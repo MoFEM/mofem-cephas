@@ -22,9 +22,6 @@
 using namespace MoFEM;
 #include <ArcLengthTools.hpp>
 
-//static ErrorCode rval;
-static PetscErrorCode ierr;
-
 PetscErrorCode ArcLengthCtx::setS(double s) {
   PetscFunctionBegin;
   this->s = s;

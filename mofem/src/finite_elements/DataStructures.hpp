@@ -1205,7 +1205,7 @@ struct DataForcesAndSurcesCore {
    * @return error code
    */
   inline PetscErrorCode resetFieldDepenentData() {
-    PetscErrorCode ierr;
+    
     PetscFunctionBegin;
     for(EntityType t = MBVERTEX;t!=MBMAXTYPE;t++) {
       boost::ptr_vector<EntData>::iterator ent_data_it = dataOnEntities[t].begin();

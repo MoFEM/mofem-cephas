@@ -76,8 +76,8 @@ namespace MoFEM {
   PetscErrorCode ProblemsManager::partitionMesh(
     const Range &ents,const int dim,const int adj_dim,const int n_parts,int verb
   ) {
-    MoABErrorCode rval;
-    PetscErrorCode ierr;
+    
+    
     MoFEM::Interface &m_field = cOre;
     PetscFunctionBegin;
 
@@ -321,7 +321,7 @@ namespace MoFEM {
   }
 
   PetscErrorCode ProblemsManager::buildProblem(const std::string &name,const bool square_matrix,int verb) {
-    PetscErrorCode ierr;
+    
     MoFEM::Interface &m_field = cOre;
     PetscFunctionBegin;
     if(!(cOre.getBuildMoFEM()&(1<<0))) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"fields not build");
@@ -335,7 +335,7 @@ namespace MoFEM {
   }
 
   PetscErrorCode ProblemsManager::buildProblem(Problem *problem_ptr,const bool square_matrix,int verb) {
-    PetscErrorCode ierr;
+    
     MoFEM::Interface &m_field = cOre;
     const EntFiniteElement_multiIndex *fe_ent_ptr;
     const DofEntity_multiIndex *dofs_field_ptr;
@@ -509,7 +509,7 @@ namespace MoFEM {
   PetscErrorCode ProblemsManager::buildProblemOnDistributedMesh(
     const std::string &name,const bool square_matrix,int verb
   ) {
-    PetscErrorCode ierr;
+    
     MoFEM::Interface &m_field = cOre;
     PetscFunctionBegin;
 
@@ -532,7 +532,7 @@ namespace MoFEM {
   PetscErrorCode ProblemsManager::buildProblemOnDistributedMesh(
     Problem *problem_ptr,const bool square_matrix,int verb
   ) {
-    PetscErrorCode ierr;
+    
     MoFEM::Interface &m_field = cOre;
     const EntFiniteElement_multiIndex *fe_ent_ptr;
     const DofEntity_multiIndex *dofs_field_ptr;
@@ -1034,7 +1034,7 @@ namespace MoFEM {
     const bool square_matrix,
     int verb
   ) {
-    PetscErrorCode ierr;
+    
     MoFEM::Interface &m_field = cOre;
     const Problem_multiIndex *problems_ptr;
     PetscFunctionBegin;
@@ -1288,7 +1288,7 @@ namespace MoFEM {
     if(!(cOre.getBuildMoFEM()&Core::BUILD_FE)) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"FEs not build");
     if(!(cOre.getBuildMoFEM()&Core::BUILD_ADJ)) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"adjacencies not build");
 
-    PetscErrorCode ierr;
+    
     MoFEM::Interface &m_field = cOre;
     const Problem_multiIndex *problems_ptr;
     PetscFunctionBegin;
@@ -1605,7 +1605,7 @@ namespace MoFEM {
   }
 
   PetscErrorCode ProblemsManager::partitionSimpleProblem(const std::string &name,int verb) {
-    PetscErrorCode ierr;
+    
     MoFEM::Interface &m_field = cOre;
     const Problem_multiIndex *problems_ptr;
     PetscFunctionBegin;
@@ -1716,7 +1716,7 @@ namespace MoFEM {
   }
 
   PetscErrorCode ProblemsManager::partitionProblem(const std::string &name,int verb) {
-    PetscErrorCode ierr;
+    
     MoFEM::Interface &m_field = cOre;
     const Problem_multiIndex *problems_ptr;
     PetscFunctionBegin;
@@ -1942,7 +1942,7 @@ namespace MoFEM {
     bool copy_cols,
     int verb
   ) {
-    PetscErrorCode ierr;
+    
     MoFEM::Interface &m_field = cOre;
     const Problem_multiIndex *problems_ptr;
     PetscFunctionBegin;
@@ -2240,8 +2240,8 @@ namespace MoFEM {
     int hi_proc,
     int verb
   ) {
-    PetscErrorCode ierr;
-    //MoABErrorCode rval;
+    
+    //
     MoFEM::Interface &m_field = cOre;
     const Problem_multiIndex *problems_ptr;
     const EntFiniteElement_multiIndex *fe_ent_ptr;
@@ -2474,7 +2474,7 @@ namespace MoFEM {
   }
 
   PetscErrorCode ProblemsManager::partitionGhostDofs(const std::string &name,int verb) {
-    PetscErrorCode ierr;
+    
     MoFEM::Interface &m_field = cOre;
     const Problem_multiIndex *problems_ptr;
     PetscFunctionBegin;

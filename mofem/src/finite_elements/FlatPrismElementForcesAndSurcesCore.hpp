@@ -39,7 +39,7 @@ namespace MoFEM {
  */
 struct FlatPrismElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 
-  MoABErrorCode rval;
+  
   double aRea[2];
   VectorDouble normal;
   VectorDouble coords;

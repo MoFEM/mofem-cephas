@@ -30,8 +30,8 @@ static char help[] = "...\n\n";
 
 int main(int argc, char *argv[]) {
 
-  ErrorCode rval;
-  PetscErrorCode ierr;
+  
+  
 
   PetscInitialize(&argc,&argv,(char *)0,help);
 
@@ -136,8 +136,8 @@ int main(int argc, char *argv[]) {
 
   struct ForcesAndSurcesCore_TestFE: public ForcesAndSurcesCore {
 
-    ErrorCode rval;
-    PetscErrorCode ierr;
+    
+    
 
     MatrixDouble hoCoords_at_GaussPt;
     MatrixDouble nOrmals_at_GaussPt;

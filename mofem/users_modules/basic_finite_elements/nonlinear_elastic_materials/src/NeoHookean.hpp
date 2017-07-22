@@ -44,7 +44,7 @@ struct NeoHookean: public NonlinearElasticElement::FunctionsToCalculatePiolaKirc
       */
     virtual PetscErrorCode NeoHooke_PiolaKirchhoffII() {
       PetscFunctionBegin;
-      PetscErrorCode ierr;
+      
       invC.resize(3,3);
       this->S.resize(3,3);
       ierr = this->dEterminatnt(this->C,detC); CHKERRQ(ierr);
@@ -68,7 +68,7 @@ struct NeoHookean: public NonlinearElasticElement::FunctionsToCalculatePiolaKirc
       boost::shared_ptr<const NumeredEntFiniteElement> fe_ptr
     ) {
       PetscFunctionBegin;
-      PetscErrorCode ierr;
+      
       this->lambda = LAMBDA(block_data.E,block_data.PoissonRatio);
       this->mu = MU(block_data.E,block_data.PoissonRatio);
       ierr = this->calculateC_CauchyDefromationTensor(); CHKERRQ(ierr);
@@ -105,7 +105,7 @@ struct NeoHookean: public NonlinearElasticElement::FunctionsToCalculatePiolaKirc
       boost::shared_ptr<const NumeredEntFiniteElement> fe_ptr
     ) {
       PetscFunctionBegin;
-      PetscErrorCode ierr;
+      
       this->lambda = LAMBDA(block_data.E,block_data.PoissonRatio);
       this->mu = MU(block_data.E,block_data.PoissonRatio);
       ierr = this->calculateC_CauchyDefromationTensor(); CHKERRQ(ierr);

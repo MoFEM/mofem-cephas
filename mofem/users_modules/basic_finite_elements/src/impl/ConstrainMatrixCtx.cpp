@@ -81,7 +81,7 @@ PetscErrorCode ConstrainMatrixCtx::initializeQorP(Vec x) {
     PetscFunctionBegin;
     if(initQorP) {
       initQorP = false;
-      PetscErrorCode ierr;
+      
       PetscLogEventBegin(USER_EVENT_projInit,0,0,0,0);
       ierr = MatTranspose(C,MAT_INITIAL_MATRIX,&CT); CHKERRQ(ierr);
       ierr = MatTransposeMatMult(CT,CT,MAT_INITIAL_MATRIX,PETSC_DEFAULT,&CCT); CHKERRQ(ierr); // need to be calculated when C is changed
@@ -117,7 +117,7 @@ PetscErrorCode ConstrainMatrixCtx::initializeQorP(Vec x) {
 PetscErrorCode ConstrainMatrixCtx::recalculateCTandCCT() {
     PetscFunctionBegin;
     if(initQorP) PetscFunctionReturn(0);
-    PetscErrorCode ierr;
+    
     ierr = MatTranspose(C,MAT_REUSE_MATRIX,&CT); CHKERRQ(ierr);
     ierr = MatTransposeMatMult(CT,CT,MAT_REUSE_MATRIX,PETSC_DEFAULT,&CCT); CHKERRQ(ierr);
     PetscFunctionReturn(0);
@@ -126,7 +126,7 @@ PetscErrorCode ConstrainMatrixCtx::recalculateCTandCCT() {
 PetscErrorCode ConstrainMatrixCtx::destroyQorP() {
     PetscFunctionBegin;
     if(initQorP) PetscFunctionReturn(0);
-    PetscErrorCode ierr;
+    
     ierr = MatDestroy(&CT); CHKERRQ(ierr);
     ierr = MatDestroy(&CCT); CHKERRQ(ierr);
     if(createKSP) {
@@ -147,7 +147,7 @@ PetscErrorCode ConstrainMatrixCtx::initializeQTKQ() {
     PetscFunctionBegin;
     if(initQTKQ) {
       initQTKQ = false;
-      PetscErrorCode ierr;
+      
       PetscLogEventBegin(USER_EVENT_projInit,0,0,0,0);
       ierr = MatTransposeMatMult(C,C,MAT_INITIAL_MATRIX,PETSC_DEFAULT,&CTC); CHKERRQ(ierr); // need to be recalculated when C is changed
       if(debug) {
@@ -175,7 +175,7 @@ PetscErrorCode ConstrainMatrixCtx::initializeQTKQ() {
 PetscErrorCode ConstrainMatrixCtx::recalculateCTC() {
     PetscFunctionBegin;
     if(initQTKQ) PetscFunctionReturn(0);
-    PetscErrorCode ierr;
+    
     ierr = MatTransposeMatMult(C,C,MAT_REUSE_MATRIX,PETSC_DEFAULT,&CTC); CHKERRQ(ierr);
     PetscFunctionReturn(0);
 }
@@ -183,7 +183,7 @@ PetscErrorCode ConstrainMatrixCtx::recalculateCTC() {
 PetscErrorCode ConstrainMatrixCtx::destroyQTKQ() {
     PetscFunctionBegin;
     if(initQTKQ) PetscFunctionReturn(0);
-    PetscErrorCode ierr;
+    
     ierr = MatDestroy(&CTC); CHKERRQ(ierr);
     ierr = VecDestroy(&Qx); CHKERRQ(ierr);
     ierr = VecDestroy(&KQx); CHKERRQ(ierr);
@@ -194,7 +194,7 @@ PetscErrorCode ConstrainMatrixCtx::destroyQTKQ() {
 
 PetscErrorCode PorjectionMatrixMultOpQ(Mat Q,Vec x,Vec f) {
   PetscFunctionBegin;
-  PetscErrorCode ierr;
+  
   void *void_ctx;
   ierr = MatShellGetContext(Q,&void_ctx); CHKERRQ(ierr);
   ConstrainMatrixCtx *ctx = (ConstrainMatrixCtx*)void_ctx;
@@ -223,7 +223,7 @@ PetscErrorCode PorjectionMatrixMultOpQ(Mat Q,Vec x,Vec f) {
 
 PetscErrorCode ConstrainMatrixMultOpP(Mat P,Vec x,Vec f) {
   PetscFunctionBegin;
-  PetscErrorCode ierr;
+  
   void *void_ctx;
   ierr = MatShellGetContext(P,&void_ctx); CHKERRQ(ierr);
   ConstrainMatrixCtx *ctx = (ConstrainMatrixCtx*)void_ctx;
@@ -245,7 +245,7 @@ PetscErrorCode ConstrainMatrixMultOpP(Mat P,Vec x,Vec f) {
 
 PetscErrorCode ConstrainMatrixMultOpR(Mat R,Vec x,Vec f) {
   PetscFunctionBegin;
-  PetscErrorCode ierr;
+  
   void *void_ctx;
   ierr = MatShellGetContext(R,&void_ctx); CHKERRQ(ierr);
   ConstrainMatrixCtx *ctx = (ConstrainMatrixCtx*)void_ctx;
@@ -264,7 +264,7 @@ PetscErrorCode ConstrainMatrixMultOpR(Mat R,Vec x,Vec f) {
 
 PetscErrorCode ConstrainMatrixMultOpRT(Mat RT,Vec x,Vec f) {
   PetscFunctionBegin;
-  PetscErrorCode ierr;
+  
   void *void_ctx;
   ierr = MatShellGetContext(RT,&void_ctx); CHKERRQ(ierr);
   ConstrainMatrixCtx *ctx = (ConstrainMatrixCtx*)void_ctx;
@@ -280,7 +280,7 @@ PetscErrorCode ConstrainMatrixMultOpRT(Mat RT,Vec x,Vec f) {
 
 PetscErrorCode ConstrainMatrixMultOpCTC_QTKQ(Mat CTC_QTKQ,Vec x,Vec f) {
   PetscFunctionBegin;
-  PetscErrorCode ierr;
+  
   void *void_ctx;
   ierr = MatShellGetContext(CTC_QTKQ,&void_ctx); CHKERRQ(ierr);
   ConstrainMatrixCtx *ctx = (ConstrainMatrixCtx*)void_ctx;
@@ -307,7 +307,7 @@ PetscErrorCode ConstrainMatrixMultOpCTC_QTKQ(Mat CTC_QTKQ,Vec x,Vec f) {
 
 PetscErrorCode ConstrainMatrixDestroyOpPorQ(Mat Q) {
   PetscFunctionBegin;
-  PetscErrorCode ierr;
+  
   void *void_ctx;
   ierr = MatShellGetContext(Q,&void_ctx); CHKERRQ(ierr);
   ConstrainMatrixCtx *ctx = (ConstrainMatrixCtx*)void_ctx;
@@ -316,7 +316,7 @@ PetscErrorCode ConstrainMatrixDestroyOpPorQ(Mat Q) {
 }
 PetscErrorCode ConstrainMatrixDestroyOpQTKQ(Mat QTKQ) {
   PetscFunctionBegin;
-  PetscErrorCode ierr;
+  
   void *void_ctx;
   ierr = MatShellGetContext(QTKQ,&void_ctx); CHKERRQ(ierr);
   ConstrainMatrixCtx *ctx = (ConstrainMatrixCtx*)void_ctx;

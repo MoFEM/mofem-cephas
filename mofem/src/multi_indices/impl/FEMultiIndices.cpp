@@ -113,7 +113,7 @@ const boost::shared_ptr<SideNumber>& RefElement_PRISM::getSideNumberPtr(const En
   }
 
   // use moab to get sense, side and offset
-  MoABErrorCode rval;
+  
   int side_number,sense,offset;
   rval = moab.side_number(sPtr->ent,ent,side_number,sense,offset);
 
@@ -475,7 +475,7 @@ PetscErrorCode DefaultElementAdjacency::defaultVertex(
   Interface &moab,const Field &field_ptr,const EntFiniteElement &fe_ptr,Range &adjacency
 ) {
   PetscFunctionBegin;
-  MoABErrorCode rval;
+  
   switch (field_ptr.getSpace()) {
     case H1:
     adjacency.insert(fe_ptr.getEnt());
@@ -976,7 +976,7 @@ PetscErrorCode EntFiniteElement::getRowDofView(
   const int operation_type
 ) const {
   PetscFunctionBegin;
-  PetscErrorCode ierr;
+  
   ierr = get_fe_dof_view(*row_dof_view,dofs,dofs_view,operation_type); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
@@ -985,7 +985,7 @@ PetscErrorCode EntFiniteElement::getColDofView(
   const int operation_type
 ) const {
   PetscFunctionBegin;
-  PetscErrorCode ierr;
+  
   ierr = get_fe_dof_view(*col_dof_view,dofs,dofs_view,operation_type); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
@@ -994,7 +994,7 @@ PetscErrorCode EntFiniteElement::getDataDofView(
   const int operation_type
 ) const {
   PetscFunctionBegin;
-  PetscErrorCode ierr;
+  
   ierr = get_fe_dof_view(*data_dofs,dofs,dofs_view,operation_type); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
@@ -1004,7 +1004,7 @@ PetscErrorCode EntFiniteElement::getRowDofView(
   const int operation_type
 ) const {
   PetscFunctionBegin;
-  PetscErrorCode ierr;
+  
   ierr = get_fe_dof_view(*row_dof_view,dofs,dofs_view,operation_type); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
@@ -1013,7 +1013,7 @@ PetscErrorCode EntFiniteElement::getColDofView(
   const int operation_type
 ) const {
   PetscFunctionBegin;
-  PetscErrorCode ierr;
+  
   ierr = get_fe_dof_view(*col_dof_view,dofs,dofs_view,operation_type); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
@@ -1023,7 +1023,7 @@ PetscErrorCode EntFiniteElement::getRowDofView(
   const int operation_type
 ) const {
   PetscFunctionBegin;
-  PetscErrorCode ierr;
+  
   ierr = get_fe_dof_view(*row_dof_view,dofs,dofs_view,operation_type); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
@@ -1033,7 +1033,7 @@ PetscErrorCode EntFiniteElement::getColDofView(
   const int operation_type
 ) const {
   PetscFunctionBegin;
-  PetscErrorCode ierr;
+  
   ierr = get_fe_dof_view(*col_dof_view,dofs,dofs_view,operation_type); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
@@ -1042,7 +1042,7 @@ PetscErrorCode EntFiniteElement::getRowDofView(
   const int operation_type
 ) const {
   PetscFunctionBegin;
-  PetscErrorCode ierr;
+  
   ierr = get_fe_dof_view(*row_dof_view,dofs,dofs_view,operation_type); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
@@ -1051,7 +1051,7 @@ PetscErrorCode EntFiniteElement::getColDofView(
     const NumeredDofEntity_multiIndex &dofs,NumeredDofEntity_multiIndex_idx_view_hashed &dofs_view,
     const int operation_type) const {
   PetscFunctionBegin;
-  PetscErrorCode ierr;
+  
   ierr = get_fe_dof_view(*col_dof_view,dofs,dofs_view,operation_type); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
@@ -1059,7 +1059,7 @@ PetscErrorCode EntFiniteElement::getColDofView(
 PetscErrorCode EntFiniteElement::getElementAdjacency(
   const boost::shared_ptr<Field> field_ptr,Range &adjacency
 ) {
-  PetscErrorCode ierr;
+  
   moab::Interface &moab = getRefEntityPtr()->basicDataPtr->moab;
   PetscFunctionBegin;
   const EntFiniteElement *this_fe_ptr = this;

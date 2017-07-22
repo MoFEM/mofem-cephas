@@ -46,7 +46,7 @@ hoGeometry(ho_geometry) {
 PetscErrorCode NeummanForcesSurface::OpNeumannForce::doWork(
   int side,EntityType type,DataForcesAndSurcesCore::EntData &data
 ) {
-  PetscErrorCode ierr;
+
   PetscFunctionBegin;
 
   if(data.getIndices().size()==0) PetscFunctionReturn(0);
@@ -142,7 +142,7 @@ PetscErrorCode NeummanForcesSurface::OpNeumannForceAnalytical::doWork(
   EntityHandle ent = getNumeredEntFiniteElementPtr()->getEnt();
   if(tRis.find(ent)==tRis.end()) PetscFunctionReturn(0);
 
-  PetscErrorCode ierr;
+
 
   int rank = data.getFieldDofs()[0]->getNbOfCoeffs();
   int nb_row_dofs = data.getIndices().size()/rank;
@@ -228,7 +228,7 @@ hoGeometry(ho_geometry) {}
 PetscErrorCode NeummanForcesSurface::OpNeumannPreassure::doWork(
   int side,EntityType type,DataForcesAndSurcesCore::EntData &data
 ) {
-  PetscErrorCode ierr;
+
   PetscFunctionBegin;
 
   if(data.getIndices().size()==0) PetscFunctionReturn(0);
@@ -311,7 +311,7 @@ hoGeometry(ho_geometry) {}
 PetscErrorCode NeummanForcesSurface::OpNeumannFlux::doWork(
   int side,EntityType type,DataForcesAndSurcesCore::EntData &data
 ) {
-  PetscErrorCode ierr;
+
   PetscFunctionBegin;
 
   if(data.getIndices().size()==0) PetscFunctionReturn(0);
@@ -370,8 +370,8 @@ PetscErrorCode NeummanForcesSurface::OpNeumannFlux::doWork(
 
 
 PetscErrorCode NeummanForcesSurface::addForce(const std::string field_name,Vec F,int ms_id,bool ho_geometry,bool block_set) {
-  PetscErrorCode ierr;
-  ErrorCode rval;
+
+
   const CubitMeshSets *cubit_meshset_ptr;
   MeshsetsManager *mmanager_ptr;
   PetscFunctionBegin;
@@ -422,8 +422,7 @@ PetscErrorCode NeummanForcesSurface::addForce(const std::string field_name,Vec F
 }
 
 PetscErrorCode NeummanForcesSurface::addPreassure(const std::string field_name,Vec F,int ms_id,bool ho_geometry,bool block_set) {
-  PetscErrorCode ierr;
-  MoABErrorCode rval;
+
   const CubitMeshSets *cubit_meshset_ptr;
   MeshsetsManager *mmanager_ptr;
   PetscFunctionBegin;
@@ -459,8 +458,8 @@ PetscErrorCode NeummanForcesSurface::addPreassure(const std::string field_name,V
 }
 
 PetscErrorCode NeummanForcesSurface::addFlux(const std::string field_name,Vec F,int ms_id,bool ho_geometry) {
-  PetscErrorCode ierr;
-  ErrorCode rval;
+
+
   const CubitMeshSets *cubit_meshset_ptr;
   MeshsetsManager *mmanager_ptr;
   PetscFunctionBegin;

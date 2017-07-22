@@ -683,7 +683,7 @@ PetscErrorCode OpCalculateInvJacForFatPrism::doWork(
   EntityType type,
   DataForcesAndSurcesCore::EntData &data
 ) {
-  PetscErrorCode ierr;
+  
   PetscFunctionBegin;
 
   try {

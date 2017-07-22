@@ -269,7 +269,7 @@ struct PoissonExample::OpK: public VolumeElementForcesAndSourcesCore::UserDataOp
 
 private:
 
-  PetscErrorCode ierr;  ///< error code
+    ///< error code
 
   int nbRows;           ///< number of dofs on rows
   int nbCols;           ///< number if dof on column
@@ -574,7 +574,7 @@ struct PoissonExample::OpF: public OpBaseRhs<VolumeElementForcesAndSourcesCore::
 
 private:
 
-  PetscErrorCode ierr;
+  
   FTensor::Number<0> NX;
   FTensor::Number<1> NY;
   FTensor::Number<2> NZ;

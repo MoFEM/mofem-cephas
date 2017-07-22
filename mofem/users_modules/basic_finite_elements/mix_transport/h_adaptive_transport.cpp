@@ -141,8 +141,6 @@ struct MyTransport: public MixTransportElement {
    * @return           error code
    */
   PetscErrorCode addBoundaryElements(BitRefLevel &ref_level) {
-    MoABErrorCode rval;
-    PetscErrorCode ierr;
     PetscFunctionBegin;
     Range tets;
     ierr = mField.get_entities_by_type_and_ref_level(ref_level,BitRefLevel().set(),MBTET,tets);
@@ -209,8 +207,6 @@ struct MyTransport: public MixTransportElement {
   PetscErrorCode refineMesh(
     MixTransportElement &ufe,const int nb_levels,const int order
   ) {
-    PetscErrorCode ierr;
-    MoABErrorCode rval;
     MeshRefinement *refine_ptr;
     PetscFunctionBegin;
     // get refined edges having child vertex
@@ -315,7 +311,7 @@ struct MyTransport: public MixTransportElement {
    * @return error code
    */
   PetscErrorCode squashBits() {
-    PetscErrorCode ierr;
+
     PetscFunctionBegin;
     BitRefLevel all_but_0;
     all_but_0.set(0);
@@ -348,8 +344,6 @@ struct MyTransport: public MixTransportElement {
    * @return           error code
    */
   PetscErrorCode updateMeshsetsFieldsAndElements(const int nb_levels) {
-    MoABErrorCode rval;
-    PetscErrorCode ierr;
     BitRefLevel ref_level;
     PetscFunctionBegin;
     ref_level.set(nb_levels);
@@ -369,8 +363,8 @@ struct MyTransport: public MixTransportElement {
 
 int main(int argc, char *argv[]) {
 
-  ErrorCode rval;
-  PetscErrorCode ierr;
+
+
 
   PetscInitialize(&argc,&argv,(char *)0,help);
 

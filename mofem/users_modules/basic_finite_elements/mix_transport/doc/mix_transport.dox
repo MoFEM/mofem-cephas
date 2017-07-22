@@ -311,7 +311,7 @@ add entities to those on which given field is spanning.
 
 \code{.cpp}
 PetscErrorCode MixTransport::MixTransportElement::addFields(const std::string &values,const std::string &fluxes,const int order) {
-  PetscErrorCode ierr;
+  
   PetscFunctionBegin;
   //Fields
   ierr = mField.add_field(fluxes,HDIV,DEMKOWICZ_JACOBI_BASE,1); CHKERRQ(ierr);
@@ -378,8 +378,8 @@ PetscErrorCode MixTransport::MixTransportElement::addFiniteElements(
 ) {
   PetscFunctionBegin;
 
-  PetscErrorCode ierr;
-  ErrorCode rval;
+  
+  
 
   // Set up volume element operators. Operators are used to calculate components
   // of stiffness matrix & right hand side, in essence are used to do volume integrals over
@@ -514,8 +514,8 @@ get triangles in that BLOCKSET. Then appropriate triangles are added to \e
 MIX_BCVALUE and \e MIX_BCFLUX
 \code{.cpp}
 PetscErrorCode ExampleMix::addBoundaryElements(BitRefLevel &ref_level) {
-  MoABErrorCode rval;
-  PetscErrorCode ierr;
+  MoAB
+  
   PetscFunctionBegin;
   Range tets;
   ierr = mField.get_entities_by_type_and_ref_level(ref_level,BitRefLevel().set(),MBTET,tets);
@@ -621,7 +621,7 @@ calculations, matrices and vectors are distributed.
 
 \code{.cpp}
 PetscErrorCode MixTransport::MixTransportElement::buildProblem(BitRefLevel &ref_level) {
-  PetscErrorCode ierr;
+  
   PetscFunctionBegin;
   //build field
   ierr = mField.build_fields(); CHKERRQ(ierr);
@@ -749,7 +749,7 @@ adjacencies and other bookkeeping operations are handled by MoFEM and PETSc.
 Functions and use of below code was explained earlier in \ref minimal_surface_equation;
 \code
 PetscErrorCode MixTransport::MixTransportElement::createMatrices() {
-  PetscErrorCode ierr;
+  
   PetscFunctionBegin;
   ierr = mField.MatCreateMPIAIJWithArrays("MIX",&Aij); CHKERRQ(ierr);
   ierr = mField.VecCreateGhost("MIX",COL,&D); CHKERRQ(ierr);
@@ -828,7 +828,7 @@ is handled by the MoFEM.
 The function
 \code{.cpp}
 PetscErrorCode MixTransport::MixTransportElement::solveLinearProblem() {
-    PetscErrorCode ierr;
+    
     PetscFunctionBegin;
     \\ Code inside
     PetscFunctionReturn(0);
@@ -1068,7 +1068,7 @@ struct MixTransport::MixTransportElement::OpVDivSigma_L2Hdiv: public MoFEM::Volu
     DataForcesAndSurcesCore::EntData &row_data,
     DataForcesAndSurcesCore::EntData &col_data
   ) {
-    PetscErrorCode ierr;
+    
     PetscFunctionBegin;
     int nb_row = row_data.getFieldData().size();
     int nb_col = col_data.getFieldData().size();
@@ -1213,7 +1213,7 @@ struct MixTransport::MixTransportElement::OpRhsBcOnValues: public MoFEM::FaceEle
   F(f) {}
   VectorDouble Nf;
   PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
-    PetscErrorCode ierr;
+    
     PetscFunctionBegin;
     if(data.getFieldData().size()==0) PetscFunctionReturn(0);
     Nf.resize(data.getIndices().size());
@@ -1404,7 +1404,7 @@ will show how to calculate residual error estimator using users operators.
 Function evaluating error is implemented as follows
 \code
 PetscErrorCode MixTransport::MixTransportElement::evaluateError() {
-  PetscErrorCode ierr;
+  
   PetscFunctionBegin;
   errorMap.clear();
   sumErrorFlux = 0;
@@ -1557,8 +1557,8 @@ Once we evaluated approximation functions values at each face, we can calculate
 error \f$\eta_{e,R}\f$, using face operator
 \code{.cpp}
 PetscErrorCode MixTransport::MixTransportElement::OpSkeleton::doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
-  MoABErrorCode rval;
-  PetscErrorCode ierr;
+  MoAB
+  
   PetscFunctionBegin;
   if(type == MBTRI) {
     EntityHandle fe_ent = getNumeredEntFiniteElementPtr()->getEnt();
@@ -1652,8 +1652,8 @@ struct MixTransport::MixTransportElement::OpError: public MoFEM::VolumeElementFo
   PetscErrorCode doWork(
     int side,EntityType type,DataForcesAndSurcesCore::EntData &data
   ) {
-    PetscErrorCode ierr;
-    ErrorCode rval;
+    
+    
     PetscFunctionBegin;
     if(type != MBTET) PetscFunctionReturn(0);
     invK.resize(3,3,false);

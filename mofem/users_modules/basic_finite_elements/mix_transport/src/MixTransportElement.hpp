@@ -100,7 +100,7 @@ struct MixTransportElement {
   PetscErrorCode getDirichletBCIndices(IS *is) {
     PetscFunctionBegin;
     std::vector<int> ids;
-    PetscErrorCode ierr;
+
     ids.insert(ids.begin(),bcIndices.begin(),bcIndices.end());
     IS is_local;
     ierr = ISCreateGeneral(
@@ -206,7 +206,7 @@ struct MixTransportElement {
    * @return        error code
    */
   PetscErrorCode addFields(const std::string &values,const std::string &fluxes,const int order) {
-    PetscErrorCode ierr;
+
     PetscFunctionBegin;
     //Fields
     ierr = mField.add_field(fluxes,HDIV,DEMKOWICZ_JACOBI_BASE,1); CHKERRQ(ierr);
@@ -233,8 +233,8 @@ struct MixTransportElement {
   ) {
     PetscFunctionBegin;
 
-    PetscErrorCode ierr;
-    ErrorCode rval;
+
+
 
     // Set up volume element operators. Operators are used to calculate components
     // of stiffness matrix & right hand side, in essence are used to do volume integrals over
@@ -324,7 +324,7 @@ struct MixTransportElement {
    * @return           error code
    */
   PetscErrorCode buildProblem(BitRefLevel &ref_level) {
-    PetscErrorCode ierr;
+
     PetscFunctionBegin;
     //build field
     ierr = mField.build_fields(); CHKERRQ(ierr);
@@ -403,7 +403,6 @@ struct MixTransportElement {
       EntityType type,
       DataForcesAndSurcesCore::EntData &data
     ) {
-      MoABErrorCode rval;
       PetscFunctionBegin;
       if(type != MBTET) PetscFunctionReturn(0);
       EntityHandle fe_ent = getNumeredEntFiniteElementPtr()->getEnt();
@@ -464,7 +463,7 @@ struct MixTransportElement {
    * @return error code
    */
   PetscErrorCode postProc(const string out_file) {
-    PetscErrorCode ierr;
+
     PetscFunctionBegin;
     PostProcVolumeOnRefinedMesh post_proc(mField);
     ierr = post_proc.generateReferenceElementMesh(); CHKERRQ(ierr);
@@ -483,7 +482,7 @@ struct MixTransportElement {
 
   /// \brief create matrices
   PetscErrorCode createMatrices() {
-    PetscErrorCode ierr;
+
     PetscFunctionBegin;
     ierr = mField.MatCreateMPIAIJWithArrays("MIX",&Aij); CHKERRQ(ierr);
     ierr = mField.VecCreateGhost("MIX",COL,&D); CHKERRQ(ierr);
@@ -497,7 +496,7 @@ struct MixTransportElement {
    * @return error code
    */
   PetscErrorCode solveLinearProblem() {
-    PetscErrorCode ierr;
+
     PetscFunctionBegin;
 
     ierr = MatZeroEntries(Aij); CHKERRQ(ierr);
@@ -613,7 +612,7 @@ struct MixTransportElement {
 
   /// \brief calculate residual
   PetscErrorCode calculateResidual() {
-    PetscErrorCode ierr;
+
     PetscFunctionBegin;
     ierr = VecZeroEntries(F); CHKERRQ(ierr);
     ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -665,7 +664,7 @@ struct MixTransportElement {
 
   */
   PetscErrorCode evaluateError() {
-    PetscErrorCode ierr;
+
     PetscFunctionBegin;
     errorMap.clear();
     sumErrorFlux = 0;
@@ -692,7 +691,7 @@ struct MixTransportElement {
 
   /// \brief destroy matrices
   PetscErrorCode destroyMatrices() {
-    PetscErrorCode ierr;
+
     PetscFunctionBegin;
     ierr = MatDestroy(&Aij); CHKERRQ(ierr);
     ierr = VecDestroy(&D); CHKERRQ(ierr);
@@ -748,7 +747,7 @@ struct MixTransportElement {
       DataForcesAndSurcesCore::EntData &row_data,
       DataForcesAndSurcesCore::EntData &col_data
     ) {
-      PetscErrorCode ierr;
+
       PetscFunctionBegin;
       try {
         if(Aij == PETSC_NULL) PetscFunctionReturn(0);
@@ -837,7 +836,7 @@ struct MixTransportElement {
     PetscErrorCode doWork(
       int side,EntityType type,DataForcesAndSurcesCore::EntData &data
     ) {
-      PetscErrorCode ierr;
+
       PetscFunctionBegin;
       try {
         if(F==PETSC_NULL) PetscFunctionReturn(0);
@@ -928,7 +927,7 @@ struct MixTransportElement {
       int side,EntityType type,
       DataForcesAndSurcesCore::EntData &data
     ) {
-      PetscErrorCode ierr;
+
       PetscFunctionBegin;
       try {
         if(data.getFieldData().size()==0) PetscFunctionReturn(0);
@@ -1012,7 +1011,7 @@ struct MixTransportElement {
       DataForcesAndSurcesCore::EntData &row_data,
       DataForcesAndSurcesCore::EntData &col_data
     ) {
-      PetscErrorCode ierr;
+
       PetscFunctionBegin;
       try {
         if(Aij == PETSC_NULL) PetscFunctionReturn(0);
@@ -1061,7 +1060,7 @@ struct MixTransportElement {
       int side,EntityType type,
       DataForcesAndSurcesCore::EntData &data
     ) {
-      PetscErrorCode ierr;
+
       PetscFunctionBegin;
       try {
         if(data.getIndices().size()==0) PetscFunctionReturn(0);
@@ -1114,7 +1113,7 @@ struct MixTransportElement {
     PetscErrorCode doWork(
       int side,EntityType type,DataForcesAndSurcesCore::EntData &data
     ) {
-      PetscErrorCode ierr;
+
       PetscFunctionBegin;
       try {
         if(data.getFieldData().size()==0) PetscFunctionReturn(0);
@@ -1188,7 +1187,7 @@ struct MixTransportElement {
     PetscErrorCode doWork(
       int side,EntityType type,DataForcesAndSurcesCore::EntData &data
     ) {
-      PetscErrorCode ierr;
+
       PetscFunctionBegin;
       try {
         if(data.getFieldData().size()==0) PetscFunctionReturn(0);
@@ -1258,7 +1257,7 @@ struct MixTransportElement {
     MatrixDouble NN;
     VectorDouble Nf;
     PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
-      PetscErrorCode ierr;
+
       PetscFunctionBegin;
       try {
         if(data.getFieldData().size()==0) PetscFunctionReturn(0);
@@ -1462,7 +1461,7 @@ struct MixTransportElement {
     VectorDouble divVec;
     PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
-      PetscErrorCode ierr;
+
       try {
         if(data.getFieldData().size() == 0)  PetscFunctionReturn(0);
         int nb_gauss_pts = data.getDiffN().size1();
@@ -1514,8 +1513,8 @@ struct MixTransportElement {
     PetscErrorCode doWork(
       int side,EntityType type,DataForcesAndSurcesCore::EntData &data
     ) {
-      PetscErrorCode ierr;
-      ErrorCode rval;
+
+
       PetscFunctionBegin;
       try {
         if(type != MBTET) PetscFunctionReturn(0);
@@ -1665,8 +1664,6 @@ struct MixTransportElement {
     }
 
     PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
-      MoABErrorCode rval;
-      PetscErrorCode ierr;
       PetscFunctionBegin;
       try {
 

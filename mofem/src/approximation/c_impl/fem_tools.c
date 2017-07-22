@@ -29,6 +29,8 @@
 
 #include <h1_hdiv_hcurl_l2.h>
 
+static PetscErrorCode ierr;
+
 double ShapeDetJacVolume(double *jac) {
   double det_jac;
   __CLPK_integer ipiv[4];
@@ -61,7 +63,7 @@ PetscErrorCode ShapeInvJacVolume(double *jac) {
 PetscErrorCode Grundmann_Moeller_integration_points_1D_EDGE(int rule,double *G_TRI_X,double *G_TRI_W) {
   PetscFunctionBegin;
 
-  PetscErrorCode ierr;
+
 
   int dim_num=1;
   int point;
@@ -100,7 +102,7 @@ PetscErrorCode Grundmann_Moeller_integration_points_1D_EDGE(int rule,double *G_T
 PetscErrorCode Grundmann_Moeller_integration_points_2D_TRI(int rule,double *G_TRI_X,double *G_TRI_Y,double *G_TRI_W){
   PetscFunctionBegin;
 
-  PetscErrorCode ierr;
+
 
   int dim_num=2;
   int point;
@@ -140,7 +142,7 @@ PetscErrorCode Grundmann_Moeller_integration_points_2D_TRI(int rule,double *G_TR
 PetscErrorCode Grundmann_Moeller_integration_points_3D_TET(int rule,double *G_TET_X,double *G_TET_Y,double *G_TET_Z, double *G_TET_W){
   PetscFunctionBegin;
 
-  PetscErrorCode ierr;
+
 
   int dim_num=3;
   int point;
@@ -192,7 +194,7 @@ PetscErrorCode ShapeFaceBaseMBTRI(
   double *diffN,const double *coords,
   double *normal,double *s1,double *s2) {
   PetscFunctionBegin;
-  PetscErrorCode ierr;
+
   double diffX_ksi[3];
   double diffX_eta[3];
   int ii = 0;
@@ -217,14 +219,14 @@ PetscErrorCode ShapeFaceBaseMBTRI(
 PetscErrorCode ShapeFaceNormalMBTRI(
   double *diffN,const double *coords,double *normal) {
   PetscFunctionBegin;
-  PetscErrorCode ierr;
+
   ierr = ShapeFaceBaseMBTRI(diffN,coords,normal,NULL,NULL);  CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 PetscErrorCode ShapeFaceDiffNormalMBTRI(double *diffN,const double *coords,double *diff_normal) {
   PetscFunctionBegin;
   // N = Spin(dX/dksi)*dX/deta = -Spin(dX/deta)*dX/dksi
-  PetscErrorCode ierr;
+
   double diffX_ksi[3];
   double diffX_eta[3];
   int ii = 0;
@@ -822,7 +824,7 @@ PetscErrorCode ShapeJacMBTETQ(const double *diffN,const double *coords,double *J
 }
 PetscErrorCode ShapeMBTETQ_detJac_at_Gauss_Points(double *detJac_at_Gauss_Points,const double *diffN,const double *coords,int G_DIM) {
   PetscFunctionBegin;
-  PetscErrorCode ierr;
+
   double Jac[9];
   int ii = 0;
   for(; ii<G_DIM; ii++) {
@@ -832,7 +834,7 @@ PetscErrorCode ShapeMBTETQ_detJac_at_Gauss_Points(double *detJac_at_Gauss_Points
   PetscFunctionReturn(0);
 }
 double ShapeVolumeMBTETQ(const double *diffN,const double *coords,int G_DIM,double *G_TET_W) {
-  PetscErrorCode ierr;
+
   int ii = 0;
   double vol = 0;
   double detJac_at_Gauss_Points[G_DIM];

@@ -118,7 +118,7 @@ PetscErrorCode Problem::getColDofsByPetscGlobalDofIdx(DofIdx idx,const NumeredDo
 
 PetscErrorCode Problem::getNumberOfElementsByNameAndPart(MPI_Comm comm,const std::string name,PetscLayout *layout) const {
   PetscFunctionBegin;
-  PetscErrorCode ierr;
+
   int size, rank;
   MPI_Comm_size(comm,&size);
   MPI_Comm_rank(comm,&rank);
@@ -134,7 +134,7 @@ PetscErrorCode Problem::getNumberOfElementsByNameAndPart(MPI_Comm comm,const std
 
 PetscErrorCode Problem::getNumberOfElementsByPart(MPI_Comm comm,PetscLayout *layout) const {
   PetscFunctionBegin;
-  PetscErrorCode ierr;
+
   int size, rank;
   MPI_Comm_size(comm,&size);
   MPI_Comm_rank(comm,&rank);

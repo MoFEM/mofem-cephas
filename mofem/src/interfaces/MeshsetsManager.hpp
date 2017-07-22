@@ -171,8 +171,8 @@ namespace MoFEM {
 
     template<class CUBIT_BC_DATA_TYPE>
     PetscErrorCode printBcSet(CUBIT_BC_DATA_TYPE& data,unsigned long int type) const {
-      PetscErrorCode ierr;
-      MoABErrorCode rval;
+      
+      
       PetscFunctionBegin;
       try {
         const MoFEM::Interface& m_field = cOre;

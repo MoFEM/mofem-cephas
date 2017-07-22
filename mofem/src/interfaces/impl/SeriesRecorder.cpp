@@ -70,7 +70,7 @@ cOre(const_cast<MoFEM::Core&>(core)) {
 }
 
 PetscErrorCode SeriesRecorder::getTags(int verb) {
-  MoABErrorCode rval;
+  
   MoFEM::Interface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   PetscFunctionBegin;
@@ -89,8 +89,8 @@ PetscErrorCode SeriesRecorder::clearMap() {
 }
 
 PetscErrorCode SeriesRecorder::initialiseDatabseInformationFromMesh(int verb) {
-  PetscErrorCode ierr;
-  MoABErrorCode rval;
+  
+  
   MoFEM::Interface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   PetscFunctionBegin;
@@ -134,7 +134,7 @@ PetscErrorCode SeriesRecorder::initialiseDatabseInformationFromMesh(int verb) {
 }
 
 PetscErrorCode SeriesRecorder::add_series_recorder(const std::string &series_name) {
-  MoABErrorCode rval;
+  
   MoFEM::Interface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   PetscFunctionBegin;
@@ -151,7 +151,7 @@ PetscErrorCode SeriesRecorder::add_series_recorder(const std::string &series_nam
 }
 
 PetscErrorCode SeriesRecorder::delete_recorder_series(const std::string& series_name) {
-  MoABErrorCode rval;
+  
   MoFEM::Interface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   PetscFunctionBegin;
@@ -183,7 +183,7 @@ PetscErrorCode SeriesRecorder::delete_recorder_series(const std::string& series_
 
 PetscErrorCode SeriesRecorder::record_problem(const std::string& serie_name,const Problem *problemPtr,RowColData rc) {
   PetscFunctionBegin;
-  PetscErrorCode ierr;
+  
   Series_multiIndex::index<SeriesName_mi_tag>::type::iterator sit = sEries.get<SeriesName_mi_tag>().find(serie_name);
   if(sit==sEries.get<SeriesName_mi_tag>().end()) {
     SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"series recorder <%s> not exist",serie_name.c_str());
@@ -206,7 +206,7 @@ PetscErrorCode SeriesRecorder::record_problem(const std::string& serie_name,cons
 }
 
 PetscErrorCode SeriesRecorder::record_problem(const std::string& serie_name,const std::string& problem_name,RowColData rc) {
-  PetscErrorCode ierr;
+  
   MoFEM::Interface &m_field = cOre;
   PetscFunctionBegin;
   const Problem *problem_ptr;
@@ -219,7 +219,7 @@ PetscErrorCode SeriesRecorder::record_field(
   const std::string& serie_name,const std::string& field_name,
   const BitRefLevel &bit,const BitRefLevel &mask
 ) {
-  PetscErrorCode ierr;
+  
   MoFEM::Interface &m_field = cOre;
   const DofEntity_multiIndex *dofs_ptr;
   PetscFunctionBegin;
@@ -247,7 +247,7 @@ PetscErrorCode SeriesRecorder::record_field(
 }
 
 PetscErrorCode SeriesRecorder::record_begin(const std::string& serie_name) {
-  PetscErrorCode ierr;
+  
   PetscFunctionBegin;
   Series_multiIndex::index<SeriesName_mi_tag>::type::iterator sit = sEries.get<SeriesName_mi_tag>().find(serie_name);
   if(sit==sEries.get<SeriesName_mi_tag>().end()) {
@@ -258,7 +258,7 @@ PetscErrorCode SeriesRecorder::record_begin(const std::string& serie_name) {
 }
 
 PetscErrorCode SeriesRecorder::record_end(const std::string& serie_name,double time) {
-  PetscErrorCode ierr;
+  
   PetscFunctionBegin;
   Series_multiIndex::index<SeriesName_mi_tag>::type::iterator sit = sEries.get<SeriesName_mi_tag>().find(serie_name);
   if(sit==sEries.get<SeriesName_mi_tag>().end()) {
@@ -269,7 +269,7 @@ PetscErrorCode SeriesRecorder::record_end(const std::string& serie_name,double t
 }
 
 PetscErrorCode SeriesRecorder::initialize_series_recorder(const std::string& serie_name) {
-  PetscErrorCode ierr;
+  
   MoFEM::Interface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   PetscFunctionBegin;
@@ -284,7 +284,7 @@ PetscErrorCode SeriesRecorder::initialize_series_recorder(const std::string& ser
 }
 
 PetscErrorCode SeriesRecorder::finalize_series_recorder(const std::string& serie_name) {
-  PetscErrorCode ierr;
+  
   MoFEM::Interface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   PetscFunctionBegin;
@@ -303,7 +303,7 @@ PetscErrorCode SeriesRecorder::finalize_series_recorder(const std::string& serie
 }
 
 PetscErrorCode SeriesRecorder::print_series_steps() {
-  //PetscErrorCode ierr;
+  //
   MoFEM::Interface &m_field = cOre;
   PetscFunctionBegin;
   std::ostringstream ss;
@@ -326,7 +326,7 @@ bool SeriesRecorder::check_series(const std::string& name) const {
 }
 
 PetscErrorCode SeriesRecorder::load_series_data(const std::string& serie_name,const int step_number) {
-  PetscErrorCode ierr;
+  
   MoFEM::Interface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   const DofEntity_multiIndex *dofs_ptr;

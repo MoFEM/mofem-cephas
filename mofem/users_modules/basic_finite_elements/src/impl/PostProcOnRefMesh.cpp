@@ -42,8 +42,8 @@ PetscErrorCode PostProcCommonOnRefMesh::OpGetFieldValues::doWork(
 ) {
   PetscFunctionBegin;
 
-  ErrorCode rval;
-  PetscErrorCode ierr;
+
+
 
   if(data.getFieldData().size()==0) PetscFunctionReturn(0);
 
@@ -222,8 +222,8 @@ PetscErrorCode PostProcCommonOnRefMesh::OpGetFieldGradientValues::doWork(
 ) {
   PetscFunctionBegin;
 
-  ErrorCode rval;
-  PetscErrorCode ierr;
+
+
 
   if(data.getFieldData().size()==0) PetscFunctionReturn(0);
   if(V) {
@@ -342,8 +342,7 @@ PetscErrorCode PostProcFatPrismOnRefinedMesh::setGaussPtsTrianglesOnly(int order
 
   //FIXME: Refinement not implement and inefficient implementation, looks ugly.
 
-  // PetscErrorCode ierr;
-  MoABErrorCode rval;
+  //
   const EntityHandle *conn;
   int num_nodes;
   EntityHandle prism;
@@ -492,7 +491,7 @@ PetscErrorCode PostProcFatPrismOnRefinedMesh::setGaussPtsThroughThickness(int or
 
 PetscErrorCode PostProcFatPrismOnRefinedMesh::preProcess() {
   PetscFunctionBegin;
-  // MoABErrorCode rval;
+  // MoAB
   ParallelComm* pcomm_post_proc_mesh = ParallelComm::get_pcomm(&postProcMesh,MYPCOMM_INDEX);
   if(pcomm_post_proc_mesh != NULL) {
     delete pcomm_post_proc_mesh;
@@ -581,8 +580,7 @@ PetscErrorCode PostProcFaceOnRefinedMesh::setGaussPts(int order) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"post-process mesh not generated");
   }
 
-  // PetscErrorCode ierr;
-  MoABErrorCode rval;
+  //
   const EntityHandle *conn;
   int num_nodes;
   EntityHandle tri;

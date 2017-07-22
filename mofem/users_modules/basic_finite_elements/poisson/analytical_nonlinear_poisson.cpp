@@ -93,8 +93,8 @@ struct VolRuleNonlinear {
 
 int main(int argc, char *argv[]) {
 
-  // ErrorCode rval;
-  PetscErrorCode ierr;
+  // 
+  
 
   // Initialize PETSc
   PetscInitialize(&argc,&argv,(char *)0,help);

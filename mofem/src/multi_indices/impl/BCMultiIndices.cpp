@@ -58,7 +58,7 @@ CubitMeshSets::CubitMeshSets(Interface &moab,const EntityHandle _meshset):
   tag_block_attributes_size(0),
   tag_name_data(NULL),
   meshsets_mask(NODESET|SIDESET|BLOCKSET) {
-  PetscErrorCode ierr;
+  
   ierr = getTagsHanlders(moab); CHKERRABORT(PETSC_COMM_WORLD,ierr);
   ErrorCode rval;
   rval = moab.tag_get_tags_on_entity(meshset,tag_handles); MOAB_THROW(rval);
@@ -89,7 +89,7 @@ CubitMeshSets::CubitMeshSets(Interface &moab,const EntityHandle _meshset):
       rval = moab.tag_get_by_ptr(
         *tit,&meshset,1,(const void **)&tag_bc_data,&tag_bc_size
       ); MOAB_THROW(rval);
-      PetscErrorCode ierr;
+      
       ierr = getTypeFromBcData(cubitBcType); if(ierr>0) THROW_MESSAGE("unrecognized bc_data type");
     }
     if(*tit == bhTag_header) {
@@ -107,7 +107,7 @@ CubitMeshSets::CubitMeshSets(Interface &moab,const EntityHandle _meshset):
     }
     if(*tit == entityNameTag) {
       rval = moab.tag_get_by_ptr(entityNameTag,&meshset,1,(const void **)&tag_name_data); MOAB_THROW(rval);
-      PetscErrorCode ierr;
+      
       ierr = getTypeFromName(cubitBcType); if(ierr>0) THROW_MESSAGE("unrecognized Cubit name type");
     }
   }
@@ -140,7 +140,7 @@ tag_block_attributes(NULL),
 tag_block_attributes_size(0),
 tag_name_data(NULL),
 meshsets_mask(NODESET|SIDESET|BLOCKSET)  {
-  PetscErrorCode ierr;
+  
   ierr = getTagsHanlders(moab); CHKERRABORT(PETSC_COMM_WORLD,ierr);
   ErrorCode rval;
   rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,meshset); MOAB_THROW(rval);
@@ -287,7 +287,7 @@ PetscErrorCode CubitMeshSets::getTypeFromBcData(const std::vector<char> &bc_data
 }
 PetscErrorCode CubitMeshSets::getTypeFromBcData(CubitBCType &type) const {
   PetscFunctionBegin;
-  PetscErrorCode ierr;
+  
   std::vector<char> bc_data;
   ierr = getBcData(bc_data); CHKERRQ(ierr);
   ierr = getTypeFromBcData(bc_data,type); CHKERRQ(ierr);
@@ -322,7 +322,7 @@ PetscErrorCode CubitMeshSets::getAttributes(std::vector<double>& attributes) con
 }
 
 PetscErrorCode CubitMeshSets::setAttributes(moab::Interface &moab,const std::vector<double>& attributes) {
-  MoABErrorCode rval;
+  
   PetscFunctionBegin;
   int tag_size[] = { (int)attributes.size() };
   void const* tag_data[] = { &*attributes.begin() };
@@ -370,7 +370,7 @@ PetscErrorCode CubitMeshSets::getTypeFromName(const std::string &name,CubitBCTyp
 
 PetscErrorCode CubitMeshSets::getTypeFromName(CubitBCType &type) const {
     PetscFunctionBegin;
-    PetscErrorCode ierr;
+    
     std::string name = getName();
     ierr = getTypeFromName(name,type); CHKERRQ(ierr);
     PetscFunctionReturn(0);
@@ -675,14 +675,14 @@ std::ostream& operator<<(std::ostream& os,const Mat_Interf& e) {
 }
 
 void CubitMeshSets_change_name::operator()(CubitMeshSets &e) {
-  MoABErrorCode rval;
+  
   switch (e.cubitBcType.to_ulong()) {
     case BLOCKSET:
     {
       nAme.resize(NAME_TAG_SIZE);
       rval = mOab.tag_set_data(e.entityNameTag,&e.meshset,1,nAme.c_str()); MOAB_THROW(rval);
       rval = mOab.tag_get_by_ptr(e.entityNameTag,&e.meshset,1,(const void **)&e.tag_name_data); MOAB_THROW(rval);
-      PetscErrorCode ierr;
+      
       CubitBCType type;
       ierr = e.getTypeFromName(type); if(ierr>0) THROW_MESSAGE("unrecognized Cubit name type");
       e.cubitBcType |= type;
@@ -704,14 +704,14 @@ void CubitMeshSets_change_add_bit_to_cubit_bc_type::operator()(CubitMeshSets &e)
 }
 
 void CubitMeshSets_change_attributes::operator()(CubitMeshSets &e) {
-  PetscErrorCode ierr;
+  
   ierr = e.setAttributes(mOab,aTtr);
   if(ierr>0) THROW_MESSAGE("Attributes not changed");
 }
 
 void CubitMeshSets_change_attributes_data_structure::operator()(CubitMeshSets &e) {
-  MoABErrorCode rval;
-  PetscErrorCode ierr;
+  
+  
   // Need to run this to set tag size in number of doubles, don;t know nothing about structure
   int tag_size[] = { (int)(aTtr.getSizeOfData()/sizeof(double)) };
   void const* tag_data[] = { aTtr.getDataPtr() };
@@ -725,8 +725,8 @@ void CubitMeshSets_change_attributes_data_structure::operator()(CubitMeshSets &e
 }
 
 void CubitMeshSets_change_bc_data_structure::operator()(CubitMeshSets &e) {
-  MoABErrorCode rval;
-  PetscErrorCode ierr;
+  
+  
   // Need to run this to set tag size, don;t know nothing about structure
   int tag_size[] = { (int)bcData.getSizeOfData() };
   void const* tag_data[] = { bcData.getDataPtr() };

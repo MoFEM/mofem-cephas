@@ -34,7 +34,7 @@ struct OpVolume: public VolumeElementForcesAndSourcesCore::UserDataOperator {
   vOl(vol) {
   }
   PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
-    PetscErrorCode ierr;
+    
     PetscFunctionBegin;
     if(type!=MBVERTEX) PetscFunctionReturn(0);
     const int nb_int_pts = getGaussPts().size2();
@@ -71,7 +71,7 @@ struct OpFace: public FaceElementForcesAndSourcesCore::UserDataOperator {
   vOl(vol) {
   }
   PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
-    PetscErrorCode ierr;
+    
     PetscFunctionBegin;
     if(type!=MBVERTEX) PetscFunctionReturn(0);
     const int nb_int_pts = getGaussPts().size2();
@@ -107,8 +107,8 @@ struct FaceRule { int operator()(int,int,int) const { return 4; } };
 
 int main(int argc, char *argv[]) {
 
-  //ErrorCode rval;
-  PetscErrorCode ierr;
+  //
+  
 
   // initialize petsc
   PetscInitialize(&argc,&argv,(char *)0,help);

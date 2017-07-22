@@ -73,7 +73,7 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSurcesCore {
   VolumeElementForcesAndSourcesCore(Interface &m_field,const EntityType type = MBTET);
   virtual ~VolumeElementForcesAndSourcesCore() {}
 
-  MoABErrorCode rval;
+  
   double vOlume;
 
   int num_nodes;

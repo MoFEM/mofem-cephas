@@ -31,8 +31,8 @@ static const double face_coords[4][9] = {
 
 int main(int argc, char *argv[]) {
 
-  ErrorCode rval;
-  PetscErrorCode ierr;
+  
+  
 
   PetscInitialize(&argc,&argv,(char *)0,help);
 
@@ -49,7 +49,7 @@ int main(int argc, char *argv[]) {
     "hdiv_demkowicz"
   };
 
-  PetscErrorCode ierr;
+  
 
   PetscBool flg;
   PetscInt choise_value = HDIV_AINSWORTH;
@@ -223,7 +223,7 @@ int main(int argc, char *argv[]) {
       DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
 
-      ErrorCode rval;
+      
 
       if(data.getFieldData().size()==0) PetscFunctionReturn(0);
 
@@ -269,7 +269,7 @@ int main(int argc, char *argv[]) {
 
     MatrixDouble N_tri;
     PetscErrorCode setGaussPts(int order) {
-      PetscErrorCode ierr;
+      
       PetscFunctionBegin;
 
       try {
@@ -317,7 +317,7 @@ int main(int argc, char *argv[]) {
       DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
 
-      ErrorCode rval;
+      
 
       if(type != MBTRI) PetscFunctionReturn(0);
 
@@ -375,7 +375,7 @@ int main(int argc, char *argv[]) {
       DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
 
-      ErrorCode rval;
+      
 
       if(type != MBTRI) PetscFunctionReturn(0);
 

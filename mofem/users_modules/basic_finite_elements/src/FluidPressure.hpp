@@ -62,8 +62,8 @@ struct FluidPressure {
 
   boost::ptr_vector<MethodForForceScaling> methodsOp;
 
-  PetscErrorCode ierr;
-  ErrorCode rval;
+  
+  
 
   struct OpCalculatePressure: public MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator {
 
@@ -90,7 +90,7 @@ struct FluidPressure {
     }
 
     VectorDouble Nf;
-    PetscErrorCode ierr;
+    
     PetscErrorCode doWork(
       int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;

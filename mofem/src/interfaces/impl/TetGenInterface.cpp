@@ -106,7 +106,7 @@ PetscErrorCode TetGenInterface::inData(
   MoFEM::Interface& m_field = cOre;
   Range::iterator it;
 
-  //PetscErrorCode ierr;
+  //
   ErrorCode rval;
 
   Tag th_marker;
@@ -249,7 +249,7 @@ PetscErrorCode TetGenInterface::setGeomData(
   PetscFunctionBegin;
 
   MoFEM::Interface& m_field = cOre;
-  //PetscErrorCode ierr;
+  //
   //ErrorCode rval;
   in.pointparamlist = new tetgenio::pointparam[in.numberofpoints];
   // std::vector<bool> points_is_set(in.numberofpoints,false);
@@ -296,7 +296,7 @@ PetscErrorCode TetGenInterface::outData(
 
   MoFEM::Interface& m_field = cOre;
 
-  //PetscErrorCode ierr;
+  //
   ErrorCode rval;
 
   Tag th_marker;
@@ -465,9 +465,9 @@ PetscErrorCode TetGenInterface::outData(
   std::map<unsigned long,EntityHandle>& tetgen_moab_map,
   BitRefLevel bit,bool id_in_tags,bool error_if_created) {
   PetscFunctionBegin;
-  PetscErrorCode ierr;
+  
 
-  //MoABErrorCode rval;
+  //
   MoFEM::Interface& m_field = cOre;
 
   // ParallelComm* pcomm = ParallelComm::get_pcomm(&m_field.get_moab(),MYPCOMM_INDEX);
@@ -721,7 +721,7 @@ PetscErrorCode TetGenInterface::groupPlanar_Triangle(Range &tris,std::vector<Ran
 
   MoFEM::Interface& m_field = cOre;
 
-  PetscErrorCode ierr;
+  
   ErrorCode rval;
   Skinner skin(&m_field.get_moab());
 
@@ -825,7 +825,7 @@ PetscErrorCode TetGenInterface::groupPlanar_Triangle(Range &tris,std::vector<Ran
 PetscErrorCode TetGenInterface::groupRegion_Triangle(Range &tris,std::vector<std::vector<Range> > &sorted,const double eps) {
   PetscFunctionBegin;
 
-  PetscErrorCode ierr;
+  
 
   //PetscAttachDebugger();
 
@@ -858,7 +858,7 @@ PetscErrorCode TetGenInterface::makePolygonFacet(Range &ents,Range &polygons,
   PetscFunctionBegin;
   //FIXME: assumes that are no holes
 
-  PetscErrorCode ierr;
+  
 
   if(ents.empty()) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"no ents to build polygon");
@@ -866,7 +866,7 @@ PetscErrorCode TetGenInterface::makePolygonFacet(Range &ents,Range &polygons,
 
   MoFEM::Interface& m_field = cOre;
 
-  //PetscErrorCode ierr;
+  //
   ErrorCode rval;
   Skinner skin(&m_field.get_moab());
 

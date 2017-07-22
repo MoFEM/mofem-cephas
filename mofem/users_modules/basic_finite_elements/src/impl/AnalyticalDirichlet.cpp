@@ -79,7 +79,7 @@ PetscErrorCode AnalyticalDirichletBC::ApproxField::OpLhs::doWork(
   if(row_data.getIndices().size()==0) PetscFunctionReturn(0);
   if(col_data.getIndices().size()==0) PetscFunctionReturn(0);
 
-  PetscErrorCode ierr;
+
 
   const FENumeredDofEntity *dof_ptr;
   ierr = getNumeredEntFiniteElementPtr()->getRowDofsByPetscGlobalDofIdx(row_data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
@@ -243,7 +243,7 @@ PetscErrorCode AnalyticalDirichletBC::ApproxField::OpLhs::doWork(
     MoFEM::Interface &m_field,string fe,string field,Range& tris,string nodals_positions
   ) {
     PetscFunctionBegin;
-    PetscErrorCode ierr;
+
     ierr = m_field.add_finite_element(fe,MF_ZERO); CHKERRQ(ierr);
     ierr = m_field.modify_finite_element_add_field_row(fe,field); CHKERRQ(ierr);
     ierr = m_field.modify_finite_element_add_field_col(fe,field); CHKERRQ(ierr);
@@ -259,7 +259,7 @@ PetscErrorCode AnalyticalDirichletBC::ApproxField::OpLhs::doWork(
     MoFEM::Interface &m_field,string problem
   ) {
     PetscFunctionBegin;
-    PetscErrorCode ierr;
+
 
     ierr = m_field.VecCreateGhost(problem,ROW,&F); CHKERRQ(ierr);
     ierr = m_field.VecCreateGhost(problem,COL,&D); CHKERRQ(ierr);
@@ -282,7 +282,7 @@ PetscErrorCode AnalyticalDirichletBC::ApproxField::OpLhs::doWork(
     MoFEM::Interface &m_field,string problem,string fe,DirichletBC &bc,Range &tris
   ) {
     PetscFunctionBegin;
-    PetscErrorCode ierr;
+
 
     ierr = VecZeroEntries(F); CHKERRQ(ierr);
     ierr = MatZeroEntries(A); CHKERRQ(ierr);
@@ -314,7 +314,6 @@ PetscErrorCode AnalyticalDirichletBC::ApproxField::OpLhs::doWork(
   PetscErrorCode AnalyticalDirichletBC::solveProblem(
     MoFEM::Interface &m_field,string problem,string fe,DirichletBC &bc
   ) {
-    MoABErrorCode rval;
     PetscFunctionBegin;
     EntityHandle fe_meshset = m_field.get_finite_element_meshset("BC_FE");
     Range bc_tris;
@@ -325,7 +324,7 @@ PetscErrorCode AnalyticalDirichletBC::ApproxField::OpLhs::doWork(
 
   PetscErrorCode AnalyticalDirichletBC::destroyProblem() {
     PetscFunctionBegin;
-    PetscErrorCode ierr;
+
     ierr = KSPDestroy(&kspSolver); CHKERRQ(ierr);
     ierr = MatDestroy(&A); CHKERRQ(ierr);
     ierr = VecDestroy(&F); CHKERRQ(ierr);

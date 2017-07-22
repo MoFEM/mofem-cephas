@@ -21,12 +21,14 @@
 
 #include <h1_hdiv_hcurl_l2.h>
 
+static PetscErrorCode ierr;
+
 PetscErrorCode H1_EdgeShapeFunctions_MBTRI(
   int *sense,int *p,double *N,double *diffN,double *edgeN[3],double *diff_edgeN[3],int GDIM,
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 ) {
   PetscFunctionBegin;
-  PetscErrorCode ierr;
+
   double *edgeN01 = NULL,*edgeN12 = NULL,*edgeN20 = NULL;
   if(edgeN!=NULL) {
     edgeN01 = edgeN[0];
@@ -122,7 +124,7 @@ PetscErrorCode H1_FaceShapeFunctions_MBTRI(
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 ) {
   PetscFunctionBegin;
-  PetscErrorCode ierr;
+
   int P = NBFACETRI_H1(p);
   if(P == 0) PetscFunctionReturn(0);
   double diff_ksiL0[2],diff_ksiL1[2];
@@ -190,7 +192,7 @@ PetscErrorCode H1_EdgeShapeFunctions_MBTET(
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 ) {
   PetscFunctionBegin;
-  PetscErrorCode ierr;
+
   int P[6];
   int ee = 0;
   for(;ee<6; ee++) P[ee] = NBEDGE_H1(p[ee]);
@@ -249,7 +251,7 @@ PetscErrorCode H1_FaceShapeFunctions_MBTET(
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 ) {
   PetscFunctionBegin;
-  PetscErrorCode ierr;
+
   int P[4];
   int ff = 0;
   for(;ff<4; ff++) P[ff] = NBFACETRI_H1(p[ff]);
@@ -328,7 +330,7 @@ PetscErrorCode H1_VolumeShapeFunctions_MBTET(
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 ) {
   PetscFunctionBegin;
-  PetscErrorCode ierr;
+
   int P = NBVOLUMETET_H1(p);
   if(P==0) PetscFunctionReturn(0);
   double diff_ksiL0[3],diff_ksiL1[3],diff_ksiL2[3];
@@ -453,7 +455,7 @@ PetscErrorCode H1_QuadShapeFunctions_MBPRISM(
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 ) {
   PetscFunctionBegin;
-  PetscErrorCode ierr;
+
   int P[3];
   int ff = 0;
   for(;ff<3; ff++) {
@@ -553,7 +555,7 @@ PetscErrorCode H1_VolumeShapeFunctions_MBPRISM(
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 ) {
   PetscFunctionBegin;
-  PetscErrorCode ierr;
+
   int P = NBVOLUMEPRISM_H1(p);
   if(P==0) PetscFunctionReturn(0);
   double diff_ksiL0[3],diff_ksiL1[3],diff_ksiL2[3];

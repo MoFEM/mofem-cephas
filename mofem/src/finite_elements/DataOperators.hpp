@@ -538,7 +538,7 @@ struct OpGetDataAndGradient: public DataOperator {
     EntityType type,
     DataForcesAndSurcesCore::EntData &data
   ) {
-    PetscErrorCode ierr;
+    
     PetscFunctionBegin;
 
     try {

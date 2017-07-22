@@ -20,7 +20,7 @@ PetscErrorCode MoFEM::Hdiv_Ainsworth_EdgeFaceShapeFunctions_MBTET(
   int *faces_nodes,int *p,double *N,double *diffN,double *phi_f_e[4][3],double *diff_phi_f_e[4][3],int gdim,
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 ) {
-  PetscErrorCode ierr;
+  
   PetscFunctionBegin;
   for(int ff = 0;ff<4;ff++) {
     if(diff_phi_f_e!=NULL) {
@@ -45,7 +45,7 @@ PetscErrorCode MoFEM::Hdiv_Ainsworth_EdgeFaceShapeFunctions_MBTET_ON_FACE(
   const int face_oposite_edges_node[] = { 2, 0, 1 };
   FTensor::Index<'i',3> i;
   FTensor::Index<'j',3> j;
-  PetscErrorCode ierr;
+  
   PetscFunctionBegin;
   if(p<1) PetscFunctionReturn(0);
 
@@ -133,7 +133,7 @@ PetscErrorCode MoFEM::Hdiv_Ainsworth_FaceBubbleShapeFunctions(
   int *faces_nodes,int *p,double *N,double *diffN,double *phi_f[],double *diff_phi_f[],int gdim,
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 ) {
-  PetscErrorCode ierr;
+  
   PetscFunctionBegin;
   for(int ff = 0;ff<4;ff++) {
     double *diff;
@@ -155,7 +155,7 @@ PetscErrorCode MoFEM::Hdiv_Ainsworth_FaceBubbleShapeFunctions_ON_FACE(
 ) {
   FTensor::Index<'i',3> i;
   FTensor::Index<'j',3> j;
-  PetscErrorCode ierr;
+  
   PetscFunctionBegin;
   if(p<3) PetscFunctionReturn(0);
 
@@ -281,7 +281,7 @@ PetscErrorCode MoFEM::Hdiv_Ainsworth_EdgeBasedVolumeShapeFunctions_MBTET(
     int p,double s,double *diff_s,double *L,double *diffL,const int dim
   )
 ) {
-  PetscErrorCode ierr;
+  
   const int edges_nodes[6][2] = {
     {0,1}, {1,2}, {2,0}, {0,3}, {1,3}, {2,3}
   };
@@ -368,7 +368,7 @@ PetscErrorCode MoFEM::Hdiv_Ainsworth_FaceBasedVolumeShapeFunctions_MBTET(
   int p,double *N,double *diffN,double *phi_v_f[],double *diff_phi_v_f[],int gdim,
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 ) {
-  PetscErrorCode ierr;
+  
   const int faces_nodes[4][3] = { {0,1,3}, {1,2,3}, {0,2,3}, {0,1,2} };
 
   PetscFunctionBegin;
@@ -485,7 +485,7 @@ PetscErrorCode MoFEM::Hdiv_Ainsworth_VolumeBubbleShapeFunctions_MBTET(
   int p,double *N,double *diffN,double *phi_v,double *diff_phi_v,int gdim,
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 ) {
-  PetscErrorCode ierr;
+  
   PetscFunctionBegin;
   if(p<4) PetscFunctionReturn(0);
 
@@ -625,7 +625,7 @@ PetscErrorCode MoFEM::Hdiv_Demkowicz_Face_MBTET_ON_FACE(
 ) {
   const int face_edges_nodes[3][2] = { {0,1}, {1,2}, {2,0} };
   const int face_oposite_edges_node[] = { 2, 0, 1 };
-  PetscErrorCode ierr;
+  
   PetscFunctionBegin;
 
   FTensor::Index<'i',3> i;
@@ -779,7 +779,7 @@ PetscErrorCode MoFEM::Hdiv_Demkowicz_Interior_MBTET(
   double *phi_v,double *diff_phi_v,
   int gdim
 ) {
-  PetscErrorCode ierr;
+  
   const int oppisite_face_node[4] = { 2,0,1,3 };
   // list of zero node faces
   const int znf[] = { 0,2,3 };

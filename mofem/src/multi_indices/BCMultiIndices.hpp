@@ -279,7 +279,7 @@ struct CubitMeshSets {
   template<class ATTRIBUTE_TYPE>
   PetscErrorCode getAttributeDataStructure(ATTRIBUTE_TYPE &data) const {
     PetscFunctionBegin;
-    PetscErrorCode ierr;
+    
     if((cubitBcType&data.getType()).none()) {
       SETERRQ(
         PETSC_COMM_SELF,
@@ -306,7 +306,7 @@ struct CubitMeshSets {
   template<class ATTRIBUTE_TYPE>
   PetscErrorCode setAttributeDataStructure(const ATTRIBUTE_TYPE &data) {
     PetscFunctionBegin;
-    PetscErrorCode ierr;
+    
     if((cubitBcType&data.getType()).none()) {
         SETERRQ(PETSC_COMM_SELF,1,"attributes are not for ATTRIBUTE_TYPE structure");
     }
@@ -318,7 +318,7 @@ struct CubitMeshSets {
   template<class CUBIT_BC_DATA_TYPE>
   PetscErrorCode getBcDataStructure(CUBIT_BC_DATA_TYPE& data) const {
     PetscFunctionBegin;
-    PetscErrorCode ierr;
+    
     if((cubitBcType&data.tYpe).none()) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"bc_data are not for CUBIT_BC_DATA_TYPE structure");
     }
@@ -338,7 +338,7 @@ struct CubitMeshSets {
   template<class CUBIT_BC_DATA_TYPE>
   PetscErrorCode setBcDataStructure(CUBIT_BC_DATA_TYPE& data) {
     PetscFunctionBegin;
-    PetscErrorCode ierr;
+    
     char *ptr = const_cast<char*>(tag_bc_data);
     ierr = data.set_data(ptr,tag_bc_size); CHKERRQ(ierr);
     PetscFunctionReturn(0);

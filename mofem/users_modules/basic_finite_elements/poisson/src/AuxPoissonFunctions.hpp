@@ -40,7 +40,7 @@ namespace PoissonExample {
      * @return           error code
      */
     PetscErrorCode createGhostVec(Vec *ghost_vec) const {
-      PetscErrorCode ierr;
+      
       PetscFunctionBegin;
       int ghosts[] = { 0 };
       int nb_locals = rAnk==0?1:0;
@@ -53,7 +53,7 @@ namespace PoissonExample {
      * \brief Assemble error vector
      */
     PetscErrorCode assembleGhostVector(Vec ghost_vec) const {
-      PetscErrorCode ierr;
+      
       PetscFunctionBegin;
       ierr = VecAssemblyBegin(ghost_vec); CHKERRQ(ierr);
       ierr = VecAssemblyEnd(ghost_vec); CHKERRQ(ierr);
@@ -70,7 +70,7 @@ namespace PoissonExample {
      * \brief Print error
      */
     PetscErrorCode printError(Vec ghost_vec) {
-      PetscErrorCode ierr;
+      
       PetscFunctionBegin;
       double *e;
       ierr = VecGetArray(ghost_vec,&e); CHKERRQ(ierr);
@@ -83,7 +83,7 @@ namespace PoissonExample {
      * \brief Test error
      */
     PetscErrorCode testError(Vec ghost_vec) {
-      PetscErrorCode ierr;
+      
       PetscFunctionBegin;
       double *e;
       ierr = VecGetArray(ghost_vec,&e); CHKERRQ(ierr);

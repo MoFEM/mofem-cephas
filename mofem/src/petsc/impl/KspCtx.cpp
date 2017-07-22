@@ -46,7 +46,7 @@ namespace MoFEM {
 
 PetscErrorCode KspRhs(KSP ksp,Vec f,void *ctx) {
   PetscFunctionBegin;
-  PetscErrorCode ierr;
+  
   KspCtx* ksp_ctx = (KspCtx*)ctx;
   PetscLogEventBegin(ksp_ctx->USER_EVENT_KspRhs,0,0,0,0);
   KspCtx::basic_method_to_do::iterator bit = ksp_ctx->preProcess_Rhs.begin();
@@ -82,7 +82,7 @@ PetscErrorCode KspRhs(KSP ksp,Vec f,void *ctx) {
 }
 PetscErrorCode KspMat(KSP ksp,Mat A,Mat B,void *ctx) {
   PetscFunctionBegin;
-  PetscErrorCode ierr;
+  
   KspCtx* ksp_ctx = (KspCtx*)ctx;
   PetscLogEventBegin(ksp_ctx->USER_EVENT_KspMat,0,0,0,0);
   KspCtx::basic_method_to_do::iterator bit = ksp_ctx->preProcess_Mat.begin();

@@ -16,8 +16,8 @@
 
 using namespace MoFEM;
 
-ErrorCode rval;
-PetscErrorCode ierr;
+
+
 
 static char help[] = "...\n\n";
 #define RND_EPS 1e-6

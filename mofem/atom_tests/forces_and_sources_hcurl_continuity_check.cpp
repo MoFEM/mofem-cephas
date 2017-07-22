@@ -40,8 +40,8 @@ static const double edge_coords[6][6] = {
 
 int main(int argc, char *argv[]) {
 
-  MoABErrorCode rval;
-  PetscErrorCode ierr;
+  
+  
 
   PetscInitialize(&argc,&argv,(char *)0,help);
 
@@ -216,7 +216,7 @@ int main(int argc, char *argv[]) {
       DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
 
-      MoABErrorCode rval;
+      
 
       if(data.getFieldData().size()==0) PetscFunctionReturn(0);
 
@@ -283,7 +283,7 @@ int main(int argc, char *argv[]) {
 
     MatrixDouble N_tri;
     PetscErrorCode setGaussPts(int order) {
-      PetscErrorCode ierr;
+      
       PetscFunctionBegin;
 
       try {
@@ -343,7 +343,7 @@ int main(int argc, char *argv[]) {
       DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
 
-      MoABErrorCode rval;
+      
 
       if(type != MBTRI) PetscFunctionReturn(0);
 
@@ -405,7 +405,7 @@ int main(int argc, char *argv[]) {
       DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
 
-      MoABErrorCode rval;
+      
 
       if(type != MBTRI) PetscFunctionReturn(0);
 
@@ -473,7 +473,7 @@ int main(int argc, char *argv[]) {
       DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
 
-      MoABErrorCode rval;
+      
 
       if(type != MBEDGE) PetscFunctionReturn(0);
 

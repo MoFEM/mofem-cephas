@@ -206,7 +206,7 @@ struct SurfaceSlidingConstrains {
 
     PetscErrorCode preProcess() {
       PetscFunctionBegin;
-      PetscErrorCode ierr;
+      
 
       ierr = MoFEM::FaceElementForcesAndSourcesCore::preProcess(); CHKERRQ(ierr);
 
@@ -363,7 +363,7 @@ struct SurfaceSlidingConstrains {
 
     PetscErrorCode calculateNormal() {
       PetscFunctionBegin;
-      PetscErrorCode ierr;
+      
       try {
         sPin.resize(3,3,false);
         ierr = calcSpin(sPin,dXdKsi); CHKERRQ(ierr);
@@ -396,7 +396,7 @@ struct SurfaceSlidingConstrains {
 
     PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
-      PetscErrorCode ierr;
+      
 
       try {
 
@@ -453,7 +453,7 @@ struct SurfaceSlidingConstrains {
 
     PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
-      //PetscErrorCode ierr;
+      //
 
       try {
 
@@ -530,7 +530,7 @@ struct SurfaceSlidingConstrains {
     PetscErrorCode doWork(
       int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data
     ) {
-      PetscErrorCode ierr;
+      
 
       try {
 
@@ -622,7 +622,7 @@ struct SurfaceSlidingConstrains {
       int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data
     ) {
 
-      PetscErrorCode ierr;
+      
 
       try {
 
@@ -723,7 +723,7 @@ struct SurfaceSlidingConstrains {
       DataForcesAndSurcesCore::EntData &col_data
     ) {
       PetscFunctionBegin;
-      PetscErrorCode ierr;
+      
 
       if(col_type != MBVERTEX) {
         PetscFunctionReturn(0);
@@ -851,7 +851,7 @@ struct SurfaceSlidingConstrains {
       DataForcesAndSurcesCore::EntData &col_data
     ) {
       PetscFunctionBegin;
-      PetscErrorCode ierr;
+      
 
       try {
 
@@ -963,7 +963,7 @@ struct SurfaceSlidingConstrains {
       DataForcesAndSurcesCore::EntData &col_data
     ) {
       PetscFunctionBegin;
-      PetscErrorCode ierr;
+      
 
       try {
 

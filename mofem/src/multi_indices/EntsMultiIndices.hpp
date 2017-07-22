@@ -192,7 +192,7 @@ struct BasicEntity {
 
   */
   int* getSharingProcsPtr() const {
-    MoABErrorCode rval;
+    
     moab::Interface &moab = basicDataPtr->moab;
     int *sharing_procs_ptr = NULL;
     ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
@@ -229,7 +229,7 @@ struct BasicEntity {
 
     */
   inline EntityHandle* getSharingHandlersPtr() const {
-    MoABErrorCode rval;
+    
     EntityHandle *sharing_handlers_ptr = NULL;
     moab::Interface &moab = basicDataPtr->moab;
     ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);

@@ -28,8 +28,8 @@ using namespace MoFEM;
 
 #include <SurfacePressureComplexForLazy.hpp>
 
-ErrorCode rval;
-PetscErrorCode ierr;
+
+
 
 static char help[] = "...\n\n";
 

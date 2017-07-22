@@ -238,7 +238,7 @@ struct NitscheMethod {
     int getRule(int order) { return -1; };
 
     PetscErrorCode setGaussPts(int order) {
-      PetscErrorCode ierr;
+      
       PetscFunctionBegin;
 
       gaussPts.resize(4,0,false);
@@ -517,7 +517,7 @@ struct NitscheMethod {
     ) {
       PetscFunctionBegin;
 
-      PetscErrorCode ierr;
+      
       if(dAta.tEts.find(getNumeredEntFiniteElementPtr()->getEnt()) == dAta.tEts.end()) {
         PetscFunctionReturn(0);
       }
@@ -691,7 +691,7 @@ struct NitscheMethod {
     ) {
       PetscFunctionBegin;
 
-      PetscErrorCode ierr;
+      
       if(dAta.tEts.find(getNumeredEntFiniteElementPtr()->getEnt()) == dAta.tEts.end()) {
         PetscFunctionReturn(0);
       }

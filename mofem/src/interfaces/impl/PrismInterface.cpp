@@ -74,7 +74,7 @@ cOre(const_cast<MoFEM::Core&>(core)) {
 PetscErrorCode PrismInterface::getSides(
   const int msId,const CubitBCType cubit_bc_type,const BitRefLevel mesh_bit_level,const bool recursive,int verb
 ) {
-  PetscErrorCode ierr;
+  
   MoFEM::Interface &m_field = cOre;
   MeshsetsManager *meshsets_manager_ptr;
   PetscFunctionBegin;
@@ -91,8 +91,8 @@ PetscErrorCode PrismInterface::getSides(
 }
 
 PetscErrorCode PrismInterface::getSides(const EntityHandle sideset,const BitRefLevel mesh_bit_level,const bool recursive,int verb) {
-  PetscErrorCode ierr;
-  MoABErrorCode rval;
+  
+  
   MoFEM::Interface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   PetscFunctionBegin;
@@ -296,7 +296,7 @@ PetscErrorCode PrismInterface::splitSides(
   const EntityHandle meshset,const BitRefLevel &bit,
   const int msId,const CubitBCType cubit_bc_type,const bool add_iterfece_entities,const bool recursive,int verb
 ) {
-  PetscErrorCode ierr;
+  
   MoFEM::Interface &m_field = cOre;
   MeshsetsManager *meshsets_manager_ptr;
   PetscFunctionBegin;
@@ -316,7 +316,7 @@ PetscErrorCode PrismInterface::splitSides(
   const EntityHandle sideset,const bool add_iterfece_entities,const bool recursive,
   int verb
 ) {
-  PetscErrorCode ierr;
+  
   PetscFunctionBegin;
   ierr = splitSides(meshset,bit,
     BitRefLevel(),BitRefLevel(),sideset,add_iterfece_entities,recursive,verb
@@ -329,8 +329,8 @@ PetscErrorCode PrismInterface::splitSides(
   const EntityHandle sideset,const bool add_iterfece_entities,const bool recursive,
   int verb
 ) {
-  PetscErrorCode ierr;
-  MoABErrorCode rval;
+  
+  
   MoFEM::Interface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   PetscFunctionBegin;

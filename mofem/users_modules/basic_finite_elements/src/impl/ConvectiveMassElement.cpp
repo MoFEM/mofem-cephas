@@ -53,7 +53,7 @@ int ConvectiveMassElement::MyVolumeFE::getRule(int order) { return 2*order; };
 
 PetscErrorCode ConvectiveMassElement::MyVolumeFE::preProcess() {
   PetscFunctionBegin;
-  PetscErrorCode ierr;
+  
 
   ierr = VolumeElementForcesAndSourcesCore::preProcess(); CHKERRQ(ierr);
 
@@ -106,7 +106,7 @@ PetscErrorCode ConvectiveMassElement::MyVolumeFE::preProcess() {
 
 PetscErrorCode ConvectiveMassElement::MyVolumeFE::postProcess() {
   PetscFunctionBegin;
-  PetscErrorCode ierr;
+  
 
   ierr = VolumeElementForcesAndSourcesCore::postProcess(); CHKERRQ(ierr);
 
@@ -275,7 +275,7 @@ PetscErrorCode ConvectiveMassElement::OpMassJacobian::doWork(
 ) {
   PetscFunctionBegin;
 
-  PetscErrorCode ierr;
+  
   if(dAta.tEts.find(getNumeredEntFiniteElementPtr()->getEnt()) == dAta.tEts.end()) {
     PetscFunctionReturn(0);
   }
@@ -495,7 +495,7 @@ PetscErrorCode ConvectiveMassElement::OpMassJacobian::doWork(
   ) {
     PetscFunctionBegin;
 
-    PetscErrorCode ierr;
+    
     if(dAta.tEts.find(getNumeredEntFiniteElementPtr()->getEnt()) == dAta.tEts.end()) {
       PetscFunctionReturn(0);
     }
@@ -670,7 +670,7 @@ PetscErrorCode ConvectiveMassElement::OpMassJacobian::doWork(
   ) {
     PetscFunctionBegin;
 
-    PetscErrorCode ierr;
+    
 
     if(dAta.tEts.find(getNumeredEntFiniteElementPtr()->getEnt()) == dAta.tEts.end()) {
       PetscFunctionReturn(0);
@@ -941,7 +941,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
 ) {
     PetscFunctionBegin;
 
-    PetscErrorCode ierr;
+    
     if(row_type != MBVERTEX) {
       PetscFunctionReturn(0);
     }
@@ -1010,7 +1010,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
   ) {
     PetscFunctionBegin;
 
-    PetscErrorCode ierr;
+    
     if(dAta.tEts.find(getNumeredEntFiniteElementPtr()->getEnt()) == dAta.tEts.end()) {
       PetscFunctionReturn(0);
     }
@@ -1195,7 +1195,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
     ) {
       PetscFunctionBegin;
 
-      PetscErrorCode ierr;
+      
       if(dAta.tEts.find(getNumeredEntFiniteElementPtr()->getEnt()) == dAta.tEts.end()) {
         PetscFunctionReturn(0);
       }
@@ -1497,7 +1497,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
     ) {
       PetscFunctionBegin;
 
-      PetscErrorCode ierr;
+      
       if(dAta.tEts.find(getNumeredEntFiniteElementPtr()->getEnt()) == dAta.tEts.end()) {
         PetscFunctionReturn(0);
       }
@@ -1677,7 +1677,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
       int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data) {
       PetscFunctionBegin;
 
-      PetscErrorCode ierr;
+      
       if(dAta.tEts.find(getNumeredEntFiniteElementPtr()->getEnt()) == dAta.tEts.end()) {
         PetscFunctionReturn(0);
       }
@@ -2002,7 +2002,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
 
     PetscErrorCode ConvectiveMassElement::UpdateAndControl::preProcess() {
       PetscFunctionBegin;
-      PetscErrorCode ierr;
+      
 
       switch (ts_ctx) {
         case CTX_TSSETIFUNCTION: {
@@ -2028,7 +2028,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
 
     PetscErrorCode ConvectiveMassElement::UpdateAndControl::postProcess() {
       PetscFunctionBegin;
-      //PetscErrorCode ierr;
+      //
       //SNES snes;
       //ierr = TSGetSNES(tS,&snes); CHKERRQ(ierr);
       //ierr = SNESSetLagJacobian(snes,jacobianLag); CHKERRQ(ierr);
@@ -2039,8 +2039,8 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
 
     PetscErrorCode ConvectiveMassElement::setBlocks() {
       PetscFunctionBegin;
-      ErrorCode rval;
-      PetscErrorCode ierr;
+      
+      
 
       Range added_tets;
       for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|BODYFORCESSET,it)) {
@@ -2088,8 +2088,8 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
     bool ale,BitRefLevel bit) {
     PetscFunctionBegin;
 
-    PetscErrorCode ierr;
-    //ErrorCode rval;
+    
+    //
 
     ierr = mField.add_finite_element(element_name,MF_ZERO); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_row(element_name,velocity_field_name); CHKERRQ(ierr);
@@ -2133,8 +2133,8 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
     bool ale,BitRefLevel bit) {
       PetscFunctionBegin;
 
-      PetscErrorCode ierr;
-      //ErrorCode rval;
+      
+      //
 
       ierr = mField.add_finite_element(element_name,MF_ZERO); CHKERRQ(ierr);
       ierr = mField.modify_finite_element_add_field_row(element_name,velocity_field_name); CHKERRQ(ierr);
@@ -2179,8 +2179,8 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
   ) {
     PetscFunctionBegin;
 
-    PetscErrorCode ierr;
-    //ErrorCode rval;
+    
+    //
 
     ierr = mField.add_finite_element(element_name,MF_ZERO); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_col(element_name,velocity_field_name); CHKERRQ(ierr);
@@ -2496,7 +2496,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
   ConvectiveMassElement::MatShellCtx::MatShellCtx(): iNitialized(false) {}
   ConvectiveMassElement::MatShellCtx::~MatShellCtx() {
     if(iNitialized) {
-      PetscErrorCode ierr;
+      
       ierr = dEstroy(); CHKERRABORT(PETSC_COMM_WORLD,ierr);
     }
   }
@@ -2504,7 +2504,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
   PetscErrorCode ConvectiveMassElement::MatShellCtx::iNit() {
     PetscFunctionBegin;
     if(!iNitialized) {
-      PetscErrorCode ierr;
+      
       #if PETSC_VERSION_GE(3,5,3)
       ierr = MatCreateVecs(K,&u,&Ku); CHKERRQ(ierr);
       ierr = MatCreateVecs(M,&v,&Mv); CHKERRQ(ierr);
@@ -2521,7 +2521,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
   PetscErrorCode ConvectiveMassElement::MatShellCtx::dEstroy() {
     PetscFunctionBegin;
     if(iNitialized) {
-      PetscErrorCode ierr;
+      
       ierr = VecDestroy(&u); CHKERRQ(ierr);
       ierr = VecDestroy(&Ku); CHKERRQ(ierr);
       ierr = VecDestroy(&v); CHKERRQ(ierr);
@@ -2535,7 +2535,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
 
   PetscErrorCode ConvectiveMassElement::PCShellCtx::iNit() {
     PetscFunctionBegin;
-    PetscErrorCode ierr;
+    
     if(!initPC) {
       MPI_Comm comm;
       ierr = PetscObjectGetComm((PetscObject)shellMat,&comm); CHKERRQ(ierr);
@@ -2547,7 +2547,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
 
   PetscErrorCode ConvectiveMassElement::PCShellCtx::dEstroy() {
     PetscFunctionBegin;
-    PetscErrorCode ierr;
+    
     if(initPC) {
       ierr = PCDestroy(&pC); CHKERRQ(ierr);
       initPC = false;
@@ -2564,7 +2564,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
   PetscErrorCode ConvectiveMassElement::ShellResidualElement::preProcess() {
     PetscFunctionBegin;
 
-    PetscErrorCode ierr;
+    
     if(ts_ctx != CTX_TSSETIFUNCTION) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"It is used to residual of velocities");
     }
@@ -2586,7 +2586,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
   PetscErrorCode ConvectiveMassElement::ShellResidualElement::postProcess() {
     PetscFunctionBegin;
 
-    /*PetscErrorCode ierr;
+    /*
     if(ts_ctx != CTX_TSSETIFUNCTION) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"It is used to residual of velocities");
     }
@@ -2621,7 +2621,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
 
   PetscErrorCode ConvectiveMassElement::ShellMatrixElement::preProcess() {
     PetscFunctionBegin;
-    PetscErrorCode ierr;
+    
 
     if(ts_ctx != CTX_TSSETIJACOBIAN) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"It is used to calculate shell matrix only");

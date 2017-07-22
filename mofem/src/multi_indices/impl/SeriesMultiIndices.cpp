@@ -230,7 +230,7 @@ PetscErrorCode FieldSeries::save(Interface &moab) const {
 
 FieldSeriesStep::FieldSeriesStep(Interface &moab,const FieldSeries *_FieldSeries_ptr,const int _step_number):
   interface_FieldSeries<FieldSeries>(_FieldSeries_ptr),step_number(_step_number) {
-  PetscErrorCode ierr;
+  
   ierr = get_time_init(moab); CHKERRABORT(PETSC_COMM_WORLD,ierr);
 }
 

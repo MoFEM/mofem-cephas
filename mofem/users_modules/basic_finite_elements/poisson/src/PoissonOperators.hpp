@@ -85,7 +85,7 @@ namespace PoissonExample {
 
   protected:
 
-    PetscErrorCode ierr;  ///< error code
+      ///< error code
 
     int nbRows;           ///< number of dofs on rows
     int nbCols;           ///< number if dof on column
@@ -221,7 +221,7 @@ namespace PoissonExample {
 
   protected:
 
-    PetscErrorCode ierr;    ///< error code
+        ///< error code
     int nbRows;             ///< number of dofs on row
     int nbIntegrationPts;   ///< number of integration points
 
@@ -246,7 +246,7 @@ namespace PoissonExample {
 
   protected:
 
-    PetscErrorCode ierr;
+    
     FTensor::Number<0> NX;
     FTensor::Number<1> NY;
     FTensor::Number<2> NZ;
@@ -352,7 +352,7 @@ namespace PoissonExample {
 
   private:
 
-    PetscErrorCode ierr; ///< error code
+     ///< error code
 
     int nbRows;            ///< number of dofs on row
     int nbCols;            ///< number of dofs on column
@@ -991,7 +991,7 @@ namespace PoissonExample {
     PetscErrorCode creatFEToPostProcessResults(
       boost::shared_ptr<ForcesAndSurcesCore>& post_proc_volume
     ) const {
-      PetscErrorCode ierr;
+      
       PetscFunctionBegin;
 
       // Note that user can stack together arbitrary number of operators to compose

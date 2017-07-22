@@ -70,7 +70,7 @@ struct FieldSeries {
   template<typename IT>
   PetscErrorCode push_dofs(IT it,IT hi_it) {
     PetscFunctionBegin;
-    PetscErrorCode ierr;
+    
     for(;it!=hi_it;it++) {
       ierr = push_dofs((*it)->getEnt(),(*it)->getNonNonuniqueShortId(),(*it)->getFieldData()); CHKERRQ(ierr);
     }
