@@ -87,15 +87,16 @@ struct Problem {
   BitProblemId* tagId;                ///< Unique problem ID
   const char* tagName;                ///< Problem name
   int tagNameSize;                    ///< Size of problem name
-  DofIdx* tag_nbdof_data_row;         ///< Global number of DOFs in  row
-  DofIdx* tag_nbdof_data_col;         ///< Global number of DOFs in col
-  DofIdx* tag_local_nbdof_data_row;   ///< Local number of DOFs in row
-  DofIdx* tag_local_nbdof_data_col;   ///< Local number of DOFs in colIs
-  DofIdx* tag_ghost_nbdof_data_row;   ///< Number of ghost DOFs in row
-  DofIdx* tag_ghost_nbdof_data_col;   ///< Nymber of ghost DOFs in col
   BitFEId* tagBitFEId;          ///< IDs of finite elements in problem
   BitRefLevel* tagBitRefLevel;       ///< BitRef level of finite elements in problem
   BitRefLevel* tagMaskBitRefLevel;   ///< BItRefMask of elements in problem
+
+  mutable DofIdx nbDofsRow;          ///< Global number of DOFs in  row
+  mutable DofIdx nbDofsCol;          ///< Global number of DOFs in col
+  mutable DofIdx nbLocDofsRow;    ///< Local number of DOFs in row
+  mutable DofIdx nbLocDofsCol;    ///< Local number of DOFs in colIs
+  mutable DofIdx nbGhostDofsRow;    ///< Number of ghost DOFs in row
+  mutable DofIdx nbGhostDofsCol;    ///< Nymber of ghost DOFs in col
 
   mutable boost::shared_ptr<NumeredDofEntity_multiIndex> numeredDofsRows;     ///< store dofs on rows for this problem
   mutable boost::shared_ptr<NumeredDofEntity_multiIndex> numeredDofsCols;     ///< store dofs on columns for this problem
@@ -688,12 +689,12 @@ struct Problem {
 
   inline std::string getName() const { return std::string((char *)tagName,tagNameSize); }
 
-  inline DofIdx getNbDofsRow() const { return *((DofIdx*)tag_nbdof_data_row); }
-  inline DofIdx getNbDofsCol() const { return *((DofIdx*)tag_nbdof_data_col); }
-  inline DofIdx getNbLocalDofsRow() const { return *((DofIdx*)tag_local_nbdof_data_row); }
-  inline DofIdx getNbLocalDofsCol() const { return *((DofIdx*)tag_local_nbdof_data_col); }
-  inline DofIdx getNbGhostDofsRow() const { return *((DofIdx*)tag_ghost_nbdof_data_row); }
-  inline DofIdx getNbGhostDofsCol() const { return *((DofIdx*)tag_ghost_nbdof_data_col); }
+  inline DofIdx getNbDofsRow() const { return nbDofsRow; }
+  inline DofIdx getNbDofsCol() const { return nbDofsCol; }
+  inline DofIdx getNbLocalDofsRow() const { return nbLocDofsRow; }
+  inline DofIdx getNbLocalDofsCol() const { return nbLocDofsCol; }
+  inline DofIdx getNbGhostDofsRow() const { return nbGhostDofsRow; }
+  inline DofIdx getNbGhostDofsCol() const { return nbGhostDofsCol; }
 
   inline BitRefLevel getBitRefLevel() const { return *tagBitRefLevel; }
   inline BitRefLevel getMaskBitRefLevel() const { return *tagMaskBitRefLevel; }

@@ -51,24 +51,6 @@ Problem::Problem(Interface &moab,const EntityHandle meshset):
   Tag th_ProblemName;
   rval = moab.tag_get_handle("_ProblemName",th_ProblemName); MOAB_THROW(rval);
   rval = moab.tag_get_by_ptr(th_ProblemName,&meshset,1,(const void **)&tagName,&tagNameSize); MOAB_THROW(rval);
-  Tag th_ProblemNbDofsRow;
-  rval = moab.tag_get_handle("_ProblemNbDofsRow",th_ProblemNbDofsRow); MOAB_THROW(rval);
-  rval = moab.tag_get_by_ptr(th_ProblemNbDofsRow,&meshset,1,(const void **)&tag_nbdof_data_row); MOAB_THROW(rval);
-  Tag th_ProblemNbDofsCol;
-  rval = moab.tag_get_handle("_ProblemNbDofsCol",th_ProblemNbDofsCol); MOAB_THROW(rval);
-  rval = moab.tag_get_by_ptr(th_ProblemNbDofsCol,&meshset,1,(const void **)&tag_nbdof_data_col); MOAB_THROW(rval);
-  Tag th_ProblemLocalNbDofRow;
-  rval = moab.tag_get_handle("_ProblemLocalNbDofsRow",th_ProblemLocalNbDofRow); MOAB_THROW(rval);
-  rval = moab.tag_get_by_ptr(th_ProblemLocalNbDofRow,&meshset,1,(const void **)&tag_local_nbdof_data_row); MOAB_THROW(rval);
-  Tag th_ProblemGhostNbDofRow;
-  rval = moab.tag_get_handle("_ProblemGhostNbDofsRow",th_ProblemGhostNbDofRow); MOAB_THROW(rval);
-  rval = moab.tag_get_by_ptr(th_ProblemGhostNbDofRow,&meshset,1,(const void **)&tag_ghost_nbdof_data_row); MOAB_THROW(rval);
-  Tag th_ProblemLocalNbDofCol;
-  rval = moab.tag_get_handle("_ProblemLocalNbDofsCol",th_ProblemLocalNbDofCol); MOAB_THROW(rval);
-  rval = moab.tag_get_by_ptr(th_ProblemLocalNbDofCol,&meshset,1,(const void **)&tag_local_nbdof_data_col); MOAB_THROW(rval);
-  Tag th_ProblemGhostNbDofCol;
-  rval = moab.tag_get_handle("_ProblemGhostNbDofsCol",th_ProblemGhostNbDofCol); MOAB_THROW(rval);
-  rval = moab.tag_get_by_ptr(th_ProblemGhostNbDofCol,&meshset,1,(const void **)&tag_ghost_nbdof_data_col); MOAB_THROW(rval);
   Tag th_ProblemFEId;
   rval = moab.tag_get_handle("_ProblemFEId",th_ProblemFEId); MOAB_THROW(rval);
   rval = moab.tag_get_by_ptr(th_ProblemFEId,&meshset,1,(const void **)&tagBitFEId); MOAB_THROW(rval);
@@ -200,15 +182,15 @@ void ProblemFiniteElementChangeBitUnSet::operator()(Problem &p) {
   *(p.tagBitFEId) &= ~f_id;
 }
 void ProblemZeroNbRowsChange::operator()(Problem &e) {
-  (*(DofIdx*)e.tag_nbdof_data_row) = 0;
-  (*(DofIdx*)e.tag_local_nbdof_data_row) = 0;
-  (*(DofIdx*)e.tag_ghost_nbdof_data_row) = 0;
+  e.nbDofsRow = 0;
+  e.nbLocDofsRow = 0;
+  e.nbGhostDofsRow = 0;
   e.numeredDofsRows->clear();
 }
 void ProblemZeroNbColsChange::operator()(Problem &e) {
-  (*(DofIdx*)e.tag_nbdof_data_col) = 0;
-  (*(DofIdx*)e.tag_local_nbdof_data_col) = 0;
-  (*(DofIdx*)e.tag_ghost_nbdof_data_col) = 0;
+  e.nbDofsCol = 0;
+  e.nbLocDofsCol = 0;
+  e.nbGhostDofsCol = 0;
   e.numeredDofsCols->clear();
 }
 void ProblemClearNumeredFiniteElementsChange::operator()(Problem &e) {
