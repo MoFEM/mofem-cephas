@@ -40,8 +40,6 @@ Problem::Problem(Interface &moab,const EntityHandle meshset):
   meshset(meshset),
   numeredDofsRows(boost::shared_ptr<NumeredDofEntity_multiIndex>(new NumeredDofEntity_multiIndex())),
   numeredDofsCols(boost::shared_ptr<NumeredDofEntity_multiIndex>(new NumeredDofEntity_multiIndex())),
-  // numered_dofs_rows(numeredDofsRows), // this is deprecated
-  // numered_dofs_cols(numeredDofsCols), // this is deprecated
   sequenceRowDofContainer(boost::make_shared<SequenceDofContainer>()),
   sequenceColDofContainer(boost::make_shared<SequenceDofContainer>()) {
   ErrorCode rval;
@@ -100,7 +98,6 @@ PetscErrorCode Problem::getColDofsByPetscGlobalDofIdx(DofIdx idx,const NumeredDo
 
 PetscErrorCode Problem::getNumberOfElementsByNameAndPart(MPI_Comm comm,const std::string name,PetscLayout *layout) const {
   PetscFunctionBegin;
-
   int size, rank;
   MPI_Comm_size(comm,&size);
   MPI_Comm_rank(comm,&rank);
@@ -116,7 +113,6 @@ PetscErrorCode Problem::getNumberOfElementsByNameAndPart(MPI_Comm comm,const std
 
 PetscErrorCode Problem::getNumberOfElementsByPart(MPI_Comm comm,PetscLayout *layout) const {
   PetscFunctionBegin;
-
   int size, rank;
   MPI_Comm_size(comm,&size);
   MPI_Comm_rank(comm,&rank);

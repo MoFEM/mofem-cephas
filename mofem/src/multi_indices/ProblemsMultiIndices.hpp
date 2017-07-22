@@ -83,7 +83,7 @@ struct ComposedProblemsData {
   */
 struct Problem {
 
-  EntityHandle meshset;               ///< Problem meshset (on thags of this meshset all data related to problem are strord)
+  EntityHandle meshset;               ///< Problem meshset (on tag of this meshset all data related to problem are stored)
   BitProblemId* tagId;                ///< Unique problem ID
   const char* tagName;                ///< Problem name
   int tagNameSize;                    ///< Size of problem name
@@ -96,10 +96,10 @@ struct Problem {
   mutable DofIdx nbLocDofsRow;    ///< Local number of DOFs in row
   mutable DofIdx nbLocDofsCol;    ///< Local number of DOFs in colIs
   mutable DofIdx nbGhostDofsRow;    ///< Number of ghost DOFs in row
-  mutable DofIdx nbGhostDofsCol;    ///< Nymber of ghost DOFs in col
+  mutable DofIdx nbGhostDofsCol;    ///< Number of ghost DOFs in col
 
-  mutable boost::shared_ptr<NumeredDofEntity_multiIndex> numeredDofsRows;     ///< store dofs on rows for this problem
-  mutable boost::shared_ptr<NumeredDofEntity_multiIndex> numeredDofsCols;     ///< store dofs on columns for this problem
+  mutable boost::shared_ptr<NumeredDofEntity_multiIndex> numeredDofsRows;     ///< store DOFs on rows for this problem
+  mutable boost::shared_ptr<NumeredDofEntity_multiIndex> numeredDofsCols;     ///< store DOFs on columns for this problem
   mutable NumeredEntFiniteElement_multiIndex numeredFiniteElements;           ///< store finite elements
 
   /**
@@ -122,14 +122,6 @@ struct Problem {
   const NumeredEntFiniteElement_multiIndex& getNumeredFiniteElements() const {
     return numeredFiniteElements;
   }
-
-
-
-  // /// \deprecated use numeredDofsRows instead
-  // DEPRECATED const boost::shared_ptr<NumeredDofEntity_multiIndex> &numered_dofs_rows; // FIXME name convention
-  //
-  // /// \deprecated use numeredDofsRows instead
-  // DEPRECATED const boost::shared_ptr<NumeredDofEntity_multiIndex> &numered_dofs_cols; // FIXME name convention
 
   /**
    * \brief Subproblem problem data
@@ -233,17 +225,17 @@ struct Problem {
   }
 
   /**
-   * \brief get dof from problem
+   * \brief get DOFs from problem
    *
-   * Note that \e ent_dof_idx is not coefficient number, is local number of dof on
-   * the entity. The coefficient number and local index of dof or entity are
+   * Note that \e ent_dof_idx is not coefficient number, is local number of DOFs on
+   * the entity. The coefficient number and local index of DOFs or entity are
    * the same on vertices and H1 approximation.
    *
    * @param  name       field name
    * @param  ent        entity handle
-   * @param  ent_dof_idx index of dof on entity
+   * @param  ent_dof_idx index of DOFs on entity
    * @param  row_or_col ROW or COL
-   * @param  dof_ptr    shared pointer to dof if found
+   * @param  dof_ptr    shared pointer to DOFs if found
    * @return            error code
    */
   PetscErrorCode getDofByNameEntAndEntDofIdx(
