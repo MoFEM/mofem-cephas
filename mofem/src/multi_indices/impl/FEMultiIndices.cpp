@@ -839,10 +839,10 @@ FiniteElement::FiniteElement(Interface &moab,const EntityHandle _meshset): meshs
   ErrorCode rval;
   Tag th_FEId;
   rval = moab.tag_get_handle("_FEId",th_FEId); MOAB_THROW(rval);
-  rval = moab.tag_get_by_ptr(th_FEId,&meshset,1,(const void **)&tag_id_data); MOAB_THROW(rval);
+  rval = moab.tag_get_by_ptr(th_FEId,&meshset,1,(const void **)&tagId); MOAB_THROW(rval);
   Tag th_FEName;
   rval = moab.tag_get_handle("_FEName",th_FEName); MOAB_THROW(rval);
-  rval = moab.tag_get_by_ptr(th_FEName,&meshset,1,(const void **)&tag_name_data,&tag_name_size); MOAB_THROW(rval);
+  rval = moab.tag_get_by_ptr(th_FEName,&meshset,1,(const void **)&tagName,&tagNameSize); MOAB_THROW(rval);
   Tag th_FEIdCol,th_FEIdRow,th_FEIdData;
   rval = moab.tag_get_handle("_FEIdCol",th_FEIdCol); MOAB_THROW(rval);
   rval = moab.tag_get_by_ptr(th_FEIdCol,&meshset,1,(const void **)&tag_BitFieldId_col_data); MOAB_THROW(rval);

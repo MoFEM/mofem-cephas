@@ -56,7 +56,7 @@ CubitMeshSets::CubitMeshSets(Interface &moab,const EntityHandle _meshset):
   tag_block_header_data(NULL),
   tag_block_attributes(NULL),
   tag_block_attributes_size(0),
-  tag_name_data(NULL),
+  tagName(NULL),
   meshsets_mask(NODESET|SIDESET|BLOCKSET) {
   
   ierr = getTagsHanlders(moab); CHKERRABORT(PETSC_COMM_WORLD,ierr);
@@ -106,7 +106,7 @@ CubitMeshSets::CubitMeshSets(Interface &moab,const EntityHandle _meshset):
       ); MOAB_THROW(rval);
     }
     if(*tit == entityNameTag) {
-      rval = moab.tag_get_by_ptr(entityNameTag,&meshset,1,(const void **)&tag_name_data); MOAB_THROW(rval);
+      rval = moab.tag_get_by_ptr(entityNameTag,&meshset,1,(const void **)&tagName); MOAB_THROW(rval);
       
       ierr = getTypeFromName(cubitBcType); if(ierr>0) THROW_MESSAGE("unrecognized Cubit name type");
     }
@@ -138,7 +138,7 @@ tag_bc_size(0),
 tag_block_header_data(NULL),
 tag_block_attributes(NULL),
 tag_block_attributes_size(0),
-tag_name_data(NULL),
+tagName(NULL),
 meshsets_mask(NODESET|SIDESET|BLOCKSET)  {
   
   ierr = getTagsHanlders(moab); CHKERRABORT(PETSC_COMM_WORLD,ierr);
@@ -249,8 +249,8 @@ PetscErrorCode CubitMeshSets::printBlockHeaderData(std::ostream& os) const {
 }
 
 std::string CubitMeshSets::getName() const {
-  if(tag_name_data!=NULL) {
-    return std::string(tag_name_data);
+  if(tagName!=NULL) {
+    return std::string(tagName);
   } else {
     return "NoNameSet";
   }
@@ -393,7 +393,7 @@ std::ostream& operator<<(std::ostream& os,const CubitMeshSets& e) {
   // push data to stream
   os << "meshset " << e.meshset << " type" << ss.str();
   if(e.msId != NULL) os << " msId " << *(e.msId);
-  if(e.tag_name_data!=NULL) {
+  if(e.tagName!=NULL) {
     os << " name " << e.getName();
   }
   if(e.tag_block_header_data != NULL) {
@@ -681,7 +681,7 @@ void CubitMeshSets_change_name::operator()(CubitMeshSets &e) {
     {
       nAme.resize(NAME_TAG_SIZE);
       rval = mOab.tag_set_data(e.entityNameTag,&e.meshset,1,nAme.c_str()); MOAB_THROW(rval);
-      rval = mOab.tag_get_by_ptr(e.entityNameTag,&e.meshset,1,(const void **)&e.tag_name_data); MOAB_THROW(rval);
+      rval = mOab.tag_get_by_ptr(e.entityNameTag,&e.meshset,1,(const void **)&e.tagName); MOAB_THROW(rval);
       
       CubitBCType type;
       ierr = e.getTypeFromName(type); if(ierr>0) THROW_MESSAGE("unrecognized Cubit name type");
@@ -692,7 +692,7 @@ void CubitMeshSets_change_name::operator()(CubitMeshSets &e) {
     {
       nAme.resize(NAME_TAG_SIZE);
       rval = mOab.tag_set_data(e.entityNameTag,&e.meshset,1,nAme.c_str()); MOAB_THROW(rval);
-      rval = mOab.tag_get_by_ptr(e.entityNameTag,&e.meshset,1,(const void **)&e.tag_name_data); MOAB_THROW(rval);
+      rval = mOab.tag_get_by_ptr(e.entityNameTag,&e.meshset,1,(const void **)&e.tagName); MOAB_THROW(rval);
     }; break;
     default:
     THROW_MESSAGE("not implemented for this CubitBC type");

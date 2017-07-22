@@ -84,18 +84,18 @@ struct ComposedProblemsData {
 struct Problem {
 
   EntityHandle meshset;               ///< Problem meshset (on thags of this meshset all data related to problem are strord)
-  BitProblemId* tag_id_data;          ///< Unique problem ID
-  const void* tag_name_data;          ///< Problem name
-  int tag_name_size;                  ///< Size of problem name
+  BitProblemId* tagId;                ///< Unique problem ID
+  const void* tagName;                ///< Problem name
+  int tagNameSize;                    ///< Size of problem name
   DofIdx* tag_nbdof_data_row;         ///< Global number of DOFs in  row
   DofIdx* tag_nbdof_data_col;         ///< Global number of DOFs in col
   DofIdx* tag_local_nbdof_data_row;   ///< Local number of DOFs in row
   DofIdx* tag_local_nbdof_data_col;   ///< Local number of DOFs in colIs
   DofIdx* tag_ghost_nbdof_data_row;   ///< Number of ghost DOFs in row
   DofIdx* tag_ghost_nbdof_data_col;   ///< Nymber of ghost DOFs in col
-  BitFEId* tag_BitFEId_data;          ///< IDs of finite elements in problem
-  BitRefLevel* tag_BitRefLevel;       ///< BitRef level of finite elements in problem
-  BitRefLevel* tag_MaskBitRefLevel;   ///< BItRefMask of elements in problem
+  BitFEId* tagBitFEId;          ///< IDs of finite elements in problem
+  BitRefLevel* tagBitRefLevel;       ///< BitRef level of finite elements in problem
+  BitRefLevel* tagMaskBitRefLevel;   ///< BItRefMask of elements in problem
 
   mutable boost::shared_ptr<NumeredDofEntity_multiIndex> numeredDofsRows;     ///< store dofs on rows for this problem
   mutable boost::shared_ptr<NumeredDofEntity_multiIndex> numeredDofsCols;     ///< store dofs on columns for this problem
@@ -684,9 +684,9 @@ struct Problem {
 
   virtual ~Problem();
 
-  inline BitProblemId getId() const { return *((BitProblemId*)tag_id_data); }
+  inline BitProblemId getId() const { return *((BitProblemId*)tagId); }
 
-  inline std::string getName() const { return std::string((char *)tag_name_data,tag_name_size); }
+  inline std::string getName() const { return std::string((char *)tagName,tagNameSize); }
 
   inline DofIdx getNbDofsRow() const { return *((DofIdx*)tag_nbdof_data_row); }
   inline DofIdx getNbDofsCol() const { return *((DofIdx*)tag_nbdof_data_col); }
@@ -695,8 +695,8 @@ struct Problem {
   inline DofIdx getNbGhostDofsRow() const { return *((DofIdx*)tag_ghost_nbdof_data_row); }
   inline DofIdx getNbGhostDofsCol() const { return *((DofIdx*)tag_ghost_nbdof_data_col); }
 
-  inline BitRefLevel getBitRefLevel() const { return *tag_BitRefLevel; }
-  inline BitRefLevel getMaskBitRefLevel() const { return *tag_MaskBitRefLevel; }
+  inline BitRefLevel getBitRefLevel() const { return *tagBitRefLevel; }
+  inline BitRefLevel getMaskBitRefLevel() const { return *tagMaskBitRefLevel; }
 
   PetscErrorCode getRowDofsByPetscGlobalDofIdx(DofIdx idx,const NumeredDofEntity **dof_ptr) const;
   PetscErrorCode getColDofsByPetscGlobalDofIdx(DofIdx idx,const NumeredDofEntity **dof_ptr) const;
@@ -831,7 +831,7 @@ typedef multi_index_container<
 struct ProblemChangeRefLevelBitAdd {
   BitRefLevel bit;
   ProblemChangeRefLevelBitAdd(const BitRefLevel _bit): bit(_bit) {};
-  void operator()(Problem &p) { *(p.tag_BitRefLevel) |= bit; };
+  void operator()(Problem &p) { *(p.tagBitRefLevel) |= bit; };
 };
 
 /** \brief set ref level to problem
@@ -840,7 +840,7 @@ struct ProblemChangeRefLevelBitAdd {
 struct ProblemChangeRefLevelBitSet {
   BitRefLevel bit;
   ProblemChangeRefLevelBitSet(const BitRefLevel _bit): bit(_bit) {};
-  void operator()(Problem &p) { *(p.tag_BitRefLevel) = bit; };
+  void operator()(Problem &p) { *(p.tagBitRefLevel) = bit; };
 };
 
 /** \brief set prof dof bit ref mask
@@ -849,7 +849,7 @@ struct ProblemChangeRefLevelBitSet {
 struct ProblemChangeRefLevelBitDofMaskSet {
   BitRefLevel bit;
   ProblemChangeRefLevelBitDofMaskSet(const BitRefLevel _bit): bit(_bit) {};
-  void operator()(Problem &p) { *(p.tag_MaskBitRefLevel) = bit; };
+  void operator()(Problem &p) { *(p.tagMaskBitRefLevel) = bit; };
 };
 
 /** \brief add finite element to problem

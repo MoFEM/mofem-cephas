@@ -36,7 +36,7 @@ struct CubitMeshSets {
   unsigned int *tag_block_header_data;
   double* tag_block_attributes;
   int tag_block_attributes_size;
-  char* tag_name_data;
+  char* tagName;
   const CubitBCType meshsets_mask;
 
   CubitMeshSets(Interface &moab,const EntityHandle _meshset);

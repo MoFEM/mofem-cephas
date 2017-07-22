@@ -35,8 +35,8 @@ struct FieldSeriesStep;
 struct FieldSeries {
 
   EntityHandle meshset;
-  const void* tag_name_data;		///< tag keeps name of the series
-  int tag_name_size; 			      ///< number of bits necessary to keep field series
+  const void* tagName;		///< tag keeps name of the series
+  int tagNameSize; 			      ///< number of bits necessary to keep field series
 
   bool record_begin;
   bool record_end;
@@ -47,9 +47,9 @@ struct FieldSeries {
   inline EntityHandle getMeshset() const { return meshset; }
   inline EntityID get_meshset_id() const { return (EntityID)(meshset&MB_ID_MASK); }
   /// get string_ref of series
-  inline boost::string_ref getNameRef() const { return boost::string_ref((char *)tag_name_data,tag_name_size); }
+  inline boost::string_ref getNameRef() const { return boost::string_ref((char *)tagName,tagNameSize); }
   /// get series name
-  inline std::string getName() const { return std::string((char *)tag_name_data,tag_name_size); }
+  inline std::string getName() const { return std::string((char *)tagName,tagNameSize); }
 
   Tag th_SeriesData;
   Tag th_SeriesDataUIDs;

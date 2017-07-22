@@ -85,14 +85,14 @@ struct Field {
   Tag th_FieldData;     ///< Tag storing field values on entity in the field
   Tag th_AppOrder;      ///< Tag storing approximation order on entity
 
-  BitFieldId* tag_id_data; 		             ///< tag keeps field id
+  BitFieldId* tagId; 		             ///< tag keeps field id
   FieldSpace* tag_space_data;		           ///< tag keeps field space
   FieldApproximationBase* tag_base_data;	 ///< tag keeps field spacea
   /// tag keeps field rank (dimension, f.e. Temperature field has rank 1,
   /// displacements field in 3d has rank 3)
   FieldCoefficientsNumber* tag_nb_coeff_data;
-  const void* tag_name_data; 		            ///< tag keeps name of the field
-  int tag_name_size; 			                  ///< number of bits necessary to keep field name
+  const void* tagName; 		            ///< tag keeps name of the field
+  int tagNameSize; 			                  ///< number of bits necessary to keep field name
   const void* tag_name_prefix_data; 	      ///< tag keeps name prefix of the field
   int tag_name_prefix_size; 		            ///< number of bits necessary to keep field name prefix
   FieldOrderTable forder_table;		          ///< nb. DOFs table for entities
@@ -200,19 +200,19 @@ struct Field {
    * \brief Get unique field id.
    * @return Filed ID
    */
-  inline const BitFieldId& getId() const { return *((BitFieldId*)tag_id_data); }
+  inline const BitFieldId& getId() const { return *((BitFieldId*)tagId); }
 
   /**
    * \brief Get string reference to field name
    * @return Field name
    */
-  inline boost::string_ref getNameRef() const { return boost::string_ref((char *)tag_name_data,tag_name_size); }
+  inline boost::string_ref getNameRef() const { return boost::string_ref((char *)tagName,tagNameSize); }
 
   /**
    * \brief   Get field name
    * @return  Field name
    */
-  inline std::string getName() const { return std::string((char *)tag_name_data,tag_name_size); }
+  inline std::string getName() const { return std::string((char *)tagName,tagNameSize); }
 
   /**
    * \brief   Get field approximation space
@@ -250,11 +250,11 @@ struct Field {
     * Each field has uid, get getBitNumber get number of bit set for given field. Field ID has only one bit set for each field.
     */
   inline unsigned int getBitNumberCalculate() const {
-    int b = ffsl(((BitFieldId*)tag_id_data)->to_ulong());
+    int b = ffsl(((BitFieldId*)tagId)->to_ulong());
     if(b != 0) return b;
     for(int ll = 1;ll<BITFIELDID_SIZE/32;ll++) {
       BitFieldId id;
-      id = (*tag_id_data)>>ll*32;
+      id = (*tagId)>>ll*32;
       b = ll*32+ffsl(id.to_ulong());
       if(b!=0) return b;
     }

@@ -47,10 +47,10 @@ Problem::Problem(Interface &moab,const EntityHandle meshset):
   ErrorCode rval;
   Tag th_ProblemId;
   rval = moab.tag_get_handle("_ProblemId",th_ProblemId); MOAB_THROW(rval);
-  rval = moab.tag_get_by_ptr(th_ProblemId,&meshset,1,(const void **)&tag_id_data); MOAB_THROW(rval);
+  rval = moab.tag_get_by_ptr(th_ProblemId,&meshset,1,(const void **)&tagId); MOAB_THROW(rval);
   Tag th_ProblemName;
   rval = moab.tag_get_handle("_ProblemName",th_ProblemName); MOAB_THROW(rval);
-  rval = moab.tag_get_by_ptr(th_ProblemName,&meshset,1,(const void **)&tag_name_data,&tag_name_size); MOAB_THROW(rval);
+  rval = moab.tag_get_by_ptr(th_ProblemName,&meshset,1,(const void **)&tagName,&tagNameSize); MOAB_THROW(rval);
   Tag th_ProblemNbDofsRow;
   rval = moab.tag_get_handle("_ProblemNbDofsRow",th_ProblemNbDofsRow); MOAB_THROW(rval);
   rval = moab.tag_get_by_ptr(th_ProblemNbDofsRow,&meshset,1,(const void **)&tag_nbdof_data_row); MOAB_THROW(rval);
@@ -71,13 +71,13 @@ Problem::Problem(Interface &moab,const EntityHandle meshset):
   rval = moab.tag_get_by_ptr(th_ProblemGhostNbDofCol,&meshset,1,(const void **)&tag_ghost_nbdof_data_col); MOAB_THROW(rval);
   Tag th_ProblemFEId;
   rval = moab.tag_get_handle("_ProblemFEId",th_ProblemFEId); MOAB_THROW(rval);
-  rval = moab.tag_get_by_ptr(th_ProblemFEId,&meshset,1,(const void **)&tag_BitFEId_data); MOAB_THROW(rval);
+  rval = moab.tag_get_by_ptr(th_ProblemFEId,&meshset,1,(const void **)&tagBitFEId); MOAB_THROW(rval);
   Tag th_RefBitLevel;
   rval = moab.tag_get_handle("_RefBitLevel",th_RefBitLevel); MOAB_THROW(rval);
-  rval = moab.tag_get_by_ptr(th_RefBitLevel,&meshset,1,(const void **)&tag_BitRefLevel); MOAB_THROW(rval);
+  rval = moab.tag_get_by_ptr(th_RefBitLevel,&meshset,1,(const void **)&tagBitRefLevel); MOAB_THROW(rval);
   Tag th_RefBitLevel_Mask;
   rval = moab.tag_get_handle("_RefBitLevelMask",th_RefBitLevel_Mask); MOAB_THROW(rval);
-  rval = moab.tag_get_by_ptr(th_RefBitLevel_Mask,&meshset,1,(const void **)&tag_MaskBitRefLevel); MOAB_THROW(rval);
+  rval = moab.tag_get_by_ptr(th_RefBitLevel_Mask,&meshset,1,(const void **)&tagMaskBitRefLevel); MOAB_THROW(rval);
 }
 
 Problem::~Problem() {
@@ -91,7 +91,7 @@ std::ostream& operator<<(std::ostream& os,const Problem& e) {
 }
 
 BitFEId Problem::getBitFEId() const {
-  return *tag_BitFEId_data;
+  return *tagBitFEId;
 }
 
 PetscErrorCode Problem::getRowDofsByPetscGlobalDofIdx(DofIdx idx,const NumeredDofEntity **dof_ptr) const {
@@ -194,10 +194,10 @@ PetscErrorCode Problem::getDofByNameEntAndEntDofIdx(
 
 
 void ProblemFiniteElementChangeBitAdd::operator()(Problem &p) {
-  *(p.tag_BitFEId_data) |= f_id;
+  *(p.tagBitFEId) |= f_id;
 }
 void ProblemFiniteElementChangeBitUnSet::operator()(Problem &p) {
-  *(p.tag_BitFEId_data) &= ~f_id;
+  *(p.tagBitFEId) &= ~f_id;
 }
 void ProblemZeroNbRowsChange::operator()(Problem &e) {
   (*(DofIdx*)e.tag_nbdof_data_row) = 0;

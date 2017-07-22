@@ -102,10 +102,10 @@ PetscErrorCode SeriesRecorder::initialiseDatabseInformationFromMesh(int verb) {
 
   rval = moab.get_entities_by_type(0,MBENTITYSET,meshsets,true);  CHKERRQ_MOAB(rval);
   for(Range::iterator mit = meshsets.begin();mit!=meshsets.end();mit++) {
-    const void* tag_name_data;
-    int tag_name_size;
+    const void* tagName;
+    int tagNameSize;
     rval = moab.tag_get_by_ptr(
-      th_SeriesName,&*mit,1,(const void **)&tag_name_data,&tag_name_size
+      th_SeriesName,&*mit,1,(const void **)&tagName,&tagNameSize
     );
     if(rval == MB_SUCCESS) {
       std::pair<Series_multiIndex::iterator,bool> p = sEries.insert(FieldSeries(moab,*mit));
