@@ -58,7 +58,7 @@ struct KspMethod: virtual public UnknownInterface  {
   ksp_A(PETSC_NULL),
   ksp_B(PETSC_NULL) {
   }
-  
+
   virtual ~KspMethod() {
   }
 
@@ -67,7 +67,7 @@ struct KspMethod: virtual public UnknownInterface  {
    * @param  ctx Context, CTX_SETFUNCTION, CTX_OPERATORS, CTX_KSPNONE
    * @return     error code
    */
-  PetscErrorCode setKspCtx(const KSPContext ctx);
+  PetscErrorCode setKspCtx(const KSPContext& ctx);
 
   /**
    * \brief set solver
@@ -81,16 +81,7 @@ struct KspMethod: virtual public UnknownInterface  {
    * @param  ksp ksp method
    * @return     error code
    */
-  PetscErrorCode copyKsp(const KspMethod &ksp);
-
-  /// \deprecated use setKspCtx
-  DEPRECATED PetscErrorCode set_ksp_ctx(const KSPContext ctx);
-
-  /// \deprecated  use setKsp
-  DEPRECATED PetscErrorCode set_ksp(KSP ksp);
-
-  /// \deprecated use copyKsp
-  DEPRECATED PetscErrorCode copy_ksp(const KspMethod &ksp);
+  PetscErrorCode copyKsp(const KspMethod& ksp);
 
   KSPContext ksp_ctx;   ///< Context
   KSP ksp;              ///< KSP solver
@@ -131,14 +122,39 @@ struct SnesMethod: virtual public UnknownInterface {
   virtual ~SnesMethod() {
   }
 
-  PetscErrorCode set_snes_ctx(const SNESContext ctx_);
+  /**
+   * \brief Set SNES context
+   */
+  PetscErrorCode setSnesCtx(const SNESContext& ctx);
+
+  /**
+   * \brief Set SNES instance
+   */
+  PetscErrorCode setSnes(SNES snes);
+
+  /**
+   * \brief Copy snes data
+   */
+  PetscErrorCode copySnes(const SnesMethod &snes);
 
   SNES snes;
-  PetscErrorCode set_snes(SNES _snes);
   Vec snes_x,snes_f;
   Mat snes_A,snes_B;
 
-  PetscErrorCode copy_snes(const SnesMethod &snes);
+  /// \deprecated use setSnes
+  DEPRECATED PetscErrorCode set_snes(SNES snes) {
+    return setSnes(snes);
+  }
+
+  /// \deprecated use setSnesCtx
+  DEPRECATED PetscErrorCode set_snes_ctx(const SNESContext& ctx) {
+    return setSnesCtx(ctx);
+  }
+
+  /// \deprecated use copySnes
+  DEPRECATED PetscErrorCode copy_snes(const SnesMethod &snes) {
+    return copySnes(snes);
+  };
 
 };
 
@@ -183,17 +199,30 @@ struct TSMethod: virtual public UnknownInterface  {
   virtual ~TSMethod() {
   }
 
-  PetscErrorCode set_ts_ctx(const TSContext ctx_);
+  /// \brief Set Ts context
+  PetscErrorCode setTsCtx(const TSContext& ctx);
+
+  /// \brief Copy TS solver data
+  PetscErrorCode copyTs(const TSMethod &ts);
+
+  /// \brief Set TS solver
+  PetscErrorCode setTs(TS _ts);
 
   TS ts;
-  PetscErrorCode set_ts(TS _ts);
   Vec ts_u,ts_u_t,ts_F;
   Mat ts_A,ts_B;
 
   PetscInt ts_step;
   PetscReal ts_a,ts_t;
 
-  PetscErrorCode copy_ts(const TSMethod &ts);
+  /// \deprecated use setTsCtx
+  DEPRECATED PetscErrorCode set_ts_ctx(const TSContext& ctx) { return setTsCtx(ctx); }
+
+  /// \deprecated use copyTs
+  DEPRECATED PetscErrorCode copy_ts(const TSMethod &ts) { return copyTs(ts); }
+
+  /// \deprecated use setTs
+  DEPRECATED PetscErrorCode set_ts(TS _ts) { return setTs(_ts); }
 
 };
 
@@ -232,10 +261,6 @@ TSMethod {
   */
   inline int getLoopSize() const { return loopSize; }
 
-  virtual PetscErrorCode preProcess() = 0;
-  virtual PetscErrorCode operator()() = 0;
-  virtual PetscErrorCode postProcess() = 0;
-
   int rAnk,sIze;
   const RefEntity_multiIndex *refinedEntitiesPtr;
   const RefElement_multiIndex *refinedFiniteElementsPtr;
@@ -249,10 +274,47 @@ TSMethod {
 
   PetscErrorCode copyBasicMethod(const BasicMethod &basic);
 
-  /// \deprecated use copyBasicMethod
-  DEPRECATED inline PetscErrorCode copy_basic_method(const BasicMethod &basic) {
-    return copyBasicMethod(basic);
-  }
+  /**
+   * Hook function for pre-processing
+   */
+  boost::function<PetscErrorCode ()> preProcessHook;
+
+  /**
+   * Hook function for post-processing
+   */
+  boost::function<PetscErrorCode ()> postProcessHook;
+
+  /**
+   * Hook function for operator
+   */
+  boost::function<PetscErrorCode ()> operatorHook;
+
+  /** \brief function is run at the beginning of loop
+   *
+   * It is used to zeroing matrices and vectors, calculation of shape
+   * functions on reference element, preprocessing boundary conditions, etc.
+   */
+  virtual PetscErrorCode preProcess();
+
+  /** \brief function is run for every finite element
+   *
+   * It is used to calculate element local matrices and assembly. It can be
+   * used for post-processing.
+   */
+  virtual PetscErrorCode operator()();
+
+  /** \brief function is run at the end of loop
+   *
+   * It is used to assembly matrices and vectors, calculating global variables,
+   * f.e. total internal energy, ect.
+   *
+   * Iterating over dofs:
+   * Example1 iterating over dofs in row by name of the field
+   * for(_IT_GET_FEROW_BY_NAME_DOFS_FOR_LOOP_(this,"DISPLACEMENT",it)) { ... }
+   *
+   *
+   */
+  virtual PetscErrorCode postProcess();
 
   private:
   void iNit();
@@ -282,39 +344,12 @@ struct FEMethod: public BasicMethod {
       *iface = dynamic_cast<FEMethod*>(this);
       PetscFunctionReturn(0);
     }
-    
+
     ierr = queryInterface(uuid,iface); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
   FEMethod();
-
-  /** \brief function is run at the beginning of loop
-   *
-   * It is used to zeroing matrices and vectors, calculation of shape
-   * functions on reference element, preprocessing boundary conditions, etc.
-   */
-  PetscErrorCode preProcess();
-
-  /** \brief function is run for every finite element
-   *
-   * It is used to calculate element local matrices and assembly. It can be
-   * used for post-processing.
-   */
-  PetscErrorCode operator()();
-
-  /** \brief function is run at the end of loop
-   *
-   * It is used to assembly matrices and vectors, calculating global variables,
-   * f.e. total internal energy, ect.
-   *
-   * Iterating over dofs:
-   * Example1 iterating over dofs in row by name of the field
-   * for(_IT_GET_FEROW_BY_NAME_DOFS_FOR_LOOP_(this,"DISPLACEMENT",it)) { ... }
-   *
-   *
-   */
-  PetscErrorCode postProcess();
 
   std::string feName;
 
@@ -531,16 +566,12 @@ struct EntMethod: public BasicMethod {
       *iface = dynamic_cast<EntMethod*>(this);
       PetscFunctionReturn(0);
     }
-    
+
     ierr = queryInterface(uuid,iface); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
   EntMethod();
-
-  PetscErrorCode preProcess();
-  PetscErrorCode operator()();
-  PetscErrorCode postProcess();
 
   boost::shared_ptr<Field> fieldPtr;
   boost::shared_ptr<DofEntity> dofPtr;

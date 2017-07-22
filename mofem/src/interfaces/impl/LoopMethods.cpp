@@ -43,7 +43,7 @@
 namespace MoFEM {
 
 //KSP
-PetscErrorCode KspMethod::setKspCtx(const KSPContext ctx) {
+PetscErrorCode KspMethod::setKspCtx(const KSPContext& ctx) {
   PetscFunctionBegin;
   ksp_ctx = ctx;
   PetscFunctionReturn(0);
@@ -64,17 +64,17 @@ PetscErrorCode KspMethod::copyKsp(const KspMethod &ksp) {
 }
 
 //SNES
-PetscErrorCode SnesMethod::set_snes_ctx(const SNESContext ctx_) {
+PetscErrorCode SnesMethod::setSnesCtx(const SNESContext& ctx) {
   PetscFunctionBegin;
-  snes_ctx = ctx_;
+  snes_ctx = ctx;
   PetscFunctionReturn(0);
 }
-PetscErrorCode SnesMethod::set_snes(SNES _snes) {
+PetscErrorCode SnesMethod::setSnes(SNES _snes) {
   PetscFunctionBegin;
   snes = _snes;
   PetscFunctionReturn(0);
 }
-PetscErrorCode SnesMethod::copy_snes(const SnesMethod &snes) {
+PetscErrorCode SnesMethod::copySnes(const SnesMethod& snes) {
   PetscFunctionBegin;
   this->snes_ctx = snes.snes_ctx;
   this->snes = snes.snes;
@@ -86,17 +86,17 @@ PetscErrorCode SnesMethod::copy_snes(const SnesMethod &snes) {
 }
 
 //TS
-PetscErrorCode TSMethod::set_ts_ctx(const TSContext ctx_) {
+PetscErrorCode TSMethod::setTsCtx(const TSContext& ctx) {
   PetscFunctionBegin;
-  ts_ctx = ctx_;
+  ts_ctx = ctx;
   PetscFunctionReturn(0);
 }
-PetscErrorCode TSMethod::set_ts(TS _ts) {
+PetscErrorCode TSMethod::setTs(TS _ts) {
   PetscFunctionBegin;
   ts = _ts;
   PetscFunctionReturn(0);
 }
-PetscErrorCode TSMethod::copy_ts(const TSMethod &ts) {
+PetscErrorCode TSMethod::copyTs(const TSMethod &ts) {
   PetscFunctionBegin;
   this->ts_ctx = ts.ts_ctx;
   this->ts = ts.ts;
@@ -126,7 +126,10 @@ entitiesPtr(NULL),
 dofsPtr(NULL),
 finiteElementsPtr(NULL),
 finiteElementsEntitiesPtr(NULL),
-adjacenciesPtr(NULL) {
+adjacenciesPtr(NULL),
+preProcessHook(NULL),
+postProcessHook(NULL),
+operatorHook(NULL) {
 }
 
 PetscErrorCode BasicMethod::copyBasicMethod(const BasicMethod &basic) {
@@ -149,62 +152,49 @@ PetscErrorCode BasicMethod::copyBasicMethod(const BasicMethod &basic) {
   PetscFunctionReturn(0);
 }
 
+PetscErrorCode BasicMethod::preProcess() {
+  PetscFunctionBegin;
+  if(preProcessHook) {
+    ierr = preProcessHook(); CHKERRQ(ierr);
+  } else {
+    SETERRQ(
+      PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,
+      "should be implemented by user in derived class (preProcess)"
+    );
+  }
+  PetscFunctionReturn(0);
+}
+PetscErrorCode BasicMethod::postProcess() {
+  PetscFunctionBegin;
+  if(postProcessHook) {
+    ierr = postProcessHook(); CHKERRQ(ierr);
+  } else {
+    SETERRQ(
+      PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,
+      "should be implemented by user in derived class (postProcess)"
+    );
+  }
+  PetscFunctionReturn(0);
+}
+PetscErrorCode BasicMethod::operator()() {
+  PetscFunctionBegin;
+  if(operatorHook) {
+    ierr = operatorHook(); CHKERRQ(ierr);
+  } else {
+    SETERRQ(
+      PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,
+      "should be implemented by user in derived class (operator)"
+    );
+  }
+  PetscFunctionReturn(0);
+}
+
 //FEMethod
 FEMethod::FEMethod():
 BasicMethod() {
 }
 
-PetscErrorCode FEMethod::preProcess() {
-  PetscFunctionBegin;
-  SETERRQ(
-    PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,
-    "should be implemented by user in derived class (preProcess)"
-  );
-  PetscFunctionReturn(0);
-}
-PetscErrorCode FEMethod::postProcess() {
-  PetscFunctionBegin;
-  SETERRQ(
-    PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,
-    "should be implemented by user in derived class (postProcess)"
-  );
-  PetscFunctionReturn(0);
-}
-PetscErrorCode FEMethod::operator()() {
-  PetscFunctionBegin;
-  SETERRQ(
-    PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,
-    "should be implemented by user in derived class (operator)"
-  );
-  PetscFunctionReturn(0);
-}
-
 //EntMethod
 EntMethod::EntMethod(): BasicMethod() {}
-
-PetscErrorCode EntMethod::preProcess() {
-  PetscFunctionBegin;
-  SETERRQ(
-    PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,
-    "should be implemented by user in derived class"
-  );
-  PetscFunctionReturn(0);
-}
-PetscErrorCode EntMethod::postProcess() {
-  PetscFunctionBegin;
-  SETERRQ(
-    PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,
-    "should be implemented by user in derived class"
-  );
-  PetscFunctionReturn(0);
-}
-PetscErrorCode EntMethod::operator()() {
-  PetscFunctionBegin;
-  SETERRQ(
-    PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,
-    "should be implemented by user in derived class"
-  );
-  PetscFunctionReturn(0);
-}
 
 }
