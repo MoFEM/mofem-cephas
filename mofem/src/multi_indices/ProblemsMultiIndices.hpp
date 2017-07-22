@@ -76,16 +76,16 @@ struct ComposedProblemsData {
   * \ingroup problems_multi_indices
   *
   * This is low level structure with information about problem, what elements
-  * compose problem and what dofs are on rows and columns.
+  * compose problem and what DOFs are on rows and columns.
   *
-  * \todo fix names folloing name convention
+  * \todo fix names following name convention
   *
   */
 struct Problem {
 
   EntityHandle meshset;               ///< Problem meshset (on thags of this meshset all data related to problem are strord)
   BitProblemId* tagId;                ///< Unique problem ID
-  const void* tagName;                ///< Problem name
+  const char* tagName;                ///< Problem name
   int tagNameSize;                    ///< Size of problem name
   DofIdx* tag_nbdof_data_row;         ///< Global number of DOFs in  row
   DofIdx* tag_nbdof_data_col;         ///< Global number of DOFs in col
@@ -102,14 +102,14 @@ struct Problem {
   mutable NumeredEntFiniteElement_multiIndex numeredFiniteElements;           ///< store finite elements
 
   /**
-   * \brief get access to numeredDofsRows storing dofs on rows
+   * \brief get access to numeredDofsRows storing DOFs on rows
    */
   const boost::shared_ptr<NumeredDofEntity_multiIndex>& getNumeredDofsRows() const {
     return numeredDofsRows;
   }
 
   /**
-   * \brief get access to numeredDofsCols storing dofs on cols
+   * \brief get access to numeredDofsCols storing DOFs on cols
    */
   const boost::shared_ptr<NumeredDofEntity_multiIndex>& getNumeredDofsCols() const {
     return numeredDofsCols;
@@ -306,7 +306,7 @@ struct Problem {
   }
 
   /**
-  * \brief use with loops to iterate row dofs
+  * \brief use with loops to iterate row DOFs
   * \ingroup problems_multi_indices
   *
   * \code
@@ -325,7 +325,7 @@ struct Problem {
   _IT_NUMEREDDOF_ROW_FOR_LOOP_(PROBLEMPTR,IT)
 
   /**
-  * use with loops to iterate col dofs
+  * use with loops to iterate col DOFs
   * \ingroup problems_multi_indices
   *
   * \code
@@ -388,7 +388,7 @@ struct Problem {
   };
 
   /**
-  * \brief use with loops to iterate row dofs
+  * \brief use with loops to iterate row DOFs
   * \ingroup problems_multi_indices
   *
   * \code
@@ -407,7 +407,7 @@ struct Problem {
   _IT_NUMEREDDOF_ROW_BY_LOCIDX_FOR_LOOP_(PROBLEMPTR,IT)
 
   /**
-  * \brief use with loops to iterate col dofs
+  * \brief use with loops to iterate col DOFs
   *
   * \code
   * for(_IT_NUMEREDDOF_COL_BY_LOCIDX_FOR_LOOP_(PROBLEMPTR,IT)) {
@@ -441,7 +441,7 @@ struct Problem {
   { return numeredDofsCols->get<PetscLocalIdx_mi_tag>().upper_bound(locidx); }
 
   /**
-  * \brief use with loops to iterate row dofs
+  * \brief use with loops to iterate row DOFs
   * \ingroup problems_multi_indices
   *
   * \code
@@ -461,7 +461,7 @@ struct Problem {
   IT!=PROBLEMPTR->get_numeredDofsRows_by_ent_end(ENT); IT++
 
   /**
-  * \brief use with loops to iterate col dofs
+  * \brief use with loops to iterate col DOFs
   * \ingroup problems_multi_indices
   *
   * \code
@@ -496,7 +496,7 @@ struct Problem {
   { return numeredDofsCols->get<Ent_mi_tag>().upper_bound(ent); }
 
   /**
-  * use with loops to iterate row dofs
+  * use with loops to iterate row DOFs
   * \ingroup problems_multi_indices
   *
   * \code
@@ -515,7 +515,7 @@ struct Problem {
   _IT_NUMEREDDOF_ROW_BY_NAME_FOR_LOOP_(PROBLEMPTR,NAME,IT)
 
   /**
-  * \brief use with loops to iterate col dofs
+  * \brief use with loops to iterate col DOFs
   * \ingroup problems_multi_indices
   *
   * \code
@@ -550,7 +550,7 @@ struct Problem {
   { return numeredDofsCols->get<FieldName_mi_tag>().upper_bound(name); }
 
   /**
-  * \brief use with loops to iterate row dofs
+  * \brief use with loops to iterate row DOFs
   * \ingroup problems_multi_indices
   *
   * \code
@@ -569,7 +569,7 @@ struct Problem {
   _IT_NUMEREDDOF_ROW_BY_NAME_ENT_PART_FOR_LOOP_(PROBLEMPTR,NAME,ENT,PART,IT)
 
   /**
-  * use with loops to iterate col dofs
+  * use with loops to iterate col DOFs
   * \ingroup problems_multi_indices
   *
   * \code
@@ -870,14 +870,14 @@ struct ProblemFiniteElementChangeBitUnSet {
   void operator()(Problem &p);
 };
 
-/** \brief zero nb. of dofs in row
+/** \brief zero nb. of DOFs in row
   * \ingroup problems_multi_indices
   */
 struct ProblemZeroNbRowsChange {
   void operator()(Problem &e);
 };
 
-/** \brief zero nb. of dofs in col
+/** \brief zero nb. of DOFs in col
   * \ingroup problems_multi_indices
   */
 struct ProblemZeroNbColsChange {
