@@ -362,6 +362,28 @@ PetscErrorCode DMMoFEMTSSetIFunction(
 );
 
 /**
+  * \brief set TS implicit function evaluation function
+  * \ingroup dm
+  */
+PetscErrorCode DMMoFEMTSSetIFunction(
+  DM dm,const std::string& fe_name,
+  boost::shared_ptr<MoFEM::FEMethod> method,
+  boost::shared_ptr<MoFEM::FEMethod> pre_only,
+  boost::shared_ptr<MoFEM::FEMethod> post_only
+);
+
+/**
+  * \brief set TS Jacobian evaluation function
+  * \ingroup dm
+  */
+PetscErrorCode DMMoFEMTSSetIJacobian(
+  DM dm,const std::string& fe_name,
+  boost::shared_ptr<MoFEM::FEMethod> method,
+  boost::shared_ptr<MoFEM::FEMethod> pre_only,
+  boost::shared_ptr<MoFEM::FEMethod> post_only
+);
+
+/**
   * \brief set TS Jacobian evaluation function
   * \ingroup dm
   */
@@ -369,6 +391,7 @@ PetscErrorCode DMMoFEMTSSetIJacobian(
   DM dm,const char fe_name[],
   MoFEM::FEMethod *method,MoFEM::FEMethod *pre_only,MoFEM::FEMethod *post_only
 );
+
 
 #ifdef __KSPCTX_HPP__
 
