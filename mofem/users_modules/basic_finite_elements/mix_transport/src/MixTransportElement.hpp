@@ -100,7 +100,6 @@ struct MixTransportElement {
   PetscErrorCode getDirichletBCIndices(IS *is) {
     PetscFunctionBegin;
     std::vector<int> ids;
-
     ids.insert(ids.begin(),bcIndices.begin(),bcIndices.end());
     IS is_local;
     ierr = ISCreateGeneral(
