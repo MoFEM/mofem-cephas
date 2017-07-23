@@ -63,7 +63,7 @@ struct EdgeElementForcesAndSurcesCore: public ForcesAndSurcesCore {
   opCovariantTransoform(dIrection,tAngent_at_GaussPt) {
   }
 
-  
+
   double lEngth;;
   VectorDouble dIrection;
   VectorDouble cOords;
@@ -180,15 +180,7 @@ struct EdgeElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 
   };
 
-  PetscErrorCode preProcess() {
-    PetscFunctionBegin;
-    PetscFunctionReturn(0);
-  }
   PetscErrorCode operator()();
-  PetscErrorCode postProcess() {
-    PetscFunctionBegin;
-    PetscFunctionReturn(0);
-  }
 
 };
 

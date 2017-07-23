@@ -394,16 +394,7 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
    */
   virtual PetscErrorCode calculateHoNormal();
 
-
-  PetscErrorCode preProcess() {
-    PetscFunctionBegin;
-    PetscFunctionReturn(0);
-  }
   PetscErrorCode operator()();
-  PetscErrorCode postProcess() {
-    PetscFunctionBegin;
-    PetscFunctionReturn(0);
-  }
 
 };
 
