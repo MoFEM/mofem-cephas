@@ -14,15 +14,15 @@ example is restricted to linear problem and body is subjected to inhomogeneous
 Dirichlet boundary conditions only. We do not explain here how to implement
 finite element data operator; this is part of tutorial \ref poisson_tut2.
 
-Writing this tutorial we don't know what type of person you are? You like to
-see examples first, before seeing the big picture? Or you like to see big
-picture first and then look for the details after. If you are second kind, you
+While writing this tutorial we don't know what type of person you are. Do you like to
+see examples first, before seeing the big picture? Or do you prefer to see big
+picture first and then look for the details after? If you are second kind, you
 would like to see this first \ref general_data_structure before you start with
 implementation. If you like to start from examples, skip the general details and
 go to code.
 
 MoFEM has a bottom-up design, have several levels of abstraction, yet enables
-users at any level to hack levels bellow. That is intended to give freedom to
+users at any level to hack levels below. That is intended to give freedom to
 create new methods and solve problems in new ways.
 
 - \b level \b 0: Database level, users access structures of the database
@@ -53,25 +53,25 @@ problem is managed by Discrete Manager (DM) interface.
 
 - \b level \b 4: Mathematical model level. At that level complexity related to a
 problem, discretization is hidden from a user. User states differential
-operators for PDE given in week form. This is implemented by specialisation of
+operators for PDE given in a weak form. This is implemented by specialization of
 Users Data Operators (UDO) and overloaded operators on fields (not yet
 implemented).
 
-Each level up simplify implementation, making code short and easier to follow,
+Each level up simplifies implementation, making code short and easier to follow,
 from the other hand limiting flexibility. In this tutorial we focus attention on
-functions from \b level \b 3, we not going to describe here how finite element
-is implemented, this is part of next tutorial, \ref poisson_tut2. In this
-tutorial, we focus on generic steps presented in figure bellow in yellow boxes.
+functions from \b level \b 3, we are not going to describe here how finite element
+is implemented, this is part of the next tutorial, \ref poisson_tut2. In this
+one, we focus on generic steps presented in figure below in yellow boxes.
 
 We designed code to give you a freedom to create code which does what you want
-and not force you to follow beaten path. The implementation shown here is
+and does not force you to follow beaten path. The implementation shown here is
 similar other types of PDEs, even for nonlinear or time-dependent problems. You
-don't have to understand every detail of the code here, some times we using
-advanced C++. That understanding will come later. For example,  you like to
-change a form of your PDE than you look only how to modify differential operator
+don't have to understand every detail of the code here, some times we are using
+advanced C++. That understanding will come later. For example, if you like to
+change a form of your PDE, then you need to look only how to modify differential operator
 to solve anisotropic the Darcy equation for flow, and that is easily done by
-modification of one of the operators. So, relax and look what you have bellow
-and always when you are intrigued ask questions on our Q&A forum.
+modification of one of the operators. So, relax and look what you have below
+and when you are intrigued, always ask questions on our <a href=https://groups.google.com/forum/#!forum/mofem-group>Q&A forum</a>.
 
 \image html poisson_tut1_fig1.png "Figure 1. Level 3 interfaces" width=800px
 
@@ -83,16 +83,16 @@ We solve the most basic of all PDEs, i.e. the Poisson equation,
 \f[
 -\nabla^2 u(\mathbf{x}) = f(x),\quad \textrm{in}\,\Omega\\
 \f]
-where \f$u=u(\mathbf{x})\f$ is unknown function, \f$f(\mathbf{x})\f$ is given
+where \f$u=u(\mathbf{x})\f$ is unknown function, \f$f(\mathbf{x})\f$ is a given
 source term. The Poisson equation is in so-called \e strong form, it has to be
-satisfied at every point of the body without boundary. To solve this PDE we need
-describe problem on the boundary, in this simple case for the purpose of
+satisfied at every point of the body without boundary. To solve this PDE we need to
+describe the problem on the boundary, in this simple case for the purpose of
 tutorial we are self-restricted to Dirichlet boundary condition where functions
 values are given by
 \f[
 u(x)=\overline{u}(\mathbf{x}),\quad \textrm{on}\,\partial\Omega
 \f]
-where \f$\overline{u}\f$ is prescribed function on boundary.
+where \f$\overline{u}\f$ is prescribed function on the boundary.
 
 The Laplacian \f$\nabla^2\f$ in 3d space with Cartesian coordinates is
 \f[
@@ -104,7 +104,7 @@ The Laplacian \f$\nabla^2\f$ in 3d space with Cartesian coordinates is
 
 The Poisson equation arises in many physical contexts, including heat
 conduction, electrostatics, diffusion of substances, twisting of elastic rods,
-and describes many other physical problems. In general PDE equation emerge form
+and describes many other physical problems. In general PDE equation emerge from
 conservation law, e.g. conservation of mass, electric charge or energy, i.e. one
 of the fundamental laws of the universe.
 
@@ -186,9 +186,9 @@ Matrices and vectors are implemented using users data operators (UDO);
 - \f$\mathbf{C}\f$ is implemented in PoissonExample::OpC::iNtegrte
 - \f$\mathbf{g}\f$ is implemented in PoissonExample::Op_g::iNtegrte
 
-We put light on the implementation of those functions in next tutorial  \ref poisson_tut2.
-Here, in following sections, we focus on the generic problem and
-solver set up. Complete implementation of UDO for this example is here \ref
+We put light on the implementation of those functions in the next tutorial  \ref poisson_tut2.
+Here, in the following sections, we focus on the generic problem and
+solver setup. Complete implementation of UDO for this example is here \ref
 PoissonOperators.hpp.
 
 \section poisson_tut1_variational_verification Exact solution
@@ -206,7 +206,7 @@ f(\mathbf{x}) = 4+6z.
 \f]
 If finite element approximation using 3rd order polynomials or higher, a
 solution of the Poisson problem is exact. In MoFEM you could easily increase the
-order of the polynomial, as is shown below.
+order of the polynomial, as it is shown below.
 
 \section poisson_tut1_code_disection Code dissection
 
@@ -254,7 +254,7 @@ struct ExactLaplacianFunction {
 
 \subsection poisson_tut1_code_disection_ss2 Initialization
 
-In following we initialize PETSc, and construct MoAB and MoFEM databases.
+In the following section, we initialize PETSc and construct MoAB and MoFEM databases.
 Starting with PETSc and MoAB
 \code
 // Initialize PETSc
@@ -274,7 +274,7 @@ ierr = PetscOptionsInt("-order","approximation order","",order,&order,PETSC_NULL
 ierr = PetscOptionsBool("-test","if true is ctest","",flg_test,&flg_test,PETSC_NULL); CHKERRQ(ierr);
 ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 \endcode
-In this test for simplicity, we apply for approximation order uniformly.
+In this test, for simplicity we apply for approximation order uniformly.
 However, MoFEM in principle is designed to manage heterogeneous approximation
 bases.
 
@@ -292,11 +292,10 @@ ierr = DMRegister_MoFEM("DMMOFEM"); CHKERRQ(ierr); // register MoFEM DM in PETSc
 \subsection poisson_tut1_code_disection_ss3 Creating Finite element instances
 
 We start with declaring smart pointers to finite element objects. A smart
-pointer is like "raw" pointers, but you do not have to remember to delete
-allocated memory to which it points. More about shared pointers you find here
-<http://www.boost.org/doc/libs/1_62_0/libs/smart_ptr/shared_ptr.htm>, if you
-don't know what is pointer look here
-<https://en.wikipedia.org/wiki/Pointer_(computer_programming)>. You do not have
+pointer is like a "raw" pointer, but you do not have to remember to delete
+allocated memory to which it points. More about shared pointers you find
+<a href=http://www.boost.org/doc/libs/1_62_0/libs/smart_ptr/shared_ptr.htmp>here</a>, if you
+don't know what is a pointer, look <a href=https://en.wikipedia.org/wiki/Pointer_(computer_programming)>here</a>. You do not have
 to look at the details now; you can start working with code by making
 modifications of solutions which are already there.
 \code
@@ -309,9 +308,9 @@ boost::shared_ptr<ForcesAndSurcesCore> post_proc_volume;  ///< Volume element to
 boost::shared_ptr<ForcesAndSurcesCore> null;              ///< Null element do nothing
 \endcode
 
-Now we have to allocate memory for finite element, add to them data
-operators. We do not cover details here, this is realised by three functions,
-which we will use in following tutorials
+Now we have to allocate memory for the finite elements, add data
+operators to them. We do not cover details here, this is realised by three functions,
+which we will use in the following tutorials
 \code
 // Add problem specific operators the generic finite elements to calculate matrices and vectors.
 ierr = PoissonExample::CreateFiniteElementes(m_field).createFEToAssmbleMatrceAndVector(
@@ -351,7 +350,7 @@ Basic of user data operators are explained here \ref general_data_structure.
 \subsection poisson_tut1_code_disection_ss4 Simple interface
 
 - First, we ask MoFEM::Interface for access to MoFEM::Simple interface. Creation
-and deletion of interface is managed internally and is returned as a pointer
+and deletion of the interface is managed internally and is returned as a pointer
 \code
 Simple *simple_interface;
 ierr = m_field.query_interface(simple_interface); CHKERRQ(ierr);
@@ -431,11 +430,11 @@ ierr = KSPSetUp(solver); CHKERRQ(ierr);
 // solves system of equations. Results are stored in vector D.
 ierr = KSPSolve(solver,F,D); CHKERRQ(ierr);
 \endcode
-In above code, KSP solver takes control. KSP solver using DM creates matrix and
-calls DM functions to iterate over finite elements and assemble matrix and
-vectors. KSP solver knows how to do it since it using MoFEM DM which we
+In above code, KSP solver takes control. The KSP solver is using DM creates matrix and
+calls DM functions to iterate over finite elements and assembles matrix and
+vectors. KSP solver knows how to do it since it is using MoFEM DM which we
 registered at the very beginning, and get an instance of particular DM from
-MoFEM::Simple interface. While  DM iterating over finite elements, finite
+MoFEM::Simple interface. While DM is iterating over finite elements, finite
 elements instance executes user data operators.
 
 Once we have the solution, DOFs values in solution vector are scattered on the mesh
@@ -450,7 +449,7 @@ PETSc manages complexities related to algebra and solution of the problem. For
 more details about the interaction of MoAB, MoFEM and PETSc see MoFEM software
 eccosystem (see \ref general_data_structure).
 
-Finally, we can evaluate error and verify correctness of solution
+Finally, we can evaluate error and verify correctness of the solution
 \code
 ierr = DMoFEMLoopFiniteElements(dm,simple_interface->getDomainFEName(),domain_error); CHKERRQ(ierr);
 ierr = PoissonExample::AuxFunctions(m_field).assembleGhostVector(global_error); CHKERRQ(ierr);
@@ -459,19 +458,19 @@ if(flg_test == PETSC_TRUE) {
   ierr = PoissonExample::AuxFunctions(m_field).testError(global_error); CHKERRQ(ierr);
 }
 \endcode
-Note function \ref DMoFEMLoopFiniteElements, it takes finite element instance
-"domain_error" and apply it to finite elements entities in the problem. For each
+Note that function \ref DMoFEMLoopFiniteElements  takes finite element instance
+"domain_error" and applies it to finite elements entities in the problem. For each
 finite element entity, finite element instance is called, and sequence of
 operators data operators are executed on that element.
 
 \subsection poisson_tut1_code_disection_ss6 Post-processing
 
 Finally, we will create a mesh for post-processing. Note that in MoFEM we work
-with spaces with not necessarily have physical DOFs at the nodes, i.e. higher
+with spaces that not necessarily have physical DOFs at the nodes, i.e. higher
 order polynomials or spaces like H-div, H-curl or L2. Discontinuities on
 elements edges have to be shown in post-processing accurately. To resolve this
 issue, a set of user data operators has been created to manage those problems,
-see PostProcCommonOnRefMesh for details. Here we directly run the code
+see PostProcCommonOnRefMesh for details. Here, we directly run the code
 \code
 ierr = DMoFEMLoopFiniteElements(dm,simple_interface->getDomainFEName(),post_proc_volume); CHKERRQ(ierr);
 // Write results
@@ -480,7 +479,7 @@ ierr = boost::static_pointer_cast<PostProcVolumeOnRefinedMesh>(post_proc_volume)
 
 \section poisson_tut1_running_program Running the program
 
-The easiest installation is with Docker containers; pleas see youtube video how
+The easiest installation is with Docker containers; please see youtube video how
 to run installation <a href=https://www.youtube.com/watch?v=6opfKER7JHA>link</a>. You can also look
 here \ref install_docker. Open terminal and run Docker container
 \code
@@ -501,9 +500,9 @@ Once code is compiled, we can run test
 mpirun -np 2  ./analytical_poisson -file_name cube_2part.h5m -order 3
 \endcode
 
-- We running parallel code, \e mpirun \e -np \e 2 indicate that you will use to processes to run analysis
+- We are running parallel code, \e mpirun \e -np \e 2 indicates that you will use two processes to run analysis
 
-- \e ./analytical_poisson is name and location of of executable, dot means that is current directory
+- \e ./analytical_poisson is name and location of of executable, dot means that it is current directory
 
 - \e -file_name cube_2part.h5m is name of mesh file, here partitioned for two processors
 
@@ -626,11 +625,11 @@ Once we have solution, you can convert file to VTK and open it in ParaView
 \code
 mbconvert out_vol.h5m out_vol.vtk
 \endcode
-and copy you file to the desktop
+and copy your file from docker to the desktop
 \code
 cp out_vol.vtk $HOSTHOME/Desktop/
 \endcode
-Now your file is visable on Desktop, run ParaView and open file.
+Now your file is visible on Desktop, run ParaView and open file.
 
 \image html poisson_tut1_fig4.png "Figure 4. ParaView and result" width=800px
 
@@ -672,11 +671,11 @@ mbconvert -l
 
 \section poisson_tut1_excercise Exercises
 
-- Exercise 1: Change approximate order. Make it smaller that 3rd order or make it
-large, what happens? Can you  explain this?
+- Exercise 1: Change approximation order. Make it smaller than 3rd order or make it
+larger, what happens? Can you explain this?
 
 - Exercise 2: Change exact displacement function, for example to trigonometric
-function. Can  you reproduce exact solution such this case? Can you explain your results. Try
+function. Can you reproduce the exact solution in such this case? Can you explain your results? Try
 \f[
 u = sin(kx)
 \f]
@@ -689,10 +688,10 @@ H1 space, see \ref poisson_tut2
 
 - Exercise 5: Make convergence plots for polynomial and trigonometric exact functions.
 
-Pleas feel free to ask question on our Q&A form, see
+Please feel free to ask question on our Q&A form, see
 <a href=https://groups.google.com/forum/#!forum/mofem-group>link</a>.
 
 \section poisson_tut1_notes Notes
 
-\note This is similar test to one form <https://fenicsproject.org/pub/tutorial/html/._ftut1004.html#ch:fundamentals>.
+\note This is similar test to one from <https://fenicsproject.org/pub/tutorial/html/._ftut1004.html#ch:fundamentals>.
 */
