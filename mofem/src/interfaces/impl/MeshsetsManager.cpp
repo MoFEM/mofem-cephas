@@ -58,7 +58,6 @@ namespace po = boost::program_options;
 namespace MoFEM {
 
   PetscErrorCode MeshsetsManager::queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface) {
-
     PetscFunctionBegin;
     *iface = NULL;
     if(uuid == IDD_MOFEMMeshsetsManager) {
@@ -84,7 +83,6 @@ namespace MoFEM {
   }
 
   PetscErrorCode MeshsetsManager::initialiseDatabseInformationFromMesh(int verb) {
-    
     MoFEM::Interface &m_field = cOre;
     moab::Interface &moab = m_field.get_moab();
     PetscFunctionBegin;
@@ -115,7 +113,6 @@ namespace MoFEM {
 
 
   PetscErrorCode MeshsetsManager::getTags(int verb) {
-    
     PetscFunctionBegin;
     MoFEM::Interface &m_field = cOre;
     moab::Interface &moab = m_field.get_moab();
@@ -163,7 +160,6 @@ namespace MoFEM {
   }
 
   PetscErrorCode MeshsetsManager::printDisplacementSet() const {
-    
     DisplacementCubitBcData mydata;
     PetscFunctionBegin;
     ierr = printBcSet(mydata,NODESET|mydata.tYpe.to_ulong()); CHKERRQ(ierr);
@@ -171,7 +167,6 @@ namespace MoFEM {
   }
 
   PetscErrorCode MeshsetsManager::printPressureSet() const {
-    
     PressureCubitBcData mydata;
     PetscFunctionBegin;
     ierr = printBcSet(mydata,SIDESET|mydata.tYpe.to_ulong()); CHKERRQ(ierr);
@@ -179,7 +174,6 @@ namespace MoFEM {
   }
 
   PetscErrorCode MeshsetsManager::printForceSet() const {
-    
     ForceCubitBcData mydata;
     PetscFunctionBegin;
     ierr = printBcSet(mydata,NODESET|mydata.tYpe.to_ulong()); CHKERRQ(ierr);
@@ -187,7 +181,6 @@ namespace MoFEM {
   }
 
   PetscErrorCode MeshsetsManager::printTemperatureSet() const {
-    
     TemperatureCubitBcData mydata;
     PetscFunctionBegin;
     ierr = printBcSet(mydata,NODESET|mydata.tYpe.to_ulong()); CHKERRQ(ierr);
@@ -195,7 +188,6 @@ namespace MoFEM {
   }
 
   PetscErrorCode MeshsetsManager::printHeatFluxSet() const {
-    
     HeatFluxCubitBcData mydata;
     PetscFunctionBegin;
     ierr = printBcSet(mydata,SIDESET|mydata.tYpe.to_ulong()); CHKERRQ(ierr);
@@ -203,8 +195,6 @@ namespace MoFEM {
   }
 
   PetscErrorCode MeshsetsManager::printMaterialsSet() const {
-    
-    
     PetscFunctionBegin;
     const MoFEM::Interface& m_field = cOre;
     const moab::Interface& moab = m_field.get_moab();
@@ -238,7 +228,6 @@ namespace MoFEM {
       ss << data;
       PetscPrintf(m_field.get_comm(),ss.str().c_str());
     }
-
     PetscFunctionReturn(0);
   }
 
@@ -294,7 +283,6 @@ namespace MoFEM {
   }
 
   PetscErrorCode MeshsetsManager::addEntitiesToMeshset(const CubitBCType cubit_bc_type,const int ms_id,Range &ents) {
-    
     MoFEM::Interface &m_field = cOre;
     moab::Interface &moab = m_field.get_moab();
     PetscFunctionBegin;
@@ -311,7 +299,6 @@ namespace MoFEM {
   }
 
   PetscErrorCode MeshsetsManager::addEntitiesToMeshset(const CubitBCType cubit_bc_type,const int ms_id,const EntityHandle *ents,const int nb_ents) {
-    
     MoFEM::Interface &m_field = cOre;
     moab::Interface &moab = m_field.get_moab();
     PetscFunctionBegin;
@@ -326,7 +313,6 @@ namespace MoFEM {
     rval = moab.add_entities(meshset,ents,nb_ents); CHKERRQ_MOAB(rval);
     PetscFunctionReturn(0);
   }
-
 
   PetscErrorCode MeshsetsManager::setAttribites(
     const CubitBCType cubit_bc_type,const int ms_id,const std::vector<double> &attributes,const std::string name
@@ -395,7 +381,6 @@ namespace MoFEM {
   }
 
   PetscErrorCode MeshsetsManager::deleteMeshset(const CubitBCType cubit_bc_type,const int ms_id) {
-    
     MoFEM::Interface &m_field = cOre;
     moab::Interface &moab = m_field.get_moab();
     PetscFunctionBegin;
@@ -460,7 +445,7 @@ namespace MoFEM {
   PetscErrorCode MeshsetsManager::getEntitiesByDimension(
     const int msId,const unsigned int cubit_bc_type, const int dimension,Range &entities,const bool recursive
   ) {
-    
+
     MoFEM::Interface &m_field = cOre;
     moab::Interface &moab = m_field.get_moab();
     PetscFunctionBegin;
@@ -477,7 +462,6 @@ namespace MoFEM {
   PetscErrorCode MeshsetsManager::getEntitiesByDimension(
     const int ms_id,const unsigned int cubit_bc_type, Range &entities,const bool recursive
   ) {
-    
     MoFEM::Interface &m_field = cOre;
     moab::Interface &moab = m_field.get_moab();
     PetscFunctionBegin;
@@ -553,7 +537,7 @@ namespace MoFEM {
   };
 
   PetscErrorCode MeshsetsManager::setMeshsetFromFile(const string file_name,bool clean_file_options) {
-    
+
     MoFEM::Interface &m_field = cOre;
     //moab::Interface &moab = m_field.get_moab();
     PetscFunctionBegin;
@@ -568,51 +552,35 @@ namespace MoFEM {
       map<int,BlockData> block_lists;
       for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
         block_lists[it->getMeshsetId()].cubitMeshset = it->getMeshset();
-        std::ostringstream str_add;
-        str_add << "block_" << it->getMeshsetId() << ".add";
-        std::ostringstream str_id;
-        str_id << "block_" << it->getMeshsetId() << ".id";
-        std::ostringstream str_name;
-        str_name << "block_" << it->getMeshsetId() << ".name";
+        std::string prefix = "block_"+boost::lexical_cast<std::string>(it->getMeshsetId());
         configFileOptionsPtr->add_options()
-        (str_add.str().c_str(),po::value<string>(&block_lists[it->getMeshsetId()].addType)->default_value("UNKNOWNSET"),"Add block set")
-        (str_id.str().c_str(),po::value<int>(&block_lists[it->getMeshsetId()].iD)->default_value(-1),"Id of meshset")
-        (str_name.str().c_str(),po::value<string>(&block_lists[it->getMeshsetId()].nAme)->default_value(""),"Name of the meshset");
+        ((prefix+".add").c_str(),po::value<string>(&block_lists[it->getMeshsetId()].addType)->default_value("UNKNOWNSET"),"Add block set")
+        ((prefix+".id").c_str(),po::value<int>(&block_lists[it->getMeshsetId()].iD)->default_value(-1),"Id of meshset")
+        ((prefix+".name").c_str(),po::value<string>(&block_lists[it->getMeshsetId()].nAme)->default_value(""),"Name of the meshset");
         // Block attributes
         for(int ii = 1;ii<=10;ii++) {
-          std::ostringstream str_user;
-          str_user << "block_" << it->getMeshsetId() << ".user" << ii;
+          std::string surfix = ".user"+boost::lexical_cast<std::string>(ii);
           configFileOptionsPtr->add_options()
-          (str_user.str().c_str(),po::value<double>(&block_lists[it->getMeshsetId()].aTtr[ii-1])->default_value(0.0),"Add block attribute");
+          ((prefix+surfix).c_str(),po::value<double>(&block_lists[it->getMeshsetId()].aTtr[ii-1])->default_value(0.0),"Add block attribute");
         }
         // Mat elastic
         {
           // double Young; 			///< Young's modulus
           // double Poisson; 		///< Poisson's ratio
           // double ThermalExpansion;	///< Thermal expansion
-          std::ostringstream str_young;
-          str_young << "block_" << it->getMeshsetId() << ".young";
-          std::ostringstream str_poisson;
-          str_poisson << "block_" << it->getMeshsetId() << ".poisson";
-          std::ostringstream str_thermal_expansion;
-          str_thermal_expansion << "block_" << it->getMeshsetId() << ".thermalexpansion";
           configFileOptionsPtr->add_options()
-          (str_young.str().c_str(),po::value<double>(&block_lists[it->getMeshsetId()].matElastic.data.Young)->default_value(-1),"Young modulus")
-          (str_poisson.str().c_str(),po::value<double>(&block_lists[it->getMeshsetId()].matElastic.data.Poisson)->default_value(-2),"Poisson ratio")
-          (str_thermal_expansion.str().c_str(),po::value<double>(&block_lists[it->getMeshsetId()].matElastic.data.ThermalExpansion)->default_value(-1),"Thermal expansion");
+          ((prefix+".young").c_str(),po::value<double>(&block_lists[it->getMeshsetId()].matElastic.data.Young)->default_value(-1),"Young modulus")
+          ((prefix+".poisson").c_str(),po::value<double>(&block_lists[it->getMeshsetId()].matElastic.data.Poisson)->default_value(-2),"Poisson ratio")
+          ((prefix+"thermalexpansion").c_str(),po::value<double>(&block_lists[it->getMeshsetId()].matElastic.data.ThermalExpansion)->default_value(-1),"Thermal expansion");
           // TODO Add users parameters
         }
         // Mat theraml
         {
           // double Conductivity; ///< Thermal conductivity
           // double HeatCapacity; ///< Heat Capacity
-          std::ostringstream str_conductivity;
-          str_conductivity << "block_" << it->getMeshsetId() << ".conductivity";
-          std::ostringstream str_capacity;
-          str_capacity << "block_" << it->getMeshsetId() << ".capacity";
           configFileOptionsPtr->add_options()
-          (str_conductivity.str().c_str(),po::value<double>(&block_lists[it->getMeshsetId()].matThermal.data.Conductivity)->default_value(-1),"Conductivity")
-          (str_capacity.str().c_str(),po::value<double>(&block_lists[it->getMeshsetId()].matThermal.data.HeatCapacity)->default_value(-1),"Capacity");
+          ((prefix+".conductivity").c_str(),po::value<double>(&block_lists[it->getMeshsetId()].matThermal.data.Conductivity)->default_value(-1),"Conductivity")
+          ((prefix+".capacity").c_str(),po::value<double>(&block_lists[it->getMeshsetId()].matThermal.data.HeatCapacity)->default_value(-1),"Capacity");
           // TODO Add users parameters
         }
         // Mat interface
@@ -621,19 +589,11 @@ namespace MoFEM {
           // double beta;  ///< Damage Coupling multiplier between normal and shear (g=sqrt(gn^2 + beta(gt1^2 + gt2^2)))
           // double ft;    ///< Maximum stress of crack
           // double Gf;    ///< Fracture Energy
-          std::ostringstream str_alpha;
-          str_alpha << "block_" << it->getMeshsetId() << ".interface_alpha";
-          std::ostringstream str_beta;
-          str_beta << "block_" << it->getMeshsetId() << ".interface_beta";
-          std::ostringstream str_ft;
-          str_ft << "block_" << it->getMeshsetId() << ".interface_ft";
-          std::ostringstream str_gf;
-          str_gf << "block_" << it->getMeshsetId() << ".interface_Gf";
           configFileOptionsPtr->add_options()
-          (str_alpha.str().c_str(),po::value<double>(&block_lists[it->getMeshsetId()].matInterf.data.alpha)->default_value(-1),"alpha")
-          (str_beta.str().c_str(),po::value<double>(&block_lists[it->getMeshsetId()].matInterf.data.beta)->default_value(-1),"beta")
-          (str_ft.str().c_str(),po::value<double>(&block_lists[it->getMeshsetId()].matInterf.data.ft)->default_value(-1),"ft")
-          (str_gf.str().c_str(),po::value<double>(&block_lists[it->getMeshsetId()].matInterf.data.Gf)->default_value(-1),"Gf");
+          ((prefix+".interface_alpha").c_str(),po::value<double>(&block_lists[it->getMeshsetId()].matInterf.data.alpha)->default_value(-1),"alpha")
+          ((prefix+".interface_beta").c_str(),po::value<double>(&block_lists[it->getMeshsetId()].matInterf.data.beta)->default_value(-1),"beta")
+          ((prefix+".interface_ft").c_str(),po::value<double>(&block_lists[it->getMeshsetId()].matInterf.data.ft)->default_value(-1),"ft")
+          ((prefix+".interface_Gf").c_str(),po::value<double>(&block_lists[it->getMeshsetId()].matInterf.data.Gf)->default_value(-1),"Gf");
           // TODO Add users parameters
         }
 
@@ -651,43 +611,19 @@ namespace MoFEM {
           // double value4; //< Value for X-Rotation
           // double value5; //< Value for Y-Rotation
           // double value6; //< Value for Z-Rotation
-          std::ostringstream str_flag1;
-          str_flag1 << "block_" << it->getMeshsetId() << ".disp_flag1";
-          std::ostringstream str_flag2;
-          str_flag2 << "block_" << it->getMeshsetId() << ".disp_flag2";
-          std::ostringstream str_flag3;
-          str_flag3 << "block_" << it->getMeshsetId() << ".disp_flag3";
-          std::ostringstream str_flag4;
-          str_flag4 << "block_" << it->getMeshsetId() << ".disp_flag4";
-          std::ostringstream str_flag5;
-          str_flag5 << "block_" << it->getMeshsetId() << ".disp_flag5";
-          std::ostringstream str_flag6;
-          str_flag6 << "block_" << it->getMeshsetId() << ".disp_flag6";
-          std::ostringstream str_value1;
-          str_value1 << "block_" << it->getMeshsetId() << ".disp_ux";
-          std::ostringstream str_value2;
-          str_value2 << "block_" << it->getMeshsetId() << ".disp_uy";
-          std::ostringstream str_value3;
-          str_value3 << "block_" << it->getMeshsetId() << ".disp_uz";
-          std::ostringstream str_value4;
-          str_value4 << "block_" << it->getMeshsetId() << ".disp_rx";
-          std::ostringstream str_value5;
-          str_value5 << "block_" << it->getMeshsetId() << ".disp_ry";
-          std::ostringstream str_value6;
-          str_value6 << "block_" << it->getMeshsetId() << ".disp_rz";
           configFileOptionsPtr->add_options()
-          (str_flag1.str().c_str(),po::value<char>(&block_lists[it->getMeshsetId()].dispBc.data.flag1)->default_value(0),"flag1")
-          (str_flag2.str().c_str(),po::value<char>(&block_lists[it->getMeshsetId()].dispBc.data.flag2)->default_value(0),"flag2")
-          (str_flag3.str().c_str(),po::value<char>(&block_lists[it->getMeshsetId()].dispBc.data.flag3)->default_value(0),"flag3")
-          (str_flag4.str().c_str(),po::value<char>(&block_lists[it->getMeshsetId()].dispBc.data.flag4)->default_value(0),"flag4")
-          (str_flag5.str().c_str(),po::value<char>(&block_lists[it->getMeshsetId()].dispBc.data.flag5)->default_value(0),"flag5")
-          (str_flag6.str().c_str(),po::value<char>(&block_lists[it->getMeshsetId()].dispBc.data.flag6)->default_value(0),"flag6")
-          (str_value1.str().c_str(),po::value<double>(&block_lists[it->getMeshsetId()].dispBc.data.value1)->default_value(0),"value1")
-          (str_value2.str().c_str(),po::value<double>(&block_lists[it->getMeshsetId()].dispBc.data.value2)->default_value(0),"value2")
-          (str_value3.str().c_str(),po::value<double>(&block_lists[it->getMeshsetId()].dispBc.data.value3)->default_value(0),"value3")
-          (str_value4.str().c_str(),po::value<double>(&block_lists[it->getMeshsetId()].dispBc.data.value4)->default_value(0),"value4")
-          (str_value5.str().c_str(),po::value<double>(&block_lists[it->getMeshsetId()].dispBc.data.value5)->default_value(0),"value5")
-          (str_value6.str().c_str(),po::value<double>(&block_lists[it->getMeshsetId()].dispBc.data.value6)->default_value(0),"value6");
+          ((prefix+".disp_flag1").c_str(),po::value<char>(&block_lists[it->getMeshsetId()].dispBc.data.flag1)->default_value(0),"flag1")
+          ((prefix+".disp_flag2").c_str(),po::value<char>(&block_lists[it->getMeshsetId()].dispBc.data.flag2)->default_value(0),"flag2")
+          ((prefix+".disp_flag3").c_str(),po::value<char>(&block_lists[it->getMeshsetId()].dispBc.data.flag3)->default_value(0),"flag3")
+          ((prefix+".disp_flag4").c_str(),po::value<char>(&block_lists[it->getMeshsetId()].dispBc.data.flag4)->default_value(0),"flag4")
+          ((prefix+".disp_flag5").c_str(),po::value<char>(&block_lists[it->getMeshsetId()].dispBc.data.flag5)->default_value(0),"flag5")
+          ((prefix+".disp_flag6").c_str(),po::value<char>(&block_lists[it->getMeshsetId()].dispBc.data.flag6)->default_value(0),"flag6")
+          ((prefix+".disp_ux").c_str(),po::value<double>(&block_lists[it->getMeshsetId()].dispBc.data.value1)->default_value(0),"value1")
+          ((prefix+".disp_uy").c_str(),po::value<double>(&block_lists[it->getMeshsetId()].dispBc.data.value2)->default_value(0),"value2")
+          ((prefix+".disp_uz").c_str(),po::value<double>(&block_lists[it->getMeshsetId()].dispBc.data.value3)->default_value(0),"value3")
+          ((prefix+".disp_rx").c_str(),po::value<double>(&block_lists[it->getMeshsetId()].dispBc.data.value4)->default_value(0),"value4")
+          ((prefix+".disp_ry").c_str(),po::value<double>(&block_lists[it->getMeshsetId()].dispBc.data.value5)->default_value(0),"value5")
+          ((prefix+".disp_rz").c_str(),po::value<double>(&block_lists[it->getMeshsetId()].dispBc.data.value6)->default_value(0),"value6");
         }
         // Force BC data
         {
@@ -701,31 +637,15 @@ namespace MoFEM {
           // double value7; //< Y-component of moment direction vector
           // double value8; //< Z-component of moment direction vector
           // char zero2; // 0
-          std::ostringstream str_value1;
-          str_value1 << "block_" << it->getMeshsetId() << ".force_magnitude";
-          std::ostringstream str_value2;
-          str_value2 << "block_" << it->getMeshsetId() << ".moment_magnitude";
-          std::ostringstream str_value3;
-          str_value3 << "block_" << it->getMeshsetId() << ".force_fx";
-          std::ostringstream str_value4;
-          str_value4 << "block_" << it->getMeshsetId() << ".force_fy";
-          std::ostringstream str_value5;
-          str_value5 << "block_" << it->getMeshsetId() << ".force_fz";
-          std::ostringstream str_value6;
-          str_value6 << "block_" << it->getMeshsetId() << ".moment_mx";
-          std::ostringstream str_value7;
-          str_value7 << "block_" << it->getMeshsetId() << ".moment_my";
-          std::ostringstream str_value8;
-          str_value8 << "block_" << it->getMeshsetId() << ".moment_mz";
           configFileOptionsPtr->add_options()
-          (str_value1.str().c_str(),po::value<double>(&block_lists[it->getMeshsetId()].forceBc.data.value1)->default_value(0),"value1")
-          (str_value2.str().c_str(),po::value<double>(&block_lists[it->getMeshsetId()].forceBc.data.value2)->default_value(0),"value2")
-          (str_value3.str().c_str(),po::value<double>(&block_lists[it->getMeshsetId()].forceBc.data.value3)->default_value(0),"value3")
-          (str_value4.str().c_str(),po::value<double>(&block_lists[it->getMeshsetId()].forceBc.data.value4)->default_value(0),"value4")
-          (str_value5.str().c_str(),po::value<double>(&block_lists[it->getMeshsetId()].forceBc.data.value5)->default_value(0),"value5")
-          (str_value6.str().c_str(),po::value<double>(&block_lists[it->getMeshsetId()].forceBc.data.value6)->default_value(0),"value6")
-          (str_value7.str().c_str(),po::value<double>(&block_lists[it->getMeshsetId()].forceBc.data.value7)->default_value(0),"value7")
-          (str_value8.str().c_str(),po::value<double>(&block_lists[it->getMeshsetId()].forceBc.data.value8)->default_value(0),"value8");
+          ((prefix+".force_magnitude").c_str(),po::value<double>(&block_lists[it->getMeshsetId()].forceBc.data.value1)->default_value(0),"value1")
+          ((prefix+".moment_magnitude").c_str(),po::value<double>(&block_lists[it->getMeshsetId()].forceBc.data.value2)->default_value(0),"value2")
+          ((prefix+".force_fx").c_str(),po::value<double>(&block_lists[it->getMeshsetId()].forceBc.data.value3)->default_value(0),"value3")
+          ((prefix+".force_fy").c_str(),po::value<double>(&block_lists[it->getMeshsetId()].forceBc.data.value4)->default_value(0),"value4")
+          ((prefix+".force_fz").c_str(),po::value<double>(&block_lists[it->getMeshsetId()].forceBc.data.value5)->default_value(0),"value5")
+          ((prefix+".moment_mx").c_str(),po::value<double>(&block_lists[it->getMeshsetId()].forceBc.data.value6)->default_value(0),"value6")
+          ((prefix+".moment_my").c_str(),po::value<double>(&block_lists[it->getMeshsetId()].forceBc.data.value7)->default_value(0),"value7")
+          ((prefix+".moment_mz").c_str(),po::value<double>(&block_lists[it->getMeshsetId()].forceBc.data.value8)->default_value(0),"value8");
         }
         {
           // char name[11]; //< 11 characters for "Temperature"
@@ -743,13 +663,9 @@ namespace MoFEM {
           // double value4; //< Temperature for top of thin shells
           // double value5; //< Temperature for bottom of thin shells
           // double value6; //< This is always zero, i.e. ignore
-          std::ostringstream str_flag1;
-          str_flag1 << "block_" << it->getMeshsetId() << ".temperature_flag1";
-          std::ostringstream str_value1;
-          str_value1 << "block_" << it->getMeshsetId() << ".temperature_t";
           configFileOptionsPtr->add_options()
-          (str_flag1.str().c_str(),po::value<char>(&block_lists[it->getMeshsetId()].temperatureBc.data.flag1)->default_value(0),"flag1")
-          (str_value1.str().c_str(),po::value<double>(&block_lists[it->getMeshsetId()].temperatureBc.data.value1)->default_value(0),"value1");
+          ((prefix+".temperature_flag1").c_str(),po::value<char>(&block_lists[it->getMeshsetId()].temperatureBc.data.flag1)->default_value(0),"flag1")
+          ((prefix+".temperature_t").c_str(),po::value<double>(&block_lists[it->getMeshsetId()].temperatureBc.data.value1)->default_value(0),"value1");
           // TODO: Add more cases, see above
         }
         // Sideset
@@ -758,13 +674,9 @@ namespace MoFEM {
           // char zero;      //< This is always zero
           // char flag2;     //< 0: Pressure is interpreted as pure pressure 1: pressure is interpreted as total force
           // double value1;  //< Pressure value
-          std::ostringstream str_flag2;
-          str_flag2 << "block_" << it->getMeshsetId() << ".pressure_flag2";
-          std::ostringstream str_value1;
-          str_value1 << "block_" << it->getMeshsetId() << ".pressure_magnitude";
           configFileOptionsPtr->add_options()
-          (str_flag2.str().c_str(),po::value<char>(&block_lists[it->getMeshsetId()].pressureBc.data.flag2)->default_value(0),"flag2")
-          (str_value1.str().c_str(),po::value<double>(&block_lists[it->getMeshsetId()].pressureBc.data.value1)->default_value(0),"value1");
+          ((prefix+".pressure_flag2").c_str(),po::value<char>(&block_lists[it->getMeshsetId()].pressureBc.data.flag2)->default_value(0),"flag2")
+          ((prefix+".pressure_magnitude").c_str(),po::value<double>(&block_lists[it->getMeshsetId()].pressureBc.data.value1)->default_value(0),"value1");
         }
         {
           // char name[8]; //< 8 characters for "HeatFlux" (no space)
@@ -776,20 +688,14 @@ namespace MoFEM {
           // double value1; //< Heat flux value for default case (no thin shells)
           // double value2; //< Heat flux (thin shell top)
           // double value3; //< Heat flux (thin shell bottom)
-          std::ostringstream str_flag1;
-          str_flag1 << "block_" << it->getMeshsetId() << ".heatflux_flag1";
-          std::ostringstream str_value1;
-          str_value1 << "block_" << it->getMeshsetId() << ".heatflux_magnitude";
           configFileOptionsPtr->add_options()
-          (str_flag1.str().c_str(),po::value<char>(&block_lists[it->getMeshsetId()].heatFluxBc.data.flag1)->default_value(0),"flag1")
-          (str_value1.str().c_str(),po::value<double>(&block_lists[it->getMeshsetId()].heatFluxBc.data.value1)->default_value(0),"value1");
+          ((prefix+".heatflux_flag1").c_str(),po::value<char>(&block_lists[it->getMeshsetId()].heatFluxBc.data.flag1)->default_value(0),"flag1")
+          ((prefix+".heatflux_magnitude").c_str(),po::value<double>(&block_lists[it->getMeshsetId()].heatFluxBc.data.value1)->default_value(0),"value1");
         }
         // Interface set
         {
-          std::ostringstream str_type;
-          str_type << "block_" << it->getMeshsetId() << ".interface_type";
           configFileOptionsPtr->add_options()
-          (str_type.str().c_str(),po::value<char>(&block_lists[it->getMeshsetId()].cfgBc.data.type)->default_value(0),"type");
+          ((prefix+".interface_type").c_str(),po::value<char>(&block_lists[it->getMeshsetId()].cfgBc.data.type)->default_value(0),"type");
         }
       }
       po::parsed_options parsed = parse_config_file(ini_file,*configFileOptionsPtr,true);
@@ -971,7 +877,6 @@ namespace MoFEM {
   }
 
   PetscErrorCode MeshsetsManager::setMeshsetFromFile() {
-    
     MoFEM::Interface &m_field = cOre;
     //moab::Interface &moab = m_field.get_moab();
     PetscBool flg_file;
