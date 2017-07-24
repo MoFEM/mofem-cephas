@@ -2,7 +2,7 @@
 
 In this tutorial, we show how to solve nonlinear Poisson equation.  Note that
 structure of the main program remains almost unchanged compared to linear the
-analysis is shown in first Poisson tutorial, i.e. \ref poisson_tut1.
+analysis as shown in first Poisson tutorial, i.e. \ref poisson_tut1.
 
 \tableofcontents
 
@@ -13,7 +13,7 @@ As a model problem for the solution of nonlinear PDEs, we take the following non
 -\nabla \cdot (A(u)\nabla u) = f
 \f]
 in \f$\Omega\f$ with \f$u=\overline{u}\f$ on boundary \f$\partial\Omega\f$. The
-source of nonlinearity is the coefficient \f$A(u)\f$ with is dependent on
+source of nonlinearity is the coefficient \f$A(u)\f$ which is dependent on the
 solution \f$u\f$, here we restrict ourself to the case
 \f[
 A(u) = 1+u^2
@@ -34,7 +34,7 @@ Note that second class has to be the exact derivative of \f$A(u)\f$.
 
 \subsection poisson_tut4_linearization Linearization
 
-With that at we can express equation in the weak form, where residuals are
+With that at hand we can express equation in the weak form, where residuals are
 \f[
 \mathbf{r}=
 \left[
