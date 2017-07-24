@@ -76,7 +76,7 @@ with that at hand we can add appropiate users data operators
 boundary_penalty_lhs_fe->getOpPtrVector().push_back(new PoissonExample::OpS(beta));
 \endcode
 
-Implementation of penalty operator \ref OpS::iNtegrte is in file \ref analytical_poisson_field_split.cpp
+Implementation of penalty operator \ref OpS::iNtegrate is in file \ref analytical_poisson_field_split.cpp
 and do not differ to what was shown in \ref poisson_tut2.
 
 \section poisson_tut3_code_dissection Creation and assembly of sub-DM problems

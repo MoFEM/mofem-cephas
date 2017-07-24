@@ -181,10 +181,10 @@ spaces and deeper insight in the Poisson equation see
 
 Matrices and vectors are implemented using users data operators (UDO);
 
-- \f$\mathbf{K}\f$ is implemented in PoissonExample::OpK::iNtegrte
-- \f$\mathbf{F}\f$ is implemented in PoissonExample::OpF::iNtegrte
-- \f$\mathbf{C}\f$ is implemented in PoissonExample::OpC::iNtegrte
-- \f$\mathbf{g}\f$ is implemented in PoissonExample::Op_g::iNtegrte
+- \f$\mathbf{K}\f$ is implemented in PoissonExample::OpK::iNtegrate
+- \f$\mathbf{F}\f$ is implemented in PoissonExample::OpF::iNtegrate
+- \f$\mathbf{C}\f$ is implemented in PoissonExample::OpC::iNtegrate
+- \f$\mathbf{g}\f$ is implemented in PoissonExample::Op_g::iNtegrate
 
 We put light on the implementation of those functions in the next tutorial  \ref poisson_tut2.
 Here, in the following sections, we focus on the generic problem and
@@ -313,17 +313,17 @@ operators to them. We do not cover details here, this is realised by three funct
 which we will use in the following tutorials
 \code
 // Add problem specific operators the generic finite elements to calculate matrices and vectors.
-ierr = PoissonExample::CreateFiniteElementes(m_field).createFEToAssmbleMatrceAndVector(
+ierr = PoissonExample::CreateFiniteElements(m_field).createFEToAssmbleMatrceAndVector(
   ExactFunction(),ExactLaplacianFunction(),
   domain_lhs_fe,boundary_lhs_fe,domain_rhs_fe,boundary_rhs_fe
 ); CHKERRQ(ierr);
 // Add problem specific operators the generic finite elements to calculate error on elements and global error
 // in H1 norm
-ierr = PoissonExample::CreateFiniteElementes(m_field).createFEToEvaluateError(
+ierr = PoissonExample::CreateFiniteElements(m_field).createFEToEvaluateError(
   ExactFunction(),ExactFunctionGrad(),global_error,domain_error
 ); CHKERRQ(ierr);
 // Post-process results
-ierr = PoissonExample::CreateFiniteElementes(m_field).creatFEToPostProcessResults(post_proc_volume); CHKERRQ(ierr);
+ierr = PoissonExample::CreateFiniteElements(m_field).creatFEToPostProcessResults(post_proc_volume); CHKERRQ(ierr);
 \endcode
 Note that those implementations are problem independent, we could use them in
 different problems context. To make that more visible, we create those elements
@@ -341,7 +341,7 @@ to post-process results for ParaView (or another visualization tool), it has set
 of specialised operators saving results on nodes and allows to refine mesh when
 ho-approximation is used. The result can be stored for example on 10-nodes
 tetrahedra if needed. More details about implementation of
-PoissonExample::CreateFiniteElementes and operators is in \ref poisson_tut2.
+PoissonExample::CreateFiniteElements and operators is in \ref poisson_tut2.
 Basic of user data operators are explained here \ref general_data_structure.
 
 \image html poisson_tut1_fig2.png "Figure 2. Operators of volume finite element" width=700px

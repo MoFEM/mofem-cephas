@@ -77,7 +77,7 @@ namespace PoissonExample {
         isDiag = false;
       }
       // integrate local matrix for entity block
-      ierr = iNtegrte(row_data,col_data); CHKERRQ(ierr);
+      ierr = iNtegrate(row_data,col_data); CHKERRQ(ierr);
       // asseble local matrix
       ierr = aSsemble(row_data,col_data); CHKERRQ(ierr);
       PetscFunctionReturn(0);
@@ -101,7 +101,7 @@ namespace PoissonExample {
      * @param  col_data column data (consist base functions on column entity)
      * @return          error code
      */
-    virtual PetscErrorCode iNtegrte(
+    virtual PetscErrorCode iNtegrate(
       DataForcesAndSurcesCore::EntData &row_data,DataForcesAndSurcesCore::EntData &col_data
     ) {
       PetscFunctionBegin;
@@ -199,7 +199,7 @@ namespace PoissonExample {
       // get number of integration points
       nbIntegrationPts = OPBASE::getGaussPts().size2();
       // integrate local vector
-      ierr = iNtegrte(row_data); CHKERRQ(ierr);
+      ierr = iNtegrate(row_data); CHKERRQ(ierr);
       // assemble local vector
       ierr = aSsemble(row_data); CHKERRQ(ierr);
       PetscFunctionReturn(0);
@@ -210,7 +210,7 @@ namespace PoissonExample {
      * @param  data entity data on element row
      * @return      error code
      */
-    virtual PetscErrorCode iNtegrte(DataForcesAndSurcesCore::EntData &data) = 0;
+    virtual PetscErrorCode iNtegrate(DataForcesAndSurcesCore::EntData &data) = 0;
 
     /**
      * \brief Class dedicated to assemble operator to global system vector
@@ -259,7 +259,7 @@ namespace PoissonExample {
      * @param  data entity data on element row
      * @return      error code
      */
-    PetscErrorCode iNtegrte(DataForcesAndSurcesCore::EntData &data) {
+    PetscErrorCode iNtegrate(DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
       // set size of local vector
       locVec.resize(nbRows,false);
@@ -344,7 +344,7 @@ namespace PoissonExample {
       // get number of integration points
       nbIntegrationPts = getGaussPts().size2();
       // integrate local constrains matrix
-      ierr = iNtegrte(row_data,col_data); CHKERRQ(ierr);
+      ierr = iNtegrate(row_data,col_data); CHKERRQ(ierr);
       // assemble local constrains matrix
       ierr = aSsemble(row_data,col_data); CHKERRQ(ierr);
       PetscFunctionReturn(0);
@@ -363,7 +363,7 @@ namespace PoissonExample {
 
     /** \brief Integrate local constrains matrix
      */
-    inline PetscErrorCode iNtegrte(
+    inline PetscErrorCode iNtegrate(
       DataForcesAndSurcesCore::EntData &row_data,DataForcesAndSurcesCore::EntData &col_data
     ) {
       PetscFunctionBegin;
@@ -460,7 +460,7 @@ namespace PoissonExample {
     /**
      * \brief Integrate local constrains vector
      */
-    PetscErrorCode iNtegrte(DataForcesAndSurcesCore::EntData &data) {
+    PetscErrorCode iNtegrate(DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
       // set size to local vector
       locVec.resize(nbRows,false);
@@ -536,7 +536,7 @@ namespace PoissonExample {
       nbRows = row_data.getFieldData().size();
       if(!nbRows) PetscFunctionReturn(0);
       nbIntegrationPts = getGaussPts().size2();
-      ierr = iNtegrte(row_data); CHKERRQ(ierr);
+      ierr = iNtegrate(row_data); CHKERRQ(ierr);
       ierr = aSsemble(row_data); CHKERRQ(ierr);
       PetscFunctionReturn(0);
     }
@@ -558,7 +558,7 @@ namespace PoissonExample {
     /**
      * \brief Integrate error
      */
-    PetscErrorCode iNtegrte(DataForcesAndSurcesCore::EntData &data) {
+    PetscErrorCode iNtegrate(DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
       // clear field dofs
       data.getFieldData().clear();
@@ -634,7 +634,7 @@ namespace PoissonExample {
      * @param  col_data column data (consist base functions on column entity)
      * @return          error code
      */
-    inline PetscErrorCode iNtegrte(
+    inline PetscErrorCode iNtegrate(
       DataForcesAndSurcesCore::EntData &row_data,DataForcesAndSurcesCore::EntData &col_data
     ) {
       PetscFunctionBegin;
@@ -715,7 +715,7 @@ namespace PoissonExample {
      * @param  data entity data on element row
      * @return      error code
      */
-    PetscErrorCode iNtegrte(DataForcesAndSurcesCore::EntData &data) {
+    PetscErrorCode iNtegrate(DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
       // set size of local vector
       locVec.resize(nbRows,false);
@@ -783,7 +783,7 @@ namespace PoissonExample {
     /**
      * \brief Integrate local constrains vector
      */
-    PetscErrorCode iNtegrte(DataForcesAndSurcesCore::EntData &data) {
+    PetscErrorCode iNtegrate(DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
       // set size to local vector
       locVec.resize(nbRows,false);
@@ -835,7 +835,7 @@ namespace PoissonExample {
     /**
      * \brief Integrate local constrains vector
      */
-    PetscErrorCode iNtegrte(DataForcesAndSurcesCore::EntData &data) {
+    PetscErrorCode iNtegrate(DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
       // set size to local vector
       locVec.resize(nbRows,false);
@@ -908,9 +908,9 @@ namespace PoissonExample {
    * Create finite element instances and add operators to finite elements.
    *
    */
-  struct CreateFiniteElementes {
+  struct CreateFiniteElements {
 
-    CreateFiniteElementes(MoFEM::Interface &m_field):
+    CreateFiniteElements(MoFEM::Interface &m_field):
     mField(m_field) {
     }
 

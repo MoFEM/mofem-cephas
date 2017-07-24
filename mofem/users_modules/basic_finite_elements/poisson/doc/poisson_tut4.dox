@@ -182,18 +182,18 @@ Matlab or free and open alternative Maxima <http://maxima.sourceforge.net>.
 All operators form this example are implemented in \ref PoissonOperators.cpp. In particular
 integration is implemented in following methods
 
-- Tangent \f$\mathbf{K}_t\f$ matrix integration  is implemented in \ref PoissonExample::OpKt::iNtegrte
+- Tangent \f$\mathbf{K}_t\f$ matrix integration  is implemented in \ref PoissonExample::OpKt::iNtegrate
 
-- Constrains matrix \f$\mathbf{C}\f$ is implemented in \ref PoissonExample::OpC::iNtegrte
+- Constrains matrix \f$\mathbf{C}\f$ is implemented in \ref PoissonExample::OpC::iNtegrate
 
-- Residual of momentum integrated over domain \f$\mathbf{r}_{F_\Omega}\f$ is implemented in \ref PoissonExample::OpResF_Domain::iNtegrte
+- Residual of momentum integrated over domain \f$\mathbf{r}_{F_\Omega}\f$ is implemented in \ref PoissonExample::OpResF_Domain::iNtegrate
 
-- Residual of momentum integrated over boundary \f$\mathbf{r}_{F_{\partial\Omega}}\f$ is implemented in \ref PoissonExample::OpResF_Boundary::iNtegrte
+- Residual of momentum integrated over boundary \f$\mathbf{r}_{F_{\partial\Omega}}\f$ is implemented in \ref PoissonExample::OpResF_Boundary::iNtegrate
 
-- Constrains residual \f$\mathbf{r}_g\f$ is implemented in \ref PoissonExample::OpRes_g::iNtegrte
+- Constrains residual \f$\mathbf{r}_g\f$ is implemented in \ref PoissonExample::OpRes_g::iNtegrate
 
 Finite element instances and set-up of finite element operators, following figure 1, is implanted
-in \ref PoissonExample::CreateFiniteElementes::createFEToAssmbleMatrceAndVectorForNonlinearProblem,
+in \ref PoissonExample::CreateFiniteElements::createFEToAssmbleMatrceAndVectorForNonlinearProblem,
 in particular we find there following code
 code
 \code
