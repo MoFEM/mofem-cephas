@@ -20,9 +20,6 @@ using bio::stream;
 
 using namespace MoFEM;
 
-ErrorCode rval;
-PetscErrorCode ierr;
-
 static char help[] = "...\n\n";
 
 int main(int argc, char *argv[]) {

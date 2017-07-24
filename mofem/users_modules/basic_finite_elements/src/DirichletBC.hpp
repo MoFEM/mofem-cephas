@@ -54,8 +54,8 @@ struct DisplacementBCFEMethodPreAndPostProc: public MoFEM::FEMethod {
     MoFEM::Interface& m_field,const std::string &field_name
   );
 
-  PetscErrorCode ierr;
-  ErrorCode rval;
+  
+  
 
   std::map<DofIdx,FieldData> mapZeroRows;
   std::vector<int> dofsIndices;

@@ -84,10 +84,10 @@
 //SRC/FINITE_ELEMENTS
 #include <DataStructures.hpp>
 #include <EntPolynomialBaseCtx.hpp>
-#include <TetPolynomialBase.hpp> // Base functions on tet
-#include <TriPolynomialBase.hpp> // Base functions on tri
-#include <EdgePolynomialBase.hpp> // Base functions on tri
-#include <FlatPrismPolynomialBase.hpp> // Base functions on tri
+#include <TetPolynomialBase.hpp>        // Base functions on tet
+#include <TriPolynomialBase.hpp>        // Base functions on tri
+#include <EdgePolynomialBase.hpp>       // Base functions on edge
+#include <FlatPrismPolynomialBase.hpp>  // Base functions on prism
 #include <DataOperators.hpp>
 #include <ForcesAndSurcesCore.hpp>
 #include <UserDataOperators.hpp>

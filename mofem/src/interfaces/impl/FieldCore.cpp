@@ -96,7 +96,7 @@ const Field* Core::get_field_structure(const std::string& name) {
 }
 
 PetscErrorCode Core::get_field_entities_by_dimension(const std::string name,int dim,Range &ents) const {
-  MoABErrorCode rval;
+  
   PetscFunctionBegin;
   try {
     EntityHandle meshset = get_field_meshset(name);
@@ -108,7 +108,7 @@ PetscErrorCode Core::get_field_entities_by_dimension(const std::string name,int 
 }
 
 PetscErrorCode Core::get_field_entities_by_type(const std::string name,EntityType type,Range &ents) const {
-  MoABErrorCode rval;
+  
   PetscFunctionBegin;
   try {
     EntityHandle meshset = get_field_meshset(name);
@@ -120,7 +120,7 @@ PetscErrorCode Core::get_field_entities_by_type(const std::string name,EntityTyp
 }
 
 PetscErrorCode Core::get_field_entities_by_handle(const std::string name,Range &ents) const {
-  MoABErrorCode rval;
+  
   PetscFunctionBegin;
   try {
     EntityHandle meshset = get_field_meshset(name);
@@ -241,7 +241,7 @@ PetscErrorCode Core::add_field(
 PetscErrorCode Core::addEntsToFieldByDim(
   const Range &ents,const int dim,const std::string& name,int verb
 ) {
-  MoABErrorCode rval;
+  
   *buildMoFEM = 0;
   EntityHandle idm = no_handle;
   if(verb==-1) verb = verbose;
@@ -367,7 +367,7 @@ PetscErrorCode Core::add_ents_to_field_by_dim(
 PetscErrorCode Core::add_ents_to_field_by_type(
   const Range &ents,const EntityType type,const std::string& name,int verb
 ) {
-  PetscErrorCode ierr;
+  
   PetscFunctionBegin;
   Range ents_type = ents.subset_by_type(type);
   if(!ents_type.empty()) {
@@ -380,8 +380,8 @@ PetscErrorCode Core::add_ents_to_field_by_type(
 PetscErrorCode Core::add_ents_to_field_by_dim(
   const EntityHandle meshset,const int dim,const std::string& name,const bool recursive,int verb
 ) {
-  MoABErrorCode rval;
-  PetscErrorCode ierr;
+  
+  
   PetscFunctionBegin;
   Range ents;
   rval = moab.get_entities_by_dimension(meshset,dim,ents,recursive); CHKERRQ_MOAB(rval);
@@ -392,8 +392,8 @@ PetscErrorCode Core::add_ents_to_field_by_dim(
 PetscErrorCode Core::add_ents_to_field_by_type(
   const EntityHandle meshset,const EntityType type,const std::string& name,const bool recursive,int verb
 ) {
-  MoABErrorCode rval;
-  PetscErrorCode ierr;
+  
+  
   PetscFunctionBegin;
   Range ents;
   rval = moab.get_entities_by_type(meshset,type,ents,recursive); CHKERRQ_MOAB(rval);
@@ -2032,7 +2032,7 @@ PetscErrorCode Core::check_number_of_ents_in_ents_field(const std::string& name)
   EntityHandle meshset = (*it)->getMeshset();
 
   int num_entities;
-  MoABErrorCode rval;
+  
   rval = moab.get_number_entities_by_handle(meshset,num_entities); CHKERRQ_MOAB(rval);
   if(
     entsFields.get<FieldName_mi_tag>().count((*it)->getName()) > (unsigned int)num_entities
@@ -2047,7 +2047,7 @@ PetscErrorCode Core::check_number_of_ents_in_ents_field() const {
   for(;it!=fIelds.get<FieldName_mi_tag>().end();it++) {
     if((*it)->getSpace() == NOFIELD) continue; //FIXME: should be treated properly, not test is just skipped for this NOFIELD space
     EntityHandle meshset = (*it)->getMeshset();
-    MoABErrorCode rval;
+    
     int num_entities;
     rval = moab.get_number_entities_by_handle(meshset,num_entities); CHKERRQ_MOAB(rval);
     if(entsFields.get<FieldName_mi_tag>().count((*it)->getName()) > (unsigned int)num_entities) {

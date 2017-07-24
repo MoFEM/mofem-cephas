@@ -32,7 +32,7 @@ using namespace MoFEM;
 PetscErrorCode LobattoPolynomialCtx::queryInterface(
   const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface
 ) {
-  PetscErrorCode ierr;
+  
   PetscFunctionBegin;
   *iface = NULL;
   if(uuid == IDD_LOBATTO_BASE_FUNCTION) {
@@ -48,7 +48,7 @@ PetscErrorCode LobattoPolynomialCtx::queryInterface(
 PetscErrorCode LobattoPolynomial::queryInterface(
   const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface
 ) {
-  PetscErrorCode ierr;
+  
   PetscFunctionBegin;
   *iface = NULL;
   if(uuid == IDD_LOBATTO_BASE_FUNCTION) {
@@ -65,7 +65,7 @@ PetscErrorCode LobattoPolynomial::getValue(
   MatrixDouble &pts,
   boost::shared_ptr<BaseFunctionCtx> ctx_ptr
 ) {
-  PetscErrorCode ierr;
+  
   PetscFunctionBegin;
   MoFEM::UnknownInterface *iface;
   ierr = ctx_ptr->queryInterface(IDD_LOBATTO_BASE_FUNCTION,&iface); CHKERRQ(ierr);
@@ -86,7 +86,7 @@ PetscErrorCode LobattoPolynomial::getValue(
 PetscErrorCode KernelLobattoPolynomialCtx::queryInterface(
   const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface
 ) {
-  PetscErrorCode ierr;
+  
   PetscFunctionBegin;
   *iface = NULL;
   if(uuid == IDD_KERNEL_BASE_FUNCTION) {
@@ -102,7 +102,7 @@ PetscErrorCode KernelLobattoPolynomialCtx::queryInterface(
 PetscErrorCode KernelLobattoPolynomial::queryInterface(
   const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface
 ) {
-  PetscErrorCode ierr;
+  
   PetscFunctionBegin;
   *iface = NULL;
   if(uuid == IDD_KERNEL_BASE_FUNCTION) {
@@ -119,7 +119,7 @@ PetscErrorCode KernelLobattoPolynomial::getValue(
   MatrixDouble &pts,
   boost::shared_ptr<BaseFunctionCtx> ctx_ptr
 ) {
-  PetscErrorCode ierr;
+  
   PetscFunctionBegin;
   MoFEM::UnknownInterface *iface;
   ierr = ctx_ptr->queryInterface(IDD_KERNEL_BASE_FUNCTION,&iface); CHKERRQ(ierr);

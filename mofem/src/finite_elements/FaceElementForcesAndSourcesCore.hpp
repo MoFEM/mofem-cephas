@@ -38,7 +38,6 @@ namespace MoFEM {
  */
 struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
 
-  MoABErrorCode rval;
   double aRea;;
   int num_nodes;
   const EntityHandle* conn;

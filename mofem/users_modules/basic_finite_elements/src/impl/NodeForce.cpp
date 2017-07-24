@@ -43,7 +43,7 @@ NodalForce::OpNodalForce::OpNodalForce(const std::string field_name,Vec _F,bCFor
     EntityHandle ent = getNumeredEntFiniteElementPtr()->getEnt();
     if(dAta.nOdes.find(ent)==dAta.nOdes.end()) PetscFunctionReturn(0);
 
-    PetscErrorCode ierr;
+    
 
     const FENumeredDofEntity *dof_ptr;
     ierr = getNumeredEntFiniteElementPtr()->getRowDofsByPetscGlobalDofIdx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
@@ -90,8 +90,8 @@ NodalForce::OpNodalForce::OpNodalForce(const std::string field_name,Vec _F,bCFor
   }
 
   PetscErrorCode NodalForce::addForce(const std::string field_name,Vec F,int ms_id,bool use_snes_f) {
-    PetscErrorCode ierr;
-    ErrorCode rval;
+    
+    
     const CubitMeshSets *cubit_meshset_ptr;
     MeshsetsManager *mmanager_ptr;
     PetscFunctionBegin;
@@ -104,7 +104,7 @@ NodalForce::OpNodalForce::OpNodalForce(const std::string field_name,Vec _F,bCFor
   }
 
   MetaNodalForces::TagForceScale::TagForceScale(MoFEM::Interface &m_field): mField(m_field) {
-    ErrorCode rval;
+    
     double def_scale = 1.;
     const EntityHandle root_meshset = mField.get_moab().get_root_set();
     rval = mField.get_moab().tag_get_handle("_LoadFactor_Scale_",1,MB_TYPE_DOUBLE,thScale,MB_TAG_CREAT|MB_TAG_EXCL|MB_TAG_MESH,&def_scale);

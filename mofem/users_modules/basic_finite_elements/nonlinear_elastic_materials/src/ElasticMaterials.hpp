@@ -110,7 +110,7 @@ struct ElasticMaterials {
       avilable_materials << mit->first << " ";
     }
     avilable_materials << ">";
-    PetscErrorCode ierr;
+    
     ierr = PetscOptionsBegin(mField.get_comm(),"","Elastic Materials Configuration","none"); CHKERRQ(ierr);
     char default_material[255];
     PetscBool def_mat_set;
@@ -165,7 +165,7 @@ struct ElasticMaterials {
     */
   virtual PetscErrorCode readConfigFile() {
     PetscFunctionBegin;
-    PetscErrorCode ierr;
+    
     try {
 
       po::options_description config_file_options;
@@ -245,8 +245,8 @@ struct ElasticMaterials {
 
   PetscErrorCode setBlocksOrder() {
     PetscFunctionBegin;
-    ErrorCode rval;
-    PetscErrorCode ierr;
+    
+    
     //set app. order
     PetscBool flg = PETSC_TRUE;
     PetscInt disp_order;
@@ -285,8 +285,8 @@ struct ElasticMaterials {
 
   virtual PetscErrorCode setBlocks(std::map<int,NonlinearElasticElement::BlockData> &set_of_blocks) {
     PetscFunctionBegin;
-    ErrorCode rval;
-    PetscErrorCode ierr;
+    
+    
     if(!iNitialized) {
       ierr = iNit(); CHKERRQ(ierr);
       ierr = readConfigFile(); CHKERRQ(ierr);
@@ -330,8 +330,8 @@ struct ElasticMaterials {
 
   PetscErrorCode setBlocks(std::map<int,ConvectiveMassElement::BlockData> &set_of_blocks) {
     PetscFunctionBegin;
-    ErrorCode rval;
-    PetscErrorCode ierr;
+    
+    
     if(!iNitialized) {
       ierr = iNit(); CHKERRQ(ierr);
       ierr = readConfigFile(); CHKERRQ(ierr);
@@ -382,8 +382,8 @@ struct ElasticMaterials {
 
   PetscErrorCode setBlocks(std::map<int,KelvinVoigtDamper::BlockMaterialData> &set_of_blocks) {
     PetscFunctionBegin;
-    ErrorCode rval;
-    PetscErrorCode ierr;
+    
+    
 
     if(!iNitialized) {
       ierr = iNit(); CHKERRQ(ierr);

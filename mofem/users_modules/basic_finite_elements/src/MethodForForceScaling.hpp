@@ -32,7 +32,7 @@ struct MethodForForceScaling {
   static PetscErrorCode applyScale(
     const FEMethod *fe,
     boost::ptr_vector<MethodForForceScaling> &methodsOp,VectorDouble &Nf) {
-      PetscErrorCode ierr;
+      
       PetscFunctionBegin;
       boost::ptr_vector<MethodForForceScaling>::iterator vit = methodsOp.begin();
       for(;vit!=methodsOp.end();vit++) {

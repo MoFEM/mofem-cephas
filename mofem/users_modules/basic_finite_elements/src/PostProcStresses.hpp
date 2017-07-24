@@ -70,8 +70,8 @@ struct PostPorcStress: public MoFEM::VolumeElementForcesAndSourcesCore::UserData
       PetscFunctionReturn(0);
     }
 
-    ErrorCode rval;
-    PetscErrorCode ierr;
+    
+    
 
     const FENumeredDofEntity *dof_ptr;
     ierr = getNumeredEntFiniteElementPtr()->getRowDofsByPetscGlobalDofIdx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);

@@ -66,7 +66,7 @@ struct MonitorPostProc: public FEMethod {
 
   MonitorPostProc(MoFEM::Interface &m_field):
     FEMethod(),mField(m_field),postProc(m_field),iNit(false) {
-    PetscErrorCode ierr;
+    
     PetscBool flg = PETSC_TRUE;
     ierr = PetscOptionsGetInt(PETSC_NULL,PETSC_NULL,"-my_output_prt",&pRT,&flg); CHKERRABORT(PETSC_COMM_WORLD,ierr);
     if(flg!=PETSC_TRUE) {
@@ -86,7 +86,7 @@ struct MonitorPostProc: public FEMethod {
 
   PetscErrorCode postProcess() {
     PetscFunctionBegin;
-    PetscErrorCode ierr;
+    
     if(!iNit) {
       ierr = postProc.generateReferenceElementMesh(); CHKERRQ(ierr);
       ierr = postProc.addFieldValuesPostProc("TEMP"); CHKERRQ(ierr);
@@ -97,7 +97,7 @@ struct MonitorPostProc: public FEMethod {
     }
     int step;
     ierr = TSGetTimeStepNumber(ts,&step); CHKERRQ(ierr);
-    ErrorCode rval;
+    
     if((step)%pRT==0) {
       ierr = mField.loop_finite_elements("DMTHERMAL","THERMAL_FE",postProc); CHKERRQ(ierr);
       std::ostringstream sss;
@@ -112,8 +112,8 @@ struct MonitorPostProc: public FEMethod {
 
 int main(int argc, char *argv[]) {
 
-  ErrorCode rval;
-  PetscErrorCode ierr;
+  
+  
 
   PetscInitialize(&argc,&argv,(char *)0,help);
 

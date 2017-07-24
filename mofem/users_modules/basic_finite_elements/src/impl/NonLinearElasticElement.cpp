@@ -39,7 +39,7 @@ int NonlinearElasticElement::MyVolumeFE::getRule(int order) { return 2*(order-1)
 
 PetscErrorCode NonlinearElasticElement::MyVolumeFE::preProcess() {
   PetscFunctionBegin;
-  PetscErrorCode ierr;
+  
 
   ierr = VolumeElementForcesAndSourcesCore::preProcess(); CHKERRQ(ierr);
 
@@ -279,7 +279,7 @@ fieldDisp(field_disp) {
 PetscErrorCode NonlinearElasticElement::OpJacobianPiolaKirchhoffStress::calculateStress(const int gg) {
   PetscFunctionBegin;
   try {
-    PetscErrorCode ierr;
+    
     ierr = dAta.materialAdoublePtr->calculateP_PiolaKirchhoffI(
       dAta,getNumeredEntFiniteElementPtr()
     ); CHKERRQ(ierr);
@@ -412,7 +412,7 @@ PetscErrorCode NonlinearElasticElement::OpJacobianPiolaKirchhoffStress::doWork(
   //do it only once, no need to repeat this for edges,faces or tets
   if(row_type != MBVERTEX) PetscFunctionReturn(0);
 
-  PetscErrorCode ierr;
+  
   if(dAta.tEts.find(getNumeredEntFiniteElementPtr()->getEnt()) == dAta.tEts.end()) {
     PetscFunctionReturn(0);
   }
@@ -502,7 +502,7 @@ fieldDisp(field_disp) {
 }
 
 PetscErrorCode NonlinearElasticElement::OpJacobianEnergy::calculateEnergy(const int gg) {
-  PetscErrorCode ierr;
+  
   PetscFunctionBegin;
   try {
     ierr = dAta.materialAdoublePtr->calculateElasticEnergy(dAta,getNumeredEntFiniteElementPtr()); CHKERRQ(ierr);
@@ -514,7 +514,7 @@ PetscErrorCode NonlinearElasticElement::OpJacobianEnergy::calculateEnergy(const 
 }
 
 PetscErrorCode NonlinearElasticElement::OpJacobianEnergy::recordTag(const int gg) {
-  PetscErrorCode ierr;
+  
   PetscFunctionBegin;
 
   trace_on(tAg);
@@ -625,7 +625,7 @@ PetscErrorCode NonlinearElasticElement::OpJacobianEnergy::doWork(
   //do it only once, no need to repeat this for edges,faces or tets
   if(row_type != MBVERTEX) PetscFunctionReturn(0);
 
-  PetscErrorCode ierr;
+  
   if(dAta.tEts.find(getNumeredEntFiniteElementPtr()->getEnt()) == dAta.tEts.end()) {
     PetscFunctionReturn(0);
   }
@@ -699,7 +699,7 @@ PetscErrorCode NonlinearElasticElement::OpRhsPiolaKirchhoff::aSemble(
   int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data
 ) {
   PetscFunctionBegin;
-  PetscErrorCode ierr;
+  
   int nb_dofs = row_data.getIndices().size();
   int *indices_ptr = &row_data.getIndices()[0];
   if(!dAta.forcesOnlyOnEntitiesRow.empty()) {
@@ -729,7 +729,7 @@ PetscErrorCode NonlinearElasticElement::OpRhsPiolaKirchhoff::doWork(
 ) {
   PetscFunctionBegin;
 
-  PetscErrorCode ierr;
+  
   if(dAta.tEts.find(getNumeredEntFiniteElementPtr()->getEnt()) == dAta.tEts.end()) {
     PetscFunctionReturn(0);
   }
@@ -798,7 +798,7 @@ PetscErrorCode NonlinearElasticElement::OpEnergy::doWork(
 ) {
   PetscFunctionBegin;
 
-  PetscErrorCode ierr;
+  
   if(row_type != MBVERTEX) PetscFunctionReturn(0);
   if(dAta.tEts.find(getNumeredEntFiniteElementPtr()->getEnt()) == dAta.tEts.end()) {
     PetscFunctionReturn(0);
@@ -897,7 +897,7 @@ PetscErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dx::aSemble(
 ) {
   PetscFunctionBegin;
 
-  PetscErrorCode ierr;
+  
   int nb_row = row_data.getIndices().size();
   int nb_col = col_data.getIndices().size();
 
@@ -998,7 +998,7 @@ PetscErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dx::doWork(
 ) {
   PetscFunctionBegin;
 
-  PetscErrorCode ierr;
+  
 
   int nb_row = row_data.getIndices().size();
   int nb_col = col_data.getIndices().size();
@@ -1095,7 +1095,7 @@ PetscErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dX::aSemble(
 ) {
   PetscFunctionBegin;
 
-  PetscErrorCode ierr;
+  
   int nb_row = row_data.getIndices().size();
   int nb_col = col_data.getIndices().size();
 
@@ -1159,7 +1159,7 @@ OpJacobianPiolaKirchhoffStress(field_name,data,common_data,tag,jacobian,ale,fals
 PetscErrorCode NonlinearElasticElement::OpJacobianEshelbyStress::calculateStress(const int gg) {
   PetscFunctionBegin;
   try {
-    PetscErrorCode ierr;
+    
     ierr = dAta.materialAdoublePtr->calculateSiGma_EshelbyStress(dAta,getNumeredEntFiniteElementPtr()); CHKERRQ(ierr);
     if(aLe) {
       dAta.materialAdoublePtr->SiGma =
@@ -1331,8 +1331,8 @@ PetscErrorCode NonlinearElasticElement::setBlocks(
   boost::shared_ptr<FunctionsToCalculatePiolaKirchhoffI<adouble> > materialAdoublePtr
 ) {
   PetscFunctionBegin;
-  ErrorCode rval;
-  PetscErrorCode ierr;
+  
+  
 
   if(!materialDoublePtr) {
     SETERRQ(
@@ -1371,8 +1371,8 @@ PetscErrorCode NonlinearElasticElement::addElement(string element_name,
   string material_position_field_name,bool ale) {
   PetscFunctionBegin;
 
-  PetscErrorCode ierr;
-  //ErrorCode rval;
+  
+  //
 
   ierr = mField.add_finite_element(element_name,MF_ZERO); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_row(element_name,spatial_position_field_name); CHKERRQ(ierr);

@@ -171,7 +171,7 @@ struct VolumeLengthQuality: public NonlinearElasticElement::FunctionsToCalculate
 
       try {
 
-        PetscErrorCode ierr;
+        
 
         ierr = getEdgesFromElemCoords(); CHKERRQ(ierr);
 

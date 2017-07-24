@@ -473,7 +473,7 @@ PetscErrorCode OpCalculateInvJacForFlatPrism::doWork(
   EntityType type,
   DataForcesAndSurcesCore::EntData &data
 ) {
-  PetscErrorCode ierr;
+  
   PetscFunctionBegin;
 
   try {
@@ -523,7 +523,7 @@ PetscErrorCode OpSetInvJacH1ForFlatPrism::doWork(
   DataForcesAndSurcesCore::EntData &data
 ) {
   PetscFunctionBegin;
-  // PetscErrorCode ierr;
+  // 
 
   for(int b = AINSWORTH_LEGENDRE_BASE; b!=USER_BASE; b++) {
 

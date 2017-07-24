@@ -132,7 +132,7 @@ private:
 
   const double bEta;
 
-  PetscErrorCode ierr;  ///< error code
+    ///< error code
 
   int nbRows;           ///< number of dofs on rows
   int nbCols;           ///< number if dof on column
@@ -220,8 +220,8 @@ private:
 
 int main(int argc, char *argv[]) {
 
-  // ErrorCode rval;
-  PetscErrorCode ierr;
+  // 
+  
 
   // Initialize PETSc
   PetscInitialize(&argc,&argv,(char *)0,help);

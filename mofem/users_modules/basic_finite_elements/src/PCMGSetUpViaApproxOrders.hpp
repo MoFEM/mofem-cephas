@@ -216,7 +216,7 @@ struct PCMGSetUpViaApproxOrdersCtx {
   bool shellSubA;
   int verboseLevel;
 
-  PetscErrorCode ierr;
+  
 
   /**
    * \brief get options from line command

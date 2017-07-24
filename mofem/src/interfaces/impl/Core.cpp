@@ -289,7 +289,7 @@ static PetscErrorCode mofem_error_handler(
 }
 
 PetscErrorCode print_verison() {
-  // PetscErrorCode ierr;
+  // 
   PetscFunctionBegin;
   PetscFunctionReturn(0);
 }
@@ -375,7 +375,7 @@ BitProblemId Core::getProblemShift() {
 }
 
 PetscErrorCode Core::clearMap() {
-  PetscErrorCode ierr;
+  
   PetscFunctionBegin;
 
   // Cleaning databases in iterfaces
@@ -433,8 +433,8 @@ PetscErrorCode Core::addPrismToDatabase(const EntityHandle prism,int verb) {
 }
 
 PetscErrorCode Core::getTags(int verb) {
-  // PetscErrorCode ierr;
-  MoABErrorCode rval;
+  // 
+  
 
   PetscFunctionBegin;
 
@@ -934,7 +934,7 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
 // cubit meshsets
 
 PetscErrorCode Core::print_cubit_displacement_set() const {
-  PetscErrorCode ierr;
+  
   MeshsetsManager *meshsets_manager;
   PetscFunctionBegin;
   ierr = query_interface(meshsets_manager); CHKERRQ(ierr);
@@ -943,7 +943,7 @@ PetscErrorCode Core::print_cubit_displacement_set() const {
 }
 
 PetscErrorCode Core::print_cubit_pressure_set() const {
-  PetscErrorCode ierr;
+  
   MeshsetsManager *meshsets_manager;
   PetscFunctionBegin;
   ierr = query_interface(meshsets_manager); CHKERRQ(ierr);
@@ -952,7 +952,7 @@ PetscErrorCode Core::print_cubit_pressure_set() const {
 }
 
 PetscErrorCode Core::print_cubit_force_set() const {
-  PetscErrorCode ierr;
+  
   MeshsetsManager *meshsets_manager;
   PetscFunctionBegin;
   ierr = query_interface(meshsets_manager); CHKERRQ(ierr);
@@ -961,7 +961,7 @@ PetscErrorCode Core::print_cubit_force_set() const {
 }
 
 PetscErrorCode Core::print_cubit_temperature() const {
-  PetscErrorCode ierr;
+  
   MeshsetsManager *meshsets_manager;
   PetscFunctionBegin;
   ierr = query_interface(meshsets_manager); CHKERRQ(ierr);
@@ -970,7 +970,7 @@ PetscErrorCode Core::print_cubit_temperature() const {
 }
 
 PetscErrorCode Core::print_cubit_heat_flux_set() const {
-  PetscErrorCode ierr;
+  
   MeshsetsManager *meshsets_manager;
   PetscFunctionBegin;
   ierr = query_interface(meshsets_manager); CHKERRQ(ierr);
@@ -979,7 +979,7 @@ PetscErrorCode Core::print_cubit_heat_flux_set() const {
 }
 
 PetscErrorCode Core::print_cubit_materials_set() const {
-  PetscErrorCode ierr;
+  
   MeshsetsManager *meshsets_manager;
   PetscFunctionBegin;
   ierr = query_interface(meshsets_manager); CHKERRQ(ierr);

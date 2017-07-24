@@ -31,7 +31,7 @@ using namespace MoFEM;
 PetscErrorCode JacobiPolynomialCtx::queryInterface(
   const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface
 ) {
-  PetscErrorCode ierr;
+  
   PetscFunctionBegin;
   *iface = NULL;
   if(uuid == IDD_JACOBI_BASE_FUNCTION) {
@@ -47,7 +47,7 @@ PetscErrorCode JacobiPolynomialCtx::queryInterface(
 PetscErrorCode JacobiPolynomial::queryInterface(
   const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface
 ) {
-  PetscErrorCode ierr;
+  
   PetscFunctionBegin;
   *iface = NULL;
   if(uuid == IDD_JACOBI_BASE_FUNCTION) {
@@ -65,7 +65,7 @@ PetscErrorCode JacobiPolynomial::getValue(
   MatrixDouble &pts_t,
   boost::shared_ptr<BaseFunctionCtx> ctx_ptr
 ) {
-  PetscErrorCode ierr;
+  
   PetscFunctionBegin;
   MoFEM::UnknownInterface *iface;
   ierr = ctx_ptr->queryInterface(IDD_JACOBI_BASE_FUNCTION,&iface); CHKERRQ(ierr);

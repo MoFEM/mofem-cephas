@@ -245,7 +245,6 @@ struct PostProcTemplateOnRefineMesh: public ELEMENT {
    */
   PetscErrorCode writeFile(const std::string file_name) {
     PetscFunctionBegin;
-    MoABErrorCode rval;
     // #ifdef MOAB_HDF5_PARALLEL
      rval = postProcMesh.write_file(file_name.c_str(),"MOAB","PARALLEL=WRITE_PART"); CHKERRQ_MOAB(rval);
     // #else
@@ -315,8 +314,8 @@ struct PostProcTemplateVolumeOnRefinedMesh: public PostProcTemplateOnRefineMesh<
   PetscErrorCode generateReferenceElementMesh() {
     PetscFunctionBegin;
 
-    ErrorCode rval;
-    PetscErrorCode ierr;
+
+
 
     int max_level = 0;
     if(nbOfRefLevels == -1) {
@@ -437,7 +436,7 @@ struct PostProcTemplateVolumeOnRefinedMesh: public PostProcTemplateOnRefineMesh<
 
     try {
 
-      ErrorCode rval;
+
 
       Tag th;
       int def_in_the_loop = -1;
@@ -523,7 +522,7 @@ struct PostProcTemplateVolumeOnRefinedMesh: public PostProcTemplateOnRefineMesh<
 
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
-    ErrorCode rval;
+
     moab::Interface &moab = T::coreMesh;
     ParallelComm* pcomm_post_proc_mesh = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
     if(pcomm_post_proc_mesh != NULL) {
@@ -534,7 +533,6 @@ struct PostProcTemplateVolumeOnRefinedMesh: public PostProcTemplateOnRefineMesh<
   }
 
   PetscErrorCode postProcess() {
-    MoABErrorCode rval;
     PetscFunctionBegin;
 
     moab::Interface &moab = T::coreMesh;
@@ -607,8 +605,8 @@ struct PostProcTemplateVolumeOnRefinedMesh: public PostProcTemplateOnRefineMesh<
 
       if(data.getIndices().size()==0) PetscFunctionReturn(0);
 
-      ErrorCode rval;
-      PetscErrorCode ierr;
+
+
 
       std::vector<Tag> th;
       th.resize(data.getFieldData().size());

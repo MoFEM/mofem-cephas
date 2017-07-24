@@ -64,7 +64,7 @@ struct OpAssembleMatAndVec: public MoFEM::FaceElementForcesAndSourcesCore::UserD
   PetscErrorCode	doWork(
     int side, EntityType type, DataForcesAndSurcesCore::EntData &data
   ) {
-    PetscErrorCode ierr;
+    
     PetscFunctionBegin;
     const int nb_dofs = data.getIndices().size();
     if(nb_dofs==0) PetscFunctionReturn(0);
@@ -96,7 +96,7 @@ struct OpAssembleMatAndVec: public MoFEM::FaceElementForcesAndSourcesCore::UserD
     DataForcesAndSurcesCore::EntData &row_data,
     DataForcesAndSurcesCore::EntData &col_data
   ) {
-    PetscErrorCode ierr;
+    
     PetscFunctionBegin;
     const int nb_dofs_row = row_data.getIndices().size();
     if(nb_dofs_row==0) PetscFunctionReturn(0);
@@ -143,7 +143,7 @@ struct OpValsDiffVals: public MoFEM::FaceElementForcesAndSourcesCore::UserDataOp
   PetscErrorCode	doWork(
     int side, EntityType type, DataForcesAndSurcesCore::EntData &data
   ) {
-    //PetscErrorCode ierr;
+    //
     PetscFunctionBegin;
     const int nb_dofs = data.getIndices().size();
     if(nb_dofs==0) PetscFunctionReturn(0);
@@ -190,7 +190,7 @@ struct OpCheckValsDiffVals: public MoFEM::FaceElementForcesAndSourcesCore::UserD
   PetscErrorCode	doWork(
     int side, EntityType type, DataForcesAndSurcesCore::EntData &data
   ) {
-    //PetscErrorCode ierr;
+    //
     PetscFunctionBegin;
     const double eps = 1e-6;
     if(type == MBEDGE && side == 0) {
@@ -229,8 +229,8 @@ struct OpCheckValsDiffVals: public MoFEM::FaceElementForcesAndSourcesCore::UserD
 
 int main(int argc, char *argv[]) {
 
-  ErrorCode rval;
-  PetscErrorCode ierr;
+  
+  
 
   PetscInitialize(&argc,&argv,(char *)0,help);
 

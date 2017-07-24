@@ -44,7 +44,7 @@ struct Projection10NodeCoordsOnField: public EntMethod {
     mField(m_field),fieldName(field_name),vErbose(verb) {
   }
 
-  PetscErrorCode ierr;
+  
   ErrorCode rval;
 
   PetscErrorCode preProcess() {

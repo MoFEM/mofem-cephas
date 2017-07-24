@@ -77,7 +77,7 @@ namespace MoFEM {
     const Range &surface,Tag th,
     double *shift,double *origin,double *transform
   ) {
-    MoABErrorCode rval;
+    
     MoFEM::Interface &m_field = cOre;
     moab::Interface &moab = m_field.get_moab();
     PetscFunctionBegin;
@@ -142,7 +142,7 @@ namespace MoFEM {
   }
 
   PetscErrorCode CutMeshInterface::buildTree() {
-    MoABErrorCode rval;
+    
     MoFEM::Interface &m_field = cOre;
     moab::Interface &moab = m_field.get_moab();
     PetscFunctionBegin;
@@ -156,7 +156,7 @@ namespace MoFEM {
   }
 
     PetscErrorCode CutMeshInterface::findEdgesToCut(const double low_tol,int verb) {
-    MoABErrorCode rval;
+    
     MoFEM::Interface &m_field = cOre;
     moab::Interface &moab = m_field.get_moab();
     PetscFunctionBegin;
@@ -410,7 +410,7 @@ namespace MoFEM {
 
   PetscErrorCode CutMeshInterface::moveMidNodesOnCutEdges(Tag th) {
     PetscFunctionBegin;
-    MoABErrorCode rval;
+    
     MoFEM::Interface &m_field = cOre;
     moab::Interface &moab = m_field.get_moab();
     PetscFunctionBegin;
@@ -434,7 +434,7 @@ namespace MoFEM {
 
 
   PetscErrorCode CutMeshInterface::moveMidNodesOnTrimedEdges(Tag th) {
-    MoABErrorCode rval;
+    
     MoFEM::Interface &m_field = cOre;
     moab::Interface &moab = m_field.get_moab();
     PetscFunctionBegin;
@@ -456,7 +456,7 @@ namespace MoFEM {
   }
 
   PetscErrorCode CutMeshInterface::findEdgesToTrim(Tag th,const double tol,int verb) {
-    MoABErrorCode rval;
+    
     MoFEM::Interface &m_field = cOre;
     moab::Interface &moab = m_field.get_moab();
     PetscFunctionBegin;
@@ -567,7 +567,7 @@ namespace MoFEM {
     VectorAdaptor unit_ray_dir,
     double &ray_length
   ) const {
-    MoABErrorCode rval;
+    
     const MoFEM::Interface &m_field = cOre;
     const moab::Interface &moab = m_field.get_moab();
     PetscFunctionBegin;
@@ -617,8 +617,8 @@ namespace MoFEM {
     const Range &ents,
     Tag th
   ) {
-    PetscErrorCode ierr;
-    MoABErrorCode rval;
+    
+    
     MoFEM::Interface &m_field = cOre;
     moab::Interface &moab = m_field.get_moab();
     PrismInterface *interface;
@@ -659,7 +659,7 @@ namespace MoFEM {
     const BitRefLevel bit,
     Tag th
   ) {
-    PetscErrorCode ierr;
+    
     PetscFunctionBegin;
     ierr = splitSides(split_bit,bit,getNewTrimSurfaces(),th); CHKERRQ(ierr);
     PetscFunctionReturn(0);

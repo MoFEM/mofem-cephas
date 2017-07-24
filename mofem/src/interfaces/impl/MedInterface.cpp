@@ -99,7 +99,7 @@ namespace MoFEM {
 
   PetscErrorCode MedInterface::getFileNameFromCommandLine(int verb) {
     MoFEM::Interface &m_field = cOre;
-    PetscErrorCode ierr;
+    
     char mesh_file_name[255];
     PetscFunctionBegin;
     ierr = PetscOptionsBegin(
@@ -173,7 +173,7 @@ namespace MoFEM {
   }
 
   PetscErrorCode MedInterface::medGetFieldNames(int verb) {
-    PetscErrorCode ierr;
+    
     PetscFunctionBegin;
     if(medFileName.empty()) {
       ierr = getFileNameFromCommandLine(verb); CHKERRQ(ierr);
@@ -266,7 +266,7 @@ namespace MoFEM {
     std::map<int,Range> &family_elem_map,
     int verb
   ) {
-    MoABErrorCode rval;
+    
     MoFEM::Interface &m_field = cOre;
     PetscFunctionBegin;
 
@@ -514,7 +514,7 @@ namespace MoFEM {
     std::map<string,Range> &group_elem_map,
     int verb
   ) {
-    //MoABErrorCode rval;
+    //
     MoFEM::Interface &m_field = cOre;
     PetscFunctionBegin;
 
@@ -600,8 +600,8 @@ namespace MoFEM {
     const std::map<string,Range> &group_elem_map,
     int verb
   ) {
-    MoABErrorCode rval;
-    PetscErrorCode ierr;
+    
+    
     MoFEM::Interface &m_field = cOre;
     PetscFunctionBegin;
     MeshsetsManager *meshsets_manager_ptr;
@@ -647,7 +647,7 @@ namespace MoFEM {
   }
 
   PetscErrorCode MedInterface::readMed(int verb) {
-    PetscErrorCode ierr;
+    
     PetscFunctionBegin;
     if(medFileName.empty()) {
       ierr = getFileNameFromCommandLine(verb); CHKERRQ(ierr);
@@ -670,8 +670,8 @@ namespace MoFEM {
     const int only_step,
     int verb
   ) {
-    MoABErrorCode rval;
-    PetscErrorCode ierr;
+    
+    
     MoFEM::Interface &m_field = cOre;
     PetscFunctionBegin;
     med_idt fid = MEDfileOpen((char*)file_name.c_str(), MED_LECTURE);

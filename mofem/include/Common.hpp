@@ -22,6 +22,9 @@ namespace MoFEM {
 
   typedef ErrorCode MoABErrorCode;
 
+  static MoABErrorCode rval;
+  static PetscErrorCode ierr;
+
   typedef int DofIdx;                   ///< Index of DOF
   typedef int FEIdx;                    ///< Index of the element
   typedef int EntIdx;                   ///< Index of DOF on the entity

@@ -32,7 +32,7 @@ struct VolumeCalculation: public MoFEM::VolumeElementForcesAndSourcesCore::UserD
   volumeVec(volume_vec) {
   }
 
-  PetscErrorCode ierr;
+  
 
   PetscErrorCode doWork(
     int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data

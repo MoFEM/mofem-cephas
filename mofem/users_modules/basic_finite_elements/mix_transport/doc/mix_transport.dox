@@ -1,35 +1,34 @@
-/*! \page ultra_weak UltraWeak formulation and integration on skeleton (h-adaptivity)
+/*! \page mix_transport Mix formulation and integration on skeleton (h-adaptivity)
 
 \brief Set by step example how to implement mix finite element and do hp-adaptivity
 
 Here we present general procedure applied to h-adaptivity of mix problem. MoFEM
 is generic finite element code capable of solving problems from magnetics,
-mechanics of fluids and solids, and as result of this operates on necessary
+mechanics of fluids and solids, and as a result of this operates on necessary
 complex data structures able to carry abstract problems. If you master this
 example, applying the same approach, you will be able to implement in similar
 way other problems, for instance, Discontinuous Galerkin Method, or
 thermo-mechanical coupled problem.
 
-In this tutorial we show how to implement h-adaptivity for ultraweak formulation
-for stationary transport/heat-conduction problem (Poisson equation). We focus on
-h-adaptivity, however, this implementation allows to run problem with arbitrary order of
-approximation and extension to p-/hp-adativity is straightforward.
+In this tutorial, we show how to implement h-adaptivity for mix transport formulation
+for stationary transport/heat-conduction problem (The Poisson equation). We focus on
+h-adaptivity, however, this implementation allows running problem with the arbitrary order of
+approximation and extension to p-/hp-adativity is possible.
 
-Code relevant to this tutorial could be found in \ref
-mofem_ultra_weak_transport_elem module. Plane source code for main program is
-available under link \ref transport.cpp, whereas main class implementation of
+Code relevant to this tutorial could be found in \ref mofem_mix_transport_elem module.
+Plane source code for main program is available under link \ref h_adaptive_transport.cpp, whereas main class implementation of
 finite element and finite element operators is available here \ref
-UltraWeakTransportElement.hpp.
+MixTransportElement.hpp.
 
 MoFEM is built on three pillars, PETSc library which manages abstraction related
-to algebraic system of equations and delivers interface to several solvers,
+to the algebraic system of equations and delivers interface to several solvers,
 mesh-oriented database (MoAB) which manages complexities related to mesh
 topology and delivers various format readers and Boost library which through
 multi-indices manages access to containers with MoFEM data structures.
 
 MoFEM handles complexities related to finite element method, degrees of freedom,
 approximation spaces and base functions. It provides tools and structures for
-implementation classical and non-classical finite element codes and can handle
+implementation classical and nonclassical finite element codes and can handle
 linear, nonlinear and time dependent problems.
 
 Here we are considering a problem
@@ -37,12 +36,11 @@ Here we are considering a problem
 A_{ij} \sigma_j + u_{,i} = 0 \; \textrm{on} \; \Omega \\
 \sigma_{i,i} = f \; \textrm{on} \; \Omega
 \f]
-where first equation is physical (constitutive) equation and tensor
-\f$A_{ij}\f$ express material properties, for example if \f$A_{ij}\f$ is
-diagonal matrix with single constant on diagonal we have isotropic material
-having the same conduction in each direction. Second equation is conservation
-equation, which express law that mass or energy can not be created or destroyed
-(close system).
+where first equation is a physical (constitutive) equation and tensor
+\f$A_{ij}\f$ express material properties, for example, if \f$A_{ij}\f$ is a
+diagonal matrix with single constant on diagonal we have an isotropic material.
+The second equation is conservation equation, which expresses law that mass or
+energy can not be created or destroyed (close system).
 
 Multiplying the constitutive equation by a test field \f$\tau\f$ and integrating by parts
 over \f$\Omega\f$ (taking into account the inhomogeneous Dirichlet boundary condition), we
@@ -59,7 +57,7 @@ while from the equilibrium equation by multiplying by test field \f$v\f$ we obta
 
 Before we look into implementation details, you can run simple example
 \code
-cd basic_finite_elements/ultraweak
+cd basic_finite_elements/mix_transport
 mpirun -np 2 ./transport \
 -my_file l-shape.msh -meshsets_config bc.cfg  \
 -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package mumps -ksp_monitor \
@@ -74,14 +72,14 @@ where
 - \em -nb_levels \b 5 set number of mesh refinement level driven by approximation error
 
 Above code produces output files, \b out_0.h5m, \b out_1.h5m, ... where number
-of files is dependent on refinement level. You can convert those files to VTK
+of files is dependent on number of refinement levels. You can convert those files to VTK
 format running script
 \code
 ../nonlinear_elasticity/do_vtk.sh out_*.h5m
 \endcode
-and prostporcess results in ParaView <http://www.paraview.org>.
+and post-process results in ParaView <http://www.paraview.org>.
 
-As result of postprocessing in ParaView we have created following output
+As result of post-processing in ParaView we have created following output
 \image html l-shape-adaptivity.gif "h-adaptivity" width=800px
 \image html l-shape-adaptivity_singularity.gif "Flux singularity" width=800px
 \image html l-shape-convergence.png "Convergence plot" width=800px
@@ -97,7 +95,7 @@ documentation.
 
 \tableofcontents
 
-\section uw_mesh_refinement Explaining mesh BitRefLevel
+\section mix_mesh_refinement Explaining mesh BitRefLevel
 
 \ref MoFEM::BitRefLevel is a generic tool which allows working on several
 overlapping meshes, partially sharing entities and topology. In the context of
@@ -108,7 +106,7 @@ For each entity in a database (vertex, edge, triangle, quad, ..., tetrahedra,
 brick, prism, ...) we attach bit tag, i.e. \ref MoFEM::BitRefLevel. Using that tag we
 can make selections of entities and other operations on meshes.
 
-It would be easier to understand if you look at the figure below
+It will be easier to understand if you look at the figure below
 \image html mesh_bit_levels.png "Mesh bit refinement levels (Example)" width=800px
 
 Imagine that we load the mesh with the topology like in the top-left figure. We
@@ -134,7 +132,7 @@ form deep (more than 32) mesh refinements.
 Physically all three meshes overlap, we do not delete overlapped entities or
 create new whole mesh each time. It is the reason behind that since we like to
 transfer data between different refinement levels without the redundancy and
-unnecessary copying and communication between processors if mesh is distributed.
+unnecessary copying and communication between processors if the mesh is distributed.
 
 Now we present examples of mesh selections; you can practically do everything that
 you do with bits, see
@@ -155,11 +153,11 @@ in problem below is defined for particular bit levels.
 See link \ref mofem_ref_ents for details how to get entities and adjacent by
 bit refinement levels.
 
-\section uw_reading_mesh Setting up problem
+\section mix_reading_mesh Setting up problem
 
 We consider the problem which potentially can have complex geometry and a
-not-trivial set of boundary conditions.  Here we use Gmsh
-(see <http://gmsh.info>) to generate mesh. In this section we focus attention
+non-trivial set of boundary conditions.  Here we use Gmsh
+(see <http://gmsh.info>) to generate the mesh. In this section, we focus attention
 on how to read mesh file and how to apply some arbitrary boundary conditions on
 that mesh.
 
@@ -216,7 +214,7 @@ matter of separate config file, which describes problem specific types of
 boundary conditions.
 
 The interpretation of \e BLOCKSETs is done by the meshset config file \b bc.cfg,
-\include users_modules/basic_finite_elements/ultraweak/bc.cfg
+\include users_modules/basic_finite_elements/mix_transport/bc.cfg
 According to that file, \e BLOCKSET 3 is set to be \e NODESET 1001 where
 temperature is applied \f$u=0\, x \in \partial \Omega_u\f$ and
 \e BLOCKSET 2 is set to be SIDESET 1002 where flux is applied
@@ -264,29 +262,29 @@ the error code, it simplifies code debugging and bug reporting.
 \section um_solving_problem Solving problem and calculating matrices and vectors
 
 We start with calculating initial problem on mesh created with Gmsh. The problem
-is broken down into several stages, implementation of a ultraweak problem is in
-ExampleUltraWeak which is derived from UltraWeakTransportElement.
+is broken down into several stages, implementation of a mix transport problem is in
+ExampleMix which is derived from MixTransport::MixTransportElement.
 
 \note We have the hierarchy of classes (structures), some of them are generic
 thus are part of MoFEM namespace and are implemented in the core library. Others
-are generic for a particular problem, for example, ultraweak formulation
-(UltraWeakTransportElement) is implemented in users modules. And finally, some
-classes (ExampleUltraWeak) are for very specific example, where some close
+are generic for a particular problem, for example, mix transport formulation
+(MixTransport::MixTransportElement) is implemented in users modules. And finally, some
+classes (ExampleMix) are for very specific example, where some close
 solution is needed.
 
-In class UltraWeakTransportElement all operators for evaluating matrices, the
+In class MixTransport::MixTransportElement all operators for evaluating matrices, the
 right-hand side vector, error evaluation are implemented. Moreover methods for
 declaring and defining fields, finite elements and problems are added. This
 class could be used by other users, solving similar problems.
 
-In derived class ExampleUltraWeak, particular functions for given transport
+In derived class ExampleMix, particular functions for given transport
 problem with h-adaptivity are implemented.  The method handles specific boundary
 conditions for this example.
 
 The general procedure to solve problem looks like follows
 \code{.cpp}
 BcFluxMap bc_flux_map;
-ExampleUltraWeak ufe(m_field,bc_flux_map);
+ExampleMix ufe(m_field,bc_flux_map);
 // Initially calculate problem on coarse mesh
 ierr = ufe.addFields("VALUES","FLUXES",order); CHKERRQ(ierr);
 ierr = ufe.addFiniteElements("FLUXES","VALUES"); CHKERRQ(ierr);
@@ -294,7 +292,7 @@ ierr = ufe.addFiniteElements("FLUXES","VALUES"); CHKERRQ(ierr);
 ierr = ufe.addBoundaryElements(ref_level);
 ierr = ufe.buildProblem(ref_level); CHKERRQ(ierr);
 ierr = ufe.createMatrices(); CHKERRQ(ierr);
-ierr = ufe.solveProblem(); CHKERRQ(ierr);
+ierr = ufe.solveLinearProblem(); CHKERRQ(ierr);
 ierr = ufe.calculateResidual(); CHKERRQ(ierr);
 ierr = ufe.evaluateError(); CHKERRQ(ierr);
 ierr = ufe.destroyMatrices(); CHKERRQ(ierr);
@@ -306,14 +304,14 @@ problem, apply boundary conditions, solve problem and postprocess results.
 Some MoFEM functions and philosophy of building problem is explained in  \ref
 minimal_surface_equation, please look into that document for further explanation.
 
-\subsection ultraweak_add_fields Adding fields to the database (ufe.addFields)
+\subsection mixtransport_add_fields Adding fields to the database (ufe.addFields)
 
-In \ref UltraWeakTransportElement::addFields we declare and define fields and
+In \ref MixTransport::MixTransportElement::addFields we declare and define fields and
 add entities to those on which given field is spanning.
 
 \code{.cpp}
-PetscErrorCode UltraWeakTransportElement::addFields(const std::string &values,const std::string &fluxes,const int order) {
-  PetscErrorCode ierr;
+PetscErrorCode MixTransport::MixTransportElement::addFields(const std::string &values,const std::string &fluxes,const int order) {
+  
   PetscFunctionBegin;
   //Fields
   ierr = mField.add_field(fluxes,HDIV,DEMKOWICZ_JACOBI_BASE,1); CHKERRQ(ierr);
@@ -344,7 +342,7 @@ this case, we like to solve the problem on whole mesh, so all entities from root
 meshset are added. Since we span that field on tetrahedra and all lower entities
 field is in 3d. The dimension of field is dictated by a dimension of entities.
 
-\subsection ultraweak_add_elements Adding elements to the database (ufe.addFiniteElements)
+\subsection mixtransport_add_elements Adding elements to the database (ufe.addFiniteElements)
 
 In the following part of the code we declare finite elements, implementation of
 elements is done separately. By definition of finite elements, we are simply
@@ -354,56 +352,56 @@ of the mesh where the field is given. If you declare element on entities on
 which fields is no spanning, that element will have zero number of degrees of
 freedom.
 
-In this example, we have four kinds of finite elements \e ULTRAWEAK,
-\e ULTRAWEAK_SKELETON, \e ULTRAWEAK_BCVALUE and \e ULTRAWEAK_BCFLUX.
+In this example, we have four kinds of finite elements \e MIX,
+\e MIX_SKELETON, \e MIX_BCVALUE and \e MIX_BCFLUX.
 
-- \e ULTRAWEAK finite element is used to integrate over volume; it allows us to
+- \e MIX finite element is used to integrate over volume; it allows us to
   calculate stiffness matrix and the right-hand side vector.
 
-- \e ULTRAWEAK_SKELETON finite element is used to integrate over the skeleton,
+- \e MIX_SKELETON finite element is used to integrate over the skeleton,
   i.e. faces between elements. We are using it to calculate jumps of the values
   to evaluate the solution error.
 
-- \e ULTRAWEAK_BCVALUE finite element is used to integrate over faces where
+- \e MIX_BCVALUE finite element is used to integrate over faces where
   Dirichlet (natural) boundary conditions are declared. The values integrated on
   that element are assembled into the right-hand side vector.
 
-- \e ULTRAWEAK_BCFLUX is the finite element to calculate degrees of freedom where
+- \e MIX_BCFLUX is the finite element to calculate degrees of freedom where
   flux boundary conditions are declared. This element works on faces.
-  Note that in ultraweak formulation Neumann boundary conditions are essential.
+  Note that in mix transport formulation Neumann boundary conditions are essential.
 
 \code{.cpp}
-PetscErrorCode UltraWeakTransportElement::addFiniteElements(
+PetscErrorCode MixTransport::MixTransportElement::addFiniteElements(
   const std::string &fluxes_name,
   const std::string &values_name,
   const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS"
 ) {
   PetscFunctionBegin;
 
-  PetscErrorCode ierr;
-  ErrorCode rval;
+  
+  
 
   // Set up volume element operators. Operators are used to calculate components
   // of stiffness matrix & right hand side, in essence are used to do volume integrals over
   // tetrahedral in this case.
 
-  // Declare element "ULTRAWEAK". Note that this element will work with fluxes_name and
+  // Declare element "MIX". Note that this element will work with fluxes_name and
   // values_name. This reflect bilinear form for the problem
-  ierr = mField.add_finite_element("ULTRAWEAK",MF_ZERO); CHKERRQ(ierr);
+  ierr = mField.add_finite_element("MIX",MF_ZERO); CHKERRQ(ierr);
   // Define element
-  ierr = mField.modify_finite_element_add_field_row("ULTRAWEAK",fluxes_name); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_col("ULTRAWEAK",fluxes_name); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_row("ULTRAWEAK",values_name); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_col("ULTRAWEAK",values_name); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_data("ULTRAWEAK",fluxes_name); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_data("ULTRAWEAK",values_name); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_row("MIX",fluxes_name); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_col("MIX",fluxes_name); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_row("MIX",values_name); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_col("MIX",values_name); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("MIX",fluxes_name); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("MIX",values_name); CHKERRQ(ierr);
 
   // Declare finite element to integrate over skeleton, we need that to evaluate error
-  ierr = mField.add_finite_element("ULTRAWEAK_SKELETON",MF_ZERO); CHKERRQ(ierr);
+  ierr = mField.add_finite_element("MIX_SKELETON",MF_ZERO); CHKERRQ(ierr);
   // Define element
-  ierr = mField.modify_finite_element_add_field_row("ULTRAWEAK_SKELETON",fluxes_name); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_col("ULTRAWEAK_SKELETON",fluxes_name); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_data("ULTRAWEAK_SKELETON",fluxes_name); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_row("MIX_SKELETON",fluxes_name); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_col("MIX_SKELETON",fluxes_name); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("MIX_SKELETON",fluxes_name); CHKERRQ(ierr);
 
   // In some cases you like to use HO geometry to describe shape of the body, curved edges and faces, for
   // example body is a sphere. HO geometry is approximated by a field,  which can be hierarchical, so shape of
@@ -412,11 +410,11 @@ PetscErrorCode UltraWeakTransportElement::addFiniteElements(
   // Check if field "mesh_nodals_positions" is declared, and if it is add that field to data of finite
   // element. MoFEM will use that that to calculate Jacobian as result that geometry in nonlinear.
   if(mField.check_field(mesh_nodals_positions)) {
-    ierr = mField.modify_finite_element_add_field_data("ULTRAWEAK",mesh_nodals_positions); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_data("ULTRAWEAK_SKELETON",mesh_nodals_positions); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_data("MIX",mesh_nodals_positions); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_data("MIX_SKELETON",mesh_nodals_positions); CHKERRQ(ierr);
   }
   // Look for all BLOCKSET which are MAT_THERMALSET, takes entities from those BLOCKSETS
-  // and add them to "ULTRAWEAK" finite element. In addition get data from that meshset
+  // and add them to "MIX" finite element. In addition get data from that meshset
   // and set cOnductivity which is used to calculate fluxes from gradients of concentration
   // or gradient of temperature, depending how you interpret variables.
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|MAT_THERMALSET,it)) {
@@ -431,7 +429,7 @@ PetscErrorCode UltraWeakTransportElement::addFiniteElements(
       it->meshset,MBTET,setOfBlocks[it->getMeshsetId()].tEts,true
     ); CHKERRQ_MOAB(rval);
     ierr = mField.add_ents_to_finite_element_by_TETs(
-      setOfBlocks[it->getMeshsetId()].tEts,"ULTRAWEAK"
+      setOfBlocks[it->getMeshsetId()].tEts,"MIX"
     ); CHKERRQ(ierr);
 
     Range skeleton;
@@ -439,31 +437,31 @@ PetscErrorCode UltraWeakTransportElement::addFiniteElements(
       setOfBlocks[it->getMeshsetId()].tEts,2,false,skeleton,moab::Interface::UNION
     );
     ierr = mField.add_ents_to_finite_element_by_type(
-      skeleton,MBTRI,"ULTRAWEAK_SKELETON"
+      skeleton,MBTRI,"MIX_SKELETON"
     ); CHKERRQ(ierr);
 
   }
 
   // Declare element to integrate natural boundary conditions, i.e. set values.
-  ierr = mField.add_finite_element("ULTRAWEAK_BCVALUE",MF_ZERO); CHKERRQ(ierr);
+  ierr = mField.add_finite_element("MIX_BCVALUE",MF_ZERO); CHKERRQ(ierr);
   // Define element
-  ierr = mField.modify_finite_element_add_field_row("ULTRAWEAK_BCVALUE",fluxes_name); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_col("ULTRAWEAK_BCVALUE",fluxes_name); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_data("ULTRAWEAK_BCVALUE",fluxes_name); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_data("ULTRAWEAK_BCVALUE",values_name); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_row("MIX_BCVALUE",fluxes_name); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_col("MIX_BCVALUE",fluxes_name); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("MIX_BCVALUE",fluxes_name); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("MIX_BCVALUE",values_name); CHKERRQ(ierr);
   if(mField.check_field(mesh_nodals_positions)) {
-    ierr = mField.modify_finite_element_add_field_data("ULTRAWEAK_BCVALUE",mesh_nodals_positions); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_data("MIX_BCVALUE",mesh_nodals_positions); CHKERRQ(ierr);
   }
 
   // Declare element to apply essential boundary conditions.
-  ierr = mField.add_finite_element("ULTRAWEAK_BCFLUX",MF_ZERO); CHKERRQ(ierr);
+  ierr = mField.add_finite_element("MIX_BCFLUX",MF_ZERO); CHKERRQ(ierr);
   // Define element
-  ierr = mField.modify_finite_element_add_field_row("ULTRAWEAK_BCFLUX",fluxes_name); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_col("ULTRAWEAK_BCFLUX",fluxes_name); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_data("ULTRAWEAK_BCFLUX",fluxes_name); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_data("ULTRAWEAK_BCFLUX",values_name); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_row("MIX_BCFLUX",fluxes_name); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_col("MIX_BCFLUX",fluxes_name); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("MIX_BCFLUX",fluxes_name); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("MIX_BCFLUX",values_name); CHKERRQ(ierr);
   if(mField.check_field(mesh_nodals_positions)) {
-    ierr = mField.modify_finite_element_add_field_data("ULTRAWEAK_BCFLUX",mesh_nodals_positions); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_data("MIX_BCFLUX",mesh_nodals_positions); CHKERRQ(ierr);
   }
 
   PetscFunctionReturn(0);
@@ -499,32 +497,32 @@ for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|MAT_THERMALSET,it
 \endcode
 which iterates over all BLOCKSETs on which MAT_THERMALSET is defined, then it
 gets information about material parameters and range of tetrahedral entities in
-that block. Next, it adds those tetrahedral to \e  ULTRAWEAK finite element. In
+that block. Next, it adds those tetrahedral to \e  MIX finite element. In
 addition takes all adjacent triangles to tetrahedra and add those entities to \e
-ULTRAWEAK_SKELETON finite element.
+MIX_SKELETON finite element.
 
-Adding elements to \e ULTRAWEAK_BCVALUE and \e ULTRAWEAK_BCFLUX is implemented
+Adding elements to \e MIX_BCVALUE and \e MIX_BCFLUX is implemented
 in next section. In above code, those finite elements are only declared and
 defined, but not yet implemented. Declaration, definition and implementation are
 independent of each other. You can use two different implementations of the same
 element.
 
-\subsection ultraweak_add_bc_elements Adding boundary elements to the database (ufe.addBoundaryElements)
+\subsection mixtransport_add_bc_elements Adding boundary elements to the database (ufe.addBoundaryElements)
 
-In ExampleUltraWeak::addBoundaryElements loop over boundary BLOCKSETs is made to
+In ExampleMix::addBoundaryElements loop over boundary BLOCKSETs is made to
 get triangles in that BLOCKSET. Then appropriate triangles are added to \e
-ULTRAWEAK_BCVALUE and \e ULTRAWEAK_BCFLUX
+MIX_BCVALUE and \e MIX_BCFLUX
 \code{.cpp}
-PetscErrorCode ExampleUltraWeak::addBoundaryElements(BitRefLevel &ref_level) {
-  MoABErrorCode rval;
-  PetscErrorCode ierr;
+PetscErrorCode ExampleMix::addBoundaryElements(BitRefLevel &ref_level) {
+  MoAB
+  
   PetscFunctionBegin;
   Range tets;
   ierr = mField.get_entities_by_type_and_ref_level(ref_level,BitRefLevel().set(),MBTET,tets);
   Skinner skin(&mField.get_moab());
   Range skin_faces; // skin faces from 3d ents
   rval = skin.find_skin(0,tets,false,skin_faces); CHKERRQ_MOAB(rval);
-  // note: what is essential (dirichlet) is natural (neumann) for ultra weak compared to classical FE
+  // note: what is essential (dirichlet) is natural (neumann) for mix-FE compared to classical FE
   Range natural_bc;
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NODESET|TEMPERATURESET,it)) {
     Range tris;
@@ -548,9 +546,9 @@ PetscErrorCode ExampleUltraWeak::addBoundaryElements(BitRefLevel &ref_level) {
   ierr = mField.get_entities_by_type_and_ref_level(ref_level,BitRefLevel().set(),MBTRI,bit_tris);
   essential_bc = intersect(bit_tris,essential_bc);
   natural_bc = intersect(bit_tris,natural_bc);
-  ierr = mField.add_ents_to_finite_element_by_type(essential_bc,MBTRI,"ULTRAWEAK_BCFLUX"); CHKERRQ(ierr);
-  ierr = mField.add_ents_to_finite_element_by_type(natural_bc,MBTRI,"ULTRAWEAK_BCVALUE"); CHKERRQ(ierr);
-  // ierr = mField.add_ents_to_finite_element_by_type(skin_faces,MBTRI,"ULTRAWEAK_BCVALUE"); CHKERRQ(ierr);
+  ierr = mField.add_ents_to_finite_element_by_type(essential_bc,MBTRI,"MIX_BCFLUX"); CHKERRQ(ierr);
+  ierr = mField.add_ents_to_finite_element_by_type(natural_bc,MBTRI,"MIX_BCVALUE"); CHKERRQ(ierr);
+  // ierr = mField.add_ents_to_finite_element_by_type(skin_faces,MBTRI,"MIX_BCVALUE"); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 \endcode
@@ -567,7 +565,7 @@ This is not the case here.
 
 In addition, function
 \code{.cpp}
-PetscErrorCode ExampleUltraWeak::getBcOnValues(
+PetscErrorCode ExampleMix::getBcOnValues(
   const EntityHandle ent,
   const double x,const double y,const double z,
   double &value) {
@@ -578,7 +576,7 @@ PetscErrorCode ExampleUltraWeak::getBcOnValues(
 \endcode
 and
 \code{.cpp}
-PetscErrorCode ExampleUltraWeak::getBcOnFluxes(
+PetscErrorCode ExampleMix::getBcOnFluxes(
   const EntityHandle ent,
   const double x,const double y,const double z,
   double &flux) {
@@ -601,11 +599,11 @@ PetscErrorCode ExampleUltraWeak::getBcOnFluxes(
 \endcode
 are implemented. Those functions are used to evaluate values and boundary
 conditions at integration points. For more details how those functions are used
-look into UltraWeakTransportElement::OpRhsBcOnValues and
-UltraWeakTransportElement::OpEvaluateBcOnFluxes, those classes are
+look into MixTransport::MixTransportElement::OpRhsBcOnValues and
+MixTransport::MixTransportElement::OpEvaluateBcOnFluxes, those classes are
 implementations of operations on particular elements which are later explained.
 
-\subsection ultraweak_build_problem Declaring and building problem (ufe.buildProblem)
+\subsection mixtransport_build_problem Declaring and building problem (ufe.buildProblem)
 
 Once fields and finite elements are declared and defined, we build/rebuild data
 structures carrying information needed to do the analysis. Note that function
@@ -622,8 +620,8 @@ However, here we assume that mesh is the same on all processors only
 calculations, matrices and vectors are distributed.
 
 \code{.cpp}
-PetscErrorCode UltraWeakTransportElement::buildProblem(BitRefLevel &ref_level) {
-  PetscErrorCode ierr;
+PetscErrorCode MixTransport::MixTransportElement::buildProblem(BitRefLevel &ref_level) {
+  
   PetscFunctionBegin;
   //build field
   ierr = mField.build_fields(); CHKERRQ(ierr);
@@ -641,7 +639,7 @@ PetscErrorCode UltraWeakTransportElement::buildProblem(BitRefLevel &ref_level) {
     ref_level,BitRefLevel().set(),MBTET,ref_tets
   ); CHKERRQ(ierr);
   ref_tets = subtract(ref_tets,done_tets);
-  ierr = mField.build_finite_elements("ULTRAWEAK",&ref_tets,2); CHKERRQ(ierr);
+  ierr = mField.build_finite_elements("MIX",&ref_tets,2); CHKERRQ(ierr);
   // get triangles which has been build previously and now in so called garbage bit level
   Range done_faces;
   ierr = mField.get_entities_by_type_and_ref_level(
@@ -657,31 +655,31 @@ PetscErrorCode UltraWeakTransportElement::buildProblem(BitRefLevel &ref_level) {
   ); CHKERRQ(ierr);
   ref_faces = subtract(ref_faces,done_faces);
   //build finite elements structures
-  ierr = mField.build_finite_elements("ULTRAWEAK_BCFLUX",&ref_faces,2); CHKERRQ(ierr);
-  ierr = mField.build_finite_elements("ULTRAWEAK_BCVALUE",&ref_faces,2); CHKERRQ(ierr);
-  ierr = mField.build_finite_elements("ULTRAWEAK_SKELETON",&ref_faces,2); CHKERRQ(ierr);
+  ierr = mField.build_finite_elements("MIX_BCFLUX",&ref_faces,2); CHKERRQ(ierr);
+  ierr = mField.build_finite_elements("MIX_BCVALUE",&ref_faces,2); CHKERRQ(ierr);
+  ierr = mField.build_finite_elements("MIX_SKELETON",&ref_faces,2); CHKERRQ(ierr);
   //Build adjacencies of degrees of freedom and elements
   ierr = mField.build_adjacencies(ref_level); CHKERRQ(ierr);
   //Declare problem
-  ierr = mField.add_problem("ULTRAWEAK",MF_ZERO); CHKERRQ(ierr);
+  ierr = mField.add_problem("MIX",MF_ZERO); CHKERRQ(ierr);
   //set refinement level for problem
-  ierr = mField.modify_problem_ref_level_set_bit("ULTRAWEAK",ref_level); CHKERRQ(ierr);
+  ierr = mField.modify_problem_ref_level_set_bit("MIX",ref_level); CHKERRQ(ierr);
   // Add element to problem
-  ierr = mField.modify_problem_add_finite_element("ULTRAWEAK","ULTRAWEAK"); CHKERRQ(ierr);
-  ierr = mField.modify_problem_add_finite_element("ULTRAWEAK","ULTRAWEAK_SKELETON"); CHKERRQ(ierr);
+  ierr = mField.modify_problem_add_finite_element("MIX","MIX"); CHKERRQ(ierr);
+  ierr = mField.modify_problem_add_finite_element("MIX","MIX_SKELETON"); CHKERRQ(ierr);
   // Boundary conditions
-  ierr = mField.modify_problem_add_finite_element("ULTRAWEAK","ULTRAWEAK_BCFLUX"); CHKERRQ(ierr);
-  ierr = mField.modify_problem_add_finite_element("ULTRAWEAK","ULTRAWEAK_BCVALUE"); CHKERRQ(ierr);
+  ierr = mField.modify_problem_add_finite_element("MIX","MIX_BCFLUX"); CHKERRQ(ierr);
+  ierr = mField.modify_problem_add_finite_element("MIX","MIX_BCVALUE"); CHKERRQ(ierr);
   //build problem
   ProblemsManager *prb_mng_ptr;
   ierr = mField.query_interface(prb_mng_ptr); CHKERRQ(ierr);
   ierr = prb_mng_ptr->buildProblems(); CHKERRQ(ierr);
   //mesh partitioning
   //partition
-  ierr = prb_mng_ptr->partitionProblem("ULTRAWEAK"); CHKERRQ(ierr);
-  ierr = prb_mng_ptr->partitionFiniteElements("ULTRAWEAK"); CHKERRQ(ierr);
+  ierr = prb_mng_ptr->partitionProblem("MIX"); CHKERRQ(ierr);
+  ierr = prb_mng_ptr->partitionFiniteElements("MIX"); CHKERRQ(ierr);
   //what are ghost nodes, see Petsc Manual
-  ierr = prb_mng_ptr->partitionGhostDofs("ULTRAWEAK"); CHKERRQ(ierr);
+  ierr = prb_mng_ptr->partitionGhostDofs("MIX"); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 \endcode
@@ -721,7 +719,7 @@ the problem.
 To build problem, we need to set \ref MoFEM::BitRefLevel to the problem.  In short
 \ref MoFEM::BitRefLevel allows selecting a refined mesh on which we like to
 solve our problem. The details and unique flexibility of \ref MoFEM::BitRefLevel
-are explained in \ref uw_mesh_refinement.
+are explained in \ref mix_mesh_refinement.
 
 \note Declaration, definition and building of data structures, are independent
 of each other. We can first declare fields, finite elements and problems, then
@@ -742,7 +740,7 @@ build unique enumeration of DOFs and build the system of algebraic equations.
 Using spaces (L2,H1,H-DIV,H-CURL) and their properties we build a system of a
 data structure which abstracts and general.
 
-\subsection ultraweak_create_matrices Create vectors and matrices (ufe.createMatrices)
+\subsection mixtransport_create_matrices Create vectors and matrices (ufe.createMatrices)
 
 At that point, we have defined and the partitioned problem and that is enough to
 construct distributed matrices and vectors. The sparsity of the matrix,
@@ -750,49 +748,53 @@ adjacencies and other bookkeeping operations are handled by MoFEM and PETSc.
 
 Functions and use of below code was explained earlier in \ref minimal_surface_equation;
 \code
-PetscErrorCode UltraWeakTransportElement::createMatrices() {
-  PetscErrorCode ierr;
+PetscErrorCode MixTransport::MixTransportElement::createMatrices() {
+  
   PetscFunctionBegin;
-  ierr = mField.MatCreateMPIAIJWithArrays("ULTRAWEAK",&Aij); CHKERRQ(ierr);
-  ierr = mField.VecCreateGhost("ULTRAWEAK",COL,&D); CHKERRQ(ierr);
-  ierr = mField.VecCreateGhost("ULTRAWEAK",COL,&D0); CHKERRQ(ierr);
-  ierr = mField.VecCreateGhost("ULTRAWEAK",ROW,&F); CHKERRQ(ierr);
+  ierr = mField.MatCreateMPIAIJWithArrays("MIX",&Aij); CHKERRQ(ierr);
+  ierr = mField.VecCreateGhost("MIX",COL,&D); CHKERRQ(ierr);
+  ierr = mField.VecCreateGhost("MIX",COL,&D0); CHKERRQ(ierr);
+  ierr = mField.VecCreateGhost("MIX",ROW,&F); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 \endcode
 
-\section ultraweak_assemble_and_solve Assemble and solve
+\section mixtransport_assemble_and_solve Assemble and solve
 
 At that point, we have all data structures necessary to solve the problem. Now
 we focus attention on the implementation of finite element instances and
 solution procedure. In essence, we need to assemble matrices and vectors,
-enforce constraints, solve a linear system of equations and solve the problem.
+enforce constraints, solve a linear system of equations and post-process results.
 
-\subsection ultraweak_finite_element_instances Finite element instances
+\subsection mixtransport_finite_element_instances Finite element instances
 
-Definition of the finite element allows building structure of the matrix,
-however, to fill matrix we need finite element implementation and its instance
-which  will do the work. MoFEM allows to implement finite element at low level.
-However, except special cases, a generic finite element implementations can be
-used, where some operations like calculation of Jacobian, face areas and normals
-are implemented. User focusses attention on the implementation of the bilinear
-form; that is numerical integration and evaluation of physical equations,
-evaluation of base functions and fields. User implements so called \e
-UserDataOperators. From operator, a user has access to base functions,
-integration points, Jacobian, local and global indices and values of DOFs. \e
-UserDataOperator is run for entities on element, on which approximation base is
-constructed.
+Definition of the finite element allows building the structure (adjacency) of
+the matrix, however, assemble (calculate) matrix we need finite element class
+implementation and its instance which will do the work. MoFEM allows
+implementing finite element at a low level, however, except special cases, a
+generic finite element class implementations can be used, where some operations
+like calculation of Jacobian, face areas and normals are implemented. Generic
+finite element classes enable us to focusses attention on the implementation of
+the bilinear form and its algebraic representation; that is numerical
+integration and evaluation of physical equations, evaluation of base functions
+and fields.  The implementation of generic finite element is by users data
+operators, see tutorials \ref hello_world_tut1 and \ref poisson_tut1. Class of users
+data operator is inherited, and problem specific application is by function
+overloading. From users data operator class, we have access to base functions,
+integration points, local and global indices and values of DOFs. etc. \e UserDataOperator
+is run for entities on the element, on which approximation base
+is constructed.
 
-In UltraWeakTransportElement class we create two generic finite
-element instances, i.e. UltraWeakTransportElement::MyVolumeFE and
-UltraWeakTransportElement::MyTriFE.
+In MixTransport::MixTransportElement class we create two generic finite
+element instances, i.e. MixTransport::MixTransportElement::MyVolumeFE and
+MixTransport::MixTransportElement::MyTriFE.
 \code
-struct UltraWeakTransportElement::MyVolumeFE: public MoFEM::VolumeElementForcesAndSourcesCore {
+struct MixTransport::MixTransportElement::MyVolumeFE: public MoFEM::VolumeElementForcesAndSourcesCore {
   MyVolumeFE(MoFEM::Interface &m_field): MoFEM::VolumeElementForcesAndSourcesCore(m_field) {}
   int getRule(int order) { return 2*order+1; };
 };
 MyVolumeFE feVol;   ///> Instance of volume element
-struct UltraWeakTransportElement::MyTriFE: public MoFEM::FaceElementForcesAndSourcesCore {
+struct MixTransport::MixTransportElement::MyTriFE: public MoFEM::FaceElementForcesAndSourcesCore {
   MyTriFE(MoFEM::Interface &m_field): MoFEM::FaceElementForcesAndSourcesCore(m_field) {}
   int getRule(int order) { return 2*order+1; };
 };
@@ -814,7 +816,7 @@ Now we can add tasks (\e UsersOperators) to finite element, which will
 do a sequence of calculations. However, before we show how to implement \e
 UsersOperators, we show first how finite elements objects are used.
 
-\subsection ultraweak_solve_problem Solve problem (ufe.solveProblem)
+\subsection mixtransport_solve_problem Solve problem (ufe.solveLinearProblem)
 
 In the previous step, we have constructed matrices and vectors, next step is to
 calculate matrices and vectors and to solve the linear system of equations. At
@@ -825,8 +827,8 @@ is handled by the MoFEM.
 
 The function
 \code{.cpp}
-PetscErrorCode UltraWeakTransportElement::solveProblem() {
-    PetscErrorCode ierr;
+PetscErrorCode MixTransport::MixTransportElement::solveLinearProblem() {
+    
     PetscFunctionBegin;
     \\ Code inside
     PetscFunctionReturn(0);
@@ -843,34 +845,34 @@ solved.
 \code{.cpp}
 feTri.getOpPtrVector().clear();
 feTri.getOpPtrVector().push_back(new OpEvaluateBcOnFluxes(*this,"FLUXES",D0));
-ierr = mField.loop_finite_elements("ULTRAWEAK","ULTRAWEAK_BCFLUX",feTri); CHKERRQ(ierr);
+ierr = mField.loop_finite_elements("MIX","MIX_BCFLUX",feTri); CHKERRQ(ierr);
 \endcode
 Note that first line in the code above clean vector of operators on the element
 instance (element object could be used before to do other tasks), second line add operator
-UltraWeakTransportElement::OpEvaluateBcOnFluxes to the finite element instance.
+MixTransport::MixTransportElement::OpEvaluateBcOnFluxes to the finite element instance.
 The operator has an argument vector D0 in which DOFs values for essential
 boundary conditions are stored. The third line makes the loop over all elements
 in the problem (name of the problem is the first argument), for the finite
 element  (second argument) and evaluate operators of element instance for object
-UltraWeakTransportElement::feTri. It is clear here that definition of element is
+MixTransport::MixTransportElement::feTri. It is clear here that definition of element is
 separated from its implementation.
 
 The similar procedure is repeated to calculate matrix and the right-hand side vector
 \code
 feVol.getOpPtrVector().clear();
-feVol.getOpPtrVector().push_back(new UltraWeakTransportElement::OpL2Source(*this,"VALUES",F));
-feVol.getOpPtrVector().push_back(new UltraWeakTransportElement::OpFluxDivergenceAtGaussPts(*this,"FLUXES"));
-feVol.getOpPtrVector().push_back(new UltraWeakTransportElement::OpValuesAtGaussPts(*this,"VALUES"));
-feVol.getOpPtrVector().push_back(new UltraWeakTransportElement::OpDivTauU_HdivL2(*this,"FLUXES","VALUES",Aij,F));
-feVol.getOpPtrVector().push_back(new UltraWeakTransportElement::OpTauDotSigma_HdivHdiv(*this,"FLUXES",Aij,F));
-feVol.getOpPtrVector().push_back(new UltraWeakTransportElement::OpVDotDivSigma_L2Hdiv(*this,"VALUES","FLUXES",Aij,F));
-ierr = mField.loop_finite_elements("ULTRAWEAK","ULTRAWEAK",feVol); CHKERRQ(ierr);
+feVol.getOpPtrVector().push_back(new MixTransport::MixTransportElement::OpL2Source(*this,"VALUES",F));
+feVol.getOpPtrVector().push_back(new MixTransport::MixTransportElement::OpFluxDivergenceAtGaussPts(*this,"FLUXES"));
+feVol.getOpPtrVector().push_back(new MixTransport::MixTransportElement::OpValuesAtGaussPts(*this,"VALUES"));
+feVol.getOpPtrVector().push_back(new MixTransport::MixTransportElement::OpDivTauU_HdivL2(*this,"FLUXES","VALUES",Aij,F));
+feVol.getOpPtrVector().push_back(new MixTransport::MixTransportElement::OpTauDotSigma_HdivHdiv(*this,"FLUXES",Aij,F));
+feVol.getOpPtrVector().push_back(new MixTransport::MixTransportElement::OpVDivSigma_L2Hdiv(*this,"VALUES","FLUXES",Aij,F));
+ierr = mField.loop_finite_elements("MIX","MIX",feVol); CHKERRQ(ierr);
 \endcode
 where the calculation of matrix and right-hand side vector is broken down into
 several stages, where each sub-matrix is calculated by an user operator acting
 on  finite element entities. Note that this time integration is over volume
-element, i.e. UltraWeakTransportElement::feVol. Finally, this part of code ends
-with the loop over all \e ULTRAWEAK finite elements in the \e ULTRAWEAK problem.
+element, i.e. MixTransport::MixTransportElement::feVol. Finally, this part of code ends
+with the loop over all \e MIX finite elements in the \e MIX problem.
 If calculations are done in parallel, MoFEM manages related complexities
 transparently.
 
@@ -879,11 +881,11 @@ enforce Dirichlet boundary condition
 \code
 feTri.getOpPtrVector().clear();
 feTri.getOpPtrVector().push_back(new OpRhsBcOnValues(*this,"FLUXES",F));
-ierr = mField.loop_finite_elements("ULTRAWEAK","ULTRAWEAK_BCVALUE",feTri); CHKERRQ(ierr);
+ierr = mField.loop_finite_elements("MIX","MIX_BCVALUE",feTri); CHKERRQ(ierr);
 \endcode
 This procedure looks very similar what was before; we clear existing operators
-on UltraWeakTransportElement::feTri, add operator
-UltraWeakTransportElement::OpRhsBcOnValues and loop over are surface elements
+on MixTransport::MixTransportElement::feTri, add operator
+MixTransport::MixTransportElement::OpRhsBcOnValues and loop over are surface elements
 were Dirichlet boundary is set.
 
 At this point, we have created and assembled linear system of equations, we have
@@ -895,9 +897,9 @@ modify matrix and the right-hand side vector
 ierr = getDirichletBCIndices(&essential_bc_ids); CHKERRQ(ierr);
 ierr = MatZeroRowsIS(Aij,essential_bc_ids,1,D0,F); CHKERRQ(ierr);
 \endcode
-while operator UltraWeakTransportElement::OpEvaluateBcOnFluxes is executed it
+while operator MixTransport::MixTransportElement::OpEvaluateBcOnFluxes is executed it
 records indices of DOFs for which essential boundary conditions are applied.
-This DOFs are accessed by UltraWeakTransportElement::getDirichletBCIndices. We
+This DOFs are accessed by MixTransport::MixTransportElement::getDirichletBCIndices. We
 use those indices to zero rows of matrix \e Aij  and insert 1 on diagonal, in
 addition we fill the right-hand side vector with previously calculated vector
 D0. This operation is performed with PETSc function MatZeroRowsIS
@@ -920,7 +922,7 @@ For details abut above code we refer to PETSc user manual
 
 The last operation at that stage is to store results on the mesh
 \code
-ierr = mField.set_global_ghost_vector("ULTRAWEAK",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+ierr = mField.set_global_ghost_vector("MIX",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 \endcode
 You can think about MoFEM as a link between algebraic structures (e.g. vector)
 and mesh. Function MoFEM::Interface::set_global_ghost_vector is an example of
@@ -936,7 +938,7 @@ temperature is used. In that case, an algebraic structure (enumeration of DOFs)
 is different. However, you use MoFEM::Interface::set_global_ghost_vector
 transfer of field from one problem to another is straightforward.
 
-\section ultraweak_implementation Implementation of user operator
+\section mixtransport_implementation Implementation of user operator
 
 In MoFEM we apply general procedure, recognising in the typical finite analysis
 to calculate matrices and vectors we make loops. Loop over finite elements on
@@ -968,7 +970,7 @@ finite element programmer to do the specific job.
 
 In this example, we use functionality of
 MoFEM::VolumeElementForcesAndSourcesCore by creating new class
-UltraWeakTransportElement::MyVolumeFE that derives from the existing class. The
+MixTransport::MixTransportElement::MyVolumeFE that derives from the existing class. The
 derived class inherits the properties of the base class, and you can add or
 override methods and properties as required. Each class has method
 MoFEM::ForcesAndSurcesCore::getOpPtrVector, returning reference to vector of
@@ -981,7 +983,7 @@ Instances of operator classes derived from MoFEM::DataOperator.
 MoFEM::ForcesAndSurcesCore::UserDataOperator do particular jobs, for example,
 calculate field values at integration points, integrate mass or stiffness
 matrix. Finite element instance can run the sequence of user operator in order
-you add them to shared common data structure, here \ref UltraWeakTransportElement
+you add them to shared common data structure, here \ref MixTransport::MixTransportElement
 itself. So for example in one operator you can
 calculate gradients of displacement field at each integration point, in another,
 you can symmetrize gradient to calculate strain and in following calculate
@@ -1010,7 +1012,7 @@ vectors. Note that fist \b doWork(int side,EntityType type,...) functions
 has as argument information about data in rows and columns, were second takes as
 an argument only rows or columns, depending on how user operator is set-up.
 
-\subsection ultraweak_assmble_matrix Assembling matrix
+\subsection mixtransport_assmble_matrix Assembling matrix
 
 We will show how user operators work on two examples. First, we focus attention on term
 \f[
@@ -1046,9 +1048,9 @@ point. The first and second loop are managed by MoFEM the last one over
 integration points where a particular operator is evaluated is implemented by
 programmer, as shown below
 \code
-struct UltraWeakTransportElement::OpVDotDivSigma_L2Hdiv: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
+struct MixTransport::MixTransportElement::OpVDivSigma_L2Hdiv: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
   Mat Aij;
-  OpVDotDivSigma_L2Hdiv(Mat aij):
+  OpVDivSigma_L2Hdiv(Mat aij):
   MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator(
     "FLUXES","VALUES",UserDataOperator::OPROWCOL
   ),
@@ -1066,7 +1068,7 @@ struct UltraWeakTransportElement::OpVDotDivSigma_L2Hdiv: public MoFEM::VolumeEle
     DataForcesAndSurcesCore::EntData &row_data,
     DataForcesAndSurcesCore::EntData &col_data
   ) {
-    PetscErrorCode ierr;
+    
     PetscFunctionBegin;
     int nb_row = row_data.getFieldData().size();
     int nb_col = col_data.getFieldData().size();
@@ -1097,7 +1099,7 @@ struct UltraWeakTransportElement::OpVDotDivSigma_L2Hdiv: public MoFEM::VolumeEle
 Note that we integrate over tetrahedra. Thus operator
 MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator is inherited.  The class
 constructor
-UltraWeakTransportElement::OpVDotDivSigma_L2Hdiv::OpVDotDivSigma_L2Hdiv takes an
+MixTransport::MixTransportElement::OpVDivSigma_L2Hdiv::OpVDivSigma_L2Hdiv takes an
 argument PETSc matrix and set variable \e sYmm to false, since matrix
 \f$\mathbf{C}\f$ is non-symmetric. Moreover, constructing operator we indicate
 that in the first argument of bilinear form we take field \e FLUXES and in the
@@ -1108,7 +1110,7 @@ type MoFEM::ForcesAndSurcesCore::UserDataOperator::OpType.
 
 The real work is done in
 \code
-PetscErrorCode UltraWeakTransportElement::OpVDotDivSigma_L2Hdiv::doWork(
+PetscErrorCode MixTransport::MixTransportElement::OpVDivSigma_L2Hdiv::doWork(
   int row_side,int col_side,
   EntityType row_type,EntityType col_type,
   DataForcesAndSurcesCore::EntData &row_data,
@@ -1185,9 +1187,9 @@ where  MatSetValues is a PETSc function documented here
 <http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/Mat/MatSetValues.html>
 
 To solve problem other blocks of matrix need to be assembled, for details how is
-done please see  UltraWeakTransportElement.
+done please see  MixTransport::MixTransportElement.
 
-\subsection ultraweak_assmble_vector Assembling vector
+\subsection mixtransport_assmble_vector Assembling vector
 
 At this stage you could see how to assemble vector, we focus attention on the
 assembly of Dirichlet boundary condition. Note the Dirichlet boundary conditions
@@ -1202,16 +1204,16 @@ This time, we will calculate integral
 \f]
 to do that we use following user operator class
 \code
-struct UltraWeakTransportElement::OpRhsBcOnValues: public MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator {
-  UltraWeakTransportElement &cTx;
+struct MixTransport::MixTransportElement::OpRhsBcOnValues: public MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator {
+  MixTransport::MixTransportElement &cTx;
   Vec F;
-  OpRhsBcOnValues(UltraWeakTransportElement &ctx,Vec f):
+  OpRhsBcOnValues(MixTransport::MixTransportElement &ctx,Vec f):
   MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator("FLUXES",UserDataOperator::OPROW),
   cTx(ctx),
   F(f) {}
   VectorDouble Nf;
   PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
-    PetscErrorCode ierr;
+    
     PetscFunctionBegin;
     if(data.getFieldData().size()==0) PetscFunctionReturn(0);
     Nf.resize(data.getIndices().size());
@@ -1236,7 +1238,7 @@ MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator, since we integrate
 over triangles where Dirichlet boundary conditions are set.
 
 In this case, the constructor has two arguments, reference to
-UltraWeakTransportElement object itself, and the right-hand side vector.  We use
+MixTransport::MixTransportElement object itself, and the right-hand side vector.  We use
 \b cTx reference to access function evaluating boundary conditions. Constructing
 derived class we are indicating that use field \e FLUXES and loop only over
 entities on the row, by setting OPROW from enum type
@@ -1244,7 +1246,7 @@ MoFEM::ForcesAndSurcesCore::UserDataOperator::OpType.
 
 The real work is done in
 \code
-PetscErrorCode UltraWeakTransportElement::OpRhsBcOnValues::doWork(
+PetscErrorCode MixTransport::MixTransportElement::OpRhsBcOnValues::doWork(
   int side,EntityType type,DataForcesAndSurcesCore::EntData &data
 );
 \endcode
@@ -1286,7 +1288,7 @@ where VecSetValues is PETSc function, see
 for details.
 
 
-\section ultraweak_error Evaluate error
+\section mixtransport_error Evaluate error
 
 In this example to estimate posterior error we follow paper
 \cite braess1996posteriori. This error estimator works well for mesh-dependent norms,
@@ -1371,7 +1373,7 @@ parameter, see \cite braess1996posteriori for details. Lower bound estimates is
 h \| f - \textrm{div}[\boldsymbol\sigma] \|_0
 \f]
 
-\subsection ultraweak_refinemnt_sequence Calculate error and refine mesh
+\subsection mixtransport_refinemnt_sequence Calculate error and refine mesh
 
 Once we have residual error estimator we could do h-adaptivity, it is done by
 executing following code
@@ -1385,7 +1387,7 @@ for(int ll = 1;ll!=nb_levels;ll++) {
   ierr = ufe.addBoundaryElements(ref_level);
   ierr = ufe.buildProblem(ref_level); CHKERRQ(ierr);
   ierr = ufe.createMatrices(); CHKERRQ(ierr);
-  ierr = ufe.solveProblem(); CHKERRQ(ierr);
+  ierr = ufe.solveLinearProblem(); CHKERRQ(ierr);
   ierr = ufe.calculateResidual(); CHKERRQ(ierr);
   ierr = ufe.evaluateError(); CHKERRQ(ierr);
   ierr = ufe.destroyMatrices(); CHKERRQ(ierr);
@@ -1401,23 +1403,23 @@ We focus attention on mesh refinement procedures in next section, but first we
 will show how to calculate residual error estimator using users operators.
 Function evaluating error is implemented as follows
 \code
-PetscErrorCode UltraWeakTransportElement::evaluateError() {
-  PetscErrorCode ierr;
+PetscErrorCode MixTransport::MixTransportElement::evaluateError() {
+  
   PetscFunctionBegin;
   errorMap.clear();
   sumErrorFlux = 0;
   sumErrorDiv = 0;
   sumErrorJump = 0;
   feTri.getOpPtrVector().clear();
-  feTri.getOpPtrVector().push_back(new UltraWeakTransportElement::OpSkeleton(*this,"FLUXES"));
-  ierr = mField.loop_finite_elements("ULTRAWEAK","ULTRAWEAK_SKELETON",feTri,0,mField.get_comm_size()); CHKERRQ(ierr);
+  feTri.getOpPtrVector().push_back(new MixTransport::MixTransportElement::OpSkeleton(*this,"FLUXES"));
+  ierr = mField.loop_finite_elements("MIX","MIX_SKELETON",feTri,0,mField.get_comm_size()); CHKERRQ(ierr);
   feVol.getOpPtrVector().clear();
-  feVol.getOpPtrVector().push_back(new UltraWeakTransportElement::OpFluxDivergenceAtGaussPts(*this,"FLUXES"));
-  feVol.getOpPtrVector().push_back(new UltraWeakTransportElement::OpValuesGradientAtGaussPts(*this,"VALUES"));
-  feVol.getOpPtrVector().push_back(new UltraWeakTransportElement::OpError(*this,"VALUES"));
-  ierr = mField.loop_finite_elements("ULTRAWEAK","ULTRAWEAK",feVol,0,mField.get_comm_size()); CHKERRQ(ierr);
+  feVol.getOpPtrVector().push_back(new MixTransport::MixTransportElement::OpFluxDivergenceAtGaussPts(*this,"FLUXES"));
+  feVol.getOpPtrVector().push_back(new MixTransport::MixTransportElement::OpValuesGradientAtGaussPts(*this,"VALUES"));
+  feVol.getOpPtrVector().push_back(new MixTransport::MixTransportElement::OpError(*this,"VALUES"));
+  ierr = mField.loop_finite_elements("MIX","MIX",feVol,0,mField.get_comm_size()); CHKERRQ(ierr);
   const Problem *problem_ptr;
-  ierr = mField.get_problem("ULTRAWEAK",&problem_ptr); CHKERRQ(ierr);
+  ierr = mField.get_problem("MIX",&problem_ptr); CHKERRQ(ierr);
   PetscPrintf(
     mField.get_comm(),
     "Nb dofs %d error flux^2 = %6.4e error div^2 = %6.4e error jump^2 = %6.4e error tot^2 = %6.4e\n",
@@ -1433,27 +1435,27 @@ simply doing this applying the same procedure like before, adding appropriate
 entity operator to the element object and looping over all triangular elements
 in the problem, as follows
 \code
-feTri.getOpPtrVector().push_back(new UltraWeakTransportElement::OpSkeleton(*this,"FLUXES"));
-ierr = mField.loop_finite_elements("ULTRAWEAK","ULTRAWEAK_SKELETON",feTri,0,mField.get_comm_size()); CHKERRQ(ierr);
+feTri.getOpPtrVector().push_back(new MixTransport::MixTransportElement::OpSkeleton(*this,"FLUXES"));
+ierr = mField.loop_finite_elements("MIX","MIX_SKELETON",feTri,0,mField.get_comm_size()); CHKERRQ(ierr);
 \endcode
-Note that entity operator UltraWeakTransportElement::OpSkeleton is executed for
-every element \e ULTRAWEAK_SKELETON. How this entity operator is implemented is
+Note that entity operator MixTransport::MixTransportElement::OpSkeleton is executed for
+every element \e MIX_SKELETON. How this entity operator is implemented is
 described in following section.
 
 Once the jump is calculated, we can evaluate error estimator, by running
 sequence of entity operators on each volume element, as follows,
 \code{.cpp}
-feVol.getOpPtrVector().push_back(new UltraWeakTransportElement::OpFluxDivergenceAtGaussPts(*this,"FLUXES"));
-  feVol.getOpPtrVector().push_back(new UltraWeakTransportElement::OpValuesGradientAtGaussPts(*this,"VALUES"));
-  feVol.getOpPtrVector().push_back(new UltraWeakTransportElement::OpError(*this,"VALUES"));
-  ierr = mField.loop_finite_elements("ULTRAWEAK","ULTRAWEAK",feVol,0,mField.get_comm_size()); CHKERRQ(ierr);
+feVol.getOpPtrVector().push_back(new MixTransport::MixTransportElement::OpFluxDivergenceAtGaussPts(*this,"FLUXES"));
+  feVol.getOpPtrVector().push_back(new MixTransport::MixTransportElement::OpValuesGradientAtGaussPts(*this,"VALUES"));
+  feVol.getOpPtrVector().push_back(new MixTransport::MixTransportElement::OpError(*this,"VALUES"));
+  ierr = mField.loop_finite_elements("MIX","MIX",feVol,0,mField.get_comm_size()); CHKERRQ(ierr);
 \endcode
 
 Once we loop over all elements and calculate error, we aggregate all element
 contributions in \b sumErrorFlux and \b sumErrorDiv and \b sumErrorJump which are
 \f$\eta^2_{T,R,1}\f$, \f$\eta^2_{T,R,2}\f$ and \f$\eta^2_{e,R}\f$, respectively.
 
-\subsection ultraweak_jump Calculate jump on the skeleton
+\subsection mixtransport_jump Calculate jump on the skeleton
 
 At this point, we will describe how to integrate over skeleton to get jumps on
 the faces. That involves loop over are triangles and then for each triangle
@@ -1472,7 +1474,7 @@ Discontinuous (Petrov) Galerkin, contact mechanics or other approaches involving
 integration on skeleton where information from adjacent entities is needed.
 
 \code{.cpp}
-struct UltraWeakTransportElement::OpSkeleton: public MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator {
+struct MixTransport::MixTransportElement::OpSkeleton: public MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator {
 
   /**
    * \brief volume element to get values from adjacent tets to face
@@ -1489,10 +1491,10 @@ struct UltraWeakTransportElement::OpSkeleton: public MoFEM::FaceElementForcesAnd
    */
   struct OpVolSide;
 
-  UltraWeakTransportElement &cTx;
+  MixTransport::MixTransportElement &cTx;
 
   OpSkeleton(
-    UltraWeakTransportElement &ctx,const std::string flux_name
+    MixTransport::MixTransportElement &ctx,const std::string flux_name
   ):
   MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator(flux_name,UserDataOperator::OPROW),
   volSideFe(ctx.mField),
@@ -1503,7 +1505,7 @@ struct UltraWeakTransportElement::OpSkeleton: public MoFEM::FaceElementForcesAnd
 };
 \endcode
 
-User entity operator UltraWeakTransportElement::OpSkeleton has nested volume
+User entity operator MixTransport::MixTransportElement::OpSkeleton has nested volume
 element and nested entity operator to integrate over it. Note that nested volume
 element is a class MoFEM::VolumeElementForcesAndSourcesCoreOnSide, that
 is inherited from MoFEM::VolumeElementForcesAndSourcesCore. This derived class has
@@ -1513,20 +1515,20 @@ tetrahedra. As results volume, base functions are evaluated at integration point
 which come from currently evaluated skeleton face.
 
 That nested volume element, here having instance \b volSideFe, run nested
-operator class UltraWeakTransportElement::OpSkeleton::OpVolSide, this class is
+operator class MixTransport::MixTransportElement::OpSkeleton::OpVolSide, this class is
 derived form MoFEM::VolumeElementForcesAndSourcesCoreOnSide::UserDataOperator.
 Again this class give access to additional information useful when integration
 is over skeleton, like face normal vector, face area, etc. Note that nested
-operator UltraWeakTransportElement::OpSkeleton::OpVolSide is added to nested
+operator MixTransport::MixTransportElement::OpSkeleton::OpVolSide is added to nested
 volume instance \b volSideFe, in constructor of face operator with the command
 line
 \code{.cpp}
-volSideFe.getOpPtrVector().push_back(new UltraWeakTransportElement::OpSkeleton::OpSkeleton::OpVolSide(valMap));
+volSideFe.getOpPtrVector().push_back(new MixTransport::MixTransportElement::OpSkeleton::OpSkeleton::OpVolSide(valMap));
 \endcode
 
 The example of implementation of nested volume element operator looks as follows
 \code{.cpp}
-struct UltraWeakTransportElement::OpSkeleton::OpVolSide: public MoFEM::VolumeElementForcesAndSourcesCoreOnSide::UserDataOperator {
+struct MixTransport::MixTransportElement::OpSkeleton::OpVolSide: public MoFEM::VolumeElementForcesAndSourcesCoreOnSide::UserDataOperator {
   map<int,VectorDouble> &valMap;
   OpVolSide(map<int,VectorDouble> &val_map):
   VolumeElementForcesAndSourcesCoreOnSide::UserDataOperator("VALUES",UserDataOperator::OPROW),
@@ -1554,9 +1556,9 @@ accessed by \b getFaceSense().
 Once we evaluated approximation functions values at each face, we can calculate
 error \f$\eta_{e,R}\f$, using face operator
 \code{.cpp}
-PetscErrorCode UltraWeakTransportElement::OpSkeleton::doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
-  MoABErrorCode rval;
-  PetscErrorCode ierr;
+PetscErrorCode MixTransport::MixTransportElement::OpSkeleton::doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+  MoAB
+  
   PetscFunctionBegin;
   if(type == MBTRI) {
     EntityHandle fe_ent = getNumeredEntFiniteElementPtr()->getEnt();
@@ -1571,14 +1573,14 @@ PetscErrorCode UltraWeakTransportElement::OpSkeleton::doWork(int side,EntityType
     ); CHKERRQ_MOAB(rval);
     *error_jump_ptr = 0;
     // check if this is essential boundary condition
-    EntityHandle essential_bc_meshset = cTx.mField.get_finite_element_meshset("ULTRAWEAK_BCFLUX");
+    EntityHandle essential_bc_meshset = cTx.mField.get_finite_element_meshset("MIX_BCFLUX");
     if(cTx.mField.get_moab().contains_entities(essential_bc_meshset,&fe_ent,1)) {
       // essential bc, np jump then, exit and go to next face
       PetscFunctionReturn(0);
     }
     // calculate values form adjacent tets
     valMap.clear();
-    ierr = loopSideVolumes("ULTRAWEAK",volSideFe); CHKERRQ(ierr);
+    ierr = loopSideVolumes("MIX",volSideFe); CHKERRQ(ierr);
     int nb_gauss_pts = data.getHdivN().size1();
     // it is only one face, so it has to be bc natural boundary condition
     if(valMap.size()==1) {
@@ -1611,7 +1613,7 @@ Note that we have to consider three scenarios, first, on the face is essential
 boundary condition. In that case, jump on face values is zero. If
 that is not a case, we run loop over adjacent volume elements
 \code
- ierr = loopSideVolumes("ULTRAWEAK",volSideFe); CHKERRQ(ierr);
+ ierr = loopSideVolumes("MIX",volSideFe); CHKERRQ(ierr);
 \endcode
 At this point nested volume element instance is called and then operator on this
 element executed. Results of this operation are stored in \b valMap.
@@ -1631,16 +1633,16 @@ which returns pointer to value stored (tagged) on face. Look here
 <http://ftp.mcs.anl.gov/pub/fathom/moab-docs/contents.html#twofour> to learn
 about tags in MOAB and how to use them.
 
-\subsection ultraweak_calculate_error Calculate residual error estimator
+\subsection mixtransport_calculate_error Calculate residual error estimator
 
 Once we have implemented how to calculate jumps between adjacent volume elements
 we can focus on computing residual error estimator. We do that in standard way
 using operator which acts on volume element
 \code
-struct UltraWeakTransportElement::OpError: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
-  UltraWeakTransportElement &cTx;
+struct MixTransport::MixTransportElement::OpError: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
+  MixTransport::MixTransportElement &cTx;
   OpError(
-    UltraWeakTransportElement &ctx,
+    MixTransport::MixTransportElement &ctx,
     const std::string field_name
   ):
   MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
@@ -1650,8 +1652,8 @@ struct UltraWeakTransportElement::OpError: public MoFEM::VolumeElementForcesAndS
   PetscErrorCode doWork(
     int side,EntityType type,DataForcesAndSurcesCore::EntData &data
   ) {
-    PetscErrorCode ierr;
-    ErrorCode rval;
+    
+    
     PetscFunctionBegin;
     if(type != MBTET) PetscFunctionReturn(0);
     invK.resize(3,3,false);
@@ -1729,17 +1731,17 @@ faces, summing them up to calculate
 \sum_{e \in \partial T} \eta_{e,R}^2
 \f$.
 
-\section ultraweak_meshrefinement Mesh refinement
+\section mixtransport_meshrefinement Mesh refinement
 
 We will build a refined mesh from scratch, each time we add the new level. Using
-bit refinement levels (see \ref uw_mesh_refinement) we can do that
+bit refinement levels (see \ref mix_mesh_refinement) we can do that
 efficiently.
 
 Since we build mesh without hanging nodes, not all edges in coarse tetrahedra
 are always refined. Refining such tetrahedra in subsequent refinements would result
 to poorly shaped elements. We will show how to overcome this difficulty.
 
-Implementation of mesh refinement is in ExampleUltraWeak::refineMesh. First, we
+Implementation of mesh refinement is in ExampleMix::refineMesh. First, we
 have to create a set of edges which are going to be split. This set is built
 from edges which were refined in previous mesh refinement levels and new edges
 which are adjacent to tetrahedra which have error above threshold. We used
@@ -1781,7 +1783,7 @@ for(
   tets_to_refine.insert(mit->second);
 }
 \endcode
-where \b ufe.errorMap is filled in in UltraWeakTransportElement::OpError .
+where \b ufe.errorMap is filled in in MixTransport::MixTransportElement::OpError .
 
 Once we have elements we can find adjacent edges
 \code
@@ -1826,7 +1828,7 @@ for(int ll = 0;ll!=nb_levels;ll++) {
 }
 \endcode
 
-\section ultraweak_future_work Future work and contribution
+\section mixtransport_future_work Future work and contribution
 
 If you like to contribute to this module (or MoFEM library), you are very
 welcome. Please feel free to add changes, including improving this documentation.

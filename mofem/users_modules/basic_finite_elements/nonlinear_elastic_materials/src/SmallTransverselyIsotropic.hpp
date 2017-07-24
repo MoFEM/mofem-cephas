@@ -32,7 +32,7 @@ struct SmallStrainTranverslyIsotropic: public NonlinearElasticElement::Functions
 
   SmallStrainTranverslyIsotropic(): NonlinearElasticElement::FunctionsToCalculatePiolaKirchhoffI<TYPE>() {}
 
-  PetscErrorCode ierr;
+  
 
   ublas::matrix<TYPE> sTrain;
   ublas::vector<TYPE> voightStrain;

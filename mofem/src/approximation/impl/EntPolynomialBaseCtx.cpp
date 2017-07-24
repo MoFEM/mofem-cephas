@@ -47,7 +47,7 @@ using namespace MoFEM;
 PetscErrorCode EntPolynomialBaseCtx::queryInterface(
   const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface
 ) {
-  PetscErrorCode ierr;
+  
   PetscFunctionBegin;
   *iface = NULL;
   if(
@@ -74,7 +74,7 @@ dAta(data),
 sPace(space),
 bAse(base),
 copyNodeBase(copy_node_base) {
-  PetscErrorCode ierr;
+  
   ierr = setBase(); CHKERRABORT(PETSC_COMM_WORLD,ierr);
 }
 

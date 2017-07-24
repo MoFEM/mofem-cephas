@@ -16,8 +16,6 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${UM_SOURCE_DIR}/basic_finite_elements/nonlinear_elastic_materials/src)
 include_directories(${UM_SOURCE_DIR}/obsolete/src)
 
-add_subdirectory(atom_tests)
-
 if(ADOL-C_LIBRARY)
   bfe_add_executable(arc_length_nonlinear_elasticity
   ${CMAKE_CURRENT_SOURCE_DIR}/arc_length_nonlinear_elasticity.cpp)

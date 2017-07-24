@@ -118,7 +118,7 @@ this procedure and enforcing constraints with Lagrange multiplier method we get
 \mathcal{L}(u,\lambda) =
 \frac{1}{2}\int_\Omega \left( \nabla u \right)^2 \textrm{d}\Omega
 -
-\frac{1}{2}\int_\Omega uf \textrm{d}\Omega
+\int_\Omega uf \textrm{d}\Omega
 +
 \int_{\partial\Omega} \lambda (u-\overline{u}) \textrm{d}\partial\Omega
 \f]

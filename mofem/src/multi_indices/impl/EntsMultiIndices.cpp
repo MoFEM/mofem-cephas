@@ -39,7 +39,6 @@
 
 namespace MoFEM {
 
-static MoABErrorCode rval;
 static moab::Error error;
 
 inline void* get_tag_ptr(SequenceManager *sequence_manager,Tag th,EntityHandle ent,int *tag_size) {
@@ -122,7 +121,7 @@ BitRefLevel* RefEntity::getBitRefLevelPtr() const {
 }
 
 PetscErrorCode getPatentEnt(Interface &moab,Range ents,std::vector<EntityHandle> vec_patent_ent) {
-  MoABErrorCode rval;
+  
   PetscFunctionBegin;
   Tag th_ref_parent_handle;
   rval = moab.tag_get_handle("_RefParentHandle",th_ref_parent_handle); CHKERRQ_MOAB(rval);
@@ -132,7 +131,7 @@ PetscErrorCode getPatentEnt(Interface &moab,Range ents,std::vector<EntityHandle>
 }
 
 PetscErrorCode RefEntity::getBitRefLevel(Interface &moab,Range ents,std::vector<BitRefLevel> vec_bit_ref_level) {
-  MoABErrorCode rval;
+  
   PetscFunctionBegin;
   Tag th_ref_bit_level;
   rval = moab.tag_get_handle("_RefBitLevel",th_ref_bit_level); MOAB_THROW(rval);
@@ -163,7 +162,7 @@ interface_RefEntity<RefEntity>(ref_ent_ptr),
 // tag_order_data(NULL),
 tag_FieldData(NULL),
 tag_FieldData_size(0) {
-  //MoABErrorCode rval;
+  //
   EntityHandle ent = getEnt();
   moab::Interface &moab = ref_ent_ptr->basicDataPtr->moab;
   rval = moab.tag_get_by_ptr(field_ptr->th_FieldData,&ent,1,(const void **)&tag_FieldData,&tag_FieldData_size);
@@ -193,7 +192,7 @@ std::ostream& operator<<(std::ostream& os,const FieldEntity& e) {
   return os;
 }
 void FieldEntity_change_order::operator()(FieldEntity *e) {
-  MoABErrorCode rval;
+  
   moab::Interface &moab = e->sPtr->basicDataPtr->moab;
   unsigned int nb_dofs = e->getOrderNbDofs(order)*e->getNbOfCoeffs();
   ApproximationOrder& ent_order = *(e->getMaxOrderPtr());

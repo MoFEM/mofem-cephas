@@ -53,7 +53,7 @@ using namespace MoFEM;
 PetscErrorCode TetPolynomialBase::queryInterface(
   const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface
 ) {
-  PetscErrorCode ierr;
+  
   PetscFunctionBegin;
   *iface = NULL;
   if(uuid == IDD_TET_BASE_FUNCTION) {
@@ -70,7 +70,7 @@ TetPolynomialBase::~TetPolynomialBase() {}
 TetPolynomialBase::TetPolynomialBase() {}
 
 PetscErrorCode TetPolynomialBase::getValueH1(MatrixDouble &pts) {
-  PetscErrorCode ierr;
+  
   PetscFunctionBegin;
 
   DataForcesAndSurcesCore& data = cTx->dAta;
@@ -184,7 +184,7 @@ PetscErrorCode TetPolynomialBase::getValueH1(MatrixDouble &pts) {
 PetscErrorCode TetPolynomialBase::getValueL2(
   MatrixDouble &pts
 ) {
-  PetscErrorCode ierr;
+  
   PetscFunctionBegin;
 
   DataForcesAndSurcesCore& data = cTx->dAta;
@@ -218,7 +218,7 @@ PetscErrorCode TetPolynomialBase::getValueL2(
 PetscErrorCode TetPolynomialBase::getValueHdivAinsworthBase(
   MatrixDouble &pts
 ) {
-  PetscErrorCode ierr;
+  
   PetscFunctionBegin;
 
   DataForcesAndSurcesCore& data = cTx->dAta;
@@ -541,7 +541,7 @@ PetscErrorCode TetPolynomialBase::getValueHdivAinsworthBase(
 PetscErrorCode TetPolynomialBase::getValueHdivDemkowiczBase(
   MatrixDouble &pts
 ) {
-  PetscErrorCode ierr;
+  
   PetscFunctionBegin;
 
   DataForcesAndSurcesCore& data = cTx->dAta;
@@ -642,7 +642,7 @@ PetscErrorCode TetPolynomialBase::getValueHdiv(
 PetscErrorCode TetPolynomialBase::getValueHCurl(
   MatrixDouble &pts
 ) {
-  PetscErrorCode ierr;
+  
   PetscFunctionBegin;
 
   try {
@@ -771,7 +771,7 @@ PetscErrorCode TetPolynomialBase::getValue(
   MatrixDouble &pts,
   boost::shared_ptr<BaseFunctionCtx> ctx_ptr
 ) {
-  PetscErrorCode ierr;
+  
   PetscFunctionBegin;
 
   MoFEM::UnknownInterface *iface;

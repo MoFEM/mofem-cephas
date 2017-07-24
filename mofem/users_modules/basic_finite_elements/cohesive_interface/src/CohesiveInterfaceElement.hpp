@@ -76,7 +76,7 @@ struct CohesiveInterfaceElement {
     */
     PetscErrorCode iNitailise(const FEMethod *fe_method) {
       PetscFunctionBegin;
-      ErrorCode rval;
+      
       double def_damaged = 0;
       rval = mField.get_moab().tag_get_handle(
         "DAMAGED_PRISM",1,MB_TYPE_INTEGER,thDamagedPrism,MB_TAG_CREAT|MB_TAG_SPARSE,&def_damaged
@@ -109,7 +109,7 @@ struct CohesiveInterfaceElement {
     PetscErrorCode getKappa(int nb_gauss_pts,const FEMethod *fe_method) {
       PetscFunctionBegin;
       EntityHandle ent = fe_method->numeredEntFiniteElementPtr->getEnt();
-      ErrorCode rval;
+      
       rval = mField.get_moab().tag_get_by_ptr(thKappa,&ent,1,(const void **)&kappaPtr,&kappaSize);
       if(rval != MB_SUCCESS || kappaSize != nb_gauss_pts) {
         VectorDouble kappa;
@@ -211,7 +211,7 @@ struct CohesiveInterfaceElement {
       const FEMethod *fe_method
     ) {
       PetscFunctionBegin;
-      PetscErrorCode ierr;
+      
       if(!isInitialised) {
         ierr = iNitailise(fe_method); CHKERRQ(ierr);
         isInitialised = true;
@@ -239,7 +239,7 @@ struct CohesiveInterfaceElement {
       const FEMethod *fe_method
     ) {
       PetscFunctionBegin;
-      PetscErrorCode ierr;
+      
       try {
         if(!isInitialised) {
           ierr = iNitailise(fe_method); CHKERRQ(ierr);
@@ -278,8 +278,8 @@ struct CohesiveInterfaceElement {
       CommonData &common_data,const FEMethod *fe_method
     ) {
       PetscFunctionBegin;
-      ErrorCode rval;
-      PetscErrorCode ierr;
+      
+      
       if(!isInitialised) {
         ierr = iNitailise(fe_method); CHKERRQ(ierr);
         isInitialised = true;
@@ -444,7 +444,7 @@ struct CohesiveInterfaceElement {
     VectorDouble traction,Nf;
     PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
-      PetscErrorCode ierr;
+      
       try {
         int nb_dofs = data.getIndices().size();
         if(nb_dofs == 0) PetscFunctionReturn(0);
@@ -493,7 +493,7 @@ struct CohesiveInterfaceElement {
       DataForcesAndSurcesCore::EntData &col_data
     ) {
       PetscFunctionBegin;
-      PetscErrorCode ierr;
+      
       try {
         int nb_row = row_data.getIndices().size();
         if(nb_row == 0) PetscFunctionReturn(0);
@@ -557,7 +557,7 @@ struct CohesiveInterfaceElement {
 
       PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
         PetscFunctionBegin;
-        PetscErrorCode ierr;
+        
         if(type != MBVERTEX) PetscFunctionReturn(0);
         if(physicalEqations.pRisms.find(getNumeredEntFiniteElementPtr()->getEnt()) == physicalEqations.pRisms.end()) {
           PetscFunctionReturn(0);

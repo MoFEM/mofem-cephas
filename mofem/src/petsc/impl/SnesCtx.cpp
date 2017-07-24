@@ -48,7 +48,7 @@ namespace MoFEM {
 
 PetscErrorCode SnesRhs(SNES snes,Vec x,Vec f,void *ctx) {
   PetscFunctionBegin;
-  PetscErrorCode ierr;
+  
   SnesCtx* snes_ctx = (SnesCtx*)ctx;
   PetscLogEventBegin(snes_ctx->USER_EVENT_SnesRhs,0,0,0,0);
   ierr = VecGhostUpdateBegin(x,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -95,7 +95,7 @@ PetscErrorCode SnesRhs(SNES snes,Vec x,Vec f,void *ctx) {
 }
 PetscErrorCode SnesMat(SNES snes,Vec x,Mat A,Mat B,void *ctx) {
   PetscFunctionBegin;
-  PetscErrorCode ierr;
+  
   SnesCtx* snes_ctx = (SnesCtx*)ctx;
   PetscLogEventBegin(snes_ctx->USER_EVENT_SnesMat,0,0,0,0);
   if(snes_ctx->zeroPreCondMatrixB) {

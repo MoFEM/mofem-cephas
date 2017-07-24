@@ -30,8 +30,8 @@ static char help[] = "...\n\n";
 
 int main(int argc, char *argv[]) {
 
-  ErrorCode rval;
-  PetscErrorCode ierr;
+  
+  
 
   PetscInitialize(&argc,&argv,(char *)0,help);
 
@@ -129,8 +129,8 @@ int main(int argc, char *argv[]) {
 
   struct ForcesAndSurcesCore_TestFE: public ForcesAndSurcesCore {
 
-    ErrorCode rval;
-    PetscErrorCode ierr;
+    
+    
 
     typedef tee_device<std::ostream, std::ofstream> TeeDevice;
     typedef stream<TeeDevice> TeeStream;

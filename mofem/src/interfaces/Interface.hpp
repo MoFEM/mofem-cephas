@@ -45,7 +45,7 @@ struct Interface: public UnknownInterface {
 
   template <class IFace>
   PetscErrorCode query_interface(IFace*& ptr) const {
-    PetscErrorCode ierr;
+    
     PetscFunctionBegin;
     void* tmp_ptr;
     ierr = query_interface_type(typeid(IFace),tmp_ptr); CHKERRQ(ierr);

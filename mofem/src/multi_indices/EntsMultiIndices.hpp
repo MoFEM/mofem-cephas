@@ -192,7 +192,7 @@ struct BasicEntity {
 
   */
   int* getSharingProcsPtr() const {
-    MoABErrorCode rval;
+    
     moab::Interface &moab = basicDataPtr->moab;
     int *sharing_procs_ptr = NULL;
     ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
@@ -229,7 +229,7 @@ struct BasicEntity {
 
     */
   inline EntityHandle* getSharingHandlersPtr() const {
-    MoABErrorCode rval;
+    
     EntityHandle *sharing_handlers_ptr = NULL;
     moab::Interface &moab = basicDataPtr->moab;
     ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
@@ -280,7 +280,7 @@ struct RefEntity: public BasicEntity {
    * Every entity belongs to some refinement level or levels. Each level is marked
    * by bit set in BitRefLevel() (bitset) structure.
    *
-   * See \ref uw_mesh_refinement for explanation.
+   * See \ref mix_mesh_refinement for explanation.
 
    * @return Return pointer to tag.
    */

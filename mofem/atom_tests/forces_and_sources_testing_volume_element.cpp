@@ -24,8 +24,8 @@ static char help[] = "...\n\n";
 
 int main(int argc, char *argv[]) {
 
-  ErrorCode rval;
-  PetscErrorCode ierr;
+  
+  
 
   PetscInitialize(&argc,&argv,(char *)0,help);
 
@@ -208,7 +208,7 @@ int main(int argc, char *argv[]) {
       my_split << "col side: " << col_side << " col_type: " << col_type << std::endl;
       my_split << col_data << std::endl;
 
-      PetscErrorCode ierr;
+      
       VectorInt row_indices,col_indices;
       ierr = getPorblemRowIndices("FIELD1",row_type,row_side,row_indices); CHKERRQ(ierr);
       ierr = getPorblemColIndices("FIELD2",col_type,col_side,col_indices); CHKERRQ(ierr);

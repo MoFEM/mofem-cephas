@@ -18,6 +18,7 @@
 #include <cblas.h>
 #include <base_functions.h>
 
+static PetscErrorCode ierr;
 
 PetscErrorCode Legendre_polynomials(
   int p,double s,double *diff_s,double *L,double *diffL,const int dim
@@ -149,7 +150,7 @@ PetscErrorCode Jacobi_polynomials(
 PetscErrorCode Lobatto_polynomials(
   int p,double s,double *diff_s,double *L,double *diffL,const int dim
 ) {
-  PetscErrorCode ierr;
+
   PetscFunctionBegin;
   if(dim < 1) SETERRQ(PETSC_COMM_SELF,MOFEM_INVALID_DATA,"dim < 1");
   if(dim > 3) SETERRQ(PETSC_COMM_SELF,MOFEM_INVALID_DATA,"dim > 3");

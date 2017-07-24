@@ -54,7 +54,7 @@ TriPolynomialBase::~TriPolynomialBase() {}
 PetscErrorCode TriPolynomialBase::queryInterface(
   const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface
 ) {
-  PetscErrorCode ierr;
+  
   PetscFunctionBegin;
   *iface = NULL;
   if(uuid == IDD_TET_BASE_FUNCTION) {
@@ -68,7 +68,7 @@ PetscErrorCode TriPolynomialBase::queryInterface(
 }
 
 PetscErrorCode TriPolynomialBase::getValueH1(MatrixDouble &pts) {
-  PetscErrorCode ierr;
+  
   PetscFunctionBegin;
 
   DataForcesAndSurcesCore& data = cTx->dAta;
@@ -136,7 +136,7 @@ PetscErrorCode TriPolynomialBase::getValueH1(MatrixDouble &pts) {
 PetscErrorCode TriPolynomialBase::getValueL2(
   MatrixDouble &pts
 ) {
-  PetscErrorCode ierr;
+  
   PetscFunctionBegin;
 
   DataForcesAndSurcesCore& data = cTx->dAta;
@@ -170,7 +170,7 @@ PetscErrorCode TriPolynomialBase::getValueL2(
 PetscErrorCode TriPolynomialBase::getValueHdivAinsworthBase(
   MatrixDouble &pts
 ) {
-  PetscErrorCode ierr;
+  
   PetscFunctionBegin;
 
   DataForcesAndSurcesCore& data = cTx->dAta;
@@ -238,7 +238,7 @@ PetscErrorCode TriPolynomialBase::getValueHdivAinsworthBase(
 PetscErrorCode TriPolynomialBase::getValueHdivDemkowiczBase(
   MatrixDouble &pts
 ) {
-  PetscErrorCode ierr;
+  
   PetscFunctionBegin;
 
   DataForcesAndSurcesCore& data = cTx->dAta;
@@ -295,7 +295,7 @@ PetscErrorCode TriPolynomialBase::getValueHdiv(
 PetscErrorCode TriPolynomialBase::getValueHCurl(
   MatrixDouble &pts
 ) {
-  PetscErrorCode ierr;
+  
   PetscFunctionBegin;
 
   DataForcesAndSurcesCore& data = cTx->dAta;
@@ -385,7 +385,7 @@ PetscErrorCode TriPolynomialBase::getValue(
   MatrixDouble &pts,
   boost::shared_ptr<BaseFunctionCtx> ctx_ptr
 ) {
-  PetscErrorCode ierr;
+  
   PetscFunctionBegin;
 
   MoFEM::UnknownInterface *iface;

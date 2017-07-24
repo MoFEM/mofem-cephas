@@ -84,7 +84,7 @@ namespace MoFEM {
   }
 
   PetscErrorCode MeshsetsManager::initialiseDatabseInformationFromMesh(int verb) {
-    MoABErrorCode rval;
+    
     MoFEM::Interface &m_field = cOre;
     moab::Interface &moab = m_field.get_moab();
     PetscFunctionBegin;
@@ -115,7 +115,7 @@ namespace MoFEM {
 
 
   PetscErrorCode MeshsetsManager::getTags(int verb) {
-    MoABErrorCode rval;
+    
     PetscFunctionBegin;
     MoFEM::Interface &m_field = cOre;
     moab::Interface &moab = m_field.get_moab();
@@ -163,7 +163,7 @@ namespace MoFEM {
   }
 
   PetscErrorCode MeshsetsManager::printDisplacementSet() const {
-    PetscErrorCode ierr;
+    
     DisplacementCubitBcData mydata;
     PetscFunctionBegin;
     ierr = printBcSet(mydata,NODESET|mydata.tYpe.to_ulong()); CHKERRQ(ierr);
@@ -171,7 +171,7 @@ namespace MoFEM {
   }
 
   PetscErrorCode MeshsetsManager::printPressureSet() const {
-    PetscErrorCode ierr;
+    
     PressureCubitBcData mydata;
     PetscFunctionBegin;
     ierr = printBcSet(mydata,SIDESET|mydata.tYpe.to_ulong()); CHKERRQ(ierr);
@@ -179,7 +179,7 @@ namespace MoFEM {
   }
 
   PetscErrorCode MeshsetsManager::printForceSet() const {
-    PetscErrorCode ierr;
+    
     ForceCubitBcData mydata;
     PetscFunctionBegin;
     ierr = printBcSet(mydata,NODESET|mydata.tYpe.to_ulong()); CHKERRQ(ierr);
@@ -187,7 +187,7 @@ namespace MoFEM {
   }
 
   PetscErrorCode MeshsetsManager::printTemperatureSet() const {
-    PetscErrorCode ierr;
+    
     TemperatureCubitBcData mydata;
     PetscFunctionBegin;
     ierr = printBcSet(mydata,NODESET|mydata.tYpe.to_ulong()); CHKERRQ(ierr);
@@ -195,7 +195,7 @@ namespace MoFEM {
   }
 
   PetscErrorCode MeshsetsManager::printHeatFluxSet() const {
-    PetscErrorCode ierr;
+    
     HeatFluxCubitBcData mydata;
     PetscFunctionBegin;
     ierr = printBcSet(mydata,SIDESET|mydata.tYpe.to_ulong()); CHKERRQ(ierr);
@@ -203,8 +203,8 @@ namespace MoFEM {
   }
 
   PetscErrorCode MeshsetsManager::printMaterialsSet() const {
-    MoABErrorCode rval;
-    PetscErrorCode ierr;
+    
+    
     PetscFunctionBegin;
     const MoFEM::Interface& m_field = cOre;
     const moab::Interface& moab = m_field.get_moab();
@@ -294,7 +294,7 @@ namespace MoFEM {
   }
 
   PetscErrorCode MeshsetsManager::addEntitiesToMeshset(const CubitBCType cubit_bc_type,const int ms_id,Range &ents) {
-    MoABErrorCode rval;
+    
     MoFEM::Interface &m_field = cOre;
     moab::Interface &moab = m_field.get_moab();
     PetscFunctionBegin;
@@ -311,7 +311,7 @@ namespace MoFEM {
   }
 
   PetscErrorCode MeshsetsManager::addEntitiesToMeshset(const CubitBCType cubit_bc_type,const int ms_id,const EntityHandle *ents,const int nb_ents) {
-    MoABErrorCode rval;
+    
     MoFEM::Interface &m_field = cOre;
     moab::Interface &moab = m_field.get_moab();
     PetscFunctionBegin;
@@ -395,7 +395,7 @@ namespace MoFEM {
   }
 
   PetscErrorCode MeshsetsManager::deleteMeshset(const CubitBCType cubit_bc_type,const int ms_id) {
-    MoABErrorCode rval;
+    
     MoFEM::Interface &m_field = cOre;
     moab::Interface &moab = m_field.get_moab();
     PetscFunctionBegin;
@@ -460,7 +460,7 @@ namespace MoFEM {
   PetscErrorCode MeshsetsManager::getEntitiesByDimension(
     const int msId,const unsigned int cubit_bc_type, const int dimension,Range &entities,const bool recursive
   ) {
-    PetscErrorCode ierr;
+    
     MoFEM::Interface &m_field = cOre;
     moab::Interface &moab = m_field.get_moab();
     PetscFunctionBegin;
@@ -477,7 +477,7 @@ namespace MoFEM {
   PetscErrorCode MeshsetsManager::getEntitiesByDimension(
     const int ms_id,const unsigned int cubit_bc_type, Range &entities,const bool recursive
   ) {
-    PetscErrorCode ierr;
+    
     MoFEM::Interface &m_field = cOre;
     moab::Interface &moab = m_field.get_moab();
     PetscFunctionBegin;
@@ -553,7 +553,7 @@ namespace MoFEM {
   };
 
   PetscErrorCode MeshsetsManager::setMeshsetFromFile(const string file_name,bool clean_file_options) {
-    PetscErrorCode ierr;
+    
     MoFEM::Interface &m_field = cOre;
     //moab::Interface &moab = m_field.get_moab();
     PetscFunctionBegin;
@@ -971,7 +971,7 @@ namespace MoFEM {
   }
 
   PetscErrorCode MeshsetsManager::setMeshsetFromFile() {
-    PetscErrorCode ierr;
+    
     MoFEM::Interface &m_field = cOre;
     //moab::Interface &moab = m_field.get_moab();
     PetscBool flg_file;
