@@ -31,6 +31,12 @@ file(
   ${CMAKE_CURRENT_SOURCE_DIR}/bc.cfg
   DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/
 )
+file(
+  COPY
+  ${CMAKE_CURRENT_SOURCE_DIR}/unsaturated.cfg
+  DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/
+)
+
 
 include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/src
@@ -47,6 +53,21 @@ bfe_add_executable(
   h_adaptive_transport ${CMAKE_CURRENT_SOURCE_DIR}/h_adaptive_transport.cpp
 )
 target_link_libraries(h_adaptive_transport
+  users_modules
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_third_party
+  mofem_cblas
+  ${MoFEM_PROJECT_LIBS}
+)
+
+bfe_add_executable(
+  unsaturated_transport ${CMAKE_CURRENT_SOURCE_DIR}/unsaturated_transport.cpp
+)
+target_link_libraries(unsaturated_transport
   users_modules
   mofem_finite_elements
   mofem_interfaces

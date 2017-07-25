@@ -1158,19 +1158,16 @@ struct MixTransportElement {
 
     MixTransportElement &cTx;
     Vec F;
-    boost::shared_ptr<MethodForForceScaling> valueScale;
 
     /**
      * \brief Constructor
      */
     OpRhsBcOnValues(
-      MixTransportElement &ctx,const std::string fluxes_name,Vec f,
-      boost::shared_ptr<MethodForForceScaling> value_scale = boost::shared_ptr<MethodForForceScaling>()
+      MixTransportElement &ctx,const std::string fluxes_name,Vec f
     ):
     MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator(fluxes_name,UserDataOperator::OPROW),
     cTx(ctx),
-    F(f),
-    valueScale(value_scale) {}
+    F(f) {}
 
     VectorDouble nF;
 
@@ -1212,9 +1209,6 @@ struct MixTransportElement {
           }
         }
         Vec f = (F!=PETSC_NULL) ? F : getFEMethod()->ts_F;
-        if(valueScale) {
-          ierr = valueScale->scaleNf(getFEMethod(),nF); CHKERRQ(ierr);
-        }
         ierr = VecSetValues(
           f,data.getIndices().size(),&data.getIndices()[0],&nF[0],ADD_VALUES
         ); CHKERRQ(ierr);
