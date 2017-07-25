@@ -122,7 +122,8 @@ struct MixTransportElement {
   virtual PetscErrorCode getSource(
     const EntityHandle ent,
     const double x,const double y,const double z,
-    double &flux) {
+    double &flux
+  ) {
     PetscFunctionBegin;
     flux  = 0;
     PetscFunctionReturn(0);
@@ -481,7 +482,6 @@ struct MixTransportElement {
 
   /// \brief create matrices
   PetscErrorCode createMatrices() {
-
     PetscFunctionBegin;
     ierr = mField.MatCreateMPIAIJWithArrays("MIX",&Aij); CHKERRQ(ierr);
     ierr = mField.VecCreateGhost("MIX",COL,&D); CHKERRQ(ierr);
@@ -518,7 +518,7 @@ struct MixTransportElement {
     // clear operator, just in case if some other operators are left on this element
     feTri.getOpPtrVector().clear();
     // set operator to calculate essential boundary conditions
-    feTri.getOpPtrVector().push_back(new OpEvaluateBcOnFluxes(*this,"FLUXES",D0));
+    feTri.getOpPtrVector().push_back(new OpEvaluateBcOnFluxes(*this,"FLUXES"));
     ierr = mField.loop_finite_elements("MIX","MIX_BCFLUX",feTri); CHKERRQ(ierr);
     ierr = VecGhostUpdateBegin(D0,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     ierr = VecGhostUpdateEnd(D0,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
@@ -690,7 +690,6 @@ struct MixTransportElement {
 
   /// \brief destroy matrices
   PetscErrorCode destroyMatrices() {
-
     PetscFunctionBegin;
     ierr = MatDestroy(&Aij); CHKERRQ(ierr);
     ierr = VecDestroy(&D); CHKERRQ(ierr);
@@ -768,7 +767,6 @@ struct MixTransportElement {
         );
         // Get base functions
         FTensor::Tensor1<double*,3> t_n_hdiv_row = row_data.getFTensor1HdivN<3>();
-        double x,y,z;
         FTensor::Tensor1<double,3> t_row;
         int nb_gauss_pts = row_data.getHdivN().size1();
         for(int gg = 0;gg!=nb_gauss_pts;gg++) {
@@ -1010,7 +1008,6 @@ struct MixTransportElement {
       DataForcesAndSurcesCore::EntData &row_data,
       DataForcesAndSurcesCore::EntData &col_data
     ) {
-
       PetscFunctionBegin;
       try {
         if(Aij == PETSC_NULL) PetscFunctionReturn(0);
@@ -1032,9 +1029,8 @@ struct MixTransportElement {
           ); CHKERRQ(ierr);
           noalias(NN) += w*outer_prod(row_data.getN(gg),divVec);
         }
-        Mat a = (Aij!=PETSC_NULL) ? Aij : getFEMethod()->ts_B;
         ierr = MatSetValues(
-          a,
+          Aij,
           nb_row,&row_data.getIndices()[0],
           nb_col,&col_data.getIndices()[0],
           &NN(0,0),ADD_VALUES
@@ -1042,7 +1038,7 @@ struct MixTransportElement {
         transNN.resize(nb_col,nb_row);
         ublas::noalias(transNN) = -trans(NN);
         ierr = MatSetValues(
-          a,
+          Aij,
           nb_col,&col_data.getIndices()[0],
           nb_row,&row_data.getIndices()[0],
           &transNN(0,0),ADD_VALUES
@@ -1077,9 +1073,8 @@ struct MixTransportElement {
           }
           noalias(Nf) += w*data.getN(gg)*cTx.divergenceAtGaussPts[gg];
         }
-        Vec f = (F!=PETSC_NULL) ? F : getFEMethod()->ts_F;
         ierr = VecSetValues(
-          f,nb_row,&data.getIndices()[0],
+          F,nb_row,&data.getIndices()[0],
           &Nf[0],ADD_VALUES
         ); CHKERRQ(ierr);
       } catch (const std::exception& ex) {
@@ -1163,18 +1158,21 @@ struct MixTransportElement {
 
     MixTransportElement &cTx;
     Vec F;
+    boost::shared_ptr<MethodForForceScaling> valueScale;
 
     /**
      * \brief Constructor
      */
     OpRhsBcOnValues(
-      MixTransportElement &ctx,const std::string fluxes_name,Vec f
+      MixTransportElement &ctx,const std::string fluxes_name,Vec f,
+      boost::shared_ptr<MethodForForceScaling> value_scale = boost::shared_ptr<MethodForForceScaling>()
     ):
     MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator(fluxes_name,UserDataOperator::OPROW),
     cTx(ctx),
-    F(f) {}
+    F(f),
+    valueScale(value_scale) {}
 
-    VectorDouble Nf;
+    VectorDouble nF;
 
     /**
      * \brief Integrate boundary condition
@@ -1186,13 +1184,12 @@ struct MixTransportElement {
     PetscErrorCode doWork(
       int side,EntityType type,DataForcesAndSurcesCore::EntData &data
     ) {
-
       PetscFunctionBegin;
       try {
         if(data.getFieldData().size()==0) PetscFunctionReturn(0);
         EntityHandle fe_ent = getNumeredEntFiniteElementPtr()->getEnt();
-        Nf.resize(data.getIndices().size());
-        Nf.clear();
+        nF.resize(data.getIndices().size());
+        nF.clear();
         int nb_gauss_pts = data.getHdivN().size1();
         for(int gg = 0;gg<nb_gauss_pts;gg++) {
           double x,y,z;
@@ -1209,17 +1206,17 @@ struct MixTransportElement {
           ierr = cTx.getBcOnValues(fe_ent,gg,x,y,z,value); CHKERRQ(ierr);
           double w = getGaussPts()(2,gg)*0.5;
           if(getNormalsAtGaussPt().size1() == (unsigned int)nb_gauss_pts) {
-            noalias(Nf) += w*prod(data.getHdivN(gg),getNormalsAtGaussPt(gg))*value;
+            noalias(nF) += w*prod(data.getHdivN(gg),getNormalsAtGaussPt(gg))*value;
           } else {
-            noalias(Nf) += w*prod(data.getHdivN(gg),getNormal())*value;
+            noalias(nF) += w*prod(data.getHdivN(gg),getNormal())*value;
           }
         }
         Vec f = (F!=PETSC_NULL) ? F : getFEMethod()->ts_F;
-        if(F==PETSC_NULL) {
-          Nf *= -1;
+        if(valueScale) {
+          ierr = valueScale->scaleNf(getFEMethod(),nF); CHKERRQ(ierr);
         }
         ierr = VecSetValues(
-          f,data.getIndices().size(),&data.getIndices()[0],&Nf[0],ADD_VALUES
+          f,data.getIndices().size(),&data.getIndices()[0],&nF[0],ADD_VALUES
         ); CHKERRQ(ierr);
       } catch (const std::exception& ex) {
         std::ostringstream ss;
@@ -1244,19 +1241,18 @@ struct MixTransportElement {
    */
   struct OpEvaluateBcOnFluxes: public MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator {
     MixTransportElement &cTx;
-    Vec X;
     OpEvaluateBcOnFluxes(
-      MixTransportElement &ctx,const std::string flux_name,Vec x
+      MixTransportElement &ctx,const std::string flux_name
     ):
     MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator(flux_name,UserDataOperator::OPROW),
-    cTx(ctx),
-    X(x) {
+    cTx(ctx) {
     }
-    virtual ~OpEvaluateBcOnFluxes() {}
+
     MatrixDouble NN;
     VectorDouble Nf;
-    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+    FTensor::Index<'i',3> i;
 
+    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
       try {
         if(data.getFieldData().size()==0) PetscFunctionReturn(0);
@@ -1268,8 +1264,8 @@ struct MixTransportElement {
         }
         NN.resize(nb_dofs,nb_dofs);
         Nf.resize(nb_dofs);
-        // get base functions on rows
-        FTensor::Index<'i',3> i;
+        NN.clear();
+        Nf.clear();
 
         // Get normal vector. Note that when higher order geometry is set, then
         // face element could be curved, i.e. normal can be different at each integration
@@ -1284,12 +1280,9 @@ struct MixTransportElement {
         }
         // set tensor from pointer
         FTensor::Tensor1<const double*,3> t_normal(normal_ptr,&normal_ptr[1],&normal_ptr[2],3);
-
         // get base functions
         FTensor::Tensor1<double*,3> t_n_hdiv_row = data.getFTensor1HdivN<3>();
 
-        NN.clear();
-        Nf.clear();
         double nrm2 = 0;
 
         // loop over integration points
@@ -1341,17 +1334,21 @@ struct MixTransportElement {
           }
 
         }
-
         // get global dofs indices on element
         cTx.bcIndices.insert(data.getIndices().begin(),data.getIndices().end());
-
         // factor matrix
         cholesky_decompose(NN);
         // solve local problem
         cholesky_solve(NN,Nf,ublas::lower());
 
+        // cerr << Nf << endl;
+        // cerr << data.getIndices() << endl;
+
         // set solution to vector
-        ierr = VecSetValues(X,data.getIndices().size(),&data.getIndices()[0],&Nf[0],INSERT_VALUES); CHKERRQ(ierr);
+        ierr = VecSetValues(
+          cTx.D0,nb_dofs,&*data.getIndices().begin(),
+          &*Nf.begin(),INSERT_VALUES
+        ); CHKERRQ(ierr);
 
       } catch (const std::exception& ex) {
         std::ostringstream ss;
@@ -1359,8 +1356,8 @@ struct MixTransportElement {
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
 
-    PetscFunctionReturn(0);
-  }
+      PetscFunctionReturn(0);
+    }
 
   };
 
@@ -1454,8 +1451,6 @@ struct MixTransportElement {
     ):
     MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
     cTx(ctx) {}
-
-    virtual ~OpFluxDivergenceAtGaussPts() {}
 
     VectorDouble divVec;
     PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
