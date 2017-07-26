@@ -13,6 +13,9 @@
 
 cmake_minimum_required (VERSION 2.8.7)
 
+#serch inlude directories before system directories
+set(CMAKE_INCLUDE_DIRECTORIES_BEFORE ON)
+
 #petsc and moab configuration are used to confiugre mofem
 include(cmake/FindPETSC.cmake)
 include(cmake/FindMOAB.cmake)
@@ -87,6 +90,9 @@ add_custom_target(
   COMMENT "Install prerequisites compiled with MoFEM"
 )
 
+# Find boost
+include(cmake/FindBoost.cmake)
+
 #SIGMA tools
 include(cmake/FindCGM.cmake)
 include(cmake/FindMESHKIT.cmake)
@@ -135,34 +141,6 @@ if(BLAS_FOUND)
   endif(APPLE)
 endif(BLAS_FOUND)
 message(STATUS "BLAS found: " ${BLAS_LIBRARIES})
-
-# Add boost directory
-if(NOT BOOST_DIR)
-  set(BOOST_DIR $ENV{BOOST_DIR})
-endif(NOT BOOST_DIR)
-
-find_library(
-  BOOST_PROGRAM_OPTIONS_LIB NAMES boost_program_options
-  HINTS
-  ${BOOST_DIR}/lib
-  ${PETSC_DIR}/${PETSC_ARCH}/lib
-)
-message(STATUS "Boost found: " ${BOOST_PROGRAM_OPTIONS_LIB})
-if(NOT BOOST_PROGRAM_OPTIONS_LIB)
-  message(FATAL_ERROR "boost program options library not found")
-endif(NOT BOOST_PROGRAM_OPTIONS_LIB)
-find_path(
-  BOOST_INCLUDE_DIR
-  NAMES boost/multi_index_container.hpp
-  HINTS
-  ${BOOST_DIR}/include
-  ${PETSC_DIR}/${PETSC_ARCH}/include
-)
-message(STATUS "Boost include found: " ${BOOST_INCLUDE_DIR})
-if(NOT BOOST_INCLUDE_DIR)
-  message(FATAL_ERROR "boost program incoude dir not found")
-endif(NOT BOOST_INCLUDE_DIR)
-include_directories(${BOOST_INCLUDE_DIR})
 
 if(TAO_LIBRARY)
   include_directories(${TAO_DIR}/include)
