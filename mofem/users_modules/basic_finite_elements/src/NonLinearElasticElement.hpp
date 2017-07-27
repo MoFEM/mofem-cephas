@@ -138,6 +138,9 @@ struct NonlinearElasticElement {
   template<typename TYPE>
   struct FunctionsToCalculatePiolaKirchhoffI {
 
+    virtual ~FunctionsToCalculatePiolaKirchhoffI() {
+    }
+
     /** \brief Calculate determinant of 3x3 matrix
       */
     PetscErrorCode dEterminatnt(
@@ -256,7 +259,7 @@ struct NonlinearElasticElement {
       boost::shared_ptr<const NumeredEntFiniteElement> fe_ptr
     ) {
       PetscFunctionBegin;
-      
+
       lambda = LAMBDA(block_data.E,block_data.PoissonRatio);
       mu = MU(block_data.E,block_data.PoissonRatio);
       ierr = calculateC_CauchyDefromationTensor(); CHKERRQ(ierr);
@@ -314,7 +317,7 @@ struct NonlinearElasticElement {
       boost::shared_ptr<const NumeredEntFiniteElement> fe_ptr
     ) {
       PetscFunctionBegin;
-      
+
       lambda = LAMBDA(block_data.E,block_data.PoissonRatio);
       mu = MU(block_data.E,block_data.PoissonRatio);
       ierr = calculateC_CauchyDefromationTensor(); CHKERRQ(ierr);
@@ -339,7 +342,7 @@ struct NonlinearElasticElement {
       boost::shared_ptr<const NumeredEntFiniteElement> fe_ptr
     ) {
       PetscFunctionBegin;
-      
+
       ierr = calculateP_PiolaKirchhoffI(block_data,fe_ptr); CHKERRQ(ierr);
       ierr = calculateElasticEnergy(block_data,fe_ptr); CHKERRQ(ierr);
       SiGma.resize(3,3,false);
