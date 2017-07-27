@@ -76,7 +76,7 @@ struct ExactLaplacianFunction {
   }
 };
 
-struct A {
+struct FunctionA {
   double operator()(const double u) { return 1+u*u; }
 };
 
@@ -142,7 +142,7 @@ int main(int argc, char *argv[]) {
       // Add problem specific operators the generic finite elements to calculate matrices and vectors.
       ierr = PoissonExample::CreateFiniteElements(m_field).createFEToAssmbleMatrceAndVectorForNonlinearProblem(
         ExactFunction(),ExactLaplacianFunction(),
-        A(),DiffA(),
+        FunctionA(),DiffA(),
         domain_lhs_fe,boundary_lhs_fe,domain_rhs_fe,boundary_rhs_fe,
         VolRuleNonlinear()
       ); CHKERRQ(ierr);
