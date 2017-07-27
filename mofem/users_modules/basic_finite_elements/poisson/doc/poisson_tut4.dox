@@ -23,10 +23,10 @@ at the beginning of \ref analytical_nonlinear_poisson.cpp example you can find
 two classes. Those functions can be modified to investigate alternative
 solutions
 \code
-struct A {
+struct FunA {
   double operator()(const double u) { return 1+u*u; }
 };
-struct DiffA {
+struct DiffFunA {
   double operator()(const double u) { return 2*u; }
 };
 \endcode
