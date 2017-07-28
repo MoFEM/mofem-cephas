@@ -28,16 +28,13 @@ namespace po = boost::program_options;
 #include <UnsaturatedFlow.hpp>
 #include <MaterialUnsaturatedFlow.hpp>
 
+#ifndef WITH_ADOL_C
+  #error "MoFEM need to be compiled with ADOL-C"
+#endif
+
 using namespace MoFEM;
 using namespace MixTransport;
 static char help[] = "...\n\n";
-
-double MixTransport::GenericMaterial::g = 9.81;   // [m/s^2]
-double MixTransport::GenericMaterial::rho = 1e3;  // [kg/m^3]
-double MixTransport::GenericMaterial::F = 1;      // [MN] - mega newton
-double MixTransport::GenericMaterial::S = 1;      // [S]
-double MixTransport::GenericMaterial::L = 1;      // [m]
-double MixTransport::GenericMaterial::M = 1;      // [kg]
 
 int main(int argc, char *argv[]) {
 
@@ -53,11 +50,9 @@ int main(int argc, char *argv[]) {
     // Testing van_genuchten
     MaterialVanGenuchten van_genuchten(data);
     van_genuchten.printMatParameters(-1,"testing");
-    van_genuchten.printSe(0,1e1,1e-4,"VanGenuchten_PcSe");
-    van_genuchten.printTheta(0,1e1,1e-4,"VanGenuchten_PcTheta");
-    van_genuchten.printKappaR(0,1e1,1e-4,"VanGenuchten_PcKr");
-    van_genuchten.printC(0,1e1,1e-4,"VanGenuchten_PcC");
-    van_genuchten.printDiffKappaR(-1,1e1,1e-4,"VanGenuchten_PcDiffKappaR");
+    van_genuchten.printTheta(-1e-16,-1,-1e-12,"hTheta");
+    van_genuchten.printKappa(-1e-16,-1,-1e-12,"hK");
+    van_genuchten.printC(-1e-16,-1,-1e-12,"hC");
     ierr = PetscFinalize(); CHKERRQ(ierr);
     return 0;
   }
@@ -160,15 +155,12 @@ int main(int argc, char *argv[]) {
     po::notify(vm);
     for(_IT_CUBITMESHSETS_BY_NAME_FOR_LOOP_(m_field,"SOIL",it)) {
       const int block_id = it->getMeshsetId();
-      material_blocks.at(block_id).printMatParameters(block_id,"Not-scaled");
-      material_blocks.at(block_id).sCaling();
-      material_blocks.at(block_id).printMatParameters(block_id,"Scaled");
+      material_blocks.at(block_id).printMatParameters(block_id,"Read material");
       if(material_blocks[block_id].matName=="SimpleDarcy") {
         uf.dMatMap[block_id] = boost::shared_ptr<GenericMaterial>(new SimpleDarcyProblem(material_blocks[block_id]));
       }
       if(material_blocks[block_id].matName=="VanGenuchten") {
         uf.dMatMap[block_id] = boost::shared_ptr<GenericMaterial>(new MaterialVanGenuchten(material_blocks[block_id]));
-        dynamic_cast<MaterialVanGenuchten*>(uf.dMatMap[block_id].get())->printMatParameters(block_id,"Data");
       }
       if(!uf.dMatMap[block_id]) {
         SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"Material block not set");

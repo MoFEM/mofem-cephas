@@ -30,14 +30,8 @@ namespace MixTransport {
     virtual ~GenericMaterial() {
     }
 
-    static double g;           ///< Earth acceleration [m/s^2]
-    static double rho;         ///< fluid density [kg/m^3]
-    static double L;           ///< length [m]
-    static double S;           ///< time [s]
-    static double F;           ///< force [F]
-    static double M;           ///< mass [kg]
+    double h;           ///< hydraulic head
 
-    double Pc;          ///< Capillary pressure [F/L^2]
     double K;           ///< Hydraulic conductivity [L/s]
     double diffK;       ///< Derivative of hydraulic conductivity [L/s * L^2/F]
     double C;           ///< Capacity [S^2/L^2]
@@ -47,17 +41,10 @@ namespace MixTransport {
 
     double x,y,z;       ///< in meters (L)
 
-    // Scale mass to make it consistent with other units
-    static double massScale() {
-      return M/(F*S*S/L);
-    }
-
-    // Scaling
-    virtual void sCaling() = 0;
 
     /**
-     * \brief Initialize capillary pressure
-     * @return value of pressure
+     * \brief Initialize head
+     * @return value of head
      */
     virtual double initalPcEval() const = 0;
 
@@ -122,7 +109,7 @@ namespace MixTransport {
     typedef std::map<int,boost::shared_ptr<GenericMaterial> > MaterialsDoubleMap;
     MaterialsDoubleMap dMatMap; ///< materials
 
-    boost::shared_ptr<VectorDouble> pressureRateAtGaussPts;
+    boost::shared_ptr<VectorDouble> headRateAtGaussPts;
 
     virtual PetscErrorCode getMaterial(
       const EntityHandle ent,int &block_id
@@ -265,8 +252,6 @@ namespace MixTransport {
           EntityHandle fe_ent = getNumeredEntFiniteElementPtr()->getEnt();
           nF.resize(data.getIndices().size());
           nF.clear();
-          const double g = GenericMaterial::g;
-          const double mass_scale = GenericMaterial::massScale();
           int nb_gauss_pts = data.getHdivN().size1();
           for(int gg = 0;gg<nb_gauss_pts;gg++) {
             double x,y,z;
@@ -275,8 +260,7 @@ namespace MixTransport {
             z = getCoordsAtGaussPts()(gg,2);
             double value;
             ierr = cTx.getBcOnValues(fe_ent,gg,x,y,z,value); CHKERRQ(ierr);
-            value *= mass_scale/g;
-            value = -z*GenericMaterial::rho;
+            value = -z;
             double w = getGaussPts()(2,gg)*0.5;
             noalias(nF) += w*prod(data.getHdivN(gg),getNormal())*value;
           }
@@ -323,26 +307,20 @@ namespace MixTransport {
         // Get base function
         FTensor::Tensor1<double*,3> t_n_hdiv = data.getFTensor1HdivN<3>();
         // Get pressure
-        FTensor::Tensor0<double*> t_Pc = getTensor0FormData(cTx.valuesAtGaussPts);
+        FTensor::Tensor0<double*> t_h = getTensor0FormData(cTx.valuesAtGaussPts);
         // Get flux
         FTensor::Tensor1<double*,3> t_flux = getTensor1FormData<3>(cTx.fluxesAtGaussPts);
         // Coords at integration points
         FTensor::Tensor1<double*,3> t_coords = getTensor1CoordsAtGaussPts();
         // Get integration weight
         FTensor::Tensor0<double*> t_w = getFTensor0IntegrationWeight();
-        // Earth acceleration
-        const double g = GenericMaterial::g;
-        // Scale mass
-        const double mass_scale = GenericMaterial::massScale();
-        // Density
-        const double rho = GenericMaterial::rho;
         // Get volume
         double vol = getVolume();
         // Get material parameters
         int nb_gauss_pts = data.getHdivN().size1();
         for(int gg = 0;gg!=nb_gauss_pts;gg++) {
           const double alpha = t_w*vol;
-          block_data->Pc = t_Pc;
+          block_data->h = t_h;
           block_data->x = t_coords(0);
           block_data->y = t_coords(1);
           block_data->z = t_coords(2);
@@ -351,14 +329,14 @@ namespace MixTransport {
           const double z = t_coords(2); /// z-coordinate at Gauss pt
           // Get divergence
           ierr = getDivergenceOfHDivBaseFunctions(side,type,data,gg,divVec); CHKERRQ(ierr);
-          noalias(nF) -= alpha*((t_Pc/g)*mass_scale-rho*z)*divVec;
+          noalias(nF) -= alpha*(t_h-z)*divVec;
           FTensor::Tensor0<double*> t_nf(&*nF.begin());
           for(int rr = 0;rr!=nb_dofs;rr++) {
             t_nf += alpha*(1/K)*(t_n_hdiv(i)*t_flux(i));
             ++t_n_hdiv;
             ++t_nf;
           }
-          ++t_Pc;
+          ++t_h;
           ++t_flux;
           ++t_coords;
           ++t_w;
@@ -398,9 +376,9 @@ namespace MixTransport {
         // Get material block
         boost::shared_ptr<GenericMaterial>& block_data = cTx.dMatMap.at(block_id);
         // Get pressure
-        FTensor::Tensor0<double*> t_Pc = getTensor0FormData(cTx.valuesAtGaussPts);
+        FTensor::Tensor0<double*> t_h = getTensor0FormData(cTx.valuesAtGaussPts);
         // Get pressure rate
-        FTensor::Tensor0<double*> t_Pc_t = getTensor0FormData(*cTx.pressureRateAtGaussPts);
+        FTensor::Tensor0<double*> t_h_t = getTensor0FormData(*cTx.headRateAtGaussPts);
         // Flux divergence
         FTensor::Tensor0<double*> t_div_flux = getTensor0FormData(cTx.divergenceAtGaussPts);
         // Get integration weight
@@ -413,15 +391,15 @@ namespace MixTransport {
         int nb_gauss_pts = data.getN().size1();
         for(int gg = 0;gg!=nb_gauss_pts;gg++) {
           const double alpha = t_w*vol;
-          block_data->Pc = t_Pc;
+          block_data->h = t_h;
           block_data->x = t_coords(0);
           block_data->y = t_coords(1);
           block_data->z = t_coords(2);
           ierr = block_data->calC(); CHKERRQ(ierr);
           const double C = block_data->C;
-          noalias(nF) += (alpha*(t_div_flux+C*t_Pc_t))*data.getN(gg);
-          ++t_Pc;
-          ++t_Pc_t;
+          noalias(nF) += (alpha*(t_div_flux+C*t_h_t))*data.getN(gg);
+          ++t_h;
+          ++t_h_t;
           ++t_div_flux;
           ++t_coords;
           ++t_w;
@@ -483,7 +461,7 @@ namespace MixTransport {
           // Get material block
           boost::shared_ptr<GenericMaterial>& block_data = cTx.dMatMap.at(block_id);
           // Get pressure
-          FTensor::Tensor0<double*> t_Pc = getTensor0FormData(cTx.valuesAtGaussPts);
+          FTensor::Tensor0<double*> t_h = getTensor0FormData(cTx.valuesAtGaussPts);
           // Coords at integration points
           FTensor::Tensor1<double*,3> t_coords = getTensor1CoordsAtGaussPts();
           // Get base functions
@@ -494,7 +472,7 @@ namespace MixTransport {
           const double vol = getVolume();
           int nb_gauss_pts = row_data.getHdivN().size1();
           for(int gg = 0;gg!=nb_gauss_pts;gg++) {
-            block_data->Pc = t_Pc;
+            block_data->h = t_h;
             block_data->x = t_coords(0);
             block_data->y = t_coords(1);
             block_data->z = t_coords(2);
@@ -513,7 +491,7 @@ namespace MixTransport {
               ++t_n_hdiv_row;
             }
             ++t_coords;
-            ++t_Pc;
+            ++t_h;
             ++t_w;
           }
           Mat a = getFEMethod()->ts_B;
@@ -591,9 +569,9 @@ namespace MixTransport {
           // Get material block
           boost::shared_ptr<GenericMaterial>& block_data = cTx.dMatMap.at(block_id);
           // Get pressure
-          FTensor::Tensor0<double*> t_Pc = getTensor0FormData(cTx.valuesAtGaussPts);
+          FTensor::Tensor0<double*> t_h = getTensor0FormData(cTx.valuesAtGaussPts);
           // Get pressure rate
-          FTensor::Tensor0<double*> t_Pc_t = getTensor0FormData(*cTx.pressureRateAtGaussPts);
+          FTensor::Tensor0<double*> t_h_t = getTensor0FormData(*cTx.headRateAtGaussPts);
           // Get integration weight
           FTensor::Tensor0<double*> t_w = getFTensor0IntegrationWeight();
           // Coords at integration points
@@ -608,7 +586,7 @@ namespace MixTransport {
           for(int gg = 0;gg!=nb_gauss_pts;gg++) {
             // get integration weight and multiply by element volume
             double alpha = t_w*vol;
-            block_data->Pc = t_Pc;
+            block_data->h = t_h;
             block_data->x = t_coords(0);
             block_data->y = t_coords(1);
             block_data->z = t_coords(2);
@@ -620,7 +598,7 @@ namespace MixTransport {
             for(int kk = 0;kk!=nb_row;kk++) {
               FTensor::Tensor0<double*> t_n_col = col_data.getFTensor0N(gg,0);
               for(int ll = 0;ll!=nb_col;ll++) {
-                t_a += (alpha*(C*ts_a+diffC*t_Pc_t))*t_n_row*t_n_col;
+                t_a += (alpha*(C*ts_a+diffC*t_h_t))*t_n_row*t_n_col;
                 ++t_n_col;
                 ++t_a;
               }
@@ -628,8 +606,8 @@ namespace MixTransport {
             }
             ++t_w;
             ++t_coords;
-            ++t_Pc;
-            ++t_Pc_t;
+            ++t_h;
+            ++t_h_t;
           }
           Mat a = getFEMethod()->ts_B;
           ierr = MatSetValues(
@@ -774,7 +752,7 @@ namespace MixTransport {
           // Get material block
           boost::shared_ptr<GenericMaterial>& block_data = cTx.dMatMap.at(block_id);
           // Get pressure
-          FTensor::Tensor0<double*> t_Pc = getTensor0FormData(cTx.valuesAtGaussPts);
+          FTensor::Tensor0<double*> t_h = getTensor0FormData(cTx.valuesAtGaussPts);
           // Get flux
           FTensor::Tensor1<double*,3> t_flux = getTensor1FormData<3>(cTx.fluxesAtGaussPts);
           // Coords at integration points
@@ -783,14 +761,11 @@ namespace MixTransport {
           FTensor::Tensor0<double*> t_w = getFTensor0IntegrationWeight();
           // Get base function
           FTensor::Tensor1<double*,3> t_n_hdiv_row = row_data.getFTensor1HdivN<3>();
-          const double g = GenericMaterial::g;
-          // Mass scale
-          const double mass_scale = GenericMaterial::massScale();
           // Get volume
           double vol = getVolume();
           int nb_gauss_pts = row_data.getHdivN().size1();
           for(int gg = 0;gg<nb_gauss_pts;gg++) {
-            block_data->Pc = t_Pc;
+            block_data->h = t_h;
             block_data->x = t_coords(0);
             block_data->y = t_coords(1);
             block_data->z = t_coords(2);
@@ -803,7 +778,7 @@ namespace MixTransport {
             ierr = getDivergenceOfHDivBaseFunctions(
               row_side,row_type,row_data,gg,divVec
             ); CHKERRQ(ierr);
-            noalias(nN) -= alpha*(mass_scale/g)*outer_prod(divVec,col_data.getN(gg));
+            noalias(nN) -= alpha*outer_prod(divVec,col_data.getN(gg));
             FTensor::Tensor0<double*> t_a(&*nN.data().begin());
             for(int rr = 0;rr!=nb_row;rr++) {
               double beta = alpha*(-diffK/KK)*(t_n_hdiv_row(i)*t_flux(i));
@@ -817,7 +792,7 @@ namespace MixTransport {
             }
             ++t_w;
             ++t_coords;
-            ++t_Pc;
+            ++t_h;
             ++t_flux;
           }
           ierr = MatSetValues(
@@ -836,9 +811,9 @@ namespace MixTransport {
 
     };
 
-    struct OpEvaluateInitiallPressure: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
+    struct OpEvaluateInitiallHead: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
       UnsaturatedFlowElement &cTx;
-      OpEvaluateInitiallPressure(UnsaturatedFlowElement &ctx,const std::string& val_name):
+      OpEvaluateInitiallHead(UnsaturatedFlowElement &ctx,const std::string& val_name):
       MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator(val_name,UserDataOperator::OPROW),
       cTx(ctx) {
       }
@@ -1243,14 +1218,14 @@ namespace MixTransport {
       feFaceBc->getOpPtrVector().push_back(new OpEvaluateBcOnFluxes(*this,"FLUXES"));
 
       // Set operator to calculate initial capillary pressure
-      feVolInitialPc->getOpPtrVector().push_back(new OpEvaluateInitiallPressure(*this,"VALUES"));
+      feVolInitialPc->getOpPtrVector().push_back(new OpEvaluateInitiallHead(*this,"VALUES"));
 
       // set residual face from Neumann terms, i.e. applied pressure
       feFaceRhs->getOpPtrVector().push_back(new OpRhsBcOnValues(*this,"FLUXES",scaleMethodValue));
       // set residual
-      pressureRateAtGaussPts = boost::make_shared<VectorDouble>();
+      headRateAtGaussPts = boost::make_shared<VectorDouble>();
       feVolRhs->getOpPtrVector().push_back(
-        new OpCalculateScalarFieldValues(string("VALUES")+"_t",pressureRateAtGaussPts,MBTET)
+        new OpCalculateScalarFieldValues(string("VALUES")+"_t",headRateAtGaussPts,MBTET)
       );
       feVolRhs->getOpPtrVector().push_back(new OpValuesAtGaussPts(*this,"VALUES"));
       feVolRhs->getOpPtrVector().push_back(new OpFluxDivergenceAtGaussPts(*this,"FLUXES"));
@@ -1259,7 +1234,7 @@ namespace MixTransport {
       feVolRhs->getOpPtrVector().back().opType = ForcesAndSurcesCore::UserDataOperator::OPROW;
       // set tangent matrix
       feVolLhs->getOpPtrVector().push_back(
-        new OpCalculateScalarFieldValues(string("VALUES")+"_t",pressureRateAtGaussPts,MBTET)
+        new OpCalculateScalarFieldValues(string("VALUES")+"_t",headRateAtGaussPts,MBTET)
       );
       feVolLhs->getOpPtrVector().push_back(new OpValuesAtGaussPts(*this,"VALUES"));
       feVolLhs->getOpPtrVector().push_back(new OpFluxDivergenceAtGaussPts(*this,"FLUXES"));
@@ -1366,7 +1341,7 @@ namespace MixTransport {
     PetscErrorCode solveProblem(bool set_initial_pc = true) {
       PetscFunctionBegin;
       if(set_initial_pc) {
-        // Set initial Pc
+        // Set initial head
         ierr = DMoFEMMeshToLocalVector(dM,D1,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
       }
 

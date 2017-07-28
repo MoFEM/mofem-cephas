@@ -64,9 +64,6 @@ namespace po = boost::program_options;
 
 using namespace boost::numeric;
 
-
-
-
 static char help[] =
   "-my_block_config set block data\n"
   "\n";

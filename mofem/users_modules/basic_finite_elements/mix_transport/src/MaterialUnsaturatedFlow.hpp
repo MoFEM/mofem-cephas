@@ -13,66 +13,49 @@ namespace MixTransport {
   struct CommonMaterialData: public GenericMaterial {
 
     CommonMaterialData() {
-      kappa = 5.6634e-8;
-      mu = 1e-9;
-      a = 0.0123;
       thetaS = 0.38;
+      thetaM = 0.38;
       thetaR = 0.068;
-      m = 0.0826;
-      APc = 0.;
-      APcZ = 0.;
-      APcZZ = 0;
+      alpha = 0.8;
+      n = 1.09;
+      Ks = 0.048;
+      hS = 0;
+      Ah = 0.;
+      AhZ = 0.;
+      AhZZ = 0;
     }
 
     std::string matName; ///< material name
 
+    double Ks;          ///< saturated hydraulic conductivity [m/day]
+    double hS;          ///< minimum capillary height [m]
     double thetaS;      ///< saturated water content
     double thetaR;      ///< residual water contents
-    double m;           ///< model parameter
+    double thetaM;      ///< model parameter
+    double alpha;       ///< model parameter
+    double n;           ///< model parameter
 
-    double mu;          ///< dynamic viscosity [t/mm*s]
-    double kappa;       ///< intrinsic conductivity [mm^2]
-    double a;           ///< model parameter [MPa]
-
-    // Initial capillary pressure coefficient
-    // Pc = APx+APx*Z+APx*Z*Z
-
-    double APc;       ///< Initial capillary pressure coefficient
-    double APcZ;      ///< Initial capillary pressure coefficient
-    double APcZZ;     ///< Initial capillary pressure coefficient
-
-    void sCaling() {
-      a *= (F/1)*(1/(L*L));
-      mu *= (M/1)*(1/L)*(1/S)*1e3*1e-3;
-      kappa *= ((L*L)/1)*1e-6;
-      rho *= (M/1)*(1/(L*L*L));
-      g *= (L/1)*(1/(S*S));
-      APc *= (F/1)*(1/(L*L));
-      APcZ *= (F/1)*(1/(L*L));
-      APcZZ *= (F/1)*(1/(L*L));
-    }
+    // Initial hydraulic head
+    //
+    double Ah;       ///< Initial hydraulic head coefficient
+    double AhZ;      ///< Initial hydraulic head coefficient
+    double AhZZ;     ///< Initial hydraulic head coefficient
 
     double initalPcEval() const {
-      return APc+APcZ*z+APcZZ*z*z;
+      return Ah+AhZ*z+AhZZ*z*z;
     }
 
     void addOptions(po::options_description& o,const std::string& prefix) {
       o.add_options()
-      ((prefix+".M").c_str(),po::value<double>(&M)->default_value(M))
-      ((prefix+".L").c_str(),po::value<double>(&L)->default_value(L))
-      ((prefix+".S").c_str(),po::value<double>(&S)->default_value(S))
-      ((prefix+".F").c_str(),po::value<double>(&F)->default_value(F))
-      ((prefix+".g").c_str(),po::value<double>(&g)->default_value(g))
-      ((prefix+".rho").c_str(),po::value<double>(&rho)->default_value(rho))
-      ((prefix+".kappa").c_str(),po::value<double>(&kappa)->default_value(kappa))
-      ((prefix+".mu").c_str(),po::value<double>(&mu)->default_value(mu))
-      ((prefix+".a").c_str(),po::value<double>(&a)->default_value(a))
       ((prefix+".thetaS").c_str(),po::value<double>(&thetaS)->default_value(thetaS))
       ((prefix+".thetaR").c_str(),po::value<double>(&thetaR)->default_value(thetaR))
-      ((prefix+".m").c_str(),po::value<double>(&m)->default_value(m))
-      ((prefix+".APc").c_str(),po::value<double>(&APc)->default_value(APc))
-      ((prefix+".APcZ").c_str(),po::value<double>(&APcZ)->default_value(APcZ))
-      ((prefix+".APcZZ").c_str(),po::value<double>(&APcZZ)->default_value(APcZZ));
+      ((prefix+".alpha").c_str(),po::value<double>(&alpha)->default_value(alpha))
+      ((prefix+".n").c_str(),po::value<double>(&n)->default_value(n))
+      ((prefix+".hS").c_str(),po::value<double>(&n)->default_value(hS))
+      ((prefix+".Ks").c_str(),po::value<double>(&n)->default_value(Ks))
+      ((prefix+".Ah").c_str(),po::value<double>(&Ah)->default_value(Ah))
+      ((prefix+".AhZ").c_str(),po::value<double>(&AhZ)->default_value(AhZ))
+      ((prefix+".AhZZ").c_str(),po::value<double>(&AhZZ)->default_value(AhZZ));
       // TODO Add more parameters
     }
 
@@ -81,21 +64,16 @@ namespace MixTransport {
         PETSC_COMM_WORLD,"Mat name %s-%s block id %d\n",
         prefix.c_str(),matName.c_str(),id
       );
-      PetscPrintf(PETSC_COMM_WORLD,"M=%6.4g [kg]\n",L);
-      PetscPrintf(PETSC_COMM_WORLD,"L=%6.4g [m]\n",L);
-      PetscPrintf(PETSC_COMM_WORLD,"S=%6.4g [s]\n",S);
-      PetscPrintf(PETSC_COMM_WORLD,"F=%6.4g [N]\n",F);
-      PetscPrintf(PETSC_COMM_WORLD,"g=%6.4g\n",g);
-      PetscPrintf(PETSC_COMM_WORLD,"rho=%6.4g\n",rho);
       PetscPrintf(PETSC_COMM_WORLD,"thetaS=%6.4g\n",thetaS);
       PetscPrintf(PETSC_COMM_WORLD,"thetaR=%6.4g\n",thetaR);
-      PetscPrintf(PETSC_COMM_WORLD,"mu=%6.4g\n",mu);
-      PetscPrintf(PETSC_COMM_WORLD,"a=%6.4g\n",a);
-      PetscPrintf(PETSC_COMM_WORLD,"m=%6.4g\n",m);
-      PetscPrintf(PETSC_COMM_WORLD,"kappa=%6.4g\n",kappa);
-      PetscPrintf(PETSC_COMM_WORLD,"APc=%6.4g\n",APc);
-      PetscPrintf(PETSC_COMM_WORLD,"APcZ=%6.4g\n",APcZ);
-      PetscPrintf(PETSC_COMM_WORLD,"APcZZ=%6.4g\n",APcZZ);
+      PetscPrintf(PETSC_COMM_WORLD,"thetaM=%6.4g\n",thetaM);
+      PetscPrintf(PETSC_COMM_WORLD,"alpha=%6.4g\n",alpha);
+      PetscPrintf(PETSC_COMM_WORLD,"n=%6.4g\n",n);
+      PetscPrintf(PETSC_COMM_WORLD,"hS=%6.4g\n",hS);
+      PetscPrintf(PETSC_COMM_WORLD,"Ks=%6.4g\n",Ks);
+      PetscPrintf(PETSC_COMM_WORLD,"Ah=%6.4g\n",Ah);
+      PetscPrintf(PETSC_COMM_WORLD,"AhZ=%6.4g\n",AhZ);
+      PetscPrintf(PETSC_COMM_WORLD,"AhZZ=%6.4g\n",AhZZ);
     }
 
   };
@@ -108,7 +86,7 @@ namespace MixTransport {
 
     PetscErrorCode calK() {
       PetscFunctionBegin;
-      K = kappa*(rho*g)/mu;
+      K = Ks;
       PetscFunctionReturn(0);
     };
 
@@ -120,7 +98,7 @@ namespace MixTransport {
 
     PetscErrorCode calC() {
       PetscFunctionBegin;
-      C = rho;
+      C = 0;
       PetscFunctionReturn(0);
     }
 
@@ -136,164 +114,160 @@ namespace MixTransport {
 
     MaterialVanGenuchten(const CommonMaterialData &data):
     CommonMaterialData(data) {
+      recordTheta();
+      recordKr();
     }
 
-    inline void calSe() {
-      if(Pc<=0) {
-        Se = 1;
-      } else {
-        Se = pow(1+pow(Pc/a,1/(1-m)),-m);
-      }
+    adouble ah;
+    adouble aTheta;
+    adouble aKr;
+    adouble aSe;
+    adouble aSeStar;
+
+    template <typename TYPE>
+    inline TYPE funTheta(TYPE &h,const double m) {
+      return thetaR+(thetaM-thetaR)/pow(1+pow(-alpha*h,n),m);
     }
 
-    void printSe(const double b,const double e,const double s,const std::string prefix) {
-      Pc = b;
-      for(;Pc<e;Pc+=s) {
-        calSe();
-        cout << prefix+": " << Pc << " " << Se << endl;
-      }
+    template <typename TYPE>
+    inline TYPE funSeStar(TYPE &SeStar,const double m) {
+      return pow(1-pow(SeStar,1/m),m);
     }
 
-    inline void calDiffSe() {
-      if(Pc<=0) {
-        diffSe = 0;
-      } else {
-        diffSe =
-        -pow(0.1e1 + pow(Pc / a, 0.1e1 / (double) (1 - m)), -(double) m) * (double) m *
-        pow(Pc / a, 0.1e1 / (double) (1 - m)) / (double) (1 - m) / Pc / (0.1e1 +
-          pow(Pc / a, 0.1e1 / (double) (1 - m)));
-        }
+    inline adouble funKr(adouble &ah) {
+      const double m = 1-1/n;
+      aTheta = funTheta(ah,m);
+      aSe = (aTheta-thetaR)/(thetaS-thetaR);
+      aSeStar = aSe*(thetaS-thetaR)/(thetaM-thetaR);
+      double one = 1;
+      const double c = funSeStar<double>(one,m);
+      return sqrt(aSe)*pow((1-funSeStar<adouble>(aSeStar,m))/(1-c),2);
     }
 
-    inline void calDiff2Se() {
-      if(Pc<=0) {
-        diff2Se = 0;
-      } else {
-        diff2Se = -(double) (int) pow((double) (-1 + m), (double) (-2)) * pow(Pc, -0.2e1) * (double) m *
-        (-pow(0.1e1 + pow(Pc / a, -0.1e1 / (double) (-1 + m)), (double) (-m - 2)) * (double) m *
-        pow(Pc / a, -(double) (2 / (-1 + m))) + pow(0.1e1 +
-          pow(Pc / a, -0.1e1 / (double) (-1 + m)), (double) (-m - 1)) * (double) m *
-          pow(Pc / a, -0.1e1 / (double) (-1 + m)) - pow(0.1e1 + pow(Pc / a, -0.1e1 / (double) (-1 + m)), (double) (-m - 2)) *
-          pow(Pc / a, -(double) (2 / (-1 + m))));
-      }
+    inline void recordTheta() {
+      h = -1-hS;
+      trace_on(0,true);
+      ah <<= h;
+      const double m = 1-1/n;
+      aTheta = funTheta(ah,m);
+      double r_theta;
+      aTheta >>= r_theta;
+      trace_off();
     }
 
-    inline void calKappaR() {
-      if(Se==0) {
-        kappaR = 0;
-      } else if(Se==1) {
-        kappaR = 1;
-      } else {
-        const double a = pow(Se,1/m);
-        const double b = pow(1-a,m);
-        kappaR = sqrt(Se)*pow(1-b,2);
-      }
+    inline void recordKr() {
+      h = -1-hS;
+      trace_on(1,true);
+      ah <<= h;
+      aKr = funKr(ah);
+      double r_Kr;
+      aKr >>= r_Kr;
+      trace_off();
     }
 
-    inline void  calDiffKappaR() {
-      if(Se==0) {
-        diffSe = 0;
-      } else if(Se==1) {
-        diffSe = 0;
-      } else {
-        diffKappaR =
-        pow(Se, -0.1e1 / 0.2e1) * pow(0.1e1 - pow(0.1e1 - pow(Se, 0.1e1 / m), m), 0.2e1) / 0.2e1 + 0.2e1 *
-        pow(Se, -0.1e1 / 0.2e1) * (0.1e1 - pow(0.1e1 - pow(Se, 0.1e1 / m), m)) * pow(0.1e1 - pow(Se, 0.1e1 / m), m) *
-        pow(Se, 0.1e1 / m) / (0.1e1 - pow(Se, 0.1e1 / m));
-      }
-    }
-
-    inline void calTheta() {
-      theta = Se*(thetaS-thetaR)+thetaR;
-    }
-
-    void printTheta(const double b,const double e,const double s,const std::string prefix) {
-      Pc = b;
-      for(;Pc<e;Pc+=s) {
-        calSe();
-        calTheta();
-        cout << prefix+": " << Pc << " " << theta << endl;
-      }
-    }
-
-    inline void calDiffTheta() {
-      diffTheta = diffSe*(thetaS-thetaR);
-    }
-
-    inline void calDiff2Theta() {
-      diff2Theta = diff2Se*(thetaS-thetaR);
-    }
-
+    double Kr;
     PetscErrorCode calK() {
       PetscFunctionBegin;
-      calSe();
-      calKappaR();
-      K = (rho*g/mu)*kappa*kappaR;
-      PetscFunctionReturn(0);
-    }
-
-    void printKappaR(const double b,const double e,const double s,const std::string prefix) {
-      Pc = b;
-      for(;Pc<e;Pc+=s) {
-        calSe();
-        calKappaR();
-        cout << prefix+": " << Pc << " " << kappaR << endl;
+      if(h<hS) {
+        int r = ::function(1,1,1,&h,&Kr);
+        if(r<0) {
+          SETERRQ(
+            PETSC_COMM_SELF,
+            MOFEM_OPERATION_UNSUCCESSFUL,
+            "ADOL-C function evaluation with error"
+          );
+        }
+        K = Ks*Kr;
+      } else {
+        K = Ks;
       }
-    }
-
-    PetscErrorCode calDiffK() {
-      PetscFunctionBegin;
-      calSe();
-      calDiffSe();
-      calDiffKappaR();
-      diffK = (rho*g/mu)*kappa*diffKappaR*diffSe;
       PetscFunctionReturn(0);
     };
 
-    void printDiffKappaR(const double b,const double e,const double s,const std::string prefix) {
-      Pc = b;
-      for(;Pc<e;Pc+=s) {
-        calSe();
-        calDiffKappaR();
-        calDiffSe();
-        cout << prefix+": " << Pc << " " << Se << " " << diffKappaR << " " << diffKappaR*diffSe << endl;
+    double diffKr;
+    PetscErrorCode calDiffK() {
+      PetscFunctionBegin;
+      if(h<hS) {
+        diffK = 0;
+        // int r = ::gradient(1,1,&h,&diffKr);
+        // if(r<0) {
+        //   SETERRQ(
+        //     PETSC_COMM_SELF,
+        //     MOFEM_OPERATION_UNSUCCESSFUL,
+        //     "ADOL-C function evaluation with error"
+        //   );
+        // }
+        // diffK = Ks*diffKr;
+      } else {
+        diffK = 0;
       }
-    }
+      PetscFunctionReturn(0);
+    };
 
     PetscErrorCode calC() {
       PetscFunctionBegin;
-      calDiffSe();
-      calDiffTheta();
-      C = -rho*diffTheta;
-      PetscFunctionReturn(0);
-    }
-
-    void printC(const double b,const double e,const double s,const std::string prefix) {
-      Pc = b;
-      for(;Pc<e;Pc+=s) {
-        calC();
-        cout << prefix+": " << Pc << " " << C << endl;
+      if(h<hS) {
+        int r = ::gradient(0,1,&h,&C);
+        if(r<0) {
+          SETERRQ(
+            PETSC_COMM_SELF,
+            MOFEM_OPERATION_UNSUCCESSFUL,
+            "ADOL-C function evaluation with error"
+          );
+        }
+      } else {
+        C = 0;
       }
+      PetscFunctionReturn(0);
     }
 
     PetscErrorCode calDiffC() {
       PetscFunctionBegin;
-      calDiff2Se();
-      calDiff2Theta();
-      diffC = -rho*diff2Theta;
+      if(h<hS) {
+        diffC = 0;
+        // double v = 1;
+        // int r = ::hess_vec(0,1,&h,&v,&diffC);
+        // if(r<0) {
+        //   SETERRQ(
+        //     PETSC_COMM_SELF,
+        //     MOFEM_OPERATION_UNSUCCESSFUL,
+        //     "ADOL-C function evaluation with error"
+        //   );
+        // }
+      } else {
+        diffC = 0;
+      }
       PetscFunctionReturn(0);
     }
 
-  private:
+    void printTheta(const double b,const double e,double s,const std::string& prefix) {
+      const double m = 1-1/n;
+      h = b;
+      for(;h>=e;h+=s) {
+        s = -pow(-s,0.9);
+        double theta = funTheta(h,m);
+        PetscPrintf(PETSC_COMM_SELF,"%s %6.4e %6.4e\n",prefix.c_str(),h,theta);
+      }
+    }
 
-    double Se;
-    double diffSe;
-    double diff2Se;
-    double diff2Theta;
-    double kappaR;
-    double diffKappaR;
-    double theta;
-    double diffTheta;
+    void printKappa(const double b,const double e,double s,const std::string& prefix) {
+      h = b;
+      for(;h>=e;h+=s) {
+        s = -pow(-s,0.9);
+        calK();
+        PetscPrintf(PETSC_COMM_SELF,"%s %6.4e %6.4e %6.4e\n",prefix.c_str(),h,Kr,K);
+      }
+    }
+
+    void printC(const double b,const double e,double s,const std::string& prefix) {
+      h = b;
+      for(;h>=e;h+=s) {
+        s = -pow(-s,0.9);
+        calC();
+        PetscPrintf(PETSC_COMM_SELF,"%s %6.4e %6.4e\n",prefix.c_str(),h,C);
+      }
+    }
+
 
   };
 

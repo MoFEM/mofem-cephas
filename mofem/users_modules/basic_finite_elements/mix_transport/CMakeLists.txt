@@ -64,17 +64,21 @@ target_link_libraries(h_adaptive_transport
   ${MoFEM_PROJECT_LIBS}
 )
 
-bfe_add_executable(
-  unsaturated_transport ${CMAKE_CURRENT_SOURCE_DIR}/unsaturated_transport.cpp
-)
-target_link_libraries(unsaturated_transport
-  users_modules
-  mofem_finite_elements
-  mofem_interfaces
-  mofem_multi_indices
-  mofem_petsc
-  mofem_approx
-  mofem_third_party
-  mofem_cblas
-  ${MoFEM_PROJECT_LIBS}
-)
+if(ADOL-C_LIBRARY)
+
+  bfe_add_executable(
+    unsaturated_transport ${CMAKE_CURRENT_SOURCE_DIR}/unsaturated_transport.cpp
+  )
+  target_link_libraries(unsaturated_transport
+    users_modules
+    mofem_finite_elements
+    mofem_interfaces
+    mofem_multi_indices
+    mofem_petsc
+    mofem_approx
+    mofem_third_party
+    mofem_cblas
+    ${MoFEM_PROJECT_LIBS}
+  )
+
+endif(ADOL-C_LIBRARY)
