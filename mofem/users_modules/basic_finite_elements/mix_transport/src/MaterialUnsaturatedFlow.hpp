@@ -23,6 +23,7 @@ namespace MixTransport {
       Ah = 0.;
       AhZ = 0.;
       AhZZ = 0;
+      cutTol = 1e-4;
     }
 
     std::string matName; ///< material name
@@ -41,6 +42,8 @@ namespace MixTransport {
     double AhZ;      ///< Initial hydraulic head coefficient
     double AhZZ;     ///< Initial hydraulic head coefficient
 
+    double cutTol;   ///< Controls threshold for which tangent is calculated
+
     double initalPcEval() const {
       return Ah+AhZ*z+AhZZ*z*z;
     }
@@ -55,8 +58,9 @@ namespace MixTransport {
       ((prefix+".Ks").c_str(),po::value<double>(&n)->default_value(Ks))
       ((prefix+".Ah").c_str(),po::value<double>(&Ah)->default_value(Ah))
       ((prefix+".AhZ").c_str(),po::value<double>(&AhZ)->default_value(AhZ))
-      ((prefix+".AhZZ").c_str(),po::value<double>(&AhZZ)->default_value(AhZZ));
-      // TODO Add more parameters
+      ((prefix+".AhZZ").c_str(),po::value<double>(&AhZZ)->default_value(AhZZ))
+      ((prefix+".sCale").c_str(),po::value<double>(&sCale)->default_value(sCale));
+      ((prefix+".cutTol").c_str(),po::value<double>(&cutTol)->default_value(cutTol));
     }
 
     void printMatParameters(const int id,const std::string& prefix) {
@@ -74,6 +78,7 @@ namespace MixTransport {
       PetscPrintf(PETSC_COMM_WORLD,"Ah=%6.4g\n",Ah);
       PetscPrintf(PETSC_COMM_WORLD,"AhZ=%6.4g\n",AhZ);
       PetscPrintf(PETSC_COMM_WORLD,"AhZZ=%6.4g\n",AhZZ);
+      PetscPrintf(PETSC_COMM_WORLD,"sCale=%6.4g\n",sCale);
     }
 
   };
@@ -189,15 +194,20 @@ namespace MixTransport {
       PetscFunctionBegin;
       if(h<hS) {
         diffK = 0;
-        // int r = ::gradient(1,1,&h,&diffKr);
-        // if(r<0) {
-        //   SETERRQ(
-        //     PETSC_COMM_SELF,
-        //     MOFEM_OPERATION_UNSUCCESSFUL,
-        //     "ADOL-C function evaluation with error"
-        //   );
-        // }
-        // diffK = Ks*diffKr;
+        const double m = 1-1/n;
+        double theta = funTheta(h,m);
+        double Se = (theta-thetaR)/(thetaS-thetaR);
+        if(Se<1-cutTol) {
+          int r = ::gradient(1,1,&h,&diffKr);
+          if(r<0) {
+            SETERRQ(
+              PETSC_COMM_SELF,
+              MOFEM_OPERATION_UNSUCCESSFUL,
+              "ADOL-C function evaluation with error"
+            );
+          }
+          diffK = Ks*diffKr;
+        }
       } else {
         diffK = 0;
       }
@@ -225,15 +235,20 @@ namespace MixTransport {
       PetscFunctionBegin;
       if(h<hS) {
         diffC = 0;
-        // double v = 1;
-        // int r = ::hess_vec(0,1,&h,&v,&diffC);
-        // if(r<0) {
-        //   SETERRQ(
-        //     PETSC_COMM_SELF,
-        //     MOFEM_OPERATION_UNSUCCESSFUL,
-        //     "ADOL-C function evaluation with error"
-        //   );
-        // }
+        const double m = 1-1/n;
+        double theta = funTheta(h,m);
+        double Se = (theta-thetaR)/(thetaS-thetaR);
+        if(Se<1-cutTol) {
+          double v = 1;
+          int r = ::hess_vec(0,1,&h,&v,&diffC);
+          if(r<0) {
+            SETERRQ(
+              PETSC_COMM_SELF,
+              MOFEM_OPERATION_UNSUCCESSFUL,
+              "ADOL-C function evaluation with error"
+            );
+          }
+        }
       } else {
         diffC = 0;
       }
@@ -246,7 +261,8 @@ namespace MixTransport {
       for(;h>=e;h+=s) {
         s = -pow(-s,0.9);
         double theta = funTheta(h,m);
-        PetscPrintf(PETSC_COMM_SELF,"%s %6.4e %6.4e\n",prefix.c_str(),h,theta);
+        double Se = (theta-thetaR)/(thetaS-thetaR);
+        PetscPrintf(PETSC_COMM_SELF,"%s %6.4e %6.4e %6.4e\n",prefix.c_str(),h,theta,Se);
       }
     }
 

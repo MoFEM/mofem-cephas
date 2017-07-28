@@ -30,8 +30,9 @@ namespace MixTransport {
     virtual ~GenericMaterial() {
     }
 
-    double h;           ///< hydraulic head
+    static double sCale;
 
+    double h;           ///< hydraulic head
     double K;           ///< Hydraulic conductivity [L/s]
     double diffK;       ///< Derivative of hydraulic conductivity [L/s * L^2/F]
     double C;           ///< Capacity [S^2/L^2]
@@ -385,12 +386,14 @@ namespace MixTransport {
         FTensor::Tensor0<double*> t_w = getFTensor0IntegrationWeight();
         // Coords at integration points
         FTensor::Tensor1<double*,3> t_coords = getTensor1CoordsAtGaussPts();
+        // Scale eq.
+        const double scale = GenericMaterial::sCale;
         // Get volume
         const double vol = getVolume();
         // Get number of integration points
         int nb_gauss_pts = data.getN().size1();
         for(int gg = 0;gg!=nb_gauss_pts;gg++) {
-          const double alpha = t_w*vol;
+          const double alpha = t_w*vol*scale;
           block_data->h = t_h;
           block_data->x = t_coords(0);
           block_data->y = t_coords(1);
@@ -479,12 +482,13 @@ namespace MixTransport {
             ierr = block_data->calK(); CHKERRQ(ierr);
             const double K = block_data->K;
             // get integration weight and multiply by element volume
-            double alpha = t_w*vol;
+            const double alpha = t_w*vol;
+            const double beta = alpha*(1/K);
             FTensor::Tensor0<double*> t_a(&*nN.data().begin());
             for(int kk = 0;kk!=nb_row;kk++) {
               FTensor::Tensor1<double*,3> t_n_hdiv_col = col_data.getFTensor1HdivN<3>(gg,0);
               for(int ll = 0;ll!=nb_col;ll++) {
-                t_a += alpha*(1/K)*(t_n_hdiv_row(j)*t_n_hdiv_col(j));
+                t_a += beta*(t_n_hdiv_row(j)*t_n_hdiv_col(j));
                 ++t_n_hdiv_col;
                 ++t_a;
               }
@@ -576,6 +580,8 @@ namespace MixTransport {
           FTensor::Tensor0<double*> t_w = getFTensor0IntegrationWeight();
           // Coords at integration points
           FTensor::Tensor1<double*,3> t_coords = getTensor1CoordsAtGaussPts();
+          // Scale eq.
+          const double scale = GenericMaterial::sCale;
           // Time step factor
           double ts_a = getFEMethod()->ts_a;
           // Get volume
@@ -585,7 +591,7 @@ namespace MixTransport {
           FTensor::Tensor0<double*> t_n_row = row_data.getFTensor0N();
           for(int gg = 0;gg!=nb_gauss_pts;gg++) {
             // get integration weight and multiply by element volume
-            double alpha = t_w*vol;
+            double alpha = t_w*vol*scale;
             block_data->h = t_h;
             block_data->x = t_coords(0);
             block_data->y = t_coords(1);
@@ -673,9 +679,11 @@ namespace MixTransport {
           nN.resize(nb_row,nb_col,false);
           divVec.resize(nb_col,false);
           nN.clear();
+          // Scale eq.
+          const double scale = GenericMaterial::sCale;
           int nb_gauss_pts = row_data.getHdivN().size1();
           for(int gg = 0;gg<nb_gauss_pts;gg++) {
-            double alpha = getGaussPts()(3,gg)*getVolume();
+            double alpha = getGaussPts()(3,gg)*getVolume()*scale;
             ierr = getDivergenceOfHDivBaseFunctions(
               col_side,col_type,col_data,gg,divVec
             ); CHKERRQ(ierr);
@@ -908,6 +916,7 @@ namespace MixTransport {
           int step;
           ierr = TSGetTimeStepNumber(ts,&step); CHKERRQ(ierr);
           if((step)%fRequency==0) {
+            PetscPrintf(PETSC_COMM_WORLD,"Output results %d - %d\n",step,fRequency);
             ierr = DMoFEMLoopFiniteElements(cTx.dM,"MIX",postProc); CHKERRQ(ierr);
             ierr = postProc->writeFile(
               string("out_")+boost::lexical_cast<std::string>(step)+".h5m"
@@ -1053,7 +1062,7 @@ namespace MixTransport {
     */
     struct VolRule {
       int operator()(int,int,int p_data) const {
-        return 2*p_data;
+        return 2*p_data+1;
       }
     };
     /**
@@ -1256,7 +1265,7 @@ namespace MixTransport {
       ierr = post_process->addFieldValuesPostProc("FLUXES"); CHKERRQ(ierr);
       int frequency = 1;
       ierr = PetscOptionsBegin(
-        PETSC_COMM_WORLD,"Monitor post proc","","none"
+        PETSC_COMM_WORLD,"","Monitor post proc","none"
       ); CHKERRQ(ierr);
       ierr = PetscOptionsInt(
         "-how_often_output",

@@ -36,6 +36,8 @@ using namespace MoFEM;
 using namespace MixTransport;
 static char help[] = "...\n\n";
 
+double GenericMaterial::sCale = 1;
+
 int main(int argc, char *argv[]) {
 
   PetscInitialize(&argc,&argv,(char *)0,help);
