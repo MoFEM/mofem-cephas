@@ -181,7 +181,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Set capillary pressure bc data
-    for(_IT_CUBITMESHSETS_BY_NAME_FOR_LOOP_(m_field,"CAPILLARY_PRESSURE",it)) {
+    for(_IT_CUBITMESHSETS_BY_NAME_FOR_LOOP_(m_field,"HEAD",it)) {
       // get block id
       const int block_id = it->getMeshsetId();
       // create block data instance
@@ -202,7 +202,7 @@ int main(int argc, char *argv[]) {
 
     int max_flux_id = 0;
     // Set water flux bc data
-    for(_IT_CUBITMESHSETS_BY_NAME_FOR_LOOP_(m_field,"WATER_FLUX",it)) {
+    for(_IT_CUBITMESHSETS_BY_NAME_FOR_LOOP_(m_field,"FLUX",it)) {
       // get block id
       const int block_id = it->getMeshsetId();
       // create block data instance

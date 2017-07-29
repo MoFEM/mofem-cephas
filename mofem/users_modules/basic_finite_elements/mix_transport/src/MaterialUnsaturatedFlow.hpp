@@ -59,7 +59,7 @@ namespace MixTransport {
       ((prefix+".Ah").c_str(),po::value<double>(&Ah)->default_value(Ah))
       ((prefix+".AhZ").c_str(),po::value<double>(&AhZ)->default_value(AhZ))
       ((prefix+".AhZZ").c_str(),po::value<double>(&AhZZ)->default_value(AhZZ))
-      ((prefix+".sCale").c_str(),po::value<double>(&sCale)->default_value(sCale));
+      ((prefix+".sCale").c_str(),po::value<double>(&sCale)->default_value(sCale))
       ((prefix+".cutTol").c_str(),po::value<double>(&cutTol)->default_value(cutTol));
     }
 
@@ -79,6 +79,7 @@ namespace MixTransport {
       PetscPrintf(PETSC_COMM_WORLD,"AhZ=%6.4g\n",AhZ);
       PetscPrintf(PETSC_COMM_WORLD,"AhZZ=%6.4g\n",AhZZ);
       PetscPrintf(PETSC_COMM_WORLD,"sCale=%6.4g\n",sCale);
+      PetscPrintf(PETSC_COMM_WORLD,"cutTol=%6.4g\n",cutTol);
     }
 
   };
