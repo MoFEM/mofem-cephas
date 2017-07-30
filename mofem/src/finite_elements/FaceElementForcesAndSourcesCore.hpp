@@ -319,9 +319,9 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
       return FTensor::Tensor1<double*,3>(ptr,&ptr[1],&ptr[2],3);
     }
 
-    /** \brief return pointer to triangle finite element object
+    /** \deprecated use getTriFE instead
      */
-    inline const FaceElementForcesAndSourcesCore* getFaceElementForcesAndSourcesCore() {
+    DEPRECATED inline const FaceElementForcesAndSourcesCore* getFaceElementForcesAndSourcesCore() {
       return static_cast<FaceElementForcesAndSourcesCore*>(ptrFE);
     }
 
