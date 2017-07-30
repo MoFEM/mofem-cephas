@@ -1201,7 +1201,7 @@ namespace MixTransport {
             ierr = VecAssemblyEnd(fePtr->ts_F); CHKERRQ(ierr);
             ierr = fePtr->mField.set_other_local_ghost_vector(
               fePtr->problemPtr,"VALUES",string("FLUXES")+"_residual",
-              ROW,fePtr->ts_u_t,INSERT_VALUES,SCATTER_REVERSE
+              ROW,fePtr->ts_F,INSERT_VALUES,SCATTER_REVERSE
             ); CHKERRQ(ierr);
           }
           break;
