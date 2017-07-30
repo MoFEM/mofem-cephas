@@ -32,17 +32,17 @@ namespace MixTransport {
 
     static double sCale;
 
-    double h;           ///< hydraulic head
-    double h_t;         ///< rate of hydraulic head
+    double h;                ///< hydraulic head
+    double h_t;              ///< rate of hydraulic head
     double h_flux_residual;  ///< residual at point
-    double K;           ///< Hydraulic conductivity [L/s]
-    double diffK;       ///< Derivative of hydraulic conductivity [L/s * L^2/F]
-    double C;           ///< Capacity [S^2/L^2]
-    double diffC;       ///< Derivative of capacity [S^2/L^2 * L^2/F ]
+    double K;                ///< Hydraulic conductivity [L/s]
+    double diffK;            ///< Derivative of hydraulic conductivity [L/s * L^2/F]
+    double C;                ///< Capacity [S^2/L^2]
+    double diffC;            ///< Derivative of capacity [S^2/L^2 * L^2/F ]
 
-    Range tEts;         ///< Elements with this material
+    Range tEts;              ///< Elements with this material
 
-    double x,y,z;       ///< in meters (L)
+    double x,y,z;            ///< in meters (L)
 
 
     /**
@@ -1078,7 +1078,7 @@ namespace MixTransport {
     */
     struct VolRule {
       int operator()(int,int,int p_data) const {
-        return 2*p_data+1;
+        return 2*p_data+2;
       }
     };
     /**

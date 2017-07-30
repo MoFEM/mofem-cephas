@@ -104,7 +104,7 @@ namespace MixTransport {
 
     PetscErrorCode calC() {
       PetscFunctionBegin;
-      C = 0;
+      C = Ks*1e-8;
       PetscFunctionReturn(0);
     }
 
