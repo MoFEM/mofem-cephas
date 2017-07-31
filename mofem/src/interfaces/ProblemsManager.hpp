@@ -224,8 +224,7 @@ namespace MoFEM {
 
     struct IdxDataType {
       IdxDataType(const UId uid,const int dof) {
-        bcopy(&uid,&dAta[0],sizeof(UId));
-        bcopy(&dof,&dAta[4],sizeof(int));
+        bcopy(&uid,&dAta[0],4*sizeof(int));
       }
     private:
       int dAta[5];
@@ -235,13 +234,15 @@ namespace MoFEM {
       IdxDataTypePtr(const int *ptr): pTr(ptr) {
       }
       inline int getDofIdx() const {
-        int global_dof;
-        bcopy(&pTr[4],&global_dof,sizeof(int));
+        int global_dof = pTr[4];
 	      return global_dof;
       }
       inline UId getUId() const {
-        UId uid;
-        bcopy(&pTr[0],&uid,sizeof(UId));
+        UId uid =
+        static_cast<UId>(pTr[0])
+        | static_cast<UId>(pTr[1]) << 8*sizeof(int)
+        | static_cast<UId>(pTr[2]) << 16*sizeof(int)
+        | static_cast<UId>(pTr[3]) << 24*sizeof(int);
 	      return uid;
       }
     private:
