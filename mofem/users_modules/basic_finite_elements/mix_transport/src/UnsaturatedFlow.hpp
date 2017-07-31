@@ -30,7 +30,9 @@ namespace MixTransport {
     virtual ~GenericMaterial() {
     }
 
-    static double sCale;
+    static double ePsilon0;    ///< Regularization parameter
+    static double ePsilon1;    ///< Regularization parameter
+    static double sCale;      ///< Scale time dependent eq.
 
     double h;                ///< hydraulic head
     double h_t;              ///< rate of hydraulic head
@@ -261,7 +263,7 @@ namespace MixTransport {
             z = getCoordsAtGaussPts()(gg,2);
             double value;
             ierr = cTx.getBcOnValues(fe_ent,gg,x,y,z,value); CHKERRQ(ierr);
-            value = -z;
+            value -= z;
             double w = getGaussPts()(2,gg)*0.5;
             noalias(nF) += w*prod(data.getHdivN(gg),getNormal())*value;
           }
@@ -949,7 +951,8 @@ namespace MixTransport {
       EntityHandle root_set = mField.get_moab().get_root_set();
       //add entities to field
 
-      for(_IT_CUBITMESHSETS_BY_NAME_FOR_LOOP_(mField,"SOIL",it)) {
+      for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
+        if(it->getName().compare(0,4,"SOIL")!=0) continue;
         ierr = mField.add_ents_to_field_by_type(
           dMatMap[it->getMeshsetId()]->tEts,MBTET,fluxes
         ); CHKERRQ(ierr);
@@ -991,7 +994,8 @@ namespace MixTransport {
       ierr = mField.modify_finite_element_add_field_data("MIX",values_name+"_t"); CHKERRQ(ierr);
       ierr = mField.modify_finite_element_add_field_data("MIX",fluxes_name+"_residual"); CHKERRQ(ierr);
 
-      for(_IT_CUBITMESHSETS_BY_NAME_FOR_LOOP_(mField,"SOIL",it)) {
+      for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
+        if(it->getName().compare(0,4,"SOIL")!=0) continue;
         ierr = mField.add_ents_to_finite_element_by_type(
           dMatMap[it->getMeshsetId()]->tEts,MBTET,"MIX"
         ); CHKERRQ(ierr);
@@ -1004,7 +1008,8 @@ namespace MixTransport {
       ierr = mField.modify_finite_element_add_field_data("MIX_BCVALUE",fluxes_name); CHKERRQ(ierr);
       ierr = mField.modify_finite_element_add_field_data("MIX_BCVALUE",values_name); CHKERRQ(ierr);
 
-      for(_IT_CUBITMESHSETS_BY_NAME_FOR_LOOP_(mField,"HEAD",it)) {
+      for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
+        if(it->getName().compare(0,4,"HEAD")!=0) continue;
         ierr = mField.add_ents_to_finite_element_by_type(
           bcValueMap[it->getMeshsetId()]->eNts,MBTRI,"MIX_BCVALUE"
         ); CHKERRQ(ierr);
@@ -1017,7 +1022,8 @@ namespace MixTransport {
       ierr = mField.modify_finite_element_add_field_data("MIX_BCFLUX",fluxes_name); CHKERRQ(ierr);
       ierr = mField.modify_finite_element_add_field_data("MIX_BCFLUX",values_name); CHKERRQ(ierr);
 
-      for(_IT_CUBITMESHSETS_BY_NAME_FOR_LOOP_(mField,"FLUX",it)) {
+      for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
+        if(it->getName().compare(0,4,"FLUX")!=0) continue;
         ierr = mField.add_ents_to_finite_element_by_type(
           bcFluxMap[it->getMeshsetId()]->eNts,MBTRI,"MIX_BCFLUX"
         ); CHKERRQ(ierr);
@@ -1078,7 +1084,7 @@ namespace MixTransport {
     */
     struct VolRule {
       int operator()(int,int,int p_data) const {
-        return 2*p_data+2;
+        return 2*p_data+1;
       }
     };
     /**

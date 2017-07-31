@@ -23,7 +23,6 @@ namespace MixTransport {
       Ah = 0.;
       AhZ = 0.;
       AhZZ = 0;
-      cutTol = 1e-4;
     }
 
     std::string matName; ///< material name
@@ -42,14 +41,15 @@ namespace MixTransport {
     double AhZ;      ///< Initial hydraulic head coefficient
     double AhZZ;     ///< Initial hydraulic head coefficient
 
-    double cutTol;   ///< Controls threshold for which tangent is calculated
-
     double initalPcEval() const {
       return Ah+AhZ*z+AhZZ*z*z;
     }
 
     void addOptions(po::options_description& o,const std::string& prefix) {
       o.add_options()
+      ((prefix+".ePsilon0").c_str(),po::value<double>(&ePsilon0)->default_value(ePsilon0))
+      ((prefix+".ePsilon1").c_str(),po::value<double>(&ePsilon1)->default_value(ePsilon1))
+      ((prefix+".sCale").c_str(),po::value<double>(&sCale)->default_value(sCale))
       ((prefix+".thetaS").c_str(),po::value<double>(&thetaS)->default_value(thetaS))
       ((prefix+".thetaR").c_str(),po::value<double>(&thetaR)->default_value(thetaR))
       ((prefix+".alpha").c_str(),po::value<double>(&alpha)->default_value(alpha))
@@ -58,9 +58,7 @@ namespace MixTransport {
       ((prefix+".Ks").c_str(),po::value<double>(&n)->default_value(Ks))
       ((prefix+".Ah").c_str(),po::value<double>(&Ah)->default_value(Ah))
       ((prefix+".AhZ").c_str(),po::value<double>(&AhZ)->default_value(AhZ))
-      ((prefix+".AhZZ").c_str(),po::value<double>(&AhZZ)->default_value(AhZZ))
-      ((prefix+".sCale").c_str(),po::value<double>(&sCale)->default_value(sCale))
-      ((prefix+".cutTol").c_str(),po::value<double>(&cutTol)->default_value(cutTol));
+      ((prefix+".AhZZ").c_str(),po::value<double>(&AhZZ)->default_value(AhZZ));
     }
 
     void printMatParameters(const int id,const std::string& prefix) {
@@ -78,8 +76,9 @@ namespace MixTransport {
       PetscPrintf(PETSC_COMM_WORLD,"Ah=%6.4g\n",Ah);
       PetscPrintf(PETSC_COMM_WORLD,"AhZ=%6.4g\n",AhZ);
       PetscPrintf(PETSC_COMM_WORLD,"AhZZ=%6.4g\n",AhZZ);
+      PetscPrintf(PETSC_COMM_WORLD,"ePsilon0=%6.4g\n",ePsilon0);
+      PetscPrintf(PETSC_COMM_WORLD,"ePsilon1=%6.4g\n",ePsilon1);
       PetscPrintf(PETSC_COMM_WORLD,"sCale=%6.4g\n",sCale);
-      PetscPrintf(PETSC_COMM_WORLD,"cutTol=%6.4g\n",cutTol);
     }
 
   };
@@ -104,7 +103,7 @@ namespace MixTransport {
 
     PetscErrorCode calC() {
       PetscFunctionBegin;
-      C = Ks*1e-8;
+      C = ePsilon1;
       PetscFunctionReturn(0);
     }
 
@@ -187,6 +186,7 @@ namespace MixTransport {
       } else {
         K = Ks;
       }
+      K += Ks*ePsilon0;
       PetscFunctionReturn(0);
     };
 
@@ -195,20 +195,15 @@ namespace MixTransport {
       PetscFunctionBegin;
       if(h<hS) {
         diffK = 0;
-        const double m = 1-1/n;
-        double theta = funTheta(h,m);
-        double Se = (theta-thetaR)/(thetaS-thetaR);
-        if(Se<1-cutTol) {
-          int r = ::gradient(1,1,&h,&diffKr);
-          if(r<0) {
-            SETERRQ(
-              PETSC_COMM_SELF,
-              MOFEM_OPERATION_UNSUCCESSFUL,
-              "ADOL-C function evaluation with error"
-            );
-          }
-          diffK = Ks*diffKr;
+        int r = ::gradient(1,1,&h,&diffKr);
+        if(r<0) {
+          SETERRQ(
+            PETSC_COMM_SELF,
+            MOFEM_OPERATION_UNSUCCESSFUL,
+            "ADOL-C function evaluation with error"
+          );
         }
+        diffK = Ks*diffKr;
       } else {
         diffK = 0;
       }
@@ -229,26 +224,21 @@ namespace MixTransport {
       } else {
         C = 0;
       }
+      C += ePsilon1;
       PetscFunctionReturn(0);
     }
 
     PetscErrorCode calDiffC() {
       PetscFunctionBegin;
       if(h<hS) {
-        diffC = 0;
-        const double m = 1-1/n;
-        double theta = funTheta(h,m);
-        double Se = (theta-thetaR)/(thetaS-thetaR);
-        if(Se<1-cutTol) {
-          double v = 1;
-          int r = ::hess_vec(0,1,&h,&v,&diffC);
-          if(r<0) {
-            SETERRQ(
-              PETSC_COMM_SELF,
-              MOFEM_OPERATION_UNSUCCESSFUL,
-              "ADOL-C function evaluation with error"
-            );
-          }
+        double v = 1;
+        int r = ::hess_vec(0,1,&h,&v,&diffC);
+        if(r<0) {
+          SETERRQ(
+            PETSC_COMM_SELF,
+            MOFEM_OPERATION_UNSUCCESSFUL,
+            "ADOL-C function evaluation with error"
+          );
         }
       } else {
         diffC = 0;

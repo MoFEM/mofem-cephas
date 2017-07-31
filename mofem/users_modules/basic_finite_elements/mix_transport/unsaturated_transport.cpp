@@ -36,7 +36,9 @@ using namespace MoFEM;
 using namespace MixTransport;
 static char help[] = "...\n\n";
 
-double GenericMaterial::sCale = 1;
+double GenericMaterial::sCale = 0;
+double GenericMaterial::ePsilon0 = 0;
+double GenericMaterial::ePsilon1 = 0;
 
 int main(int argc, char *argv[]) {
 
@@ -142,7 +144,8 @@ int main(int argc, char *argv[]) {
 
     map<int,CommonMaterialData> material_blocks;
     // Set material blocks
-    for(_IT_CUBITMESHSETS_BY_NAME_FOR_LOOP_(m_field,"SOIL",it)) {
+    for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
+      if(it->getName().compare(0,4,"SOIL")!=0) continue;
       // get block id
       const int block_id = it->getMeshsetId();
       std::string block_name = "mat_block_"+boost::lexical_cast<std::string>(block_id);
@@ -155,7 +158,8 @@ int main(int argc, char *argv[]) {
     po::parsed_options parsed = parse_config_file(ini_file,config_file_options,true);
     store(parsed,vm);
     po::notify(vm);
-    for(_IT_CUBITMESHSETS_BY_NAME_FOR_LOOP_(m_field,"SOIL",it)) {
+    for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
+      if(it->getName().compare(0,4,"SOIL")!=0) continue;
       const int block_id = it->getMeshsetId();
       material_blocks.at(block_id).printMatParameters(block_id,"Read material");
       if(material_blocks[block_id].matName=="SimpleDarcy") {
@@ -173,6 +177,9 @@ int main(int argc, char *argv[]) {
       ); CHKERRQ_MOAB(rval);
       domain_ents.merge(uf.dMatMap[block_id]->tEts);
     }
+    if(GenericMaterial::sCale==0&&GenericMaterial::ePsilon0>0) {
+      GenericMaterial::sCale = 1/GenericMaterial::ePsilon0;
+    }
     std::vector<std::string> additional_parameters;
     additional_parameters = collect_unrecognized(parsed.options,po::include_positional);
     for(std::vector<std::string>::iterator vit = additional_parameters.begin();
@@ -181,17 +188,19 @@ int main(int argc, char *argv[]) {
     }
 
     // Set capillary pressure bc data
-    for(_IT_CUBITMESHSETS_BY_NAME_FOR_LOOP_(m_field,"HEAD",it)) {
+    for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
+      if(it->getName().compare(0,4,"HEAD")!=0) continue;
       // get block id
       const int block_id = it->getMeshsetId();
       // create block data instance
       uf.bcValueMap[block_id] = boost::shared_ptr<UnsaturatedFlowElement::BcData>(
         new UnsaturatedFlowElement::BcData()
       );
-      // get bc balue
+      // get bc value
       std::vector<double> attributes;
       ierr = it->getAttributes(attributes); CHKERRQ(ierr);
       uf.bcValueMap[block_id]->fixValue = attributes[0];
+      // cerr << uf.bcValueMap[block_id]->fixValue  << endl;
       // ierr = it->printAttributes(std::cout); CHKERRQ(ierr);
       // get faces in the block
       rval = m_field.get_moab().get_entities_by_type(
@@ -202,7 +211,8 @@ int main(int argc, char *argv[]) {
 
     int max_flux_id = 0;
     // Set water flux bc data
-    for(_IT_CUBITMESHSETS_BY_NAME_FOR_LOOP_(m_field,"FLUX",it)) {
+    for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
+      if(it->getName().compare(0,4,"FLUX")!=0) continue;
       // get block id
       const int block_id = it->getMeshsetId();
       // create block data instance
