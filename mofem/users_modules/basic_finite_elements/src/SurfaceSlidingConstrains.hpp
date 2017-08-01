@@ -408,7 +408,7 @@ struct SurfaceSlidingConstrains {
         int nb_gauss_pts = data.getN().size1();
         if(type == MBVERTEX) {
           aUx.resize(nb_gauss_pts);
-          oRientation.getElementOrientation(getTriFE()->mField,getFEMethod());
+          oRientation.getElementOrientation(getFaceFE()->mField,getFEMethod());
           for(int gg = 0;gg<nb_gauss_pts;gg++) {
             aUx[gg].pOsition.resize(3,false);
             aUx[gg].dXdKsi.resize(3,false);
@@ -461,7 +461,7 @@ struct SurfaceSlidingConstrains {
         if(type == MBVERTEX) {
           if(aUx.size()!=nb_gauss_pts) {
             SETERRQ2(
-              getTriFE()->mField.get_comm(),MOFEM_DATA_INCONSISTENCY,
+              getFaceFE()->mField.get_comm(),MOFEM_DATA_INCONSISTENCY,
               "Size of aUx should be equal to number of integration point but is %d != %d",
               aUx.size(),nb_gauss_pts
             );

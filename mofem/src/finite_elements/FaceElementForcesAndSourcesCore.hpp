@@ -319,15 +319,21 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
       return FTensor::Tensor1<double*,3>(ptr,&ptr[1],&ptr[2],3);
     }
 
-    /** \deprecated use getTriFE instead
+    /** \deprecated use getFaceFE instead
      */
     DEPRECATED inline const FaceElementForcesAndSourcesCore* getFaceElementForcesAndSourcesCore() {
-      return static_cast<FaceElementForcesAndSourcesCore*>(ptrFE);
+      return getFaceFE();
+    }
+
+    /** \deprecated use getFaceFE instead
+     */
+    DEPRECATED inline const FaceElementForcesAndSourcesCore* getTriFE() {
+      return getFaceFE();
     }
 
     /** \brief return pointer to Generic Triangle Finite Element object
      */
-    inline const FaceElementForcesAndSourcesCore* getTriFE() {
+    inline const FaceElementForcesAndSourcesCore* getFaceFE() {
       return static_cast<FaceElementForcesAndSourcesCore*>(ptrFE);
     }
 
