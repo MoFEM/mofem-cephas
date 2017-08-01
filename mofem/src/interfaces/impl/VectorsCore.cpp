@@ -182,7 +182,6 @@ PetscErrorCode Core::ISCreateProblemFieldAndRank(
   IS *is,
   int verb
 ) const {
-
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   typedef Problem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
@@ -212,28 +211,21 @@ PetscErrorCode Core::ISCreateProblemFieldAndRank(
      SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
   }
 
-  // NumeredDofEntity_multiIndex_petsc_local_dof_view_ordered_non_unique dof_loc_idx_view;
-  // dof_loc_idx_view.insert(it,hi_it);
-  // for(;it!=hi_it;it++) {
-  //   std::pair<NumeredDofEntity_multiIndex_petsc_local_dof_view_ordered_non_unique::iterator,bool> p;
-  //   // if((*it)->getPart()!=(unsigned int)rAnk) continue;
-  //   // if((*it)->getName()!=field) continue;
-  //   p = dof_loc_idx_view.insert(*it);
-  // }
+  // Sort by local index
+  NumeredDofEntity_multiIndex_petsc_local_dof_view_ordered_non_unique dof_loc_idx_view;
+  dof_loc_idx_view.insert(it,hi_it);
+  NumeredDofEntity_multiIndex_petsc_local_dof_view_ordered_non_unique::iterator vit,hi_vit;
+  vit = dof_loc_idx_view.begin();
+  hi_vit = dof_loc_idx_view.end();
 
-  // NumeredDofEntity_multiIndex_petsc_local_dof_view_ordered_non_unique::iterator vit,hi_vit;
-  // vit = dof_loc_idx_view.begin();
-  // hi_vit = dof_loc_idx_view.end();
-
+  // create IS
   int size = distance(it,hi_it);
   int *id;
   ierr = PetscMalloc(size*sizeof(int),&id); CHKERRQ(ierr);
-  for(int ii = 0;it!=hi_it;it++) {
-    id[ii++] = (*it)->getPetscGlobalDofIdx();
+  for(int ii = 0;vit!=hi_vit;vit++) {
+    id[ii++] = (*vit)->getPetscGlobalDofIdx();
   }
-  std::sort(&id[0],&id[size]);
   ierr = ISCreateGeneral(cOmm,size,id,PETSC_OWN_POINTER,is); CHKERRQ(ierr);
-
 
   PetscFunctionReturn(0);
 }
