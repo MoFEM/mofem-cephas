@@ -222,40 +222,6 @@ namespace MoFEM {
 
     PetscLogEvent USER_EVENT_ProblemsManager;
 
-    struct IdxDataType {
-      IdxDataType(const UId uid,const int dof) {
-        bcopy(&uid,&dAta[0],4*sizeof(int));
-        dAta[4] = dof;
-      }
-    private:
-      int dAta[5];
-    };
-
-    struct IdxDataTypePtr {
-      IdxDataTypePtr(const int *ptr): pTr(ptr) {
-      }
-      inline int getDofIdx() const {
-        int global_dof = pTr[4];
-	      return global_dof;
-      }
-      inline UId getUId() const {
-        unsigned int b0,b1,b2,b3;
-        bcopy(&pTr[0],&b0,sizeof(int));
-        bcopy(&pTr[1],&b1,sizeof(int));
-        bcopy(&pTr[2],&b2,sizeof(int));
-        bcopy(&pTr[3],&b3,sizeof(int));
-        UId uid =
-        static_cast<UId>(b0)
-        | static_cast<UId>(b1) << 8*sizeof(int)
-        | static_cast<UId>(b2) << 16*sizeof(int)
-        | static_cast<UId>(b3) << 24*sizeof(int);
-	      return uid;
-      }
-    private:
-      const int *pTr;
-    };
-
-
 
   };
 
