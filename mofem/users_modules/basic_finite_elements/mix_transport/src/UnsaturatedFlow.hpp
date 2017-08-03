@@ -32,7 +32,8 @@ namespace MixTransport {
 
     static double ePsilon0;    ///< Regularization parameter
     static double ePsilon1;    ///< Regularization parameter
-    static double sCale;      ///< Scale time dependent eq.
+    double sCale;              ///< Scale time dependent eq.
+    // double Ks;                 ///< Saturated hydraulic conductivity [m/day]
 
     double h;                ///< hydraulic head
     double h_t;              ///< rate of hydraulic head
@@ -41,6 +42,7 @@ namespace MixTransport {
     double diffK;            ///< Derivative of hydraulic conductivity [L/s * L^2/F]
     double C;                ///< Capacity [S^2/L^2]
     double diffC;            ///< Derivative of capacity [S^2/L^2 * L^2/F ]
+    double tHeta;            ///< Water content
 
     Range tEts;              ///< Elements with this material
 
@@ -52,6 +54,7 @@ namespace MixTransport {
      * @return value of head
      */
     virtual double initalPcEval() const = 0;
+    virtual void printMatParameters(const int id,const std::string& prefix) const = 0;
 
     virtual PetscErrorCode calK() {
       PetscFunctionBegin;
@@ -81,6 +84,15 @@ namespace MixTransport {
     }
 
     virtual PetscErrorCode calDiffC() {
+      PetscFunctionBegin;
+      SETERRQ(
+        PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,
+        "Not implemented how to calculate capacity"
+      );
+      PetscFunctionReturn(0);
+    }
+
+    virtual PetscErrorCode calTheta() {
       PetscFunctionBegin;
       SETERRQ(
         PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,
@@ -220,6 +232,8 @@ namespace MixTransport {
       PetscFunctionReturn(0);
     }
 
+
+
     struct OpRhsBcOnValues: public MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator {
 
       UnsaturatedFlowElement &cTx;
@@ -252,7 +266,24 @@ namespace MixTransport {
         PetscFunctionBegin;
         try {
           if(data.getFieldData().size()==0) PetscFunctionReturn(0);
+          // Get EntityHandle of the finite element
           EntityHandle fe_ent = getNumeredEntFiniteElementPtr()->getEnt();
+          // // Get adjacent element handle
+          // Range adj_tet;
+          // rval = getFaceFE()->mField.get_moab().get_adjacencies(
+          //   &fe_ent,1,3,false,adj_tet
+          // ); CHKERRQ_MOAB(rval);
+          // if(adj_tet.size()!=1) {
+          //   SETERRQ1(
+          //     PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,
+          //     "Wrong number of tetrahedra on side ad_tets.size()=%d",adj_tet.size()
+          //   );
+          // }
+          // // Get material block id
+          // int block_id;
+          // ierr = cTx.getMaterial(adj_tet[0],block_id); CHKERRQ(ierr);
+          // Get material block
+          // boost::shared_ptr<GenericMaterial>& block_data = cTx.dMatMap.at(block_id);
           nF.resize(data.getIndices().size());
           nF.clear();
           int nb_gauss_pts = data.getHdivN().size1();
@@ -263,9 +294,15 @@ namespace MixTransport {
             z = getCoordsAtGaussPts()(gg,2);
             double value;
             ierr = cTx.getBcOnValues(fe_ent,gg,x,y,z,value); CHKERRQ(ierr);
-            value -= z;
-            double w = getGaussPts()(2,gg)*0.5;
-            noalias(nF) += w*prod(data.getHdivN(gg),getNormal())*value;
+            // block_data->h = value;
+            // block_data->x = x;
+            // block_data->y = y;
+            // block_data->z = z;
+            // ierr = block_data->calK(); CHKERRQ(ierr);
+            // const double K = block_data->K;
+            const double w = getGaussPts()(2,gg)*0.5;
+            const double beta = w*(value-z);
+            noalias(nF) += beta*prod(data.getHdivN(gg),getNormal());
           }
           Vec f = getFEMethod()->ts_F;
           if(valueScale) {
@@ -307,6 +344,7 @@ namespace MixTransport {
         ierr = cTx.getMaterial(fe_ent,block_id); CHKERRQ(ierr);
         // Get material block
         boost::shared_ptr<GenericMaterial>& block_data = cTx.dMatMap.at(block_id);
+        // block_data->printMatParameters(block_id,"Read material");
         // Get base function
         FTensor::Tensor1<double*,3> t_n_hdiv = data.getFTensor1HdivN<3>();
         // Get pressure
@@ -322,6 +360,8 @@ namespace MixTransport {
         // Get material parameters
         int nb_gauss_pts = data.getHdivN().size1();
         for(int gg = 0;gg!=nb_gauss_pts;gg++) {
+          // Get divergence
+          ierr = getDivergenceOfHDivBaseFunctions(side,type,data,gg,divVec); CHKERRQ(ierr);
           const double alpha = t_w*vol;
           block_data->h = t_h;
           block_data->x = t_coords(0);
@@ -330,8 +370,6 @@ namespace MixTransport {
           ierr = block_data->calK(); CHKERRQ(ierr);
           const double K = block_data->K;
           const double z = t_coords(2); /// z-coordinate at Gauss pt
-          // Get divergence
-          ierr = getDivergenceOfHDivBaseFunctions(side,type,data,gg,divVec); CHKERRQ(ierr);
           noalias(nF) -= alpha*(t_h-z)*divVec;
           FTensor::Tensor0<double*> t_nf(&*nF.begin());
           for(int rr = 0;rr!=nb_dofs;rr++) {
@@ -389,7 +427,7 @@ namespace MixTransport {
         // Coords at integration points
         FTensor::Tensor1<double*,3> t_coords = getTensor1CoordsAtGaussPts();
         // Scale eq.
-        const double scale = GenericMaterial::sCale;
+        const double scale = block_data->sCale;
         // Get volume
         const double vol = getVolume();
         // Get number of integration points
@@ -585,7 +623,7 @@ namespace MixTransport {
           // Coords at integration points
           FTensor::Tensor1<double*,3> t_coords = getTensor1CoordsAtGaussPts();
           // Scale eq.
-          const double scale = GenericMaterial::sCale;
+          const double scale = block_data->sCale;
           // Time step factor
           double ts_a = getFEMethod()->ts_a;
           // Get volume
@@ -682,11 +720,18 @@ namespace MixTransport {
           int nb_col = col_data.getFieldData().size();
           if(nb_row==0) PetscFunctionReturn(0);
           if(nb_col==0) PetscFunctionReturn(0);
+          // Get EntityHandle of the finite element
+          EntityHandle fe_ent = getNumeredEntFiniteElementPtr()->getEnt();
+          // Get material block id
+          int block_id;
+          ierr = cTx.getMaterial(fe_ent,block_id); CHKERRQ(ierr);
+          // Get material block
+          boost::shared_ptr<GenericMaterial>& block_data = cTx.dMatMap.at(block_id);
           nN.resize(nb_row,nb_col,false);
           divVec.resize(nb_col,false);
           nN.clear();
           // Scale eq.
-          const double scale = GenericMaterial::sCale;
+          const double scale = block_data->sCale;
           int nb_gauss_pts = row_data.getHdivN().size1();
           for(int gg = 0;gg<nb_gauss_pts;gg++) {
             double alpha = getGaussPts()(3,gg)*getVolume()*scale;
@@ -767,8 +812,6 @@ namespace MixTransport {
           boost::shared_ptr<GenericMaterial>& block_data = cTx.dMatMap.at(block_id);
           // Get pressure
           FTensor::Tensor0<double*> t_h = getTensor0FormData(cTx.valuesAtGaussPts);
-          // Get pressure
-          FTensor::Tensor0<double*> t_flux_residual = getTensor0FormData(*cTx.resAtGaussPts);
           // Get flux
           FTensor::Tensor1<double*,3> t_flux = getTensor1FormData<3>(cTx.fluxesAtGaussPts);
           // Coords at integration points
@@ -780,7 +823,7 @@ namespace MixTransport {
           // Get volume
           double vol = getVolume();
           int nb_gauss_pts = row_data.getHdivN().size1();
-          for(int gg = 0;gg<nb_gauss_pts;gg++) {
+          for(int gg = 0;gg!=nb_gauss_pts;gg++) {
             block_data->h = t_h;
             block_data->x = t_coords(0);
             block_data->y = t_coords(1);
@@ -788,6 +831,7 @@ namespace MixTransport {
             ierr = block_data->calK(); CHKERRQ(ierr);
             ierr = block_data->calDiffK(); CHKERRQ(ierr);
             const double K = block_data->K;
+            // const double z = t_coords(2);
             const double KK = K*K;
             const double diffK = block_data->diffK;
             double alpha = t_w*vol;
@@ -810,7 +854,6 @@ namespace MixTransport {
             ++t_coords;
             ++t_h;
             ++t_flux;
-            ++t_flux_residual;
           }
           ierr = MatSetValues(
             getFEMethod()->ts_B,
@@ -894,19 +937,181 @@ namespace MixTransport {
 
     };
 
+    struct OpIntegrateFluxes: public MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator {
+      UnsaturatedFlowElement &cTx;
+
+      /**
+       * \brief Constructor
+       */
+      OpIntegrateFluxes(
+        UnsaturatedFlowElement &ctx,const std::string fluxes_name
+      ):
+      MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator(fluxes_name,UserDataOperator::OPROW),
+      cTx(ctx) {
+      }
+
+      FTensor::Index<'i',3> i;
+
+      /**
+       * \brief Integrate boundary condition
+       * @param  side local index of entity
+       * @param  type type of entity
+       * @param  data data on entity
+       * @return      error code
+       */
+      PetscErrorCode doWork(
+        int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+      ) {
+        PetscFunctionBegin;
+        try {
+          int nb_dofs = data.getFieldData().size();
+          if(nb_dofs==0) PetscFunctionReturn(0);
+          // Get base function
+          FTensor::Tensor1<double*,3> t_n_hdiv = data.getFTensor1HdivN<3>();
+          // get normal of face
+          FTensor::Tensor1<double*,3> t_normal = getTensor1Normal();
+          // Integration weight
+          FTensor::Tensor0<double*> t_w = getFTensor0IntegrationWeight();
+          double flux_on_entity = 0;
+          int nb_gauss_pts = data.getHdivN().size1();
+          for(int gg = 0;gg<nb_gauss_pts;gg++) {
+            FTensor::Tensor0<double*> t_data = data.getFTensor0FieldData();
+            for(int rr = 0;rr!=nb_dofs;rr++) {
+              flux_on_entity -= (0.5*t_data*t_w)*(t_n_hdiv(i)*t_normal(i));
+              ++t_n_hdiv;
+              ++t_data;
+            }
+            ++t_w;
+          }
+          ierr = VecSetValue(cTx.ghostFlux,0,flux_on_entity,ADD_VALUES); CHKERRQ(ierr);
+        } catch (const std::exception& ex) {
+          std::ostringstream ss;
+          ss << "throw in method: " << ex.what() << std::endl;
+          SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
+        }
+        PetscFunctionReturn(0);
+      }
+
+    };
+
+    struct OpPostProcMaterial: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
+
+      UnsaturatedFlowElement &cTx;
+      moab::Interface &postProcMesh;
+      std::vector<EntityHandle> &mapGaussPts;
+
+      OpPostProcMaterial(
+        UnsaturatedFlowElement &ctx,
+        moab::Interface &post_proc_mesh,
+        std::vector<EntityHandle> &map_gauss_pts,
+        const std::string field_name
+      ):
+      MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator(
+        field_name,ForcesAndSurcesCore::UserDataOperator::OPROW
+      ),
+      cTx(ctx),
+      postProcMesh(post_proc_mesh),
+      mapGaussPts(map_gauss_pts) {
+      }
+
+      PetscErrorCode doWork(
+        int side,
+        EntityType type,
+        DataForcesAndSurcesCore::EntData &data
+      ) {
+        PetscFunctionBegin;
+        int nb_dofs = data.getFieldData().size();
+        if(nb_dofs==0) PetscFunctionReturn(0);
+        // if(type != MBTET) PetscFunctionReturn(0);
+        // Get EntityHandle of the finite element
+        EntityHandle fe_ent = getNumeredEntFiniteElementPtr()->getEnt();
+        // Get material block id
+        int block_id;
+        ierr = cTx.getMaterial(fe_ent,block_id); CHKERRQ(ierr);
+        // Get material block
+        boost::shared_ptr<GenericMaterial>& block_data = cTx.dMatMap.at(block_id);
+
+        // Set bloc Id
+        Tag th_id;
+        int def_block_id = -1;
+        rval = postProcMesh.tag_get_handle(
+          "BLOCK_ID",1,MB_TYPE_INTEGER,th_id,
+          MB_TAG_CREAT|MB_TAG_SPARSE,&def_block_id
+        ); CHKERRQ_MOAB(rval);
+        rval = postProcMesh.tag_set_data(th_id,&fe_ent,1,&block_id);  CHKERRQ_MOAB(rval);
+
+        double zero = 0;
+        Tag th_theta;
+        rval = postProcMesh.tag_get_handle(
+          "THETA",1,MB_TYPE_DOUBLE,th_theta,
+          MB_TAG_CREAT|MB_TAG_SPARSE,&zero
+        ); CHKERRQ_MOAB(rval);
+        // Tag th_ks;
+        // rval = postProcMesh.tag_get_handle(
+        //   "Ks",1,MB_TYPE_DOUBLE,th_ks,
+        //   MB_TAG_CREAT|MB_TAG_SPARSE,&zero
+        // ); CHKERRQ_MOAB(rval);
+        // rval = postProcMesh.tag_set_data(th_ks,&fe_ent,1,&block_data->Ks); CHKERRQ_MOAB(rval);
+        Tag th_k;
+        rval = postProcMesh.tag_get_handle(
+          "K",1,MB_TYPE_DOUBLE,th_k,
+          MB_TAG_CREAT|MB_TAG_SPARSE,&zero
+        ); CHKERRQ_MOAB(rval);
+        Tag th_c;
+        rval = postProcMesh.tag_get_handle(
+          "C",1,MB_TYPE_DOUBLE,th_c,
+          MB_TAG_CREAT|MB_TAG_SPARSE,&zero
+        ); CHKERRQ_MOAB(rval);
+
+
+        // Get pressure
+        FTensor::Tensor0<double*> t_h = getTensor0FormData(cTx.valuesAtGaussPts);
+        // Coords at integration points
+        FTensor::Tensor1<double*,3> t_coords = getTensor1CoordsAtGaussPts();
+
+        int nb_gauss_pts = data.getN().size1();
+        for(int gg = 0;gg<nb_gauss_pts;gg++) {
+          block_data->h = t_h;
+          block_data->x = t_coords(0);
+          block_data->y = t_coords(1);
+          block_data->z = t_coords(2);
+          ierr = block_data->calTheta(); CHKERRQ(ierr);
+          double theta = block_data->tHeta;
+          rval = postProcMesh.tag_set_data(
+            th_theta,&mapGaussPts[gg],1,&theta
+          ); CHKERRQ_MOAB(rval);
+          ierr = block_data->calK(); CHKERRQ(ierr);
+          double K = block_data->K;
+          rval = postProcMesh.tag_set_data(th_k,&mapGaussPts[gg],1,&K); CHKERRQ_MOAB(rval);
+          ierr = block_data->calC(); CHKERRQ(ierr);
+          double C = block_data->C;
+          rval = postProcMesh.tag_set_data(th_c,&mapGaussPts[gg],1,&C); CHKERRQ_MOAB(rval);
+          ++t_h;
+          ++t_coords;
+        }
+
+        PetscFunctionReturn(0);
+      }
+
+    };
+
     struct MonitorPostProc: public FEMethod {
 
         UnsaturatedFlowElement &cTx;
         boost::shared_ptr<PostProcVolumeOnRefinedMesh> postProc;
+        boost::shared_ptr<ForcesAndSurcesCore> fluxIntegrate;
+
         const int fRequency;
 
         MonitorPostProc(
           UnsaturatedFlowElement &ctx,
           boost::shared_ptr<PostProcVolumeOnRefinedMesh>& post_proc,
+          boost::shared_ptr<ForcesAndSurcesCore> flux_Integrate,
           const int frequency
         ):
         cTx(ctx),
         postProc(post_proc),
+        fluxIntegrate(flux_Integrate),
         fRequency(frequency) {
         }
 
@@ -925,12 +1130,37 @@ namespace MixTransport {
           int step;
           ierr = TSGetTimeStepNumber(ts,&step); CHKERRQ(ierr);
           if((step)%fRequency==0) {
+
+            // Post-process results and save in the file
             PetscPrintf(PETSC_COMM_WORLD,"Output results %d - %d\n",step,fRequency);
             ierr = DMoFEMLoopFiniteElements(cTx.dM,"MIX",postProc); CHKERRQ(ierr);
             ierr = postProc->writeFile(
               string("out_")+boost::lexical_cast<std::string>(step)+".h5m"
             ); CHKERRQ(ierr);
+
           }
+
+          // Integrate fluxes on faces where pressure head is applied
+          ierr = VecZeroEntries(cTx.ghostFlux); CHKERRQ(ierr);
+          ierr = VecGhostUpdateBegin(cTx.ghostFlux,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+          ierr = VecGhostUpdateEnd(cTx.ghostFlux,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+          // Run finite element to integrate fluxes
+          ierr = DMoFEMLoopFiniteElements(cTx.dM,"MIX_BCVALUE",fluxIntegrate); CHKERRQ(ierr);
+          ierr = VecAssemblyBegin(cTx.ghostFlux); CHKERRQ(ierr);
+          ierr = VecAssemblyEnd(cTx.ghostFlux); CHKERRQ(ierr);
+          // accumulate errors from processors
+          ierr = VecGhostUpdateBegin(cTx.ghostFlux,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+          ierr = VecGhostUpdateEnd(cTx.ghostFlux,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+          // scatter errors to all processors
+          ierr = VecGhostUpdateBegin(cTx.ghostFlux,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+          ierr = VecGhostUpdateEnd(cTx.ghostFlux,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+          double *ghost_flux;
+          ierr = VecGetArray(cTx.ghostFlux,&ghost_flux); CHKERRQ(ierr);
+          ierr = PetscPrintf(
+            PETSC_COMM_WORLD,"Flux at time %6.4g %6.4g\n",ts_t,ghost_flux[0]
+          ); CHKERRQ(ierr);
+          ierr = VecRestoreArray(cTx.ghostFlux,&ghost_flux); CHKERRQ(ierr);
+
           PetscFunctionReturn(0);
         }
 
@@ -1084,7 +1314,7 @@ namespace MixTransport {
     */
     struct VolRule {
       int operator()(int,int,int p_data) const {
-        return 2*p_data+1;
+        return 2*p_data+p_data;
       }
     };
     /**
@@ -1294,6 +1524,19 @@ namespace MixTransport {
       ierr = post_process->addFieldValuesPostProc("VALUES_t"); CHKERRQ(ierr);
       ierr = post_process->addFieldValuesPostProc("FLUXES_residual"); CHKERRQ(ierr);
       ierr = post_process->addFieldValuesPostProc("FLUXES"); CHKERRQ(ierr);
+      post_process->getOpPtrVector().push_back(new OpValuesAtGaussPts(*this,"VALUES"));
+      post_process->getOpPtrVector().push_back(
+        new OpPostProcMaterial(
+          *this,post_process->postProcMesh,post_process->mapGaussPts,"VALUES"
+        )
+      );
+
+      // Integrate fluxes on boundary
+      boost::shared_ptr<ForcesAndSurcesCore> flux_integrate;
+      flux_integrate = boost::shared_ptr<ForcesAndSurcesCore>(
+        new FaceElementForcesAndSourcesCore(mField)
+      );
+      flux_integrate->getOpPtrVector().push_back(new OpIntegrateFluxes(*this,"FLUXES"));
       int frequency = 1;
       ierr = PetscOptionsBegin(
         PETSC_COMM_WORLD,"","Monitor post proc","none"
@@ -1304,7 +1547,10 @@ namespace MixTransport {
         frequency,&frequency,NULL
       ); CHKERRQ(ierr);
       ierr = PetscOptionsEnd(); CHKERRQ(ierr);
-      tsMonitor = boost::shared_ptr<FEMethod>(new MonitorPostProc(*this,post_process,frequency));
+
+      tsMonitor = boost::shared_ptr<FEMethod>(
+        new MonitorPostProc(*this,post_process,flux_integrate,frequency)
+      );
       TsCtx *ts_ctx;
       DMMoFEMGetTsCtx(dM,&ts_ctx);
       ts_ctx->get_postProcess_to_do_Monitor().push_back(tsMonitor);
@@ -1312,6 +1558,7 @@ namespace MixTransport {
     }
 
     Vec D1;
+    Vec ghostFlux;
 
     PetscErrorCode createMatrices() {
       PetscFunctionBegin;
@@ -1320,6 +1567,12 @@ namespace MixTransport {
       ierr = VecDuplicate(D0,&D1); CHKERRQ(ierr);
       ierr = VecDuplicate(D0,&D); CHKERRQ(ierr);
       ierr = VecDuplicate(D0,&F); CHKERRQ(ierr);
+      int ghosts[] = { 0 };
+      int nb_locals = mField.get_comm_rank()==0?1:0;
+      int nb_ghosts = mField.get_comm_rank()>0?1:0;
+      ierr = VecCreateGhost(
+        PETSC_COMM_WORLD,nb_locals,1,nb_ghosts,ghosts,&ghostFlux
+      ); CHKERRQ(ierr);
       PetscFunctionReturn(0);
     }
 
@@ -1331,6 +1584,7 @@ namespace MixTransport {
       ierr = VecDestroy(&D0); CHKERRQ(ierr);
       ierr = VecDestroy(&D1); CHKERRQ(ierr);
       ierr = VecDestroy(&F); CHKERRQ(ierr);
+      ierr = VecDestroy(&ghostFlux); CHKERRQ(ierr);
       PetscFunctionReturn(0);
     }
 

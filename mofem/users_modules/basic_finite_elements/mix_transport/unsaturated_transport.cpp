@@ -36,7 +36,6 @@ using namespace MoFEM;
 using namespace MixTransport;
 static char help[] = "...\n\n";
 
-double GenericMaterial::sCale = 0;
 double GenericMaterial::ePsilon0 = 0;
 double GenericMaterial::ePsilon1 = 0;
 
@@ -149,10 +148,7 @@ int main(int argc, char *argv[]) {
       // get block id
       const int block_id = it->getMeshsetId();
       std::string block_name = "mat_block_"+boost::lexical_cast<std::string>(block_id);
-      // get material name
-      std::string str_mat_name = block_name+".material_name";
-      config_file_options.add_options()
-      (str_mat_name.c_str(),po::value<std::string>(&material_blocks[block_id].matName)->default_value("SimpleDarcy"));
+      material_blocks[block_id].blockId = block_id;
       material_blocks[block_id].addOptions(config_file_options,block_name);
     }
     po::parsed_options parsed = parse_config_file(ini_file,config_file_options,true);
@@ -161,24 +157,30 @@ int main(int argc, char *argv[]) {
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
       if(it->getName().compare(0,4,"SOIL")!=0) continue;
       const int block_id = it->getMeshsetId();
-      material_blocks.at(block_id).printMatParameters(block_id,"Read material");
       if(material_blocks[block_id].matName=="SimpleDarcy") {
-        uf.dMatMap[block_id] = boost::shared_ptr<GenericMaterial>(new SimpleDarcyProblem(material_blocks[block_id]));
+        uf.dMatMap[block_id] = boost::shared_ptr<GenericMaterial>(
+          new SimpleDarcyProblem(material_blocks.at(block_id))
+        );
       }
       if(material_blocks[block_id].matName=="VanGenuchten") {
-        uf.dMatMap[block_id] = boost::shared_ptr<GenericMaterial>(new MaterialVanGenuchten(material_blocks[block_id]));
+        uf.dMatMap[block_id] = boost::shared_ptr<GenericMaterial>(
+          new MaterialVanGenuchten(material_blocks.at(block_id))
+        );
       }
-      if(!uf.dMatMap[block_id]) {
+      if(!uf.dMatMap.at(block_id)) {
         SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"Material block not set");
       }
       // get block test
       rval = m_field.get_moab().get_entities_by_type(
-        it->meshset,MBTET,uf.dMatMap[block_id]->tEts,true
+        it->meshset,MBTET,uf.dMatMap.at(block_id)->tEts,true
       ); CHKERRQ_MOAB(rval);
-      domain_ents.merge(uf.dMatMap[block_id]->tEts);
-    }
-    if(GenericMaterial::sCale==0&&GenericMaterial::ePsilon0>0) {
-      GenericMaterial::sCale = 1/GenericMaterial::ePsilon0;
+      domain_ents.merge(uf.dMatMap.at(block_id)->tEts);
+      uf.dMatMap.at(block_id)->printMatParameters(block_id,"Read material");
+      // EntityHandle meshset = it->meshset;
+      // rval = moab.write_file(
+      //   ("mat_block_"+boost::lexical_cast<std::string>(block_id)+".h5m").c_str(),
+      //   "MOAB","",&meshset,1
+      // ); CHKERRQ_MOAB(rval);
     }
     std::vector<std::string> additional_parameters;
     additional_parameters = collect_unrecognized(parsed.options,po::include_positional);

@@ -13,6 +13,9 @@ namespace MixTransport {
   struct CommonMaterialData: public GenericMaterial {
 
     CommonMaterialData() {
+      blockId = 0;
+      matName = "SimpleDarcy";
+      sCale = 1;
       thetaS = 0.38;
       thetaM = 0.38;
       thetaR = 0.068;
@@ -25,9 +28,10 @@ namespace MixTransport {
       AhZZ = 0;
     }
 
+    int blockId;         ///< Block Id
     std::string matName; ///< material name
 
-    double Ks;          ///< saturated hydraulic conductivity [m/day]
+    double Ks;          ///< Saturated hydraulic conductivity [m/day]
     double hS;          ///< minimum capillary height [m]
     double thetaS;      ///< saturated water content
     double thetaR;      ///< residual water contents
@@ -47,25 +51,28 @@ namespace MixTransport {
 
     void addOptions(po::options_description& o,const std::string& prefix) {
       o.add_options()
+      ((prefix+".material_name").c_str(),po::value<std::string>(&matName)->default_value(matName))
       ((prefix+".ePsilon0").c_str(),po::value<double>(&ePsilon0)->default_value(ePsilon0))
       ((prefix+".ePsilon1").c_str(),po::value<double>(&ePsilon1)->default_value(ePsilon1))
       ((prefix+".sCale").c_str(),po::value<double>(&sCale)->default_value(sCale))
       ((prefix+".thetaS").c_str(),po::value<double>(&thetaS)->default_value(thetaS))
       ((prefix+".thetaR").c_str(),po::value<double>(&thetaR)->default_value(thetaR))
+      ((prefix+".thetaM").c_str(),po::value<double>(&thetaM)->default_value(thetaM))
       ((prefix+".alpha").c_str(),po::value<double>(&alpha)->default_value(alpha))
       ((prefix+".n").c_str(),po::value<double>(&n)->default_value(n))
-      ((prefix+".hS").c_str(),po::value<double>(&n)->default_value(hS))
-      ((prefix+".Ks").c_str(),po::value<double>(&n)->default_value(Ks))
+      ((prefix+".hS").c_str(),po::value<double>(&hS)->default_value(hS))
+      ((prefix+".Ks").c_str(),po::value<double>(&Ks)->default_value(Ks))
       ((prefix+".Ah").c_str(),po::value<double>(&Ah)->default_value(Ah))
       ((prefix+".AhZ").c_str(),po::value<double>(&AhZ)->default_value(AhZ))
       ((prefix+".AhZZ").c_str(),po::value<double>(&AhZZ)->default_value(AhZZ));
     }
 
-    void printMatParameters(const int id,const std::string& prefix) {
+    void printMatParameters(const int id,const std::string& prefix) const {
       PetscPrintf(
         PETSC_COMM_WORLD,"Mat name %s-%s block id %d\n",
         prefix.c_str(),matName.c_str(),id
       );
+      PetscPrintf(PETSC_COMM_WORLD,"Material name: %s\n",matName.c_str());
       PetscPrintf(PETSC_COMM_WORLD,"thetaS=%6.4g\n",thetaS);
       PetscPrintf(PETSC_COMM_WORLD,"thetaR=%6.4g\n",thetaR);
       PetscPrintf(PETSC_COMM_WORLD,"thetaM=%6.4g\n",thetaM);
@@ -113,6 +120,13 @@ namespace MixTransport {
       PetscFunctionReturn(0);
     }
 
+    PetscErrorCode calTheta() {
+      PetscFunctionBegin;
+      tHeta = thetaS;
+      PetscFunctionReturn(0);
+    }
+
+
   };
 
   struct MaterialVanGenuchten: public CommonMaterialData {
@@ -151,7 +165,7 @@ namespace MixTransport {
 
     inline void recordTheta() {
       h = -1-hS;
-      trace_on(0,true);
+      trace_on(2*blockId+0,true);
       ah <<= h;
       const double m = 1-1/n;
       aTheta = funTheta(ah,m);
@@ -162,7 +176,7 @@ namespace MixTransport {
 
     inline void recordKr() {
       h = -1-hS;
-      trace_on(1,true);
+      trace_on(2*blockId+1,true);
       ah <<= h;
       aKr = funKr(ah);
       double r_Kr;
@@ -174,7 +188,7 @@ namespace MixTransport {
     PetscErrorCode calK() {
       PetscFunctionBegin;
       if(h<hS) {
-        int r = ::function(1,1,1,&h,&Kr);
+        int r = ::function(2*blockId+1,1,1,&h,&Kr);
         if(r<0) {
           SETERRQ(
             PETSC_COMM_SELF,
@@ -195,7 +209,7 @@ namespace MixTransport {
       PetscFunctionBegin;
       if(h<hS) {
         diffK = 0;
-        int r = ::gradient(1,1,&h,&diffKr);
+        int r = ::gradient(2*blockId+1,1,&h,&diffKr);
         if(r<0) {
           SETERRQ(
             PETSC_COMM_SELF,
@@ -213,7 +227,7 @@ namespace MixTransport {
     PetscErrorCode calC() {
       PetscFunctionBegin;
       if(h<hS) {
-        int r = ::gradient(0,1,&h,&C);
+        int r = ::gradient(2*blockId+0,1,&h,&C);
         if(r<0) {
           SETERRQ(
             PETSC_COMM_SELF,
@@ -232,7 +246,7 @@ namespace MixTransport {
       PetscFunctionBegin;
       if(h<hS) {
         double v = 1;
-        int r = ::hess_vec(0,1,&h,&v,&diffC);
+        int r = ::hess_vec(2*blockId+0,1,&h,&v,&diffC);
         if(r<0) {
           SETERRQ(
             PETSC_COMM_SELF,
@@ -245,6 +259,24 @@ namespace MixTransport {
       }
       PetscFunctionReturn(0);
     }
+
+    PetscErrorCode calTheta() {
+      PetscFunctionBegin;
+      if(h<hS) {
+        int r = ::function(2*blockId+0,1,1,&h,&tHeta);
+        if(r<0) {
+          SETERRQ(
+            PETSC_COMM_SELF,
+            MOFEM_OPERATION_UNSUCCESSFUL,
+            "ADOL-C function evaluation with error"
+          );
+        }
+      } else {
+        tHeta = thetaS;
+      }
+      PetscFunctionReturn(0);
+    }
+
 
     void printTheta(const double b,const double e,double s,const std::string& prefix) {
       const double m = 1-1/n;
