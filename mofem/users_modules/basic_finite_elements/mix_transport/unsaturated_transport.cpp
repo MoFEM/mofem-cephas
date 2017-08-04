@@ -39,9 +39,13 @@ static char help[] = "...\n\n";
 double GenericMaterial::ePsilon0 = 0;
 double GenericMaterial::ePsilon1 = 0;
 
+map<std::string,CommonMaterialData::RegisterHook> RegisterMaterials::mapOfRegistredMaterials;
+
 int main(int argc, char *argv[]) {
 
   PetscInitialize(&argc,&argv,(char *)0,help);
+
+  ierr = RegisterMaterials()(); CHKERRQ(ierr);
 
   PetscBool test_mat = PETSC_FALSE;
   ierr = PetscOptionsGetBool(
@@ -53,7 +57,7 @@ int main(int argc, char *argv[]) {
     // Testing van_genuchten
     MaterialVanGenuchten van_genuchten(data);
     van_genuchten.printMatParameters(-1,"testing");
-    van_genuchten.printTheta(-1e-16,-1,-1e-12,"hTheta");
+    van_genuchten.printTheta(-1e-16,-1e4,-1e-12,"hTheta");
     van_genuchten.printKappa(-1e-16,-1,-1e-12,"hK");
     van_genuchten.printC(-1e-16,-1,-1e-12,"hC");
     ierr = PetscFinalize(); CHKERRQ(ierr);
@@ -157,16 +161,9 @@ int main(int argc, char *argv[]) {
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
       if(it->getName().compare(0,4,"SOIL")!=0) continue;
       const int block_id = it->getMeshsetId();
-      if(material_blocks[block_id].matName=="SimpleDarcy") {
-        uf.dMatMap[block_id] = boost::shared_ptr<GenericMaterial>(
-          new SimpleDarcyProblem(material_blocks.at(block_id))
-        );
-      }
-      if(material_blocks[block_id].matName=="VanGenuchten") {
-        uf.dMatMap[block_id] = boost::shared_ptr<GenericMaterial>(
-          new MaterialVanGenuchten(material_blocks.at(block_id))
-        );
-      }
+      uf.dMatMap[block_id] =
+      RegisterMaterials::mapOfRegistredMaterials.
+      at(material_blocks[block_id].matName)(material_blocks.at(block_id));
       if(!uf.dMatMap.at(block_id)) {
         SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"Material block not set");
       }

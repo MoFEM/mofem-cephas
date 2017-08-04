@@ -88,11 +88,17 @@ namespace MixTransport {
       PetscPrintf(PETSC_COMM_WORLD,"sCale=%6.4g\n",sCale);
     }
 
+    typedef boost::function<boost::shared_ptr<CommonMaterialData> (const CommonMaterialData &data)> RegisterHook;
+
   };
 
-  struct SimpleDarcyProblem: public CommonMaterialData {
+  struct MaterialDarcy: public CommonMaterialData {
 
-    SimpleDarcyProblem(const CommonMaterialData &data):
+    static boost::shared_ptr<CommonMaterialData> createMatPtr(const CommonMaterialData &data) {
+      return boost::shared_ptr<CommonMaterialData>(new MaterialDarcy(data));
+    }
+
+    MaterialDarcy(const CommonMaterialData &data):
     CommonMaterialData(data) {
     }
 
@@ -126,10 +132,21 @@ namespace MixTransport {
       PetscFunctionReturn(0);
     }
 
+    virtual PetscErrorCode calSe() {
+      PetscFunctionBegin;
+      Se = 1;
+      PetscFunctionReturn(0);
+    }
+
+
 
   };
 
   struct MaterialVanGenuchten: public CommonMaterialData {
+
+    static boost::shared_ptr<CommonMaterialData> createMatPtr(const CommonMaterialData &data) {
+      return boost::shared_ptr<CommonMaterialData>(new MaterialVanGenuchten(data));
+    }
 
     MaterialVanGenuchten(const CommonMaterialData &data):
     CommonMaterialData(data) {
@@ -148,19 +165,24 @@ namespace MixTransport {
       return thetaR+(thetaM-thetaR)/pow(1+pow(-alpha*h,n),m);
     }
 
+    template  <typename TYPE>
+    inline TYPE funSe(TYPE &theta) {
+      return (theta-thetaR)/(thetaS-thetaR);
+    }
+
     template <typename TYPE>
-    inline TYPE funSeStar(TYPE &SeStar,const double m) {
+    inline TYPE funFunSeStar(TYPE &SeStar,const double m) {
       return pow(1-pow(SeStar,1/m),m);
     }
 
     inline adouble funKr(adouble &ah) {
       const double m = 1-1/n;
       aTheta = funTheta(ah,m);
-      aSe = (aTheta-thetaR)/(thetaS-thetaR);
+      aSe = funSe(aTheta); //(aTheta-thetaR)/(thetaS-thetaR);
       aSeStar = aSe*(thetaS-thetaR)/(thetaM-thetaR);
       double one = 1;
-      const double c = funSeStar<double>(one,m);
-      return sqrt(aSe)*pow((1-funSeStar<adouble>(aSeStar,m))/(1-c),2);
+      const double c = funFunSeStar<double>(one,m);
+      return sqrt(aSe)*pow((1-funFunSeStar<adouble>(aSeStar,m))/(1-c),2);
     }
 
     inline void recordTheta() {
@@ -277,6 +299,25 @@ namespace MixTransport {
       PetscFunctionReturn(0);
     }
 
+    PetscErrorCode calSe() {
+      PetscFunctionBegin;
+      if(h<hS) {
+        int r = ::function(2*blockId+0,1,1,&h,&tHeta);
+        Se = funSe(tHeta);
+        if(r<0) {
+          SETERRQ(
+            PETSC_COMM_SELF,
+            MOFEM_OPERATION_UNSUCCESSFUL,
+            "ADOL-C function evaluation with error"
+          );
+        }
+      } else {
+        tHeta = thetaS;
+      }
+      PetscFunctionReturn(0);
+    }
+
+
 
     void printTheta(const double b,const double e,double s,const std::string& prefix) {
       const double m = 1-1/n;
@@ -308,6 +349,16 @@ namespace MixTransport {
     }
 
 
+  };
+
+  struct RegisterMaterials {
+    static map<std::string,CommonMaterialData::RegisterHook> mapOfRegistredMaterials;
+    PetscErrorCode operator()() const {
+      PetscFunctionBegin;
+      mapOfRegistredMaterials["SimpleDarcy"] = MaterialDarcy::createMatPtr;
+      mapOfRegistredMaterials["VanGenuchten"] = MaterialVanGenuchten::createMatPtr;
+      PetscFunctionReturn(0);
+    }
   };
 
 }
