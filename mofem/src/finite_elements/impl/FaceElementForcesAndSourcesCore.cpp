@@ -83,7 +83,7 @@ PetscErrorCode FaceElementForcesAndSourcesCore::UserDataOperator::loopSideVolume
   const EntityHandle ent = getNumeredEntFiniteElementPtr()->getEnt();
   const Problem *problem_ptr = getFEMethod()->problemPtr;
   Range adjacent_volumes;
-  ierr = getTriFE()->mField.get_adjacencies_any(ent,3,adjacent_volumes); CHKERRQ(ierr);
+  ierr = getFaceFE()->mField.get_adjacencies_any(ent,3,adjacent_volumes); CHKERRQ(ierr);
   typedef NumeredEntFiniteElement_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type FEByComposite;
   FEByComposite &numered_fe =
   (const_cast<NumeredEntFiniteElement_multiIndex&>(
@@ -92,11 +92,11 @@ PetscErrorCode FaceElementForcesAndSourcesCore::UserDataOperator::loopSideVolume
 
   method.feName = fe_name;
 
-  ierr = method.setFaceFEPtr(getTriFE()); CHKERRQ(ierr);
+  ierr = method.setFaceFEPtr(getFaceFE()); CHKERRQ(ierr);
   ierr = method.copyBasicMethod(*getFEMethod()); CHKERRQ(ierr);
   ierr = method.copyKsp(*getFEMethod()); CHKERRQ(ierr);
-  ierr = method.copy_snes(*getFEMethod()); CHKERRQ(ierr);
-  ierr = method.copy_ts(*getFEMethod()); CHKERRQ(ierr);
+  ierr = method.copySnes(*getFEMethod()); CHKERRQ(ierr);
+  ierr = method.copyTs(*getFEMethod()); CHKERRQ(ierr);
 
   try {
     ierr = method.preProcess(); CHKERRQ(ierr);

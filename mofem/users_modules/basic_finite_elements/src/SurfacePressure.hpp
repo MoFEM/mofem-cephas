@@ -32,6 +32,9 @@ struct NeummanForcesSurface {
    */
   struct MethodForAnaliticalForce {
 
+    virtual ~MethodForAnaliticalForce() {
+    }
+
     /**
      * User implemented analytical force
      * @param  coords coordinates of integration point
@@ -234,8 +237,8 @@ struct MetaNeummanForces {
     Range *intersect_ptr = NULL
   ) {
     PetscFunctionBegin;
-    
-    
+
+
     // Define boundary element that operates on rows, columns and data of a given field
     ierr = m_field.add_finite_element("FORCE_FE",MF_ZERO); CHKERRQ(ierr);
     ierr = m_field.modify_finite_element_add_field_row("FORCE_FE",field_name); CHKERRQ(ierr);
@@ -339,7 +342,7 @@ struct MetaNeummanForces {
     Vec F,const std::string field_name,const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS"
   ) {
     PetscFunctionBegin;
-    
+
     string fe_name;
     fe_name = "FORCE_FE";
     neumann_forces.insert(fe_name,new NeummanForcesSurface(m_field));
@@ -386,7 +389,7 @@ struct MetaNeummanForces {
   //   boost::ptr_map<std::string,NeummanForcesSurface> &neumann_forces,
   //   Vec F,const std::string field_name,const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS"
   // ) {
-  //   
+  //
   //   PetscFunctionBegin;
   //   ierr = setMomentumFluxOperators(
   //     m_field,neumann_forces,F,field_name,mesh_nodals_positions
@@ -399,8 +402,8 @@ struct MetaNeummanForces {
     const std::string field_name,
     const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS") {
     PetscFunctionBegin;
-    
-    
+
+
 
     ierr = m_field.add_finite_element("FLUX_FE",MF_ZERO); CHKERRQ(ierr);
     ierr = m_field.modify_finite_element_add_field_row("FLUX_FE",field_name); CHKERRQ(ierr);
@@ -425,7 +428,7 @@ struct MetaNeummanForces {
     Vec F,const std::string field_name,const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS"
   ) {
     PetscFunctionBegin;
-    
+
     string fe_name;
     fe_name = "FLUX_FE";
     neumann_forces.insert(fe_name,new NeummanForcesSurface(m_field));
@@ -447,7 +450,7 @@ struct MetaNeummanForces {
   //   boost::ptr_map<std::string,NeummanForcesSurface> &neumann_forces,
   //   Vec F,const std::string field_name,const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS"
   // ) {
-  //   
+  //
   //   PetscFunctionBegin;
   //   ierr = setMassFluxOperators(
   //     m_field,neumann_forces,F,field_name,mesh_nodals_positions

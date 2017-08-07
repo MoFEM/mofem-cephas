@@ -37,7 +37,7 @@ struct OpCalculateScalarFieldValues_General: public ForcesAndSurcesCore::UserDat
 
   OpCalculateScalarFieldValues_General(
     const std::string &field_name,
-    boost::shared_ptr<ublas::vector<T,A> > data_ptr,
+    boost::shared_ptr<ublas::vector<T,A> >& data_ptr,
     EntityType zero_type = MBVERTEX
   ):
   ForcesAndSurcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROW),
@@ -86,7 +86,7 @@ public OpCalculateScalarFieldValues_General<double,DoubleAllacator> {
 
   OpCalculateScalarFieldValues(
     const std::string &field_name,
-    boost::shared_ptr<VectorDouble> data_ptr,
+    boost::shared_ptr<VectorDouble>& data_ptr,
     EntityType zero_type = MBVERTEX
   ):
   OpCalculateScalarFieldValues_General<double,DoubleAllacator>(
@@ -157,7 +157,7 @@ struct OpCalculateVectorFieldValues_General: public ForcesAndSurcesCore::UserDat
 
   OpCalculateVectorFieldValues_General(
     const std::string &field_name,
-    boost::shared_ptr<ublas::matrix<T,L,A> > data_ptr,
+    boost::shared_ptr<ublas::matrix<T,L,A> >& data_ptr,
     EntityType zero_type = MBVERTEX
   ):
   ForcesAndSurcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROW),
@@ -205,7 +205,7 @@ struct OpCalculateVectorFieldValues_General<Tensor_Dim,double,ublas::row_major,D
 
   OpCalculateVectorFieldValues_General(
     const std::string &field_name,
-    boost::shared_ptr<MatrixDouble> data_ptr,
+    boost::shared_ptr<MatrixDouble>& data_ptr,
     EntityType zero_type = MBVERTEX
   ):
   ForcesAndSurcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROW),
@@ -281,7 +281,7 @@ public OpCalculateVectorFieldValues_General<Tensor_Dim,double,ublas::row_major,D
 
   OpCalculateVectorFieldValues(
     const std::string &field_name,
-    boost::shared_ptr<MatrixDouble> data_ptr,
+    boost::shared_ptr<MatrixDouble>& data_ptr,
     EntityType zero_type = MBVERTEX
   ):
   OpCalculateVectorFieldValues_General<
@@ -302,7 +302,7 @@ struct OpCalculateTensor2FieldValues_General: public ForcesAndSurcesCore::UserDa
 
   OpCalculateTensor2FieldValues_General(
     const std::string &field_name,
-    boost::shared_ptr<ublas::matrix<T,L,A> > data_ptr,
+    boost::shared_ptr<ublas::matrix<T,L,A> >& data_ptr,
     EntityType zero_type = MBVERTEX
   ):
   ForcesAndSurcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROW),
@@ -342,7 +342,7 @@ Tensor_Dim0,Tensor_Dim1,double,ublas::row_major,DoubleAllacator
 
   OpCalculateTensor2FieldValues_General(
     const std::string &field_name,
-    boost::shared_ptr<ublas::matrix<double,ublas::row_major,DoubleAllacator > > data_ptr,
+    boost::shared_ptr<ublas::matrix<double,ublas::row_major,DoubleAllacator > >& data_ptr,
     EntityType zero_type = MBVERTEX
   ):
   ForcesAndSurcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROW),
@@ -379,7 +379,7 @@ public OpCalculateVectorFieldValues_General<Tensor_Dim,T,L,A> {
 
   OpCalculateScalarFieldGradient_General(
     const std::string &field_name,
-    boost::shared_ptr<MatrixDouble> data_ptr,
+    boost::shared_ptr<MatrixDouble>& data_ptr,
     EntityType zero_type = MBVERTEX
   ):
   OpCalculateVectorFieldValues_General<Tensor_Dim,T,L,A>(
@@ -398,7 +398,7 @@ public OpCalculateVectorFieldValues_General<Tensor_Dim,double,ublas::row_major,D
 
   OpCalculateScalarFieldGradient_General(
     const std::string &field_name,
-    boost::shared_ptr<MatrixDouble> data_ptr,
+    boost::shared_ptr<MatrixDouble>& data_ptr,
     EntityType zero_type = MBVERTEX
   ):
   OpCalculateVectorFieldValues_General<Tensor_Dim,double,ublas::row_major,DoubleAllacator >(
@@ -473,7 +473,7 @@ public OpCalculateScalarFieldGradient_General<Tensor_Dim,double,ublas::row_major
 
   OpCalculateScalarFieldGradient(
     const std::string &field_name,
-    boost::shared_ptr<MatrixDouble> data_ptr,
+    boost::shared_ptr<MatrixDouble>& data_ptr,
     EntityType zero_type = MBVERTEX
   ):
   OpCalculateScalarFieldGradient_General<
@@ -493,7 +493,7 @@ public OpCalculateTensor2FieldValues_General<Tensor_Dim0,Tensor_Dim1,T,L,A> {
 
   OpCalculateVectorFieldGradient_General(
     const std::string &field_name,
-    boost::shared_ptr<MatrixDouble> data_ptr,
+    boost::shared_ptr<MatrixDouble>& data_ptr,
     EntityType zero_type = MBVERTEX
   ):
   OpCalculateTensor2FieldValues_General<Tensor_Dim0,Tensor_Dim1,T,L,A>(
@@ -509,7 +509,7 @@ public OpCalculateTensor2FieldValues_General<Tensor_Dim0,Tensor_Dim1,double,ubla
 
   OpCalculateVectorFieldGradient_General(
     const std::string &field_name,
-    boost::shared_ptr<MatrixDouble> data_ptr,
+    boost::shared_ptr<MatrixDouble>& data_ptr,
     EntityType zero_type = MBVERTEX
   ):
   OpCalculateTensor2FieldValues_General<Tensor_Dim0,Tensor_Dim1,double,ublas::row_major,DoubleAllacator >(
@@ -588,12 +588,152 @@ public OpCalculateVectorFieldGradient_General<Tensor_Dim0,Tensor_Dim1,double,ubl
 
   OpCalculateVectorFieldGradient(
     const std::string &field_name,
-    boost::shared_ptr<MatrixDouble> data_ptr,
+    boost::shared_ptr<MatrixDouble>& data_ptr,
     EntityType zero_type = MBVERTEX
   ):
   OpCalculateVectorFieldGradient_General<
   Tensor_Dim0,Tensor_Dim1,double,ublas::row_major,DoubleAllacator
   >(field_name,data_ptr,zero_type) {
+  }
+
+};
+
+/** \brief Get vector field for H-div approximation
+* \ingroup mofem_forces_and_sources_user_data_operators
+*/
+template<int Tensor_Dim0,class T, class L, class A>
+struct OpCalculateHdivVectorField_General: public ForcesAndSurcesCore::UserDataOperator {
+
+  boost::shared_ptr<ublas::matrix<T,L,A> > dataPtr;
+  EntityHandle zeroType;
+  int zero_side;
+
+  OpCalculateHdivVectorField_General(
+    const std::string &field_name,
+    boost::shared_ptr<ublas::matrix<T,L,A> >& data_ptr,
+    EntityType zero_type = MBTRI,
+    int zero_side = 0
+  ):
+  ForcesAndSurcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROW),
+  dataPtr(data_ptr),
+  zeroType(zero_type),
+  zero_side(0) {
+  }
+
+  /**
+   * \brief calculate values of vector field at integration points
+   * @param  side side entity number
+   * @param  type side entity type
+   * @param  data entity data
+   * @return      error code
+   */
+  PetscErrorCode doWork(
+    int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+  );
+
+};
+
+template<int Tensor_Dim, class T, class L, class A>
+PetscErrorCode OpCalculateHdivVectorField_General<Tensor_Dim,T,L,A>::doWork(
+  int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+) {
+  PetscFunctionBegin;
+  SETERRQ2(
+    PETSC_COMM_SELF,
+    MOFEM_NOT_IMPLEMENTED,
+    "Not implemented for T = %s and dim = %d",
+    typeid(T).name(), // boost::core::demangle(typeid(T).name()),
+    Tensor_Dim
+  );
+  PetscFunctionReturn(0);
+}
+
+/** \brief Get vector field for H-div approximation
+* \ingroup mofem_forces_and_sources_user_data_operators
+*/
+template<int Tensor_Dim>
+struct OpCalculateHdivVectorField_General<Tensor_Dim,double,ublas::row_major,DoubleAllacator>:
+public ForcesAndSurcesCore::UserDataOperator {
+
+  boost::shared_ptr<MatrixDouble> dataPtr;
+  EntityHandle zeroType;
+  int zero_side;
+
+  OpCalculateHdivVectorField_General(
+    const std::string &field_name,
+    boost::shared_ptr<MatrixDouble>& data_ptr,
+    EntityType zero_type = MBTRI,
+    int zero_side = 0
+  ):
+  ForcesAndSurcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROW),
+  dataPtr(data_ptr),
+  zeroType(zero_type),
+  zero_side(0) {
+  }
+
+  /**
+   * \brief Calculate values of vector field at integration points
+   * @param  side side entity number
+   * @param  type side entity type
+   * @param  data entity data
+   * @return      error code
+   */
+  PetscErrorCode doWork(
+    int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+  );
+
+};
+
+template<int Tensor_Dim>
+PetscErrorCode OpCalculateHdivVectorField_General<Tensor_Dim,double,ublas::row_major,DoubleAllacator>::doWork(
+  int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+) {
+  PetscFunctionBegin;
+  const int nb_dofs = data.getFieldData().size();
+  if(!nb_dofs) PetscFunctionReturn(0);
+  const int nb_base_functions = data.getHdivN().size2()/Tensor_Dim;
+  const int nb_integration_points = data.getHdivN().size1();
+  if(type==zeroType&&side==0) {
+    dataPtr->resize(nb_integration_points,Tensor_Dim,false);
+    dataPtr->clear();
+  }
+  FTensor::Index<'i',3> i;
+  FTensor::Tensor1<double*,Tensor_Dim> t_n_hdiv = data.getFTensor1HdivN<Tensor_Dim>();
+  FTensor::Tensor1<double*,Tensor_Dim> t_data = getTensor1FormData<3>(*dataPtr);
+  for(int gg = 0;gg!=nb_integration_points;gg++) {
+    FTensor::Tensor0<double*> t_dof = data.getFTensor0FieldData();
+    int bb = 0;
+    for(;bb!=nb_dofs;bb++) {
+      t_data(i) += t_n_hdiv(i)*t_dof;
+      ++t_n_hdiv;
+      ++t_dof;
+    }
+    for(;bb<nb_base_functions;bb++) {
+      ++t_n_hdiv;
+    }
+    ++t_data;
+  }
+  PetscFunctionReturn(0);
+}
+
+/** \brief Get vector field for H-div approximation
+* \ingroup mofem_forces_and_sources_user_data_operators
+* \note Not tested
+* \FIXME Test this
+*/
+template<int Tensor_Dim>
+struct OpCalculateHdivVectorField:
+public OpCalculateHdivVectorField_General<Tensor_Dim,double,ublas::row_major,DoubleAllacator> {
+
+  OpCalculateHdivVectorField(
+    const std::string &field_name,
+    boost::shared_ptr<MatrixDouble>& data_ptr,
+    EntityType zero_type = MBTRI,
+    int zero_side = 0
+  ):
+  OpCalculateHdivVectorField_General<Tensor_Dim,double,ublas::row_major,DoubleAllacator>(
+    field_name,data_ptr,zero_type,zero_side
+  ) {
   }
 
 };

@@ -69,6 +69,7 @@ struct KelvinVoigtDamper {
     ConstitutiveEquation(BlockMaterialData &data):
     dAta(data) {
     }
+    virtual ~ConstitutiveEquation() {}
 
     ublas::matrix<TYPE> F;              ///< Gradient of deformation
     ublas::matrix<TYPE> FDot;           ///< Rate of gradient of deformation
@@ -191,7 +192,7 @@ struct KelvinVoigtDamper {
       if(dAta.lInear) {
         noalias(dashpotFirstPiolaKirchhoffStress) = dashpotCauchyStress;
       } else {
-        
+
         invF.resize(3,3,false);
         ierr = dEterminatnt(F,J); CHKERRQ(ierr);
         ierr = iNvert(J,F,invF); CHKERRQ(ierr);
@@ -250,7 +251,7 @@ struct KelvinVoigtDamper {
     }
 
     PetscErrorCode preProcess() {
-      
+
       PetscFunctionBegin;
       ierr = MoFEM::VolumeElementForcesAndSourcesCore::preProcess(); CHKERRQ(ierr);
 
@@ -266,7 +267,7 @@ struct KelvinVoigtDamper {
     }
 
     PetscErrorCode postProcess() {
-      
+
       PetscFunctionBegin;
 
       ierr = MoFEM::VolumeElementForcesAndSourcesCore::postProcess(); CHKERRQ(ierr);
@@ -433,7 +434,7 @@ struct KelvinVoigtDamper {
         if(tagS[DAMPERSTRESS]<0) {
           PetscFunctionReturn(0);
         }
-        
+
         cE.F.resize(3,3,false);
         cE.FDot.resize(3,3,false);
         MatrixDouble &F = (commonData.gradAtGaussPts[commonData.spatialPositionName])[0];
@@ -531,7 +532,7 @@ struct KelvinVoigtDamper {
           PetscFunctionReturn(0);
         }
 
-        
+
         activeVariables.resize(nbActiveVariables[tagS[DAMPERSTRESS]],false);
         for(int gg = 0;gg<nbGaussPts;gg++) {
 
@@ -597,7 +598,7 @@ struct KelvinVoigtDamper {
       int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data
     ) {
       PetscFunctionBegin;
-      
+
 
       if(row_type != MBVERTEX) PetscFunctionReturn(0);
       nbGaussPts = row_data.getN().size1();
@@ -630,7 +631,7 @@ struct KelvinVoigtDamper {
     AssembleVector(string field_name):
     MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW) {
     }
-    
+
     VectorDouble nF;
     PetscErrorCode aSemble(
       int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data
@@ -708,7 +709,7 @@ struct KelvinVoigtDamper {
     MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator(
       row_name,col_name,UserDataOperator::OPROWCOL) {
     }
-    
+
     MatrixDouble K,transK;
     PetscErrorCode aSemble(
       int row_side,int col_side,
@@ -948,8 +949,8 @@ struct KelvinVoigtDamper {
 
   PetscErrorCode setBlockDataMap() {
     PetscFunctionBegin;
-    
-    
+
+
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
       if(it->getName().compare(0,6,"DAMPER") == 0) {
         std::vector<double> data;

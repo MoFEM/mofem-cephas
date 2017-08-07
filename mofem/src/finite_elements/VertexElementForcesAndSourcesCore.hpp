@@ -53,7 +53,7 @@ struct VertexElementForcesAndSourcesCore: public ForcesAndSurcesCore {
     dataNoFieldCol(MBVERTEX)
   {};
 
-  
+
   VectorDouble coords;
 
   /** \brief default operator for VERTEX element
@@ -75,15 +75,7 @@ struct VertexElementForcesAndSourcesCore: public ForcesAndSurcesCore {
 
   };
 
-  PetscErrorCode preProcess() {
-    PetscFunctionBegin;
-    PetscFunctionReturn(0);
-  }
   PetscErrorCode operator()();
-  PetscErrorCode postProcess() {
-    PetscFunctionBegin;
-    PetscFunctionReturn(0);
-  }
 
 };
 

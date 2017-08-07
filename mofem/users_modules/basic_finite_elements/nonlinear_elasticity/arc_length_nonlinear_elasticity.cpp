@@ -35,9 +35,6 @@ namespace po = boost::program_options;
 
 #include <SurfacePressureComplexForLazy.hpp>
 
-
-
-
 int main(int argc, char *argv[]) {
 
   PetscInitialize(&argc,&argv,(char *)0,help);
@@ -347,8 +344,6 @@ int main(int argc, char *argv[]) {
         arcPtr(arc_ptr),
         nodeSet(node_set) {}
 
-        
-
         PetscErrorCode preProcess() {
           PetscFunctionBegin;
 
@@ -417,7 +412,7 @@ int main(int argc, char *argv[]) {
         arcPtr(arc_ptr),
         bC(bc) {}
 
-        
+
 
         PetscErrorCode preProcess() {
           PetscFunctionBegin;

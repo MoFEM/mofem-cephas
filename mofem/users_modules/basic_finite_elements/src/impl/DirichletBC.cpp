@@ -75,7 +75,7 @@ PetscErrorCode DisplacementBCFEMethodPreAndPostProc::iNitalize() {
         }
         for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {
           for(_IT_NUMEREDDOF_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problemPtr,fieldName,*eit,pcomm->rank(),dof_ptr)) {
-            NumeredDofEntity *dof = dof_ptr->get();
+            const boost::shared_ptr<NumeredDofEntity>& dof = *dof_ptr;
             std::bitset<8> pstatus(dof->getPStatus());
             if(pstatus.test(0)) continue; //only local
             if(dof->getEntType() == MBVERTEX) {

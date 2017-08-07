@@ -23,10 +23,10 @@ at the beginning of \ref analytical_nonlinear_poisson.cpp example you can find
 two classes. Those functions can be modified to investigate alternative
 solutions
 \code
-struct A {
+struct FunA {
   double operator()(const double u) { return 1+u*u; }
 };
-struct DiffA {
+struct DiffFunA {
   double operator()(const double u) { return 2*u; }
 };
 \endcode
@@ -260,7 +260,7 @@ make -j2
 
 Once code is compiled, we can run test
 \code
-mpirun -np 2 -file_name cube_2part.h5m -order 3 \
+mpirun -np 2 ./analytical_nonlinear_poisson -file_name cube_2part.h5m -order 3 \
 -snes_monitor -snes_converged_reason  -snes_type newtonls \
 -snes_linesearch_type cp -snes_linesearch_monitor
 \endcode
@@ -299,7 +299,7 @@ Approximation error 4.109e-10
 \endverbatim
 Note fast convergence, after first two interactions, once iterative approximation
 approaches the exact solution. To obtain this solution, we are using Newton method with line-searcher, in this case,
-we use critical point secant line search, <a href=http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/SNES/SNESLINESEARCHCP.html>see details</a>.
+we use critical point secant line search, <a href=http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/SNES/SNESLINESEARCHCP.html>see details</a
 Line-search method has several alternative types and can be setup independently
 from solver, they can be found  <a href=http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/SNES/SNESLineSearchSetFromOptions.html>here</a>.
 

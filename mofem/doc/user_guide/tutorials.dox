@@ -48,8 +48,14 @@ PETSc
 In example is shown how to solve transport problem using mix element with an
 independent approximation for fluxes and function values.  Also, is shown how to
 integrate over mesh skeleton to evaluate error and how to use a posterior error
-estimator to drive mesh adaptivity (h-adaptivity),
+estimator to drive mesh adaptivity (h-adaptivity).
 
 - \subpage mix_transport
+
+In this tutorial, we show how to solve time dependent nonlinear problem using
+mix formulation applied to unsaturated water transport in heterogeneous soil.
+
+- \subpage mix_us_flow
+
 
 */

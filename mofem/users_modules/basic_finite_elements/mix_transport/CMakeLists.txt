@@ -31,6 +31,27 @@ file(
   ${CMAKE_CURRENT_SOURCE_DIR}/bc.cfg
   DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/
 )
+file(
+  COPY
+  ${CMAKE_CURRENT_SOURCE_DIR}/unsaturated.cfg
+  DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/
+)
+file(
+  COPY
+  ${CMAKE_CURRENT_SOURCE_DIR}/soil_impermeable.cub
+  DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/
+)
+file(
+  COPY
+  ${CMAKE_CURRENT_SOURCE_DIR}/upward_infiltration.cub
+  DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/
+)
+file(
+  COPY
+  ${CMAKE_CURRENT_SOURCE_DIR}/run_uf.sh
+  DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/
+  FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE
+)
 
 include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/src
@@ -57,3 +78,27 @@ target_link_libraries(h_adaptive_transport
   mofem_cblas
   ${MoFEM_PROJECT_LIBS}
 )
+
+if(ADOL-C_LIBRARY)
+
+  bfe_add_executable(
+    unsaturated_transport ${CMAKE_CURRENT_SOURCE_DIR}/unsaturated_transport.cpp
+  )
+  target_link_libraries(unsaturated_transport
+    users_modules
+    mofem_finite_elements
+    mofem_interfaces
+    mofem_multi_indices
+    mofem_petsc
+    mofem_approx
+    mofem_third_party
+    mofem_cblas
+    ${MoFEM_PROJECT_LIBS}
+  )
+
+  add_test(
+    unsaturated_flow ${CMAKE_CURRENT_BINARY_DIR}/run_uf.sh
+    soil_impermeable.cub unsaturated.cfg 2 0.0001 0.0003
+  )
+
+endif(ADOL-C_LIBRARY)

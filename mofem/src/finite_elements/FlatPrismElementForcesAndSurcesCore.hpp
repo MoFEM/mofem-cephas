@@ -39,7 +39,7 @@ namespace MoFEM {
  */
 struct FlatPrismElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 
-  
+
   double aRea[2];
   VectorDouble normal;
   VectorDouble coords;
@@ -288,15 +288,7 @@ struct FlatPrismElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 
   };
 
-  PetscErrorCode preProcess() {
-    PetscFunctionBegin;
-    PetscFunctionReturn(0);
-  }
   PetscErrorCode operator()();
-  PetscErrorCode postProcess() {
-    PetscFunctionBegin;
-    PetscFunctionReturn(0);
-  }
 
 };
 

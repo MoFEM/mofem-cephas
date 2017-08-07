@@ -268,7 +268,7 @@ namespace MoFEM {
     int gid,last_gid;
     ierr = PetscLayoutGetRange(layout,&gid,&last_gid); CHKERRQ(ierr);
     ierr = PetscLayoutDestroy(&layout); CHKERRQ(ierr);
-    for(_IT_NUMEREDFEMOFEMENTITY_BY_NAME_FOR_LOOP_(problem_ptr,fe_name,fe_it)) {
+    for(_IT_NUMEREDFE_BY_NAME_FOR_LOOP_(problem_ptr,fe_name,fe_it)) {
       EntityHandle ent = (*fe_it)->getEnt();
       ents.insert(ent);
       unsigned int part = (*fe_it)->getPart();

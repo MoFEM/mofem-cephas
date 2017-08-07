@@ -362,7 +362,7 @@ struct ForcesAndSurcesCore: public FEMethod {
 
     */
   virtual PetscErrorCode setGaussPts(int order_row,int order_col,int order_data) {
-    
+
     PetscFunctionBegin;
     ierr = setGaussPts(order_data); CHKERRQ(ierr);
     PetscFunctionReturn(0);
@@ -567,14 +567,23 @@ struct ForcesAndSurcesCore: public FEMethod {
 
   virtual PetscErrorCode preProcess() {
     PetscFunctionBegin;
+    if(preProcessHook) {
+      ierr = preProcessHook(); CHKERRQ(ierr);
+    }
     PetscFunctionReturn(0);
   }
   virtual PetscErrorCode operator()() {
     PetscFunctionBegin;
+    if(operatorHook) {
+      ierr = operatorHook(); CHKERRQ(ierr);
+    }
     PetscFunctionReturn(0);
   }
   virtual PetscErrorCode postProcess() {
     PetscFunctionBegin;
+    if(postProcessHook) {
+      ierr = postProcessHook(); CHKERRQ(ierr);
+    }
     PetscFunctionReturn(0);
   }
 

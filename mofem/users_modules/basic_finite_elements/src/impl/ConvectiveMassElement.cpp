@@ -2628,7 +2628,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
     }
 
     shellMatCtx->ts_a = ts_a;
-    DirichletBcPtr->copy_ts(*((TSMethod*)this)); //copy context for TSMethod
+    DirichletBcPtr->copyTs(*((TSMethod*)this)); //copy context for TSMethod
 
     DirichletBcPtr->dIag = 1;
     DirichletBcPtr->ts_B = shellMatCtx->K;
@@ -2636,13 +2636,13 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
     ierr = mField.problem_basic_method_preProcess(problemName,*DirichletBcPtr); CHKERRQ(ierr);
     LoopsToDoType::iterator itk = loopK.begin();
     for(;itk!=loopK.end();itk++) {
-      itk->second->copy_ts(*((TSMethod*)this));
+      itk->second->copyTs(*((TSMethod*)this));
       itk->second->ts_B = shellMatCtx->K;
       ierr = mField.loop_finite_elements(problemName,itk->first,*itk->second); CHKERRQ(ierr);
     }
     LoopsToDoType::iterator itam = loopAuxM.begin();
     for(;itam!=loopAuxM.end();itam++) {
-      itam->second->copy_ts(*((TSMethod*)this));
+      itam->second->copyTs(*((TSMethod*)this));
       itam->second->ts_B = shellMatCtx->K;
       ierr = mField.loop_finite_elements(problemName,itam->first,*itam->second); CHKERRQ(ierr);
     }
@@ -2656,7 +2656,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
     //ierr = mField.problem_basic_method_preProcess(problemName,*DirichletBcPtr); CHKERRQ(ierr);
     LoopsToDoType::iterator itm = loopM.begin();
     for(;itm!=loopM.end();itm++) {
-      itm->second->copy_ts(*((TSMethod*)this));
+      itm->second->copyTs(*((TSMethod*)this));
       itm->second->ts_B = shellMatCtx->M;
       ierr = mField.loop_finite_elements(problemName,itm->first,*itm->second); CHKERRQ(ierr);
     }

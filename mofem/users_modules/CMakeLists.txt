@@ -15,6 +15,9 @@ project(MoFEM-UserModules C CXX)
 
 cmake_minimum_required(VERSION 2.8.7)
 
+#serch inlude directories before system directories
+set(CMAKE_INCLUDE_DIRECTORIES_BEFORE ON)
+
 find_package(MoFEM 0.5.69
   REQUIRED HINTS ${MOFEM_DIR} ../ ../../ $ENV{MOFEM_DIR}
 )
@@ -40,14 +43,6 @@ find_package(Git)
 #   include_directories ( ${PYTHON_INCLUDE_DIRS} )
 # endif(PYTHON_INCLUDE_DIRS)
 
-# No need to add blas for unix like system, is added to project libs by core lib
-if(APPLE)
-  find_package(BLAS)
-  if(BLAS_FOUND)
-    set(CMAKE_EXE_LINKER_FLAGS "-framework Accelerate")
-  endif(BLAS_FOUND)
-endif(APPLE)
-message(STATUS BLAS found: ${BLAS_LIBRARIES})
 
 # Add boost directory
 if(NOT MoFEM_BOOST_DIR)
@@ -65,6 +60,15 @@ if(NOT BOOST_INCLUDE_DIR)
   message(FATAL_ERROR "boost program incoude dir not found")
 endif(NOT BOOST_INCLUDE_DIR)
 include_directories(${BOOST_INCLUDE_DIR})
+
+# No need to add blas for unix like system, is added to project libs by core lib
+if(APPLE)
+  find_package(BLAS)
+  if(BLAS_FOUND)
+    set(CMAKE_EXE_LINKER_FLAGS "-framework Accelerate")
+  endif(BLAS_FOUND)
+endif(APPLE)
+message(STATUS BLAS found: ${BLAS_LIBRARIES})
 
 find_program(
   MBCONVERT NAMES mbconvert
