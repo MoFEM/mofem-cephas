@@ -662,14 +662,16 @@ namespace MixTransport {
           const double scale = block_data->sCale;
           // Time step factor
           double ts_a = getFEMethod()->ts_a;
-          // Get volume
+          // get volume
           const double vol = getVolume();
           int nb_gauss_pts = row_data.getN().size1();
-          // Get base functions
+          // get base functions on rows
           FTensor::Tensor0<double*> t_n_row = row_data.getFTensor0N();
           for(int gg = 0;gg!=nb_gauss_pts;gg++) {
             // get integration weight and multiply by element volume
             double alpha = t_w*vol*scale;
+            // evaluate material model at integration points
+            // to calculate capacity and tangent of capacity term
             block_data->h = t_h;
             block_data->h_t = t_h_t;
             block_data->x = t_coords(0);
@@ -679,21 +681,26 @@ namespace MixTransport {
             ierr = block_data->calDiffC(); CHKERRQ(ierr);
             const double C = block_data->C;
             const double diffC = block_data->diffC;
+            // assemble local entity tangent matrix
             FTensor::Tensor0<double*> t_a(&*nN.data().begin());
+            // iterate base functions on rows
             for(int kk = 0;kk!=nb_row;kk++) {
+              // get first base function on column at integration point gg
               FTensor::Tensor0<double*> t_n_col = col_data.getFTensor0N(gg,0);
+              // iterate base functions on columns
               for(int ll = 0;ll!=nb_col;ll++) {
+                // assemble elements of local matrix
                 t_a += (alpha*(C*ts_a+diffC*t_h_t))*t_n_row*t_n_col;
-                ++t_n_col;
-                ++t_a;
+                ++t_n_col;  // move to next base function on column
+                ++t_a; // move to next element in local tangent matrix
               }
-              ++t_n_row;
+              ++t_n_row; // move to next base function on row
             }
-            ++t_w;
-            ++t_coords;
-            ++t_h;
+            ++t_w;      // move to next integration weight
+            ++t_coords; // move to next coordinate at integration point
+            ++t_h;      // move to next capillary head at integration point
             // ++t_flux_residual;
-            ++t_h_t;
+            ++t_h_t;    // move to next capillary head rate at integration point
           }
           Mat a = getFEMethod()->ts_B;
           ierr = MatSetValues(
@@ -1231,7 +1238,6 @@ namespace MixTransport {
 
     /// \brief add fields
     PetscErrorCode addFields(const std::string &values,const std::string &fluxes,const int order) {
-
       PetscFunctionBegin;
       //Fields
       ierr = mField.add_field(fluxes,HDIV,DEMKOWICZ_JACOBI_BASE,1); CHKERRQ(ierr);
@@ -1264,7 +1270,6 @@ namespace MixTransport {
       ierr = mField.set_field_order(root_set,MBTET,values,order); CHKERRQ(ierr);
       ierr = mField.set_field_order(root_set,MBTET,values+"_t",order); CHKERRQ(ierr);
       // ierr = mField.set_field_order(root_set,MBTET,fluxes+"_residual",order); CHKERRQ(ierr);
-
       PetscFunctionReturn(0);
     }
 
@@ -1341,18 +1346,23 @@ namespace MixTransport {
       //Build adjacencies of degrees of freedom and elements
       ierr = mField.build_adjacencies(ref_level); CHKERRQ(ierr);
 
-
+      //  create DM instance
       ierr = DMCreate(PETSC_COMM_WORLD,&dM);CHKERRQ(ierr);
+      // setting that DM is type of DMMOFEM, i.e. MOFEM implementation manages DM
       ierr = DMSetType(dM,"DMMOFEM");CHKERRQ(ierr);
+      // mesh is portioned, each process keeps only part of problem
       ierr = DMMoFEMSetIsPartitioned(dM,PETSC_TRUE);
-      //set dM data structure which created mofem data structures
+      // creates problem in DM
       ierr = DMMoFEMCreateMoFEM(dM,&mField,"MIX",ref_level); CHKERRQ(ierr);
-      ierr = DMMoFEMSetSquareProblem(dM,PETSC_TRUE); CHKERRQ(ierr);
+      // discretized problem creates square matrix (that makes some optimizations)
       ierr = DMMoFEMSetIsPartitioned(dM,PETSC_TRUE); CHKERRQ(ierr);
+      // set DM options from command line
       ierr = DMSetFromOptions(dM); CHKERRQ(ierr);
+      // add finite elements
       ierr = DMMoFEMAddElement(dM,"MIX"); CHKERRQ(ierr);
       ierr = DMMoFEMAddElement(dM,"MIX_BCFLUX"); CHKERRQ(ierr);
       ierr = DMMoFEMAddElement(dM,"MIX_BCVALUE"); CHKERRQ(ierr);
+      // constructor data structures
       ierr = DMSetUp(dM); CHKERRQ(ierr);
 
       PetscFunctionReturn(0);
@@ -1746,10 +1756,6 @@ namespace MixTransport {
       ierr = TSCreate(PETSC_COMM_WORLD,&ts); CHKERRQ(ierr);
       // Use backward Euler method
       ierr = TSSetType(ts,TSBEULER); CHKERRQ(ierr);
-      // Not test functions to evalye matrix and rigth hand side, TS ask DM
-      // for doing that
-      ierr = TSSetIFunction(ts,F,PETSC_NULL,PETSC_NULL); CHKERRQ(ierr);
-      ierr = TSSetIJacobian(ts,Aij,Aij,PETSC_NULL,PETSC_NULL); CHKERRQ(ierr);
       // Set final time
       double ftime = 1;
       ierr = TSSetDuration(ts,PETSC_DEFAULT,ftime); CHKERRQ(ierr);

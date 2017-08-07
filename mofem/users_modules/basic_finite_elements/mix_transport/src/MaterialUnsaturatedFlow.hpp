@@ -142,27 +142,9 @@ namespace MixTransport {
 
   };
 
-  struct MaterialVanGenuchten: public CommonMaterialData {
-
-    static boost::shared_ptr<CommonMaterialData> createMatPtr(const CommonMaterialData &data) {
-      return boost::shared_ptr<CommonMaterialData>(new MaterialVanGenuchten(data));
-    }
-
-    MaterialVanGenuchten(const CommonMaterialData &data):
+  struct MaterialWithAutomaticDifferentation: public CommonMaterialData {
+    MaterialWithAutomaticDifferentation(const CommonMaterialData &data):
     CommonMaterialData(data) {
-      recordTheta();
-      recordKr();
-    }
-
-    adouble ah;
-    adouble aTheta;
-    adouble aKr;
-    adouble aSe;
-    adouble aSeStar;
-
-    template <typename TYPE>
-    inline TYPE funTheta(TYPE &h,const double m) {
-      return thetaR+(thetaM-thetaR)/pow(1+pow(-alpha*h,n),m);
     }
 
     template  <typename TYPE>
@@ -170,41 +152,9 @@ namespace MixTransport {
       return (theta-thetaR)/(thetaS-thetaR);
     }
 
-    template <typename TYPE>
-    inline TYPE funFunSeStar(TYPE &SeStar,const double m) {
-      return pow(1-pow(SeStar,1/m),m);
-    }
+    virtual void recordTheta() = 0;
 
-    inline adouble funKr(adouble &ah) {
-      const double m = 1-1/n;
-      aTheta = funTheta(ah,m);
-      aSe = funSe(aTheta); //(aTheta-thetaR)/(thetaS-thetaR);
-      aSeStar = aSe*(thetaS-thetaR)/(thetaM-thetaR);
-      double one = 1;
-      const double c = funFunSeStar<double>(one,m);
-      return sqrt(aSe)*pow((1-funFunSeStar<adouble>(aSeStar,m))/(1-c),2);
-    }
-
-    inline void recordTheta() {
-      h = -1-hS;
-      trace_on(2*blockId+0,true);
-      ah <<= h;
-      const double m = 1-1/n;
-      aTheta = funTheta(ah,m);
-      double r_theta;
-      aTheta >>= r_theta;
-      trace_off();
-    }
-
-    inline void recordKr() {
-      h = -1-hS;
-      trace_on(2*blockId+1,true);
-      ah <<= h;
-      aKr = funKr(ah);
-      double r_Kr;
-      aKr >>= r_Kr;
-      trace_off();
-    }
+    virtual void recordKr() = 0;
 
     double Kr;
     PetscErrorCode calK() {
@@ -245,6 +195,7 @@ namespace MixTransport {
       }
       PetscFunctionReturn(0);
     };
+
 
     PetscErrorCode calC() {
       PetscFunctionBegin;
@@ -317,7 +268,66 @@ namespace MixTransport {
       PetscFunctionReturn(0);
     }
 
+  };
 
+  struct MaterialVanGenuchten: public MaterialWithAutomaticDifferentation {
+
+    static boost::shared_ptr<CommonMaterialData> createMatPtr(const CommonMaterialData &data) {
+      return boost::shared_ptr<CommonMaterialData>(new MaterialVanGenuchten(data));
+    }
+
+    MaterialVanGenuchten(const CommonMaterialData &data):
+    MaterialWithAutomaticDifferentation(data) {
+      recordTheta();
+      recordKr();
+    }
+
+    adouble ah;
+    adouble aTheta;
+    adouble aKr;
+    adouble aSe;
+    adouble aSeStar;
+
+    template <typename TYPE>
+    inline TYPE funTheta(TYPE &h,const double m) {
+      return thetaR+(thetaM-thetaR)/pow(1+pow(-alpha*h,n),m);
+    }
+
+    template <typename TYPE>
+    inline TYPE funFunSeStar(TYPE &SeStar,const double m) {
+      return pow(1-pow(SeStar,1/m),m);
+    }
+
+    inline adouble funKr(adouble &ah) {
+      const double m = 1-1/n;
+      aTheta = funTheta(ah,m);
+      aSe = funSe(aTheta);
+      aSeStar = aSe*(thetaS-thetaR)/(thetaM-thetaR);
+      double one = 1;
+      const double c = funFunSeStar<double>(one,m);
+      return sqrt(aSe)*pow((1-funFunSeStar<adouble>(aSeStar,m))/(1-c),2);
+    }
+
+    virtual void recordTheta() {
+      h = -1-hS;
+      trace_on(2*blockId+0,true);
+      ah <<= h;
+      const double m = 1-1/n;
+      aTheta = funTheta(ah,m);
+      double r_theta;
+      aTheta >>= r_theta;
+      trace_off();
+    }
+
+    virtual void recordKr() {
+      h = -1-hS;
+      trace_on(2*blockId+1,true);
+      ah <<= h;
+      aKr = funKr(ah);
+      double r_Kr;
+      aKr >>= r_Kr;
+      trace_off();
+    }
 
     void printTheta(const double b,const double e,double s,const std::string& prefix) {
       const double m = 1-1/n;

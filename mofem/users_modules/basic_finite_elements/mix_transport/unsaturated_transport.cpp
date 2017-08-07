@@ -45,6 +45,9 @@ int main(int argc, char *argv[]) {
 
   PetscInitialize(&argc,&argv,(char *)0,help);
 
+  // Register DM Manager
+  ierr = DMRegister_MoFEM("DMMOFEM"); CHKERRQ(ierr); // register MoFEM DM in PETSc
+  // Register materials
   ierr = RegisterMaterials()(); CHKERRQ(ierr);
 
   PetscBool test_mat = PETSC_FALSE;
@@ -119,8 +122,6 @@ int main(int argc, char *argv[]) {
     // Create mofem interface
     MoFEM::Core core(moab);
     MoFEM::Interface& m_field = core;
-    // Register DM Manager
-    ierr = DMRegister_MoFEM("DMMOFEM"); CHKERRQ(ierr); // register MoFEM DM in PETSc
 
     // Add meshsets with material and boundary conditions
     MeshsetsManager *meshsets_manager_ptr;
@@ -146,6 +147,8 @@ int main(int argc, char *argv[]) {
     Range domain_ents,bc_boundary_ents;
 
     map<int,CommonMaterialData> material_blocks;
+    map<int,double> head_blocks;
+    map<int,double> flux_blocks;
     // Set material blocks
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
       if(it->getName().compare(0,4,"SOIL")!=0) continue;
@@ -154,6 +157,22 @@ int main(int argc, char *argv[]) {
       std::string block_name = "mat_block_"+boost::lexical_cast<std::string>(block_id);
       material_blocks[block_id].blockId = block_id;
       material_blocks[block_id].addOptions(config_file_options,block_name);
+    }
+    for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
+      if(it->getName().compare(0,4,"HEAD")!=0) continue;
+      // get block id
+      const int block_id = it->getMeshsetId();
+      std::string block_name = "head_block_"+boost::lexical_cast<std::string>(block_id);
+      config_file_options.add_options()
+      ((block_name+".head").c_str(),po::value<double>(&head_blocks[block_id])->default_value(0));
+    }
+    for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
+      if(it->getName().compare(0,4,"FLUX")!=0) continue;
+      // get block id
+      const int block_id = it->getMeshsetId();
+      std::string block_name = "flux_block_"+boost::lexical_cast<std::string>(block_id);
+      config_file_options.add_options()
+      ((block_name+".flux").c_str(),po::value<double>(&head_blocks[block_id])->default_value(0));
     }
     po::parsed_options parsed = parse_config_file(ini_file,config_file_options,true);
     store(parsed,vm);
@@ -173,11 +192,6 @@ int main(int argc, char *argv[]) {
       ); CHKERRQ_MOAB(rval);
       domain_ents.merge(uf.dMatMap.at(block_id)->tEts);
       uf.dMatMap.at(block_id)->printMatParameters(block_id,"Read material");
-      // EntityHandle meshset = it->meshset;
-      // rval = moab.write_file(
-      //   ("mat_block_"+boost::lexical_cast<std::string>(block_id)+".h5m").c_str(),
-      //   "MOAB","",&meshset,1
-      // ); CHKERRQ_MOAB(rval);
     }
     std::vector<std::string> additional_parameters;
     additional_parameters = collect_unrecognized(parsed.options,po::include_positional);
@@ -185,7 +199,6 @@ int main(int argc, char *argv[]) {
     vit!=additional_parameters.end();vit++) {
       ierr = PetscPrintf(m_field.get_comm(),"** WARNING Unrecognized option %s\n",vit->c_str()); CHKERRQ(ierr);
     }
-
     // Set capillary pressure bc data
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
       if(it->getName().compare(0,4,"HEAD")!=0) continue;
@@ -199,6 +212,10 @@ int main(int argc, char *argv[]) {
       std::vector<double> attributes;
       ierr = it->getAttributes(attributes); CHKERRQ(ierr);
       uf.bcValueMap[block_id]->fixValue = attributes[0];
+      std::string block_name = "head_block_"+boost::lexical_cast<std::string>(block_id);
+      if(vm.count((block_name)+".head")) {
+        uf.bcValueMap[block_id]->fixValue = head_blocks[block_id];
+      }
       // cerr << uf.bcValueMap[block_id]->fixValue  << endl;
       // ierr = it->printAttributes(std::cout); CHKERRQ(ierr);
       // get faces in the block
@@ -223,6 +240,10 @@ int main(int argc, char *argv[]) {
       ierr = it->getAttributes(attributes); CHKERRQ(ierr);
       // ierr = it->printAttributes(std::cout); CHKERRQ(ierr);
       uf.bcFluxMap[block_id]->fixValue = attributes[0];
+      std::string block_name = "flux_block_"+boost::lexical_cast<std::string>(block_id);
+      if(vm.count((block_name)+".flux")) {
+        uf.bcValueMap[block_id]->fixValue = head_blocks[block_id];
+      }
       // get faces in the block
       rval = m_field.get_moab().get_entities_by_type(
         it->meshset,MBTRI,uf.bcFluxMap[block_id]->eNts,true

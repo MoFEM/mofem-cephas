@@ -36,7 +36,23 @@ file(
   ${CMAKE_CURRENT_SOURCE_DIR}/unsaturated.cfg
   DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/
 )
-
+file(
+  COPY
+  ${CMAKE_CURRENT_SOURCE_DIR}/1dTest.jou
+  DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/
+)
+file(
+  COPY
+  ${CMAKE_CURRENT_SOURCE_DIR}/soil_impermeable.cub
+  DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/
+  FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE
+)
+file(
+  COPY
+  ${CMAKE_CURRENT_SOURCE_DIR}/upward_infiltration.cub
+  DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/
+  FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE
+)
 
 include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/src
@@ -79,6 +95,11 @@ if(ADOL-C_LIBRARY)
     mofem_third_party
     mofem_cblas
     ${MoFEM_PROJECT_LIBS}
+  )
+
+  add_test(
+    unsaturated_flow ${CMAKE_CURRENT_BINARY_DIR}/run_uf.sh
+    soil_impermeable.cub unsaturated.cfg 2 0.0001 0.0003
   )
 
 endif(ADOL-C_LIBRARY)
