@@ -1,8 +1,8 @@
 /*! \page poisson_tut4 A nonlinear Poisson equation
 
 In this tutorial, we show how to solve nonlinear Poisson equation.  Note that
-structure of the main program remains almost unchanged compared to linear the
-analysis is shown in first Poisson tutorial, i.e. \ref poisson_tut1.
+structure of the main program remains almost unchanged compared to linear
+analysis as shown in the first Poisson tutorial, i.e. \ref poisson_tut1.
 
 \tableofcontents
 
@@ -12,8 +12,8 @@ As a model problem for the solution of nonlinear PDEs, we take the following non
 \f[
 -\nabla \cdot (A(u)\nabla u) = f
 \f]
-in \f$\Omega\f$ with \f$u=\overline{u}\f$ on boundary \f$\partial\Omega\f$. The
-source of nonlinearity is the coefficient \f$A(u)\f$ with is dependent on
+in domain \f$\Omega\f$ with \f$u=\overline{u}\f$ on boundary \f$\partial\Omega\f$. The
+source of nonlinearity is the coefficient \f$A(u)\f$ which is dependent on the
 solution \f$u\f$, here we restrict ourself to the case
 \f[
 A(u) = 1+u^2
@@ -23,10 +23,10 @@ at the beginning of \ref analytical_nonlinear_poisson.cpp example you can find
 two classes. Those functions can be modified to investigate alternative
 solutions
 \code
-struct A {
+struct FunA {
   double operator()(const double u) { return 1+u*u; }
 };
-struct DiffA {
+struct DiffFunA {
   double operator()(const double u) { return 2*u; }
 };
 \endcode
@@ -34,7 +34,7 @@ Note that second class has to be the exact derivative of \f$A(u)\f$.
 
 \subsection poisson_tut4_linearization Linearization
 
-With that at we can express equation in the weak form, where residuals are
+With that at hand we can express equation in the weak form, where residuals are
 \f[
 \mathbf{r}=
 \left[
@@ -50,16 +50,16 @@ r_g
 \end{array}
 \right.,\quad \forall v,\tau,\; u,v \in H^1(\Omega),\;\tau,\lambda \in H^1(\partial\Omega).
 \f]
-where \f$\overline{u}\f$ are given function on boundary, \f$f\f$ is a source
-term , \f$u,\lambda\f$ are unknown  functions and \f$v,\tau\f$ are test
+where \f$\overline{u}\f$ is given function on boundary, \f$f\f$ is a source
+term, \f$u,\lambda\f$ are unknown  functions and \f$v,\tau\f$ are test
 functions. This notation, suitable for problems with many terms in the
 variational formulations, requires some explanation. First, we use the shorthand
 notation
 \f[
-(v,u)_\Omega = \int_\Omega vu \textrm{d}\Omega,\quad (\lambda,u)_{\partial\Omega} = \int_\Omega \lambda u \textrm{d}\partial\Omega
+(v,u)_\Omega = \int_\Omega vu \textrm{d}\Omega,\quad (\lambda,u)_{\partial\Omega} = \int_{\partial \Omega} \lambda u \textrm{d}\partial\Omega
 \f]
 With that at hand, we expand residuals in Taylor series and truncate after
-second order term, as results we have
+second order term, as a result we have
 \f[
 \mathbf{r}^i +
 \frac{\partial \mathbf{r}^i}{\partial \{ u, \lambda \}}
@@ -73,7 +73,7 @@ second order term, as results we have
 \f]
 where \f$(\cdot)^i\f$ is quantity at Newton iteration \f$i\f$,
 \f$u^{i+1} = u^i + \delta u^i\f$ and \f$\lambda^{i+1} = \lambda^i + \delta \lambda^i\f$.
-The linearized system of equations take form
+The linearized system of equations takes form
 \f[
 \left\{
 \begin{array}{l}
@@ -87,7 +87,7 @@ r^i_g+
 \end{array}
 \right.
 \f]
-and applying dissertation
+and applying discretization
 \f[
 u^h = \sum_i^{n_u} \phi^i(\mathbf{x}) U_i = \boldsymbol\phi\cdot\mathbf{U}
 , \quad \mathbf{x} \in \Omega,\\
@@ -135,7 +135,7 @@ where
 \subsection poisson_tut4_analytical_solution Analytical solution
 
 To validate correctness of implementation, we first presume exact solution to be
-polynomial, such that can be precisely represented by finite element
+polynomial, such that it can be precisely represented by finite element
 approximation base, see function
 \code
 struct ExactFunction {
@@ -170,35 +170,34 @@ struct ExactLaplacianFunction {
   }
 };
 \endcode
-Note that source term has complex term and is obtained by from formula
+Note that source term has a complex form and is obtained from the following formula
 \f[
 f = \nabla \cdot \left( A(u)\nabla u \right)
 \f]
 For 3rd polynomial order, as above, results can be obtained after tedious
 calculations, to avoid that you can use symbolic derivations from Mathematica, Maple,
-Matlab or free and open alternative Maxima <http://maxima.sourceforge.net>.
+Matlab or free and open alternative <a href=http://maxima.sourceforge.net>Maxima</a>.
 
 \section poisson_tut4_code_dissection Code dissection
 
 \subsection poisson_tut4_operators Implementation of operators
 
-All operators form this example are implemented in \ref PoissonOperators.cpp. In particular
-integration is implemented in following methods
+All operators from this example are implemented in \ref PoissonOperators.cpp. In particular
+integration is implemented in the following methods
 
-- Tangent \f$\mathbf{K}_t\f$ matrix integration  is implemented in \ref PoissonExample::OpKt::iNtegrte
+- Tangent \f$\mathbf{K}_t\f$ matrix integration  is implemented in \ref PoissonExample::OpKt::iNtegrate
 
-- Constrains matrix \f$\mathbf{C}\f$ is implemented in \ref PoissonExample::OpC::iNtegrte
+- Constrains matrix \f$\mathbf{C}\f$ is implemented in \ref PoissonExample::OpC::iNtegrate
 
-- Residual of momentum integrated over domain \f$\mathbf{r}_{F_\Omega}\f$ is implemented in \ref PoissonExample::OpResF_Domain::iNtegrte
+- Residual of momentum integrated over domain \f$\mathbf{r}_{F_\Omega}\f$ is implemented in \ref PoissonExample::OpResF_Domain::iNtegrate
 
-- Residual of momentum integrated over boundary \f$\mathbf{r}_{F_{\partial\Omega}}\f$ is implemented in \ref PoissonExample::OpResF_Boundary::iNtegrte
+- Residual of momentum integrated over boundary \f$\mathbf{r}_{F_{\partial\Omega}}\f$ is implemented in \ref PoissonExample::OpResF_Boundary::iNtegrate
 
-- Constrains residual \f$\mathbf{r}_g\f$ is implemented in \ref PoissonExample::OpRes_g::iNtegrte
+- Constrains residual \f$\mathbf{r}_g\f$ is implemented in \ref PoissonExample::OpRes_g::iNtegrate
 
-Finite element instances and set-up of finite element operators, following figure 1, is implanted
-in \ref PoissonExample::CreateFiniteElementes::createFEToAssmbleMatrceAndVectorForNonlinearProblem,
-in particular we find there following code
-code
+Finite element instances and setup of finite element operators, following figure 1, is implanted
+in \ref PoissonExample::CreateFiniteElements::createFEToAssmbleMatrceAndVectorForNonlinearProblem,
+in particular we find there the following code
 \code
 boost::shared_ptr<VectorDouble> values_at_integation_ptr = boost::make_shared<VectorDouble>();
 boost::shared_ptr<MatrixDouble> grad_at_integation_ptr = boost::make_shared<MatrixDouble>();
@@ -207,7 +206,7 @@ domain_lhs_fe->getOpPtrVector().push_back(new OpCalculateScalarFieldGradient<3>(
 domain_lhs_fe->getOpPtrVector().push_back(new OpKt(a,diff_a,values_at_integation_ptr,grad_at_integation_ptr));
 \endcode
 You can note that instances of vector and matrix are created to store values of
-function \f$u^h\f$ and function gradients at integration points respectively.
+function \f$u^h\f$ and function gradients at integration points, respectively.
 Next operators are added to evaluate function and function gradients at
 integration points. Finally, operator to calculate tangent matrix is added.
 Operator constructor takes arguments of pointers of previously created instances
@@ -239,13 +238,13 @@ ierr = SNESSetUp(solver); CHKERRQ(ierr);
 ierr = SNESSolve(solver,F,D); CHKERRQ(ierr);
 \endcode
 Note that SNES solver controls DM, and implicitly query of DM to create
-necessarily matrices and assembly of the tangent matrix and residual vectors.
-SNES solver can be configured from a command line, see for details
-<http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/SNES/SNESSetFromOptions.html>.
+necessary matrices and assembly of the tangent matrix and residual vectors.
+SNES solver can be configured from a command line, see for details <a href=http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/SNES/SNESSetFromOptions.html>see for details</a>.
+
 
 \subsection poisson_tut4_main_running_code Running code
 
-The easiest installation is with Docker containers; pleas see youtube video how
+The easiest installation is with Docker containers; please see youtube video how
 to run installation <a href=https://www.youtube.com/watch?v=6opfKER7JHA>link</a>. You can also look
 here \ref install_docker. Open terminal and run Docker container
 \code
@@ -261,12 +260,12 @@ make -j2
 
 Once code is compiled, we can run test
 \code
-mpirun -np 2 -file_name cube_2part.h5m -order 3 \
+mpirun -np 2 ./analytical_nonlinear_poisson -file_name cube_2part.h5m -order 3 \
 -snes_monitor -snes_converged_reason  -snes_type newtonls \
 -snes_linesearch_type cp -snes_linesearch_monitor
 \endcode
-where SNES options are explained here
-<http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/SNES/SNESSetFromOptions.html>
+where SNES options are explained <a href=http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/SNES/SNESSetFromOptions.html>here</a>.
+
 As result of above command we get
 \verbatim
 0 SNES Function norm 6.585598470492e-01
@@ -299,9 +298,9 @@ Nonlinear solve converged due to CONVERGED_FNORM_RELATIVE iterations 5
 Approximation error 4.109e-10
 \endverbatim
 Note fast convergence, after first two interactions, once iterative approximation
-approach exact solution. To obtain this solution, we using Newton method with line-searcher, in this case,
-we use critical point secant line search, see
-<http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/SNES/SNESLINESEARCHCP.html>. Line-search method has several alternative types and can be set-up independently
-from solver, see <http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/SNES/SNESLineSearchSetFromOptions.html>.
+approaches the exact solution. To obtain this solution, we are using Newton method with line-searcher, in this case,
+we use critical point secant line search, <a href=http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/SNES/SNESLINESEARCHCP.html>see details</a
+Line-search method has several alternative types and can be setup independently
+from solver, they can be found  <a href=http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/SNES/SNESLineSearchSetFromOptions.html>here</a>.
 
 */

@@ -66,9 +66,6 @@ struct MyTransport: public MixTransportElement {
 
 int main(int argc, char *argv[]) {
 
-
-
-
   PetscInitialize(&argc,&argv,(char *)0,help);
 
   try {

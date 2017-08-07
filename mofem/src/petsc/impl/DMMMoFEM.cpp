@@ -98,14 +98,14 @@ PetscErrorCode DMCtx::queryInterface(const MOFEMuuid& uuid, UnknownInterface** i
 }
 
 PetscErrorCode DMRegister_MoFEM(const char sname[]) {
-  
+
   PetscFunctionBegin;
   ierr = DMRegister(sname,DMCreate_MoFEM); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
 PetscErrorCode DMSetOperators_MoFEM(DM dm) {
-  
+
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
 
@@ -128,7 +128,7 @@ PetscErrorCode DMSetOperators_MoFEM(DM dm) {
 }
 
 PetscErrorCode DMCreate_MoFEM(DM dm) {
-  
+
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
   dm->data = new DMCtx();
@@ -161,7 +161,7 @@ PetscErrorCode DMMoFEMCreateMoFEM(
   const MoFEM::BitRefLevel bit_level,
   const MoFEM::BitRefLevel bit_mask
 ) {
-  
+
   PetscFunctionBegin;
 
   DMCtx *dm_field = (DMCtx*)dm->data;
@@ -209,7 +209,7 @@ PetscErrorCode DMMoFEMCreateMoFEM(
 }
 
 PetscErrorCode DMMoFEMCreateSubDM(DM subdm,DM dm,const char problem_name[]) {
-  
+
   PetscFunctionBegin;
 
   DMCtx *dm_field = (DMCtx*)dm->data;
@@ -268,7 +268,7 @@ PetscErrorCode DMMoFEMGetIsSubDM(DM dm,PetscBool *is_sub_dm) {
 }
 
 PetscErrorCode DMMoFEMGetSubRowIS(DM dm,IS *is) {
-  
+
   PetscFunctionBegin;
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
@@ -285,7 +285,7 @@ PetscErrorCode DMMoFEMGetSubRowIS(DM dm,IS *is) {
 }
 
 PetscErrorCode DMMoFEMGetSubColIS(DM dm,IS *is) {
-  
+
   PetscFunctionBegin;
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
@@ -398,7 +398,7 @@ PetscErrorCode DMMoFEMSetSquareProblem(DM dm,PetscBool square_problem) {
 }
 
 PetscErrorCode DMMoFEMResolveSharedEntities(DM dm,const char fe_name[]) {
-  
+
   PetscFunctionBegin;
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
@@ -412,7 +412,7 @@ PetscErrorCode DMMoFEMGetProblemFiniteElementLayout(DM dm,const char fe_name[],P
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
   DMCtx *dm_field = (DMCtx*)dm->data;
-  
+
   MPI_Comm comm;
   ierr = PetscObjectGetComm((PetscObject)dm,&comm); CHKERRQ(ierr);
   ierr = dm_field->problemPtr->getNumberOfElementsByNameAndPart(comm,fe_name,layout); CHKERRQ(ierr);
@@ -430,7 +430,6 @@ PetscErrorCode DMMoFEMGetSquareProblem(DM dm,PetscBool *square_problem) {
 }
 
 PetscErrorCode DMMoFEMAddElement(DM dm,const char fe_name[]) {
-  
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
   DMCtx *dm_field = (DMCtx*)dm->data;
@@ -439,7 +438,6 @@ PetscErrorCode DMMoFEMAddElement(DM dm,const char fe_name[]) {
 }
 
 PetscErrorCode DMMoFEMUnSetElement(DM dm,const char fe_name[]) {
-  
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
   DMCtx *dm_field = (DMCtx*)dm->data;
@@ -449,7 +447,6 @@ PetscErrorCode DMMoFEMUnSetElement(DM dm,const char fe_name[]) {
 
 PetscErrorCode DMoFEMMeshToLocalVector(DM dm,Vec l,InsertMode mode,ScatterMode scatter_mode) {
   PetscFunctionBegin;
-  
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
   DMCtx *dm_field = (DMCtx*)dm->data;
@@ -458,7 +455,6 @@ PetscErrorCode DMoFEMMeshToLocalVector(DM dm,Vec l,InsertMode mode,ScatterMode s
 }
 
 PetscErrorCode DMoFEMMeshToGlobalVector(DM dm,Vec g,InsertMode mode,ScatterMode scatter_mode) {
-  
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
   DMCtx *dm_field = (DMCtx*)dm->data;
@@ -467,7 +463,6 @@ PetscErrorCode DMoFEMMeshToGlobalVector(DM dm,Vec g,InsertMode mode,ScatterMode 
 }
 
 PetscErrorCode DMoFEMPreProcessFiniteElements(DM dm,MoFEM::FEMethod *method) {
-  
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
   DMCtx *dm_field = (DMCtx*)dm->data;
@@ -476,7 +471,6 @@ PetscErrorCode DMoFEMPreProcessFiniteElements(DM dm,MoFEM::FEMethod *method) {
 }
 
 PetscErrorCode DMoFEMPostProcessFiniteElements(DM dm,MoFEM::FEMethod *method) {
-  
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
   DMCtx *dm_field = (DMCtx*)dm->data;
@@ -485,8 +479,6 @@ PetscErrorCode DMoFEMPostProcessFiniteElements(DM dm,MoFEM::FEMethod *method) {
 }
 
 PetscErrorCode DMoFEMLoopFiniteElementsUpAndLowRank(DM dm,const char fe_name[],MoFEM::FEMethod *method,int low_rank,int up_rank) {
-  
-  PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
   DMCtx *dm_field = (DMCtx*)dm->data;
   ierr = dm_field->mField_ptr->loop_finite_elements(dm_field->problemPtr,fe_name,*method,low_rank,up_rank); CHKERRQ(ierr);
@@ -500,7 +492,6 @@ PetscErrorCode DMoFEMLoopFiniteElementsUpAndLowRank(
 }
 
 PetscErrorCode DMoFEMLoopFiniteElements(DM dm,const char fe_name[],MoFEM::FEMethod *method) {
-  
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
   DMCtx *dm_field = (DMCtx*)dm->data;
@@ -513,7 +504,6 @@ PetscErrorCode DMoFEMLoopFiniteElements(DM dm,const std::string& fe_name,boost::
 }
 
 PetscErrorCode DMoFEMLoopDofs(DM dm,const char field_name[],MoFEM::EntMethod *method) {
-  
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
   DMCtx *dm_field = (DMCtx*)dm->data;
@@ -523,7 +513,6 @@ PetscErrorCode DMoFEMLoopDofs(DM dm,const char field_name[],MoFEM::EntMethod *me
 
 template<class S,class T>
 static PetscErrorCode DMMoFEMKSPSetComputeRHS(DM dm,S fe_name,T method,T pre_only,T post_only) {
-  
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
   DMCtx *dm_field = (DMCtx*)dm->data;
@@ -558,7 +547,6 @@ PetscErrorCode DMMoFEMKSPSetComputeRHS(
 
 template<class S,class T>
 static PetscErrorCode DMMoFEMKSPSetComputeOperators(DM dm,S fe_name,T method,T pre_only,T post_only) {
-  
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
   DMCtx *dm_field = (DMCtx*)dm->data;
@@ -595,7 +583,6 @@ PetscErrorCode DMMoFEMKSPSetComputeOperators(
 
 template<class S,class T>
 static PetscErrorCode DMMoFEMSNESSetFunction(DM dm,S fe_name,T method,T pre_only,T post_only) {
-  
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
   DMCtx *dm_field = (DMCtx*)dm->data;
@@ -631,7 +618,6 @@ PetscErrorCode DMMoFEMSNESSetFunction(
 
 template<class S,class T>
 static PetscErrorCode DMMoFEMSNESSetJacobian(DM dm,S fe_name,T method,T pre_only,T post_only) {
-  
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
   DMCtx *dm_field = (DMCtx*)dm->data;
@@ -668,40 +654,72 @@ PetscErrorCode DMMoFEMSNESSetJacobian(
   );
 }
 
-PetscErrorCode DMMoFEMTSSetIFunction(DM dm,const char fe_name[],MoFEM::FEMethod *method,MoFEM::FEMethod *pre_only,MoFEM::FEMethod *post_only) {
-  
+template<class S,class T>
+static PetscErrorCode DMMoFEMTSSetIFunction(DM dm,S fe_name,T method,T pre_only,T post_only) {
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
   DMCtx *dm_field = (DMCtx*)dm->data;
-  if(pre_only!=NULL) {
+  if(pre_only) {
     dm_field->tsCtx->get_preProcess_to_do_IFunction().push_back(pre_only);
   }
-  if(method!=NULL) {
+  if(method) {
     dm_field->tsCtx->get_loops_to_do_IFunction().push_back(TsCtx::loop_pair_type(fe_name,method));
   }
-  if(post_only!=NULL) {
+  if(post_only) {
     dm_field->tsCtx->get_postProcess_to_do_IFunction().push_back(post_only);
   }
   ierr = DMTSSetIFunction(dm,f_TSSetIFunction,dm_field->tsCtx); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode DMMoFEMTSSetIJacobian(DM dm,const char fe_name[],MoFEM::FEMethod *method,MoFEM::FEMethod *pre_only,MoFEM::FEMethod *post_only) {
-  
+PetscErrorCode DMMoFEMTSSetIFunction(DM dm,const char fe_name[],MoFEM::FEMethod *method,MoFEM::FEMethod *pre_only,MoFEM::FEMethod *post_only) {
+  return DMMoFEMTSSetIFunction<const char *,MoFEM::FEMethod*>(dm,fe_name,method,pre_only,post_only);
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode DMMoFEMTSSetIFunction(
+  DM dm,const std::string& fe_name,
+  boost::shared_ptr<MoFEM::FEMethod> method,
+  boost::shared_ptr<MoFEM::FEMethod> pre_only,
+  boost::shared_ptr<MoFEM::FEMethod> post_only
+) {
+  return DMMoFEMTSSetIFunction<const std::string,boost::shared_ptr<MoFEM::FEMethod> >(
+    dm,fe_name,method,pre_only,post_only
+  );
+  PetscFunctionReturn(0);
+}
+
+template<class S,class T>
+static PetscErrorCode DMMoFEMTSSetIJacobian(DM dm,S fe_name,T method,T pre_only,T post_only) {
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
   DMCtx *dm_field = (DMCtx*)dm->data;
-  if(pre_only!=NULL) {
+  if(pre_only) {
     dm_field->tsCtx->get_preProcess_to_do_IJacobian().push_back(pre_only);
   }
-  if(method!=NULL) {
+  if(method) {
     dm_field->tsCtx->get_loops_to_do_IJacobian().push_back(TsCtx::loop_pair_type(fe_name,method));
   }
-  if(post_only!=NULL) {
+  if(post_only) {
     dm_field->tsCtx->get_postProcess_to_do_IJacobian().push_back(post_only);
   }
   ierr = DMTSSetIJacobian(dm,f_TSSetIJacobian,dm_field->tsCtx); CHKERRQ(ierr);
   PetscFunctionReturn(0);
+}
+
+PetscErrorCode DMMoFEMTSSetIJacobian(DM dm,const char fe_name[],MoFEM::FEMethod *method,MoFEM::FEMethod *pre_only,MoFEM::FEMethod *post_only) {
+  return DMMoFEMTSSetIJacobian<const char*,FEMethod*>(dm,fe_name,method,pre_only,post_only);
+}
+
+PetscErrorCode DMMoFEMTSSetIJacobian(
+  DM dm,const std::string& fe_name,
+  boost::shared_ptr<MoFEM::FEMethod> method,
+  boost::shared_ptr<MoFEM::FEMethod> pre_only,
+  boost::shared_ptr<MoFEM::FEMethod> post_only
+) {
+  return DMMoFEMTSSetIJacobian<const std::string&,boost::shared_ptr<MoFEM::FEMethod> >(
+    dm,fe_name,method,pre_only,post_only
+  );
 }
 
 PetscErrorCode DMMoFEMGetKspCtx(DM dm,MoFEM::KspCtx **ksp_ctx) {
@@ -773,7 +791,7 @@ PetscErrorCode DMMoFEMSetTsCtx(DM dm,MoFEM::TsCtx * const ts_ctx) {
 }
 
 PetscErrorCode DMCreateGlobalVector_MoFEM(DM dm,Vec *g) {
-  
+
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
   DMCtx *dm_field = (DMCtx*)dm->data;
@@ -782,7 +800,7 @@ PetscErrorCode DMCreateGlobalVector_MoFEM(DM dm,Vec *g) {
 }
 
 PetscErrorCode DMCreateLocalVector_MoFEM(DM dm,Vec *l) {
-  
+
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
   DMCtx *dm_field = (DMCtx*)dm->data;
@@ -791,7 +809,7 @@ PetscErrorCode DMCreateLocalVector_MoFEM(DM dm,Vec *l) {
 }
 
 PetscErrorCode DMCreateMatrix_MoFEM(DM dm,Mat *M) {
-  
+
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
   DMCtx *dm_field = (DMCtx*)dm->data;
@@ -830,7 +848,7 @@ PetscErrorCode DMSetFromOptions_MoFEM(PetscOptions *PetscOptionsObject,DM dm) {
 #else
 PetscErrorCode DMSetFromOptions_MoFEM(DM dm) {
 #endif
-  
+
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
   DMCtx *dm_field = (DMCtx*)dm->data;
@@ -848,7 +866,7 @@ PetscErrorCode DMSetFromOptions_MoFEM(DM dm) {
 }
 
 PetscErrorCode DMSetUp_MoFEM(DM dm) {
-  
+
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   ProblemsManager *prb_mng_ptr;
   PetscFunctionBegin;
@@ -896,7 +914,6 @@ PetscErrorCode DMSetUp_MoFEM(DM dm) {
 }
 
 PetscErrorCode DMSubDMSetUp_MoFEM(DM subdm) {
-  
   PetscValidHeaderSpecific(subdm,DM_CLASSID,1);
   ProblemsManager *prb_mng_ptr;
   PetscFunctionBegin;
@@ -935,7 +952,7 @@ PetscErrorCode DMSubDMSetUp_MoFEM(DM subdm) {
 PetscErrorCode DMGlobalToLocalBegin_MoFEM(DM dm,Vec g,InsertMode mode,Vec l) {
   PetscFunctionBegin;
 
-  
+
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
 
@@ -946,7 +963,7 @@ PetscErrorCode DMGlobalToLocalBegin_MoFEM(DM dm,Vec g,InsertMode mode,Vec l) {
 
 PetscErrorCode DMGlobalToLocalEnd_MoFEM(DM dm,Vec g,InsertMode mode,Vec l) {
   PetscFunctionBegin;
-  
+
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
 
@@ -976,7 +993,7 @@ PetscErrorCode DMGlobalToLocalEnd_MoFEM(DM dm,Vec g,InsertMode mode,Vec l) {
 
 
 PetscErrorCode DMLocalToGlobalBegin_MoFEM(DM dm,Vec l,InsertMode mode,Vec g) {
-  
+
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
 
@@ -1012,7 +1029,7 @@ PetscErrorCode DMLocalToGlobalEnd_MoFEM(DM,Vec l,InsertMode mode,Vec g) {
 PetscErrorCode DMCreateFieldIS_MoFEM(
   DM dm,PetscInt *numFields,char ***fieldNames, IS **fields
 ) {
-  
+
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
 
@@ -1058,7 +1075,7 @@ PetscErrorCode DMCreateFieldIS_MoFEM(
 }
 
 PetscErrorCode DMMoFEMGetFieldIS(DM dm,RowColData rc,const char field_name[],IS *is) {
-  
+
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
   DMCtx *dm_field = (DMCtx*)dm->data;

@@ -31,7 +31,7 @@ struct OpCheck: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperato
     PetscFunctionBegin;
     try {
       const int nb_dofs = data.getFieldData().size();
-      const int nb_base_functions = data.getN().size2();
+      //const int nb_base_functions = data.getN().size2();
       if(nb_dofs == 0) {
         PetscFunctionReturn(0);
       }
@@ -85,7 +85,7 @@ int main(int argc, char *argv[]) {
       "NEOHOOKEAN"
     };
 
-    
+
 
     PetscBool flg_test_mat;
     PetscInt choise_value = HOOKE;

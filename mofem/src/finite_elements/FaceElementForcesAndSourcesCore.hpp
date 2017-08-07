@@ -319,15 +319,21 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
       return FTensor::Tensor1<double*,3>(ptr,&ptr[1],&ptr[2],3);
     }
 
-    /** \brief return pointer to triangle finite element object
+    /** \deprecated use getFaceFE instead
      */
-    inline const FaceElementForcesAndSourcesCore* getFaceElementForcesAndSourcesCore() {
-      return static_cast<FaceElementForcesAndSourcesCore*>(ptrFE);
+    DEPRECATED inline const FaceElementForcesAndSourcesCore* getFaceElementForcesAndSourcesCore() {
+      return getFaceFE();
+    }
+
+    /** \deprecated use getFaceFE instead
+     */
+    DEPRECATED inline const FaceElementForcesAndSourcesCore* getTriFE() {
+      return getFaceFE();
     }
 
     /** \brief return pointer to Generic Triangle Finite Element object
      */
-    inline const FaceElementForcesAndSourcesCore* getTriFE() {
+    inline const FaceElementForcesAndSourcesCore* getFaceFE() {
       return static_cast<FaceElementForcesAndSourcesCore*>(ptrFE);
     }
 
@@ -394,16 +400,7 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
    */
   virtual PetscErrorCode calculateHoNormal();
 
-
-  PetscErrorCode preProcess() {
-    PetscFunctionBegin;
-    PetscFunctionReturn(0);
-  }
   PetscErrorCode operator()();
-  PetscErrorCode postProcess() {
-    PetscFunctionBegin;
-    PetscFunctionReturn(0);
-  }
 
 };
 

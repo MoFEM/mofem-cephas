@@ -79,7 +79,8 @@ multiple degrees of freedom and/or different scales.
 
 - Interface (e.g. cohesive) elements and shell elements
 
-- Automatic Differentiation by OverLoading in C++ (<a href=ttps://projects.coin-or.org/ADOL-C>ADOL-C</a>). Applied to automatic calculation of consistent tangent
+- Automatic Differentiation by OverLoading in C++ (<a href=https://projects.coin-or.org/ADOL-C>ADOL-C</a>). 
+	Applied to automatic calculation of consistent tangent
 	matrix for any smooth plastic surface and non-sccociated plastic flow potential.
 
 \subsubsection mofem_features_mesh_types Range of mesh types and topological operations

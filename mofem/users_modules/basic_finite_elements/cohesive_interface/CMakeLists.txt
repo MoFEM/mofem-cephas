@@ -16,36 +16,40 @@ include_directories(${UM_SOURCE_DIR}/basic_finite_elements/nonlinear_elasticity)
 include_directories(${UM_SOURCE_DIR}/basic_finite_elements/nonlinear_elastic_materials/src)
 include_directories(${UM_SOURCE_DIR}/basic_finite_elements/cohesive_interface/src)
 
-bfe_add_executable(arc_length_interface
-  ${CMAKE_CURRENT_SOURCE_DIR}/arc_length_interface.cpp
-)
-target_link_libraries(arc_length_interface
-  users_modules
-  mofem_finite_elements
-  mofem_interfaces
-  mofem_multi_indices
-  mofem_petsc
-  mofem_approx
-  mofem_third_party
-  mofem_cblas
-  ${MoFEM_PROJECT_LIBS}
-)
+if(ADOL-C_LIBRARY)
 
-cm_export_file("PeelTestHalfCrack.h5m" export_files_cohesive_element)
-cm_export_file("PeelTestHalfCrack.cub" export_files_cohesive_element)
+  bfe_add_executable(arc_length_interface
+    ${CMAKE_CURRENT_SOURCE_DIR}/arc_length_interface.cpp
+  )
+  target_link_libraries(arc_length_interface
+    users_modules
+    mofem_finite_elements
+    mofem_interfaces
+    mofem_multi_indices
+    mofem_petsc
+    mofem_approx
+    mofem_third_party
+    mofem_cblas
+    ${MoFEM_PROJECT_LIBS}
+  )
 
-file(COPY
-  ${CMAKE_CURRENT_SOURCE_DIR}/README
-  DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/
-)
+  cm_export_file("PeelTestHalfCrack.h5m" export_files_cohesive_element)
+  cm_export_file("PeelTestHalfCrack.cub" export_files_cohesive_element)
 
-#testing
-add_test(ArcLengthInterfaceTest
-  ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 2 ${CMAKE_CURRENT_BINARY_DIR}/arc_length_interface
-  -my_file PeelTestHalfCrack.h5m -my_order 1
-  -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package mumps
-  -ksp_monitor -ksp_atol 1e-10 -ksp_rtol 1e-10
-  -snes_monitor -snes_type newtonls -snes_linesearch_type l2 -snes_linesearch_monitor
-  -snes_max_it 16 -snes_atol 1e-8 -snes_rtol 1e-8 -my_sr 1e-1 -my_ms 3 -snes_converged_reason
-  -log_view
-)
+  file(COPY
+    ${CMAKE_CURRENT_SOURCE_DIR}/README
+    DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/
+  )
+
+  #testing
+  add_test(ArcLengthInterfaceTest
+    ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 2 ${CMAKE_CURRENT_BINARY_DIR}/arc_length_interface
+    -my_file PeelTestHalfCrack.h5m -my_order 1
+    -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package mumps
+    -ksp_monitor -ksp_atol 1e-10 -ksp_rtol 1e-10
+    -snes_monitor -snes_type newtonls -snes_linesearch_type l2 -snes_linesearch_monitor
+    -snes_max_it 16 -snes_atol 1e-8 -snes_rtol 1e-8 -my_sr 1e-1 -my_ms 3 -snes_converged_reason
+    -log_view
+  )
+
+endif(ADOL-C_LIBRARY)

@@ -313,10 +313,7 @@ struct PostProcTemplateVolumeOnRefinedMesh: public PostProcTemplateOnRefineMesh<
   */
   PetscErrorCode generateReferenceElementMesh() {
     PetscFunctionBegin;
-
-
-
-
+    
     int max_level = 0;
     if(nbOfRefLevels == -1) {
       PetscBool flg = PETSC_TRUE;

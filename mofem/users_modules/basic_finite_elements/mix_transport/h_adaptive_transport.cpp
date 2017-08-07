@@ -363,93 +363,72 @@ struct MyTransport: public MixTransportElement {
 
 int main(int argc, char *argv[]) {
 
-
-
-
   PetscInitialize(&argc,&argv,(char *)0,help);
 
-  moab::Core mb_instance;
-  moab::Interface& moab = mb_instance;
-  int rank;
-  MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
+  try {
 
-  // get file name form command line
-  PetscBool flg = PETSC_TRUE;
-  char mesh_file_name[255];
-  ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
-  if(flg != PETSC_TRUE) {
-    SETERRQ(PETSC_COMM_SELF,MOFEM_INVALID_DATA,"*** ERROR -my_file (MESH FILE NEEDED)");
-  }
+    moab::Core mb_instance;
+    moab::Interface& moab = mb_instance;
+    int rank;
+    MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
 
-  // create MOAB communicator
-  ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
-  if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
+    // get file name form command line
+    PetscBool flg = PETSC_TRUE;
+    char mesh_file_name[255];
+    ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+    if(flg != PETSC_TRUE) {
+      SETERRQ(PETSC_COMM_SELF,MOFEM_INVALID_DATA,"*** ERROR -my_file (MESH FILE NEEDED)");
+    }
 
-  const char *option;
-  option = "";
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
+    // create MOAB communicator
+    ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
+    if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
 
-  //Create mofem interface
-  MoFEM::Core core(moab);
-  MoFEM::Interface& m_field = core;
+    const char *option;
+    option = "";
+    rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
 
-  // Add meshsets with material and boundary conditions
-  MeshsetsManager *meshsets_manager_ptr;
-  ierr = m_field.query_interface(meshsets_manager_ptr); CHKERRQ(ierr);
-  ierr = meshsets_manager_ptr->setMeshsetFromFile(); CHKERRQ(ierr);
+    //Create mofem interface
+    MoFEM::Core core(moab);
+    MoFEM::Interface& m_field = core;
 
-  PetscPrintf(PETSC_COMM_WORLD,"Read meshsets add added meshsets for bc.cfg\n");
-  for(_IT_CUBITMESHSETS_FOR_LOOP_(m_field,it)) {
-    PetscPrintf(
-      PETSC_COMM_WORLD,
-      "%s",static_cast<std::ostringstream&>(std::ostringstream().seekp(0) << *it << endl).str().c_str()
-    );
-    cerr << *it << endl;
-  }
+    // Add meshsets with material and boundary conditions
+    MeshsetsManager *meshsets_manager_ptr;
+    ierr = m_field.query_interface(meshsets_manager_ptr); CHKERRQ(ierr);
+    ierr = meshsets_manager_ptr->setMeshsetFromFile(); CHKERRQ(ierr);
 
-  //set entities bit level
-  BitRefLevel ref_level;
-  ref_level.set(0);
-  ierr = m_field.seed_ref_level_3D(0,ref_level); CHKERRQ(ierr);
+    PetscPrintf(PETSC_COMM_WORLD,"Read meshsets add added meshsets for bc.cfg\n");
+    for(_IT_CUBITMESHSETS_FOR_LOOP_(m_field,it)) {
+      PetscPrintf(
+        PETSC_COMM_WORLD,
+        "%s",static_cast<std::ostringstream&>(std::ostringstream().seekp(0) << *it << endl).str().c_str()
+      );
+      cerr << *it << endl;
+    }
 
-  //set app. order
-  //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
-  PetscInt order;
-  ierr = PetscOptionsGetInt(PETSC_NULL,PETSC_NULL,"-my_order",&order,&flg); CHKERRQ(ierr);
-  if(flg != PETSC_TRUE) {
-    order = 0;
-  }
+    //set entities bit level
+    BitRefLevel ref_level;
+    ref_level.set(0);
+    ierr = m_field.seed_ref_level_3D(0,ref_level); CHKERRQ(ierr);
 
-  //finite elements
+    //set app. order
+    //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
+    PetscInt order;
+    ierr = PetscOptionsGetInt(PETSC_NULL,PETSC_NULL,"-my_order",&order,&flg); CHKERRQ(ierr);
+    if(flg != PETSC_TRUE) {
+      order = 0;
+    }
 
-  BcFluxMap bc_flux_map;
-  MyTransport ufe(m_field,bc_flux_map);
+    //finite elements
 
-  // Initially calculate problem on coarse mesh
+    BcFluxMap bc_flux_map;
+    MyTransport ufe(m_field,bc_flux_map);
 
-  ierr = ufe.addFields("VALUES","FLUXES",order); CHKERRQ(ierr);
-  ierr = ufe.addFiniteElements("FLUXES","VALUES"); CHKERRQ(ierr);
-  // Set boundary conditions
-  ierr = ufe.addBoundaryElements(ref_level);
-  ierr = ufe.buildProblem(ref_level); CHKERRQ(ierr);
-  ierr = ufe.createMatrices(); CHKERRQ(ierr);
-  ierr = ufe.solveLinearProblem(); CHKERRQ(ierr);
-  ierr = ufe.calculateResidual(); CHKERRQ(ierr);
-  ierr = ufe.evaluateError(); CHKERRQ(ierr);
-  ierr = ufe.destroyMatrices(); CHKERRQ(ierr);
-  ierr = ufe.postProc("out_0.h5m"); CHKERRQ(ierr);
+    // Initially calculate problem on coarse mesh
 
-  int nb_levels = 5; // default number of refinement levels
-  // get number of refinement levels form command line
-  ierr = PetscOptionsGetInt(PETSC_NULL,PETSC_NULL,"-nb_levels",&nb_levels,PETSC_NULL); CHKERRQ(ierr);
-
-  // refine mesh, solve problem and do it again until number of refinement levels are exceeded.
-  for(int ll = 1;ll!=nb_levels;ll++) {
-    const int nb_levels = ll;
-    ierr = ufe.squashBits(); CHKERRQ(ierr);
-    ierr = ufe.refineMesh(ufe,nb_levels,order); CHKERRQ(ierr);
-    ref_level = BitRefLevel().set(nb_levels);
-    bc_flux_map.clear();
+    ierr = ufe.addFields("VALUES","FLUXES",order); CHKERRQ(ierr);
+    ierr = ufe.addFiniteElements("FLUXES","VALUES"); CHKERRQ(ierr);
+    // Set boundary conditions
     ierr = ufe.addBoundaryElements(ref_level);
     ierr = ufe.buildProblem(ref_level); CHKERRQ(ierr);
     ierr = ufe.createMatrices(); CHKERRQ(ierr);
@@ -457,10 +436,34 @@ int main(int argc, char *argv[]) {
     ierr = ufe.calculateResidual(); CHKERRQ(ierr);
     ierr = ufe.evaluateError(); CHKERRQ(ierr);
     ierr = ufe.destroyMatrices(); CHKERRQ(ierr);
-    ierr = ufe.postProc(
-      static_cast<std::ostringstream&>
-      (std::ostringstream().seekp(0) << "out_" << nb_levels << ".h5m").str()
-    ); CHKERRQ(ierr);
+    ierr = ufe.postProc("out_0.h5m"); CHKERRQ(ierr);
+
+    int nb_levels = 5; // default number of refinement levels
+    // get number of refinement levels form command line
+    ierr = PetscOptionsGetInt(PETSC_NULL,PETSC_NULL,"-nb_levels",&nb_levels,PETSC_NULL); CHKERRQ(ierr);
+
+    // refine mesh, solve problem and do it again until number of refinement levels are exceeded.
+    for(int ll = 1;ll!=nb_levels;ll++) {
+      const int nb_levels = ll;
+      ierr = ufe.squashBits(); CHKERRQ(ierr);
+      ierr = ufe.refineMesh(ufe,nb_levels,order); CHKERRQ(ierr);
+      ref_level = BitRefLevel().set(nb_levels);
+      bc_flux_map.clear();
+      ierr = ufe.addBoundaryElements(ref_level);
+      ierr = ufe.buildProblem(ref_level); CHKERRQ(ierr);
+      ierr = ufe.createMatrices(); CHKERRQ(ierr);
+      ierr = ufe.solveLinearProblem(); CHKERRQ(ierr);
+      ierr = ufe.calculateResidual(); CHKERRQ(ierr);
+      ierr = ufe.evaluateError(); CHKERRQ(ierr);
+      ierr = ufe.destroyMatrices(); CHKERRQ(ierr);
+      ierr = ufe.postProc(
+        static_cast<std::ostringstream&>
+        (std::ostringstream().seekp(0) << "out_" << nb_levels << ".h5m").str()
+      ); CHKERRQ(ierr);
+    }
+
+  } catch (MoFEMException const &e) {
+    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
   }
 
   ierr = PetscFinalize(); CHKERRQ(ierr);

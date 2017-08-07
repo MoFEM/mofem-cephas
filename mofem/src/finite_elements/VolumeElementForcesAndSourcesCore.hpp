@@ -73,7 +73,7 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSurcesCore {
   VolumeElementForcesAndSourcesCore(Interface &m_field,const EntityType type = MBTET);
   virtual ~VolumeElementForcesAndSourcesCore() {}
 
-  
+
   double vOlume;
 
   int num_nodes;
@@ -363,15 +363,7 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSurcesCore {
    */
   virtual PetscErrorCode transformHoBaseFunctions();
 
-  PetscErrorCode preProcess() {
-    PetscFunctionBegin;
-    PetscFunctionReturn(0);
-  }
   PetscErrorCode operator()();
-  PetscErrorCode postProcess() {
-    PetscFunctionBegin;
-    PetscFunctionReturn(0);
-  }
 
 };
 

@@ -76,11 +76,11 @@ struct ExactLaplacianFunction {
   }
 };
 
-struct A {
+struct FunA {
   double operator()(const double u) { return 1+u*u; }
 };
 
-struct DiffA {
+struct DiffFunA {
   double operator()(const double u) { return 2*u; }
 };
 
@@ -93,8 +93,6 @@ struct VolRuleNonlinear {
 
 int main(int argc, char *argv[]) {
 
-  // 
-  
 
   // Initialize PETSc
   PetscInitialize(&argc,&argv,(char *)0,help);
@@ -140,19 +138,19 @@ int main(int argc, char *argv[]) {
     boost::shared_ptr<ForcesAndSurcesCore> null;              ///< Null element do nothing
     {
       // Add problem specific operators the generic finite elements to calculate matrices and vectors.
-      ierr = PoissonExample::CreateFiniteElementes(m_field).createFEToAssmbleMatrceAndVectorForNonlinearProblem(
+      ierr = PoissonExample::CreateFiniteElements(m_field).createFEToAssmbleMatrceAndVectorForNonlinearProblem(
         ExactFunction(),ExactLaplacianFunction(),
-        A(),DiffA(),
+        FunA(),DiffFunA(),
         domain_lhs_fe,boundary_lhs_fe,domain_rhs_fe,boundary_rhs_fe,
         VolRuleNonlinear()
       ); CHKERRQ(ierr);
       // Add problem specific operators the generic finite elements to calculate error on elements and global error
       // in H1 norm
-      ierr = PoissonExample::CreateFiniteElementes(m_field).createFEToEvaluateError(
+      ierr = PoissonExample::CreateFiniteElements(m_field).createFEToEvaluateError(
         ExactFunction(),ExactFunctionGrad(),global_error,domain_error
       ); CHKERRQ(ierr);
       // Post-process results
-      ierr = PoissonExample::CreateFiniteElementes(m_field).creatFEToPostProcessResults(post_proc_volume); CHKERRQ(ierr);
+      ierr = PoissonExample::CreateFiniteElements(m_field).creatFEToPostProcessResults(post_proc_volume); CHKERRQ(ierr);
     }
 
     // Get simple interface is simplified version enabling quick and

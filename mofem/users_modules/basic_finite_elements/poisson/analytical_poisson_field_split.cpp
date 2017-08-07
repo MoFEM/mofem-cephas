@@ -122,7 +122,7 @@ struct OpS: public FaceElementForcesAndSourcesCore::UserDataOperator {
       isDiag = false;
     }
     // integrate local matrix for entity block
-    ierr = iNtegrte(row_data,col_data); CHKERRQ(ierr);
+    ierr = iNtegrate(row_data,col_data); CHKERRQ(ierr);
     // asseble local matrix
     ierr = aSsemble(row_data,col_data); CHKERRQ(ierr);
     PetscFunctionReturn(0);
@@ -148,7 +148,7 @@ private:
    * @param  col_data column data (consist base functions on column entity)
    * @return          error code
    */
-  inline PetscErrorCode iNtegrte(
+  inline PetscErrorCode iNtegrate(
     DataForcesAndSurcesCore::EntData &row_data,DataForcesAndSurcesCore::EntData &col_data
   ) {
     PetscFunctionBegin;
@@ -268,17 +268,17 @@ int main(int argc, char *argv[]) {
     boost::shared_ptr<ForcesAndSurcesCore> boundary_penalty_lhs_fe;
     {
       // Add problem specific operators the generic finite elements to calculate matrices and vectors.
-      ierr = PoissonExample::CreateFiniteElementes(m_field).createFEToAssmbleMatrceAndVector(
+      ierr = PoissonExample::CreateFiniteElements(m_field).createFEToAssmbleMatrceAndVector(
         ExactFunction(),ExactLaplacianFunction(),
         domain_lhs_fe,boundary_lhs_fe,domain_rhs_fe,boundary_rhs_fe,false
       ); CHKERRQ(ierr);
       // Add problem specific operators the generic finite elements to calculate error on elements and global error
       // in H1 norm
-      ierr = PoissonExample::CreateFiniteElementes(m_field).createFEToEvaluateError(
+      ierr = PoissonExample::CreateFiniteElements(m_field).createFEToEvaluateError(
         ExactFunction(),ExactFunctionGrad(),global_error,domain_error
       ); CHKERRQ(ierr);
       // Post-process results
-      ierr = PoissonExample::CreateFiniteElementes(m_field).creatFEToPostProcessResults(post_proc_volume); CHKERRQ(ierr);
+      ierr = PoissonExample::CreateFiniteElements(m_field).creatFEToPostProcessResults(post_proc_volume); CHKERRQ(ierr);
 
       const double beta = 1;
       boundary_penalty_lhs_fe = boost::shared_ptr<ForcesAndSurcesCore>(new FaceElementForcesAndSourcesCore(m_field));
