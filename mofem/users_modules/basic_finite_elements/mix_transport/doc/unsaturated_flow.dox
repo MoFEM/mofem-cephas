@@ -206,7 +206,7 @@ created on the interface between two materials. Those are captured very well,
 despite coarse mesh, showing capabilities of presented problem formulation. For
 creating of this figure we used the 2nd order of polynomial to approximate
 pressure head and 3rd order polynomial to approximate fluxes.
-\image html unsaturated_flow_example_fig3.gif "Figure 1. On the bottom axis is depth, on the left axis is pressure head, right axis is water content. Read line is water head, green line is water content. Colormap on the left hand side is for saturation." width=900px
+\image html unsaturated_flow_example_fig3.gif "Figure 1. On the bottom axis is depth, on the left axis is pressure head, right axis is water content. Red line is water head, green line is water content. Colormap on the left hand side is for saturation." width=900px
 
 \subsection mix_us_flow_example_2 Numerical example 2
 
@@ -370,7 +370,7 @@ use gnuplot. As results, we get figure below.
 On figure below, we can observe how wetting front is moving downwards. Note how
 the gradient of head differ between clay and silt, and how it moves through the
 interface between materials.
-\image html unsaturated_flow_example_fig4.gif "Figure 2. On the bottom axis is depth, on the left axis is pressure head, right axis is water content. Read line is water head, green line is water content. Colormap on the left hand side is for saturation." width=900px
+\image html unsaturated_flow_example_fig4.gif "Figure 2. On the bottom axis is depth, on the left axis is pressure head, right axis is water content. Red line is water head, green line is water content. Colormap on the left hand side is for saturation." width=900px
 
 \section mix_us_flow_model Mathematical model
 
