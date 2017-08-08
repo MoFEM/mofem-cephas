@@ -45,12 +45,18 @@ struct Interface: public UnknownInterface {
 
   template <class IFace>
   PetscErrorCode query_interface(IFace*& ptr) const {
-    
     PetscFunctionBegin;
     void* tmp_ptr;
     ierr = query_interface_type(typeid(IFace),tmp_ptr); CHKERRQ(ierr);
     ptr = reinterpret_cast<IFace*>(tmp_ptr);
     PetscFunctionReturn(0);
+  }
+
+  template <class IFace>
+  IFace* query_interface() const {
+    void* tmp_ptr;
+    ierr = query_interface_type(typeid(IFace),tmp_ptr); CHKERRABORT(PETSC_COMM_SELF,ierr);
+    return reinterpret_cast<IFace*>(tmp_ptr);
   }
 
   /**
@@ -2038,7 +2044,8 @@ struct Interface: public UnknownInterface {
 
  /**@{*/
 
-  /** \brief create IS for give two problems and field
+  /** \deprecated Use ISManager
+    * \brief create IS for give two problems and field
     * \ingroup mofem_vectors
 
     Note that indices are ordered in ascending order of local indices in problem_y
@@ -2054,13 +2061,14 @@ struct Interface: public UnknownInterface {
     \retval idy indexes in problem_y
 
     */
-  virtual PetscErrorCode ISCreateFromProblemFieldToOtherProblemField(
+  DEPRECATED virtual PetscErrorCode ISCreateFromProblemFieldToOtherProblemField(
     const std::string &x_problem,const std::string &x_field_name,RowColData x_rc,
     const std::string &y_problem,const std::string &y_field_name,RowColData y_rc,
     std::vector<int> &idx,std::vector<int> &idy,int verb = -1
   ) const = 0;
 
-  /** \brief create IS for give two problems and field
+  /** \deprecated Use ISManager
+    * \brief create IS for give two problems and field
     * \ingroup mofem_vectors
 
     Indices are sorted by global PETSc index in problem_x.
@@ -2076,13 +2084,13 @@ struct Interface: public UnknownInterface {
     \retval iy IS indexes in problem_y
 
     */
-  virtual PetscErrorCode ISCreateFromProblemFieldToOtherProblemField(
+  DEPRECATED virtual PetscErrorCode ISCreateFromProblemFieldToOtherProblemField(
     const std::string &x_problem,const std::string &x_field_name,RowColData x_rc,
     const std::string &y_problem,const std::string &y_field_name,RowColData y_rc,
     IS *ix,IS *iy,int verb = -1
   ) const = 0;
 
-  /**
+  /** \deprecated Use ISManager
     * \brief create IS for given order range (collective)
     * \ingroup mofem_vectors
 
@@ -2093,11 +2101,11 @@ struct Interface: public UnknownInterface {
     * \retval is out value
 
     */
-  virtual PetscErrorCode ISCreateProblemOrder(
+  DEPRECATED virtual PetscErrorCode ISCreateProblemOrder(
     const std::string &problem,RowColData rc,int min_order,int max_order,IS *is,int verb = -1
   ) const = 0;
 
-  /**
+  /** \deprecated Use ISManager
     * \brief create IS for given problem, field and rank range (collective)
     * \ingroup mofem_vectors
 
@@ -2109,7 +2117,7 @@ struct Interface: public UnknownInterface {
     * \retval is out value
 
     */
-  virtual PetscErrorCode ISCreateProblemFieldAndRank(
+  DEPRECATED virtual PetscErrorCode ISCreateProblemFieldAndRank(
     const std::string &problem,
     RowColData rc,
     const std::string &field,

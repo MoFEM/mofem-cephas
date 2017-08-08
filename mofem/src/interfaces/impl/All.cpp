@@ -13,3 +13,4 @@ const static int debug = 1;
 #include "impl/ProblemsCore.cpp"
 #include "impl/CommCore.cpp"
 #include "impl/DeleteCore.cpp"
+#include "impl/ISManager.cpp"

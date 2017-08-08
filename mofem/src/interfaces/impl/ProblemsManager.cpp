@@ -109,8 +109,6 @@ namespace MoFEM {
   PetscErrorCode ProblemsManager::partitionMesh(
     const Range &ents,const int dim,const int adj_dim,const int n_parts,int verb
   ) {
-
-
     MoFEM::Interface &m_field = cOre;
     PetscFunctionBegin;
 

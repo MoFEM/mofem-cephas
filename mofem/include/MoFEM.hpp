@@ -57,6 +57,7 @@
 #include <Interface.hpp>
 #include <Core.hpp>
 
+#include <ISManager.hpp>
 #include <ProblemsManager.hpp>
 #include <Simple.hpp>
 #include <MeshRefinement.hpp>
