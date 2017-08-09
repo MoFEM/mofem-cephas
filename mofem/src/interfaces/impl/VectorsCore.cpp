@@ -173,8 +173,7 @@ PetscErrorCode Core::VecScatterCreate(
   if(verb==-1) verb = verbose;
   std::vector<int> idx(0),idy(0);
   ierr = ISManager(*this).isCreateFromProblemFieldToOtherProblemField(
-    x_problem,x_field_name,x_rc,y_problem,y_field_name,y_rc,
-    idx,idy,verb
+    x_problem,x_field_name,x_rc,y_problem,y_field_name,y_rc,idx,idy
   ); CHKERRQ(ierr);
   IS ix,iy;
   ierr = ISCreateGeneral(PETSC_COMM_WORLD,idx.size(),&idx[0],PETSC_USE_POINTER,&ix); CHKERRQ(ierr);
