@@ -29,8 +29,8 @@ static const bool debug = false;
 
 int main(int argc, char *argv[]) {
 
-    
-    
+
+
 
     //initialize petsc
     PetscInitialize(&argc,&argv,(char *)0,help);
@@ -184,7 +184,6 @@ int main(int argc, char *argv[]) {
       std::cin >> wait;
       ierr = MatDestroy(&B); CHKERRQ(ierr);
     }
-
 
     //destry dm
     ierr = DMDestroy(&dm); CHKERRQ(ierr);

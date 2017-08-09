@@ -1999,7 +1999,7 @@ struct Interface: public UnknownInterface {
   /** \brief create ghost vector for problem (collective)
    * \ingroup mofem_vectors
 
-  collective - need tu be run on all processors in communicator
+  collective - need to be run on all processors in communicator
 
    * \param name problem name
    * \param RowColData specify what data is taken from Row, Col or Data
@@ -2046,7 +2046,6 @@ struct Interface: public UnknownInterface {
 
   /** \deprecated Use ISManager
     * \brief create IS for give two problems and field
-    * \ingroup mofem_vectors
 
     Note that indices are ordered in ascending order of local indices in problem_y
 
@@ -2069,7 +2068,6 @@ struct Interface: public UnknownInterface {
 
   /** \deprecated Use ISManager
     * \brief create IS for give two problems and field
-    * \ingroup mofem_vectors
 
     Indices are sorted by global PETSc index in problem_x.
 
@@ -2092,7 +2090,6 @@ struct Interface: public UnknownInterface {
 
   /** \deprecated Use ISManager
     * \brief create IS for given order range (collective)
-    * \ingroup mofem_vectors
 
     * \param problem name
     * \param rc ROW or COL

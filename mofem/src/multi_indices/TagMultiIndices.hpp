@@ -40,6 +40,7 @@ namespace MoFEM {
   struct BitFEId_mi_tag {};
   struct FiniteElement_name_mi_tag {};
   struct SideNumber_mi_tag{};
+  struct EntDofIdx_mi_tag {};
 
   struct Idx_mi_tag {
     static const bool IamNotPartitioned;
@@ -100,7 +101,7 @@ namespace MoFEM {
   struct Composite_Name_And_Part_mi_tag {};
   struct Composite_Ent_and_ShortId_mi_tag {};
   struct Composite_EntType_and_Space_mi_tag {};
-  struct Composite_Part_And_Ent_mi_tag {};
+  struct Composite_Ent_and_Part_mi_tag {};
   struct Composite_Name_Part_And_CoeffIdx_mi_tag {};
   struct Composite_Name_And_HasLocalIdx_mi_tag {};
 
@@ -115,7 +116,7 @@ namespace MoFEM {
   // /** \deprecated Composite_Name_And_Ent_And_EntDofIdx_mi_tag instead
   // */
   // OFF_DEPRECATED typedef Composite_Name_And_Ent_And_EntDofIdx_mi_tag
-  // Composite_Name_And_Ent_And_EndDofIdx_mi_tag;
+  // Composite_Name_And_Ent_And_EntDofIdx_mi_tag;
 
 
 }

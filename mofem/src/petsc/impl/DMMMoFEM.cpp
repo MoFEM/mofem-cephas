@@ -1075,7 +1075,6 @@ PetscErrorCode DMCreateFieldIS_MoFEM(
 }
 
 PetscErrorCode DMMoFEMGetFieldIS(DM dm,RowColData rc,const char field_name[],IS *is) {
-
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
   DMCtx *dm_field = (DMCtx*)dm->data;

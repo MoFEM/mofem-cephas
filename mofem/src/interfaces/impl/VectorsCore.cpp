@@ -125,7 +125,7 @@ PetscErrorCode Core::VecCreateGhost(const std::string &name,RowColData rc,Vec *V
   for(;miit!=hi_miit;miit++,vit++) {
     *vit = (*miit)->petscGloablDofIdx;
   }
-  ierr = ::VecCreateGhost(cOmm,nb_local_dofs,nb_dofs,nb_ghost_dofs,&ghost_idx[0],V); CHKERRQ(ierr);
+  ierr = ::VecCreateGhost(PETSC_COMM_WORLD,nb_local_dofs,nb_dofs,nb_ghost_dofs,&ghost_idx[0],V); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 PetscErrorCode Core::ISCreateProblemOrder(
@@ -172,13 +172,13 @@ PetscErrorCode Core::VecScatterCreate(
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   std::vector<int> idx(0),idy(0);
-  ierr = ISCreateFromProblemFieldToOtherProblemField(
+  ierr = ISManager(*this).isCreateFromProblemFieldToOtherProblemField(
     x_problem,x_field_name,x_rc,y_problem,y_field_name,y_rc,
     idx,idy,verb
   ); CHKERRQ(ierr);
   IS ix,iy;
-  ierr = ISCreateGeneral(cOmm,idx.size(),&idx[0],PETSC_USE_POINTER,&ix); CHKERRQ(ierr);
-  ierr = ISCreateGeneral(cOmm,idy.size(),&idy[0],PETSC_USE_POINTER,&iy); CHKERRQ(ierr);
+  ierr = ISCreateGeneral(PETSC_COMM_WORLD,idx.size(),&idx[0],PETSC_USE_POINTER,&ix); CHKERRQ(ierr);
+  ierr = ISCreateGeneral(PETSC_COMM_WORLD,idy.size(),&idy[0],PETSC_USE_POINTER,&iy); CHKERRQ(ierr);
   ierr = ::VecScatterCreate(xin,ix,yin,iy,newctx); CHKERRQ(ierr);
   ierr = ISDestroy(&ix); CHKERRQ(ierr);
   ierr = ISDestroy(&iy); CHKERRQ(ierr);
@@ -219,8 +219,8 @@ PetscErrorCode Core::VecScatterCreate(
   std::vector<int> idx(0),idy(0);
   ierr = ISManager(*this).isCreateFromProblemToOtherProblem(x_problem,x_rc,y_problem,y_rc,idx,idy); CHKERRQ(ierr);
   IS ix,iy;
-  ierr = ISCreateGeneral(cOmm,idx.size(),&idx[0],PETSC_USE_POINTER,&ix); CHKERRQ(ierr);
-  ierr = ISCreateGeneral(cOmm,idy.size(),&idy[0],PETSC_USE_POINTER,&iy); CHKERRQ(ierr);
+  ierr = ISCreateGeneral(PETSC_COMM_WORLD,idx.size(),&idx[0],PETSC_USE_POINTER,&ix); CHKERRQ(ierr);
+  ierr = ISCreateGeneral(PETSC_COMM_WORLD,idy.size(),&idy[0],PETSC_USE_POINTER,&iy); CHKERRQ(ierr);
   if(verb>2) {
     ISView(ix,PETSC_VIEWER_STDOUT_WORLD);
     ISView(iy,PETSC_VIEWER_STDOUT_WORLD);
@@ -624,7 +624,7 @@ PetscErrorCode Core::set_other_global_ghost_vector(
         if(verb > 1) {
           std::ostringstream ss;
           ss << *(*diiiit) << "set " << array[(*miit)->getPetscGlobalDofIdx()] << std::endl;
-          PetscPrintf(cOmm,ss.str().c_str());
+          PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
         }
       }
       ierr = VecRestoreArray(V_glob,&array); CHKERRQ(ierr);

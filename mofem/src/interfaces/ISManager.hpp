@@ -44,9 +44,22 @@ namespace MoFEM {
     */
     ~ISManager();
 
-    PetscErrorCode sectionCreateFromFieldsList(
+    /**
+     * \brief Create global selection
+     *
+     * Create section for given problem, such that points are sorted by UId,
+     * and number of dofs on point is equal to number of dofs on entity
+     *
+     * It takes all fields
+     *
+     * @param  problem_name
+     * @param  fields_list
+     * @param  s
+     * @param  row_col      ROE or COL, default is ROW
+     * @return              error code
+     */
+    PetscErrorCode sectionCreate(
       const std::string &problem_name,
-      const std::vector<std::string> &fields_list,
       PetscSection *s,
       const RowColData row_col = COL
     ) const;

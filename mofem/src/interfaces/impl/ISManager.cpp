@@ -73,83 +73,117 @@ namespace MoFEM {
   ISManager::~ISManager() {
   }
 
-  PetscErrorCode ISManager::sectionCreateFromFieldsList(
+  PetscErrorCode ISManager::sectionCreate(
     const std::string &problem_name,
-    const std::vector<std::string> &fields_list,
     PetscSection *s,
     const RowColData row_col
   ) const {
-    typedef NumeredDofEntity_multiIndex::index<Composite_Name_Part_And_CoeffIdx_mi_tag>::type DofsByNamePartAndCoeffIdx;
     const MoFEM::Interface &m_field = cOre;
     const Problem *problem_ptr;
     const Field_multiIndex *fields_ptr;
+    const FiniteElement_multiIndex *fe_ptr;
     PetscFunctionBegin;
     ierr = m_field.get_problem(problem_name,&problem_ptr); CHKERRQ(ierr);
     ierr = m_field.get_fields(&fields_ptr); CHKERRQ(ierr);
+    ierr = m_field.get_finite_elements(&fe_ptr); CHKERRQ(ierr);
     boost::shared_ptr<NumeredDofEntity_multiIndex> dofs;
-    int nb_local_dofs = problem_ptr->getNbLocalDofsCol();
+    BitFieldId fields_ids;
     switch (row_col) {
       case ROW:
       dofs = problem_ptr->numeredDofsRows;
-      nb_local_dofs = problem_ptr->getNbLocalDofsRow();
+      for(FiniteElement_multiIndex::iterator fit = fe_ptr->begin();fit!=fe_ptr->end();fit++) {
+        if((fit->get()->getId()&problem_ptr->getBitFEId()).any()) {
+          fields_ids |= fit->get()->getBitFieldIdRow();
+        }
+      }
       break;
       case COL:
       dofs = problem_ptr->numeredDofsCols;
-      nb_local_dofs = problem_ptr->getNbLocalDofsCol();
+      for(FiniteElement_multiIndex::iterator fit = fe_ptr->begin();fit!=fe_ptr->end();fit++) {
+        if((fit->get()->getId()&problem_ptr->getBitFEId()).any()) {
+          fields_ids |= fit->get()->getBitFieldIdCol();
+        }
+      }
       break;
       default:
       SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"Has to be ROW or COLUMN");
     }
-    const int proc = m_field.get_comm_rank();
-    ierr = PetscSectionSetNumFields(*s,fields_list.size()); CHKERRQ(ierr);
-    int nb_charts = 0;
-    for(
-      std::vector<std::string>::const_iterator vit = fields_list.begin();
-      vit!=fields_list.end();vit++
-    ) {
-      nb_charts += dofs->get<Composite_Name_Part_And_CoeffIdx_mi_tag>().
-      count(boost::make_tuple(*vit,proc,0));
+    // get fields names on the problem
+    map<std::string,std::pair<int,int> > fields_map;
+    {
+      int field = 0;
+      for(Field_multiIndex::iterator fit = fields_ptr->begin();fit!=fields_ptr->end();fit++) {
+        if((fit->get()->getId()&fields_ids).any()) {
+          fields_map[fit->get()->getName()].first = field++;
+          fields_map[fit->get()->getName()].second = fit->get()->getNbOfCoeffs();
+        }
+      }
     }
+    const int proc = m_field.get_comm_rank();
+    ierr = PetscSectionCreate(PETSC_COMM_WORLD,s); CHKERRQ(ierr);
+    ierr = PetscSectionSetNumFields(*s,fields_map.size()); CHKERRQ(ierr);
+    for(map<std::string,std::pair<int,int> >::iterator mit = fields_map.begin();mit!=fields_map.end();mit++) {
+      ierr = PetscSectionSetFieldName(*s,mit->second.first,mit->first.c_str()); CHKERRQ(ierr);
+      ierr = PetscSectionSetFieldComponents(*s,mit->second.first,mit->second.second); CHKERRQ(ierr);
+    }
+    // determine number of points
+    int nb_charts = 0;
+    {
+      NumeredDofEntity_multiIndex::iterator dit,hi_dit;
+      dit = dofs->begin();
+      hi_dit = dofs->end();
+      for(;dit!=hi_dit;) {
+        EntityHandle ent = dit->get()->getEnt();
+        if(dit->get()->getPart()==proc&&dit->get()->getEntDofIdx()==0) {
+          while(dit!=hi_dit&&ent==dit->get()->getEnt()) {
+            const int nb_of_dofs_on_ent = dit->get()->getNbDofsOnEnt();
+            for(int dd = 0;dd!=nb_of_dofs_on_ent;dd++,dit++) {}
+          }
+          ++nb_charts;
+        } else {
+          ++dit;
+        }
+      }
+    }
+    // get layout, i.e. chart
     PetscLayout layout;
     ierr = PetscLayoutCreate(PETSC_COMM_WORLD,&layout); CHKERRQ(ierr);
     ierr = PetscLayoutSetBlockSize(layout,1); CHKERRQ(ierr);
-    ierr = PetscLayoutSetSize(layout,nb_charts); CHKERRQ(ierr);
+    ierr = PetscLayoutSetLocalSize(layout,nb_charts); CHKERRQ(ierr);
     ierr = PetscLayoutSetUp(layout); CHKERRQ(ierr);
     int rstart,rend;
     ierr = PetscLayoutGetRange(layout,&rstart,&rend); CHKERRQ(ierr);
     ierr = PetscLayoutDestroy(&layout); CHKERRQ(ierr);
     ierr = PetscSectionSetChart(*s,rstart,rend); CHKERRQ(ierr);
-    int point = 0;
-    int field = 0;
-    for(
-      std::vector<std::string>::const_iterator vit = fields_list.begin();
-      vit!=fields_list.end();vit++
-    ) {
-      Field_multiIndex::index<FieldName_mi_tag>::type::iterator fit;
-      fit = fields_ptr->get<FieldName_mi_tag>().find(*vit);
-      if(fit==fields_ptr->get<FieldName_mi_tag>().end()) {
-        SETERRQ1(PETSC_COMM_WORLD,MOFEM_INVALID_DATA,"Field %s not found",*vit->c_str());
-      }
-      int pp = point;
-      int nb_coeffs = fit->get()->getNbOfCoeffs();
-      for(int dd = 0;dd!=nb_coeffs;dd++) {
-        pp = point;
-        DofsByNamePartAndCoeffIdx::iterator dit,hi_dit;
-        dit = dofs->get<Composite_Name_Part_And_CoeffIdx_mi_tag>().lower_bound(
-          boost::make_tuple(*vit,proc,dd)
-        );
-        hi_dit = dofs->get<Composite_Name_Part_And_CoeffIdx_mi_tag>().upper_bound(
-          boost::make_tuple(*vit,proc,dd)
-        );
-        for(;dit!=hi_dit;dit++) {
-          ierr = PetscSectionAddFieldDof(*s,pp,field,dit->get()->getPetscGlobalDofIdx());
-          ++pp;
+    // cerr << rstart << " " << rend << " " << proc << endl;
+    // loop of all dofs
+    {
+      NumeredDofEntity_multiIndex::iterator dit,hi_dit;
+      dit = dofs->begin();
+      hi_dit = dofs->end();
+      int point = rstart;
+      for(;dit!=hi_dit;) {
+        EntityHandle ent = dit->get()->getEnt();
+        if(dit->get()->getPart()==proc&&dit->get()->getEntDofIdx()==0) {
+          // exploit that does are continuously stored on entity
+          // that includes fields
+          while(dit!=hi_dit&&ent==dit->get()->getEnt()) {
+            const int nb_of_dofs_on_ent = dit->get()->getNbDofsOnEnt();
+            ierr = PetscSectionAddDof(*s,point,nb_of_dofs_on_ent); CHKERRQ(ierr);
+            int field = fields_map.at(dit->get()->getName()).first;
+            ierr = PetscSectionSetFieldDof(*s,point,field,nb_of_dofs_on_ent); CHKERRQ(ierr);
+            for(int dd = 0;dd!=nb_of_dofs_on_ent;dd++,dit++) {}
+            // cerr << point << endl;
+          }
+          ++point;
+        } else {
+          ++dit;
         }
       }
-      point = pp;
-      ++field;
     }
+    // cerr << "done " << proc << endl;
     ierr = PetscSectionSetUp(*s); CHKERRQ(ierr);
+    // cerr << "end " << proc << endl;
     PetscFunctionReturn(0);
   }
 
