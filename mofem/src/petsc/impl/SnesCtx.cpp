@@ -42,18 +42,19 @@
 #include <SeriesRecorder.hpp>
 #include <Core.hpp>
 
+#include <VecManager.hpp>
 #include <SnesCtx.hpp>
 
 namespace MoFEM {
 
 PetscErrorCode SnesRhs(SNES snes,Vec x,Vec f,void *ctx) {
   PetscFunctionBegin;
-  
+
   SnesCtx* snes_ctx = (SnesCtx*)ctx;
   PetscLogEventBegin(snes_ctx->USER_EVENT_SnesRhs,0,0,0,0);
   ierr = VecGhostUpdateBegin(x,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(x,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = snes_ctx->mField.set_local_ghost_vector(snes_ctx->problemName,COL,x,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = snes_ctx->mField.query_interface<VecManager>()->setLocalGhostVector(snes_ctx->problemName,COL,x,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   ierr = VecZeroEntries(f); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -95,7 +96,7 @@ PetscErrorCode SnesRhs(SNES snes,Vec x,Vec f,void *ctx) {
 }
 PetscErrorCode SnesMat(SNES snes,Vec x,Mat A,Mat B,void *ctx) {
   PetscFunctionBegin;
-  
+
   SnesCtx* snes_ctx = (SnesCtx*)ctx;
   PetscLogEventBegin(snes_ctx->USER_EVENT_SnesMat,0,0,0,0);
   if(snes_ctx->zeroPreCondMatrixB) {

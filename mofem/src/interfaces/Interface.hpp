@@ -1987,16 +1987,18 @@ struct Interface: public UnknownInterface {
 
  /**@{*/
 
-  /** \brief create local vector for problem
+  /** \deprecated use VecManager
+   * \brief create local vector for problem
    * \ingroup mofem_vectors
    *
    * \param name problem name
    * \param RowColData specify what data is taken from Row, Col or Data
    * \param Vec the vector where data is stored
    */
-  virtual PetscErrorCode VecCreateSeq(const std::string &name,RowColData rc,Vec *V) const = 0;
+  DEPRECATED virtual PetscErrorCode VecCreateSeq(const std::string &name,RowColData rc,Vec *V) const = 0;
 
-  /** \brief create ghost vector for problem (collective)
+  /** \deprecated use VecManager
+   * \brief create ghost vector for problem (collective)
    * \ingroup mofem_vectors
 
   collective - need to be run on all processors in communicator
@@ -2005,7 +2007,7 @@ struct Interface: public UnknownInterface {
    * \param RowColData specify what data is taken from Row, Col or Data
    * \param Vec the vector where data is stored
    */
-  virtual PetscErrorCode VecCreateGhost(const std::string &name,RowColData rc,Vec *V) const = 0;
+  DEPRECATED virtual PetscErrorCode VecCreateGhost(const std::string &name,RowColData rc,Vec *V) const = 0;
 
  /**@}*/
 
@@ -2130,7 +2132,7 @@ struct Interface: public UnknownInterface {
 
  /**@{*/
 
-  /**
+  /** \deprecated use VecManager
     * \brief create scatter for vectors form one to another problem (collective)
     * \ingroup mofem_vectors
     *
@@ -2147,7 +2149,7 @@ struct Interface: public UnknownInterface {
     * \retval newctx scatter
 
     */
-  virtual PetscErrorCode VecScatterCreate(
+  DEPRECATED virtual PetscErrorCode VecScatterCreate(
     Vec xin,
     const std::string &x_problem,
     const std::string &x_field_name,
@@ -2160,7 +2162,7 @@ struct Interface: public UnknownInterface {
     int verb = -1
   ) const = 0;
 
-  /**
+  /** \deprecated use VecManager
     * \brief create scatter for vectors form one to another problem (collective)
     * \ingroup mofem_vectors
     *
@@ -2171,7 +2173,7 @@ struct Interface: public UnknownInterface {
     * \retval newctx scatter
 
     */
-  virtual PetscErrorCode VecScatterCreate(
+  DEPRECATED virtual PetscErrorCode VecScatterCreate(
     Vec xin,const std::string &x_problem,
     RowColData x_rc,
     Vec yin,
@@ -2187,7 +2189,7 @@ struct Interface: public UnknownInterface {
 
  /**@{*/
 
-  /**
+  /** \deprecated use VecManager
     * \brief set values of vector from/to meshdatabase
     * \ingroup mofem_vectors
     *
@@ -2202,11 +2204,11 @@ struct Interface: public UnknownInterface {
     * SCATTER_FORWARD set vector V from data field entities
     *
     */
-  virtual PetscErrorCode set_local_ghost_vector(
+  DEPRECATED virtual PetscErrorCode set_local_ghost_vector(
     const Problem *problem_ptr,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode
   ) const = 0;
 
-  /**
+  /** \deprecated use VecManager
     * \brief set values of vector from/to meshdatabase
     * \ingroup mofem_vectors
     *
@@ -2221,11 +2223,11 @@ struct Interface: public UnknownInterface {
     * SCATTER_FORWARD set vector V from data field entities
     *
     */
-  virtual PetscErrorCode set_local_ghost_vector(
+  DEPRECATED virtual PetscErrorCode set_local_ghost_vector(
     const std::string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode
   ) const = 0;
 
-  /**
+  /** \deprecated use VecManager
     * \brief set values of vector from/to mesh database (collective)
     * \ingroup mofem_vectors
 
@@ -2240,11 +2242,11 @@ struct Interface: public UnknownInterface {
     * SCATTER_REVERSE set data to field entities form V vector.
     *
     */
-  virtual PetscErrorCode set_global_ghost_vector(
+  DEPRECATED virtual PetscErrorCode set_global_ghost_vector(
     const Problem *problem_ptr,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode
   ) const = 0;
 
-  /**
+  /** \deprecated use VecManager
     * \brief set values of vector from/to mesh database (collective)
     * \ingroup mofem_vectors
 
@@ -2259,11 +2261,12 @@ struct Interface: public UnknownInterface {
     * SCATTER_REVERSE set data to field entities form V vector.
     *
     */
-  virtual PetscErrorCode set_global_ghost_vector(
+  DEPRECATED virtual PetscErrorCode set_global_ghost_vector(
     const std::string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode
   ) const = 0;
 
-  /** \brief Copy vector to field which is not part of the problem
+  /** \deprecated use VecManager
+    * \brief Copy vector to field which is not part of the problem
     * \ingroup mofem_vectors
     *
     * \param pointer to poroblem multi_index
@@ -2277,7 +2280,7 @@ struct Interface: public UnknownInterface {
     * SCATTER_REVERSE set data to field entities form V vector.
     *
     */
-  virtual PetscErrorCode set_other_local_ghost_vector(
+  DEPRECATED virtual PetscErrorCode set_other_local_ghost_vector(
     const Problem *problem_ptr,
     const std::string& fiel_name,
     const std::string& cpy_field_name,
@@ -2288,7 +2291,8 @@ struct Interface: public UnknownInterface {
     int verb = -1
   ) = 0;
 
-  /** \brief Copy vector to field which is not part of the problem
+  /** \deprecated use VecManager
+    * \brief Copy vector to field which is not part of the problem
     * \ingroup mofem_vectors
     *
     * \param name problem name
@@ -2302,7 +2306,7 @@ struct Interface: public UnknownInterface {
     * SCATTER_REVERSE set data to field entities form V vector.
     *
     */
-  virtual PetscErrorCode set_other_local_ghost_vector(
+  DEPRECATED virtual PetscErrorCode set_other_local_ghost_vector(
     const std::string &name,
     const std::string& field_name,
     const std::string& cpy_field_name,
@@ -2313,7 +2317,8 @@ struct Interface: public UnknownInterface {
     int verb = -1
   ) = 0;
 
-  /** \brief Copy vector to field which is not part of the problem (collective)
+  /** \deprecated use VecManager
+    * \brief Copy vector to field which is not part of the problem (collective)
     * \ingroup mofem_vectors
 
     collective - need tu be run on all processors in communicator
@@ -2329,7 +2334,7 @@ struct Interface: public UnknownInterface {
     * SCATTER_REVERSE set data to field entities form V vector.
     *
     */
-  virtual PetscErrorCode set_other_global_ghost_vector(
+  DEPRECATED virtual PetscErrorCode set_other_global_ghost_vector(
     const Problem *problem_ptr,
     const std::string& field_name,
     const std::string& cpy_field_name,
@@ -2340,7 +2345,8 @@ struct Interface: public UnknownInterface {
     int verb = -1
   ) = 0;
 
-  /** \brief Copy vector to field which is not part of the problem (collective)
+  /** \deprecated use VecManager
+    * \brief Copy vector to field which is not part of the problem (collective)
     * \ingroup mofem_vectors
 
     collective - need tu be run on all processors in communicator
@@ -2356,7 +2362,7 @@ struct Interface: public UnknownInterface {
     * SCATTER_REVERSE set data to field entities form V vector.
     *
     */
-  virtual PetscErrorCode set_other_global_ghost_vector(
+  DEPRECATED virtual PetscErrorCode set_other_global_ghost_vector(
     const std::string &name,
     const std::string& field_name,
     const std::string& cpy_field_name,

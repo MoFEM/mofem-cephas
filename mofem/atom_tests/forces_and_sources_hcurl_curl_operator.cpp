@@ -146,9 +146,9 @@ int main(int argc, char *argv[]) {
   ierr = prb_mng_ptr->partitionGhostDofs("TEST_PROBLEM"); CHKERRQ(ierr);
 
   Vec v;
-  ierr = m_field.VecCreateGhost("TEST_PROBLEM",ROW,&v);
+  ierr = m_field.query_interface<VecManager>()->vecCreateGhost("TEST_PROBLEM",ROW,&v);
   ierr = VecSetRandom(v,PETSC_NULL); CHKERRQ(ierr);
-  ierr = m_field.set_local_ghost_vector("TEST_PROBLEM",ROW,v,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = m_field.query_interface<VecManager>()->setLocalGhostVector("TEST_PROBLEM",ROW,v,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   ierr = VecDestroy(&v); CHKERRQ(ierr);
 
   struct OpTetCurl: public VolumeElementForcesAndSourcesCore::UserDataOperator {

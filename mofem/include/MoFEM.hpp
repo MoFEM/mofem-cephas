@@ -58,6 +58,7 @@
 #include <Core.hpp>
 
 #include <ISManager.hpp>
+#include <VecManager.hpp>
 #include <ProblemsManager.hpp>
 #include <Simple.hpp>
 #include <MeshRefinement.hpp>

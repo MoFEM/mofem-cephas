@@ -64,7 +64,7 @@ struct OpAssembleMatAndVec: public MoFEM::FaceElementForcesAndSourcesCore::UserD
   PetscErrorCode	doWork(
     int side, EntityType type, DataForcesAndSurcesCore::EntData &data
   ) {
-    
+
     PetscFunctionBegin;
     const int nb_dofs = data.getIndices().size();
     if(nb_dofs==0) PetscFunctionReturn(0);
@@ -96,7 +96,7 @@ struct OpAssembleMatAndVec: public MoFEM::FaceElementForcesAndSourcesCore::UserD
     DataForcesAndSurcesCore::EntData &row_data,
     DataForcesAndSurcesCore::EntData &col_data
   ) {
-    
+
     PetscFunctionBegin;
     const int nb_dofs_row = row_data.getIndices().size();
     if(nb_dofs_row==0) PetscFunctionReturn(0);
@@ -229,8 +229,8 @@ struct OpCheckValsDiffVals: public MoFEM::FaceElementForcesAndSourcesCore::UserD
 
 int main(int argc, char *argv[]) {
 
-  
-  
+
+
 
   PetscInitialize(&argc,&argv,(char *)0,help);
 
@@ -297,9 +297,9 @@ int main(int argc, char *argv[]) {
     Mat A;
     ierr = m_field.MatCreateMPIAIJWithArrays("TEST_PROBLEM",&A); CHKERRQ(ierr);
     Vec F;
-    ierr = m_field.VecCreateGhost("TEST_PROBLEM",ROW,&F); CHKERRQ(ierr);
+    ierr = m_field.query_interface<VecManager>()->vecCreateGhost("TEST_PROBLEM",ROW,&F); CHKERRQ(ierr);
     Vec D;
-    ierr = m_field.VecCreateGhost("TEST_PROBLEM",COL,&D); CHKERRQ(ierr);
+    ierr = m_field.query_interface<VecManager>()->vecCreateGhost("TEST_PROBLEM",COL,&D); CHKERRQ(ierr);
 
     {
       TestFE fe(m_field);
@@ -320,7 +320,7 @@ int main(int argc, char *argv[]) {
     ierr = KSPSolve(solver,F,D); CHKERRQ(ierr);
     ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    ierr = m_field.set_local_ghost_vector(
+    ierr = m_field.query_interface<VecManager>()->setLocalGhostVector(
       "TEST_PROBLEM",COL,D,INSERT_VALUES,SCATTER_REVERSE
     ); CHKERRQ(ierr);
     ierr = KSPDestroy(&solver); CHKERRQ(ierr);

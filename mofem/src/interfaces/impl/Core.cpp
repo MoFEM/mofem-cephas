@@ -47,6 +47,7 @@
 #include <ProblemsManager.hpp>
 #include <Simple.hpp>
 #include <ISManager.hpp>
+#include <VecManager.hpp>
 #include <MeshRefinement.hpp>
 #include <SeriesRecorder.hpp>
 #include <PrismInterface.hpp>
@@ -136,6 +137,15 @@ PetscErrorCode Core::query_interface_type(const std::type_info& type,void*& ptr)
       iFaces.insert(uid,new ISManager(*this));
     }
     ptr = &iFaces.at(IDD_MOFEMISManager.uUId.to_ulong());
+    PetscFunctionReturn(0);
+  }
+
+  if(type == typeid(VecManager)) {
+    if(iFaces.find(IDD_MOFEMVEC.uUId.to_ulong()) == iFaces.end()) {
+      unsigned long int uid = IDD_MOFEMVEC.uUId.to_ulong();
+      iFaces.insert(uid,new VecManager(*this));
+    }
+    ptr = &iFaces.at(IDD_MOFEMVEC.uUId.to_ulong());
     PetscFunctionReturn(0);
   }
 

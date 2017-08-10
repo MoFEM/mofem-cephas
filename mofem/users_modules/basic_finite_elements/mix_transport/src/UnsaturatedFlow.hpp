@@ -1428,7 +1428,7 @@ namespace MixTransport {
       PetscErrorCode operator()() {
         PetscFunctionBegin;
         // Update pressure rates
-        ierr = fePtr->mField.set_other_local_ghost_vector(
+        ierr = fePtr->mField.query_interface<VecManager>()->setOtherLocalGhostVector(
           fePtr->problemPtr,"VALUES",string("VALUES")+"_t",
           ROW,fePtr->ts_u_t,INSERT_VALUES,SCATTER_REVERSE
         ); CHKERRQ(ierr);
@@ -1525,7 +1525,7 @@ namespace MixTransport {
             }
             ierr = VecAssemblyBegin(fePtr->ts_F); CHKERRQ(ierr);
             ierr = VecAssemblyEnd(fePtr->ts_F); CHKERRQ(ierr);
-            // ierr = fePtr->mField.set_other_local_ghost_vector(
+            // ierr = fePtr->mField.query_interface<VecManager>()->setOtherLocalGhostVector(
             //   fePtr->problemPtr,"VALUES",string("FLUXES")+"_residual",
             //   ROW,fePtr->ts_F,INSERT_VALUES,SCATTER_REVERSE
             // ); CHKERRQ(ierr);

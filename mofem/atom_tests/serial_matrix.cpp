@@ -154,7 +154,7 @@ int main(int argc, char *argv[]) {
   ierr = prb_mng_ptr->partitionGhostDofs("TEST_PROBLEM"); CHKERRQ(ierr);
 
   Vec F;
-  ierr = m_field.VecCreateSeq("TEST_PROBLEM",ROW,&F); CHKERRQ(ierr);
+  ierr = m_field.query_interface<VecManager>()->vecCreateSeq("TEST_PROBLEM",ROW,&F); CHKERRQ(ierr);
   Mat A;
   ierr = m_field.MatCreateMPIAIJWithArrays("TEST_PROBLEM",&A); CHKERRQ(ierr);
 

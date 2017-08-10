@@ -578,7 +578,7 @@ PetscErrorCode ThermalElement::OpConvectionLhs::doWork(
 PetscErrorCode ThermalElement::UpdateAndControl::preProcess() {
   PetscFunctionBegin;
   
-  ierr = mField.set_other_local_ghost_vector(
+  ierr = mField.query_interface<VecManager>()->setOtherLocalGhostVector(
     problemPtr,tempName,rateName,ROW,ts_u_t,INSERT_VALUES,SCATTER_REVERSE
   ); CHKERRQ(ierr);
   PetscFunctionReturn(0);
@@ -593,7 +593,7 @@ PetscErrorCode ThermalElement::TimeSeriesMonitor::postProcess() {
   PetscFunctionBegin;
   
 
-  ierr = mField.set_global_ghost_vector(
+  ierr = mField.query_interface<VecManager>()->setGlobalGhostVector(
     problemPtr,ROW,ts_u,INSERT_VALUES,SCATTER_REVERSE
   ); CHKERRQ(ierr);
 

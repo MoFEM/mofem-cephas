@@ -47,8 +47,6 @@
 
 #include <ISManager.hpp>
 
-#include <moab/MeshTopoUtil.hpp>
-
 namespace MoFEM {
 
   PetscErrorCode ISManager::queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface) {

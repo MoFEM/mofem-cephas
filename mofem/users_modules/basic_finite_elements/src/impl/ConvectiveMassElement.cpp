@@ -2010,9 +2010,9 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
           //FIXME: This global scattering because Kuu problem and Dynamic problem
           //not share partitions. Both problem should use the same partitioning to
           //resolve this problem.
-          ierr = mField.set_global_ghost_vector(problemPtr,COL,ts_u,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-          ierr = mField.set_other_global_ghost_vector(problemPtr,velocityField,"DOT_"+velocityField,COL,ts_u_t,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-          ierr = mField.set_other_global_ghost_vector(problemPtr,spatialPositionField,"DOT_"+spatialPositionField,COL,ts_u_t,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+          ierr = mField.query_interface<VecManager>()->setGlobalGhostVector(problemPtr,COL,ts_u,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+          ierr = mField.query_interface<VecManager>()->setOtherGlobalGhostVector(problemPtr,velocityField,"DOT_"+velocityField,COL,ts_u_t,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+          ierr = mField.query_interface<VecManager>()->setOtherGlobalGhostVector(problemPtr,spatialPositionField,"DOT_"+spatialPositionField,COL,ts_u_t,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
           break;
         }
         case CTX_TSSETIJACOBIAN: {

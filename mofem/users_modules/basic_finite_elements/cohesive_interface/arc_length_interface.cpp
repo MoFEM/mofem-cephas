@@ -465,7 +465,7 @@ int main(int argc, char *argv[]) {
 
     //create matrices
     Vec F,F_body_force,D;
-    ierr = m_field.VecCreateGhost("ELASTIC_MECHANICS",COL,&F); CHKERRQ(ierr);
+    ierr = m_field.query_interface<VecManager>()->vecCreateGhost("ELASTIC_MECHANICS",COL,&F); CHKERRQ(ierr);
     ierr = VecDuplicate(F,&D); CHKERRQ(ierr);
     ierr = VecDuplicate(F,&F_body_force); CHKERRQ(ierr);
     Mat Aij;
@@ -660,8 +660,8 @@ int main(int argc, char *argv[]) {
     PetscPrintf(PETSC_COMM_WORLD,"\tFlambda2 = %6.4e\n",arc_ctx->F_lambda2);
 
     if(step>1) {
-      ierr = m_field.set_local_ghost_vector("ELASTIC_MECHANICS",COL,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-      ierr = m_field.set_other_global_ghost_vector(
+      ierr = m_field.query_interface<VecManager>()->setLocalGhostVector("ELASTIC_MECHANICS",COL,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      ierr = m_field.query_interface<VecManager>()->setOtherGlobalGhostVector(
         "ELASTIC_MECHANICS","DISPLACEMENT","X0_DISPLACEMENT",COL,arc_ctx->x0,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
         double x0_nrm;
         ierr = VecNorm(arc_ctx->x0,NORM_2,&x0_nrm);  CHKERRQ(ierr);
@@ -737,7 +737,7 @@ int main(int argc, char *argv[]) {
         ierr = SNESSolve(snes,PETSC_NULL,D); CHKERRQ(ierr);
 
         //Distribute displacements on all processors
-        ierr = m_field.set_global_ghost_vector("ELASTIC_MECHANICS",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+        ierr = m_field.query_interface<VecManager>()->setGlobalGhostVector("ELASTIC_MECHANICS",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
         ierr = m_field.loop_finite_elements(
           "ELASTIC_MECHANICS","INTERFACE",cohesive_elements.getFeHistory(),0,m_field.get_comm_size()
         ); CHKERRQ(ierr);
@@ -763,8 +763,8 @@ int main(int argc, char *argv[]) {
           }
 
           //Save data on mesh
-          ierr = m_field.set_global_ghost_vector("ELASTIC_MECHANICS",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-          ierr = m_field.set_other_global_ghost_vector(
+          ierr = m_field.query_interface<VecManager>()->setGlobalGhostVector("ELASTIC_MECHANICS",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+          ierr = m_field.query_interface<VecManager>()->setOtherGlobalGhostVector(
             "ELASTIC_MECHANICS","DISPLACEMENT","X0_DISPLACEMENT",COL,arc_ctx->x0,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
             converged_state = true;
           }
@@ -795,7 +795,7 @@ int main(int argc, char *argv[]) {
         }
 
         //Save data on mesh
-        ierr = m_field.set_global_ghost_vector("ELASTIC_MECHANICS",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+        ierr = m_field.query_interface<VecManager>()->setGlobalGhostVector("ELASTIC_MECHANICS",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
         //detroy matrices
         ierr = VecDestroy(&F); CHKERRQ(ierr);

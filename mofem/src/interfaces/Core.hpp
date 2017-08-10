@@ -591,18 +591,18 @@ struct Core: public Interface {
   PetscErrorCode MatCreateSeqAIJWithArrays(
     const std::string &name,Mat *Aij,PetscInt **i,PetscInt **j,PetscScalar **v,int verb = -1
   );
-  PetscErrorCode VecCreateSeq(const std::string &name,RowColData rc,Vec *V) const;
-  PetscErrorCode VecCreateGhost(const std::string &name,RowColData rc,Vec *V) const;
-  PetscErrorCode set_local_ghost_vector(
+  DEPRECATED PetscErrorCode VecCreateSeq(const std::string &name,RowColData rc,Vec *V) const;
+  DEPRECATED PetscErrorCode VecCreateGhost(const std::string &name,RowColData rc,Vec *V) const;
+  DEPRECATED PetscErrorCode set_local_ghost_vector(
     const Problem *problem_ptr,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode
   ) const;
-  PetscErrorCode set_local_ghost_vector(
+  DEPRECATED PetscErrorCode set_local_ghost_vector(
     const std::string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode
   ) const;
-  PetscErrorCode set_global_ghost_vector(
+  DEPRECATED PetscErrorCode set_global_ghost_vector(
     const Problem *problem_ptr,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode
   ) const;
-  PetscErrorCode set_global_ghost_vector(
+  DEPRECATED PetscErrorCode set_global_ghost_vector(
     const std::string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode
   ) const;
 
@@ -660,7 +660,7 @@ struct Core: public Interface {
     int verb = -1
   ) const;
 
-  PetscErrorCode VecScatterCreate(
+  DEPRECATED PetscErrorCode VecScatterCreate(
     Vec xin,
     const std::string &x_problem,
     RowColData x_rc,
@@ -671,23 +671,23 @@ struct Core: public Interface {
     int verb = -1
   ) const;
 
-  /// \neme vector local and global projection
+  /// \name vector local and global projection
 
-  PetscErrorCode set_other_local_ghost_vector(
+  DEPRECATED PetscErrorCode set_other_local_ghost_vector(
     const Problem *problem_ptr,
     const std::string& fiel_name,
     const std::string& cpy_field_name,
     RowColData rc,Vec V,
     InsertMode mode,ScatterMode scatter_mode,int verb = -1
   );
-  PetscErrorCode set_other_local_ghost_vector(
+  DEPRECATED PetscErrorCode set_other_local_ghost_vector(
     const std::string &name,
     const std::string& fiel_name,
     const std::string& cpy_field_name,
     RowColData rc,Vec V,
     InsertMode mode,ScatterMode scatter_mode,int verb = -1
   );
-  PetscErrorCode set_other_global_ghost_vector(
+  DEPRECATED PetscErrorCode set_other_global_ghost_vector(
     const Problem *problem_ptr,
     const std::string& fiel_name,
     const std::string& cpy_field_name,
@@ -697,7 +697,7 @@ struct Core: public Interface {
     ScatterMode scatter_mode,
     int verb = -1
   );
-  PetscErrorCode set_other_global_ghost_vector(
+  DEPRECATED PetscErrorCode set_other_global_ghost_vector(
     const std::string &name,
     const std::string& fiel_name,
     const std::string& cpy_field_name,

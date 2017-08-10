@@ -196,6 +196,10 @@ struct interface_DofEntity: public interface_FieldEntity<T> {
 /**
  * \brief keeps information about indexed dofs for the problem
  * \ingroup dof_multi_indices
+ *
+ * FIXME: Is too many iterator, this has to be manage more efficiently, some
+ * iterators could be moved to multi_indices views.
+ *
  */
 struct NumeredDofEntity: public interface_DofEntity<DofEntity> {
 
