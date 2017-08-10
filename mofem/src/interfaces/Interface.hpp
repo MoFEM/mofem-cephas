@@ -2928,13 +2928,6 @@ struct Interface: public UnknownInterface {
  ******************************************************************************/
 
 /***************************************************************************//**
- * \defgroup mofem_vectors Vectors
- * \brief Creating and scattering vectors on the mesh for given problem
- *
- * \ingroup mofem
- ******************************************************************************/
-
-/***************************************************************************//**
  * \defgroup mofem_loops Loops
  * \brief Manages complexities for integrating over finite elements and dofs.
  *

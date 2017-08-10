@@ -1,6 +1,6 @@
 /** \file ISManager.hpp
  * \brief Interface managing sections
- * \ingroup mofem_section_manager
+ * \ingroup mofem_is_managers
  *
  * Managing problems, build and partitioning.
  *
@@ -16,8 +16,8 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 */
 
-#ifndef __SECTIONMANAGER_HPP__
-#define __SECTIONMANAGER_HPP__
+#ifndef _ISMANAGER_HPP__
+#define _ISMANAGER_HPP__
 
 #include "UnknownInterface.hpp"
 
@@ -27,7 +27,7 @@ namespace MoFEM {
 
   /**
    * \brief Section manager is used to create sections
-   * \mofem_section_manager
+   * \mofem_is_managers
    *
    */
   struct ISManager: public UnknownInterface {
@@ -66,7 +66,7 @@ namespace MoFEM {
 
     /**
       * \brief create IS for given order range (collective)
-      * \ingroup mofem_section_manager
+      * \ingroup mofem_is_managers
 
       * \param problem name
       * \param rc ROW or COL
@@ -81,7 +81,7 @@ namespace MoFEM {
 
     /**
       * \brief create IS for given problem, field and rank range (collective)
-      * \ingroup mofem_section_manager
+      * \ingroup mofem_is_managers
 
       * \param problem name
       * \param rc ROW or COL
@@ -101,7 +101,7 @@ namespace MoFEM {
     ) const;
 
     /** \brief create IS for give two problems and field
-      * \ingroup mofem_section_manager
+      * \ingroup mofem_is_managers
 
       Note that indices are ordered in ascending order of local indices in problem_y
 
@@ -125,7 +125,7 @@ namespace MoFEM {
     ) const;
 
     /** \brief create IS for give two problems and field
-      * \ingroup mofem_section_manager
+      * \ingroup mofem_is_managers
 
       Indices are sorted by global PETSc index in problem_x.
 
@@ -162,4 +162,12 @@ namespace MoFEM {
 
 }
 
-#endif // __SECTIONMANAGER_HPP__
+/***************************************************************************//**
+ * \defgroup mofem_is_managers Index sets (IS)
+ * \brief Construct index sets for MoFEM problems
+ *
+ * \ingroup mofem
+ ******************************************************************************/
+
+
+#endif // _ISMANAGER_HPP__
