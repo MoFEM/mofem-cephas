@@ -1525,6 +1525,7 @@ namespace MixTransport {
             }
             ierr = VecAssemblyBegin(fePtr->ts_F); CHKERRQ(ierr);
             ierr = VecAssemblyEnd(fePtr->ts_F); CHKERRQ(ierr);
+            // ierr = VecView(fePtr->ts_F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
             // ierr = fePtr->mField.query_interface<VecManager>()->setOtherLocalGhostVector(
             //   fePtr->problemPtr,"VALUES",string("FLUXES")+"_residual",
             //   ROW,fePtr->ts_F,INSERT_VALUES,SCATTER_REVERSE
@@ -1781,14 +1782,14 @@ namespace MixTransport {
       DMMoFEMGetTsCtx(dM,&ts_ctx);
       ierr = TSMonitorSet(ts,f_TSMonitorSet,ts_ctx,PETSC_NULL); CHKERRQ(ierr);
 
-      // #ifndef DOXYGEN_SHOULD_SKIP_THIS
       //This add SNES monitor, to show error by fields. It is dirty trick
-      //to add monitor, so code is hiden from doxygen
+      //to add monitor, so code is hidden from doxygen
       ierr = TSSetSolution(ts,D); CHKERRQ(ierr);
       ierr = TSSetUp(ts); CHKERRQ(ierr);
       SNES snes;
       ierr = TSGetSNES(ts,&snes); CHKERRQ(ierr);
 
+      #if PETSC_VERSION_GE(3,7,0)
       {
         PetscViewerAndFormat *vf;
         ierr = PetscViewerAndFormatCreate(PETSC_VIEWER_STDOUT_WORLD,PETSC_VIEWER_DEFAULT,&vf);CHKERRQ(ierr);
@@ -1798,6 +1799,15 @@ namespace MixTransport {
           vf,(PetscErrorCode (*)(void**))PetscViewerAndFormatDestroy
         );CHKERRQ(ierr);
       }
+      #else
+      {
+        ierr = SNESMonitorSet(
+          snes,
+          (PetscErrorCode (*)(SNES,PetscInt,PetscReal,void*))SNESMonitorFields,0,0
+        );CHKERRQ(ierr);
+      }
+      #endif
+
 
       ierr = TSSolve(ts,D); CHKERRQ(ierr);
 
