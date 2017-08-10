@@ -31,8 +31,8 @@ static const double face_coords[4][9] = {
 
 int main(int argc, char *argv[]) {
 
-  
-  
+
+
 
   PetscInitialize(&argc,&argv,(char *)0,help);
 
@@ -49,7 +49,7 @@ int main(int argc, char *argv[]) {
     "hdiv_demkowicz"
   };
 
-  
+
 
   PetscBool flg;
   PetscInt choise_value = HDIV_AINSWORTH;
@@ -196,9 +196,9 @@ int main(int argc, char *argv[]) {
   ierr = prb_mng_ptr->partitionGhostDofs("TEST_PROBLEM"); CHKERRQ(ierr);
 
   Vec v;
-  ierr = m_field.VecCreateGhost("TEST_PROBLEM",ROW,&v);
+  ierr = m_field.query_interface<VecManager>()->vecCreateGhost("TEST_PROBLEM",ROW,&v);
   ierr = VecSetRandom(v,PETSC_NULL); CHKERRQ(ierr);
-  ierr = m_field.set_local_ghost_vector("TEST_PROBLEM",ROW,v,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = m_field.query_interface<VecManager>()->setLocalGhostVector("TEST_PROBLEM",ROW,v,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   ierr = VecDestroy(&v); CHKERRQ(ierr);
 
 
@@ -223,7 +223,7 @@ int main(int argc, char *argv[]) {
       DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
 
-      
+
 
       if(data.getFieldData().size()==0) PetscFunctionReturn(0);
 
@@ -269,7 +269,7 @@ int main(int argc, char *argv[]) {
 
     MatrixDouble N_tri;
     PetscErrorCode setGaussPts(int order) {
-      
+
       PetscFunctionBegin;
 
       try {
@@ -317,7 +317,7 @@ int main(int argc, char *argv[]) {
       DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
 
-      
+
 
       if(type != MBTRI) PetscFunctionReturn(0);
 
@@ -375,7 +375,7 @@ int main(int argc, char *argv[]) {
       DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
 
-      
+
 
       if(type != MBTRI) PetscFunctionReturn(0);
 

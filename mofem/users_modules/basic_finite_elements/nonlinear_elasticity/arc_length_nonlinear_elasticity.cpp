@@ -280,7 +280,7 @@ int main(int argc, char *argv[]) {
 
       //create matrices
       Vec F;
-      ierr = m_field.VecCreateGhost("ELASTIC_MECHANICS",COL,&F); CHKERRQ(ierr);
+      ierr = m_field.query_interface<VecManager>()->vecCreateGhost("ELASTIC_MECHANICS",COL,&F); CHKERRQ(ierr);
       Vec D;
       ierr = VecDuplicate(F,&D); CHKERRQ(ierr);
       Mat Aij;
@@ -549,7 +549,7 @@ int main(int argc, char *argv[]) {
         loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("ARC_LENGTH",&arc_method));
         snes_ctx.get_postProcess_to_do_Mat().push_back(&my_dirichlet_bc);
 
-        ierr = m_field.set_local_ghost_vector("ELASTIC_MECHANICS",COL,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+        ierr = m_field.query_interface<VecManager>()->setLocalGhostVector("ELASTIC_MECHANICS",COL,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
         ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
         ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
@@ -585,7 +585,7 @@ int main(int argc, char *argv[]) {
         double step_size0 = step_size;
 
         if(step>1) {
-          ierr = m_field.set_other_global_ghost_vector(
+          ierr = m_field.query_interface<VecManager>()->setOtherGlobalGhostVector(
             "ELASTIC_MECHANICS","SPATIAL_POSITION","X0_SPATIAL_POSITION",
             COL,arc_ctx->x0,INSERT_VALUES,SCATTER_FORWARD
           ); CHKERRQ(ierr);
@@ -706,8 +706,8 @@ int main(int argc, char *argv[]) {
             }
 
             //Save data on mesh
-            ierr = m_field.set_global_ghost_vector("ELASTIC_MECHANICS",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-            ierr = m_field.set_other_global_ghost_vector(
+            ierr = m_field.query_interface<VecManager>()->setGlobalGhostVector("ELASTIC_MECHANICS",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+            ierr = m_field.query_interface<VecManager>()->setOtherGlobalGhostVector(
               "ELASTIC_MECHANICS","SPATIAL_POSITION","X0_SPATIAL_POSITION",COL,arc_ctx->x0,INSERT_VALUES,SCATTER_REVERSE
             ); CHKERRQ(ierr);
             converged_state = true;

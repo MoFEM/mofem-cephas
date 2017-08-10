@@ -107,7 +107,7 @@ PetscErrorCode ConstrainMatrixCtx::initializeQorP(Vec x) {
       #endif
       ierr = VecDuplicate(X,&CT_CCTm1_Cx); CHKERRQ(ierr);
       if(createScatter) {
-        ierr = mField.VecScatterCreate(x,xProblem,ROW,X,yProblem,COL,&sCatter); CHKERRQ(ierr);
+        ierr = mField.query_interface<VecManager>()->vecScatterCreate(x,xProblem,ROW,X,yProblem,COL,&sCatter); CHKERRQ(ierr);
       }
       PetscLogEventEnd(USER_EVENT_projInit,0,0,0,0);
     }

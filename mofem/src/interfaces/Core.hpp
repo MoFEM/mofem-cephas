@@ -91,8 +91,6 @@ struct Core: public Interface {
   mutable int *buildMoFEM; ///< keeps flags/semaphores for different stages
 
   //Database
-  
-  
 
   //Data and low level methods
   Tag th_Part;  ///< Tag for partition number
@@ -593,27 +591,28 @@ struct Core: public Interface {
   PetscErrorCode MatCreateSeqAIJWithArrays(
     const std::string &name,Mat *Aij,PetscInt **i,PetscInt **j,PetscScalar **v,int verb = -1
   );
-  PetscErrorCode VecCreateSeq(const std::string &name,RowColData rc,Vec *V) const;
-  PetscErrorCode VecCreateGhost(const std::string &name,RowColData rc,Vec *V) const;
-  PetscErrorCode set_local_ghost_vector(
+  DEPRECATED PetscErrorCode VecCreateSeq(const std::string &name,RowColData rc,Vec *V) const;
+  DEPRECATED PetscErrorCode VecCreateGhost(const std::string &name,RowColData rc,Vec *V) const;
+  DEPRECATED PetscErrorCode set_local_ghost_vector(
     const Problem *problem_ptr,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode
   ) const;
-  PetscErrorCode set_local_ghost_vector(
+  DEPRECATED PetscErrorCode set_local_ghost_vector(
     const std::string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode
   ) const;
-  PetscErrorCode set_global_ghost_vector(
+  DEPRECATED PetscErrorCode set_global_ghost_vector(
     const Problem *problem_ptr,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode
   ) const;
-  PetscErrorCode set_global_ghost_vector(
+  DEPRECATED PetscErrorCode set_global_ghost_vector(
     const std::string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode
   ) const;
 
   /// \name scatter from problem filed to other problem field
 
-  PetscErrorCode ISCreateProblemOrder(
+  DEPRECATED PetscErrorCode ISCreateProblemOrder(
     const std::string &problem,RowColData rc,int min_order,int max_order,IS *is,int verb = -1
   ) const;
-  PetscErrorCode ISCreateProblemFieldAndRank(
+
+  DEPRECATED PetscErrorCode ISCreateProblemFieldAndRank(
     const std::string &problem,
     RowColData rc,
     const std::string &field,
@@ -623,23 +622,25 @@ struct Core: public Interface {
     int verb = -1
   ) const;
 
-  PetscErrorCode ISCreateFromProblemFieldToOtherProblemField(
+  DEPRECATED PetscErrorCode ISCreateFromProblemFieldToOtherProblemField(
     const std::string &x_problem,const std::string &x_field_name,RowColData x_rc,
     const std::string &y_problem,const std::string &y_field_name,RowColData y_rc,
     std::vector<int> &idx,std::vector<int> &idy,int verb = -1
   ) const;
-  PetscErrorCode ISCreateFromProblemFieldToOtherProblemField(
+
+  DEPRECATED PetscErrorCode ISCreateFromProblemFieldToOtherProblemField(
     const std::string &x_problem,const std::string &x_field_name,RowColData x_rc,
     const std::string &y_problem,const std::string &y_field_name,RowColData y_rc,
     IS *ix,IS *iy,int verb = -1
   ) const;
+
   PetscErrorCode VecScatterCreate(
     Vec xin,const std::string &x_problem,const std::string &x_field_name,RowColData x_rc,
     Vec yin,const std::string &y_problem,const std::string &y_field_name,RowColData y_rc,
     VecScatter *newctx,int verb = -1
   ) const;
 
-  PetscErrorCode ISCreateFromProblemToOtherProblem(
+  DEPRECATED PetscErrorCode ISCreateFromProblemToOtherProblem(
     const std::string &x_problem,
     RowColData x_rc,
     const std::string &y_problem,
@@ -648,7 +649,8 @@ struct Core: public Interface {
     std::vector<int> &idy,
     int verb = -1
   ) const;
-  PetscErrorCode ISCreateFromProblemToOtherProblem(
+
+  DEPRECATED PetscErrorCode ISCreateFromProblemToOtherProblem(
     const std::string &x_problem,
     RowColData x_rc,
     const std::string &y_problem,
@@ -657,7 +659,8 @@ struct Core: public Interface {
     IS *iy,
     int verb = -1
   ) const;
-  PetscErrorCode VecScatterCreate(
+
+  DEPRECATED PetscErrorCode VecScatterCreate(
     Vec xin,
     const std::string &x_problem,
     RowColData x_rc,
@@ -668,23 +671,23 @@ struct Core: public Interface {
     int verb = -1
   ) const;
 
-  /// \neme vector local and global projection
+  /// \name vector local and global projection
 
-  PetscErrorCode set_other_local_ghost_vector(
+  DEPRECATED PetscErrorCode set_other_local_ghost_vector(
     const Problem *problem_ptr,
     const std::string& fiel_name,
     const std::string& cpy_field_name,
     RowColData rc,Vec V,
     InsertMode mode,ScatterMode scatter_mode,int verb = -1
   );
-  PetscErrorCode set_other_local_ghost_vector(
+  DEPRECATED PetscErrorCode set_other_local_ghost_vector(
     const std::string &name,
     const std::string& fiel_name,
     const std::string& cpy_field_name,
     RowColData rc,Vec V,
     InsertMode mode,ScatterMode scatter_mode,int verb = -1
   );
-  PetscErrorCode set_other_global_ghost_vector(
+  DEPRECATED PetscErrorCode set_other_global_ghost_vector(
     const Problem *problem_ptr,
     const std::string& fiel_name,
     const std::string& cpy_field_name,
@@ -694,7 +697,7 @@ struct Core: public Interface {
     ScatterMode scatter_mode,
     int verb = -1
   );
-  PetscErrorCode set_other_global_ghost_vector(
+  DEPRECATED PetscErrorCode set_other_global_ghost_vector(
     const std::string &name,
     const std::string& fiel_name,
     const std::string& cpy_field_name,

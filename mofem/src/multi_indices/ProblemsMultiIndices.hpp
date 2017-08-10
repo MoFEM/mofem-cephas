@@ -87,7 +87,7 @@ struct Problem {
   BitProblemId* tagId;                ///< Unique problem ID
   const char* tagName;                ///< Problem name
   int tagNameSize;                    ///< Size of problem name
-  BitFEId* tagBitFEId;          ///< IDs of finite elements in problem
+  BitFEId* tagBitFEId;                ///< IDs of finite elements in problem
   BitRefLevel* tagBitRefLevel;       ///< BitRef level of finite elements in problem
   BitRefLevel* tagMaskBitRefLevel;   ///< BItRefMask of elements in problem
 

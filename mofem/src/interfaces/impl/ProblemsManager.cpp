@@ -109,8 +109,6 @@ namespace MoFEM {
   PetscErrorCode ProblemsManager::partitionMesh(
     const Range &ents,const int dim,const int adj_dim,const int n_parts,int verb
   ) {
-
-
     MoFEM::Interface &m_field = cOre;
     PetscFunctionBegin;
 
@@ -368,7 +366,6 @@ namespace MoFEM {
   }
 
   PetscErrorCode ProblemsManager::buildProblem(Problem *problem_ptr,const bool square_matrix,int verb) {
-
     MoFEM::Interface &m_field = cOre;
     const EntFiniteElement_multiIndex *fe_ent_ptr;
     const DofEntity_multiIndex *dofs_field_ptr;
@@ -1210,9 +1207,9 @@ namespace MoFEM {
           bool success = out_problem_dofs[ss]->modify(
             out_problem_dofs[ss]->project<0>(dit),NumeredDofEntity_local_idx_change(idx)
           );
-	  if(!success) {
-             SETERRQ(PETSC_COMM_WORLD,MOFEM_ATOM_TEST_INVALID,"operation unsuccesful");
-	  }
+          if(!success) {
+            SETERRQ(PETSC_COMM_WORLD,MOFEM_ATOM_TEST_INVALID,"operation unsuccesful");
+          }
         };
       }
       // Set global indexes, compress global indices
@@ -1258,8 +1255,8 @@ namespace MoFEM {
             )
           );
           if(!success) {
-            SETERRQ(PETSC_COMM_WORLD,MOFEM_ATOM_TEST_INVALID,"operation unsuccesful");
-	  }
+            SETERRQ(PETSC_COMM_WORLD,MOFEM_ATOM_TEST_INVALID,"operation unsuccessful");
+          }
         }
         // set global indices to nodes not on this part
         {
@@ -1285,7 +1282,7 @@ namespace MoFEM {
               )
             );
             if(!success) {
-             SETERRQ(PETSC_COMM_WORLD,MOFEM_ATOM_TEST_INVALID,"operation unsuccesful");
+             SETERRQ(PETSC_COMM_WORLD,MOFEM_ATOM_TEST_INVALID,"operation unsuccessful");
 	    }
           }
         }

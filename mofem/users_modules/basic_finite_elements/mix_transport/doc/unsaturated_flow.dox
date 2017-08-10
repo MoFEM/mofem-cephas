@@ -641,28 +641,6 @@ continuity of capillary head (capillary pressure) is not derived from
 conservation law, but dictated by the regularity of hydraulic conductivity
 \f$K=K(\theta)\f$.
 
-One can imagine the particular case of extreme material with single pore size. For
-such case water retention curve is flat, capillary pressure is constant and does
-not depend on water concentration, up to the point where it achieves full
-saturation and sharply goes to zero. In the unsaturated domain, hydraulic
-conductivity is zero, since the gradient of water content does not result in
-flow. Whereas for the fully saturated material hydraulic conductivity has some
-finite value and flow is driven by Darcy law.  Moreover, since water saturation
-does not change with capacity pressure, capacity term
-\f$c=\frac{\textrm{d}\theta}{\textrm{d}h}\f$ for unsaturated zone is infinite.
-For fully saturated material capacity term is zero. Consequently for this model
-and material with an extreme structure having one pore size, fluxes and wetting
-front speed are undefined. One will need to add inertia terms and conservation
-of linear momentum, as a result, solve a hyperbolic equation to get finite
-fluxes and finite wetting front speed.  We do not consider such material here,
-but depending on material parameters, characteristic scale of the model, one can
-asymptotically approach this extreme case. Implemented here model does not
-enforce \e a \e prior continuity of capillary head, thus can well approximate
-material close to the extreme case discussed here. This particularly important
-on the interfaces, where two materials which two very different characteristic
-sizes of pores are in contact, resulting in large contrast  of hydraulic
-conductivity and capacity terms.
-
 The philosophy of finite element formulation presented here is to use
 approximation base having \e a \e priory continuity demanded by conservation
 law, whereas not to enforce continuity of capillary pressure head, which is
@@ -712,7 +690,7 @@ alternative approach.
 In MoFEM we do not implement own Newton method, but use one implemented in
 PETSc. PETSc Newton solver is implemented in a package of nonlinear solvers
 SNES.  In the nonlinear time dependent problem, SNES is called by TS (time
-solver).  Here we focus attention on the calculation of residual vector tangent
+solver).  Here we focus attention on the calculation of residual vector and tangent
 matrix.
 
 In this section, we focus attention on discretization in space, without
@@ -1145,7 +1123,7 @@ vector of rate of capillary pressure on field data. Since rate of capillary
 head is not primary unknown, but linear function of solution at current and
 previous steps, is evaluated by PETSc for particular integration scheme.
 \code
-ierr = fePtr->mField.set_other_local_ghost_vector(
+ierr = fePtr->mField.query_interface<VecManager>()->setOtherLocalGhostVector(
   fePtr->problemPtr,"VALUES",string("VALUES")+"_t",
   ROW,fePtr->ts_u_t,INSERT_VALUES,SCATTER_REVERSE
 ); CHKERRQ(ierr);

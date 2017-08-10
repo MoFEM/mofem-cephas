@@ -2034,7 +2034,8 @@ INCLUDE_FILE_PATTERNS  =
 PREDEFINED             = "WITH_MED=1" \
   "WITH_ADOL-C=1" \
   "WITH_TETGEN=1" \
-  "WITH_METAIO=1"
+  "WITH_METAIO=1" \
+  "DOXYGEN_SHOULD_SKIP_THIS"
 
 # If the MACRO_EXPANSION and EXPAND_ONLY_PREDEF tags are set to YES then this
 # tag can be used to specify a list of macro names that should be expanded. The

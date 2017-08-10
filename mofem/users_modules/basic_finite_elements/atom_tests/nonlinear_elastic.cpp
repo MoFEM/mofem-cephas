@@ -153,7 +153,7 @@ ierr = prb_mng_ptr->partitionGhostDofs("ELASTIC_MECHANICS"); CHKERRQ(ierr);
 
 //create matrices
 Vec F;
-ierr = m_field.VecCreateGhost("ELASTIC_MECHANICS",COL,&F); CHKERRQ(ierr);
+ierr = m_field.query_interface<VecManager>()->vecCreateGhost("ELASTIC_MECHANICS",COL,&F); CHKERRQ(ierr);
 //Vec D;
 //ierr = VecDuplicate(F,&D); CHKERRQ(ierr);
 Mat Aij;

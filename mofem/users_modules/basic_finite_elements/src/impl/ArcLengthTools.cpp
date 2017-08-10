@@ -42,7 +42,7 @@ ArcLengthCtx::ArcLengthCtx(MoFEM::Interface &m_field,const std::string &problem_
   dx2(0),
   F_lambda2(0),
   res_lambda(0) {
-  ierr = m_field.VecCreateGhost(problem_name,ROW,&F_lambda); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+  ierr = m_field.query_interface<VecManager>()->vecCreateGhost(problem_name,ROW,&F_lambda); CHKERRABORT(PETSC_COMM_WORLD,ierr);
   ierr = VecSetOption(F_lambda,VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE); CHKERRABORT(PETSC_COMM_WORLD,ierr);
   ierr = VecDuplicate(F_lambda,&db); CHKERRABORT(PETSC_COMM_WORLD,ierr);
   ierr = VecDuplicate(F_lambda,&xLambda); CHKERRABORT(PETSC_COMM_WORLD,ierr);

@@ -161,8 +161,8 @@ int main(int argc, char *argv[]) {
     Mat A;
     ierr = m_field.MatCreateMPIAIJWithArrays("TEST_PROBLEM",&A); CHKERRQ(ierr);
     Vec D,F;
-    ierr = m_field.VecCreateGhost("TEST_PROBLEM",ROW,&F); CHKERRQ(ierr);
-    ierr = m_field.VecCreateGhost("TEST_PROBLEM",COL,&D); CHKERRQ(ierr);
+    ierr = m_field.query_interface<VecManager>()->vecCreateGhost("TEST_PROBLEM",ROW,&F); CHKERRQ(ierr);
+    ierr = m_field.query_interface<VecManager>()->vecCreateGhost("TEST_PROBLEM",COL,&D); CHKERRQ(ierr);
 
     std::vector<Vec> vec_F;
     vec_F.push_back(F);
@@ -191,7 +191,7 @@ int main(int argc, char *argv[]) {
       ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
       ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
-      ierr = m_field.set_global_ghost_vector("TEST_PROBLEM",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+      ierr = m_field.query_interface<VecManager>()->setGlobalGhostVector("TEST_PROBLEM",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
       ierr = KSPDestroy(&solver); CHKERRQ(ierr);
       ierr = VecDestroy(&D); CHKERRQ(ierr);
