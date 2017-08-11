@@ -1095,7 +1095,6 @@ PetscErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dX::aSemble(
 ) {
   PetscFunctionBegin;
 
-
   int nb_row = row_data.getIndices().size();
   int nb_col = col_data.getIndices().size();
 
