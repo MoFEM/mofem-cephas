@@ -1,5 +1,5 @@
 /** \file ISManager.cpp
- * \brief Managing complexities for problem
+ * \brief IS creating 
  * \ingroup mofem_section_manager
  */
 

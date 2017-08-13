@@ -15,3 +15,4 @@ const static int debug = 1;
 #include "impl/DeleteCore.cpp"
 #include "impl/ISManager.cpp"
 #include "impl/VecManager.cpp"
+#include "impl/FieldBlas.cpp"

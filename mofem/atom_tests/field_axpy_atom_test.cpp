@@ -16,9 +16,6 @@
 
 using namespace MoFEM;
 
-
-
-
 static char help[] = "...\n\n";
 #define RND_EPS 1e-6
 
@@ -131,11 +128,11 @@ int main(int argc, char *argv[]) {
     //build field
     ierr = m_field.build_fields(); CHKERRQ(ierr);
 
-    ierr = m_field.set_field(+1,MBVERTEX,"FIELD_A"); CHKERRQ(ierr);
-    ierr = m_field.set_field(-2,MBVERTEX,"FIELD_B"); CHKERRQ(ierr);
+    ierr = m_field.query_interface<FieldBlas>()->setField(+1,MBVERTEX,"FIELD_A"); CHKERRQ(ierr);
+    ierr = m_field.query_interface<FieldBlas>()->setField(-2,MBVERTEX,"FIELD_B"); CHKERRQ(ierr);
 
-    ierr = m_field.field_axpy(+0.5,"FIELD_B","FIELD_A"); CHKERRQ(ierr);
-    ierr = m_field.field_scale(-0.5,"FIELD_B"); CHKERRQ(ierr);
+    ierr = m_field.query_interface<FieldBlas>()->fieldAxpy(+0.5,"FIELD_B","FIELD_A"); CHKERRQ(ierr);
+    ierr = m_field.query_interface<FieldBlas>()->fieldScale(-0.5,"FIELD_B"); CHKERRQ(ierr);
 
     //Open mesh_file_name.txt for writing
     std::ofstream myfile;

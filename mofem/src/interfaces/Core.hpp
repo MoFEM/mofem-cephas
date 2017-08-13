@@ -768,13 +768,13 @@ struct Core: public Interface {
 
   /// \name field axpy functions
 
-  PetscErrorCode field_axpy(
+  DEPRECATED PetscErrorCode field_axpy(
     const double alpha,const std::string& fiel_name_x,const std::string& field_name_y,
     bool error_if_missing = false,bool creat_if_missing = false
   );
-  PetscErrorCode field_scale(const double alpha,const std::string& fiel_name);
-  PetscErrorCode set_field(const double val,const EntityType type,const std::string& fiel_name);
-  PetscErrorCode set_field(const double val,const EntityType type,const Range &ents,const std::string& field_name);
+  DEPRECATED PetscErrorCode field_scale(const double alpha,const std::string& fiel_name);
+  DEPRECATED PetscErrorCode set_field(const double val,const EntityType type,const std::string& fiel_name);
+  DEPRECATED PetscErrorCode set_field(const double val,const EntityType type,const Range &ents,const std::string& field_name);
 
   /// \name get adjacencies
   PetscErrorCode get_adjacencies_equality(const EntityHandle from_entiti,const int to_dimension,Range &adj_entities) const;

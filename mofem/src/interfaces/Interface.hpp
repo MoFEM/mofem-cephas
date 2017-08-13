@@ -2379,7 +2379,8 @@ struct Interface: public UnknownInterface {
 
  /**@{*/
 
-  /** \brief axpy fields
+  /** \deprecated use FieldBlas
+    * \brief axpy fields
     * \ingroup mofem_field_algebra
     * \todo should be moved to independent interface, i.e. FieldAlgebra
     *
@@ -2392,9 +2393,10 @@ struct Interface: public UnknownInterface {
     * \param create_if_missing creat dof in field_y from fiedl_x if it is not database
     *
     */
-  virtual PetscErrorCode field_axpy(const double alpha,const std::string& fiel_name_x,const std::string& field_name_y,bool error_if_missing = false,bool creat_if_missing = false) = 0;
+  DEPRECATED virtual PetscErrorCode field_axpy(const double alpha,const std::string& fiel_name_x,const std::string& field_name_y,bool error_if_missing = false,bool creat_if_missing = false) = 0;
 
-  /** \brief scale field
+  /** \deprecated use FieldBlas
+    * \brief scale field
     * \ingroup mofem_field_algebra
     * \todo should be moved to independent interface, i.e. FieldAlgebra
     *
@@ -2402,9 +2404,10 @@ struct Interface: public UnknownInterface {
     * \field_name  is a field name
     *
     */
-  virtual PetscErrorCode field_scale(const double alpha,const std::string& field_name) = 0;
+  DEPRECATED virtual PetscErrorCode field_scale(const double alpha,const std::string& field_name) = 0;
 
-  /** \brief set field
+  /** \brief use FieldBlas
+    * \brief set field
     * \ingroup mofem_field_algebra
     * \todo should be moved to independent interface, i.e. FieldAlgebra
     *
@@ -2415,9 +2418,10 @@ struct Interface: public UnknownInterface {
     * \param field_name
     *
     */
-  virtual PetscErrorCode set_field(const double val,const EntityType type,const std::string& field_name) = 0;
+  DEPRECATED virtual PetscErrorCode set_field(const double val,const EntityType type,const std::string& field_name) = 0;
 
-  /** \brief set field
+  /** \deprecated use FieldBlas
+    * \brief set field
     * \ingroup mofem_field_algebra
     * \todo should be moved to independent interface, i.e. FieldAlgebra
     *
@@ -2429,7 +2433,7 @@ struct Interface: public UnknownInterface {
     * \param field_name
     *
     */
-  virtual PetscErrorCode set_field(const double val,const EntityType type,const Range &ents,const std::string& field_name) = 0;
+  DEPRECATED virtual PetscErrorCode set_field(const double val,const EntityType type,const Range &ents,const std::string& field_name) = 0;
 
  /**@}*/
 
@@ -2895,13 +2899,6 @@ struct Interface: public UnknownInterface {
 /***************************************************************************//**
  * \defgroup mofem_field Fields
  * \brief Data structure for adding and managing fields
- *
- * \ingroup mofem
- ******************************************************************************/
-
-/***************************************************************************//**
- * \defgroup mofem_field_algebra Field Basic Algebra
- * \brief Basic algebraic operation on fields
  *
  * \ingroup mofem
  ******************************************************************************/

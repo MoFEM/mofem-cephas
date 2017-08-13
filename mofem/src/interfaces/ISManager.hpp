@@ -1,5 +1,5 @@
 /** \file ISManager.hpp
- * \brief Interface managing sections
+ * \brief Interface managing IS
  * \ingroup mofem_is_managers
  *
  * Managing problems, build and partitioning.

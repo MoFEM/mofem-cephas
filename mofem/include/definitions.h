@@ -49,6 +49,8 @@ enum Interfaces {
   SERIES_RECORDER               = 1<<1|1<<4,
   ISMANAGER_INTERFACE           = 1<<1|1<<5,
   VECMANAGER_INTERFACE          = 1<<1|1<<6,
+  FIELDBLAS_INTERFACE           = 1<<1|1<<7,
+
   //Independent Interfaces
   TETGEN_INTERFACE              = 1<<3|1<<4,    ///< used to generate mesh using TetGen
   MED_INTERFACE                 = 1<<3|1<<5,	  ///< interface to med data format

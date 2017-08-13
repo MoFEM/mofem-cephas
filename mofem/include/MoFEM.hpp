@@ -59,6 +59,7 @@
 
 #include <ISManager.hpp>
 #include <VecManager.hpp>
+#include <FieldBlas.hpp>
 #include <ProblemsManager.hpp>
 #include <Simple.hpp>
 #include <MeshRefinement.hpp>

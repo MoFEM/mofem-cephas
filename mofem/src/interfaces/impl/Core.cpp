@@ -48,6 +48,7 @@
 #include <Simple.hpp>
 #include <ISManager.hpp>
 #include <VecManager.hpp>
+#include <FieldBlas.hpp>
 #include <MeshRefinement.hpp>
 #include <SeriesRecorder.hpp>
 #include <PrismInterface.hpp>
@@ -144,6 +145,15 @@ PetscErrorCode Core::query_interface_type(const std::type_info& type,void*& ptr)
     if(iFaces.find(IDD_MOFEMVEC.uUId.to_ulong()) == iFaces.end()) {
       unsigned long int uid = IDD_MOFEMVEC.uUId.to_ulong();
       iFaces.insert(uid,new VecManager(*this));
+    }
+    ptr = &iFaces.at(IDD_MOFEMVEC.uUId.to_ulong());
+    PetscFunctionReturn(0);
+  }
+
+  if(type == typeid(FieldBlas)) {
+    if(iFaces.find(IDD_MOFEMFieldBlas.uUId.to_ulong()) == iFaces.end()) {
+      unsigned long int uid = IDD_MOFEMVEC.uUId.to_ulong();
+      iFaces.insert(uid,new FieldBlas(*this));
     }
     ptr = &iFaces.at(IDD_MOFEMVEC.uUId.to_ulong());
     PetscFunctionReturn(0);
