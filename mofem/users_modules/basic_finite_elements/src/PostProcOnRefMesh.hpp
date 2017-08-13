@@ -91,7 +91,7 @@ struct PostProcCommonOnRefMesh {
    * \brief operator to post-process (save gradients on refined post-processing mesh) field gradient
    * \ingroup mofem_fs_post_proc
    *
-   * \todo Implamentation for Hdiv and Hcurl to be implemented
+   * \todo Implementation for Hdiv and Hcurl to be implemented
    *
    */
   struct OpGetFieldGradientValues: public MoFEM::ForcesAndSurcesCore::UserDataOperator {
@@ -313,7 +313,7 @@ struct PostProcTemplateVolumeOnRefinedMesh: public PostProcTemplateOnRefineMesh<
   */
   PetscErrorCode generateReferenceElementMesh() {
     PetscFunctionBegin;
-    
+
     int max_level = 0;
     if(nbOfRefLevels == -1) {
       PetscBool flg = PETSC_TRUE;

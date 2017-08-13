@@ -217,6 +217,10 @@ namespace MoFEM {
      */
     PetscErrorCode partitionGhostDofs(const std::string &name,int verb = 1);
 
+    /**
+     * \create meshset problem finite elements
+     */
+     PetscErrorCode getFEMeshset(const std::string& prb_name,const std::string& fe_name,EntityHandle *meshset) const;
 
   private:
 
