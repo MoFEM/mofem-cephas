@@ -2468,21 +2468,27 @@ namespace MoFEM {
         }
 
       }
-      std::pair<NumeredEntFiniteElement_multiIndex::iterator,bool> p;
-      p = problem_finite_elements.insert(numered_fe);
-      if(!p.second) {
-        SETERRQ(m_field.get_comm(),MOFEM_NOT_FOUND,"element is there");
-      }
-      if(verb>1) {
-        std::ostringstream ss;
-        ss << *p_miit << std::endl;
-        ss << *p.first << std::endl;
-        typedef FENumeredDofEntityByUId FENumeredDofEntityByUId;
-        FENumeredDofEntityByUId::iterator miit = (*p.first)->rows_dofs->get<Unique_mi_tag>().begin();
-        for(;miit!= (*p.first)->rows_dofs->get<Unique_mi_tag>().end();miit++) ss << "rows: " << *(*miit) << std::endl;
-        miit = (*p.first)->cols_dofs->get<Unique_mi_tag>().begin();
-        for(;miit!=(*p.first)->cols_dofs->get<Unique_mi_tag>().end();miit++) ss << "cols: " << *(*miit) << std::endl;
-        PetscSynchronizedPrintf(m_field.get_comm(),ss.str().c_str());
+      if(
+        !numered_fe->sPtr->row_dof_view->empty()&&
+        !numered_fe->sPtr->col_dof_view->empty()
+      ) {
+        std::pair<NumeredEntFiniteElement_multiIndex::iterator,bool> p;
+        // Add element to the problem
+        p = problem_finite_elements.insert(numered_fe);
+        if(!p.second) {
+          SETERRQ(m_field.get_comm(),MOFEM_NOT_FOUND,"element is there");
+        }
+        if(verb>1) {
+          std::ostringstream ss;
+          ss << *p_miit << std::endl;
+          ss << *p.first << std::endl;
+          typedef FENumeredDofEntityByUId FENumeredDofEntityByUId;
+          FENumeredDofEntityByUId::iterator miit = (*p.first)->rows_dofs->get<Unique_mi_tag>().begin();
+          for(;miit!= (*p.first)->rows_dofs->get<Unique_mi_tag>().end();miit++) ss << "rows: " << *(*miit) << std::endl;
+          miit = (*p.first)->cols_dofs->get<Unique_mi_tag>().begin();
+          for(;miit!=(*p.first)->cols_dofs->get<Unique_mi_tag>().end();miit++) ss << "cols: " << *(*miit) << std::endl;
+          PetscSynchronizedPrintf(m_field.get_comm(),ss.str().c_str());
+        }
       }
     }
     if(verb>0) {
