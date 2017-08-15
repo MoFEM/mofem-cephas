@@ -16,3 +16,4 @@ const static int debug = 1;
 #include "impl/ISManager.cpp"
 #include "impl/VecManager.cpp"
 #include "impl/FieldBlas.cpp"
+#include "impl/BitRefManager.cpp"

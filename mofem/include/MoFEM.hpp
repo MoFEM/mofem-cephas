@@ -57,6 +57,7 @@
 #include <Interface.hpp>
 #include <Core.hpp>
 
+#include <BitRefManager.hpp>
 #include <ISManager.hpp>
 #include <VecManager.hpp>
 #include <FieldBlas.hpp>

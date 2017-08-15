@@ -99,7 +99,7 @@ struct Interface: public UnknownInterface {
    * mofem entities, dofs and finite elements.
    *
    */
-  virtual boost::shared_ptr<BasicEntityData> get_basic_entity_data_ptr() = 0;
+  virtual boost::shared_ptr<BasicEntityData>& get_basic_entity_data_ptr() = 0;
 
  /**@}*/
 
@@ -422,7 +422,7 @@ struct Interface: public UnknownInterface {
   */
   virtual PetscErrorCode seed_finite_elements(const Range &entities,int verb = -1) = 0;
 
-  /**
+  /** \deprecated use BitRefManager
   * \brief seed 2D entities (Triangles entities only) in the meshset and their adjacencies (only TRIs adjacencies) in a particular BitRefLevel
   * \todo Should be outsourced to separate interface, i.e. BitLevelManager
   *
@@ -430,9 +430,9 @@ struct Interface: public UnknownInterface {
   * \param BitRefLevel bitLevel
   *
   */
-  virtual PetscErrorCode seed_ref_level_2D(const EntityHandle meshset,const BitRefLevel &bit,int verb = -1) = 0;
+  DEPRECATED virtual PetscErrorCode seed_ref_level_2D(const EntityHandle meshset,const BitRefLevel &bit,int verb = -1) = 0;
 
-  /**
+  /** \deprecated use BitRefManager
   * \brief seed 2D entities in the meshset and their adjacencies (only TETs adjacencies) in a particular BitRefLevel
   * \todo Should be outsourced to separate interface, i.e. BitLevelManager
   *
@@ -456,20 +456,21 @@ struct Interface: public UnknownInterface {
   * ent4[0,1,0,0,0,0,0], ent5[0,1,0,0,0,0,0] <br>
   *
   */
-  virtual PetscErrorCode seed_ref_level_3D(const EntityHandle meshset,const BitRefLevel &bit,int verb = -1) = 0;
+  DEPRECATED virtual PetscErrorCode seed_ref_level_3D(const EntityHandle meshset,const BitRefLevel &bit,int verb = -1) = 0;
 
-  /**
+  /** \deprecated use BitRefManager
    * \brief seed entities in the range and their adjacencies in a particular BitRefLevel
    * \todo Should be outsourced to separate interface, i.e. BitLevelManager
    */
-  virtual PetscErrorCode seed_ref_level(const Range &ents,const BitRefLevel &bit,const bool only_tets = true,int verb = -1) = 0;
+  DEPRECATED virtual PetscErrorCode seed_ref_level(const Range &ents,const BitRefLevel &bit,const bool only_tets = true,int verb = -1) = 0;
 
-  /** brief seed ref level by MESHSET that contains entities other than volumes
+  /** \deprecated use BitRefManager
+   * brief seed ref level by MESHSET that contains entities other than volumes
    *
    * \param EntityHandle MeshSet
    * \param BitRefLevel bitLevel
    */
-  virtual PetscErrorCode seed_ref_level_MESHSET(const EntityHandle meshset,const BitRefLevel &bit,int verb = -1) = 0;
+  DEPRECATED virtual PetscErrorCode seed_ref_level_MESHSET(const EntityHandle meshset,const BitRefLevel &bit,int verb = -1) = 0;
 
  /**@}*/
 

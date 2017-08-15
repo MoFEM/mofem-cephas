@@ -1,6 +1,6 @@
 /** \file ISManager.cpp
- * \brief IS creating 
- * \ingroup mofem_section_manager
+ * \brief IS creating
+ * \ingroup mofem_is_managers
  */
 
 /* MoFEM is free software: you can redistribute it and/or modify it under
