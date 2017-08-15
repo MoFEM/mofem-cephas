@@ -48,17 +48,22 @@ namespace MoFEM {
      * \brief add entities to database and set bit ref level
      * \mofem_bit_ref
      *
+     * This function set bit ref level, add entries to core database and
+     * create ref finite elements. Finite elements are create of entities in function
+     * argument, whereas all lower dimension entities are added as a field entities
+     *
+     *
 
      Example:\code
      EntityHandle meshset1; //contains ent1,ent2,ent3
      BitRefLevel myLevel0;
      myLevel0.set(0);
-     m_field.query_interface<BitRefManager>()->setBitRefLevel(meshset1,myLevel0);
+     m_field.query_interface<BitRefManager>()->setBitRefLevelByDim(meshset1,3,myLevel0);
      //refine meshset1 into meshset2 and get new ents which are ent4, ent5
      EntityHandle meshset2; //contains ent1,ent2,ent3,ent4,ent5
      BitRefLevel myLevel1;
      myLevel1.set(1);
-     m_field.query_interface<BitRefManager>()->setBitRefLevel(meshset2,myLevel1);
+     m_field.query_interface<BitRefManager>()->setBitRefLevelByDim(meshset2,3,myLevel1);
      \endcode
 
      * So entities 1,2,3 would be assigned to bit level 0 and 1 <br>
