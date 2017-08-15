@@ -562,13 +562,16 @@ namespace MoFEM {
   PetscErrorCode ProblemsManager::buildProblemOnDistributedMesh(
     Problem *problem_ptr,const bool square_matrix,int verb
   ) {
-
     MoFEM::Interface &m_field = cOre;
+    const Field_multiIndex *fields_ptr;
+    const FiniteElement_multiIndex *fe_ptr;
     const EntFiniteElement_multiIndex *fe_ent_ptr;
     const DofEntity_multiIndex *dofs_field_ptr;
     PetscFunctionBegin;
     PetscLogEventBegin(USER_EVENT_ProblemsManager,0,0,0,0);
 
+    ierr = m_field.get_fields(&fields_ptr); CHKERRQ(ierr);
+    ierr = m_field.get_finite_elements(&fe_ptr); CHKERRQ(ierr);
     ierr = m_field.get_ents_finite_elements(&fe_ent_ptr); CHKERRQ(ierr);
     ierr = m_field.get_dofs(&dofs_field_ptr); CHKERRQ(ierr);
 
@@ -588,6 +591,9 @@ namespace MoFEM {
       );
     }
 
+    const BitRefLevel prb_bit = problem_ptr->getBitRefLevel();
+    const BitRefLevel prb_mask = problem_ptr->getMaskBitRefLevel();
+
     // get rows and cols dofs view based on data on elements
     DofEntity_multiIndex_active_view dofs_rows,dofs_cols;
     {
@@ -599,8 +605,6 @@ namespace MoFEM {
         //if element is in problem
         if(((*fe_miit)->getId()&problem_ptr->getBitFEId()).any()) {
 
-          const BitRefLevel prb_bit = problem_ptr->getBitRefLevel();
-          const BitRefLevel prb_mask = problem_ptr->getMaskBitRefLevel();
           const BitRefLevel fe_bit = (*fe_miit)->getBitRefLevel();
           // if entity is not problem refinement level
           if((fe_bit&prb_mask)!=fe_bit) continue;
@@ -612,6 +616,43 @@ namespace MoFEM {
             ierr = (*fe_miit)->getColDofView(*dofs_field_ptr,dofs_cols); CHKERRQ(ierr);
           }
 
+        }
+      }
+    }
+
+    // Add dofs which have bit level
+    BitFieldId fields_ids_row;
+    BitFieldId fields_ids_col;
+    for(FiniteElement_multiIndex::iterator fit = fe_ptr->begin();fit!=fe_ptr->end();fit++) {
+      if((fit->get()->getId()&problem_ptr->getBitFEId()).any()) {
+        fields_ids_row |= fit->get()->getBitFieldIdRow();
+        fields_ids_col |= fit->get()->getBitFieldIdRow();
+      }
+    }
+
+    for(Field_multiIndex::iterator fit=fields_ptr->begin();fit!=fields_ptr->end();fit++) {
+      if((fit->get()->getId()&(fields_ids_row|fields_ids_col)).any()) {
+        for(
+          DofEntity_multiIndex::index<FieldName_mi_tag>::type::iterator
+          dit = dofs_field_ptr->get<FieldName_mi_tag>().lower_bound(fit->get()->getName());
+          dit!= dofs_field_ptr->get<FieldName_mi_tag>().upper_bound(fit->get()->getName());
+          dit++
+        ) {
+          // unsigned char pstatus = dit->get()->getPStatus();
+          int owner_proc = dit->get()->getOwnerProc();
+          if(owner_proc != m_field.get_comm_rank()) continue;
+          const BitRefLevel dof_bit = (*dit)->getBitRefLevel();
+          // if entity is not problem refinement level
+          if((dof_bit&prb_mask)!=dof_bit) continue;
+          if((dof_bit&prb_bit)!=prb_bit) continue;
+          if((fit->get()->getId()&fields_ids_row).any()) {
+            dofs_rows.insert(*dit);
+          }
+          if(!square_matrix) {
+            if((fit->get()->getId()&fields_ids_col).any()) {
+              dofs_cols.insert(*dit);
+            }
+          }
         }
       }
     }
@@ -2270,8 +2311,6 @@ namespace MoFEM {
     int hi_proc,
     int verb
   ) {
-
-    //
     MoFEM::Interface &m_field = cOre;
     const Problem_multiIndex *problems_ptr;
     const EntFiniteElement_multiIndex *fe_ent_ptr;
