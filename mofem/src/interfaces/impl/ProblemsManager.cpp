@@ -637,7 +637,6 @@ namespace MoFEM {
           if(!square_matrix) {
             ierr = (*fe_miit)->getColDofView(*dofs_field_ptr,dofs_cols); CHKERRQ(ierr);
           }
-
         }
       }
     }
@@ -2699,6 +2698,19 @@ namespace MoFEM {
       fe_vec.push_back(fit->get()->getEnt());
     }
     rval = m_field.get_moab().add_entities(*meshset,&*fe_vec.begin(),fe_vec.size());
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode ProblemsManager::getProblemElementsLayout(
+    const std::string &name,const std::string &fe_name,PetscLayout *layout
+  ) const {
+    MoFEM::Interface &m_field = cOre;
+    const Problem *problem_ptr;
+    PetscFunctionBegin;
+    ierr = m_field.get_problem(name,&problem_ptr); CHKERRQ(ierr);
+    ierr = problem_ptr->getNumberOfElementsByNameAndPart(
+      PETSC_COMM_WORLD,fe_name,layout
+    ); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 

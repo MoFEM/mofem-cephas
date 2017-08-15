@@ -1952,7 +1952,7 @@ struct Interface: public UnknownInterface {
    */
   virtual PetscErrorCode resolve_shared_ents(const std::string &name,const std::string &fe_name,int verb = -1) = 0;
 
-  /**
+  /** \deprecated use ProblemsManager
    * \brief Get layout of elements in the problem
    * \ingroup mofem_problems
    *
@@ -1966,7 +1966,7 @@ struct Interface: public UnknownInterface {
    * @param  verb    verbosity level
    * @return         error code
    */
-  virtual PetscErrorCode get_problem_elements_layout(
+  DEPRECATED virtual PetscErrorCode get_problem_elements_layout(
     const std::string &name,const std::string &fe_name,PetscLayout *layout,int verb = -1
   ) = 0;
 

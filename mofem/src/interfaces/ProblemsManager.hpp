@@ -226,6 +226,25 @@ namespace MoFEM {
      */
      PetscErrorCode getFEMeshset(const std::string& prb_name,const std::string& fe_name,EntityHandle *meshset) const;
 
+     /**
+      * \brief Get layout of elements in the problem
+      * \ingroup mofem_problems_manager
+      *
+      * In layout is stored information how many elements is on each processor, for
+      * more information look int petsc documentation
+      * <http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/IS/PetscLayoutCreate.html#PetscLayoutCreate>
+      *
+      * @param  name    problem name
+      * @param  fe_name finite elements
+      * @param  layout  layout
+      * @param  verb    verbosity level
+      * @return         error code
+      */
+     PetscErrorCode getProblemElementsLayout(
+       const std::string &name,const std::string &fe_name,PetscLayout *layout
+     ) const;
+
+
   private:
 
     PetscLogEvent USER_EVENT_ProblemsManager;

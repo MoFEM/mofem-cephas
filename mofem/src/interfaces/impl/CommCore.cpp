@@ -326,17 +326,9 @@ namespace MoFEM {
     ierr = resolve_shared_ents(&*p_miit,fe_name,verb); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
+
   PetscErrorCode Core::get_problem_elements_layout(const std::string &name,const std::string &fe_name,PetscLayout *layout,int verb) {
-    PetscFunctionBegin;
-    typedef Problem_multiIndex::index<Problem_mi_tag>::type Problem_multiIndex_by_name;
-    //find p_miit
-    Problem_multiIndex_by_name &problems_set = pRoblems.get<Problem_mi_tag>();
-    Problem_multiIndex_by_name::iterator p_miit = problems_set.find(name);
-    if(p_miit==problems_set.end()) {
-      SETERRQ1(PETSC_COMM_SELF,1,"problem with name < %s > not defined (top tip check spelling)",name.c_str());
-    }
-    ierr = p_miit->getNumberOfElementsByNameAndPart(get_comm(),fe_name,layout); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
+    return ProblemsManager(*this).getProblemElementsLayout(name,fe_name,layout);
   }
 
 }

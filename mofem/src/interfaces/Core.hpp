@@ -517,7 +517,8 @@ struct Core: public Interface {
   PetscErrorCode clear_finite_elements(const std::string &name,const Range &ents,int verb = -1);
   PetscErrorCode resolve_shared_ents(const Problem *problem_ptr,const std::string &fe_name,int verb = -1);
   PetscErrorCode resolve_shared_ents(const std::string &name,const std::string &fe_name,int verb = -1);
-  PetscErrorCode get_problem_elements_layout(
+  
+  DEPRECATED PetscErrorCode get_problem_elements_layout(
     const std::string &name,const std::string &fe_name,PetscLayout *layout,int verb = -1
   );
 
