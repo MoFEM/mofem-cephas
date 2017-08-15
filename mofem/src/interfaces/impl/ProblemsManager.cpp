@@ -100,11 +100,28 @@ namespace MoFEM {
   }
 
   ProblemsManager::ProblemsManager(const MoFEM::Core& core):
-  cOre(const_cast<MoFEM::Core&>(core)) {
+  cOre(const_cast<MoFEM::Core&>(core)),
+  buildProblemFromFields(PETSC_FALSE) {
     PetscLogEventRegister("ProblemsManager",0,&USER_EVENT_ProblemsManager);
   }
   ProblemsManager::~ProblemsManager() {
   }
+
+  PetscErrorCode ProblemsManager::getOptions() {
+    MoFEM::Interface &m_field = cOre;
+    PetscFunctionBegin;
+    ierr = PetscOptionsBegin(m_field.get_comm(),"","Problem manager","none"); CHKERRQ(ierr);
+    {
+      ierr = PetscOptionsBool(
+        "-problem_build_from_fields",
+        "Add DOFs to problem directly from fields not through DOFs on elements","",
+        buildProblemFromFields,&buildProblemFromFields,NULL
+      ); CHKERRQ(ierr);
+    }
+    ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
 
   PetscErrorCode ProblemsManager::partitionMesh(
     const Range &ents,const int dim,const int adj_dim,const int n_parts,int verb
@@ -570,6 +587,8 @@ namespace MoFEM {
     PetscFunctionBegin;
     PetscLogEventBegin(USER_EVENT_ProblemsManager,0,0,0,0);
 
+    ierr = getOptions(); CHKERRQ(ierr);
+
     ierr = m_field.get_fields(&fields_ptr); CHKERRQ(ierr);
     ierr = m_field.get_finite_elements(&fe_ptr); CHKERRQ(ierr);
     ierr = m_field.get_ents_finite_elements(&fe_ent_ptr); CHKERRQ(ierr);
@@ -594,9 +613,12 @@ namespace MoFEM {
     const BitRefLevel prb_bit = problem_ptr->getBitRefLevel();
     const BitRefLevel prb_mask = problem_ptr->getMaskBitRefLevel();
 
-    // get rows and cols dofs view based on data on elements
+    // // get rows and cols dofs view based on data on elements
     DofEntity_multiIndex_active_view dofs_rows,dofs_cols;
-    {
+
+    // Add DOFs to problem by visiting all elements and adding DOFs from
+    // elements to the problem
+    if(buildProblemFromFields==PETSC_FALSE) {
       //fe_miit iterator for finite elements
       EntFiniteElement_multiIndex::iterator fe_miit = fe_ent_ptr->begin();
       EntFiniteElement_multiIndex::iterator hi_fe_miit = fe_ent_ptr->end();
@@ -620,37 +642,44 @@ namespace MoFEM {
       }
     }
 
-    // Add dofs which have bit level
-    BitFieldId fields_ids_row;
-    BitFieldId fields_ids_col;
-    for(FiniteElement_multiIndex::iterator fit = fe_ptr->begin();fit!=fe_ptr->end();fit++) {
-      if((fit->get()->getId()&problem_ptr->getBitFEId()).any()) {
-        fields_ids_row |= fit->get()->getBitFieldIdRow();
-        fields_ids_col |= fit->get()->getBitFieldIdRow();
+    // Add DOFS to the proble by searching all the fileds, and adding to problem
+    // owned or shared DOFs
+    if(buildProblemFromFields==PETSC_TRUE) {
+      // Get fields IDs on elements
+      BitFieldId fields_ids_row,fields_ids_col;
+      for(FiniteElement_multiIndex::iterator fit = fe_ptr->begin();fit!=fe_ptr->end();fit++) {
+        if((fit->get()->getId()&problem_ptr->getBitFEId()).any()) {
+          fields_ids_row |= fit->get()->getBitFieldIdRow();
+          fields_ids_col |= fit->get()->getBitFieldIdCol();
+        }
       }
-    }
-
-    for(Field_multiIndex::iterator fit=fields_ptr->begin();fit!=fields_ptr->end();fit++) {
-      if((fit->get()->getId()&(fields_ids_row|fields_ids_col)).any()) {
-        for(
-          DofEntity_multiIndex::index<FieldName_mi_tag>::type::iterator
-          dit = dofs_field_ptr->get<FieldName_mi_tag>().lower_bound(fit->get()->getName());
-          dit!= dofs_field_ptr->get<FieldName_mi_tag>().upper_bound(fit->get()->getName());
-          dit++
-        ) {
-          // unsigned char pstatus = dit->get()->getPStatus();
-          int owner_proc = dit->get()->getOwnerProc();
-          if(owner_proc != m_field.get_comm_rank()) continue;
-          const BitRefLevel dof_bit = (*dit)->getBitRefLevel();
-          // if entity is not problem refinement level
-          if((dof_bit&prb_mask)!=dof_bit) continue;
-          if((dof_bit&prb_bit)!=prb_bit) continue;
-          if((fit->get()->getId()&fields_ids_row).any()) {
-            dofs_rows.insert(*dit);
-          }
-          if(!square_matrix) {
-            if((fit->get()->getId()&fields_ids_col).any()) {
-              dofs_cols.insert(*dit);
+      // Get fields DOFs
+      for(Field_multiIndex::iterator fit=fields_ptr->begin();fit!=fields_ptr->end();fit++) {
+        if((fit->get()->getId()&(fields_ids_row|fields_ids_col)).any()) {
+          for(
+            DofEntity_multiIndex::index<FieldName_mi_tag>::type::iterator
+            dit = dofs_field_ptr->get<FieldName_mi_tag>().lower_bound(fit->get()->getName());
+            dit!= dofs_field_ptr->get<FieldName_mi_tag>().upper_bound(fit->get()->getName());
+            dit++
+          ) {
+            const int owner_proc = dit->get()->getOwnerProc();
+            if(owner_proc != m_field.get_comm_rank()) {
+              const unsigned char pstatus = dit->get()->getPStatus();
+              if(pstatus==0) {
+                continue;
+              }
+            }
+            const BitRefLevel dof_bit = (*dit)->getBitRefLevel();
+            // if entity is not problem refinement level
+            if((dof_bit&prb_mask)!=dof_bit) continue;
+            if((dof_bit&prb_bit)!=prb_bit) continue;
+            if((fit->get()->getId()&fields_ids_row).any()) {
+              dofs_rows.insert(*dit);
+            }
+            if(!square_matrix) {
+              if((fit->get()->getId()&fields_ids_col).any()) {
+                dofs_cols.insert(*dit);
+              }
             }
           }
         }

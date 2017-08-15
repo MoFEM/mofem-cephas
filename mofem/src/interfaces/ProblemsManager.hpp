@@ -42,6 +42,10 @@ namespace MoFEM {
     */
     ~ProblemsManager();
 
+    PetscBool buildProblemFromFields; ///< If set to true, problem is build from DOFs in fields, not from DOFs on elements
+
+    PetscErrorCode getOptions();
+
     /**
      * \brief Set partition tag to each finite element in the problem
      * \ingroup mofem_problems_manager
