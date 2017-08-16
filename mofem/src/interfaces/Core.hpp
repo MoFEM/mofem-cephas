@@ -22,6 +22,7 @@
 
 namespace MoFEM {
 
+// This is to have obsolete back compatibility
 struct MeshsetsManager;
 
 /** \brief Core (interface) class
