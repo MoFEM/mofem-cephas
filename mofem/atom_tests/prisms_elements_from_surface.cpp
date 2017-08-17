@@ -75,7 +75,7 @@ int main(int argc, char *argv[]) {
 
     BitRefLevel bit_level0;
     bit_level0.set(0);
-    ierr = m_field.seed_ref_level_3D(meshset,bit_level0); CHKERRQ(ierr);
+    ierr = m_field.query_interface<BitRefManager>()->setBitRefLevelByDim(meshset,3,bit_level0); CHKERRQ(ierr);
     ierr = prisms_from_surface_interface->seedPrismsEntities(prisms,bit_level0); CHKERRQ(ierr);
 
     //Fields

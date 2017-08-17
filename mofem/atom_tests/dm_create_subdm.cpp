@@ -81,7 +81,7 @@ int main(int argc, char *argv[]) {
     //add all entities to database, all of them will be used
     BitRefLevel bit_level0;
     bit_level0.set(0);
-    ierr = m_field.seed_ref_level_3D(root_set,bit_level0); CHKERRQ(ierr);
+    ierr = m_field.query_interface<BitRefManager>()->setBitRefLevelByDim(root_set,3,bit_level0); CHKERRQ(ierr);
     //define & build field
     const int field_rank = 1;
     ierr = m_field.add_field("FIELD0",H1,AINSWORTH_LEGENDRE_BASE,field_rank); CHKERRQ(ierr);

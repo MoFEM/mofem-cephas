@@ -54,8 +54,8 @@ struct DisplacementBCFEMethodPreAndPostProc: public MoFEM::FEMethod {
     MoFEM::Interface& m_field,const std::string &field_name
   );
 
-  
-  
+
+
 
   std::map<DofIdx,FieldData> mapZeroRows;
   std::vector<int> dofsIndices;
@@ -121,7 +121,7 @@ struct TemperatureBCFEMethodPreAndPostProc: public DisplacementBCFEMethodPreAndP
   */
 struct FixBcAtEntities: public DisplacementBCFEMethodPreAndPostProc {
 
-  Range &eNts;
+  Range eNts;
   std::vector<std::string> fieldNames;
   FixBcAtEntities(
     MoFEM::Interface& m_field,
@@ -129,7 +129,8 @@ struct FixBcAtEntities: public DisplacementBCFEMethodPreAndPostProc {
     Mat aij,Vec x,Vec f,
     Range &ents
   ):
-  DisplacementBCFEMethodPreAndPostProc(m_field,field_name,aij,x,f),eNts(ents) {
+  DisplacementBCFEMethodPreAndPostProc(m_field,field_name,aij,x,f),
+  eNts(ents) {
     fieldNames.push_back(fieldName);
   }
 

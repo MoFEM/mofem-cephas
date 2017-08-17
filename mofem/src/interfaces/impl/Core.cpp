@@ -162,7 +162,7 @@ PetscErrorCode Core::query_interface_type(const std::type_info& type,void*& ptr)
 
   if(type == typeid(BitRefManager)) {
     if(iFaces.find(IDD_MOFEMBitRefManager.uUId.to_ulong()) == iFaces.end()) {
-      unsigned long int uid = IDD_MOFEMVEC.uUId.to_ulong();
+      unsigned long int uid = IDD_MOFEMBitRefManager.uUId.to_ulong();
       iFaces.insert(uid,new BitRefManager(*this));
     }
     ptr = &iFaces.at(IDD_MOFEMBitRefManager.uUId.to_ulong());
