@@ -1190,7 +1190,7 @@ PetscErrorCode Core::set_field_order(
     RefEntity_multiIndex::index<Ent_mi_tag>::type::iterator miit_ref_ent,hi_miit_ref_ent;
     miit_ref_ent = refinedEntities.get<Ent_mi_tag>().lower_bound(first);
     hi_miit_ref_ent = refinedEntities.get<Ent_mi_tag>().upper_bound(second);
-    for(;miit_ref_ent!=hi_miit_ref_ent;miit_ref_ent++,first++,ee++) {
+    for(int ee = 0;miit_ref_ent!=hi_miit_ref_ent;miit_ref_ent++,first++,ee++) {
       // Set tag value
       *tag_data_order[ee] = order;
       // NOTE: This will work with newer compiler only, use push_back for back compatibility.
