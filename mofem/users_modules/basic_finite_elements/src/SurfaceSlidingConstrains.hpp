@@ -241,9 +241,11 @@ struct SurfaceSlidingConstrains {
 
   };
 
-  MyTriangleFE feRhs;
+  boost::shared_ptr<MyTriangleFE> feRhsPtr,feLhsPtr;
+
+  MyTriangleFE& feRhs;
   MyTriangleFE& getLoopFeRhs() { return feRhs; }
-  MyTriangleFE feLhs;
+  MyTriangleFE& feLhs;
   MyTriangleFE& getLoopFeLhs() { return feLhs ; }
 
   /** \brief Class implemented by user to detect face orientation
@@ -270,8 +272,10 @@ struct SurfaceSlidingConstrains {
 
   SurfaceSlidingConstrains(MoFEM::Interface &m_field,DriverElementOrientation &orientation):
   mField(m_field),
-  feRhs(m_field),
-  feLhs(m_field),
+  feRhsPtr(new MyTriangleFE(m_field)),
+  feLhsPtr(new MyTriangleFE(m_field)),
+  feRhs(*feRhsPtr),
+  feLhs(*feLhsPtr),
   crackFrontOrientation(orientation) {
   }
 
