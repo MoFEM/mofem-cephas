@@ -404,7 +404,7 @@ struct interface_RefEntity {
 typedef multi_index_container<
   boost::shared_ptr<RefEntity>,
   indexed_by<
-    hashed_unique<
+    ordered_unique<
       tag<Ent_mi_tag>, member<RefEntity::BasicEntity,EntityHandle,&RefEntity::ent>
     >,
     ordered_non_unique<
@@ -906,7 +906,7 @@ typedef multi_index_container<
   boost::shared_ptr<FieldEntity>,
   indexed_by<
     sequenced<>,
-    hashed_non_unique<
+    ordered_non_unique<
       tag<Ent_mi_tag>, const_mem_fun<FieldEntity,EntityHandle,&FieldEntity::getEnt>
     >
   >

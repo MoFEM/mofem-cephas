@@ -244,7 +244,7 @@ namespace MoFEM {
   }
 
   PetscErrorCode Core::get_finite_element_entities_by_dimension(const std::string name,int dim,Range &ents) const {
-    
+
     PetscFunctionBegin;
     try {
       EntityHandle meshset = get_finite_element_meshset(name);
@@ -256,7 +256,7 @@ namespace MoFEM {
   }
 
   PetscErrorCode Core::get_finite_element_entities_by_type(const std::string name,EntityType type,Range &ents) const {
-    
+
     PetscFunctionBegin;
     try {
       EntityHandle meshset = get_finite_element_meshset(name);
@@ -268,7 +268,7 @@ namespace MoFEM {
   }
 
   PetscErrorCode Core::get_finite_element_entities_by_handle(const std::string name,Range &ents) const {
-    
+
     PetscFunctionBegin;
     try {
       EntityHandle meshset = get_finite_element_meshset(name);
@@ -499,76 +499,88 @@ namespace MoFEM {
     std::map<EntityHandle,int> data_dofs_size;
 
     //loop meshset Ents and add finite elements
-    for(Range::iterator eit = fe_ents.begin();eit!=fe_ents.end();eit++) {
+    for(
+      Range::const_pair_iterator
+      peit = fe_ents.const_pair_begin();peit!=fe_ents.const_pair_end();peit++
+    ) {
+
+      EntityHandle first = peit->first;
+      EntityHandle second = peit->second;
 
       // note: iterator is a wrapper
       // check if is in refinedFiniteElements database
-      RefFiniteElementByEnt::iterator ref_fe_miit;
-      ref_fe_miit = refinedFiniteElements.get<Ent_mi_tag>().find(*eit);
+      RefFiniteElementByEnt::iterator ref_fe_miit,hi_ref_fe_miit;
+      ref_fe_miit = refinedFiniteElements.get<Ent_mi_tag>().lower_bound(first);
       if(ref_fe_miit == refinedFiniteElements.get<Ent_mi_tag>().end()) {
         std::ostringstream ss;
-        ss << "ref FiniteElement not in database ent = " << *eit;
-        ss << " type " << moab.type_from_handle(*eit);
+        ss << "refinedFiniteElements not in database ent = " << first;
+        ss << " type " << moab.type_from_handle(first);
         ss << " " << *fe;
         SETERRQ(cOmm,MOFEM_DATA_INCONSISTENCY,ss.str().c_str());
       }
-      std::pair<EntFiniteElement_multiIndex::iterator,bool> p = entsFiniteElements.insert(
-        boost::make_shared<EntFiniteElement>(ref_fe_miit->getRefElement(),fe)
-      );
+      hi_ref_fe_miit = refinedFiniteElements.get<Ent_mi_tag>().upper_bound(second);
 
-      if(fe_fields[ROW]==fe_fields[COL]) {
-        p.first->get()->col_dof_view = p.first->get()->row_dof_view;
-      }
+      for(;ref_fe_miit!=hi_ref_fe_miit;ref_fe_miit++) {
 
-      if(
-        fe_fields[ROW]!=fe_fields[COL] &&
-        p.first->get()->col_dof_view == p.first->get()->row_dof_view
-      ) {
-        p.first->get()->col_dof_view = boost::make_shared<DofEntity_multiIndex_uid_view>();
-      }
+        std::pair<EntFiniteElement_multiIndex::iterator,bool> p = entsFiniteElements.insert(
+          boost::make_shared<EntFiniteElement>(ref_fe_miit->getRefElement(),fe)
+        );
 
-      p.first->get()->row_dof_view->clear();
-      p.first->get()->col_dof_view->clear();
-      p.first->get()->data_dofs->clear();
-
-      for(unsigned int ii = 0;ii<BitFieldId().size();ii++) {
-
-        // Common field id for ROW, COL and DATA
-        BitFieldId id_common = 0;
-        // Check if the field (ii) is added to finite element
-        for(int ss = 0;ss<LAST;ss++) {
-          id_common |= fe_fields[ss]&BitFieldId().set(ii);
-        }
-        if( id_common.none() ) continue;
-
-        // Find in database data associated with the field (ii)
-        const BitFieldId field_id = BitFieldId().set(ii);
-        FieldById::iterator miit = fields_by_id.find(field_id);
-        if(miit==fields_by_id.end()) {
-          SETERRQ(cOmm,MOFEM_DATA_INCONSISTENCY,"Data inconsistency");
+        if(fe_fields[ROW]==fe_fields[COL]) {
+          p.first->get()->col_dof_view = p.first->get()->row_dof_view;
         }
 
-        // Entities adjacent to entities
-        Range adj_ents;
+        if(
+          fe_fields[ROW]!=fe_fields[COL] &&
+          p.first->get()->col_dof_view == p.first->get()->row_dof_view
+        ) {
+          p.first->get()->col_dof_view = boost::make_shared<DofEntity_multiIndex_uid_view>();
+        }
 
-        // Resolve entities on element, those entities are used to build tag with dof
-        // uids on finite element tag
-        ierr = p.first->get()->getElementAdjacency(*miit,adj_ents); CHKERRQ(ierr);
+        p.first->get()->row_dof_view->clear();
+        p.first->get()->col_dof_view->clear();
+        p.first->get()->data_dofs->clear();
 
-        // Loop over adjacencies of element and find field entities on those
-        // adjacencies, that create hash map map_uid_fe which is used later
-        const std::string field_name = miit->get()->getName();
-        const bool add_to_data = (field_id&p.first->get()->getBitFieldIdData()).any();
-        FieldEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator meit;
-        for(Range::iterator eit = adj_ents.begin();eit!=adj_ents.end();eit++) {
-          meit = entsFields.get<Composite_Name_And_Ent_mi_tag>().find(boost::make_tuple(field_name,*eit));
-          if(meit!=entsFields.get<Composite_Name_And_Ent_mi_tag>().end()) {
-            UId uid = meit->get()->getGlobalUniqueId();
-            map_uid_fe[uid].push_back(*p.first);
-            if(add_to_data) {
-              data_dofs_size[p.first->get()->getEnt()] += meit->get()->getNbDofsOnEnt();
+        for(unsigned int ii = 0;ii<BitFieldId().size();ii++) {
+
+          // Common field id for ROW, COL and DATA
+          BitFieldId id_common = 0;
+          // Check if the field (ii) is added to finite element
+          for(int ss = 0;ss<LAST;ss++) {
+            id_common |= fe_fields[ss]&BitFieldId().set(ii);
+          }
+          if( id_common.none() ) continue;
+
+          // Find in database data associated with the field (ii)
+          const BitFieldId field_id = BitFieldId().set(ii);
+          FieldById::iterator miit = fields_by_id.find(field_id);
+          if(miit==fields_by_id.end()) {
+            SETERRQ(cOmm,MOFEM_DATA_INCONSISTENCY,"Data inconsistency");
+          }
+
+          // Entities adjacent to entities
+          Range adj_ents;
+
+          // Resolve entities on element, those entities are used to build tag with dof
+          // uids on finite element tag
+          ierr = p.first->get()->getElementAdjacency(*miit,adj_ents); CHKERRQ(ierr);
+
+          // Loop over adjacencies of element and find field entities on those
+          // adjacencies, that create hash map map_uid_fe which is used later
+          const std::string field_name = miit->get()->getName();
+          const bool add_to_data = (field_id&p.first->get()->getBitFieldIdData()).any();
+          FieldEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator meit;
+          for(Range::iterator eit = adj_ents.begin();eit!=adj_ents.end();eit++) {
+            meit = entsFields.get<Composite_Name_And_Ent_mi_tag>().find(boost::make_tuple(field_name,*eit));
+            if(meit!=entsFields.get<Composite_Name_And_Ent_mi_tag>().end()) {
+              UId uid = meit->get()->getGlobalUniqueId();
+              map_uid_fe[uid].push_back(*p.first);
+              if(add_to_data) {
+                data_dofs_size[p.first->get()->getEnt()] += meit->get()->getNbDofsOnEnt();
+              }
             }
           }
+
         }
 
       }
@@ -840,42 +852,51 @@ namespace MoFEM {
 
   PetscErrorCode Core::seed_finite_elements(const Range &entities,int verb) {
     PetscFunctionBegin;
-    for(Range::iterator eit = entities.begin();eit!=entities.end();eit++) {
-      RefEntity_multiIndex::index<Ent_mi_tag>::type::iterator
-        eiit = refinedEntities.get<Ent_mi_tag>().find(*eit);
+    for(
+      Range::const_pair_iterator pit = entities.const_pair_begin();
+      pit!=entities.const_pair_end();pit++
+    ) {
+      EntityHandle first = pit->first;
+      EntityHandle second = pit->second;
+      // for(Range::iterator eit = entities.begin();eit!=entities.end();eit++) {
+      RefEntity_multiIndex::index<Ent_mi_tag>::type::iterator eiit,hi_eiit;
+      eiit = refinedEntities.get<Ent_mi_tag>().lower_bound(first);
       if(eiit == refinedEntities.get<Ent_mi_tag>().end())  {
         SETERRQ(cOmm,MOFEM_NOT_FOUND,"entity is not in database");
       }
       if((*eiit)->getBitRefLevel().none()) continue;
-      std::pair<RefElement_multiIndex::iterator,bool> p_MoFEMFiniteElement;
-      switch ((*eiit)->getEntType()) {
-        case MBVERTEX:
-        p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(
-          boost::shared_ptr<RefElement>(new RefElement_VERTEX(*eiit)))
-        );
-        break;
-        case MBEDGE:
-        p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(
-          boost::shared_ptr<RefElement>(new RefElement_EDGE(*eiit)))
-        );
-        break;
-        case MBTRI:
-        p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(
-          boost::shared_ptr<RefElement>(new RefElement_TRI(*eiit)))
-        );
-        break;
-        case MBTET:
-        p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(
-          boost::shared_ptr<RefElement>(new RefElement_TET(*eiit)))
-        );
-        break;
-        case MBPRISM:
-        p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(
-          boost::shared_ptr<RefElement>(new RefElement_PRISM(*eiit)))
-        );
-        break;
-        default:
-        SETERRQ(cOmm,MOFEM_DATA_INCONSISTENCY,"not implemented");
+      hi_eiit = refinedEntities.get<Ent_mi_tag>().upper_bound(second);
+      for(;eiit!=hi_eiit;eiit++) {
+        std::pair<RefElement_multiIndex::iterator,bool> p_MoFEMFiniteElement;
+        switch ((*eiit)->getEntType()) {
+          case MBVERTEX:
+          p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(
+            boost::shared_ptr<RefElement>(new RefElement_VERTEX(*eiit)))
+          );
+          break;
+          case MBEDGE:
+          p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(
+            boost::shared_ptr<RefElement>(new RefElement_EDGE(*eiit)))
+          );
+          break;
+          case MBTRI:
+          p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(
+            boost::shared_ptr<RefElement>(new RefElement_TRI(*eiit)))
+          );
+          break;
+          case MBTET:
+          p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(
+            boost::shared_ptr<RefElement>(new RefElement_TET(*eiit)))
+          );
+          break;
+          case MBPRISM:
+          p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(
+            boost::shared_ptr<RefElement>(new RefElement_PRISM(*eiit)))
+          );
+          break;
+          default:
+          SETERRQ(cOmm,MOFEM_DATA_INCONSISTENCY,"not implemented");
+        }
       }
     }
     PetscFunctionReturn(0);
@@ -906,7 +927,7 @@ namespace MoFEM {
       SETERRQ1(cOmm,1,"finite element not found < %s >",name.c_str());
     }
     EntityHandle meshset = (*it)->getMeshset();
-    
+
     int num_entities;
     rval = moab.get_number_entities_by_handle(meshset,num_entities); CHKERRQ_MOAB(rval);
     if(
@@ -924,7 +945,7 @@ namespace MoFEM {
     it = finiteElements.get<FiniteElement_name_mi_tag>().begin();
     for(;it!=finiteElements.get<FiniteElement_name_mi_tag>().end();it++) {
       EntityHandle meshset = (*it)->getMeshset();
-      
+
       int num_entities;
       rval = moab.get_number_entities_by_handle(meshset,num_entities); CHKERRQ_MOAB(rval);
       if(entsFiniteElements.get<FiniteElement_name_mi_tag>().count((*it)->getName().c_str())

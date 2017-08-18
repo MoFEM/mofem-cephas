@@ -199,7 +199,7 @@ typedef interface_RefElement<RefElement> ptrWrapperRefElement;
 typedef multi_index_container<
   ptrWrapperRefElement,
   indexed_by<
-    hashed_unique<
+    ordered_unique<
       tag<Ent_mi_tag>,
       const_mem_fun<
         ptrWrapperRefElement::interface_type_RefEntity,
@@ -394,7 +394,7 @@ struct FiniteElement {
   ElementAdjacencyFunct elementAdjacencyTable[MBMAXTYPE];
 
   /**
-   * \brief print finite element 
+   * \brief print finite element
    */
   friend std::ostream& operator<<(std::ostream& os, const FiniteElement& e);
 
