@@ -66,14 +66,14 @@ int main(int argc, char *argv[]) {
   MoFEM::Interface& m_field = core;
 
   //ref meshset ref level 0
-  ierr = m_field.seed_ref_level_3D(0,0); CHKERRQ(ierr);
+  ierr = m_field.query_interface<BitRefManager>()->setBitRefLevelByDim(0,3,0); CHKERRQ(ierr);
 
   // stl::bitset see for more details
   BitRefLevel bit_level0;
   bit_level0.set(0);
   EntityHandle meshset_level0;
   rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERRQ_MOAB(rval);
-  ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
+  ierr = m_field.query_interface<BitRefManager>()->setBitRefLevelByDim(0,3,bit_level0); CHKERRQ(ierr);
   ierr = m_field.get_entities_by_ref_level(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRQ(ierr);
 
   /***/
@@ -99,8 +99,8 @@ int main(int argc, char *argv[]) {
   //build field
   ierr = m_field.build_fields(); CHKERRQ(ierr);
 
-  ierr = m_field.set_field(0,MBVERTEX,"FIELD_B"); CHKERRQ(ierr);
-  ierr = m_field.set_field(1,MBVERTEX,"FIELD_A"); CHKERRQ(ierr);
+  ierr = m_field.query_interface<FieldBlas>()->setField(0,MBVERTEX,"FIELD_B"); CHKERRQ(ierr);
+  ierr = m_field.query_interface<FieldBlas>()->setField(1,MBVERTEX,"FIELD_A"); CHKERRQ(ierr);
 
   SeriesRecorder *recorder_ptr;
   ierr = m_field.query_interface(recorder_ptr); CHKERRQ(ierr);
@@ -115,7 +115,7 @@ int main(int argc, char *argv[]) {
   ierr = recorder_ptr->record_field("TEST_SERIES1","FIELD_B",bit_level0,bit_level0); CHKERRQ(ierr);
   ierr = recorder_ptr->record_end("TEST_SERIES1",1); CHKERRQ(ierr);
 
-  ierr = m_field.field_axpy(1.,"FIELD_A","FIELD_B"); CHKERRQ(ierr);
+  ierr = m_field.query_interface<FieldBlas>()->fieldAxpy(1.,"FIELD_A","FIELD_B"); CHKERRQ(ierr);
   ierr = recorder_ptr->record_begin("TEST_SERIES1"); CHKERRQ(ierr);
   ierr = recorder_ptr->record_field("TEST_SERIES1","FIELD_B",bit_level0,bit_level0); CHKERRQ(ierr);
 
@@ -132,7 +132,7 @@ int main(int argc, char *argv[]) {
   ierr = recorder_ptr->finalize_series_recorder("TEST_SERIES1"); CHKERRQ(ierr);
   ierr = recorder_ptr->print_series_steps(); CHKERRQ(ierr);
 
-  ierr = m_field.field_scale(2,"FIELD_A"); CHKERRQ(ierr);
+  ierr = m_field.query_interface<FieldBlas>()->fieldScale(2,"FIELD_A"); CHKERRQ(ierr);
 
   MoFEM::Core core2(moab);
   MoFEM::Interface& m_field2 = core2;

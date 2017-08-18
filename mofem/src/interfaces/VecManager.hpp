@@ -282,3 +282,10 @@ namespace MoFEM {
 }
 
 #endif //__VECMANAGER_HPP__
+
+/***************************************************************************//**
+ * \defgroup mofem_vectors Vectors (Vec)
+ * \brief Creating and scattering vectors on the mesh for given problem
+ *
+ * \ingroup mofem
+ ******************************************************************************/

@@ -50,7 +50,7 @@ Finite element software is a complex ecosystem, managing mesh and topology
 related complexities, sparse algebra and complications related to approximation,
 integration or dense tensor algebra at integration point level. Each element by
 itself is a stand alone complicated problem. MoFEM ecosystem is composed of
-three disincentive parts, MoAB managing complexities related to topology, PETSc
+three parts, MoAB managing complexities related to topology, PETSc
 managing complexities related to sparse algebra and solvers and finally MoAB
 core library managing complexities directly related to finite element method.
 Each part has its own design objectives, and appropriate programming tools from

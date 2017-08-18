@@ -90,7 +90,7 @@ int main(int argc, char *argv[]) {
 
   BitRefLevel bit_level0;
   bit_level0.set(0);
-  ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
+  ierr = m_field.query_interface<BitRefManager>()->setBitRefLevelByDim(0,3,bit_level0); CHKERRQ(ierr);
   Range tets;
   rval = moab.get_entities_by_type(0,MBTET,tets,true); CHKERRQ_MOAB(rval);
   Range edges;

@@ -100,11 +100,28 @@ namespace MoFEM {
   }
 
   ProblemsManager::ProblemsManager(const MoFEM::Core& core):
-  cOre(const_cast<MoFEM::Core&>(core)) {
+  cOre(const_cast<MoFEM::Core&>(core)),
+  buildProblemFromFields(PETSC_FALSE) {
     PetscLogEventRegister("ProblemsManager",0,&USER_EVENT_ProblemsManager);
   }
   ProblemsManager::~ProblemsManager() {
   }
+
+  PetscErrorCode ProblemsManager::getOptions() {
+    MoFEM::Interface &m_field = cOre;
+    PetscFunctionBegin;
+    ierr = PetscOptionsBegin(m_field.get_comm(),"","Problem manager","none"); CHKERRQ(ierr);
+    {
+      ierr = PetscOptionsBool(
+        "-problem_build_from_fields",
+        "Add DOFs to problem directly from fields not through DOFs on elements","",
+        buildProblemFromFields,&buildProblemFromFields,NULL
+      ); CHKERRQ(ierr);
+    }
+    ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
 
   PetscErrorCode ProblemsManager::partitionMesh(
     const Range &ents,const int dim,const int adj_dim,const int n_parts,int verb
@@ -562,13 +579,18 @@ namespace MoFEM {
   PetscErrorCode ProblemsManager::buildProblemOnDistributedMesh(
     Problem *problem_ptr,const bool square_matrix,int verb
   ) {
-
     MoFEM::Interface &m_field = cOre;
+    const Field_multiIndex *fields_ptr;
+    const FiniteElement_multiIndex *fe_ptr;
     const EntFiniteElement_multiIndex *fe_ent_ptr;
     const DofEntity_multiIndex *dofs_field_ptr;
     PetscFunctionBegin;
     PetscLogEventBegin(USER_EVENT_ProblemsManager,0,0,0,0);
 
+    ierr = getOptions(); CHKERRQ(ierr);
+
+    ierr = m_field.get_fields(&fields_ptr); CHKERRQ(ierr);
+    ierr = m_field.get_finite_elements(&fe_ptr); CHKERRQ(ierr);
     ierr = m_field.get_ents_finite_elements(&fe_ent_ptr); CHKERRQ(ierr);
     ierr = m_field.get_dofs(&dofs_field_ptr); CHKERRQ(ierr);
 
@@ -588,9 +610,15 @@ namespace MoFEM {
       );
     }
 
-    // get rows and cols dofs view based on data on elements
+    const BitRefLevel prb_bit = problem_ptr->getBitRefLevel();
+    const BitRefLevel prb_mask = problem_ptr->getMaskBitRefLevel();
+
+    // // get rows and cols dofs view based on data on elements
     DofEntity_multiIndex_active_view dofs_rows,dofs_cols;
-    {
+
+    // Add DOFs to problem by visiting all elements and adding DOFs from
+    // elements to the problem
+    if(buildProblemFromFields==PETSC_FALSE) {
       //fe_miit iterator for finite elements
       EntFiniteElement_multiIndex::iterator fe_miit = fe_ent_ptr->begin();
       EntFiniteElement_multiIndex::iterator hi_fe_miit = fe_ent_ptr->end();
@@ -599,8 +627,6 @@ namespace MoFEM {
         //if element is in problem
         if(((*fe_miit)->getId()&problem_ptr->getBitFEId()).any()) {
 
-          const BitRefLevel prb_bit = problem_ptr->getBitRefLevel();
-          const BitRefLevel prb_mask = problem_ptr->getMaskBitRefLevel();
           const BitRefLevel fe_bit = (*fe_miit)->getBitRefLevel();
           // if entity is not problem refinement level
           if((fe_bit&prb_mask)!=fe_bit) continue;
@@ -611,7 +637,50 @@ namespace MoFEM {
           if(!square_matrix) {
             ierr = (*fe_miit)->getColDofView(*dofs_field_ptr,dofs_cols); CHKERRQ(ierr);
           }
+        }
+      }
+    }
 
+    // Add DOFS to the proble by searching all the fileds, and adding to problem
+    // owned or shared DOFs
+    if(buildProblemFromFields==PETSC_TRUE) {
+      // Get fields IDs on elements
+      BitFieldId fields_ids_row,fields_ids_col;
+      for(FiniteElement_multiIndex::iterator fit = fe_ptr->begin();fit!=fe_ptr->end();fit++) {
+        if((fit->get()->getId()&problem_ptr->getBitFEId()).any()) {
+          fields_ids_row |= fit->get()->getBitFieldIdRow();
+          fields_ids_col |= fit->get()->getBitFieldIdCol();
+        }
+      }
+      // Get fields DOFs
+      for(Field_multiIndex::iterator fit=fields_ptr->begin();fit!=fields_ptr->end();fit++) {
+        if((fit->get()->getId()&(fields_ids_row|fields_ids_col)).any()) {
+          for(
+            DofEntity_multiIndex::index<FieldName_mi_tag>::type::iterator
+            dit = dofs_field_ptr->get<FieldName_mi_tag>().lower_bound(fit->get()->getName());
+            dit!= dofs_field_ptr->get<FieldName_mi_tag>().upper_bound(fit->get()->getName());
+            dit++
+          ) {
+            const int owner_proc = dit->get()->getOwnerProc();
+            if(owner_proc != m_field.get_comm_rank()) {
+              const unsigned char pstatus = dit->get()->getPStatus();
+              if(pstatus==0) {
+                continue;
+              }
+            }
+            const BitRefLevel dof_bit = (*dit)->getBitRefLevel();
+            // if entity is not problem refinement level
+            if((dof_bit&prb_mask)!=dof_bit) continue;
+            if((dof_bit&prb_bit)!=prb_bit) continue;
+            if((fit->get()->getId()&fields_ids_row).any()) {
+              dofs_rows.insert(*dit);
+            }
+            if(!square_matrix) {
+              if((fit->get()->getId()&fields_ids_col).any()) {
+                dofs_cols.insert(*dit);
+              }
+            }
+          }
         }
       }
     }
@@ -2270,8 +2339,6 @@ namespace MoFEM {
     int hi_proc,
     int verb
   ) {
-
-    //
     MoFEM::Interface &m_field = cOre;
     const Problem_multiIndex *problems_ptr;
     const EntFiniteElement_multiIndex *fe_ent_ptr;
@@ -2468,21 +2535,27 @@ namespace MoFEM {
         }
 
       }
-      std::pair<NumeredEntFiniteElement_multiIndex::iterator,bool> p;
-      p = problem_finite_elements.insert(numered_fe);
-      if(!p.second) {
-        SETERRQ(m_field.get_comm(),MOFEM_NOT_FOUND,"element is there");
-      }
-      if(verb>1) {
-        std::ostringstream ss;
-        ss << *p_miit << std::endl;
-        ss << *p.first << std::endl;
-        typedef FENumeredDofEntityByUId FENumeredDofEntityByUId;
-        FENumeredDofEntityByUId::iterator miit = (*p.first)->rows_dofs->get<Unique_mi_tag>().begin();
-        for(;miit!= (*p.first)->rows_dofs->get<Unique_mi_tag>().end();miit++) ss << "rows: " << *(*miit) << std::endl;
-        miit = (*p.first)->cols_dofs->get<Unique_mi_tag>().begin();
-        for(;miit!=(*p.first)->cols_dofs->get<Unique_mi_tag>().end();miit++) ss << "cols: " << *(*miit) << std::endl;
-        PetscSynchronizedPrintf(m_field.get_comm(),ss.str().c_str());
+      if(
+        !numered_fe->sPtr->row_dof_view->empty()&&
+        !numered_fe->sPtr->col_dof_view->empty()
+      ) {
+        std::pair<NumeredEntFiniteElement_multiIndex::iterator,bool> p;
+        // Add element to the problem
+        p = problem_finite_elements.insert(numered_fe);
+        if(!p.second) {
+          SETERRQ(m_field.get_comm(),MOFEM_NOT_FOUND,"element is there");
+        }
+        if(verb>1) {
+          std::ostringstream ss;
+          ss << *p_miit << std::endl;
+          ss << *p.first << std::endl;
+          typedef FENumeredDofEntityByUId FENumeredDofEntityByUId;
+          FENumeredDofEntityByUId::iterator miit = (*p.first)->rows_dofs->get<Unique_mi_tag>().begin();
+          for(;miit!= (*p.first)->rows_dofs->get<Unique_mi_tag>().end();miit++) ss << "rows: " << *(*miit) << std::endl;
+          miit = (*p.first)->cols_dofs->get<Unique_mi_tag>().begin();
+          for(;miit!=(*p.first)->cols_dofs->get<Unique_mi_tag>().end();miit++) ss << "cols: " << *(*miit) << std::endl;
+          PetscSynchronizedPrintf(m_field.get_comm(),ss.str().c_str());
+        }
       }
     }
     if(verb>0) {
@@ -2607,6 +2680,40 @@ namespace MoFEM {
     cOre.getBuildMoFEM() |= Core::PARTITION_GHOST_DOFS;
     PetscFunctionReturn(0);
   }
+
+  PetscErrorCode ProblemsManager::getFEMeshset(
+    const std::string& prb_name,const std::string& fe_name,EntityHandle *meshset
+  ) const {
+    MoFEM::Interface &m_field = cOre;
+    const Problem *problem_ptr;
+    PetscFunctionBegin;
+    rval = m_field.get_moab().create_meshset(MESHSET_SET,*meshset); CHKERRQ_MOAB(rval);
+    ierr = m_field.get_problem(prb_name,&problem_ptr); CHKERRQ(ierr);
+    NumeredEntFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator fit,hi_fe_it;
+    fit = problem_ptr->numeredFiniteElements.get<FiniteElement_name_mi_tag>().lower_bound(fe_name);
+    hi_fe_it = problem_ptr->numeredFiniteElements.get<FiniteElement_name_mi_tag>().upper_bound(fe_name);
+    std::vector<EntityHandle> fe_vec;
+    fe_vec.reserve(std::distance(fit,hi_fe_it));
+    for(;fit!=hi_fe_it;fit++) {
+      fe_vec.push_back(fit->get()->getEnt());
+    }
+    rval = m_field.get_moab().add_entities(*meshset,&*fe_vec.begin(),fe_vec.size());
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode ProblemsManager::getProblemElementsLayout(
+    const std::string &name,const std::string &fe_name,PetscLayout *layout
+  ) const {
+    MoFEM::Interface &m_field = cOre;
+    const Problem *problem_ptr;
+    PetscFunctionBegin;
+    ierr = m_field.get_problem(name,&problem_ptr); CHKERRQ(ierr);
+    ierr = problem_ptr->getNumberOfElementsByNameAndPart(
+      PETSC_COMM_WORLD,fe_name,layout
+    ); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
 
 
 }

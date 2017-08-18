@@ -96,7 +96,7 @@ const Field* Core::get_field_structure(const std::string& name) {
 }
 
 PetscErrorCode Core::get_field_entities_by_dimension(const std::string name,int dim,Range &ents) const {
-  
+
   PetscFunctionBegin;
   try {
     EntityHandle meshset = get_field_meshset(name);
@@ -108,7 +108,7 @@ PetscErrorCode Core::get_field_entities_by_dimension(const std::string name,int 
 }
 
 PetscErrorCode Core::get_field_entities_by_type(const std::string name,EntityType type,Range &ents) const {
-  
+
   PetscFunctionBegin;
   try {
     EntityHandle meshset = get_field_meshset(name);
@@ -120,7 +120,7 @@ PetscErrorCode Core::get_field_entities_by_type(const std::string name,EntityTyp
 }
 
 PetscErrorCode Core::get_field_entities_by_handle(const std::string name,Range &ents) const {
-  
+
   PetscFunctionBegin;
   try {
     EntityHandle meshset = get_field_meshset(name);
@@ -241,7 +241,7 @@ PetscErrorCode Core::add_field(
 PetscErrorCode Core::addEntsToFieldByDim(
   const Range &ents,const int dim,const std::string& name,int verb
 ) {
-  
+
   *buildMoFEM = 0;
   EntityHandle idm = no_handle;
   if(verb==-1) verb = verbose;
@@ -367,7 +367,7 @@ PetscErrorCode Core::add_ents_to_field_by_dim(
 PetscErrorCode Core::add_ents_to_field_by_type(
   const Range &ents,const EntityType type,const std::string& name,int verb
 ) {
-  
+
   PetscFunctionBegin;
   Range ents_type = ents.subset_by_type(type);
   if(!ents_type.empty()) {
@@ -380,8 +380,8 @@ PetscErrorCode Core::add_ents_to_field_by_type(
 PetscErrorCode Core::add_ents_to_field_by_dim(
   const EntityHandle meshset,const int dim,const std::string& name,const bool recursive,int verb
 ) {
-  
-  
+
+
   PetscFunctionBegin;
   Range ents;
   rval = moab.get_entities_by_dimension(meshset,dim,ents,recursive); CHKERRQ_MOAB(rval);
@@ -392,8 +392,8 @@ PetscErrorCode Core::add_ents_to_field_by_dim(
 PetscErrorCode Core::add_ents_to_field_by_type(
   const EntityHandle meshset,const EntityType type,const std::string& name,const bool recursive,int verb
 ) {
-  
-  
+
+
   PetscFunctionBegin;
   Range ents;
   rval = moab.get_entities_by_type(meshset,type,ents,recursive); CHKERRQ_MOAB(rval);
@@ -1062,13 +1062,18 @@ PetscErrorCode Core::set_field_order(
   int nb_ents_set_order_new = 0;
 
   Range new_ents;
-
-  for(Range::iterator eit = field_ents.begin();eit!=field_ents.end();eit++) {
+  // for(Range::iterator eit = field_ents.begin();eit!=field_ents.end();eit++) {
+  for(
+    Range::const_pair_iterator pit = field_ents.const_pair_begin();
+    pit!=field_ents.const_pair_end();pit++
+  ) {
+    EntityHandle first = pit->first;
+    EntityHandle second = pit->second;
 
     // Sanity check
     switch((*miit)->getSpace()) {
       case H1:
-      if(moab.type_from_handle(*eit)==MBVERTEX) {
+      if(moab.type_from_handle(first)==MBVERTEX) {
         if(order!=1) {
           SETERRQ(cOmm,MOFEM_DATA_INCONSISTENCY,
             "approximation order for H1 space and vertex different than 1 makes not sense"
@@ -1077,15 +1082,15 @@ PetscErrorCode Core::set_field_order(
       }
       break;
       case HCURL:
-      if(moab.type_from_handle(*eit)==MBVERTEX) {
+      if(moab.type_from_handle(first)==MBVERTEX) {
         SETERRQ(cOmm,MOFEM_DATA_INCONSISTENCY,"HDIV space on vertices makes no sense");
       }
       break;
       case HDIV:
-      if(moab.type_from_handle(*eit)==MBVERTEX) {
+      if(moab.type_from_handle(first)==MBVERTEX) {
         SETERRQ(cOmm,MOFEM_DATA_INCONSISTENCY,"HDIV space on vertices makes no sense");
       }
-      if(moab.type_from_handle(*eit)==MBEDGE) {
+      if(moab.type_from_handle(first)==MBEDGE) {
         SETERRQ(cOmm,MOFEM_DATA_INCONSISTENCY,"HDIV space on edges makes no sense");
       }
       break;
@@ -1094,10 +1099,12 @@ PetscErrorCode Core::set_field_order(
     }
 
     // Entity is in database, change order only if needed
-    FieldEntity_multiIndex_ent_view::nth_index<1>::type::iterator vit;
-    vit = ents_id_view.get<1>().find(*eit);
-    if(vit!=ents_id_view.get<1>().end()) {
-
+    FieldEntity_multiIndex_ent_view::nth_index<1>::type::iterator vit,hi_vit;
+    // vit = ents_id_view.get<1>().lower_bound(*eit);
+    vit = ents_id_view.get<1>().lower_bound(first);
+    hi_vit = ents_id_view.get<1>().upper_bound(second);
+    for(;vit!=hi_vit;vit++,first++) {
+      // if(vit!=ents_id_view.get<1>().end()) {
       //entity is in database and order is changed or reset
       const ApproximationOrder old_approximation_order = (*vit)->getMaxOrder();
       if(old_approximation_order==order) continue;
@@ -1113,19 +1120,19 @@ PetscErrorCode Core::set_field_order(
       	// order is increased (note that dofs are not build if order is
       	// increased)
 
-        typedef DofEntityByNameAndEnt dof_set_type;
-        dof_set_type& set_set = dofsField.get<Composite_Name_And_Ent_mi_tag>();
-        dof_set_type::iterator dit = set_set.lower_bound(
+        DofEntityByNameAndEnt& dofs_by_name = dofsField.get<Composite_Name_And_Ent_mi_tag>();
+        DofEntityByNameAndEnt::iterator dit = dofs_by_name.lower_bound(
           boost::make_tuple((*miit)->getNameRef(),(*miit)->getEnt())
         );
-        dof_set_type::iterator hi_dit = set_set.upper_bound(
-          boost::make_tuple((*miit)->getNameRef(),(*miit)->getEnt())
-        );
-
-        for(;dit!=hi_dit;dit++) {
-          if((*dit)->getDofOrder()<=order) continue;
-          bool success = dofsField.modify(dofsField.project<0>(dit),DofEntity_active_change(false));
-          if(!success) SETERRQ(cOmm,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+        if(dit!=dofs_by_name.end()) {
+          DofEntityByNameAndEnt::iterator hi_dit = dofs_by_name.upper_bound(
+            boost::make_tuple((*miit)->getNameRef(),(*miit)->getEnt())
+          );
+          for(;dit!=hi_dit;dit++) {
+            if((*dit)->getDofOrder()<=order) continue;
+            bool success = dofsField.modify(dofsField.project<0>(dit),DofEntity_active_change(false));
+            if(!success) SETERRQ(cOmm,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+          }
         }
 
         bool success = entsFields.modify(entsFields.project<0>(miit),FieldEntity_change_order(order));
@@ -1133,19 +1140,22 @@ PetscErrorCode Core::set_field_order(
 
       }
 
-    } else {
+    }
+
+    if(first<=second) {
       // This entity is not in databse, added to the vector of entities to which
       // tag with new order have to be set.
-      new_ents.insert(*eit);
+      new_ents.insert(first,second);
     }
+
+    // else {
+    //   // This entity is not in databse, added to the vector of entities to which
+    //   // tag with new order have to be set.
+    //   new_ents.insert(*eit);
+    // }
 
   }
 
-  // get tags on entities
-  std::vector<ApproximationOrder*> tag_data_order(new_ents.size());
-  rval = moab.tag_get_by_ptr(
-    (*miit)->th_AppOrder,new_ents,(const void **)&tag_data_order[0]
-  ); CHKERRQ_MOAB(rval);
 
   // reserve memory for field  dofs
   boost::shared_ptr<std::vector<FieldEntity> > ents_array =
@@ -1160,28 +1170,44 @@ PetscErrorCode Core::set_field_order(
 
   FieldEntity_change_order modify_order(order);
 
-  Range::iterator eit = new_ents.begin();
-  for(unsigned int ee = 0;ee!=new_ents.size();ee++,eit++) {
+  //Range::iterator eit = new_ents.begin();
+  //for(unsigned int ee = 0;ee!=new_ents.size();ee++,eit++) {
+  for(
+    Range::const_pair_iterator pit = new_ents.const_pair_begin();
+    pit!=new_ents.const_pair_end();pit++
+  ) {
+    EntityHandle first = pit->first;
+    EntityHandle second = pit->second;
 
-    // Set tag value
-    *tag_data_order[ee] = order;
+    // get tags on entities
+    Range new_pair(first,second);
+    std::vector<ApproximationOrder*> tag_data_order(new_pair.size());
+    rval = moab.tag_get_by_ptr(
+      (*miit)->th_AppOrder,new_pair,(const void **)&tag_data_order[0]
+    ); CHKERRQ_MOAB(rval);
 
     // Entity is not in database and order is changed or reset
-    RefEntity_multiIndex::index<Ent_mi_tag>::type::iterator miit_ref_ent =
-    refinedEntities.get<Ent_mi_tag>().find(*eit);
-    if(miit_ref_ent==refinedEntities.get<Ent_mi_tag>().end()) {
-      RefEntity ref_ent(basicEntityDataPtr,*eit);
+    RefEntity_multiIndex::index<Ent_mi_tag>::type::iterator miit_ref_ent,hi_miit_ref_ent;
+    miit_ref_ent = refinedEntities.get<Ent_mi_tag>().lower_bound(first);
+    hi_miit_ref_ent = refinedEntities.get<Ent_mi_tag>().upper_bound(second);
+    for(int ee = 0;miit_ref_ent!=hi_miit_ref_ent;miit_ref_ent++,first++,ee++) {
+      // Set tag value
+      *tag_data_order[ee] = order;
+      // NOTE: This will work with newer compiler only, use push_back for back compatibility.
+      // ents_array->emplace_back(*miit,*miit_ref_ent);
+      ents_array->push_back(FieldEntity(*miit,*miit_ref_ent));
+      modify_order(&(ents_array->back()));
+      nb_ents_set_order_new++;
+    }
+    for(;first<=second;first++) {
+      RefEntity ref_ent(basicEntityDataPtr,first);
       // FIXME: need some consistent policy in that case
       if(ref_ent.getBitRefLevel().none()) continue; // not on any mesh and not in database
       std::cerr << ref_ent << std::endl;
       std::cerr << "bit level " << ref_ent.getBitRefLevel() << std::endl;
       SETERRQ(cOmm,MOFEM_DATA_INCONSISTENCY,"Try to add entities which are not seeded or added to database");
     }
-    // NOTE: This will work with newer compiler only, use push_back for back compatibility.
-    // ents_array->emplace_back(*miit,*miit_ref_ent);
-    ents_array->push_back(FieldEntity(*miit,*miit_ref_ent));
-    modify_order(&(ents_array->back()));
-    nb_ents_set_order_new++;
+
   }
 
   // Add entities to database
@@ -1805,21 +1831,23 @@ PetscErrorCode Core::get_entities_by_type_and_ref_level(const BitRefLevel &bit,c
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   ierr = moab.get_entities_by_type(0,type,ents,false); CHKERRQ(ierr);
+  const BitRefLevel* tag_bit;
   Range::iterator eit = ents.begin();
-  for(;eit!=ents.end();) {
-    BitRefLevel bit2;
-    rval = moab.tag_get_data(th_RefBitLevel,&*eit,1,&bit2); CHKERRQ_MOAB(rval);
-    if(mask.any()&&bit2.none()) {
+  for(;eit!=ents.end();tag_bit++) {
+    rval = moab.tag_get_by_ptr(
+      th_RefBitLevel,&*eit,1,(const void **)(&tag_bit)
+    ); CHKERRQ_MOAB(rval);
+    if(mask.any()&&tag_bit->none()) {
       eit = ents.erase(eit);
       continue;
     }
     // Not masked
-    if((bit2&mask) != bit2) {
+    if(((*tag_bit)&mask) != (*tag_bit)) {
       eit = ents.erase(eit);
       continue;
     }
     // Not in bit
-    if((bit2&bit).none()) {
+    if(((*tag_bit)&bit).none()) {
       eit = ents.erase(eit);
       continue;
     }
@@ -2032,7 +2060,7 @@ PetscErrorCode Core::check_number_of_ents_in_ents_field(const std::string& name)
   EntityHandle meshset = (*it)->getMeshset();
 
   int num_entities;
-  
+
   rval = moab.get_number_entities_by_handle(meshset,num_entities); CHKERRQ_MOAB(rval);
   if(
     entsFields.get<FieldName_mi_tag>().count((*it)->getName()) > (unsigned int)num_entities
@@ -2047,7 +2075,7 @@ PetscErrorCode Core::check_number_of_ents_in_ents_field() const {
   for(;it!=fIelds.get<FieldName_mi_tag>().end();it++) {
     if((*it)->getSpace() == NOFIELD) continue; //FIXME: should be treated properly, not test is just skipped for this NOFIELD space
     EntityHandle meshset = (*it)->getMeshset();
-    
+
     int num_entities;
     rval = moab.get_number_entities_by_handle(meshset,num_entities); CHKERRQ_MOAB(rval);
     if(entsFields.get<FieldName_mi_tag>().count((*it)->getName()) > (unsigned int)num_entities) {
