@@ -63,7 +63,7 @@ memory efficient.
 
 Code development is a compromise of different goals. First primary deign
 objective of MoFEM is to develop flexible & extendable code easy to test and bug
-search. Very often we spend more time to implement finite element that time
+search. Very often we spend more time to implement finite element than time
 needed to run analysis itself, flexibility & extensibility allow for rapid
 development of finite elements for non-standard and complex problems. Utilising
 PETSc and MoAB scalability is second important design objective. Nowadays we can
@@ -77,7 +77,7 @@ The finite element entity is composed of sub entities, like nodes, edges, faces
 (triangle, quad, etc.) and volumes (tetrahedron, hex, prism, etc.)  The element
 is implemented by evaluating base functions, indices, data on each entity in the
 domain of the element. The developer does not directly implement finite element
-for given predefined type, but UserDataOprators operating on finite element
+for given predefined type, but UserDataOperators operating on finite element
 entities.  In such method order of approximation, the shape of the finite
 element does not influence how user implements problem.
 
@@ -101,14 +101,14 @@ are shown in the figure below
 The fundamental role in finite element implementation plays \ref MoFEM::ForcesAndSurcesCore::UserDataOperator. The generality
 of this technology
 range of applications 0d-2d or 3d, with Nitsche's method or with H-div or H-curl
-spaces. The UserDataOprator are operated in three typical ways, first (\a OPROW/
+spaces. The UserDataOperator are operated in three typical ways, first (\a OPROW/
 \a OPCOL) usually used to evaluate the right-hand side vectors, second (\a
 OPROWCOL) to evaluate the left-hand side matrices, and third, often use to
 modify base functions of given space.  First two are intrinsically linked to
 operations on particular fields, the last one is abstract and should not be used
 to assemble vectors and matrices. Type of operator is set by overloading
 function \c doWrok. Operators are run in sequence as are added to finite element
-and executed or each entity on that element. If for given field number of DOFs
+and executed for each entity on that element. If for given field number of DOFs
 or base functions on given entity is zero, such entity is not evaluated.
 \image html fe_struture_2.png "Types of UserDataOperator" width=800px
 
@@ -120,7 +120,7 @@ element technologies), reusability, which with relatively small code large group
 of problems can be implemented and last but not least enables modularisation and
 testing of each element independently.
 \image html fe_struture_3.png "Example of implementation" width=800px
-Above example reflect how an engineer would formulate the problem for linear
+Above example reflects how an engineer would formulate the problem for linear
 thermoelasticity, calculate physical quantities like strain, stress, temperature
 or flux and assemble a system of linear equations to solve it staggered method.
 Another way approaching this problem to think regarding differential operators. One can
