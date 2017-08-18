@@ -252,4 +252,39 @@ namespace MoFEM {
     PetscFunctionReturn(0);
   }
 
+  PetscErrorCode BitRefManager::addBitRefLevel(
+    const Range &ents,const BitRefLevel &bit,int verb
+  ) const {
+    MoFEM::Interface &m_field = cOre;
+    const RefEntity_multiIndex *ref_ent_ptr;
+    PetscFunctionBegin;
+    ierr = m_field.get_ref_ents(&ref_ent_ptr);
+    for(
+      Range::const_pair_iterator pit = ents.const_pair_begin();
+      pit!=ents.const_pair_end();pit++
+    ) {
+      EntityHandle first = pit->first;
+      EntityHandle second = pit->second;
+      RefEntity_multiIndex::index<Ent_mi_tag>::type::iterator dit;
+      dit = ref_ent_ptr->get<Ent_mi_tag>().lower_bound(first);
+      if(dit==ref_ent_ptr->get<Ent_mi_tag>().end()) continue;
+      RefEntity_multiIndex::index<Ent_mi_tag>::type::iterator hi_dit;
+      hi_dit = ref_ent_ptr->get<Ent_mi_tag>().upper_bound(second);
+      for(;dit!=hi_dit;dit++) {
+        bool success = const_cast<RefEntity_multiIndex*>(ref_ent_ptr)->modify(
+          ref_ent_ptr->project<0>(dit),RefEntity_change_add_bit(bit)
+        );
+        if(!success) {
+          SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"operation unsuccessful");
+        };
+        if(verb>0) {
+          cerr << **dit << endl;
+        }
+      }
+    }
+
+    PetscFunctionReturn(0);
+  }
+
+
 }
