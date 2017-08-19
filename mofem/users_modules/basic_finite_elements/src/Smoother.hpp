@@ -123,15 +123,20 @@ struct Smoother {
 
   };
 
-  MyVolumeFE feRhs; ///< calculate right hand side for tetrahedral elements
+  boost::shared_ptr<MyVolumeFE> feRhsPtr;
+  boost::shared_ptr<MyVolumeFE> feLhsPtr;
+
+  MyVolumeFE& feRhs; ///< calculate right hand side for tetrahedral elements
   MyVolumeFE& getLoopFeRhs() { return feRhs; } ///< get rhs volume element
-  MyVolumeFE feLhs; //< calculate left hand side for tetrahedral elements
+  MyVolumeFE& feLhs; //< calculate left hand side for tetrahedral elements
   MyVolumeFE& getLoopFeLhs() { return feLhs; } ///< get lhs volume element
 
   Smoother(MoFEM::Interface &m_field):
-  feRhs(m_field,smootherData),
-  feLhs(m_field,smootherData)
-  {}
+  feRhsPtr(new MyVolumeFE(m_field,smootherData)),
+  feLhsPtr(new MyVolumeFE(m_field,smootherData)),
+  feRhs(*feRhsPtr),
+  feLhs(*feLhsPtr) {
+  }
 
   struct OpJacobianSmoother: public NonlinearElasticElement::OpJacobianPiolaKirchhoffStress {
 
@@ -215,6 +220,14 @@ struct Smoother {
             frontIndices[ii] = -1;
           }
         }
+        if(smootherData.frontF) {
+          ierr = VecSetValues(
+            smootherData.frontF,
+            nb_dofs,
+            &frontIndices[0],&nf[0],
+            ADD_VALUES
+          ); CHKERRQ(ierr);
+        }
       }
 
       ierr = VecSetOption(
@@ -228,15 +241,6 @@ struct Smoother {
         ADD_VALUES
       ); CHKERRQ(ierr);
 
-      if(smootherData.frontF) {
-        ierr = VecSetValues(
-          smootherData.frontF,
-          nb_dofs,
-          &frontIndices[0],&nf[0],
-          ADD_VALUES
-        ); CHKERRQ(ierr);
-      }
-
       PetscFunctionReturn(0);
     }
 
@@ -245,17 +249,20 @@ struct Smoother {
   struct OpLhsSmoother: public NonlinearElasticElement::OpLhsPiolaKirchhoff_dx {
 
     SmootherBlockData &smootherData;
+    const std::string fieldCrackAreaTangentConstrains;
 
     OpLhsSmoother(
       const std::string vel_field,
       const std::string field_name,
       NonlinearElasticElement::BlockData &data,
       NonlinearElasticElement::CommonData &common_data,
-      SmootherBlockData &smoother_data
+      SmootherBlockData &smoother_data,
+      const std::string crack_area_tangent_constrains //="LAMBDA_CRACK_TANGENT_CONSTRAIN"
     ):
     NonlinearElasticElement::OpLhsPiolaKirchhoff_dx(vel_field,field_name,data,common_data),
-    smootherData(smoother_data)
-    {}
+    smootherData(smoother_data),
+    fieldCrackAreaTangentConstrains(crack_area_tangent_constrains) {
+    }
 
     ublas::vector<int> rowFrontIndices;
 
@@ -284,7 +291,9 @@ struct Smoother {
         VectorDofs& dofs = row_data.getFieldDofs();
         VectorDofs::iterator dit = dofs.begin();
         for(int ii = 0;dit!=dofs.end();dit++,ii++) {
-          if(dAta.forcesOnlyOnEntitiesRow.find((*dit)->getEnt())!=dAta.forcesOnlyOnEntitiesRow.end()) {
+          if(dAta.forcesOnlyOnEntitiesRow.find(
+            (*dit)->getEnt())!=dAta.forcesOnlyOnEntitiesRow.end()
+          ) {
             rowIndices[ii] = -1;
           } else {
             rowFrontIndices[ii] = -1;
@@ -311,9 +320,9 @@ struct Smoother {
           // get indices with Lagrange multiplier at node nn
           FENumeredDofEntityByNameAndEnt::iterator dit,hi_dit;
           dit = getFEMethod()->rowPtr->get<Composite_Name_And_Ent_mi_tag>().
-          lower_bound(boost::make_tuple("LAMBDA_CRACK_TANGENT_CONSTRAIN",getConn()[nn]));
+          lower_bound(boost::make_tuple(fieldCrackAreaTangentConstrains,getConn()[nn]));
           hi_dit = getFEMethod()->rowPtr->get<Composite_Name_And_Ent_mi_tag>().
-          upper_bound(boost::make_tuple("LAMBDA_CRACK_TANGENT_CONSTRAIN",getConn()[nn]));
+          upper_bound(boost::make_tuple(fieldCrackAreaTangentConstrains,getConn()[nn]));
 
           // continue if Lagrange are on elemnet
           if(distance(dit,hi_dit)>0) {
