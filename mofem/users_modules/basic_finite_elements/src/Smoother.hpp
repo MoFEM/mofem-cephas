@@ -312,7 +312,6 @@ struct Smoother {
 
         // get tangent vector array
         double *f_tangent_front_mesh_array;
-        if(smootherData.tangentFrontF==PETSC_NULL) SETERRQ(PETSC_COMM_SELF,1,"vector for crack front not created");
         ierr = VecGetArray(smootherData.tangentFrontF,&f_tangent_front_mesh_array); CHKERRQ(ierr);
         // iterate nodes on tet
         for(int nn = 0;nn<4;nn++) {
@@ -324,7 +323,7 @@ struct Smoother {
           hi_dit = getFEMethod()->rowPtr->get<Composite_Name_And_Ent_mi_tag>().
           upper_bound(boost::make_tuple(fieldCrackAreaTangentConstrains,getConn()[nn]));
 
-          // continue if Lagrange are on elemnet
+          // continue if Lagrange are on element
           if(distance(dit,hi_dit)>0) {
 
             FENumeredDofEntityByNameAndEnt::iterator diit,hi_diit;
@@ -348,8 +347,9 @@ struct Smoother {
                 }
                 // dof is not on this partition
                 if(diit->get()->getPetscLocalDofIdx()==-1) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-                // calculate g =
-                double g = f_tangent_front_mesh_array[diit->get()->getPetscLocalDofIdx()]*k(3*nn+diit->get()->getDofCoeffIdx(),ddd);
+                double g =
+                f_tangent_front_mesh_array[diit->get()->getPetscLocalDofIdx()]*
+                k(3*nn+diit->get()->getDofCoeffIdx(),ddd);
                 int lambda_idx = dit->get()->getPetscGlobalDofIdx();
                 ierr = MatSetValues(
                   getFEMethod()->snes_B,1,&lambda_idx,1,&col_indices_ptr[ddd],&g,ADD_VALUES
