@@ -576,7 +576,9 @@ namespace MoFEM {
       case SCATTER_FORWARD: {
         for(;miit!=hi_miit;miit++) {
           DofEntity_multiIndex::index<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>::type::iterator diiiit;
-          diiiit = dofs_ptr->get<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>().find(boost::make_tuple(cpy_field_name,(*miit)->getEnt(),(*miit)->getEntDofIdx()));
+          diiiit = dofs_ptr->get<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>().find(
+            boost::make_tuple(cpy_field_name,(*miit)->getEnt(),(*miit)->getEntDofIdx())
+          );
           if(diiiit==dofs_ptr->get<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>().end()) {
             SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"no data to fill the vector (top tip: you want scatter forward or scatter reverse?)");
           }

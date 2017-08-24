@@ -269,6 +269,7 @@ struct BaseFEDofEntity {
   BaseFEDofEntity(const boost::shared_ptr<SideNumber>& side_number_ptr):
   sideNumberPtr(side_number_ptr) {};
   boost::shared_ptr<SideNumber> sideNumberPtr;
+  inline int getSideNumber() { return sideNumberPtr->side_number; }
 };
 
 /**

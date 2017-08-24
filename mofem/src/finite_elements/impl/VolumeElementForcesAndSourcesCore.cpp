@@ -283,6 +283,84 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::getSpaceBaseAndOrderOnElement(
   PetscFunctionReturn(0);
 }
 
+PetscErrorCode VolumeElementForcesAndSourcesCore::calculateBaseFunctionsOnElement(const int b) {
+  PetscFunctionBegin;
+  if(dataH1.bAse.test(b)) {
+    switch (ApproximationBaseArray[b]) {
+      case NOBASE:
+      break;
+      case AINSWORTH_LEGENDRE_BASE:
+      case AINSWORTH_LOBBATO_BASE:
+      if(
+        dataH1.spacesOnEntities[MBVERTEX].test(H1)&&
+        dataH1.basesOnEntities[MBVERTEX].test(b)
+      ) {
+        ierr = TetPolynomialBase().getValue(
+          gaussPts,
+          boost::shared_ptr<BaseFunctionCtx>(
+            new EntPolynomialBaseCtx(dataH1,H1,ApproximationBaseArray[b],NOBASE)
+          )
+        ); CHKERRQ(ierr);
+      }
+      if(
+        dataH1.spacesOnEntities[MBEDGE].test(HCURL)&&
+        dataH1.basesOnEntities[MBEDGE].test(b)
+      ) {
+        ierr = TetPolynomialBase().getValue(
+          gaussPts,
+          boost::shared_ptr<BaseFunctionCtx>(
+            new EntPolynomialBaseCtx(dataHcurl,HCURL,ApproximationBaseArray[b],NOBASE)
+          )
+        ); CHKERRQ(ierr);
+      }
+      if(
+        dataH1.spacesOnEntities[MBTRI].test(HDIV)&&
+        dataH1.basesOnEntities[MBTRI].test(b)
+      ) {
+        ierr = TetPolynomialBase().getValue(
+          gaussPts,
+          boost::shared_ptr<BaseFunctionCtx>(
+            new EntPolynomialBaseCtx(dataHdiv,HDIV,ApproximationBaseArray[b],NOBASE)
+          )
+        ); CHKERRQ(ierr);
+      }
+      if(
+        dataH1.spacesOnEntities[MBTET].test(L2)&&
+        dataH1.basesOnEntities[MBTET].test(b)
+      ) {
+        ierr = TetPolynomialBase().getValue(
+          gaussPts,
+          boost::shared_ptr<BaseFunctionCtx>(
+            new EntPolynomialBaseCtx(dataL2,L2,ApproximationBaseArray[b],NOBASE)
+          )
+        ); CHKERRQ(ierr);
+      }
+      break;
+      case DEMKOWICZ_JACOBI_BASE:
+      if(
+        dataH1.spacesOnEntities[MBTRI].test(HDIV)&&
+        dataH1.basesOnEntities[MBTRI].test(b)
+      ) {
+        ierr = TetPolynomialBase().getValue(
+          gaussPts,
+          boost::shared_ptr<BaseFunctionCtx>(
+            new EntPolynomialBaseCtx(dataHdiv,HDIV,ApproximationBaseArray[b],NOBASE)
+          )
+        ); CHKERRQ(ierr);
+      }
+      break;
+      default:
+      SETERRQ1(
+        mField.get_comm(),
+        MOFEM_DATA_INCONSISTENCY,
+        "Base <%s> not yet implemented",
+        ApproximationBaseNames[ApproximationBaseArray[b]]
+      );
+    }
+  }
+  PetscFunctionReturn(0);
+}
+
 PetscErrorCode VolumeElementForcesAndSourcesCore::calculateBaseFunctionsOnElement() {
   PetscFunctionBegin;
   try {
@@ -292,79 +370,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::calculateBaseFunctionsOnElemen
     dataL2.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE) = dataH1.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE);
     std::vector<FieldApproximationBase> shape_functions_for_bases;
     for(int b = AINSWORTH_LEGENDRE_BASE;b!=LASTBASE;b++) {
-      if(dataH1.bAse.test(b)) {
-        switch (ApproximationBaseArray[b]) {
-          case NOBASE:
-          break;
-          case AINSWORTH_LEGENDRE_BASE:
-          case AINSWORTH_LOBBATO_BASE:
-          if(
-            dataH1.spacesOnEntities[MBVERTEX].test(H1)&&
-            dataH1.basesOnEntities[MBVERTEX].test(b)
-          ) {
-            ierr = TetPolynomialBase().getValue(
-              gaussPts,
-              boost::shared_ptr<BaseFunctionCtx>(
-                new EntPolynomialBaseCtx(dataH1,H1,ApproximationBaseArray[b],NOBASE)
-              )
-            ); CHKERRQ(ierr);
-          }
-          if(
-            dataH1.spacesOnEntities[MBEDGE].test(HCURL)&&
-            dataH1.basesOnEntities[MBEDGE].test(b)
-          ) {
-            ierr = TetPolynomialBase().getValue(
-              gaussPts,
-              boost::shared_ptr<BaseFunctionCtx>(
-                new EntPolynomialBaseCtx(dataHcurl,HCURL,ApproximationBaseArray[b],NOBASE)
-              )
-            ); CHKERRQ(ierr);
-          }
-          if(
-            dataH1.spacesOnEntities[MBTRI].test(HDIV)&&
-            dataH1.basesOnEntities[MBTRI].test(b)
-          ) {
-            ierr = TetPolynomialBase().getValue(
-              gaussPts,
-              boost::shared_ptr<BaseFunctionCtx>(
-                new EntPolynomialBaseCtx(dataHdiv,HDIV,ApproximationBaseArray[b],NOBASE)
-              )
-            ); CHKERRQ(ierr);
-          }
-          if(
-            dataH1.spacesOnEntities[MBTET].test(L2)&&
-            dataH1.basesOnEntities[MBTET].test(b)
-          ) {
-            ierr = TetPolynomialBase().getValue(
-              gaussPts,
-              boost::shared_ptr<BaseFunctionCtx>(
-                new EntPolynomialBaseCtx(dataL2,L2,ApproximationBaseArray[b],NOBASE)
-              )
-            ); CHKERRQ(ierr);
-          }
-          break;
-          case DEMKOWICZ_JACOBI_BASE:
-          if(
-            dataH1.spacesOnEntities[MBTRI].test(HDIV)&&
-            dataH1.basesOnEntities[MBTRI].test(b)
-          ) {
-            ierr = TetPolynomialBase().getValue(
-              gaussPts,
-              boost::shared_ptr<BaseFunctionCtx>(
-                new EntPolynomialBaseCtx(dataHdiv,HDIV,ApproximationBaseArray[b],NOBASE)
-              )
-            ); CHKERRQ(ierr);
-          }
-          break;
-          default:
-          SETERRQ1(
-            mField.get_comm(),
-            MOFEM_DATA_INCONSISTENCY,
-            "Base <%s> not yet implemented",
-            ApproximationBaseNames[ApproximationBaseArray[b]]
-          );
-        }
-      }
+      ierr = calculateBaseFunctionsOnElement(b); CHKERRQ(ierr);
     }
   } catch (std::exception& ex) {
     std::ostringstream ss;

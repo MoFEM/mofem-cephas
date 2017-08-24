@@ -11,7 +11,7 @@ derivatives of constitutive model.
 Problem solved here is similar to the solution of nonlinear Poisson's equation
 described in \ref poisson_tut4 and is a generalization of the problem described in
 \ref mix_transport. You might look to those tutorials if some implementation aspects
-of presented methodology are unclear. Also, you are as well encouraged to pose
+of presented methodology are unclear. Also, you are encouraged to pose
 questions on our
 <a href=https://groups.google.com/forum/#!forum/mofem-group>Q&A forum</a>.
 
@@ -388,15 +388,15 @@ transport is described by the parabolic differential equation.
 
 \subsection mix_us_flow_pde PDE
 
-Richards equation describes problem of unsaturated flow
+The Richards equation describes problem of unsaturated flow
 \f[
 \frac{\partial \theta}{\partial t}-
 \nabla \cdot \left[ \left( K(\theta)  \nabla ( h - z) \right) \right] = 0
 \f]
-where \f$z\f$ is depth and \f$K=K(\theta)\f$ is hydraulic conductivity. \f$\nabla\f$ and
-\f$\nabla \cdot\f$  are differential operators for gradient and divergence, respectively.
-This equation is in irreducible form, however for numerical reasons we express it in
-the system of coupled equations
+where \f$z\f$ is depth and \f$K=K(\theta)\f$ is hydraulic conductivity.
+\f$\nabla\f$ and \f$\nabla \cdot\f$  are differential operators for gradient and
+divergence, respectively. The above equation alternatively can be expressed by
+the system of first order partial differential equations
 \f[
 \left\{
 \begin{array}{l}
@@ -465,7 +465,7 @@ classes derived from MixTransport::CommonMaterialData.
 
 \subsection mix_us_flow_physical_equation_adding_material Adding new material
 
-The simplest option to add new material is to derive class form
+The simplest method to implement new material is to derive class form
 MixTransport::MaterialWithAutomaticDifferentation, and add it to file \ref
 MaterialUnsaturatedFlow.cpp. MixTransport::MaterialWithAutomaticDifferentation
 is a class to simplify implementation of the material model by utilizing

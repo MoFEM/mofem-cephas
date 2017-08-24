@@ -1104,6 +1104,13 @@ PetscErrorCode Core::set_field_order(
     vit = ents_id_view.get<1>().lower_bound(first);
     hi_vit = ents_id_view.get<1>().upper_bound(second);
     for(;vit!=hi_vit;vit++,first++) {
+
+      // It is a gap in field entities, those need to be added to the field
+      while(first!=vit->get()->getEnt()&&first<=second) {
+        new_ents.insert(first);
+        first++;
+      }
+
       // if(vit!=ents_id_view.get<1>().end()) {
       //entity is in database and order is changed or reset
       const ApproximationOrder old_approximation_order = (*vit)->getMaxOrder();
