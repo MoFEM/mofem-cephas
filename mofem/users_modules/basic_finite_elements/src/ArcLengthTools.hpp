@@ -97,7 +97,11 @@ struct ArcLengthCtx {
    */
   PetscErrorCode setAlphaBeta(double alpha,double beta);
 
-  ArcLengthCtx(MoFEM::Interface &m_field,const std::string &problem_name);
+  ArcLengthCtx(
+    MoFEM::Interface& m_field,
+    const std::string& problem_name,
+    const std::string& field_name = "LAMBDA"
+  );
   virtual ~ArcLengthCtx();
 
   NumeredDofEntityByFieldName::iterator dIt;

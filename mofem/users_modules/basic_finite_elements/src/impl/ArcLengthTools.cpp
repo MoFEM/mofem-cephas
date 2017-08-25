@@ -37,7 +37,9 @@ PetscErrorCode ArcLengthCtx::setAlphaBeta(double alpha,double beta) {
   PetscFunctionReturn(0);
 }
 
-ArcLengthCtx::ArcLengthCtx(MoFEM::Interface &m_field,const std::string &problem_name):
+ArcLengthCtx::ArcLengthCtx(
+  MoFEM::Interface& m_field,const std::string& problem_name,const std::string& field_name
+):
   mField(m_field),
   dx2(0),
   F_lambda2(0),
@@ -53,8 +55,8 @@ ArcLengthCtx::ArcLengthCtx(MoFEM::Interface &m_field,const std::string &problem_
   ierr = m_field.get_problem(problem_name,&problem_ptr); CHKERRABORT(PETSC_COMM_WORLD,ierr);
   boost::shared_ptr<NumeredDofEntity_multiIndex> dofs_ptr_no_const = problem_ptr->getNumeredDofsRows();
   NumeredDofEntityByFieldName::iterator hi_dit;
-  dIt = dofs_ptr_no_const->get<FieldName_mi_tag>().lower_bound("LAMBDA");
-  hi_dit = dofs_ptr_no_const->get<FieldName_mi_tag>().upper_bound("LAMBDA");
+  dIt = dofs_ptr_no_const->get<FieldName_mi_tag>().lower_bound(field_name);
+  hi_dit = dofs_ptr_no_const->get<FieldName_mi_tag>().upper_bound(field_name);
   if(distance(dIt,hi_dit)!=1) {
     PetscTraceBackErrorHandler(
       PETSC_COMM_WORLD,
