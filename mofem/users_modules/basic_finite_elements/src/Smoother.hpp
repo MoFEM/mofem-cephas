@@ -149,7 +149,8 @@ struct Smoother {
     ):
     NonlinearElasticElement::OpJacobianPiolaKirchhoffStress(
       field_name,data,common_data,tag,jacobian,false,false
-    ) {}
+    ) {
+    }
 
     PetscErrorCode calculateStress(const int gg) {
       PetscFunctionBegin;
@@ -257,7 +258,7 @@ struct Smoother {
       NonlinearElasticElement::BlockData &data,
       NonlinearElasticElement::CommonData &common_data,
       SmootherBlockData &smoother_data,
-      const std::string crack_area_tangent_constrains = "LAMBDA_CRACK_TANGENT_CONSTRAIN"
+      const std::string crack_area_tangent_constrains// = "LAMBDA_CRACK_TANGENT_CONSTRAIN"
     ):
     NonlinearElasticElement::OpLhsPiolaKirchhoff_dx(vel_field,field_name,data,common_data),
     smootherData(smoother_data),
