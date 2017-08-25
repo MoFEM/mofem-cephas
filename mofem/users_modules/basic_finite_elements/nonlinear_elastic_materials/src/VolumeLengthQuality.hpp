@@ -28,8 +28,17 @@ enum VolumeLengthQualityType {
   QUALITY,
   BARRIER_AND_QUALITY,
   BARRIER_AND_CHANGE_QUALITY,
-  BARRIER_AND_CHANGE_QUALITY_SCALED_BY_VOLUME
+  BARRIER_AND_CHANGE_QUALITY_SCALED_BY_VOLUME,
+  LASTOP_VOLUMELENGTHQUALITYTYPE
 };
+
+const char *VolumeLengthQualityTypeNames[] = {
+  "QUALITY",
+  "BARRIER_AND_QUALITY",
+  "BARRIER_AND_CHANGE_QUALITY",
+  "BARRIER_AND_CHANGE_QUALITY_SCALED_BY_VOLUME"
+};
+
 
 /** \brief Volume Length Quality
   \ingroup nonlinear_elastic_elem
@@ -38,15 +47,42 @@ enum VolumeLengthQualityType {
 template<typename TYPE>
 struct VolumeLengthQuality: public NonlinearElasticElement::FunctionsToCalculatePiolaKirchhoffI<TYPE> {
 
-    VolumeLengthQualityType tYpe;
+    // VolumeLengthQualityType tYpe;
+    int tYpe;
     double aLpha;
     double gAmma;
 
     VolumeLengthQuality(VolumeLengthQualityType type,double alpha,double gamma):
-      NonlinearElasticElement::FunctionsToCalculatePiolaKirchhoffI<TYPE>(),
-      tYpe(type),
-      aLpha(alpha),
-      gAmma(gamma) {}
+    NonlinearElasticElement::FunctionsToCalculatePiolaKirchhoffI<TYPE>(),
+    tYpe(type),
+    aLpha(alpha),
+    gAmma(gamma) {
+      ierr = getMaterialOptions(); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+    }
+
+    PetscErrorCode getMaterialOptions() {
+      PetscFunctionBegin;
+      ierr = PetscOptionsBegin(
+        PETSC_COMM_WORLD,"","Get VolumeLengthQuality material options","none"
+      ); CHKERRQ(ierr);
+      ierr = PetscOptionsEList(
+        "-volume_length_type","Volume length quality type","",
+        VolumeLengthQualityTypeNames,LASTOP_VOLUMELENGTHQUALITYTYPE,
+        VolumeLengthQualityTypeNames[tYpe],&tYpe,PETSC_NULL
+      );
+      ierr = PetscOptionsScalar(
+        "-volume_length_alpha",
+        "volume length alpha parameter","",
+        aLpha,&aLpha,PETSC_NULL
+      ); CHKERRQ(ierr);
+      ierr = PetscOptionsScalar(
+        "-volume_length_gamma",
+        "volume length parameter (barrier)","",
+        gAmma,&gAmma,PETSC_NULL
+      ); CHKERRQ(ierr);
+      ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+      PetscFunctionReturn(0);
+    }
 
     VectorDouble coordsEdges;
     double lrmsSquared0;
@@ -171,7 +207,7 @@ struct VolumeLengthQuality: public NonlinearElasticElement::FunctionsToCalculate
 
       try {
 
-        
+
 
         ierr = getEdgesFromElemCoords(); CHKERRQ(ierr);
 
