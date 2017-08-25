@@ -99,7 +99,13 @@ ArcLengthCtx::~ArcLengthCtx() {
 }
 
 ArcLengthMatShell::ArcLengthMatShell(Mat aij,ArcLengthCtx *arc_ptr,string problem_name):
-    Aij(aij),arcPtr(arc_ptr),problemName(problem_name) {}
+Aij(aij),arcPtr(arc_ptr),problemName(problem_name) {
+  ierr = PetscObjectReference((PetscObject)aij); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+}
+
+ArcLengthMatShell::~ArcLengthMatShell() {
+  ierr = MatDestroy(&Aij); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+}
 
 PetscErrorCode ArcLengthMatShell::setLambda(Vec ksp_x,double *lambda,ScatterMode scattermode) {
   PetscFunctionBegin;
@@ -108,8 +114,7 @@ PetscErrorCode ArcLengthMatShell::setLambda(Vec ksp_x,double *lambda,ScatterMode
   ierr = arcPtr->mField.get_problem(problemName,&problem_ptr); CHKERRQ(ierr);
 
   int part = arcPtr->getPart();
-  int rank;
-  MPI_Comm_rank(arcPtr->mField.get_comm(),&rank);
+  int rank = arcPtr->mField.get_comm_rank();
 
   if(rank == part) {
 
@@ -145,8 +150,6 @@ PetscErrorCode ArcLengthMatShell::setLambda(Vec ksp_x,double *lambda,ScatterMode
 
   PetscFunctionReturn(0);
 }
-
-ArcLengthMatShell::~ArcLengthMatShell() {}
 
 PCArcLengthCtx::PCArcLengthCtx(Mat shell_Aij,Mat _Aij,ArcLengthCtx* arc_ptr):
   shellAij(shell_Aij),Aij(_Aij),arcPtr(arc_ptr) {
