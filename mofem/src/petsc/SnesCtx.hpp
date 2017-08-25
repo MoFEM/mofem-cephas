@@ -27,7 +27,7 @@ namespace MoFEM {
   struct SnesCtx {
 
     ErrorCode rval;
-    
+
 
     MoFEM::Interface &mField;   ///< database Interface
     moab::Interface &moab;      ///< moab Interface
@@ -74,6 +74,17 @@ namespace MoFEM {
     basic_method_to_do preProcess_Rhs;
     basic_method_to_do postProcess_Rhs;
 
+    PetscErrorCode copyLoops(const SnesCtx &snes_ctx) {
+      PetscFunctionBegin;
+      loops_to_do_Mat = snes_ctx.loops_to_do_Mat;
+      loops_to_do_Rhs = snes_ctx.loops_to_do_Rhs;
+      preProcess_Mat = snes_ctx.preProcess_Mat;
+      postProcess_Mat = snes_ctx.postProcess_Mat;
+      preProcess_Rhs = snes_ctx.preProcess_Rhs;
+      postProcess_Rhs = snes_ctx.postProcess_Rhs;
+      PetscFunctionReturn(0);
+    }
+
     PetscLogEvent USER_EVENT_SnesRhs;
     PetscLogEvent USER_EVENT_SnesMat;
 
@@ -87,7 +98,10 @@ namespace MoFEM {
       PetscLogEventRegister("LoopSNESMat",0,&USER_EVENT_SnesMat);
     }
 
-    virtual ~SnesCtx() {}
+    virtual ~SnesCtx() {
+    }
+
+
 
     /**
     * @return return reference to vector with FEMethod to calculate tangent matrix
