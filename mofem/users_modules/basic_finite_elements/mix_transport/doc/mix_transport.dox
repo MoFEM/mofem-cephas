@@ -752,9 +752,9 @@ PetscErrorCode MixTransport::MixTransportElement::createMatrices() {
   
   PetscFunctionBegin;
   ierr = mField.MatCreateMPIAIJWithArrays("MIX",&Aij); CHKERRQ(ierr);
-  ierr = mField.VecCreateGhost("MIX",COL,&D); CHKERRQ(ierr);
-  ierr = mField.VecCreateGhost("MIX",COL,&D0); CHKERRQ(ierr);
-  ierr = mField.VecCreateGhost("MIX",ROW,&F); CHKERRQ(ierr);
+  ierr = mField.query_interface<VecManager>()->vecCreateGhost("MIX",COL,&D); CHKERRQ(ierr);
+  ierr = mField.query_interface<VecManager>()->vecCreateGhost("MIX",COL,&D0); CHKERRQ(ierr);
+  ierr = mField.query_interface<VecManager>()->vecCreateGhost("MIX",ROW,&F); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 \endcode
@@ -922,7 +922,7 @@ For details abut above code we refer to PETSc user manual
 
 The last operation at that stage is to store results on the mesh
 \code
-ierr = mField.set_global_ghost_vector("MIX",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+ierr = mField.query_interface<VecManager>()->setGlobalGhostVector("MIX",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 \endcode
 You can think about MoFEM as a link between algebraic structures (e.g. vector)
 and mesh. Function MoFEM::Interface::set_global_ghost_vector is an example of

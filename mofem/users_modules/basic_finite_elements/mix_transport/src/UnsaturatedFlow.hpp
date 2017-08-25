@@ -1365,6 +1365,13 @@ namespace MixTransport {
       // constructor data structures
       ierr = DMSetUp(dM); CHKERRQ(ierr);
 
+      PetscSection section;
+      ierr = mField.query_interface<ISManager>()->sectionCreate("MIX",&section); CHKERRQ(ierr);
+      ierr = DMSetDefaultSection(dM,section); CHKERRQ(ierr);
+      ierr = DMSetDefaultGlobalSection(dM,section); CHKERRQ(ierr);
+      // ierr = PetscSectionView(section,PETSC_VIEWER_STDOUT_WORLD);
+      ierr = PetscSectionDestroy(&section); CHKERRQ(ierr);
+
       PetscFunctionReturn(0);
     }
 
@@ -1421,7 +1428,7 @@ namespace MixTransport {
       PetscErrorCode operator()() {
         PetscFunctionBegin;
         // Update pressure rates
-        ierr = fePtr->mField.set_other_local_ghost_vector(
+        ierr = fePtr->mField.query_interface<VecManager>()->setOtherLocalGhostVector(
           fePtr->problemPtr,"VALUES",string("VALUES")+"_t",
           ROW,fePtr->ts_u_t,INSERT_VALUES,SCATTER_REVERSE
         ); CHKERRQ(ierr);
@@ -1489,6 +1496,9 @@ namespace MixTransport {
           case TSMethod::CTX_TSSETIJACOBIAN: {
             ierr = MatAssemblyBegin(fePtr->ts_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
             ierr = MatAssemblyEnd(fePtr->ts_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+            // MatView(fePtr->ts_B,PETSC_VIEWER_DRAW_WORLD);
+            // std::string wait;
+            // std::cin >> wait;
             ierr = MatZeroRowsColumns(
               fePtr->ts_B,cTx.bcVecIds.size(),&*cTx.bcVecIds.begin(),1,PETSC_NULL,PETSC_NULL
             ); CHKERRQ(ierr);
@@ -1515,7 +1525,8 @@ namespace MixTransport {
             }
             ierr = VecAssemblyBegin(fePtr->ts_F); CHKERRQ(ierr);
             ierr = VecAssemblyEnd(fePtr->ts_F); CHKERRQ(ierr);
-            // ierr = fePtr->mField.set_other_local_ghost_vector(
+            // ierr = VecView(fePtr->ts_F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+            // ierr = fePtr->mField.query_interface<VecManager>()->setOtherLocalGhostVector(
             //   fePtr->problemPtr,"VALUES",string("FLUXES")+"_residual",
             //   ROW,fePtr->ts_F,INSERT_VALUES,SCATTER_REVERSE
             // ); CHKERRQ(ierr);
@@ -1770,6 +1781,34 @@ namespace MixTransport {
       TsCtx *ts_ctx;
       DMMoFEMGetTsCtx(dM,&ts_ctx);
       ierr = TSMonitorSet(ts,f_TSMonitorSet,ts_ctx,PETSC_NULL); CHKERRQ(ierr);
+
+      //This add SNES monitor, to show error by fields. It is dirty trick
+      //to add monitor, so code is hidden from doxygen
+      ierr = TSSetSolution(ts,D); CHKERRQ(ierr);
+      ierr = TSSetUp(ts); CHKERRQ(ierr);
+      SNES snes;
+      ierr = TSGetSNES(ts,&snes); CHKERRQ(ierr);
+
+      #if PETSC_VERSION_GE(3,7,0)
+      {
+        PetscViewerAndFormat *vf;
+        ierr = PetscViewerAndFormatCreate(PETSC_VIEWER_STDOUT_WORLD,PETSC_VIEWER_DEFAULT,&vf);CHKERRQ(ierr);
+        ierr = SNESMonitorSet(
+          snes,
+          (PetscErrorCode (*)(SNES,PetscInt,PetscReal,void*))SNESMonitorFields,
+          vf,(PetscErrorCode (*)(void**))PetscViewerAndFormatDestroy
+        );CHKERRQ(ierr);
+      }
+      #else
+      {
+        ierr = SNESMonitorSet(
+          snes,
+          (PetscErrorCode (*)(SNES,PetscInt,PetscReal,void*))SNESMonitorFields,0,0
+        );CHKERRQ(ierr);
+      }
+      #endif
+
+
       ierr = TSSolve(ts,D); CHKERRQ(ierr);
 
       // Get statisic form TS and print it

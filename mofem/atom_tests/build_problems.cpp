@@ -27,8 +27,8 @@ static char help[] = "...\n\n";
 
 int main(int argc, char *argv[]) {
 
-  
-  
+
+
 
   PetscInitialize(&argc,&argv,(char *)0,help);
 
@@ -66,7 +66,7 @@ int main(int argc, char *argv[]) {
     bit_level0.set(0);
     EntityHandle meshset_level0;
     rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERRQ_MOAB(rval);
-    ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
+    ierr = m_field.query_interface<BitRefManager>()->setBitRefLevelByDim(0,3,bit_level0); CHKERRQ(ierr);
 
     //Fields
     ierr = m_field.add_field("F1",L2,AINSWORTH_LEGENDRE_BASE,1); CHKERRQ(ierr);
@@ -103,7 +103,6 @@ int main(int argc, char *argv[]) {
     ierr = m_field.add_ents_to_finite_element_by_type(root_set,MBTET,"E1"); CHKERRQ(ierr);
     ierr = m_field.add_ents_to_finite_element_by_type(root_set,MBTET,"E2"); CHKERRQ(ierr);
     ierr = m_field.add_ents_to_finite_element_by_type(root_set,MBTET,"E3"); CHKERRQ(ierr);
-
 
     ierr = m_field.build_finite_elements(); CHKERRQ(ierr);
     ierr = m_field.build_adjacencies(bit_level0); CHKERRQ(ierr);
@@ -152,6 +151,8 @@ int main(int argc, char *argv[]) {
     MatView(m,viewer);
     ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
     ierr = MatDestroy(&m); CHKERRQ(ierr);*/
+
+    
 
   } catch (MoFEMException const &e) {
     SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);

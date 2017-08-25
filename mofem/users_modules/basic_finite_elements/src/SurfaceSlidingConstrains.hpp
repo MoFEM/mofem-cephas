@@ -206,7 +206,7 @@ struct SurfaceSlidingConstrains {
 
     PetscErrorCode preProcess() {
       PetscFunctionBegin;
-      
+
 
       ierr = MoFEM::FaceElementForcesAndSourcesCore::preProcess(); CHKERRQ(ierr);
 
@@ -241,9 +241,11 @@ struct SurfaceSlidingConstrains {
 
   };
 
-  MyTriangleFE feRhs;
+  boost::shared_ptr<MyTriangleFE> feRhsPtr,feLhsPtr;
+
+  MyTriangleFE& feRhs;
   MyTriangleFE& getLoopFeRhs() { return feRhs; }
-  MyTriangleFE feLhs;
+  MyTriangleFE& feLhs;
   MyTriangleFE& getLoopFeLhs() { return feLhs ; }
 
   /** \brief Class implemented by user to detect face orientation
@@ -270,8 +272,10 @@ struct SurfaceSlidingConstrains {
 
   SurfaceSlidingConstrains(MoFEM::Interface &m_field,DriverElementOrientation &orientation):
   mField(m_field),
-  feRhs(m_field),
-  feLhs(m_field),
+  feRhsPtr(new MyTriangleFE(m_field)),
+  feLhsPtr(new MyTriangleFE(m_field)),
+  feRhs(*feRhsPtr),
+  feLhs(*feLhsPtr),
   crackFrontOrientation(orientation) {
   }
 
@@ -363,7 +367,7 @@ struct SurfaceSlidingConstrains {
 
     PetscErrorCode calculateNormal() {
       PetscFunctionBegin;
-      
+
       try {
         sPin.resize(3,3,false);
         ierr = calcSpin(sPin,dXdKsi); CHKERRQ(ierr);
@@ -396,7 +400,7 @@ struct SurfaceSlidingConstrains {
 
     PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
-      
+
 
       try {
 
@@ -530,7 +534,7 @@ struct SurfaceSlidingConstrains {
     PetscErrorCode doWork(
       int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data
     ) {
-      
+
 
       try {
 
@@ -622,7 +626,7 @@ struct SurfaceSlidingConstrains {
       int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data
     ) {
 
-      
+
 
       try {
 
@@ -723,7 +727,7 @@ struct SurfaceSlidingConstrains {
       DataForcesAndSurcesCore::EntData &col_data
     ) {
       PetscFunctionBegin;
-      
+
 
       if(col_type != MBVERTEX) {
         PetscFunctionReturn(0);
@@ -851,7 +855,7 @@ struct SurfaceSlidingConstrains {
       DataForcesAndSurcesCore::EntData &col_data
     ) {
       PetscFunctionBegin;
-      
+
 
       try {
 
@@ -963,7 +967,7 @@ struct SurfaceSlidingConstrains {
       DataForcesAndSurcesCore::EntData &col_data
     ) {
       PetscFunctionBegin;
-      
+
 
       try {
 

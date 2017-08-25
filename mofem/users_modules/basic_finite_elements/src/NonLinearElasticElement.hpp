@@ -123,7 +123,7 @@ struct NonlinearElasticElement {
     std::vector<MatrixDouble3by3> sTress;
     std::vector<MatrixDouble> jacStress; ///< this is simply material tangent operator
 
-    // This part can be used to calulate stress directly from potential
+    // This part can be used to calculate stress directly from potential
 
     std::vector<double> eNergy;
     std::vector<VectorDouble > jacEnergy;

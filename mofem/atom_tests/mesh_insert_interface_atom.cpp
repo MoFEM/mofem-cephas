@@ -54,7 +54,7 @@ int main(int argc, char *argv[]) {
   PrismInterface *interface;
   ierr = m_field.query_interface(interface); CHKERRQ(ierr);
 
-  ierr = m_field.seed_ref_level_3D(0,BitRefLevel().set(0)); CHKERRQ(ierr);
+  ierr = m_field.query_interface<BitRefManager>()->setBitRefLevelByDim(0,3,BitRefLevel().set(0)); CHKERRQ(ierr);
   std::vector<BitRefLevel> bit_levels;
   bit_levels.push_back(BitRefLevel().set(0));
 

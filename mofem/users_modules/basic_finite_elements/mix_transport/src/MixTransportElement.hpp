@@ -484,9 +484,9 @@ struct MixTransportElement {
   PetscErrorCode createMatrices() {
     PetscFunctionBegin;
     ierr = mField.MatCreateMPIAIJWithArrays("MIX",&Aij); CHKERRQ(ierr);
-    ierr = mField.VecCreateGhost("MIX",COL,&D); CHKERRQ(ierr);
-    ierr = mField.VecCreateGhost("MIX",COL,&D0); CHKERRQ(ierr);
-    ierr = mField.VecCreateGhost("MIX",ROW,&F); CHKERRQ(ierr);
+    ierr = mField.query_interface<VecManager>()->vecCreateGhost("MIX",COL,&D); CHKERRQ(ierr);
+    ierr = mField.query_interface<VecManager>()->vecCreateGhost("MIX",COL,&D0); CHKERRQ(ierr);
+    ierr = mField.query_interface<VecManager>()->vecCreateGhost("MIX",ROW,&F); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
@@ -509,7 +509,7 @@ struct MixTransportElement {
     ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
-    ierr = mField.set_global_ghost_vector("MIX",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = mField.query_interface<VecManager>()->setGlobalGhostVector("MIX",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
     // Calculate essential boundary conditions
 
@@ -604,7 +604,7 @@ struct MixTransportElement {
 
 
     // copy data form vector on mesh
-    ierr = mField.set_global_ghost_vector("MIX",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = mField.query_interface<VecManager>()->setGlobalGhostVector("MIX",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
     PetscFunctionReturn(0);
   }

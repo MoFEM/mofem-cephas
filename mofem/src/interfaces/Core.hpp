@@ -22,6 +22,7 @@
 
 namespace MoFEM {
 
+// This is to have obsolete back compatibility
 struct MeshsetsManager;
 
 /** \brief Core (interface) class
@@ -91,8 +92,6 @@ struct Core: public Interface {
   mutable int *buildMoFEM; ///< keeps flags/semaphores for different stages
 
   //Database
-  
-  
 
   //Data and low level methods
   Tag th_Part;  ///< Tag for partition number
@@ -117,7 +116,7 @@ struct Core: public Interface {
    * mofem entities, dofs and finite elements.
    *
    */
-  boost::shared_ptr<BasicEntityData> get_basic_entity_data_ptr() {
+  boost::shared_ptr<BasicEntityData>& get_basic_entity_data_ptr() {
     return basicEntityDataPtr;
   }
 
@@ -231,10 +230,10 @@ struct Core: public Interface {
   //refine
   PetscErrorCode seed_finite_elements(const Range &entities,int verb = -1);
   PetscErrorCode seed_finite_elements(const EntityHandle meshset,int verb = -1);
-  PetscErrorCode seed_ref_level(const Range &ents,const BitRefLevel &bit,const bool only_tets = true,int verb = -1);
-  PetscErrorCode seed_ref_level_2D(const EntityHandle meshset,const BitRefLevel &bit,int verb = -1);
-  PetscErrorCode seed_ref_level_3D(const EntityHandle meshset,const BitRefLevel &bit,int verb = -1);
-  PetscErrorCode seed_ref_level_MESHSET(const EntityHandle meshset,const BitRefLevel &bit,int verb = -1);
+  DEPRECATED PetscErrorCode seed_ref_level(const Range &ents,const BitRefLevel &bit,const bool only_tets = true,int verb = -1);
+  DEPRECATED PetscErrorCode seed_ref_level_2D(const EntityHandle meshset,const BitRefLevel &bit,int verb = -1);
+  DEPRECATED PetscErrorCode seed_ref_level_3D(const EntityHandle meshset,const BitRefLevel &bit,int verb = -1);
+  DEPRECATED PetscErrorCode seed_ref_level_MESHSET(const EntityHandle meshset,const BitRefLevel &bit,int verb = -1);
   PetscErrorCode get_entities_by_type_and_ref_level(const BitRefLevel &bit,const BitRefLevel &mask,const EntityType type,const EntityHandle meshset,int verb = -1);
   PetscErrorCode get_entities_by_type_and_ref_level(const BitRefLevel &bit,const BitRefLevel &mask,const EntityType type,Range &ents,int verb = -1);
   PetscErrorCode get_entities_by_ref_level(const BitRefLevel &bit,const BitRefLevel &mask,const EntityHandle meshset);
@@ -519,7 +518,8 @@ struct Core: public Interface {
   PetscErrorCode clear_finite_elements(const std::string &name,const Range &ents,int verb = -1);
   PetscErrorCode resolve_shared_ents(const Problem *problem_ptr,const std::string &fe_name,int verb = -1);
   PetscErrorCode resolve_shared_ents(const std::string &name,const std::string &fe_name,int verb = -1);
-  PetscErrorCode get_problem_elements_layout(
+
+  DEPRECATED PetscErrorCode get_problem_elements_layout(
     const std::string &name,const std::string &fe_name,PetscLayout *layout,int verb = -1
   );
 
@@ -593,27 +593,28 @@ struct Core: public Interface {
   PetscErrorCode MatCreateSeqAIJWithArrays(
     const std::string &name,Mat *Aij,PetscInt **i,PetscInt **j,PetscScalar **v,int verb = -1
   );
-  PetscErrorCode VecCreateSeq(const std::string &name,RowColData rc,Vec *V) const;
-  PetscErrorCode VecCreateGhost(const std::string &name,RowColData rc,Vec *V) const;
-  PetscErrorCode set_local_ghost_vector(
+  DEPRECATED PetscErrorCode VecCreateSeq(const std::string &name,RowColData rc,Vec *V) const;
+  DEPRECATED PetscErrorCode VecCreateGhost(const std::string &name,RowColData rc,Vec *V) const;
+  DEPRECATED PetscErrorCode set_local_ghost_vector(
     const Problem *problem_ptr,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode
   ) const;
-  PetscErrorCode set_local_ghost_vector(
+  DEPRECATED PetscErrorCode set_local_ghost_vector(
     const std::string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode
   ) const;
-  PetscErrorCode set_global_ghost_vector(
+  DEPRECATED PetscErrorCode set_global_ghost_vector(
     const Problem *problem_ptr,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode
   ) const;
-  PetscErrorCode set_global_ghost_vector(
+  DEPRECATED PetscErrorCode set_global_ghost_vector(
     const std::string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode
   ) const;
 
   /// \name scatter from problem filed to other problem field
 
-  PetscErrorCode ISCreateProblemOrder(
+  DEPRECATED PetscErrorCode ISCreateProblemOrder(
     const std::string &problem,RowColData rc,int min_order,int max_order,IS *is,int verb = -1
   ) const;
-  PetscErrorCode ISCreateProblemFieldAndRank(
+
+  DEPRECATED PetscErrorCode ISCreateProblemFieldAndRank(
     const std::string &problem,
     RowColData rc,
     const std::string &field,
@@ -623,23 +624,25 @@ struct Core: public Interface {
     int verb = -1
   ) const;
 
-  PetscErrorCode ISCreateFromProblemFieldToOtherProblemField(
+  DEPRECATED PetscErrorCode ISCreateFromProblemFieldToOtherProblemField(
     const std::string &x_problem,const std::string &x_field_name,RowColData x_rc,
     const std::string &y_problem,const std::string &y_field_name,RowColData y_rc,
     std::vector<int> &idx,std::vector<int> &idy,int verb = -1
   ) const;
-  PetscErrorCode ISCreateFromProblemFieldToOtherProblemField(
+
+  DEPRECATED PetscErrorCode ISCreateFromProblemFieldToOtherProblemField(
     const std::string &x_problem,const std::string &x_field_name,RowColData x_rc,
     const std::string &y_problem,const std::string &y_field_name,RowColData y_rc,
     IS *ix,IS *iy,int verb = -1
   ) const;
+
   PetscErrorCode VecScatterCreate(
     Vec xin,const std::string &x_problem,const std::string &x_field_name,RowColData x_rc,
     Vec yin,const std::string &y_problem,const std::string &y_field_name,RowColData y_rc,
     VecScatter *newctx,int verb = -1
   ) const;
 
-  PetscErrorCode ISCreateFromProblemToOtherProblem(
+  DEPRECATED PetscErrorCode ISCreateFromProblemToOtherProblem(
     const std::string &x_problem,
     RowColData x_rc,
     const std::string &y_problem,
@@ -648,7 +651,8 @@ struct Core: public Interface {
     std::vector<int> &idy,
     int verb = -1
   ) const;
-  PetscErrorCode ISCreateFromProblemToOtherProblem(
+
+  DEPRECATED PetscErrorCode ISCreateFromProblemToOtherProblem(
     const std::string &x_problem,
     RowColData x_rc,
     const std::string &y_problem,
@@ -657,7 +661,8 @@ struct Core: public Interface {
     IS *iy,
     int verb = -1
   ) const;
-  PetscErrorCode VecScatterCreate(
+
+  DEPRECATED PetscErrorCode VecScatterCreate(
     Vec xin,
     const std::string &x_problem,
     RowColData x_rc,
@@ -668,23 +673,23 @@ struct Core: public Interface {
     int verb = -1
   ) const;
 
-  /// \neme vector local and global projection
+  /// \name vector local and global projection
 
-  PetscErrorCode set_other_local_ghost_vector(
+  DEPRECATED PetscErrorCode set_other_local_ghost_vector(
     const Problem *problem_ptr,
     const std::string& fiel_name,
     const std::string& cpy_field_name,
     RowColData rc,Vec V,
     InsertMode mode,ScatterMode scatter_mode,int verb = -1
   );
-  PetscErrorCode set_other_local_ghost_vector(
+  DEPRECATED PetscErrorCode set_other_local_ghost_vector(
     const std::string &name,
     const std::string& fiel_name,
     const std::string& cpy_field_name,
     RowColData rc,Vec V,
     InsertMode mode,ScatterMode scatter_mode,int verb = -1
   );
-  PetscErrorCode set_other_global_ghost_vector(
+  DEPRECATED PetscErrorCode set_other_global_ghost_vector(
     const Problem *problem_ptr,
     const std::string& fiel_name,
     const std::string& cpy_field_name,
@@ -694,7 +699,7 @@ struct Core: public Interface {
     ScatterMode scatter_mode,
     int verb = -1
   );
-  PetscErrorCode set_other_global_ghost_vector(
+  DEPRECATED PetscErrorCode set_other_global_ghost_vector(
     const std::string &name,
     const std::string& fiel_name,
     const std::string& cpy_field_name,
@@ -765,13 +770,13 @@ struct Core: public Interface {
 
   /// \name field axpy functions
 
-  PetscErrorCode field_axpy(
+  DEPRECATED PetscErrorCode field_axpy(
     const double alpha,const std::string& fiel_name_x,const std::string& field_name_y,
     bool error_if_missing = false,bool creat_if_missing = false
   );
-  PetscErrorCode field_scale(const double alpha,const std::string& fiel_name);
-  PetscErrorCode set_field(const double val,const EntityType type,const std::string& fiel_name);
-  PetscErrorCode set_field(const double val,const EntityType type,const Range &ents,const std::string& field_name);
+  DEPRECATED PetscErrorCode field_scale(const double alpha,const std::string& fiel_name);
+  DEPRECATED PetscErrorCode set_field(const double val,const EntityType type,const std::string& fiel_name);
+  DEPRECATED PetscErrorCode set_field(const double val,const EntityType type,const Range &ents,const std::string& field_name);
 
   /// \name get adjacencies
   PetscErrorCode get_adjacencies_equality(const EntityHandle from_entiti,const int to_dimension,Range &adj_entities) const;

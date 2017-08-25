@@ -45,98 +45,26 @@
 #include <PrismInterface.hpp>
 #include <SeriesRecorder.hpp>
 #include <Core.hpp>
+#include <FieldBlas.hpp>
 
 namespace MoFEM {
 
 // const static int debug = 1;
 
-PetscErrorCode Core::field_axpy(const double alpha,const std::string& field_name_x,const std::string& field_name_y,
+PetscErrorCode Core::field_axpy(
+  const double alpha,const std::string& field_name_x,const std::string& field_name_y,
   bool error_if_missing,bool creat_if_missing) {
-  PetscFunctionBegin;
-  Field_multiIndex::index<FieldName_mi_tag>::type::iterator x_fit = fIelds.get<FieldName_mi_tag>().find(field_name_x);
-  if(x_fit==fIelds.get<FieldName_mi_tag>().end()) {
-    SETERRQ1(PETSC_COMM_SELF,1,"x field < %s > not found, (top tip: check spelling)",field_name_x.c_str());
-  }
-  Field_multiIndex::index<FieldName_mi_tag>::type::iterator y_fit = fIelds.get<FieldName_mi_tag>().find(field_name_y);
-  if(y_fit==fIelds.get<FieldName_mi_tag>().end()) {
-    SETERRQ1(PETSC_COMM_SELF,1,"y field < %s > not found, (top tip: check spelling)",field_name_y.c_str());
-  }
-  if((*x_fit)->getSpace() != (*y_fit)->getSpace()) {
-    SETERRQ2(PETSC_COMM_SELF,1,"space for field < %s > and field <%s> are not compatible",field_name_x.c_str(),field_name_y.c_str());
-  }
-  if((*x_fit)->getNbOfCoeffs() != (*y_fit)->getNbOfCoeffs()) {
-    SETERRQ2(PETSC_COMM_SELF,1,"rank for field < %s > and field <%s> are not compatible",field_name_x.c_str(),field_name_y.c_str());
-  }
-  FieldEntityByFieldName::iterator x_eit;
-  x_eit = entsFields.get<FieldName_mi_tag>().lower_bound(field_name_x.c_str());
-  for(;x_eit!=entsFields.get<FieldName_mi_tag>().upper_bound(field_name_x.c_str());x_eit++) {
-    int nb_dofs_on_x_entity = (*x_eit)->tag_FieldData_size/sizeof(FieldData);
-    for(int dd = 0;dd<nb_dofs_on_x_entity;dd++) {
-      ApproximationOrder dof_order = (*x_eit)->getDofOrderMap()[dd];
-      FieldCoefficientsNumber dof_rank = dd%(*x_eit)->getNbOfCoeffs();
-      FieldData data = (*x_eit)->tag_FieldData[dd];
-      DofEntity_multiIndex::index<Composite_Name_Ent_Order_And_CoeffIdx_mi_tag>::type::iterator dit;
-      dit = dofsField.get<Composite_Name_Ent_Order_And_CoeffIdx_mi_tag>().find(
-        boost::make_tuple(field_name_y.c_str(),(*x_eit)->getEnt(),dof_order,dof_rank)
-      );
-      if(dit == dofsField.get<Composite_Name_Ent_Order_And_CoeffIdx_mi_tag>().end()) {
-        if(creat_if_missing) {
-          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"not yet implemented");
-        } else {
-          if(error_if_missing) {
-            std::ostringstream ss;
-            ss << "dof on ent " << (*x_eit)->getEnt() << " order " << dof_order << " rank " << dof_rank << " does not exist";
-            SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,ss.str().c_str());
-          } else {
-            continue;
-          }
-        }
-      }
-      (*dit)->getFieldData() += alpha*data;
-    }
-  }
-  PetscFunctionReturn(0);
+  return FieldBlas(*this).fieldAxpy(alpha,field_name_x,field_name_y,error_if_missing,creat_if_missing);
 }
 PetscErrorCode Core::set_field(const double val,const EntityType type,const std::string& field_name) {
-  PetscFunctionBegin;
-  DofEntity_multiIndex::index<Composite_Name_And_Type_mi_tag >::type::iterator dit,hi_dit;
-  dit = dofsField.get<Composite_Name_And_Type_mi_tag >().lower_bound(boost::make_tuple(field_name,type));
-  hi_dit = dofsField.get<Composite_Name_And_Type_mi_tag >().upper_bound(boost::make_tuple(field_name,type));
-  for(;dit!=hi_dit;dit++) {
-    (*dit)->getFieldData() = val;
-  }
+  return FieldBlas(*this).setField(val,type,field_name);
   PetscFunctionReturn(0);
 }
 PetscErrorCode Core::set_field(const double val,const EntityType type,const Range &ents,const std::string& field_name) {
-  PetscFunctionBegin;
-  DofEntity_multiIndex::index<Composite_Name_And_Type_mi_tag >::type::iterator dit,hi_dit;
-  dit = dofsField.get<Composite_Name_And_Type_mi_tag >().lower_bound(boost::make_tuple(field_name,type));
-  hi_dit = dofsField.get<Composite_Name_And_Type_mi_tag >().upper_bound(boost::make_tuple(field_name,type));
-  EntityHandle ent,last = 0;
-  bool cont = true;
-  for(;dit!=hi_dit;dit++) {
-    ent = (*dit)->getEnt();
-    if(ent != last) {
-      if(ents.find(ent)==ents.end()) {
-        cont = true;
-      } else {
-        cont = false;
-      }
-      last = ent;
-    }
-    if(cont) continue;
-    (*dit)->getFieldData() = val;
-  }
-  PetscFunctionReturn(0);
+  return FieldBlas(*this).setField(val,type,ents,field_name);
 }
 PetscErrorCode Core::field_scale(const double alpha,const std::string& field_name) {
-  PetscFunctionBegin;
-  DofEntityByFieldName::iterator dit,hi_dit;
-  dit = dofsField.get<FieldName_mi_tag>().lower_bound(field_name);
-  hi_dit = dofsField.get<FieldName_mi_tag>().upper_bound(field_name);
-  for(;dit!=hi_dit;dit++) {
-    (*dit)->getFieldData() *= alpha;
-  }
+  return FieldBlas(*this).fieldScale(alpha,field_name);
   PetscFunctionReturn(0);
 }
 

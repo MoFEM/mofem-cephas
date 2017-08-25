@@ -196,6 +196,10 @@ struct interface_DofEntity: public interface_FieldEntity<T> {
 /**
  * \brief keeps information about indexed dofs for the problem
  * \ingroup dof_multi_indices
+ *
+ * FIXME: Is too many iterator, this has to be manage more efficiently, some
+ * iterators could be moved to multi_indices views.
+ *
  */
 struct NumeredDofEntity: public interface_DofEntity<DofEntity> {
 
@@ -265,6 +269,7 @@ struct BaseFEDofEntity {
   BaseFEDofEntity(const boost::shared_ptr<SideNumber>& side_number_ptr):
   sideNumberPtr(side_number_ptr) {};
   boost::shared_ptr<SideNumber> sideNumberPtr;
+  inline int getSideNumber() { return sideNumberPtr->side_number; }
 };
 
 /**
@@ -628,6 +633,8 @@ typedef multi_index_container<
 	      const_mem_fun<NumeredDofEntity::interface_type_DofEntity,DofIdx,&NumeredDofEntity::getEntDofIdx>
       >
     >,
+    // ordered_non_unique<
+    //   tag<EntDofIdx_mi_tag>, const_mem_fun<NumeredDofEntity::interface_type_DofEntity,DofIdx,&NumeredDofEntity::getEntDofIdx> >,
     ordered_non_unique<
       tag<Idx_mi_tag>, member<NumeredDofEntity,DofIdx,&NumeredDofEntity::dofIdx> >,
     ordered_non_unique<
@@ -680,6 +687,14 @@ typedef multi_index_container<
 	     member<NumeredDofEntity,unsigned int,&NumeredDofEntity::pArt>
 	    >
     >,
+    // ordered_non_unique<
+    //   tag<Composite_Ent_and_Part_mi_tag>,
+    //   composite_key<
+	  //    NumeredDofEntity,
+	  //    const_mem_fun<NumeredDofEntity::interface_type_DofEntity,EntityHandle,&NumeredDofEntity::getEnt>,
+	  //    member<NumeredDofEntity,unsigned int,&NumeredDofEntity::pArt>
+	  //   >
+    // >,
     ordered_non_unique<
       tag<Composite_Name_And_HasLocalIdx_mi_tag>,
       composite_key<

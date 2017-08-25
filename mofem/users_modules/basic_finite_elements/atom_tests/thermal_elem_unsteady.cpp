@@ -122,7 +122,7 @@ int main(int argc, char *argv[]) {
     ierr = prb_mng_ptr->partitionGhostDofs("TEST_PROBLEM"); CHKERRQ(ierr);
 
     Vec F;
-    ierr = m_field.VecCreateGhost("TEST_PROBLEM",ROW,&F); CHKERRQ(ierr);
+    ierr = m_field.query_interface<VecManager>()->vecCreateGhost("TEST_PROBLEM",ROW,&F); CHKERRQ(ierr);
     Vec T;
     ierr = VecDuplicate(F,&T); CHKERRQ(ierr);
     Mat A;
@@ -192,7 +192,7 @@ int main(int argc, char *argv[]) {
       for(_IT_SERIES_STEPS_BY_NAME_FOR_LOOP_(recorder_ptr,"THEMP_SERIES",sit)) {
 
         ierr = recorder_ptr->load_series_data("THEMP_SERIES",sit->get_step_number()); CHKERRQ(ierr);
-        ierr = m_field.set_local_ghost_vector("TEST_PROBLEM",ROW,T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+        ierr = m_field.query_interface<VecManager>()->setLocalGhostVector("TEST_PROBLEM",ROW,T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
         double sum0;
         ierr = VecSum(T,&sum0); CHKERRQ(ierr);

@@ -25,10 +25,6 @@ using namespace MoFEM;
 static char help[] = "...\n\n";
 
 int main(int argc, char *argv[]) {
-
-  
-  
-
   //initialize petsc
   PetscInitialize(&argc,&argv,(char *)0,help);
 
@@ -71,32 +67,41 @@ int main(int argc, char *argv[]) {
   //add all entities to database, all of them will be used
   BitRefLevel bit_level0;
   bit_level0.set(0);
-  ierr = m_field.seed_ref_level_3D(root_set,bit_level0); CHKERRQ(ierr);
+  ierr = m_field.query_interface<BitRefManager>()->setBitRefLevelByDim(root_set,3,bit_level0); CHKERRQ(ierr);
   //define & build field
-  int field_rank = 1;
+  int field_rank = 3;
   #if PETSC_VERSION_GE(3,6,4)
   ierr = PetscOptionsGetInt(PETSC_NULL,"","-my_field_rank",&field_rank,&flg); CHKERRQ(ierr);
   #else
   ierr = PetscOptionsGetInt(PETSC_NULL,PETSC_NULL,"-my_field_rank",&field_rank,&flg); CHKERRQ(ierr);
   #endif
-  ierr = m_field.add_field("FIELD",H1,AINSWORTH_LEGENDRE_BASE,field_rank); CHKERRQ(ierr);
+  ierr = m_field.add_field("FIELD1",H1,AINSWORTH_LEGENDRE_BASE,field_rank); CHKERRQ(ierr);
+  ierr = m_field.add_field("FIELD2",L2,AINSWORTH_LEGENDRE_BASE,1); CHKERRQ(ierr);
+
   //add entities to field
-  ierr = m_field.add_ents_to_field_by_type(root_set,MBTET,"FIELD"); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_field_by_type(root_set,MBTET,"FIELD1"); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_field_by_type(root_set,MBTET,"FIELD2"); CHKERRQ(ierr);
+
   //set app. order
   int order = 4;
-  ierr = m_field.set_field_order(root_set,MBTET,"FIELD",order); CHKERRQ(ierr);
-  ierr = m_field.set_field_order(root_set,MBTRI,"FIELD",order); CHKERRQ(ierr);
-  ierr = m_field.set_field_order(root_set,MBEDGE,"FIELD",order); CHKERRQ(ierr);
-  ierr = m_field.set_field_order(root_set,MBVERTEX,"FIELD",1); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(root_set,MBTET,"FIELD1",order); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(root_set,MBTRI,"FIELD1",order); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(root_set,MBEDGE,"FIELD1",order); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(root_set,MBVERTEX,"FIELD1",1); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(root_set,MBTET,"FIELD2",order); CHKERRQ(ierr);
+
   //build data structures for fields
   ierr = m_field.build_fields(); CHKERRQ(ierr);
 
   //define & build finite elements
   ierr = m_field.add_finite_element("FE"); CHKERRQ(ierr);
   //Define rows/cols and element data
-  ierr = m_field.modify_finite_element_add_field_row("FE","FIELD"); CHKERRQ(ierr);
-  ierr = m_field.modify_finite_element_add_field_col("FE","FIELD"); CHKERRQ(ierr);
-  ierr = m_field.modify_finite_element_add_field_data("FE","FIELD"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_row("FE","FIELD1"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_col("FE","FIELD1"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_data("FE","FIELD1"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_row("FE","FIELD2"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_col("FE","FIELD2"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_data("FE","FIELD2"); CHKERRQ(ierr);
   //add entities to finite element
   ierr = m_field.add_ents_to_finite_element_by_type(root_set,MBTET,"FE"); CHKERRQ(ierr);
   //build finite elemnts
@@ -121,24 +126,39 @@ int main(int argc, char *argv[]) {
   //   std::cin >> wait;
   // }
 
+  // const MoFEM::Problem *problem_ptr;
+  // ierr = DMMoFEMGetProblemPtr(dm,&problem_ptr); CHKERRQ(ierr);
+  // for(_IT_NUMEREDDOF_COL_FOR_LOOP_(problem_ptr,dit)) {
+  //   cerr << **dit << endl;
+  // }
+
   ierr = m_field.partition_check_matrix_fill_in("DMMOFEM",-1,-1,1); CHKERRQ(ierr);
 
+  std::vector<std::string> fields_list;
+  fields_list.push_back("FIELD1");
+
+  // PetscSection section;
+  PetscSection section;
+  ierr = m_field.query_interface<ISManager>()->sectionCreate(
+    dm_name,&section
+  ); CHKERRQ(ierr);
+  ierr = PetscSectionView(section,PETSC_VIEWER_STDOUT_WORLD);
+  ierr = DMSetDefaultSection(dm,section); CHKERRQ(ierr);
+  ierr = DMSetDefaultGlobalSection(dm,section); CHKERRQ(ierr);
+  ierr = PetscSectionDestroy(&section); CHKERRQ(ierr);
 
   PetscBool save_file = PETSC_TRUE;
-
   #if PETSC_VERSION_GE(3,6,4)
   ierr = PetscOptionsGetBool(PETSC_NULL,"","-my_save_fiele",&save_file,&flg); CHKERRQ(ierr);
   #else
   ierr = PetscOptionsGetBool(PETSC_NULL,PETSC_NULL,"-my_save_fiele",&save_file,&flg); CHKERRQ(ierr);
   #endif
   if(save_file) {
-
     PetscViewer viewer;
     ierr = PetscViewerASCIIOpen(PETSC_COMM_WORLD,"dm_build_partitioned_mesh.txt",&viewer); CHKERRQ(ierr);
     ierr = PetscViewerPushFormat(viewer,PETSC_VIEWER_ASCII_INFO); CHKERRQ(ierr);
     MatView(m,viewer);
     ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
-
   }
 
   ierr = MatDestroy(&m); CHKERRQ(ierr);

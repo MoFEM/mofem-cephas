@@ -329,6 +329,12 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSurcesCore {
    * \brief Calculate base functions
    * @return Error code
    */
+  virtual PetscErrorCode calculateBaseFunctionsOnElement(const int b);
+
+  /**
+   * \brief Calculate base functions
+   * @return Error code
+   */
   virtual PetscErrorCode calculateBaseFunctionsOnElement();
 
   /**

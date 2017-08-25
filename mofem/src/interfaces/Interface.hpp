@@ -45,12 +45,18 @@ struct Interface: public UnknownInterface {
 
   template <class IFace>
   PetscErrorCode query_interface(IFace*& ptr) const {
-    
     PetscFunctionBegin;
     void* tmp_ptr;
     ierr = query_interface_type(typeid(IFace),tmp_ptr); CHKERRQ(ierr);
     ptr = reinterpret_cast<IFace*>(tmp_ptr);
     PetscFunctionReturn(0);
+  }
+
+  template <class IFace>
+  IFace* query_interface() const {
+    void* tmp_ptr;
+    ierr = query_interface_type(typeid(IFace),tmp_ptr); CHKERRABORT(PETSC_COMM_SELF,ierr);
+    return reinterpret_cast<IFace*>(tmp_ptr);
   }
 
   /**
@@ -93,7 +99,7 @@ struct Interface: public UnknownInterface {
    * mofem entities, dofs and finite elements.
    *
    */
-  virtual boost::shared_ptr<BasicEntityData> get_basic_entity_data_ptr() = 0;
+  virtual boost::shared_ptr<BasicEntityData>& get_basic_entity_data_ptr() = 0;
 
  /**@}*/
 
@@ -416,7 +422,7 @@ struct Interface: public UnknownInterface {
   */
   virtual PetscErrorCode seed_finite_elements(const Range &entities,int verb = -1) = 0;
 
-  /**
+  /** \deprecated use BitRefManager
   * \brief seed 2D entities (Triangles entities only) in the meshset and their adjacencies (only TRIs adjacencies) in a particular BitRefLevel
   * \todo Should be outsourced to separate interface, i.e. BitLevelManager
   *
@@ -424,9 +430,9 @@ struct Interface: public UnknownInterface {
   * \param BitRefLevel bitLevel
   *
   */
-  virtual PetscErrorCode seed_ref_level_2D(const EntityHandle meshset,const BitRefLevel &bit,int verb = -1) = 0;
+  DEPRECATED virtual PetscErrorCode seed_ref_level_2D(const EntityHandle meshset,const BitRefLevel &bit,int verb = -1) = 0;
 
-  /**
+  /** \deprecated use BitRefManager
   * \brief seed 2D entities in the meshset and their adjacencies (only TETs adjacencies) in a particular BitRefLevel
   * \todo Should be outsourced to separate interface, i.e. BitLevelManager
   *
@@ -450,20 +456,21 @@ struct Interface: public UnknownInterface {
   * ent4[0,1,0,0,0,0,0], ent5[0,1,0,0,0,0,0] <br>
   *
   */
-  virtual PetscErrorCode seed_ref_level_3D(const EntityHandle meshset,const BitRefLevel &bit,int verb = -1) = 0;
+  DEPRECATED virtual PetscErrorCode seed_ref_level_3D(const EntityHandle meshset,const BitRefLevel &bit,int verb = -1) = 0;
 
-  /**
+  /** \deprecated use BitRefManager
    * \brief seed entities in the range and their adjacencies in a particular BitRefLevel
    * \todo Should be outsourced to separate interface, i.e. BitLevelManager
    */
-  virtual PetscErrorCode seed_ref_level(const Range &ents,const BitRefLevel &bit,const bool only_tets = true,int verb = -1) = 0;
+  DEPRECATED virtual PetscErrorCode seed_ref_level(const Range &ents,const BitRefLevel &bit,const bool only_tets = true,int verb = -1) = 0;
 
-  /** brief seed ref level by MESHSET that contains entities other than volumes
+  /** \deprecated use BitRefManager
+   * brief seed ref level by MESHSET that contains entities other than volumes
    *
    * \param EntityHandle MeshSet
    * \param BitRefLevel bitLevel
    */
-  virtual PetscErrorCode seed_ref_level_MESHSET(const EntityHandle meshset,const BitRefLevel &bit,int verb = -1) = 0;
+  DEPRECATED virtual PetscErrorCode seed_ref_level_MESHSET(const EntityHandle meshset,const BitRefLevel &bit,int verb = -1) = 0;
 
  /**@}*/
 
@@ -1946,7 +1953,7 @@ struct Interface: public UnknownInterface {
    */
   virtual PetscErrorCode resolve_shared_ents(const std::string &name,const std::string &fe_name,int verb = -1) = 0;
 
-  /**
+  /** \deprecated use ProblemsManager
    * \brief Get layout of elements in the problem
    * \ingroup mofem_problems
    *
@@ -1960,7 +1967,7 @@ struct Interface: public UnknownInterface {
    * @param  verb    verbosity level
    * @return         error code
    */
-  virtual PetscErrorCode get_problem_elements_layout(
+  DEPRECATED virtual PetscErrorCode get_problem_elements_layout(
     const std::string &name,const std::string &fe_name,PetscLayout *layout,int verb = -1
   ) = 0;
 
@@ -1981,25 +1988,27 @@ struct Interface: public UnknownInterface {
 
  /**@{*/
 
-  /** \brief create local vector for problem
+  /** \deprecated use VecManager
+   * \brief create local vector for problem
    * \ingroup mofem_vectors
    *
    * \param name problem name
    * \param RowColData specify what data is taken from Row, Col or Data
    * \param Vec the vector where data is stored
    */
-  virtual PetscErrorCode VecCreateSeq(const std::string &name,RowColData rc,Vec *V) const = 0;
+  DEPRECATED virtual PetscErrorCode VecCreateSeq(const std::string &name,RowColData rc,Vec *V) const = 0;
 
-  /** \brief create ghost vector for problem (collective)
+  /** \deprecated use VecManager
+   * \brief create ghost vector for problem (collective)
    * \ingroup mofem_vectors
 
-  collective - need tu be run on all processors in communicator
+  collective - need to be run on all processors in communicator
 
    * \param name problem name
    * \param RowColData specify what data is taken from Row, Col or Data
    * \param Vec the vector where data is stored
    */
-  virtual PetscErrorCode VecCreateGhost(const std::string &name,RowColData rc,Vec *V) const = 0;
+  DEPRECATED virtual PetscErrorCode VecCreateGhost(const std::string &name,RowColData rc,Vec *V) const = 0;
 
  /**@}*/
 
@@ -2038,8 +2047,8 @@ struct Interface: public UnknownInterface {
 
  /**@{*/
 
-  /** \brief create IS for give two problems and field
-    * \ingroup mofem_vectors
+  /** \deprecated Use ISManager
+    * \brief create IS for give two problems and field
 
     Note that indices are ordered in ascending order of local indices in problem_y
 
@@ -2054,14 +2063,14 @@ struct Interface: public UnknownInterface {
     \retval idy indexes in problem_y
 
     */
-  virtual PetscErrorCode ISCreateFromProblemFieldToOtherProblemField(
+  DEPRECATED virtual PetscErrorCode ISCreateFromProblemFieldToOtherProblemField(
     const std::string &x_problem,const std::string &x_field_name,RowColData x_rc,
     const std::string &y_problem,const std::string &y_field_name,RowColData y_rc,
     std::vector<int> &idx,std::vector<int> &idy,int verb = -1
   ) const = 0;
 
-  /** \brief create IS for give two problems and field
-    * \ingroup mofem_vectors
+  /** \deprecated Use ISManager
+    * \brief create IS for give two problems and field
 
     Indices are sorted by global PETSc index in problem_x.
 
@@ -2076,15 +2085,14 @@ struct Interface: public UnknownInterface {
     \retval iy IS indexes in problem_y
 
     */
-  virtual PetscErrorCode ISCreateFromProblemFieldToOtherProblemField(
+  DEPRECATED virtual PetscErrorCode ISCreateFromProblemFieldToOtherProblemField(
     const std::string &x_problem,const std::string &x_field_name,RowColData x_rc,
     const std::string &y_problem,const std::string &y_field_name,RowColData y_rc,
     IS *ix,IS *iy,int verb = -1
   ) const = 0;
 
-  /**
+  /** \deprecated Use ISManager
     * \brief create IS for given order range (collective)
-    * \ingroup mofem_vectors
 
     * \param problem name
     * \param rc ROW or COL
@@ -2093,11 +2101,11 @@ struct Interface: public UnknownInterface {
     * \retval is out value
 
     */
-  virtual PetscErrorCode ISCreateProblemOrder(
+  DEPRECATED virtual PetscErrorCode ISCreateProblemOrder(
     const std::string &problem,RowColData rc,int min_order,int max_order,IS *is,int verb = -1
   ) const = 0;
 
-  /**
+  /** \deprecated Use ISManager
     * \brief create IS for given problem, field and rank range (collective)
     * \ingroup mofem_vectors
 
@@ -2109,7 +2117,7 @@ struct Interface: public UnknownInterface {
     * \retval is out value
 
     */
-  virtual PetscErrorCode ISCreateProblemFieldAndRank(
+  DEPRECATED virtual PetscErrorCode ISCreateProblemFieldAndRank(
     const std::string &problem,
     RowColData rc,
     const std::string &field,
@@ -2125,7 +2133,7 @@ struct Interface: public UnknownInterface {
 
  /**@{*/
 
-  /**
+  /** \deprecated use VecManager
     * \brief create scatter for vectors form one to another problem (collective)
     * \ingroup mofem_vectors
     *
@@ -2142,7 +2150,7 @@ struct Interface: public UnknownInterface {
     * \retval newctx scatter
 
     */
-  virtual PetscErrorCode VecScatterCreate(
+  DEPRECATED virtual PetscErrorCode VecScatterCreate(
     Vec xin,
     const std::string &x_problem,
     const std::string &x_field_name,
@@ -2155,7 +2163,7 @@ struct Interface: public UnknownInterface {
     int verb = -1
   ) const = 0;
 
-  /**
+  /** \deprecated use VecManager
     * \brief create scatter for vectors form one to another problem (collective)
     * \ingroup mofem_vectors
     *
@@ -2166,7 +2174,7 @@ struct Interface: public UnknownInterface {
     * \retval newctx scatter
 
     */
-  virtual PetscErrorCode VecScatterCreate(
+  DEPRECATED virtual PetscErrorCode VecScatterCreate(
     Vec xin,const std::string &x_problem,
     RowColData x_rc,
     Vec yin,
@@ -2182,7 +2190,7 @@ struct Interface: public UnknownInterface {
 
  /**@{*/
 
-  /**
+  /** \deprecated use VecManager
     * \brief set values of vector from/to meshdatabase
     * \ingroup mofem_vectors
     *
@@ -2197,11 +2205,11 @@ struct Interface: public UnknownInterface {
     * SCATTER_FORWARD set vector V from data field entities
     *
     */
-  virtual PetscErrorCode set_local_ghost_vector(
+  DEPRECATED virtual PetscErrorCode set_local_ghost_vector(
     const Problem *problem_ptr,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode
   ) const = 0;
 
-  /**
+  /** \deprecated use VecManager
     * \brief set values of vector from/to meshdatabase
     * \ingroup mofem_vectors
     *
@@ -2216,11 +2224,11 @@ struct Interface: public UnknownInterface {
     * SCATTER_FORWARD set vector V from data field entities
     *
     */
-  virtual PetscErrorCode set_local_ghost_vector(
+  DEPRECATED virtual PetscErrorCode set_local_ghost_vector(
     const std::string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode
   ) const = 0;
 
-  /**
+  /** \deprecated use VecManager
     * \brief set values of vector from/to mesh database (collective)
     * \ingroup mofem_vectors
 
@@ -2235,11 +2243,11 @@ struct Interface: public UnknownInterface {
     * SCATTER_REVERSE set data to field entities form V vector.
     *
     */
-  virtual PetscErrorCode set_global_ghost_vector(
+  DEPRECATED virtual PetscErrorCode set_global_ghost_vector(
     const Problem *problem_ptr,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode
   ) const = 0;
 
-  /**
+  /** \deprecated use VecManager
     * \brief set values of vector from/to mesh database (collective)
     * \ingroup mofem_vectors
 
@@ -2254,11 +2262,12 @@ struct Interface: public UnknownInterface {
     * SCATTER_REVERSE set data to field entities form V vector.
     *
     */
-  virtual PetscErrorCode set_global_ghost_vector(
+  DEPRECATED virtual PetscErrorCode set_global_ghost_vector(
     const std::string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode
   ) const = 0;
 
-  /** \brief Copy vector to field which is not part of the problem
+  /** \deprecated use VecManager
+    * \brief Copy vector to field which is not part of the problem
     * \ingroup mofem_vectors
     *
     * \param pointer to poroblem multi_index
@@ -2272,7 +2281,7 @@ struct Interface: public UnknownInterface {
     * SCATTER_REVERSE set data to field entities form V vector.
     *
     */
-  virtual PetscErrorCode set_other_local_ghost_vector(
+  DEPRECATED virtual PetscErrorCode set_other_local_ghost_vector(
     const Problem *problem_ptr,
     const std::string& fiel_name,
     const std::string& cpy_field_name,
@@ -2283,7 +2292,8 @@ struct Interface: public UnknownInterface {
     int verb = -1
   ) = 0;
 
-  /** \brief Copy vector to field which is not part of the problem
+  /** \deprecated use VecManager
+    * \brief Copy vector to field which is not part of the problem
     * \ingroup mofem_vectors
     *
     * \param name problem name
@@ -2297,7 +2307,7 @@ struct Interface: public UnknownInterface {
     * SCATTER_REVERSE set data to field entities form V vector.
     *
     */
-  virtual PetscErrorCode set_other_local_ghost_vector(
+  DEPRECATED virtual PetscErrorCode set_other_local_ghost_vector(
     const std::string &name,
     const std::string& field_name,
     const std::string& cpy_field_name,
@@ -2308,7 +2318,8 @@ struct Interface: public UnknownInterface {
     int verb = -1
   ) = 0;
 
-  /** \brief Copy vector to field which is not part of the problem (collective)
+  /** \deprecated use VecManager
+    * \brief Copy vector to field which is not part of the problem (collective)
     * \ingroup mofem_vectors
 
     collective - need tu be run on all processors in communicator
@@ -2324,7 +2335,7 @@ struct Interface: public UnknownInterface {
     * SCATTER_REVERSE set data to field entities form V vector.
     *
     */
-  virtual PetscErrorCode set_other_global_ghost_vector(
+  DEPRECATED virtual PetscErrorCode set_other_global_ghost_vector(
     const Problem *problem_ptr,
     const std::string& field_name,
     const std::string& cpy_field_name,
@@ -2335,7 +2346,8 @@ struct Interface: public UnknownInterface {
     int verb = -1
   ) = 0;
 
-  /** \brief Copy vector to field which is not part of the problem (collective)
+  /** \deprecated use VecManager
+    * \brief Copy vector to field which is not part of the problem (collective)
     * \ingroup mofem_vectors
 
     collective - need tu be run on all processors in communicator
@@ -2351,7 +2363,7 @@ struct Interface: public UnknownInterface {
     * SCATTER_REVERSE set data to field entities form V vector.
     *
     */
-  virtual PetscErrorCode set_other_global_ghost_vector(
+  DEPRECATED virtual PetscErrorCode set_other_global_ghost_vector(
     const std::string &name,
     const std::string& field_name,
     const std::string& cpy_field_name,
@@ -2368,7 +2380,8 @@ struct Interface: public UnknownInterface {
 
  /**@{*/
 
-  /** \brief axpy fields
+  /** \deprecated use FieldBlas
+    * \brief axpy fields
     * \ingroup mofem_field_algebra
     * \todo should be moved to independent interface, i.e. FieldAlgebra
     *
@@ -2381,9 +2394,10 @@ struct Interface: public UnknownInterface {
     * \param create_if_missing creat dof in field_y from fiedl_x if it is not database
     *
     */
-  virtual PetscErrorCode field_axpy(const double alpha,const std::string& fiel_name_x,const std::string& field_name_y,bool error_if_missing = false,bool creat_if_missing = false) = 0;
+  DEPRECATED virtual PetscErrorCode field_axpy(const double alpha,const std::string& fiel_name_x,const std::string& field_name_y,bool error_if_missing = false,bool creat_if_missing = false) = 0;
 
-  /** \brief scale field
+  /** \deprecated use FieldBlas
+    * \brief scale field
     * \ingroup mofem_field_algebra
     * \todo should be moved to independent interface, i.e. FieldAlgebra
     *
@@ -2391,9 +2405,10 @@ struct Interface: public UnknownInterface {
     * \field_name  is a field name
     *
     */
-  virtual PetscErrorCode field_scale(const double alpha,const std::string& field_name) = 0;
+  DEPRECATED virtual PetscErrorCode field_scale(const double alpha,const std::string& field_name) = 0;
 
-  /** \brief set field
+  /** \brief use FieldBlas
+    * \brief set field
     * \ingroup mofem_field_algebra
     * \todo should be moved to independent interface, i.e. FieldAlgebra
     *
@@ -2404,9 +2419,10 @@ struct Interface: public UnknownInterface {
     * \param field_name
     *
     */
-  virtual PetscErrorCode set_field(const double val,const EntityType type,const std::string& field_name) = 0;
+  DEPRECATED virtual PetscErrorCode set_field(const double val,const EntityType type,const std::string& field_name) = 0;
 
-  /** \brief set field
+  /** \deprecated use FieldBlas
+    * \brief set field
     * \ingroup mofem_field_algebra
     * \todo should be moved to independent interface, i.e. FieldAlgebra
     *
@@ -2418,7 +2434,7 @@ struct Interface: public UnknownInterface {
     * \param field_name
     *
     */
-  virtual PetscErrorCode set_field(const double val,const EntityType type,const Range &ents,const std::string& field_name) = 0;
+  DEPRECATED virtual PetscErrorCode set_field(const double val,const EntityType type,const Range &ents,const std::string& field_name) = 0;
 
  /**@}*/
 
@@ -2889,13 +2905,6 @@ struct Interface: public UnknownInterface {
  ******************************************************************************/
 
 /***************************************************************************//**
- * \defgroup mofem_field_algebra Field Basic Algebra
- * \brief Basic algebraic operation on fields
- *
- * \ingroup mofem
- ******************************************************************************/
-
-/***************************************************************************//**
  * \defgroup mofem_ref_ents Get entities and adjacencies
  * \brief Get adjacencies/entities for given BitRefLevel (mesh refinement)
  *
@@ -2912,13 +2921,6 @@ struct Interface: public UnknownInterface {
 /***************************************************************************//**
  * \defgroup mofem_problems Problems
  * \brief Adding and managing problems
- *
- * \ingroup mofem
- ******************************************************************************/
-
-/***************************************************************************//**
- * \defgroup mofem_vectors Vectors
- * \brief Creating and scattering vectors on the mesh for given problem
  *
  * \ingroup mofem
  ******************************************************************************/

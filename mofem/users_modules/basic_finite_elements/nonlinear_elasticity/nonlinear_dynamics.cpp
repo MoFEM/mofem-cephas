@@ -64,8 +64,8 @@ struct MonitorPostProc: public FEMethod {
   feKineticEnergy(fe_kinetic_energy),
   iNit(false) {
 
-    
-    
+
+
     double def_t_val = 0;
     const EntityHandle root_meshset = mField.get_moab().get_root_set();
 
@@ -88,8 +88,8 @@ struct MonitorPostProc: public FEMethod {
 
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
-    
-    
+
+
 
     if(!iNit) {
       ierr = postProc.generateReferenceElementMesh(); CHKERRQ(ierr);
@@ -154,8 +154,8 @@ struct MonitorRestart: public FEMethod {
 
   MonitorRestart(MoFEM::Interface &m_field,TS ts): mField(m_field) {
 
-    
-    
+
+
     double def_t_val = 0;
 
     const EntityHandle root_meshset = mField.get_moab().get_root_set();
@@ -191,7 +191,7 @@ struct MonitorRestart: public FEMethod {
     PetscFunctionBegin;
 
     //
-    
+
     (*time) = ts_t;
     // if(pRT>0) {
     //   if((*step)%pRT==0) {
@@ -489,7 +489,7 @@ int main(int argc, char *argv[]) {
   ierr = prb_mng_ptr->partitionGhostDofs("DYNAMICS"); CHKERRQ(ierr);
 
   Vec F;
-  ierr = m_field.VecCreateGhost("DYNAMICS",COL,&F); CHKERRQ(ierr);
+  ierr = m_field.query_interface<VecManager>()->vecCreateGhost("DYNAMICS",COL,&F); CHKERRQ(ierr);
   Vec D;
   ierr = VecDuplicate(F,&D); CHKERRQ(ierr);
 
@@ -504,8 +504,8 @@ int main(int argc, char *argv[]) {
     ierr = m_field.MatCreateMPIAIJWithArrays("Kuu",&shellAij_ctx->K); CHKERRQ(ierr);
     ierr = MatDuplicate(shellAij_ctx->K,MAT_DO_NOT_COPY_VALUES,&shellAij_ctx->M); CHKERRQ(ierr);
     ierr = shellAij_ctx->iNit(); CHKERRQ(ierr);
-    ierr = m_field.VecScatterCreate(D,"DYNAMICS",COL,shellAij_ctx->u,"Kuu",COL,&shellAij_ctx->scatterU); CHKERRQ(ierr);
-    ierr = m_field.VecScatterCreate(
+    ierr = m_field.query_interface<VecManager>()->vecScatterCreate(D,"DYNAMICS",COL,shellAij_ctx->u,"Kuu",COL,&shellAij_ctx->scatterU); CHKERRQ(ierr);
+    ierr = m_field.query_interface<VecManager>()->vecScatterCreate(
       D,"DYNAMICS","SPATIAL_VELOCITY",COL,shellAij_ctx->v,"Kuu","SPATIAL_POSITION",COL,&shellAij_ctx->scatterV
     ); CHKERRQ(ierr);
     Mat shell_Aij;
@@ -683,7 +683,7 @@ int main(int argc, char *argv[]) {
     ierr = PCShellSetDestroy(pc,ConvectiveMassElement::PCShellDestroy);  CHKERRQ(ierr);
   #endif
 
-  ierr = m_field.set_local_ghost_vector("DYNAMICS",COL,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = m_field.query_interface<VecManager>()->setLocalGhostVector("DYNAMICS",COL,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
@@ -698,7 +698,7 @@ int main(int argc, char *argv[]) {
 
     Mat Aij = shellAij_ctx->K;
     Vec F;
-    ierr = m_field.VecCreateGhost("Kuu",COL,&F); CHKERRQ(ierr);
+    ierr = m_field.query_interface<VecManager>()->vecCreateGhost("Kuu",COL,&F); CHKERRQ(ierr);
     Vec D;
     ierr = VecDuplicate(F,&D); CHKERRQ(ierr);
 
@@ -744,14 +744,14 @@ int main(int argc, char *argv[]) {
     ierr = m_field.field_scale(0,"DOT_SPATIAL_POSITION"); CHKERRQ(ierr);
     ierr = m_field.field_scale(0,"DOT_SPATIAL_VELOCITY"); CHKERRQ(ierr);
 
-    ierr = m_field.set_local_ghost_vector("Kuu",COL,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = m_field.query_interface<VecManager>()->setLocalGhostVector("Kuu",COL,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
     ierr = SNESSolve(snes,PETSC_NULL,D); CHKERRQ(ierr);
     int its;
     ierr = SNESGetIterationNumber(snes,&its); CHKERRQ(ierr);
     ierr = PetscPrintf(PETSC_COMM_WORLD,"number of Newton iterations = %D\n",its); CHKERRQ(ierr);
 
-    ierr = m_field.set_global_ghost_vector("Kuu",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = m_field.query_interface<VecManager>()->setGlobalGhostVector("Kuu",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
     ierr = VecDestroy(&F); CHKERRQ(ierr);
     ierr = VecDestroy(&D); CHKERRQ(ierr);
@@ -761,7 +761,7 @@ int main(int argc, char *argv[]) {
   }
 
   if(is_solve_at_time_zero) {
-    ierr = m_field.set_local_ghost_vector("DYNAMICS",COL,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = m_field.query_interface<VecManager>()->setLocalGhostVector("DYNAMICS",COL,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   }
 
   #if PETSC_VERSION_GE(3,7,0)

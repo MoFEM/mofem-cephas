@@ -192,7 +192,7 @@ struct BasicEntity {
 
   */
   int* getSharingProcsPtr() const {
-    
+
     moab::Interface &moab = basicDataPtr->moab;
     int *sharing_procs_ptr = NULL;
     ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
@@ -229,7 +229,7 @@ struct BasicEntity {
 
     */
   inline EntityHandle* getSharingHandlersPtr() const {
-    
+
     EntityHandle *sharing_handlers_ptr = NULL;
     moab::Interface &moab = basicDataPtr->moab;
     ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
@@ -404,7 +404,7 @@ struct interface_RefEntity {
 typedef multi_index_container<
   boost::shared_ptr<RefEntity>,
   indexed_by<
-    hashed_unique<
+    ordered_unique<
       tag<Ent_mi_tag>, member<RefEntity::BasicEntity,EntityHandle,&RefEntity::ent>
     >,
     ordered_non_unique<
@@ -685,13 +685,18 @@ struct FieldEntity:
     assert(owner_proc<1024);
     if(true_if_distributed_mesh) {
       return
-      static_cast<UId>(moab_owner_handle)|
-      static_cast<UId>(bit_number) << 8*sizeof(EntityHandle)|
+      static_cast<UId>(bit_number)|
+      static_cast<UId>(moab_owner_handle) << 5|
       static_cast<UId>(owner_proc) << 5+8*sizeof(EntityHandle);
+      // static_cast<UId>(moab_owner_handle)|
+      // static_cast<UId>(bit_number) << 8*sizeof(EntityHandle)|
+      // static_cast<UId>(owner_proc) << 5+8*sizeof(EntityHandle);
     } else {
       return
-      static_cast<UId>(moab_owner_handle)|
-      static_cast<UId>(bit_number) << 8*sizeof(EntityHandle);
+      static_cast<UId>(bit_number)|
+      static_cast<UId>(moab_owner_handle) << 5;
+      // static_cast<UId>(moab_owner_handle)|
+      // static_cast<UId>(bit_number) << 8*sizeof(EntityHandle);
     }
   }
 
@@ -901,7 +906,7 @@ typedef multi_index_container<
   boost::shared_ptr<FieldEntity>,
   indexed_by<
     sequenced<>,
-    hashed_non_unique<
+    ordered_non_unique<
       tag<Ent_mi_tag>, const_mem_fun<FieldEntity,EntityHandle,&FieldEntity::getEnt>
     >
   >

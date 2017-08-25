@@ -50,7 +50,7 @@ struct Smoother {
     PetscErrorCode preProcess() {
       PetscFunctionBegin;
 
-      
+
       ierr = VolumeElementForcesAndSourcesCore::preProcess(); CHKERRQ(ierr);
 
       if(A != PETSC_NULL) {
@@ -98,7 +98,7 @@ struct Smoother {
 
     PetscErrorCode postProcess() {
       PetscFunctionBegin;
-      
+
 
       switch(snes_ctx) {
         case CTX_SNESSETFUNCTION: {
@@ -123,15 +123,20 @@ struct Smoother {
 
   };
 
-  MyVolumeFE feRhs; ///< calculate right hand side for tetrahedral elements
+  boost::shared_ptr<MyVolumeFE> feRhsPtr;
+  boost::shared_ptr<MyVolumeFE> feLhsPtr;
+
+  MyVolumeFE& feRhs; ///< calculate right hand side for tetrahedral elements
   MyVolumeFE& getLoopFeRhs() { return feRhs; } ///< get rhs volume element
-  MyVolumeFE feLhs; //< calculate left hand side for tetrahedral elements
+  MyVolumeFE& feLhs; //< calculate left hand side for tetrahedral elements
   MyVolumeFE& getLoopFeLhs() { return feLhs; } ///< get lhs volume element
 
   Smoother(MoFEM::Interface &m_field):
-  feRhs(m_field,smootherData),
-  feLhs(m_field,smootherData)
-  {}
+  feRhsPtr(new MyVolumeFE(m_field,smootherData)),
+  feLhsPtr(new MyVolumeFE(m_field,smootherData)),
+  feRhs(*feRhsPtr),
+  feLhs(*feLhsPtr) {
+  }
 
   struct OpJacobianSmoother: public NonlinearElasticElement::OpJacobianPiolaKirchhoffStress {
 
@@ -144,14 +149,15 @@ struct Smoother {
     ):
     NonlinearElasticElement::OpJacobianPiolaKirchhoffStress(
       field_name,data,common_data,tag,jacobian,false,false
-    ) {}
+    ) {
+    }
 
     PetscErrorCode calculateStress(const int gg) {
       PetscFunctionBegin;
 
       try {
 
-        
+
         ierr = dAta.materialAdoublePtr->calculateP_PiolaKirchhoffI(dAta,getNumeredEntFiniteElementPtr()); CHKERRQ(ierr);
 
         commonData.sTress[gg].resize(3,3,false);
@@ -194,7 +200,7 @@ struct Smoother {
     ) {
       PetscFunctionBegin;
 
-      
+
       int nb_dofs = row_data.getIndices().size();
 
       int *indices_ptr = &row_data.getIndices()[0];
@@ -215,6 +221,14 @@ struct Smoother {
             frontIndices[ii] = -1;
           }
         }
+        if(smootherData.frontF) {
+          ierr = VecSetValues(
+            smootherData.frontF,
+            nb_dofs,
+            &frontIndices[0],&nf[0],
+            ADD_VALUES
+          ); CHKERRQ(ierr);
+        }
       }
 
       ierr = VecSetOption(
@@ -228,15 +242,6 @@ struct Smoother {
         ADD_VALUES
       ); CHKERRQ(ierr);
 
-      if(smootherData.frontF) {
-        ierr = VecSetValues(
-          smootherData.frontF,
-          nb_dofs,
-          &frontIndices[0],&nf[0],
-          ADD_VALUES
-        ); CHKERRQ(ierr);
-      }
-
       PetscFunctionReturn(0);
     }
 
@@ -245,17 +250,20 @@ struct Smoother {
   struct OpLhsSmoother: public NonlinearElasticElement::OpLhsPiolaKirchhoff_dx {
 
     SmootherBlockData &smootherData;
+    const std::string fieldCrackAreaTangentConstrains;
 
     OpLhsSmoother(
       const std::string vel_field,
       const std::string field_name,
       NonlinearElasticElement::BlockData &data,
       NonlinearElasticElement::CommonData &common_data,
-      SmootherBlockData &smoother_data
+      SmootherBlockData &smoother_data,
+      const std::string crack_area_tangent_constrains// = "LAMBDA_CRACK_TANGENT_CONSTRAIN"
     ):
     NonlinearElasticElement::OpLhsPiolaKirchhoff_dx(vel_field,field_name,data,common_data),
-    smootherData(smoother_data)
-    {}
+    smootherData(smoother_data),
+    fieldCrackAreaTangentConstrains(crack_area_tangent_constrains) {
+    }
 
     ublas::vector<int> rowFrontIndices;
 
@@ -267,7 +275,7 @@ struct Smoother {
     ) {
       PetscFunctionBegin;
 
-      
+
       int nb_row = row_data.getIndices().size();
       int nb_col = col_data.getIndices().size();
       int *row_indices_ptr = &row_data.getIndices()[0];
@@ -284,7 +292,9 @@ struct Smoother {
         VectorDofs& dofs = row_data.getFieldDofs();
         VectorDofs::iterator dit = dofs.begin();
         for(int ii = 0;dit!=dofs.end();dit++,ii++) {
-          if(dAta.forcesOnlyOnEntitiesRow.find((*dit)->getEnt())!=dAta.forcesOnlyOnEntitiesRow.end()) {
+          if(dAta.forcesOnlyOnEntitiesRow.find(
+            (*dit)->getEnt())!=dAta.forcesOnlyOnEntitiesRow.end()
+          ) {
             rowIndices[ii] = -1;
           } else {
             rowFrontIndices[ii] = -1;
@@ -301,36 +311,46 @@ struct Smoother {
 
       if(smootherData.tangentFrontF) {
 
+        // get tangent vector array
         double *f_tangent_front_mesh_array;
-        if(smootherData.tangentFrontF==PETSC_NULL) SETERRQ(PETSC_COMM_SELF,1,"vector for crack front not created");
         ierr = VecGetArray(smootherData.tangentFrontF,&f_tangent_front_mesh_array); CHKERRQ(ierr);
+        // iterate nodes on tet
         for(int nn = 0;nn<4;nn++) {
 
+          // get indices with Lagrange multiplier at node nn
           FENumeredDofEntityByNameAndEnt::iterator dit,hi_dit;
           dit = getFEMethod()->rowPtr->get<Composite_Name_And_Ent_mi_tag>().
-          lower_bound(boost::make_tuple("LAMBDA_CRACK_TANGENT_CONSTRAIN",getConn()[nn]));
+          lower_bound(boost::make_tuple(fieldCrackAreaTangentConstrains,getConn()[nn]));
           hi_dit = getFEMethod()->rowPtr->get<Composite_Name_And_Ent_mi_tag>().
-          upper_bound(boost::make_tuple("LAMBDA_CRACK_TANGENT_CONSTRAIN",getConn()[nn]));
+          upper_bound(boost::make_tuple(fieldCrackAreaTangentConstrains,getConn()[nn]));
 
+          // continue if Lagrange are on element
           if(distance(dit,hi_dit)>0) {
 
             FENumeredDofEntityByNameAndEnt::iterator diit,hi_diit;
 
+            // get mesh node positions at node nn
             diit = getFEMethod()->rowPtr->get<Composite_Name_And_Ent_mi_tag>().
             lower_bound(boost::make_tuple("MESH_NODE_POSITIONS",getConn()[nn]));
             hi_diit = getFEMethod()->rowPtr->get<Composite_Name_And_Ent_mi_tag>().
             upper_bound(boost::make_tuple("MESH_NODE_POSITIONS",getConn()[nn]));
 
+            // iterate over dofs on node nn
             for(;diit!=hi_diit;diit++) {
+              // iterate overt dofs in element column
               for(int ddd = 0;ddd<nb_col;ddd++) {
+                // check consistency, node has to be at crack front
                 if(rowFrontIndices[3*nn+diit->get()->getDofCoeffIdx()]!=diit->get()->getPetscGlobalDofIdx()) {
                   SETERRQ2(
-                    PETSC_COMM_SELF,1,"data inconsistency %d != %d",
+                    PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency %d != %d",
                     3*nn+diit->get()->getDofCoeffIdx(),diit->get()->getPetscGlobalDofIdx()
                   );
                 }
+                // dof is not on this partition
                 if(diit->get()->getPetscLocalDofIdx()==-1) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-                double g = f_tangent_front_mesh_array[diit->get()->getPetscLocalDofIdx()]*k(3*nn+diit->get()->getDofCoeffIdx(),ddd);
+                double g =
+                f_tangent_front_mesh_array[diit->get()->getPetscLocalDofIdx()]*
+                k(3*nn+diit->get()->getDofCoeffIdx(),ddd);
                 int lambda_idx = dit->get()->getPetscGlobalDofIdx();
                 ierr = MatSetValues(
                   getFEMethod()->snes_B,1,&lambda_idx,1,&col_indices_ptr[ddd],&g,ADD_VALUES

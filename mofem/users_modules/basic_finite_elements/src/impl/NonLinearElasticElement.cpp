@@ -587,8 +587,6 @@ PetscErrorCode NonlinearElasticElement::OpJacobianEnergy::recordTag(const int gg
 PetscErrorCode NonlinearElasticElement::OpJacobianEnergy::playTag(const int gg) {
   PetscFunctionBegin;
 
-  int r;
-
   if(gRadient) {
     commonData.jacEnergy[gg].resize(nbActiveVariables,false);
     int r = ::gradient(
@@ -606,11 +604,23 @@ PetscErrorCode NonlinearElasticElement::OpJacobianEnergy::playTag(const int gg) 
   }
 
   if(hEssian) {
-    SETERRQ(
-      PETSC_COMM_SELF,
-      MOFEM_NOT_IMPLEMENTED,
-      "Not yet implemented"
+    commonData.hessianEnergy[gg].resize(
+      nbActiveVariables*nbActiveVariables,false
     );
+    double* H[nbActiveVariables];
+    for(int n = 0;n!=nbActiveVariables;n++) {
+      H[n] = &(commonData.hessianEnergy[gg][n*nbActiveVariables]);
+    }
+    int r = ::hessian(tAg,nbActiveVariables,&*activeVariables.begin(),H);
+    if(r<0) {
+      // That means that energy function is not smooth and derivative
+      // can not be calculated,
+      SETERRQ(
+        PETSC_COMM_SELF,
+        MOFEM_OPERATION_UNSUCCESSFUL,
+        "ADOL-C function evaluation with error"
+      );
+    }
   }
 
   PetscFunctionReturn(0);
@@ -676,7 +686,7 @@ PetscErrorCode NonlinearElasticElement::OpJacobianEnergy::doWork(
       }
       ierr = dAta.materialAdoublePtr->setUserActiveVariables(activeVariables); CHKERRQ(ierr);
 
-      // Play tag and calualte stress or tannget
+      // Play tag and calculate stress or tangent
       ierr = playTag(gg); CHKERRQ(ierr);
 
     }
@@ -998,8 +1008,6 @@ PetscErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dx::doWork(
 ) {
   PetscFunctionBegin;
 
-
-
   int nb_row = row_data.getIndices().size();
   int nb_col = col_data.getIndices().size();
   if(nb_row == 0) PetscFunctionReturn(0);
@@ -1094,7 +1102,6 @@ PetscErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dX::aSemble(
   DataForcesAndSurcesCore::EntData &col_data
 ) {
   PetscFunctionBegin;
-
 
   int nb_row = row_data.getIndices().size();
   int nb_col = col_data.getIndices().size();

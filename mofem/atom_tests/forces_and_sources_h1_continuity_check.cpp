@@ -40,8 +40,8 @@ static const double edge_coords[6][6] = {
 
 int main(int argc, char *argv[]) {
 
-  
-  
+
+
 
   PetscInitialize(&argc,&argv,(char *)0,help);
 
@@ -78,7 +78,7 @@ int main(int argc, char *argv[]) {
   bit_level0.set(0);
   EntityHandle meshset_level0;
   rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERRQ_MOAB(rval);
-  ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
+  ierr = m_field.query_interface<BitRefManager>()->setBitRefLevelByDim(0,3,bit_level0); CHKERRQ(ierr);
 
   //Fields
   ierr = m_field.add_field("MESH_NODE_POSITIONS",H1,AINSWORTH_LEGENDRE_BASE,3); CHKERRQ(ierr);
@@ -191,9 +191,9 @@ int main(int argc, char *argv[]) {
   ierr = prb_mng_ptr->partitionGhostDofs("TEST_PROBLEM"); CHKERRQ(ierr);
 
   Vec v;
-  ierr = m_field.VecCreateGhost("TEST_PROBLEM",ROW,&v);
+  ierr = m_field.query_interface<VecManager>()->vecCreateGhost("TEST_PROBLEM",ROW,&v);
   ierr = VecSetRandom(v,PETSC_NULL); CHKERRQ(ierr);
-  ierr = m_field.set_local_ghost_vector("TEST_PROBLEM",ROW,v,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = m_field.query_interface<VecManager>()->setLocalGhostVector("TEST_PROBLEM",ROW,v,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   ierr = VecDestroy(&v); CHKERRQ(ierr);
 
 
@@ -218,7 +218,7 @@ int main(int argc, char *argv[]) {
       DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
 
-      
+
 
       if(data.getFieldData().size()==0) PetscFunctionReturn(0);
 
@@ -275,7 +275,7 @@ int main(int argc, char *argv[]) {
 
     MatrixDouble N_tri;
     PetscErrorCode setGaussPts(int order) {
-      
+
       PetscFunctionBegin;
 
       try {
@@ -335,7 +335,7 @@ int main(int argc, char *argv[]) {
       DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
 
-      
+
       if(type != MBTRI) PetscFunctionReturn(0);
       EntityHandle face = getNumeredEntFiniteElementPtr()->getEnt();
 
@@ -387,7 +387,7 @@ int main(int argc, char *argv[]) {
       DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
 
-      
+
 
       if(type != MBTRI) PetscFunctionReturn(0);
 
@@ -453,7 +453,7 @@ int main(int argc, char *argv[]) {
       DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
 
-      
+
 
       if(type != MBEDGE) PetscFunctionReturn(0);
 
