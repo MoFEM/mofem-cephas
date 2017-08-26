@@ -46,12 +46,18 @@
 #include <AuxPTESc.hpp>
 #include <SnesCtx.hpp>
 
+#if PETSC_VERSION_GE(3,6,0)
+  #include <petsc/private/snesimpl.h>
+#else
+  #include <petsc-private/snesimpl.h>
+#endif
+
 namespace MoFEM {
 
 PetscErrorCode SnesRhs(SNES snes,Vec x,Vec f,void *ctx) {
-  PetscFunctionBegin;
-
   SnesCtx* snes_ctx = (SnesCtx*)ctx;
+  PetscValidHeaderSpecific(snes,SNES_CLASSID,1);
+  PetscFunctionBegin;
   PetscLogEventBegin(snes_ctx->USER_EVENT_SnesRhs,0,0,0,0);
   ierr = VecGhostUpdateBegin(x,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(x,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -96,9 +102,9 @@ PetscErrorCode SnesRhs(SNES snes,Vec x,Vec f,void *ctx) {
   PetscFunctionReturn(0);
 }
 PetscErrorCode SnesMat(SNES snes,Vec x,Mat A,Mat B,void *ctx) {
-  PetscFunctionBegin;
-
   SnesCtx* snes_ctx = (SnesCtx*)ctx;
+  PetscValidHeaderSpecific(snes,SNES_CLASSID,1);
+  PetscFunctionBegin;
   PetscLogEventBegin(snes_ctx->USER_EVENT_SnesMat,0,0,0,0);
   if(snes_ctx->zeroPreCondMatrixB) {
     ierr = MatZeroEntries(B); CHKERRQ(ierr);
@@ -135,10 +141,29 @@ PetscErrorCode SnesMat(SNES snes,Vec x,Mat A,Mat B,void *ctx) {
     ierr = snes_ctx->mField.problem_basic_method_postProcess(snes_ctx->problemName,*(*(bit)));  CHKERRQ(ierr);
     ierr = (*bit)->setSnesCtx(SnesMethod::CTX_SNESNONE);  CHKERRQ(ierr);
   }
-  ierr = MatAssemblyBegin(B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-  ierr = MatAssemblyEnd(B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+  ierr = MatAssemblyBegin(B,snes_ctx->typeOfAssembly); CHKERRQ(ierr);
+  ierr = MatAssemblyEnd(B,snes_ctx->typeOfAssembly); CHKERRQ(ierr);
   PetscLogEventEnd(snes_ctx->USER_EVENT_SnesMat,0,0,0,0);
   PetscFunctionReturn(0);
 }
+
+PetscErrorCode SNESMoFEMSetAssmblyType(SNES snes,MatAssemblyType type) {
+  SnesCtx* snes_ctx;
+  PetscValidHeaderSpecific(snes,SNES_CLASSID,1);
+  PetscFunctionBegin;
+  ierr = SNESGetApplicationContext(snes,&snes_ctx); CHKERRQ(ierr);
+  snes_ctx->typeOfAssembly = type;
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode SNESMoFEMSetBehavior(SNES snes,MoFEMTypes bh) {
+  SnesCtx* snes_ctx;
+  PetscValidHeaderSpecific(snes,SNES_CLASSID,1);
+  PetscFunctionBegin;
+  ierr = SNESGetApplicationContext(snes,&snes_ctx); CHKERRQ(ierr);
+  snes_ctx->bH = bh;
+  PetscFunctionReturn(0);
+}
+
 
 }

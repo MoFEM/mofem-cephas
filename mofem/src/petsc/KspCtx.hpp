@@ -45,12 +45,12 @@ namespace MoFEM {
     typedef MoFEM::FEMethodsSequence FEMethodsSequence;
     typedef MoFEM::BasicMethodsSequence BasicMethodsSequence;
 
-    FEMethodsSequence loops_to_do_Mat;
-    FEMethodsSequence loops_to_do_Rhs;
-    BasicMethodsSequence preProcess_Mat;
-    BasicMethodsSequence postProcess_Mat;
-    BasicMethodsSequence preProcess_Rhs;
-    BasicMethodsSequence postProcess_Rhs;
+    FEMethodsSequence loops_to_do_Mat;    ///< Sequence of finite elements instances assembiling tangent matrix
+    FEMethodsSequence loops_to_do_Rhs;    ///< Sequence of finite elements instances assembiling residual vector
+    BasicMethodsSequence preProcess_Mat;  ///< Sequence of methods run before tangent matrix is assembled
+    BasicMethodsSequence postProcess_Mat; ///< Sequence of methods run after tangent matrix is assembled
+    BasicMethodsSequence preProcess_Rhs;  ///< Sequence of methods run before residual is assembled
+    BasicMethodsSequence postProcess_Rhs; ///< Sequence of methods run after residual is assembled
 
     PetscLogEvent USER_EVENT_KspRhs;
     PetscLogEvent USER_EVENT_KspMat;

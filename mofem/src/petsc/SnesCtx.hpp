@@ -32,6 +32,7 @@ namespace MoFEM {
     std::string problemName;    ///< problem name
     MoFEMTypes bH;              ///< If set to MF_EXIST check if element exist, default MF_EXIST
     bool zeroPreCondMatrixB;    ///< If true zero matrix, otherwise user need to do it, default true
+    MatAssemblyType typeOfAssembly; ///< type of assembly at the end
 
     /// \deprecated use PairNameFEMethodPtr
     DEPRECATED  typedef MoFEM::PairNameFEMethodPtr loop_pair_type;
@@ -77,7 +78,8 @@ namespace MoFEM {
     moab(m_field.get_moab()),
     problemName(problem_name),
     bH(MF_EXIST),
-    zeroPreCondMatrixB(true) {
+    zeroPreCondMatrixB(true),
+    typeOfAssembly(MAT_FINAL_ASSEMBLY) {
       PetscLogEventRegister("LoopSNESRhs",0,&USER_EVENT_SnesRhs);
       PetscLogEventRegister("LoopSNESMat",0,&USER_EVENT_SnesMat);
     }
@@ -130,6 +132,8 @@ namespace MoFEM {
     friend PetscErrorCode SnesRhs(SNES snes,Vec x,Vec f,void *ctx);
     friend PetscErrorCode SnesMat(SNES snes,Vec x,Mat A,Mat B,void *ctx);
 
+    friend PetscErrorCode SNESMoFEMSetAssmblyType(SNES snes,MatAssemblyType type);
+    friend PetscErrorCode SNESMoFEMSetBehavior(SNES snes,MoFEMTypes bh);
   };
 
   /**
@@ -149,7 +153,7 @@ namespace MoFEM {
   /**
   * \brief This is MoFEM implementation for the left hand side (tangent matrix) evaluation in SNES solver
   *
-  * For more information pleas look to PETSc manual, i.e. SNESSetFunction
+  * For more information pleas look to PETSc manual, i.e. SNESSetJacobian
   * <http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/SNES/SNESSetJacobian.html#SNESSetJacobian>
   *
   * @param  snes SNES solver
@@ -160,6 +164,28 @@ namespace MoFEM {
   * @return      Error code
   */
   PetscErrorCode SnesMat(SNES snes,Vec x,Mat A,Mat B,void *ctx);
+
+  /**
+   * \brief Set assembly type at the end of SnesMat
+   *
+   * \note Note that tangent matrix need have to have final assembly, you would
+   * use flush assembly in special case that you call SnesMat form other function
+   * set to SNESSetJacobian
+   *
+   * @param  snes
+   * @param  type type of assembly, either MAT_FLUSH_ASSEMBLY or MAT_FINAL_ASSEMBLY
+   * @return      error code
+   */
+  PetscErrorCode SNESMoFEMSetAssmblyType(SNES snes,MatAssemblyType type);
+
+  /**
+   * \brief Set behavior if finite element in sequence does not exist
+   * @param  snes
+   * @param  bh   If set to MF_EXIST check if element exist, default MF_EXIST. Otherwise set MF_ZERO
+   * @return      error code
+   */
+  PetscErrorCode SNESMoFEMSetBehavior(SNES snes,MoFEMTypes bh);
+
 
 }
 

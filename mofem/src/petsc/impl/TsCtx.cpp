@@ -45,11 +45,17 @@
 #include <AuxPTESc.hpp>
 #include <TsCtx.hpp>
 
+#if PETSC_VERSION_GE(3,6,0)
+  #include <petsc/private/tsimpl.h>
+#else
+  #include <petsc-private/tsimpl.h>
+#endif
+
 namespace MoFEM {
 
 PetscErrorCode f_TSSetIFunction(TS ts,PetscReal t,Vec u,Vec u_t,Vec F,void *ctx) {
+  PetscValidHeaderSpecific(ts,TS_CLASSID,1);
   PetscFunctionBegin;
-
   TsCtx* ts_ctx = (TsCtx*)ctx;
   PetscLogEventBegin(ts_ctx->USER_EVENT_TsCtxIFunction,0,0,0,0);
   ierr = VecGhostUpdateBegin(u,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -111,8 +117,8 @@ PetscErrorCode f_TSSetIFunction(TS ts,PetscReal t,Vec u,Vec u_t,Vec F,void *ctx)
   PetscFunctionReturn(0);
 }
 PetscErrorCode f_TSSetIJacobian(TS ts,PetscReal t,Vec u,Vec u_t,PetscReal a,Mat A,Mat B,void *ctx) {
+  PetscValidHeaderSpecific(ts,TS_CLASSID,1);
   PetscFunctionBegin;
-
   TsCtx* ts_ctx = (TsCtx*)ctx;
   PetscLogEventBegin(ts_ctx->USER_EVENT_TsCtxIFunction,0,0,0,0);
   ierr = VecGhostUpdateBegin(u,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -179,8 +185,8 @@ PetscErrorCode f_TSSetIJacobian(TS ts,PetscReal t,Vec u,Vec u_t,PetscReal a,Mat 
   PetscFunctionReturn(0);
 }
 PetscErrorCode f_TSMonitorSet(TS ts,PetscInt step,PetscReal t,Vec u,void *ctx) {
+  PetscValidHeaderSpecific(ts,TS_CLASSID,1);
   PetscFunctionBegin;
-
   TsCtx* ts_ctx = (TsCtx*)ctx;
   PetscLogEventBegin(ts_ctx->USER_EVENT_TsCtxRHSFunction,0,0,0,0);
   ierr = VecGhostUpdateBegin(u,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
