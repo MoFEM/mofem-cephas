@@ -43,6 +43,7 @@
 #include <Core.hpp>
 
 #include <VecManager.hpp>
+#include <AuxPTESc.hpp>
 #include <SnesCtx.hpp>
 
 namespace MoFEM {
@@ -58,7 +59,7 @@ PetscErrorCode SnesRhs(SNES snes,Vec x,Vec f,void *ctx) {
   ierr = VecZeroEntries(f); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  SnesCtx::basic_method_to_do::iterator bit = snes_ctx->preProcess_Rhs.begin();
+  SnesCtx::BasicMethodsSequence::iterator bit = snes_ctx->preProcess_Rhs.begin();
   for(;bit!=snes_ctx->preProcess_Rhs.end();bit++) {
     ierr = (*bit)->setSnes(snes); CHKERRQ(ierr);
     (*bit)->snes_x = x;
@@ -67,7 +68,7 @@ PetscErrorCode SnesRhs(SNES snes,Vec x,Vec f,void *ctx) {
     ierr = snes_ctx->mField.problem_basic_method_preProcess(snes_ctx->problemName,*(*(bit)));  CHKERRQ(ierr);
     ierr = (*bit)->setSnesCtx(SnesMethod::CTX_SNESNONE);  CHKERRQ(ierr);
   }
-  SnesCtx::loops_to_do_type::iterator lit = snes_ctx->loops_to_do_Rhs.begin();
+  SnesCtx::FEMethodsSequence::iterator lit = snes_ctx->loops_to_do_Rhs.begin();
   for(;lit!=snes_ctx->loops_to_do_Rhs.end();lit++) {
     ierr = lit->second->setSnesCtx(SnesMethod::CTX_SNESSETFUNCTION);  CHKERRQ(ierr);
     ierr = lit->second->setSnes(snes); CHKERRQ(ierr);
@@ -102,7 +103,7 @@ PetscErrorCode SnesMat(SNES snes,Vec x,Mat A,Mat B,void *ctx) {
   if(snes_ctx->zeroPreCondMatrixB) {
     ierr = MatZeroEntries(B); CHKERRQ(ierr);
   }
-  SnesCtx::basic_method_to_do::iterator bit = snes_ctx->preProcess_Mat.begin();
+  SnesCtx::BasicMethodsSequence::iterator bit = snes_ctx->preProcess_Mat.begin();
   for(;bit!=snes_ctx->preProcess_Mat.end();bit++) {
     ierr = (*bit)->setSnes(snes); CHKERRQ(ierr);
     (*bit)->snes_x = x;
@@ -112,7 +113,7 @@ PetscErrorCode SnesMat(SNES snes,Vec x,Mat A,Mat B,void *ctx) {
     ierr = snes_ctx->mField.problem_basic_method_preProcess(snes_ctx->problemName,*(*(bit)));  CHKERRQ(ierr);
     ierr = (*bit)->setSnesCtx(SnesMethod::CTX_SNESNONE);  CHKERRQ(ierr);
   }
-  SnesCtx::loops_to_do_type::iterator lit = snes_ctx->loops_to_do_Mat.begin();
+  SnesCtx::FEMethodsSequence::iterator lit = snes_ctx->loops_to_do_Mat.begin();
   for(;lit!=snes_ctx->loops_to_do_Mat.end();lit++) {
     ierr = lit->second->setSnesCtx(SnesMethod::CTX_SNESSETJACOBIAN); CHKERRQ(ierr);
     ierr = lit->second->setSnes(snes); CHKERRQ(ierr);

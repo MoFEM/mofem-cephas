@@ -42,6 +42,7 @@
 #include <SeriesRecorder.hpp>
 #include <Core.hpp>
 
+#include <AuxPTESc.hpp>
 #include <TsCtx.hpp>
 
 namespace MoFEM {
@@ -64,7 +65,7 @@ PetscErrorCode f_TSSetIFunction(TS ts,PetscReal t,Vec u,Vec u_t,Vec F,void *ctx)
   int step;
   ierr = TSGetTimeStepNumber(ts,&step); CHKERRQ(ierr);
   //preprocess
-  TsCtx::basic_method_to_do::iterator bit = ts_ctx->preProcess_IFunction.begin();
+  TsCtx::BasicMethodsSequence::iterator bit = ts_ctx->preProcess_IFunction.begin();
   for(;bit!=ts_ctx->preProcess_IFunction.end();bit++) {
     (*bit)->ts_u = u;
     (*bit)->ts_u_t = u_t;
@@ -77,7 +78,7 @@ PetscErrorCode f_TSSetIFunction(TS ts,PetscReal t,Vec u,Vec u_t,Vec F,void *ctx)
     ierr = (*bit)->setTsCtx(TSMethod::CTX_TSNONE);
   }
   //fe loops
-  TsCtx::loops_to_do_type::iterator lit = ts_ctx->loops_to_do_IFunction.begin();
+  TsCtx::FEMethodsSequence::iterator lit = ts_ctx->loops_to_do_IFunction.begin();
   for(;lit!=ts_ctx->loops_to_do_IFunction.end();lit++) {
     lit->second->ts_u = u;
     lit->second->ts_u_t = u_t;
@@ -127,7 +128,7 @@ PetscErrorCode f_TSSetIJacobian(TS ts,PetscReal t,Vec u,Vec u_t,PetscReal a,Mat 
   int step;
   ierr = TSGetTimeStepNumber(ts,&step); CHKERRQ(ierr);
   //preproces
-  TsCtx::basic_method_to_do::iterator bit = ts_ctx->preProcess_IJacobian.begin();
+  TsCtx::BasicMethodsSequence::iterator bit = ts_ctx->preProcess_IJacobian.begin();
   for(;bit!=ts_ctx->preProcess_IJacobian.end();bit++) {
     (*bit)->ts_u = u;
     (*bit)->ts_u_t = u_t;
@@ -141,7 +142,7 @@ PetscErrorCode f_TSSetIJacobian(TS ts,PetscReal t,Vec u,Vec u_t,PetscReal a,Mat 
     ierr = ts_ctx->mField.problem_basic_method_preProcess(ts_ctx->problemName,*(*(bit))); CHKERRQ(ierr);
     ierr = (*bit)->setTsCtx(TSMethod::CTX_TSNONE); CHKERRQ(ierr); CHKERRQ(ierr);
   }
-  TsCtx::loops_to_do_type::iterator lit = ts_ctx->loops_to_do_IJacobian.begin();
+  TsCtx::FEMethodsSequence::iterator lit = ts_ctx->loops_to_do_IJacobian.begin();
   for(;lit!=ts_ctx->loops_to_do_IJacobian.end();lit++) {
     lit->second->ts_u = u;
     lit->second->ts_u_t = u_t;
@@ -188,7 +189,7 @@ PetscErrorCode f_TSMonitorSet(TS ts,PetscInt step,PetscReal t,Vec u,void *ctx) {
     ts_ctx->problemName,COL,u,INSERT_VALUES,SCATTER_REVERSE
   ); CHKERRQ(ierr);
   //preproces
-  TsCtx::basic_method_to_do::iterator bit = ts_ctx->preProcess_Monitor.begin();
+  TsCtx::BasicMethodsSequence::iterator bit = ts_ctx->preProcess_Monitor.begin();
   for(;bit!=ts_ctx->preProcess_Monitor.end();bit++) {
     (*bit)->ts_u = u;
     (*bit)->ts_t = t;
@@ -199,7 +200,7 @@ PetscErrorCode f_TSMonitorSet(TS ts,PetscInt step,PetscReal t,Vec u,void *ctx) {
     ierr = ts_ctx->mField.problem_basic_method_preProcess(ts_ctx->problemName,*(*(bit))); CHKERRQ(ierr);
     ierr = (*bit)->setTsCtx(TSMethod::CTX_TSNONE); CHKERRQ(ierr); CHKERRQ(ierr);
   }
-  TsCtx::loops_to_do_type::iterator lit = ts_ctx->loops_to_do_Monitor.begin();
+  TsCtx::FEMethodsSequence::iterator lit = ts_ctx->loops_to_do_Monitor.begin();
   for(;lit!=ts_ctx->loops_to_do_Monitor.end();lit++) {
     lit->second->ts_u = u;
     lit->second->ts_t = t;

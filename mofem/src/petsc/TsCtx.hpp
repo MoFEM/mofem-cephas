@@ -26,56 +26,34 @@ namespace MoFEM {
   */
 struct TsCtx {
 
-  ErrorCode rval;
-  
-
   MoFEM::Interface &mField;
   moab::Interface &moab;
 
   std::string problemName;
   MoFEMTypes bH; ///< If set to MF_EXIST check if element exist
 
-  struct LoopPairType: public std::pair<std::string,FEMethod*> {
-    LoopPairType(std::string name,FEMethod *ptr):
-    std::pair<std::string,FEMethod*>(name,ptr) {}
-    LoopPairType(std::string name,boost::shared_ptr<FEMethod> ptr):
-    std::pair<std::string,FEMethod*>(name,ptr.get()),
-    fePtr(ptr) {
-    }
-    virtual ~LoopPairType() {}
-  private:
-    boost::shared_ptr<FEMethod> fePtr;
-  };
-  typedef LoopPairType loop_pair_type;
+  /// \deprecated use PairNameFEMethodPtr
+  DEPRECATED  typedef MoFEM::PairNameFEMethodPtr loop_pair_type;
 
-  typedef std::vector<loop_pair_type > loops_to_do_type;
-  loops_to_do_type loops_to_do_IJacobian;
-  loops_to_do_type loops_to_do_IFunction;
-  loops_to_do_type loops_to_do_Monitor;
+  /// \deprecated use FEMethodsSequence
+  DEPRECATED typedef MoFEM::FEMethodsSequence loops_to_do_type;
 
-  struct BasicMethodPtr {
-    BasicMethodPtr(BasicMethod *ptr):
-    rawPtr(ptr) {}
-    BasicMethodPtr(boost::shared_ptr<BasicMethod> ptr):
-    rawPtr(ptr.get()),
-    bmPtr(ptr) {}
-    BasicMethodPtr(boost::shared_ptr<FEMethod> ptr):
-    rawPtr(ptr.get()),
-    bmPtr(ptr) {}
-    inline BasicMethod& operator*() const { return *rawPtr; };
-    inline BasicMethod* operator->() const { return rawPtr; }
-  private:
-    BasicMethod* rawPtr;
-    boost::shared_ptr<BasicMethod> bmPtr;
-  };
-  typedef std::vector<BasicMethodPtr> basic_method_to_do;
+  /// \deprecated use BasicMethodsSequence
+  DEPRECATED typedef MoFEM::BasicMethodsSequence basic_method_to_do;
 
-  basic_method_to_do preProcess_IJacobian;
-  basic_method_to_do postProcess_IJacobian;
-  basic_method_to_do preProcess_IFunction;
-  basic_method_to_do postProcess_IFunction;
-  basic_method_to_do preProcess_Monitor;
-  basic_method_to_do postProcess_Monitor;
+  typedef MoFEM::PairNameFEMethodPtr PairNameFEMethodPtr;
+  typedef MoFEM::FEMethodsSequence FEMethodsSequence;
+  typedef MoFEM::BasicMethodsSequence BasicMethodsSequence;
+
+  FEMethodsSequence loops_to_do_IJacobian;
+  FEMethodsSequence loops_to_do_IFunction;
+  FEMethodsSequence loops_to_do_Monitor;
+  BasicMethodsSequence preProcess_IJacobian;
+  BasicMethodsSequence postProcess_IJacobian;
+  BasicMethodsSequence preProcess_IFunction;
+  BasicMethodsSequence postProcess_IFunction;
+  BasicMethodsSequence preProcess_Monitor;
+  BasicMethodsSequence postProcess_Monitor;
 
   PetscLogEvent USER_EVENT_TsCtxRHSFunction;
   PetscLogEvent USER_EVENT_TsCtxRHSJacobian;
@@ -97,16 +75,16 @@ struct TsCtx {
     PetscLogEventRegister("LoopTsMonitor",0,&USER_EVENT_TsCtxMonitor);
   }
 
-  loops_to_do_type& get_loops_to_do_IFunction() { return loops_to_do_IFunction; }
-  loops_to_do_type& get_loops_to_do_IJacobian() { return loops_to_do_IJacobian; }
-  loops_to_do_type& get_loops_to_do_Monitor() { return loops_to_do_Monitor; }
+  FEMethodsSequence& get_loops_to_do_IFunction() { return loops_to_do_IFunction; }
+  FEMethodsSequence& get_loops_to_do_IJacobian() { return loops_to_do_IJacobian; }
+  FEMethodsSequence& get_loops_to_do_Monitor() { return loops_to_do_Monitor; }
 
-  basic_method_to_do& get_preProcess_to_do_IFunction() { return preProcess_IFunction; }
-  basic_method_to_do& get_postProcess_to_do_IFunction() { return postProcess_IFunction; }
-  basic_method_to_do& get_preProcess_to_do_IJacobian() { return preProcess_IJacobian; }
-  basic_method_to_do& get_postProcess_to_do_IJacobian() { return postProcess_IJacobian; }
-  basic_method_to_do& get_preProcess_to_do_Monitor() { return preProcess_Monitor; }
-  basic_method_to_do& get_postProcess_to_do_Monitor() { return postProcess_Monitor; }
+  BasicMethodsSequence& get_preProcess_to_do_IFunction() { return preProcess_IFunction; }
+  BasicMethodsSequence& get_postProcess_to_do_IFunction() { return postProcess_IFunction; }
+  BasicMethodsSequence& get_preProcess_to_do_IJacobian() { return preProcess_IJacobian; }
+  BasicMethodsSequence& get_postProcess_to_do_IJacobian() { return postProcess_IJacobian; }
+  BasicMethodsSequence& get_preProcess_to_do_Monitor() { return preProcess_Monitor; }
+  BasicMethodsSequence& get_postProcess_to_do_Monitor() { return postProcess_Monitor; }
 
   friend PetscErrorCode f_TSSetIFunction(TS ts,PetscReal t,Vec u,Vec u_t,Vec F,void *ctx);
   friend PetscErrorCode f_TSSetIJacobian(TS ts,PetscReal t,Vec u,Vec U_t,PetscReal a,Mat A,Mat B,void *ctx);

@@ -902,24 +902,24 @@ PetscErrorCode ThermalElement::setTimeSteppingProblem(TsCtx &ts_ctx,string field
   ierr = setTimeSteppingProblem(field_name,rate_name,mesh_nodals_positions); CHKERRQ(ierr);
 
   //rhs
-  TsCtx::loops_to_do_type& loops_to_do_Rhs = ts_ctx.get_loops_to_do_IFunction();
-  loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("THERMAL_FE",&feRhs));
-  loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("THERMAL_FLUX_FE",&feFlux));
+  TsCtx::FEMethodsSequence& loops_to_do_Rhs = ts_ctx.get_loops_to_do_IFunction();
+  loops_to_do_Rhs.push_back(TsCtx::PairNameFEMethodPtr("THERMAL_FE",&feRhs));
+  loops_to_do_Rhs.push_back(TsCtx::PairNameFEMethodPtr("THERMAL_FLUX_FE",&feFlux));
   if(mField.check_finite_element("THERMAL_CONVECTION_FE"))
-    loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("THERMAL_CONVECTION_FE",&feConvectionRhs));
+    loops_to_do_Rhs.push_back(TsCtx::PairNameFEMethodPtr("THERMAL_CONVECTION_FE",&feConvectionRhs));
   if(mField.check_finite_element("THERMAL_RADIATION_FE"))
-    loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("THERMAL_RADIATION_FE",&feRadiationRhs));
+    loops_to_do_Rhs.push_back(TsCtx::PairNameFEMethodPtr("THERMAL_RADIATION_FE",&feRadiationRhs));
 
   //lhs
-  TsCtx::loops_to_do_type& loops_to_do_Mat = ts_ctx.get_loops_to_do_IJacobian();
-  loops_to_do_Mat.push_back(TsCtx::loop_pair_type("THERMAL_FE",&feLhs));
+  TsCtx::FEMethodsSequence& loops_to_do_Mat = ts_ctx.get_loops_to_do_IJacobian();
+  loops_to_do_Mat.push_back(TsCtx::PairNameFEMethodPtr("THERMAL_FE",&feLhs));
   if(mField.check_finite_element("THERMAL_CONVECTION_FE")) 
-    loops_to_do_Mat.push_back(TsCtx::loop_pair_type("THERMAL_CONVECTION_FE",&feConvectionLhs));
+    loops_to_do_Mat.push_back(TsCtx::PairNameFEMethodPtr("THERMAL_CONVECTION_FE",&feConvectionLhs));
   if(mField.check_finite_element("THERMAL_RADIATION_FE"))
-    loops_to_do_Mat.push_back(TsCtx::loop_pair_type("THERMAL_RADIATION_FE",&feRadiationLhs));
+    loops_to_do_Mat.push_back(TsCtx::PairNameFEMethodPtr("THERMAL_RADIATION_FE",&feRadiationLhs));
 
   //monitor
-  //TsCtx::loops_to_do_type& loops_to_do_Monitor = ts_ctx.get_loops_to_do_Monitor();
+  //TsCtx::FEMethodsSequence& loops_to_do_Monitor = ts_ctx.get_loops_to_do_Monitor();
 
   PetscFunctionReturn(0);
 }

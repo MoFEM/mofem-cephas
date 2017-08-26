@@ -40,16 +40,17 @@
 #include <Interface.hpp>
 #include <Core.hpp>
 
+#include <AuxPTESc.hpp>
 #include <KspCtx.hpp>
 
 namespace MoFEM {
 
 PetscErrorCode KspRhs(KSP ksp,Vec f,void *ctx) {
   PetscFunctionBegin;
-  
+
   KspCtx* ksp_ctx = (KspCtx*)ctx;
   PetscLogEventBegin(ksp_ctx->USER_EVENT_KspRhs,0,0,0,0);
-  KspCtx::basic_method_to_do::iterator bit = ksp_ctx->preProcess_Rhs.begin();
+  KspCtx::BasicMethodsSequence::iterator bit = ksp_ctx->preProcess_Rhs.begin();
   for(;bit!=ksp_ctx->preProcess_Rhs.end();bit++) {
     ierr = (*bit)->setKsp(ksp); CHKERRQ(ierr);
     (*bit)->ksp_f = f;
@@ -57,7 +58,7 @@ PetscErrorCode KspRhs(KSP ksp,Vec f,void *ctx) {
     ierr = ksp_ctx->mField.problem_basic_method_preProcess(ksp_ctx->problemName,*(*(bit)));  CHKERRQ(ierr);
     ierr = (*bit)->setKspCtx(KspMethod::CTX_KSPNONE);  CHKERRQ(ierr);
   }
-  KspCtx::loops_to_do_type::iterator lit = ksp_ctx->loops_to_do_Rhs.begin();
+  KspCtx::FEMethodsSequence::iterator lit = ksp_ctx->loops_to_do_Rhs.begin();
   for(;lit!=ksp_ctx->loops_to_do_Rhs.end();lit++) {
     ierr = lit->second->setKspCtx(KspMethod::CTX_SETFUNCTION);  CHKERRQ(ierr);
     ierr = lit->second->setKsp(ksp); CHKERRQ(ierr);
@@ -82,10 +83,10 @@ PetscErrorCode KspRhs(KSP ksp,Vec f,void *ctx) {
 }
 PetscErrorCode KspMat(KSP ksp,Mat A,Mat B,void *ctx) {
   PetscFunctionBegin;
-  
+
   KspCtx* ksp_ctx = (KspCtx*)ctx;
   PetscLogEventBegin(ksp_ctx->USER_EVENT_KspMat,0,0,0,0);
-  KspCtx::basic_method_to_do::iterator bit = ksp_ctx->preProcess_Mat.begin();
+  KspCtx::BasicMethodsSequence::iterator bit = ksp_ctx->preProcess_Mat.begin();
   for(;bit!=ksp_ctx->preProcess_Mat.end();bit++) {
     ierr = (*bit)->setKsp(ksp); CHKERRQ(ierr);
     (*bit)->ksp_A = A;
@@ -94,7 +95,7 @@ PetscErrorCode KspMat(KSP ksp,Mat A,Mat B,void *ctx) {
     ierr = ksp_ctx->mField.problem_basic_method_preProcess(ksp_ctx->problemName,*(*(bit)));  CHKERRQ(ierr);
     ierr = (*bit)->setKspCtx(KspMethod::CTX_KSPNONE);  CHKERRQ(ierr);
   }
-  KspCtx::loops_to_do_type::iterator lit = ksp_ctx->loops_to_do_Mat.begin();
+  KspCtx::FEMethodsSequence::iterator lit = ksp_ctx->loops_to_do_Mat.begin();
   for(;lit!=ksp_ctx->loops_to_do_Mat.end();lit++) {
     lit->second->ksp_A = A;
     lit->second->ksp_B = B;

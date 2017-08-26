@@ -45,6 +45,7 @@
 #include <VecManager.hpp>
 #include <Core.hpp>
 
+#include <AuxPTESc.hpp>
 #include <KspCtx.hpp>
 #include <SnesCtx.hpp>
 #include <TsCtx.hpp>
@@ -520,7 +521,7 @@ static PetscErrorCode DMMoFEMKSPSetComputeRHS(DM dm,S fe_name,T method,T pre_onl
     dm_field->kspCtx->get_preProcess_to_do_Rhs().push_back(pre_only);
   }
   if(method) {
-    dm_field->kspCtx->get_loops_to_do_Rhs().push_back(KspCtx::loop_pair_type(fe_name,method));
+    dm_field->kspCtx->get_loops_to_do_Rhs().push_back(PairNameFEMethodPtr(fe_name,method));
   }
   if(post_only) {
     dm_field->kspCtx->get_postProcess_to_do_Rhs().push_back(post_only);
@@ -554,7 +555,7 @@ static PetscErrorCode DMMoFEMKSPSetComputeOperators(DM dm,S fe_name,T method,T p
     dm_field->kspCtx->get_preProcess_to_do_Mat().push_back(pre_only);
   }
   if(method) {
-    dm_field->kspCtx->get_loops_to_do_Mat().push_back(KspCtx::loop_pair_type(fe_name,method));
+    dm_field->kspCtx->get_loops_to_do_Mat().push_back(PairNameFEMethodPtr(fe_name,method));
   }
   if(post_only) {
     dm_field->kspCtx->get_postProcess_to_do_Mat().push_back(post_only);
@@ -590,7 +591,7 @@ static PetscErrorCode DMMoFEMSNESSetFunction(DM dm,S fe_name,T method,T pre_only
     dm_field->snesCtx->get_preProcess_to_do_Rhs().push_back(pre_only);
   }
   if(method) {
-    dm_field->snesCtx->get_loops_to_do_Rhs().push_back(SnesCtx::loop_pair_type(fe_name,method));
+    dm_field->snesCtx->get_loops_to_do_Rhs().push_back(PairNameFEMethodPtr(fe_name,method));
   }
   if(post_only) {
     dm_field->snesCtx->get_postProcess_to_do_Rhs().push_back(post_only);
@@ -625,7 +626,7 @@ static PetscErrorCode DMMoFEMSNESSetJacobian(DM dm,S fe_name,T method,T pre_only
     dm_field->snesCtx->get_preProcess_to_do_Mat().push_back(pre_only);
   }
   if(method) {
-    dm_field->snesCtx->get_loops_to_do_Mat().push_back(SnesCtx::loop_pair_type(fe_name,method));
+    dm_field->snesCtx->get_loops_to_do_Mat().push_back(PairNameFEMethodPtr(fe_name,method));
   }
   if(post_only) {
     dm_field->snesCtx->get_postProcess_to_do_Mat().push_back(post_only);
@@ -663,7 +664,7 @@ static PetscErrorCode DMMoFEMTSSetIFunction(DM dm,S fe_name,T method,T pre_only,
     dm_field->tsCtx->get_preProcess_to_do_IFunction().push_back(pre_only);
   }
   if(method) {
-    dm_field->tsCtx->get_loops_to_do_IFunction().push_back(TsCtx::loop_pair_type(fe_name,method));
+    dm_field->tsCtx->get_loops_to_do_IFunction().push_back(PairNameFEMethodPtr(fe_name,method));
   }
   if(post_only) {
     dm_field->tsCtx->get_postProcess_to_do_IFunction().push_back(post_only);
@@ -698,7 +699,7 @@ static PetscErrorCode DMMoFEMTSSetIJacobian(DM dm,S fe_name,T method,T pre_only,
     dm_field->tsCtx->get_preProcess_to_do_IJacobian().push_back(pre_only);
   }
   if(method) {
-    dm_field->tsCtx->get_loops_to_do_IJacobian().push_back(TsCtx::loop_pair_type(fe_name,method));
+    dm_field->tsCtx->get_loops_to_do_IJacobian().push_back(PairNameFEMethodPtr(fe_name,method));
   }
   if(post_only) {
     dm_field->tsCtx->get_postProcess_to_do_IJacobian().push_back(post_only);

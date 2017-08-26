@@ -612,21 +612,21 @@ int main(int argc, char *argv[]) {
     ierr = PCShellSetSetUp(pc,PCSetupArcLength); CHKERRQ(ierr);
 
     //Rhs
-    SnesCtx::loops_to_do_type& loops_to_do_Rhs = snes_ctx.get_loops_to_do_Rhs();
+    SnesCtx::FEMethodsSequence& loops_to_do_Rhs = snes_ctx.get_loops_to_do_Rhs();
     snes_ctx.get_preProcess_to_do_Rhs().push_back(&my_dirichlet_bc);
     snes_ctx.get_preProcess_to_do_Rhs().push_back(&pre_post_proc_fe);
-    loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("INTERFACE",&cohesive_elements.getFeRhs()));
-    loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("ELASTIC",&elastic.getLoopFeRhs()));
-    loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("ARC_LENGTH",&my_arc_method));
+    loops_to_do_Rhs.push_back(SnesCtx::PairNameFEMethodPtr("INTERFACE",&cohesive_elements.getFeRhs()));
+    loops_to_do_Rhs.push_back(SnesCtx::PairNameFEMethodPtr("ELASTIC",&elastic.getLoopFeRhs()));
+    loops_to_do_Rhs.push_back(SnesCtx::PairNameFEMethodPtr("ARC_LENGTH",&my_arc_method));
     snes_ctx.get_postProcess_to_do_Rhs().push_back(&pre_post_proc_fe);
     snes_ctx.get_postProcess_to_do_Rhs().push_back(&my_dirichlet_bc);
 
     //Mat
-    SnesCtx::loops_to_do_type& loops_to_do_Mat = snes_ctx.get_loops_to_do_Mat();
+    SnesCtx::FEMethodsSequence& loops_to_do_Mat = snes_ctx.get_loops_to_do_Mat();
     snes_ctx.get_preProcess_to_do_Mat().push_back(&my_dirichlet_bc);
-    loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("INTERFACE",&cohesive_elements.getFeLhs()));
-    loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("ELASTIC",&elastic.getLoopFeLhs()));
-    loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("ARC_LENGTH",&my_arc_method));
+    loops_to_do_Mat.push_back(SnesCtx::PairNameFEMethodPtr("INTERFACE",&cohesive_elements.getFeLhs()));
+    loops_to_do_Mat.push_back(SnesCtx::PairNameFEMethodPtr("ELASTIC",&elastic.getLoopFeLhs()));
+    loops_to_do_Mat.push_back(SnesCtx::PairNameFEMethodPtr("ARC_LENGTH",&my_arc_method));
     snes_ctx.get_postProcess_to_do_Mat().push_back(&my_dirichlet_bc);
 
     double gamma = 0.5,reduction = 1;
