@@ -392,18 +392,23 @@ PetscErrorCode DMMoFEMTSSetIJacobian(
   MoFEM::FEMethod *method,MoFEM::FEMethod *pre_only,MoFEM::FEMethod *post_only
 );
 
-
-#ifdef __KSPCTX_HPP__
-
 /**
   * \brief get MoFEM::KspCtx data structure
   * \ingroup dm
   */
 PetscErrorCode DMMoFEMGetKspCtx(DM dm,MoFEM::KspCtx **ksp_ctx);
 
-#endif //__KSPCTX_HPP__
+/**
+  * \brief get MoFEM::KspCtx data structure
+  * \ingroup dm
+  */
+PetscErrorCode DMMoFEMGetKspCtx(DM dm,const boost::shared_ptr<MoFEM::KspCtx>& ksp_ctx);
 
-#ifdef __SNESCTX_HPP__
+/**
+  * \brief set MoFEM::KspCtx data structure
+  * \ingroup dm
+ */
+PetscErrorCode DMMoFEMSetKspCtx(DM dm,boost::shared_ptr<MoFEM::KspCtx>& ksp_ctx);
 
 /**
   * \brief get MoFEM::SnesCtx data structure
@@ -412,24 +417,29 @@ PetscErrorCode DMMoFEMGetKspCtx(DM dm,MoFEM::KspCtx **ksp_ctx);
 PetscErrorCode DMMoFEMGetSnesCtx(DM dm,MoFEM::SnesCtx **snes_ctx);
 
 /**
+ * \brief get MoFEM::SnesCtx data structure
+ * \ingroup dm
+ */
+PetscErrorCode DMMoFEMGetSnesCtx(DM dm,const boost::shared_ptr<MoFEM::SnesCtx>& snes_ctx);
+
+/**
   * \brief Set MoFEM::SnesCtx data structure
   * \ingroup dm
 
-  It take over pointer, do not delete it, DM will destroy pointer
-  when is destroyed.
-
   */
-PetscErrorCode DMMoFEMSetSnesCtx(DM dm,MoFEM::SnesCtx * const snes_ctx);
-
-#endif //__SNESCTX_HPP__
-
-#ifdef __TSCTX_HPP__
+PetscErrorCode DMMoFEMSetSnesCtx(DM dm,boost::shared_ptr<MoFEM::SnesCtx>& snes_ctx);
 
 /**
   * \brief get MoFEM::TsCtx data structure
   * \ingroup dm
   */
 PetscErrorCode DMMoFEMGetTsCtx(DM dm,MoFEM::TsCtx **ts_ctx);
+
+/**
+  * \brief get MoFEM::TsCtx data structure
+  * \ingroup dm
+  */
+PetscErrorCode DMMoFEMGetTsCtx(DM dm,const boost::shared_ptr<MoFEM::TsCtx>& ts_ctx);
 
 /**
   * \brief Set MoFEM::TsCtx data structure
@@ -439,9 +449,7 @@ PetscErrorCode DMMoFEMGetTsCtx(DM dm,MoFEM::TsCtx **ts_ctx);
   when is destroyed.
 
   */
-PetscErrorCode DMMoFEMSetTsCtx(DM dm,MoFEM::TsCtx * const ts_ctx);
-
-#endif //__TSCTX_HPP__
+PetscErrorCode DMMoFEMSetTsCtx(DM dm,boost::shared_ptr<MoFEM::TsCtx>& ts_ctx);
 
 /** sets if read mesh is partitioned
   * \ingroup dm
@@ -706,15 +714,11 @@ namespace MoFEM {
 
     PetscErrorCode queryInterface(const MOFEMuuid& uuid,UnknownInterface** iface);
 
-    Interface *mField_ptr; 		///< MoFEM interface
-    PetscBool isProblemBuild;      ///< True if problem is build
-    std::string problemName;			        ///< Problem name
+    Interface *mField_ptr; 		 ///< MoFEM interface
+    PetscBool isProblemBuild;  ///< True if problem is build
+    std::string problemName;	 ///< Problem name
 
-    KspCtx *kspCtx;			  ///< data structure KSP
-    SnesCtx *snesCtx;			///< data structure SNES
-    TsCtx	*tsCtx;				   ///< data structure for TS solver
-
-    //options
+    // Options
     PetscBool isPartitioned;		///< true if read mesh is on parts
     PetscBool isSquareMatrix;		///< true if rows equals to cols
 
@@ -741,9 +745,12 @@ namespace MoFEM {
     PetscInt verbosity;			    ///< verbosity
     int referenceNumber;
 
+    boost::shared_ptr<KspCtx>  kspCtx;  ///< data structure KSP
+    boost::shared_ptr<SnesCtx> snesCtx; ///< data structure SNES
+    boost::shared_ptr<TsCtx>	 tsCtx;	  ///< data structure for TS solver
+
   };
-
-
+  
 }
 
 #endif //__DMMMOFEM_H

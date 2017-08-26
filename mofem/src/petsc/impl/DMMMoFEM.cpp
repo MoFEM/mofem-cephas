@@ -67,9 +67,6 @@ using namespace MoFEM;
 DMCtx::DMCtx():
 mField_ptr(PETSC_NULL),
 isProblemBuild(PETSC_FALSE),
-kspCtx(NULL),
-snesCtx(NULL),
-tsCtx(NULL),
 isPartitioned(PETSC_FALSE),
 isSquareMatrix(PETSC_TRUE),
 isSubDM(PETSC_FALSE),
@@ -79,9 +76,6 @@ verbosity(0),
 referenceNumber(0) {}
 
 DMCtx::~DMCtx() {
-  delete kspCtx;
-  delete snesCtx;
-  delete tsCtx;
 }
 
 PetscErrorCode DMCtx::queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface) {
@@ -189,9 +183,9 @@ PetscErrorCode DMMoFEMCreateMoFEM(
   ierr = dm_field->mField_ptr->modify_problem_mask_ref_level_set_bit(
     dm_field->problemName,bit_mask
   ); CHKERRQ(ierr);
-  dm_field->kspCtx = new KspCtx(*m_field_ptr,problem_name);
-  dm_field->snesCtx = new SnesCtx(*m_field_ptr,problem_name);
-  dm_field->tsCtx = new TsCtx(*m_field_ptr,problem_name);
+  dm_field->kspCtx = boost::shared_ptr<KspCtx>(new KspCtx(*m_field_ptr,problem_name));
+  dm_field->snesCtx = boost::shared_ptr<SnesCtx>(new SnesCtx(*m_field_ptr,problem_name));
+  dm_field->tsCtx = boost::shared_ptr<TsCtx>(new TsCtx(*m_field_ptr,problem_name));
 
   MPI_Comm comm;
   ierr = PetscObjectGetComm((PetscObject)dm,&comm); CHKERRQ(ierr);
@@ -531,7 +525,7 @@ static PetscErrorCode DMMoFEMKSPSetComputeRHS(DM dm,S fe_name,T method,T pre_onl
   if(post_only) {
     dm_field->kspCtx->get_postProcess_to_do_Rhs().push_back(post_only);
   }
-  ierr = DMKSPSetComputeRHS(dm,KspRhs,dm_field->kspCtx); CHKERRQ(ierr);
+  ierr = DMKSPSetComputeRHS(dm,KspRhs,dm_field->kspCtx.get()); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -565,7 +559,7 @@ static PetscErrorCode DMMoFEMKSPSetComputeOperators(DM dm,S fe_name,T method,T p
   if(post_only) {
     dm_field->kspCtx->get_postProcess_to_do_Mat().push_back(post_only);
   }
-  ierr = DMKSPSetComputeOperators(dm,KspMat,dm_field->kspCtx); CHKERRQ(ierr);
+  ierr = DMKSPSetComputeOperators(dm,KspMat,dm_field->kspCtx.get()); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -601,7 +595,7 @@ static PetscErrorCode DMMoFEMSNESSetFunction(DM dm,S fe_name,T method,T pre_only
   if(post_only) {
     dm_field->snesCtx->get_postProcess_to_do_Rhs().push_back(post_only);
   }
-  ierr = DMSNESSetFunction(dm,SnesRhs,dm_field->snesCtx); CHKERRQ(ierr);
+  ierr = DMSNESSetFunction(dm,SnesRhs,dm_field->snesCtx.get()); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -636,7 +630,7 @@ static PetscErrorCode DMMoFEMSNESSetJacobian(DM dm,S fe_name,T method,T pre_only
   if(post_only) {
     dm_field->snesCtx->get_postProcess_to_do_Mat().push_back(post_only);
   }
-  ierr = DMSNESSetJacobian(dm,SnesMat,dm_field->snesCtx); CHKERRQ(ierr);
+  ierr = DMSNESSetJacobian(dm,SnesMat,dm_field->snesCtx.get()); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -674,7 +668,7 @@ static PetscErrorCode DMMoFEMTSSetIFunction(DM dm,S fe_name,T method,T pre_only,
   if(post_only) {
     dm_field->tsCtx->get_postProcess_to_do_IFunction().push_back(post_only);
   }
-  ierr = DMTSSetIFunction(dm,f_TSSetIFunction,dm_field->tsCtx); CHKERRQ(ierr);
+  ierr = DMTSSetIFunction(dm,f_TSSetIFunction,dm_field->tsCtx.get()); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -709,7 +703,7 @@ static PetscErrorCode DMMoFEMTSSetIJacobian(DM dm,S fe_name,T method,T pre_only,
   if(post_only) {
     dm_field->tsCtx->get_postProcess_to_do_IJacobian().push_back(post_only);
   }
-  ierr = DMTSSetIJacobian(dm,f_TSSetIJacobian,dm_field->tsCtx); CHKERRQ(ierr);
+  ierr = DMTSSetIJacobian(dm,f_TSSetIJacobian,dm_field->tsCtx.get()); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -732,7 +726,23 @@ PetscErrorCode DMMoFEMGetKspCtx(DM dm,MoFEM::KspCtx **ksp_ctx) {
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
   DMCtx *dm_field = (DMCtx*)dm->data;
-  *ksp_ctx = dm_field->kspCtx;
+  *ksp_ctx = dm_field->kspCtx.get();
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode DMMoFEMGetKspCtx(DM dm,const boost::shared_ptr<MoFEM::KspCtx>& ksp_ctx) {
+  PetscValidHeaderSpecific(dm,DM_CLASSID,1);
+  PetscFunctionBegin;
+  DMCtx *dm_field = (DMCtx*)dm->data;
+  const_cast<boost::shared_ptr<MoFEM::KspCtx>& >(ksp_ctx) = dm_field->kspCtx;
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode DMMoFEMSetKspCtx(DM dm,boost::shared_ptr<MoFEM::KspCtx>& ksp_ctx) {
+  PetscValidHeaderSpecific(dm,DM_CLASSID,1);
+  PetscFunctionBegin;
+  DMCtx *dm_field = (DMCtx*)dm->data;
+  dm_field->kspCtx = ksp_ctx;
   PetscFunctionReturn(0);
 }
 
@@ -740,17 +750,22 @@ PetscErrorCode DMMoFEMGetSnesCtx(DM dm,MoFEM::SnesCtx **snes_ctx) {
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
   DMCtx *dm_field = (DMCtx*)dm->data;
-  *snes_ctx = dm_field->snesCtx;
+  *snes_ctx = dm_field->snesCtx.get();
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode DMMoFEMSetSnesCtx(DM dm,MoFEM::SnesCtx * const snes_ctx) {
+PetscErrorCode DMMoFEMGetSnesCtx(DM dm,const boost::shared_ptr<MoFEM::SnesCtx>& snes_ctx) {
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
   DMCtx *dm_field = (DMCtx*)dm->data;
-  if(dm_field->snesCtx) {
-    delete dm_field->snesCtx;
-  }
+  const_cast<boost::shared_ptr<MoFEM::SnesCtx>& >(snes_ctx) = dm_field->snesCtx;
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode DMMoFEMSetSnesCtx(DM dm,boost::shared_ptr<MoFEM::SnesCtx> &snes_ctx) {
+  PetscValidHeaderSpecific(dm,DM_CLASSID,1);
+  PetscFunctionBegin;
+  DMCtx *dm_field = (DMCtx*)dm->data;
   dm_field->snesCtx = snes_ctx;
   PetscFunctionReturn(0);
 }
@@ -781,23 +796,27 @@ PetscErrorCode DMMoFEMGetTsCtx(DM dm,MoFEM::TsCtx **ts_ctx) {
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
   DMCtx *dm_field = (DMCtx*)dm->data;
-  *ts_ctx = dm_field->tsCtx;
+  *ts_ctx = dm_field->tsCtx.get();
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode DMMoFEMSetTsCtx(DM dm,MoFEM::TsCtx * const ts_ctx) {
+PetscErrorCode DMMoFEMGetTsCtx(DM dm,const boost::shared_ptr<MoFEM::TsCtx>& ts_ctx) {
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
   DMCtx *dm_field = (DMCtx*)dm->data;
-  if(dm_field->tsCtx) {
-    delete dm_field->tsCtx;
-  }
+  const_cast<boost::shared_ptr<MoFEM::TsCtx>& >(ts_ctx) = dm_field->tsCtx;
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode DMMoFEMSetTsCtx(DM dm,boost::shared_ptr<MoFEM::TsCtx>& ts_ctx) {
+  PetscValidHeaderSpecific(dm,DM_CLASSID,1);
+  PetscFunctionBegin;
+  DMCtx *dm_field = (DMCtx*)dm->data;
   dm_field->tsCtx = ts_ctx;
   PetscFunctionReturn(0);
 }
 
 PetscErrorCode DMCreateGlobalVector_MoFEM(DM dm,Vec *g) {
-
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
   DMCtx *dm_field = (DMCtx*)dm->data;
@@ -808,7 +827,6 @@ PetscErrorCode DMCreateGlobalVector_MoFEM(DM dm,Vec *g) {
 }
 
 PetscErrorCode DMCreateLocalVector_MoFEM(DM dm,Vec *l) {
-
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
   DMCtx *dm_field = (DMCtx*)dm->data;
@@ -819,7 +837,6 @@ PetscErrorCode DMCreateLocalVector_MoFEM(DM dm,Vec *l) {
 }
 
 PetscErrorCode DMCreateMatrix_MoFEM(DM dm,Mat *M) {
-
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
   DMCtx *dm_field = (DMCtx*)dm->data;
