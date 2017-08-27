@@ -191,7 +191,7 @@ struct AnalyticalDirichletBC {
   /**
    * \brief Structure used to enforce analytical boundary conditions
    */
-  struct DirichletBC : public DisplacementBCFEMethodPreAndPostProc {
+  struct DirichletBC : public DirichletDisplacementBc {
 
     DirichletBC(
       MoFEM::Interface& m_field,const std::string &field,Mat A,Vec X,Vec F

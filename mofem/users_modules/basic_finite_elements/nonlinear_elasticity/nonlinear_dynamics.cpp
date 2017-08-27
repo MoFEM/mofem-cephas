@@ -523,10 +523,10 @@ int main(int argc, char *argv[]) {
     ierr = MatShellSetOperation(shell_Aij,MATOP_ZERO_ENTRIES,(void(*)(void))ConvectiveMassElement::ZeroEntriesOp); CHKERRQ(ierr);
     //blocked problem
     ConvectiveMassElement::ShellMatrixElement shell_matrix_element(m_field);
-    SpatialPositionsBCFEMethodPreAndPostProc shell_dirichlet_bc(
+    DirichletSpatialPositionsBc shell_dirichlet_bc(
       m_field,"SPATIAL_POSITION",shellAij_ctx->barK,PETSC_NULL,PETSC_NULL
     );
-    SpatialPositionsBCFEMethodPreAndPostProc my_dirichlet_bc(
+    DirichletSpatialPositionsBc my_dirichlet_bc(
       m_field,"SPATIAL_POSITION",PETSC_NULL,D,F
     );
     shell_matrix_element.problemName = "Kuu";
@@ -566,7 +566,7 @@ int main(int argc, char *argv[]) {
   #else
     Mat Aij;
     ierr = m_field.MatCreateMPIAIJWithArrays("DYNAMICS",&Aij); CHKERRQ(ierr);
-    SpatialPositionsBCFEMethodPreAndPostProc my_dirichlet_bc(m_field,"SPATIAL_POSITION",Aij,D,F);
+    DirichletSpatialPositionsBc my_dirichlet_bc(m_field,"SPATIAL_POSITION",Aij,D,F);
     //my_dirichlet_bc.fixFields.push_back("SPATIAL_VELOCITY");
 
     //surface forces
@@ -711,7 +711,7 @@ int main(int argc, char *argv[]) {
     ierr = SNESSetJacobian(snes,Aij,Aij,SnesMat,&snes_ctx); CHKERRQ(ierr);
     ierr = SNESSetFromOptions(snes); CHKERRQ(ierr);
 
-    SpatialPositionsBCFEMethodPreAndPostProc my_dirichlet_bc(
+    DirichletSpatialPositionsBc my_dirichlet_bc(
       m_field,"SPATIAL_POSITION",PETSC_NULL,D,F
     );
 

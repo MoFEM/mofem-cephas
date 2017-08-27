@@ -67,23 +67,23 @@ struct ArcLengthCtx {
 
   MoFEM::Interface &mField;
 
-  double s;	///< arc length radius
-  double beta; 	///< force scaling factor
-  double alpha; ///< displacement scaling factor
+  double s;	          ///< arc length radius
+  double beta; 	      ///< force scaling factor
+  double alpha;       ///< displacement scaling factor
 
   Vec ghosTdLambda;
-  double dLambda;	///< increment of load factor
+  double dLambda;	    ///< increment of load factor
   Vec ghostDiag;
-  double dIag;		///< diagonal value
+  double dIag;		    ///< diagonal value
 
-  double dx2;		///< inner_prod(dX,dX)
-  double F_lambda2;	///< inner_prod(F_lambda,F_lambda);
+  double dx2;		      ///< inner_prod(dX,dX)
+  double F_lambda2;	  ///< inner_prod(F_lambda,F_lambda);
   double res_lambda;	///< f_lambda - s
-  Vec F_lambda;		///< F_lambda reference load vector
-  Vec db;		///< db derivative of f(dx*dx), i.e. db = d[ f(dx*dx) ]/dx
-  Vec xLambda;		///< solution of eq. K*xLambda = F_lambda
-  Vec x0;		///< displacement vector at beginning of step
-  Vec dx;		///< dx = x-x0
+  Vec F_lambda;		    ///< F_lambda reference load vector
+  Vec db;		          ///< db derivative of f(dx*dx), i.e. db = d[ f(dx*dx) ]/dx
+  Vec xLambda;		    ///< solution of eq. K*xLambda = F_lambda
+  Vec x0;		          ///< displacement vector at beginning of step
+  Vec dx;		          ///< dx = x-x0
 
   /**
     * \brief set arc radius

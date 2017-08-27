@@ -328,7 +328,7 @@ int main(int argc, char *argv[]) {
       for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,SIDESET|PRESSURESET,it)) {
         ierr = fe_neumann.addPreassure(it->getMeshsetId()); CHKERRQ(ierr);
       }
-      SpatialPositionsBCFEMethodPreAndPostProc my_dirichlet_bc(m_field,"SPATIAL_POSITION",Aij,D,F);
+      DirichletSpatialPositionsBc my_dirichlet_bc(m_field,"SPATIAL_POSITION",Aij,D,F);
       ierr = m_field.get_problem("ELASTIC_MECHANICS",&my_dirichlet_bc.problemPtr); CHKERRQ(ierr);
       ierr = my_dirichlet_bc.iNitalize(); CHKERRQ(ierr);
 
@@ -403,11 +403,11 @@ int main(int argc, char *argv[]) {
       struct AddLambdaVectorToFinternal: public FEMethod {
 
         ArcLengthCtx *arcPtr;
-        SpatialPositionsBCFEMethodPreAndPostProc *bC;
+        DirichletSpatialPositionsBc *bC;
 
         AddLambdaVectorToFinternal(
           ArcLengthCtx *arc_ptr,
-          SpatialPositionsBCFEMethodPreAndPostProc *bc
+          DirichletSpatialPositionsBc *bc
         ):
         arcPtr(arc_ptr),
         bC(bc) {}

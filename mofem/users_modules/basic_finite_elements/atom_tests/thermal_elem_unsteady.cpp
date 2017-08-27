@@ -134,7 +134,7 @@ int main(int argc, char *argv[]) {
     ierr = TSCreate(PETSC_COMM_WORLD,&ts); CHKERRQ(ierr);
     ierr = TSSetType(ts,TSBEULER); CHKERRQ(ierr);
 
-    TemperatureBCFEMethodPreAndPostProc my_dirichlet_bc(m_field,"TEMP",A,T,F);
+    DirichletTemperatureBc my_dirichlet_bc(m_field,"TEMP",A,T,F);
     ThermalElement::UpdateAndControl update_velocities(m_field,"TEMP","TEMP_RATE");
     ThermalElement::TimeSeriesMonitor monitor(m_field,"THEMP_SERIES","TEMP");
 

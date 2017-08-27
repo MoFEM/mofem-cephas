@@ -359,7 +359,7 @@ int main(int argc, char *argv[]) {
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,SIDESET|PRESSURESET,it)) {
     ierr = neumann.addPreassure(it->getMeshsetId()); CHKERRQ(ierr);
   }
-  SpatialPositionsBCFEMethodPreAndPostProc my_Dirichlet_bc(m_field,"SPATIAL_POSITION",Aij,D,F);
+  DirichletSpatialPositionsBc my_Dirichlet_bc(m_field,"SPATIAL_POSITION",Aij,D,F);
 
   ierr = VecZeroEntries(F); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);

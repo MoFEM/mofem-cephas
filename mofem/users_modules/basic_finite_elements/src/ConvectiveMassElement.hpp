@@ -760,7 +760,7 @@ struct ConvectiveMassElement {
     //variables bellow need to be set by user
     string problemName; 					///< name of shell problem
     MatShellCtx *shellMatCtx; 					///< pointer to shell matrix
-    SpatialPositionsBCFEMethodPreAndPostProc *DirichletBcPtr; 	///< boundary conditions
+    DirichletSpatialPositionsBc *DirichletBcPtr; 	///< boundary conditions
 
     PetscErrorCode preProcess();
 

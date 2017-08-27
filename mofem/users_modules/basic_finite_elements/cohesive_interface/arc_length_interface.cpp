@@ -527,7 +527,7 @@ int main(int argc, char *argv[]) {
     ArcLengthSnesCtx snes_ctx(m_field,"ELASTIC_MECHANICS",arc_ctx);
     AssembleRhsVectors pre_post_proc_fe(m_field,F_body_force,arc_ctx);
 
-    DisplacementBCFEMethodPreAndPostProc my_dirichlet_bc(m_field,"DISPLACEMENT",Aij,D,F);
+    DirichletDisplacementBc my_dirichlet_bc(m_field,"DISPLACEMENT",Aij,D,F);
     ierr = m_field.get_problem("ELASTIC_MECHANICS",&my_dirichlet_bc.problemPtr); CHKERRQ(ierr);
     ierr = my_dirichlet_bc.iNitalize(); CHKERRQ(ierr);
     boost::shared_ptr<Hooke<adouble> > hooke_adouble_ptr(new Hooke<adouble>);
