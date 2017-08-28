@@ -1,4 +1,5 @@
 /** \file ArcLengthTools.cpp
+ * \ingroup arc_length_control
  *
  * Implementation of arc-length control method
  *
