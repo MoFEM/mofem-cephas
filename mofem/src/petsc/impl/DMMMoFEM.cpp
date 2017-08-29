@@ -77,6 +77,8 @@ verbosity(0),
 referenceNumber(0) {}
 
 DMCtx::~DMCtx() {
+  // cerr << "Snes " << snesCtx.use_count() << endl;
+  // cerr << "Destroy DMCtx" << endl;
 }
 
 PetscErrorCode DMCtx::queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface) {
@@ -95,14 +97,12 @@ PetscErrorCode DMCtx::queryInterface(const MOFEMuuid& uuid, UnknownInterface** i
 }
 
 PetscErrorCode DMRegister_MoFEM(const char sname[]) {
-
   PetscFunctionBegin;
   ierr = DMRegister(sname,DMCreate_MoFEM); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
 PetscErrorCode DMSetOperators_MoFEM(DM dm) {
-
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
 
@@ -125,7 +125,6 @@ PetscErrorCode DMSetOperators_MoFEM(DM dm) {
 }
 
 PetscErrorCode DMCreate_MoFEM(DM dm) {
-
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
   dm->data = new DMCtx();
@@ -134,18 +133,19 @@ PetscErrorCode DMCreate_MoFEM(DM dm) {
 }
 
 PetscErrorCode DMDestroy_MoFEM(DM dm) {
-  //
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
+  DMCtx *dm_field = (DMCtx*)dm->data;
   PetscFunctionBegin;
-  if(!((DMCtx*)dm->data)->referenceNumber) {
-    DMCtx *dm_field = (DMCtx*)dm->data;
+  if(((DMCtx*)dm->data)->referenceNumber==0) {
     if(dm_field->destroyProblem) {
       if(dm_field->mField_ptr->check_problem(dm_field->problemName)) {
         dm_field->mField_ptr->delete_problem(dm_field->problemName);
       } // else problem has to be deleted by the user
     }
-    delete (DMCtx*)dm->data;
+    // cerr << "Destroy " << dm_field->problemName << endl;
+    delete ((DMCtx*)dm->data);
   } else {
+    // cerr << "Derefrence " << dm_field->problemName << " "  << ((DMCtx*)dm->data)->referenceNumber << endl;
     (((DMCtx*)dm->data)->referenceNumber)--;
   }
   PetscFunctionReturn(0);
@@ -158,7 +158,6 @@ PetscErrorCode DMMoFEMCreateMoFEM(
   const MoFEM::BitRefLevel bit_level,
   const MoFEM::BitRefLevel bit_mask
 ) {
-
   PetscFunctionBegin;
 
   DMCtx *dm_field = (DMCtx*)dm->data;

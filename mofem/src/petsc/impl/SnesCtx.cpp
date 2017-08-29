@@ -46,17 +46,17 @@
 #include <AuxPTESc.hpp>
 #include <SnesCtx.hpp>
 
-#if PETSC_VERSION_GE(3,6,0)
-  #include <petsc/private/snesimpl.h>
-#else
-  #include <petsc-private/snesimpl.h>
-#endif
+// #if PETSC_VERSION_GE(3,6,0)
+//   #include <petsc/private/snesimpl.h>
+// #else
+//   #include <petsc-private/snesimpl.h>
+// #endif
 
 namespace MoFEM {
 
 PetscErrorCode SnesRhs(SNES snes,Vec x,Vec f,void *ctx) {
   SnesCtx* snes_ctx = (SnesCtx*)ctx;
-  PetscValidHeaderSpecific(snes,SNES_CLASSID,1);
+  // PetscValidHeaderSpecific(snes,SNES_CLASSID,1);
   PetscFunctionBegin;
   PetscLogEventBegin(snes_ctx->USER_EVENT_SnesRhs,0,0,0,0);
   ierr = VecGhostUpdateBegin(x,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -103,7 +103,7 @@ PetscErrorCode SnesRhs(SNES snes,Vec x,Vec f,void *ctx) {
 }
 PetscErrorCode SnesMat(SNES snes,Vec x,Mat A,Mat B,void *ctx) {
   SnesCtx* snes_ctx = (SnesCtx*)ctx;
-  PetscValidHeaderSpecific(snes,SNES_CLASSID,1);
+  // PetscValidHeaderSpecific(snes,SNES_CLASSID,1);
   PetscFunctionBegin;
   PetscLogEventBegin(snes_ctx->USER_EVENT_SnesMat,0,0,0,0);
   if(snes_ctx->zeroPreCondMatrixB) {
@@ -149,7 +149,7 @@ PetscErrorCode SnesMat(SNES snes,Vec x,Mat A,Mat B,void *ctx) {
 
 PetscErrorCode SNESMoFEMSetAssmblyType(SNES snes,MatAssemblyType type) {
   SnesCtx* snes_ctx;
-  PetscValidHeaderSpecific(snes,SNES_CLASSID,1);
+  // PetscValidHeaderSpecific(snes,SNES_CLASSID,1);
   PetscFunctionBegin;
   ierr = SNESGetApplicationContext(snes,&snes_ctx); CHKERRQ(ierr);
   snes_ctx->typeOfAssembly = type;
@@ -158,7 +158,7 @@ PetscErrorCode SNESMoFEMSetAssmblyType(SNES snes,MatAssemblyType type) {
 
 PetscErrorCode SNESMoFEMSetBehavior(SNES snes,MoFEMTypes bh) {
   SnesCtx* snes_ctx;
-  PetscValidHeaderSpecific(snes,SNES_CLASSID,1);
+  // PetscValidHeaderSpecific(snes,SNES_CLASSID,1);
   PetscFunctionBegin;
   ierr = SNESGetApplicationContext(snes,&snes_ctx); CHKERRQ(ierr);
   snes_ctx->bH = bh;

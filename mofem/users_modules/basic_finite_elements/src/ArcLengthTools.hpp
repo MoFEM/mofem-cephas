@@ -217,7 +217,10 @@ struct PCArcLengthCtx {
   Mat shellAij,Aij;
   ArcLengthCtx* arcPtr;
   PCArcLengthCtx(
-    Mat shell_Aij,Mat _Aij,ArcLengthCtx* arc_ptr
+    Mat shell_Aij,Mat aij,ArcLengthCtx* arc_ptr
+  );
+  PCArcLengthCtx(
+    PC pc,Mat shell_Aij,Mat aij,ArcLengthCtx* arc_ptr
   );
   virtual ~PCArcLengthCtx();
 

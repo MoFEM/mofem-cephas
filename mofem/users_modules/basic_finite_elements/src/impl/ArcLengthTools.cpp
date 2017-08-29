@@ -57,6 +57,7 @@ ArcLengthCtx::ArcLengthCtx(
   NumeredDofEntityByFieldName::iterator hi_dit;
   dIt = dofs_ptr_no_const->get<FieldName_mi_tag>().lower_bound(field_name);
   hi_dit = dofs_ptr_no_const->get<FieldName_mi_tag>().upper_bound(field_name);
+
   if(distance(dIt,hi_dit)!=1) {
     PetscTraceBackErrorHandler(
       PETSC_COMM_WORLD,
@@ -70,6 +71,12 @@ ArcLengthCtx::ArcLengthCtx(
       "can not find unique LAMBDA (load factor)",PETSC_NULL
     );
   }
+
+  // ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
+  // BARRIER_RANK_START(pcomm)
+  // cerr << **dIt << endl;
+  // BARRIER_RANK_END(pcomm)
+
   if((unsigned int)mField.get_comm_rank()==(*dIt)->getPart()) {
     ierr = VecCreateGhostWithArray(
       mField.get_comm(),1,1,0,PETSC_NULL,&dLambda,&ghosTdLambda
@@ -153,9 +160,14 @@ PetscErrorCode ArcLengthMatShell::setLambda(Vec ksp_x,double *lambda,ScatterMode
   PetscFunctionReturn(0);
 }
 
-PCArcLengthCtx::PCArcLengthCtx(Mat shell_Aij,Mat _Aij,ArcLengthCtx* arc_ptr):
-  shellAij(shell_Aij),Aij(_Aij),arcPtr(arc_ptr) {
+PCArcLengthCtx::PCArcLengthCtx(Mat shell_Aij,Mat aij,ArcLengthCtx* arc_ptr):
+  shellAij(shell_Aij),Aij(aij),arcPtr(arc_ptr) {
   ierr = PCCreate(arc_ptr->mField.get_comm(),&pC); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+}
+
+PCArcLengthCtx::PCArcLengthCtx(PC pc,Mat shell_Aij,Mat aij,ArcLengthCtx* arc_ptr):
+  pC(pc),shellAij(shell_Aij),Aij(aij),arcPtr(arc_ptr) {
+  ierr = PetscObjectReference((PetscObject)pC); CHKERRABORT(PETSC_COMM_WORLD,ierr);
 }
 
 PCArcLengthCtx::~PCArcLengthCtx() {
@@ -246,6 +258,7 @@ PetscErrorCode PCApplyArcLength(PC pc,Vec pc_f,Vec pc_x) {
   double res_lambda;
   ierr = mat_ctx->setLambda(pc_f,&res_lambda,SCATTER_FORWARD); CHKERRQ(ierr);
   double ddlambda = (res_lambda - db_dot_pc_x)/denominator;
+  // cerr << denominator << " " << res_lambda << " " << ddlambda << endl;
   if(ddlambda != ddlambda || denominator == 0) {
     double nrm2_pc_f,nrm2_db,nrm2_pc_x,nrm2_xLambda;
     ierr = VecNorm(pc_f,NORM_2,&nrm2_pc_f); CHKERRQ(ierr);

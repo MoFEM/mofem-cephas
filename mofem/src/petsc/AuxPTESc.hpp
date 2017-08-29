@@ -25,7 +25,7 @@ namespace MoFEM {
     PairNameFEMethodPtr(std::string name,FEMethod *ptr):
     std::pair<std::string,FEMethod*>(name,ptr) {
     }
-    PairNameFEMethodPtr(std::string name,boost::shared_ptr<FEMethod> ptr):
+    PairNameFEMethodPtr(std::string name,boost::shared_ptr<FEMethod>& ptr):
     std::pair<std::string,FEMethod*>(name,ptr.get()),
     fePtr(ptr) {
     }
@@ -37,10 +37,10 @@ namespace MoFEM {
   struct BasicMethodPtr {
     BasicMethodPtr(BasicMethod *ptr):
     rawPtr(ptr) {}
-    BasicMethodPtr(boost::shared_ptr<BasicMethod> ptr):
+    BasicMethodPtr(boost::shared_ptr<BasicMethod>& ptr):
     rawPtr(ptr.get()),
     bmPtr(ptr) {}
-    BasicMethodPtr(boost::shared_ptr<FEMethod> ptr):
+    BasicMethodPtr(boost::shared_ptr<FEMethod>& ptr):
     rawPtr(ptr.get()),
     bmPtr(ptr) {}
     inline BasicMethod& operator*() const { return *rawPtr; };

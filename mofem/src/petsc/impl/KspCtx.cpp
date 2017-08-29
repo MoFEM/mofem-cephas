@@ -43,16 +43,16 @@
 #include <AuxPTESc.hpp>
 #include <KspCtx.hpp>
 
-#if PETSC_VERSION_GE(3,6,0)
-  #include <petsc/private/kspimpl.h>
-#else
-  #include <petsc-private/kspimpl.h>
-#endif
+// #if PETSC_VERSION_GE(3,6,0)
+//   #include <petsc/private/kspimpl.h>
+// #else
+//   #include <petsc-private/kspimpl.h>
+// #endif
 
 namespace MoFEM {
 
 PetscErrorCode KspRhs(KSP ksp,Vec f,void *ctx) {
-  PetscValidHeaderSpecific(ksp,KSP_CLASSID,1);
+  // PetscValidHeaderSpecific(ksp,KSP_CLASSID,1);
   PetscFunctionBegin;
   KspCtx* ksp_ctx = (KspCtx*)ctx;
   PetscLogEventBegin(ksp_ctx->USER_EVENT_KspRhs,0,0,0,0);
@@ -88,7 +88,7 @@ PetscErrorCode KspRhs(KSP ksp,Vec f,void *ctx) {
   PetscFunctionReturn(0);
 }
 PetscErrorCode KspMat(KSP ksp,Mat A,Mat B,void *ctx) {
-  PetscValidHeaderSpecific(ksp,KSP_CLASSID,1);
+  // PetscValidHeaderSpecific(ksp,KSP_CLASSID,1);
   PetscFunctionBegin;
   KspCtx* ksp_ctx = (KspCtx*)ctx;
   PetscLogEventBegin(ksp_ctx->USER_EVENT_KspMat,0,0,0,0);
