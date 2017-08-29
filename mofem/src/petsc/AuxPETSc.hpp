@@ -1,4 +1,4 @@
-/** \file AuxPTESc.hpp
+/** \file AuxPETSc.hpp
  * \brief Auxuliary MoFEM-PETSc structures
  */
 

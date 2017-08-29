@@ -43,7 +43,7 @@
 #include <Core.hpp>
 
 #include <VecManager.hpp>
-#include <AuxPTESc.hpp>
+#include <AuxPETSc.hpp>
 #include <SnesCtx.hpp>
 
 // #if PETSC_VERSION_GE(3,6,0)

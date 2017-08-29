@@ -46,7 +46,7 @@
 #include <Interface.hpp>
 #include <Core.hpp>
 
-#include <AuxPTESc.hpp>
+#include <AuxPETSc.hpp>
 #include <KspCtx.hpp>
 #include <SnesCtx.hpp>
 #include <TsCtx.hpp>

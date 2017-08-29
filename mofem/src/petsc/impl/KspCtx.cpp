@@ -40,7 +40,7 @@
 #include <Interface.hpp>
 #include <Core.hpp>
 
-#include <AuxPTESc.hpp>
+#include <AuxPETSc.hpp>
 #include <KspCtx.hpp>
 
 // #if PETSC_VERSION_GE(3,6,0)
