@@ -40,8 +40,7 @@ using namespace MoFEM;
 PCMGSubMatrixCtx::PCMGSubMatrixCtx(Mat a,IS is):
   A(a),
   iS(is) {
-
-  // Increse reference of petsc opbject (works like shared_ptr but unique for PETSc)
+  // Increase reference of petsc object (works like shared_ptr but unique for PETSc)
   ierr = PetscObjectReference((PetscObject)A); CHKERRABORT(PETSC_COMM_WORLD,ierr);
   ierr = PetscObjectReference((PetscObject)iS); CHKERRABORT(PETSC_COMM_WORLD,ierr);
 }
@@ -142,7 +141,6 @@ DMMGViaApproxOrdersCtx::DMMGViaApproxOrdersCtx():
     // std::cerr << "create dm\n";
 }
 DMMGViaApproxOrdersCtx::~DMMGViaApproxOrdersCtx() {
-
   for(unsigned int ii = 0;ii<coarseningIS.size();ii++) {
     ierr = ISDestroy(&coarseningIS[ii]); CHKERRABORT(PETSC_COMM_WORLD,ierr);
   }
@@ -153,7 +151,7 @@ DMMGViaApproxOrdersCtx::~DMMGViaApproxOrdersCtx() {
     // std::cerr << "destroy ao\n";
     ierr = AODestroy(&aO); CHKERRABORT(PETSC_COMM_WORLD,ierr);
   }
-  // std::cerr << "destroy dm\n";
+  // std::cerr << "destroy dm data\n";
 }
 
 PetscErrorCode DMMGViaApproxOrdersCtx::queryInterface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface) {
@@ -177,7 +175,6 @@ PetscErrorCode DMMGViaApproxOrdersCtx::queryInterface(const MOFEMuuid& uuid,MoFE
 
 
 PetscErrorCode DMMGViaApproxOrdersGetCtx(DM dm,DMMGViaApproxOrdersCtx **ctx) {
-
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
   GET_DM_FIELD(dm);
@@ -186,7 +183,6 @@ PetscErrorCode DMMGViaApproxOrdersGetCtx(DM dm,DMMGViaApproxOrdersCtx **ctx) {
 }
 
 PetscErrorCode DMMGViaApproxOrdersSetAO(DM dm,AO ao) {
-
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
   GET_DM_FIELD(dm);
@@ -202,7 +198,6 @@ PetscErrorCode DMMGViaApproxOrdersSetAO(DM dm,AO ao) {
 }
 
 PetscErrorCode DMMGViaApproxOrdersGetCoarseningISSize(DM dm,int *size) {
-
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
   GET_DM_FIELD(dm);
@@ -213,7 +208,6 @@ PetscErrorCode DMMGViaApproxOrdersGetCoarseningISSize(DM dm,int *size) {
 PetscErrorCode DMMGViaApproxOrdersPushBackCoarseningIS(
   DM dm,IS is,Mat A,Mat *subA,bool create_sub_matrix,bool shell_sub_a
 ) {
-
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
   GET_DM_FIELD(dm);
@@ -265,7 +259,6 @@ PetscErrorCode DMMGViaApproxOrdersPushBackCoarseningIS(
 }
 
 PetscErrorCode DMMGViaApproxOrdersPopBackCoarseningIS(DM dm) {
-
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
   GET_DM_FIELD(dm);
@@ -282,7 +275,6 @@ PetscErrorCode DMMGViaApproxOrdersPopBackCoarseningIS(DM dm) {
 }
 
 PetscErrorCode DMMGViaApproxOrdersReplaceCoarseningIS(DM dm,IS *is_vec,int nb_elems,Mat A,int verb) {
-
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
   GET_DM_FIELD(dm);
@@ -356,7 +348,6 @@ PetscErrorCode DMMGViaApproxOrdersReplaceCoarseningIS(DM dm,IS *is_vec,int nb_el
 }
 
 PetscErrorCode DMMGViaApproxOrdersGetCtx(DM dm,const DMMGViaApproxOrdersCtx **ctx) {
-
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
   GET_DM_FIELD(dm);
@@ -365,11 +356,31 @@ PetscErrorCode DMMGViaApproxOrdersGetCtx(DM dm,const DMMGViaApproxOrdersCtx **ct
 }
 
 PetscErrorCode DMRegister_MGViaApproxOrders(const char sname[]) {
-
   PetscFunctionBegin;
   ierr = DMRegister(sname,DMCreate_MGViaApproxOrders); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
+
+// PetscErrorCode DMDestroy_MGViaApproxOrders(DM dm) {
+//   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
+//   PetscFunctionBegin;
+//   if(!((DMMGViaApproxOrdersCtx*)dm->data)->referenceNumber) {
+//     DMMGViaApproxOrdersCtx *dm_field = (DMMGViaApproxOrdersCtx*)dm->data;
+//     if(dm_field->destroyProblem) {
+//       if(dm_field->mField_ptr->check_problem(dm_field->problemName)) {
+//         dm_field->mField_ptr->delete_problem(dm_field->problemName);
+//       } // else problem has to be deleted by the user
+//     }
+//     cerr << "Destroy " << dm_field->problemName << endl;
+//     delete (DMMGViaApproxOrdersCtx*)dm->data;
+//   } else {
+//     DMMGViaApproxOrdersCtx *dm_field = (DMMGViaApproxOrdersCtx*)dm->data;
+//
+//     cerr << "Derefrence " << dm_field->problemName << " "  << ((DMCtx*)dm->data)->referenceNumber << endl;
+//     (((DMMGViaApproxOrdersCtx*)dm->data)->referenceNumber)--;
+//   }
+//   PetscFunctionReturn(0);
+// }
 
 static PetscErrorCode ksp_set_operators(KSP ksp,Mat A,Mat B,void *ctx) {
   PetscFunctionBegin;
@@ -377,7 +388,6 @@ static PetscErrorCode ksp_set_operators(KSP ksp,Mat A,Mat B,void *ctx) {
 }
 
 PetscErrorCode DMCreate_MGViaApproxOrders(DM dm) {
-
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
   if(!dm->data) {
@@ -385,10 +395,12 @@ PetscErrorCode DMCreate_MGViaApproxOrders(DM dm) {
   } else {
     ((DMCtx*)(dm->data))->referenceNumber++;
   }
+  // cerr << "Create " << ((DMCtx*)(dm->data))->referenceNumber << endl;
   ierr = DMSetOperators_MoFEM(dm); CHKERRQ(ierr);
   dm->ops->creatematrix = DMCreateMatrix_MGViaApproxOrders;
   dm->ops->createglobalvector = DMCreateGlobalVector_MGViaApproxOrders;
   dm->ops->coarsen = DMCoarsen_MGViaApproxOrders;
+  // dm->ops->destroy = DMDestroy_MGViaApproxOrders;
   dm->ops->createinterpolation = DMCreateInterpolation_MGViaApproxOrders;
   ierr = DMKSPSetComputeOperators(dm,ksp_set_operators,NULL); CHKERRQ(ierr);
   PetscInfo1(dm,"Create DMMGViaApproxOrders reference = %d\n",((DMCtx*)(dm->data))->referenceNumber);
@@ -424,7 +436,6 @@ PetscErrorCode DMCreateMatrix_MGViaApproxOrders(DM dm,Mat *M) {
 }
 
 PetscErrorCode DMCoarsen_MGViaApproxOrders(DM dm, MPI_Comm comm, DM *dmc) {
-
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
   GET_DM_FIELD(dm);
@@ -434,16 +445,12 @@ PetscErrorCode DMCoarsen_MGViaApproxOrders(DM dm, MPI_Comm comm, DM *dmc) {
   DMType type;
   ierr = DMGetType(dm,&type); CHKERRQ(ierr);
   ierr = DMSetType(*dmc,type); CHKERRQ(ierr);
-  ierr = PetscObjectReference((PetscObject)(*dmc)); CHKERRQ(ierr);
-  // ierr = PetscObjectReference((PetscObject)(*dmc)); CHKERRQ(ierr);
-  // dm->coarseMesh = *dmc;
-  // ierr = PetscObjectReference((PetscObject)dm->coarseMesh); CHKERRQ(ierr);
+  ierr = PetscObjectReference((PetscObject)(*dmc));CHKERRQ(ierr);
   PetscInfo1(dm,"Coarsen DMMGViaApproxOrders leveldown = %d\n",dm->leveldown);
   PetscFunctionReturn(0);
 }
 
 PetscErrorCode DMCreateInterpolation_MGViaApproxOrders(DM dm1,DM dm2,Mat *mat,Vec *vec) {
-
   PetscValidHeaderSpecific(dm1,DM_CLASSID,1);
   PetscValidHeaderSpecific(dm2,DM_CLASSID,1);
   PetscFunctionBegin;
@@ -530,7 +537,9 @@ PetscErrorCode DMCreateInterpolation_MGViaApproxOrders(DM dm1,DM dm2,Mat *mat,Ve
   ierr = MatAssemblyBegin(*mat,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
   ierr = MatAssemblyEnd(*mat,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
 
-  *vec = PETSC_NULL;
+  if(vec!=NULL) {
+    *vec = PETSC_NULL;
+  }
 
   PetscFunctionReturn(0);
 }

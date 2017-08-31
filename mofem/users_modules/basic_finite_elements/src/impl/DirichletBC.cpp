@@ -20,7 +20,7 @@ using namespace MoFEM;
 
 using namespace boost::numeric;
 
-DisplacementBCFEMethodPreAndPostProc::DisplacementBCFEMethodPreAndPostProc(
+DirichletDisplacementBc::DirichletDisplacementBc(
   MoFEM::Interface& m_field,const std::string &field_name,Mat Aij,Vec X,Vec F
 ):
 mField(m_field),
@@ -34,7 +34,7 @@ dIag(1) {
   ts_F = F;
 };
 
-DisplacementBCFEMethodPreAndPostProc::DisplacementBCFEMethodPreAndPostProc(
+DirichletDisplacementBc::DirichletDisplacementBc(
   MoFEM::Interface& m_field,const std::string &field_name
 ):
 mField(m_field),
@@ -48,7 +48,7 @@ dIag(1) {
   ts_F = PETSC_NULL;
 };
 
-PetscErrorCode DisplacementBCFEMethodPreAndPostProc::iNitalize() {
+PetscErrorCode DirichletDisplacementBc::iNitalize() {
   PetscFunctionBegin;
   if(mapZeroRows.empty() || !methodsOp.empty()) {
     ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
@@ -116,7 +116,7 @@ PetscErrorCode DisplacementBCFEMethodPreAndPostProc::iNitalize() {
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode DisplacementBCFEMethodPreAndPostProc::preProcess() {
+PetscErrorCode DirichletDisplacementBc::preProcess() {
   PetscFunctionBegin;
 
   switch (ts_ctx) {
@@ -150,7 +150,7 @@ PetscErrorCode DisplacementBCFEMethodPreAndPostProc::preProcess() {
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode DisplacementBCFEMethodPreAndPostProc::postProcess() {
+PetscErrorCode DirichletDisplacementBc::postProcess() {
   PetscFunctionBegin;
 
   switch (ts_ctx) {
@@ -246,7 +246,7 @@ PetscErrorCode DisplacementBCFEMethodPreAndPostProc::postProcess() {
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode SpatialPositionsBCFEMethodPreAndPostProc::iNitalize() {
+PetscErrorCode DirichletSpatialPositionsBc::iNitalize() {
   PetscFunctionBegin;
   if(mapZeroRows.empty() || !methodsOp.empty()) {
     const DofEntity_multiIndex *dofs_ptr;
@@ -354,7 +354,7 @@ PetscErrorCode SpatialPositionsBCFEMethodPreAndPostProc::iNitalize() {
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode TemperatureBCFEMethodPreAndPostProc::iNitalize() {
+PetscErrorCode DirichletTemperatureBc::iNitalize() {
   PetscFunctionBegin;
   if(mapZeroRows.empty() || !methodsOp.empty()) {
     ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
@@ -401,7 +401,7 @@ PetscErrorCode TemperatureBCFEMethodPreAndPostProc::iNitalize() {
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode FixBcAtEntities::iNitalize() {
+PetscErrorCode DirichletFixFieldAtEntitiesBc::iNitalize() {
   PetscFunctionBegin;
   if(mapZeroRows.empty()) {
     for(std::vector<std::string>::iterator fit = fieldNames.begin();fit!=fieldNames.end();fit++) {
@@ -424,7 +424,7 @@ PetscErrorCode FixBcAtEntities::iNitalize() {
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode FixBcAtEntities::preProcess() {
+PetscErrorCode DirichletFixFieldAtEntitiesBc::preProcess() {
   PetscFunctionBegin;
 
   switch (ts_ctx) {
@@ -447,7 +447,7 @@ PetscErrorCode FixBcAtEntities::preProcess() {
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode FixBcAtEntities::postProcess() {
+PetscErrorCode DirichletFixFieldAtEntitiesBc::postProcess() {
   PetscFunctionBegin;
   if(snes_ctx == CTX_SNESNONE && ts_ctx == CTX_TSNONE) {
     if(snes_B) {
@@ -504,7 +504,7 @@ PetscErrorCode FixBcAtEntities::postProcess() {
 }
 
 
-PetscErrorCode DirichletBCFromBlockSetFEMethodPreAndPostProc::iNitalize() {
+PetscErrorCode DirichletSetFieldFromBlock::iNitalize() {
   PetscFunctionBegin;
   if(mapZeroRows.empty() || !methodsOp.empty()) {
     ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
@@ -572,7 +572,7 @@ PetscErrorCode DirichletBCFromBlockSetFEMethodPreAndPostProc::iNitalize() {
 }
 
 
-PetscErrorCode DirichletBCFromBlockSetFEMethodPreAndPostProcWithFlags::iNitalize() {
+PetscErrorCode DirichletSetFieldFromBlockWithFlags::iNitalize() {
   PetscFunctionBegin;
   if(mapZeroRows.empty() || !methodsOp.empty()) {
     ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);

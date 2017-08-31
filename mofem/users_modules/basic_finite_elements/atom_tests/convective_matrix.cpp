@@ -24,9 +24,6 @@
  #include <BasicFiniteElements.hpp>
  using namespace MoFEM;
 
-
-
-
 static char help[] = "...\n\n";
 
 int main(int argc, char *argv[]) {

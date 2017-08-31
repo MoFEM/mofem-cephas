@@ -1,4 +1,5 @@
 /** \file ArcLengthTools.cpp
+ * \ingroup arc_length_control
  *
  * Implementation of arc-length control method
  *
@@ -67,23 +68,23 @@ struct ArcLengthCtx {
 
   MoFEM::Interface &mField;
 
-  double s;	///< arc length radius
-  double beta; 	///< force scaling factor
-  double alpha; ///< displacement scaling factor
+  double s;	          ///< arc length radius
+  double beta; 	      ///< force scaling factor
+  double alpha;       ///< displacement scaling factor
 
   Vec ghosTdLambda;
-  double dLambda;	///< increment of load factor
+  double dLambda;	    ///< increment of load factor
   Vec ghostDiag;
-  double dIag;		///< diagonal value
+  double dIag;		    ///< diagonal value
 
-  double dx2;		///< inner_prod(dX,dX)
-  double F_lambda2;	///< inner_prod(F_lambda,F_lambda);
+  double dx2;		      ///< inner_prod(dX,dX)
+  double F_lambda2;	  ///< inner_prod(F_lambda,F_lambda);
   double res_lambda;	///< f_lambda - s
-  Vec F_lambda;		///< F_lambda reference load vector
-  Vec db;		///< db derivative of f(dx*dx), i.e. db = d[ f(dx*dx) ]/dx
-  Vec xLambda;		///< solution of eq. K*xLambda = F_lambda
-  Vec x0;		///< displacement vector at beginning of step
-  Vec dx;		///< dx = x-x0
+  Vec F_lambda;		    ///< F_lambda reference load vector
+  Vec db;		          ///< db derivative of f(dx*dx), i.e. db = d[ f(dx*dx) ]/dx
+  Vec xLambda;		    ///< solution of eq. K*xLambda = F_lambda
+  Vec x0;		          ///< displacement vector at beginning of step
+  Vec dx;		          ///< dx = x-x0
 
   /**
     * \brief set arc radius
@@ -97,7 +98,11 @@ struct ArcLengthCtx {
    */
   PetscErrorCode setAlphaBeta(double alpha,double beta);
 
-  ArcLengthCtx(MoFEM::Interface &m_field,const std::string &problem_name);
+  ArcLengthCtx(
+    MoFEM::Interface& m_field,
+    const std::string& problem_name,
+    const std::string& field_name = "LAMBDA"
+  );
   virtual ~ArcLengthCtx();
 
   NumeredDofEntityByFieldName::iterator dIt;
@@ -127,13 +132,27 @@ struct ArcLengthCtx {
  * \ingroup arc_length_control
  */
 struct ArcLengthSnesCtx: public SnesCtx {
-  ArcLengthCtx* arcPtr;
+  ArcLengthCtx* arcPtrRaw;
+
   ArcLengthSnesCtx(
-    MoFEM::Interface &m_field,const std::string &problem_name,ArcLengthCtx* arc_ptr
+    MoFEM::Interface &m_field,const std::string &problem_name,ArcLengthCtx* arc_ptr_raw
   ):
   SnesCtx(m_field,problem_name),
+  arcPtrRaw(arc_ptr_raw) {
+  }
+
+  ArcLengthSnesCtx(
+    MoFEM::Interface &m_field,const std::string &problem_name,boost::shared_ptr<ArcLengthCtx> arc_ptr
+  ):
+  SnesCtx(m_field,problem_name),
+  arcPtrRaw(arc_ptr.get()),
   arcPtr(arc_ptr) {
   }
+
+private:
+
+  boost::shared_ptr<ArcLengthCtx> arcPtr;
+
 };
 
 #endif //__SNESCTX_HPP__
@@ -145,13 +164,28 @@ struct ArcLengthSnesCtx: public SnesCtx {
  * \ingroup arc_length_control
  */
 struct ArcLengthTsCtx: public TsCtx {
-  ArcLengthCtx* arcPtr;
-  ArcLengthTsCtx(
-    MoFEM::Interface &m_field,const std::string &problem_name,ArcLengthCtx* arc_ptr
+  ArcLengthCtx* arcPtrRaw;
+
+  /// \deprecated use constructor with shared ptr
+  DEPRECATED ArcLengthTsCtx(
+    MoFEM::Interface &m_field,const std::string &problem_name,ArcLengthCtx* arc_ptr_raw
   ):
   TsCtx(m_field,problem_name),
+  arcPtrRaw(arc_ptr_raw) {
+  }
+
+  ArcLengthTsCtx(
+    MoFEM::Interface &m_field,const std::string &problem_name,boost::shared_ptr<ArcLengthCtx> arc_ptr
+  ):
+  TsCtx(m_field,problem_name),
+  arcPtrRaw(arc_ptr.get()),
   arcPtr(arc_ptr) {
   }
+
+private:
+
+  boost::shared_ptr<ArcLengthCtx> arcPtr;
+
 };
 
 #endif // __TSCTX_HPP__
@@ -187,15 +221,25 @@ struct ArcLengthTsCtx: public TsCtx {
 struct ArcLengthMatShell {
 
   Mat Aij;
-  ArcLengthCtx* arcPtr;
+  ArcLengthCtx* arcPtrRaw; // this is for back compatibility
   string problemName;
 
-  ArcLengthMatShell(Mat aij,ArcLengthCtx *arc_ptr,string problem_name);
+  /// \deprecated use constructow with shared_ptr
+  DEPRECATED ArcLengthMatShell(Mat aij,ArcLengthCtx *arc_ptr_raw,string problem_name);
+
+  ArcLengthMatShell(Mat aij,boost::shared_ptr<ArcLengthCtx> arc_ptr,string problem_name);
+
+
   virtual ~ArcLengthMatShell();
 
   PetscErrorCode setLambda(Vec ksp_x,double *lambda,ScatterMode scattermode);
 
   friend PetscErrorCode ArcLengthMatMultShellOp(Mat A,Vec x,Vec f);
+
+private:
+
+  boost::shared_ptr<ArcLengthCtx> arcPtr;
+
 };
 
 /**
@@ -208,16 +252,32 @@ PetscErrorCode ArcLengthMatMultShellOp(Mat A,Vec x,Vec f);
  * \ingroup arc_length_control
  */
 struct PCArcLengthCtx {
+
   PC pC;
   Mat shellAij,Aij;
-  ArcLengthCtx* arcPtr;
+
+  ArcLengthCtx* arcPtrRaw; // this is for back compatibility
+
+  /// \deprecated use with shared_ptr
+  DEPRECATED PCArcLengthCtx(
+    Mat shell_Aij,Mat aij,ArcLengthCtx* arc_ptr_raw
+  );
+
   PCArcLengthCtx(
-    Mat shell_Aij,Mat _Aij,ArcLengthCtx* arc_ptr
+    Mat shell_Aij,Mat aij,boost::shared_ptr<ArcLengthCtx>& arc_ptr
+  );
+
+  PCArcLengthCtx(
+    PC pc,Mat shell_Aij,Mat aij,boost::shared_ptr<ArcLengthCtx>& arc_ptr
   );
   virtual ~PCArcLengthCtx();
 
   friend PetscErrorCode PCApplyArcLength(PC pc,Vec pc_f,Vec pc_x);
   friend PetscErrorCode PCSetupArcLength(PC pc);
+
+private:
+  boost::shared_ptr<ArcLengthCtx> arcPtr;
+
 };
 
 /**
@@ -237,26 +297,61 @@ PetscErrorCode PCApplyArcLength(PC pc,Vec pc_f,Vec pc_x);
 PetscErrorCode PCSetupArcLength(PC pc);
 
 /**
- * \brief Pre and Post Process for Arc Length
+ * \brief Assemble F_lambda into the right hand side
+ *
  * preProcess - zero F_lambda
  * postProcess - assembly F_lambda
- * Example: \code
-      SnesCtx::basic_method_to_do& preProcess_to_do_Rhs = SnesCtx.get_preProcess_to_do_Rhs();
-      SnesCtx::basic_method_to_do& postProcess_to_do_Rhs = SnesCtx.get_postProcess_to_do_Rhs();
-      SnesCtx.get_preProcess_to_do_Rhs().push_back(&PrePostFE); //Zero F_lambda before looping over FEs
-      loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("ELASTIC",&MyFE));
-      loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("INTERFACE",&IntMyFE));
-      loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("ARC_LENGTH",&MyArcMethod));
-      SnesCtx.get_postProcess_to_do_Rhs().push_back(&PrePostFE); //finally, assemble F_lambda
-  \endcode
+ *
  */
-struct PrePostProcessForArcLength: public FEMethod {
+struct AssembleFLmabda: public FEMethod {
 
-  ArcLengthCtx *arcPtr;
-  PrePostProcessForArcLength(ArcLengthCtx *arc_ptr);
+  boost::shared_ptr<ArcLengthCtx> arcPtr;
+
+  AssembleFLmabda(
+    boost::shared_ptr<ArcLengthCtx> arc_ptr
+  );
 
   PetscErrorCode preProcess();
+  PetscErrorCode operator()();
   PetscErrorCode postProcess();
+
+};
+
+/**
+ * |brief Simple arc-length constrol of force
+ *
+ * This is added for testing, it simply control force, i.e.
+ *
+ * \f[
+ * \lambda =  s
+ * \f]
+ *
+ * Constuctir takes one argument,
+ * @param arc_ptr Pointer to arc-length CTX.
+ */
+struct SimpleArcLengthControl: public FEMethod {
+
+  boost::shared_ptr<ArcLengthCtx> arcPtr;
+  const bool aSsemble;
+
+  SimpleArcLengthControl(
+    boost::shared_ptr<ArcLengthCtx>& arc_ptr,const bool assemble = false
+  );
+  ~SimpleArcLengthControl();
+
+  PetscErrorCode preProcess();
+  PetscErrorCode operator()();
+  PetscErrorCode postProcess();
+
+  /** \brief Calculate internal lambda
+  */
+  double calculateLambdaInt();
+
+  /** \brief Calculate db
+  */
+  PetscErrorCode calculateDb();
+
+  PetscErrorCode calculateDxAndDlambda(Vec x);
 
 };
 
@@ -278,9 +373,12 @@ struct PrePostProcessForArcLength: public FEMethod {
   */
 struct SphericalArcLengthControl: public FEMethod {
 
-  ArcLengthCtx* arcPtr;
+  ArcLengthCtx* arcPtrRaw; // this is for back compatibility
 
-  SphericalArcLengthControl(ArcLengthCtx *arc_ptr);
+  /// \deprecated use constructor with shared_ptr
+  DEPRECATED SphericalArcLengthControl(ArcLengthCtx *arc_ptr_raw);
+
+  SphericalArcLengthControl(boost::shared_ptr<ArcLengthCtx>& arc_ptr);
   virtual ~SphericalArcLengthControl();
 
   PetscErrorCode preProcess();
@@ -309,6 +407,9 @@ struct SphericalArcLengthControl: public FEMethod {
   virtual PetscErrorCode calculateDxAndDlambda(Vec x);
   virtual PetscErrorCode calculateInitDlambda(double *dlambda);
   virtual PetscErrorCode setDlambdaToX(Vec x,double dlambda);
+
+private:
+  boost::shared_ptr<ArcLengthCtx> arcPtr;
 
 };
 

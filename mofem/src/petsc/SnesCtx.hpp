@@ -26,78 +26,76 @@ namespace MoFEM {
   */
   struct SnesCtx {
 
-    ErrorCode rval;
-    
-
     MoFEM::Interface &mField;   ///< database Interface
     moab::Interface &moab;      ///< moab Interface
 
     std::string problemName;    ///< problem name
     MoFEMTypes bH;              ///< If set to MF_EXIST check if element exist, default MF_EXIST
     bool zeroPreCondMatrixB;    ///< If true zero matrix, otherwise user need to do it, default true
+    MatAssemblyType typeOfAssembly; ///< type of assembly at the end
 
-    struct LoopPairType: public std::pair<std::string,FEMethod*> {
-      LoopPairType(std::string name,FEMethod *ptr):
-      std::pair<std::string,FEMethod*>(name,ptr) {}
-      LoopPairType(std::string name,boost::shared_ptr<FEMethod> ptr):
-      std::pair<std::string,FEMethod*>(name,ptr.get()),
-      fePtr(ptr) {}
-      virtual ~LoopPairType() {}
-    private:
-      boost::shared_ptr<FEMethod> fePtr;
-    };
-    typedef LoopPairType loop_pair_type;
-    typedef std::vector<loop_pair_type > loops_to_do_type;
+    /// \deprecated use PairNameFEMethodPtr
+    DEPRECATED  typedef MoFEM::PairNameFEMethodPtr loop_pair_type;
 
-    loops_to_do_type loops_to_do_Mat;
-    loops_to_do_type loops_to_do_Rhs;
+    /// \deprecated use FEMethodsSequence
+    DEPRECATED typedef MoFEM::FEMethodsSequence loops_to_do_type;
 
-    struct BasicMethodPtr {
-      BasicMethodPtr(BasicMethod *ptr):
-      rawPtr(ptr) {}
-      BasicMethodPtr(boost::shared_ptr<BasicMethod> ptr):
-      rawPtr(ptr.get()),
-      bmPtr(ptr) {}
-      BasicMethodPtr(boost::shared_ptr<FEMethod> ptr):
-      rawPtr(ptr.get()),
-      bmPtr(ptr) {}
-      inline BasicMethod& operator*() const { return *rawPtr; };
-      inline BasicMethod* operator->() const { return rawPtr; }
-    private:
-      BasicMethod* rawPtr;
-      boost::shared_ptr<BasicMethod> bmPtr;
-    };
-    typedef std::vector<BasicMethodPtr> basic_method_to_do;
+    /// \deprecated use BasicMethodsSequence
+    DEPRECATED typedef MoFEM::BasicMethodsSequence basic_method_to_do;
 
-    basic_method_to_do preProcess_Mat;
-    basic_method_to_do postProcess_Mat;
-    basic_method_to_do preProcess_Rhs;
-    basic_method_to_do postProcess_Rhs;
+    typedef MoFEM::PairNameFEMethodPtr PairNameFEMethodPtr;
+    typedef MoFEM::FEMethodsSequence FEMethodsSequence;
+    typedef MoFEM::BasicMethodsSequence BasicMethodsSequence;
 
-    PetscLogEvent USER_EVENT_SnesRhs;
-    PetscLogEvent USER_EVENT_SnesMat;
+    FEMethodsSequence loops_to_do_Mat;    ///< Sequence of finite elements instances assembiling tangent matrix
+    FEMethodsSequence loops_to_do_Rhs;    ///< Sequence of finite elements instances assembiling residual vector
+    BasicMethodsSequence preProcess_Mat;  ///< Sequence of methods run before tangent matrix is assembled
+    BasicMethodsSequence postProcess_Mat; ///< Sequence of methods run after tangent matrix is assembled
+    BasicMethodsSequence preProcess_Rhs;  ///< Sequence of methods run before residual is assembled
+    BasicMethodsSequence postProcess_Rhs; ///< Sequence of methods run after residual is assembled
+
+    /**
+     * \brief Copy seqences from other SNES contex
+     * @param  snes_ctx SNES contex from which Sequence is copied from
+     * @return          error code
+     */
+    PetscErrorCode copyLoops(const SnesCtx &snes_ctx) {
+      PetscFunctionBegin;
+      loops_to_do_Mat = snes_ctx.loops_to_do_Mat;
+      loops_to_do_Rhs = snes_ctx.loops_to_do_Rhs;
+      preProcess_Mat = snes_ctx.preProcess_Mat;
+      postProcess_Mat = snes_ctx.postProcess_Mat;
+      preProcess_Rhs = snes_ctx.preProcess_Rhs;
+      postProcess_Rhs = snes_ctx.postProcess_Rhs;
+      PetscFunctionReturn(0);
+    }
+
+    PetscLogEvent USER_EVENT_SnesRhs; ///< Log events to assemble residual
+    PetscLogEvent USER_EVENT_SnesMat; ///< Log events to assemble tangent matrix
 
     SnesCtx(Interface &m_field,const std::string &problem_name):
     mField(m_field),
     moab(m_field.get_moab()),
     problemName(problem_name),
     bH(MF_EXIST),
-    zeroPreCondMatrixB(true) {
+    zeroPreCondMatrixB(true),
+    typeOfAssembly(MAT_FINAL_ASSEMBLY) {
       PetscLogEventRegister("LoopSNESRhs",0,&USER_EVENT_SnesRhs);
       PetscLogEventRegister("LoopSNESMat",0,&USER_EVENT_SnesMat);
     }
 
-    virtual ~SnesCtx() {}
+    virtual ~SnesCtx() {
+    }
 
     /**
     * @return return reference to vector with FEMethod to calculate tangent matrix
     */
-    loops_to_do_type& get_loops_to_do_Mat() { return loops_to_do_Mat; }
+    FEMethodsSequence& get_loops_to_do_Mat() { return loops_to_do_Mat; }
 
     /**
     * @return return vector to vector with FEMethod to calculate residual
     */
-    loops_to_do_type& get_loops_to_do_Rhs() { return loops_to_do_Rhs; }
+    FEMethodsSequence& get_loops_to_do_Rhs() { return loops_to_do_Rhs; }
 
     /**
     * The sequence of BasicMethod is executed before residual is calculated. It can be
@@ -106,7 +104,7 @@ namespace MoFEM {
     *
     * @return reference to BasicMethod for preprocessing
     */
-    basic_method_to_do& get_preProcess_to_do_Rhs() { return preProcess_Rhs; }
+    BasicMethodsSequence& get_preProcess_to_do_Rhs() { return preProcess_Rhs; }
 
     /**
     * The sequence of BasicMethod is executed after residual is calculated. It can be
@@ -115,12 +113,12 @@ namespace MoFEM {
     *
     * @return reference to BasicMethod for postprocessing
     */
-    basic_method_to_do& get_postProcess_to_do_Rhs() { return postProcess_Rhs; }
+    BasicMethodsSequence& get_postProcess_to_do_Rhs() { return postProcess_Rhs; }
 
     /**
     * @return reference to BasicMethod for preprocessing
     */
-    basic_method_to_do& get_preProcess_to_do_Mat() { return preProcess_Mat; }
+    BasicMethodsSequence& get_preProcess_to_do_Mat() { return preProcess_Mat; }
 
     /**
     * The sequence of BasicMethod is executed after tangent matrix is calculated. It can be
@@ -129,11 +127,13 @@ namespace MoFEM {
     *
     * @return reference to BasicMethod for postprocessing
     */
-    basic_method_to_do& get_postProcess_to_do_Mat() { return postProcess_Mat; }
+    BasicMethodsSequence& get_postProcess_to_do_Mat() { return postProcess_Mat; }
 
     friend PetscErrorCode SnesRhs(SNES snes,Vec x,Vec f,void *ctx);
     friend PetscErrorCode SnesMat(SNES snes,Vec x,Mat A,Mat B,void *ctx);
 
+    friend PetscErrorCode SNESMoFEMSetAssmblyType(SNES snes,MatAssemblyType type);
+    friend PetscErrorCode SNESMoFEMSetBehavior(SNES snes,MoFEMTypes bh);
   };
 
   /**
@@ -153,7 +153,7 @@ namespace MoFEM {
   /**
   * \brief This is MoFEM implementation for the left hand side (tangent matrix) evaluation in SNES solver
   *
-  * For more information pleas look to PETSc manual, i.e. SNESSetFunction
+  * For more information pleas look to PETSc manual, i.e. SNESSetJacobian
   * <http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/SNES/SNESSetJacobian.html#SNESSetJacobian>
   *
   * @param  snes SNES solver
@@ -164,6 +164,28 @@ namespace MoFEM {
   * @return      Error code
   */
   PetscErrorCode SnesMat(SNES snes,Vec x,Mat A,Mat B,void *ctx);
+
+  /**
+   * \brief Set assembly type at the end of SnesMat
+   *
+   * \note Note that tangent matrix need have to have final assembly, you would
+   * use flush assembly in special case that you call SnesMat form other function
+   * set to SNESSetJacobian
+   *
+   * @param  snes
+   * @param  type type of assembly, either MAT_FLUSH_ASSEMBLY or MAT_FINAL_ASSEMBLY
+   * @return      error code
+   */
+  PetscErrorCode SNESMoFEMSetAssmblyType(SNES snes,MatAssemblyType type);
+
+  /**
+   * \brief Set behavior if finite element in sequence does not exist
+   * @param  snes
+   * @param  bh   If set to MF_EXIST check if element exist, default MF_EXIST. Otherwise set MF_ZERO
+   * @return      error code
+   */
+  PetscErrorCode SNESMoFEMSetBehavior(SNES snes,MoFEMTypes bh);
+
 
 }
 

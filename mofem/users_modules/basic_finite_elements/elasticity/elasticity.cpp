@@ -421,13 +421,13 @@ int main(int argc, char *argv[]) {
   // To implementations available here, depending how BC is defined on mesh file.
   if(!flag_cubit_disp){
     dirihlet_bc_ptr = boost::shared_ptr<FEMethod>(new
-      DirichletBCFromBlockSetFEMethodPreAndPostProcWithFlags(
+      DirichletSetFieldFromBlockWithFlags(
         m_field,"DISPLACEMENT","DISPLACEMENT",Aij,D0,F
       )
     );
   } else {
     dirihlet_bc_ptr = boost::shared_ptr<FEMethod>(
-      new DisplacementBCFEMethodPreAndPostProc(m_field,"DISPLACEMENT",Aij,D0,F)
+      new DirichletDisplacementBc(m_field,"DISPLACEMENT",Aij,D0,F)
     );
   }
   // That sets dirihlet_bc objects that problem is linear, i.e. no newton (SNES) solver

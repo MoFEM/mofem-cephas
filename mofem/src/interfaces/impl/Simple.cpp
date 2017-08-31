@@ -46,11 +46,13 @@
 #include <Interface.hpp>
 #include <Core.hpp>
 
+#include <AuxPETSc.hpp>
 #include <KspCtx.hpp>
 #include <SnesCtx.hpp>
 #include <TsCtx.hpp>
 #include <DMMoFEM.hpp>
 
+#include <BitRefManager.hpp>
 #include <Simple.hpp>
 
 namespace MoFEM {
@@ -111,8 +113,6 @@ namespace MoFEM {
   }
 
   PetscErrorCode Simple::loadFile() {
-
-
     MoFEM::Interface &m_field = cOre;
     PetscFunctionBegin;
     PetscLogEventBegin(USER_EVENT_SimpleLoadMesh,0,0,0,0);
@@ -142,7 +142,7 @@ namespace MoFEM {
     }
     Range ents;
     ierr = m_field.get_moab().get_entities_by_dimension(meshSet,dIm,ents,true);
-    ierr = m_field.seed_ref_level(ents,bitLevel,false); CHKERRQ(ierr);
+    ierr = m_field.query_interface<BitRefManager>()->setBitRefLevel(ents,bitLevel,false); CHKERRQ(ierr);
     ParallelComm* pcomm = ParallelComm::get_pcomm(&m_field.get_moab(),MYPCOMM_INDEX);
     if(pcomm == NULL) pcomm =  new ParallelComm(&m_field.get_moab(),m_field.get_comm());
     PetscLogEventEnd(USER_EVENT_SimpleLoadMesh,0,0,0,0);
