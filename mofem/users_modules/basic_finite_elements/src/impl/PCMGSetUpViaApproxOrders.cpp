@@ -445,10 +445,7 @@ PetscErrorCode DMCoarsen_MGViaApproxOrders(DM dm, MPI_Comm comm, DM *dmc) {
   DMType type;
   ierr = DMGetType(dm,&type); CHKERRQ(ierr);
   ierr = DMSetType(*dmc,type); CHKERRQ(ierr);
-  // ierr = PetscObjectReference((PetscObject)(*dmc)); CHKERRQ(ierr);
-  // ierr = PetscObjectReference((PetscObject)(*dmc)); CHKERRQ(ierr);
-  // dm->coarseMesh = *dmc;
-  // ierr = PetscObjectReference((PetscObject)dm->coarseMesh); CHKERRQ(ierr);
+  ierr = PetscObjectReference((PetscObject)(*dmc));CHKERRQ(ierr);
   PetscInfo1(dm,"Coarsen DMMGViaApproxOrders leveldown = %d\n",dm->leveldown);
   PetscFunctionReturn(0);
 }
