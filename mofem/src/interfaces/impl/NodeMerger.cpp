@@ -116,8 +116,8 @@ PetscErrorCode NodeMergerInterface::mergeNodes(
   const int line_search
 ) {
   MoFEM::Interface& m_field = cOre;
-  
-  
+
+
   PetscFunctionBegin;
 
 
@@ -327,7 +327,7 @@ PetscErrorCode NodeMergerInterface::minQuality(
   double &min_quality
 ) {
   MoFEM::Interface& m_field = cOre;
-  
+
   double coords[12];
   PetscFunctionBegin;
   for(Range::iterator tit = check_tests.begin();tit!=check_tests.end();tit++) {
@@ -381,8 +381,8 @@ PetscErrorCode NodeMergerInterface::lineSearch(
   int line_search,
   double *coords_move
 ) {
-  
-  
+
+
   MoFEM::Interface& m_field = cOre;
   PetscFunctionBegin;
 
@@ -460,13 +460,13 @@ PetscErrorCode NodeMergerInterface::mergeNodes(
   const double move
 ) {
   MoFEM::Interface& m_field = cOre;
-  
+
   PetscFunctionBegin;
   Range out_tets;
   ierr = mergeNodes(
     father,mother,out_tets,tets_ptr,only_if_improve_quality,move
   ); CHKERRQ(ierr);
-  ierr = m_field.seed_ref_level(out_tets,bit); CHKERRQ(ierr);
+  ierr = m_field.query_interface<BitRefManager>()->setBitRefLevel(out_tets,bit); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -479,7 +479,7 @@ PetscErrorCode NodeMergerInterface::mergeNodes(
   const double move
 ) {
   MoFEM::Interface& m_field = cOre;
-  
+
 
   PetscFunctionBegin;
   Range level_tets;

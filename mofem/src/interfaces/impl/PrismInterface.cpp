@@ -74,7 +74,7 @@ cOre(const_cast<MoFEM::Core&>(core)) {
 PetscErrorCode PrismInterface::getSides(
   const int msId,const CubitBCType cubit_bc_type,const BitRefLevel mesh_bit_level,const bool recursive,int verb
 ) {
-  
+
   MoFEM::Interface &m_field = cOre;
   MeshsetsManager *meshsets_manager_ptr;
   PetscFunctionBegin;
@@ -91,8 +91,8 @@ PetscErrorCode PrismInterface::getSides(
 }
 
 PetscErrorCode PrismInterface::getSides(const EntityHandle sideset,const BitRefLevel mesh_bit_level,const bool recursive,int verb) {
-  
-  
+
+
   MoFEM::Interface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   PetscFunctionBegin;
@@ -296,7 +296,7 @@ PetscErrorCode PrismInterface::splitSides(
   const EntityHandle meshset,const BitRefLevel &bit,
   const int msId,const CubitBCType cubit_bc_type,const bool add_iterfece_entities,const bool recursive,int verb
 ) {
-  
+
   MoFEM::Interface &m_field = cOre;
   MeshsetsManager *meshsets_manager_ptr;
   PetscFunctionBegin;
@@ -316,7 +316,7 @@ PetscErrorCode PrismInterface::splitSides(
   const EntityHandle sideset,const bool add_iterfece_entities,const bool recursive,
   int verb
 ) {
-  
+
   PetscFunctionBegin;
   ierr = splitSides(meshset,bit,
     BitRefLevel(),BitRefLevel(),sideset,add_iterfece_entities,recursive,verb
@@ -329,8 +329,8 @@ PetscErrorCode PrismInterface::splitSides(
   const EntityHandle sideset,const bool add_iterfece_entities,const bool recursive,
   int verb
 ) {
-  
-  
+
+
   MoFEM::Interface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   PetscFunctionBegin;
@@ -827,7 +827,7 @@ PetscErrorCode PrismInterface::splitSides(
     }
   }
   //finalise by adding new tets and prism ti bitlelvel
-  ierr = m_field.seed_ref_level_3D(meshset_for_bit_level,bit); CHKERRQ(ierr);
+  ierr = m_field.query_interface<BitRefManager>()->setBitRefLevelByDim(meshset_for_bit_level,3,bit); CHKERRQ(ierr);
   rval = moab.delete_entities(&meshset_for_bit_level,1); CHKERRQ_MOAB(rval);
   ierr = moab.clear_meshset(&children[0],3); CHKERRQ(ierr);
   PetscFunctionReturn(0);

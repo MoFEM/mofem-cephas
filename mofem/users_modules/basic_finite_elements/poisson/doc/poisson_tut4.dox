@@ -59,7 +59,7 @@ notation
 (v,u)_\Omega = \int_\Omega vu \textrm{d}\Omega,\quad (\lambda,u)_{\partial\Omega} = \int_{\partial \Omega} \lambda u \textrm{d}\partial\Omega
 \f]
 With that at hand, we expand residuals in Taylor series and truncate after
-second order term, as a result we have
+first order term, as a result we have
 \f[
 \mathbf{r}^i +
 \frac{\partial \mathbf{r}^i}{\partial \{ u, \lambda \}}

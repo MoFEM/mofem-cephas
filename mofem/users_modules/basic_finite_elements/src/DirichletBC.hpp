@@ -1,6 +1,6 @@
 /* \file Dirichlet.hpp
  * \brief Implementation of Dirichlet boundary conditions
- *
+ * \ingroup Dirichlet_bc
  *
  * Structures and method in this file erase rows and column, set value on
  * matrix diagonal and on the right hand side vector to enforce boundary
@@ -13,7 +13,7 @@
 
 /* Notes:
 
- DirichletBCFromBlockSetFEMethodPreAndPostProc implemented by Zahur Ullah
+ DirichletSetFieldFromBlock implemented by Zahur Ullah
  (Zahur.Ullah@glasgow.ac.uk)
 
  */
@@ -40,22 +40,19 @@ using namespace boost::numeric;
 /** \brief Set Dirichlet boundary conditions on displacements
   * \ingroup Dirichlet_bc
   */
-struct DisplacementBCFEMethodPreAndPostProc: public MoFEM::FEMethod {
+struct DirichletDisplacementBc: public MoFEM::FEMethod {
 
   MoFEM::Interface& mField;
   const std::string fieldName;			///< field name to set Dirichlet BC
   double dIag;					      ///< diagonal value set on zeroed column and rows
 
-  DisplacementBCFEMethodPreAndPostProc(
+  DirichletDisplacementBc(
     MoFEM::Interface& m_field,const std::string &field_name,
     Mat Aij,Vec X,Vec F
   );
-  DisplacementBCFEMethodPreAndPostProc(
+  DirichletDisplacementBc(
     MoFEM::Interface& m_field,const std::string &field_name
   );
-
-
-
 
   std::map<DofIdx,FieldData> mapZeroRows;
   std::vector<int> dofsIndices;
@@ -70,27 +67,30 @@ struct DisplacementBCFEMethodPreAndPostProc: public MoFEM::FEMethod {
 
 };
 
+/// \deprecated use DirichletDisplacementBc
+DEPRECATED typedef DirichletDisplacementBc DisplacementBCFEMethodPreAndPostProc;
+
 /** \brief Set Dirichlet boundary conditions on spatial displacements
   * \ingroup Dirichlet_bc
   */
-struct SpatialPositionsBCFEMethodPreAndPostProc: public DisplacementBCFEMethodPreAndPostProc {
+struct DirichletSpatialPositionsBc: public DirichletDisplacementBc {
 
-  SpatialPositionsBCFEMethodPreAndPostProc(
+  DirichletSpatialPositionsBc(
     MoFEM::Interface& m_field,
     const std::string &field_name,
     Mat aij,Vec x,Vec f,
     const std::string material_positions = "MESH_NODE_POSITIONS"
   ):
-  DisplacementBCFEMethodPreAndPostProc(m_field,field_name,aij,x,f),
+  DirichletDisplacementBc(m_field,field_name,aij,x,f),
   materialPositions(material_positions) {
   }
 
-  SpatialPositionsBCFEMethodPreAndPostProc(
+  DirichletSpatialPositionsBc(
     MoFEM::Interface& m_field,
     const std::string &field_name,
     const std::string material_positions = "MESH_NODE_POSITIONS"
   ):
-  DisplacementBCFEMethodPreAndPostProc(m_field,field_name),
+  DirichletDisplacementBc(m_field,field_name),
   materialPositions(material_positions) {
   }
 
@@ -102,42 +102,48 @@ struct SpatialPositionsBCFEMethodPreAndPostProc: public DisplacementBCFEMethodPr
 
 };
 
-struct TemperatureBCFEMethodPreAndPostProc: public DisplacementBCFEMethodPreAndPostProc {
+/// \deprecated use DirichletSpatialPositionsBc
+DEPRECATED typedef DirichletSpatialPositionsBc SpatialPositionsBCFEMethodPreAndPostProc;
 
-  TemperatureBCFEMethodPreAndPostProc(
+struct DirichletTemperatureBc: public DirichletDisplacementBc {
+
+  DirichletTemperatureBc(
     MoFEM::Interface& m_field,const std::string &field_name,Mat aij,Vec x,Vec f):
-    DisplacementBCFEMethodPreAndPostProc(m_field,field_name,aij,x,f) {}
+    DirichletDisplacementBc(m_field,field_name,aij,x,f) {}
 
-  TemperatureBCFEMethodPreAndPostProc(
+  DirichletTemperatureBc(
     MoFEM::Interface& m_field,const std::string &field_name):
-    DisplacementBCFEMethodPreAndPostProc(m_field,field_name) {}
+    DirichletDisplacementBc(m_field,field_name) {}
 
   PetscErrorCode iNitalize();
 
 };
 
+/// \deprecated use DirichletTemperatureBc
+DEPRECATED typedef DirichletTemperatureBc TemperatureBCFEMethodPreAndPostProc;
+
 /** \brief Fix dofs on entities
   * \ingroup Dirichlet_bc
   */
-struct FixBcAtEntities: public DisplacementBCFEMethodPreAndPostProc {
+struct DirichletFixFieldAtEntitiesBc: public DirichletDisplacementBc {
 
   Range eNts;
   std::vector<std::string> fieldNames;
-  FixBcAtEntities(
+  DirichletFixFieldAtEntitiesBc(
     MoFEM::Interface& m_field,
     const std::string &field_name,
     Mat aij,Vec x,Vec f,
     Range &ents
   ):
-  DisplacementBCFEMethodPreAndPostProc(m_field,field_name,aij,x,f),
+  DirichletDisplacementBc(m_field,field_name,aij,x,f),
   eNts(ents) {
     fieldNames.push_back(fieldName);
   }
 
-  FixBcAtEntities(
+  DirichletFixFieldAtEntitiesBc(
     MoFEM::Interface& m_field,const std::string &field_name,Range &ents
   ):
-  DisplacementBCFEMethodPreAndPostProc(m_field,field_name),eNts(ents) {
+  DirichletDisplacementBc(m_field,field_name),eNts(ents) {
     fieldNames.push_back(fieldName);
   }
 
@@ -147,6 +153,8 @@ struct FixBcAtEntities: public DisplacementBCFEMethodPreAndPostProc {
 
 };
 
+/// \deprecated use DirichletFixFieldAtEntitiesBc
+DEPRECATED typedef DirichletFixFieldAtEntitiesBc FixBcAtEntities;
 
 /** \brief Blockset boundary conditions
   * \ingroup Dirichlet_bc
@@ -166,26 +174,32 @@ struct FixBcAtEntities: public DisplacementBCFEMethodPreAndPostProc {
       With above command we set displacement of 2 on y-direction and constrain x,z direction (0 displacement)
   *
 **/
-struct DirichletBCFromBlockSetFEMethodPreAndPostProc: public DisplacementBCFEMethodPreAndPostProc {
+struct DirichletSetFieldFromBlock: public DirichletDisplacementBc {
 
   const std::string blocksetName;
-  DirichletBCFromBlockSetFEMethodPreAndPostProc(
-    MoFEM::Interface& m_field,const std::string &field_name,const std::string &blockset_name,Mat aij,Vec x,Vec f
+  DirichletSetFieldFromBlock(
+    MoFEM::Interface& m_field,
+    const std::string &field_name,
+    const std::string &blockset_name,
+    Mat aij,Vec x,Vec f
   ):
-  DisplacementBCFEMethodPreAndPostProc(m_field,field_name,aij,x,f),
+  DirichletDisplacementBc(m_field,field_name,aij,x,f),
   blocksetName(blockset_name) {
   }
 
-  DirichletBCFromBlockSetFEMethodPreAndPostProc(
+  DirichletSetFieldFromBlock(
     MoFEM::Interface& m_field,const std::string &field_name,const std::string &blockset_name
   ):
-  DisplacementBCFEMethodPreAndPostProc(m_field,field_name),
+  DirichletDisplacementBc(m_field,field_name),
   blocksetName(blockset_name) {
   }
 
   PetscErrorCode iNitalize();
 
 };
+
+/// \deprecated use DirichletSetFieldFromBlock
+DEPRECATED typedef DirichletSetFieldFromBlock DirichletBCFromBlockSetFEMethodPreAndPostProc;
 
 /**
  * \brief Add boundary conditions form block set having 6 attributes
@@ -208,26 +222,29 @@ struct DirichletBCFromBlockSetFEMethodPreAndPostProc: public DisplacementBCFEMet
     since standard boundary conditions in Cubit allow only using nodeset or surface
     which might not work with mesh based on facet engine (e.g. STL file)
  */
-struct DirichletBCFromBlockSetFEMethodPreAndPostProcWithFlags: public DisplacementBCFEMethodPreAndPostProc {
+struct DirichletSetFieldFromBlockWithFlags: public DirichletDisplacementBc {
 
   const std::string blocksetName;
-  DirichletBCFromBlockSetFEMethodPreAndPostProcWithFlags(
+  DirichletSetFieldFromBlockWithFlags(
     MoFEM::Interface& m_field,const std::string &field_name,const std::string &blockset_name,Mat aij,Vec x,Vec f
   ):
-  DisplacementBCFEMethodPreAndPostProc(m_field,field_name,aij,x,f),
+  DirichletDisplacementBc(m_field,field_name,aij,x,f),
   blocksetName(blockset_name) {
   }
 
-  DirichletBCFromBlockSetFEMethodPreAndPostProcWithFlags(
+  DirichletSetFieldFromBlockWithFlags(
     MoFEM::Interface& m_field,const std::string &field_name,const std::string &blockset_name
   ):
-  DisplacementBCFEMethodPreAndPostProc(m_field,field_name),
+  DirichletDisplacementBc(m_field,field_name),
   blocksetName(blockset_name) {
   }
 
   PetscErrorCode iNitalize();
 
 };
+
+/// \deprecated use DirichletSetFieldFromBlockWithFlags
+DEPRECATED typedef DirichletSetFieldFromBlockWithFlags DirichletBCFromBlockSetFEMethodPreAndPostProcWithFlags;
 
 #endif //__DIRICHLETBC_HPP__
 

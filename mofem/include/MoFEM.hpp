@@ -80,6 +80,7 @@
 #include <PrismsFromSurfaceInterface.hpp>
 
 //SRC/PETSC
+#include <AuxPETSc.hpp>
 #include <KspCtx.hpp>
 #include <SnesCtx.hpp>
 #include <TsCtx.hpp>

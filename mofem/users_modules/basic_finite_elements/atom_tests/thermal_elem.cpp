@@ -119,7 +119,7 @@ int main(int argc, char *argv[]) {
     Mat A;
     ierr = m_field.MatCreateMPIAIJWithArrays("TEST_PROBLEM",&A); CHKERRQ(ierr);
 
-    TemperatureBCFEMethodPreAndPostProc my_dirichlet_bc(m_field,"TEMP",A,T,F);
+    DirichletTemperatureBc my_dirichlet_bc(m_field,"TEMP",A,T,F);
     ierr = thermal_elements.setThermalFiniteElementRhsOperators("TEMP",F); CHKERRQ(ierr);
     ierr = thermal_elements.setThermalFiniteElementLhsOperators("TEMP",A); CHKERRQ(ierr);
     ierr = thermal_elements.setThermalFluxFiniteElementRhsOperators("TEMP",F); CHKERRQ(ierr);

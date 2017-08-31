@@ -1,4 +1,5 @@
 /** \file ArcLengthTools.cpp
+ * \ingroup arc_length_control
  *
  * Implementation of arc-length control method
  *
@@ -67,23 +68,23 @@ struct ArcLengthCtx {
 
   MoFEM::Interface &mField;
 
-  double s;	///< arc length radius
-  double beta; 	///< force scaling factor
-  double alpha; ///< displacement scaling factor
+  double s;	          ///< arc length radius
+  double beta; 	      ///< force scaling factor
+  double alpha;       ///< displacement scaling factor
 
   Vec ghosTdLambda;
-  double dLambda;	///< increment of load factor
+  double dLambda;	    ///< increment of load factor
   Vec ghostDiag;
-  double dIag;		///< diagonal value
+  double dIag;		    ///< diagonal value
 
-  double dx2;		///< inner_prod(dX,dX)
-  double F_lambda2;	///< inner_prod(F_lambda,F_lambda);
+  double dx2;		      ///< inner_prod(dX,dX)
+  double F_lambda2;	  ///< inner_prod(F_lambda,F_lambda);
   double res_lambda;	///< f_lambda - s
-  Vec F_lambda;		///< F_lambda reference load vector
-  Vec db;		///< db derivative of f(dx*dx), i.e. db = d[ f(dx*dx) ]/dx
-  Vec xLambda;		///< solution of eq. K*xLambda = F_lambda
-  Vec x0;		///< displacement vector at beginning of step
-  Vec dx;		///< dx = x-x0
+  Vec F_lambda;		    ///< F_lambda reference load vector
+  Vec db;		          ///< db derivative of f(dx*dx), i.e. db = d[ f(dx*dx) ]/dx
+  Vec xLambda;		    ///< solution of eq. K*xLambda = F_lambda
+  Vec x0;		          ///< displacement vector at beginning of step
+  Vec dx;		          ///< dx = x-x0
 
   /**
     * \brief set arc radius
@@ -97,7 +98,11 @@ struct ArcLengthCtx {
    */
   PetscErrorCode setAlphaBeta(double alpha,double beta);
 
-  ArcLengthCtx(MoFEM::Interface &m_field,const std::string &problem_name);
+  ArcLengthCtx(
+    MoFEM::Interface& m_field,
+    const std::string& problem_name,
+    const std::string& field_name = "LAMBDA"
+  );
   virtual ~ArcLengthCtx();
 
   NumeredDofEntityByFieldName::iterator dIt;
@@ -212,7 +217,10 @@ struct PCArcLengthCtx {
   Mat shellAij,Aij;
   ArcLengthCtx* arcPtr;
   PCArcLengthCtx(
-    Mat shell_Aij,Mat _Aij,ArcLengthCtx* arc_ptr
+    Mat shell_Aij,Mat aij,ArcLengthCtx* arc_ptr
+  );
+  PCArcLengthCtx(
+    PC pc,Mat shell_Aij,Mat aij,ArcLengthCtx* arc_ptr
   );
   virtual ~PCArcLengthCtx();
 
@@ -241,12 +249,12 @@ PetscErrorCode PCSetupArcLength(PC pc);
  * preProcess - zero F_lambda
  * postProcess - assembly F_lambda
  * Example: \code
-      SnesCtx::basic_method_to_do& preProcess_to_do_Rhs = SnesCtx.get_preProcess_to_do_Rhs();
-      SnesCtx::basic_method_to_do& postProcess_to_do_Rhs = SnesCtx.get_postProcess_to_do_Rhs();
+      SnesCtx::BasicMethodsSequence& preProcess_to_do_Rhs = SnesCtx.get_preProcess_to_do_Rhs();
+      SnesCtx::BasicMethodsSequence& postProcess_to_do_Rhs = SnesCtx.get_postProcess_to_do_Rhs();
       SnesCtx.get_preProcess_to_do_Rhs().push_back(&PrePostFE); //Zero F_lambda before looping over FEs
-      loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("ELASTIC",&MyFE));
-      loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("INTERFACE",&IntMyFE));
-      loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("ARC_LENGTH",&MyArcMethod));
+      loops_to_do_Rhs.push_back(SnesCtx::PairNameFEMethodPtr("ELASTIC",&MyFE));
+      loops_to_do_Rhs.push_back(SnesCtx::PairNameFEMethodPtr("INTERFACE",&IntMyFE));
+      loops_to_do_Rhs.push_back(SnesCtx::PairNameFEMethodPtr("ARC_LENGTH",&MyArcMethod));
       SnesCtx.get_postProcess_to_do_Rhs().push_back(&PrePostFE); //finally, assemble F_lambda
   \endcode
  */

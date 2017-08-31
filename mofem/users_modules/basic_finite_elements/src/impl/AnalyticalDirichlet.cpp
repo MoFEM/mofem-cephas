@@ -189,13 +189,13 @@ PetscErrorCode AnalyticalDirichletBC::ApproxField::OpLhs::doWork(
   AnalyticalDirichletBC::DirichletBC::DirichletBC(
     MoFEM::Interface& m_field,const std::string &field,Mat A,Vec X,Vec F
   ):
-  DisplacementBCFEMethodPreAndPostProc(m_field,field,A,X,F) {
+  DirichletDisplacementBc(m_field,field,A,X,F) {
   }
 
   AnalyticalDirichletBC::DirichletBC::DirichletBC(
     MoFEM::Interface& m_field,const std::string &field
   ):
-  DisplacementBCFEMethodPreAndPostProc(m_field,field) {
+  DirichletDisplacementBc(m_field,field) {
   }
 
 

@@ -39,7 +39,7 @@ struct DMMGViaApproxOrdersCtx: public MoFEM::DMCtx {
   PetscErrorCode queryInterface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface);
 
   DMMGViaApproxOrdersCtx();
-  ~DMMGViaApproxOrdersCtx();
+  virtual ~DMMGViaApproxOrdersCtx();
 
   AO aO;
   std::vector<IS> coarseningIS;   ///< Coarsening IS
@@ -206,7 +206,7 @@ struct PCMGSetUpViaApproxOrdersCtx {
   verboseLevel(0) {
   }
 
-  ~PCMGSetUpViaApproxOrdersCtx() {
+  virtual ~PCMGSetUpViaApproxOrdersCtx() {
   }
 
   int nbLevels;				///< number of multi-grid levels
@@ -215,8 +215,6 @@ struct PCMGSetUpViaApproxOrdersCtx {
 
   bool shellSubA;
   int verboseLevel;
-
-  
 
   /**
    * \brief get options from line command

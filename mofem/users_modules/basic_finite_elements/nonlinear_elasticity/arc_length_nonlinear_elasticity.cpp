@@ -328,7 +328,7 @@ int main(int argc, char *argv[]) {
       for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,SIDESET|PRESSURESET,it)) {
         ierr = fe_neumann.addPreassure(it->getMeshsetId()); CHKERRQ(ierr);
       }
-      SpatialPositionsBCFEMethodPreAndPostProc my_dirichlet_bc(m_field,"SPATIAL_POSITION",Aij,D,F);
+      DirichletSpatialPositionsBc my_dirichlet_bc(m_field,"SPATIAL_POSITION",Aij,D,F);
       ierr = m_field.get_problem("ELASTIC_MECHANICS",&my_dirichlet_bc.problemPtr); CHKERRQ(ierr);
       ierr = my_dirichlet_bc.iNitalize(); CHKERRQ(ierr);
 
@@ -403,11 +403,11 @@ int main(int argc, char *argv[]) {
       struct AddLambdaVectorToFinternal: public FEMethod {
 
         ArcLengthCtx *arcPtr;
-        SpatialPositionsBCFEMethodPreAndPostProc *bC;
+        DirichletSpatialPositionsBc *bC;
 
         AddLambdaVectorToFinternal(
           ArcLengthCtx *arc_ptr,
-          SpatialPositionsBCFEMethodPreAndPostProc *bc
+          DirichletSpatialPositionsBc *bc
         ):
         arcPtr(arc_ptr),
         bC(bc) {}
@@ -502,12 +502,12 @@ int main(int argc, char *argv[]) {
         ierr = KSPSetTolerances(ksp,rtol,atol,dtol,maxits); CHKERRQ(ierr);
       }
 
-      SnesCtx::loops_to_do_type& loops_to_do_Rhs = snes_ctx.get_loops_to_do_Rhs();
+      SnesCtx::FEMethodsSequence& loops_to_do_Rhs = snes_ctx.get_loops_to_do_Rhs();
       snes_ctx.get_preProcess_to_do_Rhs().push_back(&my_dirichlet_bc);
       snes_ctx.get_preProcess_to_do_Rhs().push_back(&pre_post_method);
-      loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("ELASTIC",&elastic.getLoopFeRhs()));
+      loops_to_do_Rhs.push_back(SnesCtx::PairNameFEMethodPtr("ELASTIC",&elastic.getLoopFeRhs()));
       //surface forces and pressures
-      loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("NEUAMNN_FE",&fe_neumann));
+      loops_to_do_Rhs.push_back(SnesCtx::PairNameFEMethodPtr("NEUAMNN_FE",&fe_neumann));
 
       //edge forces
       boost::ptr_map<std::string,EdgeForce> edge_forces;
@@ -520,7 +520,7 @@ int main(int argc, char *argv[]) {
         boost::ptr_map<std::string,EdgeForce>::iterator eit = edge_forces.begin();
         eit!=edge_forces.end();eit++
       ) {
-        loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type(eit->first,&eit->second->getLoopFe()));
+        loops_to_do_Rhs.push_back(SnesCtx::PairNameFEMethodPtr(eit->first,&eit->second->getLoopFe()));
       }
 
       //nodal forces
@@ -533,20 +533,20 @@ int main(int argc, char *argv[]) {
       for(
         boost::ptr_map<std::string,NodalForce>::iterator fit = nodal_forces.begin();
         fit!=nodal_forces.end();fit++) {
-          loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type(fit->first,&fit->second->getLoopFe()));
+          loops_to_do_Rhs.push_back(SnesCtx::PairNameFEMethodPtr(fit->first,&fit->second->getLoopFe()));
         }
 
         //arc length
-        loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("NONE",&assemble_F_lambda));
-        loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("ARC_LENGTH",&arc_method));
+        loops_to_do_Rhs.push_back(SnesCtx::PairNameFEMethodPtr("NONE",&assemble_F_lambda));
+        loops_to_do_Rhs.push_back(SnesCtx::PairNameFEMethodPtr("ARC_LENGTH",&arc_method));
         snes_ctx.get_postProcess_to_do_Rhs().push_back(&pre_post_method);
         snes_ctx.get_postProcess_to_do_Rhs().push_back(&my_dirichlet_bc);
 
-        SnesCtx::loops_to_do_type& loops_to_do_Mat = snes_ctx.get_loops_to_do_Mat();
+        SnesCtx::FEMethodsSequence& loops_to_do_Mat = snes_ctx.get_loops_to_do_Mat();
         snes_ctx.get_preProcess_to_do_Mat().push_back(&my_dirichlet_bc);
-        loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("ELASTIC",&elastic.getLoopFeLhs()));
-        loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("NEUAMNN_FE",&fe_neumann));
-        loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("ARC_LENGTH",&arc_method));
+        loops_to_do_Mat.push_back(SnesCtx::PairNameFEMethodPtr("ELASTIC",&elastic.getLoopFeLhs()));
+        loops_to_do_Mat.push_back(SnesCtx::PairNameFEMethodPtr("NEUAMNN_FE",&fe_neumann));
+        loops_to_do_Mat.push_back(SnesCtx::PairNameFEMethodPtr("ARC_LENGTH",&arc_method));
         snes_ctx.get_postProcess_to_do_Mat().push_back(&my_dirichlet_bc);
 
         ierr = m_field.query_interface<VecManager>()->setLocalGhostVector("ELASTIC_MECHANICS",COL,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
