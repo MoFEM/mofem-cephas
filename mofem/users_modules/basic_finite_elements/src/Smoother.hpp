@@ -26,12 +26,21 @@ struct Smoother {
     bool sTabilised;
     Vec frontF;
     Vec tangentFrontF;
+    bool ownVectors;
 
     SmootherBlockData():
     sTabilised(false),
     frontF(PETSC_NULL),
-    tangentFrontF(PETSC_NULL)
-    {}
+    tangentFrontF(PETSC_NULL),
+    ownVectors(false) {
+    }
+
+    ~SmootherBlockData() {
+      if(ownVectors) {
+        ierr = VecDestroy(&frontF); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+        ierr = VecDestroy(&tangentFrontF); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+      }
+    }
 
   };
   SmootherBlockData smootherData;
