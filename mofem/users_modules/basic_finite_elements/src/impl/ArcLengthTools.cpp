@@ -119,7 +119,7 @@ Aij(aij),arcPtrRaw(arc_ptr_raw),problemName(problem_name) {
 }
 
 ArcLengthMatShell::ArcLengthMatShell(Mat aij,boost::shared_ptr<ArcLengthCtx> arc_ptr,string problem_name):
-Aij(aij),arcPtr(arc_ptr),arcPtrRaw(arc_ptr.get()),problemName(problem_name) {
+Aij(aij),arcPtrRaw(arc_ptr.get()),arcPtr(arc_ptr),problemName(problem_name) {
   ierr = PetscObjectReference((PetscObject)aij); CHKERRABORT(PETSC_COMM_WORLD,ierr);
 }
 
