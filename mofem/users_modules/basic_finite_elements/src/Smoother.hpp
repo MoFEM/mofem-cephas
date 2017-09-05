@@ -35,7 +35,7 @@ struct Smoother {
     ownVectors(false) {
     }
 
-    ~SmootherBlockData() {
+    virtual ~SmootherBlockData() {
       if(ownVectors) {
         ierr = VecDestroy(&frontF); CHKERRABORT(PETSC_COMM_WORLD,ierr);
         ierr = VecDestroy(&tangentFrontF); CHKERRABORT(PETSC_COMM_WORLD,ierr);
