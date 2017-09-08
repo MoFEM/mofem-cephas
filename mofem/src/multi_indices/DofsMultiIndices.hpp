@@ -648,7 +648,7 @@ typedef multi_index_container<
     ordered_non_unique<
       tag<Ent_mi_tag>,
       const_mem_fun<NumeredDofEntity::interface_type_DofEntity,EntityHandle,&NumeredDofEntity::getEnt>
-      >,
+    >,
     ordered_non_unique<
       tag<Order_mi_tag>,
       const_mem_fun<NumeredDofEntity::interface_type_DofEntity,ApproximationOrder,&NumeredDofEntity::getDofOrder>
@@ -659,15 +659,6 @@ typedef multi_index_container<
 	      NumeredDofEntity,
 	       member<NumeredDofEntity,unsigned int,&NumeredDofEntity::pArt>,
 	      const_mem_fun<NumeredDofEntity::interface_type_DofEntity,ApproximationOrder,&NumeredDofEntity::getDofOrder>
-	    >
-    >,
-    ordered_non_unique<
-      tag<Composite_Name_Part_And_CoeffIdx_mi_tag>,
-      composite_key<
-	     NumeredDofEntity,
-	      const_mem_fun<NumeredDofEntity::interface_type_Field,boost::string_ref,&NumeredDofEntity::getNameRef>,
-	      member<NumeredDofEntity,unsigned int,&NumeredDofEntity::pArt>,
-	      const_mem_fun<NumeredDofEntity::interface_type_DofEntity,FieldCoefficientsNumber,&NumeredDofEntity::getDofCoeffIdx>
 	    >
     >,
     ordered_non_unique<
@@ -685,22 +676,6 @@ typedef multi_index_container<
 	     const_mem_fun<NumeredDofEntity::interface_type_Field,boost::string_ref,&NumeredDofEntity::getNameRef>,
 	     const_mem_fun<NumeredDofEntity::interface_type_DofEntity,EntityHandle,&NumeredDofEntity::getEnt>,
 	     member<NumeredDofEntity,unsigned int,&NumeredDofEntity::pArt>
-	    >
-    >,
-    // ordered_non_unique<
-    //   tag<Composite_Ent_and_Part_mi_tag>,
-    //   composite_key<
-	  //    NumeredDofEntity,
-	  //    const_mem_fun<NumeredDofEntity::interface_type_DofEntity,EntityHandle,&NumeredDofEntity::getEnt>,
-	  //    member<NumeredDofEntity,unsigned int,&NumeredDofEntity::pArt>
-	  //   >
-    // >,
-    ordered_non_unique<
-      tag<Composite_Name_And_HasLocalIdx_mi_tag>,
-      composite_key<
-	     NumeredDofEntity,
-	     const_mem_fun<NumeredDofEntity::interface_type_Field,boost::string_ref,&NumeredDofEntity::getNameRef>,
-	     const_mem_fun<NumeredDofEntity,bool,&NumeredDofEntity::getHasLocalIndex>
 	    >
     >
   >
@@ -771,9 +746,19 @@ typedef multi_index_container<
   boost::shared_ptr<NumeredDofEntity>,
   indexed_by<
     ordered_non_unique<
-      const_mem_fun<NumeredDofEntity,DofIdx,&NumeredDofEntity::getPetscGlobalDofIdx> >
+      const_mem_fun<NumeredDofEntity,DofIdx,&NumeredDofEntity::getPetscGlobalDofIdx>
+    >
   >
 > NumeredDofEntity_multiIndex_petsc_global_dof_view_ordered_non_unique;
+
+typedef multi_index_container<
+  boost::shared_ptr<NumeredDofEntity>,
+  indexed_by<
+    ordered_non_unique<
+      const_mem_fun<NumeredDofEntity::interface_type_DofEntity,FieldCoefficientsNumber,&NumeredDofEntity::getDofCoeffIdx>
+    >
+  >
+> NumeredDofEntity_multiIndex_coeff_idx_ordered_non_unique;
 
 /**
  * Activate or deactivate dofs (multi-index modifier)

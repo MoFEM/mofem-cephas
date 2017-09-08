@@ -119,7 +119,7 @@ Aij(aij),arcPtrRaw(arc_ptr_raw),problemName(problem_name) {
 }
 
 ArcLengthMatShell::ArcLengthMatShell(Mat aij,boost::shared_ptr<ArcLengthCtx> arc_ptr,string problem_name):
-Aij(aij),arcPtr(arc_ptr),arcPtrRaw(arc_ptr.get()),problemName(problem_name) {
+Aij(aij),arcPtrRaw(arc_ptr.get()),arcPtr(arc_ptr),problemName(problem_name) {
   ierr = PetscObjectReference((PetscObject)aij); CHKERRABORT(PETSC_COMM_WORLD,ierr);
 }
 
@@ -490,6 +490,19 @@ PetscErrorCode SphericalArcLengthControl::preProcess() {
   PetscFunctionReturn(0);
 }
 
+double SphericalArcLengthControl::calculateLambdaInt() {
+  PetscFunctionBegin;
+  return arcPtrRaw->alpha*arcPtrRaw->dx2 + pow(arcPtrRaw->dLambda,2)*pow(arcPtrRaw->beta,2)*arcPtrRaw->F_lambda2;
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode SphericalArcLengthControl::calculateDb() {
+  PetscFunctionBegin;
+  ierr = VecCopy(arcPtrRaw->dx,arcPtrRaw->db); CHKERRQ(ierr);
+  ierr = VecScale(arcPtrRaw->db,2*arcPtrRaw->alpha); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
 PetscErrorCode SphericalArcLengthControl::operator()() {
   PetscFunctionBegin;
   switch(snes_ctx) {
@@ -550,19 +563,6 @@ PetscErrorCode SphericalArcLengthControl::postProcess() {
     default:
     break;
   }
-  PetscFunctionReturn(0);
-}
-
-double SphericalArcLengthControl::calculateLambdaInt() {
-  PetscFunctionBegin;
-  return arcPtrRaw->alpha*arcPtrRaw->dx2 + pow(arcPtrRaw->dLambda,2)*pow(arcPtrRaw->beta,2)*arcPtrRaw->F_lambda2;
-  PetscFunctionReturn(0);
-}
-
-PetscErrorCode SphericalArcLengthControl::calculateDb() {
-  PetscFunctionBegin;
-  ierr = VecCopy(arcPtrRaw->dx,arcPtrRaw->db); CHKERRQ(ierr);
-  ierr = VecScale(arcPtrRaw->db,2*arcPtrRaw->alpha); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 

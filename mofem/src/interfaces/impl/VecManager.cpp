@@ -326,14 +326,14 @@ namespace MoFEM {
     PetscFunctionBegin;
     ierr = m_field.get_fields(&fields_ptr); CHKERRQ(ierr);
     ierr = m_field.get_dofs(&dofs_ptr); CHKERRQ(ierr);
-    typedef NumeredDofEntity_multiIndex::index<Composite_Name_And_HasLocalIdx_mi_tag>::type DofsByNameAndLocalIdx;
-    DofsByNameAndLocalIdx *dofs;
+    typedef NumeredDofEntity_multiIndex::index<FieldName_mi_tag>::type DofsByName;
+    DofsByName *dofs;
     switch (rc) {
       case ROW:
-        dofs = const_cast<DofsByNameAndLocalIdx*>(&problem_ptr->numeredDofsRows->get<Composite_Name_And_HasLocalIdx_mi_tag>());
+        dofs = const_cast<DofsByName*>(&problem_ptr->numeredDofsRows->get<FieldName_mi_tag>());
         break;
       case COL:
-        dofs = const_cast<DofsByNameAndLocalIdx*>(&problem_ptr->numeredDofsCols->get<Composite_Name_And_HasLocalIdx_mi_tag>());
+        dofs = const_cast<DofsByName*>(&problem_ptr->numeredDofsCols->get<FieldName_mi_tag>());
         break;
       default:
        SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
@@ -342,11 +342,11 @@ namespace MoFEM {
     if(cpy_fit==fields_ptr->get<FieldName_mi_tag>().end()) {
       SETERRQ1(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"cpy field < %s > not found, (top tip: check spelling)",cpy_field_name.c_str());
     }
-    DofsByNameAndLocalIdx::iterator miit = dofs->lower_bound(boost::make_tuple(field_name,1));
+    DofsByName::iterator miit = dofs->lower_bound(field_name);
     if(miit==dofs->end()) {
       SETERRQ1(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"cpy field < %s > not found, (top tip: check spelling)",field_name.c_str());
     }
-    DofsByNameAndLocalIdx::iterator hi_miit = dofs->upper_bound(boost::make_tuple(field_name,1));
+    DofsByName::iterator hi_miit = dofs->upper_bound(field_name);
     if((*miit)->getSpace() != (*cpy_fit)->getSpace()) {
       SETERRQ4(
         PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
@@ -375,7 +375,7 @@ namespace MoFEM {
         PetscScalar *array;
         VecGetArray(V,&array);
         for(;miit!=hi_miit;miit++) {
-          //if(miit->getNameRef()!=field_name) continue;
+          if(!miit->get()->getHasLocalIndex()) continue;
           DofEntity_multiIndex::index<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>::type::iterator diiiit;
           diiiit = dofs_ptr->get<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>().find(
             boost::make_tuple(cpy_field_name,(*miit)->getEnt(),(*miit)->getEntDofIdx())
@@ -397,7 +397,7 @@ namespace MoFEM {
       break;
       case SCATTER_FORWARD: {
         for(;miit!=hi_miit;miit++) {
-          //if(miit->getNameRef()!=field_name) continue;
+          if(!miit->get()->getHasLocalIndex()) continue;
           DofEntity_multiIndex::index<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>::type::iterator diiiit;
           diiiit = dofs_ptr->get<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>().find(
             boost::make_tuple(cpy_field_name,(*miit)->getEnt(),(*miit)->getEntDofIdx())
