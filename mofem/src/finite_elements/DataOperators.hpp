@@ -63,7 +63,7 @@ struct DataOperator {
     DataForcesAndSurcesCore::EntData &row_data,
     DataForcesAndSurcesCore::EntData &col_data) {
     PetscFunctionBegin;
-    SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
     PetscFunctionReturn(0);
   }
 
@@ -88,7 +88,7 @@ struct DataOperator {
     EntityType type,
     DataForcesAndSurcesCore::EntData &data) {
     PetscFunctionBegin;
-    SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
     PetscFunctionReturn(0);
   }
 
@@ -538,7 +538,7 @@ struct OpGetDataAndGradient: public DataOperator {
     EntityType type,
     DataForcesAndSurcesCore::EntData &data
   ) {
-    
+
     PetscFunctionBegin;
 
     try {
