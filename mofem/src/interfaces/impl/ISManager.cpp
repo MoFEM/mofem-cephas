@@ -167,10 +167,28 @@ namespace MoFEM {
           // that includes fields
           while(dit!=hi_dit&&ent==dit->get()->getEnt()) {
             const int nb_of_dofs_on_ent = dit->get()->getNbDofsOnEnt();
-            ierr = PetscSectionAddDof(*s,point,nb_of_dofs_on_ent); CHKERRQ(ierr);
-            int field = fields_map.at(dit->get()->getName()).first;
-            ierr = PetscSectionSetFieldDof(*s,point,field,nb_of_dofs_on_ent); CHKERRQ(ierr);
-            for(int dd = 0;dd!=nb_of_dofs_on_ent;dd++,dit++) {}
+            std::string field_name = dit->get()->getName();
+            if(fields_map.find(field_name)==fields_map.end()) {
+              PetscPrintf(
+                PETSC_COMM_WORLD,"Warning: Field %s not found\n",dit->get()->getName().c_str()
+              );
+            } else {
+              if(dit->get()->getEntDofIdx()!=0) {
+                cerr << **dit << endl;
+                SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
+              }
+              ierr = PetscSectionAddDof(*s,point,nb_of_dofs_on_ent); CHKERRQ(ierr);
+              int field = fields_map.at(field_name).first;
+              ierr = PetscSectionSetFieldDof(*s,point,field,nb_of_dofs_on_ent); CHKERRQ(ierr);
+            }
+            for(int dd = 0;dd!=nb_of_dofs_on_ent;dd++,dit++) {
+              if(field_name!=dit->get()->getName()) {
+                SETERRQ2(
+                  PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"field name inconsistency %s!=%s",
+                  field_name.c_str(),dit->get()->getName().c_str()
+                );
+              }
+            }
             // cerr << point << endl;
           }
           ++point;
