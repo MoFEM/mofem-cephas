@@ -104,6 +104,7 @@ namespace MoFEM {
   struct Composite_Ent_and_Part_mi_tag {};
   struct Composite_Name_Part_And_CoeffIdx_mi_tag {};
   struct Composite_Name_And_HasLocalIdx_mi_tag {};
+  struct Composite_Ent_And_EntDofIdx_mi_tag {};
 
   struct SeriesID_mi_tag {};
   struct SeriesName_mi_tag {};

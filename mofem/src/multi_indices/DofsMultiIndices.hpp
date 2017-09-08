@@ -648,7 +648,7 @@ typedef multi_index_container<
     ordered_non_unique<
       tag<Ent_mi_tag>,
       const_mem_fun<NumeredDofEntity::interface_type_DofEntity,EntityHandle,&NumeredDofEntity::getEnt>
-      >,
+    >,
     ordered_non_unique<
       tag<Order_mi_tag>,
       const_mem_fun<NumeredDofEntity::interface_type_DofEntity,ApproximationOrder,&NumeredDofEntity::getDofOrder>
@@ -774,6 +774,20 @@ typedef multi_index_container<
       const_mem_fun<NumeredDofEntity,DofIdx,&NumeredDofEntity::getPetscGlobalDofIdx> >
   >
 > NumeredDofEntity_multiIndex_petsc_global_dof_view_ordered_non_unique;
+
+typedef multi_index_container<
+  boost::shared_ptr<NumeredDofEntity>,
+  indexed_by<
+    ordered_non_unique<
+      tag<Composite_Ent_And_EntDofIdx_mi_tag>,
+      composite_key<
+        NumeredDofEntity,
+        const_mem_fun<NumeredDofEntity::interface_type_DofEntity,EntityHandle,&NumeredDofEntity::getEnt>,
+        const_mem_fun<NumeredDofEntity::interface_type_DofEntity,DofIdx,&NumeredDofEntity::getEntDofIdx>
+      >
+    >
+  >
+> NumeredDofEntity_multiIndex_ent_and_ent_dof_idx_view_ordered_non_unique;
 
 /**
  * Activate or deactivate dofs (multi-index modifier)
