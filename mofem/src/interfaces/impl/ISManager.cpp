@@ -256,39 +256,43 @@ namespace MoFEM {
     const Problem *problem_ptr;
     PetscFunctionBegin;
     ierr = m_field.get_problem(problem,&problem_ptr); CHKERRQ(ierr);
-    typedef NumeredDofEntity_multiIndex::index<Composite_Name_Part_And_CoeffIdx_mi_tag>::type DofsByNamePartAndCoeffIdx;
+    typedef NumeredDofEntity_multiIndex::index<Composite_Name_And_Part_mi_tag>::type DofsByNamePartAndCoeffIdx;
     int rank = m_field.get_comm_rank();
     DofsByNamePartAndCoeffIdx::iterator it,hi_it;
     switch(rc) {
       case ROW:
-      it = problem_ptr->numeredDofsRows->get<Composite_Name_Part_And_CoeffIdx_mi_tag>().lower_bound(
-        boost::make_tuple(field,rank,min_coeff_idx)
-      );
-      hi_it = problem_ptr->numeredDofsRows->get<Composite_Name_Part_And_CoeffIdx_mi_tag>().upper_bound(
-        boost::make_tuple(field,rank,max_coeff_idx)
-      );
+      it = problem_ptr->numeredDofsRows->get<Composite_Name_And_Part_mi_tag>().
+      lower_bound(boost::make_tuple(field,rank));
+      hi_it = problem_ptr->numeredDofsRows->get<Composite_Name_And_Part_mi_tag>().
+      upper_bound(boost::make_tuple(field,rank));
       break;
       case COL:
-      it = problem_ptr->numeredDofsCols->get<Composite_Name_Part_And_CoeffIdx_mi_tag>().lower_bound(
-        boost::make_tuple(field,rank,min_coeff_idx)
-      );
-      hi_it = problem_ptr->numeredDofsCols->get<Composite_Name_Part_And_CoeffIdx_mi_tag>().upper_bound(
-        boost::make_tuple(field,rank,max_coeff_idx)
-      );
+      it = problem_ptr->numeredDofsCols->get<Composite_Name_And_Part_mi_tag>().
+      lower_bound(boost::make_tuple(field,rank));
+      hi_it = problem_ptr->numeredDofsCols->get<Composite_Name_And_Part_mi_tag>().
+      upper_bound(boost::make_tuple(field,rank));
       break;
       default:
       SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
     }
 
-    // Sort by local index
     NumeredDofEntity_multiIndex_petsc_local_dof_view_ordered_non_unique dof_loc_idx_view;
-    dof_loc_idx_view.insert(it,hi_it);
+    {
+      // get min and max bound coefficient index
+      NumeredDofEntity_multiIndex_coeff_idx_ordered_non_unique dofs_view_coeff_idx;
+      dofs_view_coeff_idx.insert(it,hi_it);
+      NumeredDofEntity_multiIndex_coeff_idx_ordered_non_unique::iterator vit,hi_vit;
+      vit = dofs_view_coeff_idx.lower_bound(min_coeff_idx);
+      hi_vit = dofs_view_coeff_idx.upper_bound(max_coeff_idx);
+      // sort by local index
+      dof_loc_idx_view.insert(vit,hi_vit);
+    }
+
+    // create IS
     NumeredDofEntity_multiIndex_petsc_local_dof_view_ordered_non_unique::iterator vit,hi_vit;
     vit = dof_loc_idx_view.begin();
     hi_vit = dof_loc_idx_view.end();
-
-    // create IS
-    int size = distance(it,hi_it);
+    int size = distance(vit,hi_vit);
     int *id;
     ierr = PetscMalloc(size*sizeof(int),&id); CHKERRQ(ierr);
     for(int ii = 0;vit!=hi_vit;vit++) {
