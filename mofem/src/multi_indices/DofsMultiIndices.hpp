@@ -32,6 +32,17 @@ struct DofEntity: public interface_FieldEntity<FieldEntity> {
   typedef interface_FieldEntity<FieldEntity> interface_type_FieldEntity;
   typedef interface_RefEntity<FieldEntity> interface_type_RefEntity;
 
+  /**
+   * \brief Calculate UId for DOF
+   *
+   * UId is constructed such that all DOFs are ordered by processor, entity, field
+   * and dof index on entity, On entity dofs index is constructed such that
+   * coffient number and dofs increase with dofs index on entity.
+   *
+   * @param  dof     dof index on entity
+   * @param  ent_ptr pointer to field entity
+   * @return         UId
+   */
   static inline UId getGlobalUniqueIdCalculate(
     const DofIdx dof,const boost::shared_ptr<FieldEntity>& ent_ptr
   ) {
