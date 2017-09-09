@@ -93,7 +93,7 @@ namespace MoFEM {
 
     PetscErrorCode getValueHCurl(MatrixDouble &pts);
 
-    int faceNodes[2][3];
+    // int faceNodes[2][3];
     MatrixDouble N;
     MatrixDouble diffN;
 

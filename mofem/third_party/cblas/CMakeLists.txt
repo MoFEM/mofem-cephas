@@ -48,5 +48,6 @@ else(BLAS_FOUND)
     zdotusub.f
   )
 endif(BLAS_FOUND)
+# target_compile_options(mofem_cblas PUBLIC "-Wno-macro-redefined")
 
 install(TARGETS mofem_cblas DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
