@@ -675,6 +675,17 @@ struct FieldEntity:
    */
   const UId& getGlobalUniqueId() const { return globalUid; }
 
+  /**
+   * \brief Calulate UId for field entity
+   * 
+   * UId is constructed such that all DOFs are ordered by processor, entity, field.
+   *
+   * @param  owner_proc               owning processor
+   * @param  bit_number               field bit number
+   * @param  moab_owner_handle        entity handle on owning processor
+   * @param  true_if_distributed_mesh if true UId is construted for distributed meshes
+   * @return                          UId
+   */
   static inline UId getGlobalUniqueIdCalculate(
     const int owner_proc,
     const char bit_number,
@@ -688,15 +699,10 @@ struct FieldEntity:
       static_cast<UId>(bit_number)|
       static_cast<UId>(moab_owner_handle) << 5|
       static_cast<UId>(owner_proc) << 5+8*sizeof(EntityHandle);
-      // static_cast<UId>(moab_owner_handle)|
-      // static_cast<UId>(bit_number) << 8*sizeof(EntityHandle)|
-      // static_cast<UId>(owner_proc) << 5+8*sizeof(EntityHandle);
     } else {
       return
       static_cast<UId>(bit_number)|
       static_cast<UId>(moab_owner_handle) << 5;
-      // static_cast<UId>(moab_owner_handle)|
-      // static_cast<UId>(bit_number) << 8*sizeof(EntityHandle);
     }
   }
 
