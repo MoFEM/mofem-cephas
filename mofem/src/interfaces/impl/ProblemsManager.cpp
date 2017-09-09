@@ -1382,12 +1382,9 @@ namespace MoFEM {
     const bool square_matrix,
     int verb
   ) {
-
     if(!(cOre.getBuildMoFEM()&Core::BUILD_FIELD)) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"fields not build");
     if(!(cOre.getBuildMoFEM()&Core::BUILD_FE)) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"FEs not build");
     if(!(cOre.getBuildMoFEM()&Core::BUILD_ADJ)) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"adjacencies not build");
-
-
     MoFEM::Interface &m_field = cOre;
     const Problem_multiIndex *problems_ptr;
     PetscFunctionBegin;
@@ -1421,11 +1418,6 @@ namespace MoFEM {
     };
     std::vector<IS>* add_prb_is[] = {&cmp_prb_data->rowIs,&cmp_prb_data->colIs};
 
-    // Get DOFs for row & columns for out problem,
-    //boost::shared_ptr<NumeredDofEntity_multiIndex> out_problem_dofs[] = {
-    //  out_problem_it->numeredDofsRows,
-    //  out_problem_it->numeredDofsCols
-    //};
     // Get local indices counter
     int* nb_local_dofs[] = {
       &out_problem_it->nbLocDofsRow,
@@ -1449,8 +1441,6 @@ namespace MoFEM {
     int nb_dofs_reserve[] = {0,0};
 
     // Loop over rows and columns in the main problem and sub-problems
-
-    // cerr << "AAA " << ((square_matrix)?1:2) << "\n";
     for(int ss = 0;ss!=((square_matrix)?1:2);ss++) {
       // cerr << "SS " << ss << endl;
       // cerr << add_prb[ss]->size() << endl;
@@ -1471,17 +1461,21 @@ namespace MoFEM {
           );
         }
         add_prb_ptr[ss]->push_back(&*prb_it);
+        // set number of dofs on rows and columns
         if(ss==0) {
+          // row
           *nb_dofs[ss] += add_prb_ptr[ss]->back()->getNbDofsRow();
           *nb_local_dofs[ss] += add_prb_ptr[ss]->back()->getNbLocalDofsRow();
           nb_dofs_reserve[ss] += add_prb_ptr[ss]->back()->numeredDofsRows->size();
         } else {
+          // column
           *nb_dofs[ss] += add_prb_ptr[ss]->back()->getNbDofsCol();
           *nb_local_dofs[ss] += add_prb_ptr[ss]->back()->getNbLocalDofsCol();
           nb_dofs_reserve[ss] += add_prb_ptr[ss]->back()->numeredDofsCols->size();
         }
       }
     }
+    // if squre problem, rows and columns are the same
     if(square_matrix) {
       add_prb_ptr[1]->reserve(add_prb_ptr[0]->size());
       add_prb_is[1]->reserve(add_prb_ptr[0]->size());
@@ -1490,8 +1484,8 @@ namespace MoFEM {
       *nb_local_dofs[1] = *nb_local_dofs[0];
     }
 
+    // reserve memory for dofs
     boost::shared_ptr<std::vector<NumeredDofEntity> > dofs_array[2];
-
     // Reserve memory
     for(int ss = 0;ss!=((square_matrix)?1:2);ss++) {
       dofs_array[ss] = boost::make_shared<std::vector<NumeredDofEntity> >();
@@ -1523,14 +1517,12 @@ namespace MoFEM {
         int is_nb = 0;
         for(;dit!=hi_dit;dit++) {
           // cerr << **dit << endl;
-          //
           BitRefLevel prb_bit = out_problem_it->getBitRefLevel();
           BitRefLevel prb_mask = out_problem_it->getMaskBitRefLevel();
           BitRefLevel dof_bit = dit->get()->getBitRefLevel();
           if(
             (dof_bit&prb_bit).none() || ((dof_bit&prb_mask)!=dof_bit)
           ) continue;
-
           const int rank = m_field.get_comm_rank();
           const int part = dit->get()->getPart();
           const int glob_idx = shift_glob+dit->get()->getPetscGlobalDofIdx();
@@ -1603,23 +1595,24 @@ namespace MoFEM {
     *nb_local_dofs[0] = 0;
     *nb_local_dofs[1] = 0;
     for(int ss = 0;ss!=((square_matrix)?1:2);ss++) {
+
       // if(ss == 0 && renumerate_row) continue;
       // if(ss == 1 && renumerate_col) continue;
       boost::shared_ptr<NumeredDofEntity_multiIndex> dofs_ptr;
-      NumeredDofEntity_multiIndex::index<PetscGlobalIdx_mi_tag>::type::iterator dit,hi_dit;
       if(ss == 0) {
         dofs_ptr = out_problem_it->numeredDofsRows;
       } else {
         dofs_ptr = out_problem_it->numeredDofsCols;
       }
-      dit = dofs_ptr->get<PetscGlobalIdx_mi_tag>().begin();
-      hi_dit = dofs_ptr->get<PetscGlobalIdx_mi_tag>().end();
+      NumeredDofEntityByUId::iterator dit,hi_dit;
+      dit = dofs_ptr->get<Unique_mi_tag>().begin();
+      hi_dit = dofs_ptr->get<Unique_mi_tag>().end();
       std::vector<int> idx;
       idx.reserve(std::distance(dit,hi_dit));
+      // set dofs in order entity and dof number on entity
       for(;dit!=hi_dit;dit++) {
         if(dit->get()->getPart()==(unsigned int)m_field.get_comm_rank()) {
-          bool success =
-          dofs_ptr->get<PetscGlobalIdx_mi_tag>().modify(
+          bool success = dofs_ptr->get<Unique_mi_tag>().modify(
             dit,NumeredDofEntity_local_idx_change((*nb_local_dofs[ss])++)
           );
           if(!success) {
@@ -1639,6 +1632,8 @@ namespace MoFEM {
       if(square_matrix) {
         *nb_local_dofs[1] = *nb_local_dofs[0];
       }
+
+      // set new dofs mapping
       IS is;
       ierr = ISCreateGeneral(
         m_field.get_comm(),idx.size(),&*idx.begin(),PETSC_USE_POINTER,&is
@@ -1651,34 +1646,37 @@ namespace MoFEM {
       //   PetscSynchronizedPrintf(m_field.get_comm(),"nb dofs %d %d %d\n",*nb_local_dofs[0],idx.size(),*nb_dofs[0]);
       //   PetscSynchronizedFlush(m_field.get_comm(),PETSC_STDOUT);
       // }
-
       AO ao;
       ierr = AOCreateMappingIS(is,PETSC_NULL,&ao); CHKERRQ(ierr);
       for(unsigned int pp = 0;pp!=(*add_prb_is[ss]).size();pp++) {
         ierr = AOApplicationToPetscIS(ao,(*add_prb_is[ss])[pp]); CHKERRQ(ierr);
       }
+
       // Set DOFs numeration
       {
         std::vector<int> idx_new;
         idx_new.reserve(dofs_ptr->size());
         for(
-          NumeredDofEntity_multiIndex::iterator
-          dit = dofs_ptr->begin();dit!=dofs_ptr->end();dit++
+          NumeredDofEntityByUId::iterator
+          dit = dofs_ptr->get<Unique_mi_tag>().begin();
+          dit!= dofs_ptr->get<Unique_mi_tag>().end();dit++
         ) {
           idx_new.push_back(dit->get()->getPetscGlobalDofIdx());
         }
+        // set new global dofs numeration
         IS is_new;
         ierr = ISCreateGeneral(
           m_field.get_comm(),idx_new.size(),&*idx_new.begin(),PETSC_USE_POINTER,&is_new
         ); CHKERRQ(ierr);
         ierr = AOApplicationToPetscIS(ao,is_new); CHKERRQ(ierr);
+        // set global indices to multi-index
         std::vector<int>::iterator vit = idx_new.begin();
         for(
-          NumeredDofEntity_multiIndex::iterator
-          dit = dofs_ptr->begin();dit!=dofs_ptr->end();dit++
+          NumeredDofEntityByUId::iterator
+          dit = dofs_ptr->get<Unique_mi_tag>().begin();
+          dit!= dofs_ptr->get<Unique_mi_tag>().end();dit++
         ) {
-          bool success =
-          dofs_ptr->modify(
+          bool success = dofs_ptr->modify(
             dit,NumeredDofEntity_part_change(dit->get()->getPart(),*(vit++))
           );
           if(!success) {

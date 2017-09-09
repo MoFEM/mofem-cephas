@@ -123,6 +123,21 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSurcesCore {
     }
 
     /**
+     * \brief get element Jacobian
+     */
+    inline FTensor::Tensor2<double*,3,3>& getJac() {
+      return static_cast<VolumeElementForcesAndSourcesCore*>(ptrFE)->tJac;
+    }
+
+    /**
+     * \brief get element inverse Jacobian
+     */
+    inline FTensor::Tensor2<double*,3,3>& getInvJac() {
+      return static_cast<VolumeElementForcesAndSourcesCore*>(ptrFE)->tInvJac;
+    }
+
+
+    /**
      * \brief get measure of element
      * @return area of face
      */
