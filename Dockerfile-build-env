@@ -205,6 +205,9 @@ ENV MOFEM_ROOT_DIR=/mofem_build
 ENV MOFEM_INSTALL_DIR=/mofem_build/um
 ENV MOFEM_BUILD_DIR=/mofem_build/lib
 
+# Set mpirun alias
+RUN echo "alias mpirun='mpirun --allow-run-as-root'" >> /root/.bash_aliases
+
 # SSH
 RUN mkdir /var/run/sshd
 RUN echo 'root:mofem' | chpasswd

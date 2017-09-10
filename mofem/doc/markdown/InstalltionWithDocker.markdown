@@ -68,7 +68,7 @@ In container new we can compile linear elastic example and calculate simple prob
 ~~~~~~
 cd /mofem_build/um/basic_finite_elements/elasticity
 make
-mpirun --allow-run-as-root -np 2 ./elasticity -my_file LShape.h5m -ksp_type gmres -pc_type lu -pc_factor_mat_solver_package mumps -ksp_monitor -my_order 2
+mpirun -np 2 ./elasticity -my_file LShape.h5m -ksp_type gmres -pc_type lu -pc_factor_mat_solver_package mumps -ksp_monitor -my_order 2
 mbconvert out.h5m $HOSTHOME/out.vtk
 ~~~~~~
 In above example two processors are used to do calculations. Number of
