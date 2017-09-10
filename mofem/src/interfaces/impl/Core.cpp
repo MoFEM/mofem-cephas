@@ -89,6 +89,8 @@ PetscErrorCode Core::queryInterface(const MOFEMuuid& uuid,UnknownInterface** ifa
 PetscErrorCode Core::query_interface_type(const std::type_info& type,void*& ptr) const {
   PetscFunctionBegin;
 
+  ptr = NULL;
+
   // TetGen
   #ifdef WITH_TETGEN
   if(type == typeid(TetGenInterface)) {

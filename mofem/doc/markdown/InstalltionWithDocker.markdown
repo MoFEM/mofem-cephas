@@ -50,7 +50,7 @@ To run code a *work container* need to be started, container mount *mofem build
 volume* from container which has been created in the previous step
 
 ~~~~~~
-    docker run --rm=true -it --volumes-from mofem_build  -v $HOME/mofem-cephas/mofem:/mofem -v $HOME:$HOME -e HOSTHOME=$HOME mofem_build /bin/bash
+docker run --rm=true -it --volumes-from mofem_build  -v $HOME/mofem-cephas/mofem:/mofem -v $HOME:$HOME -e HOSTHOME=$HOME mofem_build /bin/bash
 ~~~~~~
 After execution of above command you are working inside docker, this is isolated
 system hosted by your OS (MacOSX, Linux or Windows). You can run several
@@ -68,7 +68,7 @@ In container new we can compile linear elastic example and calculate simple prob
 ~~~~~~
 cd /mofem_build/um/basic_finite_elements/elasticity
 make
-mpirun -np 2 ./elasticity -my_file LShape.h5m -ksp_type gmres -pc_type lu -pc_factor_mat_solver_package mumps -ksp_monitor -my_order 2
+mpirun --allow-run-as-root -np 2 ./elasticity -my_file LShape.h5m -ksp_type gmres -pc_type lu -pc_factor_mat_solver_package mumps -ksp_monitor -my_order 2
 mbconvert out.h5m $HOSTHOME/out.vtk
 ~~~~~~
 In above example two processors are used to do calculations. Number of
