@@ -253,7 +253,7 @@ int main(int argc, char *argv[]) {
     //set entitities bit level
     BitRefLevel bit_level0;
     bit_level0.set(0);
-    ierr = m_field.seed_ref_level_2D(0,bit_level0); CHKERRQ(ierr);
+    ierr = m_field.query_interface<BitRefManager>()->setBitRefLevelByDim(0,2,bit_level0); CHKERRQ(ierr);
 
     // Declare elements
     ierr = m_field.add_field("FIELD1",HCURL,AINSWORTH_LEGENDRE_BASE,1); CHKERRQ(ierr);
