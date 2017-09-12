@@ -19,7 +19,7 @@
 include_directories("${PROJECT_SOURCE_DIR}/third_party/cblas")
 link_directories("${PROJECT_BINARY_DIR}/third_party/cblas")
 
-if(CBLAS_LIB)
+if(CBLAS_LIB AND BLAS_FOUND)
   add_library(mofem_cblas all.c)
 elseif(BLAS_FOUND)
   add_library(mofem_cblas all.c)
@@ -47,7 +47,7 @@ else(CBLAS_LIB)
     zdotcsub.f
     zdotusub.f
   )
-endif(CBLAS_LIB)
+endif(CBLAS_LIB AND BLAS_FOUND)
 # target_compile_options(mofem_cblas PUBLIC "-Wno-macro-redefined")
 
 install(TARGETS mofem_cblas DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
