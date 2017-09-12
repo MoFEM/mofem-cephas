@@ -1,3 +1,9 @@
+#ifdef CBLAS_FOUND
+double cblas_dummy_variable = 1;
+#endif
+
+#ifndef CBLAS_FOUND
+
 #undef F77_incX
 #undef F77_incY
 #include "cblas_caxpy.c"
@@ -433,3 +439,5 @@
 #undef F77_incX
 #undef F77_incY
 #include "xerbla.c"
+
+#endif

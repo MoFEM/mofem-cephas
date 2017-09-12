@@ -128,12 +128,6 @@ resolve_includes(PROJECT_INCLUDE_DIRECTORIES
   "${PETSCVAR_PACKAGES_INCLUDES} ${MOAB_INCLUDES0} ${MOAB_INCLUDES1}"
 )
 
-include_directories(
-  ${PROJECT_INCLUDE_DIRECTORIES}
-  ${PETSC_DIR}/${PETSC_ARCH}/include
-  ${PETSCVAR_DIR}/include
-)
-
 find_package(BLAS)
 if(BLAS_FOUND)
   if(APPLE)
@@ -141,6 +135,31 @@ if(BLAS_FOUND)
   endif(APPLE)
 endif(BLAS_FOUND)
 message(STATUS "BLAS found: " ${BLAS_LIBRARIES})
+
+find_library(
+  CBLAS_LIBIBRARY NAMES cblas
+  ${PETSC_DIR}/${PETSC_ARCH}/lib
+)
+message(STATUS "CBLAS found: " ${CBLAS_LIBIBRARY})
+find_path(
+  CBLAS_INCLUDE_DIR
+  NAMES boost/multi_index_container.hpp
+  HINTS
+  ${PETSC_DIR}/${PETSC_ARCH}/include
+)
+message(STATUS "CBLAS inlude found: " ${CBLAS_INCLUDE_DIR})
+if(CBLAS_INCLUDE_DIR)
+  include_directories(${CBLAS_INCLUDE_DIR})
+  add_definitions(-DCBLAS_FOUND)
+endif(CBLAS_INCLUDE_DIR)
+
+include_directories(
+  ${PROJECT_INCLUDE_DIRECTORIES}
+  ${PETSC_DIR}/${PETSC_ARCH}/include
+  ${PETSCVAR_DIR}/include
+  ${BOOST_INCLUDE_DIR}
+  ${CBLAS_INCLUDE_DIR}
+)
 
 if(TAO_LIBRARY)
   include_directories(${TAO_DIR}/include)
@@ -169,7 +188,8 @@ resolve_libraries(PROJECT_LIBS "
   ${MPI_F77_LIB}
   ${ADOL-C_LIBRARY}
   ${BOOST_PROGRAM_OPTIONS_LIB}
-  ${BLAS_LINKER_FLAGS}"
+  ${BLAS_LINKER_FLAGS}
+  ${CBLAS_LIBIBRARY}"
 )
 
 message(STATUS ${PROJECT_LIBS})
