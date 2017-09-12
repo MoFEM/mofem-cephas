@@ -41,7 +41,7 @@ namespace MoFEM {
  */
 struct FatPrismElementForcesAndSourcesCore: public MoFEM::VolumeElementForcesAndSourcesCore {
 
-  
+
   double aRea[2];
   VectorDouble normal;
 
@@ -368,6 +368,9 @@ struct OpSetInvJacH1ForFatPrism: public FatPrismElementForcesAndSourcesCore::Use
   );
 
 };
+
+/// \deprecated use FatPrismElementForcesAndSourcesCore
+DEPRECATED typedef FatPrismElementForcesAndSourcesCore FatPrismElementForcesAndSurcesCore;
 
 }
 
