@@ -133,6 +133,7 @@ if(BLAS_FOUND)
   if(APPLE)
     set(CMAKE_EXE_LINKER_FLAGS "-framework Accelerate")
   endif(APPLE)
+  add_definitions(-DBLAS_FOUND)
 endif(BLAS_FOUND)
 message(STATUS "BLAS found: " ${BLAS_LIBRARIES})
 

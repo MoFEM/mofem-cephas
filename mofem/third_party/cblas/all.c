@@ -1,7 +1,10 @@
-#ifdef CBLAS_FOUND
-double cblas_dummy_variable = 1;
+#ifdef BLAS_FOUND
+  #ifdef CBLAS_FOUND
+    double cblas_dummy_variable = 1;
+  #endif
 #endif
 
+#ifndef BLAS_FOUND
 #ifndef CBLAS_FOUND
 
 #undef F77_incX
@@ -440,4 +443,5 @@ double cblas_dummy_variable = 1;
 #undef F77_incY
 #include "xerbla.c"
 
-#endif
+#endif // CBLAS_FOUND
+#endif // BLAS_FOUND
