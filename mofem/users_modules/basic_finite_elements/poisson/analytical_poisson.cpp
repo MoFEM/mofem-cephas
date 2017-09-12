@@ -127,7 +127,7 @@ int main(int argc, char *argv[]) {
     boost::shared_ptr<ForcesAndSourcesCore> null;              ///< Null element do nothing
     {
       // Add problem specific operators the generic finite elements to calculate matrices and vectors.
-      ierr = PoissonExample::CreateFiniteElements(m_field).createFEToAssmbleMatrceAndVector(
+      ierr = PoissonExample::CreateFiniteElements(m_field).createFEToAssmbleMatrixAndVector(
         ExactFunction(),ExactLaplacianFunction(),
         domain_lhs_fe,boundary_lhs_fe,domain_rhs_fe,boundary_rhs_fe
       ); CHKERRQ(ierr);
