@@ -30,13 +30,13 @@ NodalForce::MyFE::MyFE(MoFEM::Interface &m_field): VertexElementForcesAndSources
 
 NodalForce::OpNodalForce::OpNodalForce(const std::string field_name,Vec _F,bCForce &data,
   boost::ptr_vector<MethodForForceScaling> &methods_op,bool use_snes_f):
-  VertexElementForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROW),
+  VertexElementForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSourcesCore::UserDataOperator::OPROW),
   F(_F),
   useSnesF(use_snes_f),
   dAta(data),
   methodsOp(methods_op) {}
 
-  PetscErrorCode NodalForce::OpNodalForce::doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+  PetscErrorCode NodalForce::OpNodalForce::doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
     PetscFunctionBegin;
 
     if(data.getIndices().size()==0) PetscFunctionReturn(0);

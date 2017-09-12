@@ -62,7 +62,7 @@ struct OpAssembleMatAndVec: public MoFEM::FaceElementForcesAndSourcesCore::UserD
 
   VectorDouble nF;
   PetscErrorCode	doWork(
-    int side, EntityType type, DataForcesAndSurcesCore::EntData &data
+    int side, EntityType type, DataForcesAndSourcesCore::EntData &data
   ) {
 
     PetscFunctionBegin;
@@ -93,8 +93,8 @@ struct OpAssembleMatAndVec: public MoFEM::FaceElementForcesAndSourcesCore::UserD
     int col_side,
     EntityType row_type,
     EntityType col_type,
-    DataForcesAndSurcesCore::EntData &row_data,
-    DataForcesAndSurcesCore::EntData &col_data
+    DataForcesAndSourcesCore::EntData &row_data,
+    DataForcesAndSourcesCore::EntData &col_data
   ) {
 
     PetscFunctionBegin;
@@ -141,7 +141,7 @@ struct OpValsDiffVals: public MoFEM::FaceElementForcesAndSourcesCore::UserDataOp
   FTensor::Index<'j',2> j;
 
   PetscErrorCode	doWork(
-    int side, EntityType type, DataForcesAndSurcesCore::EntData &data
+    int side, EntityType type, DataForcesAndSourcesCore::EntData &data
   ) {
     //
     PetscFunctionBegin;
@@ -188,7 +188,7 @@ struct OpCheckValsDiffVals: public MoFEM::FaceElementForcesAndSourcesCore::UserD
   FTensor::Index<'j',2> j;
 
   PetscErrorCode	doWork(
-    int side, EntityType type, DataForcesAndSurcesCore::EntData &data
+    int side, EntityType type, DataForcesAndSourcesCore::EntData &data
   ) {
     //
     PetscFunctionBegin;

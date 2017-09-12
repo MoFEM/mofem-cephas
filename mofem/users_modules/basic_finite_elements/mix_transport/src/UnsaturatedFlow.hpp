@@ -302,7 +302,7 @@ namespace MixTransport {
        * @return      error code
        */
       PetscErrorCode doWork(
-        int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+        int side,EntityType type,DataForcesAndSourcesCore::EntData &data
       ) {
         PetscFunctionBegin;
         try {
@@ -358,7 +358,7 @@ namespace MixTransport {
       VectorDouble divVec,nF;
       FTensor::Index<'i',3> i;
 
-      PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+      PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
         PetscFunctionBegin;
         const int nb_dofs = data.getIndices().size();
         if(nb_dofs==0) PetscFunctionReturn(0);
@@ -435,7 +435,7 @@ namespace MixTransport {
 
       VectorDouble nF;
 
-      PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+      PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
         PetscFunctionBegin;
         PetscFunctionBegin;
         const int nb_dofs = data.getIndices().size();
@@ -521,8 +521,8 @@ namespace MixTransport {
       PetscErrorCode doWork(
         int row_side,int col_side,
         EntityType row_type,EntityType col_type,
-        DataForcesAndSurcesCore::EntData &row_data,
-        DataForcesAndSurcesCore::EntData &col_data
+        DataForcesAndSourcesCore::EntData &row_data,
+        DataForcesAndSourcesCore::EntData &col_data
       ) {
         PetscFunctionBegin;
         try {
@@ -630,8 +630,8 @@ namespace MixTransport {
       PetscErrorCode doWork(
         int row_side,int col_side,
         EntityType row_type,EntityType col_type,
-        DataForcesAndSurcesCore::EntData &row_data,
-        DataForcesAndSurcesCore::EntData &col_data
+        DataForcesAndSourcesCore::EntData &row_data,
+        DataForcesAndSourcesCore::EntData &col_data
       ) {
         PetscFunctionBegin;
         try {
@@ -754,8 +754,8 @@ namespace MixTransport {
       PetscErrorCode doWork(
         int row_side,int col_side,
         EntityType row_type,EntityType col_type,
-        DataForcesAndSurcesCore::EntData &row_data,
-        DataForcesAndSurcesCore::EntData &col_data
+        DataForcesAndSourcesCore::EntData &row_data,
+        DataForcesAndSourcesCore::EntData &col_data
       ) {
         PetscFunctionBegin;
         try {
@@ -834,8 +834,8 @@ namespace MixTransport {
       PetscErrorCode doWork(
         int row_side,int col_side,
         EntityType row_type,EntityType col_type,
-        DataForcesAndSurcesCore::EntData &row_data,
-        DataForcesAndSurcesCore::EntData &col_data
+        DataForcesAndSourcesCore::EntData &row_data,
+        DataForcesAndSourcesCore::EntData &col_data
       ) {
         PetscFunctionBegin;
         try {
@@ -924,7 +924,7 @@ namespace MixTransport {
       MatrixDouble nN;
       VectorDouble nF;
 
-      PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+      PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
         PetscFunctionBegin;
         try {
           if(data.getFieldData().size()==0) PetscFunctionReturn(0);
@@ -1003,7 +1003,7 @@ namespace MixTransport {
        * @return      error code
        */
       PetscErrorCode doWork(
-        int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+        int side,EntityType type,DataForcesAndSourcesCore::EntData &data
       ) {
         PetscFunctionBegin;
         try {
@@ -1054,7 +1054,7 @@ namespace MixTransport {
         const std::string field_name
       ):
       MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator(
-        field_name,ForcesAndSurcesCore::UserDataOperator::OPROW
+        field_name,ForcesAndSourcesCore::UserDataOperator::OPROW
       ),
       cTx(ctx),
       postProcMesh(post_proc_mesh),
@@ -1064,7 +1064,7 @@ namespace MixTransport {
       PetscErrorCode doWork(
         int side,
         EntityType type,
-        DataForcesAndSurcesCore::EntData &data
+        DataForcesAndSourcesCore::EntData &data
       ) {
         PetscFunctionBegin;
         int nb_dofs = data.getFieldData().size();
@@ -1166,14 +1166,14 @@ namespace MixTransport {
 
         UnsaturatedFlowElement &cTx;
         boost::shared_ptr<PostProcVolumeOnRefinedMesh> postProc;
-        boost::shared_ptr<ForcesAndSurcesCore> fluxIntegrate;
+        boost::shared_ptr<ForcesAndSourcesCore> fluxIntegrate;
 
         const int fRequency;
 
         MonitorPostProc(
           UnsaturatedFlowElement &ctx,
           boost::shared_ptr<PostProcVolumeOnRefinedMesh>& post_proc,
-          boost::shared_ptr<ForcesAndSurcesCore> flux_Integrate,
+          boost::shared_ptr<ForcesAndSourcesCore> flux_Integrate,
           const int frequency
         ):
         cTx(ctx),
@@ -1375,11 +1375,11 @@ namespace MixTransport {
       PetscFunctionReturn(0);
     }
 
-    boost::shared_ptr<ForcesAndSurcesCore> feFaceBc;  ///< Elemnet to calculate essential bc
-    boost::shared_ptr<ForcesAndSurcesCore> feFaceRhs; ///< Face element apply natural bc
-    boost::shared_ptr<ForcesAndSurcesCore> feVolInitialPc;  ///< Calculate inital boundary conditions
-    boost::shared_ptr<ForcesAndSurcesCore> feVolRhs;  ///< Assemble resdiauls vector
-    boost::shared_ptr<ForcesAndSurcesCore> feVolLhs;  ///< Assemble tangent matrix
+    boost::shared_ptr<ForcesAndSourcesCore> feFaceBc;  ///< Elemnet to calculate essential bc
+    boost::shared_ptr<ForcesAndSourcesCore> feFaceRhs; ///< Face element apply natural bc
+    boost::shared_ptr<ForcesAndSourcesCore> feVolInitialPc;  ///< Calculate inital boundary conditions
+    boost::shared_ptr<ForcesAndSourcesCore> feVolRhs;  ///< Assemble resdiauls vector
+    boost::shared_ptr<ForcesAndSourcesCore> feVolLhs;  ///< Assemble tangent matrix
     boost::shared_ptr<MethodForForceScaling> scaleMethodFlux; ///< Method scaling fluxes
     boost::shared_ptr<MethodForForceScaling> scaleMethodValue; ///< Method scaling values
     boost::shared_ptr<FEMethod> tsMonitor;  ///< Element used by TS monitor to postprocess results at time step
@@ -1415,12 +1415,12 @@ namespace MixTransport {
      */
     struct preProcessVol {
       UnsaturatedFlowElement& cTx;
-      boost::shared_ptr<ForcesAndSurcesCore> fePtr;
+      boost::shared_ptr<ForcesAndSourcesCore> fePtr;
       //std::string mArk;
 
       preProcessVol(
         UnsaturatedFlowElement& ctx,
-        boost::shared_ptr<ForcesAndSurcesCore>& fe_ptr/*,std::string mark*/
+        boost::shared_ptr<ForcesAndSourcesCore>& fe_ptr/*,std::string mark*/
       ):
       cTx(ctx),
       fePtr(fe_ptr)/*,mArk(mark)*/ {
@@ -1481,11 +1481,11 @@ namespace MixTransport {
      */
     struct postProcessVol {
       UnsaturatedFlowElement& cTx;
-      boost::shared_ptr<ForcesAndSurcesCore> fePtr;
+      boost::shared_ptr<ForcesAndSourcesCore> fePtr;
       // std::string mArk;
       postProcessVol(
         UnsaturatedFlowElement& ctx,
-        boost::shared_ptr<ForcesAndSurcesCore>& fe_ptr//,std::string mark
+        boost::shared_ptr<ForcesAndSourcesCore>& fe_ptr//,std::string mark
       ):
       cTx(ctx),
       fePtr(fe_ptr)/*,mArk(mark)*/ {
@@ -1547,17 +1547,17 @@ namespace MixTransport {
      * @return error code
      */
     PetscErrorCode setFiniteElements(
-      ForcesAndSurcesCore::RuleHookFun vol_rule = VolRule(),
-      ForcesAndSurcesCore::RuleHookFun face_rule = FaceRule()
+      ForcesAndSourcesCore::RuleHookFun vol_rule = VolRule(),
+      ForcesAndSourcesCore::RuleHookFun face_rule = FaceRule()
     ) {
       PetscFunctionBegin;
 
       // create finite element instances
-      feFaceBc = boost::shared_ptr<ForcesAndSurcesCore>(new FaceElementForcesAndSourcesCore(mField));
-      feFaceRhs = boost::shared_ptr<ForcesAndSurcesCore>(new FaceElementForcesAndSourcesCore(mField));
-      feVolInitialPc = boost::shared_ptr<ForcesAndSurcesCore>(new VolumeElementForcesAndSourcesCore(mField));
-      feVolLhs = boost::shared_ptr<ForcesAndSurcesCore>(new VolumeElementForcesAndSourcesCore(mField));
-      feVolRhs = boost::shared_ptr<ForcesAndSurcesCore>(new VolumeElementForcesAndSourcesCore(mField));
+      feFaceBc = boost::shared_ptr<ForcesAndSourcesCore>(new FaceElementForcesAndSourcesCore(mField));
+      feFaceRhs = boost::shared_ptr<ForcesAndSourcesCore>(new FaceElementForcesAndSourcesCore(mField));
+      feVolInitialPc = boost::shared_ptr<ForcesAndSourcesCore>(new VolumeElementForcesAndSourcesCore(mField));
+      feVolLhs = boost::shared_ptr<ForcesAndSourcesCore>(new VolumeElementForcesAndSourcesCore(mField));
+      feVolRhs = boost::shared_ptr<ForcesAndSourcesCore>(new VolumeElementForcesAndSourcesCore(mField));
       // set integration rule to elements
       feFaceBc->getRuleHook = face_rule;
       feFaceRhs->getRuleHook = face_rule;
@@ -1598,7 +1598,7 @@ namespace MixTransport {
       feVolRhs->getOpPtrVector().push_back(new OpFluxDivergenceAtGaussPts(*this,"FLUXES"));
       feVolRhs->getOpPtrVector().push_back(new OpResidualFlux(*this,"FLUXES"));
       feVolRhs->getOpPtrVector().push_back(new OpResidualMass(*this,"VALUES"));
-      feVolRhs->getOpPtrVector().back().opType = ForcesAndSurcesCore::UserDataOperator::OPROW;
+      feVolRhs->getOpPtrVector().back().opType = ForcesAndSourcesCore::UserDataOperator::OPROW;
       // set tangent matrix finite element operators
       feVolLhs->getOpPtrVector().push_back(
         new OpCalculateScalarFieldValues(string("VALUES")+"_t",headRateAtGaussPts,MBTET)
@@ -1635,8 +1635,8 @@ namespace MixTransport {
       );
 
       // Integrate fluxes on boundary
-      boost::shared_ptr<ForcesAndSurcesCore> flux_integrate;
-      flux_integrate = boost::shared_ptr<ForcesAndSurcesCore>(
+      boost::shared_ptr<ForcesAndSourcesCore> flux_integrate;
+      flux_integrate = boost::shared_ptr<ForcesAndSourcesCore>(
         new FaceElementForcesAndSourcesCore(mField)
       );
       flux_integrate->getOpPtrVector().push_back(new OpIntegrateFluxes(*this,"FLUXES"));

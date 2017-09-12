@@ -1089,11 +1089,11 @@ We use smart pointers to create finite element instances, which gives code
 flexibility and safe memory management. Finite element instances are created in
 method MixTransport::UnsaturatedFlowElement::setFiniteElements, as follows
 \code
-feFaceBc = boost::shared_ptr<ForcesAndSurcesCore>(new FaceElementForcesAndSourcesCore(mField));
-feFaceRhs = boost::shared_ptr<ForcesAndSurcesCore>(new FaceElementForcesAndSourcesCore(mField));
-feVolInitialPc = boost::shared_ptr<ForcesAndSurcesCore>(new VolumeElementForcesAndSourcesCore(mField));
-feVolLhs = boost::shared_ptr<ForcesAndSurcesCore>(new VolumeElementForcesAndSourcesCore(mField));
-feVolRhs = boost::shared_ptr<ForcesAndSurcesCore>(new VolumeElementForcesAndSourcesCore(mField));
+feFaceBc = boost::shared_ptr<ForcesAndSourcesCore>(new FaceElementForcesAndSourcesCore(mField));
+feFaceRhs = boost::shared_ptr<ForcesAndSourcesCore>(new FaceElementForcesAndSourcesCore(mField));
+feVolInitialPc = boost::shared_ptr<ForcesAndSourcesCore>(new VolumeElementForcesAndSourcesCore(mField));
+feVolLhs = boost::shared_ptr<ForcesAndSourcesCore>(new VolumeElementForcesAndSourcesCore(mField));
+feVolRhs = boost::shared_ptr<ForcesAndSourcesCore>(new VolumeElementForcesAndSourcesCore(mField));
 \endcode
 Next, we set integration rule, as has been discussed in tutorial \ref poisson_tut1, as follows
 \code

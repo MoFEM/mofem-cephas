@@ -30,7 +30,7 @@ namespace MoFEM {
 * \ingroup mofem_forces_and_sources_user_data_operators
 */
 template<class T, class A>
-struct OpCalculateScalarFieldValues_General: public ForcesAndSurcesCore::UserDataOperator {
+struct OpCalculateScalarFieldValues_General: public ForcesAndSourcesCore::UserDataOperator {
 
   boost::shared_ptr<ublas::vector<T,A> > dataPtr;
   EntityHandle zeroType;
@@ -40,7 +40,7 @@ struct OpCalculateScalarFieldValues_General: public ForcesAndSurcesCore::UserDat
     boost::shared_ptr<ublas::vector<T,A> >& data_ptr,
     EntityType zero_type = MBVERTEX
   ):
-  ForcesAndSurcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROW),
+  ForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSourcesCore::UserDataOperator::OPROW),
   dataPtr(data_ptr),
   zeroType(zero_type) {
   }
@@ -53,7 +53,7 @@ struct OpCalculateScalarFieldValues_General: public ForcesAndSurcesCore::UserDat
    * @return      error code
    */
   PetscErrorCode doWork(
-    int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+    int side,EntityType type,DataForcesAndSourcesCore::EntData &data
   );
 
 };
@@ -64,7 +64,7 @@ struct OpCalculateScalarFieldValues_General: public ForcesAndSurcesCore::UserDat
 */
 template<class T, class A>
 PetscErrorCode OpCalculateScalarFieldValues_General<T,A>::doWork(
-  int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+  int side,EntityType type,DataForcesAndSourcesCore::EntData &data
 ) {
   PetscFunctionBegin;
   SETERRQ1(
@@ -102,7 +102,7 @@ public OpCalculateScalarFieldValues_General<double,DoubleAllacator> {
    * @return      error code
    */
   PetscErrorCode doWork(
-    int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+    int side,EntityType type,DataForcesAndSourcesCore::EntData &data
   ) {
     PetscFunctionBegin;
     const int nb_dofs = data.getFieldData().size();
@@ -150,7 +150,7 @@ public OpCalculateScalarFieldValues_General<double,DoubleAllacator> {
 * \ingroup mofem_forces_and_sources_user_data_operators
 */
 template<int Tensor_Dim, class T, class L, class A>
-struct OpCalculateVectorFieldValues_General: public ForcesAndSurcesCore::UserDataOperator {
+struct OpCalculateVectorFieldValues_General: public ForcesAndSourcesCore::UserDataOperator {
 
   boost::shared_ptr<ublas::matrix<T,L,A> > dataPtr;
   EntityHandle zeroType;
@@ -160,7 +160,7 @@ struct OpCalculateVectorFieldValues_General: public ForcesAndSurcesCore::UserDat
     boost::shared_ptr<ublas::matrix<T,L,A> >& data_ptr,
     EntityType zero_type = MBVERTEX
   ):
-  ForcesAndSurcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROW),
+  ForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSourcesCore::UserDataOperator::OPROW),
   dataPtr(data_ptr),
   zeroType(zero_type) {
   }
@@ -173,14 +173,14 @@ struct OpCalculateVectorFieldValues_General: public ForcesAndSurcesCore::UserDat
    * @return      error code
    */
   PetscErrorCode doWork(
-    int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+    int side,EntityType type,DataForcesAndSourcesCore::EntData &data
   );
 
 };
 
 template<int Tensor_Dim, class T, class L, class A>
 PetscErrorCode OpCalculateVectorFieldValues_General<Tensor_Dim,T,L,A>::doWork(
-  int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+  int side,EntityType type,DataForcesAndSourcesCore::EntData &data
 ) {
   PetscFunctionBegin;
   SETERRQ2(
@@ -198,7 +198,7 @@ PetscErrorCode OpCalculateVectorFieldValues_General<Tensor_Dim,T,L,A>::doWork(
 */
 template<int Tensor_Dim>
 struct OpCalculateVectorFieldValues_General<Tensor_Dim,double,ublas::row_major,DoubleAllacator >:
-  public ForcesAndSurcesCore::UserDataOperator {
+  public ForcesAndSourcesCore::UserDataOperator {
 
   boost::shared_ptr<MatrixDouble> dataPtr;
   EntityHandle zeroType;
@@ -208,13 +208,13 @@ struct OpCalculateVectorFieldValues_General<Tensor_Dim,double,ublas::row_major,D
     boost::shared_ptr<MatrixDouble>& data_ptr,
     EntityType zero_type = MBVERTEX
   ):
-  ForcesAndSurcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROW),
+  ForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSourcesCore::UserDataOperator::OPROW),
   dataPtr(data_ptr),
   zeroType(zero_type) {
   }
 
   PetscErrorCode doWork(
-    int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+    int side,EntityType type,DataForcesAndSourcesCore::EntData &data
   );
 
 };
@@ -225,7 +225,7 @@ struct OpCalculateVectorFieldValues_General<Tensor_Dim,double,ublas::row_major,D
  */
 template<int Tensor_Dim>
 PetscErrorCode OpCalculateVectorFieldValues_General<Tensor_Dim,double,ublas::row_major,DoubleAllacator >::doWork(
-  int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+  int side,EntityType type,DataForcesAndSourcesCore::EntData &data
 ) {
   PetscFunctionBegin;
   const int nb_dofs = data.getFieldData().size();
@@ -295,7 +295,7 @@ public OpCalculateVectorFieldValues_General<Tensor_Dim,double,ublas::row_major,D
 * \ingroup mofem_forces_and_sources_user_data_operators
 */
 template<int Tensor_Dim0,int Tensor_Dim1, class T, class L, class A>
-struct OpCalculateTensor2FieldValues_General: public ForcesAndSurcesCore::UserDataOperator {
+struct OpCalculateTensor2FieldValues_General: public ForcesAndSourcesCore::UserDataOperator {
 
   boost::shared_ptr<ublas::matrix<T,L,A> > dataPtr;
   EntityHandle zeroType;
@@ -305,20 +305,20 @@ struct OpCalculateTensor2FieldValues_General: public ForcesAndSurcesCore::UserDa
     boost::shared_ptr<ublas::matrix<T,L,A> >& data_ptr,
     EntityType zero_type = MBVERTEX
   ):
-  ForcesAndSurcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROW),
+  ForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSourcesCore::UserDataOperator::OPROW),
   dataPtr(data_ptr),
   zeroType(zero_type) {
   }
 
   PetscErrorCode doWork(
-    int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+    int side,EntityType type,DataForcesAndSourcesCore::EntData &data
   );
 
 };
 
 template<int Tensor_Dim0, int Tensor_Dim1, class T, class L, class A>
 PetscErrorCode OpCalculateTensor2FieldValues_General<Tensor_Dim0,Tensor_Dim1,T,L,A>::doWork(
-  int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+  int side,EntityType type,DataForcesAndSourcesCore::EntData &data
 ) {
   PetscFunctionBegin;
   SETERRQ3(
@@ -335,7 +335,7 @@ PetscErrorCode OpCalculateTensor2FieldValues_General<Tensor_Dim0,Tensor_Dim1,T,L
 template<int Tensor_Dim0,int Tensor_Dim1>
 struct OpCalculateTensor2FieldValues_General<
 Tensor_Dim0,Tensor_Dim1,double,ublas::row_major,DoubleAllacator
->: public ForcesAndSurcesCore::UserDataOperator {
+>: public ForcesAndSourcesCore::UserDataOperator {
 
   boost::shared_ptr<ublas::matrix<double,ublas::row_major,DoubleAllacator > > dataPtr;
   EntityHandle zeroType;
@@ -345,13 +345,13 @@ Tensor_Dim0,Tensor_Dim1,double,ublas::row_major,DoubleAllacator
     boost::shared_ptr<ublas::matrix<double,ublas::row_major,DoubleAllacator > >& data_ptr,
     EntityType zero_type = MBVERTEX
   ):
-  ForcesAndSurcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROW),
+  ForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSourcesCore::UserDataOperator::OPROW),
   dataPtr(data_ptr),
   zeroType(zero_type) {
   }
 
   PetscErrorCode doWork(
-    int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+    int side,EntityType type,DataForcesAndSourcesCore::EntData &data
   );
 
 };
@@ -360,7 +360,7 @@ template<int Tensor_Dim0,int Tensor_Dim1>
 PetscErrorCode OpCalculateTensor2FieldValues_General<
 Tensor_Dim0,Tensor_Dim1, double, ublas::row_major, DoubleAllacator
 >::doWork(
-  int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+  int side,EntityType type,DataForcesAndSourcesCore::EntData &data
 ) {
   PetscFunctionBegin;
   SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"Not implemented yet");
@@ -414,7 +414,7 @@ public OpCalculateVectorFieldValues_General<Tensor_Dim,double,ublas::row_major,D
    * @return      error code
    */
   PetscErrorCode doWork(
-    int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+    int side,EntityType type,DataForcesAndSourcesCore::EntData &data
   );
 
 };
@@ -425,7 +425,7 @@ public OpCalculateVectorFieldValues_General<Tensor_Dim,double,ublas::row_major,D
  */
 template<int Tensor_Dim>
 PetscErrorCode OpCalculateScalarFieldGradient_General<Tensor_Dim,double,ublas::row_major,DoubleAllacator >::doWork(
-  int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+  int side,EntityType type,DataForcesAndSourcesCore::EntData &data
 ) {
   PetscFunctionBegin;
   const int nb_dofs = data.getFieldData().size();
@@ -525,7 +525,7 @@ public OpCalculateTensor2FieldValues_General<Tensor_Dim0,Tensor_Dim1,double,ubla
    * @return      error code
    */
   PetscErrorCode doWork(
-    int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+    int side,EntityType type,DataForcesAndSourcesCore::EntData &data
   );
 
 };
@@ -538,7 +538,7 @@ template<int Tensor_Dim0,int Tensor_Dim1>
 PetscErrorCode OpCalculateVectorFieldGradient_General<
 Tensor_Dim0,Tensor_Dim1,double,ublas::row_major,DoubleAllacator
 >::doWork(
-  int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+  int side,EntityType type,DataForcesAndSourcesCore::EntData &data
 ) {
   PetscFunctionBegin;
   const int nb_dofs = data.getFieldData().size();
@@ -602,7 +602,7 @@ public OpCalculateVectorFieldGradient_General<Tensor_Dim0,Tensor_Dim1,double,ubl
 * \ingroup mofem_forces_and_sources_user_data_operators
 */
 template<int Tensor_Dim0,class T, class L, class A>
-struct OpCalculateHdivVectorField_General: public ForcesAndSurcesCore::UserDataOperator {
+struct OpCalculateHdivVectorField_General: public ForcesAndSourcesCore::UserDataOperator {
 
   boost::shared_ptr<ublas::matrix<T,L,A> > dataPtr;
   EntityHandle zeroType;
@@ -614,7 +614,7 @@ struct OpCalculateHdivVectorField_General: public ForcesAndSurcesCore::UserDataO
     EntityType zero_type = MBTRI,
     int zero_side = 0
   ):
-  ForcesAndSurcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROW),
+  ForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSourcesCore::UserDataOperator::OPROW),
   dataPtr(data_ptr),
   zeroType(zero_type),
   zero_side(0) {
@@ -628,14 +628,14 @@ struct OpCalculateHdivVectorField_General: public ForcesAndSurcesCore::UserDataO
    * @return      error code
    */
   PetscErrorCode doWork(
-    int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+    int side,EntityType type,DataForcesAndSourcesCore::EntData &data
   );
 
 };
 
 template<int Tensor_Dim, class T, class L, class A>
 PetscErrorCode OpCalculateHdivVectorField_General<Tensor_Dim,T,L,A>::doWork(
-  int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+  int side,EntityType type,DataForcesAndSourcesCore::EntData &data
 ) {
   PetscFunctionBegin;
   SETERRQ2(
@@ -653,7 +653,7 @@ PetscErrorCode OpCalculateHdivVectorField_General<Tensor_Dim,T,L,A>::doWork(
 */
 template<int Tensor_Dim>
 struct OpCalculateHdivVectorField_General<Tensor_Dim,double,ublas::row_major,DoubleAllacator>:
-public ForcesAndSurcesCore::UserDataOperator {
+public ForcesAndSourcesCore::UserDataOperator {
 
   boost::shared_ptr<MatrixDouble> dataPtr;
   EntityHandle zeroType;
@@ -665,7 +665,7 @@ public ForcesAndSurcesCore::UserDataOperator {
     EntityType zero_type = MBTRI,
     int zero_side = 0
   ):
-  ForcesAndSurcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROW),
+  ForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSourcesCore::UserDataOperator::OPROW),
   dataPtr(data_ptr),
   zeroType(zero_type),
   zero_side(0) {
@@ -679,14 +679,14 @@ public ForcesAndSurcesCore::UserDataOperator {
    * @return      error code
    */
   PetscErrorCode doWork(
-    int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+    int side,EntityType type,DataForcesAndSourcesCore::EntData &data
   );
 
 };
 
 template<int Tensor_Dim>
 PetscErrorCode OpCalculateHdivVectorField_General<Tensor_Dim,double,ublas::row_major,DoubleAllacator>::doWork(
-  int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+  int side,EntityType type,DataForcesAndSourcesCore::EntData &data
 ) {
   PetscFunctionBegin;
   const int nb_dofs = data.getFieldData().size();

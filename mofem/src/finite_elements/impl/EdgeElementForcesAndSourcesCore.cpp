@@ -1,4 +1,4 @@
-/** \file EdgeElementForcesAndSurcesCore.cpp
+/** \file EdgeElementForcesAndSourcesCore.cpp
 
 \brief Implementation of edge element
 
@@ -59,8 +59,8 @@
 #include <EntPolynomialBaseCtx.hpp>
 #include <EdgePolynomialBase.hpp> // Base functions on tet
 #include <DataOperators.hpp>
-#include <ForcesAndSurcesCore.hpp>
-#include <EdgeElementForcesAndSurcesCore.hpp>
+#include <ForcesAndSourcesCore.hpp>
+#include <EdgeElementForcesAndSourcesCore.hpp>
 
 #ifdef __cplusplus
 extern "C" {
@@ -75,7 +75,7 @@ extern "C" {
 
 namespace MoFEM {
 
-PetscErrorCode EdgeElementForcesAndSurcesCore::operator()() {
+PetscErrorCode EdgeElementForcesAndSourcesCore::operator()() {
   PetscFunctionBegin;
 
   if(numeredEntFiniteElementPtr->getEntType() != MBEDGE) PetscFunctionReturn(0);
@@ -232,7 +232,7 @@ PetscErrorCode EdgeElementForcesAndSurcesCore::operator()() {
     UserDataOperator::OPROW, UserDataOperator::OPCOL
   };
   std::vector<std::string> last_eval_field_name(2);
-  DataForcesAndSurcesCore *op_data[2];
+  DataForcesAndSourcesCore *op_data[2];
   FieldSpace space[2];
   FieldApproximationBase base[2];
 

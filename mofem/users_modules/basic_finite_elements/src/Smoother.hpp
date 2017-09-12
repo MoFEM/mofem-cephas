@@ -205,7 +205,7 @@ struct Smoother {
     ublas::vector<int> frontIndices;
 
     PetscErrorCode aSemble(
-      int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data
+      int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
     ) {
       PetscFunctionBegin;
 
@@ -279,8 +279,8 @@ struct Smoother {
     PetscErrorCode aSemble(
       int row_side,int col_side,
       EntityType row_type,EntityType col_type,
-      DataForcesAndSurcesCore::EntData &row_data,
-      DataForcesAndSurcesCore::EntData &col_data
+      DataForcesAndSourcesCore::EntData &row_data,
+      DataForcesAndSourcesCore::EntData &col_data
     ) {
       PetscFunctionBegin;
 

@@ -65,8 +65,8 @@ struct FieldApproximationH1 {
     PetscErrorCode doWork(
       int row_side,int col_side,
       EntityType row_type,EntityType col_type,
-      DataForcesAndSurcesCore::EntData &row_data,
-      DataForcesAndSurcesCore::EntData &col_data) {
+      DataForcesAndSourcesCore::EntData &row_data,
+      DataForcesAndSourcesCore::EntData &col_data) {
       PetscFunctionBegin;
 
       if(A == PETSC_NULL) PetscFunctionReturn(0);
@@ -172,7 +172,7 @@ struct FieldApproximationH1 {
     /** \brief calculate vector
       */
     PetscErrorCode doWork(
-      int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+      int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
       PetscFunctionBegin;
 
       if(data.getIndices().size()==0) PetscFunctionReturn(0);
@@ -291,8 +291,8 @@ struct FieldApproximationH1 {
     PetscErrorCode doWork(
       int row_side,int col_side,
       EntityType row_type,EntityType col_type,
-      DataForcesAndSurcesCore::EntData &row_data,
-      DataForcesAndSurcesCore::EntData &col_data) {
+      DataForcesAndSourcesCore::EntData &row_data,
+      DataForcesAndSourcesCore::EntData &col_data) {
       PetscFunctionBegin;
 
       if(A == PETSC_NULL) PetscFunctionReturn(0);
@@ -381,7 +381,7 @@ struct FieldApproximationH1 {
     /** \brief calculate vector
       */
     PetscErrorCode doWork(
-      int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+      int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
       PetscFunctionBegin;
 
       if(data.getIndices().size()==0) PetscFunctionReturn(0);

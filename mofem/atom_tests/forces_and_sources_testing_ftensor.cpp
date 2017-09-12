@@ -167,7 +167,7 @@ int main(int argc, char *argv[]) {
     PetscErrorCode doWork(
       int side,
       EntityType type,
-      DataForcesAndSurcesCore::EntData &data) {
+      DataForcesAndSourcesCore::EntData &data) {
       PetscFunctionBegin;
 
       FTensor::Tensor2<double,3,3,row_major> t2;
@@ -274,8 +274,8 @@ int main(int argc, char *argv[]) {
     PetscErrorCode doWork(
       int row_side,int col_side,
       EntityType row_type,EntityType col_type,
-      DataForcesAndSurcesCore::EntData &row_data,
-      DataForcesAndSurcesCore::EntData &col_data
+      DataForcesAndSourcesCore::EntData &row_data,
+      DataForcesAndSourcesCore::EntData &col_data
     ) {
       PetscFunctionBegin;
       //
@@ -352,7 +352,7 @@ int main(int argc, char *argv[]) {
       grad1_at_gauss_pts_ptr,
       grad2_at_gauss_pts_ptr,
       my_split,
-      ForcesAndSurcesCore::UserDataOperator::OPROW
+      ForcesAndSourcesCore::UserDataOperator::OPROW
     )
   );
   fe1.getOpPtrVector().push_back(
@@ -362,7 +362,7 @@ int main(int argc, char *argv[]) {
       grad1_at_gauss_pts_ptr,
       grad2_at_gauss_pts_ptr,
       my_split,
-      ForcesAndSurcesCore::UserDataOperator::OPROWCOL
+      ForcesAndSourcesCore::UserDataOperator::OPROWCOL
     )
   );
 

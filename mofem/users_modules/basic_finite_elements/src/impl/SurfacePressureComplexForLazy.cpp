@@ -94,7 +94,7 @@ FaceElementForcesAndSourcesCore::UserDataOperator(field_name,type),
 myPtr(my_ptr) {};
 
 PetscErrorCode NeummanForcesSurfaceComplexForLazy::
-  AuxMethodSpatial::doWork(int side, EntityType type, DataForcesAndSurcesCore::EntData &data) {
+  AuxMethodSpatial::doWork(int side, EntityType type, DataForcesAndSourcesCore::EntData &data) {
   PetscFunctionBegin;
 
   try {
@@ -156,7 +156,7 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::
 }
 
 PetscErrorCode NeummanForcesSurfaceComplexForLazy::
-  AuxMethodMaterial::doWork(int side, EntityType type, DataForcesAndSurcesCore::EntData &data) {
+  AuxMethodMaterial::doWork(int side, EntityType type, DataForcesAndSourcesCore::EntData &data) {
   PetscFunctionBegin;
 
   //cerr << "AuxMethodMaterial\n";
@@ -233,9 +233,9 @@ NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::MyTriangleSpatialFE
   snes_f = _F;
 
   if(mField.check_field("MESH_NODE_POSITIONS")) {
-    getOpPtrVector().push_back(new AuxMethodMaterial("MESH_NODE_POSITIONS",this,ForcesAndSurcesCore::UserDataOperator::OPROW));
+    getOpPtrVector().push_back(new AuxMethodMaterial("MESH_NODE_POSITIONS",this,ForcesAndSourcesCore::UserDataOperator::OPROW));
   }
-  getOpPtrVector().push_back(new AuxMethodSpatial("SPATIAL_POSITION",this,ForcesAndSurcesCore::UserDataOperator::OPROW));
+  getOpPtrVector().push_back(new AuxMethodSpatial("SPATIAL_POSITION",this,ForcesAndSourcesCore::UserDataOperator::OPROW));
 
 }
 

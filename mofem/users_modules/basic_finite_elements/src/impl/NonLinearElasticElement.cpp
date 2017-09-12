@@ -136,7 +136,7 @@ NonlinearElasticElement::OpGetDataAtGaussPts::OpGetDataAtGaussPts(const std::str
   zeroAtType(MBVERTEX) {}
 
 PetscErrorCode NonlinearElasticElement::OpGetDataAtGaussPts::doWork(
-  int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+  int side,EntityType type,DataForcesAndSourcesCore::EntData &data
 ) {
   PetscFunctionBegin;
   try {
@@ -405,7 +405,7 @@ PetscErrorCode NonlinearElasticElement::OpJacobianPiolaKirchhoffStress::playTag(
 }
 
 PetscErrorCode NonlinearElasticElement::OpJacobianPiolaKirchhoffStress::doWork(
-  int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data
+  int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
 ) {
   PetscFunctionBegin;
 
@@ -627,7 +627,7 @@ PetscErrorCode NonlinearElasticElement::OpJacobianEnergy::playTag(const int gg) 
 }
 
 PetscErrorCode NonlinearElasticElement::OpJacobianEnergy::doWork(
-  int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data
+  int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
 ) {
   PetscFunctionBegin;
   PetscFunctionBegin;
@@ -706,7 +706,7 @@ NonlinearElasticElement::OpRhsPiolaKirchhoff::OpRhsPiolaKirchhoff(const std::str
   aLe(false) {}
 
 PetscErrorCode NonlinearElasticElement::OpRhsPiolaKirchhoff::aSemble(
-  int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data
+  int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
 ) {
   PetscFunctionBegin;
 
@@ -735,7 +735,7 @@ PetscErrorCode NonlinearElasticElement::OpRhsPiolaKirchhoff::aSemble(
 }
 
 PetscErrorCode NonlinearElasticElement::OpRhsPiolaKirchhoff::doWork(
-  int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data
+  int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
 ) {
   PetscFunctionBegin;
 
@@ -804,7 +804,7 @@ fieldDisp(field_disp) {
 }
 
 PetscErrorCode NonlinearElasticElement::OpEnergy::doWork(
-  int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data
+  int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
 ) {
   PetscFunctionBegin;
 
@@ -857,7 +857,7 @@ aLe(false) {
 }
 
 PetscErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dx::getJac(
-  DataForcesAndSurcesCore::EntData &col_data,int gg
+  DataForcesAndSourcesCore::EntData &col_data,int gg
 ) {
   PetscFunctionBegin;
   jac.clear();
@@ -902,8 +902,8 @@ PetscErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dx::getJac(
 PetscErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dx::aSemble(
   int row_side,int col_side,
   EntityType row_type,EntityType col_type,
-  DataForcesAndSurcesCore::EntData &row_data,
-  DataForcesAndSurcesCore::EntData &col_data
+  DataForcesAndSourcesCore::EntData &row_data,
+  DataForcesAndSourcesCore::EntData &col_data
 ) {
   PetscFunctionBegin;
 
@@ -1003,8 +1003,8 @@ PetscErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dx::aSemble(
 PetscErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dx::doWork(
   int row_side,int col_side,
   EntityType row_type,EntityType col_type,
-  DataForcesAndSurcesCore::EntData &row_data,
-  DataForcesAndSurcesCore::EntData &col_data
+  DataForcesAndSourcesCore::EntData &row_data,
+  DataForcesAndSourcesCore::EntData &col_data
 ) {
   PetscFunctionBegin;
 
@@ -1078,7 +1078,7 @@ NonlinearElasticElement::OpLhsPiolaKirchhoff_dX::OpLhsPiolaKirchhoff_dX(
   OpLhsPiolaKirchhoff_dx(vel_field,field_name,data,common_data)
   { sYmm = false; }
 
-PetscErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dX::getJac(DataForcesAndSurcesCore::EntData &col_data,int gg) {
+PetscErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dX::getJac(DataForcesAndSourcesCore::EntData &col_data,int gg) {
   PetscFunctionBegin;
   jac.clear();
   int nb_col = col_data.getFieldData().size();
@@ -1098,8 +1098,8 @@ PetscErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dX::getJac(DataForce
 PetscErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dX::aSemble(
   int row_side,int col_side,
   EntityType row_type,EntityType col_type,
-  DataForcesAndSurcesCore::EntData &row_data,
-  DataForcesAndSurcesCore::EntData &col_data
+  DataForcesAndSourcesCore::EntData &row_data,
+  DataForcesAndSourcesCore::EntData &col_data
 ) {
   PetscFunctionBegin;
 
@@ -1195,7 +1195,7 @@ NonlinearElasticElement::OpLhsEshelby_dx::OpLhsEshelby_dx(
 ):
 OpLhsPiolaKirchhoff_dX(vel_field,field_name,data,common_data) {}
 
-PetscErrorCode NonlinearElasticElement::OpLhsEshelby_dx::getJac(DataForcesAndSurcesCore::EntData &col_data,int gg) {
+PetscErrorCode NonlinearElasticElement::OpLhsEshelby_dx::getJac(DataForcesAndSourcesCore::EntData &col_data,int gg) {
   PetscFunctionBegin;
   jac.clear();
   FTensor::Index<'i',3> i;
@@ -1251,7 +1251,7 @@ NonlinearElasticElement::OpLhsEshelby_dX::OpLhsEshelby_dX(
 OpLhsPiolaKirchhoff_dx(vel_field,field_name,data,common_data)
 {}
 
-PetscErrorCode NonlinearElasticElement::OpLhsEshelby_dX::getJac(DataForcesAndSurcesCore::EntData &col_data,int gg) {
+PetscErrorCode NonlinearElasticElement::OpLhsEshelby_dX::getJac(DataForcesAndSourcesCore::EntData &col_data,int gg) {
   PetscFunctionBegin;
   jac.clear();
   FTensor::Index<'i',3> i;

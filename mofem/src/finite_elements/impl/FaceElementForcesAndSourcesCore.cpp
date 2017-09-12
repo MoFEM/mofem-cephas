@@ -53,7 +53,7 @@
 #include <FTensor.hpp>
 #include <DataStructures.hpp>
 #include <DataOperators.hpp>
-#include <ForcesAndSurcesCore.hpp>
+#include <ForcesAndSourcesCore.hpp>
 #include <VolumeElementForcesAndSourcesCore.hpp>
 #include <FaceElementForcesAndSourcesCore.hpp>
 
@@ -451,7 +451,7 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
     UserDataOperator::OPROW, UserDataOperator::OPCOL
   };
   std::vector<std::string> last_eval_field_name(2);
-  DataForcesAndSurcesCore *op_data[2];
+  DataForcesAndSourcesCore *op_data[2];
   FieldSpace space[2];
   FieldApproximationBase base[2];
 
@@ -676,7 +676,7 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
 PetscErrorCode OpCalculateInvJacForFace::doWork(
   int side,
   EntityType type,
-  DataForcesAndSurcesCore::EntData &data
+  DataForcesAndSourcesCore::EntData &data
 ) {
   
   PetscFunctionBegin;
@@ -731,7 +731,7 @@ PetscErrorCode OpCalculateInvJacForFace::doWork(
 PetscErrorCode OpSetInvJacH1ForFace::doWork(
   int side,
   EntityType type,
-  DataForcesAndSurcesCore::EntData &data
+  DataForcesAndSourcesCore::EntData &data
 ) {
   PetscFunctionBegin;
   // 
@@ -807,7 +807,7 @@ PetscErrorCode OpSetInvJacH1ForFace::doWork(
 }
 
 PetscErrorCode OpSetInvJacHcurlFace::doWork(
-  int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+  int side,EntityType type,DataForcesAndSourcesCore::EntData &data
 ) {
   PetscFunctionBegin;
 

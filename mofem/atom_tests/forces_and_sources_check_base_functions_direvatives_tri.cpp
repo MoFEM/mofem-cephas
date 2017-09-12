@@ -169,7 +169,7 @@ int main(int argc, char *argv[]) {
     PetscErrorCode doWork(
       int side,
       EntityType type,
-      DataForcesAndSurcesCore::EntData &data
+      DataForcesAndSourcesCore::EntData &data
     ) {
       PetscFunctionBegin;
 

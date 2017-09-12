@@ -38,7 +38,7 @@ namespace MoFEM {
     const NumeredEntFiniteElement *fePtr;
 
     FlatPrismPolynomialBaseCtx(
-      DataForcesAndSurcesCore &data,
+      DataForcesAndSourcesCore &data,
       moab::Interface &moab,
       const NumeredEntFiniteElement *fe_ptr,
       const FieldSpace space,

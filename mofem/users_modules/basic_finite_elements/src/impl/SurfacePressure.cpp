@@ -44,7 +44,7 @@ hoGeometry(ho_geometry) {
 }
 
 PetscErrorCode NeummanForcesSurface::OpNeumannForce::doWork(
-  int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+  int side,EntityType type,DataForcesAndSourcesCore::EntData &data
 ) {
 
   PetscFunctionBegin;
@@ -134,7 +134,7 @@ hoGeometry(ho_geometry) {
 }
 
 PetscErrorCode NeummanForcesSurface::OpNeumannForceAnalytical::doWork(
-  int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+  int side,EntityType type,DataForcesAndSourcesCore::EntData &data
 ) {
   PetscFunctionBegin;
 
@@ -226,7 +226,7 @@ methodsOp(methods_op),
 hoGeometry(ho_geometry) {}
 
 PetscErrorCode NeummanForcesSurface::OpNeumannPreassure::doWork(
-  int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+  int side,EntityType type,DataForcesAndSourcesCore::EntData &data
 ) {
 
   PetscFunctionBegin;
@@ -309,7 +309,7 @@ methodsOp(methods_op),
 hoGeometry(ho_geometry) {}
 
 PetscErrorCode NeummanForcesSurface::OpNeumannFlux::doWork(
-  int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+  int side,EntityType type,DataForcesAndSourcesCore::EntData &data
 ) {
 
   PetscFunctionBegin;

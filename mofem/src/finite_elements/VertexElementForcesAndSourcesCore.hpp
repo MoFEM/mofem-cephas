@@ -1,4 +1,4 @@
-/** \file ForcesAndSurcesCore.hpp
+/** \file ForcesAndSourcesCore.hpp
 
   \brief Implementation of elements on entities.
 
@@ -38,15 +38,15 @@ namespace MoFEM {
  rowColOpPtrVector.
 
  */
-struct VertexElementForcesAndSourcesCore: public ForcesAndSurcesCore {
+struct VertexElementForcesAndSourcesCore: public ForcesAndSourcesCore {
 
-  DataForcesAndSurcesCore data;
-  DerivedDataForcesAndSurcesCore derivedData;
-  DataForcesAndSurcesCore dataNoField,dataNoFieldCol;
+  DataForcesAndSourcesCore data;
+  DerivedDataForcesAndSourcesCore derivedData;
+  DataForcesAndSourcesCore dataNoField,dataNoFieldCol;
   std::string meshPositionsFieldName;
 
   VertexElementForcesAndSourcesCore(Interface &m_field):
-    ForcesAndSurcesCore(m_field),
+    ForcesAndSourcesCore(m_field),
     data(MBVERTEX),
     derivedData(data),
     dataNoField(MBVERTEX),
@@ -59,15 +59,15 @@ struct VertexElementForcesAndSourcesCore: public ForcesAndSurcesCore {
   /** \brief default operator for VERTEX element
     \ingroup mofem_forces_and_sources_vertex_element
     */
-  struct UserDataOperator: public ForcesAndSurcesCore::UserDataOperator {
+  struct UserDataOperator: public ForcesAndSourcesCore::UserDataOperator {
 
     UserDataOperator(
       const std::string &field_name,const char type):
-      ForcesAndSurcesCore::UserDataOperator(field_name,type) {}
+      ForcesAndSourcesCore::UserDataOperator(field_name,type) {}
 
     UserDataOperator(
       const std::string &row_field_name,const std::string &col_field_name,const char type):
-      ForcesAndSurcesCore::UserDataOperator(row_field_name,col_field_name,type) {}
+      ForcesAndSourcesCore::UserDataOperator(row_field_name,col_field_name,type) {}
 
     inline VectorDouble& getCoords() {
       return static_cast<VertexElementForcesAndSourcesCore*>(ptrFE)->coords;
@@ -78,6 +78,9 @@ struct VertexElementForcesAndSourcesCore: public ForcesAndSurcesCore {
   PetscErrorCode operator()();
 
 };
+
+/// \deprecated Use VertexElementForcesAndSourcesCore
+DEPRECATED typedef VertexElementForcesAndSourcesCore VertexElementForcesAndSurcesCore;
 
 }
 

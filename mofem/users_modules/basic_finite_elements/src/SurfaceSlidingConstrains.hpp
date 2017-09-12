@@ -318,7 +318,7 @@ struct SurfaceSlidingConstrains {
     }
 
 
-    PetscErrorCode matrixN(int gg,DataForcesAndSurcesCore::EntData &data) {
+    PetscErrorCode matrixN(int gg,DataForcesAndSourcesCore::EntData &data) {
       PetscFunctionBegin;
       try {
 
@@ -339,7 +339,7 @@ struct SurfaceSlidingConstrains {
       PetscFunctionReturn(0);
     }
 
-    PetscErrorCode matrixB(int gg,DataForcesAndSurcesCore::EntData &data) {
+    PetscErrorCode matrixB(int gg,DataForcesAndSourcesCore::EntData &data) {
       PetscFunctionBegin;
       try {
         int nb_dofs = data.getN().size2();
@@ -398,7 +398,7 @@ struct SurfaceSlidingConstrains {
     oRientation(orientation)
     {}
 
-    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
       PetscFunctionBegin;
 
 
@@ -455,7 +455,7 @@ struct SurfaceSlidingConstrains {
     }
 
 
-    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
       PetscFunctionBegin;
       //
 
@@ -532,7 +532,7 @@ struct SurfaceSlidingConstrains {
     ublas::vector<int> rowIndices;
 
     PetscErrorCode doWork(
-      int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data
+      int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
     ) {
 
 
@@ -623,7 +623,7 @@ struct SurfaceSlidingConstrains {
     VectorDouble g,dElta;
 
     PetscErrorCode doWork(
-      int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data
+      int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
     ) {
 
 
@@ -723,8 +723,8 @@ struct SurfaceSlidingConstrains {
     PetscErrorCode doWork(
       int row_side,int col_side,
       EntityType row_type,EntityType col_type,
-      DataForcesAndSurcesCore::EntData &row_data,
-      DataForcesAndSurcesCore::EntData &col_data
+      DataForcesAndSourcesCore::EntData &row_data,
+      DataForcesAndSourcesCore::EntData &col_data
     ) {
       PetscFunctionBegin;
 
@@ -851,8 +851,8 @@ struct SurfaceSlidingConstrains {
     PetscErrorCode doWork(
       int row_side,int col_side,
       EntityType row_type,EntityType col_type,
-      DataForcesAndSurcesCore::EntData &row_data,
-      DataForcesAndSurcesCore::EntData &col_data
+      DataForcesAndSourcesCore::EntData &row_data,
+      DataForcesAndSourcesCore::EntData &col_data
     ) {
       PetscFunctionBegin;
 
@@ -963,8 +963,8 @@ struct SurfaceSlidingConstrains {
     PetscErrorCode doWork(
       int row_side,int col_side,
       EntityType row_type,EntityType col_type,
-      DataForcesAndSurcesCore::EntData &row_data,
-      DataForcesAndSurcesCore::EntData &col_data
+      DataForcesAndSourcesCore::EntData &row_data,
+      DataForcesAndSourcesCore::EntData &col_data
     ) {
       PetscFunctionBegin;
 

@@ -61,7 +61,7 @@ PetscErrorCode FlatPrismPolynomialBaseCtx::queryInterface(const MOFEMuuid& uuid,
 }
 
 FlatPrismPolynomialBaseCtx::FlatPrismPolynomialBaseCtx(
-  DataForcesAndSurcesCore &data,
+  DataForcesAndSourcesCore &data,
   moab::Interface &moab,
   const NumeredEntFiniteElement *fe_ptr,
   const FieldSpace space,
@@ -128,7 +128,7 @@ PetscErrorCode FlatPrismPolynomialBase::getValue(
   }
 
   const FieldApproximationBase base = cTx->bAse;
-  DataForcesAndSurcesCore& data = cTx->dAta;
+  DataForcesAndSourcesCore& data = cTx->dAta;
 
   if(cTx->copyNodeBase==LASTBASE) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"Not implemented");
@@ -213,7 +213,7 @@ PetscErrorCode FlatPrismPolynomialBase::getValueH1(MatrixDouble &pts) {
   
   PetscFunctionBegin;
 
-  DataForcesAndSurcesCore& data = cTx->dAta;
+  DataForcesAndSourcesCore& data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
   PetscErrorCode (*base_polynomials)(
     int p,double s,double *diff_s,double *L,double *diffL,const int dim

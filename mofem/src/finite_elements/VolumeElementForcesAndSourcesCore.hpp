@@ -36,22 +36,22 @@ namespace MoFEM {
  number of operator can be added by pushing objects to OpPtrVector
 
  */
-struct VolumeElementForcesAndSourcesCore: public ForcesAndSurcesCore {
+struct VolumeElementForcesAndSourcesCore: public ForcesAndSourcesCore {
 
   VectorDouble coords;
   MatrixDouble3by3 jAc;
   MatrixDouble3by3 invJac;
 
-  DataForcesAndSurcesCore dataH1;
-  DerivedDataForcesAndSurcesCore derivedDataH1;
-  DataForcesAndSurcesCore dataL2;
-  DerivedDataForcesAndSurcesCore derivedDataL2;
-  DataForcesAndSurcesCore dataHdiv;
-  DerivedDataForcesAndSurcesCore derivedDataHdiv;
-  DataForcesAndSurcesCore dataHcurl;
-  DerivedDataForcesAndSurcesCore derivedDataHcurl;
-  DataForcesAndSurcesCore dataNoField;
-  DataForcesAndSurcesCore dataNoFieldCol;
+  DataForcesAndSourcesCore dataH1;
+  DerivedDataForcesAndSourcesCore derivedDataH1;
+  DataForcesAndSourcesCore dataL2;
+  DerivedDataForcesAndSourcesCore derivedDataL2;
+  DataForcesAndSourcesCore dataHdiv;
+  DerivedDataForcesAndSourcesCore derivedDataHdiv;
+  DataForcesAndSourcesCore dataHcurl;
+  DerivedDataForcesAndSourcesCore derivedDataHcurl;
+  DataForcesAndSourcesCore dataNoField;
+  DataForcesAndSourcesCore dataNoFieldCol;
 
   OpSetInvJacH1 opSetInvJacH1;
   OpSetContravariantPiolaTransform opContravariantPiolaTransform;
@@ -87,21 +87,21 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSurcesCore {
   /** \brief default operator for TET element
     * \ingroup mofem_forces_and_sources_volume_element
     */
-  struct UserDataOperator: public ForcesAndSurcesCore::UserDataOperator {
+  struct UserDataOperator: public ForcesAndSourcesCore::UserDataOperator {
 
     UserDataOperator(const FieldSpace space):
-    ForcesAndSurcesCore::UserDataOperator(space) {}
+    ForcesAndSourcesCore::UserDataOperator(space) {}
 
     UserDataOperator(
       const std::string &field_name,const char type
     ):
-    ForcesAndSurcesCore::UserDataOperator(field_name,type) {
+    ForcesAndSourcesCore::UserDataOperator(field_name,type) {
     }
 
     UserDataOperator(
       const std::string &row_field_name,const std::string &col_field_name,const char type,const bool symm = true
     ):
-    ForcesAndSurcesCore::UserDataOperator(row_field_name,col_field_name,type,symm) {
+    ForcesAndSourcesCore::UserDataOperator(row_field_name,col_field_name,type,symm) {
     }
 
     /** \brief get element number of nodes
@@ -264,7 +264,7 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSurcesCore {
     PetscErrorCode getDivergenceOfHDivBaseFunctions(
       int side,
       EntityType type,
-      DataForcesAndSurcesCore::EntData &data,
+      DataForcesAndSourcesCore::EntData &data,
       int gg,
       VectorDouble &div
     );
@@ -300,7 +300,7 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSurcesCore {
     PetscErrorCode getCurlOfHCurlBaseFunctions(
       int side,
       EntityType type,
-      DataForcesAndSurcesCore::EntData &data,
+      DataForcesAndSourcesCore::EntData &data,
       int gg,
       MatrixDouble &curl
     );
@@ -535,6 +535,9 @@ struct VolumeElementForcesAndSourcesCoreOnSide: public VolumeElementForcesAndSou
 
 
 };
+
+/// \deprecated Use VolumeElementForcesAndSourcesCore
+DEPRECATED typedef VolumeElementForcesAndSourcesCore VolumeElementForcesAndSurcesCore;
 
 }
 

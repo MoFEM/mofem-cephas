@@ -36,7 +36,7 @@ namespace MoFEM {
  number of operator added pushing objects to OpPtrVector
 
  */
-struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
+struct FaceElementForcesAndSourcesCore: public ForcesAndSourcesCore {
 
   double aRea;;
   int num_nodes;
@@ -46,15 +46,15 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
   MatrixDouble gaussPts;
   MatrixDouble coordsAtGaussPts;
 
-  DataForcesAndSurcesCore dataH1;
-  DerivedDataForcesAndSurcesCore derivedDataH1;
-  DataForcesAndSurcesCore dataHdiv;
-  DerivedDataForcesAndSurcesCore derivedDataHdiv;
-  DataForcesAndSurcesCore dataHcurl;
-  DerivedDataForcesAndSurcesCore derivedDataHcurl;
-  DataForcesAndSurcesCore dataL2;
-  DerivedDataForcesAndSurcesCore derivedDataL2;
-  DataForcesAndSurcesCore dataNoField,dataNoFieldCol;
+  DataForcesAndSourcesCore dataH1;
+  DerivedDataForcesAndSourcesCore derivedDataH1;
+  DataForcesAndSourcesCore dataHdiv;
+  DerivedDataForcesAndSourcesCore derivedDataHdiv;
+  DataForcesAndSourcesCore dataHcurl;
+  DerivedDataForcesAndSourcesCore derivedDataHcurl;
+  DataForcesAndSourcesCore dataL2;
+  DerivedDataForcesAndSourcesCore derivedDataL2;
+  DataForcesAndSourcesCore dataNoField,dataNoFieldCol;
 
   std::string meshPositionsFieldName; ///< Name of the field with geometry
 
@@ -67,7 +67,7 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
   OpSetCovariantPiolaTransoformOnTriangle opCovariantTransoform;
 
   FaceElementForcesAndSourcesCore(Interface &m_field):
-  ForcesAndSurcesCore(m_field),
+  ForcesAndSourcesCore(m_field),
   dataH1(MBTRI),derivedDataH1(dataH1),
   dataHdiv(MBTRI),derivedDataHdiv(dataHdiv),
   dataHcurl(MBTRI),derivedDataHcurl(dataHcurl),
@@ -88,17 +88,17 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
   /** \brief default operator for TRI element
     * \ingroup mofem_forces_and_sources_tri_element
     */
-  struct UserDataOperator: public ForcesAndSurcesCore::UserDataOperator {
+  struct UserDataOperator: public ForcesAndSourcesCore::UserDataOperator {
 
     UserDataOperator(const FieldSpace space):
-    ForcesAndSurcesCore::UserDataOperator(space) {}
+    ForcesAndSourcesCore::UserDataOperator(space) {}
 
     UserDataOperator(const std::string &field_name,const char type):
-    ForcesAndSurcesCore::UserDataOperator(field_name,type) {}
+    ForcesAndSourcesCore::UserDataOperator(field_name,type) {}
 
     UserDataOperator(
     const std::string &row_field_name,const std::string &col_field_name,const char type,const bool symm = true):
-    ForcesAndSurcesCore::UserDataOperator(row_field_name,col_field_name,type,symm) {};
+    ForcesAndSourcesCore::UserDataOperator(row_field_name,col_field_name,type,symm) {};
 
     /**
      * \brief get area of face
@@ -429,7 +429,7 @@ struct OpCalculateInvJacForFace: public FaceElementForcesAndSourcesCore::UserDat
   invJac(inv_jac) {}
 
   PetscErrorCode doWork(
-    int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+    int side,EntityType type,DataForcesAndSourcesCore::EntData &data
   );
 };
 
@@ -454,7 +454,7 @@ struct OpSetInvJacH1ForFace: public FaceElementForcesAndSourcesCore::UserDataOpe
 
   MatrixDouble diffNinvJac;
   PetscErrorCode doWork(
-    int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+    int side,EntityType type,DataForcesAndSourcesCore::EntData &data
   );
 };
 
@@ -484,12 +484,13 @@ struct OpSetInvJacHcurlFace: public FaceElementForcesAndSourcesCore::UserDataOpe
   MatrixDouble diffHcurlInvJac;
 
   PetscErrorCode doWork(
-    int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+    int side,EntityType type,DataForcesAndSourcesCore::EntData &data
   );
 
 };
 
-
+/// \deprecated Use FaceElementForcesAndSurcesCore
+DEPRECATED typedef FaceElementForcesAndSourcesCore FaceElementForcesAndSurcesCore;
 
 
 }

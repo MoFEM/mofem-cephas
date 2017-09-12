@@ -184,9 +184,9 @@ MoFEM::FaceElementForcesAndSourcesCore for boundary element and skeleton
 elements, since we use 3d mesh, which boundary and skeleton are 2d entities
 emerged in 3d space
 \code
-boost::shared_ptr<ForcesAndSurcesCore> domain_fe(new VolumeElementForcesAndSourcesCore(m_field));
-boost::shared_ptr<ForcesAndSurcesCore> boundary_fe(new FaceElementForcesAndSourcesCore(m_field));
-boost::shared_ptr<ForcesAndSurcesCore> skeleton_fe(new FaceElementForcesAndSourcesCore(m_field));
+boost::shared_ptr<ForcesAndSourcesCore> domain_fe(new VolumeElementForcesAndSourcesCore(m_field));
+boost::shared_ptr<ForcesAndSourcesCore> boundary_fe(new FaceElementForcesAndSourcesCore(m_field));
+boost::shared_ptr<ForcesAndSourcesCore> skeleton_fe(new FaceElementForcesAndSourcesCore(m_field));
 \endcode
 
 Once finite elements objects are created we add operators to them according to
@@ -350,42 +350,42 @@ and it has two volume neighbours.
 Now we focus attention on the implementation of users data operator. The first
 operator has the structure
 \code
-struct OpRow: public MoFEM::ForcesAndSurcesCore::UserDataOperator {
+struct OpRow: public MoFEM::ForcesAndSourcesCore::UserDataOperator {
  OpRow(const std::string& field_name):
- ForcesAndSurcesCore::UserDataOperator(field_name,field_name,OPROW) {
+ ForcesAndSourcesCore::UserDataOperator(field_name,field_name,OPROW) {
  }
- PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
+ PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data);
 };
 \endcode
 This users data operator class is derived from
-MoFEM::ForcesAndSurcesCore::UserDataOperator which can be used with any type of
+MoFEM::ForcesAndSourcesCore::UserDataOperator which can be used with any type of
 entity. It is the type of OPROW, which indicates that it only iterates lower
 dimension entities on the element. On each lower entity overload method is
 called
 \code
-PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
+PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data);
 \endcode
 which as arguments takes entity side number (local entity number on the finite
 element), entity type (e.g. MBVERTEX, MBEDGE, MBTET) and reference to structure
-MoFEM::DataForcesAndSurcesCore::EntData, which keeps information on DOFs,
+MoFEM::DataForcesAndSourcesCore::EntData, which keeps information on DOFs,
 approximation on given entity. This type of entity is usually used to integrate
 the right-hand side vector.
 
 Another type of users data operator is implemented here
 \code
-struct OpRowCol: public MoFEM::ForcesAndSurcesCore::UserDataOperator {
+struct OpRowCol: public MoFEM::ForcesAndSourcesCore::UserDataOperator {
  OpRowCol(
    const std::string row_field,
    const std::string col_field,
    const bool symm
  ):
- ForcesAndSurcesCore::UserDataOperator(row_field,col_field,OPROWCOL,symm) {
+ ForcesAndSourcesCore::UserDataOperator(row_field,col_field,OPROWCOL,symm) {
  }
  virtual PetscErrorCode doWork(
    int row_side,int col_side,
    EntityType row_type,EntityType col_type,
-   DataForcesAndSurcesCore::EntData &row_data,
-   DataForcesAndSurcesCore::EntData &col_data
+   DataForcesAndSourcesCore::EntData &row_data,
+   DataForcesAndSourcesCore::EntData &col_data
  );
 };
 \endcode

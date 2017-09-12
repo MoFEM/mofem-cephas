@@ -65,7 +65,7 @@ struct ThermalStressElement {
     commonData(common_data),
     verb(_verb) {}
 
-    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
       PetscFunctionBegin;
       try {
         if(data.getFieldData().size()==0) PetscFunctionReturn(0);
@@ -105,7 +105,7 @@ struct ThermalStressElement {
 
     VectorDouble Nf;
     PetscErrorCode doWork(
-      int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+      int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
         PetscFunctionBegin;
 
         try {

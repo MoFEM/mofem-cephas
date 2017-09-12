@@ -38,7 +38,7 @@ using namespace boost::numeric;
 PetscErrorCode PostProcCommonOnRefMesh::OpGetFieldValues::doWork(
   int side,
   EntityType type,
-  DataForcesAndSurcesCore::EntData &data
+  DataForcesAndSourcesCore::EntData &data
 ) {
   PetscFunctionBegin;
 
@@ -218,7 +218,7 @@ PetscErrorCode PostProcCommonOnRefMesh::OpGetFieldValues::doWork(
 PetscErrorCode PostProcCommonOnRefMesh::OpGetFieldGradientValues::doWork(
   int side,
   EntityType type,
-  DataForcesAndSurcesCore::EntData &data
+  DataForcesAndSourcesCore::EntData &data
 ) {
   PetscFunctionBegin;
 

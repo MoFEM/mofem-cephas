@@ -71,7 +71,7 @@ PetscErrorCode TriPolynomialBase::getValueH1(MatrixDouble &pts) {
   
   PetscFunctionBegin;
 
-  DataForcesAndSurcesCore& data = cTx->dAta;
+  DataForcesAndSourcesCore& data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
   PetscErrorCode (*base_polynomials)(
     int p,double s,double *diff_s,double *L,double *diffL,const int dim
@@ -139,7 +139,7 @@ PetscErrorCode TriPolynomialBase::getValueL2(
   
   PetscFunctionBegin;
 
-  DataForcesAndSurcesCore& data = cTx->dAta;
+  DataForcesAndSourcesCore& data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
   PetscErrorCode (*base_polynomials)(
     int p,double s,double *diff_s,double *L,double *diffL,const int dim
@@ -173,7 +173,7 @@ PetscErrorCode TriPolynomialBase::getValueHdivAinsworthBase(
   
   PetscFunctionBegin;
 
-  DataForcesAndSurcesCore& data = cTx->dAta;
+  DataForcesAndSourcesCore& data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
   PetscErrorCode (*base_polynomials)(
     int p,double s,double *diff_s,double *L,double *diffL,const int dim
@@ -241,7 +241,7 @@ PetscErrorCode TriPolynomialBase::getValueHdivDemkowiczBase(
   
   PetscFunctionBegin;
 
-  DataForcesAndSurcesCore& data = cTx->dAta;
+  DataForcesAndSourcesCore& data = cTx->dAta;
   // set shape functions into data structure
   if(data.dataOnEntities[MBTRI].size()!=1) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
@@ -298,7 +298,7 @@ PetscErrorCode TriPolynomialBase::getValueHCurl(
   
   PetscFunctionBegin;
 
-  DataForcesAndSurcesCore& data = cTx->dAta;
+  DataForcesAndSourcesCore& data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
   PetscErrorCode (*base_polynomials)(
     int p,double s,double *diff_s,double *L,double *diffL,const int dim
@@ -406,7 +406,7 @@ PetscErrorCode TriPolynomialBase::getValue(
   }
 
   const FieldApproximationBase base = cTx->bAse;
-  DataForcesAndSurcesCore& data = cTx->dAta;
+  DataForcesAndSourcesCore& data = cTx->dAta;
   if(cTx->copyNodeBase==LASTBASE) {
     data.dataOnEntities[MBVERTEX][0].getN(base).resize(nb_gauss_pts,3,false);
     ierr = ShapeMBTRI(

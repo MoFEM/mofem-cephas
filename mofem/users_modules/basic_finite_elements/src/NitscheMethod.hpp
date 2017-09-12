@@ -141,7 +141,7 @@ struct NitscheMethod {
     commonData(common_data) {
     }
 
-    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
       PetscFunctionBegin;
 
       int faceInRespectToTet = getFEMethod()->nInTheLoop;
@@ -428,7 +428,7 @@ struct NitscheMethod {
     }
 
     PetscErrorCode getJac(
-      DataForcesAndSurcesCore::EntData &data,int gg,MatrixDouble &jac
+      DataForcesAndSourcesCore::EntData &data,int gg,MatrixDouble &jac
     ) {
       PetscFunctionBegin;
       try {
@@ -513,7 +513,7 @@ struct NitscheMethod {
     PetscErrorCode doWork(
       int row_side,int col_side,
       EntityType row_type,EntityType col_type,
-      DataForcesAndSurcesCore::EntData &row_data,DataForcesAndSurcesCore::EntData &col_data
+      DataForcesAndSourcesCore::EntData &row_data,DataForcesAndSourcesCore::EntData &col_data
     ) {
       PetscFunctionBegin;
 
@@ -687,7 +687,7 @@ struct NitscheMethod {
     VectorDouble nF;
 
     PetscErrorCode doWork(
-      int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data
+      int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
     ) {
       PetscFunctionBegin;
 

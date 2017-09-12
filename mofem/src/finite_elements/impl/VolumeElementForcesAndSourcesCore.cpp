@@ -59,7 +59,7 @@
 #include <EntPolynomialBaseCtx.hpp>
 #include <TetPolynomialBase.hpp> // Base functions on tet
 #include <DataOperators.hpp>
-#include <ForcesAndSurcesCore.hpp>
+#include <ForcesAndSourcesCore.hpp>
 #include <VolumeElementForcesAndSourcesCore.hpp>
 #include <FaceElementForcesAndSourcesCore.hpp>
 
@@ -79,7 +79,7 @@ namespace MoFEM {
 VolumeElementForcesAndSourcesCore::VolumeElementForcesAndSourcesCore(
   Interface &m_field,const EntityType type
 ):
-ForcesAndSurcesCore(m_field),
+ForcesAndSourcesCore(m_field),
 coords(12),
 jAc(3,3),
 invJac(3,3),
@@ -515,7 +515,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
       for(int b = AINSWORTH_LEGENDRE_BASE;b!=LASTBASE;b++) {
         FTensor::Index<'i',3> i;
         FieldApproximationBase base = ApproximationBaseArray[b];
-        DataForcesAndSurcesCore::EntData &data = dataH1.dataOnEntities[MBVERTEX][0];
+        DataForcesAndSourcesCore::EntData &data = dataH1.dataOnEntities[MBVERTEX][0];
         if((data.getDiffN(base).size1()==4)&&(data.getDiffN(base).size2()==3)) {
           const unsigned int nb_base_functions = 4;
           new_diff_n.resize(nbGaussPts,3*nb_base_functions,false);
@@ -551,7 +551,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
       UserDataOperator::OPROW, UserDataOperator::OPCOL
     };
     std::vector<std::string> last_eval_field_name(2);
-    DataForcesAndSurcesCore *op_data[2];
+    DataForcesAndSourcesCore *op_data[2];
     FieldSpace space[2];
     FieldApproximationBase base[2];
 
@@ -773,7 +773,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
 
 PetscErrorCode VolumeElementForcesAndSourcesCore::UserDataOperator::getDivergenceOfHDivBaseFunctions(
   int side,EntityType type,
-  DataForcesAndSurcesCore::EntData &data,
+  DataForcesAndSourcesCore::EntData &data,
   int gg,
   VectorDouble &div
 ) {
@@ -833,7 +833,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::UserDataOperator::getDivergenc
 PetscErrorCode VolumeElementForcesAndSourcesCore::UserDataOperator::getCurlOfHCurlBaseFunctions(
   int side,
   EntityType type,
-  DataForcesAndSurcesCore::EntData &data,
+  DataForcesAndSourcesCore::EntData &data,
   int gg,
   MatrixDouble &curl
 ) {

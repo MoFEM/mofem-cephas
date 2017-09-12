@@ -65,7 +65,7 @@ PetscErrorCode EntPolynomialBaseCtx::queryInterface(
 }
 
 EntPolynomialBaseCtx::EntPolynomialBaseCtx(
-  DataForcesAndSurcesCore &data,
+  DataForcesAndSourcesCore &data,
   const FieldSpace space,
   const FieldApproximationBase base,
   const FieldApproximationBase copy_node_base

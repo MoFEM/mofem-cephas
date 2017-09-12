@@ -99,7 +99,7 @@ struct OpS: public FaceElementForcesAndSourcesCore::UserDataOperator {
   PetscErrorCode doWork(
     int row_side,int col_side,
     EntityType row_type,EntityType col_type,
-    DataForcesAndSurcesCore::EntData &row_data,DataForcesAndSurcesCore::EntData &col_data
+    DataForcesAndSourcesCore::EntData &row_data,DataForcesAndSourcesCore::EntData &col_data
   ) {
     PetscFunctionBegin;
     // get number of dofs on row
@@ -149,7 +149,7 @@ private:
    * @return          error code
    */
   inline PetscErrorCode iNtegrate(
-    DataForcesAndSurcesCore::EntData &row_data,DataForcesAndSurcesCore::EntData &col_data
+    DataForcesAndSourcesCore::EntData &row_data,DataForcesAndSourcesCore::EntData &col_data
   ) {
     PetscFunctionBegin;
     // set size of local entity bock
@@ -193,7 +193,7 @@ private:
    * @return          error code
    */
   inline PetscErrorCode aSsemble(
-    DataForcesAndSurcesCore::EntData &row_data,DataForcesAndSurcesCore::EntData &col_data
+    DataForcesAndSourcesCore::EntData &row_data,DataForcesAndSourcesCore::EntData &col_data
   ) {
     PetscFunctionBegin;
     // get pointer to first global index on row
@@ -258,14 +258,14 @@ int main(int argc, char *argv[]) {
     // those constrains and can be used in different context.
 
     // Elements used by KSP & DM to assemble system of equations
-    boost::shared_ptr<ForcesAndSurcesCore> domain_lhs_fe;     ///< Volume element for the matrix
-    boost::shared_ptr<ForcesAndSurcesCore> boundary_lhs_fe;   ///< Boundary element for the matrix
-    boost::shared_ptr<ForcesAndSurcesCore> domain_rhs_fe;     ///< Volume element to assemble vector
-    boost::shared_ptr<ForcesAndSurcesCore> boundary_rhs_fe;   ///< Volume element to assemble vector
-    boost::shared_ptr<ForcesAndSurcesCore> domain_error;      ///< Volume element evaluate error
-    boost::shared_ptr<ForcesAndSurcesCore> post_proc_volume;  ///< Volume element to Post-process results
-    boost::shared_ptr<ForcesAndSurcesCore> null;              ///< Null element do nothing
-    boost::shared_ptr<ForcesAndSurcesCore> boundary_penalty_lhs_fe;
+    boost::shared_ptr<ForcesAndSourcesCore> domain_lhs_fe;     ///< Volume element for the matrix
+    boost::shared_ptr<ForcesAndSourcesCore> boundary_lhs_fe;   ///< Boundary element for the matrix
+    boost::shared_ptr<ForcesAndSourcesCore> domain_rhs_fe;     ///< Volume element to assemble vector
+    boost::shared_ptr<ForcesAndSourcesCore> boundary_rhs_fe;   ///< Volume element to assemble vector
+    boost::shared_ptr<ForcesAndSourcesCore> domain_error;      ///< Volume element evaluate error
+    boost::shared_ptr<ForcesAndSourcesCore> post_proc_volume;  ///< Volume element to Post-process results
+    boost::shared_ptr<ForcesAndSourcesCore> null;              ///< Null element do nothing
+    boost::shared_ptr<ForcesAndSourcesCore> boundary_penalty_lhs_fe;
     {
       // Add problem specific operators the generic finite elements to calculate matrices and vectors.
       ierr = PoissonExample::CreateFiniteElements(m_field).createFEToAssmbleMatrceAndVector(
@@ -281,7 +281,7 @@ int main(int argc, char *argv[]) {
       ierr = PoissonExample::CreateFiniteElements(m_field).creatFEToPostProcessResults(post_proc_volume); CHKERRQ(ierr);
 
       const double beta = 1;
-      boundary_penalty_lhs_fe = boost::shared_ptr<ForcesAndSurcesCore>(new FaceElementForcesAndSourcesCore(m_field));
+      boundary_penalty_lhs_fe = boost::shared_ptr<ForcesAndSourcesCore>(new FaceElementForcesAndSourcesCore(m_field));
       boundary_penalty_lhs_fe->getRuleHook = PoissonExample::FaceRule();
       boundary_penalty_lhs_fe->getOpPtrVector().push_back(new OpS(beta));
       boundary_rhs_fe->getOpPtrVector().push_back(new PoissonExample::Op_g(ExactFunction(),"U",beta));

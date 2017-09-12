@@ -27,10 +27,10 @@ struct EdgeForce {
   MoFEM::Interface &mField;
   EdgeForce(MoFEM::Interface &m_field): mField(m_field),fe(m_field,1){}
 
-  struct MyFE: public MoFEM::EdgeElementForcesAndSurcesCore {
+  struct MyFE: public MoFEM::EdgeElementForcesAndSourcesCore {
     int addToRule;
     MyFE(MoFEM::Interface &m_field,int add_to_rule):
-    EdgeElementForcesAndSurcesCore(m_field),
+    EdgeElementForcesAndSourcesCore(m_field),
     addToRule(add_to_rule)
     {}
       int getRule(int order) { return order+addToRule; };
@@ -47,7 +47,7 @@ struct EdgeForce {
 
     boost::ptr_vector<MethodForForceScaling> methodsOp;
 
-    struct OpEdgeForce: public MoFEM::EdgeElementForcesAndSurcesCore::UserDataOperator {
+    struct OpEdgeForce: public MoFEM::EdgeElementForcesAndSourcesCore::UserDataOperator {
 
       Vec F;
       bCForce &dAta;
@@ -64,7 +64,7 @@ struct EdgeForce {
       VectorDouble wEights;
       VectorDouble Nf;
 
-      PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
+      PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data);
 
 
     };

@@ -91,14 +91,14 @@ constructed and base functions evaluated. The finite element has an auxiliary
 set of data, for example, a measure of the domain, i.e. volume, area or length.
 Some elements carry information about normal, direction depending on the
 dimension of the finite element domain. The base finite element interface can be
-seen here \ref MoFEM::ForcesAndSurcesCore. Note that most of the derived
+seen here \ref MoFEM::ForcesAndSourcesCore. Note that most of the derived
 classes, alter finite element behaviour in minimally, usually by altering rule
 of integration, appropriately to order and type of differential operators on the
 element. The structure and finite element interaction with user data operators
 are shown in the figure below
 \image html fe_struture_1.png "Finite element and is structure" width=800px
 
-The fundamental role in finite element implementation plays \ref MoFEM::ForcesAndSurcesCore::UserDataOperator. The generality
+The fundamental role in finite element implementation plays \ref MoFEM::ForcesAndSourcesCore::UserDataOperator. The generality
 of this technology
 range of applications 0d-2d or 3d, with Nitsche's method or with H-div or H-curl
 spaces. The UserDataOperator are operated in three typical ways, first (\a OPROW/
@@ -159,8 +159,8 @@ struct OpGradGrad: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOper
   PetscErrorCode doWork(
     int row_side,int col_side,
     EntityType row_type,EntityType col_type,
-    DataForcesAndSurcesCore::EntData &row_data,
-    DataForcesAndSurcesCore::EntData &col_data
+    DataForcesAndSourcesCore::EntData &row_data,
+    DataForcesAndSourcesCore::EntData &col_data
   ) {
     PetscErrorCode ierr;
     PetscFunctionBegin;

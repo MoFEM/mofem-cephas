@@ -35,7 +35,7 @@ struct VolumeCalculation: public MoFEM::VolumeElementForcesAndSourcesCore::UserD
   
 
   PetscErrorCode doWork(
-    int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data
+    int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
   ) {
     PetscFunctionBegin;
 
