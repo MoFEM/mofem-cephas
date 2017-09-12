@@ -136,7 +136,7 @@ int main(int argc, char *argv[]) {
   //what are ghost nodes, see Petsc Manual
   ierr = prb_mng_ptr->partitionGhostDofs("TEST_PROBLEM"); CHKERRQ(ierr);
 
-  struct ForcesAndSurcesCore_TestFE: public ForcesAndSurcesCore {
+  struct ForcesAndSourcesCore_TestFE: public ForcesAndSourcesCore {
 
     
     
@@ -148,11 +148,11 @@ int main(int argc, char *argv[]) {
     TeeDevice my_tee;
     TeeStream my_split;
 
-    DataForcesAndSurcesCore data;
-    DerivedDataForcesAndSurcesCore derived_data;
+    DataForcesAndSourcesCore data;
+    DerivedDataForcesAndSourcesCore derived_data;
 
-    ForcesAndSurcesCore_TestFE(MoFEM::Interface &_m_field):
-      ForcesAndSurcesCore(_m_field),
+    ForcesAndSourcesCore_TestFE(MoFEM::Interface &_m_field):
+      ForcesAndSourcesCore(_m_field),
       ofs("forces_and_sources_getting_orders_indices_atom_test.txt"),
       my_tee(std::cout, ofs),my_split(my_tee),
       data(MBTET),
@@ -231,7 +231,7 @@ int main(int argc, char *argv[]) {
 
   };
 
-  ForcesAndSurcesCore_TestFE fe1(m_field);
+  ForcesAndSourcesCore_TestFE fe1(m_field);
   ierr = m_field.loop_finite_elements("TEST_PROBLEM","TEST_FE",fe1);  CHKERRQ(ierr);
 
 

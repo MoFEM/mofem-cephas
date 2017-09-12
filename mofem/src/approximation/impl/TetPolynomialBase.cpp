@@ -73,7 +73,7 @@ PetscErrorCode TetPolynomialBase::getValueH1(MatrixDouble &pts) {
   
   PetscFunctionBegin;
 
-  DataForcesAndSurcesCore& data = cTx->dAta;
+  DataForcesAndSourcesCore& data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
   PetscErrorCode (*base_polynomials)(
     int p,double s,double *diff_s,double *L,double *diffL,const int dim
@@ -187,7 +187,7 @@ PetscErrorCode TetPolynomialBase::getValueL2(
   
   PetscFunctionBegin;
 
-  DataForcesAndSurcesCore& data = cTx->dAta;
+  DataForcesAndSourcesCore& data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
   PetscErrorCode (*base_polynomials)(
     int p,double s,double *diff_s,double *L,double *diffL,const int dim
@@ -221,7 +221,7 @@ PetscErrorCode TetPolynomialBase::getValueHdivAinsworthBase(
   
   PetscFunctionBegin;
 
-  DataForcesAndSurcesCore& data = cTx->dAta;
+  DataForcesAndSourcesCore& data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
   PetscErrorCode (*base_polynomials)(
     int p,double s,double *diff_s,double *L,double *diffL,const int dim
@@ -544,7 +544,7 @@ PetscErrorCode TetPolynomialBase::getValueHdivDemkowiczBase(
   
   PetscFunctionBegin;
 
-  DataForcesAndSurcesCore& data = cTx->dAta;
+  DataForcesAndSourcesCore& data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
   if(base != DEMKOWICZ_JACOBI_BASE) {
     SETERRQ1(
@@ -647,7 +647,7 @@ PetscErrorCode TetPolynomialBase::getValueHCurl(
 
   try {
 
-  DataForcesAndSurcesCore& data = cTx->dAta;
+  DataForcesAndSourcesCore& data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
   PetscErrorCode (*base_polynomials)(
     int p,double s,double *diff_s,double *L,double *diffL,const int dim
@@ -792,7 +792,7 @@ PetscErrorCode TetPolynomialBase::getValue(
   }
 
   const FieldApproximationBase base = cTx->bAse;
-  DataForcesAndSurcesCore& data = cTx->dAta;
+  DataForcesAndSourcesCore& data = cTx->dAta;
   if(cTx->copyNodeBase==LASTBASE) {
     data.dataOnEntities[MBVERTEX][0].getN(base).resize(nb_gauss_pts,4,false);
     ierr = ShapeMBTET(

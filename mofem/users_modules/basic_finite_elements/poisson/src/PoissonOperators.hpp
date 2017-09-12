@@ -54,7 +54,7 @@ namespace PoissonExample {
     PetscErrorCode doWork(
       int row_side,int col_side,
       EntityType row_type,EntityType col_type,
-      DataForcesAndSurcesCore::EntData &row_data,DataForcesAndSurcesCore::EntData &col_data
+      DataForcesAndSourcesCore::EntData &row_data,DataForcesAndSourcesCore::EntData &col_data
     ) {
       PetscFunctionBegin;
       // get number of dofs on row
@@ -102,7 +102,7 @@ namespace PoissonExample {
      * @return          error code
      */
     virtual PetscErrorCode iNtegrate(
-      DataForcesAndSurcesCore::EntData &row_data,DataForcesAndSurcesCore::EntData &col_data
+      DataForcesAndSourcesCore::EntData &row_data,DataForcesAndSourcesCore::EntData &col_data
     ) {
       PetscFunctionBegin;
       // set size of local entity bock
@@ -147,7 +147,7 @@ namespace PoissonExample {
      * @return          error code
      */
     virtual PetscErrorCode aSsemble(
-      DataForcesAndSurcesCore::EntData &row_data,DataForcesAndSurcesCore::EntData &col_data
+      DataForcesAndSourcesCore::EntData &row_data,DataForcesAndSourcesCore::EntData &col_data
     ) {
       PetscFunctionBegin;
       // get pointer to first global index on row
@@ -190,7 +190,7 @@ namespace PoissonExample {
      *
      */
     PetscErrorCode doWork(
-      int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data
+      int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
     ) {
       PetscFunctionBegin;
       // get number of dofs on row
@@ -210,14 +210,14 @@ namespace PoissonExample {
      * @param  data entity data on element row
      * @return      error code
      */
-    virtual PetscErrorCode iNtegrate(DataForcesAndSurcesCore::EntData &data) = 0;
+    virtual PetscErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &data) = 0;
 
     /**
      * \brief Class dedicated to assemble operator to global system vector
      * @param  data entity data (indices, base functions, etc. ) on element row
      * @return      error code
      */
-    virtual PetscErrorCode aSsemble(DataForcesAndSurcesCore::EntData &data) = 0;
+    virtual PetscErrorCode aSsemble(DataForcesAndSourcesCore::EntData &data) = 0;
 
   protected:
 
@@ -259,7 +259,7 @@ namespace PoissonExample {
      * @param  data entity data on element row
      * @return      error code
      */
-    PetscErrorCode iNtegrate(DataForcesAndSurcesCore::EntData &data) {
+    PetscErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &data) {
       PetscFunctionBegin;
       // set size of local vector
       locVec.resize(nbRows,false);
@@ -297,7 +297,7 @@ namespace PoissonExample {
      * @param  data entity data, i.e. global indices of local vector
      * @return      error code
      */
-    PetscErrorCode aSsemble(DataForcesAndSurcesCore::EntData &data) {
+    PetscErrorCode aSsemble(DataForcesAndSourcesCore::EntData &data) {
       PetscFunctionBegin;
       // get global indices of local vector
       const int* indices = &*data.getIndices().data().begin();
@@ -330,7 +330,7 @@ namespace PoissonExample {
     PetscErrorCode doWork(
       int row_side,int col_side,
       EntityType row_type,EntityType col_type,
-      DataForcesAndSurcesCore::EntData &row_data,DataForcesAndSurcesCore::EntData &col_data
+      DataForcesAndSourcesCore::EntData &row_data,DataForcesAndSourcesCore::EntData &col_data
     ) {
       PetscFunctionBegin;
       // get number of dofs on row
@@ -364,7 +364,7 @@ namespace PoissonExample {
     /** \brief Integrate local constrains matrix
      */
     inline PetscErrorCode iNtegrate(
-      DataForcesAndSurcesCore::EntData &row_data,DataForcesAndSurcesCore::EntData &col_data
+      DataForcesAndSourcesCore::EntData &row_data,DataForcesAndSourcesCore::EntData &col_data
     ) {
       PetscFunctionBegin;
       // set size of local constrains matrix
@@ -404,7 +404,7 @@ namespace PoissonExample {
      * \brief integrate local constrains matrix
      */
     inline PetscErrorCode aSsemble(
-      DataForcesAndSurcesCore::EntData &row_data,DataForcesAndSurcesCore::EntData &col_data
+      DataForcesAndSourcesCore::EntData &row_data,DataForcesAndSourcesCore::EntData &col_data
     ) {
       PetscFunctionBegin;
       // get indices on row
@@ -460,7 +460,7 @@ namespace PoissonExample {
     /**
      * \brief Integrate local constrains vector
      */
-    PetscErrorCode iNtegrate(DataForcesAndSurcesCore::EntData &data) {
+    PetscErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &data) {
       PetscFunctionBegin;
       // set size to local vector
       locVec.resize(nbRows,false);
@@ -495,7 +495,7 @@ namespace PoissonExample {
     /**
      * \brief assemble constrains vectors
      */
-    PetscErrorCode aSsemble(DataForcesAndSurcesCore::EntData &data) {
+    PetscErrorCode aSsemble(DataForcesAndSourcesCore::EntData &data) {
       PetscFunctionBegin;
       const int* indices = &*data.getIndices().data().begin();
       const double* vals = &*locVec.data().begin();
@@ -530,7 +530,7 @@ namespace PoissonExample {
     }
 
     PetscErrorCode doWork(
-      int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data
+      int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
     ) {
       PetscFunctionBegin;
       nbRows = row_data.getFieldData().size();
@@ -558,7 +558,7 @@ namespace PoissonExample {
     /**
      * \brief Integrate error
      */
-    PetscErrorCode iNtegrate(DataForcesAndSurcesCore::EntData &data) {
+    PetscErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &data) {
       PetscFunctionBegin;
       // clear field dofs
       data.getFieldData().clear();
@@ -598,7 +598,7 @@ namespace PoissonExample {
     /**
      * \brief Assemble error
      */
-    PetscErrorCode aSsemble(DataForcesAndSurcesCore::EntData &data) {
+    PetscErrorCode aSsemble(DataForcesAndSourcesCore::EntData &data) {
       PetscFunctionBegin;
       // set error on mesh
       data.getFieldDofs()[0]->getFieldData() = sqrt(data.getFieldData()[0]);
@@ -635,7 +635,7 @@ namespace PoissonExample {
      * @return          error code
      */
     inline PetscErrorCode iNtegrate(
-      DataForcesAndSurcesCore::EntData &row_data,DataForcesAndSurcesCore::EntData &col_data
+      DataForcesAndSourcesCore::EntData &row_data,DataForcesAndSourcesCore::EntData &col_data
     ) {
       PetscFunctionBegin;
       // set size of local entity bock
@@ -715,7 +715,7 @@ namespace PoissonExample {
      * @param  data entity data on element row
      * @return      error code
      */
-    PetscErrorCode iNtegrate(DataForcesAndSurcesCore::EntData &data) {
+    PetscErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &data) {
       PetscFunctionBegin;
       // set size of local vector
       locVec.resize(nbRows,false);
@@ -783,7 +783,7 @@ namespace PoissonExample {
     /**
      * \brief Integrate local constrains vector
      */
-    PetscErrorCode iNtegrate(DataForcesAndSurcesCore::EntData &data) {
+    PetscErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &data) {
       PetscFunctionBegin;
       // set size to local vector
       locVec.resize(nbRows,false);
@@ -835,7 +835,7 @@ namespace PoissonExample {
     /**
      * \brief Integrate local constrains vector
      */
-    PetscErrorCode iNtegrate(DataForcesAndSurcesCore::EntData &data) {
+    PetscErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &data) {
       PetscFunctionBegin;
       // set size to local vector
       locVec.resize(nbRows,false);
@@ -920,19 +920,19 @@ namespace PoissonExample {
     PetscErrorCode createFEToAssmbleMatrceAndVector(
       boost::function<double (const double,const double,const double)> f_u,
       boost::function<double (const double,const double,const double)> f_source,
-      boost::shared_ptr<ForcesAndSurcesCore>& domain_lhs_fe,
-      boost::shared_ptr<ForcesAndSurcesCore>& boundary_lhs_fe,
-      boost::shared_ptr<ForcesAndSurcesCore>& domain_rhs_fe,
-      boost::shared_ptr<ForcesAndSurcesCore>& boundary_rhs_fe,
+      boost::shared_ptr<ForcesAndSourcesCore>& domain_lhs_fe,
+      boost::shared_ptr<ForcesAndSourcesCore>& boundary_lhs_fe,
+      boost::shared_ptr<ForcesAndSourcesCore>& domain_rhs_fe,
+      boost::shared_ptr<ForcesAndSourcesCore>& boundary_rhs_fe,
       bool trans = true
     ) const {
       PetscFunctionBegin;
 
       // Create elements element instances
-      domain_lhs_fe = boost::shared_ptr<ForcesAndSurcesCore>(new VolumeElementForcesAndSourcesCore(mField));
-      boundary_lhs_fe = boost::shared_ptr<ForcesAndSurcesCore>(new FaceElementForcesAndSourcesCore(mField));
-      domain_rhs_fe = boost::shared_ptr<ForcesAndSurcesCore>(new VolumeElementForcesAndSourcesCore(mField));
-      boundary_rhs_fe = boost::shared_ptr<ForcesAndSurcesCore>(new FaceElementForcesAndSourcesCore(mField));
+      domain_lhs_fe = boost::shared_ptr<ForcesAndSourcesCore>(new VolumeElementForcesAndSourcesCore(mField));
+      boundary_lhs_fe = boost::shared_ptr<ForcesAndSourcesCore>(new FaceElementForcesAndSourcesCore(mField));
+      domain_rhs_fe = boost::shared_ptr<ForcesAndSourcesCore>(new VolumeElementForcesAndSourcesCore(mField));
+      boundary_rhs_fe = boost::shared_ptr<ForcesAndSourcesCore>(new FaceElementForcesAndSourcesCore(mField));
 
       // Set integration rule to elements instances
       domain_lhs_fe->getRuleHook = VolRule();
@@ -960,11 +960,11 @@ namespace PoissonExample {
       boost::function<double (const double,const double,const double)> f_u,
       boost::function<FTensor::Tensor1<double,3> (const double,const double,const double)> g_u,
       Vec global_error,
-      boost::shared_ptr<ForcesAndSurcesCore>& domain_error
+      boost::shared_ptr<ForcesAndSourcesCore>& domain_error
     ) const {
       PetscFunctionBegin;
       // Create finite element instance to calculaye error
-      domain_error = boost::shared_ptr<ForcesAndSurcesCore>(
+      domain_error = boost::shared_ptr<ForcesAndSourcesCore>(
         new VolumeElementForcesAndSourcesCore(mField)
       );
       domain_error->getRuleHook = VolRule();
@@ -989,7 +989,7 @@ namespace PoissonExample {
      * \brief Create finite element to post-process results
      */
     PetscErrorCode creatFEToPostProcessResults(
-      boost::shared_ptr<ForcesAndSurcesCore>& post_proc_volume
+      boost::shared_ptr<ForcesAndSourcesCore>& post_proc_volume
     ) const {
       
       PetscFunctionBegin;
@@ -1003,7 +1003,7 @@ namespace PoissonExample {
       // using simplified mechanism for post-processing finite element, we
       // add operators to save data from field on mesh tags for ParaView
       // visualization.
-      post_proc_volume = boost::shared_ptr<ForcesAndSurcesCore>(new PostProcVolumeOnRefinedMesh(mField));
+      post_proc_volume = boost::shared_ptr<ForcesAndSourcesCore>(new PostProcVolumeOnRefinedMesh(mField));
       // Add operators to the elements, starting with some generic
       ierr = boost::static_pointer_cast<PostProcVolumeOnRefinedMesh>(post_proc_volume)->
       generateReferenceElementMesh(); CHKERRQ(ierr);
@@ -1026,21 +1026,21 @@ namespace PoissonExample {
       boost::function<double (const double,const double,const double)> f_source,
       boost::function<double (const double)> a,
       boost::function<double (const double)> diff_a,
-      boost::shared_ptr<ForcesAndSurcesCore>& domain_lhs_fe,
-      boost::shared_ptr<ForcesAndSurcesCore>& boundary_lhs_fe,
-      boost::shared_ptr<ForcesAndSurcesCore>& domain_rhs_fe,
-      boost::shared_ptr<ForcesAndSurcesCore>& boundary_rhs_fe,
-      ForcesAndSurcesCore::RuleHookFun vol_rule,
-      ForcesAndSurcesCore::RuleHookFun face_rule = FaceRule(),
+      boost::shared_ptr<ForcesAndSourcesCore>& domain_lhs_fe,
+      boost::shared_ptr<ForcesAndSourcesCore>& boundary_lhs_fe,
+      boost::shared_ptr<ForcesAndSourcesCore>& domain_rhs_fe,
+      boost::shared_ptr<ForcesAndSourcesCore>& boundary_rhs_fe,
+      ForcesAndSourcesCore::RuleHookFun vol_rule,
+      ForcesAndSourcesCore::RuleHookFun face_rule = FaceRule(),
       bool trans = true
     ) const {
       PetscFunctionBegin;
 
       // Create elements element instances
-      domain_lhs_fe = boost::shared_ptr<ForcesAndSurcesCore>(new VolumeElementForcesAndSourcesCore(mField));
-      boundary_lhs_fe = boost::shared_ptr<ForcesAndSurcesCore>(new FaceElementForcesAndSourcesCore(mField));
-      domain_rhs_fe = boost::shared_ptr<ForcesAndSurcesCore>(new VolumeElementForcesAndSourcesCore(mField));
-      boundary_rhs_fe = boost::shared_ptr<ForcesAndSurcesCore>(new FaceElementForcesAndSourcesCore(mField));
+      domain_lhs_fe = boost::shared_ptr<ForcesAndSourcesCore>(new VolumeElementForcesAndSourcesCore(mField));
+      boundary_lhs_fe = boost::shared_ptr<ForcesAndSourcesCore>(new FaceElementForcesAndSourcesCore(mField));
+      domain_rhs_fe = boost::shared_ptr<ForcesAndSourcesCore>(new VolumeElementForcesAndSourcesCore(mField));
+      boundary_rhs_fe = boost::shared_ptr<ForcesAndSourcesCore>(new FaceElementForcesAndSourcesCore(mField));
 
       // Set integration rule to elements instances
       domain_lhs_fe->getRuleHook = vol_rule;

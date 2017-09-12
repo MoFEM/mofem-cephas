@@ -62,9 +62,9 @@ PetscErrorCode FatPrismPolynomialBaseCtx::queryInterface(const MOFEMuuid& uuid,M
 }
 
 FatPrismPolynomialBaseCtx::FatPrismPolynomialBaseCtx(
-  DataForcesAndSurcesCore &data,
-  DataForcesAndSurcesCore &data_triangles_only,
-  DataForcesAndSurcesCore &data_trough_thickness,
+  DataForcesAndSourcesCore &data,
+  DataForcesAndSourcesCore &data_triangles_only,
+  DataForcesAndSourcesCore &data_trough_thickness,
   MatrixDouble& gauss_pts_triangles_only,
   MatrixDouble& gauss_pts_through_thickness,
   moab::Interface &moab,
@@ -137,7 +137,7 @@ PetscErrorCode FatPrismPolynomialBase::getValue(
   }
 
   const FieldApproximationBase base = cTx->bAse;
-  DataForcesAndSurcesCore& data = cTx->dAta;
+  DataForcesAndSourcesCore& data = cTx->dAta;
 
   if(cTx->copyNodeBase==LASTBASE) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"It is assumed that base for vertices is calculated");
@@ -208,7 +208,7 @@ PetscErrorCode FatPrismPolynomialBase::getValueH1ThroughThickness() {
   
   PetscFunctionBegin;
 
-  // DataForcesAndSurcesCore& data = cTx->dAta;
+  // DataForcesAndSourcesCore& data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
   PetscErrorCode (*base_polynomials)(
     int p,double s,double *diff_s,double *L,double *diffL,const int dim
@@ -251,7 +251,7 @@ PetscErrorCode FatPrismPolynomialBase::getValueH1(MatrixDouble &pts) {
   
   PetscFunctionBegin;
 
-  DataForcesAndSurcesCore& data = cTx->dAta;
+  DataForcesAndSourcesCore& data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
   // PetscErrorCode (*base_polynomials)(
   //   int p,double s,double *diff_s,double *L,double *diffL,const int dim

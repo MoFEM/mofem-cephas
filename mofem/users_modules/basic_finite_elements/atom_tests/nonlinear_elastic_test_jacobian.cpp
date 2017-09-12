@@ -26,7 +26,7 @@ struct OpCheck: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperato
   FTensor::Index<'j',3> j;
 
   PetscErrorCode doWork(
-    int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+    int side,EntityType type,DataForcesAndSourcesCore::EntData &data
   ) {
     PetscFunctionBegin;
     try {

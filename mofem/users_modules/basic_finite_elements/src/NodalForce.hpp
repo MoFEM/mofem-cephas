@@ -59,7 +59,7 @@ struct NodalForce {
     /** Exeuted for each entity on element, i.e. in this case Vertex element
       has only one entity, that is vertex
     */
-    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
+    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data);
 
   };
 

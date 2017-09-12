@@ -153,14 +153,14 @@ ConvectiveMassElement::OpGetDataAtGaussPts::OpGetDataAtGaussPts(const std::strin
   std::vector<VectorDouble > &values_at_gauss_pts,
   std::vector<MatrixDouble > &gardient_at_gauss_pts
 ):
-VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROW),
+VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSourcesCore::UserDataOperator::OPROW),
 valuesAtGaussPts(values_at_gauss_pts),gradientAtGaussPts(gardient_at_gauss_pts),
 zeroAtType(MBVERTEX) {
 
 }
 
 PetscErrorCode ConvectiveMassElement::OpGetDataAtGaussPts::doWork(
-  int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+  int side,EntityType type,DataForcesAndSourcesCore::EntData &data
 ) {
   PetscFunctionBegin;
   try {
@@ -260,7 +260,7 @@ ConvectiveMassElement::OpMassJacobian::OpMassJacobian(
   int tag,
   bool jacobian
 ):
-VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROW),
+VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSourcesCore::UserDataOperator::OPROW),
 dAta(data),
 commonData(common_data),
 tAg(tag),
@@ -271,7 +271,7 @@ methodsOp(methods_op) {
 }
 
 PetscErrorCode ConvectiveMassElement::OpMassJacobian::doWork(
-  int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data
+  int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
 ) {
   PetscFunctionBegin;
 
@@ -485,13 +485,13 @@ PetscErrorCode ConvectiveMassElement::OpMassJacobian::doWork(
   ConvectiveMassElement::OpMassRhs::OpMassRhs(
     const std::string field_name,BlockData &data,CommonData &common_data
   ):
-  VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROW),
+  VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSourcesCore::UserDataOperator::OPROW),
   dAta(data),
   commonData(common_data) {
   }
 
   PetscErrorCode ConvectiveMassElement::OpMassRhs::doWork(
-    int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data
+    int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
   ) {
     PetscFunctionBegin;
 
@@ -556,7 +556,7 @@ PetscErrorCode ConvectiveMassElement::OpMassJacobian::doWork(
   ConvectiveMassElement::OpMassLhs_dM_dv::OpMassLhs_dM_dv(
     const std::string vel_field,const std::string field_name,BlockData &data,CommonData &common_data,Range *forcesonlyonentities_ptr
   ):
-  VolumeElementForcesAndSourcesCore::UserDataOperator(vel_field,field_name,ForcesAndSurcesCore::UserDataOperator::OPROWCOL),
+  VolumeElementForcesAndSourcesCore::UserDataOperator(vel_field,field_name,ForcesAndSourcesCore::UserDataOperator::OPROWCOL),
   dAta(data),
   commonData(common_data) {
     sYmm = false;
@@ -566,7 +566,7 @@ PetscErrorCode ConvectiveMassElement::OpMassJacobian::doWork(
   }
 
   PetscErrorCode ConvectiveMassElement::OpMassLhs_dM_dv::getJac(
-    DataForcesAndSurcesCore::EntData &col_data,int gg
+    DataForcesAndSourcesCore::EntData &col_data,int gg
   ) {
     PetscFunctionBegin;
     try {
@@ -665,8 +665,8 @@ PetscErrorCode ConvectiveMassElement::OpMassJacobian::doWork(
   PetscErrorCode ConvectiveMassElement::OpMassLhs_dM_dv::doWork(
     int row_side,int col_side,
     EntityType row_type,EntityType col_type,
-    DataForcesAndSurcesCore::EntData &row_data,
-    DataForcesAndSurcesCore::EntData &col_data
+    DataForcesAndSourcesCore::EntData &row_data,
+    DataForcesAndSourcesCore::EntData &col_data
   ) {
     PetscFunctionBegin;
 
@@ -770,7 +770,7 @@ PetscErrorCode ConvectiveMassElement::OpMassJacobian::doWork(
   ):
   OpMassLhs_dM_dv(field_name,col_field,data,common_data) {}
 
-  PetscErrorCode ConvectiveMassElement::OpMassLhs_dM_dx::getJac(DataForcesAndSurcesCore::EntData &col_data,int gg) {
+  PetscErrorCode ConvectiveMassElement::OpMassLhs_dM_dx::getJac(DataForcesAndSourcesCore::EntData &col_data,int gg) {
     PetscFunctionBegin;
     try {
       FTensor::Index<'i',3> i;
@@ -841,7 +841,7 @@ PetscErrorCode ConvectiveMassElement::OpMassJacobian::doWork(
 
   }
 
-  PetscErrorCode ConvectiveMassElement::OpMassLhs_dM_dX::getJac(DataForcesAndSurcesCore::EntData &col_data,int gg) {
+  PetscErrorCode ConvectiveMassElement::OpMassLhs_dM_dX::getJac(DataForcesAndSourcesCore::EntData &col_data,int gg) {
     PetscFunctionBegin;
     try {
       int nb_col = col_data.getIndices().size();
@@ -929,7 +929,7 @@ PetscErrorCode ConvectiveMassElement::OpMassJacobian::doWork(
 ConvectiveMassElement::OpEnergy::OpEnergy(
   const std::string field_name,BlockData &data,CommonData &common_data,Vec *v_ptr
 ):
-VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROW),
+VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSourcesCore::UserDataOperator::OPROW),
 dAta(data),
 commonData(common_data),
 Vptr(v_ptr),
@@ -937,7 +937,7 @@ lInear(commonData.lInear) {
 }
 
 PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
-  int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data
+  int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
 ) {
     PetscFunctionBegin;
 
@@ -998,7 +998,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
   ConvectiveMassElement::OpVelocityJacobian::OpVelocityJacobian(
     const std::string field_name,BlockData &data,CommonData &common_data,int tag,bool jacobian
   ):
-  VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROW),
+  VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSourcesCore::UserDataOperator::OPROW),
   dAta(data),
   commonData(common_data),
   tAg(tag),
@@ -1006,7 +1006,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
   fieldDisp(false) { }
 
   PetscErrorCode ConvectiveMassElement::OpVelocityJacobian::doWork(
-    int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data
+    int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
   ) {
     PetscFunctionBegin;
 
@@ -1185,13 +1185,13 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
     ConvectiveMassElement::OpVelocityRhs::OpVelocityRhs(
       const std::string field_name,BlockData &data,CommonData &common_data
     ):
-    VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROW),
+    VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSourcesCore::UserDataOperator::OPROW),
     dAta(data),
     commonData(common_data) {
     }
 
     PetscErrorCode ConvectiveMassElement::OpVelocityRhs::doWork(
-      int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data
+      int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
     ) {
       PetscFunctionBegin;
 
@@ -1259,7 +1259,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
     }
 
     PetscErrorCode ConvectiveMassElement::OpVelocityLhs_dV_dv::getJac(
-      DataForcesAndSurcesCore::EntData &col_data,int gg
+      DataForcesAndSourcesCore::EntData &col_data,int gg
     ) {
       PetscFunctionBegin;
       int nb_col = col_data.getIndices().size();
@@ -1303,7 +1303,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
     }
 
     PetscErrorCode ConvectiveMassElement::OpVelocityLhs_dV_dx::getJac(
-      DataForcesAndSurcesCore::EntData &col_data,int gg
+      DataForcesAndSourcesCore::EntData &col_data,int gg
     ) {
       PetscFunctionBegin;
       int nb_col = col_data.getIndices().size();
@@ -1401,7 +1401,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
     OpVelocityLhs_dV_dv(vel_field,field_name,data,common_data) {}
 
     PetscErrorCode ConvectiveMassElement::OpVelocityLhs_dV_dX::getJac(
-      DataForcesAndSurcesCore::EntData &col_data,int gg
+      DataForcesAndSourcesCore::EntData &col_data,int gg
     ) {
       PetscFunctionBegin;
       int nb_col = col_data.getIndices().size();
@@ -1485,7 +1485,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
     ConvectiveMassElement::OpEshelbyDynamicMaterialMomentumJacobian::OpEshelbyDynamicMaterialMomentumJacobian(
       const std::string field_name,BlockData &data,CommonData &common_data,int tag,bool jacobian
     ):
-    VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROW),
+    VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSourcesCore::UserDataOperator::OPROW),
     dAta(data),
     commonData(common_data),
     tAg(tag),
@@ -1493,7 +1493,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
     fieldDisp(false) {}
 
     PetscErrorCode ConvectiveMassElement::OpEshelbyDynamicMaterialMomentumJacobian::doWork(
-      int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data
+      int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
     ) {
       PetscFunctionBegin;
 
@@ -1665,7 +1665,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
     ConvectiveMassElement::OpEshelbyDynamicMaterialMomentumRhs::OpEshelbyDynamicMaterialMomentumRhs(
       const std::string field_name,BlockData &data,CommonData &common_data,Range *forcesonlyonentities_ptr
     ):
-    VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROW),
+    VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSourcesCore::UserDataOperator::OPROW),
     dAta(data),
     commonData(common_data) {
       if(forcesonlyonentities_ptr!=NULL) {
@@ -1674,7 +1674,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
     }
 
     PetscErrorCode ConvectiveMassElement::OpEshelbyDynamicMaterialMomentumRhs::doWork(
-      int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data) {
+      int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data) {
       PetscFunctionBegin;
 
       
@@ -1760,7 +1760,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
 
 
     PetscErrorCode ConvectiveMassElement::OpEshelbyDynamicMaterialMomentumLhs_dv::getJac(
-      DataForcesAndSurcesCore::EntData &col_data,int gg
+      DataForcesAndSourcesCore::EntData &col_data,int gg
     ) {
       PetscFunctionBegin;
       int nb_col = col_data.getIndices().size();
@@ -1856,7 +1856,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
     }
 
     PetscErrorCode ConvectiveMassElement::OpEshelbyDynamicMaterialMomentumLhs_dx::getJac(
-      DataForcesAndSurcesCore::EntData &col_data,int gg
+      DataForcesAndSourcesCore::EntData &col_data,int gg
     ) {
       PetscFunctionBegin;
       int nb_col = col_data.getIndices().size();
@@ -1927,7 +1927,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
 
     }
 
-    PetscErrorCode ConvectiveMassElement::OpEshelbyDynamicMaterialMomentumLhs_dX::getJac(DataForcesAndSurcesCore::EntData &col_data,int gg) {
+    PetscErrorCode ConvectiveMassElement::OpEshelbyDynamicMaterialMomentumLhs_dX::getJac(DataForcesAndSourcesCore::EntData &col_data,int gg) {
       PetscFunctionBegin;
       int nb_col = col_data.getIndices().size();
       jac.clear();

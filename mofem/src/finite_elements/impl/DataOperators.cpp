@@ -66,7 +66,7 @@ extern "C" {
 namespace MoFEM {
 
 PetscErrorCode DataOperator::opLhs(
-    DataForcesAndSurcesCore &row_data,DataForcesAndSurcesCore &col_data,bool symm) {
+    DataForcesAndSourcesCore &row_data,DataForcesAndSourcesCore &col_data,bool symm) {
   PetscFunctionBegin;
   
 
@@ -506,7 +506,7 @@ PetscErrorCode invertTensor3by3<3,double,ublas::row_major,DoubleAllacator>(
 }
 
 PetscErrorCode DataOperator::opRhs(
-  DataForcesAndSurcesCore &data,
+  DataForcesAndSourcesCore &data,
   const bool do_vertices,
   const bool do_edges,
   const bool do_quads,
@@ -658,7 +658,7 @@ PetscErrorCode DataOperator::opRhs(
 PetscErrorCode OpSetInvJacH1::doWork(
   int side,
   EntityType type,
-  DataForcesAndSurcesCore::EntData &data
+  DataForcesAndSourcesCore::EntData &data
 ) {
   PetscFunctionBegin;
   // 
@@ -746,7 +746,7 @@ PetscErrorCode OpSetInvJacH1::doWork(
 PetscErrorCode OpSetInvJacHdivAndHcurl::doWork(
   int side,
   EntityType type,
-  DataForcesAndSurcesCore::EntData &data
+  DataForcesAndSourcesCore::EntData &data
 ) {
   PetscFunctionBegin;
 
@@ -813,7 +813,7 @@ PetscErrorCode OpSetInvJacHdivAndHcurl::doWork(
 PetscErrorCode OpSetContravariantPiolaTransform::doWork(
   int side,
   EntityType type,
-  DataForcesAndSurcesCore::EntData &data
+  DataForcesAndSourcesCore::EntData &data
 )  {
   PetscFunctionBegin;
 
@@ -885,7 +885,7 @@ PetscErrorCode OpSetContravariantPiolaTransform::doWork(
 PetscErrorCode OpSetCovariantPiolaTransform::doWork(
   int side,
   EntityType type,
-  DataForcesAndSurcesCore::EntData &data
+  DataForcesAndSourcesCore::EntData &data
 )  {
   PetscFunctionBegin;
 
@@ -954,7 +954,7 @@ PetscErrorCode OpSetCovariantPiolaTransform::doWork(
 PetscErrorCode OpSetHoInvJacH1::doWork(
     int side,
     EntityType type,
-    DataForcesAndSurcesCore::EntData &data
+    DataForcesAndSourcesCore::EntData &data
   )  {
     PetscFunctionBegin;
 
@@ -1056,7 +1056,7 @@ PetscErrorCode OpSetHoInvJacH1::doWork(
   PetscErrorCode OpSetHoInvJacHdivAndHcurl::doWork(
     int side,
     EntityType type,
-    DataForcesAndSurcesCore::EntData &data
+    DataForcesAndSourcesCore::EntData &data
   ) {
     PetscFunctionBegin;
 
@@ -1127,7 +1127,7 @@ PetscErrorCode OpSetHoInvJacH1::doWork(
 
 
 PetscErrorCode OpSetHoContravariantPiolaTransform::doWork(
-  int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+  int side,EntityType type,DataForcesAndSourcesCore::EntData &data
 ) {
   PetscFunctionBegin;
 
@@ -1202,7 +1202,7 @@ PetscErrorCode OpSetHoContravariantPiolaTransform::doWork(
 }
 
 PetscErrorCode OpSetHoCovariantPiolaTransform::doWork(
-  int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+  int side,EntityType type,DataForcesAndSourcesCore::EntData &data
 ) {
   PetscFunctionBegin;
 
@@ -1273,7 +1273,7 @@ PetscErrorCode OpSetHoCovariantPiolaTransform::doWork(
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode OpGetCoordsAndNormalsOnFace::doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+PetscErrorCode OpGetCoordsAndNormalsOnFace::doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
   PetscFunctionBegin;
 
   unsigned int nb_dofs = data.getFieldData().size();
@@ -1357,7 +1357,7 @@ PetscErrorCode OpGetCoordsAndNormalsOnFace::calculateNormals() {
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode OpGetCoordsAndNormalsOnPrism::doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+PetscErrorCode OpGetCoordsAndNormalsOnPrism::doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
   PetscFunctionBegin;
 
   if(data.getFieldData().size()==0)  PetscFunctionReturn(0);
@@ -1467,7 +1467,7 @@ PetscErrorCode OpGetCoordsAndNormalsOnPrism::calculateNormals() {
 PetscErrorCode OpSetContravariantPiolaTransoformOnTriangle::doWork(
     int side,
     EntityType type,
-    DataForcesAndSurcesCore::EntData &data
+    DataForcesAndSourcesCore::EntData &data
 ) {
   PetscFunctionBegin;
 
@@ -1508,7 +1508,7 @@ PetscErrorCode OpSetContravariantPiolaTransoformOnTriangle::doWork(
 PetscErrorCode OpSetCovariantPiolaTransoformOnTriangle::doWork(
   int side,
   EntityType type,
-  DataForcesAndSurcesCore::EntData &data
+  DataForcesAndSourcesCore::EntData &data
 ) {
   
   PetscFunctionBegin;
@@ -1612,7 +1612,7 @@ PetscErrorCode OpSetCovariantPiolaTransoformOnTriangle::doWork(
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode OpGetHoTangentOnEdge::doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+PetscErrorCode OpGetHoTangentOnEdge::doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
   PetscFunctionBegin;
 
   int nb_dofs = data.getFieldData().size();
@@ -1667,7 +1667,7 @@ PetscErrorCode OpGetHoTangentOnEdge::doWork(int side,EntityType type,DataForcesA
 PetscErrorCode OpSetCovariantPiolaTransoformOnEdge::doWork(
   int side,
   EntityType type,
-  DataForcesAndSurcesCore::EntData &data
+  DataForcesAndSourcesCore::EntData &data
 ) {
   PetscFunctionBegin;
 
@@ -1762,7 +1762,7 @@ template<>
 PetscErrorCode OpGetDataAndGradient<3,3>::calculateValAndGrad(
   int side,
   EntityType type,
-  DataForcesAndSurcesCore::EntData &data
+  DataForcesAndSourcesCore::EntData &data
 ) {
   PetscFunctionBegin;
   if(data.getBase()==NOBASE) PetscFunctionReturn(0);
@@ -1823,7 +1823,7 @@ template<>
 PetscErrorCode OpGetDataAndGradient<1,3>::calculateValAndGrad(
   int side,
   EntityType type,
-  DataForcesAndSurcesCore::EntData &data
+  DataForcesAndSourcesCore::EntData &data
 ) {
   PetscFunctionBegin;
   const unsigned int nb_gauss_pts = data.getN().size1();

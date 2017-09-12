@@ -153,18 +153,18 @@ int main(int argc, char *argv[]) {
     TeeDevice my_tee(std::cout, ofs);
     TeeStream my_split(my_tee);
 
-    struct MyOp: public FatPrismElementForcesAndSurcesCore::UserDataOperator {
+    struct MyOp: public FatPrismElementForcesAndSourcesCore::UserDataOperator {
 
       TeeStream &mySplit;
       MyOp(TeeStream &mySplit,const char type):
-        FatPrismElementForcesAndSurcesCore::UserDataOperator("FIELD1","FIELD1",type),
+        FatPrismElementForcesAndSourcesCore::UserDataOperator("FIELD1","FIELD1",type),
         mySplit(mySplit)
       {}
 
       PetscErrorCode doWork(
         int side,
         EntityType type,
-        DataForcesAndSurcesCore::EntData &data
+        DataForcesAndSourcesCore::EntData &data
       ) {
         PetscFunctionBegin;
 
@@ -246,8 +246,8 @@ int main(int argc, char *argv[]) {
       PetscErrorCode doWork(
         int row_side,int col_side,
         EntityType row_type,EntityType col_type,
-        DataForcesAndSurcesCore::EntData &row_data,
-        DataForcesAndSurcesCore::EntData &col_data
+        DataForcesAndSourcesCore::EntData &row_data,
+        DataForcesAndSourcesCore::EntData &col_data
       ) {
         PetscFunctionBegin;
 
@@ -265,9 +265,9 @@ int main(int argc, char *argv[]) {
 
     };
 
-    FatPrismElementForcesAndSurcesCore fe1(m_field);
-    fe1.getOpPtrVector().push_back(new MyOp(my_split,ForcesAndSurcesCore::UserDataOperator::OPROW));
-    //fe1.getOpPtrVector().push_back(new MyOp(my_split,ForcesAndSurcesCore::UserDataOperator::OPROWCOL));
+    FatPrismElementForcesAndSourcesCore fe1(m_field);
+    fe1.getOpPtrVector().push_back(new MyOp(my_split,ForcesAndSourcesCore::UserDataOperator::OPROW));
+    //fe1.getOpPtrVector().push_back(new MyOp(my_split,ForcesAndSourcesCore::UserDataOperator::OPROWCOL));
     ierr = m_field.loop_finite_elements("TEST_PROBLEM","TEST_FE1",fe1);  CHKERRQ(ierr);
 
 

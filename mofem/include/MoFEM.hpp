@@ -94,14 +94,14 @@
 #include <EdgePolynomialBase.hpp>       // Base functions on edge
 #include <FlatPrismPolynomialBase.hpp>  // Base functions on prism
 #include <DataOperators.hpp>
-#include <ForcesAndSurcesCore.hpp>
+#include <ForcesAndSourcesCore.hpp>
 #include <UserDataOperators.hpp>
 #include <VolumeElementForcesAndSourcesCore.hpp>
 #include <FaceElementForcesAndSourcesCore.hpp>
-#include <EdgeElementForcesAndSurcesCore.hpp>
+#include <EdgeElementForcesAndSourcesCore.hpp>
 #include <VertexElementForcesAndSourcesCore.hpp>
-#include <FlatPrismElementForcesAndSurcesCore.hpp>
-#include <FatPrismElementForcesAndSurcesCore.hpp>
+#include <FlatPrismElementForcesAndSourcesCore.hpp>
+#include <FatPrismElementForcesAndSourcesCore.hpp>
 #include <Projection10NodeCoordsOnField.hpp>
 
 

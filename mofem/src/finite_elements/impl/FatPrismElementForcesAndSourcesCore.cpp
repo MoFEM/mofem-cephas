@@ -1,4 +1,4 @@
-/** \file FatPrismElementForcesAndSurcesCore.cpp
+/** \file FatPrismElementForcesAndSourcesCore.cpp
 
 \brief Implementation of fat prism element
 
@@ -53,9 +53,9 @@
 #include <FTensor.hpp>
 #include <DataStructures.hpp>
 #include <DataOperators.hpp>
-#include <ForcesAndSurcesCore.hpp>
+#include <ForcesAndSourcesCore.hpp>
 #include <VolumeElementForcesAndSourcesCore.hpp>
-#include <FatPrismElementForcesAndSurcesCore.hpp>
+#include <FatPrismElementForcesAndSourcesCore.hpp>
 
 #include <BaseFunction.hpp>
 #include <EntPolynomialBaseCtx.hpp>
@@ -76,7 +76,7 @@ extern "C" {
 
 namespace MoFEM {
 
-PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
+PetscErrorCode FatPrismElementForcesAndSourcesCore::operator()() {
   PetscFunctionBegin;
 
   if(numeredEntFiniteElementPtr->getEntType() != MBPRISM) PetscFunctionReturn(0);
@@ -447,7 +447,7 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
       UserDataOperator::OPROW, UserDataOperator::OPCOL
     };
     std::vector<std::string> last_eval_field_name(2);
-    DataForcesAndSurcesCore *op_data[2];
+    DataForcesAndSourcesCore *op_data[2];
     FieldSpace space[2];
     FieldApproximationBase base[2];
 
@@ -681,7 +681,7 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
 PetscErrorCode OpCalculateInvJacForFatPrism::doWork(
   int side,
   EntityType type,
-  DataForcesAndSurcesCore::EntData &data
+  DataForcesAndSourcesCore::EntData &data
 ) {
   
   PetscFunctionBegin;
@@ -746,7 +746,7 @@ PetscErrorCode OpCalculateInvJacForFatPrism::doWork(
 }
 
 PetscErrorCode OpSetInvJacH1ForFatPrism::doWork(
-  int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+  int side,EntityType type,DataForcesAndSourcesCore::EntData &data
 ) {
   PetscFunctionBegin;
 

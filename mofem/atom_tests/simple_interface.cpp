@@ -33,7 +33,7 @@ struct OpVolume: public VolumeElementForcesAndSourcesCore::UserDataOperator {
   VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,OPROW),
   vOl(vol) {
   }
-  PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+  PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
     
     PetscFunctionBegin;
     if(type!=MBVERTEX) PetscFunctionReturn(0);
@@ -55,8 +55,8 @@ struct OpVolume: public VolumeElementForcesAndSourcesCore::UserDataOperator {
   PetscErrorCode doWork(
     int row_side,int col_side,
     EntityType row_type, EntityType col_type,
-    DataForcesAndSurcesCore::EntData &row_data,
-    DataForcesAndSurcesCore::EntData &col_data
+    DataForcesAndSourcesCore::EntData &row_data,
+    DataForcesAndSourcesCore::EntData &col_data
   )	{
     PetscFunctionBegin;
     // PetscPrintf(PETSC_COMM_WORLD,"domain: calculate matrix\n");
@@ -70,7 +70,7 @@ struct OpFace: public FaceElementForcesAndSourcesCore::UserDataOperator {
   FaceElementForcesAndSourcesCore::UserDataOperator(field_name,OPROW),
   vOl(vol) {
   }
-  PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+  PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
     
     PetscFunctionBegin;
     if(type!=MBVERTEX) PetscFunctionReturn(0);
@@ -93,8 +93,8 @@ struct OpFace: public FaceElementForcesAndSourcesCore::UserDataOperator {
   PetscErrorCode doWork(
     int row_side,int col_side,
     EntityType row_type, EntityType col_type,
-    DataForcesAndSurcesCore::EntData &row_data,
-    DataForcesAndSurcesCore::EntData &col_data
+    DataForcesAndSourcesCore::EntData &row_data,
+    DataForcesAndSourcesCore::EntData &col_data
   )	{
     PetscFunctionBegin;
     // PetscPrintf(PETSC_COMM_WORLD,"boundary: calculate matrix\n");
@@ -149,10 +149,10 @@ int main(int argc, char *argv[]) {
       // get dm
       ierr = simple_interface->getDM(&dm); CHKERRQ(ierr);
       // create elements
-      boost::shared_ptr<ForcesAndSurcesCore> domain_fe =
-      boost::shared_ptr<ForcesAndSurcesCore>(new VolumeElementForcesAndSourcesCore(m_field));
-      boost::shared_ptr<ForcesAndSurcesCore> boundary_fe =
-      boost::shared_ptr<ForcesAndSurcesCore>(new FaceElementForcesAndSourcesCore(m_field));
+      boost::shared_ptr<ForcesAndSourcesCore> domain_fe =
+      boost::shared_ptr<ForcesAndSourcesCore>(new VolumeElementForcesAndSourcesCore(m_field));
+      boost::shared_ptr<ForcesAndSourcesCore> boundary_fe =
+      boost::shared_ptr<ForcesAndSourcesCore>(new FaceElementForcesAndSourcesCore(m_field));
       // set integration rule
       domain_fe->getRuleHook = VolRule();
       boundary_fe->getRuleHook = FaceRule();

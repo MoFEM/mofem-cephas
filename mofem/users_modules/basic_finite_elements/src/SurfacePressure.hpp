@@ -108,7 +108,7 @@ struct NeummanForcesSurface {
 
     VectorDouble Nf; //< Local force vector
 
-    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
+    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data);
 
   };
 
@@ -133,7 +133,7 @@ struct NeummanForcesSurface {
 
     VectorDouble Nf; //< Local force vector
 
-    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
+    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data);
 
   };
 
@@ -155,7 +155,7 @@ struct NeummanForcesSurface {
 
     VectorDouble Nf;
 
-    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
+    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data);
 
   };
 
@@ -176,7 +176,7 @@ struct NeummanForcesSurface {
 
     VectorDouble Nf;
 
-    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
+    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data);
 
   };
 

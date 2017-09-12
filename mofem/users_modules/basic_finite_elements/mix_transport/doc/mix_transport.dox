@@ -802,7 +802,7 @@ MyTriFE feTri;   ///< Instance of surface element
 \endcode
 
 Those two finite element classes have method
-MoFEM::ForcesAndSurcesCore::getRule overladed, which sets rank of integration rule
+MoFEM::ForcesAndSourcesCore::getRule overladed, which sets rank of integration rule
 on the element. The programmer needs to set integration rule, since he knows what will
 be integrated.
 
@@ -954,11 +954,11 @@ derivatives and other typical operations.
 All this work is done by generic finite element,  the basic finite element
 instance is built on MoFEM::FEMethod, then more advanced structure recognising
 that finite element entity is composed of lower dimension entities is
-MoFEM::ForcesAndSurcesCore. MoFEM::ForcesAndSurcesCore allows to add so-called
+MoFEM::ForcesAndSourcesCore. MoFEM::ForcesAndSourcesCore allows to add so-called
 users operators, which are classes operating on each lower dimension entities
 and performing loops over integration points.
 
-From class MoFEM::ForcesAndSurcesCore are derived more specialised classes like
+From class MoFEM::ForcesAndSourcesCore are derived more specialised classes like
 MoFEM::VolumeElementForcesAndSourcesCore, MoFEM::FaceElementForcesAndSourcesCore
 and others, see \ref mofem_forces_and_sources . Those elements recognise the
 fact that for example working with a volume (3d) finite element you would like
@@ -973,14 +973,14 @@ MoFEM::VolumeElementForcesAndSourcesCore by creating new class
 MixTransport::MixTransportElement::MyVolumeFE that derives from the existing class. The
 derived class inherits the properties of the base class, and you can add or
 override methods and properties as required. Each class has method
-MoFEM::ForcesAndSurcesCore::getOpPtrVector, returning reference to vector of
-shared pointers to MoFEM::ForcesAndSurcesCore::UserDataOperator, i.e.
+MoFEM::ForcesAndSourcesCore::getOpPtrVector, returning reference to vector of
+shared pointers to MoFEM::ForcesAndSourcesCore::UserDataOperator, i.e.
 \code
-boost::ptr_vector<MoFEM::ForcesAndSurcesCore::UserDataOperator>& MoFEM::ForcesAndSurcesCore::getOpPtrVector ();
+boost::ptr_vector<MoFEM::ForcesAndSourcesCore::UserDataOperator>& MoFEM::ForcesAndSourcesCore::getOpPtrVector ();
 \endcode
 
 Instances of operator classes derived from MoFEM::DataOperator.
-MoFEM::ForcesAndSurcesCore::UserDataOperator do particular jobs, for example,
+MoFEM::ForcesAndSourcesCore::UserDataOperator do particular jobs, for example,
 calculate field values at integration points, integrate mass or stiffness
 matrix. Finite element instance can run the sequence of user operator in order
 you add them to shared common data structure, here \ref MixTransport::MixTransportElement
@@ -993,17 +993,17 @@ and easily test them one by one, making debugging easy. That is general
 philosophy of MoFEM, that complex and difficult problems are composition of
 small and simple tasks.
 
-Class MoFEM::ForcesAndSurcesCore::UserDataOperator is inherited by
+Class MoFEM::ForcesAndSourcesCore::UserDataOperator is inherited by
 MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator or
 MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator and other users
 operator classes associated with vertices and edges. User operator class has two
 types of functions which need to be overloaded to do calculations, and that is
 \code virtual PetscErrorCode MoFEM::DataOperator::doWork( int row_side,int
 col_side, EntityType row_type,EntityType col_type,
-DataForcesAndSurcesCore::EntData &row_data, DataForcesAndSurcesCore::EntData
+DataForcesAndSourcesCore::EntData &row_data, DataForcesAndSourcesCore::EntData
 &col_data ); \endcode and \code virtual PetscErrorCode
 MoFEM::DataOperator::doWork( int side, EntityType type,
-DataForcesAndSurcesCore::EntData &data ) \endcode You have seen how we use those
+DataForcesAndSourcesCore::EntData &data ) \endcode You have seen how we use those
 operators in the previous section here we show how to implement particular
 cases. The first \b doWork(nt row_side,int col_side,...) function is usually
 overloaded when you assemble matrix, the second is often used to assemble
@@ -1065,8 +1065,8 @@ struct MixTransport::MixTransportElement::OpVDivSigma_L2Hdiv: public MoFEM::Volu
   PetscErrorCode doWork(
     int row_side,int col_side,
     EntityType row_type,EntityType col_type,
-    DataForcesAndSurcesCore::EntData &row_data,
-    DataForcesAndSurcesCore::EntData &col_data
+    DataForcesAndSourcesCore::EntData &row_data,
+    DataForcesAndSourcesCore::EntData &col_data
   ) {
     
     PetscFunctionBegin;
@@ -1106,15 +1106,15 @@ that in the first argument of bilinear form we take field \e FLUXES and in the
 second argument of bilinear form we take field \e VALUES. Finally, in the
 constructor of operator we indicate that we like to loop over all possible
 combinations of entities on rows and columns, by setting \e OPROWCOL from enum
-type MoFEM::ForcesAndSurcesCore::UserDataOperator::OpType.
+type MoFEM::ForcesAndSourcesCore::UserDataOperator::OpType.
 
 The real work is done in
 \code
 PetscErrorCode MixTransport::MixTransportElement::OpVDivSigma_L2Hdiv::doWork(
   int row_side,int col_side,
   EntityType row_type,EntityType col_type,
-  DataForcesAndSurcesCore::EntData &row_data,
-  DataForcesAndSurcesCore::EntData &col_data
+  DataForcesAndSourcesCore::EntData &row_data,
+  DataForcesAndSourcesCore::EntData &col_data
 );
 \endcode
 MoFEM executes this method, in this particular case, for each combination of pairs
@@ -1134,7 +1134,7 @@ example, tetrahedra or triangle in this case.  To see more details about a type
 of entities, local indices and canonical numeration see  \cite tautges2010canonical.
 
 The \b row_data and \b col_data are data structures
-MoFEM::DataForcesAndSurcesCore::EntData carrying information about values of base
+MoFEM::DataForcesAndSourcesCore::EntData carrying information about values of base
 functions, global and local DOFs indices, DOFs values on evaluated entities. For
 example, you can get indices on the row using \b row_data.getIndices(), or matrix
 of base functions at integration point as follows
@@ -1143,7 +1143,7 @@ MatrixDouble &base_row_hdiv = row_data.getHdivN(gg);
 \endcode
 In this case, each row of the matrix \b base_row_hdiv represents base function, where columns
 represent values of the element of base function vector. Look to
-MoFEM::DataForcesAndSurcesCore::EntData to see a range of data which is accessible by
+MoFEM::DataForcesAndSourcesCore::EntData to see a range of data which is accessible by
 this data structure.
 
 From inside MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator we
@@ -1212,7 +1212,7 @@ struct MixTransport::MixTransportElement::OpRhsBcOnValues: public MoFEM::FaceEle
   cTx(ctx),
   F(f) {}
   VectorDouble Nf;
-  PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+  PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
     
     PetscFunctionBegin;
     if(data.getFieldData().size()==0) PetscFunctionReturn(0);
@@ -1242,12 +1242,12 @@ MixTransport::MixTransportElement object itself, and the right-hand side vector.
 \b cTx reference to access function evaluating boundary conditions. Constructing
 derived class we are indicating that use field \e FLUXES and loop only over
 entities on the row, by setting OPROW from enum type
-MoFEM::ForcesAndSurcesCore::UserDataOperator::OpType.
+MoFEM::ForcesAndSourcesCore::UserDataOperator::OpType.
 
 The real work is done in
 \code
 PetscErrorCode MixTransport::MixTransportElement::OpRhsBcOnValues::doWork(
-  int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+  int side,EntityType type,DataForcesAndSourcesCore::EntData &data
 );
 \endcode
 Since we loop only over row entities, the function \b doWork, looks different that
@@ -1501,7 +1501,7 @@ struct MixTransport::MixTransportElement::OpSkeleton: public MoFEM::FaceElementF
   cTx(ctx) {
     volSideFe.getOpPtrVector().push_back(new OpSkeleton::OpVolSide(valMap));
   }
-  PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
+  PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data);
 };
 \endcode
 
@@ -1534,7 +1534,7 @@ struct MixTransport::MixTransportElement::OpSkeleton::OpVolSide: public MoFEM::V
   VolumeElementForcesAndSourcesCoreOnSide::UserDataOperator("VALUES",UserDataOperator::OPROW),
   valMap(val_map) {
   }
-  PetscErrorCode doWork(int side, EntityType type,DataForcesAndSurcesCore::EntData &data) {
+  PetscErrorCode doWork(int side, EntityType type,DataForcesAndSourcesCore::EntData &data) {
     PetscFunctionBegin;
     if(data.getFieldData().size() == 0)  PetscFunctionReturn(0);
     int nb_gauss_pts = data.getN().size1();
@@ -1556,7 +1556,7 @@ accessed by \b getFaceSense().
 Once we evaluated approximation functions values at each face, we can calculate
 error \f$\eta_{e,R}\f$, using face operator
 \code{.cpp}
-PetscErrorCode MixTransport::MixTransportElement::OpSkeleton::doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+PetscErrorCode MixTransport::MixTransportElement::OpSkeleton::doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
   MoAB
   
   PetscFunctionBegin;
@@ -1650,7 +1650,7 @@ struct MixTransport::MixTransportElement::OpError: public MoFEM::VolumeElementFo
   VectorDouble deltaFlux;
   MatrixDouble invK;
   PetscErrorCode doWork(
-    int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+    int side,EntityType type,DataForcesAndSourcesCore::EntData &data
   ) {
     
     

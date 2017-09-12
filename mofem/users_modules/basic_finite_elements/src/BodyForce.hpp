@@ -50,7 +50,7 @@ struct BodyFroceConstantField {
     VectorDouble Nf;
 
     PetscErrorCode doWork(
-      int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+      int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
       PetscFunctionBegin;
 
       if(data.getIndices().size()==0) PetscFunctionReturn(0);

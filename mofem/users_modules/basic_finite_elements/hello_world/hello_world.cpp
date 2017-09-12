@@ -30,11 +30,11 @@ static char help[] = "...\n\n";
 
 static map<EntityType,std::string> type_name;
 
-struct OpRow: public ForcesAndSurcesCore::UserDataOperator {
+struct OpRow: public ForcesAndSourcesCore::UserDataOperator {
  OpRow(const std::string& field_name):
- ForcesAndSurcesCore::UserDataOperator(field_name,field_name,OPROW) {
+ ForcesAndSourcesCore::UserDataOperator(field_name,field_name,OPROW) {
  }
- PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+ PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
    PetscFunctionBegin;
    if(type == MBVERTEX) {
      // get number of evaluated element in the loop
@@ -49,19 +49,19 @@ struct OpRow: public ForcesAndSurcesCore::UserDataOperator {
  }
 };
 
-struct OpRowCol: public ForcesAndSurcesCore::UserDataOperator {
+struct OpRowCol: public ForcesAndSourcesCore::UserDataOperator {
  OpRowCol(
    const std::string row_field,
    const std::string col_field,
    const bool symm
  ):
- ForcesAndSurcesCore::UserDataOperator(row_field,col_field,OPROWCOL,symm) {
+ ForcesAndSourcesCore::UserDataOperator(row_field,col_field,OPROWCOL,symm) {
  }
  virtual PetscErrorCode doWork(
    int row_side,int col_side,
    EntityType row_type,EntityType col_type,
-   DataForcesAndSurcesCore::EntData &row_data,
-   DataForcesAndSurcesCore::EntData &col_data
+   DataForcesAndSourcesCore::EntData &row_data,
+   DataForcesAndSourcesCore::EntData &col_data
  ) {
    PetscFunctionBegin;
    std::cout << "Hello Operator OpRowCol:"
@@ -79,7 +79,7 @@ struct OpVolume: public VolumeElementForcesAndSourcesCore::UserDataOperator {
  OpVolume(const std::string& field_name):
  VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,field_name,OPROW) {
  }
- PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+ PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
    PetscFunctionBegin;
    if(type == MBVERTEX) {
     std::cout << "Hello Operator OpVolume:" << " volume " << getVolume() << endl;
@@ -92,7 +92,7 @@ struct OpFace: public FaceElementForcesAndSourcesCore::UserDataOperator {
  OpFace(const std::string& field_name):
  FaceElementForcesAndSourcesCore::UserDataOperator(field_name,OPROW) {
  }
- PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+ PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
    PetscFunctionBegin;
    if(type == MBVERTEX) {
      std::cout << "Hello Operator OpFace:" << " normal " << getNormal() << endl;
@@ -110,7 +110,7 @@ struct OpFaceSide: public FaceElementForcesAndSourcesCore::UserDataOperator {
  FaceElementForcesAndSourcesCore::UserDataOperator(field_name,OPROW),
  feSidePtr(fe_side_ptr) {
  }
- PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+ PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
    
    PetscFunctionBegin;
    if(type == MBVERTEX) {
@@ -125,7 +125,7 @@ struct OpVolumeSide: public VolumeElementForcesAndSourcesCoreOnSide::UserDataOpe
  OpVolumeSide(const std::string& field_name):
  VolumeElementForcesAndSourcesCoreOnSide::UserDataOperator(field_name,field_name,OPROW) {
  }
- PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+ PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
    PetscFunctionBegin;
    if(type == MBVERTEX) {
      std::cout << "Hello Operator OpVolumeSide:"
@@ -182,9 +182,9 @@ int main(int argc, char *argv[]) {
    // setup problem
    ierr = simple_interface->setUp(); CHKERRQ(ierr);
    // Create elements
-   boost::shared_ptr<ForcesAndSurcesCore> domain_fe(new VolumeElementForcesAndSourcesCore(m_field));
-   boost::shared_ptr<ForcesAndSurcesCore> boundary_fe(new FaceElementForcesAndSourcesCore(m_field));
-   boost::shared_ptr<ForcesAndSurcesCore> skeleton_fe(new FaceElementForcesAndSourcesCore(m_field));
+   boost::shared_ptr<ForcesAndSourcesCore> domain_fe(new VolumeElementForcesAndSourcesCore(m_field));
+   boost::shared_ptr<ForcesAndSourcesCore> boundary_fe(new FaceElementForcesAndSourcesCore(m_field));
+   boost::shared_ptr<ForcesAndSourcesCore> skeleton_fe(new FaceElementForcesAndSourcesCore(m_field));
    boost::shared_ptr<VolumeElementForcesAndSourcesCoreOnSide> side_fe(new VolumeElementForcesAndSourcesCoreOnSide(m_field));
    // create distributed vector to accumulate values from processors.
    // set operator to the volume element

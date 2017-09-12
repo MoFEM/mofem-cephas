@@ -5,7 +5,48 @@
 Following lines install minimum number of packages need to work with MoFEM:
 ~~~~~~
 apt-get update
-apt-get install -y wget valgrind git g++ gdb m4 automake libsigsegv2 build-essential libibverbs-dev libblas-dev gfortran libatlas-dev libatlas-base-dev libhdf5-openmpi-dev libjpeg-dev graphviz doxygen cmake gnuplot pstack ca-certificates python libadolc-dev bison flex libx11-dev libboost-all-dev xauth xterm libtool
+apt-get install -y \
+file \
+zlib1g-dev \
+openssh-server \
+wget \
+valgrind \
+git \
+g++ \
+gfortran \
+gdb \
+m4 \
+automake \
+build-essential \
+libtool \
+libblas-dev \
+liblapack-dev \
+libsigsegv2 \
+libjpeg-dev \
+graphviz \
+doxygen \
+cmake \
+gnuplot \
+pstack \
+ca-certificates \
+python \
+bison \
+flex \
+libx11-dev \
+libboost-all-dev \
+libopenmpi-dev \
+openmpi-bin \
+xauth \
+xterm \
+unzip \
+tk8.6-dev \
+libfreetype6-dev \
+mesa-common-dev \
+libglu1-mesa-dev \
+libxmu-dev \
+libxi-dev \
+libadolc-dev \
+libssl-dev
 ~~~~~~
 
 ###1. Open a terminal
@@ -23,7 +64,6 @@ mkdir $MOFEM_INSTALL_DIR
 cd $MOFEM_INSTALL_DIR
 
 # Colone PETSc repository:
-
 git clone https://bitbucket.org/petsc/petsc.git
 cd $MOFEM_INSTALL_DIR/petsc
 
@@ -33,7 +73,7 @@ git checkout tags/v$PETSC_VERSION
 
 # Configure and compile petsc:
 wget ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-4.3.3.1.tar.gz
-./configure --with-mpi=1 --with-debugging=0 --download-superlu_dist=1 --download-metis=1 --download-parmetis=1 --download-hypre=1 --download-mumps=1 --download-scalapack=1 --download-zoltan=1 --download-blacs=1 --download-moab=1 --download-ptscotch=1 --with-hdf5=1 --with-hdf5-dir=/usr --download-netcdf=$MOFEM_INSTALL_DIR/petsc/netcdf-4.3.3.1.tar.gz --with-shared-libraries=1
+./configure --with-mpi=1 --with-debugging=0 --download-superlu_dist=1 --download-metis=1 --download-parmetis=1 --download-hypre=1 --download-mumps=1 --download-scalapack=1 --download-blacs=1 --download-moab=1 --download-ptscotch=1 --download-hdf5=1 --download-netcdf=$MOFEM_INSTALL_DIR/petsc/netcdf-4.3.3.1.tar.gz --with-shared-libraries=1
 make PETSC_DIR=$PWD PETSC_ARCH=arch-linux2-c-opt all
 ~~~~~~
 
@@ -70,7 +110,7 @@ mkdir $MOFEM_INSTALL_DIR/lib
 cd $MOFEM_INSTALL_DIR/lib
 
 # Configuring and compiling code:
-cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS="-Wall"  -DCMAKE_CXX_FLAGS="-Wall" -DPETSC_DIR=$MOFEM_INSTALL_DIR/petsc/ -DPETSC_ARCH=arch-linux2-c-opt -DMOAB_DIR=$MOFEM_INSTALL_DIR/petsc/arch-linux2-c-opt/ -DADOL-C_DIR=$MOFEM_INSTALL_DIR/local/ -DTETGEN_DIR=$MOFEM_INSTALL_DIR/tetgen1.5.0 -DCMAKE_INSTALL_PREFIX=$MOFEM_INSTALL_DIR/users_modules $MOFEM_INSTALL_DIR/mofem-cephas/mofem
+cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS="-Wall"  -DCMAKE_CXX_FLAGS="-Wall -std=c++11" -DPETSC_DIR=$MOFEM_INSTALL_DIR/petsc/ -DPETSC_ARCH=arch-linux2-c-opt -DMOAB_DIR=$MOFEM_INSTALL_DIR/petsc/arch-linux2-c-opt/ -DADOL-C_DIR=$MOFEM_INSTALL_DIR/local/ -DTETGEN_DIR=$MOFEM_INSTALL_DIR/tetgen1.5.0 -DCMAKE_INSTALL_PREFIX=$MOFEM_INSTALL_DIR/users_modules $MOFEM_INSTALL_DIR/mofem-cephas/mofem
 
 # Building code (assuming that you have computer with 4 cores):
 make -j4 install
@@ -94,7 +134,7 @@ List of some additional users modules is available on the main page.
 
 ~~~~~~
 # Configuration:
-cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS="-Wall" -DCMAKE_CXX_FLAGS="-Wall"  users_modules
+cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS="-Wall" -DCMAKE_CXX_FLAGS="-Wall -std=c++11"  users_modules
 
 # Build:
 make -j4

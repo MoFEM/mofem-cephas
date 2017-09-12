@@ -382,7 +382,7 @@ struct NonlinearElasticElement {
       * temperature gradient is calculated multiplying derivatives of shape functions by degrees of freedom
       */
     PetscErrorCode doWork(
-      int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+      int side,EntityType type,DataForcesAndSourcesCore::EntData &data
     );
 
   };
@@ -468,7 +468,7 @@ struct NonlinearElasticElement {
      * @param  row_data
      * @return          error code
      */
-    PetscErrorCode doWork(int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data);
+    PetscErrorCode doWork(int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data);
 
   };
 
@@ -533,7 +533,7 @@ struct NonlinearElasticElement {
 
 
     PetscErrorCode doWork(
-      int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data
+      int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
     );
 
   };
@@ -550,11 +550,11 @@ struct NonlinearElasticElement {
 
     VectorDouble nf;
     PetscErrorCode doWork(
-      int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data
+      int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
     );
 
     virtual PetscErrorCode aSemble(
-      int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data
+      int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
     );
 
   };
@@ -569,7 +569,7 @@ struct NonlinearElasticElement {
     OpEnergy(const std::string field_name,BlockData &data,CommonData &common_data,Vec *v_ptr,bool field_disp);
 
     PetscErrorCode doWork(
-      int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data);
+      int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data);
 
   };
 
@@ -601,20 +601,20 @@ struct NonlinearElasticElement {
       where second therm \f$\frac{\partial F}{\partial x_\textrm{DOF}}\f$ is derivative of shape function
 
     */
-    virtual PetscErrorCode getJac(DataForcesAndSurcesCore::EntData &col_data,int gg);
+    virtual PetscErrorCode getJac(DataForcesAndSourcesCore::EntData &col_data,int gg);
 
     virtual PetscErrorCode aSemble(
       int row_side,int col_side,
       EntityType row_type,EntityType col_type,
-      DataForcesAndSurcesCore::EntData &row_data,
-      DataForcesAndSurcesCore::EntData &col_data
+      DataForcesAndSourcesCore::EntData &row_data,
+      DataForcesAndSourcesCore::EntData &col_data
     );
 
     PetscErrorCode doWork(
       int row_side,int col_side,
       EntityType row_type,EntityType col_type,
-      DataForcesAndSurcesCore::EntData &row_data,
-      DataForcesAndSurcesCore::EntData &col_data);
+      DataForcesAndSourcesCore::EntData &row_data,
+      DataForcesAndSourcesCore::EntData &col_data);
 
   };
 
@@ -629,13 +629,13 @@ struct NonlinearElasticElement {
     );
 
     /// \brief Derivative of Piola Kirchhoff stress over material DOFs
-    PetscErrorCode getJac(DataForcesAndSurcesCore::EntData &col_data,int gg);
+    PetscErrorCode getJac(DataForcesAndSourcesCore::EntData &col_data,int gg);
 
     PetscErrorCode aSemble(
       int row_side,int col_side,
       EntityType row_type,EntityType col_type,
-      DataForcesAndSurcesCore::EntData &row_data,
-      DataForcesAndSurcesCore::EntData &col_data
+      DataForcesAndSourcesCore::EntData &row_data,
+      DataForcesAndSourcesCore::EntData &col_data
     );
 
   };
@@ -669,7 +669,7 @@ struct NonlinearElasticElement {
       const std::string vel_field,const std::string field_name,BlockData &data,CommonData &common_data
     );
 
-    PetscErrorCode getJac(DataForcesAndSurcesCore::EntData &col_data,int gg);
+    PetscErrorCode getJac(DataForcesAndSourcesCore::EntData &col_data,int gg);
 
   };
 
@@ -679,7 +679,7 @@ struct NonlinearElasticElement {
       const std::string vel_field,const std::string field_name,BlockData &data,CommonData &common_data
     );
 
-    PetscErrorCode getJac(DataForcesAndSurcesCore::EntData &col_data,int gg);
+    PetscErrorCode getJac(DataForcesAndSourcesCore::EntData &col_data,int gg);
 
   };
 

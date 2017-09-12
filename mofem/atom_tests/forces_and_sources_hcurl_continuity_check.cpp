@@ -213,7 +213,7 @@ int main(int argc, char *argv[]) {
     PetscErrorCode doWork(
       int side,
       EntityType type,
-      DataForcesAndSurcesCore::EntData &data) {
+      DataForcesAndSourcesCore::EntData &data) {
       PetscFunctionBegin;
 
 
@@ -340,7 +340,7 @@ int main(int argc, char *argv[]) {
     PetscErrorCode doWork(
       int side,
       EntityType type,
-      DataForcesAndSurcesCore::EntData &data) {
+      DataForcesAndSourcesCore::EntData &data) {
       PetscFunctionBegin;
 
 
@@ -402,7 +402,7 @@ int main(int argc, char *argv[]) {
     PetscErrorCode doWork(
       int side,
       EntityType type,
-      DataForcesAndSurcesCore::EntData &data) {
+      DataForcesAndSourcesCore::EntData &data) {
       PetscFunctionBegin;
 
 
@@ -457,20 +457,20 @@ int main(int argc, char *argv[]) {
 
   };
 
-  struct OpEdgesFluxes: public EdgeElementForcesAndSurcesCore::UserDataOperator {
+  struct OpEdgesFluxes: public EdgeElementForcesAndSourcesCore::UserDataOperator {
 
     MoFEM::Interface &mField;
     Tag tH1,tH2;
     TeeStream &mySplit;
 
     OpEdgesFluxes(MoFEM::Interface &m_field,Tag _th1,Tag _th2,TeeStream &my_split):
-      EdgeElementForcesAndSurcesCore::UserDataOperator("HCURL",UserDataOperator::OPROW),
+      EdgeElementForcesAndSourcesCore::UserDataOperator("HCURL",UserDataOperator::OPROW),
       mField(m_field),tH1(_th1),tH2(_th2),mySplit(my_split) {}
 
     PetscErrorCode doWork(
       int side,
       EntityType type,
-      DataForcesAndSurcesCore::EntData &data) {
+      DataForcesAndSourcesCore::EntData &data) {
       PetscFunctionBegin;
 
 
@@ -526,10 +526,10 @@ int main(int argc, char *argv[]) {
 
   };
 
-  struct MyEdgeFE: public EdgeElementForcesAndSurcesCore {
+  struct MyEdgeFE: public EdgeElementForcesAndSourcesCore {
 
     MyEdgeFE(MoFEM::Interface &m_field):
-    EdgeElementForcesAndSurcesCore(m_field) {}
+    EdgeElementForcesAndSourcesCore(m_field) {}
     int getRule(int order) { return -1; };
 
     PetscErrorCode setGaussPts(int order) {

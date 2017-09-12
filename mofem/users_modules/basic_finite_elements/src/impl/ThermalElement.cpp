@@ -22,7 +22,7 @@ using namespace MoFEM;
 
 using namespace boost::numeric;
 
-PetscErrorCode ThermalElement::OpGetGradAtGaussPts::doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+PetscErrorCode ThermalElement::OpGetGradAtGaussPts::doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
   PetscFunctionBegin;
   try {
 
@@ -49,7 +49,7 @@ PetscErrorCode ThermalElement::OpGetGradAtGaussPts::doWork(int side,EntityType t
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode ThermalElement::OpThermalRhs::doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+PetscErrorCode ThermalElement::OpThermalRhs::doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
   PetscFunctionBegin;
 
   if(dAta.tEts.find(getNumeredEntFiniteElementPtr()->getEnt()) == dAta.tEts.end()) {
@@ -111,8 +111,8 @@ PetscErrorCode ThermalElement::OpThermalRhs::doWork(int side,EntityType type,Dat
 PetscErrorCode ThermalElement::OpThermalLhs::doWork(
   int row_side,int col_side,
   EntityType row_type,EntityType col_type,
-  DataForcesAndSurcesCore::EntData &row_data,
-  DataForcesAndSurcesCore::EntData &col_data
+  DataForcesAndSourcesCore::EntData &row_data,
+  DataForcesAndSourcesCore::EntData &col_data
 ) {
   PetscFunctionBegin;
 
@@ -180,7 +180,7 @@ PetscErrorCode ThermalElement::OpThermalLhs::doWork(
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode ThermalElement::OpHeatCapacityRhs::doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+PetscErrorCode ThermalElement::OpHeatCapacityRhs::doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
   PetscFunctionBegin;
 
   try {
@@ -220,8 +220,8 @@ PetscErrorCode ThermalElement::OpHeatCapacityRhs::doWork(int side,EntityType typ
 PetscErrorCode ThermalElement::OpHeatCapacityLhs::doWork(
   int row_side,int col_side,
   EntityType row_type,EntityType col_type,
-  DataForcesAndSurcesCore::EntData &row_data,
-  DataForcesAndSurcesCore::EntData &col_data
+  DataForcesAndSourcesCore::EntData &row_data,
+  DataForcesAndSourcesCore::EntData &col_data
 ) {
   PetscFunctionBegin;
 
@@ -284,7 +284,7 @@ PetscErrorCode ThermalElement::OpHeatCapacityLhs::doWork(
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode ThermalElement::OpHeatFlux::doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+PetscErrorCode ThermalElement::OpHeatFlux::doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
   PetscFunctionBegin;
 
   if(data.getIndices().size()==0) PetscFunctionReturn(0);
@@ -336,8 +336,8 @@ PetscErrorCode ThermalElement::OpHeatFlux::doWork(int side,EntityType type,DataF
 PetscErrorCode ThermalElement::OpRadiationLhs::doWork(
   int row_side,int col_side,
   EntityType row_type,EntityType col_type,
-  DataForcesAndSurcesCore::EntData &row_data,
-  DataForcesAndSurcesCore::EntData &col_data
+  DataForcesAndSourcesCore::EntData &row_data,
+  DataForcesAndSourcesCore::EntData &col_data
 ) {
   PetscFunctionBegin;
 
@@ -398,7 +398,7 @@ PetscErrorCode ThermalElement::OpRadiationLhs::doWork(
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode ThermalElement::OpRadiationRhs::doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+PetscErrorCode ThermalElement::OpRadiationRhs::doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
   PetscFunctionBegin;
 
   if(data.getIndices().size()==0) PetscFunctionReturn(0);
@@ -453,7 +453,7 @@ PetscErrorCode ThermalElement::OpRadiationRhs::doWork(int side,EntityType type,D
 }
 
 PetscErrorCode ThermalElement::OpConvectionRhs::doWork(
-  int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+  int side,EntityType type,DataForcesAndSourcesCore::EntData &data
 ) {
   PetscFunctionBegin;
 
@@ -515,8 +515,8 @@ PetscErrorCode ThermalElement::OpConvectionRhs::doWork(
 PetscErrorCode ThermalElement::OpConvectionLhs::doWork(
   int row_side,int col_side,
   EntityType row_type,EntityType col_type,
-  DataForcesAndSurcesCore::EntData &row_data,
-  DataForcesAndSurcesCore::EntData &col_data
+  DataForcesAndSourcesCore::EntData &row_data,
+  DataForcesAndSourcesCore::EntData &col_data
 ) {
   PetscFunctionBegin;
 

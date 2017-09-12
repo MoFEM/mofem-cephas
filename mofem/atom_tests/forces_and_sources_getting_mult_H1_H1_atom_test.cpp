@@ -139,7 +139,7 @@ int main(int argc, char *argv[]) {
   //what are ghost nodes, see Petsc Manual
   ierr = prb_mng_ptr->partitionGhostDofs("TEST_PROBLEM"); CHKERRQ(ierr);
 
-  struct ForcesAndSurcesCore_TestFE: public ForcesAndSurcesCore {
+  struct ForcesAndSourcesCore_TestFE: public ForcesAndSourcesCore {
 
     
     
@@ -167,8 +167,8 @@ int main(int argc, char *argv[]) {
       PetscErrorCode doWork(
         int row_side,int col_side,
         EntityType row_type,EntityType col_type,
-        DataForcesAndSurcesCore::EntData &row_data,
-        DataForcesAndSurcesCore::EntData &col_data
+        DataForcesAndSourcesCore::EntData &row_data,
+        DataForcesAndSourcesCore::EntData &col_data
       ) {
           PetscFunctionBegin;
 
@@ -223,15 +223,15 @@ int main(int argc, char *argv[]) {
 
     my_mult_H1_H1 op;
 
-    ForcesAndSurcesCore_TestFE(MoFEM::Interface &_m_field):
-      ForcesAndSurcesCore(_m_field),data_row(MBTET),data_col(MBTET) {};
+    ForcesAndSourcesCore_TestFE(MoFEM::Interface &_m_field):
+      ForcesAndSourcesCore(_m_field),data_row(MBTET),data_col(MBTET) {};
 
     PetscErrorCode preProcess() {
       PetscFunctionBegin;
       PetscFunctionReturn(0);
     }
 
-    DataForcesAndSurcesCore data_row,data_col;
+    DataForcesAndSourcesCore data_row,data_col;
 
     PetscErrorCode operator()() {
       PetscFunctionBegin;
@@ -309,7 +309,7 @@ int main(int argc, char *argv[]) {
 
   };
 
-  ForcesAndSurcesCore_TestFE fe1(m_field);
+  ForcesAndSourcesCore_TestFE fe1(m_field);
   ierr = m_field.loop_finite_elements("TEST_PROBLEM","TEST_FE",fe1);  CHKERRQ(ierr);
 
 

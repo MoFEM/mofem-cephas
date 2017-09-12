@@ -52,7 +52,7 @@
 #include <FTensor.hpp>
 #include <DataStructures.hpp>
 #include <DataOperators.hpp>
-#include <ForcesAndSurcesCore.hpp>
+#include <ForcesAndSourcesCore.hpp>
 #include <VertexElementForcesAndSourcesCore.hpp>
 
 #ifdef __cplusplus
@@ -80,7 +80,7 @@ PetscErrorCode VertexElementForcesAndSourcesCore::operator()() {
     UserDataOperator::OPROW, UserDataOperator::OPCOL
   };
   std::vector<std::string> last_eval_field_name(2);
-  DataForcesAndSurcesCore *op_data[2];
+  DataForcesAndSourcesCore *op_data[2];
   FieldSpace space[2];
 
   boost::ptr_vector<UserDataOperator>::iterator oit,hi_oit;
