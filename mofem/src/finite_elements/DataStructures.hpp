@@ -153,7 +153,7 @@ FTensor::Tensor2<double*,Tensor_Dim0,Tensor_Dim1> getTensor2FormData(
   * functions, entity side number, type of entities, approximation order, etc.
   *
   */
-struct DataForcesAndSurcesCore {
+struct DataForcesAndSourcesCore {
 
   /** \brief Data on single entity (This is passed as argument to DataOperator::doWork)
     * \ingroup mofem_forces_and_sources_user_data_operators
@@ -1154,7 +1154,7 @@ struct DataForcesAndSurcesCore {
 
     /**@{*/
 
-    friend std::ostream& operator<<(std::ostream& os,const DataForcesAndSurcesCore::EntData &e);
+    friend std::ostream& operator<<(std::ostream& os,const DataForcesAndSourcesCore::EntData &e);
 
     /**
      * Reset data associated with particular field name
@@ -1205,7 +1205,7 @@ struct DataForcesAndSurcesCore {
    * @return error code
    */
   inline PetscErrorCode resetFieldDepenentData() {
-    
+
     PetscFunctionBegin;
     for(EntityType t = MBVERTEX;t!=MBMAXTYPE;t++) {
       boost::ptr_vector<EntData>::iterator ent_data_it = dataOnEntities[t].begin();
@@ -1216,13 +1216,13 @@ struct DataForcesAndSurcesCore {
     PetscFunctionReturn(0);
   }
 
-  DataForcesAndSurcesCore(EntityType type);
-  virtual ~DataForcesAndSurcesCore() {}
+  DataForcesAndSourcesCore(EntityType type);
+  virtual ~DataForcesAndSourcesCore() {}
 
-  friend std::ostream& operator<<(std::ostream& os,const DataForcesAndSurcesCore &e);
+  friend std::ostream& operator<<(std::ostream& os,const DataForcesAndSourcesCore &e);
 
   protected:
-  DataForcesAndSurcesCore() {}
+  DataForcesAndSourcesCore() {}
 
 };
 
@@ -1231,38 +1231,38 @@ struct DataForcesAndSurcesCore {
 /**@{*/
 
 template<>
-FTensor::Tensor1<double*,3> DataForcesAndSurcesCore::EntData::getFTensor1FieldData<3>();
+FTensor::Tensor1<double*,3> DataForcesAndSourcesCore::EntData::getFTensor1FieldData<3>();
 
 template<>
-FTensor::Tensor1<double*,2> DataForcesAndSurcesCore::EntData::getFTensor1FieldData<2>();
+FTensor::Tensor1<double*,2> DataForcesAndSourcesCore::EntData::getFTensor1FieldData<2>();
 
 template<>
-FTensor::Tensor1<double*,3> DataForcesAndSurcesCore::EntData::getFTensor1DiffN<3>(
+FTensor::Tensor1<double*,3> DataForcesAndSourcesCore::EntData::getFTensor1DiffN<3>(
   const FieldApproximationBase base
 );
 template<>
-FTensor::Tensor1<double*,3> DataForcesAndSurcesCore::EntData::getFTensor1DiffN<3>();
+FTensor::Tensor1<double*,3> DataForcesAndSourcesCore::EntData::getFTensor1DiffN<3>();
 
 template<>
-FTensor::Tensor1<double*,2> DataForcesAndSurcesCore::EntData::getFTensor1DiffN<2>(
+FTensor::Tensor1<double*,2> DataForcesAndSourcesCore::EntData::getFTensor1DiffN<2>(
   const FieldApproximationBase base
 );
 template<>
-FTensor::Tensor1<double*,2> DataForcesAndSurcesCore::EntData::getFTensor1DiffN<2>();
+FTensor::Tensor1<double*,2> DataForcesAndSourcesCore::EntData::getFTensor1DiffN<2>();
 template<>
-FTensor::Tensor1<double*,3> DataForcesAndSurcesCore::EntData::getFTensor1DiffN<3>(
+FTensor::Tensor1<double*,3> DataForcesAndSourcesCore::EntData::getFTensor1DiffN<3>(
   const FieldApproximationBase base,const int bb
 );
 template<>
-FTensor::Tensor1<double*,3> DataForcesAndSurcesCore::EntData::getFTensor1DiffN<3>(
+FTensor::Tensor1<double*,3> DataForcesAndSourcesCore::EntData::getFTensor1DiffN<3>(
   const int bb
 );
 template<>
-FTensor::Tensor1<double*,2> DataForcesAndSurcesCore::EntData::getFTensor1DiffN<2>(
+FTensor::Tensor1<double*,2> DataForcesAndSourcesCore::EntData::getFTensor1DiffN<2>(
   const FieldApproximationBase base,const int bb
 );
 template<>
-FTensor::Tensor1<double*,2> DataForcesAndSurcesCore::EntData::getFTensor1DiffN<2>(
+FTensor::Tensor1<double*,2> DataForcesAndSourcesCore::EntData::getFTensor1DiffN<2>(
   const int bb
 );
 
@@ -1273,19 +1273,19 @@ FTensor::Tensor1<double*,2> DataForcesAndSurcesCore::EntData::getFTensor1DiffN<2
 /**@{*/
 
 template<>
-FTensor::Tensor1<double*,3> DataForcesAndSurcesCore::EntData::getFTensor1HdivN<3>(
+FTensor::Tensor1<double*,3> DataForcesAndSourcesCore::EntData::getFTensor1HdivN<3>(
   FieldApproximationBase base
 );
 template<>
-FTensor::Tensor2<double*,3,3> DataForcesAndSurcesCore::EntData::getFTensor2DiffHdivN<3,3>(
+FTensor::Tensor2<double*,3,3> DataForcesAndSourcesCore::EntData::getFTensor2DiffHdivN<3,3>(
   FieldApproximationBase base
 );
 template<>
-FTensor::Tensor1<double*,3> DataForcesAndSurcesCore::EntData::getFTensor1HdivN<3>(
+FTensor::Tensor1<double*,3> DataForcesAndSourcesCore::EntData::getFTensor1HdivN<3>(
   FieldApproximationBase base,const int gg,const int bb
 );
 template<>
-FTensor::Tensor2<double*,3,3> DataForcesAndSurcesCore::EntData::getFTensor2DiffHdivN<3,3>(
+FTensor::Tensor2<double*,3,3> DataForcesAndSourcesCore::EntData::getFTensor2DiffHdivN<3,3>(
   FieldApproximationBase base,const int gg,const int bb
 );
 
@@ -1296,11 +1296,11 @@ FTensor::Tensor2<double*,3,3> DataForcesAndSurcesCore::EntData::getFTensor2DiffH
 /**@{*/
 
 template<>
-FTensor::Tensor2<double*,3,2> DataForcesAndSurcesCore::EntData::getFTensor2DiffHdivN<3,2>(
+FTensor::Tensor2<double*,3,2> DataForcesAndSourcesCore::EntData::getFTensor2DiffHdivN<3,2>(
   FieldApproximationBase base
 );
 template<>
-FTensor::Tensor2<double*,3,2> DataForcesAndSurcesCore::EntData::getFTensor2DiffHdivN<3,2>(
+FTensor::Tensor2<double*,3,2> DataForcesAndSourcesCore::EntData::getFTensor2DiffHdivN<3,2>(
   FieldApproximationBase base,const int gg,const int bb
 );
 
@@ -1317,12 +1317,12 @@ FTensor::Tensor2<double*,3,2> DataForcesAndSurcesCore::EntData::getFTensor2DiffH
   * Shape functions, senses are shared with other data structure.
   *
   */
-struct DerivedDataForcesAndSurcesCore: public DataForcesAndSurcesCore  {
+struct DerivedDataForcesAndSourcesCore: public DataForcesAndSourcesCore  {
 
-  struct DerivedEntData: public DataForcesAndSurcesCore::EntData {
+  struct DerivedEntData: public DataForcesAndSourcesCore::EntData {
 
-    DataForcesAndSurcesCore::EntData &entData;
-    DerivedEntData(DataForcesAndSurcesCore::EntData &ent_data):
+    DataForcesAndSourcesCore::EntData &entData;
+    DerivedEntData(DataForcesAndSourcesCore::EntData &ent_data):
     entData(ent_data) {
     }
 
@@ -1344,9 +1344,15 @@ struct DerivedDataForcesAndSurcesCore: public DataForcesAndSurcesCore  {
 
   };
 
-  DerivedDataForcesAndSurcesCore(DataForcesAndSurcesCore &data);
+  DerivedDataForcesAndSourcesCore(DataForcesAndSourcesCore &data);
 
 };
+
+/// \deprecated Use DataForcesAndSourcesCore
+DEPRECATED typedef DataForcesAndSourcesCore DataForcesAndSurcesCore;
+
+/// \deprecated use DerivedDataForcesAndSourcesCore
+DEPRECATED typedef DerivedDataForcesAndSourcesCore DerivedDataForcesAndSurcesCore;
 
 }
 

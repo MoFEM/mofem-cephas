@@ -1,4 +1,4 @@
-/** \file ForcesAndSurcesCore.hpp
+/** \file ForcesAndSourcesCore.hpp
 
   \brief Implementation of elements on entities.
 
@@ -33,14 +33,14 @@ namespace MoFEM {
   * \ingroup mofem_forces_and_sources
   *
   */
-struct ForcesAndSurcesCore: public FEMethod {
+struct ForcesAndSourcesCore: public FEMethod {
 
   Interface& mField;
-  ForcesAndSurcesCore(MoFEM::Interface& m_field):
+  ForcesAndSourcesCore(MoFEM::Interface& m_field):
   mField(m_field),
   getRuleHook(0) {
   }
-  virtual ~ForcesAndSurcesCore() {
+  virtual ~ForcesAndSourcesCore() {
 
   }
 
@@ -292,7 +292,7 @@ struct ForcesAndSurcesCore: public FEMethod {
     * The integration points and weights are set appropriately for given entity
     * type and integration rule from \ref quad.c
     *
-    * Method \ref ForcesAndSurcesCore::getRule takes at argument takes maximal
+    * Method \ref ForcesAndSourcesCore::getRule takes at argument takes maximal
     * polynomial order set on the element on all fields defined on the element. If a
     * user likes to have more control, another variant of this function can be
     * called which distinguishing between field orders on rows, columns and data,
@@ -300,7 +300,7 @@ struct ForcesAndSurcesCore: public FEMethod {
     * form and field coefficents on the element.
     *
     * \note If user set rule to -1 or any other negative integer, then method
-    * \ref ForcesAndSurcesCore::setGaussPts is called. In that method user can implement
+    * \ref ForcesAndSourcesCore::setGaussPts is called. In that method user can implement
     * own (specific) integration method.
     *
     * \bug this function should be const
@@ -346,7 +346,7 @@ struct ForcesAndSurcesCore: public FEMethod {
     number of rows equal to problem dimension plus one, where last index is used to
     store weight values. %Number of columns is equal to number of integration points.
 
-    \note This function is called if method \ref ForcesAndSurcesCore::getRule is
+    \note This function is called if method \ref ForcesAndSourcesCore::getRule is
     returning integer -1 or any other negative integer.
 
     User sets
@@ -511,7 +511,7 @@ struct ForcesAndSurcesCore: public FEMethod {
       VectorInt& indices
     ) const;
 
-    virtual PetscErrorCode setPtrFE(ForcesAndSurcesCore *ptr) {
+    virtual PetscErrorCode setPtrFE(ForcesAndSourcesCore *ptr) {
       PetscFunctionBegin;
       ptrFE = ptr;
       PetscFunctionReturn(0);
@@ -552,7 +552,7 @@ struct ForcesAndSurcesCore: public FEMethod {
 
   protected:
 
-    ForcesAndSurcesCore *ptrFE;
+    ForcesAndSourcesCore *ptrFE;
 
   };
 
@@ -588,6 +588,9 @@ struct ForcesAndSurcesCore: public FEMethod {
   }
 
 };
+
+/// \deprecated Used ForcesAndSourcesCore instead
+DEPRECATED typedef ForcesAndSourcesCore ForcesAndSurcesCore;
 
 }
 
