@@ -489,7 +489,7 @@ struct OpSetInvJacHcurlFace: public FaceElementForcesAndSourcesCore::UserDataOpe
 
 };
 
-/// \deprecated Use FaceElementForcesAndSurcesCore
+/// \deprecated Use FaceElementForcesAndSourcesCore
 DEPRECATED typedef FaceElementForcesAndSourcesCore FaceElementForcesAndSurcesCore;
 
 
