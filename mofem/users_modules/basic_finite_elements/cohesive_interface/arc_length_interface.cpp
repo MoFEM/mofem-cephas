@@ -561,7 +561,7 @@ int main(int argc, char *argv[]) {
     ierr = MatShellSetOperation(ShellAij,MATOP_MULT,(void(*)(void))ArcLengthMatMultShellOp); CHKERRQ(ierr);
 
     //body forces
-    BodyFroceConstantField body_forces_methods(m_field);
+    BodyForceConstantField body_forces_methods(m_field);
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,BLOCKSET|BODYFORCESSET,it)) {
       ierr = body_forces_methods.addBlock("DISPLACEMENT",F_body_force,it->getMeshsetId()); CHKERRQ(ierr);
     }

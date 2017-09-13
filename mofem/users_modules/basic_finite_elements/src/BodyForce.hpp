@@ -22,7 +22,7 @@
 /** \brief Body forces elements
   * \ingroup mofem_body_forces
   */
-struct BodyFroceConstantField {
+struct BodyForceConstantField {
 
   MoFEM::Interface &mField;
 
@@ -34,7 +34,7 @@ struct BodyFroceConstantField {
   MyVolumeFE fe;
   MyVolumeFE& getLoopFe() { return fe; }
 
-  BodyFroceConstantField(
+  BodyForceConstantField(
     MoFEM::Interface &m_field):
     mField(m_field),fe(m_field) {}
 
@@ -129,6 +129,8 @@ struct BodyFroceConstantField {
   std::map<int,Block_BodyForces> mapData;
 
 };
+/// \brief USe BodyForceConstantField
+DEPRECATED typedef  BodyForceConstantField  BodyFroceConstantField;
 
 #endif //__BODY_FORCE_HPP
 

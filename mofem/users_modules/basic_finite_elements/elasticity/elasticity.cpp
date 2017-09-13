@@ -30,7 +30,7 @@ See example how code can be used \cite jordi:2017,
  If you like to see how to implement finite elements, material, are other parts of the code, look here;
  - Hooke material, see \ref Hooke
  - Thermal-stress assembly, see \ref  ThermalElement
- - Body forces element, see \ref BodyFroceConstantField
+ - Body forces element, see \ref BodyForceConstantField
  - Fluid pressure element, see \ref FluidPressure
  - The general implementation of an element for arbitrary Lagrangian-Eulerian
  aformulation for a nonlinear elastic problem is here \ref
@@ -484,8 +484,8 @@ int main(int argc, char *argv[]) {
       ierr = DMoFEMLoopFiniteElements(dm,fit->first.c_str(),&fit->second->getLoopFe()); CHKERRQ(ierr);
     }
   }
-  // Assemble body forces, implemented in BodyFroceConstantField
-  BodyFroceConstantField body_forces_methods(m_field);
+  // Assemble body forces, implemented in BodyForceConstantField
+  BodyForceConstantField body_forces_methods(m_field);
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,BLOCKSET|BODYFORCESSET,it)) {
     ierr = body_forces_methods.addBlock("DISPLACEMENT",F,it->getMeshsetId()); CHKERRQ(ierr);
   }

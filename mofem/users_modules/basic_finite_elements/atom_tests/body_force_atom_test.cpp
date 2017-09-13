@@ -146,7 +146,7 @@ int main(int argc, char *argv[]) {
     TeeStream my_split(my_tee);
 
     ierr = VecZeroEntries(F); CHKERRQ(ierr);
-    BodyFroceConstantField body_forces_methods(m_field);
+    BodyForceConstantField body_forces_methods(m_field);
 
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,BLOCKSET|BODYFORCESSET,it)) {
       Block_BodyForces mydata;
