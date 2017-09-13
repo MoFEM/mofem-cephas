@@ -129,11 +129,13 @@ namespace MoFEM {
   // typedef ublas::unbounded_array<double,std::allocator<double> > DoubleAllacator;
   typedef std::vector<int,std::allocator<int> > IntAllacator;
   typedef std::vector<double,std::allocator<double> > DoubleAllacator;
-
-  // bounded vector
   typedef ublas::vector<int,IntAllacator > VectorInt;
   typedef ublas::vector<double,DoubleAllacator > VectorDouble;
-  typedef ublas::matrix<double,ublas::row_major, DoubleAllacator > MatrixDouble;
+  typedef ublas::matrix<double,ublas::row_major,DoubleAllacator > MatrixDouble;
+
+  // bounded vector & matrices
+  typedef ublas::vector<int,ublas::bounded_array<int,3> > VectorInt3;
+  typedef ublas::vector<int,ublas::bounded_array<int,9> > VectorInt9;
   typedef ublas::matrix<double,ublas::row_major,ublas::bounded_array<double,9> > MatrixDouble3by3;
   typedef ublas::vector<double,ublas::bounded_array<double,3> > VectorDouble3;
   typedef ublas::vector<double,ublas::bounded_array<double,9> > VectorDouble9;
