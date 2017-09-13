@@ -101,7 +101,7 @@ struct MonitorPostProc: public FEMethod {
       std::map<int,NonlinearElasticElement::BlockData>::iterator sit = setOfBlocks.begin();
       for (; sit != setOfBlocks.end(); sit++) {
         postProc.getOpPtrVector().push_back(
-          new PostPorcStress(
+          new PostProcStress(
             postProc.postProcMesh,
             postProc.mapGaussPts,
             "SPATIAL_POSITION",
