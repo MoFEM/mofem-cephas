@@ -80,6 +80,9 @@ PetscErrorCode ForcesAndSourcesCore::getNumberOfNodes(int &num_nodes) const {
     case MBTRI:
     num_nodes = 3;
     break;
+    case MBQUAD:
+    num_nodes = 4;
+    break;
     case MBTET:
     num_nodes = 4;
     break;
