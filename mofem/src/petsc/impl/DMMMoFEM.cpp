@@ -926,13 +926,16 @@ PetscErrorCode DMSetUp_MoFEM(DM dm) {
     ierr = prb_mng_ptr->partitionFiniteElements(
       dm_field->problemName,true,0,dm_field->sIze,1
     ); CHKERRQ(ierr);
+    ierr = prb_mng_ptr->partitionGhostDofsOnDistributedMesh(
+      dm_field->problemName
+    ); CHKERRQ(ierr);
   } else {
     ierr = prb_mng_ptr->partitionFiniteElements(
       dm_field->problemName
     ); CHKERRQ(ierr);
+    // Get ghost DOFs
+    ierr = prb_mng_ptr->partitionGhostDofs(dm_field->problemName); CHKERRQ(ierr);
   }
-  // Get ghost DOFs
-  ierr = prb_mng_ptr->partitionGhostDofs(dm_field->problemName); CHKERRQ(ierr);
 
   // Set flag that problem is build and partitioned
   dm_field->isProblemBuild = PETSC_TRUE;
@@ -963,13 +966,17 @@ PetscErrorCode DMSubDMSetUp_MoFEM(DM subdm) {
     ierr = prb_mng_ptr->partitionFiniteElements(
       subdm_field->problemName,true,0,subdm_field->sIze,1
     ); CHKERRQ(ierr);
+    // set ghost nodes
+    ierr = prb_mng_ptr->partitionGhostDofsOnDistributedMesh(
+      subdm_field->problemName
+    ); CHKERRQ(ierr);
   } else {
     ierr = prb_mng_ptr->partitionFiniteElements(
       subdm_field->problemName
     ); CHKERRQ(ierr);
+    // set ghost nodes
+    ierr = prb_mng_ptr->partitionGhostDofs(subdm_field->problemName); CHKERRQ(ierr);
   }
-  // set ghost nodes
-  ierr = prb_mng_ptr->partitionGhostDofs(subdm_field->problemName); CHKERRQ(ierr);
 
   subdm_field->isProblemBuild = PETSC_TRUE;
 
