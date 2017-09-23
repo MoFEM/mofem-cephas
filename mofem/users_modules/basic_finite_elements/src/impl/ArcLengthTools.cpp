@@ -43,10 +43,10 @@ PetscErrorCode ArcLengthCtx::setAlphaBeta(double alpha,double beta) {
 ArcLengthCtx::ArcLengthCtx(
   MoFEM::Interface& m_field,const std::string& problem_name,const std::string& field_name
 ):
-  mField(m_field),
-  dx2(0),
-  F_lambda2(0),
-  res_lambda(0) {
+mField(m_field),
+dx2(0),
+F_lambda2(0),
+res_lambda(0) {
   ierr = m_field.query_interface<VecManager>()->vecCreateGhost(problem_name,ROW,&F_lambda); CHKERRABORT(PETSC_COMM_WORLD,ierr);
   ierr = VecSetOption(F_lambda,VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE); CHKERRABORT(PETSC_COMM_WORLD,ierr);
   ierr = VecDuplicate(F_lambda,&db); CHKERRABORT(PETSC_COMM_WORLD,ierr);
@@ -136,27 +136,6 @@ PetscErrorCode ArcLengthMatShell::setLambda(Vec ksp_x,double *lambda,ScatterMode
   int part = arcPtrRaw->getPart();
   int rank = arcPtrRaw->mField.get_comm_rank();
 
-  if(rank == part) {
-
-    switch(scattermode) {
-      case SCATTER_FORWARD: {
-        int idx = arcPtrRaw->getPetscGlobalDofIdx();
-        ierr = VecGetValues(ksp_x,1,&idx,&*lambda); CHKERRQ(ierr);
-      }
-      break;
-      case SCATTER_REVERSE: {
-        PetscScalar *array;
-        ierr = VecGetArray(ksp_x,&array); CHKERRQ(ierr);
-        array[arcPtrRaw->getPetscLocalDofIdx()] = *lambda;
-        ierr = VecRestoreArray(ksp_x,&array); CHKERRQ(ierr);
-      }
-      break;
-      default:
-      SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
-    }
-
-  }
-
   Vec lambda_ghost;
   if(rank==part) {
     ierr = VecCreateGhostWithArray(arcPtrRaw->mField.get_comm(),1,1,0,PETSC_NULL,lambda,&lambda_ghost); CHKERRQ(ierr);
@@ -164,8 +143,30 @@ PetscErrorCode ArcLengthMatShell::setLambda(Vec ksp_x,double *lambda,ScatterMode
     int one[] = {0};
     ierr = VecCreateGhostWithArray(arcPtrRaw->mField.get_comm(),0,1,1,one,lambda,&lambda_ghost); CHKERRQ(ierr);
   }
-  ierr = VecGhostUpdateBegin(lambda_ghost,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecGhostUpdateEnd(lambda_ghost,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+
+  switch(scattermode) {
+    case SCATTER_FORWARD: {
+      int idx = arcPtrRaw->getPetscGlobalDofIdx();
+      if(part == rank) {
+        ierr = VecGetValues(ksp_x,1,&idx,&*lambda); CHKERRQ(ierr);
+      }
+      ierr = VecGhostUpdateBegin(lambda_ghost,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      ierr = VecGhostUpdateEnd(lambda_ghost,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    }
+    break;
+    case SCATTER_REVERSE: {
+      ierr = VecGhostUpdateBegin(lambda_ghost,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      ierr = VecGhostUpdateEnd(lambda_ghost,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      PetscScalar *array;
+      ierr = VecGetArray(ksp_x,&array); CHKERRQ(ierr);
+      array[arcPtrRaw->getPetscLocalDofIdx()] = *lambda;
+      ierr = VecRestoreArray(ksp_x,&array); CHKERRQ(ierr);
+    }
+    break;
+    default:
+    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
+  }
+
   ierr = VecDestroy(&lambda_ghost); CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
