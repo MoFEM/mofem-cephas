@@ -119,9 +119,9 @@ To integrate fields on body surface we have two finite element instances,
 Setup of all elements used in the Poisson equation example is implemented in
 the class PoissonExample::CreateFiniteElements, here we focus attention on
 finite element setup for calculation matrices and vectors, i.e.
-PoissonExample::CreateFiniteElements::createFEToAssmbleMatrceAndVector.
+PoissonExample::CreateFiniteElements::createFEToAssmbleMatrixAndVector.
 
-We will dissect code in PoissonExample::CreateFiniteElements::createFEToAssmbleMatrceAndVector
+We will dissect code in PoissonExample::CreateFiniteElements::createFEToAssmbleMatrixAndVector
 \code
 domain_lhs_fe = boost::shared_ptr<ForcesAndSourcesCore>(new VolumeElementForcesAndSourcesCore(mField));
 boundary_lhs_fe = boost::shared_ptr<ForcesAndSourcesCore>(new FaceElementForcesAndSourcesCore(mField));

@@ -229,7 +229,7 @@ int main(int argc, char *argv[]) {
     std::map<int,NonlinearElasticElement::BlockData>::iterator sit = elastic.setOfBlocks.begin();
     for(;sit!=elastic.setOfBlocks.end();sit++) {
       post_proc.getOpPtrVector().push_back(
-        new PostPorcStress(
+        new PostProcStress(
           post_proc.postProcMesh,
           post_proc.mapGaussPts,
           "SPATIAL_POSITION",
