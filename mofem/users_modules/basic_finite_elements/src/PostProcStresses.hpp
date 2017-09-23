@@ -27,7 +27,7 @@
   #error "MoFEM need to be compiled with ADOL-C"
 #endif
 
-struct PostPorcStress: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
+struct PostProcStress: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
 
   moab::Interface &postProcMesh;
   std::vector<EntityHandle> &mapGaussPts;
@@ -37,7 +37,7 @@ struct PostPorcStress: public MoFEM::VolumeElementForcesAndSourcesCore::UserData
   bool fieldDisp;
   bool replaceNonANumberByMaxValue;
 
-  PostPorcStress(
+  PostProcStress(
     moab::Interface &post_proc_mesh,
     std::vector<EntityHandle> &map_gauss_pts,
     const std::string field_name,
@@ -193,5 +193,8 @@ struct PostPorcStress: public MoFEM::VolumeElementForcesAndSourcesCore::UserData
   }
 
 };
+
+/// \brief USe PostProcStress
+DEPRECATED typedef PostProcStress PostPorcStress;
 
 #endif //__POSTPROCSTRESSES_HPP__

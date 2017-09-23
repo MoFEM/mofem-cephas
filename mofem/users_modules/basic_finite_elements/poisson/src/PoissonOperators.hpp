@@ -917,7 +917,7 @@ namespace PoissonExample {
     /**
      * \brief Create finite element to calculate matrix and vectors
      */
-    PetscErrorCode createFEToAssmbleMatrceAndVector(
+    PetscErrorCode createFEToAssmbleMatrixAndVector(
       boost::function<double (const double,const double,const double)> f_u,
       boost::function<double (const double,const double,const double)> f_source,
       boost::shared_ptr<ForcesAndSourcesCore>& domain_lhs_fe,
@@ -1021,7 +1021,7 @@ namespace PoissonExample {
     /**
      * \brief Create finite element to calculate matrix and vectors
      */
-    PetscErrorCode createFEToAssmbleMatrceAndVectorForNonlinearProblem(
+    PetscErrorCode createFEToAssmbleMatrixAndVectorForNonlinearProblem(
       boost::function<double (const double,const double,const double)> f_u,
       boost::function<double (const double,const double,const double)> f_source,
       boost::function<double (const double)> a,
