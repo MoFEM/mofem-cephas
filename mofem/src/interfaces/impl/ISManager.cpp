@@ -225,15 +225,15 @@ namespace MoFEM {
       default:
       SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
     }
-    NumeredDofEntity_multiIndex_petsc_local_dof_view_ordered_non_unique dof_loc_idx_view;
+    NumeredDofEntity_multiIndex_petsc_global_dof_view_ordered_non_unique dof_idx_view;
     for(;it!=hi_it;it++) {
-      std::pair<NumeredDofEntity_multiIndex_petsc_local_dof_view_ordered_non_unique::iterator,bool> p;
+      std::pair<NumeredDofEntity_multiIndex_petsc_global_dof_view_ordered_non_unique::iterator,bool> p;
       if((*it)->getPart()!=(unsigned int)rank) continue;
-      p = dof_loc_idx_view.insert(*it);
+      p = dof_idx_view.insert(*it);
     }
-    NumeredDofEntity_multiIndex_petsc_local_dof_view_ordered_non_unique::iterator vit,hi_vit;
-    vit = dof_loc_idx_view.begin();
-    hi_vit = dof_loc_idx_view.end();
+    NumeredDofEntity_multiIndex_petsc_global_dof_view_ordered_non_unique::iterator vit,hi_vit;
+    vit = dof_idx_view.begin();
+    hi_vit = dof_idx_view.end();
     int size = distance(vit,hi_vit);
     int *id;
     ierr = PetscMalloc(size*sizeof(int),&id); CHKERRQ(ierr);

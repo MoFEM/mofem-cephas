@@ -130,37 +130,40 @@ ArcLengthMatShell::~ArcLengthMatShell() {
 PetscErrorCode ArcLengthMatShell::setLambda(Vec ksp_x,double *lambda,ScatterMode scattermode) {
   PetscFunctionBegin;
 
-  const Problem *problem_ptr;
-  ierr = arcPtrRaw->mField.get_problem(problemName,&problem_ptr); CHKERRQ(ierr);
-
   int part = arcPtrRaw->getPart();
   int rank = arcPtrRaw->mField.get_comm_rank();
 
   Vec lambda_ghost;
   if(rank==part) {
-    ierr = VecCreateGhostWithArray(arcPtrRaw->mField.get_comm(),1,1,0,PETSC_NULL,lambda,&lambda_ghost); CHKERRQ(ierr);
+    ierr = VecCreateGhostWithArray(
+      arcPtrRaw->mField.get_comm(),1,1,0,PETSC_NULL,lambda,&lambda_ghost
+    ); CHKERRQ(ierr);
   } else {
     int one[] = {0};
-    ierr = VecCreateGhostWithArray(arcPtrRaw->mField.get_comm(),0,1,1,one,lambda,&lambda_ghost); CHKERRQ(ierr);
+    ierr = VecCreateGhostWithArray(
+      arcPtrRaw->mField.get_comm(),0,1,1,one,lambda,&lambda_ghost
+    ); CHKERRQ(ierr);
   }
 
   switch(scattermode) {
     case SCATTER_FORWARD: {
       int idx = arcPtrRaw->getPetscGlobalDofIdx();
       if(part == rank) {
-        ierr = VecGetValues(ksp_x,1,&idx,&*lambda); CHKERRQ(ierr);
+        ierr = VecGetValues(ksp_x,1,&idx,lambda); CHKERRQ(ierr);
       }
       ierr = VecGhostUpdateBegin(lambda_ghost,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
       ierr = VecGhostUpdateEnd(lambda_ghost,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     }
     break;
     case SCATTER_REVERSE: {
-      ierr = VecGhostUpdateBegin(lambda_ghost,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-      ierr = VecGhostUpdateEnd(lambda_ghost,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-      PetscScalar *array;
-      ierr = VecGetArray(ksp_x,&array); CHKERRQ(ierr);
-      array[arcPtrRaw->getPetscLocalDofIdx()] = *lambda;
-      ierr = VecRestoreArray(ksp_x,&array); CHKERRQ(ierr);
+      // ierr = VecGhostUpdateBegin(lambda_ghost,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      // ierr = VecGhostUpdateEnd(lambda_ghost,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      if(part == rank) {
+        PetscScalar *array;
+        ierr = VecGetArray(ksp_x,&array); CHKERRQ(ierr);
+        array[arcPtrRaw->getPetscLocalDofIdx()] = *lambda;
+        ierr = VecRestoreArray(ksp_x,&array); CHKERRQ(ierr);
+      }
     }
     break;
     default:
