@@ -401,7 +401,7 @@ struct MixTransportElement {
     PetscErrorCode doWork(
       int side,
       EntityType type,
-      DataForcesAndSurcesCore::EntData &data
+      DataForcesAndSourcesCore::EntData &data
     ) {
       PetscFunctionBegin;
       if(type != MBTET) PetscFunctionReturn(0);
@@ -742,8 +742,8 @@ struct MixTransportElement {
     PetscErrorCode doWork(
       int row_side,int col_side,
       EntityType row_type,EntityType col_type,
-      DataForcesAndSurcesCore::EntData &row_data,
-      DataForcesAndSurcesCore::EntData &col_data
+      DataForcesAndSourcesCore::EntData &row_data,
+      DataForcesAndSourcesCore::EntData &col_data
     ) {
 
       PetscFunctionBegin;
@@ -831,7 +831,7 @@ struct MixTransportElement {
      * @return          error code
      */
     PetscErrorCode doWork(
-      int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+      int side,EntityType type,DataForcesAndSourcesCore::EntData &data
     ) {
 
       PetscFunctionBegin;
@@ -922,7 +922,7 @@ struct MixTransportElement {
 
     PetscErrorCode doWork(
       int side,EntityType type,
-      DataForcesAndSurcesCore::EntData &data
+      DataForcesAndSourcesCore::EntData &data
     ) {
 
       PetscFunctionBegin;
@@ -1005,8 +1005,8 @@ struct MixTransportElement {
     PetscErrorCode doWork(
       int row_side,int col_side,
       EntityType row_type,EntityType col_type,
-      DataForcesAndSurcesCore::EntData &row_data,
-      DataForcesAndSurcesCore::EntData &col_data
+      DataForcesAndSourcesCore::EntData &row_data,
+      DataForcesAndSourcesCore::EntData &col_data
     ) {
       PetscFunctionBegin;
       try {
@@ -1053,7 +1053,7 @@ struct MixTransportElement {
 
     PetscErrorCode doWork(
       int side,EntityType type,
-      DataForcesAndSurcesCore::EntData &data
+      DataForcesAndSourcesCore::EntData &data
     ) {
 
       PetscFunctionBegin;
@@ -1105,7 +1105,7 @@ struct MixTransportElement {
 
     VectorDouble Nf;
     PetscErrorCode doWork(
-      int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+      int side,EntityType type,DataForcesAndSourcesCore::EntData &data
     ) {
 
       PetscFunctionBegin;
@@ -1179,7 +1179,7 @@ struct MixTransportElement {
      * @return      error code
      */
     PetscErrorCode doWork(
-      int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+      int side,EntityType type,DataForcesAndSourcesCore::EntData &data
     ) {
       PetscFunctionBegin;
       try {
@@ -1246,7 +1246,7 @@ struct MixTransportElement {
     VectorDouble Nf;
     FTensor::Index<'i',3> i;
 
-    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
       PetscFunctionBegin;
       try {
         if(data.getFieldData().size()==0) PetscFunctionReturn(0);
@@ -1371,7 +1371,7 @@ struct MixTransportElement {
 
     virtual ~OpValuesAtGaussPts() {}
 
-    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
       PetscFunctionBegin;
 
       try {
@@ -1410,7 +1410,7 @@ struct MixTransportElement {
     cTx(ctx) {}
     virtual ~OpValuesGradientAtGaussPts() {}
 
-    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
       PetscFunctionBegin;
       try {
         if(data.getFieldData().size() == 0)  PetscFunctionReturn(0);
@@ -1447,7 +1447,7 @@ struct MixTransportElement {
     cTx(ctx) {}
 
     VectorDouble divVec;
-    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
       PetscFunctionBegin;
 
       try {
@@ -1499,7 +1499,7 @@ struct MixTransportElement {
     MatrixDouble3by3 invK;
 
     PetscErrorCode doWork(
-      int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+      int side,EntityType type,DataForcesAndSourcesCore::EntData &data
     ) {
 
 
@@ -1622,7 +1622,7 @@ struct MixTransportElement {
       VolumeElementForcesAndSourcesCoreOnSide::UserDataOperator("VALUES",UserDataOperator::OPROW),
       valMap(val_map) {
       }
-      PetscErrorCode doWork(int side, EntityType type,DataForcesAndSurcesCore::EntData &data) {
+      PetscErrorCode doWork(int side, EntityType type,DataForcesAndSourcesCore::EntData &data) {
         PetscFunctionBegin;
         try {
           if(data.getFieldData().size() == 0)  PetscFunctionReturn(0);
@@ -1651,7 +1651,7 @@ struct MixTransportElement {
       volSideFe.getOpPtrVector().push_back(new OpSkeleton::OpVolSide(valMap));
     }
 
-    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
       PetscFunctionBegin;
       try {
 

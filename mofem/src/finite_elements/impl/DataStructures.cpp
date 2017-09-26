@@ -113,7 +113,7 @@ FTensor::Tensor2<double*,3,2> getTensor2FormData<3,2,double,ublas::row_major,Dou
   );
 }
 
-DataForcesAndSurcesCore::EntData::EntData():
+DataForcesAndSourcesCore::EntData::EntData():
 sEnse(0),
 oRder(0),
 bAse(NOBASE) {
@@ -135,11 +135,11 @@ bAse(NOBASE) {
   }
 }
 
-DataForcesAndSurcesCore::EntData::~EntData() {
+DataForcesAndSourcesCore::EntData::~EntData() {
 }
 
 template<class T>
-void cOnstructor(DataForcesAndSurcesCore *data,EntityType type,T) {
+void cOnstructor(DataForcesAndSourcesCore *data,EntityType type,T) {
 
   data->dataOnEntities[MBENTITYSET].push_back(new T());
 
@@ -187,12 +187,12 @@ void cOnstructor(DataForcesAndSurcesCore *data,EntityType type,T) {
 
 }
 
-DataForcesAndSurcesCore::DataForcesAndSurcesCore(EntityType type) {
+DataForcesAndSourcesCore::DataForcesAndSourcesCore(EntityType type) {
   cOnstructor(this,type,EntData());
 }
 
 
-DerivedDataForcesAndSurcesCore::DerivedDataForcesAndSurcesCore(DataForcesAndSurcesCore &data): DataForcesAndSurcesCore() {
+DerivedDataForcesAndSourcesCore::DerivedDataForcesAndSourcesCore(DataForcesAndSourcesCore &data): DataForcesAndSourcesCore() {
 
   boost::ptr_vector<EntData>::iterator iit;
 
@@ -217,7 +217,7 @@ DerivedDataForcesAndSurcesCore::DerivedDataForcesAndSurcesCore(DataForcesAndSurc
   }
 }
 
-std::ostream& operator<<(std::ostream& os,const DataForcesAndSurcesCore::EntData &e) {
+std::ostream& operator<<(std::ostream& os,const DataForcesAndSourcesCore::EntData &e) {
   os <<
     "sEnse: " << e.getSense() << std::endl <<
     "oRder: " << e.getOrder() << std::endl <<
@@ -245,7 +245,7 @@ std::ostream& operator<<(std::ostream& os,const DataForcesAndSurcesCore::EntData
   return os;
 }
 
-std::ostream& operator<<(std::ostream& os,const DataForcesAndSurcesCore &e) {
+std::ostream& operator<<(std::ostream& os,const DataForcesAndSourcesCore &e) {
   for(unsigned int nn = 0;nn < e.dataOnEntities[MBVERTEX].size(); nn++) {
     os << "dataOnEntities[MBVERTEX][" << nn << "]" << std::endl << e.dataOnEntities[MBVERTEX][nn] << std::endl;
   }
@@ -266,7 +266,7 @@ std::ostream& operator<<(std::ostream& os,const DataForcesAndSurcesCore &e) {
 /**@{*/
 
 template<>
-FTensor::Tensor1<double*,3> DataForcesAndSurcesCore::EntData::getFTensor1FieldData<3>() {
+FTensor::Tensor1<double*,3> DataForcesAndSourcesCore::EntData::getFTensor1FieldData<3>() {
   if(dOfs[0]->getNbOfCoeffs()!=3) {
     std::stringstream s;
     s << "Wrong number of coefficents is " << dOfs[0]->getNbOfCoeffs();
@@ -278,7 +278,7 @@ FTensor::Tensor1<double*,3> DataForcesAndSurcesCore::EntData::getFTensor1FieldDa
 }
 
 template<>
-FTensor::Tensor1<double*,2> DataForcesAndSurcesCore::EntData::getFTensor1FieldData<2>() {
+FTensor::Tensor1<double*,2> DataForcesAndSourcesCore::EntData::getFTensor1FieldData<2>() {
   if(dOfs[0]->getNbOfCoeffs()!=2) {
     std::stringstream s;
     s << "Wrong number of coefficents is " << dOfs[0]->getNbOfCoeffs();
@@ -289,7 +289,7 @@ FTensor::Tensor1<double*,2> DataForcesAndSurcesCore::EntData::getFTensor1FieldDa
   return FTensor::Tensor1<double*,2>(ptr,&ptr[1],2);
 }
 
-FTensor::Tensor0<double*> DataForcesAndSurcesCore::EntData::getFTensor0FieldData() {
+FTensor::Tensor0<double*> DataForcesAndSourcesCore::EntData::getFTensor0FieldData() {
   if(dOfs[0]->getNbOfCoeffs()!=1) {
     std::stringstream s;
     s << "Wrong number of coefficents is " << dOfs[0]->getNbOfCoeffs();
@@ -300,7 +300,7 @@ FTensor::Tensor0<double*> DataForcesAndSurcesCore::EntData::getFTensor0FieldData
 }
 
 template<int Tensor_Dim>
-FTensor::Tensor1<double*,Tensor_Dim> DataForcesAndSurcesCore::EntData::getFTensor1DiffN(
+FTensor::Tensor1<double*,Tensor_Dim> DataForcesAndSourcesCore::EntData::getFTensor1DiffN(
   const FieldApproximationBase base
 ) {
   std::stringstream s;
@@ -311,13 +311,13 @@ FTensor::Tensor1<double*,Tensor_Dim> DataForcesAndSurcesCore::EntData::getFTenso
 }
 
 template<int Tensor_Dim>
-FTensor::Tensor1<double*,Tensor_Dim> DataForcesAndSurcesCore::EntData::getFTensor1DiffN(
+FTensor::Tensor1<double*,Tensor_Dim> DataForcesAndSourcesCore::EntData::getFTensor1DiffN(
 ) {
   return getFTensor1DiffN<Tensor_Dim>(bAse);
 }
 
 template<int Tensor_Dim>
-FTensor::Tensor1<double*,Tensor_Dim> DataForcesAndSurcesCore::EntData::getFTensor1DiffN(
+FTensor::Tensor1<double*,Tensor_Dim> DataForcesAndSourcesCore::EntData::getFTensor1DiffN(
   const FieldApproximationBase base,const int bb
 ) {
   std::stringstream s;
@@ -328,7 +328,7 @@ FTensor::Tensor1<double*,Tensor_Dim> DataForcesAndSurcesCore::EntData::getFTenso
 }
 
 template<int Tensor_Dim>
-FTensor::Tensor1<double*,Tensor_Dim> DataForcesAndSurcesCore::EntData::getFTensor1DiffN(
+FTensor::Tensor1<double*,Tensor_Dim> DataForcesAndSourcesCore::EntData::getFTensor1DiffN(
   const int bb
 ) {
   return getFTensor1DiffN<Tensor_Dim>(bAse,bb);
@@ -338,7 +338,7 @@ FTensor::Tensor1<double*,Tensor_Dim> DataForcesAndSurcesCore::EntData::getFTenso
  * \brief Get spatial derivative of base function tensor for dimension 3d
  */
 template<>
-FTensor::Tensor1<double*,3> DataForcesAndSurcesCore::EntData::getFTensor1DiffN<3>(
+FTensor::Tensor1<double*,3> DataForcesAndSourcesCore::EntData::getFTensor1DiffN<3>(
   const FieldApproximationBase base
 ) {
   double *ptr = &*getDiffN(base).data().begin();
@@ -349,7 +349,7 @@ FTensor::Tensor1<double*,3> DataForcesAndSurcesCore::EntData::getFTensor1DiffN<3
   * \brief Get spatial derivative of base function tensor for dimension 3d
  */
 template<>
-FTensor::Tensor1<double*,3> DataForcesAndSurcesCore::EntData::getFTensor1DiffN<3>() {
+FTensor::Tensor1<double*,3> DataForcesAndSourcesCore::EntData::getFTensor1DiffN<3>() {
   return getFTensor1DiffN<3>(bAse);
 }
 
@@ -357,7 +357,7 @@ FTensor::Tensor1<double*,3> DataForcesAndSurcesCore::EntData::getFTensor1DiffN<3
  * \brief Get spatial derivative of base function tensor for dimension 3d
  */
 template<>
-FTensor::Tensor1<double*,3> DataForcesAndSurcesCore::EntData::getFTensor1DiffN<3>(
+FTensor::Tensor1<double*,3> DataForcesAndSourcesCore::EntData::getFTensor1DiffN<3>(
   const FieldApproximationBase base,const int bb
 ) {
   double *ptr = &*getDiffN(base).data().begin();
@@ -370,7 +370,7 @@ FTensor::Tensor1<double*,3> DataForcesAndSurcesCore::EntData::getFTensor1DiffN<3
   * \brief Get spatial derivative of base function tensor for dimension 3d
  */
 template<>
-FTensor::Tensor1<double*,3> DataForcesAndSurcesCore::EntData::getFTensor1DiffN<3>(
+FTensor::Tensor1<double*,3> DataForcesAndSourcesCore::EntData::getFTensor1DiffN<3>(
   const int bb
 ) {
   return getFTensor1DiffN<3>(bAse,bb);
@@ -380,7 +380,7 @@ FTensor::Tensor1<double*,3> DataForcesAndSurcesCore::EntData::getFTensor1DiffN<3
   * \brief Get spatial derivative of base function tensor for dimension 2d
  */
 template<>
-FTensor::Tensor1<double*,2> DataForcesAndSurcesCore::EntData::getFTensor1DiffN<2>(
+FTensor::Tensor1<double*,2> DataForcesAndSourcesCore::EntData::getFTensor1DiffN<2>(
   const FieldApproximationBase base
 ) {
   double *ptr = &*getDiffN(base).data().begin();
@@ -391,7 +391,7 @@ FTensor::Tensor1<double*,2> DataForcesAndSurcesCore::EntData::getFTensor1DiffN<2
   * \brief Get spatial derivative of base function tensor for dimension 2d
  */
 template<>
-FTensor::Tensor1<double*,2> DataForcesAndSurcesCore::EntData::getFTensor1DiffN<2>() {
+FTensor::Tensor1<double*,2> DataForcesAndSourcesCore::EntData::getFTensor1DiffN<2>() {
   return getFTensor1DiffN<2>(bAse);
 }
 
@@ -399,7 +399,7 @@ FTensor::Tensor1<double*,2> DataForcesAndSurcesCore::EntData::getFTensor1DiffN<2
  * \brief Get spatial derivative of base function tensor for dimension 3d
  */
 template<>
-FTensor::Tensor1<double*,2> DataForcesAndSurcesCore::EntData::getFTensor1DiffN<2>(
+FTensor::Tensor1<double*,2> DataForcesAndSourcesCore::EntData::getFTensor1DiffN<2>(
   const FieldApproximationBase base,const int bb
 ) {
   double *ptr = &*getDiffN(base).data().begin();
@@ -410,14 +410,14 @@ FTensor::Tensor1<double*,2> DataForcesAndSurcesCore::EntData::getFTensor1DiffN<2
   * \brief Get spatial derivative of base function tensor for dimension 3d
  */
 template<>
-FTensor::Tensor1<double*,2> DataForcesAndSurcesCore::EntData::getFTensor1DiffN<2>(
+FTensor::Tensor1<double*,2> DataForcesAndSourcesCore::EntData::getFTensor1DiffN<2>(
   const int bb
 ) {
   return getFTensor1DiffN<2>(bAse,bb);
 }
 
 template<int Tensor_Dim>
-FTensor::Tensor1<double*,Tensor_Dim> DataForcesAndSurcesCore::EntData::getFTensor1DiffN(
+FTensor::Tensor1<double*,Tensor_Dim> DataForcesAndSourcesCore::EntData::getFTensor1DiffN(
   const FieldApproximationBase base,const int gg,const int bb
 ) {
   std::stringstream s;
@@ -431,7 +431,7 @@ FTensor::Tensor1<double*,Tensor_Dim> DataForcesAndSurcesCore::EntData::getFTenso
  * \brief Get spatial derivative of base function tensor for dimension 3d
  */
 template<>
-FTensor::Tensor1<double*,3> DataForcesAndSurcesCore::EntData::getFTensor1DiffN<3>(
+FTensor::Tensor1<double*,3> DataForcesAndSourcesCore::EntData::getFTensor1DiffN<3>(
   const FieldApproximationBase base,const int gg,const int bb
 ) {
   double *ptr = &getDiffN(base)(gg,3*bb);
@@ -442,7 +442,7 @@ FTensor::Tensor1<double*,3> DataForcesAndSurcesCore::EntData::getFTensor1DiffN<3
   * \brief Get spatial derivative of base function tensor for dimension 3d
  */
 template<>
-FTensor::Tensor1<double*,3> DataForcesAndSurcesCore::EntData::getFTensor1DiffN<3>(
+FTensor::Tensor1<double*,3> DataForcesAndSourcesCore::EntData::getFTensor1DiffN<3>(
   const int gg,const int bb
 ) {
   return getFTensor1DiffN<3>(bAse,gg,bb);
@@ -452,7 +452,7 @@ FTensor::Tensor1<double*,3> DataForcesAndSurcesCore::EntData::getFTensor1DiffN<3
  * \brief Get spatial derivative of base function tensor for dimension 2d
  */
 template<>
-FTensor::Tensor1<double*,2> DataForcesAndSurcesCore::EntData::getFTensor1DiffN<2>(
+FTensor::Tensor1<double*,2> DataForcesAndSourcesCore::EntData::getFTensor1DiffN<2>(
   const FieldApproximationBase base,const int gg,const int bb
 ) {
   double *ptr = &getDiffN(base)(gg,2*bb);
@@ -463,7 +463,7 @@ FTensor::Tensor1<double*,2> DataForcesAndSurcesCore::EntData::getFTensor1DiffN<2
   * \brief Get spatial derivative of base function tensor for dimension 2d
  */
 template<>
-FTensor::Tensor1<double*,2> DataForcesAndSurcesCore::EntData::getFTensor1DiffN<2>(
+FTensor::Tensor1<double*,2> DataForcesAndSourcesCore::EntData::getFTensor1DiffN<2>(
   const int gg,const int bb
 ) {
   return getFTensor1DiffN<2>(bAse,gg,bb);
@@ -476,7 +476,7 @@ FTensor::Tensor1<double*,2> DataForcesAndSurcesCore::EntData::getFTensor1DiffN<2
 /**@{*/
 
 template<int Tensor_Dim>
-FTensor::Tensor1<double*,Tensor_Dim> DataForcesAndSurcesCore::EntData::getFTensor1HdivN(
+FTensor::Tensor1<double*,Tensor_Dim> DataForcesAndSourcesCore::EntData::getFTensor1HdivN(
   FieldApproximationBase base
 ) {
   std::stringstream s;
@@ -487,7 +487,7 @@ FTensor::Tensor1<double*,Tensor_Dim> DataForcesAndSurcesCore::EntData::getFTenso
 }
 
 template<int Tensor_Dim>
-FTensor::Tensor1<double*,Tensor_Dim> DataForcesAndSurcesCore::EntData::getFTensor1HdivN(
+FTensor::Tensor1<double*,Tensor_Dim> DataForcesAndSourcesCore::EntData::getFTensor1HdivN(
   FieldApproximationBase base,const int gg,const int bb
 ) {
   std::stringstream s;
@@ -499,7 +499,7 @@ FTensor::Tensor1<double*,Tensor_Dim> DataForcesAndSurcesCore::EntData::getFTenso
 
 template<int Tensor_Dim0,int Tensor_Dim1>
 FTensor::Tensor2<double*,Tensor_Dim0,Tensor_Dim1>
-DataForcesAndSurcesCore::EntData::getFTensor2DiffHdivN(FieldApproximationBase base) {
+DataForcesAndSourcesCore::EntData::getFTensor2DiffHdivN(FieldApproximationBase base) {
   std::stringstream s;
   s << "Template for tensor dimension "
   << Tensor_Dim0 << "x" << Tensor_Dim1 << " not implemented";
@@ -509,7 +509,7 @@ DataForcesAndSurcesCore::EntData::getFTensor2DiffHdivN(FieldApproximationBase ba
 
 template<int Tensor_Dim0,int Tensor_Dim1>
 FTensor::Tensor2<double*,Tensor_Dim0,Tensor_Dim1>
-DataForcesAndSurcesCore::EntData::getFTensor2DiffHdivN(
+DataForcesAndSourcesCore::EntData::getFTensor2DiffHdivN(
   FieldApproximationBase base,const int gg,const int bb
 ) {
   std::stringstream s;
@@ -520,7 +520,7 @@ DataForcesAndSurcesCore::EntData::getFTensor2DiffHdivN(
 }
 
 template<>
-FTensor::Tensor1<double*,3> DataForcesAndSurcesCore::EntData::getFTensor1HdivN<3>(
+FTensor::Tensor1<double*,3> DataForcesAndSourcesCore::EntData::getFTensor1HdivN<3>(
   FieldApproximationBase base
 ) {
   double *t_n_ptr = &*getHdivN(base).data().begin();
@@ -532,7 +532,7 @@ FTensor::Tensor1<double*,3> DataForcesAndSurcesCore::EntData::getFTensor1HdivN<3
 }
 
 template<>
-FTensor::Tensor1<double*,3> DataForcesAndSurcesCore::EntData::getFTensor1HdivN<3>(
+FTensor::Tensor1<double*,3> DataForcesAndSourcesCore::EntData::getFTensor1HdivN<3>(
   FieldApproximationBase base,const int gg,const int bb
 ) {
   double *t_n_ptr = &getHdivN(base)(gg,3*bb);
@@ -544,7 +544,7 @@ FTensor::Tensor1<double*,3> DataForcesAndSurcesCore::EntData::getFTensor1HdivN<3
 }
 
 template<>
-FTensor::Tensor2<double*,3,3> DataForcesAndSurcesCore::EntData::getFTensor2DiffHdivN<3,3>(
+FTensor::Tensor2<double*,3,3> DataForcesAndSourcesCore::EntData::getFTensor2DiffHdivN<3,3>(
   FieldApproximationBase base
 ) {
   double *t_diff_n_ptr = &*getDiffHdivN(base).data().begin();
@@ -562,7 +562,7 @@ FTensor::Tensor2<double*,3,3> DataForcesAndSurcesCore::EntData::getFTensor2DiffH
 }
 
 template<>
-FTensor::Tensor2<double*,3,3> DataForcesAndSurcesCore::EntData::getFTensor2DiffHdivN<3,3>(
+FTensor::Tensor2<double*,3,3> DataForcesAndSourcesCore::EntData::getFTensor2DiffHdivN<3,3>(
   FieldApproximationBase base,const int gg,const int bb
 ) {
   double *t_diff_n_ptr = &getDiffHdivN(base)(gg,9*bb);
@@ -580,7 +580,7 @@ FTensor::Tensor2<double*,3,3> DataForcesAndSurcesCore::EntData::getFTensor2DiffH
 }
 
 template<>
-FTensor::Tensor2<double*,3,2> DataForcesAndSurcesCore::EntData::getFTensor2DiffHdivN<3,2>(
+FTensor::Tensor2<double*,3,2> DataForcesAndSourcesCore::EntData::getFTensor2DiffHdivN<3,2>(
   FieldApproximationBase base
 ) {
   double *t_diff_n_ptr = &*getDiffHdivN(base).data().begin();
@@ -593,7 +593,7 @@ FTensor::Tensor2<double*,3,2> DataForcesAndSurcesCore::EntData::getFTensor2DiffH
 }
 
 template<>
-FTensor::Tensor2<double*,3,2> DataForcesAndSurcesCore::EntData::getFTensor2DiffHdivN<3,2>(
+FTensor::Tensor2<double*,3,2> DataForcesAndSourcesCore::EntData::getFTensor2DiffHdivN<3,2>(
   FieldApproximationBase base,const int gg,const int bb
 ) {
   double *t_diff_n_ptr = &getDiffHdivN(base)(gg,6*bb);

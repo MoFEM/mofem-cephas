@@ -78,7 +78,6 @@ struct ConstrainMatrixCtx {
   );
 
   virtual ~ConstrainMatrixCtx() {
-    
     ierr = destroyQorP(); CHKERRABORT(mField.get_comm(),ierr);
     ierr = destroyQTKQ(); CHKERRABORT(mField.get_comm(),ierr);
     if(ownConstrainMatrix) {

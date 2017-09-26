@@ -28,11 +28,11 @@ using namespace MoFEM;
 #include <AnalyticalDirichlet.hpp>
 
 AnalyticalDirichletBC::ApproxField::OpHoCoord::OpHoCoord(const std::string field_name,MatrixDouble &ho_coords):
-FaceElementForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROW),
+FaceElementForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSourcesCore::UserDataOperator::OPROW),
 hoCoords(ho_coords) {}
 
 PetscErrorCode AnalyticalDirichletBC::ApproxField::OpHoCoord::doWork(
-  int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+  int side,EntityType type,DataForcesAndSourcesCore::EntData &data
 ) {
   PetscFunctionBegin;
 
@@ -62,7 +62,7 @@ PetscErrorCode AnalyticalDirichletBC::ApproxField::OpHoCoord::doWork(
 }
 
 AnalyticalDirichletBC::ApproxField::OpLhs::OpLhs(const std::string field_name,MatrixDouble &ho_coords):
-FaceElementForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROWCOL),
+FaceElementForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSourcesCore::UserDataOperator::OPROWCOL),
 hoCoords(ho_coords)
 {
 
@@ -71,8 +71,8 @@ hoCoords(ho_coords)
 PetscErrorCode AnalyticalDirichletBC::ApproxField::OpLhs::doWork(
   int row_side,int col_side,
   EntityType row_type,EntityType col_type,
-  DataForcesAndSurcesCore::EntData &row_data,
-  DataForcesAndSurcesCore::EntData &col_data
+  DataForcesAndSourcesCore::EntData &row_data,
+  DataForcesAndSourcesCore::EntData &col_data
 ) {
   PetscFunctionBegin;
 

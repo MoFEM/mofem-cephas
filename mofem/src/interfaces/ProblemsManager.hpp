@@ -216,10 +216,25 @@ namespace MoFEM {
 
     /** \brief determine ghost nodes
      * \ingroup mofem_problems_manager
-     *
      * \param name problem name
+     *
+     * DOFs are ghost dofs if are used by elements on given partitition, but not
+     * owned by that partitition.
+     *
      */
     PetscErrorCode partitionGhostDofs(const std::string &name,int verb = 1);
+
+    /** \brief determine ghost nodes on distributed meshes
+     * \ingroup mofem_problems_manager
+     * \param name problem name
+     *
+     * It is very similar for partitionGhostDofs, hoever this explits that mesh is
+     * distributed.
+     *
+     * DOFs are ghosted if are shered but not owned by partition.
+     *
+     */
+    PetscErrorCode partitionGhostDofsOnDistributedMesh(const std::string &name,int verb = 1);
 
     /**
      * \create meshset problem finite elements

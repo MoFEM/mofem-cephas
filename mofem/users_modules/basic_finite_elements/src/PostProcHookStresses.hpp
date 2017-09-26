@@ -76,7 +76,7 @@ struct PostPorcHookStress: public MoFEM::VolumeElementForcesAndSourcesCore::User
     #endif
   ):
   MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator(
-    field_name,ForcesAndSurcesCore::UserDataOperator::OPROW
+    field_name,ForcesAndSourcesCore::UserDataOperator::OPROW
   ),
   mField(m_field),
   postProcMesh(post_proc_mesh),
@@ -147,7 +147,7 @@ struct PostPorcHookStress: public MoFEM::VolumeElementForcesAndSourcesCore::User
   PetscErrorCode doWork(
     int side,
     EntityType type,
-    DataForcesAndSurcesCore::EntData &data) {
+    DataForcesAndSourcesCore::EntData &data) {
     PetscFunctionBegin;
 
     if(type != MBVERTEX) PetscFunctionReturn(0);

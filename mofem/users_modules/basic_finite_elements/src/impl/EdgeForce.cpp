@@ -28,14 +28,14 @@ EdgeForce::OpEdgeForce::OpEdgeForce(
   boost::ptr_vector<MethodForForceScaling> &methods_op,
   bool use_snes_f
 ):
-EdgeElementForcesAndSurcesCore::UserDataOperator(field_name,OPROW),
+EdgeElementForcesAndSourcesCore::UserDataOperator(field_name,OPROW),
 F(f),
 dAta(data),
 methodsOp(methods_op),
 useSnesF(use_snes_f) {
 }
 
-PetscErrorCode EdgeForce::OpEdgeForce::doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+PetscErrorCode EdgeForce::OpEdgeForce::doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
   PetscFunctionBegin;
 
   if(data.getIndices().size()==0) {

@@ -205,7 +205,7 @@ struct Smoother {
     ublas::vector<int> frontIndices;
 
     PetscErrorCode aSemble(
-      int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data
+      int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
     ) {
       PetscFunctionBegin;
 
@@ -279,8 +279,8 @@ struct Smoother {
     PetscErrorCode aSemble(
       int row_side,int col_side,
       EntityType row_type,EntityType col_type,
-      DataForcesAndSurcesCore::EntData &row_data,
-      DataForcesAndSurcesCore::EntData &col_data
+      DataForcesAndSourcesCore::EntData &row_data,
+      DataForcesAndSourcesCore::EntData &col_data
     ) {
       PetscFunctionBegin;
 
@@ -352,11 +352,13 @@ struct Smoother {
                 if(rowFrontIndices[3*nn+diit->get()->getDofCoeffIdx()]!=diit->get()->getPetscGlobalDofIdx()) {
                   SETERRQ2(
                     PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency %d != %d",
-                    3*nn+diit->get()->getDofCoeffIdx(),diit->get()->getPetscGlobalDofIdx()
+                    rowFrontIndices[3*nn+diit->get()->getDofCoeffIdx()],diit->get()->getPetscGlobalDofIdx()
                   );
                 }
                 // dof is not on this partition
-                if(diit->get()->getPetscLocalDofIdx()==-1) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+                if(diit->get()->getPetscLocalDofIdx()==-1) {
+                  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
+                }
                 double g =
                 f_tangent_front_mesh_array[diit->get()->getPetscLocalDofIdx()]*
                 k(3*nn+diit->get()->getDofCoeffIdx(),ddd);

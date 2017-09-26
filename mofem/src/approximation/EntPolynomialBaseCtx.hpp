@@ -47,14 +47,14 @@ namespace MoFEM {
       const int dim
     );
 
-    DataForcesAndSurcesCore &dAta;
+    DataForcesAndSourcesCore &dAta;
     const FieldSpace sPace;
     const FieldApproximationBase bAse;
     const FieldApproximationBase copyNodeBase;
     const FEMethod *fePtr;
 
     EntPolynomialBaseCtx(
-      DataForcesAndSurcesCore &data,
+      DataForcesAndSourcesCore &data,
       const FieldSpace space,
       const FieldApproximationBase base,
       const FieldApproximationBase copy_node_base = LASTBASE

@@ -129,16 +129,16 @@ int main(int argc, char *argv[]) {
     // those constrains and can be used in different context.
 
     // Elements used by KSP & DM to assemble system of equations
-    boost::shared_ptr<ForcesAndSurcesCore> domain_lhs_fe;     ///< Volume element for the matrix
-    boost::shared_ptr<ForcesAndSurcesCore> boundary_lhs_fe;   ///< Boundary element for the matrix
-    boost::shared_ptr<ForcesAndSurcesCore> domain_rhs_fe;     ///< Volume element to assemble vector
-    boost::shared_ptr<ForcesAndSurcesCore> boundary_rhs_fe;   ///< Volume element to assemble vector
-    boost::shared_ptr<ForcesAndSurcesCore> domain_error;      ///< Volume element evaluate error
-    boost::shared_ptr<ForcesAndSurcesCore> post_proc_volume;  ///< Volume element to Post-process results
-    boost::shared_ptr<ForcesAndSurcesCore> null;              ///< Null element do nothing
+    boost::shared_ptr<ForcesAndSourcesCore> domain_lhs_fe;     ///< Volume element for the matrix
+    boost::shared_ptr<ForcesAndSourcesCore> boundary_lhs_fe;   ///< Boundary element for the matrix
+    boost::shared_ptr<ForcesAndSourcesCore> domain_rhs_fe;     ///< Volume element to assemble vector
+    boost::shared_ptr<ForcesAndSourcesCore> boundary_rhs_fe;   ///< Volume element to assemble vector
+    boost::shared_ptr<ForcesAndSourcesCore> domain_error;      ///< Volume element evaluate error
+    boost::shared_ptr<ForcesAndSourcesCore> post_proc_volume;  ///< Volume element to Post-process results
+    boost::shared_ptr<ForcesAndSourcesCore> null;              ///< Null element do nothing
     {
       // Add problem specific operators the generic finite elements to calculate matrices and vectors.
-      ierr = PoissonExample::CreateFiniteElements(m_field).createFEToAssmbleMatrceAndVectorForNonlinearProblem(
+      ierr = PoissonExample::CreateFiniteElements(m_field).createFEToAssmbleMatrixAndVectorForNonlinearProblem(
         ExactFunction(),ExactLaplacianFunction(),
         FunA(),DiffFunA(),
         domain_lhs_fe,boundary_lhs_fe,domain_rhs_fe,boundary_rhs_fe,

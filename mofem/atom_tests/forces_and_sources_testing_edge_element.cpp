@@ -145,7 +145,7 @@ int main(int argc, char *argv[]) {
   //what are ghost nodes, see Petsc Manual
   ierr = prb_mng_ptr->partitionGhostDofs("TEST_PROBLEM"); CHKERRQ(ierr);
 
-  EdgeElementForcesAndSurcesCore fe1(m_field);
+  EdgeElementForcesAndSourcesCore fe1(m_field);
 
   typedef tee_device<std::ostream, std::ofstream> TeeDevice;
   typedef stream<TeeDevice> TeeStream;
@@ -154,17 +154,17 @@ int main(int argc, char *argv[]) {
   TeeDevice my_tee(std::cout, ofs);
   TeeStream my_split(my_tee);
 
-  struct MyOp: public EdgeElementForcesAndSurcesCore::UserDataOperator {
+  struct MyOp: public EdgeElementForcesAndSourcesCore::UserDataOperator {
 
     TeeStream &my_split;
     MyOp(TeeStream &_my_split,const char type):
-      EdgeElementForcesAndSurcesCore::UserDataOperator("FIELD1","FIELD1",type),
+      EdgeElementForcesAndSourcesCore::UserDataOperator("FIELD1","FIELD1",type),
       my_split(_my_split) {}
 
     PetscErrorCode doWork(
       int side,
       EntityType type,
-      DataForcesAndSurcesCore::EntData &data) {
+      DataForcesAndSourcesCore::EntData &data) {
       PetscFunctionBegin;
 
       my_split << "NH1" << std::endl;
@@ -186,8 +186,8 @@ int main(int argc, char *argv[]) {
     PetscErrorCode doWork(
       int row_side,int col_side,
       EntityType row_type,EntityType col_type,
-      DataForcesAndSurcesCore::EntData &row_data,
-      DataForcesAndSurcesCore::EntData &col_data) {
+      DataForcesAndSourcesCore::EntData &row_data,
+      DataForcesAndSourcesCore::EntData &col_data) {
       PetscFunctionBegin;
       my_split << "ROW NH1NH1" << std::endl;
       my_split << "row side: " << row_side << " row_type: " << row_type << std::endl;
@@ -200,8 +200,8 @@ int main(int argc, char *argv[]) {
 
   };
 
-  fe1.getOpPtrVector().push_back(new MyOp(my_split,ForcesAndSurcesCore::UserDataOperator::OPROW));
-  fe1.getOpPtrVector().push_back(new MyOp(my_split,ForcesAndSurcesCore::UserDataOperator::OPROWCOL));
+  fe1.getOpPtrVector().push_back(new MyOp(my_split,ForcesAndSourcesCore::UserDataOperator::OPROW));
+  fe1.getOpPtrVector().push_back(new MyOp(my_split,ForcesAndSourcesCore::UserDataOperator::OPROWCOL));
 
   ierr = m_field.loop_finite_elements("TEST_PROBLEM","TEST_FE",fe1);  CHKERRQ(ierr);
 

@@ -60,22 +60,22 @@ struct DataOperator {
   virtual PetscErrorCode doWork(
     int row_side,int col_side,
     EntityType row_type,EntityType col_type,
-    DataForcesAndSurcesCore::EntData &row_data,
-    DataForcesAndSurcesCore::EntData &col_data) {
+    DataForcesAndSourcesCore::EntData &row_data,
+    DataForcesAndSourcesCore::EntData &col_data) {
     PetscFunctionBegin;
     SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
     PetscFunctionReturn(0);
   }
 
   virtual PetscErrorCode opLhs(
-    DataForcesAndSurcesCore &row_data,
-    DataForcesAndSurcesCore &col_data,
+    DataForcesAndSourcesCore &row_data,
+    DataForcesAndSourcesCore &col_data,
     bool symm = true
   );
 
   virtual PetscErrorCode opLhs(
-    DataForcesAndSurcesCore &row_data,
-    DataForcesAndSurcesCore &col_data
+    DataForcesAndSourcesCore &row_data,
+    DataForcesAndSourcesCore &col_data
   ) {
     return opLhs(row_data,col_data,getSymm());
   }
@@ -86,14 +86,14 @@ struct DataOperator {
   virtual PetscErrorCode doWork(
     int side,
     EntityType type,
-    DataForcesAndSurcesCore::EntData &data) {
+    DataForcesAndSourcesCore::EntData &data) {
     PetscFunctionBegin;
     SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
     PetscFunctionReturn(0);
   }
 
   virtual PetscErrorCode opRhs(
-    DataForcesAndSurcesCore &data,
+    DataForcesAndSourcesCore &data,
     const bool do_vertices,
     const bool do_edges,
     const bool do_quads,
@@ -104,7 +104,7 @@ struct DataOperator {
   );
 
   virtual PetscErrorCode opRhs(
-    DataForcesAndSurcesCore &data,
+    DataForcesAndSourcesCore &data,
     const bool error_if_no_base = true
   ) {
     return opRhs(
@@ -274,7 +274,7 @@ struct OpSetInvJacH1: public DataOperator {
 
   MatrixDouble diffNinvJac;
   PetscErrorCode doWork(
-    int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+    int side,EntityType type,DataForcesAndSourcesCore::EntData &data
   );
 
 };
@@ -301,7 +301,7 @@ struct OpSetInvJacHdivAndHcurl: public DataOperator {
 
   MatrixDouble diffHdivInvJac;
   PetscErrorCode doWork(
-    int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
+    int side,EntityType type,DataForcesAndSourcesCore::EntData &data);
 
 };
 
@@ -318,7 +318,7 @@ struct OpSetHoInvJacH1: public DataOperator {
   OpSetHoInvJacH1(MatrixDouble &inv_ho_jac): invHoJac(inv_ho_jac) {}
 
   MatrixDouble diffNinvJac;
-  PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
+  PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data);
 
 };
 
@@ -339,7 +339,7 @@ struct OpSetHoInvJacHdivAndHcurl: public DataOperator {
 
   MatrixDouble diffHdivInvJac;
   PetscErrorCode doWork(
-    int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+    int side,EntityType type,DataForcesAndSourcesCore::EntData &data
   );
 
 };
@@ -380,7 +380,7 @@ struct OpSetContravariantPiolaTransform: public DataOperator {
   MatrixDouble piolaN;
   MatrixDouble piolaDiffN;
 
-  PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
+  PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data);
 
 };
 
@@ -401,7 +401,7 @@ struct OpSetHoContravariantPiolaTransform: public DataOperator {
 
   MatrixDouble piolaN;
   MatrixDouble piolaDiffN;
-  PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
+  PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data);
 
 };
 
@@ -419,7 +419,7 @@ struct OpSetHoCovariantPiolaTransform: public DataOperator {
 
   MatrixDouble piolaN;
   MatrixDouble piolaDiffN;
-  PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
+  PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data);
 
 };
 
@@ -456,7 +456,7 @@ struct OpSetCovariantPiolaTransform: public DataOperator {
   MatrixDouble piolaN;
   MatrixDouble piolaDiffN;
 
-  PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
+  PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data);
 
 };
 
@@ -501,7 +501,7 @@ struct OpGetDataAndGradient: public DataOperator {
    * @return      error code
    */
   PetscErrorCode calculateValAndGrad(
-    int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+    int side,EntityType type,DataForcesAndSourcesCore::EntData &data
   ) {
     PetscFunctionBegin;
     const int nb_base_functions = data.getN().size2();
@@ -536,7 +536,7 @@ struct OpGetDataAndGradient: public DataOperator {
   PetscErrorCode doWork(
     int side,
     EntityType type,
-    DataForcesAndSurcesCore::EntData &data
+    DataForcesAndSourcesCore::EntData &data
   ) {
 
     PetscFunctionBegin;
@@ -603,7 +603,7 @@ FTensor::Tensor2<double*,3,3> OpGetDataAndGradient<3,3>::getGradAtGaussPtsTensor
  */
 template<>
 PetscErrorCode OpGetDataAndGradient<3,3>::calculateValAndGrad(
-  int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+  int side,EntityType type,DataForcesAndSourcesCore::EntData &data
 );
 
 /**
@@ -611,7 +611,7 @@ PetscErrorCode OpGetDataAndGradient<3,3>::calculateValAndGrad(
  */
 template<>
 PetscErrorCode OpGetDataAndGradient<1,3>::calculateValAndGrad(
-  int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+  int side,EntityType type,DataForcesAndSourcesCore::EntData &data
 );
 
 /** \brief Calculate normals at Gauss points of triangle element
@@ -638,7 +638,7 @@ struct OpGetCoordsAndNormalsOnFace: public DataOperator {
   PetscErrorCode doWork(
     int side,
     EntityType type,
-    DataForcesAndSurcesCore::EntData &data
+    DataForcesAndSourcesCore::EntData &data
   );
 
   PetscErrorCode calculateNormals();
@@ -681,7 +681,7 @@ struct OpGetCoordsAndNormalsOnPrism: public DataOperator {
   PetscErrorCode doWork(
     int side,
     EntityType type,
-    DataForcesAndSurcesCore::EntData &data
+    DataForcesAndSourcesCore::EntData &data
   );
 
   PetscErrorCode calculateNormals();
@@ -706,7 +706,7 @@ struct OpSetContravariantPiolaTransoformOnTriangle: public DataOperator {
   PetscErrorCode doWork(
     int side,
     EntityType type,
-    DataForcesAndSurcesCore::EntData &data
+    DataForcesAndSourcesCore::EntData &data
   );
 
 };
@@ -742,7 +742,7 @@ struct OpSetCovariantPiolaTransoformOnTriangle: public DataOperator {
   PetscErrorCode doWork(
     int side,
     EntityType type,
-    DataForcesAndSurcesCore::EntData &data
+    DataForcesAndSourcesCore::EntData &data
   );
 
 };
@@ -757,7 +757,7 @@ struct OpGetHoTangentOnEdge: public DataOperator {
   OpGetHoTangentOnEdge(MatrixDouble &tangent):
     tAngent(tangent) {}
 
-  PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
+  PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data);
 
 };
 
@@ -780,7 +780,7 @@ struct OpSetCovariantPiolaTransoformOnEdge: public DataOperator {
   PetscErrorCode doWork(
     int side,
     EntityType type,
-    DataForcesAndSurcesCore::EntData &data
+    DataForcesAndSourcesCore::EntData &data
   );
 
 };

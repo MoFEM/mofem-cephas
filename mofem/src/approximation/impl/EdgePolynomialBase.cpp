@@ -90,7 +90,7 @@ PetscErrorCode EdgePolynomialBase::getValue(
   }
 
   const FieldApproximationBase base = cTx->bAse;
-  DataForcesAndSurcesCore& data = cTx->dAta;
+  DataForcesAndSourcesCore& data = cTx->dAta;
   if(cTx->copyNodeBase==LASTBASE) {
     data.dataOnEntities[MBVERTEX][0].getN(base).resize(nb_gauss_pts,2,false);
     ierr = ShapeMBEDGE(
@@ -138,7 +138,7 @@ PetscErrorCode EdgePolynomialBase::getValueH1(MatrixDouble &pts) {
   
   PetscFunctionBegin;
 
-  DataForcesAndSurcesCore& data = cTx->dAta;
+  DataForcesAndSourcesCore& data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
   PetscErrorCode (*base_polynomials)(
     int p,double s,double *diff_s,double *L,double *diffL,const int dim
@@ -229,7 +229,7 @@ PetscErrorCode EdgePolynomialBase::getValueHCurl(MatrixDouble &pts) {
   
   PetscFunctionBegin;
 
-  DataForcesAndSurcesCore& data = cTx->dAta;
+  DataForcesAndSourcesCore& data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
   PetscErrorCode (*base_polynomials)(
     int p,double s,double *diff_s,double *L,double *diffL,const int dim

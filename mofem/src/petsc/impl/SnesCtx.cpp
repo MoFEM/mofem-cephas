@@ -61,7 +61,9 @@ PetscErrorCode SnesRhs(SNES snes,Vec x,Vec f,void *ctx) {
   PetscLogEventBegin(snes_ctx->USER_EVENT_SnesRhs,0,0,0,0);
   ierr = VecGhostUpdateBegin(x,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(x,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = snes_ctx->mField.query_interface<VecManager>()->setLocalGhostVector(snes_ctx->problemName,COL,x,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = snes_ctx->mField.query_interface<VecManager>()->setLocalGhostVector(
+    snes_ctx->problemName,COL,x,INSERT_VALUES,SCATTER_REVERSE
+  ); CHKERRQ(ierr);
   ierr = VecZeroEntries(f); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -109,6 +111,11 @@ PetscErrorCode SnesMat(SNES snes,Vec x,Mat A,Mat B,void *ctx) {
   if(snes_ctx->zeroPreCondMatrixB) {
     ierr = MatZeroEntries(B); CHKERRQ(ierr);
   }
+  ierr = VecGhostUpdateBegin(x,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(x,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = snes_ctx->mField.query_interface<VecManager>()->setLocalGhostVector(
+    snes_ctx->problemName,COL,x,INSERT_VALUES,SCATTER_REVERSE
+  ); CHKERRQ(ierr);
   SnesCtx::BasicMethodsSequence::iterator bit = snes_ctx->preProcess_Mat.begin();
   for(;bit!=snes_ctx->preProcess_Mat.end();bit++) {
     ierr = (*bit)->setSnes(snes); CHKERRQ(ierr);

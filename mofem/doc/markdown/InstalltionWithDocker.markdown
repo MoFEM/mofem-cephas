@@ -50,7 +50,7 @@ To run code a *work container* need to be started, container mount *mofem build
 volume* from container which has been created in the previous step
 
 ~~~~~~
-    docker run --rm=true -it --volumes-from mofem_build  -v $HOME/mofem-cephas/mofem:/mofem -v $HOME:$HOME -e HOSTHOME=$HOME mofem_build /bin/bash
+docker run --rm=true -it --volumes-from mofem_build  -v $HOME/mofem-cephas/mofem:/mofem -v $HOME:$HOME -e HOSTHOME=$HOME mofem_build /bin/bash
 ~~~~~~
 After execution of above command you are working inside docker, this is isolated
 system hosted by your OS (MacOSX, Linux or Windows). You can run several

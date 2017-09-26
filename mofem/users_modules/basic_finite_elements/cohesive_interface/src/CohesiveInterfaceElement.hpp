@@ -32,8 +32,8 @@ struct CohesiveInterfaceElement {
   };
   CommonData commonData;
 
-  struct MyPrism: public MoFEM::FlatPrismElementForcesAndSurcesCore {
-    MyPrism(MoFEM::Interface &m_field): MoFEM::FlatPrismElementForcesAndSurcesCore(m_field) {}
+  struct MyPrism: public MoFEM::FlatPrismElementForcesAndSourcesCore {
+    MyPrism(MoFEM::Interface &m_field): MoFEM::FlatPrismElementForcesAndSourcesCore(m_field) {}
     int getRule(int order) { return 2*order; };
   };
   MyPrism feRhs;
@@ -316,12 +316,12 @@ struct CohesiveInterfaceElement {
 
   /** \brief Set negative sign to shape functions on face 4
     */
-  struct OpSetSignToShapeFunctions: public FlatPrismElementForcesAndSurcesCore::UserDataOperator {
+  struct OpSetSignToShapeFunctions: public FlatPrismElementForcesAndSourcesCore::UserDataOperator {
 
     OpSetSignToShapeFunctions(const std::string field_name):
-    FlatPrismElementForcesAndSurcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROW) {}
+    FlatPrismElementForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSourcesCore::UserDataOperator::OPROW) {}
 
-    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
       PetscFunctionBegin;
       if(data.getN().size1()==0)  PetscFunctionReturn(0);
       if(data.getN().size2()==0)  PetscFunctionReturn(0);
@@ -351,15 +351,15 @@ struct CohesiveInterfaceElement {
 
   /** \brief Operator calculate gap, normal vector and rotation matrix
   */
-  struct OpCalculateGapGlobal: public FlatPrismElementForcesAndSurcesCore::UserDataOperator {
+  struct OpCalculateGapGlobal: public FlatPrismElementForcesAndSourcesCore::UserDataOperator {
 
     CommonData &commonData;
     OpCalculateGapGlobal(const std::string field_name,CommonData &common_data):
-      FlatPrismElementForcesAndSurcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROW),
+      FlatPrismElementForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSourcesCore::UserDataOperator::OPROW),
       commonData(common_data) {}
 
     PetscErrorCode doWork(
-      int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+      int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
       PetscFunctionBegin;
       try {
         int nb_dofs = data.getIndices().size();
@@ -409,14 +409,14 @@ struct CohesiveInterfaceElement {
 
   /** \brief Operator calculate gap in local coordinate system
   */
-  struct OpCalculateGapLocal: public FlatPrismElementForcesAndSurcesCore::UserDataOperator {
+  struct OpCalculateGapLocal: public FlatPrismElementForcesAndSourcesCore::UserDataOperator {
 
     CommonData &commonData;
     OpCalculateGapLocal(const std::string field_name,CommonData &common_data):
-      FlatPrismElementForcesAndSurcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROW),
+      FlatPrismElementForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSourcesCore::UserDataOperator::OPROW),
       commonData(common_data) {}
 
-    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
       PetscFunctionBegin;
       try {
         if(type == MBVERTEX) {
@@ -440,16 +440,16 @@ struct CohesiveInterfaceElement {
 
   /** \brief Operator calculate right hand side vector
   */
-  struct OpRhs: public FlatPrismElementForcesAndSurcesCore::UserDataOperator {
+  struct OpRhs: public FlatPrismElementForcesAndSourcesCore::UserDataOperator {
 
     CommonData &commonData;
     PhysicalEquation &physicalEqations;
     OpRhs(const std::string field_name,CommonData &common_data,PhysicalEquation &physical_eqations):
-      FlatPrismElementForcesAndSurcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROW),
+      FlatPrismElementForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSourcesCore::UserDataOperator::OPROW),
       commonData(common_data),physicalEqations(physical_eqations) {}
 
     VectorDouble traction,Nf;
-    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
       PetscFunctionBegin;
 
       try {
@@ -484,20 +484,20 @@ struct CohesiveInterfaceElement {
 
   /** \brief Operator calculate element stiffens matrix
   */
-  struct OpLhs: public FlatPrismElementForcesAndSurcesCore::UserDataOperator {
+  struct OpLhs: public FlatPrismElementForcesAndSourcesCore::UserDataOperator {
 
     CommonData &commonData;
     PhysicalEquation &physicalEqations;
     OpLhs(const std::string field_name,CommonData &common_data,PhysicalEquation &physical_eqations):
-    FlatPrismElementForcesAndSurcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROWCOL),
+    FlatPrismElementForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSourcesCore::UserDataOperator::OPROWCOL),
     commonData(common_data),physicalEqations(physical_eqations) { sYmm = false; }
 
     MatrixDouble K,D,ND;
     PetscErrorCode doWork(
       int row_side,int col_side,
       EntityType row_type,EntityType col_type,
-      DataForcesAndSurcesCore::EntData &row_data,
-      DataForcesAndSurcesCore::EntData &col_data
+      DataForcesAndSourcesCore::EntData &row_data,
+      DataForcesAndSourcesCore::EntData &col_data
     ) {
       PetscFunctionBegin;
 
@@ -554,15 +554,15 @@ struct CohesiveInterfaceElement {
 
   /** \brief Operator update history variables
   */
-  struct OpHistory: public FlatPrismElementForcesAndSurcesCore::UserDataOperator {
+  struct OpHistory: public FlatPrismElementForcesAndSourcesCore::UserDataOperator {
 
     CommonData &commonData;
     PhysicalEquation &physicalEqations;
     OpHistory(const std::string field_name,CommonData &common_data,PhysicalEquation &physical_eqations):
-      FlatPrismElementForcesAndSurcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROW),
+      FlatPrismElementForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSourcesCore::UserDataOperator::OPROW),
       commonData(common_data),physicalEqations(physical_eqations) {}
 
-      PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+      PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
         PetscFunctionBegin;
 
         if(type != MBVERTEX) PetscFunctionReturn(0);

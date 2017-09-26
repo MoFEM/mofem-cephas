@@ -164,7 +164,7 @@ struct ThermalElement {
       *
       * temperature gradient is calculated multiplying derivatives of shape functions by degrees of freedom.
       */
-    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
+    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data);
 
   };
 
@@ -184,7 +184,7 @@ struct ThermalElement {
       * temperature temperature or rate of temperature is calculated multiplying shape functions by degrees of freedom
       */
     PetscErrorCode doWork(
-      int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+      int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
       PetscFunctionBegin;
       try {
 
@@ -272,7 +272,7 @@ struct ThermalElement {
       * F = int diffN^T k gard_T dOmega^2
       *
       */
-    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
+    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data);
 
   };
 
@@ -309,8 +309,8 @@ struct ThermalElement {
     PetscErrorCode doWork(
       int row_side,int col_side,
       EntityType row_type,EntityType col_type,
-      DataForcesAndSurcesCore::EntData &row_data,
-      DataForcesAndSurcesCore::EntData &col_data
+      DataForcesAndSourcesCore::EntData &row_data,
+      DataForcesAndSourcesCore::EntData &col_data
     );
 
   };
@@ -335,7 +335,7 @@ struct ThermalElement {
       * F = int N^T c (dT/dt) dOmega^2
       *
       */
-    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
+    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data);
 
   };
 
@@ -360,8 +360,8 @@ struct ThermalElement {
     PetscErrorCode doWork(
       int row_side,int col_side,
       EntityType row_type,EntityType col_type,
-      DataForcesAndSurcesCore::EntData &row_data,
-      DataForcesAndSurcesCore::EntData &col_data
+      DataForcesAndSourcesCore::EntData &row_data,
+      DataForcesAndSourcesCore::EntData &col_data
     );
 
   };
@@ -398,7 +398,7 @@ struct ThermalElement {
       * F = int_S N^T * flux dS
       *
       */
-    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
+    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data);
 
   };
 
@@ -442,8 +442,8 @@ struct ThermalElement {
     PetscErrorCode doWork(
       int row_side,int col_side,
       EntityType row_type,EntityType col_type,
-      DataForcesAndSurcesCore::EntData &row_data,
-      DataForcesAndSurcesCore::EntData &col_data
+      DataForcesAndSourcesCore::EntData &row_data,
+      DataForcesAndSourcesCore::EntData &col_data
     );
 
   };
@@ -479,7 +479,7 @@ struct ThermalElement {
       *
       *  R=int_S N^T * sIgma * eMissivity * (Ta^4 -Ts^4) dS
      **/
-    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
+    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data);
 
   };
 
@@ -517,7 +517,7 @@ struct ThermalElement {
       *  R=int_S N^T*alpha*N_f  dS **/
 
     PetscErrorCode doWork(
-      int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+      int side,EntityType type,DataForcesAndSourcesCore::EntData &data
     );
 
   };
@@ -557,8 +557,8 @@ struct ThermalElement {
     PetscErrorCode doWork(
       int row_side,int col_side,
       EntityType row_type,EntityType col_type,
-      DataForcesAndSurcesCore::EntData &row_data,
-      DataForcesAndSurcesCore::EntData &col_data
+      DataForcesAndSourcesCore::EntData &row_data,
+      DataForcesAndSourcesCore::EntData &col_data
     );
 
   };

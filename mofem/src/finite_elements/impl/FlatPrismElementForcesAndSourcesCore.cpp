@@ -1,4 +1,4 @@
-/** \file FlatPrismElementForcesAndSurcesCore.cpp
+/** \file FlatPrismElementForcesAndSourcesCore.cpp
 
 \brief Implementation of flat prism element
 
@@ -53,11 +53,11 @@
 #include <FTensor.hpp>
 #include <DataStructures.hpp>
 #include <DataOperators.hpp>
-#include <ForcesAndSurcesCore.hpp>
+#include <ForcesAndSourcesCore.hpp>
 #include <BaseFunction.hpp>
 #include <EntPolynomialBaseCtx.hpp>
 #include <FlatPrismPolynomialBase.hpp>
-#include <FlatPrismElementForcesAndSurcesCore.hpp>
+#include <FlatPrismElementForcesAndSourcesCore.hpp>
 
 #ifdef __cplusplus
 extern "C" {
@@ -72,7 +72,7 @@ extern "C" {
 
 namespace MoFEM {
 
-PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
+PetscErrorCode FlatPrismElementForcesAndSourcesCore::operator()() {
   PetscFunctionBegin;
 
   if(numeredEntFiniteElementPtr->getEntType() != MBPRISM) PetscFunctionReturn(0);
@@ -285,7 +285,7 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
       UserDataOperator::OPROW, UserDataOperator::OPCOL
     };
     std::vector<std::string> last_eval_field_name(2);
-    DataForcesAndSurcesCore *op_data[2];
+    DataForcesAndSourcesCore *op_data[2];
     FieldSpace space[2];
     FieldApproximationBase base[2];
 
@@ -471,7 +471,7 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
 PetscErrorCode OpCalculateInvJacForFlatPrism::doWork(
   int side,
   EntityType type,
-  DataForcesAndSurcesCore::EntData &data
+  DataForcesAndSourcesCore::EntData &data
 ) {
   
   PetscFunctionBegin;
@@ -520,7 +520,7 @@ PetscErrorCode OpCalculateInvJacForFlatPrism::doWork(
 PetscErrorCode OpSetInvJacH1ForFlatPrism::doWork(
   int side,
   EntityType type,
-  DataForcesAndSurcesCore::EntData &data
+  DataForcesAndSourcesCore::EntData &data
 ) {
   PetscFunctionBegin;
   // 

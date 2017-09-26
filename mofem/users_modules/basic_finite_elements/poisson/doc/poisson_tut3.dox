@@ -65,11 +65,11 @@ This code is largely the same as in \ref analytical_poisson.cpp, with
 only two places where we introduce changes. We will focus only on those parts.
 First we make pointer new penalty finite element instance,
 \code
- boost::shared_ptr<ForcesAndSurcesCore> boundary_penalty_lhs_fe;
+ boost::shared_ptr<ForcesAndSourcesCore> boundary_penalty_lhs_fe;
 \endcode
 and create finite element class instance itself
 \code
-boundary_penalty_lhs_fe = boost::shared_ptr<ForcesAndSurcesCore>(new FaceElementForcesAndSourcesCore(m_field));
+boundary_penalty_lhs_fe = boost::shared_ptr<ForcesAndSourcesCore>(new FaceElementForcesAndSourcesCore(m_field));
 \endcode
 with that at hand we can add appropriate users data operators
 \code

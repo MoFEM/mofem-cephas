@@ -34,8 +34,8 @@ namespace MoFEM {
 
     PetscErrorCode queryInterface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface);
 
-    DataForcesAndSurcesCore& dataTrianglesOnly;
-    DataForcesAndSurcesCore& dataTroughThickness;
+    DataForcesAndSourcesCore& dataTrianglesOnly;
+    DataForcesAndSourcesCore& dataTroughThickness;
 
     MatrixDouble& gaussPtsTrianglesOnly;
     MatrixDouble& gaussPtsThroughThickness;
@@ -44,9 +44,9 @@ namespace MoFEM {
     const NumeredEntFiniteElement *fePtr;
 
     FatPrismPolynomialBaseCtx(
-      DataForcesAndSurcesCore &data,
-      DataForcesAndSurcesCore &data_triangles_only,
-      DataForcesAndSurcesCore &data_trough_thickness,
+      DataForcesAndSourcesCore &data,
+      DataForcesAndSourcesCore &data_triangles_only,
+      DataForcesAndSourcesCore &data_trough_thickness,
       MatrixDouble& gauss_pts_triangles_only,
       MatrixDouble& gauss_pts_through_thickness,
       moab::Interface &moab,

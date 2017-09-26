@@ -31,7 +31,7 @@ struct NeummanForcesSurfaceComplexForLazy {
 
     MyTriangleSpatialFE *myPtr;
     AuxMethodSpatial(const string &field_name,MyTriangleSpatialFE *my_ptr,const char type);
-    PetscErrorCode doWork(int side, EntityType type, DataForcesAndSurcesCore::EntData &data);
+    PetscErrorCode doWork(int side, EntityType type, DataForcesAndSourcesCore::EntData &data);
 
   };
 
@@ -39,7 +39,7 @@ struct NeummanForcesSurfaceComplexForLazy {
 
     MyTriangleSpatialFE *myPtr;
     AuxMethodMaterial(const string &field_name,MyTriangleSpatialFE *my_ptr,const char type);
-    PetscErrorCode doWork(int side, EntityType type, DataForcesAndSurcesCore::EntData &data);
+    PetscErrorCode doWork(int side, EntityType type, DataForcesAndSourcesCore::EntData &data);
 
   };
 

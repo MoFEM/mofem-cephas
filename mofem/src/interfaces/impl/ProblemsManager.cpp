@@ -2575,7 +2575,6 @@ namespace MoFEM {
   }
 
   PetscErrorCode ProblemsManager::partitionGhostDofs(const std::string &name,int verb) {
-
     MoFEM::Interface &m_field = cOre;
     const Problem_multiIndex *problems_ptr;
     PetscFunctionBegin;
@@ -2585,22 +2584,28 @@ namespace MoFEM {
     if(!(cOre.getBuildMoFEM()&Core::PARTITION_FE))
     SETERRQ(m_field.get_comm(),MOFEM_DATA_INCONSISTENCY,"partitions finite elements not build");
 
+    // get problem pointer
     typedef Problem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
     //find p_miit
     ierr = m_field.get_problems(&problems_ptr); CHKERRQ(ierr);
     ProblemsByName &problems_set = const_cast<ProblemsByName&>(problems_ptr->get<Problem_mi_tag>());
     ProblemsByName::iterator p_miit = problems_set.find(name);
-    //
+
+    // get reference to number of ghost dofs
     DofIdx &nb_row_ghost_dofs = p_miit->nbGhostDofsRow;
     DofIdx &nb_col_ghost_dofs = p_miit->nbGhostDofsCol;
-    //
     nb_row_ghost_dofs = 0;
     nb_col_ghost_dofs = 0;
+
+    // do work if more than one processor
     if(m_field.get_comm_size()>1) {
       NumeredDofEntity_multiIndex_uid_view_ordered ghost_idx_col_view,ghost_idx_row_view;
+      // intearte finite elements on this partotion
       NumeredEntFiniteElement_multiIndex::index<Part_mi_tag>::type::iterator fe_it,hi_fe_it;
+      // get elements on this partition
       fe_it = p_miit->numeredFiniteElements.get<Part_mi_tag>().lower_bound(m_field.get_comm_rank());
       hi_fe_it = p_miit->numeredFiniteElements.get<Part_mi_tag>().upper_bound(m_field.get_comm_rank());
+      // get dofs on elements which are not part of this partition
       for(;fe_it!=hi_fe_it;fe_it++) {
         typedef FENumeredDofEntity_multiIndex::iterator dof_it;
         if((*fe_it)->rows_dofs->size()>0) {
@@ -2637,6 +2642,7 @@ namespace MoFEM {
       if(p_miit->numeredDofsCols==p_miit->numeredDofsRows) {
         loop_size = 1;
       }
+      // set local indices
       for(int ss = 0;ss<loop_size;ss++) {
         NumeredDofEntity_multiIndex_uid_view_ordered::iterator ghost_idx_miit = ghost_idx_view[ss]->begin();
         for(;ghost_idx_miit!=ghost_idx_view[ss]->end();ghost_idx_miit++) {
@@ -2653,6 +2659,108 @@ namespace MoFEM {
         (*nb_ghost_dofs[1]) = (*nb_ghost_dofs[0]);
       }
     }
+
+    if(verb>0) {
+      std::ostringstream ss;
+      ss << "partition_ghost_col_dofs: rank = " << m_field.get_comm_rank()
+      << " FEs col ghost dofs "<< *p_miit
+      << " Nb. col ghost dof " << p_miit->getNbGhostDofsCol()
+      << " Nb. local dof " << p_miit->getNbLocalDofsCol() << std::endl;
+      ss << "partition_ghost_row_dofs: rank = " << m_field.get_comm_rank()
+      << " FEs row ghost dofs "<< *p_miit
+      << " Nb. row ghost dof " << p_miit->getNbGhostDofsRow()
+      << " Nb. local dof " << p_miit->getNbLocalDofsRow() << std::endl;
+      if(verb>1) {
+        NumeredDofEntity_multiIndex::iterator miit_dd_col = p_miit->numeredDofsCols->begin();
+        for(;miit_dd_col!=p_miit->numeredDofsCols->end();miit_dd_col++) {
+          if((*miit_dd_col)->pArt==(unsigned int)m_field.get_comm_rank()) continue;
+          if((*miit_dd_col)->petscLocalDofIdx==(DofIdx)-1) continue;
+          ss<<*(*miit_dd_col)<<std::endl;
+        }
+      }
+      PetscSynchronizedPrintf(m_field.get_comm(),ss.str().c_str());
+      PetscSynchronizedFlush(m_field.get_comm(),PETSC_STDOUT);
+    }
+
+    cOre.getBuildMoFEM() |= Core::PARTITION_GHOST_DOFS;
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode ProblemsManager::partitionGhostDofsOnDistributedMesh(const std::string &name,int verb) {
+    MoFEM::Interface &m_field = cOre;
+    const Problem_multiIndex *problems_ptr;
+    PetscFunctionBegin;
+
+    if(!(cOre.getBuildMoFEM()&Core::PARTITION_PROBLEM))
+    SETERRQ(m_field.get_comm(),MOFEM_DATA_INCONSISTENCY,"partition of problem not build");
+    if(!(cOre.getBuildMoFEM()&Core::PARTITION_FE))
+    SETERRQ(m_field.get_comm(),MOFEM_DATA_INCONSISTENCY,"partitions finite elements not build");
+
+    // get problem pointer
+    typedef Problem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
+    //find p_miit
+    ierr = m_field.get_problems(&problems_ptr); CHKERRQ(ierr);
+    ProblemsByName &problems_set = const_cast<ProblemsByName&>(problems_ptr->get<Problem_mi_tag>());
+    ProblemsByName::iterator p_miit = problems_set.find(name);
+
+    // get reference to number of ghost dofs
+    DofIdx &nb_row_ghost_dofs = p_miit->nbGhostDofsRow;
+    DofIdx &nb_col_ghost_dofs = p_miit->nbGhostDofsCol;
+    nb_row_ghost_dofs = 0;
+    nb_col_ghost_dofs = 0;
+    // get number of local dofs
+    DofIdx *nb_ghost_dofs[2] = { &nb_row_ghost_dofs, &nb_col_ghost_dofs };
+    DofIdx nb_local_dofs[2] = { p_miit->nbLocDofsRow, p_miit->nbLocDofsCol };
+
+    // do work if more than one processor
+    if(m_field.get_comm_size()>1) {
+      // determine if rows on columns are different from dofs on rows
+      int loop_size = 2;
+      if(p_miit->numeredDofsCols==p_miit->numeredDofsRows) {
+        loop_size = 1;
+      }
+      // intearte over dofs on rows and dofs on columns
+      for(int ss = 0;ss!=loop_size;ss++) {
+        // get dofs which have not set
+        NumeredDofEntity_multiIndex::index<PetscLocalIdx_mi_tag>::type::iterator dit,hi_dit;
+        if(ss == 0) {
+          dit = p_miit->numeredDofsRows->get<PetscLocalIdx_mi_tag>().lower_bound(-1);
+          hi_dit = p_miit->numeredDofsRows->get<PetscLocalIdx_mi_tag>().upper_bound(-1);
+        } else {
+          dit = p_miit->numeredDofsCols->get<PetscLocalIdx_mi_tag>().lower_bound(-1);
+          hi_dit = p_miit->numeredDofsCols->get<PetscLocalIdx_mi_tag>().upper_bound(-1);
+        }
+        // create dofs view by uid
+        NumeredDofEntity_multiIndex_uid_view_ordered ghost_idx_view;
+        ghost_idx_view.insert(dit,hi_dit);
+        // intare over dofs which have negative local index
+        NumeredDofEntity_multiIndex_uid_view_ordered::iterator gdit = ghost_idx_view.begin();
+        for(;gdit!=ghost_idx_view.end();gdit++) {
+          if(gdit->get()->getPStatus() == 0) continue;
+          boost::weak_ptr<NumeredDofEntity_multiIndex> numered_dofs_ptr;
+          if(ss == 0) {
+            numered_dofs_ptr = p_miit->numeredDofsRows;
+          } else {
+            numered_dofs_ptr = p_miit->numeredDofsCols;
+          }
+          NumeredDofEntityByUId::iterator diit = numered_dofs_ptr.lock()->find((*gdit)->getGlobalUniqueId());
+          if(diit->get()->getPetscGlobalDofIdx()==-1) {
+            SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"data inconsitency");
+          }
+          bool success = numered_dofs_ptr.lock()->modify(
+            diit,NumeredDofEntity_local_idx_change(nb_local_dofs[ss]++)
+          );
+          if(!success) {
+            SETERRQ(m_field.get_comm(),MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+          }
+          (*nb_ghost_dofs[ss])++;
+        }
+      }
+      if(loop_size==1) {
+        (*nb_ghost_dofs[1]) = (*nb_ghost_dofs[0]);
+      }
+    }
+
     if(verb>0) {
       std::ostringstream ss;
       ss << "partition_ghost_col_dofs: rank = " << m_field.get_comm_rank()

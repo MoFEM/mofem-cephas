@@ -57,7 +57,7 @@ struct AnalyticalDirichletBC {
       OpHoCoord(const std::string field_name,MatrixDouble &ho_coords);
 
       PetscErrorCode doWork(
-        int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+        int side,EntityType type,DataForcesAndSourcesCore::EntData &data
       );
 
     };
@@ -74,8 +74,8 @@ struct AnalyticalDirichletBC {
       PetscErrorCode doWork(
         int row_side,int col_side,
         EntityType row_type,EntityType col_type,
-        DataForcesAndSurcesCore::EntData &row_data,
-        DataForcesAndSurcesCore::EntData &col_data
+        DataForcesAndSourcesCore::EntData &row_data,
+        DataForcesAndSourcesCore::EntData &col_data
       );
 
     };
@@ -97,7 +97,7 @@ struct AnalyticalDirichletBC {
         boost::shared_ptr<FUNEVAL> function_evaluator,int field_number
       ):
       MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator(
-        field_name,ForcesAndSurcesCore::UserDataOperator::OPROW
+        field_name,ForcesAndSourcesCore::UserDataOperator::OPROW
       ),
       hoCoords(ho_coords),
       functionEvaluator(function_evaluator),
@@ -109,7 +109,7 @@ struct AnalyticalDirichletBC {
       VectorInt iNdices;
 
       PetscErrorCode doWork(
-        int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+        int side,EntityType type,DataForcesAndSourcesCore::EntData &data
       ) {
         PetscFunctionBegin;
         

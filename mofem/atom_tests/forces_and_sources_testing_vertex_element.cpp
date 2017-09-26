@@ -151,7 +151,7 @@ int main(int argc, char *argv[]) {
     PetscErrorCode doWork(
       int side,
       EntityType type,
-      DataForcesAndSurcesCore::EntData &data) {
+      DataForcesAndSourcesCore::EntData &data) {
       PetscFunctionBegin;
 
       my_split << "NH1" << std::endl;
@@ -165,8 +165,8 @@ int main(int argc, char *argv[]) {
     PetscErrorCode doWork(
       int row_side,int col_side,
       EntityType row_type,EntityType col_type,
-      DataForcesAndSurcesCore::EntData &row_data,
-      DataForcesAndSurcesCore::EntData &col_data) {
+      DataForcesAndSourcesCore::EntData &row_data,
+      DataForcesAndSourcesCore::EntData &col_data) {
       PetscFunctionBegin;
       my_split << "ROW NH1NH1" << std::endl;
       my_split << "row side: " << row_side << " row_type: " << row_type << std::endl;
@@ -179,8 +179,8 @@ int main(int argc, char *argv[]) {
 
   };
 
-  fe1.getOpPtrVector().push_back(new MyOp(my_split,ForcesAndSurcesCore::UserDataOperator::OPROW));
-  fe1.getOpPtrVector().push_back(new MyOp(my_split,ForcesAndSurcesCore::UserDataOperator::OPROWCOL));
+  fe1.getOpPtrVector().push_back(new MyOp(my_split,ForcesAndSourcesCore::UserDataOperator::OPROW));
+  fe1.getOpPtrVector().push_back(new MyOp(my_split,ForcesAndSourcesCore::UserDataOperator::OPROWCOL));
 
   ierr = m_field.loop_finite_elements("TEST_PROBLEM","TEST_FE",fe1);  CHKERRQ(ierr);
 

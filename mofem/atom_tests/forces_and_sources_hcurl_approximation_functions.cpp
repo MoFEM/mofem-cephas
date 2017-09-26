@@ -160,7 +160,7 @@ int main(int argc, char *argv[]) {
     PetscErrorCode doWork(
       int side,
       EntityType type,
-      DataForcesAndSurcesCore::EntData &data
+      DataForcesAndSourcesCore::EntData &data
     ) {
       PetscFunctionBegin;
 
@@ -203,7 +203,7 @@ int main(int argc, char *argv[]) {
     PetscErrorCode doWork(
       int side,
       EntityType type,
-      DataForcesAndSurcesCore::EntData &data
+      DataForcesAndSourcesCore::EntData &data
     ) {
       PetscFunctionBegin;
 
@@ -233,18 +233,18 @@ int main(int argc, char *argv[]) {
 
   };
 
-  struct OpEdgePrintingHdivApproximationFunctions: public EdgeElementForcesAndSurcesCore::UserDataOperator {
+  struct OpEdgePrintingHdivApproximationFunctions: public EdgeElementForcesAndSourcesCore::UserDataOperator {
 
     TeeStream &mySplit;
     OpEdgePrintingHdivApproximationFunctions(TeeStream &my_split):
-    EdgeElementForcesAndSurcesCore::UserDataOperator("HCURL",UserDataOperator::OPROW),
+    EdgeElementForcesAndSourcesCore::UserDataOperator("HCURL",UserDataOperator::OPROW),
     mySplit(my_split) {
     }
 
     PetscErrorCode doWork(
       int side,
       EntityType type,
-      DataForcesAndSurcesCore::EntData &data
+      DataForcesAndSourcesCore::EntData &data
     ) {
       PetscFunctionBegin;
 
@@ -265,10 +265,10 @@ int main(int argc, char *argv[]) {
 
   };
 
-  struct MyEdgeFE: public EdgeElementForcesAndSurcesCore {
+  struct MyEdgeFE: public EdgeElementForcesAndSourcesCore {
 
     MyEdgeFE(MoFEM::Interface &m_field):
-    EdgeElementForcesAndSurcesCore(m_field) {}
+    EdgeElementForcesAndSourcesCore(m_field) {}
     int getRule(int order) { return 1; };
 
   };

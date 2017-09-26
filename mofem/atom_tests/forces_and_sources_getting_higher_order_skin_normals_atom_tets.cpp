@@ -134,7 +134,7 @@ int main(int argc, char *argv[]) {
   //what are ghost nodes, see Petsc Manual
   ierr = prb_mng_ptr->partitionGhostDofs("TEST_PROBLEM"); CHKERRQ(ierr);
 
-  struct ForcesAndSurcesCore_TestFE: public ForcesAndSurcesCore {
+  struct ForcesAndSourcesCore_TestFE: public ForcesAndSourcesCore {
 
     
     
@@ -143,7 +143,7 @@ int main(int argc, char *argv[]) {
     MatrixDouble nOrmals_at_GaussPt;
     MatrixDouble tAngent1_at_GaussPt;
     MatrixDouble tAngent2_at_GaussPt;
-    DataForcesAndSurcesCore data;
+    DataForcesAndSourcesCore data;
     OpGetCoordsAndNormalsOnFace op;
 
     typedef tee_device<std::ostream, std::ofstream> TeeDevice;
@@ -152,8 +152,8 @@ int main(int argc, char *argv[]) {
     TeeDevice my_tee;
     TeeStream my_split;
 
-    ForcesAndSurcesCore_TestFE(MoFEM::Interface &_m_field):
-      ForcesAndSurcesCore(_m_field),data(MBTRI),
+    ForcesAndSourcesCore_TestFE(MoFEM::Interface &_m_field):
+      ForcesAndSourcesCore(_m_field),data(MBTRI),
       op(
         hoCoords_at_GaussPt,nOrmals_at_GaussPt,tAngent1_at_GaussPt,tAngent2_at_GaussPt
       ),
@@ -235,7 +235,7 @@ int main(int argc, char *argv[]) {
 
   };
 
-  ForcesAndSurcesCore_TestFE fe1(m_field);
+  ForcesAndSourcesCore_TestFE fe1(m_field);
   ierr = m_field.loop_finite_elements("TEST_PROBLEM","TEST_FE",fe1);  CHKERRQ(ierr);
 
   } catch (MoFEMException const &e) {

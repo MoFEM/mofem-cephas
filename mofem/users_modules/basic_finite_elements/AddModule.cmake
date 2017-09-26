@@ -63,19 +63,7 @@ function(bfe_add_executable target source)
 endfunction(bfe_add_executable)
 
 set(UM_LIB_SOURCES
-  ${UM_LIB_SOURCES}
-  ${PROJECT_SOURCE_DIR}/basic_finite_elements/src/impl/All.cpp
+  ${UM_LIB_SOURCES} ${PROJECT_SOURCE_DIR}/basic_finite_elements/src/impl/All.cpp
 )
 
-add_subdirectory(
-  ${PROJECT_SOURCE_DIR}/basic_finite_elements/atom_tests
-)
-
-add_subdirectory(${PROJECT_SOURCE_DIR}/basic_finite_elements/elasticity)
-add_subdirectory(${PROJECT_SOURCE_DIR}/basic_finite_elements/nonlinear_elasticity)
-add_subdirectory(${PROJECT_SOURCE_DIR}/basic_finite_elements/mix_transport)
-add_subdirectory(${PROJECT_SOURCE_DIR}/basic_finite_elements/thermal)
-add_subdirectory(${PROJECT_SOURCE_DIR}/basic_finite_elements/cohesive_interface)
-add_subdirectory(${PROJECT_SOURCE_DIR}/basic_finite_elements/magnetostatic)
-add_subdirectory(${PROJECT_SOURCE_DIR}/basic_finite_elements/poisson)
-add_subdirectory(${PROJECT_SOURCE_DIR}/basic_finite_elements/hello_world)
+add_subdirectory(${PROJECT_SOURCE_DIR}/basic_finite_elements)

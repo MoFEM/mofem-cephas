@@ -321,7 +321,7 @@ struct KelvinVoigtDamper {
     *
     */
     PetscErrorCode doWork(
-      int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+      int side,EntityType type,DataForcesAndSourcesCore::EntData &data
     ) {
       PetscFunctionBegin;
 
@@ -595,7 +595,7 @@ struct KelvinVoigtDamper {
     }
 
     PetscErrorCode doWork(
-      int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data
+      int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
     ) {
       PetscFunctionBegin;
 
@@ -634,7 +634,7 @@ struct KelvinVoigtDamper {
 
     VectorDouble nF;
     PetscErrorCode aSemble(
-      int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data
+      int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
     ) {
       PetscFunctionBegin;
       try {
@@ -663,7 +663,7 @@ struct KelvinVoigtDamper {
     commonData(common_data) {
     }
     PetscErrorCode doWork(
-      int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data
+      int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
     ) {
       PetscFunctionBegin;
 
@@ -714,8 +714,8 @@ struct KelvinVoigtDamper {
     PetscErrorCode aSemble(
       int row_side,int col_side,
       EntityType row_type,EntityType col_type,
-      DataForcesAndSurcesCore::EntData &row_data,
-      DataForcesAndSurcesCore::EntData &col_data
+      DataForcesAndSourcesCore::EntData &row_data,
+      DataForcesAndSourcesCore::EntData &col_data
     ) {
       PetscFunctionBegin;
       try {
@@ -764,7 +764,7 @@ struct KelvinVoigtDamper {
     }
     MatrixDouble dStress_dx;
     PetscErrorCode get_dStress_dx(
-      DataForcesAndSurcesCore::EntData &col_data,int gg
+      DataForcesAndSourcesCore::EntData &col_data,int gg
     ) {
       PetscFunctionBegin;
       try {
@@ -793,8 +793,8 @@ struct KelvinVoigtDamper {
     PetscErrorCode doWork(
       int row_side,int col_side,
       EntityType row_type,EntityType col_type,
-      DataForcesAndSurcesCore::EntData &row_data,
-      DataForcesAndSurcesCore::EntData &col_data
+      DataForcesAndSourcesCore::EntData &row_data,
+      DataForcesAndSourcesCore::EntData &col_data
     ) {
       PetscFunctionBegin;
 
@@ -862,7 +862,7 @@ struct KelvinVoigtDamper {
     }
     MatrixDouble dStress_dot;
     PetscErrorCode get_dStress_dot(
-      DataForcesAndSurcesCore::EntData &col_data,int gg
+      DataForcesAndSourcesCore::EntData &col_data,int gg
     ) {
       PetscFunctionBegin;
       try {
@@ -891,8 +891,8 @@ struct KelvinVoigtDamper {
     PetscErrorCode doWork(
       int row_side,int col_side,
       EntityType row_type,EntityType col_type,
-      DataForcesAndSurcesCore::EntData &row_data,
-      DataForcesAndSurcesCore::EntData &col_data
+      DataForcesAndSourcesCore::EntData &row_data,
+      DataForcesAndSourcesCore::EntData &col_data
     ) {
       PetscFunctionBegin;
 

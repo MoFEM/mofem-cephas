@@ -53,7 +53,7 @@ struct PostProcCommonOnRefMesh {
    * \todo Implamentation of setting values to fieldMap for Hcurl and Hdiv not implemented
    *
    */
-  struct OpGetFieldValues: public MoFEM::ForcesAndSurcesCore::UserDataOperator {
+  struct OpGetFieldValues: public MoFEM::ForcesAndSourcesCore::UserDataOperator {
 
     moab::Interface &postProcMesh;
     std::vector<EntityHandle> &mapGaussPts;
@@ -69,7 +69,7 @@ struct PostProcCommonOnRefMesh {
       CommonData &common_data,
       Vec v = PETSC_NULL
     ):
-    MoFEM::ForcesAndSurcesCore::UserDataOperator(field_name,UserDataOperator::OPCOL),
+    MoFEM::ForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPCOL),
     postProcMesh(post_proc_mesh),
     mapGaussPts(map_gauss_pts),
     commonData(common_data),
@@ -82,7 +82,7 @@ struct PostProcCommonOnRefMesh {
     PetscErrorCode doWork(
       int side,
       EntityType type,
-      DataForcesAndSurcesCore::EntData &data
+      DataForcesAndSourcesCore::EntData &data
     );
 
   };
@@ -94,7 +94,7 @@ struct PostProcCommonOnRefMesh {
    * \todo Implementation for Hdiv and Hcurl to be implemented
    *
    */
-  struct OpGetFieldGradientValues: public MoFEM::ForcesAndSurcesCore::UserDataOperator {
+  struct OpGetFieldGradientValues: public MoFEM::ForcesAndSourcesCore::UserDataOperator {
 
     moab::Interface &postProcMesh;
     std::vector<EntityHandle> &mapGaussPts;
@@ -110,7 +110,7 @@ struct PostProcCommonOnRefMesh {
       CommonData &common_data,
       Vec v = PETSC_NULL
     ):
-    MoFEM::ForcesAndSurcesCore::UserDataOperator(field_name,UserDataOperator::OPCOL),
+    MoFEM::ForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPCOL),
     postProcMesh(post_proc_mesh),
     mapGaussPts(map_gauss_pts),
     commonData(common_data),
@@ -124,7 +124,7 @@ struct PostProcCommonOnRefMesh {
     PetscErrorCode doWork(
       int side,
       EntityType type,
-      DataForcesAndSurcesCore::EntData &data
+      DataForcesAndSourcesCore::EntData &data
     );
 
   };
@@ -598,7 +598,7 @@ struct PostProcTemplateVolumeOnRefinedMesh: public PostProcTemplateOnRefineMesh<
     PetscErrorCode doWork(
       int side,
       EntityType type,
-      DataForcesAndSurcesCore::EntData &data
+      DataForcesAndSourcesCore::EntData &data
     ) {
       PetscFunctionBegin;
 
@@ -670,7 +670,7 @@ struct PostProcVolumeOnRefinedMesh:
  *
  * \ingroup mofem_fs_post_proc
  */
-struct PostProcFatPrismOnRefinedMesh: public PostProcTemplateOnRefineMesh<MoFEM::FatPrismElementForcesAndSurcesCore> {
+struct PostProcFatPrismOnRefinedMesh: public PostProcTemplateOnRefineMesh<MoFEM::FatPrismElementForcesAndSourcesCore> {
 
   bool tenNodesPostProcTets;
 
@@ -678,7 +678,7 @@ struct PostProcFatPrismOnRefinedMesh: public PostProcTemplateOnRefineMesh<MoFEM:
     MoFEM::Interface &m_field,
     bool ten_nodes_post_proc_tets = true
   ):
-  PostProcTemplateOnRefineMesh<MoFEM::FatPrismElementForcesAndSurcesCore>(m_field),
+  PostProcTemplateOnRefineMesh<MoFEM::FatPrismElementForcesAndSourcesCore>(m_field),
   tenNodesPostProcTets(ten_nodes_post_proc_tets) {
   }
 

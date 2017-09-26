@@ -184,7 +184,7 @@ int main(int argc, char *argv[]) {
     PetscErrorCode doWork(
       int side,
       EntityType type,
-      DataForcesAndSurcesCore::EntData &data) {
+      DataForcesAndSourcesCore::EntData &data) {
       PetscFunctionBegin;
       my_split << "NH1" << std::endl;
       my_split << "side: " << side << " type: " << type << std::endl;
@@ -198,8 +198,8 @@ int main(int argc, char *argv[]) {
     PetscErrorCode doWork(
       int row_side,int col_side,
       EntityType row_type,EntityType col_type,
-      DataForcesAndSurcesCore::EntData &row_data,
-      DataForcesAndSurcesCore::EntData &col_data) {
+      DataForcesAndSourcesCore::EntData &row_data,
+      DataForcesAndSourcesCore::EntData &col_data) {
       PetscFunctionBegin;
       my_split << "NH1NH1" << std::endl;
       my_split << "row side: " << row_side << " row_type: " << row_type << std::endl;
@@ -266,7 +266,7 @@ int main(int argc, char *argv[]) {
     PetscErrorCode doWork(
       int side,
       EntityType type,
-      DataForcesAndSurcesCore::EntData &data) {
+      DataForcesAndSourcesCore::EntData &data) {
       PetscFunctionBegin;
 
       if(type != MBENTITYSET) PetscFunctionReturn(0);
@@ -280,8 +280,8 @@ int main(int argc, char *argv[]) {
     PetscErrorCode doWork(
       int row_side,int col_side,
       EntityType row_type,EntityType col_type,
-      DataForcesAndSurcesCore::EntData &row_data,
-      DataForcesAndSurcesCore::EntData &col_data) {
+      DataForcesAndSourcesCore::EntData &row_data,
+      DataForcesAndSourcesCore::EntData &col_data) {
       PetscFunctionBegin;
 
       unSetSymm();
@@ -300,12 +300,12 @@ int main(int argc, char *argv[]) {
   };
 
   VolumeElementForcesAndSourcesCore fe1(m_field);
-  fe1.getOpPtrVector().push_back(new MyOp1(my_split,ForcesAndSurcesCore::UserDataOperator::OPROW));
-  fe1.getOpPtrVector().push_back(new MyOp1(my_split,ForcesAndSurcesCore::UserDataOperator::OPROWCOL));
+  fe1.getOpPtrVector().push_back(new MyOp1(my_split,ForcesAndSourcesCore::UserDataOperator::OPROW));
+  fe1.getOpPtrVector().push_back(new MyOp1(my_split,ForcesAndSourcesCore::UserDataOperator::OPROWCOL));
 
   VolumeElementForcesAndSourcesCore fe2(m_field);
-  fe2.getOpPtrVector().push_back(new MyOp2(my_split,ForcesAndSurcesCore::UserDataOperator::OPROW));
-  fe2.getOpPtrVector().push_back(new MyOp2(my_split,ForcesAndSurcesCore::UserDataOperator::OPROWCOL));
+  fe2.getOpPtrVector().push_back(new MyOp2(my_split,ForcesAndSourcesCore::UserDataOperator::OPROW));
+  fe2.getOpPtrVector().push_back(new MyOp2(my_split,ForcesAndSourcesCore::UserDataOperator::OPROWCOL));
 
   ierr = m_field.loop_finite_elements("TEST_PROBLEM","TEST_FE1",fe1);  CHKERRQ(ierr);
   ierr = m_field.loop_finite_elements("TEST_PROBLEM","TEST_FE2",fe2);  CHKERRQ(ierr);
