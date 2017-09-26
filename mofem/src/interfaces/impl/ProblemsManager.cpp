@@ -55,7 +55,11 @@
   #include <petsc-private/matimpl.h>
 #endif
 
+#ifdef PARMETIS
+
 static PetscErrorCode MatPartitioningApply_Parmetis_MoFEM(MatPartitioning part,IS *partitioning);
+
+#endif // PARMETIS
 
 namespace MoFEM {
 
@@ -248,7 +252,9 @@ namespace MoFEM {
       PetscBool same;
       PetscObjectTypeCompare((PetscObject)part,MATPARTITIONINGPARMETIS,&same);
       if(same) {
+        #ifdef PARMETIS
         ierr = MatPartitioningApply_Parmetis_MoFEM(part,&is); CHKERRQ(ierr);
+        #endif
       } else {
         ierr = MatPartitioningApply(part,&is); CHKERRQ(ierr);
       }
@@ -2854,6 +2860,8 @@ namespace MoFEM {
 
 }
 
+#ifdef PARMETIS
+
 #include <parmetis.h>
 
 /*
@@ -2999,3 +3007,5 @@ static PetscErrorCode MatPartitioningApply_Parmetis_MoFEM(MatPartitioning part,I
   ierr = MatDestroy(&amat);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
+
+#endif //PARMETIS

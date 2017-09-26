@@ -167,6 +167,10 @@ if(TAO_LIBRARY)
   add_definitions(-DTAO)
 endif(TAO_LIBRARY)
 
+if(PETSCVAR_PARMETIS_INCLUDE)
+  add_definitions(-DPARMETIS)
+endif(PETSCVAR_PARMETIS_INCLUDE)
+
 #CGAL tools
 #find_package(CGAL HINTS ${CGAL_DIR}/lib/CGAL)
 #if(CGAL_CONFIG_LOADED)
