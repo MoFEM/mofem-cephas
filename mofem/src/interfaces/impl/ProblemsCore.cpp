@@ -244,7 +244,7 @@ PetscErrorCode Core::partition_mesh(
   ProblemsManager *prb_mng_ptr;
   PetscFunctionBegin;
   ierr = query_interface(prb_mng_ptr); CHKERRQ(ierr);
-  ierr = prb_mng_ptr->partitionMesh(ents,dim,adj_dim,n_parts,verb); CHKERRQ(ierr);
+  ierr = prb_mng_ptr->partitionMesh(ents,dim,adj_dim,n_parts,NULL,NULL,NULL,verb); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 PetscErrorCode Core::clear_problem(const std::string &problem_name,int verb) {
