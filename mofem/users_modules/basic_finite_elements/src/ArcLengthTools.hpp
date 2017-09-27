@@ -297,9 +297,25 @@ PetscErrorCode PCApplyArcLength(PC pc,Vec pc_f,Vec pc_x);
 PetscErrorCode PCSetupArcLength(PC pc);
 
 /**
+ * \brief Zero F_lambda
+ *
+ */
+struct ZeroFLmabda: public FEMethod {
+
+  boost::shared_ptr<ArcLengthCtx> arcPtr;
+
+  ZeroFLmabda(
+    boost::shared_ptr<ArcLengthCtx> arc_ptr
+  );
+
+  PetscErrorCode preProcess();
+
+};
+
+
+/**
  * \brief Assemble F_lambda into the right hand side
  *
- * preProcess - zero F_lambda
  * postProcess - assembly F_lambda
  *
  */
