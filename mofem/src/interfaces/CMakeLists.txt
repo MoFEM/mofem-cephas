@@ -16,6 +16,7 @@ include_directories(${PROJECT_SOURCE_DIR}/src/petsc)
 
 #multi_indices
 set(MOFEM_INTERFACES_SRC
+  impl/MatPartitioningApply_Parmetis_MoFEM.cpp
   impl/All.cpp
   impl/AllInterfaces.cpp
 )
