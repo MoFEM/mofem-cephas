@@ -293,8 +293,9 @@ PetscErrorCode ZeroFLmabda::preProcess() {
 }
 
 AssembleFLmabda::AssembleFLmabda(
-  boost::shared_ptr<ArcLengthCtx> arc_ptr
-): arcPtr(arc_ptr) {
+  boost::shared_ptr<ArcLengthCtx> arc_ptr,
+  boost::shared_ptr<DirichletDisplacementBc> bc
+): arcPtr(arc_ptr),bC(bc) {
 }
 
 PetscErrorCode AssembleFLmabda::preProcess() {
@@ -314,6 +315,16 @@ PetscErrorCode AssembleFLmabda::postProcess() {
       ierr = VecAssemblyEnd(arcPtr->F_lambda); CHKERRQ(ierr);
       ierr = VecGhostUpdateBegin(arcPtr->F_lambda,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
       ierr = VecGhostUpdateEnd(arcPtr->F_lambda,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+      if(bC) {
+        for(
+          std::vector<int>::iterator vit = bC->dofsIndices.begin();
+          vit!=bC->dofsIndices.end();vit++
+        ) {
+          ierr = VecSetValue(arcPtr->F_lambda,*vit,0,INSERT_VALUES); CHKERRQ(ierr);
+        }
+        ierr = VecAssemblyBegin(arcPtr->F_lambda); CHKERRQ(ierr);
+        ierr = VecAssemblyEnd(arcPtr->F_lambda); CHKERRQ(ierr);
+      }
       ierr = VecDot(arcPtr->F_lambda,arcPtr->F_lambda,&arcPtr->F_lambda2); CHKERRQ(ierr);
       PetscPrintf(PETSC_COMM_WORLD,"\tF_lambda2 = %6.4e\n",arcPtr->F_lambda2);
       //add F_lambda

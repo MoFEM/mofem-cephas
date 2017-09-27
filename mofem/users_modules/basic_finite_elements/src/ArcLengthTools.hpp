@@ -312,6 +312,7 @@ struct ZeroFLmabda: public FEMethod {
 
 };
 
+#ifdef __DIRICHLETBC_HPP__
 
 /**
  * \brief Assemble F_lambda into the right hand side
@@ -322,9 +323,11 @@ struct ZeroFLmabda: public FEMethod {
 struct AssembleFLmabda: public FEMethod {
 
   boost::shared_ptr<ArcLengthCtx> arcPtr;
+  boost::shared_ptr<DirichletDisplacementBc> bC;
 
   AssembleFLmabda(
-    boost::shared_ptr<ArcLengthCtx> arc_ptr
+    boost::shared_ptr<ArcLengthCtx> arc_ptr,
+    boost::shared_ptr<DirichletDisplacementBc> bc = boost::shared_ptr<DirichletDisplacementBc>()
   );
 
   PetscErrorCode preProcess();
@@ -332,6 +335,8 @@ struct AssembleFLmabda: public FEMethod {
   PetscErrorCode postProcess();
 
 };
+
+#endif
 
 /**
  * |brief Simple arc-length constrol of force

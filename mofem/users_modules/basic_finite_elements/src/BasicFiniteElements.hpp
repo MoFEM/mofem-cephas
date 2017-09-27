@@ -36,10 +36,10 @@ extern "C" {
 #include <cholesky.hpp>
 
 #include <MethodForForceScaling.hpp>
+#include <DirichletBC.hpp>
 #include <ArcLengthTools.hpp>
 #include <BodyForce.hpp>
 #include <ConstrainMatrixCtx.hpp>
-#include <DirichletBC.hpp>
 #include <EdgeForce.hpp>
 #include <FieldApproximation.hpp>
 #include <FluidPressure.hpp>
