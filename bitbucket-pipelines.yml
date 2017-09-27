@@ -19,8 +19,9 @@ pipelines:
           -
           >
             /opt/local/bin/cmake
-            -DCMAKE_BUILD_TYPE=MinSizeRel
-            -DCMAKE_CXX_FLAGS="-Wall"
+            -DCMAKE_BUILD_TYPE=Release
+            -DCMAKE_CXX_FLAGS="-Wall -std=c++11"
+            -DMPI_RUN_FLAGS="--allow-run-as-root"
             -DPETSC_DIR=$PETSC_DIR
             -DPETSC_ARCH=$PETSC_ARCH
             -DMESHKIT_DIR=$PETSC_DIR/$PETSC_ARCH
@@ -40,8 +41,10 @@ pipelines:
           -
           >
             /opt/local/bin/cmake
+            -DCMAKE_BUILD_TYPE=Release
+            -DCMAKE_CXX_FLAGS="-Wall -std=c++11"
+            -DMPI_RUN_FLAGS="--allow-run-as-root"
             -DBUILD_SHARED_LIBS=yes
-            -DCMAKE_CXX_FLAGS="-Wall"
             users_modules
           - echo "Build users modules"
           - ctest --output-on-failure -D Experimental -R basic_

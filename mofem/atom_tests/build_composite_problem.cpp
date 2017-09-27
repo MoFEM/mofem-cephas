@@ -25,8 +25,8 @@ static char help[] = "...\n\n";
 
 int main(int argc, char *argv[]) {
 
-  
-  
+
+
 
   PetscInitialize(&argc,&argv,(char *)0,help);
 
@@ -62,7 +62,7 @@ int main(int argc, char *argv[]) {
 
     ProblemsManager *prb_mng_ptr;
     ierr = m_field.query_interface(prb_mng_ptr); CHKERRQ(ierr);
-    ierr = prb_mng_ptr->partitionMesh(tets,3,2,m_field.get_comm_size()); CHKERRQ(ierr);
+    ierr = prb_mng_ptr->partitionMesh(tets,3,2,m_field.get_comm_size(),NULL,NULL,NULL); CHKERRQ(ierr);
 
     EntityHandle part_set;
     rval = moab.create_meshset(MESHSET_SET,part_set); CHKERRQ_MOAB(rval);
