@@ -677,7 +677,7 @@ struct FieldEntity:
 
   /**
    * \brief Calulate UId for field entity
-   * 
+   *
    * UId is constructed such that all DOFs are ordered by processor, entity, field.
    *
    * @param  owner_proc               owning processor

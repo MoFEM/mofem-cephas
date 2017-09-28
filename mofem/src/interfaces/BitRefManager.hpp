@@ -111,6 +111,39 @@ namespace MoFEM {
       const Range &ents,const BitRefLevel &bit,int verb = 0
     ) const;
 
+    /**
+     * \brief Set nth bith ref lecel
+     * @param  ents entities to set bit ref level
+     * @param  n    nth bit
+     * @param  b    value to set
+     * @return      error code
+     */
+    PetscErrorCode setNthBitRefLevel(
+      const Range &ents,const int n,const bool b,int verb = 0
+    ) const;
+
+    /**
+     * \brief Set nth bith ref lecel
+     * @param  n    nth bit
+     * @param  b    value to set
+     * @return      error code
+     */
+    PetscErrorCode setNthBitRefLevel(
+      const int n,const bool b,int verb = 0
+    ) const;
+
+
+    /** \brief left shift bit ref level
+      * this results of deletion of entities on far left side
+      * \todo Should be outsourced to separate interface, i.e. BitLevelManage
+      */
+    PetscErrorCode shiftLeftBitRef(const int shif,int verb = -1) const;
+
+    /** \brief right shift bit ref level
+      * \todo Should be outsourced to separate interface, i.e. BitLevelManage
+      */
+    PetscErrorCode shiftRightBitRef(const int shift,int verb = -1) const;
+
   };
 
 }

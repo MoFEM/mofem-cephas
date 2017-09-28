@@ -1229,31 +1229,8 @@ PetscErrorCode Core::list_adjacencies() const {
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode Core::shift_left_bit_ref(const int shift,int verb) {
-  PetscFunctionBegin;
-  SETERRQ(cOmm,MOFEM_NOT_IMPLEMENTED,"not implemented");
-  PetscFunctionReturn(0);
-}
 PetscErrorCode Core::shift_right_bit_ref(const int shift,int verb) {
-  PetscFunctionBegin;
-  if(verb==-1) verb = verbose;
-  BitRefLevel delete_bits;
-  for(int ii = 0;ii<shift;ii++) {
-    delete_bits.set(0);
-    ierr = delete_ents_by_bit_ref(delete_bits,delete_bits,verb); CHKERRQ(ierr);
-  }
-  RefEntity_multiIndex::iterator ent_it = refinedEntities.begin();
-  for(;ent_it!=refinedEntities.end();ent_it++) {
-    if(verb>5) {
-      std::cout << (*ent_it)->getBitRefLevel() << " : ";
-    }
-    bool success = refinedEntities.modify(ent_it,RefEntity_change_right_shift(shift));
-    if(!success) SETERRQ(cOmm,MOFEM_DATA_INCONSISTENCY,"inconsistency in data");
-    if(verb>5) {
-      std::cout << (*ent_it)->getBitRefLevel() << std::endl;
-    }
-  }
-  PetscFunctionReturn(0);
+  return BitRefManager(*this).shiftRightBitRef(shift,verb);
 }
 PetscErrorCode Core::get_entities_by_type_and_ref_level(const BitRefLevel &bit,const BitRefLevel &mask,const EntityType type,const EntityHandle meshset,int verb) {
   PetscFunctionBegin;
