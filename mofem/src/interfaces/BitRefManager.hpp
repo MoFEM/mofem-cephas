@@ -142,7 +142,7 @@ namespace MoFEM {
     /** \brief right shift bit ref level
       * \todo Should be outsourced to separate interface, i.e. BitLevelManage
       */
-    PetscErrorCode shiftRightBitRef(const int shift,int verb = -1) const;
+    PetscErrorCode shiftRightBitRef(const int shift,const BitRefLevel mask = BitRefLevel().set(),int verb = -1) const;
 
   };
 

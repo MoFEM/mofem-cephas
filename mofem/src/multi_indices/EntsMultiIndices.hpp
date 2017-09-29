@@ -524,8 +524,10 @@ struct RefEntity_change_parent {
   */
 struct RefEntity_change_left_shift {
   int shift;
-  RefEntity_change_left_shift(const int _shift): shift(_shift) {};
-  void operator()(boost::shared_ptr<RefEntity> &e) { (*e->getBitRefLevelPtr())<<=shift;  };
+  RefEntity_change_left_shift(const int _shift): shift(_shift) {}
+  void operator()(boost::shared_ptr<RefEntity> &e) {
+    (*e->getBitRefLevelPtr())<<=shift;
+  };
 };
 
 /** \brief ref mofem entity, right shift
@@ -533,8 +535,15 @@ struct RefEntity_change_left_shift {
   */
 struct RefEntity_change_right_shift {
   int shift;
-  RefEntity_change_right_shift(const int _shift): shift(_shift) {};
-  void operator()(boost::shared_ptr<RefEntity> &e) { *(e->getBitRefLevelPtr())>>=shift;  };
+  BitRefLevel mask;
+  RefEntity_change_right_shift(const int _shift,BitRefLevel _mask = BitRefLevel().set()):
+  shift(_shift),mask(_mask) {
+
+  }
+  void operator()(boost::shared_ptr<RefEntity> &e) {
+    BitRefLevel bit = *(e->getBitRefLevelPtr());
+    *(e->getBitRefLevelPtr())=((bit&mask)>>shift)|(bit&~mask);
+  };
 };
 
 /** \brief ref mofem entity, change bit

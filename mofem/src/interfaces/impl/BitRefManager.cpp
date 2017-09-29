@@ -349,7 +349,7 @@ namespace MoFEM {
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode BitRefManager::shiftRightBitRef(const int shift,int verb) const {
+  PetscErrorCode BitRefManager::shiftRightBitRef(const int shift,const BitRefLevel mask,int verb) const {
     MoFEM::Interface &m_field = cOre;
     const RefEntity_multiIndex *ref_ent_ptr;
     PetscFunctionBegin;
@@ -366,7 +366,7 @@ namespace MoFEM {
         std::cout << (*ent_it)->getBitRefLevel() << " : ";
       }
       bool success = const_cast<RefEntity_multiIndex*>(ref_ent_ptr)->modify(
-        ent_it,RefEntity_change_right_shift(shift)
+        ent_it,RefEntity_change_right_shift(shift,mask)
       );
       if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"inconsistency in data");
       if(verb>5) {

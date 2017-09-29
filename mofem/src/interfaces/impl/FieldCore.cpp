@@ -1230,7 +1230,7 @@ PetscErrorCode Core::list_adjacencies() const {
 }
 
 PetscErrorCode Core::shift_right_bit_ref(const int shift,int verb) {
-  return BitRefManager(*this).shiftRightBitRef(shift,verb);
+  return BitRefManager(*this).shiftRightBitRef(shift,BitRefLevel().set(),verb);
 }
 PetscErrorCode Core::get_entities_by_type_and_ref_level(const BitRefLevel &bit,const BitRefLevel &mask,const EntityType type,const EntityHandle meshset,int verb) {
   PetscFunctionBegin;
