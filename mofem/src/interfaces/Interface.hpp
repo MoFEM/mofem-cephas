@@ -659,16 +659,11 @@ struct Interface: public UnknownInterface {
 
  /**@{*/
 
-  /** \brief left shift bit ref level
-    * this results of deletion of entities on far left side
+  /** \deprecated use BitRefManager to do this operation
+    * \brief right shift bit ref level
     * \todo Should be outsourced to separate interface, i.e. BitLevelManage
     */
-  virtual PetscErrorCode shift_left_bit_ref(const int shif,int verb = -1) = 0;
-
-  /** \brief right shift bit ref level
-    * \todo Should be outsourced to separate interface, i.e. BitLevelManage
-    */
-  virtual PetscErrorCode shift_right_bit_ref(const int shift,int verb = -1) = 0;
+  DEPRECATED virtual PetscErrorCode shift_right_bit_ref(const int shift,int verb = -1) = 0;
 
  /**@}*/
 
