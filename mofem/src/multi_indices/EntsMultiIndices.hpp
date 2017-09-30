@@ -536,9 +536,8 @@ struct RefEntity_change_left_shift {
 struct RefEntity_change_right_shift {
   int shift;
   BitRefLevel mask;
-  RefEntity_change_right_shift(const int _shift,BitRefLevel _mask = BitRefLevel().set()):
+  RefEntity_change_right_shift(const int _shift,const BitRefLevel _mask = BitRefLevel().set()):
   shift(_shift),mask(_mask) {
-
   }
   void operator()(boost::shared_ptr<RefEntity> &e) {
     BitRefLevel bit = *(e->getBitRefLevelPtr());

@@ -137,7 +137,7 @@ namespace MoFEM {
       * this results of deletion of entities on far left side
       * \todo Should be outsourced to separate interface, i.e. BitLevelManage
       */
-    PetscErrorCode shiftLeftBitRef(const int shif,int verb = -1) const;
+    PetscErrorCode shiftLeftBitRef(const int shif,const BitRefLevel mask = BitRefLevel().set(),int verb = -1) const;
 
     /** \brief right shift bit ref level
       * \todo Should be outsourced to separate interface, i.e. BitLevelManage

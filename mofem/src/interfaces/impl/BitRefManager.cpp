@@ -343,7 +343,7 @@ namespace MoFEM {
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode BitRefManager::shiftLeftBitRef(const int shift,int verb) const {
+  PetscErrorCode BitRefManager::shiftLeftBitRef(const int shift,const BitRefLevel mask,int verb) const {
     PetscFunctionBegin;
     SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
     PetscFunctionReturn(0);
@@ -354,23 +354,23 @@ namespace MoFEM {
     const RefEntity_multiIndex *ref_ent_ptr;
     PetscFunctionBegin;
     ierr = m_field.get_ref_ents(&ref_ent_ptr);
-    BitRefLevel delete_bits;
     for(int ii = 0;ii<shift;ii++) {
       // delete bits on the right which are shifted to zero
-      delete_bits.set(ii);
-      ierr = m_field.delete_ents_by_bit_ref(delete_bits,delete_bits,verb); CHKERRQ(ierr);
+      BitRefLevel delete_bits = BitRefLevel().set(ii)&mask;
+      if(delete_bits.none()) continue;
+      ierr = m_field.delete_ents_by_bit_ref(delete_bits,delete_bits,6); CHKERRQ(ierr);
     }
     RefEntity_multiIndex::iterator ent_it = ref_ent_ptr->begin();
     for(;ent_it!=ref_ent_ptr->end();ent_it++) {
       if(verb>5) {
-        std::cout << (*ent_it)->getBitRefLevel() << " : ";
+        std::cerr << (*ent_it)->getBitRefLevel() << " : ";
       }
       bool success = const_cast<RefEntity_multiIndex*>(ref_ent_ptr)->modify(
         ent_it,RefEntity_change_right_shift(shift,mask)
       );
       if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"inconsistency in data");
       if(verb>5) {
-        std::cout << (*ent_it)->getBitRefLevel() << std::endl;
+        std::cerr << (*ent_it)->getBitRefLevel() << std::endl;
       }
     }
     PetscFunctionReturn(0);
