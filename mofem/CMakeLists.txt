@@ -44,7 +44,7 @@ endif(CMAKE_Fortran_COMPILER)
 
 set(MoFEM_VERSION_MAJOR 0)
 set(MoFEM_VERSION_MINOR 5)
-set(MoFEM_VERSION_BUILD 87)
+set(MoFEM_VERSION_BUILD 89)
 
 # http://cellperformance.beyond3d.com/articles/2006/05/demystifying-the-restrict-keyword.html
 # The restrict keyword can be considered an extension to the strict aliasing rule.
@@ -166,6 +166,10 @@ if(TAO_LIBRARY)
   include_directories(${TAO_DIR}/include)
   add_definitions(-DTAO)
 endif(TAO_LIBRARY)
+
+if(PETSCVAR_PARMETIS_INCLUDE)
+  add_definitions(-DPARMETIS)
+endif(PETSCVAR_PARMETIS_INCLUDE)
 
 #CGAL tools
 #find_package(CGAL HINTS ${CGAL_DIR}/lib/CGAL)

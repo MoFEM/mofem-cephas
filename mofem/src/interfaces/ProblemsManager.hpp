@@ -61,8 +61,17 @@ namespace MoFEM {
      * @return             Error code
      */
     PetscErrorCode partitionMesh(
-      const Range &ents,const int dim,const int adj_dim,const int n_parts,int verb = 1
+      const Range &ents,const int dim,const int adj_dim,const int n_parts,
+      Tag *th_vertex_weights,Tag *th_edge_weights,Tag *th_part_veights,
+      int verb = 1
     );
+
+    /// \deprecated do not use this one
+    DEPRECATED PetscErrorCode partitionMesh(
+      const Range &ents,const int dim,const int adj_dim,const int n_parts,int verb = 1
+    ) {
+      return partitionMesh(ents,dim,adj_dim,n_parts,NULL,NULL,NULL,verb);
+    }
 
     /** \brief build problem data structures
      * \ingroup mofem_problems_manager

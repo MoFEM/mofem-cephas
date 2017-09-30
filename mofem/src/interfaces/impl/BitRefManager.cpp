@@ -286,5 +286,97 @@ namespace MoFEM {
     PetscFunctionReturn(0);
   }
 
+  PetscErrorCode BitRefManager::setNthBitRefLevel(
+    const Range &ents,const int n,const bool b,int verb
+  ) const {
+    MoFEM::Interface &m_field = cOre;
+    const RefEntity_multiIndex *ref_ent_ptr;
+    PetscFunctionBegin;
+    ierr = m_field.get_ref_ents(&ref_ent_ptr);
+    for(
+      Range::const_pair_iterator pit = ents.const_pair_begin();
+      pit!=ents.const_pair_end();pit++
+    ) {
+      EntityHandle first = pit->first;
+      EntityHandle second = pit->second;
+      RefEntity_multiIndex::index<Ent_mi_tag>::type::iterator dit;
+      dit = ref_ent_ptr->get<Ent_mi_tag>().lower_bound(first);
+      if(dit==ref_ent_ptr->get<Ent_mi_tag>().end()) continue;
+      RefEntity_multiIndex::index<Ent_mi_tag>::type::iterator hi_dit;
+      hi_dit = ref_ent_ptr->get<Ent_mi_tag>().upper_bound(second);
+      for(;dit!=hi_dit;dit++) {
+        bool success = const_cast<RefEntity_multiIndex*>(ref_ent_ptr)->modify(
+          ref_ent_ptr->project<0>(dit),RefEntity_change_set_nth_bit(n,b)
+        );
+        if(!success) {
+          SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"operation unsuccessful");
+        };
+        if(verb>0) {
+          cerr << **dit << endl;
+        }
+      }
+    }
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode BitRefManager::setNthBitRefLevel(
+    const int n,const bool b,int verb
+  ) const {
+    MoFEM::Interface &m_field = cOre;
+    const RefEntity_multiIndex *ref_ent_ptr;
+    PetscFunctionBegin;
+    ierr = m_field.get_ref_ents(&ref_ent_ptr);
+    RefEntity_multiIndex::iterator dit,hi_dit;
+    dit = ref_ent_ptr->begin();
+    hi_dit = ref_ent_ptr->end();
+    for(;dit!=hi_dit;dit++) {
+      bool success = const_cast<RefEntity_multiIndex*>(ref_ent_ptr)->modify(
+        dit,RefEntity_change_set_nth_bit(n,b)
+      );
+      if(!success) {
+        SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"operation unsuccessful");
+      };
+      if(verb>0) {
+        cerr << **dit << endl;
+      }
+    }
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode BitRefManager::shiftLeftBitRef(const int shift,const BitRefLevel mask,int verb) const {
+    PetscFunctionBegin;
+    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode BitRefManager::shiftRightBitRef(const int shift,const BitRefLevel mask,int verb) const {
+    MoFEM::Interface &m_field = cOre;
+    const RefEntity_multiIndex *ref_ent_ptr;
+    PetscFunctionBegin;
+    ierr = m_field.get_ref_ents(&ref_ent_ptr);
+    for(int ii = 0;ii<shift;ii++) {
+      // delete bits on the right which are shifted to zero
+      BitRefLevel delete_bits = BitRefLevel().set(ii)&mask;
+      if(delete_bits.none()) continue;
+      ierr = m_field.delete_ents_by_bit_ref(delete_bits,delete_bits,6); CHKERRQ(ierr);
+    }
+    RefEntity_multiIndex::iterator ent_it = ref_ent_ptr->begin();
+    for(;ent_it!=ref_ent_ptr->end();ent_it++) {
+      if(verb>5) {
+        std::cerr << (*ent_it)->getBitRefLevel() << " : ";
+      }
+      bool success = const_cast<RefEntity_multiIndex*>(ref_ent_ptr)->modify(
+        ent_it,RefEntity_change_right_shift(shift,mask)
+      );
+      if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"inconsistency in data");
+      if(verb>5) {
+        std::cerr << (*ent_it)->getBitRefLevel() << std::endl;
+      }
+    }
+    PetscFunctionReturn(0);
+
+  }
+
+
 
 }

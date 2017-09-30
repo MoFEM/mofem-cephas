@@ -252,8 +252,7 @@ struct Core: public Interface {
   PetscErrorCode delete_ents_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,const bool remove_parent = false,int verb = -1);
   PetscErrorCode remove_ents_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1);
   PetscErrorCode delete_finite_elements_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1);
-  PetscErrorCode shift_left_bit_ref(const int shif,int verb = -1);
-  PetscErrorCode shift_right_bit_ref(const int shift,int verb = -1);
+  DEPRECATED PetscErrorCode shift_right_bit_ref(const int shift,int verb = -1);
 
   //synchronize entities
   PetscErrorCode synchronise_entities(Range &ent,int verb = -1);

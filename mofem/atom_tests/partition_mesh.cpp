@@ -26,8 +26,8 @@ static char help[] = "...\n\n";
 
 int main(int argc, char *argv[]) {
 
-  
-  
+
+
 
   //initialize petsc
   PetscInitialize(&argc,&argv,(char *)0,help);
@@ -65,9 +65,15 @@ int main(int argc, char *argv[]) {
     Range tets;
     moab.get_entities_by_type(root_set,MBTET,tets,false);
 
+    Tag th_vertex_weight;
+    int def_val = 1;
+    rval = moab.tag_get_handle(
+      "VERTEX_WEIGHT",1,MB_TYPE_INTEGER,th_vertex_weight,MB_TAG_CREAT|MB_TAG_DENSE,&def_val
+    ); CHKERRQ(ierr);
+
     ProblemsManager *prb_mng_ptr;
     ierr = m_field.query_interface(prb_mng_ptr); CHKERRQ(ierr);
-    ierr = prb_mng_ptr->partitionMesh(tets,3,2,2); CHKERRQ(ierr);
+    ierr = prb_mng_ptr->partitionMesh(tets,3,2,2,&th_vertex_weight,NULL,NULL); CHKERRQ(ierr);
 
     EntityHandle meshset;
     rval = moab.create_meshset(MESHSET_SET,meshset); CHKERRQ_MOAB(rval);
@@ -79,7 +85,6 @@ int main(int argc, char *argv[]) {
       rval = moab.write_file("partitioned_mesh.h5m"); CHKERRQ_MOAB(rval);
       // rval = moab.write_file("partitioned_mesh.h5m"); CHKERRQ_MOAB(rval);
     }
-
 
   } catch (MoFEMException const &e) {
     SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);

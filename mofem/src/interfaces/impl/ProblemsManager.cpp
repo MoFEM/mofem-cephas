@@ -51,6 +51,12 @@
 
 namespace MoFEM {
 
+  #ifdef PARMETIS
+
+  PetscErrorCode MatPartitioningApply_Parmetis_MoFEM(MatPartitioning part,IS *partitioning);
+
+  #endif // PARMETIS
+
   struct IdxDataType {
     IdxDataType(const UId uid,const int dof) {
       bcopy(&uid,dAta,4*sizeof(int));
@@ -122,9 +128,10 @@ namespace MoFEM {
     PetscFunctionReturn(0);
   }
 
-
   PetscErrorCode ProblemsManager::partitionMesh(
-    const Range &ents,const int dim,const int adj_dim,const int n_parts,int verb
+    const Range &ents,const int dim,const int adj_dim,const int n_parts,
+    Tag *th_vertex_weights,Tag *th_edge_weights,Tag *th_part_veights,
+    int verb
   ) {
     MoFEM::Interface &m_field = cOre;
     PetscFunctionBegin;
@@ -158,6 +165,8 @@ namespace MoFEM {
       }
     }
 
+    Range weigth_ents;
+
     int *_i;
     int *_j;
     {
@@ -185,6 +194,7 @@ namespace MoFEM {
               j.push_back(problem_fe_ents[*eit]);
             }
           }
+          weigth_ents.insert(*fe_it);
           jj++;
         }
         i[jj] = j.size();
@@ -193,6 +203,15 @@ namespace MoFEM {
       ierr = PetscMalloc(j.size()*sizeof(int),&_j); CHKERRQ(ierr);
       copy(i.begin(),i.end(),_i);
       copy(j.begin(),j.end(),_j);
+    }
+
+    // get veighths
+    int* vertex_weights = NULL;
+    if(th_vertex_weights!=NULL) {
+      ierr = PetscMalloc(weigth_ents.size()*sizeof(int),&vertex_weights); CHKERRQ(ierr);
+      rval = m_field.get_moab().tag_get_data(
+        *th_vertex_weights,weigth_ents,vertex_weights
+      ); CHKERRQ_MOAB(rval);
     }
 
     {
@@ -216,10 +235,23 @@ namespace MoFEM {
       MatPartitioning part;
       IS is;
       ierr = MatPartitioningCreate(m_field.get_comm(),&part); CHKERRQ(ierr);
+
+
       ierr = MatPartitioningSetAdjacency(part,Adj); CHKERRQ(ierr);
       ierr = MatPartitioningSetFromOptions(part); CHKERRQ(ierr);
       ierr = MatPartitioningSetNParts(part,n_parts); CHKERRQ(ierr);
-      ierr = MatPartitioningApply(part,&is); CHKERRQ(ierr);
+      if(th_vertex_weights!=NULL) {
+        ierr = MatPartitioningSetVertexWeights(part,vertex_weights); CHKERRQ(ierr);
+      }
+      PetscBool same;
+      PetscObjectTypeCompare((PetscObject)part,MATPARTITIONINGPARMETIS,&same);
+      if(same) {
+        #ifdef PARMETIS
+        ierr = MatPartitioningApply_Parmetis_MoFEM(part,&is); CHKERRQ(ierr);
+        #endif
+      } else {
+        ierr = MatPartitioningApply(part,&is); CHKERRQ(ierr);
+      }
 
       //gather
       IS is_gather,is_num,is_gather_num;
@@ -2819,7 +2851,5 @@ namespace MoFEM {
     ); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
-
-
 
 }
