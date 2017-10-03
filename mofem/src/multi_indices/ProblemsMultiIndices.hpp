@@ -772,6 +772,24 @@ struct ProblemClearNumeredFiniteElementsChange {
   void operator()(Problem &e);
 };
 
+/**
+ * \brief Clear sub-problem data structure
+ */
+struct ProblemClearSubProblemData {
+  void operator()(Problem &e) {
+    e.subProblemData.reset();
+  }
+};
+
+/**
+ * \brief Clear composed problem data structure
+ */
+struct ProblemClearComposedProblemData {
+  void operator()(Problem &e) {
+    e.composedProblemsData.reset();
+  }
+};
+
 }
 
 #endif //__PROBLEMSMULTIINDICES_HPP__

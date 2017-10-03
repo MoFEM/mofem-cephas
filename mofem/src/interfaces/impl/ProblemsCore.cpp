@@ -268,7 +268,11 @@ PetscErrorCode Core::clear_problem(const std::string &problem_name,int verb) {
   //clear finite elements
   success = prob_by_name.modify(p_miit,ProblemClearNumeredFiniteElementsChange());
   if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
-
+  //clear data structures
+  success = prob_by_name.modify(p_miit,ProblemClearSubProblemData());
+  if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+  success = prob_by_name.modify(p_miit,ProblemClearComposedProblemData());
+  if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
   PetscFunctionReturn(0);
 }
 PetscErrorCode Core::build_problem(Problem *problem_ptr,const bool square_matrix,int verb) {
@@ -309,18 +313,9 @@ PetscErrorCode Core::build_problems(int verb) {
 PetscErrorCode Core::clear_problems(int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
-  Problem_multiIndex::iterator p_miit = pRoblems.begin();
   //iterate problems
-  for(;p_miit!=pRoblems.end();p_miit++) {
-    //zero rows
-    bool success = pRoblems.modify(p_miit,ProblemZeroNbRowsChange());
-    if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
-    //zero cols
-    success = pRoblems.modify(p_miit,ProblemZeroNbColsChange());
-    if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
-    //clear finite elements
-    success = pRoblems.modify(p_miit,ProblemClearNumeredFiniteElementsChange());
-    if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+  for(Problem_multiIndex::iterator p_miit = pRoblems.begin();p_miit!=pRoblems.end();p_miit++) {
+    ierr = clear_problem(p_miit->getName(),verb); CHKERRQ(ierr);
   }
   PetscFunctionReturn(0);
 }

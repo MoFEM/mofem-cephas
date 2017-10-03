@@ -619,6 +619,9 @@ namespace MoFEM {
     PetscFunctionBegin;
     PetscLogEventBegin(USER_EVENT_ProblemsManager,0,0,0,0);
 
+    // clear data structures
+    ierr = m_field.clear_problem(problem_ptr->getName()); CHKERRQ(ierr);
+
     ierr = getOptions(); CHKERRQ(ierr);
 
     ierr = m_field.get_fields(&fields_ptr); CHKERRQ(ierr);
