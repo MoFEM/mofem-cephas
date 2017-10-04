@@ -460,6 +460,16 @@ namespace MoFEM {
     moab::Interface &moab = m_field.get_moab();
     PetscFunctionBegin;
 
+    // takes edges on body skin
+    Skinner skin(&moab);
+    Range tets_skin;
+    rval = skin.find_skin(0,cutNewVolumes,false,tets_skin); CHKERRQ_MOAB(rval);
+    Range adj_edges_tets_skin;
+    rval = moab.get_adjacencies(
+      tets_skin,1,false,adj_edges_tets_skin,moab::Interface::UNION
+    ); CHKERRQ_MOAB(rval);
+
+
     // get edges on new surface
     Range edges;
     rval = moab.get_adjacencies(
@@ -521,21 +531,32 @@ namespace MoFEM {
         trimEdges.insert(*eit);
         if(max_dist==dist0) {
           // move mid node in reference to node 0
-          VectorDouble3 ray = p0-s0;
-          double ray_length = norm_2(ray);
+          VectorDouble3& ray = delta0;
+          if(adj_edges_tets_skin.find(*eit)!=adj_edges_tets_skin.end()) {
+            VectorDouble3 edge_dir = s1-s0;
+            edge_dir /= norm_2(edge_dir);
+            ray = edge_dir*inner_prod(edge_dir,ray);
+            dist0 = norm_2(ray);
+          }
           edgesToTrim[*eit].dIst = dist0;
-          edgesToTrim[*eit].lEngth = ray_length;
-          edgesToTrim[*eit].unitRayDir = ray/ray_length;
+          edgesToTrim[*eit].lEngth = dist0;
+          edgesToTrim[*eit].unitRayDir = ray/dist0;
           edgesToTrim[*eit].rayPoint = s0;
         } else {
           // move node in reference to node 1
-          VectorDouble3 ray = p1-s1;
-          double ray_length = norm_2(ray);
+          VectorDouble3& ray = delta1;
+          if(adj_edges_tets_skin.find(*eit)!=adj_edges_tets_skin.end()) {
+            VectorDouble3 edge_dir = s0-s1;
+            edge_dir /= norm_2(edge_dir);
+            ray = edge_dir*inner_prod(edge_dir,ray);
+            dist1 = norm_2(ray);
+          }
           edgesToTrim[*eit].dIst = dist1;
-          edgesToTrim[*eit].lEngth = ray_length;
-          edgesToTrim[*eit].unitRayDir = ray/ray_length;
+          edgesToTrim[*eit].lEngth = dist1;
+          edgesToTrim[*eit].unitRayDir = ray/dist1;
           edgesToTrim[*eit].rayPoint = s1;
         }
+
       }
       // add edge as outsie edge, i.e. nothe nodes are outside surface
       if(min_dist > tol) {
