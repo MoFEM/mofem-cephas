@@ -77,7 +77,7 @@ namespace MoFEM {
     const Range &surface,Tag th,
     double *shift,double *origin,double *transform
   ) {
-    
+
     MoFEM::Interface &m_field = cOre;
     moab::Interface &moab = m_field.get_moab();
     PetscFunctionBegin;
@@ -142,7 +142,7 @@ namespace MoFEM {
   }
 
   PetscErrorCode CutMeshInterface::buildTree() {
-    
+
     MoFEM::Interface &m_field = cOre;
     moab::Interface &moab = m_field.get_moab();
     PetscFunctionBegin;
@@ -156,7 +156,7 @@ namespace MoFEM {
   }
 
     PetscErrorCode CutMeshInterface::findEdgesToCut(const double low_tol,int verb) {
-    
+
     MoFEM::Interface &m_field = cOre;
     moab::Interface &moab = m_field.get_moab();
     PetscFunctionBegin;
@@ -410,7 +410,7 @@ namespace MoFEM {
 
   PetscErrorCode CutMeshInterface::moveMidNodesOnCutEdges(Tag th) {
     PetscFunctionBegin;
-    
+
     MoFEM::Interface &m_field = cOre;
     moab::Interface &moab = m_field.get_moab();
     PetscFunctionBegin;
@@ -434,7 +434,7 @@ namespace MoFEM {
 
 
   PetscErrorCode CutMeshInterface::moveMidNodesOnTrimedEdges(Tag th) {
-    
+
     MoFEM::Interface &m_field = cOre;
     moab::Interface &moab = m_field.get_moab();
     PetscFunctionBegin;
@@ -456,19 +456,22 @@ namespace MoFEM {
   }
 
   PetscErrorCode CutMeshInterface::findEdgesToTrim(Tag th,const double tol,int verb) {
-    
     MoFEM::Interface &m_field = cOre;
     moab::Interface &moab = m_field.get_moab();
     PetscFunctionBegin;
+
+    // get edges on new surface
     Range edges;
     rval = moab.get_adjacencies(
       cutNewSurfaces,1,false,edges,moab::Interface::UNION
     ); CHKERRQ_MOAB(rval);
 
+    // clear data ranges
     trimEdges.clear();
     outsideEdges.clear();
     edgesToTrim.clear();
 
+    // iterate over entities on new cut surface
     for(Range::iterator eit = edges.begin();eit!=edges.end();eit++) {
       // Get edge connectivity and coords
       int num_nodes;
@@ -483,13 +486,16 @@ namespace MoFEM {
       // Put edges coords into boost vectors
       VectorAdaptor s0(3,ublas::shallow_array_adaptor<double>(3,&coords[0]));
       VectorAdaptor s1(3,ublas::shallow_array_adaptor<double>(3,&coords[3]));
+      // get edge length
       double length = norm_2(s1-s0);
       // Find point on surface closet to surface
       double point_out0[3];
       EntityHandle facets_out0;
+      // find closet point on the surface from first node
       rval = treeSurfPtr->closest_to_location(
         &coords[0],rootSetSurf,point_out0,facets_out0
       ); CHKERRQ_MOAB(rval);
+      // find closest point on the surface from second node
       double point_out1[3];
       EntityHandle facets_out1;
       rval = treeSurfPtr->closest_to_location(
@@ -511,8 +517,10 @@ namespace MoFEM {
       double max_dist = fmax(dist0,dist1);
       // If one of nodes is on the surface and other is not, that edge is to trim
       if(min_dist/length < tol && max_dist/length > tol) {
+        // add ege to trim
         trimEdges.insert(*eit);
         if(max_dist==dist0) {
+          // move mid node in reference to node 0
           VectorDouble3 ray = p0-s0;
           double ray_length = norm_2(ray);
           edgesToTrim[*eit].dIst = dist0;
@@ -520,6 +528,7 @@ namespace MoFEM {
           edgesToTrim[*eit].unitRayDir = ray/ray_length;
           edgesToTrim[*eit].rayPoint = s0;
         } else {
+          // move node in reference to node 1
           VectorDouble3 ray = p1-s1;
           double ray_length = norm_2(ray);
           edgesToTrim[*eit].dIst = dist1;
@@ -528,6 +537,7 @@ namespace MoFEM {
           edgesToTrim[*eit].rayPoint = s1;
         }
       }
+      // add edge as outsie edge, i.e. nothe nodes are outside surface
       if(min_dist > tol) {
         outsideEdges.insert(*eit);
       }
@@ -567,7 +577,7 @@ namespace MoFEM {
     VectorAdaptor unit_ray_dir,
     double &ray_length
   ) const {
-    
+
     const MoFEM::Interface &m_field = cOre;
     const moab::Interface &moab = m_field.get_moab();
     PetscFunctionBegin;
@@ -617,8 +627,6 @@ namespace MoFEM {
     const Range &ents,
     Tag th
   ) {
-    
-    
     MoFEM::Interface &m_field = cOre;
     moab::Interface &moab = m_field.get_moab();
     PrismInterface *interface;
@@ -659,7 +667,6 @@ namespace MoFEM {
     const BitRefLevel bit,
     Tag th
   ) {
-    
     PetscFunctionBegin;
     ierr = splitSides(split_bit,bit,getNewTrimSurfaces(),th); CHKERRQ(ierr);
     PetscFunctionReturn(0);
