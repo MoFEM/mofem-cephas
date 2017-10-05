@@ -155,8 +155,7 @@ namespace MoFEM {
     PetscFunctionReturn(0);
   }
 
-    PetscErrorCode CutMeshInterface::findEdgesToCut(const double low_tol,int verb) {
-
+  PetscErrorCode CutMeshInterface::findEdgesToCut(const double low_tol,int verb) {
     MoFEM::Interface &m_field = cOre;
     moab::Interface &moab = m_field.get_moab();
     PetscFunctionBegin;
@@ -331,7 +330,7 @@ namespace MoFEM {
         // }
       }
     }
-    // At that point cutNewSurfaces has all newly created faces, not take all nodes
+    // At that point cutNewSurfaces has all newly created faces, now take all nodes
     // on those faces and subtract nodes on catted edges. Faces adjacent to nodes
     // which left are not part of surface.
     Range diff_verts;
