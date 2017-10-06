@@ -238,15 +238,13 @@ struct Core: public Interface {
   PetscErrorCode get_entities_by_type_and_ref_level(const BitRefLevel &bit,const BitRefLevel &mask,const EntityType type,Range &ents,int verb = -1);
   PetscErrorCode get_entities_by_ref_level(const BitRefLevel &bit,const BitRefLevel &mask,const EntityHandle meshset);
   PetscErrorCode get_entities_by_ref_level(const BitRefLevel &bit,const BitRefLevel &mask,Range &ents);
-  // PetscErrorCode add_ref_level_to_entities(const BitRefLevel &bit,Range &ents);
-  // PetscErrorCode set_ref_level_to_entities(const BitRefLevel &bit,Range &ents);
-  PetscErrorCode update_meshset_by_entities_children(
+  DEPRECATED PetscErrorCode update_meshset_by_entities_children(
     const EntityHandle parent, const BitRefLevel &child_bit,const EntityHandle child, EntityType child_type,
     const bool recursive = false, int verb = -1
   );
-  PetscErrorCode update_field_meshset_by_entities_children(const BitRefLevel &child_bit,int verb = -1);
-  PetscErrorCode update_field_meshset_by_entities_children(const std::string name,const BitRefLevel &child_bit,int verb = -1);
-  PetscErrorCode update_finite_element_meshset_by_entities_children(const std::string name,const BitRefLevel &child_bit,const EntityType fe_ent_type,int verb = -1);
+  DEPRECATED PetscErrorCode update_field_meshset_by_entities_children(const BitRefLevel &child_bit,int verb = -1);
+  DEPRECATED PetscErrorCode update_field_meshset_by_entities_children(const std::string name,const BitRefLevel &child_bit,int verb = -1);
+  DEPRECATED PetscErrorCode update_finite_element_meshset_by_entities_children(const std::string name,const BitRefLevel &child_bit,const EntityType fe_ent_type,int verb = -1);
 
   //remove entities
   PetscErrorCode delete_ents_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,const bool remove_parent = false,int verb = -1);

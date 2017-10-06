@@ -60,6 +60,7 @@
 #include <MedInterface.hpp>
 #include <NodeMerger.hpp>
 #include <PrismsFromSurfaceInterface.hpp>
+#include <UpdateMeshsetsAndRanges.hpp>
 
 #include <boost/scoped_ptr.hpp>
 #include <moab/AdaptiveKDTree.hpp>
@@ -168,6 +169,15 @@ PetscErrorCode Core::query_interface_type(const std::type_info& type,void*& ptr)
       iFaces.insert(uid,new BitRefManager(*this));
     }
     ptr = &iFaces.at(IDD_MOFEMBitRefManager.uUId.to_ulong());
+    PetscFunctionReturn(0);
+  }
+
+  if(type == typeid(UpdateMeshsetsAndRanges)) {
+    if(iFaces.find(IDD_MOFEMUpdateMeshsetsAndRanges.uUId.to_ulong()) == iFaces.end()) {
+      unsigned long int uid = IDD_MOFEMUpdateMeshsetsAndRanges.uUId.to_ulong();
+      iFaces.insert(uid,new UpdateMeshsetsAndRanges(*this));
+    }
+    ptr = &iFaces.at(IDD_MOFEMUpdateMeshsetsAndRanges.uUId.to_ulong());
     PetscFunctionReturn(0);
   }
 

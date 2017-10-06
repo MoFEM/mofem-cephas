@@ -140,10 +140,10 @@ int main(int argc, char *argv[]) {
       // Update cubit meshsets
       for(_IT_CUBITMESHSETS_FOR_LOOP_(m_field,ciit)) {
         EntityHandle cubit_meshset = ciit->meshset;
-        ierr = m_field.update_meshset_by_entities_children(cubit_meshset,bit_levels.back(),cubit_meshset,MBVERTEX,true); CHKERRQ(ierr);
-        ierr = m_field.update_meshset_by_entities_children(cubit_meshset,bit_levels.back(),cubit_meshset,MBEDGE,true); CHKERRQ(ierr);
-        ierr = m_field.update_meshset_by_entities_children(cubit_meshset,bit_levels.back(),cubit_meshset,MBTRI,true); CHKERRQ(ierr);
-        ierr = m_field.update_meshset_by_entities_children(cubit_meshset,bit_levels.back(),cubit_meshset,MBTET,true); CHKERRQ(ierr);
+        ierr = m_field.query_interface<UpdateMeshsetsAndRanges>()->updateMeshsetByEntitiesChildren(cubit_meshset,bit_levels.back(),cubit_meshset,MBVERTEX,true); CHKERRQ(ierr);
+        ierr = m_field.query_interface<UpdateMeshsetsAndRanges>()->updateMeshsetByEntitiesChildren(cubit_meshset,bit_levels.back(),cubit_meshset,MBEDGE,true); CHKERRQ(ierr);
+        ierr = m_field.query_interface<UpdateMeshsetsAndRanges>()->updateMeshsetByEntitiesChildren(cubit_meshset,bit_levels.back(),cubit_meshset,MBTRI,true); CHKERRQ(ierr);
+        ierr = m_field.query_interface<UpdateMeshsetsAndRanges>()->updateMeshsetByEntitiesChildren(cubit_meshset,bit_levels.back(),cubit_meshset,MBTET,true); CHKERRQ(ierr);
       }
     }
 

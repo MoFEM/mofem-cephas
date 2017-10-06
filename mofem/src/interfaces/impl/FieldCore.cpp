@@ -1314,109 +1314,20 @@ PetscErrorCode Core::get_entities_by_ref_level(const BitRefLevel &bit,const BitR
   }
   PetscFunctionReturn(0);
 }
-// PetscErrorCode Core::add_ref_level_to_entities(const BitRefLevel &bit,Range &ents) {
-//   PetscFunctionBegin;
-//   Range::iterator eit = ents.begin();
-//   for(;eit!=ents.end();eit++) {
-//     BitRefLevel bit2;
-//     rval = moab.tag_get_data(th_RefBitLevel,&*eit,1,&bit2); CHKERRQ_MOAB(rval);
-//     bit2 |= bit;
-//     rval = moab.tag_set_data(th_RefBitLevel,&*eit,1,&bit2); CHKERRQ_MOAB(rval);
-//   }
-//   PetscFunctionReturn(0);
-// }
-// PetscErrorCode Core::set_ref_level_to_entities(const BitRefLevel &bit,Range &ents) {
-//   PetscFunctionBegin;
-//   Range::iterator eit = ents.begin();
-//   for(;eit!=ents.end();eit++) {
-//     BitRefLevel bit2;
-//     rval = moab.tag_get_data(th_RefBitLevel,&*eit,1,&bit2); CHKERRQ_MOAB(rval);
-//     bit2 = bit;
-//     rval = moab.tag_set_data(th_RefBitLevel,&*eit,1,&bit2); CHKERRQ_MOAB(rval);
-//   }
-//   PetscFunctionReturn(0);
-// }
 PetscErrorCode Core::update_meshset_by_entities_children(
-    const EntityHandle parent, const BitRefLevel &child_bit,const EntityHandle child, EntityType child_type,const bool recursive,int verb) {
-  PetscFunctionBegin;
-  if(verb==-1) verb = verbose;
-
-  Range ents;
-  rval = moab.get_entities_by_handle(parent,ents,recursive);
-  if(rval != MB_SUCCESS) {
-    std::cerr << parent << std::endl;
-    std::cerr << moab.type_from_handle(parent) <<  " " << MBENTITYSET << std::endl;
-  } CHKERRQ_MOAB(rval);
-
-  typedef RefEntity_multiIndex::index<Composite_ParentEnt_And_EntType_mi_tag>::type RefEntsByComposite;
-  RefEntsByComposite &ref_ents = refinedEntities.get<Composite_ParentEnt_And_EntType_mi_tag>();
-  Range::iterator eit = ents.begin();
-  for(;eit!=ents.end();eit++) {
-    if(verb>2) {
-      std::ostringstream ss;
-      ss << "ent " << *eit << std::endl;;
-      PetscPrintf(cOmm,ss.str().c_str());
-    }
-    RefEntsByComposite::iterator miit = ref_ents.lower_bound(boost::make_tuple(*eit,child_type));
-    RefEntsByComposite::iterator hi_miit = ref_ents.upper_bound(boost::make_tuple(*eit,child_type));
-    for(;miit!=hi_miit;miit++) {
-      if(verb>2) {
-        std::ostringstream ss;
-        ss << "any bit " << *miit << std::endl;;
-        PetscPrintf(cOmm,ss.str().c_str());
-      }
-      if(((*miit)->getBitRefLevel()&child_bit).any()) {
-        EntityHandle ref_ent = (*miit)->getRefEnt();
-        if(ref_ent == *eit) continue;
-        if(ref_ent == 0) {
-          SETERRQ(cOmm,MOFEM_IMPOSIBLE_CASE,"this should not happen");
-        }
-        if(moab.type_from_handle(*eit)==MBENTITYSET) {
-          SETERRQ(cOmm,MOFEM_IMPOSIBLE_CASE,"this should not happen");
-        }
-        rval = moab.add_entities(child,&ref_ent,1); CHKERRQ_MOAB(rval);
-        if(verb>1) {
-          std::ostringstream ss;
-          ss << "good bit " << *miit << std::endl;
-          PetscPrintf(cOmm,ss.str().c_str());
-        }
-      }
-    }
-  }
-  PetscFunctionReturn(0);
+  const EntityHandle parent, const BitRefLevel &child_bit,const EntityHandle child,
+  EntityType child_type,const bool recursive,int verb
+) {
+  return UpdateMeshsetsAndRanges(*this).updateMeshsetByEntitiesChildren(parent,child_bit,child,child_type,recursive,verb);
 }
 PetscErrorCode Core::update_field_meshset_by_entities_children(const BitRefLevel &child_bit,int verb) {
-  PetscFunctionBegin;
-  Field_multiIndex::iterator fit = fIelds.begin();
-  for(;fit!=fIelds.end();fit++) {
-    EntityHandle meshset = (*fit)->getMeshset();
-    ierr = update_meshset_by_entities_children(meshset,child_bit,meshset,MBTET,false,verb);  CHKERRQ(ierr);
-    ierr = update_meshset_by_entities_children(meshset,child_bit,meshset,MBTRI,false,verb);  CHKERRQ(ierr);
-    ierr = update_meshset_by_entities_children(meshset,child_bit,meshset,MBEDGE,false,verb);  CHKERRQ(ierr);
-    ierr = update_meshset_by_entities_children(meshset,child_bit,meshset,MBVERTEX,false,verb);  CHKERRQ(ierr);
-  }
-  PetscFunctionReturn(0);
+  return UpdateMeshsetsAndRanges(*this).updateFieldMeshsetByEntitiesChildren(child_bit,verb);
 }
 PetscErrorCode Core::update_field_meshset_by_entities_children(const std::string name,const BitRefLevel &child_bit,int verb) {
-  PetscFunctionBegin;
-  Field_multiIndex::index<FieldName_mi_tag>::type::iterator fit;
-  fit = fIelds.get<FieldName_mi_tag>().find(name);
-  EntityHandle meshset = (*fit)->getMeshset();
-  ierr = update_meshset_by_entities_children(meshset,child_bit,meshset,MBTET,false,verb);  CHKERRQ(ierr);
-  ierr = update_meshset_by_entities_children(meshset,child_bit,meshset,MBTRI,false,verb);  CHKERRQ(ierr);
-  ierr = update_meshset_by_entities_children(meshset,child_bit,meshset,MBEDGE,false,verb);  CHKERRQ(ierr);
-  ierr = update_meshset_by_entities_children(meshset,child_bit,meshset,MBVERTEX,false,verb);  CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  return UpdateMeshsetsAndRanges(*this).updateFieldMeshsetByEntitiesChildren(name,child_bit,verb);
 }
 PetscErrorCode Core::update_finite_element_meshset_by_entities_children(const std::string name,const BitRefLevel &child_bit,const EntityType fe_ent_type,int verb) {
-  PetscFunctionBegin;
-  typedef FiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type FiniteElementsByName;
-  const FiniteElementsByName& set = finiteElements.get<FiniteElement_name_mi_tag>();
-  FiniteElementsByName::iterator miit = set.find(name);
-  if(miit==set.end()) THROW_MESSAGE(("finite element < "+name+" > not found (top tip: check spelling)").c_str());
-  EntityHandle meshset = (*miit)->getMeshset();
-  ierr = update_meshset_by_entities_children(meshset,child_bit,meshset,fe_ent_type,false,verb);  CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  return UpdateMeshsetsAndRanges(*this).updateFiniteElementMeshsetByEntitiesChildren(name,child_bit,fe_ent_type,verb);
 }
 PetscErrorCode Core::get_problem_finite_elements_entities(const std::string &problem_name,const std::string &fe_name,const EntityHandle meshset) {
   PetscFunctionBegin;
