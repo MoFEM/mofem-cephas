@@ -493,7 +493,7 @@ struct RefEntity_change_remove_parent {
   ErrorCode rval;
   RefEntity_change_remove_parent() {
   }
-  void operator()(boost::shared_ptr<RefEntity> &e) {
+  inline void operator()(boost::shared_ptr<RefEntity> &e) {
     rval = e->basicDataPtr->moab.tag_delete_data(
       e->basicDataPtr->th_RefParentHandle,&e->ent,1
     ); MOAB_THROW(rval);
@@ -514,7 +514,7 @@ struct RefEntity_change_parent {
   EntityHandle pArent;
   ErrorCode rval;
   RefEntity_change_parent(EntityHandle parent): pArent(parent) {}
-  void operator()(boost::shared_ptr<RefEntity> &e) {
+  inline void operator()(boost::shared_ptr<RefEntity> &e) {
     *(e->getParentEntPtr()) = pArent;
   }
 };
@@ -525,7 +525,7 @@ struct RefEntity_change_parent {
 struct RefEntity_change_left_shift {
   int shift;
   RefEntity_change_left_shift(const int _shift): shift(_shift) {}
-  void operator()(boost::shared_ptr<RefEntity> &e) {
+  inline void operator()(boost::shared_ptr<RefEntity> &e) {
     (*e->getBitRefLevelPtr())<<=shift;
   };
 };
@@ -539,7 +539,7 @@ struct RefEntity_change_right_shift {
   RefEntity_change_right_shift(const int _shift,const BitRefLevel _mask = BitRefLevel().set()):
   shift(_shift),mask(_mask) {
   }
-  void operator()(boost::shared_ptr<RefEntity> &e) {
+  inline void operator()(boost::shared_ptr<RefEntity> &e) {
     BitRefLevel bit = *(e->getBitRefLevelPtr());
     *(e->getBitRefLevelPtr())=((bit&mask)>>shift)|(bit&~mask);
   };
@@ -551,9 +551,12 @@ struct RefEntity_change_right_shift {
 struct RefEntity_change_add_bit {
   BitRefLevel bit;
   RefEntity_change_add_bit(const BitRefLevel &_bit): bit(_bit) {};
-  void operator()(boost::shared_ptr<RefEntity> &e) {
-    bit |= *(e->getBitRefLevelPtr());
-    *(e->getBitRefLevelPtr()) = bit;
+  inline void operator()(RefEntity &e) {
+    bit |= e.getBitRefLevel();
+    *(e.getBitRefLevelPtr()) = bit;
+  }
+  inline void operator()(boost::shared_ptr<RefEntity> &e) {
+    this->operator()(*e);
   }
 };
 
@@ -563,7 +566,7 @@ struct RefEntity_change_add_bit {
 struct RefEntity_change_and_bit {
   BitRefLevel bit;
   RefEntity_change_and_bit(const BitRefLevel &_bit): bit(_bit) {};
-  void operator()(boost::shared_ptr<RefEntity> &e) {
+  inline void operator()(boost::shared_ptr<RefEntity> &e) {
     bit &= *(e->getBitRefLevelPtr());
     *(e->getBitRefLevelPtr()) = bit;
   }
@@ -575,7 +578,7 @@ struct RefEntity_change_and_bit {
 struct RefEntity_change_xor_bit {
   BitRefLevel bit;
   RefEntity_change_xor_bit(const BitRefLevel &_bit): bit(_bit) {};
-  void operator()(boost::shared_ptr<RefEntity> &e) {
+  inline void operator()(boost::shared_ptr<RefEntity> &e) {
     bit ^= *(e->getBitRefLevelPtr());
     *(e->getBitRefLevelPtr()) = bit;
   }
@@ -587,7 +590,7 @@ struct RefEntity_change_xor_bit {
 struct RefEntity_change_set_bit {
   BitRefLevel bit;
   RefEntity_change_set_bit(const BitRefLevel &_bit): bit(_bit) {};
-  void operator()(boost::shared_ptr<RefEntity> &e) {
+  inline void operator()(boost::shared_ptr<RefEntity> &e) {
     *(e->getBitRefLevelPtr()) = bit;
   }
 };
@@ -599,7 +602,7 @@ struct RefEntity_change_set_nth_bit {
   int n;
   bool b;
   RefEntity_change_set_nth_bit(const int _n,bool _b): n(_n),b(_b) {};
-  void operator()(boost::shared_ptr<RefEntity> &e) {
+  inline void operator()(boost::shared_ptr<RefEntity> &e) {
     (*(e->getBitRefLevelPtr()))[n] = b;
   }
 };
