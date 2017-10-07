@@ -120,7 +120,7 @@ BitRefLevel* RefEntity::getBitRefLevelPtr() const {
   );
 }
 
-PetscErrorCode getPatentEnt(Interface &moab,Range ents,std::vector<EntityHandle> vec_patent_ent) {
+PetscErrorCode getParentEnt(Interface &moab,Range ents,std::vector<EntityHandle> vec_patent_ent) {
   
   PetscFunctionBegin;
   Tag th_ref_parent_handle;
