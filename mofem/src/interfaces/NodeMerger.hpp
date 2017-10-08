@@ -20,7 +20,6 @@
 
 namespace MoFEM {
 
-
 static const MOFEMuuid IDD_MOFEMNodeMerger = MOFEMuuid( BitIntefaceId(NODEMERGER_INTERFACE) );
 
 /** \brief merge node from two bit levels
@@ -52,6 +51,18 @@ struct NodeMergerInterface: public UnknownInterface {
     errorIfNoCommonEdge = b;
   }
 
+  /**
+   * \brief calculated quality of tets adjacent to edge
+   * @param  edge        edge handle
+   * @param  tets_ptr    pointer to range of tets
+   * @param  min_quality returned quality of tets
+   * @param  th          handle to tag with nodes positions
+   * @return             error code
+   */
+  PetscErrorCode edgeMinQuality(
+    EntityHandle edge,const Range *tets_ptr,double &min_quality,Tag th = NULL
+  );
+
   /** \brief merge nodes which sharing edge
 
     Father is sties, mother is merged.
@@ -74,7 +85,9 @@ struct NodeMergerInterface: public UnknownInterface {
     Range *tets_ptr = NULL,
     const bool only_if_improve_quality = false,
     const double move = 0,
-    const int line_search = 0
+    const int line_search = 0,
+    Tag th = NULL,
+    const int verb = 0
   );
 
 
@@ -99,7 +112,8 @@ struct NodeMergerInterface: public UnknownInterface {
     BitRefLevel bit,
     Range *tets_ptr = NULL,
     const bool only_if_improve_quality = false,
-    const double move = 0
+    const double move = 0,
+    Tag th = NULL
   );
 
   /** \brief merge nodes which sharing edge
@@ -122,29 +136,101 @@ struct NodeMergerInterface: public UnknownInterface {
     BitRefLevel bit,
     BitRefLevel tets_from_bit_ref_level,
     const bool only_if_improve_quality = false,
-    const double move = 0
+    const double move = 0,
+    Tag th = NULL
   );
+
+  struct ParentChild {
+    EntityHandle pArent;
+    EntityHandle cHild;
+    ParentChild(const EntityHandle parent,const EntityHandle child):
+    pArent(parent),
+    cHild(child) {
+    }
+  };
+
+  typedef multi_index_container<
+    ParentChild,
+    indexed_by<
+      hashed_unique<
+        member<ParentChild,EntityHandle,&ParentChild::pArent>
+      >,
+      hashed_unique<
+        member<ParentChild,EntityHandle,&ParentChild::cHild>
+      >
+    >
+  > ParentChildMap;
+
+  /**
+   * \brief Get map of parent cand child
+   * @return
+   */
+  inline ParentChildMap& getParentChildMap() {
+    return parentChildMap;
+  }
 
 private:
 
   bool successMerge; ///< True if marge is success
   bool errorIfNoCommonEdge; ///< Send error if no common edge
 
+  /**
+   * \brief Calualte quality if nodes merged
+   * @param  check_tests tets to check
+   * @param  father      fisrt node of the edge
+   * @param  mother      second node of the edge
+   * @param  coords_move moved father node
+   * @param  min_quality calculated quality
+   * @return             error code
+   */
   PetscErrorCode minQuality(
     Range &check_tests,
     EntityHandle father,
     EntityHandle mother,
     double *coords_move,
-    double &min_quality
+    double &min_quality,
+    Tag th = NULL
   );
 
+  /**
+   * \brief Use bisecion method to finde point of edge collapse
+   * @param  check_tests range of tets to check quality
+   * @param  father      first node of the edge
+   * @param  mother      second node of the edge
+   * @param  line_search numbet of iterations
+   * @param  coords_move node to move
+   * @return             error code
+   */
   PetscErrorCode lineSearch(
     Range &check_tests,
     EntityHandle father,
     EntityHandle mother,
     int line_search,
-    double *coords_move
+    double *coords_move,
+    Tag th = NULL
   );
+
+  ParentChildMap parentChildMap;
+
+  struct FaceMap {
+    EntityHandle e,n0,n1;
+    FaceMap(const EntityHandle e,const EntityHandle n0,const EntityHandle n1):
+    e(e),n0(n0),n1(n1) {
+    }
+  };
+
+  typedef multi_index_container<
+    FaceMap,
+    indexed_by<
+      hashed_unique<
+        composite_key<
+          FaceMap,
+          member<FaceMap,EntityHandle,&FaceMap::n0>,
+          member<FaceMap,EntityHandle,&FaceMap::n1>
+        >
+      >
+    >
+  > FaceMapIdx;
 
 };
 
