@@ -72,6 +72,7 @@ namespace MoFEM {
   BitRefManager::~BitRefManager() {
   }
 
+
   PetscErrorCode BitRefManager::setBitRefLevel(
     const Range &ents,const BitRefLevel &bit,const bool only_tets,int verb
   ) const {
@@ -91,65 +92,88 @@ namespace MoFEM {
         );
       }
 
-      for(Range::const_pair_iterator pit = ents.pair_begin();pit!=ents.pair_end();pit++) {
+      /// tool class with methods used more than twp times
+      struct Tool {
+        const BitRefLevel &bIt;
+        const RefEntity_multiIndex *refEntsPtr;
 
-        // get first and last element of range
-        EntityHandle f = pit->first;
-        EntityHandle s = pit->second;
+        boost::shared_ptr<BasicEntityData>& baseEntData;
 
-        std::vector<EntityHandle> seed_ents_vec; // entities seeded not in database
-        std::vector<boost::shared_ptr<RefEntity> > shared_ref_ents_vec_for_fe;
+        Tool(
+          MoFEM::Interface &m_field,
+          const BitRefLevel &bit,
+          const RefEntity_multiIndex *ref_ents_ptr
+        ):
+        bIt(bit),
+        refEntsPtr(ref_ents_ptr),
+        baseEntData(m_field.get_basic_entity_data_ptr()) {
+        }
 
-        RefEntity_multiIndex::iterator rit,hi_rit;
-        // get lower bound of multi-index
-        rit = ref_ents_ptr->lower_bound(f);
-        if(rit==ref_ents_ptr->end()) {
-          // all enties in range are added to databse
-          seed_ents_vec.reserve(s-f+1);
-          for(;f<=s;f++) {
-            seed_ents_vec.push_back(f);
-          }
-        } else {
-          // some entities from range are in databse
-          hi_rit = ref_ents_ptr->upper_bound(s);
-          for(;f<=s;f++) {
-            if(f==rit->get()->getRefEnt()) {
-              // entitity is in databse, change bit levele only
-              bool success = const_cast<RefEntity_multiIndex*>(ref_ents_ptr)->
-              modify(rit,RefEntity_change_add_bit(bit));
-              if(!success) {
-                SETERRQ(m_field.get_comm(),MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+        /// find entities and change entity bit if in databse
+        PetscErrorCode findEntsToAdd(
+          EntityHandle f,EntityHandle s,
+          std::vector<EntityHandle>& seed_ents_vec,
+          std::vector<boost::shared_ptr<RefEntity> > *shared_ref_ents_vec_for_fe = NULL
+        ) {
+          PetscFunctionBegin;
+          RefEntity_multiIndex::iterator rit,hi_rit;
+          // get lower bound of multi-index
+          rit = refEntsPtr->lower_bound(f);
+          if(rit==refEntsPtr->end()) {
+            // all enties in range are added to databse
+            seed_ents_vec.reserve(s-f+1);
+            for(;f<=s;f++) {
+              seed_ents_vec.push_back(f);
+            }
+          } else {
+            // some entities from range are in databse
+            hi_rit = refEntsPtr->upper_bound(s);
+            for(;f<=s;f++) {
+              if(f==rit->get()->getRefEnt()) {
+                // entitity is in databse, change bit levele only
+                bool success = const_cast<RefEntity_multiIndex*>(refEntsPtr)->
+                modify(rit,RefEntity_change_add_bit(bIt));
+                if(!success) {
+                  SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+                }
+                if(shared_ref_ents_vec_for_fe!=NULL) {
+                  shared_ref_ents_vec_for_fe->push_back(*rit);
+                }
+                rit++; // move to next one
+                if(rit==hi_rit) {
+                  // break loop, rest of the enetities in range are not in databse
+                  break;
+                }
+              } else {
+                // this entitity added to databse
+                seed_ents_vec.push_back(f);
               }
-              shared_ref_ents_vec_for_fe.push_back(*rit);
-              rit++; // move to next one
-              if(rit==hi_rit) {
-                // break loop, rest of the enetities in range are not in databse
-                break;
-              }
-            } else {
-              // this entitity added to databse
+            }
+            // add rest entitites to vector of entitites going to be added to databse
+            for(;f<=s;f++) {
               seed_ents_vec.push_back(f);
             }
           }
-          // add rest entitites to vector of entitites going to be added to databse
-          for(;f<=s;f++) {
-            seed_ents_vec.push_back(f);
-          }
+          PetscFunctionReturn(0);
         }
 
-        // add elements
-        if(!seed_ents_vec.empty()) {
+        /// add entities to databse
+        PetscErrorCode addToDatabase(
+          std::vector<EntityHandle>& seed_ents_vec,
+          std::vector<boost::shared_ptr<RefEntity> > *shared_ref_ents_vec_for_fe = NULL
+        ) {
+          PetscFunctionBegin;
           // add entitites to databse
           boost::shared_ptr<std::vector<RefEntity> > ref_ents_vec =
           boost::make_shared<std::vector<RefEntity> >();
           ref_ents_vec->reserve(seed_ents_vec.size());
           // create ref entitity instances
           for(
-            std::vector<EntityHandle>::iterator vit=seed_ents_vec.begin();
+            std::vector<EntityHandle>::const_iterator vit=seed_ents_vec.begin();
             vit!=seed_ents_vec.end();vit++
           ) {
-            ref_ents_vec->push_back(RefEntity(m_field.get_basic_entity_data_ptr(),*vit));
-            RefEntity_change_add_bit(bit).operator()(ref_ents_vec->back());
+            ref_ents_vec->push_back(RefEntity(baseEntData,*vit));
+            RefEntity_change_add_bit(bIt).operator()(ref_ents_vec->back());
           }
           std::vector<boost::shared_ptr<RefEntity> > shared_ref_ents_vec;
           shared_ref_ents_vec.reserve(ref_ents_vec->size());
@@ -160,14 +184,36 @@ namespace MoFEM {
           ) {
             shared_ref_ents_vec.push_back(boost::shared_ptr<RefEntity>(ref_ents_vec,&*vit));
           }
-          shared_ref_ents_vec_for_fe.insert(
-            shared_ref_ents_vec_for_fe.end(),
-            shared_ref_ents_vec.begin(),shared_ref_ents_vec.end()
-          );
+          if(shared_ref_ents_vec_for_fe) {
+            shared_ref_ents_vec_for_fe->insert(
+              shared_ref_ents_vec_for_fe->end(),
+              shared_ref_ents_vec.begin(),shared_ref_ents_vec.end()
+            );
+          }
           // add shared pointers to databse
-          const_cast<RefEntity_multiIndex*>(ref_ents_ptr)->insert(
+          const_cast<RefEntity_multiIndex*>(refEntsPtr)->insert(
             shared_ref_ents_vec.begin(),shared_ref_ents_vec.end()
           );
+          PetscFunctionReturn(0);
+        }
+
+      };
+
+      for(Range::const_pair_iterator pit = ents.pair_begin();pit!=ents.pair_end();pit++) {
+        // get first and last element of range
+        EntityHandle f = pit->first;
+        EntityHandle s = pit->second;
+        std::vector<EntityHandle> seed_ents_vec; // entities seeded not in database
+        std::vector<boost::shared_ptr<RefEntity> > shared_ref_ents_vec_for_fe;
+        // find ents to add
+        ierr = Tool(m_field,bit,ref_ents_ptr).findEntsToAdd(
+          f,s,seed_ents_vec,&shared_ref_ents_vec_for_fe
+        ); CHKERRQ(ierr);
+        // add elements
+        if(!seed_ents_vec.empty()) {
+          ierr = Tool(m_field,bit,ref_ents_ptr).addToDatabase(
+            seed_ents_vec,&shared_ref_ents_vec_for_fe
+          ); CHKERRQ(ierr);
         }
 
         // create finite elements
@@ -236,67 +282,9 @@ namespace MoFEM {
             // get first and last element of range
             EntityHandle f = pit->first;
             EntityHandle s = pit->second;
-            RefEntity_multiIndex::iterator rit,hi_rit;
-            // get lower bound of multi-index
-            rit = ref_ents_ptr->lower_bound(f);
-            if(rit==ref_ents_ptr->end()) {
-              // all enties in range are added to databse
-              seed_ents_vec.reserve(s-f+1);
-              for(;f<=s;f++) {
-                seed_ents_vec.push_back(f);
-              }
-            } else {
-              // some entities from range are in databse
-              hi_rit = ref_ents_ptr->upper_bound(s);
-              for(;f<=s;f++) {
-                if(f==rit->get()->getRefEnt()) {
-                  // entitity is in databse, change bit levele only
-                  bool success = const_cast<RefEntity_multiIndex*>(ref_ents_ptr)->
-                  modify(rit,RefEntity_change_add_bit(bit));
-                  if(!success) {
-                    SETERRQ(m_field.get_comm(),MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
-                  }
-                  rit++; // move to next one
-                  if(rit==hi_rit) {
-                    // break loop, rest of the enetities in range are not in databse
-                    break;
-                  }
-                } else {
-                  // this entitity added to databse
-                  seed_ents_vec.push_back(f);
-                }
-              }
-              // add rest entitites to vector of entitites going to be added to databse
-              for(;f<=s;f++) {
-                seed_ents_vec.push_back(f);
-              }
-            }
+            ierr = Tool(m_field,bit,ref_ents_ptr).findEntsToAdd(f,s,seed_ents_vec); CHKERRQ(ierr);
             if(!seed_ents_vec.empty()) {
-              // add entitites to databse
-              boost::shared_ptr<std::vector<RefEntity> > ref_ents_vec =
-              boost::make_shared<std::vector<RefEntity> >();
-              ref_ents_vec->reserve(seed_ents_vec.size());
-              // create ref entitity instances
-              for(
-                std::vector<EntityHandle>::iterator vit=seed_ents_vec.begin();
-                vit!=seed_ents_vec.end();vit++
-              ) {
-                ref_ents_vec->push_back(RefEntity(m_field.get_basic_entity_data_ptr(),*vit));
-                RefEntity_change_add_bit(bit).operator()(ref_ents_vec->back());
-              }
-              std::vector<boost::shared_ptr<RefEntity> > shared_ref_ents_vec;
-              shared_ref_ents_vec.reserve(ref_ents_vec->size());
-              // create aliased shared pointers to ref entitity instances
-              for(
-                std::vector<RefEntity>::iterator vit = ref_ents_vec->begin();
-                vit!=ref_ents_vec->end();vit++
-              ) {
-                shared_ref_ents_vec.push_back(boost::shared_ptr<RefEntity>(ref_ents_vec,&*vit));
-              }
-              // add shared pointers to databse
-              const_cast<RefEntity_multiIndex*>(ref_ents_ptr)->insert(
-                shared_ref_ents_vec.begin(),shared_ref_ents_vec.end()
-              );
+              ierr = Tool(m_field,bit,ref_ents_ptr).addToDatabase(seed_ents_vec); CHKERRQ(ierr);
             }
           }
         }
