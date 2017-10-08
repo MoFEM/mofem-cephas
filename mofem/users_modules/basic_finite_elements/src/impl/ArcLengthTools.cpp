@@ -195,22 +195,33 @@ PetscErrorCode ArcLengthMatMultShellOp(Mat A,Vec x,Vec f) {
 // arc-length preconditioner
 
 PCArcLengthCtx::PCArcLengthCtx(Mat shell_Aij,Mat aij,ArcLengthCtx* arc_ptr):
-  shellAij(shell_Aij),Aij(aij),arcPtrRaw(arc_ptr) {
-  ierr = PCCreate(arc_ptr->mField.get_comm(),&pC); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+kSP(PETSC_NULL),pC(PETSC_NULL),shellAij(shell_Aij),Aij(aij),arcPtrRaw(arc_ptr) {
+  ierr = PCCreate(PetscObjectComm((PetscObject)aij),&pC); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+  ierr = KSPCreate(PetscObjectComm((PetscObject)pC),&kSP); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+  ierr = KSPAppendOptionsPrefix(kSP,"arc_length_"); CHKERRABORT(PETSC_COMM_WORLD,ierr);
 }
 
 PCArcLengthCtx::PCArcLengthCtx(Mat shell_Aij,Mat aij,boost::shared_ptr<ArcLengthCtx>& arc_ptr):
-  shellAij(shell_Aij),Aij(aij),arcPtrRaw(arc_ptr.get()),arcPtr(arc_ptr) {
-  ierr = PCCreate(arc_ptr->mField.get_comm(),&pC); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+  kSP(PETSC_NULL),shellAij(shell_Aij),Aij(aij),arcPtrRaw(arc_ptr.get()),arcPtr(arc_ptr) {
+  ierr = PCCreate(PetscObjectComm((PetscObject)aij),&pC); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+  ierr = KSPCreate(PetscObjectComm((PetscObject)pC),&kSP); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+  ierr = KSPAppendOptionsPrefix(kSP,"arc_length_"); CHKERRABORT(PETSC_COMM_WORLD,ierr);
 }
 
 PCArcLengthCtx::PCArcLengthCtx(PC pc,Mat shell_Aij,Mat aij,boost::shared_ptr<ArcLengthCtx>& arc_ptr):
-  pC(pc),shellAij(shell_Aij),Aij(aij),arcPtrRaw(arc_ptr.get()),arcPtr(arc_ptr) {
+  kSP(PETSC_NULL),pC(pc),shellAij(shell_Aij),Aij(aij),arcPtrRaw(arc_ptr.get()),arcPtr(arc_ptr) {
   ierr = PetscObjectReference((PetscObject)pC); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+  ierr = KSPCreate(PetscObjectComm((PetscObject)pC),&kSP); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+  ierr = KSPAppendOptionsPrefix(kSP,"arc_length_"); CHKERRABORT(PETSC_COMM_WORLD,ierr);
 }
 
 PCArcLengthCtx::~PCArcLengthCtx() {
-  ierr = PCDestroy(&pC); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+  if(kSP!=PETSC_NULL) {
+    ierr = KSPDestroy(&kSP); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+  }
+  if(pC!=PETSC_NULL) {
+    ierr = PCDestroy(&pC); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+  }
 }
 
 PetscErrorCode PCApplyArcLength(PC pc,Vec pc_f,Vec pc_x) {
@@ -221,8 +232,14 @@ PetscErrorCode PCApplyArcLength(PC pc,Vec pc_f,Vec pc_x) {
   void *void_MatCtx;
   MatShellGetContext(ctx->shellAij,&void_MatCtx);
   ArcLengthMatShell *mat_ctx = (ArcLengthMatShell*)void_MatCtx;
-  ierr = PCApply(ctx->pC,pc_f,pc_x); CHKERRQ(ierr);
-  ierr = PCApply(ctx->pC,ctx->arcPtrRaw->F_lambda,ctx->arcPtrRaw->xLambda); CHKERRQ(ierr);
+  ierr = KSPSetInitialGuessNonzero(ctx->kSP,PETSC_FALSE); CHKERRQ(ierr);
+  ierr = KSPSolve(ctx->kSP,pc_f,pc_x); CHKERRQ(ierr);
+  PetscBool same;
+  PetscObjectTypeCompare((PetscObject)ctx->kSP,KSPPREONLY,&same);
+  if(same != PETSC_TRUE) {
+    ierr = KSPSetInitialGuessNonzero(ctx->kSP,PETSC_TRUE); CHKERRQ(ierr);
+  }
+  ierr = KSPSolve(ctx->kSP,ctx->arcPtrRaw->F_lambda,ctx->arcPtrRaw->xLambda); CHKERRQ(ierr);
   double db_dot_pc_x,db_dot_x_lambda;
   ierr = VecDot(ctx->arcPtrRaw->db,pc_x,&db_dot_pc_x); CHKERRQ(ierr);
   ierr = VecDot(ctx->arcPtrRaw->db,ctx->arcPtrRaw->xLambda,&db_dot_x_lambda); CHKERRQ(ierr);
@@ -264,8 +281,15 @@ PetscErrorCode PCSetupArcLength(PC pc) {
   PCArcLengthCtx *ctx = (PCArcLengthCtx*)void_ctx;
   ierr = PCSetFromOptions(ctx->pC); CHKERRQ(ierr);
   ierr = PCGetOperators(pc,&ctx->shellAij,&ctx->Aij); CHKERRQ(ierr);
-  ierr = PCSetOperators(ctx->pC,ctx->shellAij,ctx->Aij); CHKERRQ(ierr);
+  ierr = PCSetOperators(ctx->pC,ctx->Aij,ctx->Aij); CHKERRQ(ierr);
   ierr = PCSetUp(ctx->pC); CHKERRQ(ierr);
+  // SetUp PC KSP solver
+  ierr = KSPSetType(ctx->kSP,KSPPREONLY); CHKERRQ(ierr);
+  ierr = KSPSetTabLevel(ctx->kSP,3); CHKERRQ(ierr);
+  ierr = KSPSetFromOptions(ctx->kSP); CHKERRQ(ierr);
+  ierr = KSPSetOperators(ctx->kSP,ctx->Aij,ctx->Aij); CHKERRQ(ierr);
+  ierr = KSPSetPC(ctx->kSP,ctx->pC); CHKERRQ(ierr);
+  ierr = KSPSetUp(ctx->kSP); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 

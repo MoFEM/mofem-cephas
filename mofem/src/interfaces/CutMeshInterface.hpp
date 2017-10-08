@@ -154,17 +154,11 @@ namespace MoFEM {
       Tag th = NULL
     );
 
-
-
-
-    // PetscErrorCode findTetOnTheFront(int verb = 0);
-    // #ifdef WITH_TETGEN
-    // PetscErrorCode imprintFront(
-    //   const BitRefLevel bit,
-    //   const double tetgen_face_angle,
-    //   int verb = 0
-    // );
-    // #endif //WITH_TETGEN
+    PetscErrorCode mergeBadEdgesOnSurface(
+      const Range& tets,const Range& surface,const Range& fixed_verts,
+      Tag th_quality,Tag th_position,
+      Range& out_tets,Range& new_surf
+    );
 
     inline const Range& getVerticesOnSurface() const { return verticesOnSurface; }
     inline const Range& getCutEdges() const { return cutEdges; }
@@ -239,6 +233,17 @@ namespace MoFEM {
       double &s
     ) const;
 
+    PetscErrorCode mergeNodes(
+      EntityHandle father,
+      EntityHandle mother,
+      Range& proc_tets,
+      Range &new_surf,
+      const bool only_if_improve_quality = false,
+      const double move = 0,
+      const int line_search = 0,
+      Tag th = NULL,
+      const int verb = 0
+    );
 
   };
 

@@ -58,6 +58,7 @@
 #include <Core.hpp>
 
 #include <BitRefManager.hpp>
+#include <UpdateMeshsetsAndRanges.hpp>
 #include <ISManager.hpp>
 #include <VecManager.hpp>
 #include <FieldBlas.hpp>

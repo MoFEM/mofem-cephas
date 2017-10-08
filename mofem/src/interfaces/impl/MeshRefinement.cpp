@@ -45,6 +45,7 @@
 #include <Core.hpp>
 
 #include <MeshRefinement.hpp>
+#include <UpdateMeshsetsAndRanges.hpp>
 #include <EntityRefine.hpp>
 
 namespace MoFEM {
@@ -69,8 +70,8 @@ cOre(const_cast<MoFEM::Core&>(core)) {
 }
 
 PetscErrorCode MeshRefinement::add_verices_in_the_middel_of_edges(const EntityHandle meshset,const BitRefLevel &bit,const bool recursive,int verb) {
-  
-  
+
+
   MoFEM::Interface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   PetscFunctionBegin;
@@ -123,8 +124,8 @@ PetscErrorCode MeshRefinement::add_verices_in_the_middel_of_edges(const EntityHa
   PetscFunctionReturn(0);
 }
 PetscErrorCode MeshRefinement::add_verices_in_the_middel_of_edges(const Range &_edges,const BitRefLevel &bit,int verb) {
-  
-  
+
+
   MoFEM::Interface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   const RefEntity_multiIndex *refined_ents_ptr;
@@ -198,8 +199,8 @@ PetscErrorCode MeshRefinement::add_verices_in_the_middel_of_edges(const Range &_
 PetscErrorCode MeshRefinement::refine_TET(
   const EntityHandle meshset,const BitRefLevel &bit,const bool respect_interface,int verb
 ) {
-  
-  
+
+
   MoFEM::Interface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   PetscFunctionBegin;
@@ -211,8 +212,8 @@ PetscErrorCode MeshRefinement::refine_TET(
 PetscErrorCode MeshRefinement::refine_TET(
   const Range &_tets,const BitRefLevel &bit,const bool respect_interface,int verb
 ) {
-  
-  
+
+
   MoFEM::Interface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   const RefEntity_multiIndex *refined_ents_ptr;
@@ -851,8 +852,8 @@ PetscErrorCode MeshRefinement::refine_TET(
   PetscFunctionReturn(0);
 }
 PetscErrorCode MeshRefinement::refine_PRISM(const EntityHandle meshset,const BitRefLevel &bit,int verb) {
-  
-  
+
+
   MoFEM::Interface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   const RefEntity_multiIndex *refined_ents_ptr;
@@ -1029,7 +1030,7 @@ PetscErrorCode MeshRefinement::refine_PRISM(const EntityHandle meshset,const Bit
 PetscErrorCode MeshRefinement::refine_MESHSET(
   const EntityHandle meshset,const BitRefLevel &bit,const bool recursive,int verb
 ) {
-  
+
   //
   MoFEM::Interface &m_field = cOre;
   //moab::Interface &moab = m_field.get_moab();
@@ -1041,9 +1042,9 @@ PetscErrorCode MeshRefinement::refine_MESHSET(
   if(miit==refined_ents_ptr->end()) {
     SETERRQ(m_field.get_comm(),MOFEM_DATA_INCONSISTENCY,"this meshset is not in ref database");
   }
-  ierr = m_field.update_meshset_by_entities_children(meshset,bit,meshset,MBEDGE,recursive,verb); CHKERRQ(ierr);
-  ierr = m_field.update_meshset_by_entities_children(meshset,bit,meshset,MBTRI,recursive,verb); CHKERRQ(ierr);
-  ierr = m_field.update_meshset_by_entities_children(meshset,bit,meshset,MBTET,recursive,verb); CHKERRQ(ierr);
+  ierr = m_field.query_interface<UpdateMeshsetsAndRanges>()->updateMeshsetByEntitiesChildren(meshset,bit,meshset,MBEDGE,recursive,verb); CHKERRQ(ierr);
+  ierr = m_field.query_interface<UpdateMeshsetsAndRanges>()->updateMeshsetByEntitiesChildren(meshset,bit,meshset,MBTRI,recursive,verb); CHKERRQ(ierr);
+  ierr = m_field.query_interface<UpdateMeshsetsAndRanges>()->updateMeshsetByEntitiesChildren(meshset,bit,meshset,MBTET,recursive,verb); CHKERRQ(ierr);
   const_cast<RefEntity_multiIndex*>(refined_ents_ptr)->modify(miit,RefEntity_change_add_bit(bit));
   PetscFunctionReturn(0);
 }

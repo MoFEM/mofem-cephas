@@ -26,6 +26,8 @@ static const MOFEMuuid IDD_MOFEMBitLevelCoupler = MOFEMuuid( BitIntefaceId(BITLE
 /** \brief Interface set parent for vertices, edges, triangles and tetrahedrons.
   * \ingroup mofem
   *
+  * FIXME: Not tested, slow, bugs
+  *
   */
 struct BitLevelCoupler: public UnknownInterface {
 

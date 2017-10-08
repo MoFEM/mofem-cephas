@@ -490,8 +490,6 @@ int main(int argc, char *argv[]) {
       ierr = PCShellSetContext(pc,pc_ctx); CHKERRQ(ierr);
       ierr = PCShellSetApply(pc,PCApplyArcLength); CHKERRQ(ierr);
       ierr = PCShellSetSetUp(pc,PCSetupArcLength); CHKERRQ(ierr);
-      ierr = KSPSetPC(ksp,pc); CHKERRQ(ierr);
-
 
       if(flg == PETSC_TRUE) {
         PetscReal rtol,atol,dtol;
