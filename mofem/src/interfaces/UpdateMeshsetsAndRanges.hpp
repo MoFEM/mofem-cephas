@@ -76,6 +76,16 @@ namespace MoFEM {
       const std::string name,const BitRefLevel &child_bit,const EntityType fe_ent_type,int verb = 0
     );
 
+    /**
+     * \brief Update range by prents
+     *
+     * FIXME: NOT TESTED
+     *
+     * @param  parent parent range
+     * @param  child  childeren range
+     * @return        error code
+     */
+    PetscErrorCode updateRange(const Range& parent,Range& child);
 
   };
 

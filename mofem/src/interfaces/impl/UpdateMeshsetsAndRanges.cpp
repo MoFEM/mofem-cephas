@@ -83,8 +83,7 @@ namespace MoFEM {
 
     typedef RefEntity_multiIndex::index<Composite_ParentEnt_And_EntType_mi_tag>::type RefEntsByComposite;
     RefEntsByComposite &ref_ents = const_cast<RefEntity_multiIndex*>(ref_ents_ptr)->get<Composite_ParentEnt_And_EntType_mi_tag>();
-    Range::iterator eit = ents.begin();
-    for(;eit!=ents.end();eit++) {
+    for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {
       if(verb>2) {
         std::ostringstream ss;
         ss << "ent " << *eit << std::endl;;
@@ -165,5 +164,32 @@ namespace MoFEM {
     }
     PetscFunctionReturn(0);
   }
+
+  PetscErrorCode UpdateMeshsetsAndRanges::updateRange(const Range& parent_ents,Range& child_ents) {
+    MoFEM::Interface& m_field = cOre;
+    moab::Interface &moab = m_field.get_moab();
+    const RefEntity_multiIndex *ref_ents_ptr;
+    PetscFunctionBegin;
+    ierr = m_field.get_ref_ents(&ref_ents_ptr); CHKERRQ(ierr);
+    typedef RefEntity_multiIndex::index<Ent_Ent_mi_tag>::type RefEntsByParent;
+    RefEntsByParent &ref_ents = const_cast<RefEntity_multiIndex*>(ref_ents_ptr)->get<Ent_Ent_mi_tag>();
+    for(Range::iterator eit = parent_ents.begin();eit!=parent_ents.end();eit++) {
+      RefEntsByParent::iterator miit = ref_ents.lower_bound(*eit);
+      RefEntsByParent::iterator hi_miit = ref_ents.upper_bound(*eit);
+      for(;miit!=hi_miit;miit++) {
+        EntityHandle ref_ent = (*miit)->getRefEnt();
+        if(ref_ent == *eit) continue;
+        if(ref_ent == 0) {
+          SETERRQ(m_field.get_comm(),MOFEM_IMPOSIBLE_CASE,"this should not happen");
+        }
+        if(moab.type_from_handle(*eit)==MBENTITYSET) {
+          SETERRQ(m_field.get_comm(),MOFEM_IMPOSIBLE_CASE,"this should not happen");
+        }
+        child_ents.insert(ref_ent);
+      }
+    }
+    PetscFunctionReturn(0);
+  }
+
 
 }
