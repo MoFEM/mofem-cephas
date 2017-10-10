@@ -425,7 +425,7 @@ namespace MoFEM {
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode CutMeshInterface::trimEdgesInTheMiddle(const BitRefLevel bit) {
+  PetscErrorCode CutMeshInterface::trimEdgesInTheMiddle(const BitRefLevel bit,Tag th,const double tol) {
     MoFEM::Interface &m_field = cOre;
     moab::Interface &moab = m_field.get_moab();
     MeshRefinement *refiner;
@@ -467,9 +467,6 @@ namespace MoFEM {
     rval = moab.get_connectivity(trimNewSurfaces,trim_new_surfaces_nodes,true); CHKERRQ_MOAB(rval);
     trim_new_surfaces_nodes = subtract(trim_new_surfaces_nodes,trimNewVertices);
     trim_new_surfaces_nodes = subtract(trim_new_surfaces_nodes,cutNewVertices);
-    Range outside_edges_vertices;
-    rval = moab.get_connectivity(outsideEdges,outside_edges_vertices,true); CHKERRQ_MOAB(rval);
-    trim_new_surfaces_nodes = unite(trim_new_surfaces_nodes,outside_edges_vertices);
     Range faces_not_on_surface;
     rval = moab.get_adjacencies(trim_new_surfaces_nodes,2,false,faces_not_on_surface,moab::Interface::UNION);
     trimNewSurfaces = subtract(trimNewSurfaces,faces_not_on_surface);
@@ -482,6 +479,29 @@ namespace MoFEM {
     all_surfaces_on_bit_level = intersect(all_surfaces_on_bit_level,cutNewSurfaces);
     trimNewSurfaces = unite(trimNewSurfaces,all_surfaces_on_bit_level);
 
+    Range check_verts;
+    rval = moab.get_connectivity(trimNewSurfaces,check_verts,true); CHKERRQ_MOAB(rval);
+    check_verts = subtract(check_verts,trimNewVertices);
+    for(Range::iterator vit = check_verts.begin();vit!=check_verts.end();vit++) {
+      double coords[3];
+      if(th) {
+        rval = moab.tag_get_data(th,&*vit,1,coords); CHKERRQ_MOAB(rval);
+      } else {
+        rval = moab.get_coords(&*vit,1,coords); CHKERRQ_MOAB(rval);
+      }
+      double point_out[3];
+      EntityHandle facets_out;
+      rval = treeSurfPtr->closest_to_location(
+        coords,rootSetSurf,point_out,facets_out
+      ); CHKERRQ_MOAB(rval);
+      VectorAdaptor s(3,ublas::shallow_array_adaptor<double>(3,coords));
+      VectorAdaptor p(3,ublas::shallow_array_adaptor<double>(3,point_out));
+      if(norm_2(s-p)/aveLength>tol) {
+        Range adj;
+        rval = moab.get_adjacencies(&*vit,1,2,false,adj); CHKERRQ_MOAB(rval);
+        trimNewSurfaces = subtract(trimNewSurfaces,adj);
+      }
+    }
 
     PetscFunctionReturn(0);
 
@@ -565,7 +585,6 @@ namespace MoFEM {
 
     // clear data ranges
     trimEdges.clear();
-    outsideEdges.clear();
     edgesToTrim.clear();
 
     struct CloasestPointProjection {
@@ -589,7 +608,7 @@ namespace MoFEM {
 
       VectorDouble3& operator()(const int max_it,const double tol) {
         PetscFunctionBegin;
-        cerr << "\n\n" << endl;
+        // cerr << "\n\n" << endl;
         VectorDouble3 w;
         double length = norm_2(rAY);
         rAY /= length;
@@ -601,7 +620,7 @@ namespace MoFEM {
           w = vecPointOut-S0;
           double s = inner_prod(rAY,w);
           S0 += s*rAY;
-          cerr << "s " << ii << " " << s << " " << norm_2(w) << endl;
+          // cerr << "s " << ii << " " << s << " " << norm_2(w) << endl;
           if(s<tol) break;
         }
         return S0;
@@ -654,13 +673,8 @@ namespace MoFEM {
       double min_dist = fmin(dist0,dist1);
       double max_dist = fmax(dist0,dist1);
       // If one of nodes is on the surface and other is not, that edge is to trim
-      if(min_dist/length < tol && fabs(max_dist/length-1) < tol) {
-        // edge is trimed at very end or begining, so one of the nodes is almost
-        // on the front
-        outsideEdges.insert(*eit);
-      } else if(min_dist/length < tol && max_dist/length > tol) {
+      if(min_dist/length < tol && max_dist/length > tol) {
         // add ege to trim
-        trimEdges.insert(*eit);
         double dist;
         VectorDouble3 ray;
         VectorDouble3 trimed_end;
@@ -680,39 +694,15 @@ namespace MoFEM {
           ray = itersection_point-trimed_end;
           dist = norm_2(ray);
         }
-        edgesToTrim[*eit].dIst = dist;
-        edgesToTrim[*eit].lEngth = dist;
-        edgesToTrim[*eit].unitRayDir = ray/dist;
-        edgesToTrim[*eit].rayPoint = trimed_end;
-      } else if(min_dist > tol) {
-        // add edge as outsie edge, i.e. nothe nodes are outside surface
-        outsideEdges.insert(*eit);
+        if(fabs(dist-length)/length>tol) {
+          edgesToTrim[*eit].dIst = dist;
+          edgesToTrim[*eit].lEngth = dist;
+          edgesToTrim[*eit].unitRayDir = ray/dist;
+          edgesToTrim[*eit].rayPoint = trimed_end;
+          trimEdges.insert(*eit);
+        }
       }
     }
-
-    // Remove tris which are outside surface
-    Range outside_edges_tris;
-    rval = moab.get_adjacencies(
-      outsideEdges,2,false,outside_edges_tris,moab::Interface::UNION
-    ); CHKERRQ_MOAB(rval);
-    for(Range::iterator tit = outside_edges_tris.begin();tit!=outside_edges_tris.end();tit++) {
-      Range tit_edges;
-      rval = moab.get_adjacencies(
-        &*tit,1,1,false,tit_edges,moab::Interface::UNION
-      ); CHKERRQ_MOAB(rval);
-      if(intersect(tit_edges,outsideEdges).size()==3) {
-        cutNewSurfaces.erase(*tit);
-      }
-    }
-    cutNewVertices.clear();
-    rval = moab.get_connectivity(cutNewSurfaces,cutNewVertices,true); CHKERRQ_MOAB(rval);
-
-    // Remove form outside edges, those which are not part of cutNewSurfaces edges
-    Range cut_new_surface_edges;
-    rval = moab.get_adjacencies(
-      cutNewSurfaces,1,false,cut_new_surface_edges,moab::Interface::UNION
-    ); CHKERRQ_MOAB(rval);
-    outsideEdges = intersect(outsideEdges,cut_new_surface_edges);
 
     PetscFunctionReturn(0);
   }

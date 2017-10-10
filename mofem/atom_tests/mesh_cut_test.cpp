@@ -127,7 +127,7 @@ int main(int argc, char *argv[]) {
     ierr = cut_mesh->moveMidNodesOnCutEdges(th); CHKERRQ(ierr);
 
     ierr = cut_mesh->findEdgesToTrim(th,1e-4); CHKERRQ(ierr);
-    ierr = cut_mesh->trimEdgesInTheMiddle(bit_level2); CHKERRQ(ierr);
+    ierr = cut_mesh->trimEdgesInTheMiddle(bit_level2,th,1e-3); CHKERRQ(ierr);
     ierr = cut_mesh->moveMidNodesOnTrimedEdges(th); CHKERRQ(ierr);
 
     UpdateMeshsetsAndRanges *meshset_update;
@@ -198,11 +198,6 @@ int main(int argc, char *argv[]) {
     rval = moab.create_meshset(MESHSET_SET,meshset_trim_edges); CHKERRQ_MOAB(rval);
     rval = moab.add_entities(meshset_trim_edges,cut_mesh->getTrimEdges()); CHKERRQ_MOAB(rval);
     rval = moab.write_file("out_trim_edges.vtk","VTK","",&meshset_trim_edges,1); CHKERRQ_MOAB(rval);
-
-    EntityHandle meshset_outside_edges;
-    rval = moab.create_meshset(MESHSET_SET,meshset_outside_edges); CHKERRQ_MOAB(rval);
-    rval = moab.add_entities(meshset_outside_edges,cut_mesh->getOutsideEdges()); CHKERRQ_MOAB(rval);
-    rval = moab.write_file("out_outside_edges.vtk","VTK","",&meshset_outside_edges,1); CHKERRQ_MOAB(rval);
 
     EntityHandle meshset_trim_new_surface;
     rval = moab.create_meshset(MESHSET_SET,meshset_trim_new_surface); CHKERRQ_MOAB(rval);

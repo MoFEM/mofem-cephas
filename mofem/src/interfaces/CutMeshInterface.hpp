@@ -124,7 +124,12 @@ namespace MoFEM {
      */
     PetscErrorCode findEdgesToTrim(Tag th = NULL,const double tol = 1e-4,int verb = 0);
 
-    PetscErrorCode trimEdgesInTheMiddle(const BitRefLevel bit);
+    /**
+     * \brief trim edges
+     * @param  bit bit level of the trimed mesh
+     * @return     error code
+     */
+    PetscErrorCode trimEdgesInTheMiddle(const BitRefLevel bit,Tag th = NULL,const double tol = 1e-4);
 
     /**
      * \brief move trimed edges mid nodes
@@ -174,7 +179,6 @@ namespace MoFEM {
 
 
     inline const Range& getTrimEdges() const { return trimEdges; }
-    inline const Range& getOutsideEdges() const { return outsideEdges; }
 
     inline const Range& getNewTrimVolumes() const { return trimNewVolumes; }
     inline const Range& getNewTrimSurfaces() const { return trimNewSurfaces; }
@@ -196,7 +200,6 @@ namespace MoFEM {
     Range zeroDistanseVerts;
     Range cutNewVertices;
 
-    Range outsideEdges;
     Range trimNewVolumes;
     Range trimNewVertices;
     Range trimNewSurfaces;
