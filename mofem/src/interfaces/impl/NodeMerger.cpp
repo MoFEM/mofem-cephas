@@ -227,17 +227,17 @@ PetscErrorCode NodeMergerInterface::mergeNodes(
       min_quality,th
     ); CHKERRQ(ierr);
     // cerr << min_quality << " " << min_quality0 << endl;
-    if(min_quality0>0) {
+    // if(min_quality0>0) {
       if(min_quality<min_quality0) {
         Range seed_tets;
         if(tets_ptr!=NULL) {
           seed_tets.merge(*tets_ptr);
         }
-        out_tets = seed_tets;
+        out_tets.swap(seed_tets);
         successMerge = false;
         PetscFunctionReturn(0);
       }
-    }
+    // }
   }
 
   // clear map
@@ -392,11 +392,10 @@ PetscErrorCode NodeMergerInterface::mergeNodes(
   if(tets_ptr!=NULL) {
     seed_tets.merge(*tets_ptr);
   }
-  seed_tets = subtract(seed_tets,mother_tets);
-  seed_tets = subtract(seed_tets,edge_tets);
+  seed_tets = subtract(seed_tets,unite(mother_tets,edge_tets));
   seed_tets.merge(created_tets);
 
-  out_tets = seed_tets;
+  out_tets.swap(seed_tets);
 
   successMerge = true;
 

@@ -90,6 +90,10 @@ namespace MoFEM {
      */
     PetscErrorCode findEdgesToCut(const double low_tol = 0,int verb = 0);
 
+    PetscErrorCode getEntsOnCutSurface(
+      const double low_tol = 0,int verb  = 0
+    );
+
     /**
      * \brief cut edges
      *
@@ -155,17 +159,19 @@ namespace MoFEM {
     );
 
     PetscErrorCode mergeBadEdgesOnSurface(
+      const int fraction_level,
       const Range& tets,const Range& surface,const Range& fixed_verts,
       Tag th_quality,Tag th_position,
       Range& out_tets,Range& new_surf
     );
 
-    inline const Range& getVerticesOnSurface() const { return verticesOnSurface; }
     inline const Range& getCutEdges() const { return cutEdges; }
     inline const Range& getCutVolumes() const { return cutVolumes; }
     inline const Range& getNewCutVolumes() const { return cutNewVolumes; }
     inline const Range& getNewCutSurfaces() const { return cutNewSurfaces; }
     inline const Range& getNewCutVertices() const { return cutNewVertices; }
+    inline const Range& getZeroDistanceEnts() const { return zeroDistanseEnts; }
+
 
     inline const Range& getTrimEdges() const { return trimEdges; }
     inline const Range& getOutsideEdges() const { return outsideEdges; }
@@ -182,19 +188,18 @@ namespace MoFEM {
     boost::shared_ptr<OrientedBoxTreeTool> treeSurfPtr;
     EntityHandle rootSetSurf;
 
-    Range verticesOnSurface;
-
     Range cutEdges;
     Range cutVolumes;
     Range cutNewVolumes;
     Range cutNewSurfaces;
+    Range zeroDistanseEnts;
+    Range zeroDistanseVerts;
     Range cutNewVertices;
 
     Range outsideEdges;
     Range trimNewVolumes;
     Range trimNewVertices;
     Range trimNewSurfaces;
-
 
     Range trimEdges;
 
@@ -225,13 +230,22 @@ namespace MoFEM {
       double &ray_length
     ) const;
 
-    int segmentPlane(
-      VectorAdaptor s0,
-      VectorAdaptor s1,
-      VectorAdaptor x0,
-      VectorAdaptor n,
-      double &s
-    ) const;
+    // /**
+    //  * Find if segment in on the plain
+    //  * @param  s0 segemnt fisrt point
+    //  * @param  s1 segment second point
+    //  * @param  x0 point on the plain
+    //  * @param  n  normal on the plain
+    //  * @param  s  intersect point
+    //  * @return    1 - intersect, 2 - segment on the plain, 0 - no intersect
+    //  */
+    // int segmentPlane(
+    //   VectorAdaptor s0,
+    //   VectorAdaptor s1,
+    //   VectorAdaptor x0,
+    //   VectorAdaptor n,
+    //   double &s
+    // ) const;
 
     PetscErrorCode mergeNodes(
       EntityHandle father,
@@ -244,6 +258,8 @@ namespace MoFEM {
       Tag th = NULL,
       const int verb = 0
     );
+
+    double aveLength;
 
   };
 

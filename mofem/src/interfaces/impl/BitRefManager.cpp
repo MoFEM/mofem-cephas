@@ -94,11 +94,12 @@ namespace MoFEM {
 
       /// tool class with methods used more than twp times
       struct Tool {
-        const BitRefLevel &bIt;
-        const RefEntity_multiIndex *refEntsPtr;
 
-        boost::shared_ptr<BasicEntityData>& baseEntData;
+        const BitRefLevel &bIt;                         ///< bit to set
+        const RefEntity_multiIndex *refEntsPtr;          ///< access to databse
+        boost::shared_ptr<BasicEntityData>& baseEntData; ///< base entity data
 
+        /// constrictor
         Tool(
           MoFEM::Interface &m_field,
           const BitRefLevel &bit,
@@ -114,7 +115,7 @@ namespace MoFEM {
           EntityHandle f,EntityHandle s,
           std::vector<EntityHandle>& seed_ents_vec,
           std::vector<boost::shared_ptr<RefEntity> > *shared_ref_ents_vec_for_fe = NULL
-        ) {
+        ) const {
           PetscFunctionBegin;
           RefEntity_multiIndex::iterator rit,hi_rit;
           // get lower bound of multi-index
@@ -161,7 +162,7 @@ namespace MoFEM {
         PetscErrorCode addToDatabase(
           std::vector<EntityHandle>& seed_ents_vec,
           std::vector<boost::shared_ptr<RefEntity> > *shared_ref_ents_vec_for_fe = NULL
-        ) {
+        ) const {
           PetscFunctionBegin;
           // add entitites to databse
           boost::shared_ptr<std::vector<RefEntity> > ref_ents_vec =
