@@ -138,6 +138,16 @@ namespace MoFEM {
     PetscErrorCode moveMidNodesOnTrimedEdges(Tag th = NULL);
 
     /**
+     * \brief Reset position Tag
+     *
+     * If node is not on the trimed surface reset its possition tag
+     *
+     * @param  th tag handle
+     * @return    error code
+     */
+    PetscErrorCode resetPositionTagNotOnTrimSurface(Tag th);
+
+    /**
      * \brief split sides
      * @param  split_bit split bit level
      * @param  bit       bit level of split mesh
@@ -163,9 +173,10 @@ namespace MoFEM {
       Tag th = NULL
     );
 
-    PetscErrorCode mergeBadEdgesOnSurface(
+    PetscErrorCode mergeBadEdges(
       const int fraction_level,
-      const Range& tets,const Range& surface,const Range& fixed_verts,
+      const Range& tets,const Range& surface,
+      const Range& fixed_edges,const Range& corner_nodes,
       Tag th_quality,Tag th_position,
       Range& out_tets,Range& new_surf
     );
@@ -177,9 +188,7 @@ namespace MoFEM {
     inline const Range& getNewCutVertices() const { return cutNewVertices; }
     inline const Range& getZeroDistanceEnts() const { return zeroDistanseEnts; }
 
-
     inline const Range& getTrimEdges() const { return trimEdges; }
-
     inline const Range& getNewTrimVolumes() const { return trimNewVolumes; }
     inline const Range& getNewTrimSurfaces() const { return trimNewSurfaces; }
     inline const Range& getNewTrimVertices() const { return trimNewVertices; }
@@ -249,18 +258,6 @@ namespace MoFEM {
     //   VectorAdaptor n,
     //   double &s
     // ) const;
-
-    PetscErrorCode mergeNodes(
-      EntityHandle father,
-      EntityHandle mother,
-      Range& proc_tets,
-      Range &new_surf,
-      const bool only_if_improve_quality = false,
-      const double move = 0,
-      const int line_search = 0,
-      Tag th = NULL,
-      const int verb = 0
-    );
 
     double aveLength;
 

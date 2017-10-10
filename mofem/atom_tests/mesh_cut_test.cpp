@@ -129,11 +129,12 @@ int main(int argc, char *argv[]) {
     ierr = cut_mesh->findEdgesToTrim(th,1e-4); CHKERRQ(ierr);
     ierr = cut_mesh->trimEdgesInTheMiddle(bit_level2,th,1e-3); CHKERRQ(ierr);
     ierr = cut_mesh->moveMidNodesOnTrimedEdges(th); CHKERRQ(ierr);
+    ierr = cut_mesh->resetPositionTagNotOnTrimSurface(th); CHKERRQ(ierr);
 
     UpdateMeshsetsAndRanges *meshset_update;
     ierr = m_field.query_interface(meshset_update); CHKERRQ(ierr);
 
-    Range fixed_edges,fixed_vertices;
+    Range fixed_edges,/*fixed_vertices,*/corner_nodes;
     if(meshset_manager->checkMeshset(100,SIDESET)) {
       EntityHandle meshset;
       ierr = meshset_manager->getMeshset(100,SIDESET,meshset); CHKERRQ(ierr);
@@ -147,7 +148,7 @@ int main(int argc, char *argv[]) {
         bit_level2,bit_level1|bit_level2,MBEDGE,edges_level2
       ); CHKERRQ(ierr);
       fixed_edges = intersect(fixed_edges,edges_level2);
-      rval = moab.get_connectivity(fixed_edges,fixed_vertices,true); CHKERRQ_MOAB(rval);
+      // rval = moab.get_connectivity(fixed_edges,fixed_vertices,true); CHKERRQ_MOAB(rval);
     }
 
     EntityHandle meshset_vol;
@@ -215,8 +216,8 @@ int main(int argc, char *argv[]) {
       bit_level2,BitRefLevel().set(),MBTET,tets_level2
     ); CHKERRQ(ierr);
     Range out_new_tets,out_new_surf;
-    ierr = cut_mesh->mergeBadEdgesOnSurface(
-      6,tets_level2,cut_mesh->getNewTrimSurfaces(),fixed_vertices,
+    ierr = cut_mesh->mergeBadEdges(
+      4,tets_level2,cut_mesh->getNewTrimSurfaces(),fixed_edges,corner_nodes,
       th_quality,th,out_new_tets,out_new_surf
     ); CHKERRQ(ierr);
 
