@@ -66,7 +66,7 @@ namespace MoFEM {
 
   CutMeshInterface::CutMeshInterface(const MoFEM::Core &core):
   cOre(const_cast<MoFEM::Core&>(core)) {
-    lineSearchSteps = 3;
+    lineSearchSteps = 5;
     nbMaxMergingCycles = 200;
     nbMaxTrimSearchIterations = 20;
   }
@@ -864,7 +864,7 @@ namespace MoFEM {
       NodeMergerInterface *nodeMergerPtr;
       PetscErrorCode operator()(
         EntityHandle father,EntityHandle mother,
-        Range& proc_tets,Range &new_surf,
+        Range& proc_tets,Range &new_surf,Range &edges_to_merge,
         bool add_child = true
       ) {
         moab::Interface& moab = mField.get_moab();
@@ -880,15 +880,25 @@ namespace MoFEM {
         out_tets.merge(subtract(proc_tets,vert_tets));
         proc_tets.swap(out_tets);
         if(add_child) {
-          Range child_ents;
           NodeMergerInterface::ParentChildMap& parent_child_map = nodeMergerPtr->getParentChildMap();
+
+          Range child_surf_ents;
           for(Range::iterator eit = new_surf.begin();eit!=new_surf.end();eit++) {
             NodeMergerInterface::ParentChildMap::nth_index<0>::type::iterator
             it = parent_child_map.get<0>().find(*eit);
             if(it==parent_child_map.get<0>().end()) continue;
-            child_ents.insert(it->cHild);
+            child_surf_ents.insert(it->cHild);
           }
-          new_surf.merge(child_ents);
+          new_surf.merge(child_surf_ents);
+          Range child_edge_ents;
+          for(Range::iterator eit = edges_to_merge.begin();eit!=edges_to_merge.end();eit++) {
+            NodeMergerInterface::ParentChildMap::nth_index<0>::type::iterator
+            it = parent_child_map.get<0>().find(*eit);
+            if(it==parent_child_map.get<0>().end()) continue;
+            child_edge_ents.insert(it->cHild);
+          }
+          edges_to_merge.merge(child_edge_ents);
+
         }
         PetscFunctionReturn(0);
       }
@@ -925,169 +935,179 @@ namespace MoFEM {
       }
     };
 
-    // merge edges on surface
-    enum TYPE { FREE, FIX, SURFACE };
-    int nb_nodes_merged = 0;
+    /**
+     * \brief Topological relations
+     */
+    struct Toplogy {
 
-    Range proc_tets,verts,surface_skin,verts_skin,
-    edges,adj_faces,fixed_verts,tets_skin,edges_skin,surf_tets,
-    proc_skin_tets;
-
-    std::map<double,EntityHandle> length_map;
-    Skinner skin(&moab);
-
-    // get fixed verts
-    rval = moab.get_connectivity(fixed_edges,fixed_verts,true); CHKERRQ_MOAB(rval);
-
-    // tets
-    rval = skin.find_skin(0,tets,false,tets_skin); CHKERRQ_MOAB(rval);
-    rval = moab.get_adjacencies(
-      tets_skin,1,false,edges_skin,moab::Interface::UNION
-    ); CHKERRQ_MOAB(rval);
-
-    // tetst adjacent to surface
-    ierr = moab.get_connectivity(surface,verts,true); CHKERRQ(ierr);
-    rval = moab.get_adjacencies(
-      verts,3,false,surf_tets,moab::Interface::UNION
-    ); CHKERRQ_MOAB(rval);
-    // add test on the corners
-    rval = moab.get_adjacencies(
-      fixed_verts,3,false,surf_tets,moab::Interface::UNION
-    ); CHKERRQ_MOAB(rval);
-    surf_tets = intersect(surf_tets,tets);
-    proc_tets = surf_tets;
-
-    // fornt ends
-    rval = skin.find_skin(0,surface,false,surface_skin); CHKERRQ_MOAB(rval);
-    surface_skin = intersect(surface_skin,edges_skin);
-    Range front_ends;
-    rval = skin.find_skin(0,surface_skin,false,front_ends); CHKERRQ_MOAB(rval);
-
-    // set up initial surface
-    new_surf = surface;
-    {
-      // merge nodes on with fixed verts
-      Range corner_edges = intersect(edges_skin,fixed_edges);
-      // cerr << corner_edges << endl;
-
-      length_map.clear();
-      ierr = LengthMap(m_field,th_position,corner_edges)(length_map); CHKERRQ(ierr);
-      for(std::map<double,EntityHandle>::iterator mit = length_map.begin();mit!=length_map.end();mit++) {
-        int num_nodes;
-        const EntityHandle *conn;
-        rval = moab.get_connectivity(mit->second,conn,num_nodes,true); CHKERRQ_MOAB(rval);
-        TYPE vert_type[] = { FREE,FREE };
-        for(int nn = 0;nn!=2;nn++) {
-          if(corner_nodes.find(conn[nn])!=corner_nodes.end()) {
-            vert_type[nn] = FIX;
-          }
-          if(verts.find(conn[nn])!=verts.end()) {
-            vert_type[nn] = SURFACE;
-          }
-        }
-        if(vert_type[0]==FIX||vert_type[1]==FIX) continue;
-        int line_search = 0;
-        bool add_child;
-        if(vert_type[0]!=SURFACE&&vert_type[1]!=SURFACE) {
-          line_search = lineSearchSteps;
-          add_child = false;
-        } else {
-          add_child = true;
-        }
-        EntityHandle father,mother;
-        if(vert_type[0]==SURFACE) {
-          father = conn[0];
-          mother = conn[1];
-        } else {
-          father = conn[1];
-          mother = conn[0];
-        }
-        ierr = MergeNodes(m_field,true,line_search,th_position)(
-          father,mother,proc_tets,new_surf,add_child
-        ); CHKERRQ(ierr);
-        if(m_field.query_interface<NodeMergerInterface>()->getSucessMerge()) {
-          Range adj_edges;
-          rval = moab.get_adjacencies(conn,2,1,false,adj_edges,moab::Interface::UNION); CHKERRQ_MOAB(rval);
-          std::map<double,EntityHandle>::iterator miit = mit;
-          for(miit++;miit!=length_map.end();miit++) {
-            if(adj_edges.find(miit->second)!=adj_edges.end()) {
-              length_map.erase(miit);
-            }
-          }
-          nb_nodes_merged++;
-        }
+      MoFEM::Interface& mField;
+      Toplogy(MoFEM::Interface& m_field):
+      mField(m_field) {
       }
-    }
 
-    out_tets = proc_tets;
-    adj_faces.clear();
-    rval = moab.get_adjacencies(out_tets,2,false,adj_faces,moab::Interface::UNION); CHKERRQ_MOAB(rval);
-    new_surf = intersect(new_surf,adj_faces);
-    out_tets.merge(subtract(tets,surf_tets));
+      enum TYPE {
+        FREE =          0,
+        SKIN =          1<<0,
+        SURFACE =       1<<1,
+        SURFACE_SKIN =  1<<2,
+        FRONT_ENDS =    1<<3,
+        FIX_EDGES =     1<<4,
+        FIX_CORNERS =   1<<5
+      };
 
-    verts.clear();
-    ierr = moab.get_connectivity(new_surf,verts,true); CHKERRQ(ierr);
-    surf_tets.clear();
-    rval = moab.get_adjacencies(
-      verts,3,false,surf_tets,moab::Interface::UNION
-    ); CHKERRQ_MOAB(rval);
-    surf_tets = intersect(surf_tets,out_tets);
-    proc_tets = surf_tets;
+      typedef map<int,Range> SetsMap;
+
+      PetscErrorCode getProcTets(
+        const Range &surface,const Range &tets,Range &proc_tets
+      ) {
+        moab::Interface& moab(mField.get_moab());
+        PetscFunctionBegin;
+        Range surface_verts;
+        rval = moab.get_connectivity(surface,surface_verts,true); CHKERRQ_MOAB(rval);
+        Range surface_verts_edges;
+        rval = moab.get_adjacencies(surface_verts,1,false,surface_verts_edges,moab::Interface::UNION); CHKERRQ_MOAB(rval);
+        Range tets_edges;
+        rval = moab.get_adjacencies(tets,1,false,tets_edges,moab::Interface::UNION); CHKERRQ_MOAB(rval);
+        surface_verts_edges = intersect(surface_verts_edges,tets_edges);
+        Range surface_verts_edges_verts;
+        rval = moab.get_connectivity(surface_verts_edges,surface_verts_edges_verts,true); CHKERRQ_MOAB(rval);
+        Range surface_verts_edges_verts_tets;
+        rval = moab.get_adjacencies(surface_verts_edges_verts,3,false,surface_verts_edges_verts_tets,moab::Interface::UNION); CHKERRQ_MOAB(rval);
+        surface_verts_edges_verts_tets = intersect(surface_verts_edges_verts_tets,tets);
+        proc_tets.swap(surface_verts_edges_verts_tets);
+        PetscFunctionReturn(0);
+      }
+
+      PetscErrorCode classifyVerts(
+        const Range &surface,const Range &tets,const Range& fixed_edges,const Range& corner_nodes,
+        SetsMap& sets_map
+      ) {
+        moab::Interface& moab(mField.get_moab());
+        Skinner skin(&moab);
+        PetscFunctionBegin;
+
+        sets_map[FIX_CORNERS].merge(corner_nodes);
+        Range fixed_verts;
+        rval = moab.get_connectivity(fixed_edges,fixed_verts,true); CHKERRQ_MOAB(rval);
+        sets_map[FIX_EDGES].swap(fixed_verts);
+
+
+        Range tets_skin;
+        rval = skin.find_skin(0,tets,false,tets_skin); CHKERRQ_MOAB(rval);
+        Range tets_skin_edges;
+        rval = moab.get_adjacencies(tets_skin,1,false,tets_skin_edges,moab::Interface::UNION); CHKERRQ_MOAB(rval);
+
+        // surface skin
+        Range surface_skin;
+        rval = skin.find_skin(0,surface,false,surface_skin); CHKERRQ_MOAB(rval);
+        Range front_in_the_body;
+        front_in_the_body = subtract(surface_skin,tets_skin_edges);
+        Range front_ends;
+        rval = skin.find_skin(0,front_in_the_body,false,front_ends); CHKERRQ_MOAB(rval);
+        sets_map[FRONT_ENDS].swap(front_ends);
+
+        Range surface_skin_verts;
+        rval = moab.get_connectivity(surface_skin,surface_skin_verts,true); CHKERRQ_MOAB(rval);
+        sets_map[SURFACE_SKIN].swap(surface_skin_verts);
+
+        // surface
+        Range surface_verts;
+        rval = moab.get_connectivity(surface,surface_verts,true); CHKERRQ_MOAB(rval);
+        sets_map[SURFACE].swap(surface_verts);
+
+        // skin
+        Range tets_skin_verts;
+        rval = moab.get_connectivity(tets_skin,tets_skin_verts,true); CHKERRQ_MOAB(rval);
+        sets_map[SKIN].swap(tets_skin_verts);
+
+        Range tets_verts;
+        rval = moab.get_connectivity(tets,tets_verts,true); CHKERRQ_MOAB(rval);
+        sets_map[FREE].swap(tets_verts);
+
+        // SetsMap::reverse_iterator mit = sets_map.rbegin();
+        // Range remove_verts(mit->second);
+        // mit++;
+        // for(;mit!=sets_map.rend();mit++) {
+        //   mit->second = subtract(mit->second,remove_verts);
+        //   remove_verts.merge(mit->second);
+        // }
+
+        PetscFunctionReturn(0);
+      }
+
+      PetscErrorCode edgesToMerge(const Range &surface,const Range &tets,Range& edges_to_merge) {
+        moab::Interface& moab(mField.get_moab());
+        PetscFunctionBegin;
+        Range surface_verts;
+        rval = moab.get_connectivity(surface,surface_verts,true); CHKERRQ_MOAB(rval);
+        Range surface_verts_edges;
+        rval = moab.get_adjacencies(surface_verts,1,false,surface_verts_edges,moab::Interface::UNION); CHKERRQ_MOAB(rval);
+        Range tets_edges;
+        rval = moab.get_adjacencies(tets,1,false,tets_edges,moab::Interface::UNION); CHKERRQ_MOAB(rval);
+        edges_to_merge = intersect(tets_edges,surface_verts_edges);
+        PetscFunctionReturn(0);
+      }
+
+    };
+
+    Range proc_tets;
+    ierr = Toplogy(m_field).getProcTets(surface,tets,proc_tets); CHKERRQ(ierr);
+    out_tets = subtract(tets,proc_tets);
+    Range edges_to_merge;
+    ierr = Toplogy(m_field).edgesToMerge(surface,tets,edges_to_merge); CHKERRQ(ierr);
+    Toplogy::SetsMap sets_map;
+    ierr = Toplogy(m_field).classifyVerts(surface,tets,fixed_edges,corner_nodes,sets_map); CHKERRQ(ierr);
+
+    int nb_nodes_merged = 0;
+    std::map<double,EntityHandle> length_map;
+    new_surf = surface;
 
     for(int pp = 0;pp!=nbMaxMergingCycles;pp++) {
 
       int nb_nodes_merged_0 = nb_nodes_merged;
-
-      // merge nodes on surface skin
-
-      // {
-      //   EntityHandle meshset_new_faces;
-      //   rval = moab.create_meshset(MESHSET_SET,meshset_new_faces); CHKERRQ_MOAB(rval);
-      //   rval = moab.add_entities(meshset_new_faces,new_surf); CHKERRQ_MOAB(rval);
-      //   rval = moab.add_entities(meshset_new_faces,surface_skin); CHKERRQ_MOAB(rval);
-      //   rval = moab.add_entities(meshset_new_faces,collapsed_edges); CHKERRQ_MOAB(rval);
-      //   std::string name = "pp_"+boost::lexical_cast<std::string>(2*pp+0)+".vtk";
-      //   rval = moab.write_file(name.c_str(),"VTK","",&meshset_new_faces,1); CHKERRQ_MOAB(rval);
-      //   rval = moab.delete_entities(&meshset_new_faces,1); CHKERRQ_MOAB(rval);
-      // }
-
       length_map.clear();
-      ierr = LengthMap(m_field,th_position,surface_skin)(length_map); CHKERRQ(ierr);
+      ierr = LengthMap(m_field,th_position,edges_to_merge)(length_map); CHKERRQ(ierr);
 
-      // collapsed_edges.clear();
-
-      // itearte and merge edges on surface skin
       int nn = 0;
+      Range collapsed_edges;
       for(std::map<double,EntityHandle>::iterator mit = length_map.begin();mit!=length_map.end();mit++,nn++) {
         int num_nodes;
         const EntityHandle *conn;
         rval = moab.get_connectivity(mit->second,conn,num_nodes,true); CHKERRQ_MOAB(rval);
-        TYPE vert_type[] = { FREE,FREE };
+        int conn_type[2] = { 0,0 };
         for(int nn = 0;nn!=2;nn++) {
-          if(fixed_verts.find(conn[nn])!=fixed_verts.end()) {
-            vert_type[nn] = FIX;
+          conn_type[nn] = 0;
+          for(
+            Toplogy::SetsMap::reverse_iterator sit = sets_map.rbegin();
+            sit!=sets_map.rend();sit++
+          ) {
+            if(sit->second.find(conn[nn])!=sit->second.end()) {
+              conn_type[nn] |= sit->first;
+            }
           }
-          if(front_ends.find(conn[nn])!=front_ends.end()) {
-            vert_type[nn] = FIX;
-          }
         }
-        if(vert_type[0]==FIX&&vert_type[1]==FIX) {
-          continue;
-        }
-        int line_search = 0;
-        if(vert_type[0]!=FIX&&vert_type[1]!=FIX) {
-          line_search = lineSearchSteps;
-        }
+        int type_father,type_mother;
         EntityHandle father,mother;
-        if(vert_type[0]==FIX) {
+        if(conn_type[0]>conn_type[1]) {
           father = conn[0];
           mother = conn[1];
+          type_father = conn_type[0];
+          type_mother = conn_type[1];
         } else {
           father = conn[1];
           mother = conn[0];
+          type_father = conn_type[1];
+          type_mother = conn_type[0];
+        }
+        // if(type_father&Toplogy::FIX_CORNERS && type_mother&Toplogy::FIX_CORNERS) continue;
+        // if(type_father&Toplogy::SURFACE && type_mother&Toplogy::SKIN) continue;
+        // if(type_father&(Toplogy::FRONT_ENDS|Toplogy::FIX_EDGES|Toplogy::FIX_CORNERS) && type_mother&Toplogy::SURFACE) continue;
+        int line_search = 0;
+        if(type_father==type_mother) {
+          line_search = lineSearchSteps;
         }
         ierr = MergeNodes(m_field,true,line_search,th_position)(
-          father,mother,proc_tets,new_surf
+          father,mother,proc_tets,new_surf,edges_to_merge
         ); CHKERRQ(ierr);
         if(m_field.query_interface<NodeMergerInterface>()->getSucessMerge()) {
           Range adj_edges;
@@ -1098,104 +1118,36 @@ namespace MoFEM {
               length_map.erase(miit);
             }
           }
-          // collapsed_edges.insert(mit->second);
+          // cerr << length_map.size() << " " << adj_edges << endl;
           nb_nodes_merged++;
+          collapsed_edges.insert(mit->second);
         }
         if(nn>length_map.size()/fraction_level) break;
       }
 
-      out_tets = proc_tets;
-      adj_faces.clear();
-      rval = moab.get_adjacencies(out_tets,2,false,adj_faces,moab::Interface::UNION); CHKERRQ_MOAB(rval);
+      Range adj_faces,adj_edges;
+      rval = moab.get_adjacencies(proc_tets,2,false,adj_faces,moab::Interface::UNION); CHKERRQ_MOAB(rval);
+      rval = moab.get_adjacencies(proc_tets,1,false,adj_edges,moab::Interface::UNION); CHKERRQ_MOAB(rval);
       new_surf = intersect(new_surf,adj_faces);
-
-
-      surface_skin.clear();
-      rval = skin.find_skin(0,new_surf,false,surface_skin); CHKERRQ_MOAB(rval);
-      verts_skin.clear();
-      ierr = moab.get_connectivity(surface_skin,verts_skin,true); CHKERRQ(ierr);
-      edges.clear();
-      ierr = moab.get_adjacencies(new_surf,1,false,edges,moab::Interface::UNION); CHKERRQ(ierr);
-      edges = subtract(edges,surface_skin);
-
-      // {
-      //   EntityHandle meshset_new_faces;
-      //   rval = moab.create_meshset(MESHSET_SET,meshset_new_faces); CHKERRQ_MOAB(rval);
-      //   rval = moab.add_entities(meshset_new_faces,new_surf); CHKERRQ_MOAB(rval);
-      //   rval = moab.add_entities(meshset_new_faces,surface_skin); CHKERRQ_MOAB(rval);
-      //   rval = moab.add_entities(meshset_new_faces,collapsed_edges); CHKERRQ_MOAB(rval);
-      //   std::string name = "pp_"+boost::lexical_cast<std::string>(2*pp+1)+".vtk";
-      //   rval = moab.write_file(name.c_str(),"VTK","",&meshset_new_faces,1); CHKERRQ_MOAB(rval);
-      //   rval = moab.delete_entities(&meshset_new_faces,1); CHKERRQ_MOAB(rval);
-      // }
-
-      // merge modes on surface
-
-      length_map.clear();
-      ierr = LengthMap(m_field,th_position,edges)(length_map); CHKERRQ(ierr);
-
-      // collapsed_edges.clear();
-
-      int mm = 0;
-      for(std::map<double,EntityHandle>::iterator mit = length_map.begin();mit!=length_map.end();mit++,mm++) {
-        int num_nodes;
-        const EntityHandle *conn;
-        rval = moab.get_connectivity(mit->second,conn,num_nodes,true); CHKERRQ_MOAB(rval);
-        TYPE vert_type[] = { FREE,FREE };
-        for(int nn = 0;nn!=2;nn++) {
-          if(verts_skin.find(conn[nn])!=verts_skin.end()) {
-            vert_type[nn] = FIX;
-          }
-          if(fixed_verts.find(conn[nn])!=fixed_verts.end()) {
-            vert_type[nn] = FIX;
-          }
-        }
-        if(vert_type[0]==FIX&&vert_type[1]==FIX) {
-          continue;
-        }
-        int line_search = 0;
-        if(vert_type[0]!=FIX&&vert_type[1]!=FIX) {
-          line_search = lineSearchSteps;
-        }
-        EntityHandle father,mother;
-        if(vert_type[0]==FIX) {
-          father = conn[0];
-          mother = conn[1];
-        } else {
-          father = conn[1];
-          mother = conn[0];
-        }
-        ierr = MergeNodes(m_field,true,line_search,th_position)(
-          father,mother,proc_tets,new_surf
-        ); CHKERRQ(ierr);
-        if(m_field.query_interface<NodeMergerInterface>()->getSucessMerge()) {
-          Range adj_edges;
-          rval = moab.get_adjacencies(conn,2,1,false,adj_edges,moab::Interface::UNION); CHKERRQ_MOAB(rval);
-          std::map<double,EntityHandle>::iterator miit = mit;
-          for(miit++;miit!=length_map.end();miit++) {
-            if(adj_edges.find(miit->second)!=adj_edges.end()) {
-              length_map.erase(miit);
-            }
-          }
-          // collapsed_edges.insert(mit->second);
-          nb_nodes_merged++;
-        }
-        if(mm>length_map.size()/fraction_level) break;
-      }
-
-      out_tets = proc_tets;
-      adj_faces.clear();
-      rval = moab.get_adjacencies(out_tets,2,false,adj_faces,moab::Interface::UNION); CHKERRQ_MOAB(rval);
-      new_surf = intersect(new_surf,adj_faces);
-      surface_skin.clear();
-      rval = skin.find_skin(0,new_surf,false,surface_skin); CHKERRQ_MOAB(rval);
+      edges_to_merge = intersect(edges_to_merge,adj_edges);
 
       PetscPrintf(m_field.get_comm(),"(%d) Number of nodes merged %d\n",pp,nb_nodes_merged);
+
+      {
+        EntityHandle meshset_new_faces;
+        rval = moab.create_meshset(MESHSET_SET,meshset_new_faces); CHKERRQ_MOAB(rval);
+        rval = moab.add_entities(meshset_new_faces,new_surf); CHKERRQ_MOAB(rval);
+        rval = moab.add_entities(meshset_new_faces,collapsed_edges); CHKERRQ_MOAB(rval);
+        std::string name = "pp_"+boost::lexical_cast<std::string>(pp)+".vtk";
+        rval = moab.write_file(name.c_str(),"VTK","",&meshset_new_faces,1); CHKERRQ_MOAB(rval);
+        rval = moab.delete_entities(&meshset_new_faces,1); CHKERRQ_MOAB(rval);
+      }
+
       if(nb_nodes_merged == nb_nodes_merged_0) break;
 
     }
 
-    out_tets.merge(subtract(tets,surf_tets));
+    out_tets.merge(proc_tets);
 
     PetscFunctionReturn(0);
   }
