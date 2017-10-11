@@ -224,7 +224,7 @@ int main(int argc, char *argv[]) {
     EntityHandle meshset_new_merged;
     rval = moab.create_meshset(MESHSET_SET,meshset_new_merged); CHKERRQ_MOAB(rval);
     rval = moab.add_entities(meshset_new_merged,out_new_surf); CHKERRQ_MOAB(rval);
-    // rval = moab.add_entities(meshset_new_merged,out_new_tets); CHKERRQ_MOAB(rval);
+    rval = moab.add_entities(meshset_new_merged,out_new_tets); CHKERRQ_MOAB(rval);
     rval = moab.write_file("out_new_merged.vtk","VTK","",&meshset_new_merged,1); CHKERRQ_MOAB(rval);
 
     // BitRefLevel bit_level3;
