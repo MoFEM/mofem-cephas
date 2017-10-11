@@ -66,6 +66,9 @@ namespace MoFEM {
 
   CutMeshInterface::CutMeshInterface(const MoFEM::Core &core):
   cOre(const_cast<MoFEM::Core&>(core)) {
+    lineSearchSteps = 3;
+    nbMaxMergingCycles = 200;
+    nbMaxTrimSearchIterations = 20;
   }
 
   PetscErrorCode CutMeshInterface::setSurface(const Range &surface) {
@@ -606,16 +609,18 @@ namespace MoFEM {
       EntityHandle rootSetSurf;
       VectorDouble3 S0;
       VectorDouble3 rAY;
+      double aveLength;
       double pointOut[3];
       VectorAdaptor vecPointOut;
       CloasestPointProjection(
         boost::shared_ptr<OrientedBoxTreeTool>& tree,EntityHandle root_set,
-        VectorDouble3& s0,VectorDouble3& ray
+        VectorDouble3& s0,VectorDouble3& ray,double ave_length
       ):
       treeSurfPtr(tree),
       rootSetSurf(root_set),
       S0(s0),
       rAY(ray),
+      aveLength(ave_length),
       vecPointOut(3,ublas::shallow_array_adaptor<double>(3,&pointOut[0])) {
       }
 
@@ -634,7 +639,7 @@ namespace MoFEM {
           double s = inner_prod(rAY,w);
           S0 += s*rAY;
           // cerr << "s " << ii << " " << s << " " << norm_2(w) << endl;
-          if(s<tol) break;
+          if(s/aveLength<tol) break;
         }
         return S0;
       }
@@ -696,14 +701,18 @@ namespace MoFEM {
           // move mid node in reference to node 0
           trimed_end = s0;
           ray = s1-trimed_end;
-          itersection_point = CloasestPointProjection(treeSurfPtr,rootSetSurf,trimed_end,ray)(20,tol);
+          itersection_point = CloasestPointProjection(
+            treeSurfPtr,rootSetSurf,trimed_end,ray,aveLength
+          )(nbMaxTrimSearchIterations,tol);
           ray = itersection_point-trimed_end;
           dist = norm_2(ray);
         } else {
           // move node in reference to node 1
           trimed_end = s1;
           ray = s0-trimed_end;
-          itersection_point = CloasestPointProjection(treeSurfPtr,rootSetSurf,trimed_end,ray)(20,tol);
+          itersection_point = CloasestPointProjection(
+            treeSurfPtr,rootSetSurf,trimed_end,ray,aveLength
+          )(nbMaxTrimSearchIterations,tol);
           ray = itersection_point-trimed_end;
           dist = norm_2(ray);
         }
@@ -969,7 +978,7 @@ namespace MoFEM {
         int line_search = 0;
         bool add_child;
         if(vert_type[0]!=SURFACE&&vert_type[1]!=SURFACE) {
-          line_search = 10;
+          line_search = lineSearchSteps;
           add_child = false;
         } else {
           add_child = true;
@@ -999,7 +1008,7 @@ namespace MoFEM {
       }
     }
 
-    for(int pp = 0;pp!=200;pp++) {
+    for(int pp = 0;pp!=nbMaxMergingCycles;pp++) {
 
       int nb_nodes_merged_0 = nb_nodes_merged;
 
@@ -1051,7 +1060,7 @@ namespace MoFEM {
         }
         int line_search = 0;
         if(vert_type[0]!=FIX&&vert_type[1]!=FIX) {
-          line_search = 10;
+          line_search = lineSearchSteps;
         }
         EntityHandle father,mother;
         if(vert_type[0]==FIX) {
@@ -1140,7 +1149,7 @@ namespace MoFEM {
         }
         int line_search = 0;
         if(vert_type[0]!=FIX&&vert_type[1]!=FIX) {
-          line_search = 10;
+          line_search = lineSearchSteps;
         }
         EntityHandle father,mother;
         if(vert_type[0]==FIX) {

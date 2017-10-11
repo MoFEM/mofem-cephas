@@ -34,7 +34,41 @@ namespace MoFEM {
 
     MoFEM::Core& cOre;
     CutMeshInterface(const MoFEM::Core &core);
-    ~CutMeshInterface() {}
+    ~CutMeshInterface() {
+    }
+
+    int lineSearchSteps;
+    int nbMaxMergingCycles;
+    int nbMaxTrimSearchIterations;
+
+    /**
+     * \brief Get options from command line
+     * @return error cdoe
+     */
+    PetscErrorCode getOptions() {
+      PetscFunctionBegin;
+      ierr = PetscOptionsBegin(
+        PETSC_COMM_WORLD,"",
+        "MOFEM Cut mesh options","none"
+      ); CHKERRQ(ierr);
+      ierr = PetscOptionsInt(
+        "-cut_lineserach_steps",
+        "number of bisection steps wich line search do to find optimal merged nodes position","",
+        lineSearchSteps,&lineSearchSteps,PETSC_NULL
+      ); CHKERRQ(ierr);
+      ierr = PetscOptionsInt(
+        "-cut_max_merging_cycles",
+        "number of maximal merging cycles","",
+        nbMaxMergingCycles,&nbMaxMergingCycles,PETSC_NULL
+      ); CHKERRQ(ierr);
+      ierr = PetscOptionsInt(
+        "-cut_max_trim_iterations",
+        "number of maximal merging cycles","",
+        nbMaxTrimSearchIterations,&nbMaxTrimSearchIterations,PETSC_NULL
+      ); CHKERRQ(ierr);
+      ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+      PetscFunctionReturn(0);
+    }
 
     /**
      * \brief set surface entities
