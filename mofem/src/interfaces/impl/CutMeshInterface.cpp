@@ -139,7 +139,7 @@ namespace MoFEM {
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode CutMeshInterface::mergeVolume(const Range &volume)  {
+  PetscErrorCode CutMeshInterface::mergeVolumes(const Range &volume)  {
     PetscFunctionBegin;
     vOlume.merge(volume);
     PetscFunctionReturn(0);
@@ -804,13 +804,13 @@ namespace MoFEM {
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode CutMeshInterface::splitTrimSides(
-    const BitRefLevel split_bit,
+  PetscErrorCode CutMeshInterface::splitMergedSides(
+    const BitRefLevel merged_bit,
     const BitRefLevel bit,
     Tag th
   ) {
     PetscFunctionBegin;
-    ierr = splitSides(split_bit,bit,getNewTrimSurfaces(),th); CHKERRQ(ierr);
+    ierr = splitSides(merged_bit,bit,getMergedSurfaces(),th); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
@@ -818,8 +818,10 @@ namespace MoFEM {
     const int fraction_level,
     const Range& tets,const Range& surface,
     const Range& fixed_edges,const Range& corner_nodes,
-    Tag th_quality,Tag th_position,
-    Range& out_tets,Range& new_surf
+    Tag th,
+    Range& out_tets,Range& new_surf,
+    const bool update_meshsets,
+    const BitRefLevel *bit_ptr
   ) {
     MoFEM::Interface &m_field = cOre;
     moab::Interface &moab = m_field.get_moab();
@@ -833,17 +835,18 @@ namespace MoFEM {
       const bool onlyIfImproveQuality;
       const int lineSearch;
       Tag tH;
+      bool updateMehsets;
 
       MergeNodes(
         MoFEM::Interface& m_field,
         const bool only_if_improve_quality,
         const int line_search,
-        Tag th
+        Tag th,bool update_mehsets
       ):
       mField(m_field),
       onlyIfImproveQuality(only_if_improve_quality),
       lineSearch(line_search),
-      tH(th) {
+      tH(th),updateMehsets(update_mehsets) {
         mField.query_interface(nodeMergerPtr);
       }
       NodeMergerInterface *nodeMergerPtr;
@@ -895,6 +898,21 @@ namespace MoFEM {
           }
           not_merged_edges.merge(child_edge_ents);
           edges_to_merge = subtract(edges_to_merge,not_merged_edges);
+
+          if(updateMehsets) {
+            for(_IT_CUBITMESHSETS_FOR_LOOP_(mField,cubit_it)) {
+              EntityHandle cubit_meshset = cubit_it->meshset;
+              Range parent_ents;
+              rval = moab.get_entities_by_handle(cubit_meshset,parent_ents,true); CHKERRQ_MOAB(rval);
+              for(Range::iterator eit = parent_ents.begin();eit!=parent_ents.end();eit++) {
+                NodeMergerInterface::ParentChildMap::nth_index<0>::type::iterator
+                it = parent_child_map.get<0>().find(*eit);
+                if(it==parent_child_map.get<0>().end()) continue;
+                rval = moab.add_entities(cubit_meshset,&it->cHild,1); CHKERRQ_MOAB(rval);
+              }
+            }
+          }
+
         }
         PetscFunctionReturn(0);
       }
@@ -1139,6 +1157,10 @@ namespace MoFEM {
     Range proc_tets;
     ierr = Toplogy(m_field).getProcTets(tets,edges_to_merge,proc_tets); CHKERRQ(ierr);
     out_tets = subtract(tets,proc_tets);
+    if(bit_ptr) {
+      ierr = m_field.query_interface<BitRefManager>()
+      ->addBitRefLevel(out_tets,*bit_ptr); CHKERRQ(ierr);
+    }
 
     int nb_nodes_merged = 0;
     std::map<double,EntityHandle> length_map;
@@ -1148,7 +1170,7 @@ namespace MoFEM {
 
       int nb_nodes_merged_0 = nb_nodes_merged;
       length_map.clear();
-      ierr = LengthMap(m_field,th_position,edges_to_merge)(length_map); CHKERRQ(ierr);
+      ierr = LengthMap(m_field,th,edges_to_merge)(length_map); CHKERRQ(ierr);
 
       int nn = 0;
       Range collapsed_edges;
@@ -1188,7 +1210,7 @@ namespace MoFEM {
         if(type_father==type_mother) {
           line_search = lineSearchSteps;
         }
-        ierr = MergeNodes(m_field,true,line_search,th_position)(
+        ierr = MergeNodes(m_field,true,line_search,th,update_meshsets)(
           father,mother,proc_tets,new_surf,edges_to_merge,not_merged_edges
         ); CHKERRQ(ierr);
         if(m_field.query_interface<NodeMergerInterface>()->getSucessMerge()) {
@@ -1196,9 +1218,11 @@ namespace MoFEM {
           rval = moab.get_adjacencies(conn,2,1,false,adj_edges,moab::Interface::UNION); CHKERRQ_MOAB(rval);
           std::map<double,EntityHandle>::iterator miit = mit;
           if((++miit)!=length_map.end()) {
-            for(;miit!=length_map.end();miit++) {
+            std::map<double,EntityHandle> tmp_length_map = length_map;
+            miit = tmp_length_map.find(miit->first);
+            for(;miit!=tmp_length_map.end();miit++) {
               if(adj_edges.find(miit->second)!=adj_edges.end()) {
-                length_map.erase(miit);
+                length_map.erase(miit->first);
               }
             }
           }
@@ -1231,8 +1255,40 @@ namespace MoFEM {
 
     }
 
+    if(bit_ptr) {
+      ierr = m_field.query_interface<BitRefManager>()->
+      setBitRefLevel(proc_tets,*bit_ptr); CHKERRQ(ierr);
+    }
     out_tets.merge(proc_tets);
 
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode CutMeshInterface::mergeBadEdges(
+    const int fraction_level,
+    const BitRefLevel merged_bit,
+    const BitRefLevel bit,
+    const Range& surface,
+    const Range& fixed_edges,
+    const Range& corner_nodes,
+    Tag th
+  ) {
+    MoFEM::Interface &m_field = cOre;
+    PetscFunctionBegin;
+    Range tets_level;
+    ierr = m_field.get_entities_by_type_and_ref_level(
+      merged_bit,BitRefLevel().set(),MBTET,tets_level
+    ); CHKERRQ(ierr);
+    Range out_new_tets,out_new_surf;
+    ierr = mergeBadEdges(
+      fraction_level,
+      tets_level,surface,
+      fixed_edges,corner_nodes,
+      th,out_new_tets,out_new_surf,
+      true,&bit
+    ); CHKERRQ(ierr);
+    mergedVolumes.swap(out_new_tets);
+    mergedSurfaces.swap(out_new_surf);
     PetscFunctionReturn(0);
   }
 

@@ -109,7 +109,7 @@ namespace MoFEM {
      * @param  volume entities which going to be added
      * @return         error code
      */
-    PetscErrorCode mergeVolume(const Range &volume);
+    PetscErrorCode mergeVolumes(const Range &volume);
 
     /**
      * \brief build tree
@@ -186,13 +186,13 @@ namespace MoFEM {
     );
 
     /**
-     * \brief split sides of trimmed surface
+     * \brief split sides of merged surface
      * @param  split_bit split bit level
      * @param  bit       bit level of split mesh
      * @return           error code
      */
-    PetscErrorCode splitTrimSides(
-      const BitRefLevel split_bit,
+    PetscErrorCode splitMergedSides(
+      const BitRefLevel merged_bit,
       const BitRefLevel bit,
       Tag th = NULL
     );
@@ -201,8 +201,20 @@ namespace MoFEM {
       const int fraction_level,
       const Range& tets,const Range& surface,
       const Range& fixed_edges,const Range& corner_nodes,
-      Tag th_quality,Tag th_position,
-      Range& out_tets,Range& new_surf
+      Tag th,
+      Range& out_tets,Range& new_surf,
+      const bool update_meshsets = false,
+      const BitRefLevel *bit_ptr = NULL
+    );
+
+    PetscErrorCode mergeBadEdges(
+      const int fraction_level,
+      const BitRefLevel merged_bit,
+      const BitRefLevel bit,
+      const Range& surface,
+      const Range& fixed_edges,
+      const Range& corner_nodes,
+      Tag th
     );
 
     /**
@@ -231,6 +243,9 @@ namespace MoFEM {
     inline const Range& getNewTrimSurfaces() const { return trimNewSurfaces; }
     inline const Range& getNewTrimVertices() const { return trimNewVertices; }
 
+    inline const Range& getMergedVolumes() const { return mergedVolumes; }
+    inline const Range& getMergedSurfaces() const { return mergedSurfaces; }
+
   private:
 
     Range sUrface;
@@ -250,8 +265,10 @@ namespace MoFEM {
     Range trimNewVolumes;
     Range trimNewVertices;
     Range trimNewSurfaces;
-
     Range trimEdges;
+
+    Range mergedVolumes;
+    Range mergedSurfaces;
 
     struct TreeData {
       double dIst;
