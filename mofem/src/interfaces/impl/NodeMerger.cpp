@@ -227,7 +227,7 @@ PetscErrorCode NodeMergerInterface::mergeNodes(
       min_quality,th
     ); CHKERRQ(ierr);
     // cerr << min_quality << " " << min_quality0 << endl;
-    // if(min_quality0>0) {
+    if(min_quality0>0) {
       if(min_quality<min_quality0) {
         Range seed_tets;
         if(tets_ptr!=NULL) {
@@ -237,7 +237,7 @@ PetscErrorCode NodeMergerInterface::mergeNodes(
         successMerge = false;
         PetscFunctionReturn(0);
       }
-    // }
+    }
   }
 
   // clear map

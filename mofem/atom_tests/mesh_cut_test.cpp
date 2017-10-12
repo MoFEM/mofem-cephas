@@ -114,11 +114,8 @@ int main(int argc, char *argv[]) {
       "QUALITY",1,MB_TYPE_DOUBLE,th_quality,MB_TAG_CREAT|MB_TAG_SPARSE,&def_quality
     ); CHKERRQ_MOAB(rval);
 
-    Range nodes;
-    rval = moab.get_entities_by_type(0,MBVERTEX,nodes); CHKERRQ_MOAB(rval);
-    std::vector<double> coords(3*nodes.size());
-    rval = moab.get_coords(nodes,&coords[0]); CHKERRQ_MOAB(rval);
-    rval = moab.tag_set_data(th,nodes,&coords[0]); CHKERRQ_MOAB(rval);
+    // set tag values with coordinates of nodes
+    ierr = cut_mesh->setTagData(th); CHKERRQ(ierr);
 
     // find edges to cut
     ierr = cut_mesh->findEdgesToCut(1e-2); CHKERRQ(ierr);
@@ -129,12 +126,11 @@ int main(int argc, char *argv[]) {
     ierr = cut_mesh->findEdgesToTrim(th,1e-4); CHKERRQ(ierr);
     ierr = cut_mesh->trimEdgesInTheMiddle(bit_level2,th,1e-3); CHKERRQ(ierr);
     ierr = cut_mesh->moveMidNodesOnTrimedEdges(th); CHKERRQ(ierr);
-    ierr = cut_mesh->resetPositionTagNotOnTrimSurface(th); CHKERRQ(ierr);
 
     UpdateMeshsetsAndRanges *meshset_update;
     ierr = m_field.query_interface(meshset_update); CHKERRQ(ierr);
 
-    Range fixed_edges,/*fixed_vertices,*/corner_nodes;
+    Range fixed_edges,fixed_vertices,corner_nodes;
     if(meshset_manager->checkMeshset(100,SIDESET)) {
       EntityHandle meshset;
       ierr = meshset_manager->getMeshset(100,SIDESET,meshset); CHKERRQ(ierr);
@@ -148,7 +144,7 @@ int main(int argc, char *argv[]) {
         bit_level2,bit_level1|bit_level2,MBEDGE,edges_level2
       ); CHKERRQ(ierr);
       fixed_edges = intersect(fixed_edges,edges_level2);
-      // rval = moab.get_connectivity(fixed_edges,fixed_vertices,true); CHKERRQ_MOAB(rval);
+      rval = moab.get_connectivity(fixed_edges,fixed_vertices,true); CHKERRQ_MOAB(rval);
     }
 
     EntityHandle meshset_vol;
@@ -205,11 +201,11 @@ int main(int argc, char *argv[]) {
     rval = moab.add_entities(meshset_trim_new_surface,cut_mesh->getNewTrimSurfaces()); CHKERRQ_MOAB(rval);
     rval = moab.write_file("out_trim_new_surface.vtk","VTK","",&meshset_trim_new_surface,1); CHKERRQ_MOAB(rval);
 
-    // EntityHandle meshset_fixed_edges;
-    // rval = moab.create_meshset(MESHSET_SET,meshset_fixed_edges); CHKERRQ_MOAB(rval);
-    // rval = moab.add_entities(meshset_fixed_edges,fixed_edges); CHKERRQ_MOAB(rval);
-    // rval = moab.add_entities(meshset_fixed_edges,fixed_vertices); CHKERRQ_MOAB(rval);
-    // rval = moab.write_file("out_fixed_edges.vtk","VTK","",&meshset_fixed_edges,1); CHKERRQ_MOAB(rval);
+    EntityHandle meshset_fixed_edges;
+    rval = moab.create_meshset(MESHSET_SET,meshset_fixed_edges); CHKERRQ_MOAB(rval);
+    rval = moab.add_entities(meshset_fixed_edges,fixed_edges); CHKERRQ_MOAB(rval);
+    rval = moab.add_entities(meshset_fixed_edges,fixed_vertices); CHKERRQ_MOAB(rval);
+    rval = moab.write_file("out_fixed_edges.vtk","VTK","",&meshset_fixed_edges,1); CHKERRQ_MOAB(rval);
 
     Range tets_level2;
     ierr = m_field.get_entities_by_type_and_ref_level(
@@ -217,13 +213,16 @@ int main(int argc, char *argv[]) {
     ); CHKERRQ(ierr);
     Range out_new_tets,out_new_surf;
     ierr = cut_mesh->mergeBadEdges(
-      4,tets_level2,cut_mesh->getNewTrimSurfaces(),fixed_edges,corner_nodes,
+      2,tets_level2,cut_mesh->getNewTrimSurfaces(),fixed_edges,corner_nodes,
       th_quality,th,out_new_tets,out_new_surf
     ); CHKERRQ(ierr);
 
+    // set coordinates for tag data
+    ierr = cut_mesh->setCoords(th); CHKERRQ(ierr);
+
     EntityHandle meshset_new_merged;
     rval = moab.create_meshset(MESHSET_SET,meshset_new_merged); CHKERRQ_MOAB(rval);
-    rval = moab.add_entities(meshset_new_merged,out_new_surf); CHKERRQ_MOAB(rval);
+    // rval = moab.add_entities(meshset_new_merged,out_new_surf); CHKERRQ_MOAB(rval);
     rval = moab.add_entities(meshset_new_merged,out_new_tets); CHKERRQ_MOAB(rval);
     rval = moab.write_file("out_new_merged.vtk","VTK","",&meshset_new_merged,1); CHKERRQ_MOAB(rval);
 

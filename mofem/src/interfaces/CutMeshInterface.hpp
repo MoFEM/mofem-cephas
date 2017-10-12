@@ -172,16 +172,6 @@ namespace MoFEM {
     PetscErrorCode moveMidNodesOnTrimedEdges(Tag th = NULL);
 
     /**
-     * \brief Reset position Tag
-     *
-     * If node is not on the trimed surface reset its possition tag
-     *
-     * @param  th tag handle
-     * @return    error code
-     */
-    PetscErrorCode resetPositionTagNotOnTrimSurface(Tag th);
-
-    /**
      * \brief split sides
      * @param  split_bit split bit level
      * @param  bit       bit level of split mesh
@@ -214,6 +204,20 @@ namespace MoFEM {
       Tag th_quality,Tag th_position,
       Range& out_tets,Range& new_surf
     );
+
+    /**
+     * \brief set coords to tag
+     * @param  th tag handle
+     * @return    error code
+     */
+    PetscErrorCode setTagData(Tag th);
+
+    /**
+     * \brief set coords from tag
+     * @param  th tag handle
+     * @return    error code
+     */
+    PetscErrorCode setCoords(Tag th);
 
     inline const Range& getCutEdges() const { return cutEdges; }
     inline const Range& getCutVolumes() const { return cutVolumes; }
