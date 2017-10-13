@@ -62,7 +62,7 @@ static inline double determinant(T &t) {
 
 template<class T>
 static double volume_length_quality(T *coords) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   T lrms = 0;
   for(int dd = 0;dd!=3;dd++) {
     lrms +=
@@ -92,25 +92,25 @@ static double volume_length_quality(T *coords) {
 }
 
 PetscErrorCode NodeMergerInterface::queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   *iface = NULL;
   if(uuid == IDD_MOFEMNodeMerger) {
     *iface = dynamic_cast<NodeMergerInterface*>(this);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
   if(uuid == IDD_MOFEMUnknown) {
     *iface = dynamic_cast<UnknownInterface*>(this);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
   SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown interface");
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode NodeMergerInterface::edgeMinQuality(
   EntityHandle edge,const Range *tets_ptr,double &min_quality,Tag th
 ) {
   MoFEM::Interface& m_field = cOre;
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   Range adj_edge_tets;
   rval = m_field.get_moab().get_adjacencies(&edge,1,3,false,adj_edge_tets); CHKERRQ_MOAB(rval);
   if(tets_ptr!=NULL) {
@@ -118,7 +118,7 @@ PetscErrorCode NodeMergerInterface::edgeMinQuality(
     adj_edge_tets.swap(adj);
   }
   ierr = minQuality(adj_edge_tets,0,0,NULL,min_quality,th); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode NodeMergerInterface::mergeNodes(
@@ -132,7 +132,7 @@ PetscErrorCode NodeMergerInterface::mergeNodes(
   Tag th,int verb
 ) {
   MoFEM::Interface& m_field = cOre;
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   // Get adges adjacent to father and mother, i.e. mother is merged to father.
   Range father_edges;
@@ -170,7 +170,7 @@ PetscErrorCode NodeMergerInterface::mergeNodes(
     }
     out_tets = seed_tets;
     successMerge = false;
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   // Common edge tets, that tests will be squashed
@@ -233,9 +233,9 @@ PetscErrorCode NodeMergerInterface::mergeNodes(
         if(tets_ptr!=NULL) {
           seed_tets.merge(*tets_ptr);
         }
-        out_tets = seed_tets;
+        out_tets.swap(seed_tets);
         successMerge = false;
-        PetscFunctionReturn(0);
+        MoFEMFunctionReturnHot(0);
       }
     }
   }
@@ -392,11 +392,10 @@ PetscErrorCode NodeMergerInterface::mergeNodes(
   if(tets_ptr!=NULL) {
     seed_tets.merge(*tets_ptr);
   }
-  seed_tets = subtract(seed_tets,mother_tets);
-  seed_tets = subtract(seed_tets,edge_tets);
+  seed_tets = subtract(seed_tets,unite(mother_tets,edge_tets));
   seed_tets.merge(created_tets);
 
-  out_tets = seed_tets;
+  out_tets.swap(seed_tets);
 
   successMerge = true;
 
@@ -404,7 +403,7 @@ PetscErrorCode NodeMergerInterface::mergeNodes(
     std::cout << "nodes merged" << endl;
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode NodeMergerInterface::minQuality(
@@ -418,7 +417,7 @@ PetscErrorCode NodeMergerInterface::minQuality(
   MoFEM::Interface& m_field = cOre;
 
   double coords[12];
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   for(Range::iterator tit = check_tests.begin();tit!=check_tests.end();tit++) {
     const EntityHandle* conn;
     int num_nodes;
@@ -468,7 +467,7 @@ PetscErrorCode NodeMergerInterface::minQuality(
     double quality = volume_length_quality(coords);
     min_quality = fmin(min_quality,quality);
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 };
 
 PetscErrorCode NodeMergerInterface::lineSearch(
@@ -480,7 +479,7 @@ PetscErrorCode NodeMergerInterface::lineSearch(
   Tag th
 ) {
   MoFEM::Interface& m_field = cOre;
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   EntityHandle conn[] = { father,mother };
 
@@ -547,7 +546,7 @@ PetscErrorCode NodeMergerInterface::lineSearch(
   coords_move[1] = t_move(1);
   coords_move[2] = t_move(2);
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 
@@ -560,13 +559,13 @@ PetscErrorCode NodeMergerInterface::mergeNodes(
   const double move,Tag th
 ) {
   MoFEM::Interface& m_field = cOre;
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   Range out_tets;
   ierr = mergeNodes(
     father,mother,out_tets,tets_ptr,only_if_improve_quality,move,0,th
   ); CHKERRQ(ierr);
   ierr = m_field.query_interface<BitRefManager>()->setBitRefLevel(out_tets,bit); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode NodeMergerInterface::mergeNodes(
@@ -578,13 +577,13 @@ PetscErrorCode NodeMergerInterface::mergeNodes(
   const double move,Tag th
 ) {
   MoFEM::Interface& m_field = cOre;
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   Range level_tets;
   ierr = m_field.get_entities_by_type_and_ref_level(
     tets_from_bit_ref_level,BitRefLevel().set(),MBTET,level_tets
   ); CHKERRQ(ierr);
   ierr = mergeNodes(father,mother,bit,&level_tets,only_if_improve_quality,move,th); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 

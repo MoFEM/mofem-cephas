@@ -52,22 +52,22 @@
 namespace MoFEM {
 
   PetscErrorCode BitLevelCoupler::queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     *iface = NULL;
     if(uuid == IDD_MOFEMBitLevelCoupler) {
       *iface = dynamic_cast<BitLevelCoupler*>(this);
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
     if(uuid == IDD_MOFEMUnknown) {
       *iface = dynamic_cast<UnknownInterface*>(this);
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown interface");
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode BitLevelCoupler::buildTree(const BitRefLevel &parent_level,int verb) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     MoFEM::Interface& m_field = cOre;
     treePtr.reset(new AdaptiveKDTree(&m_field.get_moab()));
     Range tets;
@@ -78,14 +78,14 @@ namespace MoFEM {
     if(verb > 2) {
       rval = treePtr->print(); CHKERRQ_MOAB(rval);
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode BitLevelCoupler::resetTree(const BitRefLevel &parent_level,int verb) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     treePtr->reset_tree();
     treePtr.reset();
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode BitLevelCoupler::getParent(
@@ -96,7 +96,7 @@ namespace MoFEM {
     const double inside_tol,
     int verb
   ) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     MoFEM::Interface& m_field = cOre;
     EntityHandle leaf_out;
     rval = treePtr->point_search(coords,leaf_out,iter_tol,inside_tol); CHKERRQ_MOAB(rval);
@@ -121,74 +121,74 @@ namespace MoFEM {
           if(fabs(N[0]-1) < inside_tol && fabs(N[1])<inside_tol && fabs(N[2])<inside_tol && fabs(N[3])<inside_tol) {
             if(verb>1) std::cout << "node 0 found " << std::endl;
             rval = m_field.get_moab().side_element(*tit,0,0,parent); CHKERRQ_MOAB(rval);
-            PetscFunctionReturn(0);
+            MoFEMFunctionReturnHot(0);
           }
           if(fabs(N[0]) < inside_tol && fabs(N[1]-1)<inside_tol && fabs(N[2])<inside_tol && fabs(N[3])<inside_tol) {
             if(verb>1) std::cout << "node 1 found " << std::endl;
             rval = m_field.get_moab().side_element(*tit,0,1,parent); CHKERRQ_MOAB(rval);
-            PetscFunctionReturn(0);
+            MoFEMFunctionReturnHot(0);
           }
           if(fabs(N[0]) < inside_tol && fabs(N[1])<inside_tol && fabs(N[2]-2)<inside_tol && fabs(N[3])<inside_tol) {
             if(verb>1) std::cout << "node 2 found " << std::endl;
             rval = m_field.get_moab().side_element(*tit,0,2,parent); CHKERRQ_MOAB(rval);
-            PetscFunctionReturn(0);
+            MoFEMFunctionReturnHot(0);
           }
           if(fabs(N[0]) < inside_tol && fabs(N[1])<inside_tol && fabs(N[2])<inside_tol && fabs(N[3]-1)<inside_tol) {
             if(verb>1) std::cout << "node 3 found " << std::endl;
             rval = m_field.get_moab().side_element(*tit,0,3,parent); CHKERRQ_MOAB(rval);
-            PetscFunctionReturn(0);
+            MoFEMFunctionReturnHot(0);
           }
           //edges
           if(fabs(N[0])>inside_tol && fabs(N[1])>inside_tol && fabs(N[2])<inside_tol && fabs(N[3])<inside_tol) {
             if(verb>1) std::cout << "edge 0 found " << std::endl;
             rval = m_field.get_moab().side_element(*tit,1,0,parent); CHKERRQ_MOAB(rval);
-            PetscFunctionReturn(0);
+            MoFEMFunctionReturnHot(0);
           }
           if(fabs(N[0])<inside_tol && fabs(N[1])>inside_tol && fabs(N[2])>inside_tol && fabs(N[3])<inside_tol) {
             if(verb>1) std::cout << "edge 1 found " << std::endl;
             rval = m_field.get_moab().side_element(*tit,1,1,parent); CHKERRQ_MOAB(rval);
-            PetscFunctionReturn(0);
+            MoFEMFunctionReturnHot(0);
           }
           if(fabs(N[0])>inside_tol && fabs(N[1])<inside_tol && fabs(N[2])>inside_tol && fabs(N[3])<inside_tol) {
             if(verb>1) std::cout << "edge 2 found " << std::endl;
             rval = m_field.get_moab().side_element(*tit,1,2,parent); CHKERRQ_MOAB(rval);
-            PetscFunctionReturn(0);
+            MoFEMFunctionReturnHot(0);
           }
           if(fabs(N[0])>inside_tol && fabs(N[1])<inside_tol && fabs(N[2])<inside_tol && fabs(N[3])>inside_tol) {
             if(verb>1) std::cout << "edge 3 found " << std::endl;
             rval = m_field.get_moab().side_element(*tit,1,3,parent); CHKERRQ_MOAB(rval);
-            PetscFunctionReturn(0);
+            MoFEMFunctionReturnHot(0);
           }
           if(fabs(N[0])<inside_tol && fabs(N[1])>inside_tol && fabs(N[2])<inside_tol && fabs(N[3])>inside_tol) {
             if(verb>1) std::cout << "edge 4 found " << std::endl;
             rval = m_field.get_moab().side_element(*tit,1,4,parent); CHKERRQ_MOAB(rval);
-            PetscFunctionReturn(0);
+            MoFEMFunctionReturnHot(0);
           }
           if(fabs(N[0])<inside_tol && fabs(N[1])<inside_tol && fabs(N[2])>inside_tol && fabs(N[3])>inside_tol) {
             if(verb>1) std::cout << "edge 5 found " << std::endl;
             rval = m_field.get_moab().side_element(*tit,1,5,parent); CHKERRQ_MOAB(rval);
-            PetscFunctionReturn(0);
+            MoFEMFunctionReturnHot(0);
           }
           //faces
           if(fabs(N[0])>inside_tol && fabs(N[1])>inside_tol && fabs(N[2])<inside_tol && fabs(N[3])>inside_tol) {
             if(verb>1) std::cout << "face 0 found " << std::endl;
             rval = m_field.get_moab().side_element(*tit,2,0,parent); CHKERRQ_MOAB(rval);
-            PetscFunctionReturn(0);
+            MoFEMFunctionReturnHot(0);
           }
           if(fabs(N[0])<inside_tol && fabs(N[1])>inside_tol && fabs(N[2])>inside_tol && fabs(N[3])>inside_tol) {
             if(verb>1) std::cout << "face 1 found " << std::endl;
             rval = m_field.get_moab().side_element(*tit,2,1,parent); CHKERRQ_MOAB(rval);
-            PetscFunctionReturn(0);
+            MoFEMFunctionReturnHot(0);
           }
           if(fabs(N[0])>inside_tol && fabs(N[1])<inside_tol && fabs(N[2])>inside_tol && fabs(N[3])>inside_tol) {
             if(verb>1) std::cout << "face 2 found " << std::endl;
             rval = m_field.get_moab().side_element(*tit,2,2,parent); CHKERRQ_MOAB(rval);
-            PetscFunctionReturn(0);
+            MoFEMFunctionReturnHot(0);
           }
           if(fabs(N[0])>inside_tol && fabs(N[1])>inside_tol && fabs(N[2])>inside_tol && fabs(N[3])<inside_tol) {
             if(verb>1) std::cout << "face 3 found " << std::endl;
             rval = m_field.get_moab().side_element(*tit,2,2,parent); CHKERRQ_MOAB(rval);
-            PetscFunctionReturn(0);
+            MoFEMFunctionReturnHot(0);
           }
           //set parent
           if(parent!=0) {
@@ -200,14 +200,14 @@ namespace MoFEM {
         break;
       }
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode BitLevelCoupler::buidlAdjacenciesVerticesOnTets(
     const BitRefLevel &parent_level,Range &children,
     bool vertex_elements,const double iter_tol,const double inside_tol,bool throw_error,int verb
   ) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     MoFEM::Interface& m_field = cOre;
     //build Tree
     bool init_tree = false;
@@ -265,13 +265,13 @@ namespace MoFEM {
       if(init_tree) {
         treePtr->reset_tree();
       }
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   PetscErrorCode BitLevelCoupler::buidlAdjacenciesEdgesFacesVolumes(
       const BitRefLevel &parent_level,Range &children,bool elements,int verb
     ) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
       if(verb>2) std::cout << children << std::endl;
 
@@ -372,11 +372,11 @@ namespace MoFEM {
 
       }
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     PetscErrorCode BitLevelCoupler::chanegParent(RefEntity_multiIndex::iterator it,EntityHandle parent,bool element) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
       MoFEM::Interface& m_field = cOre;
       const RefEntity_multiIndex *refined_ptr;
@@ -414,11 +414,11 @@ namespace MoFEM {
       }
 
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     PetscErrorCode BitLevelCoupler::resetParents(Range &children,bool elements,int verb) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
       MoFEM::Interface& m_field = cOre;
 
@@ -440,23 +440,23 @@ namespace MoFEM {
 
       }
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     PetscErrorCode BitLevelCoupler::verifyParent(RefEntity_multiIndex::iterator it,EntityHandle parent) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
       if(parent != (*it)->getParentEnt()) {
         SETERRQ3(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency %lu != %lu for ent %lu",
         parent,(*it)->getParentEnt(),(*it)->getRefEnt());
       }
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     PetscErrorCode BitLevelCoupler::getLocCoordsOnTet(EntityHandle tet,const double *glob_coords,int verb) {
       MoFEM::Interface& m_field = cOre;
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
       int num_nodes;
       rval = m_field.get_moab().get_connectivity(tet,cOnn,num_nodes,true); CHKERRQ_MOAB(rval);
@@ -480,7 +480,7 @@ namespace MoFEM {
         std::cout << "N " << N[0] << " " << N[1] << " " << N[2] << " " << N[3] << std::endl;
       }
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     PetscErrorCode BitLevelCoupler::copyFieldDataFromParentToChildren(
@@ -490,7 +490,7 @@ namespace MoFEM {
     ) {
       MoFEM::Interface& m_field = cOre;
       moab::Interface& moab = m_field.get_moab();
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
       if(parents.size()!=children.size()) {
         SETERRQ2(
@@ -572,7 +572,7 @@ namespace MoFEM {
         }
       }
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     PetscErrorCode BitLevelCoupler::copyFieldDataFromParentToChildren(
@@ -580,7 +580,7 @@ namespace MoFEM {
     ) {
       MoFEM::Interface& m_field = cOre;
       //moab::Interface& moab = m_field.get_moab();
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       Range ents;
       ierr = m_field.get_entities_by_ref_level(bit,mask,ents); CHKERRQ(ierr);
       std::vector<EntityHandle> parents;
@@ -593,7 +593,7 @@ namespace MoFEM {
         }
       }
       ierr = copyFieldDataFromParentToChildren(parents,children,verify); CHKERRQ(ierr);
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   }

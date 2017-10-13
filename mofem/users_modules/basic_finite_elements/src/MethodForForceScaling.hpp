@@ -24,21 +24,21 @@ struct MethodForForceScaling {
 
   virtual PetscErrorCode scaleNf(const FEMethod *fe,VectorDouble& Nf) = 0;
   virtual PetscErrorCode getForceScale(const double ts_t,double& scale) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   static PetscErrorCode applyScale(
     const FEMethod *fe,
     boost::ptr_vector<MethodForForceScaling> &methodsOp,VectorDouble &Nf) {
       
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       boost::ptr_vector<MethodForForceScaling>::iterator vit = methodsOp.begin();
       for(;vit!=methodsOp.end();vit++) {
         ierr = vit->scaleNf(fe,Nf); CHKERRQ(ierr);
       }
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     virtual ~MethodForForceScaling() {}

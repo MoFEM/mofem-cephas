@@ -312,7 +312,7 @@ add entities to those on which given field is spanning.
 \code{.cpp}
 PetscErrorCode MixTransport::MixTransportElement::addFields(const std::string &values,const std::string &fluxes,const int order) {
   
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   //Fields
   ierr = mField.add_field(fluxes,HDIV,DEMKOWICZ_JACOBI_BASE,1); CHKERRQ(ierr);
   ierr = mField.add_field(values,L2,AINSWORTH_LEGENDRE_BASE,1); CHKERRQ(ierr);
@@ -324,7 +324,7 @@ PetscErrorCode MixTransport::MixTransportElement::addFields(const std::string &v
   ierr = mField.set_field_order(root_set,MBTET,fluxes,order+1); CHKERRQ(ierr);
   ierr = mField.set_field_order(root_set,MBTRI,fluxes,order+1); CHKERRQ(ierr);
   ierr = mField.set_field_order(root_set,MBTET,values,order); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 \endcode
 
@@ -376,7 +376,7 @@ PetscErrorCode MixTransport::MixTransportElement::addFiniteElements(
   const std::string &values_name,
   const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS"
 ) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   
   
@@ -464,7 +464,7 @@ PetscErrorCode MixTransport::MixTransportElement::addFiniteElements(
     ierr = mField.modify_finite_element_add_field_data("MIX_BCFLUX",mesh_nodals_positions); CHKERRQ(ierr);
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 \endcode
 
@@ -516,7 +516,7 @@ MIX_BCVALUE and \e MIX_BCFLUX
 PetscErrorCode ExampleMix::addBoundaryElements(BitRefLevel &ref_level) {
   MoAB
   
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   Range tets;
   ierr = mField.get_entities_by_type_and_ref_level(ref_level,BitRefLevel().set(),MBTET,tets);
   Skinner skin(&mField.get_moab());
@@ -549,7 +549,7 @@ PetscErrorCode ExampleMix::addBoundaryElements(BitRefLevel &ref_level) {
   ierr = mField.add_ents_to_finite_element_by_type(essential_bc,MBTRI,"MIX_BCFLUX"); CHKERRQ(ierr);
   ierr = mField.add_ents_to_finite_element_by_type(natural_bc,MBTRI,"MIX_BCVALUE"); CHKERRQ(ierr);
   // ierr = mField.add_ents_to_finite_element_by_type(skin_faces,MBTRI,"MIX_BCVALUE"); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 \endcode
 
@@ -569,9 +569,9 @@ PetscErrorCode ExampleMix::getBcOnValues(
   const EntityHandle ent,
   const double x,const double y,const double z,
   double &value) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   value = 0;
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 \endcode
 and
@@ -580,7 +580,7 @@ PetscErrorCode ExampleMix::getBcOnFluxes(
   const EntityHandle ent,
   const double x,const double y,const double z,
   double &flux) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   if(lastEnt==ent) {
     flux = lastFlux;
   } else {
@@ -594,7 +594,7 @@ PetscErrorCode ExampleMix::getBcOnFluxes(
     lastEnt = ent;
     lastFlux = flux;
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 \endcode
 are implemented. Those functions are used to evaluate values and boundary
@@ -622,7 +622,7 @@ calculations, matrices and vectors are distributed.
 \code{.cpp}
 PetscErrorCode MixTransport::MixTransportElement::buildProblem(BitRefLevel &ref_level) {
   
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   //build field
   ierr = mField.build_fields(); CHKERRQ(ierr);
   // get tetrahedrons which has been build previously and now in so called garbage bit level
@@ -680,7 +680,7 @@ PetscErrorCode MixTransport::MixTransportElement::buildProblem(BitRefLevel &ref_
   ierr = prb_mng_ptr->partitionFiniteElements("MIX"); CHKERRQ(ierr);
   //what are ghost nodes, see Petsc Manual
   ierr = prb_mng_ptr->partitionGhostDofs("MIX"); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 \endcode
 
@@ -750,12 +750,12 @@ Functions and use of below code was explained earlier in \ref minimal_surface_eq
 \code
 PetscErrorCode MixTransport::MixTransportElement::createMatrices() {
   
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   ierr = mField.MatCreateMPIAIJWithArrays("MIX",&Aij); CHKERRQ(ierr);
   ierr = mField.query_interface<VecManager>()->vecCreateGhost("MIX",COL,&D); CHKERRQ(ierr);
   ierr = mField.query_interface<VecManager>()->vecCreateGhost("MIX",COL,&D0); CHKERRQ(ierr);
   ierr = mField.query_interface<VecManager>()->vecCreateGhost("MIX",ROW,&F); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 \endcode
 
@@ -829,9 +829,9 @@ The function
 \code{.cpp}
 PetscErrorCode MixTransport::MixTransportElement::solveLinearProblem() {
     
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     \\ Code inside
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
  }
 \endcode
 can be divided into several stages. First, we will focus on the
@@ -1069,11 +1069,11 @@ struct MixTransport::MixTransportElement::OpVDivSigma_L2Hdiv: public MoFEM::Volu
     DataForcesAndSourcesCore::EntData &col_data
   ) {
     
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     int nb_row = row_data.getFieldData().size();
     int nb_col = col_data.getFieldData().size();
-    if(nb_row==0) PetscFunctionReturn(0);
-    if(nb_col==0) PetscFunctionReturn(0);
+    if(nb_row==0) MoFEMFunctionReturnHot(0);
+    if(nb_col==0) MoFEMFunctionReturnHot(0);
     C.resize(nb_row,nb_col);
     C.clear();
     divVec.resize(nb_row,false);
@@ -1091,7 +1091,7 @@ struct MixTransport::MixTransportElement::OpVDivSigma_L2Hdiv: public MoFEM::Volu
       nb_col,&col_data.getIndices()[0],
       &C(0,0),ADD_VALUES
     ); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 };
 
@@ -1214,8 +1214,8 @@ struct MixTransport::MixTransportElement::OpRhsBcOnValues: public MoFEM::FaceEle
   VectorDouble Nf;
   PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
     
-    PetscFunctionBegin;
-    if(data.getFieldData().size()==0) PetscFunctionReturn(0);
+    MoFEMFunctionBeginHot;
+    if(data.getFieldData().size()==0) MoFEMFunctionReturnHot(0);
     Nf.resize(data.getIndices().size());
     Nf.clear();
     int nb_gauss_pts = data.getHdivN().size1();
@@ -1229,7 +1229,7 @@ struct MixTransport::MixTransportElement::OpRhsBcOnValues: public MoFEM::FaceEle
       noalias(Nf) += w*prod(data.getHdivN(gg),getNormal())*value;
     }
     ierr = VecSetValues(F,data.getIndices().size(),&data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 };
 \endcode
@@ -1405,7 +1405,7 @@ Function evaluating error is implemented as follows
 \code
 PetscErrorCode MixTransport::MixTransportElement::evaluateError() {
   
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   errorMap.clear();
   sumErrorFlux = 0;
   sumErrorDiv = 0;
@@ -1426,7 +1426,7 @@ PetscErrorCode MixTransport::MixTransportElement::evaluateError() {
     problem_ptr->getNbDofsRow(),
     sumErrorFlux,sumErrorDiv,sumErrorJump,sumErrorFlux+sumErrorDiv+sumErrorJump
   );
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 \endcode
 
@@ -1535,14 +1535,14 @@ struct MixTransport::MixTransportElement::OpSkeleton::OpVolSide: public MoFEM::V
   valMap(val_map) {
   }
   PetscErrorCode doWork(int side, EntityType type,DataForcesAndSourcesCore::EntData &data) {
-    PetscFunctionBegin;
-    if(data.getFieldData().size() == 0)  PetscFunctionReturn(0);
+    MoFEMFunctionBeginHot;
+    if(data.getFieldData().size() == 0)  MoFEMFunctionReturnHot(0);
     int nb_gauss_pts = data.getN().size1();
     valMap[getFaceSense()].resize(nb_gauss_pts);
     for(int gg = 0;gg<nb_gauss_pts;gg++) {
       valMap[getFaceSense()][gg] = inner_prod(trans(data.getN(gg)),data.getFieldData());
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 };
 \endcode
@@ -1559,7 +1559,7 @@ error \f$\eta_{e,R}\f$, using face operator
 PetscErrorCode MixTransport::MixTransportElement::OpSkeleton::doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
   MoAB
   
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   if(type == MBTRI) {
     EntityHandle fe_ent = getNumeredEntFiniteElementPtr()->getEnt();
     double def_val = 0;
@@ -1576,7 +1576,7 @@ PetscErrorCode MixTransport::MixTransportElement::OpSkeleton::doWork(int side,En
     EntityHandle essential_bc_meshset = cTx.mField.get_finite_element_meshset("MIX_BCFLUX");
     if(cTx.mField.get_moab().contains_entities(essential_bc_meshset,&fe_ent,1)) {
       // essential bc, np jump then, exit and go to next face
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
     // calculate values form adjacent tets
     valMap.clear();
@@ -1606,7 +1606,7 @@ PetscErrorCode MixTransport::MixTransportElement::OpSkeleton::doWork(int side,En
       }
     }
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 \endcode
 Note that we have to consider three scenarios, first, on the face is essential
@@ -1654,8 +1654,8 @@ struct MixTransport::MixTransportElement::OpError: public MoFEM::VolumeElementFo
   ) {
     
     
-    PetscFunctionBegin;
-    if(type != MBTET) PetscFunctionReturn(0);
+    MoFEMFunctionBeginHot;
+    if(type != MBTET) MoFEMFunctionReturnHot(0);
     invK.resize(3,3,false);
     int nb_gauss_pts = data.getN().size1();
     EntityHandle fe_ent = getNumeredEntFiniteElementPtr()->getEnt();
@@ -1719,7 +1719,7 @@ struct MixTransport::MixTransportElement::OpError: public MoFEM::VolumeElementFo
     // FIXME: Summation should be while skeleton is calculated
     cTx.sumErrorJump += *error_jump_ptr; // FIXME: this need to be fixed
     cTx.errorMap[sqrt(*error_flux_ptr+*error_div_ptr+*error_jump_ptr)] = fe_ent;
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 };
 \endcode

@@ -62,9 +62,9 @@ struct DataOperator {
     EntityType row_type,EntityType col_type,
     DataForcesAndSourcesCore::EntData &row_data,
     DataForcesAndSourcesCore::EntData &col_data) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   virtual PetscErrorCode opLhs(
@@ -87,9 +87,9 @@ struct DataOperator {
     int side,
     EntityType type,
     DataForcesAndSourcesCore::EntData &data) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   virtual PetscErrorCode opRhs(
@@ -152,13 +152,13 @@ inline PetscErrorCode invertTensor3by3(
   ublas::vector<T,A> &det_data,
   ublas::matrix<T,L,A> &inv_jac_data
 ) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   SETERRQ(
     PETSC_COMM_SELF,
     MOFEM_NOT_IMPLEMENTED,
     "Specialization for this template not yet implemented"
   );
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 template<>
@@ -177,12 +177,12 @@ template<class T1,class T2>
 inline PetscErrorCode determinantTensor3by3(
   T1 &t,T2 &det
 ) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   det =
     +t(0,0)*t(1,1)*t(2,2) + t(1,0)*t(2,1)*t(0,2)
     +t(2,0)*t(0,1)*t(1,2) - t(0,0)*t(2,1)*t(1,2)
     -t(2,0)*t(1,1)*t(0,2) - t(1,0)*t(0,1)*t(2,2);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 /**
@@ -194,7 +194,7 @@ template<class T1,class T2,class T3>
 inline PetscErrorCode invertTensor3by3(
   T1 &t,T2 &det,T3 &inv_t
 ) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   inv_t(0,0) = (t(1,1)*t(2,2)-t(1,2)*t(2,1))/det;
   inv_t(0,1) = (t(0,2)*t(2,1)-t(0,1)*t(2,2))/det;
   inv_t(0,2) = (t(0,1)*t(1,2)-t(0,2)*t(1,1))/det;
@@ -204,7 +204,7 @@ inline PetscErrorCode invertTensor3by3(
   inv_t(2,0) = (t(1,0)*t(2,1)-t(1,1)*t(2,0))/det;
   inv_t(2,1) = (t(0,1)*t(2,0)-t(0,0)*t(2,1))/det;
   inv_t(2,2) = (t(0,0)*t(1,1)-t(0,1)*t(1,0))/det;
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 /**
@@ -220,14 +220,14 @@ FTensor::Tensor2_symmetric<double,3>,double,FTensor::Tensor2_symmetric<double,3>
   double &det,
   FTensor::Tensor2_symmetric<double,3> &inv_t
 ) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   inv_t(0,0) = (t(1,1)*t(2,2)-t(1,2)*t(2,1))/det;
   inv_t(0,1) = (t(0,2)*t(2,1)-t(0,1)*t(2,2))/det;
   inv_t(0,2) = (t(0,1)*t(1,2)-t(0,2)*t(1,1))/det;
   inv_t(1,1) = (t(0,0)*t(2,2)-t(0,2)*t(2,0))/det;
   inv_t(1,2) = (t(0,2)*t(1,0)-t(0,0)*t(1,2))/det;
   inv_t(2,2) = (t(0,0)*t(1,1)-t(0,1)*t(1,0))/det;
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 /**
@@ -243,14 +243,14 @@ FTensor::Tensor2_symmetric<double,3>,double,FTensor::Tensor2_symmetric<double*,3
   double &det,
   FTensor::Tensor2_symmetric<double*,3> &inv_t
 ) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   inv_t(0,0) = (t(1,1)*t(2,2)-t(1,2)*t(2,1))/det;
   inv_t(0,1) = (t(0,2)*t(2,1)-t(0,1)*t(2,2))/det;
   inv_t(0,2) = (t(0,1)*t(1,2)-t(0,2)*t(1,1))/det;
   inv_t(1,1) = (t(0,0)*t(2,2)-t(0,2)*t(2,0))/det;
   inv_t(1,2) = (t(0,2)*t(1,0)-t(0,0)*t(1,2))/det;
   inv_t(2,2) = (t(0,0)*t(1,1)-t(0,1)*t(1,0))/det;
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 /**
@@ -503,7 +503,7 @@ struct OpGetDataAndGradient: public DataOperator {
   PetscErrorCode calculateValAndGrad(
     int side,EntityType type,DataForcesAndSourcesCore::EntData &data
   ) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     const int nb_base_functions = data.getN().size2();
     bool constant_diff = false;
     if(
@@ -530,7 +530,7 @@ struct OpGetDataAndGradient: public DataOperator {
         }
       }
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode doWork(
@@ -539,16 +539,16 @@ struct OpGetDataAndGradient: public DataOperator {
     DataForcesAndSourcesCore::EntData &data
   ) {
 
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
 
     try {
 
       if(data.getFieldData().size() == 0) {
-        PetscFunctionReturn(0);
+        MoFEMFunctionReturnHot(0);
       }
 
       unsigned int nb_dofs = data.getFieldData().size();
-      if(nb_dofs == 0) PetscFunctionReturn(0);
+      if(nb_dofs == 0) MoFEMFunctionReturnHot(0);
 
       if(nb_dofs % RANK != 0) {
         SETERRQ4(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
@@ -579,7 +579,7 @@ struct OpGetDataAndGradient: public DataOperator {
       SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
     }
 
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
 };

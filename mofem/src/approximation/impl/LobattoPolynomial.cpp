@@ -33,32 +33,32 @@ PetscErrorCode LobattoPolynomialCtx::queryInterface(
   const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface
 ) {
   
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   *iface = NULL;
   if(uuid == IDD_LOBATTO_BASE_FUNCTION) {
     *iface = static_cast<LobattoPolynomialCtx*>(this);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   } else {
     SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"wrong interference");
   }
   ierr = LegendrePolynomialCtx::queryInterface(uuid,iface); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode LobattoPolynomial::queryInterface(
   const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface
 ) {
   
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   *iface = NULL;
   if(uuid == IDD_LOBATTO_BASE_FUNCTION) {
     *iface = static_cast<LobattoPolynomial*>(this);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   } else {
     SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"wrong interference");
   }
   ierr = LegendrePolynomial::queryInterface(uuid,iface); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode LobattoPolynomial::getValue(
@@ -66,7 +66,7 @@ PetscErrorCode LobattoPolynomial::getValue(
   boost::shared_ptr<BaseFunctionCtx> ctx_ptr
 ) {
   
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   MoFEM::UnknownInterface *iface;
   ierr = ctx_ptr->queryInterface(IDD_LOBATTO_BASE_FUNCTION,&iface); CHKERRQ(ierr);
   LobattoPolynomialCtx *ctx = reinterpret_cast<LobattoPolynomialCtx*>(iface);
@@ -80,39 +80,39 @@ PetscErrorCode LobattoPolynomial::getValue(
     if(ctx->baseDiffFunPtr) diff_l = &((*ctx->baseDiffFunPtr)(gg,0));
     ierr = (ctx->basePolynomialsType0)(ctx->P,pts(0,gg),ctx->diffS,l,diff_l,ctx->dIm); CHKERRQ(ierr);
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode KernelLobattoPolynomialCtx::queryInterface(
   const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface
 ) {
   
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   *iface = NULL;
   if(uuid == IDD_KERNEL_BASE_FUNCTION) {
     *iface = static_cast<KernelLobattoPolynomialCtx*>(this);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   } else {
     SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"wrong interference");
   }
   ierr = LegendrePolynomialCtx::queryInterface(uuid,iface); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode KernelLobattoPolynomial::queryInterface(
   const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface
 ) {
   
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   *iface = NULL;
   if(uuid == IDD_KERNEL_BASE_FUNCTION) {
     *iface = static_cast<KernelLobattoPolynomial*>(this);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   } else {
     SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"wrong interference");
   }
   ierr = LegendrePolynomial::queryInterface(uuid,iface); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode KernelLobattoPolynomial::getValue(
@@ -120,7 +120,7 @@ PetscErrorCode KernelLobattoPolynomial::getValue(
   boost::shared_ptr<BaseFunctionCtx> ctx_ptr
 ) {
   
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   MoFEM::UnknownInterface *iface;
   ierr = ctx_ptr->queryInterface(IDD_KERNEL_BASE_FUNCTION,&iface); CHKERRQ(ierr);
   LobattoPolynomialCtx *ctx = reinterpret_cast<LobattoPolynomialCtx*>(iface);
@@ -133,5 +133,5 @@ PetscErrorCode KernelLobattoPolynomial::getValue(
     if(ctx->baseDiffFunPtr) diff_l = &((*ctx->baseDiffFunPtr)(gg,0));
     ierr = (ctx->basePolynomialsType0)(ctx->P,pts(0,gg),ctx->diffS,l,diff_l,ctx->dIm); CHKERRQ(ierr);
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }

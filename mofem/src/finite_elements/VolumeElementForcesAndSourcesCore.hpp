@@ -406,9 +406,9 @@ struct VolumeElementForcesAndSourcesCoreOnSide: public VolumeElementForcesAndSou
   ~VolumeElementForcesAndSourcesCoreOnSide() {}
 
   inline PetscErrorCode setFaceFEPtr(const FaceElementForcesAndSourcesCore *face_fe_ptr) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     faceFEPtr = const_cast<FaceElementForcesAndSourcesCore*>(face_fe_ptr);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   int getRule(int order) { return -1; };

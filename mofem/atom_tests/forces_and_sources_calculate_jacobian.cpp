@@ -153,7 +153,7 @@ int main(int argc, char *argv[]) {
       PetscErrorCode doWork(
         int side,EntityType type,DataForcesAndSourcesCore::EntData &data
       ) {
-        PetscFunctionBegin;
+        MoFEMFunctionBeginHot;
         const double eps = 1e-6;
         for(unsigned int ii = 0;ii!=data.getDiffN().size1();ii++) {
           for(unsigned int jj = 0;jj!=data.getDiffN().size2();jj++) {
@@ -165,7 +165,7 @@ int main(int argc, char *argv[]) {
         my_split << "side: " << side << " type: " << type
         << std::fixed << std::setprecision(4)
         << data.getDiffN() << std::endl;
-        PetscFunctionReturn(0);
+        MoFEMFunctionReturnHot(0);
       }
 
     };
@@ -191,14 +191,14 @@ int main(int argc, char *argv[]) {
     }
 
     PetscErrorCode preProcess() {
-      PetscFunctionBegin;
-      PetscFunctionReturn(0);
+      MoFEMFunctionBeginHot;
+      MoFEMFunctionReturnHot(0);
     }
 
     DataForcesAndSourcesCore data;
 
     PetscErrorCode operator()() {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
       ierr = getSpacesAndBaseOnEntities(data); CHKERRQ(ierr);
 
@@ -264,12 +264,12 @@ int main(int argc, char *argv[]) {
       my_split << "data diff FIELD1:" << std::endl;
       my_split << dataDiffFIELD1 << std::endl;
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     PetscErrorCode postProcess() {
-      PetscFunctionBegin;
-      PetscFunctionReturn(0);
+      MoFEMFunctionBeginHot;
+      MoFEMFunctionReturnHot(0);
     }
 
 

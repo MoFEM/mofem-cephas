@@ -166,9 +166,9 @@ struct NeummanForcesSurfaceComplexForLazy {
 
   double *sCale;
   PetscErrorCode setForceScale(double scale) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       *sCale = scale;
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
   }
 
   MyTriangleSpatialFE& getLoopSpatialFe() { return feSpatial; }

@@ -162,11 +162,11 @@ int main(int argc, char *argv[]) {
       int side,
       EntityType type,
       DataForcesAndSourcesCore::EntData &data) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
       
 
-      if(data.getFieldData().size()==0) PetscFunctionReturn(0);
+      if(data.getFieldData().size()==0) MoFEMFunctionReturnHot(0);
 
       const unsigned int nb_gauss_pts = data.getDiffHcurlN().size1();
       const unsigned int nb_dofs = data.getFieldData().size();
@@ -189,7 +189,7 @@ int main(int argc, char *argv[]) {
         }
       }
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   };
@@ -222,10 +222,10 @@ int main(int argc, char *argv[]) {
       EntityType type,
       DataForcesAndSourcesCore::EntData &data
     ) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
       int nb_dofs = data.getFieldData().size();
-      if(nb_dofs==0) PetscFunctionReturn(0);
+      if(nb_dofs==0) MoFEMFunctionReturnHot(0);
       int nb_gauss_pts = data.getHcurlN().size1();
 
       FTensor::Tensor1<double*,3> t_curl_base = data.getFTensor1HcurlN<3>();
@@ -253,7 +253,7 @@ int main(int argc, char *argv[]) {
         }
       }
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   };

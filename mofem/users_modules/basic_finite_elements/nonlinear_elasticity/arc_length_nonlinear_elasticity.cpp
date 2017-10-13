@@ -345,7 +345,7 @@ int main(int argc, char *argv[]) {
         nodeSet(node_set) {}
 
         PetscErrorCode preProcess() {
-          PetscFunctionBegin;
+          MoFEMFunctionBeginHot;
 
           //PetscAttachDebugger();
           switch(snes_ctx) {
@@ -362,11 +362,11 @@ int main(int argc, char *argv[]) {
             SETERRQ(PETSC_COMM_SELF,1,"not implemented");
           }
 
-          PetscFunctionReturn(0);
+          MoFEMFunctionReturnHot(0);
         }
 
         PetscErrorCode postProcess() {
-          PetscFunctionBegin;
+          MoFEMFunctionBeginHot;
           switch(snes_ctx) {
             case CTX_SNESSETFUNCTION: {
               //snes_f
@@ -379,11 +379,11 @@ int main(int argc, char *argv[]) {
             default:
             SETERRQ(PETSC_COMM_SELF,1,"not implemented");
           }
-          PetscFunctionReturn(0);
+          MoFEMFunctionReturnHot(0);
         }
 
         PetscErrorCode potsProcessLoadPath() {
-          PetscFunctionBegin;
+          MoFEMFunctionBeginHot;
           boost::shared_ptr<NumeredDofEntity_multiIndex> numered_dofs_rows = problemPtr->getNumeredDofsRows();
           Range::iterator nit = nodeSet.begin();
           for(;nit!=nodeSet.end();nit++) {
@@ -395,7 +395,7 @@ int main(int argc, char *argv[]) {
               PetscPrintf(PETSC_COMM_WORLD,"%s [ %d ] %6.4e\n",dit->get()->getName().c_str(),dit->get()->getDofCoeffIdx(),dit->get()->getFieldData());
             }
           }
-          PetscFunctionReturn(0);
+          MoFEMFunctionReturnHot(0);
         }
 
       };
@@ -415,15 +415,15 @@ int main(int argc, char *argv[]) {
 
 
         PetscErrorCode preProcess() {
-          PetscFunctionBegin;
-          PetscFunctionReturn(0);
+          MoFEMFunctionBeginHot;
+          MoFEMFunctionReturnHot(0);
         }
         PetscErrorCode operator()() {
-          PetscFunctionBegin;
-          PetscFunctionReturn(0);
+          MoFEMFunctionBeginHot;
+          MoFEMFunctionReturnHot(0);
         }
         PetscErrorCode postProcess() {
-          PetscFunctionBegin;
+          MoFEMFunctionBeginHot;
           switch(snes_ctx) {
             case CTX_SNESSETFUNCTION: {
               //F_lambda
@@ -449,7 +449,7 @@ int main(int argc, char *argv[]) {
             default:
             SETERRQ(PETSC_COMM_SELF,1,"not implemented");
           }
-          PetscFunctionReturn(0);
+          MoFEMFunctionReturnHot(0);
         }
 
       };

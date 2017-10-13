@@ -28,12 +28,12 @@ struct OpCheck: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperato
   PetscErrorCode doWork(
     int side,EntityType type,DataForcesAndSourcesCore::EntData &data
   ) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     try {
       const int nb_dofs = data.getFieldData().size();
       //const int nb_base_functions = data.getN().size2();
       if(nb_dofs == 0) {
-        PetscFunctionReturn(0);
+        MoFEMFunctionReturnHot(0);
       }
       const double eps = 1e-12;
       const int nb_gauss_pts = data.getN().size1();
@@ -64,7 +64,7 @@ struct OpCheck: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperato
     } catch (MoFEMException const &e) {
       SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 };
 

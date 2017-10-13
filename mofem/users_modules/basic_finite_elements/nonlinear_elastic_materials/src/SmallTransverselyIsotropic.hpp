@@ -39,7 +39,7 @@ struct SmallStrainTranverslyIsotropic: public NonlinearElasticElement::Functions
   TYPE tR;
 
   PetscErrorCode calculateStrain() {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     sTrain.resize(3,3,false);
     noalias(sTrain) = this->F;
     for(int dd = 0;dd<3;dd++) {
@@ -54,13 +54,13 @@ struct SmallStrainTranverslyIsotropic: public NonlinearElasticElement::Functions
     voightStrain[3] = 2*sTrain(0,1);
     voightStrain[4] = 2*sTrain(1,2);
     voightStrain[5] = 2*sTrain(2,0);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   double nu_p, nu_pz, E_p, E_z, G_zp;
   ublas::symmetric_matrix<TYPE,ublas::upper> localStiffnessMatrix;
   PetscErrorCode calculateLocalStiffnesMatrix() {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     double nu_zp=(nu_pz*E_z)/E_p;
     double delta=((1+nu_p)*(1-nu_p-(2*nu_pz*nu_zp)))/(E_p*E_p*E_z);
 
@@ -75,7 +75,7 @@ struct SmallStrainTranverslyIsotropic: public NonlinearElasticElement::Functions
     localStiffnessMatrix(3,3)=E_p/(2*(1+nu_p));
     localStiffnessMatrix(4,4)=localStiffnessMatrix(5,5)=G_zp;
 
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   ublas::matrix<TYPE> aARotMat;
@@ -92,7 +92,7 @@ struct SmallStrainTranverslyIsotropic: public NonlinearElasticElement::Functions
   *\param axAngle Angle of rotation along the axis (in radians)
   */
   PetscErrorCode calculateAxisAngleRotationalMatrix() {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
 
     aARotMat.resize(3,3,false);
     aARotMat.clear();
@@ -112,7 +112,7 @@ struct SmallStrainTranverslyIsotropic: public NonlinearElasticElement::Functions
     aARotMat(1,2) = ((1-cos(axAngle))*axVector[1]*axVector[2]-norm*axVector[0]*sin(axAngle))/pow(norm,2);
     aARotMat(2,1) = ((1-cos(axAngle))*axVector[1]*axVector[2]+norm*axVector[0]*sin(axAngle))/pow(norm,2);
 
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   ublas::matrix<TYPE> stressRotMat;
@@ -123,7 +123,7 @@ struct SmallStrainTranverslyIsotropic: public NonlinearElasticElement::Functions
   * One can also output the axis/angle rotational Matrix
   */
   PetscErrorCode stressTransformation() {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
 
     stressRotMat.resize(6,6,false);
     stressRotMat.clear();
@@ -170,7 +170,7 @@ struct SmallStrainTranverslyIsotropic: public NonlinearElasticElement::Functions
     stressRotMat(5, 4) = ( aARotMat(2,0) * aARotMat(1,2) + aARotMat(1,0) * aARotMat(2,2) );
     stressRotMat(5, 5) = ( aARotMat(0,0) * aARotMat(2,2) + aARotMat(2,0) * aARotMat(0,2) );
 
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   ublas::matrix<TYPE> strainRotMat;
@@ -181,7 +181,7 @@ struct SmallStrainTranverslyIsotropic: public NonlinearElasticElement::Functions
   * One can also output the axis/angle rotational Matrix
   */
   PetscErrorCode strainTransformation() {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
 
     strainRotMat.resize(6,6,false);
     strainRotMat.clear();
@@ -228,26 +228,26 @@ struct SmallStrainTranverslyIsotropic: public NonlinearElasticElement::Functions
     strainRotMat(5, 4) =     ( aARotMat(2,0) * aARotMat(1,2) + aARotMat(1,0) * aARotMat(2,2) );
     strainRotMat(5, 5) =     ( aARotMat(0,0) * aARotMat(2,2) + aARotMat(2,0) * aARotMat(0,2) );
 
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   ublas::matrix<TYPE> dR;
   ublas::matrix<TYPE> globalStiffnessMatrix;
 
   PetscErrorCode calculateGlobalStiffnesMatrix() {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
 
     dR.resize(6,6,false);
     noalias(dR) = prod(localStiffnessMatrix,strainRotMat);
     globalStiffnessMatrix.resize(6,6,false);
     noalias(globalStiffnessMatrix) = prod(stressRotMat,dR);
 
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   virtual PetscErrorCode calculateAngles() {
-    PetscFunctionBegin;
-    PetscFunctionReturn(0);
+    MoFEMFunctionBeginHot;
+    MoFEMFunctionReturnHot(0);
   }
 
   ublas::vector<TYPE> voigtStress;
@@ -263,7 +263,7 @@ struct SmallStrainTranverslyIsotropic: public NonlinearElasticElement::Functions
     const NonlinearElasticElement::BlockData block_data,
     boost::shared_ptr<const NumeredEntFiniteElement> fe_ptr
   ) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     ierr = calculateAngles(); CHKERRQ(ierr);
     ierr = calculateStrain(); CHKERRQ(ierr);
     ierr = calculateLocalStiffnesMatrix(); CHKERRQ(ierr);
@@ -287,7 +287,7 @@ struct SmallStrainTranverslyIsotropic: public NonlinearElasticElement::Functions
     this->P(2,1) = this->P(1,2);
     this->P(2,0) = this->P(0,2);
 
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   /** \brief calculate density of strain energy
@@ -297,7 +297,7 @@ struct SmallStrainTranverslyIsotropic: public NonlinearElasticElement::Functions
   const NonlinearElasticElement::BlockData block_data,
   boost::shared_ptr<const NumeredEntFiniteElement> fe_ptr
 ) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
 
     ierr = calculateAngles(); CHKERRQ(ierr);
     ierr = calculateStrain(); CHKERRQ(ierr);
@@ -312,7 +312,7 @@ struct SmallStrainTranverslyIsotropic: public NonlinearElasticElement::Functions
     voigtStress.resize(6,false);
     noalias(voigtStress) = prod(globalStiffnessMatrix,voightStrain);
     this->eNergy = 0.5*inner_prod(voigtStress,voightStrain);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   VectorDouble normalizedPhi;
@@ -320,7 +320,7 @@ struct SmallStrainTranverslyIsotropic: public NonlinearElasticElement::Functions
   double axAngleDouble;
 
   PetscErrorCode calculateFibreAngles() {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
 
     try {
 
@@ -353,7 +353,7 @@ struct SmallStrainTranverslyIsotropic: public NonlinearElasticElement::Functions
       SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
     }
 
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
 };
@@ -364,7 +364,7 @@ struct SmallStrainTranverslyIsotropicDouble: public SmallStrainTranverslyIsotrop
   SmallStrainTranverslyIsotropicDouble(): SmallStrainTranverslyIsotropic<double>() {}
 
   virtual PetscErrorCode calculateAngles() {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
 
     try {
 
@@ -380,14 +380,14 @@ struct SmallStrainTranverslyIsotropicDouble: public SmallStrainTranverslyIsotrop
       ss << "throw in method: " << ex.what() << std::endl;
       SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   virtual PetscErrorCode getDataOnPostProcessor(
     std::map<std::string,std::vector<VectorDouble > > &field_map,
     std::map<std::string,std::vector<MatrixDouble > > &grad_map
   ) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     int nb_gauss_pts = grad_map["POTENTIAL_FIELD"].size();
     this->commonDataPtr->gradAtGaussPts["POTENTIAL_FIELD"].resize(nb_gauss_pts);
     for(int gg = 0;gg<nb_gauss_pts;gg++) {
@@ -397,7 +397,7 @@ struct SmallStrainTranverslyIsotropicDouble: public SmallStrainTranverslyIsotrop
         ((grad_map["POTENTIAL_FIELD"])[gg])(0,ii);
       }
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
 };
@@ -411,7 +411,7 @@ struct SmallStrainTranverslyIsotropicADouble: public SmallStrainTranverslyIsotro
   virtual PetscErrorCode setUserActiveVariables(
     int &nb_active_variables
   ) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
 
     try {
 
@@ -430,12 +430,12 @@ struct SmallStrainTranverslyIsotropicADouble: public SmallStrainTranverslyIsotro
       SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
     }
 
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   virtual PetscErrorCode setUserActiveVariables(
     VectorDouble &active_varibles) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
 
     try {
 
@@ -452,7 +452,7 @@ struct SmallStrainTranverslyIsotropicADouble: public SmallStrainTranverslyIsotro
       SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
     }
 
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
 };

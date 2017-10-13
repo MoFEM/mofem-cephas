@@ -100,27 +100,27 @@ namespace MoFEM {
 
 
     virtual PetscErrorCode get_E_Base(const double m[]) const {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     virtual PetscErrorCode get_E_DualBase(const double m[]) const {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     virtual PetscErrorCode get_e_Base(const double m[]) const {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     virtual PetscErrorCode get_e_DualBase(const double m[]) const {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     inline EntityHandle getMeshset() const { return meshSet; };

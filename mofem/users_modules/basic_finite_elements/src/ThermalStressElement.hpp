@@ -66,9 +66,9 @@ struct ThermalStressElement {
     verb(_verb) {}
 
     PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       try {
-        if(data.getFieldData().size()==0) PetscFunctionReturn(0);
+        if(data.getFieldData().size()==0) MoFEMFunctionReturnHot(0);
         int nb_dofs = data.getFieldData().size();
         int nb_gauss_pts = data.getN().size1();
         //initialize
@@ -84,7 +84,7 @@ struct ThermalStressElement {
         ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   };
@@ -106,12 +106,12 @@ struct ThermalStressElement {
     VectorDouble Nf;
     PetscErrorCode doWork(
       int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
-        PetscFunctionBegin;
+        MoFEMFunctionBeginHot;
 
         try {
 
-          if(data.getIndices().size()==0) PetscFunctionReturn(0);
-          if(dAta.tEts.find(getNumeredEntFiniteElementPtr()->getEnt())==dAta.tEts.end()) PetscFunctionReturn(0);
+          if(data.getIndices().size()==0) MoFEMFunctionReturnHot(0);
+          if(dAta.tEts.find(getNumeredEntFiniteElementPtr()->getEnt())==dAta.tEts.end()) MoFEMFunctionReturnHot(0);
 
           
 
@@ -178,7 +178,7 @@ struct ThermalStressElement {
         SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
       }
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   };
@@ -187,7 +187,7 @@ struct ThermalStressElement {
     const std::string fe_name,const std::string field_name,const std::string thermal_field_name,
     const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS"
   ) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     if(mField.check_field(thermal_field_name)) {
       
       
@@ -216,11 +216,11 @@ struct ThermalStressElement {
         }
       }
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode setThermalStressRhsOperators(string field_name,string thermal_field_name,Vec &F,int verb = 0) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     if(mField.check_field(thermal_field_name)) {
       std::map<int,BlockData>::iterator sit = setOfBlocks.begin();
       for(;sit!=setOfBlocks.end();sit++) {
@@ -229,7 +229,7 @@ struct ThermalStressElement {
         feThermalStressRhs.getOpPtrVector().push_back(new OpThermalStressRhs(field_name,F,sit->second,commonData,verb));
       }
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
 

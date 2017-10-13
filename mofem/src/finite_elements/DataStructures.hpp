@@ -1161,14 +1161,14 @@ struct DataForcesAndSourcesCore {
      * @return error code
      */
     inline PetscErrorCode resetFieldDepenentData() {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       sPace = NOSPACE;
       bAse = NOBASE;
       iNdices.resize(0,false);
       localIndices.resize(0,false);
       dOfs.resize(0,false);
       fieldData.resize(0,false);
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     /**@}*/
@@ -1206,14 +1206,14 @@ struct DataForcesAndSourcesCore {
    */
   inline PetscErrorCode resetFieldDepenentData() {
 
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     for(EntityType t = MBVERTEX;t!=MBMAXTYPE;t++) {
       boost::ptr_vector<EntData>::iterator ent_data_it = dataOnEntities[t].begin();
       for(;ent_data_it!=dataOnEntities[t].end();ent_data_it++) {
         ierr = ent_data_it->resetFieldDepenentData(); CHKERRQ(ierr);
       }
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   DataForcesAndSourcesCore(EntityType type);

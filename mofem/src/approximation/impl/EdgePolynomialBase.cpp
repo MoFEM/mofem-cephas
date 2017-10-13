@@ -50,16 +50,16 @@ PetscErrorCode EdgePolynomialBase::queryInterface(
   const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface
 ) {
   
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   *iface = NULL;
   if(uuid == IDD_EDGE_BASE_FUNCTION) {
     *iface = static_cast<EdgePolynomialBase*>(this);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   } else {
     SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"wrong interference");
   }
   ierr = BaseFunction::queryInterface(uuid,iface); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 EdgePolynomialBase::~EdgePolynomialBase() {}
@@ -70,7 +70,7 @@ PetscErrorCode EdgePolynomialBase::getValue(
   boost::shared_ptr<BaseFunctionCtx> ctx_ptr
 ) {
   
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   MoFEM::UnknownInterface *iface;
   ierr = ctx_ptr->queryInterface(IDD_TET_BASE_FUNCTION,&iface); CHKERRQ(ierr);
@@ -78,7 +78,7 @@ PetscErrorCode EdgePolynomialBase::getValue(
 
   int nb_gauss_pts = pts.size2();
   if(!nb_gauss_pts) {
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   if(pts.size1()<1) {
@@ -131,12 +131,12 @@ PetscErrorCode EdgePolynomialBase::getValue(
     SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"Not yet implemented");
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode EdgePolynomialBase::getValueH1(MatrixDouble &pts) {
   
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   DataForcesAndSourcesCore& data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
@@ -206,16 +206,16 @@ PetscErrorCode EdgePolynomialBase::getValueH1(MatrixDouble &pts) {
   // std::cerr << data.dataOnEntities[MBEDGE][0].getN(base) << std::endl;
   //std::cerr << data.dataOnEntities[MBEDGE][0].getDiffN(base) << std::endl;
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode EdgePolynomialBase::getValueL2(MatrixDouble &pts) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   SETERRQ(
     PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,
     "Make no sense, unless problem is 1d (1d not implemented yet)"
   );
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode EdgePolynomialBase::getValueHdiv(MatrixDouble &pts) {
@@ -227,7 +227,7 @@ PetscErrorCode EdgePolynomialBase::getValueHdiv(MatrixDouble &pts) {
 
 PetscErrorCode EdgePolynomialBase::getValueHCurl(MatrixDouble &pts) {
   
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   DataForcesAndSourcesCore& data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
@@ -263,5 +263,5 @@ PetscErrorCode EdgePolynomialBase::getValueHCurl(MatrixDouble &pts) {
     data.dataOnEntities[MBEDGE][0].getDiffN(base).resize(nb_gauss_pts,0,false);
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }

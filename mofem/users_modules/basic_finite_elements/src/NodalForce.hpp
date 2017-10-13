@@ -94,9 +94,9 @@ struct MetaNodalForces {
     boost::shared_ptr<DofEntity> dOf;
     DofForceScale(boost::shared_ptr<DofEntity> dof): dOf(dof) {}
     PetscErrorCode scaleNf(const FEMethod *fe,VectorDouble &Nf) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       Nf *= dOf->getFieldData();
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
   };
 
@@ -104,7 +104,7 @@ struct MetaNodalForces {
   static PetscErrorCode addElement(
     MoFEM::Interface &m_field,const std::string field_name,Range *intersect_ptr = NULL
   ) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     
     
     ierr = m_field.add_finite_element("FORCE_FE",MF_ZERO); CHKERRQ(ierr);
@@ -129,21 +129,21 @@ struct MetaNodalForces {
       }
       ierr = m_field.add_ents_to_finite_element_by_type(nodes,MBVERTEX,"FORCE_FE"); CHKERRQ(ierr);
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   /// Set integration point operators
   static PetscErrorCode setOperators(
     MoFEM::Interface &m_field, boost::ptr_map<std::string,NodalForce> &nodal_forces, Vec F,const std::string field_name
   ) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     
     string fe_name = "FORCE_FE";
     nodal_forces.insert(fe_name,new NodalForce(m_field));
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,NODESET|FORCESET,it)) {
       ierr = nodal_forces.at(fe_name).addForce(field_name,F,it->getMeshsetId());  CHKERRQ(ierr);
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
 };

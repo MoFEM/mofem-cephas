@@ -206,9 +206,9 @@ int main(int argc, char *argv[]) {
       int side,
       EntityType type,
       DataForcesAndSourcesCore::EntData &data) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
-      if(data.getFieldData().empty()) PetscFunctionReturn(0);
+      if(data.getFieldData().empty()) MoFEMFunctionReturnHot(0);
 
       const double eps = 1e-4;
       for(
@@ -269,7 +269,7 @@ int main(int argc, char *argv[]) {
       mySplit << std::setprecision(3) << "normal at Gauss pt F4 " << getNormalsAtGaussPtF4() << std::endl;
       mySplit << std::setprecision(3) << getTangent1AtGaussPtF4() << std::endl;
       mySplit << std::setprecision(3) << getTangent2AtGaussPtF4() << std::endl;
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     PetscErrorCode doWork(
@@ -277,9 +277,9 @@ int main(int argc, char *argv[]) {
       EntityType row_type,EntityType col_type,
       DataForcesAndSourcesCore::EntData &row_data,
       DataForcesAndSourcesCore::EntData &col_data) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
-      if(row_data.getFieldData().empty()) PetscFunctionReturn(0);
+      if(row_data.getFieldData().empty()) MoFEMFunctionReturnHot(0);
 
       mySplit << "NH1NH1" << std::endl;
       mySplit << "row side: " << row_side << " row_type: " << row_type << std::endl;
@@ -288,7 +288,7 @@ int main(int argc, char *argv[]) {
       mySplit << "col side: " << col_side << " col_type: " << col_type << std::endl;
       mySplit << row_data << std::endl;
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   };
@@ -304,14 +304,14 @@ int main(int argc, char *argv[]) {
       int side,
       EntityType type,
       DataForcesAndSourcesCore::EntData &data) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
-      if(type != MBENTITYSET) PetscFunctionReturn(0);
+      if(type != MBENTITYSET) MoFEMFunctionReturnHot(0);
 
       mySplit << "NPFIELD" << std::endl;
       mySplit << "side: " << side << " type: " << type << std::endl;
       mySplit << data << std::endl;
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     PetscErrorCode doWork(
@@ -319,11 +319,11 @@ int main(int argc, char *argv[]) {
       EntityType row_type,EntityType col_type,
       DataForcesAndSourcesCore::EntData &row_data,
       DataForcesAndSourcesCore::EntData &col_data) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
       unSetSymm();
 
-      if(col_type != MBENTITYSET) PetscFunctionReturn(0);
+      if(col_type != MBENTITYSET) MoFEMFunctionReturnHot(0);
 
       mySplit << "NOFILEDH1" << std::endl;
       mySplit << "row side: " << row_side << " row_type: " << row_type << std::endl;
@@ -331,7 +331,7 @@ int main(int argc, char *argv[]) {
       mySplit << "col side: " << col_side << " col_type: " << col_type << std::endl;
       mySplit << col_data << std::endl;
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   };

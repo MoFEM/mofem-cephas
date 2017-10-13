@@ -85,7 +85,7 @@ struct KelvinVoigtDamper {
     /** \brief Calculate determinant of 3x3 matrix
     */
     PetscErrorCode dEterminatnt(ublas::matrix<TYPE> a,TYPE &det) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       // a11a22a33
       //+a21a32a13
       //+a31a12a23
@@ -100,14 +100,14 @@ struct KelvinVoigtDamper {
       -a(0,0)*a(2,1)*a(1,2)
       -a(2,0)*a(1,1)*a(0,2)
       -a(1,0)*a(0,1)*a(2,2);
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
 
     /** \brief Calculate inverse of 3x3 matrix
     */
     PetscErrorCode iNvert(TYPE det,ublas::matrix<TYPE> a,ublas::matrix<TYPE> &inv_a) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       //
       inv_a.resize(3,3);
       //http://www.cg.info.hiroshima-cu.ac.jp/~miyazaki/knowledge/teche23.html
@@ -122,7 +122,7 @@ struct KelvinVoigtDamper {
       inv_a(2,1) = a(0,1)*a(2,0)-a(0,0)*a(2,1);
       inv_a(2,2) = a(0,0)*a(1,1)-a(0,1)*a(1,0);
       inv_a /= det;
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     /** \brief Calculate strain rate
@@ -138,7 +138,7 @@ struct KelvinVoigtDamper {
 
     */
     virtual PetscErrorCode calculateEngineeringStrainDot() {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       gradientUDot.resize(3,3,false);
       noalias(gradientUDot) = FDot;
       for(int ii = 0;ii<3;ii++) {
@@ -151,7 +151,7 @@ struct KelvinVoigtDamper {
       engineringStrainDot.resize(3,3,false);
       noalias(engineringStrainDot) = gradientUDot + trans(gradientUDot);
       engineringStrainDot *= 0.5;
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     /** \brief Calculate Cauchy dashpot stress
@@ -168,7 +168,7 @@ struct KelvinVoigtDamper {
 
     */
     virtual PetscErrorCode calculateDashpotCauchyStress() {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       dashpotCauchyStress.resize(3,3,false);
       double a = 2.0*dAta.gBeta;
       double b = a*(dAta.vBeta/(1.0-2.0*dAta.vBeta));
@@ -176,7 +176,7 @@ struct KelvinVoigtDamper {
       for(int ii = 0;ii<3;ii++) {
         dashpotCauchyStress(ii,ii) += b*traceEngineeringStrainDot;
       }
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     /** \brief Calculate First Piola-Kirchhoff Stress Dashpot stress
@@ -187,7 +187,7 @@ struct KelvinVoigtDamper {
 
     */
     virtual PetscErrorCode calculateFirstPiolaKirchhoffStress() {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       dashpotFirstPiolaKirchhoffStress.resize(3,3,false);
       if(dAta.lInear) {
         noalias(dashpotFirstPiolaKirchhoffStress) = dashpotCauchyStress;
@@ -198,7 +198,7 @@ struct KelvinVoigtDamper {
         ierr = iNvert(J,F,invF); CHKERRQ(ierr);
         noalias(dashpotFirstPiolaKirchhoffStress) = J*prod(dashpotCauchyStress,trans(invF));
       }
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   };
@@ -252,7 +252,7 @@ struct KelvinVoigtDamper {
 
     PetscErrorCode preProcess() {
 
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       ierr = MoFEM::VolumeElementForcesAndSourcesCore::preProcess(); CHKERRQ(ierr);
 
       if(ts_ctx == CTX_TSSETIFUNCTION) {
@@ -263,12 +263,12 @@ struct KelvinVoigtDamper {
 
       }
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     PetscErrorCode postProcess() {
 
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
       ierr = MoFEM::VolumeElementForcesAndSourcesCore::postProcess(); CHKERRQ(ierr);
 
@@ -281,7 +281,7 @@ struct KelvinVoigtDamper {
         ierr = MatAssemblyEnd(ts_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
       }
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   };
@@ -323,13 +323,13 @@ struct KelvinVoigtDamper {
     PetscErrorCode doWork(
       int side,EntityType type,DataForcesAndSourcesCore::EntData &data
     ) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
       try {
 
         int nb_dofs = data.getFieldData().size();
         if(nb_dofs == 0) {
-          PetscFunctionReturn(0);
+          MoFEMFunctionReturnHot(0);
         }
         int rank = data.getFieldDofs()[0]->getNbOfCoeffs();
         int nb_gauss_pts = data.getN().size1();
@@ -386,7 +386,7 @@ struct KelvinVoigtDamper {
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   };
@@ -428,11 +428,11 @@ struct KelvinVoigtDamper {
     VectorDouble activeVariables;
 
     PetscErrorCode recordDamperStress() {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
       try {
         if(tagS[DAMPERSTRESS]<0) {
-          PetscFunctionReturn(0);
+          MoFEMFunctionReturnHot(0);
         }
 
         cE.F.resize(3,3,false);
@@ -478,11 +478,11 @@ struct KelvinVoigtDamper {
         ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     PetscErrorCode calculateFunction(TagEvaluate te,double *ptr) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
       int r;
       //play recorder for values
@@ -497,11 +497,11 @@ struct KelvinVoigtDamper {
         SETERRQ1(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"ADOL-C function evaluation with error r = %d",r);
       }
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     PetscErrorCode calculateJacobian(TagEvaluate te) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
       try {
         int r;
@@ -520,16 +520,16 @@ struct KelvinVoigtDamper {
         ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     PetscErrorCode calculateAtIntPtsDamperStress() {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
       try {
 
         if(tagS[DAMPERSTRESS]<0) {
-          PetscFunctionReturn(0);
+          MoFEMFunctionReturnHot(0);
         }
 
 
@@ -591,22 +591,22 @@ struct KelvinVoigtDamper {
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     PetscErrorCode doWork(
       int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
     ) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
 
-      if(row_type != MBVERTEX) PetscFunctionReturn(0);
+      if(row_type != MBVERTEX) MoFEMFunctionReturnHot(0);
       nbGaussPts = row_data.getN().size1();
 
       commonData.skipThis = false;
       if(cE.dAta.tEts.find(getNumeredEntFiniteElementPtr()->getEnt())==cE.dAta.tEts.end()) {
         commonData.skipThis =true;
-        PetscFunctionReturn(0);
+        MoFEMFunctionReturnHot(0);
       }
 
       try {
@@ -622,7 +622,7 @@ struct KelvinVoigtDamper {
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   };
@@ -636,7 +636,7 @@ struct KelvinVoigtDamper {
     PetscErrorCode aSemble(
       int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
     ) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       try {
         int nb_dofs = row_data.getIndices().size();
         int *indices_ptr = &row_data.getIndices()[0];
@@ -648,7 +648,7 @@ struct KelvinVoigtDamper {
         ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
   };
 
@@ -665,16 +665,16 @@ struct KelvinVoigtDamper {
     PetscErrorCode doWork(
       int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
     ) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
       if(commonData.skipThis) {
-        PetscFunctionReturn(0);
+        MoFEMFunctionReturnHot(0);
       }
 
       try {
         int nb_dofs = row_data.getIndices().size();
         if(!nb_dofs) {
-          PetscFunctionReturn(0);
+          MoFEMFunctionReturnHot(0);
         }
         nF.resize(nb_dofs,false);
         nF.clear();
@@ -700,7 +700,7 @@ struct KelvinVoigtDamper {
         ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
   };
 
@@ -717,7 +717,7 @@ struct KelvinVoigtDamper {
       DataForcesAndSourcesCore::EntData &row_data,
       DataForcesAndSourcesCore::EntData &col_data
     ) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       try {
         int nb_row = row_data.getIndices().size();
         int nb_col = col_data.getIndices().size();
@@ -747,7 +747,7 @@ struct KelvinVoigtDamper {
         ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
   };
 
@@ -766,7 +766,7 @@ struct KelvinVoigtDamper {
     PetscErrorCode get_dStress_dx(
       DataForcesAndSourcesCore::EntData &col_data,int gg
     ) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       try {
         int nb_col = col_data.getIndices().size();
         dStress_dx.resize(9,nb_col,false);
@@ -788,7 +788,7 @@ struct KelvinVoigtDamper {
         ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
     PetscErrorCode doWork(
       int row_side,int col_side,
@@ -796,16 +796,16 @@ struct KelvinVoigtDamper {
       DataForcesAndSourcesCore::EntData &row_data,
       DataForcesAndSourcesCore::EntData &col_data
     ) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
       if(commonData.skipThis) {
-        PetscFunctionReturn(0);
+        MoFEMFunctionReturnHot(0);
       }
 
       int nb_row = row_data.getIndices().size();
       int nb_col = col_data.getIndices().size();
-      if(nb_row == 0) PetscFunctionReturn(0);
-      if(nb_col == 0) PetscFunctionReturn(0);
+      if(nb_row == 0) MoFEMFunctionReturnHot(0);
+      if(nb_col == 0) MoFEMFunctionReturnHot(0);
       try {
         K.resize(nb_row,nb_col,false);
         K.clear();
@@ -845,7 +845,7 @@ struct KelvinVoigtDamper {
         ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
   };
 
@@ -864,7 +864,7 @@ struct KelvinVoigtDamper {
     PetscErrorCode get_dStress_dot(
       DataForcesAndSourcesCore::EntData &col_data,int gg
     ) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       try {
         int nb_col = col_data.getIndices().size();
         dStress_dot.resize(9,nb_col,false);
@@ -886,7 +886,7 @@ struct KelvinVoigtDamper {
         ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
     PetscErrorCode doWork(
       int row_side,int col_side,
@@ -894,16 +894,16 @@ struct KelvinVoigtDamper {
       DataForcesAndSourcesCore::EntData &row_data,
       DataForcesAndSourcesCore::EntData &col_data
     ) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
       if(commonData.skipThis) {
-        PetscFunctionReturn(0);
+        MoFEMFunctionReturnHot(0);
       }
 
       int nb_row = row_data.getIndices().size();
       int nb_col = col_data.getIndices().size();
-      if(nb_row == 0) PetscFunctionReturn(0);
-      if(nb_col == 0) PetscFunctionReturn(0);
+      if(nb_row == 0) MoFEMFunctionReturnHot(0);
+      if(nb_col == 0) MoFEMFunctionReturnHot(0);
       try {
         K.resize(nb_row,nb_col,false);
         K.clear();
@@ -943,12 +943,12 @@ struct KelvinVoigtDamper {
         ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
   };
 
   PetscErrorCode setBlockDataMap() {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
 
 
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
@@ -965,11 +965,11 @@ struct KelvinVoigtDamper {
         blockMaterialDataMap[it->getMeshsetId()].vBeta = data[1];
       }
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode setOperators(const int tag) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
 
     DamperFE *fe_ptr[] = { &feRhs, &feLhs };
     for(int ss = 0;ss<2;ss++) {
@@ -1010,7 +1010,7 @@ struct KelvinVoigtDamper {
       );
     }
 
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
 };

@@ -43,7 +43,7 @@ struct NeoHookean: public NonlinearElasticElement::FunctionsToCalculatePiolaKirc
 
       */
     virtual PetscErrorCode NeoHooke_PiolaKirchhoffII() {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       
       invC.resize(3,3);
       this->S.resize(3,3);
@@ -60,14 +60,14 @@ struct NeoHookean: public NonlinearElasticElement::FunctionsToCalculatePiolaKirc
           this->S(i,j) = this->mu*( ((i==j) ? 1 : 0) - invC(i,j) ) + this->lambda*logJ*invC(i,j);
         }
       }
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     virtual PetscErrorCode calculateP_PiolaKirchhoffI(
       const NonlinearElasticElement::BlockData block_data,
       boost::shared_ptr<const NumeredEntFiniteElement> fe_ptr
     ) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       
       this->lambda = LAMBDA(block_data.E,block_data.PoissonRatio);
       this->mu = MU(block_data.E,block_data.PoissonRatio);
@@ -76,7 +76,7 @@ struct NeoHookean: public NonlinearElasticElement::FunctionsToCalculatePiolaKirc
       this->P.resize(3,3);
       noalias(this->P) = prod(this->F,this->S);
       //std::cerr << "P: " << P << std::endl;
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
    /** \brief calculate elastic energy density
@@ -88,7 +88,7 @@ struct NeoHookean: public NonlinearElasticElement::FunctionsToCalculatePiolaKirc
 
     */
     virtual PetscErrorCode NeoHookean_ElasticEnergy(){
-        PetscFunctionBegin;
+        MoFEMFunctionBeginHot;
         this->eNergy = 0;
         for(int ii = 0;ii<3;ii++) {
             this->eNergy += this->C(ii,ii);
@@ -97,21 +97,21 @@ struct NeoHookean: public NonlinearElasticElement::FunctionsToCalculatePiolaKirc
         // logJ = log(this->J);
         logJ = log(sqrt(this->J*this->J));
         this->eNergy += -this->mu*logJ + 0.5*this->lambda*pow(logJ,2);
-        PetscFunctionReturn(0);
+        MoFEMFunctionReturnHot(0);
     }
 
     PetscErrorCode calculateElasticEnergy(
       const NonlinearElasticElement::BlockData block_data,
       boost::shared_ptr<const NumeredEntFiniteElement> fe_ptr
     ) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       
       this->lambda = LAMBDA(block_data.E,block_data.PoissonRatio);
       this->mu = MU(block_data.E,block_data.PoissonRatio);
       ierr = this->calculateC_CauchyDefromationTensor(); CHKERRQ(ierr);
       ierr = this->dEterminatnt(this->F,this->J); CHKERRQ(ierr);
       ierr = this->NeoHookean_ElasticEnergy(); CHKERRQ(ierr);
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
 };

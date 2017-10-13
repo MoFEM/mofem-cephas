@@ -85,9 +85,9 @@ struct UnknownInterface {
    * @return error code
    */
   virtual PetscErrorCode getLibVersion(Version &version) const {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     version = Version(MoFEM_VERSION_MAJOR,MoFEM_VERSION_MINOR,MoFEM_VERSION_BUILD);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
    }
 
   /**
@@ -100,7 +100,7 @@ struct UnknownInterface {
   */
   virtual const PetscErrorCode getFileVersion(moab::Interface &moab,Version &version) const {
 
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     const EntityHandle root_meshset = 0;
     const int def_version[] = {-1,-1,-1};
     Tag th;
@@ -122,7 +122,7 @@ struct UnknownInterface {
       version_ptr[2] = MoFEM_VERSION_BUILD;
     }
     version = Version(version_ptr);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   /**
@@ -134,9 +134,9 @@ struct UnknownInterface {
    * @return error code
    */
   virtual PetscErrorCode getInterfaceVersion(Version &version) const {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     version = Version(MoFEM_VERSION_MAJOR,MoFEM_VERSION_MINOR,MoFEM_VERSION_BUILD);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
 };

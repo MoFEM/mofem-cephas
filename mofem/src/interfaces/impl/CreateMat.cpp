@@ -111,7 +111,7 @@ PetscErrorCode CreateRowComressedADJMatrix::buildFECol(
   bool do_cols_prob,
   boost::shared_ptr<NumeredEntFiniteElement> &fe_ptr
 ) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   if(!ent_fe_ptr) {
     SETERRQ(
@@ -121,15 +121,15 @@ PetscErrorCode CreateRowComressedADJMatrix::buildFECol(
     );
   }
   // if element is not part of problem
-  if((ent_fe_ptr->getId()&p_miit->getBitFEId()).none()) PetscFunctionReturn(0);
+  if((ent_fe_ptr->getId()&p_miit->getBitFEId()).none()) MoFEMFunctionReturnHot(0);
 
 
   BitRefLevel prb_bit = p_miit->getBitRefLevel();
   BitRefLevel prb_mask = p_miit->getMaskBitRefLevel();
   BitRefLevel fe_bit = ent_fe_ptr->getBitRefLevel();
   // if entity is not problem refinement level
-  if((fe_bit&prb_mask)!=fe_bit) PetscFunctionReturn(0);
-  if((fe_bit&prb_bit)!=prb_bit) PetscFunctionReturn(0);
+  if((fe_bit&prb_mask)!=fe_bit) MoFEMFunctionReturnHot(0);
+  if((fe_bit&prb_bit)!=prb_bit) MoFEMFunctionReturnHot(0);
 
   NumeredEntFiniteElement_multiIndex::iterator fe_it
   = p_miit->numeredFiniteElements.find(ent_fe_ptr->getGlobalUniqueId());
@@ -200,7 +200,7 @@ PetscErrorCode CreateRowComressedADJMatrix::buildFECol(
     );
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 template<typename TAG>
@@ -213,7 +213,7 @@ PetscErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
   std::vector<int> &dofs_col_view,
   int verb
 ) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   // check if dofs and columns are the same, i.e. structurally symmetric problem
   bool do_cols_prob = true;
@@ -291,7 +291,7 @@ PetscErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
 
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 template<typename TAG>
@@ -301,7 +301,7 @@ PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
   std::vector<PetscInt> &i,std::vector<PetscInt> &j,
   const bool no_diagonals,int verb
 ) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   PetscLogEventBegin(USER_EVENT_createMat,0,0,0,0);
   if(verb==-1) verb = verbose;
 
@@ -680,7 +680,7 @@ PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
   }
 
   PetscLogEventEnd(USER_EVENT_createMat,0,0,0,0);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 template<typename TAG>
@@ -688,7 +688,7 @@ PetscErrorCode CreateRowComressedADJMatrix::createMat(
   const std::string &name,Mat *M,const MatType type,PetscInt **_i,PetscInt **_j,PetscScalar **_v,
   const bool no_diagonals,int verb
 ) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   ProblemsByName &pRoblems_set = pRoblems.get<Problem_mi_tag>();
   ProblemsByName::iterator p_miit = pRoblems_set.find(name);
@@ -742,11 +742,11 @@ PetscErrorCode CreateRowComressedADJMatrix::createMat(
   }
   //MatView(*M,PETSC_VIEWER_STDOUT_WORLD);
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode Core::MatCreateMPIAIJWithArrays(const std::string &name,Mat *Aij,int verb) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   if(verb==-1) verb = verbose;
   int *_i,*_j;
   CreateRowComressedADJMatrix *core_ptr =
@@ -756,11 +756,11 @@ PetscErrorCode Core::MatCreateMPIAIJWithArrays(const std::string &name,Mat *Aij,
   ); CHKERRQ(ierr);
   ierr = PetscFree(_i); CHKERRQ(ierr);
   ierr = PetscFree(_j); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode Core::MatCreateMPIAdj_with_Idx_mi_tag(const std::string &name,Mat *Adj,int verb) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   int *i,*j;
   if(verb>1) {
     PetscPrintf(cOmm,"\tCreate Adj matrix\n");
@@ -775,25 +775,25 @@ PetscErrorCode Core::MatCreateMPIAdj_with_Idx_mi_tag(const std::string &name,Mat
     ss << "throw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << std::endl;
     SETERRQ(cOmm,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 
 PetscErrorCode Core::MatCreateSeqAIJWithArrays(
   const std::string &name,Mat *Aij,PetscInt **i,PetscInt **j,PetscScalar **v,int verb
 ) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   if(verb==-1) verb = verbose;
   CreateRowComressedADJMatrix *core_ptr =
   static_cast<CreateRowComressedADJMatrix*>(const_cast<Core*>(this));
   ierr = core_ptr->createMat<PetscLocalIdx_mi_tag>(
     name,Aij,MATAIJ,i,j,v,false,verb
   ); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode Core::partition_check_matrix_fill_in(const std::string &problem_name,int row_print,int col_print,int verb) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   if(verb==-1) verb = verbose;
 
   struct TestMatrixFillIn: public FEMethod {
@@ -810,12 +810,12 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const std::string &problem_n
       rowPrint(row_print),colPrint(col_print) {};
 
     PetscErrorCode preProcess() {
-      PetscFunctionBegin;
-      PetscFunctionReturn(0);
+      MoFEMFunctionBeginHot;
+      MoFEMFunctionReturnHot(0);
     }
 
     PetscErrorCode operator()() {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
       if(refinedFiniteElementsPtr->find(numeredEntFiniteElementPtr->getEnt())==refinedFiniteElementsPtr->end()) {
         SETERRQ(mFieldPtr->get_comm(),MOFEM_DATA_INCONSISTENCY,"data inconsistency");
@@ -967,18 +967,18 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const std::string &problem_n
         << std::endl;
       }
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     PetscErrorCode postProcess() {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       
 
       // cerr << mFieldPtr->get_comm_rank() << endl;
       ierr = MatAssemblyBegin(A,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
       ierr = MatAssemblyEnd(A,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
 
@@ -1029,7 +1029,7 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const std::string &problem_n
 
   ierr = MatDestroy(&A); CHKERRQ(ierr);
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 

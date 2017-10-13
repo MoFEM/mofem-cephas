@@ -35,7 +35,7 @@ struct OpRow: public ForcesAndSourcesCore::UserDataOperator {
  ForcesAndSourcesCore::UserDataOperator(field_name,field_name,OPROW) {
  }
  PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
-   PetscFunctionBegin;
+   MoFEMFunctionBeginHot;
    if(type == MBVERTEX) {
      // get number of evaluated element in the loop
      std::cout << std::endl << "**** " << 	getNinTheLoop() << " **** " << std::endl;
@@ -45,7 +45,7 @@ struct OpRow: public ForcesAndSourcesCore::UserDataOperator {
    << " field name " << rowFieldName << " side " << side << " type " << type_name[type]
    << " nb dofs on entity " << data.getIndices().size()
    << std::endl;
-   PetscFunctionReturn(0);
+   MoFEMFunctionReturnHot(0);
  }
 };
 
@@ -63,7 +63,7 @@ struct OpRowCol: public ForcesAndSourcesCore::UserDataOperator {
    DataForcesAndSourcesCore::EntData &row_data,
    DataForcesAndSourcesCore::EntData &col_data
  ) {
-   PetscFunctionBegin;
+   MoFEMFunctionBeginHot;
    std::cout << "Hello Operator OpRowCol:"
    << " row field name " << rowFieldName
    << " row side " << row_side << " row type " << type_name[row_type]
@@ -71,7 +71,7 @@ struct OpRowCol: public ForcesAndSourcesCore::UserDataOperator {
    << " col field name " << colFieldName
    << " col side " << col_side << " col type " << type_name[col_type]
    << " nb dofs on col entity" << col_data.getIndices().size() << std::endl;
-   PetscFunctionReturn(0);
+   MoFEMFunctionReturnHot(0);
  }
 };
 
@@ -80,11 +80,11 @@ struct OpVolume: public VolumeElementForcesAndSourcesCore::UserDataOperator {
  VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,field_name,OPROW) {
  }
  PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
-   PetscFunctionBegin;
+   MoFEMFunctionBeginHot;
    if(type == MBVERTEX) {
     std::cout << "Hello Operator OpVolume:" << " volume " << getVolume() << endl;
    }
-   PetscFunctionReturn(0);
+   MoFEMFunctionReturnHot(0);
  }
 };
 
@@ -93,11 +93,11 @@ struct OpFace: public FaceElementForcesAndSourcesCore::UserDataOperator {
  FaceElementForcesAndSourcesCore::UserDataOperator(field_name,OPROW) {
  }
  PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
-   PetscFunctionBegin;
+   MoFEMFunctionBeginHot;
    if(type == MBVERTEX) {
      std::cout << "Hello Operator OpFace:" << " normal " << getNormal() << endl;
    }
-   PetscFunctionReturn(0);
+   MoFEMFunctionReturnHot(0);
  }
 };
 
@@ -112,12 +112,12 @@ struct OpFaceSide: public FaceElementForcesAndSourcesCore::UserDataOperator {
  }
  PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
    
-   PetscFunctionBegin;
+   MoFEMFunctionBeginHot;
    if(type == MBVERTEX) {
      std::cout << "Hello Operator OpSideFace" << endl;
      ierr = loopSideVolumes("dFE",*feSidePtr); CHKERRQ(ierr);
    }
-   PetscFunctionReturn(0);
+   MoFEMFunctionReturnHot(0);
  }
 };
 
@@ -126,14 +126,14 @@ struct OpVolumeSide: public VolumeElementForcesAndSourcesCoreOnSide::UserDataOpe
  VolumeElementForcesAndSourcesCoreOnSide::UserDataOperator(field_name,field_name,OPROW) {
  }
  PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
-   PetscFunctionBegin;
+   MoFEMFunctionBeginHot;
    if(type == MBVERTEX) {
      std::cout << "Hello Operator OpVolumeSide:"
      << " volume " << getVolume()
      << " normal " << getNormal()
      << endl;
    }
-   PetscFunctionReturn(0);
+   MoFEMFunctionReturnHot(0);
  }
 };
 

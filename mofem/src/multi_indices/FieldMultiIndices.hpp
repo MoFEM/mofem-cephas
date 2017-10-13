@@ -142,8 +142,8 @@ struct Field {
    * @return  Error code
    */
   inline PetscErrorCode get_E_Base(const double m[]) const {
-    PetscFunctionBegin;
-    PetscFunctionReturn(coordSysPtr->get_E_Base(m));
+    MoFEMFunctionBeginHot;
+    MoFEMFunctionReturnHot(coordSysPtr->get_E_Base(m));
   }
 
   /**
@@ -152,8 +152,8 @@ struct Field {
    * @return  Error code
    */
   inline PetscErrorCode get_E_DualBase(const double m[]) const {
-    PetscFunctionBegin;
-    PetscFunctionReturn(coordSysPtr->get_E_DualBase(m));
+    MoFEMFunctionBeginHot;
+    MoFEMFunctionReturnHot(coordSysPtr->get_E_DualBase(m));
   }
 
   /**
@@ -162,8 +162,8 @@ struct Field {
    * @return  Error code
    */
   inline PetscErrorCode get_e_Base(const double m[]) const {
-    PetscFunctionBegin;
-    PetscFunctionReturn(coordSysPtr->get_e_Base(m));
+    MoFEMFunctionBeginHot;
+    MoFEMFunctionReturnHot(coordSysPtr->get_e_Base(m));
   }
 
   /**
@@ -172,8 +172,8 @@ struct Field {
    * @return  Error code
    */
   inline PetscErrorCode get_e_DualBase(const double m[]) const {
-    PetscFunctionBegin;
-    PetscFunctionReturn(coordSysPtr->get_e_DualBase(m));
+    MoFEMFunctionBeginHot;
+    MoFEMFunctionReturnHot(coordSysPtr->get_e_DualBase(m));
   }
 
   /**
@@ -359,21 +359,21 @@ struct interface_Field {
   inline int getCoordSysDim(const int d = 0) const { return this->sFieldPtr->getCoordSysDim(d); }
 
   inline PetscErrorCode get_E_Base(const double m[]) const {
-    PetscFunctionBegin;
-    PetscFunctionReturn(this->sFieldPtr->get_E_Base(m));
+    MoFEMFunctionBeginHot;
+    MoFEMFunctionReturnHot(this->sFieldPtr->get_E_Base(m));
   }
   inline PetscErrorCode get_E_DualBase(const double m[]) const {
-    PetscFunctionBegin;
-    PetscFunctionReturn(this->sFieldPtr->get_E_DualBase(m));
+    MoFEMFunctionBeginHot;
+    MoFEMFunctionReturnHot(this->sFieldPtr->get_E_DualBase(m));
   }
   inline PetscErrorCode get_e_Base(const double m[]) const {
-    PetscFunctionBegin;
-    PetscFunctionReturn(this->sFieldPtr->get_e_Base(m));
+    MoFEMFunctionBeginHot;
+    MoFEMFunctionReturnHot(this->sFieldPtr->get_e_Base(m));
   }
 
   inline PetscErrorCode get_e_DualBase(const double m[]) const {
-    PetscFunctionBegin;
-    PetscFunctionReturn(this->sFieldPtr->get_e_DualBase(m));
+    MoFEMFunctionBeginHot;
+    MoFEMFunctionReturnHot(this->sFieldPtr->get_e_DualBase(m));
   }
 
   /// @return return meshset for coordinate system

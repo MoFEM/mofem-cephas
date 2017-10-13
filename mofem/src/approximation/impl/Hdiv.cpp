@@ -21,7 +21,7 @@ PetscErrorCode MoFEM::Hdiv_Ainsworth_EdgeFaceShapeFunctions_MBTET(
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 ) {
   
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   for(int ff = 0;ff<4;ff++) {
     if(diff_phi_f_e!=NULL) {
       ierr = Hdiv_Ainsworth_EdgeFaceShapeFunctions_MBTET_ON_FACE(
@@ -33,7 +33,7 @@ PetscErrorCode MoFEM::Hdiv_Ainsworth_EdgeFaceShapeFunctions_MBTET(
       ); CHKERRQ(ierr);
     }
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode MoFEM::Hdiv_Ainsworth_EdgeFaceShapeFunctions_MBTET_ON_FACE(
@@ -46,8 +46,8 @@ PetscErrorCode MoFEM::Hdiv_Ainsworth_EdgeFaceShapeFunctions_MBTET_ON_FACE(
   FTensor::Index<'i',3> i;
   FTensor::Index<'j',3> j;
   
-  PetscFunctionBegin;
-  if(p<1) PetscFunctionReturn(0);
+  MoFEMFunctionBeginHot;
+  if(p<1) MoFEMFunctionReturnHot(0);
 
   FTensor::Tensor1<double,3> t_edge_cross[3];
   FTensor::Tensor1<double,3> t_node_diff_ksi[4];
@@ -126,7 +126,7 @@ PetscErrorCode MoFEM::Hdiv_Ainsworth_EdgeFaceShapeFunctions_MBTET_ON_FACE(
       }
     }
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode MoFEM::Hdiv_Ainsworth_FaceBubbleShapeFunctions(
@@ -134,7 +134,7 @@ PetscErrorCode MoFEM::Hdiv_Ainsworth_FaceBubbleShapeFunctions(
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 ) {
   
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   for(int ff = 0;ff<4;ff++) {
     double *diff;
     if(diff_phi_f!=NULL) {
@@ -146,7 +146,7 @@ PetscErrorCode MoFEM::Hdiv_Ainsworth_FaceBubbleShapeFunctions(
       &faces_nodes[3*ff],p[ff],N,diffN,phi_f[ff],diff,gdim,4,base_polynomials
     ); CHKERRQ(ierr);
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode MoFEM::Hdiv_Ainsworth_FaceBubbleShapeFunctions_ON_FACE(
@@ -156,8 +156,8 @@ PetscErrorCode MoFEM::Hdiv_Ainsworth_FaceBubbleShapeFunctions_ON_FACE(
   FTensor::Index<'i',3> i;
   FTensor::Index<'j',3> j;
   
-  PetscFunctionBegin;
-  if(p<3) PetscFunctionReturn(0);
+  MoFEMFunctionBeginHot;
+  if(p<3) MoFEMFunctionReturnHot(0);
 
   const int vert_i = face_nodes[1];
   const int vert_j = face_nodes[2];
@@ -267,7 +267,7 @@ PetscErrorCode MoFEM::Hdiv_Ainsworth_FaceBubbleShapeFunctions_ON_FACE(
       );
     }
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode MoFEM::Hdiv_Ainsworth_EdgeBasedVolumeShapeFunctions_MBTET(
@@ -286,8 +286,8 @@ PetscErrorCode MoFEM::Hdiv_Ainsworth_EdgeBasedVolumeShapeFunctions_MBTET(
     {0,1}, {1,2}, {2,0}, {0,3}, {1,3}, {2,3}
   };
 
-  PetscFunctionBegin;
-  if(p<2) PetscFunctionReturn(0);
+  MoFEMFunctionBeginHot;
+  if(p<2) MoFEMFunctionReturnHot(0);
   if(diffN == NULL) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
   }
@@ -361,7 +361,7 @@ PetscErrorCode MoFEM::Hdiv_Ainsworth_EdgeBasedVolumeShapeFunctions_MBTET(
     }
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode MoFEM::Hdiv_Ainsworth_FaceBasedVolumeShapeFunctions_MBTET(
@@ -371,8 +371,8 @@ PetscErrorCode MoFEM::Hdiv_Ainsworth_FaceBasedVolumeShapeFunctions_MBTET(
   
   const int faces_nodes[4][3] = { {0,1,3}, {1,2,3}, {0,2,3}, {0,1,2} };
 
-  PetscFunctionBegin;
-  if(p<3) PetscFunctionReturn(0);
+  MoFEMFunctionBeginHot;
+  if(p<3) MoFEMFunctionReturnHot(0);
 
   FTensor::Tensor1<double,3> t_coords[4] = {
     FTensor::Tensor1<double,3>(0,0,0),
@@ -478,7 +478,7 @@ PetscErrorCode MoFEM::Hdiv_Ainsworth_FaceBasedVolumeShapeFunctions_MBTET(
       }
     }
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode MoFEM::Hdiv_Ainsworth_VolumeBubbleShapeFunctions_MBTET(
@@ -486,8 +486,8 @@ PetscErrorCode MoFEM::Hdiv_Ainsworth_VolumeBubbleShapeFunctions_MBTET(
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 ) {
   
-  PetscFunctionBegin;
-  if(p<4) PetscFunctionReturn(0);
+  MoFEMFunctionBeginHot;
+  if(p<4) MoFEMFunctionReturnHot(0);
 
   FTensor::Tensor1<double*,3> t_node_diff_ksi[4] = {
     FTensor::Tensor1<double*,3>(&diffN[0],&diffN[ 1],&diffN[ 2]),
@@ -613,7 +613,7 @@ PetscErrorCode MoFEM::Hdiv_Ainsworth_VolumeBubbleShapeFunctions_MBTET(
     }
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode MoFEM::Hdiv_Demkowicz_Face_MBTET_ON_FACE(
@@ -626,7 +626,7 @@ PetscErrorCode MoFEM::Hdiv_Demkowicz_Face_MBTET_ON_FACE(
   const int face_edges_nodes[3][2] = { {0,1}, {1,2}, {2,0} };
   const int face_oposite_edges_node[] = { 2, 0, 1 };
   
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   FTensor::Index<'i',3> i;
   FTensor::Index<'j',3> j;
@@ -767,7 +767,7 @@ PetscErrorCode MoFEM::Hdiv_Demkowicz_Face_MBTET_ON_FACE(
     }
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 
@@ -783,7 +783,7 @@ PetscErrorCode MoFEM::Hdiv_Demkowicz_Interior_MBTET(
   const int oppisite_face_node[4] = { 2,0,1,3 };
   // list of zero node faces
   const int znf[] = { 0,2,3 };
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   FTensor::Index<'i',3> i;
   FTensor::Index<'j',3> j;
@@ -888,5 +888,5 @@ PetscErrorCode MoFEM::Hdiv_Demkowicz_Interior_MBTET(
 
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }

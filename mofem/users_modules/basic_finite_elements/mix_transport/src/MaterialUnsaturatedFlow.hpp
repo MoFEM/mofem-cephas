@@ -103,39 +103,39 @@ namespace MixTransport {
     }
 
     PetscErrorCode calK() {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       K = Ks;
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     };
 
     PetscErrorCode calDiffK() {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       diffK = 0;
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     };
 
     PetscErrorCode calC() {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       C = ePsilon1;
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     PetscErrorCode calDiffC() {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       diffC = 0;
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     PetscErrorCode calTheta() {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       tHeta = thetaS;
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     virtual PetscErrorCode calSe() {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       Se = 1;
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
 
@@ -158,7 +158,7 @@ namespace MixTransport {
 
     double Kr;
     PetscErrorCode calK() {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       if(h<hS) {
         int r = ::function(2*blockId+1,1,1,&h,&Kr);
         if(r<0) {
@@ -173,12 +173,12 @@ namespace MixTransport {
         K = Ks;
       }
       K += Ks*ePsilon0;
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     };
 
     double diffKr;
     PetscErrorCode calDiffK() {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       if(h<hS) {
         diffK = 0;
         int r = ::gradient(2*blockId+1,1,&h,&diffKr);
@@ -193,12 +193,12 @@ namespace MixTransport {
       } else {
         diffK = 0;
       }
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     };
 
 
     PetscErrorCode calC() {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       if(h<hS) {
         int r = ::gradient(2*blockId+0,1,&h,&C);
         if(r<0) {
@@ -212,11 +212,11 @@ namespace MixTransport {
         C = 0;
       }
       C += ePsilon1;
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     PetscErrorCode calDiffC() {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       if(h<hS) {
         double v = 1;
         int r = ::hess_vec(2*blockId+0,1,&h,&v,&diffC);
@@ -230,11 +230,11 @@ namespace MixTransport {
       } else {
         diffC = 0;
       }
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     PetscErrorCode calTheta() {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       if(h<hS) {
         int r = ::function(2*blockId+0,1,1,&h,&tHeta);
         if(r<0) {
@@ -247,11 +247,11 @@ namespace MixTransport {
       } else {
         tHeta = thetaS;
       }
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     PetscErrorCode calSe() {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       if(h<hS) {
         int r = ::function(2*blockId+0,1,1,&h,&tHeta);
         Se = funSe(tHeta);
@@ -265,7 +265,7 @@ namespace MixTransport {
       } else {
         tHeta = thetaS;
       }
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   };
@@ -364,10 +364,10 @@ namespace MixTransport {
   struct RegisterMaterials {
     static map<std::string,CommonMaterialData::RegisterHook> mapOfRegistredMaterials;
     PetscErrorCode operator()() const {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       mapOfRegistredMaterials["SimpleDarcy"] = MaterialDarcy::createMatPtr;
       mapOfRegistredMaterials["VanGenuchten"] = MaterialVanGenuchten::createMatPtr;
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
   };
 

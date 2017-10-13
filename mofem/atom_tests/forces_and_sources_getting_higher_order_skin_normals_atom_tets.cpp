@@ -161,12 +161,12 @@ int main(int argc, char *argv[]) {
       my_tee(std::cout,ofs),my_split(my_tee) {};
 
     PetscErrorCode preProcess() {
-      PetscFunctionBegin;
-      PetscFunctionReturn(0);
+      MoFEMFunctionBeginHot;
+      MoFEMFunctionReturnHot(0);
     }
 
     PetscErrorCode operator()() {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
       ierr = getSpacesAndBaseOnEntities(data); CHKERRQ(ierr);
 
@@ -224,12 +224,12 @@ int main(int argc, char *argv[]) {
       my_split << "tangent1: " << tAngent1_at_GaussPt << std::endl;
       my_split << "tangent2: " << tAngent2_at_GaussPt << std::endl;
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     PetscErrorCode postProcess() {
-      PetscFunctionBegin;
-      PetscFunctionReturn(0);
+      MoFEMFunctionBeginHot;
+      MoFEMFunctionReturnHot(0);
     }
 
 

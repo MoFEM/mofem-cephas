@@ -181,14 +181,14 @@ int main(int argc, char *argv[]) {
       int side,
       EntityType type,
       DataForcesAndSourcesCore::EntData &data) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
-      if(type != MBTRI && type != MBTET) PetscFunctionReturn(0);
+      if(type != MBTRI && type != MBTET) MoFEMFunctionReturnHot(0);
 
 
       
 
-      if(data.getFieldData().size()==0) PetscFunctionReturn(0);
+      if(data.getFieldData().size()==0) MoFEMFunctionReturnHot(0);
 
       //cout << "type " << type << " side " << side << std::endl;
 
@@ -217,7 +217,7 @@ int main(int argc, char *argv[]) {
       //cout << std::endl;
 
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   };
@@ -250,9 +250,9 @@ int main(int argc, char *argv[]) {
       EntityType type,
       DataForcesAndSourcesCore::EntData &data
     ) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
-      if(type != MBTRI) PetscFunctionReturn(0);
+      if(type != MBTRI) MoFEMFunctionReturnHot(0);
 
       int nb_gauss_pts = data.getHdivN().size1();
       int nb_dofs = data.getFieldData().size();
@@ -280,7 +280,7 @@ int main(int argc, char *argv[]) {
         //cout << getNormal() << std::endl;
       }
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   };

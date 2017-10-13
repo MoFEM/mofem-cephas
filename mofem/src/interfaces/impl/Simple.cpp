@@ -58,18 +58,18 @@
 namespace MoFEM {
 
   PetscErrorCode Simple::queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     *iface = NULL;
     if(uuid == IDD_MOFEMSimple) {
       *iface = dynamic_cast<Simple*>(this);
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
     if(uuid == IDD_MOFEMUnknown) {
       *iface = dynamic_cast<UnknownInterface*>(this);
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown interface");
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   Simple::Simple(const MoFEM::Core& core):
@@ -99,7 +99,7 @@ namespace MoFEM {
   PetscErrorCode Simple::getOptions() {
 
     PetscBool flg = PETSC_TRUE;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     ierr = PetscOptionsBegin(
       PETSC_COMM_WORLD,"",
       "Simple interface options","none"
@@ -109,12 +109,12 @@ namespace MoFEM {
       "file name","", "mesh.h5m",meshFileName,255,&flg
     ); CHKERRQ(ierr);
     ierr = PetscOptionsEnd(); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode Simple::loadFile() {
     MoFEM::Interface &m_field = cOre;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     PetscLogEventBegin(USER_EVENT_SimpleLoadMesh,0,0,0,0);
     // This is a case of distributed mesh and algebra. In that case each processor
     // keep only part of the problem.
@@ -146,7 +146,7 @@ namespace MoFEM {
     ParallelComm* pcomm = ParallelComm::get_pcomm(&m_field.get_moab(),MYPCOMM_INDEX);
     if(pcomm == NULL) pcomm =  new ParallelComm(&m_field.get_moab(),m_field.get_comm());
     PetscLogEventEnd(USER_EVENT_SimpleLoadMesh,0,0,0,0);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode Simple::addDomainField(
@@ -160,12 +160,12 @@ namespace MoFEM {
   ) {
 
     MoFEM::Interface &m_field = cOre;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     ierr = m_field.add_field(
       name, space, base, nb_of_cooficients, tag_type, bh, verb
     ); CHKERRQ(ierr);
     domainFields.push_back(name);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode Simple::addBoundaryField(
@@ -179,12 +179,12 @@ namespace MoFEM {
   ) {
 
     MoFEM::Interface &m_field = cOre;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     ierr = m_field.add_field(
       name, space, base, nb_of_cooficients, tag_type, bh, verb
     ); CHKERRQ(ierr);
     boundaryFields.push_back(name);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode Simple::addSkeletionField(
@@ -198,12 +198,12 @@ namespace MoFEM {
   ) {
 
     MoFEM::Interface &m_field = cOre;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     ierr = m_field.add_field(
       name, space, base, nb_of_cooficients, tag_type, bh, verb
     ); CHKERRQ(ierr);
     skeletonFields.push_back(name);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode Simple::addDataField(
@@ -217,19 +217,19 @@ namespace MoFEM {
   ) {
 
     MoFEM::Interface &m_field = cOre;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     ierr = m_field.add_field(
       name, space, base, nb_of_cooficients, tag_type, bh, verb
     ); CHKERRQ(ierr);
     dataFields.push_back(name);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
 
   PetscErrorCode Simple::defineFiniteElements() {
 
     MoFEM::Interface &m_field = cOre;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     // Define finite elements
     ierr = m_field.add_finite_element(domainFE); CHKERRQ(ierr);
     for(unsigned int ff = 0;ff!=domainFields.size();ff++) {
@@ -276,13 +276,13 @@ namespace MoFEM {
         ierr = m_field.modify_finite_element_add_field_data(skeletonFE,skeletonFields[ff]); CHKERRQ(ierr);
       }
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode Simple::defineProblem() {
 
     MoFEM::Interface &m_field = cOre;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     if(dM!=PETSC_NULL) {
       ierr = DMDestroy(&dM); CHKERRQ(ierr);
     }
@@ -300,18 +300,18 @@ namespace MoFEM {
       ierr = DMMoFEMAddElement(dM,skeletonFE.c_str()); CHKERRQ(ierr);
     }
     ierr = DMMoFEMSetIsPartitioned(dM,PETSC_TRUE); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode Simple::setFieldOrder(const std::string field_name,const int order,const Range* ents) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     fieldsOrder[field_name] = std::pair<int,Range>(order,ents==NULL?Range():Range(*ents));
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode Simple::buildFields() {
     MoFEM::Interface &m_field = cOre;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     PetscLogEventBegin(USER_EVENT_SimpleBuildFields,0,0,0,0);
     // take skin
     {
@@ -470,13 +470,13 @@ namespace MoFEM {
     // Build fields
     ierr = m_field.build_fields(); CHKERRQ(ierr);
     PetscLogEventEnd(USER_EVENT_SimpleBuildFields,0,0,0,0);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode Simple::buildFiniteElements() {
 
     MoFEM::Interface &m_field = cOre;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     PetscLogEventBegin(USER_EVENT_SimpleBuildFiniteElements,0,0,0,0);
     // Add finite elements
     ierr = m_field.add_ents_to_finite_element_by_dim(meshSet,dIm,domainFE,true); CHKERRQ(ierr);
@@ -490,37 +490,37 @@ namespace MoFEM {
       ierr = m_field.build_finite_elements(skeletonFE); CHKERRQ(ierr);
     }
     PetscLogEventEnd(USER_EVENT_SimpleBuildFiniteElements,0,0,0,0);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode Simple::buildProblem() {
     MoFEM::Interface &m_field = cOre;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     PetscLogEventBegin(USER_EVENT_SimpleBuildProblem,0,0,0,0);
     ierr = m_field.build_adjacencies(bitLevel); CHKERRQ(ierr);
     // Set problem by the DOFs on the fields rather that by adding DOFs on the elements
     ierr = m_field.query_interface<ProblemsManager>()->buildProblemFromFields = PETSC_TRUE;
     ierr = DMSetUp(dM); CHKERRQ(ierr);
     PetscLogEventEnd(USER_EVENT_SimpleBuildProblem,0,0,0,0);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode Simple::setUp() {
 
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     ierr = defineFiniteElements(); CHKERRQ(ierr);
     ierr = defineProblem(); CHKERRQ(ierr);
     ierr = buildFields(); CHKERRQ(ierr);
     ierr = buildFiniteElements(); CHKERRQ(ierr);
     ierr = buildProblem(); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode Simple::getDM(DM *dm) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     PetscObjectReference((PetscObject)dM);
     *dm = dM;
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
 

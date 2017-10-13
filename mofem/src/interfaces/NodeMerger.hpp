@@ -155,7 +155,7 @@ struct NodeMergerInterface: public UnknownInterface {
       hashed_unique<
         member<ParentChild,EntityHandle,&ParentChild::pArent>
       >,
-      hashed_unique<
+      hashed_non_unique<
         member<ParentChild,EntityHandle,&ParentChild::cHild>
       >
     >

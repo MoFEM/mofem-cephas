@@ -87,7 +87,7 @@ struct MonitorPostProc: public FEMethod {
   }
 
   PetscErrorCode preProcess() {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
 
 
 
@@ -130,17 +130,17 @@ struct MonitorPostProc: public FEMethod {
         "%D Time %3.2e Elastic energy %3.2e Kinetic Energy %3.2e Total %3.2e\n",
         ts_step,ts_t,E,T,E+T);
 
-        PetscFunctionReturn(0);
+        MoFEMFunctionReturnHot(0);
       }
 
   PetscErrorCode operator()() {
-    PetscFunctionBegin;
-    PetscFunctionReturn(0);
+    MoFEMFunctionBeginHot;
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode postProcess() {
-    PetscFunctionBegin;
-    PetscFunctionReturn(0);
+    MoFEMFunctionBeginHot;
+    MoFEMFunctionReturnHot(0);
   }
 
 };
@@ -188,7 +188,7 @@ struct MonitorRestart: public FEMethod {
   }
 
   PetscErrorCode preProcess() {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
 
     //
 
@@ -201,17 +201,17 @@ struct MonitorRestart: public FEMethod {
     //   }
     // }
     (*step)++;
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode operator()() {
-    PetscFunctionBegin;
-    PetscFunctionReturn(0);
+    MoFEMFunctionBeginHot;
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode postProcess() {
-    PetscFunctionBegin;
-    PetscFunctionReturn(0);
+    MoFEMFunctionBeginHot;
+    MoFEMFunctionReturnHot(0);
   }
 
 };

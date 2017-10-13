@@ -40,12 +40,12 @@ PetscErrorCode PostProcCommonOnRefMesh::OpGetFieldValues::doWork(
   EntityType type,
   DataForcesAndSourcesCore::EntData &data
 ) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
 
 
 
-  if(data.getFieldData().size()==0) PetscFunctionReturn(0);
+  if(data.getFieldData().size()==0) MoFEMFunctionReturnHot(0);
 
   if(V) {
     vAlues.resize(data.getFieldData().size());
@@ -212,7 +212,7 @@ PetscErrorCode PostProcCommonOnRefMesh::OpGetFieldValues::doWork(
     SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"field with that space is not implemented");
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode PostProcCommonOnRefMesh::OpGetFieldGradientValues::doWork(
@@ -220,12 +220,12 @@ PetscErrorCode PostProcCommonOnRefMesh::OpGetFieldGradientValues::doWork(
   EntityType type,
   DataForcesAndSourcesCore::EntData &data
 ) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
 
 
 
-  if(data.getFieldData().size()==0) PetscFunctionReturn(0);
+  if(data.getFieldData().size()==0) MoFEMFunctionReturnHot(0);
   if(V) {
     vAlues.resize(data.getFieldData().size());
     double *a;
@@ -326,16 +326,16 @@ PetscErrorCode PostProcCommonOnRefMesh::OpGetFieldGradientValues::doWork(
     SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode PostProcFatPrismOnRefinedMesh::generateReferenceElementMesh() {
-  PetscFunctionBegin;
-  PetscFunctionReturn(0);
+  MoFEMFunctionBeginHot;
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode PostProcFatPrismOnRefinedMesh::setGaussPtsTrianglesOnly(int order_triangles_only) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   // if(gaussPtsTrianglesOnly.size1()==0 || gaussPtsTrianglesOnly.size2()==0) {
   //   SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"post-process mesh not generated");
   // }
@@ -478,30 +478,30 @@ PetscErrorCode PostProcFatPrismOnRefinedMesh::setGaussPtsTrianglesOnly(int order
     }
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode PostProcFatPrismOnRefinedMesh::setGaussPtsThroughThickness(int order_thickness) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   if(gaussPtsThroughThickness.size1()==0 || gaussPtsThroughThickness.size2()==0) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"post-process mesh not generated");
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode PostProcFatPrismOnRefinedMesh::preProcess() {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   // MoAB
   ParallelComm* pcomm_post_proc_mesh = ParallelComm::get_pcomm(&postProcMesh,MYPCOMM_INDEX);
   if(pcomm_post_proc_mesh != NULL) {
     delete pcomm_post_proc_mesh;
   }
   // rval = postProcMesh.delete_mesh(); CHKERRQ_MOAB(rval);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode PostProcFatPrismOnRefinedMesh::postProcess() {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
   ParallelComm* pcomm_post_proc_mesh = ParallelComm::get_pcomm(&postProcMesh,MYPCOMM_INDEX);
   if(pcomm_post_proc_mesh == NULL) {
@@ -518,12 +518,12 @@ PetscErrorCode PostProcFatPrismOnRefinedMesh::postProcess() {
     ); CHKERRQ_MOAB(rval);
   }
   rval = pcomm_post_proc_mesh->resolve_shared_ents(0); CHKERRQ_MOAB(rval);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 
 PetscErrorCode PostProcFaceOnRefinedMesh::generateReferenceElementMesh() {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   gaussPts.resize(3,3,false);
   gaussPts.clear();
@@ -571,11 +571,11 @@ PetscErrorCode PostProcFaceOnRefinedMesh::generateReferenceElementMesh() {
     gaussPts(1,3+nn) = coords(3+nn,1);
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode PostProcFaceOnRefinedMesh::setGaussPts(int order) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   if(gaussPts.size1()==0) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"post-process mesh not generated");
   }
@@ -632,20 +632,20 @@ PetscErrorCode PostProcFaceOnRefinedMesh::setGaussPts(int order) {
     }
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode PostProcFaceOnRefinedMesh::preProcess() {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   ParallelComm* pcomm_post_proc_mesh = ParallelComm::get_pcomm(&postProcMesh,MYPCOMM_INDEX);
   if(pcomm_post_proc_mesh != NULL) {
     delete pcomm_post_proc_mesh;
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode PostProcFaceOnRefinedMesh::postProcess() {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
   ParallelComm* pcomm_post_proc_mesh = ParallelComm::get_pcomm(&postProcMesh,MYPCOMM_INDEX);
   if(pcomm_post_proc_mesh == NULL) {
@@ -661,5 +661,5 @@ PetscErrorCode PostProcFaceOnRefinedMesh::postProcess() {
     ); CHKERRQ_MOAB(rval);
   }
   rval = pcomm_post_proc_mesh->resolve_shared_ents(0); CHKERRQ_MOAB(rval);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }

@@ -78,7 +78,7 @@ sCatter(scatter) {
 
 
 PetscErrorCode ConstrainMatrixCtx::initializeQorP(Vec x) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     if(initQorP) {
       initQorP = false;
       
@@ -111,21 +111,21 @@ PetscErrorCode ConstrainMatrixCtx::initializeQorP(Vec x) {
       }
       PetscLogEventEnd(USER_EVENT_projInit,0,0,0,0);
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode ConstrainMatrixCtx::recalculateCTandCCT() {
-    PetscFunctionBegin;
-    if(initQorP) PetscFunctionReturn(0);
+    MoFEMFunctionBeginHot;
+    if(initQorP) MoFEMFunctionReturnHot(0);
     
     ierr = MatTranspose(C,MAT_REUSE_MATRIX,&CT); CHKERRQ(ierr);
     ierr = MatTransposeMatMult(CT,CT,MAT_REUSE_MATRIX,PETSC_DEFAULT,&CCT); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode ConstrainMatrixCtx::destroyQorP() {
-    PetscFunctionBegin;
-    if(initQorP) PetscFunctionReturn(0);
+    MoFEMFunctionBeginHot;
+    if(initQorP) MoFEMFunctionReturnHot(0);
     
     ierr = MatDestroy(&CT); CHKERRQ(ierr);
     ierr = MatDestroy(&CCT); CHKERRQ(ierr);
@@ -140,11 +140,11 @@ PetscErrorCode ConstrainMatrixCtx::destroyQorP() {
       ierr = VecScatterDestroy(&sCatter); CHKERRQ(ierr);
     }
     initQorP = true;
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode ConstrainMatrixCtx::initializeQTKQ() {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     if(initQTKQ) {
       initQTKQ = false;
       
@@ -169,31 +169,31 @@ PetscErrorCode ConstrainMatrixCtx::initializeQTKQ() {
       #endif
       PetscLogEventEnd(USER_EVENT_projInit,0,0,0,0);
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode ConstrainMatrixCtx::recalculateCTC() {
-    PetscFunctionBegin;
-    if(initQTKQ) PetscFunctionReturn(0);
+    MoFEMFunctionBeginHot;
+    if(initQTKQ) MoFEMFunctionReturnHot(0);
     
     ierr = MatTransposeMatMult(C,C,MAT_REUSE_MATRIX,PETSC_DEFAULT,&CTC); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode ConstrainMatrixCtx::destroyQTKQ() {
-    PetscFunctionBegin;
-    if(initQTKQ) PetscFunctionReturn(0);
+    MoFEMFunctionBeginHot;
+    if(initQTKQ) MoFEMFunctionReturnHot(0);
     
     ierr = MatDestroy(&CTC); CHKERRQ(ierr);
     ierr = VecDestroy(&Qx); CHKERRQ(ierr);
     ierr = VecDestroy(&KQx); CHKERRQ(ierr);
     ierr = VecDestroy(&CTCx); CHKERRQ(ierr);
     initQTKQ = true;
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode PorjectionMatrixMultOpQ(Mat Q,Vec x,Vec f) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   
   void *void_ctx;
   ierr = MatShellGetContext(Q,&void_ctx); CHKERRQ(ierr);
@@ -218,11 +218,11 @@ PetscErrorCode PorjectionMatrixMultOpQ(Mat Q,Vec x,Vec f) {
   ierr = VecScatterBegin(ctx->sCatter,ctx->CT_CCTm1_Cx,f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   ierr = VecScatterEnd(ctx->sCatter,ctx->CT_CCTm1_Cx,f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   PetscLogEventEnd(ctx->USER_EVENT_projQ,0,0,0,0);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode ConstrainMatrixMultOpP(Mat P,Vec x,Vec f) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   
   void *void_ctx;
   ierr = MatShellGetContext(P,&void_ctx); CHKERRQ(ierr);
@@ -240,11 +240,11 @@ PetscErrorCode ConstrainMatrixMultOpP(Mat P,Vec x,Vec f) {
   ierr = VecScatterBegin(ctx->sCatter,ctx->CT_CCTm1_Cx,f,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   ierr = VecScatterEnd(ctx->sCatter,ctx->CT_CCTm1_Cx,f,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   PetscLogEventEnd(ctx->USER_EVENT_projP,0,0,0,0);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode ConstrainMatrixMultOpR(Mat R,Vec x,Vec f) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   
   void *void_ctx;
   ierr = MatShellGetContext(R,&void_ctx); CHKERRQ(ierr);
@@ -259,11 +259,11 @@ PetscErrorCode ConstrainMatrixMultOpR(Mat R,Vec x,Vec f) {
   ierr = VecScatterBegin(ctx->sCatter,ctx->CT_CCTm1_Cx,f,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   ierr = VecScatterEnd(ctx->sCatter,ctx->CT_CCTm1_Cx,f,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   PetscLogEventEnd(ctx->USER_EVENT_projR,0,0,0,0);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode ConstrainMatrixMultOpRT(Mat RT,Vec x,Vec f) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   
   void *void_ctx;
   ierr = MatShellGetContext(RT,&void_ctx); CHKERRQ(ierr);
@@ -275,11 +275,11 @@ PetscErrorCode ConstrainMatrixMultOpRT(Mat RT,Vec x,Vec f) {
   ierr = MatMult(ctx->C,ctx->X,ctx->Cx);  CHKERRQ(ierr);
   ierr = KSPSolve(ctx->kSP,ctx->Cx,f); CHKERRQ(ierr);
   PetscLogEventEnd(ctx->USER_EVENT_projRT,0,0,0,0);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode ConstrainMatrixMultOpCTC_QTKQ(Mat CTC_QTKQ,Vec x,Vec f) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   
   void *void_ctx;
   ierr = MatShellGetContext(CTC_QTKQ,&void_ctx); CHKERRQ(ierr);
@@ -302,24 +302,24 @@ PetscErrorCode ConstrainMatrixMultOpCTC_QTKQ(Mat CTC_QTKQ,Vec x,Vec f) {
   ierr = VecScatterEnd(ctx->sCatter,ctx->CTCx,f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   ierr = MatDestroy(&Q); CHKERRQ(ierr);
   PetscLogEventEnd(ctx->USER_EVENT_projCTC_QTKQ,0,0,0,0);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode ConstrainMatrixDestroyOpPorQ(Mat Q) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   
   void *void_ctx;
   ierr = MatShellGetContext(Q,&void_ctx); CHKERRQ(ierr);
   ConstrainMatrixCtx *ctx = (ConstrainMatrixCtx*)void_ctx;
   ierr = ctx->destroyQorP(); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 PetscErrorCode ConstrainMatrixDestroyOpQTKQ(Mat QTKQ) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   
   void *void_ctx;
   ierr = MatShellGetContext(QTKQ,&void_ctx); CHKERRQ(ierr);
   ConstrainMatrixCtx *ctx = (ConstrainMatrixCtx*)void_ctx;
   ierr = ctx->destroyQTKQ(); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }

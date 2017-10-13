@@ -34,7 +34,41 @@ namespace MoFEM {
 
     MoFEM::Core& cOre;
     CutMeshInterface(const MoFEM::Core &core);
-    ~CutMeshInterface() {}
+    ~CutMeshInterface() {
+    }
+
+    int lineSearchSteps;
+    int nbMaxMergingCycles;
+    int nbMaxTrimSearchIterations;
+
+    /**
+     * \brief Get options from command line
+     * @return error cdoe
+     */
+    PetscErrorCode getOptions() {
+      MoFEMFunctionBeginHot;
+      ierr = PetscOptionsBegin(
+        PETSC_COMM_WORLD,"",
+        "MOFEM Cut mesh options","none"
+      ); CHKERRQ(ierr);
+      ierr = PetscOptionsInt(
+        "-cut_lineserach_steps",
+        "number of bisection steps wich line search do to find optimal merged nodes position","",
+        lineSearchSteps,&lineSearchSteps,PETSC_NULL
+      ); CHKERRQ(ierr);
+      ierr = PetscOptionsInt(
+        "-cut_max_merging_cycles",
+        "number of maximal merging cycles","",
+        nbMaxMergingCycles,&nbMaxMergingCycles,PETSC_NULL
+      ); CHKERRQ(ierr);
+      ierr = PetscOptionsInt(
+        "-cut_max_trim_iterations",
+        "number of maximal merging cycles","",
+        nbMaxTrimSearchIterations,&nbMaxTrimSearchIterations,PETSC_NULL
+      ); CHKERRQ(ierr);
+      ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+      MoFEMFunctionReturnHot(0);
+    }
 
     /**
      * \brief set surface entities
@@ -75,7 +109,7 @@ namespace MoFEM {
      * @param  volume entities which going to be added
      * @return         error code
      */
-    PetscErrorCode mergeVolume(const Range &volume);
+    PetscErrorCode mergeVolumes(const Range &volume);
 
     /**
      * \brief build tree
@@ -89,6 +123,10 @@ namespace MoFEM {
      * @return      error code
      */
     PetscErrorCode findEdgesToCut(const double low_tol = 0,int verb = 0);
+
+    PetscErrorCode getEntsOnCutSurface(
+      const double low_tol = 0,int verb  = 0
+    );
 
     /**
      * \brief cut edges
@@ -120,13 +158,35 @@ namespace MoFEM {
      */
     PetscErrorCode findEdgesToTrim(Tag th = NULL,const double tol = 1e-4,int verb = 0);
 
-    PetscErrorCode trimEdgesInTheMiddle(const BitRefLevel bit);
+    /**
+     * \brief trim edges
+     * @param  bit bit level of the trimed mesh
+     * @return     error code
+     */
+    PetscErrorCode trimEdgesInTheMiddle(const BitRefLevel bit,Tag th = NULL,const double tol = 1e-4);
 
     /**
      * \brief move trimed edges mid nodes
      * @return error code
      */
     PetscErrorCode moveMidNodesOnTrimedEdges(Tag th = NULL);
+
+    /**
+     * \brief Remove patalogical elements on surface internal front
+     *
+     * Internal surface skin is a set of edges in interia of the body on boundary
+     * of surface. This set of edges is called surface front. If surface face has three nodes on
+     * surface front, non of the face nodes is split and should be removed from surface
+     * if it is going to be split.
+     *
+     * @param  split_bit split bit level
+     * @param  bit       bit level of split mesh
+     * @param  ents      ents on the surface which is going to be split
+     * @return           error code
+     */
+    PetscErrorCode removePathologicalFrontTris(
+      const BitRefLevel split_bit,Range &ents
+    );
 
     /**
      * \brief split sides
@@ -143,36 +203,65 @@ namespace MoFEM {
     );
 
     /**
-     * \brief split sides of trimmed surface
+     * \brief split sides of merged surface
      * @param  split_bit split bit level
      * @param  bit       bit level of split mesh
      * @return           error code
      */
-    PetscErrorCode splitTrimSides(
-      const BitRefLevel split_bit,
+    PetscErrorCode splitMergedSides(
+      const BitRefLevel merged_bit,
       const BitRefLevel bit,
       Tag th = NULL
     );
 
-    PetscErrorCode mergeBadEdgesOnSurface(
-      const Range& tets,const Range& surface,const Range& fixed_verts,
-      Tag th_quality,Tag th_position,
-      Range& out_tets,Range& new_surf
+    PetscErrorCode mergeBadEdges(
+      const int fraction_level,
+      const Range& tets,const Range& surface,
+      const Range& fixed_edges,const Range& corner_nodes,
+      Tag th,
+      Range& out_tets,Range& new_surf,
+      const bool update_meshsets = false,
+      const BitRefLevel *bit_ptr = NULL
     );
 
-    inline const Range& getVerticesOnSurface() const { return verticesOnSurface; }
+    PetscErrorCode mergeBadEdges(
+      const int fraction_level,
+      const BitRefLevel merged_bit,
+      const BitRefLevel bit,
+      const Range& surface,
+      const Range& fixed_edges,
+      const Range& corner_nodes,
+      Tag th
+    );
+
+    /**
+     * \brief set coords to tag
+     * @param  th tag handle
+     * @return    error code
+     */
+    PetscErrorCode setTagData(Tag th);
+
+    /**
+     * \brief set coords from tag
+     * @param  th tag handle
+     * @return    error code
+     */
+    PetscErrorCode setCoords(Tag th);
+
     inline const Range& getCutEdges() const { return cutEdges; }
     inline const Range& getCutVolumes() const { return cutVolumes; }
     inline const Range& getNewCutVolumes() const { return cutNewVolumes; }
     inline const Range& getNewCutSurfaces() const { return cutNewSurfaces; }
     inline const Range& getNewCutVertices() const { return cutNewVertices; }
+    inline const Range& getZeroDistanceEnts() const { return zeroDistanseEnts; }
 
     inline const Range& getTrimEdges() const { return trimEdges; }
-    inline const Range& getOutsideEdges() const { return outsideEdges; }
-
     inline const Range& getNewTrimVolumes() const { return trimNewVolumes; }
     inline const Range& getNewTrimSurfaces() const { return trimNewSurfaces; }
     inline const Range& getNewTrimVertices() const { return trimNewVertices; }
+
+    inline const Range& getMergedVolumes() const { return mergedVolumes; }
+    inline const Range& getMergedSurfaces() const { return mergedSurfaces; }
 
   private:
 
@@ -182,21 +271,21 @@ namespace MoFEM {
     boost::shared_ptr<OrientedBoxTreeTool> treeSurfPtr;
     EntityHandle rootSetSurf;
 
-    Range verticesOnSurface;
-
     Range cutEdges;
     Range cutVolumes;
     Range cutNewVolumes;
     Range cutNewSurfaces;
+    Range zeroDistanseEnts;
+    Range zeroDistanseVerts;
     Range cutNewVertices;
 
-    Range outsideEdges;
     Range trimNewVolumes;
     Range trimNewVertices;
     Range trimNewSurfaces;
-
-
     Range trimEdges;
+
+    Range mergedVolumes;
+    Range mergedSurfaces;
 
     struct TreeData {
       double dIst;
@@ -225,25 +314,24 @@ namespace MoFEM {
       double &ray_length
     ) const;
 
-    int segmentPlane(
-      VectorAdaptor s0,
-      VectorAdaptor s1,
-      VectorAdaptor x0,
-      VectorAdaptor n,
-      double &s
-    ) const;
+    // /**
+    //  * Find if segment in on the plain
+    //  * @param  s0 segemnt fisrt point
+    //  * @param  s1 segment second point
+    //  * @param  x0 point on the plain
+    //  * @param  n  normal on the plain
+    //  * @param  s  intersect point
+    //  * @return    1 - intersect, 2 - segment on the plain, 0 - no intersect
+    //  */
+    // int segmentPlane(
+    //   VectorAdaptor s0,
+    //   VectorAdaptor s1,
+    //   VectorAdaptor x0,
+    //   VectorAdaptor n,
+    //   double &s
+    // ) const;
 
-    PetscErrorCode mergeNodes(
-      EntityHandle father,
-      EntityHandle mother,
-      Range& proc_tets,
-      Range &new_surf,
-      const bool only_if_improve_quality = false,
-      const double move = 0,
-      const int line_search = 0,
-      Tag th = NULL,
-      const int verb = 0
-    );
+    double aveLength;
 
   };
 

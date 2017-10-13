@@ -75,29 +75,29 @@ BitFEId Problem::getBitFEId() const {
 }
 
 PetscErrorCode Problem::getRowDofsByPetscGlobalDofIdx(DofIdx idx,const NumeredDofEntity **dof_ptr) const {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   NumeredDofEntity_multiIndex::index<PetscGlobalIdx_mi_tag>::type::iterator dit;
   dit = numeredDofsRows->get<PetscGlobalIdx_mi_tag>().find(idx);
   if(dit==numeredDofsRows->get<PetscGlobalIdx_mi_tag>().end()) {
     SETERRQ1(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"row dof <%d> not found",idx);
   }
   *dof_ptr = &*(*dit);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode Problem::getColDofsByPetscGlobalDofIdx(DofIdx idx,const NumeredDofEntity **dof_ptr) const {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   NumeredDofEntity_multiIndex::index<PetscGlobalIdx_mi_tag>::type::iterator dit;
   dit = numeredDofsCols->get<PetscGlobalIdx_mi_tag>().find(idx);
   if(dit==numeredDofsCols->get<PetscGlobalIdx_mi_tag>().end()) {
     SETERRQ1(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"row dof <%d> not found",idx);
   }
   *dof_ptr = &*(*dit);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode Problem::getNumberOfElementsByNameAndPart(MPI_Comm comm,const std::string name,PetscLayout *layout) const {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   int size, rank;
   MPI_Comm_size(comm,&size);
   MPI_Comm_rank(comm,&rank);
@@ -108,11 +108,11 @@ PetscErrorCode Problem::getNumberOfElementsByNameAndPart(MPI_Comm comm,const std
   nb_elems = fe_by_name_and_part.count(boost::make_tuple(name,rank));
   ierr = PetscLayoutSetLocalSize(*layout,nb_elems); CHKERRQ(ierr);
   ierr = PetscLayoutSetUp(*layout); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode Problem::getNumberOfElementsByPart(MPI_Comm comm,PetscLayout *layout) const {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   int size, rank;
   MPI_Comm_size(comm,&size);
   MPI_Comm_rank(comm,&rank);
@@ -124,7 +124,7 @@ PetscErrorCode Problem::getNumberOfElementsByPart(MPI_Comm comm,PetscLayout *lay
   nb_elems = fe_by_part.count(rank);
   ierr = PetscLayoutSetLocalSize(*layout,nb_elems); CHKERRQ(ierr);
   ierr = PetscLayoutSetUp(*layout); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode Problem::getDofByNameEntAndEntDofIdx(
@@ -134,7 +134,7 @@ PetscErrorCode Problem::getDofByNameEntAndEntDofIdx(
   const RowColData row_or_col,
   boost::shared_ptr<NumeredDofEntity> &dof_ptr
 ) const {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   typedef NumeredDofEntity_multiIndex::index<
   Composite_Name_And_Ent_And_EntDofIdx_mi_tag
   >::type NumberdDofByNameEntAndEndDofIdx;
@@ -167,7 +167,7 @@ PetscErrorCode Problem::getDofByNameEntAndEntDofIdx(
   } else {
     dof_ptr = boost::shared_ptr<NumeredDofEntity>();
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 

@@ -278,7 +278,7 @@ struct CubitMeshSets {
    */
   template<class ATTRIBUTE_TYPE>
   PetscErrorCode getAttributeDataStructure(ATTRIBUTE_TYPE &data) const {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     
     if((cubitBcType&data.getType()).none()) {
       SETERRQ(
@@ -290,7 +290,7 @@ struct CubitMeshSets {
     std::vector<double> attributes;
     ierr = getAttributes(attributes); CHKERRQ(ierr);
     ierr = data.fill_data(attributes); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   // /** \deprecated Use getAttributeDataStructure() instead
@@ -305,19 +305,19 @@ struct CubitMeshSets {
    */
   template<class ATTRIBUTE_TYPE>
   PetscErrorCode setAttributeDataStructure(const ATTRIBUTE_TYPE &data) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     
     if((cubitBcType&data.getType()).none()) {
         SETERRQ(PETSC_COMM_SELF,1,"attributes are not for ATTRIBUTE_TYPE structure");
     }
     double *ptr = const_cast<double*>(tag_block_attributes);
     ierr = data.set_data(ptr,8*tag_block_attributes_size); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   template<class CUBIT_BC_DATA_TYPE>
   PetscErrorCode getBcDataStructure(CUBIT_BC_DATA_TYPE& data) const {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     
     if((cubitBcType&data.tYpe).none()) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"bc_data are not for CUBIT_BC_DATA_TYPE structure");
@@ -325,7 +325,7 @@ struct CubitMeshSets {
     std::vector<char> bc_data;
     getBcData(bc_data);
     ierr = data.fill_data(bc_data); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   // /** \deprecated Use getBcDataStructure() instead
@@ -337,11 +337,11 @@ struct CubitMeshSets {
 
   template<class CUBIT_BC_DATA_TYPE>
   PetscErrorCode setBcDataStructure(CUBIT_BC_DATA_TYPE& data) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     
     char *ptr = const_cast<char*>(tag_bc_data);
     ierr = data.set_data(ptr,tag_bc_size); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   friend std::ostream& operator<<(std::ostream& os,const CubitMeshSets& e);

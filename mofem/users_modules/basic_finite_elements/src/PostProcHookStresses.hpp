@@ -100,7 +100,7 @@ struct PostPorcHookStress: public MoFEM::VolumeElementForcesAndSourcesCore::User
 
    */
   PetscErrorCode getMatParameters(double *_lambda,double *_mu,int *_block_id) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
 
     
     
@@ -127,7 +127,7 @@ struct PostPorcHookStress: public MoFEM::VolumeElementForcesAndSourcesCore::User
             *_mu = MU(setOfBlocksMaterialDataPtr->at(*_block_id).E,setOfBlocksMaterialDataPtr->at(*_block_id).PoissonRatio);
           }
           #endif //__NONLINEAR_ELASTIC_HPP
-          PetscFunctionReturn(0);
+          MoFEMFunctionReturnHot(0);
         }
       }
     }
@@ -138,7 +138,7 @@ struct PostPorcHookStress: public MoFEM::VolumeElementForcesAndSourcesCore::User
       "top tip: check if you update block sets after mesh refinements or interface insertion"
     );
 
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   /**
@@ -148,10 +148,10 @@ struct PostPorcHookStress: public MoFEM::VolumeElementForcesAndSourcesCore::User
     int side,
     EntityType type,
     DataForcesAndSourcesCore::EntData &data) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
 
-    if(type != MBVERTEX) PetscFunctionReturn(0);
-    if(data.getFieldData().size()==0) PetscFunctionReturn(0);
+    if(type != MBVERTEX) MoFEMFunctionReturnHot(0);
+    if(data.getFieldData().size()==0) MoFEMFunctionReturnHot(0);
 
     
     
@@ -281,7 +281,7 @@ struct PostPorcHookStress: public MoFEM::VolumeElementForcesAndSourcesCore::User
 
     }
 
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
 };

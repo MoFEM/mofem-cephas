@@ -30,10 +30,10 @@ PetscErrorCode L2_ShapeFunctions_MBTRI(
   int p,double *N,double *diffN,double *L2N,double *diff_L2N,int GDIM,
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 ) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   int P = NBFACETRI_L2(p);
-  if(P==0) PetscFunctionReturn(0);
+  if(P==0) MoFEMFunctionReturnHot(0);
   double diff_ksiL01[2],diff_ksiL20[2];
   int dd = 0;
   for(;dd<2;dd++) {
@@ -72,16 +72,16 @@ PetscErrorCode L2_ShapeFunctions_MBTRI(
     }
     if(jj!=P) SETERRQ1(PETSC_COMM_SELF,1,"wrong order %d",jj);
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 PetscErrorCode L2_ShapeFunctions_MBTET(
   int p,double *N,double *diffN,double *L2N,double *diff_L2N,int GDIM,
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 ) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   int P = NBVOLUMETET_L2(p);
-  if(P==0) PetscFunctionReturn(0);
+  if(P==0) MoFEMFunctionReturnHot(0);
   double diff_ksiL0[3],diff_ksiL1[3],diff_ksiL2[3];
   int dd = 0;
   for(;dd<3;dd++) {
@@ -129,10 +129,10 @@ PetscErrorCode L2_ShapeFunctions_MBTET(
     }
     if(jj!=P) SETERRQ2(PETSC_COMM_SELF,1,"wrong order %d != %d",jj,P);
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 PetscErrorCode L2_VolumeShapeDiffMBTETinvJ(int base_p,int p,double *volume_diffN,double *invJac,double *volume_diffNinvJac,int GDIM) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   int ii,gg;
   for(ii = 0;ii<NBVOLUMETET_L2(p);ii++) {
     for(gg = 0;gg<GDIM;gg++) {
@@ -141,5 +141,5 @@ PetscErrorCode L2_VolumeShapeDiffMBTETinvJ(int base_p,int p,double *volume_diffN
       cblas_dgemv(CblasRowMajor,CblasTrans,3,3,1.,
 	invJac,3,&(volume_diffN)[3*shift1+3*ii],1,0.,&(volume_diffNinvJac)[3*shift2+3*ii],1);
   }}
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }

@@ -67,11 +67,11 @@ struct FieldApproximationH1 {
       EntityType row_type,EntityType col_type,
       DataForcesAndSourcesCore::EntData &row_data,
       DataForcesAndSourcesCore::EntData &col_data) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
-      if(A == PETSC_NULL) PetscFunctionReturn(0);
-      if(row_data.getIndices().size()==0) PetscFunctionReturn(0);
-      if(col_data.getIndices().size()==0) PetscFunctionReturn(0);
+      if(A == PETSC_NULL) MoFEMFunctionReturnHot(0);
+      if(row_data.getIndices().size()==0) MoFEMFunctionReturnHot(0);
+      if(col_data.getIndices().size()==0) MoFEMFunctionReturnHot(0);
 
       
 
@@ -166,16 +166,16 @@ struct FieldApproximationH1 {
 
       }
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     /** \brief calculate vector
       */
     PetscErrorCode doWork(
       int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
-      if(data.getIndices().size()==0) PetscFunctionReturn(0);
+      if(data.getIndices().size()==0) MoFEMFunctionReturnHot(0);
 
       
 
@@ -257,7 +257,7 @@ struct FieldApproximationH1 {
 
       }
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   };
@@ -293,11 +293,11 @@ struct FieldApproximationH1 {
       EntityType row_type,EntityType col_type,
       DataForcesAndSourcesCore::EntData &row_data,
       DataForcesAndSourcesCore::EntData &col_data) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
-      if(A == PETSC_NULL) PetscFunctionReturn(0);
-      if(row_data.getIndices().size()==0) PetscFunctionReturn(0);
-      if(col_data.getIndices().size()==0) PetscFunctionReturn(0);
+      if(A == PETSC_NULL) MoFEMFunctionReturnHot(0);
+      if(row_data.getIndices().size()==0) MoFEMFunctionReturnHot(0);
+      if(col_data.getIndices().size()==0) MoFEMFunctionReturnHot(0);
       
       const FENumeredDofEntity *dof_ptr;
       ierr = getNumeredEntFiniteElementPtr()->getRowDofsByPetscGlobalDofIdx(row_data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
@@ -375,16 +375,16 @@ struct FieldApproximationH1 {
           ierr = MatSetValues(A,nb_cols,cols,nb_rows,rows,trans_data,ADD_VALUES); CHKERRQ(ierr);
         }
       }
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     /** \brief calculate vector
       */
     PetscErrorCode doWork(
       int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
-      if(data.getIndices().size()==0) PetscFunctionReturn(0);
+      if(data.getIndices().size()==0) MoFEMFunctionReturnHot(0);
       
 
       //PetscAttachDebugger();
@@ -479,7 +479,7 @@ struct FieldApproximationH1 {
 
       }
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   };
@@ -493,14 +493,14 @@ struct FieldApproximationH1 {
     std::vector<Vec> &vec_F,
     FUNEVAL &function_evaluator
   ) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     //add operator to calculate F vector
     feVolume.getOpPtrVector().push_back(new OpApproxVolume<FUNEVAL>(field_name,A,vec_F,function_evaluator));
     //add operator to calculate A matrix
     // if(A) {
     //   feVolume.getOpPtrVector().push_back(new OpApproxVolume<FUNEVAL>(field_name,A,vec_F,function_evaluator));
     // }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   /** \brief Set operators
@@ -512,14 +512,14 @@ struct FieldApproximationH1 {
     std::vector<Vec> &vec_F,
     FUNEVAL &function_evaluator
   ) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     //add operator to calculate F vector
     feFace.getOpPtrVector().push_back(new OpApproxFace<FUNEVAL>(field_name,A,vec_F,function_evaluator));
     //add operator to calculate A matrix
     // if(A) {
     //   feFace.getOpPtrVector().push_back(new OpApproxFace<FUNEVAL>(field_name,A,vec_F,function_evaluator));
     // }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   /** \brief assemble matrix and vector
@@ -532,7 +532,7 @@ struct FieldApproximationH1 {
     Mat A,std::vector<Vec> &vec_F,
     FUNEVAL &function_evaluator
   ) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     
     ierr = setOperatorsVolume(field_name,A,vec_F,function_evaluator); CHKERRQ(ierr);
     if(A) {
@@ -548,7 +548,7 @@ struct FieldApproximationH1 {
       ierr = VecAssemblyBegin(vec_F[lhs]); CHKERRQ(ierr);
       ierr = VecAssemblyEnd(vec_F[lhs]); CHKERRQ(ierr);
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   // /** \deprecated Use loopMatrixAndVectorVolume instead
@@ -561,12 +561,12 @@ struct FieldApproximationH1 {
   //   Mat A,std::vector<Vec> &vec_F,
   //   FUNEVAL &function_evaluator
   // ) {
-  //   PetscFunctionBegin;
+  //   MoFEMFunctionBeginHot;
   //   
   //   ierr = loopMatrixAndVectorVolume(
   //     problem_name,fe_name,field_name,A,vec_F,function_evaluator
   //   ); CHKERRQ(ierr);
-  //   PetscFunctionReturn(0);
+  //   MoFEMFunctionReturnHot(0);
   // }
 
 };

@@ -17,6 +17,7 @@
 */
 
 #include <petscsys.h>
+#include <definitions.h>
 #include <cblas.h>
 
 #include <h1_hdiv_hcurl_l2.h>
@@ -27,7 +28,7 @@ PetscErrorCode H1_EdgeShapeFunctions_MBTRI(
   int *sense,int *p,double *N,double *diffN,double *edgeN[3],double *diff_edgeN[3],int GDIM,
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 ) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   double *edgeN01 = NULL,*edgeN12 = NULL,*edgeN20 = NULL;
   if(edgeN!=NULL) {
@@ -117,16 +118,16 @@ PetscErrorCode H1_EdgeShapeFunctions_MBTRI(
       }
     }
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 PetscErrorCode H1_FaceShapeFunctions_MBTRI(
   const int *face_nodes,int p,double *N,double *diffN,double *faceN,double *diff_faceN,int GDIM,
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 ) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   int P = NBFACETRI_H1(p);
-  if(P == 0) PetscFunctionReturn(0);
+  if(P == 0) MoFEMFunctionReturnHot(0);
   double diff_ksiL0[2],diff_ksiL1[2];
   double *diff_ksi_faces[] = { diff_ksiL0, diff_ksiL1 };
   int dd = 0;
@@ -185,13 +186,13 @@ PetscErrorCode H1_FaceShapeFunctions_MBTRI(
     }
     if(jj!=P) SETERRQ2(PETSC_COMM_SELF,1,"wrong order %d != %d",jj,P);
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 PetscErrorCode H1_EdgeShapeFunctions_MBTET(
   int *sense,int *p,double *N,double *diffN,double *edgeN[],double *diff_edgeN[],int GDIM,
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 ) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   int P[6];
   int ee = 0;
@@ -244,13 +245,13 @@ PetscErrorCode H1_EdgeShapeFunctions_MBTET(
       }
     }
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 PetscErrorCode H1_FaceShapeFunctions_MBTET(
   int *faces_nodes,int *p,double *N,double *diffN,double *faceN[],double *diff_faceN[],int GDIM,
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 ) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   int P[4];
   int ff = 0;
@@ -323,16 +324,16 @@ PetscErrorCode H1_FaceShapeFunctions_MBTET(
       if(jj!=P[ff]) SETERRQ2(PETSC_COMM_SELF,1,"wrong order %d != %d",jj,P[ff]);
     }
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 PetscErrorCode H1_VolumeShapeFunctions_MBTET(
   int p,double *N,double *diffN,double *volumeN,double *diff_volumeN,int GDIM,
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 ) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   int P = NBVOLUMETET_H1(p);
-  if(P==0) PetscFunctionReturn(0);
+  if(P==0) MoFEMFunctionReturnHot(0);
   double diff_ksiL0[3],diff_ksiL1[3],diff_ksiL2[3];
   int dd = 0;
   for(;dd<3;dd++) {
@@ -386,10 +387,10 @@ PetscErrorCode H1_VolumeShapeFunctions_MBTET(
     }
     if(jj!=P) SETERRQ1(PETSC_COMM_SELF,1,"wrong order %d",jj);
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 PetscErrorCode H1_EdgeShapeDiffMBTETinvJ(int *base_p,int *p,double *edge_diffN[],double *invJac,double *edge_diffNinvJac[],int GDIM) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   int ee = 0,ii,gg;
   for(;ee<6; ee++) {
    for(ii = 0;ii<NBEDGE_H1(p[ee]);ii++) {
@@ -399,10 +400,10 @@ PetscErrorCode H1_EdgeShapeDiffMBTETinvJ(int *base_p,int *p,double *edge_diffN[]
       cblas_dgemv(CblasRowMajor,CblasTrans,3,3,1.,
         invJac,3,&(edge_diffN[ee])[3*shift1+3*ii],1,0.,&(edge_diffNinvJac[ee])[3*shift2+3*ii],1);
   }}}
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 PetscErrorCode H1_FaceShapeDiffMBTETinvJ(int *base_p,int *p,double *face_diffN[],double *invJac,double *face_diffNinvJac[],int GDIM) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   int ff = 0,ii,gg;
   for(;ff<4; ff++) {
    for(ii = 0;ii<NBFACETRI_H1(p[ff]);ii++) {
@@ -412,10 +413,10 @@ PetscErrorCode H1_FaceShapeDiffMBTETinvJ(int *base_p,int *p,double *face_diffN[]
       cblas_dgemv(CblasRowMajor,CblasTrans,3,3,1.,
         invJac,3,&(face_diffN[ff])[3*shift1+3*ii],1,0.,&(face_diffNinvJac[ff])[3*shift2+3*ii],1);
   }}}
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 PetscErrorCode H1_VolumeShapeDiffMBTETinvJ(int base_p,int p,double *volume_diffN,double *invJac,double *volume_diffNinvJac,int GDIM) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   int ii,gg;
   for(ii = 0;ii<NBVOLUMETET_H1(p);ii++) {
     for(gg = 0;gg<GDIM;gg++) {
@@ -424,37 +425,37 @@ PetscErrorCode H1_VolumeShapeDiffMBTETinvJ(int base_p,int p,double *volume_diffN
       cblas_dgemv(CblasRowMajor,CblasTrans,3,3,1.,
         invJac,3,&(volume_diffN)[3*shift1+3*ii],1,0.,&(volume_diffNinvJac)[3*shift2+3*ii],1);
   }}
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 PetscErrorCode H1_EdgeGradientOfDeformation_hierachical(int p,double *diffN,double *dofs,double *F) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   int col,row = 0;
   for(;row<3;row++)
     for(col = 0;col<3;col++)
       F[3*row+col] = cblas_ddot(NBEDGE_H1(p),&diffN[col],3,&dofs[row],3);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 PetscErrorCode H1_FaceGradientOfDeformation_hierachical(int p,double *diffN,double *dofs,double *F) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   int col,row = 0;
   for(;row<3;row++)
     for(col = 0;col<3;col++)
       F[3*row+col] = cblas_ddot(NBFACETRI_H1(p),&diffN[col],3,&dofs[row],3);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 PetscErrorCode H1_VolumeGradientOfDeformation_hierachical(int p,double *diffN,double *dofs,double *F) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   int col,row = 0;
   for(;row<3;row++)
     for(col = 0;col<3;col++)
       F[3*row+col] = cblas_ddot(NBVOLUMETET_H1(p),&diffN[col],3,&dofs[row],3);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 PetscErrorCode H1_QuadShapeFunctions_MBPRISM(
   int *faces_nodes,int *p,double *N,double *diffN,double *faceN[],double *diff_faceN[],int GDIM,
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 ) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   int P[3];
   int ff = 0;
@@ -548,16 +549,16 @@ PetscErrorCode H1_QuadShapeFunctions_MBPRISM(
       if(jj!=P[ff]) SETERRQ2(PETSC_COMM_SELF,1,"wrong order %d != %d",jj,P[ff]);
     }
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 PetscErrorCode H1_VolumeShapeFunctions_MBPRISM(
   int p,double *N,double *diffN,double *volumeN,double *diff_volumeN,int GDIM,
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 ) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   int P = NBVOLUMEPRISM_H1(p);
-  if(P==0) PetscFunctionReturn(0);
+  if(P==0) MoFEMFunctionReturnHot(0);
   double diff_ksiL0[3],diff_ksiL1[3],diff_ksiL2[3];
   int ii = 0;
   for(;ii<GDIM;ii++) {
@@ -621,5 +622,5 @@ PetscErrorCode H1_VolumeShapeFunctions_MBPRISM(
     }
     if(jj!=P) SETERRQ1(PETSC_COMM_SELF,1,"wrong order %d",jj);
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }

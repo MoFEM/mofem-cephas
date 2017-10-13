@@ -1080,7 +1080,7 @@ void tet_type_1(const EntityHandle *conn,const int split_edge,const EntityHandle
 PetscErrorCode tri_type_3(
   const EntityHandle *conn,const BitRefEdges split_edges,const EntityHandle *edge_new_nodes,EntityHandle *new_tris_conn
 ) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   int ee = 0;
   for(;ee<3;ee++) {
     if(!split_edges.test(ee)) {
@@ -1103,14 +1103,14 @@ PetscErrorCode tri_type_3(
   new_tris_conn[3*3 + 0] = edge_new_nodes[0];
   new_tris_conn[3*3 + 1] = edge_new_nodes[1];
   new_tris_conn[3*3 + 2] = edge_new_nodes[2];
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 //PRISM
 PetscErrorCode prism_type_1(
   const EntityHandle *conn,const BitRefEdges split_edges,const EntityHandle *edge_new_nodes,EntityHandle *new_prism_conn
 ) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   int ee = 0;
   for(;ee<6;ee++) {
     if(split_edges.test(ee)) break;
@@ -1134,12 +1134,12 @@ PetscErrorCode prism_type_1(
   new_prism_conn[1*6 + 3] = edge_new_nodes[cycle_edges[ee][3]];
   new_prism_conn[1*6 + 4] = conn[cycle_nodes[ee][5]];
   new_prism_conn[1*6 + 5] = conn[cycle_nodes[ee][4]];
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 PetscErrorCode prism_type_2(
   const EntityHandle *conn,const BitRefEdges split_edges,const EntityHandle *edge_new_nodes,EntityHandle *new_prism_conn
 ) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   const int cycle_edges[3][6] = { {0,1,2, 3,4,5}, { 1,2,0, 4,5,3 }, { 2,0,1, 5,3,4 } };
   const int cycle_nodes[3][6] = { {0,1,2, 3,4,5}, { 1,2,0, 4,5,3 }, { 2,0,1, 5,3,4 } };
   int ee = 0;
@@ -1198,12 +1198,12 @@ PetscErrorCode prism_type_2(
   new_prism_conn[2*6 + 3] = _conn_[5];
   new_prism_conn[2*6 + 4] = _edge_new_nodes_[6-3];
   new_prism_conn[2*6 + 5] = _edge_new_nodes_[8-3];
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 PetscErrorCode prism_type_3(
   const EntityHandle *conn,const BitRefEdges split_edges,const EntityHandle *edge_new_nodes,EntityHandle *new_prism_conn
 ) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   int ee = 0;
   for(;ee<6;ee++) {
     if(!split_edges.test(ee)) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
@@ -1236,7 +1236,7 @@ PetscErrorCode prism_type_3(
   new_prism_conn[3*6 + 3] = edge_new_nodes[6-3];
   new_prism_conn[3*6 + 4] = edge_new_nodes[7-3];
   new_prism_conn[3*6 + 5] = edge_new_nodes[8-3];
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 }

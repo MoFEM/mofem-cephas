@@ -91,18 +91,18 @@ namespace MoFEM {
   };
 
   PetscErrorCode ProblemsManager::queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     *iface = NULL;
     if(uuid == IDD_MOFEMProblemsManager) {
       *iface = dynamic_cast<ProblemsManager*>(this);
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
     if(uuid == IDD_MOFEMUnknown) {
       *iface = dynamic_cast<UnknownInterface*>(this);
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown interface");
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   ProblemsManager::ProblemsManager(const MoFEM::Core& core):
@@ -115,7 +115,7 @@ namespace MoFEM {
 
   PetscErrorCode ProblemsManager::getOptions() {
     MoFEM::Interface &m_field = cOre;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     ierr = PetscOptionsBegin(m_field.get_comm(),"","Problem manager","none"); CHKERRQ(ierr);
     {
       ierr = PetscOptionsBool(
@@ -125,7 +125,7 @@ namespace MoFEM {
       ); CHKERRQ(ierr);
     }
     ierr = PetscOptionsEnd(); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode ProblemsManager::partitionMesh(
@@ -134,7 +134,7 @@ namespace MoFEM {
     int verb
   ) {
     MoFEM::Interface &m_field = cOre;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
 
     //get layout
     int rstart,rend,nb_elems;
@@ -397,13 +397,13 @@ namespace MoFEM {
 
     cOre.getBuildMoFEM() |= Core::PARTITION_MESH;
 
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode ProblemsManager::buildProblem(const std::string &name,const bool square_matrix,int verb) {
 
     MoFEM::Interface &m_field = cOre;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     if(!(cOre.getBuildMoFEM()&(1<<0))) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"fields not build");
     if(!(cOre.getBuildMoFEM()&(1<<1))) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"FEs not build");
     if(!(cOre.getBuildMoFEM()&(1<<2))) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"adjacencies not build");
@@ -411,14 +411,14 @@ namespace MoFEM {
     ierr = m_field.get_problem(name,&problem_ptr); CHKERRQ(ierr);
     ierr = buildProblem(const_cast<Problem*>(problem_ptr),square_matrix,verb); CHKERRQ(ierr);
     cOre.getBuildMoFEM() |= 1<<3; // It is assumed that user who uses this function knows what he is doing
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode ProblemsManager::buildProblem(Problem *problem_ptr,const bool square_matrix,int verb) {
     MoFEM::Interface &m_field = cOre;
     const EntFiniteElement_multiIndex *fe_ent_ptr;
     const DofEntity_multiIndex *dofs_field_ptr;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     PetscLogEventBegin(USER_EVENT_ProblemsManager,0,0,0,0);
 
     // Note: Only allowed changes on problem_ptr structure which not influence multi-index.
@@ -582,7 +582,7 @@ namespace MoFEM {
 
     PetscLogEventEnd(USER_EVENT_ProblemsManager,0,0,0,0);
 
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode ProblemsManager::buildProblemOnDistributedMesh(
@@ -590,7 +590,7 @@ namespace MoFEM {
   ) {
 
     MoFEM::Interface &m_field = cOre;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
 
     if(!((cOre.getBuildMoFEM())&Core::BUILD_FIELD)) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"fields not build");
     if(!((cOre.getBuildMoFEM())&Core::BUILD_FE)) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"FEs not build");
@@ -605,7 +605,7 @@ namespace MoFEM {
     cOre.getBuildMoFEM() |= Core::BUILD_PROBLEM;
     cOre.getBuildMoFEM() |= Core::PARTITION_PROBLEM;
 
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode ProblemsManager::buildProblemOnDistributedMesh(
@@ -616,7 +616,7 @@ namespace MoFEM {
     const FiniteElement_multiIndex *fe_ptr;
     const EntFiniteElement_multiIndex *fe_ent_ptr;
     const DofEntity_multiIndex *dofs_field_ptr;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     PetscLogEventBegin(USER_EVENT_ProblemsManager,0,0,0,0);
 
     // clear data structures
@@ -1157,7 +1157,7 @@ namespace MoFEM {
 
     PetscLogEventEnd(USER_EVENT_ProblemsManager,0,0,0,0);
 
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode ProblemsManager::buildSubProblem(
@@ -1171,7 +1171,7 @@ namespace MoFEM {
 
     MoFEM::Interface &m_field = cOre;
     const Problem_multiIndex *problems_ptr;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
 
     ierr = m_field.clear_problem(out_name); CHKERRQ(ierr);
     ierr = m_field.get_problems(&problems_ptr); CHKERRQ(ierr);
@@ -1407,7 +1407,7 @@ namespace MoFEM {
     ierr = printPartitionedProblem(&*out_problem_it,verb); CHKERRQ(ierr);
     ierr = debugPartitionedProblem(&*out_problem_it,verb); CHKERRQ(ierr);
 
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
    PetscErrorCode ProblemsManager::buildCompsedProblem(
@@ -1422,7 +1422,7 @@ namespace MoFEM {
     if(!(cOre.getBuildMoFEM()&Core::BUILD_ADJ)) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"adjacencies not build");
     MoFEM::Interface &m_field = cOre;
     const Problem_multiIndex *problems_ptr;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
 
     ierr = m_field.clear_problem(out_name); CHKERRQ(ierr);
     ierr = m_field.get_problems(&problems_ptr); CHKERRQ(ierr);
@@ -1733,14 +1733,14 @@ namespace MoFEM {
     cOre.getBuildMoFEM() |= Core::BUILD_PROBLEM;
     cOre.getBuildMoFEM() |= Core::PARTITION_PROBLEM;
 
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode ProblemsManager::partitionSimpleProblem(const std::string &name,int verb) {
 
     MoFEM::Interface &m_field = cOre;
     const Problem_multiIndex *problems_ptr;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     if(!(cOre.getBuildMoFEM()&Core::BUILD_FIELD)) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"fields not build");
     if(!(cOre.getBuildMoFEM()&Core::BUILD_FE)) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"FEs not build");
     if(!(cOre.getBuildMoFEM()&Core::BUILD_ADJ)) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"adjacencies not build");
@@ -1844,14 +1844,14 @@ namespace MoFEM {
     }
     ierr = printPartitionedProblem(&*p_miit,verb); CHKERRQ(ierr);
     cOre.getBuildMoFEM() |= Core::PARTITION_PROBLEM;
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode ProblemsManager::partitionProblem(const std::string &name,int verb) {
 
     MoFEM::Interface &m_field = cOre;
     const Problem_multiIndex *problems_ptr;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
 
     if(!(cOre.getBuildMoFEM()&(1<<0))) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"fields not build");
     if(!(cOre.getBuildMoFEM()&(1<<1))) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"FEs not build");
@@ -2063,7 +2063,7 @@ namespace MoFEM {
     ierr = printPartitionedProblem(&*p_miit,verb); CHKERRQ(ierr);
 
     cOre.getBuildMoFEM() |= 1<<4;
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode ProblemsManager::inheretPartition(
@@ -2077,7 +2077,7 @@ namespace MoFEM {
 
     MoFEM::Interface &m_field = cOre;
     const Problem_multiIndex *problems_ptr;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
 
     if(!(cOre.getBuildMoFEM()&Core::BUILD_PROBLEM))
     SETERRQ(m_field.get_comm(),MOFEM_DATA_INCONSISTENCY,"pRoblems not build");
@@ -2251,12 +2251,12 @@ namespace MoFEM {
     ierr = printPartitionedProblem(&*p_miit,verb); CHKERRQ(ierr);
     ierr = debugPartitionedProblem(&*p_miit,verb); CHKERRQ(ierr);
 
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode ProblemsManager::printPartitionedProblem(const Problem *problem_ptr,int verb) {
     MoFEM::Interface &m_field = cOre;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     if(verb>0) {
       std::ostringstream ss;
       ss << "partition_problem: rank = " << m_field.get_comm_rank() << " FEs row ghost dofs "<< *problem_ptr
@@ -2284,12 +2284,12 @@ namespace MoFEM {
       // PetscSynchronizedPrintf(comm,ss.str().c_str());
       // PetscSynchronizedFlush(comm,PETSC_STDOUT);
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode ProblemsManager::debugPartitionedProblem(const Problem *problem_ptr,int verb) {
     MoFEM::Interface &m_field = cOre;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     if(debug>0) {
 
       typedef NumeredDofEntity_multiIndex::index<Idx_mi_tag>::type NumeredDofEntitysByIdx;
@@ -2362,7 +2362,7 @@ namespace MoFEM {
       }
 
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode ProblemsManager::partitionFiniteElements(
@@ -2375,7 +2375,7 @@ namespace MoFEM {
     MoFEM::Interface &m_field = cOre;
     const Problem_multiIndex *problems_ptr;
     const EntFiniteElement_multiIndex *fe_ent_ptr;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
 
     if(!(cOre.getBuildMoFEM()&Core::BUILD_FIELD))
     SETERRQ(m_field.get_comm(),MOFEM_DATA_INCONSISTENCY,"fields not build");
@@ -2606,13 +2606,13 @@ namespace MoFEM {
     }
 
     cOre.getBuildMoFEM() |= Core::PARTITION_FE;
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode ProblemsManager::partitionGhostDofs(const std::string &name,int verb) {
     MoFEM::Interface &m_field = cOre;
     const Problem_multiIndex *problems_ptr;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
 
     if(!(cOre.getBuildMoFEM()&Core::PARTITION_PROBLEM))
     SETERRQ(m_field.get_comm(),MOFEM_DATA_INCONSISTENCY,"partition of problem not build");
@@ -2718,13 +2718,13 @@ namespace MoFEM {
     }
 
     cOre.getBuildMoFEM() |= Core::PARTITION_GHOST_DOFS;
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode ProblemsManager::partitionGhostDofsOnDistributedMesh(const std::string &name,int verb) {
     MoFEM::Interface &m_field = cOre;
     const Problem_multiIndex *problems_ptr;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
 
     if(!(cOre.getBuildMoFEM()&Core::PARTITION_PROBLEM))
     SETERRQ(m_field.get_comm(),MOFEM_DATA_INCONSISTENCY,"partition of problem not build");
@@ -2819,7 +2819,7 @@ namespace MoFEM {
     }
 
     cOre.getBuildMoFEM() |= Core::PARTITION_GHOST_DOFS;
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode ProblemsManager::getFEMeshset(
@@ -2827,7 +2827,7 @@ namespace MoFEM {
   ) const {
     MoFEM::Interface &m_field = cOre;
     const Problem *problem_ptr;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     rval = m_field.get_moab().create_meshset(MESHSET_SET,*meshset); CHKERRQ_MOAB(rval);
     ierr = m_field.get_problem(prb_name,&problem_ptr); CHKERRQ(ierr);
     NumeredEntFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator fit,hi_fe_it;
@@ -2839,7 +2839,7 @@ namespace MoFEM {
       fe_vec.push_back(fit->get()->getEnt());
     }
     rval = m_field.get_moab().add_entities(*meshset,&*fe_vec.begin(),fe_vec.size());
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode ProblemsManager::getProblemElementsLayout(
@@ -2847,12 +2847,12 @@ namespace MoFEM {
   ) const {
     MoFEM::Interface &m_field = cOre;
     const Problem *problem_ptr;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     ierr = m_field.get_problem(name,&problem_ptr); CHKERRQ(ierr);
     ierr = problem_ptr->getNumberOfElementsByNameAndPart(
       PETSC_COMM_WORLD,fe_name,layout
     ); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
 }

@@ -51,18 +51,18 @@
 namespace MoFEM {
 
 PetscErrorCode MeshRefinement::queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   *iface = NULL;
   if(uuid == IDD_MOFEMMeshRefine) {
     *iface = dynamic_cast<MeshRefinement*>(this);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
   if(uuid == IDD_MOFEMUnknown) {
     *iface = dynamic_cast<UnknownInterface*>(this);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
   SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown interface");
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 MeshRefinement::MeshRefinement(const MoFEM::Core &core):
@@ -74,7 +74,7 @@ PetscErrorCode MeshRefinement::add_verices_in_the_middel_of_edges(const EntityHa
 
   MoFEM::Interface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   Range edges;
   rval = moab.get_entities_by_type(meshset,MBEDGE,edges,recursive);  CHKERRQ_MOAB(rval);
   if(edges.empty()) {
@@ -121,7 +121,7 @@ PetscErrorCode MeshRefinement::add_verices_in_the_middel_of_edges(const EntityHa
     }
   }
   ierr = add_verices_in_the_middel_of_edges(edges,bit,verb); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 PetscErrorCode MeshRefinement::add_verices_in_the_middel_of_edges(const Range &_edges,const BitRefLevel &bit,int verb) {
 
@@ -129,7 +129,7 @@ PetscErrorCode MeshRefinement::add_verices_in_the_middel_of_edges(const Range &_
   MoFEM::Interface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   const RefEntity_multiIndex *refined_ents_ptr;
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   ierr = m_field.get_ref_ents(&refined_ents_ptr); CHKERRQ(ierr);
   Range edges = _edges.subset_by_type(MBEDGE);
   typedef const RefEntity_multiIndex::index<Composite_EntType_and_ParentEntType_mi_tag>::type RefEntsByComposite;
@@ -194,7 +194,7 @@ PetscErrorCode MeshRefinement::add_verices_in_the_middel_of_edges(const Range &_
       if(!success) SETERRQ(m_field.get_comm(),MOFEM_DATA_INCONSISTENCY,"inconsistency in data");
     }
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 PetscErrorCode MeshRefinement::refine_TET(
   const EntityHandle meshset,const BitRefLevel &bit,const bool respect_interface,int verb
@@ -203,11 +203,11 @@ PetscErrorCode MeshRefinement::refine_TET(
 
   MoFEM::Interface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   Range tets;
   rval = moab.get_entities_by_type(meshset,MBTET,tets,false); CHKERRQ_MOAB(rval);
   ierr = refine_TET(tets,bit,respect_interface); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 PetscErrorCode MeshRefinement::refine_TET(
   const Range &_tets,const BitRefLevel &bit,const bool respect_interface,int verb
@@ -218,7 +218,7 @@ PetscErrorCode MeshRefinement::refine_TET(
   moab::Interface &moab = m_field.get_moab();
   const RefEntity_multiIndex *refined_ents_ptr;
   const RefElement_multiIndex *refined_finite_elements_ptr;
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   ierr = m_field.get_ref_ents(&refined_ents_ptr); CHKERRQ(ierr);
   ierr = m_field.get_ref_finite_elements(&refined_finite_elements_ptr);
@@ -849,7 +849,7 @@ PetscErrorCode MeshRefinement::refine_TET(
       SETERRQ(m_field.get_comm(),MOFEM_DATA_INCONSISTENCY,"impossible refined face");
     }
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 PetscErrorCode MeshRefinement::refine_PRISM(const EntityHandle meshset,const BitRefLevel &bit,int verb) {
 
@@ -861,7 +861,7 @@ PetscErrorCode MeshRefinement::refine_PRISM(const EntityHandle meshset,const Bit
 
   //FIXME: refinement is based on entity handlers, should work on global ids of nodes, this will allow parallelize algorithm in the future
 
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   ierr = m_field.get_ref_ents(&refined_ents_ptr); CHKERRQ(ierr);
   ierr = m_field.get_ref_finite_elements(&refined_finite_elements_ptr);
@@ -1025,7 +1025,7 @@ PetscErrorCode MeshRefinement::refine_PRISM(const EntityHandle meshset,const Bit
       }
     }
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 PetscErrorCode MeshRefinement::refine_MESHSET(
   const EntityHandle meshset,const BitRefLevel &bit,const bool recursive,int verb
@@ -1035,7 +1035,7 @@ PetscErrorCode MeshRefinement::refine_MESHSET(
   MoFEM::Interface &m_field = cOre;
   //moab::Interface &moab = m_field.get_moab();
   const RefEntity_multiIndex *refined_ents_ptr;
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   ierr = m_field.get_ref_ents(&refined_ents_ptr); CHKERRQ(ierr);
   typedef const RefEntity_multiIndex::index<Ent_mi_tag>::type RefEntsByEnt;
   RefEntsByEnt::iterator miit = refined_ents_ptr->find(meshset);
@@ -1046,7 +1046,7 @@ PetscErrorCode MeshRefinement::refine_MESHSET(
   ierr = m_field.query_interface<UpdateMeshsetsAndRanges>()->updateMeshsetByEntitiesChildren(meshset,bit,meshset,MBTRI,recursive,verb); CHKERRQ(ierr);
   ierr = m_field.query_interface<UpdateMeshsetsAndRanges>()->updateMeshsetByEntitiesChildren(meshset,bit,meshset,MBTET,recursive,verb); CHKERRQ(ierr);
   const_cast<RefEntity_multiIndex*>(refined_ents_ptr)->modify(miit,RefEntity_change_add_bit(bit));
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 }

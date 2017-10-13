@@ -32,18 +32,18 @@
 namespace MoFEM {
 
   PetscErrorCode VecManager::queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     *iface = NULL;
     if(uuid == IDD_MOFEMVEC) {
       *iface = dynamic_cast<VecManager*>(this);
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
     if(uuid == IDD_MOFEMUnknown) {
       *iface = dynamic_cast<UnknownInterface*>(this);
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown interface");
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   VecManager::VecManager(const MoFEM::Core& core):
@@ -56,7 +56,7 @@ namespace MoFEM {
   PetscErrorCode VecManager::vecCreateSeq(const std::string &name,RowColData rc,Vec *V) const {
     const MoFEM::Interface &m_field = cOre;
     const Problem *problem_ptr;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     ierr = m_field.get_problem(name,&problem_ptr); CHKERRQ(ierr);
     DofIdx nb_local_dofs,nb_ghost_dofs;
     switch (rc) {
@@ -72,13 +72,13 @@ namespace MoFEM {
        SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"Not implemented");
     }
     ierr = ::VecCreateSeq(PETSC_COMM_SELF,nb_local_dofs+nb_ghost_dofs,V); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode VecManager::vecCreateGhost(const std::string &name,RowColData rc,Vec *V) const {
     const MoFEM::Interface &m_field = cOre;
     const Problem *problem_ptr;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     ierr = m_field.get_problem(name,&problem_ptr); CHKERRQ(ierr);
     DofIdx nb_dofs,nb_local_dofs,nb_ghost_dofs;
     NumeredDofEntityByLocalIdx *dofs;
@@ -110,7 +110,7 @@ namespace MoFEM {
       *vit = (*miit)->petscGloablDofIdx;
     }
     ierr = ::VecCreateGhost(PETSC_COMM_WORLD,nb_local_dofs,nb_dofs,nb_ghost_dofs,&ghost_idx[0],V); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode VecManager::vecScatterCreate(
@@ -119,7 +119,7 @@ namespace MoFEM {
     VecScatter *newctx
   ) const {
     const MoFEM::Interface &m_field = cOre;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     std::vector<int> idx(0),idy(0);
     ierr = m_field.query_interface<ISManager>()->isCreateFromProblemFieldToOtherProblemField(
       x_problem,x_field_name,x_rc,y_problem,y_field_name,y_rc,idx,idy
@@ -130,7 +130,7 @@ namespace MoFEM {
     ierr = ::VecScatterCreate(xin,ix,yin,iy,newctx); CHKERRQ(ierr);
     ierr = ISDestroy(&ix); CHKERRQ(ierr);
     ierr = ISDestroy(&iy); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode VecManager::vecScatterCreate(
@@ -139,7 +139,7 @@ namespace MoFEM {
     VecScatter *newctx
   ) const {
     const MoFEM::Interface &m_field = cOre;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     std::vector<int> idx(0),idy(0);
     ierr = m_field.query_interface<ISManager>()->isCreateFromProblemToOtherProblem(
       x_problem,x_rc,y_problem,y_rc,idx,idy
@@ -154,13 +154,13 @@ namespace MoFEM {
     ierr = ::VecScatterCreate(xin,ix,yin,iy,newctx); CHKERRQ(ierr);
     ierr = ISDestroy(&ix); CHKERRQ(ierr);
     ierr = ISDestroy(&iy); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode VecManager::setLocalGhostVector(
     const Problem *problem_ptr,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode
   ) const {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     NumeredDofEntityByLocalIdx *dofs;
     DofIdx nb_local_dofs,nb_ghost_dofs;
     switch (rc) {
@@ -235,7 +235,7 @@ namespace MoFEM {
     }
     VecRestoreArray(Vlocal,&array);
     VecDestroy(&Vlocal);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode VecManager::setLocalGhostVector(
@@ -243,16 +243,16 @@ namespace MoFEM {
   ) const {
     const MoFEM::Interface &m_field = cOre;
     const Problem *problem_ptr;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     ierr = m_field.get_problem(name,&problem_ptr); CHKERRQ(ierr);
     ierr = setLocalGhostVector(problem_ptr,rc,V,mode,scatter_mode); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode VecManager::setGlobalGhostVector(
     const Problem *problem_ptr,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode
   ) const {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     typedef NumeredDofEntity_multiIndex::index<PetscGlobalIdx_mi_tag>::type DofsByGlobalIdx;
     DofsByGlobalIdx *dofs;
     DofIdx nb_dofs;
@@ -302,7 +302,7 @@ namespace MoFEM {
       default:
       SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode VecManager::setGlobalGhostVector(
@@ -310,10 +310,10 @@ namespace MoFEM {
   ) const {
     const MoFEM::Interface &m_field = cOre;
     const Problem *problem_ptr;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     ierr = m_field.get_problem(name,&problem_ptr); CHKERRQ(ierr);
     ierr = setGlobalGhostVector(problem_ptr,rc,V,mode,scatter_mode); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode VecManager::setOtherLocalGhostVector(
@@ -323,7 +323,7 @@ namespace MoFEM {
     const MoFEM::Interface &m_field = cOre;
     const Field_multiIndex *fields_ptr;
     const DofEntity_multiIndex *dofs_ptr;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     ierr = m_field.get_fields(&fields_ptr); CHKERRQ(ierr);
     ierr = m_field.get_dofs(&dofs_ptr); CHKERRQ(ierr);
     typedef NumeredDofEntity_multiIndex::index<FieldName_mi_tag>::type DofsByName;
@@ -418,7 +418,7 @@ namespace MoFEM {
       default:
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"not implemented");
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode VecManager::setOtherLocalGhostVector(
@@ -427,12 +427,12 @@ namespace MoFEM {
   ) const {
     const MoFEM::Interface &m_field = cOre;
     const Problem *problem_ptr;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     ierr = m_field.get_problem(name,&problem_ptr); CHKERRQ(ierr);
     ierr = setOtherLocalGhostVector(
       problem_ptr,field_name,cpy_field_name,rc,V,mode,scatter_mode
     ); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode VecManager::setOtherGlobalGhostVector(
@@ -448,7 +448,7 @@ namespace MoFEM {
     const Field_multiIndex *fields_ptr;
     const DofEntity_multiIndex *dofs_ptr;
     const FieldEntity_multiIndex *field_ents;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     ierr = m_field.get_fields(&fields_ptr); CHKERRQ(ierr);
     ierr = m_field.get_dofs(&dofs_ptr); CHKERRQ(ierr);
     ierr = m_field.get_field_ents(&field_ents); CHKERRQ(ierr);
@@ -591,7 +591,7 @@ namespace MoFEM {
       default:
       SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode VecManager::setOtherGlobalGhostVector(
@@ -605,12 +605,12 @@ namespace MoFEM {
   ) const {
     const MoFEM::Interface &m_field = cOre;
     const Problem *problem_ptr;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     ierr = m_field.get_problem(name,&problem_ptr); CHKERRQ(ierr);
     ierr = setOtherGlobalGhostVector(
       problem_ptr,field_name,cpy_field_name,rc,V,mode,scatter_mode
     ); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
 }
