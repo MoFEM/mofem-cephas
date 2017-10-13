@@ -356,6 +356,102 @@ DEPRECATED void macro_is_depracted_using_deprecated_function();
 }
 #endif
 
+
+/**
+ * \brief First executable line of each MoFEM function, used for error handling. Final
+      line of MoFEM functions should be MoFEMFunctionReturn(0);
+
+   \node Not collective
+
+   Example
+   \code
+   PetscErrorCode fun()  {
+    int something;
+    MoFEMFunctionBegin;
+    MoFEMFunctionReturn(0);
+   }
+   \endcode
+
+ */
+#define MoFEMFunctionBegin \
+  PetscFunctionBegin; \
+  try {
+
+/**
+  * \brief First executable line of each MoFEM function, used for error handling. Final
+  line of MoFEM functions should be MoFEMFunctionReturn(0);
+  Use of this function allows for lighter profiling by default.
+
+  \node Not collective
+
+  Example:
+  \code
+  PetscErrorCode fun()  {
+  int something;
+  MoFEMFunctionBeginHot;
+
+  // some work here
+
+  MoFEMFunctionReturnHot(0);
+  }
+  \endcode
+*/
+#define MoFEMFunctionBeginHot \
+  PetscFunctionBeginHot
+
+/**
+  * \brief Last executable line of each PETSc function used for error handling. Replaces return()
+  * @param  a error code
+  *
+  * \note MoFEMFunctionReturn has to be used with MoFEMFunctionBegin and can be
+  * used only at the end of the function. If is need to return function in
+  * ealier use MoFEMFunctionReturnHot
+  *
+  */
+#define MoFEMFunctionReturn(a) \
+  } catch (MoFEMException const &e) { \
+    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage); \
+  } \
+  PetscFunctionReturn(a)
+
+/**
+ * \brief Last executable line of each PETSc function used for error handling. Replaces return()
+ * @param  a error code
+ */
+#define MoFEMFunctionReturnHot(a) \
+  PetscFunctionReturn(a)
+
+
+/**
+  * \brief Last executable line of each PETSc function used for error handling. Replaces return()
+  * @param  a error code.
+  *
+  * \note Return void, whereas MoFEMFunctionReturn returns error code
+  *
+  * \note MoFEMFunctionReturn has to be used with MoFEMFunctionBegin and can be
+  * used only at the end of the function. If is need to return function in
+  * ealier use MoFEMFunctionReturnHot
+  *
+  */
+#define MoFEMFunctionReturnVoid() \
+  } catch (MoFEMException const &e) { \
+    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage); \
+  } \
+  PetscFunctionReturnVoid()
+
+/**
+  * \brief Last executable line of each PETSc function used for error handling. Replaces return()
+  * @param  a error code.
+  *
+  * \note Return void, whereas MoFEMFunctionReturn returns error code
+  *
+  */
+#define MoFEMFunctionReturnHotVoid() \
+  } catch (MoFEMException const &e) { \
+    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage); \
+  } \
+  PetscFunctionReturnVoid()
+
 /**
  * \brief check error code of MoAB function
  * @param  a MoABErrorCode
