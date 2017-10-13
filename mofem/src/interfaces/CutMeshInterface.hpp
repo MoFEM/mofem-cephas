@@ -46,7 +46,7 @@ namespace MoFEM {
      * @return error cdoe
      */
     PetscErrorCode getOptions() {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       ierr = PetscOptionsBegin(
         PETSC_COMM_WORLD,"",
         "MOFEM Cut mesh options","none"
@@ -67,7 +67,7 @@ namespace MoFEM {
         nbMaxTrimSearchIterations,&nbMaxTrimSearchIterations,PETSC_NULL
       ); CHKERRQ(ierr);
       ierr = PetscOptionsEnd(); CHKERRQ(ierr);
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     /**

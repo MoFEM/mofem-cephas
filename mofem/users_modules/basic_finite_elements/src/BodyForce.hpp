@@ -51,10 +51,10 @@ struct BodyForceConstantField {
 
     PetscErrorCode doWork(
       int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
-      if(data.getIndices().size()==0) PetscFunctionReturn(0);
-      if(blockTets.find(getNumeredEntFiniteElementPtr()->getEnt())==blockTets.end()) PetscFunctionReturn(0);
+      if(data.getIndices().size()==0) MoFEMFunctionReturnHot(0);
+      if(blockTets.find(getNumeredEntFiniteElementPtr()->getEnt())==blockTets.end()) MoFEMFunctionReturnHot(0);
 
       
 
@@ -101,7 +101,7 @@ struct BodyForceConstantField {
         &data.getIndices()[0],&Nf[0],ADD_VALUES
       ); CHKERRQ(ierr);
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
 
@@ -112,7 +112,7 @@ struct BodyForceConstantField {
     
     const CubitMeshSets *cubit_meshset_ptr;
     MeshsetsManager *mmanager_ptr;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     ierr = mField.query_interface(mmanager_ptr); CHKERRQ(ierr);
     ierr = mmanager_ptr->getCubitMeshsetPtr(ms_id,BLOCKSET,&cubit_meshset_ptr); CHKERRQ(ierr);
     ierr = cubit_meshset_ptr->getAttributeDataStructure(mapData[ms_id]); CHKERRQ(ierr);
@@ -120,7 +120,7 @@ struct BodyForceConstantField {
     Range tets;
     rval = mField.get_moab().get_entities_by_type(meshset,MBTET,tets,true); CHKERRQ_MOAB(rval);
     fe.getOpPtrVector().push_back(new OpBodyForce(field_name,F,mapData[ms_id],tets));
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
 

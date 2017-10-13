@@ -111,15 +111,15 @@ struct AnalyticalDirichletBC {
       PetscErrorCode doWork(
         int side,EntityType type,DataForcesAndSourcesCore::EntData &data
       ) {
-        PetscFunctionBegin;
+        MoFEMFunctionBeginHot;
         
 
         try {
 
           unsigned int nb_row = data.getIndices().size();
-          if(nb_row==0) PetscFunctionReturn(0);
+          if(nb_row==0) MoFEMFunctionReturnHot(0);
           // if(tRis.find(getFEEntityHandle() == tRis.end()) {
-          //   PetscFunctionReturn(0);
+          //   MoFEMFunctionReturnHot(0);
           // }
 
           const FENumeredDofEntity *dof_ptr;
@@ -181,7 +181,7 @@ struct AnalyticalDirichletBC {
           SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
         }
 
-        PetscFunctionReturn(0);
+        MoFEMFunctionReturnHot(0);
       }
 
     };
@@ -233,7 +233,7 @@ struct AnalyticalDirichletBC {
     const int field_number = 0,
     const string nodals_positions = "MESH_NODE_POSITIONS"
   ) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     if(approxField.getLoopFeApprox().getOpPtrVector().empty()) {
       if(m_field.check_field(nodals_positions)) {
         approxField.getLoopFeApprox().getOpPtrVector().push_back(
@@ -249,7 +249,7 @@ struct AnalyticalDirichletBC {
         field_name,approxField.hoCoords,function_evaluator,field_number
       )
     );
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   // /**

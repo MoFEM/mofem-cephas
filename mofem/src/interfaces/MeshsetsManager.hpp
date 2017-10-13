@@ -173,7 +173,7 @@ namespace MoFEM {
     PetscErrorCode printBcSet(CUBIT_BC_DATA_TYPE& data,unsigned long int type) const {
       
       
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       try {
         const MoFEM::Interface& m_field = cOre;
         const moab::Interface& moab = m_field.get_moab();
@@ -198,7 +198,7 @@ namespace MoFEM {
       } catch (MoFEMException const &e) {
         SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
       }
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     /**

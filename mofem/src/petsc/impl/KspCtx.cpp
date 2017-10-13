@@ -53,7 +53,7 @@ namespace MoFEM {
 
 PetscErrorCode KspRhs(KSP ksp,Vec f,void *ctx) {
   // PetscValidHeaderSpecific(ksp,KSP_CLASSID,1);
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   KspCtx* ksp_ctx = (KspCtx*)ctx;
   PetscLogEventBegin(ksp_ctx->USER_EVENT_KspRhs,0,0,0,0);
   KspCtx::BasicMethodsSequence::iterator bit = ksp_ctx->preProcess_Rhs.begin();
@@ -85,11 +85,11 @@ PetscErrorCode KspRhs(KSP ksp,Vec f,void *ctx) {
   ierr = VecAssemblyBegin(f); CHKERRQ(ierr);
   ierr = VecAssemblyEnd(f); CHKERRQ(ierr);
   PetscLogEventEnd(ksp_ctx->USER_EVENT_KspRhs,0,0,0,0);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 PetscErrorCode KspMat(KSP ksp,Mat A,Mat B,void *ctx) {
   // PetscValidHeaderSpecific(ksp,KSP_CLASSID,1);
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   KspCtx* ksp_ctx = (KspCtx*)ctx;
   PetscLogEventBegin(ksp_ctx->USER_EVENT_KspMat,0,0,0,0);
   KspCtx::BasicMethodsSequence::iterator bit = ksp_ctx->preProcess_Mat.begin();
@@ -125,7 +125,7 @@ PetscErrorCode KspMat(KSP ksp,Mat A,Mat B,void *ctx) {
   // std::string wait;
   // std::cin >> wait;
   PetscLogEventEnd(ksp_ctx->USER_EVENT_KspMat,0,0,0,0);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 }

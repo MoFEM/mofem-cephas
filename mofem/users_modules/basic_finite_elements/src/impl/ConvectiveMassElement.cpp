@@ -52,7 +52,7 @@ initV(false) {
 int ConvectiveMassElement::MyVolumeFE::getRule(int order) { return 2*order; };
 
 PetscErrorCode ConvectiveMassElement::MyVolumeFE::preProcess() {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   
 
   ierr = VolumeElementForcesAndSourcesCore::preProcess(); CHKERRQ(ierr);
@@ -101,11 +101,11 @@ PetscErrorCode ConvectiveMassElement::MyVolumeFE::preProcess() {
     break;
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode ConvectiveMassElement::MyVolumeFE::postProcess() {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   
 
   ierr = VolumeElementForcesAndSourcesCore::postProcess(); CHKERRQ(ierr);
@@ -131,7 +131,7 @@ PetscErrorCode ConvectiveMassElement::MyVolumeFE::postProcess() {
     break;
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 ConvectiveMassElement::ConvectiveMassElement(
@@ -162,12 +162,12 @@ zeroAtType(MBVERTEX) {
 PetscErrorCode ConvectiveMassElement::OpGetDataAtGaussPts::doWork(
   int side,EntityType type,DataForcesAndSourcesCore::EntData &data
 ) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   try {
 
     int nb_dofs = data.getFieldData().size();
     if(nb_dofs == 0) {
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
     int nb_gauss_pts = data.getN().size1();
     int nb_base_functions = data.getN().size2();
@@ -241,7 +241,7 @@ PetscErrorCode ConvectiveMassElement::OpGetDataAtGaussPts::doWork(
     SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 ConvectiveMassElement::OpGetCommonDataAtGaussPts::OpGetCommonDataAtGaussPts(const std::string field_name,CommonData &common_data):
@@ -273,18 +273,18 @@ methodsOp(methods_op) {
 PetscErrorCode ConvectiveMassElement::OpMassJacobian::doWork(
   int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
 ) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   
   if(dAta.tEts.find(getNumeredEntFiniteElementPtr()->getEnt()) == dAta.tEts.end()) {
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   //do it only once, no need to repeat this for edges,faces or tets
-  if(row_type != MBVERTEX) PetscFunctionReturn(0);
+  if(row_type != MBVERTEX) MoFEMFunctionReturnHot(0);
 
   int nb_dofs = row_data.getIndices().size();
-  if(nb_dofs==0) PetscFunctionReturn(0);
+  if(nb_dofs==0) MoFEMFunctionReturnHot(0);
 
   try {
 
@@ -479,7 +479,7 @@ PetscErrorCode ConvectiveMassElement::OpMassJacobian::doWork(
       SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
     }
 
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   ConvectiveMassElement::OpMassRhs::OpMassRhs(
@@ -493,13 +493,13 @@ PetscErrorCode ConvectiveMassElement::OpMassJacobian::doWork(
   PetscErrorCode ConvectiveMassElement::OpMassRhs::doWork(
     int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
   ) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
 
     
     if(dAta.tEts.find(getNumeredEntFiniteElementPtr()->getEnt()) == dAta.tEts.end()) {
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
-    if(row_data.getIndices().size()==0) PetscFunctionReturn(0);
+    if(row_data.getIndices().size()==0) MoFEMFunctionReturnHot(0);
     int nb_dofs = row_data.getIndices().size();
 
     FTensor::Tensor0<double*> base = row_data.getFTensor0N();
@@ -550,7 +550,7 @@ PetscErrorCode ConvectiveMassElement::OpMassJacobian::doWork(
       SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
     }
 
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   ConvectiveMassElement::OpMassLhs_dM_dv::OpMassLhs_dM_dv(
@@ -568,11 +568,11 @@ PetscErrorCode ConvectiveMassElement::OpMassJacobian::doWork(
   PetscErrorCode ConvectiveMassElement::OpMassLhs_dM_dv::getJac(
     DataForcesAndSourcesCore::EntData &col_data,int gg
   ) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     try {
       int nb_col = col_data.getIndices().size();
       jac.clear();
-      if(!nb_col) PetscFunctionReturn(0);
+      if(!nb_col) MoFEMFunctionReturnHot(0);
       FTensor::Index<'i',3> i;
       FTensor::Index<'j',3> j;
       FTensor::Index<'k',3> k;
@@ -659,7 +659,7 @@ PetscErrorCode ConvectiveMassElement::OpMassJacobian::doWork(
       ss << "throw in method: " << ex.what() << std::endl;
       SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode ConvectiveMassElement::OpMassLhs_dM_dv::doWork(
@@ -668,18 +668,18 @@ PetscErrorCode ConvectiveMassElement::OpMassJacobian::doWork(
     DataForcesAndSourcesCore::EntData &row_data,
     DataForcesAndSourcesCore::EntData &col_data
   ) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
 
     
 
     if(dAta.tEts.find(getNumeredEntFiniteElementPtr()->getEnt()) == dAta.tEts.end()) {
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     int nb_row = row_data.getIndices().size();
     int nb_col = col_data.getIndices().size();
-    if(nb_row==0) PetscFunctionReturn(0);
-    if(nb_col==0) PetscFunctionReturn(0);
+    if(nb_row==0) MoFEMFunctionReturnHot(0);
+    if(nb_col==0) MoFEMFunctionReturnHot(0);
 
     FTensor::Tensor0<double*> base = row_data.getFTensor0N();
     int nb_base_functions = row_data.getN().size2();
@@ -761,7 +761,7 @@ PetscErrorCode ConvectiveMassElement::OpMassJacobian::doWork(
       SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
     }
 
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
 
@@ -771,7 +771,7 @@ PetscErrorCode ConvectiveMassElement::OpMassJacobian::doWork(
   OpMassLhs_dM_dv(field_name,col_field,data,common_data) {}
 
   PetscErrorCode ConvectiveMassElement::OpMassLhs_dM_dx::getJac(DataForcesAndSourcesCore::EntData &col_data,int gg) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     try {
       FTensor::Index<'i',3> i;
       FTensor::Index<'j',3> j;
@@ -831,7 +831,7 @@ PetscErrorCode ConvectiveMassElement::OpMassJacobian::doWork(
       ss << "throw in method: " << ex.what() << std::endl;
       SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   ConvectiveMassElement::OpMassLhs_dM_dX::OpMassLhs_dM_dX(
@@ -842,7 +842,7 @@ PetscErrorCode ConvectiveMassElement::OpMassJacobian::doWork(
   }
 
   PetscErrorCode ConvectiveMassElement::OpMassLhs_dM_dX::getJac(DataForcesAndSourcesCore::EntData &col_data,int gg) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     try {
       int nb_col = col_data.getIndices().size();
       jac.clear();
@@ -922,7 +922,7 @@ PetscErrorCode ConvectiveMassElement::OpMassJacobian::doWork(
       ss << "throw in method: " << ex.what() << std::endl;
       SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
 
@@ -939,14 +939,14 @@ lInear(commonData.lInear) {
 PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
   int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
 ) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
 
     
     if(row_type != MBVERTEX) {
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
     if(dAta.tEts.find(getNumeredEntFiniteElementPtr()->getEnt()) == dAta.tEts.end()) {
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     try {
@@ -992,7 +992,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
       SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
     }
 
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   ConvectiveMassElement::OpVelocityJacobian::OpVelocityJacobian(
@@ -1008,18 +1008,18 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
   PetscErrorCode ConvectiveMassElement::OpVelocityJacobian::doWork(
     int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
   ) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
 
     
     if(dAta.tEts.find(getNumeredEntFiniteElementPtr()->getEnt()) == dAta.tEts.end()) {
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     //do it only once, no need to repeat this for edges,faces or tets
-    if(row_type != MBVERTEX) PetscFunctionReturn(0);
+    if(row_type != MBVERTEX) MoFEMFunctionReturnHot(0);
 
     int nb_dofs = row_data.getIndices().size();
-    if(nb_dofs==0) PetscFunctionReturn(0);
+    if(nb_dofs==0) MoFEMFunctionReturnHot(0);
 
     try {
 
@@ -1179,7 +1179,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     ConvectiveMassElement::OpVelocityRhs::OpVelocityRhs(
@@ -1193,14 +1193,14 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
     PetscErrorCode ConvectiveMassElement::OpVelocityRhs::doWork(
       int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
     ) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
       
       if(dAta.tEts.find(getNumeredEntFiniteElementPtr()->getEnt()) == dAta.tEts.end()) {
-        PetscFunctionReturn(0);
+        MoFEMFunctionReturnHot(0);
       }
       int nb_dofs = row_data.getIndices().size();
-      if(nb_dofs==0) PetscFunctionReturn(0);
+      if(nb_dofs==0) MoFEMFunctionReturnHot(0);
 
       FTensor::Tensor0<double*> base = row_data.getFTensor0N();
       int nb_base_functions = row_data.getN().size2();
@@ -1248,7 +1248,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
 
@@ -1261,10 +1261,10 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
     PetscErrorCode ConvectiveMassElement::OpVelocityLhs_dV_dv::getJac(
       DataForcesAndSourcesCore::EntData &col_data,int gg
     ) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       int nb_col = col_data.getIndices().size();
       jac.clear();
-      if(!nb_col) PetscFunctionReturn(0);
+      if(!nb_col) MoFEMFunctionReturnHot(0);
       double *base_ptr = const_cast<double*>(&col_data.getN(gg)[0]);
       FTensor::Tensor0<double*> base(base_ptr,1);
       FTensor::Tensor2<double*,3,3> t_jac(
@@ -1293,7 +1293,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
       //     jac(2,3*dd+nn) = commonData.jacVel[gg](2,nn)*N(dd);
       //   }
       // }
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     ConvectiveMassElement::OpVelocityLhs_dV_dx::OpVelocityLhs_dV_dx(
@@ -1305,10 +1305,10 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
     PetscErrorCode ConvectiveMassElement::OpVelocityLhs_dV_dx::getJac(
       DataForcesAndSourcesCore::EntData &col_data,int gg
     ) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       int nb_col = col_data.getIndices().size();
       jac.clear();
-      if(!nb_col) PetscFunctionReturn(0);
+      if(!nb_col) MoFEMFunctionReturnHot(0);
       double *base_ptr = const_cast<double*>(&col_data.getN(gg)[0]);
       FTensor::Tensor0<double*> base(base_ptr,1);
       FTensor::Tensor2<double*,3,3> t_jac(
@@ -1392,7 +1392,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
       //   }
       // }
       //std::cerr << row_field_name << " " << col_field_name << std::endl;
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     ConvectiveMassElement::OpVelocityLhs_dV_dX::OpVelocityLhs_dV_dX(
@@ -1403,10 +1403,10 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
     PetscErrorCode ConvectiveMassElement::OpVelocityLhs_dV_dX::getJac(
       DataForcesAndSourcesCore::EntData &col_data,int gg
     ) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       int nb_col = col_data.getIndices().size();
       jac.clear();
-      if(!nb_col) PetscFunctionReturn(0);
+      if(!nb_col) MoFEMFunctionReturnHot(0);
       double *base_ptr = const_cast<double*>(&col_data.getN(gg)[0]);
       FTensor::Tensor0<double*> base(base_ptr,1);
       double *diff_ptr = const_cast<double*>(&(col_data.getDiffN(gg,nb_col/3)(0,0)));
@@ -1479,7 +1479,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
       //   jac(2,3*dd+2) += commonData.jacVel[gg](2,3+3+9+3+3*2+2)*diffN(dd,2);
       // }
       //std::cerr << row_field_name << " " << col_field_name << std::endl;
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     ConvectiveMassElement::OpEshelbyDynamicMaterialMomentumJacobian::OpEshelbyDynamicMaterialMomentumJacobian(
@@ -1495,18 +1495,18 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
     PetscErrorCode ConvectiveMassElement::OpEshelbyDynamicMaterialMomentumJacobian::doWork(
       int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
     ) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
       
       if(dAta.tEts.find(getNumeredEntFiniteElementPtr()->getEnt()) == dAta.tEts.end()) {
-        PetscFunctionReturn(0);
+        MoFEMFunctionReturnHot(0);
       }
 
       //do it only once, no need to repeat this for edges,faces or tets
-      if(row_type != MBVERTEX) PetscFunctionReturn(0);
+      if(row_type != MBVERTEX) MoFEMFunctionReturnHot(0);
 
       int nb_dofs = row_data.getIndices().size();
-      if(nb_dofs==0) PetscFunctionReturn(0);
+      if(nb_dofs==0) MoFEMFunctionReturnHot(0);
 
       try {
 
@@ -1659,7 +1659,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
           SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
         }
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     ConvectiveMassElement::OpEshelbyDynamicMaterialMomentumRhs::OpEshelbyDynamicMaterialMomentumRhs(
@@ -1675,14 +1675,14 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
 
     PetscErrorCode ConvectiveMassElement::OpEshelbyDynamicMaterialMomentumRhs::doWork(
       int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
       
       if(dAta.tEts.find(getNumeredEntFiniteElementPtr()->getEnt()) == dAta.tEts.end()) {
-        PetscFunctionReturn(0);
+        MoFEMFunctionReturnHot(0);
       }
       int nb_dofs = row_data.getIndices().size();
-      if(nb_dofs==0) PetscFunctionReturn(0);
+      if(nb_dofs==0) MoFEMFunctionReturnHot(0);
 
       try {
 
@@ -1745,7 +1745,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     ConvectiveMassElement::OpEshelbyDynamicMaterialMomentumLhs_dv::OpEshelbyDynamicMaterialMomentumLhs_dv(
@@ -1762,7 +1762,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
     PetscErrorCode ConvectiveMassElement::OpEshelbyDynamicMaterialMomentumLhs_dv::getJac(
       DataForcesAndSourcesCore::EntData &col_data,int gg
     ) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       int nb_col = col_data.getIndices().size();
       jac.clear();
       double *base_ptr = const_cast<double*>(&col_data.getN(gg)[0]);
@@ -1843,7 +1843,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
       //   jac(2,3*dd+2) += commonData.jacT[gg](2,3+3+3*2+1)*diffN(dd,1);
       //   jac(2,3*dd+2) += commonData.jacT[gg](2,3+3+3*2+2)*diffN(dd,2);
       // }
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     ConvectiveMassElement::OpEshelbyDynamicMaterialMomentumLhs_dx::OpEshelbyDynamicMaterialMomentumLhs_dx(
@@ -1858,7 +1858,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
     PetscErrorCode ConvectiveMassElement::OpEshelbyDynamicMaterialMomentumLhs_dx::getJac(
       DataForcesAndSourcesCore::EntData &col_data,int gg
     ) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       int nb_col = col_data.getIndices().size();
       jac.clear();
       double *diff_ptr = const_cast<double*>(&(col_data.getDiffN(gg,nb_col/3)(0,0)));
@@ -1914,7 +1914,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
       //   jac(2,3*dd+2) += commonData.jacT[gg](2,3+3+9+3*2+1)*diffN(dd,1);
       //   jac(2,3*dd+2) += commonData.jacT[gg](2,3+3+9+3*2+2)*diffN(dd,2);
       // }
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
 
@@ -1928,7 +1928,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
     }
 
     PetscErrorCode ConvectiveMassElement::OpEshelbyDynamicMaterialMomentumLhs_dX::getJac(DataForcesAndSourcesCore::EntData &col_data,int gg) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       int nb_col = col_data.getIndices().size();
       jac.clear();
       double *diff_ptr = const_cast<double*>(&(col_data.getDiffN(gg,nb_col/3)(0,0)));
@@ -1984,7 +1984,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
       //   jac(2,3*dd+2) += commonData.jacT[gg](2,3+3+9+9+3*2+1)*diffN(dd,1);
       //   jac(2,3*dd+2) += commonData.jacT[gg](2,3+3+9+9+3*2+2)*diffN(dd,2);
       // }
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
 
@@ -2001,7 +2001,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
     }
 
     PetscErrorCode ConvectiveMassElement::UpdateAndControl::preProcess() {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       
 
       switch (ts_ctx) {
@@ -2023,22 +2023,22 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
         break;
       }
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     PetscErrorCode ConvectiveMassElement::UpdateAndControl::postProcess() {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       //
       //SNES snes;
       //ierr = TSGetSNES(tS,&snes); CHKERRQ(ierr);
       //ierr = SNESSetLagJacobian(snes,jacobianLag); CHKERRQ(ierr);
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
 
 
     PetscErrorCode ConvectiveMassElement::setBlocks() {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       
       
 
@@ -2077,7 +2077,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
         //std::cerr << setOfBlocks[id].tEts << std::endl;
       }
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   PetscErrorCode ConvectiveMassElement::addConvectiveMassElement(
@@ -2086,7 +2086,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
     string spatial_position_field_name,
     string material_position_field_name,
     bool ale,BitRefLevel bit) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
 
     
     //
@@ -2123,7 +2123,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
       ierr = mField.add_ents_to_finite_element_by_type(add_tets,MBTET,element_name); CHKERRQ(ierr);
     }
 
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode ConvectiveMassElement::addVelocityElement(string element_name,
@@ -2131,7 +2131,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
     string spatial_position_field_name,
     string material_position_field_name,
     bool ale,BitRefLevel bit) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
       
       //
@@ -2166,7 +2166,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
         ierr = mField.add_ents_to_finite_element_by_type(add_tets,MBTET,element_name); CHKERRQ(ierr);
       }
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   PetscErrorCode ConvectiveMassElement::addEshelbyDynamicMaterialMomentum(string element_name,
@@ -2177,7 +2177,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
     BitRefLevel bit,
     Range *intersected
   ) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
 
     
     //
@@ -2219,7 +2219,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
       ierr = mField.add_ents_to_finite_element_by_type(add_tets,MBTET,element_name); CHKERRQ(ierr);
     }
 
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode ConvectiveMassElement::setConvectiveMassOperators(
@@ -2229,7 +2229,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
     bool ale,
     bool linear
   ) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
 
     commonData.spatialPositions = spatial_position_field_name;
     commonData.meshPositions = material_position_field_name;
@@ -2298,7 +2298,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
       feEnergy.getOpPtrVector().push_back(new OpEnergy(spatial_position_field_name,sit->second,commonData,&feEnergy.V));
     }
 
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode ConvectiveMassElement::setVelocityOperators(
@@ -2307,7 +2307,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
     string material_position_field_name,
     bool ale
   ) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
 
     commonData.spatialPositions = spatial_position_field_name;
     commonData.meshPositions = material_position_field_name;
@@ -2359,7 +2359,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
       }
     }
 
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
 
@@ -2369,7 +2369,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
     string material_position_field_name,
     Range *forces_on_entities_ptr
   ) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
 
     commonData.spatialPositions = spatial_position_field_name;
     commonData.meshPositions = material_position_field_name;
@@ -2409,7 +2409,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
         new OpEshelbyDynamicMaterialMomentumLhs_dX(material_position_field_name,material_position_field_name,sit->second,commonData,forces_on_entities_ptr));
     }
 
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode ConvectiveMassElement::setShellMatrixMassOperators(
@@ -2417,7 +2417,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
     string spatial_position_field_name,
     string material_position_field_name,
     bool linear) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
 
     commonData.spatialPositions = spatial_position_field_name;
     commonData.meshPositions = material_position_field_name;
@@ -2490,7 +2490,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
       feEnergy.getOpPtrVector().push_back(new OpEnergy(spatial_position_field_name,sit->second,commonData,&feEnergy.V));
     }
 
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   ConvectiveMassElement::MatShellCtx::MatShellCtx(): iNitialized(false) {}
@@ -2502,7 +2502,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
   }
 
   PetscErrorCode ConvectiveMassElement::MatShellCtx::iNit() {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     if(!iNitialized) {
       
       #if PETSC_VERSION_GE(3,5,3)
@@ -2515,11 +2515,11 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
       ierr = MatDuplicate(K,MAT_SHARE_NONZERO_PATTERN,&barK); CHKERRQ(ierr);
       iNitialized = true;
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode ConvectiveMassElement::MatShellCtx::dEstroy() {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     if(iNitialized) {
       
       ierr = VecDestroy(&u); CHKERRQ(ierr);
@@ -2529,12 +2529,12 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
       ierr = MatDestroy(&barK); CHKERRQ(ierr);
       iNitialized = false;
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
 
   PetscErrorCode ConvectiveMassElement::PCShellCtx::iNit() {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     
     if(!initPC) {
       MPI_Comm comm;
@@ -2542,17 +2542,17 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
       ierr = PCCreate(comm,&pC); CHKERRQ(ierr);
       initPC = true;
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode ConvectiveMassElement::PCShellCtx::dEstroy() {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     
     if(initPC) {
       ierr = PCDestroy(&pC); CHKERRQ(ierr);
       initPC = false;
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   ConvectiveMassElement::ShellResidualElement::ShellResidualElement(
@@ -2562,7 +2562,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
   }
 
   PetscErrorCode ConvectiveMassElement::ShellResidualElement::preProcess() {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
 
     
     if(ts_ctx != CTX_TSSETIFUNCTION) {
@@ -2580,11 +2580,11 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
     ierr = VecScatterEnd(shellMatCtx->scatterV,shellMatCtx->v,ts_F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     //VecView(shellMatCtx->v,PETSC_VIEWER_STDOUT_WORLD);
 
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode ConvectiveMassElement::ShellResidualElement::postProcess() {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
 
     /*
     if(ts_ctx != CTX_TSSETIFUNCTION) {
@@ -2607,7 +2607,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
     ierr = VecScatterBegin(shellMatCtx->scatterV,shellMatCtx->Mv,ts_F,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     ierr = VecScatterEnd(shellMatCtx->scatterV,shellMatCtx->Mv,ts_F,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);*/
 
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
 
   }
 
@@ -2620,7 +2620,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
   }
 
   PetscErrorCode ConvectiveMassElement::ShellMatrixElement::preProcess() {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     
 
     if(ts_ctx != CTX_TSSETIJACOBIAN) {
@@ -2676,7 +2676,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
     //std::string wait;
     //std::cin >> wait;
 
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   #endif //__DIRICHLETBC_HPP__

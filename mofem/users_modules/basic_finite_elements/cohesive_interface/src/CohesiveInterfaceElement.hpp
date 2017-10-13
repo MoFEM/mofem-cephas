@@ -82,7 +82,7 @@ struct CohesiveInterfaceElement {
 
     */
     PetscErrorCode iNitailise(const FEMethod *fe_method) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
       double def_damaged = 0;
       rval = mField.get_moab().tag_get_handle(
@@ -94,7 +94,7 @@ struct CohesiveInterfaceElement {
       E0 = youngModulus/h;
       g0 = ft/E0;
       kappa1 = 2*Gf/ft;
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     /** \brief Calculate gap opening
@@ -114,7 +114,7 @@ struct CohesiveInterfaceElement {
     /** \brief Get pointer from the mesh to histoy variables \f$\kappa\f$
     */
     PetscErrorCode getKappa(int nb_gauss_pts,const FEMethod *fe_method) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       EntityHandle ent = fe_method->numeredEntFiniteElementPtr->getEnt();
 
       rval = mField.get_moab().tag_get_by_ptr(thKappa,&ent,1,(const void **)&kappaPtr,&kappaSize);
@@ -128,7 +128,7 @@ struct CohesiveInterfaceElement {
         rval = mField.get_moab().tag_set_by_ptr(thKappa,&ent,1,tag_data,tag_size);  CHKERRQ_MOAB(rval);
         rval = mField.get_moab().tag_get_by_ptr(thKappa,&ent,1,(const void **)&kappaPtr,&kappaSize);  CHKERRQ_MOAB(rval);
       }
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     MatrixDouble Dglob,Dloc;
@@ -146,7 +146,7 @@ struct CohesiveInterfaceElement {
 
     */
     PetscErrorCode calcDglob(const double omega,MatrixDouble &R) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       Dglob.resize(3,3);
       Dloc.resize(3,3);
       Dloc.clear();
@@ -156,7 +156,7 @@ struct CohesiveInterfaceElement {
       Dloc(2,2) = E;
       Dglob = prod( Dloc, R );
       Dglob = prod( trans(R), Dglob );
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     /** \brief Calculate damage
@@ -167,23 +167,23 @@ struct CohesiveInterfaceElement {
 
     */
     PetscErrorCode calcOmega(const double kappa,double& omega) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       omega = 0;
       if(kappa>=kappa1) {
         omega = 1;
-        PetscFunctionReturn(0);
+        MoFEMFunctionReturnHot(0);
       } else if(kappa>0) {
         double a = (2.0*Gf*E0+ft*ft)*kappa;
         double b = (ft+E0*kappa)*Gf;
         omega = 0.5*a/b;
       }
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     /** \brief Calculate tangent material stiffness
     */
     PetscErrorCode calcTangetDglob(const double omega,double g,const VectorDouble& gap_loc,MatrixDouble &R) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       Dglob.resize(3,3);
       Dloc.resize(3,3);
       double domega = 0.5*(2*Gf*E0+ft*ft)/((ft+(g-ft/E0)*E0)*Gf) - 0.5*((g-ft/E0)*(2*Gf*E0+ft*ft)*E0)/(pow(ft+(g-ft/E0)*E0,2)*Gf);
@@ -202,7 +202,7 @@ struct CohesiveInterfaceElement {
       Dloc(2,2) = (1-omega)*E0 - domega*E0*gap_loc[2]*beta*gap_loc[2]/g;
       Dglob = prod(Dloc,R);
       Dglob = prod(trans(R),Dglob);
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     /** \brief Calculate tractions
@@ -217,7 +217,7 @@ struct CohesiveInterfaceElement {
       int gg,CommonData &common_data,
       const FEMethod *fe_method
     ) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
       if(!isInitialised) {
         ierr = iNitailise(fe_method); CHKERRQ(ierr);
@@ -235,7 +235,7 @@ struct CohesiveInterfaceElement {
       traction.resize(3);
       ublas::matrix_row<MatrixDouble > gap_glob(common_data.gapGlob,gg);
       noalias(traction) = prod(Dglob,gap_glob);
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     /** \brief Calculate tangent stiffness
@@ -245,7 +245,7 @@ struct CohesiveInterfaceElement {
       int gg,CommonData &common_data,
       const FEMethod *fe_method
     ) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
       try {
         if(!isInitialised) {
@@ -276,7 +276,7 @@ struct CohesiveInterfaceElement {
         ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     /** \brief Update history variables when converged
@@ -284,7 +284,7 @@ struct CohesiveInterfaceElement {
     virtual PetscErrorCode updateHistory(
       CommonData &common_data,const FEMethod *fe_method
     ) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
 
       if(!isInitialised) {
@@ -308,7 +308,7 @@ struct CohesiveInterfaceElement {
         int set_prism_as_demaged = 1;
         rval = mField.get_moab().tag_set_data(thDamagedPrism,&ent,1,&set_prism_as_demaged); CHKERRQ_MOAB(rval);
       }
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   };
@@ -322,9 +322,9 @@ struct CohesiveInterfaceElement {
     FlatPrismElementForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSourcesCore::UserDataOperator::OPROW) {}
 
     PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
-      PetscFunctionBegin;
-      if(data.getN().size1()==0)  PetscFunctionReturn(0);
-      if(data.getN().size2()==0)  PetscFunctionReturn(0);
+      MoFEMFunctionBeginHot;
+      if(data.getN().size1()==0)  MoFEMFunctionReturnHot(0);
+      if(data.getN().size2()==0)  MoFEMFunctionReturnHot(0);
       switch(type) {
         case MBVERTEX:
         for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
@@ -334,17 +334,17 @@ struct CohesiveInterfaceElement {
         }
         break;
         case MBEDGE:
-        if(side < 3) PetscFunctionReturn(0);
+        if(side < 3) MoFEMFunctionReturnHot(0);
         data.getN() *= -1;
         break;
         case MBTRI:
-        if(side == 3) PetscFunctionReturn(0);
+        if(side == 3) MoFEMFunctionReturnHot(0);
         data.getN() *= -1;
         break;
         default:
         SETERRQ(PETSC_COMM_SELF,1,"data inconsitency");
       }
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   };
@@ -360,10 +360,10 @@ struct CohesiveInterfaceElement {
 
     PetscErrorCode doWork(
       int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       try {
         int nb_dofs = data.getIndices().size();
-        if(nb_dofs == 0) PetscFunctionReturn(0);
+        if(nb_dofs == 0) MoFEMFunctionReturnHot(0);
         int nb_gauss_pts = data.getN().size1();
         if(type == MBVERTEX) {
           commonData.R.resize(nb_gauss_pts);
@@ -402,7 +402,7 @@ struct CohesiveInterfaceElement {
           ss << "throw in method: " << ex.what() << std::endl;
           SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
         }
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   };
@@ -417,7 +417,7 @@ struct CohesiveInterfaceElement {
       commonData(common_data) {}
 
     PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       try {
         if(type == MBVERTEX) {
           int nb_gauss_pts = data.getN().size1();
@@ -433,7 +433,7 @@ struct CohesiveInterfaceElement {
         ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   };
@@ -450,13 +450,13 @@ struct CohesiveInterfaceElement {
 
     VectorDouble traction,Nf;
     PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
       try {
         int nb_dofs = data.getIndices().size();
-        if(nb_dofs == 0) PetscFunctionReturn(0);
+        if(nb_dofs == 0) MoFEMFunctionReturnHot(0);
         if(physicalEqations.pRisms.find(getNumeredEntFiniteElementPtr()->getEnt()) == physicalEqations.pRisms.end()) {
-          PetscFunctionReturn(0);
+          MoFEMFunctionReturnHot(0);
         }
         Nf.resize(nb_dofs);
         Nf.clear();
@@ -477,7 +477,7 @@ struct CohesiveInterfaceElement {
         ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   };
@@ -499,16 +499,16 @@ struct CohesiveInterfaceElement {
       DataForcesAndSourcesCore::EntData &row_data,
       DataForcesAndSourcesCore::EntData &col_data
     ) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
       try {
         int nb_row = row_data.getIndices().size();
-        if(nb_row == 0) PetscFunctionReturn(0);
+        if(nb_row == 0) MoFEMFunctionReturnHot(0);
         int nb_col = col_data.getIndices().size();
-        if(nb_col == 0) PetscFunctionReturn(0);
+        if(nb_col == 0) MoFEMFunctionReturnHot(0);
         if(physicalEqations.pRisms.find(getNumeredEntFiniteElementPtr()->getEnt())
         == physicalEqations.pRisms.end()) {
-          PetscFunctionReturn(0);
+          MoFEMFunctionReturnHot(0);
         }
         //std::cerr << row_side << " " << row_type << " " << row_data.getN() << std::endl;
         //std::cerr << col_side << " " << col_type << " " << col_data.getN() << std::endl;
@@ -547,7 +547,7 @@ struct CohesiveInterfaceElement {
         ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   };
@@ -563,14 +563,14 @@ struct CohesiveInterfaceElement {
       commonData(common_data),physicalEqations(physical_eqations) {}
 
       PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
-        PetscFunctionBegin;
+        MoFEMFunctionBeginHot;
 
-        if(type != MBVERTEX) PetscFunctionReturn(0);
+        if(type != MBVERTEX) MoFEMFunctionReturnHot(0);
         if(physicalEqations.pRisms.find(getNumeredEntFiniteElementPtr()->getEnt()) == physicalEqations.pRisms.end()) {
-          PetscFunctionReturn(0);
+          MoFEMFunctionReturnHot(0);
         }
         ierr = physicalEqations.updateHistory(commonData,getFEMethod()); CHKERRQ(ierr);
-        PetscFunctionReturn(0);
+        MoFEMFunctionReturnHot(0);
       }
 
   };
@@ -578,7 +578,7 @@ struct CohesiveInterfaceElement {
   /** \brief Driver function settting all operators needed for interface element
   */
   PetscErrorCode addOps(const std::string field_name,boost::ptr_vector<CohesiveInterfaceElement::PhysicalEquation> &interfaces) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
 
     //Rhs
     feRhs.getOpPtrVector().push_back(new OpSetSignToShapeFunctions(field_name));
@@ -601,7 +601,7 @@ struct CohesiveInterfaceElement {
       feHistory.getOpPtrVector().push_back(new OpHistory(field_name,commonData,*pit));
     }
 
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
 };

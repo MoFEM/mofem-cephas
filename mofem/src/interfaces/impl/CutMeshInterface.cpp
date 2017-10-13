@@ -50,18 +50,18 @@
 namespace MoFEM {
 
   PetscErrorCode CutMeshInterface::queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     *iface = NULL;
     if(uuid == IDD_MOFEMCutMesh) {
       *iface = dynamic_cast<CutMeshInterface*>(this);
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
     if(uuid == IDD_MOFEMUnknown) {
       *iface = dynamic_cast<UnknownInterface*>(this);
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown interface");
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   CutMeshInterface::CutMeshInterface(const MoFEM::Core &core):
@@ -72,9 +72,9 @@ namespace MoFEM {
   }
 
   PetscErrorCode CutMeshInterface::setSurface(const Range &surface) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     sUrface = surface;
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode CutMeshInterface::copySurface(
@@ -84,7 +84,7 @@ namespace MoFEM {
 
     MoFEM::Interface &m_field = cOre;
     moab::Interface &moab = m_field.get_moab();
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     for(Range::const_iterator tit = surface.begin();tit!=surface.end();tit++) {
       int num_nodes;
       const EntityHandle *conn;
@@ -123,46 +123,46 @@ namespace MoFEM {
       rval = moab.create_element(MBTRI,new_verts,num_nodes,ele); CHKERRQ_MOAB(rval);
       sUrface.insert(ele);
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
 
   PetscErrorCode CutMeshInterface::setVolume(const Range &volume) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     vOlume = volume;
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode CutMeshInterface::mergeSurface(const Range &surface)  {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     sUrface.merge(surface);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode CutMeshInterface::mergeVolumes(const Range &volume)  {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     vOlume.merge(volume);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode CutMeshInterface::buildTree() {
 
     MoFEM::Interface &m_field = cOre;
     moab::Interface &moab = m_field.get_moab();
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     treeSurfPtr = boost::shared_ptr<OrientedBoxTreeTool>(
       new OrientedBoxTreeTool(&moab,"ROOTSETSURF",true)
     );
     rval = treeSurfPtr->build(sUrface,rootSetSurf); CHKERRQ_MOAB(rval);
     Range faces;
     rval = moab.get_adjacencies(vOlume,2,false,faces,moab::Interface::UNION); CHKERRQ_MOAB(rval);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode CutMeshInterface::findEdgesToCut(const double low_tol,int verb) {
     MoFEM::Interface &m_field = cOre;
     moab::Interface &moab = m_field.get_moab();
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     // Range vol_edges;
     // rval = moab.get_adjacencies(
     //   vOlume,1,true,vol_edges,moab::Interface::UNION
@@ -277,13 +277,13 @@ namespace MoFEM {
       }
     }
 
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode CutMeshInterface::getEntsOnCutSurface(const double low_tol,int verb) {
     MoFEM::Interface &m_field = cOre;
     moab::Interface &moab = m_field.get_moab();
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     Tag th_dist;
     rval = moab.tag_get_handle("DIST",th_dist); CHKERRQ_MOAB(rval);
     Range cut_edge_verts;
@@ -361,7 +361,7 @@ namespace MoFEM {
         verticecOnCutEdges[*vit].rayPoint = s0;
       }
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
 
@@ -372,7 +372,7 @@ namespace MoFEM {
     moab::Interface &moab = m_field.get_moab();
     MeshRefinement *refiner;
     const RefEntity_multiIndex *ref_ents_ptr;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     ierr = m_field.query_interface(refiner); CHKERRQ(ierr);
     ierr = m_field.get_ref_ents(&ref_ents_ptr); CHKERRQ(ierr);
     ierr = refiner->add_verices_in_the_middel_of_edges(cutEdges,bit); CHKERRQ(ierr);
@@ -425,7 +425,7 @@ namespace MoFEM {
       diff_verts,2,false,subtract_faces,moab::Interface::UNION
     ); CHKERRQ_MOAB(rval);
     cutNewSurfaces = subtract(cutNewSurfaces,subtract_faces);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode CutMeshInterface::trimEdgesInTheMiddle(const BitRefLevel bit,Tag th,const double tol) {
@@ -433,7 +433,7 @@ namespace MoFEM {
     moab::Interface &moab = m_field.get_moab();
     MeshRefinement *refiner;
     const RefEntity_multiIndex *ref_ents_ptr;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
 
     ierr = m_field.query_interface(refiner); CHKERRQ(ierr);
     ierr = m_field.get_ref_ents(&ref_ents_ptr); CHKERRQ(ierr);
@@ -506,16 +506,16 @@ namespace MoFEM {
       }
     }
 
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
 
   }
 
   PetscErrorCode CutMeshInterface::moveMidNodesOnCutEdges(Tag th) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
 
     MoFEM::Interface &m_field = cOre;
     moab::Interface &moab = m_field.get_moab();
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
 
     // Tag th_ray_dir;
     // double def_val[] = {0,0,0};
@@ -540,13 +540,13 @@ namespace MoFEM {
 
     }
 
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode CutMeshInterface::moveMidNodesOnTrimedEdges(Tag th) {
     MoFEM::Interface &m_field = cOre;
     moab::Interface &moab = m_field.get_moab();
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     // Range out_side_vertices;
     for(
       map<EntityHandle,TreeData>::iterator mit = verticecOnTrimEdges.begin();
@@ -561,13 +561,13 @@ namespace MoFEM {
         rval = moab.set_coords(&mit->first,1,&new_coors[0]); CHKERRQ_MOAB(rval);
       }
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode CutMeshInterface::findEdgesToTrim(Tag th,const double tol,int verb) {
     MoFEM::Interface &m_field = cOre;
     moab::Interface &moab = m_field.get_moab();
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
 
     // takes edges on body skin
     Skinner skin(&moab);
@@ -610,7 +610,7 @@ namespace MoFEM {
       }
 
       VectorDouble3& operator()(const int max_it,const double tol) {
-        PetscFunctionBegin;
+        MoFEMFunctionBeginHot;
         // cerr << "\n\n" << endl;
         VectorDouble3 w;
         double length = norm_2(rAY);
@@ -711,7 +711,7 @@ namespace MoFEM {
       }
     }
 
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode CutMeshInterface::getRayForEdge(
@@ -722,7 +722,7 @@ namespace MoFEM {
   ) const {
     const MoFEM::Interface &m_field = cOre;
     const moab::Interface &moab = m_field.get_moab();
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     int num_nodes;
     const EntityHandle *conn;
     rval = moab.get_connectivity(ent,conn,num_nodes,true); CHKERRQ_MOAB(rval);
@@ -734,7 +734,7 @@ namespace MoFEM {
     noalias(unit_ray_dir) = s1-s0;
     ray_length = norm_2(unit_ray_dir);
     unit_ray_dir /= ray_length;
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   // int CutMeshInterface::segmentPlane(
@@ -769,7 +769,7 @@ namespace MoFEM {
     MoFEM::Interface &m_field = cOre;
     moab::Interface &moab = m_field.get_moab();
     PrismInterface *interface;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     ierr = m_field.query_interface(interface); CHKERRQ(ierr);
     EntityHandle meshset;
     rval = moab.create_meshset(MESHSET_SET,meshset); CHKERRQ_MOAB(rval);
@@ -780,7 +780,7 @@ namespace MoFEM {
     ); CHKERRQ(ierr);
     ents = subtract(ents,front_tris);
     rval = moab.delete_entities(&meshset,1); CHKERRQ_MOAB(rval);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode CutMeshInterface::splitSides(
@@ -792,7 +792,7 @@ namespace MoFEM {
     MoFEM::Interface &m_field = cOre;
     moab::Interface &moab = m_field.get_moab();
     PrismInterface *interface;
-    PetscFunctionBegin;
+    MoFEMFunctionBegin;
     ierr = m_field.query_interface(interface); CHKERRQ(ierr);
     EntityHandle meshset_volume;
     rval = moab.create_meshset(MESHSET_SET,meshset_volume); CHKERRQ_MOAB(rval);
@@ -821,7 +821,7 @@ namespace MoFEM {
         rval = moab.tag_set_data(th,&conn[3],3,&data(0,0)); CHKERRQ_MOAB(rval);
       }
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturn(0);
   }
 
   PetscErrorCode CutMeshInterface::splitMergedSides(
@@ -829,9 +829,9 @@ namespace MoFEM {
     const BitRefLevel bit,
     Tag th
   ) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     ierr = splitSides(merged_bit,bit,getMergedSurfaces(),th); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode CutMeshInterface::mergeBadEdges(
@@ -845,7 +845,7 @@ namespace MoFEM {
   ) {
     MoFEM::Interface &m_field = cOre;
     moab::Interface &moab = m_field.get_moab();
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
 
     /**
      * \brief Merge nodes
@@ -879,7 +879,7 @@ namespace MoFEM {
         bool add_child = true
       ) const {
         moab::Interface& moab = mField.get_moab();
-        PetscFunctionBegin;
+        MoFEMFunctionBeginHot;
         EntityHandle conn[] = { father,mother };
         Range vert_tets;
         rval = moab.get_adjacencies(conn,2,3,false,vert_tets,moab::Interface::UNION); CHKERRQ_MOAB(rval);
@@ -928,7 +928,7 @@ namespace MoFEM {
           }
 
         }
-        PetscFunctionReturn(0);
+        MoFEMFunctionReturnHot(0);
       }
 
     private:
@@ -937,7 +937,7 @@ namespace MoFEM {
         const NodeMergerInterface::ParentChildMap& parent_child_map,
         const Range &parents,Range &childs
       ) const {
-        PetscFunctionBegin;
+        MoFEMFunctionBeginHot;
         NodeMergerInterface::ParentChildMap::nth_index<0>::type::iterator it;
         for(Range::const_iterator eit = parents.begin();eit!=parents.end();eit++) {
           it = parent_child_map.get<0>().find(*eit);
@@ -946,7 +946,7 @@ namespace MoFEM {
             childs.insert(it->cHild);
           }
         }
-        PetscFunctionReturn(0);
+        MoFEMFunctionReturnHot(0);
       }
 
     };
@@ -966,7 +966,7 @@ namespace MoFEM {
         int num_nodes;
         const EntityHandle *conn;
         double coords[6];
-        PetscFunctionBegin;
+        MoFEMFunctionBeginHot;
         VectorAdaptor s0(3,ublas::shallow_array_adaptor<double>(3,&coords[0]));
         VectorAdaptor s1(3,ublas::shallow_array_adaptor<double>(3,&coords[3]));
         for(Range::iterator eit = eDges.begin();eit!=eDges.end();eit++) {
@@ -978,7 +978,7 @@ namespace MoFEM {
           }
           length_map[norm_2(s0-s1)] = *eit;
         }
-        PetscFunctionReturn(0);
+        MoFEMFunctionReturnHot(0);
       }
     };
 
@@ -1010,7 +1010,7 @@ namespace MoFEM {
       ) const {
         moab::Interface& moab(mField.get_moab());
         Skinner skin(&moab);
-        PetscFunctionBegin;
+        MoFEMFunctionBeginHot;
 
         sets_map[FIX_CORNERS].merge(corner_nodes);
         Range fixed_verts;
@@ -1057,14 +1057,14 @@ namespace MoFEM {
         //   remove_verts.merge(mit->second);
         // }
 
-        PetscFunctionReturn(0);
+        MoFEMFunctionReturnHot(0);
       }
 
       PetscErrorCode getProcTets(
         const Range& tets,const Range &edges_to_merge,Range &proc_tets
       ) const {
         moab::Interface& moab(mField.get_moab());
-        PetscFunctionBegin;
+        MoFEMFunctionBeginHot;
         Range edges_to_merge_verts;
         rval = moab.get_connectivity(edges_to_merge,edges_to_merge_verts,true); CHKERRQ_MOAB(rval);
         Range edges_to_merge_verts_tets;
@@ -1073,7 +1073,7 @@ namespace MoFEM {
         ); CHKERRQ_MOAB(rval);
         edges_to_merge_verts_tets = intersect(edges_to_merge_verts_tets,tets);
         proc_tets.swap(edges_to_merge_verts_tets);
-        PetscFunctionReturn(0);
+        MoFEMFunctionReturnHot(0);
       }
 
       PetscErrorCode edgesToMerge(
@@ -1082,7 +1082,7 @@ namespace MoFEM {
         Range& edges_to_merge,Range& not_merged_edges
       ) const {
         moab::Interface& moab(mField.get_moab());
-        PetscFunctionBegin;
+        MoFEMFunctionBeginHot;
         Range surface_verts;
         rval = moab.get_connectivity(surface,surface_verts,true); CHKERRQ_MOAB(rval);
         Range surface_verts_edges;
@@ -1146,14 +1146,14 @@ namespace MoFEM {
         }
 
 
-        PetscFunctionReturn(0);
+        MoFEMFunctionReturnHot(0);
       }
 
     private:
 
       PetscErrorCode removeSelfConectingEdges(const Range& ents,Range& edges_to_remove,bool debug) const {
         moab::Interface& moab(mField.get_moab());
-        PetscFunctionBegin;
+        MoFEMFunctionBeginHot;
         // get nodes
         Range ents_nodes = ents.subset_by_type(MBVERTEX);
         if(ents_nodes.empty()) {
@@ -1184,7 +1184,7 @@ namespace MoFEM {
           rval = moab.write_file("edges_to_remove.vtk","VTK","",&meshset,1); CHKERRQ_MOAB(rval);
           rval = moab.delete_entities(&meshset,1); CHKERRQ_MOAB(rval);
         }
-        PetscFunctionReturn(0);
+        MoFEMFunctionReturnHot(0);
       }
 
     };
@@ -1315,7 +1315,7 @@ namespace MoFEM {
 
     }
 
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode CutMeshInterface::mergeBadEdges(
@@ -1328,7 +1328,7 @@ namespace MoFEM {
     Tag th
   ) {
     MoFEM::Interface &m_field = cOre;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     Range tets_level;
     ierr = m_field.get_entities_by_type_and_ref_level(
       merged_bit,BitRefLevel().set(),MBTET,tets_level
@@ -1343,31 +1343,31 @@ namespace MoFEM {
     ); CHKERRQ(ierr);
     mergedVolumes.swap(out_new_tets);
     mergedSurfaces.swap(out_new_surf);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode CutMeshInterface::setTagData(Tag th) {
     MoFEM::Interface &m_field = cOre;
     moab::Interface &moab = m_field.get_moab();
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     Range nodes;
     rval = moab.get_entities_by_type(0,MBVERTEX,nodes); CHKERRQ_MOAB(rval);
     std::vector<double> coords(3*nodes.size());
     rval = moab.get_coords(nodes,&coords[0]); CHKERRQ_MOAB(rval);
     rval = moab.tag_set_data(th,nodes,&coords[0]); CHKERRQ_MOAB(rval);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode CutMeshInterface::setCoords(Tag th) {
     MoFEM::Interface &m_field = cOre;
     moab::Interface &moab = m_field.get_moab();
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     Range nodes;
     rval = moab.get_entities_by_type(0,MBVERTEX,nodes); CHKERRQ_MOAB(rval);
     std::vector<double> coords(3*nodes.size());
     rval = moab.tag_get_data(th,nodes,&coords[0]); CHKERRQ_MOAB(rval);
     rval = moab.set_coords(nodes,&coords[0]); CHKERRQ_MOAB(rval);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
 }

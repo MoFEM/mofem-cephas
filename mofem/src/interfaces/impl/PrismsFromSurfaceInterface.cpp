@@ -50,22 +50,22 @@
 namespace MoFEM {
 
 PetscErrorCode PrismsFromSurfaceInterface::queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   *iface = NULL;
   if(uuid == IDD_MOFEMPrismsFromSurface) {
     *iface = dynamic_cast<PrismsFromSurfaceInterface*>(this);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
   if(uuid == IDD_MOFEMUnknown) {
     *iface = dynamic_cast<UnknownInterface*>(this);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
   SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown interface");
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode PrismsFromSurfaceInterface::createPrisms(const Range &ents,Range &prisms,int verb) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   
   MoFEM::Interface& m_field = cOre;
   Range tris = ents.subset_by_type(MBTRI);
@@ -128,11 +128,11 @@ PetscErrorCode PrismsFromSurfaceInterface::createPrisms(const Range &ents,Range 
       rval = m_field.get_moab().set_coords(&conn_f4[3],3,&coords[9]); CHKERRQ_MOAB(rval);
     }
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode PrismsFromSurfaceInterface::seedPrismsEntities(Range &prisms,const BitRefLevel &bit,int verb) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   
   
   MoFEM::Interface& m_field = cOre;
@@ -163,13 +163,13 @@ PetscErrorCode PrismsFromSurfaceInterface::seedPrismsEntities(Range &prisms,cons
       }
     }
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode PrismsFromSurfaceInterface::createPrismsFromPrisms(const Range &prisms,bool from_down,Range &out_prisms,int verb) {
   
   
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   MoFEM::Interface& m_field = cOre;
   Range tris;
   for(Range::iterator pit = prisms.begin();pit!=prisms.end();pit++) {
@@ -182,12 +182,12 @@ PetscErrorCode PrismsFromSurfaceInterface::createPrismsFromPrisms(const Range &p
     tris.insert(face);
   }
   ierr = createPrisms(tris,out_prisms,verb); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode PrismsFromSurfaceInterface::setThickness(const Range &prisms,const double director3[],const double director4[]) {
   
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   MoFEM::Interface& m_field = cOre;
   Range nodes_f3,nodes_f4;
   for(Range::iterator pit = prisms.begin();pit!=prisms.end();pit++) {
@@ -215,7 +215,7 @@ PetscErrorCode PrismsFromSurfaceInterface::setThickness(const Range &prisms,cons
     cblas_daxpy(3,1,director4,1,coords,1);
     rval = m_field.get_moab().set_coords(&*nit,1,coords); CHKERRQ_MOAB(rval);
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 }

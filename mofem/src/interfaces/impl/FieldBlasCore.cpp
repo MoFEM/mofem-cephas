@@ -58,14 +58,14 @@ PetscErrorCode Core::field_axpy(
 }
 PetscErrorCode Core::set_field(const double val,const EntityType type,const std::string& field_name) {
   return FieldBlas(*this).setField(val,type,field_name);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 PetscErrorCode Core::set_field(const double val,const EntityType type,const Range &ents,const std::string& field_name) {
   return FieldBlas(*this).setField(val,type,ents,field_name);
 }
 PetscErrorCode Core::field_scale(const double alpha,const std::string& field_name) {
   return FieldBlas(*this).fieldScale(alpha,field_name);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 }

@@ -65,9 +65,9 @@ struct OpAssembleMatAndVec: public MoFEM::FaceElementForcesAndSourcesCore::UserD
     int side, EntityType type, DataForcesAndSourcesCore::EntData &data
   ) {
 
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     const int nb_dofs = data.getIndices().size();
-    if(nb_dofs==0) PetscFunctionReturn(0);
+    if(nb_dofs==0) MoFEMFunctionReturnHot(0);
     const int nb_gauss_pts = data.getN().size1();
     nF.resize(nb_dofs,false);
     nF.clear();
@@ -84,7 +84,7 @@ struct OpAssembleMatAndVec: public MoFEM::FaceElementForcesAndSourcesCore::UserD
     ierr = VecSetValues(
       F,nb_dofs,&*data.getIndices().data().begin(),&*nF.data().begin(),ADD_VALUES
     ); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   MatrixDouble nA;
@@ -97,11 +97,11 @@ struct OpAssembleMatAndVec: public MoFEM::FaceElementForcesAndSourcesCore::UserD
     DataForcesAndSourcesCore::EntData &col_data
   ) {
 
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     const int nb_dofs_row = row_data.getIndices().size();
-    if(nb_dofs_row==0) PetscFunctionReturn(0);
+    if(nb_dofs_row==0) MoFEMFunctionReturnHot(0);
     const int nb_dofs_col = col_data.getIndices().size();
-    if(nb_dofs_col==0) PetscFunctionReturn(0);
+    if(nb_dofs_col==0) MoFEMFunctionReturnHot(0);
     nA.resize(nb_dofs_row,nb_dofs_col,false);
     nA.clear();
     const int nb_gauss_pts = row_data.getN().size1();
@@ -124,7 +124,7 @@ struct OpAssembleMatAndVec: public MoFEM::FaceElementForcesAndSourcesCore::UserD
       &*nA.data().begin(),
       ADD_VALUES
     ); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 };
 
@@ -144,9 +144,9 @@ struct OpValsDiffVals: public MoFEM::FaceElementForcesAndSourcesCore::UserDataOp
     int side, EntityType type, DataForcesAndSourcesCore::EntData &data
   ) {
     //
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     const int nb_dofs = data.getIndices().size();
-    if(nb_dofs==0) PetscFunctionReturn(0);
+    if(nb_dofs==0) MoFEMFunctionReturnHot(0);
     const int nb_gauss_pts = data.getN().size1();
     if(type == MBEDGE && side == 0) {
       vAls.resize(3,nb_gauss_pts,false);
@@ -170,7 +170,7 @@ struct OpValsDiffVals: public MoFEM::FaceElementForcesAndSourcesCore::UserDataOp
       ++t_vals;
       ++t_diff_vals;
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
 };
@@ -191,7 +191,7 @@ struct OpCheckValsDiffVals: public MoFEM::FaceElementForcesAndSourcesCore::UserD
     int side, EntityType type, DataForcesAndSourcesCore::EntData &data
   ) {
     //
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     const double eps = 1e-6;
     if(type == MBEDGE && side == 0) {
       const int nb_gauss_pts = data.getN().size1();
@@ -221,7 +221,7 @@ struct OpCheckValsDiffVals: public MoFEM::FaceElementForcesAndSourcesCore::UserD
         ++t_diff_vals;
       }
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
 };

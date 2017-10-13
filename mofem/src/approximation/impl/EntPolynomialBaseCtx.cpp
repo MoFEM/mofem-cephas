@@ -48,7 +48,7 @@ PetscErrorCode EntPolynomialBaseCtx::queryInterface(
   const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface
 ) {
   
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   *iface = NULL;
   if(
     uuid == IDD_TET_BASE_FUNCTION ||
@@ -56,12 +56,12 @@ PetscErrorCode EntPolynomialBaseCtx::queryInterface(
     uuid == IDD_EDGE_BASE_FUNCTION
   ) {
     *iface = static_cast<EntPolynomialBaseCtx*>(this);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   } else {
     SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"wrong interference");
   }
   ierr = BaseFunctionCtx::queryInterface(uuid,iface); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 EntPolynomialBaseCtx::EntPolynomialBaseCtx(
@@ -82,7 +82,7 @@ EntPolynomialBaseCtx::~EntPolynomialBaseCtx() {
 }
 
 PetscErrorCode EntPolynomialBaseCtx::setBase() {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   switch(bAse) {
     case AINSWORTH_LEGENDRE_BASE:
     switch (sPace) {
@@ -137,5 +137,5 @@ PetscErrorCode EntPolynomialBaseCtx::setBase() {
       ApproximationBaseNames[bAse]
     );
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }

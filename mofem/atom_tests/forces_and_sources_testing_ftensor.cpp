@@ -168,7 +168,7 @@ int main(int argc, char *argv[]) {
       int side,
       EntityType type,
       DataForcesAndSourcesCore::EntData &data) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
       FTensor::Tensor2<double,3,3,row_major> t2;
       const int nb_gauss_pts = data.getN().size1();
@@ -268,7 +268,7 @@ int main(int argc, char *argv[]) {
         // ++field_values;
 
       }
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     PetscErrorCode doWork(
@@ -277,7 +277,7 @@ int main(int argc, char *argv[]) {
       DataForcesAndSourcesCore::EntData &row_data,
       DataForcesAndSourcesCore::EntData &col_data
     ) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       //
 
       const int nb_gauss_pts = row_data.getN().size1();
@@ -327,7 +327,7 @@ int main(int argc, char *argv[]) {
 
       }
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   };

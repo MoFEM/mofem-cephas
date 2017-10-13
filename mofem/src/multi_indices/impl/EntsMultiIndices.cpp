@@ -122,22 +122,22 @@ BitRefLevel* RefEntity::getBitRefLevelPtr() const {
 
 PetscErrorCode getParentEnt(Interface &moab,Range ents,std::vector<EntityHandle> vec_patent_ent) {
   
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   Tag th_ref_parent_handle;
   rval = moab.tag_get_handle("_RefParentHandle",th_ref_parent_handle); CHKERRQ_MOAB(rval);
   vec_patent_ent.resize(ents.size());
   rval = moab.tag_get_data(th_ref_parent_handle,ents,&*vec_patent_ent.begin()); CHKERRQ_MOAB(rval);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode RefEntity::getBitRefLevel(Interface &moab,Range ents,std::vector<BitRefLevel> vec_bit_ref_level) {
   
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   Tag th_ref_bit_level;
   rval = moab.tag_get_handle("_RefBitLevel",th_ref_bit_level); MOAB_THROW(rval);
   vec_bit_ref_level.resize(ents.size());
   rval = moab.tag_get_data(th_ref_bit_level,ents,&*vec_bit_ref_level.begin()); CHKERRQ_MOAB(rval);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 std::ostream& operator<<(std::ostream& os,const RefEntity& e) {

@@ -170,7 +170,7 @@ int main(int argc, char *argv[]) {
         DataForcesAndSourcesCore::EntData &row_data,
         DataForcesAndSourcesCore::EntData &col_data
       ) {
-          PetscFunctionBegin;
+          MoFEMFunctionBeginHot;
 
           row_data.getBase() = AINSWORTH_LEGENDRE_BASE;
           col_data.getBase() = AINSWORTH_LEGENDRE_BASE;
@@ -216,7 +216,7 @@ int main(int argc, char *argv[]) {
 
             my_split << std::endl;
 
-            PetscFunctionReturn(0);
+            MoFEMFunctionReturnHot(0);
           }
 
         };
@@ -227,14 +227,14 @@ int main(int argc, char *argv[]) {
       ForcesAndSourcesCore(_m_field),data_row(MBTET),data_col(MBTET) {};
 
     PetscErrorCode preProcess() {
-      PetscFunctionBegin;
-      PetscFunctionReturn(0);
+      MoFEMFunctionBeginHot;
+      MoFEMFunctionReturnHot(0);
     }
 
     DataForcesAndSourcesCore data_row,data_col;
 
     PetscErrorCode operator()() {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
       ierr = getSpacesAndBaseOnEntities(data_row); CHKERRQ(ierr);
       ierr = getSpacesAndBaseOnEntities(data_col); CHKERRQ(ierr);
@@ -297,13 +297,13 @@ int main(int argc, char *argv[]) {
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     PetscErrorCode postProcess() {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
 

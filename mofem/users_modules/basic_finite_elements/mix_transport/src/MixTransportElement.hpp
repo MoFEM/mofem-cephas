@@ -98,7 +98,7 @@ struct MixTransportElement {
    * @return    error code
    */
   PetscErrorCode getDirichletBCIndices(IS *is) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     std::vector<int> ids;
     ids.insert(ids.begin(),bcIndices.begin(),bcIndices.end());
     IS is_local;
@@ -107,7 +107,7 @@ struct MixTransportElement {
     ); CHKERRQ(ierr);
     ierr = ISAllGather(is_local,is); CHKERRQ(ierr);
     ierr = ISDestroy(&is_local); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
    /**
@@ -124,9 +124,9 @@ struct MixTransportElement {
     const double x,const double y,const double z,
     double &flux
   ) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     flux  = 0;
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
    /**
@@ -143,12 +143,12 @@ struct MixTransportElement {
     const double x,const double y,const double z,
     MatrixDouble3by3& inv_k
   ) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     inv_k.clear();
     for(int dd = 0;dd<3;dd++) {
       inv_k(dd,dd) = 1;
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   /**
@@ -165,9 +165,9 @@ struct MixTransportElement {
     const int gg,
     const double x,const double y,const double z,
     double &value) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     value = 0;
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   /**
@@ -183,9 +183,9 @@ struct MixTransportElement {
     const EntityHandle ent,
     const double x,const double y,const double z,
     double &flux) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     flux = 0;
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   /** \brief data for evaluation of het conductivity and heat capacity elements
@@ -207,7 +207,7 @@ struct MixTransportElement {
    */
   PetscErrorCode addFields(const std::string &values,const std::string &fluxes,const int order) {
 
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     //Fields
     ierr = mField.add_field(fluxes,HDIV,DEMKOWICZ_JACOBI_BASE,1); CHKERRQ(ierr);
     ierr = mField.add_field(values,L2,AINSWORTH_LEGENDRE_BASE,1); CHKERRQ(ierr);
@@ -222,7 +222,7 @@ struct MixTransportElement {
     ierr = mField.set_field_order(root_set,MBTET,values,order); CHKERRQ(ierr);
 
 
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   /// \brief add finite elements
@@ -231,7 +231,7 @@ struct MixTransportElement {
     const std::string &values_name,
     const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS"
   ) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
 
 
 
@@ -315,7 +315,7 @@ struct MixTransportElement {
       ierr = mField.modify_finite_element_add_field_data("MIX_BCFLUX",mesh_nodals_positions); CHKERRQ(ierr);
     }
 
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   /**
@@ -325,7 +325,7 @@ struct MixTransportElement {
    */
   PetscErrorCode buildProblem(BitRefLevel &ref_level) {
 
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     //build field
     ierr = mField.build_fields(); CHKERRQ(ierr);
     // get tetrahedrons which has been build previously and now in so called garbage bit level
@@ -384,7 +384,7 @@ struct MixTransportElement {
     ierr = prb_mng_ptr->partitionFiniteElements("MIX"); CHKERRQ(ierr);
     //what are ghost nodes, see Petsc Manual
     ierr = prb_mng_ptr->partitionGhostDofs("MIX"); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   struct OpPostProc: MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
@@ -403,8 +403,8 @@ struct MixTransportElement {
       EntityType type,
       DataForcesAndSourcesCore::EntData &data
     ) {
-      PetscFunctionBegin;
-      if(type != MBTET) PetscFunctionReturn(0);
+      MoFEMFunctionBeginHot;
+      if(type != MBTET) MoFEMFunctionReturnHot(0);
       EntityHandle fe_ent = getNumeredEntFiniteElementPtr()->getEnt();
       Tag th_error_flux;
       rval = getVolumeFE()->mField.get_moab().tag_get_handle("ERROR_FLUX",th_error_flux); CHKERRQ_MOAB(rval);
@@ -454,7 +454,7 @@ struct MixTransportElement {
         }
 
       }
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
   };
 
@@ -464,7 +464,7 @@ struct MixTransportElement {
    */
   PetscErrorCode postProc(const string out_file) {
 
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     PostProcVolumeOnRefinedMesh post_proc(mField);
     ierr = post_proc.generateReferenceElementMesh(); CHKERRQ(ierr);
     ierr = post_proc.addFieldValuesPostProc("VALUES"); CHKERRQ(ierr);
@@ -474,7 +474,7 @@ struct MixTransportElement {
     post_proc.getOpPtrVector().push_back(new OpPostProc(post_proc.postProcMesh,post_proc.mapGaussPts));
     ierr = mField.loop_finite_elements("MIX","MIX",post_proc);  CHKERRQ(ierr);
     ierr = post_proc.writeFile(out_file.c_str()); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   Vec D,D0,F;
@@ -482,12 +482,12 @@ struct MixTransportElement {
 
   /// \brief create matrices
   PetscErrorCode createMatrices() {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     ierr = mField.MatCreateMPIAIJWithArrays("MIX",&Aij); CHKERRQ(ierr);
     ierr = mField.query_interface<VecManager>()->vecCreateGhost("MIX",COL,&D); CHKERRQ(ierr);
     ierr = mField.query_interface<VecManager>()->vecCreateGhost("MIX",COL,&D0); CHKERRQ(ierr);
     ierr = mField.query_interface<VecManager>()->vecCreateGhost("MIX",ROW,&F); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   /**
@@ -496,7 +496,7 @@ struct MixTransportElement {
    */
   PetscErrorCode solveLinearProblem() {
 
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
 
     ierr = MatZeroEntries(Aij); CHKERRQ(ierr);
     ierr = VecZeroEntries(F); CHKERRQ(ierr);
@@ -606,13 +606,13 @@ struct MixTransportElement {
     // copy data form vector on mesh
     ierr = mField.query_interface<VecManager>()->setGlobalGhostVector("MIX",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   /// \brief calculate residual
   PetscErrorCode calculateResidual() {
 
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     ierr = VecZeroEntries(F); CHKERRQ(ierr);
     ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -653,7 +653,7 @@ struct MixTransportElement {
         //SETERRQ(PETSC_COMM_SELF,MOFEM_ATOM_TEST_INVALID,"problem with residual");
       }
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   /** \brief Calculate error on elements
@@ -664,7 +664,7 @@ struct MixTransportElement {
   */
   PetscErrorCode evaluateError() {
 
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     errorMap.clear();
     sumErrorFlux = 0;
     sumErrorDiv = 0;
@@ -685,17 +685,17 @@ struct MixTransportElement {
       problem_ptr->getNbDofsRow(),
       sumErrorFlux,sumErrorDiv,sumErrorJump,sumErrorFlux+sumErrorDiv+sumErrorJump
     );
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   /// \brief destroy matrices
   PetscErrorCode destroyMatrices() {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     ierr = MatDestroy(&Aij); CHKERRQ(ierr);
     ierr = VecDestroy(&D); CHKERRQ(ierr);
     ierr = VecDestroy(&D0); CHKERRQ(ierr);
     ierr = VecDestroy(&F); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
 
@@ -746,11 +746,11 @@ struct MixTransportElement {
       DataForcesAndSourcesCore::EntData &col_data
     ) {
 
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       try {
-        if(Aij == PETSC_NULL) PetscFunctionReturn(0);
-        if(row_data.getIndices().size()==0) PetscFunctionReturn(0);
-        if(col_data.getIndices().size()==0) PetscFunctionReturn(0);
+        if(Aij == PETSC_NULL) MoFEMFunctionReturnHot(0);
+        if(row_data.getIndices().size()==0) MoFEMFunctionReturnHot(0);
+        if(col_data.getIndices().size()==0) MoFEMFunctionReturnHot(0);
         EntityHandle fe_ent = getNumeredEntFiniteElementPtr()->getEnt();
         int nb_row = row_data.getIndices().size();
         int nb_col = col_data.getIndices().size();
@@ -820,7 +820,7 @@ struct MixTransportElement {
         SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
       }
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     /**
@@ -834,11 +834,11 @@ struct MixTransportElement {
       int side,EntityType type,DataForcesAndSourcesCore::EntData &data
     ) {
 
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       try {
-        if(F==PETSC_NULL) PetscFunctionReturn(0);
+        if(F==PETSC_NULL) MoFEMFunctionReturnHot(0);
         int nb_row = data.getIndices().size();
-        if(nb_row==0) PetscFunctionReturn(0);
+        if(nb_row==0) MoFEMFunctionReturnHot(0);
 
         EntityHandle fe_ent = getNumeredEntFiniteElementPtr()->getEnt();
         // cerr << data.getIndices() << endl;
@@ -891,7 +891,7 @@ struct MixTransportElement {
         << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
       }
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   };
@@ -925,9 +925,9 @@ struct MixTransportElement {
       DataForcesAndSourcesCore::EntData &data
     ) {
 
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       try {
-        if(data.getFieldData().size()==0) PetscFunctionReturn(0);
+        if(data.getFieldData().size()==0) MoFEMFunctionReturnHot(0);
         int nb_row = data.getIndices().size();
         Nf.resize(nb_row);
         Nf.clear();
@@ -954,7 +954,7 @@ struct MixTransportElement {
         ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
       }
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   };
@@ -1008,11 +1008,11 @@ struct MixTransportElement {
       DataForcesAndSourcesCore::EntData &row_data,
       DataForcesAndSourcesCore::EntData &col_data
     ) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       try {
-        if(Aij == PETSC_NULL) PetscFunctionReturn(0);
-        if(row_data.getFieldData().size()==0) PetscFunctionReturn(0);
-        if(col_data.getFieldData().size()==0) PetscFunctionReturn(0);
+        if(Aij == PETSC_NULL) MoFEMFunctionReturnHot(0);
+        if(row_data.getFieldData().size()==0) MoFEMFunctionReturnHot(0);
+        if(col_data.getFieldData().size()==0) MoFEMFunctionReturnHot(0);
         int nb_row = row_data.getFieldData().size();
         int nb_col = col_data.getFieldData().size();
         NN.resize(nb_row,nb_col);
@@ -1048,7 +1048,7 @@ struct MixTransportElement {
         ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
       }
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     PetscErrorCode doWork(
@@ -1056,9 +1056,9 @@ struct MixTransportElement {
       DataForcesAndSourcesCore::EntData &data
     ) {
 
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       try {
-        if(data.getIndices().size()==0) PetscFunctionReturn(0);
+        if(data.getIndices().size()==0) MoFEMFunctionReturnHot(0);
         if(data.getIndices().size()!=data.getN().size2()) {
           SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
         }
@@ -1082,7 +1082,7 @@ struct MixTransportElement {
         ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   };
@@ -1108,9 +1108,9 @@ struct MixTransportElement {
       int side,EntityType type,DataForcesAndSourcesCore::EntData &data
     ) {
 
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       try {
-        if(data.getFieldData().size()==0) PetscFunctionReturn(0);
+        if(data.getFieldData().size()==0) MoFEMFunctionReturnHot(0);
         EntityHandle fe_ent = getNumeredEntFiniteElementPtr()->getEnt();
         int nb_row = data.getFieldData().size();
         Nf.resize(nb_row,false);
@@ -1142,7 +1142,7 @@ struct MixTransportElement {
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   };
@@ -1181,9 +1181,9 @@ struct MixTransportElement {
     PetscErrorCode doWork(
       int side,EntityType type,DataForcesAndSourcesCore::EntData &data
     ) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       try {
-        if(data.getFieldData().size()==0) PetscFunctionReturn(0);
+        if(data.getFieldData().size()==0) MoFEMFunctionReturnHot(0);
         EntityHandle fe_ent = getNumeredEntFiniteElementPtr()->getEnt();
         nF.resize(data.getIndices().size());
         nF.clear();
@@ -1217,7 +1217,7 @@ struct MixTransportElement {
         ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
       }
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
   };
 
@@ -1247,9 +1247,9 @@ struct MixTransportElement {
     FTensor::Index<'i',3> i;
 
     PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       try {
-        if(data.getFieldData().size()==0) PetscFunctionReturn(0);
+        if(data.getFieldData().size()==0) MoFEMFunctionReturnHot(0);
         EntityHandle fe_ent = getNumeredEntFiniteElementPtr()->getEnt();
         int nb_dofs = data.getFieldData().size();
         int nb_gauss_pts = data.getHdivN().size1();
@@ -1350,7 +1350,7 @@ struct MixTransportElement {
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   };
@@ -1372,11 +1372,11 @@ struct MixTransportElement {
     virtual ~OpValuesAtGaussPts() {}
 
     PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
       try {
 
-        if(data.getFieldData().size() == 0)  PetscFunctionReturn(0);
+        if(data.getFieldData().size() == 0)  MoFEMFunctionReturnHot(0);
 
         int nb_gauss_pts = data.getN().size1();
         cTx.valuesAtGaussPts.resize(nb_gauss_pts);
@@ -1390,7 +1390,7 @@ struct MixTransportElement {
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   };
@@ -1411,9 +1411,9 @@ struct MixTransportElement {
     virtual ~OpValuesGradientAtGaussPts() {}
 
     PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       try {
-        if(data.getFieldData().size() == 0)  PetscFunctionReturn(0);
+        if(data.getFieldData().size() == 0)  MoFEMFunctionReturnHot(0);
         int nb_gauss_pts = data.getDiffN().size1();
         // cerr << data.getDiffN() << endl;
         cTx.valuesGradientAtGaussPts.resize(3,nb_gauss_pts);
@@ -1427,7 +1427,7 @@ struct MixTransportElement {
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   };
@@ -1448,10 +1448,10 @@ struct MixTransportElement {
 
     VectorDouble divVec;
     PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
       try {
-        if(data.getFieldData().size() == 0)  PetscFunctionReturn(0);
+        if(data.getFieldData().size() == 0)  MoFEMFunctionReturnHot(0);
         int nb_gauss_pts = data.getDiffN().size1();
         int nb_dofs = data.getFieldData().size();
         cTx.fluxesAtGaussPts.resize(3,nb_gauss_pts);
@@ -1472,7 +1472,7 @@ struct MixTransportElement {
         ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   };
@@ -1503,9 +1503,9 @@ struct MixTransportElement {
     ) {
 
 
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       try {
-        if(type != MBTET) PetscFunctionReturn(0);
+        if(type != MBTET) MoFEMFunctionReturnHot(0);
         invK.resize(3,3,false);
         int nb_gauss_pts = data.getN().size1();
         EntityHandle fe_ent = getNumeredEntFiniteElementPtr()->getEnt();
@@ -1593,7 +1593,7 @@ struct MixTransportElement {
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   };
@@ -1623,9 +1623,9 @@ struct MixTransportElement {
       valMap(val_map) {
       }
       PetscErrorCode doWork(int side, EntityType type,DataForcesAndSourcesCore::EntData &data) {
-        PetscFunctionBegin;
+        MoFEMFunctionBeginHot;
         try {
-          if(data.getFieldData().size() == 0)  PetscFunctionReturn(0);
+          if(data.getFieldData().size() == 0)  MoFEMFunctionReturnHot(0);
           int nb_gauss_pts = data.getN().size1();
           valMap[getFaceSense()].resize(nb_gauss_pts);
           for(int gg = 0;gg<nb_gauss_pts;gg++) {
@@ -1636,7 +1636,7 @@ struct MixTransportElement {
           ss << "throw in method: " << ex.what() << std::endl;
           SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
         }
-        PetscFunctionReturn(0);
+        MoFEMFunctionReturnHot(0);
       }
     };
 
@@ -1652,7 +1652,7 @@ struct MixTransportElement {
     }
 
     PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       try {
 
         if(type == MBTRI) {
@@ -1673,7 +1673,7 @@ struct MixTransportElement {
           EntityHandle essential_bc_meshset = cTx.mField.get_finite_element_meshset("MIX_BCFLUX");
           if(cTx.mField.get_moab().contains_entities(essential_bc_meshset,&fe_ent,1)) {
             // essential bc, np jump then, exit and go to next face
-            PetscFunctionReturn(0);
+            MoFEMFunctionReturnHot(0);
           }
 
           // calculate values form adjacent tets
@@ -1738,7 +1738,7 @@ struct MixTransportElement {
         SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
       }
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   };

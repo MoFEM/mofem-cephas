@@ -40,12 +40,12 @@ struct NitscheMethod {
     int getRule(int order) { return order+addToRule; }
     /*int getRule(int order) { return -1; }
     PetscErrorCode setGaussPts(int order) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       int rule = order+addToRule+1;
       int nb_gauss_pts = triangle_ncc_order_num(rule);
       gaussPts.resize(3,nb_gauss_pts,false);
       triangle_ncc_rule(rule,nb_gauss_pts,&gaussPts(0,0),&gaussPts(2,0));
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }*/
 
   };
@@ -142,7 +142,7 @@ struct NitscheMethod {
     }
 
     PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
       int faceInRespectToTet = getFEMethod()->nInTheLoop;
       int nb_face_gauss_pts = getGaussPts().size2();
@@ -204,7 +204,7 @@ struct NitscheMethod {
         ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   };
@@ -218,8 +218,8 @@ struct NitscheMethod {
     int addToRule;
 
     virtual PetscErrorCode doAdditionalJobWhenGuassPtsAreCalulated() {
-      PetscFunctionBegin;
-      PetscFunctionReturn(0);
+      MoFEMFunctionBeginHot;
+      MoFEMFunctionReturnHot(0);
     }
 
     MyVolumeFE(
@@ -239,7 +239,7 @@ struct NitscheMethod {
 
     PetscErrorCode setGaussPts(int order) {
       
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
       gaussPts.resize(4,0,false);
 
@@ -343,7 +343,7 @@ struct NitscheMethod {
 
       ierr = doAdditionalJobWhenGuassPtsAreCalulated(); CHKERRQ(ierr);
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   };
@@ -374,20 +374,20 @@ struct NitscheMethod {
 
     double faceRadius;
     virtual PetscErrorCode getFaceRadius(int ff) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       VectorDouble &coords = nitscheCommonData.cOords[ff];
       double center[3];
       tricircumcenter3d_tp(&coords[0],&coords[3],&coords[6],center,NULL,NULL);
       cblas_daxpy(3,-1,&coords[0],1,center,1);
       faceRadius = cblas_dnrm2(3,center,1);
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
     double gammaH;
     virtual PetscErrorCode getGammaH(double gamma,int gg) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       gammaH = gamma;
       //gammaH*= faceRadius;
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   };
@@ -423,14 +423,14 @@ struct NitscheMethod {
     MatrixDouble tRac_u;
 
     virtual PetscErrorCode calculateP(int gg,int fgg,int ff) {
-      PetscFunctionBegin;
-      PetscFunctionReturn(0);
+      MoFEMFunctionBeginHot;
+      MoFEMFunctionReturnHot(0);
     }
 
     PetscErrorCode getJac(
       DataForcesAndSourcesCore::EntData &data,int gg,MatrixDouble &jac
     ) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       try {
         int nb = data.getFieldData().size();
         jac.resize(9,nb,false);
@@ -451,13 +451,13 @@ struct NitscheMethod {
         ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     PetscErrorCode getTractionVariance(
       int gg,int fgg,int ff,MatrixDouble &jac,MatrixDouble &trac
     ) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       try {
         VectorAdaptor normal = VectorAdaptor(
           3,ublas::shallow_array_adaptor<double>(
@@ -478,7 +478,7 @@ struct NitscheMethod {
         ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   };
@@ -515,14 +515,14 @@ struct NitscheMethod {
       EntityType row_type,EntityType col_type,
       DataForcesAndSourcesCore::EntData &row_data,DataForcesAndSourcesCore::EntData &col_data
     ) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
       
       if(dAta.tEts.find(getNumeredEntFiniteElementPtr()->getEnt()) == dAta.tEts.end()) {
-        PetscFunctionReturn(0);
+        MoFEMFunctionReturnHot(0);
       }
-      if(row_data.getIndices().size()==0) PetscFunctionReturn(0);
-      if(col_data.getIndices().size()==0) PetscFunctionReturn(0);
+      if(row_data.getIndices().size()==0) MoFEMFunctionReturnHot(0);
+      if(col_data.getIndices().size()==0) MoFEMFunctionReturnHot(0);
       int nb_dofs_row = row_data.getIndices().size();
       int nb_dofs_col = col_data.getIndices().size();
       double gamma = nitscheBlockData.gamma;
@@ -654,7 +654,7 @@ struct NitscheMethod {
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   };
@@ -689,13 +689,13 @@ struct NitscheMethod {
     PetscErrorCode doWork(
       int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
     ) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
       
       if(dAta.tEts.find(getNumeredEntFiniteElementPtr()->getEnt()) == dAta.tEts.end()) {
-        PetscFunctionReturn(0);
+        MoFEMFunctionReturnHot(0);
       }
-      if(row_data.getIndices().size()==0) PetscFunctionReturn(0);
+      if(row_data.getIndices().size()==0) MoFEMFunctionReturnHot(0);
       int nb_dofs_row = row_data.getIndices().size();
       double gamma = nitscheBlockData.gamma;
       double phi = nitscheBlockData.phi;
@@ -751,7 +751,7 @@ struct NitscheMethod {
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
 
     }
 

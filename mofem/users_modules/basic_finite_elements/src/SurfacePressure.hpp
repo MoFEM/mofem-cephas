@@ -48,13 +48,13 @@ struct NeummanForcesSurface {
       const VectorDouble3 &normal,
       VectorDouble3 &force
     ) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       SETERRQ(
         PETSC_COMM_SELF,
         MOFEM_NOT_IMPLEMENTED,
         "You need to implement this"
       );
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   };
@@ -236,7 +236,7 @@ struct MetaNeummanForces {
     const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS",
     Range *intersect_ptr = NULL
   ) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
 
 
     // Define boundary element that operates on rows, columns and data of a given field
@@ -322,7 +322,7 @@ struct MetaNeummanForces {
     }
 
 
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   /**
@@ -341,7 +341,7 @@ struct MetaNeummanForces {
     boost::ptr_map<std::string,NeummanForcesSurface> &neumann_forces,
     Vec F,const std::string field_name,const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS"
   ) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
 
     string fe_name;
     fe_name = "FORCE_FE";
@@ -379,7 +379,7 @@ struct MetaNeummanForces {
       }
     }
 
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   // /** \deprecated Use setMomentumFluxOperators() instead
@@ -390,18 +390,18 @@ struct MetaNeummanForces {
   //   Vec F,const std::string field_name,const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS"
   // ) {
   //
-  //   PetscFunctionBegin;
+  //   MoFEMFunctionBeginHot;
   //   ierr = setMomentumFluxOperators(
   //     m_field,neumann_forces,F,field_name,mesh_nodals_positions
   //   );  CHKERRQ(ierr);
-  //   PetscFunctionReturn(0);
+  //   MoFEMFunctionReturnHot(0);
   // }
 
   static PetscErrorCode addNeumannFluxBCElements(
     MoFEM::Interface &m_field,
     const std::string field_name,
     const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS") {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
 
 
 
@@ -419,7 +419,7 @@ struct MetaNeummanForces {
       ierr = m_field.add_ents_to_finite_element_by_type(tris,MBTRI,"FLUX_FE"); CHKERRQ(ierr);
     }
 
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   static PetscErrorCode setMassFluxOperators(
@@ -427,7 +427,7 @@ struct MetaNeummanForces {
     boost::ptr_map<std::string,NeummanForcesSurface> &neumann_forces,
     Vec F,const std::string field_name,const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS"
   ) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
 
     string fe_name;
     fe_name = "FLUX_FE";
@@ -440,7 +440,7 @@ struct MetaNeummanForces {
       my_split << *it << std::endl;
       my_split << data << std::endl;*/
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   // /** \deprecated Use setMassFluxOperators() instead
@@ -451,11 +451,11 @@ struct MetaNeummanForces {
   //   Vec F,const std::string field_name,const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS"
   // ) {
   //
-  //   PetscFunctionBegin;
+  //   MoFEMFunctionBeginHot;
   //   ierr = setMassFluxOperators(
   //     m_field,neumann_forces,F,field_name,mesh_nodals_positions
   //   ); CHKERRQ(ierr);
-  //   PetscFunctionReturn(0);
+  //   MoFEMFunctionReturnHot(0);
   // }
 
 

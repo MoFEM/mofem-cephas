@@ -51,7 +51,7 @@ namespace MoFEM {
 
 PetscErrorCode Core::get_adjacencies_equality(const EntityHandle from_entiti,const int to_dimension,Range &adj_entities) const {
   
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   RefEntity from_ref_entiti(basicEntityDataPtr,from_entiti);
   //std::cerr << "from:\n";
   //std::cerr << from_ref_entiti << std::endl;
@@ -73,11 +73,11 @@ PetscErrorCode Core::get_adjacencies_equality(const EntityHandle from_entiti,con
   if(b_it!=bit_levels.end()) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Data inconsistency");
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 PetscErrorCode Core::get_adjacencies_any(const EntityHandle from_entiti,const int to_dimension,Range &adj_entities) const {
   
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   RefEntity from_ref_entiti(basicEntityDataPtr,from_entiti);
   //std::cerr << "from:\n";
   //std::cerr << from_ref_entiti << std::endl;
@@ -99,7 +99,7 @@ PetscErrorCode Core::get_adjacencies_any(const EntityHandle from_entiti,const in
   if(b_it!=bit_levels.end()) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Data inconsistency");
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 PetscErrorCode Core::get_adjacencies(
   const Problem *problem_ptr,
@@ -111,10 +111,10 @@ PetscErrorCode Core::get_adjacencies(
   const int verb
 ) const {
   
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   BitRefLevel bit = problem_ptr->getBitRefLevel();
   ierr = get_adjacencies(bit,from_entities,num_netities,to_dimension,adj_entities,operation_type); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 PetscErrorCode Core::get_adjacencies(
   const BitRefLevel &bit,
@@ -126,7 +126,7 @@ PetscErrorCode Core::get_adjacencies(
   const int verb
 ) const {
   
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   if(verb>0) {
     std::ostringstream ss;
     ss << "from: " << bit << std::endl << "to: " << std::endl;
@@ -156,7 +156,7 @@ PetscErrorCode Core::get_adjacencies(
   if(b_it!=bit_levels.end()) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Data inconsistency");
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 }

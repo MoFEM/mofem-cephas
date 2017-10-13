@@ -100,9 +100,9 @@ int main(int argc, char *argv[]) {
     PetscErrorCode calculateP_PiolaKirchhoffI(
     const BlockData block_data,
     const NumeredEntFiniteElement *fe_ptr) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     //my stuff
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 };
 MyMat mymat(moab);

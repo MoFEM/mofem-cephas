@@ -23,10 +23,10 @@ using namespace MoFEM;
 using namespace boost::numeric;
 
 PetscErrorCode ThermalElement::OpGetGradAtGaussPts::doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   try {
 
-    if(data.getIndices().size()==0) PetscFunctionReturn(0);
+    if(data.getIndices().size()==0) MoFEMFunctionReturnHot(0);
     int nb_dofs = data.getFieldData().size();
     int nb_gauss_pts = data.getN().size1();
 
@@ -46,20 +46,20 @@ PetscErrorCode ThermalElement::OpGetGradAtGaussPts::doWork(int side,EntityType t
     SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode ThermalElement::OpThermalRhs::doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   if(dAta.tEts.find(getNumeredEntFiniteElementPtr()->getEnt()) == dAta.tEts.end()) {
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   try {
 
-    if(data.getIndices().size()==0) PetscFunctionReturn(0);
-    if(dAta.tEts.find(getNumeredEntFiniteElementPtr()->getEnt())==dAta.tEts.end()) PetscFunctionReturn(0);
+    if(data.getIndices().size()==0) MoFEMFunctionReturnHot(0);
+    if(dAta.tEts.find(getNumeredEntFiniteElementPtr()->getEnt())==dAta.tEts.end()) MoFEMFunctionReturnHot(0);
 
     
 
@@ -105,7 +105,7 @@ PetscErrorCode ThermalElement::OpThermalRhs::doWork(int side,EntityType type,Dat
     SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode ThermalElement::OpThermalLhs::doWork(
@@ -114,16 +114,16 @@ PetscErrorCode ThermalElement::OpThermalLhs::doWork(
   DataForcesAndSourcesCore::EntData &row_data,
   DataForcesAndSourcesCore::EntData &col_data
 ) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   if(dAta.tEts.find(getNumeredEntFiniteElementPtr()->getEnt()) == dAta.tEts.end()) {
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   try {
 
-    if(row_data.getIndices().size()==0) PetscFunctionReturn(0);
-    if(col_data.getIndices().size()==0) PetscFunctionReturn(0);
+    if(row_data.getIndices().size()==0) MoFEMFunctionReturnHot(0);
+    if(col_data.getIndices().size()==0) MoFEMFunctionReturnHot(0);
 
     int nb_row = row_data.getN().size2();
     int nb_col = col_data.getN().size2();
@@ -177,15 +177,15 @@ PetscErrorCode ThermalElement::OpThermalLhs::doWork(
     SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode ThermalElement::OpHeatCapacityRhs::doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   try {
 
-    if(data.getIndices().size()==0) PetscFunctionReturn(0);
+    if(data.getIndices().size()==0) MoFEMFunctionReturnHot(0);
     int nb_row = data.getN().size2();
     Nf.resize(nb_row);
     Nf.clear();
@@ -214,7 +214,7 @@ PetscErrorCode ThermalElement::OpHeatCapacityRhs::doWork(int side,EntityType typ
   }
 
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode ThermalElement::OpHeatCapacityLhs::doWork(
@@ -223,12 +223,12 @@ PetscErrorCode ThermalElement::OpHeatCapacityLhs::doWork(
   DataForcesAndSourcesCore::EntData &row_data,
   DataForcesAndSourcesCore::EntData &col_data
 ) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   try {
 
-    if(row_data.getIndices().size()==0) PetscFunctionReturn(0);
-    if(col_data.getIndices().size()==0) PetscFunctionReturn(0);
+    if(row_data.getIndices().size()==0) MoFEMFunctionReturnHot(0);
+    if(col_data.getIndices().size()==0) MoFEMFunctionReturnHot(0);
 
     int nb_row = row_data.getN().size2();
     int nb_col = col_data.getN().size2();
@@ -281,14 +281,14 @@ PetscErrorCode ThermalElement::OpHeatCapacityLhs::doWork(
   }
 
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode ThermalElement::OpHeatFlux::doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
-  if(data.getIndices().size()==0) PetscFunctionReturn(0);
-  if(dAta.tRis.find(getNumeredEntFiniteElementPtr()->getEnt())==dAta.tRis.end()) PetscFunctionReturn(0);
+  if(data.getIndices().size()==0) MoFEMFunctionReturnHot(0);
+  if(dAta.tRis.find(getNumeredEntFiniteElementPtr()->getEnt())==dAta.tRis.end()) MoFEMFunctionReturnHot(0);
 
   
 
@@ -330,7 +330,7 @@ PetscErrorCode ThermalElement::OpHeatFlux::doWork(int side,EntityType type,DataF
     &data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode ThermalElement::OpRadiationLhs::doWork(
@@ -339,14 +339,14 @@ PetscErrorCode ThermalElement::OpRadiationLhs::doWork(
   DataForcesAndSourcesCore::EntData &row_data,
   DataForcesAndSourcesCore::EntData &col_data
 ) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   
 
   try {
 
-    if(row_data.getIndices().size()==0) PetscFunctionReturn(0);
-    if(col_data.getIndices().size()==0) PetscFunctionReturn(0);
+    if(row_data.getIndices().size()==0) MoFEMFunctionReturnHot(0);
+    if(col_data.getIndices().size()==0) MoFEMFunctionReturnHot(0);
 
     int nb_row = row_data.getN().size2();
     int nb_col = col_data.getN().size2();
@@ -395,14 +395,14 @@ PetscErrorCode ThermalElement::OpRadiationLhs::doWork(
     SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode ThermalElement::OpRadiationRhs::doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
-  if(data.getIndices().size()==0) PetscFunctionReturn(0);
-  if(dAta.tRis.find(getNumeredEntFiniteElementPtr()->getEnt())==dAta.tRis.end()) PetscFunctionReturn(0);
+  if(data.getIndices().size()==0) MoFEMFunctionReturnHot(0);
+  if(dAta.tRis.find(getNumeredEntFiniteElementPtr()->getEnt())==dAta.tRis.end()) MoFEMFunctionReturnHot(0);
 
   
 
@@ -449,16 +449,16 @@ PetscErrorCode ThermalElement::OpRadiationRhs::doWork(int side,EntityType type,D
     ierr = VecSetValues(F,data.getIndices().size(),&data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode ThermalElement::OpConvectionRhs::doWork(
   int side,EntityType type,DataForcesAndSourcesCore::EntData &data
 ) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
-  if(data.getIndices().size()==0) PetscFunctionReturn(0);
-  if(dAta.tRis.find(getNumeredEntFiniteElementPtr()->getEnt())==dAta.tRis.end()) PetscFunctionReturn(0);
+  if(data.getIndices().size()==0) MoFEMFunctionReturnHot(0);
+  if(dAta.tRis.find(getNumeredEntFiniteElementPtr()->getEnt())==dAta.tRis.end()) MoFEMFunctionReturnHot(0);
 
   
 
@@ -509,7 +509,7 @@ PetscErrorCode ThermalElement::OpConvectionRhs::doWork(
     ); CHKERRQ(ierr);
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode ThermalElement::OpConvectionLhs::doWork(
@@ -518,12 +518,12 @@ PetscErrorCode ThermalElement::OpConvectionLhs::doWork(
   DataForcesAndSourcesCore::EntData &row_data,
   DataForcesAndSourcesCore::EntData &col_data
 ) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   try {
 
-    if(row_data.getIndices().size()==0) PetscFunctionReturn(0);
-    if(col_data.getIndices().size()==0) PetscFunctionReturn(0);
+    if(row_data.getIndices().size()==0) MoFEMFunctionReturnHot(0);
+    if(col_data.getIndices().size()==0) MoFEMFunctionReturnHot(0);
 
     int nb_row = row_data.getN().size2();
     int nb_col = col_data.getN().size2();
@@ -572,25 +572,25 @@ PetscErrorCode ThermalElement::OpConvectionLhs::doWork(
     SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode ThermalElement::UpdateAndControl::preProcess() {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   
   ierr = mField.query_interface<VecManager>()->setOtherLocalGhostVector(
     problemPtr,tempName,rateName,ROW,ts_u_t,INSERT_VALUES,SCATTER_REVERSE
   ); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode ThermalElement::UpdateAndControl::postProcess() {
-  PetscFunctionBegin;
-  PetscFunctionReturn(0);
+  MoFEMFunctionBeginHot;
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode ThermalElement::TimeSeriesMonitor::postProcess() {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   
 
   ierr = mField.query_interface<VecManager>()->setGlobalGhostVector(
@@ -605,11 +605,11 @@ PetscErrorCode ThermalElement::TimeSeriesMonitor::postProcess() {
   ierr = recorder_ptr->record_field(seriesName,tempName,proble_bit_level,mask); CHKERRQ(ierr);
   ierr = recorder_ptr->record_end(seriesName,ts_t); CHKERRQ(ierr);
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode ThermalElement::addThermalElements(const std::string field_name,const std::string mesh_nodals_positions) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   
   
@@ -644,11 +644,11 @@ PetscErrorCode ThermalElement::addThermalElements(const std::string field_name,c
 
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode ThermalElement::addThermalFluxElement(const std::string field_name,const std::string mesh_nodals_positions) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   
   
@@ -686,11 +686,11 @@ PetscErrorCode ThermalElement::addThermalFluxElement(const std::string field_nam
   }
 
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode ThermalElement::addThermalConvectionElement(const std::string field_name,const std::string mesh_nodals_positions) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   
   
@@ -722,11 +722,11 @@ PetscErrorCode ThermalElement::addThermalConvectionElement(const std::string fie
     }
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode ThermalElement::addThermalRadiationElement(const std::string field_name,const std::string mesh_nodals_positions) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   
   
@@ -759,32 +759,32 @@ PetscErrorCode ThermalElement::addThermalRadiationElement(const std::string fiel
     }
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode ThermalElement::setThermalFiniteElementRhsOperators(string field_name,Vec &F) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   std::map<int,BlockData>::iterator sit = setOfBlocks.begin();
   feRhs.getOpPtrVector().push_back(new OpGetGradAtGaussPts(field_name,commonData));
   for(;sit!=setOfBlocks.end();sit++) {
     //add finite element
     feRhs.getOpPtrVector().push_back(new OpThermalRhs(field_name,F,sit->second,commonData));
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode ThermalElement::setThermalFiniteElementLhsOperators(string field_name,Mat A) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   std::map<int,BlockData>::iterator sit = setOfBlocks.begin();
   for(;sit!=setOfBlocks.end();sit++) {
     //add finite elemen
     feLhs.getOpPtrVector().push_back(new OpThermalLhs(field_name,A,sit->second,commonData));
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode ThermalElement::setThermalFluxFiniteElementRhsOperators(string field_name,Vec &F,const std::string mesh_nodals_positions) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   bool hoGeometry = false;
   if(mField.check_field(mesh_nodals_positions)) {
     hoGeometry = true;
@@ -794,11 +794,11 @@ PetscErrorCode ThermalElement::setThermalFluxFiniteElementRhsOperators(string fi
     //add finite element
     feFlux.getOpPtrVector().push_back(new OpHeatFlux(field_name,F,sit->second,hoGeometry));
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode ThermalElement::setThermalConvectionFiniteElementRhsOperators(string field_name,Vec &F,const std::string mesh_nodals_positions) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   bool hoGeometry = false;
   if(mField.check_field(mesh_nodals_positions)) {
     hoGeometry = true;
@@ -809,11 +809,11 @@ PetscErrorCode ThermalElement::setThermalConvectionFiniteElementRhsOperators(str
     feConvectionRhs.getOpPtrVector().push_back(new OpGetTriTemperatureAtGaussPts(field_name,commonData));
     feConvectionRhs.getOpPtrVector().push_back(new OpConvectionRhs(field_name,F,sit->second,commonData,hoGeometry));
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode ThermalElement::setThermalConvectionFiniteElementLhsOperators(string field_name,Mat A,const std::string mesh_nodals_positions) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   bool hoGeometry = false;
   if(mField.check_field(mesh_nodals_positions)) {
     hoGeometry = true;
@@ -823,11 +823,11 @@ PetscErrorCode ThermalElement::setThermalConvectionFiniteElementLhsOperators(str
     //add finite element
     feConvectionLhs.getOpPtrVector().push_back(new OpConvectionLhs(field_name,A,sit->second,hoGeometry));
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode ThermalElement::setTimeSteppingProblem(string field_name,string rate_name,const std::string mesh_nodals_positions) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   bool hoGeometry = false;
   if(mField.check_field(mesh_nodals_positions)) {
@@ -891,12 +891,12 @@ PetscErrorCode ThermalElement::setTimeSteppingProblem(string field_name,string r
   }
 
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 
 PetscErrorCode ThermalElement::setTimeSteppingProblem(TsCtx &ts_ctx,string field_name,string rate_name,const std::string mesh_nodals_positions) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   
   ierr = setTimeSteppingProblem(field_name,rate_name,mesh_nodals_positions); CHKERRQ(ierr);
@@ -921,5 +921,5 @@ PetscErrorCode ThermalElement::setTimeSteppingProblem(TsCtx &ts_ctx,string field
   //monitor
   //TsCtx::FEMethodsSequence& loops_to_do_Monitor = ts_ctx.get_loops_to_do_Monitor();
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }

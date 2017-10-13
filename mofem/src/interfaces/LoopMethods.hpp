@@ -38,10 +38,10 @@ static const MOFEMuuid IDD_MOFEMEntMethod = MOFEMuuid( BitIntefaceId(ENT_METHOD)
 struct KspMethod: virtual public UnknownInterface  {
 
   PetscErrorCode queryInterface (const MOFEMuuid& uuid, UnknownInterface** iface) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     if(uuid == IDD_MOFEMKspMethod) {
       *iface = dynamic_cast<KspMethod*>(this);
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown interface");
   }
@@ -103,7 +103,7 @@ struct SnesMethod: virtual public UnknownInterface {
   PetscErrorCode queryInterface (const MOFEMuuid& uuid, UnknownInterface** iface) {
     if(uuid == IDD_MOFEMSnesMethod) {
       *iface = dynamic_cast<SnesMethod*>(this);
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown interface");
   }
@@ -169,7 +169,7 @@ struct TSMethod: virtual public UnknownInterface  {
   PetscErrorCode queryInterface (const MOFEMuuid& uuid, UnknownInterface** iface) {
     if(uuid == IDD_MOFEMTsMethod) {
       *iface = dynamic_cast<TSMethod*>(this);
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown interface");
   }
@@ -242,7 +242,7 @@ TSMethod {
   PetscErrorCode queryInterface (const MOFEMuuid& uuid, UnknownInterface** iface) {
     if(uuid == IDD_MOFEMBasicMethod) {
       *iface = dynamic_cast<BasicMethod*>(this);
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown interface");
   }
@@ -339,14 +339,14 @@ TSMethod {
 struct FEMethod: public BasicMethod {
 
   PetscErrorCode queryInterface (const MOFEMuuid& uuid, UnknownInterface** iface) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     if(uuid == IDD_MOFEMFEMethod) {
       *iface = dynamic_cast<FEMethod*>(this);
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     ierr = queryInterface(uuid,iface); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   FEMethod();
@@ -561,14 +561,14 @@ struct FEMethod: public BasicMethod {
 struct EntMethod: public BasicMethod {
 
   PetscErrorCode queryInterface (const MOFEMuuid& uuid, UnknownInterface** iface) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     if(uuid == IDD_MOFEMEntMethod) {
       *iface = dynamic_cast<EntMethod*>(this);
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     ierr = queryInterface(uuid,iface); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   EntMethod();

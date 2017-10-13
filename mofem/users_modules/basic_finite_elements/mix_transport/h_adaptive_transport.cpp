@@ -76,9 +76,9 @@ struct MyTransport: public MixTransportElement {
    * @return      error code
    */
   PetscErrorCode getSource(EntityHandle ent,const double x,const double y,const double z,double &flux) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     flux = 0;
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   /**
@@ -94,9 +94,9 @@ struct MyTransport: public MixTransportElement {
     const EntityHandle ent,
     const double x,const double y,const double z,
     double &value) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     value = 0;
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   /**
@@ -112,7 +112,7 @@ struct MyTransport: public MixTransportElement {
     const EntityHandle ent,
     const double x,const double y,const double z,
     double &flux) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     if(lastEnt==ent) {
       flux = lastFlux;
     } else {
@@ -126,7 +126,7 @@ struct MyTransport: public MixTransportElement {
       lastEnt = ent;
       lastFlux = flux;
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   /**
@@ -141,7 +141,7 @@ struct MyTransport: public MixTransportElement {
    * @return           error code
    */
   PetscErrorCode addBoundaryElements(BitRefLevel &ref_level) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     Range tets;
     ierr = mField.get_entities_by_type_and_ref_level(ref_level,BitRefLevel().set(),MBTET,tets);
     Skinner skin(&mField.get_moab());
@@ -174,7 +174,7 @@ struct MyTransport: public MixTransportElement {
     ierr = mField.add_ents_to_finite_element_by_type(essential_bc,MBTRI,"MIX_BCFLUX"); CHKERRQ(ierr);
     ierr = mField.add_ents_to_finite_element_by_type(natural_bc,MBTRI,"MIX_BCVALUE"); CHKERRQ(ierr);
     // ierr = mField.add_ents_to_finite_element_by_type(skin_faces,MBTRI,"MIX_BCVALUE"); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   /**
@@ -208,7 +208,7 @@ struct MyTransport: public MixTransportElement {
     MixTransportElement &ufe,const int nb_levels,const int order
   ) {
     MeshRefinement *refine_ptr;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     // get refined edges having child vertex
     const RefEntity_multiIndex *ref_ents_ptr;
     ierr = mField.get_ref_ents(&ref_ents_ptr); CHKERRQ(ierr);
@@ -299,7 +299,7 @@ struct MyTransport: public MixTransportElement {
       }
     }
     rval = mField.get_moab().delete_entities(&ref_meshset,1); CHKERRQ_MOAB(rval);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   /**
@@ -312,7 +312,7 @@ struct MyTransport: public MixTransportElement {
    */
   PetscErrorCode squashBits() {
 
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     BitRefLevel all_but_0;
     all_but_0.set(0);
     all_but_0.flip();
@@ -334,7 +334,7 @@ struct MyTransport: public MixTransportElement {
         );
       }
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   /**
@@ -345,7 +345,7 @@ struct MyTransport: public MixTransportElement {
    */
   PetscErrorCode updateMeshsetsFieldsAndElements(const int nb_levels) {
     BitRefLevel ref_level;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     ref_level.set(nb_levels);
     for(_IT_CUBITMESHSETS_FOR_LOOP_(mField,it)) {
       EntityHandle meshset = it->meshset;
@@ -354,7 +354,7 @@ struct MyTransport: public MixTransportElement {
       ierr = mField.query_interface<UpdateMeshsetsAndRanges>()->updateMeshsetByEntitiesChildren(meshset,ref_level,meshset,MBTRI,true); CHKERRQ(ierr);
       ierr = mField.query_interface<UpdateMeshsetsAndRanges>()->updateMeshsetByEntitiesChildren(meshset,ref_level,meshset,MBTET,true); CHKERRQ(ierr);
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
 

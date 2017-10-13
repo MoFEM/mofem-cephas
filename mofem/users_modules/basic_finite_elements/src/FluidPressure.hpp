@@ -40,8 +40,8 @@ struct FluidPressure {
     int getRule(int order) { return order+1; };
 
     PetscErrorCode preProcess() {
-      PetscFunctionBegin;
-      PetscFunctionReturn(0);
+      MoFEMFunctionBeginHot;
+      MoFEMFunctionReturnHot(0);
     }
 
   };
@@ -93,10 +93,10 @@ struct FluidPressure {
     
     PetscErrorCode doWork(
       int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
-      PetscFunctionBegin;
-      if(data.getIndices().size()==0) PetscFunctionReturn(0);
+      MoFEMFunctionBeginHot;
+      if(data.getIndices().size()==0) MoFEMFunctionReturnHot(0);
       EntityHandle ent = getNumeredEntFiniteElementPtr()->getEnt();
-      if(dAta.tRis.find(ent)==dAta.tRis.end()) PetscFunctionReturn(0);
+      if(dAta.tRis.find(ent)==dAta.tRis.end()) MoFEMFunctionReturnHot(0);
 
       const FENumeredDofEntity *dof_ptr;
       ierr = getNumeredEntFiniteElementPtr()->getRowDofsByPetscGlobalDofIdx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
@@ -178,7 +178,7 @@ struct FluidPressure {
       ); CHKERRQ(ierr);
 
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
   };
 

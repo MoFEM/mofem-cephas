@@ -67,7 +67,7 @@ extern "C" {
 namespace MoFEM {
 
 PetscErrorCode ForcesAndSourcesCore::getNumberOfNodes(int &num_nodes) const {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   EntityHandle ent = numeredEntFiniteElementPtr->getEnt();
   switch(mField.get_moab().type_from_handle(ent)) {
@@ -93,13 +93,13 @@ PetscErrorCode ForcesAndSourcesCore::getNumberOfNodes(int &num_nodes) const {
     SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 // ** Sense **
 
 PetscErrorCode ForcesAndSourcesCore::getSense(EntityType type,boost::ptr_vector<DataForcesAndSourcesCore::EntData> &data) const {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   try {
     SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(numeredEntFiniteElementPtr->getSideNumberTable());
     if(data.size() < side_table.get<2>().count(type)) {
@@ -123,28 +123,28 @@ PetscErrorCode ForcesAndSourcesCore::getSense(EntityType type,boost::ptr_vector<
     SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode ForcesAndSourcesCore::getEdgesSense(DataForcesAndSourcesCore &data) const {
 
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   ierr = getSense(MBEDGE,data.dataOnEntities[MBEDGE]); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode ForcesAndSourcesCore::getTrisSense(DataForcesAndSourcesCore &data) const {
 
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   ierr = getSense(MBTRI,data.dataOnEntities[MBTRI]); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode ForcesAndSourcesCore::getQuadSense(DataForcesAndSourcesCore &data) const {
 
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   ierr = getSense(MBQUAD,data.dataOnEntities[MBQUAD]); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 // ** Order **
@@ -178,7 +178,7 @@ int ForcesAndSourcesCore::getMaxColOrder() const {
 }
 
 PetscErrorCode ForcesAndSourcesCore::getDataOrder(const EntityType type,const FieldSpace space,boost::ptr_vector<DataForcesAndSourcesCore::EntData> &data) const {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   try {
     SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(numeredEntFiniteElementPtr->getSideNumberTable());
     if(data.size() < side_table.get<2>().count(type)) {
@@ -217,48 +217,48 @@ PetscErrorCode ForcesAndSourcesCore::getDataOrder(const EntityType type,const Fi
     ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
     SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode ForcesAndSourcesCore::getEdgesDataOrder(DataForcesAndSourcesCore &data,const FieldSpace space) const {
 
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   ierr = getDataOrder(MBEDGE,space,data.dataOnEntities[MBEDGE]); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode ForcesAndSourcesCore::getTrisDataOrder(DataForcesAndSourcesCore &data,const FieldSpace space) const {
 
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   ierr = getDataOrder(MBTRI,space,data.dataOnEntities[MBTRI]); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode ForcesAndSourcesCore::getQuadDataOrder(DataForcesAndSourcesCore &data,const FieldSpace space) const {
 
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   ierr = getDataOrder(MBQUAD,space,data.dataOnEntities[MBQUAD]); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode ForcesAndSourcesCore::getTetDataOrder(DataForcesAndSourcesCore &data,const FieldSpace space) const {
 
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   ierr = getDataOrder(MBTET,space,data.dataOnEntities[MBTET]); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode ForcesAndSourcesCore::getPrismDataOrder(DataForcesAndSourcesCore &data,const FieldSpace space) const {
 
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   ierr = getDataOrder(MBPRISM,space,data.dataOnEntities[MBPRISM]); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode ForcesAndSourcesCore::getDataOrderSpaceAndBase(
   const std::string &field_name,const EntityType type,boost::ptr_vector<DataForcesAndSourcesCore::EntData> &data
 ) const {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(numeredEntFiniteElementPtr->getSideNumberTable());
   if(data.size() < side_table.get<2>().count(type)) {
@@ -282,7 +282,7 @@ PetscErrorCode ForcesAndSourcesCore::getDataOrderSpaceAndBase(
   FEDofEntity_multiIndex::index<Composite_Name_Type_And_Side_Number_mi_tag>::type::iterator dit,hi_dit;
   dit = data_dofs.lower_bound(boost::make_tuple(field_name,type,0));
   if(dit == data_dofs.end()) {
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
   hi_dit = data_dofs.lower_bound(boost::make_tuple(field_name,type,data.size()));
 
@@ -314,42 +314,42 @@ PetscErrorCode ForcesAndSourcesCore::getDataOrderSpaceAndBase(
 
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode ForcesAndSourcesCore::getEdgesDataOrderSpaceAndBase(DataForcesAndSourcesCore &data,const std::string &field_name) const {
 
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   ierr = getDataOrderSpaceAndBase(field_name,MBEDGE,data.dataOnEntities[MBEDGE]); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode ForcesAndSourcesCore::getTrisDataOrderSpaceAndBase(DataForcesAndSourcesCore &data,const std::string &field_name) const {
 
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   ierr = getDataOrderSpaceAndBase(field_name,MBTRI,data.dataOnEntities[MBTRI]); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode ForcesAndSourcesCore::getQuadDataOrderSpaceAndBase(DataForcesAndSourcesCore &data,const std::string &field_name) const {
 
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   ierr = getDataOrderSpaceAndBase(field_name,MBQUAD,data.dataOnEntities[MBQUAD]); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode ForcesAndSourcesCore::getTetDataOrderSpaceAndBase(DataForcesAndSourcesCore &data,const std::string &field_name) const {
 
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   ierr = getDataOrderSpaceAndBase(field_name,MBTET,data.dataOnEntities[MBTET]); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode ForcesAndSourcesCore::getPrismDataOrderSpaceAndBase(DataForcesAndSourcesCore &data,const std::string &field_name) const {
 
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   ierr = getDataOrderSpaceAndBase(field_name,MBPRISM,data.dataOnEntities[MBPRISM]); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 // ** Indices **
@@ -358,7 +358,7 @@ PetscErrorCode ForcesAndSourcesCore::getNodesIndices(
   const boost::string_ref field_name,FENumeredDofEntity_multiIndex &dofs,VectorInt &nodes_indices,VectorInt &local_nodes_indices
 ) const {
 
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   FENumeredDofEntityByNameAndType::iterator dit,hi_dit,it;
   dit = dofs.get<Composite_Name_And_Type_mi_tag>().lower_bound(boost::make_tuple(field_name,MBVERTEX));
@@ -401,40 +401,40 @@ PetscErrorCode ForcesAndSourcesCore::getNodesIndices(
     }
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode ForcesAndSourcesCore::getRowNodesIndices(DataForcesAndSourcesCore &data,const std::string &field_name) const {
 
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   ierr = getNodesIndices(
     field_name,const_cast<FENumeredDofEntity_multiIndex&>(numeredEntFiniteElementPtr->getRowsDofs()),
     data.dataOnEntities[MBVERTEX][0].getIndices(),data.dataOnEntities[MBVERTEX][0].getLocalIndices()
   ); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode ForcesAndSourcesCore::getColNodesIndices(DataForcesAndSourcesCore &data,const std::string &field_name) const {
 
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   ierr = getNodesIndices(
     field_name,const_cast<FENumeredDofEntity_multiIndex&>(numeredEntFiniteElementPtr->getColsDofs()),
     data.dataOnEntities[MBVERTEX][0].getIndices(),data.dataOnEntities[MBVERTEX][0].getLocalIndices()
   ); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode ForcesAndSourcesCore::getTypeIndices(
   const boost::string_ref field_name,FENumeredDofEntity_multiIndex &dofs,EntityType type,int side_number,VectorInt &indices,VectorInt &local_indices
 ) const {
   //
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   FENumeredDofEntity_multiIndex::index<Composite_Name_Type_And_Side_Number_mi_tag>::type::iterator dit,hi_dit;
   dit = dofs.get<Composite_Name_Type_And_Side_Number_mi_tag>().lower_bound(boost::make_tuple(field_name,type,side_number));
   if(dit==dofs.get<Composite_Name_Type_And_Side_Number_mi_tag>().end()) {
     indices.resize(0);
     local_indices.resize(0);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
   hi_dit = dofs.get<Composite_Name_Type_And_Side_Number_mi_tag>().upper_bound(boost::make_tuple(field_name,type,side_number));
   if(dit!=hi_dit) {
@@ -451,7 +451,7 @@ PetscErrorCode ForcesAndSourcesCore::getTypeIndices(
     indices.resize(0);
     local_indices.resize(0);
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode ForcesAndSourcesCore::getTypeIndices(
@@ -459,7 +459,7 @@ PetscErrorCode ForcesAndSourcesCore::getTypeIndices(
   boost::ptr_vector<DataForcesAndSourcesCore::EntData> &data
 ) const {
 
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(numeredEntFiniteElementPtr->getSideNumberTable());
   SideNumber_multiIndex::nth_index<2>::type::iterator siit = side_table.get<2>().lower_bound(type);
   SideNumber_multiIndex::nth_index<2>::type::iterator hi_siit = side_table.get<2>().upper_bound(type);
@@ -475,7 +475,7 @@ PetscErrorCode ForcesAndSourcesCore::getTypeIndices(
       data[siiit->get()->side_number].getIndices().resize(0,false);
       data[siiit->get()->side_number].getLocalIndices().resize(0,false);
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
   for(
     SideNumber_multiIndex::nth_index<2>::type::iterator
@@ -518,50 +518,50 @@ PetscErrorCode ForcesAndSourcesCore::getTypeIndices(
       ); CHKERRQ(ierr);
     }
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode ForcesAndSourcesCore::getEdgesRowIndices(DataForcesAndSourcesCore &data,const std::string &field_name) const {
 
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   ierr = getTypeIndices(
     field_name,const_cast<FENumeredDofEntity_multiIndex&>(numeredEntFiniteElementPtr->getRowsDofs()),MBEDGE,data.dataOnEntities[MBEDGE]
   ); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode ForcesAndSourcesCore::getEdgesColIndices(DataForcesAndSourcesCore &data,const std::string &field_name) const {
 
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   ierr = getTypeIndices(
     field_name,const_cast<FENumeredDofEntity_multiIndex&>(numeredEntFiniteElementPtr->getColsDofs()),MBEDGE,data.dataOnEntities[MBEDGE]
   ); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode ForcesAndSourcesCore::getTrisRowIndices(
   DataForcesAndSourcesCore &data,const std::string &field_name
 ) const {
 
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   ierr = getTypeIndices(
     field_name,const_cast<FENumeredDofEntity_multiIndex&>(numeredEntFiniteElementPtr->getRowsDofs()),MBTRI,data.dataOnEntities[MBTRI]
   ); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode ForcesAndSourcesCore::getTrisColIndices(DataForcesAndSourcesCore &data,const std::string &field_name) const {
 
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   ierr = getTypeIndices(
     field_name,const_cast<FENumeredDofEntity_multiIndex&>(numeredEntFiniteElementPtr->getColsDofs()),MBTRI,data.dataOnEntities[MBTRI]
   ); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode ForcesAndSourcesCore::getTetsRowIndices(DataForcesAndSourcesCore &data,const std::string &field_name) const {
 
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   if(data.dataOnEntities[MBTET].size() == 0) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
   }
@@ -569,12 +569,12 @@ PetscErrorCode ForcesAndSourcesCore::getTetsRowIndices(DataForcesAndSourcesCore 
     field_name,const_cast<FENumeredDofEntity_multiIndex&>(numeredEntFiniteElementPtr->getRowsDofs()),MBTET,0,
     data.dataOnEntities[MBTET][0].getIndices(),data.dataOnEntities[MBTET][0].getLocalIndices()
   ); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode ForcesAndSourcesCore::getTetsColIndices(DataForcesAndSourcesCore &data,const std::string &field_name) const {
 
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   if(data.dataOnEntities[MBTET].size() == 0) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
   }
@@ -582,54 +582,54 @@ PetscErrorCode ForcesAndSourcesCore::getTetsColIndices(DataForcesAndSourcesCore 
     field_name,const_cast<FENumeredDofEntity_multiIndex&>(
       numeredEntFiniteElementPtr->getColsDofs()),MBTET,0,data.dataOnEntities[MBTET][0].getIndices(),data.dataOnEntities[MBTET][0].getLocalIndices()
   ); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode ForcesAndSourcesCore::getQuadRowIndices(
   DataForcesAndSourcesCore &data,const std::string &field_name
 ) const {
 
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   ierr = getTypeIndices(
     field_name,const_cast<FENumeredDofEntity_multiIndex&>(numeredEntFiniteElementPtr->getRowsDofs()),MBQUAD,data.dataOnEntities[MBQUAD]
   ); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode ForcesAndSourcesCore::getQuadColIndices(DataForcesAndSourcesCore &data,const std::string &field_name) const {
 
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   ierr = getTypeIndices(
     field_name,const_cast<FENumeredDofEntity_multiIndex&>(numeredEntFiniteElementPtr->getColsDofs()),MBQUAD,data.dataOnEntities[MBQUAD]
   ); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode ForcesAndSourcesCore::getPrismRowIndices(
   DataForcesAndSourcesCore &data,const std::string &field_name
 ) const {
 
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   ierr = getTypeIndices(
     field_name,const_cast<FENumeredDofEntity_multiIndex&>(numeredEntFiniteElementPtr->getRowsDofs()),MBPRISM,data.dataOnEntities[MBPRISM]
   ); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode ForcesAndSourcesCore::getPrismColIndices(DataForcesAndSourcesCore &data,const std::string &field_name) const {
 
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   ierr = getTypeIndices(
     field_name,const_cast<FENumeredDofEntity_multiIndex&>(numeredEntFiniteElementPtr->getColsDofs()),MBPRISM,data.dataOnEntities[MBPRISM]
   ); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode ForcesAndSourcesCore::getNoFieldIndices(
   const std::string &field_name,FENumeredDofEntity_multiIndex &dofs,VectorInt &indices
 ) const {
   //
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   FENumeredDofEntityByFieldName::iterator dit,hi_dit;
   dit = dofs.get<FieldName_mi_tag>().lower_bound(field_name);
   hi_dit = dofs.get<FieldName_mi_tag>().upper_bound(field_name);
@@ -638,12 +638,12 @@ PetscErrorCode ForcesAndSourcesCore::getNoFieldIndices(
     int idx = (*dit)->getPetscGlobalDofIdx();
     indices[(*dit)->getDofCoeffIdx()] = idx;
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode ForcesAndSourcesCore::getNoFieldRowIndices(DataForcesAndSourcesCore &data,const std::string &field_name) const {
 
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   //EntityType fe_type = numeredEntFiniteElementPtr->getEntType();
   if(data.dataOnEntities[MBENTITYSET].size() == 0) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
@@ -651,19 +651,19 @@ PetscErrorCode ForcesAndSourcesCore::getNoFieldRowIndices(DataForcesAndSourcesCo
   ierr = getNoFieldIndices(
     field_name,const_cast<FENumeredDofEntity_multiIndex&>(numeredEntFiniteElementPtr->getRowsDofs()),data.dataOnEntities[MBENTITYSET][0].getIndices()
   ); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode ForcesAndSourcesCore::getNoFieldColIndices(DataForcesAndSourcesCore &data,const std::string &field_name) const {
 
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   if(data.dataOnEntities[MBENTITYSET].size() == 0) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
   }
   ierr = getNoFieldIndices(
     field_name,const_cast<FENumeredDofEntity_multiIndex&>(numeredEntFiniteElementPtr->getColsDofs()),data.dataOnEntities[MBENTITYSET][0].getIndices()
   ); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 // ** Indices from problem **
@@ -673,7 +673,7 @@ PetscErrorCode ForcesAndSourcesCore::getProblemNodesIndices(
   const NumeredDofEntity_multiIndex &dofs,
   VectorInt &nodes_indices
 ) const {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   nodes_indices.resize(0);
 
@@ -704,7 +704,7 @@ PetscErrorCode ForcesAndSourcesCore::getProblemNodesIndices(
 
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 
 }
 
@@ -712,7 +712,7 @@ PetscErrorCode ForcesAndSourcesCore::getProblemTypeIndices(
   const std::string &field_name,const NumeredDofEntity_multiIndex &dofs,
   EntityType type,int side_number,VectorInt &indices
 ) const {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   indices.resize(0);
 
@@ -741,35 +741,35 @@ PetscErrorCode ForcesAndSourcesCore::getProblemTypeIndices(
 
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode ForcesAndSourcesCore::getProblemNodesRowIndices(const std::string &field_name,VectorInt &nodes_indices) const {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   ierr = getProblemNodesIndices(field_name,*(problemPtr->numeredDofsRows),nodes_indices); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode ForcesAndSourcesCore::getProblemTypeRowIndices(const std::string &field_name,EntityType type,int side_number,VectorInt &indices) const {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   ierr = getProblemTypeIndices(field_name,*(problemPtr->numeredDofsRows),type,side_number,indices); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode ForcesAndSourcesCore::getProblemNodesColIndices(const std::string &field_name,VectorInt &nodes_indices) const {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   ierr = getProblemNodesIndices(field_name,*(problemPtr->numeredDofsCols),nodes_indices); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode ForcesAndSourcesCore::getProblemTypeColIndices(const std::string &field_name,EntityType type,int side_number,VectorInt &indices) const {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   ierr = getProblemTypeIndices(field_name,*(problemPtr->numeredDofsCols),type,side_number,indices); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 // ** Data **
@@ -783,7 +783,7 @@ PetscErrorCode ForcesAndSourcesCore::getNodesFieldData(
   FieldApproximationBase &base
 ) const {
 
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   try {
     FEDofEntityByNameAndType::iterator dit,hi_dit,it;
     dit = dofs.get<Composite_Name_And_Type_mi_tag>().lower_bound(boost::make_tuple(field_name,MBVERTEX));
@@ -837,11 +837,11 @@ PetscErrorCode ForcesAndSourcesCore::getNodesFieldData(
     ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
     SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode ForcesAndSourcesCore::getNodesFieldData(DataForcesAndSourcesCore &data,const std::string &field_name) const {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   ierr = getNodesFieldData(
     field_name,
@@ -851,7 +851,7 @@ PetscErrorCode ForcesAndSourcesCore::getNodesFieldData(DataForcesAndSourcesCore 
     data.dataOnEntities[MBVERTEX][0].getSpace(),
     data.dataOnEntities[MBVERTEX][0].getBase()
   ); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode ForcesAndSourcesCore::getTypeFieldData(
@@ -863,13 +863,13 @@ PetscErrorCode ForcesAndSourcesCore::getTypeFieldData(
   VectorDofs &ent_field_dofs
 ) const {
   //
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   FEDofEntity_multiIndex::index<Composite_Name_Type_And_Side_Number_mi_tag>::type::iterator dit,hi_dit;
   dit = dofs.get<Composite_Name_Type_And_Side_Number_mi_tag>().lower_bound(boost::make_tuple(field_name,type,side_number));
   if(dit == dofs.get<Composite_Name_Type_And_Side_Number_mi_tag>().end()) {
     ent_field_data.resize(0,false);
     ent_field_dofs.resize(0,false);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
   hi_dit = dofs.get<Composite_Name_Type_And_Side_Number_mi_tag>().upper_bound(boost::make_tuple(field_name,type,side_number));
   if(dit!=hi_dit) {
@@ -885,7 +885,7 @@ PetscErrorCode ForcesAndSourcesCore::getTypeFieldData(
     ent_field_data.resize(0,false);
     ent_field_dofs.resize(0,false);
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode ForcesAndSourcesCore::getTypeFieldData(
@@ -895,7 +895,7 @@ PetscErrorCode ForcesAndSourcesCore::getTypeFieldData(
   boost::ptr_vector<DataForcesAndSourcesCore::EntData> &data
 ) const {
 
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(numeredEntFiniteElementPtr->getSideNumberTable());
   // if(data.size() < side_table.get<2>().count(type)) {
   //   SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
@@ -915,7 +915,7 @@ PetscErrorCode ForcesAndSourcesCore::getTypeFieldData(
       data[side_number].getFieldData().resize(0,false);
       data[side_number].getFieldDofs().resize(0,false);
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
   for(
     SideNumber_multiIndex::nth_index<2>::type::iterator
@@ -959,7 +959,7 @@ PetscErrorCode ForcesAndSourcesCore::getTypeFieldData(
       ); CHKERRQ(ierr);
     }
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode ForcesAndSourcesCore::getNoFieldFieldData(
@@ -969,7 +969,7 @@ PetscErrorCode ForcesAndSourcesCore::getNoFieldFieldData(
   VectorDofs &ent_field_dofs
 ) const {
   //
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   FEDofEntityByFieldName::iterator dit,hi_dit;
   dit = dofs.get<FieldName_mi_tag>().lower_bound(field_name);
   hi_dit = dofs.get<FieldName_mi_tag>().upper_bound(field_name);
@@ -981,14 +981,14 @@ PetscErrorCode ForcesAndSourcesCore::getNoFieldFieldData(
     ent_field_data[idx] = (*dit)->getFieldData();
     ent_field_dofs[idx] = *dit;
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode ForcesAndSourcesCore::getNoFieldFieldData(
   DataForcesAndSourcesCore &data,const boost::string_ref field_name
 ) const {
 
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   if(data.dataOnEntities[MBENTITYSET].size() == 0) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
   }
@@ -997,43 +997,43 @@ PetscErrorCode ForcesAndSourcesCore::getNoFieldFieldData(
     data.dataOnEntities[MBENTITYSET][0].getFieldData(),
     data.dataOnEntities[MBENTITYSET][0].getFieldDofs()
   ); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode ForcesAndSourcesCore::getEdgesFieldData(DataForcesAndSourcesCore &data,const std::string &field_name) const {
 
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   ierr = getTypeFieldData(
     field_name,const_cast<FEDofEntity_multiIndex&>(numeredEntFiniteElementPtr->getDataDofs()),MBEDGE,data.dataOnEntities[MBEDGE]
   ); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode ForcesAndSourcesCore::getTrisFieldData(
   DataForcesAndSourcesCore &data,const std::string &field_name
 ) const {
 
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   ierr = getTypeFieldData(
     field_name,const_cast<FEDofEntity_multiIndex&>(numeredEntFiniteElementPtr->getDataDofs()),MBTRI,data.dataOnEntities[MBTRI]
   ); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode ForcesAndSourcesCore::getQuadFieldData(
   DataForcesAndSourcesCore &data,const std::string &field_name
 ) const {
 
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   ierr = getTypeFieldData(
     field_name,const_cast<FEDofEntity_multiIndex&>(numeredEntFiniteElementPtr->getDataDofs()),MBQUAD,data.dataOnEntities[MBQUAD]
   ); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode ForcesAndSourcesCore::getTetsFieldData(DataForcesAndSourcesCore &data,const std::string &field_name) const {
 
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   if(data.dataOnEntities[MBTET].size() == 0) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
   }
@@ -1044,12 +1044,12 @@ PetscErrorCode ForcesAndSourcesCore::getTetsFieldData(DataForcesAndSourcesCore &
     data.dataOnEntities[MBTET][0].getFieldData(),
     data.dataOnEntities[MBTET][0].getFieldDofs()
   ); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode ForcesAndSourcesCore::getPrismFieldData(DataForcesAndSourcesCore &data,const std::string &field_name) const {
 
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   if(data.dataOnEntities[MBPRISM].size() == 0) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
   }
@@ -1061,14 +1061,14 @@ PetscErrorCode ForcesAndSourcesCore::getPrismFieldData(DataForcesAndSourcesCore 
     data.dataOnEntities[MBPRISM][0].getFieldData(),
     data.dataOnEntities[MBPRISM][0].getFieldDofs()
   ); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 // ** Face **
 
 PetscErrorCode ForcesAndSourcesCore::getFaceTriNodes(DataForcesAndSourcesCore &data) const {
   //
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   //PetscAttachDebugger();
   data.facesNodes.resize(4,3,false);
   SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(numeredEntFiniteElementPtr->getSideNumberTable());
@@ -1116,14 +1116,14 @@ PetscErrorCode ForcesAndSourcesCore::getFaceTriNodes(DataForcesAndSourcesCore &d
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
     }
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 // ** Space and Base **
 
 PetscErrorCode ForcesAndSourcesCore::getSpacesAndBaseOnEntities(DataForcesAndSourcesCore &data) const {
   //
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   try {
     if(nInTheLoop==0) {
       data.sPace.reset();
@@ -1152,14 +1152,14 @@ PetscErrorCode ForcesAndSourcesCore::getSpacesAndBaseOnEntities(DataForcesAndSou
     ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
     SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 // **** Data Operator ****
 
 static PetscErrorCode get_porblem_row_indices(
   const ForcesAndSourcesCore *fe_ptr,const EntityType type,const int side,const std::string field_name,VectorInt& indices) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
 
 
@@ -1171,12 +1171,12 @@ static PetscErrorCode get_porblem_row_indices(
       ierr = fe_ptr->getProblemTypeRowIndices(field_name,type,side,indices); CHKERRQ(ierr);
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 static PetscErrorCode get_porblem_col_indices(
   const ForcesAndSourcesCore *fe_ptr,const EntityType type,const int side,const std::string field_name,VectorInt& indices) {
-  PetscFunctionBegin;;
+  MoFEMFunctionBeginHot;;
 
 
 
@@ -1188,13 +1188,13 @@ static PetscErrorCode get_porblem_col_indices(
       ierr = fe_ptr->getProblemTypeColIndices(field_name,type,side,indices); CHKERRQ(ierr);
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode ForcesAndSourcesCore::UserDataOperator::getPorblemRowIndices(
   const std::string field_name,const EntityType type,const int side,VectorInt& indices
 ) const {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
 
 
@@ -1203,13 +1203,13 @@ PetscErrorCode ForcesAndSourcesCore::UserDataOperator::getPorblemRowIndices(
   }
   ierr = get_porblem_row_indices(ptrFE,type,side,field_name,indices); CHKERRQ(ierr);
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode ForcesAndSourcesCore::UserDataOperator::getPorblemColIndices(
   const std::string field_name,const EntityType type,const int side,VectorInt& indices
 ) const {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
 
 
@@ -1218,7 +1218,7 @@ PetscErrorCode ForcesAndSourcesCore::UserDataOperator::getPorblemColIndices(
   }
   ierr = get_porblem_col_indices(ptrFE,type,side,field_name,indices); CHKERRQ(ierr);
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 }

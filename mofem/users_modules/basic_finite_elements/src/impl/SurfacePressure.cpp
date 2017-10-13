@@ -47,11 +47,11 @@ PetscErrorCode NeummanForcesSurface::OpNeumannForce::doWork(
   int side,EntityType type,DataForcesAndSourcesCore::EntData &data
 ) {
 
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
-  if(data.getIndices().size()==0) PetscFunctionReturn(0);
+  if(data.getIndices().size()==0) MoFEMFunctionReturnHot(0);
   EntityHandle ent = getNumeredEntFiniteElementPtr()->getEnt();
-  if(dAta.tRis.find(ent)==dAta.tRis.end()) PetscFunctionReturn(0);
+  if(dAta.tRis.find(ent)==dAta.tRis.end()) MoFEMFunctionReturnHot(0);
 
   int rank = data.getFieldDofs()[0]->getNbOfCoeffs();
   int nb_row_dofs = data.getIndices().size()/rank;
@@ -114,7 +114,7 @@ PetscErrorCode NeummanForcesSurface::OpNeumannForce::doWork(
     ); CHKERRQ(ierr);
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 NeummanForcesSurface::OpNeumannForceAnalytical::OpNeumannForceAnalytical(
@@ -136,11 +136,11 @@ hoGeometry(ho_geometry) {
 PetscErrorCode NeummanForcesSurface::OpNeumannForceAnalytical::doWork(
   int side,EntityType type,DataForcesAndSourcesCore::EntData &data
 ) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
-  if(data.getIndices().size()==0) PetscFunctionReturn(0);
+  if(data.getIndices().size()==0) MoFEMFunctionReturnHot(0);
   EntityHandle ent = getNumeredEntFiniteElementPtr()->getEnt();
-  if(tRis.find(ent)==tRis.end()) PetscFunctionReturn(0);
+  if(tRis.find(ent)==tRis.end()) MoFEMFunctionReturnHot(0);
 
 
 
@@ -212,7 +212,7 @@ PetscErrorCode NeummanForcesSurface::OpNeumannForceAnalytical::doWork(
     ); CHKERRQ(ierr);
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 
@@ -229,11 +229,11 @@ PetscErrorCode NeummanForcesSurface::OpNeumannPreassure::doWork(
   int side,EntityType type,DataForcesAndSourcesCore::EntData &data
 ) {
 
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
-  if(data.getIndices().size()==0) PetscFunctionReturn(0);
+  if(data.getIndices().size()==0) MoFEMFunctionReturnHot(0);
   if(dAta.tRis.find(getNumeredEntFiniteElementPtr()->getEnt())==dAta.tRis.end()) {
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   int rank = data.getFieldDofs()[0]->getNbOfCoeffs();
@@ -294,7 +294,7 @@ PetscErrorCode NeummanForcesSurface::OpNeumannPreassure::doWork(
     ); CHKERRQ(ierr);
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 NeummanForcesSurface::OpNeumannFlux::OpNeumannFlux(
@@ -312,11 +312,11 @@ PetscErrorCode NeummanForcesSurface::OpNeumannFlux::doWork(
   int side,EntityType type,DataForcesAndSourcesCore::EntData &data
 ) {
 
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
-  if(data.getIndices().size()==0) PetscFunctionReturn(0);
+  if(data.getIndices().size()==0) MoFEMFunctionReturnHot(0);
   if(dAta.tRis.find(getNumeredEntFiniteElementPtr()->getEnt())==dAta.tRis.end()) {
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   int rank = data.getFieldDofs()[0]->getNbOfCoeffs();
@@ -365,7 +365,7 @@ PetscErrorCode NeummanForcesSurface::OpNeumannFlux::doWork(
     ierr = VecSetValues(my_f,data.getIndices().size(),&data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 
@@ -374,7 +374,7 @@ PetscErrorCode NeummanForcesSurface::addForce(const std::string field_name,Vec F
 
   const CubitMeshSets *cubit_meshset_ptr;
   MeshsetsManager *mmanager_ptr;
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   ierr = mField.query_interface(mmanager_ptr); CHKERRQ(ierr);
   if(block_set) {
     //Add data from block set.
@@ -418,14 +418,14 @@ PetscErrorCode NeummanForcesSurface::addForce(const std::string field_name,Vec F
     rval = mField.get_moab().get_entities_by_type(cubit_meshset_ptr->meshset,MBTRI,mapForce[ms_id].tRis,true); CHKERRQ_MOAB(rval);
     fe.getOpPtrVector().push_back(new OpNeumannForce(field_name,F,mapForce[ms_id],methodsOp,ho_geometry));
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode NeummanForcesSurface::addPreassure(const std::string field_name,Vec F,int ms_id,bool ho_geometry,bool block_set) {
 
   const CubitMeshSets *cubit_meshset_ptr;
   MeshsetsManager *mmanager_ptr;
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   ierr = mField.query_interface(mmanager_ptr); CHKERRQ(ierr);
   if(block_set) {
     ierr = mmanager_ptr->getCubitMeshsetPtr(ms_id,BLOCKSET,&cubit_meshset_ptr); CHKERRQ(ierr);
@@ -454,7 +454,7 @@ PetscErrorCode NeummanForcesSurface::addPreassure(const std::string field_name,V
     rval = mField.get_moab().get_entities_by_type(cubit_meshset_ptr->meshset,MBTRI,mapPreassure[ms_id].tRis,true); CHKERRQ_MOAB(rval);
     fe.getOpPtrVector().push_back(new OpNeumannPreassure(field_name,F,mapPreassure[ms_id],methodsOp,ho_geometry));
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode NeummanForcesSurface::addFlux(const std::string field_name,Vec F,int ms_id,bool ho_geometry) {
@@ -462,11 +462,11 @@ PetscErrorCode NeummanForcesSurface::addFlux(const std::string field_name,Vec F,
 
   const CubitMeshSets *cubit_meshset_ptr;
   MeshsetsManager *mmanager_ptr;
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   ierr = mField.query_interface(mmanager_ptr); CHKERRQ(ierr);
   ierr = mmanager_ptr->getCubitMeshsetPtr(ms_id,SIDESET,&cubit_meshset_ptr); CHKERRQ(ierr);
   ierr = cubit_meshset_ptr->getBcDataStructure(mapPreassure[ms_id].data); CHKERRQ(ierr);
   rval = mField.get_moab().get_entities_by_type(cubit_meshset_ptr->meshset,MBTRI,mapPreassure[ms_id].tRis,true); CHKERRQ_MOAB(rval);
   fe.getOpPtrVector().push_back(new OpNeumannFlux(field_name,F,mapPreassure[ms_id],methodsOp,ho_geometry));
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }

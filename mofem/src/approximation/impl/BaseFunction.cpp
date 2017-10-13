@@ -28,42 +28,42 @@ using namespace MoFEM;
 PetscErrorCode BaseFunctionCtx::queryInterface(
   const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface
 ) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   *iface = NULL;
   if(uuid == IDD_UNKNOWN_BASE_FUNCTION) {
     *iface = static_cast<BaseFunctionCtx*>(this);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   } else {
     SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"wrong interference");
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode BaseFunction::queryInterface(
   const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface
 ) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   *iface = NULL;
   if(uuid == IDD_UNKNOWN_BASE_FUNCTION) {
     *iface = static_cast<BaseFunction*>(this);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   } else {
     SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"wrong interference");
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode BaseFunction::getValue(
   MatrixDouble &pts,
   boost::shared_ptr<BaseFunctionCtx> ctx_ptr
 ) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   SETERRQ(
     PETSC_COMM_SELF,
     MOFEM_NOT_IMPLEMENTED,
     "BaseFunction has not valid implementation of any shape function"
   );
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode BaseFunction::getValue(
@@ -71,11 +71,11 @@ PetscErrorCode BaseFunction::getValue(
   MatrixDouble &pts_t,
   boost::shared_ptr<BaseFunctionCtx> ctx_ptr
 ) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   SETERRQ(
     PETSC_COMM_SELF,
     MOFEM_NOT_IMPLEMENTED,
     "BaseFunction has not valid implementation of any shape function"
   );
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }

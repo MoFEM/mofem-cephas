@@ -36,9 +36,9 @@ struct GenericCubitBcData {
      * @return            error code
      */
     virtual PetscErrorCode fill_data(const std::vector<char>& bc_data) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       SETERRQ(PETSC_COMM_SELF,1,"It makes no sense for the generic bc type");
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     /**
@@ -48,9 +48,9 @@ struct GenericCubitBcData {
      * @return         error code
      */
     virtual PetscErrorCode set_data(void *tag_ptr,unsigned int size) const {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       SETERRQ(PETSC_COMM_SELF,1,"It makes no sense for the generic bc type");
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     /**
@@ -117,20 +117,20 @@ struct DisplacementCubitBcData: public GenericCubitBcData {
     }
 
     PetscErrorCode fill_data(const std::vector<char>& bc_data) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       //Fill data
       if(bc_data.size()!=sizeof(data)) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
       memcpy(&data, &bc_data[0], sizeof(data));
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     PetscErrorCode set_data(void *tag_ptr,unsigned int size) const {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       if(size!=sizeof(data)) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
       }
       memcpy(tag_ptr, &data, size);
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
 
@@ -169,20 +169,20 @@ struct ForceCubitBcData: public GenericCubitBcData {
     }
 
     PetscErrorCode fill_data(const std::vector<char>& bc_data) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       //Fill data
       if(bc_data.size()!=sizeof(data)) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
       memcpy(&data, &bc_data[0], sizeof(data));
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     PetscErrorCode set_data(void *tag_ptr,unsigned int size) const {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       if(size!=sizeof(data)) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
       }
       memcpy(tag_ptr, &data, size);
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
 
@@ -225,20 +225,20 @@ struct VelocityCubitBcData: public GenericCubitBcData {
     }
 
     PetscErrorCode fill_data(const std::vector<char>& bc_data) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       //Fill data
       if(bc_data.size()!=sizeof(data)) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
       memcpy(&data, &bc_data[0], sizeof(data));
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     PetscErrorCode set_data(void *tag_ptr,unsigned int size) const {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       if(size!=sizeof(data)) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
       }
       memcpy(tag_ptr, &data, size);
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     /*! \brief Print velocity bc data
@@ -281,20 +281,20 @@ struct AccelerationCubitBcData: public GenericCubitBcData {
     }
 
     PetscErrorCode fill_data(const std::vector<char>& bc_data) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       //Fill data
       if(bc_data.size()!=sizeof(data)) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
       memcpy(&data, &bc_data[0], sizeof(data));
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     PetscErrorCode set_data(void *tag_ptr,unsigned int size) const {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       if(size!=sizeof(data)) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
       }
       memcpy(tag_ptr, &data, size);
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
 
@@ -338,20 +338,20 @@ struct AccelerationCubitBcData: public GenericCubitBcData {
    }
 
    PetscErrorCode fill_data(const std::vector<char>& bc_data) {
-     PetscFunctionBegin;
+     MoFEMFunctionBeginHot;
      //Fill data
      if(bc_data.size()!=sizeof(data)) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
      memcpy(&data, &bc_data[0], sizeof(data));
-     PetscFunctionReturn(0);
+     MoFEMFunctionReturnHot(0);
    }
 
    PetscErrorCode set_data(void *tag_ptr,unsigned int size) const {
-     PetscFunctionBegin;
+     MoFEMFunctionBeginHot;
      if(size!=sizeof(data)) {
        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
      }
      memcpy(tag_ptr, &data, size);
-     PetscFunctionReturn(0);
+     MoFEMFunctionReturnHot(0);
    }
 
 
@@ -384,22 +384,22 @@ struct PressureCubitBcData: public GenericCubitBcData {
     }
 
     PetscErrorCode fill_data(const std::vector<char>& bc_data) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       //Fill data
       if(bc_data.size()!=sizeof(data)) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
       }
       memcpy(&data, &bc_data[0], sizeof(data));
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     PetscErrorCode set_data(void *tag_ptr,unsigned int size) const {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       if(size!=sizeof(data)) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
       }
       memcpy(tag_ptr, &data, size);
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     /*! \brief Print pressure bc data
@@ -437,20 +437,20 @@ struct HeatFluxCubitBcData: public GenericCubitBcData {
   }
 
   PetscErrorCode fill_data(const std::vector<char>& bc_data) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     //Fill data
     if(bc_data.size()!=sizeof(data)) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
     memcpy(&data, &bc_data[0], sizeof(data));
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode set_data(void *tag_ptr,unsigned int size) const {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     if(size!=sizeof(data)) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
     }
     memcpy(tag_ptr, &data, size);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   /*! \brief Print heat flux bc data
@@ -481,20 +481,20 @@ struct CfgCubitBcData: public GenericCubitBcData {
     }
 
     PetscErrorCode fill_data(const std::vector<char>& bc_data) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       //Fill data
       if(bc_data.size()!=sizeof(data)) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
       memcpy(&data, &bc_data[0], sizeof(data));
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     PetscErrorCode set_data(void *tag_ptr,unsigned int size) const {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       if(size!=sizeof(data)) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
       }
       memcpy(tag_ptr, &data, size);
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     /*! \brief Print cfd_bc data

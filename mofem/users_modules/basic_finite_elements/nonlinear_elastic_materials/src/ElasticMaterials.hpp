@@ -93,7 +93,7 @@ struct ElasticMaterials {
    * @return [description]
    */
   virtual PetscErrorCode iNit() {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     //add new material below
     string mat_name;
     aDoubleMaterialModel[MAT_KIRCHOFF] = boost::make_shared<NonlinearElasticElement::FunctionsToCalculatePiolaKirchhoffI<adouble> >();
@@ -135,7 +135,7 @@ struct ElasticMaterials {
       configFile = config_file;
     }
     ierr = PetscOptionsEnd(); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   /** \brief read Elastic materials declaration for blocks and meshsets
@@ -167,7 +167,7 @@ struct ElasticMaterials {
 
     */
   virtual PetscErrorCode readConfigFile() {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
 
     try {
 
@@ -242,12 +242,12 @@ struct ElasticMaterials {
     } catch (std::exception& ex) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,"error parsing material elastic configuration file");
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
 
   }
 
   PetscErrorCode setBlocksOrder() {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
 
 
     //set app. order
@@ -281,13 +281,13 @@ struct ElasticMaterials {
         ierr = mField.set_field_order(ents_to_set_order,"SPATIAL_VELOCITY",blockData[it->getMeshsetId()].oRder); CHKERRQ(ierr);
       }
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   #ifdef __NONLINEAR_ELASTIC_HPP
 
   virtual PetscErrorCode setBlocks(std::map<int,NonlinearElasticElement::BlockData> &set_of_blocks) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
 
 
     if(!iNitialized) {
@@ -324,7 +324,7 @@ struct ElasticMaterials {
         SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"field with that space is not implemented");
       }
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   #endif //__NONLINEAR_ELASTIC_HPP
@@ -332,7 +332,7 @@ struct ElasticMaterials {
   #ifdef __CONVECTIVE_MASS_ELEMENT_HPP
 
   PetscErrorCode setBlocks(std::map<int,ConvectiveMassElement::BlockData> &set_of_blocks) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
 
 
     if(!iNitialized) {
@@ -376,7 +376,7 @@ struct ElasticMaterials {
       );
     }
 
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   #endif //__CONVECTIVE_MASS_ELEMENT_HPP
@@ -384,7 +384,7 @@ struct ElasticMaterials {
   #ifdef __KELVIN_VOIGT_DAMPER_HPP__
 
   PetscErrorCode setBlocks(std::map<int,KelvinVoigtDamper::BlockMaterialData> &set_of_blocks) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
 
 
 
@@ -430,7 +430,7 @@ struct ElasticMaterials {
       }
     }
 
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   #endif //__KELVIN_VOIGT_DAMPER_HPP__

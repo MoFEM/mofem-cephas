@@ -67,7 +67,7 @@ namespace MoFEM {
 
 PetscErrorCode DataOperator::opLhs(
     DataForcesAndSourcesCore &row_data,DataForcesAndSourcesCore &col_data,bool symm) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   
 
   //nodes
@@ -478,7 +478,7 @@ PetscErrorCode DataOperator::opLhs(
     }
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 template<>
@@ -488,7 +488,7 @@ PetscErrorCode invertTensor3by3<3,double,ublas::row_major,DoubleAllacator>(
   MatrixDouble &inv_jac_data
 ) {
   
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   FTensor::Tensor2<double*,3,3> A = getTensor2FormData<3,3>(jac_data);
   int nb_gauss_pts = jac_data.size2();
   det_data.resize(nb_gauss_pts,false);
@@ -502,7 +502,7 @@ PetscErrorCode invertTensor3by3<3,double,ublas::row_major,DoubleAllacator>(
     ++det;
     ++I;
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode DataOperator::opRhs(
@@ -515,7 +515,7 @@ PetscErrorCode DataOperator::opRhs(
   const bool do_prisms,
   const bool error_if_no_base
 ) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   
 
   if(do_vertices) {
@@ -652,7 +652,7 @@ PetscErrorCode DataOperator::opRhs(
     ierr = doWork(mm,MBENTITYSET,data.dataOnEntities[MBENTITYSET][mm]); CHKERRQ(ierr);
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode OpSetInvJacH1::doWork(
@@ -660,7 +660,7 @@ PetscErrorCode OpSetInvJacH1::doWork(
   EntityType type,
   DataForcesAndSourcesCore::EntData &data
 ) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   // 
 
   try {
@@ -740,7 +740,7 @@ PetscErrorCode OpSetInvJacH1::doWork(
     SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode OpSetInvJacHdivAndHcurl::doWork(
@@ -748,9 +748,9 @@ PetscErrorCode OpSetInvJacHdivAndHcurl::doWork(
   EntityType type,
   DataForcesAndSourcesCore::EntData &data
 ) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
-  if(type != MBEDGE && type != MBTRI && type != MBTET) PetscFunctionReturn(0);
+  if(type != MBEDGE && type != MBTRI && type != MBTET) MoFEMFunctionReturnHot(0);
 
   if(
     (int)HDIV0_1!=(int)HCURL0_1 ||
@@ -807,7 +807,7 @@ PetscErrorCode OpSetInvJacHdivAndHcurl::doWork(
     SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode OpSetContravariantPiolaTransform::doWork(
@@ -815,9 +815,9 @@ PetscErrorCode OpSetContravariantPiolaTransform::doWork(
   EntityType type,
   DataForcesAndSourcesCore::EntData &data
 )  {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
-  if(type != MBTRI && type != MBTET) PetscFunctionReturn(0);
+  if(type != MBTRI && type != MBTET) MoFEMFunctionReturnHot(0);
 
   try {
 
@@ -879,7 +879,7 @@ PetscErrorCode OpSetContravariantPiolaTransform::doWork(
     SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode OpSetCovariantPiolaTransform::doWork(
@@ -887,9 +887,9 @@ PetscErrorCode OpSetCovariantPiolaTransform::doWork(
   EntityType type,
   DataForcesAndSourcesCore::EntData &data
 )  {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
-  if(type != MBEDGE && type != MBTRI && type != MBTET) PetscFunctionReturn(0);
+  if(type != MBEDGE && type != MBTRI && type != MBTET) MoFEMFunctionReturnHot(0);
 
   try {
 
@@ -948,7 +948,7 @@ PetscErrorCode OpSetCovariantPiolaTransform::doWork(
     SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode OpSetHoInvJacH1::doWork(
@@ -956,7 +956,7 @@ PetscErrorCode OpSetHoInvJacH1::doWork(
     EntityType type,
     DataForcesAndSourcesCore::EntData &data
   )  {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
 
     try {
 
@@ -1050,7 +1050,7 @@ PetscErrorCode OpSetHoInvJacH1::doWork(
       SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
     }
 
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode OpSetHoInvJacHdivAndHcurl::doWork(
@@ -1058,10 +1058,10 @@ PetscErrorCode OpSetHoInvJacH1::doWork(
     EntityType type,
     DataForcesAndSourcesCore::EntData &data
   ) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
 
-    if(type != MBEDGE && type != MBTRI && type != MBTET) PetscFunctionReturn(0);
-    // if(data.getSpace() == HDIV && type == MBEDGE) PetscFunctionReturn(0);
+    if(type != MBEDGE && type != MBTRI && type != MBTET) MoFEMFunctionReturnHot(0);
+    // if(data.getSpace() == HDIV && type == MBEDGE) MoFEMFunctionReturnHot(0);
 
     try {
 
@@ -1122,16 +1122,16 @@ PetscErrorCode OpSetHoInvJacH1::doWork(
       SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
     }
 
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
 
 PetscErrorCode OpSetHoContravariantPiolaTransform::doWork(
   int side,EntityType type,DataForcesAndSourcesCore::EntData &data
 ) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
-  if(type != MBTRI && type != MBTET) PetscFunctionReturn(0);
+  if(type != MBTRI && type != MBTET) MoFEMFunctionReturnHot(0);
 
   try {
 
@@ -1198,15 +1198,15 @@ PetscErrorCode OpSetHoContravariantPiolaTransform::doWork(
     SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode OpSetHoCovariantPiolaTransform::doWork(
   int side,EntityType type,DataForcesAndSourcesCore::EntData &data
 ) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
-  if(type != MBEDGE && type != MBTRI && type != MBTET) PetscFunctionReturn(0);
+  if(type != MBEDGE && type != MBTRI && type != MBTET) MoFEMFunctionReturnHot(0);
 
   try {
 
@@ -1270,14 +1270,14 @@ PetscErrorCode OpSetHoCovariantPiolaTransform::doWork(
     SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode OpGetCoordsAndNormalsOnFace::doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   unsigned int nb_dofs = data.getFieldData().size();
-  if(nb_dofs==0)  PetscFunctionReturn(0);
+  if(nb_dofs==0)  MoFEMFunctionReturnHot(0);
 
   int nb_gauss_pts = data.getN().size1();
   cOords_at_GaussPt.resize(nb_gauss_pts,3,false);
@@ -1320,7 +1320,7 @@ PetscErrorCode OpGetCoordsAndNormalsOnFace::doWork(int side,EntityType type,Data
           );
         } else {
           nb_dofs = nn;
-          if(!nb_dofs) PetscFunctionReturn(0);
+          if(!nb_dofs) MoFEMFunctionReturnHot(0);
         }
       }
       for(int gg = 0;gg<nb_gauss_pts;gg++) {
@@ -1336,11 +1336,11 @@ PetscErrorCode OpGetCoordsAndNormalsOnFace::doWork(int side,EntityType type,Data
       SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode OpGetCoordsAndNormalsOnFace::calculateNormals() {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   
 
   sPin.resize(3,3);
@@ -1354,13 +1354,13 @@ PetscErrorCode OpGetCoordsAndNormalsOnFace::calculateNormals() {
       &nOrmals_at_GaussPt(gg,0),1);
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode OpGetCoordsAndNormalsOnPrism::doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
-  if(data.getFieldData().size()==0)  PetscFunctionReturn(0);
+  if(data.getFieldData().size()==0)  MoFEMFunctionReturnHot(0);
   const int valid_edges3[] = { 1,1,1,0,0,0,0,0,0 };
   const int valid_faces3[] = { 0,0,0,1,0,0,0,0,0 };
   const int valid_edges4[] = { 0,0,0,0,0,0,1,1,1 };
@@ -1369,9 +1369,9 @@ PetscErrorCode OpGetCoordsAndNormalsOnPrism::doWork(int side,EntityType type,Dat
   try {
 
     if(type == MBEDGE) {
-      if(!valid_edges3[side]||valid_edges4[side]) PetscFunctionReturn(0);
+      if(!valid_edges3[side]||valid_edges4[side]) MoFEMFunctionReturnHot(0);
     } else if(type == MBTRI) {
-      if(!valid_faces3[side]||valid_faces4[side]) PetscFunctionReturn(0);
+      if(!valid_faces3[side]||valid_faces4[side]) MoFEMFunctionReturnHot(0);
     }
 
     switch (type) {
@@ -1425,11 +1425,11 @@ PetscErrorCode OpGetCoordsAndNormalsOnPrism::doWork(int side,EntityType type,Dat
     SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode OpGetCoordsAndNormalsOnPrism::calculateNormals() {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   
 
   try {
@@ -1460,7 +1460,7 @@ PetscErrorCode OpGetCoordsAndNormalsOnPrism::calculateNormals() {
     SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 
@@ -1469,9 +1469,9 @@ PetscErrorCode OpSetContravariantPiolaTransoformOnTriangle::doWork(
     EntityType type,
     DataForcesAndSourcesCore::EntData &data
 ) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
-  if(type != MBTRI) PetscFunctionReturn(0);
+  if(type != MBTRI) MoFEMFunctionReturnHot(0);
 
   // FieldApproximationBase base = data.getBase();
 
@@ -1502,7 +1502,7 @@ PetscErrorCode OpSetContravariantPiolaTransoformOnTriangle::doWork(
 
   // data.getBase() = base;
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode OpSetCovariantPiolaTransoformOnTriangle::doWork(
@@ -1511,9 +1511,9 @@ PetscErrorCode OpSetCovariantPiolaTransoformOnTriangle::doWork(
   DataForcesAndSourcesCore::EntData &data
 ) {
   
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
-  if(type != MBEDGE && type != MBTRI) PetscFunctionReturn(0);
+  if(type != MBEDGE && type != MBTRI) MoFEMFunctionReturnHot(0);
 
   FTensor::Index<'i',3> i;
   FTensor::Index<'j',3> j;
@@ -1609,14 +1609,14 @@ PetscErrorCode OpSetCovariantPiolaTransoformOnTriangle::doWork(
 
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode OpGetHoTangentOnEdge::doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   int nb_dofs = data.getFieldData().size();
-  if(nb_dofs == 0) PetscFunctionReturn(0);
+  if(nb_dofs == 0) MoFEMFunctionReturnHot(0);
 
   try {
 
@@ -1661,7 +1661,7 @@ PetscErrorCode OpGetHoTangentOnEdge::doWork(int side,EntityType type,DataForcesA
     ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
     SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode OpSetCovariantPiolaTransoformOnEdge::doWork(
@@ -1669,9 +1669,9 @@ PetscErrorCode OpSetCovariantPiolaTransoformOnEdge::doWork(
   EntityType type,
   DataForcesAndSourcesCore::EntData &data
 ) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
-  if(type != MBEDGE) PetscFunctionReturn(0);
+  if(type != MBEDGE) MoFEMFunctionReturnHot(0);
 
   FTensor::Index<'i',3> i;
   FTensor::Tensor1<const double*,3> t_m(
@@ -1738,7 +1738,7 @@ PetscErrorCode OpSetCovariantPiolaTransoformOnEdge::doWork(
 
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 
@@ -1764,12 +1764,12 @@ PetscErrorCode OpGetDataAndGradient<3,3>::calculateValAndGrad(
   EntityType type,
   DataForcesAndSourcesCore::EntData &data
 ) {
-  PetscFunctionBegin;
-  if(data.getBase()==NOBASE) PetscFunctionReturn(0);
+  MoFEMFunctionBeginHot;
+  if(data.getBase()==NOBASE) MoFEMFunctionReturnHot(0);
   const unsigned int nb_gauss_pts = data.getN().size1();
   const unsigned int nb_base_functions = data.getN().size2();
   const unsigned int nb_dofs = data.getFieldData().size();
-  if(!nb_dofs) PetscFunctionReturn(0);
+  if(!nb_dofs) MoFEMFunctionReturnHot(0);
   FTensor::Tensor0<double*> t_n = data.getFTensor0N();
   FTensor::Tensor1<double*,3> t_val = getValAtGaussPtsTensor<3>(dataAtGaussPts);
   FTensor::Tensor2<double*,3,3> t_grad = getGradAtGaussPtsTensor<3,3>(dataGradAtGaussPts);
@@ -1816,7 +1816,7 @@ PetscErrorCode OpGetDataAndGradient<3,3>::calculateValAndGrad(
       }
     }
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 template<>
@@ -1825,7 +1825,7 @@ PetscErrorCode OpGetDataAndGradient<1,3>::calculateValAndGrad(
   EntityType type,
   DataForcesAndSourcesCore::EntData &data
 ) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   const unsigned int nb_gauss_pts = data.getN().size1();
   const unsigned int nb_base_functions = data.getN().size2();
   //bool constant_diff = false;
@@ -1876,7 +1876,7 @@ PetscErrorCode OpGetDataAndGradient<1,3>::calculateValAndGrad(
       }
     }
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 }

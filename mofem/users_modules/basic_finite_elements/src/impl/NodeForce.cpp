@@ -37,11 +37,11 @@ NodalForce::OpNodalForce::OpNodalForce(const std::string field_name,Vec _F,bCFor
   methodsOp(methods_op) {}
 
   PetscErrorCode NodalForce::OpNodalForce::doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
 
-    if(data.getIndices().size()==0) PetscFunctionReturn(0);
+    if(data.getIndices().size()==0) MoFEMFunctionReturnHot(0);
     EntityHandle ent = getNumeredEntFiniteElementPtr()->getEnt();
-    if(dAta.nOdes.find(ent)==dAta.nOdes.end()) PetscFunctionReturn(0);
+    if(dAta.nOdes.find(ent)==dAta.nOdes.end()) MoFEMFunctionReturnHot(0);
 
     
 
@@ -86,7 +86,7 @@ NodalForce::OpNodalForce::OpNodalForce(const std::string field_name,Vec _F,bCFor
       &data.getIndices()[0],&Nf[0],ADD_VALUES
     ); CHKERRQ(ierr);
 
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode NodalForce::addForce(const std::string field_name,Vec F,int ms_id,bool use_snes_f) {
@@ -94,13 +94,13 @@ NodalForce::OpNodalForce::OpNodalForce(const std::string field_name,Vec _F,bCFor
     
     const CubitMeshSets *cubit_meshset_ptr;
     MeshsetsManager *mmanager_ptr;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     ierr = mField.query_interface(mmanager_ptr); CHKERRQ(ierr);
     ierr = mmanager_ptr->getCubitMeshsetPtr(ms_id,NODESET,&cubit_meshset_ptr); CHKERRQ(ierr);
     ierr = cubit_meshset_ptr->getBcDataStructure(mapForce[ms_id].data); CHKERRQ(ierr);
     rval = mField.get_moab().get_entities_by_type(cubit_meshset_ptr->meshset,MBVERTEX,mapForce[ms_id].nOdes,true); CHKERRQ_MOAB(rval);
     fe.getOpPtrVector().push_back(new OpNodalForce(field_name,F,mapForce[ms_id],methodsOp,use_snes_f));
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   MetaNodalForces::TagForceScale::TagForceScale(MoFEM::Interface &m_field): mField(m_field) {
@@ -118,7 +118,7 @@ NodalForce::OpNodalForce::OpNodalForce(const std::string field_name,Vec _F,bCFor
   }
 
   PetscErrorCode MetaNodalForces::TagForceScale::scaleNf(const FEMethod *fe,VectorDouble &Nf) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     Nf *= *sCale;
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }

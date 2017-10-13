@@ -163,16 +163,16 @@ struct OpGradGrad: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOper
     DataForcesAndSourcesCore::EntData &col_data
   ) {
     PetscErrorCode ierr;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
 
     // get number of dofs on rows
     const int nb_row_dofs = row_data.getIndices().size();
     // if no dofs, end here
-    if(nb_row_dofs==0) PetscFunctionReturn(0);
+    if(nb_row_dofs==0) MoFEMFunctionReturnHot(0);
     // get number of dofs on column
     const int nb_col_dofs = col_data.getIndices().size();
     // if no dofs, end here
-    if(nb_col_dofs==0) PetscFunctionReturn(0);
+    if(nb_col_dofs==0) MoFEMFunctionReturnHot(0);
 
     // resize entity local matrix
     entityLocalMatrix.resize(nb_row_dofs,nb_col_dofs,false);
@@ -231,7 +231,7 @@ struct OpGradGrad: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOper
       ); CHKERRQ(ierr);
     }
 
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
 };

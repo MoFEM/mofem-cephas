@@ -216,11 +216,11 @@ int main(int argc, char *argv[]) {
       int side,
       EntityType type,
       DataForcesAndSourcesCore::EntData &data) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
 
 
-      if(data.getFieldData().size()==0) PetscFunctionReturn(0);
+      if(data.getFieldData().size()==0) MoFEMFunctionReturnHot(0);
 
       if(type == MBTRI) {
 
@@ -262,7 +262,7 @@ int main(int argc, char *argv[]) {
 
       }
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   };
@@ -276,7 +276,7 @@ int main(int argc, char *argv[]) {
     MatrixDouble N_tri;
     PetscErrorCode setGaussPts(int order) {
 
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
       try {
 
@@ -310,7 +310,7 @@ int main(int argc, char *argv[]) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
       }
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
 
@@ -333,10 +333,10 @@ int main(int argc, char *argv[]) {
       int side,
       EntityType type,
       DataForcesAndSourcesCore::EntData &data) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
 
-      if(type != MBTRI) PetscFunctionReturn(0);
+      if(type != MBTRI) MoFEMFunctionReturnHot(0);
       EntityHandle face = getNumeredEntFiniteElementPtr()->getEnt();
 
       double *t_ptr;
@@ -366,7 +366,7 @@ int main(int argc, char *argv[]) {
       mySplit.precision(5);
       mySplit << face << " " << /*std::fixed <<*/ fabs(*tn_ptr) << std::endl;
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   };
@@ -385,11 +385,11 @@ int main(int argc, char *argv[]) {
       int side,
       EntityType type,
       DataForcesAndSourcesCore::EntData &data) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
 
 
-      if(type != MBTRI) PetscFunctionReturn(0);
+      if(type != MBTRI) MoFEMFunctionReturnHot(0);
 
       EntityHandle face = getNumeredEntFiniteElementPtr()->getEnt();
 
@@ -414,7 +414,7 @@ int main(int argc, char *argv[]) {
 
       mySplit << face << " " << /*std::fixed <<*/ fabs(*tn_ptr) << std::endl;
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   };
@@ -425,14 +425,14 @@ int main(int argc, char *argv[]) {
     int getRule(int order) { return -1; };
 
     PetscErrorCode setGaussPts(int order) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
       gaussPts.resize(3,1);
       gaussPts(0,0) = G_TRI_X1[0];
       gaussPts(1,0) = G_TRI_Y1[0];
       gaussPts(2,0) = G_TRI_W1[0];
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   };
@@ -451,11 +451,11 @@ int main(int argc, char *argv[]) {
       int side,
       EntityType type,
       DataForcesAndSourcesCore::EntData &data) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
 
 
-      if(type != MBEDGE) PetscFunctionReturn(0);
+      if(type != MBEDGE) MoFEMFunctionReturnHot(0);
 
       EntityHandle edge = getNumeredEntFiniteElementPtr()->getEnt();
 
@@ -495,7 +495,7 @@ int main(int argc, char *argv[]) {
 
       mySplit << edge << " " << /*std::fixed <<*/ fabs(*tn_ptr) << std::endl;
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   };
@@ -507,13 +507,13 @@ int main(int argc, char *argv[]) {
     int getRule(int order) { return -1; };
 
     PetscErrorCode setGaussPts(int order) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
       gaussPts.resize(2,1);
       gaussPts(0,0) = 0.5;
       gaussPts(1,0) = 1;
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   };

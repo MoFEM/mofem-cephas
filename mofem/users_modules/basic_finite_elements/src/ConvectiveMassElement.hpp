@@ -176,7 +176,7 @@ struct ConvectiveMassElement {
       ublas::matrix<TYPE,ublas::row_major,ublas::bounded_array<TYPE,9> >& a,
       TYPE &det
     ) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       //a11a22a33
       //+a21a32a13
       //+a31a12a23
@@ -191,7 +191,7 @@ struct ConvectiveMassElement {
         -a(0,0)*a(2,1)*a(1,2)
         -a(2,0)*a(1,1)*a(0,2)
         -a(1,0)*a(0,1)*a(2,2);
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     template<typename TYPE>
@@ -200,7 +200,7 @@ struct ConvectiveMassElement {
       ublas::matrix<TYPE,ublas::row_major,ublas::bounded_array<TYPE,9> >& a,
       ublas::matrix<TYPE,ublas::row_major,ublas::bounded_array<TYPE,9> >& inv_a
     ) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       //
       inv_a.resize(3,3);
       //http://www.cg.info.hiroshima-cu.ac.jp/~miyazaki/knowledge/teche23.html
@@ -215,7 +215,7 @@ struct ConvectiveMassElement {
       inv_a(2,1) = a(0,1)*a(2,0)-a(0,0)*a(2,1);
       inv_a(2,2) = a(0,0)*a(1,1)-a(0,1)*a(1,0);
       inv_a /= det;
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   };
@@ -577,7 +577,7 @@ struct ConvectiveMassElement {
     *
     */
   static PetscErrorCode MultOpA(Mat A,Vec x,Vec f) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     
     void *void_ctx;
     ierr = MatShellGetContext(A,&void_ctx); CHKERRQ(ierr);
@@ -606,18 +606,18 @@ struct ConvectiveMassElement {
     //Assemble
     ierr = VecAssemblyBegin(f); CHKERRQ(ierr);
     ierr = VecAssemblyEnd(f); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   static PetscErrorCode ZeroEntriesOp(Mat A) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     
     void *void_ctx;
     ierr = MatShellGetContext(A,&void_ctx); CHKERRQ(ierr);
     MatShellCtx *ctx = (MatShellCtx*)void_ctx;
     ierr = MatZeroEntries(ctx->K); CHKERRQ(ierr);
     ierr = MatZeroEntries(ctx->M); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   struct PCShellCtx {
@@ -642,7 +642,7 @@ struct ConvectiveMassElement {
   };
 
   static PetscErrorCode PCShellSetUpOp(PC pc) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     
     void *void_ctx;
     ierr = PCShellGetContext(pc,&void_ctx); CHKERRQ(ierr);
@@ -653,17 +653,17 @@ struct ConvectiveMassElement {
     ierr = PCSetFromOptions(ctx->pC); CHKERRQ(ierr);
     ierr = PCSetOperators(ctx->pC,shell_mat_ctx->barK,shell_mat_ctx->barK); CHKERRQ(ierr);
     ierr = PCSetUp(ctx->pC); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   static PetscErrorCode PCShellDestroy(PC pc) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     
     void *void_ctx;
     ierr = PCShellGetContext(pc,&void_ctx); CHKERRQ(ierr);
     PCShellCtx *ctx = (PCShellCtx*)void_ctx;
     ierr = ctx->dEstroy(); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   /** \brief apply pre-conditioner for shell matrix
@@ -693,7 +693,7 @@ struct ConvectiveMassElement {
     *
     */
   static PetscErrorCode PCShellApplyOp(PC pc,Vec f,Vec x) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     
     void *void_ctx;
     ierr = PCShellGetContext(pc,&void_ctx); CHKERRQ(ierr);
@@ -722,7 +722,7 @@ struct ConvectiveMassElement {
     ierr = VecScatterEnd(shell_mat_ctx->scatterV,shell_mat_ctx->v,x,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     ierr = VecAssemblyBegin(x); CHKERRQ(ierr);
     ierr = VecAssemblyEnd(x); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   struct ShellResidualElement: public FEMethod {

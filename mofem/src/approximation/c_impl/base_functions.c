@@ -23,7 +23,7 @@ static PetscErrorCode ierr;
 PetscErrorCode Legendre_polynomials(
   int p,double s,double *diff_s,double *L,double *diffL,const int dim
 ) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   if(dim < 1) SETERRQ(PETSC_COMM_SELF,MOFEM_INVALID_DATA,"dim < 1");
   if(dim > 3) SETERRQ(PETSC_COMM_SELF,MOFEM_INVALID_DATA,"dim > 3");
   if(p<0) SETERRQ(PETSC_COMM_SELF,MOFEM_INVALID_DATA,"p < 0");
@@ -37,7 +37,7 @@ PetscErrorCode Legendre_polynomials(
       }
     }
   }
-  if(p==0) PetscFunctionReturn(0);
+  if(p==0) MoFEMFunctionReturnHot(0);
   L[1] = s;
   if(diffL != NULL) {
     if(diff_s == NULL) {
@@ -51,7 +51,7 @@ PetscErrorCode Legendre_polynomials(
       }
     }
   }
-  if(p==1) PetscFunctionReturn(0);
+  if(p==1) MoFEMFunctionReturnHot(0);
   int l = 1;
   for(;l<p;l++) {
     double A = ( (2*(double)l+1)/((double)l+1) );
@@ -67,7 +67,7 @@ PetscErrorCode Legendre_polynomials(
       }
     }
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode Jacobi_polynomials(
@@ -77,7 +77,7 @@ PetscErrorCode Jacobi_polynomials(
   double *L,double *diffL,
   const int dim
 ) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   if(dim < 1) SETERRQ(PETSC_COMM_SELF,MOFEM_INVALID_DATA,"dim < 1");
   if(dim > 3) SETERRQ(PETSC_COMM_SELF,MOFEM_INVALID_DATA,"dim > 3");
   if(p<0) SETERRQ(PETSC_COMM_SELF,MOFEM_INVALID_DATA,"p < 0");
@@ -91,7 +91,7 @@ PetscErrorCode Jacobi_polynomials(
       }
     }
   }
-  if(p==0) PetscFunctionReturn(0);
+  if(p==0) MoFEMFunctionReturnHot(0);
   L[1] = 2*x-t+alpha*x;
   if(diffL != NULL) {
     if(diff_x == NULL) {
@@ -108,7 +108,7 @@ PetscErrorCode Jacobi_polynomials(
       }
     }
   }
-  if(p==1) PetscFunctionReturn(0);
+  if(p==1) MoFEMFunctionReturnHot(0);
   int l = 1;
   for(;l<p;l++) {
     int lp1 = l+1;
@@ -144,14 +144,14 @@ PetscErrorCode Jacobi_polynomials(
       }
     }
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode Lobatto_polynomials(
   int p,double s,double *diff_s,double *L,double *diffL,const int dim
 ) {
 
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   if(dim < 1) SETERRQ(PETSC_COMM_SELF,MOFEM_INVALID_DATA,"dim < 1");
   if(dim > 3) SETERRQ(PETSC_COMM_SELF,MOFEM_INVALID_DATA,"dim > 3");
   if(p<2) SETERRQ(PETSC_COMM_SELF,MOFEM_INVALID_DATA,"p < 2");
@@ -201,7 +201,7 @@ PetscErrorCode Lobatto_polynomials(
       if(diffL!=NULL) diffL[k] *= a;
     }
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 static double f_phi0(double x) { return LOBATTO_PHI0(x); }
@@ -296,7 +296,7 @@ static double (*f_phix[])(double x) = {
 PetscErrorCode LobattoKernel_polynomials(
   int p,double s,double *diff_s,double *L,double *diffL,const int dim
 ) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   if(dim < 1) SETERRQ(PETSC_COMM_SELF,MOFEM_INVALID_DATA,"dim < 1");
   if(dim > 3) SETERRQ(PETSC_COMM_SELF,MOFEM_INVALID_DATA,"dim > 3");
   if(p<0) SETERRQ(PETSC_COMM_SELF,MOFEM_INVALID_DATA,"p < 0");
@@ -327,5 +327,5 @@ PetscErrorCode LobattoKernel_polynomials(
       }
     }
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }

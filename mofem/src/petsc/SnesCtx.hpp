@@ -60,14 +60,14 @@ namespace MoFEM {
      * @return          error code
      */
     PetscErrorCode copyLoops(const SnesCtx &snes_ctx) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       loops_to_do_Mat = snes_ctx.loops_to_do_Mat;
       loops_to_do_Rhs = snes_ctx.loops_to_do_Rhs;
       preProcess_Mat = snes_ctx.preProcess_Mat;
       postProcess_Mat = snes_ctx.postProcess_Mat;
       preProcess_Rhs = snes_ctx.preProcess_Rhs;
       postProcess_Rhs = snes_ctx.postProcess_Rhs;
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     PetscLogEvent USER_EVENT_SnesRhs; ///< Log events to assemble residual

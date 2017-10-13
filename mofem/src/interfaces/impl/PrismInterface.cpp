@@ -53,18 +53,18 @@
 namespace MoFEM {
 
 PetscErrorCode PrismInterface::queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   *iface = NULL;
   if(uuid == IDD_MOFEMPrismInterface) {
     *iface = dynamic_cast<PrismInterface*>(this);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
   if(uuid == IDD_MOFEMUnknown) {
     *iface = dynamic_cast<UnknownInterface*>(this);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
   SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown interface");
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PrismInterface::PrismInterface(const MoFEM::Core &core):
@@ -77,7 +77,7 @@ PetscErrorCode PrismInterface::getSides(
 
   MoFEM::Interface &m_field = cOre;
   MeshsetsManager *meshsets_manager_ptr;
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   ierr = m_field.query_interface(meshsets_manager_ptr); CHKERRQ(ierr);
   CubitMeshSet_multiIndex::index<Composite_Cubit_msId_And_MeshSetType_mi_tag>::type::iterator
   miit = meshsets_manager_ptr->getMeshsetsMultindex().get<Composite_Cubit_msId_And_MeshSetType_mi_tag>()
@@ -87,13 +87,13 @@ PetscErrorCode PrismInterface::getSides(
   } else {
     SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"msId is not there");
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode PrismInterface::getSides(const EntityHandle sideset,const BitRefLevel mesh_bit_level,const bool recursive,int verb) {
   MoFEM::Interface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   Range mesh_level_ents3d,mesh_level_ents3d_tris;
   Range mesh_level_tris;
   Range mesh_level_edges;
@@ -191,7 +191,7 @@ PetscErrorCode PrismInterface::getSides(const EntityHandle sideset,const BitRefL
       const Range& skin_edges_boundary,
       Range& ents3d_with_prisms
     ) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       Range skin_nodes_boundary_tris;
       rval = moab.get_adjacencies(
         skin_nodes_boundary,2,false,skin_nodes_boundary_tris,moab::Interface::UNION
@@ -220,7 +220,7 @@ PetscErrorCode PrismInterface::getSides(const EntityHandle sideset,const BitRefL
           skin_nodes_boundary_tris_edges,3,false,ents3d_with_prisms,moab::Interface::UNION
         ); CHKERRQ(rval);
       }
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
   };
   ierr = FindTrianglesOnFrontAndAdjacentTet::fUN(
@@ -350,7 +350,7 @@ PetscErrorCode PrismInterface::getSides(const EntityHandle sideset,const BitRefL
     ierr = moab.write_file("side.vtk","VTK","",&children[0],1); CHKERRQ(ierr);
     ierr = moab.write_file("other_side.vtk","VTK","",&children[1],1); CHKERRQ(ierr);
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode PrismInterface::findIfTringleHasThreeNodesOnInternalSurfaceSkin(
@@ -362,7 +362,7 @@ PetscErrorCode PrismInterface::findIfTringleHasThreeNodesOnInternalSurfaceSkin(
 ) {
   MoFEM::Interface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   Range mesh_level_ents3d;
   Range mesh_level_edges,mesh_level_tris;
@@ -474,7 +474,7 @@ PetscErrorCode PrismInterface::findIfTringleHasThreeNodesOnInternalSurfaceSkin(
   );
   faces_with_three_nodes_on_front.swap(skin_nodes_boundary_tris);
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode PrismInterface::splitSides(
@@ -484,7 +484,7 @@ PetscErrorCode PrismInterface::splitSides(
 
   MoFEM::Interface &m_field = cOre;
   MeshsetsManager *meshsets_manager_ptr;
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   ierr = m_field.query_interface(meshsets_manager_ptr); CHKERRQ(ierr);
   CubitMeshSet_multiIndex::index<Composite_Cubit_msId_And_MeshSetType_mi_tag>::type::iterator
     miit = meshsets_manager_ptr->getMeshsetsMultindex().get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().find(boost::make_tuple(msId,cubit_bc_type.to_ulong()));
@@ -494,7 +494,7 @@ PetscErrorCode PrismInterface::splitSides(
   } else {
     SETERRQ(PETSC_COMM_SELF,1,"msId is not there");
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 PetscErrorCode PrismInterface::splitSides(
   const EntityHandle meshset,const BitRefLevel &bit,
@@ -502,11 +502,11 @@ PetscErrorCode PrismInterface::splitSides(
   int verb
 ) {
 
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   ierr = splitSides(meshset,bit,
     BitRefLevel(),BitRefLevel(),sideset,add_iterfece_entities,recursive,verb
   ); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 PetscErrorCode PrismInterface::splitSides(
   const EntityHandle meshset,const BitRefLevel &bit,
@@ -518,7 +518,7 @@ PetscErrorCode PrismInterface::splitSides(
 
   MoFEM::Interface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   std::vector<EntityHandle> children;
   //get children meshsets
   rval = moab.get_child_meshsets(sideset,children);  CHKERRQ_MOAB(rval);
@@ -1021,7 +1021,7 @@ PetscErrorCode PrismInterface::splitSides(
   ierr = m_field.query_interface<BitRefManager>()->setBitRefLevelByDim(meshset_for_bit_level,3,bit); CHKERRQ(ierr);
   rval = moab.delete_entities(&meshset_for_bit_level,1); CHKERRQ_MOAB(rval);
   ierr = moab.clear_meshset(&children[0],3); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 }

@@ -115,7 +115,7 @@ struct MagneticElement {
    * @return      error code
    */
   PetscErrorCode getNaturalBc() {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,bit)) {
       if(bit->getName().compare(0,9,"NATURALBC") == 0) {
         Range faces;
@@ -126,7 +126,7 @@ struct MagneticElement {
         blockData.naturalBc.merge(faces);
       }
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   /**
@@ -135,7 +135,7 @@ struct MagneticElement {
    * @return      error code
    */
   PetscErrorCode getEssentialBc() {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,bit)) {
       if(bit->getName().compare(0,10,"ESSENTIALBC") == 0) {
         Range faces;
@@ -158,7 +158,7 @@ struct MagneticElement {
       ); CHKERRQ_MOAB(rval);
       blockData.essentialBc.merge(skin_faces);
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   /**
@@ -169,7 +169,7 @@ struct MagneticElement {
   PetscErrorCode createFields() {
     // MoAB
 
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
 
     // Set entities bit level. each entity has bit level depending for example
     // on refinement level. In this case we do not refine mesh or not do
@@ -221,7 +221,7 @@ struct MagneticElement {
     Projection10NodeCoordsOnField ent_method_material(mField,"MESH_NODE_POSITIONS");
     ierr = mField.loop_dofs("MESH_NODE_POSITIONS",ent_method_material); CHKERRQ(ierr);
 
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   /**
@@ -235,7 +235,7 @@ struct MagneticElement {
    */
   PetscErrorCode createElements() {
 
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     // //Elements
     ierr = mField.add_finite_element(blockData.feName); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_row(blockData.feName,blockData.fieldName); CHKERRQ(ierr);
@@ -253,7 +253,7 @@ struct MagneticElement {
     ierr = mField.build_finite_elements(); CHKERRQ(ierr);
     //build adjacencies
     ierr = mField.build_adjacencies(BitRefLevel().set(0)); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   /**
@@ -270,7 +270,7 @@ struct MagneticElement {
    */
   PetscErrorCode createProblem() {
 
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     // set up DM
     DMType dm_name = "MAGNETIC_PROBLEM";
     ierr = DMRegister_MoFEM(dm_name); CHKERRQ(ierr);
@@ -284,7 +284,7 @@ struct MagneticElement {
     ierr = DMSetUp(blockData.dM); CHKERRQ(ierr);
     // create matrices and vectors
     ierr = DMCreateGlobalVector(blockData.dM,&blockData.D); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   /**
@@ -294,9 +294,9 @@ struct MagneticElement {
    */
   PetscErrorCode destroyProblem() {
 
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     ierr = DMDestroy(&blockData.dM); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   /**  \brief solve problem
@@ -307,7 +307,7 @@ struct MagneticElement {
    */
   PetscErrorCode solveProblem() {
 
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     ierr = DMCreateMatrix(blockData.dM,&blockData.A); CHKERRQ(ierr);
     ierr = DMCreateGlobalVector(blockData.dM,&blockData.F); CHKERRQ(ierr);
     ierr = VecDuplicate(blockData.F,&blockData.D); CHKERRQ(ierr);
@@ -376,7 +376,7 @@ struct MagneticElement {
       blockData.dM,blockData.D,INSERT_VALUES,SCATTER_REVERSE
     ); CHKERRQ(ierr);
     ierr = VecDestroy(&blockData.D); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   /**
@@ -386,7 +386,7 @@ struct MagneticElement {
    */
   PetscErrorCode postProcessResults() {
 
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     PostProcVolumeOnRefinedMesh post_proc(mField);
     ierr = post_proc.generateReferenceElementMesh(); CHKERRQ(ierr);
     ierr = post_proc.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
@@ -396,7 +396,7 @@ struct MagneticElement {
     );
     ierr = DMoFEMLoopFiniteElements(blockData.dM,blockData.feName.c_str(),&post_proc); CHKERRQ(ierr);
     ierr = post_proc.writeFile("out_values.h5m"); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
 
@@ -443,15 +443,15 @@ struct MagneticElement {
       DataForcesAndSourcesCore::EntData &col_data
     ) {
 
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
-      if(row_type==MBVERTEX) PetscFunctionReturn(0);
-      if(col_type==MBVERTEX) PetscFunctionReturn(0);
+      if(row_type==MBVERTEX) MoFEMFunctionReturnHot(0);
+      if(col_type==MBVERTEX) MoFEMFunctionReturnHot(0);
 
       const int nb_row_dofs = row_data.getHcurlN().size2()/3;
-      if(nb_row_dofs==0) PetscFunctionReturn(0);
+      if(nb_row_dofs==0) MoFEMFunctionReturnHot(0);
       const int nb_col_dofs = col_data.getHcurlN().size2()/3;
-      if(nb_col_dofs==0) PetscFunctionReturn(0);
+      if(nb_col_dofs==0) MoFEMFunctionReturnHot(0);
       entityLocalMatrix.resize(nb_row_dofs,nb_col_dofs,false);
       entityLocalMatrix.clear();
 
@@ -533,7 +533,7 @@ struct MagneticElement {
         ); CHKERRQ(ierr);
       }
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   };
@@ -575,15 +575,15 @@ struct MagneticElement {
       DataForcesAndSourcesCore::EntData &col_data
     ) {
 
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
-      if(row_type==MBVERTEX) PetscFunctionReturn(0);
-      if(col_type==MBVERTEX) PetscFunctionReturn(0);
+      if(row_type==MBVERTEX) MoFEMFunctionReturnHot(0);
+      if(col_type==MBVERTEX) MoFEMFunctionReturnHot(0);
 
       const int nb_row_dofs = row_data.getHcurlN().size2()/3;
-      if(nb_row_dofs==0) PetscFunctionReturn(0);
+      if(nb_row_dofs==0) MoFEMFunctionReturnHot(0);
       const int nb_col_dofs = col_data.getHcurlN().size2()/3;
-      if(nb_col_dofs==0) PetscFunctionReturn(0);
+      if(nb_col_dofs==0) MoFEMFunctionReturnHot(0);
       entityLocalMatrix.resize(nb_row_dofs,nb_col_dofs,false);
       entityLocalMatrix.clear();
 
@@ -665,7 +665,7 @@ struct MagneticElement {
         ); CHKERRQ(ierr);
       }
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   };
@@ -706,12 +706,12 @@ struct MagneticElement {
       int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
     ) {
 
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
-      if(row_type==MBVERTEX) PetscFunctionReturn(0);
+      if(row_type==MBVERTEX) MoFEMFunctionReturnHot(0);
 
       const int nb_row_dofs = row_data.getHcurlN().size2()/3;
-      if(nb_row_dofs==0) PetscFunctionReturn(0);
+      if(nb_row_dofs==0) MoFEMFunctionReturnHot(0);
       naturalBC.resize(nb_row_dofs,false);
       naturalBC.clear();
 
@@ -764,7 +764,7 @@ struct MagneticElement {
         ADD_VALUES
       ); CHKERRQ(ierr);
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   };
@@ -795,9 +795,9 @@ struct MagneticElement {
     PetscErrorCode doWork(
       int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
     ) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
-      if(row_type==MBVERTEX) PetscFunctionReturn(0);
+      if(row_type==MBVERTEX) MoFEMFunctionReturnHot(0);
 
       Tag th;
       double def_val[] = { 0,0,0 };
@@ -805,7 +805,7 @@ struct MagneticElement {
         "MAGNETIC_INDUCTION_FIELD",3,MB_TYPE_DOUBLE,th,MB_TAG_CREAT|MB_TAG_SPARSE,def_val
       ); CHKERRQ_MOAB(rval);
       const int nb_row_dofs = row_data.getHcurlN().size2()/3;
-      if(nb_row_dofs==0) PetscFunctionReturn(0);
+      if(nb_row_dofs==0) MoFEMFunctionReturnHot(0);
       const void* tags_ptr[mapGaussPts.size()];
       MatrixDouble row_curl_mat;
       FTensor::Index<'i',3> i;
@@ -842,7 +842,7 @@ struct MagneticElement {
         }
 
       }
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   };

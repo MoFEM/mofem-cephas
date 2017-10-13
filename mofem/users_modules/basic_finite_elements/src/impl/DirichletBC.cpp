@@ -49,7 +49,7 @@ dIag(1) {
 };
 
 PetscErrorCode DirichletDisplacementBc::iNitalize() {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   if(mapZeroRows.empty() || !methodsOp.empty()) {
     ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NODESET|DISPLACEMENTSET,it)) {
@@ -113,11 +113,11 @@ PetscErrorCode DirichletDisplacementBc::iNitalize() {
       //std::cerr << dofsIndices[ii] << " " << dofsValues[ii] << std::endl;
     }
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode DirichletDisplacementBc::preProcess() {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   switch (ts_ctx) {
     case CTX_TSSETIFUNCTION: {
@@ -147,11 +147,11 @@ PetscErrorCode DirichletDisplacementBc::preProcess() {
     ierr = VecAssemblyEnd(snes_x); CHKERRQ(ierr);
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode DirichletDisplacementBc::postProcess() {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   switch (ts_ctx) {
     case CTX_TSSETIFUNCTION: {
@@ -243,11 +243,11 @@ PetscErrorCode DirichletDisplacementBc::postProcess() {
     SETERRQ(PETSC_COMM_SELF,1,"unknown snes stage");
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode DirichletSpatialPositionsBc::iNitalize() {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   if(mapZeroRows.empty() || !methodsOp.empty()) {
     const DofEntity_multiIndex *dofs_ptr;
     ierr = mField.get_dofs(&dofs_ptr); CHKERRQ(ierr);
@@ -351,11 +351,11 @@ PetscErrorCode DirichletSpatialPositionsBc::iNitalize() {
       dofsValues[ii] = mit->second;
     }
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode DirichletTemperatureBc::iNitalize() {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   if(mapZeroRows.empty() || !methodsOp.empty()) {
     ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NODESET|TEMPERATURESET,it)) {
@@ -398,11 +398,11 @@ PetscErrorCode DirichletTemperatureBc::iNitalize() {
       dofsValues[ii] = mit->second;
     }
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode DirichletFixFieldAtEntitiesBc::iNitalize() {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   if(mapZeroRows.empty()) {
     for(std::vector<std::string>::iterator fit = fieldNames.begin();fit!=fieldNames.end();fit++) {
       for(Range::iterator eit = eNts.begin();eit!=eNts.end();eit++) {
@@ -421,11 +421,11 @@ PetscErrorCode DirichletFixFieldAtEntitiesBc::iNitalize() {
       dofsValues[ii] = mit->second;
     }
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode DirichletFixFieldAtEntitiesBc::preProcess() {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   switch (ts_ctx) {
     case CTX_TSSETIFUNCTION: {
@@ -444,11 +444,11 @@ PetscErrorCode DirichletFixFieldAtEntitiesBc::preProcess() {
   }
 
   ierr = iNitalize(); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode DirichletFixFieldAtEntitiesBc::postProcess() {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   if(snes_ctx == CTX_SNESNONE && ts_ctx == CTX_TSNONE) {
     if(snes_B) {
       ierr = MatAssemblyBegin(snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
@@ -500,12 +500,12 @@ PetscErrorCode DirichletFixFieldAtEntitiesBc::postProcess() {
     SETERRQ(PETSC_COMM_SELF,1,"unknown snes stage");
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 
 PetscErrorCode DirichletSetFieldFromBlock::iNitalize() {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   if(mapZeroRows.empty() || !methodsOp.empty()) {
     ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
@@ -568,12 +568,12 @@ PetscErrorCode DirichletSetFieldFromBlock::iNitalize() {
       dofsValues[ii] = mit->second;
     }
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 
 PetscErrorCode DirichletSetFieldFromBlockWithFlags::iNitalize() {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   if(mapZeroRows.empty() || !methodsOp.empty()) {
     ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
@@ -640,5 +640,5 @@ PetscErrorCode DirichletSetFieldFromBlockWithFlags::iNitalize() {
       dofsValues[ii] = mit->second;
     }
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }

@@ -74,7 +74,7 @@ PetscErrorCode Core::ISCreateProblemFieldAndRank(
   int verb
 ) const {
   return ISManager(*this).isCreateProblemFieldAndRank(problem,rc,field,min_coeff_idx,max_coeff_idx,is);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 PetscErrorCode Core::ISCreateFromProblemFieldToOtherProblemField(
   const std::string &x_problem,const std::string &x_field_name,RowColData x_rc,

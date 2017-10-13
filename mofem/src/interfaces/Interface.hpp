@@ -45,11 +45,11 @@ struct Interface: public UnknownInterface {
 
   template <class IFace>
   PetscErrorCode query_interface(IFace*& ptr) const {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     void* tmp_ptr;
     ierr = query_interface_type(typeid(IFace),tmp_ptr); CHKERRQ(ierr);
     ptr = reinterpret_cast<IFace*>(tmp_ptr);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   template <class IFace>
@@ -2787,7 +2787,7 @@ struct Interface: public UnknownInterface {
   PetscErrorCode get_field_dof_data(
     const std::string& name,const EntityHandle *ent,const int num_ents,DIT dit,int *count = NULL
   ) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     if(count!=NULL) *count = 0;
     for(int nn = 0;nn<num_ents;nn++) {
       for(_IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_((*this),name,ent[nn],it)) {
@@ -2795,7 +2795,7 @@ struct Interface: public UnknownInterface {
         if(count!=NULL) (*count)++;
       }
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   /**
@@ -2809,7 +2809,7 @@ struct Interface: public UnknownInterface {
   PetscErrorCode get_field_dof_data(
     const std::string& name,const Range &ents,DIT dit,int *count = NULL
   ) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     if(count!=NULL) *count = 0;
     for(Range::const_iterator eit = ents.begin();eit!=ents.end();eit++) {
       for(_IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_((*this),name,*eit,it)) {
@@ -2817,7 +2817,7 @@ struct Interface: public UnknownInterface {
         if(count!=NULL) (*count)++;
       }
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   /**

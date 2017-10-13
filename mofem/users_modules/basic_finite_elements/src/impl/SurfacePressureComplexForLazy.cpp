@@ -95,7 +95,7 @@ myPtr(my_ptr) {};
 
 PetscErrorCode NeummanForcesSurfaceComplexForLazy::
   AuxMethodSpatial::doWork(int side, EntityType type, DataForcesAndSourcesCore::EntData &data) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   try {
 
@@ -152,12 +152,12 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::
     SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode NeummanForcesSurfaceComplexForLazy::
   AuxMethodMaterial::doWork(int side, EntityType type, DataForcesAndSourcesCore::EntData &data) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   //cerr << "AuxMethodMaterial\n";
 
@@ -215,7 +215,7 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::
     SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::MyTriangleSpatialFE
@@ -240,7 +240,7 @@ NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::MyTriangleSpatialFE
 }
 
 PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::rHs() {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   //cerr << "MyTriangleSpatialFE::rHs\n";
 
@@ -346,14 +346,14 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::rHs() {
     SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::lHs() {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   if(typeOfForces == NONCONSERVATIVE) {
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   try {
@@ -488,11 +488,11 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::lHs() {
     SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::reBaseToFaceLoocalCoordSystem(MatrixDouble &t_glob_nodal) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   double s1[3],s2[3],normal[3],q[9];
   ierr = ShapeFaceBaseMBTRI(diffN,&*coords.data().begin(),normal,s1,s2); CHKERRQ(ierr);
   double nrm2_normal = cblas_dnrm2(3,normal,1);
@@ -506,11 +506,11 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::reBaseTo
   if(info != 0) {
     SETERRQ1(PETSC_COMM_SELF,1,"error solve dgesv info = %d",info);
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::calcTraction() {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   try {
 
@@ -564,11 +564,11 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::calcTrac
     SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::preProcess() {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   
   ierr = PetscOptionsBegin(mField.get_comm(),"","Surface Pressure (complex for lazy)","none"); CHKERRQ(ierr);
@@ -594,11 +594,11 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::preProce
     break;
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::operator()() {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   //cerr << "MyTriangleSpatialFE::operator()()\n";
 
@@ -662,31 +662,31 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::operator
     SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::addForce(int ms_id) {
   MeshsetsManager *mesh_manager_ptr;
   const CubitMeshSets *cubit_meshset_ptr;
   
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   ierr = mField.query_interface(mesh_manager_ptr); CHKERRQ(ierr);
   ierr = mesh_manager_ptr->getCubitMeshsetPtr(ms_id,NODESET,&cubit_meshset_ptr); CHKERRQ(ierr);
   ierr = cubit_meshset_ptr->getBcDataStructure(mapForce[ms_id].data); CHKERRQ(ierr);
   rval = mField.get_moab().get_entities_by_type(cubit_meshset_ptr->meshset,MBTRI,mapForce[ms_id].tRis,true); CHKERRQ_MOAB(rval);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::addPreassure(int ms_id) {
   MeshsetsManager *mesh_manager_ptr;
   const CubitMeshSets *cubit_meshset_ptr;
   
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   ierr = mField.query_interface(mesh_manager_ptr); CHKERRQ(ierr);
   ierr = mesh_manager_ptr->getCubitMeshsetPtr(ms_id,SIDESET,&cubit_meshset_ptr); CHKERRQ(ierr);
   ierr = cubit_meshset_ptr->getBcDataStructure(mapPreassure[ms_id].data); CHKERRQ(ierr);
   rval = mField.get_moab().get_entities_by_type(cubit_meshset_ptr->meshset,MBTRI,mapPreassure[ms_id].tRis,true); CHKERRQ_MOAB(rval);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 // NeummanForcesSurfaceComplexForLazy::MyTriangleMaterialFE::MyTriangleMaterialFE
@@ -694,7 +694,7 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::addPreas
 //   MyTriangleSpatialFE(_mField,_Aij,_F,scale_lhs,scale_rhs) {}
 
 // PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleMaterialFE::rHs() {
-//   PetscFunctionBegin;
+//   MoFEMFunctionBeginHot;
 //
 //   //cerr << "MyTriangleMaterialFE::rHs()\n";
 //
@@ -734,11 +734,11 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::addPreas
 //     SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
 //   }
 //
-//   PetscFunctionReturn(0);
+//   MoFEMFunctionReturnHot(0);
 // }
 //
 // PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleMaterialFE::lHs() {
-//   PetscFunctionBegin;
+//   MoFEMFunctionBeginHot;
 //
 //   try {
 //
@@ -767,7 +767,7 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::addPreas
 //     SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
 //   }
 //
-//   PetscFunctionReturn(0);
+//   MoFEMFunctionReturnHot(0);
 // }
 //
 NeummanForcesSurfaceComplexForLazy::NeummanForcesSurfaceComplexForLazy(MoFEM::Interface &m_field,Mat _Aij,Vec _F):
@@ -808,7 +808,7 @@ extern "C" {
     double *N,double *N_face,double *N_edge[],
     double *t,double *t_edge[],double *t_face,
     double *traction,int gg) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     int dd,ee;
     for(dd = 0;dd<3;dd++) traction[dd] = cblas_ddot(3,&N[gg*3],1,&t[dd],3);
     if(t_face!=NULL) {
@@ -829,7 +829,7 @@ extern "C" {
         }
       }
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
   PetscErrorCode Fext_h_hierarchical(int order,int *order_edge,
     double *N,double *N_face,double *N_edge[],
@@ -840,7 +840,7 @@ extern "C" {
     double *Fext,double *Fext_edge[],double *Fext_face,
     double *iFext,double *iFext_edge[],double *iFext_face,
     int g_dim,const double *g_w) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     int dd,nn,ee,gg;
     if(Fext!=NULL) bzero(Fext,9*sizeof(double));
     if(iFext!=NULL) bzero(iFext,9*sizeof(double));
@@ -938,7 +938,7 @@ extern "C" {
         }
       }
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
   PetscErrorCode KExt_hh_hierarchical(double eps,int order,int *order_edge,
     double *N,double *N_face,double *N_edge[],
@@ -947,7 +947,7 @@ extern "C" {
     double *dofs_x,double *dofs_x_edge[],double *dofs_x_face,
     double *KExt_hh,double* KExt_edgeh[],double *KExt_faceh,
     int g_dim,const double *g_w) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     int gg,dd,ii,nn,ee;
     bzero(KExt_hh,9*9*sizeof(double));
     if(KExt_edgeh!=NULL) {
@@ -1014,7 +1014,7 @@ extern "C" {
         }
       }
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
   PetscErrorCode KExt_hh_hierarchical_edge(double eps,int order,int *order_edge,
     double *N,double *N_face,double *N_edge[],
@@ -1023,7 +1023,7 @@ extern "C" {
     double *dofs_x,double *dofs_x_edge[],double *dofs_x_face,
     double* KExt_hedge[3],double* KExt_edgeedge[3][3],double *KExt_faceedge[3],
     int g_dim,const double *g_w) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     int gg,dd,ii,nn,ee,EE;
     int nb_dofs_face = NBFACETRI_H1(order);
     for(EE=0;EE<3;EE++) {
@@ -1095,7 +1095,7 @@ extern "C" {
         }
       }
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
   PetscErrorCode KExt_hh_hierarchical_face(double eps,int order,int *order_edge,
     double *N,double *N_face,double *N_edge[],
@@ -1104,7 +1104,7 @@ extern "C" {
     double *dofs_x,double *dofs_x_edge[],double *dofs_x_face,
     double *KExt_hface,double *KExt_edgeface[3],double *KExt_faceface,
     int g_dim,const double *g_w) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     int gg,dd,ii,nn,ee;
     int nb_dofs_face = NBFACETRI_H1(order);
     bzero(KExt_hface,9*3*nb_dofs_face*sizeof(double));
@@ -1168,7 +1168,7 @@ extern "C" {
         }
       }
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
   // //Material
   // PetscErrorCode Fext_H_hierarchical(
@@ -1179,7 +1179,7 @@ extern "C" {
   //   double *dofs_X,double *dofs_X_edge[],double *dofs_X_face,
   //   double *idofs_X,
   //   double *Fext,double *iFext,int g_dim,const double *g_w) {
-  //   PetscFunctionBegin;
+  //   MoFEMFunctionBeginHot;
   //   int dd,nn,gg;
   //   if(Fext!=NULL) bzero(Fext,9*sizeof(double));
   //   if(iFext!=NULL) bzero(iFext,9*sizeof(double));
@@ -1222,7 +1222,7 @@ extern "C" {
   //       }
   //     }
   //   }
-  //   PetscFunctionReturn(0);
+  //   MoFEMFunctionReturnHot(0);
   // }
   // PetscErrorCode KExt_HH_hierarchical(
   //   double eps,int order,int *order_edge,
@@ -1232,7 +1232,7 @@ extern "C" {
   //   double *dofs_X,double *dofs_X_edge[],double *dofs_X_face,
   //   double *KExt_HH,int g_dim,const double *g_w
   // ) {
-  //   PetscFunctionBegin;
+  //   MoFEMFunctionBeginHot;
   //   int gg,dd,ii,nn;
   //   bzero(KExt_HH,9*9*sizeof(double));
   //   for(gg = 0;gg<g_dim;gg++) {
@@ -1269,7 +1269,7 @@ extern "C" {
   //       }
   //     }
   //   }
-  //   PetscFunctionReturn(0);
+  //   MoFEMFunctionReturnHot(0);
   // }
 
 }

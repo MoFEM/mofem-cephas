@@ -50,18 +50,18 @@
 namespace MoFEM {
 
   PetscErrorCode UpdateMeshsetsAndRanges::queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     *iface = NULL;
     if(uuid == IDD_MOFEMUpdateMeshsetsAndRanges) {
       *iface = dynamic_cast<UpdateMeshsetsAndRanges*>(this);
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
     if(uuid == IDD_MOFEMUnknown) {
       *iface = dynamic_cast<UnknownInterface*>(this);
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown interface");
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
 
@@ -72,7 +72,7 @@ namespace MoFEM {
     MoFEM::Interface& m_field = cOre;
     moab::Interface &moab = m_field.get_moab();
     const RefEntity_multiIndex *ref_ents_ptr;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     ierr = m_field.get_ref_ents(&ref_ents_ptr); CHKERRQ(ierr);
     Range ents;
     rval = moab.get_entities_by_handle(parent,ents,recursive);
@@ -115,13 +115,13 @@ namespace MoFEM {
         }
       }
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode UpdateMeshsetsAndRanges::updateFieldMeshsetByEntitiesChildren(const BitRefLevel &child_bit,int verb) {
     MoFEM::Interface& m_field = cOre;
     const Field_multiIndex *fields_ptr;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     ierr = m_field.get_fields(&fields_ptr); CHKERRQ(ierr);
     Field_multiIndex::iterator fit = fields_ptr->begin();
     for(;fit!=fields_ptr->end();fit++) {
@@ -131,14 +131,14 @@ namespace MoFEM {
       ierr = updateMeshsetByEntitiesChildren(meshset,child_bit,meshset,MBEDGE,false,verb);  CHKERRQ(ierr);
       ierr = updateMeshsetByEntitiesChildren(meshset,child_bit,meshset,MBVERTEX,false,verb);  CHKERRQ(ierr);
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode UpdateMeshsetsAndRanges::updateFieldMeshsetByEntitiesChildren(
     const std::string name,const BitRefLevel &child_bit,int verb
   ) {
     MoFEM::Interface& m_field = cOre;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     try {
       EntityHandle meshset = m_field.get_field_structure(name)->getMeshset();
       ierr = updateMeshsetByEntitiesChildren(meshset,child_bit,meshset,MBTET,false,verb);  CHKERRQ(ierr);
@@ -148,28 +148,28 @@ namespace MoFEM {
     } catch (MoFEMException const &e) {
       SETERRQ(m_field.get_comm(),e.errorCode,e.errorMessage);
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode UpdateMeshsetsAndRanges::updateFiniteElementMeshsetByEntitiesChildren(
     const std::string name,const BitRefLevel &child_bit,const EntityType fe_ent_type,int verb
   ) {
     MoFEM::Interface& m_field = cOre;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     try {
       EntityHandle meshset = m_field.get_finite_element_meshset(name);
       ierr = updateMeshsetByEntitiesChildren(meshset,child_bit,meshset,fe_ent_type,false,verb);  CHKERRQ(ierr);
     } catch (MoFEMException const &e) {
       SETERRQ(m_field.get_comm(),e.errorCode,e.errorMessage);
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode UpdateMeshsetsAndRanges::updateRange(const Range& parent_ents,Range& child_ents) {
     MoFEM::Interface& m_field = cOre;
     moab::Interface &moab = m_field.get_moab();
     const RefEntity_multiIndex *ref_ents_ptr;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     ierr = m_field.get_ref_ents(&ref_ents_ptr); CHKERRQ(ierr);
     typedef RefEntity_multiIndex::index<Ent_Ent_mi_tag>::type RefEntsByParent;
     RefEntsByParent &ref_ents = const_cast<RefEntity_multiIndex*>(ref_ents_ptr)->get<Ent_Ent_mi_tag>();
@@ -188,7 +188,7 @@ namespace MoFEM {
         child_ents.insert(ref_ent);
       }
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
 

@@ -51,18 +51,18 @@
 namespace MoFEM {
 
   PetscErrorCode BitRefManager::queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     *iface = NULL;
     if(uuid == IDD_MOFEMBitRefManager) {
       *iface = dynamic_cast<BitRefManager*>(this);
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
     if(uuid == IDD_MOFEMUnknown) {
       *iface = dynamic_cast<UnknownInterface*>(this);
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown interface");
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   BitRefManager::BitRefManager(const MoFEM::Core& core):
@@ -79,7 +79,7 @@ namespace MoFEM {
     MoFEM::Interface &m_field = cOre;
     const RefEntity_multiIndex *ref_ents_ptr;
     const RefElement_multiIndex *ref_fe_ptr;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     ierr = m_field.get_ref_ents(&ref_ents_ptr); CHKERRQ(ierr);
     ierr = m_field.get_ref_finite_elements(&ref_fe_ptr); CHKERRQ(ierr);
     Range seeded_ents;
@@ -116,7 +116,7 @@ namespace MoFEM {
           std::vector<EntityHandle>& seed_ents_vec,
           std::vector<boost::shared_ptr<RefEntity> > *shared_ref_ents_vec_for_fe = NULL
         ) const {
-          PetscFunctionBegin;
+          MoFEMFunctionBeginHot;
           RefEntity_multiIndex::iterator rit,hi_rit;
           // get lower bound of multi-index
           rit = refEntsPtr->lower_bound(f);
@@ -155,7 +155,7 @@ namespace MoFEM {
               seed_ents_vec.push_back(f);
             }
           }
-          PetscFunctionReturn(0);
+          MoFEMFunctionReturnHot(0);
         }
 
         /// add entities to databse
@@ -163,7 +163,7 @@ namespace MoFEM {
           std::vector<EntityHandle>& seed_ents_vec,
           std::vector<boost::shared_ptr<RefEntity> > *shared_ref_ents_vec_for_fe = NULL
         ) const {
-          PetscFunctionBegin;
+          MoFEMFunctionBeginHot;
           // add entitites to databse
           boost::shared_ptr<std::vector<RefEntity> > ref_ents_vec =
           boost::make_shared<std::vector<RefEntity> >();
@@ -195,7 +195,7 @@ namespace MoFEM {
           const_cast<RefEntity_multiIndex*>(refEntsPtr)->insert(
             shared_ref_ents_vec.begin(),shared_ref_ents_vec.end()
           );
-          PetscFunctionReturn(0);
+          MoFEMFunctionReturnHot(0);
         }
 
       };
@@ -294,7 +294,7 @@ namespace MoFEM {
     } catch (MoFEMException const &e) {
       SETERRQ(m_field.get_comm(),e.errorCode,e.errorMessage);
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode BitRefManager::setBitLevelToMeshset(
@@ -303,7 +303,7 @@ namespace MoFEM {
     MoFEM::Interface &m_field = cOre;
     const RefEntity_multiIndex *ref_ents_ptr;
     const RefElement_multiIndex *ref_fe_ptr;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     ierr = m_field.get_ref_ents(&ref_ents_ptr); CHKERRQ(ierr);
     ierr = m_field.get_ref_finite_elements(&ref_fe_ptr); CHKERRQ(ierr);
     std::pair<RefEntity_multiIndex::iterator,bool> p_ent =
@@ -321,33 +321,33 @@ namespace MoFEM {
       ss << "add meshset as ref_ent " << *(p_fe.first->getRefElement()) << std::endl;
       PetscPrintf(m_field.get_comm(),ss.str().c_str());
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode BitRefManager::setBitRefLevelByDim(
     const EntityHandle meshset,const int dim,const BitRefLevel &bit,int verb
   ) const {
     MoFEM::Interface &m_field = cOre;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     Range ents;
     rval = m_field.get_moab().get_entities_by_dimension(
       meshset,dim,ents,false
     ); CHKERRQ_MOAB(rval);
     ierr = setBitRefLevel(ents,bit,false,verb); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode BitRefManager::setBitRefLevelByType(
     const EntityHandle meshset,const EntityType type,const BitRefLevel &bit,int verb
   ) const {
     MoFEM::Interface &m_field = cOre;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     Range ents;
     rval = m_field.get_moab().get_entities_by_type(
       meshset,type,ents,false
     ); CHKERRQ_MOAB(rval);
     ierr = setBitRefLevel(ents,bit,false,verb); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode BitRefManager::addBitRefLevel(
@@ -355,7 +355,7 @@ namespace MoFEM {
   ) const {
     MoFEM::Interface &m_field = cOre;
     const RefEntity_multiIndex *ref_ent_ptr;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     ierr = m_field.get_ref_ents(&ref_ent_ptr);
     for(
       Range::const_pair_iterator pit = ents.const_pair_begin();
@@ -381,7 +381,7 @@ namespace MoFEM {
       }
     }
 
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode BitRefManager::setNthBitRefLevel(
@@ -389,7 +389,7 @@ namespace MoFEM {
   ) const {
     MoFEM::Interface &m_field = cOre;
     const RefEntity_multiIndex *ref_ent_ptr;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     ierr = m_field.get_ref_ents(&ref_ent_ptr);
     for(
       Range::const_pair_iterator pit = ents.const_pair_begin();
@@ -414,7 +414,7 @@ namespace MoFEM {
         }
       }
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode BitRefManager::setNthBitRefLevel(
@@ -422,7 +422,7 @@ namespace MoFEM {
   ) const {
     MoFEM::Interface &m_field = cOre;
     const RefEntity_multiIndex *ref_ent_ptr;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     ierr = m_field.get_ref_ents(&ref_ent_ptr);
     RefEntity_multiIndex::iterator dit,hi_dit;
     dit = ref_ent_ptr->begin();
@@ -438,19 +438,19 @@ namespace MoFEM {
         cerr << **dit << endl;
       }
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode BitRefManager::shiftLeftBitRef(const int shift,const BitRefLevel mask,int verb) const {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode BitRefManager::shiftRightBitRef(const int shift,const BitRefLevel mask,int verb) const {
     MoFEM::Interface &m_field = cOre;
     const RefEntity_multiIndex *ref_ent_ptr;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     ierr = m_field.get_ref_ents(&ref_ent_ptr);
     for(int ii = 0;ii<shift;ii++) {
       // delete bits on the right which are shifted to zero
@@ -471,7 +471,7 @@ namespace MoFEM {
         std::cerr << (*ent_it)->getBitRefLevel() << std::endl;
       }
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
 
   }
 

@@ -421,7 +421,6 @@ DEPRECATED void macro_is_depracted_using_deprecated_function();
 #define MoFEMFunctionReturnHot(a) \
   PetscFunctionReturn(a)
 
-
 /**
   * \brief Last executable line of each PETSc function used for error handling. Replaces return()
   * @param  a error code.

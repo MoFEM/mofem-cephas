@@ -146,7 +146,7 @@ struct NonlinearElasticElement {
     PetscErrorCode dEterminatnt(
       ublas::matrix<TYPE,ublas::row_major,ublas::bounded_array<TYPE,9> >& a,TYPE &det
     ) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       // a11a22a33
       //+a21a32a13
       //+a31a12a23
@@ -161,7 +161,7 @@ struct NonlinearElasticElement {
         -a(0,0)*a(2,1)*a(1,2)
         -a(2,0)*a(1,1)*a(0,2)
         -a(1,0)*a(0,1)*a(2,2);
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
 
@@ -172,7 +172,7 @@ struct NonlinearElasticElement {
       ublas::matrix<TYPE,ublas::row_major,ublas::bounded_array<TYPE,9> >& a,
       ublas::matrix<TYPE,ublas::row_major,ublas::bounded_array<TYPE,9> >& inv_a
     ) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       //
       inv_a.resize(3,3);
       //http://www.cg.info.hiroshima-cu.ac.jp/~miyazaki/knowledge/teche23.html
@@ -187,7 +187,7 @@ struct NonlinearElasticElement {
       inv_a(2,1) = a(0,1)*a(2,0)-a(0,0)*a(2,1);
       inv_a(2,2) = a(0,0)*a(1,1)-a(0,1)*a(1,0);
       inv_a /= det;
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     double lambda,mu;
@@ -199,26 +199,26 @@ struct NonlinearElasticElement {
     MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator *opPtr; ///< pointer to finite element tetrahedral operator
 
     PetscErrorCode calculateC_CauchyDefromationTensor() {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       C.resize(3,3);
       noalias(C) = prod(trans(F),F);
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     PetscErrorCode calculateE_GreenStrain() {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       E.resize(3,3);
       noalias(E) = C;
       for(int dd = 0;dd<3;dd++) {
         E(dd,dd) -= 1;
       }
       E *= 0.5;
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     //St. Venant–Kirchhoff Material
     PetscErrorCode calculateS_PiolaKirchhoffII() {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       TYPE trE = 0;
       for(int dd = 0;dd<3;dd++) {
         trE += E(dd,dd);
@@ -229,7 +229,7 @@ struct NonlinearElasticElement {
         S(dd,dd) = trE*lambda;
       }
       S += 2*mu*E;
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     /** \brief Function overload to implement user material
@@ -258,7 +258,7 @@ struct NonlinearElasticElement {
       const BlockData block_data,
       boost::shared_ptr<const NumeredEntFiniteElement> fe_ptr
     ) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
       lambda = LAMBDA(block_data.E,block_data.PoissonRatio);
       mu = MU(block_data.E,block_data.PoissonRatio);
@@ -268,7 +268,7 @@ struct NonlinearElasticElement {
       P.resize(3,3);
       noalias(P) = prod(F,S);
       //std::cerr << "P: " << P << std::endl;
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     /**
@@ -287,8 +287,8 @@ struct NonlinearElasticElement {
     virtual PetscErrorCode setUserActiveVariables(
       int &nb_active_variables
     ) {
-      PetscFunctionBegin;
-      PetscFunctionReturn(0);
+      MoFEMFunctionBeginHot;
+      MoFEMFunctionReturnHot(0);
     }
 
     /**
@@ -304,8 +304,8 @@ struct NonlinearElasticElement {
     */
     virtual PetscErrorCode setUserActiveVariables(
       VectorDouble &activeVariables) {
-      PetscFunctionBegin;
-      PetscFunctionReturn(0);
+      MoFEMFunctionBeginHot;
+      MoFEMFunctionReturnHot(0);
     }
 
     /** \brief Calculate elastic energy density
@@ -316,7 +316,7 @@ struct NonlinearElasticElement {
       const BlockData block_data,
       boost::shared_ptr<const NumeredEntFiniteElement> fe_ptr
     ) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
       lambda = LAMBDA(block_data.E,block_data.PoissonRatio);
       mu = MU(block_data.E,block_data.PoissonRatio);
@@ -332,7 +332,7 @@ struct NonlinearElasticElement {
         }
       }
       eNergy += 0.5*lambda*trace*trace;
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     /** \brief Calculate Eshelby stress
@@ -341,7 +341,7 @@ struct NonlinearElasticElement {
       const BlockData block_data,
       boost::shared_ptr<const NumeredEntFiniteElement> fe_ptr
     ) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
       ierr = calculateP_PiolaKirchhoffI(block_data,fe_ptr); CHKERRQ(ierr);
       ierr = calculateElasticEnergy(block_data,fe_ptr); CHKERRQ(ierr);
@@ -350,7 +350,7 @@ struct NonlinearElasticElement {
       for(int dd = 0;dd<3;dd++) {
         SiGma(dd,dd) += eNergy;
       }
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     /** \brief Do operations when pre-process
@@ -359,8 +359,8 @@ struct NonlinearElasticElement {
       std::map<std::string,std::vector<VectorDouble > > &field_map,
       std::map<std::string,std::vector<MatrixDouble > > &grad_map
     ) {
-      PetscFunctionBegin;
-      PetscFunctionReturn(0);
+      MoFEMFunctionBeginHot;
+      MoFEMFunctionReturnHot(0);
     }
 
   };

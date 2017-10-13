@@ -154,9 +154,9 @@ int main(int argc, char *argv[]) {
       EntityType type,
       DataForcesAndSourcesCore::EntData &data
     ) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
-      if(data.getFieldData().size()==0) PetscFunctionReturn(0);
+      if(data.getFieldData().size()==0) MoFEMFunctionReturnHot(0);
 
       mySplit << std::endl << "type " << type << " side " << side << std::endl;
       mySplit.precision(5);
@@ -172,7 +172,7 @@ int main(int argc, char *argv[]) {
       mySplit << std::fixed << data.getHdivN() << std::endl;
       mySplit << std::fixed << data.getDiffHdivN() << std::endl;
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   };
@@ -197,9 +197,9 @@ int main(int argc, char *argv[]) {
       EntityType type,
       DataForcesAndSourcesCore::EntData &data
     ) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
-      if(data.getFieldData().size()==0) PetscFunctionReturn(0);
+      if(data.getFieldData().size()==0) MoFEMFunctionReturnHot(0);
 
       mySplit << std::endl << "type " << type << " side " << side << std::endl;
       mySplit.precision(5);
@@ -215,7 +215,7 @@ int main(int argc, char *argv[]) {
       mySplit << std::fixed << data.getHdivN() << std::endl;
       // mySplit << std::fixed << data.getDiffHdivN() << std::endl;
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   };

@@ -474,7 +474,7 @@ std::ostream& operator<<(std::ostream& os,const RefElement_VERTEX& e) {
 PetscErrorCode DefaultElementAdjacency::defaultVertex(
   Interface &moab,const Field &field_ptr,const EntFiniteElement &fe_ptr,Range &adjacency
 ) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   
   switch (field_ptr.getSpace()) {
     case H1:
@@ -499,12 +499,12 @@ PetscErrorCode DefaultElementAdjacency::defaultVertex(
   for(Range::iterator eit = adjacency.begin();eit!=adjacency.end();eit++) {
     fe_ptr.getSideNumberPtr(*eit);
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 PetscErrorCode DefaultElementAdjacency::defaultEdge(
   Interface &moab,const Field &field_ptr,const EntFiniteElement &fe_ptr,Range &adjacency
 ) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   ErrorCode rval;
   EntityHandle fe_ent = fe_ptr.getEnt();
   // Range nodes;
@@ -547,12 +547,12 @@ PetscErrorCode DefaultElementAdjacency::defaultEdge(
   for(Range::iterator eit = adjacency.begin();eit!=adjacency.end();eit++) {
     fe_ptr.getSideNumberPtr(*eit);
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 PetscErrorCode DefaultElementAdjacency::defaultTri(
   Interface &moab,const Field &field_ptr,const EntFiniteElement &fe_ptr,Range &adjacency
 ) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   ErrorCode rval;
   // Range nodes,edges;
   EntityHandle fe_ent = fe_ptr.getEnt();
@@ -613,12 +613,12 @@ PetscErrorCode DefaultElementAdjacency::defaultTri(
   for(Range::iterator eit = adjacency.begin();eit!=adjacency.end();eit++) {
     fe_ptr.getSideNumberPtr(*eit);
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 PetscErrorCode DefaultElementAdjacency::defaultTet(
   Interface &moab,const Field &field_ptr,const EntFiniteElement &fe_ptr,Range &adjacency
 ) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   ErrorCode rval;
   EntityHandle fe_ent = fe_ptr.getEnt();
   switch (field_ptr.getSpace()) {
@@ -662,13 +662,13 @@ PetscErrorCode DefaultElementAdjacency::defaultTet(
   for(Range::iterator eit = adjacency.begin();eit!=adjacency.end();eit++) {
     fe_ptr.getSideNumberPtr(*eit);
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode DefaultElementAdjacency::defaultPrism(
   Interface &moab,const Field &field_ptr,const EntFiniteElement &fe_ptr,Range &adjacency
 ) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   ErrorCode rval;
   EntityHandle fe_ent = fe_ptr.getEnt();
   Range nodes;
@@ -791,12 +791,12 @@ PetscErrorCode DefaultElementAdjacency::defaultPrism(
     default:
     SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"this field is not implemented for TRI finite element");
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 PetscErrorCode DefaultElementAdjacency::defaultMeshset(
   Interface &moab,const Field &field_ptr,const EntFiniteElement &fe_ptr,Range &adjacency
 ) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   ErrorCode rval;
   EntityHandle fe_ent = fe_ptr.getEnt();
   //get all meshsets in finite element meshset
@@ -830,7 +830,7 @@ PetscErrorCode DefaultElementAdjacency::defaultMeshset(
     default:
     SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 //FiniteElement
@@ -943,7 +943,7 @@ static PetscErrorCode get_fe_dof_view(
   MOFEM_DOFS_VIEW &mofem_dofs_view,
   const int operation_type
 ) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   typename boost::multi_index::index<MOFEM_DOFS,Unique_mi_tag>::type::iterator mofem_it,mofem_it_end;
   typename FE_DOFS::iterator it,it_end;
   if(operation_type==moab::Interface::UNION) {
@@ -968,92 +968,92 @@ static PetscErrorCode get_fe_dof_view(
   } else {
     SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode EntFiniteElement::getRowDofView(
   const DofEntity_multiIndex &dofs,DofEntity_multiIndex_active_view &dofs_view,
   const int operation_type
 ) const {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   
   ierr = get_fe_dof_view(*row_dof_view,dofs,dofs_view,operation_type); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 PetscErrorCode EntFiniteElement::getColDofView(
   const DofEntity_multiIndex &dofs,DofEntity_multiIndex_active_view &dofs_view,
   const int operation_type
 ) const {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   
   ierr = get_fe_dof_view(*col_dof_view,dofs,dofs_view,operation_type); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 PetscErrorCode EntFiniteElement::getDataDofView(
   const DofEntity_multiIndex &dofs,DofEntity_multiIndex_active_view &dofs_view,
   const int operation_type
 ) const {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   
   ierr = get_fe_dof_view(*data_dofs,dofs,dofs_view,operation_type); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode EntFiniteElement::getRowDofView(
   const DofEntity_multiIndex &dofs,DofEntity_multiIndex_uid_view &dofs_view,
   const int operation_type
 ) const {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   
   ierr = get_fe_dof_view(*row_dof_view,dofs,dofs_view,operation_type); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 PetscErrorCode EntFiniteElement::getColDofView(
   const DofEntity_multiIndex &dofs,DofEntity_multiIndex_uid_view &dofs_view,
   const int operation_type
 ) const {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   
   ierr = get_fe_dof_view(*col_dof_view,dofs,dofs_view,operation_type); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode EntFiniteElement::getRowDofView(
   const NumeredDofEntity_multiIndex &dofs,NumeredDofEntity_multiIndex_uid_view_ordered &dofs_view,
   const int operation_type
 ) const {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   
   ierr = get_fe_dof_view(*row_dof_view,dofs,dofs_view,operation_type); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode EntFiniteElement::getColDofView(
   const NumeredDofEntity_multiIndex &dofs,NumeredDofEntity_multiIndex_uid_view_ordered &dofs_view,
   const int operation_type
 ) const {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   
   ierr = get_fe_dof_view(*col_dof_view,dofs,dofs_view,operation_type); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 PetscErrorCode EntFiniteElement::getRowDofView(
   const NumeredDofEntity_multiIndex &dofs,NumeredDofEntity_multiIndex_idx_view_hashed &dofs_view,
   const int operation_type
 ) const {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   
   ierr = get_fe_dof_view(*row_dof_view,dofs,dofs_view,operation_type); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode EntFiniteElement::getColDofView(
     const NumeredDofEntity_multiIndex &dofs,NumeredDofEntity_multiIndex_idx_view_hashed &dofs_view,
     const int operation_type) const {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   
   ierr = get_fe_dof_view(*col_dof_view,dofs,dofs_view,operation_type); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode EntFiniteElement::getElementAdjacency(
@@ -1061,7 +1061,7 @@ PetscErrorCode EntFiniteElement::getElementAdjacency(
 ) {
   
   moab::Interface &moab = getRefEntityPtr()->basicDataPtr->moab;
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   const EntFiniteElement *this_fe_ptr = this;
   if(get_MoFEMFiniteElementPtr()->elementAdjacencyTable[getEntType()] == NULL) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
@@ -1069,29 +1069,29 @@ PetscErrorCode EntFiniteElement::getElementAdjacency(
   ierr = (get_MoFEMFiniteElementPtr()->elementAdjacencyTable[getEntType()])(
     moab,*field_ptr,*this_fe_ptr,adjacency
   ); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode NumeredEntFiniteElement::getRowDofsByPetscGlobalDofIdx(DofIdx idx,const FENumeredDofEntity **dof_ptr) const {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   FENumeredDofEntity_multiIndex::index<PetscGlobalIdx_mi_tag>::type::iterator dit;
   dit = rows_dofs->get<PetscGlobalIdx_mi_tag>().find(idx);
   if(dit == rows_dofs->get<PetscGlobalIdx_mi_tag>().end()) {
     SETERRQ1(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"dof which index < %d > not found",idx);
   }
   *dof_ptr = &*dit->get();
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode NumeredEntFiniteElement::getColDofsByPetscGlobalDofIdx(DofIdx idx,const FENumeredDofEntity **dof_ptr) const {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   FENumeredDofEntity_multiIndex::index<PetscGlobalIdx_mi_tag>::type::iterator dit;
   dit = rows_dofs->get<PetscGlobalIdx_mi_tag>().find(idx);
   if(dit == rows_dofs->get<PetscGlobalIdx_mi_tag>().end()) {
     SETERRQ1(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"dof which index < %d > not found",idx);
   }
   *dof_ptr = &*dit->get();
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 }
