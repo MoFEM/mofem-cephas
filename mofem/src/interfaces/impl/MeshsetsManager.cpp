@@ -58,18 +58,18 @@ namespace po = boost::program_options;
 namespace MoFEM {
 
   PetscErrorCode MeshsetsManager::queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     *iface = NULL;
     if(uuid == IDD_MOFEMMeshsetsManager) {
       *iface = dynamic_cast<MeshsetsManager*>(this);
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
     if(uuid == IDD_MOFEMUnknown) {
       *iface = dynamic_cast<UnknownInterface*>(this);
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown interface");
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   MeshsetsManager::MeshsetsManager(const MoFEM::Core& core):
@@ -77,15 +77,15 @@ namespace MoFEM {
   }
 
   PetscErrorCode MeshsetsManager::clearMap() {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     cubitMeshsets.clear();
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode MeshsetsManager::initialiseDatabseInformationFromMesh(int verb) {
     MoFEM::Interface &m_field = cOre;
     moab::Interface &moab = m_field.get_moab();
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     Range meshsets;
     rval = moab.get_entities_by_type(0,MBENTITYSET,meshsets,true);  CHKERRQ_MOAB(rval);
     for(Range::iterator mit = meshsets.begin();mit!=meshsets.end();mit++) {
@@ -108,12 +108,12 @@ namespace MoFEM {
         SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
       }
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
 
   PetscErrorCode MeshsetsManager::getTags(int verb) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     MoFEM::Interface &m_field = cOre;
     moab::Interface &moab = m_field.get_moab();
     int default_val = -1;
@@ -156,46 +156,46 @@ namespace MoFEM {
     rval = moab.tag_get_handle(
       NAME_TAG_NAME,NAME_TAG_SIZE,MB_TYPE_OPAQUE,entity_name_tag,MB_TAG_SPARSE|MB_TAG_CREAT
     ); CHKERRQ_MOAB(rval);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode MeshsetsManager::printDisplacementSet() const {
     DisplacementCubitBcData mydata;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     ierr = printBcSet(mydata,NODESET|mydata.tYpe.to_ulong()); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode MeshsetsManager::printPressureSet() const {
     PressureCubitBcData mydata;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     ierr = printBcSet(mydata,SIDESET|mydata.tYpe.to_ulong()); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode MeshsetsManager::printForceSet() const {
     ForceCubitBcData mydata;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     ierr = printBcSet(mydata,NODESET|mydata.tYpe.to_ulong()); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode MeshsetsManager::printTemperatureSet() const {
     TemperatureCubitBcData mydata;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     ierr = printBcSet(mydata,NODESET|mydata.tYpe.to_ulong()); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode MeshsetsManager::printHeatFluxSet() const {
     HeatFluxCubitBcData mydata;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     ierr = printBcSet(mydata,SIDESET|mydata.tYpe.to_ulong()); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode MeshsetsManager::printMaterialsSet() const {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     const MoFEM::Interface& m_field = cOre;
     const moab::Interface& moab = m_field.get_moab();
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_((*this),BLOCKSET|MAT_ELASTICSET,it)) {
@@ -228,7 +228,7 @@ namespace MoFEM {
       ss << data;
       PetscPrintf(m_field.get_comm(),ss.str().c_str());
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
 
@@ -258,7 +258,7 @@ namespace MoFEM {
   PetscErrorCode MeshsetsManager::addMeshset(const CubitBCType cubit_bc_type,const int ms_id,const std::string name) {
     MoFEM::Interface &m_field = cOre;
     moab::Interface &moab = m_field.get_moab();
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     if(checkMeshset(ms_id,cubit_bc_type)) {
       SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"such cubit meshset is already there",ms_id);
     }
@@ -279,13 +279,13 @@ namespace MoFEM {
     } catch (MoFEMException const &e) {
       SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode MeshsetsManager::addEntitiesToMeshset(const CubitBCType cubit_bc_type,const int ms_id,Range &ents) {
     MoFEM::Interface &m_field = cOre;
     moab::Interface &moab = m_field.get_moab();
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     CubitMeshSet_multiIndex::index<Composite_Cubit_msId_And_MeshSetType_mi_tag>::type::iterator
     cit = cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().find(
       boost::make_tuple(ms_id,cubit_bc_type.to_ulong())
@@ -295,13 +295,13 @@ namespace MoFEM {
     }
     EntityHandle meshset = cit->getMeshset();
     rval = moab.add_entities(meshset,ents); CHKERRQ_MOAB(rval);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode MeshsetsManager::addEntitiesToMeshset(const CubitBCType cubit_bc_type,const int ms_id,const EntityHandle *ents,const int nb_ents) {
     MoFEM::Interface &m_field = cOre;
     moab::Interface &moab = m_field.get_moab();
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     CubitMeshSet_multiIndex::index<Composite_Cubit_msId_And_MeshSetType_mi_tag>::type::iterator
     cit = cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().find(
       boost::make_tuple(ms_id,cubit_bc_type.to_ulong())
@@ -311,7 +311,7 @@ namespace MoFEM {
     }
     EntityHandle meshset = cit->getMeshset();
     rval = moab.add_entities(meshset,ents,nb_ents); CHKERRQ_MOAB(rval);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode MeshsetsManager::setAttribites(
@@ -319,7 +319,7 @@ namespace MoFEM {
   ) {
     MoFEM::Interface &m_field = cOre;
     moab::Interface &moab = m_field.get_moab();
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     CubitMeshSet_multiIndex::index<Composite_Cubit_msId_And_MeshSetType_mi_tag>::type::iterator
     cit = cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().find(boost::make_tuple(ms_id,cubit_bc_type.to_ulong()));
     if(cit==cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().end()) {
@@ -335,7 +335,7 @@ namespace MoFEM {
       cubitMeshsets.project<0>(cit),CubitMeshSets_change_attributes(moab,attributes)
     );
     if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode MeshsetsManager::setAttribitesByDataStructure(
@@ -343,7 +343,7 @@ namespace MoFEM {
   ) {
     MoFEM::Interface &m_field = cOre;
     moab::Interface &moab = m_field.get_moab();
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     CubitMeshSet_multiIndex::index<Composite_Cubit_msId_And_MeshSetType_mi_tag>::type::iterator
     cit = cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().find(boost::make_tuple(ms_id,cubit_bc_type.to_ulong()));
     if(cit==cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().end()) {
@@ -359,7 +359,7 @@ namespace MoFEM {
       cubitMeshsets.project<0>(cit),CubitMeshSets_change_attributes_data_structure(moab,data)
     );
     if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode MeshsetsManager::setBcData(
@@ -367,7 +367,7 @@ namespace MoFEM {
   ) {
     MoFEM::Interface &m_field = cOre;
     moab::Interface &moab = m_field.get_moab();
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     CubitMeshSet_multiIndex::index<Composite_Cubit_msId_And_MeshSetType_mi_tag>::type::iterator
     cit = cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().find(boost::make_tuple(ms_id,cubit_bc_type.to_ulong()));
     if(cit==cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().end()) {
@@ -377,13 +377,13 @@ namespace MoFEM {
       cubitMeshsets.project<0>(cit),CubitMeshSets_change_bc_data_structure(moab,data)
     );
     if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode MeshsetsManager::deleteMeshset(const CubitBCType cubit_bc_type,const int ms_id) {
     MoFEM::Interface &m_field = cOre;
     moab::Interface &moab = m_field.get_moab();
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     CubitMeshSet_multiIndex::index<Composite_Cubit_msId_And_MeshSetType_mi_tag>::type::iterator
     miit = cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().find(boost::make_tuple(ms_id,cubit_bc_type.to_ulong()));
     if(miit==cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().end()) {
@@ -392,7 +392,7 @@ namespace MoFEM {
     EntityHandle meshset = miit->getMeshset();
     cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().erase(miit);
     rval = moab.delete_entities(&meshset,1); CHKERRQ_MOAB(rval);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode MeshsetsManager::getCubitMeshsetPtr(
@@ -401,7 +401,7 @@ namespace MoFEM {
     const CubitMeshSets **cubit_meshset_ptr
   ) {
     MoFEM::Interface &m_field = cOre;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     CubitMeshSet_multiIndex::index<Composite_Cubit_msId_And_MeshSetType_mi_tag>::type::iterator
       miit = cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().find(
         boost::make_tuple(ms_id,cubit_bc_type.to_ulong())
@@ -411,7 +411,7 @@ namespace MoFEM {
     } else {
       SETERRQ1(m_field.get_comm(),MOFEM_DATA_INCONSISTENCY,"msId = %d is not there",ms_id);
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode MeshsetsManager::getCubitMeshsetPtr(
@@ -419,7 +419,7 @@ namespace MoFEM {
     const CubitMeshSets **cubit_meshset_ptr
   ) {
     MoFEM::Interface &m_field = cOre;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     CubitMeshSet_multiIndex::index<CubitMeshSets_name>::type::iterator
       miit = cubitMeshsets.get<CubitMeshSets_name>().lower_bound(name);
     CubitMeshSet_multiIndex::index<CubitMeshSets_name>::type::iterator
@@ -439,7 +439,7 @@ namespace MoFEM {
       );
     }
     *cubit_meshset_ptr = &*miit;
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode MeshsetsManager::getEntitiesByDimension(
@@ -448,7 +448,7 @@ namespace MoFEM {
 
     MoFEM::Interface &m_field = cOre;
     moab::Interface &moab = m_field.get_moab();
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     CubitMeshSet_multiIndex::index<Composite_Cubit_msId_And_MeshSetType_mi_tag>::type::iterator
       miit = cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().find(boost::make_tuple(msId,cubit_bc_type));
     if(miit!=cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().end()) {
@@ -456,7 +456,7 @@ namespace MoFEM {
     } else {
       SETERRQ1(m_field.get_comm(),MOFEM_DATA_INCONSISTENCY,"msId = %d is not there",msId);
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode MeshsetsManager::getEntitiesByDimension(
@@ -464,7 +464,7 @@ namespace MoFEM {
   ) {
     MoFEM::Interface &m_field = cOre;
     moab::Interface &moab = m_field.get_moab();
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     CubitMeshSet_multiIndex::index<Composite_Cubit_msId_And_MeshSetType_mi_tag>::type::iterator
       miit = cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().find(boost::make_tuple(ms_id,cubit_bc_type));
     if(miit!=cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().end()) {
@@ -472,12 +472,12 @@ namespace MoFEM {
     } else {
       SETERRQ1(m_field.get_comm(),MOFEM_DATA_INCONSISTENCY,"ms_id = %d is not there",ms_id);
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode MeshsetsManager::getMeshset(const int ms_id,const unsigned int cubit_bc_type,EntityHandle &meshset) {
     MoFEM::Interface &m_field = cOre;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     CubitMeshSet_multiIndex::index<Composite_Cubit_msId_And_MeshSetType_mi_tag>::type::iterator
       miit = cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().find(boost::make_tuple(ms_id,cubit_bc_type));
     if(miit!=cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().end()) {
@@ -485,11 +485,11 @@ namespace MoFEM {
     } else {
       SETERRQ1(m_field.get_comm(),MOFEM_DATA_INCONSISTENCY,"ms_id = %d is not there",ms_id);
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode MeshsetsManager::getMeshsetsByType(const unsigned int cubit_bc_type,Range &meshsets) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     CubitMeshsetByType::iterator
       miit = cubitMeshsets.get<CubitMeshSets_mi_tag>().lower_bound(cubit_bc_type);
     CubitMeshsetByType::iterator
@@ -497,7 +497,7 @@ namespace MoFEM {
     for(;miit!=hi_miit;miit++) {
       meshsets.insert(miit->meshset);
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   struct BlockData {
@@ -540,7 +540,7 @@ namespace MoFEM {
 
     MoFEM::Interface &m_field = cOre;
     //moab::Interface &moab = m_field.get_moab();
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     try {
       std::ifstream ini_file(file_name.c_str(),std::ifstream::in);
       po::variables_map vm;
@@ -873,7 +873,7 @@ namespace MoFEM {
       ss << ex.what() << std::endl;
       SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode MeshsetsManager::setMeshsetFromFile() {
@@ -881,7 +881,7 @@ namespace MoFEM {
     //moab::Interface &moab = m_field.get_moab();
     PetscBool flg_file;
     char meshset_file_name[255];
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     ierr = PetscOptionsBegin(m_field.get_comm(),"","Set meshsets form file","none"); CHKERRQ(ierr);
     ierr = PetscOptionsString(
       "-meshsets_config",
@@ -899,7 +899,7 @@ namespace MoFEM {
       ierr = setMeshsetFromFile(string(meshset_file_name)); CHKERRQ(ierr);
     }
     ierr = PetscOptionsEnd(); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
 

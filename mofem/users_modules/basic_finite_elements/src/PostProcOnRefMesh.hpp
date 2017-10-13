@@ -166,13 +166,13 @@ struct PostProcTemplateOnRefineMesh: public ELEMENT {
 
   */
   PetscErrorCode addFieldValuesPostProc(const std::string field_name,Vec v = PETSC_NULL) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     ELEMENT::getOpPtrVector().push_back(
       new PostProcCommonOnRefMesh::OpGetFieldValues(
         postProcMesh,mapGaussPts,field_name,field_name,getCommonData(),v
       )
     );
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   /** \brief Add operator to post-process L2 or H1 field value
@@ -185,13 +185,13 @@ struct PostProcTemplateOnRefineMesh: public ELEMENT {
 
   */
   PetscErrorCode addFieldValuesPostProc(const std::string field_name,const std::string tag_name,Vec v = PETSC_NULL) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     ELEMENT::getOpPtrVector().push_back(
       new PostProcCommonOnRefMesh::OpGetFieldValues(
         postProcMesh,mapGaussPts,field_name,tag_name,getCommonData(),v
       )
     );
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
 
@@ -207,13 +207,13 @@ struct PostProcTemplateOnRefineMesh: public ELEMENT {
 
   */
   PetscErrorCode addFieldValuesGradientPostProc(const std::string field_name,Vec v = PETSC_NULL) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     ELEMENT::getOpPtrVector().push_back(
       new PostProcCommonOnRefMesh::OpGetFieldGradientValues(
         postProcMesh,mapGaussPts,field_name,field_name+"_GRAD",getCommonData(),v
       )
     );
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   /** \brief Add operator to post-process L2 or H1 field gradient
@@ -226,13 +226,13 @@ struct PostProcTemplateOnRefineMesh: public ELEMENT {
 
   */
   PetscErrorCode addFieldValuesGradientPostProc(const std::string field_name,const std::string tag_name,Vec v = PETSC_NULL) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     ELEMENT::getOpPtrVector().push_back(
       new PostProcCommonOnRefMesh::OpGetFieldGradientValues(
         postProcMesh,mapGaussPts,field_name,tag_name,getCommonData(),v
       )
     );
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   /**
@@ -244,7 +244,7 @@ struct PostProcTemplateOnRefineMesh: public ELEMENT {
 
    */
   PetscErrorCode writeFile(const std::string file_name) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     // #ifdef MOAB_HDF5_PARALLEL
      rval = postProcMesh.write_file(file_name.c_str(),"MOAB","PARALLEL=WRITE_PART"); CHKERRQ_MOAB(rval);
     // #else
@@ -253,7 +253,7 @@ struct PostProcTemplateOnRefineMesh: public ELEMENT {
     //    rval = postProcMesh.write_file(file_name.c_str(),"MOAB",""); CHKERRQ_MOAB(rval);
     //  }
     // #endif
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
 };
@@ -312,7 +312,7 @@ struct PostProcTemplateVolumeOnRefinedMesh: public PostProcTemplateOnRefineMesh<
 
   */
   PetscErrorCode generateReferenceElementMesh() {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
 
     int max_level = 0;
     if(nbOfRefLevels == -1) {
@@ -420,7 +420,7 @@ struct PostProcTemplateVolumeOnRefinedMesh: public PostProcTemplateOnRefineMesh<
     // rval = moab_ref.write_file("test_reference_mesh.vtk","VTK","",&meshset,1); CHKERRQ_MOAB(rval);
     //moab_ref.list_entities(tets);
 
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   /** \brief Set integration points
@@ -431,7 +431,7 @@ struct PostProcTemplateVolumeOnRefinedMesh: public PostProcTemplateOnRefineMesh<
 
   */
   PetscErrorCode setGaussPts(int order) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
 
     try {
 
@@ -503,7 +503,7 @@ struct PostProcTemplateVolumeOnRefinedMesh: public PostProcTemplateOnRefineMesh<
       SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
     }
 
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   /** \brief Clear operators list
@@ -514,13 +514,13 @@ struct PostProcTemplateVolumeOnRefinedMesh: public PostProcTemplateOnRefineMesh<
 
   */
   PetscErrorCode clearOperators() {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     T::getOpPtrVector().clear();
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode preProcess() {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
 
     moab::Interface &moab = T::coreMesh;
     ParallelComm* pcomm_post_proc_mesh = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
@@ -528,11 +528,11 @@ struct PostProcTemplateVolumeOnRefinedMesh: public PostProcTemplateOnRefineMesh<
       delete pcomm_post_proc_mesh;
     }
     rval = T::postProcMesh.delete_mesh(); CHKERRQ_MOAB(rval);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode postProcess() {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
 
     moab::Interface &moab = T::coreMesh;
     ParallelComm* pcomm = ParallelComm::get_pcomm(&T::mField.get_moab(),MYPCOMM_INDEX);
@@ -569,15 +569,15 @@ struct PostProcTemplateVolumeOnRefinedMesh: public PostProcTemplateOnRefineMesh<
     // }
     // #endif //
 
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   /** \brief Add operator to post-process Hdiv field
   */
   PetscErrorCode addHdivFunctionsPostProc(const std::string field_name) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     T::getOpPtrVector().push_back(new OpHdivFunctions(T::postProcMesh,T::mapGaussPts,field_name));
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   struct OpHdivFunctions: public VOLUME_ELEMENT::UserDataOperator {
@@ -600,9 +600,9 @@ struct PostProcTemplateVolumeOnRefinedMesh: public PostProcTemplateOnRefineMesh<
       EntityType type,
       DataForcesAndSourcesCore::EntData &data
     ) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
-      if(data.getIndices().size()==0) PetscFunctionReturn(0);
+      if(data.getIndices().size()==0) MoFEMFunctionReturnHot(0);
 
 
 
@@ -637,7 +637,7 @@ struct PostProcTemplateVolumeOnRefinedMesh: public PostProcTemplateOnRefineMesh<
         }
       }
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   };

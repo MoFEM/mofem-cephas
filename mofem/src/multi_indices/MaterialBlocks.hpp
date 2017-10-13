@@ -36,9 +36,9 @@ struct GenericAttributeData {
      * @return            error code
      */
     virtual PetscErrorCode fill_data(const std::vector<double>& attributes) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"It makes no sense for the generic attribute type");
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     /**
@@ -48,9 +48,9 @@ struct GenericAttributeData {
      * @return         error code
      */
     virtual PetscErrorCode set_data(void *tag_ptr,unsigned int size) const {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"It makes no sense for the generic attribute type");
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     const CubitBCType tYpe; ///< Type of data (f.e. MAT_ELATIC)
@@ -120,7 +120,7 @@ struct BlockSetAttributes: public GenericAttributeData {
     }
 
     PetscErrorCode fill_data(const std::vector<double>& attributes) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       if(8*attributes.size()>sizeof(data)) {
         SETERRQ(
           PETSC_COMM_SELF,
@@ -130,10 +130,10 @@ struct BlockSetAttributes: public GenericAttributeData {
       }
       bzero(&data,sizeof(data));
       memcpy(&data, &attributes[0],8*attributes.size());
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
     PetscErrorCode set_data(void *tag_ptr,unsigned int size) const {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       if(size>sizeof(data)) {
         SETERRQ(
           PETSC_COMM_SELF,
@@ -142,7 +142,7 @@ struct BlockSetAttributes: public GenericAttributeData {
         );
       }
       memcpy(tag_ptr,&data,size);
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     /*! \brief Print data
@@ -182,7 +182,7 @@ struct Mat_Elastic: public GenericAttributeData {
     };
 
     PetscErrorCode fill_data(const std::vector<double>& attributes) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       if(attributes.size()<minNumberOfAtributes) {
         SETERRQ2(
           PETSC_COMM_SELF,
@@ -196,10 +196,10 @@ struct Mat_Elastic: public GenericAttributeData {
       }
       bzero(&data,sizeof(data));
       memcpy(&data, &attributes[0],8*attributes.size());
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
     PetscErrorCode set_data(void *tag_ptr,unsigned int size) const {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       if(size>sizeof(data)) {
         SETERRQ(
           PETSC_COMM_SELF,
@@ -208,7 +208,7 @@ struct Mat_Elastic: public GenericAttributeData {
         );
       }
       memcpy(tag_ptr,&data,size);
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     /*! \brief Print Mat_Elastic data
@@ -249,7 +249,7 @@ struct Mat_Thermal: public GenericAttributeData {
   }
 
   PetscErrorCode fill_data(const std::vector<double>& attributes) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     if(attributes.size()<minNumberOfAtributes) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Thermal conductivity is not defined. (top tip: check number of THERMAL block atributes)");
     }
@@ -258,16 +258,16 @@ struct Mat_Thermal: public GenericAttributeData {
     }
     bzero(&data,sizeof(data));
     memcpy(&data, &attributes[0],8*attributes.size());
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
   PetscErrorCode set_data(void *tag_ptr,unsigned int size) const {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     if(size>sizeof(data)) {
       SETERRQ(
         PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency, please review the number of material properties defined");
     }
     memcpy(tag_ptr,&data,size);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   /*! \brief Print Mat_Elastic data
@@ -308,7 +308,7 @@ struct Mat_Moisture: public GenericAttributeData {
   }
 
   PetscErrorCode fill_data(const std::vector<double>& attributes) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     if(attributes.size()<minNumberOfAtributes) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"moisture diffusivity is not defined. (top tip: check number of MOISTURE block atributes)");
     }
@@ -317,7 +317,7 @@ struct Mat_Moisture: public GenericAttributeData {
     }
     bzero(&data,sizeof(data));
     memcpy(&data, &attributes[0],8*attributes.size());
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   /*! \brief Print Mat_Elastic data
@@ -354,7 +354,7 @@ struct Block_BodyForces: public GenericAttributeData {
   GenericAttributeData(BODYFORCESSET,4) {}
 
   PetscErrorCode fill_data(const std::vector<double>& attributes) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     if(attributes.size()<minNumberOfAtributes) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Material density and/or acceleration is not defined. (top tip: check number of THERMAL block atributes)");
     }
@@ -363,16 +363,16 @@ struct Block_BodyForces: public GenericAttributeData {
     }
     bzero(&data,sizeof(data));
     memcpy(&data, &attributes[0],8*attributes.size());
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
   PetscErrorCode set_data(void *tag_ptr,unsigned int size) const {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     if(size>sizeof(data)) {
       SETERRQ(PETSC_COMM_SELF,1,
 	"data inconsistency, please review the number of material properties defined");
     }
     memcpy(tag_ptr,&data,size);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   /*! \brief Print Mat_Elastic data
@@ -408,7 +408,7 @@ struct Block_BodyForces: public GenericAttributeData {
     }
 
     PetscErrorCode fill_data(const std::vector<double>& attributes) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       //Fill data
       if(attributes.size()<minNumberOfAtributes) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"All material data not defined");
@@ -420,10 +420,10 @@ struct Block_BodyForces: public GenericAttributeData {
       bzero(&data,sizeof(data));
       memcpy(&data, &attributes[0],8*attributes.size());
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
     PetscErrorCode set_data(void *tag_ptr,unsigned int size) const {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       if(size>sizeof(data)) {
         SETERRQ(
           PETSC_COMM_SELF,
@@ -432,7 +432,7 @@ struct Block_BodyForces: public GenericAttributeData {
         );
       }
       memcpy(tag_ptr,&data,size);
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     /*! \brief Print Mat_Elastic_TransIso data
@@ -466,7 +466,7 @@ struct Mat_Interf: public GenericAttributeData {
   }
 
   virtual PetscErrorCode fill_data(const std::vector<double>& attributes) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     //Fill data
     if(8*attributes.size()!=sizeof(data)) {
       SETERRQ(
@@ -475,10 +475,10 @@ struct Mat_Interf: public GenericAttributeData {
       );
     }
     memcpy(&data, &attributes[0], sizeof(data));
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
   virtual PetscErrorCode set_data(void *tag_ptr,unsigned int size) const {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     if(size>sizeof(data)) {
       SETERRQ(
         PETSC_COMM_SELF,
@@ -487,7 +487,7 @@ struct Mat_Interf: public GenericAttributeData {
       );
     }
     memcpy(tag_ptr,&data,size);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   /*! \brief Print Mat_Interf data
@@ -526,7 +526,7 @@ struct Mat_Elastic_EberleinHolzapfel1: public GenericAttributeData {
     }
 
     PetscErrorCode fill_data(const std::vector<double>& attributes) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       if(attributes.size()<minNumberOfAtributes) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"All material data not defined");
       }
@@ -535,7 +535,7 @@ struct Mat_Elastic_EberleinHolzapfel1: public GenericAttributeData {
       }
       bzero(&data,sizeof(data));
       memcpy(&data, &attributes[0],8*attributes.size());
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
 

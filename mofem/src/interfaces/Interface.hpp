@@ -45,11 +45,11 @@ struct Interface: public UnknownInterface {
 
   template <class IFace>
   PetscErrorCode query_interface(IFace*& ptr) const {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     void* tmp_ptr;
     ierr = query_interface_type(typeid(IFace),tmp_ptr); CHKERRQ(ierr);
     ptr = reinterpret_cast<IFace*>(tmp_ptr);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   template <class IFace>
@@ -583,12 +583,12 @@ struct Interface: public UnknownInterface {
 
  /**@}*/
 
-  /** \name Updating entities */
+  /** \name Updating entities (DO NOT USE THIS USE UpdateMeshsetsAndRanges interface)*/
 
  /**@{*/
 
   /** \brief Get child entities form meshset containing parent entities
-    * \todo Should be outsourced to separate interface, i.e. BitLevelManage
+    * \deprecated do not us this use UpdateMeshsetsAndRanges interface
     *
     * Search for refined entities of given type whose parent are entities in the
     * parent meshset. It can be used for example to transfer information about
@@ -602,7 +602,7 @@ struct Interface: public UnknownInterface {
     * \param recursive if true parent meshset is searched recursively
     *
    **/
-  virtual PetscErrorCode update_meshset_by_entities_children(
+  DEPRECATED virtual PetscErrorCode update_meshset_by_entities_children(
     const EntityHandle parent,
     const BitRefLevel &child_bit,
     const EntityHandle child,
@@ -612,22 +612,23 @@ struct Interface: public UnknownInterface {
   ) = 0;
 
   /** \brief update fields meshesets by child entities
+    * \deprecated do not us this use UpdateMeshsetsAndRanges interface
     * \ingroup mofem_field
     * \todo Should be outsourced to separate interface, i.e. BitLevelManage
     *
     */
-  virtual PetscErrorCode update_field_meshset_by_entities_children(const BitRefLevel &child_bit,int verb = -1) = 0;
+  DEPRECATED virtual PetscErrorCode update_field_meshset_by_entities_children(const BitRefLevel &child_bit,int verb = -1) = 0;
 
   /** \brief update field mesheset by child entities
+    * \deprecated do not us this use UpdateMeshsetsAndRanges interface
     * \ingroup mofem_field
-    * \todo Should be outsourced to separate interface, i.e. BitLevelManage
     */
-  virtual PetscErrorCode update_field_meshset_by_entities_children(const std::string name,const BitRefLevel &child_bit,int verb = -1) = 0;
+  DEPRECATED virtual PetscErrorCode update_field_meshset_by_entities_children(const std::string name,const BitRefLevel &child_bit,int verb = -1) = 0;
 
   /** \brief update finite element mesheset by child entities
-   * \todo Should be outsourced to separate interface, i.e. BitLevelManage
+    * \deprecated do not us this use UpdateMeshsetsAndRanges interface
    */
-  virtual PetscErrorCode update_finite_element_meshset_by_entities_children(const std::string name,const BitRefLevel &child_bit,const EntityType fe_ent_type,int verb = -1) = 0;
+  DEPRECATED virtual PetscErrorCode update_finite_element_meshset_by_entities_children(const std::string name,const BitRefLevel &child_bit,const EntityType fe_ent_type,int verb = -1) = 0;
 
  /**@}*/
 
@@ -2786,7 +2787,7 @@ struct Interface: public UnknownInterface {
   PetscErrorCode get_field_dof_data(
     const std::string& name,const EntityHandle *ent,const int num_ents,DIT dit,int *count = NULL
   ) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     if(count!=NULL) *count = 0;
     for(int nn = 0;nn<num_ents;nn++) {
       for(_IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_((*this),name,ent[nn],it)) {
@@ -2794,7 +2795,7 @@ struct Interface: public UnknownInterface {
         if(count!=NULL) (*count)++;
       }
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   /**
@@ -2808,7 +2809,7 @@ struct Interface: public UnknownInterface {
   PetscErrorCode get_field_dof_data(
     const std::string& name,const Range &ents,DIT dit,int *count = NULL
   ) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     if(count!=NULL) *count = 0;
     for(Range::const_iterator eit = ents.begin();eit!=ents.end();eit++) {
       for(_IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_((*this),name,*eit,it)) {
@@ -2816,7 +2817,7 @@ struct Interface: public UnknownInterface {
         if(count!=NULL) (*count)++;
       }
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   /**

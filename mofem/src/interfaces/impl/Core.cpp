@@ -60,6 +60,7 @@
 #include <MedInterface.hpp>
 #include <NodeMerger.hpp>
 #include <PrismsFromSurfaceInterface.hpp>
+#include <UpdateMeshsetsAndRanges.hpp>
 
 #include <boost/scoped_ptr.hpp>
 #include <moab/AdaptiveKDTree.hpp>
@@ -72,22 +73,22 @@ extern "C" {
 namespace MoFEM {
 
 PetscErrorCode Core::queryInterface(const MOFEMuuid& uuid,UnknownInterface** iface) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   *iface = NULL;
   if(uuid == IDD_MOFEMInterface) {
     *iface = dynamic_cast<Interface*>(this);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
   if(uuid == IDD_MOFEMUnknown) {
     *iface = dynamic_cast<Interface*>(this);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
   SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown interface");
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode Core::query_interface_type(const std::type_info& type,void*& ptr) const {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   ptr = NULL;
 
@@ -99,7 +100,7 @@ PetscErrorCode Core::query_interface_type(const std::type_info& type,void*& ptr)
       iFaces.insert(uid,new TetGenInterface(*this));
     }
     ptr = &iFaces.at(IDD_MOFEMTetGegInterface.uUId.to_ulong());
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
   #endif
 
@@ -111,7 +112,7 @@ PetscErrorCode Core::query_interface_type(const std::type_info& type,void*& ptr)
       iFaces.insert(uid,new MedInterface(*this));
     }
     ptr = &iFaces.at(IDD_MOFEMMedInterface.uUId.to_ulong());
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
   #endif
 
@@ -122,7 +123,7 @@ PetscErrorCode Core::query_interface_type(const std::type_info& type,void*& ptr)
       iFaces.insert(uid,new ProblemsManager(*this));
     }
     ptr = &iFaces.at(IDD_MOFEMProblemsManager.uUId.to_ulong());
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   // Simple interface
@@ -132,7 +133,7 @@ PetscErrorCode Core::query_interface_type(const std::type_info& type,void*& ptr)
       iFaces.insert(uid,new Simple(*this));
     }
     ptr = &iFaces.at(IDD_MOFEMSimple.uUId.to_ulong());
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   if(type == typeid(ISManager)) {
@@ -141,7 +142,7 @@ PetscErrorCode Core::query_interface_type(const std::type_info& type,void*& ptr)
       iFaces.insert(uid,new ISManager(*this));
     }
     ptr = &iFaces.at(IDD_MOFEMISManager.uUId.to_ulong());
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   if(type == typeid(VecManager)) {
@@ -150,7 +151,7 @@ PetscErrorCode Core::query_interface_type(const std::type_info& type,void*& ptr)
       iFaces.insert(uid,new VecManager(*this));
     }
     ptr = &iFaces.at(IDD_MOFEMVEC.uUId.to_ulong());
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   if(type == typeid(FieldBlas)) {
@@ -159,7 +160,7 @@ PetscErrorCode Core::query_interface_type(const std::type_info& type,void*& ptr)
       iFaces.insert(uid,new FieldBlas(*this));
     }
     ptr = &iFaces.at(IDD_MOFEMFieldBlas.uUId.to_ulong());
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   if(type == typeid(BitRefManager)) {
@@ -168,7 +169,16 @@ PetscErrorCode Core::query_interface_type(const std::type_info& type,void*& ptr)
       iFaces.insert(uid,new BitRefManager(*this));
     }
     ptr = &iFaces.at(IDD_MOFEMBitRefManager.uUId.to_ulong());
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
+  }
+
+  if(type == typeid(UpdateMeshsetsAndRanges)) {
+    if(iFaces.find(IDD_MOFEMUpdateMeshsetsAndRanges.uUId.to_ulong()) == iFaces.end()) {
+      unsigned long int uid = IDD_MOFEMUpdateMeshsetsAndRanges.uUId.to_ulong();
+      iFaces.insert(uid,new UpdateMeshsetsAndRanges(*this));
+    }
+    ptr = &iFaces.at(IDD_MOFEMUpdateMeshsetsAndRanges.uUId.to_ulong());
+    MoFEMFunctionReturnHot(0);
   }
 
   //Meshsets manager
@@ -178,7 +188,7 @@ PetscErrorCode Core::query_interface_type(const std::type_info& type,void*& ptr)
       iFaces.insert(uid,new MeshsetsManager(*this));
     }
     ptr = &iFaces.at(IDD_MOFEMMeshsetsManager.uUId.to_ulong());
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   //Coordinate systems manager
@@ -188,7 +198,7 @@ PetscErrorCode Core::query_interface_type(const std::type_info& type,void*& ptr)
       iFaces.insert(uid,new CoordSystemsManager(*this));
     }
     ptr = &iFaces.at(IDD_MOFEMCoordsSystemsManager.uUId.to_ulong());
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   //Node merger
@@ -198,7 +208,7 @@ PetscErrorCode Core::query_interface_type(const std::type_info& type,void*& ptr)
       iFaces.insert(uid,new NodeMergerInterface(*this));
     }
     ptr = &iFaces.at(IDD_MOFEMNodeMerger.uUId.to_ulong());
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   //BitLevelCoupler
@@ -208,7 +218,7 @@ PetscErrorCode Core::query_interface_type(const std::type_info& type,void*& ptr)
       iFaces.insert(uid,new BitLevelCoupler(*this));
     }
     ptr = &iFaces.at(IDD_MOFEMBitLevelCoupler.uUId.to_ulong());
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   //Create prism elements from surface Elements
@@ -218,7 +228,7 @@ PetscErrorCode Core::query_interface_type(const std::type_info& type,void*& ptr)
       iFaces.insert(uid,new PrismsFromSurfaceInterface(*this));
     }
     ptr = &iFaces.at(IDD_MOFEMPrismsFromSurface.uUId.to_ulong());
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   if(type == typeid(MeshRefinement)) {
@@ -227,7 +237,7 @@ PetscErrorCode Core::query_interface_type(const std::type_info& type,void*& ptr)
       iFaces.insert(uid,new MeshRefinement(*this));
     }
     ptr = &iFaces.at(IDD_MOFEMMeshRefine.uUId.to_ulong());
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   if(type == typeid(PrismInterface)) {
@@ -236,7 +246,7 @@ PetscErrorCode Core::query_interface_type(const std::type_info& type,void*& ptr)
       iFaces.insert(uid,new PrismInterface(*this));
     }
     ptr = &iFaces.at(IDD_MOFEMPrismInterface.uUId.to_ulong());
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   if(type == typeid(CutMeshInterface)) {
@@ -245,7 +255,7 @@ PetscErrorCode Core::query_interface_type(const std::type_info& type,void*& ptr)
       iFaces.insert(uid,new CutMeshInterface(*this));
     }
     ptr = &iFaces.at(IDD_MOFEMCutMesh.uUId.to_ulong());
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   if(type == typeid(SeriesRecorder)) {
@@ -254,12 +264,12 @@ PetscErrorCode Core::query_interface_type(const std::type_info& type,void*& ptr)
       iFaces.insert(uid,new SeriesRecorder(*this));
     }
     ptr = &iFaces.at(IDD_MOFEMSeriesRecorder.uUId.to_ulong());
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown interface");
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 bool Core::isGloballyInitialised = false;
@@ -283,7 +293,7 @@ static void error_printf_normal(void) {
 static PetscErrorCode mofem_error_handler(
   MPI_Comm comm,int line,const char *fun,const char *file,PetscErrorCode n,PetscErrorType p,const char *mess,void *ctx
 ) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   int rank = 0;
   if (comm != PETSC_COMM_SELF) MPI_Comm_rank(comm,&rank);
@@ -327,13 +337,13 @@ static PetscErrorCode mofem_error_handler(
 
   }
 
-  PetscFunctionReturn(n);
+  MoFEMFunctionReturnHot(n);
 }
 
 PetscErrorCode print_verison() {
   //
-  PetscFunctionBegin;
-  PetscFunctionReturn(0);
+  MoFEMFunctionBeginHot;
+  MoFEMFunctionReturnHot(0);
 }
 
 Core::Core(moab::Interface& moab,MPI_Comm comm,int verbose):
@@ -418,7 +428,7 @@ BitProblemId Core::getProblemShift() {
 
 PetscErrorCode Core::clearMap() {
 
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   // Cleaning databases in iterfaces
   SeriesRecorder *series_recorder_ptr;
@@ -443,11 +453,11 @@ PetscErrorCode Core::clearMap() {
   pRoblems.clear();
 
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode Core::addPrismToDatabase(const EntityHandle prism,int verb) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   if(verb==-1) verb = verbose;
   try {
     std::pair<RefEntity_multiIndex::iterator,bool> p_ent;
@@ -471,14 +481,14 @@ PetscErrorCode Core::addPrismToDatabase(const EntityHandle prism,int verb) {
   } catch (MoFEMException const &e) {
     SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode Core::getTags(int verb) {
   //
 
 
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   const EntityHandle root_meshset = moab.get_root_set();
   if(root_meshset) {
@@ -717,26 +727,26 @@ PetscErrorCode Core::getTags(int verb) {
   ierr = cs_manger_ptr->getTags(verb); CHKERRQ(ierr);
 
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode Core::clear_database(int verb) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   if(verb==-1) verb = verbose;
   ierr = clearMap(); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode Core::rebuild_database(int verb) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   if(verb==-1) verb = verbose;
   ierr = clearMap(); CHKERRQ(ierr);
   ierr = initialiseDatabseInformationFromMesh(verb); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   if(verb==-1) verb = verbose;
 
   CoordSystemsManager *cs_manger_ptr;
@@ -954,23 +964,23 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
   ierr = query_interface(series_recorder_ptr); CHKERRQ(ierr);
   ierr = series_recorder_ptr->initialiseDatabseInformationFromMesh(verb); CHKERRQ(ierr);
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 // PetscErrorCode Core::add_coordinate_system(const int cs_dim[],const std::string name) {
 //   CoordSystemsManager *cs_manger_ptr;
-//   PetscFunctionBegin;
+//   MoFEMFunctionBeginHot;
 //   ierr = query_interface(cs_manger_ptr); CHKERRQ(ierr);
 //   ierr = cs_manger_ptr->addCoordinateSystem(cs_dim,name); CHKERRQ(ierr);
-//   PetscFunctionReturn(0);
+//   MoFEMFunctionReturnHot(0);
 // }
 //
 // PetscErrorCode Core::set_field_coordinate_system(const std::string field_name,const std::string cs_name) {
 //   CoordSystemsManager *cs_manger_ptr;
-//   PetscFunctionBegin;
+//   MoFEMFunctionBeginHot;
 //   ierr = query_interface(cs_manger_ptr); CHKERRQ(ierr);
 //   ierr = cs_manger_ptr->setFieldCoordinateSystem(field_name,cs_name); CHKERRQ(ierr);
-//   PetscFunctionReturn(0);
+//   MoFEMFunctionReturnHot(0);
 // }
 
 // cubit meshsets
@@ -978,55 +988,55 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
 PetscErrorCode Core::print_cubit_displacement_set() const {
 
   MeshsetsManager *meshsets_manager;
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   ierr = query_interface(meshsets_manager); CHKERRQ(ierr);
   ierr = meshsets_manager->printDisplacementSet(); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode Core::print_cubit_pressure_set() const {
 
   MeshsetsManager *meshsets_manager;
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   ierr = query_interface(meshsets_manager); CHKERRQ(ierr);
   ierr = meshsets_manager->printPressureSet(); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode Core::print_cubit_force_set() const {
 
   MeshsetsManager *meshsets_manager;
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   ierr = query_interface(meshsets_manager); CHKERRQ(ierr);
   ierr = meshsets_manager->printForceSet(); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode Core::print_cubit_temperature() const {
 
   MeshsetsManager *meshsets_manager;
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   ierr = query_interface(meshsets_manager); CHKERRQ(ierr);
   ierr = meshsets_manager->printTemperatureSet(); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode Core::print_cubit_heat_flux_set() const {
 
   MeshsetsManager *meshsets_manager;
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   ierr = query_interface(meshsets_manager); CHKERRQ(ierr);
   ierr = meshsets_manager->printHeatFluxSet(); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode Core::print_cubit_materials_set() const {
 
   MeshsetsManager *meshsets_manager;
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   ierr = query_interface(meshsets_manager); CHKERRQ(ierr);
   ierr = meshsets_manager->printMaterialsSet(); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 bool Core::check_msId_meshset(const int ms_id,const CubitBCType cubit_bc_type) {
@@ -1069,15 +1079,15 @@ PetscErrorCode Core::get_cubit_msId_entities_by_dimension(const int msId,const C
 PetscErrorCode Core::get_cubit_msId_entities_by_dimension(
   const int ms_id,const unsigned int cubit_bc_type,const int dimension,Range &entities,const bool recursive
 ) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   ierr = get_cubit_msId_entities_by_dimension(ms_id,CubitBCType(cubit_bc_type),dimension,entities,recursive); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 PetscErrorCode Core::get_cubit_msId_entities_by_dimension(const int ms_id,const unsigned int cubit_bc_type,
   Range &entities,const bool recursive) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   ierr = get_cubit_msId_entities_by_dimension(ms_id,CubitBCType(cubit_bc_type),entities,recursive); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode Core::get_cubit_msId_meshset(const int ms_id,const unsigned int cubit_bc_type,EntityHandle &meshset) {
@@ -1089,24 +1099,24 @@ PetscErrorCode Core::get_cubit_meshsets(const unsigned int cubit_bc_type,Range &
 }
 
 PetscErrorCode Core::get_fields(const Field_multiIndex **fields_ptr) const {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   *fields_ptr = &fIelds;
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode Core::get_ref_ents(const RefEntity_multiIndex **refined_entities_ptr) const {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   *refined_entities_ptr = &refinedEntities;
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 PetscErrorCode Core::get_ref_finite_elements(const RefElement_multiIndex **refined_finite_elements_ptr) const {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   *refined_finite_elements_ptr = &refinedFiniteElements;
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode Core::get_problem(const std::string &problem_name,const Problem **problem_ptr) const {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   typedef Problem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
   const ProblemsByName &problems = pRoblems.get<Problem_mi_tag>();
   ProblemsByName::iterator p_miit = problems.find(problem_name);
@@ -1117,24 +1127,24 @@ PetscErrorCode Core::get_problem(const std::string &problem_name,const Problem *
     );
   }
   *problem_ptr = &*p_miit;
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode Core::get_problems(const Problem_multiIndex **problems_ptr) const {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   *problems_ptr = &pRoblems;
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode Core::get_field_ents(const FieldEntity_multiIndex **field_ents) const {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   *field_ents = &entsFields;
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 PetscErrorCode Core::get_dofs(const DofEntity_multiIndex **dofs_ptr) const {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   *dofs_ptr = &dofsField;
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode Core::seed_ref_level_2D(const EntityHandle meshset,const BitRefLevel &bit,int verb) {

@@ -17,3 +17,4 @@ const static int debug = 1;
 #include "impl/VecManager.cpp"
 #include "impl/FieldBlas.cpp"
 #include "impl/BitRefManager.cpp"
+#include "impl/UpdateMeshsetsAndRanges.cpp"

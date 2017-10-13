@@ -1,5 +1,6 @@
 #ifdef PARMETIS
 
+#include <definitions.h>
 #include <Includes.hpp>
 
 #if PETSC_VERSION_GE(3,6,0)
@@ -60,7 +61,7 @@ PetscErrorCode MatPartitioningApply_Parmetis_MoFEM(MatPartitioning part,IS *part
   PetscBool                flg;
   PetscInt                 bs = 1;
 
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   ierr = PetscObjectTypeCompare((PetscObject)mat,MATMPIADJ,&flg);CHKERRQ(ierr);
   if (flg) {
     amat = mat;
@@ -155,7 +156,7 @@ PetscErrorCode MatPartitioningApply_Parmetis_MoFEM(MatPartitioning part,IS *part
 
   ierr = MatDestroy(&pmat);CHKERRQ(ierr);
   ierr = MatDestroy(&amat);CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 }

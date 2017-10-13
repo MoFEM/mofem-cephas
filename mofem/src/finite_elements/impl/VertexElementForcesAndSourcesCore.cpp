@@ -68,9 +68,9 @@ extern "C" {
 namespace MoFEM {
 
 PetscErrorCode VertexElementForcesAndSourcesCore::operator()() {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
-  if(numeredEntFiniteElementPtr->getEntType() != MBVERTEX) PetscFunctionReturn(0);
+  if(numeredEntFiniteElementPtr->getEntType() != MBVERTEX) MoFEMFunctionReturnHot(0);
 
   EntityHandle ent = numeredEntFiniteElementPtr->getEnt();
   coords.resize(3,false);
@@ -222,7 +222,7 @@ PetscErrorCode VertexElementForcesAndSourcesCore::operator()() {
 
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 }

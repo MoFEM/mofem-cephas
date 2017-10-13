@@ -77,9 +77,9 @@ extern "C" {
 namespace MoFEM {
 
 PetscErrorCode FatPrismElementForcesAndSourcesCore::operator()() {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
-  if(numeredEntFiniteElementPtr->getEntType() != MBPRISM) PetscFunctionReturn(0);
+  if(numeredEntFiniteElementPtr->getEntType() != MBPRISM) MoFEMFunctionReturnHot(0);
 
   EntityHandle ent = numeredEntFiniteElementPtr->getEnt();
   int num_nodes;
@@ -204,7 +204,7 @@ PetscErrorCode FatPrismElementForcesAndSourcesCore::operator()() {
     } else {
       ierr = setGaussPtsTrianglesOnly(order_triangles_only); CHKERRQ(ierr);
       nb_gauss_pts_on_faces = gaussPtsTrianglesOnly.size2();
-      if(nb_gauss_pts_on_faces == 0) PetscFunctionReturn(0);
+      if(nb_gauss_pts_on_faces == 0) MoFEMFunctionReturnHot(0);
       dataH1TrianglesOnly.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nb_gauss_pts_on_faces,3,false);
       if(nb_gauss_pts_on_faces) {
         ierr = ShapeMBTRI(
@@ -272,7 +272,7 @@ PetscErrorCode FatPrismElementForcesAndSourcesCore::operator()() {
       ierr = setGaussPtsThroughThickness(order_thickness); CHKERRQ(ierr);
       nb_gauss_pts_through_thickness = gaussPtsThroughThickness.size2();
     }
-    if(nb_gauss_pts_through_thickness == 0) PetscFunctionReturn(0);
+    if(nb_gauss_pts_through_thickness == 0) MoFEMFunctionReturnHot(0);
   } catch (MoFEMException const &e) {
     SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
   } catch (std::exception& ex) {
@@ -674,7 +674,7 @@ PetscErrorCode FatPrismElementForcesAndSourcesCore::operator()() {
     SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 
@@ -684,7 +684,7 @@ PetscErrorCode OpCalculateInvJacForFatPrism::doWork(
   DataForcesAndSourcesCore::EntData &data
 ) {
   
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   try {
 
@@ -742,13 +742,13 @@ PetscErrorCode OpCalculateInvJacForFatPrism::doWork(
   doTets = false;
   doPrisms = false;
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode OpSetInvJacH1ForFatPrism::doWork(
   int side,EntityType type,DataForcesAndSourcesCore::EntData &data
 ) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   for(int b = AINSWORTH_LEGENDRE_BASE; b!=USER_BASE; b++) {
 
@@ -781,7 +781,7 @@ PetscErrorCode OpSetInvJacH1ForFatPrism::doWork(
 
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 

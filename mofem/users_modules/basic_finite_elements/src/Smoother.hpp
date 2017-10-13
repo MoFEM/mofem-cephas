@@ -57,7 +57,7 @@ struct Smoother {
     smootherData(smoother_data) {}
 
     PetscErrorCode preProcess() {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
 
       ierr = VolumeElementForcesAndSourcesCore::preProcess(); CHKERRQ(ierr);
@@ -102,11 +102,11 @@ struct Smoother {
         break;
       }
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     PetscErrorCode postProcess() {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
 
       switch(snes_ctx) {
@@ -126,7 +126,7 @@ struct Smoother {
       }
 
       ierr = VolumeElementForcesAndSourcesCore::postProcess(); CHKERRQ(ierr);
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
 
@@ -162,7 +162,7 @@ struct Smoother {
     }
 
     PetscErrorCode calculateStress(const int gg) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
       try {
 
@@ -182,7 +182,7 @@ struct Smoother {
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   };
@@ -207,7 +207,7 @@ struct Smoother {
     PetscErrorCode aSemble(
       int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
     ) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
 
       int nb_dofs = row_data.getIndices().size();
@@ -251,7 +251,7 @@ struct Smoother {
         ADD_VALUES
       ); CHKERRQ(ierr);
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   };
@@ -282,7 +282,7 @@ struct Smoother {
       DataForcesAndSourcesCore::EntData &row_data,
       DataForcesAndSourcesCore::EntData &col_data
     ) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
 
       int nb_row = row_data.getIndices().size();
@@ -375,7 +375,7 @@ struct Smoother {
 
       }
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   };

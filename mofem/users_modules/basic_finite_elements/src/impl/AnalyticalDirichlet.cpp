@@ -34,11 +34,11 @@ hoCoords(ho_coords) {}
 PetscErrorCode AnalyticalDirichletBC::ApproxField::OpHoCoord::doWork(
   int side,EntityType type,DataForcesAndSourcesCore::EntData &data
 ) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   try {
 
-    if(data.getFieldData().size()==0) PetscFunctionReturn(0);
+    if(data.getFieldData().size()==0) MoFEMFunctionReturnHot(0);
 
     hoCoords.resize(data.getN().size1(),3);
     if(type == MBVERTEX) {
@@ -58,7 +58,7 @@ PetscErrorCode AnalyticalDirichletBC::ApproxField::OpHoCoord::doWork(
     SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 AnalyticalDirichletBC::ApproxField::OpLhs::OpLhs(const std::string field_name,MatrixDouble &ho_coords):
@@ -74,10 +74,10 @@ PetscErrorCode AnalyticalDirichletBC::ApproxField::OpLhs::doWork(
   DataForcesAndSourcesCore::EntData &row_data,
   DataForcesAndSourcesCore::EntData &col_data
 ) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
-  if(row_data.getIndices().size()==0) PetscFunctionReturn(0);
-  if(col_data.getIndices().size()==0) PetscFunctionReturn(0);
+  if(row_data.getIndices().size()==0) MoFEMFunctionReturnHot(0);
+  if(col_data.getIndices().size()==0) MoFEMFunctionReturnHot(0);
 
 
 
@@ -183,7 +183,7 @@ PetscErrorCode AnalyticalDirichletBC::ApproxField::OpLhs::doWork(
 
     }
 
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   AnalyticalDirichletBC::DirichletBC::DirichletBC(
@@ -200,7 +200,7 @@ PetscErrorCode AnalyticalDirichletBC::ApproxField::OpLhs::doWork(
 
 
   PetscErrorCode AnalyticalDirichletBC::DirichletBC::iNitalize() {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     if(mapZeroRows.empty()) {
       if(!trisPtr) {
         SETERRQ(
@@ -211,11 +211,11 @@ PetscErrorCode AnalyticalDirichletBC::ApproxField::OpLhs::doWork(
       }
       ierr = iNitalize(*trisPtr); CHKERRQ(ierr);
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode AnalyticalDirichletBC::DirichletBC::iNitalize(Range &tris) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
     Range ents;
     rval = mField.get_moab().get_connectivity(tris,ents,true); CHKERRQ_MOAB(rval);
@@ -234,7 +234,7 @@ PetscErrorCode AnalyticalDirichletBC::ApproxField::OpLhs::doWork(
       dofsIndices[ii] = mit->first;
       dofsValues[ii] = mit->second;
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   AnalyticalDirichletBC::AnalyticalDirichletBC(MoFEM::Interface& m_field): approxField(m_field) {};
@@ -242,7 +242,7 @@ PetscErrorCode AnalyticalDirichletBC::ApproxField::OpLhs::doWork(
   PetscErrorCode AnalyticalDirichletBC::setFiniteElement(
     MoFEM::Interface &m_field,string fe,string field,Range& tris,string nodals_positions
   ) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
 
     ierr = m_field.add_finite_element(fe,MF_ZERO); CHKERRQ(ierr);
     ierr = m_field.modify_finite_element_add_field_row(fe,field); CHKERRQ(ierr);
@@ -252,13 +252,13 @@ PetscErrorCode AnalyticalDirichletBC::ApproxField::OpLhs::doWork(
       ierr = m_field.modify_finite_element_add_field_data(fe,nodals_positions); CHKERRQ(ierr);
     }
     ierr = m_field.add_ents_to_finite_element_by_type(tris,MBTRI,fe); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode AnalyticalDirichletBC::setUpProblem(
     MoFEM::Interface &m_field,string problem
   ) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
 
 
     ierr = m_field.query_interface<VecManager>()->vecCreateGhost(problem,ROW,&F); CHKERRQ(ierr);
@@ -275,13 +275,13 @@ PetscErrorCode AnalyticalDirichletBC::ApproxField::OpLhs::doWork(
     //ierr = PCFactorSetMatSolverPackage(pc,MATSOLVERMUMPS); CHKERRQ(ierr);
     //ierr = PCFactorSetUpMatSolverPackage(pc);  CHKERRQ(ierr);
 
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode AnalyticalDirichletBC::solveProblem(
     MoFEM::Interface &m_field,string problem,string fe,DirichletBC &bc,Range &tris
   ) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
 
 
     ierr = VecZeroEntries(F); CHKERRQ(ierr);
@@ -308,26 +308,26 @@ PetscErrorCode AnalyticalDirichletBC::ApproxField::OpLhs::doWork(
     bc.dofsIndices.clear();
     bc.dofsValues.clear();
 
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode AnalyticalDirichletBC::solveProblem(
     MoFEM::Interface &m_field,string problem,string fe,DirichletBC &bc
   ) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     EntityHandle fe_meshset = m_field.get_finite_element_meshset("BC_FE");
     Range bc_tris;
     rval = m_field.get_moab().get_entities_by_type(fe_meshset,MBTRI,bc_tris); CHKERRQ_MOAB(rval);
     return solveProblem(m_field,problem,fe,bc,bc_tris);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode AnalyticalDirichletBC::destroyProblem() {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
 
     ierr = KSPDestroy(&kspSolver); CHKERRQ(ierr);
     ierr = MatDestroy(&A); CHKERRQ(ierr);
     ierr = VecDestroy(&F); CHKERRQ(ierr);
     ierr = VecDestroy(&D); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }

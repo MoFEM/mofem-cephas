@@ -61,7 +61,7 @@ struct VolumeLengthQuality: public NonlinearElasticElement::FunctionsToCalculate
     }
 
     PetscErrorCode getMaterialOptions() {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       ierr = PetscOptionsBegin(
         PETSC_COMM_WORLD,"","Get VolumeLengthQuality material options","none"
       ); CHKERRQ(ierr);
@@ -81,7 +81,7 @@ struct VolumeLengthQuality: public NonlinearElasticElement::FunctionsToCalculate
         gAmma,&gAmma,PETSC_NULL
       ); CHKERRQ(ierr);
       ierr = PetscOptionsEnd(); CHKERRQ(ierr);
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     VectorDouble coordsEdges;
@@ -95,7 +95,7 @@ struct VolumeLengthQuality: public NonlinearElasticElement::FunctionsToCalculate
     /** Get coordinates of edges using cannonical element numeration
      */
     PetscErrorCode getEdgesFromElemCoords() {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       if(coordsEdges.empty()) {
         coordsEdges.resize(6*2*3,false);
       }
@@ -111,7 +111,7 @@ struct VolumeLengthQuality: public NonlinearElasticElement::FunctionsToCalculate
       cblas_dcopy(3,&this->opPtr->getCoords()[3*3],1,&coordsEdges[4* 3*2+3],1);
       cblas_dcopy(3,&this->opPtr->getCoords()[2*3],1,&coordsEdges[5* 3*2+0],1);
       cblas_dcopy(3,&this->opPtr->getCoords()[3*3],1,&coordsEdges[5* 3*2+3],1);
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
 
@@ -131,7 +131,7 @@ struct VolumeLengthQuality: public NonlinearElasticElement::FunctionsToCalculate
 
      */
      PetscErrorCode calculateLrms() {
-       PetscFunctionBegin;
+       MoFEMFunctionBeginHot;
        if(deltaChi.size()!=3) {
          deltaChi.resize(3);
          deltaX.resize(3);
@@ -151,7 +151,7 @@ struct VolumeLengthQuality: public NonlinearElasticElement::FunctionsToCalculate
          }
          noalias(dXdChiT) += outer_prod(deltaX,deltaChi);
        }
-       PetscFunctionReturn(0);
+       MoFEMFunctionReturnHot(0);
      }
 
      /** \brief Calculate Q
@@ -169,12 +169,12 @@ struct VolumeLengthQuality: public NonlinearElasticElement::FunctionsToCalculate
 
      */
      PetscErrorCode calculateQ() {
-       PetscFunctionBegin;
+       MoFEMFunctionBeginHot;
        if(Q.size1()==0) {
          Q.resize(3,3);
        }
        noalias(Q) = trans(this->invF)-0.5*dXdChiT/lrmsSquared;
-       PetscFunctionReturn(0);
+       MoFEMFunctionReturnHot(0);
      }
 
     /** \brief Volume Length Quality
@@ -203,7 +203,7 @@ struct VolumeLengthQuality: public NonlinearElasticElement::FunctionsToCalculate
       const NonlinearElasticElement::BlockData block_data,
       boost::shared_ptr<const NumeredEntFiniteElement> fe_ptr
     ) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
       try {
 
@@ -266,7 +266,7 @@ struct VolumeLengthQuality: public NonlinearElasticElement::FunctionsToCalculate
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
 };

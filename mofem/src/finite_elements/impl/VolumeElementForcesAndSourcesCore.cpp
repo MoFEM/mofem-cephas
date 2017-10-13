@@ -116,7 +116,7 @@ tInvJac(
 }
 
 PetscErrorCode VolumeElementForcesAndSourcesCore::setIntegartionPts() {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   int order_data = getMaxDataOrder();
   int order_row = getMaxRowOrder();
   int order_col = getMaxColOrder();
@@ -170,11 +170,11 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::setIntegartionPts() {
       ); CHKERRQ(ierr);
     }
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode VolumeElementForcesAndSourcesCore::calculateVolumeAndJacobian() {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   EntityHandle ent = numeredEntFiniteElementPtr->getEnt();
   rval = mField.get_moab().get_connectivity(ent,conn,num_nodes,true); CHKERRQ_MOAB(rval);
   rval = mField.get_moab().get_coords(conn,num_nodes,&*coords.data().begin()); CHKERRQ_MOAB(rval);
@@ -193,11 +193,11 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::calculateVolumeAndJacobian() {
   ierr = determinantTensor3by3(tJac,vOlume); CHKERRQ(ierr);
   ierr = invertTensor3by3(tJac,vOlume,tInvJac); CHKERRQ(ierr);
   vOlume *= G_TET_W1[0]/6.;
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode VolumeElementForcesAndSourcesCore::calculateCoordinatesAtGaussPts() {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   try {
     // Get coords at Gauss points
     FTensor::Index<'i',3> i;
@@ -223,11 +223,11 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::calculateCoordinatesAtGaussPts
     ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
     SETERRQ(mField.get_comm(),MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode VolumeElementForcesAndSourcesCore::getSpaceBaseAndOrderOnElement() {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   try {
     ierr = getSpacesAndBaseOnEntities(dataH1); CHKERRQ(ierr);
     ierr = getFaceTriNodes(dataH1); CHKERRQ(ierr);
@@ -280,11 +280,11 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::getSpaceBaseAndOrderOnElement(
     ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
     SETERRQ(mField.get_comm(),MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode VolumeElementForcesAndSourcesCore::calculateBaseFunctionsOnElement(const int b) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   if(dataH1.bAse.test(b)) {
     switch (ApproximationBaseArray[b]) {
       case NOBASE:
@@ -358,11 +358,11 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::calculateBaseFunctionsOnElemen
       );
     }
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode VolumeElementForcesAndSourcesCore::calculateBaseFunctionsOnElement() {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   try {
     /// Use the some node base
     dataHdiv.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE) = dataH1.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE);
@@ -377,11 +377,11 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::calculateBaseFunctionsOnElemen
     ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
     SETERRQ(mField.get_comm(),MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode VolumeElementForcesAndSourcesCore::transformBaseFunctions() {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   try {
     ierr = opSetInvJacH1.opRhs(dataH1); CHKERRQ(ierr);
     if(dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
@@ -400,11 +400,11 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::transformBaseFunctions() {
     ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
     SETERRQ(mField.get_comm(),MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode VolumeElementForcesAndSourcesCore::calculateHoJacobian() {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   if(
     dataPtr->get<FieldName_mi_tag>().find(meshPositionsFieldName)!=
     dataPtr->get<FieldName_mi_tag>().end()
@@ -464,12 +464,12 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::calculateHoJacobian() {
     hoGaussPtsInvJac.resize(0,0,false);
     hoGaussPtsDetJac.resize(0,false);
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 
 PetscErrorCode VolumeElementForcesAndSourcesCore::transformHoBaseFunctions() {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   if(hoCoordsAtGaussPts.size1()>0) {
     try {
@@ -492,20 +492,20 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::transformHoBaseFunctions() {
       SETERRQ(mField.get_comm(),MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
     }
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   try {
 
-    if(numeredEntFiniteElementPtr->getEntType() != MBTET) PetscFunctionReturn(0);
+    if(numeredEntFiniteElementPtr->getEntType() != MBTET) MoFEMFunctionReturnHot(0);
 
     ierr = calculateVolumeAndJacobian(); CHKERRQ(ierr);
     ierr = getSpaceBaseAndOrderOnElement(); CHKERRQ(ierr);
     ierr = setIntegartionPts(); CHKERRQ(ierr);
-    if(nbGaussPts == 0) PetscFunctionReturn(0);
+    if(nbGaussPts == 0) MoFEMFunctionReturnHot(0);
     ierr = calculateCoordinatesAtGaussPts(); CHKERRQ(ierr);
     ierr = calculateBaseFunctionsOnElement(); CHKERRQ(ierr);
     ierr = transformBaseFunctions(); CHKERRQ(ierr);
@@ -768,7 +768,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
     SETERRQ(mField.get_comm(),MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode VolumeElementForcesAndSourcesCore::UserDataOperator::getDivergenceOfHDivBaseFunctions(
@@ -777,12 +777,12 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::UserDataOperator::getDivergenc
   int gg,
   VectorDouble &div
 ) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   try {
 
     int nb_dofs = data.getFieldData().size();
-    if(nb_dofs==0) PetscFunctionReturn(0);
+    if(nb_dofs==0) MoFEMFunctionReturnHot(0);
 
     if(data.getSpace()!=HDIV && data.getSpace()!=HCURL) {
       SETERRQ1(
@@ -827,7 +827,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::UserDataOperator::getDivergenc
     SETERRQ(getVolumeFE()->mField.get_comm(),1,ss.str().c_str());
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode VolumeElementForcesAndSourcesCore::UserDataOperator::getCurlOfHCurlBaseFunctions(
@@ -837,12 +837,12 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::UserDataOperator::getCurlOfHCu
   int gg,
   MatrixDouble &curl
 ) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   try {
 
     int nb_dofs = data.getFieldData().size();
-    if(nb_dofs==0) PetscFunctionReturn(0);
+    if(nb_dofs==0) MoFEMFunctionReturnHot(0);
 
     if(data.getSpace()!=HDIV && data.getSpace()!=HCURL) {
       SETERRQ1(
@@ -890,11 +890,11 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::UserDataOperator::getCurlOfHCu
     SETERRQ(getVolumeFE()->mField.get_comm(),1,ss.str().c_str());
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode VolumeElementForcesAndSourcesCoreOnSide::setGaussPts(int order) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   if(faceFEPtr==NULL) {
     SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"Pointer to face element is not set");
   }
@@ -941,7 +941,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCoreOnSide::setGaussPts(int order) {
     face_shape_funtions(gg,2)*tet_coords[3*faceConnMap[2]+2];
     gaussPts(3,gg) = faceFEPtr->gaussPts(2,gg);
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 VectorDouble& VolumeElementForcesAndSourcesCoreOnSide::UserDataOperator::getNormal() {

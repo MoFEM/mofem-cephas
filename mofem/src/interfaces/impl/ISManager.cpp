@@ -50,18 +50,18 @@
 namespace MoFEM {
 
   PetscErrorCode ISManager::queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     *iface = NULL;
     if(uuid == IDD_MOFEMISManager) {
       *iface = dynamic_cast<ISManager*>(this);
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
     if(uuid == IDD_MOFEMUnknown) {
       *iface = dynamic_cast<UnknownInterface*>(this);
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown interface");
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   ISManager::ISManager(const MoFEM::Core& core):
@@ -80,7 +80,7 @@ namespace MoFEM {
     const Problem *problem_ptr;
     const Field_multiIndex *fields_ptr;
     const FiniteElement_multiIndex *fe_ptr;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     ierr = m_field.get_problem(problem_name,&problem_ptr); CHKERRQ(ierr);
     ierr = m_field.get_fields(&fields_ptr); CHKERRQ(ierr);
     ierr = m_field.get_finite_elements(&fe_ptr); CHKERRQ(ierr);
@@ -200,7 +200,7 @@ namespace MoFEM {
     // cerr << "done " << proc << endl;
     ierr = PetscSectionSetUp(*s); CHKERRQ(ierr);
     // cerr << "end " << proc << endl;
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode ISManager::isCreateProblemOrder(
@@ -208,7 +208,7 @@ namespace MoFEM {
   ) const {
     const MoFEM::Interface &m_field = cOre;
     const Problem *problem_ptr;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     ierr = m_field.get_problem(problem,&problem_ptr); CHKERRQ(ierr);
     typedef NumeredDofEntity_multiIndex::index<Composite_Part_And_Order_mi_tag>::type dofs_order;
     int rank = m_field.get_comm_rank();
@@ -241,7 +241,7 @@ namespace MoFEM {
       id[ii++] = (*vit)->getPetscGlobalDofIdx();
     }
     ierr = ISCreateGeneral(PETSC_COMM_WORLD,size,id,PETSC_OWN_POINTER,is); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode ISManager::isCreateProblemFieldAndRank(
@@ -254,7 +254,7 @@ namespace MoFEM {
   ) const {
     const MoFEM::Interface &m_field = cOre;
     const Problem *problem_ptr;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     ierr = m_field.get_problem(problem,&problem_ptr); CHKERRQ(ierr);
     typedef NumeredDofEntity_multiIndex::index<Composite_Name_And_Part_mi_tag>::type DofsByNamePartAndCoeffIdx;
     int rank = m_field.get_comm_rank();
@@ -299,7 +299,7 @@ namespace MoFEM {
       id[ii++] = (*vit)->getPetscGlobalDofIdx();
     }
     ierr = ISCreateGeneral(PETSC_COMM_WORLD,size,id,PETSC_OWN_POINTER,is); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode ISManager::isCreateFromProblemFieldToOtherProblemField(
@@ -312,7 +312,7 @@ namespace MoFEM {
     const MoFEM::Interface &m_field = cOre;
     const Problem *px_ptr;
     const Problem *py_ptr;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     ierr = m_field.get_problem(x_problem,&px_ptr); CHKERRQ(ierr);
     ierr = m_field.get_problem(y_problem,&py_ptr); CHKERRQ(ierr);
     NumeredDofEntityByLocalIdx::iterator y_dit,hi_y_dit;
@@ -369,7 +369,7 @@ namespace MoFEM {
         *iy = mit->second;
       }
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode ISManager::isCreateFromProblemFieldToOtherProblemField(
@@ -377,7 +377,7 @@ namespace MoFEM {
     const std::string &y_problem,const std::string &y_field_name,RowColData y_rc,
     IS *ix,IS *iy
   ) const {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     std::vector<int> idx(0),idy(0);
     ierr = isCreateFromProblemFieldToOtherProblemField(
       x_problem,x_field_name,x_rc,
@@ -395,7 +395,7 @@ namespace MoFEM {
       ISView(*ix,PETSC_VIEWER_STDOUT_WORLD);
       ISView(*iy,PETSC_VIEWER_STDOUT_WORLD);
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode ISManager::isCreateFromProblemToOtherProblem(
@@ -406,7 +406,7 @@ namespace MoFEM {
     const MoFEM::Interface &m_field = cOre;
     const Problem *px_ptr;
     const Problem *py_ptr;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     ierr = m_field.get_problem(x_problem,&px_ptr); CHKERRQ(ierr);
     ierr = m_field.get_problem(y_problem,&py_ptr); CHKERRQ(ierr);
     NumeredDofEntityByLocalIdx::iterator y_dit,hi_y_dit;
@@ -443,7 +443,7 @@ namespace MoFEM {
       idx.push_back((*x_dit)->getPetscGlobalDofIdx());
       idy.push_back((*y_dit)->getPetscGlobalDofIdx());
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode ISManager::isCreateFromProblemToOtherProblem(
@@ -451,7 +451,7 @@ namespace MoFEM {
     const std::string &y_problem,RowColData y_rc,
     IS *ix,IS *iy
   ) const {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     std::vector<int> idx(0),idy(0);
     ierr = isCreateFromProblemToOtherProblem(x_problem,x_rc,y_problem,y_rc,idx,idy); CHKERRQ(ierr);
     ierr = ISCreateGeneral(PETSC_COMM_WORLD,idx.size(),&idx[0],PETSC_COPY_VALUES,ix); CHKERRQ(ierr);
@@ -460,7 +460,7 @@ namespace MoFEM {
       ISView(*ix,PETSC_VIEWER_STDOUT_WORLD);
       ISView(*iy,PETSC_VIEWER_STDOUT_WORLD);
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
 }

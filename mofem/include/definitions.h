@@ -39,18 +39,19 @@
   *
   */
 enum Interfaces {
-  UNKNOWNINTERFACE              = 1<<0,
+  UNKNOWNINTERFACE                    = 1<<0,
   //Field Interface
-  CORE_INTERFACE                = 1<<0|1<<1,
-  PROBLEMSMANAGER_INTERFACE     = 1<<0|1<<2,
-  SIMPLE_INTERFACE              = 1<<0|1<<3,
-  MESH_REFINE                   = 1<<1|1<<2,
-  PRISM_INTEFACE                = 1<<1|1<<3,
-  SERIES_RECORDER               = 1<<1|1<<4,
-  ISMANAGER_INTERFACE           = 1<<1|1<<5,
-  VECMANAGER_INTERFACE          = 1<<1|1<<6,
-  FIELDBLAS_INTERFACE           = 1<<1|1<<7,
-  BITREFMANAGER_INTERFACE       = 1<<1|1<<8,
+  CORE_INTERFACE                      = 1<<0|1<<1,
+  PROBLEMSMANAGER_INTERFACE           = 1<<0|1<<2,
+  SIMPLE_INTERFACE                    = 1<<0|1<<3,
+  MESH_REFINE                         = 1<<1|1<<2,
+  PRISM_INTEFACE                      = 1<<1|1<<3,
+  SERIES_RECORDER                     = 1<<1|1<<4,
+  ISMANAGER_INTERFACE                 = 1<<1|1<<5,
+  VECMANAGER_INTERFACE                = 1<<1|1<<6,
+  FIELDBLAS_INTERFACE                 = 1<<1|1<<7,
+  BITREFMANAGER_INTERFACE             = 1<<1|1<<8,
+  UPDATEMESHSETSANDRANGES_INTERFACE   = 1<<1|1<<9,
   //Independent Interfaces
   TETGEN_INTERFACE              = 1<<3|1<<4,    ///< used to generate mesh using TetGen
   MED_INTERFACE                 = 1<<3|1<<5,	  ///< interface to med data format
@@ -354,6 +355,101 @@ DEPRECATED void macro_is_depracted_using_deprecated_function();
 #ifdef __cplusplus
 }
 #endif
+
+
+/**
+ * \brief First executable line of each MoFEM function, used for error handling. Final
+      line of MoFEM functions should be MoFEMFunctionReturn(0);
+
+   \node Not collective
+
+   Example
+   \code
+   PetscErrorCode fun()  {
+    int something;
+    MoFEMFunctionBegin;
+    MoFEMFunctionReturn(0);
+   }
+   \endcode
+
+ */
+#define MoFEMFunctionBegin \
+  PetscFunctionBegin; \
+  try {
+
+/**
+  * \brief First executable line of each MoFEM function, used for error handling. Final
+  line of MoFEM functions should be MoFEMFunctionReturn(0);
+  Use of this function allows for lighter profiling by default.
+
+  \node Not collective
+
+  Example:
+  \code
+  PetscErrorCode fun()  {
+  int something;
+  MoFEMFunctionBeginHot;
+
+  // some work here
+
+  MoFEMFunctionReturnHot(0);
+  }
+  \endcode
+*/
+#define MoFEMFunctionBeginHot \
+  PetscFunctionBeginHot
+
+/**
+  * \brief Last executable line of each PETSc function used for error handling. Replaces return()
+  * @param  a error code
+  *
+  * \note MoFEMFunctionReturn has to be used with MoFEMFunctionBegin and can be
+  * used only at the end of the function. If is need to return function in
+  * ealier use MoFEMFunctionReturnHot
+  *
+  */
+#define MoFEMFunctionReturn(a) \
+  } catch (MoFEMException const &e) { \
+    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage); \
+  } \
+  PetscFunctionReturn(a)
+
+/**
+ * \brief Last executable line of each PETSc function used for error handling. Replaces return()
+ * @param  a error code
+ */
+#define MoFEMFunctionReturnHot(a) \
+  PetscFunctionReturn(a)
+
+/**
+  * \brief Last executable line of each PETSc function used for error handling. Replaces return()
+  * @param  a error code.
+  *
+  * \note Return void, whereas MoFEMFunctionReturn returns error code
+  *
+  * \note MoFEMFunctionReturn has to be used with MoFEMFunctionBegin and can be
+  * used only at the end of the function. If is need to return function in
+  * ealier use MoFEMFunctionReturnHot
+  *
+  */
+#define MoFEMFunctionReturnVoid() \
+  } catch (MoFEMException const &e) { \
+    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage); \
+  } \
+  PetscFunctionReturnVoid()
+
+/**
+  * \brief Last executable line of each PETSc function used for error handling. Replaces return()
+  * @param  a error code.
+  *
+  * \note Return void, whereas MoFEMFunctionReturn returns error code
+  *
+  */
+#define MoFEMFunctionReturnHotVoid() \
+  } catch (MoFEMException const &e) { \
+    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage); \
+  } \
+  PetscFunctionReturnVoid()
 
 /**
  * \brief check error code of MoAB function

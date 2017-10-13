@@ -36,14 +36,14 @@ useSnesF(use_snes_f) {
 }
 
 PetscErrorCode EdgeForce::OpEdgeForce::doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   if(data.getIndices().size()==0) {
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
   EntityHandle ent = getNumeredEntFiniteElementPtr()->getEnt();
   if(dAta.eDges.find(ent)==dAta.eDges.end()) {
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   
@@ -123,7 +123,7 @@ PetscErrorCode EdgeForce::OpEdgeForce::doWork(int side,EntityType type,DataForce
     &data.getIndices()[0],&Nf[0],ADD_VALUES
   ); CHKERRQ(ierr);
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode EdgeForce::addForce(const std::string field_name,Vec F,int ms_id,bool use_snes_f) {
@@ -131,12 +131,12 @@ PetscErrorCode EdgeForce::addForce(const std::string field_name,Vec F,int ms_id,
   
   const CubitMeshSets *cubit_meshset_ptr;
   MeshsetsManager *mmanager_ptr;
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   ierr = mField.query_interface(mmanager_ptr); CHKERRQ(ierr);
   ierr = mmanager_ptr->getCubitMeshsetPtr(ms_id,NODESET,&cubit_meshset_ptr); CHKERRQ(ierr);
   ierr = cubit_meshset_ptr->getBcDataStructure(mapForce[ms_id].data); CHKERRQ(ierr);
   rval = mField.get_moab().get_entities_by_type(cubit_meshset_ptr->meshset,MBEDGE,mapForce[ms_id].eDges,true); CHKERRQ_MOAB(rval);
   // Add operator for element, set data and entities operating on the data
   fe.getOpPtrVector().push_back(new OpEdgeForce(field_name,F,mapForce[ms_id],methodsOp,use_snes_f));
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }

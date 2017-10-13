@@ -50,18 +50,18 @@
 namespace MoFEM {
 
   PetscErrorCode FieldBlas::queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     *iface = NULL;
     if(uuid == IDD_MOFEMFieldBlas) {
       *iface = dynamic_cast<FieldBlas*>(this);
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
     if(uuid == IDD_MOFEMUnknown) {
       *iface = dynamic_cast<UnknownInterface*>(this);
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown interface");
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   FieldBlas::FieldBlas(const MoFEM::Core& core):
@@ -79,7 +79,7 @@ namespace MoFEM {
     const Field_multiIndex *fields_ptr;
     const FieldEntity_multiIndex *field_ents;
     const DofEntity_multiIndex *dofs_ptr;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     ierr = m_field.get_fields(&fields_ptr); CHKERRQ(ierr);
     ierr = m_field.get_field_ents(&field_ents); CHKERRQ(ierr);
     ierr = m_field.get_dofs(&dofs_ptr); CHKERRQ(ierr);
@@ -125,13 +125,13 @@ namespace MoFEM {
         (*dit)->getFieldData() += alpha*data;
       }
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode FieldBlas::setField(const double val,const EntityType type,const std::string& field_name) {
     const MoFEM::Interface &m_field = cOre;
     const DofEntity_multiIndex *dofs_ptr;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     ierr = m_field.get_dofs(&dofs_ptr); CHKERRQ(ierr);
     DofEntity_multiIndex::index<Composite_Name_And_Type_mi_tag >::type::iterator dit,hi_dit;
     dit = dofs_ptr->get<Composite_Name_And_Type_mi_tag >().lower_bound(boost::make_tuple(field_name,type));
@@ -139,13 +139,13 @@ namespace MoFEM {
     for(;dit!=hi_dit;dit++) {
       (*dit)->getFieldData() = val;
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode FieldBlas::setField(const double val,const EntityType type,const Range &ents,const std::string& field_name) {
     const MoFEM::Interface &m_field = cOre;
     const DofEntity_multiIndex *dofs_ptr;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     ierr = m_field.get_dofs(&dofs_ptr); CHKERRQ(ierr);
     DofEntity_multiIndex::index<Composite_Name_And_Type_mi_tag >::type::iterator dit,hi_dit;
     dit = dofs_ptr->get<Composite_Name_And_Type_mi_tag >().lower_bound(boost::make_tuple(field_name,type));
@@ -165,13 +165,13 @@ namespace MoFEM {
       if(cont) continue;
       (*dit)->getFieldData() = val;
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode FieldBlas::fieldScale(const double alpha,const std::string& field_name) {
     const MoFEM::Interface &m_field = cOre;
     const DofEntity_multiIndex *dofs_ptr;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     ierr = m_field.get_dofs(&dofs_ptr); CHKERRQ(ierr);
     DofEntityByFieldName::iterator dit,hi_dit;
     dit = dofs_ptr->get<FieldName_mi_tag>().lower_bound(field_name);
@@ -179,7 +179,7 @@ namespace MoFEM {
     for(;dit!=hi_dit;dit++) {
       (*dit)->getFieldData() *= alpha;
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
 }

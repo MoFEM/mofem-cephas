@@ -65,57 +65,57 @@ namespace MixTransport {
     virtual void printMatParameters(const int id,const std::string& prefix) const = 0;
 
     virtual PetscErrorCode calK() {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       SETERRQ(
         PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,
         "Not implemented how to calculate hydraulic conductivity"
       );
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     virtual PetscErrorCode calDiffK() {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       SETERRQ(
         PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,
         "Not implemented how to calculate derivative of hydraulic conductivity"
       );
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     virtual PetscErrorCode calC() {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       SETERRQ(
         PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,
         "Not implemented how to calculate capacity"
       );
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     virtual PetscErrorCode calDiffC() {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       SETERRQ(
         PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,
         "Not implemented how to calculate capacity"
       );
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     virtual PetscErrorCode calTheta() {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       SETERRQ(
         PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,
         "Not implemented how to calculate capacity"
       );
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     virtual PetscErrorCode calSe() {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       SETERRQ(
         PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,
         "Not implemented how to calculate capacity"
       );
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   };
@@ -155,18 +155,18 @@ namespace MixTransport {
     virtual PetscErrorCode getMaterial(
       const EntityHandle ent,int &block_id
     ) const {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       for(
         MaterialsDoubleMap::const_iterator mit = dMatMap.begin();
         mit!=dMatMap.end();mit++
       ) {
         if(mit->second->tEts.find(ent)!=mit->second->tEts.end()) {
           block_id = mit->first;
-          PetscFunctionReturn(0);
+          MoFEMFunctionReturnHot(0);
         }
       }
       SETERRQ(mField.get_comm(),MOFEM_DATA_INCONSISTENCY,"Element not found, no material data");
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     /**
@@ -203,7 +203,7 @@ namespace MixTransport {
       const double x,const double y,const double z,
       double &value
     ) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       int block_id = -1;
       if(lastEvalBcValEnt==ent) {
         block_id = lastEvalBcBlockValId;
@@ -225,7 +225,7 @@ namespace MixTransport {
       } else {
         value = 0;
       }
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     BcMap bcFluxMap;
@@ -246,7 +246,7 @@ namespace MixTransport {
       const double x,const double y,const double z,
       double &flux
     ) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       int block_id = -1;
       if(lastEvalBcFluxEnt==ent) {
         block_id = lastEvalBcBlockFluxId;
@@ -268,7 +268,7 @@ namespace MixTransport {
       } else {
         flux = 0;
       }
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
 
@@ -304,9 +304,9 @@ namespace MixTransport {
       PetscErrorCode doWork(
         int side,EntityType type,DataForcesAndSourcesCore::EntData &data
       ) {
-        PetscFunctionBegin;
+        MoFEMFunctionBeginHot;
         try {
-          if(data.getFieldData().size()==0) PetscFunctionReturn(0);
+          if(data.getFieldData().size()==0) MoFEMFunctionReturnHot(0);
           // Get EntityHandle of the finite element
           EntityHandle fe_ent = getNumeredEntFiniteElementPtr()->getEnt();
           // Resize and clear vector
@@ -340,7 +340,7 @@ namespace MixTransport {
           ss << "throw in method: " << ex.what() << std::endl;
           SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
         }
-        PetscFunctionReturn(0);
+        MoFEMFunctionReturnHot(0);
       }
     };
 
@@ -359,9 +359,9 @@ namespace MixTransport {
       FTensor::Index<'i',3> i;
 
       PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
-        PetscFunctionBegin;
+        MoFEMFunctionBeginHot;
         const int nb_dofs = data.getIndices().size();
-        if(nb_dofs==0) PetscFunctionReturn(0);
+        if(nb_dofs==0) MoFEMFunctionReturnHot(0);
         nF.resize(nb_dofs,false);
         nF.clear();
         // Get EntityHandle of the finite element
@@ -416,7 +416,7 @@ namespace MixTransport {
           getFEMethod()->ts_F,nb_dofs,
           &*data.getIndices().begin(),&*nF.begin(),ADD_VALUES
         ); CHKERRQ(ierr);
-        PetscFunctionReturn(0);
+        MoFEMFunctionReturnHot(0);
       }
 
     };
@@ -436,10 +436,10 @@ namespace MixTransport {
       VectorDouble nF;
 
       PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
-        PetscFunctionBegin;
-        PetscFunctionBegin;
+        MoFEMFunctionBeginHot;
+        MoFEMFunctionBeginHot;
         const int nb_dofs = data.getIndices().size();
-        if(nb_dofs==0) PetscFunctionReturn(0);
+        if(nb_dofs==0) MoFEMFunctionReturnHot(0);
         // Resize local element vector
         nF.resize(nb_dofs,false);
         nF.clear();
@@ -487,7 +487,7 @@ namespace MixTransport {
         ierr = VecSetValues(
           f,nb_dofs,&*data.getIndices().begin(),&*nF.begin(),ADD_VALUES
         ); CHKERRQ(ierr);
-        PetscFunctionReturn(0);
+        MoFEMFunctionReturnHot(0);
       }
 
     };
@@ -524,12 +524,12 @@ namespace MixTransport {
         DataForcesAndSourcesCore::EntData &row_data,
         DataForcesAndSourcesCore::EntData &col_data
       ) {
-        PetscFunctionBegin;
+        MoFEMFunctionBeginHot;
         try {
           const int nb_row = row_data.getIndices().size();
           const int nb_col = col_data.getIndices().size();
-          if(nb_row==0) PetscFunctionReturn(0);
-          if(nb_col==0) PetscFunctionReturn(0);
+          if(nb_row==0) MoFEMFunctionReturnHot(0);
+          if(nb_col==0) MoFEMFunctionReturnHot(0);
           nN.resize(nb_row,nb_col,false);
           nN.clear();
           // Get EntityHandle of the finite element
@@ -598,7 +598,7 @@ namespace MixTransport {
           SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
         }
 
-        PetscFunctionReturn(0);
+        MoFEMFunctionReturnHot(0);
       }
 
     };
@@ -633,12 +633,12 @@ namespace MixTransport {
         DataForcesAndSourcesCore::EntData &row_data,
         DataForcesAndSourcesCore::EntData &col_data
       ) {
-        PetscFunctionBegin;
+        MoFEMFunctionBeginHot;
         try {
           int nb_row = row_data.getIndices().size();
           int nb_col = col_data.getIndices().size();
-          if(nb_row==0) PetscFunctionReturn(0);
-          if(nb_col==0) PetscFunctionReturn(0);
+          if(nb_row==0) MoFEMFunctionReturnHot(0);
+          if(nb_col==0) MoFEMFunctionReturnHot(0);
           nN.resize(nb_row,nb_col,false);
           nN.clear();
           // Get EntityHandle of the finite element
@@ -715,7 +715,7 @@ namespace MixTransport {
           SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
         }
 
-        PetscFunctionReturn(0);
+        MoFEMFunctionReturnHot(0);
       }
 
     };
@@ -757,12 +757,12 @@ namespace MixTransport {
         DataForcesAndSourcesCore::EntData &row_data,
         DataForcesAndSourcesCore::EntData &col_data
       ) {
-        PetscFunctionBegin;
+        MoFEMFunctionBeginHot;
         try {
           int nb_row = row_data.getFieldData().size();
           int nb_col = col_data.getFieldData().size();
-          if(nb_row==0) PetscFunctionReturn(0);
-          if(nb_col==0) PetscFunctionReturn(0);
+          if(nb_row==0) MoFEMFunctionReturnHot(0);
+          if(nb_col==0) MoFEMFunctionReturnHot(0);
           // Get EntityHandle of the finite element
           EntityHandle fe_ent = getNumeredEntFiniteElementPtr()->getEnt();
           // Get material block id
@@ -794,7 +794,7 @@ namespace MixTransport {
           ss << "throw in method: " << ex.what() << std::endl;
           SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
         }
-        PetscFunctionReturn(0);
+        MoFEMFunctionReturnHot(0);
       }
 
     };
@@ -837,12 +837,12 @@ namespace MixTransport {
         DataForcesAndSourcesCore::EntData &row_data,
         DataForcesAndSourcesCore::EntData &col_data
       ) {
-        PetscFunctionBegin;
+        MoFEMFunctionBeginHot;
         try {
           int nb_row = row_data.getFieldData().size();
           int nb_col = col_data.getFieldData().size();
-          if(nb_row==0) PetscFunctionReturn(0);
-          if(nb_col==0) PetscFunctionReturn(0);
+          if(nb_row==0) MoFEMFunctionReturnHot(0);
+          if(nb_col==0) MoFEMFunctionReturnHot(0);
           nN.resize(nb_row,nb_col,false);
           divVec.resize(nb_row,false);
           nN.clear();
@@ -909,7 +909,7 @@ namespace MixTransport {
           ss << "throw in method: " << ex.what() << std::endl;
           SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
         }
-        PetscFunctionReturn(0);
+        MoFEMFunctionReturnHot(0);
       }
 
     };
@@ -925,9 +925,9 @@ namespace MixTransport {
       VectorDouble nF;
 
       PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
-        PetscFunctionBegin;
+        MoFEMFunctionBeginHot;
         try {
-          if(data.getFieldData().size()==0) PetscFunctionReturn(0);
+          if(data.getFieldData().size()==0) MoFEMFunctionReturnHot(0);
           int nb_dofs = data.getFieldData().size();
           int nb_gauss_pts = data.getN().size1();
           if(nb_dofs!=data.getN().size2()) {
@@ -975,7 +975,7 @@ namespace MixTransport {
           SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
         }
 
-        PetscFunctionReturn(0);
+        MoFEMFunctionReturnHot(0);
       }
 
     };
@@ -1005,10 +1005,10 @@ namespace MixTransport {
       PetscErrorCode doWork(
         int side,EntityType type,DataForcesAndSourcesCore::EntData &data
       ) {
-        PetscFunctionBegin;
+        MoFEMFunctionBeginHot;
         try {
           int nb_dofs = data.getFieldData().size();
-          if(nb_dofs==0) PetscFunctionReturn(0);
+          if(nb_dofs==0) MoFEMFunctionReturnHot(0);
           // Get base function
           FTensor::Tensor1<double*,3> t_n_hdiv = data.getFTensor1HdivN<3>();
           // get normal of face
@@ -1032,7 +1032,7 @@ namespace MixTransport {
           ss << "throw in method: " << ex.what() << std::endl;
           SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
         }
-        PetscFunctionReturn(0);
+        MoFEMFunctionReturnHot(0);
       }
 
     };
@@ -1066,11 +1066,11 @@ namespace MixTransport {
         EntityType type,
         DataForcesAndSourcesCore::EntData &data
       ) {
-        PetscFunctionBegin;
+        MoFEMFunctionBeginHot;
         int nb_dofs = data.getFieldData().size();
-        if(nb_dofs==0) PetscFunctionReturn(0);
+        if(nb_dofs==0) MoFEMFunctionReturnHot(0);
 
-        // if(type != MBTET) PetscFunctionReturn(0);
+        // if(type != MBTET) MoFEMFunctionReturnHot(0);
         // Get EntityHandle of the finite element
         EntityHandle fe_ent = getNumeredEntFiniteElementPtr()->getEnt();
         // Get material block id
@@ -1150,7 +1150,7 @@ namespace MixTransport {
           ++t_coords;
         }
 
-        PetscFunctionReturn(0);
+        MoFEMFunctionReturnHot(0);
       }
 
     };
@@ -1183,17 +1183,17 @@ namespace MixTransport {
         }
 
         PetscErrorCode preProcess() {
-          PetscFunctionBegin;
-          PetscFunctionReturn(0);
+          MoFEMFunctionBeginHot;
+          MoFEMFunctionReturnHot(0);
         }
 
         PetscErrorCode operator()() {
-          PetscFunctionBegin;
-          PetscFunctionReturn(0);
+          MoFEMFunctionBeginHot;
+          MoFEMFunctionReturnHot(0);
         }
 
         PetscErrorCode postProcess() {
-          PetscFunctionBegin;
+          MoFEMFunctionBeginHot;
 
           // Get time step
           int step;
@@ -1230,7 +1230,7 @@ namespace MixTransport {
           ); CHKERRQ(ierr);
           ierr = VecRestoreArray(cTx.ghostFlux,&ghost_flux); CHKERRQ(ierr);
 
-          PetscFunctionReturn(0);
+          MoFEMFunctionReturnHot(0);
         }
 
       };
@@ -1238,7 +1238,7 @@ namespace MixTransport {
 
     /// \brief add fields
     PetscErrorCode addFields(const std::string &values,const std::string &fluxes,const int order) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       //Fields
       ierr = mField.add_field(fluxes,HDIV,DEMKOWICZ_JACOBI_BASE,1); CHKERRQ(ierr);
       ierr = mField.add_field(values,L2,AINSWORTH_LEGENDRE_BASE,1); CHKERRQ(ierr);
@@ -1270,14 +1270,14 @@ namespace MixTransport {
       ierr = mField.set_field_order(root_set,MBTET,values,order); CHKERRQ(ierr);
       ierr = mField.set_field_order(root_set,MBTET,values+"_t",order); CHKERRQ(ierr);
       // ierr = mField.set_field_order(root_set,MBTET,fluxes+"_residual",order); CHKERRQ(ierr);
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     /// \brief add finite elements
     PetscErrorCode addFiniteElements(
       const std::string &fluxes_name,const std::string &values_name
     ) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
       // Define element "MIX". Note that this element will work with fluxes_name and
       // values_name. This reflect bilinear form for the problem
@@ -1326,7 +1326,7 @@ namespace MixTransport {
         ); CHKERRQ(ierr);
       }
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     /**
@@ -1335,7 +1335,7 @@ namespace MixTransport {
      * @return           error code
      */
     PetscErrorCode buildProblem(BitRefLevel ref_level = BitRefLevel().set(0)) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
       // Build fields
       ierr = mField.build_fields(); CHKERRQ(ierr);
@@ -1372,7 +1372,7 @@ namespace MixTransport {
       // ierr = PetscSectionView(section,PETSC_VIEWER_STDOUT_WORLD);
       ierr = PetscSectionDestroy(&section); CHKERRQ(ierr);
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     boost::shared_ptr<ForcesAndSourcesCore> feFaceBc;  ///< Elemnet to calculate essential bc
@@ -1426,7 +1426,7 @@ namespace MixTransport {
       fePtr(fe_ptr)/*,mArk(mark)*/ {
       }
       PetscErrorCode operator()() {
-        PetscFunctionBegin;
+        MoFEMFunctionBeginHot;
         // Update pressure rates
         ierr = fePtr->mField.query_interface<VecManager>()->setOtherLocalGhostVector(
           fePtr->problemPtr,"VALUES",string("VALUES")+"_t",
@@ -1471,7 +1471,7 @@ namespace MixTransport {
           // don nothing
           break;
         }
-        PetscFunctionReturn(0);
+        MoFEMFunctionReturnHot(0);
       }
     };
 
@@ -1491,7 +1491,7 @@ namespace MixTransport {
       fePtr(fe_ptr)/*,mArk(mark)*/ {
       }
       PetscErrorCode operator()() {
-        PetscFunctionBegin;
+        MoFEMFunctionBeginHot;
         switch (fePtr->ts_ctx) {
           case TSMethod::CTX_TSSETIJACOBIAN: {
             ierr = MatAssemblyBegin(fePtr->ts_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
@@ -1536,7 +1536,7 @@ namespace MixTransport {
           // don nothing
           break;
         }
-        PetscFunctionReturn(0);
+        MoFEMFunctionReturnHot(0);
       }
     };
 
@@ -1550,7 +1550,7 @@ namespace MixTransport {
       ForcesAndSourcesCore::RuleHookFun vol_rule = VolRule(),
       ForcesAndSourcesCore::RuleHookFun face_rule = FaceRule()
     ) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
       // create finite element instances
       feFaceBc = boost::shared_ptr<ForcesAndSourcesCore>(new FaceElementForcesAndSourcesCore(mField));
@@ -1657,7 +1657,7 @@ namespace MixTransport {
       TsCtx *ts_ctx;
       DMMoFEMGetTsCtx(dM,&ts_ctx);
       ts_ctx->get_postProcess_to_do_Monitor().push_back(tsMonitor);
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     Vec D1;  ///< Vector with inital head capilary pressure
@@ -1668,7 +1668,7 @@ namespace MixTransport {
      * @return Error code
      */
     PetscErrorCode createMatrices() {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       ierr = DMCreateMatrix(dM,&Aij); CHKERRQ(ierr);
       ierr = DMCreateGlobalVector(dM,&D0); CHKERRQ(ierr);
       ierr = VecDuplicate(D0,&D1); CHKERRQ(ierr);
@@ -1680,7 +1680,7 @@ namespace MixTransport {
       ierr = VecCreateGhost(
         PETSC_COMM_WORLD,nb_locals,1,nb_ghosts,ghosts,&ghostFlux
       ); CHKERRQ(ierr);
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     /**
@@ -1688,14 +1688,14 @@ namespace MixTransport {
      * @return error code
      */
     PetscErrorCode destroyMatrices() {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       ierr = MatDestroy(&Aij); CHKERRQ(ierr);
       ierr = VecDestroy(&D); CHKERRQ(ierr);
       ierr = VecDestroy(&D0); CHKERRQ(ierr);
       ierr = VecDestroy(&D1); CHKERRQ(ierr);
       ierr = VecDestroy(&F); CHKERRQ(ierr);
       ierr = VecDestroy(&ghostFlux); CHKERRQ(ierr);
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     /**
@@ -1703,7 +1703,7 @@ namespace MixTransport {
      * @return Error code
      */
     PetscErrorCode calculateEssentialBc() {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       // clear vectors
       ierr = VecZeroEntries(D0); CHKERRQ(ierr);
       ierr = VecGhostUpdateBegin(D0,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -1720,7 +1720,7 @@ namespace MixTransport {
       ierr = VecNorm(D0,NORM_2,&norm2D0); CHKERRQ(ierr);
       // ierr = VecView(D0,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
       PetscPrintf(PETSC_COMM_WORLD,"norm2D0 = %6.4e\n",norm2D0);
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     /**
@@ -1728,7 +1728,7 @@ namespace MixTransport {
      * @return Error code
      */
     PetscErrorCode calculateInitialPc() {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       // clear vectors
       ierr = VecZeroEntries(D1); CHKERRQ(ierr);
       ierr = VecGhostUpdateBegin(D1,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -1745,7 +1745,7 @@ namespace MixTransport {
       ierr = VecNorm(D1,NORM_2,&norm2D1); CHKERRQ(ierr);
       // ierr = VecView(D0,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
       PetscPrintf(PETSC_COMM_WORLD,"norm2D1 = %6.4e\n",norm2D1);
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     /**
@@ -1753,7 +1753,7 @@ namespace MixTransport {
      * @return error code
      */
     PetscErrorCode solveProblem(bool set_initial_pc = true) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       if(set_initial_pc) {
         // Set initial head
         ierr = DMoFEMMeshToLocalVector(dM,D1,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
@@ -1824,7 +1824,7 @@ namespace MixTransport {
         steps,rejects,snesfails,ftime,nonlinits,linits
       );
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   };

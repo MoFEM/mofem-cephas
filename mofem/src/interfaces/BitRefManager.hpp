@@ -1,6 +1,6 @@
 /** \file BitRefManager.hpp
  * \brief Interface managing BitRefLevels
- * \mofem_bit_ref
+ * \ingroup mofem_bit_ref
  *
  * Managing BitRef levels
  *
@@ -27,7 +27,7 @@ namespace MoFEM {
 
   /**
    * \brief Managing BitRefLevels
-   * \mofem_bit_ref
+   * \ingroup mofem_bit_ref
    *
    */
   struct BitRefManager: public UnknownInterface {
@@ -46,7 +46,7 @@ namespace MoFEM {
 
     /**
      * \brief add entities to database and set bit ref level
-     * \mofem_bit_ref
+     * \ingroup mofem_bit_ref
      *
      * This function set bit ref level, add entries to core database and
      * create ref finite elements. Finite elements are create of entities in function
@@ -91,7 +91,7 @@ namespace MoFEM {
     ) const;
 
     /** brief add meshset and set bit ref level
-    * \mofem_bit_ref
+    * \ingroup mofem_bit_ref
      *
      * \param EntityHandle MeshSet
      * \param BitRefLevel bitLevel
@@ -102,6 +102,7 @@ namespace MoFEM {
 
     /**
      * \brief add bit ref level to ref entity
+     * \ingroup mofem_bit_ref
      * @param  ents range of entities
      * @param  bit  bit ref level
      * @param  verb verbosity level
@@ -124,6 +125,7 @@ namespace MoFEM {
 
     /**
      * \brief Set nth bith ref lecel
+     * \ingroup mofem_bit_ref
      * @param  n    nth bit
      * @param  b    value to set
      * @return      error code
@@ -134,13 +136,13 @@ namespace MoFEM {
 
 
     /** \brief left shift bit ref level
+      * \ingroup mofem_bit_ref
       * this results of deletion of entities on far left side
-      * \todo Should be outsourced to separate interface, i.e. BitLevelManage
       */
     PetscErrorCode shiftLeftBitRef(const int shif,const BitRefLevel mask = BitRefLevel().set(),int verb = -1) const;
 
     /** \brief right shift bit ref level
-      * \todo Should be outsourced to separate interface, i.e. BitLevelManage
+      * \ingroup mofem_bit_ref
       */
     PetscErrorCode shiftRightBitRef(const int shift,const BitRefLevel mask = BitRefLevel().set(),int verb = -1) const;
 

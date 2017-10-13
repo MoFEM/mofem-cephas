@@ -208,9 +208,9 @@ int main(int argc, char *argv[]) {
       EntityType type,
       DataForcesAndSourcesCore::EntData &data
     ) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
-      if(data.getFieldData().size()==0) PetscFunctionReturn(0);
+      if(data.getFieldData().size()==0) MoFEMFunctionReturnHot(0);
 
       if(data.getFieldDofs()[0]->getSpace()==H1) {
 
@@ -328,7 +328,7 @@ int main(int argc, char *argv[]) {
         }
       }
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   };
@@ -339,7 +339,7 @@ int main(int argc, char *argv[]) {
     int getRule(int order) { return -1; };
 
     PetscErrorCode setGaussPts(int order) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
       const double ksi = G_TET_X1[0];
       const double eta = G_TET_Y1[0];
@@ -379,7 +379,7 @@ int main(int argc, char *argv[]) {
 
       cerr << gaussPts << endl;
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   };

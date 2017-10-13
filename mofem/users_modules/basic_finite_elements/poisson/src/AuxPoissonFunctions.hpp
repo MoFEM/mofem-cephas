@@ -41,12 +41,12 @@ namespace PoissonExample {
      */
     PetscErrorCode createGhostVec(Vec *ghost_vec) const {
       
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       int ghosts[] = { 0 };
       int nb_locals = rAnk==0?1:0;
       int nb_ghosts = rAnk>0?1:0;
       ierr = VecCreateGhost(cOmm,nb_locals,1,nb_ghosts,ghosts,ghost_vec); CHKERRQ(ierr);
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     /**
@@ -54,7 +54,7 @@ namespace PoissonExample {
      */
     PetscErrorCode assembleGhostVector(Vec ghost_vec) const {
       
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       ierr = VecAssemblyBegin(ghost_vec); CHKERRQ(ierr);
       ierr = VecAssemblyEnd(ghost_vec); CHKERRQ(ierr);
       // accumulate errors from processors
@@ -63,7 +63,7 @@ namespace PoissonExample {
       // scatter errors to all processors
       ierr = VecGhostUpdateBegin(ghost_vec,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
       ierr = VecGhostUpdateEnd(ghost_vec,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     /**
@@ -71,12 +71,12 @@ namespace PoissonExample {
      */
     PetscErrorCode printError(Vec ghost_vec) {
       
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       double *e;
       ierr = VecGetArray(ghost_vec,&e); CHKERRQ(ierr);
       ierr = PetscPrintf(cOmm,"Approximation error %4.3e\n",sqrt(e[0])); CHKERRQ(ierr);
       ierr = VecRestoreArray(ghost_vec,&e); CHKERRQ(ierr);
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     /**
@@ -84,7 +84,7 @@ namespace PoissonExample {
      */
     PetscErrorCode testError(Vec ghost_vec) {
       
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       double *e;
       ierr = VecGetArray(ghost_vec,&e); CHKERRQ(ierr);
       // Check if error is zero, otherwise throw error
@@ -94,7 +94,7 @@ namespace PoissonExample {
         SETERRQ(PETSC_COMM_SELF,MOFEM_ATOM_TEST_INVALID,"Test failed, error too big");
       }
       ierr = VecRestoreArray(ghost_vec,&e); CHKERRQ(ierr);
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   private:

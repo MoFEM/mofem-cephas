@@ -77,7 +77,7 @@ struct ArcLengthIntElemFEMethod: public FEMethod {
     *
     */
   PetscErrorCode remove_damaged_prisms_nodes() {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     Range prisms;
     rval = mOab.get_entities_by_type(0,MBPRISM,prisms,false); CHKERRQ_MOAB(rval);
     std::vector<int> is_prism_damaged(prisms.size());
@@ -94,12 +94,12 @@ struct ArcLengthIntElemFEMethod: public FEMethod {
         }
       }
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   double lambda_int;
   PetscErrorCode preProcess() {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     switch(snes_ctx) {
       case CTX_SNESSETFUNCTION: {
         ierr = calculate_dx_and_dlambda(snes_x); CHKERRQ(ierr);
@@ -110,11 +110,11 @@ struct ArcLengthIntElemFEMethod: public FEMethod {
       default:
       break;
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode calculate_lambda_int(double &_lambda_int_) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     ParallelComm* pcomm = ParallelComm::get_pcomm(&mOab,MYPCOMM_INDEX);
     NumeredDofEntityByLocalIdx::iterator dit,hi_dit;
     dit = problemPtr->getNumeredDofsRows()->get<PetscLocalIdx_mi_tag>().lower_bound(0);
@@ -152,11 +152,11 @@ struct ArcLengthIntElemFEMethod: public FEMethod {
       array_int_lambda[0],arcPtr->F_lambda2);
     PetscSynchronizedFlush(PETSC_COMM_WORLD);*/
     ierr = VecRestoreArray(GhostLambdaInt,&array_int_lambda); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   virtual PetscErrorCode calculate_db() {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     ierr = VecZeroEntries(arcPtr->db); CHKERRQ(ierr);
     ierr = VecGhostUpdateBegin(arcPtr->db,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecGhostUpdateEnd(arcPtr->db,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -179,11 +179,11 @@ struct ArcLengthIntElemFEMethod: public FEMethod {
       } else array[dit->get()->getPetscLocalDofIdx()] = 0;
     }
     ierr = VecRestoreArray(arcPtr->db,&array); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode operator()() {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
 
     switch(snes_ctx) {
       case CTX_SNESSETFUNCTION: {
@@ -204,11 +204,11 @@ struct ArcLengthIntElemFEMethod: public FEMethod {
       break;
     }
 
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode postProcess() {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     switch(snes_ctx) {
       case CTX_SNESSETJACOBIAN: {
         ierr = VecGhostUpdateBegin(arcPtr->ghostDiag,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -221,11 +221,11 @@ struct ArcLengthIntElemFEMethod: public FEMethod {
       default:
       break;
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode calculate_dx_and_dlambda(Vec &x) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     //dx
     ierr = VecCopy(x,arcPtr->dx); CHKERRQ(ierr);
     ierr = VecAXPY(arcPtr->dx,-1,arcPtr->x0); CHKERRQ(ierr);
@@ -243,11 +243,11 @@ struct ArcLengthIntElemFEMethod: public FEMethod {
     //calculate dx2 (dot product)
     ierr = VecDot(arcPtr->dx,arcPtr->dx,&arcPtr->dx2); CHKERRQ(ierr);
     PetscPrintf(PETSC_COMM_WORLD,"\tdlambda = %6.4e dx2 = %6.4e\n",arcPtr->dLambda,arcPtr->dx2);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode calculate_init_dlambda(double *dlambda) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
 
     *dlambda = arcPtr->s/(arcPtr->beta*sqrt(arcPtr->F_lambda2));
     PetscPrintf(
@@ -262,11 +262,11 @@ struct ArcLengthIntElemFEMethod: public FEMethod {
       SETERRQ(PETSC_COMM_SELF,1,sss.str().c_str());
     }
 
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode set_dlambda_to_x(Vec &x,double dlambda) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
 
     if(arcPtr->getPetscLocalDofIdx()!=-1) {
       double *array;
@@ -283,7 +283,7 @@ struct ArcLengthIntElemFEMethod: public FEMethod {
       ierr = VecRestoreArray(x,&array); CHKERRQ(ierr);
     }
 
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
 };

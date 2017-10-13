@@ -53,7 +53,7 @@
 namespace MoFEM {
 
   PetscErrorCode Core::synchronise_entities(Range &ents,int verb) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     if(verb==-1) verb = verbose;
 
     //ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
@@ -221,11 +221,11 @@ namespace MoFEM {
       PetscSynchronizedFlush(cOmm,PETSC_STDOUT);
     }
 
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode Core::synchronise_field_entities(const BitFieldId id,int verb) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     if(verb==-1) verb = verbose;
     EntityHandle idm;
     try {
@@ -237,11 +237,11 @@ namespace MoFEM {
     ierr = moab.get_entities_by_handle(idm,ents,false); CHKERRQ(ierr);
     ierr = synchronise_entities(ents,verb); CHKERRQ(ierr);
     rval = moab.add_entities(idm,ents); CHKERRQ_MOAB(rval);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode Core::synchronise_field_entities(const std::string& name,int verb) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     if(verb==-1) verb = verbose;
     *buildMoFEM = 0;
     try {
@@ -249,11 +249,11 @@ namespace MoFEM {
     } catch (MoFEMException const &e) {
       SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode Core::resolve_shared_ents(const Problem *problem_ptr,const std::string &fe_name,int verb) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
     std::vector<int> shprocs(MAX_SHARING_PROCS,0);
     std::vector<EntityHandle> shhandles(MAX_SHARING_PROCS,0);
@@ -312,10 +312,10 @@ namespace MoFEM {
       }
     }
     rval = pcomm->exchange_tags(th_gid,ents); CHKERRQ_MOAB(rval);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
   PetscErrorCode Core::resolve_shared_ents(const std::string &name,const std::string &fe_name,int verb) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     typedef Problem_multiIndex::index<Problem_mi_tag>::type Problem_multiIndex_by_name;
     //find p_miit
     Problem_multiIndex_by_name &problems_set = pRoblems.get<Problem_mi_tag>();
@@ -324,7 +324,7 @@ namespace MoFEM {
       SETERRQ1(PETSC_COMM_SELF,1,"problem with name < %s > not defined (top tip check spelling)",name.c_str());
     }
     ierr = resolve_shared_ents(&*p_miit,fe_name,verb); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode Core::get_problem_elements_layout(const std::string &name,const std::string &fe_name,PetscLayout *layout,int verb) {

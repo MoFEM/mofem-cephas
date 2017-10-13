@@ -75,17 +75,17 @@ struct MonitorPostProc: public FEMethod {
   }
 
   PetscErrorCode preProcess() {
-    PetscFunctionBegin;
-    PetscFunctionReturn(0);
+    MoFEMFunctionBeginHot;
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode operator()() {
-    PetscFunctionBegin;
-    PetscFunctionReturn(0);
+    MoFEMFunctionBeginHot;
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode postProcess() {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     
     if(!iNit) {
       ierr = postProc.generateReferenceElementMesh(); CHKERRQ(ierr);
@@ -104,7 +104,7 @@ struct MonitorPostProc: public FEMethod {
       sss << "out_thermal_" << step << ".h5m";
       ierr = postProc.writeFile(sss.str().c_str()); CHKERRQ(ierr);
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
 };

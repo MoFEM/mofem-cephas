@@ -57,7 +57,7 @@ namespace MoFEM {
 PetscErrorCode SnesRhs(SNES snes,Vec x,Vec f,void *ctx) {
   SnesCtx* snes_ctx = (SnesCtx*)ctx;
   // PetscValidHeaderSpecific(snes,SNES_CLASSID,1);
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   PetscLogEventBegin(snes_ctx->USER_EVENT_SnesRhs,0,0,0,0);
   ierr = VecGhostUpdateBegin(x,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(x,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -101,12 +101,12 @@ PetscErrorCode SnesRhs(SNES snes,Vec x,Vec f,void *ctx) {
   ierr = VecAssemblyBegin(f); CHKERRQ(ierr);
   ierr = VecAssemblyEnd(f); CHKERRQ(ierr);
   PetscLogEventEnd(snes_ctx->USER_EVENT_SnesRhs,0,0,0,0);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 PetscErrorCode SnesMat(SNES snes,Vec x,Mat A,Mat B,void *ctx) {
   SnesCtx* snes_ctx = (SnesCtx*)ctx;
   // PetscValidHeaderSpecific(snes,SNES_CLASSID,1);
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   PetscLogEventBegin(snes_ctx->USER_EVENT_SnesMat,0,0,0,0);
   if(snes_ctx->zeroPreCondMatrixB) {
     ierr = MatZeroEntries(B); CHKERRQ(ierr);
@@ -151,25 +151,25 @@ PetscErrorCode SnesMat(SNES snes,Vec x,Mat A,Mat B,void *ctx) {
   ierr = MatAssemblyBegin(B,snes_ctx->typeOfAssembly); CHKERRQ(ierr);
   ierr = MatAssemblyEnd(B,snes_ctx->typeOfAssembly); CHKERRQ(ierr);
   PetscLogEventEnd(snes_ctx->USER_EVENT_SnesMat,0,0,0,0);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode SNESMoFEMSetAssmblyType(SNES snes,MatAssemblyType type) {
   SnesCtx* snes_ctx;
   // PetscValidHeaderSpecific(snes,SNES_CLASSID,1);
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   ierr = SNESGetApplicationContext(snes,&snes_ctx); CHKERRQ(ierr);
   snes_ctx->typeOfAssembly = type;
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode SNESMoFEMSetBehavior(SNES snes,MoFEMTypes bh) {
   SnesCtx* snes_ctx;
   // PetscValidHeaderSpecific(snes,SNES_CLASSID,1);
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   ierr = SNESGetApplicationContext(snes,&snes_ctx); CHKERRQ(ierr);
   snes_ctx->bH = bh;
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 

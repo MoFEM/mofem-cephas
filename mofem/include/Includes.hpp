@@ -21,6 +21,9 @@
 
 //TETHEN
 #ifdef WITH_TETGEN
+  #ifdef PI
+    #undef PI
+  #endif //PI
   #include <tetgen.h>
   #undef REAL
 #endif //WITH_TETGEN

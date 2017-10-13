@@ -185,14 +185,14 @@ int main(int argc, char *argv[]) {
       int side,
       EntityType type,
       DataForcesAndSourcesCore::EntData &data) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       my_split << "NH1" << std::endl;
       my_split << "side: " << side << " type: " << type << std::endl;
       my_split << data << std::endl;
       my_split << std::setprecision(3) << getVolume() << std::endl;
       my_split << std::setprecision(3) << getCoords() << std::endl;
       my_split << std::setprecision(3) << getCoordsAtGaussPts() << std::endl;
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     PetscErrorCode doWork(
@@ -200,7 +200,7 @@ int main(int argc, char *argv[]) {
       EntityType row_type,EntityType col_type,
       DataForcesAndSourcesCore::EntData &row_data,
       DataForcesAndSourcesCore::EntData &col_data) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       my_split << "NH1NH1" << std::endl;
       my_split << "row side: " << row_side << " row_type: " << row_type << std::endl;
       my_split << row_data << std::endl;
@@ -251,7 +251,7 @@ int main(int argc, char *argv[]) {
         }
       }
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   };
@@ -267,14 +267,14 @@ int main(int argc, char *argv[]) {
       int side,
       EntityType type,
       DataForcesAndSourcesCore::EntData &data) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
-      if(type != MBENTITYSET) PetscFunctionReturn(0);
+      if(type != MBENTITYSET) MoFEMFunctionReturnHot(0);
 
       my_split << "NOFIELD" << std::endl;
       my_split << "side: " << side << " type: " << type << std::endl;
       my_split << data << std::endl;
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     PetscErrorCode doWork(
@@ -282,11 +282,11 @@ int main(int argc, char *argv[]) {
       EntityType row_type,EntityType col_type,
       DataForcesAndSourcesCore::EntData &row_data,
       DataForcesAndSourcesCore::EntData &col_data) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
       unSetSymm();
 
-      if(row_type != MBENTITYSET) PetscFunctionReturn(0);
+      if(row_type != MBENTITYSET) MoFEMFunctionReturnHot(0);
 
       my_split << "NOFILEDH1" << std::endl;
       my_split << "row side: " << row_side << " row_type: " << row_type << std::endl;
@@ -294,7 +294,7 @@ int main(int argc, char *argv[]) {
       my_split << "col side: " << col_side << " col_type: " << col_type << std::endl;
       my_split << col_data << std::endl;
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   };

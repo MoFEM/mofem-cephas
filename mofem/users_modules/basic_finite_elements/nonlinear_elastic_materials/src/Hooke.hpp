@@ -44,7 +44,7 @@ struct Hooke: public NonlinearElasticElement::FunctionsToCalculatePiolaKirchhoff
       const NonlinearElasticElement::BlockData block_data,
       boost::shared_ptr<const NumeredEntFiniteElement> fe_ptr
     ) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       //
       this->lambda = LAMBDA(block_data.E,block_data.PoissonRatio);
       this->mu = MU(block_data.E,block_data.PoissonRatio);
@@ -66,7 +66,7 @@ struct Hooke: public NonlinearElasticElement::FunctionsToCalculatePiolaKirchhoff
         this->P(dd,dd) += this->lambda*tR;
       }
       //std::cerr << ePs << " : " << this->P << std::endl << std::endl;
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     /** \brief calculate density of strain energy
@@ -78,7 +78,7 @@ struct Hooke: public NonlinearElasticElement::FunctionsToCalculatePiolaKirchhoff
       const NonlinearElasticElement::BlockData block_data,
       boost::shared_ptr<const NumeredEntFiniteElement> fe_ptr
     ) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       this->lambda = LAMBDA(block_data.E,block_data.PoissonRatio);
       this->mu = MU(block_data.E,block_data.PoissonRatio);
       ePs.resize(3,3);
@@ -98,7 +98,7 @@ struct Hooke: public NonlinearElasticElement::FunctionsToCalculatePiolaKirchhoff
         }
       }
       this->eNergy += 0.5*this->lambda*tR*tR;
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
 };

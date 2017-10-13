@@ -51,7 +51,7 @@ struct PrismInterface: public UnknownInterface {
     * \param mesh_bit_level add interface on bit level is bit_level = BitRefLevel.set() then add interface on all bit levels
     * \param recursive if true parent meshset is searched recursively
     */
-  virtual PetscErrorCode getSides(
+  PetscErrorCode getSides(
     const int msId,
     const CubitBCType cubit_bc_type,
     const BitRefLevel mesh_bit_level,
@@ -68,10 +68,34 @@ struct PrismInterface: public UnknownInterface {
    * After that simply iterate under all tets on one side which are adjacent to the face are found.
    * Side tets are stored in to children meshsets of the SIDESET meshset.
    */
-  virtual PetscErrorCode getSides(
+  PetscErrorCode getSides(
     const EntityHandle sideset,
     const BitRefLevel mesh_bit_level,
     const bool recursive,int verb = -1
+  );
+
+  /**
+   * \brief Find if tringle has three nodes on internal surface skin
+   *
+   * Internal surface skin is a set of edges in interia of the body on boundary
+   * of surface. This set of edges is called surface front. If surface face has three nodes on
+   * surface front, non of the face nodes is split and should be removed from surface
+   * if it is going to be split.
+   *
+   * @param  sideset        meshset with surface
+   * @param  mesh_bit_level bit ref level of the volume mesh
+   * @param  recursive      search in sub-meshsets
+   * @param  faces_with_three_nodes_on_front returned faces
+   * @param  verb           error code
+   *
+   * @return error code
+   */
+  PetscErrorCode findIfTringleHasThreeNodesOnInternalSurfaceSkin(
+    const EntityHandle sideset,
+    const BitRefLevel mesh_bit_level,
+    const bool recursive,
+    Range& faces_with_three_nodes_on_front,
+    int verb = -1
   );
 
   /**
@@ -98,7 +122,7 @@ struct PrismInterface: public UnknownInterface {
    * inteface element.
    *
    */
-  virtual PetscErrorCode splitSides(
+  PetscErrorCode splitSides(
     const EntityHandle meshset,const BitRefLevel &bit,
     const int msId,const CubitBCType cubit_bc_type,
     const bool add_iterfece_entities,const bool recursive = false,int verb = -1
@@ -109,7 +133,7 @@ struct PrismInterface: public UnknownInterface {
    *
    * The all new entities (prisms, tets) are added to refinement level given by bit
    */
-  virtual PetscErrorCode splitSides(
+  PetscErrorCode splitSides(
     const EntityHandle meshset,const BitRefLevel &bit,
     const EntityHandle sideset,const bool add_iterfece_entities,
     const bool recursive = false,int verb = -1
@@ -132,7 +156,7 @@ struct PrismInterface: public UnknownInterface {
    * not splitting faces. Inheriting those nodes will not split faces.
    *
    */
-  virtual PetscErrorCode splitSides(
+  PetscErrorCode splitSides(
     const EntityHandle meshset,const BitRefLevel &bit,
     const BitRefLevel &inheret_from_bit_level,const BitRefLevel &inheret_from_bit_level_mask,
     const EntityHandle sideset,const bool add_iterfece_entities,const bool recursive = false,int verb = -1

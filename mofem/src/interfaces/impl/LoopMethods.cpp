@@ -44,60 +44,60 @@ namespace MoFEM {
 
 //KSP
 PetscErrorCode KspMethod::setKspCtx(const KSPContext& ctx) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   ksp_ctx = ctx;
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 PetscErrorCode KspMethod::setKsp(KSP ksp_) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   ksp = ksp_;
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 PetscErrorCode KspMethod::copyKsp(const KspMethod &ksp) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   this->ksp_ctx = ksp.ksp_ctx;
   this->ksp = ksp.ksp;
   this->ksp_f = ksp.ksp_f;
   this->ksp_A = ksp.ksp_A;
   this->ksp_B = ksp.ksp_B;
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 //SNES
 PetscErrorCode SnesMethod::setSnesCtx(const SNESContext& ctx) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   snes_ctx = ctx;
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 PetscErrorCode SnesMethod::setSnes(SNES _snes) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   snes = _snes;
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 PetscErrorCode SnesMethod::copySnes(const SnesMethod& snes) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   this->snes_ctx = snes.snes_ctx;
   this->snes = snes.snes;
   this->snes_x = snes.snes_x;
   this->snes_f = snes.snes_f;
   this->snes_A = snes.snes_A;
   this->snes_B = snes.snes_B;
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 //TS
 PetscErrorCode TSMethod::setTsCtx(const TSContext& ctx) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   ts_ctx = ctx;
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 PetscErrorCode TSMethod::setTs(TS _ts) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   ts = _ts;
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 PetscErrorCode TSMethod::copyTs(const TSMethod &ts) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   this->ts_ctx = ts.ts_ctx;
   this->ts = ts.ts;
   this->ts_u = ts.ts_u;
@@ -108,7 +108,7 @@ PetscErrorCode TSMethod::copyTs(const TSMethod &ts) {
   this->ts_step = ts.ts_step;
   this->ts_a = ts.ts_a;
   this->ts_t = ts.ts_t;
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 //BasicMethod
@@ -133,7 +133,7 @@ operatorHook(NULL) {
 }
 
 PetscErrorCode BasicMethod::copyBasicMethod(const BasicMethod &basic) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   this->nInTheLoop = basic.nInTheLoop;
   this->loopSize = basic.loopSize;
@@ -149,11 +149,11 @@ PetscErrorCode BasicMethod::copyBasicMethod(const BasicMethod &basic) {
   this->finiteElementsEntitiesPtr = basic.finiteElementsEntitiesPtr;
   this->adjacenciesPtr = basic.adjacenciesPtr;
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode BasicMethod::preProcess() {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   if(preProcessHook) {
     ierr = preProcessHook(); CHKERRQ(ierr);
   } else {
@@ -162,10 +162,10 @@ PetscErrorCode BasicMethod::preProcess() {
       "should be implemented by user in derived class (preProcess)"
     );
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 PetscErrorCode BasicMethod::postProcess() {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   if(postProcessHook) {
     ierr = postProcessHook(); CHKERRQ(ierr);
   } else {
@@ -174,10 +174,10 @@ PetscErrorCode BasicMethod::postProcess() {
       "should be implemented by user in derived class (postProcess)"
     );
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 PetscErrorCode BasicMethod::operator()() {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   if(operatorHook) {
     ierr = operatorHook(); CHKERRQ(ierr);
   } else {
@@ -186,7 +186,7 @@ PetscErrorCode BasicMethod::operator()() {
       "should be implemented by user in derived class (operator)"
     );
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 //FEMethod

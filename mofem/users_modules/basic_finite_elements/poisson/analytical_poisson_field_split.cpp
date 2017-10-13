@@ -101,15 +101,15 @@ struct OpS: public FaceElementForcesAndSourcesCore::UserDataOperator {
     EntityType row_type,EntityType col_type,
     DataForcesAndSourcesCore::EntData &row_data,DataForcesAndSourcesCore::EntData &col_data
   ) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     // get number of dofs on row
     nbRows = row_data.getIndices().size();
     // if no dofs on row, exit that work, nothing to do here
-    if(!nbRows) PetscFunctionReturn(0);
+    if(!nbRows) MoFEMFunctionReturnHot(0);
     // get number of dofs on column
     nbCols = col_data.getIndices().size();
     // if no dofs on Columbia, exit nothing to do here
-    if(!nbCols) PetscFunctionReturn(0);
+    if(!nbCols) MoFEMFunctionReturnHot(0);
     // get number of integration points
     nbIntegrationPts = getGaussPts().size2();
     // chekk if entity block is on matrix diagonal
@@ -125,7 +125,7 @@ struct OpS: public FaceElementForcesAndSourcesCore::UserDataOperator {
     ierr = iNtegrate(row_data,col_data); CHKERRQ(ierr);
     // asseble local matrix
     ierr = aSsemble(row_data,col_data); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
 private:
@@ -151,7 +151,7 @@ private:
   inline PetscErrorCode iNtegrate(
     DataForcesAndSourcesCore::EntData &row_data,DataForcesAndSourcesCore::EntData &col_data
   ) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     // set size of local entity bock
     locMat.resize(nbRows,nbCols,false);
     // clear matrux
@@ -183,7 +183,7 @@ private:
       }
       ++t_w; // move to another integration weight
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   /**
@@ -195,7 +195,7 @@ private:
   inline PetscErrorCode aSsemble(
     DataForcesAndSourcesCore::EntData &row_data,DataForcesAndSourcesCore::EntData &col_data
   ) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     // get pointer to first global index on row
     const int* row_indices = &*row_data.getIndices().data().begin();
     // get pointer to first global index on column
@@ -213,7 +213,7 @@ private:
         B, nbCols,col_indices,nbRows,row_indices,&*locMat.data().begin(),ADD_VALUES
       ); CHKERRQ(ierr);
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
 };

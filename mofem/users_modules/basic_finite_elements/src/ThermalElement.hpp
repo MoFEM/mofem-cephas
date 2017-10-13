@@ -185,10 +185,10 @@ struct ThermalElement {
       */
     PetscErrorCode doWork(
       int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       try {
 
-        if(data.getFieldData().size()==0) PetscFunctionReturn(0);
+        if(data.getFieldData().size()==0) MoFEMFunctionReturnHot(0);
         int nb_dofs = data.getFieldData().size();
         int nb_gauss_pts = data.getN().size1();
 
@@ -212,7 +212,7 @@ struct ThermalElement {
         SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
       }
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   };

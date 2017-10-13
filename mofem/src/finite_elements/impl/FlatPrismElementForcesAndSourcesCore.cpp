@@ -73,9 +73,9 @@ extern "C" {
 namespace MoFEM {
 
 PetscErrorCode FlatPrismElementForcesAndSourcesCore::operator()() {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
-  if(numeredEntFiniteElementPtr->getEntType() != MBPRISM) PetscFunctionReturn(0);
+  if(numeredEntFiniteElementPtr->getEntType() != MBPRISM) MoFEMFunctionReturnHot(0);
 
   try {
 
@@ -179,7 +179,7 @@ PetscErrorCode FlatPrismElementForcesAndSourcesCore::operator()() {
         ); CHKERRQ(ierr);
       }
     }
-    if(nb_gauss_pts == 0) PetscFunctionReturn(0);
+    if(nb_gauss_pts == 0) MoFEMFunctionReturnHot(0);
 
     dataHdiv.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE) = dataH1.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE);
     dataHcurl.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE) = dataH1.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE);
@@ -465,7 +465,7 @@ PetscErrorCode FlatPrismElementForcesAndSourcesCore::operator()() {
     SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode OpCalculateInvJacForFlatPrism::doWork(
@@ -474,7 +474,7 @@ PetscErrorCode OpCalculateInvJacForFlatPrism::doWork(
   DataForcesAndSourcesCore::EntData &data
 ) {
   
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   try {
 
@@ -514,7 +514,7 @@ PetscErrorCode OpCalculateInvJacForFlatPrism::doWork(
   doTets = false;
   doPrisms = false;
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode OpSetInvJacH1ForFlatPrism::doWork(
@@ -522,7 +522,7 @@ PetscErrorCode OpSetInvJacH1ForFlatPrism::doWork(
   EntityType type,
   DataForcesAndSourcesCore::EntData &data
 ) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   // 
 
   for(int b = AINSWORTH_LEGENDRE_BASE; b!=USER_BASE; b++) {
@@ -531,7 +531,7 @@ PetscErrorCode OpSetInvJacH1ForFlatPrism::doWork(
 
     try {
       unsigned int nb_dofs = data.getN(base).size2();
-      if(nb_dofs==0) PetscFunctionReturn(0);
+      if(nb_dofs==0) MoFEMFunctionReturnHot(0);
       unsigned int nb_gauss_pts = data.getN(base).size1();
       diffNinvJac.resize(nb_gauss_pts,2*nb_dofs,false);
 
@@ -576,7 +576,7 @@ PetscErrorCode OpSetInvJacH1ForFlatPrism::doWork(
 
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 }

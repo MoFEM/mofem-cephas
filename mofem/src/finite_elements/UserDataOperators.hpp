@@ -66,14 +66,14 @@ template<class T, class A>
 PetscErrorCode OpCalculateScalarFieldValues_General<T,A>::doWork(
   int side,EntityType type,DataForcesAndSourcesCore::EntData &data
 ) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   SETERRQ1(
     PETSC_COMM_SELF,
     MOFEM_NOT_IMPLEMENTED,
     "Not implemented for T = %s",
     typeid(T).name() // boost::core::demangle(typeid(T).name()).c_str()
   );
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 
@@ -104,7 +104,7 @@ public OpCalculateScalarFieldValues_General<double,DoubleAllacator> {
   PetscErrorCode doWork(
     int side,EntityType type,DataForcesAndSourcesCore::EntData &data
   ) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     const int nb_dofs = data.getFieldData().size();
     // cerr <<  data.getFieldData() << endl;
 
@@ -116,7 +116,7 @@ public OpCalculateScalarFieldValues_General<double,DoubleAllacator> {
       dataPtr->resize(0,false);
     }
     if(!nb_dofs) {
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
     const int nb_gauss_pts = data.getN().size1();
     const int nb_base_functions = data.getN().size2();
@@ -139,7 +139,7 @@ public OpCalculateScalarFieldValues_General<double,DoubleAllacator> {
       for(;bb!=nb_base_functions;bb++) ++base_function;
       ++values_at_gauss_pts;
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
 };
@@ -182,7 +182,7 @@ template<int Tensor_Dim, class T, class L, class A>
 PetscErrorCode OpCalculateVectorFieldValues_General<Tensor_Dim,T,L,A>::doWork(
   int side,EntityType type,DataForcesAndSourcesCore::EntData &data
 ) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   SETERRQ2(
     PETSC_COMM_SELF,
     MOFEM_NOT_IMPLEMENTED,
@@ -190,7 +190,7 @@ PetscErrorCode OpCalculateVectorFieldValues_General<Tensor_Dim,T,L,A>::doWork(
     typeid(T).name(), // boost::core::demangle(typeid(T).name()),
     Tensor_Dim
   );
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 /** \brief Calculate field values (template specialization) for tensor field rank 1, i.e. vector field
@@ -227,17 +227,17 @@ template<int Tensor_Dim>
 PetscErrorCode OpCalculateVectorFieldValues_General<Tensor_Dim,double,ublas::row_major,DoubleAllacator >::doWork(
   int side,EntityType type,DataForcesAndSourcesCore::EntData &data
 ) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   const int nb_dofs = data.getFieldData().size();
   if(!dataPtr) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Data pointer not allocated");
   }
   if(!nb_dofs && type == this->zeroType) {
     dataPtr->resize(Tensor_Dim,0,false);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
   if(!nb_dofs) {
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
   const int nb_gauss_pts = data.getN().size1();
   const int nb_base_functions = data.getN().size2();
@@ -269,7 +269,7 @@ PetscErrorCode OpCalculateVectorFieldValues_General<Tensor_Dim,double,ublas::row
     for(;bb!=nb_base_functions;bb++) ++base_function;
     ++values_at_gauss_pts;
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 /** \brief Get values at integration pts for tensor filed rank 1, i.e. vector field
@@ -320,7 +320,7 @@ template<int Tensor_Dim0, int Tensor_Dim1, class T, class L, class A>
 PetscErrorCode OpCalculateTensor2FieldValues_General<Tensor_Dim0,Tensor_Dim1,T,L,A>::doWork(
   int side,EntityType type,DataForcesAndSourcesCore::EntData &data
 ) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   SETERRQ3(
     PETSC_COMM_SELF,
     MOFEM_NOT_IMPLEMENTED,
@@ -329,7 +329,7 @@ PetscErrorCode OpCalculateTensor2FieldValues_General<Tensor_Dim0,Tensor_Dim1,T,L
     Tensor_Dim0,
     Tensor_Dim1
   );
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 template<int Tensor_Dim0,int Tensor_Dim1>
@@ -362,9 +362,9 @@ Tensor_Dim0,Tensor_Dim1, double, ublas::row_major, DoubleAllacator
 >::doWork(
   int side,EntityType type,DataForcesAndSourcesCore::EntData &data
 ) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"Not implemented yet");
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 // GET GRADIENTS AT GAUSS POINTS
@@ -427,17 +427,17 @@ template<int Tensor_Dim>
 PetscErrorCode OpCalculateScalarFieldGradient_General<Tensor_Dim,double,ublas::row_major,DoubleAllacator >::doWork(
   int side,EntityType type,DataForcesAndSourcesCore::EntData &data
 ) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   const int nb_dofs = data.getFieldData().size();
   if(!this->dataPtr) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Data pointer not allocated");
   }
   if(!nb_dofs && type == this->zeroType) {
     this->dataPtr->resize(Tensor_Dim,0,false);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
   if(!nb_dofs) {
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
   const int nb_gauss_pts = data.getN().size1();
   const int nb_base_functions = data.getN().size2();
@@ -461,7 +461,7 @@ PetscErrorCode OpCalculateScalarFieldGradient_General<Tensor_Dim,double,ublas::r
     for(;bb!=nb_base_functions;bb++) ++diff_base_function;
     ++gradients_at_gauss_pts;
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 /** \brief Get field gradients at integration pts for scalar filed rank 0, i.e. vector field
@@ -540,14 +540,14 @@ Tensor_Dim0,Tensor_Dim1,double,ublas::row_major,DoubleAllacator
 >::doWork(
   int side,EntityType type,DataForcesAndSourcesCore::EntData &data
 ) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   const int nb_dofs = data.getFieldData().size();
   if(!nb_dofs && type == this->zeroType) {
     this->dataPtr->resize(Tensor_Dim0*Tensor_Dim1,0,false);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
   if(!nb_dofs) {
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
   const int nb_gauss_pts = data.getN().size1();
   const int nb_base_functions = data.getN().size2();
@@ -576,7 +576,7 @@ Tensor_Dim0,Tensor_Dim1,double,ublas::row_major,DoubleAllacator
     for(;bb!=nb_base_functions;bb++) ++diff_base_function;
     ++gradients_at_gauss_pts;
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 /** \brief Get field gradients at integration pts for scalar filed rank 0, i.e. vector field
@@ -637,7 +637,7 @@ template<int Tensor_Dim, class T, class L, class A>
 PetscErrorCode OpCalculateHdivVectorField_General<Tensor_Dim,T,L,A>::doWork(
   int side,EntityType type,DataForcesAndSourcesCore::EntData &data
 ) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   SETERRQ2(
     PETSC_COMM_SELF,
     MOFEM_NOT_IMPLEMENTED,
@@ -645,7 +645,7 @@ PetscErrorCode OpCalculateHdivVectorField_General<Tensor_Dim,T,L,A>::doWork(
     typeid(T).name(), // boost::core::demangle(typeid(T).name()),
     Tensor_Dim
   );
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 /** \brief Get vector field for H-div approximation
@@ -688,9 +688,9 @@ template<int Tensor_Dim>
 PetscErrorCode OpCalculateHdivVectorField_General<Tensor_Dim,double,ublas::row_major,DoubleAllacator>::doWork(
   int side,EntityType type,DataForcesAndSourcesCore::EntData &data
 ) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   const int nb_dofs = data.getFieldData().size();
-  if(!nb_dofs) PetscFunctionReturn(0);
+  if(!nb_dofs) MoFEMFunctionReturnHot(0);
   const int nb_base_functions = data.getHdivN().size2()/Tensor_Dim;
   const int nb_integration_points = data.getHdivN().size1();
   if(type==zeroType&&side==0) {
@@ -713,7 +713,7 @@ PetscErrorCode OpCalculateHdivVectorField_General<Tensor_Dim,double,ublas::row_m
     }
     ++t_data;
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 /** \brief Get vector field for H-div approximation

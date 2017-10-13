@@ -37,10 +37,10 @@ struct VolumeCalculation: public MoFEM::VolumeElementForcesAndSourcesCore::UserD
   PetscErrorCode doWork(
     int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
   ) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
 
     //do it only once, no need to repeat this for edges,faces or tets
-    if(row_type != MBVERTEX) PetscFunctionReturn(0);
+    if(row_type != MBVERTEX) MoFEMFunctionReturnHot(0);
 
     int nb_gauss_pts = row_data.getN().size1();
     for(int gg = 0;gg<nb_gauss_pts;gg++) {
@@ -54,7 +54,7 @@ struct VolumeCalculation: public MoFEM::VolumeElementForcesAndSourcesCore::UserD
 
     }
 
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
 };

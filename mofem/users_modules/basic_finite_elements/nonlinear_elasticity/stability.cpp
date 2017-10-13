@@ -47,7 +47,7 @@ struct MyMat_double: public NonlinearElasticElement::FunctionsToCalculatePiolaKi
     const NonlinearElasticElement::BlockData block_data,
     boost::shared_ptr<const NumeredEntFiniteElement> fe_ptr
   ) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
 
     try {
 
@@ -115,7 +115,7 @@ struct MyMat_double: public NonlinearElasticElement::FunctionsToCalculatePiolaKi
       SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
     }
 
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
 };
@@ -127,7 +127,7 @@ struct MyMat: public MyMat_double<TYPE> {
 
   virtual PetscErrorCode setUserActiveVariables(
     int &nb_active_variables) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
 
     try {
 
@@ -148,12 +148,12 @@ struct MyMat: public MyMat_double<TYPE> {
       SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
     }
 
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   virtual PetscErrorCode setUserActiveVariables(
     VectorDouble &active_varibles) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
 
     try {
 
@@ -172,7 +172,7 @@ struct MyMat: public MyMat_double<TYPE> {
       SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
     }
 
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
 

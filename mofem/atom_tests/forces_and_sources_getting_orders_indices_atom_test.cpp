@@ -159,12 +159,12 @@ int main(int argc, char *argv[]) {
       derived_data(data) {};
 
     PetscErrorCode preProcess() {
-      PetscFunctionBegin;
-      PetscFunctionReturn(0);
+      MoFEMFunctionBeginHot;
+      MoFEMFunctionReturnHot(0);
     }
 
     PetscErrorCode operator()() {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
       my_split << "\n\nNEXT ELEM\n\n";
 
@@ -218,15 +218,15 @@ int main(int argc, char *argv[]) {
       my_split << "FIELD2:\n";
       my_split << derived_data << std::endl;
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     PetscErrorCode postProcess() {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
       my_split.close();
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   };

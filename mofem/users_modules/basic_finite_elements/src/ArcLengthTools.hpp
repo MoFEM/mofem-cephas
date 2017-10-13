@@ -253,6 +253,7 @@ PetscErrorCode ArcLengthMatMultShellOp(Mat A,Vec x,Vec f);
  */
 struct PCArcLengthCtx {
 
+  KSP kSP;
   PC pC;
   Mat shellAij,Aij;
 

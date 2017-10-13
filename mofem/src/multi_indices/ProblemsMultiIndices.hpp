@@ -35,7 +35,7 @@ struct ComposedProblemsData {
   std::vector<IS> colIs;
 
   inline PetscErrorCode getRowIs(IS *is,const unsigned int pp) const {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     PetscObjectReference((PetscObject)rowIs[pp]);
     if(pp<=rowIs.size()) {
       SETERRQ1(
@@ -44,11 +44,11 @@ struct ComposedProblemsData {
       );
     }
     *is = rowIs[pp];
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   inline PetscErrorCode getColIs(IS *is,const unsigned int pp) const {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     PetscObjectReference((PetscObject)colIs[pp]);
     if(pp<=colIs.size()) {
       SETERRQ1(
@@ -57,7 +57,7 @@ struct ComposedProblemsData {
       );
     }
     *is = colIs[pp];
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   virtual ~ComposedProblemsData() {
@@ -139,10 +139,10 @@ struct Problem {
      * @return    error code
      */
     inline PetscErrorCode getRowIs(IS *is) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       PetscObjectReference((PetscObject)rowIs);
       *is = rowIs;
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     /**
@@ -151,10 +151,10 @@ struct Problem {
      * @return    error code
      */
     inline PetscErrorCode getColIs(IS *is) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       PetscObjectReference((PetscObject)colIs);
       *is = colIs;
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     };
 
     /**
@@ -163,10 +163,10 @@ struct Problem {
      * @return    error code
      */
     inline PetscErrorCode getRowMap(AO *ao) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       PetscObjectReference((PetscObject)rowMap);
       *ao = rowMap;
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     /**
@@ -175,10 +175,10 @@ struct Problem {
      * @return    error code
      */
     inline PetscErrorCode getColMap(AO *ao) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       PetscObjectReference((PetscObject)colMap);
       *ao = colMap;
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     SubProblemData():
@@ -770,6 +770,24 @@ struct ProblemZeroNbColsChange {
   */
 struct ProblemClearNumeredFiniteElementsChange {
   void operator()(Problem &e);
+};
+
+/**
+ * \brief Clear sub-problem data structure
+ */
+struct ProblemClearSubProblemData {
+  void operator()(Problem &e) {
+    e.subProblemData.reset();
+  }
+};
+
+/**
+ * \brief Clear composed problem data structure
+ */
+struct ProblemClearComposedProblemData {
+  void operator()(Problem &e) {
+    e.composedProblemsData.reset();
+  }
 };
 
 }

@@ -79,18 +79,18 @@ extern "C" {
 namespace MoFEM {
 
   PetscErrorCode MedInterface::queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     *iface = NULL;
     if(uuid == IDD_MOFEMMedInterface) {
       *iface = dynamic_cast<MedInterface*>(this);
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
     if(uuid == IDD_MOFEMUnknown) {
       *iface = dynamic_cast<UnknownInterface*>(this);
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown interface");
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   MedInterface::MedInterface(const MoFEM::Core& core):
@@ -101,7 +101,7 @@ namespace MoFEM {
     MoFEM::Interface &m_field = cOre;
     
     char mesh_file_name[255];
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     ierr = PetscOptionsBegin(
       m_field.get_comm(),"","MED Interface","none"
     ); CHKERRQ(ierr);
@@ -115,12 +115,12 @@ namespace MoFEM {
     } else {
       medFileName = std::string("mesh.med");
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode MedInterface::medGetFieldNames(const string &file,int verb) {
     MoFEM::Interface &m_field = cOre;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     med_idt fid = MEDfileOpen(file.c_str(), MED_ACC_RDONLY);
     if(fid < 0) {
       SETERRQ1(m_field.get_comm(),MOFEM_OPERATION_UNSUCCESSFUL,"Unable to open file '%s'",file.c_str());
@@ -169,23 +169,23 @@ namespace MoFEM {
     if(MEDfileClose(fid) < 0) {
       SETERRQ1(m_field.get_comm(),MOFEM_OPERATION_UNSUCCESSFUL,"Unable to close file '%s'",file.c_str());
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode MedInterface::medGetFieldNames(int verb) {
     
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     if(medFileName.empty()) {
       ierr = getFileNameFromCommandLine(verb); CHKERRQ(ierr);
     }
     ierr = medGetFieldNames(medFileName,verb); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
 
   PetscErrorCode MedInterface::readMed(const string &file,int verb) {
     MoFEM::Interface &m_field = cOre;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
 
     med_idt fid = MEDfileOpen(file.c_str(), MED_ACC_RDONLY);
     if(fid < 0) {
@@ -243,7 +243,7 @@ namespace MoFEM {
       SETERRQ1(m_field.get_comm(),MOFEM_OPERATION_UNSUCCESSFUL,"Unable to close file '%s'",file.c_str());
     }
 
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   static med_geometrie_element moab2med_element_type(const EntityType type) {
@@ -268,7 +268,7 @@ namespace MoFEM {
   ) {
     
     MoFEM::Interface &m_field = cOre;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
 
     med_idt fid = MEDfileOpen(file.c_str(), MED_ACC_RDONLY);
     if(fid < 0) {
@@ -504,7 +504,7 @@ namespace MoFEM {
       SETERRQ1(m_field.get_comm(),MOFEM_OPERATION_UNSUCCESSFUL,"Unable to close file '%s'",file.c_str());
     }
 
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode MedInterface::readFamily(
@@ -516,7 +516,7 @@ namespace MoFEM {
   ) {
     //
     MoFEM::Interface &m_field = cOre;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
 
     med_idt fid = MEDfileOpen(file.c_str(),MED_ACC_RDONLY);
     if(fid < 0) {
@@ -593,7 +593,7 @@ namespace MoFEM {
       SETERRQ1(m_field.get_comm(),MOFEM_OPERATION_UNSUCCESSFUL,"Unable to close file '%s'",file.c_str());
     }
 
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode MedInterface::makeBlockSets(
@@ -603,7 +603,7 @@ namespace MoFEM {
     
     
     MoFEM::Interface &m_field = cOre;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     MeshsetsManager *meshsets_manager_ptr;
     ierr = m_field.query_interface(meshsets_manager_ptr); CHKERRQ(ierr);
 
@@ -643,24 +643,24 @@ namespace MoFEM {
       }
     // }
 
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode MedInterface::readMed(int verb) {
     
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     if(medFileName.empty()) {
       ierr = getFileNameFromCommandLine(verb); CHKERRQ(ierr);
     }
     ierr = readMed(medFileName,verb); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode MedInterface::writeMed(const string &file,int verb) {
     MoFEM::Interface &m_field = cOre;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     SETERRQ(m_field.get_comm(),MOFEM_NOT_IMPLEMENTED,"Not yet implemented");
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode MedInterface::readFields(
@@ -673,7 +673,7 @@ namespace MoFEM {
     
     
     MoFEM::Interface &m_field = cOre;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     med_idt fid = MEDfileOpen((char*)file_name.c_str(), MED_LECTURE);
     if(fid < 0){
       SETERRQ1(m_field.get_comm(),MOFEM_DATA_INCONSISTENCY,"Unable to open file '%s'", file_name.c_str());
@@ -895,7 +895,7 @@ namespace MoFEM {
 
     }
 
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   std::ostream& operator<<(std::ostream& os,const MedInterface::FieldData& field_data) {

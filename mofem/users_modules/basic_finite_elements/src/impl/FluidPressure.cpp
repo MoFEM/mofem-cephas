@@ -23,7 +23,7 @@
 PetscErrorCode FluidPressure::addNeumannFluidPressureBCElements(
   const std::string field_name,const std::string mesh_nodals_positions 
 ) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   ierr = mField.add_finite_element("FLUID_PRESSURE_FE",MF_ZERO); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_row("FLUID_PRESSURE_FE",field_name); CHKERRQ(ierr);
@@ -74,14 +74,14 @@ PetscErrorCode FluidPressure::addNeumannFluidPressureBCElements(
 
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 
 PetscErrorCode FluidPressure::setNeumannFluidPressureFiniteElementOperators(
   string field_name,Vec F,bool allow_negative_pressure,bool ho_geometry
 ) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   std::map<MeshSetId,FluidData>::iterator sit = setOfFluids.begin();
   for(;sit!=setOfFluids.end();sit++) {
     //add finite element
@@ -89,7 +89,7 @@ PetscErrorCode FluidPressure::setNeumannFluidPressureFiniteElementOperators(
       field_name,F,sit->second,methodsOp,allow_negative_pressure,ho_geometry
     ));
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 std::ostream& operator<<(std::ostream& os,const FluidPressure::FluidData &e) {

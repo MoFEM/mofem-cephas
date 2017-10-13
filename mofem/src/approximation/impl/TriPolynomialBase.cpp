@@ -55,21 +55,21 @@ PetscErrorCode TriPolynomialBase::queryInterface(
   const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface
 ) {
   
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   *iface = NULL;
   if(uuid == IDD_TET_BASE_FUNCTION) {
     *iface = static_cast<TriPolynomialBase*>(this);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   } else {
     SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"wrong interference");
   }
   ierr = BaseFunction::queryInterface(uuid,iface); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode TriPolynomialBase::getValueH1(MatrixDouble &pts) {
   
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   DataForcesAndSourcesCore& data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
@@ -130,14 +130,14 @@ PetscErrorCode TriPolynomialBase::getValueH1(MatrixDouble &pts) {
     ); CHKERRQ(ierr);
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode TriPolynomialBase::getValueL2(
   MatrixDouble &pts
 ) {
   
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   DataForcesAndSourcesCore& data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
@@ -164,14 +164,14 @@ PetscErrorCode TriPolynomialBase::getValueL2(
     base_polynomials
   ); CHKERRQ(ierr);
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode TriPolynomialBase::getValueHdivAinsworthBase(
   MatrixDouble &pts
 ) {
   
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   DataForcesAndSourcesCore& data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
@@ -232,14 +232,14 @@ PetscErrorCode TriPolynomialBase::getValueHdivAinsworthBase(
     }
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode TriPolynomialBase::getValueHdivDemkowiczBase(
   MatrixDouble &pts
 ) {
   
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   DataForcesAndSourcesCore& data = cTx->dAta;
   // set shape functions into data structure
@@ -262,7 +262,7 @@ PetscErrorCode TriPolynomialBase::getValueHdivDemkowiczBase(
     nb_gauss_pts,3*NBFACETRI_DEMKOWICZ_HDIV(order),false
   );
   double *phi_f = &*data.dataOnEntities[MBTRI][0].getHdivN(base).data().begin();
-  if(NBFACETRI_DEMKOWICZ_HDIV(order)==0) PetscFunctionReturn(0);
+  if(NBFACETRI_DEMKOWICZ_HDIV(order)==0) MoFEMFunctionReturnHot(0);
   int face_nodes[3] = { 0,1,2 };
   ierr = Hdiv_Demkowicz_Face_MBTET_ON_FACE(
     face_nodes,order,
@@ -271,13 +271,13 @@ PetscErrorCode TriPolynomialBase::getValueHdivDemkowiczBase(
     phi_f,NULL,nb_gauss_pts,3
   ); CHKERRQ(ierr);
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode TriPolynomialBase::getValueHdiv(
   MatrixDouble &pts
 ) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   switch (cTx->bAse) {
     case AINSWORTH_LEGENDRE_BASE:
@@ -289,14 +289,14 @@ PetscErrorCode TriPolynomialBase::getValueHdiv(
     SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"Not implemented");
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode TriPolynomialBase::getValueHCurl(
   MatrixDouble &pts
 ) {
   
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   DataForcesAndSourcesCore& data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
@@ -378,7 +378,7 @@ PetscErrorCode TriPolynomialBase::getValueHCurl(
     data.dataOnEntities[MBTRI][0].getDiffN(base).resize(nb_gauss_pts,0,false);
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode TriPolynomialBase::getValue(
@@ -386,7 +386,7 @@ PetscErrorCode TriPolynomialBase::getValue(
   boost::shared_ptr<BaseFunctionCtx> ctx_ptr
 ) {
   
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   MoFEM::UnknownInterface *iface;
   ierr = ctx_ptr->queryInterface(IDD_TRI_BASE_FUNCTION,&iface); CHKERRQ(ierr);
@@ -394,7 +394,7 @@ PetscErrorCode TriPolynomialBase::getValue(
 
   int nb_gauss_pts = pts.size2();
   if(!nb_gauss_pts) {
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   if(pts.size1()<2) {
@@ -470,5 +470,5 @@ PetscErrorCode TriPolynomialBase::getValue(
     SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"Not yet implemented");
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }

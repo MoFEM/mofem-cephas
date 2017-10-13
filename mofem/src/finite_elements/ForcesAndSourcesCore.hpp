@@ -334,9 +334,9 @@ struct ForcesAndSourcesCore: public FEMethod {
   /** \brief It will be removed in the future use other variant
     */
   virtual PetscErrorCode setGaussPts(int order) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"sorry, not implemented");
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   /** \brief set user specific integration rule
@@ -363,9 +363,9 @@ struct ForcesAndSourcesCore: public FEMethod {
     */
   virtual PetscErrorCode setGaussPts(int order_row,int order_col,int order_data) {
 
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     ierr = setGaussPts(order_data); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   /** \brief Data operator to do calculations at integration points.
@@ -512,9 +512,9 @@ struct ForcesAndSourcesCore: public FEMethod {
     ) const;
 
     virtual PetscErrorCode setPtrFE(ForcesAndSourcesCore *ptr) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       ptrFE = ptr;
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     /** \brief Return raw pointer to Finite Element Method object
@@ -566,25 +566,25 @@ struct ForcesAndSourcesCore: public FEMethod {
   boost::ptr_vector<UserDataOperator>& getOpPtrVector() { return opPtrVector; }
 
   virtual PetscErrorCode preProcess() {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     if(preProcessHook) {
       ierr = preProcessHook(); CHKERRQ(ierr);
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
   virtual PetscErrorCode operator()() {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     if(operatorHook) {
       ierr = operatorHook(); CHKERRQ(ierr);
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
   virtual PetscErrorCode postProcess() {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     if(postProcessHook) {
       ierr = postProcessHook(); CHKERRQ(ierr);
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
 };

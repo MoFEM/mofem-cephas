@@ -48,8 +48,8 @@ struct Projection10NodeCoordsOnField: public EntMethod {
   ErrorCode rval;
 
   PetscErrorCode preProcess() {
-    PetscFunctionBegin;
-    PetscFunctionReturn(0);
+    MoFEMFunctionBeginHot;
+    MoFEMFunctionReturnHot(0);
   }
 
   VectorDouble coords;
@@ -59,11 +59,11 @@ struct Projection10NodeCoordsOnField: public EntMethod {
   ublas::vector<double,ublas::bounded_array<double,3> > dOf;
 
   PetscErrorCode operator()() {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     if(dofPtr == NULL) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
     }
-    if(dofPtr->getName() != fieldName) PetscFunctionReturn(0);
+    if(dofPtr->getName() != fieldName) MoFEMFunctionReturnHot(0);
     if(dofPtr->getEntType() == MBVERTEX) {
       EntityHandle node = dofPtr->getEnt();
       coords.resize(3);
@@ -72,13 +72,13 @@ struct Projection10NodeCoordsOnField: public EntMethod {
       if(vErbose>0) {
         PetscPrintf(mField.get_comm(),"val = %6.7e\n",dofPtr->getFieldData());
       }
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
     if(dofPtr->getEntType() != MBEDGE) {
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
     if(dofPtr->getEntDofIdx() != dofPtr->getDofCoeffIdx()) {
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
     EntityHandle edge = dofPtr->getEnt();
     if(mField.get_moab().type_from_handle(edge)!=MBEDGE) {
@@ -123,12 +123,12 @@ struct Projection10NodeCoordsOnField: public EntMethod {
       SETERRQ(PETSC_COMM_SELF,1,"this method works only fields which are rank 3");
     }
     dofPtr->getFieldData() = dOf[dofPtr->getDofCoeffIdx()];
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode postProcess() {
-    PetscFunctionBegin;
-    PetscFunctionReturn(0);
+    MoFEMFunctionBeginHot;
+    MoFEMFunctionReturnHot(0);
   }
 
 };
@@ -157,7 +157,7 @@ struct ProjectionFieldOn10NodeTet: public Projection10NodeCoordsOnField {
   VectorDouble K;
 
   PetscErrorCode preProcess() {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     if(!onCoords) {
       if(onTag == "NoNE") {
         SETERRQ(PETSC_COMM_SELF,1,"tag name not specified");
@@ -179,12 +179,12 @@ struct ProjectionFieldOn10NodeTet: public Projection10NodeCoordsOnField {
     K.resize(10);
     ierr = LobattoKernel_polynomials(9,0.,NULL,&*K.data().begin(),NULL,3); CHKERRQ(ierr);
 
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode operator()() {
-    PetscFunctionBegin;
-    if(dofPtr->getName() != fieldName) PetscFunctionReturn(0);
+    MoFEMFunctionBeginHot;
+    if(dofPtr->getName() != fieldName) MoFEMFunctionReturnHot(0);
     if(setNodes) {
       if(dofPtr->getEntType() == MBVERTEX) {
         EntityHandle node = dofPtr->getEnt();
@@ -209,10 +209,10 @@ struct ProjectionFieldOn10NodeTet: public Projection10NodeCoordsOnField {
           tag_value[dofPtr->getDofCoeffIdx()] = dofPtr->getFieldData();
         }
       }
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
     if(dofPtr->getEntType() != MBEDGE) {
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
     EntityHandle edge = dofPtr->getEnt();
     if(mField.get_moab().type_from_handle(edge)!=MBEDGE) {
@@ -226,7 +226,7 @@ struct ProjectionFieldOn10NodeTet: public Projection10NodeCoordsOnField {
       SETERRQ(PETSC_COMM_SELF,1,"this method works only 4 node and 10 node tets");
     }
     if(num_nodes == 2) {
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     if(dofPtr->getDofOrder()>=maxApproximationOrder) {
@@ -271,7 +271,7 @@ struct ProjectionFieldOn10NodeTet: public Projection10NodeCoordsOnField {
       }
       tag_value[2][dofPtr->getDofCoeffIdx()] += approx_val;
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
 

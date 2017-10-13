@@ -152,14 +152,14 @@ int main(int argc, char *argv[]) {
       int side,
       EntityType type,
       DataForcesAndSourcesCore::EntData &data) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
       my_split << "NH1" << std::endl;
       my_split << "side: " << side << " type: " << type << std::endl;
       my_split << "data: " << data << std::endl;
       my_split << "coords: " << std::setprecision(3) << getCoords() << std::endl;
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     PetscErrorCode doWork(
@@ -167,14 +167,14 @@ int main(int argc, char *argv[]) {
       EntityType row_type,EntityType col_type,
       DataForcesAndSourcesCore::EntData &row_data,
       DataForcesAndSourcesCore::EntData &col_data) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       my_split << "ROW NH1NH1" << std::endl;
       my_split << "row side: " << row_side << " row_type: " << row_type << std::endl;
       my_split << row_data << std::endl;
       my_split << "COL NH1NH1" << std::endl;
       my_split << "col side: " << col_side << " col_type: " << col_type << std::endl;
       my_split << col_data << std::endl;
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   };

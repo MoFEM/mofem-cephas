@@ -77,7 +77,7 @@ struct EdgeForce {
 
     /// Add element taking information from NODESET
     static PetscErrorCode addElement(MoFEM::Interface &m_field,const std::string field_name,Range *intersect_ptr = NULL) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       
       
       ierr = m_field.add_finite_element("FORCE_FE",MF_ZERO); CHKERRQ(ierr);
@@ -100,7 +100,7 @@ struct EdgeForce {
         }
         ierr = m_field.add_ents_to_finite_element_by_type(edges,MBEDGE,"FORCE_FE"); CHKERRQ(ierr);
       }
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     /// Set integration point operators
@@ -109,14 +109,14 @@ struct EdgeForce {
       boost::ptr_map<std::string,EdgeForce> &edge_forces,
       Vec F,const std::string field_name
     ) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       
       string fe_name = "FORCE_FE";
       edge_forces.insert(fe_name,new EdgeForce(m_field));
       for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,NODESET|FORCESET,it)) {
         ierr = edge_forces.at(fe_name).addForce(field_name,F,it->getMeshsetId());  CHKERRQ(ierr);
       }
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   };

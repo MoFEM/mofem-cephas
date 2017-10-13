@@ -78,7 +78,7 @@ PetscErrorCode FaceElementForcesAndSourcesCore::UserDataOperator::loopSideVolume
   const string &fe_name,VolumeElementForcesAndSourcesCoreOnSide &method
 ) {
   
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   const EntityHandle ent = getNumeredEntFiniteElementPtr()->getEnt();
   const Problem *problem_ptr = getFEMethod()->problemPtr;
@@ -138,11 +138,11 @@ PetscErrorCode FaceElementForcesAndSourcesCore::UserDataOperator::loopSideVolume
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,ss.str().c_str());
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode FaceElementForcesAndSourcesCore::calculateAreaAndNormal() {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   EntityHandle ent = numeredEntFiniteElementPtr->getEnt();
   rval = mField.get_moab().get_connectivity(ent,conn,num_nodes,true); CHKERRQ_MOAB(rval);
   coords.resize(num_nodes*3,false);
@@ -160,11 +160,11 @@ PetscErrorCode FaceElementForcesAndSourcesCore::calculateAreaAndNormal() {
     tangentOne[dd] = cblas_ddot(3,&diff_n[0],2,&coords[dd],3);
     tangentTwo[dd] = cblas_ddot(3,&diff_n[1],2,&coords[dd],3);
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode FaceElementForcesAndSourcesCore::setIntegartionPts() {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   // Set integration points
   int order_data = getMaxDataOrder();
   int order_row = getMaxRowOrder();
@@ -218,11 +218,11 @@ PetscErrorCode FaceElementForcesAndSourcesCore::setIntegartionPts() {
       ); CHKERRQ(ierr);
     }
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode FaceElementForcesAndSourcesCore::getSpaceBaseAndOrderOnElement() {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   // Get spaces order/base and sense of entities.
 
   ierr = getSpacesAndBaseOnEntities(dataH1); CHKERRQ(ierr);
@@ -263,11 +263,11 @@ PetscErrorCode FaceElementForcesAndSourcesCore::getSpaceBaseAndOrderOnElement() 
     dataHcurl.spacesOnEntities[MBTRI].set(L2);
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode FaceElementForcesAndSourcesCore::calculateCoordinatesAtGaussPts() {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   double *shape_functions = &*dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin();
   coordsAtGaussPts.resize(nbGaussPts,3,false);
   for(int gg = 0;gg<nbGaussPts;gg++) {
@@ -275,11 +275,11 @@ PetscErrorCode FaceElementForcesAndSourcesCore::calculateCoordinatesAtGaussPts()
       coordsAtGaussPts(gg,dd) = cblas_ddot(3,&shape_functions[3*gg],1,&coords[dd],3);
     }
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode FaceElementForcesAndSourcesCore::calculateBaseFunctionsOnElement() {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   // Calculate base base functions for faces.
   try {
 
@@ -363,11 +363,11 @@ PetscErrorCode FaceElementForcesAndSourcesCore::calculateBaseFunctionsOnElement(
     ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
     SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode FaceElementForcesAndSourcesCore::calculateHoNormal() {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   // Check if field for high-order geometry is set and if it is set calculate
   // higher-order normals and face tangent vectors.
   if(
@@ -401,21 +401,21 @@ PetscErrorCode FaceElementForcesAndSourcesCore::calculateHoNormal() {
     tangentOneAtGaussPt.resize(0,0,false);
     tangentTwoAtGaussPt.resize(0,0,false);
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 
 PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
-  if(numeredEntFiniteElementPtr->getEntType() != MBTRI) PetscFunctionReturn(0);
+  if(numeredEntFiniteElementPtr->getEntType() != MBTRI) MoFEMFunctionReturnHot(0);
 
   // Calculate normal and tangent vectors for face geometry given by 3 nodes.
   ierr = calculateAreaAndNormal(); CHKERRQ(ierr);
   ierr = getSpaceBaseAndOrderOnElement(); CHKERRQ(ierr);
 
   ierr = setIntegartionPts(); CHKERRQ(ierr);
-  if(nbGaussPts == 0) PetscFunctionReturn(0);
+  if(nbGaussPts == 0) MoFEMFunctionReturnHot(0);
 
   dataH1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE).resize(3,2,false);
   ierr = ShapeDiffMBTRI(
@@ -670,7 +670,7 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
 
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode OpCalculateInvJacForFace::doWork(
@@ -679,7 +679,7 @@ PetscErrorCode OpCalculateInvJacForFace::doWork(
   DataForcesAndSourcesCore::EntData &data
 ) {
   
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   if(getNumeredEntFiniteElementPtr()->getEntType()!=MBTRI) {
     SETERRQ(
@@ -725,7 +725,7 @@ PetscErrorCode OpCalculateInvJacForFace::doWork(
   doTets= false;
   doPrisms = false;
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode OpSetInvJacH1ForFace::doWork(
@@ -733,7 +733,7 @@ PetscErrorCode OpSetInvJacH1ForFace::doWork(
   EntityType type,
   DataForcesAndSourcesCore::EntData &data
 ) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   // 
 
   if(
@@ -755,7 +755,7 @@ PetscErrorCode OpSetInvJacH1ForFace::doWork(
     try {
 
       unsigned int nb_dofs = data.getN(base).size2();
-      if(nb_dofs==0) PetscFunctionReturn(0);
+      if(nb_dofs==0) MoFEMFunctionReturnHot(0);
       unsigned int nb_gauss_pts = data.getN(base).size1();
       diffNinvJac.resize(nb_gauss_pts,2*nb_dofs,false);
 
@@ -803,15 +803,15 @@ PetscErrorCode OpSetInvJacH1ForFace::doWork(
 
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode OpSetInvJacHcurlFace::doWork(
   int side,EntityType type,DataForcesAndSourcesCore::EntData &data
 ) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
-  if(type != MBEDGE && type != MBTRI) PetscFunctionReturn(0);
+  if(type != MBEDGE && type != MBTRI) MoFEMFunctionReturnHot(0);
 
   if(
     getNumeredEntFiniteElementPtr()->getEntType()!=MBTRI
@@ -877,7 +877,7 @@ PetscErrorCode OpSetInvJacHcurlFace::doWork(
 
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 }

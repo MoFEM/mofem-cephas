@@ -62,7 +62,7 @@ static inline double determinant(T &t) {
 
 template<class T>
 static double volume_length_quality(T *coords) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   T lrms = 0;
   for(int dd = 0;dd!=3;dd++) {
     lrms +=
@@ -92,18 +92,33 @@ static double volume_length_quality(T *coords) {
 }
 
 PetscErrorCode NodeMergerInterface::queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   *iface = NULL;
   if(uuid == IDD_MOFEMNodeMerger) {
     *iface = dynamic_cast<NodeMergerInterface*>(this);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
   if(uuid == IDD_MOFEMUnknown) {
     *iface = dynamic_cast<UnknownInterface*>(this);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
   SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown interface");
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
+}
+
+PetscErrorCode NodeMergerInterface::edgeMinQuality(
+  EntityHandle edge,const Range *tets_ptr,double &min_quality,Tag th
+) {
+  MoFEM::Interface& m_field = cOre;
+  MoFEMFunctionBeginHot;
+  Range adj_edge_tets;
+  rval = m_field.get_moab().get_adjacencies(&edge,1,3,false,adj_edge_tets); CHKERRQ_MOAB(rval);
+  if(tets_ptr!=NULL) {
+    Range adj = intersect(*tets_ptr,adj_edge_tets);
+    adj_edge_tets.swap(adj);
+  }
+  ierr = minQuality(adj_edge_tets,0,0,NULL,min_quality,th); CHKERRQ(ierr);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode NodeMergerInterface::mergeNodes(
@@ -113,13 +128,11 @@ PetscErrorCode NodeMergerInterface::mergeNodes(
   Range *tets_ptr,
   const bool only_if_improve_quality,
   const double move,
-  const int line_search
+  const int line_search,
+  Tag th,int verb
 ) {
   MoFEM::Interface& m_field = cOre;
-
-
-  PetscFunctionBegin;
-
+  MoFEMFunctionBeginHot;
 
   // Get adges adjacent to father and mother, i.e. mother is merged to father.
   Range father_edges;
@@ -157,7 +170,7 @@ PetscErrorCode NodeMergerInterface::mergeNodes(
     }
     out_tets = seed_tets;
     successMerge = false;
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   // Common edge tets, that tests will be squashed
@@ -165,6 +178,7 @@ PetscErrorCode NodeMergerInterface::mergeNodes(
   rval = m_field.get_moab().get_adjacencies(common_edge,3,true,edge_tets); CHKERRQ_MOAB(rval);
   // Mother tets, has only one mother vertex and no father vertex.
   mother_tets = subtract(mother_tets,edge_tets);
+  father_tets = subtract(father_tets,edge_tets);
 
   // Intersect with ptr_tets (usually associated with some bit level)
   if(tets_ptr!=NULL) {
@@ -178,7 +192,11 @@ PetscErrorCode NodeMergerInterface::mergeNodes(
   if(move>0) {
     EntityHandle conn[] = {father,mother};
     double coords[6];
-    rval = m_field.get_moab().get_coords(conn,2,coords); CHKERRQ_MOAB(rval);
+    if(th==NULL) {
+      rval = m_field.get_moab().get_coords(conn,2,coords); CHKERRQ_MOAB(rval);
+    } else {
+      rval = m_field.get_moab().tag_get_data(th,conn,2,coords); CHKERRQ_MOAB(rval);
+    }
     for(int nn = 0;nn!=3;nn++) {
       coords_move[nn] = coords[nn] + move*(coords[nn+3]-coords[nn]);
     }
@@ -187,37 +205,43 @@ PetscErrorCode NodeMergerInterface::mergeNodes(
   if(line_search > 0) {
     Range check_tests = unite(father_tets,mother_tets);
     ierr = lineSearch(
-      check_tests,father,mother,line_search,coords_move
+      check_tests,father,mother,line_search,coords_move,th
     ); CHKERRQ(ierr);
   }
 
   if(only_if_improve_quality) {
     //double coords[12];
     Range check_tests;
-    if(move>0 || line_search) {
+    // if(move>0 || line_search) {
       check_tests = unite(father_tets,mother_tets);
-    } else {
-      check_tests = mother_tets;
-    }
+    // } else {
+    //   check_tests = mother_tets;
+    // }
     double min_quality0 = 1;
-    ierr = minQuality(check_tests,0,0,NULL,min_quality0); CHKERRQ(ierr);
-    ierr = minQuality(edge_tets,0,0,NULL,min_quality0); CHKERRQ(ierr);
+    ierr = minQuality(check_tests,0,0,NULL,min_quality0,th); CHKERRQ(ierr);
+    ierr = minQuality(edge_tets,0,0,NULL,min_quality0,th); CHKERRQ(ierr);
     double min_quality = 1;
     ierr = minQuality(
       check_tests,father,mother,
       ((move>0)||line_search)?coords_move:NULL,
-      min_quality
+      min_quality,th
     ); CHKERRQ(ierr);
-    if(min_quality<min_quality0) {
-      Range seed_tets;
-      if(tets_ptr!=NULL) {
-        seed_tets.merge(*tets_ptr);
+    // cerr << min_quality << " " << min_quality0 << endl;
+    if(min_quality0>0) {
+      if(min_quality<min_quality0) {
+        Range seed_tets;
+        if(tets_ptr!=NULL) {
+          seed_tets.merge(*tets_ptr);
+        }
+        out_tets.swap(seed_tets);
+        successMerge = false;
+        MoFEMFunctionReturnHot(0);
       }
-      out_tets = seed_tets;
-      successMerge = false;
-      PetscFunctionReturn(0);
     }
   }
+
+  // clear map
+  parentChildMap.clear();
 
   Range created_tets;
   for(
@@ -255,22 +279,57 @@ PetscErrorCode NodeMergerInterface::mergeNodes(
     EntityHandle tet;
     rval = m_field.get_moab().create_element(MBTET,new_conn,4,tet); CHKERRQ_MOAB(rval);
     rval = m_field.get_moab().tag_set_data(cOre.get_th_RefParentHandle(),&tet,1,&*tit); CHKERRQ_MOAB(rval);
+    // create map
+    parentChildMap.insert(ParentChild(*tit,tet));
+    // add tet to range
     created_tets.insert(tet);
   }
 
   // Loop over mother adjacent entities to use them as parents
-  Range adj_ents;
-  rval = m_field.get_moab().get_adjacencies(mother_tets,1,false,adj_ents,moab::Interface::UNION); CHKERRQ_MOAB(rval);
-  rval = m_field.get_moab().get_adjacencies(mother_tets,2,false,adj_ents,moab::Interface::UNION); CHKERRQ_MOAB(rval);
-  rval = m_field.get_moab().get_adjacencies(edge_tets,1,false,adj_ents,moab::Interface::UNION); CHKERRQ_MOAB(rval);
-  rval = m_field.get_moab().get_adjacencies(edge_tets,2,false,adj_ents,moab::Interface::UNION); CHKERRQ_MOAB(rval);
-  for(Range::iterator eit = adj_ents.begin();eit!=adj_ents.end();eit++) {
+  Range adj_father_ents;
+  rval = m_field.get_moab().get_adjacencies(created_tets,1,true,adj_father_ents,moab::Interface::UNION); CHKERRQ_MOAB(rval);
+  rval = m_field.get_moab().get_adjacencies(created_tets,2,true,adj_father_ents,moab::Interface::UNION); CHKERRQ_MOAB(rval);
+  rval = m_field.get_moab().get_adjacencies(&father,1,1,false,adj_father_ents,moab::Interface::UNION); CHKERRQ_MOAB(rval);
+  rval = m_field.get_moab().get_adjacencies(&father,1,2,false,adj_father_ents,moab::Interface::UNION); CHKERRQ_MOAB(rval);
+  FaceMapIdx face_map;
+  for(Range::iterator eit = adj_father_ents.begin();eit!=adj_father_ents.end();eit++) {
+    const EntityHandle* conn;
+    int num_nodes;
+    rval = m_field.get_moab().get_connectivity(*eit,conn,num_nodes,true); CHKERRQ_MOAB(rval);
+    EntityHandle small_conn[num_nodes-1];
+    int ii = 0;
+    int nn = 0;
+    for(;nn!=num_nodes;nn++) {
+      if(conn[nn]==father) {
+        continue;
+      }
+      small_conn[ii++] = conn[nn];
+    }
+    if(ii != nn-1) { continue; }
+    if(ii>1) {
+      std::sort(&small_conn[0],&small_conn[ii]);
+    }
+    if(ii == 2) {
+      face_map.insert(FaceMap(*eit,small_conn[0],small_conn[1]));
+    } else {
+      face_map.insert(FaceMap(*eit,small_conn[0],0));
+    }
+  }
+
+  Range adj_mother_ents;
+  rval = m_field.get_moab().get_adjacencies(mother_tets,1,false,adj_mother_ents,moab::Interface::UNION); CHKERRQ_MOAB(rval);
+  rval = m_field.get_moab().get_adjacencies(mother_tets,2,false,adj_mother_ents,moab::Interface::UNION); CHKERRQ_MOAB(rval);
+  rval = m_field.get_moab().get_adjacencies(edge_tets,1,false,adj_mother_ents,moab::Interface::UNION); CHKERRQ_MOAB(rval);
+  rval = m_field.get_moab().get_adjacencies(edge_tets,2,false,adj_mother_ents,moab::Interface::UNION); CHKERRQ_MOAB(rval);
+  for(Range::iterator eit = adj_mother_ents.begin();eit!=adj_mother_ents.end();eit++) {
     const EntityHandle* conn;
     int num_nodes;
     rval = m_field.get_moab().get_connectivity(*eit,conn,num_nodes,true); CHKERRQ_MOAB(rval);
     EntityHandle new_conn[num_nodes];
+    EntityHandle small_conn[num_nodes];
     int nb_new_node = 0;
     int nn = 0;
+    int ii = 0;
     for(;nn<num_nodes;nn++) {
       if(conn[nn] == father) {
         nb_new_node=0;
@@ -280,27 +339,52 @@ PetscErrorCode NodeMergerInterface::mergeNodes(
         nb_new_node++;
       } else {
         new_conn[nn] = conn[nn];
+        small_conn[ii++] = conn[nn];
       }
     }
     if(nb_new_node > 0) {
-      int dim = m_field.get_moab().dimension_from_handle(*eit);
-      Range new_ent;
-      rval = m_field.get_moab().get_adjacencies(
-        new_conn,num_nodes,dim,true,new_ent
-      ); CHKERRQ_MOAB(rval);
-      // if(new_ent.empty()) continue;
-      if(new_ent.size()!=1) {
-        SETERRQ1(PETSC_COMM_SELF,1,"data inconsistency %u",new_ent.size());
+      if(ii>1) {
+        std::sort(&small_conn[0],&small_conn[ii]);
       }
+      EntityHandle n0 = small_conn[0],n1 = 0;
+      if(ii == 2) {
+        n1 = small_conn[1];
+      }
+      FaceMapIdx::iterator fit = face_map.find(boost::make_tuple(n0,n1));
+      if(fit == face_map.end()) {
+        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
+      }
+      const EntityHandle child = fit->e;
+      const EntityHandle parent = *eit;
+
+      // // tetsing
+      // int dim = m_field.get_moab().dimension_from_handle(*eit);
+      // Range new_ent;
+      // rval = m_field.get_moab().get_adjacencies(
+      //   new_conn,num_nodes,dim,true,new_ent
+      // ); CHKERRQ_MOAB(rval);
+      // if(new_ent.size()!=1) {
+      //   SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency %u",new_ent.size());
+      // }
+      // if(new_ent[0]!=child) {
+      //   SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
+      // }
+
       rval = m_field.get_moab().tag_set_data(
-        cOre.get_th_RefParentHandle(),&*new_ent.begin(),1,&*eit
+        cOre.get_th_RefParentHandle(),&parent,1,&child
       ); CHKERRQ_MOAB(rval);
+      // create map
+      parentChildMap.insert(ParentChild(parent,child));
     }
   }
 
   // Move node
   if(move>0 || line_search) {
-    rval = m_field.get_moab().set_coords(&father,1,coords_move); CHKERRQ_MOAB(rval);
+    if(th==NULL) {
+      rval = m_field.get_moab().set_coords(&father,1,coords_move); CHKERRQ_MOAB(rval);
+    } else {
+      rval = m_field.get_moab().tag_set_data(th,&father,1,coords_move); CHKERRQ_MOAB(rval);
+    }
   }
 
   // Seed tets to given bit level
@@ -308,15 +392,18 @@ PetscErrorCode NodeMergerInterface::mergeNodes(
   if(tets_ptr!=NULL) {
     seed_tets.merge(*tets_ptr);
   }
-  seed_tets = subtract(seed_tets,mother_tets);
-  seed_tets = subtract(seed_tets,edge_tets);
+  seed_tets = subtract(seed_tets,unite(mother_tets,edge_tets));
   seed_tets.merge(created_tets);
 
-  out_tets = seed_tets;
+  out_tets.swap(seed_tets);
 
   successMerge = true;
 
-  PetscFunctionReturn(0);
+  if(verb>2) {
+    std::cout << "nodes merged" << endl;
+  }
+
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode NodeMergerInterface::minQuality(
@@ -324,12 +411,13 @@ PetscErrorCode NodeMergerInterface::minQuality(
   EntityHandle father,
   EntityHandle mother,
   double *coords_move,
-  double &min_quality
+  double &min_quality,
+  Tag th
 ) {
   MoFEM::Interface& m_field = cOre;
 
   double coords[12];
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   for(Range::iterator tit = check_tests.begin();tit!=check_tests.end();tit++) {
     const EntityHandle* conn;
     int num_nodes;
@@ -358,7 +446,11 @@ PetscErrorCode NodeMergerInterface::minQuality(
           nb_mother_verts
         );
       }
-      rval = m_field.get_moab().get_coords(new_conn,num_nodes,coords); CHKERRQ_MOAB(rval);
+      if(th == NULL) {
+        rval = m_field.get_moab().get_coords(new_conn,num_nodes,coords); CHKERRQ_MOAB(rval);
+      } else {
+        rval = m_field.get_moab().tag_get_data(th,new_conn,num_nodes,coords); CHKERRQ_MOAB(rval);
+      }
       if(coords_move) {
         int shift = 3*father_nn;
         for(int nn = 0;nn!=3;nn++) {
@@ -366,12 +458,16 @@ PetscErrorCode NodeMergerInterface::minQuality(
         }
       }
     } else {
-      rval = m_field.get_moab().get_coords(conn,num_nodes,coords); CHKERRQ_MOAB(rval);
+      if(th == NULL) {
+        rval = m_field.get_moab().get_coords(conn,num_nodes,coords); CHKERRQ_MOAB(rval);
+      } else {
+        rval = m_field.get_moab().tag_get_data(th,conn,num_nodes,coords); CHKERRQ_MOAB(rval);
+      }
     }
     double quality = volume_length_quality(coords);
-    min_quality = (min_quality>quality) ? quality : min_quality;
+    min_quality = fmin(min_quality,quality);
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 };
 
 PetscErrorCode NodeMergerInterface::lineSearch(
@@ -379,17 +475,20 @@ PetscErrorCode NodeMergerInterface::lineSearch(
   EntityHandle father,
   EntityHandle mother,
   int line_search,
-  double *coords_move
+  double *coords_move,
+  Tag th
 ) {
-
-
   MoFEM::Interface& m_field = cOre;
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   EntityHandle conn[] = { father,mother };
 
   double coords[6];
-  rval = m_field.get_moab().get_coords(conn,2,coords); CHKERRQ_MOAB(rval);
+  if(th == NULL) {
+    rval = m_field.get_moab().get_coords(conn,2,coords); CHKERRQ_MOAB(rval);
+  } else {
+    rval = m_field.get_moab().tag_get_data(th,conn,2,coords); CHKERRQ_MOAB(rval);
+  }
 
   FTensor::Index<'i',3> i;
   FTensor::Tensor1<double,3> t_coords(
@@ -405,13 +504,13 @@ PetscErrorCode NodeMergerInterface::lineSearch(
   t_move(i) = t_coords(i);
   double min_quality_i = 1;
   ierr = minQuality(
-    check_tests,father,mother,&t_move(0),min_quality_i
+    check_tests,father,mother,&t_move(0),min_quality_i,th
   ); CHKERRQ(ierr);
 
   t_move(i) = t_coords(i)+t_delta(i);
   double min_quality_k = 1;
   ierr = minQuality(
-    check_tests,father,mother,&t_move(0),min_quality_k
+    check_tests,father,mother,&t_move(0),min_quality_k,th
   ); CHKERRQ(ierr);
 
   double alpha_i = 0;
@@ -423,7 +522,7 @@ PetscErrorCode NodeMergerInterface::lineSearch(
     double alpha = (alpha_i+alpha_k)*0.5;
     t_move(i) = t_coords(i)+alpha*t_delta(i);
     ierr = minQuality(
-      check_tests,father,mother,&t_move(0),min_quality
+      check_tests,father,mother,&t_move(0),min_quality,th
     ); CHKERRQ(ierr);
     if(min_quality_i >=  min_quality_k) {
       min_quality_k = min_quality;
@@ -447,7 +546,7 @@ PetscErrorCode NodeMergerInterface::lineSearch(
   coords_move[1] = t_move(1);
   coords_move[2] = t_move(2);
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 
@@ -457,17 +556,16 @@ PetscErrorCode NodeMergerInterface::mergeNodes(
   BitRefLevel bit,
   Range *tets_ptr,
   const bool only_if_improve_quality,
-  const double move
+  const double move,Tag th
 ) {
   MoFEM::Interface& m_field = cOre;
-
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   Range out_tets;
   ierr = mergeNodes(
-    father,mother,out_tets,tets_ptr,only_if_improve_quality,move
+    father,mother,out_tets,tets_ptr,only_if_improve_quality,move,0,th
   ); CHKERRQ(ierr);
   ierr = m_field.query_interface<BitRefManager>()->setBitRefLevel(out_tets,bit); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode NodeMergerInterface::mergeNodes(
@@ -476,19 +574,16 @@ PetscErrorCode NodeMergerInterface::mergeNodes(
   BitRefLevel bit,
   BitRefLevel tets_from_bit_ref_level,
   const bool only_if_improve_quality,
-  const double move
+  const double move,Tag th
 ) {
   MoFEM::Interface& m_field = cOre;
-
-
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   Range level_tets;
   ierr = m_field.get_entities_by_type_and_ref_level(
     tets_from_bit_ref_level,BitRefLevel().set(),MBTET,level_tets
   ); CHKERRQ(ierr);
-  ierr = mergeNodes(father,mother,bit,&level_tets,only_if_improve_quality,move); CHKERRQ(ierr);
-
-  PetscFunctionReturn(0);
+  ierr = mergeNodes(father,mother,bit,&level_tets,only_if_improve_quality,move,th); CHKERRQ(ierr);
+  MoFEMFunctionReturnHot(0);
 }
 
 

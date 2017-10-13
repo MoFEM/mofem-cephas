@@ -124,7 +124,7 @@ int main(int argc, char *argv[]) {
       VolumeElementForcesAndSourcesCoreOnSide::UserDataOperator("F2",UserDataOperator::OPROW) {
       }
       PetscErrorCode doWork(int side, EntityType type,DataForcesAndSourcesCore::EntData &data) {
-        PetscFunctionBegin;
+        MoFEMFunctionBeginHot;
         std::cout << "\tVolume" << getFEMethod()->nInTheLoop << std::endl;
         std::cout << "\tGauss pts " << getGaussPts() << std::endl;
         std::cout << "\tCoords " << getCoordsAtGaussPts() << endl;
@@ -138,7 +138,7 @@ int main(int argc, char *argv[]) {
             "coordinates at integration pts are different"
           );
         }
-        PetscFunctionReturn(0);
+        MoFEMFunctionReturnHot(0);
       }
     };
 
@@ -152,14 +152,14 @@ int main(int argc, char *argv[]) {
 
     PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
       
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       if(type == MBTRI && side == 0) {
         std::cout << "Face" << std::endl;
         std::cout << "Gauss pts " << getGaussPts() << std::endl;
         std::cout << "Coords " << getCoordsAtGaussPts() << endl;
         ierr = loopSideVolumes("V1",volSideFe); CHKERRQ(ierr);
       }
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   };

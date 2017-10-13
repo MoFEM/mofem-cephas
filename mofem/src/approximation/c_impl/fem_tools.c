@@ -47,7 +47,7 @@ double ShapeDetJacVolume(double *jac) {
   return det_jac;
 }
 PetscErrorCode ShapeInvJacVolume(double *jac) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   __CLPK_integer ipiv[4];
   __CLPK_doublereal work[3];
   __CLPK_integer lwork = 3;
@@ -56,12 +56,12 @@ PetscErrorCode ShapeInvJacVolume(double *jac) {
   if(info != 0) SETERRQ1(PETSC_COMM_SELF,1,"info = %d",info);
   info = lapack_dgetri(3,jac,3,ipiv,work,lwork);
   if(info != 0) SETERRQ1(PETSC_COMM_SELF,1,"info = %d",info);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 //MBTRI
 PetscErrorCode Grundmann_Moeller_integration_points_1D_EDGE(int rule,double *G_TRI_X,double *G_TRI_W) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
 
 
@@ -96,11 +96,11 @@ PetscErrorCode Grundmann_Moeller_integration_points_1D_EDGE(int rule,double *G_T
   ierr = PetscFree(w); CHKERRQ(ierr);
   ierr = PetscFree(x); CHKERRQ(ierr);
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode Grundmann_Moeller_integration_points_2D_TRI(int rule,double *G_TRI_X,double *G_TRI_Y,double *G_TRI_W){
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
 
 
@@ -136,11 +136,11 @@ PetscErrorCode Grundmann_Moeller_integration_points_2D_TRI(int rule,double *G_TR
   ierr = PetscFree(w); CHKERRQ(ierr);
   ierr = PetscFree(x); CHKERRQ(ierr);
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode Grundmann_Moeller_integration_points_3D_TET(int rule,double *G_TET_X,double *G_TET_Y,double *G_TET_Z, double *G_TET_W){
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
 
 
@@ -170,10 +170,10 @@ PetscErrorCode Grundmann_Moeller_integration_points_3D_TET(int rule,double *G_TE
   ierr = PetscFree(w); CHKERRQ(ierr);
   ierr = PetscFree(x); CHKERRQ(ierr);
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 PetscErrorCode ShapeMBTRI(double *N,const double *X,const double *Y,const int G_DIM) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   int ii = 0;
   for(; ii<G_DIM; ii++) {
     double x = X[ii],y = Y[ii];
@@ -181,19 +181,19 @@ PetscErrorCode ShapeMBTRI(double *N,const double *X,const double *Y,const int G_
     N[3*ii+1] = N_MBTRI1(x,y);
     N[3*ii+2] = N_MBTRI2(x,y);
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 PetscErrorCode ShapeDiffMBTRI(double *diffN) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   diffN[0] = diffN_MBTRI0x; diffN[1] = diffN_MBTRI0y;
   diffN[2] = diffN_MBTRI1x; diffN[3] = diffN_MBTRI1y;
   diffN[4] = diffN_MBTRI2x; diffN[5] = diffN_MBTRI2y;
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 PetscErrorCode ShapeFaceBaseMBTRI(
   double *diffN,const double *coords,
   double *normal,double *s1,double *s2) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   double diffX_ksi[3];
   double diffX_eta[3];
@@ -213,18 +213,18 @@ PetscErrorCode ShapeFaceBaseMBTRI(
   cblas_dgemv(
     CblasRowMajor,CblasNoTrans,3,3,
     1.,Spin_diffX_ksi,3,diffX_eta,1,0.,normal,1);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode ShapeFaceNormalMBTRI(
   double *diffN,const double *coords,double *normal) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   ierr = ShapeFaceBaseMBTRI(diffN,coords,normal,NULL,NULL);  CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 PetscErrorCode ShapeFaceDiffNormalMBTRI(double *diffN,const double *coords,double *diff_normal) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   // N = Spin(dX/dksi)*dX/deta = -Spin(dX/deta)*dX/dksi
 
   double diffX_ksi[3];
@@ -265,12 +265,12 @@ PetscErrorCode ShapeFaceDiffNormalMBTRI(double *diffN,const double *coords,doubl
     CblasRowMajor,CblasNoTrans,CblasNoTrans,3,9,3,
     -1.,Spin_diffX_eta,3,B_ksi,9,1.,diff_normal,9
   );
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 //MBTET
 PetscErrorCode ShapeJacMBTET(double *diffN,const double *coords,double *jac) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   int ii,jj,kk;
   bzero(jac,sizeof(double)*9);
   for(ii = 0; ii<4; ii++) 	//shape func.
@@ -278,7 +278,7 @@ PetscErrorCode ShapeJacMBTET(double *diffN,const double *coords,double *jac) {
       for(kk = 0; kk<3; kk++) 	//direvative of shape func.
 	jac[ jj*3+kk ] +=
 	diffN[ ii*3+kk ]*coords[ ii*3+jj ];
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 double ShapeVolumeMBTET(double *diffN,const double *coords) {
   double Jac[9];
@@ -289,7 +289,7 @@ double ShapeVolumeMBTET(double *diffN,const double *coords) {
   return detJac*G_TET_W1[0]/6.;
 }
 PetscErrorCode ShapeMBTET(double *N,const double *G_X,const double *G_Y,const double *G_Z,int DIM) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   int ii = 0;
   for(; ii<DIM; ii++) {
     double x = G_X[ii],y = G_Y[ii],z = G_Z[ii];
@@ -298,20 +298,20 @@ PetscErrorCode ShapeMBTET(double *N,const double *G_X,const double *G_Y,const do
     N[4*ii+2] = N_MBTET2(x,y,z);
     N[4*ii+3] = N_MBTET3(x,y,z);
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 PetscErrorCode ShapeDiffMBTET(double *diffN) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   diffN[0] = diffN_MBTET0x; diffN[1] = diffN_MBTET0y; diffN[2] = diffN_MBTET0z;
   diffN[3] = diffN_MBTET1x; diffN[4] = diffN_MBTET1y; diffN[5] = diffN_MBTET1z;
   diffN[6] = diffN_MBTET2x; diffN[7] = diffN_MBTET2y; diffN[8] = diffN_MBTET2z;
   diffN[9] = diffN_MBTET3x; diffN[10] = diffN_MBTET3y; diffN[11] = diffN_MBTET3z;
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 PetscErrorCode ShapeMBTET_inverse(
   double *N,double *diffN,const double *elem_coords,const double *glob_coords,double *loc_coords
 ) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   double A[3*3];
   int IPIV[3];
   //COL MAJOR
@@ -335,13 +335,13 @@ PetscErrorCode ShapeMBTET_inverse(
   //printf("[ %3.2f %3.2f %3.2f ] %3.2f \n",A[2+3*0],A[2+3*1],A[2+3*2],R[1]);
   int info = lapack_dgesv(3,1,&A[0],3,(__CLPK_integer*)IPIV,loc_coords,3);
   if(info != 0) SETERRQ1(PETSC_COMM_SELF,1,"info == %d",info);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode ShapeMBTRI_inverse(
   double *N,double *diffN,const double *elem_coords,const double *glob_coords,double *loc_coords
 ) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   double A[2*2];
 
   //1st and 2nd element of matrix A
@@ -365,26 +365,26 @@ PetscErrorCode ShapeMBTRI_inverse(
   loc_coords_new[1]=invA[2]*loc_coords[0] + invA[3]*loc_coords[1];
 
   loc_coords[0]=loc_coords_new[0];   loc_coords[1]=loc_coords_new[1];
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 
 PetscErrorCode ShapeDiffMBTETinvJ(double *diffN,double *invJac,double *diffNinvJac) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   int ii = 0;
   for(;ii<4; ii++) {
    cblas_dgemv(CblasRowMajor,CblasTrans,3,3,1.,invJac,3,&diffN[ii*3],1,0.,&diffNinvJac[ii*3],1);
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 PetscErrorCode GradientOfDeformation(double *diffN,double *dofs,double *F) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   int col,row = 0;
   for(;row<3;row++)
   for(col = 0;col<3;col++) {
     F[3*row+col] = cblas_ddot(4,&diffN[col],3,&dofs[row],3);
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 //Come functions with complex variables if one like to calculate derivative using complex variable
@@ -399,7 +399,7 @@ void ShapeDiffMBTETinvJ_complex(double *diffN,__CLPK_doublecomplex *invJac,__CLP
     cblas_zgemv(CblasRowMajor,Trans,3,3,&tmp1,invJac,3,tmp3,1,&tmp2,&diffNinvJac[ii*3],1); }
 }
 PetscErrorCode ShapeFaceNormalMBTRI_complex(double *diffN,__CLPK_doublecomplex *xcoords,__CLPK_doublecomplex *xnormal) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   double complex diffX_x,diffX_y,diffX_z;
   double complex diffY_x,diffY_y,diffY_z;
   diffX_x = diffX_y = diffX_z = 0.;
@@ -423,10 +423,10 @@ PetscErrorCode ShapeFaceNormalMBTRI_complex(double *diffN,__CLPK_doublecomplex *
   tmp = diffX_x*diffY_y - diffX_y*diffY_x;
   xnormal[2].r = creal(tmp);
   xnormal[2].i = cimag(tmp);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 PetscErrorCode MakeComplexTensor(double *reA,double *imA,__CLPK_doublecomplex *xA) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   int ii = 0,jj;
   for(;ii<3;ii++) {
     for(jj=0;jj<3;jj++) {
@@ -434,10 +434,10 @@ PetscErrorCode MakeComplexTensor(double *reA,double *imA,__CLPK_doublecomplex *x
       xA[3*ii+jj].i = imA[3*ii+jj];
     }
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 PetscErrorCode InvertComplexGradient(__CLPK_doublecomplex *xF) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   __CLPK_integer IPIV[4];
   __CLPK_doublecomplex WORK[4];
   __CLPK_integer LWORK = 4;
@@ -446,10 +446,10 @@ PetscErrorCode InvertComplexGradient(__CLPK_doublecomplex *xF) {
   if(info != 0) SETERRQ(PETSC_COMM_SELF,1,"info == 0");
   info = lapack_zgetri(3,xF,3,IPIV,WORK,LWORK);
   if(info != 0) SETERRQ(PETSC_COMM_SELF,1,"info == 0");
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 PetscErrorCode InvertComplexSymmMatrix3by3(__CLPK_doublecomplex *xC) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   __CLPK_integer info;
   info = lapack_zpotrf('L',3,xC,3);
   if(info == 0) SETERRQ(PETSC_COMM_SELF,1,"info == 0");
@@ -457,10 +457,10 @@ PetscErrorCode InvertComplexSymmMatrix3by3(__CLPK_doublecomplex *xC) {
   info = lapack_zpotri('L',3,xC,3);
   if(info == 0) SETERRQ(PETSC_COMM_SELF,1,"info == 0");
   //assert(info == 0);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 PetscErrorCode DeterminantComplexGradient(__CLPK_doublecomplex *xF,__CLPK_doublecomplex *det_xF) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   __CLPK_integer IPIV[4];
   if(lapack_zgetrf(3,3,xF,3,IPIV) != 0) {
     SETERRQ(PETSC_COMM_SELF,1,"lapack_zgetrf(3,3,xF,3,IPIV) != 0");
@@ -475,10 +475,10 @@ PetscErrorCode DeterminantComplexGradient(__CLPK_doublecomplex *xF,__CLPK_double
     det = - det;
   (*det_xF).r = creal(det);
   (*det_xF).i = cimag(det);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 PetscErrorCode Spin(double *spinOmega,double *vecOmega) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   bzero(spinOmega,9*sizeof(double));
   spinOmega[0*3+1] = -vecOmega[2];
   spinOmega[0*3+2] = +vecOmega[1];
@@ -486,10 +486,10 @@ PetscErrorCode Spin(double *spinOmega,double *vecOmega) {
   spinOmega[1*3+2] = -vecOmega[0];
   spinOmega[2*3+0] = -vecOmega[1];
   spinOmega[2*3+1] = +vecOmega[0];
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 PetscErrorCode make_complex_matrix(double *reA,double *imA,__CLPK_doublecomplex *xA) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   int ii = 0,jj;
   for(;ii<3;ii++) {
     for(jj=0;jj<3;jj++) {
@@ -497,7 +497,7 @@ PetscErrorCode make_complex_matrix(double *reA,double *imA,__CLPK_doublecomplex 
       xA[3*ii+jj].i = imA[3*ii+jj];
     }
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 PetscErrorCode Normal_hierarchical(
   int order_approx,int *order_edge_approx,
@@ -509,7 +509,7 @@ PetscErrorCode Normal_hierarchical(
     __CLPK_doublecomplex *xs1,
     __CLPK_doublecomplex *xs2,
     int gg) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   int nn,ee,dd;
   //node
   double complex diffX_x_node,diffX_y_node,diffX_z_node;
@@ -610,11 +610,11 @@ PetscErrorCode Normal_hierarchical(
     xs2[1].r = creal(diffY_y); xs2[1].i = cimag(diffY_y);
     xs2[2].r = creal(diffY_z); xs2[2].i = cimag(diffY_z);
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 PetscErrorCode Base_scale(
   __CLPK_doublecomplex *xnormal,__CLPK_doublecomplex *xs1,__CLPK_doublecomplex *xs2) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   complex double xnrm2_normal = csqrt(
       cpow(xnormal[0].r+I*xnormal[0].i,2) +
       cpow(xnormal[1].r+I*xnormal[1].i,2) +
@@ -628,31 +628,31 @@ PetscErrorCode Base_scale(
       xs2[dd].r = creal(s2);
       xs2[dd].i = cimag(s2);
     }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 //MBEDGE
 PetscErrorCode ShapeMBEDGE(double *N,const double *G_X,int DIM) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   int ii = 0;
   for(; ii<DIM; ii++) {
     double x = G_X[ii];
     N[2*ii+0] = N_MBEDGE0(x);
     N[2*ii+1] = N_MBEDGE1(x);
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 PetscErrorCode ShapeDiffMBEDGE(double *diffN) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   diffN[0] = diffN_MBEDGE0;
   diffN[1] = diffN_MBEDGE1;
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 //FIXME: NOT PROPERLY TESTED YET
 //HO
 PetscErrorCode ShapeMBTRIQ(double *N,const double *X,const double *Y,const int G_DIM) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   int ii = 0;
   for(; ii<G_DIM; ii++) {
     double x = X[ii],y = Y[ii];
@@ -663,10 +663,10 @@ PetscErrorCode ShapeMBTRIQ(double *N,const double *X,const double *Y,const int G
     N[6*ii+4] = N_MBTRIQ4(x,y);
     N[6*ii+5] = N_MBTRIQ5(x,y);
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 PetscErrorCode ShapeDiffMBTRIQ(double *diffN,const double *X,const double *Y,const int G_DIM) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   int ii = 0;
   for(;ii<G_DIM;ii++) {
     double x = X[ii],y = Y[ii];
@@ -683,7 +683,7 @@ PetscErrorCode ShapeDiffMBTRIQ(double *diffN,const double *X,const double *Y,con
     diffN[12*ii+10] = diffN_MBTRIQ5x(x,y);
     diffN[12*ii+11] = diffN_MBTRIQ5y(x,y);
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 //MBTETQ (JULIEN WORK)
@@ -728,7 +728,7 @@ PetscErrorCode ShapeDiffMBTRIQ(double *diffN,const double *X,const double *Y,con
 #define diffN_MBTETQ9y(x, y, z) ( 4.*z )
 #define diffN_MBTETQ9z(x, y, z) ( 4.*y )
 PetscErrorCode ShapeMBTETQ(double *N,const double x,const double y,const double z) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   N[0] = N_MBTETQ0(x,y,z);
   N[1] = N_MBTETQ1(x,y,z);
   N[2] = N_MBTETQ2(x,y,z);
@@ -739,10 +739,10 @@ PetscErrorCode ShapeMBTETQ(double *N,const double x,const double y,const double 
   N[7] = N_MBTETQ7(x,y,z);
   N[8] = N_MBTETQ8(x,y,z);
   N[9] = N_MBTETQ9(x,y,z);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 PetscErrorCode ShapeDiffMBTETQ(double *diffN,const double x,const double y,const double z) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   diffN[0] = diffN_MBTETQ0x(x,y,z);
   diffN[1] = diffN_MBTETQ0y(x,y,z);
   diffN[2] = diffN_MBTETQ0z(x,y,z);
@@ -773,10 +773,10 @@ PetscErrorCode ShapeDiffMBTETQ(double *diffN,const double x,const double y,const
   diffN[27] = diffN_MBTETQ9x(x,y,z);
   diffN[28] = diffN_MBTETQ9y(x,y,z);
   diffN[29] = diffN_MBTETQ9z(x,y,z);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 PetscErrorCode ShapeMBTETQ_GAUSS(double *N,const double *X,const double *Y,const double *Z,const int G_DIM) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   int ii = 0;
   for(; ii<G_DIM; ii++) {
     double x = X[ii],y = Y[ii],z = Z[ii];
@@ -791,10 +791,10 @@ PetscErrorCode ShapeMBTETQ_GAUSS(double *N,const double *X,const double *Y,const
     N[10*ii+8] = N_MBTETQ8(x,y,z);
     N[10*ii+9] = N_MBTETQ9(x,y,z);
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 PetscErrorCode ShapeDiffMBTETQ_GAUSS(double *diffN,const double *X,const double *Y,const double *Z,const int G_DIM) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   int ii = 0;
   for(; ii<G_DIM; ii++) {
     double x = X[ii],y = Y[ii],z = Z[ii];
@@ -809,10 +809,10 @@ PetscErrorCode ShapeDiffMBTETQ_GAUSS(double *diffN,const double *X,const double 
     diffN[30*ii+24] = diffN_MBTETQ8x(x,y,z); diffN[30*ii+25] = diffN_MBTETQ8y(x,y,z); diffN[30*ii+26] = diffN_MBTETQ8z(x,y,z);
     diffN[30*ii+27] = diffN_MBTETQ9x(x,y,z); diffN[30*ii+28] = diffN_MBTETQ9y(x,y,z); diffN[30*ii+29] = diffN_MBTETQ9z(x,y,z);
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 PetscErrorCode ShapeJacMBTETQ(const double *diffN,const double *coords,double *Jac) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   int ii,jj,kk;
   bzero(Jac,sizeof(double)*9);
   for(ii = 0; ii<10; ii++) 	//shape func.
@@ -820,10 +820,10 @@ PetscErrorCode ShapeJacMBTETQ(const double *diffN,const double *coords,double *J
   for(kk = 0; kk<3; kk++) 	//direvative of shape func.
   Jac[ jj*3+kk ] +=
   diffN[ ii*3+kk ]*coords[ ii*3+jj ];
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 PetscErrorCode ShapeMBTETQ_detJac_at_Gauss_Points(double *detJac_at_Gauss_Points,const double *diffN,const double *coords,int G_DIM) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   double Jac[9];
   int ii = 0;
@@ -831,7 +831,7 @@ PetscErrorCode ShapeMBTETQ_detJac_at_Gauss_Points(double *detJac_at_Gauss_Points
     ierr = ShapeJacMBTETQ(&diffN[30*ii],coords,Jac); CHKERRQ(ierr);
     detJac_at_Gauss_Points[ii] = ShapeDetJacVolume(Jac);
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 double ShapeVolumeMBTETQ(const double *diffN,const double *coords,int G_DIM,double *G_TET_W) {
 
@@ -852,7 +852,7 @@ PetscErrorCode ShapeMBTETQ_inverse(
   double *loc_coords,
   const double eps
 ) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   double A[3*3];
   double R[3];
   int IPIV[3];
@@ -889,5 +889,5 @@ PetscErrorCode ShapeMBTETQ_inverse(
     ShapeMBTETQ(N,loc_coords[0],loc_coords[1],loc_coords[2]);
     ShapeDiffMBTETQ(diffN,loc_coords[0],loc_coords[1],loc_coords[2]);
  }
- PetscFunctionReturn(0);
+ MoFEMFunctionReturnHot(0);
 }

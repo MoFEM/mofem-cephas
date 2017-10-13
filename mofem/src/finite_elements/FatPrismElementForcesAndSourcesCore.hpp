@@ -76,15 +76,15 @@ struct FatPrismElementForcesAndSourcesCore: public MoFEM::VolumeElementForcesAnd
   virtual int getRuleThroughThickness(int order) { return 2*order; };
 
   virtual PetscErrorCode setGaussPtsTrianglesOnly(int order_triangles_only)  {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   virtual PetscErrorCode setGaussPtsThroughThickness(int order_thickness) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   /** \brief default operator for Flat Prism element
@@ -313,13 +313,13 @@ struct FatPrismElementForcesAndSourcesCore: public MoFEM::VolumeElementForcesAnd
   };
 
   PetscErrorCode preProcess() {
-    PetscFunctionBegin;
-    PetscFunctionReturn(0);
+    MoFEMFunctionBeginHot;
+    MoFEMFunctionReturnHot(0);
   }
   PetscErrorCode operator()();
   PetscErrorCode postProcess() {
-    PetscFunctionBegin;
-    PetscFunctionReturn(0);
+    MoFEMFunctionBeginHot;
+    MoFEMFunctionReturnHot(0);
   }
 
 };

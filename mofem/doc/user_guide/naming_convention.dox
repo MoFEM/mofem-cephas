@@ -177,8 +177,8 @@ class ClassName {
 
 - Each function should have build in error checking, following example \code{.cpp}
 PetscErrorCode fun() {
-  PetscFunctionBegin;
-  PetscFunctionReturn(0);
+  MoFEMFunctionBeginHot;
+  MoFEMFunctionReturnHot(0);
 }
 
 ierr = fun(); CHKERRQ(ierr);

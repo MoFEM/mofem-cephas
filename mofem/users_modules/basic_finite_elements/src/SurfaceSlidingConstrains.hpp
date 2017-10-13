@@ -205,7 +205,7 @@ struct SurfaceSlidingConstrains {
     int getRule(int order) { return 2*order; };
 
     PetscErrorCode preProcess() {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
 
       ierr = MoFEM::FaceElementForcesAndSourcesCore::preProcess(); CHKERRQ(ierr);
@@ -236,7 +236,7 @@ struct SurfaceSlidingConstrains {
         default:
         break;
       }
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   };
@@ -261,9 +261,9 @@ struct SurfaceSlidingConstrains {
     int elementOrientation;
 
     virtual PetscErrorCode getElementOrientation(MoFEM::Interface &m_field,const FEMethod *fe_method_ptr) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       elementOrientation = 1;
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   };
@@ -305,7 +305,7 @@ struct SurfaceSlidingConstrains {
     static PetscErrorCode calcSpin(
       MatrixDouble &spin,VectorDouble &vec
     ) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       spin.resize(3,3,false);
       spin.clear();
       spin(0,1) = -vec[2];
@@ -314,12 +314,12 @@ struct SurfaceSlidingConstrains {
       spin(1,2) = -vec[0];
       spin(2,0) = -vec[1];
       spin(2,1) = +vec[0];
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
 
     PetscErrorCode matrixN(int gg,DataForcesAndSourcesCore::EntData &data) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       try {
 
         int nb_dofs = data.getN().size2();
@@ -336,11 +336,11 @@ struct SurfaceSlidingConstrains {
         ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     PetscErrorCode matrixB(int gg,DataForcesAndSourcesCore::EntData &data) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       try {
         int nb_dofs = data.getN().size2();
         Bksi.resize(3,3*nb_dofs,false);
@@ -362,11 +362,11 @@ struct SurfaceSlidingConstrains {
         ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     PetscErrorCode calculateNormal() {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
       try {
         sPin.resize(3,3,false);
@@ -379,7 +379,7 @@ struct SurfaceSlidingConstrains {
         ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
   };
 
@@ -399,14 +399,14 @@ struct SurfaceSlidingConstrains {
     {}
 
     PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
 
       try {
 
         int nb_dofs = data.getFieldData().size();
         if(nb_dofs == 0) {
-          PetscFunctionReturn(0);
+          MoFEMFunctionReturnHot(0);
         }
 
         int nb_gauss_pts = data.getN().size1();
@@ -438,7 +438,7 @@ struct SurfaceSlidingConstrains {
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   };
@@ -456,7 +456,7 @@ struct SurfaceSlidingConstrains {
 
 
     PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       //
 
       try {
@@ -477,7 +477,7 @@ struct SurfaceSlidingConstrains {
 
         int nb_dofs = data.getFieldData().size();
         if(nb_dofs == 0) {
-          PetscFunctionReturn(0);
+          MoFEMFunctionReturnHot(0);
         }
 
         for(int gg = 0;gg<nb_gauss_pts;gg++) {
@@ -509,7 +509,7 @@ struct SurfaceSlidingConstrains {
         SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
       }
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   };
@@ -540,7 +540,7 @@ struct SurfaceSlidingConstrains {
 
         int nb_dofs = row_data.getFieldData().size();
         if(nb_dofs == 0) {
-          PetscFunctionReturn(0);
+          MoFEMFunctionReturnHot(0);
         }
         int nb_gauss_pts = row_data.getN().size1();
 
@@ -602,7 +602,7 @@ struct SurfaceSlidingConstrains {
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   };
@@ -632,7 +632,7 @@ struct SurfaceSlidingConstrains {
 
         int nb_dofs = row_data.getFieldData().size();
         if(nb_dofs == 0) {
-          PetscFunctionReturn(0);
+          MoFEMFunctionReturnHot(0);
         }
         int nb_gauss_pts = row_data.getN().size1();
 
@@ -684,7 +684,7 @@ struct SurfaceSlidingConstrains {
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   };
@@ -726,11 +726,11 @@ struct SurfaceSlidingConstrains {
       DataForcesAndSourcesCore::EntData &row_data,
       DataForcesAndSourcesCore::EntData &col_data
     ) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
 
       if(col_type != MBVERTEX) {
-        PetscFunctionReturn(0);
+        MoFEMFunctionReturnHot(0);
       }
 
       try {
@@ -738,7 +738,7 @@ struct SurfaceSlidingConstrains {
         int nb_row = row_data.getIndices().size();
         int nb_col = col_data.getIndices().size();
         if(!nb_row || !nb_col) {
-          PetscFunctionReturn(0);
+          MoFEMFunctionReturnHot(0);
         }
 
         int nb_gauss_pts = row_data.getN().size1();
@@ -819,7 +819,7 @@ struct SurfaceSlidingConstrains {
         ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   };
@@ -854,7 +854,7 @@ struct SurfaceSlidingConstrains {
       DataForcesAndSourcesCore::EntData &row_data,
       DataForcesAndSourcesCore::EntData &col_data
     ) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
 
       try {
@@ -863,7 +863,7 @@ struct SurfaceSlidingConstrains {
         int nb_row = row_data.getIndices().size();
         int nb_col = col_data.getIndices().size();
         if(!nb_row || !nb_col) {
-          PetscFunctionReturn(0);
+          MoFEMFunctionReturnHot(0);
         }
 
         int nb_gauss_pts = row_data.getN().size1();
@@ -925,7 +925,7 @@ struct SurfaceSlidingConstrains {
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   };
@@ -966,7 +966,7 @@ struct SurfaceSlidingConstrains {
       DataForcesAndSourcesCore::EntData &row_data,
       DataForcesAndSourcesCore::EntData &col_data
     ) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
 
       try {
@@ -974,7 +974,7 @@ struct SurfaceSlidingConstrains {
         int nb_row = row_data.getIndices().size();
         int nb_col = col_data.getIndices().size();
         if(!nb_row || !nb_col) {
-          PetscFunctionReturn(0);
+          MoFEMFunctionReturnHot(0);
         }
 
         int nb_gauss_pts = row_data.getN().size1();
@@ -1029,7 +1029,7 @@ struct SurfaceSlidingConstrains {
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   };
@@ -1039,7 +1039,7 @@ struct SurfaceSlidingConstrains {
   PetscErrorCode setOperatorsCOnly(
     const std::string lagrange_multipliers_field_name,
     const std::string material_field_name) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
 
     // Adding operators to calculate the left hand side
     feLhs.getOpPtrVector().push_back(
@@ -1054,7 +1054,7 @@ struct SurfaceSlidingConstrains {
       )
     );
 
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
 
@@ -1066,7 +1066,7 @@ struct SurfaceSlidingConstrains {
     bool assemble_transpose,
     bool add_nonlinear_term
   ) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
 
     // Adding operators to calculate the right hand side
     feRhs.getOpPtrVector().push_back(
@@ -1101,7 +1101,7 @@ struct SurfaceSlidingConstrains {
       new OpA(lagrange_multipliers_field_name,material_field_name,cUrrent,crackFrontOrientation)
     );
 
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
 };

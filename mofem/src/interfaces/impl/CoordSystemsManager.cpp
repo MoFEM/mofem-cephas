@@ -75,18 +75,18 @@ namespace MoFEM {
 
   PetscErrorCode CoordSystemsManager::queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface) {
 
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     *iface = NULL;
     if(uuid == IDD_MOFEMMeshsetsManager) {
       *iface = dynamic_cast<CoordSystemsManager*>(this);
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
     if(uuid == IDD_MOFEMUnknown) {
       *iface = dynamic_cast<UnknownInterface*>(this);
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown interface");
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   CoordSystemsManager::CoordSystemsManager(const MoFEM::Core& core):
@@ -99,7 +99,7 @@ namespace MoFEM {
     
     MoFEM::Interface &m_field = cOre;
     moab::Interface &moab = m_field.get_moab();
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     const int def_val_len = 0;
     //Coordinate systems
     const int def_coord_sys_dim[] = { 0,0,0,0 };
@@ -114,13 +114,13 @@ namespace MoFEM {
       MB_TAG_CREAT|MB_TAG_BYTES|MB_TAG_VARLEN|MB_TAG_SPARSE,
       NULL
     ); CHKERRQ_MOAB(rval);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode CoordSystemsManager::clearMap() {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     coordinateSystems.clear();
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
 
@@ -128,7 +128,7 @@ namespace MoFEM {
     
     MoFEM::Interface &m_field = cOre;
     moab::Interface &moab = m_field.get_moab();
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
 
     Range meshsets;
     rval = moab.get_entities_by_type(0,MBENTITYSET,meshsets,true);  CHKERRQ_MOAB(rval);
@@ -208,7 +208,7 @@ namespace MoFEM {
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Undefined system not found");
     }
 
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode CoordSystemsManager::addCoordinateSystem(const int cs_dim[],const std::string name) {
@@ -216,7 +216,7 @@ namespace MoFEM {
     MoFEM::Interface &m_field = cOre;
     moab::Interface &moab = m_field.get_moab();
     EntityHandle meshset;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,meshset); CHKERRQ_MOAB(rval);
     rval = moab.tag_set_data(th_CoordSysDim,&meshset,1,cs_dim); CHKERRQ_MOAB(rval);
     void const* sys_name[] = { name.c_str() };
@@ -231,14 +231,14 @@ namespace MoFEM {
     if(!p.second) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"MeshSet to coord system not inserted");
     }
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode CoordSystemsManager::setFieldCoordinateSystem(const std::string field_name,const std::string cs_name) {
     
     MoFEM::Interface &m_field = cOre;
     const Field_multiIndex *fields_ptr;
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     ierr = m_field.get_fields(&fields_ptr); CHKERRQ(ierr);
     Field_multiIndex::index<FieldName_mi_tag>::type::iterator field_it;
     field_it = fields_ptr->get<FieldName_mi_tag>().find(field_name);
@@ -301,11 +301,11 @@ namespace MoFEM {
       fields_ptr->project<0>(field_it),FieldChangeCoordinateSystem(*cs_it)
     );
     if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode CoordSystemsManager::getCoordSysPtr(const EntityHandle id,boost::shared_ptr<CoordSys> &cs_ptr) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     CoordSys_multiIndex::index<Meshset_mi_tag>::type::iterator cs_it;
     cs_it = coordinateSystems.get<Meshset_mi_tag>().find(id);
     if(cs_it==coordinateSystems.get<Meshset_mi_tag>().end()) {
@@ -317,11 +317,11 @@ namespace MoFEM {
       );
     }
     cs_ptr = *cs_it;
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode CoordSystemsManager::getCoordSysPtr(const string name,boost::shared_ptr<CoordSys> &cs_ptr) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     CoordSys_multiIndex::index<CoordSysName_mi_tag>::type::iterator cs_it;
     cs_it = coordinateSystems.get<CoordSysName_mi_tag>().find(name);
     if(cs_it==coordinateSystems.get<CoordSysName_mi_tag>().end()) {
@@ -333,7 +333,7 @@ namespace MoFEM {
       );
     }
     cs_ptr = *cs_it;
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
 }

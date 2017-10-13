@@ -47,18 +47,18 @@ using namespace MoFEM;
 
 PetscErrorCode FatPrismPolynomialBaseCtx::queryInterface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface) {
   
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   *iface = NULL;
   if(
     uuid == IDD_FATPRISM_BASE_FUNCTION
   ) {
     *iface = static_cast<FatPrismPolynomialBaseCtx*>(this);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   } else {
     SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"wrong interference");
   }
   ierr = EntPolynomialBaseCtx::queryInterface(uuid,iface); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 FatPrismPolynomialBaseCtx::FatPrismPolynomialBaseCtx(
@@ -90,16 +90,16 @@ PetscErrorCode FatPrismPolynomialBase::queryInterface(
   const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface
 ) {
   
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   *iface = NULL;
   if(uuid == IDD_FATPRISM_BASE_FUNCTION) {
     *iface = static_cast<FatPrismPolynomialBase*>(this);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   } else {
     SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"wrong interference");
   }
   ierr = BaseFunction::queryInterface(uuid,iface); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 FatPrismPolynomialBase::~FatPrismPolynomialBase() {}
@@ -110,7 +110,7 @@ PetscErrorCode FatPrismPolynomialBase::getValue(
   boost::shared_ptr<BaseFunctionCtx> ctx_ptr
 ) {
   
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   MoFEM::UnknownInterface *iface;
   ierr = ctx_ptr->queryInterface(IDD_FATPRISM_BASE_FUNCTION,&iface); CHKERRQ(ierr);
@@ -125,7 +125,7 @@ PetscErrorCode FatPrismPolynomialBase::getValue(
 
   int nb_gauss_pts = pts.size2();
   if(!nb_gauss_pts) {
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 
   if(pts.size1()<1) {
@@ -180,12 +180,12 @@ PetscErrorCode FatPrismPolynomialBase::getValue(
     SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"Not yet implemented");
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode FatPrismPolynomialBase::getValueH1TrianglesOnly() {
   
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   const FieldApproximationBase base = cTx->bAse;
   // PetscErrorCode (*base_polynomials)(
@@ -201,12 +201,12 @@ PetscErrorCode FatPrismPolynomialBase::getValueH1TrianglesOnly() {
     )
   ); CHKERRQ(ierr);
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode FatPrismPolynomialBase::getValueH1ThroughThickness() {
   
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   // DataForcesAndSourcesCore& data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
@@ -244,12 +244,12 @@ PetscErrorCode FatPrismPolynomialBase::getValueH1ThroughThickness() {
     }
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode FatPrismPolynomialBase::getValueH1(MatrixDouble &pts) {
   
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   DataForcesAndSourcesCore& data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
@@ -468,13 +468,13 @@ PetscErrorCode FatPrismPolynomialBase::getValueH1(MatrixDouble &pts) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode FatPrismPolynomialBase::getValueL2(MatrixDouble &pts) {
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"Not yet implemented");
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode FatPrismPolynomialBase::getValueHdiv(MatrixDouble &pts) {

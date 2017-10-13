@@ -56,15 +56,15 @@ namespace PoissonExample {
       EntityType row_type,EntityType col_type,
       DataForcesAndSourcesCore::EntData &row_data,DataForcesAndSourcesCore::EntData &col_data
     ) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       // get number of dofs on row
       nbRows = row_data.getIndices().size();
       // if no dofs on row, exit that work, nothing to do here
-      if(!nbRows) PetscFunctionReturn(0);
+      if(!nbRows) MoFEMFunctionReturnHot(0);
       // get number of dofs on column
       nbCols = col_data.getIndices().size();
       // if no dofs on Columbia, exit nothing to do here
-      if(!nbCols) PetscFunctionReturn(0);
+      if(!nbCols) MoFEMFunctionReturnHot(0);
       // get number of integration points
       nbIntegrationPts = getGaussPts().size2();
       // chekk if entity block is on matrix diagonal
@@ -80,7 +80,7 @@ namespace PoissonExample {
       ierr = iNtegrate(row_data,col_data); CHKERRQ(ierr);
       // asseble local matrix
       ierr = aSsemble(row_data,col_data); CHKERRQ(ierr);
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   protected:
@@ -104,7 +104,7 @@ namespace PoissonExample {
     virtual PetscErrorCode iNtegrate(
       DataForcesAndSourcesCore::EntData &row_data,DataForcesAndSourcesCore::EntData &col_data
     ) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       // set size of local entity bock
       locMat.resize(nbRows,nbCols,false);
       // clear matrux
@@ -137,7 +137,7 @@ namespace PoissonExample {
         }
         ++t_w; // move to another integration weight
       }
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     /**
@@ -149,7 +149,7 @@ namespace PoissonExample {
     virtual PetscErrorCode aSsemble(
       DataForcesAndSourcesCore::EntData &row_data,DataForcesAndSourcesCore::EntData &col_data
     ) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       // get pointer to first global index on row
       const int* row_indices = &*row_data.getIndices().data().begin();
       // get pointer to first global index on column
@@ -167,7 +167,7 @@ namespace PoissonExample {
           B,nbCols,col_indices,nbRows,row_indices,&*locMat.data().begin(),ADD_VALUES
         ); CHKERRQ(ierr);
       }
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   };
@@ -192,17 +192,17 @@ namespace PoissonExample {
     PetscErrorCode doWork(
       int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
     ) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       // get number of dofs on row
       nbRows = row_data.getIndices().size();
-      if(!nbRows) PetscFunctionReturn(0);
+      if(!nbRows) MoFEMFunctionReturnHot(0);
       // get number of integration points
       nbIntegrationPts = OPBASE::getGaussPts().size2();
       // integrate local vector
       ierr = iNtegrate(row_data); CHKERRQ(ierr);
       // assemble local vector
       ierr = aSsemble(row_data); CHKERRQ(ierr);
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     /**
@@ -260,7 +260,7 @@ namespace PoissonExample {
      * @return      error code
      */
     PetscErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &data) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       // set size of local vector
       locVec.resize(nbRows,false);
       // clear local entity vector
@@ -289,7 +289,7 @@ namespace PoissonExample {
         ++t_w;  // move to next integration weight
         ++t_coords; // move to next physical coordinates at integration point
       }
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     /**
@@ -298,7 +298,7 @@ namespace PoissonExample {
      * @return      error code
      */
     PetscErrorCode aSsemble(DataForcesAndSourcesCore::EntData &data) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       // get global indices of local vector
       const int* indices = &*data.getIndices().data().begin();
       // get values from local vector
@@ -306,7 +306,7 @@ namespace PoissonExample {
       Vec f = getFEMethod()->ksp_f!=PETSC_NULL ? getFEMethod()->ksp_f : getFEMethod()->snes_f;
       // assemble vector
       ierr = VecSetValues(f,nbRows,indices,vals,ADD_VALUES); CHKERRQ(ierr);
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   };
@@ -332,22 +332,22 @@ namespace PoissonExample {
       EntityType row_type,EntityType col_type,
       DataForcesAndSourcesCore::EntData &row_data,DataForcesAndSourcesCore::EntData &col_data
     ) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       // get number of dofs on row
       nbRows = row_data.getIndices().size();
       // exit here if no dofs on row, nothing to do
-      if(!nbRows) PetscFunctionReturn(0);
+      if(!nbRows) MoFEMFunctionReturnHot(0);
       // get number of dofs on column,
       nbCols = col_data.getIndices().size();
       // exit here if no dofs on roe, nothing to do
-      if(!nbCols) PetscFunctionReturn(0);
+      if(!nbCols) MoFEMFunctionReturnHot(0);
       // get number of integration points
       nbIntegrationPts = getGaussPts().size2();
       // integrate local constrains matrix
       ierr = iNtegrate(row_data,col_data); CHKERRQ(ierr);
       // assemble local constrains matrix
       ierr = aSsemble(row_data,col_data); CHKERRQ(ierr);
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   private:
@@ -366,7 +366,7 @@ namespace PoissonExample {
     inline PetscErrorCode iNtegrate(
       DataForcesAndSourcesCore::EntData &row_data,DataForcesAndSourcesCore::EntData &col_data
     ) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       // set size of local constrains matrix
       locMat.resize(nbRows,nbCols,false);
       // clear matrix
@@ -397,7 +397,7 @@ namespace PoissonExample {
         }
         ++t_w; // move to next integrate weight
       }
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     /**
@@ -406,7 +406,7 @@ namespace PoissonExample {
     inline PetscErrorCode aSsemble(
       DataForcesAndSourcesCore::EntData &row_data,DataForcesAndSourcesCore::EntData &col_data
     ) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       // get indices on row
       const int* row_indices = &*row_data.getIndices().data().begin();
       // get indices on column
@@ -424,7 +424,7 @@ namespace PoissonExample {
           B, nbCols,col_indices,nbRows,row_indices,&*locMat.data().begin(),ADD_VALUES
         ); CHKERRQ(ierr);
       }
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   };
@@ -461,7 +461,7 @@ namespace PoissonExample {
      * \brief Integrate local constrains vector
      */
     PetscErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &data) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       // set size to local vector
       locVec.resize(nbRows,false);
       // clear loacl vector
@@ -489,19 +489,19 @@ namespace PoissonExample {
         ++t_w;
         ++t_coords;
       }
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     /**
      * \brief assemble constrains vectors
      */
     PetscErrorCode aSsemble(DataForcesAndSourcesCore::EntData &data) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       const int* indices = &*data.getIndices().data().begin();
       const double* vals = &*locVec.data().begin();
       Vec f = getFEMethod()->ksp_f!=PETSC_NULL ? getFEMethod()->ksp_f : getFEMethod()->snes_f;
       ierr = VecSetValues(f,nbRows,indices,&*vals,ADD_VALUES); CHKERRQ(ierr);
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   };
@@ -532,13 +532,13 @@ namespace PoissonExample {
     PetscErrorCode doWork(
       int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
     ) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       nbRows = row_data.getFieldData().size();
-      if(!nbRows) PetscFunctionReturn(0);
+      if(!nbRows) MoFEMFunctionReturnHot(0);
       nbIntegrationPts = getGaussPts().size2();
       ierr = iNtegrate(row_data); CHKERRQ(ierr);
       ierr = aSsemble(row_data); CHKERRQ(ierr);
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   private:
@@ -559,7 +559,7 @@ namespace PoissonExample {
      * \brief Integrate error
      */
     PetscErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &data) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       // clear field dofs
       data.getFieldData().clear();
       // get volume of element
@@ -592,19 +592,19 @@ namespace PoissonExample {
         ++t_grad;   // next gradient at integration point
         ++t_coords; // next coordinate at integration point
       }
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     /**
      * \brief Assemble error
      */
     PetscErrorCode aSsemble(DataForcesAndSourcesCore::EntData &data) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       // set error on mesh
       data.getFieldDofs()[0]->getFieldData() = sqrt(data.getFieldData()[0]);
       // assemble vector to global error
       ierr = VecSetValue(globalError,0,data.getFieldData()[0],ADD_VALUES); CHKERRQ(ierr);
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   };
@@ -637,7 +637,7 @@ namespace PoissonExample {
     inline PetscErrorCode iNtegrate(
       DataForcesAndSourcesCore::EntData &row_data,DataForcesAndSourcesCore::EntData &col_data
     ) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       // set size of local entity bock
       locMat.resize(nbRows,nbCols,false);
       // clear matrix
@@ -681,7 +681,7 @@ namespace PoissonExample {
         ++t_u;    // move to next value at integration point
         ++t_grad; // move to next gradient value
       }
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     boost::function<double (const double)> A;
@@ -716,7 +716,7 @@ namespace PoissonExample {
      * @return      error code
      */
     PetscErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &data) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       // set size of local vector
       locVec.resize(nbRows,false);
       // clear local entity vector
@@ -757,7 +757,7 @@ namespace PoissonExample {
         ++t_grad; // move to next gradient value
         ++t_coords; // move to next physical coordinates at integration point
       }
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     boost::function<double (const double)> A;
@@ -784,7 +784,7 @@ namespace PoissonExample {
      * \brief Integrate local constrains vector
      */
     PetscErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &data) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       // set size to local vector
       locVec.resize(nbRows,false);
       // clear loacl vector
@@ -814,7 +814,7 @@ namespace PoissonExample {
         ++t_u;
         ++t_coords;
       }
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   };
@@ -836,7 +836,7 @@ namespace PoissonExample {
      * \brief Integrate local constrains vector
      */
     PetscErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &data) {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       // set size to local vector
       locVec.resize(nbRows,false);
       // clear loacl vector
@@ -863,7 +863,7 @@ namespace PoissonExample {
         ++t_w;
         ++t_lambda;
       }
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   };
@@ -926,7 +926,7 @@ namespace PoissonExample {
       boost::shared_ptr<ForcesAndSourcesCore>& boundary_rhs_fe,
       bool trans = true
     ) const {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
       // Create elements element instances
       domain_lhs_fe = boost::shared_ptr<ForcesAndSourcesCore>(new VolumeElementForcesAndSourcesCore(mField));
@@ -950,7 +950,7 @@ namespace PoissonExample {
       // Add operator calculating constrains vector
       boundary_rhs_fe->getOpPtrVector().push_back(new Op_g(f_u));
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     /**
@@ -962,7 +962,7 @@ namespace PoissonExample {
       Vec global_error,
       boost::shared_ptr<ForcesAndSourcesCore>& domain_error
     ) const {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       // Create finite element instance to calculaye error
       domain_error = boost::shared_ptr<ForcesAndSourcesCore>(
         new VolumeElementForcesAndSourcesCore(mField)
@@ -982,7 +982,7 @@ namespace PoissonExample {
       domain_error->getOpPtrVector().push_back(
         new OpError(f_u,g_u,values_at_integation_ptr,grad_at_integation_ptr,global_error)
       );
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     /**
@@ -992,7 +992,7 @@ namespace PoissonExample {
       boost::shared_ptr<ForcesAndSourcesCore>& post_proc_volume
     ) const {
       
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
       // Note that user can stack together arbitrary number of operators to compose
       // complex PDEs.
@@ -1014,7 +1014,7 @@ namespace PoissonExample {
       ierr = boost::static_pointer_cast<PostProcVolumeOnRefinedMesh>(post_proc_volume)->
       addFieldValuesGradientPostProc("U"); CHKERRQ(ierr);
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
 
@@ -1034,7 +1034,7 @@ namespace PoissonExample {
       ForcesAndSourcesCore::RuleHookFun face_rule = FaceRule(),
       bool trans = true
     ) const {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
       // Create elements element instances
       domain_lhs_fe = boost::shared_ptr<ForcesAndSourcesCore>(new VolumeElementForcesAndSourcesCore(mField));
@@ -1083,7 +1083,7 @@ namespace PoissonExample {
       boundary_rhs_fe->getOpPtrVector().push_back(new OpRes_g(f_u,values_at_integation_ptr));
       boundary_rhs_fe->getOpPtrVector().push_back(new OpResF_Boundary(multiplier_at_integation_ptr));
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
 

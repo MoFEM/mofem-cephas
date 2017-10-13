@@ -62,12 +62,12 @@ struct PostProcStress: public MoFEM::VolumeElementForcesAndSourcesCore::UserData
     EntityType type,
     DataForcesAndSourcesCore::EntData &data
   ) {
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
 
-    if(type != MBVERTEX) PetscFunctionReturn(0);
-    if(data.getIndices().size()==0) PetscFunctionReturn(0);
+    if(type != MBVERTEX) MoFEMFunctionReturnHot(0);
+    if(data.getIndices().size()==0) MoFEMFunctionReturnHot(0);
     if(dAta.tEts.find(getNumeredEntFiniteElementPtr()->getEnt()) == dAta.tEts.end()) {
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     
@@ -188,7 +188,7 @@ struct PostProcStress: public MoFEM::VolumeElementForcesAndSourcesCore::UserData
       }
     }
 
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
 
   }
 

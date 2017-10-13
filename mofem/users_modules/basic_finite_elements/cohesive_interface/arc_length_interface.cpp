@@ -54,7 +54,7 @@ namespace CohesiveElement {
     };
 
     PetscErrorCode postProcessLoadPath() {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       FILE *datafile;
       PetscFOpen(PETSC_COMM_SELF,DATAFILENAME,"a+",&datafile);
       boost::shared_ptr<NumeredDofEntity_multiIndex> numered_dofs_rows = problemPtr->getNumeredDofsRows();
@@ -62,7 +62,7 @@ namespace CohesiveElement {
       lit = numered_dofs_rows->get<FieldName_mi_tag>().find("LAMBDA");
       if(lit == numered_dofs_rows->get<FieldName_mi_tag>().end()) {
         fclose(datafile);
-        PetscFunctionReturn(0);
+        MoFEMFunctionReturnHot(0);
       }
       Range::iterator nit = postProcNodes.begin();
       for(;nit!=postProcNodes.end();nit++) {
@@ -90,7 +90,7 @@ namespace CohesiveElement {
       }
       PetscFPrintf(PETSC_COMM_WORLD,datafile,"\n");
       fclose(datafile);
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   };
@@ -112,7 +112,7 @@ namespace CohesiveElement {
     
 
     PetscErrorCode preProcess() {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
 
       switch(snes_ctx) {
         case CTX_SNESNONE: {}
@@ -127,11 +127,11 @@ namespace CohesiveElement {
         SETERRQ(PETSC_COMM_SELF,1,"not implemented");
       }
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     PetscErrorCode postProcess() {
-      PetscFunctionBegin;
+      MoFEMFunctionBeginHot;
       switch(snes_ctx) {
         case CTX_SNESNONE: {}
         break;
@@ -154,7 +154,7 @@ namespace CohesiveElement {
         SETERRQ(PETSC_COMM_SELF,1,"not implemented");
       }
 
-      PetscFunctionReturn(0);
+      MoFEMFunctionReturnHot(0);
     }
 
   };
@@ -291,10 +291,10 @@ int main(int argc, char *argv[]) {
         // Update cubit meshsets
         for(_IT_CUBITMESHSETS_FOR_LOOP_(m_field,ciit)) {
           EntityHandle cubit_meshset = ciit->meshset;
-          ierr = m_field.update_meshset_by_entities_children(cubit_meshset,bit_levels.back(),cubit_meshset,MBVERTEX,true); CHKERRQ(ierr);
-          ierr = m_field.update_meshset_by_entities_children(cubit_meshset,bit_levels.back(),cubit_meshset,MBEDGE,true); CHKERRQ(ierr);
-          ierr = m_field.update_meshset_by_entities_children(cubit_meshset,bit_levels.back(),cubit_meshset,MBTRI,true); CHKERRQ(ierr);
-          ierr = m_field.update_meshset_by_entities_children(cubit_meshset,bit_levels.back(),cubit_meshset,MBTET,true); CHKERRQ(ierr);
+          ierr = m_field.query_interface<UpdateMeshsetsAndRanges>()->updateMeshsetByEntitiesChildren(cubit_meshset,bit_levels.back(),cubit_meshset,MBVERTEX,true); CHKERRQ(ierr);
+          ierr = m_field.query_interface<UpdateMeshsetsAndRanges>()->updateMeshsetByEntitiesChildren(cubit_meshset,bit_levels.back(),cubit_meshset,MBEDGE,true); CHKERRQ(ierr);
+          ierr = m_field.query_interface<UpdateMeshsetsAndRanges>()->updateMeshsetByEntitiesChildren(cubit_meshset,bit_levels.back(),cubit_meshset,MBTRI,true); CHKERRQ(ierr);
+          ierr = m_field.query_interface<UpdateMeshsetsAndRanges>()->updateMeshsetByEntitiesChildren(cubit_meshset,bit_levels.back(),cubit_meshset,MBTET,true); CHKERRQ(ierr);
         }
       }
 

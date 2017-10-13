@@ -35,8 +35,8 @@ struct OpVolume: public VolumeElementForcesAndSourcesCore::UserDataOperator {
   }
   PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
     
-    PetscFunctionBegin;
-    if(type!=MBVERTEX) PetscFunctionReturn(0);
+    MoFEMFunctionBeginHot;
+    if(type!=MBVERTEX) MoFEMFunctionReturnHot(0);
     const int nb_int_pts = getGaussPts().size2();
     // cerr << nb_int_pts << endl;
     FTensor::Tensor0<double*> t_w = getFTensor0IntegrationWeight();
@@ -50,7 +50,7 @@ struct OpVolume: public VolumeElementForcesAndSourcesCore::UserDataOperator {
       ++t_ho_det;
     }
     ierr = VecSetValue(vOl,0,vol,ADD_VALUES); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
   PetscErrorCode doWork(
     int row_side,int col_side,
@@ -58,9 +58,9 @@ struct OpVolume: public VolumeElementForcesAndSourcesCore::UserDataOperator {
     DataForcesAndSourcesCore::EntData &row_data,
     DataForcesAndSourcesCore::EntData &col_data
   )	{
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     // PetscPrintf(PETSC_COMM_WORLD,"domain: calculate matrix\n");
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 };
 
@@ -72,8 +72,8 @@ struct OpFace: public FaceElementForcesAndSourcesCore::UserDataOperator {
   }
   PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
     
-    PetscFunctionBegin;
-    if(type!=MBVERTEX) PetscFunctionReturn(0);
+    MoFEMFunctionBeginHot;
+    if(type!=MBVERTEX) MoFEMFunctionReturnHot(0);
     const int nb_int_pts = getGaussPts().size2();
     FTensor::Tensor1<double*,3> t_normal = getTensor1NormalsAtGaussPt();
     FTensor::Tensor0<double*> t_w = getFTensor0IntegrationWeight();
@@ -88,7 +88,7 @@ struct OpFace: public FaceElementForcesAndSourcesCore::UserDataOperator {
     }
     vol /= 6;
     ierr = VecSetValue(vOl,0,vol,ADD_VALUES); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
   PetscErrorCode doWork(
     int row_side,int col_side,
@@ -96,9 +96,9 @@ struct OpFace: public FaceElementForcesAndSourcesCore::UserDataOperator {
     DataForcesAndSourcesCore::EntData &row_data,
     DataForcesAndSourcesCore::EntData &col_data
   )	{
-    PetscFunctionBegin;
+    MoFEMFunctionBeginHot;
     // PetscPrintf(PETSC_COMM_WORLD,"boundary: calculate matrix\n");
-    PetscFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   }
 };
 
