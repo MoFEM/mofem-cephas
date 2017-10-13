@@ -91,8 +91,6 @@ PetscErrorCode PrismInterface::getSides(
 }
 
 PetscErrorCode PrismInterface::getSides(const EntityHandle sideset,const BitRefLevel mesh_bit_level,const bool recursive,int verb) {
-
-
   MoFEM::Interface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   PetscFunctionBegin;
@@ -183,17 +181,68 @@ PetscErrorCode PrismInterface::getSides(const EntityHandle sideset,const BitRefL
   rval = moab.get_adjacencies(
     nodes_without_front,3,false,ents3d_with_prisms,moab::Interface::UNION
   ); CHKERRQ_MOAB(rval);
+
+  // Add tets adjacent to front and triangle which has all nodes on crack front
+  struct FindTrianglesOnFrontAndAdjacentTet {
+    static PetscErrorCode fUN(
+      moab::Interface& moab,
+      const Range& triangles,
+      const Range& skin_nodes_boundary,
+      const Range& skin_edges_boundary,
+      Range& ents3d_with_prisms
+    ) {
+      PetscFunctionBegin;
+      Range skin_nodes_boundary_tris;
+      rval = moab.get_adjacencies(
+        skin_nodes_boundary,2,false,skin_nodes_boundary_tris,moab::Interface::UNION
+      ); CHKERRQ(ierr);
+      Range skin_nodes_boundary_tris_nodes;
+      rval = moab.get_connectivity(skin_nodes_boundary_tris,skin_nodes_boundary_tris_nodes,true); CHKERRQ_MOAB(rval);
+      skin_nodes_boundary_tris_nodes = subtract(skin_nodes_boundary_tris_nodes,skin_nodes_boundary);
+      Range skin_nodes_boundary_tris_nodes_tris;
+      rval = moab.get_adjacencies(
+        skin_nodes_boundary_tris_nodes,2,false,skin_nodes_boundary_tris_nodes_tris,moab::Interface::UNION
+      ); CHKERRQ(ierr);
+      // Triangle which has tree nodes on front boundary
+      skin_nodes_boundary_tris = intersect(
+        triangles,
+        subtract(skin_nodes_boundary_tris,skin_nodes_boundary_tris_nodes_tris)
+      );
+      if(!skin_nodes_boundary_tris.empty()) {
+        // Get internal edges of triangle which has three nodes on boundary
+        Range skin_nodes_boundary_tris_edges;
+        rval = moab.get_adjacencies(
+          skin_nodes_boundary_tris,1,false,skin_nodes_boundary_tris_edges,moab::Interface::UNION
+        ); CHKERRQ(rval);
+        skin_nodes_boundary_tris_edges = subtract(skin_nodes_boundary_tris_edges,skin_edges_boundary);
+        // Get 3d elements adjacent to internal edge which has two nodes on boundary
+        rval = moab.get_adjacencies(
+          skin_nodes_boundary_tris_edges,3,false,ents3d_with_prisms,moab::Interface::UNION
+        ); CHKERRQ(rval);
+      }
+      PetscFunctionReturn(0);
+    }
+  };
+  ierr = FindTrianglesOnFrontAndAdjacentTet::fUN(
+    moab,triangles,skin_nodes_boundary,skin_edges_boundary,ents3d_with_prisms
+  ); CHKERRQ(ierr);
+
+  // prism and tets on both side of interface
   if(mesh_bit_level.any()) {
     ents3d_with_prisms = intersect(ents3d_with_prisms,mesh_level_ents3d);
   }
   ents3d = ents3d_with_prisms.subset_by_type(MBTET);
-  if(verb>3) PetscPrintf(m_field.get_comm(),"adj. ents3d to fornt nodes %u\n",ents3d.size());
+  if(verb>3) {
+    PetscPrintf(m_field.get_comm(),"adj. ents3d to fornt nodes %u\n",ents3d.size());
+  }
+
   Range side_ents3d;
   unsigned int nb_side_ents3d = side_ents3d.size();
   side_ents3d.insert(*ents3d.begin());
   Range side_ents3d_tris_on_surface;
 
   do {
+
     do {
       Range adj_tris,adj_ents3d;
       nb_side_ents3d = side_ents3d.size();
@@ -224,15 +273,26 @@ PetscErrorCode PrismInterface::getSides(const EntityHandle sideset,const BitRefL
       side_ents3d,2,false,side_ents3d_tris,moab::Interface::UNION
     ); CHKERRQ_MOAB(rval);
     side_ents3d_tris_on_surface = intersect(side_ents3d_tris,triangles);
+
+    // This is a case when separtae sub-domains are split
     if(side_ents3d_tris_on_surface.size()!=triangles.size()) {
       Range left_triangles = subtract(triangles,side_ents3d_tris_on_surface);
       Range tets;
       rval = moab.get_adjacencies(&*left_triangles.begin(),1,3,false,tets); CHKERRQ_MOAB(rval);
       tets = intersect(tets,ents3d_with_prisms);
       if(tets.empty()) {
+        Range left_triangles_nodes;
+        rval = moab.get_connectivity(&*left_triangles.begin(),1,left_triangles_nodes,true); CHKERRQ(ierr);
+        EntityHandle meshset;
+        rval = moab.create_meshset(MESHSET_SET,meshset); CHKERRQ_MOAB(rval);
+        rval = moab.add_entities(meshset,left_triangles); CHKERRQ_MOAB(rval);
+        rval = moab.write_file("error.vtk","VTK","",&meshset,1); CHKERRQ_MOAB(rval);
+        rval = moab.delete_entities(&meshset,1); CHKERRQ_MOAB(rval);
         SETERRQ(
           m_field.get_comm(),MOFEM_DATA_INCONSISTENCY,
-          "not all faces on surface going to be split"
+          "Not all faces on surface going to be split, see error.vtk for problematic triangle. "
+          "It could be a case where triangle on front (part boundary of surface in interia) "
+          "has three nodes front."
         );
       }
       side_ents3d.insert(*tets.begin());
@@ -292,6 +352,131 @@ PetscErrorCode PrismInterface::getSides(const EntityHandle sideset,const BitRefL
   }
   PetscFunctionReturn(0);
 }
+
+PetscErrorCode PrismInterface::findIfTringleHasThreeNodesOnInternalSurfaceSkin(
+  const EntityHandle sideset,
+  const BitRefLevel mesh_bit_level,
+  const bool recursive,
+  Range& faces_with_three_nodes_on_front,
+  int verb
+) {
+  MoFEM::Interface &m_field = cOre;
+  moab::Interface &moab = m_field.get_moab();
+  PetscFunctionBegin;
+
+  Range mesh_level_ents3d;
+  Range mesh_level_edges,mesh_level_tris;
+  if(mesh_bit_level.any()) {
+    ierr = m_field.get_entities_by_type_and_ref_level(
+      mesh_bit_level,BitRefLevel().set(),MBTET,mesh_level_ents3d
+    ); CHKERRQ(ierr);
+    ierr = m_field.get_entities_by_type_and_ref_level(
+      mesh_bit_level,BitRefLevel().set(),MBTRI,mesh_level_tris
+    ); CHKERRQ(ierr);
+    ierr = m_field.get_entities_by_type_and_ref_level(
+      mesh_bit_level,BitRefLevel().set(),MBEDGE,mesh_level_edges
+    ); CHKERRQ(ierr);
+  }
+
+  Skinner skin(&moab);
+  //get interface triangles from side set
+  Range triangles;
+  rval = moab.get_entities_by_type(sideset,MBTRI,triangles,recursive);  CHKERRQ_MOAB(rval);
+  if(mesh_bit_level.any()) {
+    triangles = intersect(triangles,mesh_level_tris);
+  }
+  if(verb>1) {
+    PetscPrintf(m_field.get_comm(),"Nb. of triangles in set %u\n",triangles.size());
+  }
+  //get nodes, edges and 3d ents (i.e. tets and prisms)
+  Range nodes; // nodes from triangles
+  rval = moab.get_connectivity(triangles,nodes,true); CHKERRQ_MOAB(rval);
+  Range ents3d; // 3d ents form nodes
+  rval = moab.get_adjacencies(nodes,3,false,ents3d,moab::Interface::UNION); CHKERRQ_MOAB(rval);
+  if(mesh_bit_level.any()) {
+    ents3d = intersect(ents3d,mesh_level_ents3d);
+  }
+  //take skin faces
+  Range skin_faces; // skin faces from 3d ents
+  rval = skin.find_skin(0,ents3d.subset_by_type(MBTET),false,skin_faces); CHKERRQ_MOAB(rval);
+  //take skin edges (boundary of surface if there is any)
+  Range skin_edges_boundary; //skin edges from triangles
+  rval = skin.find_skin(0,triangles,false,skin_edges_boundary); CHKERRQ_MOAB(rval);
+  if(verb>3) {
+    PetscPrintf(m_field.get_comm(),"skin_edges_boundary %u\n",skin_edges_boundary.size());
+  }
+  //take all edges on skin faces (i.e. skin surface)
+  Range skin_faces_edges; //edges from skin faces of 3d ents
+  rval = moab.get_adjacencies(skin_faces,1,false,skin_faces_edges,moab::Interface::UNION); CHKERRQ_MOAB(rval);
+  if(mesh_bit_level.any()) {
+    skin_faces_edges = intersect(skin_faces_edges,mesh_level_edges);
+  }
+  if(verb>3) {
+    PetscPrintf(m_field.get_comm(),"skin_faces_edges %u\n",skin_faces_edges.size());
+  }
+  //note: that skin faces edges do not contain internal boundary
+  //note: that prisms are not included in ents3d, so if ents3d have border with other inteface is like external boundary
+  //skin edges boundary are internal edge <- skin_faces_edges contains edges which are on the body boundary <- that is the trick
+  skin_edges_boundary = subtract(skin_edges_boundary,skin_faces_edges); // from skin edges subtract edges from skin faces of 3d ents (only internal edges)
+
+  if(verb>3) {
+    EntityHandle out_meshset;
+    rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,out_meshset); CHKERRQ_MOAB(rval);
+    rval = moab.add_entities(out_meshset,triangles); CHKERRQ_MOAB(rval);
+    rval = moab.write_file("triangles.vtk","VTK","",&out_meshset,1); CHKERRQ_MOAB(rval);
+    rval = moab.delete_entities(&out_meshset,1); CHKERRQ_MOAB(rval);
+    rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,out_meshset); CHKERRQ_MOAB(rval);
+    rval = moab.add_entities(out_meshset,ents3d); CHKERRQ_MOAB(rval);
+    rval = moab.write_file("ents3d.vtk","VTK","",&out_meshset,1); CHKERRQ_MOAB(rval);
+    rval = moab.delete_entities(&out_meshset,1); CHKERRQ_MOAB(rval);
+    rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,out_meshset); CHKERRQ_MOAB(rval);
+    rval = moab.add_entities(out_meshset,skin_edges_boundary); CHKERRQ_MOAB(rval);
+    rval = moab.write_file("skin_edges_boundary.vtk","VTK","",&out_meshset,1); CHKERRQ_MOAB(rval);
+    rval = moab.delete_entities(&out_meshset,1); CHKERRQ_MOAB(rval);
+  }
+  if(verb>3) {
+    PetscPrintf(
+      m_field.get_comm(),"subtract skin_edges_boundary %u\n",skin_edges_boundary.size()
+    );
+  }
+
+  //Get nodes on boundary edge
+  Range skin_nodes_boundary;
+  rval = moab.get_connectivity(skin_edges_boundary,skin_nodes_boundary,true); CHKERRQ_MOAB(rval);
+  //Remove noded which are boundary with other existing interface
+  Range prisms_nodes;
+  rval = moab.get_connectivity(ents3d.subset_by_type(MBPRISM),prisms_nodes,true); CHKERRQ_MOAB(rval);
+  skin_nodes_boundary = subtract(skin_nodes_boundary,prisms_nodes);
+  if(verb>3) {
+    PetscPrintf(m_field.get_comm(),"subtract skin_nodes_boundary %u\n",skin_nodes_boundary.size());
+  }
+  //use nodes on body boundary and interface (without internal boundary) to find adjacent tets
+  Range nodes_without_front = subtract(nodes,skin_nodes_boundary); // nodes_without_front adjacent to all split face edges except those on internal edge
+  if(verb>3) {
+    PetscPrintf(m_field.get_comm(),"adj. node if ents3d but not on the internal edge %u\n",nodes_without_front.size());
+  }
+
+  Range skin_nodes_boundary_tris;
+  rval = moab.get_adjacencies(
+    skin_nodes_boundary,2,false,skin_nodes_boundary_tris,moab::Interface::UNION
+  ); CHKERRQ(ierr);
+  Range skin_nodes_boundary_tris_nodes;
+  rval = moab.get_connectivity(skin_nodes_boundary_tris,skin_nodes_boundary_tris_nodes,true); CHKERRQ_MOAB(rval);
+  skin_nodes_boundary_tris_nodes = subtract(skin_nodes_boundary_tris_nodes,skin_nodes_boundary);
+  Range skin_nodes_boundary_tris_nodes_tris;
+  rval = moab.get_adjacencies(
+    skin_nodes_boundary_tris_nodes,2,false,skin_nodes_boundary_tris_nodes_tris,moab::Interface::UNION
+  ); CHKERRQ(ierr);
+  // Triangle which has tree nodes on front boundary
+  skin_nodes_boundary_tris = intersect(
+    triangles,
+    subtract(skin_nodes_boundary_tris,skin_nodes_boundary_tris_nodes_tris)
+  );
+  faces_with_three_nodes_on_front.swap(skin_nodes_boundary_tris);
+
+  PetscFunctionReturn(0);
+}
+
 PetscErrorCode PrismInterface::splitSides(
   const EntityHandle meshset,const BitRefLevel &bit,
   const int msId,const CubitBCType cubit_bc_type,const bool add_iterfece_entities,const bool recursive,int verb
@@ -393,7 +578,7 @@ PetscErrorCode PrismInterface::splitSides(
           std::pair<RefEntity_multiIndex_view_by_parent_entity::iterator,bool> p_ref_ent_view;
           p_ref_ent_view = ref_parent_ents_view.insert(*miit);
           if(!p_ref_ent_view.second) {
-            SETERRQ(PETSC_COMM_SELF,1,"non uniqe insertion");
+            SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"non uniqe insertion");
           }
         }
       }
@@ -501,11 +686,17 @@ PetscErrorCode PrismInterface::splitSides(
         EntityHandle meshset_error_out;
         rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,meshset_error_out); CHKERRQ_MOAB(rval);
         rval = moab.add_entities(meshset_error_out,&*eit3d,1); CHKERRQ_MOAB(rval);
-        ierr = moab.write_file("error_out.vtk","VTK","",&meshset_error_out,1); CHKERRQ(ierr);
+        ierr = moab.write_file("error.vtk","VTK","",&meshset_error_out,1); CHKERRQ(ierr);
         rval = moab.delete_entities(&meshset_error_out,1); CHKERRQ_MOAB(rval);
 
       }
-      SETERRQ1(PETSC_COMM_SELF,1,"database inconsistency, in side_ent3 is a tet which has no common node with interface, num_nodes = %d",num_nodes);
+      SETERRQ1(
+        PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
+        "In side_ent3 is a tet which has no common node with interface, num_nodes = %d. "
+        "This is could be effect when three nodes of split surface are on front, i.e. inernal skin in the body. "
+        "See error.vtk for details.",
+        num_nodes
+      );
     }
 
     const RefElement_multiIndex *refined_finite_elements_ptr;
