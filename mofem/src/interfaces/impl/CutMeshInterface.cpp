@@ -763,6 +763,26 @@ namespace MoFEM {
   //   return 1;
   // }
 
+  PetscErrorCode CutMeshInterface::removePathologicalFrontTris(
+    const BitRefLevel split_bit,Range &ents
+  ) {
+    MoFEM::Interface &m_field = cOre;
+    moab::Interface &moab = m_field.get_moab();
+    PrismInterface *interface;
+    PetscFunctionBegin;
+    ierr = m_field.query_interface(interface); CHKERRQ(ierr);
+    EntityHandle meshset;
+    rval = moab.create_meshset(MESHSET_SET,meshset); CHKERRQ_MOAB(rval);
+    rval = moab.add_entities(meshset,ents); CHKERRQ_MOAB(rval);
+    Range front_tris;
+    ierr = interface->findIfTringleHasThreeNodesOnInternalSurfaceSkin(
+      meshset,split_bit,true,front_tris
+    ); CHKERRQ(ierr);
+    ents = subtract(ents,front_tris);
+    rval = moab.delete_entities(&meshset,1); CHKERRQ_MOAB(rval);
+    PetscFunctionReturn(0);
+  }
+
   PetscErrorCode CutMeshInterface::splitSides(
     const BitRefLevel split_bit,
     const BitRefLevel bit,
@@ -774,18 +794,18 @@ namespace MoFEM {
     PrismInterface *interface;
     PetscFunctionBegin;
     ierr = m_field.query_interface(interface); CHKERRQ(ierr);
-    EntityHandle meshset;
-    rval = moab.create_meshset(MESHSET_SET,meshset); CHKERRQ_MOAB(rval);
+    EntityHandle meshset_volume;
+    rval = moab.create_meshset(MESHSET_SET,meshset_volume); CHKERRQ_MOAB(rval);
     ierr = m_field.get_entities_by_type_and_ref_level(
-      split_bit,BitRefLevel().set(),MBTET,meshset
+      split_bit,BitRefLevel().set(),MBTET,meshset_volume
     ); CHKERRQ(ierr);
-    EntityHandle meshset_trim_new_surface;
-    rval = moab.create_meshset(MESHSET_SET,meshset_trim_new_surface); CHKERRQ_MOAB(rval);
-    rval = moab.add_entities(meshset_trim_new_surface,ents); CHKERRQ_MOAB(rval);
-    ierr = interface->getSides(meshset_trim_new_surface,split_bit,true); CHKERRQ(ierr);
-    ierr = interface->splitSides(meshset,bit,meshset_trim_new_surface,true,true); CHKERRQ(ierr);
-    rval = moab.delete_entities(&meshset,1); CHKERRQ_MOAB(rval);
-    rval = moab.delete_entities(&meshset_trim_new_surface,1); CHKERRQ_MOAB(rval);
+    EntityHandle meshset_surface;
+    rval = moab.create_meshset(MESHSET_SET,meshset_surface); CHKERRQ_MOAB(rval);
+    rval = moab.add_entities(meshset_surface,ents); CHKERRQ_MOAB(rval);
+    ierr = interface->getSides(meshset_surface,split_bit,true); CHKERRQ(ierr);
+    ierr = interface->splitSides(meshset_volume,bit,meshset_surface,true,true); CHKERRQ(ierr);
+    rval = moab.delete_entities(&meshset_volume,1); CHKERRQ_MOAB(rval);
+    rval = moab.delete_entities(&meshset_surface,1); CHKERRQ_MOAB(rval);
     if(th) {
       Range prisms;
       ierr = m_field.get_entities_by_type_and_ref_level(
@@ -857,7 +877,7 @@ namespace MoFEM {
         Range &edges_to_merge,
         Range &not_merged_edges,
         bool add_child = true
-      ) {
+      ) const {
         moab::Interface& moab = mField.get_moab();
         PetscFunctionBegin;
         EntityHandle conn[] = { father,mother };
@@ -873,29 +893,25 @@ namespace MoFEM {
         if(add_child) {
           NodeMergerInterface::ParentChildMap& parent_child_map = nodeMergerPtr->getParentChildMap();
 
+          Range child_ents;
+          NodeMergerInterface::ParentChildMap::iterator it;
+          for(it = parent_child_map.begin();it!=parent_child_map.end();it++) {
+            if(it->cHild!=it->pArent) {
+              child_ents.insert(it->pArent);
+            }
+          }
+
+
           Range child_surf_ents;
-          for(Range::iterator eit = new_surf.begin();eit!=new_surf.end();eit++) {
-            NodeMergerInterface::ParentChildMap::nth_index<0>::type::iterator
-            it = parent_child_map.get<0>().find(*eit);
-            if(it==parent_child_map.get<0>().end()) continue;
-            child_surf_ents.insert(it->cHild);
-          }
+          ierr = updateRangeByChilds(parent_child_map,intersect(new_surf,child_ents),child_surf_ents); CHKERRQ(ierr);
           new_surf.merge(child_surf_ents);
+
           Range child_edge_ents;
-          for(Range::iterator eit = edges_to_merge.begin();eit!=edges_to_merge.end();eit++) {
-            NodeMergerInterface::ParentChildMap::nth_index<0>::type::iterator
-            it = parent_child_map.get<0>().find(*eit);
-            if(it==parent_child_map.get<0>().end()) continue;
-            child_edge_ents.insert(it->cHild);
-          }
+          ierr = updateRangeByChilds(parent_child_map,intersect(edges_to_merge,child_ents),child_edge_ents); CHKERRQ(ierr);
           edges_to_merge.merge(child_edge_ents);
+
           child_edge_ents.clear();
-          for(Range::iterator eit = not_merged_edges.begin();eit!=not_merged_edges.end();eit++) {
-            NodeMergerInterface::ParentChildMap::nth_index<0>::type::iterator
-            it = parent_child_map.get<0>().find(*eit);
-            if(it==parent_child_map.get<0>().end()) continue;
-            child_edge_ents.insert(it->cHild);
-          }
+          ierr = updateRangeByChilds(parent_child_map,intersect(not_merged_edges,child_ents),child_edge_ents); CHKERRQ(ierr);
           not_merged_edges.merge(child_edge_ents);
           edges_to_merge = subtract(edges_to_merge,not_merged_edges);
 
@@ -903,19 +919,36 @@ namespace MoFEM {
             for(_IT_CUBITMESHSETS_FOR_LOOP_(mField,cubit_it)) {
               EntityHandle cubit_meshset = cubit_it->meshset;
               Range parent_ents;
+              child_edge_ents.clear();
               rval = moab.get_entities_by_handle(cubit_meshset,parent_ents,true); CHKERRQ_MOAB(rval);
-              for(Range::iterator eit = parent_ents.begin();eit!=parent_ents.end();eit++) {
-                NodeMergerInterface::ParentChildMap::nth_index<0>::type::iterator
-                it = parent_child_map.get<0>().find(*eit);
-                if(it==parent_child_map.get<0>().end()) continue;
-                rval = moab.add_entities(cubit_meshset,&it->cHild,1); CHKERRQ_MOAB(rval);
-              }
+              parent_ents = intersect(parent_ents,child_ents);
+              ierr = updateRangeByChilds(parent_child_map,parent_ents,child_edge_ents); CHKERRQ(ierr);
+              rval = moab.add_entities(cubit_meshset,child_edge_ents); CHKERRQ_MOAB(rval);
             }
           }
 
         }
         PetscFunctionReturn(0);
       }
+
+    private:
+
+      PetscErrorCode updateRangeByChilds(
+        const NodeMergerInterface::ParentChildMap& parent_child_map,
+        const Range &parents,Range &childs
+      ) const {
+        PetscFunctionBegin;
+        NodeMergerInterface::ParentChildMap::nth_index<0>::type::iterator it;
+        for(Range::const_iterator eit = parents.begin();eit!=parents.end();eit++) {
+          it = parent_child_map.get<0>().find(*eit);
+          if(it==parent_child_map.get<0>().end()) continue;
+          if(it->cHild!=it->pArent) {
+            childs.insert(it->cHild);
+          }
+        }
+        PetscFunctionReturn(0);
+      }
+
     };
 
     /**
@@ -1104,6 +1137,14 @@ namespace MoFEM {
         edges_to_merge = subtract(edges_to_merge,edges_to_remove);
         not_merged_edges.merge(edges_to_remove);
 
+        {
+          EntityHandle meshset;
+          rval = moab.create_meshset(MESHSET_SET,meshset); CHKERRQ_MOAB(rval);
+          rval = moab.add_entities(meshset,edges_to_merge); CHKERRQ_MOAB(rval);
+          rval = moab.write_file("edges_to_merge.vtk","VTK","",&meshset,1); CHKERRQ_MOAB(rval);
+          rval = moab.delete_entities(&meshset,1); CHKERRQ_MOAB(rval);
+        }
+
 
         PetscFunctionReturn(0);
       }
@@ -1260,6 +1301,19 @@ namespace MoFEM {
       setBitRefLevel(proc_tets,*bit_ptr); CHKERRQ(ierr);
     }
     out_tets.merge(proc_tets);
+
+    {
+      Range adj_edges;
+      rval = moab.get_adjacencies(out_tets,1,false,adj_edges,moab::Interface::UNION); CHKERRQ_MOAB(rval);
+      edges_to_merge = intersect(edges_to_merge,adj_edges);
+      EntityHandle meshset;
+      rval = moab.create_meshset(MESHSET_SET,meshset); CHKERRQ_MOAB(rval);
+      rval = moab.add_entities(meshset,edges_to_merge); CHKERRQ_MOAB(rval);
+      std::string name = "after_edges_to_merge.vtk";
+      rval = moab.write_file(name.c_str(),"VTK","",&meshset,1); CHKERRQ_MOAB(rval);
+      rval = moab.delete_entities(&meshset,1); CHKERRQ_MOAB(rval);
+
+    }
 
     PetscFunctionReturn(0);
   }

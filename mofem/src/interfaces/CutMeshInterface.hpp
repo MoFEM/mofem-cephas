@@ -172,6 +172,23 @@ namespace MoFEM {
     PetscErrorCode moveMidNodesOnTrimedEdges(Tag th = NULL);
 
     /**
+     * \brief Remove patalogical elements on surface internal front
+     *
+     * Internal surface skin is a set of edges in interia of the body on boundary
+     * of surface. This set of edges is called surface front. If surface face has three nodes on
+     * surface front, non of the face nodes is split and should be removed from surface
+     * if it is going to be split.
+     *
+     * @param  split_bit split bit level
+     * @param  bit       bit level of split mesh
+     * @param  ents      ents on the surface which is going to be split
+     * @return           error code
+     */
+    PetscErrorCode removePathologicalFrontTris(
+      const BitRefLevel split_bit,Range &ents
+    );
+
+    /**
      * \brief split sides
      * @param  split_bit split bit level
      * @param  bit       bit level of split mesh

@@ -216,7 +216,7 @@ int main(int argc, char *argv[]) {
     // ); CHKERRQ(ierr);
 
     ierr = cut_mesh->mergeBadEdges(
-      1,bit_level2,bit_level3,
+      4,bit_level2,bit_level3,
       cut_mesh->getNewTrimSurfaces(),fixed_edges,corner_nodes,th
     ); CHKERRQ(ierr);
 
@@ -226,6 +226,10 @@ int main(int argc, char *argv[]) {
     Range tets_level3;
     ierr = m_field.get_entities_by_type_and_ref_level(
       bit_level3,BitRefLevel().set(),MBTET,tets_level3
+    ); CHKERRQ(ierr);
+
+    ierr = cut_mesh->removePathologicalFrontTris(
+      bit_level3,const_cast<Range&>(cut_mesh->getMergedSurfaces())
     ); CHKERRQ(ierr);
 
     EntityHandle meshset_level3;
