@@ -262,7 +262,10 @@ PetscErrorCode TetGenInterface::setGeomData(
     for(;it!=mit->second.end();it++) {
       moabTetGen_Map::iterator miit = moab_tetgen_map.find(*it);
       if(miit == moab_tetgen_map.end()) {
-        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Data inconsistency between TetGen and MoAB");
+        SETERRQ(
+          PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
+          "Data inconsistency between TetGen and MoAB"
+        );
         continue;
       }
       int id = miit->second>>MB_TYPE_WIDTH;
@@ -306,10 +309,10 @@ PetscErrorCode TetGenInterface::outData(
   ); CHKERRQ_MOAB(rval);
 
   int num_nodes = 0;
-  std::vector<int> new_node_markes;
-  new_node_markes.reserve(out.numberofpoints);
-  std::vector<int> new_node_ii;
-  new_node_ii.reserve(out.numberofpoints);
+  // std::vector<int> new_node_markes;
+  // new_node_markes.reserve(out.numberofpoints);
+  // std::vector<int> new_node_ii;
+  // new_node_ii.reserve(out.numberofpoints);
 
   int ii = 0;
   for(;ii<out.numberofpoints;ii++) {
@@ -337,8 +340,8 @@ PetscErrorCode TetGenInterface::outData(
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"node should not be created");
     }
     num_nodes++;
-    new_node_ii.push_back(ii);
-    new_node_markes.push_back(out.pointmarkerlist[ii]);
+    // new_node_ii.push_back(ii);
+    // new_node_markes.push_back(out.pointmarkerlist[ii]);
     // EntityHandle node;
     // rval = m_field.get_moab().create_vertex(&out.pointlist[3*ii],node); CHKERRQ_MOAB(rval);
     // rval = m_field.get_moab().tag_set_data(th_marker,&node,1,&out.pointmarkerlist[ii]); CHKERRQ_MOAB(rval);
@@ -355,16 +358,18 @@ PetscErrorCode TetGenInterface::outData(
     EntityHandle startv;
     rval = iface->get_node_coords(3,num_nodes,0,startv,arrays); CHKERRQ_MOAB(rval);
     Range verts(startv, startv + num_nodes - 1);
-    int ii = 0;
+    int ii = in.numberofpoints;
     for(Range::iterator vit = verts.begin();vit!=verts.end();vit++,ii++) {
-      arrays[0][ii] = out.pointlist[3*ii+0];
-      arrays[1][ii] = out.pointlist[3*ii+1];
-      arrays[2][ii] = out.pointlist[3*ii+2];
-      moab_tetgen_map[*vit] = MBVERTEX|(new_node_ii[ii]<<MB_TYPE_WIDTH);
-      tetgen_moab_map[MBVERTEX|(new_node_ii[ii]<<MB_TYPE_WIDTH)] = *vit;
+      for(int nn = 0;nn!=3;nn++) {
+        arrays[nn][ii-in.numberofpoints] = out.pointlist[3*ii+nn];
+      }
+      moab_tetgen_map[*vit] = MBVERTEX|(ii<<MB_TYPE_WIDTH);
+      tetgen_moab_map[MBVERTEX|(ii<<MB_TYPE_WIDTH)] = *vit;
       if(ents!=NULL) ents->insert(*vit);
     }
-    rval = m_field.get_moab().tag_set_data(th_marker,verts,&new_node_markes[0]); CHKERRQ_MOAB(rval);
+    rval = m_field.get_moab().tag_set_data(
+      th_marker,verts,&out.pointmarkerlist[in.numberofpoints]
+    ); CHKERRQ_MOAB(rval);
   }
 
   std::vector<int> tetgen_ii;
