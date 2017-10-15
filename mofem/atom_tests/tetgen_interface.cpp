@@ -94,7 +94,7 @@ int main(int argc, char *argv[]) {
   //save results
   EntityHandle meshset_level1;
   rval = moab.create_meshset(MESHSET_SET,meshset_level1); CHKERRQ_MOAB(rval);
-  ierr = m_field.get_entities_by_type_and_ref_level(bit_level1,BitRefLevel().set(),MBTET,meshset_level1); CHKERRQ(ierr);
+  ierr = m_field.query_interface<Tools>()->getEntitiesByTypeAndRefLevel(bit_level1,BitRefLevel().set(),MBTET,meshset_level1); CHKERRQ(ierr);
   if(debug) rval = moab.write_file("level1.vtk","VTK","",&meshset_level1,1); CHKERRQ_MOAB(rval);
 
   //clean data
@@ -216,11 +216,11 @@ int main(int argc, char *argv[]) {
   //post-process results, save a mesh and skin
   EntityHandle meshset_level2;
   rval = moab.create_meshset(MESHSET_SET,meshset_level2); CHKERRQ_MOAB(rval);
-  ierr = m_field.get_entities_by_type_and_ref_level(bit_level2,BitRefLevel().set(),MBTET,meshset_level2); CHKERRQ(ierr);
+  ierr = m_field.query_interface<Tools>()->getEntitiesByTypeAndRefLevel(bit_level2,BitRefLevel().set(),MBTET,meshset_level2); CHKERRQ(ierr);
   if(debug) rval = moab.write_file("level2.vtk","VTK","",&meshset_level2,1); CHKERRQ_MOAB(rval);
   EntityHandle meshset_skin_level2;
   rval = moab.create_meshset(MESHSET_SET,meshset_skin_level2); CHKERRQ_MOAB(rval);
-  ierr = m_field.get_entities_by_type_and_ref_level(bit_level2,BitRefLevel().set(),MBTRI,meshset_skin_level2); CHKERRQ(ierr);
+  ierr = m_field.query_interface<Tools>()->getEntitiesByTypeAndRefLevel(bit_level2,BitRefLevel().set(),MBTRI,meshset_skin_level2); CHKERRQ(ierr);
   if(debug) rval = moab.write_file("level_skin2.vtk","VTK","",&meshset_skin_level2,1); CHKERRQ_MOAB(rval);
 
   //test BitLevelCoupler
@@ -228,7 +228,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field.query_interface(bit_ref_copuler_ptr); CHKERRQ(ierr);
 
   Range children;
-  ierr = m_field.get_entities_by_ref_level(bit_level1,BitRefLevel().set(),children); CHKERRQ(ierr);
+  ierr = m_field.query_interface<Tools>()->getEntitiesByRefLevel(bit_level1,BitRefLevel().set(),children); CHKERRQ(ierr);
   if(children.empty()) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"it should not be empty");
   }

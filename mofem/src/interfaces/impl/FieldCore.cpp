@@ -732,7 +732,7 @@ PetscErrorCode Core::set_field_order_by_entity_type_and_bit_ref(
   if(verb==-1) verb = verbose;
   *buildMoFEM = 0;
   Range ents;
-  ierr = get_entities_by_type_and_ref_level(bit,mask,type,ents,verb); CHKERRQ(ierr);
+  ierr = Tools(*this).getEntitiesByTypeAndRefLevel(bit,mask,type,ents,verb); CHKERRQ(ierr);
   try{
     ierr = set_field_order(ents,id,order,verb); CHKERRQ(ierr);
   } catch (MoFEMException const &e) {
@@ -748,7 +748,7 @@ PetscErrorCode Core::set_field_order_by_entity_type_and_bit_ref(
   if(verb==-1) verb = verbose;
   *buildMoFEM = 0;
   Range ents;
-  ierr = get_entities_by_type_and_ref_level(bit,mask,type,ents,verb); CHKERRQ(ierr);
+  ierr = Tools(*this).getEntitiesByTypeAndRefLevel(bit,mask,type,ents,verb); CHKERRQ(ierr);
   try{
     ierr = set_field_order(ents,getBitFieldId(name),order,verb); CHKERRQ(ierr);
   } catch (MoFEMException const &e) {

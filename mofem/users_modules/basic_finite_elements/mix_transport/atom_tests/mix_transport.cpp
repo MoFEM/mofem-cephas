@@ -116,7 +116,7 @@ int main(int argc, char *argv[]) {
 
     // Set boundary conditions
     Range tets;
-    ierr = m_field.get_entities_by_type_and_ref_level(BitRefLevel().set(0),BitRefLevel().set(),MBTET,tets); CHKERRQ(ierr);
+    ierr = m_field.query_interface<Tools>()->getEntitiesByTypeAndRefLevel(BitRefLevel().set(0),BitRefLevel().set(),MBTET,tets); CHKERRQ(ierr);
     Skinner skin(&moab);
     Range skin_faces; // skin faces from 3d ents
     rval = skin.find_skin(0,tets,false,skin_faces); CHKERRQ_MOAB(rval);

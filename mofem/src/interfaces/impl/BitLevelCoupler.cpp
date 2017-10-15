@@ -71,7 +71,7 @@ namespace MoFEM {
     MoFEM::Interface& m_field = cOre;
     treePtr.reset(new AdaptiveKDTree(&m_field.get_moab()));
     Range tets;
-    ierr = m_field.get_entities_by_type_and_ref_level(
+    ierr = m_field.query_interface<Tools>()->getEntitiesByTypeAndRefLevel(
       parent_level,BitRefLevel().set(),MBTET,tets
     ); CHKERRQ(ierr);
     rval = treePtr->build_tree(tets); CHKERRQ_MOAB(rval);
@@ -582,7 +582,7 @@ namespace MoFEM {
       //moab::Interface& moab = m_field.get_moab();
       MoFEMFunctionBeginHot;
       Range ents;
-      ierr = m_field.get_entities_by_ref_level(bit,mask,ents); CHKERRQ(ierr);
+      ierr = m_field.query_interface<Tools>()->getEntitiesByRefLevel(bit,mask,ents); CHKERRQ(ierr);
       std::vector<EntityHandle> parents;
       std::vector<EntityHandle> children;
       for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {

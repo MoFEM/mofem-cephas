@@ -76,7 +76,7 @@ namespace MoFEM {
     EntityHandle meshset;
     rval = moab.create_meshset(MESHSET_SET,meshset); CHKERRQ_MOAB(rval);
     Range ents;
-    ierr = m_field.get_entities_by_type_and_ref_level(bit,mask,type,meshset); CHKERRQ(ierr);
+    ierr = getEntitiesByTypeAndRefLevel(bit,mask,type,meshset); CHKERRQ(ierr);
     rval = moab.write_file(file_name,file_type,options,&meshset,1); CHKERRQ_MOAB(rval);
     rval = moab.delete_entities(&meshset,1); CHKERRQ_MOAB(rval);
     MoFEMFunctionReturnHot(0);

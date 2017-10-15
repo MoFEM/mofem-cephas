@@ -62,7 +62,6 @@ static inline double determinant(T &t) {
 
 template<class T>
 static double volume_length_quality(T *coords) {
-  MoFEMFunctionBeginHot;
   T lrms = 0;
   for(int dd = 0;dd!=3;dd++) {
     lrms +=
@@ -579,7 +578,7 @@ PetscErrorCode NodeMergerInterface::mergeNodes(
   MoFEM::Interface& m_field = cOre;
   MoFEMFunctionBeginHot;
   Range level_tets;
-  ierr = m_field.get_entities_by_type_and_ref_level(
+  ierr = m_field.query_interface<Tools>()->getEntitiesByTypeAndRefLevel(
     tets_from_bit_ref_level,BitRefLevel().set(),MBTET,level_tets
   ); CHKERRQ(ierr);
   ierr = mergeNodes(father,mother,bit,&level_tets,only_if_improve_quality,move,th); CHKERRQ(ierr);

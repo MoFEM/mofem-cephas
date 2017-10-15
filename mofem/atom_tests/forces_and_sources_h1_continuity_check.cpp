@@ -132,14 +132,14 @@ int main(int argc, char *argv[]) {
   ierr = m_field.add_ents_to_finite_element_by_type(root_set,MBTET,"TET_FE"); CHKERRQ(ierr);
 
   Range tets;
-  ierr = m_field.get_entities_by_type_and_ref_level(BitRefLevel().set(0),BitRefLevel().set(),MBTET,tets); CHKERRQ(ierr);
+  ierr = m_field.query_interface<Tools>()->getEntitiesByTypeAndRefLevel(BitRefLevel().set(0),BitRefLevel().set(),MBTET,tets); CHKERRQ(ierr);
   Skinner skin(&moab);
   Range skin_faces; // skin faces from 3d ents
   rval = skin.find_skin(0,tets,false,skin_faces); CHKERRQ_MOAB(rval);
   ierr = m_field.add_ents_to_finite_element_by_type(skin_faces,MBTRI,"SKIN_FE"); CHKERRQ(ierr);
 
   Range faces;
-  ierr = m_field.get_entities_by_type_and_ref_level(BitRefLevel().set(0),BitRefLevel().set(),MBTRI,faces); CHKERRQ(ierr);
+  ierr = m_field.query_interface<Tools>()->getEntitiesByTypeAndRefLevel(BitRefLevel().set(0),BitRefLevel().set(),MBTRI,faces); CHKERRQ(ierr);
   faces = subtract(faces,skin_faces);
   ierr = m_field.add_ents_to_finite_element_by_type(faces,MBTRI,"TRI_FE"); CHKERRQ(ierr);
 
@@ -552,7 +552,7 @@ int main(int argc, char *argv[]) {
 
   EntityHandle meshset;
   rval = moab.create_meshset(MESHSET_SET,meshset); CHKERRQ_MOAB(rval);
-  ierr = m_field.get_entities_by_type_and_ref_level(BitRefLevel().set(0),BitRefLevel().set(),MBTRI,meshset); CHKERRQ(ierr);
+  ierr = m_field.query_interface<Tools>()->getEntitiesByTypeAndRefLevel(BitRefLevel().set(0),BitRefLevel().set(),MBTRI,meshset); CHKERRQ(ierr);
   rval = moab.write_file("out.vtk","VTK","",&meshset,1); CHKERRQ_MOAB(rval);
 
 

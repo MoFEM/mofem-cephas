@@ -92,7 +92,7 @@ int main(int argc, char *argv[]) {
 
   ierr = m_field.add_ents_to_finite_element_by_type(root_set,MBTET,"V1"); CHKERRQ(ierr);
   Range faces;
-  ierr = m_field.get_entities_by_type_and_ref_level(
+  ierr = m_field.query_interface<Tools>()->getEntitiesByTypeAndRefLevel(
     bit_level0,BitRefLevel().set(),MBTRI,faces
   ); CHKERRQ(ierr);
   ierr = m_field.add_ents_to_finite_element_by_type(faces,MBTRI,"S2"); CHKERRQ(ierr);
