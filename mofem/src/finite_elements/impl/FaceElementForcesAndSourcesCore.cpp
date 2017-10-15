@@ -61,6 +61,8 @@
 #include <EntPolynomialBaseCtx.hpp>
 #include <TriPolynomialBase.hpp>
 
+#include <Tools.hpp>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -77,13 +79,13 @@ namespace MoFEM {
 PetscErrorCode FaceElementForcesAndSourcesCore::UserDataOperator::loopSideVolumes(
   const string &fe_name,VolumeElementForcesAndSourcesCoreOnSide &method
 ) {
-  
+
   MoFEMFunctionBeginHot;
 
   const EntityHandle ent = getNumeredEntFiniteElementPtr()->getEnt();
   const Problem *problem_ptr = getFEMethod()->problemPtr;
   Range adjacent_volumes;
-  ierr = getFaceFE()->mField.get_adjacencies_any(ent,3,adjacent_volumes); CHKERRQ(ierr);
+  ierr = getFaceFE()->mField.query_interface<Tools>()->getAdjacenciesAny(ent,3,adjacent_volumes); CHKERRQ(ierr);
   typedef NumeredEntFiniteElement_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type FEByComposite;
   FEByComposite &numered_fe =
   (const_cast<NumeredEntFiniteElement_multiIndex&>(
@@ -678,7 +680,7 @@ PetscErrorCode OpCalculateInvJacForFace::doWork(
   EntityType type,
   DataForcesAndSourcesCore::EntData &data
 ) {
-  
+
   MoFEMFunctionBeginHot;
 
   if(getNumeredEntFiniteElementPtr()->getEntType()!=MBTRI) {
@@ -734,7 +736,7 @@ PetscErrorCode OpSetInvJacH1ForFace::doWork(
   DataForcesAndSourcesCore::EntData &data
 ) {
   MoFEMFunctionBeginHot;
-  // 
+  //
 
   if(
     getNumeredEntFiniteElementPtr()->getEntType()!=MBTRI &&

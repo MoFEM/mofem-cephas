@@ -48,6 +48,8 @@ namespace MoFEM {
       -t(2,0)*t(1,1)*t(0,2) - t(1,0)*t(0,1)*t(2,2);
     }
 
+    #ifdef FTENSOR_HPP
+
     template<class T>
     static double volumeLengthQuality(T *coords) {
       T lrms = 0;
@@ -78,15 +80,16 @@ namespace MoFEM {
       return 6.*sqrt(2.)*volume/pow(lrms,3);
     }
 
+    #endif // FTENSOR_HPP
+
     /**@}*/
 
-    /** \name Adjacencies and entity hanlders */
+    /** \name Entity hanlders by bit ref level */
 
     /**@{*/
 
     /**\brief add all ents from ref level given by bit to meshset
-      * \todo Should be outsourced to separate interface, i.e. BitLevelManager
-      * \ingroup mofem_ref_ents
+      * \ingroup mofem_tools
       *
       * \param BitRefLevel bitLevel
       * \param BitRefLevel mask
@@ -99,8 +102,7 @@ namespace MoFEM {
     ) const;
 
     /**\brief add all ents from ref level given by bit to meshset
-     * \todo Should be outsourced to separate interface, i.e. BitLevelManager
-     * \ingroup mofem_ref_ents
+     * \ingroup mofem_tools
      *
      * \param BitRefLevel bitLevel
      * \param BitRefLevel mask
@@ -113,8 +115,7 @@ namespace MoFEM {
     ) const;
 
     /**\brief add all ents from ref level given by bit to meshset
-     * \todo Should be outsourced to separate interface, i.e. BitLevelManager
-     * \ingroup mofem_ref_ents
+     * \ingroup mofem_tools
      *
      * \param BitRefLevel bitLevel
      * \param BitRefLevel mask
@@ -126,8 +127,7 @@ namespace MoFEM {
     ) const;
 
     /**\brief add all ents from ref level given by bit to meshset
-     * \todo Should be outsourced to separate interface, i.e. BitLevelManager
-     * \ingroup mofem_ref_ents
+     * \ingroup mofem_tools
      *
      * \param BitRefLevel bitLevel
      * \param BitRefLevel mask
@@ -135,6 +135,56 @@ namespace MoFEM {
      */
     PetscErrorCode getEntitiesByRefLevel(
       const BitRefLevel &bit,const BitRefLevel &mask,Range &ents
+    ) const;
+
+    /**@}*/
+
+    /** \name Get adjacencies bi bit ref level */
+
+    /**@{*/
+
+    /** \brief Get the adjacencies associated with a entity to entities of a specified dimension.
+      * \ingroup mofem_tools
+      *
+      * bit ref level of adjacent entities is equal to bit ref level of adjacent entities
+      */
+    virtual PetscErrorCode getAdjacenciesEquality(const EntityHandle from_entiti,const int to_dimension,Range &adj_entities) const;
+
+    /** \brief Get the adjacencies associated with a entity to entities of a specified dimension.
+      * \ingroup mofem_tools
+      *
+      * bit ref level of adjacent entities is any of bit ref level of adjacent entities
+      */
+    virtual PetscErrorCode getAdjacenciesAny(const EntityHandle from_entiti,const int to_dimension,Range &adj_entities) const;
+
+    /** \brief Get the adjacencies associated with a entity to entities of a specified dimension.
+      * \ingroup mofem_tools
+      *
+      * bit ref level of adjacent entities is equal to bit ref level of adjacent entities
+      */
+    virtual PetscErrorCode getAdjacencies(
+      const Problem *problem_ptr,
+      const EntityHandle *from_entities,
+      const int num_netities,
+      const int to_dimension,
+      Range &adj_entities,
+      const int operation_type = moab::Interface::INTERSECT,
+      const int verb = 0
+    ) const;
+
+    /** \brief Get the adjacencies associated with a entity to entities of a specified dimension.
+      * \ingroup mofem_tools
+      *
+      * bit ref level of adjacent entities is equal to bit ref level of adjacent entities
+      */
+    virtual PetscErrorCode getAdjacencies(
+      const BitRefLevel &bit,
+      const EntityHandle *from_entities,
+      const int num_netities,
+      const int to_dimension,
+      Range &adj_entities,
+      const int operation_type = moab::Interface::INTERSECT,
+      const int verb = 0
     ) const;
 
     /**@}*/

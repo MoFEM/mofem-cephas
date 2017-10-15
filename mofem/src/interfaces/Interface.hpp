@@ -535,27 +535,28 @@ struct Interface: public UnknownInterface {
  /**@{*/
 
   /** \brief Get the adjacencies associated with a entity to entities of a specified dimension.
+    * \deprecated use Tools interface
     * \ingroup mofem_ref_ents
-    * \todo Should be outsourced to separate interface, i.e. BitLevelManager
     *
     * bit ref level of adjacent entities is equal to bit ref level of adjacent entities
     */
-  virtual PetscErrorCode get_adjacencies_equality(const EntityHandle from_entiti,const int to_dimension,Range &adj_entities) const = 0;
+  DEPRECATED virtual PetscErrorCode get_adjacencies_equality(const EntityHandle from_entiti,const int to_dimension,Range &adj_entities) const = 0;
 
   /** \brief Get the adjacencies associated with a entity to entities of a specified dimension.
+    * \deprecated use Tools interface
     * \ingroup mofem_ref_ents
     *
     * bit ref level of adjacent entities is any of bit ref level of adjacent entities
     */
-  virtual PetscErrorCode get_adjacencies_any(const EntityHandle from_entiti,const int to_dimension,Range &adj_entities) const = 0;
+  DEPRECATED virtual PetscErrorCode get_adjacencies_any(const EntityHandle from_entiti,const int to_dimension,Range &adj_entities) const = 0;
 
   /** \brief Get the adjacencies associated with a entity to entities of a specified dimension.
+    * \deprecated use Tools interface
     * \ingroup mofem_ref_ents
-    * \todo Should be outsourced to separate interface, i.e. BitLevelManage
     *
     * bit ref level of adjacent entities is equal to bit ref level of adjacent entities
     */
-  virtual PetscErrorCode get_adjacencies(
+  DEPRECATED virtual PetscErrorCode get_adjacencies(
     const Problem *problem_ptr,
     const EntityHandle *from_entities,
     const int num_netities,
@@ -566,12 +567,12 @@ struct Interface: public UnknownInterface {
   ) const = 0;
 
   /** \brief Get the adjacencies associated with a entity to entities of a specified dimension.
+    * \deprecated use Tools interface
     * \ingroup mofem_ref_ents
-    * \todo Should be outsourced to separate interface, i.e. BitLevelManage
     *
     * bit ref level of adjacent entities is equal to bit ref level of adjacent entities
     */
-  virtual PetscErrorCode get_adjacencies(
+  DEPRECATED  virtual PetscErrorCode get_adjacencies(
     const BitRefLevel &bit,
     const EntityHandle *from_entities,
     const int num_netities,

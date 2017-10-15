@@ -776,9 +776,9 @@ struct Core: public Interface {
   DEPRECATED PetscErrorCode set_field(const double val,const EntityType type,const Range &ents,const std::string& field_name);
 
   /// \name get adjacencies
-  PetscErrorCode get_adjacencies_equality(const EntityHandle from_entiti,const int to_dimension,Range &adj_entities) const;
-  PetscErrorCode get_adjacencies_any(const EntityHandle from_entiti,const int to_dimension,Range &adj_entities) const;
-  PetscErrorCode get_adjacencies(
+  DEPRECATED PetscErrorCode get_adjacencies_equality(const EntityHandle from_entiti,const int to_dimension,Range &adj_entities) const;
+  DEPRECATED PetscErrorCode get_adjacencies_any(const EntityHandle from_entiti,const int to_dimension,Range &adj_entities) const;
+  DEPRECATED PetscErrorCode get_adjacencies(
     const Problem *problem_ptr,
     const EntityHandle *from_entities,
     const int num_netities,
@@ -787,7 +787,7 @@ struct Core: public Interface {
     const int operation_type = moab::Interface::INTERSECT,
     const int verb = 0
   ) const;
-  PetscErrorCode get_adjacencies(
+  DEPRECATED PetscErrorCode get_adjacencies(
     const BitRefLevel &bit,
     const EntityHandle *from_entities,
     const int num_netities,
