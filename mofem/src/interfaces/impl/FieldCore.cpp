@@ -1233,86 +1233,16 @@ PetscErrorCode Core::shift_right_bit_ref(const int shift,int verb) {
   return BitRefManager(*this).shiftRightBitRef(shift,BitRefLevel().set(),verb);
 }
 PetscErrorCode Core::get_entities_by_type_and_ref_level(const BitRefLevel &bit,const BitRefLevel &mask,const EntityType type,const EntityHandle meshset,int verb) {
-  MoFEMFunctionBeginHot;
-  Range ents;
-  ierr = get_entities_by_type_and_ref_level(bit,mask,type,ents,verb); CHKERRQ(ierr);
-  rval = moab.add_entities(meshset,ents); CHKERRQ_MOAB(rval);
-  MoFEMFunctionReturnHot(0);
+  return Tools(*this).getEntitiesByTypeAndRefLevel(bit,mask,type,meshset,verb);
 }
 PetscErrorCode Core::get_entities_by_type_and_ref_level(const BitRefLevel &bit,const BitRefLevel &mask,const EntityType type,Range &ents,int verb) {
-  MoFEMFunctionBeginHot;
-  if(verb==-1) verb = verbose;
-  ierr = moab.get_entities_by_type(0,type,ents,false); CHKERRQ(ierr);
-  const BitRefLevel* tag_bit;
-  Range::iterator eit = ents.begin();
-  for(;eit!=ents.end();tag_bit++) {
-    rval = moab.tag_get_by_ptr(
-      th_RefBitLevel,&*eit,1,(const void **)(&tag_bit)
-    ); CHKERRQ_MOAB(rval);
-    if(mask.any()&&tag_bit->none()) {
-      eit = ents.erase(eit);
-      continue;
-    }
-    // Not masked
-    if(((*tag_bit)&mask) != (*tag_bit)) {
-      eit = ents.erase(eit);
-      continue;
-    }
-    // Not in bit
-    if(((*tag_bit)&bit).none()) {
-      eit = ents.erase(eit);
-      continue;
-    }
-    eit++;
-  }
-  MoFEMFunctionReturnHot(0);
+  return Tools(*this).getEntitiesByTypeAndRefLevel(bit,mask,type,ents,verb);
 }
 PetscErrorCode Core::get_entities_by_ref_level(const BitRefLevel &bit,const BitRefLevel &mask,const EntityHandle meshset) {
-  MoFEMFunctionBeginHot;
-  Range ents;
-  ierr = get_entities_by_ref_level(bit,mask,ents); CHKERRQ(ierr);
-  rval = moab.add_entities(meshset,ents); CHKERRQ_MOAB(rval);
-  MoFEMFunctionReturnHot(0);
+  return Tools(*this).getEntitiesByRefLevel(bit,mask,meshset);
 }
 PetscErrorCode Core::get_entities_by_ref_level(const BitRefLevel &bit,const BitRefLevel &mask,Range &ents) {
-  MoFEMFunctionBeginHot;
-  Range meshset_ents;
-  ierr = moab.get_entities_by_type(0,MBENTITYSET,meshset_ents,false); CHKERRQ(ierr);
-  ierr = moab.get_entities_by_handle(0,ents,false); CHKERRQ(ierr);
-  ents.merge(meshset_ents);
-  Range::iterator eit = ents.begin();
-  for(;eit!=ents.end();) {
-    switch (moab.type_from_handle(*eit)) {
-      case MBVERTEX:
-      case MBEDGE:
-      case MBTRI:
-      case MBQUAD:
-      case MBTET:
-      case MBPRISM:
-      break;
-      case MBENTITYSET:
-      break;
-      default:
-      eit = ents.erase(eit);
-      continue;
-    }
-    BitRefLevel bit2;
-    rval = moab.tag_get_data(th_RefBitLevel,&*eit,1,&bit2); CHKERRQ_MOAB(rval);
-    if(mask.any()&&bit2.none()) {
-      eit = ents.erase(eit);
-      continue;
-    }
-    if((bit2&mask) != bit2) {
-      eit = ents.erase(eit);
-      continue;
-    }
-    if((bit2&bit).none()) {
-      eit = ents.erase(eit);
-      continue;
-    }
-    eit++;
-  }
-  MoFEMFunctionReturnHot(0);
+  return Tools(*this).getEntitiesByRefLevel(bit,mask,ents);
 }
 PetscErrorCode Core::update_meshset_by_entities_children(
   const EntityHandle parent, const BitRefLevel &child_bit,const EntityHandle child,

@@ -22,6 +22,7 @@
 #include <definitions.h>
 #include <Common.hpp>
 
+#include <FTensor.hpp>
 #include <h1_hdiv_hcurl_l2.h>
 
 #include <MaterialBlocks.hpp>
@@ -61,6 +62,7 @@
 #include <NodeMerger.hpp>
 #include <PrismsFromSurfaceInterface.hpp>
 #include <UpdateMeshsetsAndRanges.hpp>
+#include <Tools.hpp>
 
 #include <boost/scoped_ptr.hpp>
 #include <moab/AdaptiveKDTree.hpp>
@@ -178,6 +180,15 @@ PetscErrorCode Core::query_interface_type(const std::type_info& type,void*& ptr)
       iFaces.insert(uid,new UpdateMeshsetsAndRanges(*this));
     }
     ptr = &iFaces.at(IDD_MOFEMUpdateMeshsetsAndRanges.uUId.to_ulong());
+    MoFEMFunctionReturnHot(0);
+  }
+
+  if(type == typeid(Tools)) {
+    if(iFaces.find(IDD_MOFEMTools.uUId.to_ulong()) == iFaces.end()) {
+      unsigned long int uid = IDD_MOFEMTools.uUId.to_ulong();
+      iFaces.insert(uid,new Tools(*this));
+    }
+    ptr = &iFaces.at(IDD_MOFEMTools.uUId.to_ulong());
     MoFEMFunctionReturnHot(0);
   }
 
