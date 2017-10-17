@@ -15,37 +15,6 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 */
 
-#include <Includes.hpp>
-#include <version.h>
-#include <definitions.h>
-#include <Common.hpp>
-
-#include <h1_hdiv_hcurl_l2.h>
-#include <fem_tools.h>
-
-#include <UnknownInterface.hpp>
-
-#include <MaterialBlocks.hpp>
-#include <BCData.hpp>
-#include <TagMultiIndices.hpp>
-#include <CoordSysMultiIndices.hpp>
-#include <FieldMultiIndices.hpp>
-#include <EntsMultiIndices.hpp>
-#include <DofsMultiIndices.hpp>
-#include <FEMultiIndices.hpp>
-#include <ProblemsMultiIndices.hpp>
-#include <AdjacencyMultiIndices.hpp>
-#include <BCMultiIndices.hpp>
-#include <CoreDataStructures.hpp>
-#include <SeriesMultiIndices.hpp>
-
-#include <LoopMethods.hpp>
-#include <Interface.hpp>
-#include <MeshRefinement.hpp>
-#include <PrismInterface.hpp>
-#include <SeriesRecorder.hpp>
-#include <Core.hpp>
-
 #ifdef WITH_MED
 
 extern "C" {
@@ -99,7 +68,7 @@ namespace MoFEM {
 
   PetscErrorCode MedInterface::getFileNameFromCommandLine(int verb) {
     MoFEM::Interface &m_field = cOre;
-    
+
     char mesh_file_name[255];
     MoFEMFunctionBeginHot;
     ierr = PetscOptionsBegin(
@@ -173,7 +142,7 @@ namespace MoFEM {
   }
 
   PetscErrorCode MedInterface::medGetFieldNames(int verb) {
-    
+
     MoFEMFunctionBeginHot;
     if(medFileName.empty()) {
       ierr = getFileNameFromCommandLine(verb); CHKERRQ(ierr);
@@ -266,7 +235,7 @@ namespace MoFEM {
     std::map<int,Range> &family_elem_map,
     int verb
   ) {
-    
+
     MoFEM::Interface &m_field = cOre;
     MoFEMFunctionBeginHot;
 
@@ -600,8 +569,8 @@ namespace MoFEM {
     const std::map<string,Range> &group_elem_map,
     int verb
   ) {
-    
-    
+
+
     MoFEM::Interface &m_field = cOre;
     MoFEMFunctionBeginHot;
     MeshsetsManager *meshsets_manager_ptr;
@@ -647,7 +616,7 @@ namespace MoFEM {
   }
 
   PetscErrorCode MedInterface::readMed(int verb) {
-    
+
     MoFEMFunctionBeginHot;
     if(medFileName.empty()) {
       ierr = getFileNameFromCommandLine(verb); CHKERRQ(ierr);
@@ -670,8 +639,8 @@ namespace MoFEM {
     const int only_step,
     int verb
   ) {
-    
-    
+
+
     MoFEM::Interface &m_field = cOre;
     MoFEMFunctionBeginHot;
     med_idt fid = MEDfileOpen((char*)file_name.c_str(), MED_LECTURE);

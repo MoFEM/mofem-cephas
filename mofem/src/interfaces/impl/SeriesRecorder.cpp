@@ -16,36 +16,6 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 */
 
-#include <Includes.hpp>
-#include <version.h>
-#include <definitions.h>
-#include <Common.hpp>
-
-#include <h1_hdiv_hcurl_l2.h>
-
-#include <UnknownInterface.hpp>
-
-#include <MaterialBlocks.hpp>
-#include <BCData.hpp>
-#include <TagMultiIndices.hpp>
-#include <CoordSysMultiIndices.hpp>
-#include <FieldMultiIndices.hpp>
-#include <EntsMultiIndices.hpp>
-#include <DofsMultiIndices.hpp>
-#include <FEMultiIndices.hpp>
-#include <ProblemsMultiIndices.hpp>
-#include <AdjacencyMultiIndices.hpp>
-#include <BCMultiIndices.hpp>
-#include <CoreDataStructures.hpp>
-#include <SeriesMultiIndices.hpp>
-
-#include <LoopMethods.hpp>
-#include <Interface.hpp>
-#include <MeshRefinement.hpp>
-#include <PrismInterface.hpp>
-#include <SeriesRecorder.hpp>
-#include <Core.hpp>
-
 namespace MoFEM {
 
 // const static int debug = 1;
@@ -70,7 +40,7 @@ cOre(const_cast<MoFEM::Core&>(core)) {
 }
 
 PetscErrorCode SeriesRecorder::getTags(int verb) {
-  
+
   MoFEM::Interface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   MoFEMFunctionBeginHot;
@@ -89,8 +59,8 @@ PetscErrorCode SeriesRecorder::clearMap() {
 }
 
 PetscErrorCode SeriesRecorder::initialiseDatabseInformationFromMesh(int verb) {
-  
-  
+
+
   MoFEM::Interface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   MoFEMFunctionBeginHot;
@@ -134,7 +104,7 @@ PetscErrorCode SeriesRecorder::initialiseDatabseInformationFromMesh(int verb) {
 }
 
 PetscErrorCode SeriesRecorder::add_series_recorder(const std::string &series_name) {
-  
+
   MoFEM::Interface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   MoFEMFunctionBeginHot;
@@ -151,7 +121,7 @@ PetscErrorCode SeriesRecorder::add_series_recorder(const std::string &series_nam
 }
 
 PetscErrorCode SeriesRecorder::delete_recorder_series(const std::string& series_name) {
-  
+
   MoFEM::Interface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   MoFEMFunctionBeginHot;
@@ -183,7 +153,7 @@ PetscErrorCode SeriesRecorder::delete_recorder_series(const std::string& series_
 
 PetscErrorCode SeriesRecorder::record_problem(const std::string& serie_name,const Problem *problemPtr,RowColData rc) {
   MoFEMFunctionBeginHot;
-  
+
   Series_multiIndex::index<SeriesName_mi_tag>::type::iterator sit = sEries.get<SeriesName_mi_tag>().find(serie_name);
   if(sit==sEries.get<SeriesName_mi_tag>().end()) {
     SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"series recorder <%s> not exist",serie_name.c_str());
@@ -206,7 +176,7 @@ PetscErrorCode SeriesRecorder::record_problem(const std::string& serie_name,cons
 }
 
 PetscErrorCode SeriesRecorder::record_problem(const std::string& serie_name,const std::string& problem_name,RowColData rc) {
-  
+
   MoFEM::Interface &m_field = cOre;
   MoFEMFunctionBeginHot;
   const Problem *problem_ptr;
@@ -219,7 +189,7 @@ PetscErrorCode SeriesRecorder::record_field(
   const std::string& serie_name,const std::string& field_name,
   const BitRefLevel &bit,const BitRefLevel &mask
 ) {
-  
+
   MoFEM::Interface &m_field = cOre;
   const DofEntity_multiIndex *dofs_ptr;
   MoFEMFunctionBeginHot;
@@ -247,7 +217,7 @@ PetscErrorCode SeriesRecorder::record_field(
 }
 
 PetscErrorCode SeriesRecorder::record_begin(const std::string& serie_name) {
-  
+
   MoFEMFunctionBeginHot;
   Series_multiIndex::index<SeriesName_mi_tag>::type::iterator sit = sEries.get<SeriesName_mi_tag>().find(serie_name);
   if(sit==sEries.get<SeriesName_mi_tag>().end()) {
@@ -258,7 +228,7 @@ PetscErrorCode SeriesRecorder::record_begin(const std::string& serie_name) {
 }
 
 PetscErrorCode SeriesRecorder::record_end(const std::string& serie_name,double time) {
-  
+
   MoFEMFunctionBeginHot;
   Series_multiIndex::index<SeriesName_mi_tag>::type::iterator sit = sEries.get<SeriesName_mi_tag>().find(serie_name);
   if(sit==sEries.get<SeriesName_mi_tag>().end()) {
@@ -269,7 +239,7 @@ PetscErrorCode SeriesRecorder::record_end(const std::string& serie_name,double t
 }
 
 PetscErrorCode SeriesRecorder::initialize_series_recorder(const std::string& serie_name) {
-  
+
   MoFEM::Interface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   MoFEMFunctionBeginHot;
@@ -284,7 +254,7 @@ PetscErrorCode SeriesRecorder::initialize_series_recorder(const std::string& ser
 }
 
 PetscErrorCode SeriesRecorder::finalize_series_recorder(const std::string& serie_name) {
-  
+
   MoFEM::Interface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   MoFEMFunctionBeginHot;
@@ -326,7 +296,7 @@ bool SeriesRecorder::check_series(const std::string& name) const {
 }
 
 PetscErrorCode SeriesRecorder::load_series_data(const std::string& serie_name,const int step_number) {
-  
+
   MoFEM::Interface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   const DofEntity_multiIndex *dofs_ptr;

@@ -52,44 +52,6 @@
 
 namespace MoFEM {
 
-template<class T>
-static inline double determinant(T &t) {
-  return
-  +t(0,0)*t(1,1)*t(2,2) + t(1,0)*t(2,1)*t(0,2)
-  +t(2,0)*t(0,1)*t(1,2) - t(0,0)*t(2,1)*t(1,2)
-  -t(2,0)*t(1,1)*t(0,2) - t(1,0)*t(0,1)*t(2,2);
-}
-
-template<class T>
-static double volume_length_quality(T *coords) {
-  T lrms = 0;
-  for(int dd = 0;dd!=3;dd++) {
-    lrms +=
-    pow(coords[0*3+dd]-coords[1*3+dd],2)+
-    pow(coords[0*3+dd]-coords[2*3+dd],2)+
-    pow(coords[0*3+dd]-coords[3*3+dd],2)+
-    pow(coords[1*3+dd]-coords[2*3+dd],2)+
-    pow(coords[1*3+dd]-coords[3*3+dd],2)+
-    pow(coords[2*3+dd]-coords[3*3+dd],2);
-  }
-  lrms = sqrt((1./6.)*lrms);
-  T diff_n[12];
-  ShapeDiffMBTET(diff_n);
-  FTensor::Tensor1<T*,3> t_diff_n(&diff_n[0],&diff_n[1],&diff_n[2],3);
-  FTensor::Tensor1<T*,3> t_coords(&coords[0],&coords[1],&coords[2],3);
-  FTensor::Tensor2<T,3,3> jac;
-  FTensor::Index<'i',3> i;
-  FTensor::Index<'j',3> j;
-  jac(i,j) = 0;
-  for(int nn = 0;nn!=4;nn++) {
-    jac(i,j) += t_coords(i)*t_diff_n(j);
-    ++t_coords;
-    ++t_diff_n;
-  }
-  T volume = determinant(jac)*G_TET_W1[0]/6.;
-  return 6.*sqrt(2.)*volume/pow(lrms,3);
-}
-
 PetscErrorCode NodeMergerInterface::queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface) {
   MoFEMFunctionBeginHot;
   *iface = NULL;
@@ -463,7 +425,7 @@ PetscErrorCode NodeMergerInterface::minQuality(
         rval = m_field.get_moab().tag_get_data(th,conn,num_nodes,coords); CHKERRQ_MOAB(rval);
       }
     }
-    double quality = volume_length_quality(coords);
+    double quality = Tools::volumeLengthQuality(coords);
     min_quality = fmin(min_quality,quality);
   }
   MoFEMFunctionReturnHot(0);
