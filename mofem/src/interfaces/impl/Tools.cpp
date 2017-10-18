@@ -15,36 +15,6 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 */
 
-#include <Includes.hpp>
-#include <version.h>
-#include <definitions.h>
-#include <Common.hpp>
-
-#include <h1_hdiv_hcurl_l2.h>
-
-#include <UnknownInterface.hpp>
-
-#include <MaterialBlocks.hpp>
-#include <BCData.hpp>
-#include <TagMultiIndices.hpp>
-#include <CoordSysMultiIndices.hpp>
-#include <FieldMultiIndices.hpp>
-#include <EntsMultiIndices.hpp>
-#include <DofsMultiIndices.hpp>
-#include <FEMultiIndices.hpp>
-#include <ProblemsMultiIndices.hpp>
-#include <AdjacencyMultiIndices.hpp>
-#include <BCMultiIndices.hpp>
-#include <CoreDataStructures.hpp>
-#include <SeriesMultiIndices.hpp>
-
-#include <LoopMethods.hpp>
-#include <Interface.hpp>
-#include <MeshRefinement.hpp>
-#include <PrismInterface.hpp>
-#include <SeriesRecorder.hpp>
-#include <Core.hpp>
-
 namespace MoFEM {
 
   PetscErrorCode Tools::queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface) {
@@ -59,6 +29,51 @@ namespace MoFEM {
       MoFEMFunctionReturnHot(0);
     }
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown interface");
+    MoFEMFunctionReturnHot(0);
+  }
+
+  double Tools::volumeLengthQuality(const double *coords) {
+    double lrms = 0;
+    for(int dd = 0;dd!=3;dd++) {
+      lrms +=
+      pow(coords[0*3+dd]-coords[1*3+dd],2)+
+      pow(coords[0*3+dd]-coords[2*3+dd],2)+
+      pow(coords[0*3+dd]-coords[3*3+dd],2)+
+      pow(coords[1*3+dd]-coords[2*3+dd],2)+
+      pow(coords[1*3+dd]-coords[3*3+dd],2)+
+      pow(coords[2*3+dd]-coords[3*3+dd],2);
+    }
+    lrms = sqrt((1./6.)*lrms);
+    double diff_n[12];
+    ShapeDiffMBTET(diff_n);
+    FTensor::Tensor1<double*,3> t_diff_n(&diff_n[0],&diff_n[1],&diff_n[2],3);
+    FTensor::Tensor1<const double*,3> t_coords(&coords[0],&coords[1],&coords[2],3);
+    FTensor::Tensor2<double,3,3> jac;
+    FTensor::Index<'i',3> i;
+    FTensor::Index<'j',3> j;
+    jac(i,j) = 0;
+    for(int nn = 0;nn!=4;nn++) {
+      jac(i,j) += t_coords(i)*t_diff_n(j);
+      ++t_coords;
+      ++t_diff_n;
+    }
+    double volume = dEterminant(jac)/6.;
+    return 6.*sqrt(2.)*volume/pow(lrms,3);
+  }
+
+  PetscErrorCode Tools::minTetsQuality(const Range& tets,double &min_quality) {
+    MoFEM::Interface& m_field = cOre;
+    moab::Interface& moab(m_field.get_moab());
+    MoFEMFunctionBeginHot;
+    const EntityHandle* conn;
+    int num_nodes;
+    double coords[12];
+    for(Range::iterator tit=tets.begin();tit!=tets.end();tit++) {
+      rval = m_field.get_moab().get_connectivity(*tit,conn,num_nodes,true); CHKERRQ_MOAB(rval);
+      rval = moab.get_coords(conn,num_nodes,coords); CHKERRQ_MOAB(rval);
+      double q = Tools::volumeLengthQuality(coords);
+      min_quality = fmin(q,min_quality);
+    }
     MoFEMFunctionReturnHot(0);
   }
 
@@ -178,6 +193,32 @@ namespace MoFEM {
     }
     MoFEMFunctionReturnHot(0);
   }
+
+  PetscErrorCode Tools::getEntitiesByParentType(
+    const BitRefLevel &bit,const BitRefLevel &mask,const EntityType type,Range &ents
+  ) const {
+    MoFEM::Interface& m_field = cOre;
+    // moab::Interface &moab = m_field.get_moab();
+    const RefEntity_multiIndex *ref_ents_ptr;
+    PetscFunctionBegin;
+    ierr = m_field.get_ref_ents(&ref_ents_ptr); CHKERRQ(ierr);
+    typedef RefEntity_multiIndex::index<ParentEntType_mi_tag>::type RefEntsByParentType;
+    const RefEntsByParentType& ref_ents = ref_ents_ptr->get<ParentEntType_mi_tag>();
+    RefEntsByParentType::iterator it,hi_it;
+    it = ref_ents.lower_bound(type);
+    hi_it = ref_ents.upper_bound(type);
+    for(;it!=hi_it;it++) {
+      const BitRefLevel& ent_bit = it->get()->getBitRefLevel();
+      if(
+        (ent_bit&mask) == ent_bit &&
+        (ent_bit&bit).any()
+      ) {
+        ents.insert(it->get()->getRefEnt());
+      }
+    }
+    PetscFunctionReturn(0);
+  }
+
 
   PetscErrorCode Tools::getAdjacenciesEquality(const EntityHandle from_entiti,const int to_dimension,Range &adj_entities) const {
     MoFEM::Interface& m_field = cOre;

@@ -113,7 +113,7 @@ int main(int argc, char *argv[]) {
 
     // find edges to cut
     ierr = cut_mesh->findEdgesToCut(1e-2); CHKERRQ(ierr);
-    ierr = cut_mesh->getEntsOnCutSurface(1e-2); CHKERRQ(ierr);
+    ierr = cut_mesh->getEntsOnCutSurface(1e-1); CHKERRQ(ierr);
     ierr = cut_mesh->cutEdgesInMiddle(bit_level1); CHKERRQ(ierr);
     ierr = cut_mesh->moveMidNodesOnCutEdges(th); CHKERRQ(ierr);
 
@@ -135,7 +135,7 @@ int main(int argc, char *argv[]) {
       ierr = meshset_manager->getEntitiesByDimension(100,SIDESET,1,fixed_edges,true); CHKERRQ(ierr);
       Range edges_level2;
       ierr = m_field.query_interface<Tools>()->getEntitiesByTypeAndRefLevel(
-        bit_level2,bit_level1|bit_level2,MBEDGE,edges_level2
+        bit_level2,BitRefLevel().set(),MBEDGE,edges_level2
       ); CHKERRQ(ierr);
       fixed_edges = intersect(fixed_edges,edges_level2);
       rval = moab.get_connectivity(fixed_edges,fixed_vertices,true); CHKERRQ_MOAB(rval);
@@ -147,6 +147,17 @@ int main(int argc, char *argv[]) {
 
     }
 
+    {
+      Range ents;
+      ierr = m_field.query_interface<Tools>()->getEntitiesByParentType(
+        bit_level2,bit_level1|bit_level2,MBEDGE,ents
+      ); CHKERRQ(ierr);
+      EntityHandle meshset;
+      rval = moab.create_meshset(MESHSET_SET,meshset); CHKERRQ_MOAB(rval);
+      rval = moab.add_entities(meshset,ents); CHKERRQ_MOAB(rval);
+      rval = moab.write_file("not_trimed.vtk","VTK","",&meshset,1); CHKERRQ_MOAB(rval);
+
+    }
 
 
     EntityHandle meshset_vol;
@@ -203,11 +214,11 @@ int main(int argc, char *argv[]) {
     rval = moab.add_entities(meshset_trim_new_surface,cut_mesh->getNewTrimSurfaces()); CHKERRQ_MOAB(rval);
     rval = moab.write_file("out_trim_new_surface.vtk","VTK","",&meshset_trim_new_surface,1); CHKERRQ_MOAB(rval);
 
-    // EntityHandle meshset_fixed_edges;
-    // rval = moab.create_meshset(MESHSET_SET,meshset_fixed_edges); CHKERRQ_MOAB(rval);
-    // rval = moab.add_entities(meshset_fixed_edges,fixed_edges); CHKERRQ_MOAB(rval);
-    // rval = moab.add_entities(meshset_fixed_edges,fixed_vertices); CHKERRQ_MOAB(rval);
-    // rval = moab.write_file("out_fixed_edges.vtk","VTK","",&meshset_fixed_edges,1); CHKERRQ_MOAB(rval);
+    EntityHandle meshset_fixed_edges;
+    rval = moab.create_meshset(MESHSET_SET,meshset_fixed_edges); CHKERRQ_MOAB(rval);
+    rval = moab.add_entities(meshset_fixed_edges,fixed_edges); CHKERRQ_MOAB(rval);
+    rval = moab.add_entities(meshset_fixed_edges,fixed_vertices); CHKERRQ_MOAB(rval);
+    rval = moab.write_file("out_fixed_edges.vtk","VTK","",&meshset_fixed_edges,1); CHKERRQ_MOAB(rval);
 
     Range tets_level2;
     ierr = m_field.query_interface<Tools>()->getEntitiesByTypeAndRefLevel(
@@ -224,7 +235,7 @@ int main(int argc, char *argv[]) {
     // ); CHKERRQ(ierr);
 
     ierr = cut_mesh->mergeBadEdges(
-      2,bit_level2,bit_level3,
+      2,bit_level2,bit_level1,bit_level3,
       cut_mesh->getNewTrimSurfaces(),fixed_edges,corner_nodes,th
     ); CHKERRQ(ierr);
 
@@ -250,7 +261,7 @@ int main(int argc, char *argv[]) {
 
     BitRefLevel bit_level4;
     bit_level4.set(4);
-    switches.push_back("pYsqORJS0VV");
+    switches.push_back("rp180YsqORJS0VV");
     // switches.push_back("pq1.2YJVV");
     ierr = cut_mesh->rebuildMeshWithTetGen(
       switches,bit_level3,bit_level4,cut_mesh->getMergedSurfaces(),fixed_edges,corner_nodes,true
@@ -260,34 +271,39 @@ int main(int argc, char *argv[]) {
     ierr = m_field.query_interface<Tools>()->getEntitiesByTypeAndRefLevel(
       bit_level4,BitRefLevel().set(),MBTET,tets_level4
     ); CHKERRQ(ierr);
+    Range tris_level4;
+    ierr = m_field.query_interface<Tools>()->getEntitiesByTypeAndRefLevel(
+      bit_level4,BitRefLevel().set(),MBTRI,tris_level4
+    ); CHKERRQ(ierr);
 
     EntityHandle meshset_level4;
     rval = moab.create_meshset(MESHSET_SET,meshset_level4); CHKERRQ_MOAB(rval);
     rval = moab.add_entities(meshset_level4,tets_level4); CHKERRQ_MOAB(rval);
+    rval = moab.add_entities(meshset_level4,cut_mesh->getTetgenSurfaces()); CHKERRQ_MOAB(rval);
     rval = moab.write_file("out_tets_level4.vtk","VTK","",&meshset_level4,1); CHKERRQ_MOAB(rval);
 
-    // BitRefLevel bit_level4;
-    // bit_level4.set(4);
-    // ierr = cut_mesh->splitMergedSides(bit_level3,bit_level4,th); CHKERRQ(ierr);
-    //
-    // Range tets_level4;
-    // ierr = m_field.query_interface<Tools>()->getEntitiesByTypeAndRefLevel(
-    //   bit_level4,BitRefLevel().set(),MBTET,tets_level4
-    // ); CHKERRQ(ierr);
-    // Range prisms_level4;
-    // ierr = m_field.query_interface<Tools>()->getEntitiesByTypeAndRefLevel(
-    //   bit_level4,BitRefLevel().set(),MBPRISM,prisms_level4
-    // ); CHKERRQ(ierr);
-    //
-    // EntityHandle meshset_level4;
-    // rval = moab.create_meshset(MESHSET_SET,meshset_level4); CHKERRQ_MOAB(rval);
-    // rval = moab.add_entities(meshset_level4,tets_level4); CHKERRQ_MOAB(rval);
-    // rval = moab.write_file("out_tets_level4.vtk","VTK","",&meshset_level4,1); CHKERRQ_MOAB(rval);
-    //
-    // EntityHandle meshset_prims_level4;
-    // rval = moab.create_meshset(MESHSET_SET,meshset_prims_level4); CHKERRQ_MOAB(rval);
-    // rval = moab.add_entities(meshset_prims_level4,prisms_level4); CHKERRQ_MOAB(rval);
-    // rval = moab.write_file("out_prisms_level4.vtk","VTK","",&meshset_prims_level4,1); CHKERRQ_MOAB(rval);
+    BitRefLevel bit_level5;
+    bit_level5.set(5);
+    ierr = cut_mesh->splitSides(bit_level4,bit_level5,cut_mesh->getTetgenSurfaces(),th); CHKERRQ(ierr);
+
+    Range tets_level5;
+    ierr = m_field.query_interface<Tools>()->getEntitiesByTypeAndRefLevel(
+      bit_level5,BitRefLevel().set(),MBTET,tets_level5
+    ); CHKERRQ(ierr);
+    Range prisms_level5;
+    ierr = m_field.query_interface<Tools>()->getEntitiesByTypeAndRefLevel(
+      bit_level5,BitRefLevel().set(),MBPRISM,prisms_level5
+    ); CHKERRQ(ierr);
+
+    EntityHandle meshset_level5;
+    rval = moab.create_meshset(MESHSET_SET,meshset_level5); CHKERRQ_MOAB(rval);
+    rval = moab.add_entities(meshset_level5,tets_level5); CHKERRQ_MOAB(rval);
+    rval = moab.write_file("out_tets_level5.vtk","VTK","",&meshset_level5,1); CHKERRQ_MOAB(rval);
+
+    EntityHandle meshset_prims_level5;
+    rval = moab.create_meshset(MESHSET_SET,meshset_prims_level5); CHKERRQ_MOAB(rval);
+    rval = moab.add_entities(meshset_prims_level5,prisms_level5); CHKERRQ_MOAB(rval);
+    rval = moab.write_file("out_prisms_level5.vtk","VTK","",&meshset_prims_level5,1); CHKERRQ_MOAB(rval);
 
   } catch (MoFEMException const &e) {
     SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);

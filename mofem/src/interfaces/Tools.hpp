@@ -48,39 +48,20 @@ namespace MoFEM {
       -t(2,0)*t(1,1)*t(0,2) - t(1,0)*t(0,1)*t(2,2);
     }
 
-    #ifdef FTENSOR_HPP
+    /**
+     * \brief calulate tetrahedron volume length quality
+     * @param  coords tet coordinates
+     * @return        qilaity
+     */
+    static double volumeLengthQuality(const double *coords);
 
-    template<class T>
-    static double volumeLengthQuality(T *coords) {
-      T lrms = 0;
-      for(int dd = 0;dd!=3;dd++) {
-        lrms +=
-        pow(coords[0*3+dd]-coords[1*3+dd],2)+
-        pow(coords[0*3+dd]-coords[2*3+dd],2)+
-        pow(coords[0*3+dd]-coords[3*3+dd],2)+
-        pow(coords[1*3+dd]-coords[2*3+dd],2)+
-        pow(coords[1*3+dd]-coords[3*3+dd],2)+
-        pow(coords[2*3+dd]-coords[3*3+dd],2);
-      }
-      lrms = sqrt((1./6.)*lrms);
-      T diff_n[12];
-      ShapeDiffMBTET(diff_n);
-      FTensor::Tensor1<T*,3> t_diff_n(&diff_n[0],&diff_n[1],&diff_n[2],3);
-      FTensor::Tensor1<T*,3> t_coords(&coords[0],&coords[1],&coords[2],3);
-      FTensor::Tensor2<T,3,3> jac;
-      FTensor::Index<'i',3> i;
-      FTensor::Index<'j',3> j;
-      jac(i,j) = 0;
-      for(int nn = 0;nn!=4;nn++) {
-        jac(i,j) += t_coords(i)*t_diff_n(j);
-        ++t_coords;
-        ++t_diff_n;
-      }
-      T volume = dEterminant(jac)/6.;
-      return 6.*sqrt(2.)*volume/pow(lrms,3);
-    }
-
-    #endif // FTENSOR_HPP
+    /**
+     * \brief calculate minimal quality of tetrahedra in range
+     * @param  tets        range
+     * @param  min_quality mimimal quality
+     * @return             error code
+     */
+    PetscErrorCode minTetsQuality(const Range& tets,double &min_quality);
 
     /**@}*/
 
@@ -90,6 +71,8 @@ namespace MoFEM {
 
     /**\brief add all ents from ref level given by bit to meshset
       * \ingroup mofem_tools
+      *
+      * \note Entities NOT have to be added to MoFEM database
       *
       * \param BitRefLevel bitLevel
       * \param BitRefLevel mask
@@ -104,6 +87,8 @@ namespace MoFEM {
     /**\brief add all ents from ref level given by bit to meshset
      * \ingroup mofem_tools
      *
+     * \note Entities NOT have to be added to MoFEM database
+     *
      * \param BitRefLevel bitLevel
      * \param BitRefLevel mask
      * \param EntityType type of entities
@@ -117,6 +102,8 @@ namespace MoFEM {
     /**\brief add all ents from ref level given by bit to meshset
      * \ingroup mofem_tools
      *
+     * \note Entities NOT have to be added to MoFEM database
+     *
      * \param BitRefLevel bitLevel
      * \param BitRefLevel mask
      * \param EntityHandle meshset
@@ -129,12 +116,30 @@ namespace MoFEM {
     /**\brief add all ents from ref level given by bit to meshset
      * \ingroup mofem_tools
      *
+     * \note Entities NOT have to be added to MoFEM database
+     *
      * \param BitRefLevel bitLevel
      * \param BitRefLevel mask
      * \retval ents
      */
     PetscErrorCode getEntitiesByRefLevel(
       const BitRefLevel &bit,const BitRefLevel &mask,Range &ents
+    ) const;
+
+
+    /**
+     * \brief get entities by bit ref level and type of parent
+     *
+     * \note Entities have to be added to MoFEM database
+     *
+     * \param BitRefLevel bitLevel
+     * \param BitRefLevel mask
+     * @param  type of parent
+     * @param  ents returned ents
+     * @return      error code
+     */
+    PetscErrorCode getEntitiesByParentType(
+      const BitRefLevel &bit,const BitRefLevel &mask,const EntityType type,Range &ents
     ) const;
 
     /**@}*/
