@@ -263,9 +263,20 @@ int main(int argc, char *argv[]) {
     bit_level4.set(4);
     switches.push_back("rp180YsqORJS0VV");
     // switches.push_back("pq1.2YJVV");
+
+    #ifdef WITH_TETGEN
+
     ierr = cut_mesh->rebuildMeshWithTetGen(
       switches,bit_level3,bit_level4,cut_mesh->getMergedSurfaces(),fixed_edges,corner_nodes,true
     ); CHKERRQ(ierr);
+
+
+    #endif // WITH_TETGEN
+
+    #ifndef WITH_TETGEN
+    bit_level4 = bit_level3;
+    #endif // WITH_TETGEN
+
 
     Range tets_level4;
     ierr = m_field.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(

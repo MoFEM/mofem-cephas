@@ -1409,6 +1409,8 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
+  #ifdef WITH_TETGEN
+
   PetscErrorCode CutMeshInterface::rebuildMeshWithTetGen(
     vector<string> &switches,
     const BitRefLevel& mesh_bit,
@@ -1772,6 +1774,7 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
+  #endif // WITH_TETGEN
 
   PetscErrorCode CutMeshInterface::setTagData(Tag th) {
     MoFEM::Interface &m_field = cOre;
