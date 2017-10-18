@@ -134,7 +134,7 @@ int main(int argc, char *argv[]) {
       ierr = meshset_update->updateMeshsetByEntitiesChildren(meshset,bit_level2,meshset,MBVERTEX,true); CHKERRQ(ierr);
       ierr = meshset_manager->getEntitiesByDimension(100,SIDESET,1,fixed_edges,true); CHKERRQ(ierr);
       Range edges_level2;
-      ierr = m_field.query_interface<Tools>()->getEntitiesByTypeAndRefLevel(
+      ierr = m_field.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
         bit_level2,BitRefLevel().set(),MBEDGE,edges_level2
       ); CHKERRQ(ierr);
       fixed_edges = intersect(fixed_edges,edges_level2);
@@ -149,7 +149,7 @@ int main(int argc, char *argv[]) {
 
     {
       Range ents;
-      ierr = m_field.query_interface<Tools>()->getEntitiesByParentType(
+      ierr = m_field.query_interface<BitRefManager>()->getEntitiesByParentType(
         bit_level2,bit_level1|bit_level2,MBEDGE,ents
       ); CHKERRQ(ierr);
       EntityHandle meshset;
@@ -221,7 +221,7 @@ int main(int argc, char *argv[]) {
     rval = moab.write_file("out_fixed_edges.vtk","VTK","",&meshset_fixed_edges,1); CHKERRQ_MOAB(rval);
 
     Range tets_level2;
-    ierr = m_field.query_interface<Tools>()->getEntitiesByTypeAndRefLevel(
+    ierr = m_field.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
       bit_level2,BitRefLevel().set(),MBTET,tets_level2
     ); CHKERRQ(ierr);
 
@@ -243,7 +243,7 @@ int main(int argc, char *argv[]) {
     ierr = cut_mesh->setCoords(th); CHKERRQ(ierr);
 
     Range tets_level3;
-    ierr = m_field.query_interface<Tools>()->getEntitiesByTypeAndRefLevel(
+    ierr = m_field.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
       bit_level3,BitRefLevel().set(),MBTET,tets_level3
     ); CHKERRQ(ierr);
 
@@ -268,11 +268,11 @@ int main(int argc, char *argv[]) {
     ); CHKERRQ(ierr);
 
     Range tets_level4;
-    ierr = m_field.query_interface<Tools>()->getEntitiesByTypeAndRefLevel(
+    ierr = m_field.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
       bit_level4,BitRefLevel().set(),MBTET,tets_level4
     ); CHKERRQ(ierr);
     Range tris_level4;
-    ierr = m_field.query_interface<Tools>()->getEntitiesByTypeAndRefLevel(
+    ierr = m_field.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
       bit_level4,BitRefLevel().set(),MBTRI,tris_level4
     ); CHKERRQ(ierr);
 
@@ -287,11 +287,11 @@ int main(int argc, char *argv[]) {
     ierr = cut_mesh->splitSides(bit_level4,bit_level5,cut_mesh->getTetgenSurfaces(),th); CHKERRQ(ierr);
 
     Range tets_level5;
-    ierr = m_field.query_interface<Tools>()->getEntitiesByTypeAndRefLevel(
+    ierr = m_field.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
       bit_level5,BitRefLevel().set(),MBTET,tets_level5
     ); CHKERRQ(ierr);
     Range prisms_level5;
-    ierr = m_field.query_interface<Tools>()->getEntitiesByTypeAndRefLevel(
+    ierr = m_field.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
       bit_level5,BitRefLevel().set(),MBPRISM,prisms_level5
     ); CHKERRQ(ierr);
 

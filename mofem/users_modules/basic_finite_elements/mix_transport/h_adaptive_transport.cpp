@@ -143,7 +143,7 @@ struct MyTransport: public MixTransportElement {
   PetscErrorCode addBoundaryElements(BitRefLevel &ref_level) {
     MoFEMFunctionBeginHot;
     Range tets;
-    ierr = mField.query_interface<Tools>()->getEntitiesByTypeAndRefLevel(ref_level,BitRefLevel().set(),MBTET,tets);
+    ierr = mField.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(ref_level,BitRefLevel().set(),MBTET,tets);
     Skinner skin(&mField.get_moab());
     Range skin_faces; // skin faces from 3d ents
     rval = skin.find_skin(0,tets,false,skin_faces); CHKERRQ_MOAB(rval);
@@ -168,7 +168,7 @@ struct MyTransport: public MixTransportElement {
     }
     Range essential_bc = subtract(skin_faces,natural_bc);
     Range bit_tris;
-    ierr = mField.query_interface<Tools>()->getEntitiesByTypeAndRefLevel(ref_level,BitRefLevel().set(),MBTRI,bit_tris);
+    ierr = mField.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(ref_level,BitRefLevel().set(),MBTRI,bit_tris);
     essential_bc = intersect(bit_tris,essential_bc);
     natural_bc = intersect(bit_tris,natural_bc);
     ierr = mField.add_ents_to_finite_element_by_type(essential_bc,MBTRI,"MIX_BCFLUX"); CHKERRQ(ierr);
@@ -244,7 +244,7 @@ struct MyTransport: public MixTransportElement {
     ierr = mField.query_interface(refine_ptr); CHKERRQ(ierr);
     for(int ll = 0;ll!=nb_levels;ll++) {
       Range edges;
-      ierr = mField.query_interface<Tools>()->getEntitiesByTypeAndRefLevel(
+      ierr = mField.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
         BitRefLevel().set(ll),BitRefLevel().set(),MBEDGE,edges
       ); CHKERRQ(ierr);
       edges = intersect(edges,refined_edges);
@@ -252,7 +252,7 @@ struct MyTransport: public MixTransportElement {
       ierr = refine_ptr->add_verices_in_the_middel_of_edges(edges,BitRefLevel().set(ll+1)); CHKERRQ(ierr);
       //  get tets at current level
       Range tets;
-      ierr = mField.query_interface<Tools>()->getEntitiesByTypeAndRefLevel(
+      ierr = mField.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
         BitRefLevel().set(ll),BitRefLevel().set(),MBTET,tets
       ); CHKERRQ(ierr);
       ierr = refine_ptr->refine_TET(tets,BitRefLevel().set(ll+1)); CHKERRQ(ierr);
@@ -264,7 +264,7 @@ struct MyTransport: public MixTransportElement {
     rval = mField.get_moab().create_meshset(MESHSET_SET,ref_meshset); CHKERRQ_MOAB(rval);
     {
       // cerr << BitRefLevel().set(nb_levels) << endl;
-      ierr = mField.query_interface<Tools>()->getEntitiesByTypeAndRefLevel(
+      ierr = mField.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
         BitRefLevel().set(nb_levels),BitRefLevel().set(),MBTET,ref_meshset
       ); CHKERRQ(ierr);
 
@@ -280,7 +280,7 @@ struct MyTransport: public MixTransportElement {
 
       // add entities to skeleton
       Range ref_tris;
-      ierr = mField.query_interface<Tools>()->getEntitiesByTypeAndRefLevel(
+      ierr = mField.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
         BitRefLevel().set(nb_levels),BitRefLevel().set(),MBTRI,ref_tris
       ); CHKERRQ(ierr);
       ierr = mField.add_ents_to_finite_element_by_type(

@@ -137,7 +137,7 @@ int main(int argc, char *argv[]) {
   //add entities to finite element
   ierr = m_field.add_ents_to_finite_element_by_type(root_set,MBTET,"TET_FE"); CHKERRQ(ierr);
   Range tets;
-  ierr = m_field.query_interface<Tools>()->getEntitiesByTypeAndRefLevel(
+  ierr = m_field.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
     BitRefLevel().set(0),BitRefLevel().set(),MBTET,tets
   ); CHKERRQ(ierr);
   Skinner skin(&moab);

@@ -702,7 +702,7 @@ PetscErrorCode Core::set_field_order_by_entity_type_and_bit_ref(
   if(verb==-1) verb = verbose;
   *buildMoFEM = 0;
   Range ents;
-  ierr = Tools(*this).getEntitiesByTypeAndRefLevel(bit,mask,type,ents,verb); CHKERRQ(ierr);
+  ierr = BitRefManager(*this).getEntitiesByTypeAndRefLevel(bit,mask,type,ents,verb); CHKERRQ(ierr);
   try{
     ierr = set_field_order(ents,id,order,verb); CHKERRQ(ierr);
   } catch (MoFEMException const &e) {
@@ -718,7 +718,7 @@ PetscErrorCode Core::set_field_order_by_entity_type_and_bit_ref(
   if(verb==-1) verb = verbose;
   *buildMoFEM = 0;
   Range ents;
-  ierr = Tools(*this).getEntitiesByTypeAndRefLevel(bit,mask,type,ents,verb); CHKERRQ(ierr);
+  ierr = BitRefManager(*this).getEntitiesByTypeAndRefLevel(bit,mask,type,ents,verb); CHKERRQ(ierr);
   try{
     ierr = set_field_order(ents,getBitFieldId(name),order,verb); CHKERRQ(ierr);
   } catch (MoFEMException const &e) {
@@ -1203,16 +1203,16 @@ PetscErrorCode Core::shift_right_bit_ref(const int shift,int verb) {
   return BitRefManager(*this).shiftRightBitRef(shift,BitRefLevel().set(),verb);
 }
 PetscErrorCode Core::get_entities_by_type_and_ref_level(const BitRefLevel &bit,const BitRefLevel &mask,const EntityType type,const EntityHandle meshset,int verb) {
-  return Tools(*this).getEntitiesByTypeAndRefLevel(bit,mask,type,meshset,verb);
+  return BitRefManager(*this).getEntitiesByTypeAndRefLevel(bit,mask,type,meshset,verb);
 }
 PetscErrorCode Core::get_entities_by_type_and_ref_level(const BitRefLevel &bit,const BitRefLevel &mask,const EntityType type,Range &ents,int verb) {
-  return Tools(*this).getEntitiesByTypeAndRefLevel(bit,mask,type,ents,verb);
+  return BitRefManager(*this).getEntitiesByTypeAndRefLevel(bit,mask,type,ents,verb);
 }
 PetscErrorCode Core::get_entities_by_ref_level(const BitRefLevel &bit,const BitRefLevel &mask,const EntityHandle meshset) {
-  return Tools(*this).getEntitiesByRefLevel(bit,mask,meshset);
+  return BitRefManager(*this).getEntitiesByRefLevel(bit,mask,meshset);
 }
 PetscErrorCode Core::get_entities_by_ref_level(const BitRefLevel &bit,const BitRefLevel &mask,Range &ents) {
-  return Tools(*this).getEntitiesByRefLevel(bit,mask,ents);
+  return BitRefManager(*this).getEntitiesByRefLevel(bit,mask,ents);
 }
 PetscErrorCode Core::update_meshset_by_entities_children(
   const EntityHandle parent, const BitRefLevel &child_bit,const EntityHandle child,

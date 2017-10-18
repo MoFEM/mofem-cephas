@@ -61,7 +61,7 @@
 #include <EntPolynomialBaseCtx.hpp>
 #include <TriPolynomialBase.hpp>
 
-#include <Tools.hpp>
+#include <BitRefManager.hpp>
 
 #ifdef __cplusplus
 extern "C" {
@@ -85,7 +85,7 @@ PetscErrorCode FaceElementForcesAndSourcesCore::UserDataOperator::loopSideVolume
   const EntityHandle ent = getNumeredEntFiniteElementPtr()->getEnt();
   const Problem *problem_ptr = getFEMethod()->problemPtr;
   Range adjacent_volumes;
-  ierr = getFaceFE()->mField.query_interface<Tools>()->getAdjacenciesAny(ent,3,adjacent_volumes); CHKERRQ(ierr);
+  ierr = getFaceFE()->mField.query_interface<BitRefManager>()->getAdjacenciesAny(ent,3,adjacent_volumes); CHKERRQ(ierr);
   typedef NumeredEntFiniteElement_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type FEByComposite;
   FEByComposite &numered_fe =
   (const_cast<NumeredEntFiniteElement_multiIndex&>(

@@ -330,30 +330,30 @@ struct MixTransportElement {
     ierr = mField.build_fields(); CHKERRQ(ierr);
     // get tetrahedrons which has been build previously and now in so called garbage bit level
     Range done_tets;
-    ierr = mField.query_interface<Tools>()->getEntitiesByTypeAndRefLevel(
+    ierr = mField.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
       BitRefLevel().set(0),BitRefLevel().set(),MBTET,done_tets
     ); CHKERRQ(ierr);
-    ierr = mField.query_interface<Tools>()->getEntitiesByTypeAndRefLevel(
+    ierr = mField.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
       BitRefLevel().set(BITREFLEVEL_SIZE-1),BitRefLevel().set(),MBTET,done_tets
     ); CHKERRQ(ierr);
     // get tetrahedrons which belong to problem bit level
     Range ref_tets;
-    ierr = mField.query_interface<Tools>()->getEntitiesByTypeAndRefLevel(
+    ierr = mField.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
       ref_level,BitRefLevel().set(),MBTET,ref_tets
     ); CHKERRQ(ierr);
     ref_tets = subtract(ref_tets,done_tets);
     ierr = mField.build_finite_elements("MIX",&ref_tets,2); CHKERRQ(ierr);
     // get triangles which has been build previously and now in so called garbage bit level
     Range done_faces;
-    ierr = mField.query_interface<Tools>()->getEntitiesByTypeAndRefLevel(
+    ierr = mField.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
       BitRefLevel().set(0),BitRefLevel().set(),MBTRI,done_faces
     ); CHKERRQ(ierr);
-    ierr = mField.query_interface<Tools>()->getEntitiesByTypeAndRefLevel(
+    ierr = mField.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
       BitRefLevel().set(BITREFLEVEL_SIZE-1),BitRefLevel().set(),MBTRI,done_faces
     ); CHKERRQ(ierr);
     // get triangles which belong to problem bit level
     Range ref_faces;
-    ierr = mField.query_interface<Tools>()->getEntitiesByTypeAndRefLevel(
+    ierr = mField.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
       ref_level,BitRefLevel().set(),MBTRI,ref_faces
     ); CHKERRQ(ierr);
     ref_faces = subtract(ref_faces,done_faces);

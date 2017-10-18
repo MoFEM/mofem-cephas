@@ -18,10 +18,10 @@
 namespace MoFEM {
 
   PetscErrorCode Core::get_adjacencies_equality(const EntityHandle from_entiti,const int to_dimension,Range &adj_entities) const {
-    return Tools(*this).getAdjacenciesEquality(from_entiti,to_dimension,adj_entities);
+    return BitRefManager(*this).getAdjacenciesEquality(from_entiti,to_dimension,adj_entities);
   }
   PetscErrorCode Core::get_adjacencies_any(const EntityHandle from_entiti,const int to_dimension,Range &adj_entities) const {
-    return Tools(*this).getAdjacenciesAny(from_entiti,to_dimension,adj_entities);
+    return BitRefManager(*this).getAdjacenciesAny(from_entiti,to_dimension,adj_entities);
   }
   PetscErrorCode Core::get_adjacencies(
     const Problem *problem_ptr,
@@ -32,7 +32,7 @@ namespace MoFEM {
     const int operation_type,
     const int verb
   ) const {
-    return Tools(*this).getAdjacencies(problem_ptr,from_entities,num_netities,to_dimension,adj_entities,operation_type,verb);
+    return BitRefManager(*this).getAdjacencies(problem_ptr,from_entities,num_netities,to_dimension,adj_entities,operation_type,verb);
   }
   PetscErrorCode Core::get_adjacencies(
     const BitRefLevel &bit,
@@ -43,7 +43,7 @@ namespace MoFEM {
     const int operation_type,
     const int verb
   ) const {
-    return Tools(*this).getAdjacencies(bit,from_entities,num_netities,to_dimension,adj_entities,operation_type,verb);
+    return BitRefManager(*this).getAdjacencies(bit,from_entities,num_netities,to_dimension,adj_entities,operation_type,verb);
   }
 
 }

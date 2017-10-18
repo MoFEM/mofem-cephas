@@ -69,7 +69,7 @@ int main(int argc, char *argv[]) {
 
     Range edges;
     //rval = moab.get_entities_by_type(0,MBEDGE,edges,false); CHKERRQ_MOAB(rval);
-    ierr = m_field.query_interface<Tools>()->getEntitiesByTypeAndRefLevel(bit_level0,BitRefLevel().set(),MBEDGE,edges); CHKERRQ(ierr);
+    ierr = m_field.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(bit_level0,BitRefLevel().set(),MBEDGE,edges); CHKERRQ(ierr);
     Range::iterator eit = edges.begin();
 
     const EntityHandle* conn;
@@ -79,7 +79,7 @@ int main(int argc, char *argv[]) {
 
     EntityHandle meshset_level1;
     rval = moab.create_meshset(MESHSET_SET,meshset_level1); CHKERRQ_MOAB(rval);
-    ierr = m_field.query_interface<Tools>()->getEntitiesByTypeAndRefLevel(bit_level1,BitRefLevel().set(),MBTET,meshset_level1); CHKERRQ(ierr);
+    ierr = m_field.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(bit_level1,BitRefLevel().set(),MBTET,meshset_level1); CHKERRQ(ierr);
 
     std::ostringstream ss;
     ss << "node_merger_" << ii << ".vtk";
@@ -91,7 +91,7 @@ int main(int argc, char *argv[]) {
 
 
   Range tets;
-  ierr = m_field.query_interface<Tools>()->getEntitiesByTypeAndRefLevel(BitRefLevel().set(ii-1),BitRefLevel().set(),MBTET,tets); CHKERRQ(ierr);
+  ierr = m_field.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(BitRefLevel().set(ii-1),BitRefLevel().set(),MBTET,tets); CHKERRQ(ierr);
 
   std::cout << tets << std::endl;
   if(tets.size()!=10) {

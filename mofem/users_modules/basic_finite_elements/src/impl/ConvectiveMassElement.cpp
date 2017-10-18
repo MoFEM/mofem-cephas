@@ -2111,7 +2111,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
 
     Range tets;
     if(bit.any()) {
-      ierr = mField.query_interface<Tools>()->getEntitiesByTypeAndRefLevel(bit,BitRefLevel().set(),MBTET,tets); CHKERRQ(ierr);
+      ierr = mField.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(bit,BitRefLevel().set(),MBTET,tets); CHKERRQ(ierr);
     }
 
     std::map<int,BlockData>::iterator sit = setOfBlocks.begin();
@@ -2154,7 +2154,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
 
       Range tets;
       if(bit.any()) {
-        ierr = mField.query_interface<Tools>()->getEntitiesByTypeAndRefLevel(bit,BitRefLevel().set(),MBTET,tets); CHKERRQ(ierr);
+        ierr = mField.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(bit,BitRefLevel().set(),MBTET,tets); CHKERRQ(ierr);
       }
 
       std::map<int,BlockData>::iterator sit = setOfBlocks.begin();
@@ -2200,7 +2200,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
 
     Range tets;
     if(bit.any()) {
-      ierr = mField.query_interface<Tools>()->getEntitiesByTypeAndRefLevel(bit,BitRefLevel().set(),MBTET,tets); CHKERRQ(ierr);
+      ierr = mField.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(bit,BitRefLevel().set(),MBTET,tets); CHKERRQ(ierr);
     }
     if(intersected!=NULL) {
       if(tets.empty()) {

@@ -24,8 +24,8 @@ static char help[] = "...\n\n";
 
 int main(int argc, char *argv[]) {
 
-  
-  
+
+
 
   PetscInitialize(&argc,&argv,(char *)0,help);
 
@@ -104,7 +104,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field.add_ents_to_finite_element_by_type(root_set,MBTET,"HCURL_TET_FE"); CHKERRQ(ierr);
 
   Range tets;
-  ierr = m_field.query_interface<Tools>()->getEntitiesByTypeAndRefLevel(
+  ierr = m_field.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
     BitRefLevel().set(0),BitRefLevel().set(),MBTET,tets
   ); CHKERRQ(ierr);
   Skinner skin(&moab);

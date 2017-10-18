@@ -196,7 +196,7 @@ int main(int argc, char *argv[]) {
   //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
 
   //Range ref_edges;
-  //ierr = m_field.query_interface<Tools>()->getEntitiesByTypeAndRefLevel(bit_level0,BitRefLevel().set(),MBEDGE,ref_edges); CHKERRQ(ierr);
+  //ierr = m_field.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(bit_level0,BitRefLevel().set(),MBEDGE,ref_edges); CHKERRQ(ierr);
   //rval = moab.list_entities(ref_edges); CHKERRQ_MOAB(rval);
   //m_field.list_dofs_by_field_name("TEMP");
 

@@ -809,7 +809,7 @@ namespace MoFEM {
     MoFEMFunctionBeginHot;
     if(verb==-1) verb = verbose;
     Range ents;
-    ierr = Tools(*this).getEntitiesByRefLevel(bit,mask,ents); CHKERRQ(ierr);
+    ierr = BitRefManager(*this).getEntitiesByRefLevel(bit,mask,ents); CHKERRQ(ierr);
     ierr = build_adjacencies(ents,verb); CHKERRQ(ierr);
     MoFEMFunctionReturnHot(0);
   }

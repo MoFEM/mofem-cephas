@@ -540,7 +540,7 @@ PetscErrorCode NodeMergerInterface::mergeNodes(
   MoFEM::Interface& m_field = cOre;
   MoFEMFunctionBeginHot;
   Range level_tets;
-  ierr = m_field.query_interface<Tools>()->getEntitiesByTypeAndRefLevel(
+  ierr = m_field.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
     tets_from_bit_ref_level,BitRefLevel().set(),MBTET,level_tets
   ); CHKERRQ(ierr);
   ierr = mergeNodes(father,mother,bit,&level_tets,only_if_improve_quality,move,th); CHKERRQ(ierr);

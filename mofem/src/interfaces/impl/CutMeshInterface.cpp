@@ -393,11 +393,11 @@ namespace MoFEM {
     //   "RAY_DIR",3,MB_TYPE_DOUBLE,th_ray_dir,MB_TAG_CREAT|MB_TAG_SPARSE,def_val
     // ); CHKERRQ_MOAB(rval);
     cutNewVolumes.clear();
-    ierr = m_field.query_interface<Tools>()->getEntitiesByTypeAndRefLevel(
+    ierr = m_field.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
       bit,BitRefLevel().set(),MBTET,cutNewVolumes
     ); CHKERRQ(ierr);
     cutNewSurfaces.clear();
-    ierr = m_field.query_interface<Tools>()->getEntitiesByTypeAndRefLevel(
+    ierr = m_field.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
       bit,bit,MBTRI,cutNewSurfaces
     ); CHKERRQ(ierr);
     // Find new vertices on catted edges
@@ -450,7 +450,7 @@ namespace MoFEM {
     ierr = refiner->add_verices_in_the_middel_of_edges(trimEdges,bit); CHKERRQ(ierr);
     ierr = refiner->refine_TET(cutNewVolumes,bit,false); CHKERRQ(ierr);
     trimNewVolumes.clear();
-    ierr = m_field.query_interface<Tools>()->getEntitiesByTypeAndRefLevel(
+    ierr = m_field.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
       bit,bit,MBTET,trimNewVolumes
     ); CHKERRQ(ierr);
     // Get vertices which are on trim edges
@@ -473,7 +473,7 @@ namespace MoFEM {
 
     // Get faces which are trimmed
     trimNewSurfaces.clear();
-    ierr = m_field.query_interface<Tools>()->getEntitiesByTypeAndRefLevel(
+    ierr = m_field.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
       bit,bit,MBTRI,trimNewSurfaces
     ); CHKERRQ(ierr);
     Range trim_new_surfaces_nodes;
@@ -486,7 +486,7 @@ namespace MoFEM {
 
     // Get surfaces which are not trimmed and add them to surface
     Range all_surfaces_on_bit_level;
-    ierr = m_field.query_interface<Tools>()->getEntitiesByTypeAndRefLevel(
+    ierr = m_field.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
       bit,BitRefLevel().set(),MBTRI,all_surfaces_on_bit_level
     ); CHKERRQ(ierr);
     all_surfaces_on_bit_level = intersect(all_surfaces_on_bit_level,cutNewSurfaces);
@@ -806,7 +806,7 @@ namespace MoFEM {
     ierr = m_field.query_interface(interface); CHKERRQ(ierr);
     EntityHandle meshset_volume;
     rval = moab.create_meshset(MESHSET_SET,meshset_volume); CHKERRQ_MOAB(rval);
-    ierr = m_field.query_interface<Tools>()->getEntitiesByTypeAndRefLevel(
+    ierr = m_field.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
       split_bit,BitRefLevel().set(),MBTET,meshset_volume
     ); CHKERRQ(ierr);
     EntityHandle meshset_surface;
@@ -818,7 +818,7 @@ namespace MoFEM {
     rval = moab.delete_entities(&meshset_surface,1); CHKERRQ_MOAB(rval);
     if(th) {
       Range prisms;
-      ierr = m_field.query_interface<Tools>()->getEntitiesByTypeAndRefLevel(
+      ierr = m_field.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
         bit,BitRefLevel().set(),MBPRISM,prisms
       ); CHKERRQ(ierr);
       for(Range::iterator pit = prisms.begin();pit!=prisms.end();pit++) {
@@ -1384,12 +1384,12 @@ namespace MoFEM {
     MoFEM::Interface &m_field = cOre;
     MoFEMFunctionBeginHot;
     Range tets_level;
-    ierr = m_field.query_interface<Tools>()->getEntitiesByTypeAndRefLevel(
+    ierr = m_field.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
       trim_bit,BitRefLevel().set(),MBTET,tets_level
     ); CHKERRQ(ierr);
 
     Range edges_to_merge;
-    ierr = m_field.query_interface<Tools>()->getEntitiesByParentType(
+    ierr = m_field.query_interface<BitRefManager>()->getEntitiesByParentType(
       trim_bit,trim_bit|cut_bit,MBEDGE,edges_to_merge
     ); CHKERRQ(ierr);
     edges_to_merge = edges_to_merge.subset_by_type(MBEDGE);
@@ -1449,10 +1449,10 @@ namespace MoFEM {
 
       PetscErrorCode getLevelEnts() {
         MoFEMFunctionBeginHot;
-        ierr = mField.query_interface<Tools>()->getEntitiesByTypeAndRefLevel(bIt,BitRefLevel().set(),MBTET,mTets); CHKERRQ(ierr);
-        ierr = mField.query_interface<Tools>()->getEntitiesByTypeAndRefLevel(bIt,BitRefLevel().set(),MBTRI,mTris); CHKERRQ(ierr);
-        ierr = mField.query_interface<Tools>()->getEntitiesByTypeAndRefLevel(bIt,BitRefLevel().set(),MBEDGE,mEdges); CHKERRQ(ierr);
-        ierr = mField.query_interface<Tools>()->getEntitiesByTypeAndRefLevel(bIt,BitRefLevel().set(),MBVERTEX,mNodes); CHKERRQ(ierr);
+        ierr = mField.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(bIt,BitRefLevel().set(),MBTET,mTets); CHKERRQ(ierr);
+        ierr = mField.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(bIt,BitRefLevel().set(),MBTRI,mTris); CHKERRQ(ierr);
+        ierr = mField.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(bIt,BitRefLevel().set(),MBEDGE,mEdges); CHKERRQ(ierr);
+        ierr = mField.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(bIt,BitRefLevel().set(),MBVERTEX,mNodes); CHKERRQ(ierr);
         MoFEMFunctionReturnHot(0);
       }
 

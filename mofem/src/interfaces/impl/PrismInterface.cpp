@@ -68,16 +68,16 @@ PetscErrorCode PrismInterface::getSides(const EntityHandle sideset,const BitRefL
   Range mesh_level_edges;
   Range mesh_level_nodes;
   if(mesh_bit_level.any()) {
-    ierr = m_field.query_interface<Tools>()->getEntitiesByTypeAndRefLevel(mesh_bit_level,BitRefLevel().set(),MBTET,mesh_level_ents3d); CHKERRQ(ierr);
-    ierr = m_field.query_interface<Tools>()->getEntitiesByTypeAndRefLevel(mesh_bit_level,BitRefLevel().set(),MBTRI,mesh_level_tris); CHKERRQ(ierr);
-    ierr = m_field.query_interface<Tools>()->getEntitiesByTypeAndRefLevel(mesh_bit_level,BitRefLevel().set(),MBEDGE,mesh_level_edges); CHKERRQ(ierr);
-    ierr = m_field.query_interface<Tools>()->getEntitiesByTypeAndRefLevel(mesh_bit_level,BitRefLevel().set(),MBVERTEX,mesh_level_nodes); CHKERRQ(ierr);
+    ierr = m_field.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(mesh_bit_level,BitRefLevel().set(),MBTET,mesh_level_ents3d); CHKERRQ(ierr);
+    ierr = m_field.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(mesh_bit_level,BitRefLevel().set(),MBTRI,mesh_level_tris); CHKERRQ(ierr);
+    ierr = m_field.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(mesh_bit_level,BitRefLevel().set(),MBEDGE,mesh_level_edges); CHKERRQ(ierr);
+    ierr = m_field.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(mesh_bit_level,BitRefLevel().set(),MBVERTEX,mesh_level_nodes); CHKERRQ(ierr);
     rval = moab.get_adjacencies(mesh_level_ents3d,2,false,mesh_level_ents3d_tris,moab::Interface::UNION); CHKERRQ_MOAB(rval);
 
   }
   Range mesh_level_prisms;
   if(mesh_bit_level.any()) {
-    ierr = m_field.query_interface<Tools>()->getEntitiesByTypeAndRefLevel(mesh_bit_level,BitRefLevel().set(),MBPRISM,mesh_level_prisms); CHKERRQ(ierr);
+    ierr = m_field.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(mesh_bit_level,BitRefLevel().set(),MBPRISM,mesh_level_prisms); CHKERRQ(ierr);
     mesh_level_ents3d.merge(mesh_level_prisms);
   }
   Skinner skin(&moab);
@@ -336,13 +336,13 @@ PetscErrorCode PrismInterface::findIfTringleHasThreeNodesOnInternalSurfaceSkin(
   Range mesh_level_ents3d;
   Range mesh_level_edges,mesh_level_tris;
   if(mesh_bit_level.any()) {
-    ierr = m_field.query_interface<Tools>()->getEntitiesByTypeAndRefLevel(
+    ierr = m_field.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
       mesh_bit_level,BitRefLevel().set(),MBTET,mesh_level_ents3d
     ); CHKERRQ(ierr);
-    ierr = m_field.query_interface<Tools>()->getEntitiesByTypeAndRefLevel(
+    ierr = m_field.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
       mesh_bit_level,BitRefLevel().set(),MBTRI,mesh_level_tris
     ); CHKERRQ(ierr);
-    ierr = m_field.query_interface<Tools>()->getEntitiesByTypeAndRefLevel(
+    ierr = m_field.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
       mesh_bit_level,BitRefLevel().set(),MBEDGE,mesh_level_edges
     ); CHKERRQ(ierr);
   }
