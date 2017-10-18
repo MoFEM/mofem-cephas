@@ -479,7 +479,7 @@ struct Interface: public UnknownInterface {
  /**@{*/
 
   /**\brief add all ents from ref level given by bit to meshset
-    * \deprecated Use MoFEM::Tools interface instead
+    * \deprecated Use MoFEM::BitRefManager interface instead
     * \ingroup mofem_ref_ents
     *
     * \param BitRefLevel bitLevel
@@ -493,7 +493,7 @@ struct Interface: public UnknownInterface {
   ) = 0;
 
   /**\brief add all ents from ref level given by bit to meshset
-   * \deprecated Use MoFEM::Tools interface instead
+   * \deprecated Use MoFEM::BitRefManager interface instead
    * \ingroup mofem_ref_ents
    *
    * \param BitRefLevel bitLevel
@@ -508,7 +508,7 @@ struct Interface: public UnknownInterface {
 
 
   /**\brief add all ents from ref level given by bit to meshset
-   * \deprecated Use MoFEM::Tools interface instead
+   * \deprecated Use MoFEM::BitRefManager interface instead
    * \ingroup mofem_ref_ents
    *
    * \param BitRefLevel bitLevel
@@ -520,7 +520,7 @@ struct Interface: public UnknownInterface {
 
   /**\brief add all ents from ref level given by bit to meshset
    * \ingroup mofem_ref_ents
-   * \deprecated Use MoFEM::Tools interface instead
+   * \deprecated Use MoFEM::BitRefManager interface instead
    *
    * \param BitRefLevel bitLevel
    * \param BitRefLevel mask
@@ -535,7 +535,7 @@ struct Interface: public UnknownInterface {
  /**@{*/
 
   /** \brief Get the adjacencies associated with a entity to entities of a specified dimension.
-    * \deprecated use Tools interface
+    * \deprecated use BitRefManager interface
     * \ingroup mofem_ref_ents
     *
     * bit ref level of adjacent entities is equal to bit ref level of adjacent entities
@@ -543,7 +543,7 @@ struct Interface: public UnknownInterface {
   DEPRECATED virtual PetscErrorCode get_adjacencies_equality(const EntityHandle from_entiti,const int to_dimension,Range &adj_entities) const = 0;
 
   /** \brief Get the adjacencies associated with a entity to entities of a specified dimension.
-    * \deprecated use Tools interface
+    * \deprecated use BitRefManager interface
     * \ingroup mofem_ref_ents
     *
     * bit ref level of adjacent entities is any of bit ref level of adjacent entities
@@ -551,7 +551,7 @@ struct Interface: public UnknownInterface {
   DEPRECATED virtual PetscErrorCode get_adjacencies_any(const EntityHandle from_entiti,const int to_dimension,Range &adj_entities) const = 0;
 
   /** \brief Get the adjacencies associated with a entity to entities of a specified dimension.
-    * \deprecated use Tools interface
+    * \deprecated use BitRefManager interface
     * \ingroup mofem_ref_ents
     *
     * bit ref level of adjacent entities is equal to bit ref level of adjacent entities
@@ -567,7 +567,7 @@ struct Interface: public UnknownInterface {
   ) const = 0;
 
   /** \brief Get the adjacencies associated with a entity to entities of a specified dimension.
-    * \deprecated use Tools interface
+    * \deprecated use BitRefManager interface
     * \ingroup mofem_ref_ents
     *
     * bit ref level of adjacent entities is equal to bit ref level of adjacent entities
