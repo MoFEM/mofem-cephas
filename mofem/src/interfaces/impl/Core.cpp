@@ -16,56 +16,6 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 */
 
-#include <version.h>
-#include <Includes.hpp>
-#include <version.h>
-#include <definitions.h>
-#include <Common.hpp>
-
-#include <h1_hdiv_hcurl_l2.h>
-
-#include <MaterialBlocks.hpp>
-#include <BCData.hpp>
-#include <TagMultiIndices.hpp>
-#include <CoordSysMultiIndices.hpp>
-#include <FieldMultiIndices.hpp>
-#include <EntsMultiIndices.hpp>
-#include <DofsMultiIndices.hpp>
-#include <FEMultiIndices.hpp>
-#include <ProblemsMultiIndices.hpp>
-#include <AdjacencyMultiIndices.hpp>
-#include <BCMultiIndices.hpp>
-#include <CoreDataStructures.hpp>
-#include <SeriesMultiIndices.hpp>
-
-#include <UnknownInterface.hpp>
-#include <LoopMethods.hpp>
-#include <Interface.hpp>
-#include <Core.hpp>
-
-// Interfaces
-#include <ProblemsManager.hpp>
-#include <Simple.hpp>
-#include <ISManager.hpp>
-#include <BitRefManager.hpp>
-#include <VecManager.hpp>
-#include <FieldBlas.hpp>
-#include <MeshRefinement.hpp>
-#include <SeriesRecorder.hpp>
-#include <PrismInterface.hpp>
-#include <CutMeshInterface.hpp>
-#include <MeshsetsManager.hpp>
-#include <CoordSystemsManager.hpp>
-#include <TetGenInterface.hpp>
-#include <MedInterface.hpp>
-#include <NodeMerger.hpp>
-#include <PrismsFromSurfaceInterface.hpp>
-#include <UpdateMeshsetsAndRanges.hpp>
-
-#include <boost/scoped_ptr.hpp>
-#include <moab/AdaptiveKDTree.hpp>
-#include <BitLevelCoupler.hpp>
-
 extern "C" {
   void macro_is_depracted_using_deprecated_function() {}
 }
@@ -178,6 +128,15 @@ PetscErrorCode Core::query_interface_type(const std::type_info& type,void*& ptr)
       iFaces.insert(uid,new UpdateMeshsetsAndRanges(*this));
     }
     ptr = &iFaces.at(IDD_MOFEMUpdateMeshsetsAndRanges.uUId.to_ulong());
+    MoFEMFunctionReturnHot(0);
+  }
+
+  if(type == typeid(Tools)) {
+    if(iFaces.find(IDD_MOFEMTools.uUId.to_ulong()) == iFaces.end()) {
+      unsigned long int uid = IDD_MOFEMTools.uUId.to_ulong();
+      iFaces.insert(uid,new Tools(*this));
+    }
+    ptr = &iFaces.at(IDD_MOFEMTools.uUId.to_ulong());
     MoFEMFunctionReturnHot(0);
   }
 

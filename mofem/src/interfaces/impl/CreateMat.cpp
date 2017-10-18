@@ -11,35 +11,6 @@
 
 */
 
-#include <version.h>
-#include <Includes.hpp>
-#include <definitions.h>
-#include <Common.hpp>
-
-#include <h1_hdiv_hcurl_l2.h>
-
-#include <MaterialBlocks.hpp>
-#include <BCData.hpp>
-#include <TagMultiIndices.hpp>
-#include <CoordSysMultiIndices.hpp>
-#include <FieldMultiIndices.hpp>
-#include <EntsMultiIndices.hpp>
-#include <DofsMultiIndices.hpp>
-#include <FEMultiIndices.hpp>
-#include <ProblemsMultiIndices.hpp>
-#include <AdjacencyMultiIndices.hpp>
-#include <BCMultiIndices.hpp>
-#include <CoreDataStructures.hpp>
-#include <SeriesMultiIndices.hpp>
-
-#include <UnknownInterface.hpp>
-#include <LoopMethods.hpp>
-#include <Interface.hpp>
-#include <MeshRefinement.hpp>
-#include <PrismInterface.hpp>
-#include <SeriesRecorder.hpp>
-#include <Core.hpp>
-
 namespace MoFEM {
 
 /** \brief Create compressed matrix
@@ -800,7 +771,7 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const std::string &problem_n
     Interface *mFieldPtr;
 
     Mat A;
-    
+
     ErrorCode rval;
 
     int rowPrint,colPrint;
@@ -972,7 +943,7 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const std::string &problem_n
 
     PetscErrorCode postProcess() {
       MoFEMFunctionBeginHot;
-      
+
 
       // cerr << mFieldPtr->get_comm_rank() << endl;
       ierr = MatAssemblyBegin(A,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);

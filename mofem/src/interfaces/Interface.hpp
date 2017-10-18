@@ -479,7 +479,7 @@ struct Interface: public UnknownInterface {
  /**@{*/
 
   /**\brief add all ents from ref level given by bit to meshset
-    * \todo Should be outsourced to separate interface, i.e. BitLevelManager
+    * \deprecated Use MoFEM::BitRefManager interface instead
     * \ingroup mofem_ref_ents
     *
     * \param BitRefLevel bitLevel
@@ -488,12 +488,12 @@ struct Interface: public UnknownInterface {
     * \retval EntityHandle meshset
     *
     */
-  virtual PetscErrorCode get_entities_by_type_and_ref_level(
+  DEPRECATED virtual PetscErrorCode get_entities_by_type_and_ref_level(
     const BitRefLevel &bit,const BitRefLevel &mask,const EntityType type,const EntityHandle meshset,int verb = -1
   ) = 0;
 
   /**\brief add all ents from ref level given by bit to meshset
-   * \todo Should be outsourced to separate interface, i.e. BitLevelManager
+   * \deprecated Use MoFEM::BitRefManager interface instead
    * \ingroup mofem_ref_ents
    *
    * \param BitRefLevel bitLevel
@@ -502,13 +502,13 @@ struct Interface: public UnknownInterface {
    * \retval ents
    *
    */
-  virtual PetscErrorCode get_entities_by_type_and_ref_level(
+  DEPRECATED virtual PetscErrorCode get_entities_by_type_and_ref_level(
     const BitRefLevel &bit,const BitRefLevel &mask,const EntityType type,Range &ents,int verb = -1
   ) = 0;
 
 
   /**\brief add all ents from ref level given by bit to meshset
-   * \todo Should be outsourced to separate interface, i.e. BitLevelManager
+   * \deprecated Use MoFEM::BitRefManager interface instead
    * \ingroup mofem_ref_ents
    *
    * \param BitRefLevel bitLevel
@@ -516,17 +516,17 @@ struct Interface: public UnknownInterface {
    * \param EntityHandle meshset
    *
    */
-  virtual PetscErrorCode get_entities_by_ref_level(const BitRefLevel &bit,const BitRefLevel &mask,const EntityHandle meshset) = 0;
+  DEPRECATED virtual PetscErrorCode get_entities_by_ref_level(const BitRefLevel &bit,const BitRefLevel &mask,const EntityHandle meshset) = 0;
 
   /**\brief add all ents from ref level given by bit to meshset
-   * \todo Should be outsourced to separate interface, i.e. BitLevelManager
    * \ingroup mofem_ref_ents
+   * \deprecated Use MoFEM::BitRefManager interface instead
    *
    * \param BitRefLevel bitLevel
    * \param BitRefLevel mask
    * \retval ents
    */
-  virtual PetscErrorCode get_entities_by_ref_level(const BitRefLevel &bit,const BitRefLevel &mask,Range &ents) = 0;
+  DEPRECATED virtual PetscErrorCode get_entities_by_ref_level(const BitRefLevel &bit,const BitRefLevel &mask,Range &ents) = 0;
 
  /**@}*/
 
@@ -535,27 +535,28 @@ struct Interface: public UnknownInterface {
  /**@{*/
 
   /** \brief Get the adjacencies associated with a entity to entities of a specified dimension.
+    * \deprecated use BitRefManager interface
     * \ingroup mofem_ref_ents
-    * \todo Should be outsourced to separate interface, i.e. BitLevelManager
     *
     * bit ref level of adjacent entities is equal to bit ref level of adjacent entities
     */
-  virtual PetscErrorCode get_adjacencies_equality(const EntityHandle from_entiti,const int to_dimension,Range &adj_entities) const = 0;
+  DEPRECATED virtual PetscErrorCode get_adjacencies_equality(const EntityHandle from_entiti,const int to_dimension,Range &adj_entities) const = 0;
 
   /** \brief Get the adjacencies associated with a entity to entities of a specified dimension.
+    * \deprecated use BitRefManager interface
     * \ingroup mofem_ref_ents
     *
     * bit ref level of adjacent entities is any of bit ref level of adjacent entities
     */
-  virtual PetscErrorCode get_adjacencies_any(const EntityHandle from_entiti,const int to_dimension,Range &adj_entities) const = 0;
+  DEPRECATED virtual PetscErrorCode get_adjacencies_any(const EntityHandle from_entiti,const int to_dimension,Range &adj_entities) const = 0;
 
   /** \brief Get the adjacencies associated with a entity to entities of a specified dimension.
+    * \deprecated use BitRefManager interface
     * \ingroup mofem_ref_ents
-    * \todo Should be outsourced to separate interface, i.e. BitLevelManage
     *
     * bit ref level of adjacent entities is equal to bit ref level of adjacent entities
     */
-  virtual PetscErrorCode get_adjacencies(
+  DEPRECATED virtual PetscErrorCode get_adjacencies(
     const Problem *problem_ptr,
     const EntityHandle *from_entities,
     const int num_netities,
@@ -566,12 +567,12 @@ struct Interface: public UnknownInterface {
   ) const = 0;
 
   /** \brief Get the adjacencies associated with a entity to entities of a specified dimension.
+    * \deprecated use BitRefManager interface
     * \ingroup mofem_ref_ents
-    * \todo Should be outsourced to separate interface, i.e. BitLevelManage
     *
     * bit ref level of adjacent entities is equal to bit ref level of adjacent entities
     */
-  virtual PetscErrorCode get_adjacencies(
+  DEPRECATED  virtual PetscErrorCode get_adjacencies(
     const BitRefLevel &bit,
     const EntityHandle *from_entities,
     const int num_netities,

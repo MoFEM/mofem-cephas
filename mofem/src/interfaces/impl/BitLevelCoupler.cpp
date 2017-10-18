@@ -11,44 +11,6 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 */
 
-#include <Includes.hpp>
-#include <version.h>
-#include <definitions.h>
-#include <Common.hpp>
-
-#include <h1_hdiv_hcurl_l2.h>
-
-#include <UnknownInterface.hpp>
-
-#include <MaterialBlocks.hpp>
-#include <BCData.hpp>
-#include <TagMultiIndices.hpp>
-#include <CoordSysMultiIndices.hpp>
-#include <FieldMultiIndices.hpp>
-#include <EntsMultiIndices.hpp>
-#include <DofsMultiIndices.hpp>
-#include <FEMultiIndices.hpp>
-#include <ProblemsMultiIndices.hpp>
-#include <AdjacencyMultiIndices.hpp>
-#include <BCMultiIndices.hpp>
-#include <CoreDataStructures.hpp>
-#include <SeriesMultiIndices.hpp>
-
-#include <LoopMethods.hpp>
-#include <Interface.hpp>
-#include <MeshRefinement.hpp>
-#include <PrismInterface.hpp>
-#include <SeriesRecorder.hpp>
-#include <Core.hpp>
-
-//Tree
-//#include <moab/BVHTree.hpp>
-#include <moab/AdaptiveKDTree.hpp>
-#include <boost/scoped_ptr.hpp>
-#include <BitLevelCoupler.hpp>
-
-#include <fem_tools.h>
-
 namespace MoFEM {
 
   PetscErrorCode BitLevelCoupler::queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface) {
@@ -71,7 +33,7 @@ namespace MoFEM {
     MoFEM::Interface& m_field = cOre;
     treePtr.reset(new AdaptiveKDTree(&m_field.get_moab()));
     Range tets;
-    ierr = m_field.get_entities_by_type_and_ref_level(
+    ierr = m_field.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
       parent_level,BitRefLevel().set(),MBTET,tets
     ); CHKERRQ(ierr);
     rval = treePtr->build_tree(tets); CHKERRQ_MOAB(rval);
@@ -582,7 +544,7 @@ namespace MoFEM {
       //moab::Interface& moab = m_field.get_moab();
       MoFEMFunctionBeginHot;
       Range ents;
-      ierr = m_field.get_entities_by_ref_level(bit,mask,ents); CHKERRQ(ierr);
+      ierr = m_field.query_interface<BitRefManager>()->getEntitiesByRefLevel(bit,mask,ents); CHKERRQ(ierr);
       std::vector<EntityHandle> parents;
       std::vector<EntityHandle> children;
       for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {

@@ -518,7 +518,7 @@ PetscErrorCode ExampleMix::addBoundaryElements(BitRefLevel &ref_level) {
   
   MoFEMFunctionBeginHot;
   Range tets;
-  ierr = mField.get_entities_by_type_and_ref_level(ref_level,BitRefLevel().set(),MBTET,tets);
+  ierr = mField.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(ref_level,BitRefLevel().set(),MBTET,tets);
   Skinner skin(&mField.get_moab());
   Range skin_faces; // skin faces from 3d ents
   rval = skin.find_skin(0,tets,false,skin_faces); CHKERRQ_MOAB(rval);
@@ -543,7 +543,7 @@ PetscErrorCode ExampleMix::addBoundaryElements(BitRefLevel &ref_level) {
   }
   Range essential_bc = subtract(skin_faces,natural_bc);
   Range bit_tris;
-  ierr = mField.get_entities_by_type_and_ref_level(ref_level,BitRefLevel().set(),MBTRI,bit_tris);
+  ierr = mField.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(ref_level,BitRefLevel().set(),MBTRI,bit_tris);
   essential_bc = intersect(bit_tris,essential_bc);
   natural_bc = intersect(bit_tris,natural_bc);
   ierr = mField.add_ents_to_finite_element_by_type(essential_bc,MBTRI,"MIX_BCFLUX"); CHKERRQ(ierr);
@@ -627,30 +627,30 @@ PetscErrorCode MixTransport::MixTransportElement::buildProblem(BitRefLevel &ref_
   ierr = mField.build_fields(); CHKERRQ(ierr);
   // get tetrahedrons which has been build previously and now in so called garbage bit level
   Range done_tets;
-  ierr = mField.get_entities_by_type_and_ref_level(
+  ierr = mField.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
     BitRefLevel().set(0),BitRefLevel().set(),MBTET,done_tets
   ); CHKERRQ(ierr);
-  ierr = mField.get_entities_by_type_and_ref_level(
+  ierr = mField.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
     BitRefLevel().set(BITREFLEVEL_SIZE-1),BitRefLevel().set(),MBTET,done_tets
   ); CHKERRQ(ierr);
   // get tetrahedrons which belong to problem bit level
   Range ref_tets;
-  ierr = mField.get_entities_by_type_and_ref_level(
+  ierr = mField.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
     ref_level,BitRefLevel().set(),MBTET,ref_tets
   ); CHKERRQ(ierr);
   ref_tets = subtract(ref_tets,done_tets);
   ierr = mField.build_finite_elements("MIX",&ref_tets,2); CHKERRQ(ierr);
   // get triangles which has been build previously and now in so called garbage bit level
   Range done_faces;
-  ierr = mField.get_entities_by_type_and_ref_level(
+  ierr = mField.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
     BitRefLevel().set(0),BitRefLevel().set(),MBTRI,done_faces
   ); CHKERRQ(ierr);
-  ierr = mField.get_entities_by_type_and_ref_level(
+  ierr = mField.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
     BitRefLevel().set(BITREFLEVEL_SIZE-1),BitRefLevel().set(),MBTRI,done_faces
   ); CHKERRQ(ierr);
   // get triangles which belong to problem bit level
   Range ref_faces;
-  ierr = mField.get_entities_by_type_and_ref_level(
+  ierr = mField.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
     ref_level,BitRefLevel().set(),MBTRI,ref_faces
   ); CHKERRQ(ierr);
   ref_faces = subtract(ref_faces,done_faces);
@@ -1809,7 +1809,7 @@ with this interface at hand, we do
 for(int ll = 0;ll!=nb_levels;ll++) {
  // get edges from previous mesh level
   Range edges;
-  ierr = mField.get_entities_by_type_and_ref_level(
+  ierr = mField.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
     BitRefLevel().set(ll),BitRefLevel().set(),MBEDGE,edges
   ); CHKERRQ(ierr);
   // get intersection of all edges to refine and edges of previous level
@@ -1818,7 +1818,7 @@ for(int ll = 0;ll!=nb_levels;ll++) {
   ierr = refine_ptr->add_verices_in_the_middel_of_edges(edges,BitRefLevel().set(ll+1)); CHKERRQ(ierr);
   //  get all tetrahderals for current refined level
   Range tets;
-  ierr = mField.get_entities_by_type_and_ref_level(
+  ierr = mField.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
     BitRefLevel().set(ll),BitRefLevel().set(),MBTET,tets
   ); CHKERRQ(ierr);
   // refine those tetrahedrals using nodes in middle of refined edges

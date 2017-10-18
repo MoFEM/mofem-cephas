@@ -15,148 +15,35 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 */
 
-#include <version.h>
-#include <Includes.hpp>
-#include <definitions.h>
-#include <Common.hpp>
-
-#include <h1_hdiv_hcurl_l2.h>
-
-#include <UnknownInterface.hpp>
-
-#include <MaterialBlocks.hpp>
-#include <BCData.hpp>
-#include <TagMultiIndices.hpp>
-#include <CoordSysMultiIndices.hpp>
-#include <FieldMultiIndices.hpp>
-#include <EntsMultiIndices.hpp>
-#include <DofsMultiIndices.hpp>
-#include <FEMultiIndices.hpp>
-#include <ProblemsMultiIndices.hpp>
-#include <AdjacencyMultiIndices.hpp>
-#include <BCMultiIndices.hpp>
-#include <CoreDataStructures.hpp>
-#include <SeriesMultiIndices.hpp>
-
-#include <LoopMethods.hpp>
-#include <Interface.hpp>
-#include <MeshRefinement.hpp>
-#include <PrismInterface.hpp>
-#include <SeriesRecorder.hpp>
-#include <Core.hpp>
-
 namespace MoFEM {
 
-// const static int debug = 1;
-
-PetscErrorCode Core::get_adjacencies_equality(const EntityHandle from_entiti,const int to_dimension,Range &adj_entities) const {
-  
-  MoFEMFunctionBeginHot;
-  RefEntity from_ref_entiti(basicEntityDataPtr,from_entiti);
-  //std::cerr << "from:\n";
-  //std::cerr << from_ref_entiti << std::endl;
-  rval = moab.get_adjacencies(&from_entiti,1,to_dimension,false,adj_entities); CHKERRQ_MOAB(rval);
-  std::vector<BitRefLevel> bit_levels(adj_entities.size());
-  rval = moab.tag_get_data(th_RefBitLevel,adj_entities,&*bit_levels.begin());
-  std::vector<BitRefLevel>::iterator b_it = bit_levels.begin();
-  Range::iterator eit = adj_entities.begin();
-  //std::cerr << "to:\n";
-  for(;eit!=adj_entities.end();b_it++) {
-    //RefEntity adj_entiti(moab,*eit);
-    //std::cerr << "\t" << adj_entiti << std::endl;
-    if(from_ref_entiti.getBitRefLevel() != *b_it/*adj_entiti.getBitRefLevel()*/) {
-      eit = adj_entities.erase(eit);
-    } else {
-      eit++;
-    }
+  PetscErrorCode Core::get_adjacencies_equality(const EntityHandle from_entiti,const int to_dimension,Range &adj_entities) const {
+    return BitRefManager(*this).getAdjacenciesEquality(from_entiti,to_dimension,adj_entities);
   }
-  if(b_it!=bit_levels.end()) {
-    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Data inconsistency");
+  PetscErrorCode Core::get_adjacencies_any(const EntityHandle from_entiti,const int to_dimension,Range &adj_entities) const {
+    return BitRefManager(*this).getAdjacenciesAny(from_entiti,to_dimension,adj_entities);
   }
-  MoFEMFunctionReturnHot(0);
-}
-PetscErrorCode Core::get_adjacencies_any(const EntityHandle from_entiti,const int to_dimension,Range &adj_entities) const {
-  
-  MoFEMFunctionBeginHot;
-  RefEntity from_ref_entiti(basicEntityDataPtr,from_entiti);
-  //std::cerr << "from:\n";
-  //std::cerr << from_ref_entiti << std::endl;
-  rval = moab.get_adjacencies(&from_entiti,1,to_dimension,false,adj_entities); CHKERRQ_MOAB(rval);
-  std::vector<BitRefLevel> bit_levels(adj_entities.size());
-  rval = moab.tag_get_data(th_RefBitLevel,adj_entities,&*bit_levels.begin());
-  std::vector<BitRefLevel>::iterator b_it = bit_levels.begin();
-  Range::iterator eit = adj_entities.begin();
-  //std::cerr << "to:\n";
-  for(;eit!=adj_entities.end();b_it++) {
-    // RefEntity adj_entiti(moab,*eit);
-    //std::cerr << "\t" << adj_entiti << std::endl;
-    if(!(from_ref_entiti.getBitRefLevel()&(*b_it)).any()/*adj_entiti.getBitRefLevel()).any()*/) {
-      eit = adj_entities.erase(eit);
-    } else {
-      eit++;
-    }
+  PetscErrorCode Core::get_adjacencies(
+    const Problem *problem_ptr,
+    const EntityHandle *from_entities,
+    const int num_netities,
+    const int to_dimension,
+    Range &adj_entities,
+    const int operation_type,
+    const int verb
+  ) const {
+    return BitRefManager(*this).getAdjacencies(problem_ptr,from_entities,num_netities,to_dimension,adj_entities,operation_type,verb);
   }
-  if(b_it!=bit_levels.end()) {
-    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Data inconsistency");
+  PetscErrorCode Core::get_adjacencies(
+    const BitRefLevel &bit,
+    const EntityHandle *from_entities,
+    const int num_netities,
+    const int to_dimension,
+    Range &adj_entities,
+    const int operation_type,
+    const int verb
+  ) const {
+    return BitRefManager(*this).getAdjacencies(bit,from_entities,num_netities,to_dimension,adj_entities,operation_type,verb);
   }
-  MoFEMFunctionReturnHot(0);
-}
-PetscErrorCode Core::get_adjacencies(
-  const Problem *problem_ptr,
-  const EntityHandle *from_entities,
-  const int num_netities,
-  const int to_dimension,
-  Range &adj_entities,
-  const int operation_type,
-  const int verb
-) const {
-  
-  MoFEMFunctionBeginHot;
-  BitRefLevel bit = problem_ptr->getBitRefLevel();
-  ierr = get_adjacencies(bit,from_entities,num_netities,to_dimension,adj_entities,operation_type); CHKERRQ(ierr);
-  MoFEMFunctionReturnHot(0);
-}
-PetscErrorCode Core::get_adjacencies(
-  const BitRefLevel &bit,
-  const EntityHandle *from_entities,
-  const int num_netities,
-  const int to_dimension,
-  Range &adj_entities,
-  const int operation_type,
-  const int verb
-) const {
-  
-  MoFEMFunctionBeginHot;
-  if(verb>0) {
-    std::ostringstream ss;
-    ss << "from: " << bit << std::endl << "to: " << std::endl;
-    PetscPrintf(cOmm,ss.str().c_str());
-  }
-  rval = moab.get_adjacencies(
-    from_entities,num_netities,to_dimension,false,adj_entities,operation_type
-  ); CHKERRQ_MOAB(rval);
-  std::vector<BitRefLevel> bit_levels(adj_entities.size());
-  rval = moab.tag_get_data(th_RefBitLevel,adj_entities,&*bit_levels.begin());
-  std::vector<BitRefLevel>::iterator b_it = bit_levels.begin();
-  Range::iterator eit = adj_entities.begin();
-  //std::cerr << "to:\n";
-  for(;eit!=adj_entities.end();b_it++) {
-    if(verb>0) {
-      RefEntity adj_entiti(basicEntityDataPtr,*eit);
-      std::ostringstream ss;
-      ss << "\t" << adj_entiti << std::endl;
-      PetscPrintf(cOmm,ss.str().c_str());
-    }
-    if(!((*b_it)&bit).any() ) {
-      eit = adj_entities.erase(eit);
-    } else {
-      eit++;
-    }
-  }
-  if(b_it!=bit_levels.end()) {
-    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Data inconsistency");
-  }
-  MoFEMFunctionReturnHot(0);
-}
 
 }
