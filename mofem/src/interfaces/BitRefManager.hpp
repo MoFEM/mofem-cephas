@@ -230,7 +230,7 @@ namespace MoFEM {
 
     /**@}*/
 
-    /** \name Get adjacencies bi bit ref level */
+    /** \name Get adjacencies bit ref level */
 
     /**@{*/
 
