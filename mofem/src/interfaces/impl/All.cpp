@@ -56,7 +56,7 @@ const static int debug = 1;
 
 #include "impl/LoopMethods.cpp"
 #include "impl/Core.cpp"
-#include "impl/InterfaceDeprecated.cpp"
+#include "impl/DeprecatedCoreInterface.cpp"
 #include "impl/CreateMat.cpp"
 #include "impl/FieldCore.cpp"
 #include "impl/FECore.cpp"

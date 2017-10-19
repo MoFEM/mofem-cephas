@@ -35,7 +35,7 @@ namespace MoFEM {
   *
   *  \todo Clean interface, organize groups outsource some functions to independent interface
   */
-  struct Interface_VERSION: public UnknownInterface {
+  struct CoreInterface: public UnknownInterface {
 
     /** \name Interface */
 
@@ -1689,14 +1689,14 @@ namespace MoFEM {
 
 }
 
-#include <InterfaceDeprecated.hpp>
+#include <DeprecatedCoreInterface.hpp>
 
 namespace MoFEM {
   #if __cplusplus <= 199711L
-    struct Interface: public Interface_DEPRECATED_VERSION {
+    struct Interface: public DeprecatedCoreInterface {
     };
   #else
-    using Interface = Interface_DEPRECATED_VERSION;
+    using Interface = DeprecatedCoreInterface;
   #endif
 }
 

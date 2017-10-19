@@ -449,10 +449,6 @@ struct Core: public Interface {
   PetscErrorCode resolve_shared_ents(const Problem *problem_ptr,const std::string &fe_name,int verb = -1);
   PetscErrorCode resolve_shared_ents(const std::string &name,const std::string &fe_name,int verb = -1);
 
-  DEPRECATED PetscErrorCode get_problem_elements_layout(
-    const std::string &name,const std::string &fe_name,PetscLayout *layout,int verb = -1
-  );
-
   PetscErrorCode get_problem_finite_elements_entities(
     const std::string &name,const std::string &fe_name,const EntityHandle meshset
   );
@@ -472,47 +468,7 @@ struct Core: public Interface {
   // \name problem building (deprecated)
 
   DEPRECATED PetscErrorCode build_problem_on_distributed_mesh(int verb = -1);
-  DEPRECATED PetscErrorCode build_problem_on_distributed_mesh(
-    const std::string &name,const bool square_matrix = true,int verb = -1
-  );
-  DEPRECATED PetscErrorCode build_problem_on_distributed_mesh(
-    Problem *problem_ptr,const bool square_matrix = true,int verb = -1
-  );
-
-  DEPRECATED PetscErrorCode partition_mesh(
-    const Range &ents,const int dim,const int adj_dim,const int n_parts,int verb = -1
-  );
-  DEPRECATED PetscErrorCode build_problem(const std::string &name,const bool square_matrix,int verb = -1);
-  DEPRECATED PetscErrorCode build_problem(Problem *problem_ptr,const bool square_matrix,int verb = -1);
   DEPRECATED PetscErrorCode build_problems(int verb = -1);
-  DEPRECATED PetscErrorCode partition_simple_problem(const std::string &name,int verb = -1);
-  DEPRECATED PetscErrorCode partition_problem(const std::string &name,int verb = -1);
-  DEPRECATED PetscErrorCode partition_compose_problem(
-    const std::string &name,
-    const std::string &problem_for_rows,
-    const bool copy_rows,
-    const std::string &problem_for_cols,
-    const bool copy_cols,
-    int verb = -1
-  );
-  DEPRECATED PetscErrorCode build_sub_problem(
-    const std::string &out_name,
-    const std::vector<std::string> &fields_row,
-    const std::vector<std::string> &fields_col,
-    const std::string &main_problem,
-    const bool square_matrix = true,
-    int verb = -1
-  );
-  DEPRECATED PetscErrorCode printPartitionedProblem(const Problem *problem_ptr,int verb = -1);
-  DEPRECATED PetscErrorCode debugPartitionedProblem(const Problem *problem_ptr,int verb = -1);
-  DEPRECATED PetscErrorCode partition_ghost_dofs(const std::string &name,int verb = -1);
-  DEPRECATED PetscErrorCode partition_finite_elements(
-    const std::string &name,
-    bool part_from_moab = false,
-    int low_proc = -1,
-    int hi_proc = -1,
-    int verb = -1
-  );
   PetscErrorCode partition_check_matrix_fill_in(
     const std::string &problem_neme,int row,int col,int verb
   );

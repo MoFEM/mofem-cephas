@@ -1,4 +1,4 @@
-/** \file InterfaceDeprecated.hpp
+/** \file DeprecatedCoreInterface.hpp
 * \brief Deprecated interface functions
 */
 
@@ -23,7 +23,7 @@ namespace MoFEM {
   * \brief Deprecated interface functions
   * \nosubgrouping
   */
-  struct Interface_DEPRECATED_VERSION: public Interface_VERSION {
+  struct DeprecatedCoreInterface: public CoreInterface {
 
     /**@}*/
 
@@ -67,13 +67,13 @@ namespace MoFEM {
     * ent4[0,1,0,0,0,0,0], ent5[0,1,0,0,0,0,0] <br>
     *
     */
-    DEPRECATED virtual PetscErrorCode seed_ref_level_3D(const EntityHandle meshset,const BitRefLevel &bit,int verb = -1);
+    DEPRECATED PetscErrorCode seed_ref_level_3D(const EntityHandle meshset,const BitRefLevel &bit,int verb = -1);
 
     /** \deprecated use BitRefManager
     * \brief seed entities in the range and their adjacencies in a particular BitRefLevel
     * \todo Should be outsourced to separate interface, i.e. BitLevelManager
     */
-    DEPRECATED virtual PetscErrorCode seed_ref_level(const Range &ents,const BitRefLevel &bit,const bool only_tets = true,int verb = -1);
+    DEPRECATED PetscErrorCode seed_ref_level(const Range &ents,const BitRefLevel &bit,const bool only_tets = true,int verb = -1);
 
     /** \deprecated use BitRefManager
     * brief seed ref level by MESHSET that contains entities other than volumes
@@ -81,7 +81,7 @@ namespace MoFEM {
     * \param EntityHandle MeshSet
     * \param BitRefLevel bitLevel
     */
-    DEPRECATED virtual PetscErrorCode seed_ref_level_MESHSET(const EntityHandle meshset,const BitRefLevel &bit,int verb = -1);
+    DEPRECATED PetscErrorCode seed_ref_level_MESHSET(const EntityHandle meshset,const BitRefLevel &bit,int verb = -1);
 
     /**@}*/
 
@@ -99,7 +99,7 @@ namespace MoFEM {
     * \retval EntityHandle meshset
     *
     */
-    DEPRECATED virtual PetscErrorCode get_entities_by_type_and_ref_level(
+    DEPRECATED PetscErrorCode get_entities_by_type_and_ref_level(
       const BitRefLevel &bit,const BitRefLevel &mask,const EntityType type,const EntityHandle meshset,int verb = -1
     );
 
@@ -113,7 +113,7 @@ namespace MoFEM {
     * \retval ents
     *
     */
-    DEPRECATED virtual PetscErrorCode get_entities_by_type_and_ref_level(
+    DEPRECATED PetscErrorCode get_entities_by_type_and_ref_level(
       const BitRefLevel &bit,const BitRefLevel &mask,const EntityType type,Range &ents,int verb = -1
     );
 
@@ -127,7 +127,7 @@ namespace MoFEM {
     * \param EntityHandle meshset
     *
     */
-    DEPRECATED virtual PetscErrorCode get_entities_by_ref_level(const BitRefLevel &bit,const BitRefLevel &mask,const EntityHandle meshset);
+    DEPRECATED PetscErrorCode get_entities_by_ref_level(const BitRefLevel &bit,const BitRefLevel &mask,const EntityHandle meshset);
 
     /**\brief add all ents from ref level given by bit to meshset
     * \ingroup mofem_ref_ents
@@ -137,7 +137,7 @@ namespace MoFEM {
     * \param BitRefLevel mask
     * \retval ents
     */
-    DEPRECATED virtual PetscErrorCode get_entities_by_ref_level(const BitRefLevel &bit,const BitRefLevel &mask,Range &ents);
+    DEPRECATED PetscErrorCode get_entities_by_ref_level(const BitRefLevel &bit,const BitRefLevel &mask,Range &ents);
 
     /**@}*/
 
@@ -156,7 +156,7 @@ namespace MoFEM {
     * \param msId id of the BLOCKSET/SIDESET/BLOCKSET: from CUBIT
     * \param  see CubitBC (NODESET, SIDESET or BLOCKSET and more)
     */
-    DEPRECATED virtual bool check_msId_meshset(const int msId,const CubitBCType cubit_bc_type);
+    DEPRECATED bool check_msId_meshset(const int msId,const CubitBCType cubit_bc_type);
 
 
     /**
@@ -169,7 +169,7 @@ namespace MoFEM {
     * \param name of set
 
     */
-    DEPRECATED virtual PetscErrorCode add_cubit_msId(const CubitBCType cubit_bc_tyep,const int msId,const std::string name = "");
+    DEPRECATED PetscErrorCode add_cubit_msId(const CubitBCType cubit_bc_tyep,const int msId,const std::string name = "");
 
     /**
     * \brief set attributes to cubit meshset
@@ -181,7 +181,7 @@ namespace MoFEM {
     * @param  attributes    attributes
     * @return               error code
     */
-    DEPRECATED virtual PetscErrorCode set_cubit_msId_attribites(
+    DEPRECATED PetscErrorCode set_cubit_msId_attribites(
       const CubitBCType cubit_bc_type,const int ms_id,const std::vector<double> &attributes,const std::string name = ""
     );
 
@@ -196,7 +196,7 @@ namespace MoFEM {
     * @param  attributes    attributes
     * @return               error code
     */
-    DEPRECATED virtual PetscErrorCode set_cubit_msId_attribites_data_structure(
+    DEPRECATED PetscErrorCode set_cubit_msId_attribites_data_structure(
       const CubitBCType cubit_bc_type,const int ms_id,const GenericAttributeData &data,const std::string name = ""
     );
 
@@ -211,7 +211,7 @@ namespace MoFEM {
     * @param  data          data structure
     * @return               error code
     */
-    DEPRECATED virtual PetscErrorCode set_cubit_msId_bc_data_structure(
+    DEPRECATED PetscErrorCode set_cubit_msId_bc_data_structure(
       const CubitBCType cubit_bc_type,const int ms_id,const GenericCubitBcData &data
     );
 
@@ -226,7 +226,7 @@ namespace MoFEM {
     * \param msId id of the BLOCKSET/SIDESET/BLOCKSET: from CUBIT
     *
     */
-    DEPRECATED virtual PetscErrorCode delete_cubit_msId(const CubitBCType cubit_bc_type,const int msId);
+    DEPRECATED PetscErrorCode delete_cubit_msId(const CubitBCType cubit_bc_type,const int msId);
 
     /**
     * \brief get cubit meshset
@@ -235,7 +235,7 @@ namespace MoFEM {
     \todo All cubit interface functions should be outsourced to dedicated interface
 
     */
-    DEPRECATED virtual PetscErrorCode get_cubit_msId(const int msId,const CubitBCType cubit_bc_type,const CubitMeshSets **cubit_meshset_ptr);
+    DEPRECATED PetscErrorCode get_cubit_msId(const int msId,const CubitBCType cubit_bc_type,const CubitMeshSets **cubit_meshset_ptr);
 
     DEPRECATED PetscErrorCode get_cubit_msId_entities_by_dimension(
       const int ms_id,const CubitBCType cubit_bc_type, const int dimension,Range &entities,const bool recursive = false
@@ -274,7 +274,7 @@ namespace MoFEM {
     * \param Range containing the retreived entities
     * \param recursive If true, meshsets containing meshsets are queried recursively. Returns the contents of meshsets, but not the meshsets themselves if true.
     */
-    DEPRECATED virtual PetscErrorCode get_cubit_msId_entities_by_dimension(
+    DEPRECATED PetscErrorCode get_cubit_msId_entities_by_dimension(
       const int msId,const unsigned int cubit_bc_type, const int dimension,Range &entities,const bool recursive = false
     );
 
@@ -292,7 +292,7 @@ namespace MoFEM {
     * \param Range containing the retreived entities related to the
     * \param recursive If true, meshsets containing meshsets are queried recursively.  Returns the contents of meshsets, but not the meshsets themselves if true.
     */
-    DEPRECATED virtual PetscErrorCode get_cubit_msId_entities_by_dimension(
+    DEPRECATED PetscErrorCode get_cubit_msId_entities_by_dimension(
       const int msId,const unsigned int cubit_bc_type, Range &entities,const bool recursive = false
     );
 
@@ -306,7 +306,7 @@ namespace MoFEM {
     * \param  see CubitBC (NODESET, SIDESET or BLOCKSET and more)
     * \param meshset where to store the retrieved entities
     */
-    DEPRECATED virtual PetscErrorCode get_cubit_msId_meshset(const int msId,const unsigned int cubit_bc_type,EntityHandle &meshset);
+    DEPRECATED PetscErrorCode get_cubit_msId_meshset(const int msId,const unsigned int cubit_bc_type,EntityHandle &meshset);
 
     /**
     * \brief get all CUBIT meshsets by CUBIT type
@@ -317,23 +317,23 @@ namespace MoFEM {
     * \param  see CubitBC (NODESET, SIDESET or BLOCKSET and more).
     * \param meshsets is range of meshsets
     */
-    DEPRECATED virtual PetscErrorCode get_cubit_meshsets(const unsigned int cubit_bc_type,Range &meshsets);
+    DEPRECATED PetscErrorCode get_cubit_meshsets(const unsigned int cubit_bc_type,Range &meshsets);
 
     /** \deprecated use MeshsetsManager interface instead
     */
-    DEPRECATED virtual PetscErrorCode print_cubit_displacement_set() const;
+    DEPRECATED PetscErrorCode print_cubit_displacement_set() const;
 
     /** \deprecated use MeshsetsManager interface instead
     */
-    DEPRECATED virtual PetscErrorCode print_cubit_pressure_set() const;
+    DEPRECATED PetscErrorCode print_cubit_pressure_set() const;
 
     /** \deprecated use MeshsetsManager interface instead
     */
-    DEPRECATED virtual PetscErrorCode print_cubit_force_set() const;
+    DEPRECATED PetscErrorCode print_cubit_force_set() const;
 
     /** \deprecated use MeshsetsManager interface instead
     */
-    DEPRECATED virtual PetscErrorCode print_cubit_materials_set() const;
+    DEPRECATED PetscErrorCode print_cubit_materials_set() const;
 
     /**@}*/
 
@@ -356,7 +356,7 @@ namespace MoFEM {
     * \param recursive if true parent meshset is searched recursively
     *
     **/
-    DEPRECATED virtual PetscErrorCode update_meshset_by_entities_children(
+    DEPRECATED PetscErrorCode update_meshset_by_entities_children(
       const EntityHandle parent,
       const BitRefLevel &child_bit,
       const EntityHandle child,
@@ -371,18 +371,18 @@ namespace MoFEM {
     * \todo Should be outsourced to separate interface, i.e. BitLevelManage
     *
     */
-    DEPRECATED virtual PetscErrorCode update_field_meshset_by_entities_children(const BitRefLevel &child_bit,int verb = -1);
+    DEPRECATED PetscErrorCode update_field_meshset_by_entities_children(const BitRefLevel &child_bit,int verb = -1);
 
     /** \brief update field mesheset by child entities
     * \deprecated do not us this use BitRefManager interface
     * \ingroup mofem_field
     */
-    DEPRECATED virtual PetscErrorCode update_field_meshset_by_entities_children(const std::string name,const BitRefLevel &child_bit,int verb = -1);
+    DEPRECATED PetscErrorCode update_field_meshset_by_entities_children(const std::string name,const BitRefLevel &child_bit,int verb = -1);
 
     /** \brief update finite element mesheset by child entities
     * \deprecated do not us this use BitRefManager interface
     */
-    DEPRECATED virtual PetscErrorCode update_finite_element_meshset_by_entities_children(const std::string name,const BitRefLevel &child_bit,const EntityType fe_ent_type,int verb = -1);
+    DEPRECATED PetscErrorCode update_finite_element_meshset_by_entities_children(const std::string name,const BitRefLevel &child_bit,const EntityType fe_ent_type,int verb = -1);
 
     /**@}*/
 
@@ -396,7 +396,7 @@ namespace MoFEM {
     * \brief right shift bit ref level
     * \todo Should be outsourced to separate interface, i.e. BitLevelManage
     */
-    DEPRECATED virtual PetscErrorCode shift_right_bit_ref(const int shift,int verb = -1);
+    DEPRECATED PetscErrorCode shift_right_bit_ref(const int shift,int verb = -1);
 
     /**@}*/
 
@@ -551,7 +551,7 @@ namespace MoFEM {
     * @return               error code
     *
     */
-    DEPRECATED virtual PetscErrorCode build_problem(const std::string &name,const bool square_matrix,int verb = -1) = 0;
+    DEPRECATED PetscErrorCode build_problem(const std::string &name,const bool square_matrix,int verb = -1);
 
     /** \brief build problem data structures
     *
@@ -567,7 +567,7 @@ namespace MoFEM {
     * @return               error code
     *
     */
-    DEPRECATED virtual PetscErrorCode build_problem(Problem *problem_ptr,const bool square_matrix,int verb = -1) = 0;
+    DEPRECATED PetscErrorCode build_problem(Problem *problem_ptr,const bool square_matrix,int verb = -1);
 
     /** \brief build problem data structures
 
@@ -589,9 +589,9 @@ namespace MoFEM {
     function has to call this function.
 
     */
-    DEPRECATED virtual PetscErrorCode build_problem_on_distributed_mesh(
+    DEPRECATED PetscErrorCode build_problem_on_distributed_mesh(
       const std::string &name,const bool square_matrix = true,int verb = -1
-    ) = 0;
+    );
 
     /** \brief build problem data structures, assuming that mesh is distributed (collective)
 
@@ -604,11 +604,11 @@ namespace MoFEM {
     function has to call this function.
 
     */
-    DEPRECATED virtual PetscErrorCode build_problem_on_distributed_mesh(
+    DEPRECATED PetscErrorCode build_problem_on_distributed_mesh(
       Problem *problem_ptr,
       const bool square_matrix = true,
       int verb = -1
-    ) = 0;
+    );
 
     /** \brief build problem data structures, assuming that mesh is distributed (collective)
 
@@ -636,9 +636,9 @@ namespace MoFEM {
     * @param  verb        Verbosity level
     * @return             Error code
     */
-    DEPRECATED virtual PetscErrorCode partition_mesh(
+    DEPRECATED PetscErrorCode partition_mesh(
       const Range &ents,const int dim,const int adj_dim,const int n_parts,int verb = -1
-    ) = 0;
+    );
 
     /** \brief partition problem dofs
 
@@ -647,7 +647,7 @@ namespace MoFEM {
     *
     * \param name problem name
     */
-    DEPRECATED virtual PetscErrorCode partition_simple_problem(const std::string &name,int verb = -1) = 0;
+    DEPRECATED PetscErrorCode partition_simple_problem(const std::string &name,int verb = -1);
 
     /** \brief partition problem dofs (collective)
 
@@ -656,7 +656,7 @@ namespace MoFEM {
     *
     * \param name problem name
     */
-    DEPRECATED virtual PetscErrorCode partition_problem(const std::string &name,int verb = -1) = 0;
+    DEPRECATED PetscErrorCode partition_problem(const std::string &name,int verb = -1);
 
     /**
     * \brief build indexing and partition problem inheriting indexing and partitioning from two other problems
@@ -671,14 +671,14 @@ namespace MoFEM {
     * If copy_rows/copy_cols is set to false only partition is copied between problems.
     *
     */
-    DEPRECATED virtual PetscErrorCode partition_compose_problem(
+    DEPRECATED PetscErrorCode partition_compose_problem(
       const std::string &name,
       const std::string &problem_for_rows,
       const bool copy_rows,
       const std::string &problem_for_cols,
       const bool copy_cols,
       int verb = -1
-    ) = 0;
+    );
 
     /**
     * \brief build sub problem
@@ -691,14 +691,14 @@ namespace MoFEM {
     * @param  main_problem main problem
     * @return              error code
     */
-    DEPRECATED virtual PetscErrorCode build_sub_problem(
+    DEPRECATED PetscErrorCode build_sub_problem(
       const std::string &out_name,
       const std::vector<std::string> &fields_row,
       const std::vector<std::string> &fields_col,
       const std::string &main_problem,
       const bool square_matrix = true,
       int verb = -1
-    ) = 0;
+    );
 
     /** \brief determine ghost nodes
     * \ingroup mofem_field
@@ -706,7 +706,7 @@ namespace MoFEM {
     *
     * \param name problem name
     */
-    DEPRECATED virtual PetscErrorCode partition_ghost_dofs(const std::string &name,int verb = -1) = 0;
+    DEPRECATED PetscErrorCode partition_ghost_dofs(const std::string &name,int verb = -1);
 
     /** \brief partition finite elements
     *
@@ -717,9 +717,9 @@ namespace MoFEM {
     *
     * \param name problem name
     */
-    DEPRECATED virtual PetscErrorCode partition_finite_elements(const std::string &name,
+    DEPRECATED PetscErrorCode partition_finite_elements(const std::string &name,
       bool part_from_moab = false,int low_proc = -1,int hi_proc = -1,int verb = -1
-    ) = 0;
+    );
 
     /** \deprecated use ProblemsManager
     * \brief Get layout of elements in the problem
@@ -735,10 +735,9 @@ namespace MoFEM {
     * @param  verb    verbosity level
     * @return         error code
     */
-    DEPRECATED virtual PetscErrorCode get_problem_elements_layout(
+    DEPRECATED PetscErrorCode get_problem_elements_layout(
       const std::string &name,const std::string &fe_name,PetscLayout *layout,int verb = -1
-    ) = 0;
-
+    );
 
     /**@}*/
 
@@ -754,7 +753,7 @@ namespace MoFEM {
     * \param RowColData specify what data is taken from Row, Col or Data
     * \param Vec the vector where data is stored
     */
-    DEPRECATED virtual PetscErrorCode VecCreateSeq(const std::string &name,RowColData rc,Vec *V) const;
+    DEPRECATED PetscErrorCode VecCreateSeq(const std::string &name,RowColData rc,Vec *V) const;
 
     /** \deprecated use VecManager
     * \brief create ghost vector for problem (collective)
@@ -766,7 +765,7 @@ namespace MoFEM {
     * \param RowColData specify what data is taken from Row, Col or Data
     * \param Vec the vector where data is stored
     */
-    DEPRECATED virtual PetscErrorCode VecCreateGhost(const std::string &name,RowColData rc,Vec *V) const;
+    DEPRECATED PetscErrorCode VecCreateGhost(const std::string &name,RowColData rc,Vec *V) const;
 
     /**@}*/
 
@@ -790,7 +789,7 @@ namespace MoFEM {
     \retval idy indexes in problem_y
 
     */
-    DEPRECATED virtual PetscErrorCode ISCreateFromProblemFieldToOtherProblemField(
+    DEPRECATED PetscErrorCode ISCreateFromProblemFieldToOtherProblemField(
       const std::string &x_problem,const std::string &x_field_name,RowColData x_rc,
       const std::string &y_problem,const std::string &y_field_name,RowColData y_rc,
       std::vector<int> &idx,std::vector<int> &idy,int verb = -1
@@ -812,7 +811,7 @@ namespace MoFEM {
     \retval iy IS indexes in problem_y
 
     */
-    DEPRECATED virtual PetscErrorCode ISCreateFromProblemFieldToOtherProblemField(
+    DEPRECATED PetscErrorCode ISCreateFromProblemFieldToOtherProblemField(
       const std::string &x_problem,const std::string &x_field_name,RowColData x_rc,
       const std::string &y_problem,const std::string &y_field_name,RowColData y_rc,
       IS *ix,IS *iy,int verb = -1
@@ -828,7 +827,7 @@ namespace MoFEM {
     * \retval is out value
 
     */
-    DEPRECATED virtual PetscErrorCode ISCreateProblemOrder(
+    DEPRECATED PetscErrorCode ISCreateProblemOrder(
       const std::string &problem,RowColData rc,int min_order,int max_order,IS *is,int verb = -1
     ) const;
 
@@ -844,7 +843,7 @@ namespace MoFEM {
     * \retval is out value
 
     */
-    DEPRECATED virtual PetscErrorCode ISCreateProblemFieldAndRank(
+    DEPRECATED PetscErrorCode ISCreateProblemFieldAndRank(
       const std::string &problem,
       RowColData rc,
       const std::string &field,
@@ -877,7 +876,7 @@ namespace MoFEM {
     * \retval newctx scatter
 
     */
-    DEPRECATED virtual PetscErrorCode VecScatterCreate(
+    DEPRECATED PetscErrorCode VecScatterCreate(
       Vec xin,
       const std::string &x_problem,
       const std::string &x_field_name,
@@ -901,7 +900,7 @@ namespace MoFEM {
     * \retval newctx scatter
 
     */
-    DEPRECATED virtual PetscErrorCode VecScatterCreate(
+    DEPRECATED PetscErrorCode VecScatterCreate(
       Vec xin,const std::string &x_problem,
       RowColData x_rc,
       Vec yin,
@@ -932,7 +931,7 @@ namespace MoFEM {
     * SCATTER_FORWARD set vector V from data field entities
     *
     */
-    DEPRECATED virtual PetscErrorCode set_local_ghost_vector(
+    DEPRECATED PetscErrorCode set_local_ghost_vector(
       const Problem *problem_ptr,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode
     ) const;
 
@@ -951,7 +950,7 @@ namespace MoFEM {
     * SCATTER_FORWARD set vector V from data field entities
     *
     */
-    DEPRECATED virtual PetscErrorCode set_local_ghost_vector(
+    DEPRECATED PetscErrorCode set_local_ghost_vector(
       const std::string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode
     ) const;
 
@@ -970,7 +969,7 @@ namespace MoFEM {
     * SCATTER_REVERSE set data to field entities form V vector.
     *
     */
-    DEPRECATED virtual PetscErrorCode set_global_ghost_vector(
+    DEPRECATED PetscErrorCode set_global_ghost_vector(
       const Problem *problem_ptr,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode
     ) const;
 
@@ -989,7 +988,7 @@ namespace MoFEM {
     * SCATTER_REVERSE set data to field entities form V vector.
     *
     */
-    DEPRECATED virtual PetscErrorCode set_global_ghost_vector(
+    DEPRECATED PetscErrorCode set_global_ghost_vector(
       const std::string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode
     ) const;
 
@@ -1008,7 +1007,7 @@ namespace MoFEM {
     * SCATTER_REVERSE set data to field entities form V vector.
     *
     */
-    DEPRECATED virtual PetscErrorCode set_other_local_ghost_vector(
+    DEPRECATED PetscErrorCode set_other_local_ghost_vector(
       const Problem *problem_ptr,
       const std::string& fiel_name,
       const std::string& cpy_field_name,
@@ -1034,7 +1033,7 @@ namespace MoFEM {
     * SCATTER_REVERSE set data to field entities form V vector.
     *
     */
-    DEPRECATED virtual PetscErrorCode set_other_local_ghost_vector(
+    DEPRECATED PetscErrorCode set_other_local_ghost_vector(
       const std::string &name,
       const std::string& field_name,
       const std::string& cpy_field_name,
@@ -1062,7 +1061,7 @@ namespace MoFEM {
     * SCATTER_REVERSE set data to field entities form V vector.
     *
     */
-    DEPRECATED virtual PetscErrorCode set_other_global_ghost_vector(
+    DEPRECATED PetscErrorCode set_other_global_ghost_vector(
       const Problem *problem_ptr,
       const std::string& field_name,
       const std::string& cpy_field_name,
@@ -1090,7 +1089,7 @@ namespace MoFEM {
     * SCATTER_REVERSE set data to field entities form V vector.
     *
     */
-    DEPRECATED virtual PetscErrorCode set_other_global_ghost_vector(
+    DEPRECATED PetscErrorCode set_other_global_ghost_vector(
       const std::string &name,
       const std::string& field_name,
       const std::string& cpy_field_name,
@@ -1121,7 +1120,7 @@ namespace MoFEM {
     * \param create_if_missing creat dof in field_y from fiedl_x if it is not database
     *
     */
-    DEPRECATED virtual PetscErrorCode field_axpy(const double alpha,const std::string& fiel_name_x,const std::string& field_name_y,bool error_if_missing = false,bool creat_if_missing = false);
+    DEPRECATED PetscErrorCode field_axpy(const double alpha,const std::string& fiel_name_x,const std::string& field_name_y,bool error_if_missing = false,bool creat_if_missing = false);
 
     /** \deprecated use FieldBlas
     * \brief scale field
@@ -1132,7 +1131,7 @@ namespace MoFEM {
     * \field_name  is a field name
     *
     */
-    DEPRECATED virtual PetscErrorCode field_scale(const double alpha,const std::string& field_name);
+    DEPRECATED PetscErrorCode field_scale(const double alpha,const std::string& field_name);
 
     /** \brief use FieldBlas
     * \brief set field
@@ -1146,7 +1145,7 @@ namespace MoFEM {
     * \param field_name
     *
     */
-    DEPRECATED virtual PetscErrorCode set_field(const double val,const EntityType type,const std::string& field_name);
+    DEPRECATED PetscErrorCode set_field(const double val,const EntityType type,const std::string& field_name);
 
     /** \deprecated use FieldBlas
     * \brief set field
@@ -1161,7 +1160,7 @@ namespace MoFEM {
     * \param field_name
     *
     */
-    DEPRECATED virtual PetscErrorCode set_field(const double val,const EntityType type,const Range &ents,const std::string& field_name);
+    DEPRECATED PetscErrorCode set_field(const double val,const EntityType type,const Range &ents,const std::string& field_name);
 
     /**@}*/
 
@@ -1175,14 +1174,14 @@ namespace MoFEM {
     *
     * bit ref level of adjacent entities is equal to bit ref level of adjacent entities
     */
-    virtual PetscErrorCode get_adjacencies_equality(const EntityHandle from_entiti,const int to_dimension,Range &adj_entities) const;
+    PetscErrorCode get_adjacencies_equality(const EntityHandle from_entiti,const int to_dimension,Range &adj_entities) const;
 
     /** \brief Get the adjacencies associated with a entity to entities of a specified dimension.
     * \ingroup mofem_ref_ents
     *
     * bit ref level of adjacent entities is any of bit ref level of adjacent entities
     */
-    virtual PetscErrorCode get_adjacencies_any(const EntityHandle from_entiti,const int to_dimension,Range &adj_entities) const;
+    PetscErrorCode get_adjacencies_any(const EntityHandle from_entiti,const int to_dimension,Range &adj_entities) const;
 
     /** \brief Get the adjacencies associated with a entity to entities of a specified dimension.
     * \ingroup mofem_ref_ents
@@ -1190,7 +1189,7 @@ namespace MoFEM {
     *
     * bit ref level of adjacent entities is equal to bit ref level of adjacent entities
     */
-    virtual PetscErrorCode get_adjacencies(
+    PetscErrorCode get_adjacencies(
       const Problem *problem_ptr,
       const EntityHandle *from_entities,
       const int num_netities,
@@ -1206,7 +1205,7 @@ namespace MoFEM {
     *
     * bit ref level of adjacent entities is equal to bit ref level of adjacent entities
     */
-    virtual PetscErrorCode get_adjacencies(
+    PetscErrorCode get_adjacencies(
       const BitRefLevel &bit,
       const EntityHandle *from_entities,
       const int num_netities,
