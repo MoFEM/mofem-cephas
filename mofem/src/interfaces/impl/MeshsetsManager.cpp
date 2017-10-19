@@ -52,7 +52,7 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode MeshsetsManager::initialiseDatabseInformationFromMesh(int verb) {
+  PetscErrorCode MeshsetsManager::initialiseDatabseFromMesh(int verb) {
     MoFEM::Interface &m_field = cOre;
     moab::Interface &moab = m_field.get_moab();
     MoFEMFunctionBeginHot;

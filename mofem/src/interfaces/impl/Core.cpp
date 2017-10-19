@@ -316,13 +316,12 @@ cOmm(0) {
   ierr = getTags(); CHKERRABORT(cOmm,ierr);
   ierr = clearMap(); CHKERRABORT(cOmm,ierr);
   basicEntityDataPtr = boost::make_shared<BasicEntityData>(moab);
-  ierr = initialiseDatabseInformationFromMesh(verbose); CHKERRABORT(cOmm,ierr);
+  ierr = initialiseDatabseFromMesh(verbose); CHKERRABORT(cOmm,ierr);
   // Petsc Logs
    PetscLogEventRegister("FE_preProcess",0,&USER_EVENT_preProcess);
    PetscLogEventRegister("FE_operator",0,&USER_EVENT_operator);
    PetscLogEventRegister("FE_postProcess",0,&USER_EVENT_postProcess);
    PetscLogEventRegister("MoFEMCreateMat",0,&USER_EVENT_createMat);
-   PetscLogEventRegister("MoFEMBuildProblem",0,&USER_EVENT_buildProblem);
 
    // Print version
   if(verbose>0) {
@@ -377,20 +376,11 @@ BitProblemId Core::getProblemShift() {
 }
 
 PetscErrorCode Core::clearMap() {
-
   MoFEMFunctionBeginHot;
-
-  // Cleaning databases in iterfaces
-  SeriesRecorder *series_recorder_ptr;
-  ierr = query_interface(series_recorder_ptr); CHKERRQ(ierr);
-  ierr = series_recorder_ptr->clearMap(); CHKERRQ(ierr);
-  MeshsetsManager *m_manger_ptr;
-  ierr = query_interface(m_manger_ptr); CHKERRQ(ierr);
-  ierr = m_manger_ptr->clearMap(); CHKERRQ(ierr);
-  CoordSystemsManager *cs_manger_ptr;
-  ierr = query_interface(cs_manger_ptr); CHKERRQ(ierr);
-  ierr = cs_manger_ptr->clearMap(); CHKERRQ(ierr);
-
+  // Cleaning databases in interfaces
+  ierr = query_interface<SeriesRecorder>()->clearMap(); CHKERRQ(ierr);
+  ierr = query_interface<MeshsetsManager>()->clearMap(); CHKERRQ(ierr);
+  ierr = query_interface<CoordSystemsManager>()->clearMap(); CHKERRQ(ierr);
   // Cleaning databases
   refinedEntities.clear();
   refinedFiniteElements.clear();
@@ -401,8 +391,6 @@ PetscErrorCode Core::clearMap() {
   entsFiniteElements.clear();
   entFEAdjacencies.clear();
   pRoblems.clear();
-
-
   MoFEMFunctionReturnHot(0);
 }
 
@@ -435,9 +423,6 @@ PetscErrorCode Core::addPrismToDatabase(const EntityHandle prism,int verb) {
 }
 
 PetscErrorCode Core::getTags(int verb) {
-  //
-
-
   MoFEMFunctionBeginHot;
 
   const EntityHandle root_meshset = moab.get_root_set();
@@ -691,11 +676,11 @@ PetscErrorCode Core::rebuild_database(int verb) {
   MoFEMFunctionBeginHot;
   if(verb==-1) verb = verbose;
   ierr = clearMap(); CHKERRQ(ierr);
-  ierr = initialiseDatabseInformationFromMesh(verb); CHKERRQ(ierr);
+  ierr = initialiseDatabseFromMesh(verb); CHKERRQ(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
+PetscErrorCode Core::initialiseDatabseFromMesh(int verb) {
   MoFEMFunctionBeginHot;
   if(verb==-1) verb = verbose;
 
@@ -703,7 +688,7 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
   ierr = query_interface(cs_manger_ptr); CHKERRQ(ierr);
 
   // Initialize coordinate systems
-  ierr = cs_manger_ptr->initialiseDatabseInformationFromMesh(verb); CHKERRQ(ierr);
+  ierr = cs_manger_ptr->initialiseDatabseFromMesh(verb); CHKERRQ(ierr);
 
   // Initialize database
   Range meshsets;
@@ -909,10 +894,10 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
   // Initialize interfaces
   MeshsetsManager *m_manger_ptr;
   ierr = query_interface(m_manger_ptr); CHKERRQ(ierr);
-  ierr = m_manger_ptr->initialiseDatabseInformationFromMesh(verb); CHKERRQ(ierr);
+  ierr = m_manger_ptr->initialiseDatabseFromMesh(verb); CHKERRQ(ierr);
   SeriesRecorder *series_recorder_ptr;
   ierr = query_interface(series_recorder_ptr); CHKERRQ(ierr);
-  ierr = series_recorder_ptr->initialiseDatabseInformationFromMesh(verb); CHKERRQ(ierr);
+  ierr = series_recorder_ptr->initialiseDatabseFromMesh(verb); CHKERRQ(ierr);
 
   MoFEMFunctionReturnHot(0);
 }

@@ -58,7 +58,7 @@ PetscErrorCode SeriesRecorder::clearMap() {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode SeriesRecorder::initialiseDatabseInformationFromMesh(int verb) {
+PetscErrorCode SeriesRecorder::initialiseDatabseFromMesh(int verb) {
 
 
   MoFEM::Interface &m_field = cOre;
