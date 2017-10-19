@@ -257,9 +257,9 @@ PetscErrorCode Core::problem_basic_method_preProcess(const Problem *problem_ptr,
   if(verb==-1) verb = verbose;
   // finite element
   SET_BASIC_METHOD(method,problem_ptr)
-  PetscLogEventBegin(USER_EVENT_preProcess,0,0,0,0);
+  PetscLogEventBegin(MOFEM_EVENT_preProcess,0,0,0,0);
   ierr = method.preProcess(); CHKERRQ(ierr);
-  PetscLogEventEnd(USER_EVENT_preProcess,0,0,0,0);
+  PetscLogEventEnd(MOFEM_EVENT_preProcess,0,0,0,0);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -278,9 +278,9 @@ PetscErrorCode Core::problem_basic_method_postProcess(const Problem *problem_ptr
   MoFEMFunctionBeginHot;
   SET_BASIC_METHOD(method,problem_ptr)
 
-  PetscLogEventBegin(USER_EVENT_postProcess,0,0,0,0);
+  PetscLogEventBegin(MOFEM_EVENT_postProcess,0,0,0,0);
   ierr = method.postProcess(); CHKERRQ(ierr);
-  PetscLogEventEnd(USER_EVENT_postProcess,0,0,0,0);
+  PetscLogEventEnd(MOFEM_EVENT_postProcess,0,0,0,0);
 
   MoFEMFunctionReturnHot(0);
 }
@@ -325,9 +325,9 @@ PetscErrorCode Core::loop_finite_elements(
 
   method.feName = fe_name;
   SET_BASIC_METHOD(method,&*problem_ptr)
-  PetscLogEventBegin(USER_EVENT_preProcess,0,0,0,0);
+  PetscLogEventBegin(MOFEM_EVENT_preProcess,0,0,0,0);
   ierr = method.preProcess(); CHKERRQ(ierr);
-  PetscLogEventEnd(USER_EVENT_preProcess,0,0,0,0);
+  PetscLogEventEnd(MOFEM_EVENT_preProcess,0,0,0,0);
 
   NumeredEntFiniteElementbyNameAndPart &numered_fe =
   problem_ptr->numeredFiniteElements.get<Composite_Name_And_Part_mi_tag>();
@@ -358,9 +358,9 @@ PetscErrorCode Core::loop_finite_elements(
     method.colPtr = (*miit)->cols_dofs;
 
     try {
-      PetscLogEventBegin(USER_EVENT_operator,0,0,0,0);
+      PetscLogEventBegin(MOFEM_EVENT_operator,0,0,0,0);
       ierr = method(); CHKERRQ(ierr);
-      PetscLogEventEnd(USER_EVENT_operator,0,0,0,0);
+      PetscLogEventEnd(MOFEM_EVENT_operator,0,0,0,0);
     } catch (const std::exception& ex) {
       std::ostringstream ss;
       ss << "FE method " << typeid(method).name() //boost::core::demangle(typeid(method).name())
@@ -372,9 +372,9 @@ PetscErrorCode Core::loop_finite_elements(
 
   }
 
-  PetscLogEventBegin(USER_EVENT_postProcess,0,0,0,0);
+  PetscLogEventBegin(MOFEM_EVENT_postProcess,0,0,0,0);
   ierr = method.postProcess(); CHKERRQ(ierr);
-  PetscLogEventEnd(USER_EVENT_postProcess,0,0,0,0);
+  PetscLogEventEnd(MOFEM_EVENT_postProcess,0,0,0,0);
 
   MoFEMFunctionReturnHot(0);
 }

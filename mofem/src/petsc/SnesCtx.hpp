@@ -70,8 +70,8 @@ namespace MoFEM {
       MoFEMFunctionReturnHot(0);
     }
 
-    PetscLogEvent USER_EVENT_SnesRhs; ///< Log events to assemble residual
-    PetscLogEvent USER_EVENT_SnesMat; ///< Log events to assemble tangent matrix
+    PetscLogEvent MOFEM_EVENT_SnesRhs; ///< Log events to assemble residual
+    PetscLogEvent MOFEM_EVENT_SnesMat; ///< Log events to assemble tangent matrix
 
     SnesCtx(Interface &m_field,const std::string &problem_name):
     mField(m_field),
@@ -80,8 +80,8 @@ namespace MoFEM {
     bH(MF_EXIST),
     zeroPreCondMatrixB(true),
     typeOfAssembly(MAT_FINAL_ASSEMBLY) {
-      PetscLogEventRegister("LoopSNESRhs",0,&USER_EVENT_SnesRhs);
-      PetscLogEventRegister("LoopSNESMat",0,&USER_EVENT_SnesMat);
+      PetscLogEventRegister("LoopSNESRhs",0,&MOFEM_EVENT_SnesRhs);
+      PetscLogEventRegister("LoopSNESMat",0,&MOFEM_EVENT_SnesMat);
     }
 
     virtual ~SnesCtx() {

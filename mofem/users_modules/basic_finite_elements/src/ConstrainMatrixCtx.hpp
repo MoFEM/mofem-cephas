@@ -46,12 +46,12 @@ struct ConstrainMatrixCtx {
   string xProblem,yProblem;
 
 
-  PetscLogEvent USER_EVENT_projInit;
-  PetscLogEvent USER_EVENT_projQ;
-  PetscLogEvent USER_EVENT_projP;
-  PetscLogEvent USER_EVENT_projR;
-  PetscLogEvent USER_EVENT_projRT;
-  PetscLogEvent USER_EVENT_projCTC_QTKQ;
+  PetscLogEvent MOFEM_EVENT_projInit;
+  PetscLogEvent MOFEM_EVENT_projQ;
+  PetscLogEvent MOFEM_EVENT_projP;
+  PetscLogEvent MOFEM_EVENT_projR;
+  PetscLogEvent MOFEM_EVENT_projRT;
+  PetscLogEvent MOFEM_EVENT_projCTC_QTKQ;
 
   /**
    * Construct data structure to build operators for projection matrices

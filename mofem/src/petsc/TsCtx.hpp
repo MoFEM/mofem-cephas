@@ -55,11 +55,11 @@ struct TsCtx {
   BasicMethodsSequence preProcess_Monitor;
   BasicMethodsSequence postProcess_Monitor;
 
-  PetscLogEvent USER_EVENT_TsCtxRHSFunction;
-  PetscLogEvent USER_EVENT_TsCtxRHSJacobian;
-  PetscLogEvent USER_EVENT_TsCtxIFunction;
-  PetscLogEvent USER_EVENT_TsCtxIJacobian;
-  PetscLogEvent USER_EVENT_TsCtxMonitor;
+  PetscLogEvent MOFEM_EVENT_TsCtxRHSFunction;
+  PetscLogEvent MOFEM_EVENT_TsCtxRHSJacobian;
+  PetscLogEvent MOFEM_EVENT_TsCtxIFunction;
+  PetscLogEvent MOFEM_EVENT_TsCtxIJacobian;
+  PetscLogEvent MOFEM_EVENT_TsCtxMonitor;
 
   bool zeroMatrix;
   TsCtx(MoFEM::Interface &m_field,const std::string &problem_name):
@@ -68,11 +68,11 @@ struct TsCtx {
     problemName(problem_name),
     bH(MF_EXIST),
     zeroMatrix(true) {
-    PetscLogEventRegister("LoopTsIFunction",0,&USER_EVENT_TsCtxIFunction);
-    PetscLogEventRegister("LoopTsIJacobian",0,&USER_EVENT_TsCtxIJacobian);
-    PetscLogEventRegister("LoopTsRHSFunction",0,&USER_EVENT_TsCtxRHSFunction);
-    PetscLogEventRegister("LoopTsRHSJacobian",0,&USER_EVENT_TsCtxRHSJacobian);
-    PetscLogEventRegister("LoopTsMonitor",0,&USER_EVENT_TsCtxMonitor);
+    PetscLogEventRegister("LoopTsIFunction",0,&MOFEM_EVENT_TsCtxIFunction);
+    PetscLogEventRegister("LoopTsIJacobian",0,&MOFEM_EVENT_TsCtxIJacobian);
+    PetscLogEventRegister("LoopTsRHSFunction",0,&MOFEM_EVENT_TsCtxRHSFunction);
+    PetscLogEventRegister("LoopTsRHSJacobian",0,&MOFEM_EVENT_TsCtxRHSJacobian);
+    PetscLogEventRegister("LoopTsMonitor",0,&MOFEM_EVENT_TsCtxMonitor);
   }
 
   FEMethodsSequence& get_loops_to_do_IFunction() { return loops_to_do_IFunction; }

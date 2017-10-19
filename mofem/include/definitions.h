@@ -42,8 +42,9 @@ enum Interfaces {
   UNKNOWNINTERFACE                    = 1<<0,
   //Field Interface
   CORE_INTERFACE                      = 1<<0|1<<1,
-  PROBLEMSMANAGER_INTERFACE           = 1<<0|1<<2,
-  SIMPLE_INTERFACE                    = 1<<0|1<<3,
+  DEPRECATED_CORE_INTERFACE           = 1<<0|1<<2,
+  PROBLEMSMANAGER_INTERFACE           = 1<<0|1<<3,
+  SIMPLE_INTERFACE                    = 1<<0|1<<4,
   MESH_REFINE                         = 1<<1|1<<2,
   PRISM_INTEFACE                      = 1<<1|1<<3,
   SERIES_RECORDER                     = 1<<1|1<<4,
@@ -53,49 +54,49 @@ enum Interfaces {
   BITREFMANAGER_INTERFACE             = 1<<1|1<<8,
   TOOLS                               = 1<<1|1<<10,
   //Independent Interfaces
-  TETGEN_INTERFACE              = 1<<3|1<<4,    ///< used to generate mesh using TetGen
-  MED_INTERFACE                 = 1<<3|1<<5,	  ///< interface to med data format
-  NODEMERGER_INTERFACE          = 1<<3|1<<6,	  ///< used to merge nodes
-  BITLEVELCOUPLER_INTERFACE     = 1<<3|1<<7,    ///< used to couple bit levels by finding parent children relation
-  PRISMSFROMSURFACE_INTERFACE   = 1<<3|1<<8,    ///< create prisms from surface elements
-  MESHSETSMANAGER_INTERFACE     = 1<<3|1<<9,    ///< Interface to manage meshsets with materials and boundary conditions
-  COORDSSYSTEMMANAGER_INTERFACE = 1<<3|1<<10,   ///< Interface to manage coordinate systems
-  CUTMESH_INTERFACE             = 1<<3|1<<11    ///< Cutting mesh
+  TETGEN_INTERFACE                    = 1<<2|1<<3,    ///< used to generate mesh using TetGen
+  MED_INTERFACE                       = 1<<2|1<<4,	  ///< interface to med data format
+  NODEMERGER_INTERFACE                = 1<<2|1<<5,	  ///< used to merge nodes
+  BITLEVELCOUPLER_INTERFACE           = 1<<2|1<<6,    ///< used to couple bit levels by finding parent children relation
+  PRISMSFROMSURFACE_INTERFACE         = 1<<2|1<<7,    ///< create prisms from surface elements
+  MESHSETSMANAGER_INTERFACE           = 1<<2|1<<8,    ///< Interface to manage meshsets with materials and boundary conditions
+  COORDSSYSTEMMANAGER_INTERFACE       = 1<<2|1<<9,   ///< Interface to manage coordinate systems
+  CUTMESH_INTERFACE                   = 1<<2|1<<10    ///< Cutting mesh
 };
 
 enum LoopInterfaces {
   //Loop Methods
-  KSP_METHOD    = 1<<0,
-  SNES_METHOD   = 1<<1,
-  TS_METHOD     = 1<<2,
-  BASIC_METHOD  = 1<<0|1<<1|1<<2,
-  FE_METHOD     = 1<<0|1<<1|1<<2|1<<3,
-  ENT_METHOD    = 1<<0|1<<1|1<<2|1<<4
+  KSP_METHOD                          = 1<<3|1<<4,
+  SNES_METHOD                         = 1<<3|1<<5,
+  TS_METHOD                           = 1<<3|1<<6,
+  BASIC_METHOD                        = 1<<3|1<<4|1<<5|1<<6,
+  FE_METHOD                           = 1<<3|1<<4|1<<5|1<<6|1<<7,
+  ENT_METHOD                          = 1<<3|1<<4|1<<5|1<<6|1<<8
 };
 
 /**
  * \brief interfaces for PETSc DM interfaces
  */
 enum DMInterfaces {
-  UNKNOWN_DM_INTERFACE = 1<<0,
-  DMCTX_INTERFACE = 1<<1
+  UNKNOWN_DM_INTERFACE                = 1<<4|1<<5,
+  DMCTX_INTERFACE                     = 1<<4|1<<6
 };
 
 /**
  * \brief Interfaces uses to manage base functions
  */
 enum BaseIntefaces {
-  UNKNOWN_BASE_FUNCTION_INTERFACE     = 1<<0,
-  LEGENDRE_BASE_FUNCTION_INTERFACE    = 1<<1,
-  LOBATTO_BASE_FUNCTION_INTERFACE     = 1<<2,
-  KERNEL_BASE_FUNCTION_INTERFACE      = 1<<3,
-  JACOBI_BASE_FUNCTION_INTERFACE      = 1<<4,
-  ENT_BASE_FUNCTION_INTERFACE         = 1<<5,
-  TET_BASE_FUNCTION_INTERFACE         = 1<<1|1<<3|1<<3,
-  TRI_BASE_FUNCTION_INTERFACE         = 1<<1|1<<3|1<<4,
-  EDGE_BASE_FUNCTION_INTERFACE        = 1<<1|1<<3|1<<5,
-  FATPRISM_BASE_FUNCTION_INTERFACE    = 1<<1|1<<3|1<<6,
-  FLATPRISM_BASE_FUNCTION_INTERFACE   = 1<<1|1<<3|1<<7
+  UNKNOWN_BASE_FUNCTION_INTERFACE     = 1<<5|1<<6,
+  LEGENDRE_BASE_FUNCTION_INTERFACE    = 1<<5|1<<7,
+  LOBATTO_BASE_FUNCTION_INTERFACE     = 1<<5|1<<8,
+  KERNEL_BASE_FUNCTION_INTERFACE      = 1<<5|1<<9,
+  JACOBI_BASE_FUNCTION_INTERFACE      = 1<<5|1<<10,
+  ENT_BASE_FUNCTION_INTERFACE         = 1<<5|1<<6|1<<7,
+  TET_BASE_FUNCTION_INTERFACE         = 1<<5|1<<6|1<<8,
+  TRI_BASE_FUNCTION_INTERFACE         = 1<<5|1<<6|1<<9,
+  EDGE_BASE_FUNCTION_INTERFACE        = 1<<5|1<<6|1<<10,
+  FATPRISM_BASE_FUNCTION_INTERFACE    = 1<<5|1<<6|1<<11,
+  FLATPRISM_BASE_FUNCTION_INTERFACE   = 1<<5|1<<6|1<<12
 };
 
 /** \brief Error handling

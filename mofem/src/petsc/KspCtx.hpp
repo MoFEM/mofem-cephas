@@ -52,16 +52,16 @@ namespace MoFEM {
     BasicMethodsSequence preProcess_Rhs;  ///< Sequence of methods run before residual is assembled
     BasicMethodsSequence postProcess_Rhs; ///< Sequence of methods run after residual is assembled
 
-    PetscLogEvent USER_EVENT_KspRhs;
-    PetscLogEvent USER_EVENT_KspMat;
+    PetscLogEvent MOFEM_EVENT_KspRhs;
+    PetscLogEvent MOFEM_EVENT_KspMat;
 
     KspCtx(MoFEM::Interface &m_field,const std::string &_problem_name):
     mField(m_field),
     moab(m_field.get_moab()),
     problemName(_problem_name),
     bH(MF_EXIST) {
-      PetscLogEventRegister("LoopKSPRhs",0,&USER_EVENT_KspRhs);
-      PetscLogEventRegister("LoopKSPMat",0,&USER_EVENT_KspMat);
+      PetscLogEventRegister("LoopKSPRhs",0,&MOFEM_EVENT_KspRhs);
+      PetscLogEventRegister("LoopKSPMat",0,&MOFEM_EVENT_KspMat);
     }
     virtual ~KspCtx() {}
 
