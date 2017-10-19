@@ -51,7 +51,6 @@ enum Interfaces {
   VECMANAGER_INTERFACE                = 1<<1|1<<6,
   FIELDBLAS_INTERFACE                 = 1<<1|1<<7,
   BITREFMANAGER_INTERFACE             = 1<<1|1<<8,
-  UPDATEMESHSETSANDRANGES_INTERFACE   = 1<<1|1<<9,
   TOOLS                               = 1<<1|1<<10,
   //Independent Interfaces
   TETGEN_INTERFACE              = 1<<3|1<<4,    ///< used to generate mesh using TetGen

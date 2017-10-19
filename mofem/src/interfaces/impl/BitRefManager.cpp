@@ -702,5 +702,132 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
+  PetscErrorCode BitRefManager::updateMeshsetByEntitiesChildren(
+    const EntityHandle parent, const BitRefLevel &child_bit,const EntityHandle child, EntityType child_type,
+    const bool recursive,int verb
+  ) {
+    MoFEM::Interface& m_field = cOre;
+    moab::Interface &moab = m_field.get_moab();
+    const RefEntity_multiIndex *ref_ents_ptr;
+    MoFEMFunctionBeginHot;
+    ierr = m_field.get_ref_ents(&ref_ents_ptr); CHKERRQ(ierr);
+    Range ents;
+    rval = moab.get_entities_by_handle(parent,ents,recursive);
+    if(rval != MB_SUCCESS) {
+      std::cerr << parent << std::endl;
+      std::cerr << moab.type_from_handle(parent) <<  " " << MBENTITYSET << std::endl;
+    } CHKERRQ_MOAB(rval);
+
+    typedef RefEntity_multiIndex::index<Composite_ParentEnt_And_EntType_mi_tag>::type RefEntsByComposite;
+    RefEntsByComposite &ref_ents = const_cast<RefEntity_multiIndex*>(ref_ents_ptr)->get<Composite_ParentEnt_And_EntType_mi_tag>();
+    for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {
+      if(verb>2) {
+        std::ostringstream ss;
+        ss << "ent " << *eit << std::endl;;
+        PetscPrintf(m_field.get_comm(),ss.str().c_str());
+      }
+      RefEntsByComposite::iterator miit = ref_ents.lower_bound(boost::make_tuple(*eit,child_type));
+      RefEntsByComposite::iterator hi_miit = ref_ents.upper_bound(boost::make_tuple(*eit,child_type));
+      for(;miit!=hi_miit;miit++) {
+        if(verb>2) {
+          std::ostringstream ss;
+          ss << "any bit " << *miit << std::endl;;
+          PetscPrintf(m_field.get_comm(),ss.str().c_str());
+        }
+        if(((*miit)->getBitRefLevel()&child_bit).any()) {
+          EntityHandle ref_ent = (*miit)->getRefEnt();
+          if(ref_ent == *eit) continue;
+          if(ref_ent == 0) {
+            SETERRQ(m_field.get_comm(),MOFEM_IMPOSIBLE_CASE,"this should not happen");
+          }
+          if(moab.type_from_handle(*eit)==MBENTITYSET) {
+            SETERRQ(m_field.get_comm(),MOFEM_IMPOSIBLE_CASE,"this should not happen");
+          }
+          rval = moab.add_entities(child,&ref_ent,1); CHKERRQ_MOAB(rval);
+          if(verb>1) {
+            std::ostringstream ss;
+            ss << "good bit " << *miit << std::endl;
+            PetscPrintf(m_field.get_comm(),ss.str().c_str());
+          }
+        }
+      }
+    }
+    MoFEMFunctionReturnHot(0);
+  }
+
+  PetscErrorCode BitRefManager::updateFieldMeshsetByEntitiesChildren(const BitRefLevel &child_bit,int verb) {
+    MoFEM::Interface& m_field = cOre;
+    const Field_multiIndex *fields_ptr;
+    MoFEMFunctionBeginHot;
+    ierr = m_field.get_fields(&fields_ptr); CHKERRQ(ierr);
+    Field_multiIndex::iterator fit = fields_ptr->begin();
+    for(;fit!=fields_ptr->end();fit++) {
+      EntityHandle meshset = (*fit)->getMeshset();
+      ierr = updateMeshsetByEntitiesChildren(meshset,child_bit,meshset,MBTET,false,verb);  CHKERRQ(ierr);
+      ierr = updateMeshsetByEntitiesChildren(meshset,child_bit,meshset,MBTRI,false,verb);  CHKERRQ(ierr);
+      ierr = updateMeshsetByEntitiesChildren(meshset,child_bit,meshset,MBEDGE,false,verb);  CHKERRQ(ierr);
+      ierr = updateMeshsetByEntitiesChildren(meshset,child_bit,meshset,MBVERTEX,false,verb);  CHKERRQ(ierr);
+    }
+    MoFEMFunctionReturnHot(0);
+  }
+
+  PetscErrorCode BitRefManager::updateFieldMeshsetByEntitiesChildren(
+    const std::string name,const BitRefLevel &child_bit,int verb
+  ) {
+    MoFEM::Interface& m_field = cOre;
+    MoFEMFunctionBeginHot;
+    try {
+      EntityHandle meshset = m_field.get_field_structure(name)->getMeshset();
+      ierr = updateMeshsetByEntitiesChildren(meshset,child_bit,meshset,MBTET,false,verb);  CHKERRQ(ierr);
+      ierr = updateMeshsetByEntitiesChildren(meshset,child_bit,meshset,MBTRI,false,verb);  CHKERRQ(ierr);
+      ierr = updateMeshsetByEntitiesChildren(meshset,child_bit,meshset,MBEDGE,false,verb);  CHKERRQ(ierr);
+      ierr = updateMeshsetByEntitiesChildren(meshset,child_bit,meshset,MBVERTEX,false,verb);  CHKERRQ(ierr);
+    } catch (MoFEMException const &e) {
+      SETERRQ(m_field.get_comm(),e.errorCode,e.errorMessage);
+    }
+    MoFEMFunctionReturnHot(0);
+  }
+
+  PetscErrorCode BitRefManager::updateFiniteElementMeshsetByEntitiesChildren(
+    const std::string name,const BitRefLevel &child_bit,const EntityType fe_ent_type,int verb
+  ) {
+    MoFEM::Interface& m_field = cOre;
+    MoFEMFunctionBeginHot;
+    try {
+      EntityHandle meshset = m_field.get_finite_element_meshset(name);
+      ierr = updateMeshsetByEntitiesChildren(meshset,child_bit,meshset,fe_ent_type,false,verb);  CHKERRQ(ierr);
+    } catch (MoFEMException const &e) {
+      SETERRQ(m_field.get_comm(),e.errorCode,e.errorMessage);
+    }
+    MoFEMFunctionReturnHot(0);
+  }
+
+  PetscErrorCode BitRefManager::updateRange(const Range& parent_ents,Range& child_ents) {
+    MoFEM::Interface& m_field = cOre;
+    moab::Interface &moab = m_field.get_moab();
+    const RefEntity_multiIndex *ref_ents_ptr;
+    MoFEMFunctionBeginHot;
+    ierr = m_field.get_ref_ents(&ref_ents_ptr); CHKERRQ(ierr);
+    typedef RefEntity_multiIndex::index<Ent_Ent_mi_tag>::type RefEntsByParent;
+    RefEntsByParent &ref_ents = const_cast<RefEntity_multiIndex*>(ref_ents_ptr)->get<Ent_Ent_mi_tag>();
+    for(Range::iterator eit = parent_ents.begin();eit!=parent_ents.end();eit++) {
+      RefEntsByParent::iterator miit = ref_ents.lower_bound(*eit);
+      RefEntsByParent::iterator hi_miit = ref_ents.upper_bound(*eit);
+      for(;miit!=hi_miit;miit++) {
+        EntityHandle ref_ent = (*miit)->getRefEnt();
+        if(ref_ent == *eit) continue;
+        if(ref_ent == 0) {
+          SETERRQ(m_field.get_comm(),MOFEM_IMPOSIBLE_CASE,"this should not happen");
+        }
+        if(moab.type_from_handle(*eit)==MBENTITYSET) {
+          SETERRQ(m_field.get_comm(),MOFEM_IMPOSIBLE_CASE,"this should not happen");
+        }
+        child_ents.insert(ref_ent);
+      }
+    }
+    MoFEMFunctionReturnHot(0);
+  }
+
+
 
 }

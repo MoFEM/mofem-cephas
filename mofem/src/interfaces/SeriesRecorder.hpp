@@ -61,7 +61,7 @@ struct SeriesRecorder: public UnknownInterface {
    * \brier initialize container form data on mesh
    * @return error code
    */
-  PetscErrorCode initialiseDatabseInformationFromMesh(int verb = 0);
+  PetscErrorCode initialiseDatabseFromMesh(int verb = 0);
 
   /**
    * \brief return pointer to meshset manager

@@ -292,8 +292,5 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode Core::get_problem_elements_layout(const std::string &name,const std::string &fe_name,PetscLayout *layout,int verb) {
-    return ProblemsManager(*this).getProblemElementsLayout(name,fe_name,layout);
-  }
 
 }

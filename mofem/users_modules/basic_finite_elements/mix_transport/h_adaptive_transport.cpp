@@ -349,10 +349,10 @@ struct MyTransport: public MixTransportElement {
     ref_level.set(nb_levels);
     for(_IT_CUBITMESHSETS_FOR_LOOP_(mField,it)) {
       EntityHandle meshset = it->meshset;
-      ierr = mField.query_interface<UpdateMeshsetsAndRanges>()->updateMeshsetByEntitiesChildren(meshset,ref_level,meshset,MBVERTEX,true); CHKERRQ(ierr);
-      ierr = mField.query_interface<UpdateMeshsetsAndRanges>()->updateMeshsetByEntitiesChildren(meshset,ref_level,meshset,MBEDGE,true); CHKERRQ(ierr);
-      ierr = mField.query_interface<UpdateMeshsetsAndRanges>()->updateMeshsetByEntitiesChildren(meshset,ref_level,meshset,MBTRI,true); CHKERRQ(ierr);
-      ierr = mField.query_interface<UpdateMeshsetsAndRanges>()->updateMeshsetByEntitiesChildren(meshset,ref_level,meshset,MBTET,true); CHKERRQ(ierr);
+      ierr = mField.query_interface<BitRefManager>()->updateMeshsetByEntitiesChildren(meshset,ref_level,meshset,MBVERTEX,true); CHKERRQ(ierr);
+      ierr = mField.query_interface<BitRefManager>()->updateMeshsetByEntitiesChildren(meshset,ref_level,meshset,MBEDGE,true); CHKERRQ(ierr);
+      ierr = mField.query_interface<BitRefManager>()->updateMeshsetByEntitiesChildren(meshset,ref_level,meshset,MBTRI,true); CHKERRQ(ierr);
+      ierr = mField.query_interface<BitRefManager>()->updateMeshsetByEntitiesChildren(meshset,ref_level,meshset,MBTET,true); CHKERRQ(ierr);
     }
     MoFEMFunctionReturnHot(0);
   }

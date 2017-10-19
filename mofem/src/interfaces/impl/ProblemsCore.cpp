@@ -171,48 +171,19 @@ PetscErrorCode Core::modify_problem_mask_ref_level_set_bit(const std::string &na
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode Core::build_problem_on_distributed_mesh(
-  const std::string &name,const bool square_matrix,int verb
-) {
-  ProblemsManager *problems_manager_ptr;
-  MoFEMFunctionBeginHot;
-  if(verb==-1) verb = verbose;
-  ierr = query_interface(problems_manager_ptr); CHKERRQ(ierr);
-  ierr = problems_manager_ptr->buildProblemOnDistributedMesh(
-    name,square_matrix,verb
-  ); CHKERRQ(ierr);
-  MoFEMFunctionReturnHot(0);
-}
-PetscErrorCode Core::build_problem_on_distributed_mesh(
-  Problem *problem_ptr,const bool square_matrix,int verb
-) {
-  ProblemsManager *problems_manager_ptr;
-  MoFEMFunctionBeginHot;
-  ierr = query_interface(problems_manager_ptr); CHKERRQ(ierr);
-  ierr = problems_manager_ptr->buildProblemOnDistributedMesh(
-    problem_ptr,square_matrix,verb
-  ); CHKERRQ(ierr);
-  MoFEMFunctionReturnHot(0);
-}
 PetscErrorCode Core::build_problem_on_distributed_mesh(int verb) {
   MoFEMFunctionBeginHot;
   if(verb==-1) verb = verbose;
   DofEntity_multiIndex_active_view dofs_rows,dofs_cols;
   Problem_multiIndex::iterator p_miit = pRoblems.begin();
   for(;p_miit!=pRoblems.end();p_miit++) {
-    ierr = build_problem_on_distributed_mesh(const_cast<Problem*>(&*p_miit),verb); CHKERRQ(ierr);
+    ierr = query_interface<ProblemsManager>()->buildProblemOnDistributedMesh(
+      const_cast<Problem*>(&*p_miit),verb
+    ); CHKERRQ(ierr);
   }
   MoFEMFunctionReturnHot(0);
 }
-PetscErrorCode Core::partition_mesh(
-  const Range &ents,const int dim,const int adj_dim,const int n_parts,int verb
-) {
-  ProblemsManager *prb_mng_ptr;
-  MoFEMFunctionBeginHot;
-  ierr = query_interface(prb_mng_ptr); CHKERRQ(ierr);
-  ierr = prb_mng_ptr->partitionMesh(ents,dim,adj_dim,n_parts,NULL,NULL,NULL,verb); CHKERRQ(ierr);
-  MoFEMFunctionReturnHot(0);
-}
+
 PetscErrorCode Core::clear_problem(const std::string &problem_name,int verb) {
   MoFEMFunctionBeginHot;
   if(verb==-1) verb = verbose;
@@ -241,26 +212,6 @@ PetscErrorCode Core::clear_problem(const std::string &problem_name,int verb) {
   if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
   MoFEMFunctionReturnHot(0);
 }
-PetscErrorCode Core::build_problem(Problem *problem_ptr,const bool square_matrix,int verb) {
-  ProblemsManager *problem_manager_ptr;
-  MoFEMFunctionBeginHot;
-  // Note: Only allowe changes on problem_ptr structure which not influence multindex
-  // indexing are allowd.
-  if(verb==-1) verb = verbose;
-  ierr = query_interface(problem_manager_ptr); CHKERRQ(ierr);
-  ierr = problem_manager_ptr->buildProblem(problem_ptr,square_matrix,verb); CHKERRQ(ierr);
-  MoFEMFunctionReturnHot(0);
-}
-PetscErrorCode Core::build_problem(const std::string &problem_name,const bool square_matrix,int verb) {
-  ProblemsManager *problem_manager_ptr;
-  MoFEMFunctionBeginHot;
-  // Note: Only allowe changes on problem_ptr structure which not influence multindex
-  // indexing are allowd.
-  if(verb==-1) verb = verbose;
-  ierr = query_interface(problem_manager_ptr); CHKERRQ(ierr);
-  ierr = problem_manager_ptr->buildProblem(problem_name,square_matrix,verb); CHKERRQ(ierr);
-  MoFEMFunctionReturnHot(0);
-}
 PetscErrorCode Core::build_problems(int verb) {
   MoFEMFunctionBeginHot;
   if(verb==-1) verb = verbose;
@@ -283,104 +234,6 @@ PetscErrorCode Core::clear_problems(int verb) {
   for(Problem_multiIndex::iterator p_miit = pRoblems.begin();p_miit!=pRoblems.end();p_miit++) {
     ierr = clear_problem(p_miit->getName(),verb); CHKERRQ(ierr);
   }
-  MoFEMFunctionReturnHot(0);
-}
-PetscErrorCode Core::partition_simple_problem(const std::string &name,int verb) {
-  ProblemsManager *problem_manager_ptr;
-  MoFEMFunctionBeginHot;
-  if(verb==-1) verb = verbose;
-  ierr = query_interface(problem_manager_ptr); CHKERRQ(ierr);
-  ierr = problem_manager_ptr->partitionSimpleProblem(name,verb); CHKERRQ(ierr);
-  MoFEMFunctionReturnHot(0);
-}
-
-PetscErrorCode Core::partition_compose_problem(
-  const std::string &name,
-  const std::string &problem_for_rows,
-  bool copy_rows,
-  const std::string &problem_for_cols,
-  bool copy_cols,
-  int verb
-) {
-  ProblemsManager *problem_manager_ptr;
-  MoFEMFunctionBeginHot;
-  if(verb==-1) verb = verbose;
-  ierr = query_interface(problem_manager_ptr); CHKERRQ(ierr);
-  ierr = problem_manager_ptr->inheretPartition(
-    name,problem_for_rows,copy_rows,problem_for_cols,copy_cols,verb
-  ); CHKERRQ(ierr);
-  MoFEMFunctionReturnHot(0);
-}
-
-PetscErrorCode Core::build_sub_problem(
-  const std::string &out_name,
-  const std::vector<std::string> &fields_row,
-  const std::vector<std::string> &fields_col,
-  const std::string &main_problem,
-  const bool square_matrix,
-  int verb
-) {
-  ProblemsManager *problem_manager_ptr;
-  MoFEMFunctionBeginHot;
-  ierr = query_interface(problem_manager_ptr); CHKERRQ(ierr);
-
-  if(verb==-1) verb = verbose;
-  ierr = problem_manager_ptr->buildSubProblem(
-    out_name,fields_row,fields_col,main_problem,square_matrix,verb
-  ); CHKERRQ(ierr);
-
-  MoFEMFunctionReturnHot(0);
-}
-
-PetscErrorCode Core::printPartitionedProblem(const Problem *problem_ptr,int verb) {
-  ProblemsManager *problem_manager_ptr;
-  MoFEMFunctionBeginHot;
-  if(verb==-1) verb = verbose;
-  ierr = query_interface(problem_manager_ptr); CHKERRQ(ierr);
-  ierr = problem_manager_ptr->printPartitionedProblem(problem_ptr,verb); CHKERRQ(ierr);
-  MoFEMFunctionReturnHot(0);
-}
-
-PetscErrorCode Core::debugPartitionedProblem(const Problem *problem_ptr,int verb) {
-  ProblemsManager *problem_manager_ptr;
-  MoFEMFunctionBeginHot;
-  if(verb==-1) verb = verbose;
-  ierr = query_interface(problem_manager_ptr); CHKERRQ(ierr);
-  ierr = problem_manager_ptr->debugPartitionedProblem(problem_ptr,verb); CHKERRQ(ierr);
-  MoFEMFunctionReturnHot(0);
-}
-
-PetscErrorCode Core::partition_problem(const std::string &name,int verb) {
-  ProblemsManager *prb_mng_ptr;
-  MoFEMFunctionBeginHot;
-  ierr = query_interface(prb_mng_ptr); CHKERRQ(ierr);
-  ierr = prb_mng_ptr->partitionProblem(name,verb); CHKERRQ(ierr);
-  MoFEMFunctionReturnHot(0);
-}
-
-PetscErrorCode Core::partition_finite_elements(
-  const std::string &name,
-  bool part_from_moab,
-  int low_proc,
-  int hi_proc,
-  int verb
-) {
-  MoFEMFunctionBeginHot;
-  ProblemsManager *prb_mng_ptr;
-  MoFEMFunctionBeginHot;
-  ierr = query_interface(prb_mng_ptr); CHKERRQ(ierr);
-  ierr = prb_mng_ptr->partitionFiniteElements(
-    name,part_from_moab,low_proc,hi_proc,verb
-  ); CHKERRQ(ierr);
-  MoFEMFunctionReturnHot(0);
-}
-
-PetscErrorCode Core::partition_ghost_dofs(const std::string &name,int verb) {
-  MoFEMFunctionBeginHot;
-  ProblemsManager *prb_mng_ptr;
-  MoFEMFunctionBeginHot;
-  ierr = query_interface(prb_mng_ptr); CHKERRQ(ierr);
-  ierr = prb_mng_ptr->partitionGhostDofs(name,verb); CHKERRQ(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
