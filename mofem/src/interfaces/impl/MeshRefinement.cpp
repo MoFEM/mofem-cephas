@@ -1011,9 +1011,9 @@ PetscErrorCode MeshRefinement::refine_MESHSET(
   if(miit==refined_ents_ptr->end()) {
     SETERRQ(m_field.get_comm(),MOFEM_DATA_INCONSISTENCY,"this meshset is not in ref database");
   }
-  ierr = m_field.query_interface<UpdateMeshsetsAndRanges>()->updateMeshsetByEntitiesChildren(meshset,bit,meshset,MBEDGE,recursive,verb); CHKERRQ(ierr);
-  ierr = m_field.query_interface<UpdateMeshsetsAndRanges>()->updateMeshsetByEntitiesChildren(meshset,bit,meshset,MBTRI,recursive,verb); CHKERRQ(ierr);
-  ierr = m_field.query_interface<UpdateMeshsetsAndRanges>()->updateMeshsetByEntitiesChildren(meshset,bit,meshset,MBTET,recursive,verb); CHKERRQ(ierr);
+  ierr = m_field.query_interface<BitRefManager>()->updateMeshsetByEntitiesChildren(meshset,bit,meshset,MBEDGE,recursive,verb); CHKERRQ(ierr);
+  ierr = m_field.query_interface<BitRefManager>()->updateMeshsetByEntitiesChildren(meshset,bit,meshset,MBTRI,recursive,verb); CHKERRQ(ierr);
+  ierr = m_field.query_interface<BitRefManager>()->updateMeshsetByEntitiesChildren(meshset,bit,meshset,MBTET,recursive,verb); CHKERRQ(ierr);
   const_cast<RefEntity_multiIndex*>(refined_ents_ptr)->modify(miit,RefEntity_change_add_bit(bit));
   MoFEMFunctionReturnHot(0);
 }

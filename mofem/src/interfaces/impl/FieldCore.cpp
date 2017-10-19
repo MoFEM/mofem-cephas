@@ -1199,36 +1199,6 @@ PetscErrorCode Core::list_adjacencies() const {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode Core::shift_right_bit_ref(const int shift,int verb) {
-  return BitRefManager(*this).shiftRightBitRef(shift,BitRefLevel().set(),verb);
-}
-PetscErrorCode Core::get_entities_by_type_and_ref_level(const BitRefLevel &bit,const BitRefLevel &mask,const EntityType type,const EntityHandle meshset,int verb) {
-  return BitRefManager(*this).getEntitiesByTypeAndRefLevel(bit,mask,type,meshset,verb);
-}
-PetscErrorCode Core::get_entities_by_type_and_ref_level(const BitRefLevel &bit,const BitRefLevel &mask,const EntityType type,Range &ents,int verb) {
-  return BitRefManager(*this).getEntitiesByTypeAndRefLevel(bit,mask,type,ents,verb);
-}
-PetscErrorCode Core::get_entities_by_ref_level(const BitRefLevel &bit,const BitRefLevel &mask,const EntityHandle meshset) {
-  return BitRefManager(*this).getEntitiesByRefLevel(bit,mask,meshset);
-}
-PetscErrorCode Core::get_entities_by_ref_level(const BitRefLevel &bit,const BitRefLevel &mask,Range &ents) {
-  return BitRefManager(*this).getEntitiesByRefLevel(bit,mask,ents);
-}
-PetscErrorCode Core::update_meshset_by_entities_children(
-  const EntityHandle parent, const BitRefLevel &child_bit,const EntityHandle child,
-  EntityType child_type,const bool recursive,int verb
-) {
-  return UpdateMeshsetsAndRanges(*this).updateMeshsetByEntitiesChildren(parent,child_bit,child,child_type,recursive,verb);
-}
-PetscErrorCode Core::update_field_meshset_by_entities_children(const BitRefLevel &child_bit,int verb) {
-  return UpdateMeshsetsAndRanges(*this).updateFieldMeshsetByEntitiesChildren(child_bit,verb);
-}
-PetscErrorCode Core::update_field_meshset_by_entities_children(const std::string name,const BitRefLevel &child_bit,int verb) {
-  return UpdateMeshsetsAndRanges(*this).updateFieldMeshsetByEntitiesChildren(name,child_bit,verb);
-}
-PetscErrorCode Core::update_finite_element_meshset_by_entities_children(const std::string name,const BitRefLevel &child_bit,const EntityType fe_ent_type,int verb) {
-  return UpdateMeshsetsAndRanges(*this).updateFiniteElementMeshsetByEntitiesChildren(name,child_bit,fe_ent_type,verb);
-}
 PetscErrorCode Core::get_problem_finite_elements_entities(const std::string &problem_name,const std::string &fe_name,const EntityHandle meshset) {
   MoFEMFunctionBeginHot;
   typedef Problem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;

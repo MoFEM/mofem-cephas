@@ -121,17 +121,17 @@ int main(int argc, char *argv[]) {
     ierr = cut_mesh->trimEdgesInTheMiddle(bit_level2,th,1e-3); CHKERRQ(ierr);
     ierr = cut_mesh->moveMidNodesOnTrimedEdges(th); CHKERRQ(ierr);
 
-    UpdateMeshsetsAndRanges *meshset_update;
-    ierr = m_field.query_interface(meshset_update); CHKERRQ(ierr);
+    BitRefManager *bit_ref_manager;
+    ierr = m_field.query_interface(bit_ref_manager); CHKERRQ(ierr);
 
     Range fixed_edges,fixed_vertices,corner_nodes;
     if(meshset_manager->checkMeshset(100,SIDESET)) {
       EntityHandle meshset;
       ierr = meshset_manager->getMeshset(100,SIDESET,meshset); CHKERRQ(ierr);
-      ierr = meshset_update->updateMeshsetByEntitiesChildren(meshset,bit_level1,meshset,MBEDGE,true); CHKERRQ(ierr);
-      ierr = meshset_update->updateMeshsetByEntitiesChildren(meshset,bit_level1,meshset,MBVERTEX,true); CHKERRQ(ierr);
-      ierr = meshset_update->updateMeshsetByEntitiesChildren(meshset,bit_level2,meshset,MBEDGE,true); CHKERRQ(ierr);
-      ierr = meshset_update->updateMeshsetByEntitiesChildren(meshset,bit_level2,meshset,MBVERTEX,true); CHKERRQ(ierr);
+      ierr = bit_ref_manager->updateMeshsetByEntitiesChildren(meshset,bit_level1,meshset,MBEDGE,true); CHKERRQ(ierr);
+      ierr = bit_ref_manager->updateMeshsetByEntitiesChildren(meshset,bit_level1,meshset,MBVERTEX,true); CHKERRQ(ierr);
+      ierr = bit_ref_manager->updateMeshsetByEntitiesChildren(meshset,bit_level2,meshset,MBEDGE,true); CHKERRQ(ierr);
+      ierr = bit_ref_manager->updateMeshsetByEntitiesChildren(meshset,bit_level2,meshset,MBVERTEX,true); CHKERRQ(ierr);
       ierr = meshset_manager->getEntitiesByDimension(100,SIDESET,1,fixed_edges,true); CHKERRQ(ierr);
       Range edges_level2;
       ierr = m_field.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
@@ -141,8 +141,8 @@ int main(int argc, char *argv[]) {
       rval = moab.get_connectivity(fixed_edges,fixed_vertices,true); CHKERRQ_MOAB(rval);
 
       ierr = meshset_manager->getMeshset(1,BLOCKSET,meshset); CHKERRQ(ierr);
-      ierr = meshset_update->updateMeshsetByEntitiesChildren(meshset,bit_level1,meshset,MBVERTEX,true); CHKERRQ(ierr);
-      ierr = meshset_update->updateMeshsetByEntitiesChildren(meshset,bit_level2,meshset,MBVERTEX,true); CHKERRQ(ierr);
+      ierr = bit_ref_manager->updateMeshsetByEntitiesChildren(meshset,bit_level1,meshset,MBVERTEX,true); CHKERRQ(ierr);
+      ierr = bit_ref_manager->updateMeshsetByEntitiesChildren(meshset,bit_level2,meshset,MBVERTEX,true); CHKERRQ(ierr);
       ierr = meshset_manager->getEntitiesByDimension(1,BLOCKSET,0,corner_nodes,true); CHKERRQ(ierr);
 
     }

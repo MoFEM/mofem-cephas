@@ -280,6 +280,61 @@ namespace MoFEM {
 
     /**@}*/
 
+    /** \name Update meshsets and ranges by children */
+
+    /**@{*/
+
+    /** \brief Get child entities form meshset containing parent entities
+      * \ingroup mofem_update_meshsets_and_ranges
+      *
+      * Search for refined entities of given type whose parent are entities in the
+      * parent meshset. It can be used for example to transfer information about
+      * boundary conditions to refined mesh or split mesh by interface
+      * elements. It is used by function refine_MESHSET, to update MESHSET finite elements.
+      *
+      * \param parent meshset
+      * \param child_bit refinement level
+      * \param type of refined entity
+      * \param child_type meshset where child entities are stored (if the child meshset is set to be the parent meshset, the parent would be updated with the refined entities)
+      * \param recursive if true parent meshset is searched recursively
+      *
+     **/
+    PetscErrorCode updateMeshsetByEntitiesChildren(
+      const EntityHandle parent, const BitRefLevel &child_bit,const EntityHandle child, EntityType child_type,
+      const bool recursive = false, int verb = 0
+    );
+
+    /** \brief update fields meshesets by child entities
+      * \ingroup mofem_update_meshsets_and_ranges
+      *
+      */
+    PetscErrorCode updateFieldMeshsetByEntitiesChildren(const BitRefLevel &child_bit,int verb = 0);
+
+    /** \brief update field mesheset by child entities
+      * \ingroup mofem_update_meshsets_and_ranges
+      */
+    PetscErrorCode updateFieldMeshsetByEntitiesChildren(const std::string name,const BitRefLevel &child_bit,int verb = 0);
+
+    /** \brief update finite element mesheset by child entities
+     * \ingroup mofem_update_meshsets_and_ranges
+     */
+    PetscErrorCode updateFiniteElementMeshsetByEntitiesChildren(
+      const std::string name,const BitRefLevel &child_bit,const EntityType fe_ent_type,int verb = 0
+    );
+
+    /**
+     * \brief Update range by prents
+     *
+     * FIXME: NOT TESTED
+     *
+     * @param  parent parent range
+     * @param  child  childeren range
+     * @return        error code
+     */
+    PetscErrorCode updateRange(const Range& parent,Range& child);
+
+    /**@}*/
+
     /** \name Writting files */
 
     /**@{*/

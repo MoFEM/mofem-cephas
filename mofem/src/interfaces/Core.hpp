@@ -186,71 +186,14 @@ struct Core: public Interface {
     return *get_meshsets_manager_ptr();
   }
 
-  // Should not be used, access data meshesets by MeshsetsManager interface
-  DEPRECATED bool check_msId_meshset(const int ms_id,const CubitBCType cubit_bc_type);
-  DEPRECATED PetscErrorCode add_cubit_msId(const CubitBCType cubit_bc_type,const int ms_id,const std::string name = "");
-  DEPRECATED PetscErrorCode set_cubit_msId_attribites(
-    const CubitBCType cubit_bc_type,const int ms_id,const std::vector<double> &attributes,const std::string name = ""
-  );
-  DEPRECATED PetscErrorCode set_cubit_msId_attribites_data_structure(
-    const CubitBCType cubit_bc_type,const int ms_id,const GenericAttributeData &data,const std::string name = ""
-  );
-  DEPRECATED PetscErrorCode set_cubit_msId_bc_data_structure(
-    const CubitBCType cubit_bc_type,const int ms_id,const GenericCubitBcData &data
-  );
-  DEPRECATED PetscErrorCode delete_cubit_msId(const CubitBCType cubit_bc_type,const int ms_id);
-  DEPRECATED PetscErrorCode get_cubit_msId(
-    const int ms_id,const CubitBCType cubit_bc_type,const CubitMeshSets **cubit_meshset_ptr
-  );
-  DEPRECATED PetscErrorCode get_cubit_msId_entities_by_dimension(
-    const int ms_id,const CubitBCType cubit_bc_type, const int dimension,Range &entities,const bool recursive = false
-  );
-  DEPRECATED PetscErrorCode get_cubit_msId_entities_by_dimension(
-    const int ms_id,const CubitBCType cubit_bc_type, Range &entities,const bool recursive = false
-  );
-  DEPRECATED PetscErrorCode get_cubit_msId_entities_by_dimension(
-    const int ms_id,const unsigned int cubit_bc_type, const int dimension,Range &entities,const bool recursive = false
-  );
-  DEPRECATED PetscErrorCode get_cubit_msId_entities_by_dimension(
-    const int ms_id,const unsigned int cubit_bc_type, Range &entities,const bool recursive = false
-  );
-  DEPRECATED PetscErrorCode get_cubit_msId_meshset(
-    const int ms_id,const unsigned int cubit_bc_type,EntityHandle &meshset
-  );
-  DEPRECATED PetscErrorCode get_cubit_meshsets(
-    const unsigned int cubit_bc_type,Range &meshsets
-  );
-  DEPRECATED PetscErrorCode print_cubit_displacement_set() const;
-  DEPRECATED PetscErrorCode print_cubit_pressure_set() const;
-  DEPRECATED PetscErrorCode print_cubit_force_set() const;
-  DEPRECATED PetscErrorCode print_cubit_temperature() const;
-  DEPRECATED PetscErrorCode print_cubit_heat_flux_set() const;
-  DEPRECATED PetscErrorCode print_cubit_materials_set() const;
-
   //refine
   PetscErrorCode seed_finite_elements(const Range &entities,int verb = -1);
   PetscErrorCode seed_finite_elements(const EntityHandle meshset,int verb = -1);
-  DEPRECATED PetscErrorCode seed_ref_level(const Range &ents,const BitRefLevel &bit,const bool only_tets = true,int verb = -1);
-  DEPRECATED PetscErrorCode seed_ref_level_2D(const EntityHandle meshset,const BitRefLevel &bit,int verb = -1);
-  DEPRECATED PetscErrorCode seed_ref_level_3D(const EntityHandle meshset,const BitRefLevel &bit,int verb = -1);
-  DEPRECATED PetscErrorCode seed_ref_level_MESHSET(const EntityHandle meshset,const BitRefLevel &bit,int verb = -1);
-  DEPRECATED PetscErrorCode get_entities_by_type_and_ref_level(const BitRefLevel &bit,const BitRefLevel &mask,const EntityType type,const EntityHandle meshset,int verb = -1);
-  DEPRECATED PetscErrorCode get_entities_by_type_and_ref_level(const BitRefLevel &bit,const BitRefLevel &mask,const EntityType type,Range &ents,int verb = -1);
-  DEPRECATED PetscErrorCode get_entities_by_ref_level(const BitRefLevel &bit,const BitRefLevel &mask,const EntityHandle meshset);
-  DEPRECATED PetscErrorCode get_entities_by_ref_level(const BitRefLevel &bit,const BitRefLevel &mask,Range &ents);
-  DEPRECATED PetscErrorCode update_meshset_by_entities_children(
-    const EntityHandle parent, const BitRefLevel &child_bit,const EntityHandle child, EntityType child_type,
-    const bool recursive = false, int verb = -1
-  );
-  DEPRECATED PetscErrorCode update_field_meshset_by_entities_children(const BitRefLevel &child_bit,int verb = -1);
-  DEPRECATED PetscErrorCode update_field_meshset_by_entities_children(const std::string name,const BitRefLevel &child_bit,int verb = -1);
-  DEPRECATED PetscErrorCode update_finite_element_meshset_by_entities_children(const std::string name,const BitRefLevel &child_bit,const EntityType fe_ent_type,int verb = -1);
 
   //remove entities
   PetscErrorCode delete_ents_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,const bool remove_parent = false,int verb = -1);
   PetscErrorCode remove_ents_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1);
   PetscErrorCode delete_finite_elements_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1);
-  DEPRECATED PetscErrorCode shift_right_bit_ref(const int shift,int verb = -1);
 
   //synchronize entities
   PetscErrorCode synchronise_entities(Range &ent,int verb = -1);
@@ -304,26 +247,16 @@ struct Core: public Interface {
     const EntityHandle meshset,const EntityType type,const std::string& name,const bool recursive = true,int verb = -1
   );
 
-  // DEPRECATED PetscErrorCode add_ents_to_field_by_VERTICEs(const Range &nodes,const BitFieldId id,int verb = -1);
   DEPRECATED PetscErrorCode add_ents_to_field_by_VERTICEs(const Range &nodes,const std::string& name,int verb = -1);
-  // DEPRECATED PetscErrorCode add_ents_to_field_by_VERTICEs(const EntityHandle meshset,const BitFieldId id,int verb = -1);
   DEPRECATED PetscErrorCode add_ents_to_field_by_VERTICEs(const EntityHandle meshset,const std::string& name,int verb = -1);
-  // DEPRECATED PetscErrorCode add_ents_to_field_by_EDGEs(const Range &edges,const BitFieldId id,int verb = -1);
   DEPRECATED PetscErrorCode add_ents_to_field_by_EDGEs(const Range &edges,const std::string& name,int verb = -1);
-  // DEPRECATED PetscErrorCode add_ents_to_field_by_EDGEs(const EntityHandle meshset,const BitFieldId id,int verb = -1);
   DEPRECATED PetscErrorCode add_ents_to_field_by_EDGEs(const EntityHandle meshset,const std::string& name,int verb = -1);
-  // DEPRECATED PetscErrorCode add_ents_to_field_by_TRIs(const EntityHandle meshset,const BitFieldId id,int verb = -1);
   DEPRECATED PetscErrorCode add_ents_to_field_by_TRIs(const EntityHandle meshset,const std::string& name,int verb = -1);
-  // DEPRECATED PetscErrorCode add_ents_to_field_by_TRIs(const Range &tris,const BitFieldId id,int verb = -1);
   DEPRECATED PetscErrorCode add_ents_to_field_by_TRIs(const Range &tris,const std::string& name,int verb = -1);
-  // DEPRECATED PetscErrorCode add_ents_to_field_by_TETs(const Range &tets,const BitFieldId id,int verb = -1);
-  // DEPRECATED PetscErrorCode add_ents_to_field_by_TETs(const EntityHandle meshset,const BitFieldId id,int verb = -1);
   DEPRECATED PetscErrorCode add_ents_to_field_by_TETs(const Range &tets,const std::string& name,int verb = -1);
   DEPRECATED PetscErrorCode add_ents_to_field_by_TETs(const EntityHandle meshset,const std::string& name,int verb = -1);
-  // DEPRECATED PetscErrorCode add_ents_to_field_by_QUADs(const Range &prisms,const BitFieldId id,int verb = -1);
   DEPRECATED PetscErrorCode add_ents_to_field_by_QUADs(const Range &prisms,const std::string& name,int verb = -1);
   DEPRECATED PetscErrorCode add_ents_to_field_by_QUADs(EntityHandle meshset,const std::string& name,int verb = -1);
-  // DEPRECATED PetscErrorCode add_ents_to_field_by_PRISMs(const Range &prisms,const BitFieldId id,int verb = -1);
   DEPRECATED PetscErrorCode add_ents_to_field_by_PRISMs(const Range &prisms,const std::string& name,int verb = -1);
   DEPRECATED PetscErrorCode add_ents_to_field_by_PRISMs(EntityHandle meshset,const std::string& name,int verb = -1);
 
@@ -590,122 +523,6 @@ struct Core: public Interface {
   PetscErrorCode MatCreateSeqAIJWithArrays(
     const std::string &name,Mat *Aij,PetscInt **i,PetscInt **j,PetscScalar **v,int verb = -1
   );
-  DEPRECATED PetscErrorCode VecCreateSeq(const std::string &name,RowColData rc,Vec *V) const;
-  DEPRECATED PetscErrorCode VecCreateGhost(const std::string &name,RowColData rc,Vec *V) const;
-  DEPRECATED PetscErrorCode set_local_ghost_vector(
-    const Problem *problem_ptr,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode
-  ) const;
-  DEPRECATED PetscErrorCode set_local_ghost_vector(
-    const std::string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode
-  ) const;
-  DEPRECATED PetscErrorCode set_global_ghost_vector(
-    const Problem *problem_ptr,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode
-  ) const;
-  DEPRECATED PetscErrorCode set_global_ghost_vector(
-    const std::string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode
-  ) const;
-
-  /// \name scatter from problem filed to other problem field
-
-  DEPRECATED PetscErrorCode ISCreateProblemOrder(
-    const std::string &problem,RowColData rc,int min_order,int max_order,IS *is,int verb = -1
-  ) const;
-
-  DEPRECATED PetscErrorCode ISCreateProblemFieldAndRank(
-    const std::string &problem,
-    RowColData rc,
-    const std::string &field,
-    int min_coeff_idx,
-    int max_coeff_idx,
-    IS *is,
-    int verb = -1
-  ) const;
-
-  DEPRECATED PetscErrorCode ISCreateFromProblemFieldToOtherProblemField(
-    const std::string &x_problem,const std::string &x_field_name,RowColData x_rc,
-    const std::string &y_problem,const std::string &y_field_name,RowColData y_rc,
-    std::vector<int> &idx,std::vector<int> &idy,int verb = -1
-  ) const;
-
-  DEPRECATED PetscErrorCode ISCreateFromProblemFieldToOtherProblemField(
-    const std::string &x_problem,const std::string &x_field_name,RowColData x_rc,
-    const std::string &y_problem,const std::string &y_field_name,RowColData y_rc,
-    IS *ix,IS *iy,int verb = -1
-  ) const;
-
-  PetscErrorCode VecScatterCreate(
-    Vec xin,const std::string &x_problem,const std::string &x_field_name,RowColData x_rc,
-    Vec yin,const std::string &y_problem,const std::string &y_field_name,RowColData y_rc,
-    VecScatter *newctx,int verb = -1
-  ) const;
-
-  DEPRECATED PetscErrorCode ISCreateFromProblemToOtherProblem(
-    const std::string &x_problem,
-    RowColData x_rc,
-    const std::string &y_problem,
-    RowColData y_rc,
-    std::vector<int> &idx,
-    std::vector<int> &idy,
-    int verb = -1
-  ) const;
-
-  DEPRECATED PetscErrorCode ISCreateFromProblemToOtherProblem(
-    const std::string &x_problem,
-    RowColData x_rc,
-    const std::string &y_problem,
-    RowColData y_rc,
-    IS *ix,
-    IS *iy,
-    int verb = -1
-  ) const;
-
-  DEPRECATED PetscErrorCode VecScatterCreate(
-    Vec xin,
-    const std::string &x_problem,
-    RowColData x_rc,
-    Vec yin,
-    const std::string &y_problem,
-    RowColData y_rc,
-    VecScatter *newctx,
-    int verb = -1
-  ) const;
-
-  /// \name vector local and global projection
-
-  DEPRECATED PetscErrorCode set_other_local_ghost_vector(
-    const Problem *problem_ptr,
-    const std::string& fiel_name,
-    const std::string& cpy_field_name,
-    RowColData rc,Vec V,
-    InsertMode mode,ScatterMode scatter_mode,int verb = -1
-  );
-  DEPRECATED PetscErrorCode set_other_local_ghost_vector(
-    const std::string &name,
-    const std::string& fiel_name,
-    const std::string& cpy_field_name,
-    RowColData rc,Vec V,
-    InsertMode mode,ScatterMode scatter_mode,int verb = -1
-  );
-  DEPRECATED PetscErrorCode set_other_global_ghost_vector(
-    const Problem *problem_ptr,
-    const std::string& fiel_name,
-    const std::string& cpy_field_name,
-    RowColData rc,
-    Vec V,
-    InsertMode mode,
-    ScatterMode scatter_mode,
-    int verb = -1
-  );
-  DEPRECATED PetscErrorCode set_other_global_ghost_vector(
-    const std::string &name,
-    const std::string& fiel_name,
-    const std::string& cpy_field_name,
-    RowColData rc,
-    Vec V,
-    InsertMode mode,
-    ScatterMode scatter_mode,
-    int verb = -1
-  );
 
   /// \name looping over finite elements
 
@@ -765,42 +582,6 @@ struct Core: public Interface {
   EntFiniteElementbyName::iterator get_fe_by_name_begin(const std::string &fe_name) const;
   EntFiniteElementbyName::iterator get_fe_by_name_end(const std::string &fe_name) const;
 
-  /// \name field axpy functions
-
-  DEPRECATED PetscErrorCode field_axpy(
-    const double alpha,const std::string& fiel_name_x,const std::string& field_name_y,
-    bool error_if_missing = false,bool creat_if_missing = false
-  );
-  DEPRECATED PetscErrorCode field_scale(const double alpha,const std::string& fiel_name);
-  DEPRECATED PetscErrorCode set_field(const double val,const EntityType type,const std::string& fiel_name);
-  DEPRECATED PetscErrorCode set_field(const double val,const EntityType type,const Range &ents,const std::string& field_name);
-
-  /// \name get adjacencies
-  DEPRECATED PetscErrorCode get_adjacencies_equality(const EntityHandle from_entiti,const int to_dimension,Range &adj_entities) const;
-  DEPRECATED PetscErrorCode get_adjacencies_any(const EntityHandle from_entiti,const int to_dimension,Range &adj_entities) const;
-  DEPRECATED PetscErrorCode get_adjacencies(
-    const Problem *problem_ptr,
-    const EntityHandle *from_entities,
-    const int num_netities,
-    const int to_dimension,
-    Range &adj_entities,
-    const int operation_type = moab::Interface::INTERSECT,
-    const int verb = 0
-  ) const;
-  DEPRECATED PetscErrorCode get_adjacencies(
-    const BitRefLevel &bit,
-    const EntityHandle *from_entities,
-    const int num_netities,
-    const int to_dimension,
-    Range &adj_entities,
-    const int operation_type = moab::Interface::INTERSECT,
-    const int verb = 0
-  ) const;
-
-  // //Coordinate systems
-  // DEPRECATED PetscErrorCode add_coordinate_system(const int cs_dim[],const std::string name);
-  // DEPRECATED PetscErrorCode set_field_coordinate_system(const std::string field_name,const std::string cs_name);
-
   /// \name logging events
 
   PetscLogEvent USER_EVENT_preProcess;
@@ -822,9 +603,6 @@ struct Core: public Interface {
   inline MPI_Comm& get_comm() const { return cOmm; }
   inline int get_comm_size() const { return sIze; }
   inline int get_comm_rank() const { return rAnk; }
-
-  // DEPRECATED inline int getCommSize() const { return sIze; }
-  // DEPRECATED inline int getCommRank() const { return rAnk; }
 
   private:
 

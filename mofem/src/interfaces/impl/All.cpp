@@ -48,7 +48,6 @@ const static int debug = 1;
 #include <MedInterface.hpp>
 #include <NodeMerger.hpp>
 #include <PrismsFromSurfaceInterface.hpp>
-#include <UpdateMeshsetsAndRanges.hpp>
 #include <Tools.hpp>
 
 #include <boost/scoped_ptr.hpp>
@@ -57,10 +56,8 @@ const static int debug = 1;
 
 #include "impl/LoopMethods.cpp"
 #include "impl/Core.cpp"
+#include "impl/InterfaceDeprecated.cpp"
 #include "impl/CreateMat.cpp"
-#include "impl/VectorsCore.cpp"
-#include "impl/FieldBlasCore.cpp"
-#include "impl/GetAdjacancies.cpp"
 #include "impl/FieldCore.cpp"
 #include "impl/FECore.cpp"
 #include "impl/ProblemsCore.cpp"
@@ -70,5 +67,4 @@ const static int debug = 1;
 #include "impl/VecManager.cpp"
 #include "impl/FieldBlas.cpp"
 #include "impl/BitRefManager.cpp"
-#include "impl/UpdateMeshsetsAndRanges.cpp"
 #include "impl/Tools.cpp"
