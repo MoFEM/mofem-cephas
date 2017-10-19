@@ -32,7 +32,7 @@ namespace MoFEM {
    */
   struct ProblemsManager: public UnknownInterface {
 
-    PetscErrorCode queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface);
+    PetscErrorCode queryInterface(const MOFEMuuid& uuid,UnknownInterface** iface);
 
     MoFEM::Core& cOre;
     ProblemsManager(const MoFEM::Core& core);
@@ -271,7 +271,7 @@ namespace MoFEM {
 
   private:
 
-    PetscLogEvent USER_EVENT_ProblemsManager;
+    PetscLogEvent MOFEM_EVENT_ProblemsManager;
 
 
   };

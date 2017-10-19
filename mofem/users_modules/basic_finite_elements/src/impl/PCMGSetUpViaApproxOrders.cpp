@@ -55,8 +55,8 @@ struct PCMGSubMatrixCtx_private: public PCMGSubMatrixCtx {
   PCMGSubMatrixCtx_private(Mat a,IS is):
   PCMGSubMatrixCtx(a,is),
   isInitisalised(false) {
-    PetscLogEventRegister("PCMGSubMatrixCtx_mult",0,&USER_EVENT_mult);
-    PetscLogEventRegister("PCMGSubMatrixCtx_sor",0,&USER_EVENT_sor);
+    PetscLogEventRegister("PCMGSubMatrixCtx_mult",0,&MOFEM_EVENT_mult);
+    PetscLogEventRegister("PCMGSubMatrixCtx_sor",0,&MOFEM_EVENT_sor);
   }
   ~PCMGSubMatrixCtx_private() {
     if(isInitisalised) {
@@ -81,8 +81,8 @@ public:
     }
     MoFEMFunctionReturnHot(0);
   }
-  PetscLogEvent USER_EVENT_mult;
-  PetscLogEvent USER_EVENT_sor;
+  PetscLogEvent MOFEM_EVENT_mult;
+  PetscLogEvent MOFEM_EVENT_sor;
   bool isInitisalised;
 };
 
@@ -96,13 +96,13 @@ PetscErrorCode sub_mat_mult_generic(Mat a,Vec x,Vec f) {
   if(!ctx->isInitisalised) {
     ierr = ctx->initData(x); CHKERRQ(ierr);
   }
-  PetscLogEventBegin(ctx->USER_EVENT_mult,0,0,0,0);
+  PetscLogEventBegin(ctx->MOFEM_EVENT_mult,0,0,0,0);
   ierr = VecScatterBegin(ctx->sCat,x,ctx->X,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   ierr = VecScatterEnd(ctx->sCat,x,ctx->X,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   ierr = MatMult(ctx->A,ctx->X,ctx->F); CHKERRQ(ierr);
   ierr = VecScatterBegin(ctx->sCat,ctx->F,f,MODE,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecScatterEnd(ctx->sCat,ctx->F,f,MODE,SCATTER_FORWARD); CHKERRQ(ierr);
-  PetscLogEventEnd(ctx->USER_EVENT_mult,0,0,0,0);
+  PetscLogEventEnd(ctx->MOFEM_EVENT_mult,0,0,0,0);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -125,13 +125,13 @@ PetscErrorCode sub_mat_sor(
   if(!ctx->isInitisalised) {
     ierr = ctx->initData(x); CHKERRQ(ierr);
   }
-  PetscLogEventBegin(ctx->USER_EVENT_sor,0,0,0,0);
+  PetscLogEventBegin(ctx->MOFEM_EVENT_sor,0,0,0,0);
   ierr = VecScatterBegin(ctx->sCat,b,ctx->X,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   ierr = VecScatterEnd(ctx->sCat,b,ctx->X,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   ierr = MatSOR(ctx->A,ctx->X,omega,flag,shift,its,lits,ctx->F); CHKERRQ(ierr);
   ierr = VecScatterBegin(ctx->sCat,ctx->F,x,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecScatterEnd(ctx->sCat,ctx->F,x,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  PetscLogEventEnd(ctx->USER_EVENT_sor,0,0,0,0);
+  PetscLogEventEnd(ctx->MOFEM_EVENT_sor,0,0,0,0);
   MoFEMFunctionReturnHot(0);
 }
 

@@ -57,7 +57,9 @@ int main(int argc, char *argv[]) {
     rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
 
     MoFEM::Core core(moab);
-    MoFEM::Interface& m_field = core;
+    MoFEM::CoreInterface* iface_core_ptr;
+    ierr = core.getInterface(iface_core_ptr); CHKERRQ(ierr);
+    MoFEM::CoreInterface& m_field = *iface_core_ptr;
 
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,SIDESET,it)) {
       cout << *it << endl;

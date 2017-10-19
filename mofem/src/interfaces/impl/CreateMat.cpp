@@ -273,8 +273,7 @@ PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
   const bool no_diagonals,int verb
 ) {
   MoFEMFunctionBeginHot;
-  PetscLogEventBegin(USER_EVENT_createMat,0,0,0,0);
-  if(verb==-1) verb = verbose;
+  PetscLogEventBegin(MOFEM_EVENT_createMat,0,0,0,0);
 
   typedef typename boost::multi_index::index<NumeredDofEntity_multiIndex,TAG>::type NumeredDofEntitysByIdx;
 
@@ -650,7 +649,7 @@ PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
 
   }
 
-  PetscLogEventEnd(USER_EVENT_createMat,0,0,0,0);
+  PetscLogEventEnd(MOFEM_EVENT_createMat,0,0,0,0);
   MoFEMFunctionReturnHot(0);
 }
 

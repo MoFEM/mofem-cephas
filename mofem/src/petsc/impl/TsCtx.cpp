@@ -57,7 +57,7 @@ PetscErrorCode f_TSSetIFunction(TS ts,PetscReal t,Vec u,Vec u_t,Vec F,void *ctx)
   // PetscValidHeaderSpecific(ts,TS_CLASSID,1);
   MoFEMFunctionBeginHot;
   TsCtx* ts_ctx = (TsCtx*)ctx;
-  PetscLogEventBegin(ts_ctx->USER_EVENT_TsCtxIFunction,0,0,0,0);
+  PetscLogEventBegin(ts_ctx->MOFEM_EVENT_TsCtxIFunction,0,0,0,0);
   ierr = VecGhostUpdateBegin(u,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(u,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(u_t,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -113,14 +113,14 @@ PetscErrorCode f_TSSetIFunction(TS ts,PetscReal t,Vec u,Vec u_t,Vec F,void *ctx)
   ierr = VecGhostUpdateEnd(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
   ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
-  PetscLogEventEnd(ts_ctx->USER_EVENT_TsCtxIFunction,0,0,0,0);
+  PetscLogEventEnd(ts_ctx->MOFEM_EVENT_TsCtxIFunction,0,0,0,0);
   MoFEMFunctionReturnHot(0);
 }
 PetscErrorCode f_TSSetIJacobian(TS ts,PetscReal t,Vec u,Vec u_t,PetscReal a,Mat A,Mat B,void *ctx) {
   // PetscValidHeaderSpecific(ts,TS_CLASSID,1);
   MoFEMFunctionBeginHot;
   TsCtx* ts_ctx = (TsCtx*)ctx;
-  PetscLogEventBegin(ts_ctx->USER_EVENT_TsCtxIFunction,0,0,0,0);
+  PetscLogEventBegin(ts_ctx->MOFEM_EVENT_TsCtxIFunction,0,0,0,0);
   ierr = VecGhostUpdateBegin(u,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(u,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(u_t,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -181,14 +181,14 @@ PetscErrorCode f_TSSetIJacobian(TS ts,PetscReal t,Vec u,Vec u_t,PetscReal a,Mat 
     ierr = MatAssemblyBegin(B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
     ierr = MatAssemblyEnd(B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
   }
-  PetscLogEventEnd(ts_ctx->USER_EVENT_TsCtxIFunction,0,0,0,0);
+  PetscLogEventEnd(ts_ctx->MOFEM_EVENT_TsCtxIFunction,0,0,0,0);
   MoFEMFunctionReturnHot(0);
 }
 PetscErrorCode f_TSMonitorSet(TS ts,PetscInt step,PetscReal t,Vec u,void *ctx) {
   // PetscValidHeaderSpecific(ts,TS_CLASSID,1);
   MoFEMFunctionBeginHot;
   TsCtx* ts_ctx = (TsCtx*)ctx;
-  PetscLogEventBegin(ts_ctx->USER_EVENT_TsCtxRHSFunction,0,0,0,0);
+  PetscLogEventBegin(ts_ctx->MOFEM_EVENT_TsCtxRHSFunction,0,0,0,0);
   ierr = VecGhostUpdateBegin(u,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(u,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = ts_ctx->mField.query_interface<VecManager>()->setLocalGhostVector(
@@ -229,7 +229,7 @@ PetscErrorCode f_TSMonitorSet(TS ts,PetscInt step,PetscReal t,Vec u,void *ctx) {
     ierr = ts_ctx->mField.problem_basic_method_postProcess(ts_ctx->problemName,*(*(bit))); CHKERRQ(ierr);
     ierr = (*bit)->setTsCtx(TSMethod::CTX_TSNONE); CHKERRQ(ierr);
   }
-  PetscLogEventEnd(ts_ctx->USER_EVENT_TsCtxRHSFunction,0,0,0,0);
+  PetscLogEventEnd(ts_ctx->MOFEM_EVENT_TsCtxRHSFunction,0,0,0,0);
   MoFEMFunctionReturnHot(0);
 }
 

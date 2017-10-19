@@ -21,7 +21,8 @@ namespace MoFEM {
 
   struct MeshsetsManager;
 
-  static const MOFEMuuid IDD_MOFEMInterface = MOFEMuuid( BitIntefaceId(CORE_INTERFACE) );
+  static const MOFEMuuid IDD_MOFEMCoreInterface = MOFEMuuid( BitIntefaceId(CORE_INTERFACE));
+  static const MOFEMuuid IDD_MOFEMDeprecatedCoreInterface = MOFEMuuid( BitIntefaceId(DEPRECATED_CORE_INTERFACE));
 
   /**
   * \brief Interface
@@ -1692,12 +1693,14 @@ namespace MoFEM {
 #include <DeprecatedCoreInterface.hpp>
 
 namespace MoFEM {
+
   #if __cplusplus <= 199711L
     struct Interface: public DeprecatedCoreInterface {
     };
   #else
     using Interface = DeprecatedCoreInterface;
   #endif
+
 }
 
 #endif // __INTERFACE_HPP__

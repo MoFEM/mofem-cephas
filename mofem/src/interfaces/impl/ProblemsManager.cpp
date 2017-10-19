@@ -76,7 +76,7 @@ namespace MoFEM {
   ProblemsManager::ProblemsManager(const MoFEM::Core& core):
   cOre(const_cast<MoFEM::Core&>(core)),
   buildProblemFromFields(PETSC_FALSE) {
-    PetscLogEventRegister("ProblemsManager",0,&USER_EVENT_ProblemsManager);
+    PetscLogEventRegister("ProblemsManager",0,&MOFEM_EVENT_ProblemsManager);
   }
   ProblemsManager::~ProblemsManager() {
   }
@@ -387,7 +387,7 @@ namespace MoFEM {
     const EntFiniteElement_multiIndex *fe_ent_ptr;
     const DofEntity_multiIndex *dofs_field_ptr;
     MoFEMFunctionBeginHot;
-    PetscLogEventBegin(USER_EVENT_ProblemsManager,0,0,0,0);
+    PetscLogEventBegin(MOFEM_EVENT_ProblemsManager,0,0,0,0);
 
     // Note: Only allowed changes on problem_ptr structure which not influence multi-index.
 
@@ -548,7 +548,7 @@ namespace MoFEM {
     }
     cOre.getBuildMoFEM() |= Core::BUILD_PROBLEM; // It is assumed that user who uses this function knows what he is doing
 
-    PetscLogEventEnd(USER_EVENT_ProblemsManager,0,0,0,0);
+    PetscLogEventEnd(MOFEM_EVENT_ProblemsManager,0,0,0,0);
 
     MoFEMFunctionReturnHot(0);
   }
@@ -585,7 +585,7 @@ namespace MoFEM {
     const EntFiniteElement_multiIndex *fe_ent_ptr;
     const DofEntity_multiIndex *dofs_field_ptr;
     MoFEMFunctionBeginHot;
-    PetscLogEventBegin(USER_EVENT_ProblemsManager,0,0,0,0);
+    PetscLogEventBegin(MOFEM_EVENT_ProblemsManager,0,0,0,0);
 
     // clear data structures
     ierr = m_field.clear_problem(problem_ptr->getName()); CHKERRQ(ierr);
@@ -1123,7 +1123,7 @@ namespace MoFEM {
     ierr = printPartitionedProblem(problem_ptr,verb); CHKERRQ(ierr);
     ierr = debugPartitionedProblem(problem_ptr,verb); CHKERRQ(ierr);
 
-    PetscLogEventEnd(USER_EVENT_ProblemsManager,0,0,0,0);
+    PetscLogEventEnd(MOFEM_EVENT_ProblemsManager,0,0,0,0);
 
     MoFEMFunctionReturnHot(0);
   }

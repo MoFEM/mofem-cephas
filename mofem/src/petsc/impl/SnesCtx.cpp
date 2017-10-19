@@ -58,7 +58,7 @@ PetscErrorCode SnesRhs(SNES snes,Vec x,Vec f,void *ctx) {
   SnesCtx* snes_ctx = (SnesCtx*)ctx;
   // PetscValidHeaderSpecific(snes,SNES_CLASSID,1);
   MoFEMFunctionBeginHot;
-  PetscLogEventBegin(snes_ctx->USER_EVENT_SnesRhs,0,0,0,0);
+  PetscLogEventBegin(snes_ctx->MOFEM_EVENT_SnesRhs,0,0,0,0);
   ierr = VecGhostUpdateBegin(x,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(x,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = snes_ctx->mField.query_interface<VecManager>()->setLocalGhostVector(
@@ -100,14 +100,14 @@ PetscErrorCode SnesRhs(SNES snes,Vec x,Vec f,void *ctx) {
   ierr = VecGhostUpdateEnd(f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   ierr = VecAssemblyBegin(f); CHKERRQ(ierr);
   ierr = VecAssemblyEnd(f); CHKERRQ(ierr);
-  PetscLogEventEnd(snes_ctx->USER_EVENT_SnesRhs,0,0,0,0);
+  PetscLogEventEnd(snes_ctx->MOFEM_EVENT_SnesRhs,0,0,0,0);
   MoFEMFunctionReturnHot(0);
 }
 PetscErrorCode SnesMat(SNES snes,Vec x,Mat A,Mat B,void *ctx) {
   SnesCtx* snes_ctx = (SnesCtx*)ctx;
   // PetscValidHeaderSpecific(snes,SNES_CLASSID,1);
   MoFEMFunctionBeginHot;
-  PetscLogEventBegin(snes_ctx->USER_EVENT_SnesMat,0,0,0,0);
+  PetscLogEventBegin(snes_ctx->MOFEM_EVENT_SnesMat,0,0,0,0);
   if(snes_ctx->zeroPreCondMatrixB) {
     ierr = MatZeroEntries(B); CHKERRQ(ierr);
   }
@@ -150,7 +150,7 @@ PetscErrorCode SnesMat(SNES snes,Vec x,Mat A,Mat B,void *ctx) {
   }
   ierr = MatAssemblyBegin(B,snes_ctx->typeOfAssembly); CHKERRQ(ierr);
   ierr = MatAssemblyEnd(B,snes_ctx->typeOfAssembly); CHKERRQ(ierr);
-  PetscLogEventEnd(snes_ctx->USER_EVENT_SnesMat,0,0,0,0);
+  PetscLogEventEnd(snes_ctx->MOFEM_EVENT_SnesMat,0,0,0,0);
   MoFEMFunctionReturnHot(0);
 }
 

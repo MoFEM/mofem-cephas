@@ -49,7 +49,7 @@ using namespace MoFEM;
 PetscErrorCode EdgePolynomialBase::queryInterface(
   const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface
 ) {
-  
+
   MoFEMFunctionBeginHot;
   *iface = NULL;
   if(uuid == IDD_EDGE_BASE_FUNCTION) {
@@ -69,11 +69,11 @@ PetscErrorCode EdgePolynomialBase::getValue(
   MatrixDouble &pts,
   boost::shared_ptr<BaseFunctionCtx> ctx_ptr
 ) {
-  
+
   MoFEMFunctionBeginHot;
 
   MoFEM::UnknownInterface *iface;
-  ierr = ctx_ptr->queryInterface(IDD_TET_BASE_FUNCTION,&iface); CHKERRQ(ierr);
+  ierr = ctx_ptr->queryInterface(IDD_EDGE_BASE_FUNCTION,&iface); CHKERRQ(ierr);
   cTx = reinterpret_cast<EntPolynomialBaseCtx*>(iface);
 
   int nb_gauss_pts = pts.size2();
@@ -135,7 +135,7 @@ PetscErrorCode EdgePolynomialBase::getValue(
 }
 
 PetscErrorCode EdgePolynomialBase::getValueH1(MatrixDouble &pts) {
-  
+
   MoFEMFunctionBeginHot;
 
   DataForcesAndSourcesCore& data = cTx->dAta;
@@ -226,7 +226,7 @@ PetscErrorCode EdgePolynomialBase::getValueHdiv(MatrixDouble &pts) {
 }
 
 PetscErrorCode EdgePolynomialBase::getValueHCurl(MatrixDouble &pts) {
-  
+
   MoFEMFunctionBeginHot;
 
   DataForcesAndSourcesCore& data = cTx->dAta;

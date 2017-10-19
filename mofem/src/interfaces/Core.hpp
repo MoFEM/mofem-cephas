@@ -60,8 +60,13 @@ namespace MoFEM {
 
     /**@{*/
 
+    /**
+     * \brief Getting interface of core database
+     * @param  uuid  unique ID of interface
+     * @param  iface returned pointer to interface
+     * @return       error code
+     */
     PetscErrorCode queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface);
-    PetscErrorCode query_interface_type(const std::type_info& iface_type,void*& ptr) const;
 
     /**@}*/
 
@@ -115,8 +120,6 @@ namespace MoFEM {
 
   protected:
 
-    int verbose; ///< Verbosity level
-
     /** \name Tags to data on mesh and entities */
 
     /**@{*/
@@ -135,6 +138,14 @@ namespace MoFEM {
     Tag th_ElemType;  ///< Needed for VTK files
     Tag th_MoFEMBuild;  ///< Internal use storing state, used to detect error and inconsistencies
 
+    /**
+     * @return pointer to BasicEntityData structure
+     *
+     * BasicEntityData is structure which every BasicEntity have. It keeps data
+     * about tags to handles on the mesh, in particular tag to BitRefLevel and
+     * tag with handle to parent.
+     *
+     */
     boost::shared_ptr<BasicEntityData> basicEntityDataPtr;
 
     /**
@@ -147,8 +158,6 @@ namespace MoFEM {
     boost::shared_ptr<BasicEntityData>& get_basic_entity_data_ptr() {
       return basicEntityDataPtr;
     }
-
-    int *fShift,*feShift,*pShift;   ///< Counting indexes
 
     /**@}*/
 
@@ -574,10 +583,12 @@ namespace MoFEM {
 
     /**@{*/
 
-    PetscLogEvent USER_EVENT_preProcess;
-    PetscLogEvent USER_EVENT_operator;
-    PetscLogEvent USER_EVENT_postProcess;
-    PetscLogEvent USER_EVENT_createMat;
+    // Events are are using for logging and hailed by PETSc
+
+    PetscLogEvent MOFEM_EVENT_preProcess;    ///< Event for preProcess finite element
+    PetscLogEvent MOFEM_EVENT_operator;      ///< Event for evaluating operator of finite element
+    PetscLogEvent MOFEM_EVENT_postProcess;   ///< Event for postProcess finite element
+    PetscLogEvent MOFEM_EVENT_createMat;
 
     /**@}*/
 
@@ -609,6 +620,12 @@ namespace MoFEM {
     /**@}*/
 
   private:
+
+    int verbose; ///< Verbosity level
+
+    int *fShift;  ///< Ptr to tag handle storing last set bit in field ID
+    int *feShift; ///< Ptr to tag handle storing last set bit in finite element ID
+    int *pShift;  ///< Ptr to tag handle storing last set bit in problem ID
 
     /**
     * \brief Hash map of pointers to interfaces
@@ -658,6 +675,16 @@ namespace MoFEM {
      * \brief Initialize database getting information on mesh
      */
     PetscErrorCode initialiseDatabseFromMesh(int verb = -1);
+
+    /**
+     * \brief Getting pinter to interface working on database
+     * @param  iface_type interface type
+     * @param  ptr        pointer to interface
+     * @return            error code
+     */
+    PetscErrorCode query_interface_type(const std::type_info& iface_type,void*& ptr) const;
+
+
 
   };
 

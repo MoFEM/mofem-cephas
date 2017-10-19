@@ -22,15 +22,17 @@ extern "C" {
 
 namespace MoFEM {
 
+UnknownInterface::iFaceTypeMap_multiIndex UnknownInterface::iFaceTypeMap;
+
 PetscErrorCode Core::queryInterface(const MOFEMuuid& uuid,UnknownInterface** iface) {
   MoFEMFunctionBeginHot;
   *iface = NULL;
-  if(uuid == IDD_MOFEMInterface) {
-    *iface = dynamic_cast<Interface*>(this);
+  if(uuid == IDD_MOFEMCoreInterface) {
+    *iface = static_cast<CoreInterface*>(this);
     MoFEMFunctionReturnHot(0);
   }
-  if(uuid == IDD_MOFEMUnknown) {
-    *iface = dynamic_cast<Interface*>(this);
+  if(uuid == IDD_MOFEMDeprecatedCoreInterface) {
+    *iface = static_cast<DeprecatedCoreInterface*>(this);
     MoFEMFunctionReturnHot(0);
   }
   SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown interface");
@@ -298,8 +300,14 @@ PetscErrorCode print_verison() {
 
 Core::Core(moab::Interface& moab,MPI_Comm comm,int verbose):
 moab(moab),
-verbose(verbose),
-cOmm(0) {
+cOmm(0),
+verbose(verbose) {
+
+  // Add interfaces for this implementation
+  iFaceTypeMap.insert(HashMap(IDD_MOFEMUnknown,typeid(UnknownInterface).name()));
+  iFaceTypeMap.insert(HashMap(IDD_MOFEMCoreInterface,typeid(CoreInterface).name()));
+  iFaceTypeMap.insert(HashMap(IDD_MOFEMDeprecatedCoreInterface,typeid(DeprecatedCoreInterface).name()));
+
   if(!isGloballyInitialised) {
     PetscPushErrorHandler(mofem_error_handler,PETSC_NULL);
     isGloballyInitialised = true;
@@ -318,10 +326,10 @@ cOmm(0) {
   basicEntityDataPtr = boost::make_shared<BasicEntityData>(moab);
   ierr = initialiseDatabseFromMesh(verbose); CHKERRABORT(cOmm,ierr);
   // Petsc Logs
-   PetscLogEventRegister("FE_preProcess",0,&USER_EVENT_preProcess);
-   PetscLogEventRegister("FE_operator",0,&USER_EVENT_operator);
-   PetscLogEventRegister("FE_postProcess",0,&USER_EVENT_postProcess);
-   PetscLogEventRegister("MoFEMCreateMat",0,&USER_EVENT_createMat);
+   PetscLogEventRegister("FE_preProcess",0,&MOFEM_EVENT_preProcess);
+   PetscLogEventRegister("FE_operator",0,&MOFEM_EVENT_operator);
+   PetscLogEventRegister("FE_postProcess",0,&MOFEM_EVENT_postProcess);
+   PetscLogEventRegister("MoFEMCreateMat",0,&MOFEM_EVENT_createMat);
 
    // Print version
   if(verbose>0) {
