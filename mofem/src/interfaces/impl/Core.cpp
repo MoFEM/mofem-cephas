@@ -16,71 +16,23 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 */
 
-#include <version.h>
-#include <Includes.hpp>
-#include <version.h>
-#include <definitions.h>
-#include <Common.hpp>
-
-#include <h1_hdiv_hcurl_l2.h>
-
-#include <MaterialBlocks.hpp>
-#include <BCData.hpp>
-#include <TagMultiIndices.hpp>
-#include <CoordSysMultiIndices.hpp>
-#include <FieldMultiIndices.hpp>
-#include <EntsMultiIndices.hpp>
-#include <DofsMultiIndices.hpp>
-#include <FEMultiIndices.hpp>
-#include <ProblemsMultiIndices.hpp>
-#include <AdjacencyMultiIndices.hpp>
-#include <BCMultiIndices.hpp>
-#include <CoreDataStructures.hpp>
-#include <SeriesMultiIndices.hpp>
-
-#include <UnknownInterface.hpp>
-#include <LoopMethods.hpp>
-#include <Interface.hpp>
-#include <Core.hpp>
-
-// Interfaces
-#include <ProblemsManager.hpp>
-#include <Simple.hpp>
-#include <ISManager.hpp>
-#include <BitRefManager.hpp>
-#include <VecManager.hpp>
-#include <FieldBlas.hpp>
-#include <MeshRefinement.hpp>
-#include <SeriesRecorder.hpp>
-#include <PrismInterface.hpp>
-#include <CutMeshInterface.hpp>
-#include <MeshsetsManager.hpp>
-#include <CoordSystemsManager.hpp>
-#include <TetGenInterface.hpp>
-#include <MedInterface.hpp>
-#include <NodeMerger.hpp>
-#include <PrismsFromSurfaceInterface.hpp>
-#include <UpdateMeshsetsAndRanges.hpp>
-
-#include <boost/scoped_ptr.hpp>
-#include <moab/AdaptiveKDTree.hpp>
-#include <BitLevelCoupler.hpp>
-
 extern "C" {
   void macro_is_depracted_using_deprecated_function() {}
 }
 
 namespace MoFEM {
 
+UnknownInterface::iFaceTypeMap_multiIndex UnknownInterface::iFaceTypeMap;
+
 PetscErrorCode Core::queryInterface(const MOFEMuuid& uuid,UnknownInterface** iface) {
   MoFEMFunctionBeginHot;
   *iface = NULL;
-  if(uuid == IDD_MOFEMInterface) {
-    *iface = dynamic_cast<Interface*>(this);
+  if(uuid == IDD_MOFEMCoreInterface) {
+    *iface = static_cast<CoreInterface*>(this);
     MoFEMFunctionReturnHot(0);
   }
-  if(uuid == IDD_MOFEMUnknown) {
-    *iface = dynamic_cast<Interface*>(this);
+  if(uuid == IDD_MOFEMDeprecatedCoreInterface) {
+    *iface = static_cast<DeprecatedCoreInterface*>(this);
     MoFEMFunctionReturnHot(0);
   }
   SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown interface");
@@ -172,12 +124,12 @@ PetscErrorCode Core::query_interface_type(const std::type_info& type,void*& ptr)
     MoFEMFunctionReturnHot(0);
   }
 
-  if(type == typeid(UpdateMeshsetsAndRanges)) {
-    if(iFaces.find(IDD_MOFEMUpdateMeshsetsAndRanges.uUId.to_ulong()) == iFaces.end()) {
-      unsigned long int uid = IDD_MOFEMUpdateMeshsetsAndRanges.uUId.to_ulong();
-      iFaces.insert(uid,new UpdateMeshsetsAndRanges(*this));
+  if(type == typeid(Tools)) {
+    if(iFaces.find(IDD_MOFEMTools.uUId.to_ulong()) == iFaces.end()) {
+      unsigned long int uid = IDD_MOFEMTools.uUId.to_ulong();
+      iFaces.insert(uid,new Tools(*this));
     }
-    ptr = &iFaces.at(IDD_MOFEMUpdateMeshsetsAndRanges.uUId.to_ulong());
+    ptr = &iFaces.at(IDD_MOFEMTools.uUId.to_ulong());
     MoFEMFunctionReturnHot(0);
   }
 
@@ -348,8 +300,14 @@ PetscErrorCode print_verison() {
 
 Core::Core(moab::Interface& moab,MPI_Comm comm,int verbose):
 moab(moab),
-verbose(verbose),
-cOmm(0) {
+cOmm(0),
+verbose(verbose) {
+
+  // Add interfaces for this implementation
+  iFaceTypeMap.insert(HashMap(IDD_MOFEMUnknown,typeid(UnknownInterface).name()));
+  iFaceTypeMap.insert(HashMap(IDD_MOFEMCoreInterface,typeid(CoreInterface).name()));
+  iFaceTypeMap.insert(HashMap(IDD_MOFEMDeprecatedCoreInterface,typeid(DeprecatedCoreInterface).name()));
+
   if(!isGloballyInitialised) {
     PetscPushErrorHandler(mofem_error_handler,PETSC_NULL);
     isGloballyInitialised = true;
@@ -366,13 +324,12 @@ cOmm(0) {
   ierr = getTags(); CHKERRABORT(cOmm,ierr);
   ierr = clearMap(); CHKERRABORT(cOmm,ierr);
   basicEntityDataPtr = boost::make_shared<BasicEntityData>(moab);
-  ierr = initialiseDatabseInformationFromMesh(verbose); CHKERRABORT(cOmm,ierr);
+  ierr = initialiseDatabseFromMesh(verbose); CHKERRABORT(cOmm,ierr);
   // Petsc Logs
-   PetscLogEventRegister("FE_preProcess",0,&USER_EVENT_preProcess);
-   PetscLogEventRegister("FE_operator",0,&USER_EVENT_operator);
-   PetscLogEventRegister("FE_postProcess",0,&USER_EVENT_postProcess);
-   PetscLogEventRegister("MoFEMCreateMat",0,&USER_EVENT_createMat);
-   PetscLogEventRegister("MoFEMBuildProblem",0,&USER_EVENT_buildProblem);
+   PetscLogEventRegister("FE_preProcess",0,&MOFEM_EVENT_preProcess);
+   PetscLogEventRegister("FE_operator",0,&MOFEM_EVENT_operator);
+   PetscLogEventRegister("FE_postProcess",0,&MOFEM_EVENT_postProcess);
+   PetscLogEventRegister("MoFEMCreateMat",0,&MOFEM_EVENT_createMat);
 
    // Print version
   if(verbose>0) {
@@ -427,20 +384,11 @@ BitProblemId Core::getProblemShift() {
 }
 
 PetscErrorCode Core::clearMap() {
-
   MoFEMFunctionBeginHot;
-
-  // Cleaning databases in iterfaces
-  SeriesRecorder *series_recorder_ptr;
-  ierr = query_interface(series_recorder_ptr); CHKERRQ(ierr);
-  ierr = series_recorder_ptr->clearMap(); CHKERRQ(ierr);
-  MeshsetsManager *m_manger_ptr;
-  ierr = query_interface(m_manger_ptr); CHKERRQ(ierr);
-  ierr = m_manger_ptr->clearMap(); CHKERRQ(ierr);
-  CoordSystemsManager *cs_manger_ptr;
-  ierr = query_interface(cs_manger_ptr); CHKERRQ(ierr);
-  ierr = cs_manger_ptr->clearMap(); CHKERRQ(ierr);
-
+  // Cleaning databases in interfaces
+  ierr = query_interface<SeriesRecorder>()->clearMap(); CHKERRQ(ierr);
+  ierr = query_interface<MeshsetsManager>()->clearMap(); CHKERRQ(ierr);
+  ierr = query_interface<CoordSystemsManager>()->clearMap(); CHKERRQ(ierr);
   // Cleaning databases
   refinedEntities.clear();
   refinedFiniteElements.clear();
@@ -451,8 +399,6 @@ PetscErrorCode Core::clearMap() {
   entsFiniteElements.clear();
   entFEAdjacencies.clear();
   pRoblems.clear();
-
-
   MoFEMFunctionReturnHot(0);
 }
 
@@ -485,9 +431,6 @@ PetscErrorCode Core::addPrismToDatabase(const EntityHandle prism,int verb) {
 }
 
 PetscErrorCode Core::getTags(int verb) {
-  //
-
-
   MoFEMFunctionBeginHot;
 
   const EntityHandle root_meshset = moab.get_root_set();
@@ -741,11 +684,11 @@ PetscErrorCode Core::rebuild_database(int verb) {
   MoFEMFunctionBeginHot;
   if(verb==-1) verb = verbose;
   ierr = clearMap(); CHKERRQ(ierr);
-  ierr = initialiseDatabseInformationFromMesh(verb); CHKERRQ(ierr);
+  ierr = initialiseDatabseFromMesh(verb); CHKERRQ(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
+PetscErrorCode Core::initialiseDatabseFromMesh(int verb) {
   MoFEMFunctionBeginHot;
   if(verb==-1) verb = verbose;
 
@@ -753,7 +696,7 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
   ierr = query_interface(cs_manger_ptr); CHKERRQ(ierr);
 
   // Initialize coordinate systems
-  ierr = cs_manger_ptr->initialiseDatabseInformationFromMesh(verb); CHKERRQ(ierr);
+  ierr = cs_manger_ptr->initialiseDatabseFromMesh(verb); CHKERRQ(ierr);
 
   // Initialize database
   Range meshsets;
@@ -959,144 +902,15 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
   // Initialize interfaces
   MeshsetsManager *m_manger_ptr;
   ierr = query_interface(m_manger_ptr); CHKERRQ(ierr);
-  ierr = m_manger_ptr->initialiseDatabseInformationFromMesh(verb); CHKERRQ(ierr);
+  ierr = m_manger_ptr->initialiseDatabseFromMesh(verb); CHKERRQ(ierr);
   SeriesRecorder *series_recorder_ptr;
   ierr = query_interface(series_recorder_ptr); CHKERRQ(ierr);
-  ierr = series_recorder_ptr->initialiseDatabseInformationFromMesh(verb); CHKERRQ(ierr);
+  ierr = series_recorder_ptr->initialiseDatabseFromMesh(verb); CHKERRQ(ierr);
 
   MoFEMFunctionReturnHot(0);
 }
-
-// PetscErrorCode Core::add_coordinate_system(const int cs_dim[],const std::string name) {
-//   CoordSystemsManager *cs_manger_ptr;
-//   MoFEMFunctionBeginHot;
-//   ierr = query_interface(cs_manger_ptr); CHKERRQ(ierr);
-//   ierr = cs_manger_ptr->addCoordinateSystem(cs_dim,name); CHKERRQ(ierr);
-//   MoFEMFunctionReturnHot(0);
-// }
-//
-// PetscErrorCode Core::set_field_coordinate_system(const std::string field_name,const std::string cs_name) {
-//   CoordSystemsManager *cs_manger_ptr;
-//   MoFEMFunctionBeginHot;
-//   ierr = query_interface(cs_manger_ptr); CHKERRQ(ierr);
-//   ierr = cs_manger_ptr->setFieldCoordinateSystem(field_name,cs_name); CHKERRQ(ierr);
-//   MoFEMFunctionReturnHot(0);
-// }
 
 // cubit meshsets
-
-PetscErrorCode Core::print_cubit_displacement_set() const {
-
-  MeshsetsManager *meshsets_manager;
-  MoFEMFunctionBeginHot;
-  ierr = query_interface(meshsets_manager); CHKERRQ(ierr);
-  ierr = meshsets_manager->printDisplacementSet(); CHKERRQ(ierr);
-  MoFEMFunctionReturnHot(0);
-}
-
-PetscErrorCode Core::print_cubit_pressure_set() const {
-
-  MeshsetsManager *meshsets_manager;
-  MoFEMFunctionBeginHot;
-  ierr = query_interface(meshsets_manager); CHKERRQ(ierr);
-  ierr = meshsets_manager->printPressureSet(); CHKERRQ(ierr);
-  MoFEMFunctionReturnHot(0);
-}
-
-PetscErrorCode Core::print_cubit_force_set() const {
-
-  MeshsetsManager *meshsets_manager;
-  MoFEMFunctionBeginHot;
-  ierr = query_interface(meshsets_manager); CHKERRQ(ierr);
-  ierr = meshsets_manager->printForceSet(); CHKERRQ(ierr);
-  MoFEMFunctionReturnHot(0);
-}
-
-PetscErrorCode Core::print_cubit_temperature() const {
-
-  MeshsetsManager *meshsets_manager;
-  MoFEMFunctionBeginHot;
-  ierr = query_interface(meshsets_manager); CHKERRQ(ierr);
-  ierr = meshsets_manager->printTemperatureSet(); CHKERRQ(ierr);
-  MoFEMFunctionReturnHot(0);
-}
-
-PetscErrorCode Core::print_cubit_heat_flux_set() const {
-
-  MeshsetsManager *meshsets_manager;
-  MoFEMFunctionBeginHot;
-  ierr = query_interface(meshsets_manager); CHKERRQ(ierr);
-  ierr = meshsets_manager->printHeatFluxSet(); CHKERRQ(ierr);
-  MoFEMFunctionReturnHot(0);
-}
-
-PetscErrorCode Core::print_cubit_materials_set() const {
-
-  MeshsetsManager *meshsets_manager;
-  MoFEMFunctionBeginHot;
-  ierr = query_interface(meshsets_manager); CHKERRQ(ierr);
-  ierr = meshsets_manager->printMaterialsSet(); CHKERRQ(ierr);
-  MoFEMFunctionReturnHot(0);
-}
-
-bool Core::check_msId_meshset(const int ms_id,const CubitBCType cubit_bc_type) {
-  return get_meshsets_manager_ptr()->checkMeshset(ms_id,cubit_bc_type);
-}
-
-PetscErrorCode Core::add_cubit_msId(const CubitBCType cubit_bc_type,const int ms_id,const std::string name) {
-  return get_meshsets_manager_ptr()->addMeshset(cubit_bc_type,ms_id,name);
-}
-
-PetscErrorCode Core::set_cubit_msId_attribites(
-  const CubitBCType cubit_bc_type,const int ms_id,const std::vector<double> &attributes,const std::string name
-) {
-  return get_meshsets_manager_ptr()->setAttribites(cubit_bc_type,ms_id,attributes,name);
-}
-PetscErrorCode Core::set_cubit_msId_attribites_data_structure(
-  const CubitBCType cubit_bc_type,const int ms_id,const GenericAttributeData &data,const std::string name
-) {
-  return get_meshsets_manager_ptr()->setAttribitesByDataStructure(cubit_bc_type,ms_id,data,name);
-}
-PetscErrorCode Core::set_cubit_msId_bc_data_structure(
-  const CubitBCType cubit_bc_type,const int ms_id,const GenericCubitBcData &data
-) {
-  return get_meshsets_manager_ptr()->setBcData(cubit_bc_type,ms_id,data);
-}
-PetscErrorCode Core::delete_cubit_msId(const CubitBCType cubit_bc_type,const int ms_id) {
-  return get_meshsets_manager_ptr()->deleteMeshset(cubit_bc_type,ms_id);
-}
-PetscErrorCode Core::get_cubit_msId(const int ms_id,const CubitBCType cubit_bc_type,const CubitMeshSets **cubit_meshset_ptr) {
-  return get_meshsets_manager_ptr()->getCubitMeshsetPtr(ms_id,cubit_bc_type,cubit_meshset_ptr);
-}
-PetscErrorCode Core::get_cubit_msId_entities_by_dimension(
-  const int msId,const CubitBCType cubit_bc_type,const int dimension,Range &entities,const bool recursive
-) {
-  return get_meshsets_manager_ptr()->getEntitiesByDimension(msId,cubit_bc_type.to_ulong(),dimension,entities,recursive);
-}
-PetscErrorCode Core::get_cubit_msId_entities_by_dimension(const int msId,const CubitBCType cubit_bc_type,Range &entities,const bool recursive) {
-  return get_meshsets_manager_ptr()->getEntitiesByDimension(msId,cubit_bc_type.to_ulong(),entities,recursive);
-}
-PetscErrorCode Core::get_cubit_msId_entities_by_dimension(
-  const int ms_id,const unsigned int cubit_bc_type,const int dimension,Range &entities,const bool recursive
-) {
-  MoFEMFunctionBeginHot;
-  ierr = get_cubit_msId_entities_by_dimension(ms_id,CubitBCType(cubit_bc_type),dimension,entities,recursive); CHKERRQ(ierr);
-  MoFEMFunctionReturnHot(0);
-}
-PetscErrorCode Core::get_cubit_msId_entities_by_dimension(const int ms_id,const unsigned int cubit_bc_type,
-  Range &entities,const bool recursive) {
-  MoFEMFunctionBeginHot;
-  ierr = get_cubit_msId_entities_by_dimension(ms_id,CubitBCType(cubit_bc_type),entities,recursive); CHKERRQ(ierr);
-  MoFEMFunctionReturnHot(0);
-}
-
-PetscErrorCode Core::get_cubit_msId_meshset(const int ms_id,const unsigned int cubit_bc_type,EntityHandle &meshset) {
-  return get_meshsets_manager_ptr()->getMeshset(ms_id,cubit_bc_type,meshset);
-}
-
-PetscErrorCode Core::get_cubit_meshsets(const unsigned int cubit_bc_type,Range &meshsets) {
-  return get_meshsets_manager_ptr()->getMeshsetsByType(cubit_bc_type,meshsets);
-}
 
 PetscErrorCode Core::get_fields(const Field_multiIndex **fields_ptr) const {
   MoFEMFunctionBeginHot;
@@ -1145,22 +959,6 @@ PetscErrorCode Core::get_dofs(const DofEntity_multiIndex **dofs_ptr) const {
   MoFEMFunctionBeginHot;
   *dofs_ptr = &dofsField;
   MoFEMFunctionReturnHot(0);
-}
-
-PetscErrorCode Core::seed_ref_level_2D(const EntityHandle meshset,const BitRefLevel &bit,int verb) {
-  return BitRefManager(*this).setBitRefLevelByDim(meshset,2,bit,verb);
-}
-
-PetscErrorCode Core::seed_ref_level(const Range &ents,const BitRefLevel &bit,const bool only_tets,int verb) {
-  return BitRefManager(*this).setBitRefLevel(ents,bit,only_tets,verb);
-}
-
-PetscErrorCode Core::seed_ref_level_3D(const EntityHandle meshset,const BitRefLevel &bit,int verb) {
-  return BitRefManager(*this).setBitRefLevelByDim(meshset,3,bit,verb);
-}
-
-PetscErrorCode Core::seed_ref_level_MESHSET(const EntityHandle meshset,const BitRefLevel &bit,int verb) {
-  return BitRefManager(*this).setBitLevelToMeshset(meshset,bit,verb);
 }
 
 MeshsetsManager* Core::get_meshsets_manager_ptr() {

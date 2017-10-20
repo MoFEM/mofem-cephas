@@ -271,10 +271,10 @@ int main(int argc, char *argv[]) {
           //get tet entities form back bit_level
           EntityHandle ref_level_meshset = 0;
           rval = moab.create_meshset(MESHSET_SET,ref_level_meshset); CHKERRQ_MOAB(rval);
-          ierr = m_field.get_entities_by_type_and_ref_level(
+          ierr = m_field.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
             bit_levels.back(),BitRefLevel().set(),MBTET,ref_level_meshset
           ); CHKERRQ(ierr);
-          ierr = m_field.get_entities_by_type_and_ref_level(
+          ierr = m_field.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
             bit_levels.back(),BitRefLevel().set(),MBPRISM,ref_level_meshset
           ); CHKERRQ(ierr);
           Range ref_level_tets;
@@ -291,10 +291,10 @@ int main(int argc, char *argv[]) {
         // Update cubit meshsets
         for(_IT_CUBITMESHSETS_FOR_LOOP_(m_field,ciit)) {
           EntityHandle cubit_meshset = ciit->meshset;
-          ierr = m_field.query_interface<UpdateMeshsetsAndRanges>()->updateMeshsetByEntitiesChildren(cubit_meshset,bit_levels.back(),cubit_meshset,MBVERTEX,true); CHKERRQ(ierr);
-          ierr = m_field.query_interface<UpdateMeshsetsAndRanges>()->updateMeshsetByEntitiesChildren(cubit_meshset,bit_levels.back(),cubit_meshset,MBEDGE,true); CHKERRQ(ierr);
-          ierr = m_field.query_interface<UpdateMeshsetsAndRanges>()->updateMeshsetByEntitiesChildren(cubit_meshset,bit_levels.back(),cubit_meshset,MBTRI,true); CHKERRQ(ierr);
-          ierr = m_field.query_interface<UpdateMeshsetsAndRanges>()->updateMeshsetByEntitiesChildren(cubit_meshset,bit_levels.back(),cubit_meshset,MBTET,true); CHKERRQ(ierr);
+          ierr = m_field.query_interface<BitRefManager>()->updateMeshsetByEntitiesChildren(cubit_meshset,bit_levels.back(),cubit_meshset,MBVERTEX,true); CHKERRQ(ierr);
+          ierr = m_field.query_interface<BitRefManager>()->updateMeshsetByEntitiesChildren(cubit_meshset,bit_levels.back(),cubit_meshset,MBEDGE,true); CHKERRQ(ierr);
+          ierr = m_field.query_interface<BitRefManager>()->updateMeshsetByEntitiesChildren(cubit_meshset,bit_levels.back(),cubit_meshset,MBTRI,true); CHKERRQ(ierr);
+          ierr = m_field.query_interface<BitRefManager>()->updateMeshsetByEntitiesChildren(cubit_meshset,bit_levels.back(),cubit_meshset,MBTET,true); CHKERRQ(ierr);
         }
       }
 
@@ -398,7 +398,7 @@ int main(int argc, char *argv[]) {
 
       /*//reduce level of approximation for entities on interface
       Range prims;
-      ierr = m_field.get_entities_by_type_and_ref_level(problem_bit_level,BitRefLevel().set(),MBPRISM,prims); CHKERRQ(ierr);
+      ierr = m_field.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(problem_bit_level,BitRefLevel().set(),MBPRISM,prims); CHKERRQ(ierr);
       Range prims_faces;
       rval = m_field.get_moab().get_adjacencies(prims,2,false,prims_faces,moab::Interface::UNION); CHKERRQ_MOAB(rval);
       Range prims_faces_edges;

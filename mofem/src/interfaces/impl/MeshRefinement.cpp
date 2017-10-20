@@ -15,37 +15,6 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 */
 
-#include <version.h>
-#include <Includes.hpp>
-#include <definitions.h>
-#include <Common.hpp>
-
-#include <h1_hdiv_hcurl_l2.h>
-
-#include <UnknownInterface.hpp>
-
-#include <MaterialBlocks.hpp>
-#include <BCData.hpp>
-#include <TagMultiIndices.hpp>
-#include <CoordSysMultiIndices.hpp>
-#include <FieldMultiIndices.hpp>
-#include <EntsMultiIndices.hpp>
-#include <DofsMultiIndices.hpp>
-#include <FEMultiIndices.hpp>
-#include <ProblemsMultiIndices.hpp>
-#include <AdjacencyMultiIndices.hpp>
-#include <BCMultiIndices.hpp>
-#include <CoreDataStructures.hpp>
-#include <SeriesMultiIndices.hpp>
-
-#include <LoopMethods.hpp>
-#include <Interface.hpp>
-#include <PrismInterface.hpp>
-#include <SeriesRecorder.hpp>
-#include <Core.hpp>
-
-#include <MeshRefinement.hpp>
-#include <UpdateMeshsetsAndRanges.hpp>
 #include <EntityRefine.hpp>
 
 namespace MoFEM {
@@ -1042,9 +1011,9 @@ PetscErrorCode MeshRefinement::refine_MESHSET(
   if(miit==refined_ents_ptr->end()) {
     SETERRQ(m_field.get_comm(),MOFEM_DATA_INCONSISTENCY,"this meshset is not in ref database");
   }
-  ierr = m_field.query_interface<UpdateMeshsetsAndRanges>()->updateMeshsetByEntitiesChildren(meshset,bit,meshset,MBEDGE,recursive,verb); CHKERRQ(ierr);
-  ierr = m_field.query_interface<UpdateMeshsetsAndRanges>()->updateMeshsetByEntitiesChildren(meshset,bit,meshset,MBTRI,recursive,verb); CHKERRQ(ierr);
-  ierr = m_field.query_interface<UpdateMeshsetsAndRanges>()->updateMeshsetByEntitiesChildren(meshset,bit,meshset,MBTET,recursive,verb); CHKERRQ(ierr);
+  ierr = m_field.query_interface<BitRefManager>()->updateMeshsetByEntitiesChildren(meshset,bit,meshset,MBEDGE,recursive,verb); CHKERRQ(ierr);
+  ierr = m_field.query_interface<BitRefManager>()->updateMeshsetByEntitiesChildren(meshset,bit,meshset,MBTRI,recursive,verb); CHKERRQ(ierr);
+  ierr = m_field.query_interface<BitRefManager>()->updateMeshsetByEntitiesChildren(meshset,bit,meshset,MBTET,recursive,verb); CHKERRQ(ierr);
   const_cast<RefEntity_multiIndex*>(refined_ents_ptr)->modify(miit,RefEntity_change_add_bit(bit));
   MoFEMFunctionReturnHot(0);
 }

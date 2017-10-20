@@ -11,35 +11,6 @@
 
 */
 
-#include <version.h>
-#include <Includes.hpp>
-#include <definitions.h>
-#include <Common.hpp>
-
-#include <h1_hdiv_hcurl_l2.h>
-
-#include <MaterialBlocks.hpp>
-#include <BCData.hpp>
-#include <TagMultiIndices.hpp>
-#include <CoordSysMultiIndices.hpp>
-#include <FieldMultiIndices.hpp>
-#include <EntsMultiIndices.hpp>
-#include <DofsMultiIndices.hpp>
-#include <FEMultiIndices.hpp>
-#include <ProblemsMultiIndices.hpp>
-#include <AdjacencyMultiIndices.hpp>
-#include <BCMultiIndices.hpp>
-#include <CoreDataStructures.hpp>
-#include <SeriesMultiIndices.hpp>
-
-#include <UnknownInterface.hpp>
-#include <LoopMethods.hpp>
-#include <Interface.hpp>
-#include <MeshRefinement.hpp>
-#include <PrismInterface.hpp>
-#include <SeriesRecorder.hpp>
-#include <Core.hpp>
-
 namespace MoFEM {
 
 /** \brief Create compressed matrix
@@ -302,8 +273,7 @@ PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
   const bool no_diagonals,int verb
 ) {
   MoFEMFunctionBeginHot;
-  PetscLogEventBegin(USER_EVENT_createMat,0,0,0,0);
-  if(verb==-1) verb = verbose;
+  PetscLogEventBegin(MOFEM_EVENT_createMat,0,0,0,0);
 
   typedef typename boost::multi_index::index<NumeredDofEntity_multiIndex,TAG>::type NumeredDofEntitysByIdx;
 
@@ -679,7 +649,7 @@ PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
 
   }
 
-  PetscLogEventEnd(USER_EVENT_createMat,0,0,0,0);
+  PetscLogEventEnd(MOFEM_EVENT_createMat,0,0,0,0);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -800,7 +770,7 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const std::string &problem_n
     Interface *mFieldPtr;
 
     Mat A;
-    
+
     ErrorCode rval;
 
     int rowPrint,colPrint;
@@ -972,7 +942,7 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const std::string &problem_n
 
     PetscErrorCode postProcess() {
       MoFEMFunctionBeginHot;
-      
+
 
       // cerr << mFieldPtr->get_comm_rank() << endl;
       ierr = MatAssemblyBegin(A,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);

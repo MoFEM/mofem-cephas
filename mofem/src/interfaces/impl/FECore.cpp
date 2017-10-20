@@ -16,36 +16,6 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 */
 
-#include <version.h>
-#include <Includes.hpp>
-#include <definitions.h>
-#include <Common.hpp>
-
-#include <h1_hdiv_hcurl_l2.h>
-
-#include <UnknownInterface.hpp>
-
-#include <MaterialBlocks.hpp>
-#include <BCData.hpp>
-#include <TagMultiIndices.hpp>
-#include <CoordSysMultiIndices.hpp>
-#include <FieldMultiIndices.hpp>
-#include <EntsMultiIndices.hpp>
-#include <DofsMultiIndices.hpp>
-#include <FEMultiIndices.hpp>
-#include <ProblemsMultiIndices.hpp>
-#include <AdjacencyMultiIndices.hpp>
-#include <BCMultiIndices.hpp>
-#include <CoreDataStructures.hpp>
-#include <SeriesMultiIndices.hpp>
-
-#include <LoopMethods.hpp>
-#include <Interface.hpp>
-#include <MeshRefinement.hpp>
-#include <PrismInterface.hpp>
-#include <SeriesRecorder.hpp>
-#include <Core.hpp>
-
 namespace MoFEM {
 
   PetscErrorCode Core::get_finite_elements(const FiniteElement_multiIndex **fe_ptr) const {
@@ -839,7 +809,7 @@ namespace MoFEM {
     MoFEMFunctionBeginHot;
     if(verb==-1) verb = verbose;
     Range ents;
-    ierr = get_entities_by_ref_level(bit,mask,ents); CHKERRQ(ierr);
+    ierr = BitRefManager(*this).getEntitiesByRefLevel(bit,mask,ents); CHKERRQ(ierr);
     ierr = build_adjacencies(ents,verb); CHKERRQ(ierr);
     MoFEMFunctionReturnHot(0);
   }

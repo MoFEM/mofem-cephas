@@ -15,38 +15,6 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 */
 
-#include <Includes.hpp>
-#include <version.h>
-#include <definitions.h>
-#include <Common.hpp>
-
-#include <h1_hdiv_hcurl_l2.h>
-
-#include <UnknownInterface.hpp>
-
-#include <MaterialBlocks.hpp>
-#include <BCData.hpp>
-#include <TagMultiIndices.hpp>
-#include <CoordSysMultiIndices.hpp>
-#include <FieldMultiIndices.hpp>
-#include <EntsMultiIndices.hpp>
-#include <DofsMultiIndices.hpp>
-#include <FEMultiIndices.hpp>
-#include <ProblemsMultiIndices.hpp>
-#include <AdjacencyMultiIndices.hpp>
-#include <BCMultiIndices.hpp>
-#include <CoreDataStructures.hpp>
-#include <SeriesMultiIndices.hpp>
-
-#include <LoopMethods.hpp>
-#include <Interface.hpp>
-#include <MeshRefinement.hpp>
-#include <PrismInterface.hpp>
-#include <SeriesRecorder.hpp>
-#include <Core.hpp>
-
-#include <PrismsFromSurfaceInterface.hpp>
-
 namespace MoFEM {
 
 PetscErrorCode PrismsFromSurfaceInterface::queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface) {
@@ -66,7 +34,7 @@ PetscErrorCode PrismsFromSurfaceInterface::queryInterface(const MOFEMuuid& uuid,
 
 PetscErrorCode PrismsFromSurfaceInterface::createPrisms(const Range &ents,Range &prisms,int verb) {
   MoFEMFunctionBeginHot;
-  
+
   MoFEM::Interface& m_field = cOre;
   Range tris = ents.subset_by_type(MBTRI);
   for(Range::iterator tit = tris.begin();tit!=tris.end();tit++) {
@@ -133,8 +101,8 @@ PetscErrorCode PrismsFromSurfaceInterface::createPrisms(const Range &ents,Range 
 
 PetscErrorCode PrismsFromSurfaceInterface::seedPrismsEntities(Range &prisms,const BitRefLevel &bit,int verb) {
   MoFEMFunctionBeginHot;
-  
-  
+
+
   MoFEM::Interface& m_field = cOre;
   const RefEntity_multiIndex *const_refined_entities_ptr;
   ierr = m_field.get_ref_ents(&const_refined_entities_ptr); CHKERRQ(ierr);
@@ -167,8 +135,8 @@ PetscErrorCode PrismsFromSurfaceInterface::seedPrismsEntities(Range &prisms,cons
 }
 
 PetscErrorCode PrismsFromSurfaceInterface::createPrismsFromPrisms(const Range &prisms,bool from_down,Range &out_prisms,int verb) {
-  
-  
+
+
   MoFEMFunctionBeginHot;
   MoFEM::Interface& m_field = cOre;
   Range tris;
@@ -186,7 +154,7 @@ PetscErrorCode PrismsFromSurfaceInterface::createPrismsFromPrisms(const Range &p
 }
 
 PetscErrorCode PrismsFromSurfaceInterface::setThickness(const Range &prisms,const double director3[],const double director4[]) {
-  
+
   MoFEMFunctionBeginHot;
   MoFEM::Interface& m_field = cOre;
   Range nodes_f3,nodes_f4;

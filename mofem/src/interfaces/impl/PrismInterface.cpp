@@ -19,37 +19,6 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 */
 
-#include <Includes.hpp>
-#include <version.h>
-#include <definitions.h>
-#include <Common.hpp>
-
-#include <h1_hdiv_hcurl_l2.h>
-
-#include <UnknownInterface.hpp>
-
-#include <MaterialBlocks.hpp>
-#include <BCData.hpp>
-#include <TagMultiIndices.hpp>
-#include <CoordSysMultiIndices.hpp>
-#include <FieldMultiIndices.hpp>
-#include <EntsMultiIndices.hpp>
-#include <DofsMultiIndices.hpp>
-#include <FEMultiIndices.hpp>
-#include <ProblemsMultiIndices.hpp>
-#include <AdjacencyMultiIndices.hpp>
-#include <BCMultiIndices.hpp>
-#include <CoreDataStructures.hpp>
-#include <SeriesMultiIndices.hpp>
-
-#include <LoopMethods.hpp>
-#include <Interface.hpp>
-#include <SeriesRecorder.hpp>
-#include <Core.hpp>
-
-#include <PrismInterface.hpp>
-#include <MeshsetsManager.hpp>
-
 namespace MoFEM {
 
 PetscErrorCode PrismInterface::queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface) {
@@ -99,16 +68,16 @@ PetscErrorCode PrismInterface::getSides(const EntityHandle sideset,const BitRefL
   Range mesh_level_edges;
   Range mesh_level_nodes;
   if(mesh_bit_level.any()) {
-    ierr = m_field.get_entities_by_type_and_ref_level(mesh_bit_level,BitRefLevel().set(),MBTET,mesh_level_ents3d); CHKERRQ(ierr);
-    ierr = m_field.get_entities_by_type_and_ref_level(mesh_bit_level,BitRefLevel().set(),MBTRI,mesh_level_tris); CHKERRQ(ierr);
-    ierr = m_field.get_entities_by_type_and_ref_level(mesh_bit_level,BitRefLevel().set(),MBEDGE,mesh_level_edges); CHKERRQ(ierr);
-    ierr = m_field.get_entities_by_type_and_ref_level(mesh_bit_level,BitRefLevel().set(),MBVERTEX,mesh_level_nodes); CHKERRQ(ierr);
+    ierr = m_field.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(mesh_bit_level,BitRefLevel().set(),MBTET,mesh_level_ents3d); CHKERRQ(ierr);
+    ierr = m_field.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(mesh_bit_level,BitRefLevel().set(),MBTRI,mesh_level_tris); CHKERRQ(ierr);
+    ierr = m_field.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(mesh_bit_level,BitRefLevel().set(),MBEDGE,mesh_level_edges); CHKERRQ(ierr);
+    ierr = m_field.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(mesh_bit_level,BitRefLevel().set(),MBVERTEX,mesh_level_nodes); CHKERRQ(ierr);
     rval = moab.get_adjacencies(mesh_level_ents3d,2,false,mesh_level_ents3d_tris,moab::Interface::UNION); CHKERRQ_MOAB(rval);
 
   }
   Range mesh_level_prisms;
   if(mesh_bit_level.any()) {
-    ierr = m_field.get_entities_by_type_and_ref_level(mesh_bit_level,BitRefLevel().set(),MBPRISM,mesh_level_prisms); CHKERRQ(ierr);
+    ierr = m_field.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(mesh_bit_level,BitRefLevel().set(),MBPRISM,mesh_level_prisms); CHKERRQ(ierr);
     mesh_level_ents3d.merge(mesh_level_prisms);
   }
   Skinner skin(&moab);
@@ -367,13 +336,13 @@ PetscErrorCode PrismInterface::findIfTringleHasThreeNodesOnInternalSurfaceSkin(
   Range mesh_level_ents3d;
   Range mesh_level_edges,mesh_level_tris;
   if(mesh_bit_level.any()) {
-    ierr = m_field.get_entities_by_type_and_ref_level(
+    ierr = m_field.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
       mesh_bit_level,BitRefLevel().set(),MBTET,mesh_level_ents3d
     ); CHKERRQ(ierr);
-    ierr = m_field.get_entities_by_type_and_ref_level(
+    ierr = m_field.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
       mesh_bit_level,BitRefLevel().set(),MBTRI,mesh_level_tris
     ); CHKERRQ(ierr);
-    ierr = m_field.get_entities_by_type_and_ref_level(
+    ierr = m_field.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
       mesh_bit_level,BitRefLevel().set(),MBEDGE,mesh_level_edges
     ); CHKERRQ(ierr);
   }

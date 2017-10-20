@@ -18,42 +18,11 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 */
 
-#include <Includes.hpp>
-#include <version.h>
-#include <definitions.h>
-#include <Common.hpp>
-
-#include <h1_hdiv_hcurl_l2.h>
-#include <fem_tools.h>
-
-#include <UnknownInterface.hpp>
-
-#include <MaterialBlocks.hpp>
-#include <BCData.hpp>
-#include <TagMultiIndices.hpp>
-#include <CoordSysMultiIndices.hpp>
-#include <FieldMultiIndices.hpp>
-#include <EntsMultiIndices.hpp>
-#include <DofsMultiIndices.hpp>
-#include <FEMultiIndices.hpp>
-#include <ProblemsMultiIndices.hpp>
-#include <AdjacencyMultiIndices.hpp>
-#include <BCMultiIndices.hpp>
-#include <CoreDataStructures.hpp>
-#include <SeriesMultiIndices.hpp>
-
-#include <LoopMethods.hpp>
-#include <Interface.hpp>
-#include <Core.hpp>
-
 #include <AuxPETSc.hpp>
 #include <KspCtx.hpp>
 #include <SnesCtx.hpp>
 #include <TsCtx.hpp>
 #include <DMMoFEM.hpp>
-
-#include <BitRefManager.hpp>
-#include <Simple.hpp>
 
 namespace MoFEM {
 
@@ -82,11 +51,11 @@ namespace MoFEM {
   skeletonFE("sFE"),
   dIm(-1),
   dM(PETSC_NULL) {
-    PetscLogEventRegister("LoadMesh",0,&USER_EVENT_SimpleLoadMesh);
-    PetscLogEventRegister("buildFields",0,&USER_EVENT_SimpleBuildFields);
-    PetscLogEventRegister("buildFiniteElements",0,&USER_EVENT_SimpleBuildFiniteElements);
-    PetscLogEventRegister("SimpleSetUp",0,&USER_EVENT_SimpleBuildProblem);
-    PetscLogEventRegister("SimpleKSPSolve",0,&USER_EVENT_SimpleKSPSolve);
+    PetscLogEventRegister("LoadMesh",0,&MOFEM_EVENT_SimpleLoadMesh);
+    PetscLogEventRegister("buildFields",0,&MOFEM_EVENT_SimpleBuildFields);
+    PetscLogEventRegister("buildFiniteElements",0,&MOFEM_EVENT_SimpleBuildFiniteElements);
+    PetscLogEventRegister("SimpleSetUp",0,&MOFEM_EVENT_SimpleBuildProblem);
+    PetscLogEventRegister("SimpleKSPSolve",0,&MOFEM_EVENT_SimpleKSPSolve);
     strcpy(meshFileName,"mesh.h5m");
   }
   Simple::~Simple() {
@@ -115,7 +84,7 @@ namespace MoFEM {
   PetscErrorCode Simple::loadFile() {
     MoFEM::Interface &m_field = cOre;
     MoFEMFunctionBeginHot;
-    PetscLogEventBegin(USER_EVENT_SimpleLoadMesh,0,0,0,0);
+    PetscLogEventBegin(MOFEM_EVENT_SimpleLoadMesh,0,0,0,0);
     // This is a case of distributed mesh and algebra. In that case each processor
     // keep only part of the problem.
     const char *option;
@@ -145,7 +114,7 @@ namespace MoFEM {
     ierr = m_field.query_interface<BitRefManager>()->setBitRefLevel(ents,bitLevel,false); CHKERRQ(ierr);
     ParallelComm* pcomm = ParallelComm::get_pcomm(&m_field.get_moab(),MYPCOMM_INDEX);
     if(pcomm == NULL) pcomm =  new ParallelComm(&m_field.get_moab(),m_field.get_comm());
-    PetscLogEventEnd(USER_EVENT_SimpleLoadMesh,0,0,0,0);
+    PetscLogEventEnd(MOFEM_EVENT_SimpleLoadMesh,0,0,0,0);
     MoFEMFunctionReturnHot(0);
   }
 
@@ -312,7 +281,7 @@ namespace MoFEM {
   PetscErrorCode Simple::buildFields() {
     MoFEM::Interface &m_field = cOre;
     MoFEMFunctionBeginHot;
-    PetscLogEventBegin(USER_EVENT_SimpleBuildFields,0,0,0,0);
+    PetscLogEventBegin(MOFEM_EVENT_SimpleBuildFields,0,0,0,0);
     // take skin
     {
       Range domain_ents;
@@ -469,7 +438,7 @@ namespace MoFEM {
     }
     // Build fields
     ierr = m_field.build_fields(); CHKERRQ(ierr);
-    PetscLogEventEnd(USER_EVENT_SimpleBuildFields,0,0,0,0);
+    PetscLogEventEnd(MOFEM_EVENT_SimpleBuildFields,0,0,0,0);
     MoFEMFunctionReturnHot(0);
   }
 
@@ -477,7 +446,7 @@ namespace MoFEM {
 
     MoFEM::Interface &m_field = cOre;
     MoFEMFunctionBeginHot;
-    PetscLogEventBegin(USER_EVENT_SimpleBuildFiniteElements,0,0,0,0);
+    PetscLogEventBegin(MOFEM_EVENT_SimpleBuildFiniteElements,0,0,0,0);
     // Add finite elements
     ierr = m_field.add_ents_to_finite_element_by_dim(meshSet,dIm,domainFE,true); CHKERRQ(ierr);
     ierr = m_field.build_finite_elements(domainFE); CHKERRQ(ierr);
@@ -489,19 +458,19 @@ namespace MoFEM {
       ierr = m_field.add_ents_to_finite_element_by_dim(meshSet,dIm-1,skeletonFE,true); CHKERRQ(ierr);
       ierr = m_field.build_finite_elements(skeletonFE); CHKERRQ(ierr);
     }
-    PetscLogEventEnd(USER_EVENT_SimpleBuildFiniteElements,0,0,0,0);
+    PetscLogEventEnd(MOFEM_EVENT_SimpleBuildFiniteElements,0,0,0,0);
     MoFEMFunctionReturnHot(0);
   }
 
   PetscErrorCode Simple::buildProblem() {
     MoFEM::Interface &m_field = cOre;
     MoFEMFunctionBeginHot;
-    PetscLogEventBegin(USER_EVENT_SimpleBuildProblem,0,0,0,0);
+    PetscLogEventBegin(MOFEM_EVENT_SimpleBuildProblem,0,0,0,0);
     ierr = m_field.build_adjacencies(bitLevel); CHKERRQ(ierr);
     // Set problem by the DOFs on the fields rather that by adding DOFs on the elements
     ierr = m_field.query_interface<ProblemsManager>()->buildProblemFromFields = PETSC_TRUE;
     ierr = DMSetUp(dM); CHKERRQ(ierr);
-    PetscLogEventEnd(USER_EVENT_SimpleBuildProblem,0,0,0,0);
+    PetscLogEventEnd(MOFEM_EVENT_SimpleBuildProblem,0,0,0,0);
     MoFEMFunctionReturnHot(0);
   }
 

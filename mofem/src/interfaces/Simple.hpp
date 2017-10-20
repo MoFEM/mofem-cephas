@@ -201,11 +201,11 @@ namespace MoFEM {
 
     const BitRefLevel bitLevel;
 
-    PetscLogEvent USER_EVENT_SimpleLoadMesh;
-    PetscLogEvent USER_EVENT_SimpleBuildFields;
-    PetscLogEvent USER_EVENT_SimpleBuildFiniteElements;
-    PetscLogEvent USER_EVENT_SimpleBuildProblem;
-    PetscLogEvent USER_EVENT_SimpleKSPSolve;
+    PetscLogEvent MOFEM_EVENT_SimpleLoadMesh;
+    PetscLogEvent MOFEM_EVENT_SimpleBuildFields;
+    PetscLogEvent MOFEM_EVENT_SimpleBuildFiniteElements;
+    PetscLogEvent MOFEM_EVENT_SimpleBuildProblem;
+    PetscLogEvent MOFEM_EVENT_SimpleKSPSolve;
 
     EntityHandle meshSet;                     ///< domain meshset
     EntityHandle boundaryMeshset;             ///< meshset with boundary

@@ -202,37 +202,41 @@ namespace MoFEM {
       Tag th = NULL
     );
 
-    /**
-     * \brief split sides of merged surface
-     * @param  split_bit split bit level
-     * @param  bit       bit level of split mesh
-     * @return           error code
-     */
-    PetscErrorCode splitMergedSides(
-      const BitRefLevel merged_bit,
-      const BitRefLevel bit,
-      Tag th = NULL
-    );
-
     PetscErrorCode mergeBadEdges(
       const int fraction_level,
       const Range& tets,const Range& surface,
       const Range& fixed_edges,const Range& corner_nodes,
-      Tag th,
+      Range& merged_nodes,
       Range& out_tets,Range& new_surf,
+      Tag th,
       const bool update_meshsets = false,
       const BitRefLevel *bit_ptr = NULL
     );
 
     PetscErrorCode mergeBadEdges(
       const int fraction_level,
-      const BitRefLevel merged_bit,
+      const BitRefLevel cut_bit,
+      const BitRefLevel trim_bit,
       const BitRefLevel bit,
       const Range& surface,
       const Range& fixed_edges,
       const Range& corner_nodes,
       Tag th
     );
+
+    #ifdef WITH_TETGEN
+
+    PetscErrorCode rebuildMeshWithTetGen(
+      vector<string> &switches,
+      const BitRefLevel& mesh_bit,
+      const BitRefLevel& bit,
+      const Range& surface,
+      const Range& fixed_edges,
+      const Range& corner_nodes,
+      const bool debug = false
+    );
+
+    #endif
 
     /**
      * \brief set coords to tag
@@ -263,6 +267,8 @@ namespace MoFEM {
     inline const Range& getMergedVolumes() const { return mergedVolumes; }
     inline const Range& getMergedSurfaces() const { return mergedSurfaces; }
 
+    inline const Range& getTetgenSurfaces() const { return tetgenSurfaces; }
+
   private:
 
     Range sUrface;
@@ -287,6 +293,8 @@ namespace MoFEM {
     Range mergedVolumes;
     Range mergedSurfaces;
 
+    Range tetgenSurfaces;
+
     struct TreeData {
       double dIst;
       double lEngth;
@@ -299,13 +307,13 @@ namespace MoFEM {
     map<EntityHandle,TreeData> edgesToTrim;
     map<EntityHandle,TreeData> verticecOnTrimEdges;
 
-    // #ifdef WITH_TETGEN
-    //
-    // map<EntityHandle,unsigned long> moabTetGenMap;
-    // map<unsigned long,EntityHandle> tetGenMoabMap;
-    // boost::ptr_vector<tetgenio> tetGenData;
-    //
-    // #endif
+    #ifdef WITH_TETGEN
+
+    map<EntityHandle,unsigned long> moabTetGenMap;
+    map<unsigned long,EntityHandle> tetGenMoabMap;
+    boost::ptr_vector<tetgenio> tetGenData;
+
+    #endif
 
     PetscErrorCode getRayForEdge(
       const EntityHandle ent,
