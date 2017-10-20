@@ -101,6 +101,18 @@ namespace MoFEM {
       return getInterface(getUId(typeid(IFACE).name()),iface);
     }
 
+    template <class IFACE>
+    inline PetscErrorCode getInterface(IFACE**const iface) {
+      return getInterface(getUId(typeid(IFACE).name()),*iface);
+    }
+
+    template <class IFACE>
+    inline IFACE* getInterface() {
+      IFACE* iface;
+      ierr = getInterface(getUId(typeid(IFACE).name()),iface); CHKERRQ(ierr);
+      return iface;
+    }
+
     virtual ~UnknownInterface() {}
 
     /**
