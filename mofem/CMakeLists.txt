@@ -142,13 +142,11 @@ find_library(
   ${PETSC_DIR}/${PETSC_ARCH}/lib
 )
 message(STATUS "CBLAS found: " ${CBLAS_LIBIBRARY})
+
 find_path(
-  CBLAS_INCLUDE_DIR
-  NAMES boost/multi_index_container.hpp
-  HINTS
-  ${PETSC_DIR}/${PETSC_ARCH}/include
+  CBLAS_INCLUDE_DIR cblas.h HINTS ${PETSC_DIR}/${PETSC_ARCH}/include
 )
-message(STATUS "CBLAS inlude found: " ${CBLAS_INCLUDE_DIR})
+message(STATUS "CBLAS include found: " ${CBLAS_INCLUDE_DIR})
 if(CBLAS_INCLUDE_DIR)
   include_directories(${CBLAS_INCLUDE_DIR})
   add_definitions(-DCBLAS_FOUND)
