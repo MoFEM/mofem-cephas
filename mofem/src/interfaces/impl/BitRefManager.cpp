@@ -19,15 +19,11 @@
 
 namespace MoFEM {
 
-  PetscErrorCode BitRefManager::queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface) {
+  PetscErrorCode BitRefManager::query_interface(const MOFEMuuid& uuid, UnknownInterface** iface) const {
     MoFEMFunctionBeginHot;
     *iface = NULL;
     if(uuid == IDD_MOFEMBitRefManager) {
-      *iface = dynamic_cast<BitRefManager*>(this);
-      MoFEMFunctionReturnHot(0);
-    }
-    if(uuid == IDD_MOFEMUnknown) {
-      *iface = dynamic_cast<UnknownInterface*>(this);
+      *iface = const_cast<BitRefManager*>(this);
       MoFEMFunctionReturnHot(0);
     }
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown interface");

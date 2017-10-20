@@ -32,7 +32,7 @@ namespace MoFEM {
   */
   struct FatPrismPolynomialBaseCtx: public EntPolynomialBaseCtx {
 
-    PetscErrorCode queryInterface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface);
+    PetscErrorCode query_interface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface) const;
 
     DataForcesAndSourcesCore& dataTrianglesOnly;
     DataForcesAndSourcesCore& dataTroughThickness;
@@ -68,7 +68,7 @@ namespace MoFEM {
   */
   struct FatPrismPolynomialBase: public BaseFunction {
 
-    PetscErrorCode queryInterface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface);
+    PetscErrorCode query_interface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface) const;
 
     FatPrismPolynomialBase();
     ~FatPrismPolynomialBase();

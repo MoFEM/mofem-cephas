@@ -271,7 +271,7 @@ int main(int argc, char *argv[]) {
   EntityHandle meshset_level0;
   rval = moab.create_meshset(MESHSET_SET, meshset_level0); CHKERRQ_MOAB(rval);
   ierr = m_field.seed_ref_level_3D(0, bit_level0); CHKERRQ(ierr);
-  ierr = m_field.query_interface<BitRefManager>()->getEntitiesByRefLevel(
+  ierr = m_field.getInterface<BitRefManager>()->getEntitiesByRefLevel(
     bit_level0, BitRefLevel().set(), meshset_level0); CHKERRQ(ierr);
 
   //Fields
@@ -450,7 +450,7 @@ int main(int argc, char *argv[]) {
     ierr = m_field.modify_problem_ref_level_add_bit("Kuu",bit_level0); CHKERRQ(ierr);
 
     ProblemsManager *prb_mng_ptr;
-    ierr = m_field.query_interface(prb_mng_ptr); CHKERRQ(ierr);
+    ierr = m_field.getInterface(prb_mng_ptr); CHKERRQ(ierr);
     if(is_partitioned) {
       ierr = prb_mng_ptr->buildProblemOnDistributedMesh("Kuu",true); CHKERRQ(ierr);
       ierr = prb_mng_ptr->partitionFiniteElements("Kuu",true,0,pcomm->size()); CHKERRQ(ierr);
@@ -477,7 +477,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field.modify_problem_ref_level_add_bit("DYNAMICS",bit_level0); CHKERRQ(ierr);
 
   ProblemsManager *prb_mng_ptr;
-  ierr = m_field.query_interface(prb_mng_ptr); CHKERRQ(ierr);
+  ierr = m_field.getInterface(prb_mng_ptr); CHKERRQ(ierr);
   if(is_partitioned) {
     ierr = prb_mng_ptr->buildProblemOnDistributedMesh("DYNAMICS",true); CHKERRQ(ierr);
     ierr = prb_mng_ptr->partitionFiniteElements("DYNAMICS",true,0,pcomm->size()); CHKERRQ(ierr);
@@ -489,7 +489,7 @@ int main(int argc, char *argv[]) {
   ierr = prb_mng_ptr->partitionGhostDofs("DYNAMICS"); CHKERRQ(ierr);
 
   Vec F;
-  ierr = m_field.query_interface<VecManager>()->vecCreateGhost("DYNAMICS",COL,&F); CHKERRQ(ierr);
+  ierr = m_field.getInterface<VecManager>()->vecCreateGhost("DYNAMICS",COL,&F); CHKERRQ(ierr);
   Vec D;
   ierr = VecDuplicate(F,&D); CHKERRQ(ierr);
 
@@ -504,8 +504,8 @@ int main(int argc, char *argv[]) {
     ierr = m_field.MatCreateMPIAIJWithArrays("Kuu",&shellAij_ctx->K); CHKERRQ(ierr);
     ierr = MatDuplicate(shellAij_ctx->K,MAT_DO_NOT_COPY_VALUES,&shellAij_ctx->M); CHKERRQ(ierr);
     ierr = shellAij_ctx->iNit(); CHKERRQ(ierr);
-    ierr = m_field.query_interface<VecManager>()->vecScatterCreate(D,"DYNAMICS",COL,shellAij_ctx->u,"Kuu",COL,&shellAij_ctx->scatterU); CHKERRQ(ierr);
-    ierr = m_field.query_interface<VecManager>()->vecScatterCreate(
+    ierr = m_field.getInterface<VecManager>()->vecScatterCreate(D,"DYNAMICS",COL,shellAij_ctx->u,"Kuu",COL,&shellAij_ctx->scatterU); CHKERRQ(ierr);
+    ierr = m_field.getInterface<VecManager>()->vecScatterCreate(
       D,"DYNAMICS","SPATIAL_VELOCITY",COL,shellAij_ctx->v,"Kuu","SPATIAL_POSITION",COL,&shellAij_ctx->scatterV
     ); CHKERRQ(ierr);
     Mat shell_Aij;
@@ -683,7 +683,7 @@ int main(int argc, char *argv[]) {
     ierr = PCShellSetDestroy(pc,ConvectiveMassElement::PCShellDestroy);  CHKERRQ(ierr);
   #endif
 
-  ierr = m_field.query_interface<VecManager>()->setLocalGhostVector("DYNAMICS",COL,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = m_field.getInterface<VecManager>()->setLocalGhostVector("DYNAMICS",COL,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
@@ -698,7 +698,7 @@ int main(int argc, char *argv[]) {
 
     Mat Aij = shellAij_ctx->K;
     Vec F;
-    ierr = m_field.query_interface<VecManager>()->vecCreateGhost("Kuu",COL,&F); CHKERRQ(ierr);
+    ierr = m_field.getInterface<VecManager>()->vecCreateGhost("Kuu",COL,&F); CHKERRQ(ierr);
     Vec D;
     ierr = VecDuplicate(F,&D); CHKERRQ(ierr);
 
@@ -744,14 +744,14 @@ int main(int argc, char *argv[]) {
     ierr = m_field.field_scale(0,"DOT_SPATIAL_POSITION"); CHKERRQ(ierr);
     ierr = m_field.field_scale(0,"DOT_SPATIAL_VELOCITY"); CHKERRQ(ierr);
 
-    ierr = m_field.query_interface<VecManager>()->setLocalGhostVector("Kuu",COL,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = m_field.getInterface<VecManager>()->setLocalGhostVector("Kuu",COL,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
     ierr = SNESSolve(snes,PETSC_NULL,D); CHKERRQ(ierr);
     int its;
     ierr = SNESGetIterationNumber(snes,&its); CHKERRQ(ierr);
     ierr = PetscPrintf(PETSC_COMM_WORLD,"number of Newton iterations = %D\n",its); CHKERRQ(ierr);
 
-    ierr = m_field.query_interface<VecManager>()->setGlobalGhostVector("Kuu",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = m_field.getInterface<VecManager>()->setGlobalGhostVector("Kuu",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
     ierr = VecDestroy(&F); CHKERRQ(ierr);
     ierr = VecDestroy(&D); CHKERRQ(ierr);
@@ -761,7 +761,7 @@ int main(int argc, char *argv[]) {
   }
 
   if(is_solve_at_time_zero) {
-    ierr = m_field.query_interface<VecManager>()->setLocalGhostVector("DYNAMICS",COL,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = m_field.getInterface<VecManager>()->setLocalGhostVector("DYNAMICS",COL,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   }
 
   #if PETSC_VERSION_GE(3,7,0)

@@ -32,7 +32,7 @@ namespace MoFEM {
    */
   struct BitRefManager: public UnknownInterface {
 
-    PetscErrorCode queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface);
+    PetscErrorCode query_interface(const MOFEMuuid& uuid, UnknownInterface** iface) const;
 
     MoFEM::Core& cOre;
     bool dEbug;
@@ -62,12 +62,12 @@ namespace MoFEM {
      EntityHandle meshset1; //contains ent1,ent2,ent3
      BitRefLevel myLevel0;
      myLevel0.set(0);
-     m_field.query_interface<BitRefManager>()->setBitRefLevelByDim(meshset1,3,myLevel0);
+     m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(meshset1,3,myLevel0);
      //refine meshset1 into meshset2 and get new ents which are ent4, ent5
      EntityHandle meshset2; //contains ent1,ent2,ent3,ent4,ent5
      BitRefLevel myLevel1;
      myLevel1.set(1);
-     m_field.query_interface<BitRefManager>()->setBitRefLevelByDim(meshset2,3,myLevel1);
+     m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(meshset2,3,myLevel1);
      \endcode
 
      * So entities 1,2,3 would be assigned to bit level 0 and 1 <br>

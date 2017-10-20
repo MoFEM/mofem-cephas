@@ -353,7 +353,7 @@ Basic of user data operators are explained here \ref general_data_structure.
 and deletion of the interface is managed internally and is returned as a pointer
 \code
 Simple *simple_interface;
-ierr = m_field.query_interface(simple_interface); CHKERRQ(ierr);
+ierr = m_field.getInterface(simple_interface); CHKERRQ(ierr);
 \endcode
 
 - Now we load mesh file and get additional options related to simple interface

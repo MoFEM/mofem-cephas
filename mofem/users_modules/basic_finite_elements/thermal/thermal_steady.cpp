@@ -119,7 +119,7 @@ int main(int argc, char *argv[]) {
 
 
   ProblemsManager *prb_mng_ptr;
-  ierr = m_field.query_interface(prb_mng_ptr); CHKERRQ(ierr);
+  ierr = m_field.getInterface(prb_mng_ptr); CHKERRQ(ierr);
   //build problem
   ierr = prb_mng_ptr->buildProblem("THERMAL_PROBLEM",true); CHKERRQ(ierr);
 
@@ -135,7 +135,7 @@ int main(int argc, char *argv[]) {
   ierr = prb_mng_ptr->partitionGhostDofs("THERMAL_PROBLEM"); CHKERRQ(ierr);
 
   Vec F;
-  ierr = m_field.query_interface<VecManager>()->vecCreateGhost("THERMAL_PROBLEM",ROW,&F); CHKERRQ(ierr);
+  ierr = m_field.getInterface<VecManager>()->vecCreateGhost("THERMAL_PROBLEM",ROW,&F); CHKERRQ(ierr);
   Vec T;
   ierr = VecDuplicate(F,&T); CHKERRQ(ierr);
   Mat A;
@@ -158,7 +158,7 @@ int main(int argc, char *argv[]) {
 
   //preproc
   ierr = m_field.problem_basic_method_preProcess("THERMAL_PROBLEM",my_dirichlet_bc); CHKERRQ(ierr);
-  ierr = m_field.query_interface<VecManager>()->setGlobalGhostVector("THERMAL_PROBLEM",ROW,T,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = m_field.getInterface<VecManager>()->setGlobalGhostVector("THERMAL_PROBLEM",ROW,T,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
   ierr = m_field.loop_finite_elements("THERMAL_PROBLEM","THERMAL_FE",thermal_elements.getLoopFeRhs()); CHKERRQ(ierr);
   ierr = m_field.loop_finite_elements("THERMAL_PROBLEM","THERMAL_FE",thermal_elements.getLoopFeLhs()); CHKERRQ(ierr);
@@ -192,11 +192,11 @@ int main(int argc, char *argv[]) {
   ierr = m_field.problem_basic_method_preProcess("THERMAL_PROBLEM",my_dirichlet_bc); CHKERRQ(ierr);
 
   //Save data on mesh
-  ierr = m_field.query_interface<VecManager>()->setGlobalGhostVector("THERMAL_PROBLEM",ROW,T,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = m_field.getInterface<VecManager>()->setGlobalGhostVector("THERMAL_PROBLEM",ROW,T,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
 
   //Range ref_edges;
-  //ierr = m_field.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(bit_level0,BitRefLevel().set(),MBEDGE,ref_edges); CHKERRQ(ierr);
+  //ierr = m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(bit_level0,BitRefLevel().set(),MBEDGE,ref_edges); CHKERRQ(ierr);
   //rval = moab.list_entities(ref_edges); CHKERRQ_MOAB(rval);
   //m_field.list_dofs_by_field_name("TEMP");
 

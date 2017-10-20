@@ -29,7 +29,7 @@ namespace MoFEM {
 
   struct CoordSystemsManager: public UnknownInterface {
 
-    PetscErrorCode queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface);
+    PetscErrorCode query_interface(const MOFEMuuid& uuid, UnknownInterface** iface) const;
 
     MoFEM::Core& cOre;
     CoordSystemsManager(const MoFEM::Core& core);

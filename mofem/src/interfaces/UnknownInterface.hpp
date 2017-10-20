@@ -71,17 +71,34 @@ namespace MoFEM {
   **/
   struct UnknownInterface {
 
-    virtual PetscErrorCode queryInterface(
+    virtual PetscErrorCode query_interface(
       const MOFEMuuid& uuid,UnknownInterface** iface
-    ) = 0;
+    ) const = 0;
+
+    template <class IFACE>
+    PetscErrorCode registerInterface(
+      const MOFEMuuid& uuid,bool error_if_registration_failed = true
+    ) {
+      MoFEMFunctionBeginHot;
+      std::pair<iFaceTypeMap_multiIndex::iterator,bool> p;
+      p = iFaceTypeMap.insert(UIdTypeMap(uuid,typeid(IFACE).name()));
+      if(error_if_registration_failed&&(!p.second)) {
+        SETERRQ1(
+          PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,
+          "Registration of interface typeid(IFACE).name() = %s failed",
+          typeid(IFACE).name()
+        );
+      }
+      MoFEMFunctionReturnHot(0);
+    }
 
     template <class IFACE>
     inline PetscErrorCode getInterface(
       const MOFEMuuid& uuid,IFACE*& iface
-    ) {
+    ) const {
       MoFEMFunctionBegin;
       if(typeid(IFACE).name()==getClassName(uuid)) {
-        UnknownInterface *ptr = static_cast<UnknownInterface*>(iface);
+        UnknownInterface *ptr;
         ierr = getInterface(uuid,ptr); CHKERRQ(ierr);
         iface = static_cast<IFACE*>(ptr);
         MoFEMFunctionReturnHot(0);
@@ -93,12 +110,25 @@ namespace MoFEM {
         "%s != %s",
         typeid(IFACE).name(),getClassName(uuid).c_str()
       );
+      iface = NULL;
       MoFEMFunctionReturn(0);
     }
 
     template <class IFACE>
-    inline PetscErrorCode getInterface(IFACE*& iface) {
+    inline PetscErrorCode getInterface(IFACE*& iface) const {
       return getInterface(getUId(typeid(IFACE).name()),iface);
+    }
+
+    template <class IFACE>
+    inline PetscErrorCode getInterface(IFACE**const iface) const {
+      return getInterface(getUId(typeid(IFACE).name()),*iface);
+    }
+
+    template <class IFACE>
+    inline IFACE* getInterface() const {
+      IFACE* iface = NULL;
+      ierr = getInterface(getUId(typeid(IFACE).name()),iface); CHKERRABORT(PETSC_COMM_SELF,ierr);
+      return iface;
     }
 
     virtual ~UnknownInterface() {}
@@ -166,10 +196,36 @@ namespace MoFEM {
 
   protected:
 
-    struct HashMap {
+    /**
+     * \brief Get type name for interface Id
+     * @param  uid interface Id
+     * @return     class name
+     */
+    inline const std::string getClassName(const MOFEMuuid& uid) const {
+      if(iFaceTypeMap.get<0>().find(uid)!=iFaceTypeMap.get<0>().end()) {
+        return iFaceTypeMap.get<0>().find(uid)->className;
+      }
+      return string("No class for UId found");
+    }
+
+    /**
+     * \brief Get interface Id for class name
+     * @param  class_name
+     * @return            Id
+     */
+    inline const MOFEMuuid& getUId(const std::string& class_name) const {
+      if(iFaceTypeMap.get<1>().find(class_name)!=iFaceTypeMap.get<1>().end()) {
+        return iFaceTypeMap.get<1>().find(class_name)->uID;
+      }
+      return IDD_MOFEMUnknown;
+    }
+
+  private:
+
+    struct UIdTypeMap {
       MOFEMuuid uID;
       std::string className;
-      HashMap(const MOFEMuuid &uid,const std::string& name):
+      UIdTypeMap(const MOFEMuuid &uid,const std::string& name):
       uID(uid),
       className(name) {
       }
@@ -181,38 +237,24 @@ namespace MoFEM {
       }
     };
 
+    /// Data structure for interfaces Id and class names
     typedef multi_index_container<
-      HashMap,
+      UIdTypeMap,
       indexed_by<
-        hashed_unique< member<HashMap,MOFEMuuid,&HashMap::uID>,HashMOFEMuuid >,
-        hashed_unique< member<HashMap,std::string,&HashMap::className> >
+        hashed_unique< member<UIdTypeMap,MOFEMuuid,&UIdTypeMap::uID>,HashMOFEMuuid >,
+        hashed_unique< member<UIdTypeMap,std::string,&UIdTypeMap::className> >
       >
     > iFaceTypeMap_multiIndex;
 
-    static iFaceTypeMap_multiIndex iFaceTypeMap;
-
-    static std::string getClassName(const MOFEMuuid& uid) {
-      if(iFaceTypeMap.get<0>().find(uid)!=iFaceTypeMap.get<0>().end()) {
-        return iFaceTypeMap.get<0>().find(uid)->className;
-      }
-      return string("No class for UId found");
-    }
-
-    static MOFEMuuid getUId(const std::string& class_name) {
-      if(iFaceTypeMap.get<1>().find(class_name)!=iFaceTypeMap.get<1>().end()) {
-        return iFaceTypeMap.get<1>().find(class_name)->uID;
-      }
-      return IDD_MOFEMUnknown;
-    }
-
+    mutable iFaceTypeMap_multiIndex iFaceTypeMap; ///< Maps MOFEMuuid to interface type name
 
   };
 
   template<>
   inline PetscErrorCode UnknownInterface::getInterface(
     const MOFEMuuid& uuid,UnknownInterface*& iface
-  ) {
-    return queryInterface(uuid,&iface);
+  ) const {
+    return query_interface(uuid,&iface);
   }
 
 }

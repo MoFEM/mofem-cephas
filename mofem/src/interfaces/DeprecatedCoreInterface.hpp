@@ -25,6 +25,26 @@ namespace MoFEM {
   */
   struct DeprecatedCoreInterface: public CoreInterface {
 
+    /** \name Interfaces */
+
+    /**@{*/
+
+    template <class IFace>
+    DEPRECATED PetscErrorCode query_interface(IFace*& ptr) const {
+      MoFEMFunctionBeginHot;
+      ierr = getInterface(ptr); CHKERRQ(ierr);
+      MoFEMFunctionReturnHot(0);
+    }
+
+    template <class IFace>
+    DEPRECATED IFace* query_interface() const {
+      IFace* tmp_ptr;
+      ierr = getInterface(tmp_ptr); CHKERRABORT(PETSC_COMM_SELF,ierr);
+      return tmp_ptr;
+    }
+
+    /**@}*/
+
     /**@}*/
 
     /** \name Seed entities */
@@ -264,7 +284,7 @@ namespace MoFEM {
 
     \code
     MeshsetsManager *meshset_manager_ptr;
-    ierr = m_field.query_interface(meshset_manager_ptr); CHKERRQ(ierr);
+    ierr = m_field.getInterface(meshset_manager_ptr); CHKERRQ(ierr);
     ierr = meshset_manager_ptr->getEntitiesByDimension(ms_id,cubit_bc_type,dimension,entities,true); CHKERRQ(ierr);
     \endcode
 

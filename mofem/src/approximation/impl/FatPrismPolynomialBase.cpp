@@ -45,19 +45,19 @@ using namespace MoFEM;
 #include <FlatPrismPolynomialBase.hpp>
 #include <FatPrismPolynomialBase.hpp>
 
-PetscErrorCode FatPrismPolynomialBaseCtx::queryInterface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface) {
-  
+PetscErrorCode FatPrismPolynomialBaseCtx::query_interface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface) const {
+
   MoFEMFunctionBeginHot;
   *iface = NULL;
   if(
     uuid == IDD_FATPRISM_BASE_FUNCTION
   ) {
-    *iface = static_cast<FatPrismPolynomialBaseCtx*>(this);
+    *iface = const_cast<FatPrismPolynomialBaseCtx*>(this);
     MoFEMFunctionReturnHot(0);
   } else {
     SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"wrong interference");
   }
-  ierr = EntPolynomialBaseCtx::queryInterface(uuid,iface); CHKERRQ(ierr);
+  ierr = EntPolynomialBaseCtx::query_interface(uuid,iface); CHKERRQ(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -80,25 +80,24 @@ gaussPtsTrianglesOnly(gauss_pts_triangles_only),
 gaussPtsThroughThickness(gauss_pts_through_thickness),
 mOab(moab),
 fePtr(fe_ptr) {
-  
+
   ierr = setBase(); CHKERRABORT(PETSC_COMM_WORLD,ierr);
 }
 FatPrismPolynomialBaseCtx::~FatPrismPolynomialBaseCtx() {
 }
 
-PetscErrorCode FatPrismPolynomialBase::queryInterface(
+PetscErrorCode FatPrismPolynomialBase::query_interface(
   const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface
-) {
-  
+) const {
   MoFEMFunctionBeginHot;
   *iface = NULL;
   if(uuid == IDD_FATPRISM_BASE_FUNCTION) {
-    *iface = static_cast<FatPrismPolynomialBase*>(this);
+    *iface = const_cast<FatPrismPolynomialBase*>(this);
     MoFEMFunctionReturnHot(0);
   } else {
     SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"wrong interference");
   }
-  ierr = BaseFunction::queryInterface(uuid,iface); CHKERRQ(ierr);
+  ierr = BaseFunction::query_interface(uuid,iface); CHKERRQ(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -109,11 +108,11 @@ PetscErrorCode FatPrismPolynomialBase::getValue(
   MatrixDouble &pts,
   boost::shared_ptr<BaseFunctionCtx> ctx_ptr
 ) {
-  
+
   MoFEMFunctionBeginHot;
 
   MoFEM::UnknownInterface *iface;
-  ierr = ctx_ptr->queryInterface(IDD_FATPRISM_BASE_FUNCTION,&iface); CHKERRQ(ierr);
+  ierr = ctx_ptr->query_interface(IDD_FATPRISM_BASE_FUNCTION,&iface); CHKERRQ(ierr);
   cTx = reinterpret_cast<FatPrismPolynomialBaseCtx*>(iface);
   if(!cTx->fePtr) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
@@ -184,7 +183,7 @@ PetscErrorCode FatPrismPolynomialBase::getValue(
 }
 
 PetscErrorCode FatPrismPolynomialBase::getValueH1TrianglesOnly() {
-  
+
   MoFEMFunctionBeginHot;
 
   const FieldApproximationBase base = cTx->bAse;
@@ -205,7 +204,7 @@ PetscErrorCode FatPrismPolynomialBase::getValueH1TrianglesOnly() {
 }
 
 PetscErrorCode FatPrismPolynomialBase::getValueH1ThroughThickness() {
-  
+
   MoFEMFunctionBeginHot;
 
   // DataForcesAndSourcesCore& data = cTx->dAta;
@@ -248,7 +247,7 @@ PetscErrorCode FatPrismPolynomialBase::getValueH1ThroughThickness() {
 }
 
 PetscErrorCode FatPrismPolynomialBase::getValueH1(MatrixDouble &pts) {
-  
+
   MoFEMFunctionBeginHot;
 
   DataForcesAndSourcesCore& data = cTx->dAta;
@@ -388,7 +387,7 @@ PetscErrorCode FatPrismPolynomialBase::getValueH1(MatrixDouble &pts) {
     // quads
     // higher order edges and zeta
     {
-      
+
       int quads_nodes[3*4];
       int quad_order[3] = { 0, 0, 0};
       double *quad_n[3],*diff_quad_n[3];

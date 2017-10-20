@@ -44,19 +44,19 @@ using namespace MoFEM;
 #include <EntPolynomialBaseCtx.hpp>
 #include <FlatPrismPolynomialBase.hpp>
 
-PetscErrorCode FlatPrismPolynomialBaseCtx::queryInterface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface) {
-  
+PetscErrorCode FlatPrismPolynomialBaseCtx::query_interface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface) const {
+
   MoFEMFunctionBeginHot;
   *iface = NULL;
   if(
     uuid == IDD_FLATPRISM_BASE_FUNCTION
   ) {
-    *iface = static_cast<FlatPrismPolynomialBaseCtx*>(this);
+    *iface = const_cast<FlatPrismPolynomialBaseCtx*>(this);
     MoFEMFunctionReturnHot(0);
   } else {
     SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"wrong interference");
   }
-  ierr = EntPolynomialBaseCtx::queryInterface(uuid,iface); CHKERRQ(ierr);
+  ierr = EntPolynomialBaseCtx::query_interface(uuid,iface); CHKERRQ(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -71,25 +71,25 @@ FlatPrismPolynomialBaseCtx::FlatPrismPolynomialBaseCtx(
 EntPolynomialBaseCtx(data,space,base,copy_node_base),
 mOab(moab),
 fePtr(fe_ptr) {
-  
+
   ierr = setBase(); CHKERRABORT(PETSC_COMM_WORLD,ierr);
 }
 FlatPrismPolynomialBaseCtx::~FlatPrismPolynomialBaseCtx() {
 }
 
-PetscErrorCode FlatPrismPolynomialBase::queryInterface(
+PetscErrorCode FlatPrismPolynomialBase::query_interface(
   const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface
-) {
-  
+) const {
+
   MoFEMFunctionBeginHot;
   *iface = NULL;
   if(uuid == IDD_FLATPRISM_BASE_FUNCTION) {
-    *iface = static_cast<FlatPrismPolynomialBase*>(this);
+    *iface = const_cast<FlatPrismPolynomialBase*>(this);
     MoFEMFunctionReturnHot(0);
   } else {
     SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"wrong interference");
   }
-  ierr = BaseFunction::queryInterface(uuid,iface); CHKERRQ(ierr);
+  ierr = BaseFunction::query_interface(uuid,iface); CHKERRQ(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -100,11 +100,11 @@ PetscErrorCode FlatPrismPolynomialBase::getValue(
   MatrixDouble &pts,
   boost::shared_ptr<BaseFunctionCtx> ctx_ptr
 ) {
-  
+
   MoFEMFunctionBeginHot;
 
   MoFEM::UnknownInterface *iface;
-  ierr = ctx_ptr->queryInterface(IDD_FLATPRISM_BASE_FUNCTION,&iface); CHKERRQ(ierr);
+  ierr = ctx_ptr->query_interface(IDD_FLATPRISM_BASE_FUNCTION,&iface); CHKERRQ(ierr);
   cTx = reinterpret_cast<FlatPrismPolynomialBaseCtx*>(iface);
   if(!cTx->fePtr) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
@@ -154,7 +154,7 @@ PetscErrorCode FlatPrismPolynomialBase::getValue(
   ierr = ShapeDiffMBTRI(&*diffN.data().begin()); CHKERRQ(ierr);
 
   // This is needed to have proper order of nodes on faces
-  
+
   rval = cTx->mOab.get_connectivity(cTx->fePtr->getEnt(),connPrism,numNodes,true); CHKERRQ_MOAB(rval);
   SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(cTx->fePtr->getSideNumberTable());
   SideNumber_multiIndex::nth_index<1>::type::iterator siit3 = side_table.get<1>().find(boost::make_tuple(MBTRI,3));
@@ -210,7 +210,7 @@ PetscErrorCode FlatPrismPolynomialBase::getValue(
 }
 
 PetscErrorCode FlatPrismPolynomialBase::getValueH1(MatrixDouble &pts) {
-  
+
   MoFEMFunctionBeginHot;
 
   DataForcesAndSourcesCore& data = cTx->dAta;

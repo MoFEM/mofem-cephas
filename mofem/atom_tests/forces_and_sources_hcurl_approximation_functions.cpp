@@ -60,7 +60,7 @@ int main(int argc, char *argv[]) {
   //set entitities bit level
   BitRefLevel bit_level0;
   bit_level0.set(0);
-  ierr = m_field.query_interface<BitRefManager>()->setBitRefLevelByDim(0,3,bit_level0); CHKERRQ(ierr);
+  ierr = m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(0,3,bit_level0); CHKERRQ(ierr);
 
   //Fields
   ierr = m_field.add_field("HCURL",HCURL,AINSWORTH_LEGENDRE_BASE,1); CHKERRQ(ierr);
@@ -104,7 +104,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field.add_ents_to_finite_element_by_type(root_set,MBTET,"HCURL_TET_FE"); CHKERRQ(ierr);
 
   Range tets;
-  ierr = m_field.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
+  ierr = m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
     BitRefLevel().set(0),BitRefLevel().set(),MBTET,tets
   ); CHKERRQ(ierr);
   Skinner skin(&moab);
@@ -131,7 +131,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field.build_adjacencies(bit_level0); CHKERRQ(ierr);
   //build problem
   ProblemsManager *prb_mng_ptr;
-  ierr = m_field.query_interface(prb_mng_ptr); CHKERRQ(ierr);
+  ierr = m_field.getInterface(prb_mng_ptr); CHKERRQ(ierr);
   ierr = prb_mng_ptr->buildProblem("TEST_PROBLEM",true); CHKERRQ(ierr);
 
   //mesh partitioning

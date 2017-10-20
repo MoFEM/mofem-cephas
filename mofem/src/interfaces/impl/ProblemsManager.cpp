@@ -58,15 +58,11 @@ namespace MoFEM {
     const int *pTr;
   };
 
-  PetscErrorCode ProblemsManager::queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface) {
+  PetscErrorCode ProblemsManager::query_interface(const MOFEMuuid& uuid, UnknownInterface** iface) const {
     MoFEMFunctionBeginHot;
     *iface = NULL;
     if(uuid == IDD_MOFEMProblemsManager) {
-      *iface = dynamic_cast<ProblemsManager*>(this);
-      MoFEMFunctionReturnHot(0);
-    }
-    if(uuid == IDD_MOFEMUnknown) {
-      *iface = dynamic_cast<UnknownInterface*>(this);
+      *iface = const_cast<ProblemsManager*>(this);
       MoFEMFunctionReturnHot(0);
     }
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown interface");

@@ -25,7 +25,7 @@ static const MOFEMuuid IDD_MOFEMPrismsFromSurface = MOFEMuuid(BitIntefaceId(PRIS
   */
 struct PrismsFromSurfaceInterface: public UnknownInterface {
 
-  PetscErrorCode queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface);
+  PetscErrorCode query_interface(const MOFEMuuid& uuid, UnknownInterface** iface) const;
 
   MoFEM::Core& cOre;
   PrismsFromSurfaceInterface(const MoFEM::Core& core):

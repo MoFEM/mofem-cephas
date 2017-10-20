@@ -578,7 +578,7 @@ PetscErrorCode ThermalElement::OpConvectionLhs::doWork(
 PetscErrorCode ThermalElement::UpdateAndControl::preProcess() {
   MoFEMFunctionBeginHot;
   
-  ierr = mField.query_interface<VecManager>()->setOtherLocalGhostVector(
+  ierr = mField.getInterface<VecManager>()->setOtherLocalGhostVector(
     problemPtr,tempName,rateName,ROW,ts_u_t,INSERT_VALUES,SCATTER_REVERSE
   ); CHKERRQ(ierr);
   MoFEMFunctionReturnHot(0);
@@ -593,14 +593,14 @@ PetscErrorCode ThermalElement::TimeSeriesMonitor::postProcess() {
   MoFEMFunctionBeginHot;
   
 
-  ierr = mField.query_interface<VecManager>()->setGlobalGhostVector(
+  ierr = mField.getInterface<VecManager>()->setGlobalGhostVector(
     problemPtr,ROW,ts_u,INSERT_VALUES,SCATTER_REVERSE
   ); CHKERRQ(ierr);
 
   BitRefLevel proble_bit_level = problemPtr->getBitRefLevel();
 
   SeriesRecorder *recorder_ptr = NULL;
-  ierr = mField.query_interface(recorder_ptr); CHKERRQ(ierr);
+  ierr = mField.getInterface(recorder_ptr); CHKERRQ(ierr);
   ierr = recorder_ptr->record_begin(seriesName); CHKERRQ(ierr);
   ierr = recorder_ptr->record_field(seriesName,tempName,proble_bit_level,mask); CHKERRQ(ierr);
   ierr = recorder_ptr->record_end(seriesName,ts_t); CHKERRQ(ierr);

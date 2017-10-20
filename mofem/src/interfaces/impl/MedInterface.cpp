@@ -47,15 +47,11 @@ extern "C" {
 
 namespace MoFEM {
 
-  PetscErrorCode MedInterface::queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface) {
+  PetscErrorCode MedInterface::query_interface(const MOFEMuuid& uuid, UnknownInterface** iface) const {
     MoFEMFunctionBeginHot;
     *iface = NULL;
     if(uuid == IDD_MOFEMMedInterface) {
-      *iface = dynamic_cast<MedInterface*>(this);
-      MoFEMFunctionReturnHot(0);
-    }
-    if(uuid == IDD_MOFEMUnknown) {
-      *iface = dynamic_cast<UnknownInterface*>(this);
+      *iface = const_cast<MedInterface*>(this);
       MoFEMFunctionReturnHot(0);
     }
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown interface");
@@ -293,7 +289,7 @@ namespace MoFEM {
     EntityHandle mesh_meshset;
     {
       MeshsetsManager *meshsets_manager_ptr;
-      ierr = m_field.query_interface(meshsets_manager_ptr); CHKERRQ(ierr);
+      ierr = m_field.getInterface(meshsets_manager_ptr); CHKERRQ(ierr);
       int max_id = 0;
       for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,cit)) {
         max_id = (max_id < cit->getMeshsetId()) ? cit->getMeshsetId() : max_id;
@@ -574,7 +570,7 @@ namespace MoFEM {
     MoFEM::Interface &m_field = cOre;
     MoFEMFunctionBeginHot;
     MeshsetsManager *meshsets_manager_ptr;
-    ierr = m_field.query_interface(meshsets_manager_ptr); CHKERRQ(ierr);
+    ierr = m_field.getInterface(meshsets_manager_ptr); CHKERRQ(ierr);
 
     int max_id = 0;
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,cit)) {
@@ -669,7 +665,7 @@ namespace MoFEM {
 
     // Get meshset
     MeshsetsManager *meshsets_manager_ptr;
-    ierr = m_field.query_interface(meshsets_manager_ptr); CHKERRQ(ierr);
+    ierr = m_field.getInterface(meshsets_manager_ptr); CHKERRQ(ierr);
     const CubitMeshSets *cubit_meshset_ptr;
     ierr = meshsets_manager_ptr->getCubitMeshsetPtr(meshName,&cubit_meshset_ptr); CHKERRQ(ierr);
     EntityHandle meshset = cubit_meshset_ptr->getMeshset();

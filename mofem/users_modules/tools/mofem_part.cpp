@@ -82,7 +82,7 @@ int main(int argc, char *argv[]) {
   }
 
   MeshsetsManager *meshsets_interface_ptr;
-  ierr = m_field.query_interface(meshsets_interface_ptr); CHKERRQ(ierr);
+  ierr = m_field.getInterface(meshsets_interface_ptr); CHKERRQ(ierr);
   ierr = meshsets_interface_ptr->setMeshsetFromFile(); CHKERRQ(ierr);
 
   for(
@@ -102,7 +102,7 @@ int main(int argc, char *argv[]) {
       rval = moab.get_adjacencies(ents3d,1,true,edges,moab::Interface::UNION); CHKERRQ_MOAB(rval);
     }
     ProblemsManager *prb_mng_ptr;
-    ierr = m_field.query_interface(prb_mng_ptr); CHKERRQ(ierr);
+    ierr = m_field.getInterface(prb_mng_ptr); CHKERRQ(ierr);
     ierr = prb_mng_ptr->partitionMesh(ents3d,3,2,n_partas); CHKERRQ(ierr);
   }
 

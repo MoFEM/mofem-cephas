@@ -95,15 +95,15 @@ int main(int argc, char *argv[]) {
     MoFEM::Interface& m_field = core;
 
     //ref meshset ref level 0
-    ierr = m_field.query_interface<BitRefManager>()->setBitRefLevelByDim(0,3,0); CHKERRQ(ierr);
+    ierr = m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(0,3,0); CHKERRQ(ierr);
 
     // stl::bitset see for more details
     BitRefLevel bit_level0;
     bit_level0.set(0);
     EntityHandle meshset_level0;
     rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERRQ_MOAB(rval);
-    ierr = m_field.query_interface<BitRefManager>()->setBitRefLevelByDim(0,3,bit_level0); CHKERRQ(ierr);
-    ierr = m_field.query_interface<BitRefManager>()->getEntitiesByRefLevel(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRQ(ierr);
+    ierr = m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(0,3,bit_level0); CHKERRQ(ierr);
+    ierr = m_field.getInterface<BitRefManager>()->getEntitiesByRefLevel(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRQ(ierr);
 
     /***/
     //Define problem
@@ -128,11 +128,11 @@ int main(int argc, char *argv[]) {
     //build field
     ierr = m_field.build_fields(); CHKERRQ(ierr);
 
-    ierr = m_field.query_interface<FieldBlas>()->setField(+1,MBVERTEX,"FIELD_A"); CHKERRQ(ierr);
-    ierr = m_field.query_interface<FieldBlas>()->setField(-2,MBVERTEX,"FIELD_B"); CHKERRQ(ierr);
+    ierr = m_field.getInterface<FieldBlas>()->setField(+1,MBVERTEX,"FIELD_A"); CHKERRQ(ierr);
+    ierr = m_field.getInterface<FieldBlas>()->setField(-2,MBVERTEX,"FIELD_B"); CHKERRQ(ierr);
 
-    ierr = m_field.query_interface<FieldBlas>()->fieldAxpy(+0.5,"FIELD_B","FIELD_A"); CHKERRQ(ierr);
-    ierr = m_field.query_interface<FieldBlas>()->fieldScale(-0.5,"FIELD_B"); CHKERRQ(ierr);
+    ierr = m_field.getInterface<FieldBlas>()->fieldAxpy(+0.5,"FIELD_B","FIELD_A"); CHKERRQ(ierr);
+    ierr = m_field.getInterface<FieldBlas>()->fieldScale(-0.5,"FIELD_B"); CHKERRQ(ierr);
 
     //Open mesh_file_name.txt for writing
     std::ofstream myfile;

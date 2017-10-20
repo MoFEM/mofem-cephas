@@ -18,15 +18,11 @@
 
 namespace MoFEM {
 
-  PetscErrorCode VecManager::queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface) {
+  PetscErrorCode VecManager::query_interface(const MOFEMuuid& uuid, UnknownInterface** iface) const {
     MoFEMFunctionBeginHot;
     *iface = NULL;
     if(uuid == IDD_MOFEMVEC) {
-      *iface = dynamic_cast<VecManager*>(this);
-      MoFEMFunctionReturnHot(0);
-    }
-    if(uuid == IDD_MOFEMUnknown) {
-      *iface = dynamic_cast<UnknownInterface*>(this);
+      *iface = const_cast<VecManager*>(this);
       MoFEMFunctionReturnHot(0);
     }
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown interface");
@@ -108,7 +104,7 @@ namespace MoFEM {
     const MoFEM::Interface &m_field = cOre;
     MoFEMFunctionBeginHot;
     std::vector<int> idx(0),idy(0);
-    ierr = m_field.query_interface<ISManager>()->isCreateFromProblemFieldToOtherProblemField(
+    ierr = m_field.getInterface<ISManager>()->isCreateFromProblemFieldToOtherProblemField(
       x_problem,x_field_name,x_rc,y_problem,y_field_name,y_rc,idx,idy
     ); CHKERRQ(ierr);
     IS ix,iy;
@@ -128,7 +124,7 @@ namespace MoFEM {
     const MoFEM::Interface &m_field = cOre;
     MoFEMFunctionBeginHot;
     std::vector<int> idx(0),idy(0);
-    ierr = m_field.query_interface<ISManager>()->isCreateFromProblemToOtherProblem(
+    ierr = m_field.getInterface<ISManager>()->isCreateFromProblemToOtherProblem(
       x_problem,x_rc,y_problem,y_rc,idx,idy
     ); CHKERRQ(ierr);
     IS ix,iy;

@@ -13,15 +13,11 @@
 
 namespace MoFEM {
 
-  PetscErrorCode BitLevelCoupler::queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface) {
+  PetscErrorCode BitLevelCoupler::query_interface(const MOFEMuuid& uuid, UnknownInterface** iface) const {
     MoFEMFunctionBeginHot;
     *iface = NULL;
     if(uuid == IDD_MOFEMBitLevelCoupler) {
-      *iface = dynamic_cast<BitLevelCoupler*>(this);
-      MoFEMFunctionReturnHot(0);
-    }
-    if(uuid == IDD_MOFEMUnknown) {
-      *iface = dynamic_cast<UnknownInterface*>(this);
+      *iface = const_cast<BitLevelCoupler*>(this);
       MoFEMFunctionReturnHot(0);
     }
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown interface");
@@ -33,7 +29,7 @@ namespace MoFEM {
     MoFEM::Interface& m_field = cOre;
     treePtr.reset(new AdaptiveKDTree(&m_field.get_moab()));
     Range tets;
-    ierr = m_field.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
+    ierr = m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
       parent_level,BitRefLevel().set(),MBTET,tets
     ); CHKERRQ(ierr);
     rval = treePtr->build_tree(tets); CHKERRQ_MOAB(rval);
@@ -544,7 +540,7 @@ namespace MoFEM {
       //moab::Interface& moab = m_field.get_moab();
       MoFEMFunctionBeginHot;
       Range ents;
-      ierr = m_field.query_interface<BitRefManager>()->getEntitiesByRefLevel(bit,mask,ents); CHKERRQ(ierr);
+      ierr = m_field.getInterface<BitRefManager>()->getEntitiesByRefLevel(bit,mask,ents); CHKERRQ(ierr);
       std::vector<EntityHandle> parents;
       std::vector<EntityHandle> children;
       for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {

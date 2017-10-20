@@ -52,15 +52,11 @@
 
 namespace MoFEM {
 
-PetscErrorCode NodeMergerInterface::queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface) {
+PetscErrorCode NodeMergerInterface::query_interface(const MOFEMuuid& uuid, UnknownInterface** iface) const {
   MoFEMFunctionBeginHot;
   *iface = NULL;
   if(uuid == IDD_MOFEMNodeMerger) {
-    *iface = dynamic_cast<NodeMergerInterface*>(this);
-    MoFEMFunctionReturnHot(0);
-  }
-  if(uuid == IDD_MOFEMUnknown) {
-    *iface = dynamic_cast<UnknownInterface*>(this);
+    *iface = const_cast<NodeMergerInterface*>(this);
     MoFEMFunctionReturnHot(0);
   }
   SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown interface");
@@ -525,7 +521,7 @@ PetscErrorCode NodeMergerInterface::mergeNodes(
   ierr = mergeNodes(
     father,mother,out_tets,tets_ptr,only_if_improve_quality,move,0,th
   ); CHKERRQ(ierr);
-  ierr = m_field.query_interface<BitRefManager>()->setBitRefLevel(out_tets,bit); CHKERRQ(ierr);
+  ierr = m_field.getInterface<BitRefManager>()->setBitRefLevel(out_tets,bit); CHKERRQ(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -540,7 +536,7 @@ PetscErrorCode NodeMergerInterface::mergeNodes(
   MoFEM::Interface& m_field = cOre;
   MoFEMFunctionBeginHot;
   Range level_tets;
-  ierr = m_field.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
+  ierr = m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
     tets_from_bit_ref_level,BitRefLevel().set(),MBTET,level_tets
   ); CHKERRQ(ierr);
   ierr = mergeNodes(father,mother,bit,&level_tets,only_if_improve_quality,move,th); CHKERRQ(ierr);

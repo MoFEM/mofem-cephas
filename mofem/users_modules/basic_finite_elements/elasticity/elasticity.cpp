@@ -162,7 +162,7 @@ int main(int argc, char *argv[]) {
 
   // Print boundary conditions and material parameters
   MeshsetsManager *mmanager_ptr;
-  ierr = m_field.query_interface(mmanager_ptr); CHKERRQ(ierr);
+  ierr = m_field.getInterface(mmanager_ptr); CHKERRQ(ierr);
   ierr = mmanager_ptr->printDisplacementSet(); CHKERRQ(ierr);
   ierr = mmanager_ptr->printForceSet(); CHKERRQ(ierr);
   ierr = mmanager_ptr->printMaterialsSet(); CHKERRQ(ierr);
@@ -569,7 +569,7 @@ int main(int argc, char *argv[]) {
     ierr = thermal_stress_elem.setThermalStressRhsOperators("DISPLACEMENT","TEMP",F_thermal); CHKERRQ(ierr);
 
     SeriesRecorder *recorder_ptr;
-    ierr = m_field.query_interface(recorder_ptr); CHKERRQ(ierr);
+    ierr = m_field.getInterface(recorder_ptr); CHKERRQ(ierr);
     // Read time series and do thermo-elastic analysis, this is when time dependent
     // temperature problem was run before on the mesh. It means that before non-stationary
     // problem was solved for temperature and filed "TEMP" is stored for subsequent time

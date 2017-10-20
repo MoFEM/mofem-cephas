@@ -36,7 +36,7 @@ struct PCMGSubMatrixCtx {
  */
 struct DMMGViaApproxOrdersCtx: public MoFEM::DMCtx {
 
-  PetscErrorCode queryInterface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface);
+  PetscErrorCode query_interface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface) const;
 
   DMMGViaApproxOrdersCtx();
   virtual ~DMMGViaApproxOrdersCtx();

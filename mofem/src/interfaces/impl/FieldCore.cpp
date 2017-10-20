@@ -176,7 +176,7 @@ PetscErrorCode Core::add_field(
     std::pair<Field_multiIndex::iterator,bool> p;
     try {
       CoordSystemsManager *cs_manger_ptr;
-      ierr = query_interface(cs_manger_ptr); CHKERRQ(ierr);
+      ierr = getInterface(cs_manger_ptr); CHKERRQ(ierr);
       boost::shared_ptr<CoordSys > undefined_cs_ptr;
       ierr = cs_manger_ptr->getCoordSysPtr("UNDEFINED",undefined_cs_ptr); CHKERRQ(ierr);
       int sys_name_size[1];

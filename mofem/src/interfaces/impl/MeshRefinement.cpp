@@ -19,15 +19,11 @@
 
 namespace MoFEM {
 
-PetscErrorCode MeshRefinement::queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface) {
+PetscErrorCode MeshRefinement::query_interface(const MOFEMuuid& uuid, UnknownInterface** iface) const {
   MoFEMFunctionBeginHot;
   *iface = NULL;
   if(uuid == IDD_MOFEMMeshRefine) {
-    *iface = dynamic_cast<MeshRefinement*>(this);
-    MoFEMFunctionReturnHot(0);
-  }
-  if(uuid == IDD_MOFEMUnknown) {
-    *iface = dynamic_cast<UnknownInterface*>(this);
+    *iface = const_cast<MeshRefinement*>(this);
     MoFEMFunctionReturnHot(0);
   }
   SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown interface");
@@ -1011,9 +1007,9 @@ PetscErrorCode MeshRefinement::refine_MESHSET(
   if(miit==refined_ents_ptr->end()) {
     SETERRQ(m_field.get_comm(),MOFEM_DATA_INCONSISTENCY,"this meshset is not in ref database");
   }
-  ierr = m_field.query_interface<BitRefManager>()->updateMeshsetByEntitiesChildren(meshset,bit,meshset,MBEDGE,recursive,verb); CHKERRQ(ierr);
-  ierr = m_field.query_interface<BitRefManager>()->updateMeshsetByEntitiesChildren(meshset,bit,meshset,MBTRI,recursive,verb); CHKERRQ(ierr);
-  ierr = m_field.query_interface<BitRefManager>()->updateMeshsetByEntitiesChildren(meshset,bit,meshset,MBTET,recursive,verb); CHKERRQ(ierr);
+  ierr = m_field.getInterface<BitRefManager>()->updateMeshsetByEntitiesChildren(meshset,bit,meshset,MBEDGE,recursive,verb); CHKERRQ(ierr);
+  ierr = m_field.getInterface<BitRefManager>()->updateMeshsetByEntitiesChildren(meshset,bit,meshset,MBTRI,recursive,verb); CHKERRQ(ierr);
+  ierr = m_field.getInterface<BitRefManager>()->updateMeshsetByEntitiesChildren(meshset,bit,meshset,MBTET,recursive,verb); CHKERRQ(ierr);
   const_cast<RefEntity_multiIndex*>(refined_ents_ptr)->modify(miit,RefEntity_change_add_bit(bit));
   MoFEMFunctionReturnHot(0);
 }

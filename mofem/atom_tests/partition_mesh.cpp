@@ -72,7 +72,7 @@ int main(int argc, char *argv[]) {
     ); CHKERRQ(ierr);
 
     ProblemsManager *prb_mng_ptr;
-    ierr = m_field.query_interface(prb_mng_ptr); CHKERRQ(ierr);
+    ierr = m_field.getInterface(prb_mng_ptr); CHKERRQ(ierr);
     ierr = prb_mng_ptr->partitionMesh(tets,3,2,2,&th_vertex_weight,NULL,NULL); CHKERRQ(ierr);
 
     EntityHandle meshset;

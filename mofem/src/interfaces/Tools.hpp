@@ -29,7 +29,7 @@ namespace MoFEM {
    */
   struct Tools: public UnknownInterface {
 
-    PetscErrorCode queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface);
+    PetscErrorCode query_interface(const MOFEMuuid& uuid, UnknownInterface** iface) const;
 
     MoFEM::Core& cOre;
     Tools(const MoFEM::Core& core):

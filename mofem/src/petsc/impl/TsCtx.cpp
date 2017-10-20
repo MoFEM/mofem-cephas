@@ -62,7 +62,7 @@ PetscErrorCode f_TSSetIFunction(TS ts,PetscReal t,Vec u,Vec u_t,Vec F,void *ctx)
   ierr = VecGhostUpdateEnd(u,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(u_t,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(u_t,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = ts_ctx->mField.query_interface<VecManager>()->setLocalGhostVector(
+  ierr = ts_ctx->mField.getInterface<VecManager>()->setLocalGhostVector(
     ts_ctx->problemName,COL,u,INSERT_VALUES,SCATTER_REVERSE
   ); CHKERRQ(ierr);
   ierr = VecZeroEntries(F); CHKERRQ(ierr);
@@ -125,7 +125,7 @@ PetscErrorCode f_TSSetIJacobian(TS ts,PetscReal t,Vec u,Vec u_t,PetscReal a,Mat 
   ierr = VecGhostUpdateEnd(u,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(u_t,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(u_t,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = ts_ctx->mField.query_interface<VecManager>()->setLocalGhostVector(
+  ierr = ts_ctx->mField.getInterface<VecManager>()->setLocalGhostVector(
     ts_ctx->problemName,COL,u,INSERT_VALUES,SCATTER_REVERSE
   ); CHKERRQ(ierr);
   if(ts_ctx->zeroMatrix) {
@@ -191,7 +191,7 @@ PetscErrorCode f_TSMonitorSet(TS ts,PetscInt step,PetscReal t,Vec u,void *ctx) {
   PetscLogEventBegin(ts_ctx->MOFEM_EVENT_TsCtxRHSFunction,0,0,0,0);
   ierr = VecGhostUpdateBegin(u,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(u,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = ts_ctx->mField.query_interface<VecManager>()->setLocalGhostVector(
+  ierr = ts_ctx->mField.getInterface<VecManager>()->setLocalGhostVector(
     ts_ctx->problemName,COL,u,INSERT_VALUES,SCATTER_REVERSE
   ); CHKERRQ(ierr);
   //preproces

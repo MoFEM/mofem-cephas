@@ -98,7 +98,7 @@ namespace MoFEM {
    */
   struct MeshsetsManager: public UnknownInterface {
 
-    PetscErrorCode queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface);
+    PetscErrorCode query_interface(const MOFEMuuid& uuid, UnknownInterface** iface) const;
 
     MoFEM::Core& cOre;
     MeshsetsManager(const MoFEM::Core& core);
