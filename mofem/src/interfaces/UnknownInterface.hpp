@@ -71,6 +71,23 @@ namespace MoFEM {
   **/
   struct UnknownInterface {
 
+    template <class IFACE>
+    static PetscErrorCode registerInterface(
+      const MOFEMuuid& uuid,bool error_if_registration_failed = true
+    ) {
+      MoFEMFunctionBeginHot;
+      std::pair<iFaceTypeMap_multiIndex::iterator,bool> p;
+      p = iFaceTypeMap.insert(HashMap(uuid,typeid(IFACE).name()));
+      if(error_if_registration_failed&&(!p.second)) {
+        SETERRQ1(
+          PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,
+          "Registration of interface typeid(IFACE).name() = %s failed",
+          typeid(IFACE).name()
+        );
+      }
+      MoFEMFunctionReturnHot(0);
+    }
+
     virtual PetscErrorCode queryInterface(
       const MOFEMuuid& uuid,UnknownInterface** iface
     ) = 0;

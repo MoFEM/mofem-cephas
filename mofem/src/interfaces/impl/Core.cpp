@@ -303,13 +303,12 @@ moab(moab),
 cOmm(0),
 verbose(verbose) {
 
-  // Add interfaces for this implementation
-  iFaceTypeMap.insert(HashMap(IDD_MOFEMUnknown,typeid(UnknownInterface).name()));
-  iFaceTypeMap.insert(HashMap(IDD_MOFEMCoreInterface,typeid(CoreInterface).name()));
-  iFaceTypeMap.insert(HashMap(IDD_MOFEMDeprecatedCoreInterface,typeid(DeprecatedCoreInterface).name()));
-
   if(!isGloballyInitialised) {
     PetscPushErrorHandler(mofem_error_handler,PETSC_NULL);
+    // Add interfaces for this implementation
+    ierr = UnknownInterface::registerInterface<UnknownInterface>(IDD_MOFEMUnknown,false); CHKERRABORT(PETSC_COMM_SELF,ierr);
+    ierr = UnknownInterface::registerInterface<CoreInterface>(IDD_MOFEMCoreInterface); CHKERRABORT(PETSC_COMM_SELF,ierr);
+    ierr = UnknownInterface::registerInterface<DeprecatedCoreInterface>(IDD_MOFEMDeprecatedCoreInterface); CHKERRABORT(PETSC_COMM_SELF,ierr);
     isGloballyInitialised = true;
   }
   // Duplicate petsc communicator
