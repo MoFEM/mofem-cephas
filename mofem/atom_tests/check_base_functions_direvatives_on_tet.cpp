@@ -119,7 +119,7 @@ int main(int argc, char *argv[]) {
   //set entitities bit level
   BitRefLevel bit_level0;
   bit_level0.set(0);
-  ierr = m_field.query_interface<BitRefManager>()->setBitRefLevelByDim(0,3,bit_level0); CHKERRQ(ierr);
+  ierr = m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(0,3,bit_level0); CHKERRQ(ierr);
 
   //Fields
   ierr = m_field.add_field("FIELD",space,base,1); CHKERRQ(ierr);
@@ -178,7 +178,7 @@ int main(int argc, char *argv[]) {
 
   /****/
   ProblemsManager *prb_mng_ptr;
-  ierr = m_field.query_interface(prb_mng_ptr); CHKERRQ(ierr);
+  ierr = m_field.getInterface(prb_mng_ptr); CHKERRQ(ierr);
   //build problem
   ierr = prb_mng_ptr->buildProblem("TEST_PROBLEM",true); CHKERRQ(ierr);
   //mesh partitioning

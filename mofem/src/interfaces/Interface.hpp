@@ -38,31 +38,12 @@ namespace MoFEM {
   */
   struct CoreInterface: public UnknownInterface {
 
-    /** \name Interface */
+    /** \name Interfaces */
 
     /**@{*/
 
-    virtual PetscErrorCode query_interface_type(const std::type_info& type,void*& ptr) const = 0;
-
-    template <class IFace>
-    PetscErrorCode query_interface(IFace*& ptr) const {
-      MoFEMFunctionBeginHot;
-      void* tmp_ptr;
-      ierr = query_interface_type(typeid(IFace),tmp_ptr); CHKERRQ(ierr);
-      ptr = reinterpret_cast<IFace*>(tmp_ptr);
-      MoFEMFunctionReturnHot(0);
-    }
-
-    template <class IFace>
-    IFace* query_interface() const {
-      void* tmp_ptr;
-      ierr = query_interface_type(typeid(IFace),tmp_ptr); CHKERRABORT(PETSC_COMM_SELF,ierr);
-      return reinterpret_cast<IFace*>(tmp_ptr);
-    }
-
     /**
     * get moab instance
-    * \copydoc MoFEM::Core::get_moab
     */
     virtual moab::Interface& get_moab() = 0;
 

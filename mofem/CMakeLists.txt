@@ -157,7 +157,6 @@ include_directories(
   ${PETSC_DIR}/${PETSC_ARCH}/include
   ${PETSCVAR_DIR}/include
   ${BOOST_INCLUDE_DIR}
-  ${CBLAS_INCLUDE_DIR}
 )
 
 if(TAO_LIBRARY)

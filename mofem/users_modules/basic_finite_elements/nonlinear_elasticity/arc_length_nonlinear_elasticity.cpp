@@ -259,7 +259,7 @@ int main(int argc, char *argv[]) {
 
 
       ProblemsManager *prb_mng_ptr;
-      ierr = m_field.query_interface(prb_mng_ptr); CHKERRQ(ierr);
+      ierr = m_field.getInterface(prb_mng_ptr); CHKERRQ(ierr);
       //build database
       if(is_partitioned) {
         SETERRQ(PETSC_COMM_SELF,1,"Not implemented, problem with arc-length force multiplayer");
@@ -272,7 +272,7 @@ int main(int argc, char *argv[]) {
 
       //print bcs
       MeshsetsManager *mmanager_ptr;
-      ierr = m_field.query_interface(mmanager_ptr); CHKERRQ(ierr);
+      ierr = m_field.getInterface(mmanager_ptr); CHKERRQ(ierr);
       ierr = mmanager_ptr->printDisplacementSet(); CHKERRQ(ierr);
       ierr = mmanager_ptr->printForceSet(); CHKERRQ(ierr);
       //print block sets with materials
@@ -280,7 +280,7 @@ int main(int argc, char *argv[]) {
 
       //create matrices
       Vec F;
-      ierr = m_field.query_interface<VecManager>()->vecCreateGhost("ELASTIC_MECHANICS",COL,&F); CHKERRQ(ierr);
+      ierr = m_field.getInterface<VecManager>()->vecCreateGhost("ELASTIC_MECHANICS",COL,&F); CHKERRQ(ierr);
       Vec D;
       ierr = VecDuplicate(F,&D); CHKERRQ(ierr);
       Mat Aij;
@@ -547,7 +547,7 @@ int main(int argc, char *argv[]) {
         loops_to_do_Mat.push_back(SnesCtx::PairNameFEMethodPtr("ARC_LENGTH",&arc_method));
         snes_ctx.get_postProcess_to_do_Mat().push_back(&my_dirichlet_bc);
 
-        ierr = m_field.query_interface<VecManager>()->setLocalGhostVector("ELASTIC_MECHANICS",COL,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+        ierr = m_field.getInterface<VecManager>()->setLocalGhostVector("ELASTIC_MECHANICS",COL,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
         ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
         ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
@@ -583,7 +583,7 @@ int main(int argc, char *argv[]) {
         double step_size0 = step_size;
 
         if(step>1) {
-          ierr = m_field.query_interface<VecManager>()->setOtherGlobalGhostVector(
+          ierr = m_field.getInterface<VecManager>()->setOtherGlobalGhostVector(
             "ELASTIC_MECHANICS","SPATIAL_POSITION","X0_SPATIAL_POSITION",
             COL,arc_ctx->x0,INSERT_VALUES,SCATTER_FORWARD
           ); CHKERRQ(ierr);
@@ -704,8 +704,8 @@ int main(int argc, char *argv[]) {
             }
 
             //Save data on mesh
-            ierr = m_field.query_interface<VecManager>()->setGlobalGhostVector("ELASTIC_MECHANICS",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-            ierr = m_field.query_interface<VecManager>()->setOtherGlobalGhostVector(
+            ierr = m_field.getInterface<VecManager>()->setGlobalGhostVector("ELASTIC_MECHANICS",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+            ierr = m_field.getInterface<VecManager>()->setOtherGlobalGhostVector(
               "ELASTIC_MECHANICS","SPATIAL_POSITION","X0_SPATIAL_POSITION",COL,arc_ctx->x0,INSERT_VALUES,SCATTER_REVERSE
             ); CHKERRQ(ierr);
             converged_state = true;

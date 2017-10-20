@@ -53,7 +53,7 @@ MoFEM::Interface& m_field = mofem_core;
 Next, we get access to database by MoFEM::Simple interface
 \code
 Simple *simple_interface;
-ierr = m_field.query_interface(simple_interface); CHKERRQ(ierr);
+ierr = m_field.getInterface(simple_interface); CHKERRQ(ierr);
 // get options from command line
 ierr = simple_interface->getOptions(); CHKERRQ(ierr);
 // load mesh file

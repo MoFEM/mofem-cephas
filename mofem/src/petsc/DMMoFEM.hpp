@@ -53,7 +53,7 @@ PetscErrorCode DMMoFEMCreateSubDM(DM subdm,DM dm,const char problem_name[]);
  * @return             Error code
  * \ingroup dm
  */
-PetscErrorCode DMoFEMGetInterfacePtr(DM dm,const MoFEM::Interface **m_field_ptr);
+PetscErrorCode DMoFEMGetInterfacePtr(DM dm,MoFEM::Interface **m_field_ptr);
 
 /**
   * \brief Get pointer to problem data structurGe
@@ -712,7 +712,7 @@ namespace MoFEM {
    */
   struct DMCtx: public MoFEM::UnknownInterface {
 
-    PetscErrorCode queryInterface(const MOFEMuuid& uuid,UnknownInterface** iface);
+    PetscErrorCode query_interface(const MOFEMuuid& uuid,UnknownInterface** iface) const;
 
     Interface *mField_ptr; 		 ///< MoFEM interface
     PetscBool isProblemBuild;  ///< True if problem is build

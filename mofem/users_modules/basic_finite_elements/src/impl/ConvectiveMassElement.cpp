@@ -2010,9 +2010,9 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
           //FIXME: This global scattering because Kuu problem and Dynamic problem
           //not share partitions. Both problem should use the same partitioning to
           //resolve this problem.
-          ierr = mField.query_interface<VecManager>()->setGlobalGhostVector(problemPtr,COL,ts_u,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-          ierr = mField.query_interface<VecManager>()->setOtherGlobalGhostVector(problemPtr,velocityField,"DOT_"+velocityField,COL,ts_u_t,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-          ierr = mField.query_interface<VecManager>()->setOtherGlobalGhostVector(problemPtr,spatialPositionField,"DOT_"+spatialPositionField,COL,ts_u_t,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+          ierr = mField.getInterface<VecManager>()->setGlobalGhostVector(problemPtr,COL,ts_u,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+          ierr = mField.getInterface<VecManager>()->setOtherGlobalGhostVector(problemPtr,velocityField,"DOT_"+velocityField,COL,ts_u_t,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+          ierr = mField.getInterface<VecManager>()->setOtherGlobalGhostVector(problemPtr,spatialPositionField,"DOT_"+spatialPositionField,COL,ts_u_t,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
           break;
         }
         case CTX_TSSETIJACOBIAN: {
@@ -2111,7 +2111,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
 
     Range tets;
     if(bit.any()) {
-      ierr = mField.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(bit,BitRefLevel().set(),MBTET,tets); CHKERRQ(ierr);
+      ierr = mField.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(bit,BitRefLevel().set(),MBTET,tets); CHKERRQ(ierr);
     }
 
     std::map<int,BlockData>::iterator sit = setOfBlocks.begin();
@@ -2154,7 +2154,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
 
       Range tets;
       if(bit.any()) {
-        ierr = mField.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(bit,BitRefLevel().set(),MBTET,tets); CHKERRQ(ierr);
+        ierr = mField.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(bit,BitRefLevel().set(),MBTET,tets); CHKERRQ(ierr);
       }
 
       std::map<int,BlockData>::iterator sit = setOfBlocks.begin();
@@ -2200,7 +2200,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
 
     Range tets;
     if(bit.any()) {
-      ierr = mField.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(bit,BitRefLevel().set(),MBTET,tets); CHKERRQ(ierr);
+      ierr = mField.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(bit,BitRefLevel().set(),MBTET,tets); CHKERRQ(ierr);
     }
     if(intersected!=NULL) {
       if(tets.empty()) {

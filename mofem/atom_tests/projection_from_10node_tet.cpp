@@ -90,7 +90,7 @@ int main(int argc, char *argv[]) {
 
   BitRefLevel bit_level0;
   bit_level0.set(0);
-  ierr = m_field.query_interface<BitRefManager>()->setBitRefLevelByDim(0,3,bit_level0); CHKERRQ(ierr);
+  ierr = m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(0,3,bit_level0); CHKERRQ(ierr);
   Range tets;
   rval = moab.get_entities_by_type(0,MBTET,tets,true); CHKERRQ_MOAB(rval);
   Range edges;
@@ -119,7 +119,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field.build_adjacencies(bit_level0); CHKERRQ(ierr);
   //build problem
   ProblemsManager *prb_mng_ptr;
-  ierr = m_field.query_interface(prb_mng_ptr); CHKERRQ(ierr);
+  ierr = m_field.getInterface(prb_mng_ptr); CHKERRQ(ierr);
   ierr = prb_mng_ptr->buildProblem("TET_PROBLEM",false); CHKERRQ(ierr);
 
   //partition

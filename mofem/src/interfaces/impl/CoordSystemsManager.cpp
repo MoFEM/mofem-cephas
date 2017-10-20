@@ -73,16 +73,12 @@
 
 namespace MoFEM {
 
-  PetscErrorCode CoordSystemsManager::queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface) {
+  PetscErrorCode CoordSystemsManager::query_interface(const MOFEMuuid& uuid, UnknownInterface** iface) const {
 
     MoFEMFunctionBeginHot;
     *iface = NULL;
     if(uuid == IDD_MOFEMMeshsetsManager) {
-      *iface = dynamic_cast<CoordSystemsManager*>(this);
-      MoFEMFunctionReturnHot(0);
-    }
-    if(uuid == IDD_MOFEMUnknown) {
-      *iface = dynamic_cast<UnknownInterface*>(this);
+      *iface = const_cast<CoordSystemsManager*>(this);
       MoFEMFunctionReturnHot(0);
     }
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown interface");
@@ -96,7 +92,7 @@ namespace MoFEM {
   CoordSystemsManager::~CoordSystemsManager() {}
 
   PetscErrorCode CoordSystemsManager::getTags(int verb) {
-    
+
     MoFEM::Interface &m_field = cOre;
     moab::Interface &moab = m_field.get_moab();
     MoFEMFunctionBeginHot;
@@ -125,7 +121,7 @@ namespace MoFEM {
 
 
   PetscErrorCode CoordSystemsManager::initialiseDatabseFromMesh(int verb) {
-    
+
     MoFEM::Interface &m_field = cOre;
     moab::Interface &moab = m_field.get_moab();
     MoFEMFunctionBeginHot;
@@ -212,7 +208,7 @@ namespace MoFEM {
   }
 
   PetscErrorCode CoordSystemsManager::addCoordinateSystem(const int cs_dim[],const std::string name) {
-    
+
     MoFEM::Interface &m_field = cOre;
     moab::Interface &moab = m_field.get_moab();
     EntityHandle meshset;
@@ -235,7 +231,7 @@ namespace MoFEM {
   }
 
   PetscErrorCode CoordSystemsManager::setFieldCoordinateSystem(const std::string field_name,const std::string cs_name) {
-    
+
     MoFEM::Interface &m_field = cOre;
     const Field_multiIndex *fields_ptr;
     MoFEMFunctionBeginHot;

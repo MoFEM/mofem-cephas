@@ -66,15 +66,15 @@ int main(int argc, char *argv[]) {
   MoFEM::Interface& m_field = core;
 
   //ref meshset ref level 0
-  ierr = m_field.query_interface<BitRefManager>()->setBitRefLevelByDim(0,3,0); CHKERRQ(ierr);
+  ierr = m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(0,3,0); CHKERRQ(ierr);
 
   // stl::bitset see for more details
   BitRefLevel bit_level0;
   bit_level0.set(0);
   EntityHandle meshset_level0;
   rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERRQ_MOAB(rval);
-  ierr = m_field.query_interface<BitRefManager>()->setBitRefLevelByDim(0,3,bit_level0); CHKERRQ(ierr);
-  ierr = m_field.query_interface<BitRefManager>()->getEntitiesByRefLevel(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRQ(ierr);
+  ierr = m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(0,3,bit_level0); CHKERRQ(ierr);
+  ierr = m_field.getInterface<BitRefManager>()->getEntitiesByRefLevel(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRQ(ierr);
 
   /***/
   //Define problem
@@ -99,11 +99,11 @@ int main(int argc, char *argv[]) {
   //build field
   ierr = m_field.build_fields(); CHKERRQ(ierr);
 
-  ierr = m_field.query_interface<FieldBlas>()->setField(0,MBVERTEX,"FIELD_B"); CHKERRQ(ierr);
-  ierr = m_field.query_interface<FieldBlas>()->setField(1,MBVERTEX,"FIELD_A"); CHKERRQ(ierr);
+  ierr = m_field.getInterface<FieldBlas>()->setField(0,MBVERTEX,"FIELD_B"); CHKERRQ(ierr);
+  ierr = m_field.getInterface<FieldBlas>()->setField(1,MBVERTEX,"FIELD_A"); CHKERRQ(ierr);
 
   SeriesRecorder *recorder_ptr;
-  ierr = m_field.query_interface(recorder_ptr); CHKERRQ(ierr);
+  ierr = m_field.getInterface(recorder_ptr); CHKERRQ(ierr);
 
   ierr = recorder_ptr->add_series_recorder("TEST_SERIES1"); CHKERRQ(ierr);
   ierr = recorder_ptr->add_series_recorder("TEST_SERIES2"); CHKERRQ(ierr);
@@ -115,7 +115,7 @@ int main(int argc, char *argv[]) {
   ierr = recorder_ptr->record_field("TEST_SERIES1","FIELD_B",bit_level0,bit_level0); CHKERRQ(ierr);
   ierr = recorder_ptr->record_end("TEST_SERIES1",1); CHKERRQ(ierr);
 
-  ierr = m_field.query_interface<FieldBlas>()->fieldAxpy(1.,"FIELD_A","FIELD_B"); CHKERRQ(ierr);
+  ierr = m_field.getInterface<FieldBlas>()->fieldAxpy(1.,"FIELD_A","FIELD_B"); CHKERRQ(ierr);
   ierr = recorder_ptr->record_begin("TEST_SERIES1"); CHKERRQ(ierr);
   ierr = recorder_ptr->record_field("TEST_SERIES1","FIELD_B",bit_level0,bit_level0); CHKERRQ(ierr);
 
@@ -132,7 +132,7 @@ int main(int argc, char *argv[]) {
   ierr = recorder_ptr->finalize_series_recorder("TEST_SERIES1"); CHKERRQ(ierr);
   ierr = recorder_ptr->print_series_steps(); CHKERRQ(ierr);
 
-  ierr = m_field.query_interface<FieldBlas>()->fieldScale(2,"FIELD_A"); CHKERRQ(ierr);
+  ierr = m_field.getInterface<FieldBlas>()->fieldScale(2,"FIELD_A"); CHKERRQ(ierr);
 
   MoFEM::Core core2(moab);
   MoFEM::Interface& m_field2 = core2;
@@ -147,7 +147,7 @@ int main(int argc, char *argv[]) {
   TeeStream my_split(my_tee);
 
   SeriesRecorder *recorder2_ptr;
-  ierr = m_field2.query_interface(recorder2_ptr); CHKERRQ(ierr);
+  ierr = m_field2.getInterface(recorder2_ptr); CHKERRQ(ierr);
   ierr = recorder2_ptr->print_series_steps(); CHKERRQ(ierr);
 
   const DofEntity_multiIndex *dofs_ptr;

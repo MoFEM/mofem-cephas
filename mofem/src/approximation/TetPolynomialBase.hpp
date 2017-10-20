@@ -29,7 +29,7 @@ namespace MoFEM {
    */
   struct TetPolynomialBase: public BaseFunction {
 
-    PetscErrorCode queryInterface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface);
+    PetscErrorCode query_interface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface) const;
 
     TetPolynomialBase();
     ~TetPolynomialBase();

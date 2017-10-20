@@ -61,7 +61,7 @@ int main(int argc, char *argv[]) {
     rval = moab.get_entities_by_type(root_set,MBTET,tets,false); CHKERRQ(rval);
 
     ProblemsManager *prb_mng_ptr;
-    ierr = m_field.query_interface(prb_mng_ptr); CHKERRQ(ierr);
+    ierr = m_field.getInterface(prb_mng_ptr); CHKERRQ(ierr);
     ierr = prb_mng_ptr->partitionMesh(tets,3,2,m_field.get_comm_size(),NULL,NULL,NULL); CHKERRQ(ierr);
 
     EntityHandle part_set;
@@ -149,7 +149,7 @@ int main(int argc, char *argv[]) {
     // set entitities bit level
     BitRefLevel bit_level0;
     bit_level0.set(0);
-    ierr = m_field.query_interface<BitRefManager>()->setBitRefLevelByDim(part_set,3,bit_level0); CHKERRQ(ierr);
+    ierr = m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(part_set,3,bit_level0); CHKERRQ(ierr);
 
     //Fields
     ierr = m_field.add_field("F1",H1,AINSWORTH_LEGENDRE_BASE,1); CHKERRQ(ierr);

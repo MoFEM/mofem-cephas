@@ -67,15 +67,15 @@ int main(int argc, char *argv[]) {
 
     BitRefLevel bit_level0;
     bit_level0.set(0);
-    ierr = m_field.query_interface<BitRefManager>()->setBitRefLevelByDim(0,3,bit_level0); CHKERRQ(ierr);
+    ierr = m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(0,3,bit_level0); CHKERRQ(ierr);
 
     // get cut mesh interface
     CutMeshInterface *cut_mesh;
-    ierr = m_field.query_interface(cut_mesh); CHKERRQ(ierr);
+    ierr = m_field.getInterface(cut_mesh); CHKERRQ(ierr);
 
     // get meshset manager interface
     MeshsetsManager *meshset_manager;
-    ierr = m_field.query_interface(meshset_manager); CHKERRQ(ierr);
+    ierr = m_field.getInterface(meshset_manager); CHKERRQ(ierr);
 
     // get surface entities
     Range surface;
@@ -124,7 +124,7 @@ int main(int argc, char *argv[]) {
     ierr = cut_mesh->moveMidNodesOnTrimedEdges(th); CHKERRQ(ierr);
 
     BitRefManager *bit_ref_manager;
-    ierr = m_field.query_interface(bit_ref_manager); CHKERRQ(ierr);
+    ierr = m_field.getInterface(bit_ref_manager); CHKERRQ(ierr);
 
     Range fixed_edges,fixed_vertices,corner_nodes;
     if(meshset_manager->checkMeshset(100,SIDESET)) {
@@ -136,7 +136,7 @@ int main(int argc, char *argv[]) {
       ierr = bit_ref_manager->updateMeshsetByEntitiesChildren(meshset,bit_level2,meshset,MBVERTEX,true); CHKERRQ(ierr);
       ierr = meshset_manager->getEntitiesByDimension(100,SIDESET,1,fixed_edges,true); CHKERRQ(ierr);
       Range edges_level2;
-      ierr = m_field.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
+      ierr = m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
         bit_level2,BitRefLevel().set(),MBEDGE,edges_level2
       ); CHKERRQ(ierr);
       fixed_edges = intersect(fixed_edges,edges_level2);
@@ -151,7 +151,7 @@ int main(int argc, char *argv[]) {
 
     {
       Range ents;
-      ierr = m_field.query_interface<BitRefManager>()->getEntitiesByParentType(
+      ierr = m_field.getInterface<BitRefManager>()->getEntitiesByParentType(
         bit_level2,bit_level1|bit_level2,MBEDGE,ents
       ); CHKERRQ(ierr);
       EntityHandle meshset;
@@ -223,7 +223,7 @@ int main(int argc, char *argv[]) {
     rval = moab.write_file("out_fixed_edges.vtk","VTK","",&meshset_fixed_edges,1); CHKERRQ_MOAB(rval);
 
     Range tets_level2;
-    ierr = m_field.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
+    ierr = m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
       bit_level2,BitRefLevel().set(),MBTET,tets_level2
     ); CHKERRQ(ierr);
 
@@ -245,7 +245,7 @@ int main(int argc, char *argv[]) {
     ierr = cut_mesh->setCoords(th); CHKERRQ(ierr);
 
     Range tets_level3;
-    ierr = m_field.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
+    ierr = m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
       bit_level3,BitRefLevel().set(),MBTET,tets_level3
     ); CHKERRQ(ierr);
 
@@ -281,11 +281,11 @@ int main(int argc, char *argv[]) {
 
 
     Range tets_level4;
-    ierr = m_field.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
+    ierr = m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
       bit_level4,BitRefLevel().set(),MBTET,tets_level4
     ); CHKERRQ(ierr);
     Range tris_level4;
-    ierr = m_field.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
+    ierr = m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
       bit_level4,BitRefLevel().set(),MBTRI,tris_level4
     ); CHKERRQ(ierr);
 
@@ -300,11 +300,11 @@ int main(int argc, char *argv[]) {
     ierr = cut_mesh->splitSides(bit_level4,bit_level5,cut_mesh->getTetgenSurfaces(),th); CHKERRQ(ierr);
 
     Range tets_level5;
-    ierr = m_field.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
+    ierr = m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
       bit_level5,BitRefLevel().set(),MBTET,tets_level5
     ); CHKERRQ(ierr);
     Range prisms_level5;
-    ierr = m_field.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
+    ierr = m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
       bit_level5,BitRefLevel().set(),MBPRISM,prisms_level5
     ); CHKERRQ(ierr);
 

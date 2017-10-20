@@ -31,7 +31,7 @@ static const MOFEMuuid IDD_MOFEMBitLevelCoupler = MOFEMuuid( BitIntefaceId(BITLE
   */
 struct BitLevelCoupler: public UnknownInterface {
 
-  PetscErrorCode queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface);
+  PetscErrorCode query_interface(const MOFEMuuid& uuid, UnknownInterface** iface) const;
 
   MoFEM::Core& cOre;
   bool vErify;	///< by default is switched off, with it on to verify if existing parent is equal to parent set by interface

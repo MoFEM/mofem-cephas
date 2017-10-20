@@ -22,205 +22,25 @@ extern "C" {
 
 namespace MoFEM {
 
-UnknownInterface::iFaceTypeMap_multiIndex UnknownInterface::iFaceTypeMap;
-
-PetscErrorCode Core::queryInterface(const MOFEMuuid& uuid,UnknownInterface** iface) {
+PetscErrorCode Core::query_interface(const MOFEMuuid& uuid,UnknownInterface** iface) const {
   MoFEMFunctionBeginHot;
   *iface = NULL;
   if(uuid == IDD_MOFEMCoreInterface) {
-    *iface = static_cast<CoreInterface*>(this);
+    *iface = static_cast<CoreInterface*>(const_cast<Core*>(this));
+    MoFEMFunctionReturnHot(0);
+  } else if(uuid == IDD_MOFEMDeprecatedCoreInterface) {
+    *iface = static_cast<DeprecatedCoreInterface*>(const_cast<Core*>(this));
     MoFEMFunctionReturnHot(0);
   }
-  if(uuid == IDD_MOFEMDeprecatedCoreInterface) {
-    *iface = static_cast<DeprecatedCoreInterface*>(this);
+  // Get sub-interface
+  unsigned long int id = uuid.uUId.to_ulong();
+  boost::ptr_map<unsigned long,UnknownInterface>::iterator it;
+  it = iFaces.find(id);
+  if(it != iFaces.end()) {
+    *iface = it->second;
     MoFEMFunctionReturnHot(0);
   }
   SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown interface");
-  MoFEMFunctionReturnHot(0);
-}
-
-PetscErrorCode Core::query_interface_type(const std::type_info& type,void*& ptr) const {
-  MoFEMFunctionBeginHot;
-
-  ptr = NULL;
-
-  // TetGen
-  #ifdef WITH_TETGEN
-  if(type == typeid(TetGenInterface)) {
-    if(iFaces.find(IDD_MOFEMTetGegInterface.uUId.to_ulong()) == iFaces.end()) {
-      unsigned long int uid = IDD_MOFEMTetGegInterface.uUId.to_ulong();
-      iFaces.insert(uid,new TetGenInterface(*this));
-    }
-    ptr = &iFaces.at(IDD_MOFEMTetGegInterface.uUId.to_ulong());
-    MoFEMFunctionReturnHot(0);
-  }
-  #endif
-
-  // MedInterface
-  #ifdef WITH_MED
-  if(type == typeid(MedInterface)) {
-    if(iFaces.find(IDD_MOFEMMedInterface.uUId.to_ulong()) == iFaces.end()) {
-      unsigned long int uid = IDD_MOFEMMedInterface.uUId.to_ulong();
-      iFaces.insert(uid,new MedInterface(*this));
-    }
-    ptr = &iFaces.at(IDD_MOFEMMedInterface.uUId.to_ulong());
-    MoFEMFunctionReturnHot(0);
-  }
-  #endif
-
-  // Problems manager
-  if(type == typeid(ProblemsManager)) {
-    if(iFaces.find(IDD_MOFEMProblemsManager.uUId.to_ulong()) == iFaces.end()) {
-      unsigned long int uid = IDD_MOFEMProblemsManager.uUId.to_ulong();
-      iFaces.insert(uid,new ProblemsManager(*this));
-    }
-    ptr = &iFaces.at(IDD_MOFEMProblemsManager.uUId.to_ulong());
-    MoFEMFunctionReturnHot(0);
-  }
-
-  // Simple interface
-  if(type == typeid(Simple)) {
-    if(iFaces.find(IDD_MOFEMSimple.uUId.to_ulong()) == iFaces.end()) {
-      unsigned long int uid = IDD_MOFEMSimple.uUId.to_ulong();
-      iFaces.insert(uid,new Simple(*this));
-    }
-    ptr = &iFaces.at(IDD_MOFEMSimple.uUId.to_ulong());
-    MoFEMFunctionReturnHot(0);
-  }
-
-  if(type == typeid(ISManager)) {
-    if(iFaces.find(IDD_MOFEMISManager.uUId.to_ulong()) == iFaces.end()) {
-      unsigned long int uid = IDD_MOFEMISManager.uUId.to_ulong();
-      iFaces.insert(uid,new ISManager(*this));
-    }
-    ptr = &iFaces.at(IDD_MOFEMISManager.uUId.to_ulong());
-    MoFEMFunctionReturnHot(0);
-  }
-
-  if(type == typeid(VecManager)) {
-    if(iFaces.find(IDD_MOFEMVEC.uUId.to_ulong()) == iFaces.end()) {
-      unsigned long int uid = IDD_MOFEMVEC.uUId.to_ulong();
-      iFaces.insert(uid,new VecManager(*this));
-    }
-    ptr = &iFaces.at(IDD_MOFEMVEC.uUId.to_ulong());
-    MoFEMFunctionReturnHot(0);
-  }
-
-  if(type == typeid(FieldBlas)) {
-    if(iFaces.find(IDD_MOFEMFieldBlas.uUId.to_ulong()) == iFaces.end()) {
-      unsigned long int uid = IDD_MOFEMFieldBlas.uUId.to_ulong();
-      iFaces.insert(uid,new FieldBlas(*this));
-    }
-    ptr = &iFaces.at(IDD_MOFEMFieldBlas.uUId.to_ulong());
-    MoFEMFunctionReturnHot(0);
-  }
-
-  if(type == typeid(BitRefManager)) {
-    if(iFaces.find(IDD_MOFEMBitRefManager.uUId.to_ulong()) == iFaces.end()) {
-      unsigned long int uid = IDD_MOFEMBitRefManager.uUId.to_ulong();
-      iFaces.insert(uid,new BitRefManager(*this));
-    }
-    ptr = &iFaces.at(IDD_MOFEMBitRefManager.uUId.to_ulong());
-    MoFEMFunctionReturnHot(0);
-  }
-
-  if(type == typeid(Tools)) {
-    if(iFaces.find(IDD_MOFEMTools.uUId.to_ulong()) == iFaces.end()) {
-      unsigned long int uid = IDD_MOFEMTools.uUId.to_ulong();
-      iFaces.insert(uid,new Tools(*this));
-    }
-    ptr = &iFaces.at(IDD_MOFEMTools.uUId.to_ulong());
-    MoFEMFunctionReturnHot(0);
-  }
-
-  //Meshsets manager
-  if(type == typeid(MeshsetsManager)) {
-    if(iFaces.find(IDD_MOFEMMeshsetsManager.uUId.to_ulong()) == iFaces.end()) {
-      unsigned long int uid = IDD_MOFEMMeshsetsManager.uUId.to_ulong();
-      iFaces.insert(uid,new MeshsetsManager(*this));
-    }
-    ptr = &iFaces.at(IDD_MOFEMMeshsetsManager.uUId.to_ulong());
-    MoFEMFunctionReturnHot(0);
-  }
-
-  //Coordinate systems manager
-  if(type == typeid(CoordSystemsManager)) {
-    if(iFaces.find(IDD_MOFEMCoordsSystemsManager.uUId.to_ulong()) == iFaces.end()) {
-      unsigned long int uid = IDD_MOFEMCoordsSystemsManager.uUId.to_ulong();
-      iFaces.insert(uid,new CoordSystemsManager(*this));
-    }
-    ptr = &iFaces.at(IDD_MOFEMCoordsSystemsManager.uUId.to_ulong());
-    MoFEMFunctionReturnHot(0);
-  }
-
-  //Node merger
-  if(type == typeid(NodeMergerInterface)) {
-    if(iFaces.find(IDD_MOFEMNodeMerger.uUId.to_ulong()) == iFaces.end()) {
-      unsigned long int uid = IDD_MOFEMNodeMerger.uUId.to_ulong();
-      iFaces.insert(uid,new NodeMergerInterface(*this));
-    }
-    ptr = &iFaces.at(IDD_MOFEMNodeMerger.uUId.to_ulong());
-    MoFEMFunctionReturnHot(0);
-  }
-
-  //BitLevelCoupler
-  if(type == typeid(BitLevelCoupler)) {
-    if(iFaces.find(IDD_MOFEMBitLevelCoupler.uUId.to_ulong()) == iFaces.end()) {
-      unsigned long int uid = IDD_MOFEMBitLevelCoupler.uUId.to_ulong();
-      iFaces.insert(uid,new BitLevelCoupler(*this));
-    }
-    ptr = &iFaces.at(IDD_MOFEMBitLevelCoupler.uUId.to_ulong());
-    MoFEMFunctionReturnHot(0);
-  }
-
-  //Create prism elements from surface Elements
-  if(type == typeid(PrismsFromSurfaceInterface)) {
-    if(iFaces.find(IDD_MOFEMPrismsFromSurface.uUId.to_ulong()) == iFaces.end()) {
-      unsigned long int uid = IDD_MOFEMPrismsFromSurface.uUId.to_ulong();
-      iFaces.insert(uid,new PrismsFromSurfaceInterface(*this));
-    }
-    ptr = &iFaces.at(IDD_MOFEMPrismsFromSurface.uUId.to_ulong());
-    MoFEMFunctionReturnHot(0);
-  }
-
-  if(type == typeid(MeshRefinement)) {
-    if(iFaces.find(IDD_MOFEMMeshRefine.uUId.to_ulong()) == iFaces.end()) {
-      unsigned long int uid = IDD_MOFEMMeshRefine.uUId.to_ulong();
-      iFaces.insert(uid,new MeshRefinement(*this));
-    }
-    ptr = &iFaces.at(IDD_MOFEMMeshRefine.uUId.to_ulong());
-    MoFEMFunctionReturnHot(0);
-  }
-
-  if(type == typeid(PrismInterface)) {
-    if(iFaces.find(IDD_MOFEMPrismInterface.uUId.to_ulong()) == iFaces.end()) {
-      unsigned long int uid = IDD_MOFEMPrismInterface.uUId.to_ulong();
-      iFaces.insert(uid,new PrismInterface(*this));
-    }
-    ptr = &iFaces.at(IDD_MOFEMPrismInterface.uUId.to_ulong());
-    MoFEMFunctionReturnHot(0);
-  }
-
-  if(type == typeid(CutMeshInterface)) {
-    if(iFaces.find(IDD_MOFEMCutMesh.uUId.to_ulong()) == iFaces.end()) {
-      unsigned long int uid = IDD_MOFEMCutMesh.uUId.to_ulong();
-      iFaces.insert(uid,new CutMeshInterface(*this));
-    }
-    ptr = &iFaces.at(IDD_MOFEMCutMesh.uUId.to_ulong());
-    MoFEMFunctionReturnHot(0);
-  }
-
-  if(type == typeid(SeriesRecorder)) {
-    if(iFaces.find(IDD_MOFEMSeriesRecorder.uUId.to_ulong()) == iFaces.end()) {
-      unsigned long int uid = IDD_MOFEMSeriesRecorder.uUId.to_ulong();
-      iFaces.insert(uid,new SeriesRecorder(*this));
-    }
-    ptr = &iFaces.at(IDD_MOFEMSeriesRecorder.uUId.to_ulong());
-    MoFEMFunctionReturnHot(0);
-  }
-
-  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown interface");
-
   MoFEMFunctionReturnHot(0);
 }
 
@@ -292,9 +112,12 @@ static PetscErrorCode mofem_error_handler(
   MoFEMFunctionReturnHot(n);
 }
 
-PetscErrorCode print_verison() {
-  //
+template<class IFACE>
+PetscErrorCode Core::regSubInterface(const MOFEMuuid& uid) {
   MoFEMFunctionBeginHot;
+  ierr = registerInterface<IFACE>(uid); CHKERRQ(ierr);
+  unsigned long int id = uid.uUId.to_ulong();
+  iFaces.insert(id,new IFACE(*this));
   MoFEMFunctionReturnHot(0);
 }
 
@@ -305,13 +128,44 @@ verbose(verbose) {
 
   if(!isGloballyInitialised) {
     PetscPushErrorHandler(mofem_error_handler,PETSC_NULL);
-    // Add interfaces for this implementation
-    ierr = UnknownInterface::registerInterface<UnknownInterface>(IDD_MOFEMUnknown,false); CHKERRABORT(PETSC_COMM_SELF,ierr);
-    ierr = UnknownInterface::registerInterface<CoreInterface>(IDD_MOFEMCoreInterface); CHKERRABORT(PETSC_COMM_SELF,ierr);
-    ierr = UnknownInterface::registerInterface<DeprecatedCoreInterface>(IDD_MOFEMDeprecatedCoreInterface); CHKERRABORT(PETSC_COMM_SELF,ierr);
     isGloballyInitialised = true;
   }
-  // Duplicate petsc communicator
+
+  // Register interfaces for this implementation
+  ierr = registerInterface<UnknownInterface>(IDD_MOFEMUnknown); CHKERRABORT(PETSC_COMM_SELF,ierr);
+  ierr = registerInterface<CoreInterface>(IDD_MOFEMCoreInterface); CHKERRABORT(PETSC_COMM_SELF,ierr);
+  ierr = registerInterface<DeprecatedCoreInterface>(IDD_MOFEMDeprecatedCoreInterface); CHKERRABORT(PETSC_COMM_SELF,ierr);
+  // Register sub interfaces
+  ierr = regSubInterface<Simple>(IDD_MOFEMSimple); CHKERRABORT(PETSC_COMM_SELF,ierr);
+  ierr = regSubInterface<ProblemsManager>(IDD_MOFEMProblemsManager); CHKERRABORT(PETSC_COMM_SELF,ierr);
+  ierr = regSubInterface<ISManager>(IDD_MOFEMISManager); CHKERRABORT(PETSC_COMM_SELF,ierr);
+  ierr = regSubInterface<VecManager>(IDD_MOFEMVEC); CHKERRABORT(PETSC_COMM_SELF,ierr);
+  ierr = regSubInterface<FieldBlas>(IDD_MOFEMFieldBlas); CHKERRABORT(PETSC_COMM_SELF,ierr);
+  ierr = regSubInterface<BitRefManager>(IDD_MOFEMBitRefManager); CHKERRABORT(PETSC_COMM_SELF,ierr);
+  ierr = regSubInterface<Tools>(IDD_MOFEMTools); CHKERRABORT(PETSC_COMM_SELF,ierr);
+  ierr = regSubInterface<MeshsetsManager>(IDD_MOFEMMeshsetsManager); CHKERRABORT(PETSC_COMM_SELF,ierr);
+  ierr = regSubInterface<CoordSystemsManager>(IDD_MOFEMCoordsSystemsManager); CHKERRABORT(PETSC_COMM_SELF,ierr);
+  ierr = regSubInterface<NodeMergerInterface>(IDD_MOFEMNodeMerger); CHKERRABORT(PETSC_COMM_SELF,ierr);
+  ierr = regSubInterface<BitLevelCoupler>(IDD_MOFEMBitLevelCoupler); CHKERRABORT(PETSC_COMM_SELF,ierr);
+  ierr = regSubInterface<PrismsFromSurfaceInterface>(IDD_MOFEMPrismsFromSurface); CHKERRABORT(PETSC_COMM_SELF,ierr);
+  ierr = regSubInterface<MeshRefinement>(IDD_MOFEMMeshRefine); CHKERRABORT(PETSC_COMM_SELF,ierr);
+  ierr = regSubInterface<PrismInterface>(IDD_MOFEMPrismInterface); CHKERRABORT(PETSC_COMM_SELF,ierr);
+  ierr = regSubInterface<CutMeshInterface>(IDD_MOFEMCutMesh); CHKERRABORT(PETSC_COMM_SELF,ierr);
+  ierr = regSubInterface<SeriesRecorder>(IDD_MOFEMSeriesRecorder); CHKERRABORT(PETSC_COMM_SELF,ierr);
+  #ifdef WITH_TETGEN
+  ierr = regSubInterface<TetGenInterface>(IDD_MOFEMTetGegInterface); CHKERRABORT(PETSC_COMM_SELF,ierr);
+  #endif
+  #ifdef WITH_MED
+  ierr = regSubInterface<MedInterface>(IDD_MOFEMMedInterface); CHKERRABORT(PETSC_COMM_SELF,ierr);
+  #endif
+
+  // Register MOFEM events in PETSc
+  PetscLogEventRegister("FE_preProcess",0,&MOFEM_EVENT_preProcess);
+  PetscLogEventRegister("FE_operator",0,&MOFEM_EVENT_operator);
+  PetscLogEventRegister("FE_postProcess",0,&MOFEM_EVENT_postProcess);
+  PetscLogEventRegister("MoFEMCreateMat",0,&MOFEM_EVENT_createMat);
+
+  // Duplicate PETSc communicator
   ierr = PetscCommDuplicate(comm,&cOmm,NULL); CHKERRABORT(comm,ierr);
   MPI_Comm_size(cOmm,&sIze);
   MPI_Comm_rank(cOmm,&rAnk);
@@ -320,17 +174,14 @@ verbose(verbose) {
   if(pComm == NULL) {
     pComm =  new ParallelComm(&moab,comm);
   }
+
+  // Initialize database
   ierr = getTags(); CHKERRABORT(cOmm,ierr);
   ierr = clearMap(); CHKERRABORT(cOmm,ierr);
   basicEntityDataPtr = boost::make_shared<BasicEntityData>(moab);
   ierr = initialiseDatabseFromMesh(verbose); CHKERRABORT(cOmm,ierr);
-  // Petsc Logs
-   PetscLogEventRegister("FE_preProcess",0,&MOFEM_EVENT_preProcess);
-   PetscLogEventRegister("FE_operator",0,&MOFEM_EVENT_operator);
-   PetscLogEventRegister("FE_postProcess",0,&MOFEM_EVENT_postProcess);
-   PetscLogEventRegister("MoFEMCreateMat",0,&MOFEM_EVENT_createMat);
 
-   // Print version
+  // Print version
   if(verbose>0) {
     ierr = PetscPrintf(
       cOmm,
@@ -385,9 +236,9 @@ BitProblemId Core::getProblemShift() {
 PetscErrorCode Core::clearMap() {
   MoFEMFunctionBeginHot;
   // Cleaning databases in interfaces
-  ierr = query_interface<SeriesRecorder>()->clearMap(); CHKERRQ(ierr);
-  ierr = query_interface<MeshsetsManager>()->clearMap(); CHKERRQ(ierr);
-  ierr = query_interface<CoordSystemsManager>()->clearMap(); CHKERRQ(ierr);
+  ierr = getInterface<SeriesRecorder>()->clearMap(); CHKERRQ(ierr);
+  ierr = getInterface<MeshsetsManager>()->clearMap(); CHKERRQ(ierr);
+  ierr = getInterface<CoordSystemsManager>()->clearMap(); CHKERRQ(ierr);
   // Cleaning databases
   refinedEntities.clear();
   refinedFiniteElements.clear();
@@ -655,17 +506,17 @@ PetscErrorCode Core::getTags(int verb) {
 
   //Meshsets with boundary conditions and material sets
   MeshsetsManager *meshsets_manager_ptr;
-  ierr = query_interface(meshsets_manager_ptr); CHKERRQ(ierr);
+  ierr = getInterface(meshsets_manager_ptr); CHKERRQ(ierr);
   ierr = meshsets_manager_ptr->getTags(verb); CHKERRQ(ierr);
 
   // Series recorder
   SeriesRecorder *series_recorder_ptr;
-  ierr = query_interface(series_recorder_ptr); CHKERRQ(ierr);
+  ierr = getInterface(series_recorder_ptr); CHKERRQ(ierr);
   ierr = series_recorder_ptr->getTags(verb); CHKERRQ(ierr);
 
   //Coordinate systems
   CoordSystemsManager *cs_manger_ptr;
-  ierr = query_interface(cs_manger_ptr); CHKERRQ(ierr);
+  ierr = getInterface(cs_manger_ptr); CHKERRQ(ierr);
   ierr = cs_manger_ptr->getTags(verb); CHKERRQ(ierr);
 
 
@@ -692,7 +543,7 @@ PetscErrorCode Core::initialiseDatabseFromMesh(int verb) {
   if(verb==-1) verb = verbose;
 
   CoordSystemsManager *cs_manger_ptr;
-  ierr = query_interface(cs_manger_ptr); CHKERRQ(ierr);
+  ierr = getInterface(cs_manger_ptr); CHKERRQ(ierr);
 
   // Initialize coordinate systems
   ierr = cs_manger_ptr->initialiseDatabseFromMesh(verb); CHKERRQ(ierr);
@@ -900,10 +751,10 @@ PetscErrorCode Core::initialiseDatabseFromMesh(int verb) {
 
   // Initialize interfaces
   MeshsetsManager *m_manger_ptr;
-  ierr = query_interface(m_manger_ptr); CHKERRQ(ierr);
+  ierr = getInterface(m_manger_ptr); CHKERRQ(ierr);
   ierr = m_manger_ptr->initialiseDatabseFromMesh(verb); CHKERRQ(ierr);
   SeriesRecorder *series_recorder_ptr;
-  ierr = query_interface(series_recorder_ptr); CHKERRQ(ierr);
+  ierr = getInterface(series_recorder_ptr); CHKERRQ(ierr);
   ierr = series_recorder_ptr->initialiseDatabseFromMesh(verb); CHKERRQ(ierr);
 
   MoFEMFunctionReturnHot(0);
@@ -962,13 +813,13 @@ PetscErrorCode Core::get_dofs(const DofEntity_multiIndex **dofs_ptr) const {
 
 MeshsetsManager* Core::get_meshsets_manager_ptr() {
   MeshsetsManager* meshsets_manager_ptr;
-  query_interface(meshsets_manager_ptr);
+  getInterface(meshsets_manager_ptr);
   return meshsets_manager_ptr;
 }
 
 const MeshsetsManager* Core::get_meshsets_manager_ptr() const {
   MeshsetsManager* meshsets_manager_ptr;
-  query_interface(meshsets_manager_ptr);
+  getInterface(meshsets_manager_ptr);
   return meshsets_manager_ptr;
 }
 

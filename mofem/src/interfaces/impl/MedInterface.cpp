@@ -47,7 +47,7 @@ extern "C" {
 
 namespace MoFEM {
 
-  PetscErrorCode MedInterface::queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface) {
+  PetscErrorCode MedInterface::query_interface(const MOFEMuuid& uuid, UnknownInterface** iface) const {
     MoFEMFunctionBeginHot;
     *iface = NULL;
     if(uuid == IDD_MOFEMMedInterface) {
@@ -293,7 +293,7 @@ namespace MoFEM {
     EntityHandle mesh_meshset;
     {
       MeshsetsManager *meshsets_manager_ptr;
-      ierr = m_field.query_interface(meshsets_manager_ptr); CHKERRQ(ierr);
+      ierr = m_field.getInterface(meshsets_manager_ptr); CHKERRQ(ierr);
       int max_id = 0;
       for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,cit)) {
         max_id = (max_id < cit->getMeshsetId()) ? cit->getMeshsetId() : max_id;
@@ -340,7 +340,7 @@ namespace MoFEM {
     ReadUtilIface* iface;
     vector<double*> arrays_coord;
     EntityHandle startv;
-    rval = m_field.get_moab().query_interface(iface); CHKERRQ_MOAB(rval);
+    rval = m_field.get_moab().getInterface(iface); CHKERRQ_MOAB(rval);
     rval = iface->get_node_coords(3,num_nodes,0,startv,arrays_coord); CHKERRQ_MOAB(rval);
     Range verts(startv,startv+num_nodes-1);
     std::copy(&coord_med[0*num_nodes],&coord_med[1*num_nodes],arrays_coord[0]);
@@ -574,7 +574,7 @@ namespace MoFEM {
     MoFEM::Interface &m_field = cOre;
     MoFEMFunctionBeginHot;
     MeshsetsManager *meshsets_manager_ptr;
-    ierr = m_field.query_interface(meshsets_manager_ptr); CHKERRQ(ierr);
+    ierr = m_field.getInterface(meshsets_manager_ptr); CHKERRQ(ierr);
 
     int max_id = 0;
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,cit)) {
@@ -669,7 +669,7 @@ namespace MoFEM {
 
     // Get meshset
     MeshsetsManager *meshsets_manager_ptr;
-    ierr = m_field.query_interface(meshsets_manager_ptr); CHKERRQ(ierr);
+    ierr = m_field.getInterface(meshsets_manager_ptr); CHKERRQ(ierr);
     const CubitMeshSets *cubit_meshset_ptr;
     ierr = meshsets_manager_ptr->getCubitMeshsetPtr(meshName,&cubit_meshset_ptr); CHKERRQ(ierr);
     EntityHandle meshset = cubit_meshset_ptr->getMeshset();

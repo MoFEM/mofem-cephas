@@ -31,7 +31,7 @@ namespace MoFEM {
    */
   struct BaseFunctionCtx: public UnknownInterface {
 
-    PetscErrorCode queryInterface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface);
+    PetscErrorCode query_interface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface) const;
 
     BaseFunctionCtx() {}
     ~BaseFunctionCtx() {}
@@ -44,7 +44,7 @@ namespace MoFEM {
    */
   struct BaseFunction: public UnknownInterface {
 
-    PetscErrorCode queryInterface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface);
+    PetscErrorCode query_interface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface) const;
 
     BaseFunction() {}
     ~BaseFunction() {}

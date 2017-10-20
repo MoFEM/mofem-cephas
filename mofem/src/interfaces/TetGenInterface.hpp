@@ -34,7 +34,7 @@ static const MOFEMuuid IDD_MOFEMTetGegInterface = MOFEMuuid( BitIntefaceId(TETGE
   */
 struct TetGenInterface: public UnknownInterface {
 
-  PetscErrorCode queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface);
+  PetscErrorCode query_interface(const MOFEMuuid& uuid, UnknownInterface** iface) const;
 
   MoFEM::Core& cOre;
   TetGenInterface(const MoFEM::Core& core):

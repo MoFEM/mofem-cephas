@@ -31,7 +31,7 @@ namespace MoFEM {
    */
   struct JacobiPolynomialCtx: public BaseFunctionCtx {
 
-    PetscErrorCode queryInterface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface);
+    PetscErrorCode query_interface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface) const;
 
     int P;
     double *diffX;
@@ -79,7 +79,7 @@ namespace MoFEM {
    */
   struct JacobiPolynomial: public BaseFunction {
 
-    PetscErrorCode queryInterface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface);
+    PetscErrorCode query_interface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface) const;
 
     JacobiPolynomial() {}
     ~JacobiPolynomial() {}

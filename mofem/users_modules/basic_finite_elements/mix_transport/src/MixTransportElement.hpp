@@ -330,30 +330,30 @@ struct MixTransportElement {
     ierr = mField.build_fields(); CHKERRQ(ierr);
     // get tetrahedrons which has been build previously and now in so called garbage bit level
     Range done_tets;
-    ierr = mField.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
+    ierr = mField.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
       BitRefLevel().set(0),BitRefLevel().set(),MBTET,done_tets
     ); CHKERRQ(ierr);
-    ierr = mField.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
+    ierr = mField.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
       BitRefLevel().set(BITREFLEVEL_SIZE-1),BitRefLevel().set(),MBTET,done_tets
     ); CHKERRQ(ierr);
     // get tetrahedrons which belong to problem bit level
     Range ref_tets;
-    ierr = mField.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
+    ierr = mField.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
       ref_level,BitRefLevel().set(),MBTET,ref_tets
     ); CHKERRQ(ierr);
     ref_tets = subtract(ref_tets,done_tets);
     ierr = mField.build_finite_elements("MIX",&ref_tets,2); CHKERRQ(ierr);
     // get triangles which has been build previously and now in so called garbage bit level
     Range done_faces;
-    ierr = mField.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
+    ierr = mField.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
       BitRefLevel().set(0),BitRefLevel().set(),MBTRI,done_faces
     ); CHKERRQ(ierr);
-    ierr = mField.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
+    ierr = mField.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
       BitRefLevel().set(BITREFLEVEL_SIZE-1),BitRefLevel().set(),MBTRI,done_faces
     ); CHKERRQ(ierr);
     // get triangles which belong to problem bit level
     Range ref_faces;
-    ierr = mField.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
+    ierr = mField.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
       ref_level,BitRefLevel().set(),MBTRI,ref_faces
     ); CHKERRQ(ierr);
     ref_faces = subtract(ref_faces,done_faces);
@@ -376,7 +376,7 @@ struct MixTransportElement {
     //build problem
 
     ProblemsManager *prb_mng_ptr;
-    ierr = mField.query_interface(prb_mng_ptr); CHKERRQ(ierr);
+    ierr = mField.getInterface(prb_mng_ptr); CHKERRQ(ierr);
     ierr = prb_mng_ptr->buildProblem("MIX",true); CHKERRQ(ierr);
     //mesh partitioning
     //partition
@@ -484,9 +484,9 @@ struct MixTransportElement {
   PetscErrorCode createMatrices() {
     MoFEMFunctionBeginHot;
     ierr = mField.MatCreateMPIAIJWithArrays("MIX",&Aij); CHKERRQ(ierr);
-    ierr = mField.query_interface<VecManager>()->vecCreateGhost("MIX",COL,&D); CHKERRQ(ierr);
-    ierr = mField.query_interface<VecManager>()->vecCreateGhost("MIX",COL,&D0); CHKERRQ(ierr);
-    ierr = mField.query_interface<VecManager>()->vecCreateGhost("MIX",ROW,&F); CHKERRQ(ierr);
+    ierr = mField.getInterface<VecManager>()->vecCreateGhost("MIX",COL,&D); CHKERRQ(ierr);
+    ierr = mField.getInterface<VecManager>()->vecCreateGhost("MIX",COL,&D0); CHKERRQ(ierr);
+    ierr = mField.getInterface<VecManager>()->vecCreateGhost("MIX",ROW,&F); CHKERRQ(ierr);
     MoFEMFunctionReturnHot(0);
   }
 
@@ -509,7 +509,7 @@ struct MixTransportElement {
     ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
-    ierr = mField.query_interface<VecManager>()->setGlobalGhostVector("MIX",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = mField.getInterface<VecManager>()->setGlobalGhostVector("MIX",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
     // Calculate essential boundary conditions
 
@@ -604,7 +604,7 @@ struct MixTransportElement {
 
 
     // copy data form vector on mesh
-    ierr = mField.query_interface<VecManager>()->setGlobalGhostVector("MIX",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = mField.getInterface<VecManager>()->setGlobalGhostVector("MIX",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
     MoFEMFunctionReturnHot(0);
   }

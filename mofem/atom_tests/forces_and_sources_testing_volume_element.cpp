@@ -65,7 +65,7 @@ int main(int argc, char *argv[]) {
   bit_level0.set(0);
   EntityHandle meshset_level0;
   rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERRQ_MOAB(rval);
-  ierr = m_field.query_interface<BitRefManager>()->setBitRefLevelByDim(0,3,bit_level0); CHKERRQ(ierr);
+  ierr = m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(0,3,bit_level0); CHKERRQ(ierr);
 
   //Fields
   ierr = m_field.add_field("FIELD1",H1,AINSWORTH_LEGENDRE_BASE,1); CHKERRQ(ierr);
@@ -80,7 +80,7 @@ int main(int argc, char *argv[]) {
     rval = m_field.get_moab().create_vertex(coords,no_field_vertex); CHKERRQ_MOAB(rval);
     Range range_no_field_vertex;
     range_no_field_vertex.insert(no_field_vertex);
-    ierr = m_field.query_interface<BitRefManager>()->setBitRefLevel(range_no_field_vertex,BitRefLevel().set()); CHKERRQ(ierr);
+    ierr = m_field.getInterface<BitRefManager>()->setBitRefLevel(range_no_field_vertex,BitRefLevel().set()); CHKERRQ(ierr);
     EntityHandle meshset = m_field.get_field_meshset("FIELD3");
     rval = m_field.get_moab().add_entities(meshset,range_no_field_vertex); CHKERRQ_MOAB(rval);
   }
@@ -150,7 +150,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field.build_adjacencies(bit_level0); CHKERRQ(ierr);
   //build problem
   ProblemsManager *prb_mng_ptr;
-  ierr = m_field.query_interface(prb_mng_ptr); CHKERRQ(ierr);
+  ierr = m_field.getInterface(prb_mng_ptr); CHKERRQ(ierr);
   //  const Problem_multiIndex *problems_ptr;
   ierr = prb_mng_ptr->buildProblem("TEST_PROBLEM",false); CHKERRQ(ierr);
 

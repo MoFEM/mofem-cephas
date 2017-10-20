@@ -1366,7 +1366,7 @@ namespace MixTransport {
       ierr = DMSetUp(dM); CHKERRQ(ierr);
 
       PetscSection section;
-      ierr = mField.query_interface<ISManager>()->sectionCreate("MIX",&section); CHKERRQ(ierr);
+      ierr = mField.getInterface<ISManager>()->sectionCreate("MIX",&section); CHKERRQ(ierr);
       ierr = DMSetDefaultSection(dM,section); CHKERRQ(ierr);
       ierr = DMSetDefaultGlobalSection(dM,section); CHKERRQ(ierr);
       // ierr = PetscSectionView(section,PETSC_VIEWER_STDOUT_WORLD);
@@ -1428,7 +1428,7 @@ namespace MixTransport {
       PetscErrorCode operator()() {
         MoFEMFunctionBeginHot;
         // Update pressure rates
-        ierr = fePtr->mField.query_interface<VecManager>()->setOtherLocalGhostVector(
+        ierr = fePtr->mField.getInterface<VecManager>()->setOtherLocalGhostVector(
           fePtr->problemPtr,"VALUES",string("VALUES")+"_t",
           ROW,fePtr->ts_u_t,INSERT_VALUES,SCATTER_REVERSE
         ); CHKERRQ(ierr);
@@ -1526,7 +1526,7 @@ namespace MixTransport {
             ierr = VecAssemblyBegin(fePtr->ts_F); CHKERRQ(ierr);
             ierr = VecAssemblyEnd(fePtr->ts_F); CHKERRQ(ierr);
             // ierr = VecView(fePtr->ts_F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-            // ierr = fePtr->mField.query_interface<VecManager>()->setOtherLocalGhostVector(
+            // ierr = fePtr->mField.getInterface<VecManager>()->setOtherLocalGhostVector(
             //   fePtr->problemPtr,"VALUES",string("FLUXES")+"_residual",
             //   ROW,fePtr->ts_F,INSERT_VALUES,SCATTER_REVERSE
             // ); CHKERRQ(ierr);

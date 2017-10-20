@@ -50,19 +50,19 @@ using namespace MoFEM;
 #include <Hcurl.hpp>
 #include <Hdiv.hpp>
 
-PetscErrorCode TetPolynomialBase::queryInterface(
+PetscErrorCode TetPolynomialBase::query_interface(
   const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface
-) {
-  
+) const {
+
   MoFEMFunctionBeginHot;
   *iface = NULL;
   if(uuid == IDD_TET_BASE_FUNCTION) {
-    *iface = static_cast<TetPolynomialBase*>(this);
+    *iface = const_cast<TetPolynomialBase*>(this);
     MoFEMFunctionReturnHot(0);
   } else {
     SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"wrong interference");
   }
-  ierr = BaseFunction::queryInterface(uuid,iface); CHKERRQ(ierr);
+  ierr = BaseFunction::query_interface(uuid,iface); CHKERRQ(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -70,7 +70,7 @@ TetPolynomialBase::~TetPolynomialBase() {}
 TetPolynomialBase::TetPolynomialBase() {}
 
 PetscErrorCode TetPolynomialBase::getValueH1(MatrixDouble &pts) {
-  
+
   MoFEMFunctionBeginHot;
 
   DataForcesAndSourcesCore& data = cTx->dAta;
@@ -184,7 +184,7 @@ PetscErrorCode TetPolynomialBase::getValueH1(MatrixDouble &pts) {
 PetscErrorCode TetPolynomialBase::getValueL2(
   MatrixDouble &pts
 ) {
-  
+
   MoFEMFunctionBeginHot;
 
   DataForcesAndSourcesCore& data = cTx->dAta;
@@ -218,7 +218,7 @@ PetscErrorCode TetPolynomialBase::getValueL2(
 PetscErrorCode TetPolynomialBase::getValueHdivAinsworthBase(
   MatrixDouble &pts
 ) {
-  
+
   MoFEMFunctionBeginHot;
 
   DataForcesAndSourcesCore& data = cTx->dAta;
@@ -541,7 +541,7 @@ PetscErrorCode TetPolynomialBase::getValueHdivAinsworthBase(
 PetscErrorCode TetPolynomialBase::getValueHdivDemkowiczBase(
   MatrixDouble &pts
 ) {
-  
+
   MoFEMFunctionBeginHot;
 
   DataForcesAndSourcesCore& data = cTx->dAta;
@@ -642,7 +642,7 @@ PetscErrorCode TetPolynomialBase::getValueHdiv(
 PetscErrorCode TetPolynomialBase::getValueHCurl(
   MatrixDouble &pts
 ) {
-  
+
   MoFEMFunctionBeginHot;
 
   try {
@@ -771,11 +771,11 @@ PetscErrorCode TetPolynomialBase::getValue(
   MatrixDouble &pts,
   boost::shared_ptr<BaseFunctionCtx> ctx_ptr
 ) {
-  
+
   MoFEMFunctionBeginHot;
 
   MoFEM::UnknownInterface *iface;
-  ierr = ctx_ptr->queryInterface(IDD_TET_BASE_FUNCTION,&iface); CHKERRQ(ierr);
+  ierr = ctx_ptr->query_interface(IDD_TET_BASE_FUNCTION,&iface); CHKERRQ(ierr);
   cTx = reinterpret_cast<EntPolynomialBaseCtx*>(iface);
 
   int nb_gauss_pts = pts.size2();

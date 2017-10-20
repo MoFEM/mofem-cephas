@@ -76,15 +76,15 @@ int main(int argc, char *argv[]) {
   MoFEM::Interface& m_field = core;
 
   //ref meshset ref level 0
-  ierr = m_field.query_interface<BitRefManager>()->setBitRefLevelByDim(0,3,0); CHKERRQ(ierr);
+  ierr = m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(0,3,0); CHKERRQ(ierr);
 
   // stl::bitset see for more details
   BitRefLevel bit_level0;
   bit_level0.set(0);
   EntityHandle meshset_level0;
   rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERRQ_MOAB(rval);
-  ierr = m_field.query_interface<BitRefManager>()->setBitRefLevelByDim(0,3,bit_level0); CHKERRQ(ierr);
-  ierr = m_field.query_interface<BitRefManager>()->getEntitiesByRefLevel(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRQ(ierr);
+  ierr = m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(0,3,bit_level0); CHKERRQ(ierr);
+  ierr = m_field.getInterface<BitRefManager>()->getEntitiesByRefLevel(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRQ(ierr);
 
   /***/
   //Define problem
@@ -144,7 +144,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field.modify_problem_add_finite_element("TEST_PROBLEM","FE2"); CHKERRQ(ierr);
 
   ProblemsManager *prb_mng_ptr;
-  ierr = m_field.query_interface(prb_mng_ptr); CHKERRQ(ierr);
+  ierr = m_field.getInterface(prb_mng_ptr); CHKERRQ(ierr);
   ierr = prb_mng_ptr->buildProblem("TEST_PROBLEM",true); CHKERRQ(ierr);
   ierr = prb_mng_ptr->partitionSimpleProblem("TEST_PROBLEM"); CHKERRQ(ierr);
 
@@ -154,7 +154,7 @@ int main(int argc, char *argv[]) {
   ierr = prb_mng_ptr->partitionGhostDofs("TEST_PROBLEM"); CHKERRQ(ierr);
 
   Vec F;
-  ierr = m_field.query_interface<VecManager>()->vecCreateSeq("TEST_PROBLEM",ROW,&F); CHKERRQ(ierr);
+  ierr = m_field.getInterface<VecManager>()->vecCreateSeq("TEST_PROBLEM",ROW,&F); CHKERRQ(ierr);
   Mat A;
   ierr = m_field.MatCreateMPIAIJWithArrays("TEST_PROBLEM",&A); CHKERRQ(ierr);
 

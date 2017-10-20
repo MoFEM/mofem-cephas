@@ -32,7 +32,7 @@ namespace MoFEM {
   */
   struct FlatPrismPolynomialBaseCtx: public EntPolynomialBaseCtx {
 
-    PetscErrorCode queryInterface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface);
+    PetscErrorCode query_interface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface) const;
 
     moab::Interface &mOab;
     const NumeredEntFiniteElement *fePtr;
@@ -58,7 +58,7 @@ namespace MoFEM {
   */
   struct FlatPrismPolynomialBase: public BaseFunction {
 
-    PetscErrorCode queryInterface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface);
+    PetscErrorCode query_interface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface) const;
 
     FlatPrismPolynomialBase();
     ~FlatPrismPolynomialBase();
