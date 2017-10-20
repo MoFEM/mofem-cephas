@@ -51,11 +51,7 @@ namespace MoFEM {
     MoFEMFunctionBeginHot;
     *iface = NULL;
     if(uuid == IDD_MOFEMMedInterface) {
-      *iface = dynamic_cast<MedInterface*>(this);
-      MoFEMFunctionReturnHot(0);
-    }
-    if(uuid == IDD_MOFEMUnknown) {
-      *iface = dynamic_cast<UnknownInterface*>(this);
+      *iface = const_cast<MedInterface*>(this);
       MoFEMFunctionReturnHot(0);
     }
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown interface");
@@ -340,7 +336,7 @@ namespace MoFEM {
     ReadUtilIface* iface;
     vector<double*> arrays_coord;
     EntityHandle startv;
-    rval = m_field.get_moab().getInterface(iface); CHKERRQ_MOAB(rval);
+    rval = m_field.get_moab().query_interface(iface); CHKERRQ_MOAB(rval);
     rval = iface->get_node_coords(3,num_nodes,0,startv,arrays_coord); CHKERRQ_MOAB(rval);
     Range verts(startv,startv+num_nodes-1);
     std::copy(&coord_med[0*num_nodes],&coord_med[1*num_nodes],arrays_coord[0]);
