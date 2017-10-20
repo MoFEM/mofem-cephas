@@ -98,7 +98,7 @@ namespace MoFEM {
     ) const {
       MoFEMFunctionBegin;
       if(typeid(IFACE).name()==getClassName(uuid)) {
-        UnknownInterface *ptr = static_cast<UnknownInterface*>(iface);
+        UnknownInterface *ptr;
         ierr = getInterface(uuid,ptr); CHKERRQ(ierr);
         iface = static_cast<IFACE*>(ptr);
         MoFEMFunctionReturnHot(0);
@@ -110,6 +110,7 @@ namespace MoFEM {
         "%s != %s",
         typeid(IFACE).name(),getClassName(uuid).c_str()
       );
+      iface = NULL;
       MoFEMFunctionReturn(0);
     }
 
@@ -125,7 +126,7 @@ namespace MoFEM {
 
     template <class IFACE>
     inline IFACE* getInterface() const {
-      IFACE* iface;
+      IFACE* iface = NULL;
       ierr = getInterface(getUId(typeid(IFACE).name()),iface); CHKERRABORT(PETSC_COMM_SELF,ierr);
       return iface;
     }

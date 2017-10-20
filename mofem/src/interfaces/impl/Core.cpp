@@ -40,6 +40,7 @@ PetscErrorCode Core::query_interface(const MOFEMuuid& uuid,UnknownInterface** if
     *iface = it->second;
     MoFEMFunctionReturnHot(0);
   }
+  *iface = NULL; 
   SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown interface");
   MoFEMFunctionReturnHot(0);
 }
