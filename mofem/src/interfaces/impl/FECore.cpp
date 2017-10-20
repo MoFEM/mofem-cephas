@@ -543,7 +543,7 @@ namespace MoFEM {
           for(Range::iterator eit = adj_ents.begin();eit!=adj_ents.end();eit++) {
             meit = entsFields.get<Composite_Name_And_Ent_mi_tag>().find(boost::make_tuple(field_name,*eit));
             if(meit!=entsFields.get<Composite_Name_And_Ent_mi_tag>().end()) {
-              UId uid = meit->get()->getGlobalUniqueId();
+              const UId& uid = meit->get()->getGlobalUniqueId();
               map_uid_fe[uid].push_back(*p.first);
               if(add_to_data) {
                 data_dofs_size[p.first->get()->getEnt()] += meit->get()->getNbDofsOnEnt();
