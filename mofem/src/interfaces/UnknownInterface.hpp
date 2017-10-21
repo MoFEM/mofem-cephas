@@ -201,11 +201,13 @@ namespace MoFEM {
      * @param  uid interface Id
      * @return     class name
      */
-    inline const std::string getClassName(const MOFEMuuid& uid) const {
-      if(iFaceTypeMap.get<0>().find(uid)!=iFaceTypeMap.get<0>().end()) {
-        return iFaceTypeMap.get<0>().find(uid)->className;
+    inline const std::string& getClassName(const MOFEMuuid& uid) const {
+      iFaceTypeMap_multiIndex::nth_index<0>::type::iterator it;
+      it = iFaceTypeMap.get<0>().find(uid);
+      if(it!=iFaceTypeMap.get<0>().end()) {
+        return it->className;
       }
-      return string("No class for UId found");
+      return noClassUIdFoundStr;
     }
 
     /**
@@ -214,13 +216,17 @@ namespace MoFEM {
      * @return            Id
      */
     inline const MOFEMuuid& getUId(const std::string& class_name) const {
-      if(iFaceTypeMap.get<1>().find(class_name)!=iFaceTypeMap.get<1>().end()) {
-        return iFaceTypeMap.get<1>().find(class_name)->uID;
+      iFaceTypeMap_multiIndex::nth_index<1>::type::iterator it;
+      it = iFaceTypeMap.get<1>().find(class_name); 
+      if (it!= iFaceTypeMap.get<1>().end()) {
+        return it->uID;
       }
       return IDD_MOFEMUnknown;
     }
 
   private:
+
+    const static std::string noClassUIdFoundStr;
 
     struct UIdTypeMap {
       MOFEMuuid uID;
