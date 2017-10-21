@@ -75,6 +75,13 @@ namespace MoFEM {
       const MOFEMuuid& uuid,UnknownInterface** iface
     ) const = 0;
 
+    /**
+     * @brief Register interface 
+     * 
+     * @param uuid 
+     * @param true 
+     * @return template <class IFACE> PetscErrorCode 
+     */
     template <class IFACE>
     PetscErrorCode registerInterface(
       const MOFEMuuid& uuid,bool error_if_registration_failed = true
@@ -92,42 +99,71 @@ namespace MoFEM {
       MoFEMFunctionReturnHot(0);
     }
 
-    template <class IFACE>
-    inline PetscErrorCode getInterface(
-      const MOFEMuuid& uuid,IFACE*& iface
-    ) const {
-      MoFEMFunctionBegin;
-      if(typeid(IFACE).name()==getClassName(uuid)) {
-        UnknownInterface *ptr;
-        ierr = getInterface(uuid,ptr); CHKERRQ(ierr);
-        iface = static_cast<IFACE*>(ptr);
-        MoFEMFunctionReturnHot(0);
+    /**
+     * @brief Get interface by uuid and return reference to pointer of interface
+     * 
+     * @param uuid 
+     * @param iface 
+     * @return template <class IFACE, bool VERIFY>  PetscErrorCode 
+     */
+    template <class IFACE, bool VERIFY>
+    inline PetscErrorCode getInterface(const MOFEMuuid &uuid, IFACE *&iface) const
+    {
+      MoFEMFunctionBeginHot;
+      if (VERIFY)
+      {
+        if (typeid(IFACE).name() == getClassName(uuid))
+        {
+          SETERRQ2(
+              PETSC_COMM_SELF, MOFEM_INVALID_DATA,
+              "Inconsistency between interface Id and type "
+              "typeid(IFACE).name() != iFaceTypeMap.at(uuid) "
+              "%s != %s",
+              typeid(IFACE).name(), getClassName(uuid).c_str());
+        }
       }
-      SETERRQ2(
-        PETSC_COMM_SELF,MOFEM_INVALID_DATA,
-        "Inconsistency between interface Id and type "
-        "typeid(IFACE).name() != iFaceTypeMap.at(uuid) "
-        "%s != %s",
-        typeid(IFACE).name(),getClassName(uuid).c_str()
-      );
-      iface = NULL;
-      MoFEMFunctionReturn(0);
+      UnknownInterface *ptr;
+      ierr = getInterface<UnknownInterface, false>(uuid, ptr);
+      CHKERRQ(ierr);
+      iface = static_cast<IFACE *>(ptr);
+      MoFEMFunctionReturnHot(0);
     }
 
+    /**
+     * @brief Get interface refernce to pointer of interface
+     * 
+     * @param iface 
+     * @return template <class IFACE>  PetscErrorCode 
+     */
     template <class IFACE>
-    inline PetscErrorCode getInterface(IFACE*& iface) const {
-      return getInterface(getUId(typeid(IFACE).name()),iface);
+    inline PetscErrorCode getInterface(IFACE *&iface) const
+    {
+      return getInterface<IFACE, false>(getUId(typeid(IFACE).name()), iface);
     }
 
+    /**
+     * @brief Get interface pointer to pointer of inetrface
+     * 
+     * @param iface 
+     * @return template <class IFACE>  PetscErrorCode 
+     */
     template <class IFACE>
-    inline PetscErrorCode getInterface(IFACE**const iface) const {
-      return getInterface(getUId(typeid(IFACE).name()),*iface);
+    inline PetscErrorCode getInterface(IFACE **const iface) const
+    {
+      return getInterface<IFACE, false>(getUId(typeid(IFACE).name()), *iface);
     }
 
+    /**
+     * @brief Funtion retunrning pointer to interface
+     * 
+     * @return template <class IFACE>  IFACE 
+     */
     template <class IFACE>
-    inline IFACE* getInterface() const {
-      IFACE* iface = NULL;
-      ierr = getInterface(getUId(typeid(IFACE).name()),iface); CHKERRABORT(PETSC_COMM_SELF,ierr);
+    inline IFACE *getInterface() const
+    {
+      IFACE *iface = NULL;
+      ierr = getInterface<IFACE, false>(getUId(typeid(IFACE).name()), iface);
+      CHKERRABORT(PETSC_COMM_SELF, ierr);
       return iface;
     }
 
@@ -256,13 +292,12 @@ namespace MoFEM {
 
   };
 
-  template<>
-  inline PetscErrorCode UnknownInterface::getInterface(
-    const MOFEMuuid& uuid,UnknownInterface*& iface
-  ) const {
-    return query_interface(uuid,&iface);
+  template <>
+  inline PetscErrorCode UnknownInterface::getInterface<UnknownInterface, false>(
+      const MOFEMuuid &uuid, UnknownInterface *&iface) const
+  {
+    return query_interface(uuid, &iface);
   }
-
 }
 
 #endif // __MOFEMUNKNOWNINTERFACE_HPP__
