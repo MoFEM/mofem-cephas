@@ -375,7 +375,7 @@ PetscErrorCode NeummanForcesSurface::addForce(const std::string field_name,Vec F
   const CubitMeshSets *cubit_meshset_ptr;
   MeshsetsManager *mmanager_ptr;
   MoFEMFunctionBeginHot;
-  ierr = mField.query_interface(mmanager_ptr); CHKERRQ(ierr);
+  ierr = mField.getInterface(mmanager_ptr); CHKERRQ(ierr);
   if(block_set) {
     //Add data from block set.
     ierr = mmanager_ptr->getCubitMeshsetPtr(ms_id,BLOCKSET,&cubit_meshset_ptr); CHKERRQ(ierr);
@@ -426,7 +426,7 @@ PetscErrorCode NeummanForcesSurface::addPreassure(const std::string field_name,V
   const CubitMeshSets *cubit_meshset_ptr;
   MeshsetsManager *mmanager_ptr;
   MoFEMFunctionBeginHot;
-  ierr = mField.query_interface(mmanager_ptr); CHKERRQ(ierr);
+  ierr = mField.getInterface(mmanager_ptr); CHKERRQ(ierr);
   if(block_set) {
     ierr = mmanager_ptr->getCubitMeshsetPtr(ms_id,BLOCKSET,&cubit_meshset_ptr); CHKERRQ(ierr);
     std::vector<double> mydata;
@@ -463,7 +463,7 @@ PetscErrorCode NeummanForcesSurface::addFlux(const std::string field_name,Vec F,
   const CubitMeshSets *cubit_meshset_ptr;
   MeshsetsManager *mmanager_ptr;
   MoFEMFunctionBeginHot;
-  ierr = mField.query_interface(mmanager_ptr); CHKERRQ(ierr);
+  ierr = mField.getInterface(mmanager_ptr); CHKERRQ(ierr);
   ierr = mmanager_ptr->getCubitMeshsetPtr(ms_id,SIDESET,&cubit_meshset_ptr); CHKERRQ(ierr);
   ierr = cubit_meshset_ptr->getBcDataStructure(mapPreassure[ms_id].data); CHKERRQ(ierr);
   rval = mField.get_moab().get_entities_by_type(cubit_meshset_ptr->meshset,MBTRI,mapPreassure[ms_id].tRis,true); CHKERRQ_MOAB(rval);

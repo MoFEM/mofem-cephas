@@ -66,7 +66,7 @@ namespace MoFEM {
      * @param  iface returned pointer to interface
      * @return       error code
      */
-    PetscErrorCode queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface);
+    PetscErrorCode query_interface(const MOFEMuuid& uuid, UnknownInterface** iface) const;
 
     /**@}*/
 
@@ -676,15 +676,8 @@ namespace MoFEM {
      */
     PetscErrorCode initialiseDatabseFromMesh(int verb = -1);
 
-    /**
-     * \brief Getting pinter to interface working on database
-     * @param  iface_type interface type
-     * @param  ptr        pointer to interface
-     * @return            error code
-     */
-    PetscErrorCode query_interface_type(const std::type_info& iface_type,void*& ptr) const;
-
-
+    template<class IFACE>
+    PetscErrorCode regSubInterface(const MOFEMuuid& uid);
 
   };
 

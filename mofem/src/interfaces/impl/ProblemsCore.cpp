@@ -177,7 +177,7 @@ PetscErrorCode Core::build_problem_on_distributed_mesh(int verb) {
   DofEntity_multiIndex_active_view dofs_rows,dofs_cols;
   Problem_multiIndex::iterator p_miit = pRoblems.begin();
   for(;p_miit!=pRoblems.end();p_miit++) {
-    ierr = query_interface<ProblemsManager>()->buildProblemOnDistributedMesh(
+    ierr = getInterface<ProblemsManager>()->buildProblemOnDistributedMesh(
       const_cast<Problem*>(&*p_miit),verb
     ); CHKERRQ(ierr);
   }

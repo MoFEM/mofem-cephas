@@ -228,7 +228,7 @@ int main(int argc, char *argv[]) {
   EntityHandle meshset_level0;
   rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERRQ_MOAB(rval);
   ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
-  ierr = m_field.query_interface<BitRefManager>()->getEntitiesByRefLevel(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRQ(ierr);
+  ierr = m_field.getInterface<BitRefManager>()->getEntitiesByRefLevel(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRQ(ierr);
 
   //Fields
   ierr = m_field.add_field("MESH_NODE_POSITIONS",H1,AINSWORTH_LEGENDRE_BASE,3,MB_TAG_SPARSE,MF_ZERO); CHKERRQ(ierr);
@@ -331,7 +331,7 @@ int main(int argc, char *argv[]) {
 
   //build database
   ProblemsManager *prb_mng_ptr;
-  ierr = m_field.query_interface(prb_mng_ptr); CHKERRQ(ierr);
+  ierr = m_field.getInterface(prb_mng_ptr); CHKERRQ(ierr);
   if(is_partitioned) {
     ierr = prb_mng_ptr->buildProblemOnDistributedMesh("ELASTIC_MECHANICS",true); CHKERRQ(ierr);
     ierr = prb_mng_ptr->partitionFiniteElements("ELASTIC_MECHANICS",true,0,pcomm->size(),1); CHKERRQ(ierr);
@@ -344,7 +344,7 @@ int main(int argc, char *argv[]) {
 
   //create matrices
   Vec F;
-  ierr = m_field.query_interface<VecManager>()->vecCreateGhost("ELASTIC_MECHANICS",ROW,&F); CHKERRQ(ierr);
+  ierr = m_field.getInterface<VecManager>()->vecCreateGhost("ELASTIC_MECHANICS",ROW,&F); CHKERRQ(ierr);
   Vec D;
   ierr = VecDuplicate(F,&D); CHKERRQ(ierr);
   Mat Aij;
@@ -366,7 +366,7 @@ int main(int argc, char *argv[]) {
   ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = MatZeroEntries(Aij); CHKERRQ(ierr);
 
-  ierr = m_field.query_interface<VecManager>()->setLocalGhostVector("ELASTIC_MECHANICS",COL,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = m_field.getInterface<VecManager>()->setLocalGhostVector("ELASTIC_MECHANICS",COL,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
@@ -378,7 +378,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field.problem_basic_method_preProcess("ELASTIC_MECHANICS",my_Dirichlet_bc); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = m_field.query_interface<VecManager>()->setLocalGhostVector("ELASTIC_MECHANICS",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = m_field.getInterface<VecManager>()->setLocalGhostVector("ELASTIC_MECHANICS",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   //elem loops
   //noadl forces
   boost::ptr_map<std::string,NodalForce> nodal_forces;
@@ -448,7 +448,7 @@ int main(int argc, char *argv[]) {
   ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
-  ierr = m_field.query_interface<VecManager>()->setOtherGlobalGhostVector(
+  ierr = m_field.getInterface<VecManager>()->setOtherGlobalGhostVector(
     "ELASTIC_MECHANICS","SPATIAL_POSITION","D0",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
   Mat Bij;
@@ -557,7 +557,7 @@ int main(int argc, char *argv[]) {
     PetscPrintf(PETSC_COMM_WORLD," ncov = %D eigr = %.4g eigi = %.4g (inv eigr = %.4g) nrm2r = %.4g\n",nn,eigr,eigi,1./eigr,nrm2r);
     std::ostringstream o1;
     o1 << "eig_" << nn << ".h5m";
-    ierr = m_field.query_interface<VecManager>()->setOtherGlobalGhostVector(
+    ierr = m_field.getInterface<VecManager>()->setOtherGlobalGhostVector(
       "ELASTIC_MECHANICS","SPATIAL_POSITION","EIGEN_VECTOR",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",post_proc); CHKERRQ(ierr);
     ierr = post_proc.writeFile(o1.str().c_str()); CHKERRQ(ierr);

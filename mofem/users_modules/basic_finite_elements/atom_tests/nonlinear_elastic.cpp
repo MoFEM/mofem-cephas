@@ -68,7 +68,7 @@ int main(int argc, char *argv[]) {
     EntityHandle meshset_level0;
     rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERRQ_MOAB(rval);
     ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
-    ierr = m_field.query_interface<BitRefManager>()->getEntitiesByRefLevel(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRQ(ierr);
+    ierr = m_field.getInterface<BitRefManager>()->getEntitiesByRefLevel(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRQ(ierr);
 
     //Fields
     ierr = m_field.add_field("SPATIAL_POSITION",H1,AINSWORTH_LEGENDRE_BASE,3); CHKERRQ(ierr);
@@ -143,7 +143,7 @@ ierr = m_field.build_adjacencies(bit_level0); CHKERRQ(ierr);
 
 
 ProblemsManager *prb_mng_ptr;
-ierr = m_field.query_interface(prb_mng_ptr); CHKERRQ(ierr);
+ierr = m_field.getInterface(prb_mng_ptr); CHKERRQ(ierr);
 //build problem
 ierr = prb_mng_ptr->buildProblem("ELASTIC_MECHANICS",true); CHKERRQ(ierr);
 //partition
@@ -153,7 +153,7 @@ ierr = prb_mng_ptr->partitionGhostDofs("ELASTIC_MECHANICS"); CHKERRQ(ierr);
 
 //create matrices
 Vec F;
-ierr = m_field.query_interface<VecManager>()->vecCreateGhost("ELASTIC_MECHANICS",COL,&F); CHKERRQ(ierr);
+ierr = m_field.getInterface<VecManager>()->vecCreateGhost("ELASTIC_MECHANICS",COL,&F); CHKERRQ(ierr);
 //Vec D;
 //ierr = VecDuplicate(F,&D); CHKERRQ(ierr);
 Mat Aij;

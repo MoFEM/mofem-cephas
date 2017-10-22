@@ -365,7 +365,7 @@ struct CubitMeshSets {
  *  Example:
  *  \code
  *   MeshsetsManager *m_mng;
- *   ierr = m_field.query_interface(m_mng); CHKERRQ(ierr);
+ *   ierr = m_field.getInterface(m_mng); CHKERRQ(ierr);
  *   CubitMeshSet_multiIndex &meshsets_index = m_mng->etMeshsetsMultindex();
  *
  *   CubitMeshSet_multiIndex::index<CubitMeshSets_mask_meshset_mi_tag>::type::iterator mit,hi_mit;

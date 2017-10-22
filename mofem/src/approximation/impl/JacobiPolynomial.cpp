@@ -28,35 +28,35 @@ using namespace MoFEM;
 #include <BaseFunction.hpp>
 #include <JacobiPolynomial.hpp>
 
-PetscErrorCode JacobiPolynomialCtx::queryInterface(
+PetscErrorCode JacobiPolynomialCtx::query_interface(
   const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface
-) {
-  
+) const {
+
   MoFEMFunctionBeginHot;
   *iface = NULL;
   if(uuid == IDD_JACOBI_BASE_FUNCTION) {
-    *iface = static_cast<JacobiPolynomialCtx*>(this);
+    *iface = const_cast<JacobiPolynomialCtx*>(this);
     MoFEMFunctionReturnHot(0);
   } else {
     SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"wrong interference");
   }
-  ierr = BaseFunctionCtx::queryInterface(uuid,iface); CHKERRQ(ierr);
+  ierr = BaseFunctionCtx::query_interface(uuid,iface); CHKERRQ(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode JacobiPolynomial::queryInterface(
+PetscErrorCode JacobiPolynomial::query_interface(
   const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface
-) {
-  
+) const {
+
   MoFEMFunctionBeginHot;
   *iface = NULL;
   if(uuid == IDD_JACOBI_BASE_FUNCTION) {
-    *iface = static_cast<JacobiPolynomial*>(this);
+    *iface = const_cast<JacobiPolynomial*>(this);
     MoFEMFunctionReturnHot(0);
   } else {
     SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"wrong interference");
   }
-  ierr = BaseFunction::queryInterface(uuid,iface); CHKERRQ(ierr);
+  ierr = BaseFunction::query_interface(uuid,iface); CHKERRQ(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -65,10 +65,10 @@ PetscErrorCode JacobiPolynomial::getValue(
   MatrixDouble &pts_t,
   boost::shared_ptr<BaseFunctionCtx> ctx_ptr
 ) {
-  
+
   MoFEMFunctionBeginHot;
   MoFEM::UnknownInterface *iface;
-  ierr = ctx_ptr->queryInterface(IDD_JACOBI_BASE_FUNCTION,&iface); CHKERRQ(ierr);
+  ierr = ctx_ptr->query_interface(IDD_JACOBI_BASE_FUNCTION,&iface); CHKERRQ(ierr);
   JacobiPolynomialCtx *ctx = reinterpret_cast<JacobiPolynomialCtx*>(iface);
   ctx->baseFunPtr->resize(pts_x.size2(),ctx->P+1,false);
   ctx->baseDiffFunPtr->resize(pts_x.size2(),ctx->dIm*(ctx->P+1),false);

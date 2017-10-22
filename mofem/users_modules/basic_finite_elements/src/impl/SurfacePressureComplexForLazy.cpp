@@ -670,7 +670,7 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::addForce
   const CubitMeshSets *cubit_meshset_ptr;
   
   MoFEMFunctionBeginHot;
-  ierr = mField.query_interface(mesh_manager_ptr); CHKERRQ(ierr);
+  ierr = mField.getInterface(mesh_manager_ptr); CHKERRQ(ierr);
   ierr = mesh_manager_ptr->getCubitMeshsetPtr(ms_id,NODESET,&cubit_meshset_ptr); CHKERRQ(ierr);
   ierr = cubit_meshset_ptr->getBcDataStructure(mapForce[ms_id].data); CHKERRQ(ierr);
   rval = mField.get_moab().get_entities_by_type(cubit_meshset_ptr->meshset,MBTRI,mapForce[ms_id].tRis,true); CHKERRQ_MOAB(rval);
@@ -682,7 +682,7 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::addPreas
   const CubitMeshSets *cubit_meshset_ptr;
   
   MoFEMFunctionBeginHot;
-  ierr = mField.query_interface(mesh_manager_ptr); CHKERRQ(ierr);
+  ierr = mField.getInterface(mesh_manager_ptr); CHKERRQ(ierr);
   ierr = mesh_manager_ptr->getCubitMeshsetPtr(ms_id,SIDESET,&cubit_meshset_ptr); CHKERRQ(ierr);
   ierr = cubit_meshset_ptr->getBcDataStructure(mapPreassure[ms_id].data); CHKERRQ(ierr);
   rval = mField.get_moab().get_entities_by_type(cubit_meshset_ptr->meshset,MBTRI,mapPreassure[ms_id].tRis,true); CHKERRQ_MOAB(rval);

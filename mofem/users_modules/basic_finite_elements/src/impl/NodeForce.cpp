@@ -95,7 +95,7 @@ NodalForce::OpNodalForce::OpNodalForce(const std::string field_name,Vec _F,bCFor
     const CubitMeshSets *cubit_meshset_ptr;
     MeshsetsManager *mmanager_ptr;
     MoFEMFunctionBeginHot;
-    ierr = mField.query_interface(mmanager_ptr); CHKERRQ(ierr);
+    ierr = mField.getInterface(mmanager_ptr); CHKERRQ(ierr);
     ierr = mmanager_ptr->getCubitMeshsetPtr(ms_id,NODESET,&cubit_meshset_ptr); CHKERRQ(ierr);
     ierr = cubit_meshset_ptr->getBcDataStructure(mapForce[ms_id].data); CHKERRQ(ierr);
     rval = mField.get_moab().get_entities_by_type(cubit_meshset_ptr->meshset,MBVERTEX,mapForce[ms_id].nOdes,true); CHKERRQ_MOAB(rval);

@@ -43,7 +43,7 @@ int main(int argc, char *argv[]) {
     MoFEM::Interface& m_field = core;
 
     MedInterface *med_interface_ptr;
-    ierr = m_field.query_interface(med_interface_ptr); CHKERRQ(ierr);
+    ierr = m_field.getInterface(med_interface_ptr); CHKERRQ(ierr);
 
     ierr = med_interface_ptr->readMed(); CHKERRQ(ierr);
     ierr = med_interface_ptr->medGetFieldNames(); CHKERRQ(ierr);
@@ -78,7 +78,7 @@ int main(int argc, char *argv[]) {
     }
 
     MeshsetsManager *meshset_manager_ptr;
-    ierr = m_field.query_interface(meshset_manager_ptr); CHKERRQ(ierr);
+    ierr = m_field.getInterface(meshset_manager_ptr); CHKERRQ(ierr);
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_((*meshset_manager_ptr),BLOCKSET,mit)) {
       EntityHandle meshset = mit->getMeshset();
       std::string name = mit->getName();

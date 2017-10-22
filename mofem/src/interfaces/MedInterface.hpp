@@ -34,7 +34,7 @@ namespace MoFEM {
   */
   struct MedInterface: public UnknownInterface {
 
-    PetscErrorCode queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface);
+    PetscErrorCode query_interface(const MOFEMuuid& uuid, UnknownInterface** iface) const;
 
     MedInterface(const MoFEM::Core& core);
 

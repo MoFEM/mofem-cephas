@@ -107,7 +107,7 @@ int main(int argc, char *argv[]) {
 
     //build problem
     ProblemsManager *prb_mng_ptr;
-    ierr = m_field.query_interface(prb_mng_ptr); CHKERRQ(ierr);
+    ierr = m_field.getInterface(prb_mng_ptr); CHKERRQ(ierr);
     ierr = prb_mng_ptr->buildProblem("PROB",true); CHKERRQ(ierr);
     //mesh partitioning
     //partition
@@ -125,7 +125,7 @@ int main(int argc, char *argv[]) {
     }
 
     Vec F;
-    ierr = m_field.query_interface<VecManager>()->vecCreateGhost("PROB",ROW,&F); CHKERRQ(ierr);
+    ierr = m_field.getInterface<VecManager>()->vecCreateGhost("PROB",ROW,&F); CHKERRQ(ierr);
     ierr = thermal_stress_elem.setThermalStressRhsOperators("DISP","TEMP",F,1); CHKERRQ(ierr);
 
     ierr = m_field.loop_finite_elements("PROB","ELAS",thermal_stress_elem.getLoopThermalStressRhs()); CHKERRQ(ierr);

@@ -261,8 +261,8 @@ PetscErrorCode AnalyticalDirichletBC::ApproxField::OpLhs::doWork(
     MoFEMFunctionBeginHot;
 
 
-    ierr = m_field.query_interface<VecManager>()->vecCreateGhost(problem,ROW,&F); CHKERRQ(ierr);
-    ierr = m_field.query_interface<VecManager>()->vecCreateGhost(problem,COL,&D); CHKERRQ(ierr);
+    ierr = m_field.getInterface<VecManager>()->vecCreateGhost(problem,ROW,&F); CHKERRQ(ierr);
+    ierr = m_field.getInterface<VecManager>()->vecCreateGhost(problem,COL,&D); CHKERRQ(ierr);
     ierr = m_field.MatCreateMPIAIJWithArrays(problem,&A); CHKERRQ(ierr);
 
     ierr = KSPCreate(PETSC_COMM_WORLD,&kspSolver); CHKERRQ(ierr);
@@ -301,7 +301,7 @@ PetscErrorCode AnalyticalDirichletBC::ApproxField::OpLhs::doWork(
     ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
-    ierr = m_field.query_interface<VecManager>()->setGlobalGhostVector(problem,ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = m_field.getInterface<VecManager>()->setGlobalGhostVector(problem,ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
     bc.trisPtr = boost::shared_ptr<Range>(new Range(tris));
     bc.mapZeroRows.clear();

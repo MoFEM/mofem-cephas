@@ -329,7 +329,7 @@ int main(int argc, char *argv[]) {
 
   // delete old temerature recorded series
   SeriesRecorder *recorder_ptr;
-  ierr = m_field.query_interface(recorder_ptr); CHKERRQ(ierr);
+  ierr = m_field.getInterface(recorder_ptr); CHKERRQ(ierr);
   if(recorder_ptr->check_series("THEMP_SERIES")) {
     /*for(_IT_SERIES_STEPS_BY_NAME_FOR_LOOP_(recorder_ptr,"THEMP_SERIES",sit)) {
       ierr = recorder_ptr->load_series_data("THEMP_SERIES",sit->get_step_number()); CHKERRQ(ierr);

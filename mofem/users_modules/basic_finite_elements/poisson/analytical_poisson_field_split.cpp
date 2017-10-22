@@ -292,7 +292,7 @@ int main(int argc, char *argv[]) {
     // easy construction of problem.
     Simple *simple_interface;
     // Query interface and get pointer to Simple interface
-    ierr = m_field.query_interface(simple_interface); CHKERRQ(ierr);
+    ierr = m_field.getInterface(simple_interface); CHKERRQ(ierr);
 
     // Build problem with simple interface
     {

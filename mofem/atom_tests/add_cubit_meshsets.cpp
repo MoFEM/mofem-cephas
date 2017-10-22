@@ -23,7 +23,7 @@ int main(int argc, char *argv[]) {
     MoFEM::Interface& m_field = core;
 
     MeshsetsManager *meshsets_manager_ptr;
-    ierr = m_field.query_interface(meshsets_manager_ptr); CHKERRQ(ierr);
+    ierr = m_field.getInterface(meshsets_manager_ptr); CHKERRQ(ierr);
 
     std::cout << "<<<< SIDESETs >>>>>" << std::endl;
 

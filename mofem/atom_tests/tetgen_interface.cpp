@@ -63,7 +63,7 @@ int main(int argc, char *argv[]) {
 
   BitRefLevel bit_level0;
   bit_level0.set(0);
-  ierr = m_field.query_interface<BitRefManager>()->setBitRefLevelByDim(0,3,bit_level0); CHKERRQ(ierr);
+  ierr = m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(0,3,bit_level0); CHKERRQ(ierr);
 
   Range nodes,tets;
   rval = moab.get_entities_by_type(0,MBVERTEX,nodes,false); CHKERRQ_MOAB(rval);
@@ -76,7 +76,7 @@ int main(int argc, char *argv[]) {
 
   //get TetGen interface
   TetGenInterface *tetgen_iface;
-  ierr = m_field.query_interface(tetgen_iface); CHKERRQ(ierr);
+  ierr = m_field.getInterface(tetgen_iface); CHKERRQ(ierr);
 
   //set MoAB nodes to TetGen data structure
   ierr = tetgen_iface->inData(nodes,in,moab_tetgen_map,tetgen_moab_map); CHKERRQ(ierr);
@@ -94,7 +94,7 @@ int main(int argc, char *argv[]) {
   //save results
   EntityHandle meshset_level1;
   rval = moab.create_meshset(MESHSET_SET,meshset_level1); CHKERRQ_MOAB(rval);
-  ierr = m_field.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(bit_level1,BitRefLevel().set(),MBTET,meshset_level1); CHKERRQ(ierr);
+  ierr = m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(bit_level1,BitRefLevel().set(),MBTET,meshset_level1); CHKERRQ(ierr);
   if(debug) rval = moab.write_file("level1.vtk","VTK","",&meshset_level1,1); CHKERRQ_MOAB(rval);
 
   //clean data
@@ -216,19 +216,19 @@ int main(int argc, char *argv[]) {
   //post-process results, save a mesh and skin
   EntityHandle meshset_level2;
   rval = moab.create_meshset(MESHSET_SET,meshset_level2); CHKERRQ_MOAB(rval);
-  ierr = m_field.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(bit_level2,BitRefLevel().set(),MBTET,meshset_level2); CHKERRQ(ierr);
+  ierr = m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(bit_level2,BitRefLevel().set(),MBTET,meshset_level2); CHKERRQ(ierr);
   if(debug) rval = moab.write_file("level2.vtk","VTK","",&meshset_level2,1); CHKERRQ_MOAB(rval);
   EntityHandle meshset_skin_level2;
   rval = moab.create_meshset(MESHSET_SET,meshset_skin_level2); CHKERRQ_MOAB(rval);
-  ierr = m_field.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(bit_level2,BitRefLevel().set(),MBTRI,meshset_skin_level2); CHKERRQ(ierr);
+  ierr = m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(bit_level2,BitRefLevel().set(),MBTRI,meshset_skin_level2); CHKERRQ(ierr);
   if(debug) rval = moab.write_file("level_skin2.vtk","VTK","",&meshset_skin_level2,1); CHKERRQ_MOAB(rval);
 
   //test BitLevelCoupler
   BitLevelCoupler *bit_ref_copuler_ptr;
-  ierr = m_field.query_interface(bit_ref_copuler_ptr); CHKERRQ(ierr);
+  ierr = m_field.getInterface(bit_ref_copuler_ptr); CHKERRQ(ierr);
 
   Range children;
-  ierr = m_field.query_interface<BitRefManager>()->getEntitiesByRefLevel(bit_level1,BitRefLevel().set(),children); CHKERRQ(ierr);
+  ierr = m_field.getInterface<BitRefManager>()->getEntitiesByRefLevel(bit_level1,BitRefLevel().set(),children); CHKERRQ(ierr);
   if(children.empty()) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"it should not be empty");
   }

@@ -35,7 +35,7 @@ static const MOFEMuuid IDD_MOFEMSeriesRecorder = MOFEMuuid( BitIntefaceId(SERIES
  */
 struct SeriesRecorder: public UnknownInterface {
 
-  PetscErrorCode queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface);
+  PetscErrorCode query_interface(const MOFEMuuid& uuid, UnknownInterface** iface) const;
 
   MoFEM::Core& cOre;
   SeriesRecorder(const MoFEM::Core &core);

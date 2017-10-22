@@ -29,35 +29,35 @@ using namespace MoFEM;
 #include <LegendrePolynomial.hpp>
 #include <LobattoPolynomial.hpp>
 
-PetscErrorCode LobattoPolynomialCtx::queryInterface(
+PetscErrorCode LobattoPolynomialCtx::query_interface(
   const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface
-) {
-  
+) const {
+
   MoFEMFunctionBeginHot;
   *iface = NULL;
   if(uuid == IDD_LOBATTO_BASE_FUNCTION) {
-    *iface = static_cast<LobattoPolynomialCtx*>(this);
+    *iface = const_cast<LobattoPolynomialCtx*>(this);
     MoFEMFunctionReturnHot(0);
   } else {
     SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"wrong interference");
   }
-  ierr = LegendrePolynomialCtx::queryInterface(uuid,iface); CHKERRQ(ierr);
+  ierr = LegendrePolynomialCtx::query_interface(uuid,iface); CHKERRQ(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode LobattoPolynomial::queryInterface(
+PetscErrorCode LobattoPolynomial::query_interface(
   const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface
-) {
-  
+) const {
+
   MoFEMFunctionBeginHot;
   *iface = NULL;
   if(uuid == IDD_LOBATTO_BASE_FUNCTION) {
-    *iface = static_cast<LobattoPolynomial*>(this);
+    *iface = const_cast<LobattoPolynomial*>(this);
     MoFEMFunctionReturnHot(0);
   } else {
     SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"wrong interference");
   }
-  ierr = LegendrePolynomial::queryInterface(uuid,iface); CHKERRQ(ierr);
+  ierr = LegendrePolynomial::query_interface(uuid,iface); CHKERRQ(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -65,10 +65,10 @@ PetscErrorCode LobattoPolynomial::getValue(
   MatrixDouble &pts,
   boost::shared_ptr<BaseFunctionCtx> ctx_ptr
 ) {
-  
+
   MoFEMFunctionBeginHot;
   MoFEM::UnknownInterface *iface;
-  ierr = ctx_ptr->queryInterface(IDD_LOBATTO_BASE_FUNCTION,&iface); CHKERRQ(ierr);
+  ierr = ctx_ptr->query_interface(IDD_LOBATTO_BASE_FUNCTION,&iface); CHKERRQ(ierr);
   LobattoPolynomialCtx *ctx = reinterpret_cast<LobattoPolynomialCtx*>(iface);
   // Polynomial order start from 2nd order
   ctx->baseFunPtr->resize(pts.size2(),ctx->P+1-2,false);
@@ -83,35 +83,35 @@ PetscErrorCode LobattoPolynomial::getValue(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode KernelLobattoPolynomialCtx::queryInterface(
+PetscErrorCode KernelLobattoPolynomialCtx::query_interface(
   const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface
-) {
-  
+) const {
+
   MoFEMFunctionBeginHot;
   *iface = NULL;
   if(uuid == IDD_KERNEL_BASE_FUNCTION) {
-    *iface = static_cast<KernelLobattoPolynomialCtx*>(this);
+    *iface = const_cast<KernelLobattoPolynomialCtx*>(this);
     MoFEMFunctionReturnHot(0);
   } else {
     SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"wrong interference");
   }
-  ierr = LegendrePolynomialCtx::queryInterface(uuid,iface); CHKERRQ(ierr);
+  ierr = LegendrePolynomialCtx::query_interface(uuid,iface); CHKERRQ(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode KernelLobattoPolynomial::queryInterface(
+PetscErrorCode KernelLobattoPolynomial::query_interface(
   const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface
-) {
-  
+) const {
+
   MoFEMFunctionBeginHot;
   *iface = NULL;
   if(uuid == IDD_KERNEL_BASE_FUNCTION) {
-    *iface = static_cast<KernelLobattoPolynomial*>(this);
+    *iface = const_cast<KernelLobattoPolynomial*>(this);
     MoFEMFunctionReturnHot(0);
   } else {
     SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"wrong interference");
   }
-  ierr = LegendrePolynomial::queryInterface(uuid,iface); CHKERRQ(ierr);
+  ierr = LegendrePolynomial::query_interface(uuid,iface); CHKERRQ(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -119,10 +119,10 @@ PetscErrorCode KernelLobattoPolynomial::getValue(
   MatrixDouble &pts,
   boost::shared_ptr<BaseFunctionCtx> ctx_ptr
 ) {
-  
+
   MoFEMFunctionBeginHot;
   MoFEM::UnknownInterface *iface;
-  ierr = ctx_ptr->queryInterface(IDD_KERNEL_BASE_FUNCTION,&iface); CHKERRQ(ierr);
+  ierr = ctx_ptr->query_interface(IDD_KERNEL_BASE_FUNCTION,&iface); CHKERRQ(ierr);
   LobattoPolynomialCtx *ctx = reinterpret_cast<LobattoPolynomialCtx*>(iface);
   ctx->baseFunPtr->resize(pts.size2(),ctx->P+1,false);
   ctx->baseDiffFunPtr->resize(pts.size2(),ctx->dIm*(ctx->P+1),false);

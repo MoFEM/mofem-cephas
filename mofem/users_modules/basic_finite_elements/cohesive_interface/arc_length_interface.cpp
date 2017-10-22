@@ -243,7 +243,7 @@ int main(int argc, char *argv[]) {
     MoFEM::Interface& m_field = core;
 
     PrismInterface *interface_ptr;
-    ierr = m_field.query_interface(interface_ptr); CHKERRQ(ierr);
+    ierr = m_field.getInterface(interface_ptr); CHKERRQ(ierr);
 
     Tag th_my_ref_level;
     BitRefLevel def_bit_level = 0;
@@ -271,10 +271,10 @@ int main(int argc, char *argv[]) {
           //get tet entities form back bit_level
           EntityHandle ref_level_meshset = 0;
           rval = moab.create_meshset(MESHSET_SET,ref_level_meshset); CHKERRQ_MOAB(rval);
-          ierr = m_field.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
+          ierr = m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
             bit_levels.back(),BitRefLevel().set(),MBTET,ref_level_meshset
           ); CHKERRQ(ierr);
-          ierr = m_field.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
+          ierr = m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
             bit_levels.back(),BitRefLevel().set(),MBPRISM,ref_level_meshset
           ); CHKERRQ(ierr);
           Range ref_level_tets;
@@ -291,10 +291,10 @@ int main(int argc, char *argv[]) {
         // Update cubit meshsets
         for(_IT_CUBITMESHSETS_FOR_LOOP_(m_field,ciit)) {
           EntityHandle cubit_meshset = ciit->meshset;
-          ierr = m_field.query_interface<BitRefManager>()->updateMeshsetByEntitiesChildren(cubit_meshset,bit_levels.back(),cubit_meshset,MBVERTEX,true); CHKERRQ(ierr);
-          ierr = m_field.query_interface<BitRefManager>()->updateMeshsetByEntitiesChildren(cubit_meshset,bit_levels.back(),cubit_meshset,MBEDGE,true); CHKERRQ(ierr);
-          ierr = m_field.query_interface<BitRefManager>()->updateMeshsetByEntitiesChildren(cubit_meshset,bit_levels.back(),cubit_meshset,MBTRI,true); CHKERRQ(ierr);
-          ierr = m_field.query_interface<BitRefManager>()->updateMeshsetByEntitiesChildren(cubit_meshset,bit_levels.back(),cubit_meshset,MBTET,true); CHKERRQ(ierr);
+          ierr = m_field.getInterface<BitRefManager>()->updateMeshsetByEntitiesChildren(cubit_meshset,bit_levels.back(),cubit_meshset,MBVERTEX,true); CHKERRQ(ierr);
+          ierr = m_field.getInterface<BitRefManager>()->updateMeshsetByEntitiesChildren(cubit_meshset,bit_levels.back(),cubit_meshset,MBEDGE,true); CHKERRQ(ierr);
+          ierr = m_field.getInterface<BitRefManager>()->updateMeshsetByEntitiesChildren(cubit_meshset,bit_levels.back(),cubit_meshset,MBTRI,true); CHKERRQ(ierr);
+          ierr = m_field.getInterface<BitRefManager>()->updateMeshsetByEntitiesChildren(cubit_meshset,bit_levels.back(),cubit_meshset,MBTET,true); CHKERRQ(ierr);
         }
       }
 
@@ -398,7 +398,7 @@ int main(int argc, char *argv[]) {
 
       /*//reduce level of approximation for entities on interface
       Range prims;
-      ierr = m_field.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(problem_bit_level,BitRefLevel().set(),MBPRISM,prims); CHKERRQ(ierr);
+      ierr = m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(problem_bit_level,BitRefLevel().set(),MBPRISM,prims); CHKERRQ(ierr);
       Range prims_faces;
       rval = m_field.get_moab().get_adjacencies(prims,2,false,prims_faces,moab::Interface::UNION); CHKERRQ_MOAB(rval);
       Range prims_faces_edges;
@@ -446,7 +446,7 @@ int main(int argc, char *argv[]) {
 
     /****/
     ProblemsManager *prb_mng_ptr;
-    ierr = m_field.query_interface(prb_mng_ptr); CHKERRQ(ierr);
+    ierr = m_field.getInterface(prb_mng_ptr); CHKERRQ(ierr);
     //build problem
     ierr = prb_mng_ptr->buildProblem("ELASTIC_MECHANICS",true); CHKERRQ(ierr);
     //partition
@@ -457,7 +457,7 @@ int main(int argc, char *argv[]) {
 
     //print bcs
     MeshsetsManager *mmanager_ptr;
-    ierr = m_field.query_interface(mmanager_ptr); CHKERRQ(ierr);
+    ierr = m_field.getInterface(mmanager_ptr); CHKERRQ(ierr);
     ierr = mmanager_ptr->printDisplacementSet(); CHKERRQ(ierr);
     ierr = mmanager_ptr->printForceSet(); CHKERRQ(ierr);
     //print block sets with materials
@@ -465,7 +465,7 @@ int main(int argc, char *argv[]) {
 
     //create matrices
     Vec F,F_body_force,D;
-    ierr = m_field.query_interface<VecManager>()->vecCreateGhost("ELASTIC_MECHANICS",COL,&F); CHKERRQ(ierr);
+    ierr = m_field.getInterface<VecManager>()->vecCreateGhost("ELASTIC_MECHANICS",COL,&F); CHKERRQ(ierr);
     ierr = VecDuplicate(F,&D); CHKERRQ(ierr);
     ierr = VecDuplicate(F,&F_body_force); CHKERRQ(ierr);
     Mat Aij;
@@ -660,8 +660,8 @@ int main(int argc, char *argv[]) {
     PetscPrintf(PETSC_COMM_WORLD,"\tFlambda2 = %6.4e\n",arc_ctx->F_lambda2);
 
     if(step>1) {
-      ierr = m_field.query_interface<VecManager>()->setLocalGhostVector("ELASTIC_MECHANICS",COL,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-      ierr = m_field.query_interface<VecManager>()->setOtherGlobalGhostVector(
+      ierr = m_field.getInterface<VecManager>()->setLocalGhostVector("ELASTIC_MECHANICS",COL,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      ierr = m_field.getInterface<VecManager>()->setOtherGlobalGhostVector(
         "ELASTIC_MECHANICS","DISPLACEMENT","X0_DISPLACEMENT",COL,arc_ctx->x0,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
         double x0_nrm;
         ierr = VecNorm(arc_ctx->x0,NORM_2,&x0_nrm);  CHKERRQ(ierr);
@@ -737,7 +737,7 @@ int main(int argc, char *argv[]) {
         ierr = SNESSolve(snes,PETSC_NULL,D); CHKERRQ(ierr);
 
         //Distribute displacements on all processors
-        ierr = m_field.query_interface<VecManager>()->setGlobalGhostVector("ELASTIC_MECHANICS",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+        ierr = m_field.getInterface<VecManager>()->setGlobalGhostVector("ELASTIC_MECHANICS",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
         ierr = m_field.loop_finite_elements(
           "ELASTIC_MECHANICS","INTERFACE",cohesive_elements.getFeHistory(),0,m_field.get_comm_size()
         ); CHKERRQ(ierr);
@@ -763,8 +763,8 @@ int main(int argc, char *argv[]) {
           }
 
           //Save data on mesh
-          ierr = m_field.query_interface<VecManager>()->setGlobalGhostVector("ELASTIC_MECHANICS",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-          ierr = m_field.query_interface<VecManager>()->setOtherGlobalGhostVector(
+          ierr = m_field.getInterface<VecManager>()->setGlobalGhostVector("ELASTIC_MECHANICS",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+          ierr = m_field.getInterface<VecManager>()->setOtherGlobalGhostVector(
             "ELASTIC_MECHANICS","DISPLACEMENT","X0_DISPLACEMENT",COL,arc_ctx->x0,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
             converged_state = true;
           }
@@ -795,7 +795,7 @@ int main(int argc, char *argv[]) {
         }
 
         //Save data on mesh
-        ierr = m_field.query_interface<VecManager>()->setGlobalGhostVector("ELASTIC_MECHANICS",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+        ierr = m_field.getInterface<VecManager>()->setGlobalGhostVector("ELASTIC_MECHANICS",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
         //detroy matrices
         ierr = VecDestroy(&F); CHKERRQ(ierr);

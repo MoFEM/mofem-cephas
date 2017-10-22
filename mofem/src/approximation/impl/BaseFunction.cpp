@@ -25,13 +25,13 @@ using namespace MoFEM;
 
 #include <BaseFunction.hpp>
 
-PetscErrorCode BaseFunctionCtx::queryInterface(
+PetscErrorCode BaseFunctionCtx::query_interface(
   const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface
-) {
+) const {
   MoFEMFunctionBeginHot;
   *iface = NULL;
   if(uuid == IDD_UNKNOWN_BASE_FUNCTION) {
-    *iface = static_cast<BaseFunctionCtx*>(this);
+    *iface = const_cast<BaseFunctionCtx*>(this);
     MoFEMFunctionReturnHot(0);
   } else {
     SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"wrong interference");
@@ -39,13 +39,13 @@ PetscErrorCode BaseFunctionCtx::queryInterface(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode BaseFunction::queryInterface(
+PetscErrorCode BaseFunction::query_interface(
   const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface
-) {
+) const {
   MoFEMFunctionBeginHot;
   *iface = NULL;
   if(uuid == IDD_UNKNOWN_BASE_FUNCTION) {
-    *iface = static_cast<BaseFunction*>(this);
+    *iface = const_cast<BaseFunction*>(this);
     MoFEMFunctionReturnHot(0);
   } else {
     SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"wrong interference");

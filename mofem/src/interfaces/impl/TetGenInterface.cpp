@@ -47,15 +47,11 @@
 
 namespace MoFEM {
 
-PetscErrorCode TetGenInterface::queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface) {
+PetscErrorCode TetGenInterface::query_interface(const MOFEMuuid& uuid, UnknownInterface** iface) const {
   MoFEMFunctionBeginHot;
   *iface = NULL;
   if(uuid == IDD_MOFEMTetGegInterface) {
-    *iface = dynamic_cast<TetGenInterface*>(this);
-    MoFEMFunctionReturnHot(0);
-  }
-  if(uuid == IDD_MOFEMUnknown) {
-    *iface = dynamic_cast<UnknownInterface*>(this);
+    *iface = const_cast<TetGenInterface*>(this);
     MoFEMFunctionReturnHot(0);
   }
   SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown interface");
@@ -463,7 +459,7 @@ PetscErrorCode TetGenInterface::outData(
   // BARRIER_RANK_END(pcomm)
 
   //std::cerr << ents.size() << std::endl;
-  ierr = m_field.query_interface<BitRefManager>()->setBitRefLevel(ents.subset_by_type(MBTET),bit); CHKERRQ(ierr);
+  ierr = m_field.getInterface<BitRefManager>()->setBitRefLevel(ents.subset_by_type(MBTET),bit); CHKERRQ(ierr);
 
   // BARRIER_RANK_START(pcomm)
   // {

@@ -1123,7 +1123,7 @@ vector of rate of capillary pressure on field data. Since rate of capillary
 head is not primary unknown, but linear function of solution at current and
 previous steps, is evaluated by PETSc for particular integration scheme.
 \code
-ierr = fePtr->mField.query_interface<VecManager>()->setOtherLocalGhostVector(
+ierr = fePtr->mField.getInterface<VecManager>()->setOtherLocalGhostVector(
   fePtr->problemPtr,"VALUES",string("VALUES")+"_t",
   ROW,fePtr->ts_u_t,INSERT_VALUES,SCATTER_REVERSE
 ); CHKERRQ(ierr);

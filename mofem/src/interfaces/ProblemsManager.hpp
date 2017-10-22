@@ -32,7 +32,7 @@ namespace MoFEM {
    */
   struct ProblemsManager: public UnknownInterface {
 
-    PetscErrorCode queryInterface(const MOFEMuuid& uuid,UnknownInterface** iface);
+    PetscErrorCode query_interface(const MOFEMuuid& uuid,UnknownInterface** iface) const;
 
     MoFEM::Core& cOre;
     ProblemsManager(const MoFEM::Core& core);

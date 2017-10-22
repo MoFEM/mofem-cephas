@@ -45,18 +45,18 @@ int main(int argc, char *argv[]) {
 
 
     MeshRefinement *refine;
-    ierr = m_field.query_interface(refine); CHKERRQ(ierr);
+    ierr = m_field.getInterface(refine); CHKERRQ(ierr);
 
     BitRefLevel bit_level0;
     bit_level0.set(0);
-    ierr = m_field.query_interface<BitRefManager>()->setBitRefLevelByDim(0,3,bit_level0); CHKERRQ(ierr);
+    ierr = m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(0,3,bit_level0); CHKERRQ(ierr);
 
     BitRefLevel bit_level1;
     bit_level1.set(1);
 
     EntityHandle meshset_level0;
     rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERRQ_MOAB(rval);
-    ierr = m_field.query_interface<BitRefManager>()->getEntitiesByRefLevel(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRQ(ierr);
+    ierr = m_field.getInterface<BitRefManager>()->getEntitiesByRefLevel(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRQ(ierr);
 
     // random mesh refinement
     EntityHandle meshset_ref_edges;
@@ -81,7 +81,7 @@ int main(int argc, char *argv[]) {
 
     EntityHandle out_meshset_tet;
     rval = moab.create_meshset(MESHSET_SET,out_meshset_tet); CHKERRQ_MOAB(rval);
-    ierr = m_field.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(bit_level1,BitRefLevel().set(),MBTET,out_meshset_tet); CHKERRQ(ierr);
+    ierr = m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(bit_level1,BitRefLevel().set(),MBTET,out_meshset_tet); CHKERRQ(ierr);
     Range tets;
     rval = moab.get_entities_by_handle(out_meshset_tet,tets); CHKERRQ_MOAB(rval);
     {
@@ -106,10 +106,10 @@ int main(int argc, char *argv[]) {
     rval = moab.write_file("out_mesh_refine.vtk","VTK","",&out_meshset_tet,1); CHKERRQ_MOAB(rval);
 
     BitLevelCoupler *bit_ref_copuler_ptr;
-    ierr = m_field.query_interface(bit_ref_copuler_ptr); CHKERRQ(ierr);
+    ierr = m_field.getInterface(bit_ref_copuler_ptr); CHKERRQ(ierr);
 
     Range children;
-    ierr = m_field.query_interface<BitRefManager>()->getEntitiesByRefLevel(bit_level1,BitRefLevel().set(),children); CHKERRQ(ierr);
+    ierr = m_field.getInterface<BitRefManager>()->getEntitiesByRefLevel(bit_level1,BitRefLevel().set(),children); CHKERRQ(ierr);
     if(children.empty()) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"it should not be empty");
     }
@@ -119,7 +119,7 @@ int main(int argc, char *argv[]) {
     // //reset entities
     // bit_ref_copuler_ptr->vErify = false;
     // Range children_new;
-    // ierr = m_field.query_interface<BitRefManager>()->getEntitiesByRefLevel(bit_level1,bit_level1,children_new); CHKERRQ(ierr);
+    // ierr = m_field.getInterface<BitRefManager>()->getEntitiesByRefLevel(bit_level1,bit_level1,children_new); CHKERRQ(ierr);
     // ierr = bit_ref_copuler_ptr->resetParents(children_new,true); CHKERRQ(ierr);
     //
     // ierr = bit_ref_copuler_ptr->buidlAdjacenciesVerticesOnTets(bit_level0,children,true,1e-10,1e-6,true,0); CHKERRQ(ierr);

@@ -154,24 +154,24 @@ DMMGViaApproxOrdersCtx::~DMMGViaApproxOrdersCtx() {
   // std::cerr << "destroy dm data\n";
 }
 
-PetscErrorCode DMMGViaApproxOrdersCtx::queryInterface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface) {
+PetscErrorCode DMMGViaApproxOrdersCtx::query_interface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface) const {
   MoFEMFunctionBeginHot;
   *iface = NULL;
   if(uuid == IDD_DMMGVIAAPPROXORDERSCTX) {
-    *iface = dynamic_cast<DMMGViaApproxOrdersCtx*>(this);
+    *iface = static_cast<DMMGViaApproxOrdersCtx*>(const_cast<DMMGViaApproxOrdersCtx*>(this));
     MoFEMFunctionReturnHot(0);
   } else {
     SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"wrong interference");
   }
 
-  ierr = DMCtx::queryInterface(uuid,iface); CHKERRQ(ierr);
+  ierr = DMCtx::query_interface(uuid,iface); CHKERRQ(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
 #define GET_DM_FIELD(DM) \
   MoFEM::UnknownInterface *iface; \
-  ierr = ((DMCtx*)DM->data)->queryInterface(IDD_DMMGVIAAPPROXORDERSCTX,&iface); CHKERRQ(ierr); \
-  DMMGViaApproxOrdersCtx *dm_field = reinterpret_cast<DMMGViaApproxOrdersCtx*>(iface)
+  ierr = ((DMCtx*)DM->data)->query_interface(IDD_DMMGVIAAPPROXORDERSCTX,&iface); CHKERRQ(ierr); \
+  DMMGViaApproxOrdersCtx *dm_field = static_cast<DMMGViaApproxOrdersCtx*>(iface)
 
 
 PetscErrorCode DMMGViaApproxOrdersGetCtx(DM dm,DMMGViaApproxOrdersCtx **ctx) {
@@ -610,12 +610,12 @@ PetscErrorCode PCMGSetUpViaApproxOrdersCtx::getOptions() {
 }
 
 PetscErrorCode PCMGSetUpViaApproxOrdersCtx::createIsAtLevel(int kk,IS *is) {
-  const MoFEM::Interface *m_field_ptr;
-  const MoFEM::ISManager *is_manager_ptr;
+  MoFEM::Interface *m_field_ptr;
+  MoFEM::ISManager *is_manager_ptr;
   MoFEMFunctionBeginHot;
   //if is last level, take all remaining orders dofs, if any left
   ierr = DMoFEMGetInterfacePtr(dM,&m_field_ptr); CHKERRQ(ierr);
-  ierr = m_field_ptr->query_interface(is_manager_ptr); CHKERRQ(ierr);
+  ierr = m_field_ptr->getInterface(is_manager_ptr); CHKERRQ(ierr);
   const Problem *problem_ptr;
   ierr = DMMoFEMGetProblemPtr(dM,&problem_ptr); CHKERRQ(ierr);
   int order_at_next_level = kk+coarseOrder;

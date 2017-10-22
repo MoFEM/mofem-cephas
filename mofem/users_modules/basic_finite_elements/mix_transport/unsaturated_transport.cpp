@@ -125,7 +125,7 @@ int main(int argc, char *argv[]) {
 
     // Add meshsets with material and boundary conditions
     MeshsetsManager *meshsets_manager_ptr;
-    ierr = m_field.query_interface(meshsets_manager_ptr); CHKERRQ(ierr);
+    ierr = m_field.getInterface(meshsets_manager_ptr); CHKERRQ(ierr);
     ierr = meshsets_manager_ptr->setMeshsetFromFile(); CHKERRQ(ierr);
 
     PetscPrintf(PETSC_COMM_WORLD,"Read meshsets and added meshsets from bc.cfg\n");

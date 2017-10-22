@@ -257,7 +257,7 @@ struct KelvinVoigtDamper {
 
       if(ts_ctx == CTX_TSSETIFUNCTION) {
 
-        ierr = mField.query_interface<VecManager>()->setOtherLocalGhostVector(
+        ierr = mField.getInterface<VecManager>()->setOtherLocalGhostVector(
           problemPtr,commonData.spatialPositionName,commonData.spatialPositionNameDot,COL,ts_u_t,INSERT_VALUES,SCATTER_REVERSE
         ); CHKERRQ(ierr);
 

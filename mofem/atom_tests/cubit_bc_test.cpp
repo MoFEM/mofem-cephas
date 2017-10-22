@@ -193,7 +193,7 @@ int main(int argc, char *argv[]) {
   }
 
   MeshsetsManager *meshsets_manager_ptr;
-  ierr = m_field.query_interface(meshsets_manager_ptr); CHKERRQ(ierr);
+  ierr = m_field.getInterface(meshsets_manager_ptr); CHKERRQ(ierr);
 
   std::cout << "<<<< BLOCKSETs >>>>>" << std::endl;
   //BLOCKSETs

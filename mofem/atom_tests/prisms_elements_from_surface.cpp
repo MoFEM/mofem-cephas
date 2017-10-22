@@ -58,7 +58,7 @@ int main(int argc, char *argv[]) {
     MoFEM::Interface& m_field = core;
 
     PrismsFromSurfaceInterface *prisms_from_surface_interface;
-    ierr = m_field.query_interface(prisms_from_surface_interface); CHKERRQ(ierr);
+    ierr = m_field.getInterface(prisms_from_surface_interface); CHKERRQ(ierr);
 
     Range tris;
     rval = moab.get_entities_by_type(0,MBTRI,tris,false); CHKERRQ_MOAB(rval);
@@ -75,7 +75,7 @@ int main(int argc, char *argv[]) {
 
     BitRefLevel bit_level0;
     bit_level0.set(0);
-    ierr = m_field.query_interface<BitRefManager>()->setBitRefLevelByDim(meshset,3,bit_level0); CHKERRQ(ierr);
+    ierr = m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(meshset,3,bit_level0); CHKERRQ(ierr);
     ierr = prisms_from_surface_interface->seedPrismsEntities(prisms,bit_level0); CHKERRQ(ierr);
 
     //Fields
@@ -138,7 +138,7 @@ int main(int argc, char *argv[]) {
 
     //build problem
     ProblemsManager *prb_mng_ptr;
-    ierr = m_field.query_interface(prb_mng_ptr); CHKERRQ(ierr);
+    ierr = m_field.getInterface(prb_mng_ptr); CHKERRQ(ierr);
     ierr = prb_mng_ptr->buildProblem("TEST_PROBLEM",true); CHKERRQ(ierr);
     //partition
     ierr = prb_mng_ptr->partitionSimpleProblem("TEST_PROBLEM"); CHKERRQ(ierr);

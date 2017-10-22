@@ -67,7 +67,7 @@ int main(int argc, char *argv[]) {
   //add all entities to database, all of them will be used
   BitRefLevel bit_level0;
   bit_level0.set(0);
-  ierr = m_field.query_interface<BitRefManager>()->setBitRefLevelByDim(root_set,3,bit_level0); CHKERRQ(ierr);
+  ierr = m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(root_set,3,bit_level0); CHKERRQ(ierr);
   //define & build field
   int field_rank = 3;
   #if PETSC_VERSION_GE(3,6,4)
@@ -139,7 +139,7 @@ int main(int argc, char *argv[]) {
 
   // PetscSection section;
   PetscSection section;
-  ierr = m_field.query_interface<ISManager>()->sectionCreate(
+  ierr = m_field.getInterface<ISManager>()->sectionCreate(
     dm_name,&section
   ); CHKERRQ(ierr);
   ierr = PetscSectionView(section,PETSC_VIEWER_STDOUT_WORLD);

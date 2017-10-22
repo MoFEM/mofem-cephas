@@ -21,15 +21,11 @@
 
 namespace MoFEM {
 
-PetscErrorCode PrismInterface::queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface) {
+PetscErrorCode PrismInterface::query_interface(const MOFEMuuid& uuid, UnknownInterface** iface) const {
   MoFEMFunctionBeginHot;
   *iface = NULL;
   if(uuid == IDD_MOFEMPrismInterface) {
-    *iface = dynamic_cast<PrismInterface*>(this);
-    MoFEMFunctionReturnHot(0);
-  }
-  if(uuid == IDD_MOFEMUnknown) {
-    *iface = dynamic_cast<UnknownInterface*>(this);
+    *iface = const_cast<PrismInterface*>(this);
     MoFEMFunctionReturnHot(0);
   }
   SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown interface");
@@ -47,7 +43,7 @@ PetscErrorCode PrismInterface::getSides(
   MoFEM::Interface &m_field = cOre;
   MeshsetsManager *meshsets_manager_ptr;
   MoFEMFunctionBeginHot;
-  ierr = m_field.query_interface(meshsets_manager_ptr); CHKERRQ(ierr);
+  ierr = m_field.getInterface(meshsets_manager_ptr); CHKERRQ(ierr);
   CubitMeshSet_multiIndex::index<Composite_Cubit_msId_And_MeshSetType_mi_tag>::type::iterator
   miit = meshsets_manager_ptr->getMeshsetsMultindex().get<Composite_Cubit_msId_And_MeshSetType_mi_tag>()
   .find(boost::make_tuple(msId,cubit_bc_type.to_ulong()));
@@ -68,16 +64,16 @@ PetscErrorCode PrismInterface::getSides(const EntityHandle sideset,const BitRefL
   Range mesh_level_edges;
   Range mesh_level_nodes;
   if(mesh_bit_level.any()) {
-    ierr = m_field.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(mesh_bit_level,BitRefLevel().set(),MBTET,mesh_level_ents3d); CHKERRQ(ierr);
-    ierr = m_field.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(mesh_bit_level,BitRefLevel().set(),MBTRI,mesh_level_tris); CHKERRQ(ierr);
-    ierr = m_field.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(mesh_bit_level,BitRefLevel().set(),MBEDGE,mesh_level_edges); CHKERRQ(ierr);
-    ierr = m_field.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(mesh_bit_level,BitRefLevel().set(),MBVERTEX,mesh_level_nodes); CHKERRQ(ierr);
+    ierr = m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(mesh_bit_level,BitRefLevel().set(),MBTET,mesh_level_ents3d); CHKERRQ(ierr);
+    ierr = m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(mesh_bit_level,BitRefLevel().set(),MBTRI,mesh_level_tris); CHKERRQ(ierr);
+    ierr = m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(mesh_bit_level,BitRefLevel().set(),MBEDGE,mesh_level_edges); CHKERRQ(ierr);
+    ierr = m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(mesh_bit_level,BitRefLevel().set(),MBVERTEX,mesh_level_nodes); CHKERRQ(ierr);
     rval = moab.get_adjacencies(mesh_level_ents3d,2,false,mesh_level_ents3d_tris,moab::Interface::UNION); CHKERRQ_MOAB(rval);
 
   }
   Range mesh_level_prisms;
   if(mesh_bit_level.any()) {
-    ierr = m_field.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(mesh_bit_level,BitRefLevel().set(),MBPRISM,mesh_level_prisms); CHKERRQ(ierr);
+    ierr = m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(mesh_bit_level,BitRefLevel().set(),MBPRISM,mesh_level_prisms); CHKERRQ(ierr);
     mesh_level_ents3d.merge(mesh_level_prisms);
   }
   Skinner skin(&moab);
@@ -336,13 +332,13 @@ PetscErrorCode PrismInterface::findIfTringleHasThreeNodesOnInternalSurfaceSkin(
   Range mesh_level_ents3d;
   Range mesh_level_edges,mesh_level_tris;
   if(mesh_bit_level.any()) {
-    ierr = m_field.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
+    ierr = m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
       mesh_bit_level,BitRefLevel().set(),MBTET,mesh_level_ents3d
     ); CHKERRQ(ierr);
-    ierr = m_field.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
+    ierr = m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
       mesh_bit_level,BitRefLevel().set(),MBTRI,mesh_level_tris
     ); CHKERRQ(ierr);
-    ierr = m_field.query_interface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
+    ierr = m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
       mesh_bit_level,BitRefLevel().set(),MBEDGE,mesh_level_edges
     ); CHKERRQ(ierr);
   }
@@ -454,7 +450,7 @@ PetscErrorCode PrismInterface::splitSides(
   MoFEM::Interface &m_field = cOre;
   MeshsetsManager *meshsets_manager_ptr;
   MoFEMFunctionBeginHot;
-  ierr = m_field.query_interface(meshsets_manager_ptr); CHKERRQ(ierr);
+  ierr = m_field.getInterface(meshsets_manager_ptr); CHKERRQ(ierr);
   CubitMeshSet_multiIndex::index<Composite_Cubit_msId_And_MeshSetType_mi_tag>::type::iterator
     miit = meshsets_manager_ptr->getMeshsetsMultindex().get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().find(boost::make_tuple(msId,cubit_bc_type.to_ulong()));
   if(miit!=meshsets_manager_ptr->getMeshsetsMultindex().get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().end()) {
@@ -987,7 +983,7 @@ PetscErrorCode PrismInterface::splitSides(
     }
   }
   //finalise by adding new tets and prism ti bitlelvel
-  ierr = m_field.query_interface<BitRefManager>()->setBitRefLevelByDim(meshset_for_bit_level,3,bit); CHKERRQ(ierr);
+  ierr = m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(meshset_for_bit_level,3,bit); CHKERRQ(ierr);
   rval = moab.delete_entities(&meshset_for_bit_level,1); CHKERRQ_MOAB(rval);
   ierr = moab.clear_meshset(&children[0],3); CHKERRQ(ierr);
   MoFEMFunctionReturnHot(0);

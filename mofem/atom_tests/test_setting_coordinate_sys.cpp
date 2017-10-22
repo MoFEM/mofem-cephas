@@ -65,22 +65,22 @@ int main(int argc, char *argv[]) {
   MoFEM::Interface& m_field = core;
 
   //ref meshset ref level 0
-  ierr = m_field.query_interface<BitRefManager>()->setBitRefLevelByDim(0,3,0); CHKERRQ(ierr);
+  ierr = m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(0,3,0); CHKERRQ(ierr);
 
   // stl::bitset see for more details
   BitRefLevel bit_level0;
   bit_level0.set(0);
   EntityHandle meshset_level0;
   rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERRQ_MOAB(rval);
-  ierr = m_field.query_interface<BitRefManager>()->setBitRefLevelByDim(0,3,bit_level0); CHKERRQ(ierr);
-  ierr = m_field.query_interface<BitRefManager>()->getEntitiesByRefLevel(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRQ(ierr);
+  ierr = m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(0,3,bit_level0); CHKERRQ(ierr);
+  ierr = m_field.getInterface<BitRefManager>()->getEntitiesByRefLevel(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRQ(ierr);
 
   /***/
   //Define problem
 
   //Coord system
   CoordSystemsManager *cs_manger_ptr;
-  ierr = m_field.query_interface(cs_manger_ptr); CHKERRQ(ierr);
+  ierr = m_field.getInterface(cs_manger_ptr); CHKERRQ(ierr);
   {
     int cs_dim[] = {0,3,0,3};
     ierr = cs_manger_ptr->addCoordinateSystem(cs_dim,"BASE_FOR_TWO_POINT_TENSOR"); CHKERRQ(ierr);

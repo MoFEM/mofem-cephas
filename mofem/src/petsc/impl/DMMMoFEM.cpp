@@ -81,15 +81,11 @@ DMCtx::~DMCtx() {
   // cerr << "Destroy DMCtx" << endl;
 }
 
-PetscErrorCode DMCtx::queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface) {
+PetscErrorCode DMCtx::query_interface(const MOFEMuuid& uuid, UnknownInterface** iface) const {
   MoFEMFunctionBeginHot;
   *iface = NULL;
   if(uuid == IDD_DMCTX) {
-    *iface = dynamic_cast<DMCtx*>(this);
-    MoFEMFunctionReturnHot(0);
-  }
-  if(uuid == IDD_MOFEMUnknown) {
-    *iface = dynamic_cast<UnknownInterface*>(this);
+    *iface = const_cast<DMCtx*>(this);
     MoFEMFunctionReturnHot(0);
   }
   SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown interface");
@@ -344,7 +340,7 @@ PetscErrorCode DMMoFEMGetIsCompDM(DM dm,PetscBool *is_comp_dm) {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode DMoFEMGetInterfacePtr(DM dm,const MoFEM::Interface **m_field_ptr) {
+PetscErrorCode DMoFEMGetInterfacePtr(DM dm,MoFEM::Interface **m_field_ptr) {
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   MoFEMFunctionBeginHot;
   DMCtx *dm_field = (DMCtx*)dm->data;
@@ -446,7 +442,7 @@ PetscErrorCode DMoFEMMeshToLocalVector(DM dm,Vec l,InsertMode mode,ScatterMode s
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   MoFEMFunctionBeginHot;
   DMCtx *dm_field = (DMCtx*)dm->data;
-  ierr = dm_field->mField_ptr->query_interface<VecManager>()->setLocalGhostVector(
+  ierr = dm_field->mField_ptr->getInterface<VecManager>()->setLocalGhostVector(
     dm_field->problemPtr,COL,l,mode,scatter_mode
   ); CHKERRQ(ierr);
   MoFEMFunctionReturnHot(0);
@@ -456,7 +452,7 @@ PetscErrorCode DMoFEMMeshToGlobalVector(DM dm,Vec g,InsertMode mode,ScatterMode 
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   MoFEMFunctionBeginHot;
   DMCtx *dm_field = (DMCtx*)dm->data;
-  ierr = dm_field->mField_ptr->query_interface<VecManager>()->setGlobalGhostVector(
+  ierr = dm_field->mField_ptr->getInterface<VecManager>()->setGlobalGhostVector(
     dm_field->problemPtr,COL,g,mode,scatter_mode
   ); CHKERRQ(ierr);
   MoFEMFunctionReturnHot(0);
@@ -820,7 +816,7 @@ PetscErrorCode DMCreateGlobalVector_MoFEM(DM dm,Vec *g) {
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   MoFEMFunctionBeginHot;
   DMCtx *dm_field = (DMCtx*)dm->data;
-  ierr = dm_field->mField_ptr->query_interface<VecManager>()->vecCreateGhost(
+  ierr = dm_field->mField_ptr->getInterface<VecManager>()->vecCreateGhost(
     dm_field->problemName,COL,g
   ); CHKERRQ(ierr);
   MoFEMFunctionReturnHot(0);
@@ -830,7 +826,7 @@ PetscErrorCode DMCreateLocalVector_MoFEM(DM dm,Vec *l) {
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   MoFEMFunctionBeginHot;
   DMCtx *dm_field = (DMCtx*)dm->data;
-  ierr = dm_field->mField_ptr->query_interface<VecManager>()->vecCreateSeq(
+  ierr = dm_field->mField_ptr->getInterface<VecManager>()->vecCreateSeq(
     dm_field->problemName,COL,l
   ); CHKERRQ(ierr);
   MoFEMFunctionReturnHot(0);
@@ -898,7 +894,7 @@ PetscErrorCode DMSetUp_MoFEM(DM dm) {
   ProblemsManager *prb_mng_ptr;
   MoFEMFunctionBeginHot;
   DMCtx *dm_field = (DMCtx*)dm->data;
-  ierr = dm_field->mField_ptr->query_interface(prb_mng_ptr); CHKERRQ(ierr);
+  ierr = dm_field->mField_ptr->getInterface(prb_mng_ptr); CHKERRQ(ierr);
 
   if(dm_field->isCompDM) {
     // It is composite probelm
@@ -951,7 +947,7 @@ PetscErrorCode DMSubDMSetUp_MoFEM(DM subdm) {
   DMCtx *subdm_field = (DMCtx*)subdm->data;
 
   // build sub dm problem
-  ierr = subdm_field->mField_ptr->query_interface(prb_mng_ptr); CHKERRQ(ierr);
+  ierr = subdm_field->mField_ptr->getInterface(prb_mng_ptr); CHKERRQ(ierr);
   ierr = prb_mng_ptr->buildSubProblem(
     subdm_field->problemName,
     subdm_field->rowFields,
@@ -1097,7 +1093,7 @@ PetscErrorCode DMCreateFieldIS_MoFEM(
       PetscStrallocpy(fit->get()->getName().c_str(),(char**)&(*fieldNames)[f]);
     }
     if(fields) {
-      ierr = dm_field->mField_ptr->query_interface<ISManager>()->isCreateProblemFieldAndRank(
+      ierr = dm_field->mField_ptr->getInterface<ISManager>()->isCreateProblemFieldAndRank(
         dm_field->problemPtr->getName(),
         ROW,fit->get()->getName(),0,fit->get()->getNbOfCoeffs(),
         &(*fields)[f]
@@ -1112,7 +1108,7 @@ PetscErrorCode DMMoFEMGetFieldIS(DM dm,RowColData rc,const char field_name[],IS 
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   MoFEMFunctionBeginHot;
   DMCtx *dm_field = (DMCtx*)dm->data;
-  ierr = dm_field->mField_ptr->query_interface<ISManager>()->isCreateProblemFieldAndRank(
+  ierr = dm_field->mField_ptr->getInterface<ISManager>()->isCreateProblemFieldAndRank(
     dm_field->problemPtr->getName(),
     ROW,field_name,0,1000,
     is

@@ -26,15 +26,11 @@
 
 namespace MoFEM {
 
-  PetscErrorCode Simple::queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface) {
+  PetscErrorCode Simple::query_interface(const MOFEMuuid& uuid, UnknownInterface** iface) const {
     MoFEMFunctionBeginHot;
     *iface = NULL;
     if(uuid == IDD_MOFEMSimple) {
-      *iface = dynamic_cast<Simple*>(this);
-      MoFEMFunctionReturnHot(0);
-    }
-    if(uuid == IDD_MOFEMUnknown) {
-      *iface = dynamic_cast<UnknownInterface*>(this);
+      *iface = const_cast<Simple*>(this);
       MoFEMFunctionReturnHot(0);
     }
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown interface");
@@ -111,7 +107,7 @@ namespace MoFEM {
     }
     Range ents;
     ierr = m_field.get_moab().get_entities_by_dimension(meshSet,dIm,ents,true);
-    ierr = m_field.query_interface<BitRefManager>()->setBitRefLevel(ents,bitLevel,false); CHKERRQ(ierr);
+    ierr = m_field.getInterface<BitRefManager>()->setBitRefLevel(ents,bitLevel,false); CHKERRQ(ierr);
     ParallelComm* pcomm = ParallelComm::get_pcomm(&m_field.get_moab(),MYPCOMM_INDEX);
     if(pcomm == NULL) pcomm =  new ParallelComm(&m_field.get_moab(),m_field.get_comm());
     PetscLogEventEnd(MOFEM_EVENT_SimpleLoadMesh,0,0,0,0);
@@ -468,7 +464,7 @@ namespace MoFEM {
     PetscLogEventBegin(MOFEM_EVENT_SimpleBuildProblem,0,0,0,0);
     ierr = m_field.build_adjacencies(bitLevel); CHKERRQ(ierr);
     // Set problem by the DOFs on the fields rather that by adding DOFs on the elements
-    ierr = m_field.query_interface<ProblemsManager>()->buildProblemFromFields = PETSC_TRUE;
+    ierr = m_field.getInterface<ProblemsManager>()->buildProblemFromFields = PETSC_TRUE;
     ierr = DMSetUp(dM); CHKERRQ(ierr);
     PetscLogEventEnd(MOFEM_EVENT_SimpleBuildProblem,0,0,0,0);
     MoFEMFunctionReturnHot(0);

@@ -1520,7 +1520,7 @@ PetscErrorCode VTK_Hcurl_MBTET(const string file_name) {
     (BitRefLevel().set(ll),BitRefLevel(ll).set(),MBTET,tets); CHKERRQ(ierr);
     //refine mesh
     MeshRefinement *m_ref;
-    ierr = m_field_ref.query_interface(m_ref); CHKERRQ(ierr);
+    ierr = m_field_ref.getInterface(m_ref); CHKERRQ(ierr);
     ierr = m_ref->add_verices_in_the_middel_of_edges(edges,BitRefLevel().set(ll+1)); CHKERRQ(ierr);
     ierr = m_ref->refine_TET(tets,BitRefLevel().set(ll+1)); CHKERRQ(ierr);
   }

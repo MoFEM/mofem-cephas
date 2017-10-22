@@ -44,10 +44,10 @@ using namespace MoFEM;
 #include <BaseFunction.hpp>
 #include <EntPolynomialBaseCtx.hpp>
 
-PetscErrorCode EntPolynomialBaseCtx::queryInterface(
+PetscErrorCode EntPolynomialBaseCtx::query_interface(
   const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface
-) {
-  
+) const {
+
   MoFEMFunctionBeginHot;
   *iface = NULL;
   if(
@@ -55,12 +55,12 @@ PetscErrorCode EntPolynomialBaseCtx::queryInterface(
     uuid == IDD_TRI_BASE_FUNCTION ||
     uuid == IDD_EDGE_BASE_FUNCTION
   ) {
-    *iface = static_cast<EntPolynomialBaseCtx*>(this);
+    *iface = const_cast<EntPolynomialBaseCtx*>(this);
     MoFEMFunctionReturnHot(0);
   } else {
     SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"wrong interference");
   }
-  ierr = BaseFunctionCtx::queryInterface(uuid,iface); CHKERRQ(ierr);
+  ierr = BaseFunctionCtx::query_interface(uuid,iface); CHKERRQ(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -74,7 +74,7 @@ dAta(data),
 sPace(space),
 bAse(base),
 copyNodeBase(copy_node_base) {
-  
+
   ierr = setBase(); CHKERRABORT(PETSC_COMM_WORLD,ierr);
 }
 

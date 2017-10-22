@@ -49,7 +49,7 @@ int main(int argc, char *argv[]) {
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
   MedInterface *med_interface_ptr;
-  ierr = m_field.query_interface(med_interface_ptr); CHKERRQ(ierr);
+  ierr = m_field.getInterface(med_interface_ptr); CHKERRQ(ierr);
   ierr = med_interface_ptr->readMed(); CHKERRQ(ierr);
   ierr = med_interface_ptr->medGetFieldNames(); CHKERRQ(ierr);
 
@@ -66,7 +66,7 @@ int main(int argc, char *argv[]) {
   }
 
   MeshsetsManager *meshsets_interface_ptr;
-  ierr = m_field.query_interface(meshsets_interface_ptr); CHKERRQ(ierr);
+  ierr = m_field.getInterface(meshsets_interface_ptr); CHKERRQ(ierr);
   ierr = meshsets_interface_ptr->setMeshsetFromFile(); CHKERRQ(ierr);
 
   for(

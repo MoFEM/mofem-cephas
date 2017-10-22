@@ -113,7 +113,7 @@ struct BodyForceConstantField {
     const CubitMeshSets *cubit_meshset_ptr;
     MeshsetsManager *mmanager_ptr;
     MoFEMFunctionBeginHot;
-    ierr = mField.query_interface(mmanager_ptr); CHKERRQ(ierr);
+    ierr = mField.getInterface(mmanager_ptr); CHKERRQ(ierr);
     ierr = mmanager_ptr->getCubitMeshsetPtr(ms_id,BLOCKSET,&cubit_meshset_ptr); CHKERRQ(ierr);
     ierr = cubit_meshset_ptr->getAttributeDataStructure(mapData[ms_id]); CHKERRQ(ierr);
     EntityHandle meshset = cubit_meshset_ptr->getMeshset();

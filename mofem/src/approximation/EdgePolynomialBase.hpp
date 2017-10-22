@@ -23,12 +23,12 @@ namespace MoFEM {
 
   /**
    * \brief Calculate base functions on tetrahedral
-   * 
+   *
    * \ingroup mofem_base_functions
    */
   struct EdgePolynomialBase: public BaseFunction {
 
-    PetscErrorCode queryInterface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface);
+    PetscErrorCode query_interface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface) const;
 
     EdgePolynomialBase();
     ~EdgePolynomialBase();

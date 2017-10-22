@@ -129,7 +129,7 @@ int main(int argc, char *argv[]) {
 
     // Simple interface
     Simple *simple_interface;
-    ierr = m_field.query_interface(simple_interface); CHKERRQ(ierr);
+    ierr = m_field.getInterface(simple_interface); CHKERRQ(ierr);
     {
       // get options from command line
       ierr = simple_interface->getOptions(); CHKERRQ(ierr);

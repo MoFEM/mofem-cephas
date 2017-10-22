@@ -28,35 +28,35 @@ using namespace MoFEM;
 #include <BaseFunction.hpp>
 #include <LegendrePolynomial.hpp>
 
-PetscErrorCode LegendrePolynomialCtx::queryInterface(
+PetscErrorCode LegendrePolynomialCtx::query_interface(
   const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface
-) {
-  
+) const {
+
   MoFEMFunctionBeginHot;
   *iface = NULL;
   if(uuid == IDD_LEGENDRE_BASE_FUNCTION) {
-    *iface = static_cast<LegendrePolynomialCtx*>(this);
+    *iface = const_cast<LegendrePolynomialCtx*>(this);
     MoFEMFunctionReturnHot(0);
   } else {
     SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"wrong interference");
   }
-  ierr = BaseFunctionCtx::queryInterface(uuid,iface); CHKERRQ(ierr);
+  ierr = BaseFunctionCtx::query_interface(uuid,iface); CHKERRQ(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode LegendrePolynomial::queryInterface(
+PetscErrorCode LegendrePolynomial::query_interface(
   const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface
-) {
-  
+) const {
+
   MoFEMFunctionBeginHot;
   *iface = NULL;
   if(uuid == IDD_LEGENDRE_BASE_FUNCTION) {
-    *iface = static_cast<LegendrePolynomial*>(this);
+    *iface = const_cast<LegendrePolynomial*>(this);
     MoFEMFunctionReturnHot(0);
   } else {
     SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"wrong interference");
   }
-  ierr = BaseFunction::queryInterface(uuid,iface); CHKERRQ(ierr);
+  ierr = BaseFunction::query_interface(uuid,iface); CHKERRQ(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -64,10 +64,10 @@ PetscErrorCode LegendrePolynomial::getValue(
   MatrixDouble &pts,
   boost::shared_ptr<BaseFunctionCtx> ctx_ptr
 ) {
-  
+
   MoFEMFunctionBeginHot;
   MoFEM::UnknownInterface *iface;
-  ierr = ctx_ptr->queryInterface(IDD_LEGENDRE_BASE_FUNCTION,&iface); CHKERRQ(ierr);
+  ierr = ctx_ptr->query_interface(IDD_LEGENDRE_BASE_FUNCTION,&iface); CHKERRQ(ierr);
   LegendrePolynomialCtx *ctx = reinterpret_cast<LegendrePolynomialCtx*>(iface);
   ctx->baseFunPtr->resize(pts.size2(),ctx->P+1,false);
   ctx->baseDiffFunPtr->resize(pts.size2(),ctx->dIm*(ctx->P+1),false);
