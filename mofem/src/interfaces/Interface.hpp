@@ -36,37 +36,37 @@ namespace MoFEM {
   *
   *  \todo Clean interface, organize groups outsource some functions to independent interface
   */
-  struct CoreInterface: public UnknownInterface {
+  struct CoreInterface : public UnknownInterface {
 
     /** \name Interfaces */
 
     /**@{*/
 
     /**
-    * get moab instance
-    */
-    virtual moab::Interface& get_moab() = 0;
+     * get moab instance
+     */
+    virtual moab::Interface &get_moab() = 0;
 
     /**
-    * get moab instance interface
-    */
-    virtual const moab::Interface& get_moab() const = 0;
+     * get moab instance interface
+     */
+    virtual const moab::Interface &get_moab() const = 0;
 
     /** \brief get MeshsetsManager pointer
-    */
-    virtual MeshsetsManager* get_meshsets_manager_ptr() = 0;
+     */
+    virtual MeshsetsManager *get_meshsets_manager_ptr() = 0;
 
     /** \brief get MeshsetsManager pointer
-    */
-    virtual const MeshsetsManager* get_meshsets_manager_ptr() const = 0;
+     */
+    virtual const MeshsetsManager *get_meshsets_manager_ptr() const = 0;
 
     /** \brief get MeshsetsManager pointer
-    */
-    virtual MeshsetsManager& get_meshsets_manager() = 0;
+     */
+    virtual MeshsetsManager &get_meshsets_manager() = 0;
 
     /** \brief get MeshsetsManager pointer
-    */
-    virtual const MeshsetsManager& get_meshsets_manager() const = 0;
+     */
+    virtual const MeshsetsManager &get_meshsets_manager() const = 0;
 
     /**@}*/
 
@@ -75,13 +75,13 @@ namespace MoFEM {
     /**@{*/
 
     /**
-    * \brief Get pointer to basic entity data.
-    *
-    * This structure keeps data like tags handlers and other data used to construct
-    * mofem entities, dofs and finite elements.
-    *
-    */
-    virtual boost::shared_ptr<BasicEntityData>& get_basic_entity_data_ptr() = 0;
+     * \brief Get pointer to basic entity data.
+     *
+     * This structure keeps data like tags handlers and other data used to
+     * construct mofem entities, dofs and finite elements.
+     *
+     */
+    virtual boost::shared_ptr<BasicEntityData> &get_basic_entity_data_ptr() = 0;
 
     /**@}*/
 
@@ -90,19 +90,19 @@ namespace MoFEM {
     /**@{*/
 
     /**
-    * get MPI communicator
-    *
-    */
-    virtual MPI_Comm& get_comm() const = 0;
+     * get MPI communicator
+     *
+     */
+    virtual MPI_Comm &get_comm() const = 0;
 
     /**
-    * get communicator size
-    */
+     * get communicator size
+     */
     virtual int get_comm_size() const = 0;
 
     /**
-    * get comm rank
-    */
+     * get comm rank
+     */
     virtual int get_comm_rank() const = 0;
 
     /**@}*/
@@ -112,46 +112,48 @@ namespace MoFEM {
     /**@{*/
 
     /**
-    * \brief check data consistency in entitiesPtr
-    *
-    */
-    virtual PetscErrorCode check_number_of_ents_in_ents_field(const std::string& name) const = 0;
+     * \brief check data consistency in entitiesPtr
+     *
+     */
+    virtual PetscErrorCode
+    check_number_of_ents_in_ents_field(const std::string &name) const = 0;
 
     /**
-    * \brief check data consistency in entitiesPtr
-    *
-    */
+     * \brief check data consistency in entitiesPtr
+     *
+     */
     virtual PetscErrorCode check_number_of_ents_in_ents_field() const = 0;
 
     /**
-    * \brief check data consistency in entsFiniteElements
-    *
-    */
-    virtual PetscErrorCode check_number_of_ents_in_ents_finite_element(const std::string& name) const = 0;
+     * \brief check data consistency in entsFiniteElements
+     *
+     */
+    virtual PetscErrorCode check_number_of_ents_in_ents_finite_element(
+        const std::string &name) const = 0;
 
     /**
-    * \brief check data consistency in entsFiniteElements
-    *
-    */
-    virtual PetscErrorCode check_number_of_ents_in_ents_finite_element() const = 0;
-
+     * \brief check data consistency in entsFiniteElements
+     *
+     */
+    virtual PetscErrorCode
+    check_number_of_ents_in_ents_finite_element() const = 0;
 
     /** \name Database */
 
     /**@{*/
 
     /**
-    * \brief Clear database
-    * @param  verb Verbosity level
-    * @return      Error code
-    */
-    virtual PetscErrorCode clear_database(int verb  = -1) = 0;
+     * \brief Clear database
+     * @param  verb Verbosity level
+     * @return      Error code
+     */
+    virtual PetscErrorCode clear_database(int verb = -1) = 0;
 
     /**
-    * \brief Clear database and initialize it once again
-    * @param  verb Verbosity level
-    * @return      Error code
-    */
+     * \brief Clear database and initialize it once again
+     * @param  verb Verbosity level
+     * @return      Error code
+     */
     virtual PetscErrorCode rebuild_database(int verb = -1) = 0;
 
     /**@}*/
@@ -165,7 +167,7 @@ namespace MoFEM {
     collective - need tu be run on all processors in communicator
 
     */
-    virtual PetscErrorCode synchronise_entities(Range &ent,int verb = -1) = 0;
+    virtual PetscErrorCode synchronise_entities(Range &ent, int verb = -1) = 0;
 
     /** synchronize entity range on processors (collective)
     * \ingroup mofem_field
@@ -176,7 +178,8 @@ namespace MoFEM {
     \param verbose level
 
     */
-    virtual PetscErrorCode synchronise_field_entities(const BitFieldId id,int verb = -1) = 0;
+    virtual PetscErrorCode synchronise_field_entities(const BitFieldId id,
+                                                      int verb = -1) = 0;
 
     /** synchronize entity range on processors (collective)
     * \ingroup mofem_field
@@ -187,7 +190,8 @@ namespace MoFEM {
     \param verbose level
 
     */
-    virtual PetscErrorCode synchronise_field_entities(const std::string& name,int verb = -1) = 0;
+    virtual PetscErrorCode synchronise_field_entities(const std::string &name,
+                                                      int verb = -1) = 0;
 
     /**@}*/
 
@@ -196,22 +200,26 @@ namespace MoFEM {
     /**@{*/
 
     /**
-    * Create finite elements based from entities in meshses. Throw error if entity is not in database
-    * \todo Should be outsourced to separate interface, i.e. BitLevelManager
-    *
-    * \param EntityHandle meshset
-    *
-    */
-    virtual PetscErrorCode seed_finite_elements(const EntityHandle meshset,int verb = -1) = 0;
+     * Create finite elements based from entities in meshses. Throw error if
+     * entity is not in database \todo Should be outsourced to separate
+     * interface, i.e. BitLevelManager
+     *
+     * \param EntityHandle meshset
+     *
+     */
+    virtual PetscErrorCode seed_finite_elements(const EntityHandle meshset,
+                                                int verb = -1) = 0;
 
     /**
-    * Create finite elements based from entities in meshsets. Throw error if entity is not in database
-    * \todo Should be outsourced to separate interface, i.e. BitLevelManager
-    *
-    * \param Range entities
-    *
-    */
-    virtual PetscErrorCode seed_finite_elements(const Range &entities,int verb = -1) = 0;
+     * Create finite elements based from entities in meshsets. Throw error if
+     * entity is not in database \todo Should be outsourced to separate
+     * interface, i.e. BitLevelManager
+     *
+     * \param Range entities
+     *
+     */
+    virtual PetscErrorCode seed_finite_elements(const Range &entities,
+                                                int verb = -1) = 0;
 
     /**@}*/
 
@@ -220,193 +228,219 @@ namespace MoFEM {
     /**@{*/
 
     /** \brief delete entities form mofem and moab database
-    *
-    */
-    virtual PetscErrorCode delete_ents_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,const bool remove_parent = false,int verb = -1) = 0;
+     *
+     */
+    virtual PetscErrorCode
+    delete_ents_by_bit_ref(const BitRefLevel &bit, const BitRefLevel &mask,
+                           const bool remove_parent = false, int verb = -1) = 0;
 
     /** \brief remove entities form mofem database
-    */
-    virtual PetscErrorCode remove_ents_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1) = 0;
+     */
+    virtual PetscErrorCode remove_ents_by_bit_ref(const BitRefLevel &bit,
+                                                  const BitRefLevel &mask,
+                                                  int verb = -1) = 0;
 
     /** \brief remove finite element from mofem database
-    */
-    virtual PetscErrorCode delete_finite_elements_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1) = 0;
+     */
+    virtual PetscErrorCode delete_finite_elements_by_bit_ref(
+        const BitRefLevel &bit, const BitRefLevel &mask, int verb = -1) = 0;
 
     /** \brief delete finite element from mofem database
-    */
-    virtual PetscErrorCode delete_finite_element(const std::string name,int verb = -1) = 0;
-
+     */
+    virtual PetscErrorCode delete_finite_element(const std::string name,
+                                                 int verb = -1) = 0;
 
     /** \name Fields */
 
     /**@{*/
 
     /**
-    * \brief Add field
-    * @param  name              name of the filed
-    * @param  space             space (L2,H1,Hdiv,Hcurl)
-    * @param  base              approximation base, see FieldApproximationBase
-    * @param  nb_of_cooficients number of field coefficients
-    * @param  tag_type          type of the tag MB_TAG_DENSE or MB_TAG_SPARSE (DENSE is faster and uses less memory, SPARSE is more flexible if you define field on subdomains)
-    * @param  bh                if MF_EXCL throws error if field exits, MF_ZERO no error if field exist
-    * @param  verb              verbosity leve
-    * @return                   error code
-    */
-    virtual PetscErrorCode add_field(
-      const std::string& name,
-      const FieldSpace space,
-      const FieldApproximationBase base,
-      const FieldCoefficientsNumber nb_of_cooficients,
-      const TagType tag_type = MB_TAG_SPARSE,
-      const enum MoFEMTypes bh = MF_EXCL,
-      int verb = -1
-    ) = 0;
+     * \brief Add field
+     * @param  name              name of the filed
+     * @param  space             space (L2,H1,Hdiv,Hcurl)
+     * @param  base              approximation base, see FieldApproximationBase
+     * @param  nb_of_cooficients number of field coefficients
+     * @param  tag_type          type of the tag MB_TAG_DENSE or MB_TAG_SPARSE
+     * (DENSE is faster and uses less memory, SPARSE is more flexible if you
+     * define field on subdomains)
+     * @param  bh                if MF_EXCL throws error if field exits, MF_ZERO
+     * no error if field exist
+     * @param  verb              verbosity leve
+     * @return                   error code
+     */
+    virtual PetscErrorCode
+    add_field(const std::string &name, const FieldSpace space,
+              const FieldApproximationBase base,
+              const FieldCoefficientsNumber nb_of_cooficients,
+              const TagType tag_type = MB_TAG_SPARSE,
+              const enum MoFEMTypes bh = MF_EXCL, int verb = -1) = 0;
 
     /**
-    * \brief Add entities to field meshset
-    * \ingroup mofem_field
-    *
-    * The lower dimension entities are added depending on the space type
-    *
-    * @param  ents rnage of entities
-    * @param  dim  dimension of entities
-    * @param  name name of field
-    * @param  verb verbosity level
-    * @return      error code
-    */
-    virtual PetscErrorCode add_ents_to_field_by_dim(
-      const Range &ents,const int dim,const std::string& name,int verb = -1
-    ) = 0;
+     * \brief Add entities to field meshset
+     * \ingroup mofem_field
+     *
+     * The lower dimension entities are added depending on the space type
+     *
+     * @param  ents rnage of entities
+     * @param  dim  dimension of entities
+     * @param  name name of field
+     * @param  verb verbosity level
+     * @return      error code
+     */
+    virtual PetscErrorCode add_ents_to_field_by_dim(const Range &ents,
+                                                    const int dim,
+                                                    const std::string &name,
+                                                    int verb = -1) = 0;
 
     /**
-    * \brief Add entities to field meshset
-    * \ingroup mofem_field
-    *
-    * The lower dimension entities are added depending on the space type
-    *
-    * @param  ents rnage of entities
-    * @param  type  type of entities
-    * @param  name name of field
-    * @param  verb verbosity level
-    * @return      error code
-    */
-    virtual PetscErrorCode add_ents_to_field_by_type(
-      const Range &ents,const EntityType type,const std::string& name,int verb = -1
-    ) = 0;
+     * \brief Add entities to field meshset
+     * \ingroup mofem_field
+     *
+     * The lower dimension entities are added depending on the space type
+     *
+     * @param  ents rnage of entities
+     * @param  type  type of entities
+     * @param  name name of field
+     * @param  verb verbosity level
+     * @return      error code
+     */
+    virtual PetscErrorCode add_ents_to_field_by_type(const Range &ents,
+                                                     const EntityType type,
+                                                     const std::string &name,
+                                                     int verb = -1) = 0;
 
     /**
-    * \brief Add entities to field meshset
-    * \ingroup mofem_field
-    *
-    * The lower dimension entities are added depending on the space type
-    *
-    * @param  meshset
-    * @param  dim  diemsipm
-    * @param  name name of field
-    * @param  recursive take entities recursively from embaded entities
-    * @param  verb verbosity level
-    * @return      error code
-    */
-    virtual PetscErrorCode add_ents_to_field_by_dim(
-      const EntityHandle meshset,const int dim,const std::string& name,const bool recursive = true,int verb = -1
-    ) = 0;
+     * \brief Add entities to field meshset
+     * \ingroup mofem_field
+     *
+     * The lower dimension entities are added depending on the space type
+     *
+     * @param  meshset
+     * @param  dim  diemsipm
+     * @param  name name of field
+     * @param  recursive take entities recursively from embaded entities
+     * @param  verb verbosity level
+     * @return      error code
+     */
+    virtual PetscErrorCode add_ents_to_field_by_dim(const EntityHandle meshset,
+                                                    const int dim,
+                                                    const std::string &name,
+                                                    const bool recursive = true,
+                                                    int verb = -1) = 0;
 
     /**
-    * \brief Add entities to field meshset
-    * \ingroup mofem_field
-    *
-    * The lower dimension entities are added depending on the space type
-    *
-    * @param  meshset
-    * @param  type of entoties
-    * @param  name name of field
-    * @param  recursive take entities recursively from embaded entities
-    * @param  verb verbosity level
-    * @return      error code
-    */
-    virtual PetscErrorCode add_ents_to_field_by_type(
-      const EntityHandle meshset,const EntityType type,const std::string& name,const bool recursive = true,int verb = -1
-    ) = 0;
+     * \brief Add entities to field meshset
+     * \ingroup mofem_field
+     *
+     * The lower dimension entities are added depending on the space type
+     *
+     * @param  meshset
+     * @param  type of entoties
+     * @param  name name of field
+     * @param  recursive take entities recursively from embaded entities
+     * @param  verb verbosity level
+     * @return      error code
+     */
+    virtual PetscErrorCode
+    add_ents_to_field_by_type(const EntityHandle meshset, const EntityType type,
+                              const std::string &name,
+                              const bool recursive = true, int verb = -1) = 0;
 
     /**
-    * \brief set field entities on vertices
-    * \ingroup mofem_field
-    *
-    * The lower dimension entities are added depending on the space type
-    * \param nodes contains set vertices
-    * \param name of the field
-    */
-    virtual PetscErrorCode add_ents_to_field_by_VERTICEs(const Range &nodes,const std::string& name,int verb = -1) = 0;
+     * \brief set field entities on vertices
+     * \ingroup mofem_field
+     *
+     * The lower dimension entities are added depending on the space type
+     * \param nodes contains set vertices
+     * \param name of the field
+     */
+    virtual PetscErrorCode
+    add_ents_to_field_by_VERTICEs(const Range &nodes, const std::string &name,
+                                  int verb = -1) = 0;
 
     /**
-    * \brief set field entities on vertices
-    * \ingroup mofem_field
-    *
-    * The lower dimension entities are added depending on the space type
-    * \param meshset contains set vertices
-    * \param name of the field
-    */
-    virtual PetscErrorCode add_ents_to_field_by_VERTICEs(const EntityHandle meshset,const std::string& name,int verb = -1) = 0;
+     * \brief set field entities on vertices
+     * \ingroup mofem_field
+     *
+     * The lower dimension entities are added depending on the space type
+     * \param meshset contains set vertices
+     * \param name of the field
+     */
+    virtual PetscErrorCode
+    add_ents_to_field_by_VERTICEs(const EntityHandle meshset,
+                                  const std::string &name, int verb = -1) = 0;
 
     /**
-    * \brief set field entities form adjacencies of edges
-    * \ingroup mofem_field
-    *
-    * The lower dimension entities are added depending on the space type
-    * \param tange contains set edges
-    * \param name of the field
-    */
-    virtual PetscErrorCode add_ents_to_field_by_EDGEs(const Range &edges,const std::string& name,int verb = -1) = 0;
+     * \brief set field entities form adjacencies of edges
+     * \ingroup mofem_field
+     *
+     * The lower dimension entities are added depending on the space type
+     * \param tange contains set edges
+     * \param name of the field
+     */
+    virtual PetscErrorCode add_ents_to_field_by_EDGEs(const Range &edges,
+                                                      const std::string &name,
+                                                      int verb = -1) = 0;
 
     /**
-    * \brief set field entities form adjacencies of edges
-    * \ingroup mofem_field
-    *
-    * The lower dimension entities are added depending on the space type
-    * \param meshset contains set edges
-    * \param name of the field
-    */
-    virtual PetscErrorCode add_ents_to_field_by_EDGEs(const EntityHandle meshset,const std::string& name,int verb = -1) = 0;
+     * \brief set field entities form adjacencies of edges
+     * \ingroup mofem_field
+     *
+     * The lower dimension entities are added depending on the space type
+     * \param meshset contains set edges
+     * \param name of the field
+     */
+    virtual PetscErrorCode
+    add_ents_to_field_by_EDGEs(const EntityHandle meshset,
+                               const std::string &name, int verb = -1) = 0;
 
     /**
-    * \brief set field entities form adjacencies of triangles
-    * \ingroup mofem_field
-    *
-    * The lower dimension entities are added depending on the space type
-    * \param meshset contains set triangles
-    * \param name of the field
-    */
-    virtual PetscErrorCode add_ents_to_field_by_TRIs(const EntityHandle meshset,const std::string& name,int verb = -1) = 0;
+     * \brief set field entities form adjacencies of triangles
+     * \ingroup mofem_field
+     *
+     * The lower dimension entities are added depending on the space type
+     * \param meshset contains set triangles
+     * \param name of the field
+     */
+    virtual PetscErrorCode add_ents_to_field_by_TRIs(const EntityHandle meshset,
+                                                     const std::string &name,
+                                                     int verb = -1) = 0;
 
     /**
-    * \brief set field entities form adjacencies of triangles
-    * \ingroup mofem_field
-    *
-    * The lower dimension entities are added depending on the space type
-    * \param range triangles
-    * \param name of the field
-    */
-    virtual PetscErrorCode add_ents_to_field_by_TRIs(const Range &tris,const std::string& name,int verb = -1) = 0;
+     * \brief set field entities form adjacencies of triangles
+     * \ingroup mofem_field
+     *
+     * The lower dimension entities are added depending on the space type
+     * \param range triangles
+     * \param name of the field
+     */
+    virtual PetscErrorCode add_ents_to_field_by_TRIs(const Range &tris,
+                                                     const std::string &name,
+                                                     int verb = -1) = 0;
 
     /**
-    * \brief set field entities from adjacencies of tetrahedron
-    * \ingroup mofem_field
-    *
-    * The lower dimension entities are added depending on the space type
-    * \param meshset contains set tetrahedron
-    * \param name of the field
-    */
-    virtual PetscErrorCode add_ents_to_field_by_TETs(const EntityHandle meshset,const std::string& name,int verb = -1) = 0;
+     * \brief set field entities from adjacencies of tetrahedron
+     * \ingroup mofem_field
+     *
+     * The lower dimension entities are added depending on the space type
+     * \param meshset contains set tetrahedron
+     * \param name of the field
+     */
+    virtual PetscErrorCode add_ents_to_field_by_TETs(const EntityHandle meshset,
+                                                     const std::string &name,
+                                                     int verb = -1) = 0;
 
     /**
-    * \brief set field entities from adjacencies of tetrahedron
-    * \ingroup mofem_field
-    *
-    * The lower dimension entities are added depending on the space type
-    * \param range contains set tetrahedron
-    * \param name of the field
-    */
-    virtual PetscErrorCode add_ents_to_field_by_TETs(const Range &tets,const std::string& name,int verb = -1) = 0;
+     * \brief set field entities from adjacencies of tetrahedron
+     * \ingroup mofem_field
+     *
+     * The lower dimension entities are added depending on the space type
+     * \param range contains set tetrahedron
+     * \param name of the field
+     */
+    virtual PetscErrorCode add_ents_to_field_by_TETs(const Range &tets,
+                                                     const std::string &name,
+                                                     int verb = -1) = 0;
 
     // /**
     //   * \brief set field entities from adjacencies of quads
@@ -416,27 +450,32 @@ namespace MoFEM {
     //   * \param quads range of quads
     //   * \param id field id
     //   */
-    // virtual PetscErrorCode add_ents_to_field_by_QUADs(const Range &quads,const BitFieldId id,int verb = -1) = 0;
+    // virtual PetscErrorCode add_ents_to_field_by_QUADs(const Range
+    // &quads,const BitFieldId id,int verb = -1) = 0;
 
     /**
-    * \brief set field entities from adjacencies of quads
-    * \ingroup mofem_field
-    *
-    * The lower dimension entities are added depending on the space type
-    * \param quads range contains set quads
-    * \param name of the field
-    */
-    virtual PetscErrorCode add_ents_to_field_by_QUADs(const Range &quads,const std::string& name,int verb = -1) = 0;
+     * \brief set field entities from adjacencies of quads
+     * \ingroup mofem_field
+     *
+     * The lower dimension entities are added depending on the space type
+     * \param quads range contains set quads
+     * \param name of the field
+     */
+    virtual PetscErrorCode add_ents_to_field_by_QUADs(const Range &quads,
+                                                      const std::string &name,
+                                                      int verb = -1) = 0;
 
     /**
-    * \brief set field entities from adjacencies of quads
-    * \ingroup mofem_field
-    *
-    * The lower dimension entities are added depending on the space type
-    * \param meshset contains set quads
-    * \param name of the field
-    */
-    virtual PetscErrorCode add_ents_to_field_by_QUADs(EntityHandle meshset,const std::string& name,int verb = -1) = 0;
+     * \brief set field entities from adjacencies of quads
+     * \ingroup mofem_field
+     *
+     * The lower dimension entities are added depending on the space type
+     * \param meshset contains set quads
+     * \param name of the field
+     */
+    virtual PetscErrorCode add_ents_to_field_by_QUADs(EntityHandle meshset,
+                                                      const std::string &name,
+                                                      int verb = -1) = 0;
 
     // /**
     //   * \brief set field entities from adjacencies of prisms
@@ -446,102 +485,105 @@ namespace MoFEM {
     //   * \param prisms range of prisms
     //   * \param id field id
     //   */
-    // virtual PetscErrorCode add_ents_to_field_by_PRISMs(const Range &prisms,const BitFieldId id,int verb = -1) = 0;
+    // virtual PetscErrorCode add_ents_to_field_by_PRISMs(const Range
+    // &prisms,const BitFieldId id,int verb = -1) = 0;
 
     /**
-    * \brief set field entities from adjacencies of prisms
-    * \ingroup mofem_field
-    *
-    * The lower dimension entities are added depending on the space type
-    * \param prisms range contains set prisms
-    * \param name of the field
-    */
-    virtual PetscErrorCode add_ents_to_field_by_PRISMs(const Range &prisms,const std::string& name,int verb = -1) = 0;
+     * \brief set field entities from adjacencies of prisms
+     * \ingroup mofem_field
+     *
+     * The lower dimension entities are added depending on the space type
+     * \param prisms range contains set prisms
+     * \param name of the field
+     */
+    virtual PetscErrorCode add_ents_to_field_by_PRISMs(const Range &prisms,
+                                                       const std::string &name,
+                                                       int verb = -1) = 0;
 
     /**
-    * \brief set field entities from adjacencies of prisms
-    * \ingroup mofem_field
-    *
-    * The lower dimension entities are added depending on the space type
-    * \param meshset contains set prisms
-    * \param name of the field
-    */
-    virtual PetscErrorCode add_ents_to_field_by_PRISMs(EntityHandle meshset,const std::string& name,int verb = -1) = 0;
+     * \brief set field entities from adjacencies of prisms
+     * \ingroup mofem_field
+     *
+     * The lower dimension entities are added depending on the space type
+     * \param meshset contains set prisms
+     * \param name of the field
+     */
+    virtual PetscErrorCode add_ents_to_field_by_PRISMs(EntityHandle meshset,
+                                                       const std::string &name,
+                                                       int verb = -1) = 0;
 
     /**
-    * \brief remove entities from field
-    * \ingroup mofem_field
-    *
-    */
-    virtual PetscErrorCode remove_ents_from_field_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1) = 0;
+     * \brief remove entities from field
+     * \ingroup mofem_field
+     *
+     */
+    virtual PetscErrorCode remove_ents_from_field_by_bit_ref(
+        const BitRefLevel &bit, const BitRefLevel &mask, int verb = -1) = 0;
 
     /**
-    * \brief remove entities from field
-    * \ingroup mofem_field
-    *
-    */
-    virtual PetscErrorCode remove_ents_from_field(const std::string& name,const EntityHandle meshset,const EntityType type,int verb = -1) = 0;
+     * \brief remove entities from field
+     * \ingroup mofem_field
+     *
+     */
+    virtual PetscErrorCode remove_ents_from_field(const std::string &name,
+                                                  const EntityHandle meshset,
+                                                  const EntityType type,
+                                                  int verb = -1) = 0;
 
     /**
-    * \brief remove entities from field
-    * \ingroup mofem_field
-    *
-    */
-    virtual PetscErrorCode remove_ents_from_field(const std::string& name,const Range &ents,int verb = -1) = 0;
+     * \brief remove entities from field
+     * \ingroup mofem_field
+     *
+     */
+    virtual PetscErrorCode remove_ents_from_field(const std::string &name,
+                                                  const Range &ents,
+                                                  int verb = -1) = 0;
 
     /**
-    * \brief Set order approximation of the entities in the field
-    * \ingroup mofem_field
-    *
-    * \param meshset containing set of the entities (use 0 for all the entities in the meshset)
-    * \param type selected type of the entities f.e. MBTET, MBTRI, MBEDGE, MBVERTEX, see moab documentation
-    * \param order approximation order
-    */
-    virtual PetscErrorCode set_field_order(
-      const EntityHandle meshset,
-      const EntityType type,
-      const std::string& name,
-      const ApproximationOrder order,
-      int verb = -1
-    ) = 0;
+     * \brief Set order approximation of the entities in the field
+     * \ingroup mofem_field
+     *
+     * \param meshset containing set of the entities (use 0 for all the entities
+     * in the meshset) \param type selected type of the entities f.e. MBTET,
+     * MBTRI, MBEDGE, MBVERTEX, see moab documentation \param order
+     * approximation order
+     */
+    virtual PetscErrorCode set_field_order(const EntityHandle meshset,
+                                           const EntityType type,
+                                           const std::string &name,
+                                           const ApproximationOrder order,
+                                           int verb = -1) = 0;
 
     /**
-    * \brief Set order approximation of the entities in the field
-    * \ingroup mofem_field
-    *
-    * \param entities
-    * \param type selected type of the entities f.e. MBTET, MBTRI, MBEDGE, MBVERTEX, see moab documentation
-    * \param order approximation order
-    */
-    virtual PetscErrorCode set_field_order(
-      const Range &ents,
-      const std::string& name,
-      const ApproximationOrder order,
-      int verb = -1
-    ) = 0;
+     * \brief Set order approximation of the entities in the field
+     * \ingroup mofem_field
+     *
+     * \param entities
+     * \param type selected type of the entities f.e. MBTET, MBTRI, MBEDGE,
+     * MBVERTEX, see moab documentation \param order approximation order
+     */
+    virtual PetscErrorCode set_field_order(const Range &ents,
+                                           const std::string &name,
+                                           const ApproximationOrder order,
+                                           int verb = -1) = 0;
 
     /**
-    * \brief Set order approximation of the entities in the field
-    * \ingroup mofem_field
-    *
-    * \param bit refinement level
-    * \param mask bit mask
-    * \param type selected type of the entities f.e. MBTET, MBTRI, MBEDGE, MBVERTEX, see moab documentation
-    * \param order approximation order
-    */
+     * \brief Set order approximation of the entities in the field
+     * \ingroup mofem_field
+     *
+     * \param bit refinement level
+     * \param mask bit mask
+     * \param type selected type of the entities f.e. MBTET, MBTRI, MBEDGE,
+     * MBVERTEX, see moab documentation \param order approximation order
+     */
     virtual PetscErrorCode set_field_order_by_entity_type_and_bit_ref(
-      const BitRefLevel &bit,
-      const BitRefLevel &mask,
-      const EntityType type,
-      const std::string& name,
-      const ApproximationOrder order,
-      int verb = -1
-    ) = 0;
-
+        const BitRefLevel &bit, const BitRefLevel &mask, const EntityType type,
+        const std::string &name, const ApproximationOrder order,
+        int verb = -1) = 0;
 
     /** \brief list entities in the field
-    * \ingroup mofem_field
-    */
+     * \ingroup mofem_field
+     */
     virtual PetscErrorCode list_fields() const = 0;
 
     /** \brief get field meshset
@@ -551,7 +593,7 @@ namespace MoFEM {
     EntityHandle disp_files_meshset = mField.get_field_meshset("DISPLACEMENT");
     * \endcode
     */
-    virtual EntityHandle get_field_meshset(const std::string& name) const = 0;
+    virtual EntityHandle get_field_meshset(const std::string &name) const = 0;
 
     /**
     * \brief get entities in the field by dimension
@@ -562,9 +604,9 @@ namespace MoFEM {
 
     * \ingroup mofem_field
     */
-    virtual PetscErrorCode get_field_entities_by_dimension(
-      const std::string name,int dim,Range &ents
-    ) const = 0;
+    virtual PetscErrorCode
+    get_field_entities_by_dimension(const std::string name, int dim,
+                                    Range &ents) const = 0;
 
     /**
     * \brief get entities in the field by type
@@ -575,9 +617,9 @@ namespace MoFEM {
 
     * \ingroup mofem_field
     */
-    virtual PetscErrorCode get_field_entities_by_type(
-      const std::string name,EntityType type,Range &ents
-    ) const = 0;
+    virtual PetscErrorCode get_field_entities_by_type(const std::string name,
+                                                      EntityType type,
+                                                      Range &ents) const = 0;
 
     /**
     * \brief get entities in the field by handle
@@ -587,28 +629,26 @@ namespace MoFEM {
 
     * \ingroup mofem_field
     */
-    virtual PetscErrorCode get_field_entities_by_handle(
-      const std::string name,Range &ents
-    ) const = 0;
-
+    virtual PetscErrorCode get_field_entities_by_handle(const std::string name,
+                                                        Range &ents) const = 0;
 
     /** \brief check if field is in database
-    * \ingroup mofem_field
-    *
-    * \param name field name
-    * \return true if field exist
-    *
-    */
-    virtual bool check_field(const std::string& name) const = 0;
+     * \ingroup mofem_field
+     *
+     * \param name field name
+     * \return true if field exist
+     *
+     */
+    virtual bool check_field(const std::string &name) const = 0;
 
     /** \brief get field structure
-    * \ingroup mofem_field
-    *
-    * \param name field name
-    * \return const Field*
-    *
-    */
-    virtual const Field* get_field_structure(const std::string& name) = 0;
+     * \ingroup mofem_field
+     *
+     * \param name field name
+     * \return const Field*
+     *
+     */
+    virtual const Field *get_field_structure(const std::string &name) = 0;
 
     /**@}*/
 
@@ -617,11 +657,11 @@ namespace MoFEM {
     /**@{*/
 
     /**
-    * \brief Check if finite element is in database
-    * @param  name Name of finite element
-    * @return      true if element is declared
-    */
-    virtual bool check_finite_element(const std::string& name) const = 0;
+     * \brief Check if finite element is in database
+     * @param  name Name of finite element
+     * @return      true if element is declared
+     */
+    virtual bool check_finite_element(const std::string &name) const = 0;
 
     /**
     * \brief add finite element
@@ -633,138 +673,154 @@ namespace MoFEM {
     ierr = mField.add_finite_element("PLASTIC"); CHKERRQ(ierr);
     \endcode
     */
-    virtual PetscErrorCode add_finite_element(const std::string &fe_name,enum MoFEMTypes bh = MF_EXCL) = 0;
+    virtual PetscErrorCode add_finite_element(const std::string &fe_name,
+                                              enum MoFEMTypes bh = MF_EXCL) = 0;
 
     /**
-    * \brief modify finite element table, only for advanced user
-    * \ingroup mofem_fe
-    *
-    * Using that functions means that you like to do something not usual.
-    *
-    */
-    virtual PetscErrorCode modify_finite_element_adjacency_table(const std::string &fe_name,const EntityType type,ElementAdjacencyFunct function) = 0;
-
+     * \brief modify finite element table, only for advanced user
+     * \ingroup mofem_fe
+     *
+     * Using that functions means that you like to do something not usual.
+     *
+     */
+    virtual PetscErrorCode
+    modify_finite_element_adjacency_table(const std::string &fe_name,
+                                          const EntityType type,
+                                          ElementAdjacencyFunct function) = 0;
 
     /** \brief set finite element field data
-    * \ingroup mofem_fe
-    *
-    * \param name finite element name
-    * \param name field name
-    *
-    * This function will set memory in the form of a vector
-    */
-    virtual PetscErrorCode modify_finite_element_add_field_data(const std::string &fe_name,const std::string &name_filed) = 0;
+     * \ingroup mofem_fe
+     *
+     * \param name finite element name
+     * \param name field name
+     *
+     * This function will set memory in the form of a vector
+     */
+    virtual PetscErrorCode
+    modify_finite_element_add_field_data(const std::string &fe_name,
+                                         const std::string &name_filed) = 0;
 
     /** \brief unset finite element field data
-    * \ingroup mofem_fe
-    *
-    * \param name finite element name
-    * \param name field name
-    *
-    * This function will set memory in the form of a vector
-    */
-    virtual PetscErrorCode modify_finite_element_off_field_data(const std::string &fe_name,const std::string &name_filed) = 0;
+     * \ingroup mofem_fe
+     *
+     * \param name finite element name
+     * \param name field name
+     *
+     * This function will set memory in the form of a vector
+     */
+    virtual PetscErrorCode
+    modify_finite_element_off_field_data(const std::string &fe_name,
+                                         const std::string &name_filed) = 0;
 
     /** \brief set field row which finite element use
-    * \ingroup mofem_fe
-    *
-    * \param name finite element name
-    * \param name field name
-    */
-    virtual PetscErrorCode modify_finite_element_add_field_row(const std::string &fe_name,const std::string &name_row) = 0;
+     * \ingroup mofem_fe
+     *
+     * \param name finite element name
+     * \param name field name
+     */
+    virtual PetscErrorCode
+    modify_finite_element_add_field_row(const std::string &fe_name,
+                                        const std::string &name_row) = 0;
 
     /** \brief unset field row which finite element use
-    * \ingroup mofem_fe
-    *
-    * \param name finite element name
-    * \param name field name
-    */
-    virtual PetscErrorCode modify_finite_element_off_field_row(const std::string &fe_name,const std::string &name_row) = 0;
-
+     * \ingroup mofem_fe
+     *
+     * \param name finite element name
+     * \param name field name
+     */
+    virtual PetscErrorCode
+    modify_finite_element_off_field_row(const std::string &fe_name,
+                                        const std::string &name_row) = 0;
 
     /** \brief set field col which finite element use
-    *
-    * \param name finite element name
-    * \param name field name
-    */
-    virtual PetscErrorCode modify_finite_element_add_field_col(const std::string &fe_name,const std::string &name_row) = 0;
+     *
+     * \param name finite element name
+     * \param name field name
+     */
+    virtual PetscErrorCode
+    modify_finite_element_add_field_col(const std::string &fe_name,
+                                        const std::string &name_row) = 0;
 
     /** \brief unset field col which finite element use
-    * \ingroup mofem_fe
-    *
-    * \param name finite element name
-    * \param name field name
-    */
-    virtual PetscErrorCode modify_finite_element_off_field_col(const std::string &fe_name,const std::string &name_row) = 0;
+     * \ingroup mofem_fe
+     *
+     * \param name finite element name
+     * \param name field name
+     */
+    virtual PetscErrorCode
+    modify_finite_element_off_field_col(const std::string &fe_name,
+                                        const std::string &name_row) = 0;
 
     /**
-    * \brief add entities to finite element
-    * \ingroup mofem_fe
-    * @param  entities   meshset or range form were entities taken
-    * @param  type      type of entity
-    * @param  name      name of field
-    * @param  recursive take entities from meshsets in meshset
-    * @return           error code
-    */
+     * \brief add entities to finite element
+     * \ingroup mofem_fe
+     * @param  entities   meshset or range form were entities taken
+     * @param  type      type of entity
+     * @param  name      name of field
+     * @param  recursive take entities from meshsets in meshset
+     * @return           error code
+     */
     virtual PetscErrorCode add_ents_to_finite_element_by_type(
-      const EntityHandle entities,const EntityType type,const std::string &name,const bool recursive = true
-    ) = 0;
+        const EntityHandle entities, const EntityType type,
+        const std::string &name, const bool recursive = true) = 0;
 
     /**
-    * \brief add entities to finite element
-    * \ingroup mofem_fe
-    * @param  entities  meshset or range form were entities taken
-    * @param  dim       dimension
-    * @param  name      name of field
-    * @param  recursive take entities from meshsets in meshset
-    * @return           error code
-    */
-    virtual PetscErrorCode add_ents_to_finite_element_by_dim(
-      const EntityHandle entities,const int dim,const std::string &name,const bool recursive = true
-    ) = 0;
+     * \brief add entities to finite element
+     * \ingroup mofem_fe
+     * @param  entities  meshset or range form were entities taken
+     * @param  dim       dimension
+     * @param  name      name of field
+     * @param  recursive take entities from meshsets in meshset
+     * @return           error code
+     */
+    virtual PetscErrorCode
+    add_ents_to_finite_element_by_dim(const EntityHandle entities,
+                                      const int dim, const std::string &name,
+                                      const bool recursive = true) = 0;
 
     /**
-    * \brief add entities to finite elements
-    * \ingroup mofem_fe
-    * @param  ents range of entities
-    * @param  type type of entity (MBVERTEX, MBEDGE, MBTRI, ...)
-    * @param  name name of finite element
-    * @return      error code
-    */
-    virtual PetscErrorCode add_ents_to_finite_element_by_type(
-      const Range& ents,const EntityType type,const std::string &name
-    ) = 0;
+     * \brief add entities to finite elements
+     * \ingroup mofem_fe
+     * @param  ents range of entities
+     * @param  type type of entity (MBVERTEX, MBEDGE, MBTRI, ...)
+     * @param  name name of finite element
+     * @return      error code
+     */
+    virtual PetscErrorCode
+    add_ents_to_finite_element_by_type(const Range &ents, const EntityType type,
+                                       const std::string &name) = 0;
 
     /**
-    * \brief add entities to finite elements
-    * \ingroup mofem_fe
-    * @param  ents range of entities
-    * @param  dim dimension of entities
-    * @param  name name of finite element
-    * @return      error code
-    */
-    virtual PetscErrorCode add_ents_to_finite_element_by_dim(
-      const Range& ents,const int dim,const std::string &name
-    ) = 0;
+     * \brief add entities to finite elements
+     * \ingroup mofem_fe
+     * @param  ents range of entities
+     * @param  dim dimension of entities
+     * @param  name name of finite element
+     * @return      error code
+     */
+    virtual PetscErrorCode
+    add_ents_to_finite_element_by_dim(const Range &ents, const int dim,
+                                      const std::string &name) = 0;
 
-    /** \brief add TET entities from given refinement level to finite element database given by name
-    * \ingroup mofem_fe
-    *
-    * \param BitRefLevel bit
-    * \param BitRefLevel mask
-    * \param finite element name
-    * \param finite element type
-    * \param verrbose level
-    */
+    /** \brief add TET entities from given refinement level to finite element
+     * database given by name \ingroup mofem_fe
+     *
+     * \param BitRefLevel bit
+     * \param BitRefLevel mask
+     * \param finite element name
+     * \param finite element type
+     * \param verrbose level
+     */
     virtual PetscErrorCode add_ents_to_finite_element_by_bit_ref(
-      const BitRefLevel &bit,const BitRefLevel &mask,const std::string &name,EntityType type,int verb = -1
-    ) = 0;
+        const BitRefLevel &bit, const BitRefLevel &mask,
+        const std::string &name, EntityType type, int verb = -1) = 0;
 
     /** get finite element meshset
-    * \ingroup mofem_fe
-    *
-    */
-    virtual EntityHandle get_finite_element_meshset(const std::string& name) const = 0;
+     * \ingroup mofem_fe
+     *
+     */
+    virtual EntityHandle
+    get_finite_element_meshset(const std::string &name) const = 0;
 
     /**
     * \brief get entities in the finite element by dimension
@@ -775,9 +831,9 @@ namespace MoFEM {
 
     * \ingroup mofem_field
     */
-    virtual PetscErrorCode get_finite_element_entities_by_dimension(
-      const std::string name,int dim,Range &ents
-    ) const = 0;
+    virtual PetscErrorCode
+    get_finite_element_entities_by_dimension(const std::string name, int dim,
+                                             Range &ents) const = 0;
 
     /**
     * \brief get entities in the finite element by type
@@ -788,9 +844,9 @@ namespace MoFEM {
 
     * \ingroup mofem_field
     */
-    virtual PetscErrorCode get_finite_element_entities_by_type(
-      const std::string name,EntityType type,Range &ents
-    ) const = 0;
+    virtual PetscErrorCode
+    get_finite_element_entities_by_type(const std::string name, EntityType type,
+                                        Range &ents) const = 0;
 
     /**
     * \brief get entities in the finite element by handle
@@ -800,42 +856,51 @@ namespace MoFEM {
 
     * \ingroup mofem_field
     */
-    virtual PetscErrorCode get_finite_element_entities_by_handle(
-      const std::string name,Range &ents
-    ) const = 0;
+    virtual PetscErrorCode
+    get_finite_element_entities_by_handle(const std::string name,
+                                          Range &ents) const = 0;
 
+    /** \brief remove elements from given refinement level to finite element
+     * database \ingroup mofem_fe
+     *
+     * \param BitRefLevel bit
+     * \param BitRefLevel mask
+     * \param verbose level
+     */
+    virtual PetscErrorCode remove_ents_from_finite_element_by_bit_ref(
+        const BitRefLevel &bit, const BitRefLevel &mask, int verb = -1) = 0;
 
-    /** \brief remove elements from given refinement level to finite element database
-    * \ingroup mofem_fe
-    *
-    * \param BitRefLevel bit
-    * \param BitRefLevel mask
-    * \param verbose level
-    */
-    virtual PetscErrorCode remove_ents_from_finite_element_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1) = 0;
-
-    /** \brief remove entities from given refinement level to finite element database
-    *
-    */
-    virtual PetscErrorCode remove_ents_from_finite_element(const std::string &name,const EntityHandle meshset,const EntityType type,int verb = -1) = 0;
+    /** \brief remove entities from given refinement level to finite element
+     * database
+     *
+     */
+    virtual PetscErrorCode
+    remove_ents_from_finite_element(const std::string &name,
+                                    const EntityHandle meshset,
+                                    const EntityType type, int verb = -1) = 0;
 
     /** \brief remove entities from finite element database
-    * \ingroup mofem_fe
-    *
-    */
-    virtual PetscErrorCode remove_ents_from_finite_element(const std::string &name,const Range &ents,int verb = -1) = 0;
+     * \ingroup mofem_fe
+     *
+     */
+    virtual PetscErrorCode
+    remove_ents_from_finite_element(const std::string &name, const Range &ents,
+                                    int verb = -1) = 0;
 
     /** \brief add MESHSET element to finite element database given by name
-    * \ingroup mofem_fe
-    *
-    * \param meshset contains all entities that could be used for finite element
-    * \param name Finite Element name
-    */
-    virtual PetscErrorCode add_ents_to_finite_element_by_MESHSET(const EntityHandle meshset,const std::string& name,const bool recursive = false) = 0;
+     * \ingroup mofem_fe
+     *
+     * \param meshset contains all entities that could be used for finite
+     * element \param name Finite Element name
+     */
+    virtual PetscErrorCode
+    add_ents_to_finite_element_by_MESHSET(const EntityHandle meshset,
+                                          const std::string &name,
+                                          const bool recursive = false) = 0;
 
     /** \brief list finite elements in database
-    * \ingroup mofem_fe
-    */
+     * \ingroup mofem_fe
+     */
     virtual PetscErrorCode list_finite_elements() const = 0;
 
     /// list adjacencies
@@ -848,100 +913,129 @@ namespace MoFEM {
     /**@{*/
 
     /** \brief Add problem
-    * \ingroup mofem_problems
-    */
-    virtual PetscErrorCode add_problem(const std::string& name,enum MoFEMTypes bh = MF_EXCL,int verb = -1) = 0;
+     * \ingroup mofem_problems
+     */
+    virtual PetscErrorCode add_problem(const std::string &name,
+                                       enum MoFEMTypes bh = MF_EXCL,
+                                       int verb = -1) = 0;
 
     /**
-    * \brief check if problem exist
-    * @param  name problem name
-    * @return      true if problem is in database
-    */
+     * \brief check if problem exist
+     * @param  name problem name
+     * @return      true if problem is in database
+     */
     virtual bool check_problem(const std::string name) = 0;
 
     /** \brief Delete problem
-    * \ingroup mofem_problems
-    */
+     * \ingroup mofem_problems
+     */
     virtual PetscErrorCode delete_problem(const std::string name) = 0;
 
-    /** \brief add finite element to problem, this add entities assigned to finite element to a particular problem
-    * \ingroup mofem_problems
-    *
-    * \param name Problem name
-    * \param name Finite Element name
-    */
-    virtual PetscErrorCode modify_problem_add_finite_element(const std::string &name_problem,const std::string &fe_name) = 0;
+    /** \brief add finite element to problem, this add entities assigned to
+     * finite element to a particular problem \ingroup mofem_problems
+     *
+     * \param name Problem name
+     * \param name Finite Element name
+     */
+    virtual PetscErrorCode
+    modify_problem_add_finite_element(const std::string &name_problem,
+                                      const std::string &fe_name) = 0;
 
-    /** \brief unset finite element from problem, this remove entities assigned to finite element to a particular problem
-    * \ingroup mofem_problems
-    *
-    *  Note: If problem is build, it need to be cleaned to make this effective
-    *
-    * \param name Problem name
-    * \param name Finite Element name
-    */
-    virtual PetscErrorCode modify_problem_unset_finite_element(const std::string &name_problem,const std::string &fe_name) = 0;
-
+    /** \brief unset finite element from problem, this remove entities assigned
+     * to finite element to a particular problem \ingroup mofem_problems
+     *
+     *  Note: If problem is build, it need to be cleaned to make this effective
+     *
+     * \param name Problem name
+     * \param name Finite Element name
+     */
+    virtual PetscErrorCode
+    modify_problem_unset_finite_element(const std::string &name_problem,
+                                        const std::string &fe_name) = 0;
 
     /** \brief add ref level to problem
     * \ingroup mofem_problems
     *
-    * if same finite element is solved using different level of refinements, than the level of refinement has to be specificied to problem in query
+    * if same finite element is solved using different level of refinements,
+    than the level of refinement has to be specificied to problem in query
     *
     * \param name Problem name
     * \param BitRefLevel bitLevel
     * Example: \code
-    ierr = mField.modify_problem_add_finite_element("BEAM_BENDING_ON_MESH_REF1","ELASTIC"); CHKERRQ(ierr);
-    ierr = mField.modify_problem_add_finite_element("BEAM_BENDING_ON_MESH_REF2","ELASTIC"); CHKERRQ(ierr);
+    ierr =
+    mField.modify_problem_add_finite_element("BEAM_BENDING_ON_MESH_REF1","ELASTIC");
+    CHKERRQ(ierr); ierr =
+    mField.modify_problem_add_finite_element("BEAM_BENDING_ON_MESH_REF2","ELASTIC");
+    CHKERRQ(ierr);
 
-    ierr = mField.modify_problem_ref_level_add_bit("BEAM_BENDING_ON_MESH_REF1",bit_level1); CHKERRQ(ierr);
-    ierr = mField.modify_problem_ref_level_add_bit("BEAM_BENDING_ON_MESH_REF2",bit_level2); CHKERRQ(ierr);
+    ierr =
+    mField.modify_problem_ref_level_add_bit("BEAM_BENDING_ON_MESH_REF1",bit_level1);
+    CHKERRQ(ierr); ierr =
+    mField.modify_problem_ref_level_add_bit("BEAM_BENDING_ON_MESH_REF2",bit_level2);
+    CHKERRQ(ierr);
     *\endcode
-    * Two Problems exist and solved independently, both are elastic, but solved using different mesh refinement <br>
+    * Two Problems exist and solved independently, both are elastic, but solved
+    using different mesh refinement <br>
     */
-    virtual PetscErrorCode modify_problem_ref_level_add_bit(const std::string &name_problem,const BitRefLevel &bit) = 0;
+    virtual PetscErrorCode
+    modify_problem_ref_level_add_bit(const std::string &name_problem,
+                                     const BitRefLevel &bit) = 0;
 
     /** \brief set ref level for problem
     * \ingroup mofem_problems
     *
-    * if same finite element is solved using different level of refinements, than the level of refinement has to be specificied to problem in query
+    * if same finite element is solved using different level of refinements,
+    than the level of refinement has to be specificied to problem in query
     *
     * \param name Problem name
     * \param BitRefLevel bitLevel
     * Example: \code
-    ierr = mField.modify_problem_add_finite_element("BEAM_BENDING_ON_MESH_REF1","ELASTIC"); CHKERRQ(ierr);
-    ierr = mField.modify_problem_add_finite_element("BEAM_BENDING_ON_MESH_REF2","ELASTIC"); CHKERRQ(ierr);
+    ierr =
+    mField.modify_problem_add_finite_element("BEAM_BENDING_ON_MESH_REF1","ELASTIC");
+    CHKERRQ(ierr); ierr =
+    mField.modify_problem_add_finite_element("BEAM_BENDING_ON_MESH_REF2","ELASTIC");
+    CHKERRQ(ierr);
 
-    ierr = mField.modify_problem_ref_level_set_bit("BEAM_BENDING_ON_MESH_REF1",bit_level1); CHKERRQ(ierr);
-    ierr = mField.modify_problem_ref_level_set_bit("BEAM_BENDING_ON_MESH_REF2",bit_level2); CHKERRQ(ierr);
+    ierr =
+    mField.modify_problem_ref_level_set_bit("BEAM_BENDING_ON_MESH_REF1",bit_level1);
+    CHKERRQ(ierr); ierr =
+    mField.modify_problem_ref_level_set_bit("BEAM_BENDING_ON_MESH_REF2",bit_level2);
+    CHKERRQ(ierr);
     *\endcode
-    * Two Problems exist and solved independently, both are elastic, but solved using different mesh refinement <br>
+    * Two Problems exist and solved independently, both are elastic, but solved
+    using different mesh refinement <br>
 
-    \bug Problem bit level should be defined by bit and mask for better flexibility
+    \bug Problem bit level should be defined by bit and mask for better
+    flexibility
 
     */
-    virtual PetscErrorCode modify_problem_ref_level_set_bit(const std::string &name_problem,const BitRefLevel &bit) = 0;
+    virtual PetscErrorCode
+    modify_problem_ref_level_set_bit(const std::string &name_problem,
+                                     const BitRefLevel &bit) = 0;
 
     /** \brief set dof mask ref level for problem
-    * \ingroup mofem_problems
-    *
-    */
-    virtual PetscErrorCode modify_problem_mask_ref_level_set_bit(const std::string &name_problem,const BitRefLevel &bit) = 0;
+     * \ingroup mofem_problems
+     *
+     */
+    virtual PetscErrorCode
+    modify_problem_mask_ref_level_set_bit(const std::string &name_problem,
+                                          const BitRefLevel &bit) = 0;
 
     /** \brief list problems
-    * \ingroup mofem_problems
-    */
+     * \ingroup mofem_problems
+     */
     virtual PetscErrorCode list_problem() const = 0;
 
     /** build fields
-    * \ingroup mofem_field
-    */
+     * \ingroup mofem_field
+     */
     virtual PetscErrorCode build_fields(int verb = -1) = 0;
 
     /** list dofs
-    * \ingroup mofem_field
-    */
-    virtual PetscErrorCode list_dofs_by_field_name(const std::string &name) const = 0;
+     * \ingroup mofem_field
+     */
+    virtual PetscErrorCode
+    list_dofs_by_field_name(const std::string &name) const = 0;
 
     /**@}*/
 
@@ -950,29 +1044,37 @@ namespace MoFEM {
     /**@{*/
 
     /** Clear inactive dofs
-    * \ingroup mofem_field
-    */
+     * \ingroup mofem_field
+     */
     virtual PetscErrorCode clear_inactive_dofs(int verb = -1) = 0;
 
     /** Clear dofs by bit level
-    * \ingroup mofem_field
-    */
-    virtual PetscErrorCode clear_dofs_fields(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1) = 0;
+     * \ingroup mofem_field
+     */
+    virtual PetscErrorCode clear_dofs_fields(const BitRefLevel &bit,
+                                             const BitRefLevel &mask,
+                                             int verb = -1) = 0;
 
     /** Clear ents by bit level
-    * \ingroup mofem_field
-    */
-    virtual PetscErrorCode clear_ents_fields(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1) = 0;
+     * \ingroup mofem_field
+     */
+    virtual PetscErrorCode clear_ents_fields(const BitRefLevel &bit,
+                                             const BitRefLevel &mask,
+                                             int verb = -1) = 0;
 
     /** Clear dofs by field name
-    * \ingroup mofem_field
-    */
-    virtual PetscErrorCode clear_dofs_fields(const std::string &name,const Range ents,int verb = -1) = 0;
+     * \ingroup mofem_field
+     */
+    virtual PetscErrorCode clear_dofs_fields(const std::string &name,
+                                             const Range ents,
+                                             int verb = -1) = 0;
 
     /** Clear entities by field name
-    * \ingroup mofem_field
-    */
-    virtual PetscErrorCode clear_ents_fields(const std::string &name,const Range enst,int verb = -1) = 0;
+     * \ingroup mofem_field
+     */
+    virtual PetscErrorCode clear_ents_fields(const std::string &name,
+                                             const Range enst,
+                                             int verb = -1) = 0;
 
     /**@}*/
 
@@ -981,30 +1083,32 @@ namespace MoFEM {
     /**@{*/
 
     /**
-    * \brief Build finite elements
-    * \ingroup mofem_fe
-    *
-    * Build finite element data structures. Have to be run before problem and adjacencies
-    * are constructed.
-    *
-    * @param  verb Verbosity level
-    * @return      Error code
-    */
+     * \brief Build finite elements
+     * \ingroup mofem_fe
+     *
+     * Build finite element data structures. Have to be run before problem and
+     * adjacencies are constructed.
+     *
+     * @param  verb Verbosity level
+     * @return      Error code
+     */
     virtual PetscErrorCode build_finite_elements(int verb = -1) = 0;
 
     /**
-    * \brief Build finite elements
-    * \ingroup mofem_fe
-    *
-    * Build finite element data structures. Have to be run before problem and adjacencies
-    * are constructed.
-    *
-    * @param  fe_name  Name of finite element
-    * @param  ents_ptr Pointer to range of finite elements
-    * @param  verb     Verbosity level
-    * @return      Error code
-    */
-    virtual PetscErrorCode build_finite_elements(const string fe_name,const Range *ents_ptr = NULL,int verb = -1) = 0;
+     * \brief Build finite elements
+     * \ingroup mofem_fe
+     *
+     * Build finite element data structures. Have to be run before problem and
+     * adjacencies are constructed.
+     *
+     * @param  fe_name  Name of finite element
+     * @param  ents_ptr Pointer to range of finite elements
+     * @param  verb     Verbosity level
+     * @return      Error code
+     */
+    virtual PetscErrorCode build_finite_elements(const string fe_name,
+                                                 const Range *ents_ptr = NULL,
+                                                 int verb = -1) = 0;
 
     /**@}*/
 
@@ -1013,12 +1117,16 @@ namespace MoFEM {
     /**@{*/
 
     /** clear finite elements
-    */
-    virtual PetscErrorCode clear_finite_elements(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1) = 0;
+     */
+    virtual PetscErrorCode clear_finite_elements(const BitRefLevel &bit,
+                                                 const BitRefLevel &mask,
+                                                 int verb = -1) = 0;
 
     /** clear finite elements
-    */
-    virtual PetscErrorCode clear_finite_elements(const std::string &name,const Range &ents,int verb = -1) = 0;
+     */
+    virtual PetscErrorCode clear_finite_elements(const std::string &name,
+                                                 const Range &ents,
+                                                 int verb = -1) = 0;
 
     /**@}*/
 
@@ -1027,50 +1135,54 @@ namespace MoFEM {
     /**@{*/
 
     /** \brief build adjacencies
-    *
-    * \param list of entities
-    *
-    * This function will get information of adjacent finite elements and fields
-    * of all entities. If this is not executed, partitioning the problem is not
-    * possible. Adjacency map is based on degrees of freedom adjacent to
-    * elements. This linked to geometric element connectivity.
-    *
-    * If new degrees of freedom or new finite elements are added to the
-    * database, adjacency map has to be rebuild.
-    *
-    */
-    virtual PetscErrorCode build_adjacencies(const Range &ents,int verb = -1) = 0;
+     *
+     * \param list of entities
+     *
+     * This function will get information of adjacent finite elements and fields
+     * of all entities. If this is not executed, partitioning the problem is not
+     * possible. Adjacency map is based on degrees of freedom adjacent to
+     * elements. This linked to geometric element connectivity.
+     *
+     * If new degrees of freedom or new finite elements are added to the
+     * database, adjacency map has to be rebuild.
+     *
+     */
+    virtual PetscErrorCode build_adjacencies(const Range &ents,
+                                             int verb = -1) = 0;
 
     /** \brief build adjacencies
-    *
-    * \param bit adjacencies for refine level
-    *
-    * This function will get information of adjacent finite elements and fields
-    * of all entities. If this is not executed, partitioning the problem is not
-    * possible. Adjacency map is based on degrees of freedom adjacent to
-    * elements. This linked to geometric element connectivity.
-    *
-    * If new degrees of freedom or new finite elements are added to the
-    * database, adjacency map has to be rebuild.
-    *
-    */
-    virtual PetscErrorCode build_adjacencies(const BitRefLevel &bit,int verb = -1) = 0;
+     *
+     * \param bit adjacencies for refine level
+     *
+     * This function will get information of adjacent finite elements and fields
+     * of all entities. If this is not executed, partitioning the problem is not
+     * possible. Adjacency map is based on degrees of freedom adjacent to
+     * elements. This linked to geometric element connectivity.
+     *
+     * If new degrees of freedom or new finite elements are added to the
+     * database, adjacency map has to be rebuild.
+     *
+     */
+    virtual PetscErrorCode build_adjacencies(const BitRefLevel &bit,
+                                             int verb = -1) = 0;
 
     /** \brief build adjacencies
-    *
-    * \param bit adjacencies for refine level
-    * \param mask mask for bit level
-    *
-    * This function will get information of adjacent finite elements and fields
-    * of all entities. If this is not executed, partitioning the problem is not
-    * possible. Adjacency map is based on degrees of freedom adjacent to
-    * elements. This linked to geometric element connectivity.
-    *
-    * If new degrees of freedom or new finite elements are added to the
-    * database, adjacency map has to be rebuild.
-    *
-    */
-    virtual PetscErrorCode build_adjacencies(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1) = 0;
+     *
+     * \param bit adjacencies for refine level
+     * \param mask mask for bit level
+     *
+     * This function will get information of adjacent finite elements and fields
+     * of all entities. If this is not executed, partitioning the problem is not
+     * possible. Adjacency map is based on degrees of freedom adjacent to
+     * elements. This linked to geometric element connectivity.
+     *
+     * If new degrees of freedom or new finite elements are added to the
+     * database, adjacency map has to be rebuild.
+     *
+     */
+    virtual PetscErrorCode build_adjacencies(const BitRefLevel &bit,
+                                             const BitRefLevel &mask,
+                                             int verb = -1) = 0;
 
     /**@}*/
 
@@ -1079,18 +1191,21 @@ namespace MoFEM {
     /**@{*/
 
     /** \brief clear adjacency map for finite elements on given bit level
-    *
-    * \param bit
-    * \param mask
-    */
-    virtual PetscErrorCode clear_adjacencies_finite_elements(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1) = 0;
+     *
+     * \param bit
+     * \param mask
+     */
+    virtual PetscErrorCode clear_adjacencies_finite_elements(
+        const BitRefLevel &bit, const BitRefLevel &mask, int verb = -1) = 0;
 
     /** \brief clear adjacency map for entities on given bit level
-    *
-    * \param bit
-    * \param mask
-    */
-    virtual PetscErrorCode clear_adjacencies_entities(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1) = 0;
+     *
+     * \param bit
+     * \param mask
+     */
+    virtual PetscErrorCode clear_adjacencies_entities(const BitRefLevel &bit,
+                                                      const BitRefLevel &mask,
+                                                      int verb = -1) = 0;
 
     /**@}*/
 
@@ -1099,29 +1214,30 @@ namespace MoFEM {
     /**@{*/
 
     /** \brief clear problem
-    * \ingroup mofem_problems
-    */
-    virtual PetscErrorCode clear_problem(const std::string &name,int verb = -1) = 0;
+     * \ingroup mofem_problems
+     */
+    virtual PetscErrorCode clear_problem(const std::string &name,
+                                         int verb = -1) = 0;
 
     /** \brief clear problems
-    * \ingroup mofem_problems
-    */
+     * \ingroup mofem_problems
+     */
     virtual PetscErrorCode clear_problems(int verb = -1) = 0;
 
     /** \brief check if matrix fill in correspond to finite element indices
 
     This is used to check consistency of code. If problem is notices with
-    additional non-zero elements in matrix, this function can help detect problem.
-    Should be used as a part of atom tests
+    additional non-zero elements in matrix, this function can help detect
+    problem. Should be used as a part of atom tests
 
     \param problem_nanme
     \param row print info at particular row
     \param col print info at particular col
 
     */
-    virtual PetscErrorCode partition_check_matrix_fill_in(
-      const std::string &problem_name,int row,int col,int verb
-    ) = 0;
+    virtual PetscErrorCode
+    partition_check_matrix_fill_in(const std::string &problem_name, int row,
+                                   int col, int verb) = 0;
 
     /**
     * \brief resolve shared entities for finite elements in the problem
@@ -1136,15 +1252,18 @@ namespace MoFEM {
 
     \code
     Tag th;
-    rval = mField.get_moab().tag_get_handle("ADAPT_ORDER",th); CHKERRQ_MOAB(rval);
-    ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
+    rval = mField.get_moab().tag_get_handle("ADAPT_ORDER",th);
+    CHKERRQ_MOAB(rval); ParallelComm* pcomm =
+    ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
     // rval = pcomm->reduce_tags(th,MPI_SUM,prisms);
     rval = pcomm->exchange_tags(th,prisms);
     \endcode
 
     *
     */
-    virtual PetscErrorCode resolve_shared_ents(const Problem *problem_ptr,const std::string &fe_name,int verb = -1) = 0;
+    virtual PetscErrorCode resolve_shared_ents(const Problem *problem_ptr,
+                                               const std::string &fe_name,
+                                               int verb = -1) = 0;
 
     /**
     * \brief resolve shared entities for finite elements in the problem
@@ -1158,59 +1277,68 @@ namespace MoFEM {
     * This allows for tag reduction or tag exchange, f.e.
 
     \code
-    ierr = m_field.resolve_shared_ents(problem_ptr,"SHELL_ELEMENT"); CHKERRQ(ierr);
-    Tag th;
-    rval = mField.get_moab().tag_get_handle("ADAPT_ORDER",th); CHKERRQ_MOAB(rval);
-    ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
+    ierr = m_field.resolve_shared_ents(problem_ptr,"SHELL_ELEMENT");
+    CHKERRQ(ierr); Tag th; rval =
+    mField.get_moab().tag_get_handle("ADAPT_ORDER",th); CHKERRQ_MOAB(rval);
+    ParallelComm* pcomm =
+    ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
     // rval = pcomm->reduce_tags(th,MPI_SUM,prisms);
     rval = pcomm->exchange_tags(th,prisms);
     \endcode
 
     *
     */
-    virtual PetscErrorCode resolve_shared_ents(const std::string &name,const std::string &fe_name,int verb = -1) = 0;
+    virtual PetscErrorCode resolve_shared_ents(const std::string &name,
+                                               const std::string &fe_name,
+                                               int verb = -1) = 0;
 
     /**
-    * \brief add finite elements to the meshset
-    * \ingroup mofem_problems
-    *
-    * \param name is problem name
-    * \param fe_name
-    * \param meshset
-    */
-    virtual PetscErrorCode get_problem_finite_elements_entities(const std::string &name,const std::string &fe_name,const EntityHandle meshset) = 0;
+     * \brief add finite elements to the meshset
+     * \ingroup mofem_problems
+     *
+     * \param name is problem name
+     * \param fe_name
+     * \param meshset
+     */
+    virtual PetscErrorCode
+    get_problem_finite_elements_entities(const std::string &name,
+                                         const std::string &fe_name,
+                                         const EntityHandle meshset) = 0;
 
     /**@}*/
-
 
     /** \name Create matrices */
 
     /**@{*/
 
     /**
-    * \brief create Mat (MPIAIJ) for problem (collective)
-    *
-    * \param name of the problem
-    */
-    virtual PetscErrorCode MatCreateMPIAIJWithArrays(const std::string &name,Mat *Aij,int verb = -1) = 0;
+     * \brief create Mat (MPIAIJ) for problem (collective)
+     *
+     * \param name of the problem
+     */
+    virtual PetscErrorCode MatCreateMPIAIJWithArrays(const std::string &name,
+                                                     Mat *Aij,
+                                                     int verb = -1) = 0;
 
     /**
-    * \brief Create Adj matrix
-    * @param  name [description]
-    * @param  Adj  [description]
-    * @param  verb [description]
-    * @return      [description]
-    */
-    virtual PetscErrorCode MatCreateMPIAdj_with_Idx_mi_tag(const std::string &name,Mat *Adj,int verb = -1) = 0;
-
-
+     * \brief Create Adj matrix
+     * @param  name [description]
+     * @param  Adj  [description]
+     * @param  verb [description]
+     * @return      [description]
+     */
+    virtual PetscErrorCode
+    MatCreateMPIAdj_with_Idx_mi_tag(const std::string &name, Mat *Adj,
+                                    int verb = -1) = 0;
 
     /**
-    * \brief create Mat (AIJ) for problem
-    *
-    * \param name of the problem
-    */
-    virtual PetscErrorCode MatCreateSeqAIJWithArrays(const std::string &name,Mat *Aij,PetscInt **i,PetscInt **j,PetscScalar **v,int verb = -1) = 0;
+     * \brief create Mat (AIJ) for problem
+     *
+     * \param name of the problem
+     */
+    virtual PetscErrorCode
+    MatCreateSeqAIJWithArrays(const std::string &name, Mat *Aij, PetscInt **i,
+                              PetscInt **j, PetscScalar **v, int verb = -1) = 0;
 
     /**@}*/
 
@@ -1219,77 +1347,87 @@ namespace MoFEM {
     /**@{*/
 
     /** \brief Set data for BasicMethod
-    *
-    * This function set data about problem, adjacencies and other MultIindices
-    * in database. This function can be used a special case when user need to
-    * do some pre- and post-processing before matrix or vector is initiated, or
-    * to assemble matrix for group of FEMethods. Is used by calsses classes
-    * SnesCtx and TsCtx. Look for more details there.
-    *
-    * FIXME: Here we need example
-    *
-    * \param pointer to problem data structure
-    * \param method user method derived from BasicMethod
-    *
-    **/
-    virtual PetscErrorCode problem_basic_method_preProcess(const Problem *problem_ptr,BasicMethod &method,int verb = -1) = 0;
+     *
+     * This function set data about problem, adjacencies and other MultIindices
+     * in database. This function can be used a special case when user need to
+     * do some pre- and post-processing before matrix or vector is initiated, or
+     * to assemble matrix for group of FEMethods. Is used by calsses classes
+     * SnesCtx and TsCtx. Look for more details there.
+     *
+     * FIXME: Here we need example
+     *
+     * \param pointer to problem data structure
+     * \param method user method derived from BasicMethod
+     *
+     **/
+    virtual PetscErrorCode
+    problem_basic_method_preProcess(const Problem *problem_ptr,
+                                    BasicMethod &method, int verb = -1) = 0;
 
     /** \brief Set data for BasicMethod
-    *
-    * This function set data about problem, adjacencies and other MultIindices
-    * in database. This function can be used a special case when user need to
-    * do some pre- and post-processing before matrix or vector is initiated, or
-    * to assemble matrix for group of FEMethods. Is used by classes
-    * SnesCtx and TsCtx. Look for more details there.
-    *
-    * FIXME: Here we need example
-    *
-    * \param problem_name name of the problem
-    * \param method user method derived from BasicMethod
-    *
-    **/
-    virtual PetscErrorCode problem_basic_method_preProcess(const std::string &problem_name,BasicMethod &method,int verb = -1) = 0;
+     *
+     * This function set data about problem, adjacencies and other MultIindices
+     * in database. This function can be used a special case when user need to
+     * do some pre- and post-processing before matrix or vector is initiated, or
+     * to assemble matrix for group of FEMethods. Is used by classes
+     * SnesCtx and TsCtx. Look for more details there.
+     *
+     * FIXME: Here we need example
+     *
+     * \param problem_name name of the problem
+     * \param method user method derived from BasicMethod
+     *
+     **/
+    virtual PetscErrorCode
+    problem_basic_method_preProcess(const std::string &problem_name,
+                                    BasicMethod &method, int verb = -1) = 0;
 
     /** \brief Set data for BasicMethod
-    * \ingroup mofem_loops
-    *
-    * This function set data about problem, adjacencies and other MultIindices
-    * in database. This function can be used a special case when user need to
-    * do some pre- and post-processing before matrix or vector is initiated, or
-    * to assemble matrix for group of FEMethods. Is used by classes
-    * SnesCtx and TsCtx. Look for more details there.
-    *
-    * FIXME: Here we need example
-    *
-    * \param pointer to problem data structure
-    * \param method user method derived from BasicMethod
-    *
-    **/
-    virtual PetscErrorCode problem_basic_method_postProcess(const Problem *problem_ptr,BasicMethod &method,int verb = -1) = 0;
+     * \ingroup mofem_loops
+     *
+     * This function set data about problem, adjacencies and other MultIindices
+     * in database. This function can be used a special case when user need to
+     * do some pre- and post-processing before matrix or vector is initiated, or
+     * to assemble matrix for group of FEMethods. Is used by classes
+     * SnesCtx and TsCtx. Look for more details there.
+     *
+     * FIXME: Here we need example
+     *
+     * \param pointer to problem data structure
+     * \param method user method derived from BasicMethod
+     *
+     **/
+    virtual PetscErrorCode
+    problem_basic_method_postProcess(const Problem *problem_ptr,
+                                     BasicMethod &method, int verb = -1) = 0;
 
     /** \brief Set data for BasicMethod
-    * \ingroup mofem_loops
-    *
-    * This function set data about problem, adjacencies and other MultIindices
-    * in database. This function can be used a special case when user need to
-    * do some pre- and post-processing before matrix or vector is initiated, or
-    * to assemble matrix for group of FEMethods. Is used by classes
-    * SnesCtx and TsCtx. Look for more details there.
-    *
-    * FIXME: Here we need example
-    *
-    * \param problem_name name of the problem
-    * \param method user method derived from BasicMethod
-    *
-    **/
-    virtual PetscErrorCode problem_basic_method_postProcess(const std::string &problem_name,BasicMethod &method,int verb = -1) = 0;
+     * \ingroup mofem_loops
+     *
+     * This function set data about problem, adjacencies and other MultIindices
+     * in database. This function can be used a special case when user need to
+     * do some pre- and post-processing before matrix or vector is initiated, or
+     * to assemble matrix for group of FEMethods. Is used by classes
+     * SnesCtx and TsCtx. Look for more details there.
+     *
+     * FIXME: Here we need example
+     *
+     * \param problem_name name of the problem
+     * \param method user method derived from BasicMethod
+     *
+     **/
+    virtual PetscErrorCode
+    problem_basic_method_postProcess(const std::string &problem_name,
+                                     BasicMethod &method, int verb = -1) = 0;
 
     /** \brief Make a loop over finite elements.
     *
-    * This function is like swiss knife, is can be used to post-processing or matrix
+    * This function is like swiss knife, is can be used to post-processing or
+    matrix
     * and vectors assembly. It makes loop over given finite element for given
     * problem. The particular methods executed on each element are given by
-    * class derived form Interface::FEMethod. At beginning of each loop user defined
+    * class derived form Interface::FEMethod. At beginning of each loop user
+    defined
     * function (method)  preProcess() is called, for each element operator() is
     * executed, at the end loop finalizes with user defined function (method)
     * postProcess().
@@ -1301,23 +1439,28 @@ namespace MoFEM {
     * @param  problem_name problem consisting set of elements
     * @param  fe_name      name of element in problem
     * @param  method       class derived form Interface::FEMethod
-    * @param  bh           if bH = MF_EXIST, throws error if fe_name does not exist
+    * @param  bh           if bH = MF_EXIST, throws error if fe_name does not
+    exist
     * @param  verb         verbosity level
     * @return              error code
 
     * \ingroup mofem_loops
     **/
-    virtual PetscErrorCode loop_finite_elements(
-      const std::string &problem_name,const std::string &fe_name,FEMethod &method,
-      MoFEMTypes bh = MF_EXIST,int verb = -1
-    ) = 0;
+    virtual PetscErrorCode loop_finite_elements(const std::string &problem_name,
+                                                const std::string &fe_name,
+                                                FEMethod &method,
+                                                MoFEMTypes bh = MF_EXIST,
+                                                int verb = -1) = 0;
 
-    /** \brief Make a loop over finite elements on partitions from upper to lower rank.
+    /** \brief Make a loop over finite elements on partitions from upper to
+    lower rank.
     *
-    * This function is like swiss knife, is can be used to post-processing or matrix
+    * This function is like swiss knife, is can be used to post-processing or
+    matrix
     * and vectors assembly. It makes loop over given finite element for given
     * problem. The particular methods executed on each element are given by
-    * class derived form Interface::FEMethod. At beginning of each loop user defined
+    * class derived form Interface::FEMethod. At beginning of each loop user
+    defined
     * function (method)  preProcess() is called, for each element operator() is
     * executed, at the end loop finalizes with user defined function (method)
     * postProcess().
@@ -1331,23 +1474,27 @@ namespace MoFEM {
     * @param  method       class derived form Interface::FEMethod
     * @param  lower_rank   lower rank of process owned by finite element
     * @param  upper_rank   lower rank of process owned by finite element
-    * @param  bh           if bH = MF_EXIST, throws error if fe_name does not exist
+    * @param  bh           if bH = MF_EXIST, throws error if fe_name does not
+    exist
     * @param  verb         verbosity level
     * @return              error code
 
     * \ingroup mofem_loops
     **/
-    virtual PetscErrorCode loop_finite_elements(
-      const Problem *problem_ptr,const std::string &fe_name,FEMethod &method,
-      int lower_rank,int upper_rank,MoFEMTypes bh = MF_EXIST,int verb = -1
-    ) = 0;
+    virtual PetscErrorCode
+    loop_finite_elements(const Problem *problem_ptr, const std::string &fe_name,
+                         FEMethod &method, int lower_rank, int upper_rank,
+                         MoFEMTypes bh = MF_EXIST, int verb = -1) = 0;
 
-    /** \brief Make a loop over finite elements on partitions from upper to lower rank.
+    /** \brief Make a loop over finite elements on partitions from upper to
+    lower rank.
     *
-    * This function is like swiss knife, is can be used to post-processing or matrix
+    * This function is like swiss knife, is can be used to post-processing or
+    matrix
     * and vectors assembly. It makes loop over given finite element for given
     * problem. The particular methods executed on each element are given by
-    * class derived form Interface::FEMethod. At beginning of each loop user defined
+    * class derived form Interface::FEMethod. At beginning of each loop user
+    defined
     * function (method)  preProcess() is called, for each element operator() is
     * executed, at the end loop finalizes with user defined function (method)
     * postProcess().
@@ -1360,50 +1507,55 @@ namespace MoFEM {
     * @param  method       class derived form Interface::FEMethod
     * @param  lower_rank   lower rank of process owned by finite element
     * @param  upper_rank   lower rank of process owned by finite element
-    * @param  bh           if bH = MF_EXIST, throws error if fe_name does not exist
+    * @param  bh           if bH = MF_EXIST, throws error if fe_name does not
+    exist
     * @param  verb         verbosity level
     * @return              error code
 
     * \ingroup mofem_loops
     **/
-    virtual PetscErrorCode loop_finite_elements(
-      const std::string &problem_name,const std::string &fe_name,FEMethod &method,
-      int lower_rank,int upper_rank,MoFEMTypes bh = MF_EXIST,int verb = -1
-    ) = 0;
+    virtual PetscErrorCode loop_finite_elements(const std::string &problem_name,
+                                                const std::string &fe_name,
+                                                FEMethod &method,
+                                                int lower_rank, int upper_rank,
+                                                MoFEMTypes bh = MF_EXIST,
+                                                int verb = -1) = 0;
 
     /** \brief Make a loop over entities
 
     * \ingroup mofem_loops
     */
-    virtual PetscErrorCode loop_dofs(
-      const Problem *problem_ptr,const std::string &field_name,RowColData rc,
-      EntMethod &method,int lower_rank,int upper_rank,int verb = -1
-    ) = 0;
+    virtual PetscErrorCode loop_dofs(const Problem *problem_ptr,
+                                     const std::string &field_name,
+                                     RowColData rc, EntMethod &method,
+                                     int lower_rank, int upper_rank,
+                                     int verb = -1) = 0;
 
     /** \brief Make a loop over entities
 
     * \ingroup mofem_loops
     */
-    virtual PetscErrorCode loop_dofs(
-      const std::string &problem_name,const std::string &field_name,RowColData rc,
-      EntMethod &method,int lower_rank,int upper_rank,int verb = -1
-    ) = 0;
-
+    virtual PetscErrorCode loop_dofs(const std::string &problem_name,
+                                     const std::string &field_name,
+                                     RowColData rc, EntMethod &method,
+                                     int lower_rank, int upper_rank,
+                                     int verb = -1) = 0;
 
     /** \brief Make a loop over entities
 
     * \ingroup mofem_loops
     */
-    virtual PetscErrorCode loop_dofs(
-      const std::string &problem_name,const std::string &field_name,RowColData rc,
-      EntMethod &method,int verb = -1
-    ) = 0;
+    virtual PetscErrorCode loop_dofs(const std::string &problem_name,
+                                     const std::string &field_name,
+                                     RowColData rc, EntMethod &method,
+                                     int verb = -1) = 0;
 
     /** \brief Make a loop over entities
 
     * \ingroup mofem_field
     */
-    virtual PetscErrorCode loop_dofs(const std::string &field_name,EntMethod &method,int verb = -1) = 0;
+    virtual PetscErrorCode loop_dofs(const std::string &field_name,
+                                     EntMethod &method, int verb = -1) = 0;
 
     /**@}*/
 
@@ -1412,263 +1564,304 @@ namespace MoFEM {
     /**@{*/
 
     /** \brief Get fields multi-index from database
-    * \ingroup mofem_access
-    */
-    virtual PetscErrorCode get_fields(const Field_multiIndex **fields_ptr) const = 0;
+     * \ingroup mofem_access
+     */
+    virtual PetscErrorCode
+    get_fields(const Field_multiIndex **fields_ptr) const = 0;
 
     /** \brief Get ref entities multi-index from database
-    * \ingroup mofem_access
-    */
-    virtual PetscErrorCode get_ref_ents(const RefEntity_multiIndex **refined_ents_ptr) const = 0;
+     * \ingroup mofem_access
+     */
+    virtual PetscErrorCode
+    get_ref_ents(const RefEntity_multiIndex **refined_ents_ptr) const = 0;
 
     /** \brief Get ref finite elements multi-index form database
-    * \ingroup mofem_access
-    */
-    virtual PetscErrorCode get_ref_finite_elements(const RefElement_multiIndex **refined_finite_elements_ptr) const = 0;
+     * \ingroup mofem_access
+     */
+    virtual PetscErrorCode get_ref_finite_elements(
+        const RefElement_multiIndex **refined_finite_elements_ptr) const = 0;
 
     /** \brief Get finite elements multi-index
-    * \ingroup mofem_access
-    */
-    virtual PetscErrorCode get_finite_elements(const FiniteElement_multiIndex **fe_ptr) const = 0;
+     * \ingroup mofem_access
+     */
+    virtual PetscErrorCode
+    get_finite_elements(const FiniteElement_multiIndex **fe_ptr) const = 0;
 
     /** \brief Get entities finite elements multi-index
-    * \ingroup mofem_access
-    */
-    virtual PetscErrorCode get_ents_finite_elements(const EntFiniteElement_multiIndex **fe_ent_ptr) const = 0;
+     * \ingroup mofem_access
+     */
+    virtual PetscErrorCode get_ents_finite_elements(
+        const EntFiniteElement_multiIndex **fe_ent_ptr) const = 0;
 
     /** \brief Get problem database (data structure)
-    * \ingroup mofem_access
-    */
-    virtual PetscErrorCode get_problem(const std::string &problem_name,const Problem **problem_ptr) const = 0;
+     * \ingroup mofem_access
+     */
+    virtual PetscErrorCode get_problem(const std::string &problem_name,
+                                       const Problem **problem_ptr) const = 0;
 
     /**
-    * \brief Get pointer to problems multi-index
-    * \ingroup mofem_access
-    */
-    virtual PetscErrorCode get_problems(const Problem_multiIndex **problems_ptr) const = 0;
+     * \brief Get pointer to problems multi-index
+     * \ingroup mofem_access
+     */
+    virtual PetscErrorCode
+    get_problems(const Problem_multiIndex **problems_ptr) const = 0;
 
     /** \brief Get field multi index
-    *
-    * \ingroup mofem_access
-    *
-    */
-    virtual PetscErrorCode get_field_ents(const FieldEntity_multiIndex **field_ents) const = 0;
+     *
+     * \ingroup mofem_access
+     *
+     */
+    virtual PetscErrorCode
+    get_field_ents(const FieldEntity_multiIndex **field_ents) const = 0;
 
     /** \brief Get dofs multi index
-    *
-    * \ingroup mofem_access
-    *
-    */
-    virtual PetscErrorCode get_dofs(const DofEntity_multiIndex **dofs_ptr) const = 0;
+     *
+     * \ingroup mofem_access
+     *
+     */
+    virtual PetscErrorCode
+    get_dofs(const DofEntity_multiIndex **dofs_ptr) const = 0;
 
     /**
-    * \brief get begin iterator of filed ents of given name (instead you can use _IT_GET_ENT_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)
-    * \ingroup mofem_field
-    *
-    * for(_IT_GET_ENT_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)) {
-    * 	...
-    * }
-    *
-    * \param field_name
-    */
-    virtual FieldEntityByFieldName::iterator get_ent_moabfield_by_name_begin(const std::string &field_name) const = 0;
+     * \brief get begin iterator of filed ents of given name (instead you can
+     * use _IT_GET_ENT_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT) \ingroup
+     * mofem_field
+     *
+     * for(_IT_GET_ENT_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)) {
+     * 	...
+     * }
+     *
+     * \param field_name
+     */
+    virtual FieldEntityByFieldName::iterator
+    get_ent_moabfield_by_name_begin(const std::string &field_name) const = 0;
 
     /**
-    * \brief get begin iterator of filed dofs of given name (instead you can use _IT_GET_ENT_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)
-    * \ingroup mofem_field
-    *
-    * for(_IT_GET_ENT_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)) {
-    * 	...
-    * }
-    *
-    * \param field_name
-    */
-    virtual FieldEntityByFieldName::iterator get_ent_moabfield_by_name_end(const std::string &field_name) const = 0;
+     * \brief get begin iterator of filed dofs of given name (instead you can
+     * use _IT_GET_ENT_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT) \ingroup
+     * mofem_field
+     *
+     * for(_IT_GET_ENT_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)) {
+     * 	...
+     * }
+     *
+     * \param field_name
+     */
+    virtual FieldEntityByFieldName::iterator
+    get_ent_moabfield_by_name_end(const std::string &field_name) const = 0;
 
-    /** \brief loop over all dofs from a moFEM field and particular field
-    * \ingroup mofem_field
-    */
-    #define _IT_GET_ENT_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT) \
-    FieldEntityByFieldName::iterator IT = MFIELD.get_ent_moabfield_by_name_begin(NAME); \
-    IT != MFIELD.get_ent_moabfield_by_name_end(NAME); IT++
-
-    /**
-    * \brief get begin iterator of filed dofs of given name (instead you can use _IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)
-    * \ingroup mofem_field
-    *
-    * for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)) {
-    * 	...
-    * }
-    *
-    * \param field_name
-    */
-    virtual DofEntityByFieldName::iterator get_dofs_by_name_begin(const std::string &field_name) const = 0;
+  /** \brief loop over all dofs from a moFEM field and particular field
+   * \ingroup mofem_field
+   */
+#define _IT_GET_ENT_FIELD_BY_NAME_FOR_LOOP_(MFIELD, NAME, IT)                  \
+  FieldEntityByFieldName::iterator IT =                                        \
+      MFIELD.get_ent_moabfield_by_name_begin(NAME);                            \
+  IT != MFIELD.get_ent_moabfield_by_name_end(NAME);                            \
+  IT++
 
     /**
-    * \brief get begin iterator of filed dofs of given name (instead you can use _IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)
-    * \ingroup mofem_field
-    *
-    * for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)) {
-    * 	...
-    * }
-    *
-    * \param field_name
-    */
-    virtual DofEntityByFieldName::iterator get_dofs_by_name_end(const std::string &field_name) const = 0;
-
-    /** loop over all dofs from a moFEM field and particular field
-    * \ingroup mofem_field
-    */
-    #define _IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT) \
-    DofEntityByFieldName::iterator IT = MFIELD.get_dofs_by_name_begin(NAME); \
-    IT != MFIELD.get_dofs_by_name_end(NAME); IT++
+     * \brief get begin iterator of filed dofs of given name (instead you can
+     * use _IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT) \ingroup
+     * mofem_field
+     *
+     * for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)) {
+     * 	...
+     * }
+     *
+     * \param field_name
+     */
+    virtual DofEntityByFieldName::iterator
+    get_dofs_by_name_begin(const std::string &field_name) const = 0;
 
     /**
-    * \brief get begin iterator of filed dofs of given name and ent(instead you can use _IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,ENT,IT)
-    * \ingroup mofem_field
-    *
-    * for(_IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_(MFIELD,NAME,ENT,IT)) {
-    * 	...
-    * }
-    *
-    * \param field_name
-    */
+     * \brief get begin iterator of filed dofs of given name (instead you can
+     * use _IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT) \ingroup
+     * mofem_field
+     *
+     * for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)) {
+     * 	...
+     * }
+     *
+     * \param field_name
+     */
+    virtual DofEntityByFieldName::iterator
+    get_dofs_by_name_end(const std::string &field_name) const = 0;
+
+  /** loop over all dofs from a moFEM field and particular field
+   * \ingroup mofem_field
+   */
+#define _IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD, NAME, IT)                 \
+  DofEntityByFieldName::iterator IT = MFIELD.get_dofs_by_name_begin(NAME);     \
+  IT != MFIELD.get_dofs_by_name_end(NAME);                                     \
+  IT++
+
+    /**
+     * \brief get begin iterator of filed dofs of given name and ent(instead you
+     * can use _IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,ENT,IT) \ingroup
+     * mofem_field
+     *
+     * for(_IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_(MFIELD,NAME,ENT,IT)) {
+     * 	...
+     * }
+     *
+     * \param field_name
+     */
     virtual DofEntityByNameAndEnt::iterator
-    get_dofs_by_name_and_ent_begin(const std::string &field_name,const EntityHandle ent) const = 0;
+    get_dofs_by_name_and_ent_begin(const std::string &field_name,
+                                   const EntityHandle ent) const = 0;
 
     /**
-    * \brief get begin iterator of filed dofs of given name and ent (instead you can use _IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,ENT,IT)
-    * \ingroup mofem_field
-    *
-    * for(_IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_(MFIELD,NAME,ENT,IT)) {
-    * 	...
-    * }
-    *
-    * \param field_name
-    */
+     * \brief get begin iterator of filed dofs of given name and ent (instead
+     * you can use _IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,ENT,IT)
+     * \ingroup mofem_field
+     *
+     * for(_IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_(MFIELD,NAME,ENT,IT)) {
+     * 	...
+     * }
+     *
+     * \param field_name
+     */
     virtual DofEntityByNameAndEnt::iterator
-    get_dofs_by_name_and_ent_end(const std::string &field_name,const EntityHandle ent) const = 0;
+    get_dofs_by_name_and_ent_end(const std::string &field_name,
+                                 const EntityHandle ent) const = 0;
 
-    /** \brief loop over all dofs from a moFEM field and particular field
-    * \ingroup mofem_access
-    */
-    #define _IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_(MFIELD,NAME,ENT,IT) \
-    DofEntityByNameAndEnt::iterator IT = MFIELD.get_dofs_by_name_and_ent_begin(NAME,ENT); \
-    IT != MFIELD.get_dofs_by_name_and_ent_end(NAME,ENT); IT++
+  /** \brief loop over all dofs from a moFEM field and particular field
+   * \ingroup mofem_access
+   */
+#define _IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_(MFIELD, NAME, ENT, IT)    \
+  DofEntityByNameAndEnt::iterator IT =                                         \
+      MFIELD.get_dofs_by_name_and_ent_begin(NAME, ENT);                        \
+  IT != MFIELD.get_dofs_by_name_and_ent_end(NAME, ENT);                        \
+  IT++
 
     /**
-    * \brief get field data from entity and field
-    * \ingroup mofem_field
-    *
-    * this funciont is not recommended to be used in finite elemeny implementation
-    *
-    */
+     * \brief get field data from entity and field
+     * \ingroup mofem_field
+     *
+     * this funciont is not recommended to be used in finite elemeny
+     * implementation
+     *
+     */
     template <typename DIT>
-    PetscErrorCode get_field_dof_data(
-      const std::string& name,const EntityHandle *ent,const int num_ents,DIT dit,int *count = NULL
-    ) {
+    PetscErrorCode
+    get_field_dof_data(const std::string &name, const EntityHandle *ent,
+                       const int num_ents, DIT dit, int *count = NULL) {
       MoFEMFunctionBeginHot;
-      if(count!=NULL) *count = 0;
-      for(int nn = 0;nn<num_ents;nn++) {
-        for(_IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_((*this),name,ent[nn],it)) {
+      if (count != NULL)
+        *count = 0;
+      for (int nn = 0; nn < num_ents; nn++) {
+        for (_IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_((*this), name,
+                                                          ent[nn], it)) {
           *(dit++) = (*it)->getFieldData();
-          if(count!=NULL) (*count)++;
+          if (count != NULL)
+            (*count)++;
         }
       }
       MoFEMFunctionReturnHot(0);
     }
 
     /**
-    * \brief get field data from entity and field
-    * \ingroup mofem_field
-    *
-    * this function is not recommended to be used in finite element implementation
-    *
-    */
+     * \brief get field data from entity and field
+     * \ingroup mofem_field
+     *
+     * this function is not recommended to be used in finite element
+     * implementation
+     *
+     */
     template <typename DIT>
-    PetscErrorCode get_field_dof_data(
-      const std::string& name,const Range &ents,DIT dit,int *count = NULL
-    ) {
+    PetscErrorCode get_field_dof_data(const std::string &name,
+                                      const Range &ents, DIT dit,
+                                      int *count = NULL) {
       MoFEMFunctionBeginHot;
-      if(count!=NULL) *count = 0;
-      for(Range::const_iterator eit = ents.begin();eit!=ents.end();eit++) {
-        for(_IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_((*this),name,*eit,it)) {
+      if (count != NULL)
+        *count = 0;
+      for (Range::const_iterator eit = ents.begin(); eit != ents.end(); eit++) {
+        for (_IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_((*this), name, *eit,
+                                                          it)) {
           *(dit++) = (*it)->getFieldData();
-          if(count!=NULL) (*count)++;
+          if (count != NULL)
+            (*count)++;
         }
       }
       MoFEMFunctionReturnHot(0);
     }
 
     /**
-    * \brief get begin iterator of filed dofs of given name and ent type (instead you can use _IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,TYPE,IT)
-    * \ingroup mofem_field
-    *
-    * for(_IT_GET_DOFS_FIELD_BY_NAME_AND_TYPE_FOR_LOOP_(MFIELD,NAME,TYPE,IT)) {
-    * 	...
-    * }
-    *
-    * \param field_name
-    */
+     * \brief get begin iterator of filed dofs of given name and ent type
+     * (instead you can use
+     * _IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,TYPE,IT) \ingroup
+     * mofem_field
+     *
+     * for(_IT_GET_DOFS_FIELD_BY_NAME_AND_TYPE_FOR_LOOP_(MFIELD,NAME,TYPE,IT)) {
+     * 	...
+     * }
+     *
+     * \param field_name
+     */
     virtual DofEntityByNameAndType::iterator
-    get_dofs_by_name_and_type_begin(const std::string &field_name,const EntityType type) const = 0;
+    get_dofs_by_name_and_type_begin(const std::string &field_name,
+                                    const EntityType type) const = 0;
 
     /**
-    * \brief get begin iterator of filed dofs of given name end ent type(instead you can use _IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,TYPE,IT)
-    * \ingroup mofem_field
-    *
-    * for(_IT_GET_DOFS_FIELD_BY_NAME_AND_TYPE_FOR_LOOP_(MFIELD,NAME,TYPE,IT)) {
-    * 	...
-    * }
-    *
-    * \param field_name
-    */
+     * \brief get begin iterator of filed dofs of given name end ent
+     * type(instead you can use
+     * _IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,TYPE,IT) \ingroup
+     * mofem_field
+     *
+     * for(_IT_GET_DOFS_FIELD_BY_NAME_AND_TYPE_FOR_LOOP_(MFIELD,NAME,TYPE,IT)) {
+     * 	...
+     * }
+     *
+     * \param field_name
+     */
     virtual DofEntityByNameAndType::iterator
-    get_dofs_by_name_and_type_end(const std::string &field_name,const EntityType type) const = 0;
+    get_dofs_by_name_and_type_end(const std::string &field_name,
+                                  const EntityType type) const = 0;
 
-    /** \brief loop over all dofs from a moFEM field and particular field
-    * \ingroup mofem_field
-    */
-    #define _IT_GET_DOFS_FIELD_BY_NAME_AND_TYPE_FOR_LOOP_(MFIELD,NAME,TYPE,IT) \
-    DofEntityByNameAndType::iterator IT = MFIELD.get_dofs_by_name_and_type_begin(NAME,TYPE); \
-    IT != MFIELD.get_dofs_by_name_and_type_end(NAME,TYPE); IT++
+  /** \brief loop over all dofs from a moFEM field and particular field
+   * \ingroup mofem_field
+   */
+#define _IT_GET_DOFS_FIELD_BY_NAME_AND_TYPE_FOR_LOOP_(MFIELD, NAME, TYPE, IT)  \
+  DofEntityByNameAndType::iterator IT =                                        \
+      MFIELD.get_dofs_by_name_and_type_begin(NAME, TYPE);                      \
+  IT != MFIELD.get_dofs_by_name_and_type_end(NAME, TYPE);                      \
+  IT++
 
     /**
-    * \brief get begin iterator of finite elements of given name (instead you can use _IT_GET_FES_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)
-    * \ingroup mofem_access
-    *
-    * for(_IT_GET_FES_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)) {
-    * 	...
-    * }
-    *
-    * \param fe_name
-    */
+     * \brief get begin iterator of finite elements of given name (instead you
+     * can use _IT_GET_FES_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT) \ingroup
+     * mofem_access
+     *
+     * for(_IT_GET_FES_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)) {
+     * 	...
+     * }
+     *
+     * \param fe_name
+     */
     virtual EntFiniteElementbyName::iterator
     get_fe_by_name_begin(const std::string &fe_name) const = 0;
 
     /**
-    * \brief get end iterator of finite elements of given name (instead you can use _IT_GET_FES_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)
-    * \ingroup mofem_access
-    *
-    * for(_IT_GET_FES_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)) {
-    * 	...
-    * }
-    *
-    * \param fe_name
-    */
+     * \brief get end iterator of finite elements of given name (instead you can
+     * use _IT_GET_FES_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT) \ingroup mofem_access
+     *
+     * for(_IT_GET_FES_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)) {
+     * 	...
+     * }
+     *
+     * \param fe_name
+     */
     virtual EntFiniteElementbyName::iterator
     get_fe_by_name_end(const std::string &fe_name) const = 0;
 
-    /** \brief loop over all finite elements from a moFEM field and FE
-    * \ingroup mofem_access
-    */
-    #define _IT_GET_FES_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT) \
-    EntFiniteElementbyName::iterator IT = MFIELD.get_fe_by_name_begin(NAME); \
-    IT != MFIELD.get_fe_by_name_end(NAME); IT++
-
-
+  /** \brief loop over all finite elements from a moFEM field and FE
+   * \ingroup mofem_access
+   */
+#define _IT_GET_FES_BY_NAME_FOR_LOOP_(MFIELD, NAME, IT)                        \
+  EntFiniteElementbyName::iterator IT = MFIELD.get_fe_by_name_begin(NAME);     \
+  IT != MFIELD.get_fe_by_name_end(NAME);                                       \
+  IT++
   };
-
 }
 
 #include <DeprecatedCoreInterface.hpp>
