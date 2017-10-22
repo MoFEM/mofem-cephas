@@ -30,14 +30,15 @@ namespace MoFEM {
    * \ingroup mofem_bit_ref
    * \nosubgrouping
    */
-  struct BitRefManager: public UnknownInterface {
+  struct BitRefManager : public UnknownInterface {
 
-    PetscErrorCode query_interface(const MOFEMuuid& uuid, UnknownInterface** iface) const;
+    PetscErrorCode query_interface(const MOFEMuuid &uuid,
+                                   UnknownInterface **iface) const;
 
-    MoFEM::Core& cOre;
+    MoFEM::Core &cOre;
     bool dEbug;
 
-    BitRefManager(const MoFEM::Core& core);
+    BitRefManager(const MoFEM::Core &core);
 
     /**
     * \brief Destructor
@@ -53,8 +54,10 @@ namespace MoFEM {
      * \ingroup mofem_bit_ref
      *
      * This function set bit ref level, add entries to core database and
-     * create ref finite elements. Finite elements are create of entities in function
-     * argument, whereas all lower dimension entities are added as a field entities
+     * create ref finite elements. Finite elements are create of entities in
+     function
+     * argument, whereas all lower dimension entities are added as a field
+     entities
      *
      *
 
@@ -78,21 +81,23 @@ namespace MoFEM {
 
      * @param  ents      entities to set
      * @param  bit       bit refinement level
-     * @param  only_tets only add entities on tetrahedral (obsolete need to be fixed)
+     * @param  only_tets only add entities on tetrahedral (obsolete need to be
+     fixed)
      * @param  verb      verbosity level
      * @return           error code
      */
-    PetscErrorCode setBitRefLevel(
-      const Range &ents,const BitRefLevel &bit,const bool only_tets = true,int verb = 0
-    ) const;
+    PetscErrorCode setBitRefLevel(const Range &ents, const BitRefLevel &bit,
+                                  const bool only_tets = true,
+                                  int verb = 0) const;
 
-    PetscErrorCode setBitRefLevelByDim(
-      const EntityHandle meshset,const int dim,const BitRefLevel &bit,int verb = 0
-    ) const;
+    PetscErrorCode setBitRefLevelByDim(const EntityHandle meshset,
+                                       const int dim, const BitRefLevel &bit,
+                                       int verb = 0) const;
 
-    PetscErrorCode setBitRefLevelByType(
-      const EntityHandle meshset,const EntityType type,const BitRefLevel &bit,int verb = 0
-    ) const;
+    PetscErrorCode setBitRefLevelByType(const EntityHandle meshset,
+                                        const EntityType type,
+                                        const BitRefLevel &bit,
+                                        int verb = 0) const;
 
     /** brief add meshset and set bit ref level
     * \ingroup mofem_bit_ref
@@ -100,9 +105,9 @@ namespace MoFEM {
      * \param EntityHandle MeshSet
      * \param BitRefLevel bitLevel
      */
-    PetscErrorCode setBitLevelToMeshset(
-      const EntityHandle meshset,const BitRefLevel &bit,int verb = 0
-    ) const;
+    PetscErrorCode setBitLevelToMeshset(const EntityHandle meshset,
+                                        const BitRefLevel &bit,
+                                        int verb = 0) const;
 
     /**
      * \brief add bit ref level to ref entity
@@ -112,9 +117,8 @@ namespace MoFEM {
      * @param  verb verbosity level
      * @return      error code
      */
-    PetscErrorCode addBitRefLevel(
-      const Range &ents,const BitRefLevel &bit,int verb = 0
-    ) const;
+    PetscErrorCode addBitRefLevel(const Range &ents, const BitRefLevel &bit,
+                                  int verb = 0) const;
 
     /**
      * \brief Set nth bith ref lecel
@@ -123,9 +127,8 @@ namespace MoFEM {
      * @param  b    value to set
      * @return      error code
      */
-    PetscErrorCode setNthBitRefLevel(
-      const Range &ents,const int n,const bool b,int verb = 0
-    ) const;
+    PetscErrorCode setNthBitRefLevel(const Range &ents, const int n,
+                                     const bool b, int verb = 0) const;
 
     /**
      * \brief Set nth bith ref lecel
@@ -134,21 +137,24 @@ namespace MoFEM {
      * @param  b    value to set
      * @return      error code
      */
-    PetscErrorCode setNthBitRefLevel(
-      const int n,const bool b,int verb = 0
-    ) const;
-
+    PetscErrorCode setNthBitRefLevel(const int n, const bool b,
+                                     int verb = 0) const;
 
     /** \brief left shift bit ref level
       * \ingroup mofem_bit_ref
       * this results of deletion of entities on far left side
       */
-    PetscErrorCode shiftLeftBitRef(const int shif,const BitRefLevel mask = BitRefLevel().set(),int verb = -1) const;
+    PetscErrorCode shiftLeftBitRef(const int shif,
+                                   const BitRefLevel mask = BitRefLevel().set(),
+                                   int verb = -1) const;
 
     /** \brief right shift bit ref level
       * \ingroup mofem_bit_ref
       */
-    PetscErrorCode shiftRightBitRef(const int shift,const BitRefLevel mask = BitRefLevel().set(),int verb = -1) const;
+    PetscErrorCode
+    shiftRightBitRef(const int shift,
+                     const BitRefLevel mask = BitRefLevel().set(),
+                     int verb = -1) const;
 
     /**@}*/
 
@@ -167,9 +173,11 @@ namespace MoFEM {
       * \retval EntityHandle meshset
       *
       */
-    PetscErrorCode getEntitiesByTypeAndRefLevel(
-      const BitRefLevel &bit,const BitRefLevel &mask,const EntityType type,const EntityHandle meshset,int verb = 0
-    ) const;
+    PetscErrorCode getEntitiesByTypeAndRefLevel(const BitRefLevel &bit,
+                                                const BitRefLevel &mask,
+                                                const EntityType type,
+                                                const EntityHandle meshset,
+                                                int verb = 0) const;
 
     /**\brief add all ents from ref level given by bit to meshset
      * \ingroup mofem_bit_ref
@@ -182,9 +190,11 @@ namespace MoFEM {
      * \retval ents
      *
      */
-    PetscErrorCode getEntitiesByTypeAndRefLevel(
-      const BitRefLevel &bit,const BitRefLevel &mask,const EntityType type,Range &ents,int verb = 0
-    ) const;
+    PetscErrorCode getEntitiesByTypeAndRefLevel(const BitRefLevel &bit,
+                                                const BitRefLevel &mask,
+                                                const EntityType type,
+                                                Range &ents,
+                                                int verb = 0) const;
 
     /**\brief add all ents from ref level given by bit to meshset
      * \ingroup mofem_bit_ref
@@ -196,9 +206,9 @@ namespace MoFEM {
      * \param EntityHandle meshset
      *
      */
-    PetscErrorCode getEntitiesByRefLevel(
-      const BitRefLevel &bit,const BitRefLevel &mask,const EntityHandle meshset
-    ) const;
+    PetscErrorCode getEntitiesByRefLevel(const BitRefLevel &bit,
+                                         const BitRefLevel &mask,
+                                         const EntityHandle meshset) const;
 
     /**\brief add all ents from ref level given by bit to meshset
      * \ingroup mofem_bit_ref
@@ -209,9 +219,9 @@ namespace MoFEM {
      * \param BitRefLevel mask
      * \retval ents
      */
-    PetscErrorCode getEntitiesByRefLevel(
-      const BitRefLevel &bit,const BitRefLevel &mask,Range &ents
-    ) const;
+    PetscErrorCode getEntitiesByRefLevel(const BitRefLevel &bit,
+                                         const BitRefLevel &mask,
+                                         Range &ents) const;
 
     /**
      * \brief get entities by bit ref level and type of parent
@@ -224,9 +234,10 @@ namespace MoFEM {
      * @param  ents returned ents
      * @return      error code
      */
-    PetscErrorCode getEntitiesByParentType(
-      const BitRefLevel &bit,const BitRefLevel &mask,const EntityType type,Range &ents
-    ) const;
+    PetscErrorCode getEntitiesByParentType(const BitRefLevel &bit,
+                                           const BitRefLevel &mask,
+                                           const EntityType type,
+                                           Range &ents) const;
 
     /**@}*/
 
@@ -234,49 +245,55 @@ namespace MoFEM {
 
     /**@{*/
 
-    /** \brief Get the adjacencies associated with a entity to entities of a specified dimension.
+    /** \brief Get the adjacencies associated with a entity to entities of a
+     * specified dimension.
       * \ingroup mofem_bit_ref
       *
-      * bit ref level of adjacent entities is equal to bit ref level of adjacent entities
+      * bit ref level of adjacent entities is equal to bit ref level of adjacent
+     * entities
       */
-    virtual PetscErrorCode getAdjacenciesEquality(const EntityHandle from_entiti,const int to_dimension,Range &adj_entities) const;
+    virtual PetscErrorCode
+    getAdjacenciesEquality(const EntityHandle from_entiti,
+                           const int to_dimension, Range &adj_entities) const;
 
-    /** \brief Get the adjacencies associated with a entity to entities of a specified dimension.
+    /** \brief Get the adjacencies associated with a entity to entities of a
+     * specified dimension.
       * \ingroup mofem_bit_ref
       *
-      * bit ref level of adjacent entities is any of bit ref level of adjacent entities
+      * bit ref level of adjacent entities is any of bit ref level of adjacent
+     * entities
       */
-    virtual PetscErrorCode getAdjacenciesAny(const EntityHandle from_entiti,const int to_dimension,Range &adj_entities) const;
+    virtual PetscErrorCode getAdjacenciesAny(const EntityHandle from_entiti,
+                                             const int to_dimension,
+                                             Range &adj_entities) const;
 
-    /** \brief Get the adjacencies associated with a entity to entities of a specified dimension.
+    /** \brief Get the adjacencies associated with a entity to entities of a
+     * specified dimension.
       * \ingroup mofem_bit_ref
       *
-      * bit ref level of adjacent entities is equal to bit ref level of adjacent entities
+      * bit ref level of adjacent entities is equal to bit ref level of adjacent
+     * entities
       */
-    virtual PetscErrorCode getAdjacencies(
-      const Problem *problem_ptr,
-      const EntityHandle *from_entities,
-      const int num_netities,
-      const int to_dimension,
-      Range &adj_entities,
-      const int operation_type = moab::Interface::INTERSECT,
-      const int verb = 0
-    ) const;
+    virtual PetscErrorCode
+    getAdjacencies(const Problem *problem_ptr,
+                   const EntityHandle *from_entities, const int num_netities,
+                   const int to_dimension, Range &adj_entities,
+                   const int operation_type = moab::Interface::INTERSECT,
+                   const int verb = 0) const;
 
-    /** \brief Get the adjacencies associated with a entity to entities of a specified dimension.
+    /** \brief Get the adjacencies associated with a entity to entities of a
+     * specified dimension.
       * \ingroup mofem_bit_ref
       *
-      * bit ref level of adjacent entities is equal to bit ref level of adjacent entities
+      * bit ref level of adjacent entities is equal to bit ref level of adjacent
+     * entities
       */
-    virtual PetscErrorCode getAdjacencies(
-      const BitRefLevel &bit,
-      const EntityHandle *from_entities,
-      const int num_netities,
-      const int to_dimension,
-      Range &adj_entities,
-      const int operation_type = moab::Interface::INTERSECT,
-      const int verb = 0
-    ) const;
+    virtual PetscErrorCode
+    getAdjacencies(const BitRefLevel &bit, const EntityHandle *from_entities,
+                   const int num_netities, const int to_dimension,
+                   Range &adj_entities,
+                   const int operation_type = moab::Interface::INTERSECT,
+                   const int verb = 0) const;
 
     /**@}*/
 
@@ -287,40 +304,49 @@ namespace MoFEM {
     /** \brief Get child entities form meshset containing parent entities
       * \ingroup mofem_update_meshsets_and_ranges
       *
-      * Search for refined entities of given type whose parent are entities in the
+      * Search for refined entities of given type whose parent are entities in
+      *the
       * parent meshset. It can be used for example to transfer information about
       * boundary conditions to refined mesh or split mesh by interface
-      * elements. It is used by function refine_MESHSET, to update MESHSET finite elements.
+      * elements. It is used by function refine_MESHSET, to update MESHSET
+      *finite elements.
       *
       * \param parent meshset
       * \param child_bit refinement level
       * \param type of refined entity
-      * \param child_type meshset where child entities are stored (if the child meshset is set to be the parent meshset, the parent would be updated with the refined entities)
+      * \param child_type meshset where child entities are stored (if the child
+      *meshset is set to be the parent meshset, the parent would be updated with
+      *the refined entities)
       * \param recursive if true parent meshset is searched recursively
       *
      **/
-    PetscErrorCode updateMeshsetByEntitiesChildren(
-      const EntityHandle parent, const BitRefLevel &child_bit,const EntityHandle child, EntityType child_type,
-      const bool recursive = false, int verb = 0
-    );
+    PetscErrorCode updateMeshsetByEntitiesChildren(const EntityHandle parent,
+                                                   const BitRefLevel &child_bit,
+                                                   const EntityHandle child,
+                                                   EntityType child_type,
+                                                   const bool recursive = false,
+                                                   int verb = 0);
 
     /** \brief update fields meshesets by child entities
       * \ingroup mofem_update_meshsets_and_ranges
       *
       */
-    PetscErrorCode updateFieldMeshsetByEntitiesChildren(const BitRefLevel &child_bit,int verb = 0);
+    PetscErrorCode
+    updateFieldMeshsetByEntitiesChildren(const BitRefLevel &child_bit,
+                                         int verb = 0);
 
     /** \brief update field mesheset by child entities
       * \ingroup mofem_update_meshsets_and_ranges
       */
-    PetscErrorCode updateFieldMeshsetByEntitiesChildren(const std::string name,const BitRefLevel &child_bit,int verb = 0);
+    PetscErrorCode updateFieldMeshsetByEntitiesChildren(
+        const std::string name, const BitRefLevel &child_bit, int verb = 0);
 
     /** \brief update finite element mesheset by child entities
      * \ingroup mofem_update_meshsets_and_ranges
      */
     PetscErrorCode updateFiniteElementMeshsetByEntitiesChildren(
-      const std::string name,const BitRefLevel &child_bit,const EntityType fe_ent_type,int verb = 0
-    );
+        const std::string name, const BitRefLevel &child_bit,
+        const EntityType fe_ent_type, int verb = 0);
 
     /**
      * \brief Update range by prents
@@ -331,7 +357,7 @@ namespace MoFEM {
      * @param  child  childeren range
      * @return        error code
      */
-    PetscErrorCode updateRange(const Range& parent,Range& child);
+    PetscErrorCode updateRange(const Range &parent, Range &child);
 
     /**@}*/
 
@@ -349,19 +375,13 @@ namespace MoFEM {
      * @param  options   file options (see moab documentation)
      * @return           error code
      */
-    PetscErrorCode writeBitLevelByType(
-      const BitRefLevel& bit,
-      const BitRefLevel& mask,
-      const EntityType type,
-      const char * 	file_name,
-      const char * 	file_type,
-      const char * 	options
-    ) const;
+    PetscErrorCode
+    writeBitLevelByType(const BitRefLevel &bit, const BitRefLevel &mask,
+                        const EntityType type, const char *file_name,
+                        const char *file_type, const char *options) const;
 
     /**@}*/
-
   };
-
 }
 
 #endif //__BITREFMANAGER_HPP__
