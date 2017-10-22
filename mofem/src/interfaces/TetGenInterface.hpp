@@ -47,12 +47,13 @@ struct TetGenInterface : public UnknownInterface {
   typedef std::map<int, Range> idxRange_Map;
 
   /** \brief create TetGen data structure form range of moab entities
-
-    \param ents range of entities (tetrahedrons or nodes)
-    \param in tegen data structure (look to TetGen user manual)
-    \param moab_tetgen_map mapping moab to TetGen entities
-    \param tetgen_moab_map mapping tegen to moab entities
-
+    *
+    * Move mesh to TetGen data structures
+    *
+    * \param ents range of entities (tetrahedrons or nodes)
+    * \param in tegen data structure (look to TetGen user manual)
+    * \param moab_tetgen_map mapping moab to TetGen entities
+    * \param tetgen_moab_map mapping tegen to moab entities
     */
   PetscErrorCode inData(Range &ents, tetgenio &in,
                         moabTetGen_Map &moab_tetgen_map,
