@@ -126,7 +126,7 @@ struct CutMeshInterface : public UnknownInterface {
                   Tag th, const double tol_cut, const double tol_cut_close,
                   const double tol_trim, const double tol_trim_close,
                   Range &fixed_edges, Range &corner_nodes,
-                  const bool update_meshsets = false);
+                  const bool update_meshsets = false, const bool debug = false);
 
   /**
    * \brief find edges to cut
@@ -208,19 +208,48 @@ struct CutMeshInterface : public UnknownInterface {
   PetscErrorCode splitSides(const BitRefLevel split_bit, const BitRefLevel bit,
                             const Range &ents, Tag th = NULL);
 
+  /**
+   * @brief Merge edges
+   *
+   * Sort all edges, where sorting is by quality calculated as edge lebgth times
+   * quality of tets adjacent to the edge. Edge is merged if quality if the mesh
+   * is improved.
+   *
+   * @param fraction_level Fraction of edges attemt to be merged at iteration
+   * @param tets Tetst of the mesh which edges are merged
+   * @param surface Surface created by edge spliting
+   * @param fixed_edges edges which are geometricar corners of the body
+   * @param corner_nodes vertices on the corners
+   * @param merged_nodes  merged nodes
+   * @param out_tets  returned test adter merge
+   * @param new_surf  new surface without merged edfes
+   * @param th  tag with nodal positons
+   * @param bit_ptr set bit ref level to mesh without merged edges
+   * @param debug
+   * @return PetscErrorCode
+   */
   PetscErrorCode mergeBadEdges(const int fraction_level, const Range &tets,
                                const Range &surface, const Range &fixed_edges,
                                const Range &corner_nodes, Range &merged_nodes,
                                Range &out_tets, Range &new_surf, Tag th,
                                const bool update_meshsets = false,
-                               const BitRefLevel *bit_ptr = NULL);
+                               const BitRefLevel *bit_ptr = NULL,
+                               const bool debug = false);
 
+  /**
+   * @brief Merge edges
+   *
+   * Sort all edges, where sorting is by quality calculated as edge lebgth times
+   * quality of tets adjacent to the edge. Edge is merged if quality if the mesh
+   * is improved.
+   */
   PetscErrorCode mergeBadEdges(const int fraction_level,
                                const BitRefLevel cut_bit,
                                const BitRefLevel trim_bit,
                                const BitRefLevel bit, const Range &surface,
                                const Range &fixed_edges,
-                               const Range &corner_nodes, Tag th);
+                               const Range &corner_nodes, Tag th = NULL,
+                               const bool debug = false);
 
 #ifdef WITH_TETGEN
 
@@ -262,6 +291,11 @@ struct CutMeshInterface : public UnknownInterface {
   inline const Range &getMergedSurfaces() const { return mergedSurfaces; }
 
   inline const Range &getTetgenSurfaces() const { return tetgenSurfaces; }
+
+  PetscErrorCode saveCutEdges();
+
+  PetscErrorCode saveTrimEdges();
+  
 
 private:
   Range sUrface;

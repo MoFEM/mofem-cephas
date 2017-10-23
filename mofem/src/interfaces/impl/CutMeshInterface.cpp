@@ -132,26 +132,11 @@ PetscErrorCode CutMeshInterface::buildTree() {
 
 struct UpdateMeshsets {
   PetscErrorCode operator()(MoFEM::Core &core, const BitRefLevel &bit) const {
-    BitRefManager *bit_ref_manager;
     MoFEMFunctionBeginHot;
-    ierr = core.getInterface(bit_ref_manager);
+    ierr = core.getInterface<MeshsetsManager>()
+               ->updateAllMeshsetsByEntitiesChildren(bit);
     CHKERRQ(ierr);
-    for (_IT_CUBITMESHSETS_FOR_LOOP_((*core.getInterface<MeshsetsManager>()),
-                                     iit)) {
-      EntityHandle meshset = iit->getMeshset();
-      ierr = bit_ref_manager->updateMeshsetByEntitiesChildren(
-          meshset, bit, meshset, MBTET, true);
-      CHKERRQ(ierr);
-      ierr = bit_ref_manager->updateMeshsetByEntitiesChildren(
-          meshset, bit, meshset, MBTRI, true);
-      CHKERRQ(ierr);
-      ierr = bit_ref_manager->updateMeshsetByEntitiesChildren(
-          meshset, bit, meshset, MBEDGE, true);
-      CHKERRQ(ierr);
-      ierr = bit_ref_manager->updateMeshsetByEntitiesChildren(
-          meshset, bit, meshset, MBVERTEX, true);
-      CHKERRQ(ierr);
-    }
+
     MoFEMFunctionReturnHot(0);
   }
 };
@@ -186,6 +171,13 @@ PetscErrorCode CutMeshInterface::cutAndTrim(
   }
   ierr = moveMidNodesOnCutEdges(th);
   CHKERRQ(ierr);
+
+  if(debug) {
+    ierr = cOre.getInterface<BitRefManager>()->writeBitLevelByType(
+        bit_level1, BitRefLevel().set(), MBTET, "out_tets_cut.vtk", "VTK", "");
+    CHKERRQ(ierr);
+  }
+
   // trim mesh
   ierr = findEdgesToTrim(th, tol_trim);
   CHKERRQ(ierr);
@@ -207,6 +199,13 @@ PetscErrorCode CutMeshInterface::cutAndTrim(
   }
   ierr = moveMidNodesOnTrimedEdges(th);
   CHKERRQ(ierr);
+
+  if(debug) {
+    ierr = cOre.getInterface<BitRefManager>()->writeBitLevelByType(
+        bit_level2, BitRefLevel().set(), MBTET, "out_tets_trim.vtk", "VTK", "");
+    CHKERRQ(ierr);
+  }
+
   MoFEMFunctionReturnHot(0);
 }
 
@@ -215,18 +214,27 @@ PetscErrorCode CutMeshInterface::cutTrimAndMerge(
     const BitRefLevel &bit_level2, const BitRefLevel &bit_level3, Tag th,
     const double tol_cut, const double tol_cut_close, const double tol_trim,
     const double tol_trim_close, Range &fixed_edges, Range &corner_nodes,
-    const bool update_meshsets) {
+    const bool update_meshsets, const bool debug) {
   MoFEMFunctionBeginHot;
   ierr =
       cutAndTrim(bit_level1, bit_level2, th, tol_cut, tol_cut_close, tol_trim,
                  tol_trim_close, &fixed_edges, &corner_nodes, update_meshsets);
   CHKERRQ(ierr);
-  ierr = mergeBadEdges(fraction_level, bit_level2, bit_level1, bit_level3,
-                       getNewTrimSurfaces(), fixed_edges, corner_nodes, th);
+  ierr =
+      mergeBadEdges(fraction_level, bit_level2, bit_level1, bit_level3,
+                    getNewTrimSurfaces(), fixed_edges, corner_nodes, th, debug);
   CHKERRQ(ierr);
   ierr = removePathologicalFrontTris(bit_level3,
                                      const_cast<Range &>(getMergedSurfaces()));
   CHKERRQ(ierr);
+
+  if(debug) {
+    ierr = cOre.getInterface<BitRefManager>()->writeBitLevelByType(
+        bit_level3, BitRefLevel().set(), MBTET, "out_tets_merged.vtk", "VTK",
+        "");
+    CHKERRQ(ierr);
+  }
+
   ierr =
       cOre.getInterface<BitRefManager>()->updateRange(fixed_edges, fixed_edges);
   CHKERRQ(ierr);
@@ -479,15 +487,6 @@ PetscErrorCode CutMeshInterface::getEntsOnCutSurface(const double low_tol,
       verticecOnCutEdges[*vit].rayPoint = s0;
     }
   }
-  EntityHandle meshset;
-  rval = moab.create_meshset(MESHSET_SET, meshset);
-  CHKERRQ_MOAB(rval);
-  rval = moab.add_entities(meshset, debug);
-  CHKERRQ_MOAB(rval);
-  rval = moab.write_file("zero_distance_verts.vtk", "VTK", "", &meshset, 1);
-  CHKERRQ_MOAB(rval);
-  rval = moab.delete_entities(&meshset, 1);
-  CHKERRQ_MOAB(rval);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -987,7 +986,7 @@ PetscErrorCode CutMeshInterface::mergeBadEdges(
     const int fraction_level, const Range &tets, const Range &surface,
     const Range &fixed_edges, const Range &corner_nodes, Range &edges_to_merge,
     Range &out_tets, Range &new_surf, Tag th, const bool update_meshsets,
-    const BitRefLevel *bit_ptr) {
+    const BitRefLevel *bit_ptr,const bool debug) {
   MoFEM::CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   MoFEMFunctionBeginHot;
@@ -1230,14 +1229,6 @@ PetscErrorCode CutMeshInterface::mergeBadEdges(
       rval = moab.get_connectivity(tets, tets_verts, true);
       CHKERRQ_MOAB(rval);
       sets_map[FREE].swap(tets_verts);
-
-      // SetsMap::reverse_iterator mit = sets_map.rbegin();
-      // Range remove_verts(mit->second);
-      // mit++;
-      // for(;mit!=sets_map.rend();mit++) {
-      //   mit->second = subtract(mit->second,remove_verts);
-      //   remove_verts.merge(mit->second);
-      // }
 
       MoFEMFunctionReturnHot(0);
     }
@@ -1556,7 +1547,7 @@ PetscErrorCode CutMeshInterface::mergeBadEdges(
     PetscPrintf(m_field.get_comm(), "(%d) Number of nodes merged %d\n", pp,
                 nb_nodes_merged);
 
-    {
+    if(debug) {
       EntityHandle meshset_new_faces;
       rval = moab.create_meshset(MESHSET_SET, meshset_new_faces);
       CHKERRQ_MOAB(rval);
@@ -1564,7 +1555,7 @@ PetscErrorCode CutMeshInterface::mergeBadEdges(
       CHKERRQ_MOAB(rval);
       rval = moab.add_entities(meshset_new_faces, collapsed_edges);
       CHKERRQ_MOAB(rval);
-      std::string name = "pp_" + boost::lexical_cast<std::string>(pp) + ".vtk";
+      std::string name = "node_merge_step_" + boost::lexical_cast<std::string>(pp) + ".vtk";
       rval = moab.write_file(name.c_str(), "VTK", "", &meshset_new_faces, 1);
       CHKERRQ_MOAB(rval);
       rval = moab.delete_entities(&meshset_new_faces, 1);
@@ -1582,31 +1573,14 @@ PetscErrorCode CutMeshInterface::mergeBadEdges(
   }
   out_tets.merge(proc_tets);
 
-  {
-    Range adj_edges;
-    rval = moab.get_adjacencies(out_tets, 1, false, adj_edges,
-                                moab::Interface::UNION);
-    CHKERRQ_MOAB(rval);
-    edges_to_merge = intersect(edges_to_merge, adj_edges);
-    EntityHandle meshset;
-    rval = moab.create_meshset(MESHSET_SET, meshset);
-    CHKERRQ_MOAB(rval);
-    rval = moab.add_entities(meshset, edges_to_merge);
-    CHKERRQ_MOAB(rval);
-    std::string name = "after_edges_to_merge.vtk";
-    rval = moab.write_file(name.c_str(), "VTK", "", &meshset, 1);
-    CHKERRQ_MOAB(rval);
-    rval = moab.delete_entities(&meshset, 1);
-    CHKERRQ_MOAB(rval);
-  }
-
   MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode CutMeshInterface::mergeBadEdges(
     const int fraction_level, const BitRefLevel trim_bit,
     const BitRefLevel cut_bit, const BitRefLevel bit, const Range &surface,
-    const Range &fixed_edges, const Range &corner_nodes, Tag th) {
+    const Range &fixed_edges, const Range &corner_nodes, Tag th,
+    const bool debug) {
   MoFEM::CoreInterface &m_field = cOre;
   MoFEMFunctionBeginHot;
   Range tets_level;
@@ -1623,7 +1597,7 @@ PetscErrorCode CutMeshInterface::mergeBadEdges(
   Range out_new_tets, out_new_surf;
   ierr = mergeBadEdges(fraction_level, tets_level, surface, fixed_edges,
                        corner_nodes, edges_to_merge, out_new_tets, out_new_surf,
-                       th, true, &bit);
+                       th, true, &bit, debug);
   CHKERRQ(ierr);
   mergedVolumes.swap(out_new_tets);
   mergedSurfaces.swap(out_new_surf);
@@ -1852,16 +1826,6 @@ PetscErrorCode CutMeshInterface::rebuildMeshWithTetGen(
   ierr = surf_ents.getTetsForRemesh(bit_ents);
   CHKERRQ(ierr);
 
-  EntityHandle meshset;
-  rval = moab.create_meshset(MESHSET_SET, meshset);
-  CHKERRQ_MOAB(rval);
-  rval = moab.add_entities(meshset, surf_ents.sVols);
-  CHKERRQ_MOAB(rval);
-  rval = moab.write_file("sVols.vtk", "VTK", "", &meshset, 1);
-  CHKERRQ_MOAB(rval);
-  rval = moab.delete_entities(&meshset, 1);
-  CHKERRQ_MOAB(rval);
-
   map<int, Range> types_ents;
   types_ents[TetGenInterface::RIDGEVERTEX].merge(
       surf_ents.vSkinNodesWithoutBodySkin);
@@ -2080,6 +2044,59 @@ PetscErrorCode CutMeshInterface::setCoords(Tag th) {
   CHKERRQ_MOAB(rval);
   rval = moab.set_coords(nodes, &coords[0]);
   CHKERRQ_MOAB(rval);
+  MoFEMFunctionReturnHot(0);
+}
+
+struct SaveData {
+  moab::Interface &moab;
+  SaveData(moab::Interface &moab) : moab(moab) {}
+  PetscErrorCode operator()(const std::string name, const Range &ents) {
+    MoFEMFunctionBeginHot;
+    EntityHandle meshset;
+    rval = moab.create_meshset(MESHSET_SET, meshset);
+    CHKERRQ_MOAB(rval);
+    rval = moab.add_entities(meshset, ents);
+    CHKERRQ_MOAB(rval);
+    rval = moab.write_file(name.c_str(), "VTK", "", &meshset, 1);
+    CHKERRQ_MOAB(rval);
+    rval = moab.delete_entities(&meshset, 1);
+    CHKERRQ_MOAB(rval);
+    MoFEMFunctionReturnHot(0);
+  }
+};
+
+PetscErrorCode CutMeshInterface::saveCutEdges() {
+  MoFEM::CoreInterface &m_field = cOre;
+  moab::Interface &moab = m_field.get_moab();
+  MoFEMFunctionBeginHot;
+
+  ierr = SaveData(moab)("out_vol.vtk", vOlume);
+  CHKERRQ(ierr);
+  ierr = SaveData(moab)("out_surface.vtk", sUrface);
+  CHKERRQ(ierr);
+  ierr = SaveData(moab)("out_cut_edges.vtk", cutEdges);
+  CHKERRQ(ierr);
+  ierr = SaveData(moab)("out_cut_volumes.vtk", cutVolumes);
+  CHKERRQ(ierr);
+  ierr = SaveData(moab)("out_cut_new_volumes.vtk", cutNewVolumes);
+  CHKERRQ(ierr);
+  ierr = SaveData(moab)("out_cut_new_surfaces.vtk", cutNewSurfaces);
+  CHKERRQ(ierr);
+
+  MoFEMFunctionReturnHot(0);
+}
+
+PetscErrorCode CutMeshInterface::saveTrimEdges() {
+  moab::Interface &moab = cOre.getInterface<CoreInterface>()->get_moab();
+  MoFEMFunctionBeginHot;
+
+  ierr = SaveData(moab)("out_trim_new_volumes.vtk", trimNewVolumes);
+  CHKERRQ(ierr);
+  ierr = SaveData(moab)("out_trim_new_surfaces.vtk", trimNewSurfaces);
+  CHKERRQ(ierr);
+  ierr = SaveData(moab)("out_trim_edges.vtk", trimEdges);
+  CHKERRQ(ierr);
+ 
   MoFEMFunctionReturnHot(0);
 }
 
