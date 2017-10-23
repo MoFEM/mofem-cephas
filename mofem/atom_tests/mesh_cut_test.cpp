@@ -1,4 +1,5 @@
 /** \file mesh_cut_test.cpp
+ *  \example mesh_cut_test.cpp
   * \brief test for mesh cut interface
   *
   * \ingroup mesh_cut
