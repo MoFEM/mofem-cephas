@@ -29,7 +29,6 @@
   #define DEPRECATED
 #endif
 
-
 /** \brief Interfaces IDs
   *
   * To manage different complexities related to field, finite elements mesh
@@ -296,6 +295,11 @@ enum HCurlFormatting {
 enum HCurlDiffFormatting {
   HCURL0_0 = 0,HCURL1_0,HCURL2_0,HCURL0_1,HCURL1_1,HCURL2_1,HCURL0_2,HCURL1_2,HCURL2_2
 };
+
+/**
+ * \brief Verboisty levels
+ */
+enum VERBOSITY_LEVELS { QUAIET = 0, VERBOSE, VERBY_VERBOSE, NOISY, VERY_NOISY };
 
 #define BITREFEDGES_SIZE 6    ///< number of edges on tetrahedral
 #define BITREFLEVEL_SIZE 128  ///< max number of refinements
