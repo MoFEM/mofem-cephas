@@ -19,285 +19,270 @@
 
 namespace MoFEM {
 
-  /**
-  * \brief MoFEM interface unique ID
-  * \ingroup mofem
-  */
-  struct MOFEMuuid {
+/**
+* \brief MoFEM interface unique ID
+* \ingroup mofem
+*/
+struct MOFEMuuid {
 
-    MOFEMuuid() { memset( this, 0, sizeof(MOFEMuuid)); }
-    MOFEMuuid(const BitIntefaceId& uuid) { uUId = uuid; }
+  MOFEMuuid() { memset(this, 0, sizeof(MOFEMuuid)); }
+  MOFEMuuid(const BitIntefaceId &uuid) { uUId = uuid; }
 
-    /** \brief returns whether two uuid's are equal
-    **/
-    inline bool operator==(const MOFEMuuid& orig) const {
-      return (uUId&orig.uUId) == orig.uUId;
-    }
-
-    //uuid
-    BitIntefaceId uUId;
-
-  };
-
-  /** uuid for an unknown interface
-  * this can be used to either return a default interface
-  * or a NULL interface
+  /** \brief returns whether two uuid's are equal
   **/
-  static const MOFEMuuid IDD_MOFEMUnknown = MOFEMuuid( BitIntefaceId(UNKNOWNINTERFACE) );
-
-  struct Version {
-    int majorVersion;
-    int minorVersion;
-    int buildVersion;
-    Version():
-    majorVersion(MoFEM_VERSION_MAJOR),
-    minorVersion(MoFEM_VERSION_MINOR),
-    buildVersion(MoFEM_VERSION_BUILD) {
-    }
-    Version(const int v[3]):
-    majorVersion(v[0]),
-    minorVersion(v[1]),
-    buildVersion(v[2]) {
-    }
-    Version(const int minor,const int major,const int build):
-    majorVersion(minor),
-    minorVersion(major),
-    buildVersion(build) {
-    }
-  };
-
-  /** \brief base class for all interface classes
-  * \ingroup mofem
-  **/
-  struct UnknownInterface {
-
-    virtual PetscErrorCode query_interface(
-      const MOFEMuuid& uuid,UnknownInterface** iface
-    ) const = 0;
-
-    /**
-     * @brief Register interface 
-     * 
-     * @param uuid 
-     * @param true 
-     * @return template <class IFACE> PetscErrorCode 
-     */
-    template <class IFACE>
-    PetscErrorCode registerInterface(
-      const MOFEMuuid& uuid,bool error_if_registration_failed = true
-    ) {
-      MoFEMFunctionBeginHot;
-      std::pair<iFaceTypeMap_multiIndex::iterator,bool> p;
-      p = iFaceTypeMap.insert(UIdTypeMap(uuid,typeid(IFACE).name()));
-      if(error_if_registration_failed&&(!p.second)) {
-        SETERRQ1(
-          PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,
-          "Registration of interface typeid(IFACE).name() = %s failed",
-          typeid(IFACE).name()
-        );
-      }
-      MoFEMFunctionReturnHot(0);
-    }
-
-    /**
-     * @brief Get interface by uuid and return reference to pointer of interface
-     * 
-     * @param uuid 
-     * @param iface 
-     * @return template <class IFACE, bool VERIFY>  PetscErrorCode 
-     */
-    template <class IFACE, bool VERIFY>
-    inline PetscErrorCode getInterface(const MOFEMuuid &uuid, IFACE *&iface) const
-    {
-      MoFEMFunctionBeginHot;
-      if (VERIFY)
-      {
-        if (typeid(IFACE).name() == getClassName(uuid))
-        {
-          SETERRQ2(
-              PETSC_COMM_SELF, MOFEM_INVALID_DATA,
-              "Inconsistency between interface Id and type "
-              "typeid(IFACE).name() != iFaceTypeMap.at(uuid) "
-              "%s != %s",
-              typeid(IFACE).name(), getClassName(uuid).c_str());
-        }
-      }
-      UnknownInterface *ptr;
-      ierr = getInterface<UnknownInterface, false>(uuid, ptr);
-      CHKERRQ(ierr);
-      iface = static_cast<IFACE *>(ptr);
-      MoFEMFunctionReturnHot(0);
-    }
-
-    /**
-     * @brief Get interface refernce to pointer of interface
-     * 
-     * @param iface 
-     * @return template <class IFACE>  PetscErrorCode 
-     */
-    template <class IFACE>
-    inline PetscErrorCode getInterface(IFACE *&iface) const
-    {
-      return getInterface<IFACE, false>(getUId(typeid(IFACE).name()), iface);
-    }
-
-    /**
-     * @brief Get interface pointer to pointer of inetrface
-     * 
-     * @param iface 
-     * @return template <class IFACE>  PetscErrorCode 
-     */
-    template <class IFACE>
-    inline PetscErrorCode getInterface(IFACE **const iface) const
-    {
-      return getInterface<IFACE, false>(getUId(typeid(IFACE).name()), *iface);
-    }
-
-    /**
-     * @brief Funtion retunrning pointer to interface
-     * 
-     * @return template <class IFACE>  IFACE 
-     */
-    template <class IFACE>
-    inline IFACE *getInterface() const
-    {
-      IFACE *iface = NULL;
-      ierr = getInterface<IFACE, false>(getUId(typeid(IFACE).name()), iface);
-      CHKERRABORT(PETSC_COMM_SELF, ierr);
-      return iface;
-    }
-
-    virtual ~UnknownInterface() {}
-
-    /**
-    * \brief Get library version
-    *
-    * This is library version.
-    *
-    * @return error code
-    */
-    virtual PetscErrorCode getLibVersion(Version &version) const {
-      MoFEMFunctionBeginHot;
-      version = Version(MoFEM_VERSION_MAJOR,MoFEM_VERSION_MINOR,MoFEM_VERSION_BUILD);
-      MoFEMFunctionReturnHot(0);
-    }
-
-    /**
-    * \brief Get database major version
-    *
-    * This is database version. MoFEM can read DataBase from file created by older
-    * version. Then library version and database version could be different.
-    *
-    * @return error code
-    */
-    virtual const PetscErrorCode getFileVersion(moab::Interface &moab,Version &version) const {
-      MoFEMFunctionBeginHot;
-      const EntityHandle root_meshset = 0;
-      const int def_version[] = {-1,-1,-1};
-      Tag th;
-      rval = moab.tag_get_handle(
-        "MOFEM_VERSION",3,MB_TYPE_INTEGER,th,MB_TAG_CREAT|MB_TAG_MESH,&def_version
-      );
-      int *version_ptr;
-      if(rval==MB_ALREADY_ALLOCATED) {
-        const void* tag_data[1];
-        rval = moab.tag_get_by_ptr(th,&root_meshset,1,tag_data); CHKERRQ_MOAB(rval);
-        version_ptr = (int*)tag_data[0];
-      } else {
-        CHKERRQ_MOAB(rval);
-        const void* tag_data[1];
-        rval = moab.tag_get_by_ptr(th,&root_meshset,1,tag_data); CHKERRQ_MOAB(rval);
-        version_ptr = (int*)tag_data[0];
-        version_ptr[0] = MoFEM_VERSION_MAJOR;
-        version_ptr[1] = MoFEM_VERSION_MINOR;
-        version_ptr[2] = MoFEM_VERSION_BUILD;
-      }
-      version = Version(version_ptr);
-      MoFEMFunctionReturnHot(0);
-    }
-
-    /**
-    * \brief Get database major version
-    *
-    * Implementation of particular interface could be different than main lib. For
-    * example user could use older interface, to keep back compatibility.
-    *
-    * @return error code
-    */
-    virtual PetscErrorCode getInterfaceVersion(Version &version) const {
-      MoFEMFunctionBeginHot;
-      version = Version(MoFEM_VERSION_MAJOR,MoFEM_VERSION_MINOR,MoFEM_VERSION_BUILD);
-      MoFEMFunctionReturnHot(0);
-    }
-
-  protected:
-
-    /**
-     * \brief Get type name for interface Id
-     * @param  uid interface Id
-     * @return     class name
-     */
-    inline const std::string& getClassName(const MOFEMuuid& uid) const {
-      iFaceTypeMap_multiIndex::nth_index<0>::type::iterator it;
-      it = iFaceTypeMap.get<0>().find(uid);
-      if(it!=iFaceTypeMap.get<0>().end()) {
-        return it->className;
-      }
-      return noClassUIdFoundStr;
-    }
-
-    /**
-     * \brief Get interface Id for class name
-     * @param  class_name
-     * @return            Id
-     */
-    inline const MOFEMuuid& getUId(const std::string& class_name) const {
-      iFaceTypeMap_multiIndex::nth_index<1>::type::iterator it;
-      it = iFaceTypeMap.get<1>().find(class_name); 
-      if (it!= iFaceTypeMap.get<1>().end()) {
-        return it->uID;
-      }
-      return IDD_MOFEMUnknown;
-    }
-
-  private:
-
-    const static std::string noClassUIdFoundStr;
-
-    struct UIdTypeMap {
-      MOFEMuuid uID;
-      std::string className;
-      UIdTypeMap(const MOFEMuuid &uid,const std::string& name):
-      uID(uid),
-      className(name) {
-      }
-    };
-
-    struct HashMOFEMuuid {
-      inline unsigned int operator()(const MOFEMuuid& value) const {
-        return value.uUId.to_ulong();
-      }
-    };
-
-    /// Data structure for interfaces Id and class names
-    typedef multi_index_container<
-      UIdTypeMap,
-      indexed_by<
-        hashed_unique< member<UIdTypeMap,MOFEMuuid,&UIdTypeMap::uID>,HashMOFEMuuid >,
-        hashed_unique< member<UIdTypeMap,std::string,&UIdTypeMap::className> >
-      >
-    > iFaceTypeMap_multiIndex;
-
-    mutable iFaceTypeMap_multiIndex iFaceTypeMap; ///< Maps MOFEMuuid to interface type name
-
-  };
-
-  template <>
-  inline PetscErrorCode UnknownInterface::getInterface<UnknownInterface, false>(
-      const MOFEMuuid &uuid, UnknownInterface *&iface) const
-  {
-    return query_interface(uuid, &iface);
+  inline bool operator==(const MOFEMuuid &orig) const {
+    return (uUId & orig.uUId) == orig.uUId;
   }
+
+  // uuid
+  BitIntefaceId uUId;
+};
+
+/** uuid for an unknown interface
+* this can be used to either return a default interface
+* or a NULL interface
+**/
+static const MOFEMuuid IDD_MOFEMUnknown =
+    MOFEMuuid(BitIntefaceId(UNKNOWNINTERFACE));
+
+struct Version {
+  int majorVersion;
+  int minorVersion;
+  int buildVersion;
+  Version()
+      : majorVersion(MoFEM_VERSION_MAJOR), minorVersion(MoFEM_VERSION_MINOR),
+        buildVersion(MoFEM_VERSION_BUILD) {}
+  Version(const int v[3])
+      : majorVersion(v[0]), minorVersion(v[1]), buildVersion(v[2]) {}
+  Version(const int minor, const int major, const int build)
+      : majorVersion(minor), minorVersion(major), buildVersion(build) {}
+};
+
+/** \brief base class for all interface classes
+* \ingroup mofem
+**/
+struct UnknownInterface {
+
+  virtual PetscErrorCode query_interface(const MOFEMuuid &uuid,
+                                         UnknownInterface **iface) const = 0;
+
+  /**
+   * @brief Register interface
+   *
+   * @param uuid
+   * @param true
+   * @return template <class IFACE> PetscErrorCode
+   */
+  template <class IFACE>
+  PetscErrorCode registerInterface(const MOFEMuuid &uuid,
+                                   bool error_if_registration_failed = true) {
+    MoFEMFunctionBeginHot;
+    std::pair<iFaceTypeMap_multiIndex::iterator, bool> p;
+    p = iFaceTypeMap.insert(UIdTypeMap(uuid, typeid(IFACE).name()));
+    if (error_if_registration_failed && (!p.second)) {
+      SETERRQ1(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
+               "Registration of interface typeid(IFACE).name() = %s failed",
+               typeid(IFACE).name());
+    }
+    MoFEMFunctionReturnHot(0);
+  }
+
+  /**
+   * @brief Get interface by uuid and return reference to pointer of interface
+   *
+   * @param uuid
+   * @param iface
+   * @return template <class IFACE, bool VERIFY>  PetscErrorCode
+   */
+  template <class IFACE, bool VERIFY>
+  inline PetscErrorCode getInterface(const MOFEMuuid &uuid,
+                                     IFACE *&iface) const {
+    MoFEMFunctionBeginHot;
+    if (VERIFY) {
+      if (typeid(IFACE).name() == getClassName(uuid)) {
+        SETERRQ2(PETSC_COMM_SELF, MOFEM_INVALID_DATA,
+                 "Inconsistency between interface Id and type "
+                 "typeid(IFACE).name() != iFaceTypeMap.at(uuid) "
+                 "%s != %s",
+                 typeid(IFACE).name(), getClassName(uuid).c_str());
+      }
+    }
+    UnknownInterface *ptr;
+    ierr = getInterface<UnknownInterface, false>(uuid, ptr);
+    CHKERRQ(ierr);
+    iface = static_cast<IFACE *>(ptr);
+    MoFEMFunctionReturnHot(0);
+  }
+
+  /**
+   * @brief Get interface refernce to pointer of interface
+   *
+   * @param iface
+   * @return template <class IFACE>  PetscErrorCode
+   */
+  template <class IFACE>
+  inline PetscErrorCode getInterface(IFACE *&iface) const {
+    return getInterface<IFACE, false>(getUId(typeid(IFACE).name()), iface);
+  }
+
+  /**
+   * @brief Get interface pointer to pointer of inetrface
+   *
+   * @param iface
+   * @return template <class IFACE>  PetscErrorCode
+   */
+  template <class IFACE>
+  inline PetscErrorCode getInterface(IFACE **const iface) const {
+    return getInterface<IFACE, false>(getUId(typeid(IFACE).name()), *iface);
+  }
+
+  /**
+   * @brief Funtion retunrning pointer to interface
+   *
+   * @return template <class IFACE>  IFACE
+   */
+  template <class IFACE> inline IFACE *getInterface() const {
+    IFACE *iface = NULL;
+    ierr = getInterface<IFACE, false>(getUId(typeid(IFACE).name()), iface);
+    CHKERRABORT(PETSC_COMM_SELF, ierr);
+    return iface;
+  }
+
+  virtual ~UnknownInterface() {}
+
+  /**
+  * \brief Get library version
+  *
+  * This is library version.
+  *
+  * @return error code
+  */
+  virtual PetscErrorCode getLibVersion(Version &version) const {
+    MoFEMFunctionBeginHot;
+    version =
+        Version(MoFEM_VERSION_MAJOR, MoFEM_VERSION_MINOR, MoFEM_VERSION_BUILD);
+    MoFEMFunctionReturnHot(0);
+  }
+
+  /**
+  * \brief Get database major version
+  *
+  * This is database version. MoFEM can read DataBase from file created by older
+  * version. Then library version and database version could be different.
+  *
+  * @return error code
+  */
+  virtual const PetscErrorCode getFileVersion(moab::Interface &moab,
+                                              Version &version) const {
+    MoFEMFunctionBeginHot;
+    const EntityHandle root_meshset = 0;
+    const int def_version[] = {-1, -1, -1};
+    Tag th;
+    rval = moab.tag_get_handle("MOFEM_VERSION", 3, MB_TYPE_INTEGER, th,
+                               MB_TAG_CREAT | MB_TAG_MESH, &def_version);
+    int *version_ptr;
+    if (rval == MB_ALREADY_ALLOCATED) {
+      const void *tag_data[1];
+      rval = moab.tag_get_by_ptr(th, &root_meshset, 1, tag_data);
+      CHKERRQ_MOAB(rval);
+      version_ptr = (int *)tag_data[0];
+    } else {
+      CHKERRQ_MOAB(rval);
+      const void *tag_data[1];
+      rval = moab.tag_get_by_ptr(th, &root_meshset, 1, tag_data);
+      CHKERRQ_MOAB(rval);
+      version_ptr = (int *)tag_data[0];
+      version_ptr[0] = MoFEM_VERSION_MAJOR;
+      version_ptr[1] = MoFEM_VERSION_MINOR;
+      version_ptr[2] = MoFEM_VERSION_BUILD;
+    }
+    version = Version(version_ptr);
+    MoFEMFunctionReturnHot(0);
+  }
+
+  /**
+  * \brief Get database major version
+  *
+  * Implementation of particular interface could be different than main lib. For
+  * example user could use older interface, to keep back compatibility.
+  *
+  * @return error code
+  */
+  virtual PetscErrorCode getInterfaceVersion(Version &version) const {
+    MoFEMFunctionBeginHot;
+    version =
+        Version(MoFEM_VERSION_MAJOR, MoFEM_VERSION_MINOR, MoFEM_VERSION_BUILD);
+    MoFEMFunctionReturnHot(0);
+  }
+
+protected:
+  /**
+   * \brief Get type name for interface Id
+   * @param  uid interface Id
+   * @return     class name
+   */
+  inline const std::string &getClassName(const MOFEMuuid &uid) const {
+    iFaceTypeMap_multiIndex::nth_index<0>::type::iterator it;
+    it = iFaceTypeMap.get<0>().find(uid);
+    if (it != iFaceTypeMap.get<0>().end()) {
+      return it->className;
+    }
+    return noClassUIdFoundStr;
+  }
+
+  /**
+   * \brief Get interface Id for class name
+   * @param  class_name
+   * @return            Id
+   */
+  inline const MOFEMuuid &getUId(const std::string &class_name) const {
+    iFaceTypeMap_multiIndex::nth_index<1>::type::iterator it;
+    it = iFaceTypeMap.get<1>().find(class_name);
+    if (it != iFaceTypeMap.get<1>().end()) {
+      return it->uID;
+    }
+    return IDD_MOFEMUnknown;
+  }
+
+private:
+  const static std::string noClassUIdFoundStr;
+
+  struct UIdTypeMap {
+    MOFEMuuid uID;
+    std::string className;
+    UIdTypeMap(const MOFEMuuid &uid, const std::string &name)
+        : uID(uid), className(name) {}
+  };
+
+  struct HashMOFEMuuid {
+    inline unsigned int operator()(const MOFEMuuid &value) const {
+      return value.uUId.to_ulong();
+    }
+  };
+
+  /// Data structure for interfaces Id and class names
+  typedef multi_index_container<
+    UIdTypeMap,
+    indexed_by<
+     hashed_unique<
+      member<UIdTypeMap, MOFEMuuid, &UIdTypeMap::uID>, 
+      HashMOFEMuuid
+     >,
+     hashed_unique<
+      member<UIdTypeMap, std::string, &UIdTypeMap::className>
+     >
+    >
+  > iFaceTypeMap_multiIndex;
+
+  mutable iFaceTypeMap_multiIndex
+      iFaceTypeMap; ///< Maps MOFEMuuid to interface type name
+};
+
+template <>
+inline PetscErrorCode UnknownInterface::getInterface<UnknownInterface, false>(
+    const MOFEMuuid &uuid, UnknownInterface *&iface) const {
+  return query_interface(uuid, &iface);
+}
 }
 
 #endif // __MOFEMUNKNOWNINTERFACE_HPP__
