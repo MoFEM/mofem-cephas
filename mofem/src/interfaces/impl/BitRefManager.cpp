@@ -435,7 +435,7 @@ PetscErrorCode BitRefManager::shiftRightBitRef(const int shift,
     BitRefLevel delete_bits = BitRefLevel().set(ii) & mask;
     if (delete_bits.none())
       continue;
-    ierr = m_field.delete_ents_by_bit_ref(delete_bits, delete_bits, 6);
+    ierr = m_field.delete_ents_by_bit_ref(delete_bits, delete_bits, true, verb);
     CHKERRQ(ierr);
   }
   RefEntity_multiIndex::iterator ent_it = ref_ent_ptr->begin();
