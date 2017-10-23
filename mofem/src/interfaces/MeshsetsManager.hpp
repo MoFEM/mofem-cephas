@@ -740,6 +740,8 @@ struct MeshsetsManager : public UnknownInterface {
     return configFileOptionsPtr;
   }
 
+  PetscErrorCode updateAllMeshsetsByEntitiesChildren(const BitRefLevel& bit);
+
 protected:
   Tag nsTag;
   Tag ssTag;

@@ -982,4 +982,30 @@ MeshsetsManager::query_interface(const MOFEMuuid &uuid,
     CHKERRQ(ierr);
     MoFEMFunctionReturnHot(0);
   }
+
+  PetscErrorCode
+  MeshsetsManager::updateAllMeshsetsByEntitiesChildren(const BitRefLevel &bit) {
+    MoFEMFunctionBegin;
+    BitRefManager *bit_mng = cOre.getInterface<BitRefManager>();
+    for (_IT_CUBITMESHSETS_FOR_LOOP_((*this), iit)) {
+      EntityHandle meshset = iit->getMeshset();
+      ierr = bit_mng->updateMeshsetByEntitiesChildren(meshset, bit, meshset,
+                                                      MBPRISM, true);
+      CHKERRQ(ierr);
+      ierr = bit_mng->updateMeshsetByEntitiesChildren(meshset, bit, meshset,
+                                                      MBTET, true);
+      CHKERRQ(ierr);
+      ierr = bit_mng->updateMeshsetByEntitiesChildren(meshset, bit, meshset,
+                                                      MBTRI, true);
+      CHKERRQ(ierr);
+      ierr = bit_mng->updateMeshsetByEntitiesChildren(meshset, bit, meshset,
+                                                      MBEDGE, true);
+      CHKERRQ(ierr);
+      ierr = bit_mng->updateMeshsetByEntitiesChildren(meshset, bit, meshset,
+                                                      MBVERTEX, true);
+      CHKERRQ(ierr);
+    }
+    MoFEMFunctionReturn(0);
+  }
+
 }
