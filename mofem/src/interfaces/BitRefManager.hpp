@@ -143,6 +143,8 @@ namespace MoFEM {
     /** \brief left shift bit ref level
       * \ingroup mofem_bit_ref
       * this results of deletion of entities on far left side
+      * 
+      * \note Not implemented
       */
     PetscErrorCode shiftLeftBitRef(const int shif,
                                    const BitRefLevel mask = BitRefLevel().set(),
