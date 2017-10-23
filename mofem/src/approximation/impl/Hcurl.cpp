@@ -1508,25 +1508,32 @@ PetscErrorCode VTK_Hcurl_MBTET(const string file_name) {
   MoFEM::Core m_core_ref(moab_ref,PETSC_COMM_SELF,-2);
   MoFEM::Interface& m_field_ref = m_core_ref;
 
-  ierr = m_field_ref.seed_ref_level_3D(0,BitRefLevel().set(0)); CHKERRQ(ierr);
+  ierr = m_field_ref.getInterface<BitRefManager>()->setBitRefLevelByDim(0, 3, BitRefLevel().set(0));
+  CHKERRQ(ierr);
 
   const int max_level = 4;
-  for(int ll = 0;ll!=max_level;ll++) {
+  for(int ll = 0;ll!=max_level;ll++)
+  {
     Range edges;
-    ierr = m_field_ref.get_entities_by_type_and_ref_level
-    (BitRefLevel().set(ll),BitRefLevel().set(),MBEDGE,edges); CHKERRQ(ierr);
+    ierr = m_field_ref.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
+        BitRefLevel().set(ll), BitRefLevel().set(), MBEDGE, edges);
+    CHKERRQ(ierr);
     Range tets;
-    ierr = m_field_ref.get_entities_by_type_and_ref_level
-    (BitRefLevel().set(ll),BitRefLevel(ll).set(),MBTET,tets); CHKERRQ(ierr);
+    ierr = m_field_ref.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
+        BitRefLevel().set(ll), BitRefLevel(ll).set(), MBTET, tets);
+    CHKERRQ(ierr);
     //refine mesh
     MeshRefinement *m_ref;
-    ierr = m_field_ref.getInterface(m_ref); CHKERRQ(ierr);
-    ierr = m_ref->add_verices_in_the_middel_of_edges(edges,BitRefLevel().set(ll+1)); CHKERRQ(ierr);
-    ierr = m_ref->refine_TET(tets,BitRefLevel().set(ll+1)); CHKERRQ(ierr);
+    ierr = m_field_ref.getInterface(m_ref);
+    CHKERRQ(ierr);
+    ierr = m_ref->add_verices_in_the_middel_of_edges(edges, BitRefLevel().set(ll + 1));
+    CHKERRQ(ierr);
+    ierr = m_ref->refine_TET(tets, BitRefLevel().set(ll + 1));
+    CHKERRQ(ierr);
   }
 
   Range tets;
-  ierr = m_field_ref.get_entities_by_type_and_ref_level(
+  ierr = m_field_ref.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
     BitRefLevel().set(max_level),BitRefLevel().set(max_level),MBTET,tets
   ); CHKERRQ(ierr);
 
