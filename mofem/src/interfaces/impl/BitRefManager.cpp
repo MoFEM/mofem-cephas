@@ -432,25 +432,26 @@ PetscErrorCode BitRefManager::shiftRightBitRef(const int shift,
   ierr = m_field.get_ref_ents(&ref_ent_ptr);
   for (int ii = 0; ii < shift; ii++) {
     // delete bits on the right which are shifted to zero
-    BitRefLevel delete_bits = BitRefLevel().set(ii) & mask;
-    if (delete_bits.none())
-      continue;
-    ierr = m_field.delete_ents_by_bit_ref(delete_bits, delete_bits, true, verb);
-    CHKERRQ(ierr);
-  }
-  RefEntity_multiIndex::iterator ent_it = ref_ent_ptr->begin();
-  for (; ent_it != ref_ent_ptr->end(); ent_it++) {
-    if (verb > 5) {
-      std::cerr << (*ent_it)->getBitRefLevel() << " : ";
+    BitRefLevel delete_bits = BitRefLevel().set(0) & mask;
+    if (delete_bits.any()) {
+      ierr =
+          m_field.delete_ents_by_bit_ref(delete_bits, delete_bits, true, verb);
+      CHKERRQ(ierr);
     }
-    bool success =
-        const_cast<RefEntity_multiIndex *>(ref_ent_ptr)
-            ->modify(ent_it, RefEntity_change_right_shift(shift, mask));
-    if (!success)
-      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-              "inconsistency in data");
-    if (verb > 5) {
-      std::cerr << (*ent_it)->getBitRefLevel() << std::endl;
+    for (RefEntity_multiIndex::iterator ent_it = ref_ent_ptr->begin();
+         ent_it != ref_ent_ptr->end(); ent_it++) {
+      if (verb > NOISY) {
+        std::cerr << (*ent_it)->getBitRefLevel() << " : ";
+      }
+      bool success =
+          const_cast<RefEntity_multiIndex *>(ref_ent_ptr)
+              ->modify(ent_it, RefEntity_change_right_shift(1, mask));
+      if (!success)
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "inconsistency in data");
+      if (verb > NOISY) {
+        std::cerr << (*ent_it)->getBitRefLevel() << std::endl;
+      }
     }
   }
   MoFEMFunctionReturnHot(0);
