@@ -70,7 +70,7 @@ int main(int argc, char *argv[]) {
              (*core.getInterface<MeshsetsManager>()), SIDESET, it)) {
       cout << *it << endl;
     }
-    
+
 
     BitRefLevel bit_level0;
     bit_level0.set(0);
@@ -196,6 +196,26 @@ int main(int argc, char *argv[]) {
    ierr = core.getInterface<BitRefManager>()->writeBitLevelByType(
         bit_level5, BitRefLevel().set(), MBTET, "out_tets_level5.vtk", "VTK",
         "");
+    CHKERRQ(ierr);
+
+    // Finally shift bits
+    BitRefLevel shift_mask;
+    //shift_mask.set(0);
+    shift_mask.set(1);
+    shift_mask.set(2);
+    shift_mask.set(3);
+    shift_mask.set(4);
+    shift_mask.set(5);
+    ierr = core.getInterface<BitRefManager>()->shiftRightBitRef(3, shift_mask);
+    CHKERRQ(ierr);
+ 
+    ierr = core.getInterface<BitRefManager>()->writeBitLevelByType(
+        bit_level1, BitRefLevel().set(), MBTET, "out_tets_shift_level1.vtk",
+        "VTK", "");
+    CHKERRQ(ierr);
+    ierr = core.getInterface<BitRefManager>()->writeBitLevelByType(
+        bit_level2, BitRefLevel().set(), MBTET, "out_tets_shift_level2.vtk",
+        "VTK", "");
     CHKERRQ(ierr);
 
   } catch (MoFEMException const &e) {
