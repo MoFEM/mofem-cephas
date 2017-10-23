@@ -20,140 +20,133 @@
 
 namespace MoFEM {
 
-  typedef ErrorCode MoABErrorCode;
+typedef ErrorCode MoABErrorCode;
 
-  static MoABErrorCode rval;
-  static PetscErrorCode ierr;
+static MoABErrorCode rval;
+static PetscErrorCode ierr;
 
-  typedef int DofIdx;                   ///< Index of DOF
-  typedef int FEIdx;                    ///< Index of the element
-  typedef int EntIdx;                   ///< Index of DOF on the entity
-  typedef int EntPart;                  ///< Partition owning entity
-  typedef double FieldData;             ///< Field data type
-  typedef int ApproximationOrder;       ///< Approximation on the entity
-  typedef int FieldCoefficientsNumber;  ///< Number of field coefficients
-  const EntityHandle no_handle = 0;
+typedef int DofIdx;                  ///< Index of DOF
+typedef int FEIdx;                   ///< Index of the element
+typedef int EntIdx;                  ///< Index of DOF on the entity
+typedef int EntPart;                 ///< Partition owning entity
+typedef double FieldData;            ///< Field data type
+typedef int ApproximationOrder;      ///< Approximation on the entity
+typedef int FieldCoefficientsNumber; ///< Number of field coefficients
+const EntityHandle no_handle = 0;
 
-  //typedef checked_uint128_t UId;
-  typedef uint128_t UId;  ///< Unique Id
-  typedef int ShortId;    ///< Unique Id in the field
+// typedef checked_uint128_t UId;
+typedef uint128_t UId; ///< Unique Id
+typedef int ShortId;   ///< Unique Id in the field
 
-  #define UID_DOF_MAK 0x1FF
+#define UID_DOF_MAK 0x1FF
 
-  typedef std::bitset<BITREFEDGES_SIZE> BitRefEdges;
+typedef std::bitset<BITREFEDGES_SIZE> BitRefEdges;
 
-  /**
-   * \brief Bit structure attached to each entity identifying to what mesh entity is attached.
-   */
-  typedef std::bitset<BITREFLEVEL_SIZE> BitRefLevel;
+/**
+ * \brief Bit structure attached to each entity identifying to what mesh entity
+ * is attached.
+ */
+typedef std::bitset<BITREFLEVEL_SIZE> BitRefLevel;
 
-  typedef std::bitset<BITFIELDID_SIZE> BitFieldId;
-  typedef std::bitset<BITFEID_SIZE> BitFEId;
-  typedef std::bitset<BITPROBLEMID_SIZE> BitProblemId;
-  typedef std::bitset<BITINTERFACEUID_SIZE> BitIntefaceId;
+typedef std::bitset<BITFIELDID_SIZE> BitFieldId;
+typedef std::bitset<BITFEID_SIZE> BitFEId;
+typedef std::bitset<BITPROBLEMID_SIZE> BitProblemId;
+typedef std::bitset<BITINTERFACEUID_SIZE> BitIntefaceId;
 
-  //AUX STRUCTURES
+// AUX STRUCTURES
 
-  /* This small utility that cascades two key extractors will be
-  * used throughout the boost example
-  * http://www.boost.org/doc/libs/1_53_0/libs/multi_index/example/complex_structs.cpp
-  */
-  template<class KeyExtractor1,class KeyExtractor2>
-  struct KeyFromKey {
-  public:
-    typedef typename KeyExtractor1::result_type result_type;
+/* This small utility that cascades two key extractors will be
+* used throughout the boost example
+* http://www.boost.org/doc/libs/1_53_0/libs/multi_index/example/complex_structs.cpp
+*/
+template <class KeyExtractor1, class KeyExtractor2> struct KeyFromKey {
+public:
+  typedef typename KeyExtractor1::result_type result_type;
 
-    KeyFromKey(
-      const KeyExtractor1& key1_=KeyExtractor1(),
-      const KeyExtractor2& key2_=KeyExtractor2()
-    ):
-    key1(key1_),
-    key2(key2_) {}
+  KeyFromKey(const KeyExtractor1 &key1_ = KeyExtractor1(),
+             const KeyExtractor2 &key2_ = KeyExtractor2())
+      : key1(key1_), key2(key2_) {}
 
-    template<typename Arg>
-    result_type operator()(Arg& arg) const {
-      return key1(key2(arg));
-    }
-
-  private:
-    KeyExtractor1 key1;
-    KeyExtractor2 key2;
-  };
-
-  template <typename id_type>
-  struct LtBit {
-    inline bool operator()(const id_type& valueA,const id_type& valueB) const {
-      return valueA.to_ulong()<valueB.to_ulong();
-    }
-  };
-
-  template <typename id_type>
-  struct EqBit {
-    inline bool operator()(const id_type& valueA,const id_type& valueB) const {
-      return valueA.to_ulong() == valueB.to_ulong();
-    }
-  };
-
-  template <typename id_type>
-  struct HashBit {
-    inline unsigned int operator()(const id_type& value) const {
-      return value.to_ulong();
-    }
-  };
-
-  struct MoFEMException: public std::exception {
-    MoFEMErrorCodes errorCode;
-    char errorMessage[255];
-    MoFEMException(MoFEMErrorCodes error_code):
-    errorCode(error_code) {
-      strcpy(errorMessage,"Huston we have a problem, something is wrong");
-    }
-    MoFEMException(MoFEMErrorCodes error_code,const char error_message[]):
-    errorCode(error_code) {
-      strcpy(errorMessage,error_message);
-    }
-    const char* what() const throw() {
-      return errorMessage;
-    }
-  };
-
-  /**
-  * \typedef CubitBCType
-  * bc & material meshsets
-  *
-  */
-  typedef std::bitset<32> CubitBCType;
-
-  // array with std allocators (i.e. concept of capacity is useful here)
-  // typedef ublas::unbounded_array<int,std::allocator<int> > IntAllacator;
-  // typedef ublas::unbounded_array<double,std::allocator<double> > DoubleAllacator;
-  typedef std::vector<int,std::allocator<int> > IntAllacator;
-  typedef std::vector<double,std::allocator<double> > DoubleAllacator;
-  typedef ublas::vector<int,IntAllacator > VectorInt;
-  typedef ublas::vector<double,DoubleAllacator > VectorDouble;
-  typedef ublas::matrix<double,ublas::row_major,DoubleAllacator > MatrixDouble;
-
-  // bounded vector & matrices
-  typedef ublas::vector<int,ublas::bounded_array<int,3> > VectorInt3;
-  typedef ublas::vector<int,ublas::bounded_array<int,9> > VectorInt9;
-  typedef ublas::matrix<double,ublas::row_major,ublas::bounded_array<double,9> > MatrixDouble3by3;
-  typedef ublas::vector<double,ublas::bounded_array<double,3> > VectorDouble3;
-  typedef ublas::vector<double,ublas::bounded_array<double,9> > VectorDouble9;
-
-  // shallow adaptor classes
-  typedef ublas::vector<double,ublas::shallow_array_adaptor<double> > VectorAdaptor;
-  typedef ublas::matrix<double,ublas::row_major,ublas::shallow_array_adaptor<double> > MatrixAdaptor;
-  typedef ublas::vector<int,ublas::shallow_array_adaptor<int> > VectorIntAdaptor;
-
-  typedef std::vector<boost::shared_ptr<MatrixDouble> > ShapeFunctionBasesVector;
-
-  template<class X>
-  inline std::string toString(X x) {
-    std::ostringstream buffer;
-    buffer << x;
-    return buffer.str();
+  template <typename Arg> result_type operator()(Arg &arg) const {
+    return key1(key2(arg));
   }
 
+private:
+  KeyExtractor1 key1;
+  KeyExtractor2 key2;
+};
+
+template <typename id_type> struct LtBit {
+  inline bool operator()(const id_type &valueA, const id_type &valueB) const {
+    return valueA.to_ulong() < valueB.to_ulong();
+  }
+};
+
+template <typename id_type> struct EqBit {
+  inline bool operator()(const id_type &valueA, const id_type &valueB) const {
+    return valueA.to_ulong() == valueB.to_ulong();
+  }
+};
+
+template <typename id_type> struct HashBit {
+  inline unsigned int operator()(const id_type &value) const {
+    return value.to_ulong();
+  }
+};
+
+struct MoFEMException : public std::exception {
+  MoFEMErrorCodes errorCode;
+  char errorMessage[255];
+  MoFEMException(MoFEMErrorCodes error_code) : errorCode(error_code) {
+    strcpy(errorMessage, "Huston we have a problem, something is wrong");
+  }
+  MoFEMException(MoFEMErrorCodes error_code, const char error_message[])
+      : errorCode(error_code) {
+    strcpy(errorMessage, error_message);
+  }
+  const char *what() const throw() { return errorMessage; }
+};
+
+/**
+* \typedef CubitBCType
+* bc & material meshsets
+*
+*/
+typedef std::bitset<32> CubitBCType;
+
+// array with std allocators (i.e. concept of capacity is useful here)
+// typedef ublas::unbounded_array<int,std::allocator<int> > IntAllacator;
+// typedef ublas::unbounded_array<double,std::allocator<double> >
+// DoubleAllacator;
+typedef std::vector<int, std::allocator<int> > IntAllacator;
+typedef std::vector<double, std::allocator<double> > DoubleAllacator;
+typedef ublas::vector<int, IntAllacator> VectorInt;
+typedef ublas::vector<double, DoubleAllacator> VectorDouble;
+typedef ublas::matrix<double, ublas::row_major, DoubleAllacator> MatrixDouble;
+
+// bounded vector & matrices
+typedef ublas::vector<int, ublas::bounded_array<int, 3> > VectorInt3;
+typedef ublas::vector<int, ublas::bounded_array<int, 9> > VectorInt9;
+typedef ublas::matrix<double, ublas::row_major, ublas::bounded_array<double, 9> >
+    MatrixDouble3by3;
+typedef ublas::vector<double, ublas::bounded_array<double, 3> > VectorDouble3;
+typedef ublas::vector<double, ublas::bounded_array<double, 9> > VectorDouble9;
+
+// shallow adaptor classes
+typedef ublas::vector<double, ublas::shallow_array_adaptor<double> >
+    VectorAdaptor;
+typedef ublas::matrix<double, ublas::row_major,
+                      ublas::shallow_array_adaptor<double> >
+    MatrixAdaptor;
+typedef ublas::vector<int, ublas::shallow_array_adaptor<int> > VectorIntAdaptor;
+
+typedef std::vector<boost::shared_ptr<MatrixDouble> > ShapeFunctionBasesVector;
+
+template <class X> inline std::string toString(X x) {
+  std::ostringstream buffer;
+  buffer << x;
+  return buffer.str();
+}
 }
 
 #endif //__COMMON_HPP__
