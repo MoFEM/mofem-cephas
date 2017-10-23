@@ -68,23 +68,23 @@ struct ArcLengthCtx {
 
   MoFEM::Interface &mField;
 
-  double s;	          ///< arc length radius
-  double beta; 	      ///< force scaling factor
-  double alpha;       ///< displacement scaling factor
+  double s;     ///< arc length radius
+  double beta;  ///< force scaling factor
+  double alpha; ///< displacement scaling factor
 
   Vec ghosTdLambda;
-  double dLambda;	    ///< increment of load factor
+  double dLambda; ///< increment of load factor
   Vec ghostDiag;
-  double dIag;		    ///< diagonal value
+  double dIag; ///< diagonal value
 
-  double dx2;		      ///< inner_prod(dX,dX)
-  double F_lambda2;	  ///< inner_prod(F_lambda,F_lambda);
-  double res_lambda;	///< f_lambda - s
-  Vec F_lambda;		    ///< F_lambda reference load vector
-  Vec db;		          ///< db derivative of f(dx*dx), i.e. db = d[ f(dx*dx) ]/dx
-  Vec xLambda;		    ///< solution of eq. K*xLambda = F_lambda
-  Vec x0;		          ///< displacement vector at beginning of step
-  Vec dx;		          ///< dx = x-x0
+  double dx2;        ///< inner_prod(dX,dX)
+  double F_lambda2;  ///< inner_prod(F_lambda,F_lambda);
+  double res_lambda; ///< f_lambda - s
+  Vec F_lambda;      ///< F_lambda reference load vector
+  Vec db;            ///< db derivative of f(dx*dx), i.e. db = d[ f(dx*dx) ]/dx
+  Vec xLambda;       ///< solution of eq. K*xLambda = F_lambda
+  Vec x0;            ///< displacement vector at beginning of step
+  Vec dx;            ///< dx = x-x0
 
   /**
     * \brief set arc radius
@@ -96,13 +96,10 @@ struct ArcLengthCtx {
    * alpha controls off diagonal therms
    * beta controls diagonal therm
    */
-  PetscErrorCode setAlphaBeta(double alpha,double beta);
+  PetscErrorCode setAlphaBeta(double alpha, double beta);
 
-  ArcLengthCtx(
-    MoFEM::Interface& m_field,
-    const std::string& problem_name,
-    const std::string& field_name = "LAMBDA"
-  );
+  ArcLengthCtx(MoFEM::Interface &m_field, const std::string &problem_name,
+               const std::string &field_name = "LAMBDA");
   virtual ~ArcLengthCtx();
 
   NumeredDofEntityByFieldName::iterator dIt;
@@ -117,12 +114,11 @@ struct ArcLengthCtx {
 
   /** \brief Get value of load factor
   */
-  FieldData& getFieldData() { return (*dIt)->getFieldData(); }
+  FieldData &getFieldData() { return (*dIt)->getFieldData(); }
 
   /** \brief Get proc owning lambda dof
   */
   int getPart() { return (*dIt)->getPart(); };
-
 };
 
 #ifdef __SNESCTX_HPP__
