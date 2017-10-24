@@ -472,7 +472,7 @@ PetscErrorCode BitRefManager::shiftRightBitRef(const int shift,
       if (!success)
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                 "inconsistency in data");
-      if (verb > NOISY) {
+      if (verb >= VERY_NOISY) {
         std::cerr << (*ent_it)->getBitRefLevel() << std::endl;
       }
     }
