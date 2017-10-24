@@ -112,13 +112,12 @@ struct CutMeshInterface : public UnknownInterface {
    */
   PetscErrorCode buildTree();
 
-  PetscErrorCode cutAndTrim(const BitRefLevel &bit_level1,
-                            const BitRefLevel &bit_level2, Tag th,
-                            const double tol_cut, const double tol_cut_close,
-                            const double tol_trim, const double tol_trim_close,
-                            Range *fixed_edges = NULL,
-                            Range *corner_nodes = NULL,
-                            const bool update_meshsets = false);
+  PetscErrorCode
+  cutAndTrim(const BitRefLevel &bit_level1, const BitRefLevel &bit_level2,
+             Tag th, const double tol_cut, const double tol_cut_close,
+             const double tol_trim, const double tol_trim_close,
+             Range *fixed_edges = NULL, Range *corner_nodes = NULL,
+             const bool update_meshsets = false, const bool debug = true);
 
   PetscErrorCode
   cutTrimAndMerge(const int fraction_level, const BitRefLevel &bit_level1,
@@ -135,7 +134,7 @@ struct CutMeshInterface : public UnknownInterface {
    */
   PetscErrorCode findEdgesToCut(const double low_tol = 0, int verb = 0);
 
-  PetscErrorCode getZeroDistanceEnts(const double low_tol = 0, int verb = 0);
+  PetscErrorCode getEntsOnCutSurface(const double low_tol = 0, int verb = 0);
 
   /**
    * \brief cut edges
@@ -274,6 +273,9 @@ struct CutMeshInterface : public UnknownInterface {
    * @return    error code
    */
   PetscErrorCode setCoords(Tag th);
+
+  inline const Range &getVolume() const { return vOlume; }
+  inline const Range &getSurface() const { return sUrface; }
 
   inline const Range &getCutEdges() const { return cutEdges; }
   inline const Range &getCutVolumes() const { return cutVolumes; }
