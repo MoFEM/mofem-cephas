@@ -254,6 +254,22 @@ namespace MoFEM {
                                            const EntityType type,
                                            Range &ents) const;
 
+    /**
+     * @brief Get all entities not in databse
+     * 
+     * @param ents 
+     * @return PetscErrorCode 
+     */
+    PetscErrorCode getAllEntitiesNotInDatabase(Range &ents) const;
+
+    /**
+     * @brief \brief Get entities not in database
+     * 
+     * @param ents 
+     * @return PetscErrorCode 
+     */
+    PetscErrorCode getEntitiesNotInDatabase(Range &ents) const;
+
     /**@}*/
 
     /** \name Get adjacencies bit ref level */
@@ -381,7 +397,7 @@ namespace MoFEM {
     /**@{*/
 
     /**
-     * \brief write bit ref level to file
+     * \brief Write bit ref level to file
      * @param  bit       bit ref level
      * @param  mask      mask of bit ref level
      * @param  type      type of entity
@@ -394,6 +410,18 @@ namespace MoFEM {
     writeBitLevelByType(const BitRefLevel &bit, const BitRefLevel &mask,
                         const EntityType type, const char *file_name,
                         const char *file_type, const char *options) const;
+
+    /**
+     * @brief Wite ents not in databse
+     * 
+     * @param file_name 
+     * @param file_type for example "VTK"
+     * @param options 
+     * @return PetscErrorCode 
+     */
+    PetscErrorCode writeEntitiesNotInDatabse(const char *file_name,
+                                             const char *file_type,
+                                             const char *options) const;
 
     /**@}*/
   };

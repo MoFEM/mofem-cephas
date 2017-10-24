@@ -489,9 +489,28 @@ PetscErrorCode BitRefManager::writeBitLevelByType(
   EntityHandle meshset;
   rval = moab.create_meshset(MESHSET_SET, meshset);
   CHKERRQ_MOAB(rval);
-  Range ents;
   ierr = getEntitiesByTypeAndRefLevel(bit, mask, type, meshset);
   CHKERRQ(ierr);
+  rval = moab.write_file(file_name, file_type, options, &meshset, 1);
+  CHKERRQ_MOAB(rval);
+  rval = moab.delete_entities(&meshset, 1);
+  CHKERRQ_MOAB(rval);
+  MoFEMFunctionReturnHot(0);
+}
+
+PetscErrorCode BitRefManager::writeEntitiesNotInDatabse(
+    const char *file_name, const char *file_type, const char *options) const {
+  MoFEM::Interface &m_field = cOre;
+  moab::Interface &moab(m_field.get_moab());
+  MoFEMFunctionBeginHot;
+  EntityHandle meshset;
+  rval = moab.create_meshset(MESHSET_SET, meshset);
+  CHKERRQ_MOAB(rval);
+  Range ents;
+  ierr = getAllEntitiesNotInDatabase(ents);
+  CHKERRQ(ierr);
+  rval = moab.add_entities(meshset, ents);
+  CHKERRQ_MOAB(rval);
   rval = moab.write_file(file_name, file_type, options, &meshset, 1);
   CHKERRQ_MOAB(rval);
   rval = moab.delete_entities(&meshset, 1);
@@ -616,7 +635,7 @@ PetscErrorCode BitRefManager::getEntitiesByParentType(const BitRefLevel &bit,
   MoFEM::Interface &m_field = cOre;
   // moab::Interface &moab = m_field.get_moab();
   const RefEntity_multiIndex *ref_ents_ptr;
-  PetscFunctionBegin;
+  MoFEMFunctionBeginHot;
   ierr = m_field.get_ref_ents(&ref_ents_ptr);
   CHKERRQ(ierr);
   typedef RefEntity_multiIndex::index<ParentEntType_mi_tag>::type
@@ -632,7 +651,37 @@ PetscErrorCode BitRefManager::getEntitiesByParentType(const BitRefLevel &bit,
       ents.insert(it->get()->getRefEnt());
     }
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
+}
+
+PetscErrorCode
+BitRefManager::getAllEntitiesNotInDatabase(Range &ents) const {
+  MoFEM::Interface &m_field = cOre;
+  moab::Interface &moab = m_field.get_moab();
+  MoFEMFunctionBeginHot;
+  rval = moab.get_entities_by_handle(0,ents,false); CHKERRQ_MOAB(rval);
+  ents = subtract(ents,ents.subset_by_type(MBENTITYSET));
+  ierr = getEntitiesNotInDatabase(ents); CHKERRQ(ierr);
+  MoFEMFunctionReturnHot(0);
+}
+
+PetscErrorCode BitRefManager::getEntitiesNotInDatabase(Range &ents) const {
+  MoFEM::Interface &m_field = cOre;
+  const RefEntity_multiIndex *ref_ents_ptr;
+  MoFEMFunctionBeginHot;
+  ierr = m_field.get_ref_ents(&ref_ents_ptr);
+  CHKERRQ(ierr);
+  Range::iterator eit = ents.begin();
+  for (; eit != ents.end(); ) {
+    RefEntity_multiIndex::index<Ent_mi_tag>::type::iterator rit;
+    rit = ref_ents_ptr->get<Ent_mi_tag>().find(*eit);
+    if (rit != ref_ents_ptr->get<Ent_mi_tag>().end()) {
+      eit = ents.erase(eit);
+    } else {
+      eit++;
+    }
+  }
+  MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode
