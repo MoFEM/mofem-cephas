@@ -42,8 +42,14 @@ MoFEM code should follow MoAB code style and best practices listed here
 
 - Style:
 
-  - Make indentations. Indent code to better convey the logical structure of
-    your code. Without indenting, code becomes difficult to follow. \code
+- Code formatting style makes code easier to read and follow by other.
+  For that reason, we choose to use LLVM style, i.e. one of the built-in
+  styles offered by clang-format. The motivation for use this style is as
+  follows; is popular, can be set-up in many editors and compact.
+
+- Make indentations. Indent code to better convey the logical structure of
+  your code. Without indenting, code becomes difficult to follow. 
+\code
 if (...) {
 if (...) {
 ...
@@ -55,7 +61,8 @@ if (...) {
 ...
 }
 \endcode
-Can you follow this ? This is much better \code
+Can you follow this ? This is much better 
+\code
 if (...) {
   if (...) {
     ...
