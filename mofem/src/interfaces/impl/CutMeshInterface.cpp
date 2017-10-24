@@ -216,10 +216,21 @@ PetscErrorCode CutMeshInterface::cutTrimAndMerge(
     const double tol_trim_close, Range &fixed_edges, Range &corner_nodes,
     const bool update_meshsets, const bool debug) {
   MoFEMFunctionBeginHot;
+  if(debug) {
+    ierr = cOre.getInterface<BitRefManager>()->writeEntitiesNotInDatabse(
+        "ents_not_in_databse.vtk", "VTK", "");
+    CHKERRQ(ierr);
+  }
   ierr =
       cutAndTrim(bit_level1, bit_level2, th, tol_cut, tol_cut_close, tol_trim,
                  tol_trim_close, &fixed_edges, &corner_nodes, update_meshsets);
   CHKERRQ(ierr);
+  if(debug) {
+    ierr = cOre.getInterface<BitRefManager>()->writeEntitiesNotInDatabse(
+        "cut_trim_ents_not_in_databse.vtk", "VTK", "");
+    CHKERRQ(ierr);
+  }
+
   ierr =
       mergeBadEdges(fraction_level, bit_level2, bit_level1, bit_level3,
                     getNewTrimSurfaces(), fixed_edges, corner_nodes, th, debug);
@@ -232,6 +243,9 @@ PetscErrorCode CutMeshInterface::cutTrimAndMerge(
     ierr = cOre.getInterface<BitRefManager>()->writeBitLevelByType(
         bit_level3, BitRefLevel().set(), MBTET, "out_tets_merged.vtk", "VTK",
         "");
+    CHKERRQ(ierr);
+    ierr = cOre.getInterface<BitRefManager>()->writeEntitiesNotInDatabse(
+        "cut_trim_merge_ents_not_in_databse.vtk", "VTK", "");
     CHKERRQ(ierr);
   }
 
@@ -1028,7 +1042,7 @@ PetscErrorCode CutMeshInterface::mergeBadEdges(
       out_tets.merge(subtract(proc_tets, vert_tets));
       proc_tets.swap(out_tets);
 
-      if (add_child) {
+      if (add_child && nodeMergerPtr->getSucessMerge()) {
 
         NodeMergerInterface::ParentChildMap &parent_child_map =
             nodeMergerPtr->getParentChildMap();
@@ -1037,9 +1051,7 @@ PetscErrorCode CutMeshInterface::mergeBadEdges(
         NodeMergerInterface::ParentChildMap::iterator it;
         for (it = parent_child_map.begin(); it != parent_child_map.end();
              it++) {
-          if (it->cHild != it->pArent) {
-            child_ents.insert(it->pArent);
-          }
+          child_ents.insert(it->pArent);
         }
 
         Range new_surf_child_ents = intersect(new_surf, child_ents);
@@ -1104,9 +1116,7 @@ PetscErrorCode CutMeshInterface::mergeBadEdges(
         it = parent_child_map.get<0>().find(*eit);
         if (it == parent_child_map.get<0>().end())
           continue;
-        if (it->cHild != it->pArent) {
-          childs.insert(it->cHild);
-        }
+        childs.insert(it->cHild);
       }
       MoFEMFunctionReturnHot(0);
     }
@@ -1446,7 +1456,7 @@ PetscErrorCode CutMeshInterface::mergeBadEdges(
   CHKERRQ(ierr);
   out_tets = subtract(tets, proc_tets);
   if (bit_ptr) {
-    for (int dd = 2; dd <= 0; dd--) {
+    for (int dd = 2; dd >= 0; dd--) {
       rval = moab.get_adjacencies(out_tets.subset_by_dimension(3), dd, false,
                                   out_tets, moab::Interface::UNION);
       CHKERRQ_MOAB(rval);
@@ -1459,6 +1469,10 @@ PetscErrorCode CutMeshInterface::mergeBadEdges(
   int nb_nodes_merged = 0;
   std::map<double, EntityHandle> length_map;
   new_surf = surface;
+
+  // Range all_ents,sum_of_all_ents;
+  // rval = moab.get_entities_by_handle(0, all_ents, true);
+  // CHKERRQ_MOAB(rval);
 
   for (int pp = 0; pp != nbMaxMergingCycles; pp++) {
 
@@ -1502,10 +1516,13 @@ PetscErrorCode CutMeshInterface::mergeBadEdges(
       if (type_father == type_mother) {
         line_search = lineSearchSteps;
       }
+      
       ierr = MergeNodes(m_field, true, line_search, th,
                         update_meshsets)(father, mother, proc_tets, new_surf,
                                          edges_to_merge, not_merged_edges);
       CHKERRQ(ierr);
+      // sum_of_all_ents.merge(proc_tets);
+
       if (m_field.getInterface<NodeMergerInterface>()->getSucessMerge()) {
         Range adj_edges;
         rval = moab.get_adjacencies(conn, 2, 1, false, adj_edges,
@@ -1573,6 +1590,30 @@ PetscErrorCode CutMeshInterface::mergeBadEdges(
   }
   out_tets.merge(proc_tets);
 
+  // // delete left created and no needed ents
+  // {
+  //   Range adj;
+  //   for (int dd = 2; dd >= 0; dd--) {
+  //     rval = moab.get_adjacencies(sum_of_all_ents, dd,
+  //                                 false, adj, moab::Interface::UNION);
+  //     CHKERRQ_MOAB(rval);
+  //   }
+  //   sum_of_all_ents.merge(adj);
+  // }
+
+  // sum_of_all_ents = subtract(sum_of_all_ents,all_ents);
+  // sum_of_all_ents = subtract(sum_of_all_ents,out_tets);
+  // {
+  //   Range adj;
+  //   for (int dd = 2; dd >= 0; dd--) {
+  //     rval = moab.get_adjacencies(out_tets, dd, false, adj,
+  //                                 moab::Interface::UNION);
+  //     CHKERRQ_MOAB(rval);
+  //   }
+  //   sum_of_all_ents = subtract(sum_of_all_ents, adj);
+  // }
+  // rval = moab.delete_entities(sum_of_all_ents); CHKERRQ_MOAB(rval);
+
   MoFEMFunctionReturnHot(0);
 }
 
@@ -1594,11 +1635,28 @@ PetscErrorCode CutMeshInterface::mergeBadEdges(
   CHKERRQ(ierr);
   edges_to_merge = edges_to_merge.subset_by_type(MBEDGE);
 
+  // get all entities not in databse
+  Range all_ents_not_in_databse_before;
+  ierr = cOre.getInterface<BitRefManager>()->getAllEntitiesNotInDatabase(
+      all_ents_not_in_databse_before);
+  CHKERRQ(ierr);
+
   Range out_new_tets, out_new_surf;
   ierr = mergeBadEdges(fraction_level, tets_level, surface, fixed_edges,
                        corner_nodes, edges_to_merge, out_new_tets, out_new_surf,
                        th, true, &bit, debug);
   CHKERRQ(ierr);
+
+  // get all entities not in database after merge
+  Range all_ents_not_in_databse_after;
+  ierr = cOre.getInterface<BitRefManager>()->getAllEntitiesNotInDatabase(
+      all_ents_not_in_databse_after);
+  CHKERRQ(ierr);
+  // delete hanging entities
+  all_ents_not_in_databse_after =
+      subtract(all_ents_not_in_databse_after, all_ents_not_in_databse_before);
+  m_field.get_moab().delete_entities(all_ents_not_in_databse_after);
+
   mergedVolumes.swap(out_new_tets);
   mergedSurfaces.swap(out_new_surf);
   MoFEMFunctionReturnHot(0);
@@ -1983,7 +2041,7 @@ PetscErrorCode CutMeshInterface::rebuildMeshWithTetGen(
   CHKERRQ(ierr);
 
   Range rest_of_ents = subtract(bit_ents.mTets, surf_ents.tVols);
-  for (int dd = 2; dd <= 0; dd--) {
+  for (int dd = 2; dd >= 0; dd--) {
     rval = moab.get_adjacencies(rest_of_ents.subset_by_dimension(3), dd, false,
                                 rest_of_ents, moab::Interface::UNION);
     CHKERRQ_MOAB(rval);
