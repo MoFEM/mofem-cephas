@@ -151,7 +151,7 @@ PetscErrorCode CutMeshInterface::cutAndTrim(
   // cut mesh
   ierr = findEdgesToCut(tol_cut);
   CHKERRQ(ierr);
-  ierr = getEntsOnCutSurface(tol_cut_close);
+  ierr = getZeroDistanceEnts(tol_cut_close);
   CHKERRQ(ierr);
   ierr = cutEdgesInMiddle(bit_level1);
   CHKERRQ(ierr);
@@ -423,7 +423,7 @@ PetscErrorCode CutMeshInterface::findEdgesToCut(const double low_tol,
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode CutMeshInterface::getEntsOnCutSurface(const double low_tol,
+PetscErrorCode CutMeshInterface::getZeroDistanceEnts(const double low_tol,
                                                      int verb) {
   MoFEM::CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
