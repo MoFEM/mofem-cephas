@@ -78,6 +78,15 @@ int main(int argc, char *argv[]) {
     ierr = m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(
         0, 3, bit_level0);
     CHKERRQ(ierr);
+    // BitRefLevel bit_last;
+    // bit_last.set(BITREFLEVEL_SIZE-1);
+    // ierr = m_field.getInterface<BitRefManager>()->addBitRefLevelByDim(
+    //     0, 3, bit_last);
+    // CHKERRQ(ierr);
+    // ierr = core.getInterface<BitRefManager>()->writeBitLevelByType(
+    //     bit_last, BitRefLevel().set(), MBTET, "out_tets_bit_last.vtk",
+    //     "VTK", "");
+    // CHKERRQ(ierr);
 
     // get cut mesh interface
     CutMeshInterface *cut_mesh;
@@ -161,12 +170,8 @@ int main(int argc, char *argv[]) {
     // Cut mesh, trim surface and merge bad edges
     ierr = cut_mesh->cutTrimAndMerge(2, bit_level1, bit_level2, bit_level3, th,
                                      1e-2, 1e-1, 1e-3, 1e-3, fixed_edges,
-                                     corner_nodes, true, true);
+                                     corner_nodes, true, false);
     CHKERRQ(ierr);
-
-    // Set coordinates for tag data
-    // ierr = cut_mesh->setCoords(th);
-    // CHKERRQ(ierr);
 
     // Improve mesh with tetgen
 #ifdef WITH_TETGEN
@@ -177,13 +182,14 @@ int main(int argc, char *argv[]) {
                                            cut_mesh->getMergedSurfaces(),
                                            fixed_edges, corner_nodes, th);
     CHKERRQ(ierr);
-   ierr = core.getInterface<BitRefManager>()->writeBitLevelByType(
+    ierr = core.getInterface<BitRefManager>()->writeBitLevelByType(
         bit_level4, BitRefLevel().set(), MBTET, "out_tets_tetgen.vtk", "VTK",
         "");
     CHKERRQ(ierr);
-
 #else
     bit_level4 = bit_level3;
+    const_cast<Range &>(cut_mesh->getTetgenSurfaces()) =
+        cut_mesh->getMergedSurfaces();
 #endif // WITH_TETGEN
 
     // Split faces 
@@ -201,23 +207,28 @@ int main(int argc, char *argv[]) {
 
     // Finally shift bits
     BitRefLevel shift_mask;
-    //shift_mask.set(0);
+    shift_mask.set(0);
     shift_mask.set(1);
     shift_mask.set(2);
     shift_mask.set(3);
     shift_mask.set(4);
     shift_mask.set(5);
-    ierr = core.getInterface<BitRefManager>()->shiftRightBitRef(3, shift_mask);
+    ierr = core.getInterface<BitRefManager>()->shiftRightBitRef(4, shift_mask, VERBOSE);
     CHKERRQ(ierr);
- 
+
+    // Set coordinates for tag data
+    ierr = cut_mesh->setCoords(th);
+    CHKERRQ(ierr);
+
+    ierr = core.getInterface<BitRefManager>()->writeBitLevelByType(
+        bit_level0, BitRefLevel().set(), MBTET, "out_tets_shift_level0.vtk",
+        "VTK", "");
+    CHKERRQ(ierr);
     ierr = core.getInterface<BitRefManager>()->writeBitLevelByType(
         bit_level1, BitRefLevel().set(), MBTET, "out_tets_shift_level1.vtk",
         "VTK", "");
     CHKERRQ(ierr);
-    ierr = core.getInterface<BitRefManager>()->writeBitLevelByType(
-        bit_level2, BitRefLevel().set(), MBTET, "out_tets_shift_level2.vtk",
-        "VTK", "");
-    CHKERRQ(ierr);
+
 
   } catch (MoFEMException const &e) {
     SETERRQ(PETSC_COMM_SELF, e.errorCode, e.errorMessage);
