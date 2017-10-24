@@ -299,7 +299,7 @@ enum HCurlDiffFormatting {
 /**
  * \brief Verboisty levels
  */
-enum VERBOSITY_LEVELS { QUAIET = 0, VERBOSE, VERBY_VERBOSE, NOISY, VERY_NOISY };
+enum VERBOSITY_LEVELS { QUAIET = 0, VERBOSE, VERY_VERBOSE, NOISY, VERY_NOISY };
 
 #define BITREFEDGES_SIZE 6    ///< number of edges on tetrahedral
 #define BITREFLEVEL_SIZE 128  ///< max number of refinements
