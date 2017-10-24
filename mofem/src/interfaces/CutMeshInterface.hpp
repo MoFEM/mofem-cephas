@@ -135,7 +135,7 @@ struct CutMeshInterface : public UnknownInterface {
    */
   PetscErrorCode findEdgesToCut(const double low_tol = 0, int verb = 0);
 
-  PetscErrorCode getEntsOnCutSurface(const double low_tol = 0, int verb = 0);
+  PetscErrorCode getZeroDistanceEnts(const double low_tol = 0, int verb = 0);
 
   /**
    * \brief cut edges

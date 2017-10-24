@@ -401,7 +401,7 @@ PetscErrorCode CutMeshInterface::findEdgesToCut(const double low_tol,
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode CutMeshInterface::getEntsOnCutSurface(const double low_tol,
+PetscErrorCode CutMeshInterface::getZeroDistanceEnts(const double low_tol,
                                                      int verb) {
   MoFEM::CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
