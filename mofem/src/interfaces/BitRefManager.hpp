@@ -118,7 +118,20 @@ namespace MoFEM {
      * @return      error code
      */
     PetscErrorCode addBitRefLevel(const Range &ents, const BitRefLevel &bit,
-                                  int verb = 0) const;
+                                  int verb = QUAIET) const;
+
+    /**
+     * @brief add bit ref level by dimension
+     * 
+     * @param meshset 
+     * @param dim dimension of entities
+     * @param bit added bit 
+     * @param verb verbosity level
+     * @return PetscErrorCode 
+     */
+    PetscErrorCode addBitRefLevelByDim(const EntityHandle meshset,
+                                       const int dim, const BitRefLevel &bit,
+                                       int verb = QUAIET) const;
 
     /**
      * \brief Set nth bith ref lecel

@@ -351,12 +351,35 @@ PetscErrorCode BitRefManager::addBitRefLevel(const Range &ents,
         SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
                 "operation unsuccessful");
       };
-      if (verb > 0) {
+      if (verb >= VERY_NOISY) {
         cerr << **dit << endl;
       }
     }
   }
 
+  MoFEMFunctionReturnHot(0);
+}
+
+PetscErrorCode BitRefManager::addBitRefLevelByDim(const EntityHandle meshset,
+                                                  const int dim,
+                                                  const BitRefLevel &bit,
+                                                  int verb) const {
+  MoFEM::Interface& m_field = cOre;
+  moab::Interface& moab = m_field.get_moab();
+  Range ents, adj;
+  MoFEMFunctionBeginHot;
+  rval = moab.get_entities_by_dimension(meshset, dim, ents, true);
+  CHKERRQ_MOAB(rval);
+  for (int dd = dim - 1; dd >= 0; dd--) {
+    rval = moab.get_adjacencies(ents, dd, false, adj, moab::Interface::UNION);
+    CHKERRQ_MOAB(rval);
+  }
+  ents.merge(adj);
+  if (verb == VERY_NOISY) {
+    cerr << ents << endl;
+  }
+  ierr = addBitRefLevel(ents, bit, verb);
+  CHKERRQ(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
