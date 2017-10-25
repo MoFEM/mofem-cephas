@@ -1,8 +1,7 @@
 
-
-/** \file split_sidesets.cpp
-
+/** \file split_sideset.cpp
   \brief Split sidesets
+  \example split_sideset.cpp
 
 */
 
@@ -26,10 +25,6 @@ using namespace MoFEM;
 static char help[] = "...\n\n";
 
 int main(int argc, char *argv[]) {
-
-  
-  
-
   PetscInitialize(&argc,&argv,(char *)0,help);
 
   try {
