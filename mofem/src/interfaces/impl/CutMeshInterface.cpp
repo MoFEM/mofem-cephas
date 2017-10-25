@@ -1163,9 +1163,27 @@ PetscErrorCode CutMeshInterface::mergeBadEdges(
     LengthMap(MoFEM::CoreInterface &m_field, Tag th)
         : tH(th), mField(m_field), moab(m_field.get_moab()) {}
 
-    PetscErrorCode
-    operator()(const Range &tets, const Range &edges,
-               std::map<double, EntityHandle> &length_map) const {
+    struct Data {
+      double lEngth;
+      EntityHandle eDge;
+      bool skip;
+      Data(const double l, const EntityHandle e)
+          : lEngth(l), eDge(e), skip(false) {}
+    };
+    typedef multi_index_container<
+      Data,
+      indexed_by<
+        ordered_non_unique<
+          member<Data,double,&Data::lEngth>
+         >,
+         hashed_unique<
+          member<Data,EntityHandle,&Data::eDge>
+         >
+      >
+    > Data_multi_index;
+
+    PetscErrorCode operator()(const Range &tets, const Range &edges,
+                              Data_multi_index &length_map) const {
       int num_nodes;
       const EntityHandle *conn;
       double coords[6];
@@ -1188,9 +1206,11 @@ PetscErrorCode CutMeshInterface::mergeBadEdges(
           CHKERRQ_MOAB(rval);
         }
         double q = 1;
-        ierr = mField.getInterface<Tools>()->minTetsQuality(adj_tet, q);
+        ierr = mField.getInterface<Tools>()->minTetsQuality(adj_tet, q, tH);
+        if (q != q)
+          q = -1;
         CHKERRQ(ierr);
-        length_map[q * norm_2(s0 - s1)] = *eit;
+        length_map.insert(Data(q * norm_2(s0 - s1),*eit));
       }
       MoFEMFunctionReturnHot(0);
     }
@@ -1360,7 +1380,7 @@ PetscErrorCode CutMeshInterface::mergeBadEdges(
 
       Range edges_to_remove;
 
-      // romove edges self connected to body skin
+      // remove edges self connected to body skin
       {
         Range ents_nodes_and_edges;
         ents_nodes_and_edges.merge(tets_skin_edges_verts);
@@ -1421,7 +1441,7 @@ PetscErrorCode CutMeshInterface::mergeBadEdges(
       edges_to_merge = subtract(edges_to_merge, edges_to_remove);
       not_merged_edges.merge(edges_to_remove);
 
-      // remove edges connecting crack front and fixed eges, except those short
+      // remove edges connecting crack front and fixed edges, except those short
       {
         Range ents_nodes_and_edges;
         ents_nodes_and_edges.merge(surface_skin.subset_by_type(MBEDGE));
@@ -1543,12 +1563,8 @@ PetscErrorCode CutMeshInterface::mergeBadEdges(
   }
 
   int nb_nodes_merged = 0;
-  std::map<double, EntityHandle> length_map;
+  LengthMap::Data_multi_index length_map;
   new_surf = surface;
-
-  // Range all_ents,sum_of_all_ents;
-  // rval = moab.get_entities_by_handle(0, all_ents, true);
-  // CHKERRQ_MOAB(rval);
 
   for (int pp = 0; pp != nbMaxMergingCycles; pp++) {
 
@@ -1559,11 +1575,14 @@ PetscErrorCode CutMeshInterface::mergeBadEdges(
 
     int nn = 0;
     Range collapsed_edges;
-    for (std::map<double, EntityHandle>::iterator mit = length_map.begin();
-         mit != length_map.end(); mit++, nn++) {
+    for (LengthMap::Data_multi_index::nth_index<0>::type::iterator
+             mit = length_map.get<0>().begin();
+         mit != length_map.get<0>().end(); mit++, nn++) {
+      // cerr << mit->lEngth << endl; //" " << mit->eDge << endl;
+      if(mit->skip) continue;
       int num_nodes;
       const EntityHandle *conn;
-      rval = moab.get_connectivity(mit->second, conn, num_nodes, true);
+      rval = moab.get_connectivity(mit->eDge, conn, num_nodes, true);
       CHKERRQ_MOAB(rval);
       int conn_type[2] = {0, 0};
       for (int nn = 0; nn != 2; nn++) {
@@ -1604,20 +1623,18 @@ PetscErrorCode CutMeshInterface::mergeBadEdges(
         rval = moab.get_adjacencies(conn, 2, 1, false, adj_edges,
                                     moab::Interface::UNION);
         CHKERRQ_MOAB(rval);
-        std::map<double, EntityHandle>::iterator miit = mit;
-        if ((++miit) != length_map.end()) {
-          std::map<double, EntityHandle> tmp_length_map = length_map;
-          miit = tmp_length_map.find(miit->first);
-          for (; miit != tmp_length_map.end(); miit++) {
-            if (adj_edges.find(miit->second) != adj_edges.end()) {
-              length_map.erase(miit->first);
-            }
+        for (Range::iterator ait = adj_edges.begin(); ait != adj_edges.end();
+             ait++) {
+          LengthMap::Data_multi_index::nth_index<1>::type::iterator miit =
+              length_map.get<1>().find(*ait);
+          if (miit != length_map.get<1>().end()) {
+            (const_cast<LengthMap::Data &>(*miit)).skip = true;
           }
         }
-        // cerr << length_map.size() << " " << adj_edges << endl;
         nb_nodes_merged++;
-        collapsed_edges.insert(mit->second);
+        collapsed_edges.insert(mit->eDge);
       }
+
       if (nn > length_map.size() / fraction_level)
         break;
     }
