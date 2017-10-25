@@ -1,4 +1,5 @@
 /** \file mesh_cut_test.cpp
+ *  \example mesh_cut_test.cpp
   * \brief test for mesh cut interface
   *
   * \ingroup mesh_cut
@@ -36,7 +37,7 @@ int main(int argc, char *argv[]) {
                                  255, &flg);
     CHKERRQ(ierr);
     if (flg != PETSC_TRUE) {
-      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
               "*** ERROR -my_file (MESH FILE NEEDED)");
     }
     int side_set = 200;
@@ -47,9 +48,13 @@ int main(int argc, char *argv[]) {
     int nmax = 3;
     ierr = PetscOptionsGetRealArray("", "-shift", shift, &nmax, &flg);
     if (flg && nmax != 3) {
-      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
               "three values expected");
     }
+    PetscBool test = PETSC_FALSE;
+    ierr =
+        PetscOptionsGetBool(PETSC_NULL, "", "-test", &test, PETSC_NULL);
+    CHKERRQ(ierr);
 
     moab::Core mb_instance;
     moab::Interface &moab = mb_instance;
@@ -70,13 +75,30 @@ int main(int argc, char *argv[]) {
              (*core.getInterface<MeshsetsManager>()), SIDESET, it)) {
       cout << *it << endl;
     }
-    
 
     BitRefLevel bit_level0;
     bit_level0.set(0);
     ierr = m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(
         0, 3, bit_level0);
     CHKERRQ(ierr);
+    BitRefLevel bit_last;
+    bit_last.set(BITREFLEVEL_SIZE-1);
+    ierr = m_field.getInterface<BitRefManager>()->addBitRefLevelByDim(
+        0, 3, bit_last);
+    CHKERRQ(ierr);
+    ierr = core.getInterface<BitRefManager>()->writeBitLevelByType(
+        bit_last, BitRefLevel().set(), MBTET, "out_tets_bit_last.vtk",
+        "VTK", "");
+    CHKERRQ(ierr);
+
+    int no_of_ents_not_in_dabase = -1;
+    Range ents_not_in_dabase;
+    if (test) {
+      core.getInterface<BitRefManager>()->getAllEntitiesNotInDatabase(
+          ents_not_in_dabase);
+      CHKERRQ(ierr);
+      no_of_ents_not_in_dabase = ents_not_in_dabase.size();
+    }
 
     // get cut mesh interface
     CutMeshInterface *cut_mesh;
@@ -96,11 +118,11 @@ int main(int argc, char *argv[]) {
       CHKERRQ(ierr);
     }
     if (surface.empty()) {
-      SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY, "No surface to cut");
+      SETERRQ(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID, "No surface to cut");
     }
 
-    // Set surface entities. If surface eneriries are from existing side set,
-    // copy those entities and do other gemtrical transformations, like shify
+    // Set surface entities. If surface entities are from existing side set,
+    // copy those entities and do other geometrical transformations, like shift
     // scale or streach, rotate.
     if (meshset_manager->checkMeshset(side_set, SIDESET)) {
       ierr = cut_mesh->copySurface(surface, NULL, shift);
@@ -115,7 +137,7 @@ int main(int argc, char *argv[]) {
     ierr = cut_mesh->setVolume(tets);
     CHKERRQ(ierr);
 
-    // Build tree, it is used to ask geometrical queris, i.e. to find edges to
+    // Build tree, it is used to ask geometrical queries, i.e. to find edges to
     // cut or trim.
     ierr = cut_mesh->buildTree();
     CHKERRQ(ierr);
@@ -158,17 +180,40 @@ int main(int argc, char *argv[]) {
     }
 
     // Cut mesh, trim surface and merge bad edges
-    ierr = cut_mesh->cutTrimAndMerge(2, bit_level1, bit_level2, bit_level3, th,
-                                     1e-2, 1e-1, 1e-3, 1e-3, fixed_edges,
+    ierr = cut_mesh->cutTrimAndMerge(1, bit_level1, bit_level2, bit_level3, th,
+                                     1e-4, 1e-2, 1e-4, 1e-2, fixed_edges,
                                      corner_nodes, true, true);
     CHKERRQ(ierr);
 
-    // Set coordinates for tag data
-    // ierr = cut_mesh->setCoords(th);
-    // CHKERRQ(ierr);
+    if (test) {
+      struct TestBitLevel {
+        BitRefManager *mngPtr;
+        TestBitLevel(BitRefManager *mng_ptr) : mngPtr(mng_ptr) {}
+        PetscErrorCode operator()(const BitRefLevel &bit,
+                                  const int expected_size) {
+          MoFEMFunctionBeginHot;
+          Range ents;
+          ierr = mngPtr->getEntitiesByRefLevel(bit, bit, ents);
+          CHKERRQ(ierr);
+          cout << "bit_level nb ents " << ents.size() << endl;
+          if (expected_size != -1 && expected_size != ents.size()) {
+            SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                     "Wrong bit ref size %d!=%d", expected_size, ents.size());
+          }
+          MoFEMFunctionReturnHot(0);
+        }
+      };
+      ierr = TestBitLevel(core.getInterface<BitRefManager>())(bit_level1, 405);
+      CHKERRQ(ierr);
+      ierr = TestBitLevel(core.getInterface<BitRefManager>())(bit_level2, 1527);
+      CHKERRQ(ierr);
+      ierr = TestBitLevel(core.getInterface<BitRefManager>())(bit_level3, 1729);
+      CHKERRQ(ierr);
+    }
 
     // Improve mesh with tetgen
 #ifdef WITH_TETGEN
+
     // Switches controling TetGen
     vector<string> switches; 
     switches.push_back("rp180YsqORJS0VV");
@@ -176,13 +221,14 @@ int main(int argc, char *argv[]) {
                                            cut_mesh->getMergedSurfaces(),
                                            fixed_edges, corner_nodes, th);
     CHKERRQ(ierr);
-   ierr = core.getInterface<BitRefManager>()->writeBitLevelByType(
-        bit_level4, BitRefLevel().set(), MBTET, "out_tets_tetgen.vtk", "VTK",
-        "");
-    CHKERRQ(ierr);
-
+    // ierr = core.getInterface<BitRefManager>()->writeBitLevelByType(
+    //     bit_level4, BitRefLevel().set(), MBTET, "out_tets_tetgen.vtk", "VTK",
+    //     "");
+    // CHKERRQ(ierr);
 #else
     bit_level4 = bit_level3;
+    const_cast<Range &>(cut_mesh->getTetgenSurfaces()) =
+        cut_mesh->getMergedSurfaces();
 #endif // WITH_TETGEN
 
     // Split faces 
@@ -193,10 +239,93 @@ int main(int argc, char *argv[]) {
                ->updateAllMeshsetsByEntitiesChildren(bit_level5);
     CHKERRQ(ierr);
 
-   ierr = core.getInterface<BitRefManager>()->writeBitLevelByType(
-        bit_level5, BitRefLevel().set(), MBTET, "out_tets_level5.vtk", "VTK",
-        "");
+  //  ierr = core.getInterface<BitRefManager>()->writeBitLevelByType(
+  //       bit_level5, BitRefLevel().set(), MBTET, "out_tets_level5.vtk", "VTK",
+  //       "");
+  //   CHKERRQ(ierr);
+
+    // Finally shift bits
+    BitRefLevel shift_mask;
+    shift_mask.set(0);
+    shift_mask.set(1);
+    shift_mask.set(2);
+    shift_mask.set(3);
+    shift_mask.set(4);
+    shift_mask.set(5);
+    ierr = core.getInterface<BitRefManager>()->shiftRightBitRef(4, shift_mask, VERBOSE);
     CHKERRQ(ierr);
+
+    // Set coordinates for tag data
+    ierr = cut_mesh->setCoords(th);
+    CHKERRQ(ierr);
+
+    ierr = core.getInterface<BitRefManager>()->writeBitLevelByType(
+        bit_level0, BitRefLevel().set(), MBTET, "out_tets_shift_level0.vtk",
+        "VTK", "");
+    CHKERRQ(ierr);
+    ierr = core.getInterface<BitRefManager>()->writeBitLevelByType(
+        bit_level1, BitRefLevel().set(), MBTET, "out_tets_shift_level1.vtk",
+        "VTK", "");
+    CHKERRQ(ierr);
+
+    Range surface_verts;
+    rval = moab.get_connectivity(cut_mesh->getSurface(), surface_verts);
+    CHKERRQ_MOAB(rval);
+    rval = moab.delete_entities(cut_mesh->getSurface());
+    CHKERRQ_MOAB(rval);
+    rval = moab.delete_entities(surface_verts);
+    CHKERRQ_MOAB(rval);
+    ierr = m_field.delete_ents_by_bit_ref(
+        bit_level0 | bit_level1, bit_level0 | bit_level1, true, VERBOSE);
+    CHKERRQ(ierr);
+
+    {
+      EntityHandle meshset;
+      rval = moab.create_meshset(MESHSET_SET, meshset);
+      CHKERRQ_MOAB(rval);
+      Range tets;
+      rval = moab.get_entities_by_dimension(0, 3, tets, true);
+      CHKERRQ_MOAB(rval);
+      rval = moab.add_entities(meshset, tets);
+      CHKERRQ_MOAB(rval);
+      rval = moab.write_file("out.vtk", "VTK", "", &meshset, 1);
+      CHKERRQ_MOAB(rval);
+      rval = moab.delete_entities(&meshset, 1);
+      CHKERRQ_MOAB(rval);
+    }
+    ierr = core.getInterface<BitRefManager>()->writeBitLevelByType(
+        bit_last, BitRefLevel().set(), MBTET, "out_tets_bit_last.vtk",
+        "VTK", "");
+    CHKERRQ(ierr);
+    ierr = core.getInterface<BitRefManager>()->writeEntitiesNotInDatabse(
+      "left_entities.vtk","VTK",""
+    );
+    CHKERRQ(ierr);
+
+    if(test) {
+      Range ents;
+      core.getInterface<BitRefManager>()->getAllEntitiesNotInDatabase(ents);
+      CHKERRQ(ierr);
+      if(no_of_ents_not_in_dabase != ents.size()) {
+        cerr << subtract(ents,ents_not_in_dabase) << endl;
+        EntityHandle meshset;
+        rval = moab.create_meshset(MESHSET_SET, meshset);
+        CHKERRQ_MOAB(rval);
+        Range tets;
+        rval = moab.get_entities_by_dimension(0, 3, tets, true);
+        CHKERRQ_MOAB(rval);
+        rval = moab.add_entities(meshset, subtract(ents,ents_not_in_dabase));
+        CHKERRQ_MOAB(rval);
+        rval = moab.write_file("not_cleanded.vtk", "VTK", "", &meshset, 1);
+        CHKERRQ_MOAB(rval);
+        rval = moab.delete_entities(&meshset, 1);
+        CHKERRQ_MOAB(rval);
+
+        SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                 "Inconsistent number of ents %d!=%d", no_of_ents_not_in_dabase,
+                 ents.size());
+      }
+    } 
 
   } catch (MoFEMException const &e) {
     SETERRQ(PETSC_COMM_SELF, e.errorCode, e.errorMessage);

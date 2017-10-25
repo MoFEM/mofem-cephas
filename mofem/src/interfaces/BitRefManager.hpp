@@ -118,7 +118,20 @@ namespace MoFEM {
      * @return      error code
      */
     PetscErrorCode addBitRefLevel(const Range &ents, const BitRefLevel &bit,
-                                  int verb = 0) const;
+                                  int verb = QUAIET) const;
+
+    /**
+     * @brief add bit ref level by dimension
+     * 
+     * @param meshset 
+     * @param dim dimension of entities
+     * @param bit added bit 
+     * @param verb verbosity level
+     * @return PetscErrorCode 
+     */
+    PetscErrorCode addBitRefLevelByDim(const EntityHandle meshset,
+                                       const int dim, const BitRefLevel &bit,
+                                       int verb = QUAIET) const;
 
     /**
      * \brief Set nth bith ref lecel
@@ -143,6 +156,8 @@ namespace MoFEM {
     /** \brief left shift bit ref level
       * \ingroup mofem_bit_ref
       * this results of deletion of entities on far left side
+      * 
+      * \note Not implemented
       */
     PetscErrorCode shiftLeftBitRef(const int shif,
                                    const BitRefLevel mask = BitRefLevel().set(),
@@ -238,6 +253,22 @@ namespace MoFEM {
                                            const BitRefLevel &mask,
                                            const EntityType type,
                                            Range &ents) const;
+
+    /**
+     * @brief Get all entities not in databse
+     * 
+     * @param ents 
+     * @return PetscErrorCode 
+     */
+    PetscErrorCode getAllEntitiesNotInDatabase(Range &ents) const;
+
+    /**
+     * @brief \brief Get entities not in database
+     * 
+     * @param ents 
+     * @return PetscErrorCode 
+     */
+    PetscErrorCode getEntitiesNotInDatabase(Range &ents) const;
 
     /**@}*/
 
@@ -366,7 +397,7 @@ namespace MoFEM {
     /**@{*/
 
     /**
-     * \brief write bit ref level to file
+     * \brief Write bit ref level to file
      * @param  bit       bit ref level
      * @param  mask      mask of bit ref level
      * @param  type      type of entity
@@ -379,6 +410,18 @@ namespace MoFEM {
     writeBitLevelByType(const BitRefLevel &bit, const BitRefLevel &mask,
                         const EntityType type, const char *file_name,
                         const char *file_type, const char *options) const;
+
+    /**
+     * @brief Wite ents not in databse
+     * 
+     * @param file_name 
+     * @param file_type for example "VTK"
+     * @param options 
+     * @return PetscErrorCode 
+     */
+    PetscErrorCode writeEntitiesNotInDatabse(const char *file_name,
+                                             const char *file_type,
+                                             const char *options) const;
 
     /**@}*/
   };

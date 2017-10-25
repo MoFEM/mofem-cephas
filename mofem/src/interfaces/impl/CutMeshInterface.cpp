@@ -145,13 +145,13 @@ PetscErrorCode CutMeshInterface::cutAndTrim(
     const BitRefLevel &bit_level1, const BitRefLevel &bit_level2, Tag th,
     const double tol_cut, const double tol_cut_close, const double tol_trim,
     const double tol_trim_close, Range *fixed_edges, Range *corner_nodes,
-    const bool update_meshsets) {
-
+    const bool update_meshsets,const bool debug) {
+  MoFEM::CoreInterface &m_field = cOre;
   MoFEMFunctionBeginHot;
   // cut mesh
   ierr = findEdgesToCut(tol_cut);
   CHKERRQ(ierr);
-  ierr = getEntsOnCutSurface(tol_cut_close);
+  ierr = getZeroDistanceEnts(tol_cut_close);
   CHKERRQ(ierr);
   ierr = cutEdgesInMiddle(bit_level1);
   CHKERRQ(ierr);
@@ -176,6 +176,17 @@ PetscErrorCode CutMeshInterface::cutAndTrim(
     ierr = cOre.getInterface<BitRefManager>()->writeBitLevelByType(
         bit_level1, BitRefLevel().set(), MBTET, "out_tets_cut.vtk", "VTK", "");
     CHKERRQ(ierr);
+    {
+      EntityHandle meshset;
+      rval = m_field.get_moab().create_meshset(MESHSET_SET, meshset);
+      CHKERRQ_MOAB(rval);
+      rval = m_field.get_moab().add_entities(meshset, cutNewSurfaces);
+      CHKERRQ_MOAB(rval);
+      rval = m_field.get_moab().write_file("cut_new_surfaces.vtk", "VTK", "", &meshset, 1);
+      CHKERRQ_MOAB(rval);
+      rval = m_field.get_moab().delete_entities(&meshset, 1);
+      CHKERRQ_MOAB(rval);
+    }
   }
 
   // trim mesh
@@ -204,6 +215,17 @@ PetscErrorCode CutMeshInterface::cutAndTrim(
     ierr = cOre.getInterface<BitRefManager>()->writeBitLevelByType(
         bit_level2, BitRefLevel().set(), MBTET, "out_tets_trim.vtk", "VTK", "");
     CHKERRQ(ierr);
+    {
+      EntityHandle meshset;
+      rval = m_field.get_moab().create_meshset(MESHSET_SET, meshset);
+      CHKERRQ_MOAB(rval);
+      rval = m_field.get_moab().add_entities(meshset, trimNewSurfaces);
+      CHKERRQ_MOAB(rval);
+      rval = m_field.get_moab().write_file("trim_new_surfaces.vtk", "VTK", "", &meshset, 1);
+      CHKERRQ_MOAB(rval);
+      rval = m_field.get_moab().delete_entities(&meshset, 1);
+      CHKERRQ_MOAB(rval);
+    }
   }
 
   MoFEMFunctionReturnHot(0);
@@ -216,10 +238,21 @@ PetscErrorCode CutMeshInterface::cutTrimAndMerge(
     const double tol_trim_close, Range &fixed_edges, Range &corner_nodes,
     const bool update_meshsets, const bool debug) {
   MoFEMFunctionBeginHot;
-  ierr =
-      cutAndTrim(bit_level1, bit_level2, th, tol_cut, tol_cut_close, tol_trim,
-                 tol_trim_close, &fixed_edges, &corner_nodes, update_meshsets);
+  if(debug) {
+    ierr = cOre.getInterface<BitRefManager>()->writeEntitiesNotInDatabse(
+        "ents_not_in_databse.vtk", "VTK", "");
+    CHKERRQ(ierr);
+  }
+  ierr = cutAndTrim(bit_level1, bit_level2, th, tol_cut, tol_cut_close,
+                    tol_trim, tol_trim_close, &fixed_edges, &corner_nodes,
+                    update_meshsets, debug);
   CHKERRQ(ierr);
+  if(debug) {
+    ierr = cOre.getInterface<BitRefManager>()->writeEntitiesNotInDatabse(
+        "cut_trim_ents_not_in_databse.vtk", "VTK", "");
+    CHKERRQ(ierr);
+  }
+
   ierr =
       mergeBadEdges(fraction_level, bit_level2, bit_level1, bit_level3,
                     getNewTrimSurfaces(), fixed_edges, corner_nodes, th, debug);
@@ -232,6 +265,9 @@ PetscErrorCode CutMeshInterface::cutTrimAndMerge(
     ierr = cOre.getInterface<BitRefManager>()->writeBitLevelByType(
         bit_level3, BitRefLevel().set(), MBTET, "out_tets_merged.vtk", "VTK",
         "");
+    CHKERRQ(ierr);
+    ierr = cOre.getInterface<BitRefManager>()->writeEntitiesNotInDatabse(
+        "cut_trim_merge_ents_not_in_databse.vtk", "VTK", "");
     CHKERRQ(ierr);
   }
 
@@ -387,13 +423,19 @@ PetscErrorCode CutMeshInterface::findEdgesToCut(const double low_tol,
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode CutMeshInterface::getEntsOnCutSurface(const double low_tol,
+PetscErrorCode CutMeshInterface::getZeroDistanceEnts(const double low_tol,
                                                      int verb) {
   MoFEM::CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   MoFEMFunctionBeginHot;
+  Skinner skin(&moab);
+  Range tets_skin;
+  rval = skin.find_skin(0, vOlume, false, tets_skin);
+  Range tets_skin_verts;
+  rval = moab.get_connectivity(tets_skin, tets_skin_verts, true);
+  CHKERRQ_MOAB(rval);
   Tag th_dist;
-  rval = moab.tag_get_handle("DIST", th_dist);
+  rval = moab.tag_get_handle("DIST_NORMAL", th_dist);
   CHKERRQ_MOAB(rval);
   Range cut_edge_verts;
   rval = moab.get_connectivity(cutEdges, cut_edge_verts, false);
@@ -417,8 +459,9 @@ PetscErrorCode CutMeshInterface::getEntsOnCutSurface(const double low_tol,
     double dist[] = {0, 0, 0};
     rval = moab.tag_get_data(th_dist, conn, num_nodes, dist);
     CHKERRQ_MOAB(rval);
-    if (dist[0] < low_tol * aveLength && dist[1] < low_tol * aveLength &&
-        dist[2] < low_tol * aveLength) {
+    if (fabs(dist[0]) < low_tol * aveLength &&
+        fabs(dist[1]) < low_tol * aveLength &&
+        fabs(dist[2]) < low_tol * aveLength) {
       zeroDistanseEnts.insert(*fit);
       Range adj_edges;
       rval = moab.get_adjacencies(conn, num_nodes, 1, false, adj_edges,
@@ -433,31 +476,34 @@ PetscErrorCode CutMeshInterface::getEntsOnCutSurface(const double low_tol,
       rval = moab.get_coords(conn, num_nodes, coords);
       CHKERRQ(ierr);
       for (int nn = 0; nn != num_nodes; nn++) {
-        VectorAdaptor s0(
-            3, ublas::shallow_array_adaptor<double>(3, &coords[3 * nn]));
-        double p_out[3];
-        EntityHandle facets_out;
-        rval = treeSurfPtr->closest_to_location(&s0[0], rootSetSurf, p_out,
-                                                facets_out);
-        CHKERRQ_MOAB(rval);
-        VectorAdaptor point_out(3,
-                                ublas::shallow_array_adaptor<double>(3, p_out));
-        VectorDouble3 ray = point_out - s0;
-        double dist0 = norm_2(ray);
-        verticecOnCutEdges[conn[nn]].dIst = dist0;
-        verticecOnCutEdges[conn[nn]].lEngth = dist0;
-        verticecOnCutEdges[conn[nn]].unitRayDir = dist0 > 0 ? ray / dist0 : ray;
-        verticecOnCutEdges[conn[nn]].rayPoint = s0;
+        if (tets_skin_verts.find(conn[nn]) == tets_skin_verts.end()) {
+          VectorAdaptor s0(
+              3, ublas::shallow_array_adaptor<double>(3, &coords[3 * nn]));
+          double p_out[3];
+          EntityHandle facets_out;
+          rval = treeSurfPtr->closest_to_location(&s0[0], rootSetSurf, p_out,
+                                                  facets_out);
+          CHKERRQ_MOAB(rval);
+          VectorAdaptor point_out(
+              3, ublas::shallow_array_adaptor<double>(3, p_out));
+          VectorDouble3 ray = point_out - s0;
+          double dist0 = norm_2(ray);
+          verticecOnCutEdges[conn[nn]].dIst = dist0;
+          verticecOnCutEdges[conn[nn]].lEngth = dist0;
+          verticecOnCutEdges[conn[nn]].unitRayDir =
+              dist0 > 0 ? ray / dist0 : ray;
+          verticecOnCutEdges[conn[nn]].rayPoint = s0;
+        }
       }
     }
   }
-  Range debug;
+  rval = moab.tag_get_handle("DIST", th_dist);
   for (Range::iterator vit = cut_edge_verts.begin();
        vit != cut_edge_verts.end(); vit++) {
     double dist[] = {0};
     rval = moab.tag_get_data(th_dist, &*vit, 1, dist);
     CHKERRQ_MOAB(rval);
-    if (dist[0] < low_tol * aveLength) {
+    if (fabs(dist[0]) < low_tol * aveLength) {
       zeroDistanseVerts.insert(*vit);
       Range adj_edges;
       rval = moab.get_adjacencies(&*vit, 1, 1, false, adj_edges);
@@ -466,7 +512,6 @@ PetscErrorCode CutMeshInterface::getEntsOnCutSurface(const double low_tol,
            eit++) {
         cutEdges.erase(*eit);
         edgesToCut.erase(*eit);
-        debug.insert(*eit);
       }
       double coords[3];
       rval = moab.get_coords(&*vit, 1, coords);
@@ -1028,7 +1073,7 @@ PetscErrorCode CutMeshInterface::mergeBadEdges(
       out_tets.merge(subtract(proc_tets, vert_tets));
       proc_tets.swap(out_tets);
 
-      if (add_child) {
+      if (add_child && nodeMergerPtr->getSucessMerge()) {
 
         NodeMergerInterface::ParentChildMap &parent_child_map =
             nodeMergerPtr->getParentChildMap();
@@ -1037,9 +1082,7 @@ PetscErrorCode CutMeshInterface::mergeBadEdges(
         NodeMergerInterface::ParentChildMap::iterator it;
         for (it = parent_child_map.begin(); it != parent_child_map.end();
              it++) {
-          if (it->cHild != it->pArent) {
-            child_ents.insert(it->pArent);
-          }
+          child_ents.insert(it->pArent);
         }
 
         Range new_surf_child_ents = intersect(new_surf, child_ents);
@@ -1104,9 +1147,7 @@ PetscErrorCode CutMeshInterface::mergeBadEdges(
         it = parent_child_map.get<0>().find(*eit);
         if (it == parent_child_map.get<0>().end())
           continue;
-        if (it->cHild != it->pArent) {
-          childs.insert(it->cHild);
-        }
+        childs.insert(it->cHild);
       }
       MoFEMFunctionReturnHot(0);
     }
@@ -1122,9 +1163,27 @@ PetscErrorCode CutMeshInterface::mergeBadEdges(
     LengthMap(MoFEM::CoreInterface &m_field, Tag th)
         : tH(th), mField(m_field), moab(m_field.get_moab()) {}
 
-    PetscErrorCode
-    operator()(const Range &tets, const Range &edges,
-               std::map<double, EntityHandle> &length_map) const {
+    struct Data {
+      double lEngth;
+      EntityHandle eDge;
+      bool skip;
+      Data(const double l, const EntityHandle e)
+          : lEngth(l), eDge(e), skip(false) {}
+    };
+    typedef multi_index_container<
+      Data,
+      indexed_by<
+        ordered_non_unique<
+          member<Data,double,&Data::lEngth>
+         >,
+         hashed_unique<
+          member<Data,EntityHandle,&Data::eDge>
+         >
+      >
+    > Data_multi_index;
+
+    PetscErrorCode operator()(const Range &tets, const Range &edges,
+                              Data_multi_index &length_map) const {
       int num_nodes;
       const EntityHandle *conn;
       double coords[6];
@@ -1147,9 +1206,11 @@ PetscErrorCode CutMeshInterface::mergeBadEdges(
           CHKERRQ_MOAB(rval);
         }
         double q = 1;
-        ierr = mField.getInterface<Tools>()->minTetsQuality(adj_tet, q);
+        ierr = mField.getInterface<Tools>()->minTetsQuality(adj_tet, q, tH);
+        if (q != q)
+          q = -1;
         CHKERRQ(ierr);
-        length_map[q * norm_2(s0 - s1)] = *eit;
+        length_map.insert(Data(q * norm_2(s0 - s1),*eit));
       }
       MoFEMFunctionReturnHot(0);
     }
@@ -1161,7 +1222,10 @@ PetscErrorCode CutMeshInterface::mergeBadEdges(
   struct Toplogy {
 
     MoFEM::CoreInterface &mField;
-    Toplogy(MoFEM::CoreInterface &m_field) : mField(m_field) {}
+    Tag tH;
+    const double tOL;
+    Toplogy(MoFEM::CoreInterface &m_field, Tag th, const double tol)
+        : mField(m_field), tH(th), tOL(tol) {}
 
     enum TYPE {
       FREE = 0,
@@ -1316,13 +1380,13 @@ PetscErrorCode CutMeshInterface::mergeBadEdges(
 
       Range edges_to_remove;
 
-      // romove edges self connected to body skin
+      // remove edges self connected to body skin
       {
         Range ents_nodes_and_edges;
         ents_nodes_and_edges.merge(tets_skin_edges_verts);
         ents_nodes_and_edges.merge(tets_skin_edges);
         ierr = removeSelfConectingEdges(ents_nodes_and_edges, edges_to_remove,
-                                        false);
+                                        0, false);
         CHKERRQ(ierr);
       }
       edges_to_merge = subtract(edges_to_merge, edges_to_remove);
@@ -1336,7 +1400,7 @@ PetscErrorCode CutMeshInterface::mergeBadEdges(
         ents_nodes_and_edges.merge(tets_skin_edges_verts);
         ents_nodes_and_edges.merge(tets_skin_edges);
         ierr = removeSelfConectingEdges(ents_nodes_and_edges, edges_to_remove,
-                                        false);
+                                        0, false);
         CHKERRQ(ierr);
       }
       edges_to_merge = subtract(edges_to_merge, edges_to_remove);
@@ -1352,14 +1416,14 @@ PetscErrorCode CutMeshInterface::mergeBadEdges(
         ents_nodes_and_edges.merge(corner_nodes);
         ents_nodes_and_edges.merge(fixed_edges);
         ierr = removeSelfConectingEdges(ents_nodes_and_edges, edges_to_remove,
-                                        false);
+                                        0, false);
         CHKERRQ(ierr);
       }
       edges_to_merge = subtract(edges_to_merge, edges_to_remove);
       not_merged_edges.merge(edges_to_remove);
 
       // remove edges self conected to surface
-      ierr = removeSelfConectingEdges(surface_edges, edges_to_remove, false);
+      ierr = removeSelfConectingEdges(surface_edges, edges_to_remove, 0, false);
       CHKERRQ(ierr);
       edges_to_merge = subtract(edges_to_merge, edges_to_remove);
       not_merged_edges.merge(edges_to_remove);
@@ -1371,7 +1435,19 @@ PetscErrorCode CutMeshInterface::mergeBadEdges(
         ents_nodes_and_edges.merge(fixed_edges_nodes);
         ents_nodes_and_edges.merge(edges_to_remove);
         ierr = removeSelfConectingEdges(ents_nodes_and_edges, edges_to_remove,
-                                        false);
+                                        0, false);
+        CHKERRQ(ierr);
+      }
+      edges_to_merge = subtract(edges_to_merge, edges_to_remove);
+      not_merged_edges.merge(edges_to_remove);
+
+      // remove edges connecting crack front and fixed edges, except those short
+      {
+        Range ents_nodes_and_edges;
+        ents_nodes_and_edges.merge(surface_skin.subset_by_type(MBEDGE));
+        ents_nodes_and_edges.merge(fixed_edges.subset_by_type(MBEDGE));
+        ierr = removeSelfConectingEdges(ents_nodes_and_edges, edges_to_remove,
+                                        tOL, false);
         CHKERRQ(ierr);
       }
       edges_to_merge = subtract(edges_to_merge, edges_to_remove);
@@ -1383,6 +1459,7 @@ PetscErrorCode CutMeshInterface::mergeBadEdges(
   private:
     PetscErrorCode removeSelfConectingEdges(const Range &ents,
                                             Range &edges_to_remove,
+                                            const bool length,
                                             bool debug) const {
       moab::Interface &moab(mField.get_moab());
       MoFEMFunctionBeginHot;
@@ -1414,6 +1491,33 @@ PetscErrorCode CutMeshInterface::mergeBadEdges(
           subtract(ents_nodes_edges, ents_nodes_edges_nodes_edges);
       ents_nodes_edges =
           subtract(ents_nodes_edges, ents.subset_by_type(MBEDGE));
+      if(length>0) {
+        Range::iterator eit = ents_nodes_edges.begin();
+        for (; eit != ents_nodes_edges.end();) {
+          int num_nodes;
+          const EntityHandle *conn;
+          rval = moab.get_connectivity(*eit, conn, num_nodes, true);
+          CHKERRQ_MOAB(rval);
+          double coords[6];
+          if(tH) {
+            rval = moab.tag_get_data(tH, conn, num_nodes, coords);
+            CHKERRQ_MOAB(rval);
+          } else {
+            rval = moab.get_coords(conn, num_nodes, coords);
+            CHKERRQ_MOAB(rval);
+          }
+          VectorAdaptor s0(3,
+                           ublas::shallow_array_adaptor<double>(3, &coords[0]));
+          VectorAdaptor s1(3,
+                           ublas::shallow_array_adaptor<double>(3, &coords[3]));
+          const double edge_length = norm_2(s0-s1);
+          if(edge_length<tOL) {
+            eit = ents_nodes_edges.erase(eit);
+          } else {
+            eit++;
+          }
+        }
+      }
       edges_to_remove.swap(ents_nodes_edges);
       if (debug) {
         EntityHandle meshset;
@@ -1431,22 +1535,24 @@ PetscErrorCode CutMeshInterface::mergeBadEdges(
   };
 
   Range not_merged_edges;
-  ierr = Toplogy(m_field).edgesToMerge(surface, tets, edges_to_merge);
+  ierr = Toplogy(m_field, th, 0.1 * aveLength)
+             .edgesToMerge(surface, tets, edges_to_merge);
   CHKERRQ(ierr);
-  ierr =
-      Toplogy(m_field).removeBadEdges(surface, tets, fixed_edges, corner_nodes,
-                                      edges_to_merge, not_merged_edges);
+  ierr = Toplogy(m_field, th, 0.1 * aveLength)
+             .removeBadEdges(surface, tets, fixed_edges, corner_nodes,
+                             edges_to_merge, not_merged_edges);
   CHKERRQ(ierr);
   Toplogy::SetsMap sets_map;
-  ierr = Toplogy(m_field).classifyVerts(surface, tets, fixed_edges,
-                                        corner_nodes, sets_map);
+  ierr = Toplogy(m_field, th, 0.1 * aveLength)
+             .classifyVerts(surface, tets, fixed_edges, corner_nodes, sets_map);
   CHKERRQ(ierr);
   Range proc_tets;
-  ierr = Toplogy(m_field).getProcTets(tets, edges_to_merge, proc_tets);
+  ierr = Toplogy(m_field, th, 0.1 * aveLength)
+             .getProcTets(tets, edges_to_merge, proc_tets);
   CHKERRQ(ierr);
   out_tets = subtract(tets, proc_tets);
   if (bit_ptr) {
-    for (int dd = 2; dd <= 0; dd--) {
+    for (int dd = 2; dd >= 0; dd--) {
       rval = moab.get_adjacencies(out_tets.subset_by_dimension(3), dd, false,
                                   out_tets, moab::Interface::UNION);
       CHKERRQ_MOAB(rval);
@@ -1457,7 +1563,7 @@ PetscErrorCode CutMeshInterface::mergeBadEdges(
   }
 
   int nb_nodes_merged = 0;
-  std::map<double, EntityHandle> length_map;
+  LengthMap::Data_multi_index length_map;
   new_surf = surface;
 
   for (int pp = 0; pp != nbMaxMergingCycles; pp++) {
@@ -1469,11 +1575,14 @@ PetscErrorCode CutMeshInterface::mergeBadEdges(
 
     int nn = 0;
     Range collapsed_edges;
-    for (std::map<double, EntityHandle>::iterator mit = length_map.begin();
-         mit != length_map.end(); mit++, nn++) {
+    for (LengthMap::Data_multi_index::nth_index<0>::type::iterator
+             mit = length_map.get<0>().begin();
+         mit != length_map.get<0>().end(); mit++, nn++) {
+      // cerr << mit->lEngth << endl; //" " << mit->eDge << endl;
+      if(mit->skip) continue;
       int num_nodes;
       const EntityHandle *conn;
-      rval = moab.get_connectivity(mit->second, conn, num_nodes, true);
+      rval = moab.get_connectivity(mit->eDge, conn, num_nodes, true);
       CHKERRQ_MOAB(rval);
       int conn_type[2] = {0, 0};
       for (int nn = 0; nn != 2; nn++) {
@@ -1502,29 +1611,30 @@ PetscErrorCode CutMeshInterface::mergeBadEdges(
       if (type_father == type_mother) {
         line_search = lineSearchSteps;
       }
+      
       ierr = MergeNodes(m_field, true, line_search, th,
                         update_meshsets)(father, mother, proc_tets, new_surf,
                                          edges_to_merge, not_merged_edges);
       CHKERRQ(ierr);
+      // sum_of_all_ents.merge(proc_tets);
+
       if (m_field.getInterface<NodeMergerInterface>()->getSucessMerge()) {
         Range adj_edges;
         rval = moab.get_adjacencies(conn, 2, 1, false, adj_edges,
                                     moab::Interface::UNION);
         CHKERRQ_MOAB(rval);
-        std::map<double, EntityHandle>::iterator miit = mit;
-        if ((++miit) != length_map.end()) {
-          std::map<double, EntityHandle> tmp_length_map = length_map;
-          miit = tmp_length_map.find(miit->first);
-          for (; miit != tmp_length_map.end(); miit++) {
-            if (adj_edges.find(miit->second) != adj_edges.end()) {
-              length_map.erase(miit->first);
-            }
+        for (Range::iterator ait = adj_edges.begin(); ait != adj_edges.end();
+             ait++) {
+          LengthMap::Data_multi_index::nth_index<1>::type::iterator miit =
+              length_map.get<1>().find(*ait);
+          if (miit != length_map.get<1>().end()) {
+            (const_cast<LengthMap::Data &>(*miit)).skip = true;
           }
         }
-        // cerr << length_map.size() << " " << adj_edges << endl;
         nb_nodes_merged++;
-        collapsed_edges.insert(mit->second);
+        collapsed_edges.insert(mit->eDge);
       }
+
       if (nn > length_map.size() / fraction_level)
         break;
     }
@@ -1539,9 +1649,9 @@ PetscErrorCode CutMeshInterface::mergeBadEdges(
                                 moab::Interface::UNION);
     CHKERRQ_MOAB(rval);
     edges_to_merge = intersect(edges_to_merge, adj_edges);
-    ierr = Toplogy(m_field).removeBadEdges(new_surf, proc_tets, fixed_edges,
-                                           corner_nodes, edges_to_merge,
-                                           not_merged_edges);
+    ierr = Toplogy(m_field, th, 0.1 * aveLength)
+               .removeBadEdges(new_surf, proc_tets, fixed_edges, corner_nodes,
+                               edges_to_merge, not_merged_edges);
     CHKERRQ(ierr);
 
     PetscPrintf(m_field.get_comm(), "(%d) Number of nodes merged %d\n", pp,
@@ -1573,6 +1683,30 @@ PetscErrorCode CutMeshInterface::mergeBadEdges(
   }
   out_tets.merge(proc_tets);
 
+  // // delete left created and no needed ents
+  // {
+  //   Range adj;
+  //   for (int dd = 2; dd >= 0; dd--) {
+  //     rval = moab.get_adjacencies(sum_of_all_ents, dd,
+  //                                 false, adj, moab::Interface::UNION);
+  //     CHKERRQ_MOAB(rval);
+  //   }
+  //   sum_of_all_ents.merge(adj);
+  // }
+
+  // sum_of_all_ents = subtract(sum_of_all_ents,all_ents);
+  // sum_of_all_ents = subtract(sum_of_all_ents,out_tets);
+  // {
+  //   Range adj;
+  //   for (int dd = 2; dd >= 0; dd--) {
+  //     rval = moab.get_adjacencies(out_tets, dd, false, adj,
+  //                                 moab::Interface::UNION);
+  //     CHKERRQ_MOAB(rval);
+  //   }
+  //   sum_of_all_ents = subtract(sum_of_all_ents, adj);
+  // }
+  // rval = moab.delete_entities(sum_of_all_ents); CHKERRQ_MOAB(rval);
+
   MoFEMFunctionReturnHot(0);
 }
 
@@ -1594,11 +1728,28 @@ PetscErrorCode CutMeshInterface::mergeBadEdges(
   CHKERRQ(ierr);
   edges_to_merge = edges_to_merge.subset_by_type(MBEDGE);
 
+  // get all entities not in databse
+  Range all_ents_not_in_databse_before;
+  ierr = cOre.getInterface<BitRefManager>()->getAllEntitiesNotInDatabase(
+      all_ents_not_in_databse_before);
+  CHKERRQ(ierr);
+
   Range out_new_tets, out_new_surf;
   ierr = mergeBadEdges(fraction_level, tets_level, surface, fixed_edges,
                        corner_nodes, edges_to_merge, out_new_tets, out_new_surf,
                        th, true, &bit, debug);
   CHKERRQ(ierr);
+
+  // get all entities not in database after merge
+  Range all_ents_not_in_databse_after;
+  ierr = cOre.getInterface<BitRefManager>()->getAllEntitiesNotInDatabase(
+      all_ents_not_in_databse_after);
+  CHKERRQ(ierr);
+  // delete hanging entities
+  all_ents_not_in_databse_after =
+      subtract(all_ents_not_in_databse_after, all_ents_not_in_databse_before);
+  m_field.get_moab().delete_entities(all_ents_not_in_databse_after);
+
   mergedVolumes.swap(out_new_tets);
   mergedSurfaces.swap(out_new_surf);
   MoFEMFunctionReturnHot(0);
@@ -1983,7 +2134,7 @@ PetscErrorCode CutMeshInterface::rebuildMeshWithTetGen(
   CHKERRQ(ierr);
 
   Range rest_of_ents = subtract(bit_ents.mTets, surf_ents.tVols);
-  for (int dd = 2; dd <= 0; dd--) {
+  for (int dd = 2; dd >= 0; dd--) {
     rval = moab.get_adjacencies(rest_of_ents.subset_by_dimension(3), dd, false,
                                 rest_of_ents, moab::Interface::UNION);
     CHKERRQ_MOAB(rval);
