@@ -200,7 +200,7 @@ namespace MoFEM {
     /**@{*/
 
     /**
-     * Create finite elements based from entities in meshses. Throw error if
+     * Create finite elements based from entities in meshsets. Throw error if
      * entity is not in database \todo Should be outsourced to separate
      * interface, i.e. BitLevelManager
      *
@@ -259,19 +259,19 @@ namespace MoFEM {
      * @param  name              name of the filed
      * @param  space             space (L2,H1,Hdiv,Hcurl)
      * @param  base              approximation base, see FieldApproximationBase
-     * @param  nb_of_cooficients number of field coefficients
+     * @param  nb_of_coefficients number of field coefficients
      * @param  tag_type          type of the tag MB_TAG_DENSE or MB_TAG_SPARSE
      * (DENSE is faster and uses less memory, SPARSE is more flexible if you
      * define field on subdomains)
      * @param  bh                if MF_EXCL throws error if field exits, MF_ZERO
      * no error if field exist
-     * @param  verb              verbosity leve
+     * @param  verb              verbosity level
      * @return                   error code
      */
     virtual PetscErrorCode
     add_field(const std::string &name, const FieldSpace space,
               const FieldApproximationBase base,
-              const FieldCoefficientsNumber nb_of_cooficients,
+              const FieldCoefficientsNumber nb_of_coefficients,
               const TagType tag_type = MB_TAG_SPARSE,
               const enum MoFEMTypes bh = MF_EXCL, int verb = -1) = 0;
 
@@ -281,7 +281,7 @@ namespace MoFEM {
      *
      * The lower dimension entities are added depending on the space type
      *
-     * @param  ents rnage of entities
+     * @param  ents range of entities
      * @param  dim  dimension of entities
      * @param  name name of field
      * @param  verb verbosity level
@@ -298,7 +298,7 @@ namespace MoFEM {
      *
      * The lower dimension entities are added depending on the space type
      *
-     * @param  ents rnage of entities
+     * @param  ents range of entities
      * @param  type  type of entities
      * @param  name name of field
      * @param  verb verbosity level
@@ -316,9 +316,9 @@ namespace MoFEM {
      * The lower dimension entities are added depending on the space type
      *
      * @param  meshset
-     * @param  dim  diemsipm
+     * @param  dim  dimension
      * @param  name name of field
-     * @param  recursive take entities recursively from embaded entities
+     * @param  recursive take entities recursively from embedded entities
      * @param  verb verbosity level
      * @return      error code
      */
@@ -335,9 +335,9 @@ namespace MoFEM {
      * The lower dimension entities are added depending on the space type
      *
      * @param  meshset
-     * @param  type of entoties
+     * @param  type of entities
      * @param  name name of field
-     * @param  recursive take entities recursively from embaded entities
+     * @param  recursive take entities recursively from embedded entities
      * @param  verb verbosity level
      * @return      error code
      */
@@ -375,7 +375,7 @@ namespace MoFEM {
      * \ingroup mofem_field
      *
      * The lower dimension entities are added depending on the space type
-     * \param tange contains set edges
+     * \param range contains set edges
      * \param name of the field
      */
     virtual PetscErrorCode add_ents_to_field_by_EDGEs(const Range &edges,
@@ -809,7 +809,7 @@ namespace MoFEM {
      * \param BitRefLevel mask
      * \param finite element name
      * \param finite element type
-     * \param verrbose level
+     * \param verbose level
      */
     virtual PetscErrorCode add_ents_to_finite_element_by_bit_ref(
         const BitRefLevel &bit, const BitRefLevel &mask,
@@ -1348,10 +1348,10 @@ namespace MoFEM {
 
     /** \brief Set data for BasicMethod
      *
-     * This function set data about problem, adjacencies and other MultIindices
+     * This function set data about problem, adjacencies and other multi-indices
      * in database. This function can be used a special case when user need to
      * do some pre- and post-processing before matrix or vector is initiated, or
-     * to assemble matrix for group of FEMethods. Is used by calsses classes
+     * to assemble matrix for group of FEMethods. Is used by classes
      * SnesCtx and TsCtx. Look for more details there.
      *
      * FIXME: Here we need example
@@ -1366,7 +1366,7 @@ namespace MoFEM {
 
     /** \brief Set data for BasicMethod
      *
-     * This function set data about problem, adjacencies and other MultIindices
+     * This function set data about problem, adjacencies and other multi-indices
      * in database. This function can be used a special case when user need to
      * do some pre- and post-processing before matrix or vector is initiated, or
      * to assemble matrix for group of FEMethods. Is used by classes
@@ -1385,7 +1385,7 @@ namespace MoFEM {
     /** \brief Set data for BasicMethod
      * \ingroup mofem_loops
      *
-     * This function set data about problem, adjacencies and other MultIindices
+     * This function set data about problem, adjacencies and other multi-indices
      * in database. This function can be used a special case when user need to
      * do some pre- and post-processing before matrix or vector is initiated, or
      * to assemble matrix for group of FEMethods. Is used by classes
@@ -1404,7 +1404,7 @@ namespace MoFEM {
     /** \brief Set data for BasicMethod
      * \ingroup mofem_loops
      *
-     * This function set data about problem, adjacencies and other MultIindices
+     * This function set data about problem, adjacencies and other multi-indices
      * in database. This function can be used a special case when user need to
      * do some pre- and post-processing before matrix or vector is initiated, or
      * to assemble matrix for group of FEMethods. Is used by classes
