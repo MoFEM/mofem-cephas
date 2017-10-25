@@ -1027,6 +1027,28 @@ PetscErrorCode CutMeshInterface::splitSides(const BitRefLevel split_bit,
   MoFEMFunctionReturn(0);
 }
 
+struct LengthMapData {
+  double lEngth;
+  EntityHandle eDge;
+  bool skip;
+  LengthMapData(const double l, const EntityHandle e)
+      : lEngth(l), eDge(e), skip(false) {}
+};
+
+typedef multi_index_container<
+  LengthMapData, 
+  indexed_by<
+    ordered_non_unique<
+      member<LengthMapData, double, &LengthMapData::lEngth>
+    >,
+    hashed_unique<
+      member<LengthMapData, EntityHandle, &LengthMapData::eDge>
+    >
+  >
+> LengthMapData_multi_index;
+
+
+
 PetscErrorCode CutMeshInterface::mergeBadEdges(
     const int fraction_level, const Range &tets, const Range &surface,
     const Range &fixed_edges, const Range &corner_nodes, Range &edges_to_merge,
@@ -1163,27 +1185,8 @@ PetscErrorCode CutMeshInterface::mergeBadEdges(
     LengthMap(MoFEM::CoreInterface &m_field, Tag th)
         : tH(th), mField(m_field), moab(m_field.get_moab()) {}
 
-    struct Data {
-      double lEngth;
-      EntityHandle eDge;
-      bool skip;
-      Data(const double l, const EntityHandle e)
-          : lEngth(l), eDge(e), skip(false) {}
-    };
-    typedef multi_index_container<
-      Data,
-      indexed_by<
-        ordered_non_unique<
-          member<Data,double,&Data::lEngth>
-         >,
-         hashed_unique<
-          member<Data,EntityHandle,&Data::eDge>
-         >
-      >
-    > Data_multi_index;
-
     PetscErrorCode operator()(const Range &tets, const Range &edges,
-                              Data_multi_index &length_map) const {
+                              LengthMapData_multi_index &length_map) const {
       int num_nodes;
       const EntityHandle *conn;
       double coords[6];
@@ -1210,7 +1213,7 @@ PetscErrorCode CutMeshInterface::mergeBadEdges(
         if (q != q)
           q = -1;
         CHKERRQ(ierr);
-        length_map.insert(Data(q * norm_2(s0 - s1),*eit));
+        length_map.insert(LengthMapData(q * norm_2(s0 - s1),*eit));
       }
       MoFEMFunctionReturnHot(0);
     }
@@ -1563,7 +1566,7 @@ PetscErrorCode CutMeshInterface::mergeBadEdges(
   }
 
   int nb_nodes_merged = 0;
-  LengthMap::Data_multi_index length_map;
+  LengthMapData_multi_index length_map;
   new_surf = surface;
 
   for (int pp = 0; pp != nbMaxMergingCycles; pp++) {
@@ -1575,7 +1578,7 @@ PetscErrorCode CutMeshInterface::mergeBadEdges(
 
     int nn = 0;
     Range collapsed_edges;
-    for (LengthMap::Data_multi_index::nth_index<0>::type::iterator
+    for (LengthMapData_multi_index::nth_index<0>::type::iterator
              mit = length_map.get<0>().begin();
          mit != length_map.get<0>().end(); mit++, nn++) {
       // cerr << mit->lEngth << endl; //" " << mit->eDge << endl;
@@ -1625,10 +1628,10 @@ PetscErrorCode CutMeshInterface::mergeBadEdges(
         CHKERRQ_MOAB(rval);
         for (Range::iterator ait = adj_edges.begin(); ait != adj_edges.end();
              ait++) {
-          LengthMap::Data_multi_index::nth_index<1>::type::iterator miit =
+          LengthMapData_multi_index::nth_index<1>::type::iterator miit =
               length_map.get<1>().find(*ait);
           if (miit != length_map.get<1>().end()) {
-            (const_cast<LengthMap::Data &>(*miit)).skip = true;
+            (const_cast<LengthMapData &>(*miit)).skip = true;
           }
         }
         nb_nodes_merged++;
