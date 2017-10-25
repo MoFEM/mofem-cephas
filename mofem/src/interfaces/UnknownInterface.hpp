@@ -126,7 +126,7 @@ struct UnknownInterface {
   }
 
   /**
-   * @brief Get interface pointer to pointer of inetrface
+   * @brief Get interface pointer to pointer of interface
    *
    * @param iface
    * @return template <class IFACE>  PetscErrorCode
@@ -137,7 +137,7 @@ struct UnknownInterface {
   }
 
   /**
-   * @brief Funtion retunrning pointer to interface
+   * @brief Function returning pointer to interface
    *
    * @return template <class IFACE>  IFACE
    */
