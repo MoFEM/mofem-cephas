@@ -180,7 +180,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Cut mesh, trim surface and merge bad edges
-    ierr = cut_mesh->cutTrimAndMerge(4, bit_level1, bit_level2, bit_level3, th,
+    ierr = cut_mesh->cutTrimAndMerge(1, bit_level1, bit_level2, bit_level3, th,
                                      1e-4, 1e-2, 1e-4, 1e-2, fixed_edges,
                                      corner_nodes, true, true);
     CHKERRQ(ierr);
@@ -195,7 +195,7 @@ int main(int argc, char *argv[]) {
           Range ents;
           ierr = mngPtr->getEntitiesByRefLevel(bit, bit, ents);
           CHKERRQ(ierr);
-          cout << "bit_level1 nb ents " << ents.size() << endl;
+          cout << "bit_level nb ents " << ents.size() << endl;
           if (expected_size != -1 && expected_size != ents.size()) {
             SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                      "Wrong bit ref size %d!=%d", expected_size, ents.size());
@@ -203,20 +203,16 @@ int main(int argc, char *argv[]) {
           MoFEMFunctionReturnHot(0);
         }
       };
-      ierr = TestBitLevel(core.getInterface<BitRefManager>())(bit_level1, 408);
+      ierr = TestBitLevel(core.getInterface<BitRefManager>())(bit_level1, 405);
       CHKERRQ(ierr);
-      ierr = TestBitLevel(core.getInterface<BitRefManager>())(bit_level2, 1532);
+      ierr = TestBitLevel(core.getInterface<BitRefManager>())(bit_level2, 1527);
       CHKERRQ(ierr);
-      ierr = TestBitLevel(core.getInterface<BitRefManager>())(bit_level3, 1645);
+      ierr = TestBitLevel(core.getInterface<BitRefManager>())(bit_level3, 1729);
       CHKERRQ(ierr);
     }
 
     // Improve mesh with tetgen
 #ifdef WITH_TETGEN
-
-    // Set coordinates for tag data
-    ierr = cut_mesh->setCoords(th);
-    CHKERRQ(ierr);
 
     // Switches controling TetGen
     vector<string> switches; 
@@ -260,8 +256,8 @@ int main(int argc, char *argv[]) {
     CHKERRQ(ierr);
 
     // Set coordinates for tag data
-    // ierr = cut_mesh->setCoords(th);
-    // CHKERRQ(ierr);
+    ierr = cut_mesh->setCoords(th);
+    CHKERRQ(ierr);
 
     ierr = core.getInterface<BitRefManager>()->writeBitLevelByType(
         bit_level0, BitRefLevel().set(), MBTET, "out_tets_shift_level0.vtk",
@@ -282,9 +278,6 @@ int main(int argc, char *argv[]) {
     ierr = m_field.delete_ents_by_bit_ref(
         bit_level0 | bit_level1, bit_level0 | bit_level1, true, VERBOSE);
     CHKERRQ(ierr);
-    // ierr = m_field.delete_ents_by_bit_ref(
-    //     bit_level0,bit_level0,true,VERBOSE
-    // ); CHKERRQ(ierr);
 
     {
       EntityHandle meshset;
@@ -329,7 +322,7 @@ int main(int argc, char *argv[]) {
         CHKERRQ_MOAB(rval);
 
         SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-                 "Insonsitent number of ents %d!=%d", no_of_ents_not_in_dabase,
+                 "Inconsistent number of ents %d!=%d", no_of_ents_not_in_dabase,
                  ents.size());
       }
     } 
