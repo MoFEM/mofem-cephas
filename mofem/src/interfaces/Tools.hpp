@@ -23,18 +23,17 @@ namespace MoFEM {
   static const MOFEMuuid IDD_MOFEMTools = MOFEMuuid( BitIntefaceId(TOOLS) );
 
   /**
-   * \brief Auxilairy tools
+   * \brief Auxiliary tools
    * \nosubgrouping
    * \ingroup mofem_tools
    */
   struct Tools: public UnknownInterface {
 
-    PetscErrorCode query_interface(const MOFEMuuid& uuid, UnknownInterface** iface) const;
+    PetscErrorCode query_interface(const MOFEMuuid &uuid,
+                                   UnknownInterface **iface) const;
 
-    MoFEM::Core& cOre;
-    Tools(const MoFEM::Core& core):
-    cOre(const_cast<MoFEM::Core&>(core)) {
-    }
+    MoFEM::Core &cOre;
+    Tools(const MoFEM::Core &core) : cOre(const_cast<MoFEM::Core &>(core)) {}
 
     /** \name Computational */
 
@@ -49,11 +48,19 @@ namespace MoFEM {
     }
 
     /**
-     * \brief calulate tetrahedron volume length quality
+     * \brief Calculate tetrahedron volume length quality
      * @param  coords tet coordinates
-     * @return        qilaity
+     * @return        Volume-length quality
      */
     static double volumeLengthQuality(const double *coords);
+
+    /**
+     * @brief Calculate volume of tetrahedron
+     * 
+     * @param coords 
+     * @return double volume
+     */
+    static double tetVolume(const double *coords);
 
     /**
      * \brief calculate minimal quality of tetrahedra in range
@@ -61,7 +68,8 @@ namespace MoFEM {
      * @param  min_quality mimimal quality
      * @return             error code
      */
-    PetscErrorCode minTetsQuality(const Range& tets,double &min_quality);
+    PetscErrorCode minTetsQuality(const Range &tets, double &min_quality,
+                                  Tag th = NULL);
 
     /**@}*/
 

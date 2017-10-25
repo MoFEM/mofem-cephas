@@ -323,20 +323,6 @@ add_test(
   ${CMAKE_BINARY_DIR}/atom_tests/mesh_refine.txt
 )
 
-# Tetsing mesh cuttiong
-
-cm_export_file("../meshes/mesh_cut_test.cub" export_atom_tests)
-my_add_executable(mesh_cut_test mesh_cut_test.cpp)
-target_link_libraries(mesh_cut_test
-  mofem_interfaces
-  mofem_multi_indices
-  mofem_petsc
-  mofem_approx
-  mofem_cblas
-  mofem_third_party
-  ${PROJECT_LIBS}
-)
-
 #mesh_insert_interface_atom
 cm_export_file("../meshes/Tinterface.h5m" export_atom_tests)
 cm_export_file("../meshes/4seasons.h5m" export_atom_tests)
@@ -1157,3 +1143,22 @@ add_test(
   simple_interface ${MPI_RUN} ${MPI_RUN_FLAGS} -np 2
   ${CMAKE_CURRENT_BINARY_DIR}/simple_interface -file_name disp01_2parts.h5m -log_summary
 )
+
+# Tetsing mesh cuttiong
+
+cm_export_file("../meshes/test_mesh_cut.cub" export_atom_tests)
+my_add_executable(mesh_cut_test mesh_cut_test.cpp)
+target_link_libraries(mesh_cut_test
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS}
+)
+add_test(
+  mesh_cut ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/mesh_cut_test -my_file test_mesh_cut.cub -side_set 200 -shift -0.2,0.2,0. -test
+)
+

@@ -49,3 +49,15 @@ target_link_libraries(split_sideset
   mofem_third_party
   ${MoFEM_PROJECT_LIBS}
 )
+
+add_executable(mesh_cut ${CMAKE_CURRENT_SOURCE_DIR}/mesh_cut.cpp)
+target_link_libraries(mesh_cut
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${MoFEM_PROJECT_LIBS}
+)
