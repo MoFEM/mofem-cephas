@@ -37,7 +37,7 @@ int main(int argc, char *argv[]) {
                                  255, &flg);
     CHKERRQ(ierr);
     if (flg != PETSC_TRUE) {
-      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
               "*** ERROR -my_file (MESH FILE NEEDED)");
     }
     int side_set = 200;
@@ -48,7 +48,7 @@ int main(int argc, char *argv[]) {
     int nmax = 3;
     ierr = PetscOptionsGetRealArray("", "-shift", shift, &nmax, &flg);
     if (flg && nmax != 3) {
-      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
               "three values expected");
     }
     PetscBool test = PETSC_FALSE;
@@ -76,7 +76,6 @@ int main(int argc, char *argv[]) {
       cout << *it << endl;
     }
 
-
     BitRefLevel bit_level0;
     bit_level0.set(0);
     ierr = m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(
@@ -91,6 +90,15 @@ int main(int argc, char *argv[]) {
         bit_last, BitRefLevel().set(), MBTET, "out_tets_bit_last.vtk",
         "VTK", "");
     CHKERRQ(ierr);
+
+    int no_of_ents_not_in_dabase = -1;
+    Range ents_not_in_dabase;
+    if (test) {
+      core.getInterface<BitRefManager>()->getAllEntitiesNotInDatabase(
+          ents_not_in_dabase);
+      CHKERRQ(ierr);
+      no_of_ents_not_in_dabase = ents_not_in_dabase.size();
+    }
 
     // get cut mesh interface
     CutMeshInterface *cut_mesh;
@@ -110,7 +118,7 @@ int main(int argc, char *argv[]) {
       CHKERRQ(ierr);
     }
     if (surface.empty()) {
-      SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY, "No surface to cut");
+      SETERRQ(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID, "No surface to cut");
     }
 
     // Set surface entities. If surface eneriries are from existing side set,
@@ -177,6 +185,32 @@ int main(int argc, char *argv[]) {
                                      corner_nodes, true, true);
     CHKERRQ(ierr);
 
+    if (test) {
+      struct TestBitLevel {
+        BitRefManager *mngPtr;
+        TestBitLevel(BitRefManager *mng_ptr) : mngPtr(mng_ptr) {}
+        PetscErrorCode operator()(const BitRefLevel &bit,
+                                  const int expected_size) {
+          MoFEMFunctionBeginHot;
+          Range ents;
+          ierr = mngPtr->getEntitiesByRefLevel(bit, bit, ents);
+          CHKERRQ(ierr);
+          cout << "bit_level1 nb ents " << ents.size() << endl;
+          if (expected_size != -1 && expected_size != ents.size()) {
+            SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                     "Wrong bit ref size %d!=%d", expected_size, ents.size());
+          }
+          MoFEMFunctionReturnHot(0);
+        }
+      };
+      ierr = TestBitLevel(core.getInterface<BitRefManager>())(bit_level1, 408);
+      CHKERRQ(ierr);
+      ierr = TestBitLevel(core.getInterface<BitRefManager>())(bit_level2, 1532);
+      CHKERRQ(ierr);
+      ierr = TestBitLevel(core.getInterface<BitRefManager>())(bit_level3, 1645);
+      CHKERRQ(ierr);
+    }
+
     // Improve mesh with tetgen
 #ifdef WITH_TETGEN
 
@@ -238,10 +272,16 @@ int main(int argc, char *argv[]) {
         "VTK", "");
     CHKERRQ(ierr);
 
-    rval = moab.delete_entities(cut_mesh->getSurface()); CHKERRQ_MOAB(rval);
+    Range surface_verts;
+    rval = moab.get_connectivity(cut_mesh->getSurface(), surface_verts);
+    CHKERRQ_MOAB(rval);
+    rval = moab.delete_entities(cut_mesh->getSurface());
+    CHKERRQ_MOAB(rval);
+    rval = moab.delete_entities(surface_verts);
+    CHKERRQ_MOAB(rval);
     ierr = m_field.delete_ents_by_bit_ref(
-       bit_level0|bit_level1,bit_level0|bit_level1,true,VERBOSE
-    ); CHKERRQ(ierr);
+        bit_level0 | bit_level1, bit_level0 | bit_level1, true, VERBOSE);
+    CHKERRQ(ierr);
     // ierr = m_field.delete_ents_by_bit_ref(
     //     bit_level0,bit_level0,true,VERBOSE
     // ); CHKERRQ(ierr);
@@ -268,6 +308,31 @@ int main(int argc, char *argv[]) {
       "left_entities.vtk","VTK",""
     );
     CHKERRQ(ierr);
+
+    if(test) {
+      Range ents;
+      core.getInterface<BitRefManager>()->getAllEntitiesNotInDatabase(ents);
+      CHKERRQ(ierr);
+      if(no_of_ents_not_in_dabase != ents.size()) {
+        cerr << subtract(ents,ents_not_in_dabase) << endl;
+        EntityHandle meshset;
+        rval = moab.create_meshset(MESHSET_SET, meshset);
+        CHKERRQ_MOAB(rval);
+        Range tets;
+        rval = moab.get_entities_by_dimension(0, 3, tets, true);
+        CHKERRQ_MOAB(rval);
+        rval = moab.add_entities(meshset, subtract(ents,ents_not_in_dabase));
+        CHKERRQ_MOAB(rval);
+        rval = moab.write_file("not_cleanded.vtk", "VTK", "", &meshset, 1);
+        CHKERRQ_MOAB(rval);
+        rval = moab.delete_entities(&meshset, 1);
+        CHKERRQ_MOAB(rval);
+
+        SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                 "Insonsitent number of ents %d!=%d", no_of_ents_not_in_dabase,
+                 ents.size());
+      }
+    } 
 
   } catch (MoFEMException const &e) {
     SETERRQ(PETSC_COMM_SELF, e.errorCode, e.errorMessage);
