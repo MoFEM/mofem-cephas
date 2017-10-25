@@ -25,6 +25,7 @@ namespace MoFEM {
 // This is to have obsolete back compatibility
 struct MeshsetsManager;
 
+
 /** \brief Core (interface) class
 * \ingroup mofem
 * \nosubgrouping
@@ -231,6 +232,11 @@ protected:
 
   /**@}*/
 
+  /** \name Seed and synchronize entities (Following functions in future will be
+   * deprecated) */
+
+  /**@{*/
+
   // refine
   PetscErrorCode seed_finite_elements(const Range &entities, int verb = -1);
   PetscErrorCode seed_finite_elements(const EntityHandle meshset,
@@ -253,6 +259,8 @@ protected:
   PetscErrorCode synchronise_field_entities(const std::string &name,
                                             int verb = -1);
 
+   /**@}*/
+                                          
   /** \name Fields */
 
   /**@{*/
