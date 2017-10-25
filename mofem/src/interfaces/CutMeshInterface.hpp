@@ -44,15 +44,15 @@ struct CutMeshInterface : public UnknownInterface {
 
   /**
    * \brief Get options from command line
-   * @return error cdoe
+   * @return error code
    */
   PetscErrorCode getOptions() {
     MoFEMFunctionBeginHot;
     ierr = PetscOptionsBegin(PETSC_COMM_WORLD, "", "MOFEM Cut mesh options",
                              "none");
     CHKERRQ(ierr);
-    ierr = PetscOptionsInt("-cut_lineserach_steps",
-                           "number of bisection steps wich line search do to "
+    ierr = PetscOptionsInt("-cut_linesearch_steps",
+                           "number of bisection steps which line search do to "
                            "find optimal merged nodes position",
                            "", lineSearchSteps, &lineSearchSteps, PETSC_NULL);
     CHKERRQ(ierr);
@@ -169,22 +169,22 @@ struct CutMeshInterface : public UnknownInterface {
 
   /**
    * \brief trim edges
-   * @param  bit bit level of the trimed mesh
+   * @param  bit bit level of the trimmed mesh
    * @return     error code
    */
   PetscErrorCode trimEdgesInTheMiddle(const BitRefLevel bit, Tag th = NULL,
                                       const double tol = 1e-4);
 
   /**
-   * \brief move trimed edges mid nodes
+   * \brief move trimmed edges mid nodes
    * @return error code
    */
   PetscErrorCode moveMidNodesOnTrimedEdges(Tag th = NULL);
 
   /**
-   * \brief Remove patalogical elements on surface internal front
+   * \brief Remove pathological elements on surface internal front
    *
-   * Internal surface skin is a set of edges in interia of the body on boundary
+   * Internal surface skin is a set of edges in iterior of the body on boundary
    * of surface. This set of edges is called surface front. If surface face has
    * three nodes on surface front, non of the face nodes is split and should be
    * removed from surface if it is going to be split.
@@ -210,18 +210,18 @@ struct CutMeshInterface : public UnknownInterface {
   /**
    * @brief Merge edges
    *
-   * Sort all edges, where sorting is by quality calculated as edge lebgth times
+   * Sort all edges, where sorting is by quality calculated as edge length times
    * quality of tets adjacent to the edge. Edge is merged if quality if the mesh
    * is improved.
    *
    * @param fraction_level Fraction of edges attemt to be merged at iteration
-   * @param tets Tetst of the mesh which edges are merged
+   * @param tets Tets of the mesh which edges are merged
    * @param surface Surface created by edge spliting
-   * @param fixed_edges edges which are geometricar corners of the body
+   * @param fixed_edges edges which are geometrical corners of the body
    * @param corner_nodes vertices on the corners
    * @param merged_nodes  merged nodes
-   * @param out_tets  returned test adter merge
-   * @param new_surf  new surface without merged edfes
+   * @param out_tets  returned test after merge
+   * @param new_surf  new surface without merged edges
    * @param th  tag with nodal positons
    * @param bit_ptr set bit ref level to mesh without merged edges
    * @param debug
@@ -238,7 +238,7 @@ struct CutMeshInterface : public UnknownInterface {
   /**
    * @brief Merge edges
    *
-   * Sort all edges, where sorting is by quality calculated as edge lebgth times
+   * Sort all edges, where sorting is by quality calculated as edge length times
    * quality of tets adjacent to the edge. Edge is merged if quality if the mesh
    * is improved.
    */
@@ -350,7 +350,7 @@ private:
 
   // /**
   //  * Find if segment in on the plain
-  //  * @param  s0 segemnt fisrt point
+  //  * @param  s0 segment first point
   //  * @param  s1 segment second point
   //  * @param  x0 point on the plain
   //  * @param  n  normal on the plain

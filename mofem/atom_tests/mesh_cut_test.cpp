@@ -121,8 +121,8 @@ int main(int argc, char *argv[]) {
       SETERRQ(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID, "No surface to cut");
     }
 
-    // Set surface entities. If surface eneriries are from existing side set,
-    // copy those entities and do other gemtrical transformations, like shify
+    // Set surface entities. If surface entities are from existing side set,
+    // copy those entities and do other geometrical transformations, like shift
     // scale or streach, rotate.
     if (meshset_manager->checkMeshset(side_set, SIDESET)) {
       ierr = cut_mesh->copySurface(surface, NULL, shift);
@@ -137,7 +137,7 @@ int main(int argc, char *argv[]) {
     ierr = cut_mesh->setVolume(tets);
     CHKERRQ(ierr);
 
-    // Build tree, it is used to ask geometrical queris, i.e. to find edges to
+    // Build tree, it is used to ask geometrical queries, i.e. to find edges to
     // cut or trim.
     ierr = cut_mesh->buildTree();
     CHKERRQ(ierr);
