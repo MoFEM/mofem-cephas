@@ -105,8 +105,8 @@ int main(int argc, char *argv[]) {
     BitRefManager *bit_ref_manager;
     ierr = m_field.getInterface(bit_ref_manager); CHKERRQ(ierr);
 
-    for (_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_((*meshset_manager), SIDESET,
-                                                 it)) {
+    for (_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(
+             (core.getInterface<MeshsetsManager &, 0>()), SIDESET, it)) {
       cout << *it << endl;
     }
 
