@@ -23,261 +23,261 @@
 
 namespace MoFEM {
 
-  static const MOFEMuuid IDD_MOFEMProblemsManager = MOFEMuuid( BitIntefaceId(PROBLEMSMANAGER_INTERFACE) );
+static const MOFEMuuid IDD_MOFEMProblemsManager =
+    MOFEMuuid(BitIntefaceId(PROBLEMSMANAGER_INTERFACE));
+
+/**
+ * \brief Problem manager is used to build and partition problems
+ * \mofem_problems_manager
+ *
+ */
+struct ProblemsManager : public UnknownInterface {
+
+  PetscErrorCode query_interface(const MOFEMuuid &uuid,
+                                 UnknownInterface **iface) const;
+
+  MoFEM::Core &cOre;
+  ProblemsManager(const MoFEM::Core &core);
 
   /**
-   * \brief Problem manager is used to build and partition problems
-   * \mofem_problems_manager
+  * \brief Destructor
+  */
+  ~ProblemsManager();
+
+  PetscBool buildProblemFromFields; ///< If set to true, problem is build from
+  /// DOFs in fields, not from DOFs on elements
+
+  PetscErrorCode getOptions();
+
+  /**
+   * \brief Set partition tag to each finite element in the problem
+   * \ingroup mofem_problems_manager
+   *
+   * This will use one of the mesh partitioning programs available from PETSc
+   * See
+   * <http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/Mat/MatPartitioningType.html>
+   *
+   * @param  ents        Entities to partition
+   * @param  dim         Dimension of entities to partition
+   * @param  adj_dim     Adjacency dimension
+   * @param  n_parts     Number of partitions
+   * @param  verb        Verbosity level
+   * @return             Error code
+   */
+  PetscErrorCode partitionMesh(const Range &ents, const int dim,
+                               const int adj_dim, const int n_parts,
+                               Tag *th_vertex_weights, Tag *th_edge_weights,
+                               Tag *th_part_weights, int verb = 1);
+
+  /// \deprecated do not use this one
+  DEPRECATED PetscErrorCode partitionMesh(const Range &ents, const int dim,
+                                          const int adj_dim, const int n_parts,
+                                          int verb = 1) {
+    return partitionMesh(ents, dim, adj_dim, n_parts, NULL, NULL, NULL, verb);
+  }
+
+  /** \brief build problem data structures
+   * \ingroup mofem_problems_manager
+   *
+   * \note If square_matrix is set to true, that indicate that problem is
+   * structurally
+   * symmetric, i.e. rows and columns have the same dofs and are indexed in the
+   * same
+   * way.
+   *
+   * @param  name          problem name
+   * @param  square_matrix structurally symmetric problem
+   * @param  verb          verbosity level
+   * @return               error code
    *
    */
-  struct ProblemsManager: public UnknownInterface {
+  PetscErrorCode buildProblem(const std::string &name, const bool square_matrix,
+                              int verb = 1);
 
-    PetscErrorCode query_interface(const MOFEMuuid& uuid,UnknownInterface** iface) const;
+  /** \brief build problem data structures
+   * \ingroup mofem_problems_manager
+   *
+   * \note If square_matrix is set to true, that indicate that problem is
+   * structurally
+   * symmetric, i.e. rows and columns have the same dofs and are indexed in the
+   * same
+   * way.
+   *
+   * @param  problem pointer
+   * @param  square_matrix structurally symmetric problem
+   * @param  verb          verbosity level
+   * @return               error code
+   *
+   */
+  PetscErrorCode buildProblem(Problem *problem_ptr, const bool square_matrix,
+                              int verb = 1);
 
-    MoFEM::Core& cOre;
-    ProblemsManager(const MoFEM::Core& core);
+  /** \brief build problem data structures, assuming that mesh is distributed
+   (collective)
+   * \ingroup mofem_problems_manager
 
-    /**
-    * \brief Destructor
+   Mesh is distributed, that means that each processor keeps only own part of
+   the mesh and shared entities.
+
+   Collective - need to be run on all processors in communicator, i.e. each
+   function has to call this function.
+
+   */
+  PetscErrorCode buildProblemOnDistributedMesh(const std::string &name,
+                                               const bool square_matrix,
+                                               int verb = 1);
+
+  /** \brief build problem data structures, assuming that mesh is distributed
+   (collective)
+   * \ingroup mofem_problems_manager
+
+   Mesh is distributed, that means that each processor keeps only own part of
+   the mesh and shared entities.
+
+   Collective - need to be run on all processors in communicator, i.e. each
+   function has to call this function.
+
+   */
+  PetscErrorCode buildProblemOnDistributedMesh(Problem *problem_ptr,
+                                               const bool square_matrix = true,
+                                               int verb = 1);
+
+  /**
+   * \brief build sub problem
+   * @param  out_name problem
+   * @param  fields_row  vector of fields composing problem
+   * @param  fields_col  vector of fields composing problem
+   * @param  main_problem main problem
+   * @return              error code
+   */
+  PetscErrorCode buildSubProblem(const std::string &out_name,
+                                 const std::vector<std::string> &fields_row,
+                                 const std::vector<std::string> &fields_col,
+                                 const std::string &main_problem,
+                                 const bool square_matrix = true, int verb = 1);
+
+  /**
+   * \brief build composite problem
+   * @param  out_name         name of build problem
+   * @param  add_row_problems vector of add row problems
+   * @param  add_col_problems vector of add col problems
+   * @param  square_matrix    true if structurally squared matrix
+   * @param  verb             verbosity level
+   * @return                  error code
+   */
+  PetscErrorCode
+  buildCompsedProblem(const std::string &out_name,
+                      const std::vector<std::string> add_row_problems,
+                      const std::vector<std::string> add_col_problems,
+                      const bool square_matrix = true, int verb = 1);
+
+  /**
+    * \brief build indexing and partition problem inheriting indexing and
+   * partitioning from two other problems
+    * \ingroup mofem_problems_manager
+    *
+    * \param name problem name
+    * \param problem_for_rows problem used to index rows
+    * \param copy_rows just copy rows dofs
+    * \param problem_for_cols problem used to index cols
+    * \param copy_cols just copy cols dofs
+    *
+    * If copy_rows/copy_cols is set to false only partition is copied between
+   * problems.
+    *
     */
-    ~ProblemsManager();
+  PetscErrorCode inheretPartition(const std::string &name,
+                                  const std::string &problem_for_rows,
+                                  bool copy_rows,
+                                  const std::string &problem_for_cols,
+                                  bool copy_cols, int verb = 1);
 
-    PetscBool buildProblemFromFields; ///< If set to true, problem is build from DOFs in fields, not from DOFs on elements
+  /** \brief partition problem dofs
+   * \ingroup mofem_problems_manager
+   *
+   * \param name problem name
+   */
+  PetscErrorCode partitionSimpleProblem(const std::string &name, int verb = 1);
 
-    PetscErrorCode getOptions();
+  /** \brief partition problem dofs (collective)
+   * \ingroup mofem_problems_manager
+   *
+   * \param name problem name
+   */
+  PetscErrorCode partitionProblem(const std::string &name, int verb = 1);
 
-    /**
-     * \brief Set partition tag to each finite element in the problem
-     * \ingroup mofem_problems_manager
-     *
-     * This will use one of the mesh partitioning programs available from PETSc
-     * See <http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/Mat/MatPartitioningType.html>
-     *
-     * @param  ents        Entities to partition
-     * @param  dim         Dimension of entities to partition
-     * @param  adj_dim     Adjacency dimension
-     * @param  n_parts     Number of partitions
-     * @param  verb        Verbosity level
-     * @return             Error code
-     */
-    PetscErrorCode partitionMesh(
-      const Range &ents,const int dim,const int adj_dim,const int n_parts,
-      Tag *th_vertex_weights,Tag *th_edge_weights,Tag *th_part_weights,
-      int verb = 1
-    );
+  PetscErrorCode printPartitionedProblem(const Problem *problem_ptr,
+                                         int verb = 1);
 
-    /// \deprecated do not use this one
-    DEPRECATED PetscErrorCode partitionMesh(
-      const Range &ents,const int dim,const int adj_dim,const int n_parts,int verb = 1
-    ) {
-      return partitionMesh(ents,dim,adj_dim,n_parts,NULL,NULL,NULL,verb);
-    }
+  PetscErrorCode debugPartitionedProblem(const Problem *problem_ptr,
+                                         int verb = 1);
 
-    /** \brief build problem data structures
-     * \ingroup mofem_problems_manager
-     *
-     * \note If square_matrix is set to true, that indicate that problem is structurally
-     * symmetric, i.e. rows and columns have the same dofs and are indexed in the same
-     * way.
-     *
-     * @param  name          problem name
-     * @param  square_matrix structurally symmetric problem
-     * @param  verb          verbosity level
-     * @return               error code
-     *
-     */
-     PetscErrorCode buildProblem(const std::string &name,const bool square_matrix,int verb = 1);
+  /** \brief partition finite elements
+   * \ingroup mofem_problems_manager
+   *
+   * Function which partition finite elements based on dofs partitioning.<br>
+   * In addition it sets information about local row and cols dofs at given
+   * element on partition.
+   *
+   * \param name problem name
+   */
+  PetscErrorCode partitionFiniteElements(const std::string &name,
+                                         bool part_from_moab = false,
+                                         int low_proc = -1, int hi_proc = -1,
+                                         int verb = 1);
 
-     /** \brief build problem data structures
-      * \ingroup mofem_problems_manager
-      *
-      * \note If square_matrix is set to true, that indicate that problem is structurally
-      * symmetric, i.e. rows and columns have the same dofs and are indexed in the same
-      * way.
-      *
-      * @param  problem pointer
-      * @param  square_matrix structurally symmetric problem
-      * @param  verb          verbosity level
-      * @return               error code
-      *
-      */
-    PetscErrorCode buildProblem(Problem *problem_ptr,const bool square_matrix,int verb = 1);
+  /** \brief determine ghost nodes
+   * \ingroup mofem_problems_manager
+   * \param name problem name
+   *
+   * DOFs are ghost dofs if are used by elements on given partitition, but not
+   * owned by that partitition.
+   *
+   */
+  PetscErrorCode partitionGhostDofs(const std::string &name, int verb = 1);
 
-    /** \brief build problem data structures, assuming that mesh is distributed (collective)
-     * \ingroup mofem_problems_manager
+  /** \brief determine ghost nodes on distributed meshes
+   * \ingroup mofem_problems_manager
+   * \param name problem name
+   *
+   * It is very similar for partitionGhostDofs, however this explits that mesh
+   * is
+   * distributed.
+   *
+   * DOFs are ghosted if are shered but not owned by partition.
+   *
+   */
+  PetscErrorCode partitionGhostDofsOnDistributedMesh(const std::string &name,
+                                                     int verb = 1);
 
-     Mesh is distributed, that means that each processor keeps only own part of
-     the mesh and shared entities.
+  /**
+   * \create meshset problem finite elements
+   */
+  PetscErrorCode getFEMeshset(const std::string &prb_name,
+                              const std::string &fe_name,
+                              EntityHandle *meshset) const;
 
-     Collective - need to be run on all processors in communicator, i.e. each
-     function has to call this function.
+  /**
+   * \brief Get layout of elements in the problem
+   * \ingroup mofem_problems_manager
+   *
+   * In layout is stored information how many elements is on each processor, for
+   * more information look int petsc documentation
+   * <http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/IS/PetscLayoutCreate.html#PetscLayoutCreate>
+   *
+   * @param  name    problem name
+   * @param  fe_name finite elements
+   * @param  layout  layout
+   * @param  verb    verbosity level
+   * @return         error code
+   */
+  PetscErrorCode getProblemElementsLayout(const std::string &name,
+                                          const std::string &fe_name,
+                                          PetscLayout *layout) const;
 
-     */
-    PetscErrorCode buildProblemOnDistributedMesh(
-      const std::string &name,const bool square_matrix,int verb = 1
-    );
-
-    /** \brief build problem data structures, assuming that mesh is distributed (collective)
-     * \ingroup mofem_problems_manager
-
-     Mesh is distributed, that means that each processor keeps only own part of
-     the mesh and shared entities.
-
-     Collective - need to be run on all processors in communicator, i.e. each
-     function has to call this function.
-
-     */
-    PetscErrorCode buildProblemOnDistributedMesh(
-      Problem *problem_ptr,
-      const bool square_matrix = true,
-      int verb = 1
-    );
-
-    /**
-     * \brief build sub problem
-     * @param  out_name problem
-     * @param  fields_row  vector of fields composing problem
-     * @param  fields_col  vector of fields composing problem
-     * @param  main_problem main problem
-     * @return              error code
-     */
-    PetscErrorCode buildSubProblem(
-      const std::string &out_name,
-      const std::vector<std::string> &fields_row,
-      const std::vector<std::string> &fields_col,
-      const std::string &main_problem,
-      const bool square_matrix = true,
-      int verb = 1
-    );
-
-    /**
-     * \brief build composite problem
-     * @param  out_name         name of build problem
-     * @param  add_row_problems vector of add row problems
-     * @param  add_col_problems vector of add col problems
-     * @param  square_matrix    true if structurally squared matrix
-     * @param  verb             verbosity level
-     * @return                  error code
-     */
-    PetscErrorCode buildCompsedProblem(
-      const std::string &out_name,
-      const std::vector<std::string> add_row_problems,
-      const std::vector<std::string> add_col_problems,
-      const bool square_matrix = true,
-      int verb = 1
-    );
-
-    /**
-      * \brief build indexing and partition problem inheriting indexing and partitioning from two other problems
-      * \ingroup mofem_problems_manager
-      *
-      * \param name problem name
-      * \param problem_for_rows problem used to index rows
-      * \param copy_rows just copy rows dofs
-      * \param problem_for_cols problem used to index cols
-      * \param copy_cols just copy cols dofs
-      *
-      * If copy_rows/copy_cols is set to false only partition is copied between problems.
-      *
-      */
-    PetscErrorCode inheretPartition(
-      const std::string &name,
-      const std::string &problem_for_rows,
-      bool copy_rows,
-      const std::string &problem_for_cols,
-      bool copy_cols,
-      int verb = 1
-    );
-
-    /** \brief partition problem dofs
-     * \ingroup mofem_problems_manager
-     *
-     * \param name problem name
-     */
-    PetscErrorCode partitionSimpleProblem(const std::string &name,int verb = 1);
-
-    /** \brief partition problem dofs (collective)
-     * \ingroup mofem_problems_manager
-     *
-     * \param name problem name
-     */
-    PetscErrorCode partitionProblem(const std::string &name,int verb = 1);
-
-    PetscErrorCode printPartitionedProblem(
-      const Problem *problem_ptr,int verb = 1
-    );
-
-    PetscErrorCode debugPartitionedProblem(
-      const Problem *problem_ptr,int verb = 1
-    );
-
-    /** \brief partition finite elements
-     * \ingroup mofem_problems_manager
-     *
-     * Function which partition finite elements based on dofs partitioning.<br>
-     * In addition it sets information about local row and cols dofs at given element on partition.
-     *
-     * \param name problem name
-     */
-    PetscErrorCode partitionFiniteElements(const std::string &name,
-      bool part_from_moab = false,int low_proc = -1,int hi_proc = -1,int verb = 1
-    );
-
-    /** \brief determine ghost nodes
-     * \ingroup mofem_problems_manager
-     * \param name problem name
-     *
-     * DOFs are ghost dofs if are used by elements on given partitition, but not
-     * owned by that partitition.
-     *
-     */
-    PetscErrorCode partitionGhostDofs(const std::string &name,int verb = 1);
-
-    /** \brief determine ghost nodes on distributed meshes
-     * \ingroup mofem_problems_manager
-     * \param name problem name
-     *
-     * It is very similar for partitionGhostDofs, however this explits that mesh is
-     * distributed.
-     *
-     * DOFs are ghosted if are shered but not owned by partition.
-     *
-     */
-    PetscErrorCode partitionGhostDofsOnDistributedMesh(const std::string &name,int verb = 1);
-
-    /**
-     * \create meshset problem finite elements
-     */
-     PetscErrorCode getFEMeshset(const std::string& prb_name,const std::string& fe_name,EntityHandle *meshset) const;
-
-     /**
-      * \brief Get layout of elements in the problem
-      * \ingroup mofem_problems_manager
-      *
-      * In layout is stored information how many elements is on each processor, for
-      * more information look int petsc documentation
-      * <http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/IS/PetscLayoutCreate.html#PetscLayoutCreate>
-      *
-      * @param  name    problem name
-      * @param  fe_name finite elements
-      * @param  layout  layout
-      * @param  verb    verbosity level
-      * @return         error code
-      */
-     PetscErrorCode getProblemElementsLayout(
-       const std::string &name,const std::string &fe_name,PetscLayout *layout
-     ) const;
-
-
-  private:
-
-    PetscLogEvent MOFEM_EVENT_ProblemsManager;
-
-
-  };
-
-
-
+private:
+  PetscLogEvent MOFEM_EVENT_ProblemsManager;
+};
 }
 
 #endif //__PROBLEMSMANAGER_HPP__
