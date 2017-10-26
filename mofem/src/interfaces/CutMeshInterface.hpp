@@ -372,7 +372,7 @@ private:
 #endif //__CUTMESHINTERFACE_HPP__
 
 /**
- * \defgroup mesh_cut Mech cutter
+ * \defgroup mesh_cut CutMeshInterface
  * \brief Interface to mesh cut mesh
  *
  * \ingroup mofem
