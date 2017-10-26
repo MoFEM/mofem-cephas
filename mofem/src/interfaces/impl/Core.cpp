@@ -22,8 +22,6 @@ extern "C" {
 
 namespace MoFEM {
 
-const std::string UnknownInterface::noClassUIdFoundStr = "No class UId is found";
-
 PetscErrorCode Core::query_interface(const MOFEMuuid& uuid,UnknownInterface** iface) const {
   MoFEMFunctionBeginHot;
   *iface = NULL;

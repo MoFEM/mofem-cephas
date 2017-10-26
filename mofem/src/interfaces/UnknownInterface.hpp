@@ -78,7 +78,8 @@ struct UnknownInterface {
                                    bool error_if_registration_failed = true) {
     MoFEMFunctionBeginHot;
     std::pair<iFaceTypeMap_multiIndex::iterator, bool> p;
-    p = iFaceTypeMap.insert(UIdTypeMap(uuid, typeid(IFACE).name()));
+    p = iFaceTypeMap.insert(
+        UIdTypeMap(uuid, boost::typeindex::type_id<IFACE>()));
     if (error_if_registration_failed && (!p.second)) {
       SETERRQ1(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
                "Registration of interface typeid(IFACE).name() = %s failed",
@@ -99,12 +100,9 @@ struct UnknownInterface {
                                      IFACE *&iface) const {
     MoFEMFunctionBeginHot;
     if (VERIFY) {
-      if (typeid(IFACE).name() == getClassName(uuid)) {
-        SETERRQ2(PETSC_COMM_SELF, MOFEM_INVALID_DATA,
-                 "Inconsistency between interface Id and type "
-                 "typeid(IFACE).name() != iFaceTypeMap.at(uuid) "
-                 "%s != %s",
-                 typeid(IFACE).name(), getClassName(uuid).c_str());
+      if (boost::typeindex::type_id<IFACE>()!=getClassIdx(uuid)) {
+        SETERRQ(PETSC_COMM_SELF, MOFEM_INVALID_DATA,
+                 "Inconsistency between interface Id and type");
       }
     }
     UnknownInterface *ptr;
@@ -122,7 +120,8 @@ struct UnknownInterface {
    */
   template <class IFACE>
   inline PetscErrorCode getInterface(IFACE *&iface) const {
-    return getInterface<IFACE, false>(getUId(typeid(IFACE).name()), iface);
+    return getInterface<IFACE, false>(
+        getUId(boost::typeindex::type_id<IFACE>()), iface);
   }
 
   /**
@@ -133,7 +132,8 @@ struct UnknownInterface {
    */
   template <class IFACE>
   inline PetscErrorCode getInterface(IFACE **const iface) const {
-    return getInterface<IFACE, false>(getUId(typeid(IFACE).name()), *iface);
+    return getInterface<IFACE, false>(boost::typeindex::type_id<IFACE>(),
+                                      *iface);
   }
 
   template <
@@ -144,7 +144,7 @@ struct UnknownInterface {
     typedef typename boost::remove_pointer<IFACE>::type IFaceType;
     IFaceType* iface = NULL;
     ierr = getInterface<IFaceType, false>(
-        getUId(typeid(IFaceType).name()), iface);
+        getUId(boost::typeindex::type_id<IFaceType>()), iface);
     CHKERRABORT(PETSC_COMM_SELF, ierr);
     return iface;
   }
@@ -157,7 +157,7 @@ struct UnknownInterface {
     typedef typename boost::remove_reference<IFACE>::type IFaceType;
     IFaceType* iface = NULL;
     ierr = getInterface<IFaceType, false>(
-        getUId(typeid(IFaceType).name()), iface);
+        getUId(boost::typeindex::type_id<IFaceType>()), iface);
     CHKERRABORT(PETSC_COMM_SELF, ierr);
     return *iface;
   }
@@ -240,18 +240,21 @@ struct UnknownInterface {
   }
 
 protected:
+
+  struct NotKnownClass {};
+
   /**
    * \brief Get type name for interface Id
    * @param  uid interface Id
    * @return     class name
    */
-  inline const std::string &getClassName(const MOFEMuuid &uid) const {
+  inline boost::typeindex::type_index getClassIdx(const MOFEMuuid &uid) const {
     iFaceTypeMap_multiIndex::nth_index<0>::type::iterator it;
     it = iFaceTypeMap.get<0>().find(uid);
     if (it != iFaceTypeMap.get<0>().end()) {
-      return it->className;
+      return it->classIdx;
     }
-    return noClassUIdFoundStr;
+    return boost::typeindex::type_id<NotKnownClass>();
   }
 
   /**
@@ -259,9 +262,9 @@ protected:
    * @param  class_name
    * @return            Id
    */
-  inline const MOFEMuuid &getUId(const std::string &class_name) const {
+  inline MOFEMuuid getUId(const boost::typeindex::type_index &class_idx) const {
     iFaceTypeMap_multiIndex::nth_index<1>::type::iterator it;
-    it = iFaceTypeMap.get<1>().find(class_name);
+    it = iFaceTypeMap.get<1>().find(class_idx);
     if (it != iFaceTypeMap.get<1>().end()) {
       return it->uID;
     }
@@ -269,13 +272,12 @@ protected:
   }
 
 private:
-  const static std::string noClassUIdFoundStr;
 
   struct UIdTypeMap {
     MOFEMuuid uID;
-    std::string className;
-    UIdTypeMap(const MOFEMuuid &uid, const std::string &name)
-        : uID(uid), className(name) {}
+    boost::typeindex::type_index classIdx;
+    UIdTypeMap(const MOFEMuuid &uid, const boost::typeindex::type_index &idx)
+        : uID(uid), classIdx(idx) {}
   };
 
   struct HashMOFEMuuid {
@@ -293,7 +295,7 @@ private:
       HashMOFEMuuid
      >,
      hashed_unique<
-      member<UIdTypeMap, std::string, &UIdTypeMap::className>
+      member<UIdTypeMap, boost::typeindex::type_index, &UIdTypeMap::classIdx>
      >
     >
   > iFaceTypeMap_multiIndex;
