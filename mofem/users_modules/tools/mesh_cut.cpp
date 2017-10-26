@@ -44,6 +44,8 @@ int main(int argc, char *argv[]) {
     PetscBool squash_bits = PETSC_TRUE;
     PetscBool set_coords = PETSC_TRUE;
     PetscBool output_vtk = PETSC_TRUE;
+    int create_surface_side_set = 201;
+    PetscBool flg_create_surface_side_set;
 
     ierr = PetscOptionsBegin(PETSC_COMM_WORLD, "", "Mesh cut options", "none");
     CHKERRQ(ierr);
@@ -78,6 +80,10 @@ int main(int argc, char *argv[]) {
     CHKERRQ(ierr);
     ierr = PetscOptionsBool("-output_vtk", "if true outout vtk file", "",
                             output_vtk, &output_vtk, PETSC_NULL);
+    CHKERRQ(ierr);
+    ierr = PetscOptionsInt("-create_side_set", "crete side set", "",
+                           create_surface_side_set, &create_surface_side_set,
+                           &flg_create_surface_side_set);
     CHKERRQ(ierr);
     
     ierr = PetscOptionsEnd();
@@ -180,7 +186,7 @@ int main(int argc, char *argv[]) {
     bit_level2.set(2);
     BitRefLevel bit_level3; // Merge level
     bit_level3.set(3);
-    BitRefLevel bit_level4; // TeteGen level
+    BitRefLevel bit_level4; // TetGen level
     bit_level4.set(4);
 
     // Create tag storing nodal positions
@@ -263,6 +269,14 @@ int main(int argc, char *argv[]) {
     CHKERRQ_MOAB(rval);
     rval = moab.delete_entities(surface_verts);
     CHKERRQ_MOAB(rval);
+
+    if(flg_create_surface_side_set) {
+      ierr = meshset_manager->addMeshset(SIDESET, create_surface_side_set);
+      CHKERRQ(ierr);
+      ierr = meshset_manager->addEntitiesToMeshset(
+          SIDESET, create_surface_side_set, cut_mesh->getTetgenSurfaces());
+      CHKERRQ(ierr);
+    }
 
     rval = moab.write_file("out.h5m"); CHKERRQ_MOAB(rval);
 
