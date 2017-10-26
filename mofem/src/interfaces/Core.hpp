@@ -25,6 +25,7 @@ namespace MoFEM {
 // This is to have obsolete back compatibility
 struct MeshsetsManager;
 
+
 /** \brief Core (interface) class
 * \ingroup mofem
 * \nosubgrouping
@@ -231,6 +232,11 @@ protected:
 
   /**@}*/
 
+  /** \name Seed and synchronize entities (Following functions in future will be
+   * deprecated) */
+
+  /**@{*/
+
   // refine
   PetscErrorCode seed_finite_elements(const Range &entities, int verb = -1);
   PetscErrorCode seed_finite_elements(const EntityHandle meshset,
@@ -253,6 +259,8 @@ protected:
   PetscErrorCode synchronise_field_entities(const std::string &name,
                                             int verb = -1);
 
+   /**@}*/
+                                          
   /** \name Fields */
 
   /**@{*/
@@ -263,7 +271,7 @@ protected:
   * @param  space          Space L2,H1,Hdiv,Hcurl
   * @param  base           Approximation base AINSWORTH_LEGENDRE_BASE,
   AINSWORTH_BERNSTEIN_BEZIER_BASE ...
-  * @param  nb_cooficients Number of field coefficients
+  * @param  nb_coefficients Number of field coefficients
   * @param  tag_type       Tag type, MB_TAG_DENSE or MB_TAG_SPARSE (default)
   * @param  bh             Control behavior, if MF_EXCL throws error if exist
   * @param  verb           Verbosity level
@@ -282,7 +290,7 @@ protected:
   */
   PetscErrorCode add_field(const std::string &name, const FieldSpace space,
                            const FieldApproximationBase base,
-                           const FieldCoefficientsNumber nb_cooficients,
+                           const FieldCoefficientsNumber nb_coefficients,
                            const TagType tag_type = MB_TAG_SPARSE,
                            const enum MoFEMTypes bh = MF_EXCL, int verb = -1);
   PetscErrorCode addEntsToFieldByDim(const Range &ents, const int dim,

@@ -44,6 +44,11 @@ int main(int argc, char *argv[]) {
     ierr =
         PetscOptionsGetInt(PETSC_NULL, "", "-surface_side_set", &surface_side_set, PETSC_NULL);
     CHKERRQ(ierr);
+
+    PetscBool flg_vol_block_set;
+    int vol_block_set = 1;
+    ierr = PetscOptionsGetInt(PETSC_NULL, "", "-vol_block_set", &vol_block_set,
+                              &flg_vol_block_set);
     int edges_block_set = 1;
     ierr = PetscOptionsGetInt(PETSC_NULL, "", "-edges_block_set", &edges_block_set,
                               PETSC_NULL);
@@ -88,25 +93,26 @@ int main(int argc, char *argv[]) {
     MoFEM::CoreInterface &m_field =
         *(core.getInterface<MoFEM::CoreInterface>());
 
-    for (_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(
-             (*core.getInterface<MeshsetsManager>()), SIDESET, it)) {
+      // get cut mesh interface
+    CutMeshInterface *cut_mesh;
+    ierr = m_field.getInterface(cut_mesh);
+    CHKERRQ(ierr);
+    // get meshset manager interface
+    MeshsetsManager *meshset_manager;
+    ierr = m_field.getInterface(meshset_manager);
+    CHKERRQ(ierr);
+    // get bit ref manager interface
+    BitRefManager *bit_ref_manager;
+    ierr = m_field.getInterface(bit_ref_manager); CHKERRQ(ierr);
+
+    for (_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_((*meshset_manager), SIDESET,
+                                                 it)) {
       cout << *it << endl;
     }
 
     BitRefLevel bit_level0;
     bit_level0.set(0);
-    ierr = m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(
-        0, 3, bit_level0);
-    CHKERRQ(ierr);
-
-    // get cut mesh interface
-    CutMeshInterface *cut_mesh;
-    ierr = m_field.getInterface(cut_mesh);
-    CHKERRQ(ierr);
-
-    // get meshset manager interface
-    MeshsetsManager *meshset_manager;
-    ierr = m_field.getInterface(meshset_manager);
+    ierr = bit_ref_manager->setBitRefLevelByDim(0, 3, bit_level0);
     CHKERRQ(ierr);
 
     // get surface entities form side set
@@ -126,11 +132,25 @@ int main(int argc, char *argv[]) {
     if (meshset_manager->checkMeshset(surface_side_set, SIDESET)) {
       ierr = cut_mesh->copySurface(surface, NULL, shift);
       CHKERRQ(ierr);
-    } 
+    } else {
+      SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "Side set not found %d", surface_side_set);
+    }
 
     Range tets;
-    ierr = moab.get_entities_by_dimension(0, 3, tets, false);
-    CHKERRQ(ierr);
+    if (flg_vol_block_set) {
+      if (meshset_manager->checkMeshset(vol_block_set, BLOCKSET)) {
+        ierr = meshset_manager->getEntitiesByDimension(
+            edges_block_set, BLOCKSET, 3, tets, true);
+        CHKERRQ(ierr);
+      } else {
+        SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "Block set %d not found", vol_block_set);
+      }
+    } else {
+      ierr = moab.get_entities_by_dimension(0, 3, tets, false);
+      CHKERRQ(ierr);
+    }
     ierr = cut_mesh->setVolume(tets);
     CHKERRQ(ierr);
 
@@ -156,11 +176,6 @@ int main(int argc, char *argv[]) {
     CHKERRQ_MOAB(rval);
     // Set tag values with coordinates of nodes
     ierr = cut_mesh->setTagData(th);
-    CHKERRQ(ierr);
-
-    // Get BitRefManager interface
-    BitRefManager *bit_ref_manager;
-    ierr = m_field.getInterface(bit_ref_manager);
     CHKERRQ(ierr);
 
     // Get geometric corner nodes and corner edges
@@ -196,6 +211,16 @@ int main(int argc, char *argv[]) {
     const_cast<Range &>(cut_mesh->getTetgenSurfaces()) =
         cut_mesh->getMergedSurfaces();
 #endif // WITH_TETGEN
+
+    // Add tets from last level to block
+    if(flg_vol_block_set) {
+      EntityHandle meshset;
+      ierr = meshset_manager->getMeshset(vol_block_set, BLOCKSET, meshset);
+      CHKERRQ(ierr);
+      ierr = bit_ref_manager->getEntitiesByTypeAndRefLevel(
+          bit_level4, BitRefLevel().set(), MBTET, meshset);
+      CHKERRQ(ierr);
+    }
 
     // Shift bits
     if (squash_bits) {

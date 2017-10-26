@@ -1139,7 +1139,8 @@ PetscErrorCode CutMeshInterface::mergeBadEdges(
 
         if (updateMehsets) {
           Range child_ents;
-          for (_IT_CUBITMESHSETS_FOR_LOOP_(mField, cubit_it)) {
+          for (_IT_CUBITMESHSETS_FOR_LOOP_(
+                   (*mField.getInterface<MeshsetsManager>()), cubit_it)) {
             EntityHandle cubit_meshset = cubit_it->meshset;
             Range parent_ents;
             child_ents.clear();
@@ -2029,7 +2030,8 @@ PetscErrorCode CutMeshInterface::rebuildMeshWithTetGen(
   }
   int shift = 3;
   map<int, int> id_shift_map; // each meshset has set unique bit
-  for (_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field, SIDESET, it)) {
+  for (_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(
+           (*cOre.getInterface<MeshsetsManager>()), SIDESET, it)) {
     int ms_id = it->getMeshsetId();
     id_shift_map[ms_id] = 1 << shift; // shift bit
     shift++;
@@ -2155,7 +2157,8 @@ PetscErrorCode CutMeshInterface::rebuildMeshWithTetGen(
   tetgenSurfaces = face_markers_map[1];
   for (map<int, Range>::iterator mit = face_markers_map.begin();
        mit != face_markers_map.end(); mit++) {
-    for (_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field, SIDESET, it)) {
+    for (_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(
+             (*cOre.getInterface<MeshsetsManager>()), SIDESET, it)) {
       int msId = it->getMeshsetId();
       if (id_shift_map[msId] & mit->first) {
         EntityHandle meshset = it->getMeshset();
