@@ -278,7 +278,7 @@ MeshsetsManager::query_interface(const MOFEMuuid &uuid,
 
   PetscErrorCode
   MeshsetsManager::addEntitiesToMeshset(const CubitBCType cubit_bc_type,
-                                        const int ms_id, Range &ents) {
+                                        const int ms_id, const Range &ents) {
     MoFEM::Interface &m_field = cOre;
     moab::Interface &moab = m_field.get_moab();
     MoFEMFunctionBeginHot;

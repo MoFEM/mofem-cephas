@@ -444,7 +444,7 @@ struct MeshsetsManager : public UnknownInterface {
    * @return               error code
    */
   PetscErrorCode addEntitiesToMeshset(const CubitBCType cubit_bc_type,
-                                      const int ms_id, Range &ents);
+                                      const int ms_id, const Range &ents);
 
   /**
    * \brief add entities to cubit meshset
