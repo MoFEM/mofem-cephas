@@ -33,50 +33,61 @@ int main(int argc, char *argv[]) {
 
     PetscBool flg = PETSC_TRUE;
     char mesh_file_name[255];
-    ierr = PetscOptionsGetString(PETSC_NULL, "", "-my_file", mesh_file_name,
-                                 255, &flg);
+    int surface_side_set = 200;
+    PetscBool flg_vol_block_set;
+    int vol_block_set = 1;
+    int edges_block_set = 1;
+    int vertex_block_set = 2;
+    double shift[] = {0, 0, 0};
+    int nmax = 3;
+    int fraction_level = 2;
+    PetscBool squash_bits = PETSC_TRUE;
+    PetscBool set_coords = PETSC_TRUE;
+
+    ierr = PetscOptionsBegin(PETSC_COMM_WORLD, "", "Mesh cut options", "none");
     CHKERRQ(ierr);
+
+    ierr = PetscOptionsString("-my_file", "mesh file name", "", "mesh.h5m",
+                              mesh_file_name, 255, &flg);
+    CHKERRQ(ierr);
+    ierr = PetscOptionsInt("-surface_side_set", "surface side set", "",
+                           surface_side_set, &surface_side_set, PETSC_NULL);
+    CHKERRQ(ierr);
+    ierr = PetscOptionsInt("-vol_block_set", "volume side set", "",
+                           vol_block_set, &vol_block_set, &flg_vol_block_set);
+    CHKERRQ(ierr);
+    ierr = PetscOptionsInt("-edges_block_set", "edges side set", "",
+                           edges_block_set, &edges_block_set, PETSC_NULL);
+    CHKERRQ(ierr);
+
+    ierr = PetscOptionsInt("-vertex_block_set", "vertex side set", "",
+                           vertex_block_set, &vertex_block_set, PETSC_NULL);
+    CHKERRQ(ierr);
+    ierr = PetscOptionsRealArray("-shift", "shift surface by vector", "", shift,
+                                 &nmax, &flg);
+    CHKERRQ(ierr);
+    ierr = PetscOptionsInt("-fraction_level", "fraction of merges merged", "",
+                           fraction_level, &fraction_level, PETSC_NULL);
+    CHKERRQ(ierr);
+    ierr = PetscOptionsBool("-squash_bits", "true to squash bits at the end",
+                            "", squash_bits, &squash_bits, PETSC_NULL);
+    CHKERRQ(ierr);
+    ierr = PetscOptionsBool("-set_coords", "true to set coords at the end", "",
+                            set_coords, &set_coords, PETSC_NULL);
+    CHKERRQ(ierr);
+
+    ierr = PetscOptionsEnd();
+    CHKERRQ(ierr);
+
     if (flg != PETSC_TRUE) {
       SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
               "*** ERROR -my_file (MESH FILE NEEDED)");
     }
-    int surface_side_set = 200;
-    ierr =
-        PetscOptionsGetInt(PETSC_NULL, "", "-surface_side_set", &surface_side_set, PETSC_NULL);
-    CHKERRQ(ierr);
-
-    PetscBool flg_vol_block_set;
-    int vol_block_set = 1;
-    ierr = PetscOptionsGetInt(PETSC_NULL, "", "-vol_block_set", &vol_block_set,
-                              &flg_vol_block_set);
-    int edges_block_set = 1;
-    ierr = PetscOptionsGetInt(PETSC_NULL, "", "-edges_block_set", &edges_block_set,
-                              PETSC_NULL);
-    CHKERRQ(ierr);
-    int vertex_block_set = 2;
-    ierr = PetscOptionsGetInt(PETSC_NULL, "", "-vertex_block_set", &vertex_block_set,
-                              PETSC_NULL);
-
-    double shift[] = {0, 0, 0};
-    int nmax = 3;
-    ierr = PetscOptionsGetRealArray("", "-shift", shift, &nmax, &flg);
     if (flg && nmax != 3) {
       SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
               "three values expected");
     }
-    int fraction_level = 2;
-    ierr =
-        PetscOptionsGetInt(PETSC_NULL, "", "-fraction_level", &fraction_level, PETSC_NULL);
-    CHKERRQ(ierr);
-    PetscBool squash_bits = PETSC_TRUE;
-    ierr =
-        PetscOptionsGetBool(PETSC_NULL, "", "-squash_bits", &squash_bits, PETSC_NULL);
-    CHKERRQ(ierr);
-
-    PetscBool set_coords = PETSC_TRUE;
-    ierr =
-        PetscOptionsGetBool(PETSC_NULL, "", "-set_coords", &set_coords, PETSC_NULL);
-    CHKERRQ(ierr);
+ 
 
     moab::Core mb_instance;
     moab::Interface &moab = mb_instance;
