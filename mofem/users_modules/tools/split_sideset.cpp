@@ -38,7 +38,7 @@ int main(int argc, char *argv[]) {
     int nb_sidesets = 10;
     int sidesets[nb_sidesets];
 
-    ierr = PetscOptionsBegin(PETSC_COMM_WORLD, "", "none", "none");
+    ierr = PetscOptionsBegin(PETSC_COMM_WORLD, "", "Split sides options", "none");
     CHKERRQ(ierr);
     ierr = PetscOptionsString("-my_file", "mesh file name", "", "mesh.h5m",
                               mesh_file_name, 255, &flg_file);
