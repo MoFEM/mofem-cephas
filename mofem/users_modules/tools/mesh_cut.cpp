@@ -43,6 +43,7 @@ int main(int argc, char *argv[]) {
     int fraction_level = 2;
     PetscBool squash_bits = PETSC_TRUE;
     PetscBool set_coords = PETSC_TRUE;
+    PetscBool output_vtk = PETSC_TRUE;
 
     ierr = PetscOptionsBegin(PETSC_COMM_WORLD, "", "Mesh cut options", "none");
     CHKERRQ(ierr);
@@ -75,7 +76,10 @@ int main(int argc, char *argv[]) {
     ierr = PetscOptionsBool("-set_coords", "true to set coords at the end", "",
                             set_coords, &set_coords, PETSC_NULL);
     CHKERRQ(ierr);
-
+    ierr = PetscOptionsBool("-output_vtk", "if true outout vtk file", "",
+                            output_vtk, &output_vtk, PETSC_NULL);
+    CHKERRQ(ierr);
+    
     ierr = PetscOptionsEnd();
     CHKERRQ(ierr);
 
@@ -261,6 +265,32 @@ int main(int argc, char *argv[]) {
     CHKERRQ_MOAB(rval);
 
     rval = moab.write_file("out.h5m"); CHKERRQ_MOAB(rval);
+
+    if(output_vtk) {
+      EntityHandle meshset;
+      rval = moab.create_meshset(MESHSET_SET,meshset); CHKERRQ_MOAB(rval);
+      if(flg_vol_block_set) {
+        Range ents;
+        meshset_manager->getEntitiesByDimension(vol_block_set, BLOCKSET, 3,
+                                                ents);
+        CHKERRQ(ierr);
+        rval = moab.add_entities(meshset, ents);
+        CHKERRQ_MOAB(rval);
+      } else {
+        BitRefLevel bit;
+        if (squash_bits)
+          bit = bit_level0;
+        else
+          bit = bit_level4;
+        ierr = bit_ref_manager->getEntitiesByTypeAndRefLevel(
+            bit, BitRefLevel().set(), MBTET, meshset);
+        CHKERRQ(ierr);
+      }
+      rval = moab.add_entities(meshset, cut_mesh->getTetgenSurfaces());
+      CHKERRQ_MOAB(rval);
+      rval = moab.write_file("out.vtk","VTK","",&meshset,1); CHKERRQ_MOAB(rval);
+      rval = moab.delete_entities(&meshset,1); CHKERRQ_MOAB(rval);
+    }
 
   } catch (MoFEMException const &e) {
     SETERRQ(PETSC_COMM_SELF, e.errorCode, e.errorMessage);
