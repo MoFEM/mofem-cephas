@@ -284,7 +284,7 @@ private:
 
 
 /***************************************************************************//**
- * \defgroup mofem_problems_manager Problems manager
+ * \defgroup mofem_problems_manager ProblemsManager
  * \brief Adding and managing problems
  *
  * \ingroup mofem
