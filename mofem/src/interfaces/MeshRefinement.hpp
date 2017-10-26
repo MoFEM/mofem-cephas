@@ -21,7 +21,8 @@
 
 namespace MoFEM {
 
-static const MOFEMuuid IDD_MOFEMMeshRefine = MOFEMuuid( BitIntefaceId(MESH_REFINE) );
+static const MOFEMuuid IDD_MOFEMMeshRefine =
+    MOFEMuuid(BitIntefaceId(MESH_REFINE));
 
 /** \brief Mesh refinement interface
 
@@ -36,41 +37,54 @@ static const MOFEMuuid IDD_MOFEMMeshRefine = MOFEMuuid( BitIntefaceId(MESH_REFIN
 
   \ingroup mofem_refiner
   */
-struct MeshRefinement: public UnknownInterface {
+struct MeshRefinement : public UnknownInterface {
 
-  PetscErrorCode query_interface(const MOFEMuuid& uuid, UnknownInterface** iface) const;
+  PetscErrorCode query_interface(const MOFEMuuid &uuid,
+                                 UnknownInterface **iface) const;
 
-  MoFEM::Core& cOre;
+  MoFEM::Core &cOre;
   MeshRefinement(const MoFEM::Core &core);
 
-  ///destructor
+  /// destructor
   ~MeshRefinement() {}
 
   /**
-   * \brief make vertices in the middle of edges in meshset and add them to refinement levels defined by bit
+   * \brief make vertices in the middle of edges in meshset and add them to
+   * refinement levels defined by bit
    *
-   * Takes entities fromm meshsets and queried recursively (get entities from meshsets in meshsets, usually have to be used for CUBIT meshset).
-   * If meshset does not contain any edges, get entities in dimension 3 and get edge adjacencies.
+   * Takes entities fromm meshsets and queried recursively (get entities from
+   * meshsets in meshsets, usually have to be used for CUBIT meshset).
+   * If meshset does not contain any edges, get entities in dimension 3 and get
+   * edge adjacencies.
    *
    * \param EntityHandle meshset
    * \param BitRefLevel bitLevel
-   * \param recursive If true, meshsets containing meshsets are queried recursively.  Returns the contents of meshsets, but not the meshsets themselves if true.
+   * \param recursive If true, meshsets containing meshsets are queried
+   * recursively.  Returns the contents of meshsets, but not the meshsets
+   * themselves if true.
    */
   virtual PetscErrorCode add_verices_in_the_middel_of_edges(
-    const EntityHandle meshset,const BitRefLevel &bit,const bool recursive = false,int verb = -1
-  );
+      const EntityHandle meshset, const BitRefLevel &bit,
+      const bool recursive = false, int verb = -1);
 
   /**
-   * \brief make vertices in the middle of edges in meshset and add them to Refinement levels defined by bit
+   * \brief make vertices in the middle of edges in meshset and add them to
+   * Refinement levels defined by bit
    *
-   * Takes entities from meshsets and queried recursively (get entities from meshsets in meshsets, usually have to be used for CUBIT meshset).
-   * If meshset does not contain any edges, get entities in dimension 3 and get edge adjacencies.
+   * Takes entities from meshsets and queried recursively (get entities from
+   * meshsets in meshsets, usually have to be used for CUBIT meshset).
+   * If meshset does not contain any edges, get entities in dimension 3 and get
+   * edge adjacencies.
    *
    * \param Range consisting edges for refine
    * \param BitRefLevel bitLevel
-   * \param recursive If true, meshsets containing meshsets are queried recursively.  Returns the contents of meshsets, but not the meshsets themselves if true.
+   * \param recursive If true, meshsets containing meshsets are queried
+   * recursively.  Returns the contents of meshsets, but not the meshsets
+   * themselves if true.
    */
-  virtual PetscErrorCode add_verices_in_the_middel_of_edges(const Range &edges,const BitRefLevel &bit,int verb = 0);
+  virtual PetscErrorCode
+  add_verices_in_the_middel_of_edges(const Range &edges, const BitRefLevel &bit,
+                                     int verb = 0);
 
   /**\brief refine TET in the meshset
    *
@@ -78,7 +92,10 @@ struct MeshRefinement: public UnknownInterface {
    * \param BitRefLevel bitLevel
    * \param If TRUE, interface elements would be refined too
    */
-  virtual PetscErrorCode refine_TET(const EntityHandle meshset,const BitRefLevel &bit,const bool respect_interface = false,int verb = 0);
+  virtual PetscErrorCode refine_TET(const EntityHandle meshset,
+                                    const BitRefLevel &bit,
+                                    const bool respect_interface = false,
+                                    int verb = 0);
 
   /**\brief refine TET in the meshset
    *
@@ -86,25 +103,30 @@ struct MeshRefinement: public UnknownInterface {
    * \param BitRefLevel bitLevel
    * \param If TRUE, interface elements would be refined too
    */
-  virtual PetscErrorCode refine_TET(const Range &tets,const BitRefLevel &bit,const bool respect_interface = false,int verb = 0);
+  virtual PetscErrorCode refine_TET(const Range &tets, const BitRefLevel &bit,
+                                    const bool respect_interface = false,
+                                    int verb = 0);
 
   /**\brief refine PRISM in the meshset
    *
    * \param EntityHandle meshset
    * \param BitRefLevel bitLevel
    */
-  virtual PetscErrorCode refine_PRISM(const EntityHandle meshset,const BitRefLevel &bit,int verb = 0);
+  virtual PetscErrorCode refine_PRISM(const EntityHandle meshset,
+                                      const BitRefLevel &bit, int verb = 0);
 
   /**\brief refinem meshset, i.e. add child of refined entities to meshset
    *
    * \param EntityHandle meshset where to save the child refined entities
    * \param BitRefLevel bitLevel
-   * \param recursive If true, meshsets containing meshsets are queried recursively.  Returns the contents of meshsets, but not the meshsets themselves if true.
+   * \param recursive If true, meshsets containing meshsets are queried
+   * recursively.  Returns the contents of meshsets, but not the meshsets
+   * themselves if true.
    */
-  virtual PetscErrorCode refine_MESHSET(
-    const EntityHandle meshset,const BitRefLevel &bit,const bool recursive = false,int verb = 0
-  );
-
+  virtual PetscErrorCode refine_MESHSET(const EntityHandle meshset,
+                                        const BitRefLevel &bit,
+                                        const bool recursive = false,
+                                        int verb = 0);
 };
 
 // DEPRECATED typedef MeshRefinement MeshRefinment;
@@ -113,10 +135,11 @@ struct MeshRefinement: public UnknownInterface {
 
 #endif // __MESHREFINE_HPP__
 
-
-/***************************************************************************//**
- * \defgroup mofem_refiner Mesh refining
- * \brief Interface to mesh refining
- *
- * \ingroup mofem
- ******************************************************************************/
+/***************************************************************************/ /**
+  * \defgroup mofem_refiner MeshRefinement
+  * \brief Refine mesh by splitting edges
+  *
+  *
+  *
+  * \ingroup mofem
+  ******************************************************************************/
