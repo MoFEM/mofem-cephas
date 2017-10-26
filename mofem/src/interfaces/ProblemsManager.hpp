@@ -186,7 +186,7 @@ struct ProblemsManager : public UnknownInterface {
    * problems.
     *
     */
-  PetscErrorCode inheretPartition(const std::string &name,
+  PetscErrorCode inheritPartition(const std::string &name,
                                   const std::string &problem_for_rows,
                                   bool copy_rows,
                                   const std::string &problem_for_cols,

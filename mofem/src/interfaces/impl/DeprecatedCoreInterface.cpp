@@ -359,7 +359,7 @@ namespace MoFEM {
     bool copy_cols,
     int verb
   ) {
-    return getInterface<ProblemsManager>()->inheretPartition(
+    return getInterface<ProblemsManager>()->inheritPartition(
       name,problem_for_rows,copy_rows,problem_for_cols,copy_cols,verb
     );
   }
