@@ -817,7 +817,7 @@ private:
   /**
    * \brief Initialize database getting information on mesh
    */
-  PetscErrorCode initialiseDatabseFromMesh(int verb = -1);
+  PetscErrorCode initialiseDatabaseFromMesh(int verb = -1);
 
   template <class IFACE> PetscErrorCode regSubInterface(const MOFEMuuid &uid);
 };

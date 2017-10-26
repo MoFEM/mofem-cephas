@@ -49,7 +49,7 @@ MeshsetsManager::query_interface(const MOFEMuuid &uuid,
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode MeshsetsManager::initialiseDatabseFromMesh(int verb) {
+  PetscErrorCode MeshsetsManager::initialiseDatabaseFromMesh(int verb) {
     MoFEM::Interface &m_field = cOre;
     moab::Interface &moab = m_field.get_moab();
     MoFEMFunctionBeginHot;

@@ -180,7 +180,7 @@ verbose(verbose) {
   ierr = getTags(); CHKERRABORT(cOmm,ierr);
   ierr = clearMap(); CHKERRABORT(cOmm,ierr);
   basicEntityDataPtr = boost::make_shared<BasicEntityData>(moab);
-  ierr = initialiseDatabseFromMesh(verbose); CHKERRABORT(cOmm,ierr);
+  ierr = initialiseDatabaseFromMesh(verbose); CHKERRABORT(cOmm,ierr);
 
   // Print version
   if(verbose>0) {
@@ -535,11 +535,11 @@ PetscErrorCode Core::rebuild_database(int verb) {
   MoFEMFunctionBeginHot;
   if(verb==-1) verb = verbose;
   ierr = clearMap(); CHKERRQ(ierr);
-  ierr = initialiseDatabseFromMesh(verb); CHKERRQ(ierr);
+  ierr = initialiseDatabaseFromMesh(verb); CHKERRQ(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode Core::initialiseDatabseFromMesh(int verb) {
+PetscErrorCode Core::initialiseDatabaseFromMesh(int verb) {
   MoFEMFunctionBeginHot;
   if(verb==-1) verb = verbose;
 
@@ -547,7 +547,7 @@ PetscErrorCode Core::initialiseDatabseFromMesh(int verb) {
   ierr = getInterface(cs_manger_ptr); CHKERRQ(ierr);
 
   // Initialize coordinate systems
-  ierr = cs_manger_ptr->initialiseDatabseFromMesh(verb); CHKERRQ(ierr);
+  ierr = cs_manger_ptr->initialiseDatabaseFromMesh(verb); CHKERRQ(ierr);
 
   // Initialize database
   Range meshsets;
@@ -753,10 +753,10 @@ PetscErrorCode Core::initialiseDatabseFromMesh(int verb) {
   // Initialize interfaces
   MeshsetsManager *m_manger_ptr;
   ierr = getInterface(m_manger_ptr); CHKERRQ(ierr);
-  ierr = m_manger_ptr->initialiseDatabseFromMesh(verb); CHKERRQ(ierr);
+  ierr = m_manger_ptr->initialiseDatabaseFromMesh(verb); CHKERRQ(ierr);
   SeriesRecorder *series_recorder_ptr;
   ierr = getInterface(series_recorder_ptr); CHKERRQ(ierr);
-  ierr = series_recorder_ptr->initialiseDatabseFromMesh(verb); CHKERRQ(ierr);
+  ierr = series_recorder_ptr->initialiseDatabaseFromMesh(verb); CHKERRQ(ierr);
 
   MoFEMFunctionReturnHot(0);
 }

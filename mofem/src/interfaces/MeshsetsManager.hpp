@@ -187,7 +187,7 @@ struct MeshsetsManager : public UnknownInterface {
    * \brier initialize container form data on mesh
    * @return [description]
    */
-  PetscErrorCode initialiseDatabseFromMesh(int verb = 0);
+  PetscErrorCode initialiseDatabaseFromMesh(int verb = 0);
 
   template <class CUBIT_BC_DATA_TYPE>
   PetscErrorCode printBcSet(CUBIT_BC_DATA_TYPE &data,
