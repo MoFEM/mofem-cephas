@@ -44,7 +44,7 @@ int main(int argc, char *argv[]) {
                               mesh_file_name, 255, &flg_file);
     CHKERRQ(ierr);
 
-    ierr = PetscOptionsBool("-squash_bit_levels", "squahs bit levels", "",
+    ierr = PetscOptionsBool("-squash_bit_levels", "squash bit levels", "",
                             squash_bit_levels, &squash_bit_levels, NULL);
     CHKERRQ(ierr);
 
