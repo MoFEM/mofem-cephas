@@ -18,7 +18,7 @@ cmake_minimum_required(VERSION 2.8.7)
 #serch inlude directories before system directories
 set(CMAKE_INCLUDE_DIRECTORIES_BEFORE ON)
 
-find_package(MoFEM 0.5.69
+find_package(MoFEM 0.5.95
   REQUIRED HINTS ${MOFEM_DIR} ../ ../../ $ENV{MOFEM_DIR}
 )
 message(STATUS "MoFEM version ${MoFEM_VERSION}")
@@ -74,6 +74,14 @@ include_directories(${MoFEM_PROJECT_SOURCE_DIR}/src/multi_indices)
 include_directories(${MoFEM_PROJECT_SOURCE_DIR}/src/interfaces)
 include_directories(${MoFEM_PROJECT_SOURCE_DIR}/src/petsc)
 include_directories(${MoFEM_PROJECT_SOURCE_DIR}/src/finite_elements)
+# boost dir
+if(MoFEM_BOOST_INCLUDE_DIR)
+  include_directories(${MoFEM_BOOST_INCLUDE_DIR})
+endif(MoFEM_BOOST_INCLUDE_DIR)
+# cblas 
+if(MoFEM_CBLAS_INCLUDE_DIR) 
+  include_directories(${MoFEM_CBLAS_INCLUDE_DIR})
+endif(MoFEM_CBLAS_INCLUDE_DIR)
 
 link_directories(${MoFEM_INSTALL_DIR}/lib)
 link_directories(${PROJECT_BINARY_DIR})
