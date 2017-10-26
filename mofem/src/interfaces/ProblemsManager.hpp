@@ -62,7 +62,7 @@ namespace MoFEM {
      */
     PetscErrorCode partitionMesh(
       const Range &ents,const int dim,const int adj_dim,const int n_parts,
-      Tag *th_vertex_weights,Tag *th_edge_weights,Tag *th_part_veights,
+      Tag *th_vertex_weights,Tag *th_edge_weights,Tag *th_part_weights,
       int verb = 1
     );
 
@@ -237,7 +237,7 @@ namespace MoFEM {
      * \ingroup mofem_problems_manager
      * \param name problem name
      *
-     * It is very similar for partitionGhostDofs, hoever this explits that mesh is
+     * It is very similar for partitionGhostDofs, however this explits that mesh is
      * distributed.
      *
      * DOFs are ghosted if are shered but not owned by partition.
