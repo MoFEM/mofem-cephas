@@ -1,4 +1,3 @@
-
 /** \file split_sideset.cpp
   \brief Split sidesets
   \example split_sideset.cpp
@@ -34,6 +33,7 @@ int main(int argc, char *argv[]) {
     PetscBool flg_file = PETSC_FALSE;
     PetscBool squash_bit_levels = PETSC_TRUE;
     PetscBool flg_list_of_sidesets = PETSC_FALSE;
+    PetscBool output_vtk = PETSC_TRUE;
 
     int nb_sidesets = 10;
     int sidesets[nb_sidesets];
@@ -44,13 +44,17 @@ int main(int argc, char *argv[]) {
                               mesh_file_name, 255, &flg_file);
     CHKERRQ(ierr);
 
-    ierr = PetscOptionsBool("-my_squash_bit_levels", "squahs bit levels", "",
+    ierr = PetscOptionsBool("-squash_bit_levels", "squahs bit levels", "",
                             squash_bit_levels, &squash_bit_levels, NULL);
     CHKERRQ(ierr);
 
-    ierr = PetscOptionsIntArray("-my_side_sets", "get list of sidesets", "",
+    ierr = PetscOptionsIntArray("-side_sets", "get list of sidesets", "",
                                 sidesets, &nb_sidesets, &flg_list_of_sidesets);
     CHKERRQ(ierr);
+    ierr = PetscOptionsBool("-output_vtk", "if true outout vtk file", "",
+                            output_vtk, &output_vtk, PETSC_NULL);
+    CHKERRQ(ierr);
+ 
 
     ierr = PetscOptionsEnd();
     CHKERRQ(ierr);
@@ -78,70 +82,76 @@ int main(int argc, char *argv[]) {
               "List of sidesets not given -my_side_sets ...");
     }
 
-    // Seed mesh with bit levels
-    ierr = m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(
-        0, 3, BitRefLevel().set(0));
-    CHKERRQ(ierr);
-    std::vector<BitRefLevel> bit_levels;
-    bit_levels.push_back(BitRefLevel().set(0));
-
     // Get interface to meshsets manager
     MeshsetsManager *m_mng;
     ierr = m_field.getInterface(m_mng);
     CHKERRQ(ierr);
-    CubitMeshSet_multiIndex &meshsets_index = m_mng->getMeshsetsMultindex();
-
     // Get interface for splitting manager
     PrismInterface *interface_ptr;
     ierr = m_field.getInterface(interface_ptr);
     CHKERRQ(ierr);
+    BitRefManager *bit_mng;
+    ierr = m_field.getInterface(bit_mng);
+    CHKERRQ(ierr);
 
-    for (CubitMeshSet_multiIndex::index<
-             CubitMeshSets_mask_meshset_mi_tag>::type::iterator mit =
-             meshsets_index.get<CubitMeshSets_mask_meshset_mi_tag>()
-                 .lower_bound(SIDESET);
-         mit !=
-         meshsets_index.get<CubitMeshSets_mask_meshset_mi_tag>().upper_bound(
-             SIDESET);
-         mit++) {
-      std::cout << "Sidesset on the mesh id = " << mit->getMeshsetId()
+    // Seed mesh with bit levels
+    ierr = bit_mng->setBitRefLevelByDim(0, 3, BitRefLevel().set(0));
+    CHKERRQ(ierr);
+    std::vector<BitRefLevel> bit_levels;
+    bit_levels.push_back(BitRefLevel().set(0));
+
+    typedef CubitMeshSet_multiIndex::index<
+      CubitMeshSets_mask_meshset_mi_tag>::type CMeshsetByType;
+    typedef CMeshsetByType::iterator CMIteratorByType;
+    typedef CubitMeshSet_multiIndex::index<
+        Composite_Cubit_msId_And_MeshSetType_mi_tag>::type CMeshsetByIdType;
+    typedef CMeshsetByIdType::iterator CMIteratorByIdType;
+
+    CubitMeshSet_multiIndex &meshsets_index = m_mng->getMeshsetsMultindex();
+    CMeshsetByType &m_by_type =
+        meshsets_index.get<CubitMeshSets_mask_meshset_mi_tag>();
+    CMeshsetByIdType &m_by_id_and_type =
+        meshsets_index.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>();
+
+    for (CMIteratorByType mit = m_by_type.lower_bound(SIDESET);
+         mit != m_by_type.upper_bound(SIDESET); mit++) {
+
+      std::cout << "Sideset on the mesh id = " << mit->getMeshsetId()
                 << std::endl;
     }
 
+    // iterate sideset and split
     for (int mm = 0; mm != nb_sidesets; mm++) {
-      CubitMeshSet_multiIndex::index<
-          Composite_Cubit_msId_And_MeshSetType_mi_tag>::type::iterator mit;
-      mit = meshsets_index.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>()
-                .find(boost::make_tuple(sidesets[mm], SIDESET));
-      if (mit ==
-          meshsets_index.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>()
-              .end()) {
+
+      // find side set
+
+      CMIteratorByIdType mit;
+      mit = m_by_id_and_type.find(boost::make_tuple(sidesets[mm], SIDESET));
+      if (mit == m_by_id_and_type.end()) {
         SETERRQ1(PETSC_COMM_SELF, MOFEM_INVALID_DATA,
                  "No sideset in database id = %d", sidesets[mm]);
       }
       ierr = PetscPrintf(PETSC_COMM_WORLD, "Split sideset %d\n",
                          mit->getMeshsetId());
       CHKERRQ(ierr);
+
       EntityHandle cubit_meshset = mit->getMeshset();
       {
         // get tet entities form back bit_level
         EntityHandle ref_level_meshset = 0;
         rval = moab.create_meshset(MESHSET_SET, ref_level_meshset);
         CHKERRQ_MOAB(rval);
-        ierr =
-            m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
-                bit_levels.back(), BitRefLevel().set(), MBTET,
-                ref_level_meshset);
+        ierr = bit_mng->getEntitiesByTypeAndRefLevel(
+            bit_levels.back(), BitRefLevel().set(), MBTET, ref_level_meshset);
         CHKERRQ(ierr);
-        ierr =
-            m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
-                bit_levels.back(), BitRefLevel().set(), MBPRISM,
-                ref_level_meshset);
+        ierr = bit_mng->getEntitiesByTypeAndRefLevel(
+            bit_levels.back(), BitRefLevel().set(), MBPRISM, ref_level_meshset);
         CHKERRQ(ierr);
         Range ref_level_tets;
         rval = moab.get_entities_by_handle(ref_level_meshset, ref_level_tets,
                                            true);
         CHKERRQ_MOAB(rval);
+
         // get faces and test to split
         ierr =
             interface_ptr->getSides(cubit_meshset, bit_levels.back(), true, 0);
@@ -152,33 +162,33 @@ int main(int argc, char *argv[]) {
         ierr = interface_ptr->splitSides(ref_level_meshset, bit_levels.back(),
                                          cubit_meshset, false, true, 0);
         CHKERRQ(ierr);
+
         // clean meshsets
         rval = moab.delete_entities(&ref_level_meshset, 1);
         CHKERRQ_MOAB(rval);
       }
       // Update cubit meshsets
-      for (_IT_CUBITMESHSETS_FOR_LOOP_(m_field, ciit)) {
+      for (_IT_CUBITMESHSETS_FOR_LOOP_(
+        (core.getInterface<MeshsetsManager &, 0>()),ciit) ) {
+
         EntityHandle cubit_meshset = ciit->meshset;
-        ierr = m_field.getInterface<BitRefManager>()
-                   ->updateMeshsetByEntitiesChildren(
+        ierr = bit_mng->updateMeshsetByEntitiesChildren(
                        cubit_meshset, bit_levels.back(), cubit_meshset,
                        MBVERTEX, true);
         CHKERRQ(ierr);
-        ierr = m_field.getInterface<BitRefManager>()
-                   ->updateMeshsetByEntitiesChildren(
+        ierr = bit_mng->updateMeshsetByEntitiesChildren(
                        cubit_meshset, bit_levels.back(), cubit_meshset, MBEDGE,
                        true);
         CHKERRQ(ierr);
-        ierr = m_field.getInterface<BitRefManager>()
-                   ->updateMeshsetByEntitiesChildren(
+        ierr = bit_mng->updateMeshsetByEntitiesChildren(
                        cubit_meshset, bit_levels.back(), cubit_meshset, MBTRI,
                        true);
         CHKERRQ(ierr);
-        ierr = m_field.getInterface<BitRefManager>()
-                   ->updateMeshsetByEntitiesChildren(
+        ierr = bit_mng->updateMeshsetByEntitiesChildren(
                        cubit_meshset, bit_levels.back(), cubit_meshset, MBTET,
                        true);
         CHKERRQ(ierr);
+        
       }
     }
 
@@ -188,9 +198,26 @@ int main(int argc, char *argv[]) {
                                               true);
         CHKERRQ(ierr);
       }
-      ierr = m_field.getInterface<BitRefManager>()->shiftRightBitRef(
-          bit_levels.size() - 1);
+      ierr = bit_mng->shiftRightBitRef(bit_levels.size() - 1);
       CHKERRQ(ierr);
+    }
+
+    if (output_vtk) {
+      EntityHandle meshset;
+      rval = moab.create_meshset(MESHSET_SET, meshset);
+      CHKERRQ_MOAB(rval);
+      BitRefLevel bit;
+      if (squash_bit_levels)
+        bit = bit_levels[0];
+      else
+        bit = bit_levels.back();
+      ierr = bit_mng->getEntitiesByTypeAndRefLevel(
+          bit, BitRefLevel().set(), MBTET, meshset);
+      CHKERRQ(ierr);
+      rval = moab.write_file("out.vtk", "VTK", "", &meshset, 1);
+      CHKERRQ_MOAB(rval);
+      rval = moab.delete_entities(&meshset, 1);
+      CHKERRQ_MOAB(rval);
     }
 
     rval = moab.write_file("out.h5m");
