@@ -1313,15 +1313,19 @@ namespace MoFEM {
 
     /**
      * \brief create Mat (MPIAIJ) for problem (collective)
+     * 
+     * FIXME: Should be moved to independent interface MatManger
      *
      * \param name of the problem
      */
     virtual PetscErrorCode MatCreateMPIAIJWithArrays(const std::string &name,
                                                      Mat *Aij,
                                                      int verb = -1) = 0;
-
     /**
      * \brief Create Adj matrix
+     * 
+     * FIXME: Should be moved to independent interface MatManger
+     * 
      * @param  name [description]
      * @param  Adj  [description]
      * @param  verb [description]
@@ -1333,6 +1337,8 @@ namespace MoFEM {
 
     /**
      * \brief create Mat (AIJ) for problem
+     * 
+     * FIXME: Should be moved to independent interface MatManger
      *
      * \param name of the problem
      */
