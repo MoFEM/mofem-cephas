@@ -189,7 +189,7 @@ protected:
 
   /**@{*/
 
-  moab::Interface &moab; ///< moab databse
+  moab::Interface &moab; ///< moab database
   inline moab::Interface &get_moab() { return moab; }
   inline const moab::Interface &get_moab() const { return moab; }
 
@@ -391,7 +391,7 @@ protected:
                                    const BitRefLevel &mask, int verb = -1);
   PetscErrorCode clear_dofs_fields(const std::string &name, const Range ents,
                                    int verb = -1);
-  PetscErrorCode clear_ents_fields(const std::string &name, const Range enst,
+  PetscErrorCode clear_ents_fields(const std::string &name, const Range ents,
                                    int verb = -1);
 
   /// \name Other auxiliary functions for fields
@@ -515,7 +515,7 @@ protected:
   BitFEId getBitFEId(const std::string &name) const;
 
   /**
-   * \beief Get field name
+   * \brief Get field name
    * @param  id field id
    * @return    field name
    */
@@ -587,7 +587,7 @@ protected:
 
   DEPRECATED PetscErrorCode build_problem_on_distributed_mesh(int verb = -1);
   DEPRECATED PetscErrorCode build_problems(int verb = -1);
-  PetscErrorCode partition_check_matrix_fill_in(const std::string &problem_neme,
+  PetscErrorCode partition_check_matrix_fill_in(const std::string &problem_name,
                                                 int row, int col, int verb);
 
   /**@}*/
