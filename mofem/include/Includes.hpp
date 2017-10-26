@@ -103,7 +103,6 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/program_options.hpp>
 
-#include <boost/type_index.hpp>
 #include <boost/type_traits/remove_pointer.hpp>
 #include <boost/type_traits/remove_reference.hpp>
 #include <boost/type_traits/is_reference.hpp>
