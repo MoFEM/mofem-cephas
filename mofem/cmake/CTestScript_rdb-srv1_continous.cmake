@@ -1,4 +1,4 @@
-set(CTEST_BUILD_OPTIONS "-DPETSC_DIR=/opt/petsc -DPETSC_ARCH=arch-linux2-c-debug -DCMAKE_Fortran_COMPILER=/usr/bin/gfortran -DMOAB_DIR=/opt/local_new_moab -DADOL-C_DIR=/opt/local_adol-c-2.5.2 -DTETGEN_DIR=/opt/tetgen1.5.0 -DMED_DIR=/opt/med -DCMAKE_INSTALL_PREFIX=/home/lukasz/tmp/cephas_users_modules -DBLA_VENDOR=Apple -DBOOST_DIR=/opt/local_boost_1_54_0")
+set(CTEST_BUILD_OPTIONS "-DPETSC_DIR=/opt/petsc -DPETSC_ARCH=arch-linux2-c-debug -DCMAKE_Fortran_COMPILER=/usr/bin/gfortran -DMOAB_DIR=/opt/local_new_moab -DADOL-C_DIR=/opt/local_adol-c-2.5.2 -DTETGEN_DIR=/opt/tetgen1.5.0 -DMED_DIR=/opt/med -DCMAKE_INSTALL_PREFIX=/home/lukasz/tmp/cephas_users_modules -DBOOST_DIR=/opt/local_boost_1_65_1")
 
 set(CTEST_SITE "rdb-srv1")
 set(CTEST_BUILD_NAME "Linux-mpicxx")
