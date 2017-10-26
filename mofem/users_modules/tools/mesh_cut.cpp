@@ -141,7 +141,7 @@ int main(int argc, char *argv[]) {
     if (flg_vol_block_set) {
       if (meshset_manager->checkMeshset(vol_block_set, BLOCKSET)) {
         ierr = meshset_manager->getEntitiesByDimension(
-            edges_block_set, BLOCKSET, 3, tets, true);
+            vol_block_set, BLOCKSET, 3, tets, true);
         CHKERRQ(ierr);
       } else {
         SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
