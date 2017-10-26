@@ -1216,10 +1216,10 @@ PetscErrorCode Core::get_problem_finite_elements_entities(const std::string &pro
   MoFEMFunctionReturnHot(0);
 }
 
-FieldEntityByFieldName::iterator Core::get_ent_moabfield_by_name_begin(const std::string &field_name) const {
+FieldEntityByFieldName::iterator Core::get_ent_field_by_name_begin(const std::string &field_name) const {
   return entsFields.get<FieldName_mi_tag>().lower_bound(field_name);
 }
-FieldEntityByFieldName::iterator Core::get_ent_moabfield_by_name_end(const std::string &field_name) const {
+FieldEntityByFieldName::iterator Core::get_ent_field_by_name_end(const std::string &field_name) const {
   return entsFields.get<FieldName_mi_tag>().upper_bound(field_name);
 }
 DofEntityByFieldName::iterator Core::get_dofs_by_name_begin(const std::string &field_name) const {

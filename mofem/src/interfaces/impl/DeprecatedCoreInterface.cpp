@@ -281,12 +281,12 @@ namespace MoFEM {
   PetscErrorCode DeprecatedCoreInterface::set_cubit_msId_attribites(
     const CubitBCType cubit_bc_type,const int ms_id,const std::vector<double> &attributes,const std::string name
   ) {
-    return getInterface<MeshsetsManager>()->setAttribites(cubit_bc_type,ms_id,attributes,name);
+    return getInterface<MeshsetsManager>()->setAtributes(cubit_bc_type,ms_id,attributes,name);
   }
   PetscErrorCode DeprecatedCoreInterface::set_cubit_msId_attribites_data_structure(
     const CubitBCType cubit_bc_type,const int ms_id,const GenericAttributeData &data,const std::string name
   ) {
-    return getInterface<MeshsetsManager>()->setAttribitesByDataStructure(cubit_bc_type,ms_id,data,name);
+    return getInterface<MeshsetsManager>()->setAtributesByDataStructure(cubit_bc_type,ms_id,data,name);
   }
   PetscErrorCode DeprecatedCoreInterface::set_cubit_msId_bc_data_structure(
     const CubitBCType cubit_bc_type,const int ms_id,const GenericCubitBcData &data
@@ -359,7 +359,7 @@ namespace MoFEM {
     bool copy_cols,
     int verb
   ) {
-    return getInterface<ProblemsManager>()->inheretPartition(
+    return getInterface<ProblemsManager>()->inheritPartition(
       name,problem_for_rows,copy_rows,problem_for_cols,copy_cols,verb
     );
   }

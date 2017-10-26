@@ -55,7 +55,7 @@ namespace MoFEM {
      * \brier initialize container form data on mesh
      * @return error code
      */
-    PetscErrorCode initialiseDatabseFromMesh(int verb = 0);
+    PetscErrorCode initialiseDatabaseFromMesh(int verb = 0);
 
     inline CoordSys_multiIndex& getCoordinateSystemsMultindex() {
       return coordinateSystems;

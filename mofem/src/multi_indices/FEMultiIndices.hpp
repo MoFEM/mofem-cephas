@@ -940,7 +940,7 @@ typedef multi_index_container<
  *
  *  \ingroup fe_multi_indices
  */
-typedef EntFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type EntFiniteElementbyName;
+typedef EntFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type EntFiniteElementByName;
 
 /**
   @relates multi_index_container

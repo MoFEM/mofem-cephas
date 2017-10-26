@@ -120,7 +120,7 @@ namespace MoFEM {
   }
 
 
-  PetscErrorCode CoordSystemsManager::initialiseDatabseFromMesh(int verb) {
+  PetscErrorCode CoordSystemsManager::initialiseDatabaseFromMesh(int verb) {
 
     MoFEM::Interface &m_field = cOre;
     moab::Interface &moab = m_field.get_moab();

@@ -3,7 +3,7 @@
 
  Interface to manage material and boundary sets
 
- * \ingroup mofem_bc
+ * \ingroup mofem_meshset_mng
  */
 
 /*
@@ -35,7 +35,7 @@ typedef CubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type
 
 /**
  * \brief Iterator that loops over all the Cubit MeshSets in a moFEM field
- * \ingroup mofem_bc
+ * \ingroup mofem_meshset_mng
 
  *
  * \param MESHSET_MANAGER meshset manager (works as well with Interface)
@@ -49,7 +49,7 @@ typedef CubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type
 
 /**
 * \brief Iterator that loops over a specific Cubit MeshSet in a moFEM field
-* \ingroup mofem_bc
+* \ingroup mofem_meshset_mng
 
 *
 * \param mField moFEM Field
@@ -66,7 +66,7 @@ typedef CubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type
 /**
 * \brief Iterator that loops over a specific Cubit MeshSet having a particular
 BC meshset in a moFEM field
-* \ingroup mofem_bc
+* \ingroup mofem_meshset_mng
 
 *
 * \param MESHSET_MANAGER meshset manager (works as well with Interface)
@@ -90,7 +90,7 @@ for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,NODESET|DISPLACEMENTSET,it) {
 
 /**
 * \brief Iterator that loops over Cubit BlockSet having a particular name
-* \ingroup mofem_bc
+* \ingroup mofem_meshset_mng
 
 
 * \param MESHSET_MANAGER meshset manager (works as well with Interface)
@@ -98,7 +98,7 @@ for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,NODESET|DISPLACEMENTSET,it) {
 * \param IT iterator
 *
 * Example: \code
-for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,"SOME_BLOCK_NANE",it) {
+for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,"SOME_BLOCK_NAME",it) {
 ...
 * } \endcode
 */
@@ -113,7 +113,7 @@ static const MOFEMuuid IDD_MOFEMMeshsetsManager =
 
 /** \brief Interface for managing meshsets containing materials and boundary
  * conditions
- * \ingroup mofem_bc
+ * \ingroup mofem_meshset_mng
  */
 struct MeshsetsManager : public UnknownInterface {
 
@@ -127,7 +127,7 @@ struct MeshsetsManager : public UnknownInterface {
   /**
    * \brief get tags handlers used on meshsets
 
-   * On meshsets range of tages in set. Depending on tag type and data on that
+   * On meshsets range of tags in set. Depending on tag type and data on that
    * tag type of meshset could be determined. This function get hanldes to
    * tags.
    *
@@ -187,7 +187,7 @@ struct MeshsetsManager : public UnknownInterface {
    * \brier initialize container form data on mesh
    * @return [description]
    */
-  PetscErrorCode initialiseDatabseFromMesh(int verb = 0);
+  PetscErrorCode initialiseDatabaseFromMesh(int verb = 0);
 
   template <class CUBIT_BC_DATA_TYPE>
   PetscErrorCode printBcSet(CUBIT_BC_DATA_TYPE &data,
@@ -266,7 +266,7 @@ struct MeshsetsManager : public UnknownInterface {
   }
 
   /**
-   * \ingroup mofem_bc
+   * \ingroup mofem_meshset_mng
    * \brief get begin iterator of cubit mehset of given type (instead you can
    * use _IT_CUBITMESHSETS_TYPE_FOR_LOOP_(MFIELD,CUBITBCTYPE,IT)
    *
@@ -280,7 +280,7 @@ struct MeshsetsManager : public UnknownInterface {
   }
 
   /**
-   * \ingroup mofem_bc
+   * \ingroup mofem_meshset_mng
    * \brief get begin iterator of cubit mehset of given type (instead you can
    * use _IT_CUBITMESHSETS_TYPE_FOR_LOOP_(MFIELD,CUBITBCTYPE,IT)
    *
@@ -296,7 +296,7 @@ struct MeshsetsManager : public UnknownInterface {
   /**
     * \brief get begin iterator of cubit mehset of given type (instead you can
     use _IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(MFIELD,CUBITBCTYPE,IT)
-    * \ingroup mofem_bc
+    * \ingroup mofem_meshset_mng
 
     *
     *
@@ -315,7 +315,7 @@ struct MeshsetsManager : public UnknownInterface {
   /**
     * \brief get begin iterator of cubit mehset of given type (instead you can
     use _IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(MFIELD,CUBITBCTYPE,IT)
-    * \ingroup mofem_bc
+    * \ingroup mofem_meshset_mng
 
     *
     *
@@ -334,7 +334,7 @@ struct MeshsetsManager : public UnknownInterface {
   /**
     * \brief get end iterator of cubit meshset of given type (instead you can
     use _IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(MFIELD,CUBITBCTYPE,IT)
-    * \ingroup mofem_bc
+    * \ingroup mofem_meshset_mng
 
     *
     * for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NODESET,it) {
@@ -352,7 +352,7 @@ struct MeshsetsManager : public UnknownInterface {
   /**
     * \brief get end iterator of cubit mehset of given type (instead you can
     use _IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(MFIELD,CUBITBCTYPE,IT)
-    * \ingroup mofem_bc
+    * \ingroup mofem_meshset_mng
 
     *
     * for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NODESET,it) {
@@ -370,7 +370,7 @@ struct MeshsetsManager : public UnknownInterface {
   /**
     * \brief get begin iterator of cubit mehset of given type (instead you can
     use _IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(MFIELD,CUBITBCTYPE,IT)
-    * \ingroup mofem_bc
+    * \ingroup mofem_meshset_mng
 
     *
     *
@@ -388,7 +388,7 @@ struct MeshsetsManager : public UnknownInterface {
   /**
     * \brief get begin iterator of cubit mehset of given type (instead you can
     use _IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(MFIELD,CUBITBCTYPE,IT)
-    * \ingroup mofem_bc
+    * \ingroup mofem_meshset_mng
 
     *
     *
@@ -405,7 +405,7 @@ struct MeshsetsManager : public UnknownInterface {
 
   /**
     * \brief check for CUBIT Id and CUBIT type
-    * \ingroup mofem_bc
+    * \ingroup mofem_meshset_mng
 
     \todo All cubit interface functions should be outsourced to dedicated
     interface
@@ -425,7 +425,7 @@ struct MeshsetsManager : public UnknownInterface {
 
   /**
     * \brief add cubit meshset
-    * \ingroup mofem_bc
+    * \ingroup mofem_meshset_mng
 
     *
     * \param see CubitBC (NODESET, SIDESET or BLOCKSET and more)
@@ -433,22 +433,22 @@ struct MeshsetsManager : public UnknownInterface {
     * \param name of set
 
     */
-  PetscErrorCode addMeshset(const CubitBCType cubit_bc_tyep, const int ms_id,
+  PetscErrorCode addMeshset(const CubitBCType cubit_bc_type, const int ms_id,
                             const std::string name = "");
 
   /**
    * \brief add entities to cubit meshset
-   * @param  cubit_bc_tyep type of meshset, f.e. NODESET, SIDESET or BLOCKSET
+   * @param  cubit_bc_type type of meshset, f.e. NODESET, SIDESET or BLOCKSET
    * @param  ms_id         id of meshset
    * @param  ents          entities to add
    * @return               error code
    */
-  PetscErrorCode addEntitiesToMeshset(const CubitBCType cubit_bc_tyep,
-                                      const int ms_id, Range &ents);
+  PetscErrorCode addEntitiesToMeshset(const CubitBCType cubit_bc_type,
+                                      const int ms_id, const Range &ents);
 
   /**
    * \brief add entities to cubit meshset
-   * @param  cubit_bc_tyep type of meshset, f.e. NODESET, SIDESET or BLOCKSET
+   * @param  cubit_bc_type type of meshset, f.e. NODESET, SIDESET or BLOCKSET
    * @param  ms_id         id of meshset
    * @param  ents          pointer to entities array
    * @param  nb_ents       number of entities in array
@@ -466,7 +466,7 @@ struct MeshsetsManager : public UnknownInterface {
    * @param  attributes    attributes
    * @return               error code
    */
-  PetscErrorCode setAttribites(const CubitBCType cubit_bc_type, const int ms_id,
+  PetscErrorCode setAtributes(const CubitBCType cubit_bc_type, const int ms_id,
                                const std::vector<double> &attributes,
                                const std::string name = "");
 
@@ -478,7 +478,7 @@ struct MeshsetsManager : public UnknownInterface {
    * @param  attributes    attributes
    * @return               error code
    */
-  PetscErrorCode setAttribitesByDataStructure(const CubitBCType cubit_bc_type,
+  PetscErrorCode setAtributesByDataStructure(const CubitBCType cubit_bc_type,
                                               const int ms_id,
                                               const GenericAttributeData &data,
                                               const std::string name = "");
@@ -508,7 +508,7 @@ struct MeshsetsManager : public UnknownInterface {
 
   /**
     * \brief get cubit meshset
-    * \ingroup mofem_bc
+    * \ingroup mofem_meshset_mng
 
     */
   PetscErrorCode getCubitMeshsetPtr(const int ms_id,
@@ -517,7 +517,7 @@ struct MeshsetsManager : public UnknownInterface {
 
   /**
     * \brief get cubit meshset
-    * \ingroup mofem_bc
+    * \ingroup mofem_meshset_mng
 
     */
   PetscErrorCode getCubitMeshsetPtr(const string name,
@@ -525,7 +525,7 @@ struct MeshsetsManager : public UnknownInterface {
 
   /**
     * \brief get entities from CUBIT/meshset of a particular entity dimension
-    * \ingroup mofem_bc
+    * \ingroup mofem_meshset_mng
 
     * Nodeset can contain nodes, edges, triangles and tets. This applies to
     other  meshsets too.
@@ -540,7 +540,7 @@ struct MeshsetsManager : public UnknownInterface {
     * \param  see CubitBC (NODESET, SIDESET or BLOCKSET and more)
     * \param dimensions (0 - Nodes, 1 - Edges, 2 - Faces, 3 -
     Volume(tetrahedral))
-    * \param Range containing the retreived entities
+    * \param Range containing the retrieved entities
     * \param recursive If true, meshsets containing meshsets are queried
     recursively. Returns the contents of meshsets, but not the meshsets
     themselves if true.
@@ -552,7 +552,7 @@ struct MeshsetsManager : public UnknownInterface {
 
   /**
     * \brief get entities related to CUBIT/meshset,
-    * \ingroup mofem_bc
+    * \ingroup mofem_meshset_mng
 
     * NODESET will get Vertices only, even if the NODESET contains edges, tris
     and tets
@@ -561,7 +561,7 @@ struct MeshsetsManager : public UnknownInterface {
 
     * \param ms_id id of the BLOCKSET/SIDESET/BLOCKSET: from CUBIT
     * \param  see CubitBC (NODESET, SIDESET or BLOCKSET and more)
-    * \param Range containing the retreived entities related to the
+    * \param Range containing the retrieved entities related to the
     * \param recursive If true, meshsets containing meshsets are queried
     recursively.  Returns the contents of meshsets, but not the meshsets
     themselves if true.
@@ -572,7 +572,7 @@ struct MeshsetsManager : public UnknownInterface {
                                         const bool recursive = false);
 
   /**
-    * \ingroup mofem_bc
+    * \ingroup mofem_meshset_mng
     * \brief get meshset from CUBIT Id and CUBIT type
     *
     * \param ms_id id of the BLOCKSET/SIDESET/BLOCKSET: from CUBIT
@@ -583,7 +583,7 @@ struct MeshsetsManager : public UnknownInterface {
                             EntityHandle &meshset);
 
   /**
-    * \ingroup mofem_bc
+    * \ingroup mofem_meshset_mng
     * \brief get all CUBIT meshsets by CUBIT type
     *
     * \param  see CubitBC (NODESET, SIDESET or BLOCKSET and more).
@@ -627,7 +627,7 @@ struct MeshsetsManager : public UnknownInterface {
    id=2003
    add=NODESET
 
-   # Each flag means that boundary consition on displacemnys is set.
+   # Each flag means that boundary consition on displacements is set.
    disp_flag1=1 # Setting constrains in x- direction
    disp_flag2=1 # Setting constrains in y- direction
    disp_flag3=1 # Setting constrains in z- direction
@@ -637,11 +637,11 @@ struct MeshsetsManager : public UnknownInterface {
    disp_ux=1 # value of disp in x- direction
    disp_uy=2
    disp_uz=3
-   disp_rx=4 # value of rotiatuin in y-direction
+   disp_rx=4 # value of rotation in y-direction
    disp_ry=5
    disp_rz=6
 
-   # Note abouve values could be interpreted differntly if needed.
+   # Note above values could be interpreted differently if needed.
 
    [block_1004]
 
@@ -681,7 +681,7 @@ struct MeshsetsManager : public UnknownInterface {
 
    id=2007
    add=SIDESET
-   heatflux_flag1=1        # 0: N/A, 1: hetflux applied
+   heatflux_flag1=1        # 0: N/A, 1: heat flux applied
    heatflux_magnitude=1
 
    [block_1008]
@@ -732,7 +732,7 @@ struct MeshsetsManager : public UnknownInterface {
   PetscErrorCode setMeshsetFromFile();
 
   /**
-   * \brief Get confi file options, use with care
+   * \brief Get config file options, use with care
    * @return error code
    */
   inline boost::shared_ptr<boost::program_options::options_description> &
@@ -760,7 +760,7 @@ protected:
 #endif //__MESHSETSMANAGER_HPP__
 
 /***************************************************************************//**
- * \defgroup mofem_bc Managing boundary conditions and materials
+ * \defgroup mofem_meshset_mng MeshsetsManager
  * \brief Interface for meshsets with entities with data and boundary conditions
  *
  * \ingroup mofem

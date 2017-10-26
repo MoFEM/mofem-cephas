@@ -33,50 +33,71 @@ int main(int argc, char *argv[]) {
 
     PetscBool flg = PETSC_TRUE;
     char mesh_file_name[255];
-    ierr = PetscOptionsGetString(PETSC_NULL, "", "-my_file", mesh_file_name,
-                                 255, &flg);
+    int surface_side_set = 200;
+    PetscBool flg_vol_block_set;
+    int vol_block_set = 1;
+    int edges_block_set = 1;
+    int vertex_block_set = 2;
+    double shift[] = {0, 0, 0};
+    int nmax = 3;
+    int fraction_level = 2;
+    PetscBool squash_bits = PETSC_TRUE;
+    PetscBool set_coords = PETSC_TRUE;
+    PetscBool output_vtk = PETSC_TRUE;
+    int create_surface_side_set = 201;
+    PetscBool flg_create_surface_side_set;
+
+    ierr = PetscOptionsBegin(PETSC_COMM_WORLD, "", "Mesh cut options", "none");
     CHKERRQ(ierr);
+
+    ierr = PetscOptionsString("-my_file", "mesh file name", "", "mesh.h5m",
+                              mesh_file_name, 255, &flg);
+    CHKERRQ(ierr);
+    ierr = PetscOptionsInt("-surface_side_set", "surface side set", "",
+                           surface_side_set, &surface_side_set, PETSC_NULL);
+    CHKERRQ(ierr);
+    ierr = PetscOptionsInt("-vol_block_set", "volume side set", "",
+                           vol_block_set, &vol_block_set, &flg_vol_block_set);
+    CHKERRQ(ierr);
+    ierr = PetscOptionsInt("-edges_block_set", "edges side set", "",
+                           edges_block_set, &edges_block_set, PETSC_NULL);
+    CHKERRQ(ierr);
+
+    ierr = PetscOptionsInt("-vertex_block_set", "vertex side set", "",
+                           vertex_block_set, &vertex_block_set, PETSC_NULL);
+    CHKERRQ(ierr);
+    ierr = PetscOptionsRealArray("-shift", "shift surface by vector", "", shift,
+                                 &nmax, &flg);
+    CHKERRQ(ierr);
+    ierr = PetscOptionsInt("-fraction_level", "fraction of merges merged", "",
+                           fraction_level, &fraction_level, PETSC_NULL);
+    CHKERRQ(ierr);
+    ierr = PetscOptionsBool("-squash_bits", "true to squash bits at the end",
+                            "", squash_bits, &squash_bits, PETSC_NULL);
+    CHKERRQ(ierr);
+    ierr = PetscOptionsBool("-set_coords", "true to set coords at the end", "",
+                            set_coords, &set_coords, PETSC_NULL);
+    CHKERRQ(ierr);
+    ierr = PetscOptionsBool("-output_vtk", "if true outout vtk file", "",
+                            output_vtk, &output_vtk, PETSC_NULL);
+    CHKERRQ(ierr);
+    ierr = PetscOptionsInt("-create_side_set", "crete side set", "",
+                           create_surface_side_set, &create_surface_side_set,
+                           &flg_create_surface_side_set);
+    CHKERRQ(ierr);
+    
+    ierr = PetscOptionsEnd();
+    CHKERRQ(ierr);
+
     if (flg != PETSC_TRUE) {
       SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
               "*** ERROR -my_file (MESH FILE NEEDED)");
     }
-    int surface_side_set = 200;
-    ierr =
-        PetscOptionsGetInt(PETSC_NULL, "", "-surface_side_set", &surface_side_set, PETSC_NULL);
-    CHKERRQ(ierr);
-
-    PetscBool flg_vol_block_set;
-    int vol_block_set = 1;
-    ierr = PetscOptionsGetInt(PETSC_NULL, "", "-vol_block_set", &vol_block_set,
-                              &flg_vol_block_set);
-    int edges_block_set = 1;
-    ierr = PetscOptionsGetInt(PETSC_NULL, "", "-edges_block_set", &edges_block_set,
-                              PETSC_NULL);
-    CHKERRQ(ierr);
-    int vertex_block_set = 2;
-    ierr = PetscOptionsGetInt(PETSC_NULL, "", "-vertex_block_set", &vertex_block_set,
-                              PETSC_NULL);
-
-    double shift[] = {0, 0, 0};
-    int nmax = 3;
-    ierr = PetscOptionsGetRealArray("", "-shift", shift, &nmax, &flg);
     if (flg && nmax != 3) {
       SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
               "three values expected");
     }
-    int fraction_level = 2;
-    ierr =
-        PetscOptionsGetInt(PETSC_NULL, "", "-fraction_level", &fraction_level, PETSC_NULL);
-    CHKERRQ(ierr);
-    PetscBool squash_bits = PETSC_TRUE;
-    ierr =
-        PetscOptionsGetBool(PETSC_NULL, "", "-squash_bits", &squash_bits, PETSC_NULL);
-    CHKERRQ(ierr);
-
-    PetscBool set_coords = PETSC_TRUE;
-    ierr =
-        PetscOptionsGetBool(PETSC_NULL, "", "-set_coords", &set_coords, PETSC_NULL);
-    CHKERRQ(ierr);
+ 
 
     moab::Core mb_instance;
     moab::Interface &moab = mb_instance;
@@ -105,8 +126,8 @@ int main(int argc, char *argv[]) {
     BitRefManager *bit_ref_manager;
     ierr = m_field.getInterface(bit_ref_manager); CHKERRQ(ierr);
 
-    for (_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_((*meshset_manager), SIDESET,
-                                                 it)) {
+    for (_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(
+             (core.getInterface<MeshsetsManager &, 0>()), SIDESET, it)) {
       cout << *it << endl;
     }
 
@@ -141,7 +162,7 @@ int main(int argc, char *argv[]) {
     if (flg_vol_block_set) {
       if (meshset_manager->checkMeshset(vol_block_set, BLOCKSET)) {
         ierr = meshset_manager->getEntitiesByDimension(
-            edges_block_set, BLOCKSET, 3, tets, true);
+            vol_block_set, BLOCKSET, 3, tets, true);
         CHKERRQ(ierr);
       } else {
         SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
@@ -165,7 +186,7 @@ int main(int argc, char *argv[]) {
     bit_level2.set(2);
     BitRefLevel bit_level3; // Merge level
     bit_level3.set(3);
-    BitRefLevel bit_level4; // TeteGen level
+    BitRefLevel bit_level4; // TetGen level
     bit_level4.set(4);
 
     // Create tag storing nodal positions
@@ -249,7 +270,41 @@ int main(int argc, char *argv[]) {
     rval = moab.delete_entities(surface_verts);
     CHKERRQ_MOAB(rval);
 
+    if(flg_create_surface_side_set) {
+      ierr = meshset_manager->addMeshset(SIDESET, create_surface_side_set);
+      CHKERRQ(ierr);
+      ierr = meshset_manager->addEntitiesToMeshset(
+          SIDESET, create_surface_side_set, cut_mesh->getTetgenSurfaces());
+      CHKERRQ(ierr);
+    }
+
     rval = moab.write_file("out.h5m"); CHKERRQ_MOAB(rval);
+
+    if(output_vtk) {
+      EntityHandle meshset;
+      rval = moab.create_meshset(MESHSET_SET,meshset); CHKERRQ_MOAB(rval);
+      if(flg_vol_block_set) {
+        Range ents;
+        meshset_manager->getEntitiesByDimension(vol_block_set, BLOCKSET, 3,
+                                                ents);
+        CHKERRQ(ierr);
+        rval = moab.add_entities(meshset, ents);
+        CHKERRQ_MOAB(rval);
+      } else {
+        BitRefLevel bit;
+        if (squash_bits)
+          bit = bit_level0;
+        else
+          bit = bit_level4;
+        ierr = bit_ref_manager->getEntitiesByTypeAndRefLevel(
+            bit, BitRefLevel().set(), MBTET, meshset);
+        CHKERRQ(ierr);
+      }
+      rval = moab.add_entities(meshset, cut_mesh->getTetgenSurfaces());
+      CHKERRQ_MOAB(rval);
+      rval = moab.write_file("out.vtk","VTK","",&meshset,1); CHKERRQ_MOAB(rval);
+      rval = moab.delete_entities(&meshset,1); CHKERRQ_MOAB(rval);
+    }
 
   } catch (MoFEMException const &e) {
     SETERRQ(PETSC_COMM_SELF, e.errorCode, e.errorMessage);
