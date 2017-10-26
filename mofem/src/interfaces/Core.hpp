@@ -695,9 +695,9 @@ protected:
                              const Problem **problem_ptr) const;
   PetscErrorCode get_problems(const Problem_multiIndex **problems_ptr) const;
   FieldEntityByFieldName::iterator
-  get_ent_moabfield_by_name_begin(const std::string &field_name) const;
+  get_ent_field_by_name_begin(const std::string &field_name) const;
   FieldEntityByFieldName::iterator
-  get_ent_moabfield_by_name_end(const std::string &field_name) const;
+  get_ent_field_by_name_end(const std::string &field_name) const;
   DofEntityByFieldName::iterator
   get_dofs_by_name_begin(const std::string &field_name) const;
   DofEntityByFieldName::iterator
@@ -714,9 +714,9 @@ protected:
   DofEntityByNameAndType::iterator
   get_dofs_by_name_and_type_end(const std::string &field_name,
                                 const EntityType ent) const;
-  EntFiniteElementbyName::iterator
+  EntFiniteElementByName::iterator
   get_fe_by_name_begin(const std::string &fe_name) const;
-  EntFiniteElementbyName::iterator
+  EntFiniteElementByName::iterator
   get_fe_by_name_end(const std::string &fe_name) const;
 
   /**@}*/
