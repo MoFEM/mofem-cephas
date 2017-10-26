@@ -98,7 +98,7 @@ for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,NODESET|DISPLACEMENTSET,it) {
 * \param IT iterator
 *
 * Example: \code
-for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,"SOME_BLOCK_NANE",it) {
+for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,"SOME_BLOCK_NAME",it) {
 ...
 * } \endcode
 */
@@ -127,7 +127,7 @@ struct MeshsetsManager : public UnknownInterface {
   /**
    * \brief get tags handlers used on meshsets
 
-   * On meshsets range of tages in set. Depending on tag type and data on that
+   * On meshsets range of tags in set. Depending on tag type and data on that
    * tag type of meshset could be determined. This function get hanldes to
    * tags.
    *
@@ -433,22 +433,22 @@ struct MeshsetsManager : public UnknownInterface {
     * \param name of set
 
     */
-  PetscErrorCode addMeshset(const CubitBCType cubit_bc_tyep, const int ms_id,
+  PetscErrorCode addMeshset(const CubitBCType cubit_bc_type, const int ms_id,
                             const std::string name = "");
 
   /**
    * \brief add entities to cubit meshset
-   * @param  cubit_bc_tyep type of meshset, f.e. NODESET, SIDESET or BLOCKSET
+   * @param  cubit_bc_type type of meshset, f.e. NODESET, SIDESET or BLOCKSET
    * @param  ms_id         id of meshset
    * @param  ents          entities to add
    * @return               error code
    */
-  PetscErrorCode addEntitiesToMeshset(const CubitBCType cubit_bc_tyep,
+  PetscErrorCode addEntitiesToMeshset(const CubitBCType cubit_bc_type,
                                       const int ms_id, Range &ents);
 
   /**
    * \brief add entities to cubit meshset
-   * @param  cubit_bc_tyep type of meshset, f.e. NODESET, SIDESET or BLOCKSET
+   * @param  cubit_bc_type type of meshset, f.e. NODESET, SIDESET or BLOCKSET
    * @param  ms_id         id of meshset
    * @param  ents          pointer to entities array
    * @param  nb_ents       number of entities in array
@@ -540,7 +540,7 @@ struct MeshsetsManager : public UnknownInterface {
     * \param  see CubitBC (NODESET, SIDESET or BLOCKSET and more)
     * \param dimensions (0 - Nodes, 1 - Edges, 2 - Faces, 3 -
     Volume(tetrahedral))
-    * \param Range containing the retreived entities
+    * \param Range containing the retrieved entities
     * \param recursive If true, meshsets containing meshsets are queried
     recursively. Returns the contents of meshsets, but not the meshsets
     themselves if true.
@@ -561,7 +561,7 @@ struct MeshsetsManager : public UnknownInterface {
 
     * \param ms_id id of the BLOCKSET/SIDESET/BLOCKSET: from CUBIT
     * \param  see CubitBC (NODESET, SIDESET or BLOCKSET and more)
-    * \param Range containing the retreived entities related to the
+    * \param Range containing the retrieved entities related to the
     * \param recursive If true, meshsets containing meshsets are queried
     recursively.  Returns the contents of meshsets, but not the meshsets
     themselves if true.
@@ -627,7 +627,7 @@ struct MeshsetsManager : public UnknownInterface {
    id=2003
    add=NODESET
 
-   # Each flag means that boundary consition on displacemnys is set.
+   # Each flag means that boundary consition on displacements is set.
    disp_flag1=1 # Setting constrains in x- direction
    disp_flag2=1 # Setting constrains in y- direction
    disp_flag3=1 # Setting constrains in z- direction
@@ -637,11 +637,11 @@ struct MeshsetsManager : public UnknownInterface {
    disp_ux=1 # value of disp in x- direction
    disp_uy=2
    disp_uz=3
-   disp_rx=4 # value of rotiatuin in y-direction
+   disp_rx=4 # value of rotation in y-direction
    disp_ry=5
    disp_rz=6
 
-   # Note abouve values could be interpreted differntly if needed.
+   # Note above values could be interpreted differently if needed.
 
    [block_1004]
 
@@ -681,7 +681,7 @@ struct MeshsetsManager : public UnknownInterface {
 
    id=2007
    add=SIDESET
-   heatflux_flag1=1        # 0: N/A, 1: hetflux applied
+   heatflux_flag1=1        # 0: N/A, 1: heat flux applied
    heatflux_magnitude=1
 
    [block_1008]
