@@ -466,7 +466,7 @@ struct MeshsetsManager : public UnknownInterface {
    * @param  attributes    attributes
    * @return               error code
    */
-  PetscErrorCode setAttribites(const CubitBCType cubit_bc_type, const int ms_id,
+  PetscErrorCode setAtributes(const CubitBCType cubit_bc_type, const int ms_id,
                                const std::vector<double> &attributes,
                                const std::string name = "");
 
@@ -478,7 +478,7 @@ struct MeshsetsManager : public UnknownInterface {
    * @param  attributes    attributes
    * @return               error code
    */
-  PetscErrorCode setAttribitesByDataStructure(const CubitBCType cubit_bc_type,
+  PetscErrorCode setAtributesByDataStructure(const CubitBCType cubit_bc_type,
                                               const int ms_id,
                                               const GenericAttributeData &data,
                                               const std::string name = "");

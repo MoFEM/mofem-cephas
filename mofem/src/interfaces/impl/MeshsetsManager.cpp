@@ -320,7 +320,7 @@ MeshsetsManager::query_interface(const MOFEMuuid &uuid,
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode MeshsetsManager::setAttribites(
+  PetscErrorCode MeshsetsManager::setAtributes(
       const CubitBCType cubit_bc_type, const int ms_id,
       const std::vector<double> &attributes, const std::string name) {
     MoFEM::Interface &m_field = cOre;
@@ -353,7 +353,7 @@ MeshsetsManager::query_interface(const MOFEMuuid &uuid,
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode MeshsetsManager::setAttribitesByDataStructure(
+  PetscErrorCode MeshsetsManager::setAtributesByDataStructure(
       const CubitBCType cubit_bc_type, const int ms_id,
       const GenericAttributeData &data, const std::string name) {
     MoFEM::Interface &m_field = cOre;
@@ -834,23 +834,23 @@ MeshsetsManager::query_interface(const MOFEMuuid &uuid,
               ierr = addEntitiesToMeshset(mit->second.bcType,mit->second.iD,&meshset,1); CHKERRQ(ierr);
             }
             // Add attributes
-            ierr = setAttribites(mit->second.bcType, mit->second.iD,
+            ierr = setAtributes(mit->second.bcType, mit->second.iD,
                                  mit->second.aTtr);
             CHKERRQ(ierr);
             // Add material elastic data if value are physical (i.e. Young > 0,
             // Poisson in (-1.0.5) and ThermalExpansion>0)
             if(mit->second.matElastic.data.Young!=-1) {
-              ierr = setAttribitesByDataStructure(
+              ierr = setAtributesByDataStructure(
                   mit->second.bcType, mit->second.iD, mit->second.matElastic);
               CHKERRQ(ierr);
             }
             if(mit->second.matThermal.data.Conductivity!=-1) {
-              ierr = setAttribitesByDataStructure(
+              ierr = setAtributesByDataStructure(
                   mit->second.bcType, mit->second.iD, mit->second.matThermal);
               CHKERRQ(ierr);
             }
             if(mit->second.matInterf.data.ft!=-1) {
-              ierr = setAttribitesByDataStructure(
+              ierr = setAtributesByDataStructure(
                   mit->second.bcType, mit->second.iD, mit->second.matInterf);
               CHKERRQ(ierr);
             }
