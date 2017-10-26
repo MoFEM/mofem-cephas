@@ -94,7 +94,7 @@ struct UnknownInterface {
    * @param iface
    * @return template <class IFACE, bool VERIFY>  PetscErrorCode
    */
-  template <class IFACE, bool VERIFY>
+  template <class IFACE, bool VERIFY /* =false C++11 needed to have this */ >
   inline PetscErrorCode getInterface(const MOFEMuuid &uuid,
                                      IFACE *&iface) const {
     MoFEMFunctionBeginHot;
@@ -136,16 +136,40 @@ struct UnknownInterface {
     return getInterface<IFACE, false>(getUId(typeid(IFACE).name()), *iface);
   }
 
+  template <
+    class IFACE, 
+    typename boost::enable_if<boost::is_pointer<IFACE>, int>::type /* =0 C++11 needed to have this */  
+  >
+  inline IFACE getInterface() const {
+    typedef typename boost::remove_pointer<IFACE>::type IFaceType;
+    IFaceType* iface = NULL;
+    ierr = getInterface<IFaceType, false>(
+        getUId(typeid(IFaceType).name()), iface);
+    CHKERRABORT(PETSC_COMM_SELF, ierr);
+    return iface;
+  }
+
+  template <
+    class IFACE, 
+    typename boost::enable_if<boost::is_reference<IFACE>, int>::type /* =0 C++11 needed to have this */  
+  >
+  inline IFACE getInterface() const {
+    typedef typename boost::remove_reference<IFACE>::type IFaceType;
+    IFaceType* iface = NULL;
+    ierr = getInterface<IFaceType, false>(
+        getUId(typeid(IFaceType).name()), iface);
+    CHKERRABORT(PETSC_COMM_SELF, ierr);
+    return *iface;
+  }
+
   /**
    * @brief Function returning pointer to interface
    *
-   * @return template <class IFACE>  IFACE
+   * @return template <class IFACE>  IFACE*
    */
-  template <class IFACE> inline IFACE *getInterface() const {
-    IFACE *iface = NULL;
-    ierr = getInterface<IFACE, false>(getUId(typeid(IFACE).name()), iface);
-    CHKERRABORT(PETSC_COMM_SELF, ierr);
-    return iface;
+  template <class IFACE>
+  inline IFACE* getInterface() const {
+    return getInterface<IFACE*,0>();
   }
 
   virtual ~UnknownInterface() {}
