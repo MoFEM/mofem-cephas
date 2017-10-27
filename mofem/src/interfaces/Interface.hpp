@@ -1073,7 +1073,7 @@ namespace MoFEM {
      * \ingroup mofem_field
      */
     virtual PetscErrorCode clear_ents_fields(const std::string &name,
-                                             const Range enst,
+                                             const Range ents,
                                              int verb = -1) = 0;
 
     /**@}*/
@@ -1230,7 +1230,7 @@ namespace MoFEM {
     additional non-zero elements in matrix, this function can help detect
     problem. Should be used as a part of atom tests
 
-    \param problem_nanme
+    \param problem_name
     \param row print info at particular row
     \param col print info at particular col
 
@@ -1565,7 +1565,7 @@ namespace MoFEM {
 
     /**@}*/
 
-    /** \name Get pointers to multi-index databses */
+    /** \name Get pointers to multi-index database */
 
     /**@{*/
 
@@ -1640,7 +1640,7 @@ namespace MoFEM {
      * \param field_name
      */
     virtual FieldEntityByFieldName::iterator
-    get_ent_moabfield_by_name_begin(const std::string &field_name) const = 0;
+    get_ent_field_by_name_begin(const std::string &field_name) const = 0;
 
     /**
      * \brief get begin iterator of filed dofs of given name (instead you can
@@ -1654,15 +1654,15 @@ namespace MoFEM {
      * \param field_name
      */
     virtual FieldEntityByFieldName::iterator
-    get_ent_moabfield_by_name_end(const std::string &field_name) const = 0;
+    get_ent_field_by_name_end(const std::string &field_name) const = 0;
 
   /** \brief loop over all dofs from a moFEM field and particular field
    * \ingroup mofem_field
    */
 #define _IT_GET_ENT_FIELD_BY_NAME_FOR_LOOP_(MFIELD, NAME, IT)                  \
   FieldEntityByFieldName::iterator IT =                                        \
-      MFIELD.get_ent_moabfield_by_name_begin(NAME);                            \
-  IT != MFIELD.get_ent_moabfield_by_name_end(NAME);                            \
+      MFIELD.get_ent_field_by_name_begin(NAME);                                \
+  IT != MFIELD.get_ent_field_by_name_end(NAME);                                \
   IT++
 
     /**
@@ -1744,7 +1744,7 @@ namespace MoFEM {
      * \brief get field data from entity and field
      * \ingroup mofem_field
      *
-     * this funciont is not recommended to be used in finite elemeny
+     * this function is not recommended to be used in finite element
      * implementation
      *
      */
@@ -1844,7 +1844,7 @@ namespace MoFEM {
      *
      * \param fe_name
      */
-    virtual EntFiniteElementbyName::iterator
+    virtual EntFiniteElementByName::iterator
     get_fe_by_name_begin(const std::string &fe_name) const = 0;
 
     /**
@@ -1857,14 +1857,14 @@ namespace MoFEM {
      *
      * \param fe_name
      */
-    virtual EntFiniteElementbyName::iterator
+    virtual EntFiniteElementByName::iterator
     get_fe_by_name_end(const std::string &fe_name) const = 0;
 
   /** \brief loop over all finite elements from a moFEM field and FE
    * \ingroup mofem_access
    */
 #define _IT_GET_FES_BY_NAME_FOR_LOOP_(MFIELD, NAME, IT)                        \
-  EntFiniteElementbyName::iterator IT = MFIELD.get_fe_by_name_begin(NAME);     \
+  EntFiniteElementByName::iterator IT = MFIELD.get_fe_by_name_begin(NAME);     \
   IT != MFIELD.get_fe_by_name_end(NAME);                                       \
   IT++
   };

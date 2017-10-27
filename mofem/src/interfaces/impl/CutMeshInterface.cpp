@@ -448,8 +448,8 @@ PetscErrorCode CutMeshInterface::getZeroDistanceEnts(const double low_tol,
   rval = moab.get_adjacencies(cut_edge_verts, 2, true, cut_edges_faces,
                               moab::Interface::UNION);
   CHKERRQ_MOAB(rval);
-  zeroDistanseEnts.clear();
-  verticecOnCutEdges.clear();
+  zeroDistanceEnts.clear();
+  verticesOnCutEdges.clear();
   for (Range::iterator fit = cut_edges_faces.begin();
        fit != cut_edges_faces.end(); fit++) {
     int num_nodes;
@@ -462,7 +462,7 @@ PetscErrorCode CutMeshInterface::getZeroDistanceEnts(const double low_tol,
     if (fabs(dist[0]) < low_tol * aveLength &&
         fabs(dist[1]) < low_tol * aveLength &&
         fabs(dist[2]) < low_tol * aveLength) {
-      zeroDistanseEnts.insert(*fit);
+      zeroDistanceEnts.insert(*fit);
       Range adj_edges;
       rval = moab.get_adjacencies(conn, num_nodes, 1, false, adj_edges,
                                   moab::Interface::UNION);
@@ -488,11 +488,11 @@ PetscErrorCode CutMeshInterface::getZeroDistanceEnts(const double low_tol,
               3, ublas::shallow_array_adaptor<double>(3, p_out));
           VectorDouble3 ray = point_out - s0;
           double dist0 = norm_2(ray);
-          verticecOnCutEdges[conn[nn]].dIst = dist0;
-          verticecOnCutEdges[conn[nn]].lEngth = dist0;
-          verticecOnCutEdges[conn[nn]].unitRayDir =
+          verticesOnCutEdges[conn[nn]].dIst = dist0;
+          verticesOnCutEdges[conn[nn]].lEngth = dist0;
+          verticesOnCutEdges[conn[nn]].unitRayDir =
               dist0 > 0 ? ray / dist0 : ray;
-          verticecOnCutEdges[conn[nn]].rayPoint = s0;
+          verticesOnCutEdges[conn[nn]].rayPoint = s0;
         }
       }
     }
@@ -504,7 +504,7 @@ PetscErrorCode CutMeshInterface::getZeroDistanceEnts(const double low_tol,
     rval = moab.tag_get_data(th_dist, &*vit, 1, dist);
     CHKERRQ_MOAB(rval);
     if (fabs(dist[0]) < low_tol * aveLength) {
-      zeroDistanseVerts.insert(*vit);
+      zeroDistanceVerts.insert(*vit);
       Range adj_edges;
       rval = moab.get_adjacencies(&*vit, 1, 1, false, adj_edges);
       CHKERRQ_MOAB(rval);
@@ -526,10 +526,10 @@ PetscErrorCode CutMeshInterface::getZeroDistanceEnts(const double low_tol,
                               ublas::shallow_array_adaptor<double>(3, p_out));
       VectorDouble3 ray = point_out - s0;
       double dist0 = norm_2(ray);
-      verticecOnCutEdges[*vit].dIst = dist0;
-      verticecOnCutEdges[*vit].lEngth = dist0;
-      verticecOnCutEdges[*vit].unitRayDir = dist0 > 0 ? ray / dist0 : ray;
-      verticecOnCutEdges[*vit].rayPoint = s0;
+      verticesOnCutEdges[*vit].dIst = dist0;
+      verticesOnCutEdges[*vit].lEngth = dist0;
+      verticesOnCutEdges[*vit].unitRayDir = dist0 > 0 ? ray / dist0 : ray;
+      verticesOnCutEdges[*vit].rayPoint = s0;
     }
   }
   MoFEMFunctionReturnHot(0);
@@ -564,9 +564,9 @@ PetscErrorCode CutMeshInterface::cutEdgesInMiddle(const BitRefLevel bit) {
   CHKERRQ(ierr);
   // Find new vertices on catted edges
   cutNewVertices.clear();
-  rval = moab.get_connectivity(zeroDistanseEnts, cutNewVertices, true);
+  rval = moab.get_connectivity(zeroDistanceEnts, cutNewVertices, true);
   CHKERRQ_MOAB(rval);
-  cutNewVertices.merge(zeroDistanseVerts);
+  cutNewVertices.merge(zeroDistanceVerts);
   for (map<EntityHandle, TreeData>::iterator mit = edgesToCut.begin();
        mit != edgesToCut.end(); mit++) {
     boost::shared_ptr<RefEntity> ref_ent =
@@ -575,7 +575,7 @@ PetscErrorCode CutMeshInterface::cutEdgesInMiddle(const BitRefLevel bit) {
     if ((ref_ent->getBitRefLevel() & bit).any()) {
       EntityHandle vert = ref_ent->getRefEnt();
       cutNewVertices.insert(vert);
-      verticecOnCutEdges[vert] = mit->second;
+      verticesOnCutEdges[vert] = mit->second;
       // rval =
       // moab.tag_set_data(th_ray_dir,&vert,1,&mit->second.unitRayDir[0]);
       // CHKERRQ_MOAB(rval);
@@ -587,7 +587,7 @@ PetscErrorCode CutMeshInterface::cutEdgesInMiddle(const BitRefLevel bit) {
   rval = skin.find_skin(0, cutNewVolumes, false, tets_skin);
   CHKERRQ_MOAB(rval);
   cutNewSurfaces.merge(
-      subtract(zeroDistanseEnts.subset_by_type(MBTRI), tets_skin));
+      subtract(zeroDistanceEnts.subset_by_type(MBTRI), tets_skin));
   // At that point cutNewSurfaces has all newly created faces, now take all
   // nodes on those faces and subtract nodes on catted edges. Faces adjacent to
   // nodes which left are not part of surface.
@@ -625,7 +625,7 @@ PetscErrorCode CutMeshInterface::trimEdgesInTheMiddle(const BitRefLevel bit,
       bit, bit, MBTET, trimNewVolumes);
   CHKERRQ(ierr);
   // Get vertices which are on trim edges
-  verticecOnTrimEdges.clear();
+  verticesOnTrimEdges.clear();
   trimNewVertices.clear();
   for (map<EntityHandle, TreeData>::iterator mit = edgesToTrim.begin();
        mit != edgesToTrim.end(); mit++) {
@@ -635,7 +635,7 @@ PetscErrorCode CutMeshInterface::trimEdgesInTheMiddle(const BitRefLevel bit,
     if ((ref_ent->getBitRefLevel() & bit).any()) {
       EntityHandle vert = ref_ent->getRefEnt();
       trimNewVertices.insert(vert);
-      verticecOnTrimEdges[vert] = mit->second;
+      verticesOnTrimEdges[vert] = mit->second;
     }
   }
 
@@ -709,8 +709,8 @@ PetscErrorCode CutMeshInterface::moveMidNodesOnCutEdges(Tag th) {
   // ); CHKERRQ_MOAB(rval);
 
   // Range out_side_vertices;
-  for (map<EntityHandle, TreeData>::iterator mit = verticecOnCutEdges.begin();
-       mit != verticecOnCutEdges.end(); mit++) {
+  for (map<EntityHandle, TreeData>::iterator mit = verticesOnCutEdges.begin();
+       mit != verticesOnCutEdges.end(); mit++) {
     double dist = mit->second.dIst;
     // cout << s << " " << mit->second.dIst << " " << mit->second.lEngth <<
     // endl;
@@ -736,8 +736,8 @@ PetscErrorCode CutMeshInterface::moveMidNodesOnTrimedEdges(Tag th) {
   moab::Interface &moab = m_field.get_moab();
   MoFEMFunctionBeginHot;
   // Range out_side_vertices;
-  for (map<EntityHandle, TreeData>::iterator mit = verticecOnTrimEdges.begin();
-       mit != verticecOnTrimEdges.end(); mit++) {
+  for (map<EntityHandle, TreeData>::iterator mit = verticesOnTrimEdges.begin();
+       mit != verticesOnTrimEdges.end(); mit++) {
     double dist = mit->second.dIst;
     // cout << s << " " << mit->second.dIst << " " << mit->second.lEngth <<
     // endl;

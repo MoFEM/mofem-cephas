@@ -282,7 +282,7 @@ struct CutMeshInterface : public UnknownInterface {
   inline const Range &getNewCutVolumes() const { return cutNewVolumes; }
   inline const Range &getNewCutSurfaces() const { return cutNewSurfaces; }
   inline const Range &getNewCutVertices() const { return cutNewVertices; }
-  inline const Range &getZeroDistanceEnts() const { return zeroDistanseEnts; }
+  inline const Range &getZeroDistanceEnts() const { return zeroDistanceEnts; }
 
   inline const Range &getTrimEdges() const { return trimEdges; }
   inline const Range &getNewTrimVolumes() const { return trimNewVolumes; }
@@ -310,8 +310,8 @@ private:
   Range cutVolumes;
   Range cutNewVolumes;
   Range cutNewSurfaces;
-  Range zeroDistanseEnts;
-  Range zeroDistanseVerts;
+  Range zeroDistanceEnts;
+  Range zeroDistanceVerts;
   Range cutNewVertices;
 
   Range trimNewVolumes;
@@ -332,9 +332,9 @@ private:
   };
 
   map<EntityHandle, TreeData> edgesToCut;
-  map<EntityHandle, TreeData> verticecOnCutEdges;
+  map<EntityHandle, TreeData> verticesOnCutEdges;
   map<EntityHandle, TreeData> edgesToTrim;
-  map<EntityHandle, TreeData> verticecOnTrimEdges;
+  map<EntityHandle, TreeData> verticesOnTrimEdges;
 
 #ifdef WITH_TETGEN
 
@@ -372,7 +372,7 @@ private:
 #endif //__CUTMESHINTERFACE_HPP__
 
 /**
- * \defgroup mesh_cut Mech cutter
+ * \defgroup mesh_cut CutMeshInterface
  * \brief Interface to mesh cut mesh
  *
  * \ingroup mofem

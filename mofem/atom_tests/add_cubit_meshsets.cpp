@@ -57,7 +57,7 @@ int main(int argc, char *argv[]) {
     attr[0] = 0;
     attr[1] = 1;
     attr[2] = 2;
-    ierr = meshsets_manager_ptr->setAttribites(BLOCKSET,1000,attr); CHKERRQ(ierr);
+    ierr = meshsets_manager_ptr->setAtributes(BLOCKSET,1000,attr); CHKERRQ(ierr);
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
       //Get block name
       std::string name = it->getName();
@@ -82,7 +82,7 @@ int main(int argc, char *argv[]) {
       Mat_Elastic mydata;
       mydata.data.Young = 1;
       mydata.data.Poisson = 0.25;
-      ierr = meshsets_manager_ptr->setAttribitesByDataStructure(BLOCKSET,1001,mydata); CHKERRQ(ierr);
+      ierr = meshsets_manager_ptr->setAtributesByDataStructure(BLOCKSET,1001,mydata); CHKERRQ(ierr);
     }
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
       if(it->getMeshsetId()!=1001) continue;

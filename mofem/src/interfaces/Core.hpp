@@ -189,7 +189,7 @@ protected:
 
   /**@{*/
 
-  moab::Interface &moab; ///< moab databse
+  moab::Interface &moab; ///< moab database
   inline moab::Interface &get_moab() { return moab; }
   inline const moab::Interface &get_moab() const { return moab; }
 
@@ -391,7 +391,7 @@ protected:
                                    const BitRefLevel &mask, int verb = -1);
   PetscErrorCode clear_dofs_fields(const std::string &name, const Range ents,
                                    int verb = -1);
-  PetscErrorCode clear_ents_fields(const std::string &name, const Range enst,
+  PetscErrorCode clear_ents_fields(const std::string &name, const Range ents,
                                    int verb = -1);
 
   /// \name Other auxiliary functions for fields
@@ -515,7 +515,7 @@ protected:
   BitFEId getBitFEId(const std::string &name) const;
 
   /**
-   * \beief Get field name
+   * \brief Get field name
    * @param  id field id
    * @return    field name
    */
@@ -587,7 +587,7 @@ protected:
 
   DEPRECATED PetscErrorCode build_problem_on_distributed_mesh(int verb = -1);
   DEPRECATED PetscErrorCode build_problems(int verb = -1);
-  PetscErrorCode partition_check_matrix_fill_in(const std::string &problem_neme,
+  PetscErrorCode partition_check_matrix_fill_in(const std::string &problem_name,
                                                 int row, int col, int verb);
 
   /**@}*/
@@ -695,9 +695,9 @@ protected:
                              const Problem **problem_ptr) const;
   PetscErrorCode get_problems(const Problem_multiIndex **problems_ptr) const;
   FieldEntityByFieldName::iterator
-  get_ent_moabfield_by_name_begin(const std::string &field_name) const;
+  get_ent_field_by_name_begin(const std::string &field_name) const;
   FieldEntityByFieldName::iterator
-  get_ent_moabfield_by_name_end(const std::string &field_name) const;
+  get_ent_field_by_name_end(const std::string &field_name) const;
   DofEntityByFieldName::iterator
   get_dofs_by_name_begin(const std::string &field_name) const;
   DofEntityByFieldName::iterator
@@ -714,9 +714,9 @@ protected:
   DofEntityByNameAndType::iterator
   get_dofs_by_name_and_type_end(const std::string &field_name,
                                 const EntityType ent) const;
-  EntFiniteElementbyName::iterator
+  EntFiniteElementByName::iterator
   get_fe_by_name_begin(const std::string &fe_name) const;
-  EntFiniteElementbyName::iterator
+  EntFiniteElementByName::iterator
   get_fe_by_name_end(const std::string &fe_name) const;
 
   /**@}*/
@@ -817,7 +817,7 @@ private:
   /**
    * \brief Initialize database getting information on mesh
    */
-  PetscErrorCode initialiseDatabseFromMesh(int verb = -1);
+  PetscErrorCode initialiseDatabaseFromMesh(int verb = -1);
 
   template <class IFACE> PetscErrorCode regSubInterface(const MOFEMuuid &uid);
 };
