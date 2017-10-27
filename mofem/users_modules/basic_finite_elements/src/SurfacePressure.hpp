@@ -30,9 +30,9 @@ struct NeummanForcesSurface {
   /**
    * \brief Analytical force method
    */
-  struct MethodForAnaliticalForce {
+  struct MethodForAnalyticalForce {
 
-    virtual ~MethodForAnaliticalForce() {
+    virtual ~MethodForAnalyticalForce() {
     }
 
     /**
@@ -58,6 +58,9 @@ struct NeummanForcesSurface {
     }
 
   };
+
+  /// \deprecated fixed spelling mistake
+  DEPRECATED typedef MethodForAnalyticalForce MethodForAnaliticalForce;
 
   /**
    * Definition of face element used for integration
@@ -89,7 +92,7 @@ struct NeummanForcesSurface {
   std::map<int,bCPreassure> mapPreassure;
 
   boost::ptr_vector<MethodForForceScaling> methodsOp;
-  boost::ptr_vector<MethodForAnaliticalForce> analyticalForceOp;
+  boost::ptr_vector<MethodForAnalyticalForce> analyticalForceOp;
 
   /// Operator for force element
   struct OpNeumannForce: public MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator {
@@ -118,7 +121,7 @@ struct NeummanForcesSurface {
     Vec F;
     const Range tRis;
     boost::ptr_vector<MethodForForceScaling> &methodsOp;
-    boost::ptr_vector<MethodForAnaliticalForce> &analyticalForceOp;
+    boost::ptr_vector<MethodForAnalyticalForce> &analyticalForceOp;
 
     bool hoGeometry;
 
@@ -127,7 +130,7 @@ struct NeummanForcesSurface {
       Vec f,
       const Range tris,
       boost::ptr_vector<MethodForForceScaling> &methods_op,
-      boost::ptr_vector<MethodForAnaliticalForce> &analytical_force_op,
+      boost::ptr_vector<MethodForAnalyticalForce> &analytical_force_op,
       bool ho_geometry = false
     );
 

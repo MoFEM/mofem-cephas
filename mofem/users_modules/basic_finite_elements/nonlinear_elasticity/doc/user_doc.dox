@@ -33,7 +33,7 @@ where first column represents time and second column represent time force scalin
 
 \subsection execution Executing code
 
-If bar material model is NeoHookean (note that using key word KIRCHOFF a St Venant Kirchoff material is used)
+If bar material model is NeoHookean (note that using key word KIRCHHOFF a St Venant Kirchhoff material is used)
 \code
 mpirun -np 4  ../../nonlinear_dynamics \
   -my_file rod.cub \

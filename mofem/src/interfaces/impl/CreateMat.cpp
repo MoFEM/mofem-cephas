@@ -136,7 +136,7 @@ PetscErrorCode CreateRowComressedADJMatrix::buildFECol(
       // Reserve memory for field  dofs
       boost::shared_ptr<std::vector<FENumeredDofEntity> > dofs_array =
       boost::make_shared<std::vector<FENumeredDofEntity> >();
-      fe_ptr->getColDofsSeqence() = dofs_array;
+      fe_ptr->getColDofsSequence() = dofs_array;
       dofs_array->reserve(cols_view.size());
       // Reserve memory for shared pointers now
       std::vector<boost::shared_ptr<FENumeredDofEntity> > dofs_shared_array;

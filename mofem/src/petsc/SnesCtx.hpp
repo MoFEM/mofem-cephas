@@ -55,7 +55,7 @@ namespace MoFEM {
     BasicMethodsSequence postProcess_Rhs; ///< Sequence of methods run after residual is assembled
 
     /**
-     * \brief Copy seqences from other SNES contex
+     * \brief Copy sequences from other SNES contex
      * @param  snes_ctx SNES contex from which Sequence is copied from
      * @return          error code
      */

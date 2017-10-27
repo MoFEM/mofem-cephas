@@ -33,7 +33,7 @@ static const MOFEMuuid IDD_MOFEMMeshRefine =
   \bug Need to be implemented as a stand alone interface not as a part of core
   structure which should be only basic database
   \bug If outsourced, class member functions should follow name convention
-
+  \bug Spelling mistakes will be corrected with names fix to follow name convetion
 
   \ingroup mofem_refiner
   */

@@ -192,7 +192,7 @@ PetscErrorCode ConstrainMatrixCtx::destroyQTKQ() {
     MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode PorjectionMatrixMultOpQ(Mat Q,Vec x,Vec f) {
+PetscErrorCode ProjectionMatrixMultOpQ(Mat Q,Vec x,Vec f) {
   MoFEMFunctionBeginHot;
   
   void *void_ctx;
@@ -290,7 +290,7 @@ PetscErrorCode ConstrainMatrixMultOpCTC_QTKQ(Mat CTC_QTKQ,Vec x,Vec f) {
   ierr = MatGetSize(ctx->K,&M,&N); CHKERRQ(ierr);
   ierr = MatGetLocalSize(ctx->K,&m,&n); CHKERRQ(ierr);
   ierr = MatCreateShell(ctx->mField.get_comm(),m,n,M,N,ctx,&Q); CHKERRQ(ierr);
-  ierr = MatShellSetOperation(Q,MATOP_MULT,(void(*)(void))PorjectionMatrixMultOpQ); CHKERRQ(ierr);
+  ierr = MatShellSetOperation(Q,MATOP_MULT,(void(*)(void))ProjectionMatrixMultOpQ); CHKERRQ(ierr);
   ierr = ctx->initializeQTKQ(); CHKERRQ(ierr);
   ierr = MatMult(Q,x,ctx->Qx); CHKERRQ(ierr);
   ierr = MatMult(ctx->K,ctx->Qx,ctx->KQx); CHKERRQ(ierr);

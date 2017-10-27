@@ -442,7 +442,7 @@ namespace MoFEM {
 
       boost::shared_ptr<std::vector<NumeredDofEntity> > dofs_array =
       boost::shared_ptr<std::vector<NumeredDofEntity> >(new std::vector<NumeredDofEntity>());
-      problem_ptr->getRowDofsSeqence()->push_back(dofs_array);
+      problem_ptr->getRowDofsSequence()->push_back(dofs_array);
       dofs_array->reserve(count_dofs);
       std::vector<boost::shared_ptr<NumeredDofEntity> > dofs_shared_array;
       dofs_shared_array.reserve(count_dofs);
@@ -482,7 +482,7 @@ namespace MoFEM {
 
       boost::shared_ptr<std::vector<NumeredDofEntity> > dofs_array =
       boost::shared_ptr<std::vector<NumeredDofEntity> >(new std::vector<NumeredDofEntity>());
-      problem_ptr->getColDofsSeqence()->push_back(dofs_array);
+      problem_ptr->getColDofsSequence()->push_back(dofs_array);
       dofs_array->reserve(count_dofs);
       std::vector<boost::shared_ptr<NumeredDofEntity> > dofs_shared_array;
       dofs_shared_array.reserve(count_dofs);
@@ -780,9 +780,9 @@ namespace MoFEM {
       dofs_shared_array.clear();
       dofs_shared_array.reserve(nb_dofs_to_add);
       if(ss == 0) {
-        problem_ptr->getRowDofsSeqence()->push_back(dofs_array);
+        problem_ptr->getRowDofsSequence()->push_back(dofs_array);
       } else {
-        problem_ptr->getColDofsSeqence()->push_back(dofs_array);
+        problem_ptr->getColDofsSequence()->push_back(dofs_array);
       }
 
       int &local_idx = *local_nbdof_ptr[ss];
@@ -1228,9 +1228,9 @@ namespace MoFEM {
         boost::shared_ptr<std::vector<NumeredDofEntity> >(new std::vector<NumeredDofEntity>());
 
         if(ss == 0) {
-          out_problem_it->getRowDofsSeqence()->push_back(dofs_array);
+          out_problem_it->getRowDofsSequence()->push_back(dofs_array);
         } else {
-          out_problem_it->getColDofsSeqence()->push_back(dofs_array);
+          out_problem_it->getColDofsSequence()->push_back(dofs_array);
         }
         dofs_array->reserve(std::distance(dit,hi_dit));
 
@@ -1490,10 +1490,10 @@ namespace MoFEM {
       dofs_array[ss] = boost::make_shared<std::vector<NumeredDofEntity> >();
       dofs_array[ss]->reserve(nb_dofs_reserve[ss]);
       if(ss==0) {
-        out_problem_it->getRowDofsSeqence()->push_back(dofs_array[ss]);
+        out_problem_it->getRowDofsSequence()->push_back(dofs_array[ss]);
       }
       if(ss==1) {
-        out_problem_it->getColDofsSeqence()->push_back(dofs_array[ss]);
+        out_problem_it->getColDofsSequence()->push_back(dofs_array[ss]);
       }
     }
 
@@ -2504,12 +2504,12 @@ namespace MoFEM {
           boost::shared_ptr<std::vector<FENumeredDofEntity> > dofs_array =
           boost::make_shared<std::vector<FENumeredDofEntity> >();
           if(ss == 0) {
-            numered_fe->getRowDofsSeqence() = dofs_array;
+            numered_fe->getRowDofsSequence() = dofs_array;
             if(!do_cols_fe) {
-              numered_fe->getColDofsSeqence() = dofs_array;
+              numered_fe->getColDofsSequence() = dofs_array;
             }
           } else {
-            numered_fe->getColDofsSeqence() = dofs_array;
+            numered_fe->getColDofsSequence() = dofs_array;
           }
           dofs_array->reserve(std::distance(vit,hi_vit));
           // reserve memory for shared pointers now

@@ -604,7 +604,7 @@ PetscErrorCode Core::initialiseDatabaseFromMesh(int verb) {
         // once into vector. This vector is passed into sequence as a weak_ptr.
         // Vector is destroyed at the point last entity inside that vector is
         // destroyed.
-        p.first->get()->getEntSeqenceContainer()->push_back(ents_array);
+        p.first->get()->getEntSequenceContainer()->push_back(ents_array);
         ents_array->reserve(ents.size());
         std::vector<boost::shared_ptr<FieldEntity> > ents_shared_array;
         ents_shared_array.reserve(ents.size());

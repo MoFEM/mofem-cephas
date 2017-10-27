@@ -71,7 +71,7 @@ int main(int argc, char *argv[]) {
 
   //Create MoFEM (Joseph) database
   //second argument set communicator for sequential problem
-  //last argument make mofem quaiet
+  //last argument make mofem QUIET
   MoFEM::Core core(moab,PETSC_COMM_SELF,-1);
   MoFEM::Interface& m_field = core;
 

@@ -1,5 +1,5 @@
 /** \file ProblemsMultiIndices.hpp
- * \brief Mylti-index containers, data structures for problems and other low-level functions
+ * \brief Multi-index containers, data structures for problems and other low-level functions
  */
 
 /* MoFEM is free software: you can redistribute it and/or modify it under
@@ -497,7 +497,7 @@ struct Problem {
   }
 
   /**
-  * \berief Loop over problem DOFs in row by part
+  * \brief Loop over problem DOFs in row by part
   * @param  PROBLEMPTR problem pointer
   * @param  PART         partition number
   * @param  IT           iterator
@@ -529,7 +529,7 @@ struct Problem {
   }
 
   /**
-  * \berief Loop over problem DOFs in col by part
+  * \brief Loop over problem DOFs in col by part
   * @param  PROBLEMPTR problem pointer
   * @param  PART         partition number
   * @param  IT           iterator
@@ -652,7 +652,7 @@ struct Problem {
 
    * @return MoFEM::Problem::SequenceDofContainer
    */
-  inline boost::shared_ptr<SequenceDofContainer> getRowDofsSeqence() const {
+  inline boost::shared_ptr<SequenceDofContainer> getRowDofsSequence() const {
     return sequenceRowDofContainer;
   }
 
@@ -668,7 +668,7 @@ struct Problem {
 
    * @return MoFEM::Problem::SequenceDofContainer
    */
-  inline boost::shared_ptr<SequenceDofContainer> getColDofsSeqence() const {
+  inline boost::shared_ptr<SequenceDofContainer> getColDofsSequence() const {
     return sequenceColDofContainer;
   }
 

@@ -1,5 +1,5 @@
 /** \file FEMultiIndices.hpp
- * \brief Myltiindex contains, data structures for mofem finite elements and other low-level functions
+ * \brief Multi-index contains, data structures for mofem finite elements and other low-level functions
  */
 
 /* MoFEM is free software: you can redistribute it and/or modify it under
@@ -410,7 +410,7 @@ struct FiniteElement {
 //    *
 //    * @return MoFEM::Field::SequenceFEContainer
 //    */
-//   inline boost::shared_ptr<SequenceFEContainer> getFESeqenceContainer() const {
+//   inline boost::shared_ptr<SequenceFEContainer> getFESequenceContainer() const {
 //     return sequenceFEContainer;
 //   }
 //
@@ -646,7 +646,7 @@ interface_RefElement<RefElement> {
    * That do the trick.
    *
    */
-  inline boost::weak_ptr<std::vector<FEDofEntity> >& getDofsSeqence() const {
+  inline boost::weak_ptr<std::vector<FEDofEntity> >& getDofsSequence() const {
     return dofsSequce;
   }
 
@@ -824,7 +824,7 @@ struct NumeredEntFiniteElement: public interface_EntFiniteElement<EntFiniteEleme
    * That do the trick.
    *
    */
-  inline boost::weak_ptr<std::vector<FENumeredDofEntity> >& getRowDofsSeqence() const {
+  inline boost::weak_ptr<std::vector<FENumeredDofEntity> >& getRowDofsSequence() const {
     return dofsRowSequce;
   }
 
@@ -836,7 +836,7 @@ struct NumeredEntFiniteElement: public interface_EntFiniteElement<EntFiniteEleme
    * That do the trick.
    *
    */
-  inline boost::weak_ptr<std::vector<FENumeredDofEntity> >& getColDofsSeqence() const {
+  inline boost::weak_ptr<std::vector<FENumeredDofEntity> >& getColDofsSequence() const {
     return dofsColSequce;
   }
 

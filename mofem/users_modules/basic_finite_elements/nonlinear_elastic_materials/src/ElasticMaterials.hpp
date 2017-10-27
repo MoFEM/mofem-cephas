@@ -23,7 +23,7 @@
 #include <Hooke.hpp>
 #include <NeoHookean.hpp>
 
-#define MAT_KIRCHOFF "KIRCHOFF"
+#define MAT_KIRCHHOFF "KIRCHHOFF"
 #define MAT_HOOKE "HOOKE"
 #define MAT_NEOHOOKEAN "NEOHOOKEAN"
 
@@ -39,7 +39,7 @@ struct ElasticMaterials {
   bool iNitialized; ///< true if class is initialized
 
   ElasticMaterials(
-    MoFEM::Interface &m_field,std::string def_material = MAT_KIRCHOFF
+    MoFEM::Interface &m_field,std::string def_material = MAT_KIRCHHOFF
   ):
   mField(m_field),
   defMaterial(def_material),
@@ -70,7 +70,7 @@ struct ElasticMaterials {
     double dashPoisson;
     double aX,aY,aZ;
     BlockOptionData():
-    mAterial(MAT_KIRCHOFF),
+    mAterial(MAT_KIRCHHOFF),
     oRder(-1),
     yOung(-1),
     pOisson(-2),
@@ -96,8 +96,8 @@ struct ElasticMaterials {
     MoFEMFunctionBeginHot;
     //add new material below
     string mat_name;
-    aDoubleMaterialModel[MAT_KIRCHOFF] = boost::make_shared<NonlinearElasticElement::FunctionsToCalculatePiolaKirchhoffI<adouble> >();
-    doubleMaterialModel[MAT_KIRCHOFF] = boost::make_shared<NonlinearElasticElement::FunctionsToCalculatePiolaKirchhoffI<double> >();
+    aDoubleMaterialModel[MAT_KIRCHHOFF] = boost::make_shared<NonlinearElasticElement::FunctionsToCalculatePiolaKirchhoffI<adouble> >();
+    doubleMaterialModel[MAT_KIRCHHOFF] = boost::make_shared<NonlinearElasticElement::FunctionsToCalculatePiolaKirchhoffI<double> >();
     aDoubleMaterialModel[MAT_HOOKE] = boost::make_shared<Hooke<adouble> >();
     doubleMaterialModel[MAT_HOOKE] = boost::make_shared<Hooke<double> >();
     aDoubleMaterialModel[MAT_NEOHOOKEAN] = boost::make_shared<NeoHookean<adouble> >();
@@ -151,7 +151,7 @@ struct ElasticMaterials {
     \code
     [block_1]
     displacemet_order = 1/2 .. N
-    material = KIRCHOFF/HOOKE/NEOHOOKEAN
+    material = KIRCHHOFF/HOOKE/NEOHOOKEAN
     young_modulus = 1
     poisson_ratio = 0.25
     density = 1
@@ -309,9 +309,9 @@ struct ElasticMaterials {
       if(blockData[id].pOisson >= -1) set_of_blocks[id].PoissonRatio = blockData[id].pOisson;
       PetscPrintf(mField.get_comm(),"Block Id %d Young Modulus %3.2g Poisson Ration %3.2f Material model %s\n",
       id,set_of_blocks[id].E,set_of_blocks[id].PoissonRatio,blockData[id].mAterial.c_str());
-      if(blockData[id].mAterial.compare(MAT_KIRCHOFF)==0) {
-        set_of_blocks[id].materialDoublePtr = doubleMaterialModel.at(MAT_KIRCHOFF);
-        set_of_blocks[id].materialAdoublePtr = aDoubleMaterialModel.at(MAT_KIRCHOFF);
+      if(blockData[id].mAterial.compare(MAT_KIRCHHOFF)==0) {
+        set_of_blocks[id].materialDoublePtr = doubleMaterialModel.at(MAT_KIRCHHOFF);
+        set_of_blocks[id].materialAdoublePtr = aDoubleMaterialModel.at(MAT_KIRCHHOFF);
       } else
       if(blockData[id].mAterial.compare(MAT_HOOKE)==0) {
         set_of_blocks[id].materialDoublePtr = doubleMaterialModel.at(MAT_HOOKE);

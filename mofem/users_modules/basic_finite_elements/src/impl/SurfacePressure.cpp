@@ -122,7 +122,7 @@ NeummanForcesSurface::OpNeumannForceAnalytical::OpNeumannForceAnalytical(
   Vec f,
   const Range tris,
   boost::ptr_vector<MethodForForceScaling> &methods_op,
-  boost::ptr_vector<MethodForAnaliticalForce> &analytical_force_op,
+  boost::ptr_vector<MethodForAnalyticalForce> &analytical_force_op,
   bool ho_geometry
 ):
 FaceElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
@@ -173,7 +173,7 @@ PetscErrorCode NeummanForcesSurface::OpNeumannForceAnalytical::doWork(
     }
 
     for(
-      boost::ptr_vector<MethodForAnaliticalForce>::iterator vit = analyticalForceOp.begin();
+      boost::ptr_vector<MethodForAnalyticalForce>::iterator vit = analyticalForceOp.begin();
       vit!=analyticalForceOp.end();vit++
     ) {
       ierr = vit->getForce(ent,coords,normal,force); CHKERRQ(ierr);

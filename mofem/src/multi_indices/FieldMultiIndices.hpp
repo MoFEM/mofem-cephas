@@ -275,7 +275,7 @@ struct Field {
    *
    * @return MoFEM::Field::SequenceEntContainer
    */
-  inline boost::shared_ptr<SequenceEntContainer> getEntSeqenceContainer() const {
+  inline boost::shared_ptr<SequenceEntContainer> getEntSequenceContainer() const {
     return sequenceEntContainer;
   }
 
@@ -297,7 +297,7 @@ struct Field {
 
    * @return MoFEM::Field::SequenceDofContainer
    */
-  inline boost::shared_ptr<SequenceDofContainer> getDofSeqenceContainer() const {
+  inline boost::shared_ptr<SequenceDofContainer> getDofSequenceContainer() const {
     return sequenceDofContainer;
   }
 
