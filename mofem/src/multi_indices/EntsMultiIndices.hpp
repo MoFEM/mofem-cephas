@@ -766,7 +766,7 @@ struct FieldEntity:
    * That do the trick.
    *
    */
-  inline boost::weak_ptr<std::vector<DofEntity> >& getDofsSeqence() const {
+  inline boost::weak_ptr<std::vector<DofEntity> >& getDofsSequence() const {
     return dofsSequce;
   }
 
