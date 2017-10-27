@@ -628,7 +628,7 @@ PetscErrorCode TetPolynomialBase::getValueHdiv(
 
   switch (cTx->bAse) {
     case AINSWORTH_LEGENDRE_BASE:
-    case AINSWORTH_LOBBATO_BASE:
+    case AINSWORTH_LOBATTO_BASE:
     return getValueHdivAinsworthBase(pts);
     case DEMKOWICZ_JACOBI_BASE:
     return getValueHdivDemkowiczBase(pts);
