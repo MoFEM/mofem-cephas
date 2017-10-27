@@ -8,7 +8,7 @@ displacemet_order = 2
 # Elastic material
 [block_1]
 # Elastic material properties. Possible materials are NEOHOOKEAN, HOOKE,
-# KIRCHOFF or any other added by user.
+# KIRCHHOFF or any other added by user.
 material = HOOKE
 young_modulus = 2.6e+4
 poisson_ratio = 0.2

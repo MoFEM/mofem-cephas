@@ -413,7 +413,7 @@ DEPRECATED void macro_is_depracted_using_deprecated_function();
   *
   * \note MoFEMFunctionReturn has to be used with MoFEMFunctionBegin and can be
   * used only at the end of the function. If is need to return function in
-  * ealier use MoFEMFunctionReturnHot
+  * earlier use MoFEMFunctionReturnHot
   *
   */
 #define MoFEMFunctionReturn(a) \
@@ -437,7 +437,7 @@ DEPRECATED void macro_is_depracted_using_deprecated_function();
   *
   * \note MoFEMFunctionReturn has to be used with MoFEMFunctionBegin and can be
   * used only at the end of the function. If is need to return function in
-  * ealier use MoFEMFunctionReturnHot
+  * earlier use MoFEMFunctionReturnHot
   *
   */
 #define MoFEMFunctionReturnVoid() \
