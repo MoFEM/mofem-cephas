@@ -89,19 +89,22 @@ struct ConstrainMatrixCtx {
   PetscInt maxIts;
 
   /**
-    * \brief initialize vectors and matrices for Q and P shell matrices, scattering is set based on x_problem and y_problem
+    * \brief initialize vectors and matrices for Q and P shell matrices,
+   * scattering is set based on x_problem and y_problem
     *
     * \param x is a vector from problem x
     */
   PetscErrorCode initializeQorP(Vec x);
 
   /**
-    * \brief initialize vectors and matrices for CTC+QTKQ shell matrices, scattering is set based on x_problem and y_problem
+    * \brief initialize vectors and matrices for CTC+QTKQ shell matrices,
+   * scattering is set based on x_problem and y_problem
     */
   PetscErrorCode initializeQTKQ();
 
   /**
-    * \brief re-calculate CT and CCT if C matrix has been changed since initialization
+    * \brief re-calculate CT and CCT if C matrix has been changed since
+   * initialization
     */
   PetscErrorCode recalculateCTandCCT();
 
@@ -151,7 +154,7 @@ PetscErrorCode ProjectionMatrixMultOpQ(Mat Q,Vec x,Vec f);
 /**
  * \deprecated Use ProjectionMatrixMultOpQ
  */
-DEPRECATED PetscErrorCode PorjectionMatrixMultOpQ(Mat Q, Vec x, Vec f) {
+DEPRECATED inline PetscErrorCode PorjectionMatrixMultOpQ(Mat Q, Vec x, Vec f) {
   return ProjectionMatrixMultOpQ(Q, x, f);
 }
 
