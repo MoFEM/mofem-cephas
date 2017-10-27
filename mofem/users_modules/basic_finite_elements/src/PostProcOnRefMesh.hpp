@@ -47,7 +47,7 @@ struct PostProcCommonOnRefMesh {
   };
 
   /**
-   * \brief operator to post-process (save gardients on refined post-processing mesh) field gradient
+   * \brief operator to post-process (save gradients on refined post-processing mesh) field gradient
    * \ingroup mofem_fs_post_proc
    *
    * \todo Implamentation of setting values to fieldMap for Hcurl and Hdiv not implemented
@@ -132,7 +132,7 @@ struct PostProcCommonOnRefMesh {
 };
 
 /**
- * \brief Generic post-pocessing class
+ * \brief Generic post-processing class
  *
  * Generate refined mesh and save data on vertices
  *
@@ -499,7 +499,7 @@ struct PostProcTemplateVolumeOnRefinedMesh: public PostProcTemplateOnRefineMesh<
 
     } catch (std::exception& ex) {
       std::ostringstream ss;
-      ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+      ss << "throw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
       SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
     }
 
