@@ -738,7 +738,7 @@ struct ConvectiveMassElement {
 
   };
 
-  #ifdef __DIRICHLETBC_HPP__
+  #ifdef __DIRICHLET_HPP__
 
   /** \brief blocked element/problem
     *
@@ -766,7 +766,7 @@ struct ConvectiveMassElement {
 
   };
 
-  #endif //__DIRICHLETBC_HPP__
+  #endif //__DIRICHLET_HPP__
 
 };
 
