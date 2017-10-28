@@ -368,9 +368,11 @@ struct PostProcTemplateVolumeOnRefinedMesh: public PostProcTemplateOnRefineMesh<
     }
 
     Range tets;
-    ierr = m_field_ref.get_entities_by_type_and_ref_level(
-      BitRefLevel().set(max_level),BitRefLevel().set(max_level),MBTET,tets
-    ); CHKERRQ(ierr);
+    ierr =
+        m_field_ref.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
+            BitRefLevel().set(max_level), BitRefLevel().set(max_level), MBTET,
+            tets);
+    CHKERRQ(ierr);
 
     if(tenNodesPostProcTets) {
       // Range edges;
