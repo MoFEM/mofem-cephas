@@ -1,5 +1,5 @@
 /** \file Core.cpp
- * \brief Mylti-index containers, data structures and other low-level functions
+ * \brief Multi-index containers, data structures and other low-level functions
  */
 
 /* MoFEM is free software: you can redistribute it and/or modify it under
@@ -47,7 +47,7 @@ PetscErrorCode Core::query_interface(const MOFEMuuid& uuid,UnknownInterface** if
 
 bool Core::isGloballyInitialised = false;
 
-static void error_printf_hilight(void) {
+static void error_printf_highlight(void) {
 #if defined(PETSC_HAVE_UNISTD_H) && defined(PETSC_USE_ISATTY)
   if (PetscErrorPrintf == PetscErrorPrintfDefault) {
     if (isatty(fileno(PETSC_STDERR))) fprintf(PETSC_STDERR,"\033[1;32m");
@@ -74,14 +74,13 @@ static PetscErrorCode mofem_error_handler(
   if(!rank) {
 
     if(p == PETSC_ERROR_INITIAL) {
-      error_printf_hilight();
+      error_printf_highlight();
       (*PetscErrorPrintf)("--------------------- MoFEM Error Message---------------------------------------------------------------------------\n");
       (*PetscErrorPrintf)("MoFEM version %d.%d.%d\n",MoFEM_VERSION_MAJOR,MoFEM_VERSION_MINOR,MoFEM_VERSION_BUILD);
       (*PetscErrorPrintf)("MoFEM git commit id %s\n",GIT_SHA1_NAME);
       (*PetscErrorPrintf)("See http://mofem.eng.gla.ac.uk/mofem/html/guidelines_bug_reporting.html for bug reporting.\n");
       (*PetscErrorPrintf)("See http://mofem.eng.gla.ac.uk/mofem/html/faq_and_bugs.html for trouble shooting.\n");
       error_printf_normal();
-
     }
 
     PetscTraceBackErrorHandler(PETSC_COMM_SELF,line,fun,file,n,p,mess,ctx);
@@ -96,7 +95,7 @@ static PetscErrorCode mofem_error_handler(
       std::stringstream strs_version;
       strs_version << "MoFEM_version_" << MoFEM_VERSION_MAJOR << "." << MoFEM_VERSION_MINOR << "." << MoFEM_VERSION_BUILD;
 
-      error_printf_hilight();
+      error_printf_highlight();
       (*PetscErrorPrintf)("----------MoFEM End of Error Message -------send entire error message to mofem-group@googlegroups.com ----------\n");
       error_printf_normal();
 
@@ -104,7 +103,8 @@ static PetscErrorCode mofem_error_handler(
 
   } else {
 
-    /* do not print error messages since process 0 will print them, sleep before aborting so will not accidentally kill process 0*/
+    /* do not print error messages since process 0 will print them, sleep before
+     * aborting so will not accidentally kill process 0*/
     PetscSleep(10.0);
     abort();
 
@@ -198,14 +198,14 @@ Core::~Core() {
   MPI_Finalized(&flg);
   // Destroy interfaces
   iFaces.clear();
-  // Pop error hanlder
+  // Pop error handler
   if(isGloballyInitialised) {
     if(!flg) {
       PetscPopErrorHandler();
     }
     isGloballyInitialised = false;
   }
-  // Destroy communictaor
+  // Destroy communicator
   if(!flg) {
     ierr = PetscCommDestroy(&cOmm); CHKERRABORT(cOmm,ierr);
   }
@@ -321,7 +321,7 @@ PetscErrorCode Core::getTags(int verb) {
     CHKERRQ_MOAB(rval);
     rval = moab.tag_get_by_ptr(th_ProblemShift,&root_meshset,1,tag_data); CHKERRQ_MOAB(rval);
     pShift = (int*)tag_data[0];
-    //SaftyNets
+    //Safety nets
     int def_bool = 0;
     rval = moab.tag_get_handle("_MoFEMBuild",1,MB_TYPE_INTEGER,th_MoFEMBuild,MB_TAG_CREAT|MB_TAG_MESH,&def_bool);
     if(rval==MB_ALREADY_ALLOCATED) rval = MB_SUCCESS;
@@ -369,13 +369,13 @@ PetscErrorCode Core::getTags(int verb) {
       MB_TAG_CREAT|MB_TAG_BYTES|MB_TAG_SPARSE,
       &def_bit_level_mask
     ); CHKERRQ_MOAB(rval);
-    BitRefEdges def_bit_egde = 0;
+    BitRefEdges def_bit_edge = 0;
     rval = moab.tag_get_handle(
       "_RefBitEdge",
       sizeof(BitRefEdges),
       MB_TYPE_OPAQUE,
       th_RefBitEdge,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,
-      &def_bit_egde
+      &def_bit_edge
     ); CHKERRQ_MOAB(rval);
     const int def_type[] = {0,0};
     rval = moab.tag_get_handle(
@@ -694,7 +694,7 @@ PetscErrorCode Core::initialiseDatabaseFromMesh(int verb) {
             SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Only finite elements of type MBTET, MBPRISM and MBENTITYSET are implemented");
           }
           if(p_MoFEMFiniteElement.second) {
-            //PetscPrintf(cOmm,"Warrning: this entity should be already in refined finite elements database");
+            //PetscPrintf(cOmm,"Warring: this entity should be already in refined finite elements database");
             //SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, this entity should be already in refined finite elements database");
           }
         } catch (MoFEMException const &e) {
