@@ -120,6 +120,9 @@ PetscErrorCode CutMeshInterface::buildTree() {
   MoFEM::CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   MoFEMFunctionBeginHot;
+  if(treeSurfPtr) {
+    rval = treeSurfPtr->delete_tree(rootSetSurf); CHKERRQ_MOAB(rval);
+  }
   treeSurfPtr = boost::shared_ptr<OrientedBoxTreeTool>(
       new OrientedBoxTreeTool(&moab, "ROOTSETSURF", true));
   rval = treeSurfPtr->build(sUrface, rootSetSurf);
