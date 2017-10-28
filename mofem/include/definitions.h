@@ -103,7 +103,7 @@ enum BaseIntefaces {
   * This is complementary to PETSC error codes. The numerical values for
   * these are defined in include/petscerror.h. The names are defined in err.c
   *
-  * MoAB error messages are defined in naob/Types.hpp
+  * MoAB error messages are defined in moab/Types.hpp
   *
   */
 enum MoFEMErrorCodes {
@@ -124,17 +124,20 @@ enum MoFEMErrorCodes {
 enum FieldApproximationBase {
   NOBASE = 0,
   AINSWORTH_LEGENDRE_BASE = 1,   ///< Ainsworth Cole (Legendre) approx. base \cite NME:NME847
-  AINSWORTH_LOBBATO_BASE,        ///< Like AINSWORTH_LEGENDRE_BASE but with Lobatto base instead Legendre \cite beriot2015efficient
+  AINSWORTH_LOBATTO_BASE,        ///< Like AINSWORTH_LEGENDRE_BASE but with Lobatto base instead Legendre \cite beriot2015efficient
   AINSWORTH_BERNSTEIN_BEZIER_BASE,   ///< Not yet implemented, in implementation we will follow \cite ainsworth2011bernstein
   DEMKOWICZ_JACOBI_BASE,             ///< Construction of base is by Demkowicz \cite fuentes2015orientation
   USER_BASE,               ///< user implemented approximation base
   LASTBASE
 };
 
+// Fix spelling bug (do do not use this)
+#define AINSWORTH_LOBBATO_BASE AINSWORTH_LOBATTO_BASE
+
 const static char * const ApproximationBaseNames[] = {
   "NOBASE",
   "AINSWORTH_LEGENDRE_BASE",
-  "AINSWORTH_LOBBATO_BASE",
+  "AINSWORTH_LOBATTO_BASE",
   "AINSWORTH_BERNSTEIN_BEZIER_BASE",
   "DEMKOWICZ_JACOBI_BASE",
   "USER_BASE",
@@ -145,7 +148,7 @@ const static char * const ApproximationBaseNames[] = {
 const static FieldApproximationBase ApproximationBaseArray[] = {
   NOBASE,
   AINSWORTH_LEGENDRE_BASE,
-  AINSWORTH_LOBBATO_BASE,
+  AINSWORTH_LOBATTO_BASE,
   AINSWORTH_BERNSTEIN_BEZIER_BASE,
   DEMKOWICZ_JACOBI_BASE,
   USER_BASE,
@@ -202,7 +205,7 @@ enum ByWhat {
 };
 
 /**
-  * \bief Types of sets and boundary conditions
+  * \brief Types of sets and boundary conditions
   *
   */
 enum CubitBC {
@@ -297,9 +300,9 @@ enum HCurlDiffFormatting {
 };
 
 /**
- * \brief Verboisty levels
+ * \brief Verbosity levels
  */
-enum VERBOSITY_LEVELS { QUAIET = 0, VERBOSE, VERY_VERBOSE, NOISY, VERY_NOISY };
+enum VERBOSITY_LEVELS { QUIET = 0, VERBOSE, VERY_VERBOSE, NOISY, VERY_NOISY };
 
 #define BITREFEDGES_SIZE 6    ///< number of edges on tetrahedral
 #define BITREFLEVEL_SIZE 128  ///< max number of refinements
@@ -410,7 +413,7 @@ DEPRECATED void macro_is_depracted_using_deprecated_function();
   *
   * \note MoFEMFunctionReturn has to be used with MoFEMFunctionBegin and can be
   * used only at the end of the function. If is need to return function in
-  * ealier use MoFEMFunctionReturnHot
+  * earlier use MoFEMFunctionReturnHot
   *
   */
 #define MoFEMFunctionReturn(a) \
@@ -434,7 +437,7 @@ DEPRECATED void macro_is_depracted_using_deprecated_function();
   *
   * \note MoFEMFunctionReturn has to be used with MoFEMFunctionBegin and can be
   * used only at the end of the function. If is need to return function in
-  * ealier use MoFEMFunctionReturnHot
+  * earlier use MoFEMFunctionReturnHot
   *
   */
 #define MoFEMFunctionReturnVoid() \

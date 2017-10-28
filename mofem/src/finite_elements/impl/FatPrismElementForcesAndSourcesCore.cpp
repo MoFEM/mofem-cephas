@@ -361,7 +361,7 @@ PetscErrorCode FatPrismElementForcesAndSourcesCore::operator()() {
     if(dataH1.bAse.test(b)) {
       switch (ApproximationBaseArray[b]) {
         case AINSWORTH_LEGENDRE_BASE:
-        case AINSWORTH_LOBBATO_BASE:
+        case AINSWORTH_LOBATTO_BASE:
         if(dataH1.spacesOnEntities[MBVERTEX].test(H1)) {
           ierr = FatPrismPolynomialBase().getValue(
             gaussPts,
@@ -543,7 +543,7 @@ PetscErrorCode FatPrismElementForcesAndSourcesCore::operator()() {
             base[ss] = field_struture->getApproxBase();
             switch(base[ss]) {
               case AINSWORTH_LEGENDRE_BASE:
-              case AINSWORTH_LOBBATO_BASE:
+              case AINSWORTH_LOBATTO_BASE:
               break;
               default:
               SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown or not implemented base");

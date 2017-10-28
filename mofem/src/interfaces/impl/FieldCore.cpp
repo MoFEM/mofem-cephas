@@ -570,7 +570,7 @@ PetscErrorCode Core::set_field_order(
   // once into vector. This vector is passed into sequence as a weak_ptr.
   // Vector is destroyed at the point last entity inside that vector is
   // destroyed.
-  miit->get()->getEntSeqenceContainer()->push_back(ents_array);
+  miit->get()->getEntSequenceContainer()->push_back(ents_array);
   ents_array->reserve(new_ents.size());
 
   FieldEntity_change_order modify_order(order);
@@ -853,7 +853,7 @@ PetscErrorCode Core::buildFieldForL2H1HcurlHdiv(
   FieldEntity_multiIndex_ent_view ents_view;
   std::vector<boost::shared_ptr<DofEntity> > dofs_shared_array;
 
-  // Loop over all entities and insert dofs by seqences on edges, faces and volumes
+  // Loop over all entities and insert dofs by Sequences on edges, faces and volumes
   Range::iterator eit = ents_of_id_meshset.begin();
   for(;eit!=ents_of_id_meshset.end();eit++) {
 
@@ -933,9 +933,9 @@ PetscErrorCode Core::buildFieldForL2H1HcurlHdiv(
       = boost::make_shared<std::vector<DofEntity> >(std::vector<DofEntity>());
       dofs_array->reserve(nb_dofs_on_ent);
 
-      // Set weak pointer on entity to vector/seqence with allocated dofs on
+      // Set weak pointer on entity to vector/Sequence with allocated dofs on
       // this entity
-      field_ent->getDofsSeqence() = dofs_array;
+      field_ent->getDofsSequence() = dofs_array;
 
       // Temerary vector to store shared pointers
       dofs_shared_array.clear();
@@ -1022,10 +1022,10 @@ PetscErrorCode Core::buildFieldForL2H1HcurlHdiv(
   // Add vertices DOFs by bulk
   boost::shared_ptr<std::vector<DofEntity> > dofs_array
   = boost::make_shared<std::vector<DofEntity> >(std::vector<DofEntity>());
-  // Add seqence of DOFs to sequence container as weak_ptr
+  // Add Sequence of DOFs to sequence container as weak_ptr
   dofs_array->reserve(rank*ents_view.size());
-  // Add seqence of DOFs to sequence container as weak_ptr
-  field_it->get()->getDofSeqenceContainer()->push_back(dofs_array);
+  // Add Sequence of DOFs to sequence container as weak_ptr
+  field_it->get()->getDofSequenceContainer()->push_back(dofs_array);
   dofs_shared_array.clear();
   dofs_shared_array.reserve(dofs_array->size());
   for(

@@ -43,7 +43,7 @@ using namespace MoFEM;
 static int debug = 1;
 static char help[] = "...\n\n";
 
-struct AnaliticalFunction {
+struct AnalyticalFunction {
 
   std::vector<VectorDouble > val;
 
@@ -195,7 +195,7 @@ int main(int argc, char *argv[]) {
     //solve for ditihlet bc dofs
     ierr = analytical_bc.setUpProblem(m_field,"BC_PROBLEM"); CHKERRQ(ierr);
 
-    boost::shared_ptr<AnaliticalFunction> testing_function = boost::shared_ptr<AnaliticalFunction>(new AnaliticalFunction);
+    boost::shared_ptr<AnalyticalFunction> testing_function = boost::shared_ptr<AnalyticalFunction>(new AnalyticalFunction);
 
     ierr = analytical_bc.setApproxOps(m_field,"TEMP",testing_function,0); CHKERRQ(ierr);
     ierr = analytical_bc.solveProblem(m_field,"BC_PROBLEM","BC_FE",analytical_ditihlet_bc); CHKERRQ(ierr);

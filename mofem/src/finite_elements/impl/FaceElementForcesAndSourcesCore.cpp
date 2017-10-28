@@ -291,7 +291,7 @@ PetscErrorCode FaceElementForcesAndSourcesCore::calculateBaseFunctionsOnElement(
           case NOBASE:
           break;
           case AINSWORTH_LEGENDRE_BASE:
-          case AINSWORTH_LOBBATO_BASE:
+          case AINSWORTH_LOBATTO_BASE:
           if(
             dataH1.spacesOnEntities[MBVERTEX].test(H1)&&
             dataH1.basesOnEntities[MBVERTEX].test(b)
@@ -552,7 +552,7 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
           switch(base[ss]) {
             case NOBASE:
             case AINSWORTH_LEGENDRE_BASE:
-            case AINSWORTH_LOBBATO_BASE:
+            case AINSWORTH_LOBATTO_BASE:
             case DEMKOWICZ_JACOBI_BASE:
             break;
             default:

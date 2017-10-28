@@ -33,7 +33,7 @@ struct NeoHookean: public NonlinearElasticElement::FunctionsToCalculatePiolaKirc
     TYPE logJ;
     ublas::matrix<TYPE,ublas::row_major,ublas::bounded_array<TYPE,9> > invC;
 
-    /** \brief calculate second Piola Kirchoff
+    /** \brief calculate second Piola Kirchhoff
       *
       * \f$\mathbf{S} = \mu(\mathbf{I}-\mathbf{C}^{-1})+\lambda(\ln{J})\mathbf{C}^{-1}\f$
 

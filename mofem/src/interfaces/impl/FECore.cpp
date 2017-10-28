@@ -665,7 +665,7 @@ namespace MoFEM {
               fe_it->lock().get()->data_dofs->get<Unique_mi_tag>().insert(
                 data_dofs_shared_array.begin(),data_dofs_shared_array.end()
               );
-              fe_it->lock().get()->getDofsSeqence()=data_dofs_array[fe_ent];
+              fe_it->lock().get()->getDofsSequence()=data_dofs_array[fe_ent];
             }
             // // add dofs to finite element multi_index database
             // fe_it->lock().get()->data_dofs.get<Unique_mi_tag>().insert(

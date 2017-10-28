@@ -99,7 +99,7 @@ PetscErrorCode EntPolynomialBaseCtx::setBase() {
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Makes no sense");
     }
     break;
-    case AINSWORTH_LOBBATO_BASE:
+    case AINSWORTH_LOBATTO_BASE:
     switch (sPace) {
       case NOSPACE:
       case NOFIELD:

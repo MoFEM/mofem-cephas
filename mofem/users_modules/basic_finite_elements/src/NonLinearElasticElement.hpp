@@ -132,7 +132,7 @@ struct NonlinearElasticElement {
    };
   CommonData commonData;
 
-  /** \brief Implementation of elastic (non-linear) St. Kirchoff equation
+  /** \brief Implementation of elastic (non-linear) St. Kirchhoff equation
     * \ingroup nonlinear_elastic_elem
     */
   template<typename TYPE>
@@ -695,7 +695,7 @@ struct NonlinearElasticElement {
 
   /** \brief Set operators to calculate left hand tangent matrix and right hand residual
     *
-    * \param fun class needed to calculate Piola Kirchoff I Stress tensor
+    * \param fun class needed to calculate Piola Kirchhoff I Stress tensor
     * \param spatial_position_field_name name of approximation field
     * \param material_position_field_name name of field to define geometry
     * \param ale true if arbitrary Lagrangian Eulerian formulation

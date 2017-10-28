@@ -104,7 +104,7 @@ sequenceDofContainer(
   }
   switch(*tag_base_data) {
     case AINSWORTH_LEGENDRE_BASE:
-    case AINSWORTH_LOBBATO_BASE:
+    case AINSWORTH_LOBATTO_BASE:
     switch(*tag_space_data) {
       case H1:
       forder_table[MBVERTEX] = fNBVERTEX_H1;
