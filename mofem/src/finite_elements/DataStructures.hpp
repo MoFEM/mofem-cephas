@@ -29,9 +29,9 @@ namespace MoFEM {
 typedef ublas::unbounded_array<
   boost::shared_ptr<const FEDofEntity>,
   std::allocator<boost::shared_ptr<const FEDofEntity> >
-> DofsAllacator;
+> DofsAllocator;
 typedef ublas::vector<
-  boost::shared_ptr<const FEDofEntity>,DofsAllacator
+  boost::shared_ptr<const FEDofEntity>,DofsAllocator
 > VectorDofs;
 
 /**
@@ -1160,7 +1160,7 @@ struct DataForcesAndSourcesCore {
      * Reset data associated with particular field name
      * @return error code
      */
-    inline PetscErrorCode resetFieldDepenentData() {
+    inline PetscErrorCode resetFieldDependentData() {
       MoFEMFunctionBeginHot;
       sPace = NOSPACE;
       bAse = NOBASE;
@@ -1204,13 +1204,13 @@ struct DataForcesAndSourcesCore {
    * Reset data associated with particular field name
    * @return error code
    */
-  inline PetscErrorCode resetFieldDepenentData() {
+  inline PetscErrorCode resetFieldDependentData() {
 
     MoFEMFunctionBeginHot;
     for(EntityType t = MBVERTEX;t!=MBMAXTYPE;t++) {
       boost::ptr_vector<EntData>::iterator ent_data_it = dataOnEntities[t].begin();
       for(;ent_data_it!=dataOnEntities[t].end();ent_data_it++) {
-        ierr = ent_data_it->resetFieldDepenentData(); CHKERRQ(ierr);
+        ierr = ent_data_it->resetFieldDependentData(); CHKERRQ(ierr);
       }
     }
     MoFEMFunctionReturnHot(0);

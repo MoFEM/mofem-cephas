@@ -486,7 +486,7 @@ PetscErrorCode FatPrismElementForcesAndSourcesCore::operator()() {
         }
 
         // Reseat all data which all field dependent
-        op_data[0]->resetFieldDepenentData();
+        op_data[0]->resetFieldDependentData();
 
         // Run operator
         ierr = oit->opRhs(
