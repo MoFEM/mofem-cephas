@@ -1268,7 +1268,7 @@ FTensor::Tensor1<double*,2> DataForcesAndSourcesCore::EntData::getFTensor1DiffN<
 
 /**@}*/
 
-/** \name Specializations for HDiv/HCrul */
+/** \name Specializations for HDiv/HCurl */
 
 /**@{*/
 
@@ -1291,7 +1291,7 @@ FTensor::Tensor2<double*,3,3> DataForcesAndSourcesCore::EntData::getFTensor2Diff
 
 /**@}*/
 
-/** \name Specializations for HDiv/HCrul in 2d */
+/** \name Specializations for HDiv/HCurl in 2d */
 
 /**@{*/
 

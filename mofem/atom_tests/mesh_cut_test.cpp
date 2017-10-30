@@ -90,13 +90,13 @@ int main(int argc, char *argv[]) {
         "VTK", "");
     CHKERRQ(ierr);
 
-    int no_of_ents_not_in_dabase = -1;
-    Range ents_not_in_dabase;
+    int no_of_ents_not_in_database = -1;
+    Range ents_not_in_database;
     if (test) {
       core.getInterface<BitRefManager>()->getAllEntitiesNotInDatabase(
-          ents_not_in_dabase);
+          ents_not_in_database);
       CHKERRQ(ierr);
-      no_of_ents_not_in_dabase = ents_not_in_dabase.size();
+      no_of_ents_not_in_database = ents_not_in_database.size();
     }
 
     // get cut mesh interface
@@ -296,7 +296,7 @@ int main(int argc, char *argv[]) {
         bit_last, BitRefLevel().set(), MBTET, "out_tets_bit_last.vtk",
         "VTK", "");
     CHKERRQ(ierr);
-    ierr = core.getInterface<BitRefManager>()->writeEntitiesNotInDatabse(
+    ierr = core.getInterface<BitRefManager>()->writeEntitiesNotInDatabase(
       "left_entities.vtk","VTK",""
     );
     CHKERRQ(ierr);
@@ -305,15 +305,15 @@ int main(int argc, char *argv[]) {
       Range ents;
       core.getInterface<BitRefManager>()->getAllEntitiesNotInDatabase(ents);
       CHKERRQ(ierr);
-      if(no_of_ents_not_in_dabase != ents.size()) {
-        cerr << subtract(ents,ents_not_in_dabase) << endl;
+      if(no_of_ents_not_in_database != ents.size()) {
+        cerr << subtract(ents,ents_not_in_database) << endl;
         EntityHandle meshset;
         rval = moab.create_meshset(MESHSET_SET, meshset);
         CHKERRQ_MOAB(rval);
         Range tets;
         rval = moab.get_entities_by_dimension(0, 3, tets, true);
         CHKERRQ_MOAB(rval);
-        rval = moab.add_entities(meshset, subtract(ents,ents_not_in_dabase));
+        rval = moab.add_entities(meshset, subtract(ents,ents_not_in_database));
         CHKERRQ_MOAB(rval);
         rval = moab.write_file("not_cleanded.vtk", "VTK", "", &meshset, 1);
         CHKERRQ_MOAB(rval);
@@ -321,7 +321,7 @@ int main(int argc, char *argv[]) {
         CHKERRQ_MOAB(rval);
 
         SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-                 "Inconsistent number of ents %d!=%d", no_of_ents_not_in_dabase,
+                 "Inconsistent number of ents %d!=%d", no_of_ents_not_in_database,
                  ents.size());
       }
     } 

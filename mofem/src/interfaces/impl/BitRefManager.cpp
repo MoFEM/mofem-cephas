@@ -498,7 +498,7 @@ PetscErrorCode BitRefManager::writeBitLevelByType(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode BitRefManager::writeEntitiesNotInDatabse(
+PetscErrorCode BitRefManager::writeEntitiesNotInDatabase(
     const char *file_name, const char *file_type, const char *options) const {
   MoFEM::Interface &m_field = cOre;
   moab::Interface &moab(m_field.get_moab());
