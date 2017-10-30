@@ -63,8 +63,8 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSourcesCore {
   MatrixDouble tangentOneAtGaussPt;
   MatrixDouble tangentTwoAtGaussPt;
   OpGetCoordsAndNormalsOnFace opHOCoordsAndNormals;
-  OpSetContravariantPiolaTransoformOnTriangle opContravariantTransoform;
-  OpSetCovariantPiolaTransoformOnTriangle opCovariantTransoform;
+  OpSetContravariantPiolaTransformOnTriangle opContravariantTransform;
+  OpSetCovariantPiolaTransformOnTriangle opCovariantTransform;
 
   FaceElementForcesAndSourcesCore(Interface &m_field):
   ForcesAndSourcesCore(m_field),
@@ -77,8 +77,8 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSourcesCore {
   opHOCoordsAndNormals(
     hoCoordsAtGaussPts,normalsAtGaussPt,tangentOneAtGaussPt,tangentTwoAtGaussPt
   ),
-  opContravariantTransoform(nOrmal,normalsAtGaussPt),
-  opCovariantTransoform(
+  opContravariantTransform(nOrmal,normalsAtGaussPt),
+  opCovariantTransform(
     nOrmal,normalsAtGaussPt,
     tangentOne,tangentOneAtGaussPt,
     tangentTwo,tangentTwoAtGaussPt
@@ -340,8 +340,8 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSourcesCore {
     /**
      *
      * User call this function to loop over elements on the side of face. This
-     * funtion cals MoFEM::VolumeElementForcesAndSourcesCoreOnSide with is
-     * operator to do calulations
+     * function calls MoFEM::VolumeElementForcesAndSourcesCoreOnSide with is
+     * operator to do calculations.
      *
      * @param  fe_name Name of the element
      * @param  method  Finite element object
@@ -392,7 +392,7 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSourcesCore {
   virtual PetscErrorCode calculateBaseFunctionsOnElement();
 
   /**
-   * \brieg Calculate normal on curved elements
+   * \brief Calculate normal on curved elements
    *
    *  Geometry is given by other field.
    *

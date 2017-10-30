@@ -691,12 +691,12 @@ struct OpGetCoordsAndNormalsOnPrism: public DataOperator {
 /** \brief transform Hdiv base fluxes from reference element to physical triangle
  * \ingroup mofem_forces_and_sources
  */
-struct OpSetContravariantPiolaTransoformOnTriangle: public DataOperator {
+struct OpSetContravariantPiolaTransformOnTriangle: public DataOperator {
 
   const VectorDouble &nOrmal;
   const MatrixDouble &normalsAtGaussPt;
 
-  OpSetContravariantPiolaTransoformOnTriangle(
+  OpSetContravariantPiolaTransformOnTriangle(
     const VectorDouble &normal,
     const MatrixDouble &normals_at_pts
   ):
@@ -714,7 +714,7 @@ struct OpSetContravariantPiolaTransoformOnTriangle: public DataOperator {
 /** \brief transform Hcurl base fluxes from reference element to physical triangle
  * \ingroup mofem_forces_and_sources
  */
-struct OpSetCovariantPiolaTransoformOnTriangle: public DataOperator {
+struct OpSetCovariantPiolaTransformOnTriangle: public DataOperator {
 
   const VectorDouble &nOrmal;
   const MatrixDouble &normalsAtGaussPt;
@@ -723,7 +723,7 @@ struct OpSetCovariantPiolaTransoformOnTriangle: public DataOperator {
   const VectorDouble &tAngent1;
   const MatrixDouble &tangent1AtGaussPt;
 
-  OpSetCovariantPiolaTransoformOnTriangle(
+  OpSetCovariantPiolaTransformOnTriangle(
     const VectorDouble &normal,
     const MatrixDouble &normals_at_pts,
     const VectorDouble &tangent0,

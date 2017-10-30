@@ -1464,7 +1464,7 @@ PetscErrorCode OpGetCoordsAndNormalsOnPrism::calculateNormals() {
 }
 
 
-PetscErrorCode OpSetContravariantPiolaTransoformOnTriangle::doWork(
+PetscErrorCode OpSetContravariantPiolaTransformOnTriangle::doWork(
     int side,
     EntityType type,
     DataForcesAndSourcesCore::EntData &data
@@ -1505,7 +1505,7 @@ PetscErrorCode OpSetContravariantPiolaTransoformOnTriangle::doWork(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode OpSetCovariantPiolaTransoformOnTriangle::doWork(
+PetscErrorCode OpSetCovariantPiolaTransformOnTriangle::doWork(
   int side,
   EntityType type,
   DataForcesAndSourcesCore::EntData &data

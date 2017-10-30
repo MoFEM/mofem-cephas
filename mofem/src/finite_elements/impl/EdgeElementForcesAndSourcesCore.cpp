@@ -225,7 +225,7 @@ PetscErrorCode EdgeElementForcesAndSourcesCore::operator()() {
 
   if(dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
     // cerr << dataHcurl.dataOnEntities[MBEDGE][0].getN(AINSWORTH_LEGENDRE_BASE) << endl;
-    ierr = opCovariantTransoform.opRhs(dataHcurl); CHKERRQ(ierr);
+    ierr = opCovariantTransform.opRhs(dataHcurl); CHKERRQ(ierr);
   }
 
   const UserDataOperator::OpType types[2] = {
