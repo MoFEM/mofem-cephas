@@ -32,8 +32,8 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef __DIRICHLETBC_HPP__
-#define __DIRICHLETBC_HPP__
+#ifndef __DIRICHLET_HPP__
+#define __DIRICHLET_HPP__
 
 using namespace boost::numeric;
 
@@ -246,7 +246,7 @@ struct DirichletSetFieldFromBlockWithFlags: public DirichletDisplacementBc {
 /// \deprecated use DirichletSetFieldFromBlockWithFlags
 DEPRECATED typedef DirichletSetFieldFromBlockWithFlags DirichletBCFromBlockSetFEMethodPreAndPostProcWithFlags;
 
-#endif //__DIRICHLETBC_HPP__
+#endif //__DIRICHLET_HPP__
 
 /***************************************************************************//**
  * \defgroup Dirichlet_bc Dirichlet boundary conditions

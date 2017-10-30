@@ -120,6 +120,9 @@ PetscErrorCode CutMeshInterface::buildTree() {
   MoFEM::CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   MoFEMFunctionBeginHot;
+  if(treeSurfPtr) {
+    rval = treeSurfPtr->delete_tree(rootSetSurf); CHKERRQ_MOAB(rval);
+  }
   treeSurfPtr = boost::shared_ptr<OrientedBoxTreeTool>(
       new OrientedBoxTreeTool(&moab, "ROOTSETSURF", true));
   rval = treeSurfPtr->build(sUrface, rootSetSurf);
@@ -208,7 +211,7 @@ PetscErrorCode CutMeshInterface::cutAndTrim(
     ierr = UpdateMeshsets()(cOre, bit_level2);
     CHKERRQ(ierr);
   }
-  ierr = moveMidNodesOnTrimedEdges(th);
+  ierr = moveMidNodesOnTrimmedEdges(th);
   CHKERRQ(ierr);
 
   if(debug) {
@@ -239,8 +242,8 @@ PetscErrorCode CutMeshInterface::cutTrimAndMerge(
     const bool update_meshsets, const bool debug) {
   MoFEMFunctionBeginHot;
   if(debug) {
-    ierr = cOre.getInterface<BitRefManager>()->writeEntitiesNotInDatabse(
-        "ents_not_in_databse.vtk", "VTK", "");
+    ierr = cOre.getInterface<BitRefManager>()->writeEntitiesNotInDatabase(
+        "ents_not_in_database.vtk", "VTK", "");
     CHKERRQ(ierr);
   }
   ierr = cutAndTrim(bit_level1, bit_level2, th, tol_cut, tol_cut_close,
@@ -248,8 +251,8 @@ PetscErrorCode CutMeshInterface::cutTrimAndMerge(
                     update_meshsets, debug);
   CHKERRQ(ierr);
   if(debug) {
-    ierr = cOre.getInterface<BitRefManager>()->writeEntitiesNotInDatabse(
-        "cut_trim_ents_not_in_databse.vtk", "VTK", "");
+    ierr = cOre.getInterface<BitRefManager>()->writeEntitiesNotInDatabase(
+        "cut_trim_ents_not_in_database.vtk", "VTK", "");
     CHKERRQ(ierr);
   }
 
@@ -266,7 +269,7 @@ PetscErrorCode CutMeshInterface::cutTrimAndMerge(
         bit_level3, BitRefLevel().set(), MBTET, "out_tets_merged.vtk", "VTK",
         "");
     CHKERRQ(ierr);
-    ierr = cOre.getInterface<BitRefManager>()->writeEntitiesNotInDatabse(
+    ierr = cOre.getInterface<BitRefManager>()->writeEntitiesNotInDatabase(
         "cut_trim_merge_ents_not_in_databse.vtk", "VTK", "");
     CHKERRQ(ierr);
   }
@@ -393,7 +396,7 @@ PetscErrorCode CutMeshInterface::findEdgesToCut(const double low_tol,
   CHKERRQ_MOAB(rval);
   edges = subtract(edges, cutEdges);
 
-  // add to cut set edges which are cutted by extension of cuttting surfeca
+  // add to cut set edges which are cutted by extension of cutting surfaca
   for (Range::iterator eit = edges.begin(); eit != edges.end(); eit++) {
     int num_nodes;
     const EntityHandle *conn;
@@ -731,7 +734,7 @@ PetscErrorCode CutMeshInterface::moveMidNodesOnCutEdges(Tag th) {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode CutMeshInterface::moveMidNodesOnTrimedEdges(Tag th) {
+PetscErrorCode CutMeshInterface::moveMidNodesOnTrimmedEdges(Tag th) {
   MoFEM::CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   MoFEMFunctionBeginHot;
@@ -780,7 +783,7 @@ PetscErrorCode CutMeshInterface::findEdgesToTrim(Tag th, const double tol,
   trimEdges.clear();
   edgesToTrim.clear();
 
-  struct CloasestPointProjection {
+  struct ClosestPointProjection {
 
     boost::shared_ptr<OrientedBoxTreeTool> treeSurfPtr;
     EntityHandle rootSetSurf;
@@ -789,7 +792,7 @@ PetscErrorCode CutMeshInterface::findEdgesToTrim(Tag th, const double tol,
     double aveLength;
     double pointOut[3];
     VectorAdaptor vecPointOut;
-    CloasestPointProjection(boost::shared_ptr<OrientedBoxTreeTool> &tree,
+    ClosestPointProjection(boost::shared_ptr<OrientedBoxTreeTool> &tree,
                             EntityHandle root_set, VectorDouble3 &s0,
                             VectorDouble3 &ray, double ave_length)
         : treeSurfPtr(tree), rootSetSurf(root_set), S0(s0), rAY(ray),
@@ -870,32 +873,32 @@ PetscErrorCode CutMeshInterface::findEdgesToTrim(Tag th, const double tol,
       // add ege to trim
       double dist;
       VectorDouble3 ray;
-      VectorDouble3 trimed_end;
+      VectorDouble3 trimmed_end;
       VectorDouble3 itersection_point;
       if (max_dist == dist0) {
         // move mid node in reference to node 0
-        trimed_end = s0;
-        ray = s1 - trimed_end;
+        trimmed_end = s0;
+        ray = s1 - trimmed_end;
         itersection_point =
-            CloasestPointProjection(treeSurfPtr, rootSetSurf, trimed_end, ray,
+            ClosestPointProjection(treeSurfPtr, rootSetSurf, trimmed_end, ray,
                                     aveLength)(nbMaxTrimSearchIterations, tol);
-        ray = itersection_point - trimed_end;
+        ray = itersection_point - trimmed_end;
         dist = norm_2(ray);
       } else {
         // move node in reference to node 1
-        trimed_end = s1;
-        ray = s0 - trimed_end;
+        trimmed_end = s1;
+        ray = s0 - trimmed_end;
         itersection_point =
-            CloasestPointProjection(treeSurfPtr, rootSetSurf, trimed_end, ray,
+            ClosestPointProjection(treeSurfPtr, rootSetSurf, trimmed_end, ray,
                                     aveLength)(nbMaxTrimSearchIterations, tol);
-        ray = itersection_point - trimed_end;
+        ray = itersection_point - trimmed_end;
         dist = norm_2(ray);
       }
       if (fabs(dist - length) / length > tol) {
         edgesToTrim[*eit].dIst = dist;
         edgesToTrim[*eit].lEngth = dist;
         edgesToTrim[*eit].unitRayDir = ray / dist;
-        edgesToTrim[*eit].rayPoint = trimed_end;
+        edgesToTrim[*eit].rayPoint = trimmed_end;
         trimEdges.insert(*eit);
       }
     }
@@ -1490,7 +1493,7 @@ PetscErrorCode CutMeshInterface::mergeBadEdges(
                                   ents_nodes_edges_nodes_edges,
                                   moab::Interface::UNION);
       CHKERRQ_MOAB(rval);
-      // remove eges adj. to hanging edges
+      // remove edges adj. to hanging edges
       ents_nodes_edges =
           subtract(ents_nodes_edges, ents_nodes_edges_nodes_edges);
       ents_nodes_edges =
@@ -1732,10 +1735,10 @@ PetscErrorCode CutMeshInterface::mergeBadEdges(
   CHKERRQ(ierr);
   edges_to_merge = edges_to_merge.subset_by_type(MBEDGE);
 
-  // get all entities not in databse
-  Range all_ents_not_in_databse_before;
+  // get all entities not in database
+  Range all_ents_not_in_database_before;
   ierr = cOre.getInterface<BitRefManager>()->getAllEntitiesNotInDatabase(
-      all_ents_not_in_databse_before);
+      all_ents_not_in_database_before);
   CHKERRQ(ierr);
 
   Range out_new_tets, out_new_surf;
@@ -1745,14 +1748,14 @@ PetscErrorCode CutMeshInterface::mergeBadEdges(
   CHKERRQ(ierr);
 
   // get all entities not in database after merge
-  Range all_ents_not_in_databse_after;
+  Range all_ents_not_in_database_after;
   ierr = cOre.getInterface<BitRefManager>()->getAllEntitiesNotInDatabase(
-      all_ents_not_in_databse_after);
+      all_ents_not_in_database_after);
   CHKERRQ(ierr);
   // delete hanging entities
-  all_ents_not_in_databse_after =
-      subtract(all_ents_not_in_databse_after, all_ents_not_in_databse_before);
-  m_field.get_moab().delete_entities(all_ents_not_in_databse_after);
+  all_ents_not_in_database_after =
+      subtract(all_ents_not_in_database_after, all_ents_not_in_database_before);
+  m_field.get_moab().delete_entities(all_ents_not_in_database_after);
 
   mergedVolumes.swap(out_new_tets);
   mergedSurfaces.swap(out_new_surf);

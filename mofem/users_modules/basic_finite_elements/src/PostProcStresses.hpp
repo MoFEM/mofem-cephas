@@ -173,9 +173,9 @@ struct PostProcStress: public MoFEM::VolumeElementForcesAndSourcesCore::UserData
     if(replaceNonANumberByMaxValue&&max_energy>0) {
       MatrixDouble3by3 P(3,3);
       for(int gg = 0;gg!=nb_gauss_pts;gg++) {
-        double val_enrgy;
-        rval = postProcMesh.tag_get_data(th_energy,&mapGaussPts[gg],1,&val_enrgy); CHKERRQ_MOAB(rval);
-        if(!std::isnormal(val_enrgy)) {
+        double val_energy;
+        rval = postProcMesh.tag_get_data(th_energy,&mapGaussPts[gg],1,&val_energy); CHKERRQ_MOAB(rval);
+        if(!std::isnormal(val_energy)) {
           rval = postProcMesh.tag_set_data(th_energy,&mapGaussPts[gg],1,&max_energy); CHKERRQ_MOAB(rval);
           rval = postProcMesh.tag_get_data(th_piola1,&mapGaussPts[gg],1,&P(0,0)); CHKERRQ_MOAB(rval);
           for(int r  = 0;r!=P.size1();r++) {

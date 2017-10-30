@@ -197,7 +197,7 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSourcesCore {
      * \code
      * FTensor::Tensor1<double*> t_coords = getTensor1CoordsAtGaussPts();
      * for(int gg = 0;gg!=nb_int_ptrs;gg++) {
-     *   // do somthing
+     *   // do something
      *   ++t_coords;
      * }
      * \endcode
@@ -218,7 +218,7 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSourcesCore {
      * \code
      * FTensor::Tensor1<double*> t_coords = getTensor1HoCoordsAtGaussPts();
      * for(int gg = 0;gg!=nb_int_ptrs;gg++) {
-     *   // do somthing
+     *   // do something
      *   ++t_coords;
      * }
      * \endcode
@@ -248,10 +248,10 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSourcesCore {
      * VectorDouble div_vec(data.getFieldData().size());
      * for(int gg = 0;gg<nb_gauss_pts;gg++) {
      *  ierr = getDivergenceOfHDivBaseFunctions(side,type,data,gg,div_vec); CHKERRQ(ierr);
-     *  // do somthing with vec_div
+     *  // do something with vec_div
      * }
      * \endcode
-     * wheee vec_div has size of nb. of dofs, at each element represents divergence
+     * where vec_div has size of nb. of dofs, at each element represents divergence
      * of base functions.
      *
      * @param  side side (local) number of entity on element
@@ -283,10 +283,10 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSourcesCore {
      * MatrixDouble curl_mat(data.getFieldData().size(),3);
      * for(int gg = 0;gg<nb_gauss_pts;gg++) {
      *  ierr = getCurlOfHCurlBaseFunctions(side,type,data,gg,curl_mat); CHKERRQ(ierr);
-     *  // do somthing with vec_div
+     *  // do something with vec_div
      * }
      * \endcode
-     * where curl_mat is matrix which number of rows is eqal to nb. of base
+     * where curl_mat is matrix which number of rows is equal to nb. of base
      * functions. Number of columns is 3, since we work in 3d here. Rows represents
      * curl of vase functions.
      *
@@ -295,7 +295,7 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSourcesCore {
      * @param  data data structure
      * @param  gg   gauss pts
      * @param  curl curl matrix, nb. of rows is equal to number of base functions, columns are curl of base vector
-     * @return      error codea
+     * @return      error code
      */
     PetscErrorCode getCurlOfHCurlBaseFunctions(
       int side,
@@ -368,7 +368,7 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSourcesCore {
     *
     * MoFEM use hierarchical approximate base to describe geometry of the body. This
     * function transform derivatives of base functions when HO geometry is set and
-    * calculate Jaobian, inverse of Jacobian and determinant of transformation.
+    * calculate Jacobian, inverse of Jacobian and determinant of transformation.
     *
     */
   virtual PetscErrorCode calculateHoJacobian();

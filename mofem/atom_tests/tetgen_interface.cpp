@@ -104,7 +104,7 @@ int main(int argc, char *argv[]) {
   in.initialize();
   out.initialize();
 
-  //claer data stratus used by MoFEM
+  //clear data stratus used by MoFEM
   moab_tetgen_map.clear();
   tetgen_moab_map.clear();
 
@@ -186,7 +186,7 @@ int main(int argc, char *argv[]) {
     regions.push_back(std::pair<EntityHandle,int>(*tets.begin(),-id));
   }
   //set volume regions
-  ierr = tetgen_iface->setReginData(regions,in);  CHKERRQ(ierr);
+  ierr = tetgen_iface->setRegionData(regions,in);  CHKERRQ(ierr);
 
   //print mesh in tetgeb format
   if(debug>0) {
@@ -208,7 +208,7 @@ int main(int argc, char *argv[]) {
   //set markers to triangles
   ierr = tetgen_iface->getTriangleMarkers(tetgen_moab_map,out); CHKERRQ(ierr);
   //set refions to triangles
-  ierr = tetgen_iface->getReginData(tetgen_moab_map,out); CHKERRQ(ierr);
+  ierr = tetgen_iface->getRegionData(tetgen_moab_map,out); CHKERRQ(ierr);
 
   //char tetgen_out_file_name[] = "out";
   //out.save_elements(tetgen_out_file_name);
@@ -224,16 +224,16 @@ int main(int argc, char *argv[]) {
   if(debug) rval = moab.write_file("level_skin2.vtk","VTK","",&meshset_skin_level2,1); CHKERRQ_MOAB(rval);
 
   //test BitLevelCoupler
-  BitLevelCoupler *bit_ref_copuler_ptr;
-  ierr = m_field.getInterface(bit_ref_copuler_ptr); CHKERRQ(ierr);
+  BitLevelCoupler *bit_ref_coupler_ptr;
+  ierr = m_field.getInterface(bit_ref_coupler_ptr); CHKERRQ(ierr);
 
   Range children;
   ierr = m_field.getInterface<BitRefManager>()->getEntitiesByRefLevel(bit_level1,BitRefLevel().set(),children); CHKERRQ(ierr);
   if(children.empty()) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"it should not be empty");
   }
-  ierr = bit_ref_copuler_ptr->buidlAdjacenciesVerticesOnTets(bit_level0,children,true,1e-10,1e-6,true,2); CHKERRQ(ierr);
-  ierr = bit_ref_copuler_ptr->buidlAdjacenciesEdgesFacesVolumes(bit_level0,children,true,2); CHKERRQ(ierr);
+  ierr = bit_ref_coupler_ptr->buildAdjacenciesVerticesOnTets(bit_level0,children,true,1e-10,1e-6,true,2); CHKERRQ(ierr);
+  ierr = bit_ref_coupler_ptr->buildAdjacenciesEdgesFacesVolumes(bit_level0,children,true,2); CHKERRQ(ierr);
 
   } catch (MoFEMException const &e) {
     SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);

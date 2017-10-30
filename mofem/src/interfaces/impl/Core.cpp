@@ -1,5 +1,5 @@
 /** \file Core.cpp
- * \brief Mylti-index containers, data structures and other low-level functions
+ * \brief Multi-index containers, data structures and other low-level functions
  */
 
 /* MoFEM is free software: you can redistribute it and/or modify it under
@@ -20,34 +20,37 @@ extern "C" {
   void macro_is_depracted_using_deprecated_function() {}
 }
 
+// #include </Users/likask/MyBuild/mofem-cephas/mofem/include/MoFEM.hpp>
+
 namespace MoFEM {
 
-PetscErrorCode Core::query_interface(const MOFEMuuid& uuid,UnknownInterface** iface) const {
+PetscErrorCode Core::query_interface(const MOFEMuuid &uuid,
+                                     UnknownInterface **iface) const {
   MoFEMFunctionBeginHot;
   *iface = NULL;
-  if(uuid == IDD_MOFEMCoreInterface) {
-    *iface = static_cast<CoreInterface*>(const_cast<Core*>(this));
+  if (uuid == IDD_MOFEMCoreInterface) {
+    *iface = static_cast<CoreInterface *>(const_cast<Core *>(this));
     MoFEMFunctionReturnHot(0);
-  } else if(uuid == IDD_MOFEMDeprecatedCoreInterface) {
-    *iface = static_cast<DeprecatedCoreInterface*>(const_cast<Core*>(this));
+  } else if (uuid == IDD_MOFEMDeprecatedCoreInterface) {
+    *iface = static_cast<DeprecatedCoreInterface *>(const_cast<Core *>(this));
     MoFEMFunctionReturnHot(0);
   }
   // Get sub-interface
   unsigned long int id = uuid.uUId.to_ulong();
-  boost::ptr_map<unsigned long,UnknownInterface>::iterator it;
+  boost::ptr_map<unsigned long, UnknownInterface>::iterator it;
   it = iFaces.find(id);
-  if(it != iFaces.end()) {
+  if (it != iFaces.end()) {
     *iface = it->second;
     MoFEMFunctionReturnHot(0);
   }
-  *iface = NULL; 
-  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown interface");
+  *iface = NULL;
+  SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "unknown interface");
   MoFEMFunctionReturnHot(0);
 }
 
 bool Core::isGloballyInitialised = false;
 
-static void error_printf_hilight(void) {
+static void error_printf_highlight(void) {
 #if defined(PETSC_HAVE_UNISTD_H) && defined(PETSC_USE_ISATTY)
   if (PetscErrorPrintf == PetscErrorPrintfDefault) {
     if (isatty(fileno(PETSC_STDERR))) fprintf(PETSC_STDERR,"\033[1;32m");
@@ -74,14 +77,13 @@ static PetscErrorCode mofem_error_handler(
   if(!rank) {
 
     if(p == PETSC_ERROR_INITIAL) {
-      error_printf_hilight();
+      error_printf_highlight();
       (*PetscErrorPrintf)("--------------------- MoFEM Error Message---------------------------------------------------------------------------\n");
       (*PetscErrorPrintf)("MoFEM version %d.%d.%d\n",MoFEM_VERSION_MAJOR,MoFEM_VERSION_MINOR,MoFEM_VERSION_BUILD);
       (*PetscErrorPrintf)("MoFEM git commit id %s\n",GIT_SHA1_NAME);
       (*PetscErrorPrintf)("See http://mofem.eng.gla.ac.uk/mofem/html/guidelines_bug_reporting.html for bug reporting.\n");
       (*PetscErrorPrintf)("See http://mofem.eng.gla.ac.uk/mofem/html/faq_and_bugs.html for trouble shooting.\n");
       error_printf_normal();
-
     }
 
     PetscTraceBackErrorHandler(PETSC_COMM_SELF,line,fun,file,n,p,mess,ctx);
@@ -96,7 +98,7 @@ static PetscErrorCode mofem_error_handler(
       std::stringstream strs_version;
       strs_version << "MoFEM_version_" << MoFEM_VERSION_MAJOR << "." << MoFEM_VERSION_MINOR << "." << MoFEM_VERSION_BUILD;
 
-      error_printf_hilight();
+      error_printf_highlight();
       (*PetscErrorPrintf)("----------MoFEM End of Error Message -------send entire error message to mofem-group@googlegroups.com ----------\n");
       error_printf_normal();
 
@@ -104,7 +106,8 @@ static PetscErrorCode mofem_error_handler(
 
   } else {
 
-    /* do not print error messages since process 0 will print them, sleep before aborting so will not accidentally kill process 0*/
+    /* do not print error messages since process 0 will print them, sleep before
+     * aborting so will not accidentally kill process 0*/
     PetscSleep(10.0);
     abort();
 
@@ -133,32 +136,55 @@ verbose(verbose) {
   }
 
   // Register interfaces for this implementation
-  ierr = registerInterface<UnknownInterface>(IDD_MOFEMUnknown); CHKERRABORT(PETSC_COMM_SELF,ierr);
-  ierr = registerInterface<CoreInterface>(IDD_MOFEMCoreInterface); CHKERRABORT(PETSC_COMM_SELF,ierr);
-  ierr = registerInterface<DeprecatedCoreInterface>(IDD_MOFEMDeprecatedCoreInterface); CHKERRABORT(PETSC_COMM_SELF,ierr);
+  ierr = registerInterface<UnknownInterface>(IDD_MOFEMUnknown);
+  CHKERRABORT(PETSC_COMM_SELF, ierr);
+  ierr = registerInterface<CoreInterface>(IDD_MOFEMCoreInterface);
+  CHKERRABORT(PETSC_COMM_SELF, ierr);
+  ierr = registerInterface<DeprecatedCoreInterface>(
+      IDD_MOFEMDeprecatedCoreInterface);
+  CHKERRABORT(PETSC_COMM_SELF, ierr);
   // Register sub interfaces
-  ierr = regSubInterface<Simple>(IDD_MOFEMSimple); CHKERRABORT(PETSC_COMM_SELF,ierr);
-  ierr = regSubInterface<ProblemsManager>(IDD_MOFEMProblemsManager); CHKERRABORT(PETSC_COMM_SELF,ierr);
-  ierr = regSubInterface<ISManager>(IDD_MOFEMISManager); CHKERRABORT(PETSC_COMM_SELF,ierr);
-  ierr = regSubInterface<VecManager>(IDD_MOFEMVEC); CHKERRABORT(PETSC_COMM_SELF,ierr);
-  ierr = regSubInterface<FieldBlas>(IDD_MOFEMFieldBlas); CHKERRABORT(PETSC_COMM_SELF,ierr);
-  ierr = regSubInterface<BitRefManager>(IDD_MOFEMBitRefManager); CHKERRABORT(PETSC_COMM_SELF,ierr);
-  ierr = regSubInterface<Tools>(IDD_MOFEMTools); CHKERRABORT(PETSC_COMM_SELF,ierr);
-  ierr = regSubInterface<MeshsetsManager>(IDD_MOFEMMeshsetsManager); CHKERRABORT(PETSC_COMM_SELF,ierr);
-  ierr = regSubInterface<CoordSystemsManager>(IDD_MOFEMCoordsSystemsManager); CHKERRABORT(PETSC_COMM_SELF,ierr);
-  ierr = regSubInterface<NodeMergerInterface>(IDD_MOFEMNodeMerger); CHKERRABORT(PETSC_COMM_SELF,ierr);
-  ierr = regSubInterface<BitLevelCoupler>(IDD_MOFEMBitLevelCoupler); CHKERRABORT(PETSC_COMM_SELF,ierr);
-  ierr = regSubInterface<PrismsFromSurfaceInterface>(IDD_MOFEMPrismsFromSurface); CHKERRABORT(PETSC_COMM_SELF,ierr);
-  ierr = regSubInterface<MeshRefinement>(IDD_MOFEMMeshRefine); CHKERRABORT(PETSC_COMM_SELF,ierr);
-  ierr = regSubInterface<PrismInterface>(IDD_MOFEMPrismInterface); CHKERRABORT(PETSC_COMM_SELF,ierr);
-  ierr = regSubInterface<CutMeshInterface>(IDD_MOFEMCutMesh); CHKERRABORT(PETSC_COMM_SELF,ierr);
-  ierr = regSubInterface<SeriesRecorder>(IDD_MOFEMSeriesRecorder); CHKERRABORT(PETSC_COMM_SELF,ierr);
-  #ifdef WITH_TETGEN
-  ierr = regSubInterface<TetGenInterface>(IDD_MOFEMTetGegInterface); CHKERRABORT(PETSC_COMM_SELF,ierr);
-  #endif
-  #ifdef WITH_MED
-  ierr = regSubInterface<MedInterface>(IDD_MOFEMMedInterface); CHKERRABORT(PETSC_COMM_SELF,ierr);
-  #endif
+  ierr = regSubInterface<Simple>(IDD_MOFEMSimple);
+  CHKERRABORT(PETSC_COMM_SELF, ierr);
+  ierr = regSubInterface<ProblemsManager>(IDD_MOFEMProblemsManager);
+  CHKERRABORT(PETSC_COMM_SELF, ierr);
+  ierr = regSubInterface<ISManager>(IDD_MOFEMISManager);
+  CHKERRABORT(PETSC_COMM_SELF, ierr);
+  ierr = regSubInterface<VecManager>(IDD_MOFEMVEC);
+  CHKERRABORT(PETSC_COMM_SELF, ierr);
+  ierr = regSubInterface<FieldBlas>(IDD_MOFEMFieldBlas);
+  CHKERRABORT(PETSC_COMM_SELF, ierr);
+  ierr = regSubInterface<BitRefManager>(IDD_MOFEMBitRefManager);
+  CHKERRABORT(PETSC_COMM_SELF, ierr);
+  ierr = regSubInterface<Tools>(IDD_MOFEMTools);
+  CHKERRABORT(PETSC_COMM_SELF, ierr);
+  ierr = regSubInterface<MeshsetsManager>(IDD_MOFEMMeshsetsManager);
+  CHKERRABORT(PETSC_COMM_SELF, ierr);
+  ierr = regSubInterface<CoordSystemsManager>(IDD_MOFEMCoordsSystemsManager);
+  CHKERRABORT(PETSC_COMM_SELF, ierr);
+  ierr = regSubInterface<NodeMergerInterface>(IDD_MOFEMNodeMerger);
+  CHKERRABORT(PETSC_COMM_SELF, ierr);
+  ierr = regSubInterface<BitLevelCoupler>(IDD_MOFEMBitLevelCoupler);
+  CHKERRABORT(PETSC_COMM_SELF, ierr);
+  ierr =
+      regSubInterface<PrismsFromSurfaceInterface>(IDD_MOFEMPrismsFromSurface);
+  CHKERRABORT(PETSC_COMM_SELF, ierr);
+  ierr = regSubInterface<MeshRefinement>(IDD_MOFEMMeshRefine);
+  CHKERRABORT(PETSC_COMM_SELF, ierr);
+  ierr = regSubInterface<PrismInterface>(IDD_MOFEMPrismInterface);
+  CHKERRABORT(PETSC_COMM_SELF, ierr);
+  ierr = regSubInterface<CutMeshInterface>(IDD_MOFEMCutMesh);
+  CHKERRABORT(PETSC_COMM_SELF, ierr);
+  ierr = regSubInterface<SeriesRecorder>(IDD_MOFEMSeriesRecorder);
+  CHKERRABORT(PETSC_COMM_SELF, ierr);
+#ifdef WITH_TETGEN
+  ierr = regSubInterface<TetGenInterface>(IDD_MOFEMTetGegInterface);
+  CHKERRABORT(PETSC_COMM_SELF, ierr);
+#endif
+#ifdef WITH_MED
+  ierr = regSubInterface<MedInterface>(IDD_MOFEMMedInterface);
+  CHKERRABORT(PETSC_COMM_SELF, ierr);
+#endif
 
   // Register MOFEM events in PETSc
   PetscLogEventRegister("FE_preProcess",0,&MOFEM_EVENT_preProcess);
@@ -193,19 +219,20 @@ verbose(verbose) {
   }
 
 }
+
 Core::~Core() {
   int flg;
   MPI_Finalized(&flg);
   // Destroy interfaces
   iFaces.clear();
-  // Pop error hanlder
+  // Pop error handler
   if(isGloballyInitialised) {
     if(!flg) {
       PetscPopErrorHandler();
     }
     isGloballyInitialised = false;
   }
-  // Destroy communictaor
+  // Destroy communicator
   if(!flg) {
     ierr = PetscCommDestroy(&cOmm); CHKERRABORT(cOmm,ierr);
   }
@@ -321,7 +348,7 @@ PetscErrorCode Core::getTags(int verb) {
     CHKERRQ_MOAB(rval);
     rval = moab.tag_get_by_ptr(th_ProblemShift,&root_meshset,1,tag_data); CHKERRQ_MOAB(rval);
     pShift = (int*)tag_data[0];
-    //SaftyNets
+    //Safety nets
     int def_bool = 0;
     rval = moab.tag_get_handle("_MoFEMBuild",1,MB_TYPE_INTEGER,th_MoFEMBuild,MB_TAG_CREAT|MB_TAG_MESH,&def_bool);
     if(rval==MB_ALREADY_ALLOCATED) rval = MB_SUCCESS;
@@ -369,13 +396,13 @@ PetscErrorCode Core::getTags(int verb) {
       MB_TAG_CREAT|MB_TAG_BYTES|MB_TAG_SPARSE,
       &def_bit_level_mask
     ); CHKERRQ_MOAB(rval);
-    BitRefEdges def_bit_egde = 0;
+    BitRefEdges def_bit_edge = 0;
     rval = moab.tag_get_handle(
       "_RefBitEdge",
       sizeof(BitRefEdges),
       MB_TYPE_OPAQUE,
       th_RefBitEdge,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,
-      &def_bit_egde
+      &def_bit_edge
     ); CHKERRQ_MOAB(rval);
     const int def_type[] = {0,0};
     rval = moab.tag_get_handle(
@@ -694,7 +721,7 @@ PetscErrorCode Core::initialiseDatabaseFromMesh(int verb) {
             SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Only finite elements of type MBTET, MBPRISM and MBENTITYSET are implemented");
           }
           if(p_MoFEMFiniteElement.second) {
-            //PetscPrintf(cOmm,"Warrning: this entity should be already in refined finite elements database");
+            //PetscPrintf(cOmm,"Warring: this entity should be already in refined finite elements database");
             //SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, this entity should be already in refined finite elements database");
           }
         } catch (MoFEMException const &e) {

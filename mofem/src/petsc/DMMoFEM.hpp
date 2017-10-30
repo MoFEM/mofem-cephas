@@ -1,4 +1,4 @@
-/** \brieg DMMoFEM.hpp
+/** \file DMMoFEM.hpp
   \brief Discrete manager interface for MoFEM
   */
 
@@ -37,7 +37,7 @@ PetscErrorCode DMMoFEMCreateMoFEM(
   MoFEM::Interface *m_field_ptr,
   const char problem_name[],
   const MoFEM::BitRefLevel bit_level,
-  const MoFEM::BitRefLevel bit_maks = MoFEM::BitRefLevel().set()
+  const MoFEM::BitRefLevel bit_mask = MoFEM::BitRefLevel().set()
 );
 
 /**
@@ -56,7 +56,7 @@ PetscErrorCode DMMoFEMCreateSubDM(DM subdm,DM dm,const char problem_name[]);
 PetscErrorCode DMoFEMGetInterfacePtr(DM dm,MoFEM::Interface **m_field_ptr);
 
 /**
-  * \brief Get pointer to problem data structurGe
+  * \brief Get pointer to problem data structure
   * \ingroup dm
   */
 PetscErrorCode DMMoFEMGetProblemPtr(DM dm,const MoFEM::Problem **problem_ptr);

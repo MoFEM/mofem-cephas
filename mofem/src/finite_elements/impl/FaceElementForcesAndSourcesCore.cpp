@@ -442,11 +442,11 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
   // Apply Piola transform to HDiv and HCurl spaces, uses previously calculated
   // faces normal and tangent vectors.
   if(dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
-    ierr = opContravariantTransoform.opRhs(dataHdiv); CHKERRQ(ierr);
+    ierr = opContravariantTransform.opRhs(dataHdiv); CHKERRQ(ierr);
   }
   if(dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
     // cerr << dataHcurl.dataOnEntities[MBEDGE][0].getN(AINSWORTH_LEGENDRE_BASE) << endl;
-    ierr = opCovariantTransoform.opRhs(dataHcurl); CHKERRQ(ierr);
+    ierr = opCovariantTransform.opRhs(dataHcurl); CHKERRQ(ierr);
   }
 
   const UserDataOperator::OpType types[2] = {
@@ -492,7 +492,7 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
       }
 
       // Reseat all data which all field dependent
-      op_data[0]->resetFieldDepenentData();
+      op_data[0]->resetFieldDependentData();
       last_eval_field_name[0] = "";
       last_eval_field_name[1] = "";
 

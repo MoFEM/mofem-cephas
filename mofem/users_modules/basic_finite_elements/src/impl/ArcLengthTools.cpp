@@ -375,19 +375,19 @@ PetscErrorCode ZeroFLmabda::preProcess() {
   MoFEMFunctionReturnHot(0);
 }
 
-AssembleFLmabda::AssembleFLmabda(boost::shared_ptr<ArcLengthCtx> arc_ptr,
+AssembleFlambda::AssembleFlambda(boost::shared_ptr<ArcLengthCtx> arc_ptr,
                                  boost::shared_ptr<DirichletDisplacementBc> bc)
     : arcPtr(arc_ptr), bC(bc) {}
 
-PetscErrorCode AssembleFLmabda::preProcess() {
+PetscErrorCode AssembleFlambda::preProcess() {
   MoFEMFunctionBeginHot;
   MoFEMFunctionReturnHot(0);
 }
-PetscErrorCode AssembleFLmabda::operator()() {
+PetscErrorCode AssembleFlambda::operator()() {
   MoFEMFunctionBeginHot;
   MoFEMFunctionReturnHot(0);
 }
-PetscErrorCode AssembleFLmabda::postProcess() {
+PetscErrorCode AssembleFlambda::postProcess() {
   MoFEMFunctionBeginHot;
   switch (snes_ctx) {
   case CTX_SNESSETFUNCTION: {
