@@ -210,8 +210,8 @@ int main(int argc, char *argv[]) {
 
       
       VectorInt row_indices,col_indices;
-      ierr = getPorblemRowIndices("FIELD1",row_type,row_side,row_indices); CHKERRQ(ierr);
-      ierr = getPorblemColIndices("FIELD1",col_type,col_side,col_indices); CHKERRQ(ierr);
+      ierr = getProblemRowIndices("FIELD1",row_type,row_side,row_indices); CHKERRQ(ierr);
+      ierr = getProblemColIndices("FIELD1",col_type,col_side,col_indices); CHKERRQ(ierr);
 
       if(row_indices.size()!=row_data.getIndices().size()) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"row inconsistency");

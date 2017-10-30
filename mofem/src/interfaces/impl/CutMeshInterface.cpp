@@ -211,7 +211,7 @@ PetscErrorCode CutMeshInterface::cutAndTrim(
     ierr = UpdateMeshsets()(cOre, bit_level2);
     CHKERRQ(ierr);
   }
-  ierr = moveMidNodesOnTrimedEdges(th);
+  ierr = moveMidNodesOnTrimmedEdges(th);
   CHKERRQ(ierr);
 
   if(debug) {
@@ -734,7 +734,7 @@ PetscErrorCode CutMeshInterface::moveMidNodesOnCutEdges(Tag th) {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode CutMeshInterface::moveMidNodesOnTrimedEdges(Tag th) {
+PetscErrorCode CutMeshInterface::moveMidNodesOnTrimmedEdges(Tag th) {
   MoFEM::CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   MoFEMFunctionBeginHot;
