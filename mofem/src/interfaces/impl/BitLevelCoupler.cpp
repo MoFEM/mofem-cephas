@@ -161,7 +161,7 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode BitLevelCoupler::buidlAdjacenciesVerticesOnTets(
+  PetscErrorCode BitLevelCoupler::buildAdjacenciesVerticesOnTets(
     const BitRefLevel &parent_level,Range &children,
     bool vertex_elements,const double iter_tol,const double inside_tol,bool throw_error,int verb
   ) {
@@ -226,7 +226,7 @@ namespace MoFEM {
       MoFEMFunctionReturnHot(0);
     }
 
-  PetscErrorCode BitLevelCoupler::buidlAdjacenciesEdgesFacesVolumes(
+  PetscErrorCode BitLevelCoupler::buildAdjacenciesEdgesFacesVolumes(
       const BitRefLevel &parent_level,Range &children,bool elements,int verb
     ) {
       MoFEMFunctionBeginHot;

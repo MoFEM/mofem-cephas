@@ -90,7 +90,7 @@ struct BitLevelCoupler: public UnknownInterface {
     \param verbose level
 
     */
-  PetscErrorCode buidlAdjacenciesVerticesOnTets(
+  PetscErrorCode buildAdjacenciesVerticesOnTets(
     const BitRefLevel &parent_level,
     Range &children,
     bool vertex_elements = false,
@@ -103,7 +103,7 @@ struct BitLevelCoupler: public UnknownInterface {
   /** \brief finding parents for edegs, faces and tets
 
     It assumes that parents for vertices are known. Run
-    buidlAdjacenciesVerticesOnTets if parents for vertices are not set.
+    buildAdjacenciesVerticesOnTets if parents for vertices are not set.
 
     \param parent_level bit level of parents
 
@@ -122,7 +122,7 @@ struct BitLevelCoupler: public UnknownInterface {
     \param verbose level
 
     */
-  PetscErrorCode buidlAdjacenciesEdgesFacesVolumes(
+  PetscErrorCode buildAdjacenciesEdgesFacesVolumes(
     const BitRefLevel &parent_level,
     Range &children,
     bool elements = true,

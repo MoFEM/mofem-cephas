@@ -51,9 +51,9 @@ struct TetGenInterface : public UnknownInterface {
     * Move mesh to TetGen data structures
     *
     * \param ents range of entities (tetrahedrons or nodes)
-    * \param in tegen data structure (look to TetGen user manual)
+    * \param in tetgen data structure (look to TetGen user manual)
     * \param moab_tetgen_map mapping moab to TetGen entities
-    * \param tetgen_moab_map mapping tegen to moab entities
+    * \param tetgen_moab_map mapping tetgen to moab entities
     */
   PetscErrorCode inData(Range &ents, tetgenio &in,
                         moabTetGen_Map &moab_tetgen_map,
@@ -100,10 +100,10 @@ struct TetGenInterface : public UnknownInterface {
   /** \brief get entities for TetGen data structure
 
     \param ents range of entities (tetrahedrons or nodes)
-    \param in tegen data structure (look to TetGen user manual)
+    \param in tetgen data structure (look to TetGen user manual)
     \param moab_tetgen_map mapping MoAB to TetGen entities
     \param tetgen_moab_map mapping TetGen to moab entities
-    \param ents rerun entities which are in TetGen Dara structure
+    \param ents rerun entities which are in TetGen Data structure
     \param id_in_tags use tags as entity handles, if that is a case use tag to
     find MoAB vertex id
     \param error_if_created throw error if node need to be created
@@ -118,7 +118,7 @@ struct TetGenInterface : public UnknownInterface {
   /** \brief get entities for TetGen data structure
 
     \param ents range of entities (tetrahedrons or nodes)
-    \param in tegen data structure (look to TetGen user manual)
+    \param in tetgen data structure (look to TetGen user manual)
     \param moab_tetgen_map mapping MoAB to TetGen entities
     \param tetgen_moab_map mapping TetGen to MoAB entities
     \param ents rerun entities which are in TetGen data structure
@@ -135,7 +135,7 @@ struct TetGenInterface : public UnknownInterface {
   /** \brief set markers to faces
 
     \param markers data structure with markers
-    \param in tegen data structure (look to TetGen user manual)
+    \param in tetgen data structure (look to TetGen user manual)
     \param moab_tetgen_map mapping MoAB to TetGen entities
     \param tetgen_moab_map mapping TetGen to MoAB entities
 
@@ -147,7 +147,7 @@ struct TetGenInterface : public UnknownInterface {
   /** \brief get markers to faces
 
     \param markers data structure with markers
-    \param in tegen data structure (look to TetGen user manual)
+    \param in tetgen data structure (look to TetGen user manual)
     \param moab_tetgen_map mapping MoAB to TetGen entities
     \param tetgen_moab_map mapping TetGen to MoAB entities
 
@@ -160,12 +160,12 @@ struct TetGenInterface : public UnknownInterface {
   /** \brief set region data to tetrahedral
     */
   PetscErrorCode
-  setReginData(std::vector<std::pair<EntityHandle, int> > &regions, tetgenio &in,
+  setRegionData(std::vector<std::pair<EntityHandle, int> > &regions, tetgenio &in,
                Tag th = NULL);
 
   /** \brief get region data to tetrahedral
     */
-  PetscErrorCode getReginData(tetGenMoab_Map &tetgen_moab_map, tetgenio &out,
+  PetscErrorCode getRegionData(tetGenMoab_Map &tetgen_moab_map, tetgenio &out,
                               Range *ents = NULL,
                               idxRange_Map *ents_map = NULL);
 
@@ -198,7 +198,7 @@ struct TetGenInterface : public UnknownInterface {
   /** make planar polygon facet
 
     \param ents surface triangles
-    \param plygons output list of polygons
+    \param polygons output list of polygons
     \param reduce_edges reduce edges if on the line
     \param not_reducable_nodes do not reduce node on edge if in this range
     \param eps tolerance
