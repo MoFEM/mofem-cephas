@@ -141,7 +141,7 @@ PetscErrorCode DMDestroy_MoFEM(DM dm) {
     // cerr << "Destroy " << dm_field->problemName << endl;
     delete ((DMCtx*)dm->data);
   } else {
-    // cerr << "Derefrence " << dm_field->problemName << " "  << ((DMCtx*)dm->data)->referenceNumber << endl;
+    // cerr << "Dereference " << dm_field->problemName << " "  << ((DMCtx*)dm->data)->referenceNumber << endl;
     (((DMCtx*)dm->data)->referenceNumber)--;
   }
   MoFEMFunctionReturnHot(0);
