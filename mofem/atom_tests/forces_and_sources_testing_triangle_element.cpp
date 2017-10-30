@@ -172,7 +172,7 @@ int main(int argc, char *argv[]) {
 
       const double eps = 1e-4;
       for(
-        DoubleAllacator::iterator it = getNormal().data().begin();
+        DoubleAllocator::iterator it = getNormal().data().begin();
         it!=getNormal().data().end();it++
       ) {
         *it = fabs(*it)<eps ? 0.0 : *it;

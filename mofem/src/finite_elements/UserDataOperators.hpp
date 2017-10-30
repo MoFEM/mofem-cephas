@@ -82,14 +82,14 @@ PetscErrorCode OpCalculateScalarFieldValues_General<T,A>::doWork(
  * \ingroup mofem_forces_and_sources_user_data_operators
  */
 struct OpCalculateScalarFieldValues:
-public OpCalculateScalarFieldValues_General<double,DoubleAllacator> {
+public OpCalculateScalarFieldValues_General<double,DoubleAllocator> {
 
   OpCalculateScalarFieldValues(
     const std::string &field_name,
     boost::shared_ptr<VectorDouble>& data_ptr,
     EntityType zero_type = MBVERTEX
   ):
-  OpCalculateScalarFieldValues_General<double,DoubleAllacator>(
+  OpCalculateScalarFieldValues_General<double,DoubleAllocator>(
   field_name,data_ptr,zero_type
   ) {
   }
@@ -197,7 +197,7 @@ PetscErrorCode OpCalculateVectorFieldValues_General<Tensor_Dim,T,L,A>::doWork(
 * \ingroup mofem_forces_and_sources_user_data_operators
 */
 template<int Tensor_Dim>
-struct OpCalculateVectorFieldValues_General<Tensor_Dim,double,ublas::row_major,DoubleAllacator >:
+struct OpCalculateVectorFieldValues_General<Tensor_Dim,double,ublas::row_major,DoubleAllocator >:
   public ForcesAndSourcesCore::UserDataOperator {
 
   boost::shared_ptr<MatrixDouble> dataPtr;
@@ -224,7 +224,7 @@ struct OpCalculateVectorFieldValues_General<Tensor_Dim,double,ublas::row_major,D
  * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template<int Tensor_Dim>
-PetscErrorCode OpCalculateVectorFieldValues_General<Tensor_Dim,double,ublas::row_major,DoubleAllacator >::doWork(
+PetscErrorCode OpCalculateVectorFieldValues_General<Tensor_Dim,double,ublas::row_major,DoubleAllocator >::doWork(
   int side,EntityType type,DataForcesAndSourcesCore::EntData &data
 ) {
   MoFEMFunctionBeginHot;
@@ -277,7 +277,7 @@ PetscErrorCode OpCalculateVectorFieldValues_General<Tensor_Dim,double,ublas::row
 */
 template<int Tensor_Dim>
 struct OpCalculateVectorFieldValues:
-public OpCalculateVectorFieldValues_General<Tensor_Dim,double,ublas::row_major,DoubleAllacator > {
+public OpCalculateVectorFieldValues_General<Tensor_Dim,double,ublas::row_major,DoubleAllocator > {
 
   OpCalculateVectorFieldValues(
     const std::string &field_name,
@@ -285,7 +285,7 @@ public OpCalculateVectorFieldValues_General<Tensor_Dim,double,ublas::row_major,D
     EntityType zero_type = MBVERTEX
   ):
   OpCalculateVectorFieldValues_General<
-  Tensor_Dim,double,ublas::row_major,DoubleAllacator
+  Tensor_Dim,double,ublas::row_major,DoubleAllocator
   >(field_name,data_ptr,zero_type) {
   }
 
@@ -334,15 +334,15 @@ PetscErrorCode OpCalculateTensor2FieldValues_General<Tensor_Dim0,Tensor_Dim1,T,L
 
 template<int Tensor_Dim0,int Tensor_Dim1>
 struct OpCalculateTensor2FieldValues_General<
-Tensor_Dim0,Tensor_Dim1,double,ublas::row_major,DoubleAllacator
+Tensor_Dim0,Tensor_Dim1,double,ublas::row_major,DoubleAllocator
 >: public ForcesAndSourcesCore::UserDataOperator {
 
-  boost::shared_ptr<ublas::matrix<double,ublas::row_major,DoubleAllacator > > dataPtr;
+  boost::shared_ptr<ublas::matrix<double,ublas::row_major,DoubleAllocator > > dataPtr;
   EntityHandle zeroType;
 
   OpCalculateTensor2FieldValues_General(
     const std::string &field_name,
-    boost::shared_ptr<ublas::matrix<double,ublas::row_major,DoubleAllacator > >& data_ptr,
+    boost::shared_ptr<ublas::matrix<double,ublas::row_major,DoubleAllocator > >& data_ptr,
     EntityType zero_type = MBVERTEX
   ):
   ForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSourcesCore::UserDataOperator::OPROW),
@@ -358,7 +358,7 @@ Tensor_Dim0,Tensor_Dim1,double,ublas::row_major,DoubleAllacator
 
 template<int Tensor_Dim0,int Tensor_Dim1>
 PetscErrorCode OpCalculateTensor2FieldValues_General<
-Tensor_Dim0,Tensor_Dim1, double, ublas::row_major, DoubleAllacator
+Tensor_Dim0,Tensor_Dim1, double, ublas::row_major, DoubleAllocator
 >::doWork(
   int side,EntityType type,DataForcesAndSourcesCore::EntData &data
 ) {
@@ -393,15 +393,15 @@ public OpCalculateVectorFieldValues_General<Tensor_Dim,T,L,A> {
 * \ingroup mofem_forces_and_sources_user_data_operators
 */
 template<int Tensor_Dim>
-struct OpCalculateScalarFieldGradient_General<Tensor_Dim,double,ublas::row_major,DoubleAllacator >:
-public OpCalculateVectorFieldValues_General<Tensor_Dim,double,ublas::row_major,DoubleAllacator > {
+struct OpCalculateScalarFieldGradient_General<Tensor_Dim,double,ublas::row_major,DoubleAllocator >:
+public OpCalculateVectorFieldValues_General<Tensor_Dim,double,ublas::row_major,DoubleAllocator > {
 
   OpCalculateScalarFieldGradient_General(
     const std::string &field_name,
     boost::shared_ptr<MatrixDouble>& data_ptr,
     EntityType zero_type = MBVERTEX
   ):
-  OpCalculateVectorFieldValues_General<Tensor_Dim,double,ublas::row_major,DoubleAllacator >(
+  OpCalculateVectorFieldValues_General<Tensor_Dim,double,ublas::row_major,DoubleAllocator >(
     field_name,data_ptr,zero_type
   ) {
   }
@@ -424,7 +424,7 @@ public OpCalculateVectorFieldValues_General<Tensor_Dim,double,ublas::row_major,D
  * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template<int Tensor_Dim>
-PetscErrorCode OpCalculateScalarFieldGradient_General<Tensor_Dim,double,ublas::row_major,DoubleAllacator >::doWork(
+PetscErrorCode OpCalculateScalarFieldGradient_General<Tensor_Dim,double,ublas::row_major,DoubleAllocator >::doWork(
   int side,EntityType type,DataForcesAndSourcesCore::EntData &data
 ) {
   MoFEMFunctionBeginHot;
@@ -441,7 +441,7 @@ PetscErrorCode OpCalculateScalarFieldGradient_General<Tensor_Dim,double,ublas::r
   }
   const int nb_gauss_pts = data.getN().size1();
   const int nb_base_functions = data.getN().size2();
-  ublas::matrix<double,ublas::row_major,DoubleAllacator > &mat = *this->dataPtr;
+  ublas::matrix<double,ublas::row_major,DoubleAllocator > &mat = *this->dataPtr;
   if(type == this->zeroType) {
     mat.resize(Tensor_Dim,nb_gauss_pts,false);
     mat.clear();
@@ -469,7 +469,7 @@ PetscErrorCode OpCalculateScalarFieldGradient_General<Tensor_Dim,double,ublas::r
 */
 template<int Tensor_Dim>
 struct OpCalculateScalarFieldGradient:
-public OpCalculateScalarFieldGradient_General<Tensor_Dim,double,ublas::row_major,DoubleAllacator > {
+public OpCalculateScalarFieldGradient_General<Tensor_Dim,double,ublas::row_major,DoubleAllocator > {
 
   OpCalculateScalarFieldGradient(
     const std::string &field_name,
@@ -477,7 +477,7 @@ public OpCalculateScalarFieldGradient_General<Tensor_Dim,double,ublas::row_major
     EntityType zero_type = MBVERTEX
   ):
   OpCalculateScalarFieldGradient_General<
-  Tensor_Dim,double,ublas::row_major,DoubleAllacator
+  Tensor_Dim,double,ublas::row_major,DoubleAllocator
   >(field_name,data_ptr,zero_type) {
   }
 
@@ -504,15 +504,15 @@ public OpCalculateTensor2FieldValues_General<Tensor_Dim0,Tensor_Dim1,T,L,A> {
 };
 
 template<int Tensor_Dim0,int Tensor_Dim1>
-struct OpCalculateVectorFieldGradient_General<Tensor_Dim0,Tensor_Dim1,double,ublas::row_major,DoubleAllacator >:
-public OpCalculateTensor2FieldValues_General<Tensor_Dim0,Tensor_Dim1,double,ublas::row_major,DoubleAllacator > {
+struct OpCalculateVectorFieldGradient_General<Tensor_Dim0,Tensor_Dim1,double,ublas::row_major,DoubleAllocator >:
+public OpCalculateTensor2FieldValues_General<Tensor_Dim0,Tensor_Dim1,double,ublas::row_major,DoubleAllocator > {
 
   OpCalculateVectorFieldGradient_General(
     const std::string &field_name,
     boost::shared_ptr<MatrixDouble>& data_ptr,
     EntityType zero_type = MBVERTEX
   ):
-  OpCalculateTensor2FieldValues_General<Tensor_Dim0,Tensor_Dim1,double,ublas::row_major,DoubleAllacator >(
+  OpCalculateTensor2FieldValues_General<Tensor_Dim0,Tensor_Dim1,double,ublas::row_major,DoubleAllocator >(
     field_name,data_ptr,zero_type
   ) {
   }
@@ -536,7 +536,7 @@ public OpCalculateTensor2FieldValues_General<Tensor_Dim0,Tensor_Dim1,double,ubla
  */
 template<int Tensor_Dim0,int Tensor_Dim1>
 PetscErrorCode OpCalculateVectorFieldGradient_General<
-Tensor_Dim0,Tensor_Dim1,double,ublas::row_major,DoubleAllacator
+Tensor_Dim0,Tensor_Dim1,double,ublas::row_major,DoubleAllocator
 >::doWork(
   int side,EntityType type,DataForcesAndSourcesCore::EntData &data
 ) {
@@ -551,7 +551,7 @@ Tensor_Dim0,Tensor_Dim1,double,ublas::row_major,DoubleAllacator
   }
   const int nb_gauss_pts = data.getN().size1();
   const int nb_base_functions = data.getN().size2();
-  ublas::matrix<double,ublas::row_major,DoubleAllacator > &mat = *this->dataPtr;
+  ublas::matrix<double,ublas::row_major,DoubleAllocator > &mat = *this->dataPtr;
   if(type == this->zeroType) {
     mat.resize(Tensor_Dim0*Tensor_Dim1,nb_gauss_pts,false);
     mat.clear();
@@ -584,7 +584,7 @@ Tensor_Dim0,Tensor_Dim1,double,ublas::row_major,DoubleAllacator
 */
 template<int Tensor_Dim0,int Tensor_Dim1>
 struct OpCalculateVectorFieldGradient:
-public OpCalculateVectorFieldGradient_General<Tensor_Dim0,Tensor_Dim1,double,ublas::row_major,DoubleAllacator > {
+public OpCalculateVectorFieldGradient_General<Tensor_Dim0,Tensor_Dim1,double,ublas::row_major,DoubleAllocator > {
 
   OpCalculateVectorFieldGradient(
     const std::string &field_name,
@@ -592,7 +592,7 @@ public OpCalculateVectorFieldGradient_General<Tensor_Dim0,Tensor_Dim1,double,ubl
     EntityType zero_type = MBVERTEX
   ):
   OpCalculateVectorFieldGradient_General<
-  Tensor_Dim0,Tensor_Dim1,double,ublas::row_major,DoubleAllacator
+  Tensor_Dim0,Tensor_Dim1,double,ublas::row_major,DoubleAllocator
   >(field_name,data_ptr,zero_type) {
   }
 
@@ -652,7 +652,7 @@ PetscErrorCode OpCalculateHdivVectorField_General<Tensor_Dim,T,L,A>::doWork(
 * \ingroup mofem_forces_and_sources_user_data_operators
 */
 template<int Tensor_Dim>
-struct OpCalculateHdivVectorField_General<Tensor_Dim,double,ublas::row_major,DoubleAllacator>:
+struct OpCalculateHdivVectorField_General<Tensor_Dim,double,ublas::row_major,DoubleAllocator>:
 public ForcesAndSourcesCore::UserDataOperator {
 
   boost::shared_ptr<MatrixDouble> dataPtr;
@@ -685,7 +685,7 @@ public ForcesAndSourcesCore::UserDataOperator {
 };
 
 template<int Tensor_Dim>
-PetscErrorCode OpCalculateHdivVectorField_General<Tensor_Dim,double,ublas::row_major,DoubleAllacator>::doWork(
+PetscErrorCode OpCalculateHdivVectorField_General<Tensor_Dim,double,ublas::row_major,DoubleAllocator>::doWork(
   int side,EntityType type,DataForcesAndSourcesCore::EntData &data
 ) {
   MoFEMFunctionBeginHot;
@@ -723,7 +723,7 @@ PetscErrorCode OpCalculateHdivVectorField_General<Tensor_Dim,double,ublas::row_m
 */
 template<int Tensor_Dim>
 struct OpCalculateHdivVectorField:
-public OpCalculateHdivVectorField_General<Tensor_Dim,double,ublas::row_major,DoubleAllacator> {
+public OpCalculateHdivVectorField_General<Tensor_Dim,double,ublas::row_major,DoubleAllocator> {
 
   OpCalculateHdivVectorField(
     const std::string &field_name,
@@ -731,7 +731,7 @@ public OpCalculateHdivVectorField_General<Tensor_Dim,double,ublas::row_major,Dou
     EntityType zero_type = MBTRI,
     int zero_side = 0
   ):
-  OpCalculateHdivVectorField_General<Tensor_Dim,double,ublas::row_major,DoubleAllacator>(
+  OpCalculateHdivVectorField_General<Tensor_Dim,double,ublas::row_major,DoubleAllocator>(
     field_name,data_ptr,zero_type,zero_side
   ) {
   }

@@ -48,7 +48,7 @@ struct EdgeElementForcesAndSourcesCore: public ForcesAndSourcesCore {
 
   MatrixDouble tAngent_at_GaussPt;
   OpGetHoTangentOnEdge opGetHoTangentOnEdge;
-  OpSetCovariantPiolaTransoformOnEdge opCovariantTransform;
+  OpSetCovariantPiolaTransformOnEdge opCovariantTransform;
 
   EdgeElementForcesAndSourcesCore(Interface &m_field):
   ForcesAndSourcesCore(m_field),

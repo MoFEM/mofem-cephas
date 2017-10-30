@@ -72,7 +72,7 @@ int main(int argc, char *argv[]) {
     MoFEM::Interface& m_field = core;
 
 
-    //set entitities bit level
+    //set entities bit level
     BitRefLevel bit_level0;
     bit_level0.set(0);
     EntityHandle meshset_level0;
@@ -241,7 +241,7 @@ int main(int argc, char *argv[]) {
         my_split.precision(3);
         my_split.setf(std::ios::fixed);
         for(
-          DoubleAllacator::iterator it = nodes_vals.data().begin();
+          DoubleAllocator::iterator it = nodes_vals.data().begin();
           it!=nodes_vals.data().end();it++) {
             *it = fabs(*it)<eps ? 0.0 : *it;
           }
