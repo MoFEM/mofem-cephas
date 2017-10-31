@@ -71,7 +71,7 @@ struct NeoHookean: public NonlinearElasticElement::FunctionsToCalculatePiolaKirc
       
       this->lambda = LAMBDA(block_data.E,block_data.PoissonRatio);
       this->mu = MU(block_data.E,block_data.PoissonRatio);
-      ierr = this->calculateC_CauchyDefromationTensor(); CHKERRQ(ierr);
+      ierr = this->calculateC_CauchyDeformationTensor(); CHKERRQ(ierr);
       ierr = this->NeoHooke_PiolaKirchhoffII(); CHKERRQ(ierr);
       this->P.resize(3,3);
       noalias(this->P) = prod(this->F,this->S);
@@ -108,7 +108,7 @@ struct NeoHookean: public NonlinearElasticElement::FunctionsToCalculatePiolaKirc
       
       this->lambda = LAMBDA(block_data.E,block_data.PoissonRatio);
       this->mu = MU(block_data.E,block_data.PoissonRatio);
-      ierr = this->calculateC_CauchyDefromationTensor(); CHKERRQ(ierr);
+      ierr = this->calculateC_CauchyDeformationTensor(); CHKERRQ(ierr);
       ierr = this->dEterminatnt(this->F,this->J); CHKERRQ(ierr);
       ierr = this->NeoHookean_ElasticEnergy(); CHKERRQ(ierr);
       MoFEMFunctionReturnHot(0);

@@ -198,7 +198,7 @@ struct NonlinearElasticElement {
     CommonData *commonDataPtr; ///< common data shared between entities (f.e. field values at Gauss pts.)
     MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator *opPtr; ///< pointer to finite element tetrahedral operator
 
-    PetscErrorCode calculateC_CauchyDefromationTensor() {
+    PetscErrorCode calculateC_CauchyDeformationTensor() {
       MoFEMFunctionBeginHot;
       C.resize(3,3);
       noalias(C) = prod(trans(F),F);
@@ -262,7 +262,7 @@ struct NonlinearElasticElement {
 
       lambda = LAMBDA(block_data.E,block_data.PoissonRatio);
       mu = MU(block_data.E,block_data.PoissonRatio);
-      ierr = calculateC_CauchyDefromationTensor(); CHKERRQ(ierr);
+      ierr = calculateC_CauchyDeformationTensor(); CHKERRQ(ierr);
       ierr = calculateE_GreenStrain(); CHKERRQ(ierr);
       ierr = calculateS_PiolaKirchhoffII(); CHKERRQ(ierr);
       P.resize(3,3);
@@ -320,7 +320,7 @@ struct NonlinearElasticElement {
 
       lambda = LAMBDA(block_data.E,block_data.PoissonRatio);
       mu = MU(block_data.E,block_data.PoissonRatio);
-      ierr = calculateC_CauchyDefromationTensor(); CHKERRQ(ierr);
+      ierr = calculateC_CauchyDeformationTensor(); CHKERRQ(ierr);
       ierr = calculateE_GreenStrain(); CHKERRQ(ierr);
       TYPE trace = 0;
       eNergy = 0;
@@ -374,7 +374,7 @@ struct NonlinearElasticElement {
     OpGetDataAtGaussPts(
       const std::string field_name,
       std::vector<VectorDouble > &values_at_gauss_pts,
-      std::vector<MatrixDouble > &gardient_at_gauss_pts
+      std::vector<MatrixDouble > &gradient_at_gauss_pts
     );
 
     /** \brief operator calculating deformation gradient
@@ -392,7 +392,7 @@ struct NonlinearElasticElement {
   };
 
   /**
-   * \brief Operator performs automatic differentation.
+   * \brief Operator performs automatic differentiation.
    */
   struct OpJacobianPiolaKirchhoffStress: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
 
@@ -401,7 +401,7 @@ struct NonlinearElasticElement {
     int tAg;//,lastId;        ///< ADOL-C tag used for recording operations
     int adlocReturnValue;     ///< return value from ADOL-C, if non-zero that is error.
     bool jAcobian;            ///< if true Jacobian is calculated
-    bool fUnction;            ///< if true stress i calcualted
+    bool fUnction;            ///< if true stress i calculated
     bool aLe;                 ///< true if arbitrary Lagrangian-Eulerian formulation
     bool fieldDisp;           ///< true if field of displacements is given, usually spatial positions are given.
 
@@ -473,7 +473,7 @@ struct NonlinearElasticElement {
   };
 
   /**
-   * \brief Calulate explicit direvative of free energy
+   * \brief Calculate explicit derivative of free energy
    */
   struct OpJacobianEnergy: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
 
@@ -504,7 +504,7 @@ struct NonlinearElasticElement {
     std::vector<MatrixDouble > *ptrH;
 
     /**
-     * \brief Cgeck if tape is recorded for given integration point
+     * \brief Check if tape is recorded for given integration point
      * @param  gg integration point
      * @return    true if tag is recorded
      */
@@ -655,15 +655,20 @@ struct NonlinearElasticElement {
 
   };
 
-  struct OpRhsEshelbyStrees: public OpRhsPiolaKirchhoff {
+  struct OpRhsEshelbyStress: public OpRhsPiolaKirchhoff {
 
-    OpRhsEshelbyStrees(
+    OpRhsEshelbyStress(
       const std::string field_name,BlockData &data,CommonData &common_data
     );
 
   };
 
-  struct OpLhsEshelby_dx: public OpLhsPiolaKirchhoff_dX {
+  /**
+   * \deprecated name with spelling mistake
+   */
+  DEPRECATED typedef OpRhsEshelbyStress OpRhsEshelbyStrees;
+
+  struct OpLhsEshelby_dx : public OpLhsPiolaKirchhoff_dX {
 
     OpLhsEshelby_dx(
       const std::string vel_field,const std::string field_name,BlockData &data,CommonData &common_data
