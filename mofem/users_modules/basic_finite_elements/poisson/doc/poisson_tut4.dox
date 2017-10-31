@@ -196,7 +196,7 @@ integration is implemented in the following methods
 - Constrains residual \f$\mathbf{r}_g\f$ is implemented in \ref PoissonExample::OpRes_g::iNtegrate
 
 Finite element instances and setup of finite element operators, following figure 1, is implanted
-in \ref PoissonExample::CreateFiniteElements::createFEToAssmbleMatrixAndVectorForNonlinearProblem,
+in \ref PoissonExample::CreateFiniteElements::createFEToAssembleMatrixAndVectorForNonlinearProblem,
 in particular we find there the following code
 \code
 boost::shared_ptr<VectorDouble> values_at_integation_ptr = boost::make_shared<VectorDouble>();

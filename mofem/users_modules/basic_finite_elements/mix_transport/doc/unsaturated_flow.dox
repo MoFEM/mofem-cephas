@@ -466,8 +466,8 @@ classes derived from MixTransport::CommonMaterialData.
 \subsection mix_us_flow_physical_equation_adding_material Adding new material
 
 The simplest method to implement new material is to derive class form
-MixTransport::MaterialWithAutomaticDifferentation, and add it to file \ref
-MaterialUnsaturatedFlow.cpp. MixTransport::MaterialWithAutomaticDifferentation
+MixTransport::MaterialWithAutomaticDifferentiation, and add it to file \ref
+MaterialUnsaturatedFlow.cpp. MixTransport::MaterialWithAutomaticDifferentiation
 is a class to simplify implementation of the material model by utilizing
 advantages of automatic differentiation. Comprehensive description of library
 ADOL-C for animatic differentiation can be found here (<a
@@ -484,17 +484,17 @@ In consequence, user need to build a tree to calculate water content density
 \f$\theta=\theta(h)\f$ and relative hydraulic conductivity \f$K_r=K_r(h)\f$.
 Using terminology from ADOL-C, one has to \e record \e tape with differentiated
 function. This is done by overloading two functions,
-MaterialWithAutomaticDifferentation::recordTheta and
-MaterialWithAutomaticDifferentation::recordKr. For example
+MaterialWithAutomaticDifferentiation::recordTheta and
+MaterialWithAutomaticDifferentiation::recordKr. For example
 \code
-struct MyMaterialForUnsaturatedFlow: public MaterialWithAutomaticDifferentation {
+struct MyMaterialForUnsaturatedFlow: public MaterialWithAutomaticDifferentiation {
 
   static boost::shared_ptr<CommonMaterialData> createMatPtr(const CommonMaterialData &data) {
     return boost::shared_ptr<CommonMaterialData>(new MyMaterialForUnsaturatedFlow(data));
     }
 
     MyMaterialForUnsaturatedFlow(const CommonMaterialData &data):
-    MaterialWithAutomaticDifferentation(data) {
+    MaterialWithAutomaticDifferentiation(data) {
       recordTheta();
       recordKr();
     }

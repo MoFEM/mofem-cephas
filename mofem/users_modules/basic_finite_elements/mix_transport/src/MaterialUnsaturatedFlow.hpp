@@ -142,8 +142,8 @@ namespace MixTransport {
 
   };
 
-  struct MaterialWithAutomaticDifferentation: public CommonMaterialData {
-    MaterialWithAutomaticDifferentation(const CommonMaterialData &data):
+  struct MaterialWithAutomaticDifferentiation : public CommonMaterialData {
+    MaterialWithAutomaticDifferentiation(const CommonMaterialData &data):
     CommonMaterialData(data) {
     }
 
@@ -270,14 +270,14 @@ namespace MixTransport {
 
   };
 
-  struct MaterialVanGenuchten: public MaterialWithAutomaticDifferentation {
+  struct MaterialVanGenuchten: public MaterialWithAutomaticDifferentiation {
 
     static boost::shared_ptr<CommonMaterialData> createMatPtr(const CommonMaterialData &data) {
       return boost::shared_ptr<CommonMaterialData>(new MaterialVanGenuchten(data));
     }
 
     MaterialVanGenuchten(const CommonMaterialData &data):
-    MaterialWithAutomaticDifferentation(data) {
+    MaterialWithAutomaticDifferentiation(data) {
       recordTheta();
       recordKr();
     }
