@@ -524,7 +524,7 @@ struct ForcesAndSourcesCore: public FEMethod {
 
     // \deprecated Deprecated function with spelling mistake
     DEPRECATED inline PetscErrorCode
-    getPorblemAAAColIndices(const std::string filed_name, const EntityType type,
+    getPorblemColIndices(const std::string filed_name, const EntityType type,
                          const int side, VectorInt &indices) const {
       return getProblemColIndices(filed_name, type, side, indices);
     }

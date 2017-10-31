@@ -112,7 +112,7 @@ struct OpS: public FaceElementForcesAndSourcesCore::UserDataOperator {
     if(!nbCols) MoFEMFunctionReturnHot(0);
     // get number of integration points
     nbIntegrationPts = getGaussPts().size2();
-    // chekk if entity block is on matrix diagonal
+    // check if entity block is on matrix diagonal
     if(
       row_side==col_side&&
       row_type==col_type
@@ -123,7 +123,7 @@ struct OpS: public FaceElementForcesAndSourcesCore::UserDataOperator {
     }
     // integrate local matrix for entity block
     ierr = iNtegrate(row_data,col_data); CHKERRQ(ierr);
-    // asseble local matrix
+    // assemble local matrix
     ierr = aSsemble(row_data,col_data); CHKERRQ(ierr);
     MoFEMFunctionReturnHot(0);
   }
@@ -154,11 +154,11 @@ private:
     MoFEMFunctionBeginHot;
     // set size of local entity bock
     locMat.resize(nbRows,nbCols,false);
-    // clear matrux
+    // clear matrix
     locMat.clear();
     // get element area
     double area = getArea()*bEta;
-    // get integration weigths
+    // get integration weights
     FTensor::Tensor0<double*> t_w = getFTensor0IntegrationWeight();
     // get base function gradient on rows
     FTensor::Tensor0<double*> t_row_base = row_data.getFTensor0N();
@@ -172,9 +172,9 @@ private:
       for(int rr = 0;rr!=nbRows;rr++) {
         // get column base functions gradient at gauss point gg
         FTensor::Tensor0<double*> t_col_base = col_data.getFTensor0N(gg,0);
-        // loop over columbs
+        // loop over columns
         for(int cc = 0;cc!=nbCols;cc++) {
-          // calculate element of loacl matrix
+          // calculate element of local matrix
           a += alpha*t_row_base*t_col_base;
           ++t_col_base; // move to another gradient of base function on column
           ++a;  // move to another element of local matrix in column
@@ -268,7 +268,7 @@ int main(int argc, char *argv[]) {
     boost::shared_ptr<ForcesAndSourcesCore> boundary_penalty_lhs_fe;
     {
       // Add problem specific operators the generic finite elements to calculate matrices and vectors.
-      ierr = PoissonExample::CreateFiniteElements(m_field).createFEToAssmbleMatrixAndVector(
+      ierr = PoissonExample::CreateFiniteElements(m_field).createFEToAssembleMatrixAndVector(
         ExactFunction(),ExactLaplacianFunction(),
         domain_lhs_fe,boundary_lhs_fe,domain_rhs_fe,boundary_rhs_fe,false
       ); CHKERRQ(ierr);
@@ -325,7 +325,7 @@ int main(int argc, char *argv[]) {
 
       // Set fields order domain and boundary fields.
       ierr = simple_interface->setFieldOrder("U",order); CHKERRQ(ierr); // to approximate function
-      ierr = simple_interface->setFieldOrder("L",order); CHKERRQ(ierr); // to Lagrange multiplaiers
+      ierr = simple_interface->setFieldOrder("L",order); CHKERRQ(ierr); // to Lagrange multipliers
       ierr = simple_interface->setFieldOrder("ERROR",0); CHKERRQ(ierr); // approximation order for error
 
       // Setup problem. At that point database is constructed, i.e. fields, finite elements and

@@ -79,7 +79,7 @@ struct BasicEntityData {
   virtual ~BasicEntityData();
   inline void setDistributedMesh() { distributedMesh = true; }
   inline void unSetDistributedMesh() { distributedMesh = false; }
-  inline bool trueIfDistrubutedMesh() const { return distributedMesh; }
+  inline bool trueIfDistributedMesh() const { return distributedMesh; }
 private:
   bool distributedMesh;
 };
@@ -120,11 +120,13 @@ struct BasicEntity {
 
   /** \brief Get entity type
   */
-  inline EntityType getEntType() const { return (EntityType)((ent&MB_TYPE_MASK)>>MB_ID_WIDTH); }
+  inline EntityType getEntType() const {
+    return (EntityType)((ent & MB_TYPE_MASK) >> MB_ID_WIDTH);
+  }
 
   /** \brief get entity id
   */
-  inline EntityID getEntId() const { return (EntityID)(ent&MB_ID_MASK); };
+  inline EntityID getEntId() const { return (EntityID)(ent & MB_ID_MASK); };
 
   /** \brief Owner handle on this or other processors
     */
@@ -156,7 +158,7 @@ struct BasicEntity {
 
   /** \brief get pstatus
     * This tag stores various aspects of parallel status in bits; see also
-    * #define's following, to be used in bit mask operations.  If an entity is
+    * define following, to be used in bit mask operations.  If an entity is
     * not shared with any other processors, the pstatus is 0, otherwise it's > 0
     *
     * bit 0: !owned (0=owned, 1=not owned)
@@ -168,7 +170,7 @@ struct BasicEntity {
     */
   unsigned char getPStatus() const;
 
-  /** \berief get shared processors
+  /** \brief get shared processors
 
   Returning list to shared processors. Lists end with -1. Returns NULL if not
   sharing processors.
@@ -192,23 +194,26 @@ struct BasicEntity {
 
   */
   int* getSharingProcsPtr() const {
-
     moab::Interface &moab = basicDataPtr->moab;
     int *sharing_procs_ptr = NULL;
     ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
     if(getPStatus() & PSTATUS_MULTISHARED) {
       // entity is multi shared
-      rval = moab.tag_get_by_ptr(pcomm->sharedps_tag(),&ent,1,(const void **)&sharing_procs_ptr); MOAB_THROW(rval);
+      rval = moab.tag_get_by_ptr(pcomm->sharedps_tag(), &ent, 1,
+                                 (const void **)&sharing_procs_ptr);
+      MOAB_THROW(rval);
     } else if(getPStatus() & PSTATUS_SHARED) {
       // shared
-      rval = moab.tag_get_by_ptr(pcomm->sharedp_tag(),&ent,1,(const void **)&sharing_procs_ptr); MOAB_THROW(rval);
+      rval = moab.tag_get_by_ptr(pcomm->sharedp_tag(), &ent, 1,
+                                 (const void **)&sharing_procs_ptr);
+      MOAB_THROW(rval);
     }
     return sharing_procs_ptr;
   }
 
-  /** \berief get sharid entity handlers
+  /** \brief get sharid entity handlers
 
-  Returning list to shared entity hanlders. Use it with getSharingProcsPtr()
+  Returning list to shared entity handlers. Use it with getSharingProcsPtr()
 
   DO NOT MODIFY LIST.
 
@@ -229,16 +234,19 @@ struct BasicEntity {
 
     */
   inline EntityHandle* getSharingHandlersPtr() const {
-
     EntityHandle *sharing_handlers_ptr = NULL;
     moab::Interface &moab = basicDataPtr->moab;
     ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
     if(getPStatus() & PSTATUS_MULTISHARED) {
       // entity is multi shared
-      rval = moab.tag_get_by_ptr(pcomm->sharedhs_tag(),&ent,1,(const void **)&sharing_handlers_ptr); MOAB_THROW(rval);
+      rval = moab.tag_get_by_ptr(pcomm->sharedhs_tag(), &ent, 1,
+                                 (const void **)&sharing_handlers_ptr);
+      MOAB_THROW(rval);
     } else if(getPStatus() & PSTATUS_SHARED) {
       // shared
-      rval = moab.tag_get_by_ptr(pcomm->sharedh_tag(),&ent,1,(const void **)&sharing_handlers_ptr); MOAB_THROW(rval);
+      rval = moab.tag_get_by_ptr(pcomm->sharedh_tag(), &ent, 1,
+                                 (const void **)&sharing_handlers_ptr);
+      MOAB_THROW(rval);
     }
     return sharing_handlers_ptr;
   }
@@ -260,9 +268,12 @@ struct RefEntity: public BasicEntity {
     const EntityHandle ent
   );
 
-  static PetscErrorCode getParentEnt(Interface &moab,Range ents,std::vector<EntityHandle> vec_patent_ent);
+  static PetscErrorCode getParentEnt(Interface &moab, Range ents,
+                                     std::vector<EntityHandle> vec_patent_ent);
 
-  static PetscErrorCode getBitRefLevel(Interface &moab,Range ents,std::vector<BitRefLevel> vec_bit_ref_level);
+  static PetscErrorCode
+  getBitRefLevel(Interface &moab, Range ents,
+                 std::vector<BitRefLevel> vec_bit_ref_level);
 
   /**
    * \brief Get pointer to parent entity tag.
@@ -307,12 +318,15 @@ struct RefEntity: public BasicEntity {
 
   /** \brief Get entity ref bit refinement signature
   */
-  inline const BitRefLevel& getBitRefLevel() const { return *getBitRefLevelPtr(); }
+  inline const BitRefLevel &getBitRefLevel() const {
+    return *getBitRefLevelPtr();
+  }
 
   /** \brief Get entity ref bit refinement as ulong
   */
-  inline unsigned long int getBitRefLevelULong() const { return getBitRefLevel().to_ulong(); }
-
+  inline unsigned long int getBitRefLevelULong() const {
+    return getBitRefLevel().to_ulong();
+  }
 
   friend std::ostream& operator<<(std::ostream& os,const RefEntity& e);
 
@@ -344,7 +358,9 @@ struct interface_RefEntity {
 
   inline EntityHandle getRefEnt() const { return this->sPtr->getRefEnt(); }
 
-  inline EntityType getParentEntType() const { return this->sPtr->getParentEntType(); };
+  inline EntityType getParentEntType() const {
+    return this->sPtr->getParentEntType();
+  };
 
   inline EntityHandle getParentEnt() const { return this->sPtr->getParentEnt(); }
 
@@ -374,7 +390,9 @@ struct interface_RefEntity {
 
   inline unsigned char getPStatus() const { return this->sPtr->getPStatus(); }
 
-  inline int* getSharingProcsPtr() const { return this->sPtr->getSharingProcsPtr(); }
+  inline int *getSharingProcsPtr() const {
+    return this->sPtr->getSharingProcsPtr();
+  }
 
   inline EntityHandle* getSharingHandlersPtr() const {
     return this->sPtr->getSharingHandlersPtr();
@@ -405,16 +423,20 @@ typedef multi_index_container<
   boost::shared_ptr<RefEntity>,
   indexed_by<
     ordered_unique<
-      tag<Ent_mi_tag>, member<RefEntity::BasicEntity,EntityHandle,&RefEntity::ent>
+      tag<Ent_mi_tag>, 
+      member<RefEntity::BasicEntity,EntityHandle,&RefEntity::ent>
     >,
     ordered_non_unique<
-      tag<Ent_Ent_mi_tag>, const_mem_fun<RefEntity,EntityHandle,&RefEntity::getParentEnt>
+      tag<Ent_Ent_mi_tag>, 
+      const_mem_fun<RefEntity,EntityHandle,&RefEntity::getParentEnt>
     >,
     ordered_non_unique<
-      tag<EntType_mi_tag>, const_mem_fun<RefEntity::BasicEntity,EntityType,&RefEntity::getEntType>
+      tag<EntType_mi_tag>, 
+      const_mem_fun<RefEntity::BasicEntity,EntityType,&RefEntity::getEntType>
     >,
     ordered_non_unique<
-      tag<ParentEntType_mi_tag>, const_mem_fun<RefEntity,EntityType,&RefEntity::getParentEntType>
+      tag<ParentEntType_mi_tag>, 
+      const_mem_fun<RefEntity,EntityType,&RefEntity::getParentEntType>
     >,
     ordered_non_unique<
       tag<Composite_EntType_and_ParentEntType_mi_tag>,
@@ -463,10 +485,13 @@ struct Entity_update_pcomm_data {
   void operator()(boost::shared_ptr<T> &e) {
     ParallelComm* pcomm = ParallelComm::get_pcomm(&e->getBasicDataPtr()->moab,MYPCOMM_INDEX);
     if(pcomm == NULL) THROW_MESSAGE("pcomm is null");
-    if(e->getBasicDataPtr()->trueIfDistrubutedMesh()) {
-      THROW_MESSAGE("Can not change owner proc if distributed mesh, this will make undetermined behavior");
+    if(e->getBasicDataPtr()->trueIfDistributedMesh()) {
+      THROW_MESSAGE("Can not change owner proc if distributed mesh, this will "
+                    "make undetermined behavior");
     }
-    rval = pcomm->get_owner_handle(e->getRefEnt(),e->getOwnerProc(),e->getOwnerEnt()); MOAB_THROW(rval);
+    rval = pcomm->get_owner_handle(e->getRefEnt(), e->getOwnerProc(),
+                                   e->getOwnerEnt());
+    MOAB_THROW(rval);
   }
 };
 
@@ -476,7 +501,8 @@ struct Entity_update_part_proc {
   Entity_update_part_proc() {
   }
   void operator()(boost::shared_ptr<T> &e) {
-    ParallelComm* pcomm = ParallelComm::get_pcomm(&e->getBasicDataPtr()->moab,MYPCOMM_INDEX);
+    ParallelComm *pcomm =
+        ParallelComm::get_pcomm(&e->getBasicDataPtr()->moab, MYPCOMM_INDEX);
     if(pcomm == NULL) THROW_MESSAGE("pcomm is null");
     EntityHandle ent = e->getRefEnt();
     rval = e->getBasicDataPtr()->moab.tag_get_data(
@@ -536,9 +562,9 @@ struct RefEntity_change_left_shift {
 struct RefEntity_change_right_shift {
   int shift;
   BitRefLevel mask;
-  RefEntity_change_right_shift(const int _shift,const BitRefLevel _mask = BitRefLevel().set()):
-  shift(_shift),mask(_mask) {
-  }
+  RefEntity_change_right_shift(const int _shift,
+                               const BitRefLevel _mask = BitRefLevel().set())
+      : shift(_shift), mask(_mask) {}
   inline void operator()(boost::shared_ptr<RefEntity> &e) {
     BitRefLevel bit = *(e->getBitRefLevelPtr());
     *(e->getBitRefLevelPtr())=((bit&mask)>>shift)|(bit&~mask);
@@ -638,7 +664,9 @@ struct FieldEntity:
    * \brief Get number of DOFs on entity
    * @return Number of DOFs
    */
-  inline int getNbDofsOnEnt() const { return tag_FieldData_size/sizeof(FieldData); }
+  inline int getNbDofsOnEnt() const {
+    return tag_FieldData_size / sizeof(FieldData);
+  }
 
   /**
    * \brief Get Vector of DOFs values on entity
@@ -664,7 +692,9 @@ struct FieldEntity:
    * @param  order Approximation order
    * @return       Difference number of DOFs
    */
-  inline int getOrderNbDofsDiff(int order) const { return getOrderNbDofs(order)-getOrderNbDofs(order-1); }
+  inline int getOrderNbDofsDiff(int order) const {
+    return getOrderNbDofs(order) - getOrderNbDofs(order - 1);
+  }
 
   /**
    * \brief Get pinter to Tag keeping approximation order
@@ -687,14 +717,14 @@ struct FieldEntity:
   const UId& getGlobalUniqueId() const { return globalUid; }
 
   /**
-   * \brief Calulate UId for field entity
+   * \brief Calculate UId for field entity
    *
    * UId is constructed such that all DOFs are ordered by processor, entity, field.
    *
    * @param  owner_proc               owning processor
    * @param  bit_number               field bit number
    * @param  moab_owner_handle        entity handle on owning processor
-   * @param  true_if_distributed_mesh if true UId is construted for distributed meshes
+   * @param  true_if_distributed_mesh if true UId is constructed for distributed meshes
    * @return                          UId
    */
   static inline UId getGlobalUniqueIdCalculate(
@@ -742,7 +772,7 @@ struct FieldEntity:
       sPtr->owner_proc,
       getBitNumber(),
       sPtr->moab_owner_handle,
-      getBasicDataPtr()->trueIfDistrubutedMesh()
+      getBasicDataPtr()->trueIfDistributedMesh()
     );
   }
 
@@ -817,28 +847,44 @@ interface_RefEntity<T> {
   inline int getNbDofsOnEnt() const { return this->sPtr->getNbDofsOnEnt(); }
 
   /// @return get field data on entity
-  inline VectorAdaptor getEntFieldData() const { return this->sPtr->getEntFieldData(); }
+  inline VectorAdaptor getEntFieldData() const {
+    return this->sPtr->getEntFieldData();
+  }
 
   /// @return get number of DOFs for given order
-  inline int getOrderNbDofs(int order) const { return this->sPtr->getOrderNbDofs(order); }
+  inline int getOrderNbDofs(int order) const {
+    return this->sPtr->getOrderNbDofs(order);
+  }
 
   /// @return get increase of DOFs by increase to this order
-  inline int getOrderNbDofsDiff(int order) const { return this->sPtr->getOrderNbDofsDiff(order); }
+  inline int getOrderNbDofsDiff(int order) const {
+    return this->sPtr->getOrderNbDofsDiff(order);
+  }
 
   /// @return get maximal order on entity
-  inline ApproximationOrder getMaxOrder() const { return this->sPtr->getMaxOrder(); }
+  inline ApproximationOrder getMaxOrder() const {
+    return this->sPtr->getMaxOrder();
+  }
 
-  /// @retun get entity UId
-  inline UId getGlobalUniqueId() const { return this->sPtr->getGlobalUniqueId(); }
+  /// @return get entity UId
+  inline UId getGlobalUniqueId() const {
+    return this->sPtr->getGlobalUniqueId();
+  }
 
   /// @return return pointer to reference entity data structure
-  inline boost::shared_ptr<RefEntity>& getRefEntityPtr() const { return this->sPtr->getRefEntityPtr(); }
+  inline boost::shared_ptr<RefEntity> &getRefEntityPtr() const {
+    return this->sPtr->getRefEntityPtr();
+  }
 
   /// @return get pointer to field data structure
-  inline boost::shared_ptr<Field>& getFieldPtr() const { return this->sFieldPtr->getFieldPtr(); }
+  inline boost::shared_ptr<Field> &getFieldPtr() const {
+    return this->sFieldPtr->getFieldPtr();
+  }
 
   /// @return get pointer to mofem entity data structure
-  inline boost::shared_ptr<FieldEntity>& getFieldEntityPtr() const { return this->sPtr; };
+  inline boost::shared_ptr<FieldEntity> &getFieldEntityPtr() const {
+    return this->sPtr;
+  };
 
   // /// \deprecated use getFieldEntityPtr instead
   // DEPRECATED inline boost::shared_ptr<FieldEntity>& getMoFEMEntityPtr() const {
@@ -860,7 +906,7 @@ interface_RefEntity<T> {
 };
 
 /**
- * \brief structure to chane FieldEntity order
+ * \brief structure to change FieldEntity order
  * \ingroup ent_multi_indices
  */
 struct FieldEntity_change_order {
@@ -913,7 +959,7 @@ typedef multi_index_container<
 // /// \deprecated use FieldEntity_multiIndex
 // DEPRECATED typedef FieldEntity_multiIndex MoFEMEntity_multiIndex;
 
-/** \brief Entity nulti index by field name
+/** \brief Entity index by field name
   *
   * \ingroup ent_multi_indices
   */

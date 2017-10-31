@@ -29,7 +29,7 @@ namespace MixTransport {
   /**
    * \brief Generic material model for unsaturated water transport
    *
-   * \note This is abstact calss, no physical material model is implemented
+   * \note This is abstact class, no physical material model is implemented
    * here.
    */
   struct GenericMaterial {
@@ -144,10 +144,10 @@ namespace MixTransport {
     }
 
     typedef std::map<int,boost::shared_ptr<GenericMaterial> > MaterialsDoubleMap;
-    MaterialsDoubleMap dMatMap; ///< materials databse
+    MaterialsDoubleMap dMatMap; ///< materials database
 
     /**
-     * \brief For ginent element handle get material block Id
+     * \brief For given element handle get material block Id
      * @param  ent      finite element entity handle
      * @param  block_id reference to returned block id
      * @return          error code
@@ -183,7 +183,7 @@ namespace MixTransport {
       }
     };
     typedef map<int,boost::shared_ptr<BcData> > BcMap;
-    BcMap bcValueMap; ///< Store boundary codition for head capilary pressure
+    BcMap bcValueMap; ///< Store boundary condition for head capillary pressure
 
     EntityHandle lastEvalBcValEnt;
     int lastEvalBcBlockValId;
@@ -273,7 +273,7 @@ namespace MixTransport {
 
 
     /**
-     * \brief Evaluate boundary codition at the boundary
+     * \brief Evaluate boundary condition at the boundary
      */
     struct OpRhsBcOnValues: public MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator {
 
@@ -397,16 +397,16 @@ namespace MixTransport {
           ierr = block_data->calK(); CHKERRQ(ierr);
           const double K = block_data->K;
           const double z = t_coords(2); /// z-coordinate at Gauss pt
-          // Calualte pressure gragient
+          // Calculate pressure gradient
           noalias(nF) -= alpha*(t_h-z)*divVec;
-          // Calualte presure gradient from flux
+          // Calculate presure gradient from flux
           FTensor::Tensor0<double*> t_nf(&*nF.begin());
           for(int rr = 0;rr!=nb_dofs;rr++) {
             t_nf += alpha*(1/K)*(t_n_hdiv(i)*t_flux(i));
-            ++t_n_hdiv; // move to next base funtion
+            ++t_n_hdiv; // move to next base function
             ++t_nf; // move to next element in vector
           }
-          ++t_h;  // move to next inetgration point
+          ++t_h;  // move to next integration point
           ++t_flux;
           ++t_coords;
           ++t_w;
@@ -474,7 +474,7 @@ namespace MixTransport {
           block_data->z = t_coords(2);
           ierr = block_data->calC(); CHKERRQ(ierr);
           const double C = block_data->C;
-          // Calulate flux conservation
+          // Calculate flux conservation
           noalias(nF) += (alpha*(t_div_flux+C*t_h_t))*data.getN(gg);
           ++t_h;
           ++t_h_t;
@@ -1130,19 +1130,19 @@ namespace MixTransport {
           block_data->x = t_coords(0);
           block_data->y = t_coords(1);
           block_data->z = t_coords(2);
-          // Calulate theta (water content) and save it on mesh tages
+          // Calculate theta (water content) and save it on mesh tags
           ierr = block_data->calTheta(); CHKERRQ(ierr);
           double theta = block_data->tHeta;
           rval = postProcMesh.tag_set_data(th_theta,&mapGaussPts[gg],1,&theta); CHKERRQ_MOAB(rval);
           ierr = block_data->calSe(); CHKERRQ(ierr);
-          // Caculate Se (effective saturation and save it on the mesh tags)
+          // Calculate Se (effective saturation and save it on the mesh tags)
           double Se = block_data->Se;
           rval = postProcMesh.tag_set_data(th_se,&mapGaussPts[gg],1,&Se); CHKERRQ_MOAB(rval);
-          // calculate K (hydraulic conductivity) and save it on the mesh tags
+          // Calculate K (hydraulic conductivity) and save it on the mesh tags
           ierr = block_data->calK(); CHKERRQ(ierr);
           double K = block_data->K;
           rval = postProcMesh.tag_set_data(th_k,&mapGaussPts[gg],1,&K); CHKERRQ_MOAB(rval);
-          // clulate water capacity and save it on the mesh tags
+          // Calculate water capacity and save it on the mesh tags
           ierr = block_data->calC(); CHKERRQ(ierr);
           double C = block_data->C;
           rval = postProcMesh.tag_set_data(th_c,&mapGaussPts[gg],1,&C); CHKERRQ_MOAB(rval);
@@ -1156,8 +1156,8 @@ namespace MixTransport {
     };
 
     /**
-     * Finite elemet implementation called by TS monitor. Element calls other
-     * finite elements to evaluate material propeties and save results on the mesh.
+     * Finite element implementation called by TS monitor. Element calls other
+     * finite elements to evaluate material properties and save results on the mesh.
      *
      * \note Element overloaded only FEMethod::postProcess methos where other elements
      * are called.
@@ -1354,7 +1354,7 @@ namespace MixTransport {
       ierr = DMMoFEMSetIsPartitioned(dM,PETSC_TRUE);
       // creates problem in DM
       ierr = DMMoFEMCreateMoFEM(dM,&mField,"MIX",ref_level); CHKERRQ(ierr);
-      // discretized problem creates square matrix (that makes some optimizations)
+      // discretised problem creates square matrix (that makes some optimizations)
       ierr = DMMoFEMSetIsPartitioned(dM,PETSC_TRUE); CHKERRQ(ierr);
       // set DM options from command line
       ierr = DMSetFromOptions(dM); CHKERRQ(ierr);
@@ -1378,7 +1378,7 @@ namespace MixTransport {
     boost::shared_ptr<ForcesAndSourcesCore> feFaceBc;  ///< Elemnet to calculate essential bc
     boost::shared_ptr<ForcesAndSourcesCore> feFaceRhs; ///< Face element apply natural bc
     boost::shared_ptr<ForcesAndSourcesCore> feVolInitialPc;  ///< Calculate inital boundary conditions
-    boost::shared_ptr<ForcesAndSourcesCore> feVolRhs;  ///< Assemble resdiauls vector
+    boost::shared_ptr<ForcesAndSourcesCore> feVolRhs;  ///< Assemble residual vector
     boost::shared_ptr<ForcesAndSourcesCore> feVolLhs;  ///< Assemble tangent matrix
     boost::shared_ptr<MethodForForceScaling> scaleMethodFlux; ///< Method scaling fluxes
     boost::shared_ptr<MethodForForceScaling> scaleMethodValue; ///< Method scaling values
@@ -1410,7 +1410,7 @@ namespace MixTransport {
     VectorDouble bcVecVals,vecValsOnBc;
 
     /**
-     * \brief Prepeprocesing
+     * \brief Pre-peprocessing
      * Set head pressute rate and get inital essential boundary conditions
      */
     struct preProcessVol {
@@ -1477,7 +1477,7 @@ namespace MixTransport {
 
     /**
      * \brief Post proces method for volume element
-     * Assemble vectors and matrices and apply essential boundary coditions
+     * Assemble vectors and matrices and apply essential boundary conditions
      */
     struct postProcessVol {
       UnsaturatedFlowElement& cTx;
@@ -1660,7 +1660,7 @@ namespace MixTransport {
       MoFEMFunctionReturnHot(0);
     }
 
-    Vec D1;  ///< Vector with inital head capilary pressure
+    Vec D1;  ///< Vector with inital head capillary pressure
     Vec ghostFlux;  ///< Ghost Vector of integrated fluxes
 
     /**
@@ -1699,7 +1699,7 @@ namespace MixTransport {
     }
 
     /**
-     * \brief Calualte boundary conditions for fluxes
+     * \brief Calculate boundary conditions for fluxes
      * @return Error code
      */
     PetscErrorCode calculateEssentialBc() {
@@ -1724,7 +1724,7 @@ namespace MixTransport {
     }
 
     /**
-     * \brief Calulate inital preassure head distrinution
+     * \brief Calculate inital preassure head distribution
      * @return Error code
      */
     PetscErrorCode calculateInitialPc() {
@@ -1733,14 +1733,14 @@ namespace MixTransport {
       ierr = VecZeroEntries(D1); CHKERRQ(ierr);
       ierr = VecGhostUpdateBegin(D1,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
       ierr = VecGhostUpdateEnd(D1,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-      // Caculate innitial pressure head on each element
+      // Calculate initial pressure head on each element
       ierr = DMoFEMLoopFiniteElements(dM,"MIX",feVolInitialPc); CHKERRQ(ierr);
-      // Asemble vector
+      // Assemble vector
       ierr = VecGhostUpdateBegin(D1,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
       ierr = VecGhostUpdateEnd(D1,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
       ierr = VecAssemblyBegin(D1); CHKERRQ(ierr);
       ierr = VecAssemblyEnd(D1); CHKERRQ(ierr);
-      // Calulate norm
+      // Calculate norm
       double norm2D1;
       ierr = VecNorm(D1,NORM_2,&norm2D1); CHKERRQ(ierr);
       // ierr = VecView(D0,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
@@ -1811,7 +1811,7 @@ namespace MixTransport {
 
       ierr = TSSolve(ts,D); CHKERRQ(ierr);
 
-      // Get statisic form TS and print it
+      // Get statistic form TS and print it
       ierr = TSGetTime(ts,&ftime); CHKERRQ(ierr);
       PetscInt steps,snesfails,rejects,nonlinits,linits;
       ierr = TSGetTimeStepNumber(ts,&steps); CHKERRQ(ierr);

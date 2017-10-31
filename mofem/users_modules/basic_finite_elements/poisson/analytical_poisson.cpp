@@ -127,7 +127,7 @@ int main(int argc, char *argv[]) {
     boost::shared_ptr<ForcesAndSourcesCore> null;              ///< Null element do nothing
     {
       // Add problem specific operators the generic finite elements to calculate matrices and vectors.
-      ierr = PoissonExample::CreateFiniteElements(m_field).createFEToAssmbleMatrixAndVector(
+      ierr = PoissonExample::CreateFiniteElements(m_field).createFEToAssembleMatrixAndVector(
         ExactFunction(),ExactLaplacianFunction(),
         domain_lhs_fe,boundary_lhs_fe,domain_rhs_fe,boundary_rhs_fe
       ); CHKERRQ(ierr);
@@ -177,7 +177,7 @@ int main(int argc, char *argv[]) {
 
       // Set fields order domain and boundary fields.
       ierr = simple_interface->setFieldOrder("U",order); CHKERRQ(ierr); // to approximate function
-      ierr = simple_interface->setFieldOrder("L",order); CHKERRQ(ierr); // to Lagrange multiplaiers
+      ierr = simple_interface->setFieldOrder("L",order); CHKERRQ(ierr); // to Lagrange multipliers
       ierr = simple_interface->setFieldOrder("ERROR",0); CHKERRQ(ierr); // approximation order for error
 
       // Setup problem. At that point database is constructed, i.e. fields, finite elements and
@@ -210,7 +210,7 @@ int main(int argc, char *argv[]) {
       ierr = DMMoFEMKSPSetComputeOperators(
         dm,simple_interface->getBoundaryFEName(),boundary_lhs_fe,null,null
       ); CHKERRQ(ierr);
-      // Set calculation of the right hand side vetor for KSP solver
+      // Set calculation of the right hand side vector for KSP solver
       ierr = DMMoFEMKSPSetComputeRHS(
         dm,simple_interface->getDomainFEName(),domain_rhs_fe,null,null
       ); CHKERRQ(ierr);

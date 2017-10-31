@@ -81,7 +81,7 @@ MoFEM::Simple::addDomainField.
 \code
 ierr = simple_interface->addDomainField("U",H1,AINSWORTH_LEGENDRE_BASE,3); CHKERRQ(ierr);
 ierr = simple_interface->addBoundaryField("L",H1,AINSWORTH_LEGENDRE_BASE,3); CHKERRQ(ierr);
-ierr = simple_interface->addSkeletionField("S",H1,AINSWORTH_LEGENDRE_BASE,3); CHKERRQ(ierr);
+ierr = simple_interface->addSkeletonField("S",H1,AINSWORTH_LEGENDRE_BASE,3); CHKERRQ(ierr);
 \endcode
 Next, we set approximation order to those fields
 \code

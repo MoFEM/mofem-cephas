@@ -1184,7 +1184,7 @@ PetscErrorCode NonlinearElasticElement::OpJacobianEshelbyStress::calculateStress
   MoFEMFunctionReturnHot(0);
 }
 
-NonlinearElasticElement::OpRhsEshelbyStrees::OpRhsEshelbyStrees(
+NonlinearElasticElement::OpRhsEshelbyStress::OpRhsEshelbyStress(
   const std::string field_name,BlockData &data,CommonData &common_data
 ):
 OpRhsPiolaKirchhoff(field_name,data,common_data)
