@@ -47,7 +47,7 @@ struct PostProcCommonOnRefMesh {
   };
 
   /**
-   * \brief operator to post-process (save gardients on refined post-processing mesh) field gradient
+   * \brief operator to post-process (save gradients on refined post-processing mesh) field gradient
    * \ingroup mofem_fs_post_proc
    *
    * \todo Implamentation of setting values to fieldMap for Hcurl and Hdiv not implemented
@@ -132,7 +132,7 @@ struct PostProcCommonOnRefMesh {
 };
 
 /**
- * \brief Generic post-pocessing class
+ * \brief Generic post-processing class
  *
  * Generate refined mesh and save data on vertices
  *
@@ -346,23 +346,33 @@ struct PostProcTemplateVolumeOnRefinedMesh: public PostProcTemplateOnRefineMesh<
       0,3,BitRefLevel().set(0)
     ); CHKERRQ(ierr);
 
-    for(int ll = 0;ll<max_level;ll++) {
+    for (int ll = 0; ll < max_level; ll++) {
       PetscPrintf(T::mField.get_comm(),"Refine Level %d\n",ll);
       Range edges;
-      ierr = m_field_ref.get_entities_by_type_and_ref_level(BitRefLevel().set(ll),BitRefLevel().set(),MBEDGE,edges); CHKERRQ(ierr);
+      ierr = m_field_ref.getInterface<BitRefManager>()
+                 ->getEntitiesByTypeAndRefLevel(
+                     BitRefLevel().set(ll), BitRefLevel().set(), MBEDGE, edges);
+      CHKERRQ(ierr);
       Range tets;
-      ierr = m_field_ref.get_entities_by_type_and_ref_level(BitRefLevel().set(ll),BitRefLevel(ll).set(),MBTET,tets); CHKERRQ(ierr);
+      ierr = m_field_ref.getInterface<BitRefManager>()
+                 ->getEntitiesByTypeAndRefLevel(
+                     BitRefLevel().set(ll), BitRefLevel(ll).set(), MBTET, tets);
+      CHKERRQ(ierr);
       //refine mesh
       MeshRefinement *m_ref;
       ierr = m_field_ref.getInterface(m_ref); CHKERRQ(ierr);
-      ierr = m_ref->add_verices_in_the_middel_of_edges(edges,BitRefLevel().set(ll+1)); CHKERRQ(ierr);
+      ierr = m_ref->add_verices_in_the_middel_of_edges(
+          edges, BitRefLevel().set(ll + 1));
+      CHKERRQ(ierr);
       ierr = m_ref->refine_TET(tets,BitRefLevel().set(ll+1)); CHKERRQ(ierr);
     }
 
     Range tets;
-    ierr = m_field_ref.get_entities_by_type_and_ref_level(
-      BitRefLevel().set(max_level),BitRefLevel().set(max_level),MBTET,tets
-    ); CHKERRQ(ierr);
+    ierr =
+        m_field_ref.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
+            BitRefLevel().set(max_level), BitRefLevel().set(max_level), MBTET,
+            tets);
+    CHKERRQ(ierr);
 
     if(tenNodesPostProcTets) {
       // Range edges;
@@ -499,7 +509,7 @@ struct PostProcTemplateVolumeOnRefinedMesh: public PostProcTemplateOnRefineMesh<
 
     } catch (std::exception& ex) {
       std::ostringstream ss;
-      ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+      ss << "throw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
       SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
     }
 

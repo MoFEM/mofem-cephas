@@ -4,10 +4,6 @@
  */
 
 /**
- * The MoFEM package is copyrighted by Lukasz Kaczmarczyk.
- * It can be freely used for educational and research purposes
- * by other institutions. If you use this softwre pleas cite my work.
- *
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or (at your
@@ -645,7 +641,7 @@
     }
     MoFEMFunctionReturnHot(0);
   }
-  PetscErrorCode TetGenInterface::setReginData(
+  PetscErrorCode TetGenInterface::setRegionData(
       std::vector<std::pair<EntityHandle, int> > &regions, tetgenio &in,
       Tag th) {
     MoFEMFunctionBeginHot;
@@ -696,7 +692,7 @@
     }
     MoFEMFunctionReturnHot(0);
   }
-  PetscErrorCode TetGenInterface::getReginData(
+  PetscErrorCode TetGenInterface::getRegionData(
       std::map<EntityHandle, unsigned long> &tetgen_moab_map, tetgenio &out,
       Range *ents, idxRange_Map *ents_map) {
     MoFEMFunctionBeginHot;
@@ -705,7 +701,7 @@
     int nbattributes = out.numberoftetrahedronattributes;
     if (nbattributes == 0) {
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-              "tetgen has no regions attribites");
+              "tetgen has no regions attributes");
     }
     Tag th_region;
     rval = m_field.get_moab().tag_get_handle("TETGEN_REGION", th_region);

@@ -115,14 +115,16 @@ struct MoFEMException : public std::exception {
 typedef std::bitset<32> CubitBCType;
 
 // array with std allocators (i.e. concept of capacity is useful here)
-// typedef ublas::unbounded_array<int,std::allocator<int> > IntAllacator;
+// typedef ublas::unbounded_array<int,std::allocator<int> > IntAllocator;
 // typedef ublas::unbounded_array<double,std::allocator<double> >
-// DoubleAllacator;
-typedef std::vector<int, std::allocator<int> > IntAllacator;
-typedef std::vector<double, std::allocator<double> > DoubleAllacator;
-typedef ublas::vector<int, IntAllacator> VectorInt;
-typedef ublas::vector<double, DoubleAllacator> VectorDouble;
-typedef ublas::matrix<double, ublas::row_major, DoubleAllacator> MatrixDouble;
+// DoubleAllocator;
+typedef std::vector<int, std::allocator<int> > IntAllocator;
+typedef std::vector<double, std::allocator<double> > DoubleAllocator;
+DEPRECATED typedef IntAllocator IntAllacator; ///< \deprecated Do not use spelling mistake
+DEPRECATED typedef DoubleAllocator DoubleAllacator; ///< \deprecated Do not use spelling mistake
+typedef ublas::vector<int, IntAllocator> VectorInt;
+typedef ublas::vector<double, DoubleAllocator> VectorDouble;
+typedef ublas::matrix<double, ublas::row_major, DoubleAllocator> MatrixDouble;
 
 // bounded vector & matrices
 typedef ublas::vector<int, ublas::bounded_array<int, 3> > VectorInt3;

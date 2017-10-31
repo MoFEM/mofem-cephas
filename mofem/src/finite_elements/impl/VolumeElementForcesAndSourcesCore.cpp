@@ -588,7 +588,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
         }
 
         // Reseat all data which all field dependent
-        op_data[0]->resetFieldDepenentData();
+        op_data[0]->resetFieldDependentData();
         last_eval_field_name[0] = "";
         last_eval_field_name[1] = "";
 

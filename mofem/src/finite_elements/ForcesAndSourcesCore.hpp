@@ -485,12 +485,19 @@ struct ForcesAndSourcesCore: public FEMethod {
     NOTE: Using those indices to assemble matrix will result in error if new non-zero values need to be created.
 
     */
-    PetscErrorCode getPorblemRowIndices(
+    PetscErrorCode getProblemRowIndices(
       const std::string filed_name,
       const EntityType type,
       const int side,
       VectorInt& indices
     ) const;
+
+    // \deprecated Deprecated function with spelling mistake
+    DEPRECATED inline PetscErrorCode
+    getPorblemRowIndices(const std::string filed_name, const EntityType type,
+                         const int side, VectorInt &indices) const {
+      return getProblemRowIndices(filed_name, type, side, indices);
+    }
 
     /** \brief Get col indices
 
@@ -501,20 +508,25 @@ struct ForcesAndSourcesCore: public FEMethod {
     \param side side number, any number if type is MBVERTEX
     \return indices
 
-    NOTE: Using those indices to assemble matrix will result in error if new non-zero values need to be created.
+    NOTE: Using those indices to assemble matrix will result in error if new
+    non-zero values need to be created.
 
     */
-    PetscErrorCode getPorblemColIndices(
-      const std::string filed_name,
-      const EntityType type,
-      const int side,
-      VectorInt& indices
-    ) const;
+    PetscErrorCode getProblemColIndices(const std::string filed_name,
+                                        const EntityType type, const int side,
+                                        VectorInt &indices) const;
 
     virtual PetscErrorCode setPtrFE(ForcesAndSourcesCore *ptr) {
       MoFEMFunctionBeginHot;
       ptrFE = ptr;
       MoFEMFunctionReturnHot(0);
+    }
+
+    // \deprecated Deprecated function with spelling mistake
+    DEPRECATED inline PetscErrorCode
+    getPorblemAAAColIndices(const std::string filed_name, const EntityType type,
+                         const int side, VectorInt &indices) const {
+      return getProblemColIndices(filed_name, type, side, indices);
     }
 
     /** \brief Return raw pointer to Finite Element Method object

@@ -162,7 +162,7 @@ inline PetscErrorCode invertTensor3by3(
 }
 
 template<>
-inline PetscErrorCode invertTensor3by3<3,double,ublas::row_major,DoubleAllacator>(
+inline PetscErrorCode invertTensor3by3<3,double,ublas::row_major,DoubleAllocator>(
   MatrixDouble &jac_data,
   VectorDouble &det_data,
   MatrixDouble &inv_jac_data
@@ -494,10 +494,10 @@ struct OpGetDataAndGradient: public DataOperator {
   }
 
   /**
-   * \bief calcualte gardient and values at integration points
+   * \brief Calculate gradient and values at integration points
    * @param  side side of entity on element
    * @param  type type of entity
-   * @param  data data storoed on entity (dofs values, dofs indices, etc.)
+   * @param  data data stored on entity (dofs values, dofs indices, etc.)
    * @return      error code
    */
   PetscErrorCode calculateValAndGrad(
@@ -575,7 +575,7 @@ struct OpGetDataAndGradient: public DataOperator {
 
     } catch (std::exception& ex) {
       std::ostringstream ss;
-      ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+      ss << "throw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
       SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
     }
 
@@ -691,12 +691,12 @@ struct OpGetCoordsAndNormalsOnPrism: public DataOperator {
 /** \brief transform Hdiv base fluxes from reference element to physical triangle
  * \ingroup mofem_forces_and_sources
  */
-struct OpSetContravariantPiolaTransoformOnTriangle: public DataOperator {
+struct OpSetContravariantPiolaTransformOnTriangle: public DataOperator {
 
   const VectorDouble &nOrmal;
   const MatrixDouble &normalsAtGaussPt;
 
-  OpSetContravariantPiolaTransoformOnTriangle(
+  OpSetContravariantPiolaTransformOnTriangle(
     const VectorDouble &normal,
     const MatrixDouble &normals_at_pts
   ):
@@ -714,7 +714,7 @@ struct OpSetContravariantPiolaTransoformOnTriangle: public DataOperator {
 /** \brief transform Hcurl base fluxes from reference element to physical triangle
  * \ingroup mofem_forces_and_sources
  */
-struct OpSetCovariantPiolaTransoformOnTriangle: public DataOperator {
+struct OpSetCovariantPiolaTransformOnTriangle: public DataOperator {
 
   const VectorDouble &nOrmal;
   const MatrixDouble &normalsAtGaussPt;
@@ -723,7 +723,7 @@ struct OpSetCovariantPiolaTransoformOnTriangle: public DataOperator {
   const VectorDouble &tAngent1;
   const MatrixDouble &tangent1AtGaussPt;
 
-  OpSetCovariantPiolaTransoformOnTriangle(
+  OpSetCovariantPiolaTransformOnTriangle(
     const VectorDouble &normal,
     const MatrixDouble &normals_at_pts,
     const VectorDouble &tangent0,
@@ -764,12 +764,12 @@ struct OpGetHoTangentOnEdge: public DataOperator {
 /** \brief transform Hcurl base fluxes from reference element to physical edge
  * \ingroup mofem_forces_and_sources
  */
-struct OpSetCovariantPiolaTransoformOnEdge: public DataOperator {
+struct OpSetCovariantPiolaTransformOnEdge: public DataOperator {
 
   const VectorDouble &tAngent;
   const MatrixDouble &tangentAtGaussPt;
 
-  OpSetCovariantPiolaTransoformOnEdge(
+  OpSetCovariantPiolaTransformOnEdge(
     const VectorDouble &tangent,
     const MatrixDouble &tangent_at_pts
   ):

@@ -48,7 +48,7 @@ struct EdgeElementForcesAndSourcesCore: public ForcesAndSourcesCore {
 
   MatrixDouble tAngent_at_GaussPt;
   OpGetHoTangentOnEdge opGetHoTangentOnEdge;
-  OpSetCovariantPiolaTransoformOnEdge opCovariantTransoform;
+  OpSetCovariantPiolaTransformOnEdge opCovariantTransform;
 
   EdgeElementForcesAndSourcesCore(Interface &m_field):
   ForcesAndSourcesCore(m_field),
@@ -60,7 +60,7 @@ struct EdgeElementForcesAndSourcesCore: public ForcesAndSourcesCore {
   dataNoFieldCol(MBEDGE),
   meshPositionsFieldName("MESH_NODE_POSITIONS"),
   opGetHoTangentOnEdge(tAngent_at_GaussPt),
-  opCovariantTransoform(dIrection,tAngent_at_GaussPt) {
+  opCovariantTransform(dIrection,tAngent_at_GaussPt) {
   }
 
 

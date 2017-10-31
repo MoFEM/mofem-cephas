@@ -1191,7 +1191,7 @@ static PetscErrorCode get_porblem_col_indices(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode ForcesAndSourcesCore::UserDataOperator::getPorblemRowIndices(
+PetscErrorCode ForcesAndSourcesCore::UserDataOperator::getProblemRowIndices(
   const std::string field_name,const EntityType type,const int side,VectorInt& indices
 ) const {
   MoFEMFunctionBeginHot;
@@ -1206,7 +1206,7 @@ PetscErrorCode ForcesAndSourcesCore::UserDataOperator::getPorblemRowIndices(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode ForcesAndSourcesCore::UserDataOperator::getPorblemColIndices(
+PetscErrorCode ForcesAndSourcesCore::UserDataOperator::getProblemColIndices(
   const std::string field_name,const EntityType type,const int side,VectorInt& indices
 ) const {
   MoFEMFunctionBeginHot;

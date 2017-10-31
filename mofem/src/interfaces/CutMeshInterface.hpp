@@ -179,7 +179,7 @@ struct CutMeshInterface : public UnknownInterface {
    * \brief move trimmed edges mid nodes
    * @return error code
    */
-  PetscErrorCode moveMidNodesOnTrimedEdges(Tag th = NULL);
+  PetscErrorCode moveMidNodesOnTrimmedEdges(Tag th = NULL);
 
   /**
    * \brief Remove pathological elements on surface internal front

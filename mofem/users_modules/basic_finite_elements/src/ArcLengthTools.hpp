@@ -33,24 +33,32 @@
  \f[
  r_\lambda = f_\lambda(\mathbf{x},\lambda) - s^2
  \f]
- where \f$f_\lambda(\mathbf{x},\lambda)\f$ is some constrain function, which has general form given by
+ where \f$f_\lambda(\mathbf{x},\lambda)\f$ is some constrain function, which has
+ general form given by
  \f[
- f_\lambda(\mathbf{x},\lambda) = \alpha f(\|\Delta\mathbf{x}\|^2) +
+ f_\lambda(\mathbf{x},\lambda) = \alpha f(\Delta\mathbf{x}) +
  \beta^2 \Delta\lambda^2 \| \mathbf{F}_{\lambda} \|^2
  \f]
- where \f$f(\|\Delta\mathbf{x}\|^2)\f$ is some user defined function evaluating
+ where for example \f$f(\mathbf{x})=\|\Delta\mathbf{x}\|^2\f$ is some user
+ defined
+ function evaluating
  increments vector of degrees of freedom  \f$\Delta\mathbf{x}\f$. The increment
  vector is
  \f[
- \Delta \mathbf{x} = \mathbf{x}-\mathbf{x}_0.
+ \Delta \mathbf{x} = \mathbf{x}-\mathbf{x}_0
  \f]
+ and
+ \f[
+ \Delta \lambda = \lambda-\lambda_0.
+ \f]
+ 
  For convenience we assume that
  \f[
  \frac{\partial f}{\partial \mathbf{x}}\Delta \mathbf{x}
  =
  \textrm{d}\mathbf{b} \Delta \mathbf{x},
  \f]
- as result linearized constrain equation takes form
+ as result linearised constrain equation takes form
  \f[
  \textrm{d}\mathbf{b} \delta \Delta x +
  D \delta \Delta\lambda - r_{\lambda} = 0
@@ -60,8 +68,10 @@
  D = 2\beta^2 \Delta\lambda \| \mathbf{F}_{\lambda} \|^2.
  \f]
 
- User need to implement functions calculating \f$f(\mathbf{x},\lambda)\f$, i.e. function
- \f$f(\|\Delta\mathbf{x}\|^2)\f$  and its derivative, \f$\textrm{d}\mathbf{b}\f$.
+ User need to implement functions calculating \f$f(\mathbf{x},\lambda)\f$, i.e.
+ function
+ \f$f(\|\Delta\mathbf{x}\|^2)\f$  and its derivative,
+ \f$\textrm{d}\mathbf{b}\f$.
 
  */
 struct ArcLengthCtx {
@@ -220,7 +230,7 @@ struct ArcLengthMatShell {
   ArcLengthCtx* arcPtrRaw; // this is for back compatibility
   string problemName;
 
-  /// \deprecated use constructow with shared_ptr
+  /// \deprecated use constructor with shared_ptr
   DEPRECATED ArcLengthMatShell(Mat aij,ArcLengthCtx *arc_ptr_raw,string problem_name);
 
   ArcLengthMatShell(Mat aij,boost::shared_ptr<ArcLengthCtx> arc_ptr,string problem_name);
@@ -309,7 +319,7 @@ struct ZeroFLmabda: public FEMethod {
 
 };
 
-#ifdef __DIRICHLETBC_HPP__
+#ifdef __DIRICHLET_HPP__
 
 /**
  * \brief Assemble F_lambda into the right hand side
@@ -317,12 +327,12 @@ struct ZeroFLmabda: public FEMethod {
  * postProcess - assembly F_lambda
  *
  */
-struct AssembleFLmabda: public FEMethod {
+struct AssembleFlambda: public FEMethod {
 
   boost::shared_ptr<ArcLengthCtx> arcPtr;
   boost::shared_ptr<DirichletDisplacementBc> bC;
 
-  AssembleFLmabda(
+  AssembleFlambda(
     boost::shared_ptr<ArcLengthCtx> arc_ptr,
     boost::shared_ptr<DirichletDisplacementBc> bc = boost::shared_ptr<DirichletDisplacementBc>()
   );
@@ -336,7 +346,7 @@ struct AssembleFLmabda: public FEMethod {
 #endif
 
 /**
- * |brief Simple arc-length constrol of force
+ * |brief Simple arc-length control of force
  *
  * This is added for testing, it simply control force, i.e.
  *
@@ -344,7 +354,7 @@ struct AssembleFLmabda: public FEMethod {
  * \lambda =  s
  * \f]
  *
- * Constuctir takes one argument,
+ * Constructor takes one argument,
  * @param arc_ptr Pointer to arc-length CTX.
  */
 struct SimpleArcLengthControl: public FEMethod {

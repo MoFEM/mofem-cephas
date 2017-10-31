@@ -139,8 +139,8 @@ int main(int argc, char *argv[]) {
     // get surface entities form side set
     Range surface;
     if (meshset_manager->checkMeshset(surface_side_set, SIDESET)) {
-      ierr = meshset_manager->getEntitiesByDimension(surface_side_set, SIDESET, 2,
-                                                     surface, true);
+      ierr = meshset_manager->getEntitiesByDimension(surface_side_set, SIDESET,
+                                                     2, surface, true);
       CHKERRQ(ierr);
     }
     if (surface.empty()) {

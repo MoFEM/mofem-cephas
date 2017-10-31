@@ -2611,7 +2611,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
 
   }
 
-  #ifdef __DIRICHLETBC_HPP__
+  #ifdef __DIRICHLET_HPP__
 
   ConvectiveMassElement::ShellMatrixElement::ShellMatrixElement(
     MoFEM::Interface &m_field
@@ -2679,4 +2679,4 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
     MoFEMFunctionReturnHot(0);
   }
 
-  #endif //__DIRICHLETBC_HPP__
+  #endif //__DIRICHLET_HPP__

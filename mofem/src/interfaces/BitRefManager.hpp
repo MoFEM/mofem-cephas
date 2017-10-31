@@ -134,7 +134,7 @@ namespace MoFEM {
                                        int verb = QUIET) const;
 
     /**
-     * \brief Set nth bith ref lecel
+     * \brief Set nth bit ref level
      * @param  ents entities to set bit ref level
      * @param  n    nth bit
      * @param  b    value to set
@@ -144,7 +144,7 @@ namespace MoFEM {
                                      const bool b, int verb = 0) const;
 
     /**
-     * \brief Set nth bith ref lecel
+     * \brief Set nth bit ref level
      * \ingroup mofem_bit_ref
      * @param  n    nth bit
      * @param  b    value to set
@@ -159,7 +159,7 @@ namespace MoFEM {
       * 
       * \note Not implemented
       */
-    PetscErrorCode shiftLeftBitRef(const int shif,
+    PetscErrorCode shiftLeftBitRef(const int shift,
                                    const BitRefLevel mask = BitRefLevel().set(),
                                    int verb = -1) const;
 
@@ -173,7 +173,7 @@ namespace MoFEM {
 
     /**@}*/
 
-    /** \name Entity hanlders by bit ref level */
+    /** \name Entity handlers by bit ref level */
 
     /**@{*/
 
@@ -255,7 +255,7 @@ namespace MoFEM {
                                            Range &ents) const;
 
     /**
-     * @brief Get all entities not in databse
+     * @brief Get all entities not in database
      * 
      * @param ents 
      * @return PetscErrorCode 
@@ -284,7 +284,7 @@ namespace MoFEM {
      * entities
       */
     virtual PetscErrorCode
-    getAdjacenciesEquality(const EntityHandle from_entiti,
+    getAdjacenciesEquality(const EntityHandle from_entity,
                            const int to_dimension, Range &adj_entities) const;
 
     /** \brief Get the adjacencies associated with a entity to entities of a
@@ -294,7 +294,7 @@ namespace MoFEM {
       * bit ref level of adjacent entities is any of bit ref level of adjacent
      * entities
       */
-    virtual PetscErrorCode getAdjacenciesAny(const EntityHandle from_entiti,
+    virtual PetscErrorCode getAdjacenciesAny(const EntityHandle from_entity,
                                              const int to_dimension,
                                              Range &adj_entities) const;
 
@@ -307,7 +307,7 @@ namespace MoFEM {
       */
     virtual PetscErrorCode
     getAdjacencies(const Problem *problem_ptr,
-                   const EntityHandle *from_entities, const int num_netities,
+                   const EntityHandle *from_entities, const int num_entities,
                    const int to_dimension, Range &adj_entities,
                    const int operation_type = moab::Interface::INTERSECT,
                    const int verb = 0) const;
@@ -321,7 +321,7 @@ namespace MoFEM {
       */
     virtual PetscErrorCode
     getAdjacencies(const BitRefLevel &bit, const EntityHandle *from_entities,
-                   const int num_netities, const int to_dimension,
+                   const int num_entities, const int to_dimension,
                    Range &adj_entities,
                    const int operation_type = moab::Interface::INTERSECT,
                    const int verb = 0) const;
@@ -366,13 +366,13 @@ namespace MoFEM {
     updateFieldMeshsetByEntitiesChildren(const BitRefLevel &child_bit,
                                          int verb = 0);
 
-    /** \brief update field mesheset by child entities
+    /** \brief update field meshset by child entities
       * \ingroup mofem_update_meshsets_and_ranges
       */
     PetscErrorCode updateFieldMeshsetByEntitiesChildren(
         const std::string name, const BitRefLevel &child_bit, int verb = 0);
 
-    /** \brief update finite element mesheset by child entities
+    /** \brief update finite element meshset by child entities
      * \ingroup mofem_update_meshsets_and_ranges
      */
     PetscErrorCode updateFiniteElementMeshsetByEntitiesChildren(
@@ -385,7 +385,7 @@ namespace MoFEM {
      * FIXME: NOT TESTED
      *
      * @param  parent parent range
-     * @param  child  childeren range
+     * @param  child  children range
      * @return        error code
      */
     PetscErrorCode updateRange(const Range &parent, Range &child);
@@ -412,14 +412,14 @@ namespace MoFEM {
                         const char *file_type, const char *options) const;
 
     /**
-     * @brief Wite ents not in databse
+     * @brief Write ents not in database
      * 
      * @param file_name 
      * @param file_type for example "VTK"
      * @param options 
      * @return PetscErrorCode 
      */
-    PetscErrorCode writeEntitiesNotInDatabse(const char *file_name,
+    PetscErrorCode writeEntitiesNotInDatabase(const char *file_name,
                                              const char *file_type,
                                              const char *options) const;
 

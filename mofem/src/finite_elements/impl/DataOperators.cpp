@@ -482,7 +482,7 @@ PetscErrorCode DataOperator::opLhs(
 }
 
 template<>
-PetscErrorCode invertTensor3by3<3,double,ublas::row_major,DoubleAllacator>(
+PetscErrorCode invertTensor3by3<3,double,ublas::row_major,DoubleAllocator>(
   MatrixDouble &jac_data,
   VectorDouble &det_data,
   MatrixDouble &inv_jac_data
@@ -1464,7 +1464,7 @@ PetscErrorCode OpGetCoordsAndNormalsOnPrism::calculateNormals() {
 }
 
 
-PetscErrorCode OpSetContravariantPiolaTransoformOnTriangle::doWork(
+PetscErrorCode OpSetContravariantPiolaTransformOnTriangle::doWork(
     int side,
     EntityType type,
     DataForcesAndSourcesCore::EntData &data
@@ -1505,7 +1505,7 @@ PetscErrorCode OpSetContravariantPiolaTransoformOnTriangle::doWork(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode OpSetCovariantPiolaTransoformOnTriangle::doWork(
+PetscErrorCode OpSetCovariantPiolaTransformOnTriangle::doWork(
   int side,
   EntityType type,
   DataForcesAndSourcesCore::EntData &data
@@ -1664,7 +1664,7 @@ PetscErrorCode OpGetHoTangentOnEdge::doWork(int side,EntityType type,DataForcesA
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode OpSetCovariantPiolaTransoformOnEdge::doWork(
+PetscErrorCode OpSetCovariantPiolaTransformOnEdge::doWork(
   int side,
   EntityType type,
   DataForcesAndSourcesCore::EntData &data

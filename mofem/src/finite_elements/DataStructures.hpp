@@ -29,9 +29,9 @@ namespace MoFEM {
 typedef ublas::unbounded_array<
   boost::shared_ptr<const FEDofEntity>,
   std::allocator<boost::shared_ptr<const FEDofEntity> >
-> DofsAllacator;
+> DofsAllocator;
 typedef ublas::vector<
-  boost::shared_ptr<const FEDofEntity>,DofsAllacator
+  boost::shared_ptr<const FEDofEntity>,DofsAllocator
 > VectorDofs;
 
 /**
@@ -62,8 +62,8 @@ FTensor::Tensor0<T*> getTensor0FormData(
 }
 
 template<>
-FTensor::Tensor0<double*> getTensor0FormData<double,DoubleAllacator >(
-  ublas::vector<double,DoubleAllacator > &data
+FTensor::Tensor0<double*> getTensor0FormData<double,DoubleAllocator >(
+  ublas::vector<double,DoubleAllocator > &data
 );
 
 /**
@@ -90,18 +90,18 @@ FTensor::Tensor1<double*,Tensor_Dim> getTensor1FormData(
   MatrixDouble &data
 ) {
   return getTensor1FormData<
-  Tensor_Dim,double,ublas::row_major,DoubleAllacator
+  Tensor_Dim,double,ublas::row_major,DoubleAllocator
   >(data);
 }
 
 
 template<>
-FTensor::Tensor1<double*,3> getTensor1FormData<3,double,ublas::row_major,DoubleAllacator>(
+FTensor::Tensor1<double*,3> getTensor1FormData<3,double,ublas::row_major,DoubleAllocator>(
   MatrixDouble &data
 );
 
 template<>
-FTensor::Tensor1<double*,2> getTensor1FormData<2,double,ublas::row_major,DoubleAllacator>(
+FTensor::Tensor1<double*,2> getTensor1FormData<2,double,ublas::row_major,DoubleAllocator>(
   MatrixDouble &data
 );
 
@@ -142,7 +142,7 @@ FTensor::Tensor2<double*,Tensor_Dim0,Tensor_Dim1> getTensor2FormData(
   MatrixDouble &data
 ) {
   return getTensor2FormData<
-  Tensor_Dim0,Tensor_Dim1,double,ublas::row_major,DoubleAllacator
+  Tensor_Dim0,Tensor_Dim1,double,ublas::row_major,DoubleAllocator
   >(data);
 }
 
@@ -1160,7 +1160,7 @@ struct DataForcesAndSourcesCore {
      * Reset data associated with particular field name
      * @return error code
      */
-    inline PetscErrorCode resetFieldDepenentData() {
+    inline PetscErrorCode resetFieldDependentData() {
       MoFEMFunctionBeginHot;
       sPace = NOSPACE;
       bAse = NOBASE;
@@ -1204,13 +1204,13 @@ struct DataForcesAndSourcesCore {
    * Reset data associated with particular field name
    * @return error code
    */
-  inline PetscErrorCode resetFieldDepenentData() {
+  inline PetscErrorCode resetFieldDependentData() {
 
     MoFEMFunctionBeginHot;
     for(EntityType t = MBVERTEX;t!=MBMAXTYPE;t++) {
       boost::ptr_vector<EntData>::iterator ent_data_it = dataOnEntities[t].begin();
       for(;ent_data_it!=dataOnEntities[t].end();ent_data_it++) {
-        ierr = ent_data_it->resetFieldDepenentData(); CHKERRQ(ierr);
+        ierr = ent_data_it->resetFieldDependentData(); CHKERRQ(ierr);
       }
     }
     MoFEMFunctionReturnHot(0);
@@ -1268,7 +1268,7 @@ FTensor::Tensor1<double*,2> DataForcesAndSourcesCore::EntData::getFTensor1DiffN<
 
 /**@}*/
 
-/** \name Specializations for HDiv/HCrul */
+/** \name Specializations for HDiv/HCurl */
 
 /**@{*/
 
@@ -1291,7 +1291,7 @@ FTensor::Tensor2<double*,3,3> DataForcesAndSourcesCore::EntData::getFTensor2Diff
 
 /**@}*/
 
-/** \name Specializations for HDiv/HCrul in 2d */
+/** \name Specializations for HDiv/HCurl in 2d */
 
 /**@{*/
 
