@@ -444,7 +444,7 @@ PetscErrorCode PrismInterface::findIfTringleHasThreeNodesOnInternalSurfaceSkin(
 
 PetscErrorCode PrismInterface::splitSides(
   const EntityHandle meshset,const BitRefLevel &bit,
-  const int msId,const CubitBCType cubit_bc_type,const bool add_iterfece_entities,const bool recursive,int verb
+  const int msId,const CubitBCType cubit_bc_type,const bool add_interface_entities,const bool recursive,int verb
 ) {
 
   MoFEM::Interface &m_field = cOre;
@@ -455,7 +455,7 @@ PetscErrorCode PrismInterface::splitSides(
     miit = meshsets_manager_ptr->getMeshsetsMultindex().get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().find(boost::make_tuple(msId,cubit_bc_type.to_ulong()));
   if(miit!=meshsets_manager_ptr->getMeshsetsMultindex().get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().end()) {
     ierr = splitSides(
-      meshset,bit,miit->meshset,add_iterfece_entities,recursive,verb); CHKERRQ(ierr);
+      meshset,bit,miit->meshset,add_interface_entities,recursive,verb); CHKERRQ(ierr);
   } else {
     SETERRQ(PETSC_COMM_SELF,1,"msId is not there");
   }
@@ -653,12 +653,11 @@ PetscErrorCode PrismInterface::splitSides(
         rval = moab.add_entities(meshset_error_out,&*eit3d,1); CHKERRQ_MOAB(rval);
         ierr = moab.write_file("error.vtk","VTK","",&meshset_error_out,1); CHKERRQ(ierr);
         rval = moab.delete_entities(&meshset_error_out,1); CHKERRQ_MOAB(rval);
-
       }
       SETERRQ1(
         PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
         "In side_ent3 is a tet which has no common node with interface, num_nodes = %d. "
-        "This is could be effect when three nodes of split surface are on front, i.e. inernal skin in the body. "
+        "This is could be effect when three nodes of split surface are on front, i.e. infernal skin in the body. "
         "See error.vtk for details.",
         num_nodes
       );
