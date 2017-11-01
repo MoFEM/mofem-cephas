@@ -174,7 +174,7 @@ int main(int argc, char *argv[]) {
    // add fields
    ierr = simple_interface->addDomainField("U",H1,AINSWORTH_LEGENDRE_BASE,3); CHKERRQ(ierr);
    ierr = simple_interface->addBoundaryField("L",H1,AINSWORTH_LEGENDRE_BASE,3); CHKERRQ(ierr);
-   ierr = simple_interface->addSkeletionField("S",H1,AINSWORTH_LEGENDRE_BASE,3); CHKERRQ(ierr);
+   ierr = simple_interface->addSkeletonField("S",H1,AINSWORTH_LEGENDRE_BASE,3); CHKERRQ(ierr);
    // set fields order
    ierr = simple_interface->setFieldOrder("U",4); CHKERRQ(ierr);
    ierr = simple_interface->setFieldOrder("L",3); CHKERRQ(ierr);
@@ -198,7 +198,7 @@ int main(int argc, char *argv[]) {
    // set operator to the face element on skeleton
    skeleton_fe->getOpPtrVector().push_back(new OpRow("S"));
    skeleton_fe->getOpPtrVector().push_back(new OpFaceSide("S",side_fe));
-   // set operator to the volume on side of the Skelton face
+   // set operator to the volume on side of the Skeleton face
    side_fe->getOpPtrVector().push_back(new OpVolumeSide("U"));
    DM dm;
    // get dm

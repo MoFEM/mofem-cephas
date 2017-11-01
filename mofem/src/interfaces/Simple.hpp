@@ -60,17 +60,17 @@ namespace MoFEM {
      * @param  name              name of the filed
      * @param  space             space (L2,H1,Hdiv,Hcurl)
      * @param  base              approximation base, see FieldApproximationBase
-     * @param  nb_of_cooficients number of field coefficients
+     * @param  nb_of_coefficients number of field coefficients
      * @param  tag_type          type of the tag MB_TAG_DENSE or MB_TAG_SPARSE (DENSE is faster and uses less memory, SPARSE is more flexible if you define field on subdomains)
      * @param  bh                if MF_EXCL throws error if field exits, MF_ZERO no error if field exist
-     * @param  verb              verbosity leve
+     * @param  verb              verbosity level
      * @return                   error code
      */
     PetscErrorCode addDomainField(
       const std::string& name,
       const FieldSpace space,
       const FieldApproximationBase base,
-      const FieldCoefficientsNumber nb_of_cooficients,
+      const FieldCoefficientsNumber nb_of_coefficients,
       const TagType tag_type = MB_TAG_SPARSE,
       const enum MoFEMTypes bh = MF_ZERO,
       int verb = -1
@@ -81,17 +81,17 @@ namespace MoFEM {
      * @param  name              name of the filed
      * @param  space             space (L2,H1,Hdiv,Hcurl)
      * @param  base              approximation base, see FieldApproximationBase
-     * @param  nb_of_cooficients number of field coefficients
+     * @param  nb_of_coefficients number of field coefficients
      * @param  tag_type          type of the tag MB_TAG_DENSE or MB_TAG_SPARSE (DENSE is faster and uses less memory, SPARSE is more flexible if you define field on subdomains)
      * @param  bh                if MF_EXCL throws error if field exits, MF_ZERO no error if field exist
-     * @param  verb              verbosity leve
+     * @param  verb              verbosity level
      * @return                   error code
      */
     PetscErrorCode addBoundaryField(
       const std::string& name,
       const FieldSpace space,
       const FieldApproximationBase base,
-      const FieldCoefficientsNumber nb_of_cooficients,
+      const FieldCoefficientsNumber nb_of_coefficients,
       const TagType tag_type = MB_TAG_SPARSE,
       const enum MoFEMTypes bh = MF_ZERO,
       int verb = -1
@@ -102,17 +102,17 @@ namespace MoFEM {
      * @param  name              name of the filed
      * @param  space             space (L2,H1,Hdiv,Hcurl)
      * @param  base              approximation base, see FieldApproximationBase
-     * @param  nb_of_cooficients number of field coefficients
+     * @param  nb_of_coefficients number of field coefficients
      * @param  tag_type          type of the tag MB_TAG_DENSE or MB_TAG_SPARSE (DENSE is faster and uses less memory, SPARSE is more flexible if you define field on subdomains)
      * @param  bh                if MF_EXCL throws error if field exits, MF_ZERO no error if field exist
-     * @param  verb              verbosity leve
+     * @param  verb              verbosity level
      * @return                   error code
      */
-    PetscErrorCode addSkeletionField(
+    PetscErrorCode addSkeletonField(
       const std::string& name,
       const FieldSpace space,
       const FieldApproximationBase base,
-      const FieldCoefficientsNumber nb_of_cooficients,
+      const FieldCoefficientsNumber nb_of_coefficients,
       const TagType tag_type = MB_TAG_SPARSE,
       const enum MoFEMTypes bh = MF_ZERO,
       int verb = -1
@@ -123,17 +123,17 @@ namespace MoFEM {
      * @param  name              name of the filed
      * @param  space             space (L2,H1,Hdiv,Hcurl)
      * @param  base              approximation base, see FieldApproximationBase
-     * @param  nb_of_cooficients number of field coefficients
+     * @param  nb_of_coefficients number of field coefficients
      * @param  tag_type          type of the tag MB_TAG_DENSE or MB_TAG_SPARSE (DENSE is faster and uses less memory, SPARSE is more flexible if you define field on subdomains)
      * @param  bh                if MF_EXCL throws error if field exits, MF_ZERO no error if field exist
-     * @param  verb              verbosity leve
+     * @param  verb              verbosity level
      * @return                   error code
      */
     PetscErrorCode addDataField(
       const std::string& name,
       const FieldSpace space,
       const FieldApproximationBase base,
-      const FieldCoefficientsNumber nb_of_cooficients,
+      const FieldCoefficientsNumber nb_of_coefficients,
       const TagType tag_type = MB_TAG_SPARSE,
       const enum MoFEMTypes bh = MF_ZERO,
       int verb = -1

@@ -67,7 +67,7 @@ namespace PoissonExample {
       if(!nbCols) MoFEMFunctionReturnHot(0);
       // get number of integration points
       nbIntegrationPts = getGaussPts().size2();
-      // chekk if entity block is on matrix diagonal
+      // check if entity block is on matrix diagonal
       if(
         row_side==col_side&&
         row_type==col_type
@@ -78,7 +78,7 @@ namespace PoissonExample {
       }
       // integrate local matrix for entity block
       ierr = iNtegrate(row_data,col_data); CHKERRQ(ierr);
-      // asseble local matrix
+      // assemble local matrix
       ierr = aSsemble(row_data,col_data); CHKERRQ(ierr);
       MoFEMFunctionReturnHot(0);
     }
@@ -107,11 +107,11 @@ namespace PoissonExample {
       MoFEMFunctionBeginHot;
       // set size of local entity bock
       locMat.resize(nbRows,nbCols,false);
-      // clear matrux
+      // clear matrix
       locMat.clear();
       // get element volume
       double vol = getVolume();
-      // get integration weigths
+      // get integration weights
       FTensor::Tensor0<double*> t_w = getFTensor0IntegrationWeight();
       // get base function gradient on rows
       FTensor::Tensor1<double*,3> t_row_grad = row_data.getFTensor1DiffN<3>();
@@ -126,9 +126,9 @@ namespace PoissonExample {
         for(int rr = 0;rr!=nbRows;rr++) {
           // get column base functions gradient at gauss point gg
           FTensor::Tensor1<double*,3> t_col_grad = col_data.getFTensor1DiffN<3>(gg,0);
-          // loop over columbs
+          // loop over columns
           for(int cc = 0;cc!=nbCols;cc++) {
-            // calculate element of loacl matrix
+            // calculate element of local matrix
             a += alpha*(t_row_grad(i)*t_col_grad(i));
             ++t_col_grad; // move to another gradient of base function on column
             ++a;  // move to another element of local matrix in column
@@ -324,7 +324,7 @@ namespace PoissonExample {
 
     OpC(const bool assemble_transpose):
     FaceElementForcesAndSourcesCore::UserDataOperator("L","U",OPROWCOL,false),
-    assembleTraspose(assemble_transpose) {
+    assembleTranspose(assemble_transpose) {
     }
 
     PetscErrorCode doWork(
@@ -357,9 +357,9 @@ namespace PoissonExample {
     int nbRows;            ///< number of dofs on row
     int nbCols;            ///< number of dofs on column
     int nbIntegrationPts;  ///< number of integration points
-    const bool assembleTraspose;  ///< assemble transpose, i.e. CT if set to true
+    const bool assembleTranspose;  ///< assemble transpose, i.e. CT if set to true
 
-    MatrixDouble locMat;   ///< local constrains matrxi
+    MatrixDouble locMat;   ///< local constrains matrix
 
     /** \brief Integrate local constrains matrix
      */
@@ -417,8 +417,8 @@ namespace PoissonExample {
         B,nbRows,row_indices,nbCols,col_indices,&*locMat.data().begin(),ADD_VALUES
       ); CHKERRQ(ierr);
       // cerr << locMat << endl;
-      if(assembleTraspose) {
-        // assmble transpose of local matrix
+      if(assembleTranspose) {
+        // assemble transpose of local matrix
         locMat = trans(locMat);
         ierr = MatSetValues(
           B, nbCols,col_indices,nbRows,row_indices,&*locMat.data().begin(),ADD_VALUES
@@ -464,11 +464,11 @@ namespace PoissonExample {
       MoFEMFunctionBeginHot;
       // set size to local vector
       locVec.resize(nbRows,false);
-      // clear loacl vector
+      // clear local vector
       locVec.clear();
       // get face area
       const double area = getArea()*bEta;
-      // get integration wiegth
+      // get integration weight
       FTensor::Tensor0<double*> t_w = getFTensor0IntegrationWeight();
       // get base function
       FTensor::Tensor0<double*> t_l = data.getFTensor0N();
@@ -476,7 +476,7 @@ namespace PoissonExample {
       FTensor::Tensor1<double*,3> t_coords = getTensor1CoordsAtGaussPts();
       // make loop over integration points
       for(int gg = 0;gg!=nbIntegrationPts;gg++) {
-        // evalue function on boundary and scale it by area and integration weight
+        // evaluate function on boundary and scale it by area and integration weight
         double alpha = area*t_w*fValue(t_coords(NX),t_coords(NY),t_coords(NZ));
         // get element of vector
         FTensor::Tensor0<double*> t_a(&*locVec.data().begin());
@@ -577,9 +577,9 @@ namespace PoissonExample {
       // integrate over
       for(int gg = 0;gg!=nbIntegrationPts;gg++) {
         double alpha = vol*t_w;
-        // evalue exact value
+        // evaluate exact value
         double exact_u = uValue(t_coords(NX),t_coords(NY),t_coords(NZ));
-        // evalue exact hradient
+        // evaluate exact gradient
         t_exact_grad = gValue(t_coords(NX),t_coords(NY),t_coords(NZ));
         // calculate gradient errro
         t_error_grad(i) = t_grad(i)-t_exact_grad(i);
@@ -787,11 +787,11 @@ namespace PoissonExample {
       MoFEMFunctionBeginHot;
       // set size to local vector
       locVec.resize(nbRows,false);
-      // clear loacl vector
+      // clear local vector
       locVec.clear();
       // get face area
       const double area = getArea()*bEta;
-      // get integration wiegth
+      // get integration weight
       FTensor::Tensor0<double*> t_w = getFTensor0IntegrationWeight();
       // get base function
       FTensor::Tensor0<double*> t_l = data.getFTensor0N();
@@ -801,7 +801,7 @@ namespace PoissonExample {
       FTensor::Tensor1<double*,3> t_coords = getTensor1CoordsAtGaussPts();
       // make loop over integration points
       for(int gg = 0;gg!=nbIntegrationPts;gg++) {
-        // evalue function on boundary and scale it by area and integration weight
+        // evaluate function on boundary and scale it by area and integration weight
         double alpha = area*t_w;
         // get element of vector
         FTensor::Tensor0<double*> t_a(&*locVec.data().begin());
@@ -839,11 +839,11 @@ namespace PoissonExample {
       MoFEMFunctionBeginHot;
       // set size to local vector
       locVec.resize(nbRows,false);
-      // clear loacl vector
+      // clear local vector
       locVec.clear();
       // get face area
       const double area = getArea()*bEta;
-      // get integration wiegth
+      // get integration weight
       FTensor::Tensor0<double*> t_w = getFTensor0IntegrationWeight();
       // get base function
       FTensor::Tensor0<double*> t_u = data.getFTensor0N();
@@ -851,7 +851,7 @@ namespace PoissonExample {
       FTensor::Tensor0<double*> t_lambda = getTensor0FormData(*lambdaVals);
       // make loop over integration points
       for(int gg = 0;gg!=nbIntegrationPts;gg++) {
-        // evalue function on boundary and scale it by area and integration weight
+        // evaluate function on boundary and scale it by area and integration weight
         double alpha = area*t_w;
         // get element of vector
         FTensor::Tensor0<double*> t_a(&*locVec.data().begin());
@@ -917,7 +917,7 @@ namespace PoissonExample {
     /**
      * \brief Create finite element to calculate matrix and vectors
      */
-    PetscErrorCode createFEToAssmbleMatrixAndVector(
+    PetscErrorCode createFEToAssembleMatrixAndVector(
       boost::function<double (const double,const double,const double)> f_u,
       boost::function<double (const double,const double,const double)> f_source,
       boost::shared_ptr<ForcesAndSourcesCore>& domain_lhs_fe,
@@ -941,7 +941,7 @@ namespace PoissonExample {
       boundary_rhs_fe->getRuleHook = FaceRule();
 
       // Add operators to element instances
-      // Add operator grad-grad for calculaye matrix
+      // Add operator grad-grad for calculate matrix
       domain_lhs_fe->getOpPtrVector().push_back(new OpK());
       // Add operator to calculate source terms
       domain_rhs_fe->getOpPtrVector().push_back(new OpF(f_source));
@@ -963,7 +963,7 @@ namespace PoissonExample {
       boost::shared_ptr<ForcesAndSourcesCore>& domain_error
     ) const {
       MoFEMFunctionBeginHot;
-      // Create finite element instance to calculaye error
+      // Create finite element instance to calculate error
       domain_error = boost::shared_ptr<ForcesAndSourcesCore>(
         new VolumeElementForcesAndSourcesCore(mField)
       );
@@ -971,16 +971,16 @@ namespace PoissonExample {
       // Set integration rule
       // Crate shared vector storing values of field "u" on integration points on element. element
       // is local and is used to exchange data between operators.
-      boost::shared_ptr<VectorDouble> values_at_integation_ptr = boost::make_shared<VectorDouble>();
+      boost::shared_ptr<VectorDouble> values_at_integration_ptr = boost::make_shared<VectorDouble>();
       // Storing gradients of field
-      boost::shared_ptr<MatrixDouble> grad_at_integation_ptr = boost::make_shared<MatrixDouble>();
+      boost::shared_ptr<MatrixDouble> grad_at_integration_ptr = boost::make_shared<MatrixDouble>();
       // Add default operator to calculate field values at integration points
-      domain_error->getOpPtrVector().push_back(new OpCalculateScalarFieldValues("U",values_at_integation_ptr));
+      domain_error->getOpPtrVector().push_back(new OpCalculateScalarFieldValues("U",values_at_integration_ptr));
       // Add default operator to calculate field gradient at integration points
-      domain_error->getOpPtrVector().push_back(new OpCalculateScalarFieldGradient<3>("U",grad_at_integation_ptr));
+      domain_error->getOpPtrVector().push_back(new OpCalculateScalarFieldGradient<3>("U",grad_at_integration_ptr));
       // Add operator to integrate error element by element.
       domain_error->getOpPtrVector().push_back(
-        new OpError(f_u,g_u,values_at_integation_ptr,grad_at_integation_ptr,global_error)
+        new OpError(f_u,g_u,values_at_integration_ptr,grad_at_integration_ptr,global_error)
       );
       MoFEMFunctionReturnHot(0);
     }
@@ -1021,7 +1021,7 @@ namespace PoissonExample {
     /**
      * \brief Create finite element to calculate matrix and vectors
      */
-    PetscErrorCode createFEToAssmbleMatrixAndVectorForNonlinearProblem(
+    PetscErrorCode createFEToAssembleMatrixAndVectorForNonlinearProblem(
       boost::function<double (const double,const double,const double)> f_u,
       boost::function<double (const double,const double,const double)> f_source,
       boost::function<double (const double)> a,
@@ -1051,37 +1051,37 @@ namespace PoissonExample {
       // Set integration rule
       // Crate shared vector storing values of field "u" on integration points on element. element
       // is local and is used to exchange data between operators.
-      boost::shared_ptr<VectorDouble> values_at_integation_ptr = boost::make_shared<VectorDouble>();
+      boost::shared_ptr<VectorDouble> values_at_integration_ptr = boost::make_shared<VectorDouble>();
       // Storing gradients of field
-      boost::shared_ptr<MatrixDouble> grad_at_integation_ptr = boost::make_shared<MatrixDouble>();
+      boost::shared_ptr<MatrixDouble> grad_at_integration_ptr = boost::make_shared<MatrixDouble>();
       // multipliers values
-      boost::shared_ptr<VectorDouble> multiplier_at_integation_ptr = boost::make_shared<VectorDouble>();
+      boost::shared_ptr<VectorDouble> multiplier_at_integration_ptr = boost::make_shared<VectorDouble>();
 
       // Add operators to element instances
       // Add default operator to calculate field values at integration points
-      domain_lhs_fe->getOpPtrVector().push_back(new OpCalculateScalarFieldValues("U",values_at_integation_ptr));
+      domain_lhs_fe->getOpPtrVector().push_back(new OpCalculateScalarFieldValues("U",values_at_integration_ptr));
       // Add default operator to calculate field gradient at integration points
-      domain_lhs_fe->getOpPtrVector().push_back(new OpCalculateScalarFieldGradient<3>("U",grad_at_integation_ptr));
+      domain_lhs_fe->getOpPtrVector().push_back(new OpCalculateScalarFieldGradient<3>("U",grad_at_integration_ptr));
       // Add operator grad-(1+u^2)grad for calculate matrix
-      domain_lhs_fe->getOpPtrVector().push_back(new OpKt(a,diff_a,values_at_integation_ptr,grad_at_integation_ptr));
+      domain_lhs_fe->getOpPtrVector().push_back(new OpKt(a,diff_a,values_at_integration_ptr,grad_at_integration_ptr));
 
       // Add default operator to calculate field values at integration points
-      domain_rhs_fe->getOpPtrVector().push_back(new OpCalculateScalarFieldValues("U",values_at_integation_ptr));
+      domain_rhs_fe->getOpPtrVector().push_back(new OpCalculateScalarFieldValues("U",values_at_integration_ptr));
       // Add default operator to calculate field gradient at integration points
-      domain_rhs_fe->getOpPtrVector().push_back(new OpCalculateScalarFieldGradient<3>("U",grad_at_integation_ptr));
+      domain_rhs_fe->getOpPtrVector().push_back(new OpCalculateScalarFieldGradient<3>("U",grad_at_integration_ptr));
       // Add operator to calculate source terms
-      domain_rhs_fe->getOpPtrVector().push_back(new OpResF_Domain(f_source,a,values_at_integation_ptr,grad_at_integation_ptr));
+      domain_rhs_fe->getOpPtrVector().push_back(new OpResF_Domain(f_source,a,values_at_integration_ptr,grad_at_integration_ptr));
 
       // Add operator calculating constrains matrix
       boundary_lhs_fe->getOpPtrVector().push_back(new OpC(trans));
 
       // Add default operator to calculate field values at integration points
-      boundary_rhs_fe->getOpPtrVector().push_back(new OpCalculateScalarFieldValues("U",values_at_integation_ptr));
-      // Add defualy operator to calculate values of Lagrange multipliers
-      boundary_rhs_fe->getOpPtrVector().push_back(new OpCalculateScalarFieldValues("L",multiplier_at_integation_ptr));
+      boundary_rhs_fe->getOpPtrVector().push_back(new OpCalculateScalarFieldValues("U",values_at_integration_ptr));
+      // Add default operator to calculate values of Lagrange multipliers
+      boundary_rhs_fe->getOpPtrVector().push_back(new OpCalculateScalarFieldValues("L",multiplier_at_integration_ptr));
       // Add operator calculating constrains vector
-      boundary_rhs_fe->getOpPtrVector().push_back(new OpRes_g(f_u,values_at_integation_ptr));
-      boundary_rhs_fe->getOpPtrVector().push_back(new OpResF_Boundary(multiplier_at_integation_ptr));
+      boundary_rhs_fe->getOpPtrVector().push_back(new OpRes_g(f_u,values_at_integration_ptr));
+      boundary_rhs_fe->getOpPtrVector().push_back(new OpResF_Boundary(multiplier_at_integration_ptr));
 
       MoFEMFunctionReturnHot(0);
     }

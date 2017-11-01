@@ -152,7 +152,7 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode Simple::addSkeletionField(
+  PetscErrorCode Simple::addSkeletonField(
     const std::string& name,
     const FieldSpace space,
     const FieldApproximationBase base,

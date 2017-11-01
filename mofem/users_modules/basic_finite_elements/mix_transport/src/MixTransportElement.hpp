@@ -130,7 +130,7 @@ struct MixTransportElement {
   }
 
    /**
-    * \brief natural (Dirihlet) boundary conditions (set values)
+    * \brief natural (Dirichlet) boundary conditions (set values)
     * @param  ent   handle to finite element entity
     * @param  x     coord
     * @param  y     coord
@@ -189,7 +189,7 @@ struct MixTransportElement {
   }
 
   /** \brief data for evaluation of het conductivity and heat capacity elements
-    * \infroup mofem_thermal_elem
+    * \ingroup mofem_thermal_elem
     */
   struct BlockData {
     double cOnductivity;
@@ -913,7 +913,7 @@ struct MixTransportElement {
     cTx(ctx),
     F(f) {
       //this operator is not symmetric setting this variable makes element
-      //operator to loop over element entities (subsimplicies) without
+      //operator to loop over element entities (sub-simplices) without
       //assumption that off-diagonal matrices are symmetric.
       sYmm = false;
     }
@@ -1150,7 +1150,7 @@ struct MixTransportElement {
   /**
    * \brief calculate \f$ \int_\mathcal{S} {\boldsymbol\tau} \cdot \mathbf{n}u \textrm{d}\mathcal{S} \f$
 
-   * This terms comes from differentiation by parts. Note that in this Dirihlet
+   * This terms comes from differentiation by parts. Note that in this Dirichlet
    * boundary conditions are natural.
 
    */
@@ -1418,8 +1418,8 @@ struct MixTransportElement {
         // cerr << data.getDiffN() << endl;
         cTx.valuesGradientAtGaussPts.resize(3,nb_gauss_pts);
         for(int gg = 0;gg<nb_gauss_pts;gg++) {
-          ublas::matrix_column<MatrixDouble> values_grad_at_gaus_pts(cTx.valuesGradientAtGaussPts,gg);
-          noalias(values_grad_at_gaus_pts) = prod( trans(data.getDiffN(gg)), data.getFieldData() );
+          ublas::matrix_column<MatrixDouble> values_grad_at_gauss_pts(cTx.valuesGradientAtGaussPts,gg);
+          noalias(values_grad_at_gauss_pts) = prod( trans(data.getDiffN(gg)), data.getFieldData() );
         }
       } catch (const std::exception& ex) {
         std::ostringstream ss;
@@ -1575,8 +1575,8 @@ struct MixTransportElement {
           *error_div_ptr += w*pow(cTx.divergenceAtGaussPts[gg]-flux,2);
           ierr = cTx.getResistivity(fe_ent,x,y,z,invK); CHKERRQ(ierr);
           ublas::matrix_column<MatrixDouble> flux_at_gauss_pt(cTx.fluxesAtGaussPts,gg);
-          ublas::matrix_column<MatrixDouble> values_grad_at_gaus_pts(cTx.valuesGradientAtGaussPts,gg);
-          noalias(deltaFlux) = prod(invK,flux_at_gauss_pt)+values_grad_at_gaus_pts;
+          ublas::matrix_column<MatrixDouble> values_grad_at_gauss_pts(cTx.valuesGradientAtGaussPts,gg);
+          noalias(deltaFlux) = prod(invK,flux_at_gauss_pt)+values_grad_at_gauss_pts;
           *error_flux_ptr += w*inner_prod(deltaFlux,deltaFlux);
         }
         *error_div_ptr = h*sqrt(*error_div_ptr);
