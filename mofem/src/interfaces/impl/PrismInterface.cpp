@@ -132,7 +132,7 @@ PetscErrorCode PrismInterface::getSides(const EntityHandle sideset,const BitRefL
   //Get nodes on boundary edge
   Range skin_nodes_boundary;
   rval = moab.get_connectivity(skin_edges_boundary,skin_nodes_boundary,true); CHKERRQ_MOAB(rval);
-  //Remove noded which are boundary with other existing interface
+  //Remove node which are boundary with other existing interface
   Range prisms_nodes;
   rval = moab.get_connectivity(ents3d_with_prisms.subset_by_type(MBPRISM),prisms_nodes,true); CHKERRQ_MOAB(rval);
   skin_nodes_boundary = subtract(skin_nodes_boundary,prisms_nodes);
@@ -198,7 +198,7 @@ PetscErrorCode PrismInterface::getSides(const EntityHandle sideset,const BitRefL
   }
   ents3d = ents3d_with_prisms.subset_by_type(MBTET);
   if(verb>3) {
-    PetscPrintf(m_field.get_comm(),"adj. ents3d to fornt nodes %u\n",ents3d.size());
+    PetscPrintf(m_field.get_comm(),"adj. ents3d to front nodes %u\n",ents3d.size());
   }
 
   Range side_ents3d;
@@ -239,7 +239,7 @@ PetscErrorCode PrismInterface::getSides(const EntityHandle sideset,const BitRefL
     ); CHKERRQ_MOAB(rval);
     side_ents3d_tris_on_surface = intersect(side_ents3d_tris,triangles);
 
-    // This is a case when separtae sub-domains are split
+    // This is a case when separate sub-domains are split
     if(side_ents3d_tris_on_surface.size()!=triangles.size()) {
       Range left_triangles = subtract(triangles,side_ents3d_tris_on_surface);
       Range tets;
@@ -256,7 +256,7 @@ PetscErrorCode PrismInterface::getSides(const EntityHandle sideset,const BitRefL
         SETERRQ(
           m_field.get_comm(),MOFEM_DATA_INCONSISTENCY,
           "Not all faces on surface going to be split, see error.vtk for problematic triangle. "
-          "It could be a case where triangle on front (part boundary of surface in interia) "
+          "It could be a case where triangle on front (part boundary of surface in interior) "
           "has three nodes front."
         );
       }
@@ -294,7 +294,7 @@ PetscErrorCode PrismInterface::getSides(const EntityHandle sideset,const BitRefL
     rval = moab.add_child_meshset(sideset,children[2]); CHKERRQ_MOAB(rval);
   } else {
     if(children.size()!=3) {
-      SETERRQ(PETSC_COMM_SELF,1,"this meshset shuld have 3 children meshsets");
+      SETERRQ(PETSC_COMM_SELF,1,"this meshset should have 3 children meshsets");
     }
     children.resize(3);
     ierr = moab.clear_meshset(&children[0],3); CHKERRQ(ierr);
@@ -408,7 +408,7 @@ PetscErrorCode PrismInterface::findIfTringleHasThreeNodesOnInternalSurfaceSkin(
   //Get nodes on boundary edge
   Range skin_nodes_boundary;
   rval = moab.get_connectivity(skin_edges_boundary,skin_nodes_boundary,true); CHKERRQ_MOAB(rval);
-  //Remove noded which are boundary with other existing interface
+  //Remove node which are boundary with other existing interface
   Range prisms_nodes;
   rval = moab.get_connectivity(ents3d.subset_by_type(MBPRISM),prisms_nodes,true); CHKERRQ_MOAB(rval);
   skin_nodes_boundary = subtract(skin_nodes_boundary,prisms_nodes);
@@ -463,20 +463,20 @@ PetscErrorCode PrismInterface::splitSides(
 }
 PetscErrorCode PrismInterface::splitSides(
   const EntityHandle meshset,const BitRefLevel &bit,
-  const EntityHandle sideset,const bool add_iterfece_entities,const bool recursive,
+  const EntityHandle sideset,const bool add_interface_entities,const bool recursive,
   int verb
 ) {
 
   MoFEMFunctionBeginHot;
   ierr = splitSides(meshset,bit,
-    BitRefLevel(),BitRefLevel(),sideset,add_iterfece_entities,recursive,verb
+    BitRefLevel(),BitRefLevel(),sideset,add_interface_entities,recursive,verb
   ); CHKERRQ(ierr);
   MoFEMFunctionReturnHot(0);
 }
 PetscErrorCode PrismInterface::splitSides(
   const EntityHandle meshset,const BitRefLevel &bit,
-  const BitRefLevel &inheret_from_bit_level,const BitRefLevel &inheret_from_bit_level_mask,
-  const EntityHandle sideset,const bool add_iterfece_entities,const bool recursive,
+  const BitRefLevel &inhered_from_bit_level,const BitRefLevel &inhered_from_bit_level_mask,
+  const EntityHandle sideset,const bool add_interface_entities,const bool recursive,
   int verb
 ) {
 
@@ -538,12 +538,12 @@ PetscErrorCode PrismInterface::splitSides(
     miit = ref_ents.lower_bound(boost::make_tuple(MBVERTEX,MBVERTEX));
     hi_miit = ref_ents.upper_bound(boost::make_tuple(MBVERTEX,MBVERTEX));
     for(;miit!=hi_miit;miit++) {
-      if(((*miit)->getBitRefLevel()&inheret_from_bit_level_mask) == (*miit)->getBitRefLevel()) {
-        if(((*miit)->getBitRefLevel()&inheret_from_bit_level).any()) {
+      if(((*miit)->getBitRefLevel()&inhered_from_bit_level_mask) == (*miit)->getBitRefLevel()) {
+        if(((*miit)->getBitRefLevel()&inhered_from_bit_level).any()) {
           std::pair<RefEntity_multiIndex_view_by_parent_entity::iterator,bool> p_ref_ent_view;
           p_ref_ent_view = ref_parent_ents_view.insert(*miit);
           if(!p_ref_ent_view.second) {
-            SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"non uniqe insertion");
+            SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"non unique insertion");
           }
         }
       }
@@ -570,7 +570,7 @@ PetscErrorCode PrismInterface::splitSides(
     if(child_iit != ref_parent_ents_view.end()) {
       child_it = refined_ents_ptr->find((*child_iit)->getRefEnt());
       BitRefLevel bit_child = (*child_it)->getBitRefLevel();
-      if( (inheret_from_bit_level&bit_child).none() ) {
+      if( (inhered_from_bit_level&bit_child).none() ) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
       }
       child_entity = (*child_it)->getRefEnt();
@@ -668,7 +668,7 @@ PetscErrorCode PrismInterface::splitSides(
 
     //here is created new or prism is on interface
     EntityHandle existing_ent = 0;
-    /* check if tet element whith new connectivity is in database*/
+    /* check if tet element with new connectivity is in database*/
     RefElement_multiIndex::index<Ent_Ent_mi_tag>::type::iterator child_iit,hi_child_iit;
     child_iit = refined_finite_elements_ptr->get<Ent_Ent_mi_tag>().lower_bound(*eit3d);
     hi_child_iit = refined_finite_elements_ptr->get<Ent_Ent_mi_tag>().upper_bound(*eit3d);
@@ -752,7 +752,7 @@ PetscErrorCode PrismInterface::splitSides(
     }
   }
   Range new_ents;
-  //create new entities by adjecies form new tets
+  //create new entities by adjacencies form new tets
   rval = moab.get_adjacencies(new_3d_ents.subset_by_type(MBTET),2,true,new_ents,moab::Interface::UNION); CHKERRQ_MOAB(rval);
   rval = moab.get_adjacencies(new_3d_ents.subset_by_type(MBTET),1,true,new_ents,moab::Interface::UNION); CHKERRQ_MOAB(rval);
   //Tags for setting side
@@ -800,9 +800,9 @@ PetscErrorCode PrismInterface::splitSides(
         rval = moab.tag_set_data(th_interface_side,&*new_ent.begin(),1,&new_side); CHKERRQ_MOAB(rval);
         if(verb>3) PetscPrintf(m_field.get_comm(),"new_ent %u\n",new_ent.size());
         //add prism element
-        if(add_iterfece_entities) {
-          if(inheret_from_bit_level.any()) {
-            SETERRQ(PETSC_COMM_SELF,1,"not implemented for inheret_from_bit_level");
+        if(add_interface_entities) {
+          if(inhered_from_bit_level.any()) {
+            SETERRQ(PETSC_COMM_SELF,1,"not implemented for inhered_from_bit_level");
           }
           //set prism connectivity
           EntityHandle prism_conn[6] = {
@@ -981,7 +981,7 @@ PetscErrorCode PrismInterface::splitSides(
       }
     }
   }
-  //finalise by adding new tets and prism ti bitlelvel
+  //finalise by adding new tets and prism ti bit level
   ierr = m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(meshset_for_bit_level,3,bit); CHKERRQ(ierr);
   rval = moab.delete_entities(&meshset_for_bit_level,1); CHKERRQ_MOAB(rval);
   ierr = moab.clear_meshset(&children[0],3); CHKERRQ(ierr);

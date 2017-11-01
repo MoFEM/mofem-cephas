@@ -135,7 +135,7 @@ struct PrismInterface: public UnknownInterface {
    */
   PetscErrorCode splitSides(
     const EntityHandle meshset,const BitRefLevel &bit,
-    const EntityHandle sideset,const bool add_interface_entities,
+    const EntityHandle  ,const bool add_interface_entities,
     const bool recursive = false,int verb = -1
   );
 
@@ -158,8 +158,8 @@ struct PrismInterface: public UnknownInterface {
    */
   PetscErrorCode splitSides(
     const EntityHandle meshset,const BitRefLevel &bit,
-    const BitRefLevel &inheret_from_bit_level,const BitRefLevel &inheret_from_bit_level_mask,
-    const EntityHandle sideset,const bool add_iterfece_entities,const bool recursive = false,int verb = -1
+    const BitRefLevel &inhered_from_bit_level,const BitRefLevel &inhered_from_bit_level_mask,
+    const EntityHandle sideset,const bool add_interface_entities,const bool recursive = false,int verb = -1
   );
 
 };
