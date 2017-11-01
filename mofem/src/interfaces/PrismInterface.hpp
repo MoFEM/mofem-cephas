@@ -23,7 +23,8 @@
 
 namespace MoFEM {
 
-static const MOFEMuuid IDD_MOFEMPrismInterface = MOFEMuuid( BitIntefaceId(PRISM_INTEFACE) );
+static const MOFEMuuid IDD_MOFEMPrismInterface =
+    MOFEMuuid(BitIntefaceId(PRISM_INTEFACE));
 
 /** \brief Make interface on given faces and create flat prism in that space
 
@@ -35,7 +36,8 @@ static const MOFEMuuid IDD_MOFEMPrismInterface = MOFEMuuid( BitIntefaceId(PRISM_
 */
 struct PrismInterface: public UnknownInterface {
 
-  PetscErrorCode query_interface(const MOFEMuuid& uuid, UnknownInterface** iface) const;
+  PetscErrorCode query_interface(const MOFEMuuid &uuid,
+                                 UnknownInterface **iface) const;
 
   MoFEM::Core& cOre;
   PrismInterface(const MoFEM::Core &core);
@@ -51,13 +53,9 @@ struct PrismInterface: public UnknownInterface {
     * \param mesh_bit_level add interface on bit level is bit_level = BitRefLevel.set() then add interface on all bit levels
     * \param recursive if true parent meshset is searched recursively
     */
-  PetscErrorCode getSides(
-    const int msId,
-    const CubitBCType cubit_bc_type,
-    const BitRefLevel mesh_bit_level,
-    const bool recursive,int verb = -1
-  );
-
+  PetscErrorCode getSides(const int msId, const CubitBCType cubit_bc_type,
+                          const BitRefLevel mesh_bit_level,
+                          const bool recursive, int verb = -1);
 
   /** \brief create two children meshsets in the meshset containing tetrahedral on two sides of faces
    *
@@ -68,11 +66,9 @@ struct PrismInterface: public UnknownInterface {
    * After that simply iterate under all tets on one side which are adjacent to the face are found.
    * Side tets are stored in to children meshsets of the SIDESET meshset.
    */
-  PetscErrorCode getSides(
-    const EntityHandle sideset,
-    const BitRefLevel mesh_bit_level,
-    const bool recursive,int verb = -1
-  );
+  PetscErrorCode getSides(const EntityHandle sideset,
+                          const BitRefLevel mesh_bit_level,
+                          const bool recursive, int verb = -1);
 
   /**
    * \brief Find if triangle has three nodes on internal surface skin
@@ -91,12 +87,9 @@ struct PrismInterface: public UnknownInterface {
    * @return error code
    */
   PetscErrorCode findIfTringleHasThreeNodesOnInternalSurfaceSkin(
-    const EntityHandle sideset,
-    const BitRefLevel mesh_bit_level,
-    const bool recursive,
-    Range& faces_with_three_nodes_on_front,
-    int verb = -1
-  );
+      const EntityHandle sideset, const BitRefLevel mesh_bit_level,
+      const bool recursive, Range &faces_with_three_nodes_on_front,
+      int verb = -1);
 
   /**
    * \brief split nodes and other entities of tetrahedral in children sets and add prism elements
@@ -122,23 +115,20 @@ struct PrismInterface: public UnknownInterface {
    * inteface element.
    *
    */
-  PetscErrorCode splitSides(
-    const EntityHandle meshset,const BitRefLevel &bit,
-    const int msId,const CubitBCType cubit_bc_type,
-    const bool add_interface_entities,const bool recursive = false,int verb = -1
-  );
+  PetscErrorCode splitSides(const EntityHandle meshset, const BitRefLevel &bit,
+                            const int msId, const CubitBCType cubit_bc_type,
+                            const bool add_interface_entities,
+                            const bool recursive = false, int verb = -1);
 
   /**
    * \brief split nodes and other entities of tetrahedral in children sets and add prism elements
    *
    * The all new entities (prisms, tets) are added to refinement level given by bit
    */
-  PetscErrorCode splitSides(
-    const EntityHandle meshset,const BitRefLevel &bit,
-    const EntityHandle  ,const bool add_interface_entities,
-    const bool recursive = false,int verb = -1
-  );
-
+  PetscErrorCode splitSides(const EntityHandle meshset, const BitRefLevel &bit,
+                            const EntityHandle,
+                            const bool add_interface_entities,
+                            const bool recursive = false, int verb = -1);
 
   /**
    * \brief split nodes and other entities of tetrahedrons in children sets and add prism elements
@@ -156,12 +146,12 @@ struct PrismInterface: public UnknownInterface {
    * not splitting faces. Inheriting those nodes will not split faces.
    *
    */
-  PetscErrorCode splitSides(
-    const EntityHandle meshset,const BitRefLevel &bit,
-    const BitRefLevel &inhered_from_bit_level,const BitRefLevel &inhered_from_bit_level_mask,
-    const EntityHandle sideset,const bool add_interface_entities,const bool recursive = false,int verb = -1
-  );
-
+  PetscErrorCode splitSides(const EntityHandle meshset, const BitRefLevel &bit,
+                            const BitRefLevel &inhered_from_bit_level,
+                            const BitRefLevel &inhered_from_bit_level_mask,
+                            const EntityHandle sideset,
+                            const bool add_interface_entities,
+                            const bool recursive = false, int verb = -1);
 };
 
 }
