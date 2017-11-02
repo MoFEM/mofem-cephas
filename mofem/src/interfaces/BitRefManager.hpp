@@ -96,6 +96,11 @@ struct BitRefManager : public UnknownInterface {
                                                 const bool only_tets = true,
                                                 int verb             = 0) const;
 
+  PetscErrorCode addToDatabaseBitRefLevelByDim(const int dim,
+                                               const BitRefLevel &bit,
+                                               const bool only_tets = true,
+                                               int verb             = 0) const;
+
   PetscErrorCode setBitRefLevelByDim(const EntityHandle meshset, const int dim,
                                      const BitRefLevel &bit,
                                      int verb = 0) const;
@@ -182,6 +187,19 @@ struct BitRefManager : public UnknownInterface {
 
   /**@{*/
 
+  /**
+   * @brief filter entities by bit ref level 
+   * 
+   * @param bit 
+   * @param mask
+   * @param ents 
+   * @param QUIET 
+   * @return PetscErrorCode 
+   */
+  PetscErrorCode filterEntitiesByRefLevel(const BitRefLevel &bit,
+                                          const BitRefLevel &mask, Range &ents,
+                                          int verb = QUIET) const;
+
   /**\brief add all ents from ref level given by bit to meshset
     * \ingroup mofem_bit_ref
     *
@@ -214,6 +232,39 @@ struct BitRefManager : public UnknownInterface {
                                               const BitRefLevel &mask,
                                               const EntityType type,
                                               Range &ents, int verb = 0) const;
+
+  /**\brief add all ents from ref level given by bit to meshset
+   * \ingroup mofem_bit_ref
+   *
+   * \note Entities NOT have to be added to MoFEM database
+   *
+   * \param BitRefLevel bitLevel
+   * \param BitRefLevel mask
+   * \param EntityType dimension of entities
+   * \retval ents
+   *
+   */
+  PetscErrorCode getEntitiesByDimAndRefLevel(const BitRefLevel &bit,
+                                             const BitRefLevel &mask,
+                                             const int dim,
+                                             const EntityHandle meshset,
+                                             int verb = 0) const;
+
+  /**\brief add all ents from ref level given by bit to meshset
+   * \ingroup mofem_bit_ref
+   *
+   * \note Entities NOT have to be added to MoFEM database
+   *
+   * \param BitRefLevel bitLevel
+   * \param BitRefLevel mask
+   * \param EntityType dimension of entities
+   * \retval ents
+   *
+   */
+  PetscErrorCode getEntitiesByDimAndRefLevel(const BitRefLevel &bit,
+                                             const BitRefLevel &mask,
+                                             const int dim, Range &ents,
+                                             int verb = 0) const;
 
   /**\brief add all ents from ref level given by bit to meshset
    * \ingroup mofem_bit_ref

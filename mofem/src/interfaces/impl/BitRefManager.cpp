@@ -280,6 +280,19 @@ PetscErrorCode BitRefManager::addToDatabaseBitRefLevelByType(
   MoFEMFunctionReturnHot(0);
 }
 
+PetscErrorCode BitRefManager::addToDatabaseBitRefLevelByDim(
+    const int dim, const BitRefLevel &bit, const bool only_tets,
+    int verb) const {
+  MoFEMFunctionBeginHot;
+  Range ents;
+  ierr = getEntitiesByDimAndRefLevel(bit, BitRefLevel().set(), dim, ents);
+  CHKERRQ(ierr);
+  // Add bit ref level to database
+  ierr = setBitRefLevel(ents, bit);
+  CHKERRQ(ierr);
+  MoFEMFunctionReturnHot(0);
+}
+
 PetscErrorCode BitRefManager::setBitLevelToMeshset(const EntityHandle meshset,
                                                    const BitRefLevel &bit,
                                                    int verb) const {
@@ -545,14 +558,13 @@ PetscErrorCode BitRefManager::getEntitiesByTypeAndRefLevel(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode BitRefManager::getEntitiesByTypeAndRefLevel(
-    const BitRefLevel &bit, const BitRefLevel &mask, const EntityType type,
-    Range &ents, int verb) const {
+PetscErrorCode BitRefManager::filterEntitiesByRefLevel(const BitRefLevel &bit,
+                                                       const BitRefLevel &mask,
+                                                       Range &ents,
+                                                       int verb) const {
   MoFEM::Interface &m_field = cOre;
   moab::Interface &moab(m_field.get_moab());
   MoFEMFunctionBeginHot;
-  ierr = moab.get_entities_by_type(0, type, ents, false);
-  CHKERRQ(ierr);
   const BitRefLevel *tag_bit;
   Range::iterator eit = ents.begin();
   for (; eit != ents.end(); tag_bit++) {
@@ -575,6 +587,47 @@ PetscErrorCode BitRefManager::getEntitiesByTypeAndRefLevel(
     }
     eit++;
   }
+  MoFEMFunctionReturnHot(0);
+}
+
+PetscErrorCode BitRefManager::getEntitiesByTypeAndRefLevel(
+    const BitRefLevel &bit, const BitRefLevel &mask, const EntityType type,
+    Range &ents, int verb) const {
+  MoFEM::Interface &m_field = cOre;
+  moab::Interface &moab(m_field.get_moab());
+  MoFEMFunctionBeginHot;
+  ierr = moab.get_entities_by_type(0, type, ents, false);
+  CHKERRQ(ierr);
+  ierr = filterEntitiesByRefLevel(bit, mask, ents, verb);
+  CHKERRQ(ierr);
+  MoFEMFunctionReturnHot(0);
+}
+
+PetscErrorCode BitRefManager::getEntitiesByDimAndRefLevel(const BitRefLevel &bit,
+                                           const BitRefLevel &mask,
+                                           const int dim,
+                                           const EntityHandle meshset,
+                                           int verb) const {
+  MoFEM::Interface &m_field = cOre;
+  moab::Interface &moab(m_field.get_moab());
+  MoFEMFunctionBeginHot;
+  Range ents;
+  ierr = getEntitiesByDimAndRefLevel(bit, mask, dim, ents, verb);
+  CHKERRQ(ierr);
+  rval = moab.add_entities(meshset, ents);
+  CHKERRQ_MOAB(rval);
+  MoFEMFunctionReturnHot(0);
+}
+
+PetscErrorCode BitRefManager::getEntitiesByDimAndRefLevel(
+    const BitRefLevel &bit, const BitRefLevel &mask, const int dim,
+    Range &ents, int verb) const {
+  MoFEM::Interface &m_field = cOre;
+  moab::Interface &moab(m_field.get_moab());
+  MoFEMFunctionBeginHot;
+  ierr = moab.get_entities_by_dimension(0, dim, ents, false);
+  ierr = filterEntitiesByRefLevel(bit, mask, ents, verb);
+  CHKERRQ(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
