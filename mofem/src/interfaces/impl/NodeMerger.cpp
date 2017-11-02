@@ -281,9 +281,9 @@ PetscErrorCode NodeMergerInterface::mergeNodes(
     rval = m_field.get_moab().get_adjacencies(
         mother_tets, dd, false, adj_mother_ents, moab::Interface::UNION);
     CHKERRQ_MOAB(rval);
-    rval = m_field.get_moab().get_adjacencies(
-        edge_tets, dd, false, adj_mother_ents, moab::Interface::UNION);
-    CHKERRQ_MOAB(rval);
+    // rval = m_field.get_moab().get_adjacencies(
+    //     edge_tets, dd, false, adj_mother_ents, moab::Interface::UNION);
+    // CHKERRQ_MOAB(rval);
   }
   if(tets_ptr) {
     Range adj;
@@ -295,6 +295,7 @@ PetscErrorCode NodeMergerInterface::mergeNodes(
     CHKERRQ(rval);
     adj_mother_ents = intersect(adj_mother_ents,adj);
   }
+  adj_mother_ents.erase(common_edge[0]);
   for (Range::iterator eit = adj_mother_ents.begin();
        eit != adj_mother_ents.end(); eit++) {
     const EntityHandle *conn;
@@ -325,7 +326,7 @@ PetscErrorCode NodeMergerInterface::mergeNodes(
       }
       FaceMapIdx::iterator fit = face_map.find(boost::make_tuple(n0, n1));
       if (fit == face_map.end()) {
-        continue;
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Entity not found");
       }
       const EntityHandle child = fit->e;
       const EntityHandle parent = *eit;
