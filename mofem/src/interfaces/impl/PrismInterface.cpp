@@ -742,8 +742,8 @@ PetscErrorCode PrismInterface::splitSides(
   //ref_ent_by_composite &by_composite = refinedEntities.get<Composite_ParentEnt_And_EntType_mi_tag>();
   //create new 3d ents on "father" side
   Range new_3d_ents;
-  Range::iterator eit3d = side_ents3d.begin();
-  for(;eit3d!=side_ents3d.end();eit3d++) {
+  for (Range::iterator eit3d = side_ents3d.begin(); eit3d != side_ents3d.end();
+       eit3d++) {
     RefEntsByEntType::iterator miit_ref_ent = ref_ents_by_type.find(*eit3d);
     if(miit_ref_ent==ref_ents_by_type.end()) {
       SETERRQ(m_field.get_comm(), MOFEM_OPERATION_UNSUCCESSFUL,
@@ -926,8 +926,7 @@ PetscErrorCode PrismInterface::splitSides(
   CHKERRQ_MOAB(rval);
   ents.insert(triangles.begin(),triangles.end());
   Range new_ents_in_database; //this range contains all new entities
-  Range::iterator eit = ents.begin();
-  for(;eit!=ents.end();eit++) {
+  for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {
     int num_nodes;
     const EntityHandle* conn;
     rval = moab.get_connectivity(*eit, conn, num_nodes, true);
@@ -1073,8 +1072,8 @@ PetscErrorCode PrismInterface::splitSides(
   //subtract entities already added to mofem database
   side_adj_faces_and_edges =
       subtract(side_adj_faces_and_edges, new_ents_in_database);
-  eit = side_adj_faces_and_edges.begin();
-  for(;eit!=side_adj_faces_and_edges.end();eit++) {
+  for (Range::iterator eit = side_adj_faces_and_edges.begin();
+       eit != side_adj_faces_and_edges.end(); eit++) {
     int num_nodes;
     const EntityHandle* conn;
     rval = moab.get_connectivity(*eit, conn, num_nodes, true);
