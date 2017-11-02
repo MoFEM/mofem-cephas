@@ -156,14 +156,14 @@ struct PrismInterface: public UnknownInterface {
 
 }
 
-/***************************************************************************//**
- * \defgroup mofem_prism_interface Prism interface
- * \brief Make interface between faces
- *
- * Make interface between faces (surface) and put in between prism element
- *
- * \ingroup mofem
- ******************************************************************************/
-
+/***************************************************************************/ /**
+  * \defgroup mofem_prism_interface PrismInterface
+  * \brief Make interface between faces
+  *
+  * Make interface between faces (surface) and put in between prism element if
+  *needed. 
+  *
+  * \ingroup mofem
+  ******************************************************************************/
 
 #endif // __PRISMINTERFACE_HPP__
