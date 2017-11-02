@@ -780,25 +780,10 @@ PetscErrorCode PrismInterface::splitSides(
         new_conn[ii] = conn[ii];
       }
     }
-    if(nb_new_conn==0) {
-      if (verb >= VERY_VERBOSE) {
-        EntityHandle meshset_error_out;
-        rval = moab.create_meshset(MESHSET_SET | MESHSET_TRACK_OWNER,
-                                   meshset_error_out);
-        CHKERRQ_MOAB(rval);
-        rval = moab.add_entities(meshset_error_out, &*eit3d, 1);
-        CHKERRQ_MOAB(rval);
-        ierr = moab.write_file("error.vtk", "VTK", "", &meshset_error_out, 1);
-        CHKERRQ(ierr);
-        rval = moab.delete_entities(&meshset_error_out, 1);
-        CHKERRQ_MOAB(rval);
-      }
-      SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-               "In side_ent3 is a tet which has no common node with interface. "
-               "This is could be effect when three nodes of split surface are "
-               "on front, i.e. infernal skin in the body. "
-               "See error.vtk for details if (verb >= VERY_VERBOSE).",
-               num_nodes);
+    if (nb_new_conn == 0) {
+      // Add this tet to bit ref level
+      rval = moab.add_entities(meshset_for_bit_level, &*eit3d, 1);
+      continue;
     }
 
     const RefElement_multiIndex *refined_finite_elements_ptr;
