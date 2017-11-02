@@ -193,11 +193,11 @@ private:
   );
 
   /**
-   * \brief Use bisecion method to finde point of edge collapse
+   * \brief Use bisection method to find point of edge collapse
    * @param  check_tests range of tets to check quality
    * @param  father      first node of the edge
    * @param  mother      second node of the edge
-   * @param  line_search numbet of iterations
+   * @param  line_search number of iterations
    * @param  coords_move node to move
    * @return             error code
    */
