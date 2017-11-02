@@ -240,7 +240,7 @@ private:
 
 /***************************************************************************//**
  * \defgroup mofem_node_merger NodeMerger
- * \brief Interface for node merger
+ * \brief Node merger interface
  *
  * \ingroup mofem
  ******************************************************************************/
