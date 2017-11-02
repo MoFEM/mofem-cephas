@@ -436,7 +436,7 @@ namespace MoFEM {
 
 
 /***************************************************************************//**
- * \defgroup mofem_bit_ref BitRefLevels manager
+ * \defgroup mofem_bit_ref BitRefManager
  * \brief Managing BitRefLevels
  *
  * \ingroup mofem
