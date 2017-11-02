@@ -271,6 +271,7 @@ PetscErrorCode PrismInterface::getSides(const EntityHandle sideset,
   side_ents3d.insert(*ents3d.begin());
   Range side_ents3d_tris_on_surface;
 
+  // get all tets adjacent to crack surface, but only on one side of it
   do {
 
     do {
@@ -307,7 +308,8 @@ PetscErrorCode PrismInterface::getSides(const EntityHandle sideset,
     ); CHKERRQ_MOAB(rval);
     side_ents3d_tris_on_surface = intersect(side_ents3d_tris,triangles);
 
-    // This is a case when separate sub-domains are split
+    // This is a case when separate sub-domains are split, so wee need additional
+    // tetrahedron for seed process
     if (side_ents3d_tris_on_surface.size() != triangles.size()) {
       Range left_triangles = subtract(triangles,side_ents3d_tris_on_surface);
       Range tets;
@@ -340,7 +342,7 @@ PetscErrorCode PrismInterface::getSides(const EntityHandle sideset,
   if(ents3d_with_prisms.size() == side_ents3d.size()) {
     SETERRQ(
       m_field.get_comm(),MOFEM_DATA_INCONSISTENCY,
-      "all tets on one side, no-interface"
+      "All tets on one side, no-interface"
     );
   }
   //other side ents
