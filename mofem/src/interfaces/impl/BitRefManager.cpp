@@ -59,7 +59,7 @@ PetscErrorCode BitRefManager::setBitRefLevel(const Range &ents,
     struct Tool {
 
       const BitRefLevel &bIt;                          ///< bit to set
-      const RefEntity_multiIndex *refEntsPtr;          ///< access to databse
+      const RefEntity_multiIndex *refEntsPtr;          ///< access to database
       boost::shared_ptr<BasicEntityData> &baseEntData; ///< base entity data
 
       /// constrictor
@@ -68,7 +68,7 @@ PetscErrorCode BitRefManager::setBitRefLevel(const Range &ents,
           : bIt(bit), refEntsPtr(ref_ents_ptr),
             baseEntData(m_field.get_basic_entity_data_ptr()) {}
 
-      /// find entities and change entity bit if in databse
+      /// find entities and change entity bit if in database
       PetscErrorCode
       findEntsToAdd(EntityHandle f, EntityHandle s,
                     std::vector<EntityHandle> &seed_ents_vec,
@@ -79,17 +79,17 @@ PetscErrorCode BitRefManager::setBitRefLevel(const Range &ents,
         // get lower bound of multi-index
         rit = refEntsPtr->lower_bound(f);
         if (rit == refEntsPtr->end()) {
-          // all enties in range are added to databse
+          // all enties in range are added to database
           seed_ents_vec.reserve(s - f + 1);
           for (; f <= s; f++) {
             seed_ents_vec.push_back(f);
           }
         } else {
-          // some entities from range are in databse
+          // some entities from range are in database
           hi_rit = refEntsPtr->upper_bound(s);
           for (; f <= s; f++) {
             if (f == rit->get()->getRefEnt()) {
-              // entitity is in databse, change bit levele only
+              // entity is in database, change bit level only
               bool success = const_cast<RefEntity_multiIndex *>(refEntsPtr)
                                  ->modify(rit, RefEntity_change_add_bit(bIt));
               if (!success) {
@@ -101,16 +101,16 @@ PetscErrorCode BitRefManager::setBitRefLevel(const Range &ents,
               }
               rit++; // move to next one
               if (rit == hi_rit) {
-                // break loop, rest of the enetities in range are not in databse
+                // break loop, rest of the entities in range are not in database
                 break;
               }
             } else {
-              // this entitity added to databse
+              // this entities added to database
               seed_ents_vec.push_back(f);
             }
           }
-          // add rest entitites to vector of entitites going to be added to
-          // databse
+          // add rest entities to vector of entities going to be added to
+          // database
           for (; f <= s; f++) {
             seed_ents_vec.push_back(f);
           }
@@ -118,17 +118,17 @@ PetscErrorCode BitRefManager::setBitRefLevel(const Range &ents,
         MoFEMFunctionReturnHot(0);
       }
 
-      /// add entities to databse
+      /// add entities to database
       PetscErrorCode
       addToDatabase(std::vector<EntityHandle> &seed_ents_vec,
                     std::vector<boost::shared_ptr<RefEntity> >
                         *shared_ref_ents_vec_for_fe = NULL) const {
         MoFEMFunctionBeginHot;
-        // add entitites to databse
+        // add entities to database
         boost::shared_ptr<std::vector<RefEntity> > ref_ents_vec =
             boost::make_shared<std::vector<RefEntity> >();
         ref_ents_vec->reserve(seed_ents_vec.size());
-        // create ref entitity instances
+        // create ref entity instances
         for (std::vector<EntityHandle>::const_iterator vit =
                  seed_ents_vec.begin();
              vit != seed_ents_vec.end(); vit++) {
@@ -137,7 +137,7 @@ PetscErrorCode BitRefManager::setBitRefLevel(const Range &ents,
         }
         std::vector<boost::shared_ptr<RefEntity> > shared_ref_ents_vec;
         shared_ref_ents_vec.reserve(ref_ents_vec->size());
-        // create aliased shared pointers to ref entitity instances
+        // create aliased shared pointers to ref entity instances
         for (std::vector<RefEntity>::iterator vit = ref_ents_vec->begin();
              vit != ref_ents_vec->end(); vit++) {
           shared_ref_ents_vec.push_back(
@@ -148,7 +148,7 @@ PetscErrorCode BitRefManager::setBitRefLevel(const Range &ents,
                                              shared_ref_ents_vec.begin(),
                                              shared_ref_ents_vec.end());
         }
-        // add shared pointers to databse
+        // add shared pointers to database
         const_cast<RefEntity_multiIndex *>(refEntsPtr)
             ->insert(shared_ref_ents_vec.begin(), shared_ref_ents_vec.end());
         MoFEMFunctionReturnHot(0);
@@ -264,6 +264,19 @@ PetscErrorCode BitRefManager::setBitRefLevel(const Range &ents,
   } catch (MoFEMException const &e) {
     SETERRQ(m_field.get_comm(), e.errorCode, e.errorMessage);
   }
+  MoFEMFunctionReturnHot(0);
+}
+
+PetscErrorCode BitRefManager::addToDatabaseBitRefLevelByType(
+    const EntityType type, const BitRefLevel &bit, const bool only_tets,
+    int verb) const {
+  MoFEMFunctionBeginHot;
+  Range ents;
+  ierr = getEntitiesByTypeAndRefLevel(bit, BitRefLevel().set(), type, ents);
+  CHKERRQ(ierr);
+  // Add bit ref level to database
+  ierr = setBitRefLevel(ents, bit);
+  CHKERRQ(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -685,17 +698,17 @@ PetscErrorCode BitRefManager::getEntitiesNotInDatabase(Range &ents) const {
 }
 
 PetscErrorCode
-BitRefManager::getAdjacenciesEquality(const EntityHandle from_entiti,
+BitRefManager::getAdjacenciesEquality(const EntityHandle from_entity,
                                       const int to_dimension,
                                       Range &adj_entities) const {
   MoFEM::Interface &m_field = cOre;
   moab::Interface &moab(m_field.get_moab());
   MoFEMFunctionBeginHot;
-  RefEntity from_ref_entiti(m_field.get_basic_entity_data_ptr(), from_entiti);
+  RefEntity from_ref_entity(m_field.get_basic_entity_data_ptr(), from_entity);
   // std::cerr << "from:\n";
-  // std::cerr << from_ref_entiti << std::endl;
+  // std::cerr << from_ref_entity << std::endl;
   rval =
-      moab.get_adjacencies(&from_entiti, 1, to_dimension, false, adj_entities);
+      moab.get_adjacencies(&from_entity, 1, to_dimension, false, adj_entities);
   CHKERRQ_MOAB(rval);
   std::vector<BitRefLevel> bit_levels(adj_entities.size());
   rval = moab.tag_get_data(cOre.get_th_RefBitLevel(), adj_entities,
@@ -705,10 +718,10 @@ BitRefManager::getAdjacenciesEquality(const EntityHandle from_entiti,
   Range::iterator eit = adj_entities.begin();
   // std::cerr << "to:\n";
   for (; eit != adj_entities.end(); b_it++) {
-    // RefEntity adj_entiti(moab,*eit);
-    // std::cerr << "\t" << adj_entiti << std::endl;
-    if (from_ref_entiti.getBitRefLevel() !=
-        *b_it /*adj_entiti.getBitRefLevel()*/) {
+    // RefEntity adj_entity(moab,*eit);
+    // std::cerr << "\t" << adj_entity << std::endl;
+    if (from_ref_entity.getBitRefLevel() !=
+        *b_it /*adj_entity.getBitRefLevel()*/) {
       eit = adj_entities.erase(eit);
     } else {
       eit++;
@@ -720,17 +733,17 @@ BitRefManager::getAdjacenciesEquality(const EntityHandle from_entiti,
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode BitRefManager::getAdjacenciesAny(const EntityHandle from_entiti,
+PetscErrorCode BitRefManager::getAdjacenciesAny(const EntityHandle from_entity,
                                                 const int to_dimension,
                                                 Range &adj_entities) const {
   MoFEM::Interface &m_field = cOre;
   moab::Interface &moab(m_field.get_moab());
   MoFEMFunctionBeginHot;
-  RefEntity from_ref_entiti(m_field.get_basic_entity_data_ptr(), from_entiti);
+  RefEntity from_ref_entity(m_field.get_basic_entity_data_ptr(), from_entity);
   // std::cerr << "from:\n";
-  // std::cerr << from_ref_entiti << std::endl;
+  // std::cerr << from_ref_entity << std::endl;
   rval =
-      moab.get_adjacencies(&from_entiti, 1, to_dimension, false, adj_entities);
+      moab.get_adjacencies(&from_entity, 1, to_dimension, false, adj_entities);
   CHKERRQ_MOAB(rval);
   std::vector<BitRefLevel> bit_levels(adj_entities.size());
   rval = moab.tag_get_data(cOre.get_th_RefBitLevel(), adj_entities,
@@ -739,10 +752,10 @@ PetscErrorCode BitRefManager::getAdjacenciesAny(const EntityHandle from_entiti,
   Range::iterator eit = adj_entities.begin();
   // std::cerr << "to:\n";
   for (; eit != adj_entities.end(); b_it++) {
-    // RefEntity adj_entiti(moab,*eit);
-    // std::cerr << "\t" << adj_entiti << std::endl;
-    if (!(from_ref_entiti.getBitRefLevel() & (*b_it))
-             .any() /*adj_entiti.getBitRefLevel()).any()*/) {
+    // RefEntity adj_entity(moab,*eit);
+    // std::cerr << "\t" << adj_entity << std::endl;
+    if (!(from_ref_entity.getBitRefLevel() & (*b_it))
+             .any() /*adj_entity.getBitRefLevel()).any()*/) {
       eit = adj_entities.erase(eit);
     } else {
       eit++;
@@ -756,11 +769,11 @@ PetscErrorCode BitRefManager::getAdjacenciesAny(const EntityHandle from_entiti,
 
 PetscErrorCode BitRefManager::getAdjacencies(
     const Problem *problem_ptr, const EntityHandle *from_entities,
-    const int num_netities, const int to_dimension, Range &adj_entities,
+    const int num_entities, const int to_dimension, Range &adj_entities,
     const int operation_type, const int verb) const {
   MoFEMFunctionBeginHot;
   BitRefLevel bit = problem_ptr->getBitRefLevel();
-  ierr = getAdjacencies(bit, from_entities, num_netities, to_dimension,
+  ierr = getAdjacencies(bit, from_entities, num_entities, to_dimension,
                         adj_entities, operation_type);
   CHKERRQ(ierr);
   MoFEMFunctionReturnHot(0);
@@ -768,7 +781,7 @@ PetscErrorCode BitRefManager::getAdjacencies(
 
 PetscErrorCode BitRefManager::getAdjacencies(
     const BitRefLevel &bit, const EntityHandle *from_entities,
-    const int num_netities, const int to_dimension, Range &adj_entities,
+    const int num_entities, const int to_dimension, Range &adj_entities,
     const int operation_type, const int verb) const {
   MoFEM::Interface &m_field = cOre;
   moab::Interface &moab(m_field.get_moab());
@@ -778,7 +791,7 @@ PetscErrorCode BitRefManager::getAdjacencies(
     ss << "from: " << bit << std::endl << "to: " << std::endl;
     PetscPrintf(m_field.get_comm(), ss.str().c_str());
   }
-  rval = moab.get_adjacencies(from_entities, num_netities, to_dimension, false,
+  rval = moab.get_adjacencies(from_entities, num_entities, to_dimension, false,
                               adj_entities, operation_type);
   CHKERRQ_MOAB(rval);
   std::vector<BitRefLevel> bit_levels(adj_entities.size());
@@ -790,9 +803,9 @@ PetscErrorCode BitRefManager::getAdjacencies(
   // std::cerr << "to:\n";
   for (; eit != adj_entities.end(); b_it++) {
     if (verb > 0) {
-      RefEntity adj_entiti(m_field.get_basic_entity_data_ptr(), *eit);
+      RefEntity adj_entity(m_field.get_basic_entity_data_ptr(), *eit);
       std::ostringstream ss;
-      ss << "\t" << adj_entiti << std::endl;
+      ss << "\t" << adj_entity << std::endl;
       PetscPrintf(m_field.get_comm(), ss.str().c_str());
     }
     if (!((*b_it) & bit).any()) {

@@ -90,6 +90,11 @@ namespace MoFEM {
                                   const bool only_tets = true,
                                   int verb = 0) const;
 
+    PetscErrorCode addToDatabaseBitRefLevelByType(const EntityType type,
+                                                  const BitRefLevel &bit,
+                                                  const bool only_tets = true,
+                                                  int verb = 0) const;
+
     PetscErrorCode setBitRefLevelByDim(const EntityHandle meshset,
                                        const int dim, const BitRefLevel &bit,
                                        int verb = 0) const;
