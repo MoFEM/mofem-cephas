@@ -990,19 +990,19 @@ MeshsetsManager::query_interface(const MOFEMuuid &uuid,
     for (_IT_CUBITMESHSETS_FOR_LOOP_((*this), iit)) {
       EntityHandle meshset = iit->getMeshset();
       ierr = bit_mng->updateMeshsetByEntitiesChildren(meshset, bit, meshset,
-                                                      MBPRISM, true);
-      CHKERRQ(ierr);
-      ierr = bit_mng->updateMeshsetByEntitiesChildren(meshset, bit, meshset,
-                                                      MBTET, true);
-      CHKERRQ(ierr);
-      ierr = bit_mng->updateMeshsetByEntitiesChildren(meshset, bit, meshset,
-                                                      MBTRI, true);
+                                                      MBVERTEX, true);
       CHKERRQ(ierr);
       ierr = bit_mng->updateMeshsetByEntitiesChildren(meshset, bit, meshset,
                                                       MBEDGE, true);
       CHKERRQ(ierr);
       ierr = bit_mng->updateMeshsetByEntitiesChildren(meshset, bit, meshset,
-                                                      MBVERTEX, true);
+                                                      MBTRI, true);
+      CHKERRQ(ierr);
+      ierr = bit_mng->updateMeshsetByEntitiesChildren(meshset, bit, meshset,
+                                                      MBTET, true);
+      CHKERRQ(ierr);
+      ierr = bit_mng->updateMeshsetByEntitiesChildren(meshset, bit, meshset,
+                                                      MBPRISM, true);
       CHKERRQ(ierr);
     }
     MoFEMFunctionReturn(0);
