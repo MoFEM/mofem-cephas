@@ -248,6 +248,7 @@ struct CutMeshInterface : public UnknownInterface {
                                const BitRefLevel bit, const Range &surface,
                                const Range &fixed_edges,
                                const Range &corner_nodes, Tag th = NULL,
+                                const bool update_meshsets = false,
                                const bool debug = false);
 
 #ifdef WITH_TETGEN

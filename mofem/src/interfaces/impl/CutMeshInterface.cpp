@@ -256,9 +256,9 @@ PetscErrorCode CutMeshInterface::cutTrimAndMerge(
     CHKERRQ(ierr);
   }
 
-  ierr =
-      mergeBadEdges(fraction_level, bit_level2, bit_level1, bit_level3,
-                    getNewTrimSurfaces(), fixed_edges, corner_nodes, th, debug);
+  ierr = mergeBadEdges(fraction_level, bit_level2, bit_level1, bit_level3,
+                       getNewTrimSurfaces(), fixed_edges, corner_nodes, th,
+                       update_meshsets, debug);
   CHKERRQ(ierr);
   ierr = removePathologicalFrontTris(bit_level3,
                                      const_cast<Range &>(getMergedSurfaces()));
@@ -270,7 +270,7 @@ PetscErrorCode CutMeshInterface::cutTrimAndMerge(
         "");
     CHKERRQ(ierr);
     ierr = cOre.getInterface<BitRefManager>()->writeEntitiesNotInDatabase(
-        "cut_trim_merge_ents_not_in_databse.vtk", "VTK", "");
+        "cut_trim_merge_ents_not_in_database.vtk", "VTK", "");
     CHKERRQ(ierr);
   }
 
@@ -280,10 +280,7 @@ PetscErrorCode CutMeshInterface::cutTrimAndMerge(
   ierr = cOre.getInterface<BitRefManager>()->updateRange(corner_nodes,
                                                          corner_nodes);
   CHKERRQ(ierr);
-  if (update_meshsets) {
-    ierr = UpdateMeshsets()(cOre, bit_level3);
-    CHKERRQ(ierr);
-  }
+
   MoFEMFunctionReturnHot(0);
 }
 
@@ -1141,16 +1138,15 @@ PetscErrorCode CutMeshInterface::mergeBadEdges(
         not_merged_edges.merge(not_merged_child_edge_ents);
 
         if (updateMehsets) {
-          Range child_ents;
+          
           for (_IT_CUBITMESHSETS_FOR_LOOP_(
                    (*mField.getInterface<MeshsetsManager>()), cubit_it)) {
             EntityHandle cubit_meshset = cubit_it->meshset;
             Range parent_ents;
-            child_ents.clear();
             rval =
                 moab.get_entities_by_handle(cubit_meshset, parent_ents, true);
             CHKERRQ_MOAB(rval);
-            parent_ents = intersect(parent_ents, child_ents);
+            Range child_ents;
             ierr =
                 updateRangeByChilds(parent_child_map, parent_ents, child_ents);
             CHKERRQ(ierr);
@@ -1721,7 +1717,7 @@ PetscErrorCode CutMeshInterface::mergeBadEdges(
     const int fraction_level, const BitRefLevel trim_bit,
     const BitRefLevel cut_bit, const BitRefLevel bit, const Range &surface,
     const Range &fixed_edges, const Range &corner_nodes, Tag th,
-    const bool debug) {
+    const bool update_meshsets, const bool debug) {
   MoFEM::CoreInterface &m_field = cOre;
   MoFEMFunctionBeginHot;
   Range tets_level;
@@ -1744,7 +1740,7 @@ PetscErrorCode CutMeshInterface::mergeBadEdges(
   Range out_new_tets, out_new_surf;
   ierr = mergeBadEdges(fraction_level, tets_level, surface, fixed_edges,
                        corner_nodes, edges_to_merge, out_new_tets, out_new_surf,
-                       th, true, &bit, debug);
+                       th, update_meshsets, &bit, debug);
   CHKERRQ(ierr);
 
   // get all entities not in database after merge
@@ -1755,6 +1751,13 @@ PetscErrorCode CutMeshInterface::mergeBadEdges(
   // delete hanging entities
   all_ents_not_in_database_after =
       subtract(all_ents_not_in_database_after, all_ents_not_in_database_before);
+
+  for (_IT_CUBITMESHSETS_FOR_LOOP_((cOre.getInterface<MeshsetsManager&,0>()),
+                                   cubit_it)) {
+    rval = m_field.get_moab().remove_entities(cubit_it->getMeshset(),
+                                       all_ents_not_in_database_after);
+    CHKERRQ_MOAB(rval);
+  }
   m_field.get_moab().delete_entities(all_ents_not_in_database_after);
 
   mergedVolumes.swap(out_new_tets);
