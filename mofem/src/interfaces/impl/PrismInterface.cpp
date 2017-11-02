@@ -300,6 +300,21 @@ PetscErrorCode PrismInterface::getSides(const EntityHandle sideset,
         PetscPrintf(m_field.get_comm(), "adj_ents3d %u\n", adj_ents3d.size());
       //add tets to side
       side_ents3d.insert(adj_ents3d.begin(),adj_ents3d.end());
+      if (verb >= VERY_NOISY) {
+        EntityHandle out_meshset;
+        rval =
+            moab.create_meshset(MESHSET_SET | MESHSET_TRACK_OWNER, out_meshset);
+        CHKERRQ_MOAB(rval);
+        rval = moab.add_entities(out_meshset,side_ents3d);
+        CHKERRQ_MOAB(rval);
+        std::string file = "side_ents3d_" +
+                           boost::lexical_cast<std::string>(nb_side_ents3d) +
+                           ".vtk";
+        rval = moab.write_file(file.c_str(), "VTK", "", &out_meshset, 1);
+        CHKERRQ_MOAB(rval);
+        rval = moab.delete_entities(&out_meshset, 1);
+        CHKERRQ_MOAB(rval);
+      }
     } while (nb_side_ents3d != side_ents3d.size());
 
     Range side_ents3d_tris;
@@ -308,25 +323,48 @@ PetscErrorCode PrismInterface::getSides(const EntityHandle sideset,
     ); CHKERRQ_MOAB(rval);
     side_ents3d_tris_on_surface = intersect(side_ents3d_tris,triangles);
 
-    // This is a case when separate sub-domains are split, so wee need additional
-    // tetrahedron for seed process
+    if (verb >= VERY_NOISY) {
+      Range left_triangles = subtract(triangles, side_ents3d_tris_on_surface);
+      if(!left_triangles.empty()) {
+        EntityHandle out_meshset;
+        rval =
+            moab.create_meshset(MESHSET_SET | MESHSET_TRACK_OWNER, out_meshset);
+        CHKERRQ_MOAB(rval);
+        rval = moab.add_entities(out_meshset, left_triangles);
+        CHKERRQ_MOAB(rval);
+        std::string file = "left_triangles_" +
+                           boost::lexical_cast<std::string>(nb_side_ents3d) +
+                           ".vtk";
+        rval = moab.write_file(file.c_str(), "VTK", "", &out_meshset, 1);
+        CHKERRQ_MOAB(rval);
+        rval = moab.delete_entities(&out_meshset, 1);
+        CHKERRQ_MOAB(rval);
+      }
+    }
+
+      // This is a case when separate sub-domains are split, so wee need
+      // additional
+      // tetrahedron for seed process
     if (side_ents3d_tris_on_surface.size() != triangles.size()) {
-      Range left_triangles = subtract(triangles,side_ents3d_tris_on_surface);
+      Range left_triangles = subtract(triangles, side_ents3d_tris_on_surface);
       Range tets;
       rval = moab.get_adjacencies(&*left_triangles.begin(), 1, 3, false, tets);
       CHKERRQ_MOAB(rval);
-      tets = intersect(tets,ents3d_with_prisms);
-      if(tets.empty()) {
+      tets = intersect(tets, ents3d_with_prisms);
+      if (tets.empty()) {
         Range left_triangles_nodes;
         rval = moab.get_connectivity(&*left_triangles.begin(), 1,
                                      left_triangles_nodes, true);
         CHKERRQ(ierr);
         EntityHandle meshset;
-        rval = moab.create_meshset(MESHSET_SET,meshset); CHKERRQ_MOAB(rval);
-        rval = moab.add_entities(meshset,left_triangles); CHKERRQ_MOAB(rval);
+        rval = moab.create_meshset(MESHSET_SET, meshset);
+        CHKERRQ_MOAB(rval);
+        rval = moab.add_entities(meshset, left_triangles);
+        CHKERRQ_MOAB(rval);
         rval = moab.write_file("error.vtk", "VTK", "", &meshset, 1);
         CHKERRQ_MOAB(rval);
-        rval = moab.delete_entities(&meshset,1); CHKERRQ_MOAB(rval);
+        rval = moab.delete_entities(&meshset, 1);
+        CHKERRQ_MOAB(rval);
         SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
                 "Not all faces on surface going to be split, see error.vtk for "
                 "problematic triangle. "
@@ -335,7 +373,7 @@ PetscErrorCode PrismInterface::getSides(const EntityHandle sideset,
                 "has three nodes front.");
       }
       side_ents3d.insert(*tets.begin());
-    }
+      }
 
   } while (side_ents3d_tris_on_surface.size()!=triangles.size());
 
@@ -783,6 +821,7 @@ PetscErrorCode PrismInterface::splitSides(
     if (nb_new_conn == 0) {
       // Add this tet to bit ref level
       rval = moab.add_entities(meshset_for_bit_level, &*eit3d, 1);
+      rval = moab.add_entities(meshset_for_bit_level, conn, num_nodes);
       continue;
     }
 
