@@ -206,27 +206,32 @@ PetscErrorCode PrismInterface::getSides(const EntityHandle sideset,
   // Add tets adjacent to front and triangle which has all nodes on crack front
   struct FindTrianglesOnFrontAndAdjacentTet {
     static PetscErrorCode fUN(moab::Interface &moab, const Range &triangles,
-                              const Range &skin_nodes_boundary,
-                              const Range &skin_edges_boundary,
+                              const Range &skin_nodes_boundary, ///< nodes on front
+                              const Range &skin_edges_boundary, ///< edges on front
                               Range &ents3d_with_prisms) {
       MoFEMFunctionBeginHot;
+      // get all triangles adjacent to front
       Range skin_nodes_boundary_tris;
       rval = moab.get_adjacencies(skin_nodes_boundary, 2, false,
                                   skin_nodes_boundary_tris,
                                   moab::Interface::UNION);
       CHKERRQ(ierr);
+      // get nodes of triangles adjacent to front nodes
       Range skin_nodes_boundary_tris_nodes;
       rval = moab.get_connectivity(skin_nodes_boundary_tris,
                                    skin_nodes_boundary_tris_nodes, true);
       CHKERRQ_MOAB(rval);
+      // get hanging nodes, i.e. nodes which are not on the front but adjacent
+      // to triangles adjacent to crack front
       skin_nodes_boundary_tris_nodes =
           subtract(skin_nodes_boundary_tris_nodes, skin_nodes_boundary);
+      // get triangles adjacent to hanging nodes
       Range skin_nodes_boundary_tris_nodes_tris;
       rval = moab.get_adjacencies(skin_nodes_boundary_tris_nodes, 2, false,
                                   skin_nodes_boundary_tris_nodes_tris,
                                   moab::Interface::UNION);
       CHKERRQ(ierr);
-      // Triangle which has tree nodes on front boundary
+      // triangles which have tree nodes on front boundary
       skin_nodes_boundary_tris =
           intersect(triangles, subtract(skin_nodes_boundary_tris,
                                         skin_nodes_boundary_tris_nodes_tris));
