@@ -679,7 +679,7 @@ int main(int argc, char *argv[]) {
       ierr = post_proc.addFieldValuesGradientPostProc("DISPLACEMENT"); CHKERRQ(ierr);
       //add postpocessing for sresses
       post_proc.getOpPtrVector().push_back(
-        new PostPorcHookStress(
+        new PostProcHookStress(
           m_field,
           post_proc.postProcMesh,
           post_proc.mapGaussPts,

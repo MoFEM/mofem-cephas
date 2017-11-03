@@ -93,7 +93,7 @@ int main(int argc, char *argv[]) {
     ierr = m_field.set_field_order(root_set,MBVERTEX,"DISP",1); CHKERRQ(ierr);
 
     ThermalStressElement thermal_stress_elem(m_field);
-    ierr = thermal_stress_elem.addThermalSterssElement("ELAS","DISP","TEMP"); CHKERRQ(ierr);
+    ierr = thermal_stress_elem.addThermalStressElement("ELAS","DISP","TEMP"); CHKERRQ(ierr);
     ierr = m_field.modify_problem_add_finite_element("PROB","ELAS"); CHKERRQ(ierr);
 
     /****/

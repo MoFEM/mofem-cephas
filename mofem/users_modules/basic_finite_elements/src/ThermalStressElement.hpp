@@ -183,7 +183,7 @@ struct ThermalStressElement {
 
   };
 
-  PetscErrorCode addThermalSterssElement(
+  PetscErrorCode addThermalStressElement(
     const std::string fe_name,const std::string field_name,const std::string thermal_field_name,
     const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS"
   ) {
@@ -217,6 +217,15 @@ struct ThermalStressElement {
       }
     }
     MoFEMFunctionReturnHot(0);
+  }
+
+  /// \depracted Do not use this fiction with spelling mistake
+  DEPRECATED inline PetscErrorCode addThermalSterssElement(
+    const std::string fe_name,const std::string field_name,const std::string thermal_field_name,
+    const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS"
+  ) {
+    return addThermalStressElement(fe_name, field_name, thermal_field_name,
+                                   mesh_nodals_positions);
   }
 
   PetscErrorCode setThermalStressRhsOperators(string field_name,string thermal_field_name,Vec &F,int verb = 0) {

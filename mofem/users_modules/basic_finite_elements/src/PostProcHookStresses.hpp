@@ -1,6 +1,6 @@
 /**
- * \file PostPorcHookStress.hpp
- * \brief Post-proc stresses for linear Hooke'e isotropic material
+ * \file PostProcHookStress.hpp
+ * \brief Post-proc stresses for linear Hooke isotropic material
  *
  * \ingroup nonlinear_elastic_elem
  */
@@ -20,7 +20,7 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 /**
- * \brief Operator post-procesing stresses for Hook'e isotropic material
+ * \brief Operator post-procesing stresses for Hook isotropic material
 
  * Example how to use it
 
@@ -31,9 +31,9 @@
    ierr = post_proc.addFieldValuesPostProc("DISPLACEMENT"); CHKERRQ(ierr);
    ierr = post_proc.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
    ierr = post_proc.addFieldValuesGradientPostProc("DISPLACEMENT"); CHKERRQ(ierr);
-   //add postpocessing for sresses
+   //add postprocessing for stresses
    post_proc.getOpPtrVector().push_back(
-     new PostPorcHookStress(
+     new PostProcHookStress(
        m_field,
        post_proc.postProcMesh,
        post_proc.mapGaussPts,
@@ -49,7 +49,7 @@
  \endcode
 
  */
-struct PostPorcHookStress: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
+struct PostProcHookStress: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
 
   MoFEM::Interface& mField;
   moab::Interface &postProcMesh;
@@ -65,7 +65,7 @@ struct PostPorcHookStress: public MoFEM::VolumeElementForcesAndSourcesCore::User
   /**
    * Constructor
    */
-  PostPorcHookStress(
+  PostProcHookStress(
     MoFEM::Interface& m_field,
     moab::Interface& post_proc_mesh,
     std::vector<EntityHandle> &map_gauss_pts,
@@ -94,7 +94,7 @@ struct PostPorcHookStress: public MoFEM::VolumeElementForcesAndSourcesCore::User
    * use data how are set for elastic element operators.
 
    * @param  _lambda   elastic material constant
-   * @param  _mu       elastci material constant
+   * @param  _mu       elastic material constant
    * @param  _block_id  block id
    * @return           error code
 
@@ -285,3 +285,6 @@ struct PostPorcHookStress: public MoFEM::VolumeElementForcesAndSourcesCore::User
   }
 
 };
+
+/// \deprecated Class name with spelling mistake
+DEPRECATED typedef PostProcHookStress PostPorcHookStress;
