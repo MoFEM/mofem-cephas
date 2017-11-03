@@ -40,7 +40,7 @@ struct CreateRowComressedADJMatrix: public Core {
 
     */
   template<typename TAG>
-  PetscErrorCode createMatArrays(
+  MoFEMErrorCode createMatArrays(
     ProblemsByName::iterator p_miit,
     const MatType type,
     std::vector<PetscInt> &i,std::vector<PetscInt> &j,
@@ -48,7 +48,7 @@ struct CreateRowComressedADJMatrix: public Core {
   );
 
   template<typename TAG>
-  PetscErrorCode createMat(
+  MoFEMErrorCode createMat(
     const std::string &name,Mat *M,const MatType type,
     PetscInt **_i,PetscInt **_j,PetscScalar **_v,
     const bool no_diagonals = true,int verb = -1
@@ -57,7 +57,7 @@ struct CreateRowComressedADJMatrix: public Core {
   /** \brief Get element adjacencies
     */
   template<typename TAG>
-  PetscErrorCode getEntityAdjacenies(
+  MoFEMErrorCode getEntityAdjacenies(
     ProblemsByName::iterator p_miit,
     typename boost::multi_index::index<
       NumeredDofEntity_multiIndex,TAG
@@ -67,7 +67,7 @@ struct CreateRowComressedADJMatrix: public Core {
     int verb
   );
 
-  PetscErrorCode buildFECol(
+  MoFEMErrorCode buildFECol(
     ProblemsByName::iterator p_miit,
     boost::shared_ptr<EntFiniteElement> ent_fe_ptr,
     bool do_cols_prob,
@@ -76,7 +76,7 @@ struct CreateRowComressedADJMatrix: public Core {
 
 };
 
-PetscErrorCode CreateRowComressedADJMatrix::buildFECol(
+MoFEMErrorCode CreateRowComressedADJMatrix::buildFECol(
   ProblemsByName::iterator p_miit,
   boost::shared_ptr<EntFiniteElement> ent_fe_ptr,
   bool do_cols_prob,
@@ -175,7 +175,7 @@ PetscErrorCode CreateRowComressedADJMatrix::buildFECol(
 }
 
 template<typename TAG>
-PetscErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
+MoFEMErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
   ProblemsByName::iterator p_miit,
   typename boost::multi_index::index<
     NumeredDofEntity_multiIndex,TAG
@@ -266,7 +266,7 @@ PetscErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
 }
 
 template<typename TAG>
-PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
+MoFEMErrorCode CreateRowComressedADJMatrix::createMatArrays(
   ProblemsByName::iterator p_miit,
   const MatType type,
   std::vector<PetscInt> &i,std::vector<PetscInt> &j,
@@ -654,7 +654,7 @@ PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
 }
 
 template<typename TAG>
-PetscErrorCode CreateRowComressedADJMatrix::createMat(
+MoFEMErrorCode CreateRowComressedADJMatrix::createMat(
   const std::string &name,Mat *M,const MatType type,PetscInt **_i,PetscInt **_j,PetscScalar **_v,
   const bool no_diagonals,int verb
 ) {
@@ -715,7 +715,7 @@ PetscErrorCode CreateRowComressedADJMatrix::createMat(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode Core::MatCreateMPIAIJWithArrays(const std::string &name,Mat *Aij,int verb) {
+MoFEMErrorCode Core::MatCreateMPIAIJWithArrays(const std::string &name,Mat *Aij,int verb) {
   MoFEMFunctionBeginHot;
   if(verb==-1) verb = verbose;
   int *_i,*_j;
@@ -729,7 +729,7 @@ PetscErrorCode Core::MatCreateMPIAIJWithArrays(const std::string &name,Mat *Aij,
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode Core::MatCreateMPIAdj_with_Idx_mi_tag(const std::string &name,Mat *Adj,int verb) {
+MoFEMErrorCode Core::MatCreateMPIAdj_with_Idx_mi_tag(const std::string &name,Mat *Adj,int verb) {
   MoFEMFunctionBeginHot;
   int *i,*j;
   if(verb>1) {
@@ -749,7 +749,7 @@ PetscErrorCode Core::MatCreateMPIAdj_with_Idx_mi_tag(const std::string &name,Mat
 }
 
 
-PetscErrorCode Core::MatCreateSeqAIJWithArrays(
+MoFEMErrorCode Core::MatCreateSeqAIJWithArrays(
   const std::string &name,Mat *Aij,PetscInt **i,PetscInt **j,PetscScalar **v,int verb
 ) {
   MoFEMFunctionBeginHot;
@@ -762,7 +762,7 @@ PetscErrorCode Core::MatCreateSeqAIJWithArrays(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode Core::partition_check_matrix_fill_in(const std::string &problem_name,int row_print,int col_print,int verb) {
+MoFEMErrorCode Core::partition_check_matrix_fill_in(const std::string &problem_name,int row_print,int col_print,int verb) {
   MoFEMFunctionBeginHot;
   if(verb==-1) verb = verbose;
 
@@ -779,12 +779,12 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const std::string &problem_n
       mFieldPtr(m_field_ptr),A(a),
       rowPrint(row_print),colPrint(col_print) {};
 
-    PetscErrorCode preProcess() {
+    MoFEMErrorCode preProcess() {
       MoFEMFunctionBeginHot;
       MoFEMFunctionReturnHot(0);
     }
 
-    PetscErrorCode operator()() {
+    MoFEMErrorCode operator()() {
       MoFEMFunctionBeginHot;
 
       if(refinedFiniteElementsPtr->find(numeredEntFiniteElementPtr->getEnt())==refinedFiniteElementsPtr->end()) {
@@ -940,7 +940,7 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const std::string &problem_n
       MoFEMFunctionReturnHot(0);
     }
 
-    PetscErrorCode postProcess() {
+    MoFEMErrorCode postProcess() {
       MoFEMFunctionBeginHot;
 
 

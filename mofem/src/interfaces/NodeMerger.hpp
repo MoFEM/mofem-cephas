@@ -28,7 +28,7 @@ static const MOFEMuuid IDD_MOFEMNodeMerger = MOFEMuuid( BitIntefaceId(NODEMERGER
   */
 struct NodeMergerInterface: public UnknownInterface {
 
-  PetscErrorCode query_interface(const MOFEMuuid& uuid, UnknownInterface** iface) const;
+  MoFEMErrorCode query_interface(const MOFEMuuid& uuid, UnknownInterface** iface) const;
 
   MoFEM::Core& cOre;
   NodeMergerInterface(const MoFEM::Core& core):
@@ -59,7 +59,7 @@ struct NodeMergerInterface: public UnknownInterface {
    * @param  th          handle to tag with nodes positions
    * @return             error code
    */
-  PetscErrorCode edgeMinQuality(
+  MoFEMErrorCode edgeMinQuality(
     EntityHandle edge,const Range *tets_ptr,double &min_quality,Tag th = NULL
   );
 
@@ -78,7 +78,7 @@ struct NodeMergerInterface: public UnknownInterface {
     middle.
 
     */
-  PetscErrorCode mergeNodes(
+  MoFEMErrorCode mergeNodes(
     EntityHandle father,
     EntityHandle mother,
     Range &out_tets,
@@ -106,7 +106,7 @@ struct NodeMergerInterface: public UnknownInterface {
     middle.
 
     */
-  PetscErrorCode mergeNodes(
+  MoFEMErrorCode mergeNodes(
     EntityHandle father,
     EntityHandle mother,
     BitRefLevel bit,
@@ -130,7 +130,7 @@ struct NodeMergerInterface: public UnknownInterface {
     middle.
 
     */
-  PetscErrorCode mergeNodes(
+  MoFEMErrorCode mergeNodes(
     EntityHandle father,
     EntityHandle mother,
     BitRefLevel bit,
@@ -183,7 +183,7 @@ private:
    * @param  min_quality calculated quality
    * @return             error code
    */
-  PetscErrorCode minQuality(
+  MoFEMErrorCode minQuality(
     Range &check_tests,
     EntityHandle father,
     EntityHandle mother,
@@ -201,7 +201,7 @@ private:
    * @param  coords_move node to move
    * @return             error code
    */
-  PetscErrorCode lineSearch(
+  MoFEMErrorCode lineSearch(
     Range &check_tests,
     EntityHandle father,
     EntityHandle mother,

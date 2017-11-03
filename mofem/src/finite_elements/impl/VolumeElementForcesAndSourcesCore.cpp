@@ -115,7 +115,7 @@ tInvJac(
 ) {
 }
 
-PetscErrorCode VolumeElementForcesAndSourcesCore::setIntegartionPts() {
+MoFEMErrorCode VolumeElementForcesAndSourcesCore::setIntegartionPts() {
   MoFEMFunctionBeginHot;
   int order_data = getMaxDataOrder();
   int order_row = getMaxRowOrder();
@@ -173,7 +173,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::setIntegartionPts() {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode VolumeElementForcesAndSourcesCore::calculateVolumeAndJacobian() {
+MoFEMErrorCode VolumeElementForcesAndSourcesCore::calculateVolumeAndJacobian() {
   MoFEMFunctionBeginHot;
   EntityHandle ent = numeredEntFiniteElementPtr->getEnt();
   rval = mField.get_moab().get_connectivity(ent,conn,num_nodes,true); CHKERRQ_MOAB(rval);
@@ -196,7 +196,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::calculateVolumeAndJacobian() {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode VolumeElementForcesAndSourcesCore::calculateCoordinatesAtGaussPts() {
+MoFEMErrorCode VolumeElementForcesAndSourcesCore::calculateCoordinatesAtGaussPts() {
   MoFEMFunctionBeginHot;
   try {
     // Get coords at Gauss points
@@ -226,7 +226,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::calculateCoordinatesAtGaussPts
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode VolumeElementForcesAndSourcesCore::getSpaceBaseAndOrderOnElement() {
+MoFEMErrorCode VolumeElementForcesAndSourcesCore::getSpaceBaseAndOrderOnElement() {
   MoFEMFunctionBeginHot;
   try {
     ierr = getSpacesAndBaseOnEntities(dataH1); CHKERRQ(ierr);
@@ -283,7 +283,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::getSpaceBaseAndOrderOnElement(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode VolumeElementForcesAndSourcesCore::calculateBaseFunctionsOnElement(const int b) {
+MoFEMErrorCode VolumeElementForcesAndSourcesCore::calculateBaseFunctionsOnElement(const int b) {
   MoFEMFunctionBeginHot;
   if(dataH1.bAse.test(b)) {
     switch (ApproximationBaseArray[b]) {
@@ -361,7 +361,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::calculateBaseFunctionsOnElemen
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode VolumeElementForcesAndSourcesCore::calculateBaseFunctionsOnElement() {
+MoFEMErrorCode VolumeElementForcesAndSourcesCore::calculateBaseFunctionsOnElement() {
   MoFEMFunctionBeginHot;
   try {
     /// Use the some node base
@@ -380,7 +380,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::calculateBaseFunctionsOnElemen
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode VolumeElementForcesAndSourcesCore::transformBaseFunctions() {
+MoFEMErrorCode VolumeElementForcesAndSourcesCore::transformBaseFunctions() {
   MoFEMFunctionBeginHot;
   try {
     ierr = opSetInvJacH1.opRhs(dataH1); CHKERRQ(ierr);
@@ -403,7 +403,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::transformBaseFunctions() {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode VolumeElementForcesAndSourcesCore::calculateHoJacobian() {
+MoFEMErrorCode VolumeElementForcesAndSourcesCore::calculateHoJacobian() {
   MoFEMFunctionBeginHot;
   if(
     dataPtr->get<FieldName_mi_tag>().find(meshPositionsFieldName)!=
@@ -468,7 +468,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::calculateHoJacobian() {
 }
 
 
-PetscErrorCode VolumeElementForcesAndSourcesCore::transformHoBaseFunctions() {
+MoFEMErrorCode VolumeElementForcesAndSourcesCore::transformHoBaseFunctions() {
   MoFEMFunctionBeginHot;
 
   if(hoCoordsAtGaussPts.size1()>0) {
@@ -495,7 +495,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::transformHoBaseFunctions() {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
+MoFEMErrorCode VolumeElementForcesAndSourcesCore::operator()() {
   MoFEMFunctionBeginHot;
 
   try {
@@ -777,7 +777,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode VolumeElementForcesAndSourcesCore::UserDataOperator::getDivergenceOfHDivBaseFunctions(
+MoFEMErrorCode VolumeElementForcesAndSourcesCore::UserDataOperator::getDivergenceOfHDivBaseFunctions(
   int side,EntityType type,
   DataForcesAndSourcesCore::EntData &data,
   int gg,
@@ -836,7 +836,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::UserDataOperator::getDivergenc
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode VolumeElementForcesAndSourcesCore::UserDataOperator::getCurlOfHCurlBaseFunctions(
+MoFEMErrorCode VolumeElementForcesAndSourcesCore::UserDataOperator::getCurlOfHCurlBaseFunctions(
   int side,
   EntityType type,
   DataForcesAndSourcesCore::EntData &data,
@@ -899,7 +899,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::UserDataOperator::getCurlOfHCu
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode VolumeElementForcesAndSourcesCoreOnSide::setGaussPts(int order) {
+MoFEMErrorCode VolumeElementForcesAndSourcesCoreOnSide::setGaussPts(int order) {
   MoFEMFunctionBeginHot;
   if(faceFEPtr==NULL) {
     SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"Pointer to face element is not set");

@@ -123,7 +123,7 @@ int main(int argc, char *argv[]) {
       OpVolSide():
       VolumeElementForcesAndSourcesCoreOnSide::UserDataOperator("F2",UserDataOperator::OPROW) {
       }
-      PetscErrorCode doWork(int side, EntityType type,DataForcesAndSourcesCore::EntData &data) {
+      MoFEMErrorCode doWork(int side, EntityType type,DataForcesAndSourcesCore::EntData &data) {
         MoFEMFunctionBeginHot;
         std::cout << "\tVolume" << getFEMethod()->nInTheLoop << std::endl;
         std::cout << "\tGauss pts " << getGaussPts() << std::endl;
@@ -150,7 +150,7 @@ int main(int argc, char *argv[]) {
 
     int getRule(int order) { return order; };
 
-    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
+    MoFEMErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
       
       MoFEMFunctionBeginHot;
       if(type == MBTRI && side == 0) {

@@ -34,7 +34,7 @@ struct ComposedProblemsData {
   std::vector<IS> rowIs;
   std::vector<IS> colIs;
 
-  inline PetscErrorCode getRowIs(IS *is,const unsigned int pp) const {
+  inline MoFEMErrorCode getRowIs(IS *is,const unsigned int pp) const {
     MoFEMFunctionBeginHot;
     PetscObjectReference((PetscObject)rowIs[pp]);
     if(pp<=rowIs.size()) {
@@ -47,7 +47,7 @@ struct ComposedProblemsData {
     MoFEMFunctionReturnHot(0);
   }
 
-  inline PetscErrorCode getColIs(IS *is,const unsigned int pp) const {
+  inline MoFEMErrorCode getColIs(IS *is,const unsigned int pp) const {
     MoFEMFunctionBeginHot;
     PetscObjectReference((PetscObject)colIs[pp]);
     if(pp<=colIs.size()) {
@@ -138,7 +138,7 @@ struct Problem {
      * @param  is create is
      * @return    error code
      */
-    inline PetscErrorCode getRowIs(IS *is) {
+    inline MoFEMErrorCode getRowIs(IS *is) {
       MoFEMFunctionBeginHot;
       PetscObjectReference((PetscObject)rowIs);
       *is = rowIs;
@@ -150,7 +150,7 @@ struct Problem {
      * @param  is create is
      * @return    error code
      */
-    inline PetscErrorCode getColIs(IS *is) {
+    inline MoFEMErrorCode getColIs(IS *is) {
       MoFEMFunctionBeginHot;
       PetscObjectReference((PetscObject)colIs);
       *is = colIs;
@@ -162,7 +162,7 @@ struct Problem {
      * @param  ao get mapping
      * @return    error code
      */
-    inline PetscErrorCode getRowMap(AO *ao) {
+    inline MoFEMErrorCode getRowMap(AO *ao) {
       MoFEMFunctionBeginHot;
       PetscObjectReference((PetscObject)rowMap);
       *ao = rowMap;
@@ -174,7 +174,7 @@ struct Problem {
      * @param  ao get mapping
      * @return    error code
      */
-    inline PetscErrorCode getColMap(AO *ao) {
+    inline MoFEMErrorCode getColMap(AO *ao) {
       MoFEMFunctionBeginHot;
       PetscObjectReference((PetscObject)colMap);
       *ao = colMap;
@@ -238,7 +238,7 @@ struct Problem {
    * @param  dof_ptr    shared pointer to DOFs if found
    * @return            error code
    */
-  PetscErrorCode getDofByNameEntAndEntDofIdx(
+  MoFEMErrorCode getDofByNameEntAndEntDofIdx(
     const string name,
     const EntityHandle ent,
     const int ent_dof_idx,
@@ -579,8 +579,8 @@ struct Problem {
   inline BitRefLevel getBitRefLevel() const { return *tagBitRefLevel; }
   inline BitRefLevel getMaskBitRefLevel() const { return *tagMaskBitRefLevel; }
 
-  PetscErrorCode getRowDofsByPetscGlobalDofIdx(DofIdx idx,const NumeredDofEntity **dof_ptr) const;
-  PetscErrorCode getColDofsByPetscGlobalDofIdx(DofIdx idx,const NumeredDofEntity **dof_ptr) const;
+  MoFEMErrorCode getRowDofsByPetscGlobalDofIdx(DofIdx idx,const NumeredDofEntity **dof_ptr) const;
+  MoFEMErrorCode getColDofsByPetscGlobalDofIdx(DofIdx idx,const NumeredDofEntity **dof_ptr) const;
 
   BitFEId getBitFEId() const;
 
@@ -608,7 +608,7 @@ struct Problem {
    * @param  layout Get number of elements on each processor
    * @return      error code
    */
-  PetscErrorCode getNumberOfElementsByNameAndPart(MPI_Comm comm,const std::string name,PetscLayout *layout) const;
+  MoFEMErrorCode getNumberOfElementsByNameAndPart(MPI_Comm comm,const std::string name,PetscLayout *layout) const;
 
   /**
    * \brief Get number of finite elements on processors
@@ -631,7 +631,7 @@ struct Problem {
    * @param  layout Get number of elements on each processor
    * @return      error code
    */
-  PetscErrorCode getNumberOfElementsByPart(MPI_Comm comm,PetscLayout *layout) const;
+  MoFEMErrorCode getNumberOfElementsByPart(MPI_Comm comm,PetscLayout *layout) const;
 
   typedef multi_index_container<
     boost::weak_ptr<std::vector<NumeredDofEntity> >,

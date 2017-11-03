@@ -18,7 +18,7 @@
 
 namespace MoFEM {
 
-  PetscErrorCode Core::clear_inactive_dofs(int verb) {
+  MoFEMErrorCode Core::clear_inactive_dofs(int verb) {
     MoFEMFunctionBeginHot;
     if(verb==-1) verb = verbose;
     DofEntity_multiIndex::iterator dit;
@@ -44,7 +44,7 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode Core::clear_dofs_fields(const BitRefLevel &bit,const BitRefLevel &mask,int verb) {
+  MoFEMErrorCode Core::clear_dofs_fields(const BitRefLevel &bit,const BitRefLevel &mask,int verb) {
     MoFEMFunctionBeginHot;
     if(verb==-1) verb = verbose;
     {
@@ -82,7 +82,7 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode Core::clear_dofs_fields(const std::string &name,const Range ents,int verb) {
+  MoFEMErrorCode Core::clear_dofs_fields(const std::string &name,const Range ents,int verb) {
     MoFEMFunctionBeginHot;
     if(verb==-1) verb = verbose;
     Range::iterator eit = ents.begin();
@@ -108,7 +108,7 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode Core::clear_ents_fields(const BitRefLevel &bit,const BitRefLevel &mask,int verb) {
+  MoFEMErrorCode Core::clear_ents_fields(const BitRefLevel &bit,const BitRefLevel &mask,int verb) {
     MoFEMFunctionBeginHot;
     if(verb==-1) verb = verbose;
     ierr = clear_dofs_fields(bit,mask,verb); CHKERRQ(ierr);
@@ -139,7 +139,7 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode Core::clear_ents_fields(const std::string &name,const Range ents,int verb) {
+  MoFEMErrorCode Core::clear_ents_fields(const std::string &name,const Range ents,int verb) {
     MoFEMFunctionBeginHot;
     if(verb==-1) verb = verbose;
     ierr = clear_dofs_fields(name,ents,verb); CHKERRQ(ierr);
@@ -159,7 +159,7 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode Core::clear_finite_elements(const BitRefLevel &bit,const BitRefLevel &mask,int verb) {
+  MoFEMErrorCode Core::clear_finite_elements(const BitRefLevel &bit,const BitRefLevel &mask,int verb) {
     MoFEMFunctionBeginHot;
     if(verb==-1) verb = verbose;
     ierr = clear_adjacencies_finite_elements(bit,mask,verb); CHKERRQ(ierr);
@@ -183,7 +183,7 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode Core::clear_finite_elements(const std::string &name,const Range &ents,int verb) {
+  MoFEMErrorCode Core::clear_finite_elements(const std::string &name,const Range &ents,int verb) {
     MoFEMFunctionBeginHot;
     if(verb==-1) verb = verbose;
     ierr = clear_adjacencies_finite_elements(name,ents,verb); CHKERRQ(ierr);
@@ -199,7 +199,7 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode Core::clear_adjacencies_finite_elements(const BitRefLevel &bit,const BitRefLevel &mask,int verb) {
+  MoFEMErrorCode Core::clear_adjacencies_finite_elements(const BitRefLevel &bit,const BitRefLevel &mask,int verb) {
     MoFEMFunctionBeginHot;
     FieldEntityEntFiniteElementAdjacencyMap_multiIndex::iterator ait;
     ait = entFEAdjacencies.begin();
@@ -221,7 +221,7 @@ namespace MoFEM {
     }
     MoFEMFunctionReturnHot(0);
   }
-  PetscErrorCode Core::clear_adjacencies_finite_elements(const std::string &name,const Range &ents,int verb) {
+  MoFEMErrorCode Core::clear_adjacencies_finite_elements(const std::string &name,const Range &ents,int verb) {
     MoFEMFunctionBeginHot;
     if(verb==-1) verb = verbose;
     Range::iterator eit = ents.begin();
@@ -240,7 +240,7 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode Core::clear_adjacencies_entities(const BitRefLevel &bit,const BitRefLevel &mask,int verb ) {
+  MoFEMErrorCode Core::clear_adjacencies_entities(const BitRefLevel &bit,const BitRefLevel &mask,int verb ) {
     MoFEMFunctionBeginHot;
     if(verb==-1) verb = verbose;
     FieldEntityEntFiniteElementAdjacencyMap_multiIndex::iterator ait;
@@ -264,7 +264,7 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode Core::clear_adjacencies_entities(const std::string &name,const Range &ents,int verb) {
+  MoFEMErrorCode Core::clear_adjacencies_entities(const std::string &name,const Range &ents,int verb) {
     MoFEMFunctionBeginHot;
     if(verb==-1) verb = verbose;
     Range::iterator eit = ents.begin();
@@ -283,7 +283,7 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode Core::remove_ents_from_field_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,int verb) {
+  MoFEMErrorCode Core::remove_ents_from_field_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,int verb) {
     MoFEMFunctionBeginHot;
     if(verb==-1) verb = verbose;
     ierr = clear_ents_fields(bit,mask,verb); CHKERRQ(ierr);
@@ -334,7 +334,7 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode Core::remove_ents_from_field(const std::string& name,const EntityHandle meshset,const EntityType type,int verb) {
+  MoFEMErrorCode Core::remove_ents_from_field(const std::string& name,const EntityHandle meshset,const EntityType type,int verb) {
     MoFEMFunctionBeginHot;
     if(verb==-1) verb = verbose;
     Range ents;
@@ -343,7 +343,7 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode Core::remove_ents_from_field(const std::string& name,const Range &ents,int verb) {
+  MoFEMErrorCode Core::remove_ents_from_field(const std::string& name,const Range &ents,int verb) {
     MoFEMFunctionBeginHot;
     if(verb==-1) verb = verbose;
     EntityHandle meshset;
@@ -357,7 +357,7 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode Core::remove_ents_from_finite_element_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,int verb) {
+  MoFEMErrorCode Core::remove_ents_from_finite_element_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,int verb) {
     MoFEMFunctionBeginHot;
     if(verb==-1) verb = verbose;
     ierr = clear_finite_elements(bit,mask,verb); CHKERRQ(ierr);
@@ -404,7 +404,7 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode Core::remove_ents_from_finite_element(const std::string &name,const EntityHandle meshset,const EntityType type,int verb) {
+  MoFEMErrorCode Core::remove_ents_from_finite_element(const std::string &name,const EntityHandle meshset,const EntityType type,int verb) {
     MoFEMFunctionBeginHot;
     if(verb==-1) verb = verbose;
     Range ents;
@@ -413,7 +413,7 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode Core::remove_ents_from_finite_element(const std::string &name,const Range &ents,int verb) {
+  MoFEMErrorCode Core::remove_ents_from_finite_element(const std::string &name,const Range &ents,int verb) {
     MoFEMFunctionBeginHot;
     if(verb==-1) verb = verbose;
     ierr = clear_finite_elements(name,ents,verb); CHKERRQ(ierr);
@@ -423,7 +423,7 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode Core::remove_ents_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,int verb) {
+  MoFEMErrorCode Core::remove_ents_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,int verb) {
     MoFEMFunctionBeginHot;
     if(verb==-1) verb = verbose;
     ierr = delete_finite_elements_by_bit_ref(bit,mask,verb); CHKERRQ(ierr);
@@ -448,7 +448,7 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode Core::delete_ents_by_bit_ref(const BitRefLevel &bit,
+  MoFEMErrorCode Core::delete_ents_by_bit_ref(const BitRefLevel &bit,
                                               const BitRefLevel &mask,
                                               const bool remove_parent,
                                               int verb) {
@@ -544,7 +544,7 @@ namespace MoFEM {
     rval = moab.delete_entities(ents_to_delete); CHKERRQ_MOAB(rval);
     MoFEMFunctionReturnHot(0);
   }
-  PetscErrorCode Core::delete_finite_elements_by_bit_ref(
+  MoFEMErrorCode Core::delete_finite_elements_by_bit_ref(
     const BitRefLevel &bit,const BitRefLevel &mask,int verb
   ) {
     MoFEMFunctionBeginHot;
@@ -569,7 +569,7 @@ namespace MoFEM {
     }
     MoFEMFunctionReturnHot(0);
   }
-  PetscErrorCode Core::delete_finite_element(const std::string name,int verb) {
+  MoFEMErrorCode Core::delete_finite_element(const std::string name,int verb) {
     MoFEMFunctionBeginHot;
     typedef FiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type FiniteElements_by_name;
     FiniteElements_by_name& fe = finiteElements.get<FiniteElement_name_mi_tag>();

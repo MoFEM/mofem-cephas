@@ -156,13 +156,13 @@ struct OpGradGrad: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOper
    * @param  col_data structure of data, like base functions and associated methods to access those data on rows
    * @return          error code
    */
-  PetscErrorCode doWork(
+  MoFEMErrorCode doWork(
     int row_side,int col_side,
     EntityType row_type,EntityType col_type,
     DataForcesAndSourcesCore::EntData &row_data,
     DataForcesAndSourcesCore::EntData &col_data
   ) {
-    PetscErrorCode ierr;
+    MoFEMErrorCode ierr;
     MoFEMFunctionBeginHot;
 
     // get number of dofs on rows

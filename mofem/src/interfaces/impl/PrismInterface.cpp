@@ -21,7 +21,7 @@
 
 namespace MoFEM {
 
-PetscErrorCode PrismInterface::query_interface(const MOFEMuuid &uuid,
+MoFEMErrorCode PrismInterface::query_interface(const MOFEMuuid &uuid,
                                                UnknownInterface **iface) const {
   MoFEMFunctionBeginHot;
   *iface = NULL;
@@ -33,16 +33,16 @@ PetscErrorCode PrismInterface::query_interface(const MOFEMuuid &uuid,
   MoFEMFunctionReturnHot(0);
 }
 
-PrismInterface::PrismInterface(const MoFEM::Core &core):
-cOre(const_cast<MoFEM::Core&>(core)) {
+PrismInterface::PrismInterface(const Core &core):
+cOre(const_cast<Core&>(core)) {
 }
 
-PetscErrorCode PrismInterface::getSides(const int msId,
+MoFEMErrorCode PrismInterface::getSides(const int msId,
                                         const CubitBCType cubit_bc_type,
                                         const BitRefLevel mesh_bit_level,
                                         const bool recursive, int verb) {
 
-  MoFEM::Interface &m_field = cOre;
+  Interface &m_field = cOre;
   MeshsetsManager *meshsets_manager_ptr;
   MoFEMFunctionBeginHot;
   ierr = m_field.getInterface(meshsets_manager_ptr);
@@ -64,10 +64,10 @@ PetscErrorCode PrismInterface::getSides(const int msId,
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode PrismInterface::getSides(const EntityHandle sideset,
+MoFEMErrorCode PrismInterface::getSides(const EntityHandle sideset,
                                         const BitRefLevel mesh_bit_level,
                                         const bool recursive, int verb) {
-  MoFEM::Interface &m_field = cOre;
+  Interface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   MoFEMFunctionBeginHot;
   Range mesh_level_ents3d,mesh_level_ents3d_tris;
@@ -205,7 +205,7 @@ PetscErrorCode PrismInterface::getSides(const EntityHandle sideset,
 
   // Add tets adjacent to front and triangle which has all nodes on crack front
   struct FindTrianglesOnFrontAndAdjacentTet {
-    static PetscErrorCode fUN(moab::Interface &moab, const Range &triangles,
+    static MoFEMErrorCode fUN(moab::Interface &moab, const Range &triangles,
                               const Range &skin_nodes_boundary, ///< nodes on front
                               const Range &skin_edges_boundary, ///< edges on front
                               Range &ents3d_with_prisms) {
@@ -444,10 +444,10 @@ PetscErrorCode PrismInterface::getSides(const EntityHandle sideset,
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode PrismInterface::findIfTringleHasThreeNodesOnInternalSurfaceSkin(
+MoFEMErrorCode PrismInterface::findIfTringleHasThreeNodesOnInternalSurfaceSkin(
     const EntityHandle sideset, const BitRefLevel mesh_bit_level,
     const bool recursive, Range &faces_with_three_nodes_on_front, int verb) {
-  MoFEM::Interface &m_field = cOre;
+  Interface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   MoFEMFunctionBeginHot;
 
@@ -582,14 +582,14 @@ PetscErrorCode PrismInterface::findIfTringleHasThreeNodesOnInternalSurfaceSkin(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode PrismInterface::splitSides(const EntityHandle meshset,
+MoFEMErrorCode PrismInterface::splitSides(const EntityHandle meshset,
                                           const BitRefLevel &bit,
                                           const int msId,
                                           const CubitBCType cubit_bc_type,
                                           const bool add_interface_entities,
                                           const bool recursive, int verb) {
 
-  MoFEM::Interface &m_field = cOre;
+  Interface &m_field = cOre;
   MeshsetsManager *meshsets_manager_ptr;
   MoFEMFunctionBeginHot;
   ierr = m_field.getInterface(meshsets_manager_ptr); CHKERRQ(ierr);
@@ -610,7 +610,7 @@ PetscErrorCode PrismInterface::splitSides(const EntityHandle meshset,
   }
   MoFEMFunctionReturnHot(0);
 }
-PetscErrorCode PrismInterface::splitSides(const EntityHandle meshset,
+MoFEMErrorCode PrismInterface::splitSides(const EntityHandle meshset,
                                           const BitRefLevel &bit,
                                           const EntityHandle sideset,
                                           const bool add_interface_entities,
@@ -622,13 +622,13 @@ PetscErrorCode PrismInterface::splitSides(const EntityHandle meshset,
   CHKERRQ(ierr);
   MoFEMFunctionReturnHot(0);
 }
-PetscErrorCode PrismInterface::splitSides(
+MoFEMErrorCode PrismInterface::splitSides(
     const EntityHandle meshset, const BitRefLevel &bit,
     const BitRefLevel &inhered_from_bit_level,
     const BitRefLevel &inhered_from_bit_level_mask, const EntityHandle sideset,
     const bool add_interface_entities, const bool recursive, int verb) {
 
-  MoFEM::Interface &m_field = cOre;
+  Interface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   MoFEMFunctionBeginHot;
   std::vector<EntityHandle> children;

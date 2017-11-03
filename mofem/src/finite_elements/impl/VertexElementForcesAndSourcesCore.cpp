@@ -67,7 +67,7 @@ extern "C" {
 
 namespace MoFEM {
 
-PetscErrorCode VertexElementForcesAndSourcesCore::operator()() {
+MoFEMErrorCode VertexElementForcesAndSourcesCore::operator()() {
   MoFEMFunctionBeginHot;
 
   if(numeredEntFiniteElementPtr->getEntType() != MBVERTEX) MoFEMFunctionReturnHot(0);

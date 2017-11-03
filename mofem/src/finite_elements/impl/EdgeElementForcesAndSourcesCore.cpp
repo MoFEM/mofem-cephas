@@ -75,7 +75,7 @@ extern "C" {
 
 namespace MoFEM {
 
-PetscErrorCode EdgeElementForcesAndSourcesCore::operator()() {
+MoFEMErrorCode EdgeElementForcesAndSourcesCore::operator()() {
   MoFEMFunctionBeginHot;
 
   if(numeredEntFiniteElementPtr->getEntType() != MBEDGE) MoFEMFunctionReturnHot(0);

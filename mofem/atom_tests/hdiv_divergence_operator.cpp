@@ -177,7 +177,7 @@ int main(int argc, char *argv[]) {
     VolumeElementForcesAndSourcesCore::UserDataOperator("HDIV",UserDataOperator::OPROW),
     dIv(div) {}
 
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int side,
       EntityType type,
       DataForcesAndSourcesCore::EntData &data) {
@@ -245,7 +245,7 @@ int main(int argc, char *argv[]) {
     FaceElementForcesAndSourcesCore::UserDataOperator("HDIV",UserDataOperator::OPROW),
     dIv(div) {}
 
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int side,
       EntityType type,
       DataForcesAndSourcesCore::EntData &data

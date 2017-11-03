@@ -160,12 +160,12 @@ int main(int argc, char *argv[]) {
       ofs("forces_and_sources_getting_higher_order_skin_normals_atom.txt"),
       my_tee(std::cout,ofs),my_split(my_tee) {};
 
-    PetscErrorCode preProcess() {
+    MoFEMErrorCode preProcess() {
       MoFEMFunctionBeginHot;
       MoFEMFunctionReturnHot(0);
     }
 
-    PetscErrorCode operator()() {
+    MoFEMErrorCode operator()() {
       MoFEMFunctionBeginHot;
 
       ierr = getSpacesAndBaseOnEntities(data); CHKERRQ(ierr);
@@ -227,7 +227,7 @@ int main(int argc, char *argv[]) {
       MoFEMFunctionReturnHot(0);
     }
 
-    PetscErrorCode postProcess() {
+    MoFEMErrorCode postProcess() {
       MoFEMFunctionBeginHot;
       MoFEMFunctionReturnHot(0);
     }

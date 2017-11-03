@@ -26,7 +26,7 @@
 
 namespace MoFEM {
 
-  PetscErrorCode Simple::query_interface(const MOFEMuuid& uuid, UnknownInterface** iface) const {
+  MoFEMErrorCode Simple::query_interface(const MOFEMuuid& uuid, UnknownInterface** iface) const {
     MoFEMFunctionBeginHot;
     *iface = NULL;
     if(uuid == IDD_MOFEMSimple) {
@@ -37,8 +37,8 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  Simple::Simple(const MoFEM::Core& core):
-  cOre(const_cast<MoFEM::Core&>(core)),
+  Simple::Simple(const Core& core):
+  cOre(const_cast<Core&>(core)),
   bitLevel(BitRefLevel().set(0)),
   meshSet(0),
   boundaryMeshset(0),
@@ -61,7 +61,7 @@ namespace MoFEM {
     }
   }
 
-  PetscErrorCode Simple::getOptions() {
+  MoFEMErrorCode Simple::getOptions() {
 
     PetscBool flg = PETSC_TRUE;
     MoFEMFunctionBeginHot;
@@ -77,8 +77,8 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode Simple::loadFile() {
-    MoFEM::Interface &m_field = cOre;
+  MoFEMErrorCode Simple::loadFile() {
+    Interface &m_field = cOre;
     MoFEMFunctionBeginHot;
     PetscLogEventBegin(MOFEM_EVENT_SimpleLoadMesh,0,0,0,0);
     // This is a case of distributed mesh and algebra. In that case each processor
@@ -114,7 +114,7 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode Simple::addDomainField(
+  MoFEMErrorCode Simple::addDomainField(
     const std::string& name,
     const FieldSpace space,
     const FieldApproximationBase base,
@@ -124,7 +124,7 @@ namespace MoFEM {
     int verb
   ) {
 
-    MoFEM::Interface &m_field = cOre;
+    Interface &m_field = cOre;
     MoFEMFunctionBeginHot;
     ierr = m_field.add_field(
       name, space, base, nb_of_cooficients, tag_type, bh, verb
@@ -133,7 +133,7 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode Simple::addBoundaryField(
+  MoFEMErrorCode Simple::addBoundaryField(
     const std::string& name,
     const FieldSpace space,
     const FieldApproximationBase base,
@@ -143,7 +143,7 @@ namespace MoFEM {
     int verb
   ) {
 
-    MoFEM::Interface &m_field = cOre;
+    Interface &m_field = cOre;
     MoFEMFunctionBeginHot;
     ierr = m_field.add_field(
       name, space, base, nb_of_cooficients, tag_type, bh, verb
@@ -152,7 +152,7 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode Simple::addSkeletonField(
+  MoFEMErrorCode Simple::addSkeletonField(
     const std::string& name,
     const FieldSpace space,
     const FieldApproximationBase base,
@@ -162,7 +162,7 @@ namespace MoFEM {
     int verb
   ) {
 
-    MoFEM::Interface &m_field = cOre;
+    Interface &m_field = cOre;
     MoFEMFunctionBeginHot;
     ierr = m_field.add_field(
       name, space, base, nb_of_cooficients, tag_type, bh, verb
@@ -171,7 +171,7 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode Simple::addDataField(
+  MoFEMErrorCode Simple::addDataField(
     const std::string& name,
     const FieldSpace space,
     const FieldApproximationBase base,
@@ -181,7 +181,7 @@ namespace MoFEM {
     int verb
   ) {
 
-    MoFEM::Interface &m_field = cOre;
+    Interface &m_field = cOre;
     MoFEMFunctionBeginHot;
     ierr = m_field.add_field(
       name, space, base, nb_of_cooficients, tag_type, bh, verb
@@ -191,9 +191,9 @@ namespace MoFEM {
   }
 
 
-  PetscErrorCode Simple::defineFiniteElements() {
+  MoFEMErrorCode Simple::defineFiniteElements() {
 
-    MoFEM::Interface &m_field = cOre;
+    Interface &m_field = cOre;
     MoFEMFunctionBeginHot;
     // Define finite elements
     ierr = m_field.add_finite_element(domainFE); CHKERRQ(ierr);
@@ -244,9 +244,9 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode Simple::defineProblem() {
+  MoFEMErrorCode Simple::defineProblem() {
 
-    MoFEM::Interface &m_field = cOre;
+    Interface &m_field = cOre;
     MoFEMFunctionBeginHot;
     if(dM!=PETSC_NULL) {
       ierr = DMDestroy(&dM); CHKERRQ(ierr);
@@ -268,14 +268,14 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode Simple::setFieldOrder(const std::string field_name,const int order,const Range* ents) {
+  MoFEMErrorCode Simple::setFieldOrder(const std::string field_name,const int order,const Range* ents) {
     MoFEMFunctionBeginHot;
     fieldsOrder[field_name] = std::pair<int,Range>(order,ents==NULL?Range():Range(*ents));
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode Simple::buildFields() {
-    MoFEM::Interface &m_field = cOre;
+  MoFEMErrorCode Simple::buildFields() {
+    Interface &m_field = cOre;
     MoFEMFunctionBeginHot;
     PetscLogEventBegin(MOFEM_EVENT_SimpleBuildFields,0,0,0,0);
     // take skin
@@ -438,9 +438,9 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode Simple::buildFiniteElements() {
+  MoFEMErrorCode Simple::buildFiniteElements() {
 
-    MoFEM::Interface &m_field = cOre;
+    Interface &m_field = cOre;
     MoFEMFunctionBeginHot;
     PetscLogEventBegin(MOFEM_EVENT_SimpleBuildFiniteElements,0,0,0,0);
     // Add finite elements
@@ -458,8 +458,8 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode Simple::buildProblem() {
-    MoFEM::Interface &m_field = cOre;
+  MoFEMErrorCode Simple::buildProblem() {
+    Interface &m_field = cOre;
     MoFEMFunctionBeginHot;
     PetscLogEventBegin(MOFEM_EVENT_SimpleBuildProblem,0,0,0,0);
     ierr = m_field.build_adjacencies(bitLevel); CHKERRQ(ierr);
@@ -470,7 +470,7 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode Simple::setUp() {
+  MoFEMErrorCode Simple::setUp() {
 
     MoFEMFunctionBeginHot;
     ierr = defineFiniteElements(); CHKERRQ(ierr);
@@ -481,7 +481,7 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode Simple::getDM(DM *dm) {
+  MoFEMErrorCode Simple::getDM(DM *dm) {
     MoFEMFunctionBeginHot;
     PetscObjectReference((PetscObject)dM);
     *dm = dM;

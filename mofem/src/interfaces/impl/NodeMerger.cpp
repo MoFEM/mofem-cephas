@@ -52,7 +52,7 @@
 
 namespace MoFEM {
 
-PetscErrorCode NodeMergerInterface::query_interface(const MOFEMuuid& uuid, UnknownInterface** iface) const {
+MoFEMErrorCode NodeMergerInterface::query_interface(const MOFEMuuid& uuid, UnknownInterface** iface) const {
   MoFEMFunctionBeginHot;
   *iface = NULL;
   if(uuid == IDD_MOFEMNodeMerger) {
@@ -63,10 +63,10 @@ PetscErrorCode NodeMergerInterface::query_interface(const MOFEMuuid& uuid, Unkno
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode NodeMergerInterface::edgeMinQuality(
+MoFEMErrorCode NodeMergerInterface::edgeMinQuality(
   EntityHandle edge,const Range *tets_ptr,double &min_quality,Tag th
 ) {
-  MoFEM::Interface& m_field = cOre;
+  Interface& m_field = cOre;
   MoFEMFunctionBeginHot;
   Range adj_edge_tets;
   rval = m_field.get_moab().get_adjacencies(&edge,1,3,false,adj_edge_tets); CHKERRQ_MOAB(rval);
@@ -78,11 +78,11 @@ PetscErrorCode NodeMergerInterface::edgeMinQuality(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode NodeMergerInterface::mergeNodes(
+MoFEMErrorCode NodeMergerInterface::mergeNodes(
     EntityHandle father, EntityHandle mother, Range &out_tets, Range *tets_ptr,
     const bool only_if_improve_quality, const double move,
     const int line_search, Tag th, int verb) {
-  MoFEM::Interface &m_field = cOre;
+  Interface &m_field = cOre;
   MoFEMFunctionBeginHot;
 
   // Get adges adjacent to father and mother, i.e. mother is merged to father.
@@ -373,7 +373,7 @@ PetscErrorCode NodeMergerInterface::mergeNodes(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode NodeMergerInterface::minQuality(
+MoFEMErrorCode NodeMergerInterface::minQuality(
   Range &check_tests,
   EntityHandle father,
   EntityHandle mother,
@@ -381,7 +381,7 @@ PetscErrorCode NodeMergerInterface::minQuality(
   double &min_quality,
   Tag th
 ) {
-  MoFEM::Interface& m_field = cOre;
+  Interface& m_field = cOre;
 
   double coords[12];
   MoFEMFunctionBeginHot;
@@ -437,7 +437,7 @@ PetscErrorCode NodeMergerInterface::minQuality(
   MoFEMFunctionReturnHot(0);
 };
 
-PetscErrorCode NodeMergerInterface::lineSearch(
+MoFEMErrorCode NodeMergerInterface::lineSearch(
   Range &check_tests,
   EntityHandle father,
   EntityHandle mother,
@@ -445,7 +445,7 @@ PetscErrorCode NodeMergerInterface::lineSearch(
   double *coords_move,
   Tag th
 ) {
-  MoFEM::Interface& m_field = cOre;
+  Interface& m_field = cOre;
   MoFEMFunctionBeginHot;
 
   EntityHandle conn[] = { father,mother };
@@ -517,7 +517,7 @@ PetscErrorCode NodeMergerInterface::lineSearch(
 }
 
 
-PetscErrorCode NodeMergerInterface::mergeNodes(
+MoFEMErrorCode NodeMergerInterface::mergeNodes(
   EntityHandle father,
   EntityHandle mother,
   BitRefLevel bit,
@@ -525,7 +525,7 @@ PetscErrorCode NodeMergerInterface::mergeNodes(
   const bool only_if_improve_quality,
   const double move,Tag th
 ) {
-  MoFEM::Interface& m_field = cOre;
+  Interface& m_field = cOre;
   MoFEMFunctionBeginHot;
   Range out_tets;
   ierr = mergeNodes(
@@ -535,7 +535,7 @@ PetscErrorCode NodeMergerInterface::mergeNodes(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode NodeMergerInterface::mergeNodes(
+MoFEMErrorCode NodeMergerInterface::mergeNodes(
   EntityHandle father,
   EntityHandle mother,
   BitRefLevel bit,
@@ -543,7 +543,7 @@ PetscErrorCode NodeMergerInterface::mergeNodes(
   const bool only_if_improve_quality,
   const double move,Tag th
 ) {
-  MoFEM::Interface& m_field = cOre;
+  Interface& m_field = cOre;
   MoFEMFunctionBeginHot;
   Range level_tets;
   ierr = m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(

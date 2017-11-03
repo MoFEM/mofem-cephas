@@ -63,7 +63,7 @@ struct Version {
 **/
 struct UnknownInterface {
 
-  virtual PetscErrorCode query_interface(const MOFEMuuid &uuid,
+  virtual MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
                                          UnknownInterface **iface) const = 0;
 
   /**
@@ -71,10 +71,10 @@ struct UnknownInterface {
    *
    * @param uuid
    * @param true
-   * @return template <class IFACE> PetscErrorCode
+   * @return template <class IFACE> MoFEMErrorCode
    */
   template <class IFACE>
-  PetscErrorCode registerInterface(const MOFEMuuid &uuid,
+  MoFEMErrorCode registerInterface(const MOFEMuuid &uuid,
                                    bool error_if_registration_failed = true) {
     MoFEMFunctionBeginHot;
     std::pair<iFaceTypeMap_multiIndex::iterator, bool> p;
@@ -93,10 +93,10 @@ struct UnknownInterface {
    *
    * @param uuid
    * @param iface
-   * @return template <class IFACE, bool VERIFY>  PetscErrorCode
+   * @return template <class IFACE, bool VERIFY>  MoFEMErrorCode
    */
   template <class IFACE, bool VERIFY /* =false C++11 needed to have this */ >
-  inline PetscErrorCode getInterface(const MOFEMuuid &uuid,
+  inline MoFEMErrorCode getInterface(const MOFEMuuid &uuid,
                                      IFACE *&iface) const {
     MoFEMFunctionBeginHot;
     if (VERIFY) {
@@ -116,10 +116,10 @@ struct UnknownInterface {
    * @brief Get interface refernce to pointer of interface
    *
    * @param iface
-   * @return template <class IFACE>  PetscErrorCode
+   * @return template <class IFACE>  MoFEMErrorCode
    */
   template <class IFACE>
-  inline PetscErrorCode getInterface(IFACE *&iface) const {
+  inline MoFEMErrorCode getInterface(IFACE *&iface) const {
     return getInterface<IFACE, false>(
         getUId(boost::typeindex::type_id<IFACE>()), iface);
   }
@@ -128,10 +128,10 @@ struct UnknownInterface {
    * @brief Get interface pointer to pointer of interface
    *
    * @param iface
-   * @return template <class IFACE>  PetscErrorCode
+   * @return template <class IFACE>  MoFEMErrorCode
    */
   template <class IFACE>
-  inline PetscErrorCode getInterface(IFACE **const iface) const {
+  inline MoFEMErrorCode getInterface(IFACE **const iface) const {
     return getInterface<IFACE, false>(boost::typeindex::type_id<IFACE>(),
                                       *iface);
   }
@@ -181,7 +181,7 @@ struct UnknownInterface {
   *
   * @return error code
   */
-  virtual PetscErrorCode getLibVersion(Version &version) const {
+  virtual MoFEMErrorCode getLibVersion(Version &version) const {
     MoFEMFunctionBeginHot;
     version =
         Version(MoFEM_VERSION_MAJOR, MoFEM_VERSION_MINOR, MoFEM_VERSION_BUILD);
@@ -196,7 +196,7 @@ struct UnknownInterface {
   *
   * @return error code
   */
-  virtual const PetscErrorCode getFileVersion(moab::Interface &moab,
+  virtual const MoFEMErrorCode getFileVersion(moab::Interface &moab,
                                               Version &version) const {
     MoFEMFunctionBeginHot;
     const EntityHandle root_meshset = 0;
@@ -232,7 +232,7 @@ struct UnknownInterface {
   *
   * @return error code
   */
-  virtual PetscErrorCode getInterfaceVersion(Version &version) const {
+  virtual MoFEMErrorCode getInterfaceVersion(Version &version) const {
     MoFEMFunctionBeginHot;
     version =
         Version(MoFEM_VERSION_MAJOR, MoFEM_VERSION_MINOR, MoFEM_VERSION_BUILD);
@@ -305,7 +305,7 @@ private:
 };
 
 template <>
-inline PetscErrorCode UnknownInterface::getInterface<UnknownInterface, false>(
+inline MoFEMErrorCode UnknownInterface::getInterface<UnknownInterface, false>(
     const MOFEMuuid &uuid, UnknownInterface *&iface) const {
   return query_interface(uuid, &iface);
 }

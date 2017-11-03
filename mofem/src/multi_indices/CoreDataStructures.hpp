@@ -68,7 +68,7 @@ inline int fNBVOLUMETET_DEMKOWICZ_HDIV(int P) { return NBVOLUMETET_DEMKOWICZ_HDI
 
 /** \brief Test MoAB entity handle if has structure as is assumed by MoFEM
   */
-PetscErrorCode test_moab(Interface &moab,const EntityHandle ent);
+MoFEMErrorCode test_moab(Interface &moab,const EntityHandle ent);
 
 }
 

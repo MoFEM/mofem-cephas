@@ -51,7 +51,7 @@ using namespace MoFEM;
 TriPolynomialBase::TriPolynomialBase() {}
 TriPolynomialBase::~TriPolynomialBase() {}
 
-PetscErrorCode TriPolynomialBase::query_interface(
+MoFEMErrorCode TriPolynomialBase::query_interface(
   const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface
 ) const {
   MoFEMFunctionBeginHot;
@@ -66,7 +66,7 @@ PetscErrorCode TriPolynomialBase::query_interface(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode TriPolynomialBase::getValueH1(MatrixDouble &pts) {
+MoFEMErrorCode TriPolynomialBase::getValueH1(MatrixDouble &pts) {
 
   MoFEMFunctionBeginHot;
 
@@ -132,7 +132,7 @@ PetscErrorCode TriPolynomialBase::getValueH1(MatrixDouble &pts) {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode TriPolynomialBase::getValueL2(
+MoFEMErrorCode TriPolynomialBase::getValueL2(
   MatrixDouble &pts
 ) {
 
@@ -166,7 +166,7 @@ PetscErrorCode TriPolynomialBase::getValueL2(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode TriPolynomialBase::getValueHdivAinsworthBase(
+MoFEMErrorCode TriPolynomialBase::getValueHdivAinsworthBase(
   MatrixDouble &pts
 ) {
 
@@ -234,7 +234,7 @@ PetscErrorCode TriPolynomialBase::getValueHdivAinsworthBase(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode TriPolynomialBase::getValueHdivDemkowiczBase(
+MoFEMErrorCode TriPolynomialBase::getValueHdivDemkowiczBase(
   MatrixDouble &pts
 ) {
 
@@ -273,7 +273,7 @@ PetscErrorCode TriPolynomialBase::getValueHdivDemkowiczBase(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode TriPolynomialBase::getValueHdiv(
+MoFEMErrorCode TriPolynomialBase::getValueHdiv(
   MatrixDouble &pts
 ) {
   MoFEMFunctionBeginHot;
@@ -291,7 +291,7 @@ PetscErrorCode TriPolynomialBase::getValueHdiv(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode TriPolynomialBase::getValueHCurl(
+MoFEMErrorCode TriPolynomialBase::getValueHCurl(
   MatrixDouble &pts
 ) {
 
@@ -380,7 +380,7 @@ PetscErrorCode TriPolynomialBase::getValueHCurl(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode TriPolynomialBase::getValue(
+MoFEMErrorCode TriPolynomialBase::getValue(
   MatrixDouble &pts,
   boost::shared_ptr<BaseFunctionCtx> ctx_ptr
 ) {

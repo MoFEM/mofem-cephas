@@ -32,7 +32,7 @@ namespace MoFEM {
   */
   struct FatPrismPolynomialBaseCtx: public EntPolynomialBaseCtx {
 
-    PetscErrorCode query_interface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface) const;
+    MoFEMErrorCode query_interface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface) const;
 
     DataForcesAndSourcesCore& dataTrianglesOnly;
     DataForcesAndSourcesCore& dataTroughThickness;
@@ -68,12 +68,12 @@ namespace MoFEM {
   */
   struct FatPrismPolynomialBase: public BaseFunction {
 
-    PetscErrorCode query_interface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface) const;
+    MoFEMErrorCode query_interface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface) const;
 
     FatPrismPolynomialBase();
     ~FatPrismPolynomialBase();
 
-    PetscErrorCode getValue(
+    MoFEMErrorCode getValue(
       MatrixDouble &pts,boost::shared_ptr<BaseFunctionCtx> ctx_ptr
     );
 
@@ -81,17 +81,17 @@ namespace MoFEM {
 
     FatPrismPolynomialBaseCtx *cTx;
 
-    PetscErrorCode getValueH1TrianglesOnly();
+    MoFEMErrorCode getValueH1TrianglesOnly();
 
-    PetscErrorCode getValueH1ThroughThickness();
+    MoFEMErrorCode getValueH1ThroughThickness();
 
-    PetscErrorCode getValueH1(MatrixDouble &pts);
+    MoFEMErrorCode getValueH1(MatrixDouble &pts);
 
-    PetscErrorCode getValueL2(MatrixDouble &pts);
+    MoFEMErrorCode getValueL2(MatrixDouble &pts);
 
-    PetscErrorCode getValueHdiv(MatrixDouble &pts);
+    MoFEMErrorCode getValueHdiv(MatrixDouble &pts);
 
-    PetscErrorCode getValueHCurl(MatrixDouble &pts);
+    MoFEMErrorCode getValueHCurl(MatrixDouble &pts);
 
     // int faceNodes[2][3];
     MatrixDouble N;

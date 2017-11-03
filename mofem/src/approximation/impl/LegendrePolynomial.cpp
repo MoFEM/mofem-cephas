@@ -28,7 +28,9 @@ using namespace MoFEM;
 #include <BaseFunction.hpp>
 #include <LegendrePolynomial.hpp>
 
-PetscErrorCode LegendrePolynomialCtx::query_interface(
+namespace MoFEM {
+
+MoFEMErrorCode LegendrePolynomialCtx::query_interface(
   const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface
 ) const {
 
@@ -44,7 +46,7 @@ PetscErrorCode LegendrePolynomialCtx::query_interface(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode LegendrePolynomial::query_interface(
+MoFEMErrorCode LegendrePolynomial::query_interface(
   const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface
 ) const {
 
@@ -60,7 +62,7 @@ PetscErrorCode LegendrePolynomial::query_interface(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode LegendrePolynomial::getValue(
+MoFEMErrorCode LegendrePolynomial::getValue(
   MatrixDouble &pts,
   boost::shared_ptr<BaseFunctionCtx> ctx_ptr
 ) {
@@ -79,4 +81,6 @@ PetscErrorCode LegendrePolynomial::getValue(
     ierr = (ctx->basePolynomialsType0)(ctx->P,pts(0,gg),ctx->diffS,l,diff_l,ctx->dIm); CHKERRQ(ierr);
   }
   MoFEMFunctionReturnHot(0);
+}
+
 }

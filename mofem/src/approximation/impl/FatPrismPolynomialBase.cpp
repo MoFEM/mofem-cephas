@@ -45,7 +45,7 @@ using namespace MoFEM;
 #include <FlatPrismPolynomialBase.hpp>
 #include <FatPrismPolynomialBase.hpp>
 
-PetscErrorCode FatPrismPolynomialBaseCtx::query_interface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface) const {
+MoFEMErrorCode FatPrismPolynomialBaseCtx::query_interface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface) const {
 
   MoFEMFunctionBeginHot;
   *iface = NULL;
@@ -86,7 +86,7 @@ fePtr(fe_ptr) {
 FatPrismPolynomialBaseCtx::~FatPrismPolynomialBaseCtx() {
 }
 
-PetscErrorCode FatPrismPolynomialBase::query_interface(
+MoFEMErrorCode FatPrismPolynomialBase::query_interface(
   const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface
 ) const {
   MoFEMFunctionBeginHot;
@@ -104,7 +104,7 @@ PetscErrorCode FatPrismPolynomialBase::query_interface(
 FatPrismPolynomialBase::~FatPrismPolynomialBase() {}
 FatPrismPolynomialBase::FatPrismPolynomialBase() {}
 
-PetscErrorCode FatPrismPolynomialBase::getValue(
+MoFEMErrorCode FatPrismPolynomialBase::getValue(
   MatrixDouble &pts,
   boost::shared_ptr<BaseFunctionCtx> ctx_ptr
 ) {
@@ -182,12 +182,12 @@ PetscErrorCode FatPrismPolynomialBase::getValue(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode FatPrismPolynomialBase::getValueH1TrianglesOnly() {
+MoFEMErrorCode FatPrismPolynomialBase::getValueH1TrianglesOnly() {
 
   MoFEMFunctionBeginHot;
 
   const FieldApproximationBase base = cTx->bAse;
-  // PetscErrorCode (*base_polynomials)(
+  // MoFEMErrorCode (*base_polynomials)(
   //   int p,double s,double *diff_s,double *L,double *diffL,const int dim
   // ) = cTx->basePolynomialsType0;
 
@@ -203,7 +203,7 @@ PetscErrorCode FatPrismPolynomialBase::getValueH1TrianglesOnly() {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode FatPrismPolynomialBase::getValueH1ThroughThickness() {
+MoFEMErrorCode FatPrismPolynomialBase::getValueH1ThroughThickness() {
 
   MoFEMFunctionBeginHot;
 
@@ -246,13 +246,13 @@ PetscErrorCode FatPrismPolynomialBase::getValueH1ThroughThickness() {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode FatPrismPolynomialBase::getValueH1(MatrixDouble &pts) {
+MoFEMErrorCode FatPrismPolynomialBase::getValueH1(MatrixDouble &pts) {
 
   MoFEMFunctionBeginHot;
 
   DataForcesAndSourcesCore& data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
-  // PetscErrorCode (*base_polynomials)(
+  // MoFEMErrorCode (*base_polynomials)(
   //   int p,double s,double *diff_s,double *L,double *diffL,const int dim
   // ) = cTx->basePolynomialsType0;
 
@@ -470,16 +470,16 @@ PetscErrorCode FatPrismPolynomialBase::getValueH1(MatrixDouble &pts) {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode FatPrismPolynomialBase::getValueL2(MatrixDouble &pts) {
+MoFEMErrorCode FatPrismPolynomialBase::getValueL2(MatrixDouble &pts) {
   MoFEMFunctionBeginHot;
   SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"Not yet implemented");
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode FatPrismPolynomialBase::getValueHdiv(MatrixDouble &pts) {
+MoFEMErrorCode FatPrismPolynomialBase::getValueHdiv(MatrixDouble &pts) {
   SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"Not yet implemented");
 }
 
-PetscErrorCode FatPrismPolynomialBase::getValueHCurl(MatrixDouble &pts) {
+MoFEMErrorCode FatPrismPolynomialBase::getValueHCurl(MatrixDouble &pts) {
   SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"Not yet implemented");
 }

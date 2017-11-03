@@ -63,7 +63,7 @@
 
 #include <DMMoFEM.hpp>
 
-using namespace MoFEM;
+namespace MoFEM {
 
 DMCtx::DMCtx():
 mField_ptr(PETSC_NULL),
@@ -81,7 +81,7 @@ DMCtx::~DMCtx() {
   // cerr << "Destroy DMCtx" << endl;
 }
 
-PetscErrorCode DMCtx::query_interface(const MOFEMuuid& uuid, UnknownInterface** iface) const {
+MoFEMErrorCode DMCtx::query_interface(const MOFEMuuid& uuid, UnknownInterface** iface) const {
   MoFEMFunctionBeginHot;
   *iface = NULL;
   if(uuid == IDD_DMCTX) {
@@ -1114,4 +1114,6 @@ PetscErrorCode DMMoFEMGetFieldIS(DM dm,RowColData rc,const char field_name[],IS 
     is
   ); CHKERRQ(ierr);
   MoFEMFunctionReturnHot(0);
+}
+
 }

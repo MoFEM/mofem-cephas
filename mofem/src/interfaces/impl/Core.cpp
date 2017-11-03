@@ -24,7 +24,7 @@ extern "C" {
 
 namespace MoFEM {
 
-PetscErrorCode Core::query_interface(const MOFEMuuid &uuid,
+MoFEMErrorCode Core::query_interface(const MOFEMuuid &uuid,
                                      UnknownInterface **iface) const {
   MoFEMFunctionBeginHot;
   *iface = NULL;
@@ -117,7 +117,7 @@ static PetscErrorCode mofem_error_handler(
 }
 
 template<class IFACE>
-PetscErrorCode Core::regSubInterface(const MOFEMuuid& uid) {
+MoFEMErrorCode Core::regSubInterface(const MOFEMuuid& uid) {
   MoFEMFunctionBeginHot;
   ierr = registerInterface<IFACE>(uid); CHKERRQ(ierr);
   unsigned long int id = uid.uUId.to_ulong();
@@ -261,7 +261,7 @@ BitProblemId Core::getProblemShift() {
   return BitProblemId(1<<(((*pShift)++)-1));
 }
 
-PetscErrorCode Core::clearMap() {
+MoFEMErrorCode Core::clearMap() {
   MoFEMFunctionBeginHot;
   // Cleaning databases in interfaces
   ierr = getInterface<SeriesRecorder>()->clearMap(); CHKERRQ(ierr);
@@ -280,7 +280,7 @@ PetscErrorCode Core::clearMap() {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode Core::addPrismToDatabase(const EntityHandle prism,int verb) {
+MoFEMErrorCode Core::addPrismToDatabase(const EntityHandle prism,int verb) {
   MoFEMFunctionBeginHot;
   if(verb==-1) verb = verbose;
   try {
@@ -308,7 +308,7 @@ PetscErrorCode Core::addPrismToDatabase(const EntityHandle prism,int verb) {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode Core::getTags(int verb) {
+MoFEMErrorCode Core::getTags(int verb) {
   MoFEMFunctionBeginHot;
 
   const EntityHandle root_meshset = moab.get_root_set();
@@ -551,14 +551,14 @@ PetscErrorCode Core::getTags(int verb) {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode Core::clear_database(int verb) {
+MoFEMErrorCode Core::clear_database(int verb) {
   MoFEMFunctionBeginHot;
   if(verb==-1) verb = verbose;
   ierr = clearMap(); CHKERRQ(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode Core::rebuild_database(int verb) {
+MoFEMErrorCode Core::rebuild_database(int verb) {
   MoFEMFunctionBeginHot;
   if(verb==-1) verb = verbose;
   ierr = clearMap(); CHKERRQ(ierr);
@@ -566,7 +566,7 @@ PetscErrorCode Core::rebuild_database(int verb) {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode Core::initialiseDatabaseFromMesh(int verb) {
+MoFEMErrorCode Core::initialiseDatabaseFromMesh(int verb) {
   MoFEMFunctionBeginHot;
   if(verb==-1) verb = verbose;
 
@@ -790,24 +790,24 @@ PetscErrorCode Core::initialiseDatabaseFromMesh(int verb) {
 
 // cubit meshsets
 
-PetscErrorCode Core::get_fields(const Field_multiIndex **fields_ptr) const {
+MoFEMErrorCode Core::get_fields(const Field_multiIndex **fields_ptr) const {
   MoFEMFunctionBeginHot;
   *fields_ptr = &fIelds;
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode Core::get_ref_ents(const RefEntity_multiIndex **refined_entities_ptr) const {
+MoFEMErrorCode Core::get_ref_ents(const RefEntity_multiIndex **refined_entities_ptr) const {
   MoFEMFunctionBeginHot;
   *refined_entities_ptr = &refinedEntities;
   MoFEMFunctionReturnHot(0);
 }
-PetscErrorCode Core::get_ref_finite_elements(const RefElement_multiIndex **refined_finite_elements_ptr) const {
+MoFEMErrorCode Core::get_ref_finite_elements(const RefElement_multiIndex **refined_finite_elements_ptr) const {
   MoFEMFunctionBeginHot;
   *refined_finite_elements_ptr = &refinedFiniteElements;
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode Core::get_problem(const std::string &problem_name,const Problem **problem_ptr) const {
+MoFEMErrorCode Core::get_problem(const std::string &problem_name,const Problem **problem_ptr) const {
   MoFEMFunctionBeginHot;
   typedef Problem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
   const ProblemsByName &problems = pRoblems.get<Problem_mi_tag>();
@@ -822,18 +822,18 @@ PetscErrorCode Core::get_problem(const std::string &problem_name,const Problem *
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode Core::get_problems(const Problem_multiIndex **problems_ptr) const {
+MoFEMErrorCode Core::get_problems(const Problem_multiIndex **problems_ptr) const {
   MoFEMFunctionBeginHot;
   *problems_ptr = &pRoblems;
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode Core::get_field_ents(const FieldEntity_multiIndex **field_ents) const {
+MoFEMErrorCode Core::get_field_ents(const FieldEntity_multiIndex **field_ents) const {
   MoFEMFunctionBeginHot;
   *field_ents = &entsFields;
   MoFEMFunctionReturnHot(0);
 }
-PetscErrorCode Core::get_dofs(const DofEntity_multiIndex **dofs_ptr) const {
+MoFEMErrorCode Core::get_dofs(const DofEntity_multiIndex **dofs_ptr) const {
   MoFEMFunctionBeginHot;
   *dofs_ptr = &dofsField;
   MoFEMFunctionReturnHot(0);

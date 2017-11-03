@@ -164,7 +164,7 @@ int main(int argc, char *argv[]) {
 
       ublas::matrix<FieldData> NN;
 
-      PetscErrorCode doWork(
+      MoFEMErrorCode doWork(
         int row_side,int col_side,
         EntityType row_type,EntityType col_type,
         DataForcesAndSourcesCore::EntData &row_data,
@@ -226,14 +226,14 @@ int main(int argc, char *argv[]) {
     ForcesAndSourcesCore_TestFE(MoFEM::Interface &_m_field):
       ForcesAndSourcesCore(_m_field),data_row(MBTET),data_col(MBTET) {};
 
-    PetscErrorCode preProcess() {
+    MoFEMErrorCode preProcess() {
       MoFEMFunctionBeginHot;
       MoFEMFunctionReturnHot(0);
     }
 
     DataForcesAndSourcesCore data_row,data_col;
 
-    PetscErrorCode operator()() {
+    MoFEMErrorCode operator()() {
       MoFEMFunctionBeginHot;
 
       ierr = getSpacesAndBaseOnEntities(data_row); CHKERRQ(ierr);
@@ -300,7 +300,7 @@ int main(int argc, char *argv[]) {
       MoFEMFunctionReturnHot(0);
     }
 
-    PetscErrorCode postProcess() {
+    MoFEMErrorCode postProcess() {
       MoFEMFunctionBeginHot;
 
       MoFEMFunctionReturnHot(0);

@@ -19,17 +19,17 @@
 namespace MoFEM {
 
 //KSP
-PetscErrorCode KspMethod::setKspCtx(const KSPContext& ctx) {
+MoFEMErrorCode KspMethod::setKspCtx(const KSPContext& ctx) {
   MoFEMFunctionBeginHot;
   ksp_ctx = ctx;
   MoFEMFunctionReturnHot(0);
 }
-PetscErrorCode KspMethod::setKsp(KSP ksp_) {
+MoFEMErrorCode KspMethod::setKsp(KSP ksp_) {
   MoFEMFunctionBeginHot;
   ksp = ksp_;
   MoFEMFunctionReturnHot(0);
 }
-PetscErrorCode KspMethod::copyKsp(const KspMethod &ksp) {
+MoFEMErrorCode KspMethod::copyKsp(const KspMethod &ksp) {
   MoFEMFunctionBeginHot;
   this->ksp_ctx = ksp.ksp_ctx;
   this->ksp = ksp.ksp;
@@ -40,17 +40,17 @@ PetscErrorCode KspMethod::copyKsp(const KspMethod &ksp) {
 }
 
 //SNES
-PetscErrorCode SnesMethod::setSnesCtx(const SNESContext& ctx) {
+MoFEMErrorCode SnesMethod::setSnesCtx(const SNESContext& ctx) {
   MoFEMFunctionBeginHot;
   snes_ctx = ctx;
   MoFEMFunctionReturnHot(0);
 }
-PetscErrorCode SnesMethod::setSnes(SNES _snes) {
+MoFEMErrorCode SnesMethod::setSnes(SNES _snes) {
   MoFEMFunctionBeginHot;
   snes = _snes;
   MoFEMFunctionReturnHot(0);
 }
-PetscErrorCode SnesMethod::copySnes(const SnesMethod& snes) {
+MoFEMErrorCode SnesMethod::copySnes(const SnesMethod& snes) {
   MoFEMFunctionBeginHot;
   this->snes_ctx = snes.snes_ctx;
   this->snes = snes.snes;
@@ -62,17 +62,17 @@ PetscErrorCode SnesMethod::copySnes(const SnesMethod& snes) {
 }
 
 //TS
-PetscErrorCode TSMethod::setTsCtx(const TSContext& ctx) {
+MoFEMErrorCode TSMethod::setTsCtx(const TSContext& ctx) {
   MoFEMFunctionBeginHot;
   ts_ctx = ctx;
   MoFEMFunctionReturnHot(0);
 }
-PetscErrorCode TSMethod::setTs(TS _ts) {
+MoFEMErrorCode TSMethod::setTs(TS _ts) {
   MoFEMFunctionBeginHot;
   ts = _ts;
   MoFEMFunctionReturnHot(0);
 }
-PetscErrorCode TSMethod::copyTs(const TSMethod &ts) {
+MoFEMErrorCode TSMethod::copyTs(const TSMethod &ts) {
   MoFEMFunctionBeginHot;
   this->ts_ctx = ts.ts_ctx;
   this->ts = ts.ts;
@@ -108,7 +108,7 @@ postProcessHook(NULL),
 operatorHook(NULL) {
 }
 
-PetscErrorCode BasicMethod::copyBasicMethod(const BasicMethod &basic) {
+MoFEMErrorCode BasicMethod::copyBasicMethod(const BasicMethod &basic) {
   MoFEMFunctionBeginHot;
 
   this->nInTheLoop = basic.nInTheLoop;
@@ -128,7 +128,7 @@ PetscErrorCode BasicMethod::copyBasicMethod(const BasicMethod &basic) {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode BasicMethod::preProcess() {
+MoFEMErrorCode BasicMethod::preProcess() {
   MoFEMFunctionBeginHot;
   if(preProcessHook) {
     ierr = preProcessHook(); CHKERRQ(ierr);
@@ -140,7 +140,7 @@ PetscErrorCode BasicMethod::preProcess() {
   }
   MoFEMFunctionReturnHot(0);
 }
-PetscErrorCode BasicMethod::postProcess() {
+MoFEMErrorCode BasicMethod::postProcess() {
   MoFEMFunctionBeginHot;
   if(postProcessHook) {
     ierr = postProcessHook(); CHKERRQ(ierr);
@@ -152,7 +152,7 @@ PetscErrorCode BasicMethod::postProcess() {
   }
   MoFEMFunctionReturnHot(0);
 }
-PetscErrorCode BasicMethod::operator()() {
+MoFEMErrorCode BasicMethod::operator()() {
   MoFEMFunctionBeginHot;
   if(operatorHook) {
     ierr = operatorHook(); CHKERRQ(ierr);

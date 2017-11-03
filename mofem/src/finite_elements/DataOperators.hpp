@@ -57,7 +57,7 @@ struct DataOperator {
 
   /** \brief Operator for bi-linear form, usually to calculate values on right hand side
     */
-  virtual PetscErrorCode doWork(
+  virtual MoFEMErrorCode doWork(
     int row_side,int col_side,
     EntityType row_type,EntityType col_type,
     DataForcesAndSourcesCore::EntData &row_data,
@@ -67,13 +67,13 @@ struct DataOperator {
     MoFEMFunctionReturnHot(0);
   }
 
-  virtual PetscErrorCode opLhs(
+  virtual MoFEMErrorCode opLhs(
     DataForcesAndSourcesCore &row_data,
     DataForcesAndSourcesCore &col_data,
     bool symm = true
   );
 
-  virtual PetscErrorCode opLhs(
+  virtual MoFEMErrorCode opLhs(
     DataForcesAndSourcesCore &row_data,
     DataForcesAndSourcesCore &col_data
   ) {
@@ -83,7 +83,7 @@ struct DataOperator {
 
   /** \brief Operator for linear form, usually to calculate values on left hand side
     */
-  virtual PetscErrorCode doWork(
+  virtual MoFEMErrorCode doWork(
     int side,
     EntityType type,
     DataForcesAndSourcesCore::EntData &data) {
@@ -92,7 +92,7 @@ struct DataOperator {
     MoFEMFunctionReturnHot(0);
   }
 
-  virtual PetscErrorCode opRhs(
+  virtual MoFEMErrorCode opRhs(
     DataForcesAndSourcesCore &data,
     const bool do_vertices,
     const bool do_edges,
@@ -103,7 +103,7 @@ struct DataOperator {
     const bool error_if_no_base = true
   );
 
-  virtual PetscErrorCode opRhs(
+  virtual MoFEMErrorCode opRhs(
     DataForcesAndSourcesCore &data,
     const bool error_if_no_base = true
   ) {
@@ -147,7 +147,7 @@ struct DataOperator {
  * \ingroup mofem_forces_and_sources
  */
 template<int Tensor_Dim,class T,class L,class A>
-inline PetscErrorCode invertTensor3by3(
+inline MoFEMErrorCode invertTensor3by3(
   ublas::matrix<T,L,A> &jac_data,
   ublas::vector<T,A> &det_data,
   ublas::matrix<T,L,A> &inv_jac_data
@@ -162,7 +162,7 @@ inline PetscErrorCode invertTensor3by3(
 }
 
 template<>
-inline PetscErrorCode invertTensor3by3<3,double,ublas::row_major,DoubleAllocator>(
+inline MoFEMErrorCode invertTensor3by3<3,double,ublas::row_major,DoubleAllocator>(
   MatrixDouble &jac_data,
   VectorDouble &det_data,
   MatrixDouble &inv_jac_data
@@ -174,7 +174,7 @@ inline PetscErrorCode invertTensor3by3<3,double,ublas::row_major,DoubleAllocator
  * \ingroup mofem_forces_and_sources
  */
 template<class T1,class T2>
-inline PetscErrorCode determinantTensor3by3(
+inline MoFEMErrorCode determinantTensor3by3(
   T1 &t,T2 &det
 ) {
   MoFEMFunctionBeginHot;
@@ -191,7 +191,7 @@ inline PetscErrorCode determinantTensor3by3(
  * \ingroup mofem_forces_and_sources
  */
 template<class T1,class T2,class T3>
-inline PetscErrorCode invertTensor3by3(
+inline MoFEMErrorCode invertTensor3by3(
   T1 &t,T2 &det,T3 &inv_t
 ) {
   MoFEMFunctionBeginHot;
@@ -213,7 +213,7 @@ inline PetscErrorCode invertTensor3by3(
  * \ingroup mofem_forces_and_sources
  */
 template<>
-inline PetscErrorCode invertTensor3by3<
+inline MoFEMErrorCode invertTensor3by3<
 FTensor::Tensor2_symmetric<double,3>,double,FTensor::Tensor2_symmetric<double,3>
 >(
   FTensor::Tensor2_symmetric<double,3> &t,
@@ -236,7 +236,7 @@ FTensor::Tensor2_symmetric<double,3>,double,FTensor::Tensor2_symmetric<double,3>
  * \ingroup mofem_forces_and_sources
  */
 template<>
-inline PetscErrorCode invertTensor3by3<
+inline MoFEMErrorCode invertTensor3by3<
 FTensor::Tensor2_symmetric<double,3>,double,FTensor::Tensor2_symmetric<double*,3>
 >(
   FTensor::Tensor2_symmetric<double,3> &t,
@@ -273,7 +273,7 @@ struct OpSetInvJacH1: public DataOperator {
   }
 
   MatrixDouble diffNinvJac;
-  PetscErrorCode doWork(
+  MoFEMErrorCode doWork(
     int side,EntityType type,DataForcesAndSourcesCore::EntData &data
   );
 
@@ -300,7 +300,7 @@ struct OpSetInvJacHdivAndHcurl: public DataOperator {
   }
 
   MatrixDouble diffHdivInvJac;
-  PetscErrorCode doWork(
+  MoFEMErrorCode doWork(
     int side,EntityType type,DataForcesAndSourcesCore::EntData &data);
 
 };
@@ -318,7 +318,7 @@ struct OpSetHoInvJacH1: public DataOperator {
   OpSetHoInvJacH1(MatrixDouble &inv_ho_jac): invHoJac(inv_ho_jac) {}
 
   MatrixDouble diffNinvJac;
-  PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data);
+  MoFEMErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data);
 
 };
 
@@ -338,7 +338,7 @@ struct OpSetHoInvJacHdivAndHcurl: public DataOperator {
   OpSetHoInvJacHdivAndHcurl(MatrixDouble &inv_ho_jac): invHoJac(inv_ho_jac) {}
 
   MatrixDouble diffHdivInvJac;
-  PetscErrorCode doWork(
+  MoFEMErrorCode doWork(
     int side,EntityType type,DataForcesAndSourcesCore::EntData &data
   );
 
@@ -380,7 +380,7 @@ struct OpSetContravariantPiolaTransform: public DataOperator {
   MatrixDouble piolaN;
   MatrixDouble piolaDiffN;
 
-  PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data);
+  MoFEMErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data);
 
 };
 
@@ -401,7 +401,7 @@ struct OpSetHoContravariantPiolaTransform: public DataOperator {
 
   MatrixDouble piolaN;
   MatrixDouble piolaDiffN;
-  PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data);
+  MoFEMErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data);
 
 };
 
@@ -419,7 +419,7 @@ struct OpSetHoCovariantPiolaTransform: public DataOperator {
 
   MatrixDouble piolaN;
   MatrixDouble piolaDiffN;
-  PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data);
+  MoFEMErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data);
 
 };
 
@@ -456,7 +456,7 @@ struct OpSetCovariantPiolaTransform: public DataOperator {
   MatrixDouble piolaN;
   MatrixDouble piolaDiffN;
 
-  PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data);
+  MoFEMErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data);
 
 };
 
@@ -500,7 +500,7 @@ struct OpGetDataAndGradient: public DataOperator {
    * @param  data data stored on entity (dofs values, dofs indices, etc.)
    * @return      error code
    */
-  PetscErrorCode calculateValAndGrad(
+  MoFEMErrorCode calculateValAndGrad(
     int side,EntityType type,DataForcesAndSourcesCore::EntData &data
   ) {
     MoFEMFunctionBeginHot;
@@ -533,7 +533,7 @@ struct OpGetDataAndGradient: public DataOperator {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode doWork(
+  MoFEMErrorCode doWork(
     int side,
     EntityType type,
     DataForcesAndSourcesCore::EntData &data
@@ -602,7 +602,7 @@ FTensor::Tensor2<double*,3,3> OpGetDataAndGradient<3,3>::getGradAtGaussPtsTensor
  * \brief Specialization for field with 3 coefficients in 3 dimension
  */
 template<>
-PetscErrorCode OpGetDataAndGradient<3,3>::calculateValAndGrad(
+MoFEMErrorCode OpGetDataAndGradient<3,3>::calculateValAndGrad(
   int side,EntityType type,DataForcesAndSourcesCore::EntData &data
 );
 
@@ -610,7 +610,7 @@ PetscErrorCode OpGetDataAndGradient<3,3>::calculateValAndGrad(
  * \brief Specialization for field with for scalar field in 3 dimension
  */
 template<>
-PetscErrorCode OpGetDataAndGradient<1,3>::calculateValAndGrad(
+MoFEMErrorCode OpGetDataAndGradient<1,3>::calculateValAndGrad(
   int side,EntityType type,DataForcesAndSourcesCore::EntData &data
 );
 
@@ -635,13 +635,13 @@ struct OpGetCoordsAndNormalsOnFace: public DataOperator {
     tAngent2_at_GaussPt(tangent2_at_gausspt) {}
 
   MatrixDouble sPin;
-  PetscErrorCode doWork(
+  MoFEMErrorCode doWork(
     int side,
     EntityType type,
     DataForcesAndSourcesCore::EntData &data
   );
 
-  PetscErrorCode calculateNormals();
+  MoFEMErrorCode calculateNormals();
 
 };
 
@@ -678,13 +678,13 @@ struct OpGetCoordsAndNormalsOnPrism: public DataOperator {
     tAngent2_at_GaussPtF4(tangent2_at_gaussptf4) {}
 
   MatrixDouble sPin;
-  PetscErrorCode doWork(
+  MoFEMErrorCode doWork(
     int side,
     EntityType type,
     DataForcesAndSourcesCore::EntData &data
   );
 
-  PetscErrorCode calculateNormals();
+  MoFEMErrorCode calculateNormals();
 
 };
 
@@ -703,7 +703,7 @@ struct OpSetContravariantPiolaTransformOnTriangle: public DataOperator {
   nOrmal(normal),
   normalsAtGaussPt(normals_at_pts) {}
 
-  PetscErrorCode doWork(
+  MoFEMErrorCode doWork(
     int side,
     EntityType type,
     DataForcesAndSourcesCore::EntData &data
@@ -739,7 +739,7 @@ struct OpSetCovariantPiolaTransformOnTriangle: public DataOperator {
   tangent1AtGaussPt(tangent1_at_pts)
   {}
 
-  PetscErrorCode doWork(
+  MoFEMErrorCode doWork(
     int side,
     EntityType type,
     DataForcesAndSourcesCore::EntData &data
@@ -757,7 +757,7 @@ struct OpGetHoTangentOnEdge: public DataOperator {
   OpGetHoTangentOnEdge(MatrixDouble &tangent):
     tAngent(tangent) {}
 
-  PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data);
+  MoFEMErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data);
 
 };
 
@@ -777,7 +777,7 @@ struct OpSetCovariantPiolaTransformOnEdge: public DataOperator {
   tangentAtGaussPt(tangent_at_pts)
   {}
 
-  PetscErrorCode doWork(
+  MoFEMErrorCode doWork(
     int side,
     EntityType type,
     DataForcesAndSourcesCore::EntData &data

@@ -188,7 +188,7 @@ int main(int argc, char *argv[]) {
       struct TestBitLevel {
         BitRefManager *mngPtr;
         TestBitLevel(BitRefManager *mng_ptr) : mngPtr(mng_ptr) {}
-        PetscErrorCode operator()(const BitRefLevel &bit,
+        MoFEMErrorCode operator()(const BitRefLevel &bit,
                                   const int expected_size) {
           MoFEMFunctionBeginHot;
           Range ents;

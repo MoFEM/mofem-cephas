@@ -44,7 +44,7 @@ using namespace MoFEM;
 #include <EntPolynomialBaseCtx.hpp>
 #include <FlatPrismPolynomialBase.hpp>
 
-PetscErrorCode FlatPrismPolynomialBaseCtx::query_interface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface) const {
+MoFEMErrorCode FlatPrismPolynomialBaseCtx::query_interface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface) const {
 
   MoFEMFunctionBeginHot;
   *iface = NULL;
@@ -77,7 +77,7 @@ fePtr(fe_ptr) {
 FlatPrismPolynomialBaseCtx::~FlatPrismPolynomialBaseCtx() {
 }
 
-PetscErrorCode FlatPrismPolynomialBase::query_interface(
+MoFEMErrorCode FlatPrismPolynomialBase::query_interface(
   const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface
 ) const {
 
@@ -96,7 +96,7 @@ PetscErrorCode FlatPrismPolynomialBase::query_interface(
 FlatPrismPolynomialBase::~FlatPrismPolynomialBase() {}
 FlatPrismPolynomialBase::FlatPrismPolynomialBase() {}
 
-PetscErrorCode FlatPrismPolynomialBase::getValue(
+MoFEMErrorCode FlatPrismPolynomialBase::getValue(
   MatrixDouble &pts,
   boost::shared_ptr<BaseFunctionCtx> ctx_ptr
 ) {
@@ -209,7 +209,7 @@ PetscErrorCode FlatPrismPolynomialBase::getValue(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode FlatPrismPolynomialBase::getValueH1(MatrixDouble &pts) {
+MoFEMErrorCode FlatPrismPolynomialBase::getValueH1(MatrixDouble &pts) {
 
   MoFEMFunctionBeginHot;
 
@@ -288,16 +288,16 @@ PetscErrorCode FlatPrismPolynomialBase::getValueH1(MatrixDouble &pts) {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode FlatPrismPolynomialBase::getValueL2(MatrixDouble &pts) {
+MoFEMErrorCode FlatPrismPolynomialBase::getValueL2(MatrixDouble &pts) {
   MoFEMFunctionBeginHot;
   SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"Not yet implemented");
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode FlatPrismPolynomialBase::getValueHdiv(MatrixDouble &pts) {
+MoFEMErrorCode FlatPrismPolynomialBase::getValueHdiv(MatrixDouble &pts) {
   SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"Not yet implemented");
 }
 
-PetscErrorCode FlatPrismPolynomialBase::getValueHCurl(MatrixDouble &pts) {
+MoFEMErrorCode FlatPrismPolynomialBase::getValueHCurl(MatrixDouble &pts) {
   SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"Not yet implemented");
 }

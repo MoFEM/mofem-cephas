@@ -29,7 +29,9 @@ using namespace MoFEM;
 #include <LegendrePolynomial.hpp>
 #include <LobattoPolynomial.hpp>
 
-PetscErrorCode LobattoPolynomialCtx::query_interface(
+namespace MoFEM {
+
+MoFEMErrorCode LobattoPolynomialCtx::query_interface(
   const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface
 ) const {
 
@@ -45,7 +47,7 @@ PetscErrorCode LobattoPolynomialCtx::query_interface(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode LobattoPolynomial::query_interface(
+MoFEMErrorCode LobattoPolynomial::query_interface(
   const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface
 ) const {
 
@@ -61,7 +63,7 @@ PetscErrorCode LobattoPolynomial::query_interface(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode LobattoPolynomial::getValue(
+MoFEMErrorCode LobattoPolynomial::getValue(
   MatrixDouble &pts,
   boost::shared_ptr<BaseFunctionCtx> ctx_ptr
 ) {
@@ -83,7 +85,7 @@ PetscErrorCode LobattoPolynomial::getValue(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode KernelLobattoPolynomialCtx::query_interface(
+MoFEMErrorCode KernelLobattoPolynomialCtx::query_interface(
   const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface
 ) const {
 
@@ -99,7 +101,7 @@ PetscErrorCode KernelLobattoPolynomialCtx::query_interface(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode KernelLobattoPolynomial::query_interface(
+MoFEMErrorCode KernelLobattoPolynomial::query_interface(
   const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface
 ) const {
 
@@ -115,7 +117,7 @@ PetscErrorCode KernelLobattoPolynomial::query_interface(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode KernelLobattoPolynomial::getValue(
+MoFEMErrorCode KernelLobattoPolynomial::getValue(
   MatrixDouble &pts,
   boost::shared_ptr<BaseFunctionCtx> ctx_ptr
 ) {
@@ -134,4 +136,6 @@ PetscErrorCode KernelLobattoPolynomial::getValue(
     ierr = (ctx->basePolynomialsType0)(ctx->P,pts(0,gg),ctx->diffS,l,diff_l,ctx->dIm); CHKERRQ(ierr);
   }
   MoFEMFunctionReturnHot(0);
+}
+
 }

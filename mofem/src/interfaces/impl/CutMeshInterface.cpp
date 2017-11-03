@@ -17,7 +17,7 @@
 
 namespace MoFEM {
 
-PetscErrorCode
+MoFEMErrorCode
 CutMeshInterface::query_interface(const MOFEMuuid &uuid,
                                   UnknownInterface **iface) const {
   MoFEMFunctionBeginHot;
@@ -30,23 +30,23 @@ CutMeshInterface::query_interface(const MOFEMuuid &uuid,
   MoFEMFunctionReturnHot(0);
 }
 
-CutMeshInterface::CutMeshInterface(const MoFEM::Core &core)
-    : cOre(const_cast<MoFEM::Core &>(core)) {
+CutMeshInterface::CutMeshInterface(const Core &core)
+    : cOre(const_cast<Core &>(core)) {
   lineSearchSteps = 10;
   nbMaxMergingCycles = 200;
   nbMaxTrimSearchIterations = 20;
 }
 
-PetscErrorCode CutMeshInterface::setSurface(const Range &surface) {
+MoFEMErrorCode CutMeshInterface::setSurface(const Range &surface) {
   MoFEMFunctionBeginHot;
   sUrface = surface;
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode CutMeshInterface::copySurface(const Range &surface, Tag th,
+MoFEMErrorCode CutMeshInterface::copySurface(const Range &surface, Tag th,
                                              double *shift, double *origin,
                                              double *transform) {
-  MoFEM::CoreInterface &m_field = cOre;
+  CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   MoFEMFunctionBeginHot;
   for (Range::const_iterator tit = surface.begin(); tit != surface.end();
@@ -98,26 +98,26 @@ PetscErrorCode CutMeshInterface::copySurface(const Range &surface, Tag th,
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode CutMeshInterface::setVolume(const Range &volume) {
+MoFEMErrorCode CutMeshInterface::setVolume(const Range &volume) {
   MoFEMFunctionBeginHot;
   vOlume = volume;
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode CutMeshInterface::mergeSurface(const Range &surface) {
+MoFEMErrorCode CutMeshInterface::mergeSurface(const Range &surface) {
   MoFEMFunctionBeginHot;
   sUrface.merge(surface);
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode CutMeshInterface::mergeVolumes(const Range &volume) {
+MoFEMErrorCode CutMeshInterface::mergeVolumes(const Range &volume) {
   MoFEMFunctionBeginHot;
   vOlume.merge(volume);
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode CutMeshInterface::buildTree() {
-  MoFEM::CoreInterface &m_field = cOre;
+MoFEMErrorCode CutMeshInterface::buildTree() {
+  CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   MoFEMFunctionBeginHot;
   if(treeSurfPtr) {
@@ -134,7 +134,7 @@ PetscErrorCode CutMeshInterface::buildTree() {
 }
 
 struct UpdateMeshsets {
-  PetscErrorCode operator()(MoFEM::Core &core, const BitRefLevel &bit) const {
+  MoFEMErrorCode operator()(Core &core, const BitRefLevel &bit) const {
     MoFEMFunctionBeginHot;
     ierr = core.getInterface<MeshsetsManager>()
                ->updateAllMeshsetsByEntitiesChildren(bit);
@@ -144,12 +144,12 @@ struct UpdateMeshsets {
   }
 };
 
-PetscErrorCode CutMeshInterface::cutAndTrim(
+MoFEMErrorCode CutMeshInterface::cutAndTrim(
     const BitRefLevel &bit_level1, const BitRefLevel &bit_level2, Tag th,
     const double tol_cut, const double tol_cut_close, const double tol_trim,
     const double tol_trim_close, Range *fixed_edges, Range *corner_nodes,
     const bool update_meshsets,const bool debug) {
-  MoFEM::CoreInterface &m_field = cOre;
+  CoreInterface &m_field = cOre;
   MoFEMFunctionBeginHot;
   // cut mesh
   ierr = findEdgesToCut(tol_cut);
@@ -234,7 +234,7 @@ PetscErrorCode CutMeshInterface::cutAndTrim(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode CutMeshInterface::cutTrimAndMerge(
+MoFEMErrorCode CutMeshInterface::cutTrimAndMerge(
     const int fraction_level, const BitRefLevel &bit_level1,
     const BitRefLevel &bit_level2, const BitRefLevel &bit_level3, Tag th,
     const double tol_cut, const double tol_cut_close, const double tol_trim,
@@ -284,9 +284,9 @@ PetscErrorCode CutMeshInterface::cutTrimAndMerge(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode CutMeshInterface::findEdgesToCut(const double low_tol,
+MoFEMErrorCode CutMeshInterface::findEdgesToCut(const double low_tol,
                                                 int verb) {
-  MoFEM::CoreInterface &m_field = cOre;
+  CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   MoFEMFunctionBeginHot;
   // Range vol_edges;
@@ -423,9 +423,9 @@ PetscErrorCode CutMeshInterface::findEdgesToCut(const double low_tol,
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode CutMeshInterface::getZeroDistanceEnts(const double low_tol,
+MoFEMErrorCode CutMeshInterface::getZeroDistanceEnts(const double low_tol,
                                                      int verb) {
-  MoFEM::CoreInterface &m_field = cOre;
+  CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   MoFEMFunctionBeginHot;
   Skinner skin(&moab);
@@ -535,8 +535,8 @@ PetscErrorCode CutMeshInterface::getZeroDistanceEnts(const double low_tol,
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode CutMeshInterface::cutEdgesInMiddle(const BitRefLevel bit) {
-  MoFEM::CoreInterface &m_field = cOre;
+MoFEMErrorCode CutMeshInterface::cutEdgesInMiddle(const BitRefLevel bit) {
+  CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   MeshRefinement *refiner;
   const RefEntity_multiIndex *ref_ents_ptr;
@@ -603,10 +603,10 @@ PetscErrorCode CutMeshInterface::cutEdgesInMiddle(const BitRefLevel bit) {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode CutMeshInterface::trimEdgesInTheMiddle(const BitRefLevel bit,
+MoFEMErrorCode CutMeshInterface::trimEdgesInTheMiddle(const BitRefLevel bit,
                                                       Tag th,
                                                       const double tol) {
-  MoFEM::CoreInterface &m_field = cOre;
+  CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   MeshRefinement *refiner;
   const RefEntity_multiIndex *ref_ents_ptr;
@@ -695,10 +695,10 @@ PetscErrorCode CutMeshInterface::trimEdgesInTheMiddle(const BitRefLevel bit,
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode CutMeshInterface::moveMidNodesOnCutEdges(Tag th) {
+MoFEMErrorCode CutMeshInterface::moveMidNodesOnCutEdges(Tag th) {
   MoFEMFunctionBeginHot;
 
-  MoFEM::CoreInterface &m_field = cOre;
+  CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   MoFEMFunctionBeginHot;
 
@@ -731,8 +731,8 @@ PetscErrorCode CutMeshInterface::moveMidNodesOnCutEdges(Tag th) {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode CutMeshInterface::moveMidNodesOnTrimmedEdges(Tag th) {
-  MoFEM::CoreInterface &m_field = cOre;
+MoFEMErrorCode CutMeshInterface::moveMidNodesOnTrimmedEdges(Tag th) {
+  CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   MoFEMFunctionBeginHot;
   // Range out_side_vertices;
@@ -754,9 +754,9 @@ PetscErrorCode CutMeshInterface::moveMidNodesOnTrimmedEdges(Tag th) {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode CutMeshInterface::findEdgesToTrim(Tag th, const double tol,
+MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Tag th, const double tol,
                                                  int verb) {
-  MoFEM::CoreInterface &m_field = cOre;
+  CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   MoFEMFunctionBeginHot;
 
@@ -904,11 +904,11 @@ PetscErrorCode CutMeshInterface::findEdgesToTrim(Tag th, const double tol,
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode CutMeshInterface::getRayForEdge(const EntityHandle ent,
+MoFEMErrorCode CutMeshInterface::getRayForEdge(const EntityHandle ent,
                                                VectorAdaptor ray_point,
                                                VectorAdaptor unit_ray_dir,
                                                double &ray_length) const {
-  const MoFEM::CoreInterface &m_field = cOre;
+  const CoreInterface &m_field = cOre;
   const moab::Interface &moab = m_field.get_moab();
   MoFEMFunctionBeginHot;
   int num_nodes;
@@ -953,10 +953,10 @@ PetscErrorCode CutMeshInterface::getRayForEdge(const EntityHandle ent,
 //   return 1;
 // }
 
-PetscErrorCode
+MoFEMErrorCode
 CutMeshInterface::removePathologicalFrontTris(const BitRefLevel split_bit,
                                               Range &ents) {
-  MoFEM::CoreInterface &m_field = cOre;
+  CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   PrismInterface *interface;
   MoFEMFunctionBeginHot;
@@ -977,10 +977,10 @@ CutMeshInterface::removePathologicalFrontTris(const BitRefLevel split_bit,
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode CutMeshInterface::splitSides(const BitRefLevel split_bit,
+MoFEMErrorCode CutMeshInterface::splitSides(const BitRefLevel split_bit,
                                             const BitRefLevel bit,
                                             const Range &ents, Tag th) {
-  MoFEM::CoreInterface &m_field = cOre;
+  CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   PrismInterface *interface;
   MoFEMFunctionBegin;
@@ -1049,12 +1049,12 @@ typedef multi_index_container<
 
 
 
-PetscErrorCode CutMeshInterface::mergeBadEdges(
+MoFEMErrorCode CutMeshInterface::mergeBadEdges(
     const int fraction_level, const Range &tets, const Range &surface,
     const Range &fixed_edges, const Range &corner_nodes, Range &edges_to_merge,
     Range &out_tets, Range &new_surf, Tag th, const bool update_meshsets,
     const BitRefLevel *bit_ptr,const bool debug) {
-  MoFEM::CoreInterface &m_field = cOre;
+  CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   MoFEMFunctionBeginHot;
 
@@ -1062,13 +1062,13 @@ PetscErrorCode CutMeshInterface::mergeBadEdges(
    * \brief Merge nodes
    */
   struct MergeNodes {
-    MoFEM::CoreInterface &mField;
+    CoreInterface &mField;
     const bool onlyIfImproveQuality;
     const int lineSearch;
     Tag tH;
     bool updateMehsets;
 
-    MergeNodes(MoFEM::CoreInterface &m_field,
+    MergeNodes(CoreInterface &m_field,
                const bool only_if_improve_quality, const int line_search,
                Tag th, bool update_mehsets)
         : mField(m_field), onlyIfImproveQuality(only_if_improve_quality),
@@ -1076,7 +1076,7 @@ PetscErrorCode CutMeshInterface::mergeBadEdges(
       mField.getInterface(nodeMergerPtr);
     }
     NodeMergerInterface *nodeMergerPtr;
-    PetscErrorCode operator()(EntityHandle father, EntityHandle mother,
+    MoFEMErrorCode operator()(EntityHandle father, EntityHandle mother,
                               Range &proc_tets, Range &new_surf,
                               Range &edges_to_merge, Range &not_merged_edges,
                               bool add_child = true) const {
@@ -1159,7 +1159,7 @@ PetscErrorCode CutMeshInterface::mergeBadEdges(
     }
 
   private:
-    PetscErrorCode updateRangeByChilds(
+    MoFEMErrorCode updateRangeByChilds(
         const NodeMergerInterface::ParentChildMap &parent_child_map,
         const Range &parents, Range &childs) const {
       MoFEMFunctionBeginHot;
@@ -1180,12 +1180,12 @@ PetscErrorCode CutMeshInterface::mergeBadEdges(
    */
   struct LengthMap {
     Tag tH;
-    MoFEM::CoreInterface &mField;
+    CoreInterface &mField;
     moab::Interface &moab;
-    LengthMap(MoFEM::CoreInterface &m_field, Tag th)
+    LengthMap(CoreInterface &m_field, Tag th)
         : tH(th), mField(m_field), moab(m_field.get_moab()) {}
 
-    PetscErrorCode operator()(const Range &tets, const Range &edges,
+    MoFEMErrorCode operator()(const Range &tets, const Range &edges,
                               LengthMapData_multi_index &length_map) const {
       int num_nodes;
       const EntityHandle *conn;
@@ -1224,10 +1224,10 @@ PetscErrorCode CutMeshInterface::mergeBadEdges(
    */
   struct Toplogy {
 
-    MoFEM::CoreInterface &mField;
+    CoreInterface &mField;
     Tag tH;
     const double tOL;
-    Toplogy(MoFEM::CoreInterface &m_field, Tag th, const double tol)
+    Toplogy(CoreInterface &m_field, Tag th, const double tol)
         : mField(m_field), tH(th), tOL(tol) {}
 
     enum TYPE {
@@ -1242,7 +1242,7 @@ PetscErrorCode CutMeshInterface::mergeBadEdges(
 
     typedef map<int, Range> SetsMap;
 
-    PetscErrorCode classifyVerts(const Range &surface, const Range &tets,
+    MoFEMErrorCode classifyVerts(const Range &surface, const Range &tets,
                                  const Range &fixed_edges,
                                  const Range &corner_nodes,
                                  SetsMap &sets_map) const {
@@ -1300,7 +1300,7 @@ PetscErrorCode CutMeshInterface::mergeBadEdges(
       MoFEMFunctionReturnHot(0);
     }
 
-    PetscErrorCode getProcTets(const Range &tets, const Range &edges_to_merge,
+    MoFEMErrorCode getProcTets(const Range &tets, const Range &edges_to_merge,
                                Range &proc_tets) const {
       moab::Interface &moab(mField.get_moab());
       MoFEMFunctionBeginHot;
@@ -1317,7 +1317,7 @@ PetscErrorCode CutMeshInterface::mergeBadEdges(
       MoFEMFunctionReturnHot(0);
     }
 
-    PetscErrorCode edgesToMerge(const Range &surface, const Range &tets,
+    MoFEMErrorCode edgesToMerge(const Range &surface, const Range &tets,
                                 Range &edges_to_merge) const {
       moab::Interface &moab(mField.get_moab());
       MoFEMFunctionBeginHot;
@@ -1338,7 +1338,7 @@ PetscErrorCode CutMeshInterface::mergeBadEdges(
       MoFEMFunctionReturnHot(0);
     }
 
-    PetscErrorCode removeBadEdges(const Range &surface, const Range &tets,
+    MoFEMErrorCode removeBadEdges(const Range &surface, const Range &tets,
                                   const Range &fixed_edges,
                                   const Range &corner_nodes,
                                   Range &edges_to_merge,
@@ -1460,7 +1460,7 @@ PetscErrorCode CutMeshInterface::mergeBadEdges(
     }
 
   private:
-    PetscErrorCode removeSelfConectingEdges(const Range &ents,
+    MoFEMErrorCode removeSelfConectingEdges(const Range &ents,
                                             Range &edges_to_remove,
                                             const bool length,
                                             bool debug) const {
@@ -1713,12 +1713,12 @@ PetscErrorCode CutMeshInterface::mergeBadEdges(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode CutMeshInterface::mergeBadEdges(
+MoFEMErrorCode CutMeshInterface::mergeBadEdges(
     const int fraction_level, const BitRefLevel trim_bit,
     const BitRefLevel cut_bit, const BitRefLevel bit, const Range &surface,
     const Range &fixed_edges, const Range &corner_nodes, Tag th,
     const bool update_meshsets, const bool debug) {
-  MoFEM::CoreInterface &m_field = cOre;
+  CoreInterface &m_field = cOre;
   MoFEMFunctionBeginHot;
   Range tets_level;
   ierr = m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
@@ -1767,11 +1767,11 @@ PetscErrorCode CutMeshInterface::mergeBadEdges(
 
 #ifdef WITH_TETGEN
 
-PetscErrorCode CutMeshInterface::rebuildMeshWithTetGen(
+MoFEMErrorCode CutMeshInterface::rebuildMeshWithTetGen(
     vector<string> &switches, const BitRefLevel &mesh_bit,
     const BitRefLevel &bit, const Range &surface, const Range &fixed_edges,
     const Range &corner_nodes, Tag th, const bool debug) {
-  MoFEM::CoreInterface &m_field = cOre;
+  CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   TetGenInterface *tetgen_iface;
   MoFEMFunctionBeginHot;
@@ -1789,9 +1789,9 @@ PetscErrorCode CutMeshInterface::rebuildMeshWithTetGen(
 
   struct BitEnts {
 
-    MoFEM::CoreInterface &mField;
+    CoreInterface &mField;
     const BitRefLevel &bIt;
-    BitEnts(MoFEM::CoreInterface &m_field, const BitRefLevel &bit)
+    BitEnts(CoreInterface &m_field, const BitRefLevel &bit)
         : mField(m_field), bIt(bit) {}
 
     Range mTets;
@@ -1799,7 +1799,7 @@ PetscErrorCode CutMeshInterface::rebuildMeshWithTetGen(
     Range mEdges;
     Range mNodes;
 
-    PetscErrorCode getLevelEnts() {
+    MoFEMErrorCode getLevelEnts() {
       MoFEMFunctionBeginHot;
       ierr = mField.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
           bIt, BitRefLevel().set(), MBTET, mTets);
@@ -1820,7 +1820,7 @@ PetscErrorCode CutMeshInterface::rebuildMeshWithTetGen(
     Range mSkinNodes;
     Range mSkinEdges;
 
-    PetscErrorCode getSkin() {
+    MoFEMErrorCode getSkin() {
       moab::Interface &moab = mField.get_moab();
       MoFEMFunctionBeginHot;
       Skinner skin(&moab);
@@ -1837,15 +1837,15 @@ PetscErrorCode CutMeshInterface::rebuildMeshWithTetGen(
 
   struct SurfaceEnts {
 
-    MoFEM::CoreInterface &mField;
-    SurfaceEnts(MoFEM::CoreInterface &m_field) : mField(m_field) {}
+    CoreInterface &mField;
+    SurfaceEnts(CoreInterface &m_field) : mField(m_field) {}
 
     Range sNodes;
     Range sEdges;
     Range sVols;
     Range vNodes;
 
-    PetscErrorCode getVolume(const BitEnts &bit_ents, const Range &tris) {
+    MoFEMErrorCode getVolume(const BitEnts &bit_ents, const Range &tris) {
       moab::Interface &moab = mField.get_moab();
       MoFEMFunctionBeginHot;
       rval = moab.get_connectivity(tris, sNodes, true);
@@ -1871,7 +1871,7 @@ PetscErrorCode CutMeshInterface::rebuildMeshWithTetGen(
     Range vSkinOnBodySkin;
     Range vSkinOnBodySkinNodes;
 
-    PetscErrorCode getSkin(const BitEnts &bit_ents, const Range &tris,
+    MoFEMErrorCode getSkin(const BitEnts &bit_ents, const Range &tris,
                            const int levels = 3) {
       moab::Interface &moab = mField.get_moab();
       MoFEMFunctionBeginHot;
@@ -1906,7 +1906,7 @@ PetscErrorCode CutMeshInterface::rebuildMeshWithTetGen(
 
     Range tVols;
 
-    PetscErrorCode getTetsForRemesh(const BitEnts &bit_ents, Tag th = NULL) {
+    MoFEMErrorCode getTetsForRemesh(const BitEnts &bit_ents, Tag th = NULL) {
       moab::Interface &moab = mField.get_moab();
       MoFEMFunctionBeginHot;
 
@@ -2180,8 +2180,8 @@ PetscErrorCode CutMeshInterface::rebuildMeshWithTetGen(
 
 #endif // WITH_TETGEN
 
-PetscErrorCode CutMeshInterface::setTagData(Tag th) {
-  MoFEM::CoreInterface &m_field = cOre;
+MoFEMErrorCode CutMeshInterface::setTagData(Tag th) {
+  CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   MoFEMFunctionBeginHot;
   Range nodes;
@@ -2195,8 +2195,8 @@ PetscErrorCode CutMeshInterface::setTagData(Tag th) {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode CutMeshInterface::setCoords(Tag th) {
-  MoFEM::CoreInterface &m_field = cOre;
+MoFEMErrorCode CutMeshInterface::setCoords(Tag th) {
+  CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   MoFEMFunctionBeginHot;
   Range nodes;
@@ -2213,7 +2213,7 @@ PetscErrorCode CutMeshInterface::setCoords(Tag th) {
 struct SaveData {
   moab::Interface &moab;
   SaveData(moab::Interface &moab) : moab(moab) {}
-  PetscErrorCode operator()(const std::string name, const Range &ents) {
+  MoFEMErrorCode operator()(const std::string name, const Range &ents) {
     MoFEMFunctionBeginHot;
     EntityHandle meshset;
     rval = moab.create_meshset(MESHSET_SET, meshset);
@@ -2228,8 +2228,8 @@ struct SaveData {
   }
 };
 
-PetscErrorCode CutMeshInterface::saveCutEdges() {
-  MoFEM::CoreInterface &m_field = cOre;
+MoFEMErrorCode CutMeshInterface::saveCutEdges() {
+  CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   MoFEMFunctionBeginHot;
 
@@ -2249,7 +2249,7 @@ PetscErrorCode CutMeshInterface::saveCutEdges() {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode CutMeshInterface::saveTrimEdges() {
+MoFEMErrorCode CutMeshInterface::saveTrimEdges() {
   moab::Interface &moab = cOre.getInterface<CoreInterface>()->get_moab();
   MoFEMFunctionBeginHot;
 

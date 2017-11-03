@@ -212,7 +212,7 @@ int main(int argc, char *argv[]) {
       VolumeElementForcesAndSourcesCore::UserDataOperator("H1",UserDataOperator::OPROW),
       mField(m_field),tH(th) {}
 
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int side,
       EntityType type,
       DataForcesAndSourcesCore::EntData &data) {
@@ -274,7 +274,7 @@ int main(int argc, char *argv[]) {
     int getRule(int order) { return -1; };
 
     MatrixDouble N_tri;
-    PetscErrorCode setGaussPts(int order) {
+    MoFEMErrorCode setGaussPts(int order) {
 
       MoFEMFunctionBeginHot;
 
@@ -329,7 +329,7 @@ int main(int argc, char *argv[]) {
       tH2(th2),
       mySplit(my_split) {}
 
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int side,
       EntityType type,
       DataForcesAndSourcesCore::EntData &data) {
@@ -381,7 +381,7 @@ int main(int argc, char *argv[]) {
       FaceElementForcesAndSourcesCore::UserDataOperator("H1",UserDataOperator::OPROW),
       mField(m_field),tH1(_th1),tH2(_th2),mySplit(my_split) {}
 
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int side,
       EntityType type,
       DataForcesAndSourcesCore::EntData &data) {
@@ -424,7 +424,7 @@ int main(int argc, char *argv[]) {
     MyTriFE(MoFEM::Interface &m_field): FaceElementForcesAndSourcesCore(m_field) {}
     int getRule(int order) { return -1; };
 
-    PetscErrorCode setGaussPts(int order) {
+    MoFEMErrorCode setGaussPts(int order) {
       MoFEMFunctionBeginHot;
 
       gaussPts.resize(3,1);
@@ -447,7 +447,7 @@ int main(int argc, char *argv[]) {
       EdgeElementForcesAndSourcesCore::UserDataOperator("H1",UserDataOperator::OPROW),
       mField(m_field),tH1(_th1),tH2(_th2),mySplit(my_split) {}
 
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int side,
       EntityType type,
       DataForcesAndSourcesCore::EntData &data) {
@@ -506,7 +506,7 @@ int main(int argc, char *argv[]) {
     EdgeElementForcesAndSourcesCore(m_field) {}
     int getRule(int order) { return -1; };
 
-    PetscErrorCode setGaussPts(int order) {
+    MoFEMErrorCode setGaussPts(int order) {
       MoFEMFunctionBeginHot;
 
       gaussPts.resize(2,1);

@@ -30,7 +30,7 @@ namespace MoFEM {
    */
   struct LegendrePolynomialCtx: public BaseFunctionCtx {
 
-    PetscErrorCode query_interface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface) const;
+    MoFEMErrorCode query_interface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface) const;
 
     int P;
     double *diffS;
@@ -66,12 +66,12 @@ namespace MoFEM {
    */
   struct LegendrePolynomial: public BaseFunction {
 
-    PetscErrorCode query_interface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface) const;
+    MoFEMErrorCode query_interface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface) const;
 
     LegendrePolynomial() {}
     ~LegendrePolynomial() {}
 
-    PetscErrorCode getValue(
+    MoFEMErrorCode getValue(
       MatrixDouble &pts,
       boost::shared_ptr<BaseFunctionCtx> ctx_ptr
     );

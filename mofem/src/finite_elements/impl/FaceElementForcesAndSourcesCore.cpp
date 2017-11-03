@@ -76,7 +76,7 @@ extern "C" {
 
 namespace MoFEM {
 
-PetscErrorCode FaceElementForcesAndSourcesCore::UserDataOperator::loopSideVolumes(
+MoFEMErrorCode FaceElementForcesAndSourcesCore::UserDataOperator::loopSideVolumes(
   const string &fe_name,VolumeElementForcesAndSourcesCoreOnSide &method
 ) {
 
@@ -143,7 +143,7 @@ PetscErrorCode FaceElementForcesAndSourcesCore::UserDataOperator::loopSideVolume
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode FaceElementForcesAndSourcesCore::calculateAreaAndNormal() {
+MoFEMErrorCode FaceElementForcesAndSourcesCore::calculateAreaAndNormal() {
   MoFEMFunctionBeginHot;
   EntityHandle ent = numeredEntFiniteElementPtr->getEnt();
   rval = mField.get_moab().get_connectivity(ent,conn,num_nodes,true); CHKERRQ_MOAB(rval);
@@ -165,7 +165,7 @@ PetscErrorCode FaceElementForcesAndSourcesCore::calculateAreaAndNormal() {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode FaceElementForcesAndSourcesCore::setIntegartionPts() {
+MoFEMErrorCode FaceElementForcesAndSourcesCore::setIntegartionPts() {
   MoFEMFunctionBeginHot;
   // Set integration points
   int order_data = getMaxDataOrder();
@@ -223,7 +223,7 @@ PetscErrorCode FaceElementForcesAndSourcesCore::setIntegartionPts() {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode FaceElementForcesAndSourcesCore::getSpaceBaseAndOrderOnElement() {
+MoFEMErrorCode FaceElementForcesAndSourcesCore::getSpaceBaseAndOrderOnElement() {
   MoFEMFunctionBeginHot;
   // Get spaces order/base and sense of entities.
 
@@ -268,7 +268,7 @@ PetscErrorCode FaceElementForcesAndSourcesCore::getSpaceBaseAndOrderOnElement() 
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode FaceElementForcesAndSourcesCore::calculateCoordinatesAtGaussPts() {
+MoFEMErrorCode FaceElementForcesAndSourcesCore::calculateCoordinatesAtGaussPts() {
   MoFEMFunctionBeginHot;
   double *shape_functions = &*dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin();
   coordsAtGaussPts.resize(nbGaussPts,3,false);
@@ -280,7 +280,7 @@ PetscErrorCode FaceElementForcesAndSourcesCore::calculateCoordinatesAtGaussPts()
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode FaceElementForcesAndSourcesCore::calculateBaseFunctionsOnElement() {
+MoFEMErrorCode FaceElementForcesAndSourcesCore::calculateBaseFunctionsOnElement() {
   MoFEMFunctionBeginHot;
   // Calculate base base functions for faces.
   try {
@@ -368,7 +368,7 @@ PetscErrorCode FaceElementForcesAndSourcesCore::calculateBaseFunctionsOnElement(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode FaceElementForcesAndSourcesCore::calculateHoNormal() {
+MoFEMErrorCode FaceElementForcesAndSourcesCore::calculateHoNormal() {
   MoFEMFunctionBeginHot;
   // Check if field for high-order geometry is set and if it is set calculate
   // higher-order normals and face tangent vectors.
@@ -407,7 +407,7 @@ PetscErrorCode FaceElementForcesAndSourcesCore::calculateHoNormal() {
 }
 
 
-PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
+MoFEMErrorCode FaceElementForcesAndSourcesCore::operator()() {
   MoFEMFunctionBeginHot;
 
   if(numeredEntFiniteElementPtr->getEntType() != MBTRI) MoFEMFunctionReturnHot(0);
@@ -681,7 +681,7 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode OpCalculateInvJacForFace::doWork(
+MoFEMErrorCode OpCalculateInvJacForFace::doWork(
   int side,
   EntityType type,
   DataForcesAndSourcesCore::EntData &data
@@ -736,7 +736,7 @@ PetscErrorCode OpCalculateInvJacForFace::doWork(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode OpSetInvJacH1ForFace::doWork(
+MoFEMErrorCode OpSetInvJacH1ForFace::doWork(
   int side,
   EntityType type,
   DataForcesAndSourcesCore::EntData &data
@@ -814,7 +814,7 @@ PetscErrorCode OpSetInvJacH1ForFace::doWork(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode OpSetInvJacHcurlFace::doWork(
+MoFEMErrorCode OpSetInvJacHcurlFace::doWork(
   int side,EntityType type,DataForcesAndSourcesCore::EntData &data
 ) {
   MoFEMFunctionBeginHot;

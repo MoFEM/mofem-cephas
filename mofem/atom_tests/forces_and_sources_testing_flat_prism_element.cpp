@@ -202,7 +202,7 @@ int main(int argc, char *argv[]) {
       mySplit(mySplit)
     {}
 
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int side,
       EntityType type,
       DataForcesAndSourcesCore::EntData &data) {
@@ -272,7 +272,7 @@ int main(int argc, char *argv[]) {
       MoFEMFunctionReturnHot(0);
     }
 
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int row_side,int col_side,
       EntityType row_type,EntityType col_type,
       DataForcesAndSourcesCore::EntData &row_data,
@@ -300,7 +300,7 @@ int main(int argc, char *argv[]) {
     FaceElementForcesAndSourcesCore::UserDataOperator("FIELD1","FIELD2",type),
       mySplit(my_split) {}
 
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int side,
       EntityType type,
       DataForcesAndSourcesCore::EntData &data) {
@@ -314,7 +314,7 @@ int main(int argc, char *argv[]) {
       MoFEMFunctionReturnHot(0);
     }
 
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int row_side,int col_side,
       EntityType row_type,EntityType col_type,
       DataForcesAndSourcesCore::EntData &row_data,

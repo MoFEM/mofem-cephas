@@ -44,7 +44,7 @@ using namespace MoFEM;
 #include <BaseFunction.hpp>
 #include <EntPolynomialBaseCtx.hpp>
 
-PetscErrorCode EntPolynomialBaseCtx::query_interface(
+MoFEMErrorCode EntPolynomialBaseCtx::query_interface(
   const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface
 ) const {
 
@@ -81,7 +81,7 @@ copyNodeBase(copy_node_base) {
 EntPolynomialBaseCtx::~EntPolynomialBaseCtx() {
 }
 
-PetscErrorCode EntPolynomialBaseCtx::setBase() {
+MoFEMErrorCode EntPolynomialBaseCtx::setBase() {
   MoFEMFunctionBeginHot;
   switch(bAse) {
     case AINSWORTH_LEGENDRE_BASE:

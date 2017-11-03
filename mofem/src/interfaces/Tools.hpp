@@ -29,7 +29,7 @@ namespace MoFEM {
    */
   struct Tools: public UnknownInterface {
 
-    PetscErrorCode query_interface(const MOFEMuuid &uuid,
+    MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
                                    UnknownInterface **iface) const;
 
     MoFEM::Core &cOre;
@@ -68,7 +68,7 @@ namespace MoFEM {
      * @param  min_quality mimimal quality
      * @return             error code
      */
-    PetscErrorCode minTetsQuality(const Range &tets, double &min_quality,
+    MoFEMErrorCode minTetsQuality(const Range &tets, double &min_quality,
                                   Tag th = NULL);
 
     /**@}*/

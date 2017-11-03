@@ -288,7 +288,7 @@ struct FlatPrismElementForcesAndSourcesCore: public ForcesAndSourcesCore {
 
   };
 
-  PetscErrorCode operator()();
+  MoFEMErrorCode operator()();
 
 };
 
@@ -311,7 +311,7 @@ struct OpCalculateInvJacForFlatPrism: public FlatPrismElementForcesAndSourcesCor
   ):
   FlatPrismElementForcesAndSourcesCore::UserDataOperator(H1),
   invJacF3(inv_jac_f3){}
-  PetscErrorCode doWork(
+  MoFEMErrorCode doWork(
     int side,EntityType type,DataForcesAndSourcesCore::EntData &data
   );
 };
@@ -334,7 +334,7 @@ struct OpSetInvJacH1ForFlatPrism: public FlatPrismElementForcesAndSourcesCore::U
   }
 
   MatrixDouble diffNinvJac;
-  PetscErrorCode doWork(
+  MoFEMErrorCode doWork(
     int side,EntityType type,DataForcesAndSourcesCore::EntData &data
   );
 };

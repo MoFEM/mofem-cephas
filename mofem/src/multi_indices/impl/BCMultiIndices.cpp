@@ -30,7 +30,7 @@
 namespace MoFEM {
 
 //moab base meshsets
-PetscErrorCode CubitMeshSets::getTagsHanlders(Interface &moab) {
+MoFEMErrorCode CubitMeshSets::getTagsHanlders(Interface &moab) {
   MoFEMFunctionBeginHot;
   ErrorCode rval;
   rval = moab.tag_get_handle(DIRICHLET_SET_TAG_NAME,nsTag); CHKERRQ_MOAB(rval);MOAB_THROW(rval);
@@ -171,7 +171,7 @@ meshsets_mask(NODESET|SIDESET|BLOCKSET)  {
     }
   }
 }
-PetscErrorCode CubitMeshSets::getMeshsetIdEntitiesByDimension(Interface &moab,const int dimension,Range &entities,const bool recursive)  const {
+MoFEMErrorCode CubitMeshSets::getMeshsetIdEntitiesByDimension(Interface &moab,const int dimension,Range &entities,const bool recursive)  const {
   MoFEMFunctionBeginHot;
   ErrorCode rval;
   //rval = moab.list_entity(meshset); CHKERRQ_MOAB(rval);
@@ -184,7 +184,7 @@ PetscErrorCode CubitMeshSets::getMeshsetIdEntitiesByDimension(Interface &moab,co
   CHKERRQ_MOAB(rval);
   MoFEMFunctionReturnHot(0);
 }
-PetscErrorCode CubitMeshSets::getMeshsetIdEntitiesByDimension(Interface &moab,Range &entities,const bool recursive)  const {
+MoFEMErrorCode CubitMeshSets::getMeshsetIdEntitiesByDimension(Interface &moab,Range &entities,const bool recursive)  const {
   MoFEMFunctionBeginHot;
   if((cubitBcType&CubitBCType(BLOCKSET)).any()) {
     if(tag_block_header_data!=NULL) {
@@ -198,7 +198,7 @@ PetscErrorCode CubitMeshSets::getMeshsetIdEntitiesByDimension(Interface &moab,Ra
   }
   MoFEMFunctionReturnHot(0);
 }
-PetscErrorCode CubitMeshSets::getMeshsetIdEntitiesByType(Interface &moab,const EntityType type,Range &entities,const bool recursive)  const {
+MoFEMErrorCode CubitMeshSets::getMeshsetIdEntitiesByType(Interface &moab,const EntityType type,Range &entities,const bool recursive)  const {
   MoFEMFunctionBeginHot;
   ErrorCode rval;
   //rval = moab.list_entity(meshset); CHKERRQ_MOAB(rval);
@@ -212,21 +212,21 @@ PetscErrorCode CubitMeshSets::getMeshsetIdEntitiesByType(Interface &moab,const E
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode CubitMeshSets::getBcData(std::vector<char>& bc_data) const {
+MoFEMErrorCode CubitMeshSets::getBcData(std::vector<char>& bc_data) const {
   MoFEMFunctionBeginHot;
   bc_data.resize(tag_bc_size);
   copy(&tag_bc_data[0],&tag_bc_data[tag_bc_size],bc_data.begin());
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode CubitMeshSets::getBlockHeaderData(std::vector<unsigned int>& material_data) const {
+MoFEMErrorCode CubitMeshSets::getBlockHeaderData(std::vector<unsigned int>& material_data) const {
     MoFEMFunctionBeginHot;
     material_data.resize(3);
     copy(&tag_block_header_data[0],&tag_block_header_data[3],material_data.begin());
     MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode CubitMeshSets::printBlockHeaderData(std::ostream& os) const {
+MoFEMErrorCode CubitMeshSets::printBlockHeaderData(std::ostream& os) const {
     MoFEMFunctionBeginHot;
     if(tag_block_header_data!=NULL) {
       std::vector<unsigned int> material_data;
@@ -256,7 +256,7 @@ std::string CubitMeshSets::getName() const {
   }
 }
 
-PetscErrorCode CubitMeshSets::printName(std::ostream& os) const {
+MoFEMErrorCode CubitMeshSets::printName(std::ostream& os) const {
     MoFEMFunctionBeginHot;
     std::string name = getName();
     os << std::endl;
@@ -264,7 +264,7 @@ PetscErrorCode CubitMeshSets::printName(std::ostream& os) const {
     MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode CubitMeshSets::getTypeFromBcData(const std::vector<char> &bc_data,CubitBCType &type) const {
+MoFEMErrorCode CubitMeshSets::getTypeFromBcData(const std::vector<char> &bc_data,CubitBCType &type) const {
     MoFEMFunctionBeginHot;
 
     //See CubitBCType in common.hpp
@@ -285,7 +285,7 @@ PetscErrorCode CubitMeshSets::getTypeFromBcData(const std::vector<char> &bc_data
 
     MoFEMFunctionReturnHot(0);
 }
-PetscErrorCode CubitMeshSets::getTypeFromBcData(CubitBCType &type) const {
+MoFEMErrorCode CubitMeshSets::getTypeFromBcData(CubitBCType &type) const {
   MoFEMFunctionBeginHot;
   
   std::vector<char> bc_data;
@@ -294,7 +294,7 @@ PetscErrorCode CubitMeshSets::getTypeFromBcData(CubitBCType &type) const {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode CubitMeshSets::printBcData(std::ostream& os) const {
+MoFEMErrorCode CubitMeshSets::printBcData(std::ostream& os) const {
   MoFEMFunctionBeginHot;
   std::vector<char> bc_data;
   getBcData(bc_data);
@@ -312,7 +312,7 @@ PetscErrorCode CubitMeshSets::printBcData(std::ostream& os) const {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode CubitMeshSets::getAttributes(std::vector<double>& attributes) const {
+MoFEMErrorCode CubitMeshSets::getAttributes(std::vector<double>& attributes) const {
   MoFEMFunctionBeginHot;
   attributes.resize(tag_block_attributes_size);
   if(tag_block_attributes_size>0) {
@@ -321,7 +321,7 @@ PetscErrorCode CubitMeshSets::getAttributes(std::vector<double>& attributes) con
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode CubitMeshSets::setAttributes(moab::Interface &moab,const std::vector<double>& attributes) {
+MoFEMErrorCode CubitMeshSets::setAttributes(moab::Interface &moab,const std::vector<double>& attributes) {
   
   MoFEMFunctionBeginHot;
   int tag_size[] = { (int)attributes.size() };
@@ -333,7 +333,7 @@ PetscErrorCode CubitMeshSets::setAttributes(moab::Interface &moab,const std::vec
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode CubitMeshSets::printAttributes(std::ostream& os) const {
+MoFEMErrorCode CubitMeshSets::printAttributes(std::ostream& os) const {
     MoFEMFunctionBeginHot;
     std::vector<double> attributes;
     getAttributes(attributes);
@@ -347,7 +347,7 @@ PetscErrorCode CubitMeshSets::printAttributes(std::ostream& os) const {
     MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode CubitMeshSets::getTypeFromName(const std::string &name,CubitBCType &type) const {
+MoFEMErrorCode CubitMeshSets::getTypeFromName(const std::string &name,CubitBCType &type) const {
     MoFEMFunctionBeginHot;
 
     //See CubitBCType in common.hpp
@@ -368,7 +368,7 @@ PetscErrorCode CubitMeshSets::getTypeFromName(const std::string &name,CubitBCTyp
     MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode CubitMeshSets::getTypeFromName(CubitBCType &type) const {
+MoFEMErrorCode CubitMeshSets::getTypeFromName(CubitBCType &type) const {
     MoFEMFunctionBeginHot;
     
     std::string name = getName();

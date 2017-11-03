@@ -35,7 +35,7 @@ struct GenericCubitBcData {
      * @param  attributes vector of doubles
      * @return            error code
      */
-    virtual PetscErrorCode fill_data(const std::vector<char>& bc_data) {
+    virtual MoFEMErrorCode fill_data(const std::vector<char>& bc_data) {
       MoFEMFunctionBeginHot;
       SETERRQ(PETSC_COMM_SELF,1,"It makes no sense for the generic bc type");
       MoFEMFunctionReturnHot(0);
@@ -47,7 +47,7 @@ struct GenericCubitBcData {
      * @param  size    size of data in bytes
      * @return         error code
      */
-    virtual PetscErrorCode set_data(void *tag_ptr,unsigned int size) const {
+    virtual MoFEMErrorCode set_data(void *tag_ptr,unsigned int size) const {
       MoFEMFunctionBeginHot;
       SETERRQ(PETSC_COMM_SELF,1,"It makes no sense for the generic bc type");
       MoFEMFunctionReturnHot(0);
@@ -116,7 +116,7 @@ struct DisplacementCubitBcData: public GenericCubitBcData {
       bzero(&data,sizeof(data));
     }
 
-    PetscErrorCode fill_data(const std::vector<char>& bc_data) {
+    MoFEMErrorCode fill_data(const std::vector<char>& bc_data) {
       MoFEMFunctionBeginHot;
       //Fill data
       if(bc_data.size()!=sizeof(data)) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
@@ -124,7 +124,7 @@ struct DisplacementCubitBcData: public GenericCubitBcData {
       MoFEMFunctionReturnHot(0);
     }
 
-    PetscErrorCode set_data(void *tag_ptr,unsigned int size) const {
+    MoFEMErrorCode set_data(void *tag_ptr,unsigned int size) const {
       MoFEMFunctionBeginHot;
       if(size!=sizeof(data)) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
@@ -168,7 +168,7 @@ struct ForceCubitBcData: public GenericCubitBcData {
       bzero(&data,sizeof(data));
     }
 
-    PetscErrorCode fill_data(const std::vector<char>& bc_data) {
+    MoFEMErrorCode fill_data(const std::vector<char>& bc_data) {
       MoFEMFunctionBeginHot;
       //Fill data
       if(bc_data.size()!=sizeof(data)) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
@@ -176,7 +176,7 @@ struct ForceCubitBcData: public GenericCubitBcData {
       MoFEMFunctionReturnHot(0);
     }
 
-    PetscErrorCode set_data(void *tag_ptr,unsigned int size) const {
+    MoFEMErrorCode set_data(void *tag_ptr,unsigned int size) const {
       MoFEMFunctionBeginHot;
       if(size!=sizeof(data)) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
@@ -224,7 +224,7 @@ struct VelocityCubitBcData: public GenericCubitBcData {
       bzero(&data,sizeof(data));
     }
 
-    PetscErrorCode fill_data(const std::vector<char>& bc_data) {
+    MoFEMErrorCode fill_data(const std::vector<char>& bc_data) {
       MoFEMFunctionBeginHot;
       //Fill data
       if(bc_data.size()!=sizeof(data)) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
@@ -232,7 +232,7 @@ struct VelocityCubitBcData: public GenericCubitBcData {
       MoFEMFunctionReturnHot(0);
     }
 
-    PetscErrorCode set_data(void *tag_ptr,unsigned int size) const {
+    MoFEMErrorCode set_data(void *tag_ptr,unsigned int size) const {
       MoFEMFunctionBeginHot;
       if(size!=sizeof(data)) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
@@ -280,7 +280,7 @@ struct AccelerationCubitBcData: public GenericCubitBcData {
       bzero(&data,sizeof(data));
     }
 
-    PetscErrorCode fill_data(const std::vector<char>& bc_data) {
+    MoFEMErrorCode fill_data(const std::vector<char>& bc_data) {
       MoFEMFunctionBeginHot;
       //Fill data
       if(bc_data.size()!=sizeof(data)) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
@@ -288,7 +288,7 @@ struct AccelerationCubitBcData: public GenericCubitBcData {
       MoFEMFunctionReturnHot(0);
     }
 
-    PetscErrorCode set_data(void *tag_ptr,unsigned int size) const {
+    MoFEMErrorCode set_data(void *tag_ptr,unsigned int size) const {
       MoFEMFunctionBeginHot;
       if(size!=sizeof(data)) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
@@ -337,7 +337,7 @@ struct AccelerationCubitBcData: public GenericCubitBcData {
      bzero(&data,sizeof(data));
    }
 
-   PetscErrorCode fill_data(const std::vector<char>& bc_data) {
+   MoFEMErrorCode fill_data(const std::vector<char>& bc_data) {
      MoFEMFunctionBeginHot;
      //Fill data
      if(bc_data.size()!=sizeof(data)) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
@@ -345,7 +345,7 @@ struct AccelerationCubitBcData: public GenericCubitBcData {
      MoFEMFunctionReturnHot(0);
    }
 
-   PetscErrorCode set_data(void *tag_ptr,unsigned int size) const {
+   MoFEMErrorCode set_data(void *tag_ptr,unsigned int size) const {
      MoFEMFunctionBeginHot;
      if(size!=sizeof(data)) {
        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
@@ -383,7 +383,7 @@ struct PressureCubitBcData: public GenericCubitBcData {
       bzero(&data,sizeof(data));
     }
 
-    PetscErrorCode fill_data(const std::vector<char>& bc_data) {
+    MoFEMErrorCode fill_data(const std::vector<char>& bc_data) {
       MoFEMFunctionBeginHot;
       //Fill data
       if(bc_data.size()!=sizeof(data)) {
@@ -393,7 +393,7 @@ struct PressureCubitBcData: public GenericCubitBcData {
       MoFEMFunctionReturnHot(0);
     }
 
-    PetscErrorCode set_data(void *tag_ptr,unsigned int size) const {
+    MoFEMErrorCode set_data(void *tag_ptr,unsigned int size) const {
       MoFEMFunctionBeginHot;
       if(size!=sizeof(data)) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
@@ -436,7 +436,7 @@ struct HeatFluxCubitBcData: public GenericCubitBcData {
     bzero(&data,sizeof(data));
   }
 
-  PetscErrorCode fill_data(const std::vector<char>& bc_data) {
+  MoFEMErrorCode fill_data(const std::vector<char>& bc_data) {
     MoFEMFunctionBeginHot;
     //Fill data
     if(bc_data.size()!=sizeof(data)) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
@@ -444,7 +444,7 @@ struct HeatFluxCubitBcData: public GenericCubitBcData {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode set_data(void *tag_ptr,unsigned int size) const {
+  MoFEMErrorCode set_data(void *tag_ptr,unsigned int size) const {
     MoFEMFunctionBeginHot;
     if(size!=sizeof(data)) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
@@ -480,7 +480,7 @@ struct CfgCubitBcData: public GenericCubitBcData {
       bzero(&data,sizeof(data));
     }
 
-    PetscErrorCode fill_data(const std::vector<char>& bc_data) {
+    MoFEMErrorCode fill_data(const std::vector<char>& bc_data) {
       MoFEMFunctionBeginHot;
       //Fill data
       if(bc_data.size()!=sizeof(data)) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
@@ -488,7 +488,7 @@ struct CfgCubitBcData: public GenericCubitBcData {
       MoFEMFunctionReturnHot(0);
     }
 
-    PetscErrorCode set_data(void *tag_ptr,unsigned int size) const {
+    MoFEMErrorCode set_data(void *tag_ptr,unsigned int size) const {
       MoFEMFunctionBeginHot;
       if(size!=sizeof(data)) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");

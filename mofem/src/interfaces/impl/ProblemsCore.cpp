@@ -27,7 +27,7 @@ bool Core::check_problem(const string name) {
   return true;
 }
 
-PetscErrorCode Core::add_problem(const BitProblemId id,const std::string& name) {
+MoFEMErrorCode Core::add_problem(const BitProblemId id,const std::string& name) {
   MoFEMFunctionBeginHot;
   EntityHandle meshset;
   rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,meshset); CHKERRQ_MOAB(rval);
@@ -47,7 +47,7 @@ PetscErrorCode Core::add_problem(const BitProblemId id,const std::string& name) 
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode Core::add_problem(const std::string& name,enum MoFEMTypes bh,int verb) {
+MoFEMErrorCode Core::add_problem(const std::string& name,enum MoFEMTypes bh,int verb) {
   MoFEMFunctionBeginHot;
   if(verb==-1) verb = verbose;
   typedef Problem_multiIndex::index<Problem_mi_tag>::type mofem_problems_by_name;
@@ -62,7 +62,7 @@ PetscErrorCode Core::add_problem(const std::string& name,enum MoFEMTypes bh,int 
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode Core::delete_problem(const std::string name) {
+MoFEMErrorCode Core::delete_problem(const std::string name) {
   MoFEMFunctionBeginHot;
   typedef Problem_multiIndex::index<Problem_mi_tag>::type mofem_problems_by_name;
   mofem_problems_by_name &mofem_problems_set = pRoblems.get<Problem_mi_tag>();
@@ -83,7 +83,7 @@ BitProblemId Core::getBitProblemId(const std::string& name) const {
   return miit->getId();
 }
 
-PetscErrorCode Core::list_problem() const {
+MoFEMErrorCode Core::list_problem() const {
   MoFEMFunctionBeginHot;
   typedef Problem_multiIndex::index<BitProblemId_mi_tag>::type problem_set_by_id;
   const problem_set_by_id &set_id = pRoblems.get<BitProblemId_mi_tag>();
@@ -96,7 +96,7 @@ PetscErrorCode Core::list_problem() const {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode Core::modify_problem_add_finite_element(const std::string &name_problem,const std::string &fe_name) {
+MoFEMErrorCode Core::modify_problem_add_finite_element(const std::string &name_problem,const std::string &fe_name) {
   MoFEMFunctionBeginHot;
   try {
     typedef Problem_multiIndex::index<Problem_mi_tag>::type mofem_problems_by_name;
@@ -114,7 +114,7 @@ PetscErrorCode Core::modify_problem_add_finite_element(const std::string &name_p
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode Core::modify_problem_unset_finite_element(const std::string &name_problem,const std::string &fe_name) {
+MoFEMErrorCode Core::modify_problem_unset_finite_element(const std::string &name_problem,const std::string &fe_name) {
   MoFEMFunctionBeginHot;
   try {
     typedef Problem_multiIndex::index<Problem_mi_tag>::type mofem_problems_by_name;
@@ -132,7 +132,7 @@ PetscErrorCode Core::modify_problem_unset_finite_element(const std::string &name
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode Core::modify_problem_ref_level_add_bit(const std::string &name_problem,const BitRefLevel &bit) {
+MoFEMErrorCode Core::modify_problem_ref_level_add_bit(const std::string &name_problem,const BitRefLevel &bit) {
   MoFEMFunctionBeginHot;
   typedef Problem_multiIndex::index<Problem_mi_tag>::type mofem_problems_by_name;
   mofem_problems_by_name& set = pRoblems.get<Problem_mi_tag>();
@@ -145,7 +145,7 @@ PetscErrorCode Core::modify_problem_ref_level_add_bit(const std::string &name_pr
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode Core::modify_problem_ref_level_set_bit(const std::string &name_problem,const BitRefLevel &bit) {
+MoFEMErrorCode Core::modify_problem_ref_level_set_bit(const std::string &name_problem,const BitRefLevel &bit) {
   MoFEMFunctionBeginHot;
   typedef Problem_multiIndex::index<Problem_mi_tag>::type mofem_problems_by_name;
   mofem_problems_by_name& set = pRoblems.get<Problem_mi_tag>();
@@ -158,7 +158,7 @@ PetscErrorCode Core::modify_problem_ref_level_set_bit(const std::string &name_pr
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode Core::modify_problem_mask_ref_level_set_bit(const std::string &name_problem,const BitRefLevel &bit) {
+MoFEMErrorCode Core::modify_problem_mask_ref_level_set_bit(const std::string &name_problem,const BitRefLevel &bit) {
   MoFEMFunctionBeginHot;
   typedef Problem_multiIndex::index<Problem_mi_tag>::type mofem_problems_by_name;
   mofem_problems_by_name& set = pRoblems.get<Problem_mi_tag>();
@@ -171,7 +171,7 @@ PetscErrorCode Core::modify_problem_mask_ref_level_set_bit(const std::string &na
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode Core::build_problem_on_distributed_mesh(int verb) {
+MoFEMErrorCode Core::build_problem_on_distributed_mesh(int verb) {
   MoFEMFunctionBeginHot;
   if(verb==-1) verb = verbose;
   DofEntity_multiIndex_active_view dofs_rows,dofs_cols;
@@ -184,7 +184,7 @@ PetscErrorCode Core::build_problem_on_distributed_mesh(int verb) {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode Core::clear_problem(const std::string &problem_name,int verb) {
+MoFEMErrorCode Core::clear_problem(const std::string &problem_name,int verb) {
   MoFEMFunctionBeginHot;
   if(verb==-1) verb = verbose;
   typedef Problem_multiIndex::index<Problem_mi_tag>::type pRoblemsByName;
@@ -212,7 +212,7 @@ PetscErrorCode Core::clear_problem(const std::string &problem_name,int verb) {
   if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
   MoFEMFunctionReturnHot(0);
 }
-PetscErrorCode Core::build_problems(int verb) {
+MoFEMErrorCode Core::build_problems(int verb) {
   MoFEMFunctionBeginHot;
   if(verb==-1) verb = verbose;
   if(!((*buildMoFEM)&BUILD_FIELD)) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"fields not build");
@@ -227,7 +227,7 @@ PetscErrorCode Core::build_problems(int verb) {
   *buildMoFEM |= BUILD_PROBLEM;
   MoFEMFunctionReturnHot(0);
 }
-PetscErrorCode Core::clear_problems(int verb) {
+MoFEMErrorCode Core::clear_problems(int verb) {
   MoFEMFunctionBeginHot;
   if(verb==-1) verb = verbose;
   //iterate problems
@@ -252,7 +252,7 @@ PetscErrorCode Core::clear_problems(int verb) {
     METHOD.adjacenciesPtr = &entFEAdjacencies; \
   }
 
-PetscErrorCode Core::problem_basic_method_preProcess(const Problem *problem_ptr,BasicMethod &method,int verb) {
+MoFEMErrorCode Core::problem_basic_method_preProcess(const Problem *problem_ptr,BasicMethod &method,int verb) {
   MoFEMFunctionBeginHot;
   if(verb==-1) verb = verbose;
   // finite element
@@ -263,7 +263,7 @@ PetscErrorCode Core::problem_basic_method_preProcess(const Problem *problem_ptr,
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode Core::problem_basic_method_preProcess(const std::string &problem_name,BasicMethod &method,int verb) {
+MoFEMErrorCode Core::problem_basic_method_preProcess(const std::string &problem_name,BasicMethod &method,int verb) {
   MoFEMFunctionBeginHot;
   if(verb==-1) verb = verbose;
   typedef Problem_multiIndex::index<Problem_mi_tag>::type mofem_problems_by_name;
@@ -274,7 +274,7 @@ PetscErrorCode Core::problem_basic_method_preProcess(const std::string &problem_
   ierr = problem_basic_method_preProcess(&*p_miit,method,verb); CHKERRQ(ierr);
   MoFEMFunctionReturnHot(0);
 }
-PetscErrorCode Core::problem_basic_method_postProcess(const Problem *problem_ptr,BasicMethod &method,int verb) {
+MoFEMErrorCode Core::problem_basic_method_postProcess(const Problem *problem_ptr,BasicMethod &method,int verb) {
   MoFEMFunctionBeginHot;
   SET_BASIC_METHOD(method,problem_ptr)
 
@@ -284,7 +284,7 @@ PetscErrorCode Core::problem_basic_method_postProcess(const Problem *problem_ptr
 
   MoFEMFunctionReturnHot(0);
 }
-PetscErrorCode Core::problem_basic_method_postProcess(const std::string &problem_name,BasicMethod &method,int verb) {
+MoFEMErrorCode Core::problem_basic_method_postProcess(const std::string &problem_name,BasicMethod &method,int verb) {
   MoFEMFunctionBeginHot;
   if(verb==-1) verb = verbose;
   typedef Problem_multiIndex::index<Problem_mi_tag>::type mofem_problems_by_name;
@@ -298,7 +298,7 @@ PetscErrorCode Core::problem_basic_method_postProcess(const std::string &problem
 
   MoFEMFunctionReturnHot(0);
 }
-PetscErrorCode Core::loop_finite_elements(
+MoFEMErrorCode Core::loop_finite_elements(
   const std::string &problem_name,
   const std::string &fe_name,
   FEMethod &method,MoFEMTypes bh,
@@ -311,7 +311,7 @@ PetscErrorCode Core::loop_finite_elements(
 
   MoFEMFunctionReturnHot(0);
 }
-PetscErrorCode Core::loop_finite_elements(
+MoFEMErrorCode Core::loop_finite_elements(
   const Problem *problem_ptr,
   const std::string &fe_name,
   FEMethod &method, // reference to finite element implementation
@@ -378,7 +378,7 @@ PetscErrorCode Core::loop_finite_elements(
 
   MoFEMFunctionReturnHot(0);
 }
-PetscErrorCode Core::loop_finite_elements(
+MoFEMErrorCode Core::loop_finite_elements(
   const std::string &problem_name,
   const std::string &fe_name,
   FEMethod &method,
@@ -398,7 +398,7 @@ PetscErrorCode Core::loop_finite_elements(
 
   MoFEMFunctionReturnHot(0);
 }
-PetscErrorCode Core::loop_dofs(
+MoFEMErrorCode Core::loop_dofs(
   const Problem *problem_ptr,const std::string &field_name,RowColData rc,EntMethod &method,int lower_rank,int upper_rank,int verb
 ) {
   MoFEMFunctionBeginHot;
@@ -441,7 +441,7 @@ PetscErrorCode Core::loop_dofs(
   ierr = method.postProcess(); CHKERRQ(ierr);
   MoFEMFunctionReturnHot(0);
 }
-PetscErrorCode Core::loop_dofs(
+MoFEMErrorCode Core::loop_dofs(
   const std::string &problem_name,
   const std::string &field_name,
   RowColData rc,                     // ROW or COL
@@ -460,7 +460,7 @@ PetscErrorCode Core::loop_dofs(
   ierr = loop_dofs(&*p_miit,field_name,rc,method,lower_rank,upper_rank,verb); CHKERRQ(ierr);
   MoFEMFunctionReturnHot(0);
 }
-PetscErrorCode Core::loop_dofs(
+MoFEMErrorCode Core::loop_dofs(
   const std::string &problem_name,
   const std::string &field_name,
   RowColData rc,
@@ -472,7 +472,7 @@ PetscErrorCode Core::loop_dofs(
   ierr = loop_dofs(problem_name,field_name,rc,method,0,sIze,verb); CHKERRQ(ierr);
   MoFEMFunctionReturnHot(0);
 }
-PetscErrorCode Core::loop_dofs(const std::string &field_name,EntMethod &method,int verb) {
+MoFEMErrorCode Core::loop_dofs(const std::string &field_name,EntMethod &method,int verb) {
   MoFEMFunctionBeginHot;
   if(verb==-1) verb = verbose;
   SET_BASIC_METHOD(method,NULL);

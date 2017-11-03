@@ -11,14 +11,15 @@
 #include <petscsys.h>
 #include <FTensor.hpp>
 #include <h1_hdiv_hcurl_l2.h>
-#include <Hcurl.hpp>
 #include <definitions.h>
+#include <Common.hpp>
+#include <Hcurl.hpp>
 
 using namespace MoFEM;
 
 #ifndef GENERATE_VTK_WITH_CURL_BASE
 
-PetscErrorCode MoFEM::Hcurl_EdgeBaseFunctions_MBTET(
+MoFEMErrorCode MoFEM::Hcurl_EdgeBaseFunctions_MBTET(
   int *sense,int *p,double *N,double *diffN,double *edge_n[],double *diff_edge_n[],int nb_integration_pts,
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 ) {
@@ -157,7 +158,7 @@ PetscErrorCode MoFEM::Hcurl_EdgeBaseFunctions_MBTET(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode MoFEM::Hcurl_EdgeBaseFunctions_MBTET_ON_EDGE(
+MoFEMErrorCode MoFEM::Hcurl_EdgeBaseFunctions_MBTET_ON_EDGE(
   int sense,int p,double *N,double *diffN,double *edge_n,double *diff_edge_n,int nb_integration_pts,
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 ) {
@@ -209,7 +210,7 @@ PetscErrorCode MoFEM::Hcurl_EdgeBaseFunctions_MBTET_ON_EDGE(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode MoFEM::Hcurl_EdgeBaseFunctions_MBTET_ON_FACE(
+MoFEMErrorCode MoFEM::Hcurl_EdgeBaseFunctions_MBTET_ON_FACE(
   int *sense,int *p,double *N,double *diffN,double *edge_n[],double *diff_edge_n[],int nb_integration_pts,
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 ) {
@@ -325,7 +326,7 @@ PetscErrorCode MoFEM::Hcurl_EdgeBaseFunctions_MBTET_ON_FACE(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode MoFEM::Hcurl_EdgeBasedFaceFunctions_MBTET(
+MoFEMErrorCode MoFEM::Hcurl_EdgeBasedFaceFunctions_MBTET(
   int *faces_nodes,int *p,double *N,double *diffN,double *phi_f_e[4][3],double *diff_phi_f_e[4][3],int nb_integration_pts,
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 ) {
@@ -408,7 +409,7 @@ PetscErrorCode MoFEM::Hcurl_EdgeBasedFaceFunctions_MBTET(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode MoFEM::Hcurl_EdgeBasedFaceFunctions_MBTET_ON_FACE(
+MoFEMErrorCode MoFEM::Hcurl_EdgeBasedFaceFunctions_MBTET_ON_FACE(
   int *faces_nodes,int p,double *N,double *diffN,double *phi_f_e[3],double *diff_phi_f_e[3],int nb_integration_pts,
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 ) {
@@ -496,7 +497,7 @@ PetscErrorCode MoFEM::Hcurl_EdgeBasedFaceFunctions_MBTET_ON_FACE(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode MoFEM::Hcurl_BubbleFaceFunctions_MBTET(
+MoFEMErrorCode MoFEM::Hcurl_BubbleFaceFunctions_MBTET(
   int *faces_nodes,int *p,double *N,double *diffN,double *phi_f[4],double *diff_phi_f[4],int nb_integration_pts,
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 ) {
@@ -616,7 +617,7 @@ PetscErrorCode MoFEM::Hcurl_BubbleFaceFunctions_MBTET(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode MoFEM::Hcurl_BubbleFaceFunctions_MBTET_ON_FACE(
+MoFEMErrorCode MoFEM::Hcurl_BubbleFaceFunctions_MBTET_ON_FACE(
   int *faces_nodes,int p,double *N,double *diffN,double *phi_f,double *diff_phi_f,int nb_integration_pts,
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 ) {
@@ -732,7 +733,7 @@ PetscErrorCode MoFEM::Hcurl_BubbleFaceFunctions_MBTET_ON_FACE(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode MoFEM::Hcurl_FaceInteriorFunctions_MBTET(
+MoFEMErrorCode MoFEM::Hcurl_FaceInteriorFunctions_MBTET(
   int *faces_nodes,int p,double *N,double *diffN,double *phi_v,double *diff_phi_v,int nb_integration_pts,
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 ) {
@@ -865,7 +866,7 @@ PetscErrorCode MoFEM::Hcurl_FaceInteriorFunctions_MBTET(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode MoFEM::Hcurl_VolumeInteriorFunctions_MBTET(
+MoFEMErrorCode MoFEM::Hcurl_VolumeInteriorFunctions_MBTET(
   int p,double *N,double *diffN,double *phi_v,double *diff_phi_v,int nb_integration_pts,
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 ) {
@@ -1015,7 +1016,7 @@ PetscErrorCode MoFEM::Hcurl_VolumeInteriorFunctions_MBTET(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode MoFEM::Hcurl_FaceFunctions_MBTET(
+MoFEMErrorCode MoFEM::Hcurl_FaceFunctions_MBTET(
   int *face_nodes,int *p,double *N,double *diffN,double *phi_f[4],double *diff_phi_f[4],int nb_integration_pts,
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 ) {
@@ -1200,7 +1201,7 @@ PetscErrorCode MoFEM::Hcurl_FaceFunctions_MBTET(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode MoFEM::Hcurl_FaceFunctions_MBTET_ON_FACE(
+MoFEMErrorCode MoFEM::Hcurl_FaceFunctions_MBTET_ON_FACE(
   int *faces_nodes,int p,double *N,double *diffN,double *phi_f,double *diff_phi_f,int nb_integration_pts,
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 ) {
@@ -1358,7 +1359,7 @@ PetscErrorCode MoFEM::Hcurl_FaceFunctions_MBTET_ON_FACE(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode MoFEM::Hcurl_VolumeFunctions_MBTET(
+MoFEMErrorCode MoFEM::Hcurl_VolumeFunctions_MBTET(
   int p,double *N,double *diffN,double *phi_v,double *diff_phi_v,int nb_integration_pts,
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 ) {
@@ -1482,7 +1483,7 @@ PetscErrorCode MoFEM::Hcurl_VolumeFunctions_MBTET(
 using namespace MoFEM;
 using namespace boost::numeric;
 
-PetscErrorCode VTK_Hcurl_MBTET(const string file_name) {
+MoFEMErrorCode VTK_Hcurl_MBTET(const string file_name) {
   MoFEMFunctionBeginHot;
 
   ErrorCode rval;

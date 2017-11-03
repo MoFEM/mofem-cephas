@@ -50,7 +50,7 @@ using namespace MoFEM;
 #include <Hcurl.hpp>
 #include <Hdiv.hpp>
 
-PetscErrorCode TetPolynomialBase::query_interface(
+MoFEMErrorCode TetPolynomialBase::query_interface(
   const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface
 ) const {
 
@@ -69,7 +69,7 @@ PetscErrorCode TetPolynomialBase::query_interface(
 TetPolynomialBase::~TetPolynomialBase() {}
 TetPolynomialBase::TetPolynomialBase() {}
 
-PetscErrorCode TetPolynomialBase::getValueH1(MatrixDouble &pts) {
+MoFEMErrorCode TetPolynomialBase::getValueH1(MatrixDouble &pts) {
 
   MoFEMFunctionBeginHot;
 
@@ -181,7 +181,7 @@ PetscErrorCode TetPolynomialBase::getValueH1(MatrixDouble &pts) {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode TetPolynomialBase::getValueL2(
+MoFEMErrorCode TetPolynomialBase::getValueL2(
   MatrixDouble &pts
 ) {
 
@@ -215,7 +215,7 @@ PetscErrorCode TetPolynomialBase::getValueL2(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode TetPolynomialBase::getValueHdivAinsworthBase(
+MoFEMErrorCode TetPolynomialBase::getValueHdivAinsworthBase(
   MatrixDouble &pts
 ) {
 
@@ -538,7 +538,7 @@ PetscErrorCode TetPolynomialBase::getValueHdivAinsworthBase(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode TetPolynomialBase::getValueHdivDemkowiczBase(
+MoFEMErrorCode TetPolynomialBase::getValueHdivDemkowiczBase(
   MatrixDouble &pts
 ) {
 
@@ -621,7 +621,7 @@ PetscErrorCode TetPolynomialBase::getValueHdivDemkowiczBase(
 }
 
 
-PetscErrorCode TetPolynomialBase::getValueHdiv(
+MoFEMErrorCode TetPolynomialBase::getValueHdiv(
   MatrixDouble &pts
 ) {
   MoFEMFunctionBeginHot;
@@ -639,7 +639,7 @@ PetscErrorCode TetPolynomialBase::getValueHdiv(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode TetPolynomialBase::getValueHCurl(
+MoFEMErrorCode TetPolynomialBase::getValueHCurl(
   MatrixDouble &pts
 ) {
 
@@ -767,7 +767,7 @@ PetscErrorCode TetPolynomialBase::getValueHCurl(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode TetPolynomialBase::getValue(
+MoFEMErrorCode TetPolynomialBase::getValue(
   MatrixDouble &pts,
   boost::shared_ptr<BaseFunctionCtx> ctx_ptr
 ) {

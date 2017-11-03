@@ -96,13 +96,13 @@ struct CubitMeshSets {
    * @param  recursive true if meshset should be searched recursively
    * @return           error code
    */
-  PetscErrorCode getMeshsetIdEntitiesByDimension(
+  MoFEMErrorCode getMeshsetIdEntitiesByDimension(
     Interface &moab,const int dimension,Range &entities,const bool recursive = false
   ) const;
 
   // /** \deprecated Use getMeshsetIdEntitiesByDimension() instead
   // */
-  // DEPRECATED inline PetscErrorCode get_cubit_msId_entities_by_dimension(
+  // DEPRECATED inline MoFEMErrorCode get_cubit_msId_entities_by_dimension(
   //   Interface &moab,const int dimension,Range &entities,const bool recursive = false
   // ) const {
   //   return getMeshsetIdEntitiesByDimension(moab,dimension,entities,recursive);
@@ -119,13 +119,13 @@ struct CubitMeshSets {
    * @return           error code
    *
    */
-  PetscErrorCode getMeshsetIdEntitiesByDimension(
+  MoFEMErrorCode getMeshsetIdEntitiesByDimension(
     Interface &moab,Range &entities,const bool recursive = false
   )  const;
 
   // /** \deprecated Use getMeshsetIdEntitiesByDimension() instead
   // */
-  // DEPRECATED inline PetscErrorCode get_cubit_msId_entities_by_dimension(
+  // DEPRECATED inline MoFEMErrorCode get_cubit_msId_entities_by_dimension(
   //   Interface &moab,Range &entities,const bool recursive = false
   // )  const {
   //   return getMeshsetIdEntitiesByDimension(moab,entities,recursive);
@@ -139,13 +139,13 @@ struct CubitMeshSets {
    * @param  recursive true if meshset should be searched recursively
    * @return           error code
    */
-  PetscErrorCode getMeshsetIdEntitiesByType(
+  MoFEMErrorCode getMeshsetIdEntitiesByType(
     Interface &moab,const EntityType type,Range &entities,const bool recursive = false
   ) const;
 
   // /** \deprecated Use getMeshsetIdEntitiesByType() instead
   // */
-  // DEPRECATED inline PetscErrorCode get_cubit_msId_entities_by_type(
+  // DEPRECATED inline MoFEMErrorCode get_cubit_msId_entities_by_type(
   //   Interface &moab,const EntityType type,Range &entities,const bool recursive = false
   // ) const {
   //   return getMeshsetIdEntitiesByType(moab,type,entities,recursive);
@@ -154,26 +154,26 @@ struct CubitMeshSets {
   /**
    *  \brief Function that returns the CubitBCType type of the contents of bc_data
    */
-  PetscErrorCode getTypeFromBcData(const std::vector<char> &bc_data,CubitBCType &type) const;
+  MoFEMErrorCode getTypeFromBcData(const std::vector<char> &bc_data,CubitBCType &type) const;
 
   /**
    *  \brief Function that returns the CubitBCType type of the contents of bc_data
   */
-  PetscErrorCode getTypeFromBcData(CubitBCType &type) const;
+  MoFEMErrorCode getTypeFromBcData(CubitBCType &type) const;
 
   /**
    * \brief get bc_data vector from MoFEM database
    *
    * \param bc_data is the in/out vector were bc_data will be stored
    */
-  PetscErrorCode getBcData(std::vector<char>& bc_data) const;
+  MoFEMErrorCode getBcData(std::vector<char>& bc_data) const;
 
   /**
   * \brief get block_headers vector from MoFEM database
   *
   * \param material_data is the in/out vector were the material data will be stored
   */
-  PetscErrorCode getBlockHeaderData(std::vector<unsigned int>& material_data) const;
+  MoFEMErrorCode getBlockHeaderData(std::vector<unsigned int>& material_data) const;
 
   /**
   * \brief print material_data int stream given by os
@@ -181,7 +181,7 @@ struct CubitMeshSets {
   * f.e. it->print_Cubit_material_data(cout), i.e. printing to standard output
   * f.e. it->print_Cubit_material_data(std::cerr), i.e. printing to standard error output
   */
-  PetscErrorCode printBlockHeaderData(std::ostream& os) const;
+  MoFEMErrorCode printBlockHeaderData(std::ostream& os) const;
 
   /**
    * \brief print bc_data int stream given by os
@@ -189,35 +189,35 @@ struct CubitMeshSets {
    * f.e. it->printBcData(cout), i.e. printing to standard output
    * f.e. it->printBcData(std::cerr), i.e. printing to standard error output
    */
-  PetscErrorCode printBcData(std::ostream& os) const;
+  MoFEMErrorCode printBcData(std::ostream& os) const;
 
   /**
    *  \brief Function that returns the CubitBCType type of the block name, sideset name etc.
    */
-  PetscErrorCode getTypeFromName(const std::string &name,CubitBCType &type) const;
+  MoFEMErrorCode getTypeFromName(const std::string &name,CubitBCType &type) const;
 
   /**
    *  \brief Function that returns the CubitBCType type of the block name, sideset name etc.
    */
-  PetscErrorCode getTypeFromName(CubitBCType &type) const;
+  MoFEMErrorCode getTypeFromName(CubitBCType &type) const;
 
   /**
    * \brief get Cubit block attributes
    *
    * \param attributes is the vector where the block attribute data will be stored
    */
-  PetscErrorCode getAttributes(std::vector<double> &attributes) const;
+  MoFEMErrorCode getAttributes(std::vector<double> &attributes) const;
 
   /**
    * \brief cet Cubit block attributes
    *
    * \param attributes is the vector where the block attribute data will be stored
    */
-  PetscErrorCode setAttributes(moab::Interface &moab,const std::vector<double> &attributes);
+  MoFEMErrorCode setAttributes(moab::Interface &moab,const std::vector<double> &attributes);
 
   // /** \deprecated Use getAttributes() instead
   // */
-  // DEPRECATED inline PetscErrorCode get_attributes(std::vector<double> &attributes) const {
+  // DEPRECATED inline MoFEMErrorCode get_attributes(std::vector<double> &attributes) const {
   //   return getAttributes(attributes);
   // }
 
@@ -227,7 +227,7 @@ struct CubitMeshSets {
    * f.e. it->printAttributes(cout), i.e. printing to standard output
    * f.e. it->printAttributes(std::cerr), i.e. printing to standard error output
    */
-  PetscErrorCode printAttributes(std::ostream& os) const;
+  MoFEMErrorCode printAttributes(std::ostream& os) const;
 
   /**
    * \brief get name of block, sideset etc. (this is set in Cubit block properties)
@@ -271,13 +271,13 @@ struct CubitMeshSets {
    * e.g. it->printName(cout), i.e. printing to standard output
    * e.g it->printName(std::cerr), i.e. printing to standard error output
    */
-  PetscErrorCode printName(std::ostream& os) const;
+  MoFEMErrorCode printName(std::ostream& os) const;
 
   /**
    * \brief fill data structure with data saved on meshset
    */
   template<class ATTRIBUTE_TYPE>
-  PetscErrorCode getAttributeDataStructure(ATTRIBUTE_TYPE &data) const {
+  MoFEMErrorCode getAttributeDataStructure(ATTRIBUTE_TYPE &data) const {
     MoFEMFunctionBeginHot;
     
     if((cubitBcType&data.getType()).none()) {
@@ -296,7 +296,7 @@ struct CubitMeshSets {
   // /** \deprecated Use getAttributeDataStructure() instead
   // */
   // template<class ATTRIBUTE_TYPE>
-  // DEPRECATED inline PetscErrorCode get_attribute_data_structure(ATTRIBUTE_TYPE &data) const {
+  // DEPRECATED inline MoFEMErrorCode get_attribute_data_structure(ATTRIBUTE_TYPE &data) const {
   //   return getAttributeDataStructure(data);
   // }
 
@@ -304,7 +304,7 @@ struct CubitMeshSets {
    * \brief fill meshset data with data on structure
    */
   template<class ATTRIBUTE_TYPE>
-  PetscErrorCode setAttributeDataStructure(const ATTRIBUTE_TYPE &data) {
+  MoFEMErrorCode setAttributeDataStructure(const ATTRIBUTE_TYPE &data) {
     MoFEMFunctionBeginHot;
     
     if((cubitBcType&data.getType()).none()) {
@@ -316,7 +316,7 @@ struct CubitMeshSets {
   }
 
   template<class CUBIT_BC_DATA_TYPE>
-  PetscErrorCode getBcDataStructure(CUBIT_BC_DATA_TYPE& data) const {
+  MoFEMErrorCode getBcDataStructure(CUBIT_BC_DATA_TYPE& data) const {
     MoFEMFunctionBeginHot;
     
     if((cubitBcType&data.tYpe).none()) {
@@ -331,12 +331,12 @@ struct CubitMeshSets {
   // /** \deprecated Use getBcDataStructure() instead
   // */
   // template<class CUBIT_BC_DATA_TYPE>
-  // DEPRECATED inline PetscErrorCode get_bc_data_structure(CUBIT_BC_DATA_TYPE& data) const {
+  // DEPRECATED inline MoFEMErrorCode get_bc_data_structure(CUBIT_BC_DATA_TYPE& data) const {
   //   return getBcDataStructure(data);
   // }
 
   template<class CUBIT_BC_DATA_TYPE>
-  PetscErrorCode setBcDataStructure(CUBIT_BC_DATA_TYPE& data) {
+  MoFEMErrorCode setBcDataStructure(CUBIT_BC_DATA_TYPE& data) {
     MoFEMFunctionBeginHot;
     
     char *ptr = const_cast<char*>(tag_bc_data);
@@ -348,7 +348,7 @@ struct CubitMeshSets {
 
   Tag nsTag,ssTag,nsTag_data,ssTag_data,bhTag,bhTag_header,thBlockAttribs,entityNameTag;
 
-  PetscErrorCode getTagsHanlders(Interface &moab);
+  MoFEMErrorCode getTagsHanlders(Interface &moab);
 
 };
 

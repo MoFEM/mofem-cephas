@@ -19,7 +19,7 @@
 
 namespace MoFEM {
 
-PetscErrorCode BitRefManager::query_interface(const MOFEMuuid &uuid,
+MoFEMErrorCode BitRefManager::query_interface(const MOFEMuuid &uuid,
                                               UnknownInterface **iface) const {
   MoFEMFunctionBeginHot;
   *iface = NULL;
@@ -35,7 +35,7 @@ BitRefManager::BitRefManager(const MoFEM::Core &core)
     : cOre(const_cast<MoFEM::Core &>(core)), dEbug(false) {}
 BitRefManager::~BitRefManager() {}
 
-PetscErrorCode BitRefManager::setBitRefLevel(const Range &ents,
+MoFEMErrorCode BitRefManager::setBitRefLevel(const Range &ents,
                                              const BitRefLevel &bit,
                                              const bool only_tets,
                                              int verb) const {
@@ -69,7 +69,7 @@ PetscErrorCode BitRefManager::setBitRefLevel(const Range &ents,
             baseEntData(m_field.get_basic_entity_data_ptr()) {}
 
       /// find entities and change entity bit if in database
-      PetscErrorCode
+      MoFEMErrorCode
       findEntsToAdd(EntityHandle f, EntityHandle s,
                     std::vector<EntityHandle> &seed_ents_vec,
                     std::vector<boost::shared_ptr<RefEntity> >
@@ -119,7 +119,7 @@ PetscErrorCode BitRefManager::setBitRefLevel(const Range &ents,
       }
 
       /// add entities to database
-      PetscErrorCode
+      MoFEMErrorCode
       addToDatabase(std::vector<EntityHandle> &seed_ents_vec,
                     std::vector<boost::shared_ptr<RefEntity> >
                         *shared_ref_ents_vec_for_fe = NULL) const {
@@ -267,7 +267,7 @@ PetscErrorCode BitRefManager::setBitRefLevel(const Range &ents,
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode BitRefManager::addToDatabaseBitRefLevelByType(
+MoFEMErrorCode BitRefManager::addToDatabaseBitRefLevelByType(
     const EntityType type, const BitRefLevel &bit, const bool only_tets,
     int verb) const {
   MoFEMFunctionBeginHot;
@@ -280,7 +280,7 @@ PetscErrorCode BitRefManager::addToDatabaseBitRefLevelByType(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode BitRefManager::addToDatabaseBitRefLevelByDim(
+MoFEMErrorCode BitRefManager::addToDatabaseBitRefLevelByDim(
     const int dim, const BitRefLevel &bit, const bool only_tets,
     int verb) const {
   MoFEMFunctionBeginHot;
@@ -293,7 +293,7 @@ PetscErrorCode BitRefManager::addToDatabaseBitRefLevelByDim(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode BitRefManager::setBitLevelToMeshset(const EntityHandle meshset,
+MoFEMErrorCode BitRefManager::setBitLevelToMeshset(const EntityHandle meshset,
                                                    const BitRefLevel &bit,
                                                    int verb) const {
   MoFEM::Interface &m_field = cOre;
@@ -323,7 +323,7 @@ PetscErrorCode BitRefManager::setBitLevelToMeshset(const EntityHandle meshset,
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode BitRefManager::setBitRefLevelByDim(const EntityHandle meshset,
+MoFEMErrorCode BitRefManager::setBitRefLevelByDim(const EntityHandle meshset,
                                                   const int dim,
                                                   const BitRefLevel &bit,
                                                   int verb) const {
@@ -338,7 +338,7 @@ PetscErrorCode BitRefManager::setBitRefLevelByDim(const EntityHandle meshset,
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode BitRefManager::setBitRefLevelByType(const EntityHandle meshset,
+MoFEMErrorCode BitRefManager::setBitRefLevelByType(const EntityHandle meshset,
                                                    const EntityType type,
                                                    const BitRefLevel &bit,
                                                    int verb) const {
@@ -352,7 +352,7 @@ PetscErrorCode BitRefManager::setBitRefLevelByType(const EntityHandle meshset,
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode BitRefManager::addBitRefLevel(const Range &ents,
+MoFEMErrorCode BitRefManager::addBitRefLevel(const Range &ents,
                                              const BitRefLevel &bit,
                                              int verb) const {
   MoFEM::Interface &m_field = cOre;
@@ -386,7 +386,7 @@ PetscErrorCode BitRefManager::addBitRefLevel(const Range &ents,
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode BitRefManager::addBitRefLevelByDim(const EntityHandle meshset,
+MoFEMErrorCode BitRefManager::addBitRefLevelByDim(const EntityHandle meshset,
                                                   const int dim,
                                                   const BitRefLevel &bit,
                                                   int verb) const {
@@ -409,7 +409,7 @@ PetscErrorCode BitRefManager::addBitRefLevelByDim(const EntityHandle meshset,
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode BitRefManager::setNthBitRefLevel(const Range &ents, const int n,
+MoFEMErrorCode BitRefManager::setNthBitRefLevel(const Range &ents, const int n,
                                                 const bool b, int verb) const {
   MoFEM::Interface &m_field = cOre;
   const RefEntity_multiIndex *ref_ent_ptr;
@@ -441,7 +441,7 @@ PetscErrorCode BitRefManager::setNthBitRefLevel(const Range &ents, const int n,
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode BitRefManager::setNthBitRefLevel(const int n, const bool b,
+MoFEMErrorCode BitRefManager::setNthBitRefLevel(const int n, const bool b,
                                                 int verb) const {
   MoFEM::Interface &m_field = cOre;
   const RefEntity_multiIndex *ref_ent_ptr;
@@ -464,7 +464,7 @@ PetscErrorCode BitRefManager::setNthBitRefLevel(const int n, const bool b,
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode BitRefManager::shiftLeftBitRef(const int shift,
+MoFEMErrorCode BitRefManager::shiftLeftBitRef(const int shift,
                                               const BitRefLevel mask,
                                               int verb) const {
   MoFEMFunctionBeginHot;
@@ -472,7 +472,7 @@ PetscErrorCode BitRefManager::shiftLeftBitRef(const int shift,
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode BitRefManager::shiftRightBitRef(const int shift,
+MoFEMErrorCode BitRefManager::shiftRightBitRef(const int shift,
                                                const BitRefLevel mask,
                                                int verb) const {
   MoFEM::Interface &m_field = cOre;
@@ -506,7 +506,7 @@ PetscErrorCode BitRefManager::shiftRightBitRef(const int shift,
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode BitRefManager::writeBitLevelByType(
+MoFEMErrorCode BitRefManager::writeBitLevelByType(
     const BitRefLevel &bit, const BitRefLevel &mask, const EntityType type,
     const char *file_name, const char *file_type, const char *options) const {
   MoFEM::Interface &m_field = cOre;
@@ -524,7 +524,7 @@ PetscErrorCode BitRefManager::writeBitLevelByType(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode BitRefManager::writeEntitiesNotInDatabase(
+MoFEMErrorCode BitRefManager::writeEntitiesNotInDatabase(
     const char *file_name, const char *file_type, const char *options) const {
   MoFEM::Interface &m_field = cOre;
   moab::Interface &moab(m_field.get_moab());
@@ -544,7 +544,7 @@ PetscErrorCode BitRefManager::writeEntitiesNotInDatabase(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode BitRefManager::getEntitiesByTypeAndRefLevel(
+MoFEMErrorCode BitRefManager::getEntitiesByTypeAndRefLevel(
     const BitRefLevel &bit, const BitRefLevel &mask, const EntityType type,
     const EntityHandle meshset, int verb) const {
   MoFEM::Interface &m_field = cOre;
@@ -558,7 +558,7 @@ PetscErrorCode BitRefManager::getEntitiesByTypeAndRefLevel(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode BitRefManager::filterEntitiesByRefLevel(const BitRefLevel &bit,
+MoFEMErrorCode BitRefManager::filterEntitiesByRefLevel(const BitRefLevel &bit,
                                                        const BitRefLevel &mask,
                                                        Range &ents,
                                                        int verb) const {
@@ -590,7 +590,7 @@ PetscErrorCode BitRefManager::filterEntitiesByRefLevel(const BitRefLevel &bit,
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode BitRefManager::getEntitiesByTypeAndRefLevel(
+MoFEMErrorCode BitRefManager::getEntitiesByTypeAndRefLevel(
     const BitRefLevel &bit, const BitRefLevel &mask, const EntityType type,
     Range &ents, int verb) const {
   MoFEM::Interface &m_field = cOre;
@@ -603,7 +603,7 @@ PetscErrorCode BitRefManager::getEntitiesByTypeAndRefLevel(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode BitRefManager::getEntitiesByDimAndRefLevel(const BitRefLevel &bit,
+MoFEMErrorCode BitRefManager::getEntitiesByDimAndRefLevel(const BitRefLevel &bit,
                                            const BitRefLevel &mask,
                                            const int dim,
                                            const EntityHandle meshset,
@@ -619,7 +619,7 @@ PetscErrorCode BitRefManager::getEntitiesByDimAndRefLevel(const BitRefLevel &bit
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode BitRefManager::getEntitiesByDimAndRefLevel(
+MoFEMErrorCode BitRefManager::getEntitiesByDimAndRefLevel(
     const BitRefLevel &bit, const BitRefLevel &mask, const int dim,
     Range &ents, int verb) const {
   MoFEM::Interface &m_field = cOre;
@@ -631,7 +631,7 @@ PetscErrorCode BitRefManager::getEntitiesByDimAndRefLevel(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode
+MoFEMErrorCode
 BitRefManager::getEntitiesByRefLevel(const BitRefLevel &bit,
                                      const BitRefLevel &mask,
                                      const EntityHandle meshset) const {
@@ -646,7 +646,7 @@ BitRefManager::getEntitiesByRefLevel(const BitRefLevel &bit,
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode BitRefManager::getEntitiesByRefLevel(const BitRefLevel &bit,
+MoFEMErrorCode BitRefManager::getEntitiesByRefLevel(const BitRefLevel &bit,
                                                     const BitRefLevel &mask,
                                                     Range &ents) const {
   MoFEM::Interface &m_field = cOre;
@@ -694,7 +694,7 @@ PetscErrorCode BitRefManager::getEntitiesByRefLevel(const BitRefLevel &bit,
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode BitRefManager::getEntitiesByParentType(const BitRefLevel &bit,
+MoFEMErrorCode BitRefManager::getEntitiesByParentType(const BitRefLevel &bit,
                                                       const BitRefLevel &mask,
                                                       const EntityType type,
                                                       Range &ents) const {
@@ -720,7 +720,7 @@ PetscErrorCode BitRefManager::getEntitiesByParentType(const BitRefLevel &bit,
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode
+MoFEMErrorCode
 BitRefManager::getAllEntitiesNotInDatabase(Range &ents) const {
   MoFEM::Interface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
@@ -731,7 +731,7 @@ BitRefManager::getAllEntitiesNotInDatabase(Range &ents) const {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode BitRefManager::getEntitiesNotInDatabase(Range &ents) const {
+MoFEMErrorCode BitRefManager::getEntitiesNotInDatabase(Range &ents) const {
   MoFEM::Interface &m_field = cOre;
   const RefEntity_multiIndex *ref_ents_ptr;
   MoFEMFunctionBeginHot;
@@ -750,7 +750,7 @@ PetscErrorCode BitRefManager::getEntitiesNotInDatabase(Range &ents) const {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode
+MoFEMErrorCode
 BitRefManager::getAdjacenciesEquality(const EntityHandle from_entity,
                                       const int to_dimension,
                                       Range &adj_entities) const {
@@ -786,7 +786,7 @@ BitRefManager::getAdjacenciesEquality(const EntityHandle from_entity,
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode BitRefManager::getAdjacenciesAny(const EntityHandle from_entity,
+MoFEMErrorCode BitRefManager::getAdjacenciesAny(const EntityHandle from_entity,
                                                 const int to_dimension,
                                                 Range &adj_entities) const {
   MoFEM::Interface &m_field = cOre;
@@ -820,7 +820,7 @@ PetscErrorCode BitRefManager::getAdjacenciesAny(const EntityHandle from_entity,
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode BitRefManager::getAdjacencies(
+MoFEMErrorCode BitRefManager::getAdjacencies(
     const Problem *problem_ptr, const EntityHandle *from_entities,
     const int num_entities, const int to_dimension, Range &adj_entities,
     const int operation_type, const int verb) const {
@@ -832,7 +832,7 @@ PetscErrorCode BitRefManager::getAdjacencies(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode BitRefManager::getAdjacencies(
+MoFEMErrorCode BitRefManager::getAdjacencies(
     const BitRefLevel &bit, const EntityHandle *from_entities,
     const int num_entities, const int to_dimension, Range &adj_entities,
     const int operation_type, const int verb) const {
@@ -873,7 +873,7 @@ PetscErrorCode BitRefManager::getAdjacencies(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode BitRefManager::updateMeshsetByEntitiesChildren(
+MoFEMErrorCode BitRefManager::updateMeshsetByEntitiesChildren(
     const EntityHandle parent, const BitRefLevel &child_bit,
     const EntityHandle child, EntityType child_type, const bool recursive,
     int verb) {
@@ -940,7 +940,7 @@ PetscErrorCode BitRefManager::updateMeshsetByEntitiesChildren(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode BitRefManager::updateFieldMeshsetByEntitiesChildren(
+MoFEMErrorCode BitRefManager::updateFieldMeshsetByEntitiesChildren(
     const BitRefLevel &child_bit, int verb) {
   MoFEM::Interface &m_field = cOre;
   const Field_multiIndex *fields_ptr;
@@ -966,7 +966,7 @@ PetscErrorCode BitRefManager::updateFieldMeshsetByEntitiesChildren(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode BitRefManager::updateFieldMeshsetByEntitiesChildren(
+MoFEMErrorCode BitRefManager::updateFieldMeshsetByEntitiesChildren(
     const std::string name, const BitRefLevel &child_bit, int verb) {
   MoFEM::Interface &m_field = cOre;
   MoFEMFunctionBeginHot;
@@ -990,7 +990,7 @@ PetscErrorCode BitRefManager::updateFieldMeshsetByEntitiesChildren(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode BitRefManager::updateFiniteElementMeshsetByEntitiesChildren(
+MoFEMErrorCode BitRefManager::updateFiniteElementMeshsetByEntitiesChildren(
     const std::string name, const BitRefLevel &child_bit,
     const EntityType fe_ent_type, int verb) {
   MoFEM::Interface &m_field = cOre;
@@ -1006,7 +1006,7 @@ PetscErrorCode BitRefManager::updateFiniteElementMeshsetByEntitiesChildren(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode BitRefManager::updateRange(const Range &parent_ents,
+MoFEMErrorCode BitRefManager::updateRange(const Range &parent_ents,
                                           Range &child_ents) {
   MoFEM::Interface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();

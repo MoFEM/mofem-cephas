@@ -18,7 +18,7 @@
 
 namespace MoFEM {
 
-  PetscErrorCode VecManager::query_interface(const MOFEMuuid& uuid, UnknownInterface** iface) const {
+  MoFEMErrorCode VecManager::query_interface(const MOFEMuuid& uuid, UnknownInterface** iface) const {
     MoFEMFunctionBeginHot;
     *iface = NULL;
     if(uuid == IDD_MOFEMVEC) {
@@ -36,7 +36,7 @@ namespace MoFEM {
   VecManager::~VecManager() {
   }
 
-  PetscErrorCode VecManager::vecCreateSeq(const std::string &name,RowColData rc,Vec *V) const {
+  MoFEMErrorCode VecManager::vecCreateSeq(const std::string &name,RowColData rc,Vec *V) const {
     const MoFEM::Interface &m_field = cOre;
     const Problem *problem_ptr;
     MoFEMFunctionBeginHot;
@@ -58,7 +58,7 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode VecManager::vecCreateGhost(const std::string &name,RowColData rc,Vec *V) const {
+  MoFEMErrorCode VecManager::vecCreateGhost(const std::string &name,RowColData rc,Vec *V) const {
     const MoFEM::Interface &m_field = cOre;
     const Problem *problem_ptr;
     MoFEMFunctionBeginHot;
@@ -96,7 +96,7 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode VecManager::vecScatterCreate(
+  MoFEMErrorCode VecManager::vecScatterCreate(
     Vec xin,const std::string &x_problem,const std::string &x_field_name,RowColData x_rc,
     Vec yin,const std::string &y_problem,const std::string &y_field_name,RowColData y_rc,
     VecScatter *newctx
@@ -116,7 +116,7 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode VecManager::vecScatterCreate(
+  MoFEMErrorCode VecManager::vecScatterCreate(
     Vec xin,const std::string &x_problem,RowColData x_rc,
     Vec yin,const std::string &y_problem,RowColData y_rc,
     VecScatter *newctx
@@ -140,7 +140,7 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode VecManager::setLocalGhostVector(
+  MoFEMErrorCode VecManager::setLocalGhostVector(
     const Problem *problem_ptr,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode
   ) const {
     MoFEMFunctionBeginHot;
@@ -221,7 +221,7 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode VecManager::setLocalGhostVector(
+  MoFEMErrorCode VecManager::setLocalGhostVector(
     const std::string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode
   ) const {
     const MoFEM::Interface &m_field = cOre;
@@ -232,7 +232,7 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode VecManager::setGlobalGhostVector(
+  MoFEMErrorCode VecManager::setGlobalGhostVector(
     const Problem *problem_ptr,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode
   ) const {
     MoFEMFunctionBeginHot;
@@ -288,7 +288,7 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode VecManager::setGlobalGhostVector(
+  MoFEMErrorCode VecManager::setGlobalGhostVector(
     const std::string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode
   ) const {
     const MoFEM::Interface &m_field = cOre;
@@ -299,7 +299,7 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode VecManager::setOtherLocalGhostVector(
+  MoFEMErrorCode VecManager::setOtherLocalGhostVector(
     const Problem *problem_ptr,const std::string& field_name,const std::string& cpy_field_name,RowColData rc,
     Vec V,InsertMode mode,ScatterMode scatter_mode
   ) const {
@@ -404,7 +404,7 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode VecManager::setOtherLocalGhostVector(
+  MoFEMErrorCode VecManager::setOtherLocalGhostVector(
     const std::string &name,const std::string& field_name,const std::string& cpy_field_name,RowColData rc,
     Vec V,InsertMode mode,ScatterMode scatter_mode
   ) const {
@@ -418,7 +418,7 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode VecManager::setOtherGlobalGhostVector(
+  MoFEMErrorCode VecManager::setOtherGlobalGhostVector(
     const Problem *problem_ptr,
     const std::string& field_name,
     const std::string& cpy_field_name,
@@ -577,7 +577,7 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode VecManager::setOtherGlobalGhostVector(
+  MoFEMErrorCode VecManager::setOtherGlobalGhostVector(
     const std::string& name,
     const std::string& field_name,
     const std::string& cpy_field_name,

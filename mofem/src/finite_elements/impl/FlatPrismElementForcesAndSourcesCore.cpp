@@ -72,7 +72,7 @@ extern "C" {
 
 namespace MoFEM {
 
-PetscErrorCode FlatPrismElementForcesAndSourcesCore::operator()() {
+MoFEMErrorCode FlatPrismElementForcesAndSourcesCore::operator()() {
   MoFEMFunctionBeginHot;
 
   if(numeredEntFiniteElementPtr->getEntType() != MBPRISM) MoFEMFunctionReturnHot(0);
@@ -473,7 +473,7 @@ PetscErrorCode FlatPrismElementForcesAndSourcesCore::operator()() {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode OpCalculateInvJacForFlatPrism::doWork(
+MoFEMErrorCode OpCalculateInvJacForFlatPrism::doWork(
   int side,
   EntityType type,
   DataForcesAndSourcesCore::EntData &data
@@ -522,7 +522,7 @@ PetscErrorCode OpCalculateInvJacForFlatPrism::doWork(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode OpSetInvJacH1ForFlatPrism::doWork(
+MoFEMErrorCode OpSetInvJacH1ForFlatPrism::doWork(
   int side,
   EntityType type,
   DataForcesAndSourcesCore::EntData &data

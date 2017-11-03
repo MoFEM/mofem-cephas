@@ -33,7 +33,7 @@ static const MOFEMuuid IDD_MOFEMProblemsManager =
  */
 struct ProblemsManager : public UnknownInterface {
 
-  PetscErrorCode query_interface(const MOFEMuuid &uuid,
+  MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
                                  UnknownInterface **iface) const;
 
   MoFEM::Core &cOre;
@@ -47,7 +47,7 @@ struct ProblemsManager : public UnknownInterface {
   PetscBool buildProblemFromFields; ///< If set to true, problem is build from
   /// DOFs in fields, not from DOFs on elements
 
-  PetscErrorCode getOptions();
+  MoFEMErrorCode getOptions();
 
   /**
    * \brief Set partition tag to each finite element in the problem
@@ -64,13 +64,13 @@ struct ProblemsManager : public UnknownInterface {
    * @param  verb        Verbosity level
    * @return             Error code
    */
-  PetscErrorCode partitionMesh(const Range &ents, const int dim,
+  MoFEMErrorCode partitionMesh(const Range &ents, const int dim,
                                const int adj_dim, const int n_parts,
                                Tag *th_vertex_weights, Tag *th_edge_weights,
                                Tag *th_part_weights, int verb = 1);
 
   /// \deprecated do not use this one
-  DEPRECATED PetscErrorCode partitionMesh(const Range &ents, const int dim,
+  DEPRECATED MoFEMErrorCode partitionMesh(const Range &ents, const int dim,
                                           const int adj_dim, const int n_parts,
                                           int verb = 1) {
     return partitionMesh(ents, dim, adj_dim, n_parts, NULL, NULL, NULL, verb);
@@ -91,7 +91,7 @@ struct ProblemsManager : public UnknownInterface {
    * @return               error code
    *
    */
-  PetscErrorCode buildProblem(const std::string &name, const bool square_matrix,
+  MoFEMErrorCode buildProblem(const std::string &name, const bool square_matrix,
                               int verb = 1);
 
   /** \brief build problem data structures
@@ -109,7 +109,7 @@ struct ProblemsManager : public UnknownInterface {
    * @return               error code
    *
    */
-  PetscErrorCode buildProblem(Problem *problem_ptr, const bool square_matrix,
+  MoFEMErrorCode buildProblem(Problem *problem_ptr, const bool square_matrix,
                               int verb = 1);
 
   /** \brief build problem data structures, assuming that mesh is distributed
@@ -123,7 +123,7 @@ struct ProblemsManager : public UnknownInterface {
    function has to call this function.
 
    */
-  PetscErrorCode buildProblemOnDistributedMesh(const std::string &name,
+  MoFEMErrorCode buildProblemOnDistributedMesh(const std::string &name,
                                                const bool square_matrix,
                                                int verb = 1);
 
@@ -138,7 +138,7 @@ struct ProblemsManager : public UnknownInterface {
    function has to call this function.
 
    */
-  PetscErrorCode buildProblemOnDistributedMesh(Problem *problem_ptr,
+  MoFEMErrorCode buildProblemOnDistributedMesh(Problem *problem_ptr,
                                                const bool square_matrix = true,
                                                int verb = 1);
 
@@ -150,7 +150,7 @@ struct ProblemsManager : public UnknownInterface {
    * @param  main_problem main problem
    * @return              error code
    */
-  PetscErrorCode buildSubProblem(const std::string &out_name,
+  MoFEMErrorCode buildSubProblem(const std::string &out_name,
                                  const std::vector<std::string> &fields_row,
                                  const std::vector<std::string> &fields_col,
                                  const std::string &main_problem,
@@ -165,7 +165,7 @@ struct ProblemsManager : public UnknownInterface {
    * @param  verb             verbosity level
    * @return                  error code
    */
-  PetscErrorCode
+  MoFEMErrorCode
   buildCompsedProblem(const std::string &out_name,
                       const std::vector<std::string> add_row_problems,
                       const std::vector<std::string> add_col_problems,
@@ -186,7 +186,7 @@ struct ProblemsManager : public UnknownInterface {
    * problems.
     *
     */
-  PetscErrorCode inheritPartition(const std::string &name,
+  MoFEMErrorCode inheritPartition(const std::string &name,
                                   const std::string &problem_for_rows,
                                   bool copy_rows,
                                   const std::string &problem_for_cols,
@@ -197,19 +197,19 @@ struct ProblemsManager : public UnknownInterface {
    *
    * \param name problem name
    */
-  PetscErrorCode partitionSimpleProblem(const std::string &name, int verb = 1);
+  MoFEMErrorCode partitionSimpleProblem(const std::string &name, int verb = 1);
 
   /** \brief partition problem dofs (collective)
    * \ingroup mofem_problems_manager
    *
    * \param name problem name
    */
-  PetscErrorCode partitionProblem(const std::string &name, int verb = 1);
+  MoFEMErrorCode partitionProblem(const std::string &name, int verb = 1);
 
-  PetscErrorCode printPartitionedProblem(const Problem *problem_ptr,
+  MoFEMErrorCode printPartitionedProblem(const Problem *problem_ptr,
                                          int verb = 1);
 
-  PetscErrorCode debugPartitionedProblem(const Problem *problem_ptr,
+  MoFEMErrorCode debugPartitionedProblem(const Problem *problem_ptr,
                                          int verb = 1);
 
   /** \brief partition finite elements
@@ -221,7 +221,7 @@ struct ProblemsManager : public UnknownInterface {
    *
    * \param name problem name
    */
-  PetscErrorCode partitionFiniteElements(const std::string &name,
+  MoFEMErrorCode partitionFiniteElements(const std::string &name,
                                          bool part_from_moab = false,
                                          int low_proc = -1, int hi_proc = -1,
                                          int verb = 1);
@@ -234,7 +234,7 @@ struct ProblemsManager : public UnknownInterface {
    * owned by that partitition.
    *
    */
-  PetscErrorCode partitionGhostDofs(const std::string &name, int verb = 1);
+  MoFEMErrorCode partitionGhostDofs(const std::string &name, int verb = 1);
 
   /** \brief determine ghost nodes on distributed meshes
    * \ingroup mofem_problems_manager
@@ -247,13 +247,13 @@ struct ProblemsManager : public UnknownInterface {
    * DOFs are ghosted if are shered but not owned by partition.
    *
    */
-  PetscErrorCode partitionGhostDofsOnDistributedMesh(const std::string &name,
+  MoFEMErrorCode partitionGhostDofsOnDistributedMesh(const std::string &name,
                                                      int verb = 1);
 
   /**
    * \create meshset problem finite elements
    */
-  PetscErrorCode getFEMeshset(const std::string &prb_name,
+  MoFEMErrorCode getFEMeshset(const std::string &prb_name,
                               const std::string &fe_name,
                               EntityHandle *meshset) const;
 
@@ -271,7 +271,7 @@ struct ProblemsManager : public UnknownInterface {
    * @param  verb    verbosity level
    * @return         error code
    */
-  PetscErrorCode getProblemElementsLayout(const std::string &name,
+  MoFEMErrorCode getProblemElementsLayout(const std::string &name,
                                           const std::string &fe_name,
                                           PetscLayout *layout) const;
 

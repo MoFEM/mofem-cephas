@@ -22,6 +22,8 @@
 
 #define DM_NO_ELEMENT "DMNONEFE"
 
+namespace MoFEM {
+
 /**
   * \brief Register MoFEM problem
   * \ingroup dm
@@ -693,7 +695,6 @@ PetscErrorCode DMCreateFieldIS_MoFEM(DM dm, PetscInt *numFields, char ***fieldNa
  */
 PetscErrorCode DMMoFEMGetFieldIS(DM dm,RowColData rc,const char field_name[],IS *is);
 
-namespace MoFEM {
 
   static const MOFEMuuid IDD_DMCTX = MOFEMuuid(BitIntefaceId(DMCTX_INTERFACE));
 
@@ -710,9 +711,9 @@ namespace MoFEM {
    * \ingroup dm
    *
    */
-  struct DMCtx: public MoFEM::UnknownInterface {
+  struct DMCtx: public UnknownInterface {
 
-    PetscErrorCode query_interface(const MOFEMuuid& uuid,UnknownInterface** iface) const;
+    MoFEMErrorCode query_interface(const MOFEMuuid& uuid,UnknownInterface** iface) const;
 
     Interface *mField_ptr; 		 ///< MoFEM interface
     PetscBool isProblemBuild;  ///< True if problem is build
@@ -750,6 +751,7 @@ namespace MoFEM {
     boost::shared_ptr<TsCtx>	 tsCtx;	  ///< data structure for TS solver
 
   };
+
 
 }
 

@@ -47,7 +47,7 @@ extern "C" {
 
 namespace MoFEM {
 
-  PetscErrorCode MedInterface::query_interface(const MOFEMuuid& uuid, UnknownInterface** iface) const {
+  MoFEMErrorCode MedInterface::query_interface(const MOFEMuuid& uuid, UnknownInterface** iface) const {
     MoFEMFunctionBeginHot;
     *iface = NULL;
     if(uuid == IDD_MOFEMMedInterface) {
@@ -58,12 +58,12 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  MedInterface::MedInterface(const MoFEM::Core& core):
-  cOre(const_cast<MoFEM::Core&>(core)),
+  MedInterface::MedInterface(const Core& core):
+  cOre(const_cast<Core&>(core)),
   flgFile(PETSC_FALSE) {}
 
-  PetscErrorCode MedInterface::getFileNameFromCommandLine(int verb) {
-    MoFEM::Interface &m_field = cOre;
+  MoFEMErrorCode MedInterface::getFileNameFromCommandLine(int verb) {
+    Interface &m_field = cOre;
 
     char mesh_file_name[255];
     MoFEMFunctionBeginHot;
@@ -83,8 +83,8 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode MedInterface::medGetFieldNames(const string &file,int verb) {
-    MoFEM::Interface &m_field = cOre;
+  MoFEMErrorCode MedInterface::medGetFieldNames(const string &file,int verb) {
+    Interface &m_field = cOre;
     MoFEMFunctionBeginHot;
     med_idt fid = MEDfileOpen(file.c_str(), MED_ACC_RDONLY);
     if(fid < 0) {
@@ -137,7 +137,7 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode MedInterface::medGetFieldNames(int verb) {
+  MoFEMErrorCode MedInterface::medGetFieldNames(int verb) {
 
     MoFEMFunctionBeginHot;
     if(medFileName.empty()) {
@@ -148,8 +148,8 @@ namespace MoFEM {
   }
 
 
-  PetscErrorCode MedInterface::readMed(const string &file,int verb) {
-    MoFEM::Interface &m_field = cOre;
+  MoFEMErrorCode MedInterface::readMed(const string &file,int verb) {
+    Interface &m_field = cOre;
     MoFEMFunctionBeginHot;
 
     med_idt fid = MEDfileOpen(file.c_str(), MED_ACC_RDONLY);
@@ -225,14 +225,14 @@ namespace MoFEM {
     }
   }
 
-  PetscErrorCode MedInterface::readMesh(
+  MoFEMErrorCode MedInterface::readMesh(
     const string &file,
     const int index,
     std::map<int,Range> &family_elem_map,
     int verb
   ) {
 
-    MoFEM::Interface &m_field = cOre;
+    Interface &m_field = cOre;
     MoFEMFunctionBeginHot;
 
     med_idt fid = MEDfileOpen(file.c_str(), MED_ACC_RDONLY);
@@ -472,7 +472,7 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode MedInterface::readFamily(
+  MoFEMErrorCode MedInterface::readFamily(
     const string &file,
     const int index,
     const std::map<int,Range> &family_elem_map,
@@ -480,7 +480,7 @@ namespace MoFEM {
     int verb
   ) {
     //
-    MoFEM::Interface &m_field = cOre;
+    Interface &m_field = cOre;
     MoFEMFunctionBeginHot;
 
     med_idt fid = MEDfileOpen(file.c_str(),MED_ACC_RDONLY);
@@ -561,13 +561,13 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode MedInterface::makeBlockSets(
+  MoFEMErrorCode MedInterface::makeBlockSets(
     const std::map<string,Range> &group_elem_map,
     int verb
   ) {
 
 
-    MoFEM::Interface &m_field = cOre;
+    Interface &m_field = cOre;
     MoFEMFunctionBeginHot;
     MeshsetsManager *meshsets_manager_ptr;
     ierr = m_field.getInterface(meshsets_manager_ptr); CHKERRQ(ierr);
@@ -611,7 +611,7 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode MedInterface::readMed(int verb) {
+  MoFEMErrorCode MedInterface::readMed(int verb) {
 
     MoFEMFunctionBeginHot;
     if(medFileName.empty()) {
@@ -621,14 +621,14 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode MedInterface::writeMed(const string &file,int verb) {
-    MoFEM::Interface &m_field = cOre;
+  MoFEMErrorCode MedInterface::writeMed(const string &file,int verb) {
+    Interface &m_field = cOre;
     MoFEMFunctionBeginHot;
     SETERRQ(m_field.get_comm(),MOFEM_NOT_IMPLEMENTED,"Not yet implemented");
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode MedInterface::readFields(
+  MoFEMErrorCode MedInterface::readFields(
     const std::string &file_name,
     const std::string &field_name,
     const bool load_series,
@@ -637,7 +637,7 @@ namespace MoFEM {
   ) {
 
 
-    MoFEM::Interface &m_field = cOre;
+    Interface &m_field = cOre;
     MoFEMFunctionBeginHot;
     med_idt fid = MEDfileOpen((char*)file_name.c_str(), MED_LECTURE);
     if(fid < 0){

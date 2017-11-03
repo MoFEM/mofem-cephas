@@ -347,7 +347,7 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSourcesCore {
      * @param  method  Finite element object
      * @return         error code
      */
-    PetscErrorCode loopSideVolumes(
+    MoFEMErrorCode loopSideVolumes(
       const string &fe_name,VolumeElementForcesAndSourcesCoreOnSide &method
     );
 
@@ -362,7 +362,7 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSourcesCore {
    *
    * @return Error code
    */
-  virtual PetscErrorCode calculateAreaAndNormal();
+  virtual MoFEMErrorCode calculateAreaAndNormal();
 
 
   int nbGaussPts; ///< Number of integration points
@@ -371,25 +371,25 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSourcesCore {
    * \brief Set integration points
    * @return Error code
    */
-  virtual PetscErrorCode setIntegartionPts();
+  virtual MoFEMErrorCode setIntegartionPts();
 
   /**
    * \brief Determine approximation space and order of base functions
    * @return Error code
    */
-  virtual PetscErrorCode getSpaceBaseAndOrderOnElement();
+  virtual MoFEMErrorCode getSpaceBaseAndOrderOnElement();
 
   /**
    * \brief Calculate coordinate at integration points
    * @return Error code
    */
-  virtual PetscErrorCode calculateCoordinatesAtGaussPts();
+  virtual MoFEMErrorCode calculateCoordinatesAtGaussPts();
 
   /**
    * \brief Calculate base functions
    * @return Error code
    */
-  virtual PetscErrorCode calculateBaseFunctionsOnElement();
+  virtual MoFEMErrorCode calculateBaseFunctionsOnElement();
 
   /**
    * \brief Calculate normal on curved elements
@@ -398,9 +398,9 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSourcesCore {
    *
    * @return error code
    */
-  virtual PetscErrorCode calculateHoNormal();
+  virtual MoFEMErrorCode calculateHoNormal();
 
-  PetscErrorCode operator()();
+  MoFEMErrorCode operator()();
 
 };
 
@@ -428,7 +428,7 @@ struct OpCalculateInvJacForFace: public FaceElementForcesAndSourcesCore::UserDat
   FaceElementForcesAndSourcesCore::UserDataOperator(H1),
   invJac(inv_jac) {}
 
-  PetscErrorCode doWork(
+  MoFEMErrorCode doWork(
     int side,EntityType type,DataForcesAndSourcesCore::EntData &data
   );
 };
@@ -453,7 +453,7 @@ struct OpSetInvJacH1ForFace: public FaceElementForcesAndSourcesCore::UserDataOpe
   invJac(inv_jac) {}
 
   MatrixDouble diffNinvJac;
-  PetscErrorCode doWork(
+  MoFEMErrorCode doWork(
     int side,EntityType type,DataForcesAndSourcesCore::EntData &data
   );
 };
@@ -483,7 +483,7 @@ struct OpSetInvJacHcurlFace: public FaceElementForcesAndSourcesCore::UserDataOpe
 
   MatrixDouble diffHcurlInvJac;
 
-  PetscErrorCode doWork(
+  MoFEMErrorCode doWork(
     int side,EntityType type,DataForcesAndSourcesCore::EntData &data
   );
 

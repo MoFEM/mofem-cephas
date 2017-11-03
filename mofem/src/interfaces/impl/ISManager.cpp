@@ -19,7 +19,7 @@
 
 namespace MoFEM {
 
-  PetscErrorCode ISManager::query_interface(const MOFEMuuid& uuid, UnknownInterface** iface) const {
+  MoFEMErrorCode ISManager::query_interface(const MOFEMuuid& uuid, UnknownInterface** iface) const {
     MoFEMFunctionBeginHot;
     *iface = NULL;
     if(uuid == IDD_MOFEMISManager) {
@@ -37,7 +37,7 @@ namespace MoFEM {
   ISManager::~ISManager() {
   }
 
-  PetscErrorCode ISManager::sectionCreate(
+  MoFEMErrorCode ISManager::sectionCreate(
     const std::string &problem_name,
     PetscSection *s,
     const RowColData row_col
@@ -169,7 +169,7 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode ISManager::isCreateProblemOrder(
+  MoFEMErrorCode ISManager::isCreateProblemOrder(
     const std::string &problem,RowColData rc,int min_order,int max_order,IS *is
   ) const {
     const MoFEM::Interface &m_field = cOre;
@@ -210,7 +210,7 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode ISManager::isCreateProblemFieldAndRank(
+  MoFEMErrorCode ISManager::isCreateProblemFieldAndRank(
     const std::string &problem,
     RowColData rc,
     const std::string &field,
@@ -268,7 +268,7 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode ISManager::isCreateFromProblemFieldToOtherProblemField(
+  MoFEMErrorCode ISManager::isCreateFromProblemFieldToOtherProblemField(
     const std::string &x_problem,
     const std::string &x_field_name,RowColData x_rc,
     const std::string &y_problem,
@@ -338,7 +338,7 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode ISManager::isCreateFromProblemFieldToOtherProblemField(
+  MoFEMErrorCode ISManager::isCreateFromProblemFieldToOtherProblemField(
     const std::string &x_problem,const std::string &x_field_name,RowColData x_rc,
     const std::string &y_problem,const std::string &y_field_name,RowColData y_rc,
     IS *ix,IS *iy
@@ -364,7 +364,7 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode ISManager::isCreateFromProblemToOtherProblem(
+  MoFEMErrorCode ISManager::isCreateFromProblemToOtherProblem(
     const std::string &x_problem,RowColData x_rc,
     const std::string &y_problem,RowColData y_rc,
     std::vector<int> &idx,std::vector<int> &idy
@@ -412,7 +412,7 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode ISManager::isCreateFromProblemToOtherProblem(
+  MoFEMErrorCode ISManager::isCreateFromProblemToOtherProblem(
     const std::string &x_problem,RowColData x_rc,
     const std::string &y_problem,RowColData y_rc,
     IS *ix,IS *iy

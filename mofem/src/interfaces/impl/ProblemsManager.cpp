@@ -21,7 +21,7 @@ namespace MoFEM {
 
   #ifdef PARMETIS
 
-  PetscErrorCode MatPartitioningApply_Parmetis_MoFEM(MatPartitioning part,IS *partitioning);
+  MoFEMErrorCode MatPartitioningApply_Parmetis_MoFEM(MatPartitioning part,IS *partitioning);
 
   #endif // PARMETIS
 
@@ -58,7 +58,7 @@ namespace MoFEM {
     const int *pTr;
   };
 
-  PetscErrorCode ProblemsManager::query_interface(const MOFEMuuid& uuid, UnknownInterface** iface) const {
+  MoFEMErrorCode ProblemsManager::query_interface(const MOFEMuuid& uuid, UnknownInterface** iface) const {
     MoFEMFunctionBeginHot;
     *iface = NULL;
     if(uuid == IDD_MOFEMProblemsManager) {
@@ -77,7 +77,7 @@ namespace MoFEM {
   ProblemsManager::~ProblemsManager() {
   }
 
-  PetscErrorCode ProblemsManager::getOptions() {
+  MoFEMErrorCode ProblemsManager::getOptions() {
     MoFEM::Interface &m_field = cOre;
     MoFEMFunctionBeginHot;
     ierr = PetscOptionsBegin(m_field.get_comm(),"","Problem manager","none"); CHKERRQ(ierr);
@@ -92,7 +92,7 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode ProblemsManager::partitionMesh(
+  MoFEMErrorCode ProblemsManager::partitionMesh(
     const Range &ents,const int dim,const int adj_dim,const int n_parts,
     Tag *th_vertex_weights,Tag *th_edge_weights,Tag *th_part_veights,
     int verb
@@ -364,7 +364,7 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode ProblemsManager::buildProblem(const std::string &name,const bool square_matrix,int verb) {
+  MoFEMErrorCode ProblemsManager::buildProblem(const std::string &name,const bool square_matrix,int verb) {
 
     MoFEM::Interface &m_field = cOre;
     MoFEMFunctionBeginHot;
@@ -378,7 +378,7 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode ProblemsManager::buildProblem(Problem *problem_ptr,const bool square_matrix,int verb) {
+  MoFEMErrorCode ProblemsManager::buildProblem(Problem *problem_ptr,const bool square_matrix,int verb) {
     MoFEM::Interface &m_field = cOre;
     const EntFiniteElement_multiIndex *fe_ent_ptr;
     const DofEntity_multiIndex *dofs_field_ptr;
@@ -549,7 +549,7 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode ProblemsManager::buildProblemOnDistributedMesh(
+  MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
     const std::string &name,const bool square_matrix,int verb
   ) {
 
@@ -572,7 +572,7 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode ProblemsManager::buildProblemOnDistributedMesh(
+  MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
     Problem *problem_ptr,const bool square_matrix,int verb
   ) {
     MoFEM::Interface &m_field = cOre;
@@ -1124,7 +1124,7 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode ProblemsManager::buildSubProblem(
+  MoFEMErrorCode ProblemsManager::buildSubProblem(
     const std::string &out_name,
     const std::vector<std::string> &fields_row,
     const std::vector<std::string> &fields_col,
@@ -1374,7 +1374,7 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-   PetscErrorCode ProblemsManager::buildCompsedProblem(
+   MoFEMErrorCode ProblemsManager::buildCompsedProblem(
     const std::string &out_name,
     const std::vector<std::string> add_row_problems,
     const std::vector<std::string> add_col_problems,
@@ -1700,7 +1700,7 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode ProblemsManager::partitionSimpleProblem(const std::string &name,int verb) {
+  MoFEMErrorCode ProblemsManager::partitionSimpleProblem(const std::string &name,int verb) {
 
     MoFEM::Interface &m_field = cOre;
     const Problem_multiIndex *problems_ptr;
@@ -1811,7 +1811,7 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode ProblemsManager::partitionProblem(const std::string &name,int verb) {
+  MoFEMErrorCode ProblemsManager::partitionProblem(const std::string &name,int verb) {
 
     MoFEM::Interface &m_field = cOre;
     const Problem_multiIndex *problems_ptr;
@@ -2030,7 +2030,7 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode ProblemsManager::inheritPartition(
+  MoFEMErrorCode ProblemsManager::inheritPartition(
     const std::string &name,
     const std::string &problem_for_rows,
     bool copy_rows,
@@ -2218,7 +2218,7 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode ProblemsManager::printPartitionedProblem(const Problem *problem_ptr,int verb) {
+  MoFEMErrorCode ProblemsManager::printPartitionedProblem(const Problem *problem_ptr,int verb) {
     MoFEM::Interface &m_field = cOre;
     MoFEMFunctionBeginHot;
     if(verb>0) {
@@ -2251,7 +2251,7 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode ProblemsManager::debugPartitionedProblem(const Problem *problem_ptr,int verb) {
+  MoFEMErrorCode ProblemsManager::debugPartitionedProblem(const Problem *problem_ptr,int verb) {
     MoFEM::Interface &m_field = cOre;
     MoFEMFunctionBeginHot;
     if(debug>0) {
@@ -2329,7 +2329,7 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode ProblemsManager::partitionFiniteElements(
+  MoFEMErrorCode ProblemsManager::partitionFiniteElements(
     const std::string &name,
     bool part_from_moab,
     int low_proc,
@@ -2573,7 +2573,7 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode ProblemsManager::partitionGhostDofs(const std::string &name,int verb) {
+  MoFEMErrorCode ProblemsManager::partitionGhostDofs(const std::string &name,int verb) {
     MoFEM::Interface &m_field = cOre;
     const Problem_multiIndex *problems_ptr;
     MoFEMFunctionBeginHot;
@@ -2685,7 +2685,7 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode ProblemsManager::partitionGhostDofsOnDistributedMesh(const std::string &name,int verb) {
+  MoFEMErrorCode ProblemsManager::partitionGhostDofsOnDistributedMesh(const std::string &name,int verb) {
     MoFEM::Interface &m_field = cOre;
     const Problem_multiIndex *problems_ptr;
     MoFEMFunctionBeginHot;
@@ -2786,7 +2786,7 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode ProblemsManager::getFEMeshset(
+  MoFEMErrorCode ProblemsManager::getFEMeshset(
     const std::string& prb_name,const std::string& fe_name,EntityHandle *meshset
   ) const {
     MoFEM::Interface &m_field = cOre;
@@ -2806,7 +2806,7 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode ProblemsManager::getProblemElementsLayout(
+  MoFEMErrorCode ProblemsManager::getProblemElementsLayout(
     const std::string &name,const std::string &fe_name,PetscLayout *layout
   ) const {
     MoFEM::Interface &m_field = cOre;

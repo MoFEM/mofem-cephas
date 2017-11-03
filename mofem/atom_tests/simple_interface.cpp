@@ -33,7 +33,7 @@ struct OpVolume: public VolumeElementForcesAndSourcesCore::UserDataOperator {
   VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,OPROW),
   vOl(vol) {
   }
-  PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
+  MoFEMErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
     
     MoFEMFunctionBeginHot;
     if(type!=MBVERTEX) MoFEMFunctionReturnHot(0);
@@ -52,7 +52,7 @@ struct OpVolume: public VolumeElementForcesAndSourcesCore::UserDataOperator {
     ierr = VecSetValue(vOl,0,vol,ADD_VALUES); CHKERRQ(ierr);
     MoFEMFunctionReturnHot(0);
   }
-  PetscErrorCode doWork(
+  MoFEMErrorCode doWork(
     int row_side,int col_side,
     EntityType row_type, EntityType col_type,
     DataForcesAndSourcesCore::EntData &row_data,
@@ -70,7 +70,7 @@ struct OpFace: public FaceElementForcesAndSourcesCore::UserDataOperator {
   FaceElementForcesAndSourcesCore::UserDataOperator(field_name,OPROW),
   vOl(vol) {
   }
-  PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
+  MoFEMErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
     
     MoFEMFunctionBeginHot;
     if(type!=MBVERTEX) MoFEMFunctionReturnHot(0);
@@ -90,7 +90,7 @@ struct OpFace: public FaceElementForcesAndSourcesCore::UserDataOperator {
     ierr = VecSetValue(vOl,0,vol,ADD_VALUES); CHKERRQ(ierr);
     MoFEMFunctionReturnHot(0);
   }
-  PetscErrorCode doWork(
+  MoFEMErrorCode doWork(
     int row_side,int col_side,
     EntityType row_type, EntityType col_type,
     DataForcesAndSourcesCore::EntData &row_data,

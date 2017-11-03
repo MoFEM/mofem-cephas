@@ -22,8 +22,30 @@ namespace MoFEM {
 
 typedef ErrorCode MoABErrorCode;
 
-static MoABErrorCode rval;
-static PetscErrorCode ierr;
+template <typename TYPE>
+struct MoFEMErrorCodeGeneric {
+  MoFEMErrorCodeGeneric(const TYPE) {}
+};
+
+template<>
+struct MoFEMErrorCodeGeneric<PetscErrorCode> {
+  PetscErrorCode iERR;
+  MoFEMErrorCodeGeneric(const PetscErrorCode ierr) : iERR(ierr) {}
+  inline operator PetscErrorCode() const { return iERR; }
+};
+
+template<>
+struct MoFEMErrorCodeGeneric<moab::ErrorCode> {
+  moab::ErrorCode rVAL;
+  MoFEMErrorCodeGeneric(const moab::ErrorCode rval): rVAL(rval) {}
+  inline operator moab::ErrorCode() const { return rVAL; }
+};
+
+typedef MoFEMErrorCodeGeneric<PetscErrorCode> MoFEMErrorCode;
+
+static MoFEMErrorCodeGeneric<moab::ErrorCode> rval =
+    MoFEMErrorCodeGeneric<moab::ErrorCode>(MB_SUCCESS);
+static MoFEMErrorCode ierr = MoFEMErrorCode(0);
 
 typedef int DofIdx;                  ///< Index of DOF
 typedef int FEIdx;                   ///< Index of the element

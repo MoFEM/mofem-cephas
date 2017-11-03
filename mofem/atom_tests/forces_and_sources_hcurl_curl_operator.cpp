@@ -158,7 +158,7 @@ int main(int argc, char *argv[]) {
     VolumeElementForcesAndSourcesCore::UserDataOperator("HCURL",UserDataOperator::OPROW),
     cUrl(curl) {}
 
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int side,
       EntityType type,
       DataForcesAndSourcesCore::EntData &data) {
@@ -217,7 +217,7 @@ int main(int argc, char *argv[]) {
     FaceElementForcesAndSourcesCore::UserDataOperator("HCURL",UserDataOperator::OPROW),
     cUrl(curl) {}
 
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int side,
       EntityType type,
       DataForcesAndSourcesCore::EntData &data

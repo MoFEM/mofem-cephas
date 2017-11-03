@@ -65,7 +65,7 @@ extern "C" {
 
 namespace MoFEM {
 
-PetscErrorCode DataOperator::opLhs(
+MoFEMErrorCode DataOperator::opLhs(
     DataForcesAndSourcesCore &row_data,DataForcesAndSourcesCore &col_data,bool symm) {
   MoFEMFunctionBeginHot;
   
@@ -482,7 +482,7 @@ PetscErrorCode DataOperator::opLhs(
 }
 
 template<>
-PetscErrorCode invertTensor3by3<3,double,ublas::row_major,DoubleAllocator>(
+MoFEMErrorCode invertTensor3by3<3,double,ublas::row_major,DoubleAllocator>(
   MatrixDouble &jac_data,
   VectorDouble &det_data,
   MatrixDouble &inv_jac_data
@@ -505,7 +505,7 @@ PetscErrorCode invertTensor3by3<3,double,ublas::row_major,DoubleAllocator>(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode DataOperator::opRhs(
+MoFEMErrorCode DataOperator::opRhs(
   DataForcesAndSourcesCore &data,
   const bool do_vertices,
   const bool do_edges,
@@ -655,7 +655,7 @@ PetscErrorCode DataOperator::opRhs(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode OpSetInvJacH1::doWork(
+MoFEMErrorCode OpSetInvJacH1::doWork(
   int side,
   EntityType type,
   DataForcesAndSourcesCore::EntData &data
@@ -743,7 +743,7 @@ PetscErrorCode OpSetInvJacH1::doWork(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode OpSetInvJacHdivAndHcurl::doWork(
+MoFEMErrorCode OpSetInvJacHdivAndHcurl::doWork(
   int side,
   EntityType type,
   DataForcesAndSourcesCore::EntData &data
@@ -810,7 +810,7 @@ PetscErrorCode OpSetInvJacHdivAndHcurl::doWork(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode OpSetContravariantPiolaTransform::doWork(
+MoFEMErrorCode OpSetContravariantPiolaTransform::doWork(
   int side,
   EntityType type,
   DataForcesAndSourcesCore::EntData &data
@@ -882,7 +882,7 @@ PetscErrorCode OpSetContravariantPiolaTransform::doWork(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode OpSetCovariantPiolaTransform::doWork(
+MoFEMErrorCode OpSetCovariantPiolaTransform::doWork(
   int side,
   EntityType type,
   DataForcesAndSourcesCore::EntData &data
@@ -951,7 +951,7 @@ PetscErrorCode OpSetCovariantPiolaTransform::doWork(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode OpSetHoInvJacH1::doWork(
+MoFEMErrorCode OpSetHoInvJacH1::doWork(
     int side,
     EntityType type,
     DataForcesAndSourcesCore::EntData &data
@@ -1053,7 +1053,7 @@ PetscErrorCode OpSetHoInvJacH1::doWork(
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode OpSetHoInvJacHdivAndHcurl::doWork(
+  MoFEMErrorCode OpSetHoInvJacHdivAndHcurl::doWork(
     int side,
     EntityType type,
     DataForcesAndSourcesCore::EntData &data
@@ -1126,7 +1126,7 @@ PetscErrorCode OpSetHoInvJacH1::doWork(
   }
 
 
-PetscErrorCode OpSetHoContravariantPiolaTransform::doWork(
+MoFEMErrorCode OpSetHoContravariantPiolaTransform::doWork(
   int side,EntityType type,DataForcesAndSourcesCore::EntData &data
 ) {
   MoFEMFunctionBeginHot;
@@ -1201,7 +1201,7 @@ PetscErrorCode OpSetHoContravariantPiolaTransform::doWork(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode OpSetHoCovariantPiolaTransform::doWork(
+MoFEMErrorCode OpSetHoCovariantPiolaTransform::doWork(
   int side,EntityType type,DataForcesAndSourcesCore::EntData &data
 ) {
   MoFEMFunctionBeginHot;
@@ -1273,7 +1273,7 @@ PetscErrorCode OpSetHoCovariantPiolaTransform::doWork(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode OpGetCoordsAndNormalsOnFace::doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
+MoFEMErrorCode OpGetCoordsAndNormalsOnFace::doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
   MoFEMFunctionBeginHot;
 
   unsigned int nb_dofs = data.getFieldData().size();
@@ -1339,7 +1339,7 @@ PetscErrorCode OpGetCoordsAndNormalsOnFace::doWork(int side,EntityType type,Data
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode OpGetCoordsAndNormalsOnFace::calculateNormals() {
+MoFEMErrorCode OpGetCoordsAndNormalsOnFace::calculateNormals() {
   MoFEMFunctionBeginHot;
   
 
@@ -1357,7 +1357,7 @@ PetscErrorCode OpGetCoordsAndNormalsOnFace::calculateNormals() {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode OpGetCoordsAndNormalsOnPrism::doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
+MoFEMErrorCode OpGetCoordsAndNormalsOnPrism::doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
   MoFEMFunctionBeginHot;
 
   if(data.getFieldData().size()==0)  MoFEMFunctionReturnHot(0);
@@ -1428,7 +1428,7 @@ PetscErrorCode OpGetCoordsAndNormalsOnPrism::doWork(int side,EntityType type,Dat
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode OpGetCoordsAndNormalsOnPrism::calculateNormals() {
+MoFEMErrorCode OpGetCoordsAndNormalsOnPrism::calculateNormals() {
   MoFEMFunctionBeginHot;
   
 
@@ -1464,7 +1464,7 @@ PetscErrorCode OpGetCoordsAndNormalsOnPrism::calculateNormals() {
 }
 
 
-PetscErrorCode OpSetContravariantPiolaTransformOnTriangle::doWork(
+MoFEMErrorCode OpSetContravariantPiolaTransformOnTriangle::doWork(
     int side,
     EntityType type,
     DataForcesAndSourcesCore::EntData &data
@@ -1505,7 +1505,7 @@ PetscErrorCode OpSetContravariantPiolaTransformOnTriangle::doWork(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode OpSetCovariantPiolaTransformOnTriangle::doWork(
+MoFEMErrorCode OpSetCovariantPiolaTransformOnTriangle::doWork(
   int side,
   EntityType type,
   DataForcesAndSourcesCore::EntData &data
@@ -1612,7 +1612,7 @@ PetscErrorCode OpSetCovariantPiolaTransformOnTriangle::doWork(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode OpGetHoTangentOnEdge::doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
+MoFEMErrorCode OpGetHoTangentOnEdge::doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
   MoFEMFunctionBeginHot;
 
   int nb_dofs = data.getFieldData().size();
@@ -1664,7 +1664,7 @@ PetscErrorCode OpGetHoTangentOnEdge::doWork(int side,EntityType type,DataForcesA
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode OpSetCovariantPiolaTransformOnEdge::doWork(
+MoFEMErrorCode OpSetCovariantPiolaTransformOnEdge::doWork(
   int side,
   EntityType type,
   DataForcesAndSourcesCore::EntData &data
@@ -1759,7 +1759,7 @@ FTensor::Tensor2<double*,3,3> OpGetDataAndGradient<3,3>::getGradAtGaussPtsTensor
 }
 
 template<>
-PetscErrorCode OpGetDataAndGradient<3,3>::calculateValAndGrad(
+MoFEMErrorCode OpGetDataAndGradient<3,3>::calculateValAndGrad(
   int side,
   EntityType type,
   DataForcesAndSourcesCore::EntData &data
@@ -1820,7 +1820,7 @@ PetscErrorCode OpGetDataAndGradient<3,3>::calculateValAndGrad(
 }
 
 template<>
-PetscErrorCode OpGetDataAndGradient<1,3>::calculateValAndGrad(
+MoFEMErrorCode OpGetDataAndGradient<1,3>::calculateValAndGrad(
   int side,
   EntityType type,
   DataForcesAndSourcesCore::EntData &data

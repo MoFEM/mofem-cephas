@@ -33,7 +33,7 @@ static const MOFEMuuid IDD_MOFEMBitRefManager =
  */
 struct BitRefManager : public UnknownInterface {
 
-  PetscErrorCode query_interface(const MOFEMuuid &uuid,
+  MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
                                  UnknownInterface **iface) const;
 
   MoFEM::Core &cOre;
@@ -87,25 +87,25 @@ struct BitRefManager : public UnknownInterface {
    * @param  verb      verbosity level
    * @return           error code
    */
-  PetscErrorCode setBitRefLevel(const Range &ents, const BitRefLevel &bit,
+  MoFEMErrorCode setBitRefLevel(const Range &ents, const BitRefLevel &bit,
                                 const bool only_tets = true,
                                 int verb             = 0) const;
 
-  PetscErrorCode addToDatabaseBitRefLevelByType(const EntityType type,
+  MoFEMErrorCode addToDatabaseBitRefLevelByType(const EntityType type,
                                                 const BitRefLevel &bit,
                                                 const bool only_tets = true,
                                                 int verb             = 0) const;
 
-  PetscErrorCode addToDatabaseBitRefLevelByDim(const int dim,
+  MoFEMErrorCode addToDatabaseBitRefLevelByDim(const int dim,
                                                const BitRefLevel &bit,
                                                const bool only_tets = true,
                                                int verb             = 0) const;
 
-  PetscErrorCode setBitRefLevelByDim(const EntityHandle meshset, const int dim,
+  MoFEMErrorCode setBitRefLevelByDim(const EntityHandle meshset, const int dim,
                                      const BitRefLevel &bit,
                                      int verb = 0) const;
 
-  PetscErrorCode setBitRefLevelByType(const EntityHandle meshset,
+  MoFEMErrorCode setBitRefLevelByType(const EntityHandle meshset,
                                       const EntityType type,
                                       const BitRefLevel &bit,
                                       int verb = 0) const;
@@ -116,7 +116,7 @@ struct BitRefManager : public UnknownInterface {
    * \param EntityHandle MeshSet
    * \param BitRefLevel bitLevel
    */
-  PetscErrorCode setBitLevelToMeshset(const EntityHandle meshset,
+  MoFEMErrorCode setBitLevelToMeshset(const EntityHandle meshset,
                                       const BitRefLevel &bit,
                                       int verb = 0) const;
 
@@ -128,7 +128,7 @@ struct BitRefManager : public UnknownInterface {
    * @param  verb verbosity level
    * @return      error code
    */
-  PetscErrorCode addBitRefLevel(const Range &ents, const BitRefLevel &bit,
+  MoFEMErrorCode addBitRefLevel(const Range &ents, const BitRefLevel &bit,
                                 int verb = QUIET) const;
 
   /**
@@ -138,9 +138,9 @@ struct BitRefManager : public UnknownInterface {
    * @param dim dimension of entities
    * @param bit added bit
    * @param verb verbosity level
-   * @return PetscErrorCode
+   * @return MoFEMErrorCode
    */
-  PetscErrorCode addBitRefLevelByDim(const EntityHandle meshset, const int dim,
+  MoFEMErrorCode addBitRefLevelByDim(const EntityHandle meshset, const int dim,
                                      const BitRefLevel &bit,
                                      int verb = QUIET) const;
 
@@ -151,7 +151,7 @@ struct BitRefManager : public UnknownInterface {
    * @param  b    value to set
    * @return      error code
    */
-  PetscErrorCode setNthBitRefLevel(const Range &ents, const int n, const bool b,
+  MoFEMErrorCode setNthBitRefLevel(const Range &ents, const int n, const bool b,
                                    int verb = 0) const;
 
   /**
@@ -161,7 +161,7 @@ struct BitRefManager : public UnknownInterface {
    * @param  b    value to set
    * @return      error code
    */
-  PetscErrorCode setNthBitRefLevel(const int n, const bool b,
+  MoFEMErrorCode setNthBitRefLevel(const int n, const bool b,
                                    int verb = 0) const;
 
   /** \brief left shift bit ref level
@@ -170,14 +170,14 @@ struct BitRefManager : public UnknownInterface {
     *
     * \note Not implemented
     */
-  PetscErrorCode shiftLeftBitRef(const int shift,
+  MoFEMErrorCode shiftLeftBitRef(const int shift,
                                  const BitRefLevel mask = BitRefLevel().set(),
                                  int verb               = -1) const;
 
   /** \brief right shift bit ref level
     * \ingroup mofem_bit_ref
     */
-  PetscErrorCode shiftRightBitRef(const int shift,
+  MoFEMErrorCode shiftRightBitRef(const int shift,
                                   const BitRefLevel mask = BitRefLevel().set(),
                                   int verb               = -1) const;
 
@@ -194,9 +194,9 @@ struct BitRefManager : public UnknownInterface {
    * @param mask
    * @param ents 
    * @param QUIET 
-   * @return PetscErrorCode 
+   * @return MoFEMErrorCode 
    */
-  PetscErrorCode filterEntitiesByRefLevel(const BitRefLevel &bit,
+  MoFEMErrorCode filterEntitiesByRefLevel(const BitRefLevel &bit,
                                           const BitRefLevel &mask, Range &ents,
                                           int verb = QUIET) const;
 
@@ -211,7 +211,7 @@ struct BitRefManager : public UnknownInterface {
     * \retval EntityHandle meshset
     *
     */
-  PetscErrorCode getEntitiesByTypeAndRefLevel(const BitRefLevel &bit,
+  MoFEMErrorCode getEntitiesByTypeAndRefLevel(const BitRefLevel &bit,
                                               const BitRefLevel &mask,
                                               const EntityType type,
                                               const EntityHandle meshset,
@@ -228,7 +228,7 @@ struct BitRefManager : public UnknownInterface {
    * \retval ents
    *
    */
-  PetscErrorCode getEntitiesByTypeAndRefLevel(const BitRefLevel &bit,
+  MoFEMErrorCode getEntitiesByTypeAndRefLevel(const BitRefLevel &bit,
                                               const BitRefLevel &mask,
                                               const EntityType type,
                                               Range &ents, int verb = 0) const;
@@ -244,7 +244,7 @@ struct BitRefManager : public UnknownInterface {
    * \retval ents
    *
    */
-  PetscErrorCode getEntitiesByDimAndRefLevel(const BitRefLevel &bit,
+  MoFEMErrorCode getEntitiesByDimAndRefLevel(const BitRefLevel &bit,
                                              const BitRefLevel &mask,
                                              const int dim,
                                              const EntityHandle meshset,
@@ -261,7 +261,7 @@ struct BitRefManager : public UnknownInterface {
    * \retval ents
    *
    */
-  PetscErrorCode getEntitiesByDimAndRefLevel(const BitRefLevel &bit,
+  MoFEMErrorCode getEntitiesByDimAndRefLevel(const BitRefLevel &bit,
                                              const BitRefLevel &mask,
                                              const int dim, Range &ents,
                                              int verb = 0) const;
@@ -276,7 +276,7 @@ struct BitRefManager : public UnknownInterface {
    * \param EntityHandle meshset
    *
    */
-  PetscErrorCode getEntitiesByRefLevel(const BitRefLevel &bit,
+  MoFEMErrorCode getEntitiesByRefLevel(const BitRefLevel &bit,
                                        const BitRefLevel &mask,
                                        const EntityHandle meshset) const;
 
@@ -289,7 +289,7 @@ struct BitRefManager : public UnknownInterface {
    * \param BitRefLevel mask
    * \retval ents
    */
-  PetscErrorCode getEntitiesByRefLevel(const BitRefLevel &bit,
+  MoFEMErrorCode getEntitiesByRefLevel(const BitRefLevel &bit,
                                        const BitRefLevel &mask,
                                        Range &ents) const;
 
@@ -304,7 +304,7 @@ struct BitRefManager : public UnknownInterface {
    * @param  ents returned ents
    * @return      error code
    */
-  PetscErrorCode getEntitiesByParentType(const BitRefLevel &bit,
+  MoFEMErrorCode getEntitiesByParentType(const BitRefLevel &bit,
                                          const BitRefLevel &mask,
                                          const EntityType type,
                                          Range &ents) const;
@@ -313,17 +313,17 @@ struct BitRefManager : public UnknownInterface {
    * @brief Get all entities not in database
    *
    * @param ents
-   * @return PetscErrorCode
+   * @return MoFEMErrorCode
    */
-  PetscErrorCode getAllEntitiesNotInDatabase(Range &ents) const;
+  MoFEMErrorCode getAllEntitiesNotInDatabase(Range &ents) const;
 
   /**
    * @brief \brief Get entities not in database
    *
    * @param ents
-   * @return PetscErrorCode
+   * @return MoFEMErrorCode
    */
-  PetscErrorCode getEntitiesNotInDatabase(Range &ents) const;
+  MoFEMErrorCode getEntitiesNotInDatabase(Range &ents) const;
 
   /**@}*/
 
@@ -338,7 +338,7 @@ struct BitRefManager : public UnknownInterface {
     * bit ref level of adjacent entities is equal to bit ref level of adjacent
    * entities
     */
-  virtual PetscErrorCode getAdjacenciesEquality(const EntityHandle from_entity,
+  virtual MoFEMErrorCode getAdjacenciesEquality(const EntityHandle from_entity,
                                                 const int to_dimension,
                                                 Range &adj_entities) const;
 
@@ -349,7 +349,7 @@ struct BitRefManager : public UnknownInterface {
     * bit ref level of adjacent entities is any of bit ref level of adjacent
    * entities
     */
-  virtual PetscErrorCode getAdjacenciesAny(const EntityHandle from_entity,
+  virtual MoFEMErrorCode getAdjacenciesAny(const EntityHandle from_entity,
                                            const int to_dimension,
                                            Range &adj_entities) const;
 
@@ -360,7 +360,7 @@ struct BitRefManager : public UnknownInterface {
     * bit ref level of adjacent entities is equal to bit ref level of adjacent
    * entities
     */
-  virtual PetscErrorCode
+  virtual MoFEMErrorCode
   getAdjacencies(const Problem *problem_ptr, const EntityHandle *from_entities,
                  const int num_entities, const int to_dimension,
                  Range &adj_entities,
@@ -374,7 +374,7 @@ struct BitRefManager : public UnknownInterface {
     * bit ref level of adjacent entities is equal to bit ref level of adjacent
    * entities
     */
-  virtual PetscErrorCode
+  virtual MoFEMErrorCode
   getAdjacencies(const BitRefLevel &bit, const EntityHandle *from_entities,
                  const int num_entities, const int to_dimension,
                  Range &adj_entities,
@@ -406,7 +406,7 @@ struct BitRefManager : public UnknownInterface {
     * \param recursive if true parent meshset is searched recursively
     *
    **/
-  PetscErrorCode updateMeshsetByEntitiesChildren(const EntityHandle parent,
+  MoFEMErrorCode updateMeshsetByEntitiesChildren(const EntityHandle parent,
                                                  const BitRefLevel &child_bit,
                                                  const EntityHandle child,
                                                  EntityType child_type,
@@ -417,20 +417,20 @@ struct BitRefManager : public UnknownInterface {
     * \ingroup mofem_update_meshsets_and_ranges
     *
     */
-  PetscErrorCode
+  MoFEMErrorCode
   updateFieldMeshsetByEntitiesChildren(const BitRefLevel &child_bit,
                                        int verb = 0);
 
   /** \brief update field meshset by child entities
     * \ingroup mofem_update_meshsets_and_ranges
     */
-  PetscErrorCode updateFieldMeshsetByEntitiesChildren(
+  MoFEMErrorCode updateFieldMeshsetByEntitiesChildren(
       const std::string name, const BitRefLevel &child_bit, int verb = 0);
 
   /** \brief update finite element meshset by child entities
    * \ingroup mofem_update_meshsets_and_ranges
    */
-  PetscErrorCode updateFiniteElementMeshsetByEntitiesChildren(
+  MoFEMErrorCode updateFiniteElementMeshsetByEntitiesChildren(
       const std::string name, const BitRefLevel &child_bit,
       const EntityType fe_ent_type, int verb = 0);
 
@@ -443,7 +443,7 @@ struct BitRefManager : public UnknownInterface {
    * @param  child  children range
    * @return        error code
    */
-  PetscErrorCode updateRange(const Range &parent, Range &child);
+  MoFEMErrorCode updateRange(const Range &parent, Range &child);
 
   /**@}*/
 
@@ -461,7 +461,7 @@ struct BitRefManager : public UnknownInterface {
    * @param  options   file options (see moab documentation)
    * @return           error code
    */
-  PetscErrorCode
+  MoFEMErrorCode
   writeBitLevelByType(const BitRefLevel &bit, const BitRefLevel &mask,
                       const EntityType type, const char *file_name,
                       const char *file_type, const char *options) const;
@@ -472,9 +472,9 @@ struct BitRefManager : public UnknownInterface {
    * @param file_name
    * @param file_type for example "VTK"
    * @param options
-   * @return PetscErrorCode
+   * @return MoFEMErrorCode
    */
-  PetscErrorCode writeEntitiesNotInDatabase(const char *file_name,
+  MoFEMErrorCode writeEntitiesNotInDatabase(const char *file_name,
                                             const char *file_type,
                                             const char *options) const;
 

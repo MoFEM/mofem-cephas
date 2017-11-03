@@ -149,7 +149,7 @@ int main(int argc, char *argv[]) {
     mySplit(my_split) {
     }
 
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int side,
       EntityType type,
       DataForcesAndSourcesCore::EntData &data
@@ -192,7 +192,7 @@ int main(int argc, char *argv[]) {
     mySplit(my_split) {
     }
 
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int side,
       EntityType type,
       DataForcesAndSourcesCore::EntData &data

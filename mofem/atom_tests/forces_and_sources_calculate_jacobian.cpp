@@ -150,7 +150,7 @@ int main(int argc, char *argv[]) {
         my_split.close();
       }
 
-      PetscErrorCode doWork(
+      MoFEMErrorCode doWork(
         int side,EntityType type,DataForcesAndSourcesCore::EntData &data
       ) {
         MoFEMFunctionBeginHot;
@@ -190,14 +190,14 @@ int main(int argc, char *argv[]) {
     data(MBTET) {
     }
 
-    PetscErrorCode preProcess() {
+    MoFEMErrorCode preProcess() {
       MoFEMFunctionBeginHot;
       MoFEMFunctionReturnHot(0);
     }
 
     DataForcesAndSourcesCore data;
 
-    PetscErrorCode operator()() {
+    MoFEMErrorCode operator()() {
       MoFEMFunctionBeginHot;
 
       ierr = getSpacesAndBaseOnEntities(data); CHKERRQ(ierr);
@@ -267,7 +267,7 @@ int main(int argc, char *argv[]) {
       MoFEMFunctionReturnHot(0);
     }
 
-    PetscErrorCode postProcess() {
+    MoFEMErrorCode postProcess() {
       MoFEMFunctionBeginHot;
       MoFEMFunctionReturnHot(0);
     }

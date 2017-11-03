@@ -59,7 +59,7 @@ namespace MoFEM {
      * @param  snes_ctx SNES contex from which Sequence is copied from
      * @return          error code
      */
-    PetscErrorCode copyLoops(const SnesCtx &snes_ctx) {
+    MoFEMErrorCode copyLoops(const SnesCtx &snes_ctx) {
       MoFEMFunctionBeginHot;
       loops_to_do_Mat = snes_ctx.loops_to_do_Mat;
       loops_to_do_Rhs = snes_ctx.loops_to_do_Rhs;
@@ -132,8 +132,8 @@ namespace MoFEM {
     friend PetscErrorCode SnesRhs(SNES snes,Vec x,Vec f,void *ctx);
     friend PetscErrorCode SnesMat(SNES snes,Vec x,Mat A,Mat B,void *ctx);
 
-    friend PetscErrorCode SNESMoFEMSetAssmblyType(SNES snes,MatAssemblyType type);
-    friend PetscErrorCode SNESMoFEMSetBehavior(SNES snes,MoFEMTypes bh);
+    friend MoFEMErrorCode SNESMoFEMSetAssmblyType(SNES snes,MatAssemblyType type);
+    friend MoFEMErrorCode SNESMoFEMSetBehavior(SNES snes,MoFEMTypes bh);
   };
 
   /**
@@ -176,7 +176,7 @@ namespace MoFEM {
    * @param  type type of assembly, either MAT_FLUSH_ASSEMBLY or MAT_FINAL_ASSEMBLY
    * @return      error code
    */
-  PetscErrorCode SNESMoFEMSetAssmblyType(SNES snes,MatAssemblyType type);
+  MoFEMErrorCode SNESMoFEMSetAssmblyType(SNES snes,MatAssemblyType type);
 
   /**
    * \brief Set behavior if finite element in sequence does not exist
@@ -184,7 +184,7 @@ namespace MoFEM {
    * @param  bh   If set to MF_EXIST check if element exist, default MF_EXIST. Otherwise set MF_ZERO
    * @return      error code
    */
-  PetscErrorCode SNESMoFEMSetBehavior(SNES snes,MoFEMTypes bh);
+  MoFEMErrorCode SNESMoFEMSetBehavior(SNES snes,MoFEMTypes bh);
 
 
 }

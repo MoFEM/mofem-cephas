@@ -37,7 +37,7 @@ static const MOFEMuuid IDD_MOFEMEntMethod = MOFEMuuid( BitIntefaceId(ENT_METHOD)
  */
 struct KspMethod: virtual public UnknownInterface  {
 
-  PetscErrorCode query_interface (const MOFEMuuid& uuid, UnknownInterface** iface) const {
+  MoFEMErrorCode query_interface (const MOFEMuuid& uuid, UnknownInterface** iface) const {
     MoFEMFunctionBeginHot;
     if(uuid == IDD_MOFEMKspMethod) {
       *iface = const_cast<KspMethod*>(this);
@@ -67,21 +67,21 @@ struct KspMethod: virtual public UnknownInterface  {
    * @param  ctx Context, CTX_SETFUNCTION, CTX_OPERATORS, CTX_KSPNONE
    * @return     error code
    */
-  PetscErrorCode setKspCtx(const KSPContext& ctx);
+  MoFEMErrorCode setKspCtx(const KSPContext& ctx);
 
   /**
    * \brief set solver
    * @param  ksp solver
    * @return     error code
    */
-  PetscErrorCode setKsp(KSP ksp);
+  MoFEMErrorCode setKsp(KSP ksp);
 
   /**
    * \brief copy data form another method
    * @param  ksp ksp method
    * @return     error code
    */
-  PetscErrorCode copyKsp(const KspMethod& ksp);
+  MoFEMErrorCode copyKsp(const KspMethod& ksp);
 
   KSPContext ksp_ctx;   ///< Context
   KSP ksp;              ///< KSP solver
@@ -100,7 +100,7 @@ struct KspMethod: virtual public UnknownInterface  {
  */
 struct SnesMethod: virtual public UnknownInterface {
 
-  PetscErrorCode query_interface (const MOFEMuuid& uuid, UnknownInterface** iface) const {
+  MoFEMErrorCode query_interface (const MOFEMuuid& uuid, UnknownInterface** iface) const {
     if(uuid == IDD_MOFEMSnesMethod) {
       *iface = const_cast<SnesMethod*>(this);
       MoFEMFunctionReturnHot(0);
@@ -125,34 +125,34 @@ struct SnesMethod: virtual public UnknownInterface {
   /**
    * \brief Set SNES context
    */
-  PetscErrorCode setSnesCtx(const SNESContext& ctx);
+  MoFEMErrorCode setSnesCtx(const SNESContext& ctx);
 
   /**
    * \brief Set SNES instance
    */
-  PetscErrorCode setSnes(SNES snes);
+  MoFEMErrorCode setSnes(SNES snes);
 
   /**
    * \brief Copy snes data
    */
-  PetscErrorCode copySnes(const SnesMethod &snes);
+  MoFEMErrorCode copySnes(const SnesMethod &snes);
 
   SNES snes;
   Vec snes_x,snes_f;
   Mat snes_A,snes_B;
 
   /// \deprecated use setSnes
-  DEPRECATED PetscErrorCode set_snes(SNES snes) {
+  DEPRECATED MoFEMErrorCode set_snes(SNES snes) {
     return setSnes(snes);
   }
 
   /// \deprecated use setSnesCtx
-  DEPRECATED PetscErrorCode set_snes_ctx(const SNESContext& ctx) {
+  DEPRECATED MoFEMErrorCode set_snes_ctx(const SNESContext& ctx) {
     return setSnesCtx(ctx);
   }
 
   /// \deprecated use copySnes
-  DEPRECATED PetscErrorCode copy_snes(const SnesMethod &snes) {
+  DEPRECATED MoFEMErrorCode copy_snes(const SnesMethod &snes) {
     return copySnes(snes);
   };
 
@@ -166,7 +166,7 @@ struct SnesMethod: virtual public UnknownInterface {
  */
 struct TSMethod: virtual public UnknownInterface  {
 
-  PetscErrorCode query_interface (const MOFEMuuid& uuid, UnknownInterface** iface) const {
+  MoFEMErrorCode query_interface (const MOFEMuuid& uuid, UnknownInterface** iface) const {
     if(uuid == IDD_MOFEMTsMethod) {
       *iface = const_cast<TSMethod*>(this);
       MoFEMFunctionReturnHot(0);
@@ -200,13 +200,13 @@ struct TSMethod: virtual public UnknownInterface  {
   }
 
   /// \brief Set Ts context
-  PetscErrorCode setTsCtx(const TSContext& ctx);
+  MoFEMErrorCode setTsCtx(const TSContext& ctx);
 
   /// \brief Copy TS solver data
-  PetscErrorCode copyTs(const TSMethod &ts);
+  MoFEMErrorCode copyTs(const TSMethod &ts);
 
   /// \brief Set TS solver
-  PetscErrorCode setTs(TS _ts);
+  MoFEMErrorCode setTs(TS _ts);
 
   TS ts;
   Vec ts_u,ts_u_t,ts_F;
@@ -216,13 +216,13 @@ struct TSMethod: virtual public UnknownInterface  {
   PetscReal ts_a,ts_t;
 
   /// \deprecated use setTsCtx
-  DEPRECATED PetscErrorCode set_ts_ctx(const TSContext& ctx) { return setTsCtx(ctx); }
+  DEPRECATED MoFEMErrorCode set_ts_ctx(const TSContext& ctx) { return setTsCtx(ctx); }
 
   /// \deprecated use copyTs
-  DEPRECATED PetscErrorCode copy_ts(const TSMethod &ts) { return copyTs(ts); }
+  DEPRECATED MoFEMErrorCode copy_ts(const TSMethod &ts) { return copyTs(ts); }
 
   /// \deprecated use setTs
-  DEPRECATED PetscErrorCode set_ts(TS _ts) { return setTs(_ts); }
+  DEPRECATED MoFEMErrorCode set_ts(TS _ts) { return setTs(_ts); }
 
 };
 
@@ -239,7 +239,7 @@ KspMethod,
 SnesMethod,
 TSMethod {
 
-  PetscErrorCode query_interface (const MOFEMuuid& uuid, UnknownInterface** iface) const {
+  MoFEMErrorCode query_interface (const MOFEMuuid& uuid, UnknownInterface** iface) const {
     if(uuid == IDD_MOFEMBasicMethod) {
       *iface = const_cast<BasicMethod*>(this);
       MoFEMFunctionReturnHot(0);
@@ -272,36 +272,36 @@ TSMethod {
   const EntFiniteElement_multiIndex *finiteElementsEntitiesPtr;
   const FieldEntityEntFiniteElementAdjacencyMap_multiIndex *adjacenciesPtr;
 
-  PetscErrorCode copyBasicMethod(const BasicMethod &basic);
+  MoFEMErrorCode copyBasicMethod(const BasicMethod &basic);
 
   /**
    * Hook function for pre-processing
    */
-  boost::function<PetscErrorCode ()> preProcessHook;
+  boost::function<MoFEMErrorCode ()> preProcessHook;
 
   /**
    * Hook function for post-processing
    */
-  boost::function<PetscErrorCode ()> postProcessHook;
+  boost::function<MoFEMErrorCode ()> postProcessHook;
 
   /**
    * Hook function for operator
    */
-  boost::function<PetscErrorCode ()> operatorHook;
+  boost::function<MoFEMErrorCode ()> operatorHook;
 
   /** \brief function is run at the beginning of loop
    *
    * It is used to zeroing matrices and vectors, calculation of shape
    * functions on reference element, preprocessing boundary conditions, etc.
    */
-  virtual PetscErrorCode preProcess();
+  virtual MoFEMErrorCode preProcess();
 
   /** \brief function is run for every finite element
    *
    * It is used to calculate element local matrices and assembly. It can be
    * used for post-processing.
    */
-  virtual PetscErrorCode operator()();
+  virtual MoFEMErrorCode operator()();
 
   /** \brief function is run at the end of loop
    *
@@ -314,7 +314,7 @@ TSMethod {
    *
    *
    */
-  virtual PetscErrorCode postProcess();
+  virtual MoFEMErrorCode postProcess();
 
   private:
   void iNit();
@@ -338,7 +338,7 @@ TSMethod {
   */
 struct FEMethod: public BasicMethod {
 
-  PetscErrorCode query_interface (const MOFEMuuid& uuid, UnknownInterface** iface) const {
+  MoFEMErrorCode query_interface (const MOFEMuuid& uuid, UnknownInterface** iface) const {
     MoFEMFunctionBeginHot;
     if(uuid == IDD_MOFEMFEMethod) {
       *iface = const_cast<FEMethod*>(this);
@@ -560,7 +560,7 @@ struct FEMethod: public BasicMethod {
  */
 struct EntMethod: public BasicMethod {
 
-  PetscErrorCode query_interface (const MOFEMuuid& uuid, UnknownInterface** iface) const {
+  MoFEMErrorCode query_interface (const MOFEMuuid& uuid, UnknownInterface** iface) const {
     MoFEMFunctionBeginHot;
     if(uuid == IDD_MOFEMEntMethod) {
       *iface = const_cast<EntMethod*>(this);

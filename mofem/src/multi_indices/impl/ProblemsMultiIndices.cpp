@@ -74,7 +74,7 @@ BitFEId Problem::getBitFEId() const {
   return *tagBitFEId;
 }
 
-PetscErrorCode Problem::getRowDofsByPetscGlobalDofIdx(DofIdx idx,const NumeredDofEntity **dof_ptr) const {
+MoFEMErrorCode Problem::getRowDofsByPetscGlobalDofIdx(DofIdx idx,const NumeredDofEntity **dof_ptr) const {
   MoFEMFunctionBeginHot;
   NumeredDofEntity_multiIndex::index<PetscGlobalIdx_mi_tag>::type::iterator dit;
   dit = numeredDofsRows->get<PetscGlobalIdx_mi_tag>().find(idx);
@@ -85,7 +85,7 @@ PetscErrorCode Problem::getRowDofsByPetscGlobalDofIdx(DofIdx idx,const NumeredDo
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode Problem::getColDofsByPetscGlobalDofIdx(DofIdx idx,const NumeredDofEntity **dof_ptr) const {
+MoFEMErrorCode Problem::getColDofsByPetscGlobalDofIdx(DofIdx idx,const NumeredDofEntity **dof_ptr) const {
   MoFEMFunctionBeginHot;
   NumeredDofEntity_multiIndex::index<PetscGlobalIdx_mi_tag>::type::iterator dit;
   dit = numeredDofsCols->get<PetscGlobalIdx_mi_tag>().find(idx);
@@ -96,7 +96,7 @@ PetscErrorCode Problem::getColDofsByPetscGlobalDofIdx(DofIdx idx,const NumeredDo
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode Problem::getNumberOfElementsByNameAndPart(MPI_Comm comm,const std::string name,PetscLayout *layout) const {
+MoFEMErrorCode Problem::getNumberOfElementsByNameAndPart(MPI_Comm comm,const std::string name,PetscLayout *layout) const {
   MoFEMFunctionBeginHot;
   int size, rank;
   MPI_Comm_size(comm,&size);
@@ -111,7 +111,7 @@ PetscErrorCode Problem::getNumberOfElementsByNameAndPart(MPI_Comm comm,const std
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode Problem::getNumberOfElementsByPart(MPI_Comm comm,PetscLayout *layout) const {
+MoFEMErrorCode Problem::getNumberOfElementsByPart(MPI_Comm comm,PetscLayout *layout) const {
   MoFEMFunctionBeginHot;
   int size, rank;
   MPI_Comm_size(comm,&size);
@@ -127,7 +127,7 @@ PetscErrorCode Problem::getNumberOfElementsByPart(MPI_Comm comm,PetscLayout *lay
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode Problem::getDofByNameEntAndEntDofIdx(
+MoFEMErrorCode Problem::getDofByNameEntAndEntDofIdx(
   const string name,
   const EntityHandle ent,
   const int ent_dof_idx,

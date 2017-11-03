@@ -17,7 +17,7 @@
 */
 namespace MoFEM {
 
-  PetscErrorCode Core::synchronise_entities(Range &ents,int verb) {
+  MoFEMErrorCode Core::synchronise_entities(Range &ents,int verb) {
     MoFEMFunctionBeginHot;
     if(verb==-1) verb = verbose;
 
@@ -189,7 +189,7 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode Core::synchronise_field_entities(const BitFieldId id,int verb) {
+  MoFEMErrorCode Core::synchronise_field_entities(const BitFieldId id,int verb) {
     MoFEMFunctionBeginHot;
     if(verb==-1) verb = verbose;
     EntityHandle idm;
@@ -205,7 +205,7 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode Core::synchronise_field_entities(const std::string& name,int verb) {
+  MoFEMErrorCode Core::synchronise_field_entities(const std::string& name,int verb) {
     MoFEMFunctionBeginHot;
     if(verb==-1) verb = verbose;
     *buildMoFEM = 0;
@@ -217,7 +217,7 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode Core::resolve_shared_ents(const Problem *problem_ptr,const std::string &fe_name,int verb) {
+  MoFEMErrorCode Core::resolve_shared_ents(const Problem *problem_ptr,const std::string &fe_name,int verb) {
     MoFEMFunctionBeginHot;
     ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
     std::vector<int> shprocs(MAX_SHARING_PROCS,0);
@@ -279,7 +279,7 @@ namespace MoFEM {
     rval = pcomm->exchange_tags(th_gid,ents); CHKERRQ_MOAB(rval);
     MoFEMFunctionReturnHot(0);
   }
-  PetscErrorCode Core::resolve_shared_ents(const std::string &name,const std::string &fe_name,int verb) {
+  MoFEMErrorCode Core::resolve_shared_ents(const std::string &name,const std::string &fe_name,int verb) {
     MoFEMFunctionBeginHot;
     typedef Problem_multiIndex::index<Problem_mi_tag>::type Problem_multiIndex_by_name;
     //find p_miit

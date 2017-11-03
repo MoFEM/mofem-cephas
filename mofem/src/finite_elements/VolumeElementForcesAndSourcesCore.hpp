@@ -261,7 +261,7 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSourcesCore {
      * @param  div  divergence vector, size of vector is equal to number of base functions
      * @return      error code
      */
-    PetscErrorCode getDivergenceOfHDivBaseFunctions(
+    MoFEMErrorCode getDivergenceOfHDivBaseFunctions(
       int side,
       EntityType type,
       DataForcesAndSourcesCore::EntData &data,
@@ -297,7 +297,7 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSourcesCore {
      * @param  curl curl matrix, nb. of rows is equal to number of base functions, columns are curl of base vector
      * @return      error code
      */
-    PetscErrorCode getCurlOfHCurlBaseFunctions(
+    MoFEMErrorCode getCurlOfHCurlBaseFunctions(
       int side,
       EntityType type,
       DataForcesAndSourcesCore::EntData &data,
@@ -316,7 +316,7 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSourcesCore {
    * \brief Set integration points
    * @return Error code
    */
-  virtual PetscErrorCode setIntegartionPts();
+  virtual MoFEMErrorCode setIntegartionPts();
 
   /**
    * \brief Calculate element volume and Jacobian
@@ -326,31 +326,31 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSourcesCore {
    *
    * @return Error code
    */
-  virtual PetscErrorCode calculateVolumeAndJacobian();
+  virtual MoFEMErrorCode calculateVolumeAndJacobian();
 
   /**
    * \brief Calculate coordinate at integration points
    * @return Error code
    */
-  virtual PetscErrorCode calculateCoordinatesAtGaussPts();
+  virtual MoFEMErrorCode calculateCoordinatesAtGaussPts();
 
   /**
    * \brief Determine approximation space and order of base functions
    * @return Error code
    */
-  virtual PetscErrorCode getSpaceBaseAndOrderOnElement();
+  virtual MoFEMErrorCode getSpaceBaseAndOrderOnElement();
 
   /**
    * \brief Calculate base functions
    * @return Error code
    */
-  virtual PetscErrorCode calculateBaseFunctionsOnElement(const int b);
+  virtual MoFEMErrorCode calculateBaseFunctionsOnElement(const int b);
 
   /**
    * \brief Calculate base functions
    * @return Error code
    */
-  virtual PetscErrorCode calculateBaseFunctionsOnElement();
+  virtual MoFEMErrorCode calculateBaseFunctionsOnElement();
 
   /**
    * \brief Transform base functions based on geometric element Jacobian.
@@ -361,7 +361,7 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSourcesCore {
    *
    * @return Error code
    */
-  virtual PetscErrorCode transformBaseFunctions();
+  virtual MoFEMErrorCode transformBaseFunctions();
 
 
   /** \brief Calculate Jacobian for HO geometry
@@ -371,7 +371,7 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSourcesCore {
     * calculate Jacobian, inverse of Jacobian and determinant of transformation.
     *
     */
-  virtual PetscErrorCode calculateHoJacobian();
+  virtual MoFEMErrorCode calculateHoJacobian();
 
   /**
    * \brief Transform base functions based on ho-geometry element Jacobian.
@@ -382,9 +382,9 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSourcesCore {
    *
    * @return Error code
    */
-  virtual PetscErrorCode transformHoBaseFunctions();
+  virtual MoFEMErrorCode transformHoBaseFunctions();
 
-  PetscErrorCode operator()();
+  MoFEMErrorCode operator()();
 
 };
 
@@ -405,7 +405,7 @@ struct VolumeElementForcesAndSourcesCoreOnSide: public VolumeElementForcesAndSou
   }
   ~VolumeElementForcesAndSourcesCoreOnSide() {}
 
-  inline PetscErrorCode setFaceFEPtr(const FaceElementForcesAndSourcesCore *face_fe_ptr) {
+  inline MoFEMErrorCode setFaceFEPtr(const FaceElementForcesAndSourcesCore *face_fe_ptr) {
     MoFEMFunctionBeginHot;
     faceFEPtr = const_cast<FaceElementForcesAndSourcesCore*>(face_fe_ptr);
     MoFEMFunctionReturnHot(0);
@@ -419,7 +419,7 @@ struct VolumeElementForcesAndSourcesCoreOnSide: public VolumeElementForcesAndSou
   int tetConnMap[4];
   int oppositeNode;
 
-  PetscErrorCode setGaussPts(int order);
+  MoFEMErrorCode setGaussPts(int order);
 
   /** \brief default operator for TET element
     * \ingroup mofem_forces_and_sources_volume_element

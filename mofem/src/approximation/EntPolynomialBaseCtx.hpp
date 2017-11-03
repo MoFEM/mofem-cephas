@@ -33,7 +33,7 @@ namespace MoFEM {
    */
   struct EntPolynomialBaseCtx: public BaseFunctionCtx {
 
-    PetscErrorCode query_interface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface) const;
+    MoFEMErrorCode query_interface(const MOFEMuuid& uuid,UnknownInterface** iface) const;
 
     PetscErrorCode (*basePolynomialsType0)(
       int p,double s,double *diff_s,double *L,double *diffL,const int dim
@@ -64,7 +64,7 @@ namespace MoFEM {
 
   protected:
 
-    PetscErrorCode setBase();
+    MoFEMErrorCode setBase();
 
   };
 

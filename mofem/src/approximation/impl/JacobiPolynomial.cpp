@@ -28,7 +28,9 @@ using namespace MoFEM;
 #include <BaseFunction.hpp>
 #include <JacobiPolynomial.hpp>
 
-PetscErrorCode JacobiPolynomialCtx::query_interface(
+namespace MoFEM {
+
+MoFEMErrorCode JacobiPolynomialCtx::query_interface(
   const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface
 ) const {
 
@@ -44,7 +46,7 @@ PetscErrorCode JacobiPolynomialCtx::query_interface(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode JacobiPolynomial::query_interface(
+MoFEMErrorCode JacobiPolynomial::query_interface(
   const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface
 ) const {
 
@@ -60,7 +62,7 @@ PetscErrorCode JacobiPolynomial::query_interface(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode JacobiPolynomial::getValue(
+MoFEMErrorCode JacobiPolynomial::getValue(
   MatrixDouble &pts_x,
   MatrixDouble &pts_t,
   boost::shared_ptr<BaseFunctionCtx> ctx_ptr
@@ -92,4 +94,6 @@ PetscErrorCode JacobiPolynomial::getValue(
     ); CHKERRQ(ierr);
   }
   MoFEMFunctionReturnHot(0);
+}
+
 }

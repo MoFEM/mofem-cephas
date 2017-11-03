@@ -16,7 +16,7 @@
 
 using namespace MoFEM;
 
-PetscErrorCode MoFEM::Hdiv_Ainsworth_EdgeFaceShapeFunctions_MBTET(
+MoFEMErrorCode MoFEM::Hdiv_Ainsworth_EdgeFaceShapeFunctions_MBTET(
   int *faces_nodes,int *p,double *N,double *diffN,double *phi_f_e[4][3],double *diff_phi_f_e[4][3],int gdim,
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 ) {
@@ -36,7 +36,7 @@ PetscErrorCode MoFEM::Hdiv_Ainsworth_EdgeFaceShapeFunctions_MBTET(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode MoFEM::Hdiv_Ainsworth_EdgeFaceShapeFunctions_MBTET_ON_FACE(
+MoFEMErrorCode MoFEM::Hdiv_Ainsworth_EdgeFaceShapeFunctions_MBTET_ON_FACE(
   int *faces_nodes,int p,double *N,double *diffN,double *phi_f_e[3],double *diff_phi_f_e[3],int gdim,int nb,
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 ) {
@@ -129,7 +129,7 @@ PetscErrorCode MoFEM::Hdiv_Ainsworth_EdgeFaceShapeFunctions_MBTET_ON_FACE(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode MoFEM::Hdiv_Ainsworth_FaceBubbleShapeFunctions(
+MoFEMErrorCode MoFEM::Hdiv_Ainsworth_FaceBubbleShapeFunctions(
   int *faces_nodes,int *p,double *N,double *diffN,double *phi_f[],double *diff_phi_f[],int gdim,
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 ) {
@@ -149,7 +149,7 @@ PetscErrorCode MoFEM::Hdiv_Ainsworth_FaceBubbleShapeFunctions(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode MoFEM::Hdiv_Ainsworth_FaceBubbleShapeFunctions_ON_FACE(
+MoFEMErrorCode MoFEM::Hdiv_Ainsworth_FaceBubbleShapeFunctions_ON_FACE(
   int *face_nodes,int p,double *N,double *diffN,double *phi_f,double *diff_phi_f,int gdim,int nb,
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 ) {
@@ -270,7 +270,7 @@ PetscErrorCode MoFEM::Hdiv_Ainsworth_FaceBubbleShapeFunctions_ON_FACE(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode MoFEM::Hdiv_Ainsworth_EdgeBasedVolumeShapeFunctions_MBTET(
+MoFEMErrorCode MoFEM::Hdiv_Ainsworth_EdgeBasedVolumeShapeFunctions_MBTET(
   int p,
   double *N,
   double *diffN,
@@ -364,7 +364,7 @@ PetscErrorCode MoFEM::Hdiv_Ainsworth_EdgeBasedVolumeShapeFunctions_MBTET(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode MoFEM::Hdiv_Ainsworth_FaceBasedVolumeShapeFunctions_MBTET(
+MoFEMErrorCode MoFEM::Hdiv_Ainsworth_FaceBasedVolumeShapeFunctions_MBTET(
   int p,double *N,double *diffN,double *phi_v_f[],double *diff_phi_v_f[],int gdim,
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 ) {
@@ -481,7 +481,7 @@ PetscErrorCode MoFEM::Hdiv_Ainsworth_FaceBasedVolumeShapeFunctions_MBTET(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode MoFEM::Hdiv_Ainsworth_VolumeBubbleShapeFunctions_MBTET(
+MoFEMErrorCode MoFEM::Hdiv_Ainsworth_VolumeBubbleShapeFunctions_MBTET(
   int p,double *N,double *diffN,double *phi_v,double *diff_phi_v,int gdim,
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 ) {
@@ -616,7 +616,7 @@ PetscErrorCode MoFEM::Hdiv_Ainsworth_VolumeBubbleShapeFunctions_MBTET(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode MoFEM::Hdiv_Demkowicz_Face_MBTET_ON_FACE(
+MoFEMErrorCode MoFEM::Hdiv_Demkowicz_Face_MBTET_ON_FACE(
   int *faces_nodes,
   int p,
   double *N,double *diffN,
@@ -771,7 +771,7 @@ PetscErrorCode MoFEM::Hdiv_Demkowicz_Face_MBTET_ON_FACE(
 }
 
 
-PetscErrorCode MoFEM::Hdiv_Demkowicz_Interior_MBTET(
+MoFEMErrorCode MoFEM::Hdiv_Demkowicz_Interior_MBTET(
   int p,
   double *N,double *diffN,
   int p_f[],

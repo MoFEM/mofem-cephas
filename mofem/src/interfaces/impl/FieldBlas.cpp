@@ -19,7 +19,7 @@
 
 namespace MoFEM {
 
-  PetscErrorCode FieldBlas::query_interface(const MOFEMuuid& uuid, UnknownInterface** iface) const {
+  MoFEMErrorCode FieldBlas::query_interface(const MOFEMuuid& uuid, UnknownInterface** iface) const {
     MoFEMFunctionBeginHot;
     *iface = NULL;
     if(uuid == IDD_MOFEMFieldBlas) {
@@ -37,7 +37,7 @@ namespace MoFEM {
   FieldBlas::~FieldBlas() {
   }
 
-  PetscErrorCode FieldBlas::fieldAxpy(
+  MoFEMErrorCode FieldBlas::fieldAxpy(
     const double alpha,const std::string& field_name_x,const std::string& field_name_y,
     bool error_if_missing,bool creat_if_missing
   ) {
@@ -94,7 +94,7 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode FieldBlas::setField(const double val,const EntityType type,const std::string& field_name) {
+  MoFEMErrorCode FieldBlas::setField(const double val,const EntityType type,const std::string& field_name) {
     const MoFEM::Interface &m_field = cOre;
     const DofEntity_multiIndex *dofs_ptr;
     MoFEMFunctionBeginHot;
@@ -108,7 +108,7 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode FieldBlas::setField(const double val,const EntityType type,const Range &ents,const std::string& field_name) {
+  MoFEMErrorCode FieldBlas::setField(const double val,const EntityType type,const Range &ents,const std::string& field_name) {
     const MoFEM::Interface &m_field = cOre;
     const DofEntity_multiIndex *dofs_ptr;
     MoFEMFunctionBeginHot;
@@ -134,7 +134,7 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode FieldBlas::fieldScale(const double alpha,const std::string& field_name) {
+  MoFEMErrorCode FieldBlas::fieldScale(const double alpha,const std::string& field_name) {
     const MoFEM::Interface &m_field = cOre;
     const DofEntity_multiIndex *dofs_ptr;
     MoFEMFunctionBeginHot;

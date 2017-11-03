@@ -31,7 +31,7 @@ namespace MoFEM {
    */
   struct LobattoPolynomialCtx: public LegendrePolynomialCtx {
 
-    PetscErrorCode query_interface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface) const;
+    MoFEMErrorCode query_interface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface) const;
 
     LobattoPolynomialCtx(
       int p,
@@ -53,12 +53,12 @@ namespace MoFEM {
    */
   struct LobattoPolynomial: public LegendrePolynomial {
 
-    PetscErrorCode query_interface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface) const;
+    MoFEMErrorCode query_interface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface) const;
 
     LobattoPolynomial() {}
     ~LobattoPolynomial() {}
 
-    PetscErrorCode getValue(
+    MoFEMErrorCode getValue(
       MatrixDouble &pts,
       boost::shared_ptr<BaseFunctionCtx> ctx_ptr
     );
@@ -71,7 +71,7 @@ namespace MoFEM {
    */
   struct KernelLobattoPolynomialCtx: public LegendrePolynomialCtx {
 
-    PetscErrorCode query_interface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface) const;
+    MoFEMErrorCode query_interface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface) const;
 
     KernelLobattoPolynomialCtx(
       int p,
@@ -93,12 +93,12 @@ namespace MoFEM {
    */
   struct KernelLobattoPolynomial: public LegendrePolynomial {
 
-    PetscErrorCode query_interface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface) const;
+    MoFEMErrorCode query_interface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface) const;
 
     KernelLobattoPolynomial() {}
     ~KernelLobattoPolynomial() {}
 
-    PetscErrorCode getValue(
+    MoFEMErrorCode getValue(
       MatrixDouble &pts,
       boost::shared_ptr<BaseFunctionCtx> ctx_ptr
     );

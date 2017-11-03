@@ -46,7 +46,7 @@ using namespace MoFEM;
 
 #include <Hcurl.hpp>
 
-PetscErrorCode EdgePolynomialBase::query_interface(
+MoFEMErrorCode EdgePolynomialBase::query_interface(
   const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface
 ) const {
 
@@ -65,7 +65,7 @@ PetscErrorCode EdgePolynomialBase::query_interface(
 EdgePolynomialBase::~EdgePolynomialBase() {}
 EdgePolynomialBase::EdgePolynomialBase() {}
 
-PetscErrorCode EdgePolynomialBase::getValue(
+MoFEMErrorCode EdgePolynomialBase::getValue(
   MatrixDouble &pts,
   boost::shared_ptr<BaseFunctionCtx> ctx_ptr
 ) {
@@ -134,7 +134,7 @@ PetscErrorCode EdgePolynomialBase::getValue(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode EdgePolynomialBase::getValueH1(MatrixDouble &pts) {
+MoFEMErrorCode EdgePolynomialBase::getValueH1(MatrixDouble &pts) {
 
   MoFEMFunctionBeginHot;
 
@@ -209,7 +209,7 @@ PetscErrorCode EdgePolynomialBase::getValueH1(MatrixDouble &pts) {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode EdgePolynomialBase::getValueL2(MatrixDouble &pts) {
+MoFEMErrorCode EdgePolynomialBase::getValueL2(MatrixDouble &pts) {
   MoFEMFunctionBeginHot;
   SETERRQ(
     PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,
@@ -218,14 +218,14 @@ PetscErrorCode EdgePolynomialBase::getValueL2(MatrixDouble &pts) {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode EdgePolynomialBase::getValueHdiv(MatrixDouble &pts) {
+MoFEMErrorCode EdgePolynomialBase::getValueHdiv(MatrixDouble &pts) {
   SETERRQ(
     PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,
     "Make no sense, unless problem is 2d (2d not implemented yet)"
   );
 }
 
-PetscErrorCode EdgePolynomialBase::getValueHCurl(MatrixDouble &pts) {
+MoFEMErrorCode EdgePolynomialBase::getValueHCurl(MatrixDouble &pts) {
 
   MoFEMFunctionBeginHot;
 

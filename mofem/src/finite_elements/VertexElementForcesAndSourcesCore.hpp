@@ -75,7 +75,7 @@ struct VertexElementForcesAndSourcesCore: public ForcesAndSourcesCore {
 
   };
 
-  PetscErrorCode operator()();
+  MoFEMErrorCode operator()();
 
 };
 

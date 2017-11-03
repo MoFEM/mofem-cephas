@@ -166,7 +166,7 @@ int main(int argc, char *argv[]) {
     mySplit(my_split) {
     }
 
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int side,
       EntityType type,
       DataForcesAndSourcesCore::EntData &data
@@ -290,7 +290,7 @@ int main(int argc, char *argv[]) {
     MyFE(MoFEM::Interface &m_field): FaceElementForcesAndSourcesCore(m_field) {}
     int getRule(int order) { return -1; };
 
-    PetscErrorCode setGaussPts(int order) {
+    MoFEMErrorCode setGaussPts(int order) {
       MoFEMFunctionBeginHot;
 
       const double ksi = G_TRI_X1[0];

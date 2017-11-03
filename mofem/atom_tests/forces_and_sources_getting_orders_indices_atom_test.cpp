@@ -158,12 +158,12 @@ int main(int argc, char *argv[]) {
       data(MBTET),
       derived_data(data) {};
 
-    PetscErrorCode preProcess() {
+    MoFEMErrorCode preProcess() {
       MoFEMFunctionBeginHot;
       MoFEMFunctionReturnHot(0);
     }
 
-    PetscErrorCode operator()() {
+    MoFEMErrorCode operator()() {
       MoFEMFunctionBeginHot;
 
       my_split << "\n\nNEXT ELEM\n\n";
@@ -221,7 +221,7 @@ int main(int argc, char *argv[]) {
       MoFEMFunctionReturnHot(0);
     }
 
-    PetscErrorCode postProcess() {
+    MoFEMErrorCode postProcess() {
       MoFEMFunctionBeginHot;
 
       my_split.close();

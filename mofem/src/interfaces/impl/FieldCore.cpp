@@ -65,7 +65,7 @@ const Field* Core::get_field_structure(const std::string& name) {
   return miit->get();
 }
 
-PetscErrorCode Core::get_field_entities_by_dimension(const std::string name,int dim,Range &ents) const {
+MoFEMErrorCode Core::get_field_entities_by_dimension(const std::string name,int dim,Range &ents) const {
 
   MoFEMFunctionBeginHot;
   try {
@@ -77,7 +77,7 @@ PetscErrorCode Core::get_field_entities_by_dimension(const std::string name,int 
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode Core::get_field_entities_by_type(const std::string name,EntityType type,Range &ents) const {
+MoFEMErrorCode Core::get_field_entities_by_type(const std::string name,EntityType type,Range &ents) const {
 
   MoFEMFunctionBeginHot;
   try {
@@ -89,7 +89,7 @@ PetscErrorCode Core::get_field_entities_by_type(const std::string name,EntityTyp
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode Core::get_field_entities_by_handle(const std::string name,Range &ents) const {
+MoFEMErrorCode Core::get_field_entities_by_handle(const std::string name,Range &ents) const {
 
   MoFEMFunctionBeginHot;
   try {
@@ -101,7 +101,7 @@ PetscErrorCode Core::get_field_entities_by_handle(const std::string name,Range &
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode Core::add_field(
+MoFEMErrorCode Core::add_field(
   const std::string& name,
   const FieldSpace space,
   const FieldApproximationBase base,
@@ -208,7 +208,7 @@ PetscErrorCode Core::add_field(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode Core::addEntsToFieldByDim(
+MoFEMErrorCode Core::addEntsToFieldByDim(
   const Range &ents,const int dim,const std::string& name,int verb
 ) {
 
@@ -327,14 +327,14 @@ PetscErrorCode Core::addEntsToFieldByDim(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode Core::add_ents_to_field_by_dim(
+MoFEMErrorCode Core::add_ents_to_field_by_dim(
   const Range &ents,const int dim,const std::string& name,int verb
 ) {
   Range ents_dim = ents.subset_by_dimension(dim);
   return addEntsToFieldByDim(ents_dim,dim,name,verb);
 }
 
-PetscErrorCode Core::add_ents_to_field_by_type(
+MoFEMErrorCode Core::add_ents_to_field_by_type(
   const Range &ents,const EntityType type,const std::string& name,int verb
 ) {
 
@@ -347,7 +347,7 @@ PetscErrorCode Core::add_ents_to_field_by_type(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode Core::add_ents_to_field_by_dim(
+MoFEMErrorCode Core::add_ents_to_field_by_dim(
   const EntityHandle meshset,const int dim,const std::string& name,const bool recursive,int verb
 ) {
   MoFEMFunctionBeginHot;
@@ -357,7 +357,7 @@ PetscErrorCode Core::add_ents_to_field_by_dim(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode Core::add_ents_to_field_by_type(
+MoFEMErrorCode Core::add_ents_to_field_by_type(
   const EntityHandle meshset,const EntityType type,const std::string& name,const bool recursive,int verb
 ) {
   MoFEMFunctionBeginHot;
@@ -370,44 +370,44 @@ PetscErrorCode Core::add_ents_to_field_by_type(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode Core::add_ents_to_field_by_EDGEs(const Range &edges,const std::string& name,int verb) {
+MoFEMErrorCode Core::add_ents_to_field_by_EDGEs(const Range &edges,const std::string& name,int verb) {
   return add_ents_to_field_by_type(edges,MBEDGE,name,verb);
 }
-PetscErrorCode Core::add_ents_to_field_by_EDGEs(const EntityHandle meshset,const std::string& name,int verb) {
+MoFEMErrorCode Core::add_ents_to_field_by_EDGEs(const EntityHandle meshset,const std::string& name,int verb) {
   return add_ents_to_field_by_type(meshset,MBEDGE,name,true,verb);
 }
-PetscErrorCode Core::add_ents_to_field_by_TRIs(const EntityHandle meshset,const std::string& name,int verb) {
+MoFEMErrorCode Core::add_ents_to_field_by_TRIs(const EntityHandle meshset,const std::string& name,int verb) {
   return add_ents_to_field_by_type(meshset,MBTRI,name,true,verb);
 }
-PetscErrorCode Core::add_ents_to_field_by_TRIs(const Range &tris,const std::string& name,int verb) {
+MoFEMErrorCode Core::add_ents_to_field_by_TRIs(const Range &tris,const std::string& name,int verb) {
   return add_ents_to_field_by_type(tris,MBTRI,name,verb);
 }
-PetscErrorCode Core::add_ents_to_field_by_VERTICEs(const Range &nodes,const std::string& name,int verb) {
+MoFEMErrorCode Core::add_ents_to_field_by_VERTICEs(const Range &nodes,const std::string& name,int verb) {
   return add_ents_to_field_by_type(nodes,MBVERTEX,name,verb);
 }
-PetscErrorCode Core::add_ents_to_field_by_VERTICEs(const EntityHandle meshset,const std::string& name,int verb) {
+MoFEMErrorCode Core::add_ents_to_field_by_VERTICEs(const EntityHandle meshset,const std::string& name,int verb) {
   return add_ents_to_field_by_type(meshset,MBVERTEX,name,true,verb);
 }
-PetscErrorCode Core::add_ents_to_field_by_TETs(const Range &tets,const std::string& name,int verb) {
+MoFEMErrorCode Core::add_ents_to_field_by_TETs(const Range &tets,const std::string& name,int verb) {
   return add_ents_to_field_by_type(tets,MBTET,name,verb);
 }
-PetscErrorCode Core::add_ents_to_field_by_TETs(const EntityHandle meshset,const std::string& name,int verb) {
+MoFEMErrorCode Core::add_ents_to_field_by_TETs(const EntityHandle meshset,const std::string& name,int verb) {
   return add_ents_to_field_by_type(meshset,MBTET,name,true,verb);
 }
-PetscErrorCode Core::add_ents_to_field_by_QUADs(const Range &quads,const std::string& name,int verb) {
+MoFEMErrorCode Core::add_ents_to_field_by_QUADs(const Range &quads,const std::string& name,int verb) {
   return add_ents_to_field_by_type(quads,MBQUAD,name,verb);
 }
-PetscErrorCode Core::add_ents_to_field_by_QUADs(EntityHandle meshset,const std::string& name,int verb) {
+MoFEMErrorCode Core::add_ents_to_field_by_QUADs(EntityHandle meshset,const std::string& name,int verb) {
   return add_ents_to_field_by_type(meshset,MBQUAD,name,true,verb);
 }
-PetscErrorCode Core::add_ents_to_field_by_PRISMs(const Range &prisms,const std::string& name,int verb) {
+MoFEMErrorCode Core::add_ents_to_field_by_PRISMs(const Range &prisms,const std::string& name,int verb) {
   return add_ents_to_field_by_type(prisms,MBPRISM,name,verb);
 }
-PetscErrorCode Core::add_ents_to_field_by_PRISMs(EntityHandle meshset,const std::string& name,int verb) {
+MoFEMErrorCode Core::add_ents_to_field_by_PRISMs(EntityHandle meshset,const std::string& name,int verb) {
   return add_ents_to_field_by_type(meshset,MBPRISM,name,true,verb);
 }
 
-PetscErrorCode Core::set_field_order(
+MoFEMErrorCode Core::set_field_order(
   const Range &ents,const BitFieldId id,const ApproximationOrder order,int verb
 ) {
   MoFEMFunctionBeginHot;
@@ -649,7 +649,7 @@ PetscErrorCode Core::set_field_order(
 
   MoFEMFunctionReturnHot(0);
 }
-PetscErrorCode Core::set_field_order(
+MoFEMErrorCode Core::set_field_order(
   const EntityHandle meshset,const EntityType type,const BitFieldId id,const ApproximationOrder order,int verb
 ) {
   MoFEMFunctionBeginHot;
@@ -670,7 +670,7 @@ PetscErrorCode Core::set_field_order(
   }
   MoFEMFunctionReturnHot(0);
 }
-PetscErrorCode Core::set_field_order(
+MoFEMErrorCode Core::set_field_order(
   const EntityHandle meshset,const EntityType type,const std::string& name,const ApproximationOrder order,int verb
 ) {
   MoFEMFunctionBeginHot;
@@ -683,7 +683,7 @@ PetscErrorCode Core::set_field_order(
   }
   MoFEMFunctionReturnHot(0);
 }
-PetscErrorCode Core::set_field_order(const Range &ents,const std::string& name,const ApproximationOrder order,int verb) {
+MoFEMErrorCode Core::set_field_order(const Range &ents,const std::string& name,const ApproximationOrder order,int verb) {
   MoFEMFunctionBeginHot;
   if(verb==-1) verb = verbose;
   *buildMoFEM = 0;
@@ -694,7 +694,7 @@ PetscErrorCode Core::set_field_order(const Range &ents,const std::string& name,c
   }
   MoFEMFunctionReturnHot(0);
 }
-PetscErrorCode Core::set_field_order_by_entity_type_and_bit_ref(
+MoFEMErrorCode Core::set_field_order_by_entity_type_and_bit_ref(
   const BitRefLevel &bit,const BitRefLevel &mask,
   const EntityType type,const BitFieldId id,const ApproximationOrder order,int verb
 ) {
@@ -710,7 +710,7 @@ PetscErrorCode Core::set_field_order_by_entity_type_and_bit_ref(
   }
   MoFEMFunctionReturnHot(0);
 }
-PetscErrorCode Core::set_field_order_by_entity_type_and_bit_ref(
+MoFEMErrorCode Core::set_field_order_by_entity_type_and_bit_ref(
   const BitRefLevel &bit,const BitRefLevel &mask,
   const EntityType type,const std::string& name,const ApproximationOrder order,int verb
 ) {
@@ -726,7 +726,7 @@ PetscErrorCode Core::set_field_order_by_entity_type_and_bit_ref(
   }
   MoFEMFunctionReturnHot(0);
 }
-PetscErrorCode Core::buildFieldForNoField(
+MoFEMErrorCode Core::buildFieldForNoField(
   const BitFieldId id,std::map<EntityType,int> &dof_counter,int verb
 ) {
   MoFEMFunctionBeginHot;
@@ -815,7 +815,7 @@ PetscErrorCode Core::buildFieldForNoField(
   }
   MoFEMFunctionReturnHot(0);
 }
-PetscErrorCode Core::buildFieldForL2H1HcurlHdiv(
+MoFEMErrorCode Core::buildFieldForL2H1HcurlHdiv(
   const BitFieldId id,
   std::map<EntityType,int> &dof_counter,
   std::map<EntityType,int> &inactive_dof_counter,
@@ -1047,7 +1047,7 @@ PetscErrorCode Core::buildFieldForL2H1HcurlHdiv(
 
   MoFEMFunctionReturnHot(0);
 }
-PetscErrorCode Core::build_fields(int verb) {
+MoFEMErrorCode Core::build_fields(int verb) {
   MoFEMFunctionBeginHot;
   if(verb==-1) verb = verbose;
   typedef Field_multiIndex::index<BitFieldId_mi_tag>::type FieldSetById;
@@ -1158,7 +1158,7 @@ PetscErrorCode Core::build_fields(int verb) {
   MoFEMFunctionReturnHot(0);
   //return 0;
 }
-PetscErrorCode Core::list_dofs_by_field_name(const std::string &field_name) const {
+MoFEMErrorCode Core::list_dofs_by_field_name(const std::string &field_name) const {
   MoFEMFunctionBeginHot;
   DofEntityByFieldName::iterator dit,hi_dit;
   dit = dofsField.get<FieldName_mi_tag>().lower_bound(field_name);
@@ -1172,7 +1172,7 @@ PetscErrorCode Core::list_dofs_by_field_name(const std::string &field_name) cons
   PetscSynchronizedFlush(cOmm,PETSC_STDOUT);
   MoFEMFunctionReturnHot(0);
 }
-PetscErrorCode Core::list_fields() const {
+MoFEMErrorCode Core::list_fields() const {
   MoFEMFunctionBeginHot;
   typedef Field_multiIndex::index<BitFieldId_mi_tag>::type FieldSetById;
   const FieldSetById &set_id = fIelds.get<BitFieldId_mi_tag>();
@@ -1187,7 +1187,7 @@ PetscErrorCode Core::list_fields() const {
 }
 
 
-PetscErrorCode Core::list_adjacencies() const {
+MoFEMErrorCode Core::list_adjacencies() const {
   MoFEMFunctionBeginHot;
   FieldEntityEntFiniteElementAdjacencyMap_multiIndex::iterator miit = entFEAdjacencies.begin();
   for(;miit!=entFEAdjacencies.end();miit++) {
@@ -1199,7 +1199,7 @@ PetscErrorCode Core::list_adjacencies() const {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode Core::get_problem_finite_elements_entities(const std::string &problem_name,const std::string &fe_name,const EntityHandle meshset) {
+MoFEMErrorCode Core::get_problem_finite_elements_entities(const std::string &problem_name,const std::string &fe_name,const EntityHandle meshset) {
   MoFEMFunctionBeginHot;
   typedef Problem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
   ProblemsByName &pRoblems_set = pRoblems.get<Problem_mi_tag>();
@@ -1244,7 +1244,7 @@ DofEntityByNameAndType::iterator
 Core::get_dofs_by_name_and_type_end(const std::string &field_name,const EntityType type) const {
   return dofsField.get<Composite_Name_And_Type_mi_tag>().upper_bound(boost::make_tuple(field_name,type));
 }
-PetscErrorCode Core::check_number_of_ents_in_ents_field(const std::string& name) const {
+MoFEMErrorCode Core::check_number_of_ents_in_ents_field(const std::string& name) const {
   MoFEMFunctionBeginHot;
   Field_multiIndex::index<FieldName_mi_tag>::type::iterator it = fIelds.get<FieldName_mi_tag>().find(name);
   if(it == fIelds.get<FieldName_mi_tag>().end()) {
@@ -1262,7 +1262,7 @@ PetscErrorCode Core::check_number_of_ents_in_ents_field(const std::string& name)
   }
   MoFEMFunctionReturnHot(0);
 }
-PetscErrorCode Core::check_number_of_ents_in_ents_field() const {
+MoFEMErrorCode Core::check_number_of_ents_in_ents_field() const {
   MoFEMFunctionBeginHot;
   Field_multiIndex::index<FieldName_mi_tag>::type::iterator it = fIelds.get<FieldName_mi_tag>().begin();
   for(;it!=fIelds.get<FieldName_mi_tag>().end();it++) {
