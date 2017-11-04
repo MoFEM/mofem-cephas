@@ -103,14 +103,10 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/program_options.hpp>
 
+#include <boost/typeof/typeof.hpp>
 #include <boost/type_index.hpp>
-#include <boost/type_traits/remove_pointer.hpp>
-#include <boost/type_traits/remove_reference.hpp>
-#include <boost/type_traits/is_reference.hpp>
-#include <boost/type_traits/is_pointer.hpp>
+#include <boost/type_traits.hpp>
 #include <boost/utility/enable_if.hpp>
-
-// #include <boost/core/demangle.hpp>
 
 //MOAB
 #include <moab/ParallelComm.hpp>

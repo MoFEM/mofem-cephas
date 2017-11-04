@@ -39,26 +39,26 @@ struct MoFEMException : public std::exception {
 typedef moab::ErrorCode MoABErrorCode;  ///< MoAB error code
 typedef PetscErrorCode MoFEMErrorCode;  ///< MoFEM/PETSc error code
 
-static MoABErrorCode rval; 
-static PetscErrorCode ierr;
+template <typename TYPE> struct MoFEMErrorCodeGeneric {
+  MoFEMErrorCodeGeneric(const TYPE) {}
+};
 
-/**
- * @brief \brief Get error type form variable
- * 
- * @param TYPE 
- * @return template <typename TYPE>  enum MoFEMErrorTypes 
- */
-template <typename TYPE> inline enum MoFEMErrorTypes getErrorType(const TYPE) {}
+template <> struct MoFEMErrorCodeGeneric<PetscErrorCode> {
+  PetscErrorCode iERR;
+  MoFEMErrorCodeGeneric(const PetscErrorCode ierr) : iERR(ierr) {}
+  inline operator PetscErrorCode() const { return iERR; }
+};
 
-template <>
-inline enum MoFEMErrorTypes getErrorType(const PetscErrorCode) {
-  return PETSC_ERROR;
-}
+template <> struct MoFEMErrorCodeGeneric<moab::ErrorCode> {
+  moab::ErrorCode rVAL;
+  MoFEMErrorCodeGeneric(const moab::ErrorCode rval) : rVAL(rval) {}
+  inline operator moab::ErrorCode() const { return rVAL; }
+};
 
-template <>
-inline enum MoFEMErrorTypes getErrorType(const moab::ErrorCode) {
-  return MOAB_ERROR;
-}
+static MoFEMErrorCodeGeneric<moab::ErrorCode> rval =
+    MoFEMErrorCodeGeneric<moab::ErrorCode>(MB_SUCCESS);
+static MoFEMErrorCodeGeneric<PetscErrorCode> ierr =
+    MoFEMErrorCodeGeneric<PetscErrorCode>(0);
 
 struct ErrorCheckerFunction;
 struct ErrorCheckerLine;
