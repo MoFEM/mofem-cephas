@@ -42,9 +42,9 @@ int main(int argc, char *argv[]) {
   PetscBool flg = PETSC_TRUE;
   char mesh_file_name[255];
   #if PETSC_VERSION_GE(3,6,4)
-  ierr = PetscOptionsGetString(PETSC_NULL,"","-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  ierr = PetscOptionsGetString(PETSC_NULL,"","-my_file",mesh_file_name,255,&flg); CHKERRG(ierr);
   #else
-  ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRG(ierr);
   #endif
   if(flg != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
@@ -63,7 +63,7 @@ int main(int argc, char *argv[]) {
 
   BitRefLevel bit_level0;
   bit_level0.set(0);
-  ierr = m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(0,3,bit_level0); CHKERRQ(ierr);
+  ierr = m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(0,3,bit_level0); CHKERRG(ierr);
 
   Range nodes,tets;
   rval = moab.get_entities_by_type(0,MBVERTEX,nodes,false); CHKERRG(rval);
@@ -76,25 +76,25 @@ int main(int argc, char *argv[]) {
 
   //get TetGen interface
   TetGenInterface *tetgen_iface;
-  ierr = m_field.getInterface(tetgen_iface); CHKERRQ(ierr);
+  ierr = m_field.getInterface(tetgen_iface); CHKERRG(ierr);
 
   //set MoAB nodes to TetGen data structure
-  ierr = tetgen_iface->inData(nodes,in,moab_tetgen_map,tetgen_moab_map); CHKERRQ(ierr);
+  ierr = tetgen_iface->inData(nodes,in,moab_tetgen_map,tetgen_moab_map); CHKERRG(ierr);
   std::map<int,Range> types_ents;
   types_ents[TetGenInterface::RIDGEVERTEX].merge(nodes);
-  ierr = tetgen_iface->setGeomData(in,moab_tetgen_map,tetgen_moab_map,types_ents); CHKERRQ(ierr);
+  ierr = tetgen_iface->setGeomData(in,moab_tetgen_map,tetgen_moab_map,types_ents); CHKERRG(ierr);
 
   char switches[] = ""; // TetGen switches, look to TegGen user manual
-  ierr = tetgen_iface->tetRahedralize(switches,in,out); CHKERRQ(ierr); // make a TetGen mesh
+  ierr = tetgen_iface->tetRahedralize(switches,in,out); CHKERRG(ierr); // make a TetGen mesh
   BitRefLevel bit_level1;
   bit_level1.set(1);
   //get mesh from TetGen and set bit level to 1
-  ierr = tetgen_iface->outData(in,out,moab_tetgen_map,tetgen_moab_map,bit_level1,false,true); CHKERRQ(ierr);
+  ierr = tetgen_iface->outData(in,out,moab_tetgen_map,tetgen_moab_map,bit_level1,false,true); CHKERRG(ierr);
 
   //save results
   EntityHandle meshset_level1;
   rval = moab.create_meshset(MESHSET_SET,meshset_level1); CHKERRG(rval);
-  ierr = m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(bit_level1,BitRefLevel().set(),MBTET,meshset_level1); CHKERRQ(ierr);
+  ierr = m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(bit_level1,BitRefLevel().set(),MBTET,meshset_level1); CHKERRG(ierr);
   if(debug) rval = moab.write_file("level1.vtk","VTK","",&meshset_level1,1); CHKERRG(rval);
 
   //clean data
@@ -114,7 +114,7 @@ int main(int argc, char *argv[]) {
   rval = skin.find_skin(0,tets,false,outer_surface_skin); CHKERRG(rval);
 
   //set nodes to TetGen data structures
-  ierr = tetgen_iface->inData(nodes,in,moab_tetgen_map,tetgen_moab_map); CHKERRQ(ierr);
+  ierr = tetgen_iface->inData(nodes,in,moab_tetgen_map,tetgen_moab_map); CHKERRG(ierr);
 
 
   Range side_set_faces;
@@ -128,7 +128,7 @@ int main(int argc, char *argv[]) {
   std::vector<std::vector<Range> > sorted_outer_surface_skin;
   int nb_ents = outer_surface_skin.size();
   //sort surface elements in planar groups
-  ierr = tetgen_iface->groupRegion_Triangle(outer_surface_skin,sorted_outer_surface_skin,1e-10); CHKERRQ(ierr);
+  ierr = tetgen_iface->groupRegion_Triangle(outer_surface_skin,sorted_outer_surface_skin,1e-10); CHKERRG(ierr);
   if(debug>0) {
     std::cout << " number of triangle entities " << nb_ents
     << " number of faces disjoint regions " << sorted_outer_surface_skin.size() << std::endl;
@@ -147,7 +147,7 @@ int main(int argc, char *argv[]) {
     std::vector<Range>::iterator viit = vit->begin();
     for(;viit!=vit->end();viit++) {
       Range polygons;
-      ierr = tetgen_iface->makePolygonFacet(*viit,polygons); CHKERRQ(ierr);
+      ierr = tetgen_iface->makePolygonFacet(*viit,polygons); CHKERRG(ierr);
       Range aa;
       rval = moab.get_connectivity(*viit,aa,true); CHKERRG(rval);
       Range viit_edges;
@@ -174,9 +174,9 @@ int main(int argc, char *argv[]) {
     markers.push_back(std::pair<Range,int>(faces,id));
   }
 
-  //ierr = tetgen_iface->inData(nodes,in,moab_tetgen_map,tetgen_moab_map); CHKERRQ(ierr);
+  //ierr = tetgen_iface->inData(nodes,in,moab_tetgen_map,tetgen_moab_map); CHKERRG(ierr);
   //set face markers
-  ierr = tetgen_iface->setFaceData(markers,in,moab_tetgen_map,tetgen_moab_map); CHKERRQ(ierr);
+  ierr = tetgen_iface->setFaceData(markers,in,moab_tetgen_map,tetgen_moab_map); CHKERRG(ierr);
 
   std::vector<std::pair<EntityHandle,int> > regions; // list of regions
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,bit)) {
@@ -186,7 +186,7 @@ int main(int argc, char *argv[]) {
     regions.push_back(std::pair<EntityHandle,int>(*tets.begin(),-id));
   }
   //set volume regions
-  ierr = tetgen_iface->setRegionData(regions,in);  CHKERRQ(ierr);
+  ierr = tetgen_iface->setRegionData(regions,in);  CHKERRG(ierr);
 
   //print mesh in tetgeb format
   if(debug>0) {
@@ -200,15 +200,15 @@ int main(int argc, char *argv[]) {
 
   //make TetGen mesh
   char switches2[] = "pYA"; // TetGen line command switches, look to TetGen manual for details
-  ierr = tetgen_iface->tetRahedralize(switches2,in,out); CHKERRQ(ierr); // make a mesh
+  ierr = tetgen_iface->tetRahedralize(switches2,in,out); CHKERRG(ierr); // make a mesh
   BitRefLevel bit_level2;
   bit_level2.set(2);
   //get mesh form TetGen and store it on second bit refined level
-  ierr = tetgen_iface->outData(in,out,moab_tetgen_map,tetgen_moab_map,bit_level2,false,true); CHKERRQ(ierr);
+  ierr = tetgen_iface->outData(in,out,moab_tetgen_map,tetgen_moab_map,bit_level2,false,true); CHKERRG(ierr);
   //set markers to triangles
-  ierr = tetgen_iface->getTriangleMarkers(tetgen_moab_map,out); CHKERRQ(ierr);
+  ierr = tetgen_iface->getTriangleMarkers(tetgen_moab_map,out); CHKERRG(ierr);
   //set refions to triangles
-  ierr = tetgen_iface->getRegionData(tetgen_moab_map,out); CHKERRQ(ierr);
+  ierr = tetgen_iface->getRegionData(tetgen_moab_map,out); CHKERRG(ierr);
 
   //char tetgen_out_file_name[] = "out";
   //out.save_elements(tetgen_out_file_name);
@@ -216,24 +216,24 @@ int main(int argc, char *argv[]) {
   //post-process results, save a mesh and skin
   EntityHandle meshset_level2;
   rval = moab.create_meshset(MESHSET_SET,meshset_level2); CHKERRG(rval);
-  ierr = m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(bit_level2,BitRefLevel().set(),MBTET,meshset_level2); CHKERRQ(ierr);
+  ierr = m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(bit_level2,BitRefLevel().set(),MBTET,meshset_level2); CHKERRG(ierr);
   if(debug) rval = moab.write_file("level2.vtk","VTK","",&meshset_level2,1); CHKERRG(rval);
   EntityHandle meshset_skin_level2;
   rval = moab.create_meshset(MESHSET_SET,meshset_skin_level2); CHKERRG(rval);
-  ierr = m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(bit_level2,BitRefLevel().set(),MBTRI,meshset_skin_level2); CHKERRQ(ierr);
+  ierr = m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(bit_level2,BitRefLevel().set(),MBTRI,meshset_skin_level2); CHKERRG(ierr);
   if(debug) rval = moab.write_file("level_skin2.vtk","VTK","",&meshset_skin_level2,1); CHKERRG(rval);
 
   //test BitLevelCoupler
   BitLevelCoupler *bit_ref_coupler_ptr;
-  ierr = m_field.getInterface(bit_ref_coupler_ptr); CHKERRQ(ierr);
+  ierr = m_field.getInterface(bit_ref_coupler_ptr); CHKERRG(ierr);
 
   Range children;
-  ierr = m_field.getInterface<BitRefManager>()->getEntitiesByRefLevel(bit_level1,BitRefLevel().set(),children); CHKERRQ(ierr);
+  ierr = m_field.getInterface<BitRefManager>()->getEntitiesByRefLevel(bit_level1,BitRefLevel().set(),children); CHKERRG(ierr);
   if(children.empty()) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"it should not be empty");
   }
-  ierr = bit_ref_coupler_ptr->buildAdjacenciesVerticesOnTets(bit_level0,children,true,1e-10,1e-6,true,2); CHKERRQ(ierr);
-  ierr = bit_ref_coupler_ptr->buildAdjacenciesEdgesFacesVolumes(bit_level0,children,true,2); CHKERRQ(ierr);
+  ierr = bit_ref_coupler_ptr->buildAdjacenciesVerticesOnTets(bit_level0,children,true,1e-10,1e-6,true,2); CHKERRG(ierr);
+  ierr = bit_ref_coupler_ptr->buildAdjacenciesEdgesFacesVolumes(bit_level0,children,true,2); CHKERRG(ierr);
 
   } catch (MoFEMException const &e) {
     SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);

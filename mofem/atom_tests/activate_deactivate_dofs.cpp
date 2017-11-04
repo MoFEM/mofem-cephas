@@ -43,9 +43,9 @@ int main(int argc, char *argv[]) {
   PetscBool flg = PETSC_TRUE;
   char mesh_file_name[255];
   #if PETSC_VERSION_GE(3,6,4)
-  ierr = PetscOptionsGetString(PETSC_NULL,"","-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  ierr = PetscOptionsGetString(PETSC_NULL,"","-my_file",mesh_file_name,255,&flg); CHKERRG(ierr);
   #else
-  ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRG(ierr);
   #endif
   if(flg != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
@@ -67,37 +67,37 @@ int main(int argc, char *argv[]) {
   bit_level0.set(0);
   EntityHandle meshset_level0;
   rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERRG(rval);
-  ierr = m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(0,3,bit_level0); CHKERRQ(ierr);
+  ierr = m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(0,3,bit_level0); CHKERRG(ierr);
 
   //Fields
-  ierr = m_field.add_field("F1",L2,AINSWORTH_LEGENDRE_BASE,1); CHKERRQ(ierr);
-  ierr = m_field.add_field("F2",HDIV,AINSWORTH_LEGENDRE_BASE,1); CHKERRQ(ierr);
+  ierr = m_field.add_field("F1",L2,AINSWORTH_LEGENDRE_BASE,1); CHKERRG(ierr);
+  ierr = m_field.add_field("F2",HDIV,AINSWORTH_LEGENDRE_BASE,1); CHKERRG(ierr);
 
   //meshset consisting all entities in mesh
   EntityHandle root_set = moab.get_root_set();
   //add entities to field
-  ierr = m_field.add_ents_to_field_by_type(root_set,MBTET,"F1"); CHKERRQ(ierr);
-  ierr = m_field.add_ents_to_field_by_type(root_set,MBTET,"F2"); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_field_by_type(root_set,MBTET,"F1"); CHKERRG(ierr);
+  ierr = m_field.add_ents_to_field_by_type(root_set,MBTET,"F2"); CHKERRG(ierr);
 
   //set app. order
   //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
   int order = 4;
-  ierr = m_field.set_field_order(root_set,MBTET,"F1",order-1,2); CHKERRQ(ierr);
-  ierr = m_field.set_field_order(root_set,MBTET,"F2",order,2); CHKERRQ(ierr);
-  ierr = m_field.set_field_order(root_set,MBTRI,"F2",order,2); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(root_set,MBTET,"F1",order-1,2); CHKERRG(ierr);
+  ierr = m_field.set_field_order(root_set,MBTET,"F2",order,2); CHKERRG(ierr);
+  ierr = m_field.set_field_order(root_set,MBTRI,"F2",order,2); CHKERRG(ierr);
 
-  ierr = m_field.build_fields(); CHKERRQ(ierr);
+  ierr = m_field.build_fields(); CHKERRG(ierr);
 
   order = 2;
-  ierr = m_field.set_field_order(root_set,MBTET,"F1",order-1,2); CHKERRQ(ierr);
-  ierr = m_field.set_field_order(root_set,MBTET,"F2",order,2); CHKERRQ(ierr);
-  ierr = m_field.set_field_order(root_set,MBTRI,"F2",order,2); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(root_set,MBTET,"F1",order-1,2); CHKERRG(ierr);
+  ierr = m_field.set_field_order(root_set,MBTET,"F2",order,2); CHKERRG(ierr);
+  ierr = m_field.set_field_order(root_set,MBTRI,"F2",order,2); CHKERRG(ierr);
 
-  ierr = m_field.clear_inactive_dofs(); CHKERRQ(ierr);
-  ierr = m_field.build_fields(); CHKERRQ(ierr);
+  ierr = m_field.clear_inactive_dofs(); CHKERRG(ierr);
+  ierr = m_field.build_fields(); CHKERRG(ierr);
 
   const DofEntity_multiIndex *dofs_ptr;
-  ierr = m_field.get_dofs(&dofs_ptr); CHKERRQ(ierr);
+  ierr = m_field.get_dofs(&dofs_ptr); CHKERRG(ierr);
   const unsigned int expected_size = 744;
   if(dofs_ptr->size()!=expected_size) {
     SETERRQ1(
@@ -113,7 +113,7 @@ int main(int argc, char *argv[]) {
   }
 
   //finish work cleaning memory, getting statistics, ect.
-  ierr = PetscFinalize(); CHKERRQ(ierr);
+  ierr = PetscFinalize(); CHKERRG(ierr);
 
   return 0;
 

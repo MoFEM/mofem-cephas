@@ -37,9 +37,9 @@ int main(int argc, char *argv[]) {
     PetscBool flg = PETSC_TRUE;
     char mesh_file_name[255];
     #if PETSC_VERSION_GE(3,6,4)
-    ierr = PetscOptionsGetString(PETSC_NULL,"","-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+    ierr = PetscOptionsGetString(PETSC_NULL,"","-my_file",mesh_file_name,255,&flg); CHKERRG(ierr);
     #else
-    ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+    ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRG(ierr);
     #endif
     if(flg != PETSC_TRUE) {
       SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
@@ -69,11 +69,11 @@ int main(int argc, char *argv[]) {
     int def_val = 1;
     rval = moab.tag_get_handle(
       "VERTEX_WEIGHT",1,MB_TYPE_INTEGER,th_vertex_weight,MB_TAG_CREAT|MB_TAG_DENSE,&def_val
-    ); CHKERRQ(ierr);
+    ); CHKERRG(ierr);
 
     ProblemsManager *prb_mng_ptr;
-    ierr = m_field.getInterface(prb_mng_ptr); CHKERRQ(ierr);
-    ierr = prb_mng_ptr->partitionMesh(tets,3,2,2,&th_vertex_weight,NULL,NULL); CHKERRQ(ierr);
+    ierr = m_field.getInterface(prb_mng_ptr); CHKERRG(ierr);
+    ierr = prb_mng_ptr->partitionMesh(tets,3,2,2,&th_vertex_weight,NULL,NULL); CHKERRG(ierr);
 
     EntityHandle meshset;
     rval = moab.create_meshset(MESHSET_SET,meshset); CHKERRG(rval);
@@ -103,7 +103,7 @@ int main(int argc, char *argv[]) {
     rval = moab2.load_file("partitioned_mesh.h5m",0,option); CHKERRG(rval);
   }
 
-  ierr = PetscFinalize(); CHKERRQ(ierr);
+  ierr = PetscFinalize(); CHKERRG(ierr);
 
   return 0;
 

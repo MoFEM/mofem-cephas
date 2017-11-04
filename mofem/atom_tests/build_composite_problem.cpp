@@ -35,9 +35,9 @@ int main(int argc, char *argv[]) {
     PetscBool flg = PETSC_TRUE;
     char mesh_file_name[255];
     #if PETSC_VERSION_GE(3,6,4)
-    ierr = PetscOptionsGetString(PETSC_NULL,"","-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+    ierr = PetscOptionsGetString(PETSC_NULL,"","-my_file",mesh_file_name,255,&flg); CHKERRG(ierr);
     #else
-    ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+    ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRG(ierr);
     #endif
     if(flg != PETSC_TRUE) {
       SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
@@ -58,11 +58,11 @@ int main(int argc, char *argv[]) {
 
     EntityHandle root_set = moab.get_root_set();
     Range tets;
-    rval = moab.get_entities_by_type(root_set,MBTET,tets,false); CHKERRQ(rval);
+    rval = moab.get_entities_by_type(root_set,MBTET,tets,false); CHKERRG(rval);
 
     ProblemsManager *prb_mng_ptr;
-    ierr = m_field.getInterface(prb_mng_ptr); CHKERRQ(ierr);
-    ierr = prb_mng_ptr->partitionMesh(tets,3,2,m_field.get_comm_size(),NULL,NULL,NULL); CHKERRQ(ierr);
+    ierr = m_field.getInterface(prb_mng_ptr); CHKERRG(ierr);
+    ierr = prb_mng_ptr->partitionMesh(tets,3,2,m_field.get_comm_size(),NULL,NULL,NULL); CHKERRG(ierr);
 
     EntityHandle part_set;
     rval = moab.create_meshset(MESHSET_SET,part_set); CHKERRG(rval);
@@ -149,114 +149,114 @@ int main(int argc, char *argv[]) {
     // set entitities bit level
     BitRefLevel bit_level0;
     bit_level0.set(0);
-    ierr = m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(part_set,3,bit_level0); CHKERRQ(ierr);
+    ierr = m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(part_set,3,bit_level0); CHKERRG(ierr);
 
     //Fields
-    ierr = m_field.add_field("F1",H1,AINSWORTH_LEGENDRE_BASE,1); CHKERRQ(ierr);
-    ierr = m_field.add_field("F2",H1,AINSWORTH_LEGENDRE_BASE,1); CHKERRQ(ierr);
+    ierr = m_field.add_field("F1",H1,AINSWORTH_LEGENDRE_BASE,1); CHKERRG(ierr);
+    ierr = m_field.add_field("F2",H1,AINSWORTH_LEGENDRE_BASE,1); CHKERRG(ierr);
     //add entities to field
-    ierr = m_field.add_ents_to_field_by_type(part_set,MBTET,"F1"); CHKERRQ(ierr);
-    ierr = m_field.add_ents_to_field_by_type(part_set,MBTET,"F2"); CHKERRQ(ierr);
+    ierr = m_field.add_ents_to_field_by_type(part_set,MBTET,"F1"); CHKERRG(ierr);
+    ierr = m_field.add_ents_to_field_by_type(part_set,MBTET,"F2"); CHKERRG(ierr);
     int order = 4;
-    ierr = m_field.set_field_order(part_set,MBTET,"F1",order); CHKERRQ(ierr);
-    ierr = m_field.set_field_order(part_set,MBTRI,"F1",order); CHKERRQ(ierr);
-    ierr = m_field.set_field_order(part_set,MBEDGE,"F1",order); CHKERRQ(ierr);
-    ierr = m_field.set_field_order(part_set,MBVERTEX,"F1",1); CHKERRQ(ierr);
-    ierr = m_field.set_field_order(part_set,MBTET,"F2",order); CHKERRQ(ierr);
-    ierr = m_field.set_field_order(part_set,MBTRI,"F2",order); CHKERRQ(ierr);
-    ierr = m_field.set_field_order(part_set,MBEDGE,"F2",order); CHKERRQ(ierr);
-    ierr = m_field.set_field_order(part_set,MBVERTEX,"F2",1); CHKERRQ(ierr);
-    ierr = m_field.build_fields(); CHKERRQ(ierr);
+    ierr = m_field.set_field_order(part_set,MBTET,"F1",order); CHKERRG(ierr);
+    ierr = m_field.set_field_order(part_set,MBTRI,"F1",order); CHKERRG(ierr);
+    ierr = m_field.set_field_order(part_set,MBEDGE,"F1",order); CHKERRG(ierr);
+    ierr = m_field.set_field_order(part_set,MBVERTEX,"F1",1); CHKERRG(ierr);
+    ierr = m_field.set_field_order(part_set,MBTET,"F2",order); CHKERRG(ierr);
+    ierr = m_field.set_field_order(part_set,MBTRI,"F2",order); CHKERRG(ierr);
+    ierr = m_field.set_field_order(part_set,MBEDGE,"F2",order); CHKERRG(ierr);
+    ierr = m_field.set_field_order(part_set,MBVERTEX,"F2",1); CHKERRG(ierr);
+    ierr = m_field.build_fields(); CHKERRG(ierr);
 
     //Elements
-    ierr = m_field.add_finite_element("E1"); CHKERRQ(ierr);
-    ierr = m_field.add_finite_element("E2"); CHKERRQ(ierr);
-    ierr = m_field.modify_finite_element_add_field_row("E1","F1"); CHKERRQ(ierr);
-    ierr = m_field.modify_finite_element_add_field_col("E1","F1"); CHKERRQ(ierr);
-    ierr = m_field.modify_finite_element_add_field_row("E2","F2"); CHKERRQ(ierr);
-    ierr = m_field.modify_finite_element_add_field_col("E2","F2"); CHKERRQ(ierr);
-    ierr = m_field.add_ents_to_finite_element_by_type(part_set,MBTET,"E1"); CHKERRQ(ierr);
-    ierr = m_field.add_ents_to_finite_element_by_type(part_set,MBTET,"E2"); CHKERRQ(ierr);
-    ierr = m_field.build_finite_elements(); CHKERRQ(ierr);
-    ierr = m_field.build_adjacencies(bit_level0); CHKERRQ(ierr);
+    ierr = m_field.add_finite_element("E1"); CHKERRG(ierr);
+    ierr = m_field.add_finite_element("E2"); CHKERRG(ierr);
+    ierr = m_field.modify_finite_element_add_field_row("E1","F1"); CHKERRG(ierr);
+    ierr = m_field.modify_finite_element_add_field_col("E1","F1"); CHKERRG(ierr);
+    ierr = m_field.modify_finite_element_add_field_row("E2","F2"); CHKERRG(ierr);
+    ierr = m_field.modify_finite_element_add_field_col("E2","F2"); CHKERRG(ierr);
+    ierr = m_field.add_ents_to_finite_element_by_type(part_set,MBTET,"E1"); CHKERRG(ierr);
+    ierr = m_field.add_ents_to_finite_element_by_type(part_set,MBTET,"E2"); CHKERRG(ierr);
+    ierr = m_field.build_finite_elements(); CHKERRG(ierr);
+    ierr = m_field.build_adjacencies(bit_level0); CHKERRG(ierr);
 
     //Problems
-    ierr = m_field.add_problem("P1"); CHKERRQ(ierr);
-    ierr = m_field.add_problem("P2"); CHKERRQ(ierr);
+    ierr = m_field.add_problem("P1"); CHKERRG(ierr);
+    ierr = m_field.add_problem("P2"); CHKERRG(ierr);
     //set refinement level for problem
-    ierr = m_field.modify_problem_ref_level_add_bit("P1",bit_level0); CHKERRQ(ierr);
-    ierr = m_field.modify_problem_ref_level_add_bit("P2",bit_level0); CHKERRQ(ierr);
-    ierr = m_field.modify_problem_add_finite_element("P1","E1"); CHKERRQ(ierr);
-    ierr = m_field.modify_problem_add_finite_element("P2","E2"); CHKERRQ(ierr);
+    ierr = m_field.modify_problem_ref_level_add_bit("P1",bit_level0); CHKERRG(ierr);
+    ierr = m_field.modify_problem_ref_level_add_bit("P2",bit_level0); CHKERRG(ierr);
+    ierr = m_field.modify_problem_add_finite_element("P1","E1"); CHKERRG(ierr);
+    ierr = m_field.modify_problem_add_finite_element("P2","E2"); CHKERRG(ierr);
 
     //Build problems
-    ierr = prb_mng_ptr->buildProblemOnDistributedMesh("P1",true,1); CHKERRQ(ierr);
-    ierr = prb_mng_ptr->buildProblemOnDistributedMesh("P2",true,1); CHKERRQ(ierr);
-    ierr = prb_mng_ptr->partitionFiniteElements("P1",true,0,m_field.get_comm_size(),1); CHKERRQ(ierr);
-    ierr = prb_mng_ptr->partitionGhostDofs("P1",1); CHKERRQ(ierr);
-    ierr = prb_mng_ptr->partitionFiniteElements("P2",true,0,m_field.get_comm_size(),1); CHKERRQ(ierr);
-    ierr = prb_mng_ptr->partitionGhostDofs("P2",1); CHKERRQ(ierr);
+    ierr = prb_mng_ptr->buildProblemOnDistributedMesh("P1",true,1); CHKERRG(ierr);
+    ierr = prb_mng_ptr->buildProblemOnDistributedMesh("P2",true,1); CHKERRG(ierr);
+    ierr = prb_mng_ptr->partitionFiniteElements("P1",true,0,m_field.get_comm_size(),1); CHKERRG(ierr);
+    ierr = prb_mng_ptr->partitionGhostDofs("P1",1); CHKERRG(ierr);
+    ierr = prb_mng_ptr->partitionFiniteElements("P2",true,0,m_field.get_comm_size(),1); CHKERRG(ierr);
+    ierr = prb_mng_ptr->partitionGhostDofs("P2",1); CHKERRG(ierr);
 
     if(0) {
       Mat m;
-      ierr = m_field.MatCreateMPIAIJWithArrays("P1",&m); CHKERRQ(ierr);
+      ierr = m_field.MatCreateMPIAIJWithArrays("P1",&m); CHKERRG(ierr);
       MatView(m,PETSC_VIEWER_DRAW_WORLD);
       std::string wait;
       std::cin >> wait;
-      ierr = MatDestroy(&m); CHKERRQ(ierr);
+      ierr = MatDestroy(&m); CHKERRG(ierr);
     }
 
 
-    ierr = m_field.partition_check_matrix_fill_in("P1",-1,-1,1); CHKERRQ(ierr);
-    ierr = m_field.partition_check_matrix_fill_in("P2",-1,-1,1); CHKERRQ(ierr);
+    ierr = m_field.partition_check_matrix_fill_in("P1",-1,-1,1); CHKERRG(ierr);
+    ierr = m_field.partition_check_matrix_fill_in("P2",-1,-1,1); CHKERRG(ierr);
 
     //register new dm type, i.e. mofem
     DMType dm_name = "MOFEM";
-    ierr = DMRegister_MoFEM(dm_name); CHKERRQ(ierr);
+    ierr = DMRegister_MoFEM(dm_name); CHKERRG(ierr);
     //craete dm instance
     DM dm;
-    ierr = DMCreate(PETSC_COMM_WORLD,&dm);CHKERRQ(ierr);
-    ierr = DMSetType(dm,dm_name);CHKERRQ(ierr);
+    ierr = DMCreate(PETSC_COMM_WORLD,&dm);CHKERRG(ierr);
+    ierr = DMSetType(dm,dm_name);CHKERRG(ierr);
 
-    ierr = DMMoFEMCreateMoFEM(dm,&m_field,"COMP",bit_level0); CHKERRQ(ierr);
-    ierr = DMSetFromOptions(dm); CHKERRQ(ierr);
-    ierr = DMMoFEMSetIsPartitioned(dm,PETSC_TRUE); CHKERRQ(ierr);
-    ierr = DMMoFEMAddElement(dm,"E1"); CHKERRQ(ierr);
-    ierr = DMMoFEMAddElement(dm,"E2"); CHKERRQ(ierr);
-    ierr = DMMoFEMAddRowCompositeProblem(dm,"P1"); CHKERRQ(ierr);
-    ierr = DMMoFEMAddRowCompositeProblem(dm,"P2"); CHKERRQ(ierr);
-    ierr = DMSetUp(dm); CHKERRQ(ierr);
+    ierr = DMMoFEMCreateMoFEM(dm,&m_field,"COMP",bit_level0); CHKERRG(ierr);
+    ierr = DMSetFromOptions(dm); CHKERRG(ierr);
+    ierr = DMMoFEMSetIsPartitioned(dm,PETSC_TRUE); CHKERRG(ierr);
+    ierr = DMMoFEMAddElement(dm,"E1"); CHKERRG(ierr);
+    ierr = DMMoFEMAddElement(dm,"E2"); CHKERRG(ierr);
+    ierr = DMMoFEMAddRowCompositeProblem(dm,"P1"); CHKERRG(ierr);
+    ierr = DMMoFEMAddRowCompositeProblem(dm,"P2"); CHKERRG(ierr);
+    ierr = DMSetUp(dm); CHKERRG(ierr);
 
-    // ierr = m_field.add_problem("COMP"); CHKERRQ(ierr);
-    // ierr = m_field.modify_problem_ref_level_add_bit("COMP",bit_level0); CHKERRQ(ierr);
-    // ierr = m_field.modify_problem_add_finite_element("COMP","E1"); CHKERRQ(ierr);
-    // ierr = m_field.modify_problem_add_finite_element("COMP","E2"); CHKERRQ(ierr);
+    // ierr = m_field.add_problem("COMP"); CHKERRG(ierr);
+    // ierr = m_field.modify_problem_ref_level_add_bit("COMP",bit_level0); CHKERRG(ierr);
+    // ierr = m_field.modify_problem_add_finite_element("COMP","E1"); CHKERRG(ierr);
+    // ierr = m_field.modify_problem_add_finite_element("COMP","E2"); CHKERRG(ierr);
     // std::vector<std::string> add_problems;
     // add_problems.push_back("P1");
     // add_problems.push_back("P2");
-    // ierr = prb_mng_ptr->buildCompsedProblem("COMP",add_problems,add_problems,true,1); CHKERRQ(ierr);
-    // ierr = prb_mng_ptr->partitionFiniteElements("COMP",true,0,m_field.get_comm_size(),1); CHKERRQ(ierr);
-    // ierr = prb_mng_ptr->partitionGhostDofs("COMP",1); CHKERRQ(ierr);
+    // ierr = prb_mng_ptr->buildCompsedProblem("COMP",add_problems,add_problems,true,1); CHKERRG(ierr);
+    // ierr = prb_mng_ptr->partitionFiniteElements("COMP",true,0,m_field.get_comm_size(),1); CHKERRG(ierr);
+    // ierr = prb_mng_ptr->partitionGhostDofs("COMP",1); CHKERRG(ierr);
 
     if(0) {
       Mat m;
-      ierr = m_field.MatCreateMPIAIJWithArrays("COMP",&m); CHKERRQ(ierr);
+      ierr = m_field.MatCreateMPIAIJWithArrays("COMP",&m); CHKERRG(ierr);
       MatView(m,PETSC_VIEWER_DRAW_WORLD);
       std::string wait;
       std::cin >> wait;
-      ierr = MatDestroy(&m); CHKERRQ(ierr);
+      ierr = MatDestroy(&m); CHKERRG(ierr);
     }
 
-    ierr = m_field.partition_check_matrix_fill_in("COMP",-1,-1,1); CHKERRQ(ierr);
+    ierr = m_field.partition_check_matrix_fill_in("COMP",-1,-1,1); CHKERRG(ierr);
 
-    ierr = DMDestroy(&dm); CHKERRQ(ierr);
+    ierr = DMDestroy(&dm); CHKERRG(ierr);
 
   } catch (MoFEMException const &e) {
     SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
   }
 
   // Finish work cleaning memory, getting statistics, etc.
-  ierr = PetscFinalize(); CHKERRQ(ierr);
+  ierr = PetscFinalize(); CHKERRG(ierr);
 
   return 0;
 }

@@ -83,7 +83,7 @@ struct OpAssembleMatAndVec: public MoFEM::FaceElementForcesAndSourcesCore::UserD
     }
     ierr = VecSetValues(
       F,nb_dofs,&*data.getIndices().data().begin(),&*nF.data().begin(),ADD_VALUES
-    ); CHKERRQ(ierr);
+    ); CHKERRG(ierr);
     MoFEMFunctionReturnHot(0);
   }
 
@@ -123,7 +123,7 @@ struct OpAssembleMatAndVec: public MoFEM::FaceElementForcesAndSourcesCore::UserD
       nb_dofs_col,&*col_data.getIndices().begin(),
       &*nA.data().begin(),
       ADD_VALUES
-    ); CHKERRQ(ierr);
+    ); CHKERRG(ierr);
     MoFEMFunctionReturnHot(0);
   }
 };
@@ -253,77 +253,77 @@ int main(int argc, char *argv[]) {
     //set entitities bit level
     BitRefLevel bit_level0;
     bit_level0.set(0);
-    ierr = m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(0,2,bit_level0); CHKERRQ(ierr);
+    ierr = m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(0,2,bit_level0); CHKERRG(ierr);
 
     // Declare elements
-    ierr = m_field.add_field("FIELD1",HCURL,AINSWORTH_LEGENDRE_BASE,1); CHKERRQ(ierr);
-    ierr = m_field.add_finite_element("TEST_FE1"); CHKERRQ(ierr);
+    ierr = m_field.add_field("FIELD1",HCURL,AINSWORTH_LEGENDRE_BASE,1); CHKERRG(ierr);
+    ierr = m_field.add_finite_element("TEST_FE1"); CHKERRG(ierr);
     //Define rows/cols and element data
-    ierr = m_field.modify_finite_element_add_field_row("TEST_FE1","FIELD1"); CHKERRQ(ierr);
-    ierr = m_field.modify_finite_element_add_field_col("TEST_FE1","FIELD1"); CHKERRQ(ierr);
-    ierr = m_field.modify_finite_element_add_field_data("TEST_FE1","FIELD1"); CHKERRQ(ierr);
+    ierr = m_field.modify_finite_element_add_field_row("TEST_FE1","FIELD1"); CHKERRG(ierr);
+    ierr = m_field.modify_finite_element_add_field_col("TEST_FE1","FIELD1"); CHKERRG(ierr);
+    ierr = m_field.modify_finite_element_add_field_data("TEST_FE1","FIELD1"); CHKERRG(ierr);
     //Problem
-    ierr = m_field.add_problem("TEST_PROBLEM"); CHKERRQ(ierr);
+    ierr = m_field.add_problem("TEST_PROBLEM"); CHKERRG(ierr);
     //set finite elements for problem
-    ierr = m_field.modify_problem_add_finite_element("TEST_PROBLEM","TEST_FE1"); CHKERRQ(ierr);
+    ierr = m_field.modify_problem_add_finite_element("TEST_PROBLEM","TEST_FE1"); CHKERRG(ierr);
     //set refinement level for problem
-    ierr = m_field.modify_problem_ref_level_add_bit("TEST_PROBLEM",bit_level0); CHKERRQ(ierr);
+    ierr = m_field.modify_problem_ref_level_add_bit("TEST_PROBLEM",bit_level0); CHKERRG(ierr);
 
     // Add entities
-    ierr = m_field.add_ents_to_field_by_type(0,MBTRI,"FIELD1"); CHKERRQ(ierr);
+    ierr = m_field.add_ents_to_field_by_type(0,MBTRI,"FIELD1"); CHKERRG(ierr);
     // Set order
     int order = 6;
-    ierr = m_field.set_field_order(0,MBTRI,"FIELD1",order); CHKERRQ(ierr);
-    ierr = m_field.set_field_order(0,MBEDGE,"FIELD1",order); CHKERRQ(ierr);
-    ierr = m_field.add_ents_to_finite_element_by_type(0,MBTRI,"TEST_FE1"); CHKERRQ(ierr);
+    ierr = m_field.set_field_order(0,MBTRI,"FIELD1",order); CHKERRG(ierr);
+    ierr = m_field.set_field_order(0,MBEDGE,"FIELD1",order); CHKERRG(ierr);
+    ierr = m_field.add_ents_to_finite_element_by_type(0,MBTRI,"TEST_FE1"); CHKERRG(ierr);
 
     // Build database
-    ierr = m_field.build_fields(); CHKERRQ(ierr);
+    ierr = m_field.build_fields(); CHKERRG(ierr);
     //build finite elemnts
-    ierr = m_field.build_finite_elements(); CHKERRQ(ierr);
+    ierr = m_field.build_finite_elements(); CHKERRG(ierr);
     //build adjacencies
-    ierr = m_field.build_adjacencies(bit_level0); CHKERRQ(ierr);
+    ierr = m_field.build_adjacencies(bit_level0); CHKERRG(ierr);
 
     //build problem
     ProblemsManager *prb_mng_ptr;
-    ierr = m_field.getInterface(prb_mng_ptr); CHKERRQ(ierr);
-    ierr = prb_mng_ptr->buildProblem("TEST_PROBLEM",true); CHKERRQ(ierr);
+    ierr = m_field.getInterface(prb_mng_ptr); CHKERRG(ierr);
+    ierr = prb_mng_ptr->buildProblem("TEST_PROBLEM",true); CHKERRG(ierr);
     // Partition
-    ierr = prb_mng_ptr->partitionSimpleProblem("TEST_PROBLEM"); CHKERRQ(ierr);
-    ierr = prb_mng_ptr->partitionFiniteElements("TEST_PROBLEM"); CHKERRQ(ierr);
-    ierr = prb_mng_ptr->partitionGhostDofs("TEST_PROBLEM"); CHKERRQ(ierr);
+    ierr = prb_mng_ptr->partitionSimpleProblem("TEST_PROBLEM"); CHKERRG(ierr);
+    ierr = prb_mng_ptr->partitionFiniteElements("TEST_PROBLEM"); CHKERRG(ierr);
+    ierr = prb_mng_ptr->partitionGhostDofs("TEST_PROBLEM"); CHKERRG(ierr);
 
     // Create matrices
     Mat A;
-    ierr = m_field.MatCreateMPIAIJWithArrays("TEST_PROBLEM",&A); CHKERRQ(ierr);
+    ierr = m_field.MatCreateMPIAIJWithArrays("TEST_PROBLEM",&A); CHKERRG(ierr);
     Vec F;
-    ierr = m_field.getInterface<VecManager>()->vecCreateGhost("TEST_PROBLEM",ROW,&F); CHKERRQ(ierr);
+    ierr = m_field.getInterface<VecManager>()->vecCreateGhost("TEST_PROBLEM",ROW,&F); CHKERRG(ierr);
     Vec D;
-    ierr = m_field.getInterface<VecManager>()->vecCreateGhost("TEST_PROBLEM",COL,&D); CHKERRQ(ierr);
+    ierr = m_field.getInterface<VecManager>()->vecCreateGhost("TEST_PROBLEM",COL,&D); CHKERRG(ierr);
 
     {
       TestFE fe(m_field);
       fe.getOpPtrVector().push_back(new OpAssembleMatAndVec(A,F));
-      ierr = m_field.loop_finite_elements("TEST_PROBLEM","TEST_FE1",fe); CHKERRQ(ierr);
-      ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
-      ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
-      ierr = MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-      ierr = MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+      ierr = m_field.loop_finite_elements("TEST_PROBLEM","TEST_FE1",fe); CHKERRG(ierr);
+      ierr = VecAssemblyBegin(F); CHKERRG(ierr);
+      ierr = VecAssemblyEnd(F); CHKERRG(ierr);
+      ierr = MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY); CHKERRG(ierr);
+      ierr = MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY); CHKERRG(ierr);
     }
 
     // Solver problem
     KSP solver;
-    ierr = KSPCreate(PETSC_COMM_WORLD,&solver); CHKERRQ(ierr);
-    ierr = KSPSetOperators(solver,A,A); CHKERRQ(ierr);
-    ierr = KSPSetFromOptions(solver); CHKERRQ(ierr);
-    ierr = KSPSetUp(solver); CHKERRQ(ierr);
-    ierr = KSPSolve(solver,F,D); CHKERRQ(ierr);
-    ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = KSPCreate(PETSC_COMM_WORLD,&solver); CHKERRG(ierr);
+    ierr = KSPSetOperators(solver,A,A); CHKERRG(ierr);
+    ierr = KSPSetFromOptions(solver); CHKERRG(ierr);
+    ierr = KSPSetUp(solver); CHKERRG(ierr);
+    ierr = KSPSolve(solver,F,D); CHKERRG(ierr);
+    ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
+    ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
     ierr = m_field.getInterface<VecManager>()->setLocalGhostVector(
       "TEST_PROBLEM",COL,D,INSERT_VALUES,SCATTER_REVERSE
-    ); CHKERRQ(ierr);
-    ierr = KSPDestroy(&solver); CHKERRQ(ierr);
+    ); CHKERRG(ierr);
+    ierr = KSPDestroy(&solver); CHKERRG(ierr);
 
     {
       TestFE fe(m_field);
@@ -332,16 +332,16 @@ int main(int argc, char *argv[]) {
       fe.getOpPtrVector().push_back(new OpSetInvJacHcurlFace(inv_jac));
       fe.getOpPtrVector().push_back(new OpValsDiffVals(vals,diff_vals));
       fe.getOpPtrVector().push_back(new OpCheckValsDiffVals(vals,diff_vals));
-      ierr = m_field.loop_finite_elements("TEST_PROBLEM","TEST_FE1",fe); CHKERRQ(ierr);
+      ierr = m_field.loop_finite_elements("TEST_PROBLEM","TEST_FE1",fe); CHKERRG(ierr);
     }
 
-    ierr = VecDestroy(&F); CHKERRQ(ierr);
-    ierr = VecDestroy(&D); CHKERRQ(ierr);
-    ierr = MatDestroy(&A); CHKERRQ(ierr);
+    ierr = VecDestroy(&F); CHKERRG(ierr);
+    ierr = VecDestroy(&D); CHKERRG(ierr);
+    ierr = MatDestroy(&A); CHKERRG(ierr);
 
   } catch (MoFEMException const &e) {
     SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
   }
 
-  ierr = PetscFinalize(); CHKERRQ(ierr);
+  ierr = PetscFinalize(); CHKERRG(ierr);
 }

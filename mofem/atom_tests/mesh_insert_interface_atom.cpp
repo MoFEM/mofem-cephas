@@ -27,15 +27,15 @@ int main(int argc, char *argv[]) {
   PetscBool flg = PETSC_TRUE;
   char mesh_file_name[255];
   #if PETSC_VERSION_GE(3,6,4)
-  ierr = PetscOptionsGetString(PETSC_NULL,"","-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  ierr = PetscOptionsGetString(PETSC_NULL,"","-my_file",mesh_file_name,255,&flg); CHKERRG(ierr);
   #else
-  ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRG(ierr);
   #endif
   if(flg != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
   }
   /*char mesh_out_file_name[255];
-  ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_out_file",mesh_out_file_name,255,&flg); CHKERRQ(ierr);
+  ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_out_file",mesh_out_file_name,255,&flg); CHKERRG(ierr);
   if(flg != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_out_file (MESH FILE NEEDED)");
   }**/
@@ -52,78 +52,78 @@ int main(int argc, char *argv[]) {
   MoFEM::Interface& m_field = core;
 
   PrismInterface *interface;
-  ierr = m_field.getInterface(interface); CHKERRQ(ierr);
+  ierr = m_field.getInterface(interface); CHKERRG(ierr);
 
-  ierr = m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(0,3,BitRefLevel().set(0)); CHKERRQ(ierr);
+  ierr = m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(0,3,BitRefLevel().set(0)); CHKERRG(ierr);
   std::vector<BitRefLevel> bit_levels;
   bit_levels.push_back(BitRefLevel().set(0));
 
   int ll = 1;
   //for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,SIDESET|INTERFACESET,cit)) {
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,SIDESET,cit)) {
-    ierr = PetscPrintf(PETSC_COMM_WORLD,"Insert Interface %d\n",cit->getMeshsetId()); CHKERRQ(ierr);
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"Insert Interface %d\n",cit->getMeshsetId()); CHKERRG(ierr);
     EntityHandle cubit_meshset = cit->getMeshset();
     {
       //get tet enties form back bit_level
       EntityHandle ref_level_meshset = 0;
       rval = moab.create_meshset(MESHSET_SET,ref_level_meshset); CHKERRG(rval);
-      ierr = m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(bit_levels.back(),BitRefLevel().set(),MBTET,ref_level_meshset); CHKERRQ(ierr);
-      ierr = m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(bit_levels.back(),BitRefLevel().set(),MBPRISM,ref_level_meshset); CHKERRQ(ierr);
+      ierr = m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(bit_levels.back(),BitRefLevel().set(),MBTET,ref_level_meshset); CHKERRG(ierr);
+      ierr = m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(bit_levels.back(),BitRefLevel().set(),MBPRISM,ref_level_meshset); CHKERRG(ierr);
       Range ref_level_tets;
       rval = moab.get_entities_by_handle(ref_level_meshset,ref_level_tets,true); CHKERRG(rval);
       //get faces and test to split
-      ierr = interface->getSides(cubit_meshset,bit_levels.back(),true,0); CHKERRQ(ierr);
+      ierr = interface->getSides(cubit_meshset,bit_levels.back(),true,0); CHKERRG(ierr);
       //set new bit level
       bit_levels.push_back(BitRefLevel().set(ll++));
       //split faces and
-      ierr = interface->splitSides(ref_level_meshset,bit_levels.back(),cubit_meshset,true,true,0); CHKERRQ(ierr);
+      ierr = interface->splitSides(ref_level_meshset,bit_levels.back(),cubit_meshset,true,true,0); CHKERRG(ierr);
       //clean meshsets
       rval = moab.delete_entities(&ref_level_meshset,1); CHKERRG(rval);
     }
     //update cubit meshsets
     for(_IT_CUBITMESHSETS_FOR_LOOP_(m_field,ciit)) {
       EntityHandle cubit_meshset = ciit->meshset;
-      ierr = m_field.getInterface<BitRefManager>()->updateMeshsetByEntitiesChildren(cubit_meshset,bit_levels.back(),cubit_meshset,MBVERTEX,true); CHKERRQ(ierr);
-      ierr = m_field.getInterface<BitRefManager>()->updateMeshsetByEntitiesChildren(cubit_meshset,bit_levels.back(),cubit_meshset,MBEDGE,true); CHKERRQ(ierr);
-      ierr = m_field.getInterface<BitRefManager>()->updateMeshsetByEntitiesChildren(cubit_meshset,bit_levels.back(),cubit_meshset,MBTRI,true); CHKERRQ(ierr);
-      ierr = m_field.getInterface<BitRefManager>()->updateMeshsetByEntitiesChildren(cubit_meshset,bit_levels.back(),cubit_meshset,MBTET,true); CHKERRQ(ierr);
+      ierr = m_field.getInterface<BitRefManager>()->updateMeshsetByEntitiesChildren(cubit_meshset,bit_levels.back(),cubit_meshset,MBVERTEX,true); CHKERRG(ierr);
+      ierr = m_field.getInterface<BitRefManager>()->updateMeshsetByEntitiesChildren(cubit_meshset,bit_levels.back(),cubit_meshset,MBEDGE,true); CHKERRG(ierr);
+      ierr = m_field.getInterface<BitRefManager>()->updateMeshsetByEntitiesChildren(cubit_meshset,bit_levels.back(),cubit_meshset,MBTRI,true); CHKERRG(ierr);
+      ierr = m_field.getInterface<BitRefManager>()->updateMeshsetByEntitiesChildren(cubit_meshset,bit_levels.back(),cubit_meshset,MBTET,true); CHKERRG(ierr);
     }
   }
 
   //add filds
-  ierr = m_field.add_field("H1FIELD_SCALAR",H1,AINSWORTH_LEGENDRE_BASE,1); CHKERRQ(ierr);
+  ierr = m_field.add_field("H1FIELD_SCALAR",H1,AINSWORTH_LEGENDRE_BASE,1); CHKERRG(ierr);
 
   //add finite elements
-  ierr = m_field.add_finite_element("ELEM_SCALAR"); CHKERRQ(ierr);
-  ierr = m_field.modify_finite_element_add_field_row("ELEM_SCALAR","H1FIELD_SCALAR"); CHKERRQ(ierr);
-  ierr = m_field.modify_finite_element_add_field_col("ELEM_SCALAR","H1FIELD_SCALAR"); CHKERRQ(ierr);
-  ierr = m_field.modify_finite_element_add_field_data("ELEM_SCALAR","H1FIELD_SCALAR"); CHKERRQ(ierr);
+  ierr = m_field.add_finite_element("ELEM_SCALAR"); CHKERRG(ierr);
+  ierr = m_field.modify_finite_element_add_field_row("ELEM_SCALAR","H1FIELD_SCALAR"); CHKERRG(ierr);
+  ierr = m_field.modify_finite_element_add_field_col("ELEM_SCALAR","H1FIELD_SCALAR"); CHKERRG(ierr);
+  ierr = m_field.modify_finite_element_add_field_data("ELEM_SCALAR","H1FIELD_SCALAR"); CHKERRG(ierr);
   //FE Interface
-  ierr = m_field.add_finite_element("INTERFACE"); CHKERRQ(ierr);
-  ierr = m_field.modify_finite_element_add_field_row("INTERFACE","H1FIELD_SCALAR"); CHKERRQ(ierr);
-  ierr = m_field.modify_finite_element_add_field_col("INTERFACE","H1FIELD_SCALAR"); CHKERRQ(ierr);
-  ierr = m_field.modify_finite_element_add_field_data("INTERFACE","H1FIELD_SCALAR"); CHKERRQ(ierr);
+  ierr = m_field.add_finite_element("INTERFACE"); CHKERRG(ierr);
+  ierr = m_field.modify_finite_element_add_field_row("INTERFACE","H1FIELD_SCALAR"); CHKERRG(ierr);
+  ierr = m_field.modify_finite_element_add_field_col("INTERFACE","H1FIELD_SCALAR"); CHKERRG(ierr);
+  ierr = m_field.modify_finite_element_add_field_data("INTERFACE","H1FIELD_SCALAR"); CHKERRG(ierr);
 
   //add ents to field and set app. order
-  ierr = m_field.add_ents_to_field_by_type(0,MBTET,"H1FIELD_SCALAR"); CHKERRQ(ierr);
-  ierr = m_field.set_field_order(0,MBVERTEX,"H1FIELD_SCALAR",1); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_field_by_type(0,MBTET,"H1FIELD_SCALAR"); CHKERRG(ierr);
+  ierr = m_field.set_field_order(0,MBVERTEX,"H1FIELD_SCALAR",1); CHKERRG(ierr);
 
   //add finite elements entities
   //all TETS and PRIMS are added to finite elements, for testin pruposes.
   //in some practiacl applications to save memory, you would like to add elements
   //from particular refinement level (see: m_field.add_ents_to_finite_element_by_bit_ref(...)
-  ierr = m_field.add_ents_to_finite_element_by_type(0,MBTET,"ELEM_SCALAR",true); CHKERRQ(ierr);
-  ierr = m_field.add_ents_to_finite_element_by_type(0,MBPRISM,"INTERFACE",true); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_finite_element_by_type(0,MBTET,"ELEM_SCALAR",true); CHKERRG(ierr);
+  ierr = m_field.add_ents_to_finite_element_by_type(0,MBPRISM,"INTERFACE",true); CHKERRG(ierr);
 
   //add problems
   //set problem for all last two levels, only for testing pruposes
   for(int lll = ll-2;lll<ll;lll++) {
     std::stringstream problem_name;
     problem_name << "PROBLEM_SCALAR_" << lll;
-    ierr = m_field.add_problem(problem_name.str()); CHKERRQ(ierr);
+    ierr = m_field.add_problem(problem_name.str()); CHKERRG(ierr);
     //define problems and finite elements
-    ierr = m_field.modify_problem_add_finite_element(problem_name.str(),"ELEM_SCALAR"); CHKERRQ(ierr);
-    ierr = m_field.modify_problem_add_finite_element(problem_name.str(),"INTERFACE"); CHKERRQ(ierr);
+    ierr = m_field.modify_problem_add_finite_element(problem_name.str(),"ELEM_SCALAR"); CHKERRG(ierr);
+    ierr = m_field.modify_problem_add_finite_element(problem_name.str(),"INTERFACE"); CHKERRG(ierr);
   }
 
   //set problem level
@@ -132,29 +132,29 @@ int main(int argc, char *argv[]) {
     problem_name << "PROBLEM_SCALAR_" << lll;
     std::stringstream message;
     message << "set problem problem < " << problem_name.str() << " > bit level " << bit_levels[lll] << std::endl;
-    ierr = PetscPrintf(PETSC_COMM_WORLD,message.str().c_str()); CHKERRQ(ierr);
-    ierr = m_field.modify_problem_ref_level_add_bit(problem_name.str(),bit_levels[lll]); CHKERRQ(ierr);
+    ierr = PetscPrintf(PETSC_COMM_WORLD,message.str().c_str()); CHKERRG(ierr);
+    ierr = m_field.modify_problem_ref_level_add_bit(problem_name.str(),bit_levels[lll]); CHKERRG(ierr);
   }
 
   //build fields
-  ierr = m_field.build_fields(); CHKERRQ(ierr);
+  ierr = m_field.build_fields(); CHKERRG(ierr);
   //build finite elements
-  ierr = m_field.build_finite_elements(); CHKERRQ(ierr);
+  ierr = m_field.build_finite_elements(); CHKERRG(ierr);
   //build adjacencies
   //Its build adjacencies for all ements in databse,
   //for pratical applications consider to build adjacencies
   //only for refinemnt levels which you use for calulations
-  ierr = m_field.build_adjacencies(BitRefLevel().set()); CHKERRQ(ierr);
+  ierr = m_field.build_adjacencies(BitRefLevel().set()); CHKERRG(ierr);
 
   Range tets_back_bit_level;
-  ierr = m_field.getInterface<BitRefManager>()->getEntitiesByRefLevel(bit_levels.back(),BitRefLevel().set(),tets_back_bit_level); CHKERRQ(ierr);
+  ierr = m_field.getInterface<BitRefManager>()->getEntitiesByRefLevel(bit_levels.back(),BitRefLevel().set(),tets_back_bit_level); CHKERRG(ierr);
 
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,cit)) {
 
     EntityHandle cubit_meshset = cit->getMeshset();
 
     BlockSetAttributes mydata;
-    ierr = cit->getAttributeDataStructure(mydata); CHKERRQ(ierr);
+    ierr = cit->getAttributeDataStructure(mydata); CHKERRG(ierr);
     std::cout << mydata << std::endl;
 
     Range tets;
@@ -176,17 +176,17 @@ int main(int argc, char *argv[]) {
 
 
   ProblemsManager *prb_mng_ptr;
-  ierr = m_field.getInterface(prb_mng_ptr); CHKERRQ(ierr);
+  ierr = m_field.getInterface(prb_mng_ptr); CHKERRG(ierr);
 
   //partition
   for(int lll = ll-2;lll<ll;lll++) {
     //build problem
     std::stringstream problem_name;
     problem_name << "PROBLEM_SCALAR_" << lll;
-    ierr = prb_mng_ptr->buildProblem(problem_name.str(),true); CHKERRQ(ierr);
-    ierr = prb_mng_ptr->partitionProblem(problem_name.str()); CHKERRQ(ierr);
-    ierr = prb_mng_ptr->partitionFiniteElements(problem_name.str()); CHKERRQ(ierr);
-    ierr = prb_mng_ptr->partitionGhostDofs(problem_name.str()); CHKERRQ(ierr);
+    ierr = prb_mng_ptr->buildProblem(problem_name.str(),true); CHKERRG(ierr);
+    ierr = prb_mng_ptr->partitionProblem(problem_name.str()); CHKERRG(ierr);
+    ierr = prb_mng_ptr->partitionFiniteElements(problem_name.str()); CHKERRG(ierr);
+    ierr = prb_mng_ptr->partitionGhostDofs(problem_name.str()); CHKERRG(ierr);
   }
 
   std::ofstream myfile;
@@ -196,7 +196,7 @@ int main(int argc, char *argv[]) {
   rval = moab.create_meshset(MESHSET_SET,out_meshset_tet); CHKERRG(rval);
 
 
-  ierr = m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(bit_levels.back(),BitRefLevel().set(),MBTET,out_meshset_tet); CHKERRQ(ierr);
+  ierr = m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(bit_levels.back(),BitRefLevel().set(),MBTET,out_meshset_tet); CHKERRG(ierr);
   Range tets;
   rval = moab.get_entities_by_handle(out_meshset_tet,tets,true); CHKERRG(rval);
   for(Range::iterator tit = tets.begin();tit!=tets.end();tit++) {
@@ -214,7 +214,7 @@ int main(int argc, char *argv[]) {
   }
   EntityHandle out_meshset_prism;
   rval = moab.create_meshset(MESHSET_SET,out_meshset_prism); CHKERRG(rval);
-  ierr = m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(bit_levels.back(),BitRefLevel().set(),MBPRISM,out_meshset_prism); CHKERRQ(ierr);
+  ierr = m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(bit_levels.back(),BitRefLevel().set(),MBPRISM,out_meshset_prism); CHKERRG(ierr);
   Range prisms;
   rval = moab.get_entities_by_handle(out_meshset_prism,prisms); CHKERRG(rval);
   for(Range::iterator pit = prisms.begin();pit!=prisms.end();pit++) {

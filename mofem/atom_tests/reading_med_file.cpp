@@ -43,10 +43,10 @@ int main(int argc, char *argv[]) {
     MoFEM::Interface& m_field = core;
 
     MedInterface *med_interface_ptr;
-    ierr = m_field.getInterface(med_interface_ptr); CHKERRQ(ierr);
+    ierr = m_field.getInterface(med_interface_ptr); CHKERRG(ierr);
 
-    ierr = med_interface_ptr->readMed(); CHKERRQ(ierr);
-    ierr = med_interface_ptr->medGetFieldNames(); CHKERRQ(ierr);
+    ierr = med_interface_ptr->readMed(); CHKERRG(ierr);
+    ierr = med_interface_ptr->medGetFieldNames(); CHKERRG(ierr);
 
     // read field tags
     for(
@@ -57,12 +57,12 @@ int main(int argc, char *argv[]) {
     ) {
       ierr = med_interface_ptr->readFields(
         med_interface_ptr->medFileName,fit->first,false,1
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
     }
 
 
     PetscBool check = PETSC_TRUE;
-    ierr = PetscOptionsGetBool(PETSC_NULL,"","-check",&check,PETSC_NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsGetBool(PETSC_NULL,"","-check",&check,PETSC_NULL); CHKERRG(ierr);
 
     int ii = 0;
     const int check_list[] = { 2163, 624, 65, 104};
@@ -70,7 +70,7 @@ int main(int argc, char *argv[]) {
       EntityHandle meshset = cit->getMeshset();
       int nb_ents;
       rval = moab.get_number_entities_by_handle(meshset,nb_ents,true); CHKERRG(rval);
-      ierr = PetscPrintf(PETSC_COMM_WORLD,"Nb of ents in %s %d\n",cit->getName().c_str(),nb_ents); CHKERRQ(ierr);
+      ierr = PetscPrintf(PETSC_COMM_WORLD,"Nb of ents in %s %d\n",cit->getName().c_str(),nb_ents); CHKERRG(ierr);
       if(check && nb_ents!=check_list[ii]) {
         SETERRQ2(PETSC_COMM_WORLD,MOFEM_ATOM_TEST_INVALID,"Wrong numbers of entities in meshset %d != %d",nb_ents,check_list[ii]);
       }
@@ -78,7 +78,7 @@ int main(int argc, char *argv[]) {
     }
 
     MeshsetsManager *meshset_manager_ptr;
-    ierr = m_field.getInterface(meshset_manager_ptr); CHKERRQ(ierr);
+    ierr = m_field.getInterface(meshset_manager_ptr); CHKERRG(ierr);
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_((*meshset_manager_ptr),BLOCKSET,mit)) {
       EntityHandle meshset = mit->getMeshset();
       std::string name = mit->getName();
@@ -95,7 +95,7 @@ int main(int argc, char *argv[]) {
     SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
   }
 
-  ierr = PetscFinalize(); CHKERRQ(ierr);
+  ierr = PetscFinalize(); CHKERRG(ierr);
 
   return 0;
 }

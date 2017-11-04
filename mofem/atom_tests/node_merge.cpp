@@ -35,9 +35,9 @@ int main(int argc, char *argv[]) {
   PetscBool flg = PETSC_TRUE;
   char mesh_file_name[255];
   #if PETSC_VERSION_GE(3,6,4)
-  ierr = PetscOptionsGetString(PETSC_NULL,"","-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  ierr = PetscOptionsGetString(PETSC_NULL,"","-my_file",mesh_file_name,255,&flg); CHKERRG(ierr);
   #else
-  ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRG(ierr);
   #endif
   if(flg != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
@@ -56,10 +56,10 @@ int main(int argc, char *argv[]) {
 
   BitRefLevel bit_level0;
   bit_level0.set(0);
-  ierr = m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(0,3,bit_level0); CHKERRQ(ierr);
+  ierr = m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(0,3,bit_level0); CHKERRG(ierr);
 
   NodeMergerInterface *node_merger_iface;
-  ierr = m_field.getInterface(node_merger_iface); CHKERRQ(ierr);
+  ierr = m_field.getInterface(node_merger_iface); CHKERRG(ierr);
 
   int ii = 1;
   for(;ii<2;ii++) {
@@ -69,17 +69,17 @@ int main(int argc, char *argv[]) {
 
     Range edges;
     //rval = moab.get_entities_by_type(0,MBEDGE,edges,false); CHKERRG(rval);
-    ierr = m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(bit_level0,BitRefLevel().set(),MBEDGE,edges); CHKERRQ(ierr);
+    ierr = m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(bit_level0,BitRefLevel().set(),MBEDGE,edges); CHKERRG(ierr);
     Range::iterator eit = edges.begin();
 
     const EntityHandle* conn;
     int num_nodes;
     rval = moab.get_connectivity(*eit,conn,num_nodes,true); CHKERRG(rval);
-    ierr = node_merger_iface->mergeNodes(conn[0],conn[1],bit_level1,bit_level0); CHKERRQ(ierr);
+    ierr = node_merger_iface->mergeNodes(conn[0],conn[1],bit_level1,bit_level0); CHKERRG(ierr);
 
     EntityHandle meshset_level1;
     rval = moab.create_meshset(MESHSET_SET,meshset_level1); CHKERRG(rval);
-    ierr = m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(bit_level1,BitRefLevel().set(),MBTET,meshset_level1); CHKERRQ(ierr);
+    ierr = m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(bit_level1,BitRefLevel().set(),MBTET,meshset_level1); CHKERRG(ierr);
 
     std::ostringstream ss;
     ss << "node_merger_" << ii << ".vtk";
@@ -91,7 +91,7 @@ int main(int argc, char *argv[]) {
 
 
   Range tets;
-  ierr = m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(BitRefLevel().set(ii-1),BitRefLevel().set(),MBTET,tets); CHKERRQ(ierr);
+  ierr = m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(BitRefLevel().set(ii-1),BitRefLevel().set(),MBTET,tets); CHKERRG(ierr);
 
   std::cout << tets << std::endl;
   if(tets.size()!=10) {
