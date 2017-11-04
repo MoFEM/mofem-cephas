@@ -521,15 +521,12 @@ DEPRECATED void macro_is_depracted_using_deprecated_function();
  * @param  a MoABErrorCode
  */
 #define MOAB_THROW(a)                                                          \
-  do {                                                                         \
-    ErrorCode val = (a);                                                       \
-    if (MB_SUCCESS != val) {                                                   \
-      std::ostringstream ss;                                                   \
-      ss << "Error code  " << val << " at " << __FILE__ << ":" << __LINE__     \
-         << std::endl;                                                         \
-      throw MoFEMException(MOFEM_MOAB_ERROR, ss.str().c_str());                \
-    }                                                                          \
-  } while (false)
+  if (PetscUnlikely(MB_SUCCESS != (a))) {                                      \
+    std::string str("MOAB error " + boost::lexical_cast<std::string>((a)) +    \
+                    " at line " + boost::lexical_cast<std::string>(__LINE__) + \
+                    " : " + std::string(__FILE__));                            \
+    throw MoFEMException(MOFEM_MOAB_ERROR, str.c_str());                       \
+  }
 
 /**
  * \brief Throw MoFEM exception
@@ -537,10 +534,10 @@ DEPRECATED void macro_is_depracted_using_deprecated_function();
  */
 #define THROW_MESSAGE(a)                                                       \
   {                                                                            \
-    std::ostringstream ss;                                                     \
-    ss << a << " "                                                             \
-       << " at " << __FILE__ << ":" << __LINE__ << std::endl;                  \
-    throw MoFEMException(MOFEM_MOFEMEXCEPTION_THROW, ss.str().c_str());        \
+    std::string str("MOAB error " + boost::lexical_cast<std::string>((a)) +    \
+                    " at line " + boost::lexical_cast<std::string>(__LINE__) + \
+                    " : " + std::string(__FILE__));                            \
+    throw MoFEMException(MOFEM_MOFEMEXCEPTION_THROW, str.c_str());             \
   }
 
 /**
