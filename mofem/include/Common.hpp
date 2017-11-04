@@ -20,6 +20,9 @@
 
 namespace MoFEM {
 
+/**
+ * \brief Exception to catch
+ */
 struct MoFEMException : public std::exception {
   MoFEMErrorCodes errorCode;
   char errorMessage[255];
@@ -33,17 +36,23 @@ struct MoFEMException : public std::exception {
   const char *what() const throw() { return errorMessage; }
 };
 
-typedef moab::ErrorCode MoABErrorCode;
-typedef PetscErrorCode MoFEMErrorCode;
+typedef moab::ErrorCode MoABErrorCode;  ///< MoAB error code
+typedef PetscErrorCode MoFEMErrorCode;  ///< MoFEM/PETSc error code
 
-static MoABErrorCode rval;
+static MoABErrorCode rval; 
 static PetscErrorCode ierr;
 
+/**
+ * @brief \brief Get error type form variable
+ * 
+ * @param TYPE 
+ * @return template <typename TYPE>  enum MoFEMErrorTypes 
+ */
 template <typename TYPE> inline enum MoFEMErrorTypes getErrorType(const TYPE) {}
 
 template <>
 inline enum MoFEMErrorTypes getErrorType(const PetscErrorCode) {
-  return MOAB_ERROR;
+  return PETSC_ERROR;
 }
 
 template <>
@@ -54,14 +63,49 @@ inline enum MoFEMErrorTypes getErrorType(const moab::ErrorCode) {
 struct ErrorCheckerFunction;
 struct ErrorCheckerLine;
 
+/** 
+ * \brief Error check form inline erro check
+ * 
+ * A sequence of overloaded operators << is called, starting from line number
+ * file name, function name and error code. Use this using definition CHKERR, for
+ * example
+ * \code
+ * CHKERR fun_moab();
+ * CHKERR fun_petsc();
+ * CHKERR fun_mofem();
+ * \endcode
+ * 
+ */
 struct ErrorCheckerCode {
   inline void operator<<(const MoFEMErrorCode err) {
     if (PetscUnlikely(err)) {
-      std::string str("MoFEM/PETSc error " +
-                      boost::lexical_cast<std::string>(err) + " at line " +
-                      boost::lexical_cast<std::string>(lINE) + " : " +
-                      std::string(fILE) + " in " + std::string(fUNC));
-      throw MoFEMException(MOFEM_MOFEMEXCEPTION_THROW, str.c_str());
+      std::string str;
+      if (err >= MOFEM_DATA_INCONSISTENCY && err <= MOFEM_MOAB_ERROR) {
+        str = "Error Code ( " +
+               std::string(
+                   MoFEMErrorCodesNames[err - (MOFEM_DATA_INCONSISTENCY - 1)]) +
+               " )";
+      } else {
+        str = " Error Code ( " + boost::lexical_cast<std::string>(err) + " )";
+      }
+      str += " at line " + boost::lexical_cast<std::string>(lINE) + " : " +
+             std::string(fILE) + " in " + std::string(fUNC);
+      switch (err) {
+      case MOFEM_DATA_INCONSISTENCY:
+        throw MoFEMException(MOFEM_DATA_INCONSISTENCY, str.c_str());
+      case MOFEM_NOT_IMPLEMENTED:
+        throw MoFEMException(MOFEM_NOT_IMPLEMENTED, str.c_str());
+      case MOFEM_NOT_FOUND:
+        throw MoFEMException(MOFEM_NOT_FOUND, str.c_str());
+      case MOFEM_OPERATION_UNSUCCESSFUL:
+        throw MoFEMException(MOFEM_OPERATION_UNSUCCESSFUL, str.c_str());
+      case MOFEM_IMPOSIBLE_CASE:
+        throw MoFEMException(MOFEM_IMPOSIBLE_CASE, str.c_str());
+      case MOFEM_INVALID_DATA:
+        throw MoFEMException(MOFEM_INVALID_DATA, str.c_str());
+      default:
+        throw MoFEMException(MOFEM_MOFEMEXCEPTION_THROW, str.c_str());
+      }
     }
     return;
   }
@@ -71,7 +115,7 @@ struct ErrorCheckerCode {
       std::string str("MOAB error " + boost::lexical_cast<std::string>(err) +
                       " at line " + boost::lexical_cast<std::string>(lINE) +
                       " : " + std::string(fILE) + " in " + std::string(fUNC));
-      throw MoFEMException(MOFEM_MOFEMEXCEPTION_THROW, str.c_str());
+      throw MoFEMException(MOFEM_MOAB_ERROR, str.c_str());
     }
     return;
   }

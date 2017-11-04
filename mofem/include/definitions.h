@@ -113,12 +113,25 @@ enum MoFEMErrorCodes {
   MOFEM_NOT_FOUND              = 102,
   MOFEM_OPERATION_UNSUCCESSFUL = 103,
   MOFEM_IMPOSIBLE_CASE         = 104,
-  MOFEM_MOFEMEXCEPTION_THROW   = 105,
-  MOFEM_STD_EXCEPTION_THROW    = 106,
-  MOFEM_INVALID_DATA           = 107,
+  MOFEM_INVALID_DATA           = 105,
+  MOFEM_MOFEMEXCEPTION_THROW   = 106,
+  MOFEM_STD_EXCEPTION_THROW    = 107,
   MOFEM_ATOM_TEST_INVALID      = 108,
-  MOFEM_MOAB_ERROR             = 109
+  MOFEM_MOAB_ERROR             = 110
 };
+
+const static char *const MoFEMErrorCodesNames[] = {
+    "MOFEM_SUCESS",
+    "MOFEM_DATA_INCONSISTENCY",
+    "MOFEM_NOT_IMPLEMENTED",
+    "MOFEM_NOT_FOUND",
+    "MOFEM_OPERATION_UNSUCCESSFUL",
+    "MOFEM_IMPOSIBLE_CASE",
+    "MOFEM_INVALID_DATA",
+    "MOFEM_MOFEMEXCEPTION_THROW",
+    "MOFEM_STD_EXCEPTION_THROW",
+    "MOFEM_ATOM_TEST_INVALID",
+    "MOFEM_MOAB_ERROR"};
 
 /** \brief Types of error
  */
@@ -459,6 +472,8 @@ DEPRECATED void macro_is_depracted_using_deprecated_function();
   }                                                                            \
   PetscFunctionReturnVoid()
 
+#define CHKERRQ_PETSC(n) CHKERRQ(n)
+
 /**
  * \brief check error code of MoAB function
  * @param  a MoABErrorCode
@@ -476,16 +491,36 @@ DEPRECATED void macro_is_depracted_using_deprecated_function();
   } while (false)
 
 /**
-  * \brief check error code of MoAB function
+  * \brief Check error code of MoAB function
   * @param  a MoFEMErrorCode
+  *
+  * \code
+  * rval = fun_moab(); CHKERRG(rval);
+  * ierr = fun_petsc(); CHKERRG(rval);
+  * ierr = fun_mofem(); CHKERRG(rval);
+  * \endcode
+  *
+  * \note Function detect type of errocode using specialized template function
+  * getErrorType, i.e. condition is evaluated at compilation time.
+  *
   */
 #define CHKERRG(n)                                                             \
   if (getErrorType(n) == PETSC_ERROR) {                                        \
-    CHKERRQ(n);                                                                \
+    CHKERRQ_PETSC(n);                                                          \
   } else if (getErrorType(n) == MOAB_ERROR) {                                  \
     CHKERRQ_MOAB(n);                                                           \
   }
 
+/**
+ * @brief Inline error check 
+ * 
+ * \code 
+ * CHKERR fun_moab();
+ * CHKERR fun_petsc();
+ * CHKERR fun_mofem();
+ * \endcode
+ * 
+ */
 #define CHKERR                                                                 \
   ErrorCheckerLine() << __LINE__ << __FILE__ << PETSC_FUNCTION_NAME <<
 
