@@ -40,7 +40,7 @@ int main(int argc, char *argv[]) {
     {
       PetscBool flg = PETSC_TRUE;
       char mesh_file_name[255];
-      ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+      ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRG(ierr);
       if(flg != PETSC_TRUE) {
         SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
       }
@@ -55,7 +55,7 @@ int main(int argc, char *argv[]) {
     MoFEM::Interface& m_field = core;
     BitRefLevel bit_level0;
     bit_level0.set(0);
-    ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
+    ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRG(ierr);
 
     // Define fields and finite elements
     {
@@ -68,24 +68,24 @@ int main(int argc, char *argv[]) {
         bool check_if_spatial_field_exist = m_field.check_field("SPATIAL_POSITION");
         ierr = m_field.add_field(
           "SPATIAL_POSITION",H1,AINSWORTH_LEGENDRE_BASE,3,MB_TAG_SPARSE,MF_ZERO
-        ); CHKERRQ(ierr);
+        ); CHKERRG(ierr);
         ierr = m_field.add_field(
           "SPATIAL_POSITION_DOT",H1,AINSWORTH_LEGENDRE_BASE,3,MB_TAG_SPARSE,MF_ZERO
-        ); CHKERRQ(ierr);
+        ); CHKERRG(ierr);
 
         //Add field H1 space rank 3 to approximate geometry using hierarchical basis
         //For 10 node tetrahedral, before use, geometry is projected on that field (see below)
-        ierr = m_field.add_field("MESH_NODE_POSITIONS",H1,AINSWORTH_LEGENDRE_BASE,3,MB_TAG_SPARSE,MF_ZERO); CHKERRQ(ierr);
+        ierr = m_field.add_field("MESH_NODE_POSITIONS",H1,AINSWORTH_LEGENDRE_BASE,3,MB_TAG_SPARSE,MF_ZERO); CHKERRG(ierr);
 
         //meshset consisting all entities in mesh
         EntityHandle root_set = moab.get_root_set();
         //add entities to field (root_mesh, i.e. on all mesh entities fields are approx.)
-        ierr = m_field.add_ents_to_field_by_type(root_set,MBTET,"SPATIAL_POSITION"); CHKERRQ(ierr);
-        ierr = m_field.add_ents_to_field_by_type(root_set,MBTET,"SPATIAL_POSITION_DOT"); CHKERRQ(ierr);
+        ierr = m_field.add_ents_to_field_by_type(root_set,MBTET,"SPATIAL_POSITION"); CHKERRG(ierr);
+        ierr = m_field.add_ents_to_field_by_type(root_set,MBTET,"SPATIAL_POSITION_DOT"); CHKERRG(ierr);
 
         PetscBool flg;
         PetscInt order;
-        ierr = PetscOptionsGetInt(PETSC_NULL,PETSC_NULL,"-my_order",&order,&flg); CHKERRQ(ierr);
+        ierr = PetscOptionsGetInt(PETSC_NULL,PETSC_NULL,"-my_order",&order,&flg); CHKERRG(ierr);
         if(flg != PETSC_TRUE) {
           order = 2;
         }
@@ -93,51 +93,51 @@ int main(int argc, char *argv[]) {
           //SETERRQ()
         }
 
-        ierr = m_field.set_field_order(root_set,MBTET,"SPATIAL_POSITION",order); CHKERRQ(ierr);
-        ierr = m_field.set_field_order(root_set,MBTRI,"SPATIAL_POSITION",order); CHKERRQ(ierr);
-        ierr = m_field.set_field_order(root_set,MBEDGE,"SPATIAL_POSITION",order); CHKERRQ(ierr);
-        ierr = m_field.set_field_order(root_set,MBVERTEX,"SPATIAL_POSITION",1); CHKERRQ(ierr);
+        ierr = m_field.set_field_order(root_set,MBTET,"SPATIAL_POSITION",order); CHKERRG(ierr);
+        ierr = m_field.set_field_order(root_set,MBTRI,"SPATIAL_POSITION",order); CHKERRG(ierr);
+        ierr = m_field.set_field_order(root_set,MBEDGE,"SPATIAL_POSITION",order); CHKERRG(ierr);
+        ierr = m_field.set_field_order(root_set,MBVERTEX,"SPATIAL_POSITION",1); CHKERRG(ierr);
 
-        ierr = m_field.set_field_order(root_set,MBTET,"SPATIAL_POSITION_DOT",order); CHKERRQ(ierr);
-        ierr = m_field.set_field_order(root_set,MBTRI,"SPATIAL_POSITION_DOT",order); CHKERRQ(ierr);
-        ierr = m_field.set_field_order(root_set,MBEDGE,"SPATIAL_POSITION_DOT",order); CHKERRQ(ierr);
-        ierr = m_field.set_field_order(root_set,MBVERTEX,"SPATIAL_POSITION_DOT",1); CHKERRQ(ierr);
+        ierr = m_field.set_field_order(root_set,MBTET,"SPATIAL_POSITION_DOT",order); CHKERRG(ierr);
+        ierr = m_field.set_field_order(root_set,MBTRI,"SPATIAL_POSITION_DOT",order); CHKERRG(ierr);
+        ierr = m_field.set_field_order(root_set,MBEDGE,"SPATIAL_POSITION_DOT",order); CHKERRG(ierr);
+        ierr = m_field.set_field_order(root_set,MBVERTEX,"SPATIAL_POSITION_DOT",1); CHKERRG(ierr);
 
         //gemetry approximation is set to 2nd oreder
-        ierr = m_field.add_ents_to_field_by_type(root_set,MBTET,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
-        ierr = m_field.set_field_order(0,MBTET,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
-        ierr = m_field.set_field_order(0,MBTRI,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
-        ierr = m_field.set_field_order(0,MBEDGE,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
-        ierr = m_field.set_field_order(0,MBVERTEX,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
+        ierr = m_field.add_ents_to_field_by_type(root_set,MBTET,"MESH_NODE_POSITIONS"); CHKERRG(ierr);
+        ierr = m_field.set_field_order(0,MBTET,"MESH_NODE_POSITIONS",2); CHKERRG(ierr);
+        ierr = m_field.set_field_order(0,MBTRI,"MESH_NODE_POSITIONS",2); CHKERRG(ierr);
+        ierr = m_field.set_field_order(0,MBEDGE,"MESH_NODE_POSITIONS",2); CHKERRG(ierr);
+        ierr = m_field.set_field_order(0,MBVERTEX,"MESH_NODE_POSITIONS",1); CHKERRG(ierr);
 
-        ierr = m_field.build_fields(); CHKERRQ(ierr);
+        ierr = m_field.build_fields(); CHKERRG(ierr);
 
         // Sett geometry approximation and initial spatial positions
         // 10 node tets
         if (!check_if_spatial_field_exist) {
           Projection10NodeCoordsOnField ent_method_material(m_field, "MESH_NODE_POSITIONS");
-          ierr = m_field.loop_dofs("MESH_NODE_POSITIONS", ent_method_material); CHKERRQ(ierr);
+          ierr = m_field.loop_dofs("MESH_NODE_POSITIONS", ent_method_material); CHKERRG(ierr);
           Projection10NodeCoordsOnField ent_method_spatial(m_field, "SPATIAL_POSITION");
-          ierr = m_field.loop_dofs("SPATIAL_POSITION", ent_method_spatial); CHKERRQ(ierr);
+          ierr = m_field.loop_dofs("SPATIAL_POSITION", ent_method_spatial); CHKERRG(ierr);
         }
 
       }
 
       //Set finite elements
       {
-        ierr = m_field.add_finite_element("DAMPER_FE",MF_ZERO); CHKERRQ(ierr);
-        ierr = m_field.modify_finite_element_add_field_row("DAMPER_FE","SPATIAL_POSITION"); CHKERRQ(ierr);
-        ierr = m_field.modify_finite_element_add_field_col("DAMPER_FE","SPATIAL_POSITION"); CHKERRQ(ierr);
+        ierr = m_field.add_finite_element("DAMPER_FE",MF_ZERO); CHKERRG(ierr);
+        ierr = m_field.modify_finite_element_add_field_row("DAMPER_FE","SPATIAL_POSITION"); CHKERRG(ierr);
+        ierr = m_field.modify_finite_element_add_field_col("DAMPER_FE","SPATIAL_POSITION"); CHKERRG(ierr);
 
-        ierr = m_field.modify_finite_element_add_field_data("DAMPER_FE","SPATIAL_POSITION"); CHKERRQ(ierr);
-        ierr = m_field.modify_finite_element_add_field_data("DAMPER_FE","SPATIAL_POSITION_DOT"); CHKERRQ(ierr);
+        ierr = m_field.modify_finite_element_add_field_data("DAMPER_FE","SPATIAL_POSITION"); CHKERRG(ierr);
+        ierr = m_field.modify_finite_element_add_field_data("DAMPER_FE","SPATIAL_POSITION_DOT"); CHKERRG(ierr);
         EntityHandle root_set = moab.get_root_set();
-        ierr = m_field.add_ents_to_finite_element_by_type(root_set,MBTET,"DAMPER_FE"); CHKERRQ(ierr);
+        ierr = m_field.add_ents_to_finite_element_by_type(root_set,MBTET,"DAMPER_FE"); CHKERRG(ierr);
 
         //build finite elemnts
-        ierr = m_field.build_finite_elements(); CHKERRQ(ierr);
+        ierr = m_field.build_finite_elements(); CHKERRG(ierr);
         //build adjacencies
-        ierr = m_field.build_adjacencies(bit_level0); CHKERRQ(ierr);
+        ierr = m_field.build_adjacencies(bit_level0); CHKERRG(ierr);
       }
 
     }
@@ -201,49 +201,49 @@ int main(int argc, char *argv[]) {
     DM dm;
     DMType dm_name = "DMDAMPER";
     {
-      ierr = DMRegister_MoFEM(dm_name); CHKERRQ(ierr);
-      ierr = DMCreate(PETSC_COMM_WORLD,&dm);CHKERRQ(ierr);
-      ierr = DMSetType(dm,dm_name);CHKERRQ(ierr);
-      ierr = DMMoFEMCreateMoFEM(dm,&m_field,dm_name,bit_level0); CHKERRQ(ierr);
-      ierr = DMSetFromOptions(dm); CHKERRQ(ierr);
+      ierr = DMRegister_MoFEM(dm_name); CHKERRG(ierr);
+      ierr = DMCreate(PETSC_COMM_WORLD,&dm);CHKERRG(ierr);
+      ierr = DMSetType(dm,dm_name);CHKERRG(ierr);
+      ierr = DMMoFEMCreateMoFEM(dm,&m_field,dm_name,bit_level0); CHKERRG(ierr);
+      ierr = DMSetFromOptions(dm); CHKERRG(ierr);
       //add elements to dm
-      ierr = DMMoFEMAddElement(dm,"DAMPER_FE"); CHKERRQ(ierr);
-      ierr = DMSetUp(dm); CHKERRQ(ierr);
+      ierr = DMMoFEMAddElement(dm,"DAMPER_FE"); CHKERRG(ierr);
+      ierr = DMSetUp(dm); CHKERRG(ierr);
     }
 
     // Make calculations
     Mat M;
     Vec F,U_t;
     {
-      ierr = DMCreateGlobalVector_MoFEM(dm,&F); CHKERRQ(ierr);
-      ierr = DMCreateGlobalVector_MoFEM(dm,&U_t); CHKERRQ(ierr);
-      ierr = DMCreateMatrix_MoFEM(dm,&M); CHKERRQ(ierr);
-      ierr = VecZeroEntries(F); CHKERRQ(ierr);
-      ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-      ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-      ierr = VecZeroEntries(U_t); CHKERRQ(ierr);
-      ierr = VecGhostUpdateBegin(U_t,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-      ierr = VecGhostUpdateEnd(U_t,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-      ierr = MatZeroEntries(M); CHKERRQ(ierr);
+      ierr = DMCreateGlobalVector_MoFEM(dm,&F); CHKERRG(ierr);
+      ierr = DMCreateGlobalVector_MoFEM(dm,&U_t); CHKERRG(ierr);
+      ierr = DMCreateMatrix_MoFEM(dm,&M); CHKERRG(ierr);
+      ierr = VecZeroEntries(F); CHKERRG(ierr);
+      ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
+      ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
+      ierr = VecZeroEntries(U_t); CHKERRG(ierr);
+      ierr = VecGhostUpdateBegin(U_t,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
+      ierr = VecGhostUpdateEnd(U_t,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
+      ierr = MatZeroEntries(M); CHKERRG(ierr);
       damper.feRhs.ts_F = F; // Set right hand side vector manually
       damper.feRhs.ts_u_t = U_t;
       damper.feRhs.ts_ctx = TSMethod::CTX_TSSETIFUNCTION;
-      ierr = DMoFEMLoopFiniteElements(dm,"DAMPER_FE",&damper.feRhs); CHKERRQ(ierr);
+      ierr = DMoFEMLoopFiniteElements(dm,"DAMPER_FE",&damper.feRhs); CHKERRG(ierr);
       damper.feLhs.ts_B = M; // Set matrix M
       damper.feLhs.ts_a = 1.0; // Set time step parameter
-      ierr = DMoFEMLoopFiniteElements(dm,"DAMPER_FE",&damper.feLhs); CHKERRQ(ierr);
-      ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
-      ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
-      ierr = MatAssemblyBegin(M,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-      ierr = MatAssemblyEnd(M,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+      ierr = DMoFEMLoopFiniteElements(dm,"DAMPER_FE",&damper.feLhs); CHKERRG(ierr);
+      ierr = VecAssemblyBegin(F); CHKERRG(ierr);
+      ierr = VecAssemblyEnd(F); CHKERRG(ierr);
+      ierr = MatAssemblyBegin(M,MAT_FINAL_ASSEMBLY); CHKERRG(ierr);
+      ierr = MatAssemblyEnd(M,MAT_FINAL_ASSEMBLY); CHKERRG(ierr);
     }
 
     // See results
     {
 
       PetscViewer viewer;
-      ierr = PetscViewerASCIIOpen(PETSC_COMM_WORLD,"damper_jacobian_test.txt",&viewer); CHKERRQ(ierr);
-      ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
+      ierr = PetscViewerASCIIOpen(PETSC_COMM_WORLD,"damper_jacobian_test.txt",&viewer); CHKERRG(ierr);
+      ierr = PetscViewerDestroy(&viewer); CHKERRG(ierr);
       //MatView(M,PETSC_VIEWER_DRAW_WORLD);
       //std::string wait;
       //std::cin >> wait;
@@ -253,10 +253,10 @@ int main(int argc, char *argv[]) {
 
     // Clean and destroy
     {
-      ierr = VecDestroy(&F); CHKERRQ(ierr);
-      ierr = VecDestroy(&U_t); CHKERRQ(ierr);
-      ierr = MatDestroy(&M); CHKERRQ(ierr);
-      ierr = DMDestroy(&dm); CHKERRQ(ierr);
+      ierr = VecDestroy(&F); CHKERRG(ierr);
+      ierr = VecDestroy(&U_t); CHKERRG(ierr);
+      ierr = MatDestroy(&M); CHKERRG(ierr);
+      ierr = DMDestroy(&dm); CHKERRG(ierr);
     }
 
 

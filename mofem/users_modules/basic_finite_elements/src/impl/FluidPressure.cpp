@@ -25,12 +25,12 @@ MoFEMErrorCode FluidPressure::addNeumannFluidPressureBCElements(
 ) {
   MoFEMFunctionBeginHot;
 
-  ierr = mField.add_finite_element("FLUID_PRESSURE_FE",MF_ZERO); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_row("FLUID_PRESSURE_FE",field_name); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_col("FLUID_PRESSURE_FE",field_name); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_data("FLUID_PRESSURE_FE",field_name); CHKERRQ(ierr);
+  ierr = mField.add_finite_element("FLUID_PRESSURE_FE",MF_ZERO); CHKERRG(ierr);
+  ierr = mField.modify_finite_element_add_field_row("FLUID_PRESSURE_FE",field_name); CHKERRG(ierr);
+  ierr = mField.modify_finite_element_add_field_col("FLUID_PRESSURE_FE",field_name); CHKERRG(ierr);
+  ierr = mField.modify_finite_element_add_field_data("FLUID_PRESSURE_FE",field_name); CHKERRG(ierr);
   if(mField.check_field(mesh_nodals_positions)) {
-    ierr = mField.modify_finite_element_add_field_data("FLUID_PRESSURE_FE",mesh_nodals_positions); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_data("FLUID_PRESSURE_FE",mesh_nodals_positions); CHKERRG(ierr);
   }
 
   //takes skin of block of entities
@@ -42,7 +42,7 @@ MoFEMErrorCode FluidPressure::addNeumannFluidPressureBCElements(
 
       //get block attributes
       std::vector<double> attributes;
-      ierr = bit->getAttributes(attributes); CHKERRQ(ierr);
+      ierr = bit->getAttributes(attributes); CHKERRG(ierr);
       if(attributes.size()<7) {
         SETERRQ1(PETSC_COMM_SELF,1,"not enough block attributes to deffine fluid pressure element, attributes.size() = %d ",attributes.size());
       }
@@ -68,7 +68,7 @@ MoFEMErrorCode FluidPressure::addNeumannFluidPressureBCElements(
       ss << setOfFluids[bit->getMeshsetId()] << std::endl;
       PetscPrintf(mField.get_comm(),ss.str().c_str());
 
-      ierr = mField.add_ents_to_finite_element_by_type(setOfFluids[bit->getMeshsetId()].tRis,MBTRI,"FLUID_PRESSURE_FE"); CHKERRQ(ierr);
+      ierr = mField.add_ents_to_finite_element_by_type(setOfFluids[bit->getMeshsetId()].tRis,MBTRI,"FLUID_PRESSURE_FE"); CHKERRG(ierr);
 
     }
 

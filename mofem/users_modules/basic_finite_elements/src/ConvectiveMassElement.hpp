@@ -580,32 +580,32 @@ struct ConvectiveMassElement {
     MoFEMFunctionBeginHot;
     
     void *void_ctx;
-    ierr = MatShellGetContext(A,&void_ctx); CHKERRQ(ierr);
+    ierr = MatShellGetContext(A,&void_ctx); CHKERRG(ierr);
     MatShellCtx *ctx = (MatShellCtx*)void_ctx;
     if(!ctx->iNitialized) {
-      ierr = ctx->iNit(); CHKERRQ(ierr);
+      ierr = ctx->iNit(); CHKERRG(ierr);
     }
-    ierr = VecZeroEntries(f); CHKERRQ(ierr);
+    ierr = VecZeroEntries(f); CHKERRG(ierr);
     //Mult Ku
-    ierr = VecScatterBegin(ctx->scatterU,x,ctx->u,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    ierr = VecScatterEnd(ctx->scatterU,x,ctx->u,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    ierr = MatMult(ctx->K,ctx->u,ctx->Ku); CHKERRQ(ierr);
-    ierr = VecScatterBegin(ctx->scatterU,ctx->Ku,f,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-    ierr = VecScatterEnd(ctx->scatterU,ctx->Ku,f,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = VecScatterBegin(ctx->scatterU,x,ctx->u,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
+    ierr = VecScatterEnd(ctx->scatterU,x,ctx->u,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
+    ierr = MatMult(ctx->K,ctx->u,ctx->Ku); CHKERRG(ierr);
+    ierr = VecScatterBegin(ctx->scatterU,ctx->Ku,f,INSERT_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
+    ierr = VecScatterEnd(ctx->scatterU,ctx->Ku,f,INSERT_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
     //Mult Mv
-    ierr = VecScatterBegin(ctx->scatterV,x,ctx->v,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    ierr = VecScatterEnd(ctx->scatterV,x,ctx->v,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    ierr = MatMult(ctx->M,ctx->v,ctx->Mv); CHKERRQ(ierr);
-    ierr = VecScatterBegin(ctx->scatterU,ctx->Mv,f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-    ierr = VecScatterEnd(ctx->scatterU,ctx->Mv,f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = VecScatterBegin(ctx->scatterV,x,ctx->v,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
+    ierr = VecScatterEnd(ctx->scatterV,x,ctx->v,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
+    ierr = MatMult(ctx->M,ctx->v,ctx->Mv); CHKERRG(ierr);
+    ierr = VecScatterBegin(ctx->scatterU,ctx->Mv,f,ADD_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
+    ierr = VecScatterEnd(ctx->scatterU,ctx->Mv,f,ADD_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
     //Velocities
-    ierr = VecAXPY(ctx->v,-ctx->ts_a,ctx->u); CHKERRQ(ierr);
-    //ierr = VecScale(ctx->v,ctx->scale); CHKERRQ(ierr);
-    ierr = VecScatterBegin(ctx->scatterV,ctx->v,f,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-    ierr = VecScatterEnd(ctx->scatterV,ctx->v,f,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = VecAXPY(ctx->v,-ctx->ts_a,ctx->u); CHKERRG(ierr);
+    //ierr = VecScale(ctx->v,ctx->scale); CHKERRG(ierr);
+    ierr = VecScatterBegin(ctx->scatterV,ctx->v,f,INSERT_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
+    ierr = VecScatterEnd(ctx->scatterV,ctx->v,f,INSERT_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
     //Assemble
-    ierr = VecAssemblyBegin(f); CHKERRQ(ierr);
-    ierr = VecAssemblyEnd(f); CHKERRQ(ierr);
+    ierr = VecAssemblyBegin(f); CHKERRG(ierr);
+    ierr = VecAssemblyEnd(f); CHKERRG(ierr);
     MoFEMFunctionReturnHot(0);
   }
 
@@ -613,10 +613,10 @@ struct ConvectiveMassElement {
     MoFEMFunctionBeginHot;
     
     void *void_ctx;
-    ierr = MatShellGetContext(A,&void_ctx); CHKERRQ(ierr);
+    ierr = MatShellGetContext(A,&void_ctx); CHKERRG(ierr);
     MatShellCtx *ctx = (MatShellCtx*)void_ctx;
-    ierr = MatZeroEntries(ctx->K); CHKERRQ(ierr);
-    ierr = MatZeroEntries(ctx->M); CHKERRQ(ierr);
+    ierr = MatZeroEntries(ctx->K); CHKERRG(ierr);
+    ierr = MatZeroEntries(ctx->M); CHKERRG(ierr);
     MoFEMFunctionReturnHot(0);
   }
 
@@ -645,14 +645,14 @@ struct ConvectiveMassElement {
     MoFEMFunctionBeginHot;
     
     void *void_ctx;
-    ierr = PCShellGetContext(pc,&void_ctx); CHKERRQ(ierr);
+    ierr = PCShellGetContext(pc,&void_ctx); CHKERRG(ierr);
     PCShellCtx *ctx = (PCShellCtx*)void_ctx;
-    ierr = ctx->iNit(); CHKERRQ(ierr);
+    ierr = ctx->iNit(); CHKERRG(ierr);
     MatShellCtx *shell_mat_ctx;
-    ierr = MatShellGetContext(ctx->shellMat,&shell_mat_ctx); CHKERRQ(ierr);
-    ierr = PCSetFromOptions(ctx->pC); CHKERRQ(ierr);
-    ierr = PCSetOperators(ctx->pC,shell_mat_ctx->barK,shell_mat_ctx->barK); CHKERRQ(ierr);
-    ierr = PCSetUp(ctx->pC); CHKERRQ(ierr);
+    ierr = MatShellGetContext(ctx->shellMat,&shell_mat_ctx); CHKERRG(ierr);
+    ierr = PCSetFromOptions(ctx->pC); CHKERRG(ierr);
+    ierr = PCSetOperators(ctx->pC,shell_mat_ctx->barK,shell_mat_ctx->barK); CHKERRG(ierr);
+    ierr = PCSetUp(ctx->pC); CHKERRG(ierr);
     MoFEMFunctionReturnHot(0);
   }
 
@@ -660,9 +660,9 @@ struct ConvectiveMassElement {
     MoFEMFunctionBeginHot;
     
     void *void_ctx;
-    ierr = PCShellGetContext(pc,&void_ctx); CHKERRQ(ierr);
+    ierr = PCShellGetContext(pc,&void_ctx); CHKERRG(ierr);
     PCShellCtx *ctx = (PCShellCtx*)void_ctx;
-    ierr = ctx->dEstroy(); CHKERRQ(ierr);
+    ierr = ctx->dEstroy(); CHKERRG(ierr);
     MoFEMFunctionReturnHot(0);
   }
 
@@ -696,32 +696,32 @@ struct ConvectiveMassElement {
     MoFEMFunctionBeginHot;
     
     void *void_ctx;
-    ierr = PCShellGetContext(pc,&void_ctx); CHKERRQ(ierr);
+    ierr = PCShellGetContext(pc,&void_ctx); CHKERRG(ierr);
     PCShellCtx *ctx = (PCShellCtx*)void_ctx;
     MatShellCtx *shell_mat_ctx;
-    ierr = MatShellGetContext(ctx->shellMat,&shell_mat_ctx); CHKERRQ(ierr);
+    ierr = MatShellGetContext(ctx->shellMat,&shell_mat_ctx); CHKERRG(ierr);
     //forward
-    ierr = VecScatterBegin(shell_mat_ctx->scatterU,f,shell_mat_ctx->Ku,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    ierr = VecScatterEnd(shell_mat_ctx->scatterU,f,shell_mat_ctx->Ku,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    ierr = VecScatterBegin(shell_mat_ctx->scatterV,f,shell_mat_ctx->v,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    ierr = VecScatterEnd(shell_mat_ctx->scatterV,f,shell_mat_ctx->v,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    //ierr = VecScale(shell_mat_ctx->v,1/shell_mat_ctx->scale); CHKERRQ(ierr);
+    ierr = VecScatterBegin(shell_mat_ctx->scatterU,f,shell_mat_ctx->Ku,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
+    ierr = VecScatterEnd(shell_mat_ctx->scatterU,f,shell_mat_ctx->Ku,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
+    ierr = VecScatterBegin(shell_mat_ctx->scatterV,f,shell_mat_ctx->v,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
+    ierr = VecScatterEnd(shell_mat_ctx->scatterV,f,shell_mat_ctx->v,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
+    //ierr = VecScale(shell_mat_ctx->v,1/shell_mat_ctx->scale); CHKERRG(ierr);
     //apply pre-conditioner and calculate u
-    ierr = MatMult(shell_mat_ctx->M,shell_mat_ctx->v,shell_mat_ctx->Mv); CHKERRQ(ierr); // Mrv
-    ierr = VecAXPY(shell_mat_ctx->Ku,-1,shell_mat_ctx->Mv); CHKERRQ(ierr); // f-Mrv
-    ierr = PCApply(ctx->pC,shell_mat_ctx->Ku,shell_mat_ctx->u); CHKERRQ(ierr); //u = (aM+K)^(-1)(ru-Mrv)
+    ierr = MatMult(shell_mat_ctx->M,shell_mat_ctx->v,shell_mat_ctx->Mv); CHKERRG(ierr); // Mrv
+    ierr = VecAXPY(shell_mat_ctx->Ku,-1,shell_mat_ctx->Mv); CHKERRG(ierr); // f-Mrv
+    ierr = PCApply(ctx->pC,shell_mat_ctx->Ku,shell_mat_ctx->u); CHKERRG(ierr); //u = (aM+K)^(-1)(ru-Mrv)
     //VecView(shell_mat_ctx->u,PETSC_VIEWER_STDOUT_WORLD);
     //calculate velocities
-    ierr = VecAXPY(shell_mat_ctx->v,shell_mat_ctx->ts_a,shell_mat_ctx->u); CHKERRQ(ierr); // v = v + a*u
+    ierr = VecAXPY(shell_mat_ctx->v,shell_mat_ctx->ts_a,shell_mat_ctx->u); CHKERRG(ierr); // v = v + a*u
     //VecView(shell_mat_ctx->v,PETSC_VIEWER_STDOUT_WORLD);
     //reverse
-    ierr = VecZeroEntries(x); CHKERRQ(ierr);
-    ierr = VecScatterBegin(shell_mat_ctx->scatterU,shell_mat_ctx->u,x,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-    ierr = VecScatterEnd(shell_mat_ctx->scatterU,shell_mat_ctx->u,x,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-    ierr = VecScatterBegin(shell_mat_ctx->scatterV,shell_mat_ctx->v,x,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-    ierr = VecScatterEnd(shell_mat_ctx->scatterV,shell_mat_ctx->v,x,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-    ierr = VecAssemblyBegin(x); CHKERRQ(ierr);
-    ierr = VecAssemblyEnd(x); CHKERRQ(ierr);
+    ierr = VecZeroEntries(x); CHKERRG(ierr);
+    ierr = VecScatterBegin(shell_mat_ctx->scatterU,shell_mat_ctx->u,x,INSERT_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
+    ierr = VecScatterEnd(shell_mat_ctx->scatterU,shell_mat_ctx->u,x,INSERT_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
+    ierr = VecScatterBegin(shell_mat_ctx->scatterV,shell_mat_ctx->v,x,INSERT_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
+    ierr = VecScatterEnd(shell_mat_ctx->scatterV,shell_mat_ctx->v,x,INSERT_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
+    ierr = VecAssemblyBegin(x); CHKERRG(ierr);
+    ierr = VecAssemblyEnd(x); CHKERRG(ierr);
     MoFEMFunctionReturnHot(0);
   }
 

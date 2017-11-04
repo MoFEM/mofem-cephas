@@ -50,7 +50,7 @@ MoFEMErrorCode EdgeForce::OpEdgeForce::doWork(int side,EntityType type,DataForce
 
   // Get pointer to DOF and its rank
   const FENumeredDofEntity *dof_ptr;
-  ierr = getNumeredEntFiniteElementPtr()->getRowDofsByPetscGlobalDofIdx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
+  ierr = getNumeredEntFiniteElementPtr()->getRowDofsByPetscGlobalDofIdx(data.getIndices()[0],&dof_ptr); CHKERRG(ierr);
   int rank = dof_ptr->getNbOfCoeffs();
 
   int nb_dofs =  data.getIndices().size();
@@ -101,7 +101,7 @@ MoFEMErrorCode EdgeForce::OpEdgeForce::doWork(int side,EntityType type,DataForce
 
   // I time/step varying force or calculate in arc-length control. This hack
   // scale force appropriately, and is controlled for user
-  ierr = MethodForForceScaling::applyScale(getFEMethod(),methodsOp,Nf); CHKERRQ(ierr);
+  ierr = MethodForForceScaling::applyScale(getFEMethod(),methodsOp,Nf); CHKERRG(ierr);
 
   // Assemble force into right-hand vector
   Vec myF = F;
@@ -121,7 +121,7 @@ MoFEMErrorCode EdgeForce::OpEdgeForce::doWork(int side,EntityType type,DataForce
   ierr = VecSetValues(
     myF,data.getIndices().size(),
     &data.getIndices()[0],&Nf[0],ADD_VALUES
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
 
   MoFEMFunctionReturnHot(0);
 }
@@ -132,9 +132,9 @@ MoFEMErrorCode EdgeForce::addForce(const std::string field_name,Vec F,int ms_id,
   const CubitMeshSets *cubit_meshset_ptr;
   MeshsetsManager *mmanager_ptr;
   MoFEMFunctionBeginHot;
-  ierr = mField.getInterface(mmanager_ptr); CHKERRQ(ierr);
-  ierr = mmanager_ptr->getCubitMeshsetPtr(ms_id,NODESET,&cubit_meshset_ptr); CHKERRQ(ierr);
-  ierr = cubit_meshset_ptr->getBcDataStructure(mapForce[ms_id].data); CHKERRQ(ierr);
+  ierr = mField.getInterface(mmanager_ptr); CHKERRG(ierr);
+  ierr = mmanager_ptr->getCubitMeshsetPtr(ms_id,NODESET,&cubit_meshset_ptr); CHKERRG(ierr);
+  ierr = cubit_meshset_ptr->getBcDataStructure(mapForce[ms_id].data); CHKERRG(ierr);
   rval = mField.get_moab().get_entities_by_type(cubit_meshset_ptr->meshset,MBEDGE,mapForce[ms_id].eDges,true); CHKERRG(rval);
   // Add operator for element, set data and entities operating on the data
   fe.getOpPtrVector().push_back(new OpEdgeForce(field_name,F,mapForce[ms_id],methodsOp,use_snes_f));

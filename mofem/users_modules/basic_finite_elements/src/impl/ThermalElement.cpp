@@ -93,9 +93,9 @@ MoFEMErrorCode ThermalElement::OpThermalRhs::doWork(int side,EntityType type,Dat
 
     //std::cerr << Nf << std::endl;
     if(useTsF) {
-      ierr = VecSetValues(getFEMethod()->ts_F,data.getIndices().size(),&data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
+      ierr = VecSetValues(getFEMethod()->ts_F,data.getIndices().size(),&data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRG(ierr);
     } else {
-      ierr = VecSetValues(F,data.getIndices().size(),&data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
+      ierr = VecSetValues(F,data.getIndices().size(),&data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRG(ierr);
 
     }
 
@@ -158,7 +158,7 @@ MoFEMErrorCode ThermalElement::OpThermalLhs::doWork(
       nb_row,&row_data.getIndices()[0],
       nb_col,&col_data.getIndices()[0],
       &K(0,0),ADD_VALUES
-    ); CHKERRQ(ierr);
+    ); CHKERRG(ierr);
     if(row_side != col_side || row_type != col_type) {
       transK.resize(nb_col,nb_row);
       noalias(transK) = trans( K );
@@ -167,7 +167,7 @@ MoFEMErrorCode ThermalElement::OpThermalLhs::doWork(
         nb_col,&col_data.getIndices()[0],
         nb_row,&row_data.getIndices()[0],
         &transK(0,0),ADD_VALUES
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
     }
 
 
@@ -204,7 +204,7 @@ MoFEMErrorCode ThermalElement::OpHeatCapacityRhs::doWork(int side,EntityType typ
     Nf *= getVolume()*dAta.cApacity;
     
     ierr = VecSetValues(getFEMethod()->ts_F,data.getIndices().size(),
-    &data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
+    &data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRG(ierr);
 
 
   } catch (const std::exception& ex) {
@@ -261,7 +261,7 @@ MoFEMErrorCode ThermalElement::OpHeatCapacityLhs::doWork(
       nb_row,&row_data.getIndices()[0],
       nb_col,&col_data.getIndices()[0],
       &M(0,0),ADD_VALUES
-    ); CHKERRQ(ierr);
+    ); CHKERRG(ierr);
     if(row_side != col_side || row_type != col_type) {
       transM.resize(nb_col,nb_row);
       noalias(transM) = trans(M);
@@ -270,7 +270,7 @@ MoFEMErrorCode ThermalElement::OpHeatCapacityLhs::doWork(
         nb_col,&col_data.getIndices()[0],
         nb_row,&row_data.getIndices()[0],
         &transM(0,0),ADD_VALUES
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
     }
 
 
@@ -293,7 +293,7 @@ MoFEMErrorCode ThermalElement::OpHeatFlux::doWork(int side,EntityType type,DataF
   
 
   const FENumeredDofEntity *dof_ptr;
-  ierr = getNumeredEntFiniteElementPtr()->getRowDofsByPetscGlobalDofIdx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
+  ierr = getNumeredEntFiniteElementPtr()->getRowDofsByPetscGlobalDofIdx(data.getIndices()[0],&dof_ptr); CHKERRG(ierr);
   int rank = dof_ptr->getNbOfCoeffs();
 
   int nb_dofs = data.getIndices().size()/rank;
@@ -324,10 +324,10 @@ MoFEMErrorCode ThermalElement::OpHeatFlux::doWork(int side,EntityType type,DataF
 
   if(useTsF||F==PETSC_NULL) {
     ierr = VecSetValues(getFEMethod()->ts_F,data.getIndices().size(),
-    &data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
+    &data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRG(ierr);
   } else {
     ierr = VecSetValues(F,data.getIndices().size(),
-    &data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
+    &data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRG(ierr);
   }
 
   MoFEMFunctionReturnHot(0);
@@ -377,7 +377,7 @@ MoFEMErrorCode ThermalElement::OpRadiationLhs::doWork(
       nb_row,&row_data.getIndices()[0],
       nb_col,&col_data.getIndices()[0],
       &N(0,0),ADD_VALUES
-    ); CHKERRQ(ierr);
+    ); CHKERRG(ierr);
     if(row_side != col_side || row_type != col_type) {
       transN.resize(nb_col,nb_row);
       noalias(transN) = trans( N );
@@ -386,7 +386,7 @@ MoFEMErrorCode ThermalElement::OpRadiationLhs::doWork(
         nb_col,&col_data.getIndices()[0],
         nb_row,&row_data.getIndices()[0],
         &transN(0,0),ADD_VALUES
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
     }
 
   } catch (const std::exception& ex) {
@@ -407,7 +407,7 @@ MoFEMErrorCode ThermalElement::OpRadiationRhs::doWork(int side,EntityType type,D
   
 
   const FENumeredDofEntity *dof_ptr;
-  ierr = getNumeredEntFiniteElementPtr()->getRowDofsByPetscGlobalDofIdx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
+  ierr = getNumeredEntFiniteElementPtr()->getRowDofsByPetscGlobalDofIdx(data.getIndices()[0],&dof_ptr); CHKERRG(ierr);
   int rank = dof_ptr->getNbOfCoeffs();
   int nb_row_dofs = data.getIndices().size()/rank;
 
@@ -444,9 +444,9 @@ MoFEMErrorCode ThermalElement::OpRadiationRhs::doWork(int side,EntityType type,D
   //std::cerr << data.getIndices() << std::endl;
 
   if(useTsF) {
-    ierr = VecSetValues(getFEMethod()->ts_F,data.getIndices().size(),&data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
+    ierr = VecSetValues(getFEMethod()->ts_F,data.getIndices().size(),&data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRG(ierr);
   } else {
-    ierr = VecSetValues(F,data.getIndices().size(),&data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
+    ierr = VecSetValues(F,data.getIndices().size(),&data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRG(ierr);
   }
 
   MoFEMFunctionReturnHot(0);
@@ -463,7 +463,7 @@ MoFEMErrorCode ThermalElement::OpConvectionRhs::doWork(
   
 
   const FENumeredDofEntity *dof_ptr;
-  ierr = getNumeredEntFiniteElementPtr()->getRowDofsByPetscGlobalDofIdx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
+  ierr = getNumeredEntFiniteElementPtr()->getRowDofsByPetscGlobalDofIdx(data.getIndices()[0],&dof_ptr); CHKERRG(ierr);
   int rank = dof_ptr->getNbOfCoeffs();
 
   int nb_row_dofs = data.getIndices().size()/rank;
@@ -498,7 +498,7 @@ MoFEMErrorCode ThermalElement::OpConvectionRhs::doWork(
       getFEMethod()->ts_F,
       data.getIndices().size(),
       &data.getIndices()[0],&Nf[0],ADD_VALUES
-    ); CHKERRQ(ierr);
+    ); CHKERRG(ierr);
   } else {
     ierr = VecSetValues(
       F,
@@ -506,7 +506,7 @@ MoFEMErrorCode ThermalElement::OpConvectionRhs::doWork(
       &data.getIndices()[0],
       &Nf[0],
       ADD_VALUES
-    ); CHKERRQ(ierr);
+    ); CHKERRG(ierr);
   }
 
   MoFEMFunctionReturnHot(0);
@@ -553,7 +553,7 @@ MoFEMErrorCode ThermalElement::OpConvectionLhs::doWork(
       nb_row,&row_data.getIndices()[0],
       nb_col,&col_data.getIndices()[0],
       &K(0,0),ADD_VALUES
-    ); CHKERRQ(ierr);
+    ); CHKERRG(ierr);
     if(row_side != col_side || row_type != col_type) {
       transK.resize(nb_col,nb_row);
       noalias(transK) = trans( K );
@@ -562,7 +562,7 @@ MoFEMErrorCode ThermalElement::OpConvectionLhs::doWork(
         nb_col,&col_data.getIndices()[0],
         nb_row,&row_data.getIndices()[0],
         &transK(0,0),ADD_VALUES
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
     }
 
 
@@ -580,7 +580,7 @@ MoFEMErrorCode ThermalElement::UpdateAndControl::preProcess() {
   
   ierr = mField.getInterface<VecManager>()->setOtherLocalGhostVector(
     problemPtr,tempName,rateName,ROW,ts_u_t,INSERT_VALUES,SCATTER_REVERSE
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -595,15 +595,15 @@ MoFEMErrorCode ThermalElement::TimeSeriesMonitor::postProcess() {
 
   ierr = mField.getInterface<VecManager>()->setGlobalGhostVector(
     problemPtr,ROW,ts_u,INSERT_VALUES,SCATTER_REVERSE
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
 
   BitRefLevel proble_bit_level = problemPtr->getBitRefLevel();
 
   SeriesRecorder *recorder_ptr = NULL;
-  ierr = mField.getInterface(recorder_ptr); CHKERRQ(ierr);
-  ierr = recorder_ptr->record_begin(seriesName); CHKERRQ(ierr);
-  ierr = recorder_ptr->record_field(seriesName,tempName,proble_bit_level,mask); CHKERRQ(ierr);
-  ierr = recorder_ptr->record_end(seriesName,ts_t); CHKERRQ(ierr);
+  ierr = mField.getInterface(recorder_ptr); CHKERRG(ierr);
+  ierr = recorder_ptr->record_begin(seriesName); CHKERRG(ierr);
+  ierr = recorder_ptr->record_field(seriesName,tempName,proble_bit_level,mask); CHKERRG(ierr);
+  ierr = recorder_ptr->record_end(seriesName,ts_t); CHKERRG(ierr);
 
   MoFEMFunctionReturnHot(0);
 }
@@ -614,13 +614,13 @@ MoFEMErrorCode ThermalElement::addThermalElements(const std::string field_name,c
   
   
 
-  ierr = mField.add_finite_element("THERMAL_FE",MF_ZERO); CHKERRQ(ierr);
+  ierr = mField.add_finite_element("THERMAL_FE",MF_ZERO); CHKERRG(ierr);
 
-  ierr = mField.modify_finite_element_add_field_row("THERMAL_FE",field_name); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_col("THERMAL_FE",field_name); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_data("THERMAL_FE",field_name); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_row("THERMAL_FE",field_name); CHKERRG(ierr);
+  ierr = mField.modify_finite_element_add_field_col("THERMAL_FE",field_name); CHKERRG(ierr);
+  ierr = mField.modify_finite_element_add_field_data("THERMAL_FE",field_name); CHKERRG(ierr);
   if(mField.check_field(mesh_nodals_positions)) {
-    ierr = mField.modify_finite_element_add_field_data("THERMAL_FE",mesh_nodals_positions); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_data("THERMAL_FE",mesh_nodals_positions); CHKERRG(ierr);
   }
 
   //takes skin of block of entities
@@ -629,7 +629,7 @@ MoFEMErrorCode ThermalElement::addThermalElements(const std::string field_name,c
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|MAT_THERMALSET,it)) {
 
     Mat_Thermal temp_data;
-    ierr = it->getAttributeDataStructure(temp_data); CHKERRQ(ierr);
+    ierr = it->getAttributeDataStructure(temp_data); CHKERRG(ierr);
 
     setOfBlocks[it->getMeshsetId()].cOnductivity_mat.resize(3,3); //(3X3) conductivity matrix
     setOfBlocks[it->getMeshsetId()].cOnductivity_mat.clear();
@@ -640,7 +640,7 @@ MoFEMErrorCode ThermalElement::addThermalElements(const std::string field_name,c
 
     setOfBlocks[it->getMeshsetId()].cApacity = temp_data.data.HeatCapacity;
     rval = mField.get_moab().get_entities_by_type(it->meshset,MBTET,setOfBlocks[it->getMeshsetId()].tEts,true); CHKERRG(rval);
-    ierr = mField.add_ents_to_finite_element_by_type(setOfBlocks[it->getMeshsetId()].tEts,MBTET,"THERMAL_FE"); CHKERRQ(ierr);
+    ierr = mField.add_ents_to_finite_element_by_type(setOfBlocks[it->getMeshsetId()].tEts,MBTET,"THERMAL_FE"); CHKERRG(ierr);
 
   }
 
@@ -653,18 +653,18 @@ MoFEMErrorCode ThermalElement::addThermalFluxElement(const std::string field_nam
   
   
 
-  ierr = mField.add_finite_element("THERMAL_FLUX_FE",MF_ZERO); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_row("THERMAL_FLUX_FE",field_name); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_col("THERMAL_FLUX_FE",field_name); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_data("THERMAL_FLUX_FE",field_name); CHKERRQ(ierr);
+  ierr = mField.add_finite_element("THERMAL_FLUX_FE",MF_ZERO); CHKERRG(ierr);
+  ierr = mField.modify_finite_element_add_field_row("THERMAL_FLUX_FE",field_name); CHKERRG(ierr);
+  ierr = mField.modify_finite_element_add_field_col("THERMAL_FLUX_FE",field_name); CHKERRG(ierr);
+  ierr = mField.modify_finite_element_add_field_data("THERMAL_FLUX_FE",field_name); CHKERRG(ierr);
   if(mField.check_field(mesh_nodals_positions)) {
-    ierr = mField.modify_finite_element_add_field_data("THERMAL_FLUX_FE",mesh_nodals_positions); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_data("THERMAL_FLUX_FE",mesh_nodals_positions); CHKERRG(ierr);
   }
 
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SIDESET|HEATFLUXSET,it)) {
-    ierr = it->getBcDataStructure(setOfFluxes[it->getMeshsetId()].dAta); CHKERRQ(ierr);
+    ierr = it->getBcDataStructure(setOfFluxes[it->getMeshsetId()].dAta); CHKERRG(ierr);
     rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,setOfFluxes[it->getMeshsetId()].tRis,true); CHKERRG(rval);
-    ierr = mField.add_ents_to_finite_element_by_type(setOfFluxes[it->getMeshsetId()].tRis,MBTRI,"THERMAL_FLUX_FE"); CHKERRQ(ierr);
+    ierr = mField.add_ents_to_finite_element_by_type(setOfFluxes[it->getMeshsetId()].tRis,MBTRI,"THERMAL_FLUX_FE"); CHKERRG(ierr);
   }
 
   //this is alternative method for setting boundary conditions, to bypass bu in cubit file reader.
@@ -672,7 +672,7 @@ MoFEMErrorCode ThermalElement::addThermalFluxElement(const std::string field_nam
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
     if(it->getName().compare(0,9,"HEAT_FLUX") == 0) {
       std::vector<double> data;
-      ierr = it->getAttributes(data); CHKERRQ(ierr);
+      ierr = it->getAttributes(data); CHKERRG(ierr);
       if(data.size()!=1) {
         SETERRQ(PETSC_COMM_SELF,1,"Data inconsistency");
       }
@@ -681,7 +681,7 @@ MoFEMErrorCode ThermalElement::addThermalFluxElement(const std::string field_nam
       setOfFluxes[it->getMeshsetId()].dAta.data.value1 = data[0];
       //std::cerr << setOfFluxes[it->getMeshsetId()].dAta << std::endl;
       rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,setOfFluxes[it->getMeshsetId()].tRis,true); CHKERRG(rval);
-      ierr = mField.add_ents_to_finite_element_by_type(setOfFluxes[it->getMeshsetId()].tRis,MBTRI,"THERMAL_FLUX_FE"); CHKERRQ(ierr);
+      ierr = mField.add_ents_to_finite_element_by_type(setOfFluxes[it->getMeshsetId()].tRis,MBTRI,"THERMAL_FLUX_FE"); CHKERRG(ierr);
     }
   }
 
@@ -695,12 +695,12 @@ MoFEMErrorCode ThermalElement::addThermalConvectionElement(const std::string fie
   
   
 
-  ierr = mField.add_finite_element("THERMAL_CONVECTION_FE",MF_ZERO); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_row("THERMAL_CONVECTION_FE",field_name); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_col("THERMAL_CONVECTION_FE",field_name); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_data("THERMAL_CONVECTION_FE",field_name); CHKERRQ(ierr);
+  ierr = mField.add_finite_element("THERMAL_CONVECTION_FE",MF_ZERO); CHKERRG(ierr);
+  ierr = mField.modify_finite_element_add_field_row("THERMAL_CONVECTION_FE",field_name); CHKERRG(ierr);
+  ierr = mField.modify_finite_element_add_field_col("THERMAL_CONVECTION_FE",field_name); CHKERRG(ierr);
+  ierr = mField.modify_finite_element_add_field_data("THERMAL_CONVECTION_FE",field_name); CHKERRG(ierr);
   if(mField.check_field(mesh_nodals_positions)) {
-    ierr = mField.modify_finite_element_add_field_data("THERMAL_CONVECTION_FE",mesh_nodals_positions); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_data("THERMAL_CONVECTION_FE",mesh_nodals_positions); CHKERRG(ierr);
   }
 
   //this is alternative method for setting boundary conditions, to bypass bu in cubit file reader.
@@ -709,7 +709,7 @@ MoFEMErrorCode ThermalElement::addThermalConvectionElement(const std::string fie
     if(it->getName().compare(0,10,"CONVECTION") == 0) {
 
       std::vector<double> data;
-      ierr = it->getAttributes(data); CHKERRQ(ierr);
+      ierr = it->getAttributes(data); CHKERRG(ierr);
       if(data.size()!=2) {
         SETERRQ(PETSC_COMM_SELF,1,"Data inconsistency");
       }
@@ -717,7 +717,7 @@ MoFEMErrorCode ThermalElement::addThermalConvectionElement(const std::string fie
       setOfConvection[it->getMeshsetId()].tEmperature = data[1];
       //std::cerr << setOfFluxes[it->getMeshsetId()].dAta << std::endl;
       rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,setOfConvection[it->getMeshsetId()].tRis,true); CHKERRG(rval);
-      ierr = mField.add_ents_to_finite_element_by_type(setOfConvection[it->getMeshsetId()].tRis,MBTRI,"THERMAL_CONVECTION_FE"); CHKERRQ(ierr);
+      ierr = mField.add_ents_to_finite_element_by_type(setOfConvection[it->getMeshsetId()].tRis,MBTRI,"THERMAL_CONVECTION_FE"); CHKERRG(ierr);
 
     }
   }
@@ -731,12 +731,12 @@ MoFEMErrorCode ThermalElement::addThermalRadiationElement(const std::string fiel
   
   
 
-  ierr = mField.add_finite_element("THERMAL_RADIATION_FE",MF_ZERO); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_row("THERMAL_RADIATION_FE",field_name); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_col("THERMAL_RADIATION_FE",field_name); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_data("THERMAL_RADIATION_FE",field_name); CHKERRQ(ierr);
+  ierr = mField.add_finite_element("THERMAL_RADIATION_FE",MF_ZERO); CHKERRG(ierr);
+  ierr = mField.modify_finite_element_add_field_row("THERMAL_RADIATION_FE",field_name); CHKERRG(ierr);
+  ierr = mField.modify_finite_element_add_field_col("THERMAL_RADIATION_FE",field_name); CHKERRG(ierr);
+  ierr = mField.modify_finite_element_add_field_data("THERMAL_RADIATION_FE",field_name); CHKERRG(ierr);
   if(mField.check_field(mesh_nodals_positions)) {
-    ierr = mField.modify_finite_element_add_field_data("THERMAL_RADIATION_FE",mesh_nodals_positions); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_data("THERMAL_RADIATION_FE",mesh_nodals_positions); CHKERRG(ierr);
   }
 
   //this is alternative method for setting boundary conditions, to bypass bu in cubit file reader.
@@ -744,7 +744,7 @@ MoFEMErrorCode ThermalElement::addThermalRadiationElement(const std::string fiel
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
     if(it->getName().compare(0,9,"RADIATION") == 0) {
       std::vector<double> data;
-      ierr = it->getAttributes(data); CHKERRQ(ierr);
+      ierr = it->getAttributes(data); CHKERRG(ierr);
       if(data.size()!=3) {
         SETERRQ(PETSC_COMM_SELF,1,"Data inconsistency");
       }
@@ -754,7 +754,7 @@ MoFEMErrorCode ThermalElement::addThermalRadiationElement(const std::string fiel
       setOfRadiation[it->getMeshsetId()].aMbienttEmp = data[2];
       //std::cerr << setOfFluxes[it->getMeshsetId()].dAta << std::endl;
       rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,setOfRadiation[it->getMeshsetId()].tRis,true); CHKERRG(rval);
-      ierr = mField.add_ents_to_finite_element_by_type(setOfRadiation[it->getMeshsetId()].tRis,MBTRI,"THERMAL_RADIATION_FE"); CHKERRQ(ierr);
+      ierr = mField.add_ents_to_finite_element_by_type(setOfRadiation[it->getMeshsetId()].tRis,MBTRI,"THERMAL_RADIATION_FE"); CHKERRG(ierr);
 
     }
   }
@@ -899,7 +899,7 @@ MoFEMErrorCode ThermalElement::setTimeSteppingProblem(TsCtx &ts_ctx,string field
   MoFEMFunctionBeginHot;
 
   
-  ierr = setTimeSteppingProblem(field_name,rate_name,mesh_nodals_positions); CHKERRQ(ierr);
+  ierr = setTimeSteppingProblem(field_name,rate_name,mesh_nodals_positions); CHKERRG(ierr);
 
   //rhs
   TsCtx::FEMethodsSequence& loops_to_do_Rhs = ts_ctx.get_loops_to_do_IFunction();

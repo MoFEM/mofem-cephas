@@ -122,9 +122,9 @@ struct OpS: public FaceElementForcesAndSourcesCore::UserDataOperator {
       isDiag = false;
     }
     // integrate local matrix for entity block
-    ierr = iNtegrate(row_data,col_data); CHKERRQ(ierr);
+    ierr = iNtegrate(row_data,col_data); CHKERRG(ierr);
     // assemble local matrix
-    ierr = aSsemble(row_data,col_data); CHKERRQ(ierr);
+    ierr = aSsemble(row_data,col_data); CHKERRG(ierr);
     MoFEMFunctionReturnHot(0);
   }
 
@@ -204,14 +204,14 @@ private:
     // assemble local matrix
     ierr = MatSetValues(
       B, nbRows,row_indices,nbCols,col_indices,&*locMat.data().begin(),ADD_VALUES
-    ); CHKERRQ(ierr);
+    ); CHKERRG(ierr);
     if(!isDiag) {
       // if not diagonal term and since global matrix is symmetric assemble
       // transpose term.
       locMat = trans(locMat);
       ierr = MatSetValues(
         B, nbCols,col_indices,nbRows,row_indices,&*locMat.data().begin(),ADD_VALUES
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
     }
     MoFEMFunctionReturnHot(0);
   }
@@ -232,12 +232,12 @@ int main(int argc, char *argv[]) {
   // Get command line options
   int order = 3;  // default approximation order
   PetscBool flg_test = PETSC_FALSE; // true check if error is numerical error
-  ierr = PetscOptionsBegin(PETSC_COMM_WORLD,"", "Poisson's problem options","none"); CHKERRQ(ierr);
+  ierr = PetscOptionsBegin(PETSC_COMM_WORLD,"", "Poisson's problem options","none"); CHKERRG(ierr);
   // Set approximation order
-  ierr = PetscOptionsInt("-order","approximation order","",order,&order,PETSC_NULL); CHKERRQ(ierr);
+  ierr = PetscOptionsInt("-order","approximation order","",order,&order,PETSC_NULL); CHKERRG(ierr);
   // Set testing (used by CTest)
-  ierr = PetscOptionsBool("-test","if true is ctest","",flg_test,&flg_test,PETSC_NULL); CHKERRQ(ierr);
-  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+  ierr = PetscOptionsBool("-test","if true is ctest","",flg_test,&flg_test,PETSC_NULL); CHKERRG(ierr);
+  ierr = PetscOptionsEnd(); CHKERRG(ierr);
 
   try {
 
@@ -245,11 +245,11 @@ int main(int argc, char *argv[]) {
     MoFEM::Core mofem_core(moab);                      // create database
     MoFEM::Interface& m_field = mofem_core;            // create interface to database
     // Register DM Manager
-    ierr = DMRegister_MoFEM("DMMOFEM"); CHKERRQ(ierr); // register MoFEM DM in PETSc
+    ierr = DMRegister_MoFEM("DMMOFEM"); CHKERRG(ierr); // register MoFEM DM in PETSc
 
     // Create vector to store approximation global error
     Vec global_error;
-    ierr = PoissonExample::AuxFunctions(m_field).createGhostVec(&global_error); CHKERRQ(ierr);
+    ierr = PoissonExample::AuxFunctions(m_field).createGhostVec(&global_error); CHKERRG(ierr);
 
     // First we crate elements, implementation of elements is problem independent,
     // we do not know yet what fields are present in the problem, or
@@ -271,14 +271,14 @@ int main(int argc, char *argv[]) {
       ierr = PoissonExample::CreateFiniteElements(m_field).createFEToAssembleMatrixAndVector(
         ExactFunction(),ExactLaplacianFunction(),
         domain_lhs_fe,boundary_lhs_fe,domain_rhs_fe,boundary_rhs_fe,false
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
       // Add problem specific operators the generic finite elements to calculate error on elements and global error
       // in H1 norm
       ierr = PoissonExample::CreateFiniteElements(m_field).createFEToEvaluateError(
         ExactFunction(),ExactFunctionGrad(),global_error,domain_error
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
       // Post-process results
-      ierr = PoissonExample::CreateFiniteElements(m_field).creatFEToPostProcessResults(post_proc_volume); CHKERRQ(ierr);
+      ierr = PoissonExample::CreateFiniteElements(m_field).creatFEToPostProcessResults(post_proc_volume); CHKERRG(ierr);
 
       const double beta = 1;
       boundary_penalty_lhs_fe = boost::shared_ptr<ForcesAndSourcesCore>(new FaceElementForcesAndSourcesCore(m_field));
@@ -292,15 +292,15 @@ int main(int argc, char *argv[]) {
     // easy construction of problem.
     Simple *simple_interface;
     // Query interface and get pointer to Simple interface
-    ierr = m_field.getInterface(simple_interface); CHKERRQ(ierr);
+    ierr = m_field.getInterface(simple_interface); CHKERRG(ierr);
 
     // Build problem with simple interface
     {
 
       // Get options for simple interface from command line
-      ierr = simple_interface->getOptions(); CHKERRQ(ierr);
+      ierr = simple_interface->getOptions(); CHKERRG(ierr);
       // Load mesh file to database
-      ierr = simple_interface->loadFile(); CHKERRQ(ierr);
+      ierr = simple_interface->loadFile(); CHKERRG(ierr);
 
       // Add field on domain and boundary. Field is declared by space and base and rank. space
       // can be H1. Hcurl, Hdiv and L2, base can be AINSWORTH_LEGENDRE_BASE, DEMKOWICZ_JACOBI_BASE and more,
@@ -314,23 +314,23 @@ int main(int argc, char *argv[]) {
 
       // Add domain filed "U" in space H1 and Legendre base, Ainsworth recipe is used
       // to construct base functions.
-      ierr = simple_interface->addDomainField("U",H1,AINSWORTH_LEGENDRE_BASE,1); CHKERRQ(ierr);
+      ierr = simple_interface->addDomainField("U",H1,AINSWORTH_LEGENDRE_BASE,1); CHKERRG(ierr);
       // Add Lagrange multiplier field on body boundary
-      ierr = simple_interface->addBoundaryField("L",H1,AINSWORTH_LEGENDRE_BASE,1); CHKERRQ(ierr);
+      ierr = simple_interface->addBoundaryField("L",H1,AINSWORTH_LEGENDRE_BASE,1); CHKERRG(ierr);
       // Add error (data) field, we need only L2 norm. Later order is set to 0, so this
       // is piecewise discontinuous constant approx., i.e. 1 DOF for element. You can use
       // more DOFs and collate moments of error to drive anisotropic h/p-adaptivity, however
       // this is beyond this example.
-      ierr = simple_interface->addDataField("ERROR",L2,AINSWORTH_LEGENDRE_BASE,1); CHKERRQ(ierr);
+      ierr = simple_interface->addDataField("ERROR",L2,AINSWORTH_LEGENDRE_BASE,1); CHKERRG(ierr);
 
       // Set fields order domain and boundary fields.
-      ierr = simple_interface->setFieldOrder("U",order); CHKERRQ(ierr); // to approximate function
-      ierr = simple_interface->setFieldOrder("L",order); CHKERRQ(ierr); // to Lagrange multipliers
-      ierr = simple_interface->setFieldOrder("ERROR",0); CHKERRQ(ierr); // approximation order for error
+      ierr = simple_interface->setFieldOrder("U",order); CHKERRG(ierr); // to approximate function
+      ierr = simple_interface->setFieldOrder("L",order); CHKERRG(ierr); // to Lagrange multipliers
+      ierr = simple_interface->setFieldOrder("ERROR",0); CHKERRG(ierr); // approximation order for error
 
       // Setup problem. At that point database is constructed, i.e. fields, finite elements and
       // problem data structures with local and global indexing.
-      ierr = simple_interface->setUp(); CHKERRQ(ierr);
+      ierr = simple_interface->setUp(); CHKERRG(ierr);
 
     }
 
@@ -342,67 +342,67 @@ int main(int argc, char *argv[]) {
 
     DM dm;
     // Get dm
-    ierr = simple_interface->getDM(&dm); CHKERRQ(ierr);
+    ierr = simple_interface->getDM(&dm); CHKERRG(ierr);
 
     // Solve problem, only PETEc interface here.
     {
 
       // Create the right hand side vector and vector of unknowns
       Vec F,D;
-      ierr = DMCreateGlobalVector(dm,&F); CHKERRQ(ierr);
+      ierr = DMCreateGlobalVector(dm,&F); CHKERRG(ierr);
       // Create unknown vector by creating duplicate copy of F vector. only
       // structure is duplicated no values.
-      ierr = VecDuplicate(F,&D); CHKERRQ(ierr);
+      ierr = VecDuplicate(F,&D); CHKERRG(ierr);
 
       DM dm_sub_KK,dm_sub_LU;
       ublas::matrix<Mat> nested_matrices(2,2);
       ublas::vector<IS> nested_is(2);
 
-      ierr = DMCreate(PETSC_COMM_WORLD,&dm_sub_KK);CHKERRQ(ierr);
-      ierr = DMSetType(dm_sub_KK,"DMMOFEM");CHKERRQ(ierr);
-      ierr = DMMoFEMCreateSubDM(dm_sub_KK,dm,"SUB_KK"); CHKERRQ(ierr);
-      ierr = DMSetFromOptions(dm_sub_KK); CHKERRQ(ierr);
-      ierr = DMMoFEMSetSquareProblem(dm_sub_KK,PETSC_TRUE); CHKERRQ(ierr);
-      ierr = DMMoFEMAddSubFieldRow(dm_sub_KK,"U"); CHKERRQ(ierr);
-      ierr = DMMoFEMAddSubFieldCol(dm_sub_KK,"U"); CHKERRQ(ierr);
-      ierr = DMMoFEMAddElement(dm_sub_KK,simple_interface->getDomainFEName().c_str()); CHKERRQ(ierr);
-      ierr = DMMoFEMAddElement(dm_sub_KK,simple_interface->getBoundaryFEName().c_str()); CHKERRQ(ierr);
-      ierr = DMSetUp(dm_sub_KK); CHKERRQ(ierr);
-      ierr = DMMoFEMGetSubRowIS(dm_sub_KK,&nested_is[0]); CHKERRQ(ierr);
-      ierr = DMCreateMatrix(dm_sub_KK,&nested_matrices(0,0)); CHKERRQ(ierr);
+      ierr = DMCreate(PETSC_COMM_WORLD,&dm_sub_KK);CHKERRG(ierr);
+      ierr = DMSetType(dm_sub_KK,"DMMOFEM");CHKERRG(ierr);
+      ierr = DMMoFEMCreateSubDM(dm_sub_KK,dm,"SUB_KK"); CHKERRG(ierr);
+      ierr = DMSetFromOptions(dm_sub_KK); CHKERRG(ierr);
+      ierr = DMMoFEMSetSquareProblem(dm_sub_KK,PETSC_TRUE); CHKERRG(ierr);
+      ierr = DMMoFEMAddSubFieldRow(dm_sub_KK,"U"); CHKERRG(ierr);
+      ierr = DMMoFEMAddSubFieldCol(dm_sub_KK,"U"); CHKERRG(ierr);
+      ierr = DMMoFEMAddElement(dm_sub_KK,simple_interface->getDomainFEName().c_str()); CHKERRG(ierr);
+      ierr = DMMoFEMAddElement(dm_sub_KK,simple_interface->getBoundaryFEName().c_str()); CHKERRG(ierr);
+      ierr = DMSetUp(dm_sub_KK); CHKERRG(ierr);
+      ierr = DMMoFEMGetSubRowIS(dm_sub_KK,&nested_is[0]); CHKERRG(ierr);
+      ierr = DMCreateMatrix(dm_sub_KK,&nested_matrices(0,0)); CHKERRG(ierr);
       domain_lhs_fe->ksp_B = nested_matrices(0,0);
-      ierr = DMoFEMLoopFiniteElements(dm_sub_KK,simple_interface->getDomainFEName(),domain_lhs_fe); CHKERRQ(ierr);
+      ierr = DMoFEMLoopFiniteElements(dm_sub_KK,simple_interface->getDomainFEName(),domain_lhs_fe); CHKERRG(ierr);
       boundary_penalty_lhs_fe->ksp_B = nested_matrices(0,0);
-      ierr = DMoFEMLoopFiniteElements(dm_sub_KK,simple_interface->getBoundaryFEName(),boundary_penalty_lhs_fe); CHKERRQ(ierr);
-      ierr = MatAssemblyBegin(nested_matrices(0,0),MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-      ierr = MatAssemblyEnd(nested_matrices(0,0),MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-      ierr = DMDestroy(&dm_sub_KK); CHKERRQ(ierr);
+      ierr = DMoFEMLoopFiniteElements(dm_sub_KK,simple_interface->getBoundaryFEName(),boundary_penalty_lhs_fe); CHKERRG(ierr);
+      ierr = MatAssemblyBegin(nested_matrices(0,0),MAT_FINAL_ASSEMBLY); CHKERRG(ierr);
+      ierr = MatAssemblyEnd(nested_matrices(0,0),MAT_FINAL_ASSEMBLY); CHKERRG(ierr);
+      ierr = DMDestroy(&dm_sub_KK); CHKERRG(ierr);
       //
-      ierr = DMCreate(PETSC_COMM_WORLD,&dm_sub_LU);CHKERRQ(ierr);
-      ierr = DMSetType(dm_sub_LU,"DMMOFEM");CHKERRQ(ierr);
-      ierr = DMMoFEMCreateSubDM(dm_sub_LU,dm,"SUB_LU"); CHKERRQ(ierr);
-      ierr = DMSetFromOptions(dm_sub_LU); CHKERRQ(ierr);
-      ierr = DMMoFEMSetSquareProblem(dm_sub_LU,PETSC_FALSE); CHKERRQ(ierr);
-      ierr = DMMoFEMAddSubFieldRow(dm_sub_LU,"L"); CHKERRQ(ierr);
-      ierr = DMMoFEMAddSubFieldCol(dm_sub_LU,"U"); CHKERRQ(ierr);
-      ierr = DMMoFEMAddElement(dm_sub_LU,simple_interface->getBoundaryFEName().c_str()); CHKERRQ(ierr);
-      ierr = DMSetUp(dm_sub_LU); CHKERRQ(ierr);
-      ierr = DMMoFEMGetSubRowIS(dm_sub_LU,&nested_is[1]); CHKERRQ(ierr);
-      ierr = DMCreateMatrix(dm_sub_LU,&nested_matrices(1,0)); CHKERRQ(ierr);
+      ierr = DMCreate(PETSC_COMM_WORLD,&dm_sub_LU);CHKERRG(ierr);
+      ierr = DMSetType(dm_sub_LU,"DMMOFEM");CHKERRG(ierr);
+      ierr = DMMoFEMCreateSubDM(dm_sub_LU,dm,"SUB_LU"); CHKERRG(ierr);
+      ierr = DMSetFromOptions(dm_sub_LU); CHKERRG(ierr);
+      ierr = DMMoFEMSetSquareProblem(dm_sub_LU,PETSC_FALSE); CHKERRG(ierr);
+      ierr = DMMoFEMAddSubFieldRow(dm_sub_LU,"L"); CHKERRG(ierr);
+      ierr = DMMoFEMAddSubFieldCol(dm_sub_LU,"U"); CHKERRG(ierr);
+      ierr = DMMoFEMAddElement(dm_sub_LU,simple_interface->getBoundaryFEName().c_str()); CHKERRG(ierr);
+      ierr = DMSetUp(dm_sub_LU); CHKERRG(ierr);
+      ierr = DMMoFEMGetSubRowIS(dm_sub_LU,&nested_is[1]); CHKERRG(ierr);
+      ierr = DMCreateMatrix(dm_sub_LU,&nested_matrices(1,0)); CHKERRG(ierr);
       boundary_lhs_fe->ksp_B = nested_matrices(1,0);
-      ierr = DMoFEMLoopFiniteElements(dm_sub_LU,simple_interface->getBoundaryFEName(),boundary_lhs_fe); CHKERRQ(ierr);
-      ierr = MatAssemblyBegin(nested_matrices(1,0),MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-      ierr = MatAssemblyEnd(nested_matrices(1,0),MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-      // ierr = MatCreateTranspose(nested_matrices(1,0),&nested_matrices(0,1)); CHKERRQ(ierr);
-      ierr = MatTranspose(nested_matrices(1,0),MAT_INITIAL_MATRIX,&nested_matrices(0,1)); CHKERRQ(ierr);
-      ierr = DMDestroy(&dm_sub_LU); CHKERRQ(ierr);
+      ierr = DMoFEMLoopFiniteElements(dm_sub_LU,simple_interface->getBoundaryFEName(),boundary_lhs_fe); CHKERRG(ierr);
+      ierr = MatAssemblyBegin(nested_matrices(1,0),MAT_FINAL_ASSEMBLY); CHKERRG(ierr);
+      ierr = MatAssemblyEnd(nested_matrices(1,0),MAT_FINAL_ASSEMBLY); CHKERRG(ierr);
+      // ierr = MatCreateTranspose(nested_matrices(1,0),&nested_matrices(0,1)); CHKERRG(ierr);
+      ierr = MatTranspose(nested_matrices(1,0),MAT_INITIAL_MATRIX,&nested_matrices(0,1)); CHKERRG(ierr);
+      ierr = DMDestroy(&dm_sub_LU); CHKERRG(ierr);
 
       domain_rhs_fe->ksp_f = F;
-      ierr = DMoFEMLoopFiniteElements(dm,simple_interface->getDomainFEName(),domain_rhs_fe); CHKERRQ(ierr);
+      ierr = DMoFEMLoopFiniteElements(dm,simple_interface->getDomainFEName(),domain_rhs_fe); CHKERRG(ierr);
       boundary_rhs_fe->ksp_f = F;
-      ierr = DMoFEMLoopFiniteElements(dm,simple_interface->getBoundaryFEName(),boundary_rhs_fe); CHKERRQ(ierr);
-      ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
-      ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
+      ierr = DMoFEMLoopFiniteElements(dm,simple_interface->getBoundaryFEName(),boundary_rhs_fe); CHKERRG(ierr);
+      ierr = VecAssemblyBegin(F); CHKERRG(ierr);
+      ierr = VecAssemblyEnd(F); CHKERRG(ierr);
 
       Mat A;
       nested_matrices(1,1) = PETSC_NULL;
@@ -430,21 +430,21 @@ int main(int argc, char *argv[]) {
       ierr = MatCreateNest(
         PETSC_COMM_WORLD,
         2,&nested_is[0],2,&nested_is[0],&nested_matrices(0,0),&A
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
 
       // Create solver and link it to DM
       KSP solver;
-      ierr = KSPCreate(PETSC_COMM_WORLD,&solver); CHKERRQ(ierr);
-      ierr = KSPSetFromOptions(solver); CHKERRQ(ierr);
+      ierr = KSPCreate(PETSC_COMM_WORLD,&solver); CHKERRG(ierr);
+      ierr = KSPSetFromOptions(solver); CHKERRG(ierr);
       // Set operators
-      ierr = KSPSetOperators(solver,A,A); CHKERRQ(ierr);
+      ierr = KSPSetOperators(solver,A,A); CHKERRG(ierr);
       PC pc;
-      ierr = KSPGetPC(solver,&pc); CHKERRQ(ierr);
+      ierr = KSPGetPC(solver,&pc); CHKERRG(ierr);
       PetscBool is_pcfs = PETSC_FALSE;
       PetscObjectTypeCompare((PetscObject)pc,PCFIELDSPLIT,&is_pcfs);
       if(is_pcfs) {
-        ierr = PCFieldSplitSetIS(pc,NULL,nested_is[0]); CHKERRQ(ierr);
-        ierr = PCFieldSplitSetIS(pc,NULL,nested_is[1]); CHKERRQ(ierr);
+        ierr = PCFieldSplitSetIS(pc,NULL,nested_is[0]); CHKERRG(ierr);
+        ierr = PCFieldSplitSetIS(pc,NULL,nested_is[1]); CHKERRG(ierr);
       } else {
         SETERRQ(
           PETSC_COMM_WORLD,
@@ -453,59 +453,59 @@ int main(int argc, char *argv[]) {
         );
       }
       // Set-up solver, is type of solver and pre-conditioners
-      ierr = KSPSetUp(solver); CHKERRQ(ierr);
+      ierr = KSPSetUp(solver); CHKERRG(ierr);
       // At solution process, KSP solver using DM creates matrices, Calculate
       // values of the left hand side and the right hand side vector. then
       // solves system of equations. Results are stored in vector D.
-      ierr = KSPSolve(solver,F,D); CHKERRQ(ierr);
+      ierr = KSPSolve(solver,F,D); CHKERRG(ierr);
 
       // Scatter solution on the mesh. Stores unknown vector on field on the mesh.
-      ierr = DMoFEMMeshToGlobalVector(dm,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+      ierr = DMoFEMMeshToGlobalVector(dm,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
 
       // Clean data. Solver and vector are not needed any more.
-      ierr = KSPDestroy(&solver); CHKERRQ(ierr);
+      ierr = KSPDestroy(&solver); CHKERRG(ierr);
       for(int i = 0;i!=2;i++) {
-        ierr = ISDestroy(&nested_is[i]); CHKERRQ(ierr);
+        ierr = ISDestroy(&nested_is[i]); CHKERRG(ierr);
         for(int j = 0;j!=2;j++) {
-          ierr = MatDestroy(&nested_matrices(i,j)); CHKERRQ(ierr);
+          ierr = MatDestroy(&nested_matrices(i,j)); CHKERRG(ierr);
         }
       }
-      ierr = MatDestroy(&A); CHKERRQ(ierr);
-      ierr = VecDestroy(&D); CHKERRQ(ierr);
-      ierr = VecDestroy(&F); CHKERRQ(ierr);
+      ierr = MatDestroy(&A); CHKERRG(ierr);
+      ierr = VecDestroy(&D); CHKERRG(ierr);
+      ierr = VecDestroy(&F); CHKERRG(ierr);
     }
 
     // Calculate error
     {
       // Loop over all elements in mesh, and run users operators on each element.
-      ierr = DMoFEMLoopFiniteElements(dm,simple_interface->getDomainFEName(),domain_error); CHKERRQ(ierr);
-      ierr = PoissonExample::AuxFunctions(m_field).assembleGhostVector(global_error); CHKERRQ(ierr);
-      ierr = PoissonExample::AuxFunctions(m_field).printError(global_error); CHKERRQ(ierr);
+      ierr = DMoFEMLoopFiniteElements(dm,simple_interface->getDomainFEName(),domain_error); CHKERRG(ierr);
+      ierr = PoissonExample::AuxFunctions(m_field).assembleGhostVector(global_error); CHKERRG(ierr);
+      ierr = PoissonExample::AuxFunctions(m_field).printError(global_error); CHKERRG(ierr);
       if(flg_test == PETSC_TRUE) {
-        ierr = PoissonExample::AuxFunctions(m_field).testError(global_error); CHKERRQ(ierr);
+        ierr = PoissonExample::AuxFunctions(m_field).testError(global_error); CHKERRG(ierr);
       }
     }
 
     {
       // Loop over all elements in the mesh and for each execute post_proc_volume
       // element and operators on it.
-      ierr = DMoFEMLoopFiniteElements(dm,simple_interface->getDomainFEName(),post_proc_volume); CHKERRQ(ierr);
+      ierr = DMoFEMLoopFiniteElements(dm,simple_interface->getDomainFEName(),post_proc_volume); CHKERRG(ierr);
       // Write results
-      ierr = boost::static_pointer_cast<PostProcVolumeOnRefinedMesh>(post_proc_volume)->writeFile("out_vol.h5m"); CHKERRQ(ierr);
+      ierr = boost::static_pointer_cast<PostProcVolumeOnRefinedMesh>(post_proc_volume)->writeFile("out_vol.h5m"); CHKERRG(ierr);
     }
 
     // Destroy DM, no longer needed.
-    ierr = DMDestroy(&dm); CHKERRQ(ierr);
+    ierr = DMDestroy(&dm); CHKERRG(ierr);
 
     // Destroy ghost vector
-    ierr = VecDestroy(&global_error); CHKERRQ(ierr);
+    ierr = VecDestroy(&global_error); CHKERRG(ierr);
 
   } catch (MoFEMException const &e) {
     SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
   }
 
   // finish work cleaning memory, getting statistics, etc.
-  ierr = PetscFinalize(); CHKERRQ(ierr);
+  ierr = PetscFinalize(); CHKERRG(ierr);
 
   return 0;
 

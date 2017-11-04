@@ -107,10 +107,10 @@ struct MetaNodalForces {
     MoFEMFunctionBeginHot;
     
     
-    ierr = m_field.add_finite_element("FORCE_FE",MF_ZERO); CHKERRQ(ierr);
-    ierr = m_field.modify_finite_element_add_field_row("FORCE_FE",field_name); CHKERRQ(ierr);
-    ierr = m_field.modify_finite_element_add_field_col("FORCE_FE",field_name); CHKERRQ(ierr);
-    ierr = m_field.modify_finite_element_add_field_data("FORCE_FE",field_name); CHKERRQ(ierr);
+    ierr = m_field.add_finite_element("FORCE_FE",MF_ZERO); CHKERRG(ierr);
+    ierr = m_field.modify_finite_element_add_field_row("FORCE_FE",field_name); CHKERRG(ierr);
+    ierr = m_field.modify_finite_element_add_field_col("FORCE_FE",field_name); CHKERRG(ierr);
+    ierr = m_field.modify_finite_element_add_field_data("FORCE_FE",field_name); CHKERRG(ierr);
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,NODESET|FORCESET,it)) {
       Range tris;
       rval = m_field.get_moab().get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERRG(rval);
@@ -127,7 +127,7 @@ struct MetaNodalForces {
       if(intersect_ptr) {
         nodes = intersect(nodes,*intersect_ptr);
       }
-      ierr = m_field.add_ents_to_finite_element_by_type(nodes,MBVERTEX,"FORCE_FE"); CHKERRQ(ierr);
+      ierr = m_field.add_ents_to_finite_element_by_type(nodes,MBVERTEX,"FORCE_FE"); CHKERRG(ierr);
     }
     MoFEMFunctionReturnHot(0);
   }
@@ -141,7 +141,7 @@ struct MetaNodalForces {
     string fe_name = "FORCE_FE";
     nodal_forces.insert(fe_name,new NodalForce(m_field));
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,NODESET|FORCESET,it)) {
-      ierr = nodal_forces.at(fe_name).addForce(field_name,F,it->getMeshsetId());  CHKERRQ(ierr);
+      ierr = nodal_forces.at(fe_name).addForce(field_name,F,it->getMeshsetId());  CHKERRG(ierr);
     }
     MoFEMFunctionReturnHot(0);
   }

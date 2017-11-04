@@ -71,7 +71,7 @@ int main(int argc, char *argv[]) {
 
     PetscBool flg = PETSC_TRUE;
     char mesh_file_name[255];
-    ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+    ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRG(ierr);
     if(flg != PETSC_TRUE) {
       SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
     }
@@ -94,46 +94,46 @@ int main(int argc, char *argv[]) {
     bit_level0.set(0);
     EntityHandle meshset_level0;
     rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERRG(rval);
-    ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
+    ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRG(ierr);
 
     //Fields
-    ierr = m_field.add_field("TEMP",H1,AINSWORTH_LEGENDRE_BASE,1); CHKERRQ(ierr);
+    ierr = m_field.add_field("TEMP",H1,AINSWORTH_LEGENDRE_BASE,1); CHKERRG(ierr);
 
     //Problem
-    ierr = m_field.add_problem("TEST_PROBLEM"); CHKERRQ(ierr);
-    ierr = m_field.add_problem("BC_PROBLEM"); CHKERRQ(ierr);
+    ierr = m_field.add_problem("TEST_PROBLEM"); CHKERRG(ierr);
+    ierr = m_field.add_problem("BC_PROBLEM"); CHKERRG(ierr);
 
     //set refinement level for problem
-    ierr = m_field.modify_problem_ref_level_add_bit("TEST_PROBLEM",bit_level0); CHKERRQ(ierr);
-    ierr = m_field.modify_problem_ref_level_add_bit("BC_PROBLEM",bit_level0); CHKERRQ(ierr);
+    ierr = m_field.modify_problem_ref_level_add_bit("TEST_PROBLEM",bit_level0); CHKERRG(ierr);
+    ierr = m_field.modify_problem_ref_level_add_bit("BC_PROBLEM",bit_level0); CHKERRG(ierr);
 
     //meshset consisting all entities in mesh
     EntityHandle root_set = moab.get_root_set();
-    ierr = m_field.add_field("MESH_NODE_POSITIONS",H1,AINSWORTH_LEGENDRE_BASE,3); CHKERRQ(ierr);
-    ierr = m_field.add_ents_to_field_by_type(root_set,MBTET,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
-    ierr = m_field.set_field_order(0,MBTET,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
-    ierr = m_field.set_field_order(0,MBTRI,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
-    ierr = m_field.set_field_order(0,MBEDGE,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
-    ierr = m_field.set_field_order(0,MBVERTEX,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
+    ierr = m_field.add_field("MESH_NODE_POSITIONS",H1,AINSWORTH_LEGENDRE_BASE,3); CHKERRG(ierr);
+    ierr = m_field.add_ents_to_field_by_type(root_set,MBTET,"MESH_NODE_POSITIONS"); CHKERRG(ierr);
+    ierr = m_field.set_field_order(0,MBTET,"MESH_NODE_POSITIONS",2); CHKERRG(ierr);
+    ierr = m_field.set_field_order(0,MBTRI,"MESH_NODE_POSITIONS",2); CHKERRG(ierr);
+    ierr = m_field.set_field_order(0,MBEDGE,"MESH_NODE_POSITIONS",2); CHKERRG(ierr);
+    ierr = m_field.set_field_order(0,MBVERTEX,"MESH_NODE_POSITIONS",1); CHKERRG(ierr);
 
     //add entities to field
-    ierr = m_field.add_ents_to_field_by_type(root_set,MBTET,"TEMP"); CHKERRQ(ierr);
+    ierr = m_field.add_ents_to_field_by_type(root_set,MBTET,"TEMP"); CHKERRG(ierr);
 
     //set app. order
     //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
     PetscInt order;
-    ierr = PetscOptionsGetInt(PETSC_NULL,PETSC_NULL,"-my_order",&order,&flg); CHKERRQ(ierr);
+    ierr = PetscOptionsGetInt(PETSC_NULL,PETSC_NULL,"-my_order",&order,&flg); CHKERRG(ierr);
     if(flg != PETSC_TRUE) {
       order = 2;
     }
-    ierr = m_field.set_field_order(root_set,MBTET,"TEMP",order); CHKERRQ(ierr);
-    ierr = m_field.set_field_order(root_set,MBTRI,"TEMP",order); CHKERRQ(ierr);
-    ierr = m_field.set_field_order(root_set,MBEDGE,"TEMP",order); CHKERRQ(ierr);
-    ierr = m_field.set_field_order(root_set,MBVERTEX,"TEMP",1); CHKERRQ(ierr);
+    ierr = m_field.set_field_order(root_set,MBTET,"TEMP",order); CHKERRG(ierr);
+    ierr = m_field.set_field_order(root_set,MBTRI,"TEMP",order); CHKERRG(ierr);
+    ierr = m_field.set_field_order(root_set,MBEDGE,"TEMP",order); CHKERRG(ierr);
+    ierr = m_field.set_field_order(root_set,MBVERTEX,"TEMP",1); CHKERRG(ierr);
 
     ThermalElement thermal_elements(m_field);
-    ierr = thermal_elements.addThermalElements("TEMP"); CHKERRQ(ierr);
-    ierr = m_field.modify_problem_add_finite_element("TEST_PROBLEM","THERMAL_FE"); CHKERRQ(ierr);
+    ierr = thermal_elements.addThermalElements("TEMP"); CHKERRG(ierr);
+    ierr = m_field.modify_problem_add_finite_element("TEST_PROBLEM","THERMAL_FE"); CHKERRG(ierr);
 
     Range bc_tris;
     for(_IT_CUBITMESHSETS_BY_NAME_FOR_LOOP_(m_field,"ANALYTICAL_BC",it)) {
@@ -141,87 +141,87 @@ int main(int argc, char *argv[]) {
     }
 
     AnalyticalDirichletBC analytical_bc(m_field);
-    ierr = analytical_bc.setFiniteElement(m_field,"BC_FE","TEMP",bc_tris); CHKERRQ(ierr);
-    ierr = m_field.modify_problem_add_finite_element("BC_PROBLEM","BC_FE"); CHKERRQ(ierr);
+    ierr = analytical_bc.setFiniteElement(m_field,"BC_FE","TEMP",bc_tris); CHKERRG(ierr);
+    ierr = m_field.modify_problem_add_finite_element("BC_PROBLEM","BC_FE"); CHKERRG(ierr);
 
     /****/
     //build database
     //build field
-    ierr = m_field.build_fields(); CHKERRQ(ierr);
+    ierr = m_field.build_fields(); CHKERRG(ierr);
     //build finite elemnts
-    ierr = m_field.build_finite_elements(); CHKERRQ(ierr);
+    ierr = m_field.build_finite_elements(); CHKERRG(ierr);
     //build adjacencies
-    ierr = m_field.build_adjacencies(bit_level0); CHKERRQ(ierr);
+    ierr = m_field.build_adjacencies(bit_level0); CHKERRG(ierr);
     //build problem
     ProblemsManager *prb_mng_ptr;
-    ierr = m_field.getInterface(prb_mng_ptr); CHKERRQ(ierr);
-    ierr = prb_mng_ptr->buildProblem("TEST_PROBLEM",true); CHKERRQ(ierr);
-    ierr = prb_mng_ptr->buildProblem("BC_PROBLEM",true); CHKERRQ(ierr);
+    ierr = m_field.getInterface(prb_mng_ptr); CHKERRG(ierr);
+    ierr = prb_mng_ptr->buildProblem("TEST_PROBLEM",true); CHKERRG(ierr);
+    ierr = prb_mng_ptr->buildProblem("BC_PROBLEM",true); CHKERRG(ierr);
 
     Projection10NodeCoordsOnField ent_method_material(m_field,"MESH_NODE_POSITIONS");
-    ierr = m_field.loop_dofs("MESH_NODE_POSITIONS",ent_method_material); CHKERRQ(ierr);
+    ierr = m_field.loop_dofs("MESH_NODE_POSITIONS",ent_method_material); CHKERRG(ierr);
 
     /****/
     //mesh partitioning
     //partition
-    ierr = prb_mng_ptr->partitionSimpleProblem("TEST_PROBLEM"); CHKERRQ(ierr);
-    ierr = prb_mng_ptr->partitionFiniteElements("TEST_PROBLEM"); CHKERRQ(ierr);
+    ierr = prb_mng_ptr->partitionSimpleProblem("TEST_PROBLEM"); CHKERRG(ierr);
+    ierr = prb_mng_ptr->partitionFiniteElements("TEST_PROBLEM"); CHKERRG(ierr);
     //what are ghost nodes, see Petsc Manual
-    ierr = prb_mng_ptr->partitionGhostDofs("TEST_PROBLEM"); CHKERRQ(ierr);
+    ierr = prb_mng_ptr->partitionGhostDofs("TEST_PROBLEM"); CHKERRG(ierr);
 
-    ierr = prb_mng_ptr->partitionSimpleProblem("BC_PROBLEM"); CHKERRQ(ierr);
-    ierr = prb_mng_ptr->partitionFiniteElements("BC_PROBLEM"); CHKERRQ(ierr);
+    ierr = prb_mng_ptr->partitionSimpleProblem("BC_PROBLEM"); CHKERRG(ierr);
+    ierr = prb_mng_ptr->partitionFiniteElements("BC_PROBLEM"); CHKERRG(ierr);
     //what are ghost nodes, see Petsc Manual
-    ierr = prb_mng_ptr->partitionGhostDofs("BC_PROBLEM"); CHKERRQ(ierr);
+    ierr = prb_mng_ptr->partitionGhostDofs("BC_PROBLEM"); CHKERRG(ierr);
 
     Vec F;
-    ierr = m_field.getInterface<VecManager>()->vecCreateGhost("TEST_PROBLEM",ROW,&F); CHKERRQ(ierr);
+    ierr = m_field.getInterface<VecManager>()->vecCreateGhost("TEST_PROBLEM",ROW,&F); CHKERRG(ierr);
     Vec T;
-    ierr = VecDuplicate(F,&T); CHKERRQ(ierr);
+    ierr = VecDuplicate(F,&T); CHKERRG(ierr);
     Mat A;
-    ierr = m_field.MatCreateMPIAIJWithArrays("TEST_PROBLEM",&A); CHKERRQ(ierr);
+    ierr = m_field.MatCreateMPIAIJWithArrays("TEST_PROBLEM",&A); CHKERRG(ierr);
 
-    ierr = thermal_elements.setThermalFiniteElementRhsOperators("TEMP",F); CHKERRQ(ierr);
-    ierr = thermal_elements.setThermalFiniteElementLhsOperators("TEMP",A); CHKERRQ(ierr);
-    ierr = thermal_elements.setThermalFluxFiniteElementRhsOperators("TEMP",F); CHKERRQ(ierr);
+    ierr = thermal_elements.setThermalFiniteElementRhsOperators("TEMP",F); CHKERRG(ierr);
+    ierr = thermal_elements.setThermalFiniteElementLhsOperators("TEMP",A); CHKERRG(ierr);
+    ierr = thermal_elements.setThermalFluxFiniteElementRhsOperators("TEMP",F); CHKERRG(ierr);
 
-    ierr = VecZeroEntries(T); CHKERRQ(ierr);
-    ierr = VecZeroEntries(F); CHKERRQ(ierr);
-    ierr = MatZeroEntries(A); CHKERRQ(ierr);
+    ierr = VecZeroEntries(T); CHKERRG(ierr);
+    ierr = VecZeroEntries(F); CHKERRG(ierr);
+    ierr = MatZeroEntries(A); CHKERRG(ierr);
 
     //analytical Dirichlet bc
     AnalyticalDirichletBC::DirichletBC analytical_ditihlet_bc(m_field,"TEMP",A,T,F);
 
     //solve for ditihlet bc dofs
-    ierr = analytical_bc.setUpProblem(m_field,"BC_PROBLEM"); CHKERRQ(ierr);
+    ierr = analytical_bc.setUpProblem(m_field,"BC_PROBLEM"); CHKERRG(ierr);
 
     boost::shared_ptr<AnalyticalFunction> testing_function = boost::shared_ptr<AnalyticalFunction>(new AnalyticalFunction);
 
-    ierr = analytical_bc.setApproxOps(m_field,"TEMP",testing_function,0); CHKERRQ(ierr);
-    ierr = analytical_bc.solveProblem(m_field,"BC_PROBLEM","BC_FE",analytical_ditihlet_bc); CHKERRQ(ierr);
+    ierr = analytical_bc.setApproxOps(m_field,"TEMP",testing_function,0); CHKERRG(ierr);
+    ierr = analytical_bc.solveProblem(m_field,"BC_PROBLEM","BC_FE",analytical_ditihlet_bc); CHKERRG(ierr);
 
-    ierr = analytical_bc.destroyProblem(); CHKERRQ(ierr);
+    ierr = analytical_bc.destroyProblem(); CHKERRG(ierr);
 
     //preproc
-    ierr = m_field.problem_basic_method_preProcess("TEST_PROBLEM",analytical_ditihlet_bc); CHKERRQ(ierr);
-    //ierr = m_field.getInterface<VecManager>()->setGlobalGhostVector("TEST_PROBLEM",ROW,T,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = m_field.problem_basic_method_preProcess("TEST_PROBLEM",analytical_ditihlet_bc); CHKERRG(ierr);
+    //ierr = m_field.getInterface<VecManager>()->setGlobalGhostVector("TEST_PROBLEM",ROW,T,INSERT_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
 
-    ierr = m_field.loop_finite_elements("TEST_PROBLEM","THERMAL_FE",thermal_elements.getLoopFeRhs()); CHKERRQ(ierr);
-    ierr = m_field.loop_finite_elements("TEST_PROBLEM","THERMAL_FE",thermal_elements.getLoopFeLhs()); CHKERRQ(ierr);
+    ierr = m_field.loop_finite_elements("TEST_PROBLEM","THERMAL_FE",thermal_elements.getLoopFeRhs()); CHKERRG(ierr);
+    ierr = m_field.loop_finite_elements("TEST_PROBLEM","THERMAL_FE",thermal_elements.getLoopFeLhs()); CHKERRG(ierr);
     if(m_field.check_finite_element("THERMAL_FLUX_FE"))
-    ierr = m_field.loop_finite_elements("TEST_PROBLEM","THERMAL_FLUX_FE",thermal_elements.getLoopFeFlux()); CHKERRQ(ierr);
+    ierr = m_field.loop_finite_elements("TEST_PROBLEM","THERMAL_FLUX_FE",thermal_elements.getLoopFeFlux()); CHKERRG(ierr);
 
     //postproc
-    ierr = m_field.problem_basic_method_postProcess("TEST_PROBLEM",analytical_ditihlet_bc); CHKERRQ(ierr);
+    ierr = m_field.problem_basic_method_postProcess("TEST_PROBLEM",analytical_ditihlet_bc); CHKERRG(ierr);
 
-    ierr = VecGhostUpdateBegin(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-    ierr = VecGhostUpdateEnd(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-    ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
-    ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
-    ierr = MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-    ierr = MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+    ierr = VecGhostUpdateBegin(F,ADD_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
+    ierr = VecGhostUpdateEnd(F,ADD_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
+    ierr = VecAssemblyBegin(F); CHKERRG(ierr);
+    ierr = VecAssemblyEnd(F); CHKERRG(ierr);
+    ierr = MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY); CHKERRG(ierr);
+    ierr = MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY); CHKERRG(ierr);
 
-    ierr = VecScale(F,-1); CHKERRQ(ierr);
+    ierr = VecScale(F,-1); CHKERRG(ierr);
     //std::string wait;
     //std::cout << "\n matrix is coming = \n" << std::endl;
     //ierr = MatView(A,PETSC_VIEWER_DRAW_WORLD);
@@ -229,23 +229,23 @@ int main(int argc, char *argv[]) {
 
     //Solver
     KSP solver;
-    ierr = KSPCreate(PETSC_COMM_WORLD,&solver); CHKERRQ(ierr);
-    ierr = KSPSetOperators(solver,A,A); CHKERRQ(ierr);
-    ierr = KSPSetFromOptions(solver); CHKERRQ(ierr);
-    ierr = KSPSetUp(solver); CHKERRQ(ierr);
+    ierr = KSPCreate(PETSC_COMM_WORLD,&solver); CHKERRG(ierr);
+    ierr = KSPSetOperators(solver,A,A); CHKERRG(ierr);
+    ierr = KSPSetFromOptions(solver); CHKERRG(ierr);
+    ierr = KSPSetUp(solver); CHKERRG(ierr);
 
-    ierr = KSPSolve(solver,F,T); CHKERRQ(ierr);
-    ierr = VecGhostUpdateBegin(T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    ierr = VecGhostUpdateEnd(T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = KSPSolve(solver,F,T); CHKERRG(ierr);
+    ierr = VecGhostUpdateBegin(T,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
+    ierr = VecGhostUpdateEnd(T,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
 
     //Save data on mesh
-    //ierr = m_field.problem_basic_method_preProcess("TEST_PROBLEM",analytical_ditihlet_bc); CHKERRQ(ierr);
-    ierr = m_field.getInterface<VecManager>()->setGlobalGhostVector("TEST_PROBLEM",ROW,T,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-    ierr = m_field.getInterface<VecManager>()->setLocalGhostVector("TEST_PROBLEM",ROW,T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    //ierr = m_field.problem_basic_method_preProcess("TEST_PROBLEM",analytical_ditihlet_bc); CHKERRG(ierr);
+    ierr = m_field.getInterface<VecManager>()->setGlobalGhostVector("TEST_PROBLEM",ROW,T,ADD_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
+    ierr = m_field.getInterface<VecManager>()->setLocalGhostVector("TEST_PROBLEM",ROW,T,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
 
-    //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+    //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRG(ierr);
 
-    //ierr = VecView(T,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+    //ierr = VecView(T,PETSC_VIEWER_STDOUT_WORLD); CHKERRG(ierr);
 
     PetscReal pointwisenorm;
     ierr = VecMax(T,NULL,&pointwisenorm);
@@ -253,17 +253,17 @@ int main(int argc, char *argv[]) {
 
     // PetscViewer viewer;
     // PetscViewerASCIIOpen(PETSC_COMM_WORLD,"thermal_with_analytical_bc.txt",&viewer);
-    // ierr = VecChop(T,1e-4); CHKERRQ(ierr);
-    // ierr = VecView(T,viewer); CHKERRQ(ierr);
-    // ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
+    // ierr = VecChop(T,1e-4); CHKERRG(ierr);
+    // ierr = VecView(T,viewer); CHKERRG(ierr);
+    // ierr = PetscViewerDestroy(&viewer); CHKERRG(ierr);
 
 
     double sum = 0;
-    ierr = VecSum(T,&sum); CHKERRQ(ierr);
-    ierr = PetscPrintf(PETSC_COMM_WORLD,"sum  = %9.8e\n",sum); CHKERRQ(ierr);
+    ierr = VecSum(T,&sum); CHKERRG(ierr);
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"sum  = %9.8e\n",sum); CHKERRG(ierr);
     double fnorm;
-    ierr = VecNorm(T,NORM_2,&fnorm); CHKERRQ(ierr);
-    ierr = PetscPrintf(PETSC_COMM_WORLD,"fnorm  = %9.8e\n",fnorm); CHKERRQ(ierr);
+    ierr = VecNorm(T,NORM_2,&fnorm); CHKERRG(ierr);
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"fnorm  = %9.8e\n",fnorm); CHKERRG(ierr);
     if(fabs(sum+6.46079983e-01)>1e-7) {
       SETERRQ(PETSC_COMM_WORLD,MOFEM_ATOM_TEST_INVALID,"Failed to pass test");
     }
@@ -275,26 +275,26 @@ int main(int argc, char *argv[]) {
     if(debug) {
 
       PostProcVolumeOnRefinedMesh post_proc(m_field);
-      ierr = post_proc.generateReferenceElementMesh(); CHKERRQ(ierr);
-      ierr = post_proc.addFieldValuesPostProc("TEMP"); CHKERRQ(ierr);
-      ierr = post_proc.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
-      ierr = post_proc.addFieldValuesGradientPostProc("TEMP"); CHKERRQ(ierr);
-      ierr = m_field.loop_finite_elements("TEST_PROBLEM","THERMAL_FE",post_proc); CHKERRQ(ierr);
-      ierr = post_proc.writeFile("out.h5m"); CHKERRQ(ierr);
+      ierr = post_proc.generateReferenceElementMesh(); CHKERRG(ierr);
+      ierr = post_proc.addFieldValuesPostProc("TEMP"); CHKERRG(ierr);
+      ierr = post_proc.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRG(ierr);
+      ierr = post_proc.addFieldValuesGradientPostProc("TEMP"); CHKERRG(ierr);
+      ierr = m_field.loop_finite_elements("TEST_PROBLEM","THERMAL_FE",post_proc); CHKERRG(ierr);
+      ierr = post_proc.writeFile("out.h5m"); CHKERRG(ierr);
 
     }
 
-    ierr = MatDestroy(&A); CHKERRQ(ierr);
-    ierr = VecDestroy(&F); CHKERRQ(ierr);
-    ierr = VecDestroy(&T); CHKERRQ(ierr);
-    ierr = KSPDestroy(&solver); CHKERRQ(ierr);
+    ierr = MatDestroy(&A); CHKERRG(ierr);
+    ierr = VecDestroy(&F); CHKERRG(ierr);
+    ierr = VecDestroy(&T); CHKERRG(ierr);
+    ierr = KSPDestroy(&solver); CHKERRG(ierr);
 
 
   } catch (MoFEMException const &e) {
     SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
   }
 
-  ierr = PetscFinalize(); CHKERRQ(ierr);
+  ierr = PetscFinalize(); CHKERRG(ierr);
 
   return 0;
 

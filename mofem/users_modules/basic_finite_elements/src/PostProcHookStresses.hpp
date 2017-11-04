@@ -27,10 +27,10 @@
  \code
  PostProcVolumeOnRefinedMesh post_proc(m_field);
  {
-   ierr = post_proc.generateReferenceElementMesh(); CHKERRQ(ierr);
-   ierr = post_proc.addFieldValuesPostProc("DISPLACEMENT"); CHKERRQ(ierr);
-   ierr = post_proc.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
-   ierr = post_proc.addFieldValuesGradientPostProc("DISPLACEMENT"); CHKERRQ(ierr);
+   ierr = post_proc.generateReferenceElementMesh(); CHKERRG(ierr);
+   ierr = post_proc.addFieldValuesPostProc("DISPLACEMENT"); CHKERRG(ierr);
+   ierr = post_proc.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRG(ierr);
+   ierr = post_proc.addFieldValuesGradientPostProc("DISPLACEMENT"); CHKERRG(ierr);
    //add postprocessing for stresses
    post_proc.getOpPtrVector().push_back(
      new PostProcHookStress(
@@ -42,8 +42,8 @@
        &elastic.setOfBlocks
      )
    );
-   ierr = DMoFEMLoopFiniteElements(dm,"ELASTIC",&post_proc); CHKERRQ(ierr);
-   ierr = post_proc.writeFile("out.h5m"); CHKERRQ(ierr);
+   ierr = DMoFEMLoopFiniteElements(dm,"ELASTIC",&post_proc); CHKERRG(ierr);
+   ierr = post_proc.writeFile("out.h5m"); CHKERRG(ierr);
  }
 
  \endcode
@@ -111,7 +111,7 @@ struct PostProcHookStress: public MoFEM::VolumeElementForcesAndSourcesCore::User
     EntityHandle ent = getNumeredEntFiniteElementPtr()->getEnt();
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|MAT_ELASTICSET,it)) {
       Mat_Elastic mydata;
-      ierr = it->getAttributeDataStructure(mydata); CHKERRQ(ierr);
+      ierr = it->getAttributeDataStructure(mydata); CHKERRG(ierr);
 
       Range meshsets;
       rval = mField.get_moab().get_entities_by_type(it->meshset,MBENTITYSET,meshsets,true); CHKERRG(rval);
@@ -160,7 +160,7 @@ struct PostProcHookStress: public MoFEM::VolumeElementForcesAndSourcesCore::User
 
     int id;
     double lambda,mu;
-    ierr = getMatParameters(&lambda,&mu,&id); CHKERRQ(ierr);
+    ierr = getMatParameters(&lambda,&mu,&id); CHKERRG(ierr);
 
     MatrixDouble D_lambda,D_mu,D;
     D_lambda.resize(6,6);

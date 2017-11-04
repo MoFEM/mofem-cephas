@@ -88,7 +88,7 @@ MoFEMErrorCode NeummanForcesSurface::OpNeumannForce::doWork(
   }
 
   // Scale force using user defined scaling operator
-  ierr = MethodForForceScaling::applyScale(getFEMethod(), methodsOp, Nf); CHKERRQ(ierr);
+  ierr = MethodForForceScaling::applyScale(getFEMethod(), methodsOp, Nf); CHKERRG(ierr);
   {
     Vec my_f;
     // If user vector is not set, use vector from snes or ts solvers
@@ -111,7 +111,7 @@ MoFEMErrorCode NeummanForcesSurface::OpNeumannForce::doWork(
     // Assemble force into vector
     ierr = VecSetValues(
       my_f,data.getIndices().size(),&data.getIndices()[0],&Nf[0],ADD_VALUES
-    ); CHKERRQ(ierr);
+    ); CHKERRG(ierr);
   }
 
   MoFEMFunctionReturnHot(0);
@@ -176,7 +176,7 @@ MoFEMErrorCode NeummanForcesSurface::OpNeumannForceAnalytical::doWork(
       boost::ptr_vector<MethodForAnalyticalForce>::iterator vit = analyticalForceOp.begin();
       vit!=analyticalForceOp.end();vit++
     ) {
-      ierr = vit->getForce(ent,coords,normal,force); CHKERRQ(ierr);
+      ierr = vit->getForce(ent,coords,normal,force); CHKERRG(ierr);
       for(int rr = 0;rr!=3;rr++) {
         cblas_daxpy(nb_row_dofs,val*force[rr],&data.getN()(gg,0),1,&Nf[rr],rank);
       }
@@ -185,7 +185,7 @@ MoFEMErrorCode NeummanForcesSurface::OpNeumannForceAnalytical::doWork(
   }
 
   // Scale force using user defined scaling operator
-  ierr = MethodForForceScaling::applyScale(getFEMethod(), methodsOp, Nf); CHKERRQ(ierr);
+  ierr = MethodForForceScaling::applyScale(getFEMethod(), methodsOp, Nf); CHKERRG(ierr);
 
   {
     Vec my_f;
@@ -209,7 +209,7 @@ MoFEMErrorCode NeummanForcesSurface::OpNeumannForceAnalytical::doWork(
     // Assemble force into vector
     ierr = VecSetValues(
       my_f,data.getIndices().size(),&data.getIndices()[0],&Nf[0],ADD_VALUES
-    ); CHKERRQ(ierr);
+    ); CHKERRG(ierr);
   }
 
   MoFEMFunctionReturnHot(0);
@@ -271,7 +271,7 @@ MoFEMErrorCode NeummanForcesSurface::OpNeumannPreassure::doWork(
   /*std::cerr << "VecSetValues\n";
   std::cerr << Nf << std::endl;
   std::cerr << data.getIndices() << std::endl;*/
-  ierr = MethodForForceScaling::applyScale(getFEMethod(),methodsOp,Nf); CHKERRQ(ierr);
+  ierr = MethodForForceScaling::applyScale(getFEMethod(),methodsOp,Nf); CHKERRG(ierr);
   {
     Vec my_f;
     if(F == PETSC_NULL) {
@@ -291,7 +291,7 @@ MoFEMErrorCode NeummanForcesSurface::OpNeumannPreassure::doWork(
     }
     ierr = VecSetValues(
       my_f,data.getIndices().size(),&data.getIndices()[0],&Nf[0],ADD_VALUES
-    ); CHKERRQ(ierr);
+    ); CHKERRG(ierr);
   }
 
   MoFEMFunctionReturnHot(0);
@@ -344,7 +344,7 @@ MoFEMErrorCode NeummanForcesSurface::OpNeumannFlux::doWork(
   //std::cerr << "VecSetValues\n";
   //std::cerr << Nf << std::endl;
   //std::cerr << data.getIndices() << std::endl;
-  ierr = MethodForForceScaling::applyScale(getFEMethod(), methodsOp, Nf); CHKERRQ(ierr);
+  ierr = MethodForForceScaling::applyScale(getFEMethod(), methodsOp, Nf); CHKERRG(ierr);
   {
     Vec my_f;
     if(F == PETSC_NULL) {
@@ -362,7 +362,7 @@ MoFEMErrorCode NeummanForcesSurface::OpNeumannFlux::doWork(
     } else {
       my_f = F;
     }
-    ierr = VecSetValues(my_f,data.getIndices().size(),&data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
+    ierr = VecSetValues(my_f,data.getIndices().size(),&data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRG(ierr);
   }
 
   MoFEMFunctionReturnHot(0);
@@ -375,12 +375,12 @@ MoFEMErrorCode NeummanForcesSurface::addForce(const std::string field_name,Vec F
   const CubitMeshSets *cubit_meshset_ptr;
   MeshsetsManager *mmanager_ptr;
   MoFEMFunctionBeginHot;
-  ierr = mField.getInterface(mmanager_ptr); CHKERRQ(ierr);
+  ierr = mField.getInterface(mmanager_ptr); CHKERRG(ierr);
   if(block_set) {
     //Add data from block set.
-    ierr = mmanager_ptr->getCubitMeshsetPtr(ms_id,BLOCKSET,&cubit_meshset_ptr); CHKERRQ(ierr);
+    ierr = mmanager_ptr->getCubitMeshsetPtr(ms_id,BLOCKSET,&cubit_meshset_ptr); CHKERRG(ierr);
     std::vector<double> mydata;
-    ierr = cubit_meshset_ptr->getAttributes(mydata); CHKERRQ(ierr);
+    ierr = cubit_meshset_ptr->getAttributes(mydata); CHKERRG(ierr);
     VectorDouble force(mydata.size());
     for(unsigned int ii = 0;ii<mydata.size();ii++) {
       force[ii] = mydata[ii];
@@ -413,8 +413,8 @@ MoFEMErrorCode NeummanForcesSurface::addForce(const std::string field_name,Vec F
 
     // SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"Not implemented");
   } else {
-    ierr = mmanager_ptr->getCubitMeshsetPtr(ms_id,NODESET,&cubit_meshset_ptr); CHKERRQ(ierr);
-    ierr = cubit_meshset_ptr->getBcDataStructure(mapForce[ms_id].data); CHKERRQ(ierr);
+    ierr = mmanager_ptr->getCubitMeshsetPtr(ms_id,NODESET,&cubit_meshset_ptr); CHKERRG(ierr);
+    ierr = cubit_meshset_ptr->getBcDataStructure(mapForce[ms_id].data); CHKERRG(ierr);
     rval = mField.get_moab().get_entities_by_type(cubit_meshset_ptr->meshset,MBTRI,mapForce[ms_id].tRis,true); CHKERRG(rval);
     fe.getOpPtrVector().push_back(new OpNeumannForce(field_name,F,mapForce[ms_id],methodsOp,ho_geometry));
   }
@@ -426,11 +426,11 @@ MoFEMErrorCode NeummanForcesSurface::addPreassure(const std::string field_name,V
   const CubitMeshSets *cubit_meshset_ptr;
   MeshsetsManager *mmanager_ptr;
   MoFEMFunctionBeginHot;
-  ierr = mField.getInterface(mmanager_ptr); CHKERRQ(ierr);
+  ierr = mField.getInterface(mmanager_ptr); CHKERRG(ierr);
   if(block_set) {
-    ierr = mmanager_ptr->getCubitMeshsetPtr(ms_id,BLOCKSET,&cubit_meshset_ptr); CHKERRQ(ierr);
+    ierr = mmanager_ptr->getCubitMeshsetPtr(ms_id,BLOCKSET,&cubit_meshset_ptr); CHKERRG(ierr);
     std::vector<double> mydata;
-    ierr = cubit_meshset_ptr->getAttributes(mydata); CHKERRQ(ierr);
+    ierr = cubit_meshset_ptr->getAttributes(mydata); CHKERRG(ierr);
     VectorDouble pressure(mydata.size());
     for(unsigned int ii = 0;ii<mydata.size();ii++) {
       pressure[ii] = mydata[ii];
@@ -449,8 +449,8 @@ MoFEMErrorCode NeummanForcesSurface::addPreassure(const std::string field_name,V
     rval = mField.get_moab().get_entities_by_type(cubit_meshset_ptr->meshset,MBTRI,mapPreassure[ms_id].tRis,true); CHKERRG(rval);
     fe.getOpPtrVector().push_back(new OpNeumannPreassure(field_name,F,mapPreassure[ms_id],methodsOp,ho_geometry));
   } else {
-    ierr = mmanager_ptr->getCubitMeshsetPtr(ms_id,SIDESET,&cubit_meshset_ptr); CHKERRQ(ierr);
-    ierr = cubit_meshset_ptr->getBcDataStructure(mapPreassure[ms_id].data); CHKERRQ(ierr);
+    ierr = mmanager_ptr->getCubitMeshsetPtr(ms_id,SIDESET,&cubit_meshset_ptr); CHKERRG(ierr);
+    ierr = cubit_meshset_ptr->getBcDataStructure(mapPreassure[ms_id].data); CHKERRG(ierr);
     rval = mField.get_moab().get_entities_by_type(cubit_meshset_ptr->meshset,MBTRI,mapPreassure[ms_id].tRis,true); CHKERRG(rval);
     fe.getOpPtrVector().push_back(new OpNeumannPreassure(field_name,F,mapPreassure[ms_id],methodsOp,ho_geometry));
   }
@@ -463,9 +463,9 @@ MoFEMErrorCode NeummanForcesSurface::addFlux(const std::string field_name,Vec F,
   const CubitMeshSets *cubit_meshset_ptr;
   MeshsetsManager *mmanager_ptr;
   MoFEMFunctionBeginHot;
-  ierr = mField.getInterface(mmanager_ptr); CHKERRQ(ierr);
-  ierr = mmanager_ptr->getCubitMeshsetPtr(ms_id,SIDESET,&cubit_meshset_ptr); CHKERRQ(ierr);
-  ierr = cubit_meshset_ptr->getBcDataStructure(mapPreassure[ms_id].data); CHKERRQ(ierr);
+  ierr = mField.getInterface(mmanager_ptr); CHKERRG(ierr);
+  ierr = mmanager_ptr->getCubitMeshsetPtr(ms_id,SIDESET,&cubit_meshset_ptr); CHKERRG(ierr);
+  ierr = cubit_meshset_ptr->getBcDataStructure(mapPreassure[ms_id].data); CHKERRG(ierr);
   rval = mField.get_moab().get_entities_by_type(cubit_meshset_ptr->meshset,MBTRI,mapPreassure[ms_id].tRis,true); CHKERRG(rval);
   fe.getOpPtrVector().push_back(new OpNeumannFlux(field_name,F,mapPreassure[ms_id],methodsOp,ho_geometry));
   MoFEMFunctionReturnHot(0);

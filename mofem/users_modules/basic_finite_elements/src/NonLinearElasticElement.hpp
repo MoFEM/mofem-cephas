@@ -262,9 +262,9 @@ struct NonlinearElasticElement {
 
       lambda = LAMBDA(block_data.E,block_data.PoissonRatio);
       mu = MU(block_data.E,block_data.PoissonRatio);
-      ierr = calculateC_CauchyDeformationTensor(); CHKERRQ(ierr);
-      ierr = calculateE_GreenStrain(); CHKERRQ(ierr);
-      ierr = calculateS_PiolaKirchhoffII(); CHKERRQ(ierr);
+      ierr = calculateC_CauchyDeformationTensor(); CHKERRG(ierr);
+      ierr = calculateE_GreenStrain(); CHKERRG(ierr);
+      ierr = calculateS_PiolaKirchhoffII(); CHKERRG(ierr);
       P.resize(3,3);
       noalias(P) = prod(F,S);
       //std::cerr << "P: " << P << std::endl;
@@ -320,8 +320,8 @@ struct NonlinearElasticElement {
 
       lambda = LAMBDA(block_data.E,block_data.PoissonRatio);
       mu = MU(block_data.E,block_data.PoissonRatio);
-      ierr = calculateC_CauchyDeformationTensor(); CHKERRQ(ierr);
-      ierr = calculateE_GreenStrain(); CHKERRQ(ierr);
+      ierr = calculateC_CauchyDeformationTensor(); CHKERRG(ierr);
+      ierr = calculateE_GreenStrain(); CHKERRG(ierr);
       TYPE trace = 0;
       eNergy = 0;
       for(int ii = 0;ii<3;ii++) {
@@ -343,8 +343,8 @@ struct NonlinearElasticElement {
     ) {
       MoFEMFunctionBeginHot;
 
-      ierr = calculateP_PiolaKirchhoffI(block_data,fe_ptr); CHKERRQ(ierr);
-      ierr = calculateElasticEnergy(block_data,fe_ptr); CHKERRQ(ierr);
+      ierr = calculateP_PiolaKirchhoffI(block_data,fe_ptr); CHKERRG(ierr);
+      ierr = calculateElasticEnergy(block_data,fe_ptr); CHKERRG(ierr);
       SiGma.resize(3,3,false);
       noalias(SiGma) = -prod(trans(F),P);
       for(int dd = 0;dd<3;dd++) {

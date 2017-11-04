@@ -298,7 +298,7 @@ struct NitscheMethod {
             faceFE.rowPtr = faceFEPtr->rows_dofs;
             faceFE.colPtr = faceFEPtr->cols_dofs;
             faceFE.addToRule = addToRule;
-            ierr = faceFE(); CHKERRQ(ierr);
+            ierr = faceFE(); CHKERRG(ierr);
           }
         }
       } catch (const std::exception& ex) {
@@ -341,7 +341,7 @@ struct NitscheMethod {
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
 
-      ierr = doAdditionalJobWhenGuassPtsAreCalulated(); CHKERRQ(ierr);
+      ierr = doAdditionalJobWhenGuassPtsAreCalulated(); CHKERRG(ierr);
 
       MoFEMFunctionReturnHot(0);
     }
@@ -539,16 +539,16 @@ struct NitscheMethod {
         for(int ff = 0;ff<4;ff++) {
           if(!nitscheCommonData.facesFePtr[ff]) continue;
           int nb_face_gauss_pts = nitscheCommonData.faceGaussPts[ff].size2();
-          ierr = getFaceRadius(ff); CHKERRQ(ierr);
+          ierr = getFaceRadius(ff); CHKERRG(ierr);
           kMatrix0.clear();
           kMatrix1.clear();
           for(int fgg = 0;fgg<nb_face_gauss_pts;fgg++,gg++) {
-            ierr = getGammaH(gamma,gg); CHKERRQ(ierr);
+            ierr = getGammaH(gamma,gg); CHKERRG(ierr);
             double val = getGaussPts()(3,gg);
-            ierr = getJac(row_data,gg,jAc_row); CHKERRQ(ierr);
-            ierr = getTractionVariance(gg,fgg,ff,jAc_row,tRac_v); CHKERRQ(ierr);
-            ierr = getJac(col_data,gg,jAc_col); CHKERRQ(ierr);
-            ierr = getTractionVariance(gg,fgg,ff,jAc_col,tRac_u); CHKERRQ(ierr);
+            ierr = getJac(row_data,gg,jAc_row); CHKERRG(ierr);
+            ierr = getTractionVariance(gg,fgg,ff,jAc_row,tRac_v); CHKERRG(ierr);
+            ierr = getJac(col_data,gg,jAc_col); CHKERRG(ierr);
+            ierr = getTractionVariance(gg,fgg,ff,jAc_col,tRac_u); CHKERRG(ierr);
             VectorAdaptor normal = VectorAdaptor(
               3,ublas::shallow_array_adaptor<double>(
                 3,&nitscheCommonData.faceNormals[ff](fgg,0)
@@ -556,7 +556,7 @@ struct NitscheMethod {
             );
             double area = cblas_dnrm2(3,&normal[0],1);
 
-            ierr = calculateP(gg,fgg,ff); CHKERRQ(ierr);
+            ierr = calculateP(gg,fgg,ff); CHKERRG(ierr);
             MatrixDouble &P = nitscheCommonData.P[ff][fgg];
 
             //P
@@ -646,7 +646,7 @@ struct NitscheMethod {
           &col_data.getIndices()[0],
           &kMatrix(0,0),
           ADD_VALUES
-        ); CHKERRQ(ierr);
+        ); CHKERRG(ierr);
 
       } catch (const std::exception& ex) {
         std::ostringstream ss;
@@ -709,13 +709,13 @@ struct NitscheMethod {
         for(int ff = 0;ff<4;ff++) {
           if(!nitscheCommonData.facesFePtr[ff]) continue;
           int nb_face_gauss_pts = nitscheCommonData.faceGaussPts[ff].size2();
-          ierr = getFaceRadius(ff); CHKERRQ(ierr);
+          ierr = getFaceRadius(ff); CHKERRG(ierr);
           for(int fgg = 0;fgg<nb_face_gauss_pts;fgg++,gg++) {
 
-            ierr = getGammaH(gamma,gg); CHKERRQ(ierr);
+            ierr = getGammaH(gamma,gg); CHKERRG(ierr);
             double val = getGaussPts()(3,gg);
-            ierr = getJac(row_data,gg,jAc_row); CHKERRQ(ierr);
-            ierr = getTractionVariance(gg,fgg,ff,jAc_row,tRac_v); CHKERRQ(ierr);
+            ierr = getJac(row_data,gg,jAc_row); CHKERRG(ierr);
+            ierr = getTractionVariance(gg,fgg,ff,jAc_row,tRac_v); CHKERRG(ierr);
             VectorAdaptor normal = VectorAdaptor(
               3,ublas::shallow_array_adaptor<double>(
                 3,&nitscheCommonData.faceNormals[ff](fgg,0)
@@ -723,7 +723,7 @@ struct NitscheMethod {
             );
             double area = cblas_dnrm2(3,&normal[0],1);
 
-            ierr = calculateP(gg,fgg,ff); CHKERRQ(ierr);
+            ierr = calculateP(gg,fgg,ff); CHKERRG(ierr);
             MatrixDouble &P = nitscheCommonData.P[ff][fgg];
 
             VectorDouble &u = (commonData.dataAtGaussPts[commonData.spatialPositions])[gg];
@@ -743,7 +743,7 @@ struct NitscheMethod {
 
         ierr = VecSetValues(
           getFEMethod()->snes_f,nb_dofs_row,&row_data.getIndices()[0],&nF[0],ADD_VALUES
-        ); CHKERRQ(ierr);
+        ); CHKERRG(ierr);
 
       } catch (const std::exception& ex) {
         std::ostringstream ss;

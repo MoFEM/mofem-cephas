@@ -99,7 +99,7 @@ struct FluidPressure {
       if(dAta.tRis.find(ent)==dAta.tRis.end()) MoFEMFunctionReturnHot(0);
 
       const FENumeredDofEntity *dof_ptr;
-      ierr = getNumeredEntFiniteElementPtr()->getRowDofsByPetscGlobalDofIdx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
+      ierr = getNumeredEntFiniteElementPtr()->getRowDofsByPetscGlobalDofIdx(data.getIndices()[0],&dof_ptr); CHKERRG(ierr);
       int rank = dof_ptr->getNbOfCoeffs();
       int nb_row_dofs = data.getIndices().size()/rank;
 
@@ -118,7 +118,7 @@ struct FluidPressure {
           if(acc_norm2>0) {
             fluctuation = dAta.aCCeleration/acc_norm2;
           }
-          ierr = MethodForForceScaling::applyScale(getFEMethod(),methodsOp,fluctuation); CHKERRQ(ierr);
+          ierr = MethodForForceScaling::applyScale(getFEMethod(),methodsOp,fluctuation); CHKERRG(ierr);
         }
         noalias(zero_pressure) += fluctuation;*/
         dist = ublas::matrix_row<MatrixDouble >(getCoordsAtGaussPts(),gg);
@@ -175,7 +175,7 @@ struct FluidPressure {
         &data.getIndices()[0],
         &Nf[0],
         ADD_VALUES
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
 
 
       MoFEMFunctionReturnHot(0);

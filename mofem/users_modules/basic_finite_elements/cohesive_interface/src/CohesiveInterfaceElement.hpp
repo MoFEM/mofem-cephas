@@ -220,18 +220,18 @@ struct CohesiveInterfaceElement {
       MoFEMFunctionBeginHot;
 
       if(!isInitialised) {
-        ierr = iNitailise(fe_method); CHKERRQ(ierr);
+        ierr = iNitailise(fe_method); CHKERRG(ierr);
         isInitialised = true;
       }
       if(gg==0) {
-        ierr = getKappa(common_data.gapGlob.size1(),fe_method); CHKERRQ(ierr);
+        ierr = getKappa(common_data.gapGlob.size1(),fe_method); CHKERRG(ierr);
       }
       double g = calcG(gg,common_data.gapLoc);
       double kappa = fmax(g-g0,kappaPtr[gg]);
       double omega = 0;
-      ierr = calcOmega(kappa,omega); CHKERRQ(ierr);
+      ierr = calcOmega(kappa,omega); CHKERRG(ierr);
       //std::cerr << gg << " " << omega << std::endl;
-      ierr = calcDglob(omega,common_data.R[gg]); CHKERRQ(ierr);
+      ierr = calcDglob(omega,common_data.R[gg]); CHKERRG(ierr);
       traction.resize(3);
       ublas::matrix_row<MatrixDouble > gap_glob(common_data.gapGlob,gg);
       noalias(traction) = prod(Dglob,gap_glob);
@@ -249,21 +249,21 @@ struct CohesiveInterfaceElement {
 
       try {
         if(!isInitialised) {
-          ierr = iNitailise(fe_method); CHKERRQ(ierr);
+          ierr = iNitailise(fe_method); CHKERRG(ierr);
           isInitialised = true;
         }
         if(gg==0) {
-          ierr = getKappa(common_data.gapGlob.size1(),fe_method); CHKERRQ(ierr);
+          ierr = getKappa(common_data.gapGlob.size1(),fe_method); CHKERRG(ierr);
         }
         double g = calcG(gg,common_data.gapLoc);
         double kappa = fmax(g-g0,kappaPtr[gg]);
         double omega = 0;
-        ierr = calcOmega(kappa,omega); CHKERRQ(ierr);
+        ierr = calcOmega(kappa,omega); CHKERRG(ierr);
         //std::cerr << gg << " " << omega << std::endl;
         int iter;
-        ierr = SNESGetIterationNumber(fe_method->snes,&iter); CHKERRQ(ierr);
+        ierr = SNESGetIterationNumber(fe_method->snes,&iter); CHKERRG(ierr);
         if((kappa <= kappaPtr[gg])||(kappa>=kappa1)||(iter <= 1)) {
-          ierr = calcDglob(omega,common_data.R[gg]); CHKERRQ(ierr);
+          ierr = calcDglob(omega,common_data.R[gg]); CHKERRG(ierr);
         } else {
           ublas::matrix_row<MatrixDouble > g_loc(common_data.gapLoc,gg);
           ierr = calcTangetDglob(omega,g,g_loc,common_data.R[gg]);
@@ -288,17 +288,17 @@ struct CohesiveInterfaceElement {
 
 
       if(!isInitialised) {
-        ierr = iNitailise(fe_method); CHKERRQ(ierr);
+        ierr = iNitailise(fe_method); CHKERRG(ierr);
         isInitialised = true;
       }
-      ierr = getKappa(common_data.gapGlob.size1(),fe_method); CHKERRQ(ierr);
+      ierr = getKappa(common_data.gapGlob.size1(),fe_method); CHKERRG(ierr);
       bool all_gauss_pts_damaged = true;
       for(unsigned int gg = 0;gg<common_data.gapGlob.size1();gg++) {
         double omega = 0;
         double g = calcG(gg,common_data.gapLoc);
         double kappa = fmax(g-g0,kappaPtr[gg]);
         kappaPtr[gg] = kappa;
-        ierr = calcOmega(kappa,omega); CHKERRQ(ierr);
+        ierr = calcOmega(kappa,omega); CHKERRG(ierr);
         //if(omega < 1.) {
         all_gauss_pts_damaged = false;
         //}
@@ -462,7 +462,7 @@ struct CohesiveInterfaceElement {
         Nf.clear();
         int nb_gauss_pts = data.getN().size1();
         for(int gg = 0;gg<nb_gauss_pts;gg++) {
-          ierr = physicalEqations.calculateTraction(traction,gg,commonData,getFEMethod()); CHKERRQ(ierr);
+          ierr = physicalEqations.calculateTraction(traction,gg,commonData,getFEMethod()); CHKERRG(ierr);
           double w = getGaussPts()(2,gg)*cblas_dnrm2(3,&getNormalsAtGaussPtF3()(gg,0),1)*0.5;
           for(int nn = 0;nn<nb_dofs/3;nn++) {
             for(int dd = 0;dd<3;dd++) {
@@ -471,7 +471,7 @@ struct CohesiveInterfaceElement {
           }
         }
         ierr = VecSetValues(getFEMethod()->snes_f,
-        data.getIndices().size(),&data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
+        data.getIndices().size(),&data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRG(ierr);
       } catch (const std::exception& ex) {
         std::ostringstream ss;
         ss << "throw in method: " << ex.what() << std::endl;
@@ -517,7 +517,7 @@ struct CohesiveInterfaceElement {
         K.clear();
         int nb_gauss_pts = row_data.getN().size1();
         for(int gg = 0;gg<nb_gauss_pts;gg++) {
-          ierr = physicalEqations.calculateTangentStiffeness(D,gg,commonData,getFEMethod()); CHKERRQ(ierr);
+          ierr = physicalEqations.calculateTangentStiffeness(D,gg,commonData,getFEMethod()); CHKERRG(ierr);
           double w = getGaussPts()(2,gg)*cblas_dnrm2(3,&getNormalsAtGaussPtF3()(gg,0),1)*0.5;
           ND.clear();
           for(int nn = 0; nn<nb_row/3;nn++) {
@@ -541,7 +541,7 @@ struct CohesiveInterfaceElement {
           nb_row,&row_data.getIndices()[0],
           nb_col,&col_data.getIndices()[0],
           &K(0,0),ADD_VALUES
-        ); CHKERRQ(ierr);
+        ); CHKERRG(ierr);
       } catch (const std::exception& ex) {
         std::ostringstream ss;
         ss << "throw in method: " << ex.what() << std::endl;
@@ -569,7 +569,7 @@ struct CohesiveInterfaceElement {
         if(physicalEqations.pRisms.find(getNumeredEntFiniteElementPtr()->getEnt()) == physicalEqations.pRisms.end()) {
           MoFEMFunctionReturnHot(0);
         }
-        ierr = physicalEqations.updateHistory(commonData,getFEMethod()); CHKERRQ(ierr);
+        ierr = physicalEqations.updateHistory(commonData,getFEMethod()); CHKERRG(ierr);
         MoFEMFunctionReturnHot(0);
       }
 

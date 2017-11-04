@@ -895,8 +895,8 @@ for(int gg = 0;gg!=nb_gauss_pts;gg++) {
   block_data->x = t_coords(0);
   block_data->y = t_coords(1);
   block_data->z = t_coords(2);
-  ierr = block_data->calC(); CHKERRQ(ierr);
-  ierr = block_data->calDiffC(); CHKERRQ(ierr);
+  ierr = block_data->calC(); CHKERRG(ierr);
+  ierr = block_data->calDiffC(); CHKERRG(ierr);
   const double C = block_data->C;
   const double diffC = block_data->diffC;
   // assemble local entity tangent matrix
@@ -932,26 +932,26 @@ In method MixTransport::UnsaturatedFlowElement::addFields we declare,
 define fields on entities and set order of approximation as follows
 \code
 //Fields
-ierr = mField.add_field(fluxes,HDIV,DEMKOWICZ_JACOBI_BASE,1); CHKERRQ(ierr);
-ierr = mField.add_field(values,L2,AINSWORTH_LEGENDRE_BASE,1); CHKERRQ(ierr);
-ierr = mField.add_field(values+"_t",L2,AINSWORTH_LEGENDRE_BASE,1); CHKERRQ(ierr);
+ierr = mField.add_field(fluxes,HDIV,DEMKOWICZ_JACOBI_BASE,1); CHKERRG(ierr);
+ierr = mField.add_field(values,L2,AINSWORTH_LEGENDRE_BASE,1); CHKERRG(ierr);
+ierr = mField.add_field(values+"_t",L2,AINSWORTH_LEGENDRE_BASE,1); CHKERRG(ierr);
 //add entities to field
 for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
   if(it->getName().compare(0,4,"SOIL")!=0) continue;
   ierr = mField.add_ents_to_field_by_type(
     dMatMap[it->getMeshsetId()]->tEts,MBTET,fluxes
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
   ierr = mField.add_ents_to_field_by_type(
     dMatMap[it->getMeshsetId()]->tEts,MBTET,values
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
   ierr = mField.add_ents_to_field_by_type(
     dMatMap[it->getMeshsetId()]->tEts,MBTET,values+"_t"
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
 }
-ierr = mField.set_field_order(0,MBTET,fluxes,order+1); CHKERRQ(ierr);
-ierr = mField.set_field_order(0,MBTRI,fluxes,order+1); CHKERRQ(ierr);
-ierr = mField.set_field_order(0,MBTET,values,order); CHKERRQ(ierr);
-ierr = mField.set_field_order(0,MBTET,values+"_t",order); CHKERRQ(ierr);
+ierr = mField.set_field_order(0,MBTET,fluxes,order+1); CHKERRG(ierr);
+ierr = mField.set_field_order(0,MBTRI,fluxes,order+1); CHKERRG(ierr);
+ierr = mField.set_field_order(0,MBTET,values,order); CHKERRG(ierr);
+ierr = mField.set_field_order(0,MBTET,values+"_t",order); CHKERRG(ierr);
 \endcode
 Note that we set field space independently from the approximation base. We can have
 different recipes to construct approximation base, for example, \cite NME:NME847
@@ -967,45 +967,45 @@ MixTransport::UnsaturatedFlowElement::addFiniteElements, as follows
 \code
 // Define element "MIX". Note that this element will work with fluxes_name and
 // values_name. This reflect bilinear form for the problem
-ierr = mField.add_finite_element("MIX",MF_ZERO); CHKERRQ(ierr);
-ierr = mField.modify_finite_element_add_field_row("MIX",fluxes_name); CHKERRQ(ierr);
-ierr = mField.modify_finite_element_add_field_col("MIX",fluxes_name); CHKERRQ(ierr);
-ierr = mField.modify_finite_element_add_field_row("MIX",values_name); CHKERRQ(ierr);
-ierr = mField.modify_finite_element_add_field_col("MIX",values_name); CHKERRQ(ierr);
-ierr = mField.modify_finite_element_add_field_data("MIX",fluxes_name); CHKERRQ(ierr);
-ierr = mField.modify_finite_element_add_field_data("MIX",values_name); CHKERRQ(ierr);
-ierr = mField.modify_finite_element_add_field_data("MIX",values_name+"_t"); CHKERRQ(ierr);
+ierr = mField.add_finite_element("MIX",MF_ZERO); CHKERRG(ierr);
+ierr = mField.modify_finite_element_add_field_row("MIX",fluxes_name); CHKERRG(ierr);
+ierr = mField.modify_finite_element_add_field_col("MIX",fluxes_name); CHKERRG(ierr);
+ierr = mField.modify_finite_element_add_field_row("MIX",values_name); CHKERRG(ierr);
+ierr = mField.modify_finite_element_add_field_col("MIX",values_name); CHKERRG(ierr);
+ierr = mField.modify_finite_element_add_field_data("MIX",fluxes_name); CHKERRG(ierr);
+ierr = mField.modify_finite_element_add_field_data("MIX",values_name); CHKERRG(ierr);
+ierr = mField.modify_finite_element_add_field_data("MIX",values_name+"_t"); CHKERRG(ierr);
 for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
   if(it->getName().compare(0,4,"SOIL")!=0) continue;
   ierr = mField.add_ents_to_finite_element_by_type(
     dMatMap[it->getMeshsetId()]->tEts,MBTET,"MIX"
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
 }
 
 // Define element to integrate natural boundary conditions, i.e. set values.
-ierr = mField.add_finite_element("MIX_BCVALUE",MF_ZERO); CHKERRQ(ierr);
-ierr = mField.modify_finite_element_add_field_row("MIX_BCVALUE",fluxes_name); CHKERRQ(ierr);
-ierr = mField.modify_finite_element_add_field_col("MIX_BCVALUE",fluxes_name); CHKERRQ(ierr);
-ierr = mField.modify_finite_element_add_field_data("MIX_BCVALUE",fluxes_name); CHKERRQ(ierr);
-ierr = mField.modify_finite_element_add_field_data("MIX_BCVALUE",values_name); CHKERRQ(ierr);
+ierr = mField.add_finite_element("MIX_BCVALUE",MF_ZERO); CHKERRG(ierr);
+ierr = mField.modify_finite_element_add_field_row("MIX_BCVALUE",fluxes_name); CHKERRG(ierr);
+ierr = mField.modify_finite_element_add_field_col("MIX_BCVALUE",fluxes_name); CHKERRG(ierr);
+ierr = mField.modify_finite_element_add_field_data("MIX_BCVALUE",fluxes_name); CHKERRG(ierr);
+ierr = mField.modify_finite_element_add_field_data("MIX_BCVALUE",values_name); CHKERRG(ierr);
 for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
   if(it->getName().compare(0,4,"HEAD")!=0) continue;
   ierr = mField.add_ents_to_finite_element_by_type(
     bcValueMap[it->getMeshsetId()]->eNts,MBTRI,"MIX_BCVALUE"
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
 }
 
 // Define element to apply essential boundary conditions.
-ierr = mField.add_finite_element("MIX_BCFLUX",MF_ZERO); CHKERRQ(ierr);
-ierr = mField.modify_finite_element_add_field_row("MIX_BCFLUX",fluxes_name); CHKERRQ(ierr);
-ierr = mField.modify_finite_element_add_field_col("MIX_BCFLUX",fluxes_name); CHKERRQ(ierr);
-ierr = mField.modify_finite_element_add_field_data("MIX_BCFLUX",fluxes_name); CHKERRQ(ierr);
-ierr = mField.modify_finite_element_add_field_data("MIX_BCFLUX",values_name); CHKERRQ(ierr);
+ierr = mField.add_finite_element("MIX_BCFLUX",MF_ZERO); CHKERRG(ierr);
+ierr = mField.modify_finite_element_add_field_row("MIX_BCFLUX",fluxes_name); CHKERRG(ierr);
+ierr = mField.modify_finite_element_add_field_col("MIX_BCFLUX",fluxes_name); CHKERRG(ierr);
+ierr = mField.modify_finite_element_add_field_data("MIX_BCFLUX",fluxes_name); CHKERRG(ierr);
+ierr = mField.modify_finite_element_add_field_data("MIX_BCFLUX",values_name); CHKERRG(ierr);
 for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
   if(it->getName().compare(0,4,"FLUX")!=0) continue;
   ierr = mField.add_ents_to_finite_element_by_type(
     bcFluxMap[it->getMeshsetId()]->eNts,MBTRI,"MIX_BCFLUX"
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
 }
 \endcode
 Note that we create three elements "MIX", "MIX_BCVALUE" and "MIX_BCFLUX", to
@@ -1029,23 +1029,23 @@ In method MixTransport::UnsaturatedFlowElement::buildProblem we create problem
 and Discrete Manager operating on that problem
 \code
 //  create DM instance
-ierr = DMCreate(PETSC_COMM_WORLD,&dM);CHKERRQ(ierr);
+ierr = DMCreate(PETSC_COMM_WORLD,&dM);CHKERRG(ierr);
 // setting that DM is type of DMMOFEM, i.e. MOFEM implementation manages DM
-ierr = DMSetType(dM,"DMMOFEM");CHKERRQ(ierr);
+ierr = DMSetType(dM,"DMMOFEM");CHKERRG(ierr);
 // mesh is portioned, each process keeps only part of problem
 ierr = DMMoFEMSetIsPartitioned(dM,PETSC_TRUE);
 // creates problem in DM, "MIX" is name of problem
-ierr = DMMoFEMCreateMoFEM(dM,&mField,"MIX",ref_level); CHKERRQ(ierr);
+ierr = DMMoFEMCreateMoFEM(dM,&mField,"MIX",ref_level); CHKERRG(ierr);
 // discretized problem creates square matrix (that makes some optimizations)
-ierr = DMMoFEMSetIsPartitioned(dM,PETSC_TRUE); CHKERRQ(ierr);
+ierr = DMMoFEMSetIsPartitioned(dM,PETSC_TRUE); CHKERRG(ierr);
 // set DM options from command line
-ierr = DMSetFromOptions(dM); CHKERRQ(ierr);
+ierr = DMSetFromOptions(dM); CHKERRG(ierr);
 // add finite elements
-ierr = DMMoFEMAddElement(dM,"MIX"); CHKERRQ(ierr);
-ierr = DMMoFEMAddElement(dM,"MIX_BCFLUX"); CHKERRQ(ierr);
-ierr = DMMoFEMAddElement(dM,"MIX_BCVALUE"); CHKERRQ(ierr);
+ierr = DMMoFEMAddElement(dM,"MIX"); CHKERRG(ierr);
+ierr = DMMoFEMAddElement(dM,"MIX_BCFLUX"); CHKERRG(ierr);
+ierr = DMMoFEMAddElement(dM,"MIX_BCVALUE"); CHKERRG(ierr);
 // constructor data structures
-ierr = DMSetUp(dM); CHKERRQ(ierr);
+ierr = DMSetUp(dM); CHKERRG(ierr);
 \endcode
 Note that problem in DM is created by setting finite elements on which it
 operates.
@@ -1126,7 +1126,7 @@ previous steps, is evaluated by PETSc for particular integration scheme.
 ierr = fePtr->mField.getInterface<VecManager>()->setOtherLocalGhostVector(
   fePtr->problemPtr,"VALUES",string("VALUES")+"_t",
   ROW,fePtr->ts_u_t,INSERT_VALUES,SCATTER_REVERSE
-); CHKERRQ(ierr);
+); CHKERRG(ierr);
 \endcode
 Time solver provides vector of DOFs,
 \f$\left(\frac{\textrm{d}\mathbf{p}}{\textrm{d}t}\right)^{i+1}_{n+1}\f$ at
@@ -1165,9 +1165,9 @@ Once we have created finite element instances, in
 to DM manager, such that system of equations could be assembled. This is simply
 done by
 \code
-ierr = DMMoFEMTSSetIFunction(dM,"MIX_BCVALUE",feFaceRhs,null,null); CHKERRQ(ierr);
-ierr = DMMoFEMTSSetIFunction(dM,"MIX",feVolRhs,null,null); CHKERRQ(ierr);
-ierr = DMMoFEMTSSetIJacobian(dM,"MIX",feVolLhs,null,null); CHKERRQ(ierr);
+ierr = DMMoFEMTSSetIFunction(dM,"MIX_BCVALUE",feFaceRhs,null,null); CHKERRG(ierr);
+ierr = DMMoFEMTSSetIFunction(dM,"MIX",feVolRhs,null,null); CHKERRG(ierr);
+ierr = DMMoFEMTSSetIJacobian(dM,"MIX",feVolLhs,null,null); CHKERRG(ierr);
 \endcode
 Those functions are specific to MoFEM implementation, there were implemented
 based on PETSc documentation,
@@ -1180,28 +1180,28 @@ Finally we can solve problem, by creating TS solver and link it to DM, as follow
 \code
 // Create time solver
 TS ts;
-ierr = TSCreate(PETSC_COMM_WORLD,&ts); CHKERRQ(ierr);
+ierr = TSCreate(PETSC_COMM_WORLD,&ts); CHKERRG(ierr);
 // Use backward Euler method
-ierr = TSSetType(ts,TSBEULER); CHKERRQ(ierr);
+ierr = TSSetType(ts,TSBEULER); CHKERRG(ierr);
 // Not test functions to evalye matrix and rigth hand side, TS ask DM
 // for doing that
-ierr = TSSetIFunction(ts,F,PETSC_NULL,PETSC_NULL); CHKERRQ(ierr);
-ierr = TSSetIJacobian(ts,Aij,Aij,PETSC_NULL,PETSC_NULL); CHKERRQ(ierr);
+ierr = TSSetIFunction(ts,F,PETSC_NULL,PETSC_NULL); CHKERRG(ierr);
+ierr = TSSetIJacobian(ts,Aij,Aij,PETSC_NULL,PETSC_NULL); CHKERRG(ierr);
 // Set final time
 double ftime = 1;
-ierr = TSSetDuration(ts,PETSC_DEFAULT,ftime); CHKERRQ(ierr);
+ierr = TSSetDuration(ts,PETSC_DEFAULT,ftime); CHKERRG(ierr);
 // Setup solver from commabd line
-ierr = TSSetFromOptions(ts); CHKERRQ(ierr);
+ierr = TSSetFromOptions(ts); CHKERRG(ierr);
 // Set DM to TS
-ierr = TSSetDM(ts,dM); CHKERRQ(ierr);
+ierr = TSSetDM(ts,dM); CHKERRG(ierr);
 #if PETSC_VERSION_GE(3,7,0)
-ierr = TSSetExactFinalTime(ts,TS_EXACTFINALTIME_STEPOVER); CHKERRQ(ierr);
+ierr = TSSetExactFinalTime(ts,TS_EXACTFINALTIME_STEPOVER); CHKERRG(ierr);
 #endif
 // Set-up monitor
 TsCtx *ts_ctx;
 DMMoFEMGetTsCtx(dM,&ts_ctx);
-ierr = TSMonitorSet(ts,f_TSMonitorSet,ts_ctx,PETSC_NULL); CHKERRQ(ierr);
-ierr = TSSolve(ts,D); CHKERRQ(ierr);
+ierr = TSMonitorSet(ts,f_TSMonitorSet,ts_ctx,PETSC_NULL); CHKERRG(ierr);
+ierr = TSSolve(ts,D); CHKERRG(ierr);
 \endcode
 Note that TS calls finite elements instance by DM, similarly how SNES (Newton
 solver) calls finite elements in \ref poisson_tut4, or KSP (Krylov solver) calls
@@ -1220,9 +1220,9 @@ of functions
 PetscInitialize(&argc,&argv,(char *)0,help);
 
 // Register materials
-ierr = RegisterMaterials()(); CHKERRQ(ierr);
+ierr = RegisterMaterials()(); CHKERRG(ierr);
 // Register MOFEM DM implementation
-ierr = DMRegister_MoFEM("DMMOFEM"); CHKERRQ(ierr); // register MoFEM DM in PETSc
+ierr = DMRegister_MoFEM("DMMOFEM"); CHKERRG(ierr); // register MoFEM DM in PETSc
 
 try {
 
@@ -1243,24 +1243,24 @@ try {
   \\ Read data from meshsets
   ...
 
-  ierr = uf.addFields("VALUES","FLUXES",order); CHKERRQ(ierr);
-  ierr = uf.addFiniteElements("FLUXES","VALUES"); CHKERRQ(ierr);
+  ierr = uf.addFields("VALUES","FLUXES",order); CHKERRG(ierr);
+  ierr = uf.addFiniteElements("FLUXES","VALUES"); CHKERRG(ierr);
   ierr = m_field.add_ents_to_finite_element_by_type(
   zero_flux_ents,MBTRI,"MIX_BCFLUX"
-  ); CHKERRQ(ierr);
-  ierr = uf.buildProblem(); CHKERRQ(ierr);
-  ierr = uf.createMatrices(); CHKERRQ(ierr);
-  ierr = uf.setFiniteElements(); CHKERRQ(ierr);
-  ierr = uf.calculateEssentialBc(); CHKERRQ(ierr);
-  ierr = uf.calculateInitialPc(); CHKERRQ(ierr);
-  ierr = uf.solveProblem(); CHKERRQ(ierr);
-  ierr = uf.destroyMatrices(); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
+  ierr = uf.buildProblem(); CHKERRG(ierr);
+  ierr = uf.createMatrices(); CHKERRG(ierr);
+  ierr = uf.setFiniteElements(); CHKERRG(ierr);
+  ierr = uf.calculateEssentialBc(); CHKERRG(ierr);
+  ierr = uf.calculateInitialPc(); CHKERRG(ierr);
+  ierr = uf.solveProblem(); CHKERRG(ierr);
+  ierr = uf.destroyMatrices(); CHKERRG(ierr);
 
 } catch (MoFEMException const &e) {
   SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
 }
 
-ierr = PetscFinalize(); CHKERRQ(ierr);
+ierr = PetscFinalize(); CHKERRG(ierr);
 
 \endcode
 

@@ -50,7 +50,7 @@ MoFEMErrorCode PostProcCommonOnRefMesh::OpGetFieldValues::doWork(
   if(V) {
     vAlues.resize(data.getFieldData().size());
     double *a;
-    ierr = VecGetArray(V,&a); CHKERRQ(ierr);
+    ierr = VecGetArray(V,&a); CHKERRG(ierr);
     VectorDofs::iterator it,hi_it;
     it = data.getFieldDofs().begin();
     hi_it = data.getFieldDofs().end();
@@ -58,7 +58,7 @@ MoFEMErrorCode PostProcCommonOnRefMesh::OpGetFieldValues::doWork(
       int local_idx = getFEMethod()->rowPtr->find((*it)->getGlobalUniqueId())->get()->getPetscLocalDofIdx();
       vAlues[ii] = a[local_idx];
     }
-    ierr = VecRestoreArray(V,&a); CHKERRQ(ierr);
+    ierr = VecRestoreArray(V,&a); CHKERRG(ierr);
     vAluesPtr = &vAlues;
   } else {
     vAluesPtr = &data.getFieldData();
@@ -229,7 +229,7 @@ MoFEMErrorCode PostProcCommonOnRefMesh::OpGetFieldGradientValues::doWork(
   if(V) {
     vAlues.resize(data.getFieldData().size());
     double *a;
-    ierr = VecGetArray(V,&a); CHKERRQ(ierr);
+    ierr = VecGetArray(V,&a); CHKERRG(ierr);
     VectorDofs::iterator it,hi_it;
     it = data.getFieldDofs().begin();
     hi_it = data.getFieldDofs().end();
@@ -237,7 +237,7 @@ MoFEMErrorCode PostProcCommonOnRefMesh::OpGetFieldGradientValues::doWork(
       int local_idx = getFEMethod()->rowPtr->find((*it)->getGlobalUniqueId())->get()->getPetscLocalDofIdx();
       vAlues[ii] = a[local_idx];
     }
-    ierr = VecRestoreArray(V,&a); CHKERRQ(ierr);
+    ierr = VecRestoreArray(V,&a); CHKERRG(ierr);
     vAluesPtr = &vAlues;
   } else {
     vAluesPtr = &data.getFieldData();

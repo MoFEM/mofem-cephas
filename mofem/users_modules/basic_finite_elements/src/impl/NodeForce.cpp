@@ -46,7 +46,7 @@ NodalForce::OpNodalForce::OpNodalForce(const std::string field_name,Vec _F,bCFor
     
 
     const FENumeredDofEntity *dof_ptr;
-    ierr = getNumeredEntFiniteElementPtr()->getRowDofsByPetscGlobalDofIdx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
+    ierr = getNumeredEntFiniteElementPtr()->getRowDofsByPetscGlobalDofIdx(data.getIndices()[0],&dof_ptr); CHKERRG(ierr);
     int rank = dof_ptr->getNbOfCoeffs();
 
     if(data.getIndices().size()!=(unsigned int)rank) {
@@ -66,7 +66,7 @@ NodalForce::OpNodalForce::OpNodalForce(const std::string field_name,Vec _F,bCFor
       }
     }
 
-    ierr = MethodForForceScaling::applyScale(getFEMethod(),methodsOp,Nf); CHKERRQ(ierr);
+    ierr = MethodForForceScaling::applyScale(getFEMethod(),methodsOp,Nf); CHKERRG(ierr);
     Vec myF = F;
     if(useSnesF || F == PETSC_NULL) {
       switch (getFEMethod()->ts_ctx) {
@@ -84,7 +84,7 @@ NodalForce::OpNodalForce::OpNodalForce(const std::string field_name,Vec _F,bCFor
     ierr = VecSetValues(
       myF,data.getIndices().size(),
       &data.getIndices()[0],&Nf[0],ADD_VALUES
-    ); CHKERRQ(ierr);
+    ); CHKERRG(ierr);
 
     MoFEMFunctionReturnHot(0);
   }
@@ -95,9 +95,9 @@ NodalForce::OpNodalForce::OpNodalForce(const std::string field_name,Vec _F,bCFor
     const CubitMeshSets *cubit_meshset_ptr;
     MeshsetsManager *mmanager_ptr;
     MoFEMFunctionBeginHot;
-    ierr = mField.getInterface(mmanager_ptr); CHKERRQ(ierr);
-    ierr = mmanager_ptr->getCubitMeshsetPtr(ms_id,NODESET,&cubit_meshset_ptr); CHKERRQ(ierr);
-    ierr = cubit_meshset_ptr->getBcDataStructure(mapForce[ms_id].data); CHKERRQ(ierr);
+    ierr = mField.getInterface(mmanager_ptr); CHKERRG(ierr);
+    ierr = mmanager_ptr->getCubitMeshsetPtr(ms_id,NODESET,&cubit_meshset_ptr); CHKERRG(ierr);
+    ierr = cubit_meshset_ptr->getBcDataStructure(mapForce[ms_id].data); CHKERRG(ierr);
     rval = mField.get_moab().get_entities_by_type(cubit_meshset_ptr->meshset,MBVERTEX,mapForce[ms_id].nOdes,true); CHKERRG(rval);
     fe.getOpPtrVector().push_back(new OpNodalForce(field_name,F,mapForce[ms_id],methodsOp,use_snes_f));
     MoFEMFunctionReturnHot(0);

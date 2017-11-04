@@ -80,12 +80,12 @@ struct EdgeForce {
       MoFEMFunctionBeginHot;
       
       
-      ierr = m_field.add_finite_element("FORCE_FE",MF_ZERO); CHKERRQ(ierr);
-      ierr = m_field.modify_finite_element_add_field_row("FORCE_FE",field_name); CHKERRQ(ierr);
-      ierr = m_field.modify_finite_element_add_field_col("FORCE_FE",field_name); CHKERRQ(ierr);
-      ierr = m_field.modify_finite_element_add_field_data("FORCE_FE",field_name); CHKERRQ(ierr);
+      ierr = m_field.add_finite_element("FORCE_FE",MF_ZERO); CHKERRG(ierr);
+      ierr = m_field.modify_finite_element_add_field_row("FORCE_FE",field_name); CHKERRG(ierr);
+      ierr = m_field.modify_finite_element_add_field_col("FORCE_FE",field_name); CHKERRG(ierr);
+      ierr = m_field.modify_finite_element_add_field_data("FORCE_FE",field_name); CHKERRG(ierr);
       if(m_field.check_field("MESH_NODE_POSITIONS")) {
-        ierr = m_field.modify_finite_element_add_field_data("FORCE_FE","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+        ierr = m_field.modify_finite_element_add_field_data("FORCE_FE","MESH_NODE_POSITIONS"); CHKERRG(ierr);
       }
       for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,NODESET|FORCESET,it)) {
         Range tris;
@@ -98,7 +98,7 @@ struct EdgeForce {
         if(intersect_ptr) {
           edges = intersect(edges,*intersect_ptr);
         }
-        ierr = m_field.add_ents_to_finite_element_by_type(edges,MBEDGE,"FORCE_FE"); CHKERRQ(ierr);
+        ierr = m_field.add_ents_to_finite_element_by_type(edges,MBEDGE,"FORCE_FE"); CHKERRG(ierr);
       }
       MoFEMFunctionReturnHot(0);
     }
@@ -114,7 +114,7 @@ struct EdgeForce {
       string fe_name = "FORCE_FE";
       edge_forces.insert(fe_name,new EdgeForce(m_field));
       for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,NODESET|FORCESET,it)) {
-        ierr = edge_forces.at(fe_name).addForce(field_name,F,it->getMeshsetId());  CHKERRQ(ierr);
+        ierr = edge_forces.at(fe_name).addForce(field_name,F,it->getMeshsetId());  CHKERRG(ierr);
       }
       MoFEMFunctionReturnHot(0);
     }

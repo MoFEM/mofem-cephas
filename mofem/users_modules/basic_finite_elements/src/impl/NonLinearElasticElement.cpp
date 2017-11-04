@@ -41,7 +41,7 @@ int NonlinearElasticElement::MyVolumeFE::getRule(int order) { return 2*(order-1)
 MoFEMErrorCode NonlinearElasticElement::MyVolumeFE::preProcess() {
   MoFEMFunctionBeginHot;
 
-  ierr = VolumeElementForcesAndSourcesCore::preProcess(); CHKERRQ(ierr);
+  ierr = VolumeElementForcesAndSourcesCore::preProcess(); CHKERRG(ierr);
 
   if(A != PETSC_NULL) {
     snes_B = A;
@@ -77,13 +77,13 @@ MoFEMErrorCode NonlinearElasticElement::MyVolumeFE::preProcess() {
   switch (snes_ctx) {
     case CTX_SNESNONE:
     if(rank == 0) {
-      ierr = VecCreateGhost(mField.get_comm(),1,1,1,ghosts,&V); CHKERRQ(ierr);
+      ierr = VecCreateGhost(mField.get_comm(),1,1,1,ghosts,&V); CHKERRG(ierr);
     } else {
-      ierr = VecCreateGhost(mField.get_comm(),0,1,1,ghosts,&V); CHKERRQ(ierr);
+      ierr = VecCreateGhost(mField.get_comm(),0,1,1,ghosts,&V); CHKERRG(ierr);
     }
-    ierr = VecZeroEntries(V); CHKERRQ(ierr);
-    ierr = VecGhostUpdateBegin(V,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    ierr = VecGhostUpdateEnd(V,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = VecZeroEntries(V); CHKERRG(ierr);
+    ierr = VecGhostUpdateBegin(V,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
+    ierr = VecGhostUpdateEnd(V,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
     break;
     default:
     break;
@@ -100,22 +100,22 @@ MoFEMErrorCode NonlinearElasticElement::MyVolumeFE::postProcess() {
 
   switch (snes_ctx) {
     case CTX_SNESNONE:
-      ierr = VecAssemblyBegin(V); CHKERRQ(ierr);
-      ierr = VecAssemblyEnd(V); CHKERRQ(ierr);
-      ierr = VecGhostUpdateBegin(V,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-      ierr = VecGhostUpdateEnd(V,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-      ierr = VecGhostUpdateBegin(V,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-      ierr = VecGhostUpdateEnd(V,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-      ierr = VecGetArray(V,&array); CHKERRQ(ierr);
+      ierr = VecAssemblyBegin(V); CHKERRG(ierr);
+      ierr = VecAssemblyEnd(V); CHKERRG(ierr);
+      ierr = VecGhostUpdateBegin(V,ADD_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
+      ierr = VecGhostUpdateEnd(V,ADD_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
+      ierr = VecGhostUpdateBegin(V,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
+      ierr = VecGhostUpdateEnd(V,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
+      ierr = VecGetArray(V,&array); CHKERRG(ierr);
       eNergy = array[0];
-      ierr = VecRestoreArray(V,&array); CHKERRQ(ierr);
-      ierr = VecDestroy(&V); CHKERRQ(ierr);
+      ierr = VecRestoreArray(V,&array); CHKERRG(ierr);
+      ierr = VecDestroy(&V); CHKERRG(ierr);
       break;
     default:
       break;
   }
 
-  ierr = VolumeElementForcesAndSourcesCore::postProcess(); CHKERRQ(ierr);
+  ierr = VolumeElementForcesAndSourcesCore::postProcess(); CHKERRG(ierr);
 
 
   MoFEMFunctionReturnHot(0);
@@ -282,7 +282,7 @@ MoFEMErrorCode NonlinearElasticElement::OpJacobianPiolaKirchhoffStress::calculat
 
     ierr = dAta.materialAdoublePtr->calculateP_PiolaKirchhoffI(
       dAta,getNumeredEntFiniteElementPtr()
-    ); CHKERRQ(ierr);
+    ); CHKERRG(ierr);
     if(aLe) {
       dAta.materialAdoublePtr->P =
         dAta.materialAdoublePtr->detH*prod(dAta.materialAdoublePtr->P,trans(dAta.materialAdoublePtr->invH));
@@ -347,20 +347,20 @@ MoFEMErrorCode NonlinearElasticElement::OpJacobianPiolaKirchhoffStress::recordTa
 
       ierr = dAta.materialAdoublePtr->dEterminatnt(
         dAta.materialAdoublePtr->H,dAta.materialAdoublePtr->detH
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
       dAta.materialAdoublePtr->invH.resize(3,3,false);
       ierr = dAta.materialAdoublePtr->iNvert(
         dAta.materialAdoublePtr->detH,dAta.materialAdoublePtr->H,
         dAta.materialAdoublePtr->invH
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
       noalias(dAta.materialAdoublePtr->F) = prod(
         dAta.materialAdoublePtr->h,dAta.materialAdoublePtr->invH
       );
 
     }
 
-    ierr = dAta.materialAdoublePtr->setUserActiveVariables(nbActiveVariables); CHKERRQ(ierr);
-    ierr = calculateStress(gg); CHKERRQ(ierr);
+    ierr = dAta.materialAdoublePtr->setUserActiveVariables(nbActiveVariables); CHKERRG(ierr);
+    ierr = calculateStress(gg); CHKERRG(ierr);
 
     trace_off();
 
@@ -439,7 +439,7 @@ MoFEMErrorCode NonlinearElasticElement::OpJacobianPiolaKirchhoffStress::doWork(
 
       // Record tag and calualte stress
       if(recordTagForIntegrationPoint(gg)) {
-        ierr = recordTag(gg); CHKERRQ(ierr);
+        ierr = recordTag(gg); CHKERRG(ierr);
       }
 
       // Set active variables vector
@@ -463,11 +463,11 @@ MoFEMErrorCode NonlinearElasticElement::OpJacobianPiolaKirchhoffStress::doWork(
             }
           }
         }
-        ierr = dAta.materialAdoublePtr->setUserActiveVariables(activeVariables); CHKERRQ(ierr);
+        ierr = dAta.materialAdoublePtr->setUserActiveVariables(activeVariables); CHKERRG(ierr);
 
         // Play tag and calculate stress or tangent
         if(jAcobian||(!recordTagForIntegrationPoint(gg))) {
-          ierr = playTag(gg); CHKERRQ(ierr);
+          ierr = playTag(gg); CHKERRG(ierr);
         }
 
       }
@@ -505,7 +505,7 @@ MoFEMErrorCode NonlinearElasticElement::OpJacobianEnergy::calculateEnergy(const 
 
   MoFEMFunctionBeginHot;
   try {
-    ierr = dAta.materialAdoublePtr->calculateElasticEnergy(dAta,getNumeredEntFiniteElementPtr()); CHKERRQ(ierr);
+    ierr = dAta.materialAdoublePtr->calculateElasticEnergy(dAta,getNumeredEntFiniteElementPtr()); CHKERRG(ierr);
     dAta.materialAdoublePtr->eNergy >>= commonData.eNergy[gg];
   } catch (MoFEMException const &e) {
     SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
@@ -560,20 +560,20 @@ MoFEMErrorCode NonlinearElasticElement::OpJacobianEnergy::recordTag(const int gg
 
       ierr = dAta.materialAdoublePtr->dEterminatnt(
         dAta.materialAdoublePtr->H,dAta.materialAdoublePtr->detH
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
       dAta.materialAdoublePtr->invH.resize(3,3,false);
       ierr = dAta.materialAdoublePtr->iNvert(
         dAta.materialAdoublePtr->detH,dAta.materialAdoublePtr->H,
         dAta.materialAdoublePtr->invH
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
       noalias(dAta.materialAdoublePtr->F) = prod(
         dAta.materialAdoublePtr->h,dAta.materialAdoublePtr->invH
       );
 
     }
 
-    ierr = dAta.materialAdoublePtr->setUserActiveVariables(nbActiveVariables); CHKERRQ(ierr);
-    ierr = calculateEnergy(gg); CHKERRQ(ierr);
+    ierr = dAta.materialAdoublePtr->setUserActiveVariables(nbActiveVariables); CHKERRG(ierr);
+    ierr = calculateEnergy(gg); CHKERRG(ierr);
 
     trace_off();
 
@@ -662,7 +662,7 @@ MoFEMErrorCode NonlinearElasticElement::OpJacobianEnergy::doWork(
 
       // Record tag and calualte stress
       if(recordTagForIntegrationPoint(gg)) {
-        ierr = recordTag(gg); CHKERRQ(ierr);
+        ierr = recordTag(gg); CHKERRG(ierr);
       }
 
       activeVariables.resize(nbActiveVariables,false);
@@ -684,10 +684,10 @@ MoFEMErrorCode NonlinearElasticElement::OpJacobianEnergy::doWork(
           }
         }
       }
-      ierr = dAta.materialAdoublePtr->setUserActiveVariables(activeVariables); CHKERRQ(ierr);
+      ierr = dAta.materialAdoublePtr->setUserActiveVariables(activeVariables); CHKERRG(ierr);
 
       // Play tag and calculate stress or tangent
-      ierr = playTag(gg); CHKERRQ(ierr);
+      ierr = playTag(gg); CHKERRG(ierr);
 
     }
 
@@ -730,7 +730,7 @@ MoFEMErrorCode NonlinearElasticElement::OpRhsPiolaKirchhoff::aSemble(
     indices_ptr,
     &nf[0],
     ADD_VALUES
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -785,7 +785,7 @@ MoFEMErrorCode NonlinearElasticElement::OpRhsPiolaKirchhoff::doWork(
     }
 
     //std::cerr << "nf : " << nf << std::endl;
-    ierr = aSemble(row_side,row_type,row_data); CHKERRQ(ierr);
+    ierr = aSemble(row_side,row_type,row_data); CHKERRG(ierr);
 
   } catch (MoFEMException const &e) {
     SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
@@ -833,9 +833,9 @@ MoFEMErrorCode NonlinearElasticElement::OpEnergy::doWork(
       }
 
       int nb_active_variables = 0;
-      ierr = dAta.materialDoublePtr->setUserActiveVariables(nb_active_variables); CHKERRQ(ierr);
-      ierr = dAta.materialDoublePtr->calculateElasticEnergy(dAta,getNumeredEntFiniteElementPtr()); CHKERRQ(ierr);
-      ierr = VecSetValue(*Vptr,0,val*dAta.materialDoublePtr->eNergy,ADD_VALUES); CHKERRQ(ierr);
+      ierr = dAta.materialDoublePtr->setUserActiveVariables(nb_active_variables); CHKERRG(ierr);
+      ierr = dAta.materialDoublePtr->calculateElasticEnergy(dAta,getNumeredEntFiniteElementPtr()); CHKERRG(ierr);
+      ierr = VecSetValue(*Vptr,0,val*dAta.materialDoublePtr->eNergy,ADD_VALUES); CHKERRG(ierr);
 
     }
 
@@ -953,7 +953,7 @@ MoFEMErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dx::aSemble(
     nb_row,row_indices_ptr,
     nb_col,col_indices_ptr,
     &k(0,0),ADD_VALUES
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
 
   //is symmetric
   if(row_side != col_side || row_type != col_type) {
@@ -994,7 +994,7 @@ MoFEMErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dx::aSemble(
       nb_col,col_indices_ptr,
       nb_row,row_indices_ptr,
       &trans_k(0,0),ADD_VALUES
-    ); CHKERRQ(ierr);
+    ); CHKERRG(ierr);
   }
 
   MoFEMFunctionReturnHot(0);
@@ -1031,7 +1031,7 @@ MoFEMErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dx::doWork(
     jac.resize(9,nb_col,false);
 
     for(unsigned int gg = 0;gg!=nb_gauss_pts;gg++) {
-      ierr = getJac(col_data,gg); CHKERRQ(ierr);
+      ierr = getJac(col_data,gg); CHKERRG(ierr);
       double val = getVolume()*getGaussPts()(3,gg);
       if((!aLe)&&(getHoGaussPtsDetJac().size()>0)) {
         val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
@@ -1064,7 +1064,7 @@ MoFEMErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dx::doWork(
     }
 
     //std::cerr << "N " << getNumeredEntFiniteElementPtr()->getRefEnt() << std::endl << k << std::endl;
-    ierr = aSemble(row_side,col_side,row_type,col_type,row_data,col_data); CHKERRQ(ierr);
+    ierr = aSemble(row_side,col_side,row_type,col_type,row_data,col_data); CHKERRG(ierr);
 
   } catch (MoFEMException const &e) {
     SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
@@ -1147,7 +1147,7 @@ MoFEMErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dX::aSemble(
     nb_row,row_indices_ptr,
     nb_col,col_indices_ptr,
     &k(0,0),ADD_VALUES
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
 
   MoFEMFunctionReturnHot(0);
 }
@@ -1167,7 +1167,7 @@ MoFEMErrorCode NonlinearElasticElement::OpJacobianEshelbyStress::calculateStress
   MoFEMFunctionBeginHot;
   try {
 
-    ierr = dAta.materialAdoublePtr->calculateSiGma_EshelbyStress(dAta,getNumeredEntFiniteElementPtr()); CHKERRQ(ierr);
+    ierr = dAta.materialAdoublePtr->calculateSiGma_EshelbyStress(dAta,getNumeredEntFiniteElementPtr()); CHKERRG(ierr);
     if(aLe) {
       dAta.materialAdoublePtr->SiGma =
       dAta.materialAdoublePtr->detH*prod(dAta.materialAdoublePtr->SiGma,trans(dAta.materialAdoublePtr->invH));
@@ -1358,7 +1358,7 @@ MoFEMErrorCode NonlinearElasticElement::setBlocks(
 
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|MAT_ELASTICSET,it)) {
     Mat_Elastic mydata;
-    ierr = it->getAttributeDataStructure(mydata); CHKERRQ(ierr);
+    ierr = it->getAttributeDataStructure(mydata); CHKERRG(ierr);
     int id = it->getMeshsetId();
     EntityHandle meshset = it->getMeshset();
     rval = mField.get_moab().get_entities_by_type(meshset,MBTET,setOfBlocks[id].tEts,true); CHKERRG(rval);
@@ -1381,21 +1381,21 @@ MoFEMErrorCode NonlinearElasticElement::addElement(string element_name,
 
   //
 
-  ierr = mField.add_finite_element(element_name,MF_ZERO); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_row(element_name,spatial_position_field_name); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_col(element_name,spatial_position_field_name); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_data(element_name,spatial_position_field_name); CHKERRQ(ierr);
+  ierr = mField.add_finite_element(element_name,MF_ZERO); CHKERRG(ierr);
+  ierr = mField.modify_finite_element_add_field_row(element_name,spatial_position_field_name); CHKERRG(ierr);
+  ierr = mField.modify_finite_element_add_field_col(element_name,spatial_position_field_name); CHKERRG(ierr);
+  ierr = mField.modify_finite_element_add_field_data(element_name,spatial_position_field_name); CHKERRG(ierr);
   if(mField.check_field(material_position_field_name)) {
     if(ale) {
-      ierr = mField.modify_finite_element_add_field_row(element_name,material_position_field_name); CHKERRQ(ierr);
-      ierr = mField.modify_finite_element_add_field_col(element_name,material_position_field_name); CHKERRQ(ierr);
+      ierr = mField.modify_finite_element_add_field_row(element_name,material_position_field_name); CHKERRG(ierr);
+      ierr = mField.modify_finite_element_add_field_col(element_name,material_position_field_name); CHKERRG(ierr);
     }
-    ierr = mField.modify_finite_element_add_field_data(element_name,material_position_field_name); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_data(element_name,material_position_field_name); CHKERRG(ierr);
   }
 
   std::map<int,BlockData>::iterator sit = setOfBlocks.begin();
   for(;sit!=setOfBlocks.end();sit++) {
-    ierr = mField.add_ents_to_finite_element_by_type(sit->second.tEts,MBTET,element_name); CHKERRQ(ierr);
+    ierr = mField.add_ents_to_finite_element_by_type(sit->second.tEts,MBTET,element_name); CHKERRG(ierr);
   }
 
   MoFEMFunctionReturnHot(0);

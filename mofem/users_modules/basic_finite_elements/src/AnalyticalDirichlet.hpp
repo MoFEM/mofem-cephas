@@ -123,7 +123,7 @@ struct AnalyticalDirichletBC {
           // }
 
           const FENumeredDofEntity *dof_ptr;
-          ierr = getNumeredEntFiniteElementPtr()->getRowDofsByPetscGlobalDofIdx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
+          ierr = getNumeredEntFiniteElementPtr()->getRowDofsByPetscGlobalDofIdx(data.getIndices()[0],&dof_ptr); CHKERRG(ierr);
           unsigned int rank = dof_ptr->getNbOfCoeffs();
 
           NTf.resize(nb_row/rank);
@@ -168,7 +168,7 @@ struct AnalyticalDirichletBC {
 
               noalias(NTf) = data.getN(gg,nb_row/rank)*a[rr]*val;
               ierr = VecSetValues(getFEMethod()->snes_f,iNdices.size(),
-              &iNdices[0],&*NTf.data().begin(),ADD_VALUES); CHKERRQ(ierr);
+              &iNdices[0],&*NTf.data().begin(),ADD_VALUES); CHKERRG(ierr);
 
             }
 

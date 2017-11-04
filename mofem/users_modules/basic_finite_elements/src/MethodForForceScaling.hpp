@@ -36,7 +36,7 @@ struct MethodForForceScaling {
       MoFEMFunctionBeginHot;
       boost::ptr_vector<MethodForForceScaling>::iterator vit = methodsOp.begin();
       for(;vit!=methodsOp.end();vit++) {
-        ierr = vit->scaleNf(fe,Nf); CHKERRQ(ierr);
+        ierr = vit->scaleNf(fe,Nf); CHKERRG(ierr);
       }
       MoFEMFunctionReturnHot(0);
     }

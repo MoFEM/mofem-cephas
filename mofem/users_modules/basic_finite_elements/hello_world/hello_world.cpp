@@ -115,7 +115,7 @@ struct OpFaceSide: public FaceElementForcesAndSourcesCore::UserDataOperator {
    MoFEMFunctionBeginHot;
    if(type == MBVERTEX) {
      std::cout << "Hello Operator OpSideFace" << endl;
-     ierr = loopSideVolumes("dFE",*feSidePtr); CHKERRQ(ierr);
+     ierr = loopSideVolumes("dFE",*feSidePtr); CHKERRG(ierr);
    }
    MoFEMFunctionReturnHot(0);
  }
@@ -150,7 +150,7 @@ int main(int argc, char *argv[]) {
  PetscInitialize(&argc,&argv,(char *)0,help);
  // Register DM Manager
  DMType dm_name = "DMMOFEM";
- ierr = DMRegister_MoFEM(dm_name); CHKERRQ(ierr);
+ ierr = DMRegister_MoFEM(dm_name); CHKERRG(ierr);
 
  try {
 
@@ -165,22 +165,22 @@ int main(int argc, char *argv[]) {
 
    // Simple interface
    Simple *simple_interface;
-   ierr = m_field.getInterface(simple_interface); CHKERRQ(ierr);
+   ierr = m_field.getInterface(simple_interface); CHKERRG(ierr);
 
    // get options from command line
-   ierr = simple_interface->getOptions(); CHKERRQ(ierr);
+   ierr = simple_interface->getOptions(); CHKERRG(ierr);
    // load mesh file
-   ierr = simple_interface->loadFile(); CHKERRQ(ierr);
+   ierr = simple_interface->loadFile(); CHKERRG(ierr);
    // add fields
-   ierr = simple_interface->addDomainField("U",H1,AINSWORTH_LEGENDRE_BASE,3); CHKERRQ(ierr);
-   ierr = simple_interface->addBoundaryField("L",H1,AINSWORTH_LEGENDRE_BASE,3); CHKERRQ(ierr);
-   ierr = simple_interface->addSkeletonField("S",H1,AINSWORTH_LEGENDRE_BASE,3); CHKERRQ(ierr);
+   ierr = simple_interface->addDomainField("U",H1,AINSWORTH_LEGENDRE_BASE,3); CHKERRG(ierr);
+   ierr = simple_interface->addBoundaryField("L",H1,AINSWORTH_LEGENDRE_BASE,3); CHKERRG(ierr);
+   ierr = simple_interface->addSkeletonField("S",H1,AINSWORTH_LEGENDRE_BASE,3); CHKERRG(ierr);
    // set fields order
-   ierr = simple_interface->setFieldOrder("U",4); CHKERRQ(ierr);
-   ierr = simple_interface->setFieldOrder("L",3); CHKERRQ(ierr);
-   ierr = simple_interface->setFieldOrder("S",3); CHKERRQ(ierr);
+   ierr = simple_interface->setFieldOrder("U",4); CHKERRG(ierr);
+   ierr = simple_interface->setFieldOrder("L",3); CHKERRG(ierr);
+   ierr = simple_interface->setFieldOrder("S",3); CHKERRG(ierr);
    // setup problem
-   ierr = simple_interface->setUp(); CHKERRQ(ierr);
+   ierr = simple_interface->setUp(); CHKERRG(ierr);
    // Create elements
    boost::shared_ptr<ForcesAndSourcesCore> domain_fe(new VolumeElementForcesAndSourcesCore(m_field));
    boost::shared_ptr<ForcesAndSourcesCore> boundary_fe(new FaceElementForcesAndSourcesCore(m_field));
@@ -202,22 +202,22 @@ int main(int argc, char *argv[]) {
    side_fe->getOpPtrVector().push_back(new OpVolumeSide("U"));
    DM dm;
    // get dm
-   ierr = simple_interface->getDM(&dm); CHKERRQ(ierr);
+   ierr = simple_interface->getDM(&dm); CHKERRG(ierr);
    // iterate domain elements
-   ierr = DMoFEMLoopFiniteElements(dm,simple_interface->getDomainFEName(),domain_fe); CHKERRQ(ierr);
+   ierr = DMoFEMLoopFiniteElements(dm,simple_interface->getDomainFEName(),domain_fe); CHKERRG(ierr);
    // iterate boundary elements
-   ierr = DMoFEMLoopFiniteElements(dm,simple_interface->getBoundaryFEName(),boundary_fe); CHKERRQ(ierr);
+   ierr = DMoFEMLoopFiniteElements(dm,simple_interface->getBoundaryFEName(),boundary_fe); CHKERRG(ierr);
    // iterate skeleton element
-   ierr = DMoFEMLoopFiniteElements(dm,simple_interface->getSkeletonFEName(),skeleton_fe); CHKERRQ(ierr);
+   ierr = DMoFEMLoopFiniteElements(dm,simple_interface->getSkeletonFEName(),skeleton_fe); CHKERRG(ierr);
    // destroy dm
-   ierr = DMDestroy(&dm); CHKERRQ(ierr);
+   ierr = DMDestroy(&dm); CHKERRG(ierr);
 
  } catch (MoFEMException const &e) {
    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
  }
 
  // finish work cleaning memory, getting statistics, etc.
- ierr = PetscFinalize(); CHKERRQ(ierr);
+ ierr = PetscFinalize(); CHKERRG(ierr);
 
  return 0;
 }

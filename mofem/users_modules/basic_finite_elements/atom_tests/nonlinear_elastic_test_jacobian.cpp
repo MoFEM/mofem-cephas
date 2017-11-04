@@ -52,7 +52,7 @@ struct OpCheck: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperato
         );
         t_stress_0(i,j) -= t_stress_1(i,j);
         double nrm2 = t_stress_0(i,j)*t_stress_0(i,j);
-        // PetscPrintf(PETSC_COMM_WORLD,"nrm2 = %3.2e\n",nrm2); CHKERRQ(ierr);
+        // PetscPrintf(PETSC_COMM_WORLD,"nrm2 = %3.2e\n",nrm2); CHKERRG(ierr);
         if(nrm2>eps) {
           SETERRQ1(
             PETSC_COMM_SELF,
@@ -91,7 +91,7 @@ int main(int argc, char *argv[]) {
     PetscInt choise_value = HOOKE;
     ierr = PetscOptionsGetEList(
       PETSC_NULL,NULL,"-mat",materials_list,LASTOP,&choise_value,&flg_test_mat
-    ); CHKERRQ(ierr);
+    ); CHKERRG(ierr);
 
     moab::Core mb_instance;
     moab::Interface& moab = mb_instance;
@@ -100,7 +100,7 @@ int main(int argc, char *argv[]) {
 
     PetscBool flg = PETSC_TRUE;
     char mesh_file_name[255];
-    ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+    ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRG(ierr);
 
     const char *option;
     option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
@@ -114,25 +114,25 @@ int main(int argc, char *argv[]) {
     //ref meshset ref level 0
     BitRefLevel bit_level0;
     bit_level0.set(0);
-    ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
+    ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRG(ierr);
 
     //Fields
-    ierr = m_field.add_field("SPATIAL_POSITION",H1,AINSWORTH_LEGENDRE_BASE,3); CHKERRQ(ierr);
+    ierr = m_field.add_field("SPATIAL_POSITION",H1,AINSWORTH_LEGENDRE_BASE,3); CHKERRG(ierr);
     //add entitities (by tets) to the field
-    ierr = m_field.add_ents_to_field_by_type(0,MBTET,"SPATIAL_POSITION"); CHKERRQ(ierr);
+    ierr = m_field.add_ents_to_field_by_type(0,MBTET,"SPATIAL_POSITION"); CHKERRG(ierr);
     //set app. order
     PetscInt order;
-    ierr = PetscOptionsGetInt(PETSC_NULL,PETSC_NULL,"-my_order",&order,&flg); CHKERRQ(ierr);
+    ierr = PetscOptionsGetInt(PETSC_NULL,PETSC_NULL,"-my_order",&order,&flg); CHKERRG(ierr);
     if(flg != PETSC_TRUE) {
       order = 1;
     }
-    ierr = m_field.set_field_order(0,MBTET,"SPATIAL_POSITION",order); CHKERRQ(ierr);
-    ierr = m_field.set_field_order(0,MBTRI,"SPATIAL_POSITION",order); CHKERRQ(ierr);
-    ierr = m_field.set_field_order(0,MBEDGE,"SPATIAL_POSITION",order); CHKERRQ(ierr);
-    ierr = m_field.set_field_order(0,MBVERTEX,"SPATIAL_POSITION",1); CHKERRQ(ierr);
+    ierr = m_field.set_field_order(0,MBTET,"SPATIAL_POSITION",order); CHKERRG(ierr);
+    ierr = m_field.set_field_order(0,MBTRI,"SPATIAL_POSITION",order); CHKERRG(ierr);
+    ierr = m_field.set_field_order(0,MBEDGE,"SPATIAL_POSITION",order); CHKERRG(ierr);
+    ierr = m_field.set_field_order(0,MBVERTEX,"SPATIAL_POSITION",1); CHKERRG(ierr);
 
     //build field
-    ierr = m_field.build_fields(); CHKERRQ(ierr);
+    ierr = m_field.build_fields(); CHKERRG(ierr);
 
     //use this to apply some strain field to the body (testing only)
     double scale_positions = 2;
@@ -157,32 +157,32 @@ int main(int argc, char *argv[]) {
     ierr = elastic.setBlocks(
       boost::make_shared<NonlinearElasticElement::FunctionsToCalculatePiolaKirchhoffI<double> >(),
       boost::make_shared<NonlinearElasticElement::FunctionsToCalculatePiolaKirchhoffI<adouble> >()
-    ); CHKERRQ(ierr);
+    ); CHKERRG(ierr);
     elastic.commonData.spatialPositions = "SPATIAL_POSITION";
     elastic.commonData.meshPositions = "MESH_NODE_POSITIONS";
 
-    ierr = elastic.addElement("ELASTIC","SPATIAL_POSITION"); CHKERRQ(ierr);
+    ierr = elastic.addElement("ELASTIC","SPATIAL_POSITION"); CHKERRG(ierr);
 
     //build finite elemnts
-    ierr = m_field.build_finite_elements(); CHKERRQ(ierr);
+    ierr = m_field.build_finite_elements(); CHKERRG(ierr);
     //build adjacencies
-    ierr = m_field.build_adjacencies(bit_level0); CHKERRQ(ierr);
+    ierr = m_field.build_adjacencies(bit_level0); CHKERRG(ierr);
 
     //define problems
-    ierr = m_field.add_problem("ELASTIC_MECHANICS"); CHKERRQ(ierr);
+    ierr = m_field.add_problem("ELASTIC_MECHANICS"); CHKERRG(ierr);
     //set refinement level for problem
-    ierr = m_field.modify_problem_ref_level_add_bit("ELASTIC_MECHANICS",bit_level0); CHKERRQ(ierr);
+    ierr = m_field.modify_problem_ref_level_add_bit("ELASTIC_MECHANICS",bit_level0); CHKERRG(ierr);
     //set finite elements for problems
-    ierr = m_field.modify_problem_add_finite_element("ELASTIC_MECHANICS","ELASTIC"); CHKERRQ(ierr);
+    ierr = m_field.modify_problem_add_finite_element("ELASTIC_MECHANICS","ELASTIC"); CHKERRG(ierr);
 
     ProblemsManager *prb_mng_ptr;
-    ierr = m_field.getInterface(prb_mng_ptr); CHKERRQ(ierr);
+    ierr = m_field.getInterface(prb_mng_ptr); CHKERRG(ierr);
     //build problem
-    ierr = prb_mng_ptr->buildProblem("ELASTIC_MECHANICS",true); CHKERRQ(ierr);
+    ierr = prb_mng_ptr->buildProblem("ELASTIC_MECHANICS",true); CHKERRG(ierr);
     //partition
-    ierr = prb_mng_ptr->partitionProblem("ELASTIC_MECHANICS"); CHKERRQ(ierr);
-    ierr = prb_mng_ptr->partitionFiniteElements("ELASTIC_MECHANICS"); CHKERRQ(ierr);
-    ierr = prb_mng_ptr->partitionGhostDofs("ELASTIC_MECHANICS"); CHKERRQ(ierr);
+    ierr = prb_mng_ptr->partitionProblem("ELASTIC_MECHANICS"); CHKERRG(ierr);
+    ierr = prb_mng_ptr->partitionFiniteElements("ELASTIC_MECHANICS"); CHKERRG(ierr);
+    ierr = prb_mng_ptr->partitionGhostDofs("ELASTIC_MECHANICS"); CHKERRG(ierr);
 
     // test nonlinear element
     {
@@ -209,7 +209,7 @@ int main(int argc, char *argv[]) {
 
       ierr = m_field.loop_finite_elements(
         "ELASTIC_MECHANICS","ELASTIC",elastic.getLoopFeRhs()
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
     }
 
     // test materials

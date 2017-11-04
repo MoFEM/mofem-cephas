@@ -208,7 +208,7 @@ struct SurfaceSlidingConstrains {
       MoFEMFunctionBeginHot;
 
 
-      ierr = MoFEM::FaceElementForcesAndSourcesCore::preProcess(); CHKERRQ(ierr);
+      ierr = MoFEM::FaceElementForcesAndSourcesCore::preProcess(); CHKERRG(ierr);
 
       if(B != PETSC_NULL) {
         snes_B = B;
@@ -370,7 +370,7 @@ struct SurfaceSlidingConstrains {
 
       try {
         sPin.resize(3,3,false);
-        ierr = calcSpin(sPin,dXdKsi); CHKERRQ(ierr);
+        ierr = calcSpin(sPin,dXdKsi); CHKERRG(ierr);
         nOrmal.resize(3,false);
         noalias(nOrmal) = 0.5*prod(sPin,dXdEta);
         aRea = norm_2(nOrmal);
@@ -424,8 +424,8 @@ struct SurfaceSlidingConstrains {
         }
 
         for(int gg = 0;gg<nb_gauss_pts;gg++) {
-          ierr = aUx[gg].matrixN(gg,data); CHKERRQ(ierr);
-          ierr = aUx[gg].matrixB(gg,data); CHKERRQ(ierr);
+          ierr = aUx[gg].matrixN(gg,data); CHKERRG(ierr);
+          ierr = aUx[gg].matrixB(gg,data); CHKERRG(ierr);
           noalias(aUx[gg].pOsition) += prod(aUx[gg].N,data.getFieldData());
           noalias(aUx[gg].dXdKsi) += prod(aUx[gg].Bksi,data.getFieldData());
           noalias(aUx[gg].dXdEta) += prod(aUx[gg].Beta,data.getFieldData());
@@ -586,14 +586,14 @@ struct SurfaceSlidingConstrains {
 
         ierr = VecSetOption(
           getFEMethod()->snes_f,VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE
-        );  CHKERRQ(ierr);
+        );  CHKERRG(ierr);
         ierr = VecSetValues(
           getFEMethod()->snes_f,
           nb_dofs,
           indices_ptr,
           &nF[0],
           ADD_VALUES
-        ); CHKERRQ(ierr);
+        ); CHKERRG(ierr);
 
 
       } catch (const std::exception& ex) {
@@ -668,7 +668,7 @@ struct SurfaceSlidingConstrains {
 
         ierr = VecSetOption(
           getFEMethod()->snes_f,VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE
-        );  CHKERRQ(ierr);
+        );  CHKERRG(ierr);
 
         ierr = VecSetValues(
           getFEMethod()->snes_f,
@@ -676,7 +676,7 @@ struct SurfaceSlidingConstrains {
           indices_ptr,
           &g[0],
           ADD_VALUES
-        ); CHKERRQ(ierr);
+        ); CHKERRG(ierr);
 
       } catch (const std::exception& ex) {
         std::ostringstream ss;
@@ -752,7 +752,7 @@ struct SurfaceSlidingConstrains {
         }
 
         for(int gg = 0;gg<nb_gauss_pts;gg++) {
-          ierr = aUx[gg].matrixN(gg,col_data); CHKERRQ(ierr);
+          ierr = aUx[gg].matrixN(gg,col_data); CHKERRG(ierr);
         }
 
         int eo = oRientation.elementOrientation;
@@ -784,7 +784,7 @@ struct SurfaceSlidingConstrains {
           nb_row,row_indices_ptr,
           nb_col,col_indices_ptr,
           &C(0,0),ADD_VALUES
-        ); CHKERRQ(ierr);
+        ); CHKERRG(ierr);
 
         if(assembleTranspose) {
 
@@ -810,7 +810,7 @@ struct SurfaceSlidingConstrains {
             nb_col,trans_row_indices_ptr,
             nb_row,row_indices_ptr,
             &transC(0,0),ADD_VALUES
-          ); CHKERRQ(ierr);
+          ); CHKERRG(ierr);
 
         }
 
@@ -870,8 +870,8 @@ struct SurfaceSlidingConstrains {
         int eo = oRientation.elementOrientation;
 
         for(int gg = 0;gg<nb_gauss_pts;gg++) {
-          ierr = aUx[gg].matrixN(gg,row_data); CHKERRQ(ierr);
-          ierr = aUx[gg].matrixB(gg,col_data); CHKERRQ(ierr);
+          ierr = aUx[gg].matrixN(gg,row_data); CHKERRG(ierr);
+          ierr = aUx[gg].matrixB(gg,col_data); CHKERRG(ierr);
         }
 
         spindXdKsi.resize(3,3,false);
@@ -883,8 +883,8 @@ struct SurfaceSlidingConstrains {
         B.clear();
         for(int gg = 0;gg<nb_gauss_pts;gg++) {
 
-          ierr = AuxFunctions::calcSpin(spindXdKsi,aUx[gg].dXdKsi); CHKERRQ(ierr);
-          ierr = AuxFunctions::calcSpin(spindXdEta,aUx[gg].dXdEta); CHKERRQ(ierr);
+          ierr = AuxFunctions::calcSpin(spindXdKsi,aUx[gg].dXdKsi); CHKERRG(ierr);
+          ierr = AuxFunctions::calcSpin(spindXdEta,aUx[gg].dXdEta); CHKERRG(ierr);
 
           noalias(dNormal) = eo*(prod(spindXdKsi,aUx[gg].Beta)-prod(spindXdEta,aUx[gg].Bksi));
           noalias(NdNormal) = prod(trans(aUx[gg].N),dNormal);
@@ -916,7 +916,7 @@ struct SurfaceSlidingConstrains {
           nb_row,row_indices_ptr,
           nb_col,col_indices_ptr,
           &B(0,0),ADD_VALUES
-        ); CHKERRQ(ierr);
+        ); CHKERRG(ierr);
 
 
       } catch (const std::exception& ex) {
@@ -981,7 +981,7 @@ struct SurfaceSlidingConstrains {
         int eo = oRientation.elementOrientation;
 
         for(int gg = 0;gg<nb_gauss_pts;gg++) {
-          ierr = aUx[gg].matrixB(gg,col_data); CHKERRQ(ierr);
+          ierr = aUx[gg].matrixB(gg,col_data); CHKERRG(ierr);
         }
 
         XdNormal.resize(nb_col,false);
@@ -1000,8 +1000,8 @@ struct SurfaceSlidingConstrains {
             dElta[dd] -= getCoordsAtGaussPts()(gg,dd);
           }
 
-          ierr = AuxFunctions::calcSpin(spindXdKsi,aUx[gg].dXdKsi); CHKERRQ(ierr);
-          ierr = AuxFunctions::calcSpin(spindXdEta,aUx[gg].dXdEta); CHKERRQ(ierr);
+          ierr = AuxFunctions::calcSpin(spindXdKsi,aUx[gg].dXdKsi); CHKERRG(ierr);
+          ierr = AuxFunctions::calcSpin(spindXdEta,aUx[gg].dXdEta); CHKERRG(ierr);
 
           noalias(dNormal) = eo*(prod(spindXdKsi,aUx[gg].Beta)-prod(spindXdEta,aUx[gg].Bksi));
           noalias(XdNormal) = prod(trans(dElta),dNormal);
@@ -1020,7 +1020,7 @@ struct SurfaceSlidingConstrains {
           nb_row,row_indices_ptr,
           nb_col,col_indices_ptr,
           &A(0,0),ADD_VALUES
-        ); CHKERRQ(ierr);
+        ); CHKERRG(ierr);
 
 
       } catch (const std::exception& ex) {

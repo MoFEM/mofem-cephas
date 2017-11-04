@@ -64,7 +64,7 @@ struct VolumeLengthQuality: public NonlinearElasticElement::FunctionsToCalculate
       MoFEMFunctionBeginHot;
       ierr = PetscOptionsBegin(
         PETSC_COMM_WORLD,"","Get VolumeLengthQuality material options","none"
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
       ierr = PetscOptionsEList(
         "-volume_length_type","Volume length quality type","",
         VolumeLengthQualityTypeNames,LASTOP_VOLUMELENGTHQUALITYTYPE,
@@ -74,13 +74,13 @@ struct VolumeLengthQuality: public NonlinearElasticElement::FunctionsToCalculate
         "-volume_length_alpha",
         "volume length alpha parameter","",
         aLpha,&aLpha,PETSC_NULL
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
       ierr = PetscOptionsScalar(
         "-volume_length_gamma",
         "volume length parameter (barrier)","",
         gAmma,&gAmma,PETSC_NULL
-      ); CHKERRQ(ierr);
-      ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
+      ierr = PetscOptionsEnd(); CHKERRG(ierr);
       MoFEMFunctionReturnHot(0);
     }
 
@@ -209,16 +209,16 @@ struct VolumeLengthQuality: public NonlinearElasticElement::FunctionsToCalculate
 
 
 
-        ierr = getEdgesFromElemCoords(); CHKERRQ(ierr);
+        ierr = getEdgesFromElemCoords(); CHKERRG(ierr);
 
-        ierr = this->dEterminatnt(this->F,detF); CHKERRQ(ierr);
+        ierr = this->dEterminatnt(this->F,detF); CHKERRG(ierr);
         if(this->invF.size1()!=3) {
           this->invF.resize(3,3);
         }
-        ierr = this->iNvert(detF,this->F,this->invF); CHKERRQ(ierr);
+        ierr = this->iNvert(detF,this->F,this->invF); CHKERRG(ierr);
 
-        ierr = calculateLrms(); CHKERRQ(ierr);
-        ierr = calculateQ(); CHKERRQ(ierr);
+        ierr = calculateLrms(); CHKERRG(ierr);
+        ierr = calculateQ(); CHKERRG(ierr);
 
         double lrms03 = lrmsSquared0*sqrt(lrmsSquared0);
         b = detF/(lrmsSquared*sqrt(lrmsSquared)/lrms03);

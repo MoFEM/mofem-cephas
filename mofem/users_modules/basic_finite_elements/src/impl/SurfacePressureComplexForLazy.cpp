@@ -272,7 +272,7 @@ MoFEMErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::rHs() {
         &*fExtNode.data().begin(),Fext_edge,&*fExtFace.data().begin(),//20
         NULL,NULL,NULL,//23
         gaussPts.size2(),&gaussPts(2,0)
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
       break;
       case NONCONSERVATIVE:
       for(int ee = 0;ee<3;ee++) {
@@ -300,7 +300,7 @@ MoFEMErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::rHs() {
         &*fExtNode.data().begin(),Fext_edge,&*fExtFace.data().begin(),//20
         NULL,NULL,NULL,//23
         gaussPts.size2(),&gaussPts(2,0)
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
       break;
     }
 
@@ -324,19 +324,19 @@ MoFEMErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::rHs() {
     ierr = VecSetValues(f,
       9,dofs_x_indices,
       &*fExtNode.data().begin(),ADD_VALUES
-    ); CHKERRQ(ierr);
+    ); CHKERRG(ierr);
     if(dOfs_x_face_indices.size()>0) {
       ierr = VecSetValues(f,
         dOfs_x_face_indices.size(),dofs_x_face_indices,
         &*fExtFace.data().begin(),ADD_VALUES
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
     }
     for(int ee = 0;ee<3;ee++) {
       if(dOfs_x_edge_indices[ee].size()>0) {
         ierr = VecSetValues(f,
           dOfs_x_edge_indices[ee].size(),dofs_x_edge_indices[ee],
           Fext_edge[ee],ADD_VALUES
-        ); CHKERRQ(ierr);
+        ); CHKERRG(ierr);
       }
     }
 
@@ -377,18 +377,18 @@ MoFEMErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::lHs() {
       dofs_x,dofs_x_edge,dofs_x_face,
       &*kExtNodeNode.data().begin(),Kext_edge_node,&*kExtFaceNode.data().begin(),
       gaussPts.size2(),&gaussPts(2,0)
-    ); CHKERRQ(ierr);
+    ); CHKERRG(ierr);
     //cerr << kExtNodeNode << endl;
     ierr = MatSetValues(snes_B,
       9,dofs_x_indices,
       9,dofs_x_indices,
       &*kExtNodeNode.data().begin(),ADD_VALUES
-    ); CHKERRQ(ierr);
+    ); CHKERRG(ierr);
     ierr = MatSetValues(snes_B,
       kExtFaceNode.size1(),dofs_x_face_indices,
       9,dofs_x_indices,
       &*kExtFaceNode.data().begin(),ADD_VALUES
-    ); CHKERRQ(ierr);
+    ); CHKERRG(ierr);
     //cerr << kExtFaceNode << endl;
     for(int ee = 0;ee<3;ee++) {
       //cerr << kExtEdgeNode[ee] << endl;
@@ -396,7 +396,7 @@ MoFEMErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::lHs() {
         kExtEdgeNode[ee].size1(),dofs_x_edge_indices[ee],
         9,dofs_x_indices,
         Kext_edge_node[ee],ADD_VALUES
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
     }
 
     kExtNodeFace.resize(9,dOfs_x_face_indices.size());
@@ -413,26 +413,26 @@ MoFEMErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::lHs() {
       dofs_x,dofs_x_edge,dofs_x_face,
       &*kExtNodeFace.data().begin(),Kext_edge_face,&*kExtFaceFace.data().begin(),
       gaussPts.size2(),&gaussPts(2,0)
-    ); CHKERRQ(ierr);
+    ); CHKERRG(ierr);
     //cerr << "kExtNodeFace " << kExtNodeFace << endl;
     //cerr << "kExtFaceFace " << kExtFaceFace << endl;
     ierr = MatSetValues(snes_B,
       9,dofs_x_indices,
       kExtNodeFace.size2(),dofs_x_face_indices,
       &*kExtNodeFace.data().begin(),ADD_VALUES
-    ); CHKERRQ(ierr);
+    ); CHKERRG(ierr);
     ierr = MatSetValues(snes_B,
       kExtFaceFace.size1(),dofs_x_face_indices,
       kExtFaceFace.size2(),dofs_x_face_indices,
       &*kExtFaceFace.data().begin(),ADD_VALUES
-    ); CHKERRQ(ierr);
+    ); CHKERRG(ierr);
     for(int ee = 0;ee<3;ee++) {
       //cerr << "kExtEdgeFace " << kExtEdgeFace[ee] << endl;
       ierr = MatSetValues(snes_B,
         kExtEdgeFace[ee].size1(),dofs_x_edge_indices[ee],
         kExtFaceFace.size2(),dofs_x_face_indices,
         Kext_edge_face[ee],ADD_VALUES
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
     }
 
     kExtFaceEdge.resize(3);
@@ -458,7 +458,7 @@ MoFEMErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::lHs() {
       dofs_x,dofs_x_edge,dofs_x_face,
       Kext_node_edge,Kext_edge_edge,Kext_face_edge,
       gaussPts.size2(),&gaussPts(2,0)
-    ); CHKERRQ(ierr);
+    ); CHKERRG(ierr);
     for(int ee = 0;ee<3;ee++) {
       //cerr << "kExtFaceEdge: " << kExtFaceEdge[ee] << endl;
       //cerr << "kExtFaceEdge: " << kExtNodeEdge[ee] << endl;
@@ -466,19 +466,19 @@ MoFEMErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::lHs() {
         kExtFaceEdge[ee].size1(),dofs_x_face_indices,
         kExtFaceEdge[ee].size2(),dofs_x_edge_indices[ee],
         &*kExtFaceEdge[ee].data().begin(),ADD_VALUES
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
       ierr = MatSetValues(snes_B,
         9,dofs_x_indices,
         kExtNodeEdge[ee].size2(),dofs_x_edge_indices[ee],
         &*kExtNodeEdge[ee].data().begin(),ADD_VALUES
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
       for(int EE = 0;EE<3;EE++) {
         //cerr << kExtEdgeEdge(EE,ee) << endl;
         ierr = MatSetValues(snes_B,
           kExtEdgeEdge(EE,ee).size1(),dofs_x_edge_indices[EE],
           kExtEdgeEdge(EE,ee).size2(),dofs_x_edge_indices[ee],
           Kext_edge_edge[EE][ee],ADD_VALUES
-        ); CHKERRQ(ierr);
+        ); CHKERRG(ierr);
       }
     }
 
@@ -494,7 +494,7 @@ MoFEMErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::lHs() {
 MoFEMErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::reBaseToFaceLoocalCoordSystem(MatrixDouble &t_glob_nodal) {
   MoFEMFunctionBeginHot;
   double s1[3],s2[3],normal[3],q[9];
-  ierr = ShapeFaceBaseMBTRI(diffN,&*coords.data().begin(),normal,s1,s2); CHKERRQ(ierr);
+  ierr = ShapeFaceBaseMBTRI(diffN,&*coords.data().begin(),normal,s1,s2); CHKERRG(ierr);
   double nrm2_normal = cblas_dnrm2(3,normal,1);
   cblas_dscal(3,1./nrm2_normal,normal,1);
   cblas_dcopy(3,s1,1,&q[0],1);
@@ -544,14 +544,14 @@ MoFEMErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::calcTrac
           tGlobNodal(nn,dd) = tGlob[dd];
         }
       }
-      ierr = reBaseToFaceLoocalCoordSystem(tGlobNodal); CHKERRQ(ierr);
+      ierr = reBaseToFaceLoocalCoordSystem(tGlobNodal); CHKERRG(ierr);
       tLocNodal += tGlobNodal;
     }
   }
 
   VectorDouble scale(1,1);
   //cerr << methodsOp.size() << endl;
-  ierr = MethodForForceScaling::applyScale(this,methodsOp,scale); CHKERRQ(ierr);
+  ierr = MethodForForceScaling::applyScale(this,methodsOp,scale); CHKERRG(ierr);
   tLocNodal *= scale[0];
 
   //cerr << tLocNodal << endl;
@@ -571,13 +571,13 @@ MoFEMErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::preProce
   MoFEMFunctionBeginHot;
 
   
-  ierr = PetscOptionsBegin(mField.get_comm(),"","Surface Pressure (complex for lazy)","none"); CHKERRQ(ierr);
+  ierr = PetscOptionsBegin(mField.get_comm(),"","Surface Pressure (complex for lazy)","none"); CHKERRG(ierr);
   PetscBool is_conservative = PETSC_TRUE;
-  ierr = PetscOptionsBool("-is_conservative_force","is conservative force","",PETSC_TRUE,&is_conservative,PETSC_NULL); CHKERRQ(ierr);
+  ierr = PetscOptionsBool("-is_conservative_force","is conservative force","",PETSC_TRUE,&is_conservative,PETSC_NULL); CHKERRG(ierr);
   if(is_conservative == PETSC_FALSE) {
     typeOfForces = NONCONSERVATIVE;
   }
-  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+  ierr = PetscOptionsEnd(); CHKERRG(ierr);
 
   switch(ts_ctx) {
     case CTX_TSSETIFUNCTION: {
@@ -637,8 +637,8 @@ MoFEMErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::operator
     SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
   }
 
-  ierr = FaceElementForcesAndSourcesCore::operator()(); CHKERRQ(ierr);
-  ierr = calcTraction(); CHKERRQ(ierr);
+  ierr = FaceElementForcesAndSourcesCore::operator()(); CHKERRG(ierr);
+  ierr = calcTraction(); CHKERRG(ierr);
 
   switch(snes_ctx) {
     case CTX_SNESNONE:
@@ -646,12 +646,12 @@ MoFEMErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::operator
       tLocNodal *= *sCaleRhs;
       //cerr << "sCaleRhs " << *sCaleRhs << endl;
       //cerr << tLocNodal << endl;
-      ierr = rHs(); CHKERRQ(ierr);
+      ierr = rHs(); CHKERRG(ierr);
     }
     break;
     case CTX_SNESSETJACOBIAN: {
       tLocNodal *= *sCaleLhs;
-      ierr = lHs(); CHKERRQ(ierr);
+      ierr = lHs(); CHKERRG(ierr);
     }
     break;
   }
@@ -670,9 +670,9 @@ MoFEMErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::addForce
   const CubitMeshSets *cubit_meshset_ptr;
   
   MoFEMFunctionBeginHot;
-  ierr = mField.getInterface(mesh_manager_ptr); CHKERRQ(ierr);
-  ierr = mesh_manager_ptr->getCubitMeshsetPtr(ms_id,NODESET,&cubit_meshset_ptr); CHKERRQ(ierr);
-  ierr = cubit_meshset_ptr->getBcDataStructure(mapForce[ms_id].data); CHKERRQ(ierr);
+  ierr = mField.getInterface(mesh_manager_ptr); CHKERRG(ierr);
+  ierr = mesh_manager_ptr->getCubitMeshsetPtr(ms_id,NODESET,&cubit_meshset_ptr); CHKERRG(ierr);
+  ierr = cubit_meshset_ptr->getBcDataStructure(mapForce[ms_id].data); CHKERRG(ierr);
   rval = mField.get_moab().get_entities_by_type(cubit_meshset_ptr->meshset,MBTRI,mapForce[ms_id].tRis,true); CHKERRG(rval);
   MoFEMFunctionReturnHot(0);
 }
@@ -682,9 +682,9 @@ MoFEMErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::addPreas
   const CubitMeshSets *cubit_meshset_ptr;
   
   MoFEMFunctionBeginHot;
-  ierr = mField.getInterface(mesh_manager_ptr); CHKERRQ(ierr);
-  ierr = mesh_manager_ptr->getCubitMeshsetPtr(ms_id,SIDESET,&cubit_meshset_ptr); CHKERRQ(ierr);
-  ierr = cubit_meshset_ptr->getBcDataStructure(mapPreassure[ms_id].data); CHKERRQ(ierr);
+  ierr = mField.getInterface(mesh_manager_ptr); CHKERRG(ierr);
+  ierr = mesh_manager_ptr->getCubitMeshsetPtr(ms_id,SIDESET,&cubit_meshset_ptr); CHKERRG(ierr);
+  ierr = cubit_meshset_ptr->getBcDataStructure(mapPreassure[ms_id].data); CHKERRG(ierr);
   rval = mField.get_moab().get_entities_by_type(cubit_meshset_ptr->meshset,MBTRI,mapPreassure[ms_id].tRis,true); CHKERRG(rval);
   MoFEMFunctionReturnHot(0);
 }
@@ -719,14 +719,14 @@ MoFEMErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::addPreas
 //     dofs_X,dofs_X_edge,dofs_X_face,//14
 //     NULL,
 //     &*fExtNode.begin(),NULL,
-//     gaussPts.size2(),&gaussPts(2,0)); CHKERRQ(ierr);
+//     gaussPts.size2(),&gaussPts(2,0)); CHKERRG(ierr);
 //
 //   Vec f = snes_f;
 //   if(uSeF) f = F;
 //   ierr = VecSetValues(f,
 //     9,dofs_X_indices,
 //     &*fExtNode.data().begin(),ADD_VALUES
-//   ); CHKERRQ(ierr);
+//   ); CHKERRG(ierr);
 //
 //   } catch (exception& ex) {
 //     ostringstream ss;
@@ -755,11 +755,11 @@ MoFEMErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::addPreas
 //     t_loc,NULL,NULL,
 //     dofs_X,dofs_X_edge,dofs_X_face,
 //     &*kExtNodeNode.data().begin(),
-//     gaussPts.size2(),&gaussPts(2,0)); CHKERRQ(ierr);
+//     gaussPts.size2(),&gaussPts(2,0)); CHKERRG(ierr);
 //   ierr = MatSetValues(snes_B,
 //     9,dofs_X_indices,
 //     9,dofs_X_indices,
-//     &*kExtNodeNode.data().begin(),ADD_VALUES); CHKERRQ(ierr);
+//     &*kExtNodeNode.data().begin(),ADD_VALUES); CHKERRG(ierr);
 //
 //   } catch (exception& ex) {
 //     ostringstream ss;
@@ -859,7 +859,7 @@ extern "C" {
     gg = 0;
     for(;gg<g_dim;gg++) {
       double traction[3] = {0,0,0};
-      ierr = Traction_hierarchical(order,order_edge,N,N_face,N_edge,t,t_edge,t_face,traction,gg); CHKERRQ(ierr);
+      ierr = Traction_hierarchical(order,order_edge,N,N_face,N_edge,t,t_edge,t_face,traction,gg); CHKERRG(ierr);
       __CLPK_doublecomplex xnormal[3],xs1[3],xs2[3];
       ierr = Normal_hierarchical(
         //FIXME: order of tractions approximation could be different for field approx.
@@ -869,8 +869,8 @@ extern "C" {
         dofs_x,dofs_x_edge,dofs_x_face,idofs_x,
         idofs_x_edge,idofs_x_face,
         xnormal,xs1,xs2,gg
-      ); CHKERRQ(ierr);
-      ierr = Base_scale(xnormal,xs1,xs2); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
+      ierr = Base_scale(xnormal,xs1,xs2); CHKERRG(ierr);
       double normal_real[3],s1_real[3],s2_real[3];
       double normal_imag[3],s1_imag[3],s2_imag[3];
       for(dd = 0;dd<3;dd++) {
@@ -962,7 +962,7 @@ extern "C" {
     }
     for(gg = 0;gg<g_dim;gg++) {
       double traction[3] = {0,0,0};
-      ierr = Traction_hierarchical(order,order_edge,N,N_face,N_edge,t,t_edge,t_face,traction,gg); CHKERRQ(ierr);
+      ierr = Traction_hierarchical(order,order_edge,N,N_face,N_edge,t,t_edge,t_face,traction,gg); CHKERRG(ierr);
       //
       __CLPK_doublecomplex xnormal[3],xs1[3],xs2[3];
       double idofs_x[9];
@@ -975,8 +975,8 @@ extern "C" {
   	diffN,diffN_face,diffN_edge,
   	dofs_x,dofs_x_edge,dofs_x_face,
   	idofs_x,NULL,NULL,
-  	xnormal,xs1,xs2,gg); CHKERRQ(ierr);
-        ierr = Base_scale(xnormal,xs1,xs2); CHKERRQ(ierr);
+  	xnormal,xs1,xs2,gg); CHKERRG(ierr);
+        ierr = Base_scale(xnormal,xs1,xs2); CHKERRG(ierr);
         double normal_imag[3],s1_imag[3],s2_imag[3];
         for(dd = 0;dd<3;dd++) {
   	normal_imag[dd] = 0.5*xnormal[dd].i/eps;
@@ -1041,7 +1041,7 @@ extern "C" {
     }
     for(gg = 0;gg<g_dim;gg++) {
       double traction[3]  = {0,0,0};
-      ierr = Traction_hierarchical(order,order_edge,N,N_face,N_edge,t,t_edge,t_face,traction,gg); CHKERRQ(ierr);
+      ierr = Traction_hierarchical(order,order_edge,N,N_face,N_edge,t,t_edge,t_face,traction,gg); CHKERRG(ierr);
       for(EE = 0;EE<3;EE++) {
         int nb_dofs_edge_EE = NBEDGE_H1(order_edge[EE]);
         double* idofs_x_edge[3] = { NULL, NULL, NULL };
@@ -1056,8 +1056,8 @@ extern "C" {
   	  order,order_edge,
   	  diffN,diffN_face,diffN_edge,
   	  dofs_x,dofs_x_edge,dofs_x_face,NULL,idofs_x_edge,NULL,
-  	  xnormal,xs1,xs2,gg); CHKERRQ(ierr);
-  	ierr = Base_scale(xnormal,xs1,xs2); CHKERRQ(ierr);
+  	  xnormal,xs1,xs2,gg); CHKERRG(ierr);
+  	ierr = Base_scale(xnormal,xs1,xs2); CHKERRG(ierr);
   	double normal_imag[3],s1_imag[3],s2_imag[3];
   	for(dd = 0;dd<3;dd++) {
   	  normal_imag[dd] = 0.5*xnormal[dd].i/eps;
@@ -1119,7 +1119,7 @@ extern "C" {
     }
     for(gg = 0;gg<g_dim;gg++) {
       double traction[3] = {0,0,0};
-      ierr = Traction_hierarchical(order,order_edge,N,N_face,N_edge,t,t_edge,t_face,traction,gg); CHKERRQ(ierr);
+      ierr = Traction_hierarchical(order,order_edge,N,N_face,N_edge,t,t_edge,t_face,traction,gg); CHKERRG(ierr);
       double idofs_x_face[3*nb_dofs_face];
       for(ii = 0;ii<3*nb_dofs_face;ii++) {
         bzero(idofs_x_face,3*nb_dofs_face*sizeof(double));
@@ -1130,8 +1130,8 @@ extern "C" {
   	order,order_edge,
   	diffN,diffN_face,diffN_edge,
   	dofs_x,dofs_x_edge,dofs_x_face,NULL,NULL,idofs_x_face,
-  	xnormal,xs1,xs2,gg); CHKERRQ(ierr);
-        ierr = Base_scale(xnormal,xs1,xs2); CHKERRQ(ierr);
+  	xnormal,xs1,xs2,gg); CHKERRG(ierr);
+        ierr = Base_scale(xnormal,xs1,xs2); CHKERRG(ierr);
         double normal_imag[3],s1_imag[3],s2_imag[3];
         for(dd = 0;dd<3;dd++) {
   	normal_imag[dd] = 0.5*xnormal[dd].i/eps;
@@ -1186,7 +1186,7 @@ extern "C" {
   //   gg = 0;
   //   for(;gg<g_dim;gg++) {
   //     double traction[3] = {0,0,0};
-  //     ierr = Traction_hierarchical(order,order_edge,N,N_face,N_edge,t,t_edge,t_face,traction,gg); CHKERRQ(ierr);
+  //     ierr = Traction_hierarchical(order,order_edge,N,N_face,N_edge,t,t_edge,t_face,traction,gg); CHKERRG(ierr);
   //     __CLPK_doublecomplex xnormal[3],xs1[3],xs2[3];
   //     ierr = Normal_hierarchical(
   //       order,order_edge, //FIXME
@@ -1194,8 +1194,8 @@ extern "C" {
   //       diffN,diffN_face,diffN_edge,
   //       dofs_X,dofs_X_edge,dofs_X_face,
   //       idofs_X,NULL,NULL,
-  //       xnormal,xs1,xs2,gg); CHKERRQ(ierr);
-  //     ierr = Base_scale(xnormal,xs1,xs2); CHKERRQ(ierr);
+  //       xnormal,xs1,xs2,gg); CHKERRG(ierr);
+  //     ierr = Base_scale(xnormal,xs1,xs2); CHKERRG(ierr);
   //     double normal_real[3],s1_real[3],s2_real[3];
   //     double normal_imag[3],s1_imag[3],s2_imag[3];
   //     for(dd = 0;dd<3;dd++) {
@@ -1237,7 +1237,7 @@ extern "C" {
   //   bzero(KExt_HH,9*9*sizeof(double));
   //   for(gg = 0;gg<g_dim;gg++) {
   //     double traction[3] = {0,0,0};
-  //     ierr = Traction_hierarchical(order,order_edge,N,N_face,N_edge,t,t_edge,t_face,traction,gg); CHKERRQ(ierr);
+  //     ierr = Traction_hierarchical(order,order_edge,N,N_face,N_edge,t,t_edge,t_face,traction,gg); CHKERRG(ierr);
   //     //
   //     __CLPK_doublecomplex xnormal[3],xs1[3],xs2[3];
   //     double idofs_X[9];
@@ -1251,8 +1251,8 @@ extern "C" {
   //         dofs_X,dofs_X_edge,dofs_X_face,
   //         idofs_X,NULL,NULL,
   //         xnormal,xs1,xs2,gg
-  //       ); CHKERRQ(ierr);
-  //       ierr = Base_scale(xnormal,xs1,xs2); CHKERRQ(ierr);
+  //       ); CHKERRG(ierr);
+  //       ierr = Base_scale(xnormal,xs1,xs2); CHKERRG(ierr);
   //       double normal_imag[3],s1_imag[3],s2_imag[3];
   //       for(dd = 0;dd<3;dd++) {
   //         normal_imag[dd] = 0.5*xnormal[dd].i/eps;

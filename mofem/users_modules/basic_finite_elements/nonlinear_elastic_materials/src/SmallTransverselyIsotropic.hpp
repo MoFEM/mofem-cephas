@@ -264,15 +264,15 @@ struct SmallStrainTranverslyIsotropic: public NonlinearElasticElement::Functions
     boost::shared_ptr<const NumeredEntFiniteElement> fe_ptr
   ) {
     MoFEMFunctionBeginHot;
-    ierr = calculateAngles(); CHKERRQ(ierr);
-    ierr = calculateStrain(); CHKERRQ(ierr);
-    ierr = calculateLocalStiffnesMatrix(); CHKERRQ(ierr);
-    ierr = calculateAxisAngleRotationalMatrix(); CHKERRQ(ierr);
-    ierr = stressTransformation(); CHKERRQ(ierr);
+    ierr = calculateAngles(); CHKERRG(ierr);
+    ierr = calculateStrain(); CHKERRG(ierr);
+    ierr = calculateLocalStiffnesMatrix(); CHKERRG(ierr);
+    ierr = calculateAxisAngleRotationalMatrix(); CHKERRG(ierr);
+    ierr = stressTransformation(); CHKERRG(ierr);
     axAngle = -axAngle;
-    ierr = calculateAxisAngleRotationalMatrix(); CHKERRQ(ierr);
-    ierr = strainTransformation(); CHKERRQ(ierr);
-    ierr = calculateGlobalStiffnesMatrix(); CHKERRQ(ierr);
+    ierr = calculateAxisAngleRotationalMatrix(); CHKERRG(ierr);
+    ierr = strainTransformation(); CHKERRG(ierr);
+    ierr = calculateGlobalStiffnesMatrix(); CHKERRG(ierr);
 
     voigtStress.resize(6,false);
     noalias(voigtStress) = prod(globalStiffnessMatrix,voightStrain);
@@ -299,15 +299,15 @@ struct SmallStrainTranverslyIsotropic: public NonlinearElasticElement::Functions
 ) {
     MoFEMFunctionBeginHot;
 
-    ierr = calculateAngles(); CHKERRQ(ierr);
-    ierr = calculateStrain(); CHKERRQ(ierr);
-    ierr = calculateLocalStiffnesMatrix(); CHKERRQ(ierr);
-    ierr = calculateAxisAngleRotationalMatrix(); CHKERRQ(ierr);
-    ierr = stressTransformation(); CHKERRQ(ierr);
+    ierr = calculateAngles(); CHKERRG(ierr);
+    ierr = calculateStrain(); CHKERRG(ierr);
+    ierr = calculateLocalStiffnesMatrix(); CHKERRG(ierr);
+    ierr = calculateAxisAngleRotationalMatrix(); CHKERRG(ierr);
+    ierr = stressTransformation(); CHKERRG(ierr);
     axAngle = -axAngle;
-    ierr = calculateAxisAngleRotationalMatrix(); CHKERRQ(ierr);
-    ierr = strainTransformation(); CHKERRQ(ierr);
-    ierr = calculateGlobalStiffnesMatrix(); CHKERRQ(ierr);
+    ierr = calculateAxisAngleRotationalMatrix(); CHKERRG(ierr);
+    ierr = strainTransformation(); CHKERRG(ierr);
+    ierr = calculateGlobalStiffnesMatrix(); CHKERRG(ierr);
 
     voigtStress.resize(6,false);
     noalias(voigtStress) = prod(globalStiffnessMatrix,voightStrain);
@@ -368,7 +368,7 @@ struct SmallStrainTranverslyIsotropicDouble: public SmallStrainTranverslyIsotrop
 
     try {
 
-      ierr = calculateFibreAngles(); CHKERRQ(ierr);
+      ierr = calculateFibreAngles(); CHKERRG(ierr);
       axVector.resize(3,false);
       axVector[0] = axVectorDouble[0];
       axVector[1] = axVectorDouble[1];
@@ -415,7 +415,7 @@ struct SmallStrainTranverslyIsotropicADouble: public SmallStrainTranverslyIsotro
 
     try {
 
-      ierr = calculateFibreAngles(); CHKERRQ(ierr);
+      ierr = calculateFibreAngles(); CHKERRG(ierr);
       axVector.resize(3,false);
       axVector[0] <<= axVectorDouble[0];
       axVector[1] <<= axVectorDouble[1];
@@ -440,7 +440,7 @@ struct SmallStrainTranverslyIsotropicADouble: public SmallStrainTranverslyIsotro
     try {
 
       int shift = nbActiveVariables0; // is a number of elements in F
-      ierr = calculateFibreAngles(); CHKERRQ(ierr);
+      ierr = calculateFibreAngles(); CHKERRG(ierr);
       active_varibles[shift+0] = axVectorDouble[0];
       active_varibles[shift+1] = axVectorDouble[1];
       active_varibles[shift+2] = axVectorDouble[2];

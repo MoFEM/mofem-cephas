@@ -77,9 +77,9 @@ namespace PoissonExample {
         isDiag = false;
       }
       // integrate local matrix for entity block
-      ierr = iNtegrate(row_data,col_data); CHKERRQ(ierr);
+      ierr = iNtegrate(row_data,col_data); CHKERRG(ierr);
       // assemble local matrix
-      ierr = aSsemble(row_data,col_data); CHKERRQ(ierr);
+      ierr = aSsemble(row_data,col_data); CHKERRG(ierr);
       MoFEMFunctionReturnHot(0);
     }
 
@@ -158,14 +158,14 @@ namespace PoissonExample {
       // assemble local matrix
       ierr = MatSetValues(
         B, nbRows,row_indices,nbCols,col_indices,&*locMat.data().begin(),ADD_VALUES
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
       if(!isDiag&&sYmm) {
         // if not diagonal term and since global matrix is symmetric assemble
         // transpose term.
         locMat = trans(locMat);
         ierr = MatSetValues(
           B,nbCols,col_indices,nbRows,row_indices,&*locMat.data().begin(),ADD_VALUES
-        ); CHKERRQ(ierr);
+        ); CHKERRG(ierr);
       }
       MoFEMFunctionReturnHot(0);
     }
@@ -199,9 +199,9 @@ namespace PoissonExample {
       // get number of integration points
       nbIntegrationPts = OPBASE::getGaussPts().size2();
       // integrate local vector
-      ierr = iNtegrate(row_data); CHKERRQ(ierr);
+      ierr = iNtegrate(row_data); CHKERRG(ierr);
       // assemble local vector
-      ierr = aSsemble(row_data); CHKERRQ(ierr);
+      ierr = aSsemble(row_data); CHKERRG(ierr);
       MoFEMFunctionReturnHot(0);
     }
 
@@ -305,7 +305,7 @@ namespace PoissonExample {
       const double* vals = &*locVec.data().begin();
       Vec f = getFEMethod()->ksp_f!=PETSC_NULL ? getFEMethod()->ksp_f : getFEMethod()->snes_f;
       // assemble vector
-      ierr = VecSetValues(f,nbRows,indices,vals,ADD_VALUES); CHKERRQ(ierr);
+      ierr = VecSetValues(f,nbRows,indices,vals,ADD_VALUES); CHKERRG(ierr);
       MoFEMFunctionReturnHot(0);
     }
 
@@ -344,9 +344,9 @@ namespace PoissonExample {
       // get number of integration points
       nbIntegrationPts = getGaussPts().size2();
       // integrate local constrains matrix
-      ierr = iNtegrate(row_data,col_data); CHKERRQ(ierr);
+      ierr = iNtegrate(row_data,col_data); CHKERRG(ierr);
       // assemble local constrains matrix
-      ierr = aSsemble(row_data,col_data); CHKERRQ(ierr);
+      ierr = aSsemble(row_data,col_data); CHKERRG(ierr);
       MoFEMFunctionReturnHot(0);
     }
 
@@ -415,14 +415,14 @@ namespace PoissonExample {
       // assemble local matrix
       ierr = MatSetValues(
         B,nbRows,row_indices,nbCols,col_indices,&*locMat.data().begin(),ADD_VALUES
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
       // cerr << locMat << endl;
       if(assembleTranspose) {
         // assemble transpose of local matrix
         locMat = trans(locMat);
         ierr = MatSetValues(
           B, nbCols,col_indices,nbRows,row_indices,&*locMat.data().begin(),ADD_VALUES
-        ); CHKERRQ(ierr);
+        ); CHKERRG(ierr);
       }
       MoFEMFunctionReturnHot(0);
     }
@@ -500,7 +500,7 @@ namespace PoissonExample {
       const int* indices = &*data.getIndices().data().begin();
       const double* vals = &*locVec.data().begin();
       Vec f = getFEMethod()->ksp_f!=PETSC_NULL ? getFEMethod()->ksp_f : getFEMethod()->snes_f;
-      ierr = VecSetValues(f,nbRows,indices,&*vals,ADD_VALUES); CHKERRQ(ierr);
+      ierr = VecSetValues(f,nbRows,indices,&*vals,ADD_VALUES); CHKERRG(ierr);
       MoFEMFunctionReturnHot(0);
     }
 
@@ -536,8 +536,8 @@ namespace PoissonExample {
       nbRows = row_data.getFieldData().size();
       if(!nbRows) MoFEMFunctionReturnHot(0);
       nbIntegrationPts = getGaussPts().size2();
-      ierr = iNtegrate(row_data); CHKERRQ(ierr);
-      ierr = aSsemble(row_data); CHKERRQ(ierr);
+      ierr = iNtegrate(row_data); CHKERRG(ierr);
+      ierr = aSsemble(row_data); CHKERRG(ierr);
       MoFEMFunctionReturnHot(0);
     }
 
@@ -603,7 +603,7 @@ namespace PoissonExample {
       // set error on mesh
       data.getFieldDofs()[0]->getFieldData() = sqrt(data.getFieldData()[0]);
       // assemble vector to global error
-      ierr = VecSetValue(globalError,0,data.getFieldData()[0],ADD_VALUES); CHKERRQ(ierr);
+      ierr = VecSetValue(globalError,0,data.getFieldData()[0],ADD_VALUES); CHKERRG(ierr);
       MoFEMFunctionReturnHot(0);
     }
 
@@ -1006,13 +1006,13 @@ namespace PoissonExample {
       post_proc_volume = boost::shared_ptr<ForcesAndSourcesCore>(new PostProcVolumeOnRefinedMesh(mField));
       // Add operators to the elements, starting with some generic
       ierr = boost::static_pointer_cast<PostProcVolumeOnRefinedMesh>(post_proc_volume)->
-      generateReferenceElementMesh(); CHKERRQ(ierr);
+      generateReferenceElementMesh(); CHKERRG(ierr);
       ierr = boost::static_pointer_cast<PostProcVolumeOnRefinedMesh>(post_proc_volume)->
-      addFieldValuesPostProc("U"); CHKERRQ(ierr);
+      addFieldValuesPostProc("U"); CHKERRG(ierr);
       ierr = boost::static_pointer_cast<PostProcVolumeOnRefinedMesh>(post_proc_volume)->
-      addFieldValuesPostProc("ERROR"); CHKERRQ(ierr);
+      addFieldValuesPostProc("ERROR"); CHKERRG(ierr);
       ierr = boost::static_pointer_cast<PostProcVolumeOnRefinedMesh>(post_proc_volume)->
-      addFieldValuesGradientPostProc("U"); CHKERRQ(ierr);
+      addFieldValuesGradientPostProc("U"); CHKERRG(ierr);
 
       MoFEMFunctionReturnHot(0);
     }

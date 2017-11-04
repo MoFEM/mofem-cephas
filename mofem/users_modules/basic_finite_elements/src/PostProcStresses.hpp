@@ -74,7 +74,7 @@ struct PostProcStress: public MoFEM::VolumeElementForcesAndSourcesCore::UserData
     
 
     const FENumeredDofEntity *dof_ptr;
-    ierr = getNumeredEntFiniteElementPtr()->getRowDofsByPetscGlobalDofIdx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
+    ierr = getNumeredEntFiniteElementPtr()->getRowDofsByPetscGlobalDofIdx(data.getIndices()[0],&dof_ptr); CHKERRG(ierr);
 
     int id  = dAta.iD;
 
@@ -116,7 +116,7 @@ struct PostProcStress: public MoFEM::VolumeElementForcesAndSourcesCore::UserData
     dAta.materialDoublePtr->opPtr = this;
     ierr = dAta.materialDoublePtr->getDataOnPostProcessor(
       commonData.fieldMap,commonData.gradMap
-    ); CHKERRQ(ierr);
+    ); CHKERRG(ierr);
 
     nonLinearElementCommonData.dataAtGaussPts = commonData.fieldMap;
     nonLinearElementCommonData.gradAtGaussPts = commonData.gradMap;
@@ -139,15 +139,15 @@ struct PostProcStress: public MoFEM::VolumeElementForcesAndSourcesCore::UserData
         H.resize(3,3);
         invH.resize(3,3);
         noalias(H) = (commonData.gradMap["MESH_NODE_POSITIONS"])[gg];
-        ierr = dAta.materialDoublePtr->dEterminatnt(H,detH);  CHKERRQ(ierr);
-        ierr = dAta.materialDoublePtr->iNvert(detH,H,invH); CHKERRQ(ierr);
+        ierr = dAta.materialDoublePtr->dEterminatnt(H,detH);  CHKERRG(ierr);
+        ierr = dAta.materialDoublePtr->iNvert(detH,H,invH); CHKERRG(ierr);
         noalias(dAta.materialDoublePtr->F) = prod(dAta.materialDoublePtr->F,invH);
       }
 
       int nb_active_variables = 9;
-      ierr = dAta.materialDoublePtr->setUserActiveVariables(nb_active_variables); CHKERRQ(ierr);
-      ierr = dAta.materialDoublePtr->calculateP_PiolaKirchhoffI(dAta,getNumeredEntFiniteElementPtr()); CHKERRQ(ierr);
-      ierr = dAta.materialDoublePtr->calculateElasticEnergy(dAta,getNumeredEntFiniteElementPtr()); CHKERRQ(ierr);
+      ierr = dAta.materialDoublePtr->setUserActiveVariables(nb_active_variables); CHKERRG(ierr);
+      ierr = dAta.materialDoublePtr->calculateP_PiolaKirchhoffI(dAta,getNumeredEntFiniteElementPtr()); CHKERRG(ierr);
+      ierr = dAta.materialDoublePtr->calculateElasticEnergy(dAta,getNumeredEntFiniteElementPtr()); CHKERRG(ierr);
       if(!std::isnormal(dAta.materialDoublePtr->eNergy)&&replaceNonANumberByMaxValue) {
         // If value is non a number because of singularity repleca it max double value
         for(int r  = 0;r!=dAta.materialDoublePtr->P.size1();r++) {

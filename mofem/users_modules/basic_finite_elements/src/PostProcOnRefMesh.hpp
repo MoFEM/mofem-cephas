@@ -344,7 +344,7 @@ struct PostProcTemplateVolumeOnRefinedMesh: public PostProcTemplateOnRefineMesh<
 
     ierr = m_field_ref.getInterface<BitRefManager>()->setBitRefLevelByDim(
       0,3,BitRefLevel().set(0)
-    ); CHKERRQ(ierr);
+    ); CHKERRG(ierr);
 
     for (int ll = 0; ll < max_level; ll++) {
       PetscPrintf(T::mField.get_comm(),"Refine Level %d\n",ll);
@@ -352,19 +352,19 @@ struct PostProcTemplateVolumeOnRefinedMesh: public PostProcTemplateOnRefineMesh<
       ierr = m_field_ref.getInterface<BitRefManager>()
                  ->getEntitiesByTypeAndRefLevel(
                      BitRefLevel().set(ll), BitRefLevel().set(), MBEDGE, edges);
-      CHKERRQ(ierr);
+      CHKERRG(ierr);
       Range tets;
       ierr = m_field_ref.getInterface<BitRefManager>()
                  ->getEntitiesByTypeAndRefLevel(
                      BitRefLevel().set(ll), BitRefLevel(ll).set(), MBTET, tets);
-      CHKERRQ(ierr);
+      CHKERRG(ierr);
       //refine mesh
       MeshRefinement *m_ref;
-      ierr = m_field_ref.getInterface(m_ref); CHKERRQ(ierr);
+      ierr = m_field_ref.getInterface(m_ref); CHKERRG(ierr);
       ierr = m_ref->add_verices_in_the_middel_of_edges(
           edges, BitRefLevel().set(ll + 1));
-      CHKERRQ(ierr);
-      ierr = m_ref->refine_TET(tets,BitRefLevel().set(ll+1)); CHKERRQ(ierr);
+      CHKERRG(ierr);
+      ierr = m_ref->refine_TET(tets,BitRefLevel().set(ll+1)); CHKERRG(ierr);
     }
 
     Range tets;
@@ -372,7 +372,7 @@ struct PostProcTemplateVolumeOnRefinedMesh: public PostProcTemplateOnRefineMesh<
         m_field_ref.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
             BitRefLevel().set(max_level), BitRefLevel().set(max_level), MBTET,
             tets);
-    CHKERRQ(ierr);
+    CHKERRG(ierr);
 
     if(tenNodesPostProcTets) {
       // Range edges;
@@ -388,7 +388,7 @@ struct PostProcTemplateVolumeOnRefinedMesh: public PostProcTemplateOnRefineMesh<
     rval = moab_ref.get_connectivity(tets,elem_nodes,false); CHKERRG(rval);
     // ierr = m_field_ref.get_entities_by_type_and_ref_level(
     //   BitRefLevel().set(max_level),BitRefLevel().set(),MBVERTEX,elem_nodes
-    // ); CHKERRQ(ierr);
+    // ); CHKERRG(ierr);
 
     std::map<EntityHandle,int> little_map;
     gaussPts_FirstOrder.resize(elem_nodes.size(),4,0);
@@ -422,7 +422,7 @@ struct PostProcTemplateVolumeOnRefinedMesh: public PostProcTemplateOnRefineMesh<
       &T::gaussPts(1,0),
       &T::gaussPts(2,0),
       elem_nodes.size()
-    ); CHKERRQ(ierr);
+    ); CHKERRG(ierr);
 
     // EntityHandle meshset;
     // rval = moab_ref.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,meshset); CHKERRG(rval);
@@ -643,7 +643,7 @@ struct PostProcTemplateVolumeOnRefinedMesh: public PostProcTemplateOnRefineMesh<
 
       for(unsigned int gg = 0;gg<data.getHdivN().size1();gg++) {
         for(unsigned int dd = 0;dd<data.getHdivN().size2()/3;dd++) {
-          ierr = postProcMesh.tag_set_data(th[dd],&mapGaussPts[gg],1,&data.getHdivN(gg)(dd,0)); CHKERRQ(ierr);
+          ierr = postProcMesh.tag_set_data(th[dd],&mapGaussPts[gg],1,&data.getHdivN(gg)(dd,0)); CHKERRG(ierr);
         }
       }
 

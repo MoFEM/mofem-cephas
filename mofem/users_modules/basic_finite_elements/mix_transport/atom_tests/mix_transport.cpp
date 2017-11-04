@@ -77,7 +77,7 @@ int main(int argc, char *argv[]) {
 
     PetscBool flg = PETSC_TRUE;
     char mesh_file_name[255];
-    ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+    ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRG(ierr);
     if(flg != PETSC_TRUE) {
       SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
     }
@@ -98,12 +98,12 @@ int main(int argc, char *argv[]) {
     //set entities bit level
     BitRefLevel ref_level;
     ref_level.set(0);
-    ierr = m_field.seed_ref_level_3D(0,ref_level); CHKERRQ(ierr);
+    ierr = m_field.seed_ref_level_3D(0,ref_level); CHKERRG(ierr);
 
     //set app. order
     //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
     PetscInt order;
-    ierr = PetscOptionsGetInt(PETSC_NULL,PETSC_NULL,"-my_order",&order,&flg); CHKERRQ(ierr);
+    ierr = PetscOptionsGetInt(PETSC_NULL,PETSC_NULL,"-my_order",&order,&flg); CHKERRG(ierr);
     if(flg != PETSC_TRUE) {
       order = 2;
     }
@@ -111,39 +111,39 @@ int main(int argc, char *argv[]) {
     //finite elements
     MyTransport ufe(m_field);
 
-    ierr = ufe.addFields("VALUES","FLUXES",order); CHKERRQ(ierr);
-    ierr = ufe.addFiniteElements("FLUXES","VALUES"); CHKERRQ(ierr);
+    ierr = ufe.addFields("VALUES","FLUXES",order); CHKERRG(ierr);
+    ierr = ufe.addFiniteElements("FLUXES","VALUES"); CHKERRG(ierr);
 
     // Set boundary conditions
     Range tets;
-    ierr = m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(BitRefLevel().set(0),BitRefLevel().set(),MBTET,tets); CHKERRQ(ierr);
+    ierr = m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(BitRefLevel().set(0),BitRefLevel().set(),MBTET,tets); CHKERRG(ierr);
     Skinner skin(&moab);
     Range skin_faces; // skin faces from 3d ents
     rval = skin.find_skin(0,tets,false,skin_faces); CHKERRG(rval);
-    ierr = m_field.add_ents_to_finite_element_by_type(skin_faces,MBTRI,"MIX_BCVALUE"); CHKERRQ(ierr);
+    ierr = m_field.add_ents_to_finite_element_by_type(skin_faces,MBTRI,"MIX_BCVALUE"); CHKERRG(ierr);
 
-    ierr = ufe.buildProblem(ref_level); CHKERRQ(ierr);
-    ierr = ufe.createMatrices(); CHKERRQ(ierr);
-    ierr = ufe.solveLinearProblem(); CHKERRQ(ierr);
-    ierr = ufe.calculateResidual(); CHKERRQ(ierr);
-    ierr = ufe.evaluateError(); CHKERRQ(ierr);
+    ierr = ufe.buildProblem(ref_level); CHKERRG(ierr);
+    ierr = ufe.createMatrices(); CHKERRG(ierr);
+    ierr = ufe.solveLinearProblem(); CHKERRG(ierr);
+    ierr = ufe.calculateResidual(); CHKERRG(ierr);
+    ierr = ufe.evaluateError(); CHKERRG(ierr);
 
     double nrm2_F;
-    ierr = VecNorm(ufe.F,NORM_2,&nrm2_F); CHKERRQ(ierr);
+    ierr = VecNorm(ufe.F,NORM_2,&nrm2_F); CHKERRG(ierr);
     // PetscPrintf(PETSC_COMM_WORLD,"nrm2_F = %6.4e\n",nrm2_F);
     const double eps = 1e-8;
     if(nrm2_F > eps) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_ATOM_TEST_INVALID,"problem with residual");
     }
 
-    ierr = ufe.destroyMatrices(); CHKERRQ(ierr);
+    ierr = ufe.destroyMatrices(); CHKERRG(ierr);
 
 
   } catch (MoFEMException const &e) {
     SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
   }
 
-  ierr = PetscFinalize(); CHKERRQ(ierr);
+  ierr = PetscFinalize(); CHKERRG(ierr);
 
   return 0;
 

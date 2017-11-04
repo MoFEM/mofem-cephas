@@ -118,9 +118,9 @@ namespace CohesiveElement {
         case CTX_SNESNONE: {}
         break;
         case CTX_SNESSETFUNCTION: {
-          ierr = VecZeroEntries(snes_f); CHKERRQ(ierr);
-          ierr = VecGhostUpdateBegin(snes_f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-          ierr = VecGhostUpdateEnd(snes_f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+          ierr = VecZeroEntries(snes_f); CHKERRG(ierr);
+          ierr = VecGhostUpdateBegin(snes_f,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
+          ierr = VecGhostUpdateEnd(snes_f,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
         }
         break;
         default:
@@ -136,17 +136,17 @@ namespace CohesiveElement {
         case CTX_SNESNONE: {}
         break;
         case CTX_SNESSETFUNCTION: {
-          ierr = VecGhostUpdateBegin(snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-          ierr = VecGhostUpdateEnd(snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-          ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
-          ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
+          ierr = VecGhostUpdateBegin(snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
+          ierr = VecGhostUpdateEnd(snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
+          ierr = VecAssemblyBegin(snes_f); CHKERRG(ierr);
+          ierr = VecAssemblyEnd(snes_f); CHKERRG(ierr);
           //add F_lambda
-          ierr = VecAXPY(snes_f,arcPtr->getFieldData(),arcPtr->F_lambda); CHKERRQ(ierr);
-          ierr = VecAXPY(snes_f,-1.,bodyForce); CHKERRQ(ierr);
+          ierr = VecAXPY(snes_f,arcPtr->getFieldData(),arcPtr->F_lambda); CHKERRG(ierr);
+          ierr = VecAXPY(snes_f,-1.,bodyForce); CHKERRG(ierr);
           PetscPrintf(PETSC_COMM_WORLD,"\tlambda = %6.4e\n",arcPtr->getFieldData());
           //snes_f norm
           double fnorm;
-          ierr = VecNorm(snes_f,NORM_2,&fnorm); CHKERRQ(ierr);
+          ierr = VecNorm(snes_f,NORM_2,&fnorm); CHKERRG(ierr);
           PetscPrintf(PETSC_COMM_WORLD,"\tfnorm = %6.4e\n",fnorm);
         }
         break;
@@ -177,31 +177,31 @@ int main(int argc, char *argv[]) {
     //Reade parameters from line command
     PetscBool flg = PETSC_TRUE;
     char mesh_file_name[255];
-    ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+    ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRG(ierr);
     if(flg != PETSC_TRUE) {
       SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
     }
 
     PetscScalar step_size_reduction;
-    ierr = PetscOptionsGetReal(PETSC_NULL,PETSC_NULL,"-my_sr",&step_size_reduction,&flg); CHKERRQ(ierr);
+    ierr = PetscOptionsGetReal(PETSC_NULL,PETSC_NULL,"-my_sr",&step_size_reduction,&flg); CHKERRG(ierr);
     if(flg != PETSC_TRUE) {
       step_size_reduction = 1.;
     }
 
     PetscInt max_steps;
-    ierr = PetscOptionsGetInt(PETSC_NULL,PETSC_NULL,"-my_ms",&max_steps,&flg); CHKERRQ(ierr);
+    ierr = PetscOptionsGetInt(PETSC_NULL,PETSC_NULL,"-my_ms",&max_steps,&flg); CHKERRG(ierr);
     if(flg != PETSC_TRUE) {
       max_steps = 5;
     }
 
     int its_d;
-    ierr = PetscOptionsGetInt(PETSC_NULL,"","-my_its_d",&its_d,&flg); CHKERRQ(ierr);
+    ierr = PetscOptionsGetInt(PETSC_NULL,"","-my_its_d",&its_d,&flg); CHKERRG(ierr);
     if(flg != PETSC_TRUE) {
       its_d = 6;
     }
 
     PetscInt order;
-    ierr = PetscOptionsGetInt(PETSC_NULL,PETSC_NULL,"-my_order",&order,&flg); CHKERRQ(ierr);
+    ierr = PetscOptionsGetInt(PETSC_NULL,PETSC_NULL,"-my_order",&order,&flg); CHKERRG(ierr);
     if(flg != PETSC_TRUE) {
       order = 2;
     }
@@ -236,14 +236,14 @@ int main(int argc, char *argv[]) {
     rval = moab.tag_get_by_ptr(th_step,&root,1,tag_data_step); CHKERRG(rval);
     int& step = *(int *)tag_data_step[0];
     //end of data stored for restart
-    ierr = PetscPrintf(PETSC_COMM_WORLD,"Start step %D and step_size = %6.4e\n",step,step_size); CHKERRQ(ierr);
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"Start step %D and step_size = %6.4e\n",step,step_size); CHKERRG(ierr);
 
     //Create MoFEM 2database
     MoFEM::Core core(moab);
     MoFEM::Interface& m_field = core;
 
     PrismInterface *interface_ptr;
-    ierr = m_field.getInterface(interface_ptr); CHKERRQ(ierr);
+    ierr = m_field.getInterface(interface_ptr); CHKERRG(ierr);
 
     Tag th_my_ref_level;
     BitRefLevel def_bit_level = 0;
@@ -258,14 +258,14 @@ int main(int argc, char *argv[]) {
     if(step == 1) {
 
       //ref meshset ref level 0
-      ierr = m_field.seed_ref_level_3D(0,BitRefLevel().set(0)); CHKERRQ(ierr);
+      ierr = m_field.seed_ref_level_3D(0,BitRefLevel().set(0)); CHKERRG(ierr);
       std::vector<BitRefLevel> bit_levels;
       bit_levels.push_back(BitRefLevel().set(0));
 
       int ll = 1;
 
       for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,SIDESET|INTERFACESET,cit)) {
-        ierr = PetscPrintf(PETSC_COMM_WORLD,"Insert Interface %d\n",cit->getMeshsetId()); CHKERRQ(ierr);
+        ierr = PetscPrintf(PETSC_COMM_WORLD,"Insert Interface %d\n",cit->getMeshsetId()); CHKERRG(ierr);
         EntityHandle cubit_meshset = cit->getMeshset();
         {
           //get tet entities form back bit_level
@@ -273,28 +273,28 @@ int main(int argc, char *argv[]) {
           rval = moab.create_meshset(MESHSET_SET,ref_level_meshset); CHKERRG(rval);
           ierr = m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
             bit_levels.back(),BitRefLevel().set(),MBTET,ref_level_meshset
-          ); CHKERRQ(ierr);
+          ); CHKERRG(ierr);
           ierr = m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
             bit_levels.back(),BitRefLevel().set(),MBPRISM,ref_level_meshset
-          ); CHKERRQ(ierr);
+          ); CHKERRG(ierr);
           Range ref_level_tets;
           rval = moab.get_entities_by_handle(ref_level_meshset,ref_level_tets,true); CHKERRG(rval);
           //get faces and test to split
-          ierr = interface_ptr->getSides(cubit_meshset,bit_levels.back(),true,0); CHKERRQ(ierr);
+          ierr = interface_ptr->getSides(cubit_meshset,bit_levels.back(),true,0); CHKERRG(ierr);
           //set new bit level
           bit_levels.push_back(BitRefLevel().set(ll++));
           //split faces and
-          ierr = interface_ptr->splitSides(ref_level_meshset,bit_levels.back(),cubit_meshset,true,true,0); CHKERRQ(ierr);
+          ierr = interface_ptr->splitSides(ref_level_meshset,bit_levels.back(),cubit_meshset,true,true,0); CHKERRG(ierr);
           //clean meshsets
           rval = moab.delete_entities(&ref_level_meshset,1); CHKERRG(rval);
         }
         // Update cubit meshsets
         for(_IT_CUBITMESHSETS_FOR_LOOP_(m_field,ciit)) {
           EntityHandle cubit_meshset = ciit->meshset;
-          ierr = m_field.getInterface<BitRefManager>()->updateMeshsetByEntitiesChildren(cubit_meshset,bit_levels.back(),cubit_meshset,MBVERTEX,true); CHKERRQ(ierr);
-          ierr = m_field.getInterface<BitRefManager>()->updateMeshsetByEntitiesChildren(cubit_meshset,bit_levels.back(),cubit_meshset,MBEDGE,true); CHKERRQ(ierr);
-          ierr = m_field.getInterface<BitRefManager>()->updateMeshsetByEntitiesChildren(cubit_meshset,bit_levels.back(),cubit_meshset,MBTRI,true); CHKERRQ(ierr);
-          ierr = m_field.getInterface<BitRefManager>()->updateMeshsetByEntitiesChildren(cubit_meshset,bit_levels.back(),cubit_meshset,MBTET,true); CHKERRQ(ierr);
+          ierr = m_field.getInterface<BitRefManager>()->updateMeshsetByEntitiesChildren(cubit_meshset,bit_levels.back(),cubit_meshset,MBVERTEX,true); CHKERRG(ierr);
+          ierr = m_field.getInterface<BitRefManager>()->updateMeshsetByEntitiesChildren(cubit_meshset,bit_levels.back(),cubit_meshset,MBEDGE,true); CHKERRG(ierr);
+          ierr = m_field.getInterface<BitRefManager>()->updateMeshsetByEntitiesChildren(cubit_meshset,bit_levels.back(),cubit_meshset,MBTRI,true); CHKERRG(ierr);
+          ierr = m_field.getInterface<BitRefManager>()->updateMeshsetByEntitiesChildren(cubit_meshset,bit_levels.back(),cubit_meshset,MBTET,true); CHKERRG(ierr);
         }
       }
 
@@ -305,60 +305,60 @@ int main(int argc, char *argv[]) {
       //Define problem
 
       //Fields
-      ierr = m_field.add_field("DISPLACEMENT",H1,AINSWORTH_LEGENDRE_BASE,3); CHKERRQ(ierr);
-      ierr = m_field.add_field("MESH_NODE_POSITIONS",H1,AINSWORTH_LEGENDRE_BASE,3); CHKERRQ(ierr);
+      ierr = m_field.add_field("DISPLACEMENT",H1,AINSWORTH_LEGENDRE_BASE,3); CHKERRG(ierr);
+      ierr = m_field.add_field("MESH_NODE_POSITIONS",H1,AINSWORTH_LEGENDRE_BASE,3); CHKERRG(ierr);
 
-      ierr = m_field.add_field("LAMBDA",NOFIELD,NOBASE,1); CHKERRQ(ierr);
+      ierr = m_field.add_field("LAMBDA",NOFIELD,NOBASE,1); CHKERRG(ierr);
       //Field for ArcLength
-      ierr = m_field.add_field("X0_DISPLACEMENT",H1,AINSWORTH_LEGENDRE_BASE,3); CHKERRQ(ierr);
+      ierr = m_field.add_field("X0_DISPLACEMENT",H1,AINSWORTH_LEGENDRE_BASE,3); CHKERRG(ierr);
 
       //FE
-      ierr = m_field.add_finite_element("ELASTIC"); CHKERRQ(ierr);
+      ierr = m_field.add_finite_element("ELASTIC"); CHKERRG(ierr);
       //Define rows/cols and element data
-      ierr = m_field.modify_finite_element_add_field_row("ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
-      ierr = m_field.modify_finite_element_add_field_col("ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
-      ierr = m_field.modify_finite_element_add_field_data("ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
-      ierr = m_field.modify_finite_element_add_field_data("ELASTIC","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
-      ierr = m_field.modify_finite_element_add_field_row("ELASTIC","LAMBDA"); CHKERRQ(ierr);
-      ierr = m_field.modify_finite_element_add_field_col("ELASTIC","LAMBDA"); CHKERRQ(ierr); //this is for paremtis
-      ierr = m_field.modify_finite_element_add_field_data("ELASTIC","LAMBDA"); CHKERRQ(ierr);
+      ierr = m_field.modify_finite_element_add_field_row("ELASTIC","DISPLACEMENT"); CHKERRG(ierr);
+      ierr = m_field.modify_finite_element_add_field_col("ELASTIC","DISPLACEMENT"); CHKERRG(ierr);
+      ierr = m_field.modify_finite_element_add_field_data("ELASTIC","DISPLACEMENT"); CHKERRG(ierr);
+      ierr = m_field.modify_finite_element_add_field_data("ELASTIC","MESH_NODE_POSITIONS"); CHKERRG(ierr);
+      ierr = m_field.modify_finite_element_add_field_row("ELASTIC","LAMBDA"); CHKERRG(ierr);
+      ierr = m_field.modify_finite_element_add_field_col("ELASTIC","LAMBDA"); CHKERRG(ierr); //this is for paremtis
+      ierr = m_field.modify_finite_element_add_field_data("ELASTIC","LAMBDA"); CHKERRG(ierr);
 
       //FE Interface
-      ierr = m_field.add_finite_element("INTERFACE"); CHKERRQ(ierr);
-      ierr = m_field.modify_finite_element_add_field_row("INTERFACE","DISPLACEMENT"); CHKERRQ(ierr);
-      ierr = m_field.modify_finite_element_add_field_col("INTERFACE","DISPLACEMENT"); CHKERRQ(ierr);
-      ierr = m_field.modify_finite_element_add_field_data("INTERFACE","DISPLACEMENT"); CHKERRQ(ierr);
-      ierr = m_field.modify_finite_element_add_field_data("INTERFACE","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+      ierr = m_field.add_finite_element("INTERFACE"); CHKERRG(ierr);
+      ierr = m_field.modify_finite_element_add_field_row("INTERFACE","DISPLACEMENT"); CHKERRG(ierr);
+      ierr = m_field.modify_finite_element_add_field_col("INTERFACE","DISPLACEMENT"); CHKERRG(ierr);
+      ierr = m_field.modify_finite_element_add_field_data("INTERFACE","DISPLACEMENT"); CHKERRG(ierr);
+      ierr = m_field.modify_finite_element_add_field_data("INTERFACE","MESH_NODE_POSITIONS"); CHKERRG(ierr);
 
       //FE ArcLength
-      ierr = m_field.add_finite_element("ARC_LENGTH"); CHKERRQ(ierr);
+      ierr = m_field.add_finite_element("ARC_LENGTH"); CHKERRG(ierr);
       //Define rows/cols and element data
-      ierr = m_field.modify_finite_element_add_field_row("ARC_LENGTH","LAMBDA"); CHKERRQ(ierr);
-      ierr = m_field.modify_finite_element_add_field_col("ARC_LENGTH","LAMBDA"); CHKERRQ(ierr);
+      ierr = m_field.modify_finite_element_add_field_row("ARC_LENGTH","LAMBDA"); CHKERRG(ierr);
+      ierr = m_field.modify_finite_element_add_field_col("ARC_LENGTH","LAMBDA"); CHKERRG(ierr);
       //elem data
-      ierr = m_field.modify_finite_element_add_field_data("ARC_LENGTH","LAMBDA"); CHKERRQ(ierr);
+      ierr = m_field.modify_finite_element_add_field_data("ARC_LENGTH","LAMBDA"); CHKERRG(ierr);
 
       //define problems
-      ierr = m_field.add_problem("ELASTIC_MECHANICS"); CHKERRQ(ierr);
+      ierr = m_field.add_problem("ELASTIC_MECHANICS"); CHKERRG(ierr);
 
       //set finite elements for problem
-      ierr = m_field.modify_problem_add_finite_element("ELASTIC_MECHANICS","ELASTIC"); CHKERRQ(ierr);
-      ierr = m_field.modify_problem_add_finite_element("ELASTIC_MECHANICS","INTERFACE"); CHKERRQ(ierr);
-      ierr = m_field.modify_problem_add_finite_element("ELASTIC_MECHANICS","ARC_LENGTH"); CHKERRQ(ierr);
+      ierr = m_field.modify_problem_add_finite_element("ELASTIC_MECHANICS","ELASTIC"); CHKERRG(ierr);
+      ierr = m_field.modify_problem_add_finite_element("ELASTIC_MECHANICS","INTERFACE"); CHKERRG(ierr);
+      ierr = m_field.modify_problem_add_finite_element("ELASTIC_MECHANICS","ARC_LENGTH"); CHKERRG(ierr);
 
       //set refinement level for problem
-      ierr = m_field.modify_problem_ref_level_add_bit("ELASTIC_MECHANICS",problem_bit_level); CHKERRQ(ierr);
+      ierr = m_field.modify_problem_ref_level_add_bit("ELASTIC_MECHANICS",problem_bit_level); CHKERRG(ierr);
 
       /***/
       //Declare problem
 
       //add entitities (by tets) to the field
-      ierr = m_field.add_ents_to_field_by_type(0,MBTET,"DISPLACEMENT"); CHKERRQ(ierr);
-      ierr = m_field.add_ents_to_field_by_type(0,MBTET,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+      ierr = m_field.add_ents_to_field_by_type(0,MBTET,"DISPLACEMENT"); CHKERRG(ierr);
+      ierr = m_field.add_ents_to_field_by_type(0,MBTET,"MESH_NODE_POSITIONS"); CHKERRG(ierr);
 
       //add finite elements entities
-      ierr = m_field.add_ents_to_finite_element_by_bit_ref(problem_bit_level,BitRefLevel().set(),"ELASTIC",MBTET); CHKERRQ(ierr);
-      ierr = m_field.add_ents_to_finite_element_by_bit_ref(problem_bit_level,BitRefLevel().set(),"INTERFACE",MBPRISM); CHKERRQ(ierr);
+      ierr = m_field.add_ents_to_finite_element_by_bit_ref(problem_bit_level,BitRefLevel().set(),"ELASTIC",MBTET); CHKERRG(ierr);
+      ierr = m_field.add_ents_to_finite_element_by_bit_ref(problem_bit_level,BitRefLevel().set(),"INTERFACE",MBPRISM); CHKERRG(ierr);
 
       // Setting up LAMBDA field and ARC_LENGTH interface
       {
@@ -369,7 +369,7 @@ int main(int argc, char *argv[]) {
           rval = m_field.get_moab().create_vertex(coords,no_field_vertex); CHKERRG(rval);
           Range range_no_field_vertex;
           range_no_field_vertex.insert(no_field_vertex);
-          ierr = m_field.seed_ref_level(range_no_field_vertex,BitRefLevel().set()); CHKERRQ(ierr);
+          ierr = m_field.seed_ref_level(range_no_field_vertex,BitRefLevel().set()); CHKERRG(ierr);
           EntityHandle lambda_meshset = m_field.get_field_meshset("LAMBDA");
           rval = m_field.get_moab().add_entities(lambda_meshset,range_no_field_vertex); CHKERRG(rval);
         }
@@ -378,54 +378,54 @@ int main(int argc, char *argv[]) {
         {
           rval = moab.create_meshset(MESHSET_SET,meshset_fe_arc_length); CHKERRG(rval);
           rval = moab.add_entities(meshset_fe_arc_length,&no_field_vertex,1); CHKERRG(rval);
-          ierr = m_field.seed_ref_level_MESHSET(meshset_fe_arc_length,BitRefLevel().set()); CHKERRQ(ierr);
+          ierr = m_field.seed_ref_level_MESHSET(meshset_fe_arc_length,BitRefLevel().set()); CHKERRG(ierr);
         }
         //finally add created meshset to the ARC_LENGTH finite element
-        ierr = m_field.add_ents_to_finite_element_by_MESHSET(meshset_fe_arc_length,"ARC_LENGTH",false); CHKERRQ(ierr);
+        ierr = m_field.add_ents_to_finite_element_by_MESHSET(meshset_fe_arc_length,"ARC_LENGTH",false); CHKERRG(ierr);
       }
 
       //set app. order
       //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
-      ierr = m_field.set_field_order(0,MBTET,"DISPLACEMENT",order); CHKERRQ(ierr);
-      ierr = m_field.set_field_order(0,MBTRI,"DISPLACEMENT",order); CHKERRQ(ierr);
-      ierr = m_field.set_field_order(0,MBEDGE,"DISPLACEMENT",order); CHKERRQ(ierr);
-      ierr = m_field.set_field_order(0,MBVERTEX,"DISPLACEMENT",1); CHKERRQ(ierr);
+      ierr = m_field.set_field_order(0,MBTET,"DISPLACEMENT",order); CHKERRG(ierr);
+      ierr = m_field.set_field_order(0,MBTRI,"DISPLACEMENT",order); CHKERRG(ierr);
+      ierr = m_field.set_field_order(0,MBEDGE,"DISPLACEMENT",order); CHKERRG(ierr);
+      ierr = m_field.set_field_order(0,MBVERTEX,"DISPLACEMENT",1); CHKERRG(ierr);
 
-      ierr = m_field.set_field_order(0,MBTET,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
-      ierr = m_field.set_field_order(0,MBTRI,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
-      ierr = m_field.set_field_order(0,MBEDGE,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
-      ierr = m_field.set_field_order(0,MBVERTEX,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
+      ierr = m_field.set_field_order(0,MBTET,"MESH_NODE_POSITIONS",2); CHKERRG(ierr);
+      ierr = m_field.set_field_order(0,MBTRI,"MESH_NODE_POSITIONS",2); CHKERRG(ierr);
+      ierr = m_field.set_field_order(0,MBEDGE,"MESH_NODE_POSITIONS",2); CHKERRG(ierr);
+      ierr = m_field.set_field_order(0,MBVERTEX,"MESH_NODE_POSITIONS",1); CHKERRG(ierr);
 
       /*//reduce level of approximation for entities on interface
       Range prims;
-      ierr = m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(problem_bit_level,BitRefLevel().set(),MBPRISM,prims); CHKERRQ(ierr);
+      ierr = m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(problem_bit_level,BitRefLevel().set(),MBPRISM,prims); CHKERRG(ierr);
       Range prims_faces;
       rval = m_field.get_moab().get_adjacencies(prims,2,false,prims_faces,moab::Interface::UNION); CHKERRG(rval);
       Range prims_faces_edges;
       rval = m_field.get_moab().get_adjacencies(prims_faces,1,false,prims_faces_edges,moab::Interface::UNION); CHKERRG(rval);
-      ierr = m_field.set_field_order(prims_faces,"DISPLACEMENT",order>1 ? order-1 : 0); CHKERRQ(ierr);
-      ierr = m_field.set_field_order(prims_faces_edges,"DISPLACEMENT",order>1 ? order-1 : 0); CHKERRQ(ierr);*/
+      ierr = m_field.set_field_order(prims_faces,"DISPLACEMENT",order>1 ? order-1 : 0); CHKERRG(ierr);
+      ierr = m_field.set_field_order(prims_faces_edges,"DISPLACEMENT",order>1 ? order-1 : 0); CHKERRG(ierr);*/
 
       //Elements with boundary conditions
-      ierr = MetaNeummanForces::addNeumannBCElements(m_field,"DISPLACEMENT"); CHKERRQ(ierr);
-      ierr = MetaNodalForces::addElement(m_field,"DISPLACEMENT");  CHKERRQ(ierr);
-      ierr = m_field.modify_problem_add_finite_element("ELASTIC_MECHANICS","FORCE_FE"); CHKERRQ(ierr);
-      ierr = m_field.modify_problem_add_finite_element("ELASTIC_MECHANICS","PRESSURE_FE"); CHKERRQ(ierr);
-      ierr = m_field.modify_finite_element_add_field_row("FORCE_FE","LAMBDA"); CHKERRQ(ierr);
-      ierr = m_field.modify_finite_element_add_field_col("FORCE_FE","LAMBDA"); CHKERRQ(ierr);
-      ierr = m_field.modify_finite_element_add_field_data("FORCE_FE","LAMBDA"); CHKERRQ(ierr);
-      ierr = m_field.modify_finite_element_add_field_row("PRESSURE_FE","LAMBDA"); CHKERRQ(ierr);
-      ierr = m_field.modify_finite_element_add_field_col("PRESSURE_FE","LAMBDA"); CHKERRQ(ierr);
-      ierr = m_field.modify_finite_element_add_field_data("PRESSURE_FE","LAMBDA"); CHKERRQ(ierr);
-      ierr = m_field.add_finite_element("BODY_FORCE"); CHKERRQ(ierr);
-      ierr = m_field.modify_finite_element_add_field_row("BODY_FORCE","DISPLACEMENT"); CHKERRQ(ierr);
-      ierr = m_field.modify_finite_element_add_field_col("BODY_FORCE","DISPLACEMENT"); CHKERRQ(ierr);
-      ierr = m_field.modify_finite_element_add_field_data("BODY_FORCE","DISPLACEMENT"); CHKERRQ(ierr);
-      ierr = m_field.modify_problem_add_finite_element("ELASTIC_MECHANICS","BODY_FORCE"); CHKERRQ(ierr);
+      ierr = MetaNeummanForces::addNeumannBCElements(m_field,"DISPLACEMENT"); CHKERRG(ierr);
+      ierr = MetaNodalForces::addElement(m_field,"DISPLACEMENT");  CHKERRG(ierr);
+      ierr = m_field.modify_problem_add_finite_element("ELASTIC_MECHANICS","FORCE_FE"); CHKERRG(ierr);
+      ierr = m_field.modify_problem_add_finite_element("ELASTIC_MECHANICS","PRESSURE_FE"); CHKERRG(ierr);
+      ierr = m_field.modify_finite_element_add_field_row("FORCE_FE","LAMBDA"); CHKERRG(ierr);
+      ierr = m_field.modify_finite_element_add_field_col("FORCE_FE","LAMBDA"); CHKERRG(ierr);
+      ierr = m_field.modify_finite_element_add_field_data("FORCE_FE","LAMBDA"); CHKERRG(ierr);
+      ierr = m_field.modify_finite_element_add_field_row("PRESSURE_FE","LAMBDA"); CHKERRG(ierr);
+      ierr = m_field.modify_finite_element_add_field_col("PRESSURE_FE","LAMBDA"); CHKERRG(ierr);
+      ierr = m_field.modify_finite_element_add_field_data("PRESSURE_FE","LAMBDA"); CHKERRG(ierr);
+      ierr = m_field.add_finite_element("BODY_FORCE"); CHKERRG(ierr);
+      ierr = m_field.modify_finite_element_add_field_row("BODY_FORCE","DISPLACEMENT"); CHKERRG(ierr);
+      ierr = m_field.modify_finite_element_add_field_col("BODY_FORCE","DISPLACEMENT"); CHKERRG(ierr);
+      ierr = m_field.modify_finite_element_add_field_data("BODY_FORCE","DISPLACEMENT"); CHKERRG(ierr);
+      ierr = m_field.modify_problem_add_finite_element("ELASTIC_MECHANICS","BODY_FORCE"); CHKERRG(ierr);
       for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,BLOCKSET|BODYFORCESSET,it)) {
         Range tets;
         rval = m_field.get_moab().get_entities_by_type(it->meshset,MBTET,tets,true); CHKERRG(rval);
-        ierr = m_field.add_ents_to_finite_element_by_type(tets,MBTET,"BODY_FORCE"); CHKERRQ(ierr);
+        ierr = m_field.add_ents_to_finite_element_by_type(tets,MBTET,"BODY_FORCE"); CHKERRG(ierr);
       }
 
     }
@@ -434,42 +434,42 @@ int main(int argc, char *argv[]) {
     //build database
 
     //build field
-    ierr = m_field.build_fields(); CHKERRQ(ierr);
+    ierr = m_field.build_fields(); CHKERRG(ierr);
     Projection10NodeCoordsOnField ent_method_material(m_field,"MESH_NODE_POSITIONS");
-    ierr = m_field.loop_dofs("MESH_NODE_POSITIONS",ent_method_material); CHKERRQ(ierr);
+    ierr = m_field.loop_dofs("MESH_NODE_POSITIONS",ent_method_material); CHKERRG(ierr);
 
     //build finite elemnts
-    ierr = m_field.build_finite_elements(); CHKERRQ(ierr);
+    ierr = m_field.build_finite_elements(); CHKERRG(ierr);
 
     //build adjacencies
-    ierr = m_field.build_adjacencies(problem_bit_level); CHKERRQ(ierr);
+    ierr = m_field.build_adjacencies(problem_bit_level); CHKERRG(ierr);
 
     /****/
     ProblemsManager *prb_mng_ptr;
-    ierr = m_field.getInterface(prb_mng_ptr); CHKERRQ(ierr);
+    ierr = m_field.getInterface(prb_mng_ptr); CHKERRG(ierr);
     //build problem
-    ierr = prb_mng_ptr->buildProblem("ELASTIC_MECHANICS",true); CHKERRQ(ierr);
+    ierr = prb_mng_ptr->buildProblem("ELASTIC_MECHANICS",true); CHKERRG(ierr);
     //partition
-    ierr = prb_mng_ptr->partitionProblem("ELASTIC_MECHANICS"); CHKERRQ(ierr);
-    ierr = prb_mng_ptr->partitionFiniteElements("ELASTIC_MECHANICS",false,0,pcomm->size()); CHKERRQ(ierr);
+    ierr = prb_mng_ptr->partitionProblem("ELASTIC_MECHANICS"); CHKERRG(ierr);
+    ierr = prb_mng_ptr->partitionFiniteElements("ELASTIC_MECHANICS",false,0,pcomm->size()); CHKERRG(ierr);
     //what are ghost nodes, see Petsc Manual
-    ierr = prb_mng_ptr->partitionGhostDofs("ELASTIC_MECHANICS"); CHKERRQ(ierr);
+    ierr = prb_mng_ptr->partitionGhostDofs("ELASTIC_MECHANICS"); CHKERRG(ierr);
 
     //print bcs
     MeshsetsManager *mmanager_ptr;
-    ierr = m_field.getInterface(mmanager_ptr); CHKERRQ(ierr);
-    ierr = mmanager_ptr->printDisplacementSet(); CHKERRQ(ierr);
-    ierr = mmanager_ptr->printForceSet(); CHKERRQ(ierr);
+    ierr = m_field.getInterface(mmanager_ptr); CHKERRG(ierr);
+    ierr = mmanager_ptr->printDisplacementSet(); CHKERRG(ierr);
+    ierr = mmanager_ptr->printForceSet(); CHKERRG(ierr);
     //print block sets with materials
-    ierr = mmanager_ptr->printMaterialsSet(); CHKERRQ(ierr);
+    ierr = mmanager_ptr->printMaterialsSet(); CHKERRG(ierr);
 
     //create matrices
     Vec F,F_body_force,D;
-    ierr = m_field.getInterface<VecManager>()->vecCreateGhost("ELASTIC_MECHANICS",COL,&F); CHKERRQ(ierr);
-    ierr = VecDuplicate(F,&D); CHKERRQ(ierr);
-    ierr = VecDuplicate(F,&F_body_force); CHKERRQ(ierr);
+    ierr = m_field.getInterface<VecManager>()->vecCreateGhost("ELASTIC_MECHANICS",COL,&F); CHKERRG(ierr);
+    ierr = VecDuplicate(F,&D); CHKERRG(ierr);
+    ierr = VecDuplicate(F,&F_body_force); CHKERRG(ierr);
     Mat Aij;
-    ierr = m_field.MatCreateMPIAIJWithArrays("ELASTIC_MECHANICS",&Aij); CHKERRQ(ierr);
+    ierr = m_field.MatCreateMPIAIJWithArrays("ELASTIC_MECHANICS",&Aij); CHKERRG(ierr);
 
     //Assemble F and Aij
     double young_modulus=1;
@@ -487,13 +487,13 @@ int main(int argc, char *argv[]) {
 
       if (name.compare(0,11,"MAT_ELASTIC") == 0) {
         Mat_Elastic mydata;
-        ierr = it->getAttributeDataStructure(mydata); CHKERRQ(ierr);
+        ierr = it->getAttributeDataStructure(mydata); CHKERRG(ierr);
         cout << mydata;
         young_modulus=mydata.data.Young;
         poisson_ratio=mydata.data.Poisson;
       } else if (name.compare(0,10,"MAT_INTERF") == 0) {
         Mat_Interf mydata;
-        ierr = it->getAttributeDataStructure(mydata); CHKERRQ(ierr);
+        ierr = it->getAttributeDataStructure(mydata); CHKERRG(ierr);
         cout << mydata;
 
         interface_materials.push_back(new CohesiveInterfaceElement::PhysicalEquation(m_field));
@@ -528,8 +528,8 @@ int main(int argc, char *argv[]) {
     AssembleRhsVectors pre_post_proc_fe(m_field,F_body_force,arc_ctx);
 
     DirichletDisplacementBc my_dirichlet_bc(m_field,"DISPLACEMENT",Aij,D,F);
-    ierr = m_field.get_problem("ELASTIC_MECHANICS",&my_dirichlet_bc.problemPtr); CHKERRQ(ierr);
-    ierr = my_dirichlet_bc.iNitalize(); CHKERRQ(ierr);
+    ierr = m_field.get_problem("ELASTIC_MECHANICS",&my_dirichlet_bc.problemPtr); CHKERRG(ierr);
+    ierr = my_dirichlet_bc.iNitalize(); CHKERRG(ierr);
     boost::shared_ptr<Hooke<adouble> > hooke_adouble_ptr(new Hooke<adouble>);
     boost::shared_ptr<Hooke<double> > hooke_double_ptr(new Hooke<double>);
     NonlinearElasticElement elastic(m_field,2);
@@ -546,70 +546,70 @@ int main(int argc, char *argv[]) {
       ); CHKERRG(rval);
       ierr = elastic.setOperators(
         "DISPLACEMENT","MESH_NODE_POSITIONS",false,true
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
     }
     CohesiveInterfaceElement cohesive_elements(m_field);
-    ierr = cohesive_elements.addOps("DISPLACEMENT",interface_materials); CHKERRQ(ierr);
+    ierr = cohesive_elements.addOps("DISPLACEMENT",interface_materials); CHKERRG(ierr);
 
     PetscInt M,N;
-    ierr = MatGetSize(Aij,&M,&N); CHKERRQ(ierr);
+    ierr = MatGetSize(Aij,&M,&N); CHKERRG(ierr);
     PetscInt m,n;
     MatGetLocalSize(Aij,&m,&n);
     ArcLengthMatShell* mat_ctx = new ArcLengthMatShell(Aij,arc_ctx,"ELASTIC_MECHANICS");
     Mat ShellAij;
-    ierr = MatCreateShell(PETSC_COMM_WORLD,m,n,M,N,(void*)mat_ctx,&ShellAij); CHKERRQ(ierr);
-    ierr = MatShellSetOperation(ShellAij,MATOP_MULT,(void(*)(void))ArcLengthMatMultShellOp); CHKERRQ(ierr);
+    ierr = MatCreateShell(PETSC_COMM_WORLD,m,n,M,N,(void*)mat_ctx,&ShellAij); CHKERRG(ierr);
+    ierr = MatShellSetOperation(ShellAij,MATOP_MULT,(void(*)(void))ArcLengthMatMultShellOp); CHKERRG(ierr);
 
     //body forces
     BodyForceConstantField body_forces_methods(m_field);
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,BLOCKSET|BODYFORCESSET,it)) {
-      ierr = body_forces_methods.addBlock("DISPLACEMENT",F_body_force,it->getMeshsetId()); CHKERRQ(ierr);
+      ierr = body_forces_methods.addBlock("DISPLACEMENT",F_body_force,it->getMeshsetId()); CHKERRG(ierr);
     }
-    ierr = VecZeroEntries(F_body_force); CHKERRQ(ierr);
-    ierr = VecGhostUpdateBegin(F_body_force,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    ierr = VecGhostUpdateEnd(F_body_force,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS","BODY_FORCE",body_forces_methods.getLoopFe()); CHKERRQ(ierr);
-    ierr = VecGhostUpdateBegin(F_body_force,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-    ierr = VecGhostUpdateEnd(F_body_force,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-    ierr = VecAssemblyBegin(F_body_force); CHKERRQ(ierr);
-    ierr = VecAssemblyEnd(F_body_force); CHKERRQ(ierr);
+    ierr = VecZeroEntries(F_body_force); CHKERRG(ierr);
+    ierr = VecGhostUpdateBegin(F_body_force,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
+    ierr = VecGhostUpdateEnd(F_body_force,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
+    ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS","BODY_FORCE",body_forces_methods.getLoopFe()); CHKERRG(ierr);
+    ierr = VecGhostUpdateBegin(F_body_force,ADD_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
+    ierr = VecGhostUpdateEnd(F_body_force,ADD_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
+    ierr = VecAssemblyBegin(F_body_force); CHKERRG(ierr);
+    ierr = VecAssemblyEnd(F_body_force); CHKERRG(ierr);
 
     //surface forces
     boost::ptr_map<std::string,NeummanForcesSurface> neumann_forces;
     string fe_name_str = "FORCE_FE";
     neumann_forces.insert(fe_name_str,new NeummanForcesSurface(m_field));
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,NODESET|FORCESET,it)) {
-      ierr = neumann_forces.at(fe_name_str).addForce("DISPLACEMENT",arc_ctx->F_lambda,it->getMeshsetId());  CHKERRQ(ierr);
+      ierr = neumann_forces.at(fe_name_str).addForce("DISPLACEMENT",arc_ctx->F_lambda,it->getMeshsetId());  CHKERRG(ierr);
     }
     fe_name_str = "PRESSURE_FE";
     neumann_forces.insert(fe_name_str,new NeummanForcesSurface(m_field));
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,SIDESET|PRESSURESET,it)) {
-      ierr = neumann_forces.at(fe_name_str).addPreassure("DISPLACEMENT",arc_ctx->F_lambda,it->getMeshsetId()); CHKERRQ(ierr);
+      ierr = neumann_forces.at(fe_name_str).addPreassure("DISPLACEMENT",arc_ctx->F_lambda,it->getMeshsetId()); CHKERRG(ierr);
     }
     //add nodal forces
     boost::ptr_map<std::string,NodalForce> nodal_forces;
     fe_name_str ="FORCE_FE";
     nodal_forces.insert(fe_name_str,new NodalForce(m_field));
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,NODESET|FORCESET,it)) {
-      ierr = nodal_forces.at(fe_name_str).addForce("DISPLACEMENT",arc_ctx->F_lambda,it->getMeshsetId());  CHKERRQ(ierr);
+      ierr = nodal_forces.at(fe_name_str).addForce("DISPLACEMENT",arc_ctx->F_lambda,it->getMeshsetId());  CHKERRG(ierr);
     }
 
     SNES snes;
-    ierr = SNESCreate(PETSC_COMM_WORLD,&snes); CHKERRQ(ierr);
-    ierr = SNESSetApplicationContext(snes,&snes_ctx); CHKERRQ(ierr);
-    ierr = SNESSetFunction(snes,F,SnesRhs,&snes_ctx); CHKERRQ(ierr);
-    ierr = SNESSetJacobian(snes,ShellAij,Aij,SnesMat,&snes_ctx); CHKERRQ(ierr);
-    ierr = SNESSetFromOptions(snes); CHKERRQ(ierr);
+    ierr = SNESCreate(PETSC_COMM_WORLD,&snes); CHKERRG(ierr);
+    ierr = SNESSetApplicationContext(snes,&snes_ctx); CHKERRG(ierr);
+    ierr = SNESSetFunction(snes,F,SnesRhs,&snes_ctx); CHKERRG(ierr);
+    ierr = SNESSetJacobian(snes,ShellAij,Aij,SnesMat,&snes_ctx); CHKERRG(ierr);
+    ierr = SNESSetFromOptions(snes); CHKERRG(ierr);
 
     KSP ksp;
-    ierr = SNESGetKSP(snes,&ksp); CHKERRQ(ierr);
+    ierr = SNESGetKSP(snes,&ksp); CHKERRG(ierr);
     PC pc;
-    ierr = KSPGetPC(ksp,&pc); CHKERRQ(ierr);
+    ierr = KSPGetPC(ksp,&pc); CHKERRG(ierr);
     PCArcLengthCtx* pc_ctx = new PCArcLengthCtx(ShellAij,Aij,arc_ctx);
-    ierr = PCSetType(pc,PCSHELL); CHKERRQ(ierr);
-    ierr = PCShellSetContext(pc,pc_ctx); CHKERRQ(ierr);
-    ierr = PCShellSetApply(pc,PCApplyArcLength); CHKERRQ(ierr);
-    ierr = PCShellSetSetUp(pc,PCSetupArcLength); CHKERRQ(ierr);
+    ierr = PCSetType(pc,PCSHELL); CHKERRG(ierr);
+    ierr = PCShellSetContext(pc,pc_ctx); CHKERRG(ierr);
+    ierr = PCShellSetApply(pc,PCApplyArcLength); CHKERRG(ierr);
+    ierr = PCShellSetSetUp(pc,PCSetupArcLength); CHKERRG(ierr);
 
     //Rhs
     SnesCtx::FEMethodsSequence& loops_to_do_Rhs = snes_ctx.get_loops_to_do_Rhs();
@@ -639,44 +639,44 @@ int main(int argc, char *argv[]) {
     }
 
     boost::ptr_map<std::string,NeummanForcesSurface>::iterator mit = neumann_forces.begin();
-    ierr = VecZeroEntries(arc_ctx->F_lambda); CHKERRQ(ierr);
-    ierr = VecGhostUpdateBegin(arc_ctx->F_lambda,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    ierr = VecGhostUpdateEnd(arc_ctx->F_lambda,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = VecZeroEntries(arc_ctx->F_lambda); CHKERRG(ierr);
+    ierr = VecGhostUpdateBegin(arc_ctx->F_lambda,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
+    ierr = VecGhostUpdateEnd(arc_ctx->F_lambda,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
     for(;mit!=neumann_forces.end();mit++) {
-      ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS",mit->first,mit->second->getLoopFe()); CHKERRQ(ierr);
+      ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS",mit->first,mit->second->getLoopFe()); CHKERRG(ierr);
     }
-    ierr = VecGhostUpdateBegin(arc_ctx->F_lambda,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-    ierr = VecGhostUpdateEnd(arc_ctx->F_lambda,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-    ierr = VecAssemblyBegin(arc_ctx->F_lambda); CHKERRQ(ierr);
-    ierr = VecAssemblyEnd(arc_ctx->F_lambda); CHKERRQ(ierr);
+    ierr = VecGhostUpdateBegin(arc_ctx->F_lambda,ADD_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
+    ierr = VecGhostUpdateEnd(arc_ctx->F_lambda,ADD_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
+    ierr = VecAssemblyBegin(arc_ctx->F_lambda); CHKERRG(ierr);
+    ierr = VecAssemblyEnd(arc_ctx->F_lambda); CHKERRG(ierr);
     for(std::vector<int>::iterator vit = my_dirichlet_bc.dofsIndices.begin();
     vit!=my_dirichlet_bc.dofsIndices.end();vit++) {
-      ierr = VecSetValue(arc_ctx->F_lambda,*vit,0,INSERT_VALUES); CHKERRQ(ierr);
+      ierr = VecSetValue(arc_ctx->F_lambda,*vit,0,INSERT_VALUES); CHKERRG(ierr);
     }
-    ierr = VecAssemblyBegin(arc_ctx->F_lambda); CHKERRQ(ierr);
-    ierr = VecAssemblyEnd(arc_ctx->F_lambda); CHKERRQ(ierr);
+    ierr = VecAssemblyBegin(arc_ctx->F_lambda); CHKERRG(ierr);
+    ierr = VecAssemblyEnd(arc_ctx->F_lambda); CHKERRG(ierr);
     //F_lambda2
-    ierr = VecDot(arc_ctx->F_lambda,arc_ctx->F_lambda,&arc_ctx->F_lambda2); CHKERRQ(ierr);
+    ierr = VecDot(arc_ctx->F_lambda,arc_ctx->F_lambda,&arc_ctx->F_lambda2); CHKERRG(ierr);
     PetscPrintf(PETSC_COMM_WORLD,"\tFlambda2 = %6.4e\n",arc_ctx->F_lambda2);
 
     if(step>1) {
-      ierr = m_field.getInterface<VecManager>()->setLocalGhostVector("ELASTIC_MECHANICS",COL,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      ierr = m_field.getInterface<VecManager>()->setLocalGhostVector("ELASTIC_MECHANICS",COL,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
       ierr = m_field.getInterface<VecManager>()->setOtherGlobalGhostVector(
-        "ELASTIC_MECHANICS","DISPLACEMENT","X0_DISPLACEMENT",COL,arc_ctx->x0,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+        "ELASTIC_MECHANICS","DISPLACEMENT","X0_DISPLACEMENT",COL,arc_ctx->x0,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
         double x0_nrm;
-        ierr = VecNorm(arc_ctx->x0,NORM_2,&x0_nrm);  CHKERRQ(ierr);
+        ierr = VecNorm(arc_ctx->x0,NORM_2,&x0_nrm);  CHKERRG(ierr);
         ierr = PetscPrintf(PETSC_COMM_WORLD,"\tRead x0_nrm = %6.4e dlambda = %6.4e\n",x0_nrm,arc_ctx->dLambda);
-        ierr = arc_ctx->setAlphaBeta(1,0); CHKERRQ(ierr);
+        ierr = arc_ctx->setAlphaBeta(1,0); CHKERRG(ierr);
       } else {
-        ierr = arc_ctx->setS(0); CHKERRQ(ierr);
-        ierr = arc_ctx->setAlphaBeta(0,1); CHKERRQ(ierr);
+        ierr = arc_ctx->setS(0); CHKERRG(ierr);
+        ierr = arc_ctx->setAlphaBeta(0,1); CHKERRG(ierr);
       }
-      ierr = SnesRhs(snes,D,F,&snes_ctx); CHKERRQ(ierr);
+      ierr = SnesRhs(snes,D,F,&snes_ctx); CHKERRG(ierr);
 
       PostProcVolumeOnRefinedMesh post_proc(m_field);
-      ierr = post_proc.generateReferenceElementMesh(); CHKERRQ(ierr);
-      ierr = post_proc.addFieldValuesPostProc("DISPLACEMENT"); CHKERRQ(ierr);
-      ierr = post_proc.addFieldValuesGradientPostProc("DISPLACEMENT"); CHKERRQ(ierr);
+      ierr = post_proc.generateReferenceElementMesh(); CHKERRG(ierr);
+      ierr = post_proc.addFieldValuesPostProc("DISPLACEMENT"); CHKERRG(ierr);
+      ierr = post_proc.addFieldValuesGradientPostProc("DISPLACEMENT"); CHKERRG(ierr);
       //add postpocessing for sresses
       post_proc.getOpPtrVector().push_back(
         new PostProcHookStress(
@@ -692,80 +692,80 @@ int main(int argc, char *argv[]) {
       for(;step<max_steps;step++) {
 
         if(step == 1) {
-          ierr = PetscPrintf(PETSC_COMM_WORLD,"Load Step %D step_size = %6.4e\n",step,step_size); CHKERRQ(ierr);
-          ierr = arc_ctx->setS(step_size); CHKERRQ(ierr);
-          ierr = arc_ctx->setAlphaBeta(0,1); CHKERRQ(ierr);
-          ierr = VecCopy(D,arc_ctx->x0); CHKERRQ(ierr);
+          ierr = PetscPrintf(PETSC_COMM_WORLD,"Load Step %D step_size = %6.4e\n",step,step_size); CHKERRG(ierr);
+          ierr = arc_ctx->setS(step_size); CHKERRG(ierr);
+          ierr = arc_ctx->setAlphaBeta(0,1); CHKERRG(ierr);
+          ierr = VecCopy(D,arc_ctx->x0); CHKERRG(ierr);
           double dlambda;
-          ierr = my_arc_method.calculate_init_dlambda(&dlambda); CHKERRQ(ierr);
-          ierr = my_arc_method.set_dlambda_to_x(D,dlambda); CHKERRQ(ierr);
+          ierr = my_arc_method.calculate_init_dlambda(&dlambda); CHKERRG(ierr);
+          ierr = my_arc_method.set_dlambda_to_x(D,dlambda); CHKERRG(ierr);
         } else if(step == 2) {
-          ierr = arc_ctx->setAlphaBeta(1,0); CHKERRQ(ierr);
-          ierr = my_arc_method.calculate_dx_and_dlambda(D); CHKERRQ(ierr);
-          ierr = my_arc_method.calculate_lambda_int(step_size); CHKERRQ(ierr);
-          ierr = arc_ctx->setS(step_size); CHKERRQ(ierr);
+          ierr = arc_ctx->setAlphaBeta(1,0); CHKERRG(ierr);
+          ierr = my_arc_method.calculate_dx_and_dlambda(D); CHKERRG(ierr);
+          ierr = my_arc_method.calculate_lambda_int(step_size); CHKERRG(ierr);
+          ierr = arc_ctx->setS(step_size); CHKERRG(ierr);
           double dlambda = arc_ctx->dLambda;
           double dx_nrm;
-          ierr = VecNorm(arc_ctx->dx,NORM_2,&dx_nrm);  CHKERRQ(ierr);
+          ierr = VecNorm(arc_ctx->dx,NORM_2,&dx_nrm);  CHKERRG(ierr);
           ierr = PetscPrintf(PETSC_COMM_WORLD,
             "Load Step %D step_size = %6.4e dlambda0 = %6.4e dx_nrm = %6.4e dx2 = %6.4e\n",
             step,step_size,dlambda,dx_nrm,arc_ctx->dx2
-          ); CHKERRQ(ierr);
-          ierr = VecCopy(D,arc_ctx->x0); CHKERRQ(ierr);
-          ierr = VecAXPY(D,1.,arc_ctx->dx); CHKERRQ(ierr);
-          ierr = my_arc_method.set_dlambda_to_x(D,dlambda); CHKERRQ(ierr);
+          ); CHKERRG(ierr);
+          ierr = VecCopy(D,arc_ctx->x0); CHKERRG(ierr);
+          ierr = VecAXPY(D,1.,arc_ctx->dx); CHKERRG(ierr);
+          ierr = my_arc_method.set_dlambda_to_x(D,dlambda); CHKERRG(ierr);
         } else {
-          ierr = my_arc_method.calculate_dx_and_dlambda(D); CHKERRQ(ierr);
-          ierr = my_arc_method.calculate_lambda_int(step_size); CHKERRQ(ierr);
+          ierr = my_arc_method.calculate_dx_and_dlambda(D); CHKERRG(ierr);
+          ierr = my_arc_method.calculate_lambda_int(step_size); CHKERRG(ierr);
           //step_size0_1/step_size0 = step_stize1/step_size
           //step_size0_1 = step_size0*(step_stize1/step_size)
           step_size *= reduction;
-          ierr = arc_ctx->setS(step_size); CHKERRQ(ierr);
+          ierr = arc_ctx->setS(step_size); CHKERRG(ierr);
           double dlambda = reduction*arc_ctx->dLambda;
-          ierr = VecScale(arc_ctx->dx,reduction); CHKERRQ(ierr);
+          ierr = VecScale(arc_ctx->dx,reduction); CHKERRG(ierr);
           double dx_nrm;
-          ierr = VecNorm(arc_ctx->dx,NORM_2,&dx_nrm);  CHKERRQ(ierr);
+          ierr = VecNorm(arc_ctx->dx,NORM_2,&dx_nrm);  CHKERRG(ierr);
           ierr = PetscPrintf(PETSC_COMM_WORLD,
             "Load Step %D step_size = %6.4e dlambda0 = %6.4e dx_nrm = %6.4e dx2 = %6.4e\n",
             step,step_size,dlambda,dx_nrm,arc_ctx->dx2
-          ); CHKERRQ(ierr);
-          ierr = VecCopy(D,arc_ctx->x0); CHKERRQ(ierr);
-          ierr = VecAXPY(D,1.,arc_ctx->dx); CHKERRQ(ierr);
-          ierr = my_arc_method.set_dlambda_to_x(D,dlambda); CHKERRQ(ierr);
+          ); CHKERRG(ierr);
+          ierr = VecCopy(D,arc_ctx->x0); CHKERRG(ierr);
+          ierr = VecAXPY(D,1.,arc_ctx->dx); CHKERRG(ierr);
+          ierr = my_arc_method.set_dlambda_to_x(D,dlambda); CHKERRG(ierr);
         }
 
-        ierr = SNESSolve(snes,PETSC_NULL,D); CHKERRQ(ierr);
+        ierr = SNESSolve(snes,PETSC_NULL,D); CHKERRG(ierr);
 
         //Distribute displacements on all processors
-        ierr = m_field.getInterface<VecManager>()->setGlobalGhostVector("ELASTIC_MECHANICS",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+        ierr = m_field.getInterface<VecManager>()->setGlobalGhostVector("ELASTIC_MECHANICS",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
         ierr = m_field.loop_finite_elements(
           "ELASTIC_MECHANICS","INTERFACE",cohesive_elements.getFeHistory(),0,m_field.get_comm_size()
-        ); CHKERRQ(ierr);
+        ); CHKERRG(ierr);
         //Remove nodes of damaged prisms
-        ierr = my_arc_method.remove_damaged_prisms_nodes(); CHKERRQ(ierr);
+        ierr = my_arc_method.remove_damaged_prisms_nodes(); CHKERRG(ierr);
 
         int its;
-        ierr = SNESGetIterationNumber(snes,&its); CHKERRQ(ierr);
-        ierr = PetscPrintf(PETSC_COMM_WORLD,"number of Newton iterations = %D\n",its); CHKERRQ(ierr);
+        ierr = SNESGetIterationNumber(snes,&its); CHKERRG(ierr);
+        ierr = PetscPrintf(PETSC_COMM_WORLD,"number of Newton iterations = %D\n",its); CHKERRG(ierr);
 
         SNESConvergedReason reason;
-        ierr = SNESGetConvergedReason(snes,&reason); CHKERRQ(ierr);
+        ierr = SNESGetConvergedReason(snes,&reason); CHKERRG(ierr);
 
         if (reason < 0) {
-          ierr = arc_ctx->setAlphaBeta(1,0); CHKERRQ(ierr);
+          ierr = arc_ctx->setAlphaBeta(1,0); CHKERRG(ierr);
           reduction =0.1;
           converged_state = false;
           continue;
         } else {
           if (step > 1 && converged_state) {
             reduction = pow((double)its_d/(double)(its+1),gamma);
-            ierr = PetscPrintf(PETSC_COMM_WORLD,"reduction step_size = %6.4e\n", reduction); CHKERRQ(ierr);
+            ierr = PetscPrintf(PETSC_COMM_WORLD,"reduction step_size = %6.4e\n", reduction); CHKERRG(ierr);
           }
 
           //Save data on mesh
-          ierr = m_field.getInterface<VecManager>()->setGlobalGhostVector("ELASTIC_MECHANICS",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+          ierr = m_field.getInterface<VecManager>()->setGlobalGhostVector("ELASTIC_MECHANICS",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
           ierr = m_field.getInterface<VecManager>()->setOtherGlobalGhostVector(
-            "ELASTIC_MECHANICS","DISPLACEMENT","X0_DISPLACEMENT",COL,arc_ctx->x0,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+            "ELASTIC_MECHANICS","DISPLACEMENT","X0_DISPLACEMENT",COL,arc_ctx->x0,INSERT_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
             converged_state = true;
           }
           //
@@ -774,7 +774,7 @@ int main(int argc, char *argv[]) {
             PetscFOpen(PETSC_COMM_SELF,DATAFILENAME,"a+",&datafile);
             PetscFPrintf(PETSC_COMM_WORLD,datafile,"%d %d ",reason,its);
             fclose(datafile);
-            ierr = my_arc_method.postProcessLoadPath(); CHKERRQ(ierr);
+            ierr = my_arc_method.postProcessLoadPath(); CHKERRG(ierr);
           }
 
           if(step % 1 == 0) {
@@ -785,25 +785,25 @@ int main(int argc, char *argv[]) {
             //   rval = moab.write_file(sss.str().c_str()); CHKERRG(rval);
             // }
 
-            ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",post_proc); CHKERRQ(ierr);
+            ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",post_proc); CHKERRG(ierr);
             std::ostringstream ss;
             ss << "out_values_" << step << ".h5m";
-            ierr = post_proc.writeFile(ss.str().c_str()); CHKERRQ(ierr);
+            ierr = post_proc.writeFile(ss.str().c_str()); CHKERRG(ierr);
 
           }
 
         }
 
         //Save data on mesh
-        ierr = m_field.getInterface<VecManager>()->setGlobalGhostVector("ELASTIC_MECHANICS",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+        ierr = m_field.getInterface<VecManager>()->setGlobalGhostVector("ELASTIC_MECHANICS",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
 
         //detroy matrices
-        ierr = VecDestroy(&F); CHKERRQ(ierr);
-        ierr = VecDestroy(&D); CHKERRQ(ierr);
-        ierr = VecDestroy(&F_body_force); CHKERRQ(ierr);
-        ierr = MatDestroy(&Aij); CHKERRQ(ierr);
-        ierr = SNESDestroy(&snes); CHKERRQ(ierr);
-        ierr = MatDestroy(&ShellAij); CHKERRQ(ierr);
+        ierr = VecDestroy(&F); CHKERRG(ierr);
+        ierr = VecDestroy(&D); CHKERRG(ierr);
+        ierr = VecDestroy(&F_body_force); CHKERRG(ierr);
+        ierr = MatDestroy(&Aij); CHKERRG(ierr);
+        ierr = SNESDestroy(&snes); CHKERRG(ierr);
+        ierr = MatDestroy(&ShellAij); CHKERRG(ierr);
         delete arc_ctx;
         delete mat_ctx;
         delete pc_ctx;
