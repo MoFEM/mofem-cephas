@@ -480,15 +480,14 @@ DEPRECATED void macro_is_depracted_using_deprecated_function();
   * @param  a MoFEMErrorCode
   */
 #define CHKERRG(n)                                                             \
-  if (PetscUnlikely(!n.getSuccess())) {                                        \
-    if (n.errorType() == PETSC_ERROR) {                                        \
-      CHKERRQ(n);                                                              \
-    } else if (n.errorType() == MOAB_ERROR) {                                  \
-      CHKERRQ_MOAB(n);                                                         \
-    }                                                                          \
+  if (getErrorType(n) == PETSC_ERROR) {                                        \
+    CHKERRQ(n);                                                                \
+  } else if (getErrorType(n) == MOAB_ERROR) {                                  \
+    CHKERRQ_MOAB(n);                                                           \
   }
 
-#define CHKERR ErrorCheckerLine() << __LINE__ << 
+#define CHKERR                                                                 \
+  ErrorCheckerLine() << __LINE__ << __FILE__ << PETSC_FUNCTION_NAME <<
 
 /**
  * \brief Check error code of MoAB function and throw MoFEM exception

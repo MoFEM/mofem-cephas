@@ -46,7 +46,6 @@ int main(int argc, char *argv[]) {
 #else
     CHKERR PetscOptionsGetString(PETSC_NULL, PETSC_NULL, "-my_file",
                                  mesh_file_name, 255, &flg);
-    CHKERRQ(ierr);
 #endif
     if (flg != PETSC_TRUE) {
       SETERRQ(PETSC_COMM_SELF, 1, "*** ERROR -my_file (MESH FILE NEEDED)");

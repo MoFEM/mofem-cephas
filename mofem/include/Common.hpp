@@ -34,68 +34,33 @@ struct MoFEMException : public std::exception {
 };
 
 typedef moab::ErrorCode MoABErrorCode;
+typedef PetscErrorCode MoFEMErrorCode;
 
-template <typename TYPE> struct MoFEMErrorCodeGeneric {
-  MoFEMErrorCodeGeneric(const TYPE) {}
-};
+static MoABErrorCode rval;
+static PetscErrorCode ierr;
 
-template <> struct MoFEMErrorCodeGeneric<PetscErrorCode> {
-  PetscErrorCode iERR;
-  MoFEMErrorCodeGeneric(const PetscErrorCode ierr) : iERR(ierr) {}
-  inline operator PetscErrorCode() const { return iERR; }
-  inline const MoFEMErrorTypes errorType() const { return PETSC_ERROR; }
-  inline bool getSuccess() const {
-    if (PetscUnlikely(iERR))
-      return false;
-    return true;
-  }
-};
+template <typename TYPE> inline enum MoFEMErrorTypes getErrorType(const TYPE) {}
 
-template <> struct MoFEMErrorCodeGeneric<moab::ErrorCode> {
-  moab::ErrorCode rVAL;
-  MoFEMErrorCodeGeneric(const moab::ErrorCode rval) : rVAL(rval) {}
-  inline operator moab::ErrorCode() const { return rVAL; }
-  inline const MoFEMErrorTypes errorType() const { return MOAB_ERROR; }
-  inline bool getSuccess() const {
-    if (MB_SUCCESS == rVAL)
-      return true;
-    return false;
-  }
-};
+template <>
+inline enum MoFEMErrorTypes getErrorType(const PetscErrorCode) {
+  return MOAB_ERROR;
+}
 
-typedef MoFEMErrorCodeGeneric<PetscErrorCode> MoFEMErrorCode;
+template <>
+inline enum MoFEMErrorTypes getErrorType(const moab::ErrorCode) {
+  return MOAB_ERROR;
+}
 
-static MoFEMErrorCodeGeneric<moab::ErrorCode> rval =
-    MoFEMErrorCodeGeneric<moab::ErrorCode>(MB_SUCCESS);
-static MoFEMErrorCode ierr = MoFEMErrorCode(0);
+struct ErrorCheckerFunction;
+struct ErrorCheckerLine;
 
-
-struct ErrorChecker {
-  ErrorChecker(const int line): lINE(line) {}
-  inline void 
-  operator<<(const MoFEMErrorCodeGeneric<PetscErrorCode> err) {
-    if (PetscUnlikely(!err.getSuccess())) {
-      std::string str("MoFEM-PETSc error " +
-                      boost::lexical_cast<std::string>(err) + " at line " +
-                      boost::lexical_cast<std::string>(lINE));
-      throw MoFEMException(MOFEM_MOFEMEXCEPTION_THROW, str.c_str());
-    }
-    return;
-  }
-  inline void
-  operator<<(const MoFEMErrorCodeGeneric<moab::ErrorCode> err) {
-    if (PetscUnlikely(!err.getSuccess())) {
-      std::string str("MOFEM-MOAB error " +
-                      boost::lexical_cast<std::string>(err) + " at line " +
-                      boost::lexical_cast<std::string>(lINE));
-      throw MoFEMException(MOFEM_MOFEMEXCEPTION_THROW, str.c_str());
-    }
-    return;
-  }
-  inline void operator<<(const PetscErrorCode err) {
+struct ErrorCheckerCode {
+  inline void operator<<(const MoFEMErrorCode err) {
     if (PetscUnlikely(err)) {
-      std::string str("PETSc error " + boost::lexical_cast<std::string>(err) +
-                      " at line " + boost::lexical_cast<std::string>(lINE));
+      std::string str("MoFEM/PETSc error " +
+                      boost::lexical_cast<std::string>(err) + " at line " +
+                      boost::lexical_cast<std::string>(lINE) + " : " +
+                      std::string(fILE) + " in " + std::string(fUNC));
       throw MoFEMException(MOFEM_MOFEMEXCEPTION_THROW, str.c_str());
     }
     return;
@@ -104,18 +69,35 @@ struct ErrorChecker {
   operator<<(const moab::ErrorCode err) {
     if (PetscLikely(MB_SUCCESS != err)) {
       std::string str("MOAB error " + boost::lexical_cast<std::string>(err) +
-                      " at line " + boost::lexical_cast<std::string>(lINE));
+                      " at line " + boost::lexical_cast<std::string>(lINE) +
+                      " : " + std::string(fILE) + " in " + std::string(fUNC));
       throw MoFEMException(MOFEM_MOFEMEXCEPTION_THROW, str.c_str());
     }
     return;
   }
-private:
-  int lINE;
+  static const char *fUNC;
+  static const char *fILE;
+  static int lINE;
+};
+
+struct ErrorCheckerFunction {
+  inline ErrorCheckerCode operator<<(const char *func) {
+    ErrorCheckerCode::fUNC = func;
+    return ErrorCheckerCode();
+  }
+ };
+
+struct ErrorCheckerFile {
+  inline ErrorCheckerFunction operator<<(const char *file) {
+    ErrorCheckerCode::fILE = file;
+    return ErrorCheckerFunction();
+  }
 };
 
 struct ErrorCheckerLine {
-  inline ErrorChecker operator<<(int line) {
-    return ErrorChecker(line);
+  inline ErrorCheckerFile operator<<(int line) {
+    ErrorCheckerCode::lINE = line;
+    return ErrorCheckerFile();
   }
 };
 

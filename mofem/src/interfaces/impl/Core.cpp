@@ -20,9 +20,11 @@ extern "C" {
   void macro_is_depracted_using_deprecated_function() {}
 }
 
-// #include </Users/likask/MyBuild/mofem-cephas/mofem/include/MoFEM.hpp>
-
 namespace MoFEM {
+
+int ErrorCheckerCode::lINE;
+const char *ErrorCheckerCode::fILE;
+const char *ErrorCheckerCode::fUNC;
 
 MoFEMErrorCode Core::query_interface(const MOFEMuuid &uuid,
                                      UnknownInterface **iface) const {
