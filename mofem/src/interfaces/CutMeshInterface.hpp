@@ -50,22 +50,22 @@ struct CutMeshInterface : public UnknownInterface {
     MoFEMFunctionBeginHot;
     ierr = PetscOptionsBegin(PETSC_COMM_WORLD, "", "MOFEM Cut mesh options",
                              "none");
-    CHKERRQ(ierr);
+    CHKERRG(ierr);
     ierr = PetscOptionsInt("-cut_linesearch_steps",
                            "number of bisection steps which line search do to "
                            "find optimal merged nodes position",
                            "", lineSearchSteps, &lineSearchSteps, PETSC_NULL);
-    CHKERRQ(ierr);
+    CHKERRG(ierr);
     ierr = PetscOptionsInt("-cut_max_merging_cycles",
                            "number of maximal merging cycles", "",
                            nbMaxMergingCycles, &nbMaxMergingCycles, PETSC_NULL);
-    CHKERRQ(ierr);
+    CHKERRG(ierr);
     ierr = PetscOptionsInt(
         "-cut_max_trim_iterations", "number of maximal merging cycles", "",
         nbMaxTrimSearchIterations, &nbMaxTrimSearchIterations, PETSC_NULL);
-    CHKERRQ(ierr);
+    CHKERRG(ierr);
     ierr = PetscOptionsEnd();
-    CHKERRQ(ierr);
+    CHKERRG(ierr);
     MoFEMFunctionReturnHot(0);
   }
 

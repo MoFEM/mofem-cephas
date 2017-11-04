@@ -56,7 +56,7 @@ MoFEMErrorCode FlatPrismPolynomialBaseCtx::query_interface(const MOFEMuuid& uuid
   } else {
     SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"wrong interference");
   }
-  ierr = EntPolynomialBaseCtx::query_interface(uuid,iface); CHKERRQ(ierr);
+  ierr = EntPolynomialBaseCtx::query_interface(uuid,iface); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -89,7 +89,7 @@ MoFEMErrorCode FlatPrismPolynomialBase::query_interface(
   } else {
     SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"wrong interference");
   }
-  ierr = BaseFunction::query_interface(uuid,iface); CHKERRQ(ierr);
+  ierr = BaseFunction::query_interface(uuid,iface); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -104,7 +104,7 @@ MoFEMErrorCode FlatPrismPolynomialBase::getValue(
   MoFEMFunctionBeginHot;
 
   MoFEM::UnknownInterface *iface;
-  ierr = ctx_ptr->query_interface(IDD_FLATPRISM_BASE_FUNCTION,&iface); CHKERRQ(ierr);
+  ierr = ctx_ptr->query_interface(IDD_FLATPRISM_BASE_FUNCTION,&iface); CHKERRG(ierr);
   cTx = reinterpret_cast<FlatPrismPolynomialBaseCtx*>(iface);
   if(!cTx->fePtr) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
@@ -150,8 +150,8 @@ MoFEMErrorCode FlatPrismPolynomialBase::getValue(
   data.dataOnEntities[MBVERTEX][0].getDiffN(base).resize(nb_gauss_pts,12,false);
   N.resize(nb_gauss_pts,3,false);
   diffN.resize(3,2,false);
-  ierr = ShapeMBTRI(&*N.data().begin(),&pts(0,0),&pts(1,0),nb_gauss_pts); CHKERRQ(ierr);
-  ierr = ShapeDiffMBTRI(&*diffN.data().begin()); CHKERRQ(ierr);
+  ierr = ShapeMBTRI(&*N.data().begin(),&pts(0,0),&pts(1,0),nb_gauss_pts); CHKERRG(ierr);
+  ierr = ShapeDiffMBTRI(&*diffN.data().begin()); CHKERRG(ierr);
 
   // This is needed to have proper order of nodes on faces
 
@@ -191,16 +191,16 @@ MoFEMErrorCode FlatPrismPolynomialBase::getValue(
 
   switch (cTx->sPace) {
     case H1:
-    ierr = getValueH1(pts); CHKERRQ(ierr);
+    ierr = getValueH1(pts); CHKERRG(ierr);
     break;
     case HDIV:
-    ierr = getValueHdiv(pts); CHKERRQ(ierr);
+    ierr = getValueHdiv(pts); CHKERRG(ierr);
     break;
     case HCURL:
-    ierr = getValueHCurl(pts); CHKERRQ(ierr);
+    ierr = getValueHCurl(pts); CHKERRG(ierr);
     break;
     case L2:
-    ierr = getValueL2(pts); CHKERRQ(ierr);
+    ierr = getValueL2(pts); CHKERRG(ierr);
     break;
     default:
     SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"Not yet implemented");
@@ -251,7 +251,7 @@ MoFEMErrorCode FlatPrismPolynomialBase::getValueH1(MatrixDouble &pts) {
       &H1edgeN[0],
       &diffH1edgeN[0],
       nb_gauss_pts,base_polynomials
-    ); CHKERRQ(ierr);
+    ); CHKERRG(ierr);
     //shape functions on face 4
     ierr = H1_EdgeShapeFunctions_MBTRI(
       &sense[6],
@@ -261,7 +261,7 @@ MoFEMErrorCode FlatPrismPolynomialBase::getValueH1(MatrixDouble &pts) {
       &H1edgeN[6],
       &diffH1edgeN[6],
       nb_gauss_pts,base_polynomials
-    ); CHKERRQ(ierr);
+    ); CHKERRG(ierr);
   }
 
   //face
@@ -281,7 +281,7 @@ MoFEMErrorCode FlatPrismPolynomialBase::getValueH1(MatrixDouble &pts) {
         &*data.dataOnEntities[MBTRI][ff].getN(base).data().begin(),
         &*data.dataOnEntities[MBTRI][ff].getDiffN(base).data().begin(),
         nb_gauss_pts,base_polynomials
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
     }
   }
 

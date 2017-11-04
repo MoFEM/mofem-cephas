@@ -107,7 +107,7 @@ struct UnknownInterface {
     }
     UnknownInterface *ptr;
     ierr = getInterface<UnknownInterface, false>(uuid, ptr);
-    CHKERRQ(ierr);
+    CHKERRG(ierr);
     iface = static_cast<IFACE *>(ptr);
     MoFEMFunctionReturnHot(0);
   }

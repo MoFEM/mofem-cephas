@@ -46,9 +46,9 @@ namespace MoFEM {
     const FieldEntity_multiIndex *field_ents;
     const DofEntity_multiIndex *dofs_ptr;
     MoFEMFunctionBeginHot;
-    ierr = m_field.get_fields(&fields_ptr); CHKERRQ(ierr);
-    ierr = m_field.get_field_ents(&field_ents); CHKERRQ(ierr);
-    ierr = m_field.get_dofs(&dofs_ptr); CHKERRQ(ierr);
+    ierr = m_field.get_fields(&fields_ptr); CHKERRG(ierr);
+    ierr = m_field.get_field_ents(&field_ents); CHKERRG(ierr);
+    ierr = m_field.get_dofs(&dofs_ptr); CHKERRG(ierr);
     Field_multiIndex::index<FieldName_mi_tag>::type::iterator x_fit = fields_ptr->get<FieldName_mi_tag>().find(field_name_x);
     if(x_fit==fields_ptr->get<FieldName_mi_tag>().end()) {
       SETERRQ1(PETSC_COMM_SELF,1,"x field < %s > not found, (top tip: check spelling)",field_name_x.c_str());
@@ -98,7 +98,7 @@ namespace MoFEM {
     const MoFEM::Interface &m_field = cOre;
     const DofEntity_multiIndex *dofs_ptr;
     MoFEMFunctionBeginHot;
-    ierr = m_field.get_dofs(&dofs_ptr); CHKERRQ(ierr);
+    ierr = m_field.get_dofs(&dofs_ptr); CHKERRG(ierr);
     DofEntity_multiIndex::index<Composite_Name_And_Type_mi_tag >::type::iterator dit,hi_dit;
     dit = dofs_ptr->get<Composite_Name_And_Type_mi_tag >().lower_bound(boost::make_tuple(field_name,type));
     hi_dit = dofs_ptr->get<Composite_Name_And_Type_mi_tag >().upper_bound(boost::make_tuple(field_name,type));
@@ -112,7 +112,7 @@ namespace MoFEM {
     const MoFEM::Interface &m_field = cOre;
     const DofEntity_multiIndex *dofs_ptr;
     MoFEMFunctionBeginHot;
-    ierr = m_field.get_dofs(&dofs_ptr); CHKERRQ(ierr);
+    ierr = m_field.get_dofs(&dofs_ptr); CHKERRG(ierr);
     DofEntity_multiIndex::index<Composite_Name_And_Type_mi_tag >::type::iterator dit,hi_dit;
     dit = dofs_ptr->get<Composite_Name_And_Type_mi_tag >().lower_bound(boost::make_tuple(field_name,type));
     hi_dit = dofs_ptr->get<Composite_Name_And_Type_mi_tag >().upper_bound(boost::make_tuple(field_name,type));
@@ -138,7 +138,7 @@ namespace MoFEM {
     const MoFEM::Interface &m_field = cOre;
     const DofEntity_multiIndex *dofs_ptr;
     MoFEMFunctionBeginHot;
-    ierr = m_field.get_dofs(&dofs_ptr); CHKERRQ(ierr);
+    ierr = m_field.get_dofs(&dofs_ptr); CHKERRG(ierr);
     DofEntityByFieldName::iterator dit,hi_dit;
     dit = dofs_ptr->get<FieldName_mi_tag>().lower_bound(field_name);
     hi_dit = dofs_ptr->get<FieldName_mi_tag>().upper_bound(field_name);

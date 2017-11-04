@@ -131,7 +131,7 @@ MoFEMErrorCode BasicMethod::copyBasicMethod(const BasicMethod &basic) {
 MoFEMErrorCode BasicMethod::preProcess() {
   MoFEMFunctionBeginHot;
   if(preProcessHook) {
-    ierr = preProcessHook(); CHKERRQ(ierr);
+    ierr = preProcessHook(); CHKERRG(ierr);
   } else {
     SETERRQ(
       PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,
@@ -143,7 +143,7 @@ MoFEMErrorCode BasicMethod::preProcess() {
 MoFEMErrorCode BasicMethod::postProcess() {
   MoFEMFunctionBeginHot;
   if(postProcessHook) {
-    ierr = postProcessHook(); CHKERRQ(ierr);
+    ierr = postProcessHook(); CHKERRG(ierr);
   } else {
     SETERRQ(
       PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,
@@ -155,7 +155,7 @@ MoFEMErrorCode BasicMethod::postProcess() {
 MoFEMErrorCode BasicMethod::operator()() {
   MoFEMFunctionBeginHot;
   if(operatorHook) {
-    ierr = operatorHook(); CHKERRQ(ierr);
+    ierr = operatorHook(); CHKERRG(ierr);
   } else {
     SETERRQ(
       PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,

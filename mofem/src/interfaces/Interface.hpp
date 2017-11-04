@@ -669,8 +669,8 @@ namespace MoFEM {
     * \param name finite element name
     *
     * Example \code
-    ierr = mField.add_finite_element("ELASTIC"); CHKERRQ(ierr);
-    ierr = mField.add_finite_element("PLASTIC"); CHKERRQ(ierr);
+    ierr = mField.add_finite_element("ELASTIC"); CHKERRG(ierr);
+    ierr = mField.add_finite_element("PLASTIC"); CHKERRG(ierr);
     \endcode
     */
     virtual MoFEMErrorCode add_finite_element(const std::string &fe_name,
@@ -964,15 +964,15 @@ namespace MoFEM {
     * Example: \code
     ierr =
     mField.modify_problem_add_finite_element("BEAM_BENDING_ON_MESH_REF1","ELASTIC");
-    CHKERRQ(ierr); ierr =
+    CHKERRG(ierr); ierr =
     mField.modify_problem_add_finite_element("BEAM_BENDING_ON_MESH_REF2","ELASTIC");
-    CHKERRQ(ierr);
+    CHKERRG(ierr);
 
     ierr =
     mField.modify_problem_ref_level_add_bit("BEAM_BENDING_ON_MESH_REF1",bit_level1);
-    CHKERRQ(ierr); ierr =
+    CHKERRG(ierr); ierr =
     mField.modify_problem_ref_level_add_bit("BEAM_BENDING_ON_MESH_REF2",bit_level2);
-    CHKERRQ(ierr);
+    CHKERRG(ierr);
     *\endcode
     * Two Problems exist and solved independently, both are elastic, but solved
     using different mesh refinement <br>
@@ -992,15 +992,15 @@ namespace MoFEM {
     * Example: \code
     ierr =
     mField.modify_problem_add_finite_element("BEAM_BENDING_ON_MESH_REF1","ELASTIC");
-    CHKERRQ(ierr); ierr =
+    CHKERRG(ierr); ierr =
     mField.modify_problem_add_finite_element("BEAM_BENDING_ON_MESH_REF2","ELASTIC");
-    CHKERRQ(ierr);
+    CHKERRG(ierr);
 
     ierr =
     mField.modify_problem_ref_level_set_bit("BEAM_BENDING_ON_MESH_REF1",bit_level1);
-    CHKERRQ(ierr); ierr =
+    CHKERRG(ierr); ierr =
     mField.modify_problem_ref_level_set_bit("BEAM_BENDING_ON_MESH_REF2",bit_level2);
-    CHKERRQ(ierr);
+    CHKERRG(ierr);
     *\endcode
     * Two Problems exist and solved independently, both are elastic, but solved
     using different mesh refinement <br>
@@ -1278,7 +1278,7 @@ namespace MoFEM {
 
     \code
     ierr = m_field.resolve_shared_ents(problem_ptr,"SHELL_ELEMENT");
-    CHKERRQ(ierr); Tag th; rval =
+    CHKERRG(ierr); Tag th; rval =
     mField.get_moab().tag_get_handle("ADAPT_ORDER",th); CHKERRQ_MOAB(rval);
     ParallelComm* pcomm =
     ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);

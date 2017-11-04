@@ -364,7 +364,7 @@ struct ForcesAndSourcesCore: public FEMethod {
   virtual MoFEMErrorCode setGaussPts(int order_row,int order_col,int order_data) {
 
     MoFEMFunctionBeginHot;
-    ierr = setGaussPts(order_data); CHKERRQ(ierr);
+    ierr = setGaussPts(order_data); CHKERRG(ierr);
     MoFEMFunctionReturnHot(0);
   }
 
@@ -580,21 +580,21 @@ struct ForcesAndSourcesCore: public FEMethod {
   virtual MoFEMErrorCode preProcess() {
     MoFEMFunctionBeginHot;
     if(preProcessHook) {
-      ierr = preProcessHook(); CHKERRQ(ierr);
+      ierr = preProcessHook(); CHKERRG(ierr);
     }
     MoFEMFunctionReturnHot(0);
   }
   virtual MoFEMErrorCode operator()() {
     MoFEMFunctionBeginHot;
     if(operatorHook) {
-      ierr = operatorHook(); CHKERRQ(ierr);
+      ierr = operatorHook(); CHKERRG(ierr);
     }
     MoFEMFunctionReturnHot(0);
   }
   virtual MoFEMErrorCode postProcess() {
     MoFEMFunctionBeginHot;
     if(postProcessHook) {
-      ierr = postProcessHook(); CHKERRQ(ierr);
+      ierr = postProcessHook(); CHKERRG(ierr);
     }
     MoFEMFunctionReturnHot(0);
   }

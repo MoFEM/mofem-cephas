@@ -53,7 +53,7 @@ MoFEMErrorCode PrismsFromSurfaceInterface::createPrisms(const Range &ents,Range 
       }
     }
     EntityHandle prism;
-    rval = m_field.get_moab().create_element(MBPRISM,prism_nodes,6,prism); CHKERRQ(rval);
+    rval = m_field.get_moab().create_element(MBPRISM,prism_nodes,6,prism); CHKERRG(rval);
     Range edges;
     rval = m_field.get_moab().get_adjacencies(&prism,1,1,true,edges,moab::Interface::UNION); CHKERRQ_MOAB(rval);
     Range faces;
@@ -101,7 +101,7 @@ MoFEMErrorCode PrismsFromSurfaceInterface::seedPrismsEntities(Range &prisms,cons
 
   Interface& m_field = cOre;
   const RefEntity_multiIndex *const_refined_entities_ptr;
-  ierr = m_field.get_ref_ents(&const_refined_entities_ptr); CHKERRQ(ierr);
+  ierr = m_field.get_ref_ents(&const_refined_entities_ptr); CHKERRG(ierr);
   MPI_Comm comm = m_field.get_comm();
   RefEntity_multiIndex *refined_entities_ptr;
   refined_entities_ptr = const_cast<RefEntity_multiIndex *>(const_refined_entities_ptr);
@@ -145,7 +145,7 @@ MoFEMErrorCode PrismsFromSurfaceInterface::createPrismsFromPrisms(const Range &p
     }
     tris.insert(face);
   }
-  ierr = createPrisms(tris,out_prisms,verb); CHKERRQ(ierr);
+  ierr = createPrisms(tris,out_prisms,verb); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 

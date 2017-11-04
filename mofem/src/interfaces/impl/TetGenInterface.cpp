@@ -512,7 +512,7 @@
     Range ents;
     ierr = outData(in, out, moab_tetgen_map, tetgen_moab_map, &ents, id_in_tags,
                    error_if_created);
-    CHKERRQ(ierr);
+    CHKERRG(ierr);
 
     // BARRIER_RANK_START(pcomm)
     // {
@@ -526,7 +526,7 @@
     // std::cerr << ents.size() << std::endl;
     ierr = m_field.getInterface<BitRefManager>()->setBitRefLevel(
         ents.subset_by_type(MBTET), bit);
-    CHKERRQ(ierr);
+    CHKERRG(ierr);
 
     // BARRIER_RANK_START(pcomm)
     // {
@@ -880,7 +880,7 @@
             }
             bool coplanar;
             ierr = checkPlanar_Trinagle(coords, &coplanar, eps);
-            CHKERRQ(ierr);
+            CHKERRG(ierr);
             if (coplanar) {
               coplanar_tris.insert(*tit);
               noplanar_to_anyother.erase(*tit);
@@ -931,7 +931,7 @@
     for (;;) {
       std::vector<Range> &vec = sorted.back();
       ierr = groupPlanar_Triangle(tris, vec, eps);
-      CHKERRQ(ierr);
+      CHKERRG(ierr);
       if (tris.empty()) {
         MoFEMFunctionReturnHot(0);
       } else {
@@ -1050,7 +1050,7 @@
                                                                   // mc
         double spin[9];
         ierr = Spin(spin, &coords[3 * 0]);
-        CHKERRQ(ierr);
+        CHKERRG(ierr);
         double l0 = cblas_dnrm2(3, &coords[3 * 0], 1);
         cblas_dgemv(CblasRowMajor, CblasNoTrans, 3, 3, 1. / l0, spin, 3,
                     &coords[3 * 2], 1, 0., &coords[3 * 1], 1);

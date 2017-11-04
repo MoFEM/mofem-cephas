@@ -571,7 +571,7 @@ struct OpGetDataAndGradient: public DataOperator {
         dataGradAtGaussPts.clear();
       }
 
-      ierr = calculateValAndGrad(side,type,data); CHKERRQ(ierr);
+      ierr = calculateValAndGrad(side,type,data); CHKERRG(ierr);
 
     } catch (std::exception& ex) {
       std::ostringstream ss;

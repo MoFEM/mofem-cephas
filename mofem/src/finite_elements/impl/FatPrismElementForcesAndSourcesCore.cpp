@@ -89,36 +89,36 @@ MoFEMErrorCode FatPrismElementForcesAndSourcesCore::operator()() {
     coords.resize(num_nodes*3,false);
     rval = mField.get_moab().get_coords(conn,num_nodes,&*coords.data().begin()); CHKERRQ_MOAB(rval);
     double diff_n[6];
-    ierr = ShapeDiffMBTRI(diff_n); CHKERRQ(ierr);
+    ierr = ShapeDiffMBTRI(diff_n); CHKERRG(ierr);
     normal.resize(6,false);
-    ierr = ShapeFaceNormalMBTRI(diff_n,&coords[0],&normal[0]); CHKERRQ(ierr);
-    ierr = ShapeFaceNormalMBTRI(diff_n,&coords[9],&normal[3]); CHKERRQ(ierr);
+    ierr = ShapeFaceNormalMBTRI(diff_n,&coords[0],&normal[0]); CHKERRG(ierr);
+    ierr = ShapeFaceNormalMBTRI(diff_n,&coords[9],&normal[3]); CHKERRG(ierr);
     aRea[0] = cblas_dnrm2(3,&normal[0],1)*0.5;
     aRea[1] = cblas_dnrm2(3,&normal[3],1)*0.5;
   }
 
   try {
 
-    ierr = getSpacesAndBaseOnEntities(dataH1); CHKERRQ(ierr);
-    ierr = getSpacesAndBaseOnEntities(dataH1TrianglesOnly); CHKERRQ(ierr);
-    ierr = getSpacesAndBaseOnEntities(dataH1TroughThickness); CHKERRQ(ierr);
+    ierr = getSpacesAndBaseOnEntities(dataH1); CHKERRG(ierr);
+    ierr = getSpacesAndBaseOnEntities(dataH1TrianglesOnly); CHKERRG(ierr);
+    ierr = getSpacesAndBaseOnEntities(dataH1TroughThickness); CHKERRG(ierr);
     //H1
     if((dataH1.spacesOnEntities[MBEDGE]).test(H1)) {
-      ierr = getEdgesSense(dataH1); CHKERRQ(ierr);
-      ierr = getTrisSense(dataH1); CHKERRQ(ierr);
-      ierr = getQuadSense(dataH1); CHKERRQ(ierr);
-      ierr = getEdgesDataOrder(dataH1,H1); CHKERRQ(ierr);
-      ierr = getTrisDataOrder(dataH1,H1); CHKERRQ(ierr);
-      ierr = getQuadDataOrder(dataH1,H1); CHKERRQ(ierr);
-      ierr = getPrismDataOrder(dataH1,H1); CHKERRQ(ierr);
+      ierr = getEdgesSense(dataH1); CHKERRG(ierr);
+      ierr = getTrisSense(dataH1); CHKERRG(ierr);
+      ierr = getQuadSense(dataH1); CHKERRG(ierr);
+      ierr = getEdgesDataOrder(dataH1,H1); CHKERRG(ierr);
+      ierr = getTrisDataOrder(dataH1,H1); CHKERRG(ierr);
+      ierr = getQuadDataOrder(dataH1,H1); CHKERRG(ierr);
+      ierr = getPrismDataOrder(dataH1,H1); CHKERRG(ierr);
       // Triangles only
-      ierr = getEdgesSense(dataH1TrianglesOnly); CHKERRQ(ierr);
-      ierr = getTrisSense(dataH1TrianglesOnly); CHKERRQ(ierr);
-      ierr = getEdgesDataOrder(dataH1TrianglesOnly,H1); CHKERRQ(ierr);
-      ierr = getTrisDataOrder(dataH1TrianglesOnly,H1); CHKERRQ(ierr);
+      ierr = getEdgesSense(dataH1TrianglesOnly); CHKERRG(ierr);
+      ierr = getTrisSense(dataH1TrianglesOnly); CHKERRG(ierr);
+      ierr = getEdgesDataOrder(dataH1TrianglesOnly,H1); CHKERRG(ierr);
+      ierr = getTrisDataOrder(dataH1TrianglesOnly,H1); CHKERRG(ierr);
       // Through thickness
-      ierr = getEdgesSense(dataH1TroughThickness); CHKERRQ(ierr);
-      ierr = getEdgesDataOrder(dataH1TroughThickness,H1); CHKERRQ(ierr);
+      ierr = getEdgesSense(dataH1TroughThickness); CHKERRG(ierr);
+      ierr = getEdgesDataOrder(dataH1TroughThickness,H1); CHKERRG(ierr);
     }
     //Hdiv
     if((dataH1.spacesOnEntities[MBTRI]).test(HDIV)) {
@@ -202,7 +202,7 @@ MoFEMErrorCode FatPrismElementForcesAndSourcesCore::operator()() {
         nb_gauss_pts_on_faces = 0;
       }
     } else {
-      ierr = setGaussPtsTrianglesOnly(order_triangles_only); CHKERRQ(ierr);
+      ierr = setGaussPtsTrianglesOnly(order_triangles_only); CHKERRG(ierr);
       nb_gauss_pts_on_faces = gaussPtsTrianglesOnly.size2();
       if(nb_gauss_pts_on_faces == 0) MoFEMFunctionReturnHot(0);
       dataH1TrianglesOnly.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nb_gauss_pts_on_faces,3,false);
@@ -212,7 +212,7 @@ MoFEMErrorCode FatPrismElementForcesAndSourcesCore::operator()() {
           &gaussPtsTrianglesOnly(0,0),
           &gaussPtsTrianglesOnly(1,0),
           nb_gauss_pts_on_faces
-        ); CHKERRQ(ierr);
+        ); CHKERRG(ierr);
       }
     }
   } catch (MoFEMException const &e) {
@@ -269,7 +269,7 @@ MoFEMErrorCode FatPrismElementForcesAndSourcesCore::operator()() {
         nb_gauss_pts_through_thickness = 0;
       }
     } else {
-      ierr = setGaussPtsThroughThickness(order_thickness); CHKERRQ(ierr);
+      ierr = setGaussPtsThroughThickness(order_thickness); CHKERRG(ierr);
       nb_gauss_pts_through_thickness = gaussPtsThroughThickness.size2();
     }
     if(nb_gauss_pts_through_thickness == 0) MoFEMFunctionReturnHot(0);
@@ -312,7 +312,7 @@ MoFEMErrorCode FatPrismElementForcesAndSourcesCore::operator()() {
     dataH1TrianglesOnly.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE).resize(1,6,false);
     ierr = ShapeDiffMBTRI(
       &*dataH1TrianglesOnly.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE).data().begin()
-    ); CHKERRQ(ierr);
+    ); CHKERRG(ierr);
 
     // Calculate "nobase" base functions on prism, this is cartesian product
     // of base functions on triangles with base functions through thickness
@@ -379,7 +379,7 @@ MoFEMErrorCode FatPrismElementForcesAndSourcesCore::operator()() {
                 NOBASE
               )
             )
-          ); CHKERRQ(ierr);
+          ); CHKERRG(ierr);
         }
         if(dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
           SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Not yet implemented");
@@ -414,14 +414,14 @@ MoFEMErrorCode FatPrismElementForcesAndSourcesCore::operator()() {
         nOrmals_at_GaussPtF4.resize(nb_gauss_pts_on_faces,3,false);
         tAngent1_at_GaussPtF4.resize(nb_gauss_pts_on_faces,3,false);
         tAngent2_at_GaussPtF4.resize(nb_gauss_pts_on_faces,3,false);
-        ierr = getEdgesDataOrderSpaceAndBase(dataH1TrianglesOnly,meshPositionsFieldName); CHKERRQ(ierr);
-        ierr = getTrisDataOrderSpaceAndBase(dataH1TrianglesOnly,meshPositionsFieldName); CHKERRQ(ierr);
-        ierr = getNodesFieldData(dataH1TrianglesOnly,meshPositionsFieldName); CHKERRQ(ierr);
-        ierr = getEdgesFieldData(dataH1TrianglesOnly,meshPositionsFieldName); CHKERRQ(ierr);
-        ierr = getTrisFieldData(dataH1TrianglesOnly,meshPositionsFieldName); CHKERRQ(ierr);
+        ierr = getEdgesDataOrderSpaceAndBase(dataH1TrianglesOnly,meshPositionsFieldName); CHKERRG(ierr);
+        ierr = getTrisDataOrderSpaceAndBase(dataH1TrianglesOnly,meshPositionsFieldName); CHKERRG(ierr);
+        ierr = getNodesFieldData(dataH1TrianglesOnly,meshPositionsFieldName); CHKERRG(ierr);
+        ierr = getEdgesFieldData(dataH1TrianglesOnly,meshPositionsFieldName); CHKERRG(ierr);
+        ierr = getTrisFieldData(dataH1TrianglesOnly,meshPositionsFieldName); CHKERRG(ierr);
         try {
-          ierr = opHOCoordsAndNormals.opRhs(dataH1TrianglesOnly); CHKERRQ(ierr);
-          ierr = opHOCoordsAndNormals.calculateNormals(); CHKERRQ(ierr);
+          ierr = opHOCoordsAndNormals.opRhs(dataH1TrianglesOnly); CHKERRG(ierr);
+          ierr = opHOCoordsAndNormals.calculateNormals(); CHKERRG(ierr);
         } catch (std::exception& ex) {
           std::ostringstream ss;
           ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
@@ -497,7 +497,7 @@ MoFEMErrorCode FatPrismElementForcesAndSourcesCore::operator()() {
           oit->doTris,
           false,
           false
-        ); CHKERRQ(ierr);
+        ); CHKERRG(ierr);
 
       } else {
 
@@ -557,52 +557,52 @@ MoFEMErrorCode FatPrismElementForcesAndSourcesCore::operator()() {
                 SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown space");
                 case H1:
                 if(!ss) {
-                  ierr = getRowNodesIndices(*op_data[ss],field_name); CHKERRQ(ierr);
+                  ierr = getRowNodesIndices(*op_data[ss],field_name); CHKERRG(ierr);
                 } else {
-                  ierr = getColNodesIndices(*op_data[ss],field_name); CHKERRQ(ierr);
+                  ierr = getColNodesIndices(*op_data[ss],field_name); CHKERRG(ierr);
                 }
-                ierr = getNodesFieldData(*op_data[ss],field_name); CHKERRQ(ierr);
+                ierr = getNodesFieldData(*op_data[ss],field_name); CHKERRG(ierr);
                 case HCURL:
                 if(!ss) {
-                  ierr = getEdgesRowIndices(*op_data[ss],field_name); CHKERRQ(ierr);
+                  ierr = getEdgesRowIndices(*op_data[ss],field_name); CHKERRG(ierr);
                 } else {
-                  ierr = getEdgesColIndices(*op_data[ss],field_name); CHKERRQ(ierr);
+                  ierr = getEdgesColIndices(*op_data[ss],field_name); CHKERRG(ierr);
                 }
-                ierr = getEdgesDataOrderSpaceAndBase(*op_data[ss],field_name); CHKERRQ(ierr);
-                ierr = getEdgesFieldData(*op_data[ss],field_name); CHKERRQ(ierr);
+                ierr = getEdgesDataOrderSpaceAndBase(*op_data[ss],field_name); CHKERRG(ierr);
+                ierr = getEdgesFieldData(*op_data[ss],field_name); CHKERRG(ierr);
                 case HDIV:
                 if(!ss) {
-                  ierr = getTrisRowIndices(*op_data[ss],field_name); CHKERRQ(ierr);
+                  ierr = getTrisRowIndices(*op_data[ss],field_name); CHKERRG(ierr);
                 } else {
-                  ierr = getTrisColIndices(*op_data[ss],field_name); CHKERRQ(ierr);
+                  ierr = getTrisColIndices(*op_data[ss],field_name); CHKERRG(ierr);
                 }
-                ierr = getTrisDataOrderSpaceAndBase(*op_data[ss],field_name); CHKERRQ(ierr);
-                ierr = getTrisFieldData(*op_data[ss],field_name); CHKERRQ(ierr);
+                ierr = getTrisDataOrderSpaceAndBase(*op_data[ss],field_name); CHKERRG(ierr);
+                ierr = getTrisFieldData(*op_data[ss],field_name); CHKERRG(ierr);
                 if(!ss) {
-                  ierr = getQuadRowIndices(*op_data[ss],field_name); CHKERRQ(ierr);
+                  ierr = getQuadRowIndices(*op_data[ss],field_name); CHKERRG(ierr);
                 } else {
-                  ierr = getQuadColIndices(*op_data[ss],field_name); CHKERRQ(ierr);
+                  ierr = getQuadColIndices(*op_data[ss],field_name); CHKERRG(ierr);
                 }
-                ierr = getQuadDataOrderSpaceAndBase(*op_data[ss],field_name); CHKERRQ(ierr);
-                ierr = getQuadFieldData(*op_data[ss],field_name); CHKERRQ(ierr);
+                ierr = getQuadDataOrderSpaceAndBase(*op_data[ss],field_name); CHKERRG(ierr);
+                ierr = getQuadFieldData(*op_data[ss],field_name); CHKERRG(ierr);
                 case L2:
                 if(!ss) {
-                  ierr = getPrismRowIndices(*op_data[ss],field_name); CHKERRQ(ierr);
+                  ierr = getPrismRowIndices(*op_data[ss],field_name); CHKERRG(ierr);
                 } else {
-                  ierr = getPrismColIndices(*op_data[ss],field_name); CHKERRQ(ierr);
+                  ierr = getPrismColIndices(*op_data[ss],field_name); CHKERRG(ierr);
                 }
-                ierr = getPrismDataOrderSpaceAndBase(*op_data[ss],field_name); CHKERRQ(ierr);
-                ierr = getPrismFieldData(*op_data[ss],field_name); CHKERRQ(ierr);
+                ierr = getPrismDataOrderSpaceAndBase(*op_data[ss],field_name); CHKERRG(ierr);
+                ierr = getPrismFieldData(*op_data[ss],field_name); CHKERRG(ierr);
                 break;
                 case NOFIELD:
                 if(!getNinTheLoop()) {
                   // NOFIELD data are the same for each element, can be retrieved only once
                   if(!ss) {
-                    ierr = getNoFieldRowIndices(*op_data[ss],field_name); CHKERRQ(ierr);
+                    ierr = getNoFieldRowIndices(*op_data[ss],field_name); CHKERRG(ierr);
                   } else {
-                    ierr = getNoFieldColIndices(*op_data[ss],field_name); CHKERRQ(ierr);
+                    ierr = getNoFieldColIndices(*op_data[ss],field_name); CHKERRG(ierr);
                   }
-                  ierr = getNoFieldFieldData(*op_data[ss],field_name); CHKERRQ(ierr);
+                  ierr = getNoFieldFieldData(*op_data[ss],field_name); CHKERRG(ierr);
                 }
                 break;
                 case LASTSPACE:
@@ -625,7 +625,7 @@ MoFEMErrorCode FatPrismElementForcesAndSourcesCore::operator()() {
               oit->doTris,
               false,
               oit->doPrisms
-            ); CHKERRQ(ierr);
+            ); CHKERRG(ierr);
           } catch (std::exception& ex) {
             std::ostringstream ss;
             ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
@@ -644,7 +644,7 @@ MoFEMErrorCode FatPrismElementForcesAndSourcesCore::operator()() {
               oit->doTris,
               false,
               oit->doPrisms
-            ); CHKERRQ(ierr);
+            ); CHKERRG(ierr);
           } catch (std::exception& ex) {
             std::ostringstream ss;
             ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
@@ -654,7 +654,7 @@ MoFEMErrorCode FatPrismElementForcesAndSourcesCore::operator()() {
 
         if(oit->getOpType()&UserDataOperator::OPROWCOL) {
           try {
-            ierr = oit->opLhs(*op_data[0],*op_data[1],oit->sYmm); CHKERRQ(ierr);
+            ierr = oit->opLhs(*op_data[0],*op_data[1],oit->sYmm); CHKERRG(ierr);
           } catch (std::exception& ex) {
             std::ostringstream ss;
             ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
@@ -719,8 +719,8 @@ MoFEMErrorCode OpCalculateInvJacForFatPrism::doWork(
         }
 
         double det;
-        ierr = determinantTensor3by3(t_jac,det); CHKERRQ(ierr);
-        ierr = invertTensor3by3(t_jac,det,t_inv_jac); CHKERRQ(ierr);
+        ierr = determinantTensor3by3(t_jac,det); CHKERRG(ierr);
+        ierr = invertTensor3by3(t_jac,det,t_inv_jac); CHKERRG(ierr);
         ++t_inv_jac;
 
         vol += 0.5*det*getGaussPts()(3,gg);

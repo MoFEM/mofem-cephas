@@ -80,15 +80,15 @@ namespace MoFEM {
   MoFEMErrorCode ProblemsManager::getOptions() {
     MoFEM::Interface &m_field = cOre;
     MoFEMFunctionBeginHot;
-    ierr = PetscOptionsBegin(m_field.get_comm(),"","Problem manager","none"); CHKERRQ(ierr);
+    ierr = PetscOptionsBegin(m_field.get_comm(),"","Problem manager","none"); CHKERRG(ierr);
     {
       ierr = PetscOptionsBool(
         "-problem_build_from_fields",
         "Add DOFs to problem directly from fields not through DOFs on elements","",
         buildProblemFromFields,&buildProblemFromFields,NULL
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
     }
-    ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+    ierr = PetscOptionsEnd(); CHKERRG(ierr);
     MoFEMFunctionReturnHot(0);
   }
 
@@ -104,13 +104,13 @@ namespace MoFEM {
     int rstart,rend,nb_elems;
     {
       PetscLayout layout;
-      ierr = PetscLayoutCreate(m_field.get_comm(),&layout); CHKERRQ(ierr);
-      ierr = PetscLayoutSetBlockSize(layout, 1); CHKERRQ(ierr);
-      ierr = PetscLayoutSetSize(layout,ents.size()); CHKERRQ(ierr);
-      ierr = PetscLayoutSetUp(layout); CHKERRQ(ierr);
-      ierr = PetscLayoutGetSize(layout,&nb_elems); CHKERRQ(ierr);
-      ierr = PetscLayoutGetRange(layout,&rstart,&rend); CHKERRQ(ierr);
-      ierr = PetscLayoutDestroy(&layout); CHKERRQ(ierr);
+      ierr = PetscLayoutCreate(m_field.get_comm(),&layout); CHKERRG(ierr);
+      ierr = PetscLayoutSetBlockSize(layout, 1); CHKERRG(ierr);
+      ierr = PetscLayoutSetSize(layout,ents.size()); CHKERRG(ierr);
+      ierr = PetscLayoutSetUp(layout); CHKERRG(ierr);
+      ierr = PetscLayoutGetSize(layout,&nb_elems); CHKERRG(ierr);
+      ierr = PetscLayoutGetRange(layout,&rstart,&rend); CHKERRG(ierr);
+      ierr = PetscLayoutDestroy(&layout); CHKERRG(ierr);
       if (verb > 0) {
         PetscSynchronizedPrintf(
           m_field.get_comm(),
@@ -163,8 +163,8 @@ namespace MoFEM {
         }
         i[jj] = j.size();
       }
-      ierr = PetscMalloc(i.size()*sizeof(int),&_i); CHKERRQ(ierr);
-      ierr = PetscMalloc(j.size()*sizeof(int),&_j); CHKERRQ(ierr);
+      ierr = PetscMalloc(i.size()*sizeof(int),&_i); CHKERRG(ierr);
+      ierr = PetscMalloc(j.size()*sizeof(int),&_j); CHKERRG(ierr);
       copy(i.begin(),i.end(),_i);
       copy(j.begin(),j.end(),_j);
     }
@@ -172,7 +172,7 @@ namespace MoFEM {
     // get veighths
     int* vertex_weights = NULL;
     if(th_vertex_weights!=NULL) {
-      ierr = PetscMalloc(weigth_ents.size()*sizeof(int),&vertex_weights); CHKERRQ(ierr);
+      ierr = PetscMalloc(weigth_ents.size()*sizeof(int),&vertex_weights); CHKERRG(ierr);
       rval = m_field.get_moab().tag_get_data(
         *th_vertex_weights,weigth_ents,vertex_weights
       ); CHKERRQ_MOAB(rval);
@@ -183,8 +183,8 @@ namespace MoFEM {
       // Adjacency matrix used to partition problems, f.e. METIS
       ierr = MatCreateMPIAdj(
         m_field.get_comm(),rend-rstart,nb_elems,_i,_j,PETSC_NULL,&Adj
-      ); CHKERRQ(ierr);
-      ierr = MatSetOption(Adj,MAT_STRUCTURALLY_SYMMETRIC,PETSC_TRUE); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
+      ierr = MatSetOption(Adj,MAT_STRUCTURALLY_SYMMETRIC,PETSC_TRUE); CHKERRG(ierr);
 
       // if(1) {
       //   Mat A;
@@ -198,34 +198,34 @@ namespace MoFEM {
       // run pets to do partitioning
       MatPartitioning part;
       IS is;
-      ierr = MatPartitioningCreate(m_field.get_comm(),&part); CHKERRQ(ierr);
+      ierr = MatPartitioningCreate(m_field.get_comm(),&part); CHKERRG(ierr);
 
 
-      ierr = MatPartitioningSetAdjacency(part,Adj); CHKERRQ(ierr);
-      ierr = MatPartitioningSetFromOptions(part); CHKERRQ(ierr);
-      ierr = MatPartitioningSetNParts(part,n_parts); CHKERRQ(ierr);
+      ierr = MatPartitioningSetAdjacency(part,Adj); CHKERRG(ierr);
+      ierr = MatPartitioningSetFromOptions(part); CHKERRG(ierr);
+      ierr = MatPartitioningSetNParts(part,n_parts); CHKERRG(ierr);
       if(th_vertex_weights!=NULL) {
-        ierr = MatPartitioningSetVertexWeights(part,vertex_weights); CHKERRQ(ierr);
+        ierr = MatPartitioningSetVertexWeights(part,vertex_weights); CHKERRG(ierr);
       }
       PetscBool same;
       PetscObjectTypeCompare((PetscObject)part,MATPARTITIONINGPARMETIS,&same);
       if(same) {
         #ifdef PARMETIS
-        ierr = MatPartitioningApply_Parmetis_MoFEM(part,&is); CHKERRQ(ierr);
+        ierr = MatPartitioningApply_Parmetis_MoFEM(part,&is); CHKERRG(ierr);
         #endif
       } else {
-        ierr = MatPartitioningApply(part,&is); CHKERRQ(ierr);
+        ierr = MatPartitioningApply(part,&is); CHKERRG(ierr);
       }
 
       //gather
       IS is_gather,is_num,is_gather_num;
-      ierr = ISAllGather(is,&is_gather); CHKERRQ(ierr);
-      ierr = ISPartitioningToNumbering(is,&is_num); CHKERRQ(ierr);
-      ierr = ISAllGather(is_num,&is_gather_num); CHKERRQ(ierr);
+      ierr = ISAllGather(is,&is_gather); CHKERRG(ierr);
+      ierr = ISPartitioningToNumbering(is,&is_num); CHKERRG(ierr);
+      ierr = ISAllGather(is_num,&is_gather_num); CHKERRG(ierr);
 
       const int *part_number,*gids;
-      ierr = ISGetIndices(is_gather,&part_number);  CHKERRQ(ierr);
-      ierr = ISGetIndices(is_gather_num,&gids);  CHKERRQ(ierr);
+      ierr = ISGetIndices(is_gather,&part_number);  CHKERRG(ierr);
+      ierr = ISGetIndices(is_gather_num,&gids);  CHKERRG(ierr);
 
       // set partition tag and gid tag to entities
       ParallelComm* pcomm = ParallelComm::get_pcomm(&m_field.get_moab(),MYPCOMM_INDEX);
@@ -349,14 +349,14 @@ namespace MoFEM {
 
       }
 
-      ierr = ISRestoreIndices(is_gather,&part_number);  CHKERRQ(ierr);
-      ierr = ISRestoreIndices(is_gather_num,&gids);  CHKERRQ(ierr);
-      ierr = ISDestroy(&is_num); CHKERRQ(ierr);
-      ierr = ISDestroy(&is_gather_num); CHKERRQ(ierr);
-      ierr = ISDestroy(&is_gather); CHKERRQ(ierr);
-      ierr = ISDestroy(&is); CHKERRQ(ierr);
-      ierr = MatPartitioningDestroy(&part); CHKERRQ(ierr);
-      ierr = MatDestroy(&Adj); CHKERRQ(ierr);
+      ierr = ISRestoreIndices(is_gather,&part_number);  CHKERRG(ierr);
+      ierr = ISRestoreIndices(is_gather_num,&gids);  CHKERRG(ierr);
+      ierr = ISDestroy(&is_num); CHKERRG(ierr);
+      ierr = ISDestroy(&is_gather_num); CHKERRG(ierr);
+      ierr = ISDestroy(&is_gather); CHKERRG(ierr);
+      ierr = ISDestroy(&is); CHKERRG(ierr);
+      ierr = MatPartitioningDestroy(&part); CHKERRG(ierr);
+      ierr = MatDestroy(&Adj); CHKERRG(ierr);
     }
 
     cOre.getBuildMoFEM() |= Core::PARTITION_MESH;
@@ -372,8 +372,8 @@ namespace MoFEM {
     if(!(cOre.getBuildMoFEM()&(1<<1))) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"FEs not build");
     if(!(cOre.getBuildMoFEM()&(1<<2))) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"adjacencies not build");
     const Problem *problem_ptr;
-    ierr = m_field.get_problem(name,&problem_ptr); CHKERRQ(ierr);
-    ierr = buildProblem(const_cast<Problem*>(problem_ptr),square_matrix,verb); CHKERRQ(ierr);
+    ierr = m_field.get_problem(name,&problem_ptr); CHKERRG(ierr);
+    ierr = buildProblem(const_cast<Problem*>(problem_ptr),square_matrix,verb); CHKERRG(ierr);
     cOre.getBuildMoFEM() |= 1<<3; // It is assumed that user who uses this function knows what he is doing
     MoFEMFunctionReturnHot(0);
   }
@@ -390,9 +390,9 @@ namespace MoFEM {
     if(problem_ptr->getBitRefLevel().none()) {
       SETERRQ1(PETSC_COMM_SELF,1,"problem <%s> refinement level not set",problem_ptr->getName().c_str());
     }
-    ierr = m_field.clear_problem(problem_ptr->getName()); CHKERRQ(ierr);
-    ierr = m_field.get_ents_finite_elements(&fe_ent_ptr); CHKERRQ(ierr);
-    ierr = m_field.get_dofs(&dofs_field_ptr); CHKERRQ(ierr);
+    ierr = m_field.clear_problem(problem_ptr->getName()); CHKERRG(ierr);
+    ierr = m_field.get_ents_finite_elements(&fe_ent_ptr); CHKERRG(ierr);
+    ierr = m_field.get_dofs(&dofs_field_ptr); CHKERRG(ierr);
 
     //zero finite elements
     problem_ptr->numeredFiniteElements.clear();
@@ -412,9 +412,9 @@ namespace MoFEM {
           if((fe_bit&prb_mask)!=fe_bit) continue;
           if((fe_bit&prb_bit)!=prb_bit) continue;
           //get dof uids for rows and columns
-          ierr = (*miit)->getRowDofView(*dofs_field_ptr,dofs_rows); CHKERRQ(ierr);
+          ierr = (*miit)->getRowDofView(*dofs_field_ptr,dofs_rows); CHKERRG(ierr);
           if(!square_matrix) {
-            ierr = (*miit)->getColDofView(*dofs_field_ptr,dofs_cols); CHKERRQ(ierr);
+            ierr = (*miit)->getColDofView(*dofs_field_ptr,dofs_cols); CHKERRG(ierr);
           }
         }
       }
@@ -561,10 +561,10 @@ namespace MoFEM {
     if(!((cOre.getBuildMoFEM())&Core::BUILD_ADJ)) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"adjacencies not build");
 
     const Problem *problem_ptr;
-    ierr = m_field.get_problem(name,&problem_ptr); CHKERRQ(ierr);
+    ierr = m_field.get_problem(name,&problem_ptr); CHKERRG(ierr);
     ierr = buildProblemOnDistributedMesh(
       const_cast<Problem*>(problem_ptr),square_matrix,verb
-    ); CHKERRQ(ierr);
+    ); CHKERRG(ierr);
 
     cOre.getBuildMoFEM() |= Core::BUILD_PROBLEM;
     cOre.getBuildMoFEM() |= Core::PARTITION_PROBLEM;
@@ -584,20 +584,20 @@ namespace MoFEM {
     PetscLogEventBegin(MOFEM_EVENT_ProblemsManager,0,0,0,0);
 
     // clear data structures
-    ierr = m_field.clear_problem(problem_ptr->getName()); CHKERRQ(ierr);
+    ierr = m_field.clear_problem(problem_ptr->getName()); CHKERRG(ierr);
 
-    ierr = getOptions(); CHKERRQ(ierr);
+    ierr = getOptions(); CHKERRG(ierr);
 
-    ierr = m_field.get_fields(&fields_ptr); CHKERRQ(ierr);
-    ierr = m_field.get_finite_elements(&fe_ptr); CHKERRQ(ierr);
-    ierr = m_field.get_ents_finite_elements(&fe_ent_ptr); CHKERRQ(ierr);
-    ierr = m_field.get_dofs(&dofs_field_ptr); CHKERRQ(ierr);
+    ierr = m_field.get_fields(&fields_ptr); CHKERRG(ierr);
+    ierr = m_field.get_finite_elements(&fe_ptr); CHKERRG(ierr);
+    ierr = m_field.get_ents_finite_elements(&fe_ent_ptr); CHKERRG(ierr);
+    ierr = m_field.get_dofs(&dofs_field_ptr); CHKERRG(ierr);
 
     if(problem_ptr->getBitRefLevel().none()) {
       SETERRQ1(PETSC_COMM_SELF,1,"problem <%s> refinement level not set",problem_ptr->getName().c_str());
     }
 
-    ierr = m_field.clear_problem(problem_ptr->getName()); CHKERRQ(ierr);
+    ierr = m_field.clear_problem(problem_ptr->getName()); CHKERRG(ierr);
 
     int loop_size = 2;
     if(square_matrix) {
@@ -632,9 +632,9 @@ namespace MoFEM {
           if((fe_bit&prb_bit)!=prb_bit) continue;
 
           //get dof uids for rows and columns
-          ierr = (*fe_miit)->getRowDofView(*dofs_field_ptr,dofs_rows); CHKERRQ(ierr);
+          ierr = (*fe_miit)->getRowDofView(*dofs_field_ptr,dofs_rows); CHKERRG(ierr);
           if(!square_matrix) {
-            ierr = (*fe_miit)->getColDofView(*dofs_field_ptr,dofs_cols); CHKERRQ(ierr);
+            ierr = (*fe_miit)->getColDofView(*dofs_field_ptr,dofs_cols); CHKERRG(ierr);
           }
         }
       }
@@ -723,13 +723,13 @@ namespace MoFEM {
     int start_ranges[2],end_ranges[2];
     for(int ss = 0;ss!=loop_size;ss++) {
       PetscLayout layout;
-      ierr = PetscLayoutCreate(m_field.get_comm(),&layout); CHKERRQ(ierr);
-      ierr = PetscLayoutSetBlockSize(layout,1); CHKERRQ(ierr);
-      ierr = PetscLayoutSetLocalSize(layout,nb_local_dofs[ss]); CHKERRQ(ierr);
-      ierr = PetscLayoutSetUp(layout); CHKERRQ(ierr);
-      ierr = PetscLayoutGetSize(layout,&*nbdof_ptr[ss]); CHKERRQ(ierr); // get global size
-      ierr = PetscLayoutGetRange(layout,&start_ranges[ss],&end_ranges[ss]); CHKERRQ(ierr); //get ranges
-      ierr = PetscLayoutDestroy(&layout); CHKERRQ(ierr);
+      ierr = PetscLayoutCreate(m_field.get_comm(),&layout); CHKERRG(ierr);
+      ierr = PetscLayoutSetBlockSize(layout,1); CHKERRG(ierr);
+      ierr = PetscLayoutSetLocalSize(layout,nb_local_dofs[ss]); CHKERRG(ierr);
+      ierr = PetscLayoutSetUp(layout); CHKERRG(ierr);
+      ierr = PetscLayoutGetSize(layout,&*nbdof_ptr[ss]); CHKERRG(ierr); // get global size
+      ierr = PetscLayoutGetRange(layout,&start_ranges[ss],&end_ranges[ss]); CHKERRG(ierr); //get ranges
+      ierr = PetscLayoutDestroy(&layout); CHKERRG(ierr);
     }
     if(square_matrix) {
       nbdof_ptr[1] = nbdof_ptr[0];
@@ -882,7 +882,7 @@ namespace MoFEM {
     }
 
     MPI_Status *status;
-    ierr = PetscMalloc1(m_field.get_comm_size(),&status);CHKERRQ(ierr);
+    ierr = PetscMalloc1(m_field.get_comm_size(),&status);CHKERRG(ierr);
 
     // Do rows
     int nrecvs_rows;	// number of messages received
@@ -893,12 +893,12 @@ namespace MoFEM {
     {
 
       // make sure it is a PETSc comm
-      ierr = PetscCommDuplicate(m_field.get_comm(),&m_field.get_comm(),NULL); CHKERRQ(ierr);
+      ierr = PetscCommDuplicate(m_field.get_comm(),&m_field.get_comm(),NULL); CHKERRG(ierr);
 
       //rows
 
       // Computes the number of messages a node expects to receive
-      ierr = PetscGatherNumberOfMessages(m_field.get_comm(),NULL,&lengths_rows[0],&nrecvs_rows); CHKERRQ(ierr);
+      ierr = PetscGatherNumberOfMessages(m_field.get_comm(),NULL,&lengths_rows[0],&nrecvs_rows); CHKERRG(ierr);
       //std::cerr << nrecvs_rows << std::endl;
 
       // Computes info about messages that a MPI-node will receive, including (from-id,length) pairs for each message.
@@ -906,14 +906,14 @@ namespace MoFEM {
         m_field.get_comm(),
         nsends_rows,nrecvs_rows,
         &lengths_rows[0],&onodes_rows,&olengths_rows
-      );  CHKERRQ(ierr);
+      );  CHKERRG(ierr);
 
       // Gets a unique new tag from a PETSc communicator. All processors that share
       // the communicator MUST call this routine EXACTLY the same number of times.
       // This tag should only be used with the current objects communicator; do NOT
       // use it with any other MPI communicator.
       int tag_row;
-      ierr = PetscCommGetNewTag(m_field.get_comm(),&tag_row); CHKERRQ(ierr);
+      ierr = PetscCommGetNewTag(m_field.get_comm(),&tag_row); CHKERRG(ierr);
 
       // Allocate a buffer sufficient to hold messages of size specified in
       // olengths. And post Irecvs on these buffers using node info from onodes
@@ -923,12 +923,12 @@ namespace MoFEM {
       // such that rbuf[i] = rbuf[i-1]+olengths[i-1].
       ierr = PetscPostIrecvInt(
         m_field.get_comm(),tag_row,nrecvs_rows,onodes_rows,olengths_rows,&rbuf_row,&r_waits_row
-      ); CHKERRQ(ierr);
-      ierr = PetscFree(onodes_rows); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
+      ierr = PetscFree(onodes_rows); CHKERRG(ierr);
 
 
       MPI_Request *s_waits_row; // status of sens messages
-      ierr = PetscMalloc1(nsends_rows,&s_waits_row);CHKERRQ(ierr);
+      ierr = PetscMalloc1(nsends_rows,&s_waits_row);CHKERRG(ierr);
 
       // Send messeges
       for(int proc=0,kk=0; proc<m_field.get_comm_size(); proc++) {
@@ -938,19 +938,19 @@ namespace MoFEM {
           lengths_rows[proc], 		// message length
           MPIU_INT,proc, 			// to proc
           tag_row,m_field.get_comm(),s_waits_row+kk
-        ); CHKERRQ(ierr);
+        ); CHKERRG(ierr);
         kk++;
       }
 
       if(nrecvs_rows) {
-        ierr = MPI_Waitall(nrecvs_rows,r_waits_row,status);CHKERRQ(ierr);
+        ierr = MPI_Waitall(nrecvs_rows,r_waits_row,status);CHKERRG(ierr);
       }
       if(nsends_rows) {
-        ierr = MPI_Waitall(nsends_rows,s_waits_row,status);CHKERRQ(ierr);
+        ierr = MPI_Waitall(nsends_rows,s_waits_row,status);CHKERRG(ierr);
       }
 
-      ierr = PetscFree(r_waits_row); CHKERRQ(ierr);
-      ierr = PetscFree(s_waits_row); CHKERRQ(ierr);
+      ierr = PetscFree(r_waits_row); CHKERRG(ierr);
+      ierr = PetscFree(s_waits_row); CHKERRG(ierr);
 
 
     }
@@ -962,27 +962,27 @@ namespace MoFEM {
     if(!square_matrix) {
 
       // Computes the number of messages a node expects to receive
-      ierr = PetscGatherNumberOfMessages(m_field.get_comm(),NULL,&lengths_cols[0],&nrecvs_cols); CHKERRQ(ierr);
+      ierr = PetscGatherNumberOfMessages(m_field.get_comm(),NULL,&lengths_cols[0],&nrecvs_cols); CHKERRG(ierr);
 
       // Computes info about messages that a MPI-node will receive, including (from-id,length) pairs for each message.
       int *onodes_cols;
       ierr = PetscGatherMessageLengths(m_field.get_comm(),
         nsends_cols,nrecvs_cols,
         &lengths_cols[0],&onodes_cols,&olengths_cols
-      );  CHKERRQ(ierr);
+      );  CHKERRG(ierr);
 
       // Gets a unique new tag from a PETSc communicator.
       int tag_col;
-      ierr = PetscCommGetNewTag(m_field.get_comm(),&tag_col); CHKERRQ(ierr);
+      ierr = PetscCommGetNewTag(m_field.get_comm(),&tag_col); CHKERRG(ierr);
 
       // Allocate a buffer sufficient to hold messages of size specified in
       // olengths. And post Irecvs on these buffers using node info from onodes
       MPI_Request *r_waits_col; // must bee freed by user
-      ierr = PetscPostIrecvInt(m_field.get_comm(),tag_col,nrecvs_cols,onodes_cols,olengths_cols,&rbuf_col,&r_waits_col); CHKERRQ(ierr);
-      ierr = PetscFree(onodes_cols); CHKERRQ(ierr);
+      ierr = PetscPostIrecvInt(m_field.get_comm(),tag_col,nrecvs_cols,onodes_cols,olengths_cols,&rbuf_col,&r_waits_col); CHKERRG(ierr);
+      ierr = PetscFree(onodes_cols); CHKERRG(ierr);
 
       MPI_Request *s_waits_col; // status of sens messages
-      ierr = PetscMalloc1(nsends_cols,&s_waits_col);CHKERRQ(ierr);
+      ierr = PetscMalloc1(nsends_cols,&s_waits_col);CHKERRG(ierr);
 
       // Send messeges
       for(int proc=0,kk=0; proc<m_field.get_comm_size(); proc++) {
@@ -991,23 +991,23 @@ namespace MoFEM {
           &(ids_data_packed_cols[proc])[0],	// buffer to send
           lengths_cols[proc], 			// message length
           MPIU_INT,proc, 				// to proc
-          tag_col,m_field.get_comm(),s_waits_col+kk); CHKERRQ(ierr);
+          tag_col,m_field.get_comm(),s_waits_col+kk); CHKERRG(ierr);
           kk++;
         }
 
       if(nrecvs_cols) {
-        ierr = MPI_Waitall(nrecvs_cols,r_waits_col,status);CHKERRQ(ierr);
+        ierr = MPI_Waitall(nrecvs_cols,r_waits_col,status);CHKERRG(ierr);
       }
       if(nsends_cols) {
-        ierr = MPI_Waitall(nsends_cols,s_waits_col,status);CHKERRQ(ierr);
+        ierr = MPI_Waitall(nsends_cols,s_waits_col,status);CHKERRG(ierr);
       }
 
-      ierr = PetscFree(r_waits_col); CHKERRQ(ierr);
-      ierr = PetscFree(s_waits_col); CHKERRQ(ierr);
+      ierr = PetscFree(r_waits_col); CHKERRG(ierr);
+      ierr = PetscFree(s_waits_col); CHKERRG(ierr);
 
     }
 
-    ierr = PetscFree(status); CHKERRQ(ierr);
+    ierr = PetscFree(status); CHKERRG(ierr);
 
     // set values received from other processors
     for(int ss = 0;ss<loop_size;ss++) {
@@ -1038,7 +1038,7 @@ namespace MoFEM {
             // have this dof
             // continue;
             const DofEntity_multiIndex *dofs_ptr;
-            ierr = m_field.get_dofs(&dofs_ptr); CHKERRQ(ierr);
+            ierr = m_field.get_dofs(&dofs_ptr); CHKERRG(ierr);
             DofEntity_multiIndex::iterator ddit = dofs_ptr->find(uid);
             if(ddit!=dofs_ptr->end()) {
               unsigned char pstatus = ddit->get()->getPStatus();
@@ -1089,13 +1089,13 @@ namespace MoFEM {
       (problem_ptr->nbLocDofsCol) = (problem_ptr->nbLocDofsRow);
     }
 
-    ierr = PetscFree(olengths_rows); CHKERRQ(ierr);
-    ierr = PetscFree(rbuf_row[0]); CHKERRQ(ierr);
-    ierr = PetscFree(rbuf_row); CHKERRQ(ierr);
+    ierr = PetscFree(olengths_rows); CHKERRG(ierr);
+    ierr = PetscFree(rbuf_row[0]); CHKERRG(ierr);
+    ierr = PetscFree(rbuf_row); CHKERRG(ierr);
     if(!square_matrix) {
-      ierr = PetscFree(olengths_cols); CHKERRQ(ierr);
-      ierr = PetscFree(rbuf_col[0]); CHKERRQ(ierr);
-      ierr = PetscFree(rbuf_col); CHKERRQ(ierr);
+      ierr = PetscFree(olengths_cols); CHKERRG(ierr);
+      ierr = PetscFree(rbuf_col[0]); CHKERRG(ierr);
+      ierr = PetscFree(rbuf_col); CHKERRG(ierr);
     }
 
     if(square_matrix) {
@@ -1116,8 +1116,8 @@ namespace MoFEM {
       }
     }
 
-    ierr = printPartitionedProblem(problem_ptr,verb); CHKERRQ(ierr);
-    ierr = debugPartitionedProblem(problem_ptr,verb); CHKERRQ(ierr);
+    ierr = printPartitionedProblem(problem_ptr,verb); CHKERRG(ierr);
+    ierr = debugPartitionedProblem(problem_ptr,verb); CHKERRG(ierr);
 
     PetscLogEventEnd(MOFEM_EVENT_ProblemsManager,0,0,0,0);
 
@@ -1137,8 +1137,8 @@ namespace MoFEM {
     const Problem_multiIndex *problems_ptr;
     MoFEMFunctionBeginHot;
 
-    ierr = m_field.clear_problem(out_name); CHKERRQ(ierr);
-    ierr = m_field.get_problems(&problems_ptr); CHKERRQ(ierr);
+    ierr = m_field.clear_problem(out_name); CHKERRG(ierr);
+    ierr = m_field.get_problems(&problems_ptr); CHKERRG(ierr);
 
     // get reference to all problems
     typedef Problem_multiIndex::index<Problem_mi_tag>::type ProblemByName;
@@ -1294,25 +1294,25 @@ namespace MoFEM {
         IS is;
         ierr = ISCreateGeneral(
           m_field.get_comm(),nb,&*main_indices.begin(),PETSC_USE_POINTER,&is
-        ); CHKERRQ(ierr);
+        ); CHKERRG(ierr);
         // create map form main problem global indices to out problem global indices
         AO ao;
-        ierr = AOCreateMappingIS(is,PETSC_NULL,&ao); CHKERRQ(ierr);
+        ierr = AOCreateMappingIS(is,PETSC_NULL,&ao); CHKERRG(ierr);
         if(ss == 0) {
           ierr = ISDuplicate(is,&(out_problem_it->getSubData()->rowIs));
-          // ierr = ISSort(out_problem_it->getSubData()->rowIs); CHKERRQ(ierr);
+          // ierr = ISSort(out_problem_it->getSubData()->rowIs); CHKERRG(ierr);
           out_problem_it->getSubData()->rowMap = ao;
-          ierr = PetscObjectReference((PetscObject)ao); CHKERRQ(ierr);
+          ierr = PetscObjectReference((PetscObject)ao); CHKERRG(ierr);
         } else {
           ierr = ISDuplicate(is,&(out_problem_it->getSubData()->colIs));
-          // ierr = ISSort(out_problem_it->getSubData()->colIs); CHKERRQ(ierr);
+          // ierr = ISSort(out_problem_it->getSubData()->colIs); CHKERRG(ierr);
           out_problem_it->getSubData()->colMap = ao;
-          ierr = PetscObjectReference((PetscObject)ao); CHKERRQ(ierr);
+          ierr = PetscObjectReference((PetscObject)ao); CHKERRG(ierr);
         }
-        ierr = AOApplicationToPetscIS(ao,is); CHKERRQ(ierr);
+        ierr = AOApplicationToPetscIS(ao,is); CHKERRG(ierr);
         // set global number of DOFs
-        ierr = ISGetSize(is,nb_dofs[ss]); CHKERRQ(ierr);
-        ierr = ISDestroy(&is); CHKERRQ(ierr);
+        ierr = ISGetSize(is,nb_dofs[ss]); CHKERRG(ierr);
+        ierr = ISDestroy(&is); CHKERRG(ierr);
         // set out problem global indices after applying map
         dit = out_problem_dofs[ss]->get<PetscLocalIdx_mi_tag>().lower_bound(0);
         for(std::vector<int>::iterator it = main_indices.begin();dit!=hi_dit;dit++,it++) {
@@ -1338,9 +1338,9 @@ namespace MoFEM {
           IS is;
           ierr = ISCreateGeneral(
             m_field.get_comm(),nb,&*main_indices_non_local.begin(),PETSC_USE_POINTER,&is
-          ); CHKERRQ(ierr);
-          ierr = AOApplicationToPetscIS(ao,is); CHKERRQ(ierr);
-          ierr = ISDestroy(&is); CHKERRQ(ierr);
+          ); CHKERRG(ierr);
+          ierr = AOApplicationToPetscIS(ao,is); CHKERRG(ierr);
+          ierr = ISDestroy(&is); CHKERRG(ierr);
           dit = out_problem_dofs[ss]->get<PetscLocalIdx_mi_tag>().lower_bound(-1);
           for(std::vector<int>::iterator it = main_indices_non_local.begin();dit!=hi_dit;dit++,it++) {
             bool success = out_problem_dofs[ss]->modify(
@@ -1354,7 +1354,7 @@ namespace MoFEM {
 	    }
           }
         }
-        ierr = AODestroy(&ao); CHKERRQ(ierr);
+        ierr = AODestroy(&ao); CHKERRG(ierr);
       }
     }
 
@@ -1364,12 +1364,12 @@ namespace MoFEM {
       out_problem_it->nbDofsCol = out_problem_it->nbDofsRow;
       out_problem_it->getSubData()->colIs = out_problem_it->getSubData()->rowIs;
       out_problem_it->getSubData()->colMap = out_problem_it->getSubData()->rowMap;
-      ierr = PetscObjectReference((PetscObject)out_problem_it->getSubData()->rowIs); CHKERRQ(ierr);
-      ierr = PetscObjectReference((PetscObject)out_problem_it->getSubData()->rowMap); CHKERRQ(ierr);
+      ierr = PetscObjectReference((PetscObject)out_problem_it->getSubData()->rowIs); CHKERRG(ierr);
+      ierr = PetscObjectReference((PetscObject)out_problem_it->getSubData()->rowMap); CHKERRG(ierr);
     }
 
-    ierr = printPartitionedProblem(&*out_problem_it,verb); CHKERRQ(ierr);
-    ierr = debugPartitionedProblem(&*out_problem_it,verb); CHKERRQ(ierr);
+    ierr = printPartitionedProblem(&*out_problem_it,verb); CHKERRG(ierr);
+    ierr = debugPartitionedProblem(&*out_problem_it,verb); CHKERRG(ierr);
 
     MoFEMFunctionReturnHot(0);
   }
@@ -1388,8 +1388,8 @@ namespace MoFEM {
     const Problem_multiIndex *problems_ptr;
     MoFEMFunctionBeginHot;
 
-    ierr = m_field.clear_problem(out_name); CHKERRQ(ierr);
-    ierr = m_field.get_problems(&problems_ptr); CHKERRQ(ierr);
+    ierr = m_field.clear_problem(out_name); CHKERRG(ierr);
+    ierr = m_field.get_problems(&problems_ptr); CHKERRG(ierr);
     // get reference to all problems
     typedef Problem_multiIndex::index<Problem_mi_tag>::type ProblemByName;
     ProblemByName &problems_by_name =
@@ -1505,7 +1505,7 @@ namespace MoFEM {
       for(unsigned int pp = 0;pp!=add_prb_ptr[ss]->size();pp++) {
         PetscInt *dofs_out_idx_ptr;
         int nb_local_dofs = (*add_prb_ptr[ss])[pp]->getNbLocalDofsRow();
-        ierr = PetscMalloc(nb_local_dofs*sizeof(int),&dofs_out_idx_ptr); CHKERRQ(ierr);
+        ierr = PetscMalloc(nb_local_dofs*sizeof(int),&dofs_out_idx_ptr); CHKERRG(ierr);
         if(ss == 0) {
           dit = (*add_prb_ptr[ss])[pp]->numeredDofsRows->get<PetscGlobalIdx_mi_tag>().begin();
           hi_dit = (*add_prb_ptr[ss])[pp]->numeredDofsRows->get<PetscGlobalIdx_mi_tag>().end();
@@ -1544,7 +1544,7 @@ namespace MoFEM {
         IS is;
         ierr = ISCreateGeneral(
           m_field.get_comm(),is_nb,dofs_out_idx_ptr,PETSC_OWN_POINTER,&is
-        ); CHKERRQ(ierr);
+        ); CHKERRG(ierr);
         // cerr << "Push " << ss << " " << pp << endl;
         (*add_prb_is[ss]).push_back(is);
         if(ss==0) {
@@ -1558,7 +1558,7 @@ namespace MoFEM {
           (*add_prb_ptr[1]).push_back((*add_prb_ptr[0])[pp]);
           // cerr << "Push square " << ss << " " << pp << endl;
           (*add_prb_is[1]).push_back(is);
-          ierr = PetscObjectReference((PetscObject)is); CHKERRQ(ierr);
+          ierr = PetscObjectReference((PetscObject)is); CHKERRG(ierr);
         }
       }
     }
@@ -1636,8 +1636,8 @@ namespace MoFEM {
       IS is;
       ierr = ISCreateGeneral(
         m_field.get_comm(),idx.size(),&*idx.begin(),PETSC_USE_POINTER,&is
-      ); CHKERRQ(ierr);
-      ierr = ISGetSize(is,nb_dofs[ss]); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
+      ierr = ISGetSize(is,nb_dofs[ss]); CHKERRG(ierr);
       if(square_matrix) {
         *nb_dofs[1] = *nb_dofs[0];
       }
@@ -1646,9 +1646,9 @@ namespace MoFEM {
       //   PetscSynchronizedFlush(m_field.get_comm(),PETSC_STDOUT);
       // }
       AO ao;
-      ierr = AOCreateMappingIS(is,PETSC_NULL,&ao); CHKERRQ(ierr);
+      ierr = AOCreateMappingIS(is,PETSC_NULL,&ao); CHKERRG(ierr);
       for(unsigned int pp = 0;pp!=(*add_prb_is[ss]).size();pp++) {
-        ierr = AOApplicationToPetscIS(ao,(*add_prb_is[ss])[pp]); CHKERRQ(ierr);
+        ierr = AOApplicationToPetscIS(ao,(*add_prb_is[ss])[pp]); CHKERRG(ierr);
       }
 
       // Set DOFs numeration
@@ -1666,8 +1666,8 @@ namespace MoFEM {
         IS is_new;
         ierr = ISCreateGeneral(
           m_field.get_comm(),idx_new.size(),&*idx_new.begin(),PETSC_USE_POINTER,&is_new
-        ); CHKERRQ(ierr);
-        ierr = AOApplicationToPetscIS(ao,is_new); CHKERRQ(ierr);
+        ); CHKERRG(ierr);
+        ierr = AOApplicationToPetscIS(ao,is_new); CHKERRG(ierr);
         // set global indices to multi-index
         std::vector<int>::iterator vit = idx_new.begin();
         for(
@@ -1684,14 +1684,14 @@ namespace MoFEM {
             );
           }
         }
-        ierr = ISDestroy(&is_new); CHKERRQ(ierr);
+        ierr = ISDestroy(&is_new); CHKERRG(ierr);
       }
-      ierr = ISDestroy(&is); CHKERRQ(ierr);
-      ierr = AODestroy(&ao); CHKERRQ(ierr);
+      ierr = ISDestroy(&is); CHKERRG(ierr);
+      ierr = AODestroy(&ao); CHKERRG(ierr);
     }
 
-    ierr = printPartitionedProblem(&*out_problem_it,verb); CHKERRQ(ierr);
-    ierr = debugPartitionedProblem(&*out_problem_it,verb); CHKERRQ(ierr);
+    ierr = printPartitionedProblem(&*out_problem_it,verb); CHKERRG(ierr);
+    ierr = debugPartitionedProblem(&*out_problem_it,verb); CHKERRG(ierr);
 
     // Inidcate that porble has been build
     cOre.getBuildMoFEM() |= Core::BUILD_PROBLEM;
@@ -1712,7 +1712,7 @@ namespace MoFEM {
     if(verb>0) {
       PetscPrintf(m_field.get_comm(),"Simple partition problem %s\n",name.c_str());
     }
-    ierr = m_field.get_problems(&problems_ptr); CHKERRQ(ierr);
+    ierr = m_field.get_problems(&problems_ptr); CHKERRG(ierr);
     // find p_miit
     typedef Problem_multiIndex::index<Problem_mi_tag>::type ProblemByName;
     ProblemByName &problems_set = const_cast<ProblemByName&>(problems_ptr->get<Problem_mi_tag>());
@@ -1744,21 +1744,21 @@ namespace MoFEM {
     const int *ranges_row;
 
     DofIdx nb_dofs_row = dofs_row_by_idx.size();
-    ierr = PetscLayoutCreate(m_field.get_comm(),&layout_row); CHKERRQ(ierr);
-    ierr = PetscLayoutSetBlockSize(layout_row,1); CHKERRQ(ierr);
-    ierr = PetscLayoutSetSize(layout_row,nb_dofs_row); CHKERRQ(ierr);
-    ierr = PetscLayoutSetUp(layout_row); CHKERRQ(ierr);
-    ierr = PetscLayoutGetRanges(layout_row,&ranges_row); CHKERRQ(ierr);
+    ierr = PetscLayoutCreate(m_field.get_comm(),&layout_row); CHKERRG(ierr);
+    ierr = PetscLayoutSetBlockSize(layout_row,1); CHKERRG(ierr);
+    ierr = PetscLayoutSetSize(layout_row,nb_dofs_row); CHKERRG(ierr);
+    ierr = PetscLayoutSetUp(layout_row); CHKERRG(ierr);
+    ierr = PetscLayoutGetRanges(layout_row,&ranges_row); CHKERRG(ierr);
     //get col range of local indices
     PetscLayout layout_col;
     const int *ranges_col;
     if(!square_matrix) {
       DofIdx nb_dofs_col = dofs_col_by_idx.size();
-      ierr = PetscLayoutCreate(m_field.get_comm(),&layout_col); CHKERRQ(ierr);
-      ierr = PetscLayoutSetBlockSize(layout_col,1); CHKERRQ(ierr);
-      ierr = PetscLayoutSetSize(layout_col,nb_dofs_col); CHKERRQ(ierr);
-      ierr = PetscLayoutSetUp(layout_col); CHKERRQ(ierr);
-      ierr = PetscLayoutGetRanges(layout_col,&ranges_col); CHKERRQ(ierr);
+      ierr = PetscLayoutCreate(m_field.get_comm(),&layout_col); CHKERRG(ierr);
+      ierr = PetscLayoutSetBlockSize(layout_col,1); CHKERRG(ierr);
+      ierr = PetscLayoutSetSize(layout_col,nb_dofs_col); CHKERRG(ierr);
+      ierr = PetscLayoutSetUp(layout_col); CHKERRG(ierr);
+      ierr = PetscLayoutGetRanges(layout_col,&ranges_col); CHKERRG(ierr);
     }
     for(unsigned int part = 0;part<(unsigned int)m_field.get_comm_size();part++) {
       miit_row = dofs_row_by_idx.lower_bound(ranges_row[part]);
@@ -1798,15 +1798,15 @@ namespace MoFEM {
         }
       }
     }
-    ierr = PetscLayoutDestroy(&layout_row); CHKERRQ(ierr);
+    ierr = PetscLayoutDestroy(&layout_row); CHKERRG(ierr);
     if(!square_matrix) {
-      ierr = PetscLayoutDestroy(&layout_col); CHKERRQ(ierr);
+      ierr = PetscLayoutDestroy(&layout_col); CHKERRG(ierr);
     }
     if(square_matrix) {
       nb_col_local_dofs = nb_row_local_dofs;
       nb_col_ghost_dofs = nb_row_ghost_dofs;
     }
-    ierr = printPartitionedProblem(&*p_miit,verb); CHKERRQ(ierr);
+    ierr = printPartitionedProblem(&*p_miit,verb); CHKERRG(ierr);
     cOre.getBuildMoFEM() |= Core::PARTITION_PROBLEM;
     MoFEMFunctionReturnHot(0);
   }
@@ -1830,7 +1830,7 @@ namespace MoFEM {
     typedef Problem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
 
     // Find problem pointer by name
-    ierr = m_field.get_problems(&problems_ptr); CHKERRQ(ierr);
+    ierr = m_field.get_problems(&problems_ptr); CHKERRG(ierr);
     ProblemsByName &problems_set = const_cast<ProblemsByName&>(problems_ptr->get<Problem_mi_tag>());
     ProblemsByName::iterator p_miit = problems_set.find(name);
     if(p_miit==problems_set.end()) {
@@ -1843,10 +1843,10 @@ namespace MoFEM {
     int nb_dofs_row = p_miit->getNbDofsRow();
 
     Mat Adj;
-    ierr = m_field.MatCreateMPIAdj_with_Idx_mi_tag(name,&Adj,verb); CHKERRQ(ierr);
+    ierr = m_field.MatCreateMPIAdj_with_Idx_mi_tag(name,&Adj,verb); CHKERRG(ierr);
 
     int m,n;
-    ierr = MatGetSize(Adj,&m,&n); CHKERRQ(ierr);
+    ierr = MatGetSize(Adj,&m,&n); CHKERRG(ierr);
     if(verb>2) {
       MatView(Adj,PETSC_VIEWER_STDOUT_WORLD);
     }
@@ -1854,32 +1854,32 @@ namespace MoFEM {
     //partitioning
     MatPartitioning part;
     IS is;
-    ierr = MatPartitioningCreate(m_field.get_comm(),&part); CHKERRQ(ierr);
+    ierr = MatPartitioningCreate(m_field.get_comm(),&part); CHKERRG(ierr);
     //#ifdef __APPLE__
-    // ierr = PetscBarrier((PetscObject)Adj); CHKERRQ(ierr);
+    // ierr = PetscBarrier((PetscObject)Adj); CHKERRG(ierr);
     //#endif
-    ierr = MatPartitioningSetAdjacency(part,Adj); CHKERRQ(ierr);
-    ierr = MatPartitioningSetFromOptions(part); CHKERRQ(ierr);
-    ierr = MatPartitioningSetNParts(part,m_field.get_comm_size()); CHKERRQ(ierr);
+    ierr = MatPartitioningSetAdjacency(part,Adj); CHKERRG(ierr);
+    ierr = MatPartitioningSetFromOptions(part); CHKERRG(ierr);
+    ierr = MatPartitioningSetNParts(part,m_field.get_comm_size()); CHKERRG(ierr);
     //#ifdef __APPLE__
-    // ierr = PetscBarrier((PetscObject)part); CHKERRQ(ierr);
+    // ierr = PetscBarrier((PetscObject)part); CHKERRG(ierr);
     //#endif
-    ierr = MatPartitioningApply(part,&is); CHKERRQ(ierr);
+    ierr = MatPartitioningApply(part,&is); CHKERRG(ierr);
     if(verb>2) {
       ISView(is,PETSC_VIEWER_STDOUT_WORLD);
     }
     // #ifdef __APPLE__
-    // ierr = PetscBarrier((PetscObject)is); CHKERRQ(ierr);
+    // ierr = PetscBarrier((PetscObject)is); CHKERRG(ierr);
     // #endif
 
     //gather
     IS is_gather,is_num,is_gather_num;
-    ierr = ISAllGather(is,&is_gather); CHKERRQ(ierr);
-    ierr = ISPartitioningToNumbering(is,&is_num); CHKERRQ(ierr);
-    ierr = ISAllGather(is_num,&is_gather_num); CHKERRQ(ierr);
+    ierr = ISAllGather(is,&is_gather); CHKERRG(ierr);
+    ierr = ISPartitioningToNumbering(is,&is_num); CHKERRG(ierr);
+    ierr = ISAllGather(is_num,&is_gather_num); CHKERRG(ierr);
     const int *part_number,*petsc_idx;
-    ierr = ISGetIndices(is_gather,&part_number);  CHKERRQ(ierr);
-    ierr = ISGetIndices(is_gather_num,&petsc_idx);  CHKERRQ(ierr);
+    ierr = ISGetIndices(is_gather,&part_number);  CHKERRG(ierr);
+    ierr = ISGetIndices(is_gather_num,&petsc_idx);  CHKERRG(ierr);
     int size_is_num,size_is_gather;
     ISGetSize(is_gather,&size_is_gather);
     if(size_is_gather != (int)nb_dofs_row) {
@@ -2016,15 +2016,15 @@ namespace MoFEM {
       PetscPrintf(m_field.get_comm()," <- done\n");
     }
 
-    ierr = ISRestoreIndices(is_gather,&part_number);  CHKERRQ(ierr);
-    ierr = ISRestoreIndices(is_gather_num,&petsc_idx);  CHKERRQ(ierr);
-    ierr = ISDestroy(&is_num); CHKERRQ(ierr);
-    ierr = ISDestroy(&is_gather_num); CHKERRQ(ierr);
-    ierr = ISDestroy(&is_gather); CHKERRQ(ierr);
-    ierr = ISDestroy(&is); CHKERRQ(ierr);
-    ierr = MatPartitioningDestroy(&part); CHKERRQ(ierr);
-    ierr = MatDestroy(&Adj); CHKERRQ(ierr);
-    ierr = printPartitionedProblem(&*p_miit,verb); CHKERRQ(ierr);
+    ierr = ISRestoreIndices(is_gather,&part_number);  CHKERRG(ierr);
+    ierr = ISRestoreIndices(is_gather_num,&petsc_idx);  CHKERRG(ierr);
+    ierr = ISDestroy(&is_num); CHKERRG(ierr);
+    ierr = ISDestroy(&is_gather_num); CHKERRG(ierr);
+    ierr = ISDestroy(&is_gather); CHKERRG(ierr);
+    ierr = ISDestroy(&is); CHKERRG(ierr);
+    ierr = MatPartitioningDestroy(&part); CHKERRG(ierr);
+    ierr = MatDestroy(&Adj); CHKERRG(ierr);
+    ierr = printPartitionedProblem(&*p_miit,verb); CHKERRG(ierr);
 
     cOre.getBuildMoFEM() |= 1<<4;
     MoFEMFunctionReturnHot(0);
@@ -2049,7 +2049,7 @@ namespace MoFEM {
     typedef Problem_multiIndex::index<Problem_mi_tag>::type ProblemByName;
 
     //find p_miit
-    ierr = m_field.get_problems(&problems_ptr); CHKERRQ(ierr);
+    ierr = m_field.get_problems(&problems_ptr); CHKERRG(ierr);
     ProblemByName &problems_by_name = const_cast<ProblemByName&>(problems_ptr->get<Problem_mi_tag>());
     ProblemByName::iterator p_miit = problems_by_name.find(name);
     if(p_miit==problems_by_name.end()) {
@@ -2147,7 +2147,7 @@ namespace MoFEM {
         }
 
         AO ao;
-        ierr = AOCreateMapping(m_field.get_comm(),is_local.size(),&is_local[0],NULL,&ao); CHKERRQ(ierr);
+        ierr = AOCreateMapping(m_field.get_comm(),is_local.size(),&is_local[0],NULL,&ao); CHKERRG(ierr);
 
         // apply local to global mapping
         is_local.resize(0);
@@ -2157,7 +2157,7 @@ namespace MoFEM {
         ) {
           is_local.push_back((*dit)->getPetscGlobalDofIdx());
         }
-        ierr = AOPetscToApplication(ao,is_local.size(),&is_local[0]); CHKERRQ(ierr);
+        ierr = AOPetscToApplication(ao,is_local.size(),&is_local[0]); CHKERRG(ierr);
         int idx2 = 0;
         for(
           NumeredDofEntity_multiIndex::iterator
@@ -2174,7 +2174,7 @@ namespace MoFEM {
           }
         }
 
-        ierr = AODestroy(&ao); CHKERRQ(ierr);
+        ierr = AODestroy(&ao); CHKERRG(ierr);
 
       } else {
 
@@ -2212,8 +2212,8 @@ namespace MoFEM {
       }
     }
 
-    ierr = printPartitionedProblem(&*p_miit,verb); CHKERRQ(ierr);
-    ierr = debugPartitionedProblem(&*p_miit,verb); CHKERRQ(ierr);
+    ierr = printPartitionedProblem(&*p_miit,verb); CHKERRG(ierr);
+    ierr = debugPartitionedProblem(&*p_miit,verb); CHKERRG(ierr);
 
     MoFEMFunctionReturnHot(0);
   }
@@ -2365,7 +2365,7 @@ namespace MoFEM {
     // Find pointer to problem of given name
     typedef Problem_multiIndex::index<Problem_mi_tag>::type ProblemByName;
     // Get pointer to problem data struture
-    ierr = m_field.get_problems(&problems_ptr); CHKERRQ(ierr);
+    ierr = m_field.get_problems(&problems_ptr); CHKERRG(ierr);
     ProblemByName &problems = const_cast<ProblemByName&>(problems_ptr->get<Problem_mi_tag>());
     ProblemByName::iterator p_miit = problems.find(name);
     if(p_miit == problems.end()) {
@@ -2391,7 +2391,7 @@ namespace MoFEM {
 
     // Loop over all elements in database and if right element is there add it
     // to problem finite element multi-index
-    ierr = m_field.get_ents_finite_elements(&fe_ent_ptr); CHKERRQ(ierr);
+    ierr = m_field.get_ents_finite_elements(&fe_ent_ptr); CHKERRG(ierr);
     EntFiniteElement_multiIndex::iterator efit = fe_ent_ptr->begin();
     EntFiniteElement_multiIndex::iterator hi_efit = fe_ent_ptr->end();
     for(;efit!=hi_efit;efit++) {
@@ -2448,7 +2448,7 @@ namespace MoFEM {
           // is used to set partition of the element
           ierr = (*efit)->getRowDofView(
               *(p_miit->numeredDofsRows),rows_view,moab::Interface::UNION
-          ); CHKERRQ(ierr);
+          ); CHKERRG(ierr);
           std::vector<int> parts(m_field.get_comm_size(),0);
           NumeredDofEntity_multiIndex_uid_view_ordered::iterator viit_rows;
           viit_rows = rows_view.begin();
@@ -2484,13 +2484,13 @@ namespace MoFEM {
               // get row_view
               ierr = (*efit)->getRowDofView(
                 *(p_miit->numeredDofsRows),*dofs_view[ss],moab::Interface::UNION
-              ); CHKERRQ(ierr);
+              ); CHKERRG(ierr);
             }
           } else {
             // get cols_views
             ierr = (*efit)->getColDofView(
               *(p_miit->numeredDofsCols),*dofs_view[ss],moab::Interface::UNION
-            ); CHKERRQ(ierr);
+            ); CHKERRG(ierr);
           }
 
           NumeredDofEntity_multiIndex_uid_view_ordered::iterator vit,hi_vit;
@@ -2586,7 +2586,7 @@ namespace MoFEM {
     // get problem pointer
     typedef Problem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
     //find p_miit
-    ierr = m_field.get_problems(&problems_ptr); CHKERRQ(ierr);
+    ierr = m_field.get_problems(&problems_ptr); CHKERRG(ierr);
     ProblemsByName &problems_set = const_cast<ProblemsByName&>(problems_ptr->get<Problem_mi_tag>());
     ProblemsByName::iterator p_miit = problems_set.find(name);
 
@@ -2698,7 +2698,7 @@ namespace MoFEM {
     // get problem pointer
     typedef Problem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
     //find p_miit
-    ierr = m_field.get_problems(&problems_ptr); CHKERRQ(ierr);
+    ierr = m_field.get_problems(&problems_ptr); CHKERRG(ierr);
     ProblemsByName &problems_set = const_cast<ProblemsByName&>(problems_ptr->get<Problem_mi_tag>());
     ProblemsByName::iterator p_miit = problems_set.find(name);
 
@@ -2793,7 +2793,7 @@ namespace MoFEM {
     const Problem *problem_ptr;
     MoFEMFunctionBeginHot;
     rval = m_field.get_moab().create_meshset(MESHSET_SET,*meshset); CHKERRQ_MOAB(rval);
-    ierr = m_field.get_problem(prb_name,&problem_ptr); CHKERRQ(ierr);
+    ierr = m_field.get_problem(prb_name,&problem_ptr); CHKERRG(ierr);
     NumeredEntFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator fit,hi_fe_it;
     fit = problem_ptr->numeredFiniteElements.get<FiniteElement_name_mi_tag>().lower_bound(fe_name);
     hi_fe_it = problem_ptr->numeredFiniteElements.get<FiniteElement_name_mi_tag>().upper_bound(fe_name);
@@ -2812,10 +2812,10 @@ namespace MoFEM {
     MoFEM::Interface &m_field = cOre;
     const Problem *problem_ptr;
     MoFEMFunctionBeginHot;
-    ierr = m_field.get_problem(name,&problem_ptr); CHKERRQ(ierr);
+    ierr = m_field.get_problem(name,&problem_ptr); CHKERRG(ierr);
     ierr = problem_ptr->getNumberOfElementsByNameAndPart(
       PETSC_COMM_WORLD,fe_name,layout
-    ); CHKERRQ(ierr);
+    ); CHKERRG(ierr);
     MoFEMFunctionReturnHot(0);
   }
 

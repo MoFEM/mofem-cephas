@@ -129,21 +129,21 @@ MoFEMErrorCode ForcesAndSourcesCore::getSense(EntityType type,boost::ptr_vector<
 MoFEMErrorCode ForcesAndSourcesCore::getEdgesSense(DataForcesAndSourcesCore &data) const {
 
   MoFEMFunctionBeginHot;
-  ierr = getSense(MBEDGE,data.dataOnEntities[MBEDGE]); CHKERRQ(ierr);
+  ierr = getSense(MBEDGE,data.dataOnEntities[MBEDGE]); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
 MoFEMErrorCode ForcesAndSourcesCore::getTrisSense(DataForcesAndSourcesCore &data) const {
 
   MoFEMFunctionBeginHot;
-  ierr = getSense(MBTRI,data.dataOnEntities[MBTRI]); CHKERRQ(ierr);
+  ierr = getSense(MBTRI,data.dataOnEntities[MBTRI]); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
 MoFEMErrorCode ForcesAndSourcesCore::getQuadSense(DataForcesAndSourcesCore &data) const {
 
   MoFEMFunctionBeginHot;
-  ierr = getSense(MBQUAD,data.dataOnEntities[MBQUAD]); CHKERRQ(ierr);
+  ierr = getSense(MBQUAD,data.dataOnEntities[MBQUAD]); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -223,35 +223,35 @@ MoFEMErrorCode ForcesAndSourcesCore::getDataOrder(const EntityType type,const Fi
 MoFEMErrorCode ForcesAndSourcesCore::getEdgesDataOrder(DataForcesAndSourcesCore &data,const FieldSpace space) const {
 
   MoFEMFunctionBeginHot;
-  ierr = getDataOrder(MBEDGE,space,data.dataOnEntities[MBEDGE]); CHKERRQ(ierr);
+  ierr = getDataOrder(MBEDGE,space,data.dataOnEntities[MBEDGE]); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
 MoFEMErrorCode ForcesAndSourcesCore::getTrisDataOrder(DataForcesAndSourcesCore &data,const FieldSpace space) const {
 
   MoFEMFunctionBeginHot;
-  ierr = getDataOrder(MBTRI,space,data.dataOnEntities[MBTRI]); CHKERRQ(ierr);
+  ierr = getDataOrder(MBTRI,space,data.dataOnEntities[MBTRI]); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
 MoFEMErrorCode ForcesAndSourcesCore::getQuadDataOrder(DataForcesAndSourcesCore &data,const FieldSpace space) const {
 
   MoFEMFunctionBeginHot;
-  ierr = getDataOrder(MBQUAD,space,data.dataOnEntities[MBQUAD]); CHKERRQ(ierr);
+  ierr = getDataOrder(MBQUAD,space,data.dataOnEntities[MBQUAD]); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
 MoFEMErrorCode ForcesAndSourcesCore::getTetDataOrder(DataForcesAndSourcesCore &data,const FieldSpace space) const {
 
   MoFEMFunctionBeginHot;
-  ierr = getDataOrder(MBTET,space,data.dataOnEntities[MBTET]); CHKERRQ(ierr);
+  ierr = getDataOrder(MBTET,space,data.dataOnEntities[MBTET]); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
 MoFEMErrorCode ForcesAndSourcesCore::getPrismDataOrder(DataForcesAndSourcesCore &data,const FieldSpace space) const {
 
   MoFEMFunctionBeginHot;
-  ierr = getDataOrder(MBPRISM,space,data.dataOnEntities[MBPRISM]); CHKERRQ(ierr);
+  ierr = getDataOrder(MBPRISM,space,data.dataOnEntities[MBPRISM]); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -320,35 +320,35 @@ MoFEMErrorCode ForcesAndSourcesCore::getDataOrderSpaceAndBase(
 MoFEMErrorCode ForcesAndSourcesCore::getEdgesDataOrderSpaceAndBase(DataForcesAndSourcesCore &data,const std::string &field_name) const {
 
   MoFEMFunctionBeginHot;
-  ierr = getDataOrderSpaceAndBase(field_name,MBEDGE,data.dataOnEntities[MBEDGE]); CHKERRQ(ierr);
+  ierr = getDataOrderSpaceAndBase(field_name,MBEDGE,data.dataOnEntities[MBEDGE]); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
 MoFEMErrorCode ForcesAndSourcesCore::getTrisDataOrderSpaceAndBase(DataForcesAndSourcesCore &data,const std::string &field_name) const {
 
   MoFEMFunctionBeginHot;
-  ierr = getDataOrderSpaceAndBase(field_name,MBTRI,data.dataOnEntities[MBTRI]); CHKERRQ(ierr);
+  ierr = getDataOrderSpaceAndBase(field_name,MBTRI,data.dataOnEntities[MBTRI]); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
 MoFEMErrorCode ForcesAndSourcesCore::getQuadDataOrderSpaceAndBase(DataForcesAndSourcesCore &data,const std::string &field_name) const {
 
   MoFEMFunctionBeginHot;
-  ierr = getDataOrderSpaceAndBase(field_name,MBQUAD,data.dataOnEntities[MBQUAD]); CHKERRQ(ierr);
+  ierr = getDataOrderSpaceAndBase(field_name,MBQUAD,data.dataOnEntities[MBQUAD]); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
 MoFEMErrorCode ForcesAndSourcesCore::getTetDataOrderSpaceAndBase(DataForcesAndSourcesCore &data,const std::string &field_name) const {
 
   MoFEMFunctionBeginHot;
-  ierr = getDataOrderSpaceAndBase(field_name,MBTET,data.dataOnEntities[MBTET]); CHKERRQ(ierr);
+  ierr = getDataOrderSpaceAndBase(field_name,MBTET,data.dataOnEntities[MBTET]); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
 MoFEMErrorCode ForcesAndSourcesCore::getPrismDataOrderSpaceAndBase(DataForcesAndSourcesCore &data,const std::string &field_name) const {
 
   MoFEMFunctionBeginHot;
-  ierr = getDataOrderSpaceAndBase(field_name,MBPRISM,data.dataOnEntities[MBPRISM]); CHKERRQ(ierr);
+  ierr = getDataOrderSpaceAndBase(field_name,MBPRISM,data.dataOnEntities[MBPRISM]); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -365,7 +365,7 @@ MoFEMErrorCode ForcesAndSourcesCore::getNodesIndices(
   hi_dit = dofs.get<Composite_Name_And_Type_mi_tag>().upper_bound(boost::make_tuple(field_name,MBVERTEX));
 
   int num_nodes;
-  ierr = getNumberOfNodes(num_nodes); CHKERRQ(ierr);
+  ierr = getNumberOfNodes(num_nodes); CHKERRG(ierr);
   int max_nb_dofs = 0;
   if(dit!=hi_dit) {
     max_nb_dofs = (*dit)->getNbOfCoeffs()*num_nodes;
@@ -410,7 +410,7 @@ MoFEMErrorCode ForcesAndSourcesCore::getRowNodesIndices(DataForcesAndSourcesCore
   ierr = getNodesIndices(
     field_name,const_cast<FENumeredDofEntity_multiIndex&>(numeredEntFiniteElementPtr->getRowsDofs()),
     data.dataOnEntities[MBVERTEX][0].getIndices(),data.dataOnEntities[MBVERTEX][0].getLocalIndices()
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -420,7 +420,7 @@ MoFEMErrorCode ForcesAndSourcesCore::getColNodesIndices(DataForcesAndSourcesCore
   ierr = getNodesIndices(
     field_name,const_cast<FENumeredDofEntity_multiIndex&>(numeredEntFiniteElementPtr->getColsDofs()),
     data.dataOnEntities[MBVERTEX][0].getIndices(),data.dataOnEntities[MBVERTEX][0].getLocalIndices()
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -515,7 +515,7 @@ MoFEMErrorCode ForcesAndSourcesCore::getTypeIndices(
         side_number,
         data[siit->get()->brother_side_number].getIndices(),
         data[siit->get()->brother_side_number].getLocalIndices()
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
     }
   }
   MoFEMFunctionReturnHot(0);
@@ -526,7 +526,7 @@ MoFEMErrorCode ForcesAndSourcesCore::getEdgesRowIndices(DataForcesAndSourcesCore
   MoFEMFunctionBeginHot;
   ierr = getTypeIndices(
     field_name,const_cast<FENumeredDofEntity_multiIndex&>(numeredEntFiniteElementPtr->getRowsDofs()),MBEDGE,data.dataOnEntities[MBEDGE]
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -535,7 +535,7 @@ MoFEMErrorCode ForcesAndSourcesCore::getEdgesColIndices(DataForcesAndSourcesCore
   MoFEMFunctionBeginHot;
   ierr = getTypeIndices(
     field_name,const_cast<FENumeredDofEntity_multiIndex&>(numeredEntFiniteElementPtr->getColsDofs()),MBEDGE,data.dataOnEntities[MBEDGE]
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -546,7 +546,7 @@ MoFEMErrorCode ForcesAndSourcesCore::getTrisRowIndices(
   MoFEMFunctionBeginHot;
   ierr = getTypeIndices(
     field_name,const_cast<FENumeredDofEntity_multiIndex&>(numeredEntFiniteElementPtr->getRowsDofs()),MBTRI,data.dataOnEntities[MBTRI]
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -555,7 +555,7 @@ MoFEMErrorCode ForcesAndSourcesCore::getTrisColIndices(DataForcesAndSourcesCore 
   MoFEMFunctionBeginHot;
   ierr = getTypeIndices(
     field_name,const_cast<FENumeredDofEntity_multiIndex&>(numeredEntFiniteElementPtr->getColsDofs()),MBTRI,data.dataOnEntities[MBTRI]
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -568,7 +568,7 @@ MoFEMErrorCode ForcesAndSourcesCore::getTetsRowIndices(DataForcesAndSourcesCore 
   ierr = getTypeIndices(
     field_name,const_cast<FENumeredDofEntity_multiIndex&>(numeredEntFiniteElementPtr->getRowsDofs()),MBTET,0,
     data.dataOnEntities[MBTET][0].getIndices(),data.dataOnEntities[MBTET][0].getLocalIndices()
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -581,7 +581,7 @@ MoFEMErrorCode ForcesAndSourcesCore::getTetsColIndices(DataForcesAndSourcesCore 
   ierr = getTypeIndices(
     field_name,const_cast<FENumeredDofEntity_multiIndex&>(
       numeredEntFiniteElementPtr->getColsDofs()),MBTET,0,data.dataOnEntities[MBTET][0].getIndices(),data.dataOnEntities[MBTET][0].getLocalIndices()
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -592,7 +592,7 @@ MoFEMErrorCode ForcesAndSourcesCore::getQuadRowIndices(
   MoFEMFunctionBeginHot;
   ierr = getTypeIndices(
     field_name,const_cast<FENumeredDofEntity_multiIndex&>(numeredEntFiniteElementPtr->getRowsDofs()),MBQUAD,data.dataOnEntities[MBQUAD]
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -601,7 +601,7 @@ MoFEMErrorCode ForcesAndSourcesCore::getQuadColIndices(DataForcesAndSourcesCore 
   MoFEMFunctionBeginHot;
   ierr = getTypeIndices(
     field_name,const_cast<FENumeredDofEntity_multiIndex&>(numeredEntFiniteElementPtr->getColsDofs()),MBQUAD,data.dataOnEntities[MBQUAD]
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -612,7 +612,7 @@ MoFEMErrorCode ForcesAndSourcesCore::getPrismRowIndices(
   MoFEMFunctionBeginHot;
   ierr = getTypeIndices(
     field_name,const_cast<FENumeredDofEntity_multiIndex&>(numeredEntFiniteElementPtr->getRowsDofs()),MBPRISM,data.dataOnEntities[MBPRISM]
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -621,7 +621,7 @@ MoFEMErrorCode ForcesAndSourcesCore::getPrismColIndices(DataForcesAndSourcesCore
   MoFEMFunctionBeginHot;
   ierr = getTypeIndices(
     field_name,const_cast<FENumeredDofEntity_multiIndex&>(numeredEntFiniteElementPtr->getColsDofs()),MBPRISM,data.dataOnEntities[MBPRISM]
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -650,7 +650,7 @@ MoFEMErrorCode ForcesAndSourcesCore::getNoFieldRowIndices(DataForcesAndSourcesCo
   }
   ierr = getNoFieldIndices(
     field_name,const_cast<FENumeredDofEntity_multiIndex&>(numeredEntFiniteElementPtr->getRowsDofs()),data.dataOnEntities[MBENTITYSET][0].getIndices()
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -662,7 +662,7 @@ MoFEMErrorCode ForcesAndSourcesCore::getNoFieldColIndices(DataForcesAndSourcesCo
   }
   ierr = getNoFieldIndices(
     field_name,const_cast<FENumeredDofEntity_multiIndex&>(numeredEntFiniteElementPtr->getColsDofs()),data.dataOnEntities[MBENTITYSET][0].getIndices()
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -747,28 +747,28 @@ MoFEMErrorCode ForcesAndSourcesCore::getProblemTypeIndices(
 MoFEMErrorCode ForcesAndSourcesCore::getProblemNodesRowIndices(const std::string &field_name,VectorInt &nodes_indices) const {
   MoFEMFunctionBeginHot;
 
-  ierr = getProblemNodesIndices(field_name,*(problemPtr->numeredDofsRows),nodes_indices); CHKERRQ(ierr);
+  ierr = getProblemNodesIndices(field_name,*(problemPtr->numeredDofsRows),nodes_indices); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
 MoFEMErrorCode ForcesAndSourcesCore::getProblemTypeRowIndices(const std::string &field_name,EntityType type,int side_number,VectorInt &indices) const {
   MoFEMFunctionBeginHot;
 
-  ierr = getProblemTypeIndices(field_name,*(problemPtr->numeredDofsRows),type,side_number,indices); CHKERRQ(ierr);
+  ierr = getProblemTypeIndices(field_name,*(problemPtr->numeredDofsRows),type,side_number,indices); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
 MoFEMErrorCode ForcesAndSourcesCore::getProblemNodesColIndices(const std::string &field_name,VectorInt &nodes_indices) const {
   MoFEMFunctionBeginHot;
 
-  ierr = getProblemNodesIndices(field_name,*(problemPtr->numeredDofsCols),nodes_indices); CHKERRQ(ierr);
+  ierr = getProblemNodesIndices(field_name,*(problemPtr->numeredDofsCols),nodes_indices); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
 MoFEMErrorCode ForcesAndSourcesCore::getProblemTypeColIndices(const std::string &field_name,EntityType type,int side_number,VectorInt &indices) const {
   MoFEMFunctionBeginHot;
 
-  ierr = getProblemTypeIndices(field_name,*(problemPtr->numeredDofsCols),type,side_number,indices); CHKERRQ(ierr);
+  ierr = getProblemTypeIndices(field_name,*(problemPtr->numeredDofsCols),type,side_number,indices); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -790,7 +790,7 @@ MoFEMErrorCode ForcesAndSourcesCore::getNodesFieldData(
     hi_dit = dofs.get<Composite_Name_And_Type_mi_tag>().upper_bound(boost::make_tuple(field_name,MBVERTEX));
 
     int num_nodes;
-    ierr = getNumberOfNodes(num_nodes); CHKERRQ(ierr);
+    ierr = getNumberOfNodes(num_nodes); CHKERRG(ierr);
     int max_nb_dofs = 0;
     if(dit!=hi_dit) {
       max_nb_dofs = (*dit)->getNbOfCoeffs()*num_nodes;
@@ -850,7 +850,7 @@ MoFEMErrorCode ForcesAndSourcesCore::getNodesFieldData(DataForcesAndSourcesCore 
     data.dataOnEntities[MBVERTEX][0].getFieldDofs(),
     data.dataOnEntities[MBVERTEX][0].getSpace(),
     data.dataOnEntities[MBVERTEX][0].getBase()
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -956,7 +956,7 @@ MoFEMErrorCode ForcesAndSourcesCore::getTypeFieldData(
         field_name,dofs,type,side_number,
         data[siit->get()->brother_side_number].getFieldData(),
         data[siit->get()->brother_side_number].getFieldDofs()
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
     }
   }
   MoFEMFunctionReturnHot(0);
@@ -996,7 +996,7 @@ MoFEMErrorCode ForcesAndSourcesCore::getNoFieldFieldData(
     field_name,const_cast<FEDofEntity_multiIndex&>(numeredEntFiniteElementPtr->getDataDofs()),
     data.dataOnEntities[MBENTITYSET][0].getFieldData(),
     data.dataOnEntities[MBENTITYSET][0].getFieldDofs()
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -1005,7 +1005,7 @@ MoFEMErrorCode ForcesAndSourcesCore::getEdgesFieldData(DataForcesAndSourcesCore 
   MoFEMFunctionBeginHot;
   ierr = getTypeFieldData(
     field_name,const_cast<FEDofEntity_multiIndex&>(numeredEntFiniteElementPtr->getDataDofs()),MBEDGE,data.dataOnEntities[MBEDGE]
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -1016,7 +1016,7 @@ MoFEMErrorCode ForcesAndSourcesCore::getTrisFieldData(
   MoFEMFunctionBeginHot;
   ierr = getTypeFieldData(
     field_name,const_cast<FEDofEntity_multiIndex&>(numeredEntFiniteElementPtr->getDataDofs()),MBTRI,data.dataOnEntities[MBTRI]
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -1027,7 +1027,7 @@ MoFEMErrorCode ForcesAndSourcesCore::getQuadFieldData(
   MoFEMFunctionBeginHot;
   ierr = getTypeFieldData(
     field_name,const_cast<FEDofEntity_multiIndex&>(numeredEntFiniteElementPtr->getDataDofs()),MBQUAD,data.dataOnEntities[MBQUAD]
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -1043,7 +1043,7 @@ MoFEMErrorCode ForcesAndSourcesCore::getTetsFieldData(DataForcesAndSourcesCore &
     0,
     data.dataOnEntities[MBTET][0].getFieldData(),
     data.dataOnEntities[MBTET][0].getFieldDofs()
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -1060,7 +1060,7 @@ MoFEMErrorCode ForcesAndSourcesCore::getPrismFieldData(DataForcesAndSourcesCore 
     0,
     data.dataOnEntities[MBPRISM][0].getFieldData(),
     data.dataOnEntities[MBPRISM][0].getFieldDofs()
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -1165,10 +1165,10 @@ static MoFEMErrorCode get_porblem_row_indices(
 
   switch(type) {
     case MBVERTEX:
-      ierr = fe_ptr->getProblemNodesRowIndices(field_name,indices); CHKERRQ(ierr);
+      ierr = fe_ptr->getProblemNodesRowIndices(field_name,indices); CHKERRG(ierr);
     break;
     default:
-      ierr = fe_ptr->getProblemTypeRowIndices(field_name,type,side,indices); CHKERRQ(ierr);
+      ierr = fe_ptr->getProblemTypeRowIndices(field_name,type,side,indices); CHKERRG(ierr);
   }
 
   MoFEMFunctionReturnHot(0);
@@ -1182,10 +1182,10 @@ static MoFEMErrorCode get_porblem_col_indices(
 
   switch(type) {
     case MBVERTEX:
-      ierr = fe_ptr->getProblemNodesColIndices(field_name,indices); CHKERRQ(ierr);
+      ierr = fe_ptr->getProblemNodesColIndices(field_name,indices); CHKERRG(ierr);
     break;
     default:
-      ierr = fe_ptr->getProblemTypeColIndices(field_name,type,side,indices); CHKERRQ(ierr);
+      ierr = fe_ptr->getProblemTypeColIndices(field_name,type,side,indices); CHKERRG(ierr);
   }
 
   MoFEMFunctionReturnHot(0);
@@ -1201,7 +1201,7 @@ MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::getProblemRowIndices(
   if(ptrFE == NULL) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
   }
-  ierr = get_porblem_row_indices(ptrFE,type,side,field_name,indices); CHKERRQ(ierr);
+  ierr = get_porblem_row_indices(ptrFE,type,side,field_name,indices); CHKERRG(ierr);
 
   MoFEMFunctionReturnHot(0);
 }
@@ -1216,7 +1216,7 @@ MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::getProblemColIndices(
   if(ptrFE == NULL) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
   }
-  ierr = get_porblem_col_indices(ptrFE,type,side,field_name,indices); CHKERRQ(ierr);
+  ierr = get_porblem_col_indices(ptrFE,type,side,field_name,indices); CHKERRG(ierr);
 
   MoFEMFunctionReturnHot(0);
 }

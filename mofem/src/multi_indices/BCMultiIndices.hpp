@@ -288,8 +288,8 @@ struct CubitMeshSets {
       );
     }
     std::vector<double> attributes;
-    ierr = getAttributes(attributes); CHKERRQ(ierr);
-    ierr = data.fill_data(attributes); CHKERRQ(ierr);
+    ierr = getAttributes(attributes); CHKERRG(ierr);
+    ierr = data.fill_data(attributes); CHKERRG(ierr);
     MoFEMFunctionReturnHot(0);
   }
 
@@ -311,7 +311,7 @@ struct CubitMeshSets {
         SETERRQ(PETSC_COMM_SELF,1,"attributes are not for ATTRIBUTE_TYPE structure");
     }
     double *ptr = const_cast<double*>(tag_block_attributes);
-    ierr = data.set_data(ptr,8*tag_block_attributes_size); CHKERRQ(ierr);
+    ierr = data.set_data(ptr,8*tag_block_attributes_size); CHKERRG(ierr);
     MoFEMFunctionReturnHot(0);
   }
 
@@ -324,7 +324,7 @@ struct CubitMeshSets {
     }
     std::vector<char> bc_data;
     getBcData(bc_data);
-    ierr = data.fill_data(bc_data); CHKERRQ(ierr);
+    ierr = data.fill_data(bc_data); CHKERRG(ierr);
     MoFEMFunctionReturnHot(0);
   }
 
@@ -340,7 +340,7 @@ struct CubitMeshSets {
     MoFEMFunctionBeginHot;
     
     char *ptr = const_cast<char*>(tag_bc_data);
-    ierr = data.set_data(ptr,tag_bc_size); CHKERRQ(ierr);
+    ierr = data.set_data(ptr,tag_bc_size); CHKERRG(ierr);
     MoFEMFunctionReturnHot(0);
   }
 
@@ -365,7 +365,7 @@ struct CubitMeshSets {
  *  Example:
  *  \code
  *   MeshsetsManager *m_mng;
- *   ierr = m_field.getInterface(m_mng); CHKERRQ(ierr);
+ *   ierr = m_field.getInterface(m_mng); CHKERRG(ierr);
  *   CubitMeshSet_multiIndex &meshsets_index = m_mng->etMeshsetsMultindex();
  *
  *   CubitMeshSet_multiIndex::index<CubitMeshSets_mask_meshset_mi_tag>::type::iterator mit,hi_mit;
@@ -377,7 +377,7 @@ struct CubitMeshSets {
  *     EntityHandle handle = mit->getMeshset(); // get block meshset
  *     std::vector< double > attributes;
  *     // get block attributes
- *     ierr = mit->getAttributes(attributes); CHKERRQ(ierr);
+ *     ierr = mit->getAttributes(attributes); CHKERRG(ierr);
  *     // do something
  *   }
  *  \endcode

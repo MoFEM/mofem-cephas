@@ -199,7 +199,7 @@ struct MeshsetsManager : public UnknownInterface {
       const moab::Interface &moab = m_field.get_moab();
       for (_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_((*this), type, it)) {
         ierr = it->getBcDataStructure(data);
-        CHKERRQ(ierr);
+        CHKERRG(ierr);
         std::ostringstream ss;
         ss << *it << std::endl;
         ss << data << std::endl;

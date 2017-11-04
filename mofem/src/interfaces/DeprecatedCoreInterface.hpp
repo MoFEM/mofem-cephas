@@ -33,7 +33,7 @@ struct DeprecatedCoreInterface : public CoreInterface {
   DEPRECATED MoFEMErrorCode query_interface(IFace *&ptr) const {
     MoFEMFunctionBeginHot;
     ierr = getInterface(ptr);
-    CHKERRQ(ierr);
+    CHKERRG(ierr);
     MoFEMFunctionReturnHot(0);
   }
 
@@ -317,10 +317,10 @@ struct DeprecatedCoreInterface : public CoreInterface {
 
   \code
   MeshsetsManager *meshset_manager_ptr;
-  ierr = m_field.getInterface(meshset_manager_ptr); CHKERRQ(ierr);
+  ierr = m_field.getInterface(meshset_manager_ptr); CHKERRG(ierr);
   ierr =
   meshset_manager_ptr->getEntitiesByDimension(ms_id,cubit_bc_type,dimension,entities,true);
-  CHKERRQ(ierr); \endcode
+  CHKERRG(ierr); \endcode
 
   * \param msId id of the BLOCKSET/SIDESET/BLOCKSET: from CUBIT
   * \param  see CubitBC (NODESET, SIDESET or BLOCKSET and more)

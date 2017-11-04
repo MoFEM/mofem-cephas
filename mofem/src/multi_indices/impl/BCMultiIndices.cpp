@@ -289,8 +289,8 @@ MoFEMErrorCode CubitMeshSets::getTypeFromBcData(CubitBCType &type) const {
   MoFEMFunctionBeginHot;
   
   std::vector<char> bc_data;
-  ierr = getBcData(bc_data); CHKERRQ(ierr);
-  ierr = getTypeFromBcData(bc_data,type); CHKERRQ(ierr);
+  ierr = getBcData(bc_data); CHKERRG(ierr);
+  ierr = getTypeFromBcData(bc_data,type); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -372,7 +372,7 @@ MoFEMErrorCode CubitMeshSets::getTypeFromName(CubitBCType &type) const {
     MoFEMFunctionBeginHot;
     
     std::string name = getName();
-    ierr = getTypeFromName(name,type); CHKERRQ(ierr);
+    ierr = getTypeFromName(name,type); CHKERRG(ierr);
     MoFEMFunctionReturnHot(0);
 }
 

@@ -85,7 +85,7 @@ MoFEMErrorCode MeshRefinement::add_verices_in_the_middel_of_edges(const EntityHa
       }
     }
   }
-  ierr = add_verices_in_the_middel_of_edges(edges,bit,verb); CHKERRQ(ierr);
+  ierr = add_verices_in_the_middel_of_edges(edges,bit,verb); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 MoFEMErrorCode MeshRefinement::add_verices_in_the_middel_of_edges(const Range &_edges,const BitRefLevel &bit,int verb) {
@@ -95,7 +95,7 @@ MoFEMErrorCode MeshRefinement::add_verices_in_the_middel_of_edges(const Range &_
   moab::Interface &moab = m_field.get_moab();
   const RefEntity_multiIndex *refined_ents_ptr;
   MoFEMFunctionBeginHot;
-  ierr = m_field.get_ref_ents(&refined_ents_ptr); CHKERRQ(ierr);
+  ierr = m_field.get_ref_ents(&refined_ents_ptr); CHKERRG(ierr);
   Range edges = _edges.subset_by_type(MBEDGE);
   typedef const RefEntity_multiIndex::index<Composite_EntType_and_ParentEntType_mi_tag>::type RefEntsByComposite;
   RefEntsByComposite &ref_ents = refined_ents_ptr->get<Composite_EntType_and_ParentEntType_mi_tag>();
@@ -171,7 +171,7 @@ MoFEMErrorCode MeshRefinement::refine_TET(
   MoFEMFunctionBeginHot;
   Range tets;
   rval = moab.get_entities_by_type(meshset,MBTET,tets,false); CHKERRQ_MOAB(rval);
-  ierr = refine_TET(tets,bit,respect_interface); CHKERRQ(ierr);
+  ierr = refine_TET(tets,bit,respect_interface); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 MoFEMErrorCode MeshRefinement::refine_TET(
@@ -185,7 +185,7 @@ MoFEMErrorCode MeshRefinement::refine_TET(
   const RefElement_multiIndex *refined_finite_elements_ptr;
   MoFEMFunctionBeginHot;
 
-  ierr = m_field.get_ref_ents(&refined_ents_ptr); CHKERRQ(ierr);
+  ierr = m_field.get_ref_ents(&refined_ents_ptr); CHKERRG(ierr);
   ierr = m_field.get_ref_finite_elements(&refined_finite_elements_ptr);
 
   //FIXME: refinement is based on entity handlers, should work on global ids of
@@ -828,7 +828,7 @@ MoFEMErrorCode MeshRefinement::refine_PRISM(const EntityHandle meshset,const Bit
 
   MoFEMFunctionBeginHot;
 
-  ierr = m_field.get_ref_ents(&refined_ents_ptr); CHKERRQ(ierr);
+  ierr = m_field.get_ref_ents(&refined_ents_ptr); CHKERRG(ierr);
   ierr = m_field.get_ref_finite_elements(&refined_finite_elements_ptr);
 
   typedef const RefEntity_multiIndex::index<Ent_mi_tag>::type RefEntsByEnt;
@@ -906,15 +906,15 @@ MoFEMErrorCode MeshRefinement::refine_PRISM(const EntityHandle meshset,const Bit
       case 0:
       break;
       case 2:
-      ierr = prism_type_1(conn,split_edges,edge_nodes,new_prism_conn); CHKERRQ(ierr);
+      ierr = prism_type_1(conn,split_edges,edge_nodes,new_prism_conn); CHKERRG(ierr);
       nb_new_prisms = 2;
       break;
       case 4:
-      ierr = prism_type_2(conn,split_edges,edge_nodes,new_prism_conn); CHKERRQ(ierr);
+      ierr = prism_type_2(conn,split_edges,edge_nodes,new_prism_conn); CHKERRG(ierr);
       nb_new_prisms = 3;
       break;
       case 6:
-      ierr = prism_type_3(conn,split_edges,edge_nodes,new_prism_conn); CHKERRQ(ierr);
+      ierr = prism_type_3(conn,split_edges,edge_nodes,new_prism_conn); CHKERRG(ierr);
       nb_new_prisms = 4;
       break;
       default:
@@ -974,7 +974,7 @@ MoFEMErrorCode MeshRefinement::refine_PRISM(const EntityHandle meshset,const Bit
             SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
           }
           ref_prism_bit.set(pp);
-          ierr = cOre.addPrismToDatabase(ref_prisms[pp]); CHKERRQ(ierr);
+          ierr = cOre.addPrismToDatabase(ref_prisms[pp]); CHKERRG(ierr);
           if(verb>2) {
             std::ostringstream ss;
             ss << "add prism: " << *(p_fe.first->getRefElement()) << std::endl;
@@ -1001,15 +1001,15 @@ MoFEMErrorCode MeshRefinement::refine_MESHSET(
   //moab::Interface &moab = m_field.get_moab();
   const RefEntity_multiIndex *refined_ents_ptr;
   MoFEMFunctionBeginHot;
-  ierr = m_field.get_ref_ents(&refined_ents_ptr); CHKERRQ(ierr);
+  ierr = m_field.get_ref_ents(&refined_ents_ptr); CHKERRG(ierr);
   typedef const RefEntity_multiIndex::index<Ent_mi_tag>::type RefEntsByEnt;
   RefEntsByEnt::iterator miit = refined_ents_ptr->find(meshset);
   if(miit==refined_ents_ptr->end()) {
     SETERRQ(m_field.get_comm(),MOFEM_DATA_INCONSISTENCY,"this meshset is not in ref database");
   }
-  ierr = m_field.getInterface<BitRefManager>()->updateMeshsetByEntitiesChildren(meshset,bit,meshset,MBEDGE,recursive,verb); CHKERRQ(ierr);
-  ierr = m_field.getInterface<BitRefManager>()->updateMeshsetByEntitiesChildren(meshset,bit,meshset,MBTRI,recursive,verb); CHKERRQ(ierr);
-  ierr = m_field.getInterface<BitRefManager>()->updateMeshsetByEntitiesChildren(meshset,bit,meshset,MBTET,recursive,verb); CHKERRQ(ierr);
+  ierr = m_field.getInterface<BitRefManager>()->updateMeshsetByEntitiesChildren(meshset,bit,meshset,MBEDGE,recursive,verb); CHKERRG(ierr);
+  ierr = m_field.getInterface<BitRefManager>()->updateMeshsetByEntitiesChildren(meshset,bit,meshset,MBTRI,recursive,verb); CHKERRG(ierr);
+  ierr = m_field.getInterface<BitRefManager>()->updateMeshsetByEntitiesChildren(meshset,bit,meshset,MBTET,recursive,verb); CHKERRG(ierr);
   const_cast<RefEntity_multiIndex*>(refined_ents_ptr)->modify(miit,RefEntity_change_add_bit(bit));
   MoFEMFunctionReturnHot(0);
 }

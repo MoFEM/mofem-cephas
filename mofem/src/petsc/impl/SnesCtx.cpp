@@ -59,47 +59,47 @@ PetscErrorCode SnesRhs(SNES snes,Vec x,Vec f,void *ctx) {
   // PetscValidHeaderSpecific(snes,SNES_CLASSID,1);
   MoFEMFunctionBeginHot;
   PetscLogEventBegin(snes_ctx->MOFEM_EVENT_SnesRhs,0,0,0,0);
-  ierr = VecGhostUpdateBegin(x,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecGhostUpdateEnd(x,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(x,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
+  ierr = VecGhostUpdateEnd(x,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
   ierr = snes_ctx->mField.getInterface<VecManager>()->setLocalGhostVector(
     snes_ctx->problemName,COL,x,INSERT_VALUES,SCATTER_REVERSE
-  ); CHKERRQ(ierr);
-  ierr = VecZeroEntries(f); CHKERRQ(ierr);
-  ierr = VecGhostUpdateBegin(f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecGhostUpdateEnd(f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
+  ierr = VecZeroEntries(f); CHKERRG(ierr);
+  ierr = VecGhostUpdateBegin(f,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
+  ierr = VecGhostUpdateEnd(f,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
   SnesCtx::BasicMethodsSequence::iterator bit = snes_ctx->preProcess_Rhs.begin();
   for(;bit!=snes_ctx->preProcess_Rhs.end();bit++) {
-    ierr = (*bit)->setSnes(snes); CHKERRQ(ierr);
+    ierr = (*bit)->setSnes(snes); CHKERRG(ierr);
     (*bit)->snes_x = x;
     (*bit)->snes_f = f;
-    ierr = (*bit)->setSnesCtx(SnesMethod::CTX_SNESSETFUNCTION);  CHKERRQ(ierr);
-    ierr = snes_ctx->mField.problem_basic_method_preProcess(snes_ctx->problemName,*(*(bit)));  CHKERRQ(ierr);
-    ierr = (*bit)->setSnesCtx(SnesMethod::CTX_SNESNONE);  CHKERRQ(ierr);
+    ierr = (*bit)->setSnesCtx(SnesMethod::CTX_SNESSETFUNCTION);  CHKERRG(ierr);
+    ierr = snes_ctx->mField.problem_basic_method_preProcess(snes_ctx->problemName,*(*(bit)));  CHKERRG(ierr);
+    ierr = (*bit)->setSnesCtx(SnesMethod::CTX_SNESNONE);  CHKERRG(ierr);
   }
   SnesCtx::FEMethodsSequence::iterator lit = snes_ctx->loops_to_do_Rhs.begin();
   for(;lit!=snes_ctx->loops_to_do_Rhs.end();lit++) {
-    ierr = lit->second->setSnesCtx(SnesMethod::CTX_SNESSETFUNCTION);  CHKERRQ(ierr);
-    ierr = lit->second->setSnes(snes); CHKERRQ(ierr);
+    ierr = lit->second->setSnesCtx(SnesMethod::CTX_SNESSETFUNCTION);  CHKERRG(ierr);
+    ierr = lit->second->setSnes(snes); CHKERRG(ierr);
     lit->second->snes_x = x;
     lit->second->snes_f = f;
     //PetscSynchronizedPrintf(PETSC_COMM_WORLD,"\t\tLoop FE for Rhs: %s\n",lit->first.c_str());
     //PetscSynchronizedFlush(PETSC_COMM_WORLD);
-    ierr = snes_ctx->mField.loop_finite_elements(snes_ctx->problemName,lit->first,*(lit->second),snes_ctx->bH);  CHKERRQ(ierr);
-    ierr = lit->second->setSnesCtx(SnesMethod::CTX_SNESNONE);  CHKERRQ(ierr);
+    ierr = snes_ctx->mField.loop_finite_elements(snes_ctx->problemName,lit->first,*(lit->second),snes_ctx->bH);  CHKERRG(ierr);
+    ierr = lit->second->setSnesCtx(SnesMethod::CTX_SNESNONE);  CHKERRG(ierr);
   }
   bit = snes_ctx->postProcess_Rhs.begin();
   for(;bit!=snes_ctx->postProcess_Rhs.end();bit++) {
-    ierr = (*bit)->setSnes(snes); CHKERRQ(ierr);
+    ierr = (*bit)->setSnes(snes); CHKERRG(ierr);
     (*bit)->snes_x = x;
     (*bit)->snes_f = f;
-    ierr = (*bit)->setSnesCtx(SnesMethod::CTX_SNESSETFUNCTION);  CHKERRQ(ierr);
-    ierr = snes_ctx->mField.problem_basic_method_postProcess(snes_ctx->problemName,*(*(bit)));  CHKERRQ(ierr);
-    ierr = (*bit)->setSnesCtx(SnesMethod::CTX_SNESNONE);  CHKERRQ(ierr);
+    ierr = (*bit)->setSnesCtx(SnesMethod::CTX_SNESSETFUNCTION);  CHKERRG(ierr);
+    ierr = snes_ctx->mField.problem_basic_method_postProcess(snes_ctx->problemName,*(*(bit)));  CHKERRG(ierr);
+    ierr = (*bit)->setSnesCtx(SnesMethod::CTX_SNESNONE);  CHKERRG(ierr);
   }
-  ierr = VecGhostUpdateBegin(f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-  ierr = VecGhostUpdateEnd(f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-  ierr = VecAssemblyBegin(f); CHKERRQ(ierr);
-  ierr = VecAssemblyEnd(f); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(f,ADD_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
+  ierr = VecGhostUpdateEnd(f,ADD_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
+  ierr = VecAssemblyBegin(f); CHKERRG(ierr);
+  ierr = VecAssemblyEnd(f); CHKERRG(ierr);
   PetscLogEventEnd(snes_ctx->MOFEM_EVENT_SnesRhs,0,0,0,0);
   MoFEMFunctionReturnHot(0);
 }
@@ -109,47 +109,47 @@ PetscErrorCode SnesMat(SNES snes,Vec x,Mat A,Mat B,void *ctx) {
   MoFEMFunctionBeginHot;
   PetscLogEventBegin(snes_ctx->MOFEM_EVENT_SnesMat,0,0,0,0);
   if(snes_ctx->zeroPreCondMatrixB) {
-    ierr = MatZeroEntries(B); CHKERRQ(ierr);
+    ierr = MatZeroEntries(B); CHKERRG(ierr);
   }
-  ierr = VecGhostUpdateBegin(x,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecGhostUpdateEnd(x,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(x,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
+  ierr = VecGhostUpdateEnd(x,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
   ierr = snes_ctx->mField.getInterface<VecManager>()->setLocalGhostVector(
     snes_ctx->problemName,COL,x,INSERT_VALUES,SCATTER_REVERSE
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
   SnesCtx::BasicMethodsSequence::iterator bit = snes_ctx->preProcess_Mat.begin();
   for(;bit!=snes_ctx->preProcess_Mat.end();bit++) {
-    ierr = (*bit)->setSnes(snes); CHKERRQ(ierr);
+    ierr = (*bit)->setSnes(snes); CHKERRG(ierr);
     (*bit)->snes_x = x;
     (*bit)->snes_A = A;
     (*bit)->snes_B = B;
-    ierr = (*bit)->setSnesCtx(SnesMethod::CTX_SNESSETJACOBIAN); CHKERRQ(ierr);
-    ierr = snes_ctx->mField.problem_basic_method_preProcess(snes_ctx->problemName,*(*(bit)));  CHKERRQ(ierr);
-    ierr = (*bit)->setSnesCtx(SnesMethod::CTX_SNESNONE);  CHKERRQ(ierr);
+    ierr = (*bit)->setSnesCtx(SnesMethod::CTX_SNESSETJACOBIAN); CHKERRG(ierr);
+    ierr = snes_ctx->mField.problem_basic_method_preProcess(snes_ctx->problemName,*(*(bit)));  CHKERRG(ierr);
+    ierr = (*bit)->setSnesCtx(SnesMethod::CTX_SNESNONE);  CHKERRG(ierr);
   }
   SnesCtx::FEMethodsSequence::iterator lit = snes_ctx->loops_to_do_Mat.begin();
   for(;lit!=snes_ctx->loops_to_do_Mat.end();lit++) {
-    ierr = lit->second->setSnesCtx(SnesMethod::CTX_SNESSETJACOBIAN); CHKERRQ(ierr);
-    ierr = lit->second->setSnes(snes); CHKERRQ(ierr);
+    ierr = lit->second->setSnesCtx(SnesMethod::CTX_SNESSETJACOBIAN); CHKERRG(ierr);
+    ierr = lit->second->setSnes(snes); CHKERRG(ierr);
     lit->second->snes_x = x;
     lit->second->snes_A = A;
     lit->second->snes_B = B;
     //PetscSynchronizedPrintf(PETSC_COMM_WORLD,"\t\tLoop FE for Mat: %s\n",lit->first.c_str());
     //PetscSynchronizedFlush(PETSC_COMM_WORLD);
-    ierr = snes_ctx->mField.loop_finite_elements(snes_ctx->problemName,lit->first,*(lit->second),snes_ctx->bH);  CHKERRQ(ierr);
+    ierr = snes_ctx->mField.loop_finite_elements(snes_ctx->problemName,lit->first,*(lit->second),snes_ctx->bH);  CHKERRG(ierr);
     ierr = lit->second->setSnesCtx(SnesMethod::CTX_SNESNONE);
   }
   bit = snes_ctx->postProcess_Mat.begin();
   for(;bit!=snes_ctx->postProcess_Mat.end();bit++) {
-    ierr = (*bit)->setSnes(snes); CHKERRQ(ierr);
+    ierr = (*bit)->setSnes(snes); CHKERRG(ierr);
     (*bit)->snes_x = x;
     (*bit)->snes_A = A;
     (*bit)->snes_B = B;
-    ierr = (*bit)->setSnesCtx(SnesMethod::CTX_SNESSETJACOBIAN); CHKERRQ(ierr);
-    ierr = snes_ctx->mField.problem_basic_method_postProcess(snes_ctx->problemName,*(*(bit)));  CHKERRQ(ierr);
-    ierr = (*bit)->setSnesCtx(SnesMethod::CTX_SNESNONE);  CHKERRQ(ierr);
+    ierr = (*bit)->setSnesCtx(SnesMethod::CTX_SNESSETJACOBIAN); CHKERRG(ierr);
+    ierr = snes_ctx->mField.problem_basic_method_postProcess(snes_ctx->problemName,*(*(bit)));  CHKERRG(ierr);
+    ierr = (*bit)->setSnesCtx(SnesMethod::CTX_SNESNONE);  CHKERRG(ierr);
   }
-  ierr = MatAssemblyBegin(B,snes_ctx->typeOfAssembly); CHKERRQ(ierr);
-  ierr = MatAssemblyEnd(B,snes_ctx->typeOfAssembly); CHKERRQ(ierr);
+  ierr = MatAssemblyBegin(B,snes_ctx->typeOfAssembly); CHKERRG(ierr);
+  ierr = MatAssemblyEnd(B,snes_ctx->typeOfAssembly); CHKERRG(ierr);
   PetscLogEventEnd(snes_ctx->MOFEM_EVENT_SnesMat,0,0,0,0);
   MoFEMFunctionReturnHot(0);
 }
@@ -158,7 +158,7 @@ MoFEMErrorCode SNESMoFEMSetAssmblyType(SNES snes,MatAssemblyType type) {
   SnesCtx* snes_ctx;
   // PetscValidHeaderSpecific(snes,SNES_CLASSID,1);
   MoFEMFunctionBeginHot;
-  ierr = SNESGetApplicationContext(snes,&snes_ctx); CHKERRQ(ierr);
+  ierr = SNESGetApplicationContext(snes,&snes_ctx); CHKERRG(ierr);
   snes_ctx->typeOfAssembly = type;
   MoFEMFunctionReturnHot(0);
 }
@@ -167,7 +167,7 @@ MoFEMErrorCode SNESMoFEMSetBehavior(SNES snes,MoFEMTypes bh) {
   SnesCtx* snes_ctx;
   // PetscValidHeaderSpecific(snes,SNES_CLASSID,1);
   MoFEMFunctionBeginHot;
-  ierr = SNESGetApplicationContext(snes,&snes_ctx); CHKERRQ(ierr);
+  ierr = SNESGetApplicationContext(snes,&snes_ctx); CHKERRG(ierr);
   snes_ctx->bH = bh;
   MoFEMFunctionReturnHot(0);
 }

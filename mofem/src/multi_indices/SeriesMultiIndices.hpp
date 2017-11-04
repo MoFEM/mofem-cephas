@@ -72,7 +72,7 @@ struct FieldSeries {
     MoFEMFunctionBeginHot;
     
     for(;it!=hi_it;it++) {
-      ierr = push_dofs((*it)->getEnt(),(*it)->getNonNonuniqueShortId(),(*it)->getFieldData()); CHKERRQ(ierr);
+      ierr = push_dofs((*it)->getEnt(),(*it)->getNonNonuniqueShortId(),(*it)->getFieldData()); CHKERRG(ierr);
     }
     MoFEMFunctionReturnHot(0);
   }

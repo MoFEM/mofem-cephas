@@ -597,9 +597,9 @@ struct Problem {
    * \code
 
    PetscInt rstart, rend;
-   ierr = PetscLayoutGetRange(layout, &rstart, &rend); CHKERRQ(ierr);
+   ierr = PetscLayoutGetRange(layout, &rstart, &rend); CHKERRG(ierr);
    int global_size;
-   ierr = PetscLayoutGetSize(layout,&global_size); CHKERRQ(ierr);
+   ierr = PetscLayoutGetSize(layout,&global_size); CHKERRG(ierr);
 
    \endcode
    *
@@ -621,9 +621,9 @@ struct Problem {
    * \code
 
    PetscInt rstart, rend;
-   ierr = PetscLayoutGetRange(layout, &rstart, &rend); CHKERRQ(ierr);
+   ierr = PetscLayoutGetRange(layout, &rstart, &rend); CHKERRG(ierr);
    int global_size;
-   ierr = PetscLayoutGetSize(layout,&global_size); CHKERRQ(ierr);
+   ierr = PetscLayoutGetSize(layout,&global_size); CHKERRG(ierr);
 
    \endcode
    *

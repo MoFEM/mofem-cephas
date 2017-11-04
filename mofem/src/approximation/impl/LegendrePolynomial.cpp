@@ -42,7 +42,7 @@ MoFEMErrorCode LegendrePolynomialCtx::query_interface(
   } else {
     SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"wrong interference");
   }
-  ierr = BaseFunctionCtx::query_interface(uuid,iface); CHKERRQ(ierr);
+  ierr = BaseFunctionCtx::query_interface(uuid,iface); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -58,7 +58,7 @@ MoFEMErrorCode LegendrePolynomial::query_interface(
   } else {
     SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"wrong interference");
   }
-  ierr = BaseFunction::query_interface(uuid,iface); CHKERRQ(ierr);
+  ierr = BaseFunction::query_interface(uuid,iface); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -69,7 +69,7 @@ MoFEMErrorCode LegendrePolynomial::getValue(
 
   MoFEMFunctionBeginHot;
   MoFEM::UnknownInterface *iface;
-  ierr = ctx_ptr->query_interface(IDD_LEGENDRE_BASE_FUNCTION,&iface); CHKERRQ(ierr);
+  ierr = ctx_ptr->query_interface(IDD_LEGENDRE_BASE_FUNCTION,&iface); CHKERRG(ierr);
   LegendrePolynomialCtx *ctx = reinterpret_cast<LegendrePolynomialCtx*>(iface);
   ctx->baseFunPtr->resize(pts.size2(),ctx->P+1,false);
   ctx->baseDiffFunPtr->resize(pts.size2(),ctx->dIm*(ctx->P+1),false);
@@ -78,7 +78,7 @@ MoFEMErrorCode LegendrePolynomial::getValue(
   for(unsigned int gg = 0;gg<pts.size2();gg++) {
     if(ctx->baseFunPtr) l = &((*ctx->baseFunPtr)(gg,0));
     if(ctx->baseDiffFunPtr) diff_l = &((*ctx->baseDiffFunPtr)(gg,0));
-    ierr = (ctx->basePolynomialsType0)(ctx->P,pts(0,gg),ctx->diffS,l,diff_l,ctx->dIm); CHKERRQ(ierr);
+    ierr = (ctx->basePolynomialsType0)(ctx->P,pts(0,gg),ctx->diffS,l,diff_l,ctx->dIm); CHKERRG(ierr);
   }
   MoFEMFunctionReturnHot(0);
 }

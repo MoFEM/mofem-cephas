@@ -88,42 +88,42 @@ MoFEMErrorCode FlatPrismElementForcesAndSourcesCore::operator()() {
       rval = mField.get_moab().get_coords(conn,num_nodes,&*coords.data().begin()); CHKERRQ_MOAB(rval);
 
       double diff_n[6];
-      ierr = ShapeDiffMBTRI(diff_n); CHKERRQ(ierr);
+      ierr = ShapeDiffMBTRI(diff_n); CHKERRG(ierr);
       normal.resize(6,false);
-      ierr = ShapeFaceNormalMBTRI(diff_n,&coords[0],&normal[0]); CHKERRQ(ierr);
-      ierr = ShapeFaceNormalMBTRI(diff_n, &coords[9],&normal[3]); CHKERRQ(ierr);
+      ierr = ShapeFaceNormalMBTRI(diff_n,&coords[0],&normal[0]); CHKERRG(ierr);
+      ierr = ShapeFaceNormalMBTRI(diff_n, &coords[9],&normal[3]); CHKERRG(ierr);
       aRea[0] = cblas_dnrm2(3,&normal[0],1)*0.5;
       aRea[1] = cblas_dnrm2(3,&normal[3],1)*0.5;
     }
 
-    ierr = getSpacesAndBaseOnEntities(dataH1); CHKERRQ(ierr);
+    ierr = getSpacesAndBaseOnEntities(dataH1); CHKERRG(ierr);
 
     //H1
     if((dataH1.spacesOnEntities[MBEDGE]).test(H1)) {
-      ierr = getEdgesSense(dataH1); CHKERRQ(ierr);
-      ierr = getEdgesDataOrder(dataH1,H1); CHKERRQ(ierr);
-      ierr = getTrisSense(dataH1); CHKERRQ(ierr);
-      ierr = getTrisDataOrder(dataH1,H1); CHKERRQ(ierr);
+      ierr = getEdgesSense(dataH1); CHKERRG(ierr);
+      ierr = getEdgesDataOrder(dataH1,H1); CHKERRG(ierr);
+      ierr = getTrisSense(dataH1); CHKERRG(ierr);
+      ierr = getTrisDataOrder(dataH1,H1); CHKERRG(ierr);
     }
 
     //H1
     if((dataH1.spacesOnEntities[MBEDGE]).test(HCURL)) {
-      ierr = getEdgesSense(dataHcurl); CHKERRQ(ierr);
-      ierr = getEdgesDataOrder(dataHcurl,HCURL); CHKERRQ(ierr);
-      ierr = getTrisSense(dataHcurl); CHKERRQ(ierr);
-      ierr = getTrisDataOrder(dataHcurl,HCURL); CHKERRQ(ierr);
+      ierr = getEdgesSense(dataHcurl); CHKERRG(ierr);
+      ierr = getEdgesDataOrder(dataHcurl,HCURL); CHKERRG(ierr);
+      ierr = getTrisSense(dataHcurl); CHKERRG(ierr);
+      ierr = getTrisDataOrder(dataHcurl,HCURL); CHKERRG(ierr);
     }
 
     //Hdiv
     if((dataH1.spacesOnEntities[MBTRI]).test(HDIV)) {
-      ierr = getTrisSense(dataHdiv); CHKERRQ(ierr);
-      ierr = getTrisDataOrder(dataHdiv,HDIV); CHKERRQ(ierr);
+      ierr = getTrisSense(dataHdiv); CHKERRG(ierr);
+      ierr = getTrisDataOrder(dataHdiv,HDIV); CHKERRG(ierr);
     }
 
     //Hdiv
     if((dataH1.spacesOnEntities[MBTRI]).test(L2)) {
-      ierr = getTrisSense(dataL2); CHKERRQ(ierr);
-      ierr = getTrisDataOrder(dataL2,L2); CHKERRQ(ierr);
+      ierr = getTrisSense(dataL2); CHKERRG(ierr);
+      ierr = getTrisDataOrder(dataL2,L2); CHKERRG(ierr);
     }
 
     int order_data = getMaxDataOrder();
@@ -167,7 +167,7 @@ MoFEMErrorCode FlatPrismElementForcesAndSourcesCore::operator()() {
         nb_gauss_pts = 0;
       }
     } else {
-      ierr = setGaussPts(order_row,order_col,order_data); CHKERRQ(ierr);
+      ierr = setGaussPts(order_row,order_col,order_data); CHKERRG(ierr);
       nb_gauss_pts = gaussPts.size2();
       dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nb_gauss_pts,3,false);
       if(nb_gauss_pts) {
@@ -176,7 +176,7 @@ MoFEMErrorCode FlatPrismElementForcesAndSourcesCore::operator()() {
           &gaussPts(0,0),
           &gaussPts(1,0),
           nb_gauss_pts
-        ); CHKERRQ(ierr);
+        ); CHKERRG(ierr);
       }
     }
     if(nb_gauss_pts == 0) MoFEMFunctionReturnHot(0);
@@ -210,7 +210,7 @@ MoFEMErrorCode FlatPrismElementForcesAndSourcesCore::operator()() {
                     dataH1,mField.get_moab(),numeredEntFiniteElementPtr.get(),H1,ApproximationBaseArray[b],NOBASE
                   )
                 )
-              ); CHKERRQ(ierr);
+              ); CHKERRG(ierr);
             }
             if(dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
               SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Not yet implemented");
@@ -248,14 +248,14 @@ MoFEMErrorCode FlatPrismElementForcesAndSourcesCore::operator()() {
         nOrmals_at_GaussPtF4.resize(nb_gauss_pts,3,false);
         tAngent1_at_GaussPtF4.resize(nb_gauss_pts,3,false);
         tAngent2_at_GaussPtF4.resize(nb_gauss_pts,3,false);
-        ierr = getEdgesDataOrderSpaceAndBase(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
-        ierr = getTrisDataOrderSpaceAndBase(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
-        ierr = getNodesFieldData(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
-        ierr = getEdgesFieldData(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
-        ierr = getTrisFieldData(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
+        ierr = getEdgesDataOrderSpaceAndBase(dataH1,meshPositionsFieldName); CHKERRG(ierr);
+        ierr = getTrisDataOrderSpaceAndBase(dataH1,meshPositionsFieldName); CHKERRG(ierr);
+        ierr = getNodesFieldData(dataH1,meshPositionsFieldName); CHKERRG(ierr);
+        ierr = getEdgesFieldData(dataH1,meshPositionsFieldName); CHKERRG(ierr);
+        ierr = getTrisFieldData(dataH1,meshPositionsFieldName); CHKERRG(ierr);
         try {
-          ierr = opHOCoordsAndNormals.opRhs(dataH1); CHKERRQ(ierr);
-          ierr = opHOCoordsAndNormals.calculateNormals(); CHKERRQ(ierr);
+          ierr = opHOCoordsAndNormals.opRhs(dataH1); CHKERRG(ierr);
+          ierr = opHOCoordsAndNormals.calculateNormals(); CHKERRG(ierr);
         } catch (std::exception& ex) {
           std::ostringstream ss;
           ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
@@ -353,38 +353,38 @@ MoFEMErrorCode FlatPrismElementForcesAndSourcesCore::operator()() {
               SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown space");
               case H1:
               if(!ss) {
-                ierr = getRowNodesIndices(*op_data[ss],field_name); CHKERRQ(ierr);
+                ierr = getRowNodesIndices(*op_data[ss],field_name); CHKERRG(ierr);
               } else {
-                ierr = getColNodesIndices(*op_data[ss],field_name); CHKERRQ(ierr);
+                ierr = getColNodesIndices(*op_data[ss],field_name); CHKERRG(ierr);
               }
-              ierr = getNodesFieldData(*op_data[ss],field_name); CHKERRQ(ierr);
+              ierr = getNodesFieldData(*op_data[ss],field_name); CHKERRG(ierr);
               case HCURL:
               if(!ss) {
-                ierr = getEdgesRowIndices(*op_data[ss],field_name); CHKERRQ(ierr);
+                ierr = getEdgesRowIndices(*op_data[ss],field_name); CHKERRG(ierr);
               } else {
-                ierr = getEdgesColIndices(*op_data[ss],field_name); CHKERRQ(ierr);
+                ierr = getEdgesColIndices(*op_data[ss],field_name); CHKERRG(ierr);
               }
-              ierr = getEdgesDataOrderSpaceAndBase(*op_data[ss],field_name); CHKERRQ(ierr);
-              ierr = getEdgesFieldData(*op_data[ss],field_name); CHKERRQ(ierr);
+              ierr = getEdgesDataOrderSpaceAndBase(*op_data[ss],field_name); CHKERRG(ierr);
+              ierr = getEdgesFieldData(*op_data[ss],field_name); CHKERRG(ierr);
               case HDIV:
               case L2:
               if(!ss) {
-                ierr = getTrisRowIndices(*op_data[ss],field_name); CHKERRQ(ierr);
+                ierr = getTrisRowIndices(*op_data[ss],field_name); CHKERRG(ierr);
               } else {
-                ierr = getTrisColIndices(*op_data[ss],field_name); CHKERRQ(ierr);
+                ierr = getTrisColIndices(*op_data[ss],field_name); CHKERRG(ierr);
               }
-              ierr = getTrisDataOrderSpaceAndBase(*op_data[ss],field_name); CHKERRQ(ierr);
-              ierr = getTrisFieldData(*op_data[ss],field_name); CHKERRQ(ierr);
+              ierr = getTrisDataOrderSpaceAndBase(*op_data[ss],field_name); CHKERRG(ierr);
+              ierr = getTrisFieldData(*op_data[ss],field_name); CHKERRG(ierr);
               break;
               case NOFIELD:
               if(!getNinTheLoop()) {
                 // NOFIELD data are the same for each element, can be retreived only once
                 if(!ss) {
-                  ierr = getNoFieldRowIndices(*op_data[ss],field_name); CHKERRQ(ierr);
+                  ierr = getNoFieldRowIndices(*op_data[ss],field_name); CHKERRG(ierr);
                 } else {
-                  ierr = getNoFieldColIndices(*op_data[ss],field_name); CHKERRQ(ierr);
+                  ierr = getNoFieldColIndices(*op_data[ss],field_name); CHKERRG(ierr);
                 }
-                ierr = getNoFieldFieldData(*op_data[ss],field_name); CHKERRQ(ierr);
+                ierr = getNoFieldFieldData(*op_data[ss],field_name); CHKERRG(ierr);
               }
               break;
               case LASTSPACE:
@@ -407,7 +407,7 @@ MoFEMErrorCode FlatPrismElementForcesAndSourcesCore::operator()() {
             oit->doTris,
             false,
             false
-          ); CHKERRQ(ierr);
+          ); CHKERRG(ierr);
         } catch (std::exception& ex) {
           std::ostringstream ss;
           ss << "Operator "
@@ -432,7 +432,7 @@ MoFEMErrorCode FlatPrismElementForcesAndSourcesCore::operator()() {
             oit->doTris,
             false,
             false
-          ); CHKERRQ(ierr);
+          ); CHKERRG(ierr);
         } catch (std::exception& ex) {
           std::ostringstream ss;
           ss << "Operator "
@@ -449,7 +449,7 @@ MoFEMErrorCode FlatPrismElementForcesAndSourcesCore::operator()() {
 
       if(oit->getOpType()&UserDataOperator::OPROWCOL) {
         try {
-          ierr = oit->opLhs(*op_data[0],*op_data[1],oit->sYmm); CHKERRQ(ierr);
+          ierr = oit->opLhs(*op_data[0],*op_data[1],oit->sYmm); CHKERRG(ierr);
         } catch (std::exception& ex) {
           std::ostringstream ss;
           ss << "Operator " 
@@ -488,7 +488,7 @@ MoFEMErrorCode OpCalculateInvJacForFlatPrism::doWork(
       VectorDouble &coords = getCoords();
       double *coords_ptr = &*coords.data().begin();
       double diff_n[6];
-      ierr = ShapeDiffMBTRI(diff_n); CHKERRQ(ierr);
+      ierr = ShapeDiffMBTRI(diff_n); CHKERRG(ierr);
       double j00_f3,j01_f3,j10_f3,j11_f3;
       for(int gg = 0;gg<1;gg++) {
         // this is triangle, derivative of nodal shape functions is constant.

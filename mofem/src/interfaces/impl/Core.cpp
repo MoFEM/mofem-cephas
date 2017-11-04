@@ -121,7 +121,7 @@ static PetscErrorCode mofem_error_handler(
 template<class IFACE>
 MoFEMErrorCode Core::regSubInterface(const MOFEMuuid& uid) {
   MoFEMFunctionBeginHot;
-  ierr = registerInterface<IFACE>(uid); CHKERRQ(ierr);
+  ierr = registerInterface<IFACE>(uid); CHKERRG(ierr);
   unsigned long int id = uid.uUId.to_ulong();
   iFaces.insert(id,new IFACE(*this));
   MoFEMFunctionReturnHot(0);
@@ -266,9 +266,9 @@ BitProblemId Core::getProblemShift() {
 MoFEMErrorCode Core::clearMap() {
   MoFEMFunctionBeginHot;
   // Cleaning databases in interfaces
-  ierr = getInterface<SeriesRecorder>()->clearMap(); CHKERRQ(ierr);
-  ierr = getInterface<MeshsetsManager>()->clearMap(); CHKERRQ(ierr);
-  ierr = getInterface<CoordSystemsManager>()->clearMap(); CHKERRQ(ierr);
+  ierr = getInterface<SeriesRecorder>()->clearMap(); CHKERRG(ierr);
+  ierr = getInterface<MeshsetsManager>()->clearMap(); CHKERRG(ierr);
+  ierr = getInterface<CoordSystemsManager>()->clearMap(); CHKERRG(ierr);
   // Cleaning databases
   refinedEntities.clear();
   refinedFiniteElements.clear();
@@ -321,7 +321,7 @@ MoFEMErrorCode Core::getTags(int verb) {
   // Set version
   {
     Version version;
-    ierr = getFileVersion(moab,version); CHKERRQ(ierr);
+    ierr = getFileVersion(moab,version); CHKERRG(ierr);
     // PetscPrintf(
     //   comm,"file version %d.%d.%d\n",
     //   version.majorVersion,version.minorVersion,version.buildVersion
@@ -536,18 +536,18 @@ MoFEMErrorCode Core::getTags(int verb) {
 
   //Meshsets with boundary conditions and material sets
   MeshsetsManager *meshsets_manager_ptr;
-  ierr = getInterface(meshsets_manager_ptr); CHKERRQ(ierr);
-  ierr = meshsets_manager_ptr->getTags(verb); CHKERRQ(ierr);
+  ierr = getInterface(meshsets_manager_ptr); CHKERRG(ierr);
+  ierr = meshsets_manager_ptr->getTags(verb); CHKERRG(ierr);
 
   // Series recorder
   SeriesRecorder *series_recorder_ptr;
-  ierr = getInterface(series_recorder_ptr); CHKERRQ(ierr);
-  ierr = series_recorder_ptr->getTags(verb); CHKERRQ(ierr);
+  ierr = getInterface(series_recorder_ptr); CHKERRG(ierr);
+  ierr = series_recorder_ptr->getTags(verb); CHKERRG(ierr);
 
   //Coordinate systems
   CoordSystemsManager *cs_manger_ptr;
-  ierr = getInterface(cs_manger_ptr); CHKERRQ(ierr);
-  ierr = cs_manger_ptr->getTags(verb); CHKERRQ(ierr);
+  ierr = getInterface(cs_manger_ptr); CHKERRG(ierr);
+  ierr = cs_manger_ptr->getTags(verb); CHKERRG(ierr);
 
 
   MoFEMFunctionReturnHot(0);
@@ -556,15 +556,15 @@ MoFEMErrorCode Core::getTags(int verb) {
 MoFEMErrorCode Core::clear_database(int verb) {
   MoFEMFunctionBeginHot;
   if(verb==-1) verb = verbose;
-  ierr = clearMap(); CHKERRQ(ierr);
+  ierr = clearMap(); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
 MoFEMErrorCode Core::rebuild_database(int verb) {
   MoFEMFunctionBeginHot;
   if(verb==-1) verb = verbose;
-  ierr = clearMap(); CHKERRQ(ierr);
-  ierr = initialiseDatabaseFromMesh(verb); CHKERRQ(ierr);
+  ierr = clearMap(); CHKERRG(ierr);
+  ierr = initialiseDatabaseFromMesh(verb); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -573,10 +573,10 @@ MoFEMErrorCode Core::initialiseDatabaseFromMesh(int verb) {
   if(verb==-1) verb = verbose;
 
   CoordSystemsManager *cs_manger_ptr;
-  ierr = getInterface(cs_manger_ptr); CHKERRQ(ierr);
+  ierr = getInterface(cs_manger_ptr); CHKERRG(ierr);
 
   // Initialize coordinate systems
-  ierr = cs_manger_ptr->initialiseDatabaseFromMesh(verb); CHKERRQ(ierr);
+  ierr = cs_manger_ptr->initialiseDatabaseFromMesh(verb); CHKERRG(ierr);
 
   // Initialize database
   Range meshsets;
@@ -598,9 +598,9 @@ MoFEMErrorCode Core::initialiseDatabaseFromMesh(int verb) {
         );
         boost::shared_ptr<CoordSys> cs_ptr;
         if(rval == MB_SUCCESS && cs_name_size) {
-          ierr = cs_manger_ptr->getCoordSysPtr(std::string(cs_name,cs_name_size),cs_ptr); CHKERRQ(ierr);
+          ierr = cs_manger_ptr->getCoordSysPtr(std::string(cs_name,cs_name_size),cs_ptr); CHKERRG(ierr);
         } else {
-          ierr = cs_manger_ptr->getCoordSysPtr("UNDEFINED",cs_ptr); CHKERRQ(ierr);
+          ierr = cs_manger_ptr->getCoordSysPtr("UNDEFINED",cs_ptr); CHKERRG(ierr);
         }
         p = fIelds.insert(boost::shared_ptr<Field>(new Field(moab,*mit,cs_ptr)));
         if(verb > 0) {
@@ -709,7 +709,7 @@ MoFEMErrorCode Core::initialiseDatabaseFromMesh(int verb) {
             );
             break;
             case MBPRISM:
-            ierr = addPrismToDatabase(*eit,verb); CHKERRQ(ierr);
+            ierr = addPrismToDatabase(*eit,verb); CHKERRG(ierr);
             p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(
               boost::shared_ptr<RefElement>(new RefElement_PRISM(*p_ref_ent.first)))
             );
@@ -781,11 +781,11 @@ MoFEMErrorCode Core::initialiseDatabaseFromMesh(int verb) {
 
   // Initialize interfaces
   MeshsetsManager *m_manger_ptr;
-  ierr = getInterface(m_manger_ptr); CHKERRQ(ierr);
-  ierr = m_manger_ptr->initialiseDatabaseFromMesh(verb); CHKERRQ(ierr);
+  ierr = getInterface(m_manger_ptr); CHKERRG(ierr);
+  ierr = m_manger_ptr->initialiseDatabaseFromMesh(verb); CHKERRG(ierr);
   SeriesRecorder *series_recorder_ptr;
-  ierr = getInterface(series_recorder_ptr); CHKERRQ(ierr);
-  ierr = series_recorder_ptr->initialiseDatabaseFromMesh(verb); CHKERRQ(ierr);
+  ierr = getInterface(series_recorder_ptr); CHKERRG(ierr);
+  ierr = series_recorder_ptr->initialiseDatabaseFromMesh(verb); CHKERRG(ierr);
 
   MoFEMFunctionReturnHot(0);
 }

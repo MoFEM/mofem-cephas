@@ -60,7 +60,7 @@ MoFEMErrorCode EntPolynomialBaseCtx::query_interface(
   } else {
     SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"wrong interference");
   }
-  ierr = BaseFunctionCtx::query_interface(uuid,iface); CHKERRQ(ierr);
+  ierr = BaseFunctionCtx::query_interface(uuid,iface); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 

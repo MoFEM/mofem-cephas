@@ -235,7 +235,7 @@ namespace MoFEM {
     Interface &m_field = cOre;
     const Field_multiIndex *fields_ptr;
     MoFEMFunctionBeginHot;
-    ierr = m_field.get_fields(&fields_ptr); CHKERRQ(ierr);
+    ierr = m_field.get_fields(&fields_ptr); CHKERRG(ierr);
     Field_multiIndex::index<FieldName_mi_tag>::type::iterator field_it;
     field_it = fields_ptr->get<FieldName_mi_tag>().find(field_name);
     if(field_it==fields_ptr->get<FieldName_mi_tag>().end()) {

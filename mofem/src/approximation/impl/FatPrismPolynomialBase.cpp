@@ -57,7 +57,7 @@ MoFEMErrorCode FatPrismPolynomialBaseCtx::query_interface(const MOFEMuuid& uuid,
   } else {
     SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"wrong interference");
   }
-  ierr = EntPolynomialBaseCtx::query_interface(uuid,iface); CHKERRQ(ierr);
+  ierr = EntPolynomialBaseCtx::query_interface(uuid,iface); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -97,7 +97,7 @@ MoFEMErrorCode FatPrismPolynomialBase::query_interface(
   } else {
     SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"wrong interference");
   }
-  ierr = BaseFunction::query_interface(uuid,iface); CHKERRQ(ierr);
+  ierr = BaseFunction::query_interface(uuid,iface); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -112,7 +112,7 @@ MoFEMErrorCode FatPrismPolynomialBase::getValue(
   MoFEMFunctionBeginHot;
 
   MoFEM::UnknownInterface *iface;
-  ierr = ctx_ptr->query_interface(IDD_FATPRISM_BASE_FUNCTION,&iface); CHKERRQ(ierr);
+  ierr = ctx_ptr->query_interface(IDD_FATPRISM_BASE_FUNCTION,&iface); CHKERRG(ierr);
   cTx = reinterpret_cast<FatPrismPolynomialBaseCtx*>(iface);
   if(!cTx->fePtr) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
@@ -162,18 +162,18 @@ MoFEMErrorCode FatPrismPolynomialBase::getValue(
 
   switch (cTx->sPace) {
     case H1:
-    ierr = getValueH1TrianglesOnly(); CHKERRQ(ierr);
-    ierr = getValueH1ThroughThickness(); CHKERRQ(ierr);
-    ierr = getValueH1(pts); CHKERRQ(ierr);
+    ierr = getValueH1TrianglesOnly(); CHKERRG(ierr);
+    ierr = getValueH1ThroughThickness(); CHKERRG(ierr);
+    ierr = getValueH1(pts); CHKERRG(ierr);
     break;
     case HDIV:
-    ierr = getValueHdiv(pts); CHKERRQ(ierr);
+    ierr = getValueHdiv(pts); CHKERRG(ierr);
     break;
     case HCURL:
-    ierr = getValueHCurl(pts); CHKERRQ(ierr);
+    ierr = getValueHCurl(pts); CHKERRG(ierr);
     break;
     case L2:
-    ierr = getValueL2(pts); CHKERRQ(ierr);
+    ierr = getValueL2(pts); CHKERRG(ierr);
     break;
     default:
     SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"Not yet implemented");
@@ -198,7 +198,7 @@ MoFEMErrorCode FatPrismPolynomialBase::getValueH1TrianglesOnly() {
         cTx->dataTrianglesOnly,cTx->mOab,cTx->fePtr,H1,base,NOBASE
       )
     )
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
 
   MoFEMFunctionReturnHot(0);
 }
@@ -239,7 +239,7 @@ MoFEMErrorCode FatPrismPolynomialBase::getValueH1ThroughThickness() {
         &cTx->dataTroughThickness.dataOnEntities[MBEDGE][ee].getN(base)(gg,0),
         &cTx->dataTroughThickness.dataOnEntities[MBEDGE][ee].getDiffN(base)(gg,0),
         1
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
     }
   }
 
@@ -437,7 +437,7 @@ MoFEMErrorCode FatPrismPolynomialBase::getValueH1(MatrixDouble &pts) {
         double *diff_vertex_n = &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin();
         ierr = H1_QuadShapeFunctions_MBPRISM(
           quads_nodes,quad_order,vertex_n,diff_vertex_n,quad_n,diff_quad_n,nb_gauss_pts,Legendre_polynomials
-        ); CHKERRQ(ierr);
+        ); CHKERRG(ierr);
       }
     }
     // prism
@@ -456,7 +456,7 @@ MoFEMErrorCode FatPrismPolynomialBase::getValueH1(MatrixDouble &pts) {
           &data.dataOnEntities[MBPRISM][0].getDiffN(base)(0,0),
           nb_gauss_pts,
           Legendre_polynomials
-        ); CHKERRQ(ierr);
+        ); CHKERRG(ierr);
       }
     }
   } catch (MoFEMException const &e) {

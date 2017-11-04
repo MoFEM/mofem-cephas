@@ -69,12 +69,12 @@ namespace MoFEM {
     MoFEMFunctionBeginHot;
     ierr = PetscOptionsBegin(
       m_field.get_comm(),"","MED Interface","none"
-    ); CHKERRQ(ierr);
+    ); CHKERRG(ierr);
     ierr = PetscOptionsString(
       "-med_file",
       "med file name","", "mesh.med",mesh_file_name, 255, &flgFile
-    ); CHKERRQ(ierr);
-    ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+    ); CHKERRG(ierr);
+    ierr = PetscOptionsEnd(); CHKERRG(ierr);
     if(flgFile) {
       medFileName = std::string(mesh_file_name);
     } else {
@@ -127,7 +127,7 @@ namespace MoFEM {
       if(verb>0) {
         std::ostringstream ss;
         ss <<  fieldNames[name] << std::endl;
-        ierr = PetscPrintf(m_field.get_comm(),ss.str().c_str()); CHKERRQ(ierr);
+        ierr = PetscPrintf(m_field.get_comm(),ss.str().c_str()); CHKERRG(ierr);
       }
 
     }
@@ -141,9 +141,9 @@ namespace MoFEM {
 
     MoFEMFunctionBeginHot;
     if(medFileName.empty()) {
-      ierr = getFileNameFromCommandLine(verb); CHKERRQ(ierr);
+      ierr = getFileNameFromCommandLine(verb); CHKERRG(ierr);
     }
-    ierr = medGetFieldNames(medFileName,verb); CHKERRQ(ierr);
+    ierr = medGetFieldNames(medFileName,verb); CHKERRG(ierr);
     MoFEMFunctionReturnHot(0);
   }
 
@@ -199,9 +199,9 @@ namespace MoFEM {
     std::map<string,Range> group_elem_map;
 
     for(unsigned int ii = 0;ii!=meshNames.size();ii++) {
-      ierr = readMesh(file,ii,family_elem_map,verb); CHKERRQ(ierr);
-      ierr = readFamily(file,ii,family_elem_map,group_elem_map,verb); CHKERRQ(ierr);
-      ierr = makeBlockSets(group_elem_map,verb); CHKERRQ(ierr);
+      ierr = readMesh(file,ii,family_elem_map,verb); CHKERRG(ierr);
+      ierr = readFamily(file,ii,family_elem_map,group_elem_map,verb); CHKERRG(ierr);
+      ierr = makeBlockSets(group_elem_map,verb); CHKERRG(ierr);
     }
 
     if(MEDfileClose(fid) < 0) {
@@ -289,13 +289,13 @@ namespace MoFEM {
     EntityHandle mesh_meshset;
     {
       MeshsetsManager *meshsets_manager_ptr;
-      ierr = m_field.getInterface(meshsets_manager_ptr); CHKERRQ(ierr);
+      ierr = m_field.getInterface(meshsets_manager_ptr); CHKERRG(ierr);
       int max_id = 0;
       for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,cit)) {
         max_id = (max_id < cit->getMeshsetId()) ? cit->getMeshsetId() : max_id;
       }
       max_id++;
-      ierr = meshsets_manager_ptr->addMeshset(BLOCKSET,max_id,std::string(mesh_name)); CHKERRQ(ierr);
+      ierr = meshsets_manager_ptr->addMeshset(BLOCKSET,max_id,std::string(mesh_name)); CHKERRG(ierr);
       CubitMeshSet_multiIndex::index<Composite_Cubit_msId_And_MeshSetType_mi_tag>::type::iterator cit;
       cit = meshsets_manager_ptr->getMeshsetsMultindex().get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().find(
         boost::make_tuple(max_id,CubitBCType(BLOCKSET).to_ulong())
@@ -342,7 +342,7 @@ namespace MoFEM {
     std::copy(&coord_med[0*num_nodes],&coord_med[1*num_nodes],arrays_coord[0]);
     std::copy(&coord_med[1*num_nodes],&coord_med[2*num_nodes],arrays_coord[1]);
     std::copy(&coord_med[2*num_nodes],&coord_med[3*num_nodes],arrays_coord[2]);
-    ierr = m_field.get_moab().add_entities(mesh_meshset,verts); CHKERRQ(ierr);
+    ierr = m_field.get_moab().add_entities(mesh_meshset,verts); CHKERRG(ierr);
     family_elem_map.clear();
 
     // get family for vertices
@@ -437,7 +437,7 @@ namespace MoFEM {
       ); CHKERRQ_MOAB(rval);
 
       Range ents(starte,starte+num_ele-1);
-      ierr = m_field.get_moab().add_entities(mesh_meshset,ents); CHKERRQ(ierr);
+      ierr = m_field.get_moab().add_entities(mesh_meshset,ents); CHKERRG(ierr);
 
       // get family for cells
       {
@@ -570,7 +570,7 @@ namespace MoFEM {
     Interface &m_field = cOre;
     MoFEMFunctionBeginHot;
     MeshsetsManager *meshsets_manager_ptr;
-    ierr = m_field.getInterface(meshsets_manager_ptr); CHKERRQ(ierr);
+    ierr = m_field.getInterface(meshsets_manager_ptr); CHKERRG(ierr);
 
     int max_id = 0;
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,cit)) {
@@ -584,7 +584,7 @@ namespace MoFEM {
       git!=group_elem_map.end();git++
     ) {
       // cerr << "AAA\n";
-      ierr = meshsets_manager_ptr->addMeshset(BLOCKSET,max_id,git->first); CHKERRQ(ierr);
+      ierr = meshsets_manager_ptr->addMeshset(BLOCKSET,max_id,git->first); CHKERRG(ierr);
       CubitMeshSet_multiIndex::index<Composite_Cubit_msId_And_MeshSetType_mi_tag>::type::iterator cit;
       cit = meshsets_manager_ptr->getMeshsetsMultindex().get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().find(
         boost::make_tuple(max_id,CubitBCType(BLOCKSET).to_ulong())
@@ -615,9 +615,9 @@ namespace MoFEM {
 
     MoFEMFunctionBeginHot;
     if(medFileName.empty()) {
-      ierr = getFileNameFromCommandLine(verb); CHKERRQ(ierr);
+      ierr = getFileNameFromCommandLine(verb); CHKERRG(ierr);
     }
-    ierr = readMed(medFileName,verb); CHKERRQ(ierr);
+    ierr = readMed(medFileName,verb); CHKERRG(ierr);
     MoFEMFunctionReturnHot(0);
   }
 
@@ -665,9 +665,9 @@ namespace MoFEM {
 
     // Get meshset
     MeshsetsManager *meshsets_manager_ptr;
-    ierr = m_field.getInterface(meshsets_manager_ptr); CHKERRQ(ierr);
+    ierr = m_field.getInterface(meshsets_manager_ptr); CHKERRG(ierr);
     const CubitMeshSets *cubit_meshset_ptr;
-    ierr = meshsets_manager_ptr->getCubitMeshsetPtr(meshName,&cubit_meshset_ptr); CHKERRQ(ierr);
+    ierr = meshsets_manager_ptr->getCubitMeshsetPtr(meshName,&cubit_meshset_ptr); CHKERRG(ierr);
     EntityHandle meshset = cubit_meshset_ptr->getMeshset();
 
     int num_comp_msh =

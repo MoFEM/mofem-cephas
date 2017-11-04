@@ -176,9 +176,9 @@ MoFEMErrorCode Core::add_field(
     std::pair<Field_multiIndex::iterator,bool> p;
     try {
       CoordSystemsManager *cs_manger_ptr;
-      ierr = getInterface(cs_manger_ptr); CHKERRQ(ierr);
+      ierr = getInterface(cs_manger_ptr); CHKERRG(ierr);
       boost::shared_ptr<CoordSys > undefined_cs_ptr;
-      ierr = cs_manger_ptr->getCoordSysPtr("UNDEFINED",undefined_cs_ptr); CHKERRQ(ierr);
+      ierr = cs_manger_ptr->getCoordSysPtr("UNDEFINED",undefined_cs_ptr); CHKERRG(ierr);
       int sys_name_size[1];
       sys_name_size[0] = undefined_cs_ptr->getName().size();
       void const* sys_name[] = { &*undefined_cs_ptr->getNameRef().begin() };
@@ -342,7 +342,7 @@ MoFEMErrorCode Core::add_ents_to_field_by_type(
   Range ents_type = ents.subset_by_type(type);
   if(!ents_type.empty()) {
     const int dim = moab.dimension_from_handle(ents_type[0]);
-    ierr = addEntsToFieldByDim(ents_type,dim,name,verb); CHKERRQ(ierr);
+    ierr = addEntsToFieldByDim(ents_type,dim,name,verb); CHKERRG(ierr);
   }
   MoFEMFunctionReturnHot(0);
 }
@@ -353,7 +353,7 @@ MoFEMErrorCode Core::add_ents_to_field_by_dim(
   MoFEMFunctionBeginHot;
   Range ents;
   rval = moab.get_entities_by_dimension(meshset,dim,ents,recursive); CHKERRQ_MOAB(rval);
-  ierr = addEntsToFieldByDim(ents,dim,name,verb); CHKERRQ(ierr);
+  ierr = addEntsToFieldByDim(ents,dim,name,verb); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -365,7 +365,7 @@ MoFEMErrorCode Core::add_ents_to_field_by_type(
   rval = moab.get_entities_by_type(meshset,type,ents,recursive); CHKERRQ_MOAB(rval);
   if(!ents.empty()) {
     const int dim = moab.dimension_from_handle(ents[0]);
-    ierr = addEntsToFieldByDim(ents,dim,name,verb); CHKERRQ(ierr);
+    ierr = addEntsToFieldByDim(ents,dim,name,verb); CHKERRG(ierr);
   }
   MoFEMFunctionReturnHot(0);
 }
@@ -661,7 +661,7 @@ MoFEMErrorCode Core::set_field_order(
     PetscSynchronizedPrintf(cOmm,"nb. of ents for order change %d\n",ents.size());
   }
   try{
-    ierr = set_field_order(ents,id,order,verb); CHKERRQ(ierr);
+    ierr = set_field_order(ents,id,order,verb); CHKERRG(ierr);
   } catch (MoFEMException const &e) {
     SETERRQ(cOmm,e.errorCode,e.errorMessage);
   }
@@ -677,7 +677,7 @@ MoFEMErrorCode Core::set_field_order(
   if(verb==-1) verb = verbose;
   *buildMoFEM = 0;
   try{
-    ierr = set_field_order(meshset,type,getBitFieldId(name),order,verb); CHKERRQ(ierr);
+    ierr = set_field_order(meshset,type,getBitFieldId(name),order,verb); CHKERRG(ierr);
   } catch (MoFEMException const &e) {
     SETERRQ(cOmm,e.errorCode,e.errorMessage);
   }
@@ -688,7 +688,7 @@ MoFEMErrorCode Core::set_field_order(const Range &ents,const std::string& name,c
   if(verb==-1) verb = verbose;
   *buildMoFEM = 0;
   try{
-    ierr = set_field_order(ents,getBitFieldId(name),order,verb); CHKERRQ(ierr);
+    ierr = set_field_order(ents,getBitFieldId(name),order,verb); CHKERRG(ierr);
   } catch (MoFEMException const &e) {
     SETERRQ(cOmm,e.errorCode,e.errorMessage);
   }
@@ -702,9 +702,9 @@ MoFEMErrorCode Core::set_field_order_by_entity_type_and_bit_ref(
   if(verb==-1) verb = verbose;
   *buildMoFEM = 0;
   Range ents;
-  ierr = BitRefManager(*this).getEntitiesByTypeAndRefLevel(bit,mask,type,ents,verb); CHKERRQ(ierr);
+  ierr = BitRefManager(*this).getEntitiesByTypeAndRefLevel(bit,mask,type,ents,verb); CHKERRG(ierr);
   try{
-    ierr = set_field_order(ents,id,order,verb); CHKERRQ(ierr);
+    ierr = set_field_order(ents,id,order,verb); CHKERRG(ierr);
   } catch (MoFEMException const &e) {
     SETERRQ(cOmm,e.errorCode,e.errorMessage);
   }
@@ -718,9 +718,9 @@ MoFEMErrorCode Core::set_field_order_by_entity_type_and_bit_ref(
   if(verb==-1) verb = verbose;
   *buildMoFEM = 0;
   Range ents;
-  ierr = BitRefManager(*this).getEntitiesByTypeAndRefLevel(bit,mask,type,ents,verb); CHKERRQ(ierr);
+  ierr = BitRefManager(*this).getEntitiesByTypeAndRefLevel(bit,mask,type,ents,verb); CHKERRG(ierr);
   try{
-    ierr = set_field_order(ents,getBitFieldId(name),order,verb); CHKERRQ(ierr);
+    ierr = set_field_order(ents,getBitFieldId(name),order,verb); CHKERRG(ierr);
   } catch (MoFEMException const &e) {
     SETERRQ(cOmm,e.errorCode,e.errorMessage);
   }
@@ -1065,7 +1065,7 @@ MoFEMErrorCode Core::build_fields(int verb) {
       case NOFIELD:
       ierr = buildFieldForNoField(
         (*miit)->getId(),dof_counter,verb
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
       break;
       case L2:
       case H1:
@@ -1076,7 +1076,7 @@ MoFEMErrorCode Core::build_fields(int verb) {
         dof_counter,
         inactive_dof_counter,
         verb
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
       break;
       default:
       SETERRQ(cOmm,MOFEM_NOT_IMPLEMENTED,"not implemented");

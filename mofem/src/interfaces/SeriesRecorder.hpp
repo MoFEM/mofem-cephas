@@ -195,7 +195,7 @@ protected:
     * Example: \code
       for(_IT_SERIES_STEPS_BY_NAME_FOR_LOOP_(recorder_ptr,"TEST_SERIES1",sit)) {
 
-	ierr = mField.load_series_data("TEST_SERIES1",sit->get_step_number()); CHKERRQ(ierr);
+	ierr = mField.load_series_data("TEST_SERIES1",sit->get_step_number()); CHKERRG(ierr);
     * } \endcode
     *
     */

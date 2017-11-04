@@ -94,7 +94,7 @@ MoFEMErrorCode DMCtx::query_interface(const MOFEMuuid& uuid, UnknownInterface** 
 
 PetscErrorCode DMRegister_MoFEM(const char sname[]) {
   MoFEMFunctionBeginHot;
-  ierr = DMRegister(sname,DMCreate_MoFEM); CHKERRQ(ierr);
+  ierr = DMRegister(sname,DMCreate_MoFEM); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -115,7 +115,7 @@ PetscErrorCode DMSetOperators_MoFEM(DM dm) {
   dm->ops->createfieldis            = DMCreateFieldIS_MoFEM;
 
   // Default matrix type
-  ierr = DMSetMatType(dm,MATMPIAIJ); CHKERRQ(ierr);
+  ierr = DMSetMatType(dm,MATMPIAIJ); CHKERRG(ierr);
 
   MoFEMFunctionReturnHot(0);
 }
@@ -124,7 +124,7 @@ PetscErrorCode DMCreate_MoFEM(DM dm) {
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   MoFEMFunctionBeginHot;
   dm->data = new DMCtx();
-  ierr = DMSetOperators_MoFEM(dm); CHKERRQ(ierr);
+  ierr = DMSetOperators_MoFEM(dm); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -169,22 +169,22 @@ PetscErrorCode DMMoFEMCreateMoFEM(
     // problem is not defined, declare problem internally set bool to destroyProblem
     // problem with DM
     dm_field->destroyProblem = PETSC_TRUE;
-    ierr = dm_field->mField_ptr->add_problem(dm_field->problemName); CHKERRQ(ierr);
+    ierr = dm_field->mField_ptr->add_problem(dm_field->problemName); CHKERRG(ierr);
   } else {
     dm_field->destroyProblem = PETSC_FALSE;
   }
   ierr = dm_field->mField_ptr->modify_problem_ref_level_add_bit(
     dm_field->problemName,bit_level
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
   ierr = dm_field->mField_ptr->modify_problem_mask_ref_level_set_bit(
     dm_field->problemName,bit_mask
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
   dm_field->kspCtx = boost::shared_ptr<KspCtx>(new KspCtx(*m_field_ptr,problem_name));
   dm_field->snesCtx = boost::shared_ptr<SnesCtx>(new SnesCtx(*m_field_ptr,problem_name));
   dm_field->tsCtx = boost::shared_ptr<TsCtx>(new TsCtx(*m_field_ptr,problem_name));
 
   MPI_Comm comm;
-  ierr = PetscObjectGetComm((PetscObject)dm,&comm); CHKERRQ(ierr);
+  ierr = PetscObjectGetComm((PetscObject)dm,&comm); CHKERRG(ierr);
   int result = 0;
   MPI_Comm_compare(comm,m_field_ptr->get_comm(),&result);
   //std::cerr << result << " " << MPI_IDENT << " " << MPI_CONGRUENT << " " << MPI_SIMILAR << " " << MPI_UNEQUAL << std::endl;
@@ -195,7 +195,7 @@ PetscErrorCode DMMoFEMCreateMoFEM(
   MPI_Comm_rank(comm,&dm_field->rAnk);
 
   // problem structure
-  ierr = dm_field->mField_ptr->get_problem(dm_field->problemName,&dm_field->problemPtr); CHKERRQ(ierr);
+  ierr = dm_field->mField_ptr->get_problem(dm_field->problemName,&dm_field->problemPtr); CHKERRG(ierr);
 
   MoFEMFunctionReturnHot(0);
 }
@@ -210,7 +210,7 @@ PetscErrorCode DMMoFEMCreateSubDM(DM subdm,DM dm,const char problem_name[]) {
   }
   ierr = DMMoFEMCreateMoFEM(
     subdm,dm_field->mField_ptr,problem_name,dm_field->problemPtr->getBitRefLevel()
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
 
   DMCtx *subdm_field = (DMCtx*)subdm->data;
   subdm_field->isSubDM = PETSC_TRUE;
@@ -272,7 +272,7 @@ PetscErrorCode DMMoFEMGetSubRowIS(DM dm,IS *is) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"Problem is not build");
   }
   boost::shared_ptr<Problem::SubProblemData> sub_data = dm_field->problemPtr->getSubData();
-  ierr = sub_data->getRowIs(is); CHKERRQ(ierr);
+  ierr = sub_data->getRowIs(is); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -289,7 +289,7 @@ PetscErrorCode DMMoFEMGetSubColIS(DM dm,IS *is) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"Problem is not build");
   }
   boost::shared_ptr<Problem::SubProblemData> sub_data = dm_field->problemPtr->getSubData();
-  ierr = sub_data->getColIs(is); CHKERRQ(ierr);
+  ierr = sub_data->getColIs(is); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -395,7 +395,7 @@ PetscErrorCode DMMoFEMResolveSharedEntities(DM dm,const char fe_name[]) {
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   MoFEMFunctionBeginHot;
   DMCtx *dm_field = (DMCtx*)dm->data;
-  ierr = dm_field->mField_ptr->resolve_shared_ents(dm_field->problemPtr,fe_name); CHKERRQ(ierr);
+  ierr = dm_field->mField_ptr->resolve_shared_ents(dm_field->problemPtr,fe_name); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -406,8 +406,8 @@ PetscErrorCode DMMoFEMGetProblemFiniteElementLayout(DM dm,const char fe_name[],P
   DMCtx *dm_field = (DMCtx*)dm->data;
 
   MPI_Comm comm;
-  ierr = PetscObjectGetComm((PetscObject)dm,&comm); CHKERRQ(ierr);
-  ierr = dm_field->problemPtr->getNumberOfElementsByNameAndPart(comm,fe_name,layout); CHKERRQ(ierr);
+  ierr = PetscObjectGetComm((PetscObject)dm,&comm); CHKERRG(ierr);
+  ierr = dm_field->problemPtr->getNumberOfElementsByNameAndPart(comm,fe_name,layout); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -425,7 +425,7 @@ PetscErrorCode DMMoFEMAddElement(DM dm,const char fe_name[]) {
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   MoFEMFunctionBeginHot;
   DMCtx *dm_field = (DMCtx*)dm->data;
-  ierr = dm_field->mField_ptr->modify_problem_add_finite_element(dm_field->problemName,fe_name); CHKERRQ(ierr);
+  ierr = dm_field->mField_ptr->modify_problem_add_finite_element(dm_field->problemName,fe_name); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -433,7 +433,7 @@ PetscErrorCode DMMoFEMUnSetElement(DM dm,const char fe_name[]) {
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   MoFEMFunctionBeginHot;
   DMCtx *dm_field = (DMCtx*)dm->data;
-  ierr = dm_field->mField_ptr->modify_problem_unset_finite_element(dm_field->problemName,fe_name); CHKERRQ(ierr);
+  ierr = dm_field->mField_ptr->modify_problem_unset_finite_element(dm_field->problemName,fe_name); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -444,7 +444,7 @@ PetscErrorCode DMoFEMMeshToLocalVector(DM dm,Vec l,InsertMode mode,ScatterMode s
   DMCtx *dm_field = (DMCtx*)dm->data;
   ierr = dm_field->mField_ptr->getInterface<VecManager>()->setLocalGhostVector(
     dm_field->problemPtr,COL,l,mode,scatter_mode
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -454,7 +454,7 @@ PetscErrorCode DMoFEMMeshToGlobalVector(DM dm,Vec g,InsertMode mode,ScatterMode 
   DMCtx *dm_field = (DMCtx*)dm->data;
   ierr = dm_field->mField_ptr->getInterface<VecManager>()->setGlobalGhostVector(
     dm_field->problemPtr,COL,g,mode,scatter_mode
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -462,7 +462,7 @@ PetscErrorCode DMoFEMPreProcessFiniteElements(DM dm,MoFEM::FEMethod *method) {
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   MoFEMFunctionBeginHot;
   DMCtx *dm_field = (DMCtx*)dm->data;
-  ierr = dm_field->mField_ptr->problem_basic_method_preProcess(dm_field->problemPtr,*method); CHKERRQ(ierr);
+  ierr = dm_field->mField_ptr->problem_basic_method_preProcess(dm_field->problemPtr,*method); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -470,14 +470,14 @@ PetscErrorCode DMoFEMPostProcessFiniteElements(DM dm,MoFEM::FEMethod *method) {
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   MoFEMFunctionBeginHot;
   DMCtx *dm_field = (DMCtx*)dm->data;
-  ierr = dm_field->mField_ptr->problem_basic_method_postProcess(dm_field->problemPtr,*method); CHKERRQ(ierr);
+  ierr = dm_field->mField_ptr->problem_basic_method_postProcess(dm_field->problemPtr,*method); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode DMoFEMLoopFiniteElementsUpAndLowRank(DM dm,const char fe_name[],MoFEM::FEMethod *method,int low_rank,int up_rank) {
   MoFEMFunctionBeginHot;
   DMCtx *dm_field = (DMCtx*)dm->data;
-  ierr = dm_field->mField_ptr->loop_finite_elements(dm_field->problemPtr,fe_name,*method,low_rank,up_rank); CHKERRQ(ierr);
+  ierr = dm_field->mField_ptr->loop_finite_elements(dm_field->problemPtr,fe_name,*method,low_rank,up_rank); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -491,7 +491,7 @@ PetscErrorCode DMoFEMLoopFiniteElements(DM dm,const char fe_name[],MoFEM::FEMeth
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   MoFEMFunctionBeginHot;
   DMCtx *dm_field = (DMCtx*)dm->data;
-  ierr = DMoFEMLoopFiniteElementsUpAndLowRank(dm,fe_name,method,dm_field->rAnk,dm_field->rAnk); CHKERRQ(ierr);
+  ierr = DMoFEMLoopFiniteElementsUpAndLowRank(dm,fe_name,method,dm_field->rAnk,dm_field->rAnk); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -503,7 +503,7 @@ PetscErrorCode DMoFEMLoopDofs(DM dm,const char field_name[],MoFEM::EntMethod *me
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   MoFEMFunctionBeginHot;
   DMCtx *dm_field = (DMCtx*)dm->data;
-  ierr = dm_field->mField_ptr->loop_dofs(dm_field->problemPtr,field_name,COL,*method,dm_field->rAnk,dm_field->rAnk); CHKERRQ(ierr);
+  ierr = dm_field->mField_ptr->loop_dofs(dm_field->problemPtr,field_name,COL,*method,dm_field->rAnk,dm_field->rAnk); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -521,7 +521,7 @@ static PetscErrorCode DMMoFEMKSPSetComputeRHS(DM dm,S fe_name,T method,T pre_onl
   if(post_only) {
     dm_field->kspCtx->get_postProcess_to_do_Rhs().push_back(post_only);
   }
-  ierr = DMKSPSetComputeRHS(dm,KspRhs,dm_field->kspCtx.get()); CHKERRQ(ierr);
+  ierr = DMKSPSetComputeRHS(dm,KspRhs,dm_field->kspCtx.get()); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -555,7 +555,7 @@ static PetscErrorCode DMMoFEMKSPSetComputeOperators(DM dm,S fe_name,T method,T p
   if(post_only) {
     dm_field->kspCtx->get_postProcess_to_do_Mat().push_back(post_only);
   }
-  ierr = DMKSPSetComputeOperators(dm,KspMat,dm_field->kspCtx.get()); CHKERRQ(ierr);
+  ierr = DMKSPSetComputeOperators(dm,KspMat,dm_field->kspCtx.get()); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -591,7 +591,7 @@ static PetscErrorCode DMMoFEMSNESSetFunction(DM dm,S fe_name,T method,T pre_only
   if(post_only) {
     dm_field->snesCtx->get_postProcess_to_do_Rhs().push_back(post_only);
   }
-  ierr = DMSNESSetFunction(dm,SnesRhs,dm_field->snesCtx.get()); CHKERRQ(ierr);
+  ierr = DMSNESSetFunction(dm,SnesRhs,dm_field->snesCtx.get()); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -626,7 +626,7 @@ static PetscErrorCode DMMoFEMSNESSetJacobian(DM dm,S fe_name,T method,T pre_only
   if(post_only) {
     dm_field->snesCtx->get_postProcess_to_do_Mat().push_back(post_only);
   }
-  ierr = DMSNESSetJacobian(dm,SnesMat,dm_field->snesCtx.get()); CHKERRQ(ierr);
+  ierr = DMSNESSetJacobian(dm,SnesMat,dm_field->snesCtx.get()); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -664,7 +664,7 @@ static PetscErrorCode DMMoFEMTSSetIFunction(DM dm,S fe_name,T method,T pre_only,
   if(post_only) {
     dm_field->tsCtx->get_postProcess_to_do_IFunction().push_back(post_only);
   }
-  ierr = DMTSSetIFunction(dm,f_TSSetIFunction,dm_field->tsCtx.get()); CHKERRQ(ierr);
+  ierr = DMTSSetIFunction(dm,f_TSSetIFunction,dm_field->tsCtx.get()); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -699,7 +699,7 @@ static PetscErrorCode DMMoFEMTSSetIJacobian(DM dm,S fe_name,T method,T pre_only,
   if(post_only) {
     dm_field->tsCtx->get_postProcess_to_do_IJacobian().push_back(post_only);
   }
-  ierr = DMTSSetIJacobian(dm,f_TSSetIJacobian,dm_field->tsCtx.get()); CHKERRQ(ierr);
+  ierr = DMTSSetIJacobian(dm,f_TSSetIJacobian,dm_field->tsCtx.get()); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -818,7 +818,7 @@ PetscErrorCode DMCreateGlobalVector_MoFEM(DM dm,Vec *g) {
   DMCtx *dm_field = (DMCtx*)dm->data;
   ierr = dm_field->mField_ptr->getInterface<VecManager>()->vecCreateGhost(
     dm_field->problemName,COL,g
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -828,7 +828,7 @@ PetscErrorCode DMCreateLocalVector_MoFEM(DM dm,Vec *l) {
   DMCtx *dm_field = (DMCtx*)dm->data;
   ierr = dm_field->mField_ptr->getInterface<VecManager>()->vecCreateSeq(
     dm_field->problemName,COL,l
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -837,7 +837,7 @@ PetscErrorCode DMCreateMatrix_MoFEM(DM dm,Mat *M) {
   MoFEMFunctionBeginHot;
   DMCtx *dm_field = (DMCtx*)dm->data;
   if(strcmp(dm->mattype,MATMPIAIJ)==0) {
-    ierr = dm_field->mField_ptr->MatCreateMPIAIJWithArrays(dm_field->problemName,M); CHKERRQ(ierr);
+    ierr = dm_field->mField_ptr->MatCreateMPIAIJWithArrays(dm_field->problemName,M); CHKERRG(ierr);
   } else if(strcmp(dm->mattype,MATAIJ)==0) {
     PetscInt *i;
     PetscInt *j;
@@ -845,19 +845,19 @@ PetscErrorCode DMCreateMatrix_MoFEM(DM dm,Mat *M) {
     #if PETSC_VERSION_GE(3,7,0)
       ierr = dm_field->mField_ptr->MatCreateSeqAIJWithArrays(
         dm_field->problemName,M,&i,&j,&v
-      ); CHKERRQ(ierr);
-      ierr = MatConvert(*M,MATAIJ,MAT_INPLACE_MATRIX,M); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
+      ierr = MatConvert(*M,MATAIJ,MAT_INPLACE_MATRIX,M); CHKERRG(ierr);
     #else
       Mat N;
       ierr = dm_field->mField_ptr->MatCreateSeqAIJWithArrays(
         dm_field->problemName,&N,&i,&j,&v
-      ); CHKERRQ(ierr);
-      ierr = MatConvert(N,MATAIJ,MAT_INITIAL_MATRIX,M); CHKERRQ(ierr);
-      ierr = MatDestroy(&N); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
+      ierr = MatConvert(N,MATAIJ,MAT_INITIAL_MATRIX,M); CHKERRG(ierr);
+      ierr = MatDestroy(&N); CHKERRG(ierr);
     #endif
-    ierr = PetscFree(i); CHKERRQ(ierr);
-    ierr = PetscFree(j); CHKERRQ(ierr);
-    ierr = PetscFree(v); CHKERRQ(ierr);
+    ierr = PetscFree(i); CHKERRG(ierr);
+    ierr = PetscFree(j); CHKERRG(ierr);
+    ierr = PetscFree(v); CHKERRG(ierr);
   } else {
     SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"Matrix type not implemented");
   }
@@ -876,15 +876,15 @@ PetscErrorCode DMSetFromOptions_MoFEM(DM dm) {
   MoFEMFunctionBeginHot;
   DMCtx *dm_field = (DMCtx*)dm->data;
   #if PETSC_VERSION_GE(3,5,3)
-    ierr = PetscOptionsHead(PetscOptionsObject,"DMMoFEM Options");CHKERRQ(ierr);
+    ierr = PetscOptionsHead(PetscOptionsObject,"DMMoFEM Options");CHKERRG(ierr);
   #else
-    ierr = PetscOptionsHead("DMMoFEM Options");CHKERRQ(ierr);
+    ierr = PetscOptionsHead("DMMoFEM Options");CHKERRG(ierr);
   #endif
   ierr = PetscOptionsBool(
     "-dm_is_partitioned",
     "set if mesh is partitioned (works which native MOAB file format, i.e. h5m","DMSetUp",
     dm_field->isPartitioned,&dm_field->isPartitioned,NULL
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -894,7 +894,7 @@ PetscErrorCode DMSetUp_MoFEM(DM dm) {
   ProblemsManager *prb_mng_ptr;
   MoFEMFunctionBeginHot;
   DMCtx *dm_field = (DMCtx*)dm->data;
-  ierr = dm_field->mField_ptr->getInterface(prb_mng_ptr); CHKERRQ(ierr);
+  ierr = dm_field->mField_ptr->getInterface(prb_mng_ptr); CHKERRG(ierr);
 
   if(dm_field->isCompDM) {
     // It is composite probelm
@@ -903,17 +903,17 @@ PetscErrorCode DMSetUp_MoFEM(DM dm) {
       dm_field->rowCompPrb,
       dm_field->colCompPrb,
       dm_field->isSquareMatrix == PETSC_TRUE
-    ); CHKERRQ(ierr);
+    ); CHKERRG(ierr);
   } else {
     if(dm_field->isPartitioned) {
       ierr = prb_mng_ptr->buildProblemOnDistributedMesh(
         dm_field->problemName,dm_field->isSquareMatrix == PETSC_TRUE
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
     } else {
       ierr = prb_mng_ptr->buildProblem(
         dm_field->problemName,dm_field->isSquareMatrix == PETSC_TRUE
-      ); CHKERRQ(ierr);
-      ierr = prb_mng_ptr->partitionProblem(dm_field->problemName); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
+      ierr = prb_mng_ptr->partitionProblem(dm_field->problemName); CHKERRG(ierr);
     }
   }
 
@@ -921,16 +921,16 @@ PetscErrorCode DMSetUp_MoFEM(DM dm) {
   if(dm_field->isPartitioned) {
     ierr = prb_mng_ptr->partitionFiniteElements(
       dm_field->problemName,true,0,dm_field->sIze,1
-    ); CHKERRQ(ierr);
+    ); CHKERRG(ierr);
     ierr = prb_mng_ptr->partitionGhostDofsOnDistributedMesh(
       dm_field->problemName
-    ); CHKERRQ(ierr);
+    ); CHKERRG(ierr);
   } else {
     ierr = prb_mng_ptr->partitionFiniteElements(
       dm_field->problemName
-    ); CHKERRQ(ierr);
+    ); CHKERRG(ierr);
     // Get ghost DOFs
-    ierr = prb_mng_ptr->partitionGhostDofs(dm_field->problemName); CHKERRQ(ierr);
+    ierr = prb_mng_ptr->partitionGhostDofs(dm_field->problemName); CHKERRG(ierr);
   }
 
   // Set flag that problem is build and partitioned
@@ -947,31 +947,31 @@ PetscErrorCode DMSubDMSetUp_MoFEM(DM subdm) {
   DMCtx *subdm_field = (DMCtx*)subdm->data;
 
   // build sub dm problem
-  ierr = subdm_field->mField_ptr->getInterface(prb_mng_ptr); CHKERRQ(ierr);
+  ierr = subdm_field->mField_ptr->getInterface(prb_mng_ptr); CHKERRG(ierr);
   ierr = prb_mng_ptr->buildSubProblem(
     subdm_field->problemName,
     subdm_field->rowFields,
     subdm_field->colFields,
     subdm_field->problemMainOfSubPtr->getName(),
     subdm_field->isSquareMatrix == PETSC_TRUE
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
 
   // partition problem
   subdm_field->isPartitioned = subdm_field->isPartitioned;
   if(subdm_field->isPartitioned) {
     ierr = prb_mng_ptr->partitionFiniteElements(
       subdm_field->problemName,true,0,subdm_field->sIze,1
-    ); CHKERRQ(ierr);
+    ); CHKERRG(ierr);
     // set ghost nodes
     ierr = prb_mng_ptr->partitionGhostDofsOnDistributedMesh(
       subdm_field->problemName
-    ); CHKERRQ(ierr);
+    ); CHKERRG(ierr);
   } else {
     ierr = prb_mng_ptr->partitionFiniteElements(
       subdm_field->problemName
-    ); CHKERRQ(ierr);
+    ); CHKERRG(ierr);
     // set ghost nodes
-    ierr = prb_mng_ptr->partitionGhostDofs(subdm_field->problemName); CHKERRQ(ierr);
+    ierr = prb_mng_ptr->partitionGhostDofs(subdm_field->problemName); CHKERRG(ierr);
   }
 
   subdm_field->isProblemBuild = PETSC_TRUE;
@@ -986,7 +986,7 @@ PetscErrorCode DMGlobalToLocalBegin_MoFEM(DM dm,Vec g,InsertMode mode,Vec l) {
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   MoFEMFunctionBeginHot;
 
-  ierr = VecGhostUpdateBegin(g,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(g,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
 
   MoFEMFunctionReturnHot(0);
 }
@@ -997,15 +997,15 @@ PetscErrorCode DMGlobalToLocalEnd_MoFEM(DM dm,Vec g,InsertMode mode,Vec l) {
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   MoFEMFunctionBeginHot;
 
-  ierr = VecGhostUpdateEnd(g,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(g,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
 
   DMCtx *dm_field = (DMCtx*)dm->data;
   int nb_dofs = dm_field->problemPtr->getNbLocalDofsRow();
   int nb_ghost = dm_field->problemPtr->getNbGhostDofsRow();
 
   double *array_loc,*array_glob;
-  ierr = VecGetArray(l,&array_loc); CHKERRQ(ierr);
-  ierr = VecGetArray(g,&array_glob); CHKERRQ(ierr);
+  ierr = VecGetArray(l,&array_loc); CHKERRG(ierr);
+  ierr = VecGetArray(g,&array_glob); CHKERRG(ierr);
   switch (mode) {
     case INSERT_VALUES:
       cblas_dcopy(nb_dofs+nb_ghost,array_glob,1,array_loc,1);
@@ -1016,8 +1016,8 @@ PetscErrorCode DMGlobalToLocalEnd_MoFEM(DM dm,Vec g,InsertMode mode,Vec l) {
     default:
     SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
   }
-  ierr = VecRestoreArray(l,&array_loc); CHKERRQ(ierr);
-  ierr = VecRestoreArray(g,&array_glob); CHKERRQ(ierr);
+  ierr = VecRestoreArray(l,&array_loc); CHKERRG(ierr);
+  ierr = VecRestoreArray(g,&array_glob); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -1032,8 +1032,8 @@ PetscErrorCode DMLocalToGlobalBegin_MoFEM(DM dm,Vec l,InsertMode mode,Vec g) {
   int nb_ghost = dm_field->problemPtr->getNbGhostDofsRow();
 
   double *array_loc,*array_glob;
-  ierr = VecGetArray(l,&array_loc); CHKERRQ(ierr);
-  ierr = VecGetArray(g,&array_glob); CHKERRQ(ierr);
+  ierr = VecGetArray(l,&array_loc); CHKERRG(ierr);
+  ierr = VecGetArray(g,&array_glob); CHKERRG(ierr);
   switch (mode) {
     case INSERT_VALUES:
       cblas_dcopy(nb_dofs+nb_ghost,array_loc,1,array_glob,1);
@@ -1044,8 +1044,8 @@ PetscErrorCode DMLocalToGlobalBegin_MoFEM(DM dm,Vec l,InsertMode mode,Vec g) {
     default:
     SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
   }
-  ierr = VecRestoreArray(l,&array_loc); CHKERRQ(ierr);
-  ierr = VecRestoreArray(g,&array_glob); CHKERRQ(ierr);
+  ierr = VecRestoreArray(l,&array_loc); CHKERRG(ierr);
+  ierr = VecRestoreArray(g,&array_glob); CHKERRG(ierr);
 
   MoFEMFunctionReturnHot(0);
 }
@@ -1075,7 +1075,7 @@ PetscErrorCode DMCreateFieldIS_MoFEM(
 
   DMCtx *dm_field = (DMCtx*)dm->data;
   const Field_multiIndex *fields_ptr;
-  ierr = dm_field->mField_ptr->get_fields(&fields_ptr); CHKERRQ(ierr);
+  ierr = dm_field->mField_ptr->get_fields(&fields_ptr); CHKERRG(ierr);
   Field_multiIndex::iterator fit,hi_fit;
   fit = fields_ptr->begin();
   hi_fit = fields_ptr->end();
@@ -1097,7 +1097,7 @@ PetscErrorCode DMCreateFieldIS_MoFEM(
         dm_field->problemPtr->getName(),
         ROW,fit->get()->getName(),0,fit->get()->getNbOfCoeffs(),
         &(*fields)[f]
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
     }
   }
 
@@ -1112,7 +1112,7 @@ PetscErrorCode DMMoFEMGetFieldIS(DM dm,RowColData rc,const char field_name[],IS 
     dm_field->problemPtr->getName(),
     ROW,field_name,0,1000,
     is
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 

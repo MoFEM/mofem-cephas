@@ -136,11 +136,11 @@ MoFEMErrorCode VertexElementForcesAndSourcesCore::operator()() {
             SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown space");
             case H1:
             if(!ss) {
-              ierr = getRowNodesIndices(*op_data[ss],field_name); CHKERRQ(ierr);
+              ierr = getRowNodesIndices(*op_data[ss],field_name); CHKERRG(ierr);
             } else {
-              ierr = getColNodesIndices(*op_data[ss],field_name); CHKERRQ(ierr);
+              ierr = getColNodesIndices(*op_data[ss],field_name); CHKERRG(ierr);
             }
-            ierr = getNodesFieldData(*op_data[ss],field_name); CHKERRQ(ierr);
+            ierr = getNodesFieldData(*op_data[ss],field_name); CHKERRG(ierr);
             break;
             case HCURL:
             SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not make sanes on edge");
@@ -155,11 +155,11 @@ MoFEMErrorCode VertexElementForcesAndSourcesCore::operator()() {
             if(!getNinTheLoop()) {
               // NOFIELD data are the same for each element, can be retreived only once
               if(!ss) {
-                ierr = getNoFieldRowIndices(*op_data[ss],field_name); CHKERRQ(ierr);
+                ierr = getNoFieldRowIndices(*op_data[ss],field_name); CHKERRG(ierr);
               } else {
-                ierr = getNoFieldColIndices(*op_data[ss],field_name); CHKERRQ(ierr);
+                ierr = getNoFieldColIndices(*op_data[ss],field_name); CHKERRG(ierr);
               }
-              ierr = getNoFieldFieldData(*op_data[ss],field_name); CHKERRQ(ierr);
+              ierr = getNoFieldFieldData(*op_data[ss],field_name); CHKERRG(ierr);
             }
             break;
             case LASTSPACE:
@@ -182,7 +182,7 @@ MoFEMErrorCode VertexElementForcesAndSourcesCore::operator()() {
           false,
           false,
           false
-        ); CHKERRQ(ierr);
+        ); CHKERRG(ierr);
       } catch (std::exception& ex) {
         std::ostringstream ss;
         ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
@@ -201,7 +201,7 @@ MoFEMErrorCode VertexElementForcesAndSourcesCore::operator()() {
           false,
           false,
           false
-        ); CHKERRQ(ierr);
+        ); CHKERRG(ierr);
       } catch (std::exception& ex) {
         std::ostringstream ss;
         ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
@@ -212,7 +212,7 @@ MoFEMErrorCode VertexElementForcesAndSourcesCore::operator()() {
 
     if(oit->getOpType()&UserDataOperator::OPROWCOL) {
       try {
-        ierr = oit->opLhs(*op_data[0],*op_data[1],oit->sYmm); CHKERRQ(ierr);
+        ierr = oit->opLhs(*op_data[0],*op_data[1],oit->sYmm); CHKERRG(ierr);
       } catch (std::exception& ex) {
         std::ostringstream ss;
         ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;

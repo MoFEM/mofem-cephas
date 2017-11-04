@@ -131,7 +131,7 @@ MeshsetsManager::query_interface(const MOFEMuuid &uuid,
     DisplacementCubitBcData mydata;
     MoFEMFunctionBeginHot;
     ierr = printBcSet(mydata, NODESET | mydata.tYpe.to_ulong());
-    CHKERRQ(ierr);
+    CHKERRG(ierr);
     MoFEMFunctionReturnHot(0);
   }
 
@@ -139,7 +139,7 @@ MeshsetsManager::query_interface(const MOFEMuuid &uuid,
     PressureCubitBcData mydata;
     MoFEMFunctionBeginHot;
     ierr = printBcSet(mydata, SIDESET | mydata.tYpe.to_ulong());
-    CHKERRQ(ierr);
+    CHKERRG(ierr);
     MoFEMFunctionReturnHot(0);
   }
 
@@ -147,7 +147,7 @@ MeshsetsManager::query_interface(const MOFEMuuid &uuid,
     ForceCubitBcData mydata;
     MoFEMFunctionBeginHot;
     ierr = printBcSet(mydata, NODESET | mydata.tYpe.to_ulong());
-    CHKERRQ(ierr);
+    CHKERRG(ierr);
     MoFEMFunctionReturnHot(0);
   }
 
@@ -155,7 +155,7 @@ MeshsetsManager::query_interface(const MOFEMuuid &uuid,
     TemperatureCubitBcData mydata;
     MoFEMFunctionBeginHot;
     ierr = printBcSet(mydata, NODESET | mydata.tYpe.to_ulong());
-    CHKERRQ(ierr);
+    CHKERRG(ierr);
     MoFEMFunctionReturnHot(0);
   }
 
@@ -163,7 +163,7 @@ MeshsetsManager::query_interface(const MOFEMuuid &uuid,
     HeatFluxCubitBcData mydata;
     MoFEMFunctionBeginHot;
     ierr = printBcSet(mydata, SIDESET | mydata.tYpe.to_ulong());
-    CHKERRQ(ierr);
+    CHKERRG(ierr);
     MoFEMFunctionReturnHot(0);
   }
 
@@ -175,7 +175,7 @@ MeshsetsManager::query_interface(const MOFEMuuid &uuid,
              (*this), BLOCKSET | MAT_ELASTICSET, it)) {
       Mat_Elastic data;
       ierr = it->getAttributeDataStructure(data);
-      CHKERRQ(ierr);
+      CHKERRG(ierr);
       std::ostringstream ss;
       ss << *it << std::endl;
       ss << data;
@@ -192,7 +192,7 @@ MeshsetsManager::query_interface(const MOFEMuuid &uuid,
              m_field, BLOCKSET | MAT_THERMALSET, it)) {
       Mat_Thermal data;
       ierr = it->getAttributeDataStructure(data);
-      CHKERRQ(ierr);
+      CHKERRG(ierr);
       std::ostringstream ss;
       ss << *it << std::endl;
       ss << data;
@@ -203,7 +203,7 @@ MeshsetsManager::query_interface(const MOFEMuuid &uuid,
              m_field, BLOCKSET | MAT_MOISTURESET, it)) {
       Mat_Moisture data;
       ierr = it->getAttributeDataStructure(data);
-      CHKERRQ(ierr);
+      CHKERRG(ierr);
       std::ostringstream ss;
       ss << *it << std::endl;
       ss << data;
@@ -492,7 +492,7 @@ MeshsetsManager::query_interface(const MOFEMuuid &uuid,
             .end()) {
       ierr = miit->getMeshsetIdEntitiesByDimension(moab, dimension, entities,
                                                    recursive);
-      CHKERRQ(ierr);
+      CHKERRG(ierr);
     } else {
       SETERRQ1(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
                "msId = %d is not there", msId);
@@ -514,7 +514,7 @@ MeshsetsManager::query_interface(const MOFEMuuid &uuid,
         cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>()
             .end()) {
       ierr = miit->getMeshsetIdEntitiesByDimension(moab, entities, recursive);
-      CHKERRQ(ierr);
+      CHKERRG(ierr);
     } else {
       SETERRQ1(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
                "ms_id = %d is not there", ms_id);
@@ -809,7 +809,7 @@ MeshsetsManager::query_interface(const MOFEMuuid &uuid,
            vit != additional_parameters.end(); vit++) {
         ierr = PetscPrintf(m_field.get_comm(),
                            "** WARNING Unrecognized option %s\n", vit->c_str());
-        CHKERRQ(ierr);
+        CHKERRG(ierr);
       }
       for (map<int, BlockData>::iterator mit = block_lists.begin();
            mit != block_lists.end(); mit++) {
@@ -829,30 +829,30 @@ MeshsetsManager::query_interface(const MOFEMuuid &uuid,
                 mit->second.iD == cubit_meshset_it->getMeshsetId()) {
               // Meshset is the same, only modification
             } else {
-              ierr = addMeshset(mit->second.bcType,mit->second.iD,mit->second.nAme); CHKERRQ(ierr);
+              ierr = addMeshset(mit->second.bcType,mit->second.iD,mit->second.nAme); CHKERRG(ierr);
               EntityHandle meshset = cubit_meshset_it->getMeshset();
-              ierr = addEntitiesToMeshset(mit->second.bcType,mit->second.iD,&meshset,1); CHKERRQ(ierr);
+              ierr = addEntitiesToMeshset(mit->second.bcType,mit->second.iD,&meshset,1); CHKERRG(ierr);
             }
             // Add attributes
             ierr = setAtributes(mit->second.bcType, mit->second.iD,
                                  mit->second.aTtr);
-            CHKERRQ(ierr);
+            CHKERRG(ierr);
             // Add material elastic data if value are physical (i.e. Young > 0,
             // Poisson in (-1.0.5) and ThermalExpansion>0)
             if(mit->second.matElastic.data.Young!=-1) {
               ierr = setAtributesByDataStructure(
                   mit->second.bcType, mit->second.iD, mit->second.matElastic);
-              CHKERRQ(ierr);
+              CHKERRG(ierr);
             }
             if(mit->second.matThermal.data.Conductivity!=-1) {
               ierr = setAtributesByDataStructure(
                   mit->second.bcType, mit->second.iD, mit->second.matThermal);
-              CHKERRQ(ierr);
+              CHKERRG(ierr);
             }
             if(mit->second.matInterf.data.ft!=-1) {
               ierr = setAtributesByDataStructure(
                   mit->second.bcType, mit->second.iD, mit->second.matInterf);
-              CHKERRQ(ierr);
+              CHKERRG(ierr);
             }
           }
           break;
@@ -864,11 +864,11 @@ MeshsetsManager::query_interface(const MOFEMuuid &uuid,
               // Meshset is the same, only modification
             } else {
               ierr = addMeshset(mit->second.bcType, mit->second.iD);
-              CHKERRQ(ierr);
+              CHKERRG(ierr);
               EntityHandle meshset = cubit_meshset_it->getMeshset();
               ierr = addEntitiesToMeshset(mit->second.bcType, mit->second.iD,
                                           &meshset, 1);
-              CHKERRQ(ierr);
+              CHKERRG(ierr);
             }
             //Add displacement bc
             if(
@@ -897,17 +897,17 @@ MeshsetsManager::query_interface(const MOFEMuuid &uuid,
               if(mit->second.dispBc.data.flag6=='0') mit->second.dispBc.data.flag6=0;
               if(mit->second.dispBc.data.flag6=='N') mit->second.dispBc.data.flag6=0;
               if(mit->second.dispBc.data.flag6) mit->second.dispBc.data.flag6=1;
-              ierr = setBcData(mit->second.bcType,mit->second.iD,mit->second.dispBc); CHKERRQ(ierr);
+              ierr = setBcData(mit->second.bcType,mit->second.iD,mit->second.dispBc); CHKERRG(ierr);
             }
             if(mit->second.forceBc.data.value1!=0||mit->second.forceBc.data.value2!=0) {
-              ierr = setBcData(mit->second.bcType,mit->second.iD,mit->second.forceBc); CHKERRQ(ierr);
+              ierr = setBcData(mit->second.bcType,mit->second.iD,mit->second.forceBc); CHKERRG(ierr);
             }
             // Add temperature boundary condition
             if(mit->second.temperatureBc.data.flag1) {
               if(mit->second.temperatureBc.data.flag1=='0') mit->second.temperatureBc.data.flag1=0;
               if(mit->second.temperatureBc.data.flag1=='N') mit->second.temperatureBc.data.flag1=0;
               if(mit->second.temperatureBc.data.flag1) mit->second.temperatureBc.data.flag1=1;
-              ierr = setBcData(mit->second.bcType,mit->second.iD,mit->second.temperatureBc); CHKERRQ(ierr);
+              ierr = setBcData(mit->second.bcType,mit->second.iD,mit->second.temperatureBc); CHKERRG(ierr);
             }
           }
           break;
@@ -918,27 +918,27 @@ MeshsetsManager::query_interface(const MOFEMuuid &uuid,
             ) {
               // Meshset is the same, only modification
             } else {
-              ierr = addMeshset(mit->second.bcType,mit->second.iD); CHKERRQ(ierr);
+              ierr = addMeshset(mit->second.bcType,mit->second.iD); CHKERRG(ierr);
               EntityHandle meshset = cubit_meshset_it->getMeshset();
-              ierr = addEntitiesToMeshset(mit->second.bcType,mit->second.iD,&meshset,1); CHKERRQ(ierr);
+              ierr = addEntitiesToMeshset(mit->second.bcType,mit->second.iD,&meshset,1); CHKERRG(ierr);
             }
             // Add pressure
             if(mit->second.pressureBc.data.value1!=0) {
               if(mit->second.pressureBc.data.flag2=='0') mit->second.pressureBc.data.flag2=0;
               if(mit->second.pressureBc.data.flag2=='N') mit->second.pressureBc.data.flag2=0;
               if(mit->second.pressureBc.data.flag2) mit->second.pressureBc.data.flag2=1;
-              ierr = setBcData(mit->second.bcType,mit->second.iD,mit->second.pressureBc); CHKERRQ(ierr);
+              ierr = setBcData(mit->second.bcType,mit->second.iD,mit->second.pressureBc); CHKERRG(ierr);
             }
             // Add heat flux
             if(mit->second.heatFluxBc.data.value1!=0) {
               if(mit->second.heatFluxBc.data.flag1=='0') mit->second.heatFluxBc.data.flag1=0;
               if(mit->second.heatFluxBc.data.flag1=='N') mit->second.heatFluxBc.data.flag1=0;
               if(mit->second.heatFluxBc.data.flag1) mit->second.heatFluxBc.data.flag1=1;
-              ierr = setBcData(mit->second.bcType,mit->second.iD,mit->second.heatFluxBc); CHKERRQ(ierr);
+              ierr = setBcData(mit->second.bcType,mit->second.iD,mit->second.heatFluxBc); CHKERRG(ierr);
             }
             // Add Interface
             if(mit->second.cfgBc.data.type!=0) {
-              ierr = setBcData(mit->second.bcType,mit->second.iD,mit->second.cfgBc); CHKERRQ(ierr);
+              ierr = setBcData(mit->second.bcType,mit->second.iD,mit->second.cfgBc); CHKERRG(ierr);
             }
           }
           break;
@@ -963,11 +963,11 @@ MeshsetsManager::query_interface(const MOFEMuuid &uuid,
     MoFEMFunctionBeginHot;
     ierr = PetscOptionsBegin(m_field.get_comm(), "", "Set meshsets form file",
                              "none");
-    CHKERRQ(ierr);
+    CHKERRG(ierr);
     ierr = PetscOptionsString("-meshsets_config", "meshsets config  file name",
                               "", "add_cubit_meshsets.in", meshset_file_name,
                               255, &flg_file);
-    CHKERRQ(ierr);
+    CHKERRG(ierr);
     if (flg_file == PETSC_TRUE) {
       ifstream f(meshset_file_name);
       if (!f.good()) {
@@ -976,10 +976,10 @@ MeshsetsManager::query_interface(const MOFEMuuid &uuid,
                  meshset_file_name);
       }
       ierr = setMeshsetFromFile(string(meshset_file_name));
-      CHKERRQ(ierr);
+      CHKERRG(ierr);
     }
     ierr = PetscOptionsEnd();
-    CHKERRQ(ierr);
+    CHKERRG(ierr);
     MoFEMFunctionReturnHot(0);
   }
 
@@ -991,19 +991,19 @@ MeshsetsManager::query_interface(const MOFEMuuid &uuid,
       EntityHandle meshset = iit->getMeshset();
       ierr = bit_mng->updateMeshsetByEntitiesChildren(meshset, bit, meshset,
                                                       MBVERTEX, true);
-      CHKERRQ(ierr);
+      CHKERRG(ierr);
       ierr = bit_mng->updateMeshsetByEntitiesChildren(meshset, bit, meshset,
                                                       MBEDGE, true);
-      CHKERRQ(ierr);
+      CHKERRG(ierr);
       ierr = bit_mng->updateMeshsetByEntitiesChildren(meshset, bit, meshset,
                                                       MBTRI, true);
-      CHKERRQ(ierr);
+      CHKERRG(ierr);
       ierr = bit_mng->updateMeshsetByEntitiesChildren(meshset, bit, meshset,
                                                       MBTET, true);
-      CHKERRQ(ierr);
+      CHKERRG(ierr);
       ierr = bit_mng->updateMeshsetByEntitiesChildren(meshset, bit, meshset,
                                                       MBPRISM, true);
-      CHKERRQ(ierr);
+      CHKERRG(ierr);
     }
     MoFEMFunctionReturn(0);
   }

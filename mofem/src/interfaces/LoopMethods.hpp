@@ -345,7 +345,7 @@ struct FEMethod: public BasicMethod {
       MoFEMFunctionReturnHot(0);
     }
 
-    ierr = query_interface(uuid,iface); CHKERRQ(ierr);
+    ierr = query_interface(uuid,iface); CHKERRG(ierr);
     MoFEMFunctionReturnHot(0);
   }
 
@@ -567,7 +567,7 @@ struct EntMethod: public BasicMethod {
       MoFEMFunctionReturnHot(0);
     }
 
-    ierr = query_interface(uuid,iface); CHKERRQ(ierr);
+    ierr = query_interface(uuid,iface); CHKERRG(ierr);
     MoFEMFunctionReturnHot(0);
   }
 

@@ -311,12 +311,12 @@ namespace MoFEM {
     const int ms_id,const unsigned int cubit_bc_type,const int dimension,Range &entities,const bool recursive
   ) {
     MoFEMFunctionBeginHot;
-    ierr = get_cubit_msId_entities_by_dimension(ms_id,CubitBCType(cubit_bc_type),dimension,entities,recursive); CHKERRQ(ierr);
+    ierr = get_cubit_msId_entities_by_dimension(ms_id,CubitBCType(cubit_bc_type),dimension,entities,recursive); CHKERRG(ierr);
     MoFEMFunctionReturnHot(0);
   }
   MoFEMErrorCode DeprecatedCoreInterface::get_cubit_msId_entities_by_dimension(const int ms_id,const unsigned int cubit_bc_type, Range &entities,const bool recursive) {
     MoFEMFunctionBeginHot;
-    ierr = get_cubit_msId_entities_by_dimension(ms_id,CubitBCType(cubit_bc_type),entities,recursive); CHKERRQ(ierr);
+    ierr = get_cubit_msId_entities_by_dimension(ms_id,CubitBCType(cubit_bc_type),entities,recursive); CHKERRG(ierr);
     MoFEMFunctionReturnHot(0);
   }
 

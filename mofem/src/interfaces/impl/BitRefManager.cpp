@@ -44,9 +44,9 @@ MoFEMErrorCode BitRefManager::setBitRefLevel(const Range &ents,
   const RefElement_multiIndex *ref_fe_ptr;
   MoFEMFunctionBeginHot;
   ierr = m_field.get_ref_ents(&ref_ents_ptr);
-  CHKERRQ(ierr);
+  CHKERRG(ierr);
   ierr = m_field.get_ref_finite_elements(&ref_fe_ptr);
-  CHKERRQ(ierr);
+  CHKERRG(ierr);
   Range seeded_ents;
   try {
 
@@ -167,12 +167,12 @@ MoFEMErrorCode BitRefManager::setBitRefLevel(const Range &ents,
       ierr =
           Tool(m_field, bit, ref_ents_ptr)
               .findEntsToAdd(f, s, seed_ents_vec, &shared_ref_ents_vec_for_fe);
-      CHKERRQ(ierr);
+      CHKERRG(ierr);
       // add elements
       if (!seed_ents_vec.empty()) {
         ierr = Tool(m_field, bit, ref_ents_ptr)
                    .addToDatabase(seed_ents_vec, &shared_ref_ents_vec_for_fe);
-        CHKERRQ(ierr);
+        CHKERRG(ierr);
       }
 
       // create finite elements
@@ -251,11 +251,11 @@ MoFEMErrorCode BitRefManager::setBitRefLevel(const Range &ents,
           EntityHandle s = pit->second;
           ierr = Tool(m_field, bit, ref_ents_ptr)
                      .findEntsToAdd(f, s, seed_ents_vec);
-          CHKERRQ(ierr);
+          CHKERRG(ierr);
           if (!seed_ents_vec.empty()) {
             ierr =
                 Tool(m_field, bit, ref_ents_ptr).addToDatabase(seed_ents_vec);
-            CHKERRQ(ierr);
+            CHKERRG(ierr);
           }
         }
       }
@@ -273,10 +273,10 @@ MoFEMErrorCode BitRefManager::addToDatabaseBitRefLevelByType(
   MoFEMFunctionBeginHot;
   Range ents;
   ierr = getEntitiesByTypeAndRefLevel(bit, BitRefLevel().set(), type, ents);
-  CHKERRQ(ierr);
+  CHKERRG(ierr);
   // Add bit ref level to database
   ierr = setBitRefLevel(ents, bit);
-  CHKERRQ(ierr);
+  CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -286,10 +286,10 @@ MoFEMErrorCode BitRefManager::addToDatabaseBitRefLevelByDim(
   MoFEMFunctionBeginHot;
   Range ents;
   ierr = getEntitiesByDimAndRefLevel(bit, BitRefLevel().set(), dim, ents);
-  CHKERRQ(ierr);
+  CHKERRG(ierr);
   // Add bit ref level to database
   ierr = setBitRefLevel(ents, bit);
-  CHKERRQ(ierr);
+  CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -301,9 +301,9 @@ MoFEMErrorCode BitRefManager::setBitLevelToMeshset(const EntityHandle meshset,
   const RefElement_multiIndex *ref_fe_ptr;
   MoFEMFunctionBeginHot;
   ierr = m_field.get_ref_ents(&ref_ents_ptr);
-  CHKERRQ(ierr);
+  CHKERRG(ierr);
   ierr = m_field.get_ref_finite_elements(&ref_fe_ptr);
-  CHKERRQ(ierr);
+  CHKERRG(ierr);
   std::pair<RefEntity_multiIndex::iterator, bool> p_ent =
       const_cast<RefEntity_multiIndex *>(ref_ents_ptr)
           ->insert(boost::shared_ptr<RefEntity>(
@@ -334,7 +334,7 @@ MoFEMErrorCode BitRefManager::setBitRefLevelByDim(const EntityHandle meshset,
       m_field.get_moab().get_entities_by_dimension(meshset, dim, ents, false);
   CHKERRQ_MOAB(rval);
   ierr = setBitRefLevel(ents, bit, false, verb);
-  CHKERRQ(ierr);
+  CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -348,7 +348,7 @@ MoFEMErrorCode BitRefManager::setBitRefLevelByType(const EntityHandle meshset,
   rval = m_field.get_moab().get_entities_by_type(meshset, type, ents, false);
   CHKERRQ_MOAB(rval);
   ierr = setBitRefLevel(ents, bit, false, verb);
-  CHKERRQ(ierr);
+  CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -405,7 +405,7 @@ MoFEMErrorCode BitRefManager::addBitRefLevelByDim(const EntityHandle meshset,
     cerr << ents << endl;
   }
   ierr = addBitRefLevel(ents, bit, verb);
-  CHKERRQ(ierr);
+  CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -485,7 +485,7 @@ MoFEMErrorCode BitRefManager::shiftRightBitRef(const int shift,
     if (delete_bits.any()) {
       ierr =
           m_field.delete_ents_by_bit_ref(delete_bits, delete_bits, true, verb);
-      CHKERRQ(ierr);
+      CHKERRG(ierr);
     }
     for (RefEntity_multiIndex::iterator ent_it = ref_ent_ptr->begin();
          ent_it != ref_ent_ptr->end(); ent_it++) {
@@ -516,7 +516,7 @@ MoFEMErrorCode BitRefManager::writeBitLevelByType(
   rval = moab.create_meshset(MESHSET_SET, meshset);
   CHKERRQ_MOAB(rval);
   ierr = getEntitiesByTypeAndRefLevel(bit, mask, type, meshset);
-  CHKERRQ(ierr);
+  CHKERRG(ierr);
   rval = moab.write_file(file_name, file_type, options, &meshset, 1);
   CHKERRQ_MOAB(rval);
   rval = moab.delete_entities(&meshset, 1);
@@ -534,7 +534,7 @@ MoFEMErrorCode BitRefManager::writeEntitiesNotInDatabase(
   CHKERRQ_MOAB(rval);
   Range ents;
   ierr = getAllEntitiesNotInDatabase(ents);
-  CHKERRQ(ierr);
+  CHKERRG(ierr);
   rval = moab.add_entities(meshset, ents);
   CHKERRQ_MOAB(rval);
   rval = moab.write_file(file_name, file_type, options, &meshset, 1);
@@ -552,7 +552,7 @@ MoFEMErrorCode BitRefManager::getEntitiesByTypeAndRefLevel(
   MoFEMFunctionBeginHot;
   Range ents;
   ierr = getEntitiesByTypeAndRefLevel(bit, mask, type, ents, verb);
-  CHKERRQ(ierr);
+  CHKERRG(ierr);
   rval = moab.add_entities(meshset, ents);
   CHKERRQ_MOAB(rval);
   MoFEMFunctionReturnHot(0);
@@ -597,9 +597,9 @@ MoFEMErrorCode BitRefManager::getEntitiesByTypeAndRefLevel(
   moab::Interface &moab(m_field.get_moab());
   MoFEMFunctionBeginHot;
   ierr = moab.get_entities_by_type(0, type, ents, false);
-  CHKERRQ(ierr);
+  CHKERRG(ierr);
   ierr = filterEntitiesByRefLevel(bit, mask, ents, verb);
-  CHKERRQ(ierr);
+  CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -613,7 +613,7 @@ MoFEMErrorCode BitRefManager::getEntitiesByDimAndRefLevel(const BitRefLevel &bit
   MoFEMFunctionBeginHot;
   Range ents;
   ierr = getEntitiesByDimAndRefLevel(bit, mask, dim, ents, verb);
-  CHKERRQ(ierr);
+  CHKERRG(ierr);
   rval = moab.add_entities(meshset, ents);
   CHKERRQ_MOAB(rval);
   MoFEMFunctionReturnHot(0);
@@ -627,7 +627,7 @@ MoFEMErrorCode BitRefManager::getEntitiesByDimAndRefLevel(
   MoFEMFunctionBeginHot;
   ierr = moab.get_entities_by_dimension(0, dim, ents, false);
   ierr = filterEntitiesByRefLevel(bit, mask, ents, verb);
-  CHKERRQ(ierr);
+  CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -640,7 +640,7 @@ BitRefManager::getEntitiesByRefLevel(const BitRefLevel &bit,
   MoFEMFunctionBeginHot;
   Range ents;
   ierr = getEntitiesByRefLevel(bit, mask, ents);
-  CHKERRQ(ierr);
+  CHKERRG(ierr);
   rval = moab.add_entities(meshset, ents);
   CHKERRQ_MOAB(rval);
   MoFEMFunctionReturnHot(0);
@@ -703,7 +703,7 @@ MoFEMErrorCode BitRefManager::getEntitiesByParentType(const BitRefLevel &bit,
   const RefEntity_multiIndex *ref_ents_ptr;
   MoFEMFunctionBeginHot;
   ierr = m_field.get_ref_ents(&ref_ents_ptr);
-  CHKERRQ(ierr);
+  CHKERRG(ierr);
   typedef RefEntity_multiIndex::index<ParentEntType_mi_tag>::type
       RefEntsByParentType;
   const RefEntsByParentType &ref_ents =
@@ -727,7 +727,7 @@ BitRefManager::getAllEntitiesNotInDatabase(Range &ents) const {
   MoFEMFunctionBeginHot;
   rval = moab.get_entities_by_handle(0,ents,false); CHKERRQ_MOAB(rval);
   ents = subtract(ents,ents.subset_by_type(MBENTITYSET));
-  ierr = getEntitiesNotInDatabase(ents); CHKERRQ(ierr);
+  ierr = getEntitiesNotInDatabase(ents); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -736,7 +736,7 @@ MoFEMErrorCode BitRefManager::getEntitiesNotInDatabase(Range &ents) const {
   const RefEntity_multiIndex *ref_ents_ptr;
   MoFEMFunctionBeginHot;
   ierr = m_field.get_ref_ents(&ref_ents_ptr);
-  CHKERRQ(ierr);
+  CHKERRG(ierr);
   Range::iterator eit = ents.begin();
   for (; eit != ents.end(); ) {
     RefEntity_multiIndex::index<Ent_mi_tag>::type::iterator rit;
@@ -828,7 +828,7 @@ MoFEMErrorCode BitRefManager::getAdjacencies(
   BitRefLevel bit = problem_ptr->getBitRefLevel();
   ierr = getAdjacencies(bit, from_entities, num_entities, to_dimension,
                         adj_entities, operation_type);
-  CHKERRQ(ierr);
+  CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -882,7 +882,7 @@ MoFEMErrorCode BitRefManager::updateMeshsetByEntitiesChildren(
   const RefEntity_multiIndex *ref_ents_ptr;
   MoFEMFunctionBeginHot;
   ierr = m_field.get_ref_ents(&ref_ents_ptr);
-  CHKERRQ(ierr);
+  CHKERRG(ierr);
   Range ents;
   rval = moab.get_entities_by_handle(parent, ents, recursive);
   if (rval != MB_SUCCESS) {
@@ -946,22 +946,22 @@ MoFEMErrorCode BitRefManager::updateFieldMeshsetByEntitiesChildren(
   const Field_multiIndex *fields_ptr;
   MoFEMFunctionBeginHot;
   ierr = m_field.get_fields(&fields_ptr);
-  CHKERRQ(ierr);
+  CHKERRG(ierr);
   Field_multiIndex::iterator fit = fields_ptr->begin();
   for (; fit != fields_ptr->end(); fit++) {
     EntityHandle meshset = (*fit)->getMeshset();
     ierr = updateMeshsetByEntitiesChildren(meshset, child_bit, meshset, MBTET,
                                            false, verb);
-    CHKERRQ(ierr);
+    CHKERRG(ierr);
     ierr = updateMeshsetByEntitiesChildren(meshset, child_bit, meshset, MBTRI,
                                            false, verb);
-    CHKERRQ(ierr);
+    CHKERRG(ierr);
     ierr = updateMeshsetByEntitiesChildren(meshset, child_bit, meshset, MBEDGE,
                                            false, verb);
-    CHKERRQ(ierr);
+    CHKERRG(ierr);
     ierr = updateMeshsetByEntitiesChildren(meshset, child_bit, meshset,
                                            MBVERTEX, false, verb);
-    CHKERRQ(ierr);
+    CHKERRG(ierr);
   }
   MoFEMFunctionReturnHot(0);
 }
@@ -974,16 +974,16 @@ MoFEMErrorCode BitRefManager::updateFieldMeshsetByEntitiesChildren(
     EntityHandle meshset = m_field.get_field_structure(name)->getMeshset();
     ierr = updateMeshsetByEntitiesChildren(meshset, child_bit, meshset, MBTET,
                                            false, verb);
-    CHKERRQ(ierr);
+    CHKERRG(ierr);
     ierr = updateMeshsetByEntitiesChildren(meshset, child_bit, meshset, MBTRI,
                                            false, verb);
-    CHKERRQ(ierr);
+    CHKERRG(ierr);
     ierr = updateMeshsetByEntitiesChildren(meshset, child_bit, meshset, MBEDGE,
                                            false, verb);
-    CHKERRQ(ierr);
+    CHKERRG(ierr);
     ierr = updateMeshsetByEntitiesChildren(meshset, child_bit, meshset,
                                            MBVERTEX, false, verb);
-    CHKERRQ(ierr);
+    CHKERRG(ierr);
   } catch (MoFEMException const &e) {
     SETERRQ(m_field.get_comm(), e.errorCode, e.errorMessage);
   }
@@ -999,7 +999,7 @@ MoFEMErrorCode BitRefManager::updateFiniteElementMeshsetByEntitiesChildren(
     EntityHandle meshset = m_field.get_finite_element_meshset(name);
     ierr = updateMeshsetByEntitiesChildren(meshset, child_bit, meshset,
                                            fe_ent_type, false, verb);
-    CHKERRQ(ierr);
+    CHKERRG(ierr);
   } catch (MoFEMException const &e) {
     SETERRQ(m_field.get_comm(), e.errorCode, e.errorMessage);
   }
@@ -1013,7 +1013,7 @@ MoFEMErrorCode BitRefManager::updateRange(const Range &parent_ents,
   const RefEntity_multiIndex *ref_ents_ptr;
   MoFEMFunctionBeginHot;
   ierr = m_field.get_ref_ents(&ref_ents_ptr);
-  CHKERRQ(ierr);
+  CHKERRG(ierr);
   typedef RefEntity_multiIndex::index<Ent_Ent_mi_tag>::type RefEntsByParent;
   RefEntsByParent &ref_ents =
       const_cast<RefEntity_multiIndex *>(ref_ents_ptr)->get<Ent_Ent_mi_tag>();

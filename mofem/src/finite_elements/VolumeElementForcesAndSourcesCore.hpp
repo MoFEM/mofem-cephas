@@ -247,7 +247,7 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSourcesCore {
      * \code
      * VectorDouble div_vec(data.getFieldData().size());
      * for(int gg = 0;gg<nb_gauss_pts;gg++) {
-     *  ierr = getDivergenceOfHDivBaseFunctions(side,type,data,gg,div_vec); CHKERRQ(ierr);
+     *  ierr = getDivergenceOfHDivBaseFunctions(side,type,data,gg,div_vec); CHKERRG(ierr);
      *  // do something with vec_div
      * }
      * \endcode
@@ -282,7 +282,7 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSourcesCore {
      * \code
      * MatrixDouble curl_mat(data.getFieldData().size(),3);
      * for(int gg = 0;gg<nb_gauss_pts;gg++) {
-     *  ierr = getCurlOfHCurlBaseFunctions(side,type,data,gg,curl_mat); CHKERRQ(ierr);
+     *  ierr = getCurlOfHCurlBaseFunctions(side,type,data,gg,curl_mat); CHKERRG(ierr);
      *  // do something with vec_div
      * }
      * \endcode

@@ -276,7 +276,7 @@ namespace MoFEM {
     }
     Range ents;
     rval = moab.get_entities_by_type(meshset,type,ents,recursive); CHKERRQ_MOAB(rval);
-    ierr = seed_finite_elements(ents.subset_by_type(MBEDGE)); CHKERRQ(ierr);
+    ierr = seed_finite_elements(ents.subset_by_type(MBEDGE)); CHKERRG(ierr);
     rval = moab.add_entities(idm,ents); CHKERRQ_MOAB(rval);
     MoFEMFunctionReturnHot(0);
   }
@@ -294,7 +294,7 @@ namespace MoFEM {
     }
     Range ents;
     rval = moab.get_entities_by_dimension(meshset,dim,ents,recursive); CHKERRQ_MOAB(rval);
-    ierr = seed_finite_elements(ents.subset_by_dimension(dim)); CHKERRQ(ierr);
+    ierr = seed_finite_elements(ents.subset_by_dimension(dim)); CHKERRG(ierr);
     rval = moab.add_entities(idm,ents); CHKERRQ_MOAB(rval);
     MoFEMFunctionReturnHot(0);
   }
@@ -310,7 +310,7 @@ namespace MoFEM {
     } catch (MoFEMException const &e) {
       SETERRQ(cOmm,e.errorCode,e.errorMessage);
     }
-    ierr = seed_finite_elements(ents.subset_by_type(type)); CHKERRQ(ierr);
+    ierr = seed_finite_elements(ents.subset_by_type(type)); CHKERRG(ierr);
     rval = moab.add_entities(idm,ents.subset_by_type(type)); CHKERRQ_MOAB(rval);
     MoFEMFunctionReturnHot(0);
   }
@@ -326,7 +326,7 @@ namespace MoFEM {
     } catch (MoFEMException const &e) {
       SETERRQ(cOmm,e.errorCode,e.errorMessage);
     }
-    ierr = seed_finite_elements(ents.subset_by_dimension(dim)); CHKERRQ(ierr);
+    ierr = seed_finite_elements(ents.subset_by_dimension(dim)); CHKERRG(ierr);
     rval = moab.add_entities(idm,ents.subset_by_dimension(dim)); CHKERRQ_MOAB(rval);
     MoFEMFunctionReturnHot(0);
   }
@@ -374,7 +374,7 @@ namespace MoFEM {
     const BitRefLevel &bit,const std::string &name,EntityType type,int verb
   ) {
     MoFEMFunctionBeginHot;
-    ierr = add_ents_to_finite_element_by_bit_ref(bit,BitRefLevel().set(),name,type,verb); CHKERRQ(ierr);
+    ierr = add_ents_to_finite_element_by_bit_ref(bit,BitRefLevel().set(),name,type,verb); CHKERRG(ierr);
     MoFEMFunctionReturnHot(0);
   }
 
@@ -382,7 +382,7 @@ namespace MoFEM {
     const BitRefLevel &bit,const BitRefLevel &mask,const std::string &name,EntityType type,int verb
   ) {
     MoFEMFunctionBeginHot;
-    ierr = add_ents_to_finite_element_by_bit_ref(bit,mask,name,type,verb); CHKERRQ(ierr);
+    ierr = add_ents_to_finite_element_by_bit_ref(bit,mask,name,type,verb); CHKERRG(ierr);
     MoFEMFunctionReturnHot(0);
   }
 
@@ -545,7 +545,7 @@ namespace MoFEM {
           // Resolve entities on element, those entities are used to build tag with dof
           // uids on finite element tag
           ierr = p.first->get()->getElementAdjacency(*miit, adj_ents);
-          CHKERRQ(ierr);
+          CHKERRG(ierr);
 
           // Loop over adjacencies of element and find field entities on those
           // adjacencies, that create hash map map_uid_fe which is used later
@@ -689,7 +689,7 @@ namespace MoFEM {
     // loop Finite Elements
     for(;fe_miit!=finiteElements.end();fe_miit++) {
       if(verb>0) PetscPrintf(cOmm,"Build Finite Elements %s\n",(*fe_miit)->getName().c_str());
-      ierr = build_finite_elements(*fe_miit,NULL,verb); CHKERRQ(ierr);
+      ierr = build_finite_elements(*fe_miit,NULL,verb); CHKERRG(ierr);
     }
 
     if(verb>0) {
@@ -733,7 +733,7 @@ namespace MoFEM {
     }
 
     if(verb>0) PetscPrintf(cOmm,"Build Finite Elements %s\n",fe_name.c_str());
-    ierr = build_finite_elements(*fe_miit,ents_ptr,verb); CHKERRQ(ierr);
+    ierr = build_finite_elements(*fe_miit,ents_ptr,verb); CHKERRG(ierr);
     if(verb>0) {
       typedef EntFiniteElement_multiIndex::index<BitFEId_mi_tag>::type FiniteElementById;
       FiniteElementById &finite_elements_by_id = entsFiniteElements.get<BitFEId_mi_tag>();
@@ -835,14 +835,14 @@ namespace MoFEM {
     MoFEMFunctionBeginHot;
     if(verb==-1) verb = verbose;
     Range ents;
-    ierr = BitRefManager(*this).getEntitiesByRefLevel(bit,mask,ents); CHKERRQ(ierr);
-    ierr = build_adjacencies(ents,verb); CHKERRQ(ierr);
+    ierr = BitRefManager(*this).getEntitiesByRefLevel(bit,mask,ents); CHKERRG(ierr);
+    ierr = build_adjacencies(ents,verb); CHKERRG(ierr);
     MoFEMFunctionReturnHot(0);
   }
   MoFEMErrorCode Core::build_adjacencies(const BitRefLevel &bit,int verb) {
     MoFEMFunctionBeginHot;
     if(verb==-1) verb = verbose;
-    ierr = build_adjacencies(bit,BitRefLevel().set(),verb); CHKERRQ(ierr);
+    ierr = build_adjacencies(bit,BitRefLevel().set(),verb); CHKERRG(ierr);
     MoFEMFunctionReturnHot(0);
   }
 
@@ -901,8 +901,8 @@ namespace MoFEM {
   MoFEMErrorCode Core::seed_finite_elements(const EntityHandle meshset,int verb) {
     MoFEMFunctionBeginHot;
     Range entities;
-    ierr = moab.get_entities_by_handle(meshset,entities,true); CHKERRQ(ierr);
-    ierr = seed_finite_elements(entities,verb); CHKERRQ(ierr);
+    ierr = moab.get_entities_by_handle(meshset,entities,true); CHKERRG(ierr);
+    ierr = seed_finite_elements(entities,verb); CHKERRG(ierr);
     MoFEMFunctionReturnHot(0);
   }
 

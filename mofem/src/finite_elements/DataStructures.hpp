@@ -1210,7 +1210,7 @@ struct DataForcesAndSourcesCore {
     for(EntityType t = MBVERTEX;t!=MBMAXTYPE;t++) {
       boost::ptr_vector<EntData>::iterator ent_data_it = dataOnEntities[t].begin();
       for(;ent_data_it!=dataOnEntities[t].end();ent_data_it++) {
-        ierr = ent_data_it->resetFieldDependentData(); CHKERRQ(ierr);
+        ierr = ent_data_it->resetFieldDependentData(); CHKERRG(ierr);
       }
     }
     MoFEMFunctionReturnHot(0);

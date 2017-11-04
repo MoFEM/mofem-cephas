@@ -977,7 +977,7 @@ MoFEMErrorCode EntFiniteElement::getRowDofView(
 ) const {
   MoFEMFunctionBeginHot;
   
-  ierr = get_fe_dof_view(*row_dof_view,dofs,dofs_view,operation_type); CHKERRQ(ierr);
+  ierr = get_fe_dof_view(*row_dof_view,dofs,dofs_view,operation_type); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 MoFEMErrorCode EntFiniteElement::getColDofView(
@@ -986,7 +986,7 @@ MoFEMErrorCode EntFiniteElement::getColDofView(
 ) const {
   MoFEMFunctionBeginHot;
   
-  ierr = get_fe_dof_view(*col_dof_view,dofs,dofs_view,operation_type); CHKERRQ(ierr);
+  ierr = get_fe_dof_view(*col_dof_view,dofs,dofs_view,operation_type); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 MoFEMErrorCode EntFiniteElement::getDataDofView(
@@ -995,7 +995,7 @@ MoFEMErrorCode EntFiniteElement::getDataDofView(
 ) const {
   MoFEMFunctionBeginHot;
   
-  ierr = get_fe_dof_view(*data_dofs,dofs,dofs_view,operation_type); CHKERRQ(ierr);
+  ierr = get_fe_dof_view(*data_dofs,dofs,dofs_view,operation_type); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -1005,7 +1005,7 @@ MoFEMErrorCode EntFiniteElement::getRowDofView(
 ) const {
   MoFEMFunctionBeginHot;
   
-  ierr = get_fe_dof_view(*row_dof_view,dofs,dofs_view,operation_type); CHKERRQ(ierr);
+  ierr = get_fe_dof_view(*row_dof_view,dofs,dofs_view,operation_type); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 MoFEMErrorCode EntFiniteElement::getColDofView(
@@ -1014,7 +1014,7 @@ MoFEMErrorCode EntFiniteElement::getColDofView(
 ) const {
   MoFEMFunctionBeginHot;
   
-  ierr = get_fe_dof_view(*col_dof_view,dofs,dofs_view,operation_type); CHKERRQ(ierr);
+  ierr = get_fe_dof_view(*col_dof_view,dofs,dofs_view,operation_type); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -1024,7 +1024,7 @@ MoFEMErrorCode EntFiniteElement::getRowDofView(
 ) const {
   MoFEMFunctionBeginHot;
   
-  ierr = get_fe_dof_view(*row_dof_view,dofs,dofs_view,operation_type); CHKERRQ(ierr);
+  ierr = get_fe_dof_view(*row_dof_view,dofs,dofs_view,operation_type); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -1034,7 +1034,7 @@ MoFEMErrorCode EntFiniteElement::getColDofView(
 ) const {
   MoFEMFunctionBeginHot;
   
-  ierr = get_fe_dof_view(*col_dof_view,dofs,dofs_view,operation_type); CHKERRQ(ierr);
+  ierr = get_fe_dof_view(*col_dof_view,dofs,dofs_view,operation_type); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 MoFEMErrorCode EntFiniteElement::getRowDofView(
@@ -1043,7 +1043,7 @@ MoFEMErrorCode EntFiniteElement::getRowDofView(
 ) const {
   MoFEMFunctionBeginHot;
   
-  ierr = get_fe_dof_view(*row_dof_view,dofs,dofs_view,operation_type); CHKERRQ(ierr);
+  ierr = get_fe_dof_view(*row_dof_view,dofs,dofs_view,operation_type); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -1052,7 +1052,7 @@ MoFEMErrorCode EntFiniteElement::getColDofView(
     const int operation_type) const {
   MoFEMFunctionBeginHot;
   
-  ierr = get_fe_dof_view(*col_dof_view,dofs,dofs_view,operation_type); CHKERRQ(ierr);
+  ierr = get_fe_dof_view(*col_dof_view,dofs,dofs_view,operation_type); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -1068,7 +1068,7 @@ MoFEMErrorCode EntFiniteElement::getElementAdjacency(
   }
   ierr = (get_MoFEMFiniteElementPtr()->elementAdjacencyTable[getEntType()])(
     moab,*field_ptr,*this_fe_ptr,adjacency
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
