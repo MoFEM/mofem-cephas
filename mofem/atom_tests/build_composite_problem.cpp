@@ -49,7 +49,7 @@ int main(int argc, char *argv[]) {
     moab::Interface& moab = mb_instance;
     const char *option;
     option = "";
-    rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
+    rval = moab.load_file(mesh_file_name, 0, option); CHKERRG(rval);
     ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
     if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
 
@@ -65,56 +65,56 @@ int main(int argc, char *argv[]) {
     ierr = prb_mng_ptr->partitionMesh(tets,3,2,m_field.get_comm_size(),NULL,NULL,NULL); CHKERRQ(ierr);
 
     EntityHandle part_set;
-    rval = moab.create_meshset(MESHSET_SET,part_set); CHKERRQ_MOAB(rval);
+    rval = moab.create_meshset(MESHSET_SET,part_set); CHKERRG(rval);
     Tag part_tag = pcomm->part_tag();
     Range proc_ents;
     Range tagged_sets;
     rval = m_field.get_moab().get_entities_by_type_and_tag(
       0,MBENTITYSET,&part_tag,NULL,1,tagged_sets,moab::Interface::UNION
-    ); CHKERRQ_MOAB(rval);
+    ); CHKERRG(rval);
     for(Range::iterator mit = tagged_sets.begin();mit!=tagged_sets.end();mit++) {
       int part;
-      rval = moab.tag_get_data(part_tag,&*mit,1,&part); CHKERRQ_MOAB(rval);
+      rval = moab.tag_get_data(part_tag,&*mit,1,&part); CHKERRG(rval);
       if(part==m_field.get_comm_rank()) {
         // pcomm->partition_sets().insert(*mit);
-        rval = moab.get_entities_by_type(*mit,MBTET,proc_ents,true); CHKERRQ_MOAB(rval);
-        rval = moab.add_entities(part_set,proc_ents); CHKERRQ_MOAB(rval);
+        rval = moab.get_entities_by_type(*mit,MBTET,proc_ents,true); CHKERRG(rval);
+        rval = moab.add_entities(part_set,proc_ents); CHKERRG(rval);
       }
     }
 
     Skinner skin(&m_field.get_moab());
     Range tets_skin;
-    rval = skin.find_skin(0,tets,false,tets_skin); CHKERRQ_MOAB(rval);
+    rval = skin.find_skin(0,tets,false,tets_skin); CHKERRG(rval);
     Range proc_ents_skin[4];
     proc_ents_skin[3] = proc_ents;
-    rval = skin.find_skin(0,proc_ents,false,proc_ents_skin[2]); CHKERRQ_MOAB(rval);
+    rval = skin.find_skin(0,proc_ents,false,proc_ents_skin[2]); CHKERRG(rval);
     proc_ents_skin[2] = subtract(proc_ents_skin[2],tets_skin);
     rval = moab.get_adjacencies(
       proc_ents_skin[2],1,false,proc_ents_skin[1],moab::Interface::UNION
-    ); CHKERRQ_MOAB(rval);
-    rval = moab.get_connectivity(proc_ents_skin[1],proc_ents_skin[0],true); CHKERRQ_MOAB(rval);
+    ); CHKERRG(rval);
+    rval = moab.get_connectivity(proc_ents_skin[1],proc_ents_skin[0],true); CHKERRG(rval);
     for(int dd = 0;dd!=3;dd++) {
-      rval = moab.add_entities(part_set,proc_ents_skin[dd]); CHKERRQ_MOAB(rval);
+      rval = moab.add_entities(part_set,proc_ents_skin[dd]); CHKERRG(rval);
     }
 
     if(0) {
       std::ostringstream file_skin;
       file_skin << "out_skin_" << m_field.get_comm_rank() << ".vtk";
       EntityHandle meshset_skin;
-      rval = moab.create_meshset(MESHSET_SET,meshset_skin); CHKERRQ_MOAB(rval);
-      rval = moab.add_entities(meshset_skin,proc_ents_skin[2]); CHKERRQ_MOAB(rval);
-      rval = moab.add_entities(meshset_skin,proc_ents_skin[1]); CHKERRQ_MOAB(rval);
-      rval = moab.add_entities(meshset_skin,proc_ents_skin[0]); CHKERRQ_MOAB(rval);
-      rval = moab.write_file(file_skin.str().c_str(),"VTK","",&meshset_skin,1); CHKERRQ_MOAB(rval);
+      rval = moab.create_meshset(MESHSET_SET,meshset_skin); CHKERRG(rval);
+      rval = moab.add_entities(meshset_skin,proc_ents_skin[2]); CHKERRG(rval);
+      rval = moab.add_entities(meshset_skin,proc_ents_skin[1]); CHKERRG(rval);
+      rval = moab.add_entities(meshset_skin,proc_ents_skin[0]); CHKERRG(rval);
+      rval = moab.write_file(file_skin.str().c_str(),"VTK","",&meshset_skin,1); CHKERRG(rval);
     }
 
-    rval = pcomm->resolve_shared_ents(0,proc_ents,3,-1,proc_ents_skin); CHKERRQ_MOAB(rval);
+    rval = pcomm->resolve_shared_ents(0,proc_ents,3,-1,proc_ents_skin); CHKERRG(rval);
     Range owned_tets = proc_ents;
 
-    // rval = pcomm->get_part_entities(owned_tets,3); CHKERRQ_MOAB(rval);
+    // rval = pcomm->get_part_entities(owned_tets,3); CHKERRG(rval);
     // if(m_field.get_comm_rank()==1) {
     //   Range verts;
-    //   rval = moab.get_connectivity(owned_tets,verts,true); CHKERRQ_MOAB(rval);
+    //   rval = moab.get_connectivity(owned_tets,verts,true); CHKERRG(rval);
     //   for(Range::iterator vit = verts.begin();vit!=verts.end();vit++) {
     //     EntityHandle moab_owner_handle;
     //     int owner_proc;
@@ -129,21 +129,21 @@ int main(int argc, char *argv[]) {
       std::ostringstream file_owned;
       file_owned << "out_owned_" << m_field.get_comm_rank() << ".vtk";
       EntityHandle meshset_owned;
-      rval = moab.create_meshset(MESHSET_SET,meshset_owned); CHKERRQ_MOAB(rval);
-      rval = moab.add_entities(meshset_owned,owned_tets); CHKERRQ_MOAB(rval);
-      rval = moab.write_file(file_owned.str().c_str(),"VTK","",&meshset_owned,1); CHKERRQ_MOAB(rval);
+      rval = moab.create_meshset(MESHSET_SET,meshset_owned); CHKERRG(rval);
+      rval = moab.add_entities(meshset_owned,owned_tets); CHKERRG(rval);
+      rval = moab.write_file(file_owned.str().c_str(),"VTK","",&meshset_owned,1); CHKERRG(rval);
     }
     Range shared_ents;
     // Get entities shared with all other processors
-    rval = pcomm->get_shared_entities(-1,shared_ents);CHKERRQ_MOAB(rval);
+    rval = pcomm->get_shared_entities(-1,shared_ents);CHKERRG(rval);
 
     if(0) {
       std::ostringstream file_shared_owned;
       file_shared_owned << "out_shared_owned_" << m_field.get_comm_rank() << ".vtk";
       EntityHandle meshset_shared_owned;
-      rval = moab.create_meshset(MESHSET_SET,meshset_shared_owned); CHKERRQ_MOAB(rval);
-      rval = moab.add_entities(meshset_shared_owned,shared_ents); CHKERRQ_MOAB(rval);
-      rval = moab.write_file(file_shared_owned.str().c_str(),"VTK","",&meshset_shared_owned,1); CHKERRQ_MOAB(rval);
+      rval = moab.create_meshset(MESHSET_SET,meshset_shared_owned); CHKERRG(rval);
+      rval = moab.add_entities(meshset_shared_owned,shared_ents); CHKERRG(rval);
+      rval = moab.write_file(file_shared_owned.str().c_str(),"VTK","",&meshset_shared_owned,1); CHKERRG(rval);
     }
 
     // set entitities bit level

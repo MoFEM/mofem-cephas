@@ -38,7 +38,7 @@ int main(int argc, char *argv[]) {
 
     const char *option;
     option = "";//"PARALLEL=BCAST";//;DEBUG_IO";
-    rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
+    rval = moab.load_file(mesh_file_name, 0, option); CHKERRG(rval);
 
     MoFEM::Core core(moab);
     MoFEM::Interface& m_field = core;
@@ -55,14 +55,14 @@ int main(int argc, char *argv[]) {
     bit_level1.set(1);
 
     EntityHandle meshset_level0;
-    rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERRQ_MOAB(rval);
+    rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERRG(rval);
     ierr = m_field.getInterface<BitRefManager>()->getEntitiesByRefLevel(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRQ(ierr);
 
     // random mesh refinement
     EntityHandle meshset_ref_edges;
-    rval = moab.create_meshset(MESHSET_SET,meshset_ref_edges); CHKERRQ_MOAB(rval);
+    rval = moab.create_meshset(MESHSET_SET,meshset_ref_edges); CHKERRG(rval);
     Range edges_to_refine;
-    rval = moab.get_entities_by_type(meshset_level0,MBEDGE,edges_to_refine);  CHKERRQ_MOAB(rval);
+    rval = moab.get_entities_by_type(meshset_level0,MBEDGE,edges_to_refine);  CHKERRG(rval);
     int ii = 0;
     for(Range::iterator eit = edges_to_refine.begin();
     eit!=edges_to_refine.end();eit++,ii++) {
@@ -80,16 +80,16 @@ int main(int argc, char *argv[]) {
     myfile.open("mesh_refine.txt");
 
     EntityHandle out_meshset_tet;
-    rval = moab.create_meshset(MESHSET_SET,out_meshset_tet); CHKERRQ_MOAB(rval);
+    rval = moab.create_meshset(MESHSET_SET,out_meshset_tet); CHKERRG(rval);
     ierr = m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(bit_level1,BitRefLevel().set(),MBTET,out_meshset_tet); CHKERRQ(ierr);
     Range tets;
-    rval = moab.get_entities_by_handle(out_meshset_tet,tets); CHKERRQ_MOAB(rval);
+    rval = moab.get_entities_by_handle(out_meshset_tet,tets); CHKERRG(rval);
     {
       int ii = 0;
       for(Range::iterator tit = tets.begin();tit!=tets.end();tit++) {
         int num_nodes;
         const EntityHandle* conn;
-        rval = moab.get_connectivity(*tit,conn,num_nodes,true); CHKERRQ_MOAB(rval);
+        rval = moab.get_connectivity(*tit,conn,num_nodes,true); CHKERRG(rval);
 
         for(int nn = 0;nn<num_nodes;nn++) {
           //cout << conn[nn] << " ";
@@ -103,7 +103,7 @@ int main(int argc, char *argv[]) {
 
     myfile.close();
 
-    rval = moab.write_file("out_mesh_refine.vtk","VTK","",&out_meshset_tet,1); CHKERRQ_MOAB(rval);
+    rval = moab.write_file("out_mesh_refine.vtk","VTK","",&out_meshset_tet,1); CHKERRG(rval);
 
     BitLevelCoupler *bit_ref_copuler_ptr;
     ierr = m_field.getInterface(bit_ref_copuler_ptr); CHKERRQ(ierr);

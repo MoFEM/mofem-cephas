@@ -64,7 +64,7 @@ int main(int argc, char *argv[]) {
     const char *option;
     option = ""; //"PARALLEL=BCAST";//;DEBUG_IO";
     rval = moab.load_file(mesh_file_name, 0, option);
-    CHKERRQ_MOAB(rval);
+    CHKERRG(rval);
 
     MoFEM::Core core(moab);
     MoFEM::CoreInterface &m_field =
@@ -157,7 +157,7 @@ int main(int argc, char *argv[]) {
     Tag th;
     rval = moab.tag_get_handle("POSITION", 3, MB_TYPE_DOUBLE, th,
                                MB_TAG_CREAT | MB_TAG_SPARSE, def_position);
-    CHKERRQ_MOAB(rval);
+    CHKERRG(rval);
     // Set tag values with coordinates of nodes
     ierr = cut_mesh->setTagData(th);
     CHKERRQ(ierr);
@@ -269,11 +269,11 @@ int main(int argc, char *argv[]) {
 
     Range surface_verts;
     rval = moab.get_connectivity(cut_mesh->getSurface(), surface_verts);
-    CHKERRQ_MOAB(rval);
+    CHKERRG(rval);
     rval = moab.delete_entities(cut_mesh->getSurface());
-    CHKERRQ_MOAB(rval);
+    CHKERRG(rval);
     rval = moab.delete_entities(surface_verts);
-    CHKERRQ_MOAB(rval);
+    CHKERRG(rval);
     ierr = m_field.delete_ents_by_bit_ref(
         bit_level0 | bit_level1, bit_level0 | bit_level1, true, VERBOSE);
     CHKERRQ(ierr);
@@ -281,16 +281,16 @@ int main(int argc, char *argv[]) {
     {
       EntityHandle meshset;
       rval = moab.create_meshset(MESHSET_SET, meshset);
-      CHKERRQ_MOAB(rval);
+      CHKERRG(rval);
       Range tets;
       rval = moab.get_entities_by_dimension(0, 3, tets, true);
-      CHKERRQ_MOAB(rval);
+      CHKERRG(rval);
       rval = moab.add_entities(meshset, tets);
-      CHKERRQ_MOAB(rval);
+      CHKERRG(rval);
       rval = moab.write_file("out.vtk", "VTK", "", &meshset, 1);
-      CHKERRQ_MOAB(rval);
+      CHKERRG(rval);
       rval = moab.delete_entities(&meshset, 1);
-      CHKERRQ_MOAB(rval);
+      CHKERRG(rval);
     }
     ierr = core.getInterface<BitRefManager>()->writeBitLevelByType(
         bit_last, BitRefLevel().set(), MBTET, "out_tets_bit_last.vtk",
@@ -309,16 +309,16 @@ int main(int argc, char *argv[]) {
         cerr << subtract(ents,ents_not_in_database) << endl;
         EntityHandle meshset;
         rval = moab.create_meshset(MESHSET_SET, meshset);
-        CHKERRQ_MOAB(rval);
+        CHKERRG(rval);
         Range tets;
         rval = moab.get_entities_by_dimension(0, 3, tets, true);
-        CHKERRQ_MOAB(rval);
+        CHKERRG(rval);
         rval = moab.add_entities(meshset, subtract(ents,ents_not_in_database));
-        CHKERRQ_MOAB(rval);
+        CHKERRG(rval);
         rval = moab.write_file("not_cleanded.vtk", "VTK", "", &meshset, 1);
-        CHKERRQ_MOAB(rval);
+        CHKERRG(rval);
         rval = moab.delete_entities(&meshset, 1);
-        CHKERRQ_MOAB(rval);
+        CHKERRG(rval);
 
         SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                  "Inconsistent number of ents %d!=%d", no_of_ents_not_in_database,

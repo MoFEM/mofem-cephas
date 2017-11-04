@@ -60,7 +60,7 @@ int main(int argc, char *argv[]) {
   //read mesh and create moab and mofem datastrutures
   moab::Core mb_instance;
   moab::Interface& moab = mb_instance;
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERRG(rval);
   MoFEM::Core core(moab);
   MoFEM::Interface& m_field = core;
 

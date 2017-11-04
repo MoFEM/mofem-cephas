@@ -62,13 +62,13 @@ int main(int argc, char *argv[]) {
 
   const char *option;
   option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERRG(rval);
 
   //set entitities bit level
   BitRefLevel bit_level0;
   bit_level0.set(0);
   EntityHandle meshset_level0;
-  rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERRQ_MOAB(rval);
+  rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERRG(rval);
   ierr = m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(0,3,bit_level0); CHKERRQ(ierr);
 
   //Fields
@@ -96,10 +96,10 @@ int main(int argc, char *argv[]) {
   ierr = m_field.add_ents_to_field_by_type(root_set,MBTET,"FIELD1"); CHKERRQ(ierr);
   //add entities to finite element
   Range tets;
-  rval = moab.get_entities_by_type(0,MBTET,tets,false); CHKERRQ_MOAB(rval);
+  rval = moab.get_entities_by_type(0,MBTET,tets,false); CHKERRG(rval);
   Skinner skin(&m_field.get_moab());
   Range tets_skin;
-  rval = skin.find_skin(0,tets,false,tets_skin); CHKERRQ_MOAB(rval);
+  rval = skin.find_skin(0,tets,false,tets_skin); CHKERRG(rval);
   ierr = m_field.add_ents_to_finite_element_by_type(tets_skin,MBTRI,"TEST_FE"); CHKERRQ(ierr);
 
   //set app. order

@@ -242,7 +242,7 @@ int main(int argc, char *argv[]) {
     MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
 
     //Read mesh to MOAB
-    rval = moab.load_file("rectangle.h5m", 0, ""); CHKERRQ_MOAB(rval);
+    rval = moab.load_file("rectangle.h5m", 0, ""); CHKERRG(rval);
     ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
     if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
 

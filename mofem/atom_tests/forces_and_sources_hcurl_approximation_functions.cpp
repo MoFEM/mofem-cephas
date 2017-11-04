@@ -45,10 +45,10 @@ int main(int argc, char *argv[]) {
   };
   EntityHandle nodes[4];
   for(int nn = 0;nn<4;nn++) {
-    rval = moab.create_vertex(&tet_coords[3*nn],nodes[nn]); CHKERRQ_MOAB(rval);
+    rval = moab.create_vertex(&tet_coords[3*nn],nodes[nn]); CHKERRG(rval);
   }
   EntityHandle tet;
-  rval = moab.create_element(MBTET,nodes,4,tet); CHKERRQ_MOAB(rval);
+  rval = moab.create_element(MBTET,nodes,4,tet); CHKERRG(rval);
 
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
@@ -109,10 +109,10 @@ int main(int argc, char *argv[]) {
   ); CHKERRQ(ierr);
   Skinner skin(&moab);
   Range skin_faces; // skin faces from 3d ents
-  rval = skin.find_skin(0,tets,false,skin_faces); CHKERRQ_MOAB(rval);
+  rval = skin.find_skin(0,tets,false,skin_faces); CHKERRG(rval);
   ierr = m_field.add_ents_to_finite_element_by_type(skin_faces,MBTRI,"HCURL_TRI_FE"); CHKERRQ(ierr);
   Range skin_edges;
-  rval = moab.get_adjacencies(skin_faces,1,false,skin_edges,moab::Interface::UNION); CHKERRQ_MOAB(rval);
+  rval = moab.get_adjacencies(skin_faces,1,false,skin_edges,moab::Interface::UNION); CHKERRG(rval);
   ierr = m_field.add_ents_to_finite_element_by_type(skin_edges,MBEDGE,"HCURL_EDGE_FE"); CHKERRQ(ierr);
 
   //set app. order
@@ -289,7 +289,7 @@ int main(int argc, char *argv[]) {
   ierr = post_proc.generateReferenceElementMesh(); CHKERRQ(ierr);
   ierr = post_proc.addHdivFunctionsPostProc("HCURL");  CHKERRQ(ierr);
   ierr = m_field.loop_finite_elements("TEST_PROBLEM","HCURL_TET_FE",post_proc);  CHKERRQ(ierr);
-  rval = post_proc.postProcMesh.write_file("out.vtk","VTK",""); CHKERRQ_MOAB(rval);*/
+  rval = post_proc.postProcMesh.write_file("out.vtk","VTK",""); CHKERRG(rval);*/
 
 
   } catch (MoFEMException const &e) {

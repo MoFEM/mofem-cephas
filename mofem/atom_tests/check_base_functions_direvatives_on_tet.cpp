@@ -104,10 +104,10 @@ int main(int argc, char *argv[]) {
   };
   EntityHandle nodes[4];
   for(int nn = 0;nn<4;nn++) {
-    rval = moab.create_vertex(&tet_coords[3*nn],nodes[nn]); CHKERRQ_MOAB(rval);
+    rval = moab.create_vertex(&tet_coords[3*nn],nodes[nn]); CHKERRG(rval);
   }
   EntityHandle tet;
-  rval = moab.create_element(MBTET,nodes,4,tet); CHKERRQ_MOAB(rval);
+  rval = moab.create_element(MBTET,nodes,4,tet); CHKERRG(rval);
 
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);

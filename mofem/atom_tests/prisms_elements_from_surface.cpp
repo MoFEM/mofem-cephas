@@ -49,7 +49,7 @@ int main(int argc, char *argv[]) {
     //Read mesh to MOAB
     const char *option;
     option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
-    rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
+    rval = moab.load_file(mesh_file_name, 0, option); CHKERRG(rval);
     ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
     if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
 
@@ -61,7 +61,7 @@ int main(int argc, char *argv[]) {
     ierr = m_field.getInterface(prisms_from_surface_interface); CHKERRQ(ierr);
 
     Range tris;
-    rval = moab.get_entities_by_type(0,MBTRI,tris,false); CHKERRQ_MOAB(rval);
+    rval = moab.get_entities_by_type(0,MBTRI,tris,false); CHKERRG(rval);
     Range prisms;
     ierr = prisms_from_surface_interface->createPrisms(tris,prisms); CHKERRQ(ierr);
     prisms_from_surface_interface->createdVertices.clear();
@@ -70,8 +70,8 @@ int main(int argc, char *argv[]) {
     prisms.merge(add_prims_layer);
 
     EntityHandle meshset;
-    rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,meshset); CHKERRQ_MOAB(rval);
-    rval = moab.add_entities(meshset,prisms); CHKERRQ_MOAB(rval);
+    rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,meshset); CHKERRG(rval);
+    rval = moab.add_entities(meshset,prisms); CHKERRG(rval);
 
     BitRefLevel bit_level0;
     bit_level0.set(0);
@@ -108,7 +108,7 @@ int main(int argc, char *argv[]) {
     ierr = m_field.build_fields(); CHKERRQ(ierr);
 
     if(debug) {
-      rval = moab.write_file("prism_mesh.vtk","VTK","",&meshset,1); CHKERRQ_MOAB(rval);
+      rval = moab.write_file("prism_mesh.vtk","VTK","",&meshset,1); CHKERRG(rval);
     }
 
     //FE

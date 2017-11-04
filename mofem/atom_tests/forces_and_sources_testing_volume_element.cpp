@@ -57,14 +57,14 @@ int main(int argc, char *argv[]) {
   const char *option;
   option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
   BARRIER_RANK_START(pcomm)
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERRG(rval);
   BARRIER_RANK_END(pcomm)
 
   //set entitities bit level
   BitRefLevel bit_level0;
   bit_level0.set(0);
   EntityHandle meshset_level0;
-  rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERRQ_MOAB(rval);
+  rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERRG(rval);
   ierr = m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(0,3,bit_level0); CHKERRQ(ierr);
 
   //Fields
@@ -77,12 +77,12 @@ int main(int argc, char *argv[]) {
     // Creating and adding no field entities.
     const double coords[] = {0,0,0};
     EntityHandle no_field_vertex;
-    rval = m_field.get_moab().create_vertex(coords,no_field_vertex); CHKERRQ_MOAB(rval);
+    rval = m_field.get_moab().create_vertex(coords,no_field_vertex); CHKERRG(rval);
     Range range_no_field_vertex;
     range_no_field_vertex.insert(no_field_vertex);
     ierr = m_field.getInterface<BitRefManager>()->setBitRefLevel(range_no_field_vertex,BitRefLevel().set()); CHKERRQ(ierr);
     EntityHandle meshset = m_field.get_field_meshset("FIELD3");
-    rval = m_field.get_moab().add_entities(meshset,range_no_field_vertex); CHKERRQ_MOAB(rval);
+    rval = m_field.get_moab().add_entities(meshset,range_no_field_vertex); CHKERRG(rval);
   }
 
   //FE

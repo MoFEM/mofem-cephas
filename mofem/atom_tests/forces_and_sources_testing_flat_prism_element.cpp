@@ -50,7 +50,7 @@ int main(int argc, char *argv[]) {
 
   const char *option;
   option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERRG(rval);
 
   //Create MoFEM (Joseph) database
   MoFEM::Core core(moab);
@@ -71,11 +71,11 @@ int main(int argc, char *argv[]) {
     {
       //get tet enties form back bit_level
       EntityHandle ref_level_meshset = 0;
-      rval = moab.create_meshset(MESHSET_SET,ref_level_meshset); CHKERRQ_MOAB(rval);
+      rval = moab.create_meshset(MESHSET_SET,ref_level_meshset); CHKERRG(rval);
       ierr = m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(bit_levels.back(),BitRefLevel().set(),MBTET,ref_level_meshset); CHKERRQ(ierr);
       ierr = m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(bit_levels.back(),BitRefLevel().set(),MBPRISM,ref_level_meshset); CHKERRQ(ierr);
       Range ref_level_tets;
-      rval = moab.get_entities_by_handle(ref_level_meshset,ref_level_tets,true); CHKERRQ_MOAB(rval);
+      rval = moab.get_entities_by_handle(ref_level_meshset,ref_level_tets,true); CHKERRG(rval);
       //get faces and test to split
       ierr = interface->getSides(cubit_meshset,bit_levels.back(),true,0); CHKERRQ(ierr);
       //set new bit level
@@ -83,7 +83,7 @@ int main(int argc, char *argv[]) {
       //split faces and
       ierr = interface->splitSides(ref_level_meshset,bit_levels.back(),cubit_meshset,true,true,0); CHKERRQ(ierr);
       //clean meshsets
-      rval = moab.delete_entities(&ref_level_meshset,1); CHKERRQ_MOAB(rval);
+      rval = moab.delete_entities(&ref_level_meshset,1); CHKERRG(rval);
     }
     //update cubit meshsets
     for(_IT_CUBITMESHSETS_FOR_LOOP_(m_field,ciit)) {
@@ -104,12 +104,12 @@ int main(int argc, char *argv[]) {
     // Creating and adding no field entities.
     const double coords[] = {0,0,0};
     EntityHandle no_field_vertex;
-    rval = m_field.get_moab().create_vertex(coords,no_field_vertex); CHKERRQ_MOAB(rval);
+    rval = m_field.get_moab().create_vertex(coords,no_field_vertex); CHKERRG(rval);
     Range range_no_field_vertex;
     range_no_field_vertex.insert(no_field_vertex);
     ierr = m_field.getInterface<BitRefManager>()->setBitRefLevel(range_no_field_vertex,BitRefLevel().set()); CHKERRQ(ierr);
     EntityHandle meshset = m_field.get_field_meshset("FIELD2");
-    rval = m_field.get_moab().add_entities(meshset,range_no_field_vertex); CHKERRQ_MOAB(rval);
+    rval = m_field.get_moab().add_entities(meshset,range_no_field_vertex); CHKERRG(rval);
   }
 
   //FE

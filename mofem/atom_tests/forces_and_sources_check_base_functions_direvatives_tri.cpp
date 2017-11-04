@@ -77,10 +77,10 @@ int main(int argc, char *argv[]) {
   };
   EntityHandle nodes[3];
   for(int nn = 0;nn<3;nn++) {
-    rval = moab.create_vertex(&tri_coords[3*nn],nodes[nn]); CHKERRQ_MOAB(rval);
+    rval = moab.create_vertex(&tri_coords[3*nn],nodes[nn]); CHKERRG(rval);
   }
   EntityHandle tri;
-  rval = moab.create_element(MBTRI,nodes,3,tri); CHKERRQ_MOAB(rval);
+  rval = moab.create_element(MBTRI,nodes,3,tri); CHKERRG(rval);
   // Create adjacencies entitities
   Range adj;
   rval = moab.get_adjacencies(&tri,1,1,true,adj); CHKERRQ(ierr);

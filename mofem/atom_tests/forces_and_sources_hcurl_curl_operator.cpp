@@ -48,7 +48,7 @@ int main(int argc, char *argv[]) {
   }
   const char *option;
   option = "";
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERRG(rval);
 
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
@@ -63,11 +63,11 @@ int main(int argc, char *argv[]) {
   //
   // EntityHandle nodes[4];
   // for(int nn = 0;nn<4;nn++) {
-  //   rval = moab.create_vertex(&tet_coords[3*nn],nodes[nn]); CHKERRQ_MOAB(rval);
+  //   rval = moab.create_vertex(&tet_coords[3*nn],nodes[nn]); CHKERRG(rval);
   // }
   //
   // EntityHandle tet;
-  // rval = moab.create_element(MBTET,nodes,4,tet); CHKERRQ_MOAB(rval);
+  // rval = moab.create_element(MBTET,nodes,4,tet); CHKERRG(rval);
   //
   // ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   // if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
@@ -82,7 +82,7 @@ int main(int argc, char *argv[]) {
   BitRefLevel bit_level0;
   bit_level0.set(0);
   EntityHandle meshset_level0;
-  rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERRQ_MOAB(rval);
+  rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERRG(rval);
   ierr = m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(0,3,bit_level0); CHKERRQ(ierr);
 
   //fields
@@ -116,7 +116,7 @@ int main(int argc, char *argv[]) {
   ); CHKERRQ(ierr);
   Skinner skin(&moab);
   Range skin_faces; // skin faces from 3d ents
-  rval = skin.find_skin(0,tets,false,skin_faces); CHKERRQ_MOAB(rval);
+  rval = skin.find_skin(0,tets,false,skin_faces); CHKERRG(rval);
   ierr = m_field.add_ents_to_finite_element_by_type(skin_faces,MBTRI,"SKIN_FE"); CHKERRQ(ierr);
 
   //build finite elemnts

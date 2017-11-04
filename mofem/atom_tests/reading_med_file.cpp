@@ -69,7 +69,7 @@ int main(int argc, char *argv[]) {
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,cit)) {
       EntityHandle meshset = cit->getMeshset();
       int nb_ents;
-      rval = moab.get_number_entities_by_handle(meshset,nb_ents,true); CHKERRQ_MOAB(rval);
+      rval = moab.get_number_entities_by_handle(meshset,nb_ents,true); CHKERRG(rval);
       ierr = PetscPrintf(PETSC_COMM_WORLD,"Nb of ents in %s %d\n",cit->getName().c_str(),nb_ents); CHKERRQ(ierr);
       if(check && nb_ents!=check_list[ii]) {
         SETERRQ2(PETSC_COMM_WORLD,MOFEM_ATOM_TEST_INVALID,"Wrong numbers of entities in meshset %d != %d",nb_ents,check_list[ii]);
@@ -88,7 +88,7 @@ int main(int argc, char *argv[]) {
         NULL,
         NULL,
         &meshset,1
-      ); CHKERRQ_MOAB(rval);
+      ); CHKERRG(rval);
     }
 
   } catch (MoFEMException const &e) {

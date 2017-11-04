@@ -44,7 +44,7 @@ int main(int argc, char *argv[]) {
   moab::Interface& moab = mb_instance;
   const char *option;
   option = "";//"PARALLEL=BCAST";//;DEBUG_IO";
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERRG(rval);
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
 
@@ -66,11 +66,11 @@ int main(int argc, char *argv[]) {
     {
       //get tet enties form back bit_level
       EntityHandle ref_level_meshset = 0;
-      rval = moab.create_meshset(MESHSET_SET,ref_level_meshset); CHKERRQ_MOAB(rval);
+      rval = moab.create_meshset(MESHSET_SET,ref_level_meshset); CHKERRG(rval);
       ierr = m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(bit_levels.back(),BitRefLevel().set(),MBTET,ref_level_meshset); CHKERRQ(ierr);
       ierr = m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(bit_levels.back(),BitRefLevel().set(),MBPRISM,ref_level_meshset); CHKERRQ(ierr);
       Range ref_level_tets;
-      rval = moab.get_entities_by_handle(ref_level_meshset,ref_level_tets,true); CHKERRQ_MOAB(rval);
+      rval = moab.get_entities_by_handle(ref_level_meshset,ref_level_tets,true); CHKERRG(rval);
       //get faces and test to split
       ierr = interface->getSides(cubit_meshset,bit_levels.back(),true,0); CHKERRQ(ierr);
       //set new bit level
@@ -78,7 +78,7 @@ int main(int argc, char *argv[]) {
       //split faces and
       ierr = interface->splitSides(ref_level_meshset,bit_levels.back(),cubit_meshset,true,true,0); CHKERRQ(ierr);
       //clean meshsets
-      rval = moab.delete_entities(&ref_level_meshset,1); CHKERRQ_MOAB(rval);
+      rval = moab.delete_entities(&ref_level_meshset,1); CHKERRG(rval);
     }
     //update cubit meshsets
     for(_IT_CUBITMESHSETS_FOR_LOOP_(m_field,ciit)) {
@@ -158,18 +158,18 @@ int main(int argc, char *argv[]) {
     std::cout << mydata << std::endl;
 
     Range tets;
-    rval = moab.get_entities_by_type(cubit_meshset,MBTET,tets,true); CHKERRQ_MOAB(rval);
+    rval = moab.get_entities_by_type(cubit_meshset,MBTET,tets,true); CHKERRG(rval);
     tets = intersect(tets_back_bit_level,tets);
     Range nodes;
-    rval = moab.get_connectivity(tets,nodes,true); CHKERRQ_MOAB(rval);
+    rval = moab.get_connectivity(tets,nodes,true); CHKERRG(rval);
 
     for(Range::iterator nit = nodes.begin(); nit!=nodes.end(); nit++) {
       double coords[3];
-      rval = moab.get_coords(&*nit,1,coords); CHKERRQ_MOAB(rval);
+      rval = moab.get_coords(&*nit,1,coords); CHKERRG(rval);
       coords[0] += mydata.data.User1;
       coords[1] += mydata.data.User2;
       coords[2] += mydata.data.User3;
-      rval = moab.set_coords(&*nit,1,coords); CHKERRQ_MOAB(rval);
+      rval = moab.set_coords(&*nit,1,coords); CHKERRG(rval);
     }
 
   }
@@ -193,16 +193,16 @@ int main(int argc, char *argv[]) {
   myfile.open("mesh_insert_interface.txt");
 
   EntityHandle out_meshset_tet;
-  rval = moab.create_meshset(MESHSET_SET,out_meshset_tet); CHKERRQ_MOAB(rval);
+  rval = moab.create_meshset(MESHSET_SET,out_meshset_tet); CHKERRG(rval);
 
 
   ierr = m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(bit_levels.back(),BitRefLevel().set(),MBTET,out_meshset_tet); CHKERRQ(ierr);
   Range tets;
-  rval = moab.get_entities_by_handle(out_meshset_tet,tets,true); CHKERRQ_MOAB(rval);
+  rval = moab.get_entities_by_handle(out_meshset_tet,tets,true); CHKERRG(rval);
   for(Range::iterator tit = tets.begin();tit!=tets.end();tit++) {
     int num_nodes;
     const EntityHandle* conn;
-    rval = moab.get_connectivity(*tit,conn,num_nodes,true); CHKERRQ_MOAB(rval);
+    rval = moab.get_connectivity(*tit,conn,num_nodes,true); CHKERRG(rval);
 
     for(int nn = 0;nn<num_nodes;nn++) {
       std::cout << conn[nn] << " ";
@@ -213,14 +213,14 @@ int main(int argc, char *argv[]) {
 
   }
   EntityHandle out_meshset_prism;
-  rval = moab.create_meshset(MESHSET_SET,out_meshset_prism); CHKERRQ_MOAB(rval);
+  rval = moab.create_meshset(MESHSET_SET,out_meshset_prism); CHKERRG(rval);
   ierr = m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(bit_levels.back(),BitRefLevel().set(),MBPRISM,out_meshset_prism); CHKERRQ(ierr);
   Range prisms;
-  rval = moab.get_entities_by_handle(out_meshset_prism,prisms); CHKERRQ_MOAB(rval);
+  rval = moab.get_entities_by_handle(out_meshset_prism,prisms); CHKERRG(rval);
   for(Range::iterator pit = prisms.begin();pit!=prisms.end();pit++) {
     int num_nodes;
     const EntityHandle* conn;
-    rval = moab.get_connectivity(*pit,conn,num_nodes,true); CHKERRQ_MOAB(rval);
+    rval = moab.get_connectivity(*pit,conn,num_nodes,true); CHKERRG(rval);
 
     for(int nn = 0;nn<num_nodes;nn++) {
       std::cout << conn[nn] << " ";
@@ -232,22 +232,22 @@ int main(int argc, char *argv[]) {
   }
   myfile.close();
 
-  rval = moab.write_file("out_tet.vtk","VTK","",&out_meshset_tet,1); CHKERRQ_MOAB(rval);
-  rval = moab.write_file("out_prism.vtk","VTK","",&out_meshset_prism,1); CHKERRQ_MOAB(rval);
+  rval = moab.write_file("out_tet.vtk","VTK","",&out_meshset_tet,1); CHKERRG(rval);
+  rval = moab.write_file("out_prism.vtk","VTK","",&out_meshset_prism,1); CHKERRG(rval);
 
   EntityHandle out_meshset_tets_and_prism;
-  rval = moab.create_meshset(MESHSET_SET,out_meshset_tets_and_prism); CHKERRQ_MOAB(rval);
-  rval = moab.add_entities(out_meshset_tets_and_prism,tets); CHKERRQ_MOAB(rval);
-  rval = moab.add_entities(out_meshset_tets_and_prism,prisms); CHKERRQ_MOAB(rval);
-  rval = moab.write_file("out_tets_and_prisms.vtk","VTK","",&out_meshset_tets_and_prism,1); CHKERRQ_MOAB(rval);
+  rval = moab.create_meshset(MESHSET_SET,out_meshset_tets_and_prism); CHKERRG(rval);
+  rval = moab.add_entities(out_meshset_tets_and_prism,tets); CHKERRG(rval);
+  rval = moab.add_entities(out_meshset_tets_and_prism,prisms); CHKERRG(rval);
+  rval = moab.write_file("out_tets_and_prisms.vtk","VTK","",&out_meshset_tets_and_prism,1); CHKERRG(rval);
 
   EntityHandle out_meshset_tris;
-  rval = moab.create_meshset(MESHSET_SET,out_meshset_tris); CHKERRQ_MOAB(rval);
+  rval = moab.create_meshset(MESHSET_SET,out_meshset_tris); CHKERRG(rval);
   Range tris;
-  rval = moab.get_adjacencies(prisms,2,false,tris,moab::Interface::UNION); CHKERRQ_MOAB(rval);
+  rval = moab.get_adjacencies(prisms,2,false,tris,moab::Interface::UNION); CHKERRG(rval);
   std::cerr << tris.size() << " : " << prisms.size() << std::endl;
-  rval = moab.add_entities(out_meshset_tris,tris); CHKERRQ_MOAB(rval);
-  rval = moab.write_file("out_tris.vtk","VTK","",&out_meshset_tris,1); CHKERRQ_MOAB(rval);
+  rval = moab.add_entities(out_meshset_tris,tris); CHKERRG(rval);
+  rval = moab.write_file("out_tris.vtk","VTK","",&out_meshset_tris,1); CHKERRG(rval);
 
 
   } catch (MoFEMException const &e) {
