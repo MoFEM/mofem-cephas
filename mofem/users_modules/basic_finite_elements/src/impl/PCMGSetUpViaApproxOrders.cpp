@@ -707,24 +707,32 @@ MoFEMErrorCode PCMGSetUpViaApproxOrdersCtx::buildProlongationOperator(
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode PCMGSetUpViaApproxOrders(PC pc,PCMGSetUpViaApproxOrdersCtx *ctx,int verb) {
+MoFEMErrorCode PCMGSetUpViaApproxOrders(PC pc, PCMGSetUpViaApproxOrdersCtx *ctx,
+                                        int verb) {
 
-  PetscValidHeaderSpecific(pc,PC_CLASSID,1);
-  MoFEMFunctionBeginHot;
+  PetscValidHeaderSpecific(pc, PC_CLASSID, 1);
+  MoFEMFunctionBegin;
 
   MPI_Comm comm;
-  ierr = PetscObjectGetComm((PetscObject)pc,&comm); CHKERRG(ierr);
-  if(verb>0) {
-    PetscPrintf(comm,"Start PCMGSetUpViaApproxOrders\n");
-  }
-  ierr = ctx->getOptions(); CHKERRG(ierr);
-  ierr = ctx->buildProlongationOperator(true,verb); CHKERRG(ierr);
-  ierr = PCMGSetGalerkin(pc,PETSC_FALSE); CHKERRG(ierr);
-  ierr = PCMGSetLevels(pc,ctx->nbLevels,NULL);  CHKERRG(ierr);
-
-  if(verb>0) {
-    PetscPrintf(comm,"End PCMGSetUpViaApproxOrders\n");
+  CHKERR PetscObjectGetComm((PetscObject)pc, &comm);
+  if (verb > 0) {
+    PetscPrintf(comm, "Start PCMGSetUpViaApproxOrders\n");
   }
 
-  MoFEMFunctionReturnHot(0);
+  CHKERR ctx->getOptions();
+  CHKERR ctx->buildProlongationOperator(true, verb);
+
+#if PETSC_VERSION_GE(3, 8, 0)
+  CHKERR PCMGSetGalerkin(pc, PC_MG_GALERKIN_BOTH);
+#else
+  CHKERR PCMGSetGalerkin(pc, PETSC_FALSE);
+#endif
+
+  CHKERR PCMGSetLevels(pc, ctx->nbLevels, NULL);
+
+  if (verb > 0) {
+    PetscPrintf(comm, "End PCMGSetUpViaApproxOrders\n");
+  }
+
+  MoFEMFunctionReturn(0);
 }
