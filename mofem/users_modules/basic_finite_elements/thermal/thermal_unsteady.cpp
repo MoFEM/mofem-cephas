@@ -154,7 +154,7 @@ int main(int argc, char *argv[]) {
   moab::Interface& moab = mb_instance;
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERRG(rval);
   //create MoFEM (Joseph) database
   MoFEM::Core core(moab);
   MoFEM::Interface& m_field = core;
@@ -242,7 +242,7 @@ int main(int argc, char *argv[]) {
         if(block_data[it->getMeshsetId()].oRder == order) continue;
         PetscPrintf(PETSC_COMM_WORLD,"Set block %d oRder to %d\n",it->getMeshsetId(),block_data[it->getMeshsetId()].oRder);
         Range block_ents;
-        rval = moab.get_entities_by_handle(it->meshset,block_ents,true); CHKERRQ_MOAB(rval);
+        rval = moab.get_entities_by_handle(it->meshset,block_ents,true); CHKERRG(rval);
         Range ents_to_set_order;
         ierr = moab.get_adjacencies(block_ents,3,false,ents_to_set_order,moab::Interface::UNION); CHKERRQ(ierr);
         ents_to_set_order = ents_to_set_order.subset_by_type(MBTET);
@@ -315,9 +315,9 @@ int main(int argc, char *argv[]) {
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
     if(block_data[it->getMeshsetId()].initTemp!=0) {
       Range block_ents;
-      rval = moab.get_entities_by_handle(it->meshset,block_ents,true); CHKERRQ_MOAB(rval);
+      rval = moab.get_entities_by_handle(it->meshset,block_ents,true); CHKERRG(rval);
       Range vertices;
-      rval = moab.get_connectivity(block_ents,vertices,true); CHKERRQ_MOAB(rval);
+      rval = moab.get_connectivity(block_ents,vertices,true); CHKERRG(rval);
       ierr = m_field.set_field(block_data[it->getMeshsetId()].initTemp,MBVERTEX,vertices,"TEMP"); CHKERRQ(ierr);
     }
   }
@@ -462,10 +462,10 @@ int main(int argc, char *argv[]) {
   PetscBool is_partitioned = PETSC_FALSE;
   ierr = PetscOptionsGetBool(PETSC_NULL,PETSC_NULL,"-dm_is_partitioned",&is_partitioned,PETSC_NULL); CHKERRQ(ierr);
   if(is_partitioned) {
-    rval = moab.write_file("solution.h5m"); CHKERRQ_MOAB(rval);
+    rval = moab.write_file("solution.h5m"); CHKERRG(rval);
   } else {
     if(pcomm->rank()==0) {
-      rval = moab.write_file("solution.h5m"); CHKERRQ_MOAB(rval);
+      rval = moab.write_file("solution.h5m"); CHKERRG(rval);
     }
   }
 

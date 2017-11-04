@@ -53,7 +53,7 @@ int main(int argc, char *argv[]) {
 
     const char *option;
     option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
-    rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
+    rval = moab.load_file(mesh_file_name, 0, option); CHKERRG(rval);
 
     //Create MoFEM (Joseph) database
     MoFEM::Core core(moab);
@@ -63,7 +63,7 @@ int main(int argc, char *argv[]) {
     BitRefLevel bit_level0;
     bit_level0.set(0);
     EntityHandle meshset_level0;
-    rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERRQ_MOAB(rval);
+    rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERRG(rval);
     ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
 
     //Fields

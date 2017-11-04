@@ -280,7 +280,7 @@ struct MixTransportElement {
       setOfBlocks[it->getMeshsetId()].cApacity = temp_data.data.HeatCapacity;
       rval = mField.get_moab().get_entities_by_type(
         it->meshset,MBTET,setOfBlocks[it->getMeshsetId()].tEts,true
-      ); CHKERRQ_MOAB(rval);
+      ); CHKERRG(rval);
       ierr = mField.add_ents_to_finite_element_by_type(
         setOfBlocks[it->getMeshsetId()].tEts,MBTET,"MIX"
       ); CHKERRQ(ierr);
@@ -407,50 +407,50 @@ struct MixTransportElement {
       if(type != MBTET) MoFEMFunctionReturnHot(0);
       EntityHandle fe_ent = getNumeredEntFiniteElementPtr()->getEnt();
       Tag th_error_flux;
-      rval = getVolumeFE()->mField.get_moab().tag_get_handle("ERROR_FLUX",th_error_flux); CHKERRQ_MOAB(rval);
+      rval = getVolumeFE()->mField.get_moab().tag_get_handle("ERROR_FLUX",th_error_flux); CHKERRG(rval);
       double* error_flux_ptr;
       rval = getVolumeFE()->mField.get_moab().tag_get_by_ptr(
         th_error_flux,&fe_ent,1,(const void**)&error_flux_ptr
-      ); CHKERRQ_MOAB(rval);
+      ); CHKERRG(rval);
 
       Tag th_error_div;
-      rval = getVolumeFE()->mField.get_moab().tag_get_handle("ERROR_DIV",th_error_div); CHKERRQ_MOAB(rval);
+      rval = getVolumeFE()->mField.get_moab().tag_get_handle("ERROR_DIV",th_error_div); CHKERRG(rval);
       double* error_div_ptr;
       rval = getVolumeFE()->mField.get_moab().tag_get_by_ptr(
         th_error_div,&fe_ent,1,(const void**)&error_div_ptr
-      ); CHKERRQ_MOAB(rval);
+      ); CHKERRG(rval);
 
       Tag th_error_jump;
-      rval = getVolumeFE()->mField.get_moab().tag_get_handle("ERROR_JUMP",th_error_jump); CHKERRQ_MOAB(rval);
+      rval = getVolumeFE()->mField.get_moab().tag_get_handle("ERROR_JUMP",th_error_jump); CHKERRG(rval);
       double* error_jump_ptr;
       rval = getVolumeFE()->mField.get_moab().tag_get_by_ptr(
         th_error_jump,&fe_ent,1,(const void**)&error_jump_ptr
-      ); CHKERRQ_MOAB(rval);
+      ); CHKERRG(rval);
 
       {
         double def_val = 0;
         Tag th_error_flux;
         rval = postProcMesh.tag_get_handle(
           "ERROR_FLUX",1,MB_TYPE_DOUBLE,th_error_flux,MB_TAG_CREAT|MB_TAG_SPARSE,&def_val
-        ); CHKERRQ_MOAB(rval);
+        ); CHKERRG(rval);
         for(vector<EntityHandle>::iterator vit = mapGaussPts.begin();vit!=mapGaussPts.end();vit++) {
-          rval = postProcMesh.tag_set_data(th_error_flux,&*vit,1,error_flux_ptr); CHKERRQ_MOAB(rval);
+          rval = postProcMesh.tag_set_data(th_error_flux,&*vit,1,error_flux_ptr); CHKERRG(rval);
         }
 
         Tag th_error_div;
         rval = postProcMesh.tag_get_handle(
           "ERROR_DIV",1,MB_TYPE_DOUBLE,th_error_div,MB_TAG_CREAT|MB_TAG_SPARSE,&def_val
-        ); CHKERRQ_MOAB(rval);
+        ); CHKERRG(rval);
         for(vector<EntityHandle>::iterator vit = mapGaussPts.begin();vit!=mapGaussPts.end();vit++) {
-          rval = postProcMesh.tag_set_data(th_error_div,&*vit,1,error_div_ptr); CHKERRQ_MOAB(rval);
+          rval = postProcMesh.tag_set_data(th_error_div,&*vit,1,error_div_ptr); CHKERRG(rval);
         }
 
         Tag th_error_jump;
         rval = postProcMesh.tag_get_handle(
           "ERROR_JUMP",1,MB_TYPE_DOUBLE,th_error_jump,MB_TAG_CREAT|MB_TAG_SPARSE,&def_val
-        ); CHKERRQ_MOAB(rval);
+        ); CHKERRG(rval);
         for(vector<EntityHandle>::iterator vit = mapGaussPts.begin();vit!=mapGaussPts.end();vit++) {
-          rval = postProcMesh.tag_set_data(th_error_jump,&*vit,1,error_jump_ptr); CHKERRQ_MOAB(rval);
+          rval = postProcMesh.tag_set_data(th_error_jump,&*vit,1,error_jump_ptr); CHKERRG(rval);
         }
 
       }
@@ -1513,28 +1513,28 @@ struct MixTransportElement {
         Tag th_error_flux,th_error_div;
         rval = cTx.mField.get_moab().tag_get_handle(
           "ERROR_FLUX",1,MB_TYPE_DOUBLE,th_error_flux,MB_TAG_CREAT|MB_TAG_SPARSE,&def_val
-        ); CHKERRQ_MOAB(rval);
+        ); CHKERRG(rval);
         double* error_flux_ptr;
         rval = cTx.mField.get_moab().tag_get_by_ptr(
           th_error_flux,&fe_ent,1,(const void**)&error_flux_ptr
-        ); CHKERRQ_MOAB(rval);
+        ); CHKERRG(rval);
 
         rval = cTx.mField.get_moab().tag_get_handle(
           "ERROR_DIV",1,MB_TYPE_DOUBLE,th_error_div,MB_TAG_CREAT|MB_TAG_SPARSE,&def_val
-        ); CHKERRQ_MOAB(rval);
+        ); CHKERRG(rval);
         double* error_div_ptr;
         rval = cTx.mField.get_moab().tag_get_by_ptr(
           th_error_div,&fe_ent,1,(const void**)&error_div_ptr
-        ); CHKERRQ_MOAB(rval);
+        ); CHKERRG(rval);
 
         Tag th_error_jump;
         rval = cTx.mField.get_moab().tag_get_handle(
           "ERROR_JUMP",1,MB_TYPE_DOUBLE,th_error_jump,MB_TAG_CREAT|MB_TAG_SPARSE,&def_val
-        ); CHKERRQ_MOAB(rval);
+        ); CHKERRG(rval);
         double* error_jump_ptr;
         rval = cTx.mField.get_moab().tag_get_by_ptr(
           th_error_jump,&fe_ent,1,(const void**)&error_jump_ptr
-        ); CHKERRQ_MOAB(rval);
+        ); CHKERRG(rval);
         *error_jump_ptr = 0;
 
         /// characteristic size of the element
@@ -1542,11 +1542,11 @@ struct MixTransportElement {
 
         for(int ff = 0;ff!=4;ff++) {
           EntityHandle face;
-          rval = cTx.mField.get_moab().side_element(fe_ent,2,ff,face); CHKERRQ_MOAB(rval);
+          rval = cTx.mField.get_moab().side_element(fe_ent,2,ff,face); CHKERRG(rval);
           double* error_face_jump_ptr;
           rval = cTx.mField.get_moab().tag_get_by_ptr(
             th_error_jump,&face,1,(const void**)&error_face_jump_ptr
-          ); CHKERRQ_MOAB(rval);
+          ); CHKERRG(rval);
           *error_face_jump_ptr = (1/sqrt(h))*sqrt(*error_face_jump_ptr);
           *error_face_jump_ptr = pow(*error_face_jump_ptr,2);
           *error_jump_ptr += *error_face_jump_ptr;
@@ -1662,11 +1662,11 @@ struct MixTransportElement {
           Tag th_error_jump;
           rval = cTx.mField.get_moab().tag_get_handle(
             "ERROR_JUMP",1,MB_TYPE_DOUBLE,th_error_jump,MB_TAG_CREAT|MB_TAG_SPARSE,&def_val
-          ); CHKERRQ_MOAB(rval);
+          ); CHKERRG(rval);
           double* error_jump_ptr;
           rval = cTx.mField.get_moab().tag_get_by_ptr(
             th_error_jump,&fe_ent,1,(const void**)&error_jump_ptr
-          ); CHKERRQ_MOAB(rval);
+          ); CHKERRG(rval);
           *error_jump_ptr = 0;
 
           // check if this is essential boundary condition

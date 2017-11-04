@@ -218,7 +218,7 @@ MoFEMErrorCode AnalyticalDirichletBC::ApproxField::OpLhs::doWork(
     MoFEMFunctionBeginHot;
     ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
     Range ents;
-    rval = mField.get_moab().get_connectivity(tris,ents,true); CHKERRQ_MOAB(rval);
+    rval = mField.get_moab().get_connectivity(tris,ents,true); CHKERRG(rval);
     ierr = mField.get_moab().get_adjacencies(tris,1,false,ents,moab::Interface::UNION); CHKERRQ(ierr);
     ents.merge(tris);
     for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {
@@ -317,7 +317,7 @@ MoFEMErrorCode AnalyticalDirichletBC::ApproxField::OpLhs::doWork(
     MoFEMFunctionBeginHot;
     EntityHandle fe_meshset = m_field.get_finite_element_meshset("BC_FE");
     Range bc_tris;
-    rval = m_field.get_moab().get_entities_by_type(fe_meshset,MBTRI,bc_tris); CHKERRQ_MOAB(rval);
+    rval = m_field.get_moab().get_entities_by_type(fe_meshset,MBTRI,bc_tris); CHKERRG(rval);
     return solveProblem(m_field,problem,fe,bc,bc_tris);
     MoFEMFunctionReturnHot(0);
   }

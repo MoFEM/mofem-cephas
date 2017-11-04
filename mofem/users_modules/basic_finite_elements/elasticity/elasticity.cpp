@@ -139,7 +139,7 @@ int main(int argc, char *argv[]) {
                "PARALLEL_RESOLVE_SHARED_ENTS;"
                "PARTITION=PARALLEL_PARTITION;";
       rval = moab.load_file(mesh_file_name, 0, option);
-      CHKERRQ_MOAB(rval);
+      CHKERRG(rval);
     } else {
       // If that case we have distributed algebra, i.e. assembly of vectors and
       // matrices is in parallel, but whole mesh is stored on all processors.
@@ -148,7 +148,7 @@ int main(int argc, char *argv[]) {
       const char *option;
       option = "";
       rval   = moab.load_file(mesh_file_name, 0, option);
-      CHKERRQ_MOAB(rval);
+      CHKERRG(rval);
     }
 
     // Create MoFEM database and link it to MoAB
@@ -209,15 +209,15 @@ int main(int argc, char *argv[]) {
       Skinner skin(&m_field.get_moab());
       Range faces, tets;
       rval = m_field.get_moab().get_entities_by_type(0, MBTET, tets);
-      CHKERRQ_MOAB(rval);
-      // rval = skin.find_skin(0,tets,false,faces); CHKERRQ_MOAB(rval);
+      CHKERRG(rval);
+      // rval = skin.find_skin(0,tets,false,faces); CHKERRG(rval);
       Range edges;
       rval = m_field.get_moab().get_adjacencies(tets, 1, false, edges,
                                                 moab::Interface::UNION);
-      CHKERRQ_MOAB(rval);
+      CHKERRG(rval);
       // rval = m_field.get_moab().get_adjacencies(
       //   faces,1,false,edges,moab::Interface::UNION
-      // ); CHKERRQ_MOAB(rval);
+      // ); CHKERRG(rval);
       // ierr = m_field.synchronise_entities(edges); CHKERRQ(ierr);
       ierr = m_field.set_field_order(edges, "MESH_NODE_POSITIONS", 2);
       CHKERRQ(ierr);
@@ -277,18 +277,18 @@ int main(int argc, char *argv[]) {
                     it->getMeshsetId(), block_data[it->getMeshsetId()].oRder);
         Range block_ents;
         rval = moab.get_entities_by_handle(it->getMeshset(), block_ents, true);
-        CHKERRQ_MOAB(rval);
+        CHKERRG(rval);
         Range ents_to_set_order;
         rval = moab.get_adjacencies(block_ents, 3, false, ents_to_set_order,
                                     moab::Interface::UNION);
-        CHKERRQ_MOAB(rval);
+        CHKERRG(rval);
         ents_to_set_order = ents_to_set_order.subset_by_type(MBTET);
         rval = moab.get_adjacencies(block_ents, 2, false, ents_to_set_order,
                                     moab::Interface::UNION);
-        CHKERRQ_MOAB(rval);
+        CHKERRG(rval);
         rval = moab.get_adjacencies(block_ents, 1, false, ents_to_set_order,
                                     moab::Interface::UNION);
-        CHKERRQ_MOAB(rval);
+        CHKERRG(rval);
         ierr = m_field.synchronise_entities(ents_to_set_order);
         CHKERRQ(ierr);
         ierr = m_field.set_field_order(ents_to_set_order, "DISPLACEMENT",
@@ -362,7 +362,7 @@ int main(int argc, char *argv[]) {
     Range tets;
     rval =
         m_field.get_moab().get_entities_by_type(it->meshset, MBTET, tets, true);
-    CHKERRQ_MOAB(rval);
+    CHKERRG(rval);
     ierr =
         m_field.add_ents_to_finite_element_by_type(tets, MBTET, "BODY_FORCE");
     CHKERRQ(ierr);
@@ -429,10 +429,10 @@ int main(int argc, char *argv[]) {
                     block_data[it->getMeshsetId()].initTemp);
         Range block_ents;
         rval = moab.get_entities_by_handle(it->meshset, block_ents, true);
-        CHKERRQ_MOAB(rval);
+        CHKERRG(rval);
         Range vertices;
         rval = moab.get_connectivity(block_ents, vertices, true);
-        CHKERRQ_MOAB(rval);
+        CHKERRG(rval);
         ierr = m_field.set_field(block_data[it->getMeshsetId()].initTemp,
                                  MBVERTEX, vertices, "TEMP");
         CHKERRQ(ierr);

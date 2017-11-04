@@ -2046,7 +2046,7 @@ MoFEMErrorCode ConvectiveMassElement::OpEnergy::doWork(
       for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|BODYFORCESSET,it)) {
         int id = it->getMeshsetId();
         EntityHandle meshset = it->getMeshset();
-        rval = mField.get_moab().get_entities_by_type(meshset,MBTET,setOfBlocks[id].tEts,true); CHKERRQ_MOAB(rval);
+        rval = mField.get_moab().get_entities_by_type(meshset,MBTET,setOfBlocks[id].tEts,true); CHKERRG(rval);
         added_tets.merge(setOfBlocks[id].tEts);
         Block_BodyForces mydata;
         ierr = it->getAttributeDataStructure(mydata); CHKERRQ(ierr);
@@ -2064,7 +2064,7 @@ MoFEMErrorCode ConvectiveMassElement::OpEnergy::doWork(
         if(mydata.data.User1 == 0) continue;
         Range tets;
         EntityHandle meshset = it->getMeshset();
-        rval = mField.get_moab().get_entities_by_type(meshset,MBTET,tets,true); CHKERRQ_MOAB(rval);
+        rval = mField.get_moab().get_entities_by_type(meshset,MBTET,tets,true); CHKERRG(rval);
         tets = subtract(tets,added_tets);
         if(tets.empty()) continue;
         int id = it->getMeshsetId();

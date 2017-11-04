@@ -68,11 +68,11 @@ int main(int argc, char *argv[]) {
       //Read mesh to MOAB
       const char *option;
       option = "PARALLEL=BCAST_DELETE;PARALLEL_RESOLVE_SHARED_ENTS;PARTITION=PARALLEL_PARTITION;";
-      rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
+      rval = moab.load_file(mesh_file_name, 0, option); CHKERRG(rval);
     } else {
       const char *option;
       option = "";
-      rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
+      rval = moab.load_file(mesh_file_name, 0, option); CHKERRG(rval);
     }
 
     //data stored on mesh for restart
@@ -80,17 +80,17 @@ int main(int argc, char *argv[]) {
     double def_step_size = 1;
     rval = moab.tag_get_handle("_STEPSIZE",1,MB_TYPE_DOUBLE,th_step_size,MB_TAG_CREAT|MB_TAG_MESH,&def_step_size);
     if(rval==MB_ALREADY_ALLOCATED) rval = MB_SUCCESS;
-    CHKERRQ_MOAB(rval);
+    CHKERRG(rval);
     int def_step = 1;
     rval = moab.tag_get_handle("_STEP",1,MB_TYPE_INTEGER,th_step,MB_TAG_CREAT|MB_TAG_MESH,&def_step);
     if(rval==MB_ALREADY_ALLOCATED) rval = MB_SUCCESS;
-    CHKERRQ_MOAB(rval);
+    CHKERRG(rval);
     const void* tag_data_step_size[1];
     EntityHandle root = moab.get_root_set();
-    rval = moab.tag_get_by_ptr(th_step_size,&root,1,tag_data_step_size); CHKERRQ_MOAB(rval);
+    rval = moab.tag_get_by_ptr(th_step_size,&root,1,tag_data_step_size); CHKERRG(rval);
     double& step_size = *(double *)tag_data_step_size[0];
     const void* tag_data_step[1];
-    rval = moab.tag_get_by_ptr(th_step,&root,1,tag_data_step); CHKERRQ_MOAB(rval);
+    rval = moab.tag_get_by_ptr(th_step,&root,1,tag_data_step); CHKERRG(rval);
     int& step = *(int *)tag_data_step[0];
     //end of data stored for restart
     ierr = PetscPrintf(PETSC_COMM_WORLD,"Start step %D and step_size = %6.4e\n",step,step_size); CHKERRQ(ierr);
@@ -156,18 +156,18 @@ int main(int argc, char *argv[]) {
         EntityHandle no_field_vertex;
         {
           const double coords[] = {0,0,0};
-          rval = m_field.get_moab().create_vertex(coords,no_field_vertex); CHKERRQ_MOAB(rval);
+          rval = m_field.get_moab().create_vertex(coords,no_field_vertex); CHKERRG(rval);
           Range range_no_field_vertex;
           range_no_field_vertex.insert(no_field_vertex);
           ierr = m_field.seed_ref_level(range_no_field_vertex,BitRefLevel().set()); CHKERRQ(ierr);
           EntityHandle lambda_meshset = m_field.get_field_meshset("LAMBDA");
-          rval = m_field.get_moab().add_entities(lambda_meshset,range_no_field_vertex); CHKERRQ_MOAB(rval);
+          rval = m_field.get_moab().add_entities(lambda_meshset,range_no_field_vertex); CHKERRG(rval);
         }
         //this entity will carray data for this finite element
         EntityHandle meshset_fe_arc_length;
         {
-          rval = moab.create_meshset(MESHSET_SET,meshset_fe_arc_length); CHKERRQ_MOAB(rval);
-          rval = moab.add_entities(meshset_fe_arc_length,&no_field_vertex,1); CHKERRQ_MOAB(rval);
+          rval = moab.create_meshset(MESHSET_SET,meshset_fe_arc_length); CHKERRG(rval);
+          rval = moab.add_entities(meshset_fe_arc_length,&no_field_vertex,1); CHKERRG(rval);
           ierr = m_field.seed_ref_level_MESHSET(meshset_fe_arc_length,BitRefLevel().set()); CHKERRQ(ierr);
         }
         //finally add created meshset to the ARC_LENGTH finite element
@@ -194,12 +194,12 @@ int main(int argc, char *argv[]) {
       ierr = m_field.modify_problem_add_finite_element("ELASTIC_MECHANICS","NEUAMNN_FE"); CHKERRQ(ierr);
       for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,NODESET|FORCESET,it)) {
         Range tris;
-        rval = moab.get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERRQ_MOAB(rval);
+        rval = moab.get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERRG(rval);
         ierr = m_field.add_ents_to_finite_element_by_type(tris,MBTRI,"NEUAMNN_FE"); CHKERRQ(ierr);
       }
       for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,SIDESET|PRESSURESET,it)) {
         Range tris;
-        rval = moab.get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERRQ_MOAB(rval);
+        rval = moab.get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERRG(rval);
         ierr = m_field.add_ents_to_finite_element_by_type(tris,MBTRI,"NEUAMNN_FE"); CHKERRQ(ierr);
       }
       //add nodal force element
@@ -717,7 +717,7 @@ int main(int argc, char *argv[]) {
             // #ifdef MOAB_HDF5_PARALLEL
             //   std::ostringstream sss;
             //   sss << "restart_" << step << ".h5m";
-            //   rval = moab.write_file(sss.str().c_str(),"MOAB","PARALLEL=WRITE_PART"); CHKERRQ_MOAB(rval);
+            //   rval = moab.write_file(sss.str().c_str(),"MOAB","PARALLEL=WRITE_PART"); CHKERRG(rval);
             // #else
             // #warning "No parallel HDF5, no writing restart file"
             // #endif

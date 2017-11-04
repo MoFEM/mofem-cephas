@@ -119,10 +119,10 @@ struct MagneticElement {
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,bit)) {
       if(bit->getName().compare(0,9,"NATURALBC") == 0) {
         Range faces;
-        rval = mField.get_moab().get_entities_by_type(bit->meshset,MBTRI,faces,true); CHKERRQ_MOAB(rval);
+        rval = mField.get_moab().get_entities_by_type(bit->meshset,MBTRI,faces,true); CHKERRG(rval);
         rval = mField.get_moab().get_adjacencies(
           faces,1,true,blockData.naturalBc,moab::Interface::UNION
-        ); CHKERRQ_MOAB(rval);
+        ); CHKERRG(rval);
         blockData.naturalBc.merge(faces);
       }
     }
@@ -139,23 +139,23 @@ struct MagneticElement {
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,bit)) {
       if(bit->getName().compare(0,10,"ESSENTIALBC") == 0) {
         Range faces;
-        rval = mField.get_moab().get_entities_by_type(bit->meshset,MBTRI,faces,true); CHKERRQ_MOAB(rval);
+        rval = mField.get_moab().get_entities_by_type(bit->meshset,MBTRI,faces,true); CHKERRG(rval);
         rval = mField.get_moab().get_adjacencies(
           faces,1,true,blockData.essentialBc,moab::Interface::UNION
-        ); CHKERRQ_MOAB(rval);
+        ); CHKERRG(rval);
         blockData.essentialBc.merge(faces);
       }
     }
     if(blockData.essentialBc.empty()) {
       Range tets;
-      rval = mField.get_moab().get_entities_by_type(0,MBTET,tets); CHKERRQ_MOAB(rval);
+      rval = mField.get_moab().get_entities_by_type(0,MBTET,tets); CHKERRG(rval);
       Skinner skin(&mField.get_moab());
       Range skin_faces; // skin faces from 3d ents
-      rval = skin.find_skin(0,tets,false,skin_faces); CHKERRQ_MOAB(rval);
+      rval = skin.find_skin(0,tets,false,skin_faces); CHKERRG(rval);
       skin_faces = subtract(skin_faces,blockData.naturalBc);
       rval = mField.get_moab().get_adjacencies(
         skin_faces,1,true,blockData.essentialBc,moab::Interface::UNION
-      ); CHKERRQ_MOAB(rval);
+      ); CHKERRG(rval);
       blockData.essentialBc.merge(skin_faces);
     }
     MoFEMFunctionReturnHot(0);
@@ -190,8 +190,8 @@ struct MagneticElement {
     // // edge-based, face-based and cell-based finite element subspaces.
     //
     // Range tris,edges;
-    // rval = mField.get_moab().get_entities_by_type(root_set,MBTRI,tris,true); CHKERRQ_MOAB(rval);
-    // rval = mField.get_moab().get_entities_by_type(root_set,MBEDGE,edges,true); CHKERRQ_MOAB(rval);
+    // rval = mField.get_moab().get_entities_by_type(root_set,MBTRI,tris,true); CHKERRG(rval);
+    // rval = mField.get_moab().get_entities_by_type(root_set,MBEDGE,edges,true); CHKERRG(rval);
     //
     // // Set order in volume
     // Range bc_ents = unite(blockData.naturalBc,blockData.essentialBc);
@@ -803,7 +803,7 @@ struct MagneticElement {
       double def_val[] = { 0,0,0 };
       rval = postProcMesh.tag_get_handle(
         "MAGNETIC_INDUCTION_FIELD",3,MB_TYPE_DOUBLE,th,MB_TAG_CREAT|MB_TAG_SPARSE,def_val
-      ); CHKERRQ_MOAB(rval);
+      ); CHKERRG(rval);
       const int nb_row_dofs = row_data.getHcurlN().size2()/3;
       if(nb_row_dofs==0) MoFEMFunctionReturnHot(0);
       const void* tags_ptr[mapGaussPts.size()];
@@ -818,7 +818,7 @@ struct MagneticElement {
         );
       }
 
-      rval = postProcMesh.tag_get_by_ptr(th,&mapGaussPts[0],mapGaussPts.size(),tags_ptr); CHKERRQ_MOAB(rval);
+      rval = postProcMesh.tag_get_by_ptr(th,&mapGaussPts[0],mapGaussPts.size(),tags_ptr); CHKERRG(rval);
 
 
       for(int gg = 0;gg!=nb_gauss_pts;gg++) {

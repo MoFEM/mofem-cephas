@@ -52,7 +52,7 @@ int main(int argc, char *argv[]) {
 
   const char *option;
   option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERRG(rval);
 
   //Create MoFEM (Joseph) database
   MoFEM::Core core(moab);
@@ -62,7 +62,7 @@ int main(int argc, char *argv[]) {
   BitRefLevel bit_level0;
   bit_level0.set(0);
   EntityHandle meshset_level0;
-  rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERRQ_MOAB(rval);
+  rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERRG(rval);
   ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
 
   //Fields
@@ -197,23 +197,23 @@ int main(int argc, char *argv[]) {
 
   //Range ref_edges;
   //ierr = m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(bit_level0,BitRefLevel().set(),MBEDGE,ref_edges); CHKERRQ(ierr);
-  //rval = moab.list_entities(ref_edges); CHKERRQ_MOAB(rval);
+  //rval = moab.list_entities(ref_edges); CHKERRG(rval);
   //m_field.list_dofs_by_field_name("TEMP");
 
   if(pcomm->rank()==0) {
-    rval = moab.write_file("solution.h5m"); CHKERRQ_MOAB(rval);
+    rval = moab.write_file("solution.h5m"); CHKERRG(rval);
   }
 
   /*EntityHandle fe_meshset = m_field.get_finite_element_meshset("THERMAL_FE");
   Range tets;
-  rval = moab.get_entities_by_type(fe_meshset,MBTET,tets,true); CHKERRQ_MOAB(rval);
+  rval = moab.get_entities_by_type(fe_meshset,MBTET,tets,true); CHKERRG(rval);
   Range tets_edges;
-  rval = moab.get_adjacencies(tets,1,false,tets_edges,moab::Interface::UNION); CHKERRQ_MOAB(rval);
+  rval = moab.get_adjacencies(tets,1,false,tets_edges,moab::Interface::UNION); CHKERRG(rval);
   EntityHandle edges_meshset;
-  rval = moab.create_meshset(MESHSET_SET,edges_meshset); CHKERRQ_MOAB(rval);
-  rval = moab.add_entities(edges_meshset,tets); CHKERRQ_MOAB(rval);
-  rval = moab.add_entities(edges_meshset,tets_edges); CHKERRQ_MOAB(rval);
-  rval = moab.convert_entities(edges_meshset,true,false,false); CHKERRQ_MOAB(rval);*/
+  rval = moab.create_meshset(MESHSET_SET,edges_meshset); CHKERRG(rval);
+  rval = moab.add_entities(edges_meshset,tets); CHKERRG(rval);
+  rval = moab.add_entities(edges_meshset,tets_edges); CHKERRG(rval);
+  rval = moab.convert_entities(edges_meshset,true,false,false); CHKERRG(rval);*/
 
   ProjectionFieldOn10NodeTet ent_method_on_10nodeTet(m_field,"TEMP",true,false,"TEMP");
   ierr = m_field.loop_dofs("TEMP",ent_method_on_10nodeTet); CHKERRQ(ierr);
@@ -222,10 +222,10 @@ int main(int argc, char *argv[]) {
 
   if(pcomm->rank()==0) {
     EntityHandle out_meshset;
-    rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERRQ_MOAB(rval);
+    rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERRG(rval);
     ierr = m_field.get_problem_finite_elements_entities("THERMAL_PROBLEM","THERMAL_FE",out_meshset); CHKERRQ(ierr);
-    rval = moab.write_file("out.vtk","VTK","",&out_meshset,1); CHKERRQ_MOAB(rval);
-    rval = moab.delete_entities(&out_meshset,1); CHKERRQ_MOAB(rval);
+    rval = moab.write_file("out.vtk","VTK","",&out_meshset,1); CHKERRG(rval);
+    rval = moab.delete_entities(&out_meshset,1); CHKERRG(rval);
   }
 
   ierr = MatDestroy(&A); CHKERRQ(ierr);

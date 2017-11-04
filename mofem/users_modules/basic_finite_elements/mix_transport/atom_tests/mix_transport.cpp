@@ -88,7 +88,7 @@ int main(int argc, char *argv[]) {
     const char *option;
     option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
     BARRIER_RANK_START(pcomm)
-    rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
+    rval = moab.load_file(mesh_file_name, 0, option); CHKERRG(rval);
     BARRIER_RANK_END(pcomm)
 
     //Create MoFEM (Joseph) database
@@ -119,7 +119,7 @@ int main(int argc, char *argv[]) {
     ierr = m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(BitRefLevel().set(0),BitRefLevel().set(),MBTET,tets); CHKERRQ(ierr);
     Skinner skin(&moab);
     Range skin_faces; // skin faces from 3d ents
-    rval = skin.find_skin(0,tets,false,skin_faces); CHKERRQ_MOAB(rval);
+    rval = skin.find_skin(0,tets,false,skin_faces); CHKERRG(rval);
     ierr = m_field.add_ents_to_finite_element_by_type(skin_faces,MBTRI,"MIX_BCVALUE"); CHKERRQ(ierr);
 
     ierr = ufe.buildProblem(ref_level); CHKERRQ(ierr);

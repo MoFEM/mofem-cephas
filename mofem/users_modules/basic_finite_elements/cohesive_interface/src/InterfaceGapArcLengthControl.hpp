@@ -79,15 +79,15 @@ struct ArcLengthIntElemFEMethod: public FEMethod {
   MoFEMErrorCode remove_damaged_prisms_nodes() {
     MoFEMFunctionBeginHot;
     Range prisms;
-    rval = mOab.get_entities_by_type(0,MBPRISM,prisms,false); CHKERRQ_MOAB(rval);
+    rval = mOab.get_entities_by_type(0,MBPRISM,prisms,false); CHKERRG(rval);
     std::vector<int> is_prism_damaged(prisms.size());
-    rval = mOab.tag_get_data(thDamagedPrism,prisms,&*is_prism_damaged.begin()); CHKERRQ_MOAB(rval);
+    rval = mOab.tag_get_data(thDamagedPrism,prisms,&*is_prism_damaged.begin()); CHKERRG(rval);
     Range::iterator pit = prisms.begin();
     std::vector<int>::iterator vit = is_prism_damaged.begin();
     for(;pit!=prisms.end();pit++,vit++) {
       if(*vit>0) {
         Range nodes;
-        rval = mOab.get_connectivity(&*pit,1,nodes,true); CHKERRQ_MOAB(rval);
+        rval = mOab.get_connectivity(&*pit,1,nodes,true); CHKERRG(rval);
         for(Range::iterator nit = nodes.begin();nit!=nodes.end();nit++) {
           Faces3.erase(*nit);
           Faces4.erase(*nit);

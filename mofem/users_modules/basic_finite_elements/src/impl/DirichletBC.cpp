@@ -70,7 +70,7 @@ MoFEMErrorCode DirichletDisplacementBc::iNitalize() {
         }
         if(dim>0) {
           Range _nodes;
-          rval = mField.get_moab().get_connectivity(ents,_nodes,true); CHKERRQ_MOAB(rval);
+          rval = mField.get_moab().get_connectivity(ents,_nodes,true); CHKERRG(rval);
           ents.insert(_nodes.begin(),_nodes.end());
         }
         for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {
@@ -274,7 +274,7 @@ MoFEMErrorCode DirichletSpatialPositionsBc::iNitalize() {
         }
         if(dim>0) {
           Range nodes;
-          rval = mField.get_moab().get_connectivity(ents,nodes,true); CHKERRQ_MOAB(rval);
+          rval = mField.get_moab().get_connectivity(ents,nodes,true); CHKERRG(rval);
           ents.insert(nodes.begin(),nodes.end());
         }
         // loop over entities in meshet
@@ -300,7 +300,7 @@ MoFEMErrorCode DirichletSpatialPositionsBc::iNitalize() {
                 // set coordinates form coords in MoAB
                 rval = mField.get_moab().get_coords(
                   &node,1,&*cOords.data().begin()
-                ); CHKERRQ_MOAB(rval);
+                ); CHKERRG(rval);
               } else {
                 // set coordinates from field values
                 for(;mdit!=hi_mdit;mdit++) {
@@ -374,7 +374,7 @@ MoFEMErrorCode DirichletTemperatureBc::iNitalize() {
         }
         if(dim>0) {
           Range _nodes;
-          rval = mField.get_moab().get_connectivity(ents,_nodes,true); CHKERRQ_MOAB(rval);
+          rval = mField.get_moab().get_connectivity(ents,_nodes,true); CHKERRG(rval);
           ents.insert(_nodes.begin(),_nodes.end());
         }
         for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {
@@ -527,7 +527,7 @@ MoFEMErrorCode DirichletSetFieldFromBlock::iNitalize() {
           }
           if(dim>0) {
             Range nodes;
-            rval = mField.get_moab().get_connectivity(ents,nodes,true); CHKERRQ_MOAB(rval);
+            rval = mField.get_moab().get_connectivity(ents,nodes,true); CHKERRG(rval);
             ents.insert(nodes.begin(),nodes.end());
           }
           for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {
@@ -596,7 +596,7 @@ MoFEMErrorCode DirichletSetFieldFromBlockWithFlags::iNitalize() {
           }
           if(dim>0) {
             Range nodes;
-            rval = mField.get_moab().get_connectivity(ents,nodes,true); CHKERRQ_MOAB(rval);
+            rval = mField.get_moab().get_connectivity(ents,nodes,true); CHKERRG(rval);
             ents.insert(nodes.begin(),nodes.end());
           }
           for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {

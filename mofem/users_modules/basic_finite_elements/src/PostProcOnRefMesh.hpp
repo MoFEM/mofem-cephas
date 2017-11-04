@@ -246,11 +246,11 @@ struct PostProcTemplateOnRefineMesh: public ELEMENT {
   MoFEMErrorCode writeFile(const std::string file_name) {
     MoFEMFunctionBeginHot;
     // #ifdef MOAB_HDF5_PARALLEL
-     rval = postProcMesh.write_file(file_name.c_str(),"MOAB","PARALLEL=WRITE_PART"); CHKERRQ_MOAB(rval);
+     rval = postProcMesh.write_file(file_name.c_str(),"MOAB","PARALLEL=WRITE_PART"); CHKERRG(rval);
     // #else
     //  #warning "No parallel HDF5, not most efficient way of writing files"
     //  if(mField.get_comm_rank()==0) {
-    //    rval = postProcMesh.write_file(file_name.c_str(),"MOAB",""); CHKERRQ_MOAB(rval);
+    //    rval = postProcMesh.write_file(file_name.c_str(),"MOAB",""); CHKERRG(rval);
     //  }
     // #endif
     MoFEMFunctionReturnHot(0);
@@ -334,10 +334,10 @@ struct PostProcTemplateVolumeOnRefinedMesh: public PostProcTemplateOnRefineMesh<
 
     EntityHandle nodes[4];
     for(int nn = 0;nn<4;nn++) {
-      rval = moab_ref.create_vertex(&base_coords[3*nn],nodes[nn]); CHKERRQ_MOAB(rval);
+      rval = moab_ref.create_vertex(&base_coords[3*nn],nodes[nn]); CHKERRG(rval);
     }
     EntityHandle tet;
-    rval = moab_ref.create_element(MBTET,nodes,4,tet); CHKERRQ_MOAB(rval);
+    rval = moab_ref.create_element(MBTET,nodes,4,tet); CHKERRG(rval);
 
     MoFEM::Core m_core_ref(moab_ref,PETSC_COMM_SELF,-2);
     MoFEM::Interface& m_field_ref = m_core_ref;
@@ -376,16 +376,16 @@ struct PostProcTemplateVolumeOnRefinedMesh: public PostProcTemplateOnRefineMesh<
 
     if(tenNodesPostProcTets) {
       // Range edges;
-      // rval = moab_ref.get_adjacencies(tets,1,true,edges); CHKERRQ_MOAB(rval);
+      // rval = moab_ref.get_adjacencies(tets,1,true,edges); CHKERRG(rval);
       EntityHandle meshset;
-      rval = moab_ref.create_meshset(MESHSET_SET,meshset); CHKERRQ_MOAB(rval);
-      rval = moab_ref.add_entities(meshset,tets); CHKERRQ_MOAB(rval);
-      rval = moab_ref.convert_entities(meshset,true,false,false); CHKERRQ_MOAB(rval);
-      rval = moab_ref.delete_entities(&meshset,1); CHKERRQ_MOAB(rval);
+      rval = moab_ref.create_meshset(MESHSET_SET,meshset); CHKERRG(rval);
+      rval = moab_ref.add_entities(meshset,tets); CHKERRG(rval);
+      rval = moab_ref.convert_entities(meshset,true,false,false); CHKERRG(rval);
+      rval = moab_ref.delete_entities(&meshset,1); CHKERRG(rval);
     }
 
     Range elem_nodes;
-    rval = moab_ref.get_connectivity(tets,elem_nodes,false); CHKERRQ_MOAB(rval);
+    rval = moab_ref.get_connectivity(tets,elem_nodes,false); CHKERRG(rval);
     // ierr = m_field_ref.get_entities_by_type_and_ref_level(
     //   BitRefLevel().set(max_level),BitRefLevel().set(),MBVERTEX,elem_nodes
     // ); CHKERRQ(ierr);
@@ -394,7 +394,7 @@ struct PostProcTemplateVolumeOnRefinedMesh: public PostProcTemplateOnRefineMesh<
     gaussPts_FirstOrder.resize(elem_nodes.size(),4,0);
     Range::iterator nit = elem_nodes.begin();
     for(int gg = 0;nit!=elem_nodes.end();nit++,gg++) {
-      rval = moab_ref.get_coords(&*nit,1,&gaussPts_FirstOrder(gg,0)); CHKERRQ_MOAB(rval);
+      rval = moab_ref.get_coords(&*nit,1,&gaussPts_FirstOrder(gg,0)); CHKERRG(rval);
       little_map[*nit] = gg;
     }
     T::gaussPts = gaussPts_FirstOrder;
@@ -404,7 +404,7 @@ struct PostProcTemplateVolumeOnRefinedMesh: public PostProcTemplateOnRefineMesh<
     for(int tt = 0;tit!=tets.end();tit++,tt++) {
       const EntityHandle *conn;
       int num_nodes;
-      rval = moab_ref.get_connectivity(*tit,conn,num_nodes,false); CHKERRQ_MOAB(rval);
+      rval = moab_ref.get_connectivity(*tit,conn,num_nodes,false); CHKERRG(rval);
       if(tt == 0) {
         // Ref tets has number of rows equal to number of tets on element, columns are number of
         // gauss points
@@ -425,9 +425,9 @@ struct PostProcTemplateVolumeOnRefinedMesh: public PostProcTemplateOnRefineMesh<
     ); CHKERRQ(ierr);
 
     // EntityHandle meshset;
-    // rval = moab_ref.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,meshset); CHKERRQ_MOAB(rval);
-    // rval = moab_ref.add_entities(meshset,tets); CHKERRQ_MOAB(rval);
-    // rval = moab_ref.write_file("test_reference_mesh.vtk","VTK","",&meshset,1); CHKERRQ_MOAB(rval);
+    // rval = moab_ref.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,meshset); CHKERRG(rval);
+    // rval = moab_ref.add_entities(meshset,tets); CHKERRG(rval);
+    // rval = moab_ref.write_file("test_reference_mesh.vtk","VTK","",&meshset,1); CHKERRG(rval);
     //moab_ref.list_entities(tets);
 
     MoFEMFunctionReturnHot(0);
@@ -453,7 +453,7 @@ struct PostProcTemplateVolumeOnRefinedMesh: public PostProcTemplateOnRefineMesh<
         "NB_IN_THE_LOOP",1,MB_TYPE_INTEGER,th,
         MB_TAG_CREAT|MB_TAG_SPARSE,
         &def_in_the_loop
-      ); CHKERRQ_MOAB(rval);
+      ); CHKERRG(rval);
 
       T::mapGaussPts.resize(
         gaussPts_FirstOrder.size1()
@@ -461,7 +461,7 @@ struct PostProcTemplateVolumeOnRefinedMesh: public PostProcTemplateOnRefineMesh<
       for(unsigned int gg = 0;gg<gaussPts_FirstOrder.size1();gg++) {
         rval = T::postProcMesh.create_vertex(
           &gaussPts_FirstOrder(gg,0),T::mapGaussPts[gg]
-        ); CHKERRQ_MOAB(rval);
+        ); CHKERRG(rval);
       }
 
       commonData.tEts.clear();
@@ -472,9 +472,9 @@ struct PostProcTemplateVolumeOnRefinedMesh: public PostProcTemplateOnRefineMesh<
           conn[nn] = T::mapGaussPts[refTets(tt,nn)];
         }
         EntityHandle tet;
-        rval = T::postProcMesh.create_element(MBTET,conn,num_nodes,tet); CHKERRQ_MOAB(rval);
+        rval = T::postProcMesh.create_element(MBTET,conn,num_nodes,tet); CHKERRG(rval);
         int n_in_loop = T::nInTheLoop;
-        rval = T::postProcMesh.tag_set_data(th,&tet,1,&n_in_loop); CHKERRQ_MOAB(rval);
+        rval = T::postProcMesh.tag_set_data(th,&tet,1,&n_in_loop); CHKERRG(rval);
         commonData.tEts.insert(tet);
       }
 
@@ -487,11 +487,11 @@ struct PostProcTemplateVolumeOnRefinedMesh: public PostProcTemplateOnRefineMesh<
         // coords.resize(3*num_nodes,false);
         rval = T::mField.get_moab().get_coords(
           conn,num_nodes,&T::coords[0]
-        ); CHKERRQ_MOAB(rval);
+        ); CHKERRG(rval);
       }
 
       Range nodes;
-      rval = T::postProcMesh.get_connectivity(commonData.tEts,nodes,false); CHKERRQ_MOAB(rval);
+      rval = T::postProcMesh.get_connectivity(commonData.tEts,nodes,false); CHKERRG(rval);
 
       coordsAtGaussPts.resize(nodes.size(),3,false);
       for(unsigned int gg = 0;gg<nodes.size();gg++) {
@@ -503,7 +503,7 @@ struct PostProcTemplateVolumeOnRefinedMesh: public PostProcTemplateOnRefineMesh<
       T::mapGaussPts.resize(nodes.size());
       Range::iterator nit = nodes.begin();
       for(int gg = 0;nit!=nodes.end();nit++,gg++) {
-        rval = T::postProcMesh.set_coords(&*nit,1,&coordsAtGaussPts(gg,0)); CHKERRQ_MOAB(rval);
+        rval = T::postProcMesh.set_coords(&*nit,1,&coordsAtGaussPts(gg,0)); CHKERRG(rval);
         T::mapGaussPts[gg] = *nit;
       }
 
@@ -537,7 +537,7 @@ struct PostProcTemplateVolumeOnRefinedMesh: public PostProcTemplateOnRefineMesh<
     if(pcomm_post_proc_mesh != NULL) {
       delete pcomm_post_proc_mesh;
     }
-    rval = T::postProcMesh.delete_mesh(); CHKERRQ_MOAB(rval);
+    rval = T::postProcMesh.delete_mesh(); CHKERRG(rval);
     MoFEMFunctionReturnHot(0);
   }
 
@@ -552,30 +552,30 @@ struct PostProcTemplateVolumeOnRefinedMesh: public PostProcTemplateOnRefineMesh<
     }
 
     Range edges;
-    rval = T::postProcMesh.get_entities_by_type(0,MBEDGE,edges,false);  CHKERRQ_MOAB(rval);
-    rval = T::postProcMesh.delete_entities(edges); CHKERRQ_MOAB(rval);
+    rval = T::postProcMesh.get_entities_by_type(0,MBEDGE,edges,false);  CHKERRG(rval);
+    rval = T::postProcMesh.delete_entities(edges); CHKERRG(rval);
     Range tris;
-    rval = T::postProcMesh.get_entities_by_type(0,MBTRI,tris,false);  CHKERRQ_MOAB(rval);
-    rval = T::postProcMesh.delete_entities(tris); CHKERRQ_MOAB(rval);
+    rval = T::postProcMesh.get_entities_by_type(0,MBTRI,tris,false);  CHKERRG(rval);
+    rval = T::postProcMesh.delete_entities(tris); CHKERRG(rval);
 
     Range tets;
-    rval = T::postProcMesh.get_entities_by_type(0,MBTET,tets,false);  CHKERRQ_MOAB(rval);
+    rval = T::postProcMesh.get_entities_by_type(0,MBTET,tets,false);  CHKERRG(rval);
 
     //std::cerr << "total tets size " << tets.size() << std::endl;
 
     int rank = pcomm->rank();
     Range::iterator tit = tets.begin();
     for(;tit!=tets.end();tit++) {
-      rval = T::postProcMesh.tag_set_data(pcomm_post_proc_mesh->part_tag(),&*tit,1,&rank); CHKERRQ_MOAB(rval);
+      rval = T::postProcMesh.tag_set_data(pcomm_post_proc_mesh->part_tag(),&*tit,1,&rank); CHKERRG(rval);
     }
 
-    rval = pcomm_post_proc_mesh->resolve_shared_ents(0); CHKERRQ_MOAB(rval);
+    rval = pcomm_post_proc_mesh->resolve_shared_ents(0); CHKERRG(rval);
 
     // #ifndef MOAB_HDF5_PARALLEL
     // #warning "No parallel HDF5, not most efficient way of writing files"
     // for(int r = 0;r<pcomm_post_proc_mesh->size();r++) {
     //   // FIXME make better communication send only to proc 0
-    //   rval = pcomm_post_proc_mesh->broadcast_entities(r,tets,false,true); CHKERRQ_MOAB(rval);
+    //   rval = pcomm_post_proc_mesh->broadcast_entities(r,tets,false,true); CHKERRG(rval);
     // }
     // #endif //
 
@@ -627,14 +627,14 @@ struct PostProcTemplateVolumeOnRefinedMesh: public PostProcTemplateOnRefineMesh<
         for(unsigned int dd = 0;dd<data.getHdivN().size2()/3;dd++) {
           std::ostringstream ss;
           ss << "HDIV_FACE_" << side << "_" << dd;
-          rval = postProcMesh.tag_get_handle(ss.str().c_str(),3,MB_TYPE_DOUBLE,th[dd],MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERRQ_MOAB(rval);
+          rval = postProcMesh.tag_get_handle(ss.str().c_str(),3,MB_TYPE_DOUBLE,th[dd],MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERRG(rval);
         }
         break;
         case MBTET:
         for(unsigned int dd = 0;dd<data.getHdivN().size2()/3;dd++) {
           std::ostringstream ss;
           ss << "HDIV_TET_" << dd;
-          rval = postProcMesh.tag_get_handle(ss.str().c_str(),3,MB_TYPE_DOUBLE,th[dd],MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERRQ_MOAB(rval);
+          rval = postProcMesh.tag_get_handle(ss.str().c_str(),3,MB_TYPE_DOUBLE,th[dd],MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERRG(rval);
         }
         break;
         default:

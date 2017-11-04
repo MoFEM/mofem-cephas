@@ -146,7 +146,7 @@ struct MyTransport: public MixTransportElement {
     ierr = mField.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(ref_level,BitRefLevel().set(),MBTET,tets);
     Skinner skin(&mField.get_moab());
     Range skin_faces; // skin faces from 3d ents
-    rval = skin.find_skin(0,tets,false,skin_faces); CHKERRQ_MOAB(rval);
+    rval = skin.find_skin(0,tets,false,skin_faces); CHKERRG(rval);
     // note: what is essential (dirichlet) is natural (neumann) for mix-FE compared to classical FE
     Range natural_bc;
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NODESET|TEMPERATURESET,it)) {
@@ -239,7 +239,7 @@ struct MyTransport: public MixTransportElement {
     Range tets_to_refine_edges;
     rval = mField.get_moab().get_adjacencies(
       tets_to_refine,1,false,tets_to_refine_edges,moab::Interface::UNION
-    ); CHKERRQ_MOAB(rval);
+    ); CHKERRG(rval);
     refined_edges.merge(tets_to_refine_edges);
     ierr = mField.getInterface(refine_ptr); CHKERRQ(ierr);
     for(int ll = 0;ll!=nb_levels;ll++) {
@@ -261,7 +261,7 @@ struct MyTransport: public MixTransportElement {
 
     // update fields and elements
     EntityHandle ref_meshset;
-    rval = mField.get_moab().create_meshset(MESHSET_SET,ref_meshset); CHKERRQ_MOAB(rval);
+    rval = mField.get_moab().create_meshset(MESHSET_SET,ref_meshset); CHKERRG(rval);
     {
       // cerr << BitRefLevel().set(nb_levels) << endl;
       ierr = mField.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
@@ -269,7 +269,7 @@ struct MyTransport: public MixTransportElement {
       ); CHKERRQ(ierr);
 
       Range ref_tets;
-      rval = mField.get_moab().get_entities_by_type(ref_meshset,MBTET,ref_tets); CHKERRQ_MOAB(rval);
+      rval = mField.get_moab().get_entities_by_type(ref_meshset,MBTET,ref_tets); CHKERRG(rval);
 
       //add entities to field
       ierr = mField.add_ents_to_field_by_type(ref_meshset,MBTET,"FLUXES"); CHKERRQ(ierr);
@@ -293,12 +293,12 @@ struct MyTransport: public MixTransportElement {
         ierr = it->getAttributeDataStructure(temp_data); CHKERRQ(ierr);
         setOfBlocks[it->getMeshsetId()].cOnductivity = temp_data.data.Conductivity;
         setOfBlocks[it->getMeshsetId()].cApacity = temp_data.data.HeatCapacity;
-        rval = mField.get_moab().get_entities_by_type(it->meshset,MBTET,setOfBlocks[it->getMeshsetId()].tEts,true); CHKERRQ_MOAB(rval);
+        rval = mField.get_moab().get_entities_by_type(it->meshset,MBTET,setOfBlocks[it->getMeshsetId()].tEts,true); CHKERRG(rval);
         setOfBlocks[it->getMeshsetId()].tEts = intersect(ref_tets,setOfBlocks[it->getMeshsetId()].tEts);
         ierr = mField.add_ents_to_finite_element_by_type(setOfBlocks[it->getMeshsetId()].tEts,MBTET,"MIX"); CHKERRQ(ierr);
       }
     }
-    rval = mField.get_moab().delete_entities(&ref_meshset,1); CHKERRQ_MOAB(rval);
+    rval = mField.get_moab().delete_entities(&ref_meshset,1); CHKERRG(rval);
     MoFEMFunctionReturnHot(0);
   }
 
@@ -386,7 +386,7 @@ int main(int argc, char *argv[]) {
 
     const char *option;
     option = "";
-    rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
+    rval = moab.load_file(mesh_file_name, 0, option); CHKERRG(rval);
 
     //Create mofem interface
     MoFEM::Core core(moab);

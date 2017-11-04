@@ -89,11 +89,11 @@ struct EdgeForce {
       }
       for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,NODESET|FORCESET,it)) {
         Range tris;
-        rval = m_field.get_moab().get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERRQ_MOAB(rval);
+        rval = m_field.get_moab().get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERRG(rval);
         Range edges;
-        rval = m_field.get_moab().get_entities_by_type(it->meshset,MBEDGE,edges,true); CHKERRQ_MOAB(rval);
+        rval = m_field.get_moab().get_entities_by_type(it->meshset,MBEDGE,edges,true); CHKERRG(rval);
         Range tris_edges;
-        rval = m_field.get_moab().get_adjacencies(tris,1,false,tris_edges,moab::Interface::UNION); CHKERRQ_MOAB(rval);
+        rval = m_field.get_moab().get_adjacencies(tris,1,false,tris_edges,moab::Interface::UNION); CHKERRG(rval);
         edges = subtract(edges,tris_edges);
         if(intersect_ptr) {
           edges = intersect(edges,*intersect_ptr);

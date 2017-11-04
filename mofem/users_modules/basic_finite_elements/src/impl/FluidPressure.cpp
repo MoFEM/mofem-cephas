@@ -57,12 +57,12 @@ MoFEMErrorCode FluidPressure::addNeumannFluidPressureBCElements(
       setOfFluids[bit->getMeshsetId()].zEroPressure[2] = attributes[6];
       //get blok tetrahedron and triangles
       Range tets;
-      rval = mField.get_moab().get_entities_by_type(bit->meshset,MBTET,tets,true); CHKERRQ_MOAB(rval);
+      rval = mField.get_moab().get_entities_by_type(bit->meshset,MBTET,tets,true); CHKERRG(rval);
       Range tris;
-      rval = mField.get_moab().get_entities_by_type(bit->meshset,MBTRI,setOfFluids[bit->getMeshsetId()].tRis,true); CHKERRQ_MOAB(rval);
+      rval = mField.get_moab().get_entities_by_type(bit->meshset,MBTRI,setOfFluids[bit->getMeshsetId()].tRis,true); CHKERRG(rval);
       //this get triangles only on block surfaces
       Range tets_skin_tris;
-      rval = skin.find_skin(0,tets,false,tets_skin_tris); CHKERRQ_MOAB(rval);
+      rval = skin.find_skin(0,tets,false,tets_skin_tris); CHKERRG(rval);
       setOfFluids[bit->getMeshsetId()].tRis.merge(tets_skin_tris);
       std::ostringstream ss;
       ss << setOfFluids[bit->getMeshsetId()] << std::endl;

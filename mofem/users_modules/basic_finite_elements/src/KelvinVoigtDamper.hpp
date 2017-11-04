@@ -960,7 +960,7 @@ struct KelvinVoigtDamper {
         }
         rval = mField.get_moab().get_entities_by_type(
           it->meshset,MBTET,blockMaterialDataMap[it->getMeshsetId()].tEts,true
-        ); CHKERRQ_MOAB(rval);
+        ); CHKERRG(rval);
         blockMaterialDataMap[it->getMeshsetId()].gBeta = data[0];
         blockMaterialDataMap[it->getMeshsetId()].vBeta = data[1];
       }

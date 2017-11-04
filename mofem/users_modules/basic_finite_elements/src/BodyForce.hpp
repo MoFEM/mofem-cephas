@@ -118,7 +118,7 @@ struct BodyForceConstantField {
     ierr = cubit_meshset_ptr->getAttributeDataStructure(mapData[ms_id]); CHKERRQ(ierr);
     EntityHandle meshset = cubit_meshset_ptr->getMeshset();
     Range tets;
-    rval = mField.get_moab().get_entities_by_type(meshset,MBTET,tets,true); CHKERRQ_MOAB(rval);
+    rval = mField.get_moab().get_entities_by_type(meshset,MBTET,tets,true); CHKERRG(rval);
     fe.getOpPtrVector().push_back(new OpBodyForce(field_name,F,mapData[ms_id],tets));
     MoFEMFunctionReturnHot(0);
   }

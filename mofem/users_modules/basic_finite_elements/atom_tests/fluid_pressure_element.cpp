@@ -48,7 +48,7 @@ int main(int argc, char *argv[]) {
 
     const char *option;
     option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
-    rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
+    rval = moab.load_file(mesh_file_name, 0, option); CHKERRG(rval);
 
     //Create MoFEM (Joseph) database
     MoFEM::Core core(moab);
@@ -58,7 +58,7 @@ int main(int argc, char *argv[]) {
     BitRefLevel bit_level0;
     bit_level0.set(0);
     EntityHandle meshset_level0;
-    rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERRQ_MOAB(rval);
+    rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERRG(rval);
     ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
 
     //Definitions
@@ -168,14 +168,14 @@ int main(int argc, char *argv[]) {
     //
     // double def_VAL[3] = {0,0,0};
     // Tag th_vals;
-    // rval = moab.tag_get_handle("FLUID_PRESURE_FORCES",3,MB_TYPE_DOUBLE,th_vals,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERRQ_MOAB(rval);
-    // rval = moab.tag_set_data(th_vals,&ents[0],ents.size(),&vals[0]); CHKERRQ_MOAB(rval);
+    // rval = moab.tag_get_handle("FLUID_PRESURE_FORCES",3,MB_TYPE_DOUBLE,th_vals,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERRG(rval);
+    // rval = moab.tag_set_data(th_vals,&ents[0],ents.size(),&vals[0]); CHKERRG(rval);
     //
     // EntityHandle out_meshset;
-    // rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERRQ_MOAB(rval);
+    // rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERRG(rval);
     // ierr = m_field.get_problem_finite_elements_entities("TEST_PROBLEM","FLUID_PRESSURE_FE",out_meshset); CHKERRQ(ierr);
-    // rval = moab.write_file("out.vtk","VTK","",&out_meshset,1); CHKERRQ_MOAB(rval);
-    // rval = moab.delete_entities(&out_meshset,1); CHKERRQ_MOAB(rval);
+    // rval = moab.write_file("out.vtk","VTK","",&out_meshset,1); CHKERRG(rval);
+    // rval = moab.delete_entities(&out_meshset,1); CHKERRG(rval);
 
     //destroy vector
     ierr = VecDestroy(&F); CHKERRQ(ierr);

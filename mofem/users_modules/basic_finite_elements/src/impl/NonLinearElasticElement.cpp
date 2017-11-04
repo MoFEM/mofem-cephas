@@ -1361,7 +1361,7 @@ MoFEMErrorCode NonlinearElasticElement::setBlocks(
     ierr = it->getAttributeDataStructure(mydata); CHKERRQ(ierr);
     int id = it->getMeshsetId();
     EntityHandle meshset = it->getMeshset();
-    rval = mField.get_moab().get_entities_by_type(meshset,MBTET,setOfBlocks[id].tEts,true); CHKERRQ_MOAB(rval);
+    rval = mField.get_moab().get_entities_by_type(meshset,MBTET,setOfBlocks[id].tEts,true); CHKERRG(rval);
     setOfBlocks[id].iD = id;
     setOfBlocks[id].E = mydata.data.Young;
     setOfBlocks[id].PoissonRatio = mydata.data.Poisson;

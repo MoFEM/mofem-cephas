@@ -114,7 +114,7 @@ struct PostProcHookStress: public MoFEM::VolumeElementForcesAndSourcesCore::User
       ierr = it->getAttributeDataStructure(mydata); CHKERRQ(ierr);
 
       Range meshsets;
-      rval = mField.get_moab().get_entities_by_type(it->meshset,MBENTITYSET,meshsets,true); CHKERRQ_MOAB(rval);
+      rval = mField.get_moab().get_entities_by_type(it->meshset,MBENTITYSET,meshsets,true); CHKERRG(rval);
       meshsets.insert(it->meshset);
       for(Range::iterator mit = meshsets.begin();mit != meshsets.end(); mit++) {
         if( mField.get_moab().contains_entities(*mit,&ent,1) ) {
@@ -182,28 +182,28 @@ struct PostProcHookStress: public MoFEM::VolumeElementForcesAndSourcesCore::User
     bzero(def_VAL,tag_length*sizeof(double));
     Tag th_stress;
     rval = postProcMesh.tag_get_handle(
-      "STRESS",9,MB_TYPE_DOUBLE,th_stress,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERRQ_MOAB(rval);
+      "STRESS",9,MB_TYPE_DOUBLE,th_stress,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERRG(rval);
 
     Tag th_prin_stress_vect1,th_prin_stress_vect2,th_prin_stress_vect3;
     rval = postProcMesh.tag_get_handle(
-      "S1",3,MB_TYPE_DOUBLE,th_prin_stress_vect1,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERRQ_MOAB(rval);
+      "S1",3,MB_TYPE_DOUBLE,th_prin_stress_vect1,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERRG(rval);
     rval = postProcMesh.tag_get_handle(
-      "S2",3,MB_TYPE_DOUBLE,th_prin_stress_vect2,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERRQ_MOAB(rval);
+      "S2",3,MB_TYPE_DOUBLE,th_prin_stress_vect2,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERRG(rval);
     rval = postProcMesh.tag_get_handle(
-      "S3",3,MB_TYPE_DOUBLE,th_prin_stress_vect3,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERRQ_MOAB(rval);
+      "S3",3,MB_TYPE_DOUBLE,th_prin_stress_vect3,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERRG(rval);
 
     Tag th_prin_stress_vals;
     rval = postProcMesh.tag_get_handle(
-      "PRINCIPAL_STRESS",3,MB_TYPE_DOUBLE,th_prin_stress_vals,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERRQ_MOAB(rval);
+      "PRINCIPAL_STRESS",3,MB_TYPE_DOUBLE,th_prin_stress_vals,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERRG(rval);
 
     Tag th_id;
     int def_block_id = -1;
     rval = postProcMesh.tag_get_handle(
       "BLOCK_ID",1,MB_TYPE_INTEGER,th_id,MB_TAG_CREAT|MB_TAG_SPARSE,&def_block_id
-    ); CHKERRQ_MOAB(rval);
+    ); CHKERRG(rval);
     Range::iterator tit = commonData.tEts.begin();
     for(;tit!=commonData.tEts.end();tit++) {
-      rval = postProcMesh.tag_set_data(th_id,&*tit,1,&id);  CHKERRQ_MOAB(rval);
+      rval = postProcMesh.tag_set_data(th_id,&*tit,1,&id);  CHKERRG(rval);
     }
 
     VectorDouble strain;
@@ -239,7 +239,7 @@ struct PostProcHookStress: public MoFEM::VolumeElementForcesAndSourcesCore::User
       Stress(1,2) = Stress(2,1) = stress[4];
       Stress(2,0) = Stress(0,2) = stress[5];
 
-      rval = postProcMesh.tag_set_data(th_stress,&mapGaussPts[gg],1,&Stress(0,0)); CHKERRQ_MOAB(rval);
+      rval = postProcMesh.tag_set_data(th_stress,&mapGaussPts[gg],1,&Stress(0,0)); CHKERRG(rval);
 
       ublas::matrix< FieldData > eigen_vectors = Stress;
       VectorDouble eigen_values(3);
@@ -274,10 +274,10 @@ struct PostProcHookStress: public MoFEM::VolumeElementForcesAndSourcesCore::User
       }
 
       //Tag principle stress vectors 1, 2, 3
-      rval = postProcMesh.tag_set_data(th_prin_stress_vect1,&mapGaussPts[gg],1,&prin_stress_vect(0,0)); CHKERRQ_MOAB(rval);
-      rval = postProcMesh.tag_set_data(th_prin_stress_vect2,&mapGaussPts[gg],1,&prin_stress_vect(1,0)); CHKERRQ_MOAB(rval);
-      rval = postProcMesh.tag_set_data(th_prin_stress_vect3,&mapGaussPts[gg],1,&prin_stress_vect(2,0)); CHKERRQ_MOAB(rval);
-      rval = postProcMesh.tag_set_data(th_prin_stress_vals,&mapGaussPts[gg],1,&prin_vals_vect[0]); CHKERRQ_MOAB(rval);
+      rval = postProcMesh.tag_set_data(th_prin_stress_vect1,&mapGaussPts[gg],1,&prin_stress_vect(0,0)); CHKERRG(rval);
+      rval = postProcMesh.tag_set_data(th_prin_stress_vect2,&mapGaussPts[gg],1,&prin_stress_vect(1,0)); CHKERRG(rval);
+      rval = postProcMesh.tag_set_data(th_prin_stress_vect3,&mapGaussPts[gg],1,&prin_stress_vect(2,0)); CHKERRG(rval);
+      rval = postProcMesh.tag_set_data(th_prin_stress_vals,&mapGaussPts[gg],1,&prin_vals_vect[0]); CHKERRG(rval);
 
     }
 

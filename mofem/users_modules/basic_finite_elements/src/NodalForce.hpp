@@ -113,15 +113,15 @@ struct MetaNodalForces {
     ierr = m_field.modify_finite_element_add_field_data("FORCE_FE",field_name); CHKERRQ(ierr);
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,NODESET|FORCESET,it)) {
       Range tris;
-      rval = m_field.get_moab().get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERRQ_MOAB(rval);
+      rval = m_field.get_moab().get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERRG(rval);
       Range edges;
-      rval = m_field.get_moab().get_entities_by_type(it->meshset,MBEDGE,edges,true); CHKERRQ_MOAB(rval);
+      rval = m_field.get_moab().get_entities_by_type(it->meshset,MBEDGE,edges,true); CHKERRG(rval);
       Range tris_nodes;
-      rval = m_field.get_moab().get_connectivity(tris,tris_nodes); CHKERRQ_MOAB(rval);
+      rval = m_field.get_moab().get_connectivity(tris,tris_nodes); CHKERRG(rval);
       Range edges_nodes;
-      rval = m_field.get_moab().get_connectivity(edges,edges_nodes); CHKERRQ_MOAB(rval);
+      rval = m_field.get_moab().get_connectivity(edges,edges_nodes); CHKERRG(rval);
       Range nodes;
-      rval = m_field.get_moab().get_entities_by_type(it->meshset,MBVERTEX,nodes,true); CHKERRQ_MOAB(rval);
+      rval = m_field.get_moab().get_entities_by_type(it->meshset,MBVERTEX,nodes,true); CHKERRG(rval);
       nodes = subtract(nodes,tris_nodes);
       nodes = subtract(nodes,edges_nodes);
       if(intersect_ptr) {

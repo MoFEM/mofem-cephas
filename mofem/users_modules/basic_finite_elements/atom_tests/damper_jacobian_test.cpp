@@ -46,7 +46,7 @@ int main(int argc, char *argv[]) {
       }
       const char *option;
       option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
-      rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
+      rval = moab.load_file(mesh_file_name, 0, option); CHKERRG(rval);
       ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
       if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
     }
@@ -153,7 +153,7 @@ int main(int argc, char *argv[]) {
       );
 
       // Set material parameters
-      rval = moab.get_entities_by_type(0,MBTET,material_data.tEts); CHKERRQ_MOAB(rval);
+      rval = moab.get_entities_by_type(0,MBTET,material_data.tEts); CHKERRG(rval);
       material_data.gBeta = 1;
       material_data.vBeta = 0.3;
 

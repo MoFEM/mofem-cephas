@@ -46,7 +46,7 @@ int main(int argc, char *argv[]) {
 
     const char *option;
     option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
-    rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
+    rval = moab.load_file(mesh_file_name, 0, option); CHKERRG(rval);
     ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
     if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
 
@@ -58,7 +58,7 @@ int main(int argc, char *argv[]) {
     BitRefLevel bit_level0;
     bit_level0.set(0);
     EntityHandle meshset_level0;
-    rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERRQ_MOAB(rval);
+    rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERRG(rval);
     ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
     ierr = m_field.getInterface<BitRefManager>()->getEntitiesByRefLevel(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRQ(ierr);
 
@@ -106,12 +106,12 @@ int main(int argc, char *argv[]) {
     ierr = m_field.modify_problem_add_finite_element("ELASTIC_MECHANICS","NEUAMNN_FE"); CHKERRQ(ierr);
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,NODESET|FORCESET,it)) {
       Range tris;
-      rval = moab.get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERRQ_MOAB(rval);
+      rval = moab.get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERRG(rval);
       ierr = m_field.add_ents_to_finite_element_by_type(tris,MBTRI,"NEUAMNN_FE"); CHKERRQ(ierr);
     }
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,SIDESET|PRESSURESET,it)) {
       Range tris;
-      rval = moab.get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERRQ_MOAB(rval);
+      rval = moab.get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERRG(rval);
       ierr = m_field.add_ents_to_finite_element_by_type(tris,MBTRI,"NEUAMNN_FE"); CHKERRQ(ierr);
     }
 
@@ -157,7 +157,7 @@ int main(int argc, char *argv[]) {
         int dof_rank = dof_ptr->get()->getDofCoeffIdx();
         double &fval = dof_ptr->get()->getFieldData();
         if(node!=ent) {
-          rval = moab.get_coords(&ent,1,coords); CHKERRQ_MOAB(rval);
+          rval = moab.get_coords(&ent,1,coords); CHKERRG(rval);
           node = ent;
         }
         fval = scale_positions*coords[dof_rank];
@@ -174,7 +174,7 @@ int main(int argc, char *argv[]) {
         int dof_rank = dof_ptr->get()->getDofCoeffIdx();
         double &fval = dof_ptr->get()->getFieldData();
         if(node!=ent) {
-          rval = moab.get_coords(&ent,1,coords); CHKERRQ_MOAB(rval);
+          rval = moab.get_coords(&ent,1,coords); CHKERRG(rval);
           node = ent;
         }
         fval = scale_velocities*coords[dof_rank];

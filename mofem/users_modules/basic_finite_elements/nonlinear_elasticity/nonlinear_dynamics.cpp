@@ -197,7 +197,7 @@ struct MonitorRestart: public FEMethod {
     //   if((*step)%pRT==0) {
     //     std::ostringstream ss;
     //     ss << "restart_" << (*step) << ".h5m";
-    //     rval = mField.get_moab().write_file(ss.str().c_str()/*,"MOAB","PARALLEL=WRITE_PART"*/); CHKERRQ_MOAB(rval);
+    //     rval = mField.get_moab().write_file(ss.str().c_str()/*,"MOAB","PARALLEL=WRITE_PART"*/); CHKERRG(rval);
     //   }
     // }
     (*step)++;
@@ -254,11 +254,11 @@ int main(int argc, char *argv[]) {
       "PARALLEL=BCAST_DELETE;"
       "PARALLEL_RESOLVE_SHARED_ENTS;"
       "PARTITION=PARALLEL_PARTITION;";
-    rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
+    rval = moab.load_file(mesh_file_name, 0, option); CHKERRG(rval);
   } else {
     const char *option;
     option = "";
-    rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
+    rval = moab.load_file(mesh_file_name, 0, option); CHKERRG(rval);
   }
 
   MoFEM::Core core(moab);
@@ -269,7 +269,7 @@ int main(int argc, char *argv[]) {
   BitRefLevel bit_level0;
   bit_level0.set(0);
   EntityHandle meshset_level0;
-  rval = moab.create_meshset(MESHSET_SET, meshset_level0); CHKERRQ_MOAB(rval);
+  rval = moab.create_meshset(MESHSET_SET, meshset_level0); CHKERRG(rval);
   ierr = m_field.seed_ref_level_3D(0, bit_level0); CHKERRQ(ierr);
   ierr = m_field.getInterface<BitRefManager>()->getEntitiesByRefLevel(
     bit_level0, BitRefLevel().set(), meshset_level0); CHKERRQ(ierr);
@@ -312,12 +312,12 @@ int main(int argc, char *argv[]) {
   ierr = m_field.modify_finite_element_add_field_data("NEUMANN_FE","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,NODESET|FORCESET, it)) {
     Range tris;
-    rval = moab.get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERRQ_MOAB(rval);
+    rval = moab.get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERRG(rval);
     ierr = m_field.add_ents_to_finite_element_by_type(tris,MBTRI,"NEUMANN_FE"); CHKERRQ(ierr);
   }
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,SIDESET|PRESSURESET,it)) {
     Range tris;
-    rval = moab.get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERRQ_MOAB(rval);
+    rval = moab.get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERRG(rval);
     ierr = m_field.add_ents_to_finite_element_by_type(tris,MBTRI, "NEUMANN_FE"); CHKERRQ(ierr);
   }
   // Add nodal force element

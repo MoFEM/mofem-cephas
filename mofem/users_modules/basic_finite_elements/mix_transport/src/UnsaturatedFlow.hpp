@@ -1085,8 +1085,8 @@ namespace MixTransport {
         rval = postProcMesh.tag_get_handle(
           "BLOCK_ID",1,MB_TYPE_INTEGER,th_id,
           MB_TAG_CREAT|MB_TAG_SPARSE,&def_block_id
-        ); CHKERRQ_MOAB(rval);
-        rval = postProcMesh.tag_set_data(th_id,&fe_ent,1,&block_id);  CHKERRQ_MOAB(rval);
+        ); CHKERRG(rval);
+        rval = postProcMesh.tag_set_data(th_id,&fe_ent,1,&block_id);  CHKERRG(rval);
 
         // Create mesh tag. Tags are created on post-processing mesh and
         // visable in post-processor, e.g. Paraview
@@ -1095,28 +1095,28 @@ namespace MixTransport {
         rval = postProcMesh.tag_get_handle(
           "THETA",1,MB_TYPE_DOUBLE,th_theta,
           MB_TAG_CREAT|MB_TAG_SPARSE,&zero
-        ); CHKERRQ_MOAB(rval);
+        ); CHKERRG(rval);
         Tag th_se;
         rval = postProcMesh.tag_get_handle(
           "Se",1,MB_TYPE_DOUBLE,th_se,
           MB_TAG_CREAT|MB_TAG_SPARSE,&zero
-        ); CHKERRQ_MOAB(rval);
+        ); CHKERRG(rval);
         // Tag th_ks;
         // rval = postProcMesh.tag_get_handle(
         //   "Ks",1,MB_TYPE_DOUBLE,th_ks,
         //   MB_TAG_CREAT|MB_TAG_SPARSE,&zero
-        // ); CHKERRQ_MOAB(rval);
-        // rval = postProcMesh.tag_set_data(th_ks,&fe_ent,1,&block_data->Ks); CHKERRQ_MOAB(rval);
+        // ); CHKERRG(rval);
+        // rval = postProcMesh.tag_set_data(th_ks,&fe_ent,1,&block_data->Ks); CHKERRG(rval);
         Tag th_k;
         rval = postProcMesh.tag_get_handle(
           "K",1,MB_TYPE_DOUBLE,th_k,
           MB_TAG_CREAT|MB_TAG_SPARSE,&zero
-        ); CHKERRQ_MOAB(rval);
+        ); CHKERRG(rval);
         Tag th_c;
         rval = postProcMesh.tag_get_handle(
           "C",1,MB_TYPE_DOUBLE,th_c,
           MB_TAG_CREAT|MB_TAG_SPARSE,&zero
-        ); CHKERRQ_MOAB(rval);
+        ); CHKERRG(rval);
 
 
         // Get pressure at integration points
@@ -1133,19 +1133,19 @@ namespace MixTransport {
           // Calculate theta (water content) and save it on mesh tags
           ierr = block_data->calTheta(); CHKERRQ(ierr);
           double theta = block_data->tHeta;
-          rval = postProcMesh.tag_set_data(th_theta,&mapGaussPts[gg],1,&theta); CHKERRQ_MOAB(rval);
+          rval = postProcMesh.tag_set_data(th_theta,&mapGaussPts[gg],1,&theta); CHKERRG(rval);
           ierr = block_data->calSe(); CHKERRQ(ierr);
           // Calculate Se (effective saturation and save it on the mesh tags)
           double Se = block_data->Se;
-          rval = postProcMesh.tag_set_data(th_se,&mapGaussPts[gg],1,&Se); CHKERRQ_MOAB(rval);
+          rval = postProcMesh.tag_set_data(th_se,&mapGaussPts[gg],1,&Se); CHKERRG(rval);
           // Calculate K (hydraulic conductivity) and save it on the mesh tags
           ierr = block_data->calK(); CHKERRQ(ierr);
           double K = block_data->K;
-          rval = postProcMesh.tag_set_data(th_k,&mapGaussPts[gg],1,&K); CHKERRQ_MOAB(rval);
+          rval = postProcMesh.tag_set_data(th_k,&mapGaussPts[gg],1,&K); CHKERRG(rval);
           // Calculate water capacity and save it on the mesh tags
           ierr = block_data->calC(); CHKERRQ(ierr);
           double C = block_data->C;
-          rval = postProcMesh.tag_set_data(th_c,&mapGaussPts[gg],1,&C); CHKERRQ_MOAB(rval);
+          rval = postProcMesh.tag_set_data(th_c,&mapGaussPts[gg],1,&C); CHKERRG(rval);
           ++t_h;
           ++t_coords;
         }

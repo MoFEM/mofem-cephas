@@ -639,7 +639,7 @@ MoFEMErrorCode ThermalElement::addThermalElements(const std::string field_name,c
     //setOfBlocks[it->getMeshsetId()].cOnductivity = temp_data.data.Conductivity;
 
     setOfBlocks[it->getMeshsetId()].cApacity = temp_data.data.HeatCapacity;
-    rval = mField.get_moab().get_entities_by_type(it->meshset,MBTET,setOfBlocks[it->getMeshsetId()].tEts,true); CHKERRQ_MOAB(rval);
+    rval = mField.get_moab().get_entities_by_type(it->meshset,MBTET,setOfBlocks[it->getMeshsetId()].tEts,true); CHKERRG(rval);
     ierr = mField.add_ents_to_finite_element_by_type(setOfBlocks[it->getMeshsetId()].tEts,MBTET,"THERMAL_FE"); CHKERRQ(ierr);
 
   }
@@ -663,7 +663,7 @@ MoFEMErrorCode ThermalElement::addThermalFluxElement(const std::string field_nam
 
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SIDESET|HEATFLUXSET,it)) {
     ierr = it->getBcDataStructure(setOfFluxes[it->getMeshsetId()].dAta); CHKERRQ(ierr);
-    rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,setOfFluxes[it->getMeshsetId()].tRis,true); CHKERRQ_MOAB(rval);
+    rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,setOfFluxes[it->getMeshsetId()].tRis,true); CHKERRG(rval);
     ierr = mField.add_ents_to_finite_element_by_type(setOfFluxes[it->getMeshsetId()].tRis,MBTRI,"THERMAL_FLUX_FE"); CHKERRQ(ierr);
   }
 
@@ -680,7 +680,7 @@ MoFEMErrorCode ThermalElement::addThermalFluxElement(const std::string field_nam
       setOfFluxes[it->getMeshsetId()].dAta.data.flag1 = 1;
       setOfFluxes[it->getMeshsetId()].dAta.data.value1 = data[0];
       //std::cerr << setOfFluxes[it->getMeshsetId()].dAta << std::endl;
-      rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,setOfFluxes[it->getMeshsetId()].tRis,true); CHKERRQ_MOAB(rval);
+      rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,setOfFluxes[it->getMeshsetId()].tRis,true); CHKERRG(rval);
       ierr = mField.add_ents_to_finite_element_by_type(setOfFluxes[it->getMeshsetId()].tRis,MBTRI,"THERMAL_FLUX_FE"); CHKERRQ(ierr);
     }
   }
@@ -716,7 +716,7 @@ MoFEMErrorCode ThermalElement::addThermalConvectionElement(const std::string fie
       setOfConvection[it->getMeshsetId()].cOnvection = data[0];
       setOfConvection[it->getMeshsetId()].tEmperature = data[1];
       //std::cerr << setOfFluxes[it->getMeshsetId()].dAta << std::endl;
-      rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,setOfConvection[it->getMeshsetId()].tRis,true); CHKERRQ_MOAB(rval);
+      rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,setOfConvection[it->getMeshsetId()].tRis,true); CHKERRG(rval);
       ierr = mField.add_ents_to_finite_element_by_type(setOfConvection[it->getMeshsetId()].tRis,MBTRI,"THERMAL_CONVECTION_FE"); CHKERRQ(ierr);
 
     }
@@ -753,7 +753,7 @@ MoFEMErrorCode ThermalElement::addThermalRadiationElement(const std::string fiel
       //setOfRadiation[it->getMeshsetId()].aBsorption = data[2];
       setOfRadiation[it->getMeshsetId()].aMbienttEmp = data[2];
       //std::cerr << setOfFluxes[it->getMeshsetId()].dAta << std::endl;
-      rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,setOfRadiation[it->getMeshsetId()].tRis,true); CHKERRQ_MOAB(rval);
+      rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,setOfRadiation[it->getMeshsetId()].tRis,true); CHKERRG(rval);
       ierr = mField.add_ents_to_finite_element_by_type(setOfRadiation[it->getMeshsetId()].tRis,MBTRI,"THERMAL_RADIATION_FE"); CHKERRQ(ierr);
 
     }

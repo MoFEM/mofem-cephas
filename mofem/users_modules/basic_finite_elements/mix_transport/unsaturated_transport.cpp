@@ -117,7 +117,7 @@ int main(int argc, char *argv[]) {
     option = "PARALLEL=READ_PART;"
     "PARALLEL_RESOLVE_SHARED_ENTS;"
     "PARTITION=PARALLEL_PARTITION;";
-    rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
+    rval = moab.load_file(mesh_file_name, 0, option); CHKERRG(rval);
 
     // Create mofem interface
     MoFEM::Core core(moab);
@@ -189,7 +189,7 @@ int main(int argc, char *argv[]) {
       // get block test
       rval = m_field.get_moab().get_entities_by_type(
         it->meshset,MBTET,uf.dMatMap.at(block_id)->tEts,true
-      ); CHKERRQ_MOAB(rval);
+      ); CHKERRG(rval);
       domain_ents.merge(uf.dMatMap.at(block_id)->tEts);
       uf.dMatMap.at(block_id)->printMatParameters(block_id,"Read material");
     }
@@ -221,7 +221,7 @@ int main(int argc, char *argv[]) {
       // get faces in the block
       rval = m_field.get_moab().get_entities_by_type(
         it->meshset,MBTRI,uf.bcValueMap[block_id]->eNts,true
-      ); CHKERRQ_MOAB(rval);
+      ); CHKERRG(rval);
       bc_boundary_ents.merge(uf.bcValueMap[block_id]->eNts);
     }
 
@@ -247,7 +247,7 @@ int main(int argc, char *argv[]) {
       // get faces in the block
       rval = m_field.get_moab().get_entities_by_type(
         it->meshset,MBTRI,uf.bcFluxMap[block_id]->eNts,true
-      ); CHKERRQ_MOAB(rval);
+      ); CHKERRG(rval);
       bc_boundary_ents.merge(uf.bcFluxMap[block_id]->eNts);
       max_flux_id = max_flux_id>block_id ? max_flux_id : block_id+1;
     }
@@ -257,11 +257,11 @@ int main(int argc, char *argv[]) {
     {
       Skinner skin(&m_field.get_moab());
       Range domain_skin;
-      rval = skin.find_skin(0,domain_ents,false,domain_skin); CHKERRQ_MOAB(rval);
+      rval = skin.find_skin(0,domain_ents,false,domain_skin); CHKERRG(rval);
       // filter not owned entities, those are not on boundary
       rval = pcomm->filter_pstatus(
         domain_skin,PSTATUS_SHARED|PSTATUS_MULTISHARED,PSTATUS_NOT,-1,&zero_flux_ents
-      ); CHKERRQ_MOAB(rval);
+      ); CHKERRG(rval);
       zero_flux_ents = subtract(zero_flux_ents,bc_boundary_ents);
       uf.bcFluxMap[max_flux_id] = boost::shared_ptr<UnsaturatedFlowElement::BcData>(
         new UnsaturatedFlowElement::BcData()

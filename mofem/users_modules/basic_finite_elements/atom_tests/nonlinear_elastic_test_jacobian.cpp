@@ -104,7 +104,7 @@ int main(int argc, char *argv[]) {
 
     const char *option;
     option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
-    rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
+    rval = moab.load_file(mesh_file_name, 0, option); CHKERRG(rval);
     ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
     if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
 
@@ -145,7 +145,7 @@ int main(int argc, char *argv[]) {
         int dof_rank = dof_ptr->get()->getDofCoeffIdx();
         double &fval = dof_ptr->get()->getFieldData();
         if(node!=ent) {
-          rval = moab.get_coords(&ent,1,coords); CHKERRQ_MOAB(rval);
+          rval = moab.get_coords(&ent,1,coords); CHKERRG(rval);
           node = ent;
         }
         fval = scale_positions*coords[dof_rank];
