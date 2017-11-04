@@ -97,16 +97,16 @@ struct MixTransportElement {
    * @param  is indices
    * @return    error code
    */
-  PetscErrorCode getDirichletBCIndices(IS *is) {
+  MoFEMErrorCode getDirichletBCIndices(IS *is) {
     MoFEMFunctionBeginHot;
     std::vector<int> ids;
     ids.insert(ids.begin(),bcIndices.begin(),bcIndices.end());
     IS is_local;
     ierr = ISCreateGeneral(
       mField.get_comm(),ids.size(),ids.empty()?PETSC_NULL:&ids[0],PETSC_COPY_VALUES,&is_local
-    ); CHKERRQ(ierr);
-    ierr = ISAllGather(is_local,is); CHKERRQ(ierr);
-    ierr = ISDestroy(&is_local); CHKERRQ(ierr);
+    ); CHKERRG(ierr);
+    ierr = ISAllGather(is_local,is); CHKERRG(ierr);
+    ierr = ISDestroy(&is_local); CHKERRG(ierr);
     MoFEMFunctionReturnHot(0);
   }
 
@@ -119,7 +119,7 @@ struct MixTransportElement {
     * @param  flux reference to source term set by function
     * @return      error code
     */
-  virtual PetscErrorCode getSource(
+  virtual MoFEMErrorCode getSource(
     const EntityHandle ent,
     const double x,const double y,const double z,
     double &flux
@@ -138,7 +138,7 @@ struct MixTransportElement {
     * @param  value reference to value set by function
     * @return       error code
     */
-  virtual PetscErrorCode getResistivity(
+  virtual MoFEMErrorCode getResistivity(
     const EntityHandle ent,
     const double x,const double y,const double z,
     MatrixDouble3by3& inv_k
@@ -160,7 +160,7 @@ struct MixTransportElement {
    * @param  value vale
    * @return       error code
    */
-  virtual PetscErrorCode getBcOnValues(
+  virtual MoFEMErrorCode getBcOnValues(
     const EntityHandle ent,
     const int gg,
     const double x,const double y,const double z,
@@ -179,7 +179,7 @@ struct MixTransportElement {
    * @param  flux reference to flux which is set by function
    * @return      [description]
    */
-  virtual PetscErrorCode getBcOnFluxes(
+  virtual MoFEMErrorCode getBcOnFluxes(
     const EntityHandle ent,
     const double x,const double y,const double z,
     double &flux) {
@@ -205,28 +205,28 @@ struct MixTransportElement {
    * @param  order  order of approximation
    * @return        error code
    */
-  PetscErrorCode addFields(const std::string &values,const std::string &fluxes,const int order) {
+  MoFEMErrorCode addFields(const std::string &values,const std::string &fluxes,const int order) {
 
     MoFEMFunctionBeginHot;
     //Fields
-    ierr = mField.add_field(fluxes,HDIV,DEMKOWICZ_JACOBI_BASE,1); CHKERRQ(ierr);
-    ierr = mField.add_field(values,L2,AINSWORTH_LEGENDRE_BASE,1); CHKERRQ(ierr);
+    ierr = mField.add_field(fluxes,HDIV,DEMKOWICZ_JACOBI_BASE,1); CHKERRG(ierr);
+    ierr = mField.add_field(values,L2,AINSWORTH_LEGENDRE_BASE,1); CHKERRG(ierr);
 
     //meshset consisting all entities in mesh
     EntityHandle root_set = mField.get_moab().get_root_set();
     //add entities to field
-    ierr = mField.add_ents_to_field_by_type(root_set,MBTET,fluxes); CHKERRQ(ierr);
-    ierr = mField.add_ents_to_field_by_type(root_set,MBTET,values); CHKERRQ(ierr);
-    ierr = mField.set_field_order(root_set,MBTET,fluxes,order+1); CHKERRQ(ierr);
-    ierr = mField.set_field_order(root_set,MBTRI,fluxes,order+1); CHKERRQ(ierr);
-    ierr = mField.set_field_order(root_set,MBTET,values,order); CHKERRQ(ierr);
+    ierr = mField.add_ents_to_field_by_type(root_set,MBTET,fluxes); CHKERRG(ierr);
+    ierr = mField.add_ents_to_field_by_type(root_set,MBTET,values); CHKERRG(ierr);
+    ierr = mField.set_field_order(root_set,MBTET,fluxes,order+1); CHKERRG(ierr);
+    ierr = mField.set_field_order(root_set,MBTRI,fluxes,order+1); CHKERRG(ierr);
+    ierr = mField.set_field_order(root_set,MBTET,values,order); CHKERRG(ierr);
 
 
     MoFEMFunctionReturnHot(0);
   }
 
   /// \brief add finite elements
-  PetscErrorCode addFiniteElements(
+  MoFEMErrorCode addFiniteElements(
     const std::string &fluxes_name,
     const std::string &values_name,
     const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS"
@@ -242,19 +242,19 @@ struct MixTransportElement {
 
     // Define element "MIX". Note that this element will work with fluxes_name and
     // values_name. This reflect bilinear form for the problem
-    ierr = mField.add_finite_element("MIX",MF_ZERO); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_row("MIX",fluxes_name); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_col("MIX",fluxes_name); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_row("MIX",values_name); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_col("MIX",values_name); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_data("MIX",fluxes_name); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_data("MIX",values_name); CHKERRQ(ierr);
+    ierr = mField.add_finite_element("MIX",MF_ZERO); CHKERRG(ierr);
+    ierr = mField.modify_finite_element_add_field_row("MIX",fluxes_name); CHKERRG(ierr);
+    ierr = mField.modify_finite_element_add_field_col("MIX",fluxes_name); CHKERRG(ierr);
+    ierr = mField.modify_finite_element_add_field_row("MIX",values_name); CHKERRG(ierr);
+    ierr = mField.modify_finite_element_add_field_col("MIX",values_name); CHKERRG(ierr);
+    ierr = mField.modify_finite_element_add_field_data("MIX",fluxes_name); CHKERRG(ierr);
+    ierr = mField.modify_finite_element_add_field_data("MIX",values_name); CHKERRG(ierr);
 
     // Define finite element to integrate over skeleton, we need that to evaluate error
-    ierr = mField.add_finite_element("MIX_SKELETON",MF_ZERO); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_row("MIX_SKELETON",fluxes_name); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_col("MIX_SKELETON",fluxes_name); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_data("MIX_SKELETON",fluxes_name); CHKERRQ(ierr);
+    ierr = mField.add_finite_element("MIX_SKELETON",MF_ZERO); CHKERRG(ierr);
+    ierr = mField.modify_finite_element_add_field_row("MIX_SKELETON",fluxes_name); CHKERRG(ierr);
+    ierr = mField.modify_finite_element_add_field_col("MIX_SKELETON",fluxes_name); CHKERRG(ierr);
+    ierr = mField.modify_finite_element_add_field_data("MIX_SKELETON",fluxes_name); CHKERRG(ierr);
 
     // In some cases you like to use HO geometry to describe shape of the bode, curved edges and faces, for
     // example body is a sphere. HO geometry is approximated by a field,  which can be hierarchical, so shape of
@@ -263,8 +263,8 @@ struct MixTransportElement {
     // Check if field "mesh_nodals_positions" is defined, and if it is add that field to data of finite
     // element. MoFEM will use that that to calculate Jacobian as result that geometry in nonlinear.
     if(mField.check_field(mesh_nodals_positions)) {
-      ierr = mField.modify_finite_element_add_field_data("MIX",mesh_nodals_positions); CHKERRQ(ierr);
-      ierr = mField.modify_finite_element_add_field_data("MIX_SKELETON",mesh_nodals_positions); CHKERRQ(ierr);
+      ierr = mField.modify_finite_element_add_field_data("MIX",mesh_nodals_positions); CHKERRG(ierr);
+      ierr = mField.modify_finite_element_add_field_data("MIX_SKELETON",mesh_nodals_positions); CHKERRG(ierr);
     }
     // Look for all BLOCKSET which are MAT_THERMALSET, takes entities from those BLOCKSETS
     // and add them to "MIX" finite element. In addition get data form that meshset
@@ -275,15 +275,15 @@ struct MixTransportElement {
       // cerr << *it << endl;
 
       Mat_Thermal temp_data;
-      ierr = it->getAttributeDataStructure(temp_data); CHKERRQ(ierr);
+      ierr = it->getAttributeDataStructure(temp_data); CHKERRG(ierr);
       setOfBlocks[it->getMeshsetId()].cOnductivity = temp_data.data.Conductivity;
       setOfBlocks[it->getMeshsetId()].cApacity = temp_data.data.HeatCapacity;
       rval = mField.get_moab().get_entities_by_type(
         it->meshset,MBTET,setOfBlocks[it->getMeshsetId()].tEts,true
-      ); CHKERRQ_MOAB(rval);
+      ); CHKERRG(rval);
       ierr = mField.add_ents_to_finite_element_by_type(
         setOfBlocks[it->getMeshsetId()].tEts,MBTET,"MIX"
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
 
       Range skeleton;
       rval = mField.get_moab().get_adjacencies(
@@ -291,28 +291,28 @@ struct MixTransportElement {
       );
       ierr = mField.add_ents_to_finite_element_by_type(
         skeleton,MBTRI,"MIX_SKELETON"
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
 
     }
 
     // Define element to integrate natural boundary conditions, i.e. set values.
-    ierr = mField.add_finite_element("MIX_BCVALUE",MF_ZERO); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_row("MIX_BCVALUE",fluxes_name); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_col("MIX_BCVALUE",fluxes_name); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_data("MIX_BCVALUE",fluxes_name); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_data("MIX_BCVALUE",values_name); CHKERRQ(ierr);
+    ierr = mField.add_finite_element("MIX_BCVALUE",MF_ZERO); CHKERRG(ierr);
+    ierr = mField.modify_finite_element_add_field_row("MIX_BCVALUE",fluxes_name); CHKERRG(ierr);
+    ierr = mField.modify_finite_element_add_field_col("MIX_BCVALUE",fluxes_name); CHKERRG(ierr);
+    ierr = mField.modify_finite_element_add_field_data("MIX_BCVALUE",fluxes_name); CHKERRG(ierr);
+    ierr = mField.modify_finite_element_add_field_data("MIX_BCVALUE",values_name); CHKERRG(ierr);
     if(mField.check_field(mesh_nodals_positions)) {
-      ierr = mField.modify_finite_element_add_field_data("MIX_BCVALUE",mesh_nodals_positions); CHKERRQ(ierr);
+      ierr = mField.modify_finite_element_add_field_data("MIX_BCVALUE",mesh_nodals_positions); CHKERRG(ierr);
     }
 
     // Define element to apply essential boundary conditions.
-    ierr = mField.add_finite_element("MIX_BCFLUX",MF_ZERO); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_row("MIX_BCFLUX",fluxes_name); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_col("MIX_BCFLUX",fluxes_name); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_data("MIX_BCFLUX",fluxes_name); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_data("MIX_BCFLUX",values_name); CHKERRQ(ierr);
+    ierr = mField.add_finite_element("MIX_BCFLUX",MF_ZERO); CHKERRG(ierr);
+    ierr = mField.modify_finite_element_add_field_row("MIX_BCFLUX",fluxes_name); CHKERRG(ierr);
+    ierr = mField.modify_finite_element_add_field_col("MIX_BCFLUX",fluxes_name); CHKERRG(ierr);
+    ierr = mField.modify_finite_element_add_field_data("MIX_BCFLUX",fluxes_name); CHKERRG(ierr);
+    ierr = mField.modify_finite_element_add_field_data("MIX_BCFLUX",values_name); CHKERRG(ierr);
     if(mField.check_field(mesh_nodals_positions)) {
-      ierr = mField.modify_finite_element_add_field_data("MIX_BCFLUX",mesh_nodals_positions); CHKERRQ(ierr);
+      ierr = mField.modify_finite_element_add_field_data("MIX_BCFLUX",mesh_nodals_positions); CHKERRG(ierr);
     }
 
     MoFEMFunctionReturnHot(0);
@@ -323,67 +323,67 @@ struct MixTransportElement {
    * @param  ref_level mesh refinement on which mesh problem you like to built.
    * @return           error code
    */
-  PetscErrorCode buildProblem(BitRefLevel &ref_level) {
+  MoFEMErrorCode buildProblem(BitRefLevel &ref_level) {
 
     MoFEMFunctionBeginHot;
     //build field
-    ierr = mField.build_fields(); CHKERRQ(ierr);
+    ierr = mField.build_fields(); CHKERRG(ierr);
     // get tetrahedrons which has been build previously and now in so called garbage bit level
     Range done_tets;
     ierr = mField.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
       BitRefLevel().set(0),BitRefLevel().set(),MBTET,done_tets
-    ); CHKERRQ(ierr);
+    ); CHKERRG(ierr);
     ierr = mField.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
       BitRefLevel().set(BITREFLEVEL_SIZE-1),BitRefLevel().set(),MBTET,done_tets
-    ); CHKERRQ(ierr);
+    ); CHKERRG(ierr);
     // get tetrahedrons which belong to problem bit level
     Range ref_tets;
     ierr = mField.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
       ref_level,BitRefLevel().set(),MBTET,ref_tets
-    ); CHKERRQ(ierr);
+    ); CHKERRG(ierr);
     ref_tets = subtract(ref_tets,done_tets);
-    ierr = mField.build_finite_elements("MIX",&ref_tets,2); CHKERRQ(ierr);
+    ierr = mField.build_finite_elements("MIX",&ref_tets,2); CHKERRG(ierr);
     // get triangles which has been build previously and now in so called garbage bit level
     Range done_faces;
     ierr = mField.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
       BitRefLevel().set(0),BitRefLevel().set(),MBTRI,done_faces
-    ); CHKERRQ(ierr);
+    ); CHKERRG(ierr);
     ierr = mField.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
       BitRefLevel().set(BITREFLEVEL_SIZE-1),BitRefLevel().set(),MBTRI,done_faces
-    ); CHKERRQ(ierr);
+    ); CHKERRG(ierr);
     // get triangles which belong to problem bit level
     Range ref_faces;
     ierr = mField.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
       ref_level,BitRefLevel().set(),MBTRI,ref_faces
-    ); CHKERRQ(ierr);
+    ); CHKERRG(ierr);
     ref_faces = subtract(ref_faces,done_faces);
     //build finite elements structures
-    ierr = mField.build_finite_elements("MIX_BCFLUX",&ref_faces,2); CHKERRQ(ierr);
-    ierr = mField.build_finite_elements("MIX_BCVALUE",&ref_faces,2); CHKERRQ(ierr);
-    ierr = mField.build_finite_elements("MIX_SKELETON",&ref_faces,2); CHKERRQ(ierr);
+    ierr = mField.build_finite_elements("MIX_BCFLUX",&ref_faces,2); CHKERRG(ierr);
+    ierr = mField.build_finite_elements("MIX_BCVALUE",&ref_faces,2); CHKERRG(ierr);
+    ierr = mField.build_finite_elements("MIX_SKELETON",&ref_faces,2); CHKERRG(ierr);
     //Build adjacencies of degrees of freedom and elements
-    ierr = mField.build_adjacencies(ref_level); CHKERRQ(ierr);
+    ierr = mField.build_adjacencies(ref_level); CHKERRG(ierr);
     //Define problem
-    ierr = mField.add_problem("MIX",MF_ZERO); CHKERRQ(ierr);
+    ierr = mField.add_problem("MIX",MF_ZERO); CHKERRG(ierr);
     //set refinement level for problem
-    ierr = mField.modify_problem_ref_level_set_bit("MIX",ref_level); CHKERRQ(ierr);
+    ierr = mField.modify_problem_ref_level_set_bit("MIX",ref_level); CHKERRG(ierr);
     // Add element to problem
-    ierr = mField.modify_problem_add_finite_element("MIX","MIX"); CHKERRQ(ierr);
-    ierr = mField.modify_problem_add_finite_element("MIX","MIX_SKELETON"); CHKERRQ(ierr);
+    ierr = mField.modify_problem_add_finite_element("MIX","MIX"); CHKERRG(ierr);
+    ierr = mField.modify_problem_add_finite_element("MIX","MIX_SKELETON"); CHKERRG(ierr);
     // Boundary conditions
-    ierr = mField.modify_problem_add_finite_element("MIX","MIX_BCFLUX"); CHKERRQ(ierr);
-    ierr = mField.modify_problem_add_finite_element("MIX","MIX_BCVALUE"); CHKERRQ(ierr);
+    ierr = mField.modify_problem_add_finite_element("MIX","MIX_BCFLUX"); CHKERRG(ierr);
+    ierr = mField.modify_problem_add_finite_element("MIX","MIX_BCVALUE"); CHKERRG(ierr);
     //build problem
 
     ProblemsManager *prb_mng_ptr;
-    ierr = mField.getInterface(prb_mng_ptr); CHKERRQ(ierr);
-    ierr = prb_mng_ptr->buildProblem("MIX",true); CHKERRQ(ierr);
+    ierr = mField.getInterface(prb_mng_ptr); CHKERRG(ierr);
+    ierr = prb_mng_ptr->buildProblem("MIX",true); CHKERRG(ierr);
     //mesh partitioning
     //partition
-    ierr = prb_mng_ptr->partitionProblem("MIX"); CHKERRQ(ierr);
-    ierr = prb_mng_ptr->partitionFiniteElements("MIX"); CHKERRQ(ierr);
+    ierr = prb_mng_ptr->partitionProblem("MIX"); CHKERRG(ierr);
+    ierr = prb_mng_ptr->partitionFiniteElements("MIX"); CHKERRG(ierr);
     //what are ghost nodes, see Petsc Manual
-    ierr = prb_mng_ptr->partitionGhostDofs("MIX"); CHKERRQ(ierr);
+    ierr = prb_mng_ptr->partitionGhostDofs("MIX"); CHKERRG(ierr);
     MoFEMFunctionReturnHot(0);
   }
 
@@ -398,7 +398,7 @@ struct MixTransportElement {
     postProcMesh(post_proc_mesh),
     mapGaussPts(map_gauss_pts) {
     }
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int side,
       EntityType type,
       DataForcesAndSourcesCore::EntData &data
@@ -407,50 +407,50 @@ struct MixTransportElement {
       if(type != MBTET) MoFEMFunctionReturnHot(0);
       EntityHandle fe_ent = getNumeredEntFiniteElementPtr()->getEnt();
       Tag th_error_flux;
-      rval = getVolumeFE()->mField.get_moab().tag_get_handle("ERROR_FLUX",th_error_flux); CHKERRQ_MOAB(rval);
+      rval = getVolumeFE()->mField.get_moab().tag_get_handle("ERROR_FLUX",th_error_flux); CHKERRG(rval);
       double* error_flux_ptr;
       rval = getVolumeFE()->mField.get_moab().tag_get_by_ptr(
         th_error_flux,&fe_ent,1,(const void**)&error_flux_ptr
-      ); CHKERRQ_MOAB(rval);
+      ); CHKERRG(rval);
 
       Tag th_error_div;
-      rval = getVolumeFE()->mField.get_moab().tag_get_handle("ERROR_DIV",th_error_div); CHKERRQ_MOAB(rval);
+      rval = getVolumeFE()->mField.get_moab().tag_get_handle("ERROR_DIV",th_error_div); CHKERRG(rval);
       double* error_div_ptr;
       rval = getVolumeFE()->mField.get_moab().tag_get_by_ptr(
         th_error_div,&fe_ent,1,(const void**)&error_div_ptr
-      ); CHKERRQ_MOAB(rval);
+      ); CHKERRG(rval);
 
       Tag th_error_jump;
-      rval = getVolumeFE()->mField.get_moab().tag_get_handle("ERROR_JUMP",th_error_jump); CHKERRQ_MOAB(rval);
+      rval = getVolumeFE()->mField.get_moab().tag_get_handle("ERROR_JUMP",th_error_jump); CHKERRG(rval);
       double* error_jump_ptr;
       rval = getVolumeFE()->mField.get_moab().tag_get_by_ptr(
         th_error_jump,&fe_ent,1,(const void**)&error_jump_ptr
-      ); CHKERRQ_MOAB(rval);
+      ); CHKERRG(rval);
 
       {
         double def_val = 0;
         Tag th_error_flux;
         rval = postProcMesh.tag_get_handle(
           "ERROR_FLUX",1,MB_TYPE_DOUBLE,th_error_flux,MB_TAG_CREAT|MB_TAG_SPARSE,&def_val
-        ); CHKERRQ_MOAB(rval);
+        ); CHKERRG(rval);
         for(vector<EntityHandle>::iterator vit = mapGaussPts.begin();vit!=mapGaussPts.end();vit++) {
-          rval = postProcMesh.tag_set_data(th_error_flux,&*vit,1,error_flux_ptr); CHKERRQ_MOAB(rval);
+          rval = postProcMesh.tag_set_data(th_error_flux,&*vit,1,error_flux_ptr); CHKERRG(rval);
         }
 
         Tag th_error_div;
         rval = postProcMesh.tag_get_handle(
           "ERROR_DIV",1,MB_TYPE_DOUBLE,th_error_div,MB_TAG_CREAT|MB_TAG_SPARSE,&def_val
-        ); CHKERRQ_MOAB(rval);
+        ); CHKERRG(rval);
         for(vector<EntityHandle>::iterator vit = mapGaussPts.begin();vit!=mapGaussPts.end();vit++) {
-          rval = postProcMesh.tag_set_data(th_error_div,&*vit,1,error_div_ptr); CHKERRQ_MOAB(rval);
+          rval = postProcMesh.tag_set_data(th_error_div,&*vit,1,error_div_ptr); CHKERRG(rval);
         }
 
         Tag th_error_jump;
         rval = postProcMesh.tag_get_handle(
           "ERROR_JUMP",1,MB_TYPE_DOUBLE,th_error_jump,MB_TAG_CREAT|MB_TAG_SPARSE,&def_val
-        ); CHKERRQ_MOAB(rval);
+        ); CHKERRG(rval);
         for(vector<EntityHandle>::iterator vit = mapGaussPts.begin();vit!=mapGaussPts.end();vit++) {
-          rval = postProcMesh.tag_set_data(th_error_jump,&*vit,1,error_jump_ptr); CHKERRQ_MOAB(rval);
+          rval = postProcMesh.tag_set_data(th_error_jump,&*vit,1,error_jump_ptr); CHKERRG(rval);
         }
 
       }
@@ -462,18 +462,18 @@ struct MixTransportElement {
    * \brief Post process results
    * @return error code
    */
-  PetscErrorCode postProc(const string out_file) {
+  MoFEMErrorCode postProc(const string out_file) {
 
     MoFEMFunctionBeginHot;
     PostProcVolumeOnRefinedMesh post_proc(mField);
-    ierr = post_proc.generateReferenceElementMesh(); CHKERRQ(ierr);
-    ierr = post_proc.addFieldValuesPostProc("VALUES"); CHKERRQ(ierr);
-    ierr = post_proc.addFieldValuesGradientPostProc("VALUES"); CHKERRQ(ierr);
-    ierr = post_proc.addFieldValuesPostProc("FLUXES"); CHKERRQ(ierr);
-    // ierr = post_proc.addHdivFunctionsPostProc("FLUXES"); CHKERRQ(ierr);
+    ierr = post_proc.generateReferenceElementMesh(); CHKERRG(ierr);
+    ierr = post_proc.addFieldValuesPostProc("VALUES"); CHKERRG(ierr);
+    ierr = post_proc.addFieldValuesGradientPostProc("VALUES"); CHKERRG(ierr);
+    ierr = post_proc.addFieldValuesPostProc("FLUXES"); CHKERRG(ierr);
+    // ierr = post_proc.addHdivFunctionsPostProc("FLUXES"); CHKERRG(ierr);
     post_proc.getOpPtrVector().push_back(new OpPostProc(post_proc.postProcMesh,post_proc.mapGaussPts));
-    ierr = mField.loop_finite_elements("MIX","MIX",post_proc);  CHKERRQ(ierr);
-    ierr = post_proc.writeFile(out_file.c_str()); CHKERRQ(ierr);
+    ierr = mField.loop_finite_elements("MIX","MIX",post_proc);  CHKERRG(ierr);
+    ierr = post_proc.writeFile(out_file.c_str()); CHKERRG(ierr);
     MoFEMFunctionReturnHot(0);
   }
 
@@ -481,12 +481,12 @@ struct MixTransportElement {
   Mat Aij;
 
   /// \brief create matrices
-  PetscErrorCode createMatrices() {
+  MoFEMErrorCode createMatrices() {
     MoFEMFunctionBeginHot;
-    ierr = mField.MatCreateMPIAIJWithArrays("MIX",&Aij); CHKERRQ(ierr);
-    ierr = mField.getInterface<VecManager>()->vecCreateGhost("MIX",COL,&D); CHKERRQ(ierr);
-    ierr = mField.getInterface<VecManager>()->vecCreateGhost("MIX",COL,&D0); CHKERRQ(ierr);
-    ierr = mField.getInterface<VecManager>()->vecCreateGhost("MIX",ROW,&F); CHKERRQ(ierr);
+    ierr = mField.MatCreateMPIAIJWithArrays("MIX",&Aij); CHKERRG(ierr);
+    ierr = mField.getInterface<VecManager>()->vecCreateGhost("MIX",COL,&D); CHKERRG(ierr);
+    ierr = mField.getInterface<VecManager>()->vecCreateGhost("MIX",COL,&D0); CHKERRG(ierr);
+    ierr = mField.getInterface<VecManager>()->vecCreateGhost("MIX",ROW,&F); CHKERRG(ierr);
     MoFEMFunctionReturnHot(0);
   }
 
@@ -494,22 +494,22 @@ struct MixTransportElement {
    * \brief solve problem
    * @return error code
    */
-  PetscErrorCode solveLinearProblem() {
+  MoFEMErrorCode solveLinearProblem() {
 
     MoFEMFunctionBeginHot;
 
-    ierr = MatZeroEntries(Aij); CHKERRQ(ierr);
-    ierr = VecZeroEntries(F); CHKERRQ(ierr);
-    ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    ierr = VecZeroEntries(D0); CHKERRQ(ierr);
-    ierr = VecGhostUpdateBegin(D0,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    ierr = VecGhostUpdateEnd(D0,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    ierr = VecZeroEntries(D); CHKERRQ(ierr);
-    ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = MatZeroEntries(Aij); CHKERRG(ierr);
+    ierr = VecZeroEntries(F); CHKERRG(ierr);
+    ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
+    ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
+    ierr = VecZeroEntries(D0); CHKERRG(ierr);
+    ierr = VecGhostUpdateBegin(D0,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
+    ierr = VecGhostUpdateEnd(D0,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
+    ierr = VecZeroEntries(D); CHKERRG(ierr);
+    ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
+    ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
 
-    ierr = mField.getInterface<VecManager>()->setGlobalGhostVector("MIX",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = mField.getInterface<VecManager>()->setGlobalGhostVector("MIX",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
 
     // Calculate essential boundary conditions
 
@@ -519,11 +519,11 @@ struct MixTransportElement {
     feTri.getOpPtrVector().clear();
     // set operator to calculate essential boundary conditions
     feTri.getOpPtrVector().push_back(new OpEvaluateBcOnFluxes(*this,"FLUXES"));
-    ierr = mField.loop_finite_elements("MIX","MIX_BCFLUX",feTri); CHKERRQ(ierr);
-    ierr = VecGhostUpdateBegin(D0,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-    ierr = VecGhostUpdateEnd(D0,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-    ierr = VecAssemblyBegin(D0); CHKERRQ(ierr);
-    ierr = VecAssemblyEnd(D0); CHKERRQ(ierr);
+    ierr = mField.loop_finite_elements("MIX","MIX_BCFLUX",feTri); CHKERRG(ierr);
+    ierr = VecGhostUpdateBegin(D0,INSERT_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
+    ierr = VecGhostUpdateEnd(D0,INSERT_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
+    ierr = VecAssemblyBegin(D0); CHKERRG(ierr);
+    ierr = VecAssemblyEnd(D0); CHKERRG(ierr);
 
     // set operators to calculate matrix and right hand side vectors
     feVol.getOpPtrVector().clear();
@@ -533,47 +533,47 @@ struct MixTransportElement {
     feVol.getOpPtrVector().push_back(new OpDivTauU_HdivL2(*this,"FLUXES","VALUES",F));
     feVol.getOpPtrVector().push_back(new OpTauDotSigma_HdivHdiv(*this,"FLUXES",Aij,F));
     feVol.getOpPtrVector().push_back(new OpVDivSigma_L2Hdiv(*this,"VALUES","FLUXES",Aij,F));
-    ierr = mField.loop_finite_elements("MIX","MIX",feVol); CHKERRQ(ierr);
+    ierr = mField.loop_finite_elements("MIX","MIX",feVol); CHKERRG(ierr);
 
     // calculate right hand side for natural boundary conditions
     feTri.getOpPtrVector().clear();
     feTri.getOpPtrVector().push_back(new OpRhsBcOnValues(*this,"FLUXES",F));
-    ierr = mField.loop_finite_elements("MIX","MIX_BCVALUE",feTri); CHKERRQ(ierr);
+    ierr = mField.loop_finite_elements("MIX","MIX_BCVALUE",feTri); CHKERRG(ierr);
 
     // assemble matrices
-    ierr = MatAssemblyBegin(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-    ierr = MatAssemblyEnd(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-    ierr = VecGhostUpdateBegin(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-    ierr = VecGhostUpdateEnd(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-    ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
-    ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
+    ierr = MatAssemblyBegin(Aij,MAT_FINAL_ASSEMBLY); CHKERRG(ierr);
+    ierr = MatAssemblyEnd(Aij,MAT_FINAL_ASSEMBLY); CHKERRG(ierr);
+    ierr = VecGhostUpdateBegin(F,ADD_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
+    ierr = VecGhostUpdateEnd(F,ADD_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
+    ierr = VecAssemblyBegin(F); CHKERRG(ierr);
+    ierr = VecAssemblyEnd(F); CHKERRG(ierr);
 
     {
       double nrm2_F;
-      ierr = VecNorm(F,NORM_2,&nrm2_F); CHKERRQ(ierr);
+      ierr = VecNorm(F,NORM_2,&nrm2_F); CHKERRG(ierr);
       PetscPrintf(PETSC_COMM_WORLD,"nrm2_F = %6.4e\n",nrm2_F);
     }
 
-    // ierr = MatMultAdd(Aij,D0,F,F); CHKERRQ(ierr);
+    // ierr = MatMultAdd(Aij,D0,F,F); CHKERRG(ierr);
 
     // for ksp solver vector is moved into rhs side
     // for snes it is left ond the left
-    ierr = VecScale(F,-1); CHKERRQ(ierr);
+    ierr = VecScale(F,-1); CHKERRG(ierr);
 
     IS essential_bc_ids;
-    ierr = getDirichletBCIndices(&essential_bc_ids); CHKERRQ(ierr);
-    ierr = MatZeroRowsColumnsIS(Aij,essential_bc_ids,1,D0,F); CHKERRQ(ierr);
-    ierr = ISDestroy(&essential_bc_ids); CHKERRQ(ierr);
+    ierr = getDirichletBCIndices(&essential_bc_ids); CHKERRG(ierr);
+    ierr = MatZeroRowsColumnsIS(Aij,essential_bc_ids,1,D0,F); CHKERRG(ierr);
+    ierr = ISDestroy(&essential_bc_ids); CHKERRG(ierr);
 
     // {
     //   double norm;
-    //   ierr = MatNorm(Aij,NORM_FROBENIUS,&norm); CHKERRQ(ierr);
+    //   ierr = MatNorm(Aij,NORM_FROBENIUS,&norm); CHKERRG(ierr);
     //   PetscPrintf(PETSC_COMM_WORLD,"mat norm = %6.4e\n",norm);
     // }
 
     {
       double nrm2_F;
-      ierr = VecNorm(F,NORM_2,&nrm2_F); CHKERRQ(ierr);
+      ierr = VecNorm(F,NORM_2,&nrm2_F); CHKERRG(ierr);
       PetscPrintf(PETSC_COMM_WORLD,"With BC nrm2_F = %6.4e\n",nrm2_F);
     }
 
@@ -587,37 +587,37 @@ struct MixTransportElement {
 
     // Solve
     KSP solver;
-    ierr = KSPCreate(PETSC_COMM_WORLD,&solver); CHKERRQ(ierr);
-    ierr = KSPSetOperators(solver,Aij,Aij); CHKERRQ(ierr);
-    ierr = KSPSetFromOptions(solver); CHKERRQ(ierr);
-    ierr = KSPSetUp(solver); CHKERRQ(ierr);
-    ierr = KSPSolve(solver,F,D); CHKERRQ(ierr);
-    ierr = KSPDestroy(&solver); CHKERRQ(ierr);
+    ierr = KSPCreate(PETSC_COMM_WORLD,&solver); CHKERRG(ierr);
+    ierr = KSPSetOperators(solver,Aij,Aij); CHKERRG(ierr);
+    ierr = KSPSetFromOptions(solver); CHKERRG(ierr);
+    ierr = KSPSetUp(solver); CHKERRG(ierr);
+    ierr = KSPSolve(solver,F,D); CHKERRG(ierr);
+    ierr = KSPDestroy(&solver); CHKERRG(ierr);
 
     {
       double nrm2_D;
-      ierr = VecNorm(D,NORM_2,&nrm2_D); CHKERRQ(ierr);
+      ierr = VecNorm(D,NORM_2,&nrm2_D); CHKERRG(ierr);
       PetscPrintf(PETSC_COMM_WORLD,"nrm2_D = %6.4e\n",nrm2_D);
     }
-    ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
+    ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
 
 
     // copy data form vector on mesh
-    ierr = mField.getInterface<VecManager>()->setGlobalGhostVector("MIX",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = mField.getInterface<VecManager>()->setGlobalGhostVector("MIX",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
 
     MoFEMFunctionReturnHot(0);
   }
 
   /// \brief calculate residual
-  PetscErrorCode calculateResidual() {
+  MoFEMErrorCode calculateResidual() {
 
     MoFEMFunctionBeginHot;
-    ierr = VecZeroEntries(F); CHKERRQ(ierr);
-    ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
-    ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
+    ierr = VecZeroEntries(F); CHKERRG(ierr);
+    ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
+    ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
+    ierr = VecAssemblyBegin(F); CHKERRG(ierr);
+    ierr = VecAssemblyEnd(F); CHKERRG(ierr);
     //calculate residuals
     feVol.getOpPtrVector().clear();
     feVol.getOpPtrVector().push_back(new OpL2Source(*this,"VALUES",F));
@@ -626,27 +626,27 @@ struct MixTransportElement {
     feVol.getOpPtrVector().push_back(new OpDivTauU_HdivL2(*this,"FLUXES","VALUES",F));
     feVol.getOpPtrVector().push_back(new OpTauDotSigma_HdivHdiv(*this,"FLUXES",PETSC_NULL,F));
     feVol.getOpPtrVector().push_back(new OpVDivSigma_L2Hdiv(*this,"VALUES","FLUXES",PETSC_NULL,F));
-    ierr = mField.loop_finite_elements("MIX","MIX",feVol); CHKERRQ(ierr);
+    ierr = mField.loop_finite_elements("MIX","MIX",feVol); CHKERRG(ierr);
     feTri.getOpPtrVector().clear();
     feTri.getOpPtrVector().push_back(new OpRhsBcOnValues(*this,"FLUXES",F));
-    ierr = mField.loop_finite_elements("MIX","MIX_BCVALUE",feTri); CHKERRQ(ierr);
-    ierr = VecGhostUpdateBegin(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-    ierr = VecGhostUpdateEnd(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-    ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
-    ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
-    // ierr = VecAXPY(F,-1.,D0); CHKERRQ(ierr);
-    // ierr = MatZeroRowsIS(Aij,essential_bc_ids,1,PETSC_NULL,F); CHKERRQ(ierr);
+    ierr = mField.loop_finite_elements("MIX","MIX_BCVALUE",feTri); CHKERRG(ierr);
+    ierr = VecGhostUpdateBegin(F,ADD_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
+    ierr = VecGhostUpdateEnd(F,ADD_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
+    ierr = VecAssemblyBegin(F); CHKERRG(ierr);
+    ierr = VecAssemblyEnd(F); CHKERRG(ierr);
+    // ierr = VecAXPY(F,-1.,D0); CHKERRG(ierr);
+    // ierr = MatZeroRowsIS(Aij,essential_bc_ids,1,PETSC_NULL,F); CHKERRG(ierr);
     {
       std::vector<int> ids;
       ids.insert(ids.begin(),bcIndices.begin(),bcIndices.end());
       std::vector<double> vals(ids.size(),0);
-      ierr = VecSetValues(F,ids.size(),&*ids.begin(),&*vals.begin(),INSERT_VALUES); CHKERRQ(ierr);
-      ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
-      ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
+      ierr = VecSetValues(F,ids.size(),&*ids.begin(),&*vals.begin(),INSERT_VALUES); CHKERRG(ierr);
+      ierr = VecAssemblyBegin(F); CHKERRG(ierr);
+      ierr = VecAssemblyEnd(F); CHKERRG(ierr);
     }
     {
       double nrm2_F;
-      ierr = VecNorm(F,NORM_2,&nrm2_F); CHKERRQ(ierr);
+      ierr = VecNorm(F,NORM_2,&nrm2_F); CHKERRG(ierr);
       PetscPrintf(PETSC_COMM_WORLD,"nrm2_F = %6.4e\n",nrm2_F);
       const double eps = 1e-8;
       if(nrm2_F > eps) {
@@ -662,7 +662,7 @@ struct MixTransportElement {
     distributed meshes.
 
   */
-  PetscErrorCode evaluateError() {
+  MoFEMErrorCode evaluateError() {
 
     MoFEMFunctionBeginHot;
     errorMap.clear();
@@ -671,14 +671,14 @@ struct MixTransportElement {
     sumErrorJump = 0;
     feTri.getOpPtrVector().clear();
     feTri.getOpPtrVector().push_back(new OpSkeleton(*this,"FLUXES"));
-    ierr = mField.loop_finite_elements("MIX","MIX_SKELETON",feTri,0,mField.get_comm_size()); CHKERRQ(ierr);
+    ierr = mField.loop_finite_elements("MIX","MIX_SKELETON",feTri,0,mField.get_comm_size()); CHKERRG(ierr);
     feVol.getOpPtrVector().clear();
     feVol.getOpPtrVector().push_back(new OpFluxDivergenceAtGaussPts(*this,"FLUXES"));
     feVol.getOpPtrVector().push_back(new OpValuesGradientAtGaussPts(*this,"VALUES"));
     feVol.getOpPtrVector().push_back(new OpError(*this,"VALUES"));
-    ierr = mField.loop_finite_elements("MIX","MIX",feVol,0,mField.get_comm_size()); CHKERRQ(ierr);
+    ierr = mField.loop_finite_elements("MIX","MIX",feVol,0,mField.get_comm_size()); CHKERRG(ierr);
     const Problem *problem_ptr;
-    ierr = mField.get_problem("MIX",&problem_ptr); CHKERRQ(ierr);
+    ierr = mField.get_problem("MIX",&problem_ptr); CHKERRG(ierr);
     PetscPrintf(
       mField.get_comm(),
       "Nb dofs %d error flux^2 = %6.4e error div^2 = %6.4e error jump^2 = %6.4e error tot^2 = %6.4e\n",
@@ -689,12 +689,12 @@ struct MixTransportElement {
   }
 
   /// \brief destroy matrices
-  PetscErrorCode destroyMatrices() {
+  MoFEMErrorCode destroyMatrices() {
     MoFEMFunctionBeginHot;
-    ierr = MatDestroy(&Aij); CHKERRQ(ierr);
-    ierr = VecDestroy(&D); CHKERRQ(ierr);
-    ierr = VecDestroy(&D0); CHKERRQ(ierr);
-    ierr = VecDestroy(&F); CHKERRQ(ierr);
+    ierr = MatDestroy(&Aij); CHKERRG(ierr);
+    ierr = VecDestroy(&D); CHKERRG(ierr);
+    ierr = VecDestroy(&D0); CHKERRG(ierr);
+    ierr = VecDestroy(&F); CHKERRG(ierr);
     MoFEMFunctionReturnHot(0);
   }
 
@@ -739,7 +739,7 @@ struct MixTransportElement {
      * @param  col_data data for col
      * @return          error code
      */
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int row_side,int col_side,
       EntityType row_type,EntityType col_type,
       DataForcesAndSourcesCore::EntData &row_data,
@@ -781,7 +781,7 @@ struct MixTransportElement {
           const double y = getCoordsAtGaussPts()(gg,1);
           const double z = getCoordsAtGaussPts()(gg,2);
           // calculate receptivity (invers of conductivity)
-          ierr = cTx.getResistivity(fe_ent,x,y,z,invK); CHKERRQ(ierr);
+          ierr = cTx.getResistivity(fe_ent,x,y,z,invK); CHKERRG(ierr);
           for(int kk = 0;kk!=nb_row;kk++) {
             FTensor::Tensor1<const double*,3> t_n_hdiv_col(
               &col_data.getHdivN(gg)(0,HDIV0),
@@ -802,7 +802,7 @@ struct MixTransportElement {
           nb_row,&row_data.getIndices()[0],
           nb_col,&col_data.getIndices()[0],
           &NN(0,0),ADD_VALUES
-        ); CHKERRQ(ierr);
+        ); CHKERRG(ierr);
         // matrix is symmetric, assemble other part
         if(row_side != col_side || row_type != col_type) {
           transNN.resize(nb_col,nb_row);
@@ -812,7 +812,7 @@ struct MixTransportElement {
             nb_col,&col_data.getIndices()[0],
             nb_row,&row_data.getIndices()[0],
             &transNN(0,0),ADD_VALUES
-          ); CHKERRQ(ierr);
+          ); CHKERRG(ierr);
         }
       } catch (const std::exception& ex) {
         std::ostringstream ss;
@@ -830,7 +830,7 @@ struct MixTransportElement {
      * @param  data data for row
      * @return          error code
      */
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int side,EntityType type,DataForcesAndSourcesCore::EntData &data
     ) {
 
@@ -868,7 +868,7 @@ struct MixTransportElement {
           const double x = getCoordsAtGaussPts()(gg,0);
           const double y = getCoordsAtGaussPts()(gg,1);
           const double z = getCoordsAtGaussPts()(gg,2);
-          ierr = cTx.getResistivity(fe_ent,x,y,z,invK); CHKERRQ(ierr);
+          ierr = cTx.getResistivity(fe_ent,x,y,z,invK); CHKERRG(ierr);
           for(int ll = 0;ll!=nb_row;ll++) {
             Nf[ll] += w*t_n_hdiv(i)*t_inv_k(i,j)*t_flux(j);
             ++t_n_hdiv;
@@ -877,7 +877,7 @@ struct MixTransportElement {
         }
         ierr = VecSetValues(
           F,nb_row,&data.getIndices()[0],&Nf[0],ADD_VALUES
-        ); CHKERRQ(ierr);
+        ); CHKERRG(ierr);
 
       } catch (const std::exception& ex) {
         cerr << data.getFieldData() << endl;
@@ -920,7 +920,7 @@ struct MixTransportElement {
 
     VectorDouble divVec,Nf;
 
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int side,EntityType type,
       DataForcesAndSourcesCore::EntData &data
     ) {
@@ -942,13 +942,13 @@ struct MixTransportElement {
           if(getHoGaussPtsDetJac().size()>0) {
             w *= getHoGaussPtsDetJac()(gg);
           }
-          ierr = getDivergenceOfHDivBaseFunctions(side,type,data,gg,divVec); CHKERRQ(ierr);
+          ierr = getDivergenceOfHDivBaseFunctions(side,type,data,gg,divVec); CHKERRG(ierr);
           noalias(Nf) -= w*divVec*cTx.valuesAtGaussPts[gg];
         }
         ierr = VecSetValues(
           F,nb_row,&data.getIndices()[0],
           &Nf[0],ADD_VALUES
-        ); CHKERRQ(ierr);
+        ); CHKERRG(ierr);
       } catch (const std::exception& ex) {
         std::ostringstream ss;
         ss << "throw in method: " << ex.what() << std::endl;
@@ -1002,7 +1002,7 @@ struct MixTransportElement {
      * @param  col_data column data structure carrying information about base functions, DOFs indices, etc.
      * @return          error code
      */
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int row_side,int col_side,
       EntityType row_type,EntityType col_type,
       DataForcesAndSourcesCore::EntData &row_data,
@@ -1026,7 +1026,7 @@ struct MixTransportElement {
           }
           ierr = getDivergenceOfHDivBaseFunctions(
             col_side,col_type,col_data,gg,divVec
-          ); CHKERRQ(ierr);
+          ); CHKERRG(ierr);
           noalias(NN) += w*outer_prod(row_data.getN(gg),divVec);
         }
         ierr = MatSetValues(
@@ -1034,7 +1034,7 @@ struct MixTransportElement {
           nb_row,&row_data.getIndices()[0],
           nb_col,&col_data.getIndices()[0],
           &NN(0,0),ADD_VALUES
-        ); CHKERRQ(ierr);
+        ); CHKERRG(ierr);
         transNN.resize(nb_col,nb_row);
         ublas::noalias(transNN) = -trans(NN);
         ierr = MatSetValues(
@@ -1042,7 +1042,7 @@ struct MixTransportElement {
           nb_col,&col_data.getIndices()[0],
           nb_row,&row_data.getIndices()[0],
           &transNN(0,0),ADD_VALUES
-        ); CHKERRQ(ierr);
+        ); CHKERRG(ierr);
       } catch (const std::exception& ex) {
         std::ostringstream ss;
         ss << "throw in method: " << ex.what() << std::endl;
@@ -1051,7 +1051,7 @@ struct MixTransportElement {
       MoFEMFunctionReturnHot(0);
     }
 
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int side,EntityType type,
       DataForcesAndSourcesCore::EntData &data
     ) {
@@ -1076,7 +1076,7 @@ struct MixTransportElement {
         ierr = VecSetValues(
           F,nb_row,&data.getIndices()[0],
           &Nf[0],ADD_VALUES
-        ); CHKERRQ(ierr);
+        ); CHKERRG(ierr);
       } catch (const std::exception& ex) {
         std::ostringstream ss;
         ss << "throw in method: " << ex.what() << std::endl;
@@ -1104,7 +1104,7 @@ struct MixTransportElement {
     F(f) {}
 
     VectorDouble Nf;
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int side,EntityType type,DataForcesAndSourcesCore::EntData &data
     ) {
 
@@ -1132,10 +1132,10 @@ struct MixTransportElement {
             z = getCoordsAtGaussPts()(gg,2);
          }
           double flux = 0;
-          ierr = cTx.getSource(fe_ent,x,y,z,flux); CHKERRQ(ierr);
+          ierr = cTx.getSource(fe_ent,x,y,z,flux); CHKERRG(ierr);
           noalias(Nf) += w*data.getN(gg)*flux;
         }
-        ierr = VecSetValues(F,nb_row,&data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
+        ierr = VecSetValues(F,nb_row,&data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRG(ierr);
       } catch (const std::exception& ex) {
         std::ostringstream ss;
         ss << "throw in method: " << ex.what() << std::endl;
@@ -1178,7 +1178,7 @@ struct MixTransportElement {
      * @param  data data on entity
      * @return      error code
      */
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int side,EntityType type,DataForcesAndSourcesCore::EntData &data
     ) {
       MoFEMFunctionBeginHot;
@@ -1200,7 +1200,7 @@ struct MixTransportElement {
             z = getCoordsAtGaussPts()(gg,2);
          }
           double value;
-          ierr = cTx.getBcOnValues(fe_ent,gg,x,y,z,value); CHKERRQ(ierr);
+          ierr = cTx.getBcOnValues(fe_ent,gg,x,y,z,value); CHKERRG(ierr);
           double w = getGaussPts()(2,gg)*0.5;
           if(getNormalsAtGaussPt().size1() == (unsigned int)nb_gauss_pts) {
             noalias(nF) += w*prod(data.getHdivN(gg),getNormalsAtGaussPt(gg))*value;
@@ -1211,7 +1211,7 @@ struct MixTransportElement {
         Vec f = (F!=PETSC_NULL) ? F : getFEMethod()->ts_F;
         ierr = VecSetValues(
           f,data.getIndices().size(),&data.getIndices()[0],&nF[0],ADD_VALUES
-        ); CHKERRQ(ierr);
+        ); CHKERRG(ierr);
       } catch (const std::exception& ex) {
         std::ostringstream ss;
         ss << "throw in method: " << ex.what() << std::endl;
@@ -1246,7 +1246,7 @@ struct MixTransportElement {
     VectorDouble Nf;
     FTensor::Index<'i',3> i;
 
-    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
+    MoFEMErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
       MoFEMFunctionBeginHot;
       try {
         if(data.getFieldData().size()==0) MoFEMFunctionReturnHot(0);
@@ -1296,7 +1296,7 @@ struct MixTransportElement {
 
           // get flux on fece for given element handle and coordinates
           double flux;
-          ierr = cTx.getBcOnFluxes(fe_ent,x,y,z,flux); CHKERRQ(ierr);
+          ierr = cTx.getBcOnFluxes(fe_ent,x,y,z,flux); CHKERRG(ierr);
           // get weight for integration rule
           double w = getGaussPts()(2,gg);
           if(gg == 0) {
@@ -1342,7 +1342,7 @@ struct MixTransportElement {
         ierr = VecSetValues(
           cTx.D0,nb_dofs,&*data.getIndices().begin(),
           &*Nf.begin(),INSERT_VALUES
-        ); CHKERRQ(ierr);
+        ); CHKERRG(ierr);
 
       } catch (const std::exception& ex) {
         std::ostringstream ss;
@@ -1371,7 +1371,7 @@ struct MixTransportElement {
 
     virtual ~OpValuesAtGaussPts() {}
 
-    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
+    MoFEMErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
       MoFEMFunctionBeginHot;
 
       try {
@@ -1410,7 +1410,7 @@ struct MixTransportElement {
     cTx(ctx) {}
     virtual ~OpValuesGradientAtGaussPts() {}
 
-    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
+    MoFEMErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
       MoFEMFunctionBeginHot;
       try {
         if(data.getFieldData().size() == 0)  MoFEMFunctionReturnHot(0);
@@ -1447,7 +1447,7 @@ struct MixTransportElement {
     cTx(ctx) {}
 
     VectorDouble divVec;
-    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
+    MoFEMErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
       MoFEMFunctionBeginHot;
 
       try {
@@ -1462,7 +1462,7 @@ struct MixTransportElement {
         }
         divVec.resize(nb_dofs);
         for(int gg = 0;gg<nb_gauss_pts;gg++) {
-          ierr = getDivergenceOfHDivBaseFunctions(side,type,data,gg,divVec); CHKERRQ(ierr);
+          ierr = getDivergenceOfHDivBaseFunctions(side,type,data,gg,divVec); CHKERRG(ierr);
           cTx.divergenceAtGaussPts[gg] += inner_prod(divVec,data.getFieldData());
           ublas::matrix_column<MatrixDouble> flux_at_gauss_pt(cTx.fluxesAtGaussPts,gg);
           flux_at_gauss_pt += prod(trans(data.getHdivN(gg)),data.getFieldData());
@@ -1498,7 +1498,7 @@ struct MixTransportElement {
     VectorDouble deltaFlux;
     MatrixDouble3by3 invK;
 
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int side,EntityType type,DataForcesAndSourcesCore::EntData &data
     ) {
 
@@ -1513,28 +1513,28 @@ struct MixTransportElement {
         Tag th_error_flux,th_error_div;
         rval = cTx.mField.get_moab().tag_get_handle(
           "ERROR_FLUX",1,MB_TYPE_DOUBLE,th_error_flux,MB_TAG_CREAT|MB_TAG_SPARSE,&def_val
-        ); CHKERRQ_MOAB(rval);
+        ); CHKERRG(rval);
         double* error_flux_ptr;
         rval = cTx.mField.get_moab().tag_get_by_ptr(
           th_error_flux,&fe_ent,1,(const void**)&error_flux_ptr
-        ); CHKERRQ_MOAB(rval);
+        ); CHKERRG(rval);
 
         rval = cTx.mField.get_moab().tag_get_handle(
           "ERROR_DIV",1,MB_TYPE_DOUBLE,th_error_div,MB_TAG_CREAT|MB_TAG_SPARSE,&def_val
-        ); CHKERRQ_MOAB(rval);
+        ); CHKERRG(rval);
         double* error_div_ptr;
         rval = cTx.mField.get_moab().tag_get_by_ptr(
           th_error_div,&fe_ent,1,(const void**)&error_div_ptr
-        ); CHKERRQ_MOAB(rval);
+        ); CHKERRG(rval);
 
         Tag th_error_jump;
         rval = cTx.mField.get_moab().tag_get_handle(
           "ERROR_JUMP",1,MB_TYPE_DOUBLE,th_error_jump,MB_TAG_CREAT|MB_TAG_SPARSE,&def_val
-        ); CHKERRQ_MOAB(rval);
+        ); CHKERRG(rval);
         double* error_jump_ptr;
         rval = cTx.mField.get_moab().tag_get_by_ptr(
           th_error_jump,&fe_ent,1,(const void**)&error_jump_ptr
-        ); CHKERRQ_MOAB(rval);
+        ); CHKERRG(rval);
         *error_jump_ptr = 0;
 
         /// characteristic size of the element
@@ -1542,11 +1542,11 @@ struct MixTransportElement {
 
         for(int ff = 0;ff!=4;ff++) {
           EntityHandle face;
-          rval = cTx.mField.get_moab().side_element(fe_ent,2,ff,face); CHKERRQ_MOAB(rval);
+          rval = cTx.mField.get_moab().side_element(fe_ent,2,ff,face); CHKERRG(rval);
           double* error_face_jump_ptr;
           rval = cTx.mField.get_moab().tag_get_by_ptr(
             th_error_jump,&face,1,(const void**)&error_face_jump_ptr
-          ); CHKERRQ_MOAB(rval);
+          ); CHKERRG(rval);
           *error_face_jump_ptr = (1/sqrt(h))*sqrt(*error_face_jump_ptr);
           *error_face_jump_ptr = pow(*error_face_jump_ptr,2);
           *error_jump_ptr += *error_face_jump_ptr;
@@ -1571,9 +1571,9 @@ struct MixTransportElement {
             z = getCoordsAtGaussPts()(gg,2);
           }
           double flux;
-          ierr = cTx.getSource(fe_ent,x,y,z,flux); CHKERRQ(ierr);
+          ierr = cTx.getSource(fe_ent,x,y,z,flux); CHKERRG(ierr);
           *error_div_ptr += w*pow(cTx.divergenceAtGaussPts[gg]-flux,2);
-          ierr = cTx.getResistivity(fe_ent,x,y,z,invK); CHKERRQ(ierr);
+          ierr = cTx.getResistivity(fe_ent,x,y,z,invK); CHKERRG(ierr);
           ublas::matrix_column<MatrixDouble> flux_at_gauss_pt(cTx.fluxesAtGaussPts,gg);
           ublas::matrix_column<MatrixDouble> values_grad_at_gauss_pts(cTx.valuesGradientAtGaussPts,gg);
           noalias(deltaFlux) = prod(invK,flux_at_gauss_pt)+values_grad_at_gauss_pts;
@@ -1622,7 +1622,7 @@ struct MixTransportElement {
       VolumeElementForcesAndSourcesCoreOnSide::UserDataOperator("VALUES",UserDataOperator::OPROW),
       valMap(val_map) {
       }
-      PetscErrorCode doWork(int side, EntityType type,DataForcesAndSourcesCore::EntData &data) {
+      MoFEMErrorCode doWork(int side, EntityType type,DataForcesAndSourcesCore::EntData &data) {
         MoFEMFunctionBeginHot;
         try {
           if(data.getFieldData().size() == 0)  MoFEMFunctionReturnHot(0);
@@ -1651,7 +1651,7 @@ struct MixTransportElement {
       volSideFe.getOpPtrVector().push_back(new OpSkeleton::OpVolSide(valMap));
     }
 
-    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
+    MoFEMErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
       MoFEMFunctionBeginHot;
       try {
 
@@ -1662,11 +1662,11 @@ struct MixTransportElement {
           Tag th_error_jump;
           rval = cTx.mField.get_moab().tag_get_handle(
             "ERROR_JUMP",1,MB_TYPE_DOUBLE,th_error_jump,MB_TAG_CREAT|MB_TAG_SPARSE,&def_val
-          ); CHKERRQ_MOAB(rval);
+          ); CHKERRG(rval);
           double* error_jump_ptr;
           rval = cTx.mField.get_moab().tag_get_by_ptr(
             th_error_jump,&fe_ent,1,(const void**)&error_jump_ptr
-          ); CHKERRQ_MOAB(rval);
+          ); CHKERRG(rval);
           *error_jump_ptr = 0;
 
           // check if this is essential boundary condition
@@ -1678,7 +1678,7 @@ struct MixTransportElement {
 
           // calculate values form adjacent tets
           valMap.clear();
-          ierr = loopSideVolumes("MIX",volSideFe); CHKERRQ(ierr);
+          ierr = loopSideVolumes("MIX",volSideFe); CHKERRG(ierr);
 
           int nb_gauss_pts = data.getHdivN().size1();
 
@@ -1699,7 +1699,7 @@ struct MixTransportElement {
                 z = getCoordsAtGaussPts()(gg,2);
               }
               double value;
-              ierr = cTx.getBcOnValues(fe_ent,gg,x,y,z,value); CHKERRQ(ierr);
+              ierr = cTx.getBcOnValues(fe_ent,gg,x,y,z,value); CHKERRG(ierr);
               double w = getGaussPts()(2,gg);
               if(getNormalsAtGaussPt().size1() == (unsigned int)nb_gauss_pts) {
                 w *= norm_2(getNormalsAtGaussPt(gg))*0.5;

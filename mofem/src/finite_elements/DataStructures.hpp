@@ -1160,7 +1160,7 @@ struct DataForcesAndSourcesCore {
      * Reset data associated with particular field name
      * @return error code
      */
-    inline PetscErrorCode resetFieldDependentData() {
+    inline MoFEMErrorCode resetFieldDependentData() {
       MoFEMFunctionBeginHot;
       sPace = NOSPACE;
       bAse = NOBASE;
@@ -1204,13 +1204,13 @@ struct DataForcesAndSourcesCore {
    * Reset data associated with particular field name
    * @return error code
    */
-  inline PetscErrorCode resetFieldDependentData() {
+  inline MoFEMErrorCode resetFieldDependentData() {
 
     MoFEMFunctionBeginHot;
     for(EntityType t = MBVERTEX;t!=MBMAXTYPE;t++) {
       boost::ptr_vector<EntData>::iterator ent_data_it = dataOnEntities[t].begin();
       for(;ent_data_it!=dataOnEntities[t].end();ent_data_it++) {
-        ierr = ent_data_it->resetFieldDependentData(); CHKERRQ(ierr);
+        ierr = ent_data_it->resetFieldDependentData(); CHKERRG(ierr);
       }
     }
     MoFEMFunctionReturnHot(0);

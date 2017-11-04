@@ -48,29 +48,29 @@ dIag(1) {
   ts_F = PETSC_NULL;
 };
 
-PetscErrorCode DirichletDisplacementBc::iNitalize() {
+MoFEMErrorCode DirichletDisplacementBc::iNitalize() {
   MoFEMFunctionBeginHot;
   if(mapZeroRows.empty() || !methodsOp.empty()) {
     ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NODESET|DISPLACEMENTSET,it)) {
       DisplacementCubitBcData mydata;
-      ierr = it->getBcDataStructure(mydata); CHKERRQ(ierr);
+      ierr = it->getBcDataStructure(mydata); CHKERRG(ierr);
       VectorDouble scaled_values(3);
       scaled_values[0] = mydata.data.value1;
       scaled_values[1] = mydata.data.value2;
       scaled_values[2] = mydata.data.value3;
-      ierr = MethodForForceScaling::applyScale(this,methodsOp,scaled_values); CHKERRQ(ierr);
+      ierr = MethodForForceScaling::applyScale(this,methodsOp,scaled_values); CHKERRG(ierr);
       for(int dim = 0;dim<3;dim++) {
         Range ents;
-        ierr = it->getMeshsetIdEntitiesByDimension(mField.get_moab(),dim,ents,true); CHKERRQ(ierr);
+        ierr = it->getMeshsetIdEntitiesByDimension(mField.get_moab(),dim,ents,true); CHKERRG(ierr);
         if(dim>1) {
           Range _edges;
-          ierr = mField.get_moab().get_adjacencies(ents,1,false,_edges,moab::Interface::UNION); CHKERRQ(ierr);
+          ierr = mField.get_moab().get_adjacencies(ents,1,false,_edges,moab::Interface::UNION); CHKERRG(ierr);
           ents.insert(_edges.begin(),_edges.end());
         }
         if(dim>0) {
           Range _nodes;
-          rval = mField.get_moab().get_connectivity(ents,_nodes,true); CHKERRQ_MOAB(rval);
+          rval = mField.get_moab().get_connectivity(ents,_nodes,true); CHKERRG(rval);
           ents.insert(_nodes.begin(),_nodes.end());
         }
         for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {
@@ -116,7 +116,7 @@ PetscErrorCode DirichletDisplacementBc::iNitalize() {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode DirichletDisplacementBc::preProcess() {
+MoFEMErrorCode DirichletDisplacementBc::preProcess() {
   MoFEMFunctionBeginHot;
 
   switch (ts_ctx) {
@@ -135,22 +135,22 @@ PetscErrorCode DirichletDisplacementBc::preProcess() {
     break;
   }
 
-  ierr = iNitalize(); CHKERRQ(ierr);
+  ierr = iNitalize(); CHKERRG(ierr);
 
   if(snes_ctx == CTX_SNESNONE && ts_ctx == CTX_TSNONE) {
     if(dofsIndices.size()>0) {
       ierr = VecSetValues(
         snes_x,dofsIndices.size(),&dofsIndices[0],&dofsValues[0],INSERT_VALUES
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
     }
-    ierr = VecAssemblyBegin(snes_x); CHKERRQ(ierr);
-    ierr = VecAssemblyEnd(snes_x); CHKERRQ(ierr);
+    ierr = VecAssemblyBegin(snes_x); CHKERRG(ierr);
+    ierr = VecAssemblyEnd(snes_x); CHKERRG(ierr);
   }
 
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode DirichletDisplacementBc::postProcess() {
+MoFEMErrorCode DirichletDisplacementBc::postProcess() {
   MoFEMFunctionBeginHot;
 
   switch (ts_ctx) {
@@ -171,23 +171,23 @@ PetscErrorCode DirichletDisplacementBc::postProcess() {
 
   if(snes_ctx == CTX_SNESNONE && ts_ctx == CTX_TSNONE) {
     if(snes_B) {
-      ierr = MatAssemblyBegin(snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-      ierr = MatAssemblyEnd(snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+      ierr = MatAssemblyBegin(snes_B,MAT_FINAL_ASSEMBLY); CHKERRG(ierr);
+      ierr = MatAssemblyEnd(snes_B,MAT_FINAL_ASSEMBLY); CHKERRG(ierr);
       ierr = MatZeroRowsColumns(
         snes_B,
         dofsIndices.size(),
         dofsIndices.empty()?PETSC_NULL:&dofsIndices[0],
         dIag,PETSC_NULL,PETSC_NULL
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
     }
     if(snes_f) {
-      ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
-      ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
+      ierr = VecAssemblyBegin(snes_f); CHKERRG(ierr);
+      ierr = VecAssemblyEnd(snes_f); CHKERRG(ierr);
       for(std::vector<int>::iterator vit = dofsIndices.begin();vit!=dofsIndices.end();vit++) {
-        ierr = VecSetValue(snes_f,*vit,0,INSERT_VALUES); CHKERRQ(ierr);
+        ierr = VecSetValue(snes_f,*vit,0,INSERT_VALUES); CHKERRG(ierr);
       }
-      ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
-      ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
+      ierr = VecAssemblyBegin(snes_f); CHKERRG(ierr);
+      ierr = VecAssemblyEnd(snes_f); CHKERRG(ierr);
     }
   }
 
@@ -201,10 +201,10 @@ PetscErrorCode DirichletDisplacementBc::postProcess() {
           snes_x,dofsIndices.size(),
           dofsIndices.empty()?PETSC_NULL:&*dofsIndices.begin(),
           dofsXValues.empty()?PETSC_NULL:&*dofsXValues.begin()
-        ); CHKERRQ(ierr);
+        ); CHKERRG(ierr);
       }
-      ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
-      ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
+      ierr = VecAssemblyBegin(snes_f); CHKERRG(ierr);
+      ierr = VecAssemblyEnd(snes_f); CHKERRG(ierr);
       if(!dofsIndices.empty()) {
         int ii = 0;
         for(std::vector<int>::iterator vit = dofsIndices.begin();vit!=dofsIndices.end();vit++,ii++) {
@@ -220,15 +220,15 @@ PetscErrorCode DirichletDisplacementBc::postProcess() {
           dofsIndices.empty()?PETSC_NULL:&*dofsIndices.begin(),
           dofsXValues.empty()?PETSC_NULL:&*dofsXValues.begin(),
           INSERT_VALUES
-        ); CHKERRQ(ierr);
+        ); CHKERRG(ierr);
       }
-      ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
-      ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
+      ierr = VecAssemblyBegin(snes_f); CHKERRG(ierr);
+      ierr = VecAssemblyEnd(snes_f); CHKERRG(ierr);
     }
     break;
     case CTX_SNESSETJACOBIAN: {
-      ierr = MatAssemblyBegin(snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-      ierr = MatAssemblyEnd(snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+      ierr = MatAssemblyBegin(snes_B,MAT_FINAL_ASSEMBLY); CHKERRG(ierr);
+      ierr = MatAssemblyEnd(snes_B,MAT_FINAL_ASSEMBLY); CHKERRG(ierr);
       ierr = MatZeroRowsColumns(
         snes_B,
         dofsIndices.size(),
@@ -236,7 +236,7 @@ PetscErrorCode DirichletDisplacementBc::postProcess() {
         dIag,
         PETSC_NULL,
         PETSC_NULL
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
     }
     break;
     default:
@@ -246,35 +246,35 @@ PetscErrorCode DirichletDisplacementBc::postProcess() {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode DirichletSpatialPositionsBc::iNitalize() {
+MoFEMErrorCode DirichletSpatialPositionsBc::iNitalize() {
   MoFEMFunctionBeginHot;
   if(mapZeroRows.empty() || !methodsOp.empty()) {
     const DofEntity_multiIndex *dofs_ptr;
-    ierr = mField.get_dofs(&dofs_ptr); CHKERRQ(ierr);
+    ierr = mField.get_dofs(&dofs_ptr); CHKERRG(ierr);
     VectorDouble scaled_values(3);
     // Loop over meshsets with Dirichlet boundary condition on displacements
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NODESET|DISPLACEMENTSET,it)) {
       // get data structure for boundary condition
       DisplacementCubitBcData mydata;
-      ierr = it->getBcDataStructure(mydata); CHKERRQ(ierr);
+      ierr = it->getBcDataStructure(mydata); CHKERRG(ierr);
       // set vector with prescribed displacements
       scaled_values[0] = mydata.data.value1;
       scaled_values[1] = mydata.data.value2;
       scaled_values[2] = mydata.data.value3;
       // scale vector for given load step
-      ierr = MethodForForceScaling::applyScale(this,methodsOp,scaled_values); CHKERRQ(ierr);
+      ierr = MethodForForceScaling::applyScale(this,methodsOp,scaled_values); CHKERRG(ierr);
       // get entities on meshset with boundary conditions
       for(int dim = 0;dim<3;dim++) {
         Range ents;
-        ierr = it->getMeshsetIdEntitiesByDimension(mField.get_moab(),dim,ents,true); CHKERRQ(ierr);
+        ierr = it->getMeshsetIdEntitiesByDimension(mField.get_moab(),dim,ents,true); CHKERRG(ierr);
         if(dim>1) {
           Range edges;
-          ierr = mField.get_moab().get_adjacencies(ents,1,false,edges,moab::Interface::UNION); CHKERRQ(ierr);
+          ierr = mField.get_moab().get_adjacencies(ents,1,false,edges,moab::Interface::UNION); CHKERRG(ierr);
           ents.insert(edges.begin(),edges.end());
         }
         if(dim>0) {
           Range nodes;
-          rval = mField.get_moab().get_connectivity(ents,nodes,true); CHKERRQ_MOAB(rval);
+          rval = mField.get_moab().get_connectivity(ents,nodes,true); CHKERRG(rval);
           ents.insert(nodes.begin(),nodes.end());
         }
         // loop over entities in meshet
@@ -300,7 +300,7 @@ PetscErrorCode DirichletSpatialPositionsBc::iNitalize() {
                 // set coordinates form coords in MoAB
                 rval = mField.get_moab().get_coords(
                   &node,1,&*cOords.data().begin()
-                ); CHKERRQ_MOAB(rval);
+                ); CHKERRG(rval);
               } else {
                 // set coordinates from field values
                 for(;mdit!=hi_mdit;mdit++) {
@@ -354,27 +354,27 @@ PetscErrorCode DirichletSpatialPositionsBc::iNitalize() {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode DirichletTemperatureBc::iNitalize() {
+MoFEMErrorCode DirichletTemperatureBc::iNitalize() {
   MoFEMFunctionBeginHot;
   if(mapZeroRows.empty() || !methodsOp.empty()) {
     ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NODESET|TEMPERATURESET,it)) {
       TemperatureCubitBcData mydata;
-      ierr = it->getBcDataStructure(mydata); CHKERRQ(ierr);
+      ierr = it->getBcDataStructure(mydata); CHKERRG(ierr);
       VectorDouble scaled_values(1);
       scaled_values[0] = mydata.data.value1;
-      ierr = MethodForForceScaling::applyScale(this,methodsOp,scaled_values); CHKERRQ(ierr);
+      ierr = MethodForForceScaling::applyScale(this,methodsOp,scaled_values); CHKERRG(ierr);
       for(int dim = 0;dim<3;dim++) {
         Range ents;
-        ierr = it->getMeshsetIdEntitiesByDimension(mField.get_moab(),dim,ents,true); CHKERRQ(ierr);
+        ierr = it->getMeshsetIdEntitiesByDimension(mField.get_moab(),dim,ents,true); CHKERRG(ierr);
         if(dim>1) {
           Range _edges;
-          ierr = mField.get_moab().get_adjacencies(ents,1,false,_edges,moab::Interface::UNION); CHKERRQ(ierr);
+          ierr = mField.get_moab().get_adjacencies(ents,1,false,_edges,moab::Interface::UNION); CHKERRG(ierr);
           ents.insert(_edges.begin(),_edges.end());
         }
         if(dim>0) {
           Range _nodes;
-          rval = mField.get_moab().get_connectivity(ents,_nodes,true); CHKERRQ_MOAB(rval);
+          rval = mField.get_moab().get_connectivity(ents,_nodes,true); CHKERRG(rval);
           ents.insert(_nodes.begin(),_nodes.end());
         }
         for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {
@@ -401,7 +401,7 @@ PetscErrorCode DirichletTemperatureBc::iNitalize() {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode DirichletFixFieldAtEntitiesBc::iNitalize() {
+MoFEMErrorCode DirichletFixFieldAtEntitiesBc::iNitalize() {
   MoFEMFunctionBeginHot;
   if(mapZeroRows.empty()) {
     for(std::vector<std::string>::iterator fit = fieldNames.begin();fit!=fieldNames.end();fit++) {
@@ -424,7 +424,7 @@ PetscErrorCode DirichletFixFieldAtEntitiesBc::iNitalize() {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode DirichletFixFieldAtEntitiesBc::preProcess() {
+MoFEMErrorCode DirichletFixFieldAtEntitiesBc::preProcess() {
   MoFEMFunctionBeginHot;
 
   switch (ts_ctx) {
@@ -443,29 +443,29 @@ PetscErrorCode DirichletFixFieldAtEntitiesBc::preProcess() {
     break;
   }
 
-  ierr = iNitalize(); CHKERRQ(ierr);
+  ierr = iNitalize(); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode DirichletFixFieldAtEntitiesBc::postProcess() {
+MoFEMErrorCode DirichletFixFieldAtEntitiesBc::postProcess() {
   MoFEMFunctionBeginHot;
   if(snes_ctx == CTX_SNESNONE && ts_ctx == CTX_TSNONE) {
     if(snes_B) {
-      ierr = MatAssemblyBegin(snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-      ierr = MatAssemblyEnd(snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+      ierr = MatAssemblyBegin(snes_B,MAT_FINAL_ASSEMBLY); CHKERRG(ierr);
+      ierr = MatAssemblyEnd(snes_B,MAT_FINAL_ASSEMBLY); CHKERRG(ierr);
       ierr = MatZeroRowsColumns(
         snes_B,dofsIndices.size(),dofsIndices.empty()?PETSC_NULL:&dofsIndices[0],dIag,PETSC_NULL,PETSC_NULL
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
     }
     if(snes_f) {
-      ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
-      ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
+      ierr = VecAssemblyBegin(snes_f); CHKERRG(ierr);
+      ierr = VecAssemblyEnd(snes_f); CHKERRG(ierr);
       int ii = 0;
       for(std::vector<int>::iterator vit = dofsIndices.begin();vit!=dofsIndices.end();vit++,ii++) {
-        ierr = VecSetValue(snes_f,*vit,dofsValues[ii],INSERT_VALUES); CHKERRQ(ierr);
+        ierr = VecSetValue(snes_f,*vit,dofsValues[ii],INSERT_VALUES); CHKERRG(ierr);
       }
-      ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
-      ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
+      ierr = VecAssemblyBegin(snes_f); CHKERRG(ierr);
+      ierr = VecAssemblyEnd(snes_f); CHKERRG(ierr);
     }
   }
 
@@ -473,19 +473,19 @@ PetscErrorCode DirichletFixFieldAtEntitiesBc::postProcess() {
     case CTX_SNESNONE: {}
     break;
     case CTX_SNESSETFUNCTION: {
-      ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
-      ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
+      ierr = VecAssemblyBegin(snes_f); CHKERRG(ierr);
+      ierr = VecAssemblyEnd(snes_f); CHKERRG(ierr);
       int ii = 0;
       for(std::vector<int>::iterator vit = dofsIndices.begin();vit!=dofsIndices.end();vit++,ii++) {
-        ierr = VecSetValue(snes_f,*vit,dofsValues[ii],INSERT_VALUES); CHKERRQ(ierr);
+        ierr = VecSetValue(snes_f,*vit,dofsValues[ii],INSERT_VALUES); CHKERRG(ierr);
       }
-      ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
-      ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
+      ierr = VecAssemblyBegin(snes_f); CHKERRG(ierr);
+      ierr = VecAssemblyEnd(snes_f); CHKERRG(ierr);
     }
     break;
     case CTX_SNESSETJACOBIAN: {
-      ierr = MatAssemblyBegin(snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-      ierr = MatAssemblyEnd(snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+      ierr = MatAssemblyBegin(snes_B,MAT_FINAL_ASSEMBLY); CHKERRG(ierr);
+      ierr = MatAssemblyEnd(snes_B,MAT_FINAL_ASSEMBLY); CHKERRG(ierr);
       ierr = MatZeroRowsColumns(
         snes_B,
         dofsIndices.size(),
@@ -493,7 +493,7 @@ PetscErrorCode DirichletFixFieldAtEntitiesBc::postProcess() {
         dIag,
         PETSC_NULL,
         PETSC_NULL
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
     }
     break;
     default:
@@ -504,30 +504,30 @@ PetscErrorCode DirichletFixFieldAtEntitiesBc::postProcess() {
 }
 
 
-PetscErrorCode DirichletSetFieldFromBlock::iNitalize() {
+MoFEMErrorCode DirichletSetFieldFromBlock::iNitalize() {
   MoFEMFunctionBeginHot;
   if(mapZeroRows.empty() || !methodsOp.empty()) {
     ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
       if(it->getName().compare(0,blocksetName.length(),blocksetName) == 0) {
         std::vector<double> mydata;
-        ierr = it->getAttributes(mydata); CHKERRQ(ierr);
+        ierr = it->getAttributes(mydata); CHKERRG(ierr);
         VectorDouble scaled_values(mydata.size());
         for(unsigned int ii = 0;ii<mydata.size();ii++) {
           scaled_values[ii] = mydata[ii];
         }
-        ierr = MethodForForceScaling::applyScale(this,methodsOp,scaled_values); CHKERRQ(ierr);
+        ierr = MethodForForceScaling::applyScale(this,methodsOp,scaled_values); CHKERRG(ierr);
         for(int dim = 0;dim<3;dim++) {
           Range ents;
-          ierr = it->getMeshsetIdEntitiesByDimension(mField.get_moab(),dim,ents,true); CHKERRQ(ierr);
+          ierr = it->getMeshsetIdEntitiesByDimension(mField.get_moab(),dim,ents,true); CHKERRG(ierr);
           if(dim>1) {
             Range edges;
-            ierr = mField.get_moab().get_adjacencies(ents,1,false,edges,moab::Interface::UNION); CHKERRQ(ierr);
+            ierr = mField.get_moab().get_adjacencies(ents,1,false,edges,moab::Interface::UNION); CHKERRG(ierr);
             ents.insert(edges.begin(),edges.end());
           }
           if(dim>0) {
             Range nodes;
-            rval = mField.get_moab().get_connectivity(ents,nodes,true); CHKERRQ_MOAB(rval);
+            rval = mField.get_moab().get_connectivity(ents,nodes,true); CHKERRG(rval);
             ents.insert(nodes.begin(),nodes.end());
           }
           for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {
@@ -572,31 +572,31 @@ PetscErrorCode DirichletSetFieldFromBlock::iNitalize() {
 }
 
 
-PetscErrorCode DirichletSetFieldFromBlockWithFlags::iNitalize() {
+MoFEMErrorCode DirichletSetFieldFromBlockWithFlags::iNitalize() {
   MoFEMFunctionBeginHot;
   if(mapZeroRows.empty() || !methodsOp.empty()) {
     ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
       if(it->getName().compare(0,blocksetName.length(),blocksetName) == 0) {
         std::vector<double> mydata;
-        ierr = it->getAttributes(mydata); CHKERRQ(ierr);
+        ierr = it->getAttributes(mydata); CHKERRG(ierr);
         VectorDouble scaled_values(mydata.size());
         for(unsigned int ii = 0;ii<mydata.size();ii++) {
           scaled_values[ii] = mydata[ii];
         }
 
-        ierr = MethodForForceScaling::applyScale(this,methodsOp,scaled_values); CHKERRQ(ierr);
+        ierr = MethodForForceScaling::applyScale(this,methodsOp,scaled_values); CHKERRG(ierr);
         for(int dim = 0;dim<3;dim++) {
           Range ents;
-          ierr = it->getMeshsetIdEntitiesByDimension(mField.get_moab(),dim,ents,true); CHKERRQ(ierr);
+          ierr = it->getMeshsetIdEntitiesByDimension(mField.get_moab(),dim,ents,true); CHKERRG(ierr);
           if(dim>1) {
             Range edges;
-            ierr = mField.get_moab().get_adjacencies(ents,1,false,edges,moab::Interface::UNION); CHKERRQ(ierr);
+            ierr = mField.get_moab().get_adjacencies(ents,1,false,edges,moab::Interface::UNION); CHKERRG(ierr);
             ents.insert(edges.begin(),edges.end());
           }
           if(dim>0) {
             Range nodes;
-            rval = mField.get_moab().get_connectivity(ents,nodes,true); CHKERRQ_MOAB(rval);
+            rval = mField.get_moab().get_connectivity(ents,nodes,true); CHKERRG(rval);
             ents.insert(nodes.begin(),nodes.end());
           }
           for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {

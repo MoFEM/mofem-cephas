@@ -30,10 +30,10 @@ struct DeprecatedCoreInterface : public CoreInterface {
   /**@{*/
 
   template <class IFace>
-  DEPRECATED PetscErrorCode query_interface(IFace *&ptr) const {
+  DEPRECATED MoFEMErrorCode query_interface(IFace *&ptr) const {
     MoFEMFunctionBeginHot;
     ierr = getInterface(ptr);
-    CHKERRQ(ierr);
+    CHKERRG(ierr);
     MoFEMFunctionReturnHot(0);
   }
 
@@ -61,7 +61,7 @@ struct DeprecatedCoreInterface : public CoreInterface {
    * \param BitRefLevel bitLevel
    *
    */
-  DEPRECATED virtual PetscErrorCode
+  DEPRECATED virtual MoFEMErrorCode
   seed_ref_level_2D(const EntityHandle meshset, const BitRefLevel &bit,
                     int verb = -1);
 
@@ -90,7 +90,7 @@ struct DeprecatedCoreInterface : public CoreInterface {
   * ent4[0,1,0,0,0,0,0], ent5[0,1,0,0,0,0,0] <br>
   *
   */
-  DEPRECATED PetscErrorCode seed_ref_level_3D(const EntityHandle meshset,
+  DEPRECATED MoFEMErrorCode seed_ref_level_3D(const EntityHandle meshset,
                                               const BitRefLevel &bit,
                                               int verb = -1);
 
@@ -99,7 +99,7 @@ struct DeprecatedCoreInterface : public CoreInterface {
    * BitRefLevel \todo Should be outsourced to separate interface, i.e.
    * BitLevelManager
    */
-  DEPRECATED PetscErrorCode seed_ref_level(const Range &ents,
+  DEPRECATED MoFEMErrorCode seed_ref_level(const Range &ents,
                                            const BitRefLevel &bit,
                                            const bool only_tets = true,
                                            int verb = -1);
@@ -110,7 +110,7 @@ struct DeprecatedCoreInterface : public CoreInterface {
    * \param EntityHandle MeshSet
    * \param BitRefLevel bitLevel
    */
-  DEPRECATED PetscErrorCode seed_ref_level_MESHSET(const EntityHandle meshset,
+  DEPRECATED MoFEMErrorCode seed_ref_level_MESHSET(const EntityHandle meshset,
                                                    const BitRefLevel &bit,
                                                    int verb = -1);
 
@@ -130,7 +130,7 @@ struct DeprecatedCoreInterface : public CoreInterface {
    * \retval EntityHandle meshset
    *
    */
-  DEPRECATED PetscErrorCode get_entities_by_type_and_ref_level(
+  DEPRECATED MoFEMErrorCode get_entities_by_type_and_ref_level(
       const BitRefLevel &bit, const BitRefLevel &mask, const EntityType type,
       const EntityHandle meshset, int verb = -1);
 
@@ -144,7 +144,7 @@ struct DeprecatedCoreInterface : public CoreInterface {
    * \retval ents
    *
    */
-  DEPRECATED PetscErrorCode get_entities_by_type_and_ref_level(
+  DEPRECATED MoFEMErrorCode get_entities_by_type_and_ref_level(
       const BitRefLevel &bit, const BitRefLevel &mask, const EntityType type,
       Range &ents, int verb = -1);
 
@@ -157,7 +157,7 @@ struct DeprecatedCoreInterface : public CoreInterface {
    * \param EntityHandle meshset
    *
    */
-  DEPRECATED PetscErrorCode
+  DEPRECATED MoFEMErrorCode
   get_entities_by_ref_level(const BitRefLevel &bit, const BitRefLevel &mask,
                             const EntityHandle meshset);
 
@@ -169,7 +169,7 @@ struct DeprecatedCoreInterface : public CoreInterface {
    * \param BitRefLevel mask
    * \retval ents
    */
-  DEPRECATED PetscErrorCode get_entities_by_ref_level(const BitRefLevel &bit,
+  DEPRECATED MoFEMErrorCode get_entities_by_ref_level(const BitRefLevel &bit,
                                                       const BitRefLevel &mask,
                                                       Range &ents);
 
@@ -204,7 +204,7 @@ struct DeprecatedCoreInterface : public CoreInterface {
   * \param name of set
 
   */
-  DEPRECATED PetscErrorCode add_cubit_msId(const CubitBCType cubit_bc_tyep,
+  DEPRECATED MoFEMErrorCode add_cubit_msId(const CubitBCType cubit_bc_tyep,
                                            const int msId,
                                            const std::string name = "");
 
@@ -219,7 +219,7 @@ struct DeprecatedCoreInterface : public CoreInterface {
   * @param  attributes    attributes
   * @return               error code
   */
-  DEPRECATED PetscErrorCode set_cubit_msId_attribites(
+  DEPRECATED MoFEMErrorCode set_cubit_msId_attribites(
       const CubitBCType cubit_bc_type, const int ms_id,
       const std::vector<double> &attributes, const std::string name = "");
 
@@ -236,7 +236,7 @@ struct DeprecatedCoreInterface : public CoreInterface {
   * @param  attributes    attributes
   * @return               error code
   */
-  DEPRECATED PetscErrorCode set_cubit_msId_attribites_data_structure(
+  DEPRECATED MoFEMErrorCode set_cubit_msId_attribites_data_structure(
       const CubitBCType cubit_bc_type, const int ms_id,
       const GenericAttributeData &data, const std::string name = "");
 
@@ -253,7 +253,7 @@ struct DeprecatedCoreInterface : public CoreInterface {
   * @param  data          data structure
   * @return               error code
   */
-  DEPRECATED PetscErrorCode set_cubit_msId_bc_data_structure(
+  DEPRECATED MoFEMErrorCode set_cubit_msId_bc_data_structure(
       const CubitBCType cubit_bc_type, const int ms_id,
       const GenericCubitBcData &data);
 
@@ -269,7 +269,7 @@ struct DeprecatedCoreInterface : public CoreInterface {
   * \param msId id of the BLOCKSET/SIDESET/BLOCKSET: from CUBIT
   *
   */
-  DEPRECATED PetscErrorCode delete_cubit_msId(const CubitBCType cubit_bc_type,
+  DEPRECATED MoFEMErrorCode delete_cubit_msId(const CubitBCType cubit_bc_type,
                                               const int msId);
 
   /**
@@ -280,21 +280,21 @@ struct DeprecatedCoreInterface : public CoreInterface {
   interface
 
   */
-  DEPRECATED PetscErrorCode
+  DEPRECATED MoFEMErrorCode
   get_cubit_msId(const int msId, const CubitBCType cubit_bc_type,
                  const CubitMeshSets **cubit_meshset_ptr);
 
-  DEPRECATED PetscErrorCode get_cubit_msId_entities_by_dimension(
+  DEPRECATED MoFEMErrorCode get_cubit_msId_entities_by_dimension(
       const int ms_id, const CubitBCType cubit_bc_type, const int dimension,
       Range &entities, const bool recursive = false);
-  DEPRECATED PetscErrorCode get_cubit_msId_entities_by_dimension(
+  DEPRECATED MoFEMErrorCode get_cubit_msId_entities_by_dimension(
       const int ms_id, const CubitBCType cubit_bc_type, Range &entities,
       const bool recursive = false);
-  // DEPRECATED PetscErrorCode get_cubit_msId_entities_by_dimension(
+  // DEPRECATED MoFEMErrorCode get_cubit_msId_entities_by_dimension(
   //   const int ms_id,const unsigned int cubit_bc_type, const int
   //   dimension,Range &entities,const bool recursive = false
   // );
-  // DEPRECATED PetscErrorCode get_cubit_msId_entities_by_dimension(
+  // DEPRECATED MoFEMErrorCode get_cubit_msId_entities_by_dimension(
   //   const int ms_id,const unsigned int cubit_bc_type, Range &entities,const
   //   bool recursive = false
   // );
@@ -317,10 +317,10 @@ struct DeprecatedCoreInterface : public CoreInterface {
 
   \code
   MeshsetsManager *meshset_manager_ptr;
-  ierr = m_field.getInterface(meshset_manager_ptr); CHKERRQ(ierr);
+  ierr = m_field.getInterface(meshset_manager_ptr); CHKERRG(ierr);
   ierr =
   meshset_manager_ptr->getEntitiesByDimension(ms_id,cubit_bc_type,dimension,entities,true);
-  CHKERRQ(ierr); \endcode
+  CHKERRG(ierr); \endcode
 
   * \param msId id of the BLOCKSET/SIDESET/BLOCKSET: from CUBIT
   * \param  see CubitBC (NODESET, SIDESET or BLOCKSET and more)
@@ -330,7 +330,7 @@ struct DeprecatedCoreInterface : public CoreInterface {
   recursively. Returns the contents of meshsets, but not the meshsets themselves
   if true.
   */
-  DEPRECATED PetscErrorCode get_cubit_msId_entities_by_dimension(
+  DEPRECATED MoFEMErrorCode get_cubit_msId_entities_by_dimension(
       const int msId, const unsigned int cubit_bc_type, const int dimension,
       Range &entities, const bool recursive = false);
 
@@ -353,7 +353,7 @@ struct DeprecatedCoreInterface : public CoreInterface {
   recursively.  Returns the contents of meshsets, but not the meshsets
   themselves if true.
   */
-  DEPRECATED PetscErrorCode get_cubit_msId_entities_by_dimension(
+  DEPRECATED MoFEMErrorCode get_cubit_msId_entities_by_dimension(
       const int msId, const unsigned int cubit_bc_type, Range &entities,
       const bool recursive = false);
 
@@ -368,7 +368,7 @@ struct DeprecatedCoreInterface : public CoreInterface {
   * \param  see CubitBC (NODESET, SIDESET or BLOCKSET and more)
   * \param meshset where to store the retrieved entities
   */
-  DEPRECATED PetscErrorCode get_cubit_msId_meshset(
+  DEPRECATED MoFEMErrorCode get_cubit_msId_meshset(
       const int msId, const unsigned int cubit_bc_type, EntityHandle &meshset);
 
   /**
@@ -381,24 +381,24 @@ struct DeprecatedCoreInterface : public CoreInterface {
   * \param  see CubitBC (NODESET, SIDESET or BLOCKSET and more).
   * \param meshsets is range of meshsets
   */
-  DEPRECATED PetscErrorCode get_cubit_meshsets(const unsigned int cubit_bc_type,
+  DEPRECATED MoFEMErrorCode get_cubit_meshsets(const unsigned int cubit_bc_type,
                                                Range &meshsets);
 
   /** \deprecated use MeshsetsManager interface instead
    */
-  DEPRECATED PetscErrorCode print_cubit_displacement_set() const;
+  DEPRECATED MoFEMErrorCode print_cubit_displacement_set() const;
 
   /** \deprecated use MeshsetsManager interface instead
    */
-  DEPRECATED PetscErrorCode print_cubit_pressure_set() const;
+  DEPRECATED MoFEMErrorCode print_cubit_pressure_set() const;
 
   /** \deprecated use MeshsetsManager interface instead
    */
-  DEPRECATED PetscErrorCode print_cubit_force_set() const;
+  DEPRECATED MoFEMErrorCode print_cubit_force_set() const;
 
   /** \deprecated use MeshsetsManager interface instead
    */
-  DEPRECATED PetscErrorCode print_cubit_materials_set() const;
+  DEPRECATED MoFEMErrorCode print_cubit_materials_set() const;
 
   /**@}*/
 
@@ -424,7 +424,7 @@ struct DeprecatedCoreInterface : public CoreInterface {
    *recursively
    *
    **/
-  DEPRECATED PetscErrorCode update_meshset_by_entities_children(
+  DEPRECATED MoFEMErrorCode update_meshset_by_entities_children(
       const EntityHandle parent, const BitRefLevel &child_bit,
       const EntityHandle child, EntityType child_type,
       const bool recursive = false, int verb = -1);
@@ -435,20 +435,20 @@ struct DeprecatedCoreInterface : public CoreInterface {
    * \todo Should be outsourced to separate interface, i.e. BitLevelManage
    *
    */
-  DEPRECATED PetscErrorCode update_field_meshset_by_entities_children(
+  DEPRECATED MoFEMErrorCode update_field_meshset_by_entities_children(
       const BitRefLevel &child_bit, int verb = -1);
 
   /** \brief update field mesheset by child entities
    * \deprecated do not us this use BitRefManager interface
    * \ingroup mofem_field
    */
-  DEPRECATED PetscErrorCode update_field_meshset_by_entities_children(
+  DEPRECATED MoFEMErrorCode update_field_meshset_by_entities_children(
       const std::string name, const BitRefLevel &child_bit, int verb = -1);
 
   /** \brief update finite element mesheset by child entities
    * \deprecated do not us this use BitRefManager interface
    */
-  DEPRECATED PetscErrorCode update_finite_element_meshset_by_entities_children(
+  DEPRECATED MoFEMErrorCode update_finite_element_meshset_by_entities_children(
       const std::string name, const BitRefLevel &child_bit,
       const EntityType fe_ent_type, int verb = -1);
 
@@ -464,7 +464,7 @@ struct DeprecatedCoreInterface : public CoreInterface {
    * \brief right shift bit ref level
    * \todo Should be outsourced to separate interface, i.e. BitLevelManage
    */
-  DEPRECATED PetscErrorCode shift_right_bit_ref(const int shift, int verb = -1);
+  DEPRECATED MoFEMErrorCode shift_right_bit_ref(const int shift, int verb = -1);
 
   /**@}*/
 
@@ -476,7 +476,7 @@ struct DeprecatedCoreInterface : public CoreInterface {
    * \param range contains tetrahedron
    * \param name Finite Element name
    */
-  DEPRECATED virtual PetscErrorCode
+  DEPRECATED virtual MoFEMErrorCode
   add_ents_to_finite_element_by_EDGEs(const Range &edge,
                                       const std::string &name) = 0;
 
@@ -490,7 +490,7 @@ struct DeprecatedCoreInterface : public CoreInterface {
    * @param  recursive take entities from meshsets in meshset
    * @return           error code
    */
-  DEPRECATED virtual PetscErrorCode
+  DEPRECATED virtual MoFEMErrorCode
   add_ents_to_finite_element_by_EDGEs(const EntityHandle meshset,
                                       const std::string &name,
                                       const bool recursive = false) = 0;
@@ -503,7 +503,7 @@ struct DeprecatedCoreInterface : public CoreInterface {
    * \param range contains tetrahedron
    * \param name Finite Element name
    */
-  DEPRECATED virtual PetscErrorCode
+  DEPRECATED virtual MoFEMErrorCode
   add_ents_to_finite_element_by_VERTICEs(const Range &vert,
                                          const std::string &name) = 0;
 
@@ -515,7 +515,7 @@ struct DeprecatedCoreInterface : public CoreInterface {
    * \param range contains tetrahedron
    * \param name Finite Element name
    */
-  DEPRECATED virtual PetscErrorCode
+  DEPRECATED virtual MoFEMErrorCode
   add_ents_to_finite_element_by_TRIs(const Range &tris,
                                      const std::string &name) = 0;
 
@@ -528,7 +528,7 @@ struct DeprecatedCoreInterface : public CoreInterface {
    * \param name Finite Element name
    * \param recursive if true parent meshset is searched recursively
    */
-  DEPRECATED virtual PetscErrorCode
+  DEPRECATED virtual MoFEMErrorCode
   add_ents_to_finite_element_by_TRIs(const EntityHandle meshset,
                                      const std::string &name,
                                      const bool recursive = false) = 0;
@@ -541,7 +541,7 @@ struct DeprecatedCoreInterface : public CoreInterface {
    * \param range contains tetrahedron
    * \param name Finite Element name
    */
-  DEPRECATED virtual PetscErrorCode
+  DEPRECATED virtual MoFEMErrorCode
   add_ents_to_finite_element_by_TETs(const Range &tets,
                                      const std::string &name) = 0;
 
@@ -554,7 +554,7 @@ struct DeprecatedCoreInterface : public CoreInterface {
    * \param name Finite Element name
    * \param recursive if true parent meshset is searched recursively
    */
-  DEPRECATED virtual PetscErrorCode
+  DEPRECATED virtual MoFEMErrorCode
   add_ents_to_finite_element_by_TETs(const EntityHandle meshset,
                                      const std::string &name,
                                      const bool recursive = false) = 0;
@@ -567,7 +567,7 @@ struct DeprecatedCoreInterface : public CoreInterface {
    * \param range contains tetrahedron
    * \param name Finite Element name
    */
-  DEPRECATED virtual PetscErrorCode
+  DEPRECATED virtual MoFEMErrorCode
   add_ents_to_finite_element_by_PRISMs(const Range &prims,
                                        const std::string &name) = 0;
 
@@ -580,7 +580,7 @@ struct DeprecatedCoreInterface : public CoreInterface {
    * \param name Finite Element name
    * \param recursive if true parent meshset is searched recursively
    */
-  DEPRECATED virtual PetscErrorCode
+  DEPRECATED virtual MoFEMErrorCode
   add_ents_to_finite_element_by_PRISMs(const EntityHandle meshset,
                                        const std::string &name,
                                        const bool recursive = false) = 0;
@@ -596,7 +596,7 @@ struct DeprecatedCoreInterface : public CoreInterface {
    * \param finite elenent type
    * \param verrbose level
    */
-  DEPRECATED virtual PetscErrorCode
+  DEPRECATED virtual MoFEMErrorCode
   add_ents_to_finite_element_EntType_by_bit_ref(const BitRefLevel &bit,
                                                 const std::string &name,
                                                 EntityType type,
@@ -614,7 +614,7 @@ struct DeprecatedCoreInterface : public CoreInterface {
    * \param finite element type
    * \param verrbose level
    */
-  DEPRECATED virtual PetscErrorCode
+  DEPRECATED virtual MoFEMErrorCode
   add_ents_to_finite_element_EntType_by_bit_ref(const BitRefLevel &bit,
                                                 const BitRefLevel &mask,
                                                 const std::string &name,
@@ -642,7 +642,7 @@ struct DeprecatedCoreInterface : public CoreInterface {
   * @return               error code
   *
   */
-  DEPRECATED PetscErrorCode build_problem(const std::string &name,
+  DEPRECATED MoFEMErrorCode build_problem(const std::string &name,
                                           const bool square_matrix,
                                           int verb = -1);
 
@@ -662,7 +662,7 @@ struct DeprecatedCoreInterface : public CoreInterface {
   * @return               error code
   *
   */
-  DEPRECATED PetscErrorCode build_problem(Problem *problem_ptr,
+  DEPRECATED MoFEMErrorCode build_problem(Problem *problem_ptr,
                                           const bool square_matrix,
                                           int verb = -1);
 
@@ -673,7 +673,7 @@ struct DeprecatedCoreInterface : public CoreInterface {
   if problem is structurally symmetric.
 
   */
-  DEPRECATED virtual PetscErrorCode build_problems(int verb = -1) = 0;
+  DEPRECATED virtual MoFEMErrorCode build_problems(int verb = -1) = 0;
 
   /** \brief build problem data structures, assuming that mesh is distributed
   (collective)
@@ -687,7 +687,7 @@ struct DeprecatedCoreInterface : public CoreInterface {
   function has to call this function.
 
   */
-  DEPRECATED PetscErrorCode build_problem_on_distributed_mesh(
+  DEPRECATED MoFEMErrorCode build_problem_on_distributed_mesh(
       const std::string &name, const bool square_matrix = true, int verb = -1);
 
   /** \brief build problem data structures, assuming that mesh is distributed
@@ -702,7 +702,7 @@ struct DeprecatedCoreInterface : public CoreInterface {
   function has to call this function.
 
   */
-  DEPRECATED PetscErrorCode build_problem_on_distributed_mesh(
+  DEPRECATED MoFEMErrorCode build_problem_on_distributed_mesh(
       Problem *problem_ptr, const bool square_matrix = true, int verb = -1);
 
   /** \brief build problem data structures, assuming that mesh is distributed
@@ -717,7 +717,7 @@ struct DeprecatedCoreInterface : public CoreInterface {
   function has to call this function.
 
   */
-  DEPRECATED virtual PetscErrorCode
+  DEPRECATED virtual MoFEMErrorCode
   build_problem_on_distributed_mesh(int verb = -1) = 0;
 
   /**
@@ -734,7 +734,7 @@ struct DeprecatedCoreInterface : public CoreInterface {
    * @param  verb        Verbosity level
    * @return             Error code
    */
-  DEPRECATED PetscErrorCode partition_mesh(const Range &ents, const int dim,
+  DEPRECATED MoFEMErrorCode partition_mesh(const Range &ents, const int dim,
                                            const int adj_dim, const int n_parts,
                                            int verb = -1);
 
@@ -745,7 +745,7 @@ struct DeprecatedCoreInterface : public CoreInterface {
   *
   * \param name problem name
   */
-  DEPRECATED PetscErrorCode partition_simple_problem(const std::string &name,
+  DEPRECATED MoFEMErrorCode partition_simple_problem(const std::string &name,
                                                      int verb = -1);
 
   /** \brief partition problem dofs (collective)
@@ -755,7 +755,7 @@ struct DeprecatedCoreInterface : public CoreInterface {
   *
   * \param name problem name
   */
-  DEPRECATED PetscErrorCode partition_problem(const std::string &name,
+  DEPRECATED MoFEMErrorCode partition_problem(const std::string &name,
                                               int verb = -1);
 
   /**
@@ -773,7 +773,7 @@ struct DeprecatedCoreInterface : public CoreInterface {
   problems.
   *
   */
-  DEPRECATED PetscErrorCode partition_compose_problem(
+  DEPRECATED MoFEMErrorCode partition_compose_problem(
       const std::string &name, const std::string &problem_for_rows,
       const bool copy_rows, const std::string &problem_for_cols,
       const bool copy_cols, int verb = -1);
@@ -789,7 +789,7 @@ struct DeprecatedCoreInterface : public CoreInterface {
   * @param  main_problem main problem
   * @return              error code
   */
-  DEPRECATED PetscErrorCode build_sub_problem(
+  DEPRECATED MoFEMErrorCode build_sub_problem(
       const std::string &out_name, const std::vector<std::string> &fields_row,
       const std::vector<std::string> &fields_col,
       const std::string &main_problem, const bool square_matrix = true,
@@ -801,7 +801,7 @@ struct DeprecatedCoreInterface : public CoreInterface {
    *
    * \param name problem name
    */
-  DEPRECATED PetscErrorCode partition_ghost_dofs(const std::string &name,
+  DEPRECATED MoFEMErrorCode partition_ghost_dofs(const std::string &name,
                                                  int verb = -1);
 
   /** \brief partition finite elements
@@ -814,7 +814,7 @@ struct DeprecatedCoreInterface : public CoreInterface {
    *
    * \param name problem name
    */
-  DEPRECATED PetscErrorCode partition_finite_elements(
+  DEPRECATED MoFEMErrorCode partition_finite_elements(
       const std::string &name, bool part_from_moab = false, int low_proc = -1,
       int hi_proc = -1, int verb = -1);
 
@@ -832,7 +832,7 @@ struct DeprecatedCoreInterface : public CoreInterface {
    * @param  verb    verbosity level
    * @return         error code
    */
-  DEPRECATED PetscErrorCode get_problem_elements_layout(
+  DEPRECATED MoFEMErrorCode get_problem_elements_layout(
       const std::string &name, const std::string &fe_name, PetscLayout *layout,
       int verb = -1);
 
@@ -850,7 +850,7 @@ struct DeprecatedCoreInterface : public CoreInterface {
    * \param RowColData specify what data is taken from Row, Col or Data
    * \param Vec the vector where data is stored
    */
-  DEPRECATED PetscErrorCode VecCreateSeq(const std::string &name, RowColData rc,
+  DEPRECATED MoFEMErrorCode VecCreateSeq(const std::string &name, RowColData rc,
                                          Vec *V) const;
 
   /** \deprecated use VecManager
@@ -863,7 +863,7 @@ struct DeprecatedCoreInterface : public CoreInterface {
   * \param RowColData specify what data is taken from Row, Col or Data
   * \param Vec the vector where data is stored
   */
-  DEPRECATED PetscErrorCode VecCreateGhost(const std::string &name,
+  DEPRECATED MoFEMErrorCode VecCreateGhost(const std::string &name,
                                            RowColData rc, Vec *V) const;
 
   /**@}*/
@@ -888,7 +888,7 @@ struct DeprecatedCoreInterface : public CoreInterface {
   \retval idy indexes in problem_y
 
   */
-  DEPRECATED PetscErrorCode ISCreateFromProblemFieldToOtherProblemField(
+  DEPRECATED MoFEMErrorCode ISCreateFromProblemFieldToOtherProblemField(
       const std::string &x_problem, const std::string &x_field_name,
       RowColData x_rc, const std::string &y_problem,
       const std::string &y_field_name, RowColData y_rc, std::vector<int> &idx,
@@ -910,7 +910,7 @@ struct DeprecatedCoreInterface : public CoreInterface {
   \retval iy IS indexes in problem_y
 
   */
-  DEPRECATED PetscErrorCode ISCreateFromProblemFieldToOtherProblemField(
+  DEPRECATED MoFEMErrorCode ISCreateFromProblemFieldToOtherProblemField(
       const std::string &x_problem, const std::string &x_field_name,
       RowColData x_rc, const std::string &y_problem,
       const std::string &y_field_name, RowColData y_rc, IS *ix, IS *iy,
@@ -926,7 +926,7 @@ struct DeprecatedCoreInterface : public CoreInterface {
   * \retval is out value
 
   */
-  DEPRECATED PetscErrorCode ISCreateProblemOrder(const std::string &problem,
+  DEPRECATED MoFEMErrorCode ISCreateProblemOrder(const std::string &problem,
                                                  RowColData rc, int min_order,
                                                  int max_order, IS *is,
                                                  int verb = -1) const;
@@ -943,7 +943,7 @@ struct DeprecatedCoreInterface : public CoreInterface {
   * \retval is out value
 
   */
-  DEPRECATED PetscErrorCode ISCreateProblemFieldAndRank(
+  DEPRECATED MoFEMErrorCode ISCreateProblemFieldAndRank(
       const std::string &problem, RowColData rc, const std::string &field,
       int min_coeff_idx, int max_coeff_idx, IS *is, int verb = -1) const;
 
@@ -970,7 +970,7 @@ struct DeprecatedCoreInterface : public CoreInterface {
   * \retval newctx scatter
 
   */
-  DEPRECATED PetscErrorCode VecScatterCreate(
+  DEPRECATED MoFEMErrorCode VecScatterCreate(
       Vec xin, const std::string &x_problem, const std::string &x_field_name,
       RowColData x_rc, Vec yin, const std::string &y_problem,
       const std::string &y_field_name, RowColData y_rc, VecScatter *newctx,
@@ -987,7 +987,7 @@ struct DeprecatedCoreInterface : public CoreInterface {
   * \retval newctx scatter
 
   */
-  DEPRECATED PetscErrorCode
+  DEPRECATED MoFEMErrorCode
   VecScatterCreate(Vec xin, const std::string &x_problem, RowColData x_rc,
                    Vec yin, const std::string &y_problem, RowColData y_rc,
                    VecScatter *newctx, int verb = -1) const;
@@ -1014,7 +1014,7 @@ struct DeprecatedCoreInterface : public CoreInterface {
    * SCATTER_FORWARD set vector V from data field entities
    *
    */
-  DEPRECATED PetscErrorCode
+  DEPRECATED MoFEMErrorCode
   set_local_ghost_vector(const Problem *problem_ptr, RowColData rc, Vec V,
                          InsertMode mode, ScatterMode scatter_mode) const;
 
@@ -1034,7 +1034,7 @@ struct DeprecatedCoreInterface : public CoreInterface {
    * SCATTER_FORWARD set vector V from data field entities
    *
    */
-  DEPRECATED PetscErrorCode
+  DEPRECATED MoFEMErrorCode
   set_local_ghost_vector(const std::string &name, RowColData rc, Vec V,
                          InsertMode mode, ScatterMode scatter_mode) const;
 
@@ -1054,7 +1054,7 @@ struct DeprecatedCoreInterface : public CoreInterface {
   * SCATTER_REVERSE set data to field entities form V vector.
   *
   */
-  DEPRECATED PetscErrorCode
+  DEPRECATED MoFEMErrorCode
   set_global_ghost_vector(const Problem *problem_ptr, RowColData rc, Vec V,
                           InsertMode mode, ScatterMode scatter_mode) const;
 
@@ -1074,7 +1074,7 @@ struct DeprecatedCoreInterface : public CoreInterface {
   * SCATTER_REVERSE set data to field entities form V vector.
   *
   */
-  DEPRECATED PetscErrorCode
+  DEPRECATED MoFEMErrorCode
   set_global_ghost_vector(const std::string &name, RowColData rc, Vec V,
                           InsertMode mode, ScatterMode scatter_mode) const;
 
@@ -1094,7 +1094,7 @@ struct DeprecatedCoreInterface : public CoreInterface {
    * SCATTER_REVERSE set data to field entities form V vector.
    *
    */
-  DEPRECATED PetscErrorCode set_other_local_ghost_vector(
+  DEPRECATED MoFEMErrorCode set_other_local_ghost_vector(
       const Problem *problem_ptr, const std::string &fiel_name,
       const std::string &cpy_field_name, RowColData rc, Vec V, InsertMode mode,
       ScatterMode scatter_mode, int verb = -1);
@@ -1115,7 +1115,7 @@ struct DeprecatedCoreInterface : public CoreInterface {
    * SCATTER_REVERSE set data to field entities form V vector.
    *
    */
-  DEPRECATED PetscErrorCode set_other_local_ghost_vector(
+  DEPRECATED MoFEMErrorCode set_other_local_ghost_vector(
       const std::string &name, const std::string &field_name,
       const std::string &cpy_field_name, RowColData rc, Vec V, InsertMode mode,
       ScatterMode scatter_mode, int verb = -1);
@@ -1139,7 +1139,7 @@ struct DeprecatedCoreInterface : public CoreInterface {
   * SCATTER_REVERSE set data to field entities form V vector.
   *
   */
-  DEPRECATED PetscErrorCode set_other_global_ghost_vector(
+  DEPRECATED MoFEMErrorCode set_other_global_ghost_vector(
       const Problem *problem_ptr, const std::string &field_name,
       const std::string &cpy_field_name, RowColData rc, Vec V, InsertMode mode,
       ScatterMode scatter_mode, int verb = -1);
@@ -1163,7 +1163,7 @@ struct DeprecatedCoreInterface : public CoreInterface {
   * SCATTER_REVERSE set data to field entities form V vector.
   *
   */
-  DEPRECATED PetscErrorCode set_other_global_ghost_vector(
+  DEPRECATED MoFEMErrorCode set_other_global_ghost_vector(
       const std::string &name, const std::string &field_name,
       const std::string &cpy_field_name, RowColData rc, Vec V, InsertMode mode,
       ScatterMode scatter_mode, int verb = -1);
@@ -1189,7 +1189,7 @@ struct DeprecatedCoreInterface : public CoreInterface {
    * is not database
    *
    */
-  DEPRECATED PetscErrorCode field_axpy(const double alpha,
+  DEPRECATED MoFEMErrorCode field_axpy(const double alpha,
                                        const std::string &fiel_name_x,
                                        const std::string &field_name_y,
                                        bool error_if_missing = false,
@@ -1204,7 +1204,7 @@ struct DeprecatedCoreInterface : public CoreInterface {
    * \field_name  is a field name
    *
    */
-  DEPRECATED PetscErrorCode field_scale(const double alpha,
+  DEPRECATED MoFEMErrorCode field_scale(const double alpha,
                                         const std::string &field_name);
 
   /** \brief use FieldBlas
@@ -1219,7 +1219,7 @@ struct DeprecatedCoreInterface : public CoreInterface {
    * \param field_name
    *
    */
-  DEPRECATED PetscErrorCode set_field(const double val, const EntityType type,
+  DEPRECATED MoFEMErrorCode set_field(const double val, const EntityType type,
                                       const std::string &field_name);
 
   /** \deprecated use FieldBlas
@@ -1235,7 +1235,7 @@ struct DeprecatedCoreInterface : public CoreInterface {
    * \param field_name
    *
    */
-  DEPRECATED PetscErrorCode set_field(const double val, const EntityType type,
+  DEPRECATED MoFEMErrorCode set_field(const double val, const EntityType type,
                                       const Range &ents,
                                       const std::string &field_name);
 
@@ -1252,7 +1252,7 @@ struct DeprecatedCoreInterface : public CoreInterface {
    * bit ref level of adjacent entities is equal to bit ref level of adjacent
    * entities
    */
-  PetscErrorCode get_adjacencies_equality(const EntityHandle from_entiti,
+  MoFEMErrorCode get_adjacencies_equality(const EntityHandle from_entiti,
                                           const int to_dimension,
                                           Range &adj_entities) const;
 
@@ -1262,7 +1262,7 @@ struct DeprecatedCoreInterface : public CoreInterface {
    * bit ref level of adjacent entities is any of bit ref level of adjacent
    * entities
    */
-  PetscErrorCode get_adjacencies_any(const EntityHandle from_entiti,
+  MoFEMErrorCode get_adjacencies_any(const EntityHandle from_entiti,
                                      const int to_dimension,
                                      Range &adj_entities) const;
 
@@ -1273,7 +1273,7 @@ struct DeprecatedCoreInterface : public CoreInterface {
    * bit ref level of adjacent entities is equal to bit ref level of adjacent
    * entities
    */
-  PetscErrorCode
+  MoFEMErrorCode
   get_adjacencies(const Problem *problem_ptr, const EntityHandle *from_entities,
                   const int num_netities, const int to_dimension,
                   Range &adj_entities,
@@ -1287,7 +1287,7 @@ struct DeprecatedCoreInterface : public CoreInterface {
    * bit ref level of adjacent entities is equal to bit ref level of adjacent
    * entities
    */
-  PetscErrorCode
+  MoFEMErrorCode
   get_adjacencies(const BitRefLevel &bit, const EntityHandle *from_entities,
                   const int num_netities, const int to_dimension,
                   Range &adj_entities,

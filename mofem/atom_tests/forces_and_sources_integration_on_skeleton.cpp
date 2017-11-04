@@ -40,9 +40,9 @@ int main(int argc, char *argv[]) {
   PetscBool flg = PETSC_TRUE;
   char mesh_file_name[255];
   #if PETSC_VERSION_GE(3,6,4)
-  ierr = PetscOptionsGetString(PETSC_NULL,"","-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  ierr = PetscOptionsGetString(PETSC_NULL,"","-my_file",mesh_file_name,255,&flg); CHKERRG(ierr);
   #else
-  ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRG(ierr);
   #endif
   if(flg != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
@@ -53,7 +53,7 @@ int main(int argc, char *argv[]) {
 
   const char *option;
   option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERRG(rval);
 
   //Create MoFEM (Joseph) database
   MoFEM::Core core(moab);
@@ -62,59 +62,59 @@ int main(int argc, char *argv[]) {
   //set entitities bit level
   BitRefLevel bit_level0;
   bit_level0.set(0);
-  ierr = m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(0,3,bit_level0); CHKERRQ(ierr);
+  ierr = m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(0,3,bit_level0); CHKERRG(ierr);
 
   //Fields
-  ierr = m_field.add_field("F2",HDIV,AINSWORTH_LEGENDRE_BASE,1); CHKERRQ(ierr);
+  ierr = m_field.add_field("F2",HDIV,AINSWORTH_LEGENDRE_BASE,1); CHKERRG(ierr);
 
   //meshset consisting all entities in mesh
   EntityHandle root_set = moab.get_root_set();
   //add entities to field
-  ierr = m_field.add_ents_to_field_by_type(root_set,MBTET,"F2"); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_field_by_type(root_set,MBTET,"F2"); CHKERRG(ierr);
 
   //set app. order
   //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
   int order = 1;
-  ierr = m_field.set_field_order(root_set,MBTET,"F2",order); CHKERRQ(ierr);
-  ierr = m_field.set_field_order(root_set,MBTRI,"F2",order); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(root_set,MBTET,"F2",order); CHKERRG(ierr);
+  ierr = m_field.set_field_order(root_set,MBTRI,"F2",order); CHKERRG(ierr);
 
-  ierr = m_field.build_fields(); CHKERRQ(ierr);
+  ierr = m_field.build_fields(); CHKERRG(ierr);
 
   //add elements
-  ierr = m_field.add_finite_element("V1"); CHKERRQ(ierr);
-  ierr = m_field.add_finite_element("S2"); CHKERRQ(ierr);
-  ierr = m_field.modify_finite_element_add_field_row("V1","F2"); CHKERRQ(ierr);
-  ierr = m_field.modify_finite_element_add_field_col("V1","F2"); CHKERRQ(ierr);
-  ierr = m_field.modify_finite_element_add_field_data("V1","F2"); CHKERRQ(ierr);
-  ierr = m_field.modify_finite_element_add_field_row("S2","F2"); CHKERRQ(ierr);
-  ierr = m_field.modify_finite_element_add_field_col("S2","F2"); CHKERRQ(ierr);
-  ierr = m_field.modify_finite_element_add_field_data("S2","F2"); CHKERRQ(ierr);
+  ierr = m_field.add_finite_element("V1"); CHKERRG(ierr);
+  ierr = m_field.add_finite_element("S2"); CHKERRG(ierr);
+  ierr = m_field.modify_finite_element_add_field_row("V1","F2"); CHKERRG(ierr);
+  ierr = m_field.modify_finite_element_add_field_col("V1","F2"); CHKERRG(ierr);
+  ierr = m_field.modify_finite_element_add_field_data("V1","F2"); CHKERRG(ierr);
+  ierr = m_field.modify_finite_element_add_field_row("S2","F2"); CHKERRG(ierr);
+  ierr = m_field.modify_finite_element_add_field_col("S2","F2"); CHKERRG(ierr);
+  ierr = m_field.modify_finite_element_add_field_data("S2","F2"); CHKERRG(ierr);
 
-  ierr = m_field.add_ents_to_finite_element_by_type(root_set,MBTET,"V1"); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_finite_element_by_type(root_set,MBTET,"V1"); CHKERRG(ierr);
   Range faces;
   ierr = m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
     bit_level0,BitRefLevel().set(),MBTRI,faces
-  ); CHKERRQ(ierr);
-  ierr = m_field.add_ents_to_finite_element_by_type(faces,MBTRI,"S2"); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
+  ierr = m_field.add_ents_to_finite_element_by_type(faces,MBTRI,"S2"); CHKERRG(ierr);
 
-  ierr = m_field.build_finite_elements(); CHKERRQ(ierr);
-  ierr = m_field.build_adjacencies(bit_level0); CHKERRQ(ierr);
+  ierr = m_field.build_finite_elements(); CHKERRG(ierr);
+  ierr = m_field.build_adjacencies(bit_level0); CHKERRG(ierr);
 
   //Problems
-  ierr = m_field.add_problem("P1"); CHKERRQ(ierr);
+  ierr = m_field.add_problem("P1"); CHKERRG(ierr);
 
   //set refinement level for problem
-  ierr = m_field.modify_problem_ref_level_add_bit("P1",bit_level0); CHKERRQ(ierr);
-  ierr = m_field.modify_problem_add_finite_element("P1","V1"); CHKERRQ(ierr);
-  ierr = m_field.modify_problem_add_finite_element("P1","S2"); CHKERRQ(ierr);
+  ierr = m_field.modify_problem_ref_level_add_bit("P1",bit_level0); CHKERRG(ierr);
+  ierr = m_field.modify_problem_add_finite_element("P1","V1"); CHKERRG(ierr);
+  ierr = m_field.modify_problem_add_finite_element("P1","S2"); CHKERRG(ierr);
 
   //build problems
   ProblemsManager *prb_mng_ptr;
-  ierr = m_field.getInterface(prb_mng_ptr); CHKERRQ(ierr);
-  ierr = prb_mng_ptr->buildProblem("P1",true); CHKERRQ(ierr);
-  ierr = prb_mng_ptr->partitionProblem("P1"); CHKERRQ(ierr);
-  ierr = prb_mng_ptr->partitionFiniteElements("P1"); CHKERRQ(ierr);
-  ierr = prb_mng_ptr->partitionGhostDofs("P1"); CHKERRQ(ierr);
+  ierr = m_field.getInterface(prb_mng_ptr); CHKERRG(ierr);
+  ierr = prb_mng_ptr->buildProblem("P1",true); CHKERRG(ierr);
+  ierr = prb_mng_ptr->partitionProblem("P1"); CHKERRG(ierr);
+  ierr = prb_mng_ptr->partitionFiniteElements("P1"); CHKERRG(ierr);
+  ierr = prb_mng_ptr->partitionGhostDofs("P1"); CHKERRG(ierr);
 
   struct SkeletonFE: public FaceElementForcesAndSourcesCore::UserDataOperator {
 
@@ -123,7 +123,7 @@ int main(int argc, char *argv[]) {
       OpVolSide():
       VolumeElementForcesAndSourcesCoreOnSide::UserDataOperator("F2",UserDataOperator::OPROW) {
       }
-      PetscErrorCode doWork(int side, EntityType type,DataForcesAndSourcesCore::EntData &data) {
+      MoFEMErrorCode doWork(int side, EntityType type,DataForcesAndSourcesCore::EntData &data) {
         MoFEMFunctionBeginHot;
         std::cout << "\tVolume" << getFEMethod()->nInTheLoop << std::endl;
         std::cout << "\tGauss pts " << getGaussPts() << std::endl;
@@ -150,14 +150,14 @@ int main(int argc, char *argv[]) {
 
     int getRule(int order) { return order; };
 
-    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
+    MoFEMErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
       
       MoFEMFunctionBeginHot;
       if(type == MBTRI && side == 0) {
         std::cout << "Face" << std::endl;
         std::cout << "Gauss pts " << getGaussPts() << std::endl;
         std::cout << "Coords " << getCoordsAtGaussPts() << endl;
-        ierr = loopSideVolumes("V1",volSideFe); CHKERRQ(ierr);
+        ierr = loopSideVolumes("V1",volSideFe); CHKERRG(ierr);
       }
       MoFEMFunctionReturnHot(0);
     }
@@ -166,14 +166,14 @@ int main(int argc, char *argv[]) {
 
   FaceElementForcesAndSourcesCore face_fe(m_field);
   face_fe.getOpPtrVector().push_back(new SkeletonFE(m_field));
-  ierr = m_field.loop_finite_elements("P1","S2",face_fe);  CHKERRQ(ierr);
+  ierr = m_field.loop_finite_elements("P1","S2",face_fe);  CHKERRG(ierr);
 
 
   } catch (MoFEMException const &e) {
     SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
   }
 
-  ierr = PetscFinalize(); CHKERRQ(ierr);
+  ierr = PetscFinalize(); CHKERRG(ierr);
 
   return 0;
 

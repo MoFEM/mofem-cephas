@@ -164,7 +164,7 @@ struct ThermalElement {
       *
       * temperature gradient is calculated multiplying derivatives of shape functions by degrees of freedom.
       */
-    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data);
+    MoFEMErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data);
 
   };
 
@@ -183,7 +183,7 @@ struct ThermalElement {
       *
       * temperature temperature or rate of temperature is calculated multiplying shape functions by degrees of freedom
       */
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
       MoFEMFunctionBeginHot;
       try {
@@ -272,7 +272,7 @@ struct ThermalElement {
       * F = int diffN^T k gard_T dOmega^2
       *
       */
-    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data);
+    MoFEMErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data);
 
   };
 
@@ -306,7 +306,7 @@ struct ThermalElement {
       * K = int diffN^T k diffN^T dOmega^2
       *
       */
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int row_side,int col_side,
       EntityType row_type,EntityType col_type,
       DataForcesAndSourcesCore::EntData &row_data,
@@ -335,7 +335,7 @@ struct ThermalElement {
       * F = int N^T c (dT/dt) dOmega^2
       *
       */
-    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data);
+    MoFEMErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data);
 
   };
 
@@ -357,7 +357,7 @@ struct ThermalElement {
       * M = int N^T c N dOmega^2
       *
       */
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int row_side,int col_side,
       EntityType row_type,EntityType col_type,
       DataForcesAndSourcesCore::EntData &row_data,
@@ -398,7 +398,7 @@ struct ThermalElement {
       * F = int_S N^T * flux dS
       *
       */
-    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data);
+    MoFEMErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data);
 
   };
 
@@ -439,7 +439,7 @@ struct ThermalElement {
       * K = intS 4* N^T* sIgma* eMissivity* N*  T^3 dS (Reference _ see Finite Element Simulation of Heat Transfer
       * by jean-Michel Bergheau)
     */
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int row_side,int col_side,
       EntityType row_type,EntityType col_type,
       DataForcesAndSourcesCore::EntData &row_data,
@@ -479,7 +479,7 @@ struct ThermalElement {
       *
       *  R=int_S N^T * sIgma * eMissivity * (Ta^4 -Ts^4) dS
      **/
-    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data);
+    MoFEMErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data);
 
   };
 
@@ -516,7 +516,7 @@ struct ThermalElement {
     /** brief calculate Convection condition on the right hand side
       *  R=int_S N^T*alpha*N_f  dS **/
 
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int side,EntityType type,DataForcesAndSourcesCore::EntData &data
     );
 
@@ -554,7 +554,7 @@ struct ThermalElement {
      *
      * K = intS N^T alpha N dS
      */
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int row_side,int col_side,
       EntityType row_type,EntityType col_type,
       DataForcesAndSourcesCore::EntData &row_data,
@@ -581,8 +581,8 @@ struct ThermalElement {
       rateName(rate_name) {
     }
 
-    PetscErrorCode preProcess();
-    PetscErrorCode postProcess();
+    MoFEMErrorCode preProcess();
+    MoFEMErrorCode postProcess();
 
   };
 
@@ -601,7 +601,7 @@ struct ThermalElement {
       mask.set();
     }
 
-    PetscErrorCode postProcess();
+    MoFEMErrorCode postProcess();
 
   };
 
@@ -613,7 +613,7 @@ struct ThermalElement {
     * \param field name
     * \param name of mesh nodal positions (if not defined nodal coordinates are used)
     */
-  PetscErrorCode addThermalElements(const std::string field_name,const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS");
+  MoFEMErrorCode addThermalElements(const std::string field_name,const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS");
 
   /** \brief add heat flux element
     * \infroup mofem_thermal_elem
@@ -624,7 +624,7 @@ struct ThermalElement {
     * \param field name
     * \param name of mesh nodal positions (if not defined nodal coordinates are used)
     */
-  PetscErrorCode addThermalFluxElement(const std::string field_name,const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS");
+  MoFEMErrorCode addThermalFluxElement(const std::string field_name,const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS");
 
 
   /** \brief add convection element
@@ -636,7 +636,7 @@ struct ThermalElement {
   * \param field name
   * \param name of mesh nodal positions (if not defined nodal coordinates are used)
   */
-  PetscErrorCode addThermalConvectionElement(const std::string field_name,const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS");
+  MoFEMErrorCode addThermalConvectionElement(const std::string field_name,const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS");
 
   /** \brief add Non-linear Radiation element
   * \infroup mofem_thermal_elem
@@ -647,40 +647,40 @@ struct ThermalElement {
   * \param field name
   * \param name of mesh nodal positions (if not defined nodal coordinates are used)
   */
-  PetscErrorCode addThermalRadiationElement(const std::string field_name,const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS");
+  MoFEMErrorCode addThermalRadiationElement(const std::string field_name,const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS");
 
   /** \brief this function is used in case of stationary problem to set elements for rhs
     * \infroup mofem_thermal_elem
     */
-  PetscErrorCode setThermalFiniteElementRhsOperators(string field_name,Vec &F);
+  MoFEMErrorCode setThermalFiniteElementRhsOperators(string field_name,Vec &F);
 
   /** \brief this function is used in case of stationary heat conductivity problem for lhs
     * \infroup mofem_thermal_elem
     */
-  PetscErrorCode setThermalFiniteElementLhsOperators(string field_name,Mat A);
+  MoFEMErrorCode setThermalFiniteElementLhsOperators(string field_name,Mat A);
 
   /** \brief this function is used in case of stationary problem for heat flux terms
     * \infroup mofem_thermal_elem
     */
-  PetscErrorCode setThermalFluxFiniteElementRhsOperators(string field_name,Vec &F,const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS");
+  MoFEMErrorCode setThermalFluxFiniteElementRhsOperators(string field_name,Vec &F,const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS");
 
   /* \brief linear Steady convection terms in lhs
    */
-  PetscErrorCode setThermalConvectionFiniteElementRhsOperators(string field_name,Vec &F,const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS");
+  MoFEMErrorCode setThermalConvectionFiniteElementRhsOperators(string field_name,Vec &F,const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS");
 
   /* \brief linear Steady convection terms in rhs
    */
-  PetscErrorCode setThermalConvectionFiniteElementLhsOperators(string field_name,Mat A,const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS");
+  MoFEMErrorCode setThermalConvectionFiniteElementLhsOperators(string field_name,Mat A,const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS");
 
   /** \brief set up operators for unsteady heat flux; convection; radiation problem
     * \infroup mofem_thermal_elem
     */
-  PetscErrorCode setTimeSteppingProblem(string field_name,string rate_name,const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS");
+  MoFEMErrorCode setTimeSteppingProblem(string field_name,string rate_name,const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS");
 
   /** \brief set up operators for unsteady heat flux; convection; radiation problem
     * \infroup mofem_thermal_elem
     */
-  PetscErrorCode setTimeSteppingProblem(TsCtx &ts_ctx,string field_name,string rate_name,const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS");
+  MoFEMErrorCode setTimeSteppingProblem(TsCtx &ts_ctx,string field_name,string rate_name,const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS");
 
 };
 

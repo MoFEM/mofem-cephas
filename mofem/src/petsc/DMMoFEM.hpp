@@ -22,6 +22,8 @@
 
 #define DM_NO_ELEMENT "DMNONEFE"
 
+namespace MoFEM {
+
 /**
   * \brief Register MoFEM problem
   * \ingroup dm
@@ -107,7 +109,7 @@ PetscErrorCode DMMoFEMGetSquareProblem(DM dm,PetscBool *square_problem);
  * This allows for tag reduction or tag exchange, f.e.
 
  \code
- ierr = DMMoFEMGetSquareProblem(dm,"SHELL_ELEMENT"); CHKERRQ(ierr);
+ ierr = DMMoFEMGetSquareProblem(dm,"SHELL_ELEMENT"); CHKERRG(ierr);
  Tag th;
  rval = mField.get_moab().tag_get_handle("ADAPT_ORDER",th); CHKERRQ_MOAB(rval);
  ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
@@ -685,7 +687,7 @@ PetscErrorCode DMCreateFieldIS_MoFEM(DM dm, PetscInt *numFields, char ***fieldNa
  *
  * \code
  * IS is;
- * ierr = DMMoFEMGetFieldIS(dm,ROW,"DISP",&is_disp); CHKERRQ(ierr);
+ * ierr = DMMoFEMGetFieldIS(dm,ROW,"DISP",&is_disp); CHKERRG(ierr);
  * \endcode
  *
  *
@@ -693,7 +695,6 @@ PetscErrorCode DMCreateFieldIS_MoFEM(DM dm, PetscInt *numFields, char ***fieldNa
  */
 PetscErrorCode DMMoFEMGetFieldIS(DM dm,RowColData rc,const char field_name[],IS *is);
 
-namespace MoFEM {
 
   static const MOFEMuuid IDD_DMCTX = MOFEMuuid(BitIntefaceId(DMCTX_INTERFACE));
 
@@ -710,9 +711,9 @@ namespace MoFEM {
    * \ingroup dm
    *
    */
-  struct DMCtx: public MoFEM::UnknownInterface {
+  struct DMCtx: public UnknownInterface {
 
-    PetscErrorCode query_interface(const MOFEMuuid& uuid,UnknownInterface** iface) const;
+    MoFEMErrorCode query_interface(const MOFEMuuid& uuid,UnknownInterface** iface) const;
 
     Interface *mField_ptr; 		 ///< MoFEM interface
     PetscBool isProblemBuild;  ///< True if problem is build
@@ -750,6 +751,7 @@ namespace MoFEM {
     boost::shared_ptr<TsCtx>	 tsCtx;	  ///< data structure for TS solver
 
   };
+
 
 }
 

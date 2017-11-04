@@ -31,7 +31,7 @@ AnalyticalDirichletBC::ApproxField::OpHoCoord::OpHoCoord(const std::string field
 FaceElementForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSourcesCore::UserDataOperator::OPROW),
 hoCoords(ho_coords) {}
 
-PetscErrorCode AnalyticalDirichletBC::ApproxField::OpHoCoord::doWork(
+MoFEMErrorCode AnalyticalDirichletBC::ApproxField::OpHoCoord::doWork(
   int side,EntityType type,DataForcesAndSourcesCore::EntData &data
 ) {
   MoFEMFunctionBeginHot;
@@ -68,7 +68,7 @@ hoCoords(ho_coords)
 
 }
 
-PetscErrorCode AnalyticalDirichletBC::ApproxField::OpLhs::doWork(
+MoFEMErrorCode AnalyticalDirichletBC::ApproxField::OpLhs::doWork(
   int row_side,int col_side,
   EntityType row_type,EntityType col_type,
   DataForcesAndSourcesCore::EntData &row_data,
@@ -82,7 +82,7 @@ PetscErrorCode AnalyticalDirichletBC::ApproxField::OpLhs::doWork(
 
 
   const FENumeredDofEntity *dof_ptr;
-  ierr = getNumeredEntFiniteElementPtr()->getRowDofsByPetscGlobalDofIdx(row_data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
+  ierr = getNumeredEntFiniteElementPtr()->getRowDofsByPetscGlobalDofIdx(row_data.getIndices()[0],&dof_ptr); CHKERRG(ierr);
   int rank = dof_ptr->getNbOfCoeffs();
 
   int nb_row_dofs = row_data.getIndices().size()/rank;
@@ -170,7 +170,7 @@ PetscErrorCode AnalyticalDirichletBC::ApproxField::OpLhs::doWork(
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
       }
 
-      ierr = MatSetValues(getFEMethod()->snes_B,nb_rows,rows,nb_cols,cols,data,ADD_VALUES); CHKERRQ(ierr);
+      ierr = MatSetValues(getFEMethod()->snes_B,nb_rows,rows,nb_cols,cols,data,ADD_VALUES); CHKERRG(ierr);
       if( (row_type != col_type) || (row_side != col_side) ) {
         if(nb_rows != transNN.size2()) {
           SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
@@ -178,7 +178,7 @@ PetscErrorCode AnalyticalDirichletBC::ApproxField::OpLhs::doWork(
         if(nb_cols != transNN.size1()) {
           SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
         }
-        ierr = MatSetValues(getFEMethod()->snes_B,nb_cols,cols,nb_rows,rows,trans_data,ADD_VALUES); CHKERRQ(ierr);
+        ierr = MatSetValues(getFEMethod()->snes_B,nb_cols,cols,nb_rows,rows,trans_data,ADD_VALUES); CHKERRG(ierr);
       }
 
     }
@@ -199,7 +199,7 @@ PetscErrorCode AnalyticalDirichletBC::ApproxField::OpLhs::doWork(
   }
 
 
-  PetscErrorCode AnalyticalDirichletBC::DirichletBC::iNitalize() {
+  MoFEMErrorCode AnalyticalDirichletBC::DirichletBC::iNitalize() {
     MoFEMFunctionBeginHot;
     if(mapZeroRows.empty()) {
       if(!trisPtr) {
@@ -209,17 +209,17 @@ PetscErrorCode AnalyticalDirichletBC::ApproxField::OpLhs::doWork(
           "Need to initialized from AnalyticalDirichletBC::solveProblem"
         );
       }
-      ierr = iNitalize(*trisPtr); CHKERRQ(ierr);
+      ierr = iNitalize(*trisPtr); CHKERRG(ierr);
     }
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode AnalyticalDirichletBC::DirichletBC::iNitalize(Range &tris) {
+  MoFEMErrorCode AnalyticalDirichletBC::DirichletBC::iNitalize(Range &tris) {
     MoFEMFunctionBeginHot;
     ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
     Range ents;
-    rval = mField.get_moab().get_connectivity(tris,ents,true); CHKERRQ_MOAB(rval);
-    ierr = mField.get_moab().get_adjacencies(tris,1,false,ents,moab::Interface::UNION); CHKERRQ(ierr);
+    rval = mField.get_moab().get_connectivity(tris,ents,true); CHKERRG(rval);
+    ierr = mField.get_moab().get_adjacencies(tris,1,false,ents,moab::Interface::UNION); CHKERRG(ierr);
     ents.merge(tris);
     for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {
       for(_IT_NUMEREDDOF_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problemPtr,fieldName,*eit,pcomm->rank(),dof)) {
@@ -239,69 +239,69 @@ PetscErrorCode AnalyticalDirichletBC::ApproxField::OpLhs::doWork(
 
   AnalyticalDirichletBC::AnalyticalDirichletBC(MoFEM::Interface& m_field): approxField(m_field) {};
 
-  PetscErrorCode AnalyticalDirichletBC::setFiniteElement(
+  MoFEMErrorCode AnalyticalDirichletBC::setFiniteElement(
     MoFEM::Interface &m_field,string fe,string field,Range& tris,string nodals_positions
   ) {
     MoFEMFunctionBeginHot;
 
-    ierr = m_field.add_finite_element(fe,MF_ZERO); CHKERRQ(ierr);
-    ierr = m_field.modify_finite_element_add_field_row(fe,field); CHKERRQ(ierr);
-    ierr = m_field.modify_finite_element_add_field_col(fe,field); CHKERRQ(ierr);
-    ierr = m_field.modify_finite_element_add_field_data(fe,field); CHKERRQ(ierr);
+    ierr = m_field.add_finite_element(fe,MF_ZERO); CHKERRG(ierr);
+    ierr = m_field.modify_finite_element_add_field_row(fe,field); CHKERRG(ierr);
+    ierr = m_field.modify_finite_element_add_field_col(fe,field); CHKERRG(ierr);
+    ierr = m_field.modify_finite_element_add_field_data(fe,field); CHKERRG(ierr);
     if(m_field.check_field(nodals_positions)) {
-      ierr = m_field.modify_finite_element_add_field_data(fe,nodals_positions); CHKERRQ(ierr);
+      ierr = m_field.modify_finite_element_add_field_data(fe,nodals_positions); CHKERRG(ierr);
     }
-    ierr = m_field.add_ents_to_finite_element_by_type(tris,MBTRI,fe); CHKERRQ(ierr);
+    ierr = m_field.add_ents_to_finite_element_by_type(tris,MBTRI,fe); CHKERRG(ierr);
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode AnalyticalDirichletBC::setUpProblem(
+  MoFEMErrorCode AnalyticalDirichletBC::setUpProblem(
     MoFEM::Interface &m_field,string problem
   ) {
     MoFEMFunctionBeginHot;
 
 
-    ierr = m_field.getInterface<VecManager>()->vecCreateGhost(problem,ROW,&F); CHKERRQ(ierr);
-    ierr = m_field.getInterface<VecManager>()->vecCreateGhost(problem,COL,&D); CHKERRQ(ierr);
-    ierr = m_field.MatCreateMPIAIJWithArrays(problem,&A); CHKERRQ(ierr);
+    ierr = m_field.getInterface<VecManager>()->vecCreateGhost(problem,ROW,&F); CHKERRG(ierr);
+    ierr = m_field.getInterface<VecManager>()->vecCreateGhost(problem,COL,&D); CHKERRG(ierr);
+    ierr = m_field.MatCreateMPIAIJWithArrays(problem,&A); CHKERRG(ierr);
 
-    ierr = KSPCreate(PETSC_COMM_WORLD,&kspSolver); CHKERRQ(ierr);
-    ierr = KSPSetOperators(kspSolver,A,A); CHKERRQ(ierr);
-    ierr = KSPSetFromOptions(kspSolver); CHKERRQ(ierr);
+    ierr = KSPCreate(PETSC_COMM_WORLD,&kspSolver); CHKERRG(ierr);
+    ierr = KSPSetOperators(kspSolver,A,A); CHKERRG(ierr);
+    ierr = KSPSetFromOptions(kspSolver); CHKERRG(ierr);
 
     //PC pc;
-    //ierr = KSPGetPC(kspSolver,&pc); CHKERRQ(ierr);
-    //ierr = PCSetType(pc,PCLU); CHKERRQ(ierr);
-    //ierr = PCFactorSetMatSolverPackage(pc,MATSOLVERMUMPS); CHKERRQ(ierr);
-    //ierr = PCFactorSetUpMatSolverPackage(pc);  CHKERRQ(ierr);
+    //ierr = KSPGetPC(kspSolver,&pc); CHKERRG(ierr);
+    //ierr = PCSetType(pc,PCLU); CHKERRG(ierr);
+    //ierr = PCFactorSetMatSolverPackage(pc,MATSOLVERMUMPS); CHKERRG(ierr);
+    //ierr = PCFactorSetUpMatSolverPackage(pc);  CHKERRG(ierr);
 
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode AnalyticalDirichletBC::solveProblem(
+  MoFEMErrorCode AnalyticalDirichletBC::solveProblem(
     MoFEM::Interface &m_field,string problem,string fe,DirichletBC &bc,Range &tris
   ) {
     MoFEMFunctionBeginHot;
 
 
-    ierr = VecZeroEntries(F); CHKERRQ(ierr);
-    ierr = MatZeroEntries(A); CHKERRQ(ierr);
+    ierr = VecZeroEntries(F); CHKERRG(ierr);
+    ierr = MatZeroEntries(A); CHKERRG(ierr);
 
     approxField.getLoopFeApprox().snes_B = A;
     approxField.getLoopFeApprox().snes_f = F;
-    ierr = m_field.loop_finite_elements(problem,fe,approxField.getLoopFeApprox()); CHKERRQ(ierr);
-    ierr = VecGhostUpdateBegin(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-    ierr = VecGhostUpdateEnd(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-    ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
-    ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
-    ierr = MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-    ierr = MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+    ierr = m_field.loop_finite_elements(problem,fe,approxField.getLoopFeApprox()); CHKERRG(ierr);
+    ierr = VecGhostUpdateBegin(F,ADD_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
+    ierr = VecGhostUpdateEnd(F,ADD_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
+    ierr = VecAssemblyBegin(F); CHKERRG(ierr);
+    ierr = VecAssemblyEnd(F); CHKERRG(ierr);
+    ierr = MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY); CHKERRG(ierr);
+    ierr = MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY); CHKERRG(ierr);
 
-    ierr = KSPSolve(kspSolver,F,D); CHKERRQ(ierr);
-    ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = KSPSolve(kspSolver,F,D); CHKERRG(ierr);
+    ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
+    ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
 
-    ierr = m_field.getInterface<VecManager>()->setGlobalGhostVector(problem,ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = m_field.getInterface<VecManager>()->setGlobalGhostVector(problem,ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
 
     bc.trisPtr = boost::shared_ptr<Range>(new Range(tris));
     bc.mapZeroRows.clear();
@@ -311,23 +311,23 @@ PetscErrorCode AnalyticalDirichletBC::ApproxField::OpLhs::doWork(
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode AnalyticalDirichletBC::solveProblem(
+  MoFEMErrorCode AnalyticalDirichletBC::solveProblem(
     MoFEM::Interface &m_field,string problem,string fe,DirichletBC &bc
   ) {
     MoFEMFunctionBeginHot;
     EntityHandle fe_meshset = m_field.get_finite_element_meshset("BC_FE");
     Range bc_tris;
-    rval = m_field.get_moab().get_entities_by_type(fe_meshset,MBTRI,bc_tris); CHKERRQ_MOAB(rval);
+    rval = m_field.get_moab().get_entities_by_type(fe_meshset,MBTRI,bc_tris); CHKERRG(rval);
     return solveProblem(m_field,problem,fe,bc,bc_tris);
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode AnalyticalDirichletBC::destroyProblem() {
+  MoFEMErrorCode AnalyticalDirichletBC::destroyProblem() {
     MoFEMFunctionBeginHot;
 
-    ierr = KSPDestroy(&kspSolver); CHKERRQ(ierr);
-    ierr = MatDestroy(&A); CHKERRQ(ierr);
-    ierr = VecDestroy(&F); CHKERRQ(ierr);
-    ierr = VecDestroy(&D); CHKERRQ(ierr);
+    ierr = KSPDestroy(&kspSolver); CHKERRG(ierr);
+    ierr = MatDestroy(&A); CHKERRG(ierr);
+    ierr = VecDestroy(&F); CHKERRG(ierr);
+    ierr = VecDestroy(&D); CHKERRG(ierr);
     MoFEMFunctionReturnHot(0);
   }

@@ -268,10 +268,10 @@ struct RefEntity: public BasicEntity {
     const EntityHandle ent
   );
 
-  static PetscErrorCode getParentEnt(Interface &moab, Range ents,
+  static MoFEMErrorCode getParentEnt(Interface &moab, Range ents,
                                      std::vector<EntityHandle> vec_patent_ent);
 
-  static PetscErrorCode
+  static MoFEMErrorCode
   getBitRefLevel(Interface &moab, Range ents,
                  std::vector<BitRefLevel> vec_bit_ref_level);
 

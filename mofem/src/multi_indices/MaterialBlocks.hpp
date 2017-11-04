@@ -35,7 +35,7 @@ struct GenericAttributeData {
      * @param  attributes vector of doubles
      * @return            error code
      */
-    virtual PetscErrorCode fill_data(const std::vector<double>& attributes) {
+    virtual MoFEMErrorCode fill_data(const std::vector<double>& attributes) {
       MoFEMFunctionBeginHot;
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"It makes no sense for the generic attribute type");
       MoFEMFunctionReturnHot(0);
@@ -47,7 +47,7 @@ struct GenericAttributeData {
      * @param  size    size of data in bytes
      * @return         error code
      */
-    virtual PetscErrorCode set_data(void *tag_ptr,unsigned int size) const {
+    virtual MoFEMErrorCode set_data(void *tag_ptr,unsigned int size) const {
       MoFEMFunctionBeginHot;
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"It makes no sense for the generic attribute type");
       MoFEMFunctionReturnHot(0);
@@ -119,7 +119,7 @@ struct BlockSetAttributes: public GenericAttributeData {
       bzero(&data,sizeof(data));
     }
 
-    PetscErrorCode fill_data(const std::vector<double>& attributes) {
+    MoFEMErrorCode fill_data(const std::vector<double>& attributes) {
       MoFEMFunctionBeginHot;
       if(8*attributes.size()>sizeof(data)) {
         SETERRQ(
@@ -132,7 +132,7 @@ struct BlockSetAttributes: public GenericAttributeData {
       memcpy(&data, &attributes[0],8*attributes.size());
       MoFEMFunctionReturnHot(0);
     }
-    PetscErrorCode set_data(void *tag_ptr,unsigned int size) const {
+    MoFEMErrorCode set_data(void *tag_ptr,unsigned int size) const {
       MoFEMFunctionBeginHot;
       if(size>sizeof(data)) {
         SETERRQ(
@@ -181,7 +181,7 @@ struct Mat_Elastic: public GenericAttributeData {
       bzero(&data,sizeof(data));
     };
 
-    PetscErrorCode fill_data(const std::vector<double>& attributes) {
+    MoFEMErrorCode fill_data(const std::vector<double>& attributes) {
       MoFEMFunctionBeginHot;
       if(attributes.size()<minNumberOfAtributes) {
         SETERRQ2(
@@ -198,7 +198,7 @@ struct Mat_Elastic: public GenericAttributeData {
       memcpy(&data, &attributes[0],8*attributes.size());
       MoFEMFunctionReturnHot(0);
     }
-    PetscErrorCode set_data(void *tag_ptr,unsigned int size) const {
+    MoFEMErrorCode set_data(void *tag_ptr,unsigned int size) const {
       MoFEMFunctionBeginHot;
       if(size>sizeof(data)) {
         SETERRQ(
@@ -248,7 +248,7 @@ struct Mat_Thermal: public GenericAttributeData {
     bzero(&data,sizeof(data));
   }
 
-  PetscErrorCode fill_data(const std::vector<double>& attributes) {
+  MoFEMErrorCode fill_data(const std::vector<double>& attributes) {
     MoFEMFunctionBeginHot;
     if(attributes.size()<minNumberOfAtributes) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Thermal conductivity is not defined. (top tip: check number of THERMAL block atributes)");
@@ -260,7 +260,7 @@ struct Mat_Thermal: public GenericAttributeData {
     memcpy(&data, &attributes[0],8*attributes.size());
     MoFEMFunctionReturnHot(0);
   }
-  PetscErrorCode set_data(void *tag_ptr,unsigned int size) const {
+  MoFEMErrorCode set_data(void *tag_ptr,unsigned int size) const {
     MoFEMFunctionBeginHot;
     if(size>sizeof(data)) {
       SETERRQ(
@@ -307,7 +307,7 @@ struct Mat_Moisture: public GenericAttributeData {
     bzero(&data,sizeof(data));
   }
 
-  PetscErrorCode fill_data(const std::vector<double>& attributes) {
+  MoFEMErrorCode fill_data(const std::vector<double>& attributes) {
     MoFEMFunctionBeginHot;
     if(attributes.size()<minNumberOfAtributes) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"moisture diffusivity is not defined. (top tip: check number of MOISTURE block atributes)");
@@ -353,7 +353,7 @@ struct Block_BodyForces: public GenericAttributeData {
   Block_BodyForces():
   GenericAttributeData(BODYFORCESSET,4) {}
 
-  PetscErrorCode fill_data(const std::vector<double>& attributes) {
+  MoFEMErrorCode fill_data(const std::vector<double>& attributes) {
     MoFEMFunctionBeginHot;
     if(attributes.size()<minNumberOfAtributes) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Material density and/or acceleration is not defined. (top tip: check number of THERMAL block atributes)");
@@ -365,7 +365,7 @@ struct Block_BodyForces: public GenericAttributeData {
     memcpy(&data, &attributes[0],8*attributes.size());
     MoFEMFunctionReturnHot(0);
   }
-  PetscErrorCode set_data(void *tag_ptr,unsigned int size) const {
+  MoFEMErrorCode set_data(void *tag_ptr,unsigned int size) const {
     MoFEMFunctionBeginHot;
     if(size>sizeof(data)) {
       SETERRQ(PETSC_COMM_SELF,1,
@@ -407,7 +407,7 @@ struct Block_BodyForces: public GenericAttributeData {
       bzero(&data,sizeof(data));
     }
 
-    PetscErrorCode fill_data(const std::vector<double>& attributes) {
+    MoFEMErrorCode fill_data(const std::vector<double>& attributes) {
       MoFEMFunctionBeginHot;
       //Fill data
       if(attributes.size()<minNumberOfAtributes) {
@@ -422,7 +422,7 @@ struct Block_BodyForces: public GenericAttributeData {
 
       MoFEMFunctionReturnHot(0);
     }
-    PetscErrorCode set_data(void *tag_ptr,unsigned int size) const {
+    MoFEMErrorCode set_data(void *tag_ptr,unsigned int size) const {
       MoFEMFunctionBeginHot;
       if(size>sizeof(data)) {
         SETERRQ(
@@ -465,7 +465,7 @@ struct Mat_Interf: public GenericAttributeData {
     bzero(&data,sizeof(data));
   }
 
-  virtual PetscErrorCode fill_data(const std::vector<double>& attributes) {
+  virtual MoFEMErrorCode fill_data(const std::vector<double>& attributes) {
     MoFEMFunctionBeginHot;
     //Fill data
     if(8*attributes.size()!=sizeof(data)) {
@@ -477,7 +477,7 @@ struct Mat_Interf: public GenericAttributeData {
     memcpy(&data, &attributes[0], sizeof(data));
     MoFEMFunctionReturnHot(0);
   }
-  virtual PetscErrorCode set_data(void *tag_ptr,unsigned int size) const {
+  virtual MoFEMErrorCode set_data(void *tag_ptr,unsigned int size) const {
     MoFEMFunctionBeginHot;
     if(size>sizeof(data)) {
       SETERRQ(
@@ -525,7 +525,7 @@ struct Mat_Elastic_EberleinHolzapfel1: public GenericAttributeData {
       bzero(&data,sizeof(data));
     }
 
-    PetscErrorCode fill_data(const std::vector<double>& attributes) {
+    MoFEMErrorCode fill_data(const std::vector<double>& attributes) {
       MoFEMFunctionBeginHot;
       if(attributes.size()<minNumberOfAtributes) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"All material data not defined");

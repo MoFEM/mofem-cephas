@@ -28,7 +28,9 @@ using namespace MoFEM;
 #include <BaseFunction.hpp>
 #include <JacobiPolynomial.hpp>
 
-PetscErrorCode JacobiPolynomialCtx::query_interface(
+namespace MoFEM {
+
+MoFEMErrorCode JacobiPolynomialCtx::query_interface(
   const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface
 ) const {
 
@@ -40,11 +42,11 @@ PetscErrorCode JacobiPolynomialCtx::query_interface(
   } else {
     SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"wrong interference");
   }
-  ierr = BaseFunctionCtx::query_interface(uuid,iface); CHKERRQ(ierr);
+  ierr = BaseFunctionCtx::query_interface(uuid,iface); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode JacobiPolynomial::query_interface(
+MoFEMErrorCode JacobiPolynomial::query_interface(
   const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface
 ) const {
 
@@ -56,11 +58,11 @@ PetscErrorCode JacobiPolynomial::query_interface(
   } else {
     SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"wrong interference");
   }
-  ierr = BaseFunction::query_interface(uuid,iface); CHKERRQ(ierr);
+  ierr = BaseFunction::query_interface(uuid,iface); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode JacobiPolynomial::getValue(
+MoFEMErrorCode JacobiPolynomial::getValue(
   MatrixDouble &pts_x,
   MatrixDouble &pts_t,
   boost::shared_ptr<BaseFunctionCtx> ctx_ptr
@@ -68,7 +70,7 @@ PetscErrorCode JacobiPolynomial::getValue(
 
   MoFEMFunctionBeginHot;
   MoFEM::UnknownInterface *iface;
-  ierr = ctx_ptr->query_interface(IDD_JACOBI_BASE_FUNCTION,&iface); CHKERRQ(ierr);
+  ierr = ctx_ptr->query_interface(IDD_JACOBI_BASE_FUNCTION,&iface); CHKERRG(ierr);
   JacobiPolynomialCtx *ctx = reinterpret_cast<JacobiPolynomialCtx*>(iface);
   ctx->baseFunPtr->resize(pts_x.size2(),ctx->P+1,false);
   ctx->baseDiffFunPtr->resize(pts_x.size2(),ctx->dIm*(ctx->P+1),false);
@@ -89,7 +91,9 @@ PetscErrorCode JacobiPolynomial::getValue(
       ctx->diffX,ctx->diffT,
       l,diff_l,
       ctx->dIm
-    ); CHKERRQ(ierr);
+    ); CHKERRG(ierr);
   }
   MoFEMFunctionReturnHot(0);
+}
+
 }

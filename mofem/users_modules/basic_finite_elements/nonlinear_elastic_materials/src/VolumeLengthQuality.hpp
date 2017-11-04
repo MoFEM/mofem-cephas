@@ -60,11 +60,11 @@ struct VolumeLengthQuality: public NonlinearElasticElement::FunctionsToCalculate
       ierr = getMaterialOptions(); CHKERRABORT(PETSC_COMM_WORLD,ierr);
     }
 
-    PetscErrorCode getMaterialOptions() {
+    MoFEMErrorCode getMaterialOptions() {
       MoFEMFunctionBeginHot;
       ierr = PetscOptionsBegin(
         PETSC_COMM_WORLD,"","Get VolumeLengthQuality material options","none"
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
       ierr = PetscOptionsEList(
         "-volume_length_type","Volume length quality type","",
         VolumeLengthQualityTypeNames,LASTOP_VOLUMELENGTHQUALITYTYPE,
@@ -74,13 +74,13 @@ struct VolumeLengthQuality: public NonlinearElasticElement::FunctionsToCalculate
         "-volume_length_alpha",
         "volume length alpha parameter","",
         aLpha,&aLpha,PETSC_NULL
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
       ierr = PetscOptionsScalar(
         "-volume_length_gamma",
         "volume length parameter (barrier)","",
         gAmma,&gAmma,PETSC_NULL
-      ); CHKERRQ(ierr);
-      ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
+      ierr = PetscOptionsEnd(); CHKERRG(ierr);
       MoFEMFunctionReturnHot(0);
     }
 
@@ -94,7 +94,7 @@ struct VolumeLengthQuality: public NonlinearElasticElement::FunctionsToCalculate
 
     /** Get coordinates of edges using cannonical element numeration
      */
-    PetscErrorCode getEdgesFromElemCoords() {
+    MoFEMErrorCode getEdgesFromElemCoords() {
       MoFEMFunctionBeginHot;
       if(coordsEdges.empty()) {
         coordsEdges.resize(6*2*3,false);
@@ -130,7 +130,7 @@ struct VolumeLengthQuality: public NonlinearElasticElement::FunctionsToCalculate
       \f]
 
      */
-     PetscErrorCode calculateLrms() {
+     MoFEMErrorCode calculateLrms() {
        MoFEMFunctionBeginHot;
        if(deltaChi.size()!=3) {
          deltaChi.resize(3);
@@ -168,7 +168,7 @@ struct VolumeLengthQuality: public NonlinearElasticElement::FunctionsToCalculate
      \f]
 
      */
-     PetscErrorCode calculateQ() {
+     MoFEMErrorCode calculateQ() {
        MoFEMFunctionBeginHot;
        if(Q.size1()==0) {
          Q.resize(3,3);
@@ -199,7 +199,7 @@ struct VolumeLengthQuality: public NonlinearElasticElement::FunctionsToCalculate
       where \f$a\f$ depending on problem could be \f$q\f$ or \f$b\f$.
 
       */
-    virtual PetscErrorCode calculateP_PiolaKirchhoffI(
+    virtual MoFEMErrorCode calculateP_PiolaKirchhoffI(
       const NonlinearElasticElement::BlockData block_data,
       boost::shared_ptr<const NumeredEntFiniteElement> fe_ptr
     ) {
@@ -209,16 +209,16 @@ struct VolumeLengthQuality: public NonlinearElasticElement::FunctionsToCalculate
 
 
 
-        ierr = getEdgesFromElemCoords(); CHKERRQ(ierr);
+        ierr = getEdgesFromElemCoords(); CHKERRG(ierr);
 
-        ierr = this->dEterminatnt(this->F,detF); CHKERRQ(ierr);
+        ierr = this->dEterminatnt(this->F,detF); CHKERRG(ierr);
         if(this->invF.size1()!=3) {
           this->invF.resize(3,3);
         }
-        ierr = this->iNvert(detF,this->F,this->invF); CHKERRQ(ierr);
+        ierr = this->iNvert(detF,this->F,this->invF); CHKERRG(ierr);
 
-        ierr = calculateLrms(); CHKERRQ(ierr);
-        ierr = calculateQ(); CHKERRQ(ierr);
+        ierr = calculateLrms(); CHKERRG(ierr);
+        ierr = calculateQ(); CHKERRG(ierr);
 
         double lrms03 = lrmsSquared0*sqrt(lrmsSquared0);
         b = detF/(lrmsSquared*sqrt(lrmsSquared)/lrms03);

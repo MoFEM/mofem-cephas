@@ -17,7 +17,7 @@
 */
 namespace MoFEM {
 
-  PetscErrorCode Core::synchronise_entities(Range &ents,int verb) {
+  MoFEMErrorCode Core::synchronise_entities(Range &ents,int verb) {
     MoFEMFunctionBeginHot;
     if(verb==-1) verb = verbose;
 
@@ -88,25 +88,25 @@ namespace MoFEM {
     }
 
     // Make sure it is a PETSc cOmm
-    ierr = PetscCommDuplicate(cOmm,&cOmm,NULL); CHKERRQ(ierr);
+    ierr = PetscCommDuplicate(cOmm,&cOmm,NULL); CHKERRG(ierr);
 
     std::vector<MPI_Status> status(sIze);
 
     // Computes the number of messages a node expects to receive
     int nrecvs;	// number of messages received
-    ierr = PetscGatherNumberOfMessages(cOmm,NULL,&sbuffer_lengths[0],&nrecvs); CHKERRQ(ierr);
+    ierr = PetscGatherNumberOfMessages(cOmm,NULL,&sbuffer_lengths[0],&nrecvs); CHKERRG(ierr);
 
     // Computes info about messages that a MPI-node will receive, including (from-id,length) pairs for each message.
     int *onodes;		// list of node-ids from which messages are expected
     int *olengths;	// corresponding message lengths
-    ierr = PetscGatherMessageLengths(cOmm,nsends,nrecvs,&sbuffer_lengths[0],&onodes,&olengths);  CHKERRQ(ierr);
+    ierr = PetscGatherMessageLengths(cOmm,nsends,nrecvs,&sbuffer_lengths[0],&onodes,&olengths);  CHKERRG(ierr);
 
     // Gets a unique new tag from a PETSc communicator. All processors that share
     // the communicator MUST call this routine EXACTLY the same number of times.
     // This tag should only be used with the current objects communicator; do NOT
     // use it with any other MPI communicator.
     int tag;
-    ierr = PetscCommGetNewTag(cOmm,&tag); CHKERRQ(ierr);
+    ierr = PetscCommGetNewTag(cOmm,&tag); CHKERRG(ierr);
 
     // Allocate a buffer sufficient to hold messages of size specified in
     // olengths. And post Irecvs on these buffers using node info from onodes
@@ -115,10 +115,10 @@ namespace MoFEM {
     // rbuf has a pointers to messages. It has size of of nrecvs (number of
     // messages) +1. In the first index a block is allocated,
     // such that rbuf[i] = rbuf[i-1]+olengths[i-1].
-    ierr = PetscPostIrecvInt(cOmm,tag,nrecvs,onodes,olengths,&rbuf,&r_waits); CHKERRQ(ierr);
+    ierr = PetscPostIrecvInt(cOmm,tag,nrecvs,onodes,olengths,&rbuf,&r_waits); CHKERRG(ierr);
 
     MPI_Request *s_waits; // status of sens messages
-    ierr = PetscMalloc1(nsends,&s_waits); CHKERRQ(ierr);
+    ierr = PetscMalloc1(nsends,&s_waits); CHKERRG(ierr);
 
     // Send messeges
     for(int proc=0,kk=0; proc<sIze; proc++) {
@@ -127,17 +127,17 @@ namespace MoFEM {
         &(sbuffer[proc])[0], 	// buffer to send
         sbuffer_lengths[proc], 	// message length
         MPIU_INT,proc,       	// to proc
-        tag,cOmm,s_waits+kk); CHKERRQ(ierr);
+        tag,cOmm,s_waits+kk); CHKERRG(ierr);
       kk++;
     }
 
     // Wait for received
     if(nrecvs) {
-      ierr = MPI_Waitall(nrecvs,r_waits,&status[0]);CHKERRQ(ierr);
+      ierr = MPI_Waitall(nrecvs,r_waits,&status[0]);CHKERRG(ierr);
     }
     // Wait for send messages
     if(nsends) {
-      ierr = MPI_Waitall(nsends,s_waits,&status[0]);CHKERRQ(ierr);
+      ierr = MPI_Waitall(nsends,s_waits,&status[0]);CHKERRG(ierr);
     }
 
     if(verb>0) {
@@ -175,12 +175,12 @@ namespace MoFEM {
 
 
     // Cleaning
-    ierr = PetscFree(s_waits); CHKERRQ(ierr);
-    ierr = PetscFree(rbuf[0]); CHKERRQ(ierr);
-    ierr = PetscFree(rbuf); CHKERRQ(ierr);
-    ierr = PetscFree(r_waits); CHKERRQ(ierr);
-    ierr = PetscFree(onodes); CHKERRQ(ierr);
-    ierr = PetscFree(olengths); CHKERRQ(ierr);
+    ierr = PetscFree(s_waits); CHKERRG(ierr);
+    ierr = PetscFree(rbuf[0]); CHKERRG(ierr);
+    ierr = PetscFree(rbuf); CHKERRG(ierr);
+    ierr = PetscFree(r_waits); CHKERRG(ierr);
+    ierr = PetscFree(onodes); CHKERRG(ierr);
+    ierr = PetscFree(olengths); CHKERRG(ierr);
 
     if(verb>0) {
       PetscSynchronizedFlush(cOmm,PETSC_STDOUT);
@@ -189,7 +189,7 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode Core::synchronise_field_entities(const BitFieldId id,int verb) {
+  MoFEMErrorCode Core::synchronise_field_entities(const BitFieldId id,int verb) {
     MoFEMFunctionBeginHot;
     if(verb==-1) verb = verbose;
     EntityHandle idm;
@@ -199,25 +199,25 @@ namespace MoFEM {
       SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
     }
     Range ents;
-    ierr = moab.get_entities_by_handle(idm,ents,false); CHKERRQ(ierr);
-    ierr = synchronise_entities(ents,verb); CHKERRQ(ierr);
+    ierr = moab.get_entities_by_handle(idm,ents,false); CHKERRG(ierr);
+    ierr = synchronise_entities(ents,verb); CHKERRG(ierr);
     rval = moab.add_entities(idm,ents); CHKERRQ_MOAB(rval);
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode Core::synchronise_field_entities(const std::string& name,int verb) {
+  MoFEMErrorCode Core::synchronise_field_entities(const std::string& name,int verb) {
     MoFEMFunctionBeginHot;
     if(verb==-1) verb = verbose;
     *buildMoFEM = 0;
     try {
-      ierr = synchronise_field_entities(getBitFieldId(name),verb);  CHKERRQ(ierr);
+      ierr = synchronise_field_entities(getBitFieldId(name),verb);  CHKERRG(ierr);
     } catch (MoFEMException const &e) {
       SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
     }
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode Core::resolve_shared_ents(const Problem *problem_ptr,const std::string &fe_name,int verb) {
+  MoFEMErrorCode Core::resolve_shared_ents(const Problem *problem_ptr,const std::string &fe_name,int verb) {
     MoFEMFunctionBeginHot;
     ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
     std::vector<int> shprocs(MAX_SHARING_PROCS,0);
@@ -229,10 +229,10 @@ namespace MoFEM {
       GLOBAL_ID_TAG_NAME,1,MB_TYPE_INTEGER,th_gid,MB_TAG_DENSE|MB_TAG_CREAT,&zero
     ); CHKERRQ_MOAB(rval);
     PetscLayout layout;
-    ierr = problem_ptr->getNumberOfElementsByNameAndPart(get_comm(),fe_name,&layout); CHKERRQ(ierr);
+    ierr = problem_ptr->getNumberOfElementsByNameAndPart(get_comm(),fe_name,&layout); CHKERRG(ierr);
     int gid,last_gid;
-    ierr = PetscLayoutGetRange(layout,&gid,&last_gid); CHKERRQ(ierr);
-    ierr = PetscLayoutDestroy(&layout); CHKERRQ(ierr);
+    ierr = PetscLayoutGetRange(layout,&gid,&last_gid); CHKERRG(ierr);
+    ierr = PetscLayoutDestroy(&layout); CHKERRG(ierr);
     for(_IT_NUMEREDFE_BY_NAME_FOR_LOOP_(problem_ptr,fe_name,fe_it)) {
       EntityHandle ent = (*fe_it)->getEnt();
       ents.insert(ent);
@@ -279,7 +279,7 @@ namespace MoFEM {
     rval = pcomm->exchange_tags(th_gid,ents); CHKERRQ_MOAB(rval);
     MoFEMFunctionReturnHot(0);
   }
-  PetscErrorCode Core::resolve_shared_ents(const std::string &name,const std::string &fe_name,int verb) {
+  MoFEMErrorCode Core::resolve_shared_ents(const std::string &name,const std::string &fe_name,int verb) {
     MoFEMFunctionBeginHot;
     typedef Problem_multiIndex::index<Problem_mi_tag>::type Problem_multiIndex_by_name;
     //find p_miit
@@ -288,7 +288,7 @@ namespace MoFEM {
     if(p_miit==problems_set.end()) {
       SETERRQ1(PETSC_COMM_SELF,1,"problem with name < %s > not defined (top tip check spelling)",name.c_str());
     }
-    ierr = resolve_shared_ents(&*p_miit,fe_name,verb); CHKERRQ(ierr);
+    ierr = resolve_shared_ents(&*p_miit,fe_name,verb); CHKERRG(ierr);
     MoFEMFunctionReturnHot(0);
   }
 

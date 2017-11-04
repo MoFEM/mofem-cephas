@@ -70,8 +70,8 @@ struct ConvectiveMassElement {
     Vec V;
     double eNergy;
 
-    PetscErrorCode preProcess();
-    PetscErrorCode postProcess();
+    MoFEMErrorCode preProcess();
+    MoFEMErrorCode postProcess();
 
 
   };
@@ -159,7 +159,7 @@ struct ConvectiveMassElement {
     /** \brief operator calculating deformation gradient
       *
       */
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int side,EntityType type,DataForcesAndSourcesCore::EntData &data
     );
 
@@ -172,7 +172,7 @@ struct ConvectiveMassElement {
   struct CommonFunctions {
 
     template<typename TYPE>
-    PetscErrorCode dEterminatnt(
+    MoFEMErrorCode dEterminatnt(
       ublas::matrix<TYPE,ublas::row_major,ublas::bounded_array<TYPE,9> >& a,
       TYPE &det
     ) {
@@ -195,7 +195,7 @@ struct ConvectiveMassElement {
     }
 
     template<typename TYPE>
-    PetscErrorCode iNvert(
+    MoFEMErrorCode iNvert(
       TYPE det,
       ublas::matrix<TYPE,ublas::row_major,ublas::bounded_array<TYPE,9> >& a,
       ublas::matrix<TYPE,ublas::row_major,ublas::bounded_array<TYPE,9> >& inv_a
@@ -248,7 +248,7 @@ struct ConvectiveMassElement {
     > h,H,invH,F,g,G;
     std::vector<double> active;
 
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
     );
 
@@ -263,7 +263,7 @@ struct ConvectiveMassElement {
 
     VectorDouble nf;
 
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
     );
 
@@ -281,9 +281,9 @@ struct ConvectiveMassElement {
 
     MatrixDouble k,jac;
 
-    virtual PetscErrorCode getJac(DataForcesAndSourcesCore::EntData &col_data,int gg);
+    virtual MoFEMErrorCode getJac(DataForcesAndSourcesCore::EntData &col_data,int gg);
 
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int row_side,int col_side,
       EntityType row_type,EntityType col_type,
       DataForcesAndSourcesCore::EntData &row_data,
@@ -297,7 +297,7 @@ struct ConvectiveMassElement {
 
     OpMassLhs_dM_dx(const std::string field_name,const std::string col_field,BlockData &data,CommonData &common_data);
 
-    PetscErrorCode getJac(DataForcesAndSourcesCore::EntData &col_data,int gg);
+    MoFEMErrorCode getJac(DataForcesAndSourcesCore::EntData &col_data,int gg);
 
   };
 
@@ -305,7 +305,7 @@ struct ConvectiveMassElement {
 
     OpMassLhs_dM_dX(const std::string field_name,const std::string col_field,BlockData &data,CommonData &common_data);
 
-    PetscErrorCode getJac(DataForcesAndSourcesCore::EntData &col_data,int gg);
+    MoFEMErrorCode getJac(DataForcesAndSourcesCore::EntData &col_data,int gg);
 
   };
 
@@ -321,7 +321,7 @@ struct ConvectiveMassElement {
     MatrixDouble3by3 h,H,invH,F;
     VectorDouble3 v;
 
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
     );
 
@@ -344,7 +344,7 @@ struct ConvectiveMassElement {
 
     std::vector<double> active;
 
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
     );
 
@@ -359,7 +359,7 @@ struct ConvectiveMassElement {
 
     VectorDouble nf;
 
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
     );
 
@@ -369,7 +369,7 @@ struct ConvectiveMassElement {
 
     OpVelocityLhs_dV_dv(const std::string vel_field,const std::string field_name,BlockData &data,CommonData &common_data);
 
-    virtual PetscErrorCode getJac(DataForcesAndSourcesCore::EntData &col_data,int gg);
+    virtual MoFEMErrorCode getJac(DataForcesAndSourcesCore::EntData &col_data,int gg);
 
   };
 
@@ -377,7 +377,7 @@ struct ConvectiveMassElement {
 
     OpVelocityLhs_dV_dx(const std::string vel_field,const std::string field_name,BlockData &data,CommonData &common_data);
 
-    virtual PetscErrorCode getJac(DataForcesAndSourcesCore::EntData &col_data,int gg);
+    virtual MoFEMErrorCode getJac(DataForcesAndSourcesCore::EntData &col_data,int gg);
 
   };
 
@@ -386,7 +386,7 @@ struct ConvectiveMassElement {
 
     OpVelocityLhs_dV_dX(const std::string vel_field,const std::string field_name,BlockData &data,CommonData &common_data);
 
-    virtual PetscErrorCode getJac(DataForcesAndSourcesCore::EntData &col_data,int gg);
+    virtual MoFEMErrorCode getJac(DataForcesAndSourcesCore::EntData &col_data,int gg);
 
   };
 
@@ -406,7 +406,7 @@ struct ConvectiveMassElement {
     ublas::matrix<adouble,ublas::row_major,ublas::bounded_array<adouble,9> > g,H,invH,h,F,G;
     VectorDouble active;
 
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
     );
 
@@ -424,7 +424,7 @@ struct ConvectiveMassElement {
 
     VectorDouble nf;
 
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
     );
 
@@ -436,7 +436,7 @@ struct ConvectiveMassElement {
       const std::string vel_field,const std::string field_name,BlockData &data,CommonData &common_data,Range *forcesonlyonentities_ptr
     );
 
-    virtual PetscErrorCode getJac(DataForcesAndSourcesCore::EntData &col_data,int gg);
+    virtual MoFEMErrorCode getJac(DataForcesAndSourcesCore::EntData &col_data,int gg);
 
   };
 
@@ -446,7 +446,7 @@ struct ConvectiveMassElement {
       const std::string vel_field,const std::string field_name,BlockData &data,CommonData &common_data,Range *forcesonlyonentities_ptr
     );
 
-    virtual PetscErrorCode getJac(DataForcesAndSourcesCore::EntData &col_data,int gg);
+    virtual MoFEMErrorCode getJac(DataForcesAndSourcesCore::EntData &col_data,int gg);
 
   };
 
@@ -456,7 +456,7 @@ struct ConvectiveMassElement {
       const std::string vel_field,const std::string field_name,BlockData &data,CommonData &common_data,Range *forcesonlyonentities_ptr
     );
 
-    virtual PetscErrorCode getJac(DataForcesAndSourcesCore::EntData &col_data,int gg);
+    virtual MoFEMErrorCode getJac(DataForcesAndSourcesCore::EntData &col_data,int gg);
 
   };
 
@@ -473,28 +473,28 @@ struct ConvectiveMassElement {
       const std::string spatial_position_field
     );
 
-    PetscErrorCode preProcess();
-    PetscErrorCode postProcess();
+    MoFEMErrorCode preProcess();
+    MoFEMErrorCode postProcess();
 
   };
 
-  PetscErrorCode setBlocks();
+  MoFEMErrorCode setBlocks();
 
-  PetscErrorCode addConvectiveMassElement(string element_name,
+  MoFEMErrorCode addConvectiveMassElement(string element_name,
     string velocity_field_name,
     string spatial_position_field_name,
     string material_position_field_name = "MESH_NODE_POSITIONS",
     bool ale = false,BitRefLevel bit = BitRefLevel()
   );
 
-  PetscErrorCode addVelocityElement(string element_name,
+  MoFEMErrorCode addVelocityElement(string element_name,
     string velocity_field_name,
     string spatial_position_field_name,
     string material_position_field_name = "MESH_NODE_POSITIONS",
     bool ale = false,
     BitRefLevel bit = BitRefLevel());
 
-  PetscErrorCode addEshelbyDynamicMaterialMomentum(string element_name,
+  MoFEMErrorCode addEshelbyDynamicMaterialMomentum(string element_name,
     string velocity_field_name,
     string spatial_position_field_name,
     string material_position_field_name = "MESH_NODE_POSITIONS",
@@ -502,7 +502,7 @@ struct ConvectiveMassElement {
     BitRefLevel bit = BitRefLevel(),
     Range *intersected = NULL);
 
-  PetscErrorCode setConvectiveMassOperators(
+  MoFEMErrorCode setConvectiveMassOperators(
     string velocity_field_name,
     string spatial_position_field_name,
     string material_position_field_name = "MESH_NODE_POSITIONS",
@@ -510,21 +510,21 @@ struct ConvectiveMassElement {
     bool linear = false
   );
 
-  PetscErrorCode setVelocityOperators(
+  MoFEMErrorCode setVelocityOperators(
     string velocity_field_name,
     string spatial_position_field_name,
     string material_position_field_name = "MESH_NODE_POSITIONS",
     bool ale = false
   );
 
-  PetscErrorCode setKinematicEshelbyOperators(
+  MoFEMErrorCode setKinematicEshelbyOperators(
     string velocity_field_name,
     string spatial_position_field_name,
     string material_position_field_name = "MESH_NODE_POSITIONS",
     Range *forces_on_entities_ptr = NULL
   );
 
-  PetscErrorCode setShellMatrixMassOperators(
+  MoFEMErrorCode setShellMatrixMassOperators(
     string velocity_field_name,
     string spatial_position_field_name,
     string material_position_field_name = "MESH_NODE_POSITIONS",
@@ -543,12 +543,12 @@ struct ConvectiveMassElement {
 
     Mat barK;
     Vec u,v,Ku,Mv;
-    PetscErrorCode iNit();
+    MoFEMErrorCode iNit();
 
-    PetscErrorCode dEstroy();
+    MoFEMErrorCode dEstroy();
 
-    friend PetscErrorCode MultOpA(Mat A,Vec x,Vec f);
-    friend PetscErrorCode ZeroEntriesOp(Mat A);
+    friend MoFEMErrorCode MultOpA(Mat A,Vec x,Vec f);
+    friend MoFEMErrorCode ZeroEntriesOp(Mat A);
 
   };
 
@@ -576,47 +576,47 @@ struct ConvectiveMassElement {
     * \f]
     *
     */
-  static PetscErrorCode MultOpA(Mat A,Vec x,Vec f) {
+  static MoFEMErrorCode MultOpA(Mat A,Vec x,Vec f) {
     MoFEMFunctionBeginHot;
     
     void *void_ctx;
-    ierr = MatShellGetContext(A,&void_ctx); CHKERRQ(ierr);
+    ierr = MatShellGetContext(A,&void_ctx); CHKERRG(ierr);
     MatShellCtx *ctx = (MatShellCtx*)void_ctx;
     if(!ctx->iNitialized) {
-      ierr = ctx->iNit(); CHKERRQ(ierr);
+      ierr = ctx->iNit(); CHKERRG(ierr);
     }
-    ierr = VecZeroEntries(f); CHKERRQ(ierr);
+    ierr = VecZeroEntries(f); CHKERRG(ierr);
     //Mult Ku
-    ierr = VecScatterBegin(ctx->scatterU,x,ctx->u,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    ierr = VecScatterEnd(ctx->scatterU,x,ctx->u,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    ierr = MatMult(ctx->K,ctx->u,ctx->Ku); CHKERRQ(ierr);
-    ierr = VecScatterBegin(ctx->scatterU,ctx->Ku,f,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-    ierr = VecScatterEnd(ctx->scatterU,ctx->Ku,f,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = VecScatterBegin(ctx->scatterU,x,ctx->u,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
+    ierr = VecScatterEnd(ctx->scatterU,x,ctx->u,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
+    ierr = MatMult(ctx->K,ctx->u,ctx->Ku); CHKERRG(ierr);
+    ierr = VecScatterBegin(ctx->scatterU,ctx->Ku,f,INSERT_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
+    ierr = VecScatterEnd(ctx->scatterU,ctx->Ku,f,INSERT_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
     //Mult Mv
-    ierr = VecScatterBegin(ctx->scatterV,x,ctx->v,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    ierr = VecScatterEnd(ctx->scatterV,x,ctx->v,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    ierr = MatMult(ctx->M,ctx->v,ctx->Mv); CHKERRQ(ierr);
-    ierr = VecScatterBegin(ctx->scatterU,ctx->Mv,f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-    ierr = VecScatterEnd(ctx->scatterU,ctx->Mv,f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = VecScatterBegin(ctx->scatterV,x,ctx->v,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
+    ierr = VecScatterEnd(ctx->scatterV,x,ctx->v,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
+    ierr = MatMult(ctx->M,ctx->v,ctx->Mv); CHKERRG(ierr);
+    ierr = VecScatterBegin(ctx->scatterU,ctx->Mv,f,ADD_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
+    ierr = VecScatterEnd(ctx->scatterU,ctx->Mv,f,ADD_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
     //Velocities
-    ierr = VecAXPY(ctx->v,-ctx->ts_a,ctx->u); CHKERRQ(ierr);
-    //ierr = VecScale(ctx->v,ctx->scale); CHKERRQ(ierr);
-    ierr = VecScatterBegin(ctx->scatterV,ctx->v,f,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-    ierr = VecScatterEnd(ctx->scatterV,ctx->v,f,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = VecAXPY(ctx->v,-ctx->ts_a,ctx->u); CHKERRG(ierr);
+    //ierr = VecScale(ctx->v,ctx->scale); CHKERRG(ierr);
+    ierr = VecScatterBegin(ctx->scatterV,ctx->v,f,INSERT_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
+    ierr = VecScatterEnd(ctx->scatterV,ctx->v,f,INSERT_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
     //Assemble
-    ierr = VecAssemblyBegin(f); CHKERRQ(ierr);
-    ierr = VecAssemblyEnd(f); CHKERRQ(ierr);
+    ierr = VecAssemblyBegin(f); CHKERRG(ierr);
+    ierr = VecAssemblyEnd(f); CHKERRG(ierr);
     MoFEMFunctionReturnHot(0);
   }
 
-  static PetscErrorCode ZeroEntriesOp(Mat A) {
+  static MoFEMErrorCode ZeroEntriesOp(Mat A) {
     MoFEMFunctionBeginHot;
     
     void *void_ctx;
-    ierr = MatShellGetContext(A,&void_ctx); CHKERRQ(ierr);
+    ierr = MatShellGetContext(A,&void_ctx); CHKERRG(ierr);
     MatShellCtx *ctx = (MatShellCtx*)void_ctx;
-    ierr = MatZeroEntries(ctx->K); CHKERRQ(ierr);
-    ierr = MatZeroEntries(ctx->M); CHKERRQ(ierr);
+    ierr = MatZeroEntries(ctx->K); CHKERRG(ierr);
+    ierr = MatZeroEntries(ctx->M); CHKERRG(ierr);
     MoFEMFunctionReturnHot(0);
   }
 
@@ -631,38 +631,38 @@ struct ConvectiveMassElement {
 
     PC pC;
 
-    PetscErrorCode iNit();
+    MoFEMErrorCode iNit();
 
-    PetscErrorCode dEstroy();
+    MoFEMErrorCode dEstroy();
 
-    friend PetscErrorCode PCShellSetUpOp(PC pc);
-    friend PetscErrorCode PCShellDestroy(PC pc);
-    friend PetscErrorCode PCShellApplyOp(PC pc,Vec f,Vec x);
+    friend MoFEMErrorCode PCShellSetUpOp(PC pc);
+    friend MoFEMErrorCode PCShellDestroy(PC pc);
+    friend MoFEMErrorCode PCShellApplyOp(PC pc,Vec f,Vec x);
 
   };
 
-  static PetscErrorCode PCShellSetUpOp(PC pc) {
+  static MoFEMErrorCode PCShellSetUpOp(PC pc) {
     MoFEMFunctionBeginHot;
     
     void *void_ctx;
-    ierr = PCShellGetContext(pc,&void_ctx); CHKERRQ(ierr);
+    ierr = PCShellGetContext(pc,&void_ctx); CHKERRG(ierr);
     PCShellCtx *ctx = (PCShellCtx*)void_ctx;
-    ierr = ctx->iNit(); CHKERRQ(ierr);
+    ierr = ctx->iNit(); CHKERRG(ierr);
     MatShellCtx *shell_mat_ctx;
-    ierr = MatShellGetContext(ctx->shellMat,&shell_mat_ctx); CHKERRQ(ierr);
-    ierr = PCSetFromOptions(ctx->pC); CHKERRQ(ierr);
-    ierr = PCSetOperators(ctx->pC,shell_mat_ctx->barK,shell_mat_ctx->barK); CHKERRQ(ierr);
-    ierr = PCSetUp(ctx->pC); CHKERRQ(ierr);
+    ierr = MatShellGetContext(ctx->shellMat,&shell_mat_ctx); CHKERRG(ierr);
+    ierr = PCSetFromOptions(ctx->pC); CHKERRG(ierr);
+    ierr = PCSetOperators(ctx->pC,shell_mat_ctx->barK,shell_mat_ctx->barK); CHKERRG(ierr);
+    ierr = PCSetUp(ctx->pC); CHKERRG(ierr);
     MoFEMFunctionReturnHot(0);
   }
 
-  static PetscErrorCode PCShellDestroy(PC pc) {
+  static MoFEMErrorCode PCShellDestroy(PC pc) {
     MoFEMFunctionBeginHot;
     
     void *void_ctx;
-    ierr = PCShellGetContext(pc,&void_ctx); CHKERRQ(ierr);
+    ierr = PCShellGetContext(pc,&void_ctx); CHKERRG(ierr);
     PCShellCtx *ctx = (PCShellCtx*)void_ctx;
-    ierr = ctx->dEstroy(); CHKERRQ(ierr);
+    ierr = ctx->dEstroy(); CHKERRG(ierr);
     MoFEMFunctionReturnHot(0);
   }
 
@@ -692,36 +692,36 @@ struct ConvectiveMassElement {
     * where \f$\mathbf{v} = \mathbf{r}_v + a\mathbf{u}\f$ and \f$\mathbf{u}=(a\mathbf{M}+\mathbf{K})^{-1}(\mathbf{r}_u - \mathbf{M}\mathbf{r}_v\f$.
     *
     */
-  static PetscErrorCode PCShellApplyOp(PC pc,Vec f,Vec x) {
+  static MoFEMErrorCode PCShellApplyOp(PC pc,Vec f,Vec x) {
     MoFEMFunctionBeginHot;
     
     void *void_ctx;
-    ierr = PCShellGetContext(pc,&void_ctx); CHKERRQ(ierr);
+    ierr = PCShellGetContext(pc,&void_ctx); CHKERRG(ierr);
     PCShellCtx *ctx = (PCShellCtx*)void_ctx;
     MatShellCtx *shell_mat_ctx;
-    ierr = MatShellGetContext(ctx->shellMat,&shell_mat_ctx); CHKERRQ(ierr);
+    ierr = MatShellGetContext(ctx->shellMat,&shell_mat_ctx); CHKERRG(ierr);
     //forward
-    ierr = VecScatterBegin(shell_mat_ctx->scatterU,f,shell_mat_ctx->Ku,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    ierr = VecScatterEnd(shell_mat_ctx->scatterU,f,shell_mat_ctx->Ku,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    ierr = VecScatterBegin(shell_mat_ctx->scatterV,f,shell_mat_ctx->v,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    ierr = VecScatterEnd(shell_mat_ctx->scatterV,f,shell_mat_ctx->v,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    //ierr = VecScale(shell_mat_ctx->v,1/shell_mat_ctx->scale); CHKERRQ(ierr);
+    ierr = VecScatterBegin(shell_mat_ctx->scatterU,f,shell_mat_ctx->Ku,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
+    ierr = VecScatterEnd(shell_mat_ctx->scatterU,f,shell_mat_ctx->Ku,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
+    ierr = VecScatterBegin(shell_mat_ctx->scatterV,f,shell_mat_ctx->v,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
+    ierr = VecScatterEnd(shell_mat_ctx->scatterV,f,shell_mat_ctx->v,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
+    //ierr = VecScale(shell_mat_ctx->v,1/shell_mat_ctx->scale); CHKERRG(ierr);
     //apply pre-conditioner and calculate u
-    ierr = MatMult(shell_mat_ctx->M,shell_mat_ctx->v,shell_mat_ctx->Mv); CHKERRQ(ierr); // Mrv
-    ierr = VecAXPY(shell_mat_ctx->Ku,-1,shell_mat_ctx->Mv); CHKERRQ(ierr); // f-Mrv
-    ierr = PCApply(ctx->pC,shell_mat_ctx->Ku,shell_mat_ctx->u); CHKERRQ(ierr); //u = (aM+K)^(-1)(ru-Mrv)
+    ierr = MatMult(shell_mat_ctx->M,shell_mat_ctx->v,shell_mat_ctx->Mv); CHKERRG(ierr); // Mrv
+    ierr = VecAXPY(shell_mat_ctx->Ku,-1,shell_mat_ctx->Mv); CHKERRG(ierr); // f-Mrv
+    ierr = PCApply(ctx->pC,shell_mat_ctx->Ku,shell_mat_ctx->u); CHKERRG(ierr); //u = (aM+K)^(-1)(ru-Mrv)
     //VecView(shell_mat_ctx->u,PETSC_VIEWER_STDOUT_WORLD);
     //calculate velocities
-    ierr = VecAXPY(shell_mat_ctx->v,shell_mat_ctx->ts_a,shell_mat_ctx->u); CHKERRQ(ierr); // v = v + a*u
+    ierr = VecAXPY(shell_mat_ctx->v,shell_mat_ctx->ts_a,shell_mat_ctx->u); CHKERRG(ierr); // v = v + a*u
     //VecView(shell_mat_ctx->v,PETSC_VIEWER_STDOUT_WORLD);
     //reverse
-    ierr = VecZeroEntries(x); CHKERRQ(ierr);
-    ierr = VecScatterBegin(shell_mat_ctx->scatterU,shell_mat_ctx->u,x,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-    ierr = VecScatterEnd(shell_mat_ctx->scatterU,shell_mat_ctx->u,x,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-    ierr = VecScatterBegin(shell_mat_ctx->scatterV,shell_mat_ctx->v,x,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-    ierr = VecScatterEnd(shell_mat_ctx->scatterV,shell_mat_ctx->v,x,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-    ierr = VecAssemblyBegin(x); CHKERRQ(ierr);
-    ierr = VecAssemblyEnd(x); CHKERRQ(ierr);
+    ierr = VecZeroEntries(x); CHKERRG(ierr);
+    ierr = VecScatterBegin(shell_mat_ctx->scatterU,shell_mat_ctx->u,x,INSERT_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
+    ierr = VecScatterEnd(shell_mat_ctx->scatterU,shell_mat_ctx->u,x,INSERT_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
+    ierr = VecScatterBegin(shell_mat_ctx->scatterV,shell_mat_ctx->v,x,INSERT_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
+    ierr = VecScatterEnd(shell_mat_ctx->scatterV,shell_mat_ctx->v,x,INSERT_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
+    ierr = VecAssemblyBegin(x); CHKERRG(ierr);
+    ierr = VecAssemblyEnd(x); CHKERRG(ierr);
     MoFEMFunctionReturnHot(0);
   }
 
@@ -732,9 +732,9 @@ struct ConvectiveMassElement {
     //variables bellow need to be set by user
     MatShellCtx *shellMatCtx; 					///< pointer to shell matrix
 
-    PetscErrorCode preProcess();
+    MoFEMErrorCode preProcess();
 
-    PetscErrorCode postProcess();
+    MoFEMErrorCode postProcess();
 
   };
 
@@ -762,7 +762,7 @@ struct ConvectiveMassElement {
     MatShellCtx *shellMatCtx; 					///< pointer to shell matrix
     DirichletSpatialPositionsBc *DirichletBcPtr; 	///< boundary conditions
 
-    PetscErrorCode preProcess();
+    MoFEMErrorCode preProcess();
 
   };
 

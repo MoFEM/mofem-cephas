@@ -117,7 +117,7 @@ static const MOFEMuuid IDD_MOFEMMeshsetsManager =
  */
 struct MeshsetsManager : public UnknownInterface {
 
-  PetscErrorCode query_interface(const MOFEMuuid &uuid,
+  MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
                                  UnknownInterface **iface) const;
 
   MoFEM::Core &cOre;
@@ -135,7 +135,7 @@ struct MeshsetsManager : public UnknownInterface {
    * meshing softwares, f.e. gmesh.
 
    */
-  PetscErrorCode getTags(int verb = -1);
+  MoFEMErrorCode getTags(int verb = -1);
 
   /**
    * \brief get tag handle used to store "id" of NODESET
@@ -181,16 +181,16 @@ struct MeshsetsManager : public UnknownInterface {
    * \brief clear multi-index container
    * @return error code
    */
-  PetscErrorCode clearMap();
+  MoFEMErrorCode clearMap();
 
   /**
    * \brier initialize container form data on mesh
    * @return [description]
    */
-  PetscErrorCode initialiseDatabaseFromMesh(int verb = 0);
+  MoFEMErrorCode initialiseDatabaseFromMesh(int verb = 0);
 
   template <class CUBIT_BC_DATA_TYPE>
-  PetscErrorCode printBcSet(CUBIT_BC_DATA_TYPE &data,
+  MoFEMErrorCode printBcSet(CUBIT_BC_DATA_TYPE &data,
                             unsigned long int type) const {
 
     MoFEMFunctionBeginHot;
@@ -199,7 +199,7 @@ struct MeshsetsManager : public UnknownInterface {
       const moab::Interface &moab = m_field.get_moab();
       for (_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_((*this), type, it)) {
         ierr = it->getBcDataStructure(data);
-        CHKERRQ(ierr);
+        CHKERRG(ierr);
         std::ostringstream ss;
         ss << *it << std::endl;
         ss << data << std::endl;
@@ -234,32 +234,32 @@ struct MeshsetsManager : public UnknownInterface {
    * \brief print meshsets with displacement boundary conditions data
    * structure
    */
-  PetscErrorCode printDisplacementSet() const;
+  MoFEMErrorCode printDisplacementSet() const;
 
   /**
    * \brief print meshsets with pressure boundary conditions data structure
    */
-  PetscErrorCode printPressureSet() const;
+  MoFEMErrorCode printPressureSet() const;
 
   /**
    * \brief print meshsets with force boundary conditions data structure
    */
-  PetscErrorCode printForceSet() const;
+  MoFEMErrorCode printForceSet() const;
 
   /**
    * \brief print meshsets with temperature boundary conditions data structure
    */
-  PetscErrorCode printTemperatureSet() const;
+  MoFEMErrorCode printTemperatureSet() const;
 
   /**
    * \brief print meshsets with heat flux boundary conditions data structure
    */
-  PetscErrorCode printHeatFluxSet() const;
+  MoFEMErrorCode printHeatFluxSet() const;
 
   /**
    * \brief print meshsets with material data structure set on it
    */
-  PetscErrorCode printMaterialsSet() const;
+  MoFEMErrorCode printMaterialsSet() const;
 
   inline CubitMeshSet_multiIndex &getMeshsetsMultindex() {
     return cubitMeshsets;
@@ -433,7 +433,7 @@ struct MeshsetsManager : public UnknownInterface {
     * \param name of set
 
     */
-  PetscErrorCode addMeshset(const CubitBCType cubit_bc_type, const int ms_id,
+  MoFEMErrorCode addMeshset(const CubitBCType cubit_bc_type, const int ms_id,
                             const std::string name = "");
 
   /**
@@ -443,7 +443,7 @@ struct MeshsetsManager : public UnknownInterface {
    * @param  ents          entities to add
    * @return               error code
    */
-  PetscErrorCode addEntitiesToMeshset(const CubitBCType cubit_bc_type,
+  MoFEMErrorCode addEntitiesToMeshset(const CubitBCType cubit_bc_type,
                                       const int ms_id, const Range &ents);
 
   /**
@@ -454,7 +454,7 @@ struct MeshsetsManager : public UnknownInterface {
    * @param  nb_ents       number of entities in array
    * @return               error code
    */
-  PetscErrorCode addEntitiesToMeshset(const CubitBCType cubit_bc_type,
+  MoFEMErrorCode addEntitiesToMeshset(const CubitBCType cubit_bc_type,
                                       const int ms_id, const EntityHandle *ents,
                                       const int nb_ents);
 
@@ -466,7 +466,7 @@ struct MeshsetsManager : public UnknownInterface {
    * @param  attributes    attributes
    * @return               error code
    */
-  PetscErrorCode setAtributes(const CubitBCType cubit_bc_type, const int ms_id,
+  MoFEMErrorCode setAtributes(const CubitBCType cubit_bc_type, const int ms_id,
                                const std::vector<double> &attributes,
                                const std::string name = "");
 
@@ -478,7 +478,7 @@ struct MeshsetsManager : public UnknownInterface {
    * @param  attributes    attributes
    * @return               error code
    */
-  PetscErrorCode setAtributesByDataStructure(const CubitBCType cubit_bc_type,
+  MoFEMErrorCode setAtributesByDataStructure(const CubitBCType cubit_bc_type,
                                               const int ms_id,
                                               const GenericAttributeData &data,
                                               const std::string name = "");
@@ -491,7 +491,7 @@ struct MeshsetsManager : public UnknownInterface {
    * @param  data          data structure
    * @return               error code
    */
-  PetscErrorCode setBcData(const CubitBCType cubit_bc_type, const int ms_id,
+  MoFEMErrorCode setBcData(const CubitBCType cubit_bc_type, const int ms_id,
                            const GenericCubitBcData &data);
 
   /**
@@ -503,7 +503,7 @@ struct MeshsetsManager : public UnknownInterface {
     * \param ms_id id of the BLOCKSET/SIDESET/BLOCKSET: from CUBIT
     *
     */
-  PetscErrorCode deleteMeshset(const CubitBCType cubit_bc_type,
+  MoFEMErrorCode deleteMeshset(const CubitBCType cubit_bc_type,
                                const int ms_id);
 
   /**
@@ -511,7 +511,7 @@ struct MeshsetsManager : public UnknownInterface {
     * \ingroup mofem_meshset_mng
 
     */
-  PetscErrorCode getCubitMeshsetPtr(const int ms_id,
+  MoFEMErrorCode getCubitMeshsetPtr(const int ms_id,
                                     const CubitBCType cubit_bc_type,
                                     const CubitMeshSets **cubit_meshset_ptr);
 
@@ -520,7 +520,7 @@ struct MeshsetsManager : public UnknownInterface {
     * \ingroup mofem_meshset_mng
 
     */
-  PetscErrorCode getCubitMeshsetPtr(const string name,
+  MoFEMErrorCode getCubitMeshsetPtr(const string name,
                                     const CubitMeshSets **cubit_meshset_ptr);
 
   /**
@@ -545,7 +545,7 @@ struct MeshsetsManager : public UnknownInterface {
     recursively. Returns the contents of meshsets, but not the meshsets
     themselves if true.
     */
-  PetscErrorCode getEntitiesByDimension(const int ms_id,
+  MoFEMErrorCode getEntitiesByDimension(const int ms_id,
                                         const unsigned int cubit_bc_type,
                                         const int dimension, Range &entities,
                                         const bool recursive = false);
@@ -566,7 +566,7 @@ struct MeshsetsManager : public UnknownInterface {
     recursively.  Returns the contents of meshsets, but not the meshsets
     themselves if true.
     */
-  PetscErrorCode getEntitiesByDimension(const int ms_id,
+  MoFEMErrorCode getEntitiesByDimension(const int ms_id,
                                         const unsigned int cubit_bc_type,
                                         Range &entities,
                                         const bool recursive = false);
@@ -579,7 +579,7 @@ struct MeshsetsManager : public UnknownInterface {
     * \param  see CubitBC (NODESET, SIDESET or BLOCKSET and more)
     * \param meshset where to store the retrieved entities
     */
-  PetscErrorCode getMeshset(const int ms_id, const unsigned int cubit_bc_type,
+  MoFEMErrorCode getMeshset(const int ms_id, const unsigned int cubit_bc_type,
                             EntityHandle &meshset);
 
   /**
@@ -589,7 +589,7 @@ struct MeshsetsManager : public UnknownInterface {
     * \param  see CubitBC (NODESET, SIDESET or BLOCKSET and more).
     * \param meshsets is range of meshsets
     */
-  PetscErrorCode getMeshsetsByType(const unsigned int cubit_bc_type,
+  MoFEMErrorCode getMeshsetsByType(const unsigned int cubit_bc_type,
                                    Range &meshsets);
 
   /**
@@ -719,7 +719,7 @@ struct MeshsetsManager : public UnknownInterface {
    * @return           error code
 
    */
-  PetscErrorCode setMeshsetFromFile(const string file_name,
+  MoFEMErrorCode setMeshsetFromFile(const string file_name,
                                     const bool clean_file_options = true);
 
   /**
@@ -729,7 +729,7 @@ struct MeshsetsManager : public UnknownInterface {
    Option is "-meshsets_config file_name.cfg"
 
    */
-  PetscErrorCode setMeshsetFromFile();
+  MoFEMErrorCode setMeshsetFromFile();
 
   /**
    * \brief Get config file options, use with care
@@ -740,7 +740,7 @@ struct MeshsetsManager : public UnknownInterface {
     return configFileOptionsPtr;
   }
 
-  PetscErrorCode updateAllMeshsetsByEntitiesChildren(const BitRefLevel& bit);
+  MoFEMErrorCode updateAllMeshsetsByEntitiesChildren(const BitRefLevel& bit);
 
 protected:
   Tag nsTag;

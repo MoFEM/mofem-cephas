@@ -49,7 +49,7 @@ struct BodyForceConstantField {
 
     VectorDouble Nf;
 
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
       MoFEMFunctionBeginHot;
 
@@ -61,7 +61,7 @@ struct BodyForceConstantField {
       const FENumeredDofEntity *dof_ptr;
       ierr = getNumeredEntFiniteElementPtr()->getRowDofsByPetscGlobalDofIdx(
         data.getIndices()[0],&dof_ptr
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
       int rank = dof_ptr->getNbOfCoeffs();
 
       int nb_row_dofs = data.getIndices().size()/rank;
@@ -99,7 +99,7 @@ struct BodyForceConstantField {
 
       ierr = VecSetValues(F,data.getIndices().size(),
         &data.getIndices()[0],&Nf[0],ADD_VALUES
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
 
       MoFEMFunctionReturnHot(0);
     }
@@ -107,18 +107,18 @@ struct BodyForceConstantField {
 
   };
 
-  PetscErrorCode addBlock(const std::string field_name,Vec &F,int ms_id) {
+  MoFEMErrorCode addBlock(const std::string field_name,Vec &F,int ms_id) {
     
     
     const CubitMeshSets *cubit_meshset_ptr;
     MeshsetsManager *mmanager_ptr;
     MoFEMFunctionBeginHot;
-    ierr = mField.getInterface(mmanager_ptr); CHKERRQ(ierr);
-    ierr = mmanager_ptr->getCubitMeshsetPtr(ms_id,BLOCKSET,&cubit_meshset_ptr); CHKERRQ(ierr);
-    ierr = cubit_meshset_ptr->getAttributeDataStructure(mapData[ms_id]); CHKERRQ(ierr);
+    ierr = mField.getInterface(mmanager_ptr); CHKERRG(ierr);
+    ierr = mmanager_ptr->getCubitMeshsetPtr(ms_id,BLOCKSET,&cubit_meshset_ptr); CHKERRG(ierr);
+    ierr = cubit_meshset_ptr->getAttributeDataStructure(mapData[ms_id]); CHKERRG(ierr);
     EntityHandle meshset = cubit_meshset_ptr->getMeshset();
     Range tets;
-    rval = mField.get_moab().get_entities_by_type(meshset,MBTET,tets,true); CHKERRQ_MOAB(rval);
+    rval = mField.get_moab().get_entities_by_type(meshset,MBTET,tets,true); CHKERRG(rval);
     fe.getOpPtrVector().push_back(new OpBodyForce(field_name,F,mapData[ms_id],tets));
     MoFEMFunctionReturnHot(0);
   }

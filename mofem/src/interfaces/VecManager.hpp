@@ -34,7 +34,7 @@ namespace MoFEM {
    */
   struct VecManager: public UnknownInterface {
 
-    PetscErrorCode query_interface(const MOFEMuuid& uuid, UnknownInterface** iface) const;
+    MoFEMErrorCode query_interface(const MOFEMuuid& uuid, UnknownInterface** iface) const;
 
     const MoFEM::Interface& cOre;
     bool dEbug;
@@ -53,7 +53,7 @@ namespace MoFEM {
      * \param RowColData specify what data is taken from Row, Col or Data
      * \param Vec the vector where data is stored
      */
-    PetscErrorCode vecCreateSeq(const std::string &name,RowColData rc,Vec *V) const;
+    MoFEMErrorCode vecCreateSeq(const std::string &name,RowColData rc,Vec *V) const;
 
 
     /**
@@ -66,7 +66,7 @@ namespace MoFEM {
      * \param RowColData specify what data is taken from Row, Col or Data
      * \param Vec the vector where data is stored
      */
-    PetscErrorCode vecCreateGhost(const std::string &name,RowColData rc,Vec *V) const;
+    MoFEMErrorCode vecCreateGhost(const std::string &name,RowColData rc,Vec *V) const;
 
     /**
       * \brief create scatter for vectors form one to another problem (collective)
@@ -85,7 +85,7 @@ namespace MoFEM {
       * \retval newctx scatter
 
       */
-    PetscErrorCode vecScatterCreate(
+    MoFEMErrorCode vecScatterCreate(
       Vec xin,const std::string &x_problem,const std::string &x_field_name,RowColData x_rc,
       Vec yin,const std::string &y_problem,const std::string &y_field_name,RowColData y_rc,
       VecScatter *newctx
@@ -102,7 +102,7 @@ namespace MoFEM {
       * \retval newctx scatter
 
       */
-    PetscErrorCode vecScatterCreate(
+    MoFEMErrorCode vecScatterCreate(
       Vec xin,const std::string &x_problem,RowColData x_rc,
       Vec yin,const std::string &y_problem,RowColData y_rc,
       VecScatter *newctx
@@ -123,7 +123,7 @@ namespace MoFEM {
       * SCATTER_FORWARD set vector V from data field entities
       *
       */
-    PetscErrorCode setLocalGhostVector(
+    MoFEMErrorCode setLocalGhostVector(
       const Problem *problem_ptr,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode
     ) const;
 
@@ -142,7 +142,7 @@ namespace MoFEM {
       * SCATTER_FORWARD set vector V from data field entities
       *
       */
-    PetscErrorCode setLocalGhostVector(
+    MoFEMErrorCode setLocalGhostVector(
       const std::string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode
     ) const;
 
@@ -161,7 +161,7 @@ namespace MoFEM {
       * SCATTER_REVERSE set data to field entities form V vector.
       *
       */
-    PetscErrorCode setGlobalGhostVector(
+    MoFEMErrorCode setGlobalGhostVector(
       const Problem *problem_ptr,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode
     ) const;
 
@@ -180,7 +180,7 @@ namespace MoFEM {
       * SCATTER_REVERSE set data to field entities form V vector.
       *
       */
-    PetscErrorCode setGlobalGhostVector(
+    MoFEMErrorCode setGlobalGhostVector(
       const std::string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode
     ) const;
 
@@ -199,7 +199,7 @@ namespace MoFEM {
       * SCATTER_REVERSE set data to field entities form V vector.
       *
       */
-    PetscErrorCode setOtherLocalGhostVector(
+    MoFEMErrorCode setOtherLocalGhostVector(
       const Problem *problem_ptr,const std::string& field_name,const std::string& cpy_field_name,RowColData rc,
       Vec V,InsertMode mode,ScatterMode scatter_mode
     ) const;
@@ -219,7 +219,7 @@ namespace MoFEM {
       * SCATTER_REVERSE set data to field entities form V vector.
       *
       */
-    PetscErrorCode setOtherLocalGhostVector(
+    MoFEMErrorCode setOtherLocalGhostVector(
       const std::string &name,const std::string& field_name,const std::string& cpy_field_name,RowColData rc,
       Vec V,InsertMode mode,ScatterMode scatter_mode
     ) const;
@@ -240,7 +240,7 @@ namespace MoFEM {
       * SCATTER_REVERSE set data to field entities form V vector.
       *
       */
-    PetscErrorCode setOtherGlobalGhostVector(
+    MoFEMErrorCode setOtherGlobalGhostVector(
       const Problem *problem_ptr,
       const std::string& field_name,
       const std::string& cpy_field_name,
@@ -267,7 +267,7 @@ namespace MoFEM {
       * SCATTER_REVERSE set data to field entities form V vector.
       *
       */
-    PetscErrorCode setOtherGlobalGhostVector(
+    MoFEMErrorCode setOtherGlobalGhostVector(
       const std::string& name,
       const std::string& field_name,
       const std::string& cpy_field_name,

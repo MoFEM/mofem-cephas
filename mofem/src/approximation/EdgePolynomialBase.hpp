@@ -28,12 +28,12 @@ namespace MoFEM {
    */
   struct EdgePolynomialBase: public BaseFunction {
 
-    PetscErrorCode query_interface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface) const;
+    MoFEMErrorCode query_interface(const MOFEMuuid& uuid,UnknownInterface** iface) const;
 
     EdgePolynomialBase();
     ~EdgePolynomialBase();
 
-    PetscErrorCode getValue(
+    MoFEMErrorCode getValue(
       MatrixDouble &pts,
       boost::shared_ptr<BaseFunctionCtx> ctx_ptr
     );
@@ -44,13 +44,13 @@ namespace MoFEM {
 
     VectorDouble L,diffL;
 
-    PetscErrorCode getValueH1(MatrixDouble &pts);
+    MoFEMErrorCode getValueH1(MatrixDouble &pts);
 
-    PetscErrorCode getValueL2(MatrixDouble &pts);
+    MoFEMErrorCode getValueL2(MatrixDouble &pts);
 
-    PetscErrorCode getValueHdiv(MatrixDouble &pts);
+    MoFEMErrorCode getValueHdiv(MatrixDouble &pts);
 
-    PetscErrorCode getValueHCurl(MatrixDouble &pts);
+    MoFEMErrorCode getValueHCurl(MatrixDouble &pts);
 
 
   };

@@ -40,14 +40,14 @@ struct Projection10NodeCoordsOnField: public EntMethod {
   std::string fieldName;
   int vErbose;
 
-  Projection10NodeCoordsOnField(MoFEM::Interface& m_field,std::string field_name,int verb = 0):
+  Projection10NodeCoordsOnField(Interface& m_field,std::string field_name,int verb = 0):
     mField(m_field),fieldName(field_name),vErbose(verb) {
   }
 
   
   ErrorCode rval;
 
-  PetscErrorCode preProcess() {
+  MoFEMErrorCode preProcess() {
     MoFEMFunctionBeginHot;
     MoFEMFunctionReturnHot(0);
   }
@@ -58,7 +58,7 @@ struct Projection10NodeCoordsOnField: public EntMethod {
   ublas::vector<double,ublas::bounded_array<double,3> > diffNodeCoord;
   ublas::vector<double,ublas::bounded_array<double,3> > dOf;
 
-  PetscErrorCode operator()() {
+  MoFEMErrorCode operator()() {
     MoFEMFunctionBeginHot;
     if(dofPtr == NULL) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
@@ -126,7 +126,7 @@ struct Projection10NodeCoordsOnField: public EntMethod {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode postProcess() {
+  MoFEMErrorCode postProcess() {
     MoFEMFunctionBeginHot;
     MoFEMFunctionReturnHot(0);
   }
@@ -142,7 +142,7 @@ struct ProjectionFieldOn10NodeTet: public Projection10NodeCoordsOnField {
   const int maxApproximationOrder;
 
   ProjectionFieldOn10NodeTet(
-    MoFEM::Interface& m_field,std::string _fieldName,bool set_nodes,bool on_coords,std::string on_tag = "NoNE"
+    Interface& m_field,std::string _fieldName,bool set_nodes,bool on_coords,std::string on_tag = "NoNE"
   ):
   Projection10NodeCoordsOnField(m_field,_fieldName),
   setNodes(set_nodes),
@@ -156,7 +156,7 @@ struct ProjectionFieldOn10NodeTet: public Projection10NodeCoordsOnField {
   VectorDouble L;
   VectorDouble K;
 
-  PetscErrorCode preProcess() {
+  MoFEMErrorCode preProcess() {
     MoFEMFunctionBeginHot;
     if(!onCoords) {
       if(onTag == "NoNE") {
@@ -175,14 +175,14 @@ struct ProjectionFieldOn10NodeTet: public Projection10NodeCoordsOnField {
     }
 
     L.resize(maxApproximationOrder+1);
-    ierr = Legendre_polynomials(maxApproximationOrder,0.,NULL,&*L.data().begin(),NULL,3); CHKERRQ(ierr);
+    ierr = Legendre_polynomials(maxApproximationOrder,0.,NULL,&*L.data().begin(),NULL,3); CHKERRG(ierr);
     K.resize(10);
-    ierr = LobattoKernel_polynomials(9,0.,NULL,&*K.data().begin(),NULL,3); CHKERRQ(ierr);
+    ierr = LobattoKernel_polynomials(9,0.,NULL,&*K.data().begin(),NULL,3); CHKERRG(ierr);
 
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode operator()() {
+  MoFEMErrorCode operator()() {
     MoFEMFunctionBeginHot;
     if(dofPtr->getName() != fieldName) MoFEMFunctionReturnHot(0);
     if(setNodes) {

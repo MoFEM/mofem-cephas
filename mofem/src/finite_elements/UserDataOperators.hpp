@@ -52,7 +52,7 @@ struct OpCalculateScalarFieldValues_General: public ForcesAndSourcesCore::UserDa
    * @param  data entity data
    * @return      error code
    */
-  PetscErrorCode doWork(
+  MoFEMErrorCode doWork(
     int side,EntityType type,DataForcesAndSourcesCore::EntData &data
   );
 
@@ -63,7 +63,7 @@ struct OpCalculateScalarFieldValues_General: public ForcesAndSourcesCore::UserDa
 * \ingroup mofem_forces_and_sources_user_data_operators
 */
 template<class T, class A>
-PetscErrorCode OpCalculateScalarFieldValues_General<T,A>::doWork(
+MoFEMErrorCode OpCalculateScalarFieldValues_General<T,A>::doWork(
   int side,EntityType type,DataForcesAndSourcesCore::EntData &data
 ) {
   MoFEMFunctionBeginHot;
@@ -101,7 +101,7 @@ public OpCalculateScalarFieldValues_General<double,DoubleAllocator> {
    * @param  data entity data
    * @return      error code
    */
-  PetscErrorCode doWork(
+  MoFEMErrorCode doWork(
     int side,EntityType type,DataForcesAndSourcesCore::EntData &data
   ) {
     MoFEMFunctionBeginHot;
@@ -172,14 +172,14 @@ struct OpCalculateVectorFieldValues_General: public ForcesAndSourcesCore::UserDa
    * @param  data entity data
    * @return      error code
    */
-  PetscErrorCode doWork(
+  MoFEMErrorCode doWork(
     int side,EntityType type,DataForcesAndSourcesCore::EntData &data
   );
 
 };
 
 template<int Tensor_Dim, class T, class L, class A>
-PetscErrorCode OpCalculateVectorFieldValues_General<Tensor_Dim,T,L,A>::doWork(
+MoFEMErrorCode OpCalculateVectorFieldValues_General<Tensor_Dim,T,L,A>::doWork(
   int side,EntityType type,DataForcesAndSourcesCore::EntData &data
 ) {
   MoFEMFunctionBeginHot;
@@ -213,7 +213,7 @@ struct OpCalculateVectorFieldValues_General<Tensor_Dim,double,ublas::row_major,D
   zeroType(zero_type) {
   }
 
-  PetscErrorCode doWork(
+  MoFEMErrorCode doWork(
     int side,EntityType type,DataForcesAndSourcesCore::EntData &data
   );
 
@@ -224,7 +224,7 @@ struct OpCalculateVectorFieldValues_General<Tensor_Dim,double,ublas::row_major,D
  * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template<int Tensor_Dim>
-PetscErrorCode OpCalculateVectorFieldValues_General<Tensor_Dim,double,ublas::row_major,DoubleAllocator >::doWork(
+MoFEMErrorCode OpCalculateVectorFieldValues_General<Tensor_Dim,double,ublas::row_major,DoubleAllocator >::doWork(
   int side,EntityType type,DataForcesAndSourcesCore::EntData &data
 ) {
   MoFEMFunctionBeginHot;
@@ -310,14 +310,14 @@ struct OpCalculateTensor2FieldValues_General: public ForcesAndSourcesCore::UserD
   zeroType(zero_type) {
   }
 
-  PetscErrorCode doWork(
+  MoFEMErrorCode doWork(
     int side,EntityType type,DataForcesAndSourcesCore::EntData &data
   );
 
 };
 
 template<int Tensor_Dim0, int Tensor_Dim1, class T, class L, class A>
-PetscErrorCode OpCalculateTensor2FieldValues_General<Tensor_Dim0,Tensor_Dim1,T,L,A>::doWork(
+MoFEMErrorCode OpCalculateTensor2FieldValues_General<Tensor_Dim0,Tensor_Dim1,T,L,A>::doWork(
   int side,EntityType type,DataForcesAndSourcesCore::EntData &data
 ) {
   MoFEMFunctionBeginHot;
@@ -350,14 +350,14 @@ Tensor_Dim0,Tensor_Dim1,double,ublas::row_major,DoubleAllocator
   zeroType(zero_type) {
   }
 
-  PetscErrorCode doWork(
+  MoFEMErrorCode doWork(
     int side,EntityType type,DataForcesAndSourcesCore::EntData &data
   );
 
 };
 
 template<int Tensor_Dim0,int Tensor_Dim1>
-PetscErrorCode OpCalculateTensor2FieldValues_General<
+MoFEMErrorCode OpCalculateTensor2FieldValues_General<
 Tensor_Dim0,Tensor_Dim1, double, ublas::row_major, DoubleAllocator
 >::doWork(
   int side,EntityType type,DataForcesAndSourcesCore::EntData &data
@@ -413,7 +413,7 @@ public OpCalculateVectorFieldValues_General<Tensor_Dim,double,ublas::row_major,D
    * @param  data entity data
    * @return      error code
    */
-  PetscErrorCode doWork(
+  MoFEMErrorCode doWork(
     int side,EntityType type,DataForcesAndSourcesCore::EntData &data
   );
 
@@ -424,7 +424,7 @@ public OpCalculateVectorFieldValues_General<Tensor_Dim,double,ublas::row_major,D
  * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template<int Tensor_Dim>
-PetscErrorCode OpCalculateScalarFieldGradient_General<Tensor_Dim,double,ublas::row_major,DoubleAllocator >::doWork(
+MoFEMErrorCode OpCalculateScalarFieldGradient_General<Tensor_Dim,double,ublas::row_major,DoubleAllocator >::doWork(
   int side,EntityType type,DataForcesAndSourcesCore::EntData &data
 ) {
   MoFEMFunctionBeginHot;
@@ -524,7 +524,7 @@ public OpCalculateTensor2FieldValues_General<Tensor_Dim0,Tensor_Dim1,double,ubla
    * @param  data entity data
    * @return      error code
    */
-  PetscErrorCode doWork(
+  MoFEMErrorCode doWork(
     int side,EntityType type,DataForcesAndSourcesCore::EntData &data
   );
 
@@ -535,7 +535,7 @@ public OpCalculateTensor2FieldValues_General<Tensor_Dim0,Tensor_Dim1,double,ubla
  * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template<int Tensor_Dim0,int Tensor_Dim1>
-PetscErrorCode OpCalculateVectorFieldGradient_General<
+MoFEMErrorCode OpCalculateVectorFieldGradient_General<
 Tensor_Dim0,Tensor_Dim1,double,ublas::row_major,DoubleAllocator
 >::doWork(
   int side,EntityType type,DataForcesAndSourcesCore::EntData &data
@@ -627,14 +627,14 @@ struct OpCalculateHdivVectorField_General: public ForcesAndSourcesCore::UserData
    * @param  data entity data
    * @return      error code
    */
-  PetscErrorCode doWork(
+  MoFEMErrorCode doWork(
     int side,EntityType type,DataForcesAndSourcesCore::EntData &data
   );
 
 };
 
 template<int Tensor_Dim, class T, class L, class A>
-PetscErrorCode OpCalculateHdivVectorField_General<Tensor_Dim,T,L,A>::doWork(
+MoFEMErrorCode OpCalculateHdivVectorField_General<Tensor_Dim,T,L,A>::doWork(
   int side,EntityType type,DataForcesAndSourcesCore::EntData &data
 ) {
   MoFEMFunctionBeginHot;
@@ -678,14 +678,14 @@ public ForcesAndSourcesCore::UserDataOperator {
    * @param  data entity data
    * @return      error code
    */
-  PetscErrorCode doWork(
+  MoFEMErrorCode doWork(
     int side,EntityType type,DataForcesAndSourcesCore::EntData &data
   );
 
 };
 
 template<int Tensor_Dim>
-PetscErrorCode OpCalculateHdivVectorField_General<Tensor_Dim,double,ublas::row_major,DoubleAllocator>::doWork(
+MoFEMErrorCode OpCalculateHdivVectorField_General<Tensor_Dim,double,ublas::row_major,DoubleAllocator>::doWork(
   int side,EntityType type,DataForcesAndSourcesCore::EntData &data
 ) {
   MoFEMFunctionBeginHot;

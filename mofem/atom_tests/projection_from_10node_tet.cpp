@@ -49,15 +49,15 @@ int main(int argc, char *argv[]) {
   MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
   /*if(rank==0) {
     EntityHandle dummy_meshset;
-    rval = moab.create_meshset(MESHSET_SET,dummy_meshset); CHKERRQ_MOAB(rval);
+    rval = moab.create_meshset(MESHSET_SET,dummy_meshset); CHKERRG(rval);
   }*/
 
   PetscBool flg = PETSC_TRUE;
   char mesh_file_name[255];
   #if PETSC_VERSION_GE(3,6,4)
-  ierr = PetscOptionsGetString(PETSC_NULL,"","-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  ierr = PetscOptionsGetString(PETSC_NULL,"","-my_file",mesh_file_name,255,&flg); CHKERRG(ierr);
   #else
-  ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRG(ierr);
   #endif
   if(flg != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
@@ -65,7 +65,7 @@ int main(int argc, char *argv[]) {
 
   const char *option;
   option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERRG(rval);
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
 
@@ -73,63 +73,63 @@ int main(int argc, char *argv[]) {
   MoFEM::Interface& m_field = core;
 
   //add filds
-  ierr = m_field.add_field("MESH_NODE_POSITIONS",H1,AINSWORTH_LEGENDRE_BASE,3); CHKERRQ(ierr);
+  ierr = m_field.add_field("MESH_NODE_POSITIONS",H1,AINSWORTH_LEGENDRE_BASE,3); CHKERRG(ierr);
 
   //add finite elements
-  ierr = m_field.add_finite_element("TET_ELEM"); CHKERRQ(ierr);
-  ierr = m_field.modify_finite_element_add_field_row("TET_ELEM","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
-  ierr = m_field.modify_finite_element_add_field_col("TET_ELEM","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
-  ierr = m_field.modify_finite_element_add_field_data("TET_ELEM","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+  ierr = m_field.add_finite_element("TET_ELEM"); CHKERRG(ierr);
+  ierr = m_field.modify_finite_element_add_field_row("TET_ELEM","MESH_NODE_POSITIONS"); CHKERRG(ierr);
+  ierr = m_field.modify_finite_element_add_field_col("TET_ELEM","MESH_NODE_POSITIONS"); CHKERRG(ierr);
+  ierr = m_field.modify_finite_element_add_field_data("TET_ELEM","MESH_NODE_POSITIONS"); CHKERRG(ierr);
 
   //add problems
-  //ierr = m_field.add_problem("EDGE_PROJECTOR_PROBLEM"); CHKERRQ(ierr);
-  ierr = m_field.add_problem("TET_PROBLEM"); CHKERRQ(ierr);
+  //ierr = m_field.add_problem("EDGE_PROJECTOR_PROBLEM"); CHKERRG(ierr);
+  ierr = m_field.add_problem("TET_PROBLEM"); CHKERRG(ierr);
 
   //define problems and finite elements
-  ierr = m_field.modify_problem_add_finite_element("TET_PROBLEM","TET_ELEM"); CHKERRQ(ierr);
+  ierr = m_field.modify_problem_add_finite_element("TET_PROBLEM","TET_ELEM"); CHKERRG(ierr);
 
   BitRefLevel bit_level0;
   bit_level0.set(0);
-  ierr = m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(0,3,bit_level0); CHKERRQ(ierr);
+  ierr = m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(0,3,bit_level0); CHKERRG(ierr);
   Range tets;
-  rval = moab.get_entities_by_type(0,MBTET,tets,true); CHKERRQ_MOAB(rval);
+  rval = moab.get_entities_by_type(0,MBTET,tets,true); CHKERRG(rval);
   Range edges;
-  rval = moab.get_entities_by_type(0,MBEDGE,edges,true); CHKERRQ_MOAB(rval);
-  ierr = m_field.seed_finite_elements(edges); CHKERRQ(ierr);
+  rval = moab.get_entities_by_type(0,MBEDGE,edges,true); CHKERRG(rval);
+  ierr = m_field.seed_finite_elements(edges); CHKERRG(ierr);
 
   //add ents to field and set app. order
 
-  ierr = m_field.add_ents_to_field_by_type(0,MBTET,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
-  ierr = m_field.set_field_order(0,MBVERTEX,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
-  ierr = m_field.set_field_order(0,MBEDGE,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
-  ierr = m_field.set_field_order(0,MBTRI,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
-  ierr = m_field.set_field_order(0,MBTET,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_field_by_type(0,MBTET,"MESH_NODE_POSITIONS"); CHKERRG(ierr);
+  ierr = m_field.set_field_order(0,MBVERTEX,"MESH_NODE_POSITIONS",1); CHKERRG(ierr);
+  ierr = m_field.set_field_order(0,MBEDGE,"MESH_NODE_POSITIONS",2); CHKERRG(ierr);
+  ierr = m_field.set_field_order(0,MBTRI,"MESH_NODE_POSITIONS",2); CHKERRG(ierr);
+  ierr = m_field.set_field_order(0,MBTET,"MESH_NODE_POSITIONS",2); CHKERRG(ierr);
 
   //add finite elements entities
-  ierr = m_field.add_ents_to_finite_element_by_type(tets,MBTET,"TET_ELEM"); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_finite_element_by_type(tets,MBTET,"TET_ELEM"); CHKERRG(ierr);
 
   //set problem level
-  ierr = m_field.modify_problem_ref_level_add_bit("TET_PROBLEM",bit_level0); CHKERRQ(ierr);
+  ierr = m_field.modify_problem_ref_level_add_bit("TET_PROBLEM",bit_level0); CHKERRG(ierr);
 
   //build fields
-  ierr = m_field.build_fields(); CHKERRQ(ierr);
+  ierr = m_field.build_fields(); CHKERRG(ierr);
   //build finite elements
-  ierr = m_field.build_finite_elements(); CHKERRQ(ierr);
+  ierr = m_field.build_finite_elements(); CHKERRG(ierr);
   //build adjacencies
-  ierr = m_field.build_adjacencies(bit_level0); CHKERRQ(ierr);
+  ierr = m_field.build_adjacencies(bit_level0); CHKERRG(ierr);
   //build problem
   ProblemsManager *prb_mng_ptr;
-  ierr = m_field.getInterface(prb_mng_ptr); CHKERRQ(ierr);
-  ierr = prb_mng_ptr->buildProblem("TET_PROBLEM",false); CHKERRQ(ierr);
+  ierr = m_field.getInterface(prb_mng_ptr); CHKERRG(ierr);
+  ierr = prb_mng_ptr->buildProblem("TET_PROBLEM",false); CHKERRG(ierr);
 
   //partition
-  ierr = prb_mng_ptr->partitionProblem("TET_PROBLEM"); CHKERRQ(ierr);
-  ierr = prb_mng_ptr->partitionFiniteElements("TET_PROBLEM"); CHKERRQ(ierr);
+  ierr = prb_mng_ptr->partitionProblem("TET_PROBLEM"); CHKERRG(ierr);
+  ierr = prb_mng_ptr->partitionFiniteElements("TET_PROBLEM"); CHKERRG(ierr);
   //what are ghost nodes, see Petsc Manual
-  ierr = prb_mng_ptr->partitionGhostDofs("TET_PROBLEM"); CHKERRQ(ierr);
+  ierr = prb_mng_ptr->partitionGhostDofs("TET_PROBLEM"); CHKERRG(ierr);
 
   Projection10NodeCoordsOnField ent_method(m_field,"MESH_NODE_POSITIONS");
-  ierr = m_field.loop_dofs("MESH_NODE_POSITIONS",ent_method); CHKERRQ(ierr);
+  ierr = m_field.loop_dofs("MESH_NODE_POSITIONS",ent_method); CHKERRG(ierr);
 
     //Open mesh_file_name.txt for writing
     std::ofstream myfile;
@@ -140,7 +140,7 @@ int main(int argc, char *argv[]) {
     myfile << "<<<< Dofs (X-Translation, Y-Translation, Z-Translation) >>>>>" << std::endl;
 
     const DofEntity_multiIndex *dofs_ptr;
-    ierr = m_field.get_dofs(&dofs_ptr); CHKERRQ(ierr);
+    ierr = m_field.get_dofs(&dofs_ptr); CHKERRG(ierr);
     DofEntity_multiIndex_uid_view dofs_view;
     for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(m_field,"MESH_NODE_POSITIONS",dof_ptr)) {
       dofs_view.insert(*dof_ptr);

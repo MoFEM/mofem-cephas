@@ -20,11 +20,13 @@ extern "C" {
   void macro_is_depracted_using_deprecated_function() {}
 }
 
-// #include </Users/likask/MyBuild/mofem-cephas/mofem/include/MoFEM.hpp>
-
 namespace MoFEM {
 
-PetscErrorCode Core::query_interface(const MOFEMuuid &uuid,
+int ErrorCheckerCode::lINE;
+const char *ErrorCheckerCode::fILE;
+const char *ErrorCheckerCode::fUNC;
+
+MoFEMErrorCode Core::query_interface(const MOFEMuuid &uuid,
                                      UnknownInterface **iface) const {
   MoFEMFunctionBeginHot;
   *iface = NULL;
@@ -117,9 +119,9 @@ static PetscErrorCode mofem_error_handler(
 }
 
 template<class IFACE>
-PetscErrorCode Core::regSubInterface(const MOFEMuuid& uid) {
+MoFEMErrorCode Core::regSubInterface(const MOFEMuuid& uid) {
   MoFEMFunctionBeginHot;
-  ierr = registerInterface<IFACE>(uid); CHKERRQ(ierr);
+  ierr = registerInterface<IFACE>(uid); CHKERRG(ierr);
   unsigned long int id = uid.uUId.to_ulong();
   iFaces.insert(id,new IFACE(*this));
   MoFEMFunctionReturnHot(0);
@@ -261,12 +263,12 @@ BitProblemId Core::getProblemShift() {
   return BitProblemId(1<<(((*pShift)++)-1));
 }
 
-PetscErrorCode Core::clearMap() {
+MoFEMErrorCode Core::clearMap() {
   MoFEMFunctionBeginHot;
   // Cleaning databases in interfaces
-  ierr = getInterface<SeriesRecorder>()->clearMap(); CHKERRQ(ierr);
-  ierr = getInterface<MeshsetsManager>()->clearMap(); CHKERRQ(ierr);
-  ierr = getInterface<CoordSystemsManager>()->clearMap(); CHKERRQ(ierr);
+  ierr = getInterface<SeriesRecorder>()->clearMap(); CHKERRG(ierr);
+  ierr = getInterface<MeshsetsManager>()->clearMap(); CHKERRG(ierr);
+  ierr = getInterface<CoordSystemsManager>()->clearMap(); CHKERRG(ierr);
   // Cleaning databases
   refinedEntities.clear();
   refinedFiniteElements.clear();
@@ -280,7 +282,7 @@ PetscErrorCode Core::clearMap() {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode Core::addPrismToDatabase(const EntityHandle prism,int verb) {
+MoFEMErrorCode Core::addPrismToDatabase(const EntityHandle prism,int verb) {
   MoFEMFunctionBeginHot;
   if(verb==-1) verb = verbose;
   try {
@@ -308,7 +310,7 @@ PetscErrorCode Core::addPrismToDatabase(const EntityHandle prism,int verb) {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode Core::getTags(int verb) {
+MoFEMErrorCode Core::getTags(int verb) {
   MoFEMFunctionBeginHot;
 
   const EntityHandle root_meshset = moab.get_root_set();
@@ -319,7 +321,7 @@ PetscErrorCode Core::getTags(int verb) {
   // Set version
   {
     Version version;
-    ierr = getFileVersion(moab,version); CHKERRQ(ierr);
+    ierr = getFileVersion(moab,version); CHKERRG(ierr);
     // PetscPrintf(
     //   comm,"file version %d.%d.%d\n",
     //   version.majorVersion,version.minorVersion,version.buildVersion
@@ -534,47 +536,47 @@ PetscErrorCode Core::getTags(int verb) {
 
   //Meshsets with boundary conditions and material sets
   MeshsetsManager *meshsets_manager_ptr;
-  ierr = getInterface(meshsets_manager_ptr); CHKERRQ(ierr);
-  ierr = meshsets_manager_ptr->getTags(verb); CHKERRQ(ierr);
+  ierr = getInterface(meshsets_manager_ptr); CHKERRG(ierr);
+  ierr = meshsets_manager_ptr->getTags(verb); CHKERRG(ierr);
 
   // Series recorder
   SeriesRecorder *series_recorder_ptr;
-  ierr = getInterface(series_recorder_ptr); CHKERRQ(ierr);
-  ierr = series_recorder_ptr->getTags(verb); CHKERRQ(ierr);
+  ierr = getInterface(series_recorder_ptr); CHKERRG(ierr);
+  ierr = series_recorder_ptr->getTags(verb); CHKERRG(ierr);
 
   //Coordinate systems
   CoordSystemsManager *cs_manger_ptr;
-  ierr = getInterface(cs_manger_ptr); CHKERRQ(ierr);
-  ierr = cs_manger_ptr->getTags(verb); CHKERRQ(ierr);
+  ierr = getInterface(cs_manger_ptr); CHKERRG(ierr);
+  ierr = cs_manger_ptr->getTags(verb); CHKERRG(ierr);
 
 
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode Core::clear_database(int verb) {
+MoFEMErrorCode Core::clear_database(int verb) {
   MoFEMFunctionBeginHot;
   if(verb==-1) verb = verbose;
-  ierr = clearMap(); CHKERRQ(ierr);
+  ierr = clearMap(); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode Core::rebuild_database(int verb) {
+MoFEMErrorCode Core::rebuild_database(int verb) {
   MoFEMFunctionBeginHot;
   if(verb==-1) verb = verbose;
-  ierr = clearMap(); CHKERRQ(ierr);
-  ierr = initialiseDatabaseFromMesh(verb); CHKERRQ(ierr);
+  ierr = clearMap(); CHKERRG(ierr);
+  ierr = initialiseDatabaseFromMesh(verb); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode Core::initialiseDatabaseFromMesh(int verb) {
+MoFEMErrorCode Core::initialiseDatabaseFromMesh(int verb) {
   MoFEMFunctionBeginHot;
   if(verb==-1) verb = verbose;
 
   CoordSystemsManager *cs_manger_ptr;
-  ierr = getInterface(cs_manger_ptr); CHKERRQ(ierr);
+  ierr = getInterface(cs_manger_ptr); CHKERRG(ierr);
 
   // Initialize coordinate systems
-  ierr = cs_manger_ptr->initialiseDatabaseFromMesh(verb); CHKERRQ(ierr);
+  ierr = cs_manger_ptr->initialiseDatabaseFromMesh(verb); CHKERRG(ierr);
 
   // Initialize database
   Range meshsets;
@@ -596,9 +598,9 @@ PetscErrorCode Core::initialiseDatabaseFromMesh(int verb) {
         );
         boost::shared_ptr<CoordSys> cs_ptr;
         if(rval == MB_SUCCESS && cs_name_size) {
-          ierr = cs_manger_ptr->getCoordSysPtr(std::string(cs_name,cs_name_size),cs_ptr); CHKERRQ(ierr);
+          ierr = cs_manger_ptr->getCoordSysPtr(std::string(cs_name,cs_name_size),cs_ptr); CHKERRG(ierr);
         } else {
-          ierr = cs_manger_ptr->getCoordSysPtr("UNDEFINED",cs_ptr); CHKERRQ(ierr);
+          ierr = cs_manger_ptr->getCoordSysPtr("UNDEFINED",cs_ptr); CHKERRG(ierr);
         }
         p = fIelds.insert(boost::shared_ptr<Field>(new Field(moab,*mit,cs_ptr)));
         if(verb > 0) {
@@ -707,7 +709,7 @@ PetscErrorCode Core::initialiseDatabaseFromMesh(int verb) {
             );
             break;
             case MBPRISM:
-            ierr = addPrismToDatabase(*eit,verb); CHKERRQ(ierr);
+            ierr = addPrismToDatabase(*eit,verb); CHKERRG(ierr);
             p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(
               boost::shared_ptr<RefElement>(new RefElement_PRISM(*p_ref_ent.first)))
             );
@@ -779,35 +781,35 @@ PetscErrorCode Core::initialiseDatabaseFromMesh(int verb) {
 
   // Initialize interfaces
   MeshsetsManager *m_manger_ptr;
-  ierr = getInterface(m_manger_ptr); CHKERRQ(ierr);
-  ierr = m_manger_ptr->initialiseDatabaseFromMesh(verb); CHKERRQ(ierr);
+  ierr = getInterface(m_manger_ptr); CHKERRG(ierr);
+  ierr = m_manger_ptr->initialiseDatabaseFromMesh(verb); CHKERRG(ierr);
   SeriesRecorder *series_recorder_ptr;
-  ierr = getInterface(series_recorder_ptr); CHKERRQ(ierr);
-  ierr = series_recorder_ptr->initialiseDatabaseFromMesh(verb); CHKERRQ(ierr);
+  ierr = getInterface(series_recorder_ptr); CHKERRG(ierr);
+  ierr = series_recorder_ptr->initialiseDatabaseFromMesh(verb); CHKERRG(ierr);
 
   MoFEMFunctionReturnHot(0);
 }
 
 // cubit meshsets
 
-PetscErrorCode Core::get_fields(const Field_multiIndex **fields_ptr) const {
+MoFEMErrorCode Core::get_fields(const Field_multiIndex **fields_ptr) const {
   MoFEMFunctionBeginHot;
   *fields_ptr = &fIelds;
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode Core::get_ref_ents(const RefEntity_multiIndex **refined_entities_ptr) const {
+MoFEMErrorCode Core::get_ref_ents(const RefEntity_multiIndex **refined_entities_ptr) const {
   MoFEMFunctionBeginHot;
   *refined_entities_ptr = &refinedEntities;
   MoFEMFunctionReturnHot(0);
 }
-PetscErrorCode Core::get_ref_finite_elements(const RefElement_multiIndex **refined_finite_elements_ptr) const {
+MoFEMErrorCode Core::get_ref_finite_elements(const RefElement_multiIndex **refined_finite_elements_ptr) const {
   MoFEMFunctionBeginHot;
   *refined_finite_elements_ptr = &refinedFiniteElements;
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode Core::get_problem(const std::string &problem_name,const Problem **problem_ptr) const {
+MoFEMErrorCode Core::get_problem(const std::string &problem_name,const Problem **problem_ptr) const {
   MoFEMFunctionBeginHot;
   typedef Problem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
   const ProblemsByName &problems = pRoblems.get<Problem_mi_tag>();
@@ -822,18 +824,18 @@ PetscErrorCode Core::get_problem(const std::string &problem_name,const Problem *
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode Core::get_problems(const Problem_multiIndex **problems_ptr) const {
+MoFEMErrorCode Core::get_problems(const Problem_multiIndex **problems_ptr) const {
   MoFEMFunctionBeginHot;
   *problems_ptr = &pRoblems;
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode Core::get_field_ents(const FieldEntity_multiIndex **field_ents) const {
+MoFEMErrorCode Core::get_field_ents(const FieldEntity_multiIndex **field_ents) const {
   MoFEMFunctionBeginHot;
   *field_ents = &entsFields;
   MoFEMFunctionReturnHot(0);
 }
-PetscErrorCode Core::get_dofs(const DofEntity_multiIndex **dofs_ptr) const {
+MoFEMErrorCode Core::get_dofs(const DofEntity_multiIndex **dofs_ptr) const {
   MoFEMFunctionBeginHot;
   *dofs_ptr = &dofsField;
   MoFEMFunctionReturnHot(0);

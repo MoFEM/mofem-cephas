@@ -13,7 +13,7 @@
 
 namespace MoFEM {
 
-  PetscErrorCode BitLevelCoupler::query_interface(const MOFEMuuid& uuid, UnknownInterface** iface) const {
+  MoFEMErrorCode BitLevelCoupler::query_interface(const MOFEMuuid& uuid, UnknownInterface** iface) const {
     MoFEMFunctionBeginHot;
     *iface = NULL;
     if(uuid == IDD_MOFEMBitLevelCoupler) {
@@ -24,14 +24,14 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode BitLevelCoupler::buildTree(const BitRefLevel &parent_level,int verb) {
+  MoFEMErrorCode BitLevelCoupler::buildTree(const BitRefLevel &parent_level,int verb) {
     MoFEMFunctionBeginHot;
-    MoFEM::Interface& m_field = cOre;
+    Interface& m_field = cOre;
     treePtr.reset(new AdaptiveKDTree(&m_field.get_moab()));
     Range tets;
     ierr = m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
       parent_level,BitRefLevel().set(),MBTET,tets
-    ); CHKERRQ(ierr);
+    ); CHKERRG(ierr);
     rval = treePtr->build_tree(tets); CHKERRQ_MOAB(rval);
     if(verb > 2) {
       rval = treePtr->print(); CHKERRQ_MOAB(rval);
@@ -39,14 +39,14 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode BitLevelCoupler::resetTree(const BitRefLevel &parent_level,int verb) {
+  MoFEMErrorCode BitLevelCoupler::resetTree(const BitRefLevel &parent_level,int verb) {
     MoFEMFunctionBeginHot;
     treePtr->reset_tree();
     treePtr.reset();
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode BitLevelCoupler::getParent(
+  MoFEMErrorCode BitLevelCoupler::getParent(
     const double *coords,
     EntityHandle &parent,
     bool tet_only,
@@ -55,15 +55,15 @@ namespace MoFEM {
     int verb
   ) {
     MoFEMFunctionBeginHot;
-    MoFEM::Interface& m_field = cOre;
+    Interface& m_field = cOre;
     EntityHandle leaf_out;
     rval = treePtr->point_search(coords,leaf_out,iter_tol,inside_tol); CHKERRQ_MOAB(rval);
     bool is_in;
     Range tets;
-    ierr = m_field.get_moab().get_entities_by_type(leaf_out,MBTET,tets); CHKERRQ(ierr);
+    ierr = m_field.get_moab().get_entities_by_type(leaf_out,MBTET,tets); CHKERRG(ierr);
     Range::iterator tit = tets.begin();
     for(;tit!=tets.end();tit++) {
-      ierr = getLocCoordsOnTet(*tit,coords,verb); CHKERRQ(ierr);
+      ierr = getLocCoordsOnTet(*tit,coords,verb); CHKERRG(ierr);
       is_in = true;
       for(int nn = 0;nn<4;nn++) {
         if(N[nn] < -inside_tol || N[nn] > 1+inside_tol) {
@@ -161,19 +161,19 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode BitLevelCoupler::buildAdjacenciesVerticesOnTets(
+  MoFEMErrorCode BitLevelCoupler::buildAdjacenciesVerticesOnTets(
     const BitRefLevel &parent_level,Range &children,
     bool vertex_elements,const double iter_tol,const double inside_tol,bool throw_error,int verb
   ) {
     MoFEMFunctionBeginHot;
-    MoFEM::Interface& m_field = cOre;
+    Interface& m_field = cOre;
     //build Tree
     bool init_tree = false;
 
     //find parents of all nodes, if node has no parent then tetrahedral containing that node is searched
     //node on tetrahedra my by part of face or edge on that tetrahedral, this need to be verified
     const RefEntity_multiIndex *refined_ptr;
-    ierr = m_field.get_ref_ents(&refined_ptr); CHKERRQ(ierr);
+    ierr = m_field.get_ref_ents(&refined_ptr); CHKERRG(ierr);
     RefEntity_multiIndex::index<EntType_mi_tag>::type::iterator it,hi_it;
     it = refined_ptr->get<EntType_mi_tag>().lower_bound(MBVERTEX);
     hi_it = refined_ptr->get<EntType_mi_tag>().upper_bound(MBVERTEX);
@@ -204,15 +204,15 @@ namespace MoFEM {
 
       //build a boundary volume Tree
       //if(!treePtr) {
-      ierr = buildTree(parent_level,verb); CHKERRQ(ierr);
+      ierr = buildTree(parent_level,verb); CHKERRG(ierr);
       init_tree = true;
       //}
 
       double coords[3];
       rval = m_field.get_moab().get_coords(&node,1,coords); CHKERRQ_MOAB(rval);
       EntityHandle parent = 0;
-      ierr = getParent(coords,parent,false,iter_tol,inside_tol,verb); CHKERRQ(ierr);
-      ierr = chanegParent(refined_ptr->project<0>(it),parent,vertex_elements); CHKERRQ(ierr);
+      ierr = getParent(coords,parent,false,iter_tol,inside_tol,verb); CHKERRG(ierr);
+      ierr = chanegParent(refined_ptr->project<0>(it),parent,vertex_elements); CHKERRG(ierr);
       if(throw_error && parent == 0) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
           "tets or any other entity for node not found");
@@ -226,18 +226,18 @@ namespace MoFEM {
       MoFEMFunctionReturnHot(0);
     }
 
-  PetscErrorCode BitLevelCoupler::buildAdjacenciesEdgesFacesVolumes(
+  MoFEMErrorCode BitLevelCoupler::buildAdjacenciesEdgesFacesVolumes(
       const BitRefLevel &parent_level,Range &children,bool elements,int verb
     ) {
       MoFEMFunctionBeginHot;
 
       if(verb>2) std::cout << children << std::endl;
 
-      MoFEM::Interface& m_field = cOre;
+      Interface& m_field = cOre;
 
       //access to ref dofs multi-index
       const RefEntity_multiIndex *refined_ptr;
-      ierr = m_field.get_ref_ents(&refined_ptr); CHKERRQ(ierr);
+      ierr = m_field.get_ref_ents(&refined_ptr); CHKERRG(ierr);
 
       std::vector<EntityHandle> conn_parents;
 
@@ -282,7 +282,7 @@ namespace MoFEM {
         int max_dim = m_field.get_moab().dimension_from_handle(*eit);
         const EntityHandle *conn;
         int num_nodes;
-        ierr = m_field.get_moab().get_connectivity(*eit,conn,num_nodes); CHKERRQ(ierr);
+        ierr = m_field.get_moab().get_connectivity(*eit,conn,num_nodes); CHKERRG(ierr);
         conn_parents.resize(num_nodes);
         for(int nn = 0;nn<num_nodes;nn++) {
           const RefEntity ent(m_field.get_basic_entity_data_ptr(),conn[nn]);
@@ -311,7 +311,7 @@ namespace MoFEM {
             ); CHKERRQ_MOAB(rval);
             parent_ents.erase((*it)->getRefEnt());
             if(!parent_ents.empty()) {
-              ierr = chanegParent(refined_ptr->project<0>(it),*parent_ents.begin(),elements); CHKERRQ(ierr);
+              ierr = chanegParent(refined_ptr->project<0>(it),*parent_ents.begin(),elements); CHKERRG(ierr);
               if(verb > 1) {
                 std::cout << "after: " << **it << std::endl << std::endl;
               }
@@ -320,7 +320,7 @@ namespace MoFEM {
           }
 
           if(!vErify && max_dim>3) {
-            ierr = chanegParent(refined_ptr->project<0>(it),0,elements); CHKERRQ(ierr);
+            ierr = chanegParent(refined_ptr->project<0>(it),0,elements); CHKERRG(ierr);
             if(verb > 1) {
               std::cout << "parent not found\n";
             }
@@ -333,15 +333,15 @@ namespace MoFEM {
       MoFEMFunctionReturnHot(0);
     }
 
-    PetscErrorCode BitLevelCoupler::chanegParent(RefEntity_multiIndex::iterator it,EntityHandle parent,bool element) {
+    MoFEMErrorCode BitLevelCoupler::chanegParent(RefEntity_multiIndex::iterator it,EntityHandle parent,bool element) {
       MoFEMFunctionBeginHot;
 
-      MoFEM::Interface& m_field = cOre;
+      Interface& m_field = cOre;
       const RefEntity_multiIndex *refined_ptr;
-      ierr = m_field.get_ref_ents(&refined_ptr); CHKERRQ(ierr);
+      ierr = m_field.get_ref_ents(&refined_ptr); CHKERRG(ierr);
 
       if(vErify) {
-        ierr = verifyParent(it,parent); CHKERRQ(ierr);
+        ierr = verifyParent(it,parent); CHKERRG(ierr);
       }
 
       bool parent_is_set = false;
@@ -349,7 +349,7 @@ namespace MoFEM {
         EntityHandle ent;
         ent = (*it)->getRefEnt();
         const RefElement_multiIndex *refined_finite_elements_ptr;
-        ierr = m_field.get_ref_finite_elements(&refined_finite_elements_ptr); CHKERRQ(ierr);
+        ierr = m_field.get_ref_finite_elements(&refined_finite_elements_ptr); CHKERRG(ierr);
         RefElement_multiIndex::index<Ent_mi_tag>::type::iterator eit;
         eit = refined_finite_elements_ptr->get<Ent_mi_tag>().find(ent);
         if(eit!=refined_finite_elements_ptr->get<Ent_mi_tag>().end()) {
@@ -375,14 +375,14 @@ namespace MoFEM {
       MoFEMFunctionReturnHot(0);
     }
 
-    PetscErrorCode BitLevelCoupler::resetParents(Range &children,bool elements,int verb) {
+    MoFEMErrorCode BitLevelCoupler::resetParents(Range &children,bool elements,int verb) {
       MoFEMFunctionBeginHot;
 
-      MoFEM::Interface& m_field = cOre;
+      Interface& m_field = cOre;
 
       //access to ref dofs multi-index
       const RefEntity_multiIndex *refined_ptr;
-      ierr = m_field.get_ref_ents(&refined_ptr); CHKERRQ(ierr);
+      ierr = m_field.get_ref_ents(&refined_ptr); CHKERRG(ierr);
 
       Range::iterator eit,hi_eit;
       eit = children.begin();
@@ -394,14 +394,14 @@ namespace MoFEM {
         it = refined_ptr->get<Ent_mi_tag>().find(*eit);
 
         //resent entity parent
-        ierr = chanegParent(refined_ptr->project<0>(it),0,elements); CHKERRQ(ierr);
+        ierr = chanegParent(refined_ptr->project<0>(it),0,elements); CHKERRG(ierr);
 
       }
 
       MoFEMFunctionReturnHot(0);
     }
 
-    PetscErrorCode BitLevelCoupler::verifyParent(RefEntity_multiIndex::iterator it,EntityHandle parent) {
+    MoFEMErrorCode BitLevelCoupler::verifyParent(RefEntity_multiIndex::iterator it,EntityHandle parent) {
       MoFEMFunctionBeginHot;
 
       if(parent != (*it)->getParentEnt()) {
@@ -412,8 +412,8 @@ namespace MoFEM {
       MoFEMFunctionReturnHot(0);
     }
 
-    PetscErrorCode BitLevelCoupler::getLocCoordsOnTet(EntityHandle tet,const double *glob_coords,int verb) {
-      MoFEM::Interface& m_field = cOre;
+    MoFEMErrorCode BitLevelCoupler::getLocCoordsOnTet(EntityHandle tet,const double *glob_coords,int verb) {
+      Interface& m_field = cOre;
       MoFEMFunctionBeginHot;
 
       int num_nodes;
@@ -428,11 +428,11 @@ namespace MoFEM {
       for(int dd =0;dd<3;dd++) {
         cOords[dd] = 0;
       }
-      ierr = ShapeDiffMBTET(diffN); CHKERRQ(ierr);
+      ierr = ShapeDiffMBTET(diffN); CHKERRG(ierr);
       locCoords[0] = locCoords[1] = locCoords[2] = 0;
-      ierr = ShapeMBTET(N,&locCoords[0],&locCoords[1],&locCoords[2],1);; CHKERRQ(ierr);
-      ierr = ShapeMBTET_inverse(N,diffN,cOords,shifted_glob_coors,locCoords); CHKERRQ(ierr);
-      ierr = ShapeMBTET(N,&locCoords[0],&locCoords[1],&locCoords[2],1);; CHKERRQ(ierr);
+      ierr = ShapeMBTET(N,&locCoords[0],&locCoords[1],&locCoords[2],1);; CHKERRG(ierr);
+      ierr = ShapeMBTET_inverse(N,diffN,cOords,shifted_glob_coors,locCoords); CHKERRG(ierr);
+      ierr = ShapeMBTET(N,&locCoords[0],&locCoords[1],&locCoords[2],1);; CHKERRG(ierr);
 
       if(verb>1) {
         std::cout << "N " << N[0] << " " << N[1] << " " << N[2] << " " << N[3] << std::endl;
@@ -441,12 +441,12 @@ namespace MoFEM {
       MoFEMFunctionReturnHot(0);
     }
 
-    PetscErrorCode BitLevelCoupler::copyFieldDataFromParentToChildren(
+    MoFEMErrorCode BitLevelCoupler::copyFieldDataFromParentToChildren(
       const std::vector<EntityHandle> &parents,
       const std::vector<EntityHandle> &children,
       const bool verify
     ) {
-      MoFEM::Interface& m_field = cOre;
+      Interface& m_field = cOre;
       moab::Interface& moab = m_field.get_moab();
       MoFEMFunctionBeginHot;
 
@@ -463,7 +463,7 @@ namespace MoFEM {
       std::vector<int> data_size(nb_elems);
 
       const Field_multiIndex *fields_ptr;
-      ierr = m_field.get_fields(&fields_ptr); CHKERRQ(ierr);
+      ierr = m_field.get_fields(&fields_ptr); CHKERRG(ierr);
       for(
         Field_multiIndex::iterator fit = fields_ptr->begin();
         fit!=fields_ptr->end(); fit++
@@ -473,7 +473,7 @@ namespace MoFEM {
         if(verify) {
           // Get pointer to multi-index with field entities
           const FieldEntity_multiIndex *field_ents;
-          ierr = m_field.get_field_ents(&field_ents); CHKERRQ(ierr);
+          ierr = m_field.get_field_ents(&field_ents); CHKERRG(ierr);
           std::vector<EntityHandle>::const_iterator pit = parents.begin();
           std::vector<EntityHandle>::const_iterator cit = children.begin();
           for(;pit!=parents.end();pit++,cit++) {
@@ -533,14 +533,14 @@ namespace MoFEM {
       MoFEMFunctionReturnHot(0);
     }
 
-    PetscErrorCode BitLevelCoupler::copyFieldDataFromParentToChildren(
+    MoFEMErrorCode BitLevelCoupler::copyFieldDataFromParentToChildren(
       const BitRefLevel bit,const BitRefLevel mask,const bool verify
     ) {
-      MoFEM::Interface& m_field = cOre;
+      Interface& m_field = cOre;
       //moab::Interface& moab = m_field.get_moab();
       MoFEMFunctionBeginHot;
       Range ents;
-      ierr = m_field.getInterface<BitRefManager>()->getEntitiesByRefLevel(bit,mask,ents); CHKERRQ(ierr);
+      ierr = m_field.getInterface<BitRefManager>()->getEntitiesByRefLevel(bit,mask,ents); CHKERRG(ierr);
       std::vector<EntityHandle> parents;
       std::vector<EntityHandle> children;
       for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {
@@ -550,7 +550,7 @@ namespace MoFEM {
           parents.push_back(ref_ent.getParentEnt());
         }
       }
-      ierr = copyFieldDataFromParentToChildren(parents,children,verify); CHKERRQ(ierr);
+      ierr = copyFieldDataFromParentToChildren(parents,children,verify); CHKERRG(ierr);
       MoFEMFunctionReturnHot(0);
     }
 

@@ -33,7 +33,7 @@ struct OpVolume: public VolumeElementForcesAndSourcesCore::UserDataOperator {
   VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,OPROW),
   vOl(vol) {
   }
-  PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
+  MoFEMErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
     
     MoFEMFunctionBeginHot;
     if(type!=MBVERTEX) MoFEMFunctionReturnHot(0);
@@ -49,10 +49,10 @@ struct OpVolume: public VolumeElementForcesAndSourcesCore::UserDataOperator {
       ++t_w;
       ++t_ho_det;
     }
-    ierr = VecSetValue(vOl,0,vol,ADD_VALUES); CHKERRQ(ierr);
+    ierr = VecSetValue(vOl,0,vol,ADD_VALUES); CHKERRG(ierr);
     MoFEMFunctionReturnHot(0);
   }
-  PetscErrorCode doWork(
+  MoFEMErrorCode doWork(
     int row_side,int col_side,
     EntityType row_type, EntityType col_type,
     DataForcesAndSourcesCore::EntData &row_data,
@@ -70,7 +70,7 @@ struct OpFace: public FaceElementForcesAndSourcesCore::UserDataOperator {
   FaceElementForcesAndSourcesCore::UserDataOperator(field_name,OPROW),
   vOl(vol) {
   }
-  PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
+  MoFEMErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
     
     MoFEMFunctionBeginHot;
     if(type!=MBVERTEX) MoFEMFunctionReturnHot(0);
@@ -87,10 +87,10 @@ struct OpFace: public FaceElementForcesAndSourcesCore::UserDataOperator {
       ++t_coords;
     }
     vol /= 6;
-    ierr = VecSetValue(vOl,0,vol,ADD_VALUES); CHKERRQ(ierr);
+    ierr = VecSetValue(vOl,0,vol,ADD_VALUES); CHKERRG(ierr);
     MoFEMFunctionReturnHot(0);
   }
-  PetscErrorCode doWork(
+  MoFEMErrorCode doWork(
     int row_side,int col_side,
     EntityType row_type, EntityType col_type,
     DataForcesAndSourcesCore::EntData &row_data,
@@ -125,29 +125,29 @@ int main(int argc, char *argv[]) {
 
     // Register DM Manager
     DMType dm_name = "DMMOFEM";
-    ierr = DMRegister_MoFEM(dm_name); CHKERRQ(ierr);
+    ierr = DMRegister_MoFEM(dm_name); CHKERRG(ierr);
 
     // Simple interface
     Simple *simple_interface;
-    ierr = m_field.getInterface(simple_interface); CHKERRQ(ierr);
+    ierr = m_field.getInterface(simple_interface); CHKERRG(ierr);
     {
       // get options from command line
-      ierr = simple_interface->getOptions(); CHKERRQ(ierr);
+      ierr = simple_interface->getOptions(); CHKERRG(ierr);
       // load mesh file
-      ierr = simple_interface->loadFile(); CHKERRQ(ierr);
+      ierr = simple_interface->loadFile(); CHKERRG(ierr);
       // add fields
-      ierr = simple_interface->addDomainField("MESH_NODE_POSITIONS",H1,AINSWORTH_LEGENDRE_BASE,3); CHKERRQ(ierr);
-      ierr = simple_interface->addBoundaryField("MESH_NODE_POSITIONS",H1,AINSWORTH_LEGENDRE_BASE,3); CHKERRQ(ierr);
+      ierr = simple_interface->addDomainField("MESH_NODE_POSITIONS",H1,AINSWORTH_LEGENDRE_BASE,3); CHKERRG(ierr);
+      ierr = simple_interface->addBoundaryField("MESH_NODE_POSITIONS",H1,AINSWORTH_LEGENDRE_BASE,3); CHKERRG(ierr);
       // set fields order
-      ierr = simple_interface->setFieldOrder("MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
+      ierr = simple_interface->setFieldOrder("MESH_NODE_POSITIONS",1); CHKERRG(ierr);
       // setup problem
-      ierr = simple_interface->setUp(); CHKERRQ(ierr);
+      ierr = simple_interface->setUp(); CHKERRG(ierr);
       // Project mesh coordinate on mesh
       Projection10NodeCoordsOnField ent_method(m_field,"MESH_NODE_POSITIONS");
-      ierr = m_field.loop_dofs("MESH_NODE_POSITIONS",ent_method); CHKERRQ(ierr);
+      ierr = m_field.loop_dofs("MESH_NODE_POSITIONS",ent_method); CHKERRG(ierr);
       DM dm;
       // get dm
-      ierr = simple_interface->getDM(&dm); CHKERRQ(ierr);
+      ierr = simple_interface->getDM(&dm); CHKERRG(ierr);
       // create elements
       boost::shared_ptr<ForcesAndSourcesCore> domain_fe =
       boost::shared_ptr<ForcesAndSourcesCore>(new VolumeElementForcesAndSourcesCore(m_field));
@@ -161,8 +161,8 @@ int main(int argc, char *argv[]) {
       Vec vol,surf_vol;
       ierr = VecCreateGhost(
         PETSC_COMM_WORLD,m_field.get_comm_rank()==0?1:0,1,m_field.get_comm_rank()==0?0:1,ghosts,&vol
-      ); CHKERRQ(ierr);
-      ierr = VecDuplicate(vol,&surf_vol); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
+      ierr = VecDuplicate(vol,&surf_vol); CHKERRG(ierr);
       // set operator to the volume element
       domain_fe->getOpPtrVector().push_back(new OpVolume("MESH_NODE_POSITIONS",vol)
       );
@@ -170,36 +170,36 @@ int main(int argc, char *argv[]) {
       boundary_fe->getOpPtrVector().push_back(new OpFace("MESH_NODE_POSITIONS",surf_vol)
       );
       // make integration in volume (here real calculations starts)
-      ierr = DMoFEMLoopFiniteElements(dm,simple_interface->getDomainFEName(),domain_fe); CHKERRQ(ierr);
+      ierr = DMoFEMLoopFiniteElements(dm,simple_interface->getDomainFEName(),domain_fe); CHKERRG(ierr);
       // make integration on boundary
-      ierr = DMoFEMLoopFiniteElements(dm,simple_interface->getBoundaryFEName(),boundary_fe); CHKERRQ(ierr);
+      ierr = DMoFEMLoopFiniteElements(dm,simple_interface->getBoundaryFEName(),boundary_fe); CHKERRG(ierr);
       // assemble volumes from processors and accumulate on processor of rank 0
-      ierr = VecAssemblyBegin(vol); CHKERRQ(ierr);
-      ierr = VecAssemblyEnd(vol); CHKERRQ(ierr);
-      ierr = VecGhostUpdateBegin(vol,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-      ierr = VecGhostUpdateEnd(vol,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-      ierr = VecAssemblyBegin(surf_vol); CHKERRQ(ierr);
-      ierr = VecAssemblyEnd(surf_vol); CHKERRQ(ierr);
-      ierr = VecGhostUpdateBegin(surf_vol,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-      ierr = VecGhostUpdateEnd(surf_vol,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+      ierr = VecAssemblyBegin(vol); CHKERRG(ierr);
+      ierr = VecAssemblyEnd(vol); CHKERRG(ierr);
+      ierr = VecGhostUpdateBegin(vol,ADD_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
+      ierr = VecGhostUpdateEnd(vol,ADD_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
+      ierr = VecAssemblyBegin(surf_vol); CHKERRG(ierr);
+      ierr = VecAssemblyEnd(surf_vol); CHKERRG(ierr);
+      ierr = VecGhostUpdateBegin(surf_vol,ADD_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
+      ierr = VecGhostUpdateEnd(surf_vol,ADD_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
       if(m_field.get_comm_rank()==0) {
         double *a_vol;
-        ierr = VecGetArray(vol,&a_vol); CHKERRQ(ierr);
+        ierr = VecGetArray(vol,&a_vol); CHKERRG(ierr);
         double *a_surf_vol;
-        ierr = VecGetArray(surf_vol,&a_surf_vol); CHKERRQ(ierr);
+        ierr = VecGetArray(surf_vol,&a_surf_vol); CHKERRG(ierr);
         cout << "Volume = " << a_vol[0] << endl;
         cout << "Surf Volume = " << a_surf_vol[0] << endl;
         if(fabs(a_vol[0]-a_surf_vol[0])>1e-12) {
           SETERRQ(PETSC_COMM_SELF,MOFEM_ATOM_TEST_INVALID,"Should be zero");
         }
-        ierr = VecRestoreArray(vol,&a_vol); CHKERRQ(ierr);
-        ierr = VecRestoreArray(vol,&a_surf_vol); CHKERRQ(ierr);
+        ierr = VecRestoreArray(vol,&a_vol); CHKERRG(ierr);
+        ierr = VecRestoreArray(vol,&a_surf_vol); CHKERRG(ierr);
       }
       // destroy vector
-      ierr = VecDestroy(&vol); CHKERRQ(ierr);
-      ierr = VecDestroy(&surf_vol); CHKERRQ(ierr);
+      ierr = VecDestroy(&vol); CHKERRG(ierr);
+      ierr = VecDestroy(&surf_vol); CHKERRG(ierr);
       // destroy dm
-      ierr = DMDestroy(&dm); CHKERRQ(ierr);
+      ierr = DMDestroy(&dm); CHKERRG(ierr);
    }
 
   } catch (MoFEMException const &e) {
@@ -207,7 +207,7 @@ int main(int argc, char *argv[]) {
   }
 
   // finish work cleaning memory, getting statistics, etc.
-  ierr = PetscFinalize(); CHKERRQ(ierr);
+  ierr = PetscFinalize(); CHKERRG(ierr);
 
   return 0;
 }

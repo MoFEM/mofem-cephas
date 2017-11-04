@@ -92,7 +92,7 @@ struct ElasticMaterials {
    * Initialize  model parameters
    * @return [description]
    */
-  virtual PetscErrorCode iNit() {
+  virtual MoFEMErrorCode iNit() {
     MoFEMFunctionBeginHot;
     //add new material below
     string mat_name;
@@ -114,12 +114,12 @@ struct ElasticMaterials {
     }
     avilable_materials << ">";
 
-    ierr = PetscOptionsBegin(mField.get_comm(),"","Elastic Materials Configuration","none"); CHKERRQ(ierr);
+    ierr = PetscOptionsBegin(mField.get_comm(),"","Elastic Materials Configuration","none"); CHKERRG(ierr);
     char default_material[255];
     PetscBool def_mat_set;
     ierr = PetscOptionsString(
       "-default_material",avilable_materials.str().c_str(),"",defMaterial.c_str(),default_material,255,&def_mat_set
-    ); CHKERRQ(ierr);
+    ); CHKERRG(ierr);
     if(def_mat_set) {
       defMaterial = default_material;
       if(aDoubleMaterialModel.find(defMaterial)==aDoubleMaterialModel.end()) {
@@ -130,11 +130,11 @@ struct ElasticMaterials {
     ierr = PetscOptionsString(
       "-elastic_material_configuration","elastic materials configure file name","",
       configFile.c_str(),config_file,255,&isConfigFileSet
-    ); CHKERRQ(ierr);
+    ); CHKERRG(ierr);
     if(isConfigFileSet) {
       configFile = config_file;
     }
-    ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+    ierr = PetscOptionsEnd(); CHKERRG(ierr);
     MoFEMFunctionReturnHot(0);
   }
 
@@ -166,7 +166,7 @@ struct ElasticMaterials {
     \endcode
 
     */
-  virtual PetscErrorCode readConfigFile() {
+  virtual MoFEMErrorCode readConfigFile() {
     MoFEMFunctionBeginHot;
 
     try {
@@ -237,7 +237,7 @@ struct ElasticMaterials {
       additional_parameters = collect_unrecognized(parsed.options,po::include_positional);
       for(std::vector<std::string>::iterator vit = additional_parameters.begin();
       vit!=additional_parameters.end();vit++) {
-        ierr = PetscPrintf(PETSC_COMM_WORLD,"** WARNING Unrecognized option %s\n",vit->c_str()); CHKERRQ(ierr);
+        ierr = PetscPrintf(PETSC_COMM_WORLD,"** WARNING Unrecognized option %s\n",vit->c_str()); CHKERRG(ierr);
       }
     } catch (std::exception& ex) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,"error parsing material elastic configuration file");
@@ -246,14 +246,14 @@ struct ElasticMaterials {
 
   }
 
-  PetscErrorCode setBlocksOrder() {
+  MoFEMErrorCode setBlocksOrder() {
     MoFEMFunctionBeginHot;
 
 
     //set app. order
     PetscBool flg = PETSC_TRUE;
     PetscInt disp_order;
-    ierr = PetscOptionsGetInt(PETSC_NULL,PETSC_NULL,"-order",&disp_order,&flg); CHKERRQ(ierr);
+    ierr = PetscOptionsGetInt(PETSC_NULL,PETSC_NULL,"-order",&disp_order,&flg); CHKERRG(ierr);
     if(flg!=PETSC_TRUE) {
       disp_order = 1;
     }
@@ -262,23 +262,23 @@ struct ElasticMaterials {
       if(blockData[it->getMeshsetId()].oRder == disp_order) continue;
       PetscPrintf(mField.get_comm(),"Set block %d oRder to %d\n",it->getMeshsetId(),blockData[it->getMeshsetId()].oRder);
       Range block_ents;
-      rval = mField.get_moab().get_entities_by_handle(it->meshset,block_ents,true); CHKERRQ_MOAB(rval);
+      rval = mField.get_moab().get_entities_by_handle(it->meshset,block_ents,true); CHKERRG(rval);
       Range ents_to_set_order;
-      ierr = mField.get_moab().get_adjacencies(block_ents,3,false,ents_to_set_order,moab::Interface::UNION); CHKERRQ(ierr);
+      ierr = mField.get_moab().get_adjacencies(block_ents,3,false,ents_to_set_order,moab::Interface::UNION); CHKERRG(ierr);
       ents_to_set_order = ents_to_set_order.subset_by_type(MBTET);
-      ierr = mField.get_moab().get_adjacencies(block_ents,2,false,ents_to_set_order,moab::Interface::UNION); CHKERRQ(ierr);
-      ierr = mField.get_moab().get_adjacencies(block_ents,1,false,ents_to_set_order,moab::Interface::UNION); CHKERRQ(ierr);
+      ierr = mField.get_moab().get_adjacencies(block_ents,2,false,ents_to_set_order,moab::Interface::UNION); CHKERRG(ierr);
+      ierr = mField.get_moab().get_adjacencies(block_ents,1,false,ents_to_set_order,moab::Interface::UNION); CHKERRG(ierr);
       if(mField.check_field("DISPLACEMENT")) {
-        ierr = mField.set_field_order(ents_to_set_order,"DISPLACEMENT",blockData[it->getMeshsetId()].oRder); CHKERRQ(ierr);
+        ierr = mField.set_field_order(ents_to_set_order,"DISPLACEMENT",blockData[it->getMeshsetId()].oRder); CHKERRG(ierr);
       }
       if(mField.check_field("SPATIAL_POSITION")) {
-        ierr = mField.set_field_order(ents_to_set_order,"SPATIAL_POSITION",blockData[it->getMeshsetId()].oRder); CHKERRQ(ierr);
+        ierr = mField.set_field_order(ents_to_set_order,"SPATIAL_POSITION",blockData[it->getMeshsetId()].oRder); CHKERRG(ierr);
       }
       if(mField.check_field("DOT_SPATIAL_POSITION")) {
-        ierr = mField.set_field_order(ents_to_set_order,"DOT_SPATIAL_POSITION",blockData[it->getMeshsetId()].oRder); CHKERRQ(ierr);
+        ierr = mField.set_field_order(ents_to_set_order,"DOT_SPATIAL_POSITION",blockData[it->getMeshsetId()].oRder); CHKERRG(ierr);
       }
       if(mField.check_field("SPATIAL_VELOCITY")) {
-        ierr = mField.set_field_order(ents_to_set_order,"SPATIAL_VELOCITY",blockData[it->getMeshsetId()].oRder); CHKERRQ(ierr);
+        ierr = mField.set_field_order(ents_to_set_order,"SPATIAL_VELOCITY",blockData[it->getMeshsetId()].oRder); CHKERRG(ierr);
       }
     }
     MoFEMFunctionReturnHot(0);
@@ -286,22 +286,22 @@ struct ElasticMaterials {
 
   #ifdef __NONLINEAR_ELASTIC_HPP
 
-  virtual PetscErrorCode setBlocks(std::map<int,NonlinearElasticElement::BlockData> &set_of_blocks) {
+  virtual MoFEMErrorCode setBlocks(std::map<int,NonlinearElasticElement::BlockData> &set_of_blocks) {
     MoFEMFunctionBeginHot;
 
 
     if(!iNitialized) {
-      ierr = iNit(); CHKERRQ(ierr);
-      ierr = readConfigFile(); CHKERRQ(ierr);
-      ierr = setBlocksOrder(); CHKERRQ(ierr);
+      ierr = iNit(); CHKERRG(ierr);
+      ierr = readConfigFile(); CHKERRG(ierr);
+      ierr = setBlocksOrder(); CHKERRG(ierr);
       iNitialized = true;
     }
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|MAT_ELASTICSET,it)) {
       int id = it->getMeshsetId();
       Mat_Elastic mydata;
-      ierr = it->getAttributeDataStructure(mydata); CHKERRQ(ierr);
+      ierr = it->getAttributeDataStructure(mydata); CHKERRG(ierr);
       EntityHandle meshset = it->getMeshset();
-      rval = mField.get_moab().get_entities_by_type(meshset,MBTET,set_of_blocks[id].tEts,true); CHKERRQ_MOAB(rval);
+      rval = mField.get_moab().get_entities_by_type(meshset,MBTET,set_of_blocks[id].tEts,true); CHKERRG(rval);
       set_of_blocks[id].iD = id;
       set_of_blocks[id].E = mydata.data.Young;
       set_of_blocks[id].PoissonRatio = mydata.data.Poisson;
@@ -331,22 +331,22 @@ struct ElasticMaterials {
 
   #ifdef __CONVECTIVE_MASS_ELEMENT_HPP
 
-  PetscErrorCode setBlocks(std::map<int,ConvectiveMassElement::BlockData> &set_of_blocks) {
+  MoFEMErrorCode setBlocks(std::map<int,ConvectiveMassElement::BlockData> &set_of_blocks) {
     MoFEMFunctionBeginHot;
 
 
     if(!iNitialized) {
-      ierr = iNit(); CHKERRQ(ierr);
-      ierr = readConfigFile(); CHKERRQ(ierr);
-      ierr = setBlocksOrder(); CHKERRQ(ierr);
+      ierr = iNit(); CHKERRG(ierr);
+      ierr = readConfigFile(); CHKERRG(ierr);
+      ierr = setBlocksOrder(); CHKERRG(ierr);
       iNitialized = true;
     }
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|BODYFORCESSET,it)) {
       int id = it->getMeshsetId();
       EntityHandle meshset = it->getMeshset();
-      rval = mField.get_moab().get_entities_by_type(meshset,MBTET,set_of_blocks[id].tEts,true); CHKERRQ_MOAB(rval);
+      rval = mField.get_moab().get_entities_by_type(meshset,MBTET,set_of_blocks[id].tEts,true); CHKERRG(rval);
       Block_BodyForces mydata;
-      ierr = it->getAttributeDataStructure(mydata); CHKERRQ(ierr);
+      ierr = it->getAttributeDataStructure(mydata); CHKERRG(ierr);
       set_of_blocks[id].rho0 = mydata.data.density;
       set_of_blocks[id].a0.resize(3);
       set_of_blocks[id].a0[0] = mydata.data.acceleration_x;
@@ -383,15 +383,15 @@ struct ElasticMaterials {
 
   #ifdef __KELVIN_VOIGT_DAMPER_HPP__
 
-  PetscErrorCode setBlocks(std::map<int,KelvinVoigtDamper::BlockMaterialData> &set_of_blocks) {
+  MoFEMErrorCode setBlocks(std::map<int,KelvinVoigtDamper::BlockMaterialData> &set_of_blocks) {
     MoFEMFunctionBeginHot;
 
 
 
     if(!iNitialized) {
-      ierr = iNit(); CHKERRQ(ierr);
-      ierr = readConfigFile(); CHKERRQ(ierr);
-      ierr = setBlocksOrder(); CHKERRQ(ierr);
+      ierr = iNit(); CHKERRG(ierr);
+      ierr = readConfigFile(); CHKERRG(ierr);
+      ierr = setBlocksOrder(); CHKERRG(ierr);
       iNitialized = true;
     }
 
@@ -402,20 +402,20 @@ struct ElasticMaterials {
       if(it->getName().compare(0,6,"DAMPER") == 0) {
         set = true;
         std::vector<double> data;
-        ierr = it->getAttributes(data); CHKERRQ(ierr);
+        ierr = it->getAttributes(data); CHKERRG(ierr);
         if(data.size()<2) {
           SETERRQ(PETSC_COMM_SELF,1,"Data inconsistency");
         }
         rval = mField.get_moab().get_entities_by_type(
           it->meshset,MBTET,set_of_blocks[it->getMeshsetId()].tEts,true
-        ); CHKERRQ_MOAB(rval);
+        ); CHKERRG(rval);
         set_of_blocks[it->getMeshsetId()].gBeta = data[0];
         set_of_blocks[it->getMeshsetId()].vBeta = data[1];
       }
       if(blockData[id].dashG > 0) {
         set = true;
         Range tEts;
-        rval = mField.get_moab().get_entities_by_type(meshset,MBTET,tEts,true); CHKERRQ_MOAB(rval);
+        rval = mField.get_moab().get_entities_by_type(meshset,MBTET,tEts,true); CHKERRG(rval);
         if(tEts.empty()) continue;
         set_of_blocks[it->getMeshsetId()].tEts = tEts;
         set_of_blocks[it->getMeshsetId()].gBeta = blockData[id].dashG;

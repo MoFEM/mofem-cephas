@@ -56,7 +56,7 @@ struct AnalyticalDirichletBC {
       MatrixDouble &hoCoords;
       OpHoCoord(const std::string field_name,MatrixDouble &ho_coords);
 
-      PetscErrorCode doWork(
+      MoFEMErrorCode doWork(
         int side,EntityType type,DataForcesAndSourcesCore::EntData &data
       );
 
@@ -71,7 +71,7 @@ struct AnalyticalDirichletBC {
       OpLhs(const std::string field_name,MatrixDouble &ho_coords);
 
       MatrixDouble NN,transNN;
-      PetscErrorCode doWork(
+      MoFEMErrorCode doWork(
         int row_side,int col_side,
         EntityType row_type,EntityType col_type,
         DataForcesAndSourcesCore::EntData &row_data,
@@ -108,7 +108,7 @@ struct AnalyticalDirichletBC {
       VectorDouble NTf;
       VectorInt iNdices;
 
-      PetscErrorCode doWork(
+      MoFEMErrorCode doWork(
         int side,EntityType type,DataForcesAndSourcesCore::EntData &data
       ) {
         MoFEMFunctionBeginHot;
@@ -123,7 +123,7 @@ struct AnalyticalDirichletBC {
           // }
 
           const FENumeredDofEntity *dof_ptr;
-          ierr = getNumeredEntFiniteElementPtr()->getRowDofsByPetscGlobalDofIdx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
+          ierr = getNumeredEntFiniteElementPtr()->getRowDofsByPetscGlobalDofIdx(data.getIndices()[0],&dof_ptr); CHKERRG(ierr);
           unsigned int rank = dof_ptr->getNbOfCoeffs();
 
           NTf.resize(nb_row/rank);
@@ -168,7 +168,7 @@ struct AnalyticalDirichletBC {
 
               noalias(NTf) = data.getN(gg,nb_row/rank)*a[rr]*val;
               ierr = VecSetValues(getFEMethod()->snes_f,iNdices.size(),
-              &iNdices[0],&*NTf.data().begin(),ADD_VALUES); CHKERRQ(ierr);
+              &iNdices[0],&*NTf.data().begin(),ADD_VALUES); CHKERRG(ierr);
 
             }
 
@@ -203,8 +203,8 @@ struct AnalyticalDirichletBC {
 
     boost::shared_ptr<Range> trisPtr;
 
-    PetscErrorCode iNitalize();
-    PetscErrorCode iNitalize(Range &tris);
+    MoFEMErrorCode iNitalize();
+    MoFEMErrorCode iNitalize(Range &tris);
 
   };
 
@@ -226,7 +226,7 @@ struct AnalyticalDirichletBC {
    * @param  nodals_positions   name of the field for ho-geometry description
    * @return                    error code
    */
-  template<typename FUNEVAL> PetscErrorCode setApproxOps(
+  template<typename FUNEVAL> MoFEMErrorCode setApproxOps(
     MoFEM::Interface &m_field,
     const std::string field_name,
     boost::shared_ptr<FUNEVAL> function_evaluator,
@@ -255,7 +255,7 @@ struct AnalyticalDirichletBC {
   // /**
   //  * \deprecated no need to use function with argument of triangle range
   //  */
-  // template<typename FUNEVAL> DEPRECATED PetscErrorCode setApproxOps(
+  // template<typename FUNEVAL> DEPRECATED MoFEMErrorCode setApproxOps(
   //   MoFEM::Interface &m_field,
   //   string field_name,
   //   Range& tris,
@@ -277,7 +277,7 @@ struct AnalyticalDirichletBC {
    * @param  nodals_positions field having higher order geometry description
    * @return                  error code
    */
-  PetscErrorCode setFiniteElement(
+  MoFEMErrorCode setFiniteElement(
     MoFEM::Interface &m_field,
     string fe,
     string field,
@@ -288,7 +288,7 @@ struct AnalyticalDirichletBC {
   // /**
   // \deprecated use setFiniteElement instead
   // */
-  // DEPRECATED PetscErrorCode initializeProblem(
+  // DEPRECATED MoFEMErrorCode initializeProblem(
   //   MoFEM::Interface &m_field,
   //   string fe,
   //   string field,
@@ -308,14 +308,14 @@ struct AnalyticalDirichletBC {
    * @param  problem problem name
    * @return         error code
    */
-  PetscErrorCode setUpProblem(
+  MoFEMErrorCode setUpProblem(
     MoFEM::Interface &m_field,string problem
   );
 
   // /**
   //  * \deprecated use setUpProblem instead
   //  */
-  // DEPRECATED PetscErrorCode setProblem(
+  // DEPRECATED MoFEMErrorCode setProblem(
   //   MoFEM::Interface &m_field,string problem
   // ) {
   //   return setUpProblem(m_field,problem);
@@ -335,7 +335,7 @@ struct AnalyticalDirichletBC {
    * @param  tris    triangles on boundary
    * @return         error code
    */
-  PetscErrorCode solveProblem(
+  MoFEMErrorCode solveProblem(
     MoFEM::Interface &m_field,string problem,string fe,DirichletBC &bc,Range &tris
   );
 
@@ -352,7 +352,7 @@ struct AnalyticalDirichletBC {
    * @param  bc      Driblet boundary structure used to apply boundary conditions
    * @return         [description]
    */
-  PetscErrorCode solveProblem(
+  MoFEMErrorCode solveProblem(
     MoFEM::Interface &m_field,string problem,string fe,DirichletBC &bc
   );
 
@@ -365,7 +365,7 @@ struct AnalyticalDirichletBC {
    *
    * @return error code
    */
-  PetscErrorCode destroyProblem();
+  MoFEMErrorCode destroyProblem();
 
 
 };

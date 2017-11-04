@@ -46,14 +46,14 @@ int main(int argc, char *argv[]) {
   PetscInitialize(&argc,&argv,(char *)0,help);
 
   // Register DM Manager
-  ierr = DMRegister_MoFEM("DMMOFEM"); CHKERRQ(ierr); // register MoFEM DM in PETSc
+  ierr = DMRegister_MoFEM("DMMOFEM"); CHKERRG(ierr); // register MoFEM DM in PETSc
   // Register materials
-  ierr = RegisterMaterials()(); CHKERRQ(ierr);
+  ierr = RegisterMaterials()(); CHKERRG(ierr);
 
   PetscBool test_mat = PETSC_FALSE;
   ierr = PetscOptionsGetBool(
     PETSC_NULL,"","-test_mat",&test_mat,PETSC_NULL
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
 
   if(test_mat==PETSC_TRUE) {
     CommonMaterialData data;
@@ -63,7 +63,7 @@ int main(int argc, char *argv[]) {
     van_genuchten.printTheta(-1e-16,-1e4,-1e-12,"hTheta");
     van_genuchten.printKappa(-1e-16,-1,-1e-12,"hK");
     van_genuchten.printC(-1e-16,-1,-1e-12,"hC");
-    ierr = PetscFinalize(); CHKERRQ(ierr);
+    ierr = PetscFinalize(); CHKERRG(ierr);
     return 0;
   }
 
@@ -83,22 +83,22 @@ int main(int argc, char *argv[]) {
     ierr = PetscOptionsBegin(
       PETSC_COMM_WORLD,"",
       "Unsaturated flow options","none"
-    ); CHKERRQ(ierr);
+    ); CHKERRG(ierr);
     ierr = PetscOptionsString(
       "-my_file",
       "mesh file name","","mesh.h5m",mesh_file_name,255,&flg_mesh_file_name
-    ); CHKERRQ(ierr);
+    ); CHKERRG(ierr);
     ierr = PetscOptionsString(
       "-configure",
       "material and bc configuration file name","", "unsaturated.cfg",
       conf_file_name,255,&flg_conf_file_name
-    ); CHKERRQ(ierr);
+    ); CHKERRG(ierr);
     ierr = PetscOptionsInt(
       "-my_order",
       "default approximation order","",
       order,&order,PETSC_NULL
-    ); CHKERRQ(ierr);
-    ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+    ); CHKERRG(ierr);
+    ierr = PetscOptionsEnd(); CHKERRG(ierr);
 
     if(flg_mesh_file_name != PETSC_TRUE) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_INVALID_DATA,"File name not set (e.g. -my_name mesh.h5m)");
@@ -117,7 +117,7 @@ int main(int argc, char *argv[]) {
     option = "PARALLEL=READ_PART;"
     "PARALLEL_RESOLVE_SHARED_ENTS;"
     "PARTITION=PARALLEL_PARTITION;";
-    rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
+    rval = moab.load_file(mesh_file_name, 0, option); CHKERRG(rval);
 
     // Create mofem interface
     MoFEM::Core core(moab);
@@ -125,8 +125,8 @@ int main(int argc, char *argv[]) {
 
     // Add meshsets with material and boundary conditions
     MeshsetsManager *meshsets_manager_ptr;
-    ierr = m_field.getInterface(meshsets_manager_ptr); CHKERRQ(ierr);
-    ierr = meshsets_manager_ptr->setMeshsetFromFile(); CHKERRQ(ierr);
+    ierr = m_field.getInterface(meshsets_manager_ptr); CHKERRG(ierr);
+    ierr = meshsets_manager_ptr->setMeshsetFromFile(); CHKERRG(ierr);
 
     PetscPrintf(PETSC_COMM_WORLD,"Read meshsets and added meshsets from bc.cfg\n");
     for(_IT_CUBITMESHSETS_FOR_LOOP_(m_field,it)) {
@@ -137,7 +137,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Set entities bit level
-    ierr = m_field.seed_ref_level_3D(0,BitRefLevel().set(0)); CHKERRQ(ierr);
+    ierr = m_field.seed_ref_level_3D(0,BitRefLevel().set(0)); CHKERRG(ierr);
 
     UnsaturatedFlowElement uf(m_field);
 
@@ -189,7 +189,7 @@ int main(int argc, char *argv[]) {
       // get block test
       rval = m_field.get_moab().get_entities_by_type(
         it->meshset,MBTET,uf.dMatMap.at(block_id)->tEts,true
-      ); CHKERRQ_MOAB(rval);
+      ); CHKERRG(rval);
       domain_ents.merge(uf.dMatMap.at(block_id)->tEts);
       uf.dMatMap.at(block_id)->printMatParameters(block_id,"Read material");
     }
@@ -197,7 +197,7 @@ int main(int argc, char *argv[]) {
     additional_parameters = collect_unrecognized(parsed.options,po::include_positional);
     for(std::vector<std::string>::iterator vit = additional_parameters.begin();
     vit!=additional_parameters.end();vit++) {
-      ierr = PetscPrintf(m_field.get_comm(),"** WARNING Unrecognized option %s\n",vit->c_str()); CHKERRQ(ierr);
+      ierr = PetscPrintf(m_field.get_comm(),"** WARNING Unrecognized option %s\n",vit->c_str()); CHKERRG(ierr);
     }
     // Set capillary pressure bc data
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
@@ -210,18 +210,18 @@ int main(int argc, char *argv[]) {
       );
       // get bc value
       std::vector<double> attributes;
-      ierr = it->getAttributes(attributes); CHKERRQ(ierr);
+      ierr = it->getAttributes(attributes); CHKERRG(ierr);
       uf.bcValueMap[block_id]->fixValue = attributes[0];
       std::string block_name = "head_block_"+boost::lexical_cast<std::string>(block_id);
       if(vm.count((block_name)+".head")) {
         uf.bcValueMap[block_id]->fixValue = head_blocks[block_id];
       }
       // cerr << uf.bcValueMap[block_id]->fixValue  << endl;
-      // ierr = it->printAttributes(std::cout); CHKERRQ(ierr);
+      // ierr = it->printAttributes(std::cout); CHKERRG(ierr);
       // get faces in the block
       rval = m_field.get_moab().get_entities_by_type(
         it->meshset,MBTRI,uf.bcValueMap[block_id]->eNts,true
-      ); CHKERRQ_MOAB(rval);
+      ); CHKERRG(rval);
       bc_boundary_ents.merge(uf.bcValueMap[block_id]->eNts);
     }
 
@@ -237,8 +237,8 @@ int main(int argc, char *argv[]) {
       );
       // get bc value
       std::vector<double> attributes;
-      ierr = it->getAttributes(attributes); CHKERRQ(ierr);
-      // ierr = it->printAttributes(std::cout); CHKERRQ(ierr);
+      ierr = it->getAttributes(attributes); CHKERRG(ierr);
+      // ierr = it->printAttributes(std::cout); CHKERRG(ierr);
       uf.bcFluxMap[block_id]->fixValue = attributes[0];
       std::string block_name = "flux_block_"+boost::lexical_cast<std::string>(block_id);
       if(vm.count((block_name)+".flux")) {
@@ -247,7 +247,7 @@ int main(int argc, char *argv[]) {
       // get faces in the block
       rval = m_field.get_moab().get_entities_by_type(
         it->meshset,MBTRI,uf.bcFluxMap[block_id]->eNts,true
-      ); CHKERRQ_MOAB(rval);
+      ); CHKERRG(rval);
       bc_boundary_ents.merge(uf.bcFluxMap[block_id]->eNts);
       max_flux_id = max_flux_id>block_id ? max_flux_id : block_id+1;
     }
@@ -257,11 +257,11 @@ int main(int argc, char *argv[]) {
     {
       Skinner skin(&m_field.get_moab());
       Range domain_skin;
-      rval = skin.find_skin(0,domain_ents,false,domain_skin); CHKERRQ_MOAB(rval);
+      rval = skin.find_skin(0,domain_ents,false,domain_skin); CHKERRG(rval);
       // filter not owned entities, those are not on boundary
       rval = pcomm->filter_pstatus(
         domain_skin,PSTATUS_SHARED|PSTATUS_MULTISHARED,PSTATUS_NOT,-1,&zero_flux_ents
-      ); CHKERRQ_MOAB(rval);
+      ); CHKERRG(rval);
       zero_flux_ents = subtract(zero_flux_ents,bc_boundary_ents);
       uf.bcFluxMap[max_flux_id] = boost::shared_ptr<UnsaturatedFlowElement::BcData>(
         new UnsaturatedFlowElement::BcData()
@@ -270,18 +270,18 @@ int main(int argc, char *argv[]) {
       uf.bcFluxMap[max_flux_id]->eNts = zero_flux_ents;
     }
 
-    ierr = uf.addFields("VALUES","FLUXES",order); CHKERRQ(ierr);
-    ierr = uf.addFiniteElements("FLUXES","VALUES"); CHKERRQ(ierr);
+    ierr = uf.addFields("VALUES","FLUXES",order); CHKERRG(ierr);
+    ierr = uf.addFiniteElements("FLUXES","VALUES"); CHKERRG(ierr);
     ierr = m_field.add_ents_to_finite_element_by_type(
       zero_flux_ents,MBTRI,"MIX_BCFLUX"
-    ); CHKERRQ(ierr);
-    ierr = uf.buildProblem(); CHKERRQ(ierr);
-    ierr = uf.createMatrices(); CHKERRQ(ierr);
-    ierr = uf.setFiniteElements(); CHKERRQ(ierr);
-    ierr = uf.calculateEssentialBc(); CHKERRQ(ierr);
-    ierr = uf.calculateInitialPc(); CHKERRQ(ierr);
-    ierr = uf.solveProblem(); CHKERRQ(ierr);
-    ierr = uf.destroyMatrices(); CHKERRQ(ierr);
+    ); CHKERRG(ierr);
+    ierr = uf.buildProblem(); CHKERRG(ierr);
+    ierr = uf.createMatrices(); CHKERRG(ierr);
+    ierr = uf.setFiniteElements(); CHKERRG(ierr);
+    ierr = uf.calculateEssentialBc(); CHKERRG(ierr);
+    ierr = uf.calculateInitialPc(); CHKERRG(ierr);
+    ierr = uf.solveProblem(); CHKERRG(ierr);
+    ierr = uf.destroyMatrices(); CHKERRG(ierr);
 
     MPI_Comm_free(&moab_comm_world);
 
@@ -289,7 +289,7 @@ int main(int argc, char *argv[]) {
     SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
   }
 
-  ierr = PetscFinalize(); CHKERRQ(ierr);
+  ierr = PetscFinalize(); CHKERRG(ierr);
 
   return 0;
 }

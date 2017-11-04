@@ -25,7 +25,7 @@ namespace MoFEM {
    * @param  base_polynomials base function (Legendre/Lobbatto-Gauss)
    * @return                  error code
    */
-  PetscErrorCode Hdiv_Ainsworth_EdgeFaceShapeFunctions_MBTET(
+  MoFEMErrorCode Hdiv_Ainsworth_EdgeFaceShapeFunctions_MBTET(
     int *faces_nodes,int *p,double *N,double *diffN,double *phi_f_e[4][3],double *diff_phi_f_e[4][3],int gdim,
     PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
   );
@@ -43,7 +43,7 @@ namespace MoFEM {
    * @param  nb               Number of nodes on entity (4 if tet, 3 if triangle)
    * @return                  error code
    */
-  PetscErrorCode Hdiv_Ainsworth_EdgeFaceShapeFunctions_MBTET_ON_FACE(
+  MoFEMErrorCode Hdiv_Ainsworth_EdgeFaceShapeFunctions_MBTET_ON_FACE(
     int *faces_nodes,int p,double *N,double *diffN,double *phi_f_e[3],double *diff_phi_f_e[3],int gdim,int nb,
     PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
   );
@@ -60,7 +60,7 @@ namespace MoFEM {
    * @param  base_polynomials Base function (Legendre/Lobbatto-Gauss)
    * @return                  error code
    */
-  PetscErrorCode Hdiv_Ainsworth_FaceBubbleShapeFunctions(
+  MoFEMErrorCode Hdiv_Ainsworth_FaceBubbleShapeFunctions(
     int *faces_nodes,int *p,double *N,double *diffN,double *phi_f[],double *diff_phi_f[],int gdim,
     PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
   );
@@ -78,7 +78,7 @@ namespace MoFEM {
    * @param  base_polynomials Base function (Legendre/Lobbatto-Gauss)
    * @return                  error code
    */
-  PetscErrorCode Hdiv_Ainsworth_FaceBubbleShapeFunctions_ON_FACE(
+  MoFEMErrorCode Hdiv_Ainsworth_FaceBubbleShapeFunctions_ON_FACE(
     int *faces_nodes,int p,double *N,double *diffN,double *phi_f,double *diff_phi_f,int gdim,int nb,
     PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
   );
@@ -94,7 +94,7 @@ namespace MoFEM {
    * @param  base_polynomials base function (Legendre/Lobbatto-Gauss)
    * @return                  error code
    */
-  PetscErrorCode Hdiv_Ainsworth_EdgeBasedVolumeShapeFunctions_MBTET(
+  MoFEMErrorCode Hdiv_Ainsworth_EdgeBasedVolumeShapeFunctions_MBTET(
     int p,
     double *N,
     double *diffN,
@@ -116,7 +116,7 @@ namespace MoFEM {
    * @param  base_polynomials Base function (Legendre/Lobbatto-Gauss)
    * @return                  Error code
    */
-  PetscErrorCode Hdiv_Ainsworth_FaceBasedVolumeShapeFunctions_MBTET(
+  MoFEMErrorCode Hdiv_Ainsworth_FaceBasedVolumeShapeFunctions_MBTET(
     int p,double *N,double *diffN,double *phi_v_f[],double *diff_phi_v_f[],int gdim,
     PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
   );
@@ -132,7 +132,7 @@ namespace MoFEM {
    * @param  base_polynomials Base function (Legendre/Lobbatto-Gauss)
    * @return                  Error code
    */
-  PetscErrorCode Hdiv_Ainsworth_VolumeBubbleShapeFunctions_MBTET(
+  MoFEMErrorCode Hdiv_Ainsworth_VolumeBubbleShapeFunctions_MBTET(
     int p,double *N,double *diffN,double *phi_v,double *diff_phi_v,int gdim,
     PetscErrorCode (*base_polynomials)(
       int p,double s,double *diff_s,double *L,double *diffL,const int dim
@@ -152,7 +152,7 @@ namespace MoFEM {
    * @param  nb          nb is 4 for face on tetrahedral and 3 for face
    * @return             error code
    */
-  PetscErrorCode Hdiv_Demkowicz_Face_MBTET_ON_FACE(
+  MoFEMErrorCode Hdiv_Demkowicz_Face_MBTET_ON_FACE(
     int *faces_nodes,
     int p,
     double *N,double *diffN,
@@ -174,7 +174,7 @@ namespace MoFEM {
    * @param  gdim        Number of integration points
    * @return             error code
    */
-  PetscErrorCode Hdiv_Demkowicz_Interior_MBTET(
+  MoFEMErrorCode Hdiv_Demkowicz_Interior_MBTET(
     int p,
     double *N,double *diffN,
     int p_face[],

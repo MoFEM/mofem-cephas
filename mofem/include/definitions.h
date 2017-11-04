@@ -38,64 +38,64 @@
   *
   */
 enum Interfaces {
-  UNKNOWNINTERFACE                    = 1<<0,
-  //Field Interface
-  CORE_INTERFACE                      = 1<<0|1<<1,
-  DEPRECATED_CORE_INTERFACE           = 1<<0|1<<2,
-  PROBLEMSMANAGER_INTERFACE           = 1<<0|1<<3,
-  SIMPLE_INTERFACE                    = 1<<0|1<<4,
-  MESH_REFINE                         = 1<<1|1<<2,
-  PRISM_INTEFACE                      = 1<<1|1<<3,
-  SERIES_RECORDER                     = 1<<1|1<<4,
-  ISMANAGER_INTERFACE                 = 1<<1|1<<5,
-  VECMANAGER_INTERFACE                = 1<<1|1<<6,
-  FIELDBLAS_INTERFACE                 = 1<<1|1<<7,
-  BITREFMANAGER_INTERFACE             = 1<<1|1<<8,
-  TOOLS                               = 1<<1|1<<10,
-  //Independent Interfaces
-  TETGEN_INTERFACE                    = 1<<2|1<<3,    ///< used to generate mesh using TetGen
-  MED_INTERFACE                       = 1<<2|1<<4,	  ///< interface to med data format
-  NODEMERGER_INTERFACE                = 1<<2|1<<5,	  ///< used to merge nodes
-  BITLEVELCOUPLER_INTERFACE           = 1<<2|1<<6,    ///< used to couple bit levels by finding parent children relation
-  PRISMSFROMSURFACE_INTERFACE         = 1<<2|1<<7,    ///< create prisms from surface elements
-  MESHSETSMANAGER_INTERFACE           = 1<<2|1<<8,    ///< Interface to manage meshsets with materials and boundary conditions
-  COORDSSYSTEMMANAGER_INTERFACE       = 1<<2|1<<9,   ///< Interface to manage coordinate systems
-  CUTMESH_INTERFACE                   = 1<<2|1<<10    ///< Cutting mesh
+  UNKNOWNINTERFACE          = 1 << 0,
+  // Field Interface
+  CORE_INTERFACE            = 1 << 0 | 1 << 1,
+  DEPRECATED_CORE_INTERFACE = 1 << 0 | 1 << 2,
+  PROBLEMSMANAGER_INTERFACE = 1 << 0 | 1 << 3,
+  SIMPLE_INTERFACE          = 1 << 0 | 1 << 4,
+  MESH_REFINE               = 1 << 1 | 1 << 2,
+  PRISM_INTEFACE            = 1 << 1 | 1 << 3,
+  SERIES_RECORDER           = 1 << 1 | 1 << 4,
+  ISMANAGER_INTERFACE       = 1 << 1 | 1 << 5,
+  VECMANAGER_INTERFACE      = 1 << 1 | 1 << 6,
+  FIELDBLAS_INTERFACE       = 1 << 1 | 1 << 7,
+  BITREFMANAGER_INTERFACE   = 1 << 1 | 1 << 8,
+  TOOLS                     = 1 << 1 | 1 << 10,
+  // Independent Interfaces
+  TETGEN_INTERFACE              = 1 << 2 | 1 << 3,
+  MED_INTERFACE                 = 1 << 2 | 1 << 4,
+  NODEMERGER_INTERFACE          = 1 << 2 | 1 << 5,
+  BITLEVELCOUPLER_INTERFACE     = 1 << 2 | 1 << 6,
+  PRISMSFROMSURFACE_INTERFACE   = 1 << 2 | 1 << 7,
+  MESHSETSMANAGER_INTERFACE     = 1 << 2 | 1 << 8,
+  COORDSSYSTEMMANAGER_INTERFACE = 1 << 2 | 1 << 9,
+  CUTMESH_INTERFACE             = 1 << 2 | 1 << 10
 };
 
 enum LoopInterfaces {
-  //Loop Methods
-  KSP_METHOD                          = 1<<3|1<<4,
-  SNES_METHOD                         = 1<<3|1<<5,
-  TS_METHOD                           = 1<<3|1<<6,
-  BASIC_METHOD                        = 1<<3|1<<4|1<<5|1<<6,
-  FE_METHOD                           = 1<<3|1<<4|1<<5|1<<6|1<<7,
-  ENT_METHOD                          = 1<<3|1<<4|1<<5|1<<6|1<<8
+  // Loop Methods
+  KSP_METHOD   = 1 << 3 | 1 << 4,
+  SNES_METHOD  = 1 << 3 | 1 << 5,
+  TS_METHOD    = 1 << 3 | 1 << 6,
+  BASIC_METHOD = 1 << 3 | 1 << 4 | 1 << 5 | 1 << 6,
+  FE_METHOD    = 1 << 3 | 1 << 4 | 1 << 5 | 1 << 6 | 1 << 7,
+  ENT_METHOD   = 1 << 3 | 1 << 4 | 1 << 5 | 1 << 6 | 1 << 8
 };
 
 /**
  * \brief interfaces for PETSc DM interfaces
  */
 enum DMInterfaces {
-  UNKNOWN_DM_INTERFACE                = 1<<4|1<<5,
-  DMCTX_INTERFACE                     = 1<<4|1<<6
+  UNKNOWN_DM_INTERFACE = 1 << 4 | 1 << 5,
+  DMCTX_INTERFACE      = 1 << 4 | 1 << 6
 };
 
 /**
  * \brief Interfaces uses to manage base functions
  */
 enum BaseIntefaces {
-  UNKNOWN_BASE_FUNCTION_INTERFACE     = 1<<5|1<<6,
-  LEGENDRE_BASE_FUNCTION_INTERFACE    = 1<<5|1<<7,
-  LOBATTO_BASE_FUNCTION_INTERFACE     = 1<<5|1<<8,
-  KERNEL_BASE_FUNCTION_INTERFACE      = 1<<5|1<<9,
-  JACOBI_BASE_FUNCTION_INTERFACE      = 1<<5|1<<10,
-  ENT_BASE_FUNCTION_INTERFACE         = 1<<5|1<<6|1<<7,
-  TET_BASE_FUNCTION_INTERFACE         = 1<<5|1<<6|1<<8,
-  TRI_BASE_FUNCTION_INTERFACE         = 1<<5|1<<6|1<<9,
-  EDGE_BASE_FUNCTION_INTERFACE        = 1<<5|1<<6|1<<10,
-  FATPRISM_BASE_FUNCTION_INTERFACE    = 1<<5|1<<6|1<<11,
-  FLATPRISM_BASE_FUNCTION_INTERFACE   = 1<<5|1<<6|1<<12
+  UNKNOWN_BASE_FUNCTION_INTERFACE   = 1 << 5 | 1 << 6,
+  LEGENDRE_BASE_FUNCTION_INTERFACE  = 1 << 5 | 1 << 7,
+  LOBATTO_BASE_FUNCTION_INTERFACE   = 1 << 5 | 1 << 8,
+  KERNEL_BASE_FUNCTION_INTERFACE    = 1 << 5 | 1 << 9,
+  JACOBI_BASE_FUNCTION_INTERFACE    = 1 << 5 | 1 << 10,
+  ENT_BASE_FUNCTION_INTERFACE       = 1 << 5 | 1 << 6 | 1 << 7,
+  TET_BASE_FUNCTION_INTERFACE       = 1 << 5 | 1 << 6 | 1 << 8,
+  TRI_BASE_FUNCTION_INTERFACE       = 1 << 5 | 1 << 6 | 1 << 9,
+  EDGE_BASE_FUNCTION_INTERFACE      = 1 << 5 | 1 << 6 | 1 << 10,
+  FATPRISM_BASE_FUNCTION_INTERFACE  = 1 << 5 | 1 << 6 | 1 << 11,
+  FLATPRISM_BASE_FUNCTION_INTERFACE = 1 << 5 | 1 << 6 | 1 << 12
 };
 
 /** \brief Error handling
@@ -107,18 +107,31 @@ enum BaseIntefaces {
   *
   */
 enum MoFEMErrorCodes {
-  MOFEM_SUCESS                  = 0,
-  MOFEM_DATA_INCONSISTENCY      = 100,
-  MOFEM_NOT_IMPLEMENTED         = 101,
-  MOFEM_NOT_FOUND               = 102,
-  MOFEM_OPERATION_UNSUCCESSFUL  = 103,
-  MOFEM_IMPOSIBLE_CASE          = 104,
-  MOFEM_MOFEMEXCEPTION_THROW    = 105,
-  MOFEM_STD_EXCEPTION_THROW     = 106,
-  MOFEM_INVALID_DATA            = 107,
-  MOFEM_ATOM_TEST_INVALID       = 108,
-  MOFEM_MOAB_ERROR              = 109
+  MOFEM_SUCESS                 = 0,
+  MOFEM_DATA_INCONSISTENCY     = 100,
+  MOFEM_NOT_IMPLEMENTED        = 101,
+  MOFEM_NOT_FOUND              = 102,
+  MOFEM_OPERATION_UNSUCCESSFUL = 103,
+  MOFEM_IMPOSIBLE_CASE         = 104,
+  MOFEM_INVALID_DATA           = 105,
+  MOFEM_MOFEMEXCEPTION_THROW   = 106,
+  MOFEM_STD_EXCEPTION_THROW    = 107,
+  MOFEM_ATOM_TEST_INVALID      = 108,
+  MOFEM_MOAB_ERROR             = 110
 };
+
+const static char *const MoFEMErrorCodesNames[] = {
+    "MOFEM_SUCESS",
+    "MOFEM_DATA_INCONSISTENCY",
+    "MOFEM_NOT_IMPLEMENTED",
+    "MOFEM_NOT_FOUND",
+    "MOFEM_OPERATION_UNSUCCESSFUL",
+    "MOFEM_IMPOSIBLE_CASE",
+    "MOFEM_INVALID_DATA",
+    "MOFEM_MOFEMEXCEPTION_THROW",
+    "MOFEM_STD_EXCEPTION_THROW",
+    "MOFEM_ATOM_TEST_INVALID",
+    "MOFEM_MOAB_ERROR"};
 
 /// \brief approximation base
 enum FieldApproximationBase {
@@ -134,37 +147,35 @@ enum FieldApproximationBase {
 // Fix spelling bug (do do not use this)
 #define AINSWORTH_LOBBATO_BASE AINSWORTH_LOBATTO_BASE
 
-const static char * const ApproximationBaseNames[] = {
-  "NOBASE",
-  "AINSWORTH_LEGENDRE_BASE",
-  "AINSWORTH_LOBATTO_BASE",
-  "AINSWORTH_BERNSTEIN_BEZIER_BASE",
-  "DEMKOWICZ_JACOBI_BASE",
-  "USER_BASE",
-  "LASTBASE"
-};
+const static char *const ApproximationBaseNames[] = {
+    "NOBASE",
+    "AINSWORTH_LEGENDRE_BASE",
+    "AINSWORTH_LOBATTO_BASE",
+    "AINSWORTH_BERNSTEIN_BEZIER_BASE",
+    "DEMKOWICZ_JACOBI_BASE",
+    "USER_BASE",
+    "LASTBASE"};
 
 #ifdef __cplusplus
 const static FieldApproximationBase ApproximationBaseArray[] = {
-  NOBASE,
-  AINSWORTH_LEGENDRE_BASE,
-  AINSWORTH_LOBATTO_BASE,
-  AINSWORTH_BERNSTEIN_BEZIER_BASE,
-  DEMKOWICZ_JACOBI_BASE,
-  USER_BASE,
-  LASTBASE
-};
+    NOBASE,
+    AINSWORTH_LEGENDRE_BASE,
+    AINSWORTH_LOBATTO_BASE,
+    AINSWORTH_BERNSTEIN_BEZIER_BASE,
+    DEMKOWICZ_JACOBI_BASE,
+    USER_BASE,
+    LASTBASE};
 #endif // __cplusplus
 
 /// \brief approximation spaces
 enum FieldSpace {
   NOSPACE = 0,
-  NOFIELD = 1, 	///< scalar or vector of scalars describe (no true field)
-  H1, 		      ///< continuous field
-  HDIV,		      ///< field with continuous normal traction
-  HCURL,	      ///< field with continuous tangents
-  L2,		        ///< field with C-1 continuity
-  LASTSPACE 	  ///< FieldSpace in [ 0, LASTSPACE )
+  NOFIELD = 1, ///< scalar or vector of scalars describe (no true field)
+  H1,          ///< continuous field
+  HDIV,        ///< field with continuous normal traction
+  HCURL,       ///< field with continuous tangents
+  L2,          ///< field with C-1 continuity
+  LASTSPACE    ///< FieldSpace in [ 0, LASTSPACE )
 };
 
 const static char * const FieldSpaceNames[] = {
@@ -178,11 +189,7 @@ const static char * const FieldSpaceNames[] = {
 };
 
 /// \brief Those types control how functions respond on arguments, f.e. error handling
-enum MoFEMTypes {
-  MF_ZERO = 0,
-  MF_EXCL = 1<<0,
-  MF_EXIST = 1<<1
-};
+enum MoFEMTypes { MF_ZERO = 0, MF_EXCL = 1 << 0, MF_EXIST = 1 << 1 };
 
 /// \brief RowColData
 enum RowColData {
@@ -195,13 +202,13 @@ enum RowColData {
  *
  */
 enum ByWhat {
-  BYROW     = 1<<0,
-  BYCOL     = 1<<1,
-  BYDATA    = 1<<2,
-  BYROWDATA = 1<<0|1<<2,
-  BYCOLDATA = 1<<1|1<<2,
-  BYROWCOL  = 1<<0|1<<1,
-  BYALL     = 1<<0|1<<1|1<<2
+  BYROW     = 1 << 0,
+  BYCOL     = 1 << 1,
+  BYDATA    = 1 << 2,
+  BYROWDATA = 1 << 0 | 1 << 2,
+  BYCOLDATA = 1 << 1 | 1 << 2,
+  BYROWCOL  = 1 << 0 | 1 << 1,
+  BYALL     = 1 << 0 | 1 << 1 | 1 << 2
 };
 
 /**
@@ -209,28 +216,28 @@ enum ByWhat {
   *
   */
 enum CubitBC {
-  UNKNOWNSET       = 0,
-  NODESET          = 1<<0,
-  SIDESET          = 1<<1,
-  BLOCKSET         = 1<<2,
-  MATERIALSET      = 1<<3,
-  DISPLACEMENTSET  = 1<<4,
-  FORCESET         = 1<<5,
-  PRESSURESET      = 1<<6,
-  VELOCITYSET      = 1<<7,
-  ACCELERATIONSET  = 1<<8,
-  TEMPERATURESET   = 1<<9,
-  HEATFLUXSET      = 1<<10,
-  INTERFACESET     = 1<<11,
-  UNKNOWNNAME      = 1<<12,
-  MAT_ELASTICSET   = 1<<13,	  ///< block name is "MAT_ELASTIC"
-  MAT_INTERFSET    = 1<<14,
-  MAT_THERMALSET   = 1<<15,	  ///< block name is "MAT_THERMAL"
-  BODYFORCESSET    = 1<<16, 	///< block name is "BODY_FORCES"
-  MAT_MOISTURESET  = 1<<17, 	///< block name is "MAT_MOISTURE"
-  DIRICHLET_BC     = 1<<18,
-  NEUMANN_BC       = 1<<19,
-  LASTSET_BC       = 1<<20
+  UNKNOWNSET      = 0,
+  NODESET         = 1 << 0,
+  SIDESET         = 1 << 1,
+  BLOCKSET        = 1 << 2,
+  MATERIALSET     = 1 << 3,
+  DISPLACEMENTSET = 1 << 4,
+  FORCESET        = 1 << 5,
+  PRESSURESET     = 1 << 6,
+  VELOCITYSET     = 1 << 7,
+  ACCELERATIONSET = 1 << 8,
+  TEMPERATURESET  = 1 << 9,
+  HEATFLUXSET     = 1 << 10,
+  INTERFACESET    = 1 << 11,
+  UNKNOWNNAME     = 1 << 12,
+  MAT_ELASTICSET  = 1 << 13, ///< block name is "MAT_ELASTIC"
+  MAT_INTERFSET   = 1 << 14,
+  MAT_THERMALSET  = 1 << 15, ///< block name is "MAT_THERMAL"
+  BODYFORCESSET   = 1 << 16, ///< block name is "BODY_FORCES"
+  MAT_MOISTURESET = 1 << 17, ///< block name is "MAT_MOISTURE"
+  DIRICHLET_BC    = 1 << 18,
+  NEUMANN_BC      = 1 << 19,
+  LASTSET_BC      = 1 << 20
 };
 
 // OFF_DEPRECATED static const unsigned int UNKNOWNCUBITNAME = UNKNOWNNAME;
@@ -239,64 +246,57 @@ enum CubitBC {
 /**
  * \brief Names of types of sets and boundary conditions
  */
-const static char * const CubitBCNames[] = {
-  "UNKNOWNSET",
-  "NODESET",
-  "SIDESET",
-  "BLOCKSET",
-  "MATERIALSET",
-  "DISPLACEMENTSET",
-  "FORCESET",
-  "PRESSURESET",
-  "VELOCITYSET",
-  "ACCELERATIONSET",
-  "TEMPERATURESET",
-  "HEATFLUXSET",
-  "INTERFACESET",
-  "UNKNOWNNAME",
-  "MAT_ELASTICSET",
-  "MAT_INTERFSET",
-  "MAT_THERMALSET",
-  "BODYFORCESSET",
-  "MAT_MOISTURESET",
-  "DIRICHLET_BC",
-  "NEUMANN_BC",
-  "LASTSET_BC"
-};
+const static char *const CubitBCNames[] = {
+    "UNKNOWNSET",     "NODESET",         "SIDESET",         "BLOCKSET",
+    "MATERIALSET",    "DISPLACEMENTSET", "FORCESET",        "PRESSURESET",
+    "VELOCITYSET",    "ACCELERATIONSET", "TEMPERATURESET",  "HEATFLUXSET",
+    "INTERFACESET",   "UNKNOWNNAME",     "MAT_ELASTICSET",  "MAT_INTERFSET",
+    "MAT_THERMALSET", "BODYFORCESSET",   "MAT_MOISTURESET", "DIRICHLET_BC",
+    "NEUMANN_BC",     "LASTSET_BC"};
 
 /**
  * \brief Format of rows in gradients of H1 base functions
  */
-enum H1DiffFormating {
-  H1_0 = 0,H1_1,H1_2
-};
+enum H1DiffFormating { H1_0 = 0, H1_1, H1_2 };
 
 /**
  * \brief Format in rows of Hdiv base functions
  */
-enum HDivFormatting {
-  HDIV0 = 0,HDIV1,HDIV2
-};
+enum HDivFormatting { HDIV0 = 0, HDIV1, HDIV2 };
 
 /**
  * \brief Format in rows of Hdiv gradients of base functions
  */
 enum HDivDiffFormatting {
-  HDIV0_0 = 0,HDIV1_0,HDIV2_0,HDIV0_1,HDIV1_1,HDIV2_1,HDIV0_2,HDIV1_2,HDIV2_2
+  HDIV0_0 = 0,
+  HDIV1_0,
+  HDIV2_0,
+  HDIV0_1,
+  HDIV1_1,
+  HDIV2_1,
+  HDIV0_2,
+  HDIV1_2,
+  HDIV2_2
 };
 
 /**
  * \brief Format in rows of Hcurl base functions
  */
-enum HCurlFormatting {
-  HCURL0 = 0,HCURL1,HCURL2
-};
+enum HCurlFormatting { HCURL0 = 0, HCURL1, HCURL2 };
 
 /**
  * \brief Format in rows of Hcurl gradients of base functions
  */
 enum HCurlDiffFormatting {
-  HCURL0_0 = 0,HCURL1_0,HCURL2_0,HCURL0_1,HCURL1_1,HCURL2_1,HCURL0_2,HCURL1_2,HCURL2_2
+  HCURL0_0 = 0,
+  HCURL1_0,
+  HCURL2_0,
+  HCURL0_1,
+  HCURL1_1,
+  HCURL2_1,
+  HCURL0_2,
+  HCURL1_2,
+  HCURL2_2
 };
 
 /**
@@ -315,11 +315,11 @@ enum VERBOSITY_LEVELS { QUIET = 0, VERBOSE, VERY_VERBOSE, NOISY, VERY_NOISY };
 
 //This Is form MOAB
 #define MB_TYPE_WIDTH 4
-#define MB_ID_WIDTH (8*sizeof(EntityHandle)-MB_TYPE_WIDTH)
+#define MB_ID_WIDTH (8 * sizeof(EntityHandle) - MB_TYPE_WIDTH)
 #define MB_TYPE_MASK ((EntityHandle)0xF << MB_ID_WIDTH)
 //             2^MB_TYPE_WIDTH-1 ------^
 
-#define MB_START_ID ((EntityID)1)        ///< All entity id's currently start at 1
+#define MB_START_ID ((EntityID)1) ///< All entity id's currently start at 1
 #define MB_END_ID ((EntityID)MB_ID_MASK) ///< Last id is the complement of the MASK
 #define MB_ID_MASK (~MB_TYPE_MASK)
 
@@ -335,9 +335,11 @@ enum VERBOSITY_LEVELS { QUIET = 0, VERBOSE, VERY_VERBOSE, NOISY, VERY_NOISY };
  * code.
  *
  */
-#define BARRIER_RANK_START(PCMB) \
-  { for(unsigned int i = 0; \
-  i<PCMB->proc_config().proc_rank(); i++) MPI_Barrier(PCMB->proc_config().proc_comm()); };
+#define BARRIER_RANK_START(PCMB)                                               \
+  {                                                                            \
+    for (unsigned int i = 0; i < PCMB->proc_config().proc_rank(); i++)         \
+      MPI_Barrier(PCMB->proc_config().proc_comm());                            \
+  };
 
 /** \brief set barrier start
   * Run code in sequence, starting from process 0, and ends on last process.
@@ -346,9 +348,12 @@ enum VERBOSITY_LEVELS { QUIET = 0, VERBOSE, VERY_VERBOSE, NOISY, VERY_NOISY };
   * code.
   *
   */
-#define BARRIER_RANK_END(PCMB) \
-  { for(unsigned int i = PCMB->proc_config().proc_rank(); \
-  i<PCMB->proc_config().proc_size(); i++) MPI_Barrier(PCMB->proc_config().proc_comm()); };
+#define BARRIER_RANK_END(PCMB)                                                 \
+  {                                                                            \
+    for (unsigned int i = PCMB->proc_config().proc_rank();                     \
+         i < PCMB->proc_config().proc_size(); i++)                             \
+      MPI_Barrier(PCMB->proc_config().proc_comm());                            \
+  };
 
 #ifdef __cplusplus
 extern "C" {
@@ -404,8 +409,7 @@ DEPRECATED void macro_is_depracted_using_deprecated_function();
   }
   \endcode
 */
-#define MoFEMFunctionBeginHot \
-  PetscFunctionBeginHot
+#define MoFEMFunctionBeginHot PetscFunctionBeginHot
 
 /**
   * \brief Last executable line of each PETSc function used for error handling. Replaces return()
@@ -416,10 +420,11 @@ DEPRECATED void macro_is_depracted_using_deprecated_function();
   * earlier use MoFEMFunctionReturnHot
   *
   */
-#define MoFEMFunctionReturn(a) \
-  } catch (MoFEMException const &e) { \
-    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage); \
-  } \
+#define MoFEMFunctionReturn(a)                                                 \
+  }                                                                            \
+  catch (MoFEMException const &e) {                                            \
+    SETERRQ(PETSC_COMM_SELF, e.errorCode, e.errorMessage);                     \
+  }                                                                            \
   PetscFunctionReturn(a)
 
 /**
@@ -440,10 +445,11 @@ DEPRECATED void macro_is_depracted_using_deprecated_function();
   * earlier use MoFEMFunctionReturnHot
   *
   */
-#define MoFEMFunctionReturnVoid() \
-  } catch (MoFEMException const &e) { \
-    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage); \
-  } \
+#define MoFEMFunctionReturnVoid()                                              \
+  }                                                                            \
+  catch (MoFEMException const &e) {                                            \
+    SETERRQ(PETSC_COMM_SELF, e.errorCode, e.errorMessage);                     \
+  }                                                                            \
   PetscFunctionReturnVoid()
 
 /**
@@ -453,48 +459,86 @@ DEPRECATED void macro_is_depracted_using_deprecated_function();
   * \note Return void, whereas MoFEMFunctionReturn returns error code
   *
   */
-#define MoFEMFunctionReturnHotVoid() \
-  } catch (MoFEMException const &e) { \
-    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage); \
-  } \
+#define MoFEMFunctionReturnHotVoid()                                           \
+  }                                                                            \
+  catch (MoFEMException const &e) {                                            \
+    SETERRQ(PETSC_COMM_SELF, e.errorCode, e.errorMessage);                     \
+  }                                                                            \
   PetscFunctionReturnVoid()
+
+#define CHKERRQ_PETSC(n) CHKERRQ(n)
 
 /**
  * \brief check error code of MoAB function
  * @param  a MoABErrorCode
  */
-#define CHKERRQ_MOAB(a) do { \
-  ErrorCode val = (a); \
-  if (MB_SUCCESS != val) { \
-    std::ostringstream ss; \
-    ss << "Error code  " << val << " at " << __FILE__ << ":" << __LINE__ << std::endl; \
-    std::string str(ss.str()); \
-    SETERRQ(PETSC_COMM_SELF,MOFEM_MOAB_ERROR,str.c_str()); \
-  } \
-} while (false)
+#define CHKERRQ_MOAB(a)                                                        \
+  if (PetscUnlikely(MB_SUCCESS != (a))) {                                      \
+    std::string str("MOAB error " + boost::lexical_cast<std::string>((a)) +    \
+                    " at line " + boost::lexical_cast<std::string>(__LINE__) + \
+                    " : " + std::string(__FILE__));                            \
+    SETERRQ(PETSC_COMM_SELF, MOFEM_MOAB_ERROR, str.c_str());                   \
+  }
 
 /**
- * \bried Check error code of MoAB function and throw MoFEM exception
+  * \brief Check error code of MoAB function
+  * @param  a MoFEMErrorCode
+  *
+  * \code
+  * rval = fun_moab(); CHKERRG(rval);
+  * ierr = fun_petsc(); CHKERRG(rval);
+  * ierr = fun_mofem(); CHKERRG(rval);
+  * \endcode
+  *
+  * \note Function detect type of errocode using specialized template function
+  * getErrorType, i.e. condition is evaluated at compilation time.
+  *
+  */
+#define CHKERRG(n)                                                             \
+  if ((boost::is_same<BOOST_TYPEOF((n)),                                       \
+                      MoFEMErrorCodeGeneric<PetscErrorCode> >::value)) {       \
+    CHKERRQ_PETSC((n));                                                        \
+  } else if (boost::is_same<BOOST_TYPEOF((n)),                                 \
+                            MoFEMErrorCodeGeneric<moab::ErrorCode> >::value) { \
+    CHKERRQ_MOAB((n));                                                         \
+  }
+
+/**
+ * @brief Inline error check
+ *
+ * \code
+ * CHKERR fun_moab();
+ * CHKERR fun_petsc();
+ * CHKERR fun_mofem();
+ * \endcode
+ *
+ */
+#define CHKERR                                                                 \
+  ErrorCheckerLine() << __LINE__ << __FILE__ << PETSC_FUNCTION_NAME <<
+
+/**
+ * \brief Check error code of MoAB function and throw MoFEM exception
  * @param  a MoABErrorCode
  */
-#define MOAB_THROW(a) do { \
-  ErrorCode val = (a); \
-  if (MB_SUCCESS != val) { \
-    std::ostringstream ss; \
-    ss << "Error code  " << val << " at " << __FILE__ << ":" << __LINE__ << std::endl; \
-    throw MoFEMException(MOFEM_MOAB_ERROR,ss.str().c_str() ); \
-  } \
-} while (false)
+#define MOAB_THROW(a)                                                          \
+  if (PetscUnlikely(MB_SUCCESS != (a))) {                                      \
+    std::string str("MOAB error " + boost::lexical_cast<std::string>((a)) +    \
+                    " at line " + boost::lexical_cast<std::string>(__LINE__) + \
+                    " : " + std::string(__FILE__));                            \
+    throw MoFEMException(MOFEM_MOAB_ERROR, str.c_str());                       \
+  }
 
 /**
  * \brief Throw MoFEM exception
  * @param  a message
  */
-#define THROW_MESSAGE(a) { \
-  std::ostringstream ss; \
-  ss << a << " " << " at " << __FILE__ << ":" << __LINE__ << std::endl; \
-  throw MoFEMException(MOFEM_MOFEMEXCEPTION_THROW,ss.str().c_str() ); \
-}
+#define THROW_MESSAGE(a)                                                       \
+  {                                                                            \
+    std::string str("MOAB error " + boost::lexical_cast<std::string>((a)) +    \
+                    " at line " + boost::lexical_cast<std::string>(__LINE__) + \
+                    " : " + std::string(__FILE__));                            \
+    throw MoFEMException(MOFEM_MOFEMEXCEPTION_THROW, str.c_str());             \
+  }
 
 /**
  * \brief Convert number to string

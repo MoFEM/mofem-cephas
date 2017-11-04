@@ -56,11 +56,11 @@ struct Smoother {
     NonlinearElasticElement::MyVolumeFE(m_field),
     smootherData(smoother_data) {}
 
-    PetscErrorCode preProcess() {
+    MoFEMErrorCode preProcess() {
       MoFEMFunctionBeginHot;
 
 
-      ierr = VolumeElementForcesAndSourcesCore::preProcess(); CHKERRQ(ierr);
+      ierr = VolumeElementForcesAndSourcesCore::preProcess(); CHKERRG(ierr);
 
       if(A != PETSC_NULL) {
         snes_B = A;
@@ -92,9 +92,9 @@ struct Smoother {
       switch(snes_ctx) {
         case CTX_SNESSETFUNCTION: {
           if(smootherData.frontF) {
-            ierr = VecZeroEntries(smootherData.frontF); CHKERRQ(ierr);
-            ierr = VecGhostUpdateBegin(smootherData.frontF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-            ierr = VecGhostUpdateEnd(smootherData.frontF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+            ierr = VecZeroEntries(smootherData.frontF); CHKERRG(ierr);
+            ierr = VecGhostUpdateBegin(smootherData.frontF,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
+            ierr = VecGhostUpdateEnd(smootherData.frontF,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
           }
         }
         break;
@@ -105,19 +105,19 @@ struct Smoother {
       MoFEMFunctionReturnHot(0);
     }
 
-    PetscErrorCode postProcess() {
+    MoFEMErrorCode postProcess() {
       MoFEMFunctionBeginHot;
 
 
       switch(snes_ctx) {
         case CTX_SNESSETFUNCTION: {
           if(smootherData.frontF) {
-            ierr = VecAssemblyBegin(smootherData.frontF); CHKERRQ(ierr);
-            ierr = VecAssemblyEnd(smootherData.frontF); CHKERRQ(ierr);
-            ierr = VecGhostUpdateBegin(smootherData.frontF,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-            ierr = VecGhostUpdateEnd(smootherData.frontF,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-            ierr = VecGhostUpdateBegin(smootherData.frontF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-            ierr = VecGhostUpdateEnd(smootherData.frontF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+            ierr = VecAssemblyBegin(smootherData.frontF); CHKERRG(ierr);
+            ierr = VecAssemblyEnd(smootherData.frontF); CHKERRG(ierr);
+            ierr = VecGhostUpdateBegin(smootherData.frontF,ADD_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
+            ierr = VecGhostUpdateEnd(smootherData.frontF,ADD_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
+            ierr = VecGhostUpdateBegin(smootherData.frontF,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
+            ierr = VecGhostUpdateEnd(smootherData.frontF,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
           }
           break;
           default:
@@ -125,7 +125,7 @@ struct Smoother {
         }
       }
 
-      ierr = VolumeElementForcesAndSourcesCore::postProcess(); CHKERRQ(ierr);
+      ierr = VolumeElementForcesAndSourcesCore::postProcess(); CHKERRG(ierr);
       MoFEMFunctionReturnHot(0);
     }
 
@@ -161,13 +161,13 @@ struct Smoother {
     ) {
     }
 
-    PetscErrorCode calculateStress(const int gg) {
+    MoFEMErrorCode calculateStress(const int gg) {
       MoFEMFunctionBeginHot;
 
       try {
 
 
-        ierr = dAta.materialAdoublePtr->calculateP_PiolaKirchhoffI(dAta,getNumeredEntFiniteElementPtr()); CHKERRQ(ierr);
+        ierr = dAta.materialAdoublePtr->calculateP_PiolaKirchhoffI(dAta,getNumeredEntFiniteElementPtr()); CHKERRG(ierr);
 
         commonData.sTress[gg].resize(3,3,false);
         for(int dd1 = 0;dd1<3;dd1++) {
@@ -204,7 +204,7 @@ struct Smoother {
 
     ublas::vector<int> frontIndices;
 
-    PetscErrorCode aSemble(
+    MoFEMErrorCode aSemble(
       int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
     ) {
       MoFEMFunctionBeginHot;
@@ -236,20 +236,20 @@ struct Smoother {
             nb_dofs,
             &frontIndices[0],&nf[0],
             ADD_VALUES
-          ); CHKERRQ(ierr);
+          ); CHKERRG(ierr);
         }
       }
 
       ierr = VecSetOption(
         getFEMethod()->snes_f,VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE
-      );  CHKERRQ(ierr);
+      );  CHKERRG(ierr);
 
       ierr = VecSetValues(
         getFEMethod()->snes_f,
         nb_dofs,
         indices_ptr,&nf[0],
         ADD_VALUES
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
 
       MoFEMFunctionReturnHot(0);
     }
@@ -276,7 +276,7 @@ struct Smoother {
 
     ublas::vector<int> rowFrontIndices;
 
-    PetscErrorCode aSemble(
+    MoFEMErrorCode aSemble(
       int row_side,int col_side,
       EntityType row_type,EntityType col_type,
       DataForcesAndSourcesCore::EntData &row_data,
@@ -316,13 +316,13 @@ struct Smoother {
         nb_row,row_indices_ptr,
         nb_col,col_indices_ptr,
         &k(0,0),ADD_VALUES
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
 
       if(smootherData.tangentFrontF) {
 
         // get tangent vector array
         double *f_tangent_front_mesh_array;
-        ierr = VecGetArray(smootherData.tangentFrontF,&f_tangent_front_mesh_array); CHKERRQ(ierr);
+        ierr = VecGetArray(smootherData.tangentFrontF,&f_tangent_front_mesh_array); CHKERRG(ierr);
         // iterate nodes on tet
         for(int nn = 0;nn<4;nn++) {
 
@@ -365,13 +365,13 @@ struct Smoother {
                 int lambda_idx = dit->get()->getPetscGlobalDofIdx();
                 ierr = MatSetValues(
                   getFEMethod()->snes_B,1,&lambda_idx,1,&col_indices_ptr[ddd],&g,ADD_VALUES
-                ); CHKERRQ(ierr);
+                ); CHKERRG(ierr);
               }
             }
           }
 
         }
-        ierr = VecRestoreArray(smootherData.tangentFrontF,&f_tangent_front_mesh_array); CHKERRQ(ierr);
+        ierr = VecRestoreArray(smootherData.tangentFrontF,&f_tangent_front_mesh_array); CHKERRG(ierr);
 
       }
 

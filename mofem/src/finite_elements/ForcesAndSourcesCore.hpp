@@ -36,7 +36,7 @@ namespace MoFEM {
 struct ForcesAndSourcesCore: public FEMethod {
 
   Interface& mField;
-  ForcesAndSourcesCore(MoFEM::Interface& m_field):
+  ForcesAndSourcesCore(Interface& m_field):
   mField(m_field),
   getRuleHook(0) {
   }
@@ -44,7 +44,7 @@ struct ForcesAndSourcesCore: public FEMethod {
 
   }
 
-  PetscErrorCode getNumberOfNodes(int &num_nodes) const;
+  MoFEMErrorCode getNumberOfNodes(int &num_nodes) const;
 
   /** \brief Get max order of approximation for data fields
 
@@ -71,15 +71,15 @@ struct ForcesAndSourcesCore: public FEMethod {
    * @param  data entity data
    * @return      error code
    */
-  PetscErrorCode getSense(EntityType type,boost::ptr_vector<DataForcesAndSourcesCore::EntData> &data) const;
+  MoFEMErrorCode getSense(EntityType type,boost::ptr_vector<DataForcesAndSourcesCore::EntData> &data) const;
 
   /// \brief get maximal approximation order of approximation on the entity
-  PetscErrorCode getDataOrder(
+  MoFEMErrorCode getDataOrder(
     const EntityType type,const FieldSpace space,boost::ptr_vector<DataForcesAndSourcesCore::EntData> &data
   ) const;
 
   /// \brief get maximal approximation order on entity
-  PetscErrorCode getDataOrderSpaceAndBase(
+  MoFEMErrorCode getDataOrderSpaceAndBase(
     const std::string &field_name,const EntityType type,boost::ptr_vector<DataForcesAndSourcesCore::EntData> &data
   ) const;
 
@@ -88,96 +88,96 @@ struct ForcesAndSourcesCore: public FEMethod {
    * @param  data structure where results are stored
    * @return      error code
    */
-  PetscErrorCode getEdgesSense(DataForcesAndSourcesCore &data) const;
+  MoFEMErrorCode getEdgesSense(DataForcesAndSourcesCore &data) const;
 
   /**
    * get triangle sense (orientation)
    * @param  data structure where results are stored
    * @return      error code
    */
-  PetscErrorCode getTrisSense(DataForcesAndSourcesCore &data) const;
-  PetscErrorCode getQuadSense(DataForcesAndSourcesCore &data) const;
+  MoFEMErrorCode getTrisSense(DataForcesAndSourcesCore &data) const;
+  MoFEMErrorCode getQuadSense(DataForcesAndSourcesCore &data) const;
 
-  PetscErrorCode getEdgesDataOrder(DataForcesAndSourcesCore &data,const FieldSpace space) const;
-  PetscErrorCode getTrisDataOrder(DataForcesAndSourcesCore &data,const FieldSpace space) const;
-  PetscErrorCode getQuadDataOrder(DataForcesAndSourcesCore &data,const FieldSpace space) const;
-  PetscErrorCode getTetDataOrder(DataForcesAndSourcesCore &data,const FieldSpace space) const;
-  PetscErrorCode getPrismDataOrder(DataForcesAndSourcesCore &data,const FieldSpace space) const;
+  MoFEMErrorCode getEdgesDataOrder(DataForcesAndSourcesCore &data,const FieldSpace space) const;
+  MoFEMErrorCode getTrisDataOrder(DataForcesAndSourcesCore &data,const FieldSpace space) const;
+  MoFEMErrorCode getQuadDataOrder(DataForcesAndSourcesCore &data,const FieldSpace space) const;
+  MoFEMErrorCode getTetDataOrder(DataForcesAndSourcesCore &data,const FieldSpace space) const;
+  MoFEMErrorCode getPrismDataOrder(DataForcesAndSourcesCore &data,const FieldSpace space) const;
 
-  PetscErrorCode getEdgesDataOrderSpaceAndBase(DataForcesAndSourcesCore &data,const std::string &field_name) const;
-  PetscErrorCode getTrisDataOrderSpaceAndBase(DataForcesAndSourcesCore &data,const std::string &field_name) const;
-  PetscErrorCode getQuadDataOrderSpaceAndBase(DataForcesAndSourcesCore &data,const std::string &field_name) const;
-  PetscErrorCode getTetDataOrderSpaceAndBase(DataForcesAndSourcesCore &data,const std::string &field_name) const;
-  PetscErrorCode getPrismDataOrderSpaceAndBase(DataForcesAndSourcesCore &data,const std::string &field_name) const;
+  MoFEMErrorCode getEdgesDataOrderSpaceAndBase(DataForcesAndSourcesCore &data,const std::string &field_name) const;
+  MoFEMErrorCode getTrisDataOrderSpaceAndBase(DataForcesAndSourcesCore &data,const std::string &field_name) const;
+  MoFEMErrorCode getQuadDataOrderSpaceAndBase(DataForcesAndSourcesCore &data,const std::string &field_name) const;
+  MoFEMErrorCode getTetDataOrderSpaceAndBase(DataForcesAndSourcesCore &data,const std::string &field_name) const;
+  MoFEMErrorCode getPrismDataOrderSpaceAndBase(DataForcesAndSourcesCore &data,const std::string &field_name) const;
 
   // ** Indices **
 
   /// \brief get node indices
-  PetscErrorCode getNodesIndices(const boost::string_ref field_name,
+  MoFEMErrorCode getNodesIndices(const boost::string_ref field_name,
     FENumeredDofEntity_multiIndex &dofs,
     VectorInt &nodes_indices,
     VectorInt &local_nodes_indices
   ) const;
 
   /// \brief get indices by type (generic function)
-  PetscErrorCode getTypeIndices(const boost::string_ref field_name,
+  MoFEMErrorCode getTypeIndices(const boost::string_ref field_name,
     FENumeredDofEntity_multiIndex &dofs,EntityType type,int side_number,
     VectorInt &indices,
     VectorInt &local_indices
   ) const;
 
   /// \brief get indices by type (generic function)
-  PetscErrorCode getTypeIndices(
+  MoFEMErrorCode getTypeIndices(
     const boost::string_ref field_name,FENumeredDofEntity_multiIndex &dofs,
     EntityType type,boost::ptr_vector<DataForcesAndSourcesCore::EntData> &data
   ) const;
 
   /// \brief get row node indices from FENumeredDofEntity_multiIndex
-  PetscErrorCode getRowNodesIndices(DataForcesAndSourcesCore &data,const std::string &field_name) const;
+  MoFEMErrorCode getRowNodesIndices(DataForcesAndSourcesCore &data,const std::string &field_name) const;
 
   /// \brief get col node indices from FENumeredDofEntity_multiIndex
-  PetscErrorCode getColNodesIndices(DataForcesAndSourcesCore &data,const std::string &field_name) const;
+  MoFEMErrorCode getColNodesIndices(DataForcesAndSourcesCore &data,const std::string &field_name) const;
 
   /// \brief get Edges row indices from FENumeredDofEntity_multiIndex
-  PetscErrorCode getEdgesRowIndices(DataForcesAndSourcesCore &data,const std::string &field_name) const;
+  MoFEMErrorCode getEdgesRowIndices(DataForcesAndSourcesCore &data,const std::string &field_name) const;
 
   /// \brief get Edges col indices from FENumeredDofEntity_multiIndex
-  PetscErrorCode getEdgesColIndices(DataForcesAndSourcesCore &data,const std::string &field_name) const;
+  MoFEMErrorCode getEdgesColIndices(DataForcesAndSourcesCore &data,const std::string &field_name) const;
 
   /// \brief get Tris row indices from FENumeredDofEntity_multiIndex
-  PetscErrorCode getTrisRowIndices(DataForcesAndSourcesCore &data,const std::string &field_name) const;
+  MoFEMErrorCode getTrisRowIndices(DataForcesAndSourcesCore &data,const std::string &field_name) const;
 
   /// \brief get Tris col indices from FENumeredDofEntity_multiIndex
-  PetscErrorCode getTrisColIndices(DataForcesAndSourcesCore &data,const std::string &field_name) const;
+  MoFEMErrorCode getTrisColIndices(DataForcesAndSourcesCore &data,const std::string &field_name) const;
 
   /// \brief get Tets row indices from FENumeredDofEntity_multiIndex
-  PetscErrorCode getTetsRowIndices(DataForcesAndSourcesCore &data,const std::string &field_name) const;
+  MoFEMErrorCode getTetsRowIndices(DataForcesAndSourcesCore &data,const std::string &field_name) const;
 
   /// \brief get Tets col indices from FENumeredDofEntity_multiIndex
-  PetscErrorCode getTetsColIndices(DataForcesAndSourcesCore &data,const std::string &field_name) const;
+  MoFEMErrorCode getTetsColIndices(DataForcesAndSourcesCore &data,const std::string &field_name) const;
 
   /// \brief get Quad row indices from FENumeredDofEntity_multiIndex
-  PetscErrorCode getQuadRowIndices(DataForcesAndSourcesCore &data,const std::string &field_name) const;
+  MoFEMErrorCode getQuadRowIndices(DataForcesAndSourcesCore &data,const std::string &field_name) const;
 
   /// \brief get Quad col indices from FENumeredDofEntity_multiIndex
-  PetscErrorCode getQuadColIndices(DataForcesAndSourcesCore &data,const std::string &field_name) const;
+  MoFEMErrorCode getQuadColIndices(DataForcesAndSourcesCore &data,const std::string &field_name) const;
 
   /// \brief get Prism row indices from FENumeredDofEntity_multiIndex
-  PetscErrorCode getPrismRowIndices(DataForcesAndSourcesCore &data,const std::string &field_name) const;
+  MoFEMErrorCode getPrismRowIndices(DataForcesAndSourcesCore &data,const std::string &field_name) const;
 
   /// \brief get Prism col indices from FENumeredDofEntity_multiIndex
-  PetscErrorCode getPrismColIndices(DataForcesAndSourcesCore &data,const std::string &field_name) const;
+  MoFEMErrorCode getPrismColIndices(DataForcesAndSourcesCore &data,const std::string &field_name) const;
 
   /// \brief get NoField indices
-  PetscErrorCode getNoFieldIndices(
+  MoFEMErrorCode getNoFieldIndices(
     const std::string &field_name,FENumeredDofEntity_multiIndex &dofs,VectorInt &nodes_indices
   ) const;
 
   /// \brief get col NoField indices
-  PetscErrorCode getNoFieldRowIndices(DataForcesAndSourcesCore &data,const std::string &field_name) const;
+  MoFEMErrorCode getNoFieldRowIndices(DataForcesAndSourcesCore &data,const std::string &field_name) const;
 
   /// \brief get col NoField indices
-  PetscErrorCode getNoFieldColIndices(DataForcesAndSourcesCore &data,const std::string &field_name) const;
+  MoFEMErrorCode getNoFieldColIndices(DataForcesAndSourcesCore &data,const std::string &field_name) const;
 
   // ** Data **
 
@@ -191,7 +191,7 @@ struct ForcesAndSourcesCore: public FEMethod {
    * @param  base       Get base on nodes
    * @return            Error code
    */
-  PetscErrorCode getNodesFieldData(
+  MoFEMErrorCode getNodesFieldData(
     const boost::string_ref field_name,
     FEDofEntity_multiIndex &dofs,
     VectorDouble &nodes_data,
@@ -210,7 +210,7 @@ struct ForcesAndSourcesCore: public FEMethod {
    * @param  ent_field_dofs Vector of pointers to DOFs data structure
    * @return                Error code
    */
-  PetscErrorCode getTypeFieldData(
+  MoFEMErrorCode getTypeFieldData(
     const boost::string_ref field_name,
     FEDofEntity_multiIndex &dofs,
     EntityType type,
@@ -219,20 +219,20 @@ struct ForcesAndSourcesCore: public FEMethod {
     VectorDofs &ent_field_dofs
   ) const;
 
-  PetscErrorCode getTypeFieldData(
+  MoFEMErrorCode getTypeFieldData(
     const boost::string_ref field_name,
     FEDofEntity_multiIndex &dofs,
     EntityType type,
     boost::ptr_vector<DataForcesAndSourcesCore::EntData> &data
   ) const;
 
-  PetscErrorCode getNoFieldFieldData(
+  MoFEMErrorCode getNoFieldFieldData(
     const boost::string_ref field_name,
     FEDofEntity_multiIndex &dofs,
     VectorDouble &ent_field_data,
     VectorDofs &ent_field_dofs
   ) const;
-  PetscErrorCode getNoFieldFieldData(
+  MoFEMErrorCode getNoFieldFieldData(
     DataForcesAndSourcesCore &data,const boost::string_ref field_name
   ) const;
 
@@ -242,35 +242,35 @@ struct ForcesAndSourcesCore: public FEMethod {
    * @param  field_name Field name
    * @return            Error code
    */
-  PetscErrorCode getNodesFieldData(DataForcesAndSourcesCore &data,const std::string &field_name) const;
+  MoFEMErrorCode getNodesFieldData(DataForcesAndSourcesCore &data,const std::string &field_name) const;
 
-  PetscErrorCode getEdgesFieldData(DataForcesAndSourcesCore &data,const std::string &field_name) const;
-  PetscErrorCode getTrisFieldData(DataForcesAndSourcesCore &data,const std::string &field_name) const;
-  PetscErrorCode getQuadFieldData(DataForcesAndSourcesCore &data,const std::string &field_name) const;
-  PetscErrorCode getTetsFieldData(DataForcesAndSourcesCore &data,const std::string &field_name) const;
-  PetscErrorCode getPrismFieldData(DataForcesAndSourcesCore &data,const std::string &field_name) const;
+  MoFEMErrorCode getEdgesFieldData(DataForcesAndSourcesCore &data,const std::string &field_name) const;
+  MoFEMErrorCode getTrisFieldData(DataForcesAndSourcesCore &data,const std::string &field_name) const;
+  MoFEMErrorCode getQuadFieldData(DataForcesAndSourcesCore &data,const std::string &field_name) const;
+  MoFEMErrorCode getTetsFieldData(DataForcesAndSourcesCore &data,const std::string &field_name) const;
+  MoFEMErrorCode getPrismFieldData(DataForcesAndSourcesCore &data,const std::string &field_name) const;
 
   /// \brief Get nodes on triangles
-  PetscErrorCode getFaceTriNodes(DataForcesAndSourcesCore &data) const;
+  MoFEMErrorCode getFaceTriNodes(DataForcesAndSourcesCore &data) const;
 
   /// \brief Get field approximation space and base on entities
-  PetscErrorCode getSpacesAndBaseOnEntities(DataForcesAndSourcesCore &data) const;
+  MoFEMErrorCode getSpacesAndBaseOnEntities(DataForcesAndSourcesCore &data) const;
 
   // ** Data form NumeredDofEntity_multiIndex **
 
   /// \brief get indices of nodal indices which are declared for problem but not this particular element
-  PetscErrorCode getProblemNodesIndices(const std::string &field_name,const NumeredDofEntity_multiIndex &dofs,VectorInt &nodes_indices) const;
+  MoFEMErrorCode getProblemNodesIndices(const std::string &field_name,const NumeredDofEntity_multiIndex &dofs,VectorInt &nodes_indices) const;
 
   /// \brief get indices by type (generic function) which are declared for problem but not this particular element
-  PetscErrorCode getProblemTypeIndices(
+  MoFEMErrorCode getProblemTypeIndices(
     const std::string &field_name,const NumeredDofEntity_multiIndex &dofs,
     EntityType type,int side_number,VectorInt &indices
   ) const;
 
-  PetscErrorCode getProblemNodesRowIndices(const std::string &field_name,VectorInt &nodes_indices) const;
-  PetscErrorCode getProblemTypeRowIndices(const std::string &field_name,EntityType type,int side_number,VectorInt &indices) const;
-  PetscErrorCode getProblemNodesColIndices(const std::string &field_name,VectorInt &nodes_indices) const;
-  PetscErrorCode getProblemTypeColIndices(const std::string &field_name,EntityType type,int side_number,VectorInt &indices) const;
+  MoFEMErrorCode getProblemNodesRowIndices(const std::string &field_name,VectorInt &nodes_indices) const;
+  MoFEMErrorCode getProblemTypeRowIndices(const std::string &field_name,EntityType type,int side_number,VectorInt &indices) const;
+  MoFEMErrorCode getProblemNodesColIndices(const std::string &field_name,VectorInt &nodes_indices) const;
+  MoFEMErrorCode getProblemTypeColIndices(const std::string &field_name,EntityType type,int side_number,VectorInt &indices) const;
 
   /** \brief set integration rule for finite element
     *
@@ -333,7 +333,7 @@ struct ForcesAndSourcesCore: public FEMethod {
 
   /** \brief It will be removed in the future use other variant
     */
-  virtual PetscErrorCode setGaussPts(int order) {
+  virtual MoFEMErrorCode setGaussPts(int order) {
     MoFEMFunctionBeginHot;
     SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"sorry, not implemented");
     MoFEMFunctionReturnHot(0);
@@ -361,10 +361,10 @@ struct ForcesAndSourcesCore: public FEMethod {
     in reference element, where last index in row is for integration weight.
 
     */
-  virtual PetscErrorCode setGaussPts(int order_row,int order_col,int order_data) {
+  virtual MoFEMErrorCode setGaussPts(int order_row,int order_col,int order_data) {
 
     MoFEMFunctionBeginHot;
-    ierr = setGaussPts(order_data); CHKERRQ(ierr);
+    ierr = setGaussPts(order_data); CHKERRG(ierr);
     MoFEMFunctionReturnHot(0);
   }
 
@@ -396,7 +396,7 @@ struct ForcesAndSourcesCore: public FEMethod {
     NoteL: By default sYmm is set for symmetric problems
 
   */
-  struct UserDataOperator: public MoFEM::DataOperator {
+  struct UserDataOperator: public DataOperator {
 
     /**
      * \brief Controls loop over entities on element
@@ -405,7 +405,7 @@ struct ForcesAndSourcesCore: public FEMethod {
      * OPCOL is usually used if column vector is assembled
      * OPROWCOL is usually used for assemble matrices.
      *
-     * For typical problem like Bubnov-Galrekin OPROW and OPCOL are the same. In more
+     * For typical problem like Bubnov-Galerkin OPROW and OPCOL are the same. In more
      * general case for example for non-square matrices columns and rows could have
      * different numeration and/or different set of fields.
      *
@@ -485,7 +485,7 @@ struct ForcesAndSourcesCore: public FEMethod {
     NOTE: Using those indices to assemble matrix will result in error if new non-zero values need to be created.
 
     */
-    PetscErrorCode getProblemRowIndices(
+    MoFEMErrorCode getProblemRowIndices(
       const std::string filed_name,
       const EntityType type,
       const int side,
@@ -493,7 +493,7 @@ struct ForcesAndSourcesCore: public FEMethod {
     ) const;
 
     // \deprecated Deprecated function with spelling mistake
-    DEPRECATED inline PetscErrorCode
+    DEPRECATED inline MoFEMErrorCode
     getPorblemRowIndices(const std::string filed_name, const EntityType type,
                          const int side, VectorInt &indices) const {
       return getProblemRowIndices(filed_name, type, side, indices);
@@ -512,18 +512,18 @@ struct ForcesAndSourcesCore: public FEMethod {
     non-zero values need to be created.
 
     */
-    PetscErrorCode getProblemColIndices(const std::string filed_name,
+    MoFEMErrorCode getProblemColIndices(const std::string filed_name,
                                         const EntityType type, const int side,
                                         VectorInt &indices) const;
 
-    virtual PetscErrorCode setPtrFE(ForcesAndSourcesCore *ptr) {
+    virtual MoFEMErrorCode setPtrFE(ForcesAndSourcesCore *ptr) {
       MoFEMFunctionBeginHot;
       ptrFE = ptr;
       MoFEMFunctionReturnHot(0);
     }
 
     // \deprecated Deprecated function with spelling mistake
-    DEPRECATED inline PetscErrorCode
+    DEPRECATED inline MoFEMErrorCode
     getPorblemColIndices(const std::string filed_name, const EntityType type,
                          const int side, VectorInt &indices) const {
       return getProblemColIndices(filed_name, type, side, indices);
@@ -577,24 +577,24 @@ struct ForcesAndSourcesCore: public FEMethod {
    */
   boost::ptr_vector<UserDataOperator>& getOpPtrVector() { return opPtrVector; }
 
-  virtual PetscErrorCode preProcess() {
+  virtual MoFEMErrorCode preProcess() {
     MoFEMFunctionBeginHot;
     if(preProcessHook) {
-      ierr = preProcessHook(); CHKERRQ(ierr);
+      ierr = preProcessHook(); CHKERRG(ierr);
     }
     MoFEMFunctionReturnHot(0);
   }
-  virtual PetscErrorCode operator()() {
+  virtual MoFEMErrorCode operator()() {
     MoFEMFunctionBeginHot;
     if(operatorHook) {
-      ierr = operatorHook(); CHKERRQ(ierr);
+      ierr = operatorHook(); CHKERRG(ierr);
     }
     MoFEMFunctionReturnHot(0);
   }
-  virtual PetscErrorCode postProcess() {
+  virtual MoFEMErrorCode postProcess() {
     MoFEMFunctionBeginHot;
     if(postProcessHook) {
-      ierr = postProcessHook(); CHKERRQ(ierr);
+      ierr = postProcessHook(); CHKERRG(ierr);
     }
     MoFEMFunctionReturnHot(0);
   }

@@ -180,7 +180,7 @@ struct EdgeElementForcesAndSourcesCore: public ForcesAndSourcesCore {
 
   };
 
-  PetscErrorCode operator()();
+  MoFEMErrorCode operator()();
 
 };
 

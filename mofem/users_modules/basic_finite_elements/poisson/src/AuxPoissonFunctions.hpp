@@ -39,61 +39,61 @@ namespace PoissonExample {
      * @param  ghost_vec pointer to created ghost vector
      * @return           error code
      */
-    PetscErrorCode createGhostVec(Vec *ghost_vec) const {
+    MoFEMErrorCode createGhostVec(Vec *ghost_vec) const {
       
       MoFEMFunctionBeginHot;
       int ghosts[] = { 0 };
       int nb_locals = rAnk==0?1:0;
       int nb_ghosts = rAnk>0?1:0;
-      ierr = VecCreateGhost(cOmm,nb_locals,1,nb_ghosts,ghosts,ghost_vec); CHKERRQ(ierr);
+      ierr = VecCreateGhost(cOmm,nb_locals,1,nb_ghosts,ghosts,ghost_vec); CHKERRG(ierr);
       MoFEMFunctionReturnHot(0);
     }
 
     /**
      * \brief Assemble error vector
      */
-    PetscErrorCode assembleGhostVector(Vec ghost_vec) const {
+    MoFEMErrorCode assembleGhostVector(Vec ghost_vec) const {
       
       MoFEMFunctionBeginHot;
-      ierr = VecAssemblyBegin(ghost_vec); CHKERRQ(ierr);
-      ierr = VecAssemblyEnd(ghost_vec); CHKERRQ(ierr);
+      ierr = VecAssemblyBegin(ghost_vec); CHKERRG(ierr);
+      ierr = VecAssemblyEnd(ghost_vec); CHKERRG(ierr);
       // accumulate errors from processors
-      ierr = VecGhostUpdateBegin(ghost_vec,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-      ierr = VecGhostUpdateEnd(ghost_vec,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+      ierr = VecGhostUpdateBegin(ghost_vec,ADD_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
+      ierr = VecGhostUpdateEnd(ghost_vec,ADD_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
       // scatter errors to all processors
-      ierr = VecGhostUpdateBegin(ghost_vec,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-      ierr = VecGhostUpdateEnd(ghost_vec,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      ierr = VecGhostUpdateBegin(ghost_vec,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
+      ierr = VecGhostUpdateEnd(ghost_vec,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
       MoFEMFunctionReturnHot(0);
     }
 
     /**
      * \brief Print error
      */
-    PetscErrorCode printError(Vec ghost_vec) {
+    MoFEMErrorCode printError(Vec ghost_vec) {
       
       MoFEMFunctionBeginHot;
       double *e;
-      ierr = VecGetArray(ghost_vec,&e); CHKERRQ(ierr);
-      ierr = PetscPrintf(cOmm,"Approximation error %4.3e\n",sqrt(e[0])); CHKERRQ(ierr);
-      ierr = VecRestoreArray(ghost_vec,&e); CHKERRQ(ierr);
+      ierr = VecGetArray(ghost_vec,&e); CHKERRG(ierr);
+      ierr = PetscPrintf(cOmm,"Approximation error %4.3e\n",sqrt(e[0])); CHKERRG(ierr);
+      ierr = VecRestoreArray(ghost_vec,&e); CHKERRG(ierr);
       MoFEMFunctionReturnHot(0);
     }
 
     /**
      * \brief Test error
      */
-    PetscErrorCode testError(Vec ghost_vec) {
+    MoFEMErrorCode testError(Vec ghost_vec) {
       
       MoFEMFunctionBeginHot;
       double *e;
-      ierr = VecGetArray(ghost_vec,&e); CHKERRQ(ierr);
+      ierr = VecGetArray(ghost_vec,&e); CHKERRG(ierr);
       // Check if error is zero, otherwise throw error
       const double eps = 1e-8;
       if( (sqrt(e[0])>eps) || (!boost::math::isnormal(e[0]) )
       ) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_ATOM_TEST_INVALID,"Test failed, error too big");
       }
-      ierr = VecRestoreArray(ghost_vec,&e); CHKERRQ(ierr);
+      ierr = VecRestoreArray(ghost_vec,&e); CHKERRG(ierr);
       MoFEMFunctionReturnHot(0);
     }
 

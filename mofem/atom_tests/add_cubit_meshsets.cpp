@@ -23,25 +23,25 @@ int main(int argc, char *argv[]) {
     MoFEM::Interface& m_field = core;
 
     MeshsetsManager *meshsets_manager_ptr;
-    ierr = m_field.getInterface(meshsets_manager_ptr); CHKERRQ(ierr);
+    ierr = m_field.getInterface(meshsets_manager_ptr); CHKERRG(ierr);
 
     std::cout << "<<<< SIDESETs >>>>>" << std::endl;
 
     bool add_block_is_there = false;
-    ierr = meshsets_manager_ptr->addMeshset(SIDESET,1002); CHKERRQ(ierr);
+    ierr = meshsets_manager_ptr->addMeshset(SIDESET,1002); CHKERRG(ierr);
     {
       PressureCubitBcData mybc;
       strncpy(mybc.data.name,"Pressure",8);
       mybc.data.flag1 = 0;
       mybc.data.flag2 = 0;
       mybc.data.value1 = 1;
-      ierr = meshsets_manager_ptr->setBcData(SIDESET,1002,mybc); CHKERRQ(ierr);
+      ierr = meshsets_manager_ptr->setBcData(SIDESET,1002,mybc); CHKERRG(ierr);
     }
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,SIDESET,it)) {
       if(it->getMeshsetId()!=1002) continue;
       add_block_is_there = true;
       PressureCubitBcData mydata;
-      ierr = it->getBcDataStructure(mydata); CHKERRQ(ierr);
+      ierr = it->getBcDataStructure(mydata); CHKERRG(ierr);
       //Print data
       std::cout << mydata;
     }
@@ -52,12 +52,12 @@ int main(int argc, char *argv[]) {
     std::cout << "<<<< BLOCKSETs >>>>>" << std::endl;
 
     add_block_is_there = false;
-    ierr = meshsets_manager_ptr->addMeshset(BLOCKSET,1000,"ADD_BLOCK_SET"); CHKERRQ(ierr);
+    ierr = meshsets_manager_ptr->addMeshset(BLOCKSET,1000,"ADD_BLOCK_SET"); CHKERRG(ierr);
     std::vector<double> attr(3);
     attr[0] = 0;
     attr[1] = 1;
     attr[2] = 2;
-    ierr = meshsets_manager_ptr->setAtributes(BLOCKSET,1000,attr); CHKERRQ(ierr);
+    ierr = meshsets_manager_ptr->setAtributes(BLOCKSET,1000,attr); CHKERRG(ierr);
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
       //Get block name
       std::string name = it->getName();
@@ -77,12 +77,12 @@ int main(int argc, char *argv[]) {
       SETERRQ(PETSC_COMM_WORLD,MOFEM_OPERATION_UNSUCCESSFUL,"no added block set");
     }
     add_block_is_there = false;
-    ierr = meshsets_manager_ptr->addMeshset(BLOCKSET,1001,"MAT_ELASTIC"); CHKERRQ(ierr);
+    ierr = meshsets_manager_ptr->addMeshset(BLOCKSET,1001,"MAT_ELASTIC"); CHKERRG(ierr);
     {
       Mat_Elastic mydata;
       mydata.data.Young = 1;
       mydata.data.Poisson = 0.25;
-      ierr = meshsets_manager_ptr->setAtributesByDataStructure(BLOCKSET,1001,mydata); CHKERRQ(ierr);
+      ierr = meshsets_manager_ptr->setAtributesByDataStructure(BLOCKSET,1001,mydata); CHKERRG(ierr);
     }
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
       if(it->getMeshsetId()!=1001) continue;
@@ -91,7 +91,7 @@ int main(int argc, char *argv[]) {
       if(name.compare(0,13,"MAT_ELASTIC") == 0 && (it->getBcType()&CubitBCType(MAT_ELASTICSET)).any()) {
         add_block_is_there = true;
         Mat_Elastic mydata;
-        ierr = it->getAttributeDataStructure(mydata); CHKERRQ(ierr);
+        ierr = it->getAttributeDataStructure(mydata); CHKERRG(ierr);
         //Print data
         std::cout << mydata;
         if(mydata.data.Young != 1 || mydata.data.Poisson != 0.25) {
@@ -103,17 +103,17 @@ int main(int argc, char *argv[]) {
       SETERRQ(PETSC_COMM_WORLD,MOFEM_OPERATION_UNSUCCESSFUL,"no added block set");
     }
 
-    ierr = meshsets_manager_ptr->addMeshset(BLOCKSET,1002,"ADD_BLOCK_SET"); CHKERRQ(ierr);
-    ierr = meshsets_manager_ptr->addMeshset(BLOCKSET,1003,"ADD_BLOCK_SET"); CHKERRQ(ierr);
-    ierr = meshsets_manager_ptr->addMeshset(BLOCKSET,1004,"ADD_BLOCK_SET"); CHKERRQ(ierr);
-    ierr = meshsets_manager_ptr->addMeshset(BLOCKSET,1005,"ADD_BLOCK_SET"); CHKERRQ(ierr);
-    ierr = meshsets_manager_ptr->addMeshset(BLOCKSET,1006,"ADD_BLOCK_SET"); CHKERRQ(ierr);
-    ierr = meshsets_manager_ptr->addMeshset(BLOCKSET,1007,"ADD_BLOCK_SET"); CHKERRQ(ierr);
-    ierr = meshsets_manager_ptr->addMeshset(BLOCKSET,1008,"ADD_BLOCK_SET"); CHKERRQ(ierr);
+    ierr = meshsets_manager_ptr->addMeshset(BLOCKSET,1002,"ADD_BLOCK_SET"); CHKERRG(ierr);
+    ierr = meshsets_manager_ptr->addMeshset(BLOCKSET,1003,"ADD_BLOCK_SET"); CHKERRG(ierr);
+    ierr = meshsets_manager_ptr->addMeshset(BLOCKSET,1004,"ADD_BLOCK_SET"); CHKERRG(ierr);
+    ierr = meshsets_manager_ptr->addMeshset(BLOCKSET,1005,"ADD_BLOCK_SET"); CHKERRG(ierr);
+    ierr = meshsets_manager_ptr->addMeshset(BLOCKSET,1006,"ADD_BLOCK_SET"); CHKERRG(ierr);
+    ierr = meshsets_manager_ptr->addMeshset(BLOCKSET,1007,"ADD_BLOCK_SET"); CHKERRG(ierr);
+    ierr = meshsets_manager_ptr->addMeshset(BLOCKSET,1008,"ADD_BLOCK_SET"); CHKERRG(ierr);
 
     std::cout << "<<<< ADD BLOCKSETs FROM CONFIG FILE >>>>>" << std::endl;
 
-    ierr = meshsets_manager_ptr->setMeshsetFromFile(/*"add_cubit_meshsets.in"*/); CHKERRQ(ierr);
+    ierr = meshsets_manager_ptr->setMeshsetFromFile(/*"add_cubit_meshsets.in"*/); CHKERRG(ierr);
 
     // List all meshsets
     for(_IT_CUBITMESHSETS_FOR_LOOP_(m_field,it)) {
@@ -129,37 +129,37 @@ int main(int argc, char *argv[]) {
       }
       if((it->getBcType()&CubitBCType(MAT_ELASTICSET)).any()) {
         Mat_Elastic mydata;
-        ierr = it->getAttributeDataStructure(mydata); CHKERRQ(ierr);
+        ierr = it->getAttributeDataStructure(mydata); CHKERRG(ierr);
         std::cout << "Mat elastic found " << endl << mydata << endl;
       }
       if((it->getBcType()&CubitBCType(MAT_THERMALSET)).any()) {
         Mat_Thermal mydata;
-        ierr = it->getAttributeDataStructure(mydata); CHKERRQ(ierr);
+        ierr = it->getAttributeDataStructure(mydata); CHKERRG(ierr);
         std::cout << "Mat thermal found " << endl << mydata << endl;
       }
       if((it->getBcType()&CubitBCType(DISPLACEMENTSET)).any()) {
         DisplacementCubitBcData mydata;
-        ierr = it->getBcDataStructure(mydata); CHKERRQ(ierr);
+        ierr = it->getBcDataStructure(mydata); CHKERRG(ierr);
         std::cout << mydata;
       }
       if((it->getBcType()&CubitBCType(FORCESET)).any()) {
         ForceCubitBcData mydata;
-        ierr = it->getBcDataStructure(mydata); CHKERRQ(ierr);
+        ierr = it->getBcDataStructure(mydata); CHKERRG(ierr);
         std::cout << mydata;
       }
       if((it->getBcType()&CubitBCType(PRESSURESET)).any()) {
         PressureCubitBcData mydata;
-        ierr = it->getBcDataStructure(mydata); CHKERRQ(ierr);
+        ierr = it->getBcDataStructure(mydata); CHKERRG(ierr);
         std::cout << mydata;
       }
       if((it->getBcType()&CubitBCType(TEMPERATURESET)).any()) {
         TemperatureCubitBcData mydata;
-        ierr = it->getBcDataStructure(mydata); CHKERRQ(ierr);
+        ierr = it->getBcDataStructure(mydata); CHKERRG(ierr);
         std::cout << mydata;
       }
       if((it->getBcType()&CubitBCType(HEATFLUXSET)).any()) {
         HeatFluxCubitBcData mydata;
-        ierr = it->getBcDataStructure(mydata); CHKERRQ(ierr);
+        ierr = it->getBcDataStructure(mydata); CHKERRG(ierr);
         std::cout << mydata;
       }
     }

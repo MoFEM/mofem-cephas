@@ -31,7 +31,7 @@ namespace MoFEM {
    */
   struct BaseFunctionCtx: public UnknownInterface {
 
-    PetscErrorCode query_interface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface) const;
+    MoFEMErrorCode query_interface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface) const;
 
     BaseFunctionCtx() {}
     ~BaseFunctionCtx() {}
@@ -44,17 +44,17 @@ namespace MoFEM {
    */
   struct BaseFunction: public UnknownInterface {
 
-    PetscErrorCode query_interface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface) const;
+    MoFEMErrorCode query_interface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface) const;
 
     BaseFunction() {}
     ~BaseFunction() {}
 
-    virtual PetscErrorCode getValue(
+    virtual MoFEMErrorCode getValue(
       MatrixDouble &pts,
       boost::shared_ptr<BaseFunctionCtx> ctx_ptr
     );
 
-    virtual PetscErrorCode getValue(
+    virtual MoFEMErrorCode getValue(
       MatrixDouble &pts_x,
       MatrixDouble &pts_t,
       boost::shared_ptr<BaseFunctionCtx> ctx_ptr

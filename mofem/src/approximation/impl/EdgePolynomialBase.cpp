@@ -46,7 +46,7 @@ using namespace MoFEM;
 
 #include <Hcurl.hpp>
 
-PetscErrorCode EdgePolynomialBase::query_interface(
+MoFEMErrorCode EdgePolynomialBase::query_interface(
   const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface
 ) const {
 
@@ -58,14 +58,14 @@ PetscErrorCode EdgePolynomialBase::query_interface(
   } else {
     SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"wrong interference");
   }
-  ierr = BaseFunction::query_interface(uuid,iface); CHKERRQ(ierr);
+  ierr = BaseFunction::query_interface(uuid,iface); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
 EdgePolynomialBase::~EdgePolynomialBase() {}
 EdgePolynomialBase::EdgePolynomialBase() {}
 
-PetscErrorCode EdgePolynomialBase::getValue(
+MoFEMErrorCode EdgePolynomialBase::getValue(
   MatrixDouble &pts,
   boost::shared_ptr<BaseFunctionCtx> ctx_ptr
 ) {
@@ -73,7 +73,7 @@ PetscErrorCode EdgePolynomialBase::getValue(
   MoFEMFunctionBeginHot;
 
   MoFEM::UnknownInterface *iface;
-  ierr = ctx_ptr->query_interface(IDD_EDGE_BASE_FUNCTION,&iface); CHKERRQ(ierr);
+  ierr = ctx_ptr->query_interface(IDD_EDGE_BASE_FUNCTION,&iface); CHKERRG(ierr);
   cTx = reinterpret_cast<EntPolynomialBaseCtx*>(iface);
 
   int nb_gauss_pts = pts.size2();
@@ -97,7 +97,7 @@ PetscErrorCode EdgePolynomialBase::getValue(
       &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
       &pts(0,0),
       nb_gauss_pts
-    ); CHKERRQ(ierr);
+    ); CHKERRG(ierr);
   } else {
     data.dataOnEntities[MBVERTEX][0].getNSharedPtr(base) = data.dataOnEntities[MBVERTEX][0].getNSharedPtr(cTx->copyNodeBase);
   }
@@ -112,20 +112,20 @@ PetscErrorCode EdgePolynomialBase::getValue(
   data.dataOnEntities[MBVERTEX][0].getDiffN(base).resize(2,1,false);
   ierr = ShapeDiffMBEDGE(
     &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin()
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
 
   switch (cTx->sPace) {
     case H1:
-    ierr = getValueH1(pts); CHKERRQ(ierr);
+    ierr = getValueH1(pts); CHKERRG(ierr);
     break;
     case HDIV:
-    ierr = getValueHdiv(pts); CHKERRQ(ierr);
+    ierr = getValueHdiv(pts); CHKERRG(ierr);
     break;
     case HCURL:
-    ierr = getValueHCurl(pts); CHKERRQ(ierr);
+    ierr = getValueHCurl(pts); CHKERRG(ierr);
     break;
     case L2:
-    ierr = getValueL2(pts); CHKERRQ(ierr);
+    ierr = getValueL2(pts); CHKERRG(ierr);
     break;
     default:
     SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"Not yet implemented");
@@ -134,7 +134,7 @@ PetscErrorCode EdgePolynomialBase::getValue(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode EdgePolynomialBase::getValueH1(MatrixDouble &pts) {
+MoFEMErrorCode EdgePolynomialBase::getValueH1(MatrixDouble &pts) {
 
   MoFEMFunctionBeginHot;
 
@@ -180,7 +180,7 @@ PetscErrorCode EdgePolynomialBase::getValueH1(MatrixDouble &pts) {
       // calculate Legendre polynomials at integration points
       ierr = base_polynomials(
         NBEDGE_H1(order)-1,s,&diff_s,&*L.data().begin(),&*diffL.data().begin(),1
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
 
       // std::cerr << "s " << s << " " << L << std::endl;
 
@@ -209,7 +209,7 @@ PetscErrorCode EdgePolynomialBase::getValueH1(MatrixDouble &pts) {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode EdgePolynomialBase::getValueL2(MatrixDouble &pts) {
+MoFEMErrorCode EdgePolynomialBase::getValueL2(MatrixDouble &pts) {
   MoFEMFunctionBeginHot;
   SETERRQ(
     PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,
@@ -218,14 +218,14 @@ PetscErrorCode EdgePolynomialBase::getValueL2(MatrixDouble &pts) {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode EdgePolynomialBase::getValueHdiv(MatrixDouble &pts) {
+MoFEMErrorCode EdgePolynomialBase::getValueHdiv(MatrixDouble &pts) {
   SETERRQ(
     PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,
     "Make no sense, unless problem is 2d (2d not implemented yet)"
   );
 }
 
-PetscErrorCode EdgePolynomialBase::getValueHCurl(MatrixDouble &pts) {
+MoFEMErrorCode EdgePolynomialBase::getValueHCurl(MatrixDouble &pts) {
 
   MoFEMFunctionBeginHot;
 
@@ -257,7 +257,7 @@ PetscErrorCode EdgePolynomialBase::getValueHCurl(MatrixDouble &pts) {
       NULL,
       nb_gauss_pts,
       base_polynomials
-    ); CHKERRQ(ierr);
+    ); CHKERRG(ierr);
   } else {
     data.dataOnEntities[MBEDGE][0].getN(base).resize(nb_gauss_pts,0,false);
     data.dataOnEntities[MBEDGE][0].getDiffN(base).resize(nb_gauss_pts,0,false);

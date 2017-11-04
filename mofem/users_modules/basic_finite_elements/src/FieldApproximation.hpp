@@ -62,7 +62,7 @@ struct FieldApproximationH1 {
 
     /** \brief calculate matrix
       */
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int row_side,int col_side,
       EntityType row_type,EntityType col_type,
       DataForcesAndSourcesCore::EntData &row_data,
@@ -76,7 +76,7 @@ struct FieldApproximationH1 {
       
 
       const FENumeredDofEntity *dof_ptr;
-      ierr = getNumeredEntFiniteElementPtr()->getRowDofsByPetscGlobalDofIdx(row_data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
+      ierr = getNumeredEntFiniteElementPtr()->getRowDofsByPetscGlobalDofIdx(row_data.getIndices()[0],&dof_ptr); CHKERRG(ierr);
       int rank = dof_ptr->getNbOfCoeffs();
 
       int nb_row_dofs = row_data.getIndices().size()/rank;
@@ -153,7 +153,7 @@ struct FieldApproximationH1 {
           SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
         }
 
-        ierr = MatSetValues(A,nb_rows,rows,nb_cols,cols,data,ADD_VALUES); CHKERRQ(ierr);
+        ierr = MatSetValues(A,nb_rows,rows,nb_cols,cols,data,ADD_VALUES); CHKERRG(ierr);
         if( (row_type != col_type) || (row_side != col_side) ) {
           if(nb_rows != transNN.size2()) {
             SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
@@ -161,7 +161,7 @@ struct FieldApproximationH1 {
           if(nb_cols != transNN.size1()) {
             SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
           }
-          ierr = MatSetValues(A,nb_cols,cols,nb_rows,rows,trans_data,ADD_VALUES); CHKERRQ(ierr);
+          ierr = MatSetValues(A,nb_cols,cols,nb_rows,rows,trans_data,ADD_VALUES); CHKERRG(ierr);
         }
 
       }
@@ -171,7 +171,7 @@ struct FieldApproximationH1 {
 
     /** \brief calculate vector
       */
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
       MoFEMFunctionBeginHot;
 
@@ -182,7 +182,7 @@ struct FieldApproximationH1 {
       //PetscAttachDebugger();
 
       const FENumeredDofEntity *dof_ptr;
-      ierr = getNumeredEntFiniteElementPtr()->getRowDofsByPetscGlobalDofIdx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
+      ierr = getNumeredEntFiniteElementPtr()->getRowDofsByPetscGlobalDofIdx(data.getIndices()[0],&dof_ptr); CHKERRG(ierr);
       unsigned int rank = dof_ptr->getNbOfCoeffs();
 
       int nb_row_dofs = data.getIndices().size()/rank;
@@ -253,7 +253,7 @@ struct FieldApproximationH1 {
       for(unsigned int lhs = 0;lhs != vecF.size();lhs++) {
 
         ierr = VecSetValues(vecF[lhs],data.getIndices().size(),
-        &data.getIndices()[0],&(Nf[lhs])[0],ADD_VALUES); CHKERRQ(ierr);
+        &data.getIndices()[0],&(Nf[lhs])[0],ADD_VALUES); CHKERRG(ierr);
 
       }
 
@@ -288,7 +288,7 @@ struct FieldApproximationH1 {
 
     /** \brief calculate matrix
       */
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int row_side,int col_side,
       EntityType row_type,EntityType col_type,
       DataForcesAndSourcesCore::EntData &row_data,
@@ -300,7 +300,7 @@ struct FieldApproximationH1 {
       if(col_data.getIndices().size()==0) MoFEMFunctionReturnHot(0);
       
       const FENumeredDofEntity *dof_ptr;
-      ierr = getNumeredEntFiniteElementPtr()->getRowDofsByPetscGlobalDofIdx(row_data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
+      ierr = getNumeredEntFiniteElementPtr()->getRowDofsByPetscGlobalDofIdx(row_data.getIndices()[0],&dof_ptr); CHKERRG(ierr);
       int rank = dof_ptr->getNbOfCoeffs();
       int nb_row_dofs = row_data.getIndices().size()/rank;
       int nb_col_dofs = col_data.getIndices().size()/rank;
@@ -364,7 +364,7 @@ struct FieldApproximationH1 {
         if(nb_cols != NN.size2()) {
           SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
         }
-        ierr = MatSetValues(A,nb_rows,rows,nb_cols,cols,data,ADD_VALUES); CHKERRQ(ierr);
+        ierr = MatSetValues(A,nb_rows,rows,nb_cols,cols,data,ADD_VALUES); CHKERRG(ierr);
         if( (row_type != col_type) || (row_side != col_side) ) {
           if(nb_rows != transNN.size2()) {
             SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
@@ -372,7 +372,7 @@ struct FieldApproximationH1 {
           if(nb_cols != transNN.size1()) {
             SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
           }
-          ierr = MatSetValues(A,nb_cols,cols,nb_rows,rows,trans_data,ADD_VALUES); CHKERRQ(ierr);
+          ierr = MatSetValues(A,nb_cols,cols,nb_rows,rows,trans_data,ADD_VALUES); CHKERRG(ierr);
         }
       }
       MoFEMFunctionReturnHot(0);
@@ -380,7 +380,7 @@ struct FieldApproximationH1 {
 
     /** \brief calculate vector
       */
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
       MoFEMFunctionBeginHot;
 
@@ -389,7 +389,7 @@ struct FieldApproximationH1 {
 
       //PetscAttachDebugger();
       const FENumeredDofEntity *dof_ptr;
-      ierr = getNumeredEntFiniteElementPtr()->getRowDofsByPetscGlobalDofIdx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
+      ierr = getNumeredEntFiniteElementPtr()->getRowDofsByPetscGlobalDofIdx(data.getIndices()[0],&dof_ptr); CHKERRG(ierr);
       unsigned int rank = dof_ptr->getNbOfCoeffs();
 
       int nb_row_dofs = data.getIndices().size()/rank;
@@ -475,7 +475,7 @@ struct FieldApproximationH1 {
       for(unsigned int lhs = 0;lhs != vecF.size();lhs++) {
 
         ierr = VecSetValues(vecF[lhs],data.getIndices().size(),
-        &data.getIndices()[0],&(Nf[lhs])[0],ADD_VALUES); CHKERRQ(ierr);
+        &data.getIndices()[0],&(Nf[lhs])[0],ADD_VALUES); CHKERRG(ierr);
 
       }
 
@@ -487,7 +487,7 @@ struct FieldApproximationH1 {
   /** \brief Set operators
   */
   template<typename FUNEVAL>
-  PetscErrorCode setOperatorsVolume(
+  MoFEMErrorCode setOperatorsVolume(
     const std::string &field_name,
     Mat A,
     std::vector<Vec> &vec_F,
@@ -506,7 +506,7 @@ struct FieldApproximationH1 {
   /** \brief Set operators
   */
   template<typename FUNEVAL>
-  PetscErrorCode setOperatorsFace(
+  MoFEMErrorCode setOperatorsFace(
     const std::string &field_name,
     Mat A,
     std::vector<Vec> &vec_F,
@@ -525,7 +525,7 @@ struct FieldApproximationH1 {
   /** \brief assemble matrix and vector
     */
   template<typename FUNEVAL>
-  PetscErrorCode loopMatrixAndVectorVolume(
+  MoFEMErrorCode loopMatrixAndVectorVolume(
     const std::string &problem_name,
     const std::string &fe_name,
     const std::string &field_name,
@@ -534,19 +534,19 @@ struct FieldApproximationH1 {
   ) {
     MoFEMFunctionBeginHot;
     
-    ierr = setOperatorsVolume(field_name,A,vec_F,function_evaluator); CHKERRQ(ierr);
+    ierr = setOperatorsVolume(field_name,A,vec_F,function_evaluator); CHKERRG(ierr);
     if(A) {
-      ierr = MatZeroEntries(A); CHKERRQ(ierr);
+      ierr = MatZeroEntries(A); CHKERRG(ierr);
     }
     //calculate and assemble
-    ierr = mField.loop_finite_elements(problem_name,fe_name,feVolume);  CHKERRQ(ierr);
+    ierr = mField.loop_finite_elements(problem_name,fe_name,feVolume);  CHKERRG(ierr);
     if(A) {
-      ierr = MatAssemblyBegin(A,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-      ierr = MatAssemblyEnd(A,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+      ierr = MatAssemblyBegin(A,MAT_FLUSH_ASSEMBLY); CHKERRG(ierr);
+      ierr = MatAssemblyEnd(A,MAT_FLUSH_ASSEMBLY); CHKERRG(ierr);
     }
     for(unsigned int lhs = 0; lhs<vec_F.size(); lhs++) {
-      ierr = VecAssemblyBegin(vec_F[lhs]); CHKERRQ(ierr);
-      ierr = VecAssemblyEnd(vec_F[lhs]); CHKERRQ(ierr);
+      ierr = VecAssemblyBegin(vec_F[lhs]); CHKERRG(ierr);
+      ierr = VecAssemblyEnd(vec_F[lhs]); CHKERRG(ierr);
     }
     MoFEMFunctionReturnHot(0);
   }
@@ -554,7 +554,7 @@ struct FieldApproximationH1 {
   // /** \deprecated Use loopMatrixAndVectorVolume instead
   // */
   // template<typename FUNEVAL>
-  // DEPRECATED PetscErrorCode loopMatrixAndVector(
+  // DEPRECATED MoFEMErrorCode loopMatrixAndVector(
   //   const std::string &problem_name,
   //   const std::string &fe_name,
   //   const std::string &field_name,
@@ -565,7 +565,7 @@ struct FieldApproximationH1 {
   //   
   //   ierr = loopMatrixAndVectorVolume(
   //     problem_name,fe_name,field_name,A,vec_F,function_evaluator
-  //   ); CHKERRQ(ierr);
+  //   ); CHKERRG(ierr);
   //   MoFEMFunctionReturnHot(0);
   // }
 

@@ -51,7 +51,7 @@ using namespace MoFEM;
 TriPolynomialBase::TriPolynomialBase() {}
 TriPolynomialBase::~TriPolynomialBase() {}
 
-PetscErrorCode TriPolynomialBase::query_interface(
+MoFEMErrorCode TriPolynomialBase::query_interface(
   const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface
 ) const {
   MoFEMFunctionBeginHot;
@@ -62,11 +62,11 @@ PetscErrorCode TriPolynomialBase::query_interface(
   } else {
     SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"wrong interference");
   }
-  ierr = BaseFunction::query_interface(uuid,iface); CHKERRQ(ierr);
+  ierr = BaseFunction::query_interface(uuid,iface); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode TriPolynomialBase::getValueH1(MatrixDouble &pts) {
+MoFEMErrorCode TriPolynomialBase::getValueH1(MatrixDouble &pts) {
 
   MoFEMFunctionBeginHot;
 
@@ -106,7 +106,7 @@ PetscErrorCode TriPolynomialBase::getValueH1(MatrixDouble &pts) {
       diffH1edgeN,
       nb_gauss_pts,
       base_polynomials
-    ); CHKERRQ(ierr);
+    ); CHKERRG(ierr);
   }
 
   if(data.spacesOnEntities[MBTRI].test(H1)) {
@@ -126,13 +126,13 @@ PetscErrorCode TriPolynomialBase::getValueH1(MatrixDouble &pts) {
       &*data.dataOnEntities[MBTRI][0].getN(base).data().begin(),
       &*data.dataOnEntities[MBTRI][0].getDiffN(base).data().begin(),
       nb_gauss_pts,base_polynomials
-    ); CHKERRQ(ierr);
+    ); CHKERRG(ierr);
   }
 
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode TriPolynomialBase::getValueL2(
+MoFEMErrorCode TriPolynomialBase::getValueL2(
   MatrixDouble &pts
 ) {
 
@@ -161,12 +161,12 @@ PetscErrorCode TriPolynomialBase::getValueL2(
     &*data.dataOnEntities[MBTRI][0].getDiffN(base).data().begin(),
     nb_gauss_pts,
     base_polynomials
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
 
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode TriPolynomialBase::getValueHdivAinsworthBase(
+MoFEMErrorCode TriPolynomialBase::getValueHdivAinsworthBase(
   MatrixDouble &pts
 ) {
 
@@ -201,14 +201,14 @@ PetscErrorCode TriPolynomialBase::getValueHdivAinsworthBase(
     NULL,
     PHI_f_e,NULL,nb_gauss_pts,3,
     base_polynomials
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
   ierr = Hdiv_Ainsworth_FaceBubbleShapeFunctions_ON_FACE(
     face_nodes,face_order,
     &data.dataOnEntities[MBVERTEX][0].getN(base)(0,0),
     NULL,
     PHI_f,NULL,nb_gauss_pts,3,
     base_polynomials
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
 
   // set shape functions into data structure
   if(data.dataOnEntities[MBTRI].size()!=1) {
@@ -234,7 +234,7 @@ PetscErrorCode TriPolynomialBase::getValueHdivAinsworthBase(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode TriPolynomialBase::getValueHdivDemkowiczBase(
+MoFEMErrorCode TriPolynomialBase::getValueHdivDemkowiczBase(
   MatrixDouble &pts
 ) {
 
@@ -268,12 +268,12 @@ PetscErrorCode TriPolynomialBase::getValueHdivDemkowiczBase(
     &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
     &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
     phi_f,NULL,nb_gauss_pts,3
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
 
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode TriPolynomialBase::getValueHdiv(
+MoFEMErrorCode TriPolynomialBase::getValueHdiv(
   MatrixDouble &pts
 ) {
   MoFEMFunctionBeginHot;
@@ -291,7 +291,7 @@ PetscErrorCode TriPolynomialBase::getValueHdiv(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode TriPolynomialBase::getValueHCurl(
+MoFEMErrorCode TriPolynomialBase::getValueHCurl(
   MatrixDouble &pts
 ) {
 
@@ -334,7 +334,7 @@ PetscErrorCode TriPolynomialBase::getValueHCurl(
       diff_hcurl_edge_n,
       nb_gauss_pts,
       base_polynomials
-    ); CHKERRQ(ierr);
+    ); CHKERRG(ierr);
     // cerr << data.dataOnEntities[MBVERTEX][0].getDiffN(base) << endl;
     // cerr << data.dataOnEntities[MBEDGE][0].getDiffN(base) << endl;
     // cerr << data.dataOnEntities[MBVERTEX][0].getN(base) << endl;
@@ -370,7 +370,7 @@ PetscErrorCode TriPolynomialBase::getValueHCurl(
       &*data.dataOnEntities[MBTRI][0].getDiffN(base).data().begin(),
       nb_gauss_pts,
       base_polynomials
-    ); CHKERRQ(ierr);
+    ); CHKERRG(ierr);
     // cerr << data.dataOnEntities[MBTRI][0].getN(base) << endl;
   } else {
     data.dataOnEntities[MBTRI][0].getN(base).resize(nb_gauss_pts,0,false);
@@ -380,7 +380,7 @@ PetscErrorCode TriPolynomialBase::getValueHCurl(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode TriPolynomialBase::getValue(
+MoFEMErrorCode TriPolynomialBase::getValue(
   MatrixDouble &pts,
   boost::shared_ptr<BaseFunctionCtx> ctx_ptr
 ) {
@@ -388,7 +388,7 @@ PetscErrorCode TriPolynomialBase::getValue(
   MoFEMFunctionBeginHot;
 
   MoFEM::UnknownInterface *iface;
-  ierr = ctx_ptr->query_interface(IDD_TRI_BASE_FUNCTION,&iface); CHKERRQ(ierr);
+  ierr = ctx_ptr->query_interface(IDD_TRI_BASE_FUNCTION,&iface); CHKERRG(ierr);
   cTx = reinterpret_cast<EntPolynomialBaseCtx*>(iface);
 
   int nb_gauss_pts = pts.size2();
@@ -413,11 +413,11 @@ PetscErrorCode TriPolynomialBase::getValue(
       &pts(0,0),
       &pts(1,0),
       nb_gauss_pts
-    ); CHKERRQ(ierr);
+    ); CHKERRG(ierr);
     data.dataOnEntities[MBVERTEX][0].getDiffN(base).resize(3,2,false);
     ierr = ShapeDiffMBTRI(
       &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin()
-    ); CHKERRQ(ierr);
+    ); CHKERRG(ierr);
   } else {
     data.dataOnEntities[MBVERTEX][0].getNSharedPtr(base) =
     data.dataOnEntities[MBVERTEX][0].getNSharedPtr(cTx->copyNodeBase);
@@ -440,7 +440,7 @@ PetscErrorCode TriPolynomialBase::getValue(
       // this in expense of efficiency makes implementation
       // consistent between vertices and other types of entities
       data.dataOnEntities[MBVERTEX][0].getDiffN(base).resize(3,2,false);
-      ierr = ShapeDiffMBTRI(&*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin()); CHKERRQ(ierr);
+      ierr = ShapeDiffMBTRI(&*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin()); CHKERRG(ierr);
       MatrixDouble diffN(nb_gauss_pts,6);
       for(int gg = 0;gg<nb_gauss_pts;gg++) {
         for(int nn = 0;nn<3;nn++) {
@@ -454,16 +454,16 @@ PetscErrorCode TriPolynomialBase::getValue(
       );
       data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().swap(diffN.data());
     }
-    ierr = getValueH1(pts); CHKERRQ(ierr);
+    ierr = getValueH1(pts); CHKERRG(ierr);
     break;
     case HDIV:
-    ierr = getValueHdiv(pts); CHKERRQ(ierr);
+    ierr = getValueHdiv(pts); CHKERRG(ierr);
     break;
     case HCURL:
-    ierr = getValueHCurl(pts); CHKERRQ(ierr);
+    ierr = getValueHCurl(pts); CHKERRG(ierr);
     break;
     case L2:
-    ierr = getValueL2(pts); CHKERRQ(ierr);
+    ierr = getValueL2(pts); CHKERRG(ierr);
     break;
     default:
     SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"Not yet implemented");

@@ -18,7 +18,7 @@
 
 namespace MoFEM {
 
-  PetscErrorCode Core::clear_inactive_dofs(int verb) {
+  MoFEMErrorCode Core::clear_inactive_dofs(int verb) {
     MoFEMFunctionBeginHot;
     if(verb==-1) verb = verbose;
     DofEntity_multiIndex::iterator dit;
@@ -44,7 +44,7 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode Core::clear_dofs_fields(const BitRefLevel &bit,const BitRefLevel &mask,int verb) {
+  MoFEMErrorCode Core::clear_dofs_fields(const BitRefLevel &bit,const BitRefLevel &mask,int verb) {
     MoFEMFunctionBeginHot;
     if(verb==-1) verb = verbose;
     {
@@ -82,7 +82,7 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode Core::clear_dofs_fields(const std::string &name,const Range ents,int verb) {
+  MoFEMErrorCode Core::clear_dofs_fields(const std::string &name,const Range ents,int verb) {
     MoFEMFunctionBeginHot;
     if(verb==-1) verb = verbose;
     Range::iterator eit = ents.begin();
@@ -108,11 +108,11 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode Core::clear_ents_fields(const BitRefLevel &bit,const BitRefLevel &mask,int verb) {
+  MoFEMErrorCode Core::clear_ents_fields(const BitRefLevel &bit,const BitRefLevel &mask,int verb) {
     MoFEMFunctionBeginHot;
     if(verb==-1) verb = verbose;
-    ierr = clear_dofs_fields(bit,mask,verb); CHKERRQ(ierr);
-    ierr = clear_adjacencies_entities(bit,mask,verb); CHKERRQ(ierr);
+    ierr = clear_dofs_fields(bit,mask,verb); CHKERRG(ierr);
+    ierr = clear_adjacencies_entities(bit,mask,verb); CHKERRG(ierr);
     FieldEntity_multiIndex::iterator eit;
     eit = entsFields.begin();
     for(;eit!=entsFields.end();) {
@@ -139,11 +139,11 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode Core::clear_ents_fields(const std::string &name,const Range ents,int verb) {
+  MoFEMErrorCode Core::clear_ents_fields(const std::string &name,const Range ents,int verb) {
     MoFEMFunctionBeginHot;
     if(verb==-1) verb = verbose;
-    ierr = clear_dofs_fields(name,ents,verb); CHKERRQ(ierr);
-    ierr = clear_adjacencies_entities(name,ents,verb); CHKERRQ(ierr);
+    ierr = clear_dofs_fields(name,ents,verb); CHKERRG(ierr);
+    ierr = clear_adjacencies_entities(name,ents,verb); CHKERRG(ierr);
     Range::iterator eit = ents.begin();
     for(;eit!=ents.end();eit++) {
       FieldEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator dit,hi_dit;
@@ -159,10 +159,10 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode Core::clear_finite_elements(const BitRefLevel &bit,const BitRefLevel &mask,int verb) {
+  MoFEMErrorCode Core::clear_finite_elements(const BitRefLevel &bit,const BitRefLevel &mask,int verb) {
     MoFEMFunctionBeginHot;
     if(verb==-1) verb = verbose;
-    ierr = clear_adjacencies_finite_elements(bit,mask,verb); CHKERRQ(ierr);
+    ierr = clear_adjacencies_finite_elements(bit,mask,verb); CHKERRG(ierr);
     EntFiniteElement_multiIndex::iterator fe_it = entsFiniteElements.begin();
     for(;fe_it!=entsFiniteElements.end();) {
       BitRefLevel bit2 = (*fe_it)->getBitRefLevel();
@@ -183,10 +183,10 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode Core::clear_finite_elements(const std::string &name,const Range &ents,int verb) {
+  MoFEMErrorCode Core::clear_finite_elements(const std::string &name,const Range &ents,int verb) {
     MoFEMFunctionBeginHot;
     if(verb==-1) verb = verbose;
-    ierr = clear_adjacencies_finite_elements(name,ents,verb); CHKERRQ(ierr);
+    ierr = clear_adjacencies_finite_elements(name,ents,verb); CHKERRG(ierr);
     Range::iterator eit = ents.begin();
     for(;eit!=ents.end();eit++) {
       EntFiniteElement_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator fit,hi_fit;
@@ -199,7 +199,7 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode Core::clear_adjacencies_finite_elements(const BitRefLevel &bit,const BitRefLevel &mask,int verb) {
+  MoFEMErrorCode Core::clear_adjacencies_finite_elements(const BitRefLevel &bit,const BitRefLevel &mask,int verb) {
     MoFEMFunctionBeginHot;
     FieldEntityEntFiniteElementAdjacencyMap_multiIndex::iterator ait;
     ait = entFEAdjacencies.begin();
@@ -221,7 +221,7 @@ namespace MoFEM {
     }
     MoFEMFunctionReturnHot(0);
   }
-  PetscErrorCode Core::clear_adjacencies_finite_elements(const std::string &name,const Range &ents,int verb) {
+  MoFEMErrorCode Core::clear_adjacencies_finite_elements(const std::string &name,const Range &ents,int verb) {
     MoFEMFunctionBeginHot;
     if(verb==-1) verb = verbose;
     Range::iterator eit = ents.begin();
@@ -240,7 +240,7 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode Core::clear_adjacencies_entities(const BitRefLevel &bit,const BitRefLevel &mask,int verb ) {
+  MoFEMErrorCode Core::clear_adjacencies_entities(const BitRefLevel &bit,const BitRefLevel &mask,int verb ) {
     MoFEMFunctionBeginHot;
     if(verb==-1) verb = verbose;
     FieldEntityEntFiniteElementAdjacencyMap_multiIndex::iterator ait;
@@ -264,7 +264,7 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode Core::clear_adjacencies_entities(const std::string &name,const Range &ents,int verb) {
+  MoFEMErrorCode Core::clear_adjacencies_entities(const std::string &name,const Range &ents,int verb) {
     MoFEMFunctionBeginHot;
     if(verb==-1) verb = verbose;
     Range::iterator eit = ents.begin();
@@ -283,10 +283,10 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode Core::remove_ents_from_field_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,int verb) {
+  MoFEMErrorCode Core::remove_ents_from_field_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,int verb) {
     MoFEMFunctionBeginHot;
     if(verb==-1) verb = verbose;
-    ierr = clear_ents_fields(bit,mask,verb); CHKERRQ(ierr);
+    ierr = clear_ents_fields(bit,mask,verb); CHKERRG(ierr);
     Field_multiIndex::iterator f_it = fIelds.begin();
     for(;f_it!=fIelds.end();f_it++) {
       EntityHandle meshset = (*f_it)->getMeshset();
@@ -334,16 +334,16 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode Core::remove_ents_from_field(const std::string& name,const EntityHandle meshset,const EntityType type,int verb) {
+  MoFEMErrorCode Core::remove_ents_from_field(const std::string& name,const EntityHandle meshset,const EntityType type,int verb) {
     MoFEMFunctionBeginHot;
     if(verb==-1) verb = verbose;
     Range ents;
     rval = moab.get_entities_by_type(meshset,type,ents); CHKERRQ_MOAB(rval);
-    ierr = remove_ents_from_field(name,ents,verb); CHKERRQ(ierr);
+    ierr = remove_ents_from_field(name,ents,verb); CHKERRG(ierr);
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode Core::remove_ents_from_field(const std::string& name,const Range &ents,int verb) {
+  MoFEMErrorCode Core::remove_ents_from_field(const std::string& name,const Range &ents,int verb) {
     MoFEMFunctionBeginHot;
     if(verb==-1) verb = verbose;
     EntityHandle meshset;
@@ -353,14 +353,14 @@ namespace MoFEM {
       SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
     }
     rval = moab.remove_entities(meshset,ents); CHKERRQ_MOAB(rval);
-    ierr = clear_ents_fields(name,ents,verb); CHKERRQ(ierr);
+    ierr = clear_ents_fields(name,ents,verb); CHKERRG(ierr);
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode Core::remove_ents_from_finite_element_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,int verb) {
+  MoFEMErrorCode Core::remove_ents_from_finite_element_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,int verb) {
     MoFEMFunctionBeginHot;
     if(verb==-1) verb = verbose;
-    ierr = clear_finite_elements(bit,mask,verb); CHKERRQ(ierr);
+    ierr = clear_finite_elements(bit,mask,verb); CHKERRG(ierr);
     FiniteElement_multiIndex::iterator fe_it = finiteElements.begin();
     for(;fe_it!=finiteElements.end();fe_it++) {
       EntityHandle meshset = (*fe_it)->getMeshset();
@@ -404,30 +404,30 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode Core::remove_ents_from_finite_element(const std::string &name,const EntityHandle meshset,const EntityType type,int verb) {
+  MoFEMErrorCode Core::remove_ents_from_finite_element(const std::string &name,const EntityHandle meshset,const EntityType type,int verb) {
     MoFEMFunctionBeginHot;
     if(verb==-1) verb = verbose;
     Range ents;
     rval = moab.get_entities_by_type(meshset,type,ents,false); CHKERRQ_MOAB(rval);
-    ierr = remove_ents_from_finite_element(name,ents,verb); CHKERRQ(ierr);
+    ierr = remove_ents_from_finite_element(name,ents,verb); CHKERRG(ierr);
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode Core::remove_ents_from_finite_element(const std::string &name,const Range &ents,int verb) {
+  MoFEMErrorCode Core::remove_ents_from_finite_element(const std::string &name,const Range &ents,int verb) {
     MoFEMFunctionBeginHot;
     if(verb==-1) verb = verbose;
-    ierr = clear_finite_elements(name,ents,verb); CHKERRQ(ierr);
+    ierr = clear_finite_elements(name,ents,verb); CHKERRG(ierr);
     const BitFEId id = getBitFEId(name);
     const EntityHandle idm = get_finite_element_meshset(id);
     rval = moab.remove_entities(idm,ents); CHKERRQ_MOAB(rval);
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode Core::remove_ents_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,int verb) {
+  MoFEMErrorCode Core::remove_ents_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,int verb) {
     MoFEMFunctionBeginHot;
     if(verb==-1) verb = verbose;
-    ierr = delete_finite_elements_by_bit_ref(bit,mask,verb); CHKERRQ(ierr);
-    ierr = remove_ents_from_field_by_bit_ref(bit,mask,verb); CHKERRQ(ierr);
+    ierr = delete_finite_elements_by_bit_ref(bit,mask,verb); CHKERRG(ierr);
+    ierr = remove_ents_from_field_by_bit_ref(bit,mask,verb); CHKERRG(ierr);
     RefEntity_multiIndex::iterator ent_it = refinedEntities.begin();
     for(;ent_it!=refinedEntities.end();) {
       BitRefLevel bit2 = (*ent_it)->getBitRefLevel();
@@ -448,7 +448,7 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode Core::delete_ents_by_bit_ref(const BitRefLevel &bit,
+  MoFEMErrorCode Core::delete_ents_by_bit_ref(const BitRefLevel &bit,
                                               const BitRefLevel &mask,
                                               const bool remove_parent,
                                               int verb) {
@@ -516,7 +516,7 @@ namespace MoFEM {
       }
     }
     ierr = remove_ents_by_bit_ref(bit, mask, verb);
-    CHKERRQ(ierr);
+    CHKERRG(ierr);
     if (verb >= VERBOSE) {
       PetscSynchronizedPrintf(cOmm, "number of deleted entities = %u\n",
                               ents_to_delete.size());
@@ -544,12 +544,12 @@ namespace MoFEM {
     rval = moab.delete_entities(ents_to_delete); CHKERRQ_MOAB(rval);
     MoFEMFunctionReturnHot(0);
   }
-  PetscErrorCode Core::delete_finite_elements_by_bit_ref(
+  MoFEMErrorCode Core::delete_finite_elements_by_bit_ref(
     const BitRefLevel &bit,const BitRefLevel &mask,int verb
   ) {
     MoFEMFunctionBeginHot;
     if(verb==-1) verb = verbose;
-    ierr = remove_ents_from_finite_element_by_bit_ref(bit,mask,verb); CHKERRQ(ierr);
+    ierr = remove_ents_from_finite_element_by_bit_ref(bit,mask,verb); CHKERRG(ierr);
     RefElement_multiIndex::iterator fe_it = refinedFiniteElements.begin();
     for(;fe_it!=refinedFiniteElements.end();) {
       BitRefLevel bit2 = fe_it->getBitRefLevel();
@@ -569,7 +569,7 @@ namespace MoFEM {
     }
     MoFEMFunctionReturnHot(0);
   }
-  PetscErrorCode Core::delete_finite_element(const std::string name,int verb) {
+  MoFEMErrorCode Core::delete_finite_element(const std::string name,int verb) {
     MoFEMFunctionBeginHot;
     typedef FiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type FiniteElements_by_name;
     FiniteElements_by_name& fe = finiteElements.get<FiniteElement_name_mi_tag>();
@@ -583,7 +583,7 @@ namespace MoFEM {
     EntityHandle meshset = (*miit)->getMeshset();
     Range ents;
     rval = moab.get_entities_by_handle(meshset,ents,false); CHKERRQ_MOAB(rval);
-    ierr = remove_ents_from_finite_element(name,ents,verb); CHKERRQ(ierr);
+    ierr = remove_ents_from_finite_element(name,ents,verb); CHKERRG(ierr);
     fe.erase(miit);
     rval = moab.delete_entities(&meshset,1); CHKERRQ_MOAB(rval);
     MoFEMFunctionReturnHot(0);

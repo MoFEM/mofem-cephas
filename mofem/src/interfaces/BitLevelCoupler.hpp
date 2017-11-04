@@ -31,7 +31,7 @@ static const MOFEMuuid IDD_MOFEMBitLevelCoupler = MOFEMuuid( BitIntefaceId(BITLE
   */
 struct BitLevelCoupler: public UnknownInterface {
 
-  PetscErrorCode query_interface(const MOFEMuuid& uuid, UnknownInterface** iface) const;
+  MoFEMErrorCode query_interface(const MOFEMuuid& uuid, UnknownInterface** iface) const;
 
   MoFEM::Core& cOre;
   bool vErify;	///< by default is switched off, with it on to verify if existing parent is equal to parent set by interface
@@ -42,11 +42,11 @@ struct BitLevelCoupler: public UnknownInterface {
 
   /** \brief build adaptive kd-tree
     */
-  PetscErrorCode buildTree(const BitRefLevel &parent_level,int verb = 0);
+  MoFEMErrorCode buildTree(const BitRefLevel &parent_level,int verb = 0);
 
   /** \brief reset adaptive kd-tree
     */
-  PetscErrorCode resetTree(const BitRefLevel &parent_level,int verb = 0);
+  MoFEMErrorCode resetTree(const BitRefLevel &parent_level,int verb = 0);
 
   /** \brief get parent entity
 
@@ -60,7 +60,7 @@ struct BitLevelCoupler: public UnknownInterface {
     \param verbose level
 
     */
-  PetscErrorCode getParent(
+  MoFEMErrorCode getParent(
     const double *coords,
     EntityHandle &parent,
     bool tet_only = false,
@@ -90,7 +90,7 @@ struct BitLevelCoupler: public UnknownInterface {
     \param verbose level
 
     */
-  PetscErrorCode buildAdjacenciesVerticesOnTets(
+  MoFEMErrorCode buildAdjacenciesVerticesOnTets(
     const BitRefLevel &parent_level,
     Range &children,
     bool vertex_elements = false,
@@ -122,7 +122,7 @@ struct BitLevelCoupler: public UnknownInterface {
     \param verbose level
 
     */
-  PetscErrorCode buildAdjacenciesEdgesFacesVolumes(
+  MoFEMErrorCode buildAdjacenciesEdgesFacesVolumes(
     const BitRefLevel &parent_level,
     Range &children,
     bool elements = true,
@@ -134,7 +134,7 @@ struct BitLevelCoupler: public UnknownInterface {
     This is needed for testing.
 
     */
-  PetscErrorCode resetParents(Range &children,bool elements = true,int verb = 0);
+  MoFEMErrorCode resetParents(Range &children,bool elements = true,int verb = 0);
 
   /**
    * \brief copy data from parents
@@ -151,7 +151,7 @@ struct BitLevelCoupler: public UnknownInterface {
    * @param  verify if true verifi consistency with database
    * @return     error code
    */
-  PetscErrorCode copyFieldDataFromParentToChildren(
+  MoFEMErrorCode copyFieldDataFromParentToChildren(
     const std::vector<EntityHandle> &parents,
     const std::vector<EntityHandle> &children,
     const bool verify = true
@@ -173,7 +173,7 @@ struct BitLevelCoupler: public UnknownInterface {
    * @param  verify if true verifi consistency with database
    * @return     error code
    */
-  PetscErrorCode copyFieldDataFromParentToChildren(
+  MoFEMErrorCode copyFieldDataFromParentToChildren(
     const BitRefLevel bit,
     const BitRefLevel mask,
     const bool verify = true
@@ -181,15 +181,15 @@ struct BitLevelCoupler: public UnknownInterface {
 
   private:
 
-  PetscErrorCode chanegParent(RefEntity_multiIndex::iterator it,EntityHandle parent,bool element);
-  PetscErrorCode verifyParent(RefEntity_multiIndex::iterator it,EntityHandle parent);
+  MoFEMErrorCode chanegParent(RefEntity_multiIndex::iterator it,EntityHandle parent,bool element);
+  MoFEMErrorCode verifyParent(RefEntity_multiIndex::iterator it,EntityHandle parent);
 
   double cOords[12+3];
   double diffN[12],N[4];
   double locCoords[3];
   const EntityHandle *cOnn;
 
-  PetscErrorCode getLocCoordsOnTet(EntityHandle tet,const double *glob_coords,int verb = 0);
+  MoFEMErrorCode getLocCoordsOnTet(EntityHandle tet,const double *glob_coords,int verb = 0);
 
   boost::scoped_ptr<AdaptiveKDTree> treePtr;
 

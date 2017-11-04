@@ -115,27 +115,27 @@ namespace MoFEM {
      * \brief check data consistency in entitiesPtr
      *
      */
-    virtual PetscErrorCode
+    virtual MoFEMErrorCode
     check_number_of_ents_in_ents_field(const std::string &name) const = 0;
 
     /**
      * \brief check data consistency in entitiesPtr
      *
      */
-    virtual PetscErrorCode check_number_of_ents_in_ents_field() const = 0;
+    virtual MoFEMErrorCode check_number_of_ents_in_ents_field() const = 0;
 
     /**
      * \brief check data consistency in entsFiniteElements
      *
      */
-    virtual PetscErrorCode check_number_of_ents_in_ents_finite_element(
+    virtual MoFEMErrorCode check_number_of_ents_in_ents_finite_element(
         const std::string &name) const = 0;
 
     /**
      * \brief check data consistency in entsFiniteElements
      *
      */
-    virtual PetscErrorCode
+    virtual MoFEMErrorCode
     check_number_of_ents_in_ents_finite_element() const = 0;
 
     /** \name Database */
@@ -147,14 +147,14 @@ namespace MoFEM {
      * @param  verb Verbosity level
      * @return      Error code
      */
-    virtual PetscErrorCode clear_database(int verb = -1) = 0;
+    virtual MoFEMErrorCode clear_database(int verb = -1) = 0;
 
     /**
      * \brief Clear database and initialize it once again
      * @param  verb Verbosity level
      * @return      Error code
      */
-    virtual PetscErrorCode rebuild_database(int verb = -1) = 0;
+    virtual MoFEMErrorCode rebuild_database(int verb = -1) = 0;
 
     /**@}*/
 
@@ -167,7 +167,7 @@ namespace MoFEM {
     collective - need tu be run on all processors in communicator
 
     */
-    virtual PetscErrorCode synchronise_entities(Range &ent, int verb = -1) = 0;
+    virtual MoFEMErrorCode synchronise_entities(Range &ent, int verb = -1) = 0;
 
     /** synchronize entity range on processors (collective)
     * \ingroup mofem_field
@@ -178,7 +178,7 @@ namespace MoFEM {
     \param verbose level
 
     */
-    virtual PetscErrorCode synchronise_field_entities(const BitFieldId id,
+    virtual MoFEMErrorCode synchronise_field_entities(const BitFieldId id,
                                                       int verb = -1) = 0;
 
     /** synchronize entity range on processors (collective)
@@ -190,7 +190,7 @@ namespace MoFEM {
     \param verbose level
 
     */
-    virtual PetscErrorCode synchronise_field_entities(const std::string &name,
+    virtual MoFEMErrorCode synchronise_field_entities(const std::string &name,
                                                       int verb = -1) = 0;
 
     /**@}*/
@@ -207,7 +207,7 @@ namespace MoFEM {
      * \param EntityHandle meshset
      *
      */
-    virtual PetscErrorCode seed_finite_elements(const EntityHandle meshset,
+    virtual MoFEMErrorCode seed_finite_elements(const EntityHandle meshset,
                                                 int verb = -1) = 0;
 
     /**
@@ -218,7 +218,7 @@ namespace MoFEM {
      * \param Range entities
      *
      */
-    virtual PetscErrorCode seed_finite_elements(const Range &entities,
+    virtual MoFEMErrorCode seed_finite_elements(const Range &entities,
                                                 int verb = -1) = 0;
 
     /**@}*/
@@ -230,24 +230,24 @@ namespace MoFEM {
     /** \brief delete entities form mofem and moab database
      *
      */
-    virtual PetscErrorCode
+    virtual MoFEMErrorCode
     delete_ents_by_bit_ref(const BitRefLevel &bit, const BitRefLevel &mask,
                            const bool remove_parent = false, int verb = -1) = 0;
 
     /** \brief remove entities form mofem database
      */
-    virtual PetscErrorCode remove_ents_by_bit_ref(const BitRefLevel &bit,
+    virtual MoFEMErrorCode remove_ents_by_bit_ref(const BitRefLevel &bit,
                                                   const BitRefLevel &mask,
                                                   int verb = -1) = 0;
 
     /** \brief remove finite element from mofem database
      */
-    virtual PetscErrorCode delete_finite_elements_by_bit_ref(
+    virtual MoFEMErrorCode delete_finite_elements_by_bit_ref(
         const BitRefLevel &bit, const BitRefLevel &mask, int verb = -1) = 0;
 
     /** \brief delete finite element from mofem database
      */
-    virtual PetscErrorCode delete_finite_element(const std::string name,
+    virtual MoFEMErrorCode delete_finite_element(const std::string name,
                                                  int verb = -1) = 0;
 
     /** \name Fields */
@@ -268,7 +268,7 @@ namespace MoFEM {
      * @param  verb              verbosity level
      * @return                   error code
      */
-    virtual PetscErrorCode
+    virtual MoFEMErrorCode
     add_field(const std::string &name, const FieldSpace space,
               const FieldApproximationBase base,
               const FieldCoefficientsNumber nb_of_coefficients,
@@ -287,7 +287,7 @@ namespace MoFEM {
      * @param  verb verbosity level
      * @return      error code
      */
-    virtual PetscErrorCode add_ents_to_field_by_dim(const Range &ents,
+    virtual MoFEMErrorCode add_ents_to_field_by_dim(const Range &ents,
                                                     const int dim,
                                                     const std::string &name,
                                                     int verb = -1) = 0;
@@ -304,7 +304,7 @@ namespace MoFEM {
      * @param  verb verbosity level
      * @return      error code
      */
-    virtual PetscErrorCode add_ents_to_field_by_type(const Range &ents,
+    virtual MoFEMErrorCode add_ents_to_field_by_type(const Range &ents,
                                                      const EntityType type,
                                                      const std::string &name,
                                                      int verb = -1) = 0;
@@ -322,7 +322,7 @@ namespace MoFEM {
      * @param  verb verbosity level
      * @return      error code
      */
-    virtual PetscErrorCode add_ents_to_field_by_dim(const EntityHandle meshset,
+    virtual MoFEMErrorCode add_ents_to_field_by_dim(const EntityHandle meshset,
                                                     const int dim,
                                                     const std::string &name,
                                                     const bool recursive = true,
@@ -341,7 +341,7 @@ namespace MoFEM {
      * @param  verb verbosity level
      * @return      error code
      */
-    virtual PetscErrorCode
+    virtual MoFEMErrorCode
     add_ents_to_field_by_type(const EntityHandle meshset, const EntityType type,
                               const std::string &name,
                               const bool recursive = true, int verb = -1) = 0;
@@ -354,7 +354,7 @@ namespace MoFEM {
      * \param nodes contains set vertices
      * \param name of the field
      */
-    virtual PetscErrorCode
+    virtual MoFEMErrorCode
     add_ents_to_field_by_VERTICEs(const Range &nodes, const std::string &name,
                                   int verb = -1) = 0;
 
@@ -366,7 +366,7 @@ namespace MoFEM {
      * \param meshset contains set vertices
      * \param name of the field
      */
-    virtual PetscErrorCode
+    virtual MoFEMErrorCode
     add_ents_to_field_by_VERTICEs(const EntityHandle meshset,
                                   const std::string &name, int verb = -1) = 0;
 
@@ -378,7 +378,7 @@ namespace MoFEM {
      * \param range contains set edges
      * \param name of the field
      */
-    virtual PetscErrorCode add_ents_to_field_by_EDGEs(const Range &edges,
+    virtual MoFEMErrorCode add_ents_to_field_by_EDGEs(const Range &edges,
                                                       const std::string &name,
                                                       int verb = -1) = 0;
 
@@ -390,7 +390,7 @@ namespace MoFEM {
      * \param meshset contains set edges
      * \param name of the field
      */
-    virtual PetscErrorCode
+    virtual MoFEMErrorCode
     add_ents_to_field_by_EDGEs(const EntityHandle meshset,
                                const std::string &name, int verb = -1) = 0;
 
@@ -402,7 +402,7 @@ namespace MoFEM {
      * \param meshset contains set triangles
      * \param name of the field
      */
-    virtual PetscErrorCode add_ents_to_field_by_TRIs(const EntityHandle meshset,
+    virtual MoFEMErrorCode add_ents_to_field_by_TRIs(const EntityHandle meshset,
                                                      const std::string &name,
                                                      int verb = -1) = 0;
 
@@ -414,7 +414,7 @@ namespace MoFEM {
      * \param range triangles
      * \param name of the field
      */
-    virtual PetscErrorCode add_ents_to_field_by_TRIs(const Range &tris,
+    virtual MoFEMErrorCode add_ents_to_field_by_TRIs(const Range &tris,
                                                      const std::string &name,
                                                      int verb = -1) = 0;
 
@@ -426,7 +426,7 @@ namespace MoFEM {
      * \param meshset contains set tetrahedron
      * \param name of the field
      */
-    virtual PetscErrorCode add_ents_to_field_by_TETs(const EntityHandle meshset,
+    virtual MoFEMErrorCode add_ents_to_field_by_TETs(const EntityHandle meshset,
                                                      const std::string &name,
                                                      int verb = -1) = 0;
 
@@ -438,7 +438,7 @@ namespace MoFEM {
      * \param range contains set tetrahedron
      * \param name of the field
      */
-    virtual PetscErrorCode add_ents_to_field_by_TETs(const Range &tets,
+    virtual MoFEMErrorCode add_ents_to_field_by_TETs(const Range &tets,
                                                      const std::string &name,
                                                      int verb = -1) = 0;
 
@@ -450,7 +450,7 @@ namespace MoFEM {
     //   * \param quads range of quads
     //   * \param id field id
     //   */
-    // virtual PetscErrorCode add_ents_to_field_by_QUADs(const Range
+    // virtual MoFEMErrorCode add_ents_to_field_by_QUADs(const Range
     // &quads,const BitFieldId id,int verb = -1) = 0;
 
     /**
@@ -461,7 +461,7 @@ namespace MoFEM {
      * \param quads range contains set quads
      * \param name of the field
      */
-    virtual PetscErrorCode add_ents_to_field_by_QUADs(const Range &quads,
+    virtual MoFEMErrorCode add_ents_to_field_by_QUADs(const Range &quads,
                                                       const std::string &name,
                                                       int verb = -1) = 0;
 
@@ -473,7 +473,7 @@ namespace MoFEM {
      * \param meshset contains set quads
      * \param name of the field
      */
-    virtual PetscErrorCode add_ents_to_field_by_QUADs(EntityHandle meshset,
+    virtual MoFEMErrorCode add_ents_to_field_by_QUADs(EntityHandle meshset,
                                                       const std::string &name,
                                                       int verb = -1) = 0;
 
@@ -485,7 +485,7 @@ namespace MoFEM {
     //   * \param prisms range of prisms
     //   * \param id field id
     //   */
-    // virtual PetscErrorCode add_ents_to_field_by_PRISMs(const Range
+    // virtual MoFEMErrorCode add_ents_to_field_by_PRISMs(const Range
     // &prisms,const BitFieldId id,int verb = -1) = 0;
 
     /**
@@ -496,7 +496,7 @@ namespace MoFEM {
      * \param prisms range contains set prisms
      * \param name of the field
      */
-    virtual PetscErrorCode add_ents_to_field_by_PRISMs(const Range &prisms,
+    virtual MoFEMErrorCode add_ents_to_field_by_PRISMs(const Range &prisms,
                                                        const std::string &name,
                                                        int verb = -1) = 0;
 
@@ -508,7 +508,7 @@ namespace MoFEM {
      * \param meshset contains set prisms
      * \param name of the field
      */
-    virtual PetscErrorCode add_ents_to_field_by_PRISMs(EntityHandle meshset,
+    virtual MoFEMErrorCode add_ents_to_field_by_PRISMs(EntityHandle meshset,
                                                        const std::string &name,
                                                        int verb = -1) = 0;
 
@@ -517,7 +517,7 @@ namespace MoFEM {
      * \ingroup mofem_field
      *
      */
-    virtual PetscErrorCode remove_ents_from_field_by_bit_ref(
+    virtual MoFEMErrorCode remove_ents_from_field_by_bit_ref(
         const BitRefLevel &bit, const BitRefLevel &mask, int verb = -1) = 0;
 
     /**
@@ -525,7 +525,7 @@ namespace MoFEM {
      * \ingroup mofem_field
      *
      */
-    virtual PetscErrorCode remove_ents_from_field(const std::string &name,
+    virtual MoFEMErrorCode remove_ents_from_field(const std::string &name,
                                                   const EntityHandle meshset,
                                                   const EntityType type,
                                                   int verb = -1) = 0;
@@ -535,7 +535,7 @@ namespace MoFEM {
      * \ingroup mofem_field
      *
      */
-    virtual PetscErrorCode remove_ents_from_field(const std::string &name,
+    virtual MoFEMErrorCode remove_ents_from_field(const std::string &name,
                                                   const Range &ents,
                                                   int verb = -1) = 0;
 
@@ -548,7 +548,7 @@ namespace MoFEM {
      * MBTRI, MBEDGE, MBVERTEX, see moab documentation \param order
      * approximation order
      */
-    virtual PetscErrorCode set_field_order(const EntityHandle meshset,
+    virtual MoFEMErrorCode set_field_order(const EntityHandle meshset,
                                            const EntityType type,
                                            const std::string &name,
                                            const ApproximationOrder order,
@@ -562,7 +562,7 @@ namespace MoFEM {
      * \param type selected type of the entities f.e. MBTET, MBTRI, MBEDGE,
      * MBVERTEX, see moab documentation \param order approximation order
      */
-    virtual PetscErrorCode set_field_order(const Range &ents,
+    virtual MoFEMErrorCode set_field_order(const Range &ents,
                                            const std::string &name,
                                            const ApproximationOrder order,
                                            int verb = -1) = 0;
@@ -576,7 +576,7 @@ namespace MoFEM {
      * \param type selected type of the entities f.e. MBTET, MBTRI, MBEDGE,
      * MBVERTEX, see moab documentation \param order approximation order
      */
-    virtual PetscErrorCode set_field_order_by_entity_type_and_bit_ref(
+    virtual MoFEMErrorCode set_field_order_by_entity_type_and_bit_ref(
         const BitRefLevel &bit, const BitRefLevel &mask, const EntityType type,
         const std::string &name, const ApproximationOrder order,
         int verb = -1) = 0;
@@ -584,7 +584,7 @@ namespace MoFEM {
     /** \brief list entities in the field
      * \ingroup mofem_field
      */
-    virtual PetscErrorCode list_fields() const = 0;
+    virtual MoFEMErrorCode list_fields() const = 0;
 
     /** \brief get field meshset
     *
@@ -604,7 +604,7 @@ namespace MoFEM {
 
     * \ingroup mofem_field
     */
-    virtual PetscErrorCode
+    virtual MoFEMErrorCode
     get_field_entities_by_dimension(const std::string name, int dim,
                                     Range &ents) const = 0;
 
@@ -617,7 +617,7 @@ namespace MoFEM {
 
     * \ingroup mofem_field
     */
-    virtual PetscErrorCode get_field_entities_by_type(const std::string name,
+    virtual MoFEMErrorCode get_field_entities_by_type(const std::string name,
                                                       EntityType type,
                                                       Range &ents) const = 0;
 
@@ -629,7 +629,7 @@ namespace MoFEM {
 
     * \ingroup mofem_field
     */
-    virtual PetscErrorCode get_field_entities_by_handle(const std::string name,
+    virtual MoFEMErrorCode get_field_entities_by_handle(const std::string name,
                                                         Range &ents) const = 0;
 
     /** \brief check if field is in database
@@ -669,11 +669,11 @@ namespace MoFEM {
     * \param name finite element name
     *
     * Example \code
-    ierr = mField.add_finite_element("ELASTIC"); CHKERRQ(ierr);
-    ierr = mField.add_finite_element("PLASTIC"); CHKERRQ(ierr);
+    ierr = mField.add_finite_element("ELASTIC"); CHKERRG(ierr);
+    ierr = mField.add_finite_element("PLASTIC"); CHKERRG(ierr);
     \endcode
     */
-    virtual PetscErrorCode add_finite_element(const std::string &fe_name,
+    virtual MoFEMErrorCode add_finite_element(const std::string &fe_name,
                                               enum MoFEMTypes bh = MF_EXCL) = 0;
 
     /**
@@ -683,7 +683,7 @@ namespace MoFEM {
      * Using that functions means that you like to do something not usual.
      *
      */
-    virtual PetscErrorCode
+    virtual MoFEMErrorCode
     modify_finite_element_adjacency_table(const std::string &fe_name,
                                           const EntityType type,
                                           ElementAdjacencyFunct function) = 0;
@@ -696,7 +696,7 @@ namespace MoFEM {
      *
      * This function will set memory in the form of a vector
      */
-    virtual PetscErrorCode
+    virtual MoFEMErrorCode
     modify_finite_element_add_field_data(const std::string &fe_name,
                                          const std::string &name_filed) = 0;
 
@@ -708,7 +708,7 @@ namespace MoFEM {
      *
      * This function will set memory in the form of a vector
      */
-    virtual PetscErrorCode
+    virtual MoFEMErrorCode
     modify_finite_element_off_field_data(const std::string &fe_name,
                                          const std::string &name_filed) = 0;
 
@@ -718,7 +718,7 @@ namespace MoFEM {
      * \param name finite element name
      * \param name field name
      */
-    virtual PetscErrorCode
+    virtual MoFEMErrorCode
     modify_finite_element_add_field_row(const std::string &fe_name,
                                         const std::string &name_row) = 0;
 
@@ -728,7 +728,7 @@ namespace MoFEM {
      * \param name finite element name
      * \param name field name
      */
-    virtual PetscErrorCode
+    virtual MoFEMErrorCode
     modify_finite_element_off_field_row(const std::string &fe_name,
                                         const std::string &name_row) = 0;
 
@@ -737,7 +737,7 @@ namespace MoFEM {
      * \param name finite element name
      * \param name field name
      */
-    virtual PetscErrorCode
+    virtual MoFEMErrorCode
     modify_finite_element_add_field_col(const std::string &fe_name,
                                         const std::string &name_row) = 0;
 
@@ -747,7 +747,7 @@ namespace MoFEM {
      * \param name finite element name
      * \param name field name
      */
-    virtual PetscErrorCode
+    virtual MoFEMErrorCode
     modify_finite_element_off_field_col(const std::string &fe_name,
                                         const std::string &name_row) = 0;
 
@@ -760,7 +760,7 @@ namespace MoFEM {
      * @param  recursive take entities from meshsets in meshset
      * @return           error code
      */
-    virtual PetscErrorCode add_ents_to_finite_element_by_type(
+    virtual MoFEMErrorCode add_ents_to_finite_element_by_type(
         const EntityHandle entities, const EntityType type,
         const std::string &name, const bool recursive = true) = 0;
 
@@ -773,7 +773,7 @@ namespace MoFEM {
      * @param  recursive take entities from meshsets in meshset
      * @return           error code
      */
-    virtual PetscErrorCode
+    virtual MoFEMErrorCode
     add_ents_to_finite_element_by_dim(const EntityHandle entities,
                                       const int dim, const std::string &name,
                                       const bool recursive = true) = 0;
@@ -786,7 +786,7 @@ namespace MoFEM {
      * @param  name name of finite element
      * @return      error code
      */
-    virtual PetscErrorCode
+    virtual MoFEMErrorCode
     add_ents_to_finite_element_by_type(const Range &ents, const EntityType type,
                                        const std::string &name) = 0;
 
@@ -798,7 +798,7 @@ namespace MoFEM {
      * @param  name name of finite element
      * @return      error code
      */
-    virtual PetscErrorCode
+    virtual MoFEMErrorCode
     add_ents_to_finite_element_by_dim(const Range &ents, const int dim,
                                       const std::string &name) = 0;
 
@@ -811,7 +811,7 @@ namespace MoFEM {
      * \param finite element type
      * \param verbose level
      */
-    virtual PetscErrorCode add_ents_to_finite_element_by_bit_ref(
+    virtual MoFEMErrorCode add_ents_to_finite_element_by_bit_ref(
         const BitRefLevel &bit, const BitRefLevel &mask,
         const std::string &name, EntityType type, int verb = -1) = 0;
 
@@ -831,7 +831,7 @@ namespace MoFEM {
 
     * \ingroup mofem_field
     */
-    virtual PetscErrorCode
+    virtual MoFEMErrorCode
     get_finite_element_entities_by_dimension(const std::string name, int dim,
                                              Range &ents) const = 0;
 
@@ -844,7 +844,7 @@ namespace MoFEM {
 
     * \ingroup mofem_field
     */
-    virtual PetscErrorCode
+    virtual MoFEMErrorCode
     get_finite_element_entities_by_type(const std::string name, EntityType type,
                                         Range &ents) const = 0;
 
@@ -856,7 +856,7 @@ namespace MoFEM {
 
     * \ingroup mofem_field
     */
-    virtual PetscErrorCode
+    virtual MoFEMErrorCode
     get_finite_element_entities_by_handle(const std::string name,
                                           Range &ents) const = 0;
 
@@ -867,14 +867,14 @@ namespace MoFEM {
      * \param BitRefLevel mask
      * \param verbose level
      */
-    virtual PetscErrorCode remove_ents_from_finite_element_by_bit_ref(
+    virtual MoFEMErrorCode remove_ents_from_finite_element_by_bit_ref(
         const BitRefLevel &bit, const BitRefLevel &mask, int verb = -1) = 0;
 
     /** \brief remove entities from given refinement level to finite element
      * database
      *
      */
-    virtual PetscErrorCode
+    virtual MoFEMErrorCode
     remove_ents_from_finite_element(const std::string &name,
                                     const EntityHandle meshset,
                                     const EntityType type, int verb = -1) = 0;
@@ -883,7 +883,7 @@ namespace MoFEM {
      * \ingroup mofem_fe
      *
      */
-    virtual PetscErrorCode
+    virtual MoFEMErrorCode
     remove_ents_from_finite_element(const std::string &name, const Range &ents,
                                     int verb = -1) = 0;
 
@@ -893,7 +893,7 @@ namespace MoFEM {
      * \param meshset contains all entities that could be used for finite
      * element \param name Finite Element name
      */
-    virtual PetscErrorCode
+    virtual MoFEMErrorCode
     add_ents_to_finite_element_by_MESHSET(const EntityHandle meshset,
                                           const std::string &name,
                                           const bool recursive = false) = 0;
@@ -901,10 +901,10 @@ namespace MoFEM {
     /** \brief list finite elements in database
      * \ingroup mofem_fe
      */
-    virtual PetscErrorCode list_finite_elements() const = 0;
+    virtual MoFEMErrorCode list_finite_elements() const = 0;
 
     /// list adjacencies
-    virtual PetscErrorCode list_adjacencies() const = 0;
+    virtual MoFEMErrorCode list_adjacencies() const = 0;
 
     /**@}*/
 
@@ -915,7 +915,7 @@ namespace MoFEM {
     /** \brief Add problem
      * \ingroup mofem_problems
      */
-    virtual PetscErrorCode add_problem(const std::string &name,
+    virtual MoFEMErrorCode add_problem(const std::string &name,
                                        enum MoFEMTypes bh = MF_EXCL,
                                        int verb = -1) = 0;
 
@@ -929,7 +929,7 @@ namespace MoFEM {
     /** \brief Delete problem
      * \ingroup mofem_problems
      */
-    virtual PetscErrorCode delete_problem(const std::string name) = 0;
+    virtual MoFEMErrorCode delete_problem(const std::string name) = 0;
 
     /** \brief add finite element to problem, this add entities assigned to
      * finite element to a particular problem \ingroup mofem_problems
@@ -937,7 +937,7 @@ namespace MoFEM {
      * \param name Problem name
      * \param name Finite Element name
      */
-    virtual PetscErrorCode
+    virtual MoFEMErrorCode
     modify_problem_add_finite_element(const std::string &name_problem,
                                       const std::string &fe_name) = 0;
 
@@ -949,7 +949,7 @@ namespace MoFEM {
      * \param name Problem name
      * \param name Finite Element name
      */
-    virtual PetscErrorCode
+    virtual MoFEMErrorCode
     modify_problem_unset_finite_element(const std::string &name_problem,
                                         const std::string &fe_name) = 0;
 
@@ -964,20 +964,20 @@ namespace MoFEM {
     * Example: \code
     ierr =
     mField.modify_problem_add_finite_element("BEAM_BENDING_ON_MESH_REF1","ELASTIC");
-    CHKERRQ(ierr); ierr =
+    CHKERRG(ierr); ierr =
     mField.modify_problem_add_finite_element("BEAM_BENDING_ON_MESH_REF2","ELASTIC");
-    CHKERRQ(ierr);
+    CHKERRG(ierr);
 
     ierr =
     mField.modify_problem_ref_level_add_bit("BEAM_BENDING_ON_MESH_REF1",bit_level1);
-    CHKERRQ(ierr); ierr =
+    CHKERRG(ierr); ierr =
     mField.modify_problem_ref_level_add_bit("BEAM_BENDING_ON_MESH_REF2",bit_level2);
-    CHKERRQ(ierr);
+    CHKERRG(ierr);
     *\endcode
     * Two Problems exist and solved independently, both are elastic, but solved
     using different mesh refinement <br>
     */
-    virtual PetscErrorCode
+    virtual MoFEMErrorCode
     modify_problem_ref_level_add_bit(const std::string &name_problem,
                                      const BitRefLevel &bit) = 0;
 
@@ -992,15 +992,15 @@ namespace MoFEM {
     * Example: \code
     ierr =
     mField.modify_problem_add_finite_element("BEAM_BENDING_ON_MESH_REF1","ELASTIC");
-    CHKERRQ(ierr); ierr =
+    CHKERRG(ierr); ierr =
     mField.modify_problem_add_finite_element("BEAM_BENDING_ON_MESH_REF2","ELASTIC");
-    CHKERRQ(ierr);
+    CHKERRG(ierr);
 
     ierr =
     mField.modify_problem_ref_level_set_bit("BEAM_BENDING_ON_MESH_REF1",bit_level1);
-    CHKERRQ(ierr); ierr =
+    CHKERRG(ierr); ierr =
     mField.modify_problem_ref_level_set_bit("BEAM_BENDING_ON_MESH_REF2",bit_level2);
-    CHKERRQ(ierr);
+    CHKERRG(ierr);
     *\endcode
     * Two Problems exist and solved independently, both are elastic, but solved
     using different mesh refinement <br>
@@ -1009,7 +1009,7 @@ namespace MoFEM {
     flexibility
 
     */
-    virtual PetscErrorCode
+    virtual MoFEMErrorCode
     modify_problem_ref_level_set_bit(const std::string &name_problem,
                                      const BitRefLevel &bit) = 0;
 
@@ -1017,24 +1017,24 @@ namespace MoFEM {
      * \ingroup mofem_problems
      *
      */
-    virtual PetscErrorCode
+    virtual MoFEMErrorCode
     modify_problem_mask_ref_level_set_bit(const std::string &name_problem,
                                           const BitRefLevel &bit) = 0;
 
     /** \brief list problems
      * \ingroup mofem_problems
      */
-    virtual PetscErrorCode list_problem() const = 0;
+    virtual MoFEMErrorCode list_problem() const = 0;
 
     /** build fields
      * \ingroup mofem_field
      */
-    virtual PetscErrorCode build_fields(int verb = -1) = 0;
+    virtual MoFEMErrorCode build_fields(int verb = -1) = 0;
 
     /** list dofs
      * \ingroup mofem_field
      */
-    virtual PetscErrorCode
+    virtual MoFEMErrorCode
     list_dofs_by_field_name(const std::string &name) const = 0;
 
     /**@}*/
@@ -1046,33 +1046,33 @@ namespace MoFEM {
     /** Clear inactive dofs
      * \ingroup mofem_field
      */
-    virtual PetscErrorCode clear_inactive_dofs(int verb = -1) = 0;
+    virtual MoFEMErrorCode clear_inactive_dofs(int verb = -1) = 0;
 
     /** Clear dofs by bit level
      * \ingroup mofem_field
      */
-    virtual PetscErrorCode clear_dofs_fields(const BitRefLevel &bit,
+    virtual MoFEMErrorCode clear_dofs_fields(const BitRefLevel &bit,
                                              const BitRefLevel &mask,
                                              int verb = -1) = 0;
 
     /** Clear ents by bit level
      * \ingroup mofem_field
      */
-    virtual PetscErrorCode clear_ents_fields(const BitRefLevel &bit,
+    virtual MoFEMErrorCode clear_ents_fields(const BitRefLevel &bit,
                                              const BitRefLevel &mask,
                                              int verb = -1) = 0;
 
     /** Clear dofs by field name
      * \ingroup mofem_field
      */
-    virtual PetscErrorCode clear_dofs_fields(const std::string &name,
+    virtual MoFEMErrorCode clear_dofs_fields(const std::string &name,
                                              const Range ents,
                                              int verb = -1) = 0;
 
     /** Clear entities by field name
      * \ingroup mofem_field
      */
-    virtual PetscErrorCode clear_ents_fields(const std::string &name,
+    virtual MoFEMErrorCode clear_ents_fields(const std::string &name,
                                              const Range ents,
                                              int verb = -1) = 0;
 
@@ -1092,7 +1092,7 @@ namespace MoFEM {
      * @param  verb Verbosity level
      * @return      Error code
      */
-    virtual PetscErrorCode build_finite_elements(int verb = -1) = 0;
+    virtual MoFEMErrorCode build_finite_elements(int verb = -1) = 0;
 
     /**
      * \brief Build finite elements
@@ -1106,7 +1106,7 @@ namespace MoFEM {
      * @param  verb     Verbosity level
      * @return      Error code
      */
-    virtual PetscErrorCode build_finite_elements(const string fe_name,
+    virtual MoFEMErrorCode build_finite_elements(const string fe_name,
                                                  const Range *ents_ptr = NULL,
                                                  int verb = -1) = 0;
 
@@ -1118,13 +1118,13 @@ namespace MoFEM {
 
     /** clear finite elements
      */
-    virtual PetscErrorCode clear_finite_elements(const BitRefLevel &bit,
+    virtual MoFEMErrorCode clear_finite_elements(const BitRefLevel &bit,
                                                  const BitRefLevel &mask,
                                                  int verb = -1) = 0;
 
     /** clear finite elements
      */
-    virtual PetscErrorCode clear_finite_elements(const std::string &name,
+    virtual MoFEMErrorCode clear_finite_elements(const std::string &name,
                                                  const Range &ents,
                                                  int verb = -1) = 0;
 
@@ -1147,7 +1147,7 @@ namespace MoFEM {
      * database, adjacency map has to be rebuild.
      *
      */
-    virtual PetscErrorCode build_adjacencies(const Range &ents,
+    virtual MoFEMErrorCode build_adjacencies(const Range &ents,
                                              int verb = -1) = 0;
 
     /** \brief build adjacencies
@@ -1163,7 +1163,7 @@ namespace MoFEM {
      * database, adjacency map has to be rebuild.
      *
      */
-    virtual PetscErrorCode build_adjacencies(const BitRefLevel &bit,
+    virtual MoFEMErrorCode build_adjacencies(const BitRefLevel &bit,
                                              int verb = -1) = 0;
 
     /** \brief build adjacencies
@@ -1180,7 +1180,7 @@ namespace MoFEM {
      * database, adjacency map has to be rebuild.
      *
      */
-    virtual PetscErrorCode build_adjacencies(const BitRefLevel &bit,
+    virtual MoFEMErrorCode build_adjacencies(const BitRefLevel &bit,
                                              const BitRefLevel &mask,
                                              int verb = -1) = 0;
 
@@ -1195,7 +1195,7 @@ namespace MoFEM {
      * \param bit
      * \param mask
      */
-    virtual PetscErrorCode clear_adjacencies_finite_elements(
+    virtual MoFEMErrorCode clear_adjacencies_finite_elements(
         const BitRefLevel &bit, const BitRefLevel &mask, int verb = -1) = 0;
 
     /** \brief clear adjacency map for entities on given bit level
@@ -1203,7 +1203,7 @@ namespace MoFEM {
      * \param bit
      * \param mask
      */
-    virtual PetscErrorCode clear_adjacencies_entities(const BitRefLevel &bit,
+    virtual MoFEMErrorCode clear_adjacencies_entities(const BitRefLevel &bit,
                                                       const BitRefLevel &mask,
                                                       int verb = -1) = 0;
 
@@ -1216,13 +1216,13 @@ namespace MoFEM {
     /** \brief clear problem
      * \ingroup mofem_problems
      */
-    virtual PetscErrorCode clear_problem(const std::string &name,
+    virtual MoFEMErrorCode clear_problem(const std::string &name,
                                          int verb = -1) = 0;
 
     /** \brief clear problems
      * \ingroup mofem_problems
      */
-    virtual PetscErrorCode clear_problems(int verb = -1) = 0;
+    virtual MoFEMErrorCode clear_problems(int verb = -1) = 0;
 
     /** \brief check if matrix fill in correspond to finite element indices
 
@@ -1235,7 +1235,7 @@ namespace MoFEM {
     \param col print info at particular col
 
     */
-    virtual PetscErrorCode
+    virtual MoFEMErrorCode
     partition_check_matrix_fill_in(const std::string &problem_name, int row,
                                    int col, int verb) = 0;
 
@@ -1261,7 +1261,7 @@ namespace MoFEM {
 
     *
     */
-    virtual PetscErrorCode resolve_shared_ents(const Problem *problem_ptr,
+    virtual MoFEMErrorCode resolve_shared_ents(const Problem *problem_ptr,
                                                const std::string &fe_name,
                                                int verb = -1) = 0;
 
@@ -1278,7 +1278,7 @@ namespace MoFEM {
 
     \code
     ierr = m_field.resolve_shared_ents(problem_ptr,"SHELL_ELEMENT");
-    CHKERRQ(ierr); Tag th; rval =
+    CHKERRG(ierr); Tag th; rval =
     mField.get_moab().tag_get_handle("ADAPT_ORDER",th); CHKERRQ_MOAB(rval);
     ParallelComm* pcomm =
     ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
@@ -1288,7 +1288,7 @@ namespace MoFEM {
 
     *
     */
-    virtual PetscErrorCode resolve_shared_ents(const std::string &name,
+    virtual MoFEMErrorCode resolve_shared_ents(const std::string &name,
                                                const std::string &fe_name,
                                                int verb = -1) = 0;
 
@@ -1300,7 +1300,7 @@ namespace MoFEM {
      * \param fe_name
      * \param meshset
      */
-    virtual PetscErrorCode
+    virtual MoFEMErrorCode
     get_problem_finite_elements_entities(const std::string &name,
                                          const std::string &fe_name,
                                          const EntityHandle meshset) = 0;
@@ -1318,7 +1318,7 @@ namespace MoFEM {
      *
      * \param name of the problem
      */
-    virtual PetscErrorCode MatCreateMPIAIJWithArrays(const std::string &name,
+    virtual MoFEMErrorCode MatCreateMPIAIJWithArrays(const std::string &name,
                                                      Mat *Aij,
                                                      int verb = -1) = 0;
     /**
@@ -1331,7 +1331,7 @@ namespace MoFEM {
      * @param  verb [description]
      * @return      [description]
      */
-    virtual PetscErrorCode
+    virtual MoFEMErrorCode
     MatCreateMPIAdj_with_Idx_mi_tag(const std::string &name, Mat *Adj,
                                     int verb = -1) = 0;
 
@@ -1342,7 +1342,7 @@ namespace MoFEM {
      *
      * \param name of the problem
      */
-    virtual PetscErrorCode
+    virtual MoFEMErrorCode
     MatCreateSeqAIJWithArrays(const std::string &name, Mat *Aij, PetscInt **i,
                               PetscInt **j, PetscScalar **v, int verb = -1) = 0;
 
@@ -1366,7 +1366,7 @@ namespace MoFEM {
      * \param method user method derived from BasicMethod
      *
      **/
-    virtual PetscErrorCode
+    virtual MoFEMErrorCode
     problem_basic_method_preProcess(const Problem *problem_ptr,
                                     BasicMethod &method, int verb = -1) = 0;
 
@@ -1384,7 +1384,7 @@ namespace MoFEM {
      * \param method user method derived from BasicMethod
      *
      **/
-    virtual PetscErrorCode
+    virtual MoFEMErrorCode
     problem_basic_method_preProcess(const std::string &problem_name,
                                     BasicMethod &method, int verb = -1) = 0;
 
@@ -1403,7 +1403,7 @@ namespace MoFEM {
      * \param method user method derived from BasicMethod
      *
      **/
-    virtual PetscErrorCode
+    virtual MoFEMErrorCode
     problem_basic_method_postProcess(const Problem *problem_ptr,
                                      BasicMethod &method, int verb = -1) = 0;
 
@@ -1422,7 +1422,7 @@ namespace MoFEM {
      * \param method user method derived from BasicMethod
      *
      **/
-    virtual PetscErrorCode
+    virtual MoFEMErrorCode
     problem_basic_method_postProcess(const std::string &problem_name,
                                      BasicMethod &method, int verb = -1) = 0;
 
@@ -1452,7 +1452,7 @@ namespace MoFEM {
 
     * \ingroup mofem_loops
     **/
-    virtual PetscErrorCode loop_finite_elements(const std::string &problem_name,
+    virtual MoFEMErrorCode loop_finite_elements(const std::string &problem_name,
                                                 const std::string &fe_name,
                                                 FEMethod &method,
                                                 MoFEMTypes bh = MF_EXIST,
@@ -1487,7 +1487,7 @@ namespace MoFEM {
 
     * \ingroup mofem_loops
     **/
-    virtual PetscErrorCode
+    virtual MoFEMErrorCode
     loop_finite_elements(const Problem *problem_ptr, const std::string &fe_name,
                          FEMethod &method, int lower_rank, int upper_rank,
                          MoFEMTypes bh = MF_EXIST, int verb = -1) = 0;
@@ -1520,7 +1520,7 @@ namespace MoFEM {
 
     * \ingroup mofem_loops
     **/
-    virtual PetscErrorCode loop_finite_elements(const std::string &problem_name,
+    virtual MoFEMErrorCode loop_finite_elements(const std::string &problem_name,
                                                 const std::string &fe_name,
                                                 FEMethod &method,
                                                 int lower_rank, int upper_rank,
@@ -1531,7 +1531,7 @@ namespace MoFEM {
 
     * \ingroup mofem_loops
     */
-    virtual PetscErrorCode loop_dofs(const Problem *problem_ptr,
+    virtual MoFEMErrorCode loop_dofs(const Problem *problem_ptr,
                                      const std::string &field_name,
                                      RowColData rc, EntMethod &method,
                                      int lower_rank, int upper_rank,
@@ -1541,7 +1541,7 @@ namespace MoFEM {
 
     * \ingroup mofem_loops
     */
-    virtual PetscErrorCode loop_dofs(const std::string &problem_name,
+    virtual MoFEMErrorCode loop_dofs(const std::string &problem_name,
                                      const std::string &field_name,
                                      RowColData rc, EntMethod &method,
                                      int lower_rank, int upper_rank,
@@ -1551,7 +1551,7 @@ namespace MoFEM {
 
     * \ingroup mofem_loops
     */
-    virtual PetscErrorCode loop_dofs(const std::string &problem_name,
+    virtual MoFEMErrorCode loop_dofs(const std::string &problem_name,
                                      const std::string &field_name,
                                      RowColData rc, EntMethod &method,
                                      int verb = -1) = 0;
@@ -1560,7 +1560,7 @@ namespace MoFEM {
 
     * \ingroup mofem_field
     */
-    virtual PetscErrorCode loop_dofs(const std::string &field_name,
+    virtual MoFEMErrorCode loop_dofs(const std::string &field_name,
                                      EntMethod &method, int verb = -1) = 0;
 
     /**@}*/
@@ -1572,44 +1572,44 @@ namespace MoFEM {
     /** \brief Get fields multi-index from database
      * \ingroup mofem_access
      */
-    virtual PetscErrorCode
+    virtual MoFEMErrorCode
     get_fields(const Field_multiIndex **fields_ptr) const = 0;
 
     /** \brief Get ref entities multi-index from database
      * \ingroup mofem_access
      */
-    virtual PetscErrorCode
+    virtual MoFEMErrorCode
     get_ref_ents(const RefEntity_multiIndex **refined_ents_ptr) const = 0;
 
     /** \brief Get ref finite elements multi-index form database
      * \ingroup mofem_access
      */
-    virtual PetscErrorCode get_ref_finite_elements(
+    virtual MoFEMErrorCode get_ref_finite_elements(
         const RefElement_multiIndex **refined_finite_elements_ptr) const = 0;
 
     /** \brief Get finite elements multi-index
      * \ingroup mofem_access
      */
-    virtual PetscErrorCode
+    virtual MoFEMErrorCode
     get_finite_elements(const FiniteElement_multiIndex **fe_ptr) const = 0;
 
     /** \brief Get entities finite elements multi-index
      * \ingroup mofem_access
      */
-    virtual PetscErrorCode get_ents_finite_elements(
+    virtual MoFEMErrorCode get_ents_finite_elements(
         const EntFiniteElement_multiIndex **fe_ent_ptr) const = 0;
 
     /** \brief Get problem database (data structure)
      * \ingroup mofem_access
      */
-    virtual PetscErrorCode get_problem(const std::string &problem_name,
+    virtual MoFEMErrorCode get_problem(const std::string &problem_name,
                                        const Problem **problem_ptr) const = 0;
 
     /**
      * \brief Get pointer to problems multi-index
      * \ingroup mofem_access
      */
-    virtual PetscErrorCode
+    virtual MoFEMErrorCode
     get_problems(const Problem_multiIndex **problems_ptr) const = 0;
 
     /** \brief Get field multi index
@@ -1617,7 +1617,7 @@ namespace MoFEM {
      * \ingroup mofem_access
      *
      */
-    virtual PetscErrorCode
+    virtual MoFEMErrorCode
     get_field_ents(const FieldEntity_multiIndex **field_ents) const = 0;
 
     /** \brief Get dofs multi index
@@ -1625,7 +1625,7 @@ namespace MoFEM {
      * \ingroup mofem_access
      *
      */
-    virtual PetscErrorCode
+    virtual MoFEMErrorCode
     get_dofs(const DofEntity_multiIndex **dofs_ptr) const = 0;
 
     /**
@@ -1749,7 +1749,7 @@ namespace MoFEM {
      *
      */
     template <typename DIT>
-    PetscErrorCode
+    MoFEMErrorCode
     get_field_dof_data(const std::string &name, const EntityHandle *ent,
                        const int num_ents, DIT dit, int *count = NULL) {
       MoFEMFunctionBeginHot;
@@ -1775,7 +1775,7 @@ namespace MoFEM {
      *
      */
     template <typename DIT>
-    PetscErrorCode get_field_dof_data(const std::string &name,
+    MoFEMErrorCode get_field_dof_data(const std::string &name,
                                       const Range &ents, DIT dit,
                                       int *count = NULL) {
       MoFEMFunctionBeginHot;

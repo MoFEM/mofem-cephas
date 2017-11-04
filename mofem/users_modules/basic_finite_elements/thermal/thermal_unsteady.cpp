@@ -74,35 +74,35 @@ struct MonitorPostProc: public FEMethod {
     }
   }
 
-  PetscErrorCode preProcess() {
+  MoFEMErrorCode preProcess() {
     MoFEMFunctionBeginHot;
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode operator()() {
+  MoFEMErrorCode operator()() {
     MoFEMFunctionBeginHot;
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode postProcess() {
+  MoFEMErrorCode postProcess() {
     MoFEMFunctionBeginHot;
     
     if(!iNit) {
-      ierr = postProc.generateReferenceElementMesh(); CHKERRQ(ierr);
-      ierr = postProc.addFieldValuesPostProc("TEMP"); CHKERRQ(ierr);
-      ierr = postProc.addFieldValuesPostProc("TEMP_RATE"); CHKERRQ(ierr);
-      ierr = postProc.addFieldValuesGradientPostProc("TEMP"); CHKERRQ(ierr);
-      ierr = postProc.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+      ierr = postProc.generateReferenceElementMesh(); CHKERRG(ierr);
+      ierr = postProc.addFieldValuesPostProc("TEMP"); CHKERRG(ierr);
+      ierr = postProc.addFieldValuesPostProc("TEMP_RATE"); CHKERRG(ierr);
+      ierr = postProc.addFieldValuesGradientPostProc("TEMP"); CHKERRG(ierr);
+      ierr = postProc.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRG(ierr);
       iNit = true;
     }
     int step;
-    ierr = TSGetTimeStepNumber(ts,&step); CHKERRQ(ierr);
+    ierr = TSGetTimeStepNumber(ts,&step); CHKERRG(ierr);
     
     if((step)%pRT==0) {
-      ierr = mField.loop_finite_elements("DMTHERMAL","THERMAL_FE",postProc); CHKERRQ(ierr);
+      ierr = mField.loop_finite_elements("DMTHERMAL","THERMAL_FE",postProc); CHKERRG(ierr);
       std::ostringstream sss;
       sss << "out_thermal_" << step << ".h5m";
-      ierr = postProc.writeFile(sss.str().c_str()); CHKERRQ(ierr);
+      ierr = postProc.writeFile(sss.str().c_str()); CHKERRG(ierr);
     }
     MoFEMFunctionReturnHot(0);
   }
@@ -119,7 +119,7 @@ int main(int argc, char *argv[]) {
 
   PetscBool flg = PETSC_TRUE;
   char mesh_file_name[255];
-  ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRG(ierr);
   if(flg != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
   }
@@ -127,7 +127,7 @@ int main(int argc, char *argv[]) {
   option = "";
 
   PetscInt order;
-  ierr = PetscOptionsGetInt(PETSC_NULL,PETSC_NULL,"-my_order",&order,&flg); CHKERRQ(ierr);
+  ierr = PetscOptionsGetInt(PETSC_NULL,PETSC_NULL,"-my_order",&order,&flg); CHKERRG(ierr);
   if(flg != PETSC_TRUE) {
     order = 1;
   }
@@ -135,7 +135,7 @@ int main(int argc, char *argv[]) {
   char time_data_file_for_ground_surface[255];
   PetscBool ground_temperature_analys = PETSC_FALSE;
   ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_ground_analysis_data",
-    time_data_file_for_ground_surface,255,&ground_temperature_analys); CHKERRQ(ierr);
+    time_data_file_for_ground_surface,255,&ground_temperature_analys); CHKERRG(ierr);
   if(ground_temperature_analys) {
     #ifndef __GROUNDSURFACETEMERATURE_HPP
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR to do ground thermal analys MoFEM need to be complilet wiith ADOL-C");
@@ -143,18 +143,18 @@ int main(int argc, char *argv[]) {
   }
 
   DMType dm_name = "DMTHERMAL";
-  ierr = DMRegister_MoFEM(dm_name); CHKERRQ(ierr);
+  ierr = DMRegister_MoFEM(dm_name); CHKERRG(ierr);
   //craete dm instance
   DM dm;
-  ierr = DMCreate(PETSC_COMM_WORLD,&dm);CHKERRQ(ierr);
-  ierr = DMSetType(dm,dm_name);CHKERRQ(ierr);
+  ierr = DMCreate(PETSC_COMM_WORLD,&dm);CHKERRG(ierr);
+  ierr = DMSetType(dm,dm_name);CHKERRG(ierr);
 
   //create MoAB
   moab::Core mb_instance;
   moab::Interface& moab = mb_instance;
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERRG(rval);
   //create MoFEM (Joseph) database
   MoFEM::Core core(moab);
   MoFEM::Interface& m_field = core;
@@ -163,49 +163,49 @@ int main(int argc, char *argv[]) {
   //onlt one level is used in this example
   BitRefLevel bit_level0;
   bit_level0.set(0);
-  ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
+  ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRG(ierr);
 
   //Fields H1 space rank 1
-  ierr = m_field.add_field("TEMP",H1,AINSWORTH_LEGENDRE_BASE,1,MB_TAG_SPARSE,MF_ZERO); CHKERRQ(ierr);
-  ierr = m_field.add_field("TEMP_RATE",H1,AINSWORTH_LEGENDRE_BASE,1,MB_TAG_SPARSE,MF_ZERO); CHKERRQ(ierr);
+  ierr = m_field.add_field("TEMP",H1,AINSWORTH_LEGENDRE_BASE,1,MB_TAG_SPARSE,MF_ZERO); CHKERRG(ierr);
+  ierr = m_field.add_field("TEMP_RATE",H1,AINSWORTH_LEGENDRE_BASE,1,MB_TAG_SPARSE,MF_ZERO); CHKERRG(ierr);
 
   //Add field H1 space rank 3 to approximate gemetry using heierachical basis
   //For 10 node tets, before use, gemetry is projected on that field (see below)
   ierr = m_field.add_field(
     "MESH_NODE_POSITIONS",H1,AINSWORTH_LEGENDRE_BASE,3,MB_TAG_SPARSE,MF_ZERO
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
 
   //meshset consisting all entities in mesh
   EntityHandle root_set = moab.get_root_set();
   //add entities to field (root_mesh, i.e. on all mesh etities fields are approx.)
-  ierr = m_field.add_ents_to_field_by_type(root_set,MBTET,"TEMP"); CHKERRQ(ierr);
-  ierr = m_field.add_ents_to_field_by_type(root_set,MBTET,"TEMP_RATE"); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_field_by_type(root_set,MBTET,"TEMP"); CHKERRG(ierr);
+  ierr = m_field.add_ents_to_field_by_type(root_set,MBTET,"TEMP_RATE"); CHKERRG(ierr);
 
   //set app. order
   //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
   //for simplicity of example to all entities is applied the same order
-  ierr = m_field.set_field_order(root_set,MBTET,"TEMP",order); CHKERRQ(ierr);
-  ierr = m_field.set_field_order(root_set,MBTRI,"TEMP",order); CHKERRQ(ierr);
-  ierr = m_field.set_field_order(root_set,MBEDGE,"TEMP",order); CHKERRQ(ierr);
-  ierr = m_field.set_field_order(root_set,MBVERTEX,"TEMP",1); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(root_set,MBTET,"TEMP",order); CHKERRG(ierr);
+  ierr = m_field.set_field_order(root_set,MBTRI,"TEMP",order); CHKERRG(ierr);
+  ierr = m_field.set_field_order(root_set,MBEDGE,"TEMP",order); CHKERRG(ierr);
+  ierr = m_field.set_field_order(root_set,MBVERTEX,"TEMP",1); CHKERRG(ierr);
 
-  ierr = m_field.set_field_order(root_set,MBTET,"TEMP_RATE",order); CHKERRQ(ierr);
-  ierr = m_field.set_field_order(root_set,MBTRI,"TEMP_RATE",order); CHKERRQ(ierr);
-  ierr = m_field.set_field_order(root_set,MBEDGE,"TEMP_RATE",order); CHKERRQ(ierr);
-  ierr = m_field.set_field_order(root_set,MBVERTEX,"TEMP_RATE",1); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(root_set,MBTET,"TEMP_RATE",order); CHKERRG(ierr);
+  ierr = m_field.set_field_order(root_set,MBTRI,"TEMP_RATE",order); CHKERRG(ierr);
+  ierr = m_field.set_field_order(root_set,MBEDGE,"TEMP_RATE",order); CHKERRG(ierr);
+  ierr = m_field.set_field_order(root_set,MBVERTEX,"TEMP_RATE",1); CHKERRG(ierr);
 
   //gemetry approximation is set to 2nd oreder
-  ierr = m_field.add_ents_to_field_by_type(root_set,MBTET,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
-  ierr = m_field.set_field_order(0,MBTET,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
-  ierr = m_field.set_field_order(0,MBTRI,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
-  ierr = m_field.set_field_order(0,MBEDGE,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
-  ierr = m_field.set_field_order(0,MBVERTEX,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_field_by_type(root_set,MBTET,"MESH_NODE_POSITIONS"); CHKERRG(ierr);
+  ierr = m_field.set_field_order(0,MBTET,"MESH_NODE_POSITIONS",2); CHKERRG(ierr);
+  ierr = m_field.set_field_order(0,MBTRI,"MESH_NODE_POSITIONS",2); CHKERRG(ierr);
+  ierr = m_field.set_field_order(0,MBEDGE,"MESH_NODE_POSITIONS",2); CHKERRG(ierr);
+  ierr = m_field.set_field_order(0,MBVERTEX,"MESH_NODE_POSITIONS",1); CHKERRG(ierr);
 
   // configure blocks by parsing config file
   // it allow to set approximation order for each block independettly
   PetscBool block_config;
   char block_config_file[255];
-  ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_block_config",block_config_file,255,&block_config); CHKERRQ(ierr);
+  ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_block_config",block_config_file,255,&block_config); CHKERRG(ierr);
   std::map<int,BlockOptionData> block_data;
   bool solar_radiation = false;
   if(block_config) {
@@ -242,20 +242,20 @@ int main(int argc, char *argv[]) {
         if(block_data[it->getMeshsetId()].oRder == order) continue;
         PetscPrintf(PETSC_COMM_WORLD,"Set block %d oRder to %d\n",it->getMeshsetId(),block_data[it->getMeshsetId()].oRder);
         Range block_ents;
-        rval = moab.get_entities_by_handle(it->meshset,block_ents,true); CHKERRQ_MOAB(rval);
+        rval = moab.get_entities_by_handle(it->meshset,block_ents,true); CHKERRG(rval);
         Range ents_to_set_order;
-        ierr = moab.get_adjacencies(block_ents,3,false,ents_to_set_order,moab::Interface::UNION); CHKERRQ(ierr);
+        ierr = moab.get_adjacencies(block_ents,3,false,ents_to_set_order,moab::Interface::UNION); CHKERRG(ierr);
         ents_to_set_order = ents_to_set_order.subset_by_type(MBTET);
-        ierr = moab.get_adjacencies(block_ents,2,false,ents_to_set_order,moab::Interface::UNION); CHKERRQ(ierr);
-        ierr = moab.get_adjacencies(block_ents,1,false,ents_to_set_order,moab::Interface::UNION); CHKERRQ(ierr);
-        ierr = m_field.set_field_order(ents_to_set_order,"TEMP",block_data[it->getMeshsetId()].oRder); CHKERRQ(ierr);
-        ierr = m_field.set_field_order(ents_to_set_order,"TEMP_RATE",block_data[it->getMeshsetId()].oRder); CHKERRQ(ierr);
+        ierr = moab.get_adjacencies(block_ents,2,false,ents_to_set_order,moab::Interface::UNION); CHKERRG(ierr);
+        ierr = moab.get_adjacencies(block_ents,1,false,ents_to_set_order,moab::Interface::UNION); CHKERRG(ierr);
+        ierr = m_field.set_field_order(ents_to_set_order,"TEMP",block_data[it->getMeshsetId()].oRder); CHKERRG(ierr);
+        ierr = m_field.set_field_order(ents_to_set_order,"TEMP_RATE",block_data[it->getMeshsetId()].oRder); CHKERRG(ierr);
       }
       std::vector<std::string> additional_parameters;
       additional_parameters = collect_unrecognized(parsed.options,po::include_positional);
       for(std::vector<std::string>::iterator vit = additional_parameters.begin();
       vit!=additional_parameters.end();vit++) {
-        ierr = PetscPrintf(PETSC_COMM_WORLD,"** WARRNING Unrecognised option %s\n",vit->c_str()); CHKERRQ(ierr);
+        ierr = PetscPrintf(PETSC_COMM_WORLD,"** WARRNING Unrecognised option %s\n",vit->c_str()); CHKERRG(ierr);
       }
     } catch (const std::exception& ex) {
       std::ostringstream ss;
@@ -266,14 +266,14 @@ int main(int argc, char *argv[]) {
 
   //this default class to calculate thermal elements
   ThermalElement thermal_elements(m_field);
-  ierr = thermal_elements.addThermalElements("TEMP"); CHKERRQ(ierr);
-  ierr = thermal_elements.addThermalFluxElement("TEMP"); CHKERRQ(ierr);
-  ierr = thermal_elements.addThermalConvectionElement("TEMP"); CHKERRQ(ierr);
-  ierr = thermal_elements.addThermalRadiationElement("TEMP"); CHKERRQ(ierr);
+  ierr = thermal_elements.addThermalElements("TEMP"); CHKERRG(ierr);
+  ierr = thermal_elements.addThermalFluxElement("TEMP"); CHKERRG(ierr);
+  ierr = thermal_elements.addThermalConvectionElement("TEMP"); CHKERRG(ierr);
+  ierr = thermal_elements.addThermalRadiationElement("TEMP"); CHKERRG(ierr);
   //add rate of temerature to data field of finite element
-  ierr = m_field.modify_finite_element_add_field_data("THERMAL_FE","TEMP_RATE"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_data("THERMAL_FE","TEMP_RATE"); CHKERRG(ierr);
   //and temperature element default element operators at integration (gauss) points
-  ierr = thermal_elements.setTimeSteppingProblem("TEMP","TEMP_RATE"); CHKERRQ(ierr);
+  ierr = thermal_elements.setTimeSteppingProblem("TEMP","TEMP_RATE"); CHKERRG(ierr);
 
   //set block material data from opetion file
   std::map<int,ThermalElement::BlockData>::iterator mit;
@@ -300,65 +300,65 @@ int main(int argc, char *argv[]) {
   CrudeClimateModel time_data(time_data_file_for_ground_surface);
   GroundSurfaceTemerature::PreProcess exectuteGenericClimateModel(&time_data);
   if(ground_temperature_analys) {
-    ierr = ground_surface.addSurfaces("TEMP");   CHKERRQ(ierr);
-    ierr = ground_surface.setOperators(&time_data,"TEMP"); CHKERRQ(ierr);
+    ierr = ground_surface.addSurfaces("TEMP");   CHKERRG(ierr);
+    ierr = ground_surface.setOperators(&time_data,"TEMP"); CHKERRG(ierr);
   }
   #endif //__GROUNDSURFACETEMERATURE_HPP
 
   //build database, i.e. declare dofs, elements and ajacencies
 
   //build field
-  ierr = m_field.build_fields(); CHKERRQ(ierr);
+  ierr = m_field.build_fields(); CHKERRG(ierr);
   //priject 10 node tet approximation of gemetry on hierarhical basis
   Projection10NodeCoordsOnField ent_method_material(m_field,"MESH_NODE_POSITIONS");
-  ierr = m_field.loop_dofs("MESH_NODE_POSITIONS",ent_method_material); CHKERRQ(ierr);
+  ierr = m_field.loop_dofs("MESH_NODE_POSITIONS",ent_method_material); CHKERRG(ierr);
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
     if(block_data[it->getMeshsetId()].initTemp!=0) {
       Range block_ents;
-      rval = moab.get_entities_by_handle(it->meshset,block_ents,true); CHKERRQ_MOAB(rval);
+      rval = moab.get_entities_by_handle(it->meshset,block_ents,true); CHKERRG(rval);
       Range vertices;
-      rval = moab.get_connectivity(block_ents,vertices,true); CHKERRQ_MOAB(rval);
-      ierr = m_field.set_field(block_data[it->getMeshsetId()].initTemp,MBVERTEX,vertices,"TEMP"); CHKERRQ(ierr);
+      rval = moab.get_connectivity(block_ents,vertices,true); CHKERRG(rval);
+      ierr = m_field.set_field(block_data[it->getMeshsetId()].initTemp,MBVERTEX,vertices,"TEMP"); CHKERRG(ierr);
     }
   }
 
   //build finite elemnts
-  ierr = m_field.build_finite_elements(); CHKERRQ(ierr);
+  ierr = m_field.build_finite_elements(); CHKERRG(ierr);
   //build adjacencies
-  ierr = m_field.build_adjacencies(bit_level0); CHKERRQ(ierr);
+  ierr = m_field.build_adjacencies(bit_level0); CHKERRG(ierr);
 
   // delete old temerature recorded series
   SeriesRecorder *recorder_ptr;
-  ierr = m_field.getInterface(recorder_ptr); CHKERRQ(ierr);
+  ierr = m_field.getInterface(recorder_ptr); CHKERRG(ierr);
   if(recorder_ptr->check_series("THEMP_SERIES")) {
     /*for(_IT_SERIES_STEPS_BY_NAME_FOR_LOOP_(recorder_ptr,"THEMP_SERIES",sit)) {
-      ierr = recorder_ptr->load_series_data("THEMP_SERIES",sit->get_step_number()); CHKERRQ(ierr);
+      ierr = recorder_ptr->load_series_data("THEMP_SERIES",sit->get_step_number()); CHKERRG(ierr);
     }*/
-    ierr = recorder_ptr->delete_recorder_series("THEMP_SERIES"); CHKERRQ(ierr);
+    ierr = recorder_ptr->delete_recorder_series("THEMP_SERIES"); CHKERRG(ierr);
   }
 
   //set dm data structure which created mofem data structures
-  ierr = DMMoFEMCreateMoFEM(dm,&m_field,dm_name,bit_level0); CHKERRQ(ierr);
-  ierr = DMSetFromOptions(dm); CHKERRQ(ierr);
+  ierr = DMMoFEMCreateMoFEM(dm,&m_field,dm_name,bit_level0); CHKERRG(ierr);
+  ierr = DMSetFromOptions(dm); CHKERRG(ierr);
   //add elements to dm
-  ierr = DMMoFEMAddElement(dm,"THERMAL_FE"); CHKERRQ(ierr);
-  ierr = DMMoFEMAddElement(dm,"THERMAL_FLUX_FE"); CHKERRQ(ierr);
-  ierr = DMMoFEMAddElement(dm,"THERMAL_CONVECTION_FE"); CHKERRQ(ierr);
-  ierr = DMMoFEMAddElement(dm,"THERMAL_RADIATION_FE"); CHKERRQ(ierr);
+  ierr = DMMoFEMAddElement(dm,"THERMAL_FE"); CHKERRG(ierr);
+  ierr = DMMoFEMAddElement(dm,"THERMAL_FLUX_FE"); CHKERRG(ierr);
+  ierr = DMMoFEMAddElement(dm,"THERMAL_CONVECTION_FE"); CHKERRG(ierr);
+  ierr = DMMoFEMAddElement(dm,"THERMAL_RADIATION_FE"); CHKERRG(ierr);
   #ifdef __GROUNDSURFACETEMERATURE_HPP
   if(ground_temperature_analys) {
-    ierr = DMMoFEMAddElement(dm,"GROUND_SURFACE_FE"); CHKERRQ(ierr);
+    ierr = DMMoFEMAddElement(dm,"GROUND_SURFACE_FE"); CHKERRG(ierr);
   }
   #endif //__GROUNDSURFACETEMERATURE_HPP
 
-  ierr = DMSetUp(dm); CHKERRQ(ierr);
+  ierr = DMSetUp(dm); CHKERRG(ierr);
 
   //create matrices
   Vec T,F;
-  ierr = DMCreateGlobalVector_MoFEM(dm,&T); CHKERRQ(ierr);
-  ierr = VecDuplicate(T,&F); CHKERRQ(ierr);
+  ierr = DMCreateGlobalVector_MoFEM(dm,&T); CHKERRG(ierr);
+  ierr = VecDuplicate(T,&F); CHKERRG(ierr);
   Mat A;
-  ierr = DMCreateMatrix_MoFEM(dm,&A); CHKERRQ(ierr);
+  ierr = DMCreateMatrix_MoFEM(dm,&A); CHKERRG(ierr);
 
   DirichletTemperatureBc dirichlet_bc(m_field,"TEMP",A,T,F);
   ThermalElement::UpdateAndControl update_velocities(m_field,"TEMP","TEMP_RATE");
@@ -366,54 +366,54 @@ int main(int argc, char *argv[]) {
   MonitorPostProc post_proc(m_field);
 
   //Initialize data with values save of on the field
-  ierr = VecZeroEntries(T); CHKERRQ(ierr);
-  ierr = DMoFEMMeshToLocalVector(dm,T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = DMoFEMPreProcessFiniteElements(dm,&dirichlet_bc); CHKERRQ(ierr);
-  ierr = DMoFEMMeshToGlobalVector(dm,T,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = VecZeroEntries(T); CHKERRG(ierr);
+  ierr = DMoFEMMeshToLocalVector(dm,T,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
+  ierr = DMoFEMPreProcessFiniteElements(dm,&dirichlet_bc); CHKERRG(ierr);
+  ierr = DMoFEMMeshToGlobalVector(dm,T,INSERT_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
 
   //preprocess
-  ierr = DMMoFEMTSSetIFunction(dm,DM_NO_ELEMENT,NULL,&update_velocities,NULL); CHKERRQ(ierr);
-  ierr = DMMoFEMTSSetIFunction(dm,DM_NO_ELEMENT,NULL,&dirichlet_bc,NULL); CHKERRQ(ierr);
-  ierr = DMMoFEMTSSetIJacobian(dm,DM_NO_ELEMENT,NULL,&dirichlet_bc,NULL); CHKERRQ(ierr);
+  ierr = DMMoFEMTSSetIFunction(dm,DM_NO_ELEMENT,NULL,&update_velocities,NULL); CHKERRG(ierr);
+  ierr = DMMoFEMTSSetIFunction(dm,DM_NO_ELEMENT,NULL,&dirichlet_bc,NULL); CHKERRG(ierr);
+  ierr = DMMoFEMTSSetIJacobian(dm,DM_NO_ELEMENT,NULL,&dirichlet_bc,NULL); CHKERRG(ierr);
   #ifdef __GROUNDSURFACETEMERATURE_HPP
-  ierr = DMMoFEMTSSetIFunction(dm,DM_NO_ELEMENT,NULL,&exectuteGenericClimateModel,NULL); CHKERRQ(ierr);
+  ierr = DMMoFEMTSSetIFunction(dm,DM_NO_ELEMENT,NULL,&exectuteGenericClimateModel,NULL); CHKERRG(ierr);
   { // add preporcessor, calculating angle on which sun ray on the surface
     if(solar_radiation) {
       boost::ptr_vector<GroundSurfaceTemerature::SolarRadiationPreProcessor>::iterator it,hi_it;
       it = ground_surface.preProcessShade.begin();
       hi_it = ground_surface.preProcessShade.end();
       for(;it!=hi_it;it++) {
-        ierr = DMMoFEMTSSetIFunction(dm,DM_NO_ELEMENT,NULL,&*it,NULL); CHKERRQ(ierr);
+        ierr = DMMoFEMTSSetIFunction(dm,DM_NO_ELEMENT,NULL,&*it,NULL); CHKERRG(ierr);
       }
     }
   }
   #endif //__GROUNDSURFACETEMERATURE_HPP
 
   //loops rhs
-  ierr = DMMoFEMTSSetIFunction(dm,"THERMAL_FE",&thermal_elements.feRhs,NULL,NULL); CHKERRQ(ierr);
-  ierr = DMMoFEMTSSetIFunction(dm,"THERMAL_FLUX_FE",&thermal_elements.feFlux,NULL,NULL); CHKERRQ(ierr);
-  ierr = DMMoFEMTSSetIFunction(dm,"THERMAL_CONVECTION_FE",&thermal_elements.feConvectionRhs,NULL,NULL); CHKERRQ(ierr);
-  ierr = DMMoFEMTSSetIFunction(dm,"THERMAL_RADIATION_FE",&thermal_elements.feRadiationRhs,NULL,NULL); CHKERRQ(ierr);
+  ierr = DMMoFEMTSSetIFunction(dm,"THERMAL_FE",&thermal_elements.feRhs,NULL,NULL); CHKERRG(ierr);
+  ierr = DMMoFEMTSSetIFunction(dm,"THERMAL_FLUX_FE",&thermal_elements.feFlux,NULL,NULL); CHKERRG(ierr);
+  ierr = DMMoFEMTSSetIFunction(dm,"THERMAL_CONVECTION_FE",&thermal_elements.feConvectionRhs,NULL,NULL); CHKERRG(ierr);
+  ierr = DMMoFEMTSSetIFunction(dm,"THERMAL_RADIATION_FE",&thermal_elements.feRadiationRhs,NULL,NULL); CHKERRG(ierr);
   #ifdef __GROUNDSURFACETEMERATURE_HPP
   if(ground_temperature_analys) {
-    ierr = DMMoFEMTSSetIFunction(dm,"GROUND_SURFACE_FE",&ground_surface.getFeGroundSurfaceRhs(),NULL,NULL); CHKERRQ(ierr);
+    ierr = DMMoFEMTSSetIFunction(dm,"GROUND_SURFACE_FE",&ground_surface.getFeGroundSurfaceRhs(),NULL,NULL); CHKERRG(ierr);
   }
   #endif //__GROUNDSURFACETEMERATURE_HPP
 
 
   //loops lhs
-  ierr = DMMoFEMTSSetIJacobian(dm,"THERMAL_FE",&thermal_elements.feLhs,NULL,NULL); CHKERRQ(ierr);
-  ierr = DMMoFEMTSSetIJacobian(dm,"THERMAL_CONVECTION_FE",&thermal_elements.feConvectionLhs,NULL,NULL); CHKERRQ(ierr);
-  ierr = DMMoFEMTSSetIJacobian(dm,"THERMAL_RADIATION_FE",&thermal_elements.feRadiationLhs,NULL,NULL); CHKERRQ(ierr);
+  ierr = DMMoFEMTSSetIJacobian(dm,"THERMAL_FE",&thermal_elements.feLhs,NULL,NULL); CHKERRG(ierr);
+  ierr = DMMoFEMTSSetIJacobian(dm,"THERMAL_CONVECTION_FE",&thermal_elements.feConvectionLhs,NULL,NULL); CHKERRG(ierr);
+  ierr = DMMoFEMTSSetIJacobian(dm,"THERMAL_RADIATION_FE",&thermal_elements.feRadiationLhs,NULL,NULL); CHKERRG(ierr);
   #ifdef __GROUNDSURFACETEMERATURE_HPP
   if(ground_temperature_analys) {
-    ierr = DMMoFEMTSSetIJacobian(dm,"GROUND_SURFACE_FE",&ground_surface.getFeGroundSurfaceLhs(),NULL,NULL); CHKERRQ(ierr);
+    ierr = DMMoFEMTSSetIJacobian(dm,"GROUND_SURFACE_FE",&ground_surface.getFeGroundSurfaceLhs(),NULL,NULL); CHKERRG(ierr);
   }
   #endif //__GROUNDSURFACETEMERATURE_HPP
 
   //postprocess
-  ierr = DMMoFEMTSSetIFunction(dm,DM_NO_ELEMENT,NULL,NULL,&dirichlet_bc); CHKERRQ(ierr);
-  ierr = DMMoFEMTSSetIJacobian(dm,DM_NO_ELEMENT,NULL,NULL,&dirichlet_bc); CHKERRQ(ierr);
+  ierr = DMMoFEMTSSetIFunction(dm,DM_NO_ELEMENT,NULL,NULL,&dirichlet_bc); CHKERRG(ierr);
+  ierr = DMMoFEMTSSetIJacobian(dm,DM_NO_ELEMENT,NULL,NULL,&dirichlet_bc); CHKERRG(ierr);
 
   TsCtx *ts_ctx;
   DMMoFEMGetTsCtx(dm,&ts_ctx);
@@ -423,35 +423,35 @@ int main(int argc, char *argv[]) {
 
   //create time solver
   TS ts;
-  ierr = TSCreate(PETSC_COMM_WORLD,&ts); CHKERRQ(ierr);
-  ierr = TSSetType(ts,TSBEULER); CHKERRQ(ierr);
+  ierr = TSCreate(PETSC_COMM_WORLD,&ts); CHKERRG(ierr);
+  ierr = TSSetType(ts,TSBEULER); CHKERRG(ierr);
 
-  ierr = TSSetIFunction(ts,F,PETSC_NULL,PETSC_NULL); CHKERRQ(ierr);
-  ierr = TSSetIJacobian(ts,A,A,PETSC_NULL,PETSC_NULL); CHKERRQ(ierr);
+  ierr = TSSetIFunction(ts,F,PETSC_NULL,PETSC_NULL); CHKERRG(ierr);
+  ierr = TSSetIJacobian(ts,A,A,PETSC_NULL,PETSC_NULL); CHKERRG(ierr);
   //add monitor to TS solver
-  ierr = TSMonitorSet(ts,f_TSMonitorSet,ts_ctx,PETSC_NULL); CHKERRQ(ierr); // !!!
+  ierr = TSMonitorSet(ts,f_TSMonitorSet,ts_ctx,PETSC_NULL); CHKERRG(ierr); // !!!
 
-  ierr = recorder_ptr->add_series_recorder("THEMP_SERIES"); CHKERRQ(ierr);
+  ierr = recorder_ptr->add_series_recorder("THEMP_SERIES"); CHKERRG(ierr);
   //start to record
-  ierr = recorder_ptr->initialize_series_recorder("THEMP_SERIES"); CHKERRQ(ierr);
+  ierr = recorder_ptr->initialize_series_recorder("THEMP_SERIES"); CHKERRG(ierr);
 
   double ftime = 1;
-  ierr = TSSetDuration(ts,PETSC_DEFAULT,ftime); CHKERRQ(ierr);
-  ierr = TSSetFromOptions(ts); CHKERRQ(ierr);
-  ierr = TSSetDM(ts,dm); CHKERRQ(ierr);
+  ierr = TSSetDuration(ts,PETSC_DEFAULT,ftime); CHKERRG(ierr);
+  ierr = TSSetFromOptions(ts); CHKERRG(ierr);
+  ierr = TSSetDM(ts,dm); CHKERRG(ierr);
 
-  ierr = TSSolve(ts,T); CHKERRQ(ierr);
-  ierr = TSGetTime(ts,&ftime); CHKERRQ(ierr);
+  ierr = TSSolve(ts,T); CHKERRG(ierr);
+  ierr = TSGetTime(ts,&ftime); CHKERRG(ierr);
 
   //end recoder
-  ierr = recorder_ptr->finalize_series_recorder("THEMP_SERIES"); CHKERRQ(ierr);
+  ierr = recorder_ptr->finalize_series_recorder("THEMP_SERIES"); CHKERRG(ierr);
 
   PetscInt steps,snesfails,rejects,nonlinits,linits;
-  ierr = TSGetTimeStepNumber(ts,&steps); CHKERRQ(ierr);
-  ierr = TSGetSNESFailures(ts,&snesfails); CHKERRQ(ierr);
-  ierr = TSGetStepRejections(ts,&rejects); CHKERRQ(ierr);
-  ierr = TSGetSNESIterations(ts,&nonlinits); CHKERRQ(ierr);
-  ierr = TSGetKSPIterations(ts,&linits); CHKERRQ(ierr);
+  ierr = TSGetTimeStepNumber(ts,&steps); CHKERRG(ierr);
+  ierr = TSGetSNESFailures(ts,&snesfails); CHKERRG(ierr);
+  ierr = TSGetStepRejections(ts,&rejects); CHKERRG(ierr);
+  ierr = TSGetSNESIterations(ts,&nonlinits); CHKERRG(ierr);
+  ierr = TSGetKSPIterations(ts,&linits); CHKERRG(ierr);
 
   PetscPrintf(PETSC_COMM_WORLD,
     "steps %D (%D rejected, %D SNES fails), ftime %g, nonlinits %D, linits %D\n",
@@ -460,23 +460,23 @@ int main(int argc, char *argv[]) {
   // save solution, if boundary conditions are defined you can use that file in mechanical problem
   // to calculate thermal stresses
   PetscBool is_partitioned = PETSC_FALSE;
-  ierr = PetscOptionsGetBool(PETSC_NULL,PETSC_NULL,"-dm_is_partitioned",&is_partitioned,PETSC_NULL); CHKERRQ(ierr);
+  ierr = PetscOptionsGetBool(PETSC_NULL,PETSC_NULL,"-dm_is_partitioned",&is_partitioned,PETSC_NULL); CHKERRG(ierr);
   if(is_partitioned) {
-    rval = moab.write_file("solution.h5m"); CHKERRQ_MOAB(rval);
+    rval = moab.write_file("solution.h5m"); CHKERRG(rval);
   } else {
     if(pcomm->rank()==0) {
-      rval = moab.write_file("solution.h5m"); CHKERRQ_MOAB(rval);
+      rval = moab.write_file("solution.h5m"); CHKERRG(rval);
     }
   }
 
 
-  ierr = MatDestroy(&A); CHKERRQ(ierr);
-  ierr = VecDestroy(&T); CHKERRQ(ierr);
-  ierr = VecDestroy(&F); CHKERRQ(ierr);
+  ierr = MatDestroy(&A); CHKERRG(ierr);
+  ierr = VecDestroy(&T); CHKERRG(ierr);
+  ierr = VecDestroy(&F); CHKERRG(ierr);
 
-  ierr = TSDestroy(&ts); CHKERRQ(ierr);
+  ierr = TSDestroy(&ts); CHKERRG(ierr);
 
-  ierr = PetscFinalize(); CHKERRQ(ierr);
+  ierr = PetscFinalize(); CHKERRG(ierr);
 
   return 0;
 

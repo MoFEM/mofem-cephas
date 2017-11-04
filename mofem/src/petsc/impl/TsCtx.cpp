@@ -58,18 +58,18 @@ PetscErrorCode f_TSSetIFunction(TS ts,PetscReal t,Vec u,Vec u_t,Vec F,void *ctx)
   MoFEMFunctionBeginHot;
   TsCtx* ts_ctx = (TsCtx*)ctx;
   PetscLogEventBegin(ts_ctx->MOFEM_EVENT_TsCtxIFunction,0,0,0,0);
-  ierr = VecGhostUpdateBegin(u,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecGhostUpdateEnd(u,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecGhostUpdateBegin(u_t,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecGhostUpdateEnd(u_t,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(u,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
+  ierr = VecGhostUpdateEnd(u,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
+  ierr = VecGhostUpdateBegin(u_t,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
+  ierr = VecGhostUpdateEnd(u_t,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
   ierr = ts_ctx->mField.getInterface<VecManager>()->setLocalGhostVector(
     ts_ctx->problemName,COL,u,INSERT_VALUES,SCATTER_REVERSE
-  ); CHKERRQ(ierr);
-  ierr = VecZeroEntries(F); CHKERRQ(ierr);
-  ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
+  ierr = VecZeroEntries(F); CHKERRG(ierr);
+  ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
+  ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
   int step;
-  ierr = TSGetTimeStepNumber(ts,&step); CHKERRQ(ierr);
+  ierr = TSGetTimeStepNumber(ts,&step); CHKERRG(ierr);
   //preprocess
   TsCtx::BasicMethodsSequence::iterator bit = ts_ctx->preProcess_IFunction.begin();
   for(;bit!=ts_ctx->preProcess_IFunction.end();bit++) {
@@ -79,8 +79,8 @@ PetscErrorCode f_TSSetIFunction(TS ts,PetscReal t,Vec u,Vec u_t,Vec F,void *ctx)
     (*bit)->ts_t = t;
     (*bit)->ts_step = step;
     ierr = (*bit)->setTsCtx(TSMethod::CTX_TSSETIFUNCTION);
-    ierr = (*bit)->setTs(ts); CHKERRQ(ierr);
-    ierr = ts_ctx->mField.problem_basic_method_preProcess(ts_ctx->problemName,*(*(bit)));  CHKERRQ(ierr);
+    ierr = (*bit)->setTs(ts); CHKERRG(ierr);
+    ierr = ts_ctx->mField.problem_basic_method_preProcess(ts_ctx->problemName,*(*(bit)));  CHKERRG(ierr);
     ierr = (*bit)->setTsCtx(TSMethod::CTX_TSNONE);
   }
   //fe loops
@@ -92,8 +92,8 @@ PetscErrorCode f_TSSetIFunction(TS ts,PetscReal t,Vec u,Vec u_t,Vec F,void *ctx)
     lit->second->ts_t = t;
     lit->second->ts_step = step;
     ierr = lit->second->setTsCtx(TSMethod::CTX_TSSETIFUNCTION);
-    ierr = lit->second->setTs(ts); CHKERRQ(ierr);
-    ierr = ts_ctx->mField.loop_finite_elements(ts_ctx->problemName,lit->first,*(lit->second),ts_ctx->bH); CHKERRQ(ierr);
+    ierr = lit->second->setTs(ts); CHKERRG(ierr);
+    ierr = ts_ctx->mField.loop_finite_elements(ts_ctx->problemName,lit->first,*(lit->second),ts_ctx->bH); CHKERRG(ierr);
     ierr = lit->second->setTsCtx(TSMethod::CTX_TSNONE);
   }
   //post process
@@ -105,14 +105,14 @@ PetscErrorCode f_TSSetIFunction(TS ts,PetscReal t,Vec u,Vec u_t,Vec F,void *ctx)
     (*bit)->ts_t = t;
     (*bit)->ts_step = step;
     ierr = (*bit)->setTsCtx(TSMethod::CTX_TSSETIFUNCTION);
-    ierr = (*bit)->setTs(ts); CHKERRQ(ierr);
-    ierr = ts_ctx->mField.problem_basic_method_postProcess(ts_ctx->problemName,*(*(bit)));  CHKERRQ(ierr);
+    ierr = (*bit)->setTs(ts); CHKERRG(ierr);
+    ierr = ts_ctx->mField.problem_basic_method_postProcess(ts_ctx->problemName,*(*(bit)));  CHKERRG(ierr);
     ierr = (*bit)->setTsCtx(TSMethod::CTX_TSNONE);
   }
-  ierr = VecGhostUpdateBegin(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-  ierr = VecGhostUpdateEnd(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-  ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
-  ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(F,ADD_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
+  ierr = VecGhostUpdateEnd(F,ADD_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
+  ierr = VecAssemblyBegin(F); CHKERRG(ierr);
+  ierr = VecAssemblyEnd(F); CHKERRG(ierr);
   PetscLogEventEnd(ts_ctx->MOFEM_EVENT_TsCtxIFunction,0,0,0,0);
   MoFEMFunctionReturnHot(0);
 }
@@ -121,18 +121,18 @@ PetscErrorCode f_TSSetIJacobian(TS ts,PetscReal t,Vec u,Vec u_t,PetscReal a,Mat 
   MoFEMFunctionBeginHot;
   TsCtx* ts_ctx = (TsCtx*)ctx;
   PetscLogEventBegin(ts_ctx->MOFEM_EVENT_TsCtxIFunction,0,0,0,0);
-  ierr = VecGhostUpdateBegin(u,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecGhostUpdateEnd(u,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecGhostUpdateBegin(u_t,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecGhostUpdateEnd(u_t,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(u,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
+  ierr = VecGhostUpdateEnd(u,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
+  ierr = VecGhostUpdateBegin(u_t,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
+  ierr = VecGhostUpdateEnd(u_t,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
   ierr = ts_ctx->mField.getInterface<VecManager>()->setLocalGhostVector(
     ts_ctx->problemName,COL,u,INSERT_VALUES,SCATTER_REVERSE
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
   if(ts_ctx->zeroMatrix) {
-    ierr = MatZeroEntries(B); CHKERRQ(ierr);
+    ierr = MatZeroEntries(B); CHKERRG(ierr);
   }
   int step;
-  ierr = TSGetTimeStepNumber(ts,&step); CHKERRQ(ierr);
+  ierr = TSGetTimeStepNumber(ts,&step); CHKERRG(ierr);
   //preproces
   TsCtx::BasicMethodsSequence::iterator bit = ts_ctx->preProcess_IJacobian.begin();
   for(;bit!=ts_ctx->preProcess_IJacobian.end();bit++) {
@@ -144,9 +144,9 @@ PetscErrorCode f_TSSetIJacobian(TS ts,PetscReal t,Vec u,Vec u_t,PetscReal a,Mat 
     (*bit)->ts_a = a;
     (*bit)->ts_step = step;
     ierr = (*bit)->setTsCtx(TSMethod::CTX_TSSETIJACOBIAN);
-    ierr = (*bit)->setTs(ts); CHKERRQ(ierr);
-    ierr = ts_ctx->mField.problem_basic_method_preProcess(ts_ctx->problemName,*(*(bit))); CHKERRQ(ierr);
-    ierr = (*bit)->setTsCtx(TSMethod::CTX_TSNONE); CHKERRQ(ierr); CHKERRQ(ierr);
+    ierr = (*bit)->setTs(ts); CHKERRG(ierr);
+    ierr = ts_ctx->mField.problem_basic_method_preProcess(ts_ctx->problemName,*(*(bit))); CHKERRG(ierr);
+    ierr = (*bit)->setTsCtx(TSMethod::CTX_TSNONE); CHKERRG(ierr); CHKERRG(ierr);
   }
   TsCtx::FEMethodsSequence::iterator lit = ts_ctx->loops_to_do_IJacobian.begin();
   for(;lit!=ts_ctx->loops_to_do_IJacobian.end();lit++) {
@@ -158,9 +158,9 @@ PetscErrorCode f_TSSetIJacobian(TS ts,PetscReal t,Vec u,Vec u_t,PetscReal a,Mat 
     lit->second->ts_a = a;
     lit->second->ts_step = step;
     ierr = lit->second->setTsCtx(TSMethod::CTX_TSSETIJACOBIAN);
-    ierr = lit->second->setTs(ts); CHKERRQ(ierr);
-    ierr = ts_ctx->mField.loop_finite_elements(ts_ctx->problemName,lit->first,*(lit->second),ts_ctx->bH); CHKERRQ(ierr);
-    ierr = lit->second->setTsCtx(TSMethod::CTX_TSNONE); CHKERRQ(ierr);
+    ierr = lit->second->setTs(ts); CHKERRG(ierr);
+    ierr = ts_ctx->mField.loop_finite_elements(ts_ctx->problemName,lit->first,*(lit->second),ts_ctx->bH); CHKERRG(ierr);
+    ierr = lit->second->setTsCtx(TSMethod::CTX_TSNONE); CHKERRG(ierr);
   }
   //post process
   bit = ts_ctx->postProcess_IJacobian.begin();
@@ -173,13 +173,13 @@ PetscErrorCode f_TSSetIJacobian(TS ts,PetscReal t,Vec u,Vec u_t,PetscReal a,Mat 
     (*bit)->ts_a = a;
     (*bit)->ts_step = step;
     ierr = (*bit)->setTsCtx(TSMethod::CTX_TSSETIJACOBIAN);
-    ierr = (*bit)->setTs(ts); CHKERRQ(ierr);
-    ierr = ts_ctx->mField.problem_basic_method_postProcess(ts_ctx->problemName,*(*(bit))); CHKERRQ(ierr);
-    ierr = (*bit)->setTsCtx(TSMethod::CTX_TSNONE); CHKERRQ(ierr);
+    ierr = (*bit)->setTs(ts); CHKERRG(ierr);
+    ierr = ts_ctx->mField.problem_basic_method_postProcess(ts_ctx->problemName,*(*(bit))); CHKERRG(ierr);
+    ierr = (*bit)->setTsCtx(TSMethod::CTX_TSNONE); CHKERRG(ierr);
   }
   if(ts_ctx->zeroMatrix) {
-    ierr = MatAssemblyBegin(B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-    ierr = MatAssemblyEnd(B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+    ierr = MatAssemblyBegin(B,MAT_FINAL_ASSEMBLY); CHKERRG(ierr);
+    ierr = MatAssemblyEnd(B,MAT_FINAL_ASSEMBLY); CHKERRG(ierr);
   }
   PetscLogEventEnd(ts_ctx->MOFEM_EVENT_TsCtxIFunction,0,0,0,0);
   MoFEMFunctionReturnHot(0);
@@ -189,11 +189,11 @@ PetscErrorCode f_TSMonitorSet(TS ts,PetscInt step,PetscReal t,Vec u,void *ctx) {
   MoFEMFunctionBeginHot;
   TsCtx* ts_ctx = (TsCtx*)ctx;
   PetscLogEventBegin(ts_ctx->MOFEM_EVENT_TsCtxRHSFunction,0,0,0,0);
-  ierr = VecGhostUpdateBegin(u,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecGhostUpdateEnd(u,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(u,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
+  ierr = VecGhostUpdateEnd(u,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
   ierr = ts_ctx->mField.getInterface<VecManager>()->setLocalGhostVector(
     ts_ctx->problemName,COL,u,INSERT_VALUES,SCATTER_REVERSE
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
   //preproces
   TsCtx::BasicMethodsSequence::iterator bit = ts_ctx->preProcess_Monitor.begin();
   for(;bit!=ts_ctx->preProcess_Monitor.end();bit++) {
@@ -202,9 +202,9 @@ PetscErrorCode f_TSMonitorSet(TS ts,PetscInt step,PetscReal t,Vec u,void *ctx) {
     (*bit)->ts_step = step;
     (*bit)->ts_F = PETSC_NULL;
     ierr = (*bit)->setTsCtx(TSMethod::CTX_TSSETIJACOBIAN);
-    ierr = (*bit)->setTs(ts); CHKERRQ(ierr);
-    ierr = ts_ctx->mField.problem_basic_method_preProcess(ts_ctx->problemName,*(*(bit))); CHKERRQ(ierr);
-    ierr = (*bit)->setTsCtx(TSMethod::CTX_TSNONE); CHKERRQ(ierr); CHKERRQ(ierr);
+    ierr = (*bit)->setTs(ts); CHKERRG(ierr);
+    ierr = ts_ctx->mField.problem_basic_method_preProcess(ts_ctx->problemName,*(*(bit))); CHKERRG(ierr);
+    ierr = (*bit)->setTsCtx(TSMethod::CTX_TSNONE); CHKERRG(ierr); CHKERRG(ierr);
   }
   TsCtx::FEMethodsSequence::iterator lit = ts_ctx->loops_to_do_Monitor.begin();
   for(;lit!=ts_ctx->loops_to_do_Monitor.end();lit++) {
@@ -213,8 +213,8 @@ PetscErrorCode f_TSMonitorSet(TS ts,PetscInt step,PetscReal t,Vec u,void *ctx) {
     lit->second->ts_step = step;
     lit->second->ts_F = PETSC_NULL;
     ierr = lit->second->setTsCtx(TSMethod::CTX_TSTSMONITORSET);
-    ierr = lit->second->setTs(ts); CHKERRQ(ierr);
-    ierr = ts_ctx->mField.loop_finite_elements(ts_ctx->problemName,lit->first,*(lit->second),ts_ctx->bH); CHKERRQ(ierr);
+    ierr = lit->second->setTs(ts); CHKERRG(ierr);
+    ierr = ts_ctx->mField.loop_finite_elements(ts_ctx->problemName,lit->first,*(lit->second),ts_ctx->bH); CHKERRG(ierr);
     ierr = lit->second->setTsCtx(TSMethod::CTX_TSNONE);
   }
   //post process
@@ -225,9 +225,9 @@ PetscErrorCode f_TSMonitorSet(TS ts,PetscInt step,PetscReal t,Vec u,void *ctx) {
     (*bit)->ts_step = step;
     (*bit)->ts_F = PETSC_NULL;
     ierr = (*bit)->setTsCtx(TSMethod::CTX_TSSETIJACOBIAN);
-    ierr = (*bit)->setTs(ts); CHKERRQ(ierr);
-    ierr = ts_ctx->mField.problem_basic_method_postProcess(ts_ctx->problemName,*(*(bit))); CHKERRQ(ierr);
-    ierr = (*bit)->setTsCtx(TSMethod::CTX_TSNONE); CHKERRQ(ierr);
+    ierr = (*bit)->setTs(ts); CHKERRG(ierr);
+    ierr = ts_ctx->mField.problem_basic_method_postProcess(ts_ctx->problemName,*(*(bit))); CHKERRG(ierr);
+    ierr = (*bit)->setTsCtx(TSMethod::CTX_TSNONE); CHKERRG(ierr);
   }
   PetscLogEventEnd(ts_ctx->MOFEM_EVENT_TsCtxRHSFunction,0,0,0,0);
   MoFEMFunctionReturnHot(0);

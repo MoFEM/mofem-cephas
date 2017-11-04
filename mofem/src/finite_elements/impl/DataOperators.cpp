@@ -65,7 +65,7 @@ extern "C" {
 
 namespace MoFEM {
 
-PetscErrorCode DataOperator::opLhs(
+MoFEMErrorCode DataOperator::opLhs(
     DataForcesAndSourcesCore &row_data,DataForcesAndSourcesCore &col_data,bool symm) {
   MoFEMFunctionBeginHot;
   
@@ -78,7 +78,7 @@ PetscErrorCode DataOperator::opLhs(
       ierr = doWork(
         nn,NN,MBVERTEX,MBVERTEX,
         row_data.dataOnEntities[MBVERTEX][0],col_data.dataOnEntities[MBVERTEX][0]
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
     }
     if(!symm) {
       for(unsigned int EE = 0;EE<col_data.dataOnEntities[MBEDGE].size();EE++) {
@@ -86,21 +86,21 @@ PetscErrorCode DataOperator::opLhs(
         ierr = doWork(
           nn,EE,MBVERTEX,MBEDGE,
           row_data.dataOnEntities[MBVERTEX][0],col_data.dataOnEntities[MBEDGE][EE]
-        ); CHKERRQ(ierr);
+        ); CHKERRG(ierr);
       }
       for(unsigned int FF = 0;FF<col_data.dataOnEntities[MBTRI].size();FF++) {
         if(col_data.dataOnEntities[MBTRI][FF].getN().size1()==0) continue;
         ierr = doWork(
           nn,FF,MBVERTEX,MBTRI,
           row_data.dataOnEntities[MBVERTEX][0],col_data.dataOnEntities[MBTRI][FF]
-        ); CHKERRQ(ierr);
+        ); CHKERRG(ierr);
       }
       for(unsigned int QQ = 0;QQ<col_data.dataOnEntities[MBQUAD].size();QQ++) {
         if(col_data.dataOnEntities[MBQUAD][QQ].getN().size1()==0) continue;
         ierr = doWork(
           nn,QQ,MBVERTEX,MBQUAD,
           row_data.dataOnEntities[MBVERTEX][0],col_data.dataOnEntities[MBQUAD][QQ]
-        ); CHKERRQ(ierr);
+        ); CHKERRG(ierr);
       }
     }
     for(unsigned int VV = 0;VV<col_data.dataOnEntities[MBTET].size();VV++) {
@@ -108,14 +108,14 @@ PetscErrorCode DataOperator::opLhs(
       ierr = doWork(
         nn,VV,MBVERTEX,MBTET,
         row_data.dataOnEntities[MBVERTEX][0],col_data.dataOnEntities[MBTET][VV]
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
     }
     for(unsigned int PP = 0;PP<col_data.dataOnEntities[MBPRISM].size();PP++) {
       if(col_data.dataOnEntities[MBPRISM][PP].getN().size1()==0) continue;
       ierr = doWork(
         nn,PP,MBVERTEX,MBPRISM,
         row_data.dataOnEntities[MBVERTEX][0],col_data.dataOnEntities[MBPRISM][PP]
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
     }
     for(unsigned int MM = 0;MM<col_data.dataOnEntities[MBENTITYSET].size();MM++) {
       if(
@@ -125,7 +125,7 @@ PetscErrorCode DataOperator::opLhs(
       ierr = doWork(
         nn,MM,MBVERTEX,MBENTITYSET,
         row_data.dataOnEntities[MBVERTEX][0],col_data.dataOnEntities[MBENTITYSET][MM]
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
     }
   }
 
@@ -136,7 +136,7 @@ PetscErrorCode DataOperator::opLhs(
       ierr = doWork(
         ee,NN,MBEDGE,MBVERTEX,
         row_data.dataOnEntities[MBEDGE][ee],col_data.dataOnEntities[MBVERTEX][0]
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
     }
     unsigned int EE = 0;
     if(symm) EE = ee;
@@ -145,7 +145,7 @@ PetscErrorCode DataOperator::opLhs(
       ierr = doWork(
         ee,EE,MBEDGE,MBEDGE,
         row_data.dataOnEntities[MBEDGE][ee],col_data.dataOnEntities[MBEDGE][EE]
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
     }
     //tris
     for(unsigned int FF = 0;FF<col_data.dataOnEntities[MBTRI].size();FF++) {
@@ -153,7 +153,7 @@ PetscErrorCode DataOperator::opLhs(
       ierr = doWork(
         ee,FF,MBEDGE,MBTRI,
         row_data.dataOnEntities[MBEDGE][ee],col_data.dataOnEntities[MBTRI][FF]
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
     }
     //quad
     for(unsigned int QQ = 0;QQ<col_data.dataOnEntities[MBQUAD].size();QQ++) {
@@ -161,7 +161,7 @@ PetscErrorCode DataOperator::opLhs(
       ierr = doWork(
         ee,QQ,MBEDGE,MBQUAD,
         row_data.dataOnEntities[MBEDGE][ee],col_data.dataOnEntities[MBQUAD][QQ]
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
     }
     //tet
     for(unsigned int VV = 0;VV<col_data.dataOnEntities[MBTET].size();VV++) {
@@ -169,7 +169,7 @@ PetscErrorCode DataOperator::opLhs(
       ierr = doWork(
         ee,VV,MBEDGE,MBTET,
         row_data.dataOnEntities[MBEDGE][ee],col_data.dataOnEntities[MBTET][VV]
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
     }
     //prism
     for(unsigned int PP = 0;PP<col_data.dataOnEntities[MBPRISM].size();PP++) {
@@ -177,7 +177,7 @@ PetscErrorCode DataOperator::opLhs(
       ierr = doWork(
         ee,PP,MBEDGE,MBPRISM,
         row_data.dataOnEntities[MBEDGE][ee],col_data.dataOnEntities[MBPRISM][PP]
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
     }
     for(unsigned int MM = 0;MM<col_data.dataOnEntities[MBENTITYSET].size();MM++) {
       if(
@@ -187,7 +187,7 @@ PetscErrorCode DataOperator::opLhs(
       ierr = doWork(
         ee,MM,MBEDGE,MBENTITYSET,
         row_data.dataOnEntities[MBEDGE][ee],col_data.dataOnEntities[MBENTITYSET][MM]
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
     }
   }
 
@@ -198,7 +198,7 @@ PetscErrorCode DataOperator::opLhs(
       ierr = doWork(
         ff,NN,MBTRI,MBVERTEX,
         row_data.dataOnEntities[MBTRI][ff],col_data.dataOnEntities[MBVERTEX][0]
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
     }
     if(!symm) {
       unsigned int EE = 0;
@@ -207,7 +207,7 @@ PetscErrorCode DataOperator::opLhs(
         ierr = doWork(
           ff,EE,MBTRI,MBEDGE,
           row_data.dataOnEntities[MBTRI][ff],col_data.dataOnEntities[MBEDGE][EE]
-        ); CHKERRQ(ierr);
+        ); CHKERRG(ierr);
       }
     }
     unsigned int FF = 0;
@@ -217,28 +217,28 @@ PetscErrorCode DataOperator::opLhs(
       ierr = doWork(
         ff,FF,MBTRI,MBTRI,
         row_data.dataOnEntities[MBTRI][ff],col_data.dataOnEntities[MBTRI][FF]
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
     }
     for(unsigned int QQ = 0;QQ<col_data.dataOnEntities[MBQUAD].size();QQ++) {
       if(col_data.dataOnEntities[MBQUAD][QQ].getN().size1()==0) continue;
       ierr = doWork(
         ff,QQ,MBTRI,MBQUAD,
         row_data.dataOnEntities[MBTRI][ff],col_data.dataOnEntities[MBQUAD][QQ]
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
     }
     for(unsigned int VV = 0;VV<col_data.dataOnEntities[MBTET].size();VV++) {
       if(col_data.dataOnEntities[MBTET][VV].getN().size1()==0) continue;
       ierr = doWork(
         ff,VV,MBTRI,MBTET,
         row_data.dataOnEntities[MBTRI][ff],col_data.dataOnEntities[MBTET][VV]
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
     }
     for(unsigned int PP = 0;PP<col_data.dataOnEntities[MBPRISM].size();PP++) {
       if(col_data.dataOnEntities[MBPRISM][PP].getN().size1()==0) continue;
       ierr = doWork(
         ff,PP,MBTRI,MBPRISM,
         row_data.dataOnEntities[MBTRI][ff],col_data.dataOnEntities[MBPRISM][PP]
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
     }
     for(unsigned int MM = 0;MM<col_data.dataOnEntities[MBENTITYSET].size();MM++) {
       if(
@@ -248,7 +248,7 @@ PetscErrorCode DataOperator::opLhs(
       ierr = doWork(
         ff,MM,MBTRI,MBENTITYSET,
         row_data.dataOnEntities[MBTRI][ff],col_data.dataOnEntities[MBENTITYSET][MM]
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
     }
   }
 
@@ -259,7 +259,7 @@ PetscErrorCode DataOperator::opLhs(
       ierr = doWork(
         qq,NN,MBQUAD,MBVERTEX,
         row_data.dataOnEntities[MBQUAD][qq],col_data.dataOnEntities[MBVERTEX][0]
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
     }
     if(!symm) {
       unsigned int EE = 0;
@@ -268,7 +268,7 @@ PetscErrorCode DataOperator::opLhs(
         ierr = doWork(
           qq,EE,MBQUAD,MBEDGE,
           row_data.dataOnEntities[MBQUAD][qq],col_data.dataOnEntities[MBEDGE][EE]
-        ); CHKERRQ(ierr);
+        ); CHKERRG(ierr);
       }
       unsigned int FF = 0;
       for(;FF<col_data.dataOnEntities[MBTRI].size();FF++) {
@@ -276,7 +276,7 @@ PetscErrorCode DataOperator::opLhs(
         ierr = doWork(
           qq,FF,MBQUAD,MBTRI,
           row_data.dataOnEntities[MBQUAD][qq],col_data.dataOnEntities[MBTRI][FF]
-        ); CHKERRQ(ierr);
+        ); CHKERRG(ierr);
       }
     }
     unsigned int QQ = 0;
@@ -286,14 +286,14 @@ PetscErrorCode DataOperator::opLhs(
       ierr = doWork(
         qq,QQ,MBQUAD,MBQUAD,
         row_data.dataOnEntities[MBQUAD][qq],col_data.dataOnEntities[MBQUAD][QQ]
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
     }
     for(unsigned int PP = 0;PP<col_data.dataOnEntities[MBPRISM].size();PP++) {
       if(col_data.dataOnEntities[MBPRISM][PP].getN().size1()==0) continue;
       ierr = doWork(
         qq,PP,MBTRI,MBPRISM,
         row_data.dataOnEntities[MBQUAD][qq],col_data.dataOnEntities[MBPRISM][PP]
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
     }
     for(unsigned int MM = 0;MM<col_data.dataOnEntities[MBENTITYSET].size();MM++) {
       if(
@@ -303,7 +303,7 @@ PetscErrorCode DataOperator::opLhs(
       ierr = doWork(
         qq,MM,MBQUAD,MBENTITYSET,
         row_data.dataOnEntities[MBQUAD][qq],col_data.dataOnEntities[MBENTITYSET][MM]
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
     }
   }
 
@@ -316,7 +316,7 @@ PetscErrorCode DataOperator::opLhs(
         ierr = doWork(
           vv,NN,MBTET,MBVERTEX,
           row_data.dataOnEntities[MBTET][vv],col_data.dataOnEntities[MBVERTEX][0]
-        ); CHKERRQ(ierr);
+        ); CHKERRG(ierr);
       }
       //edges
       for(unsigned int EE = 0;EE<col_data.dataOnEntities[MBEDGE].size();EE++) {
@@ -324,7 +324,7 @@ PetscErrorCode DataOperator::opLhs(
         ierr = doWork(
           vv,EE,MBTET,MBEDGE,
           row_data.dataOnEntities[MBTET][vv],col_data.dataOnEntities[MBEDGE][EE]
-        ); CHKERRQ(ierr);
+        ); CHKERRG(ierr);
       }
       //faces
       for(unsigned int FF = 0;FF<col_data.dataOnEntities[MBTRI].size();FF++) {
@@ -332,7 +332,7 @@ PetscErrorCode DataOperator::opLhs(
         ierr = doWork(
           vv,FF,MBTET,MBTRI,
           row_data.dataOnEntities[MBTET][vv],col_data.dataOnEntities[MBTRI][FF]
-        ); CHKERRQ(ierr);
+        ); CHKERRG(ierr);
       }
     }
     unsigned int VV = 0;
@@ -342,7 +342,7 @@ PetscErrorCode DataOperator::opLhs(
       ierr = doWork(
         vv,VV,MBTET,MBTET,
         row_data.dataOnEntities[MBTET][vv],col_data.dataOnEntities[MBTET][VV]
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
     }
     for(unsigned int MM = 0;MM<col_data.dataOnEntities[MBENTITYSET].size();MM++) {
       if(
@@ -352,7 +352,7 @@ PetscErrorCode DataOperator::opLhs(
       ierr = doWork(
         vv,MM,MBTET,MBENTITYSET,
         row_data.dataOnEntities[MBTET][vv],col_data.dataOnEntities[MBENTITYSET][MM]
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
     }
   }
 
@@ -364,7 +364,7 @@ PetscErrorCode DataOperator::opLhs(
         ierr = doWork(
           pp,NN,MBPRISM,MBVERTEX,
           row_data.dataOnEntities[MBPRISM][pp],col_data.dataOnEntities[MBVERTEX][0]
-        ); CHKERRQ(ierr);
+        ); CHKERRG(ierr);
       }
       //edges
       for(unsigned int EE = 0;EE<col_data.dataOnEntities[MBEDGE].size();EE++) {
@@ -372,7 +372,7 @@ PetscErrorCode DataOperator::opLhs(
         ierr = doWork(
           pp,EE,MBPRISM,MBEDGE,
           row_data.dataOnEntities[MBPRISM][pp],col_data.dataOnEntities[MBEDGE][EE]
-        ); CHKERRQ(ierr);
+        ); CHKERRG(ierr);
       }
       //faces
       for(unsigned int FF = 0;FF<col_data.dataOnEntities[MBTRI].size();FF++) {
@@ -380,7 +380,7 @@ PetscErrorCode DataOperator::opLhs(
         ierr = doWork(
           pp,FF,MBPRISM,MBTRI,
           row_data.dataOnEntities[MBPRISM][pp],col_data.dataOnEntities[MBTRI][FF]
-        ); CHKERRQ(ierr);
+        ); CHKERRG(ierr);
       }
       //quads
       for(unsigned int QQ = 0;QQ<col_data.dataOnEntities[MBQUAD].size();QQ++) {
@@ -388,7 +388,7 @@ PetscErrorCode DataOperator::opLhs(
         ierr = doWork(
           pp,QQ,MBPRISM,MBQUAD,
           row_data.dataOnEntities[MBPRISM][pp],col_data.dataOnEntities[MBQUAD][QQ]
-        ); CHKERRQ(ierr);
+        ); CHKERRG(ierr);
       }
     }
     unsigned int PP = 0;
@@ -398,7 +398,7 @@ PetscErrorCode DataOperator::opLhs(
       ierr = doWork(
         pp,PP,MBPRISM,MBPRISM,
         row_data.dataOnEntities[MBPRISM][pp],col_data.dataOnEntities[MBPRISM][PP]
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
     }
     for(unsigned int MM = 0;MM<col_data.dataOnEntities[MBENTITYSET].size();MM++) {
       if(
@@ -408,7 +408,7 @@ PetscErrorCode DataOperator::opLhs(
       ierr = doWork(
         pp,MM,MBPRISM,MBENTITYSET,
         row_data.dataOnEntities[MBPRISM][pp],col_data.dataOnEntities[MBENTITYSET][MM]
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
     }
   }
 
@@ -424,7 +424,7 @@ PetscErrorCode DataOperator::opLhs(
         ierr = doWork(
           mm,NN,MBENTITYSET,MBVERTEX,
           row_data.dataOnEntities[MBENTITYSET][mm],col_data.dataOnEntities[MBVERTEX][0]
-        ); CHKERRQ(ierr);
+        ); CHKERRG(ierr);
       }
       //edges
       for(unsigned int EE = 0;EE<col_data.dataOnEntities[MBEDGE].size();EE++) {
@@ -432,7 +432,7 @@ PetscErrorCode DataOperator::opLhs(
         ierr = doWork(
           mm,EE,MBENTITYSET,MBEDGE,
           row_data.dataOnEntities[MBENTITYSET][mm],col_data.dataOnEntities[MBEDGE][EE]
-        ); CHKERRQ(ierr);
+        ); CHKERRG(ierr);
       }
       //faces
       for(unsigned int FF = 0;FF<col_data.dataOnEntities[MBTRI].size();FF++) {
@@ -440,7 +440,7 @@ PetscErrorCode DataOperator::opLhs(
         ierr = doWork(
           mm,FF,MBENTITYSET,MBTRI,
           row_data.dataOnEntities[MBENTITYSET][mm],col_data.dataOnEntities[MBTRI][FF]
-        ); CHKERRQ(ierr);
+        ); CHKERRG(ierr);
       }
       //quad
       for(unsigned int QQ = 0;QQ<col_data.dataOnEntities[MBQUAD].size();QQ++) {
@@ -448,20 +448,20 @@ PetscErrorCode DataOperator::opLhs(
         ierr = doWork(
           mm,QQ,MBENTITYSET,MBQUAD,
           row_data.dataOnEntities[MBENTITYSET][mm],col_data.dataOnEntities[MBQUAD][QQ]
-        ); CHKERRQ(ierr);
+        ); CHKERRG(ierr);
       }
       //volume
       for(unsigned int VV = 0;VV<col_data.dataOnEntities[MBTET].size();VV++) {
         ierr = doWork(
           mm,VV,MBENTITYSET,MBTET,
           row_data.dataOnEntities[MBENTITYSET][mm],col_data.dataOnEntities[MBTET][VV]
-        ); CHKERRQ(ierr);
+        ); CHKERRG(ierr);
       }
       for(unsigned int PP = 0;PP<col_data.dataOnEntities[MBPRISM].size();PP++) {
         ierr = doWork(
           mm,PP,MBENTITYSET,MBPRISM,
           row_data.dataOnEntities[MBENTITYSET][mm],col_data.dataOnEntities[MBPRISM][PP]
-        ); CHKERRQ(ierr);
+        ); CHKERRG(ierr);
       }
     }
     unsigned int MM = 0;
@@ -474,7 +474,7 @@ PetscErrorCode DataOperator::opLhs(
       ierr = doWork(
         mm,MM,MBENTITYSET,MBENTITYSET,
         row_data.dataOnEntities[MBENTITYSET][mm],col_data.dataOnEntities[MBENTITYSET][MM]
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
     }
   }
 
@@ -482,7 +482,7 @@ PetscErrorCode DataOperator::opLhs(
 }
 
 template<>
-PetscErrorCode invertTensor3by3<3,double,ublas::row_major,DoubleAllocator>(
+MoFEMErrorCode invertTensor3by3<3,double,ublas::row_major,DoubleAllocator>(
   MatrixDouble &jac_data,
   VectorDouble &det_data,
   MatrixDouble &inv_jac_data
@@ -496,8 +496,8 @@ PetscErrorCode invertTensor3by3<3,double,ublas::row_major,DoubleAllocator>(
   FTensor::Tensor0<double*> det = getTensor0FormData(det_data);
   FTensor::Tensor2<double*,3,3> I = getTensor2FormData<3,3>(inv_jac_data);
   for(int gg = 0;gg!=nb_gauss_pts;gg++) {
-    ierr = determinantTensor3by3(A,det); CHKERRQ(ierr);
-    ierr = invertTensor3by3(A,det,I); CHKERRQ(ierr);
+    ierr = determinantTensor3by3(A,det); CHKERRG(ierr);
+    ierr = invertTensor3by3(A,det,I); CHKERRG(ierr);
     ++A;
     ++det;
     ++I;
@@ -505,7 +505,7 @@ PetscErrorCode invertTensor3by3<3,double,ublas::row_major,DoubleAllocator>(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode DataOperator::opRhs(
+MoFEMErrorCode DataOperator::opRhs(
   DataForcesAndSourcesCore &data,
   const bool do_vertices,
   const bool do_edges,
@@ -536,7 +536,7 @@ PetscErrorCode DataOperator::opRhs(
           SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"No base on Vertex and side %d",nn);
         }
       }
-      ierr = doWork(nn,MBVERTEX,data.dataOnEntities[MBVERTEX][nn]); CHKERRQ(ierr);
+      ierr = doWork(nn,MBVERTEX,data.dataOnEntities[MBVERTEX][nn]); CHKERRG(ierr);
     }
   }
   if(do_edges) {
@@ -557,7 +557,7 @@ PetscErrorCode DataOperator::opRhs(
           SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"No base on Edge and side %d",ee);
         }
       }
-      ierr = doWork(ee,MBEDGE,data.dataOnEntities[MBEDGE][ee]); CHKERRQ(ierr);
+      ierr = doWork(ee,MBEDGE,data.dataOnEntities[MBEDGE][ee]); CHKERRG(ierr);
     }
   }
   if(do_tris) {
@@ -578,7 +578,7 @@ PetscErrorCode DataOperator::opRhs(
           SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"No base on Triangle and side %d",ff);
         }
       }
-      ierr = doWork(ff,MBTRI,data.dataOnEntities[MBTRI][ff]); CHKERRQ(ierr);
+      ierr = doWork(ff,MBTRI,data.dataOnEntities[MBTRI][ff]); CHKERRG(ierr);
     }
   }
   if(do_quads) {
@@ -599,7 +599,7 @@ PetscErrorCode DataOperator::opRhs(
           SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"No base on Quad and side %d",qq);
         }
       }
-      ierr = doWork(qq,MBQUAD,data.dataOnEntities[MBQUAD][qq]); CHKERRQ(ierr);
+      ierr = doWork(qq,MBQUAD,data.dataOnEntities[MBQUAD][qq]); CHKERRG(ierr);
     }
   }
   if(do_tets) {
@@ -620,7 +620,7 @@ PetscErrorCode DataOperator::opRhs(
           SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"No base on Tet and side %d",vv);
         }
       }
-      ierr = doWork(vv,MBTET,data.dataOnEntities[MBTET][vv]); CHKERRQ(ierr);
+      ierr = doWork(vv,MBTET,data.dataOnEntities[MBTET][vv]); CHKERRG(ierr);
     }
   }
   if(do_prisms) {
@@ -641,7 +641,7 @@ PetscErrorCode DataOperator::opRhs(
           SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"No base on Prism and side %d",pp);
         }
       }
-      ierr = doWork(pp,MBPRISM,data.dataOnEntities[MBPRISM][pp]); CHKERRQ(ierr);
+      ierr = doWork(pp,MBPRISM,data.dataOnEntities[MBPRISM][pp]); CHKERRG(ierr);
     }
   }
   for(unsigned int mm = 0;mm<data.dataOnEntities[MBENTITYSET].size();mm++) {
@@ -649,13 +649,13 @@ PetscErrorCode DataOperator::opRhs(
         data.dataOnEntities[MBENTITYSET][mm].getIndices().empty()&&
         data.dataOnEntities[MBENTITYSET][mm].getFieldData().empty()
     ) continue;
-    ierr = doWork(mm,MBENTITYSET,data.dataOnEntities[MBENTITYSET][mm]); CHKERRQ(ierr);
+    ierr = doWork(mm,MBENTITYSET,data.dataOnEntities[MBENTITYSET][mm]); CHKERRG(ierr);
   }
 
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode OpSetInvJacH1::doWork(
+MoFEMErrorCode OpSetInvJacH1::doWork(
   int side,
   EntityType type,
   DataForcesAndSourcesCore::EntData &data
@@ -743,7 +743,7 @@ PetscErrorCode OpSetInvJacH1::doWork(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode OpSetInvJacHdivAndHcurl::doWork(
+MoFEMErrorCode OpSetInvJacHdivAndHcurl::doWork(
   int side,
   EntityType type,
   DataForcesAndSourcesCore::EntData &data
@@ -810,7 +810,7 @@ PetscErrorCode OpSetInvJacHdivAndHcurl::doWork(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode OpSetContravariantPiolaTransform::doWork(
+MoFEMErrorCode OpSetContravariantPiolaTransform::doWork(
   int side,
   EntityType type,
   DataForcesAndSourcesCore::EntData &data
@@ -882,7 +882,7 @@ PetscErrorCode OpSetContravariantPiolaTransform::doWork(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode OpSetCovariantPiolaTransform::doWork(
+MoFEMErrorCode OpSetCovariantPiolaTransform::doWork(
   int side,
   EntityType type,
   DataForcesAndSourcesCore::EntData &data
@@ -951,7 +951,7 @@ PetscErrorCode OpSetCovariantPiolaTransform::doWork(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode OpSetHoInvJacH1::doWork(
+MoFEMErrorCode OpSetHoInvJacH1::doWork(
     int side,
     EntityType type,
     DataForcesAndSourcesCore::EntData &data
@@ -1053,7 +1053,7 @@ PetscErrorCode OpSetHoInvJacH1::doWork(
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode OpSetHoInvJacHdivAndHcurl::doWork(
+  MoFEMErrorCode OpSetHoInvJacHdivAndHcurl::doWork(
     int side,
     EntityType type,
     DataForcesAndSourcesCore::EntData &data
@@ -1126,7 +1126,7 @@ PetscErrorCode OpSetHoInvJacH1::doWork(
   }
 
 
-PetscErrorCode OpSetHoContravariantPiolaTransform::doWork(
+MoFEMErrorCode OpSetHoContravariantPiolaTransform::doWork(
   int side,EntityType type,DataForcesAndSourcesCore::EntData &data
 ) {
   MoFEMFunctionBeginHot;
@@ -1201,7 +1201,7 @@ PetscErrorCode OpSetHoContravariantPiolaTransform::doWork(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode OpSetHoCovariantPiolaTransform::doWork(
+MoFEMErrorCode OpSetHoCovariantPiolaTransform::doWork(
   int side,EntityType type,DataForcesAndSourcesCore::EntData &data
 ) {
   MoFEMFunctionBeginHot;
@@ -1273,7 +1273,7 @@ PetscErrorCode OpSetHoCovariantPiolaTransform::doWork(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode OpGetCoordsAndNormalsOnFace::doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
+MoFEMErrorCode OpGetCoordsAndNormalsOnFace::doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
   MoFEMFunctionBeginHot;
 
   unsigned int nb_dofs = data.getFieldData().size();
@@ -1339,7 +1339,7 @@ PetscErrorCode OpGetCoordsAndNormalsOnFace::doWork(int side,EntityType type,Data
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode OpGetCoordsAndNormalsOnFace::calculateNormals() {
+MoFEMErrorCode OpGetCoordsAndNormalsOnFace::calculateNormals() {
   MoFEMFunctionBeginHot;
   
 
@@ -1347,7 +1347,7 @@ PetscErrorCode OpGetCoordsAndNormalsOnFace::calculateNormals() {
   sPin.clear();
   nOrmals_at_GaussPt.resize(tAngent1_at_GaussPt.size1(),3,false);
   for(unsigned int gg = 0;gg<tAngent1_at_GaussPt.size1();gg++) {
-    ierr = Spin(&*sPin.data().begin(),&tAngent1_at_GaussPt(gg,0)); CHKERRQ(ierr);
+    ierr = Spin(&*sPin.data().begin(),&tAngent1_at_GaussPt(gg,0)); CHKERRG(ierr);
     cblas_dgemv(
       CblasRowMajor,CblasNoTrans,3,3,1.,
       &*sPin.data().begin(),3,&tAngent2_at_GaussPt(gg,0),1,0.,
@@ -1357,7 +1357,7 @@ PetscErrorCode OpGetCoordsAndNormalsOnFace::calculateNormals() {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode OpGetCoordsAndNormalsOnPrism::doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
+MoFEMErrorCode OpGetCoordsAndNormalsOnPrism::doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
   MoFEMFunctionBeginHot;
 
   if(data.getFieldData().size()==0)  MoFEMFunctionReturnHot(0);
@@ -1428,7 +1428,7 @@ PetscErrorCode OpGetCoordsAndNormalsOnPrism::doWork(int side,EntityType type,Dat
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode OpGetCoordsAndNormalsOnPrism::calculateNormals() {
+MoFEMErrorCode OpGetCoordsAndNormalsOnPrism::calculateNormals() {
   MoFEMFunctionBeginHot;
   
 
@@ -1437,7 +1437,7 @@ PetscErrorCode OpGetCoordsAndNormalsOnPrism::calculateNormals() {
     sPin.clear();
     nOrmals_at_GaussPtF3.resize(tAngent1_at_GaussPtF3.size1(),3,false);
     for(unsigned int gg = 0;gg<tAngent1_at_GaussPtF3.size1();gg++) {
-      ierr = Spin(&*sPin.data().begin(),&tAngent1_at_GaussPtF3(gg,0)); CHKERRQ(ierr);
+      ierr = Spin(&*sPin.data().begin(),&tAngent1_at_GaussPtF3(gg,0)); CHKERRG(ierr);
       cblas_dgemv(
         CblasRowMajor,CblasNoTrans,3,3,1.,
         &*sPin.data().begin(),3,&tAngent2_at_GaussPtF3(gg,0),1,0.,
@@ -1447,7 +1447,7 @@ PetscErrorCode OpGetCoordsAndNormalsOnPrism::calculateNormals() {
     sPin.clear();
     nOrmals_at_GaussPtF4.resize(tAngent1_at_GaussPtF4.size1(),3,false);
     for(unsigned int gg = 0;gg<tAngent1_at_GaussPtF4.size1();gg++) {
-      ierr = Spin(&*sPin.data().begin(),&tAngent1_at_GaussPtF4(gg,0)); CHKERRQ(ierr);
+      ierr = Spin(&*sPin.data().begin(),&tAngent1_at_GaussPtF4(gg,0)); CHKERRG(ierr);
       cblas_dgemv(
         CblasRowMajor,CblasNoTrans,3,3,1.,
         &*sPin.data().begin(),3,&tAngent2_at_GaussPtF4(gg,0),1,0.,
@@ -1464,7 +1464,7 @@ PetscErrorCode OpGetCoordsAndNormalsOnPrism::calculateNormals() {
 }
 
 
-PetscErrorCode OpSetContravariantPiolaTransformOnTriangle::doWork(
+MoFEMErrorCode OpSetContravariantPiolaTransformOnTriangle::doWork(
     int side,
     EntityType type,
     DataForcesAndSourcesCore::EntData &data
@@ -1505,7 +1505,7 @@ PetscErrorCode OpSetContravariantPiolaTransformOnTriangle::doWork(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode OpSetCovariantPiolaTransformOnTriangle::doWork(
+MoFEMErrorCode OpSetCovariantPiolaTransformOnTriangle::doWork(
   int side,
   EntityType type,
   DataForcesAndSourcesCore::EntData &data
@@ -1527,8 +1527,8 @@ PetscErrorCode OpSetCovariantPiolaTransformOnTriangle::doWork(
   );
   double det;
   FTensor::Tensor2<double,3,3> t_inv_m;
-  ierr = determinantTensor3by3(t_m,det); CHKERRQ(ierr);
-  ierr = invertTensor3by3(t_m,det,t_inv_m); CHKERRQ(ierr);
+  ierr = determinantTensor3by3(t_m,det); CHKERRG(ierr);
+  ierr = invertTensor3by3(t_m,det,t_inv_m); CHKERRG(ierr);
 
   for(int b = AINSWORTH_LEGENDRE_BASE; b!=USER_BASE; b++) {
 
@@ -1573,8 +1573,8 @@ PetscErrorCode OpSetCovariantPiolaTransformOnTriangle::doWork(
           &tangent0AtGaussPt(0,2),&tangent1AtGaussPt(0,2),&normalsAtGaussPt(0,2),3
         );
         for(int gg = 0;gg<nb_gauss_pts;gg++) {
-          ierr = determinantTensor3by3(t_m_at_pts,det); CHKERRQ(ierr);
-          ierr = invertTensor3by3(t_m_at_pts,det,t_inv_m); CHKERRQ(ierr);
+          ierr = determinantTensor3by3(t_m_at_pts,det); CHKERRG(ierr);
+          ierr = invertTensor3by3(t_m_at_pts,det,t_inv_m); CHKERRG(ierr);
           for(int ll = 0;ll!=nb_dofs;ll++) {
             t_transformed_h_curl(i) = t_inv_m(j,i)*t_h_curl(j);
             t_transformed_diff_h_curl(i,k) = t_inv_m(j,i)*t_diff_h_curl(j,k);
@@ -1612,7 +1612,7 @@ PetscErrorCode OpSetCovariantPiolaTransformOnTriangle::doWork(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode OpGetHoTangentOnEdge::doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
+MoFEMErrorCode OpGetHoTangentOnEdge::doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
   MoFEMFunctionBeginHot;
 
   int nb_dofs = data.getFieldData().size();
@@ -1664,7 +1664,7 @@ PetscErrorCode OpGetHoTangentOnEdge::doWork(int side,EntityType type,DataForcesA
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode OpSetCovariantPiolaTransformOnEdge::doWork(
+MoFEMErrorCode OpSetCovariantPiolaTransformOnEdge::doWork(
   int side,
   EntityType type,
   DataForcesAndSourcesCore::EntData &data
@@ -1759,7 +1759,7 @@ FTensor::Tensor2<double*,3,3> OpGetDataAndGradient<3,3>::getGradAtGaussPtsTensor
 }
 
 template<>
-PetscErrorCode OpGetDataAndGradient<3,3>::calculateValAndGrad(
+MoFEMErrorCode OpGetDataAndGradient<3,3>::calculateValAndGrad(
   int side,
   EntityType type,
   DataForcesAndSourcesCore::EntData &data
@@ -1820,7 +1820,7 @@ PetscErrorCode OpGetDataAndGradient<3,3>::calculateValAndGrad(
 }
 
 template<>
-PetscErrorCode OpGetDataAndGradient<1,3>::calculateValAndGrad(
+MoFEMErrorCode OpGetDataAndGradient<1,3>::calculateValAndGrad(
   int side,
   EntityType type,
   DataForcesAndSourcesCore::EntData &data

@@ -26,7 +26,7 @@
 
 namespace MoFEM {
 
-  PetscErrorCode Simple::query_interface(const MOFEMuuid& uuid, UnknownInterface** iface) const {
+  MoFEMErrorCode Simple::query_interface(const MOFEMuuid& uuid, UnknownInterface** iface) const {
     MoFEMFunctionBeginHot;
     *iface = NULL;
     if(uuid == IDD_MOFEMSimple) {
@@ -37,8 +37,8 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  Simple::Simple(const MoFEM::Core& core):
-  cOre(const_cast<MoFEM::Core&>(core)),
+  Simple::Simple(const Core& core):
+  cOre(const_cast<Core&>(core)),
   bitLevel(BitRefLevel().set(0)),
   meshSet(0),
   boundaryMeshset(0),
@@ -61,24 +61,24 @@ namespace MoFEM {
     }
   }
 
-  PetscErrorCode Simple::getOptions() {
+  MoFEMErrorCode Simple::getOptions() {
 
     PetscBool flg = PETSC_TRUE;
     MoFEMFunctionBeginHot;
     ierr = PetscOptionsBegin(
       PETSC_COMM_WORLD,"",
       "Simple interface options","none"
-    ); CHKERRQ(ierr);
+    ); CHKERRG(ierr);
     ierr = PetscOptionsString(
       "-file_name",
       "file name","", "mesh.h5m",meshFileName,255,&flg
-    ); CHKERRQ(ierr);
-    ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+    ); CHKERRG(ierr);
+    ierr = PetscOptionsEnd(); CHKERRG(ierr);
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode Simple::loadFile() {
-    MoFEM::Interface &m_field = cOre;
+  MoFEMErrorCode Simple::loadFile() {
+    Interface &m_field = cOre;
     MoFEMFunctionBeginHot;
     PetscLogEventBegin(MOFEM_EVENT_SimpleLoadMesh,0,0,0,0);
     // This is a case of distributed mesh and algebra. In that case each processor
@@ -88,7 +88,7 @@ namespace MoFEM {
     "PARALLEL_RESOLVE_SHARED_ENTS;"
     "PARTITION=PARALLEL_PARTITION;";
     rval = m_field.get_moab().load_file(meshFileName,0,option); CHKERRQ_MOAB(rval);
-    ierr = m_field.rebuild_database(); CHKERRQ(ierr);
+    ierr = m_field.rebuild_database(); CHKERRG(ierr);
     // determine problem dimension
     if(dIm==-1) {
       int nb_ents_3d;
@@ -107,14 +107,14 @@ namespace MoFEM {
     }
     Range ents;
     ierr = m_field.get_moab().get_entities_by_dimension(meshSet,dIm,ents,true);
-    ierr = m_field.getInterface<BitRefManager>()->setBitRefLevel(ents,bitLevel,false); CHKERRQ(ierr);
+    ierr = m_field.getInterface<BitRefManager>()->setBitRefLevel(ents,bitLevel,false); CHKERRG(ierr);
     ParallelComm* pcomm = ParallelComm::get_pcomm(&m_field.get_moab(),MYPCOMM_INDEX);
     if(pcomm == NULL) pcomm =  new ParallelComm(&m_field.get_moab(),m_field.get_comm());
     PetscLogEventEnd(MOFEM_EVENT_SimpleLoadMesh,0,0,0,0);
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode Simple::addDomainField(
+  MoFEMErrorCode Simple::addDomainField(
     const std::string& name,
     const FieldSpace space,
     const FieldApproximationBase base,
@@ -124,16 +124,16 @@ namespace MoFEM {
     int verb
   ) {
 
-    MoFEM::Interface &m_field = cOre;
+    Interface &m_field = cOre;
     MoFEMFunctionBeginHot;
     ierr = m_field.add_field(
       name, space, base, nb_of_cooficients, tag_type, bh, verb
-    ); CHKERRQ(ierr);
+    ); CHKERRG(ierr);
     domainFields.push_back(name);
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode Simple::addBoundaryField(
+  MoFEMErrorCode Simple::addBoundaryField(
     const std::string& name,
     const FieldSpace space,
     const FieldApproximationBase base,
@@ -143,16 +143,16 @@ namespace MoFEM {
     int verb
   ) {
 
-    MoFEM::Interface &m_field = cOre;
+    Interface &m_field = cOre;
     MoFEMFunctionBeginHot;
     ierr = m_field.add_field(
       name, space, base, nb_of_cooficients, tag_type, bh, verb
-    ); CHKERRQ(ierr);
+    ); CHKERRG(ierr);
     boundaryFields.push_back(name);
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode Simple::addSkeletonField(
+  MoFEMErrorCode Simple::addSkeletonField(
     const std::string& name,
     const FieldSpace space,
     const FieldApproximationBase base,
@@ -162,16 +162,16 @@ namespace MoFEM {
     int verb
   ) {
 
-    MoFEM::Interface &m_field = cOre;
+    Interface &m_field = cOre;
     MoFEMFunctionBeginHot;
     ierr = m_field.add_field(
       name, space, base, nb_of_cooficients, tag_type, bh, verb
-    ); CHKERRQ(ierr);
+    ); CHKERRG(ierr);
     skeletonFields.push_back(name);
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode Simple::addDataField(
+  MoFEMErrorCode Simple::addDataField(
     const std::string& name,
     const FieldSpace space,
     const FieldApproximationBase base,
@@ -181,101 +181,101 @@ namespace MoFEM {
     int verb
   ) {
 
-    MoFEM::Interface &m_field = cOre;
+    Interface &m_field = cOre;
     MoFEMFunctionBeginHot;
     ierr = m_field.add_field(
       name, space, base, nb_of_cooficients, tag_type, bh, verb
-    ); CHKERRQ(ierr);
+    ); CHKERRG(ierr);
     dataFields.push_back(name);
     MoFEMFunctionReturnHot(0);
   }
 
 
-  PetscErrorCode Simple::defineFiniteElements() {
+  MoFEMErrorCode Simple::defineFiniteElements() {
 
-    MoFEM::Interface &m_field = cOre;
+    Interface &m_field = cOre;
     MoFEMFunctionBeginHot;
     // Define finite elements
-    ierr = m_field.add_finite_element(domainFE); CHKERRQ(ierr);
+    ierr = m_field.add_finite_element(domainFE); CHKERRG(ierr);
     for(unsigned int ff = 0;ff!=domainFields.size();ff++) {
-      ierr = m_field.modify_finite_element_add_field_row(domainFE,domainFields[ff]); CHKERRQ(ierr);
-      ierr = m_field.modify_finite_element_add_field_col(domainFE,domainFields[ff]); CHKERRQ(ierr);
-      ierr = m_field.modify_finite_element_add_field_data(domainFE,domainFields[ff]); CHKERRQ(ierr);
+      ierr = m_field.modify_finite_element_add_field_row(domainFE,domainFields[ff]); CHKERRG(ierr);
+      ierr = m_field.modify_finite_element_add_field_col(domainFE,domainFields[ff]); CHKERRG(ierr);
+      ierr = m_field.modify_finite_element_add_field_data(domainFE,domainFields[ff]); CHKERRG(ierr);
     }
     for(unsigned int ff = 0;ff!=dataFields.size();ff++) {
-      ierr = m_field.modify_finite_element_add_field_data(domainFE,dataFields[ff]); CHKERRQ(ierr);
+      ierr = m_field.modify_finite_element_add_field_data(domainFE,dataFields[ff]); CHKERRG(ierr);
     }
     if(!boundaryFields.empty()) {
-      ierr = m_field.add_finite_element(boundaryFE); CHKERRQ(ierr);
+      ierr = m_field.add_finite_element(boundaryFE); CHKERRG(ierr);
       for(unsigned int ff = 0;ff!=domainFields.size();ff++) {
-        ierr = m_field.modify_finite_element_add_field_row(boundaryFE,domainFields[ff]); CHKERRQ(ierr);
-        ierr = m_field.modify_finite_element_add_field_col(boundaryFE,domainFields[ff]); CHKERRQ(ierr);
-        ierr = m_field.modify_finite_element_add_field_data(boundaryFE,domainFields[ff]); CHKERRQ(ierr);
+        ierr = m_field.modify_finite_element_add_field_row(boundaryFE,domainFields[ff]); CHKERRG(ierr);
+        ierr = m_field.modify_finite_element_add_field_col(boundaryFE,domainFields[ff]); CHKERRG(ierr);
+        ierr = m_field.modify_finite_element_add_field_data(boundaryFE,domainFields[ff]); CHKERRG(ierr);
       }
       for(unsigned int ff = 0;ff!=boundaryFields.size();ff++) {
-        ierr = m_field.modify_finite_element_add_field_row(boundaryFE,boundaryFields[ff]); CHKERRQ(ierr);
-        ierr = m_field.modify_finite_element_add_field_col(boundaryFE,boundaryFields[ff]); CHKERRQ(ierr);
-        ierr = m_field.modify_finite_element_add_field_data(boundaryFE,boundaryFields[ff]); CHKERRQ(ierr);
+        ierr = m_field.modify_finite_element_add_field_row(boundaryFE,boundaryFields[ff]); CHKERRG(ierr);
+        ierr = m_field.modify_finite_element_add_field_col(boundaryFE,boundaryFields[ff]); CHKERRG(ierr);
+        ierr = m_field.modify_finite_element_add_field_data(boundaryFE,boundaryFields[ff]); CHKERRG(ierr);
       }
       for(unsigned int ff = 0;ff!=skeletonFields.size();ff++) {
-        ierr = m_field.modify_finite_element_add_field_row(boundaryFE,skeletonFields[ff]); CHKERRQ(ierr);
-        ierr = m_field.modify_finite_element_add_field_col(boundaryFE,skeletonFields[ff]); CHKERRQ(ierr);
-        ierr = m_field.modify_finite_element_add_field_data(boundaryFE,skeletonFields[ff]); CHKERRQ(ierr);
+        ierr = m_field.modify_finite_element_add_field_row(boundaryFE,skeletonFields[ff]); CHKERRG(ierr);
+        ierr = m_field.modify_finite_element_add_field_col(boundaryFE,skeletonFields[ff]); CHKERRG(ierr);
+        ierr = m_field.modify_finite_element_add_field_data(boundaryFE,skeletonFields[ff]); CHKERRG(ierr);
       }
     }
     if(!skeletonFields.empty()) {
-      ierr = m_field.add_finite_element(skeletonFE); CHKERRQ(ierr);
+      ierr = m_field.add_finite_element(skeletonFE); CHKERRG(ierr);
       for(unsigned int ff = 0;ff!=domainFields.size();ff++) {
-        ierr = m_field.modify_finite_element_add_field_row(skeletonFE,domainFields[ff]); CHKERRQ(ierr);
-        ierr = m_field.modify_finite_element_add_field_col(skeletonFE,domainFields[ff]); CHKERRQ(ierr);
-        ierr = m_field.modify_finite_element_add_field_data(skeletonFE,domainFields[ff]); CHKERRQ(ierr);
+        ierr = m_field.modify_finite_element_add_field_row(skeletonFE,domainFields[ff]); CHKERRG(ierr);
+        ierr = m_field.modify_finite_element_add_field_col(skeletonFE,domainFields[ff]); CHKERRG(ierr);
+        ierr = m_field.modify_finite_element_add_field_data(skeletonFE,domainFields[ff]); CHKERRG(ierr);
       }
       for(unsigned int ff = 0;ff!=boundaryFields.size();ff++) {
-        ierr = m_field.modify_finite_element_add_field_row(skeletonFE,boundaryFields[ff]); CHKERRQ(ierr);
-        ierr = m_field.modify_finite_element_add_field_col(skeletonFE,boundaryFields[ff]); CHKERRQ(ierr);
-        ierr = m_field.modify_finite_element_add_field_data(skeletonFE,boundaryFields[ff]); CHKERRQ(ierr);
+        ierr = m_field.modify_finite_element_add_field_row(skeletonFE,boundaryFields[ff]); CHKERRG(ierr);
+        ierr = m_field.modify_finite_element_add_field_col(skeletonFE,boundaryFields[ff]); CHKERRG(ierr);
+        ierr = m_field.modify_finite_element_add_field_data(skeletonFE,boundaryFields[ff]); CHKERRG(ierr);
       }
       for(unsigned int ff = 0;ff!=skeletonFields.size();ff++) {
-        ierr = m_field.modify_finite_element_add_field_row(skeletonFE,skeletonFields[ff]); CHKERRQ(ierr);
-        ierr = m_field.modify_finite_element_add_field_col(skeletonFE,skeletonFields[ff]); CHKERRQ(ierr);
-        ierr = m_field.modify_finite_element_add_field_data(skeletonFE,skeletonFields[ff]); CHKERRQ(ierr);
+        ierr = m_field.modify_finite_element_add_field_row(skeletonFE,skeletonFields[ff]); CHKERRG(ierr);
+        ierr = m_field.modify_finite_element_add_field_col(skeletonFE,skeletonFields[ff]); CHKERRG(ierr);
+        ierr = m_field.modify_finite_element_add_field_data(skeletonFE,skeletonFields[ff]); CHKERRG(ierr);
       }
     }
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode Simple::defineProblem() {
+  MoFEMErrorCode Simple::defineProblem() {
 
-    MoFEM::Interface &m_field = cOre;
+    Interface &m_field = cOre;
     MoFEMFunctionBeginHot;
     if(dM!=PETSC_NULL) {
-      ierr = DMDestroy(&dM); CHKERRQ(ierr);
+      ierr = DMDestroy(&dM); CHKERRG(ierr);
     }
     // Create dm instance
-    ierr = DMCreate(m_field.get_comm(),&dM);CHKERRQ(ierr);
-    ierr = DMSetType(dM,"DMMOFEM");CHKERRQ(ierr);
+    ierr = DMCreate(m_field.get_comm(),&dM);CHKERRG(ierr);
+    ierr = DMSetType(dM,"DMMOFEM");CHKERRG(ierr);
     //set dm data structure which created mofem data structures
-    ierr = DMMoFEMCreateMoFEM(dM,&m_field,"SimpleProblem",bitLevel); CHKERRQ(ierr);
-    ierr = DMSetFromOptions(dM); CHKERRQ(ierr);
-    ierr = DMMoFEMAddElement(dM,domainFE.c_str()); CHKERRQ(ierr);
+    ierr = DMMoFEMCreateMoFEM(dM,&m_field,"SimpleProblem",bitLevel); CHKERRG(ierr);
+    ierr = DMSetFromOptions(dM); CHKERRG(ierr);
+    ierr = DMMoFEMAddElement(dM,domainFE.c_str()); CHKERRG(ierr);
     if(!boundaryFields.empty()) {
-      ierr = DMMoFEMAddElement(dM,boundaryFE.c_str()); CHKERRQ(ierr);
+      ierr = DMMoFEMAddElement(dM,boundaryFE.c_str()); CHKERRG(ierr);
     }
     if(!skeletonFields.empty()) {
-      ierr = DMMoFEMAddElement(dM,skeletonFE.c_str()); CHKERRQ(ierr);
+      ierr = DMMoFEMAddElement(dM,skeletonFE.c_str()); CHKERRG(ierr);
     }
-    ierr = DMMoFEMSetIsPartitioned(dM,PETSC_TRUE); CHKERRQ(ierr);
+    ierr = DMMoFEMSetIsPartitioned(dM,PETSC_TRUE); CHKERRG(ierr);
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode Simple::setFieldOrder(const std::string field_name,const int order,const Range* ents) {
+  MoFEMErrorCode Simple::setFieldOrder(const std::string field_name,const int order,const Range* ents) {
     MoFEMFunctionBeginHot;
     fieldsOrder[field_name] = std::pair<int,Range>(order,ents==NULL?Range():Range(*ents));
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode Simple::buildFields() {
-    MoFEM::Interface &m_field = cOre;
+  MoFEMErrorCode Simple::buildFields() {
+    Interface &m_field = cOre;
     MoFEMFunctionBeginHot;
     PetscLogEventBegin(MOFEM_EVENT_SimpleBuildFields,0,0,0,0);
     // take skin
@@ -308,20 +308,20 @@ namespace MoFEM {
     }
     // Add entities to the fields
     for(unsigned int ff = 0;ff!=domainFields.size();ff++) {
-      ierr = m_field.add_ents_to_field_by_dim(meshSet,dIm,domainFields[ff]); CHKERRQ(ierr);
-      ierr = m_field.synchronise_field_entities(domainFields[ff],0); CHKERRQ(ierr);
+      ierr = m_field.add_ents_to_field_by_dim(meshSet,dIm,domainFields[ff]); CHKERRG(ierr);
+      ierr = m_field.synchronise_field_entities(domainFields[ff],0); CHKERRG(ierr);
     }
     for(unsigned int ff = 0;ff!=dataFields.size();ff++) {
-      ierr = m_field.add_ents_to_field_by_dim(meshSet,dIm,dataFields[ff]); CHKERRQ(ierr);
-      ierr = m_field.synchronise_field_entities(dataFields[ff],0); CHKERRQ(ierr);
+      ierr = m_field.add_ents_to_field_by_dim(meshSet,dIm,dataFields[ff]); CHKERRG(ierr);
+      ierr = m_field.synchronise_field_entities(dataFields[ff],0); CHKERRG(ierr);
     }
     for(unsigned int ff = 0;ff!=boundaryFields.size();ff++) {
-      ierr = m_field.add_ents_to_field_by_dim(boundaryMeshset,dIm-1,boundaryFields[ff]); CHKERRQ(ierr);
-      ierr = m_field.synchronise_field_entities(boundaryFields[ff],0); CHKERRQ(ierr);
+      ierr = m_field.add_ents_to_field_by_dim(boundaryMeshset,dIm-1,boundaryFields[ff]); CHKERRG(ierr);
+      ierr = m_field.synchronise_field_entities(boundaryFields[ff],0); CHKERRG(ierr);
     }
     for(unsigned int ff = 0;ff!=skeletonFields.size();ff++) {
-      ierr = m_field.add_ents_to_field_by_dim(meshSet,dIm-1,skeletonFields[ff]); CHKERRQ(ierr);
-      ierr = m_field.synchronise_field_entities(skeletonFields[ff],0); CHKERRQ(ierr);
+      ierr = m_field.add_ents_to_field_by_dim(meshSet,dIm-1,skeletonFields[ff]); CHKERRG(ierr);
+      ierr = m_field.synchronise_field_entities(skeletonFields[ff],0); CHKERRG(ierr);
     }
     // Set order
     for(unsigned int ff = 0;ff!=domainFields.size();ff++) {
@@ -342,13 +342,13 @@ namespace MoFEM {
         SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"Huston we have a problem");
       }
       if(field->getSpace()==H1) {
-        ierr = m_field.set_field_order(meshSet,MBVERTEX,domainFields[ff],1); CHKERRQ(ierr);
+        ierr = m_field.set_field_order(meshSet,MBVERTEX,domainFields[ff],1); CHKERRG(ierr);
       }
       for(int dd = dds;dd<=dIm;dd++) {
         Range ents;
-        ierr = m_field.get_field_entities_by_dimension(domainFields[ff],dd,ents); CHKERRQ(ierr);
+        ierr = m_field.get_field_entities_by_dimension(domainFields[ff],dd,ents); CHKERRG(ierr);
         if(!fieldsOrder.at(domainFields[ff]).second.empty()) { ents = intersect(ents,fieldsOrder.at(domainFields[ff]).second); }
-        ierr = m_field.set_field_order(ents,domainFields[ff],fieldsOrder.at(domainFields[ff]).first); CHKERRQ(ierr);
+        ierr = m_field.set_field_order(ents,domainFields[ff],fieldsOrder.at(domainFields[ff]).first); CHKERRG(ierr);
       }
     }
     // Set order to data fiels
@@ -370,12 +370,12 @@ namespace MoFEM {
         SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"Huston we have a problem");
       }
       if(field->getSpace()==H1) {
-        ierr = m_field.set_field_order(meshSet,MBVERTEX,dataFields[ff],1); CHKERRQ(ierr);
+        ierr = m_field.set_field_order(meshSet,MBVERTEX,dataFields[ff],1); CHKERRG(ierr);
       }
       for(int dd = dds;dd<=dIm;dd++) {
         Range ents;
-        ierr = m_field.get_field_entities_by_dimension(dataFields[ff],dd,ents); CHKERRQ(ierr);
-        ierr = m_field.set_field_order(ents,dataFields[ff],fieldsOrder.at(dataFields[ff]).first); CHKERRQ(ierr);
+        ierr = m_field.get_field_entities_by_dimension(dataFields[ff],dd,ents); CHKERRG(ierr);
+        ierr = m_field.set_field_order(ents,dataFields[ff],fieldsOrder.at(dataFields[ff]).first); CHKERRG(ierr);
       }
     }
     // Set order to boundary
@@ -397,12 +397,12 @@ namespace MoFEM {
         SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"Huston we have a problem");
       }
       if(field->getSpace()==H1) {
-        ierr = m_field.set_field_order(meshSet,MBVERTEX,boundaryFields[ff],1); CHKERRQ(ierr);
+        ierr = m_field.set_field_order(meshSet,MBVERTEX,boundaryFields[ff],1); CHKERRG(ierr);
       }
       for(int dd = dds;dd<=dIm-1;dd++) {
         Range ents;
-        ierr = m_field.get_field_entities_by_dimension(boundaryFields[ff],dd,ents); CHKERRQ(ierr);
-        ierr = m_field.set_field_order(ents,boundaryFields[ff],fieldsOrder.at(boundaryFields[ff]).first); CHKERRQ(ierr);
+        ierr = m_field.get_field_entities_by_dimension(boundaryFields[ff],dd,ents); CHKERRG(ierr);
+        ierr = m_field.set_field_order(ents,boundaryFields[ff],fieldsOrder.at(boundaryFields[ff]).first); CHKERRG(ierr);
       }
     }
     // Set order to skeleton
@@ -424,64 +424,64 @@ namespace MoFEM {
         SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"Huston we have a problem");
       }
       if(field->getSpace()==H1) {
-        ierr = m_field.set_field_order(meshSet,MBVERTEX,skeletonFields[ff],1); CHKERRQ(ierr);
+        ierr = m_field.set_field_order(meshSet,MBVERTEX,skeletonFields[ff],1); CHKERRG(ierr);
       }
       for(int dd = dds;dd<=dIm-1;dd++) {
         Range ents;
-        ierr = m_field.get_field_entities_by_dimension(skeletonFields[ff],dd,ents); CHKERRQ(ierr);
-        ierr = m_field.set_field_order(ents,skeletonFields[ff],fieldsOrder.at(skeletonFields[ff]).first); CHKERRQ(ierr);
+        ierr = m_field.get_field_entities_by_dimension(skeletonFields[ff],dd,ents); CHKERRG(ierr);
+        ierr = m_field.set_field_order(ents,skeletonFields[ff],fieldsOrder.at(skeletonFields[ff]).first); CHKERRG(ierr);
       }
     }
     // Build fields
-    ierr = m_field.build_fields(); CHKERRQ(ierr);
+    ierr = m_field.build_fields(); CHKERRG(ierr);
     PetscLogEventEnd(MOFEM_EVENT_SimpleBuildFields,0,0,0,0);
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode Simple::buildFiniteElements() {
+  MoFEMErrorCode Simple::buildFiniteElements() {
 
-    MoFEM::Interface &m_field = cOre;
+    Interface &m_field = cOre;
     MoFEMFunctionBeginHot;
     PetscLogEventBegin(MOFEM_EVENT_SimpleBuildFiniteElements,0,0,0,0);
     // Add finite elements
-    ierr = m_field.add_ents_to_finite_element_by_dim(meshSet,dIm,domainFE,true); CHKERRQ(ierr);
-    ierr = m_field.build_finite_elements(domainFE); CHKERRQ(ierr);
+    ierr = m_field.add_ents_to_finite_element_by_dim(meshSet,dIm,domainFE,true); CHKERRG(ierr);
+    ierr = m_field.build_finite_elements(domainFE); CHKERRG(ierr);
     if(!boundaryFields.empty()) {
-        ierr = m_field.add_ents_to_finite_element_by_dim(boundaryMeshset,dIm-1,boundaryFE,true); CHKERRQ(ierr);
-        ierr = m_field.build_finite_elements(boundaryFE); CHKERRQ(ierr);
+        ierr = m_field.add_ents_to_finite_element_by_dim(boundaryMeshset,dIm-1,boundaryFE,true); CHKERRG(ierr);
+        ierr = m_field.build_finite_elements(boundaryFE); CHKERRG(ierr);
     }
     if(!skeletonFields.empty()) {
-      ierr = m_field.add_ents_to_finite_element_by_dim(meshSet,dIm-1,skeletonFE,true); CHKERRQ(ierr);
-      ierr = m_field.build_finite_elements(skeletonFE); CHKERRQ(ierr);
+      ierr = m_field.add_ents_to_finite_element_by_dim(meshSet,dIm-1,skeletonFE,true); CHKERRG(ierr);
+      ierr = m_field.build_finite_elements(skeletonFE); CHKERRG(ierr);
     }
     PetscLogEventEnd(MOFEM_EVENT_SimpleBuildFiniteElements,0,0,0,0);
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode Simple::buildProblem() {
-    MoFEM::Interface &m_field = cOre;
+  MoFEMErrorCode Simple::buildProblem() {
+    Interface &m_field = cOre;
     MoFEMFunctionBeginHot;
     PetscLogEventBegin(MOFEM_EVENT_SimpleBuildProblem,0,0,0,0);
-    ierr = m_field.build_adjacencies(bitLevel); CHKERRQ(ierr);
+    ierr = m_field.build_adjacencies(bitLevel); CHKERRG(ierr);
     // Set problem by the DOFs on the fields rather that by adding DOFs on the elements
     ierr = m_field.getInterface<ProblemsManager>()->buildProblemFromFields = PETSC_TRUE;
-    ierr = DMSetUp(dM); CHKERRQ(ierr);
+    ierr = DMSetUp(dM); CHKERRG(ierr);
     PetscLogEventEnd(MOFEM_EVENT_SimpleBuildProblem,0,0,0,0);
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode Simple::setUp() {
+  MoFEMErrorCode Simple::setUp() {
 
     MoFEMFunctionBeginHot;
-    ierr = defineFiniteElements(); CHKERRQ(ierr);
-    ierr = defineProblem(); CHKERRQ(ierr);
-    ierr = buildFields(); CHKERRQ(ierr);
-    ierr = buildFiniteElements(); CHKERRQ(ierr);
-    ierr = buildProblem(); CHKERRQ(ierr);
+    ierr = defineFiniteElements(); CHKERRG(ierr);
+    ierr = defineProblem(); CHKERRG(ierr);
+    ierr = buildFields(); CHKERRG(ierr);
+    ierr = buildFiniteElements(); CHKERRG(ierr);
+    ierr = buildProblem(); CHKERRG(ierr);
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode Simple::getDM(DM *dm) {
+  MoFEMErrorCode Simple::getDM(DM *dm) {
     MoFEMFunctionBeginHot;
     PetscObjectReference((PetscObject)dM);
     *dm = dM;

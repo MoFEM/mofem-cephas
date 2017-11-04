@@ -99,14 +99,14 @@ struct ArcLengthCtx {
   /**
     * \brief set arc radius
     */
-  PetscErrorCode setS(double s);
+  MoFEMErrorCode setS(double s);
 
   /**
    * \brief set parameters controlling arc-length equations
    * alpha controls off diagonal therms
    * beta controls diagonal therm
    */
-  PetscErrorCode setAlphaBeta(double alpha, double beta);
+  MoFEMErrorCode setAlphaBeta(double alpha, double beta);
 
   ArcLengthCtx(MoFEM::Interface &m_field, const std::string &problem_name,
                const std::string &field_name = "LAMBDA");
@@ -238,9 +238,9 @@ struct ArcLengthMatShell {
 
   virtual ~ArcLengthMatShell();
 
-  PetscErrorCode setLambda(Vec ksp_x,double *lambda,ScatterMode scattermode);
+  MoFEMErrorCode setLambda(Vec ksp_x,double *lambda,ScatterMode scattermode);
 
-  friend PetscErrorCode ArcLengthMatMultShellOp(Mat A,Vec x,Vec f);
+  friend MoFEMErrorCode ArcLengthMatMultShellOp(Mat A,Vec x,Vec f);
 
 private:
 
@@ -251,7 +251,7 @@ private:
 /**
  * mult operator for Arc Length Shell Mat
  */
-PetscErrorCode ArcLengthMatMultShellOp(Mat A,Vec x,Vec f);
+MoFEMErrorCode ArcLengthMatMultShellOp(Mat A,Vec x,Vec f);
 
 /**
  * \brief structure for Arc Length pre-conditioner
@@ -279,8 +279,8 @@ struct PCArcLengthCtx {
   );
   virtual ~PCArcLengthCtx();
 
-  friend PetscErrorCode PCApplyArcLength(PC pc,Vec pc_f,Vec pc_x);
-  friend PetscErrorCode PCSetupArcLength(PC pc);
+  friend MoFEMErrorCode PCApplyArcLength(PC pc,Vec pc_f,Vec pc_x);
+  friend MoFEMErrorCode PCSetupArcLength(PC pc);
 
 private:
   boost::shared_ptr<ArcLengthCtx> arcPtr;
@@ -294,14 +294,14 @@ private:
  * solves ddlambda = ( res_lambda - db*xLambda )/( diag + db*pc_x )
  * calculate pc_x = pc_x + ddlambda*xLambda
  */
-PetscErrorCode PCApplyArcLength(PC pc,Vec pc_f,Vec pc_x);
+MoFEMErrorCode PCApplyArcLength(PC pc,Vec pc_f,Vec pc_x);
 
 /**
  * set up structure for Arc Length pre-conditioner
 
  * it sets pre-conditioner for matrix K
  */
-PetscErrorCode PCSetupArcLength(PC pc);
+MoFEMErrorCode PCSetupArcLength(PC pc);
 
 /**
  * \brief Zero F_lambda
@@ -315,7 +315,7 @@ struct ZeroFLmabda: public FEMethod {
     boost::shared_ptr<ArcLengthCtx> arc_ptr
   );
 
-  PetscErrorCode preProcess();
+  MoFEMErrorCode preProcess();
 
 };
 
@@ -337,9 +337,9 @@ struct AssembleFlambda: public FEMethod {
     boost::shared_ptr<DirichletDisplacementBc> bc = boost::shared_ptr<DirichletDisplacementBc>()
   );
 
-  PetscErrorCode preProcess();
-  PetscErrorCode operator()();
-  PetscErrorCode postProcess();
+  MoFEMErrorCode preProcess();
+  MoFEMErrorCode operator()();
+  MoFEMErrorCode postProcess();
 
 };
 
@@ -367,9 +367,9 @@ struct SimpleArcLengthControl: public FEMethod {
   );
   ~SimpleArcLengthControl();
 
-  PetscErrorCode preProcess();
-  PetscErrorCode operator()();
-  PetscErrorCode postProcess();
+  MoFEMErrorCode preProcess();
+  MoFEMErrorCode operator()();
+  MoFEMErrorCode postProcess();
 
   /** \brief Calculate internal lambda
   */
@@ -377,9 +377,9 @@ struct SimpleArcLengthControl: public FEMethod {
 
   /** \brief Calculate db
   */
-  PetscErrorCode calculateDb();
+  MoFEMErrorCode calculateDb();
 
-  PetscErrorCode calculateDxAndDlambda(Vec x);
+  MoFEMErrorCode calculateDxAndDlambda(Vec x);
 
 };
 
@@ -409,9 +409,9 @@ struct SphericalArcLengthControl: public FEMethod {
   SphericalArcLengthControl(boost::shared_ptr<ArcLengthCtx>& arc_ptr);
   virtual ~SphericalArcLengthControl();
 
-  PetscErrorCode preProcess();
-  PetscErrorCode operator()();
-  PetscErrorCode postProcess();
+  MoFEMErrorCode preProcess();
+  MoFEMErrorCode operator()();
+  MoFEMErrorCode postProcess();
 
   /** \brief Calculate f_lambda(dx,lambda)
 
@@ -431,10 +431,10 @@ struct SphericalArcLengthControl: public FEMethod {
   \f]
 
   */
-  virtual PetscErrorCode calculateDb();
-  virtual PetscErrorCode calculateDxAndDlambda(Vec x);
-  virtual PetscErrorCode calculateInitDlambda(double *dlambda);
-  virtual PetscErrorCode setDlambdaToX(Vec x,double dlambda);
+  virtual MoFEMErrorCode calculateDb();
+  virtual MoFEMErrorCode calculateDxAndDlambda(Vec x);
+  virtual MoFEMErrorCode calculateInitDlambda(double *dlambda);
+  virtual MoFEMErrorCode setDlambdaToX(Vec x,double dlambda);
 
 private:
   boost::shared_ptr<ArcLengthCtx> arcPtr;

@@ -34,7 +34,7 @@ namespace MoFEM {
   */
   struct MedInterface: public UnknownInterface {
 
-    PetscErrorCode query_interface(const MOFEMuuid& uuid, UnknownInterface** iface) const;
+    MoFEMErrorCode query_interface(const MOFEMuuid& uuid, UnknownInterface** iface) const;
 
     MedInterface(const MoFEM::Core& core);
 
@@ -43,7 +43,7 @@ namespace MoFEM {
      * @param  verb verbosity level
      * @return      error code
      */
-    PetscErrorCode getFileNameFromCommandLine(int verb = 1);
+    MoFEMErrorCode getFileNameFromCommandLine(int verb = 1);
 
     /** \brief Check if file name is given in command line
     */
@@ -55,7 +55,7 @@ namespace MoFEM {
      * @param  verb verbosity level
      * @return      error code
      */
-    PetscErrorCode medGetFieldNames(const string &file,int verb = 1);
+    MoFEMErrorCode medGetFieldNames(const string &file,int verb = 1);
 
     /**
      * \brief get field names in MED file
@@ -65,7 +65,7 @@ namespace MoFEM {
      * @param  verb verbosity level
      * @return      error code
      */
-    PetscErrorCode medGetFieldNames(int verb = 1);
+    MoFEMErrorCode medGetFieldNames(int verb = 1);
 
     /**
      * \brief read MED file
@@ -73,7 +73,7 @@ namespace MoFEM {
      * @param  verb verbosity level
      * @return      error code
      */
-    PetscErrorCode readMed(const string &file,int verb = 1);
+    MoFEMErrorCode readMed(const string &file,int verb = 1);
 
     /**
      * \brief read MED file
@@ -83,7 +83,7 @@ namespace MoFEM {
      * @param  verb verbosity level
      * @return      error code
      */
-    PetscErrorCode readMed(int verb = 1);
+    MoFEMErrorCode readMed(int verb = 1);
 
 
     /**
@@ -92,7 +92,7 @@ namespace MoFEM {
      * @param  verb verbosity level
      * @return      error code
      */
-    PetscErrorCode writeMed(const string &file,int verb = 1);
+    MoFEMErrorCode writeMed(const string &file,int verb = 1);
 
     /**
      * Read fields
@@ -102,7 +102,7 @@ namespace MoFEM {
      * @param  onlyStep    read only one step
      * @return             error code
      */
-    PetscErrorCode readFields(
+    MoFEMErrorCode readFields(
       const std::string &file_name,
       const std::string &field_name,
       const bool load_series = false,
@@ -141,7 +141,7 @@ namespace MoFEM {
      * @param  verb            verbosity level
      * @return                 error code
      */
-    PetscErrorCode readMesh(
+    MoFEMErrorCode readMesh(
       const string &file,
       const int index,
       std::map<int,Range> &family_elem_map,
@@ -157,7 +157,7 @@ namespace MoFEM {
      * @param  verb               verbosity level
      * @return                    error code
      */
-    PetscErrorCode readFamily(
+    MoFEMErrorCode readFamily(
       const string &file,
       const int index,
       const std::map<int,Range> &family_elem_mapint,
@@ -171,7 +171,7 @@ namespace MoFEM {
      * @param  verb           verbosity level
      * @return                error code
      */
-    PetscErrorCode makeBlockSets(
+    MoFEMErrorCode makeBlockSets(
       const std::map<string,Range> &group_elem_map,
       int verb = 1
     );

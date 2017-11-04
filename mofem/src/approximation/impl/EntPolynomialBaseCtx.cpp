@@ -44,7 +44,7 @@ using namespace MoFEM;
 #include <BaseFunction.hpp>
 #include <EntPolynomialBaseCtx.hpp>
 
-PetscErrorCode EntPolynomialBaseCtx::query_interface(
+MoFEMErrorCode EntPolynomialBaseCtx::query_interface(
   const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface
 ) const {
 
@@ -60,7 +60,7 @@ PetscErrorCode EntPolynomialBaseCtx::query_interface(
   } else {
     SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"wrong interference");
   }
-  ierr = BaseFunctionCtx::query_interface(uuid,iface); CHKERRQ(ierr);
+  ierr = BaseFunctionCtx::query_interface(uuid,iface); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -81,7 +81,7 @@ copyNodeBase(copy_node_base) {
 EntPolynomialBaseCtx::~EntPolynomialBaseCtx() {
 }
 
-PetscErrorCode EntPolynomialBaseCtx::setBase() {
+MoFEMErrorCode EntPolynomialBaseCtx::setBase() {
   MoFEMFunctionBeginHot;
   switch(bAse) {
     case AINSWORTH_LEGENDRE_BASE:

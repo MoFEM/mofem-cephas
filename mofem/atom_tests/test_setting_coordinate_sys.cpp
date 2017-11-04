@@ -36,18 +36,18 @@ int main(int argc, char *argv[]) {
   PetscBool flg = PETSC_TRUE;
   char mesh_file_name[255];
   #if PETSC_VERSION_GE(3,6,4)
-  ierr = PetscOptionsGetString(PETSC_NULL,"","-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  ierr = PetscOptionsGetString(PETSC_NULL,"","-my_file",mesh_file_name,255,&flg); CHKERRG(ierr);
   #else
-  ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRG(ierr);
   #endif
   if(flg != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
   }
   PetscInt order;
   #if PETSC_VERSION_GE(3,6,4)
-  ierr = PetscOptionsGetInt(PETSC_NULL,"","-my_order",&order,&flg); CHKERRQ(ierr);
+  ierr = PetscOptionsGetInt(PETSC_NULL,"","-my_order",&order,&flg); CHKERRG(ierr);
   #else
-  ierr = PetscOptionsGetInt(PETSC_NULL,PETSC_NULL,"-my_order",&order,&flg); CHKERRQ(ierr);
+  ierr = PetscOptionsGetInt(PETSC_NULL,PETSC_NULL,"-my_order",&order,&flg); CHKERRG(ierr);
   #endif
   if(flg != PETSC_TRUE) {
     order = 1;
@@ -56,7 +56,7 @@ int main(int argc, char *argv[]) {
   //Read mesh to MOAB
   const char *option;
   option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERRG(rval);
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
 
@@ -65,40 +65,40 @@ int main(int argc, char *argv[]) {
   MoFEM::Interface& m_field = core;
 
   //ref meshset ref level 0
-  ierr = m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(0,3,0); CHKERRQ(ierr);
+  ierr = m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(0,3,0); CHKERRG(ierr);
 
   // stl::bitset see for more details
   BitRefLevel bit_level0;
   bit_level0.set(0);
   EntityHandle meshset_level0;
-  rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERRQ_MOAB(rval);
-  ierr = m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(0,3,bit_level0); CHKERRQ(ierr);
-  ierr = m_field.getInterface<BitRefManager>()->getEntitiesByRefLevel(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRQ(ierr);
+  rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERRG(rval);
+  ierr = m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(0,3,bit_level0); CHKERRG(ierr);
+  ierr = m_field.getInterface<BitRefManager>()->getEntitiesByRefLevel(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRG(ierr);
 
   /***/
   //Define problem
 
   //Coord system
   CoordSystemsManager *cs_manger_ptr;
-  ierr = m_field.getInterface(cs_manger_ptr); CHKERRQ(ierr);
+  ierr = m_field.getInterface(cs_manger_ptr); CHKERRG(ierr);
   {
     int cs_dim[] = {0,3,0,3};
-    ierr = cs_manger_ptr->addCoordinateSystem(cs_dim,"BASE_FOR_TWO_POINT_TENSOR"); CHKERRQ(ierr);
+    ierr = cs_manger_ptr->addCoordinateSystem(cs_dim,"BASE_FOR_TWO_POINT_TENSOR"); CHKERRG(ierr);
   }
 
   //Fields
-  ierr = m_field.add_field("FIELD_A",H1,AINSWORTH_LEGENDRE_BASE,9); CHKERRQ(ierr);
-  ierr = cs_manger_ptr->setFieldCoordinateSystem("FIELD_A","BASE_FOR_TWO_POINT_TENSOR"); CHKERRQ(ierr);
+  ierr = m_field.add_field("FIELD_A",H1,AINSWORTH_LEGENDRE_BASE,9); CHKERRG(ierr);
+  ierr = cs_manger_ptr->setFieldCoordinateSystem("FIELD_A","BASE_FOR_TWO_POINT_TENSOR"); CHKERRG(ierr);
 
-  ierr = m_field.add_ents_to_field_by_type(0,MBTET,"FIELD_A"); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_field_by_type(0,MBTET,"FIELD_A"); CHKERRG(ierr);
 
-  ierr = m_field.set_field_order(0,MBTET,"FIELD_A",order); CHKERRQ(ierr);
-  ierr = m_field.set_field_order(0,MBTRI,"FIELD_A",order); CHKERRQ(ierr);
-  ierr = m_field.set_field_order(0,MBEDGE,"FIELD_A",order); CHKERRQ(ierr);
-  ierr = m_field.set_field_order(0,MBVERTEX,"FIELD_A",1); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBTET,"FIELD_A",order); CHKERRG(ierr);
+  ierr = m_field.set_field_order(0,MBTRI,"FIELD_A",order); CHKERRG(ierr);
+  ierr = m_field.set_field_order(0,MBEDGE,"FIELD_A",order); CHKERRG(ierr);
+  ierr = m_field.set_field_order(0,MBVERTEX,"FIELD_A",1); CHKERRG(ierr);
 
   //build field
-  ierr = m_field.build_fields(); CHKERRQ(ierr);
+  ierr = m_field.build_fields(); CHKERRG(ierr);
 
   int cs_dim[4];
   std::string cs_name;

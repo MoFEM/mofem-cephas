@@ -17,7 +17,7 @@
 
 namespace MoFEM {
 
-PetscErrorCode Tools::query_interface(const MOFEMuuid &uuid,
+MoFEMErrorCode Tools::query_interface(const MOFEMuuid &uuid,
                                       UnknownInterface **iface) const {
   MoFEMFunctionBeginHot;
   *iface = NULL;
@@ -62,7 +62,7 @@ double Tools::tetVolume(const double *coords) {
   return dEterminant(jac) / 6.;
 }
 
-PetscErrorCode Tools::minTetsQuality(const Range &tets, double &min_quality,
+MoFEMErrorCode Tools::minTetsQuality(const Range &tets, double &min_quality,
                                      Tag th) {
   MoFEM::Interface &m_field = cOre;
   moab::Interface &moab(m_field.get_moab());

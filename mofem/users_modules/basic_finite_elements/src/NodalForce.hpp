@@ -59,11 +59,11 @@ struct NodalForce {
     /** Exeuted for each entity on element, i.e. in this case Vertex element
       has only one entity, that is vertex
     */
-    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data);
+    MoFEMErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data);
 
   };
 
-  PetscErrorCode addForce(const std::string field_name,Vec F,int ms_id,bool use_snes_f = false);
+  MoFEMErrorCode addForce(const std::string field_name,Vec F,int ms_id,bool use_snes_f = false);
 
 };
 
@@ -80,7 +80,7 @@ struct MetaNodalForces {
     Tag thScale;
 
     TagForceScale(MoFEM::Interface &m_field);
-    PetscErrorCode scaleNf(const FEMethod *fe,VectorDouble &Nf);
+    MoFEMErrorCode scaleNf(const FEMethod *fe,VectorDouble &Nf);
 
   };
 
@@ -93,7 +93,7 @@ struct MetaNodalForces {
   struct DofForceScale: public MethodForForceScaling {
     boost::shared_ptr<DofEntity> dOf;
     DofForceScale(boost::shared_ptr<DofEntity> dof): dOf(dof) {}
-    PetscErrorCode scaleNf(const FEMethod *fe,VectorDouble &Nf) {
+    MoFEMErrorCode scaleNf(const FEMethod *fe,VectorDouble &Nf) {
       MoFEMFunctionBeginHot;
       Nf *= dOf->getFieldData();
       MoFEMFunctionReturnHot(0);
@@ -101,39 +101,39 @@ struct MetaNodalForces {
   };
 
   /// Add element taking information from NODESET
-  static PetscErrorCode addElement(
+  static MoFEMErrorCode addElement(
     MoFEM::Interface &m_field,const std::string field_name,Range *intersect_ptr = NULL
   ) {
     MoFEMFunctionBeginHot;
     
     
-    ierr = m_field.add_finite_element("FORCE_FE",MF_ZERO); CHKERRQ(ierr);
-    ierr = m_field.modify_finite_element_add_field_row("FORCE_FE",field_name); CHKERRQ(ierr);
-    ierr = m_field.modify_finite_element_add_field_col("FORCE_FE",field_name); CHKERRQ(ierr);
-    ierr = m_field.modify_finite_element_add_field_data("FORCE_FE",field_name); CHKERRQ(ierr);
+    ierr = m_field.add_finite_element("FORCE_FE",MF_ZERO); CHKERRG(ierr);
+    ierr = m_field.modify_finite_element_add_field_row("FORCE_FE",field_name); CHKERRG(ierr);
+    ierr = m_field.modify_finite_element_add_field_col("FORCE_FE",field_name); CHKERRG(ierr);
+    ierr = m_field.modify_finite_element_add_field_data("FORCE_FE",field_name); CHKERRG(ierr);
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,NODESET|FORCESET,it)) {
       Range tris;
-      rval = m_field.get_moab().get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERRQ_MOAB(rval);
+      rval = m_field.get_moab().get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERRG(rval);
       Range edges;
-      rval = m_field.get_moab().get_entities_by_type(it->meshset,MBEDGE,edges,true); CHKERRQ_MOAB(rval);
+      rval = m_field.get_moab().get_entities_by_type(it->meshset,MBEDGE,edges,true); CHKERRG(rval);
       Range tris_nodes;
-      rval = m_field.get_moab().get_connectivity(tris,tris_nodes); CHKERRQ_MOAB(rval);
+      rval = m_field.get_moab().get_connectivity(tris,tris_nodes); CHKERRG(rval);
       Range edges_nodes;
-      rval = m_field.get_moab().get_connectivity(edges,edges_nodes); CHKERRQ_MOAB(rval);
+      rval = m_field.get_moab().get_connectivity(edges,edges_nodes); CHKERRG(rval);
       Range nodes;
-      rval = m_field.get_moab().get_entities_by_type(it->meshset,MBVERTEX,nodes,true); CHKERRQ_MOAB(rval);
+      rval = m_field.get_moab().get_entities_by_type(it->meshset,MBVERTEX,nodes,true); CHKERRG(rval);
       nodes = subtract(nodes,tris_nodes);
       nodes = subtract(nodes,edges_nodes);
       if(intersect_ptr) {
         nodes = intersect(nodes,*intersect_ptr);
       }
-      ierr = m_field.add_ents_to_finite_element_by_type(nodes,MBVERTEX,"FORCE_FE"); CHKERRQ(ierr);
+      ierr = m_field.add_ents_to_finite_element_by_type(nodes,MBVERTEX,"FORCE_FE"); CHKERRG(ierr);
     }
     MoFEMFunctionReturnHot(0);
   }
 
   /// Set integration point operators
-  static PetscErrorCode setOperators(
+  static MoFEMErrorCode setOperators(
     MoFEM::Interface &m_field, boost::ptr_map<std::string,NodalForce> &nodal_forces, Vec F,const std::string field_name
   ) {
     MoFEMFunctionBeginHot;
@@ -141,7 +141,7 @@ struct MetaNodalForces {
     string fe_name = "FORCE_FE";
     nodal_forces.insert(fe_name,new NodalForce(m_field));
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,NODESET|FORCESET,it)) {
-      ierr = nodal_forces.at(fe_name).addForce(field_name,F,it->getMeshsetId());  CHKERRQ(ierr);
+      ierr = nodal_forces.at(fe_name).addForce(field_name,F,it->getMeshsetId());  CHKERRG(ierr);
     }
     MoFEMFunctionReturnHot(0);
   }
