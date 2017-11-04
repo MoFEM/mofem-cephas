@@ -719,7 +719,13 @@ PetscErrorCode PCMGSetUpViaApproxOrders(PC pc,PCMGSetUpViaApproxOrdersCtx *ctx,i
   }
   ierr = ctx->getOptions(); CHKERRQ(ierr);
   ierr = ctx->buildProlongationOperator(true,verb); CHKERRQ(ierr);
-  ierr = PCMGSetGalerkin(pc,PETSC_FALSE); CHKERRQ(ierr);
+
+  #if PETSC_VERSION_GE(3,8,0)
+    ierr = PCMGSetGalerkin(pc,PC_MG_GALERKIN_BOTH); CHKERRQ(ierr);
+  #else
+    ierr = PCMGSetGalerkin(pc,PETSC_FALSE); CHKERRQ(ierr);
+  #endif
+
   ierr = PCMGSetLevels(pc,ctx->nbLevels,NULL);  CHKERRQ(ierr);
 
   if(verb>0) {
