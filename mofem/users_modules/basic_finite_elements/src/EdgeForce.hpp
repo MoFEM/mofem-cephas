@@ -64,19 +64,19 @@ struct EdgeForce {
       VectorDouble wEights;
       VectorDouble Nf;
 
-      PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data);
+      MoFEMErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data);
 
 
     };
 
-    PetscErrorCode addForce(const std::string field_name,Vec F,int ms_id,bool use_snes_f = false);
+    MoFEMErrorCode addForce(const std::string field_name,Vec F,int ms_id,bool use_snes_f = false);
 
   };
 
   struct MetaEdgeForces {
 
     /// Add element taking information from NODESET
-    static PetscErrorCode addElement(MoFEM::Interface &m_field,const std::string field_name,Range *intersect_ptr = NULL) {
+    static MoFEMErrorCode addElement(MoFEM::Interface &m_field,const std::string field_name,Range *intersect_ptr = NULL) {
       MoFEMFunctionBeginHot;
       
       
@@ -104,7 +104,7 @@ struct EdgeForce {
     }
 
     /// Set integration point operators
-    static PetscErrorCode setOperators(
+    static MoFEMErrorCode setOperators(
       MoFEM::Interface &m_field,
       boost::ptr_map<std::string,EdgeForce> &edge_forces,
       Vec F,const std::string field_name

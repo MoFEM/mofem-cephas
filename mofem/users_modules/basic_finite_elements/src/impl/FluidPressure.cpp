@@ -20,7 +20,7 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-PetscErrorCode FluidPressure::addNeumannFluidPressureBCElements(
+MoFEMErrorCode FluidPressure::addNeumannFluidPressureBCElements(
   const std::string field_name,const std::string mesh_nodals_positions 
 ) {
   MoFEMFunctionBeginHot;
@@ -78,7 +78,7 @@ PetscErrorCode FluidPressure::addNeumannFluidPressureBCElements(
 }
 
 
-PetscErrorCode FluidPressure::setNeumannFluidPressureFiniteElementOperators(
+MoFEMErrorCode FluidPressure::setNeumannFluidPressureFiniteElementOperators(
   string field_name,Vec F,bool allow_negative_pressure,bool ho_geometry
 ) {
   MoFEMFunctionBeginHot;

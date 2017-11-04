@@ -94,43 +94,43 @@ struct ConstrainMatrixCtx {
     *
     * \param x is a vector from problem x
     */
-  PetscErrorCode initializeQorP(Vec x);
+  MoFEMErrorCode initializeQorP(Vec x);
 
   /**
     * \brief initialize vectors and matrices for CTC+QTKQ shell matrices,
    * scattering is set based on x_problem and y_problem
     */
-  PetscErrorCode initializeQTKQ();
+  MoFEMErrorCode initializeQTKQ();
 
   /**
     * \brief re-calculate CT and CCT if C matrix has been changed since
    * initialization
     */
-  PetscErrorCode recalculateCTandCCT();
+  MoFEMErrorCode recalculateCTandCCT();
 
   /**
     * \brief re-calculate CTC matrix has been changed since initialization
     */
-  PetscErrorCode recalculateCTC();
+  MoFEMErrorCode recalculateCTC();
 
   /**
     * \brief destroy sub-matrices used for shell matrices P, Q, R, RT
     */
-  PetscErrorCode destroyQorP();
+  MoFEMErrorCode destroyQorP();
 
   /**
     * \brief destroy sub-matrices used for shell matrix QTKQ
     */
-  PetscErrorCode destroyQTKQ();
+  MoFEMErrorCode destroyQTKQ();
 
-  friend PetscErrorCode ProjectionMatrixMultOpQ(Mat Q,Vec x,Vec f);
-  friend PetscErrorCode ConstrainMatrixMultOpP(Mat P,Vec x,Vec f);
-  friend PetscErrorCode ConstrainMatrixMultOpR(Mat R,Vec x,Vec f);
-  friend PetscErrorCode ConstrainMatrixMultOpRT(Mat RT,Vec x,Vec f);
-  friend PetscErrorCode ConstrainMatrixMultOpCTC_QTKQ(Mat CTC_QTKQ,Vec x,Vec f);
+  friend MoFEMErrorCode ProjectionMatrixMultOpQ(Mat Q,Vec x,Vec f);
+  friend MoFEMErrorCode ConstrainMatrixMultOpP(Mat P,Vec x,Vec f);
+  friend MoFEMErrorCode ConstrainMatrixMultOpR(Mat R,Vec x,Vec f);
+  friend MoFEMErrorCode ConstrainMatrixMultOpRT(Mat RT,Vec x,Vec f);
+  friend MoFEMErrorCode ConstrainMatrixMultOpCTC_QTKQ(Mat CTC_QTKQ,Vec x,Vec f);
 
-  friend PetscErrorCode ConstrainMatrixDestroyOpPorQ();
-  friend PetscErrorCode ConstrainMatrixDestroyOpQTKQ();
+  friend MoFEMErrorCode ConstrainMatrixDestroyOpPorQ();
+  friend MoFEMErrorCode ConstrainMatrixDestroyOpQTKQ();
 
 };
 
@@ -149,12 +149,12 @@ struct ConstrainMatrixCtx {
   * \ingroup projection_matrix
 
   */
-PetscErrorCode ProjectionMatrixMultOpQ(Mat Q,Vec x,Vec f);
+MoFEMErrorCode ProjectionMatrixMultOpQ(Mat Q,Vec x,Vec f);
 
 /**
  * \deprecated Use ProjectionMatrixMultOpQ
  */
-DEPRECATED inline PetscErrorCode PorjectionMatrixMultOpQ(Mat Q, Vec x, Vec f) {
+DEPRECATED inline MoFEMErrorCode PorjectionMatrixMultOpQ(Mat Q, Vec x, Vec f) {
   return ProjectionMatrixMultOpQ(Q, x, f);
 }
 
@@ -176,7 +176,7 @@ DEPRECATED inline PetscErrorCode PorjectionMatrixMultOpQ(Mat Q, Vec x, Vec f) {
   * \ingroup projection_matrix
 
   */
-PetscErrorCode ConstrainMatrixMultOpP(Mat P, Vec x, Vec f);
+MoFEMErrorCode ConstrainMatrixMultOpP(Mat P, Vec x, Vec f);
 
 /**
   * \brief Multiplication operator for R = CT(CCT)^-1
@@ -192,7 +192,7 @@ PetscErrorCode ConstrainMatrixMultOpP(Mat P, Vec x, Vec f);
   * \ingroup projection_matrix
 
   */
-PetscErrorCode ConstrainMatrixMultOpR(Mat R,Vec x,Vec f);
+MoFEMErrorCode ConstrainMatrixMultOpR(Mat R,Vec x,Vec f);
 
 /**
   * \brief Multiplication operator for RT = (CCT)^-TC
@@ -208,7 +208,7 @@ PetscErrorCode ConstrainMatrixMultOpR(Mat R,Vec x,Vec f);
   * \ingroup projection_matrix
 
   */
-PetscErrorCode ConstrainMatrixMultOpRT(Mat RT,Vec x,Vec f);
+MoFEMErrorCode ConstrainMatrixMultOpRT(Mat RT,Vec x,Vec f);
 
 /**
   * \brief Multiplication operator for RT = (CCT)^-TC
@@ -226,7 +226,7 @@ PetscErrorCode ConstrainMatrixMultOpRT(Mat RT,Vec x,Vec f);
   * \ingroup projection_matrix
 
   */
-PetscErrorCode ConstrainMatrixMultOpCTC_QTKQ(Mat CTC_QTKQ,Vec x,Vec f);
+MoFEMErrorCode ConstrainMatrixMultOpCTC_QTKQ(Mat CTC_QTKQ,Vec x,Vec f);
 
 /**
   * \brief Destroy shell matrix Q
@@ -243,7 +243,7 @@ PetscErrorCode ConstrainMatrixMultOpCTC_QTKQ(Mat CTC_QTKQ,Vec x,Vec f);
   * \ingroup projection_matrix
 
   */
-PetscErrorCode ConstrainMatrixDestroyOpPorQ(Mat Q);
+MoFEMErrorCode ConstrainMatrixDestroyOpPorQ(Mat Q);
 
 /**
   * \brief Destroy shell matrix
@@ -260,7 +260,7 @@ PetscErrorCode ConstrainMatrixDestroyOpPorQ(Mat Q);
   * \ingroup projection_matrix
 
   */
-PetscErrorCode ConstrainMatrixDestroyOpQTKQ(Mat QTKQ);
+MoFEMErrorCode ConstrainMatrixDestroyOpQTKQ(Mat QTKQ);
 
 #endif // __PROJECTION_MATRIX_CTX_HPP__
 

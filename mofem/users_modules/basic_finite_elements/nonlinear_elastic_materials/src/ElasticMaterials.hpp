@@ -92,7 +92,7 @@ struct ElasticMaterials {
    * Initialize  model parameters
    * @return [description]
    */
-  virtual PetscErrorCode iNit() {
+  virtual MoFEMErrorCode iNit() {
     MoFEMFunctionBeginHot;
     //add new material below
     string mat_name;
@@ -166,7 +166,7 @@ struct ElasticMaterials {
     \endcode
 
     */
-  virtual PetscErrorCode readConfigFile() {
+  virtual MoFEMErrorCode readConfigFile() {
     MoFEMFunctionBeginHot;
 
     try {
@@ -246,7 +246,7 @@ struct ElasticMaterials {
 
   }
 
-  PetscErrorCode setBlocksOrder() {
+  MoFEMErrorCode setBlocksOrder() {
     MoFEMFunctionBeginHot;
 
 
@@ -286,7 +286,7 @@ struct ElasticMaterials {
 
   #ifdef __NONLINEAR_ELASTIC_HPP
 
-  virtual PetscErrorCode setBlocks(std::map<int,NonlinearElasticElement::BlockData> &set_of_blocks) {
+  virtual MoFEMErrorCode setBlocks(std::map<int,NonlinearElasticElement::BlockData> &set_of_blocks) {
     MoFEMFunctionBeginHot;
 
 
@@ -331,7 +331,7 @@ struct ElasticMaterials {
 
   #ifdef __CONVECTIVE_MASS_ELEMENT_HPP
 
-  PetscErrorCode setBlocks(std::map<int,ConvectiveMassElement::BlockData> &set_of_blocks) {
+  MoFEMErrorCode setBlocks(std::map<int,ConvectiveMassElement::BlockData> &set_of_blocks) {
     MoFEMFunctionBeginHot;
 
 
@@ -383,7 +383,7 @@ struct ElasticMaterials {
 
   #ifdef __KELVIN_VOIGT_DAMPER_HPP__
 
-  PetscErrorCode setBlocks(std::map<int,KelvinVoigtDamper::BlockMaterialData> &set_of_blocks) {
+  MoFEMErrorCode setBlocks(std::map<int,KelvinVoigtDamper::BlockMaterialData> &set_of_blocks) {
     MoFEMFunctionBeginHot;
 
 

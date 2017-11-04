@@ -77,7 +77,7 @@ sCatter(scatter) {
 }
 
 
-PetscErrorCode ConstrainMatrixCtx::initializeQorP(Vec x) {
+MoFEMErrorCode ConstrainMatrixCtx::initializeQorP(Vec x) {
     MoFEMFunctionBeginHot;
     if(initQorP) {
       initQorP = false;
@@ -114,7 +114,7 @@ PetscErrorCode ConstrainMatrixCtx::initializeQorP(Vec x) {
     MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode ConstrainMatrixCtx::recalculateCTandCCT() {
+MoFEMErrorCode ConstrainMatrixCtx::recalculateCTandCCT() {
     MoFEMFunctionBeginHot;
     if(initQorP) MoFEMFunctionReturnHot(0);
     
@@ -123,7 +123,7 @@ PetscErrorCode ConstrainMatrixCtx::recalculateCTandCCT() {
     MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode ConstrainMatrixCtx::destroyQorP() {
+MoFEMErrorCode ConstrainMatrixCtx::destroyQorP() {
     MoFEMFunctionBeginHot;
     if(initQorP) MoFEMFunctionReturnHot(0);
     
@@ -143,7 +143,7 @@ PetscErrorCode ConstrainMatrixCtx::destroyQorP() {
     MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode ConstrainMatrixCtx::initializeQTKQ() {
+MoFEMErrorCode ConstrainMatrixCtx::initializeQTKQ() {
     MoFEMFunctionBeginHot;
     if(initQTKQ) {
       initQTKQ = false;
@@ -172,7 +172,7 @@ PetscErrorCode ConstrainMatrixCtx::initializeQTKQ() {
     MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode ConstrainMatrixCtx::recalculateCTC() {
+MoFEMErrorCode ConstrainMatrixCtx::recalculateCTC() {
     MoFEMFunctionBeginHot;
     if(initQTKQ) MoFEMFunctionReturnHot(0);
     
@@ -180,7 +180,7 @@ PetscErrorCode ConstrainMatrixCtx::recalculateCTC() {
     MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode ConstrainMatrixCtx::destroyQTKQ() {
+MoFEMErrorCode ConstrainMatrixCtx::destroyQTKQ() {
     MoFEMFunctionBeginHot;
     if(initQTKQ) MoFEMFunctionReturnHot(0);
     
@@ -192,7 +192,7 @@ PetscErrorCode ConstrainMatrixCtx::destroyQTKQ() {
     MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode ProjectionMatrixMultOpQ(Mat Q,Vec x,Vec f) {
+MoFEMErrorCode ProjectionMatrixMultOpQ(Mat Q,Vec x,Vec f) {
   MoFEMFunctionBeginHot;
   
   void *void_ctx;
@@ -221,7 +221,7 @@ PetscErrorCode ProjectionMatrixMultOpQ(Mat Q,Vec x,Vec f) {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode ConstrainMatrixMultOpP(Mat P,Vec x,Vec f) {
+MoFEMErrorCode ConstrainMatrixMultOpP(Mat P,Vec x,Vec f) {
   MoFEMFunctionBeginHot;
   
   void *void_ctx;
@@ -243,7 +243,7 @@ PetscErrorCode ConstrainMatrixMultOpP(Mat P,Vec x,Vec f) {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode ConstrainMatrixMultOpR(Mat R,Vec x,Vec f) {
+MoFEMErrorCode ConstrainMatrixMultOpR(Mat R,Vec x,Vec f) {
   MoFEMFunctionBeginHot;
   
   void *void_ctx;
@@ -262,7 +262,7 @@ PetscErrorCode ConstrainMatrixMultOpR(Mat R,Vec x,Vec f) {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode ConstrainMatrixMultOpRT(Mat RT,Vec x,Vec f) {
+MoFEMErrorCode ConstrainMatrixMultOpRT(Mat RT,Vec x,Vec f) {
   MoFEMFunctionBeginHot;
   
   void *void_ctx;
@@ -278,7 +278,7 @@ PetscErrorCode ConstrainMatrixMultOpRT(Mat RT,Vec x,Vec f) {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode ConstrainMatrixMultOpCTC_QTKQ(Mat CTC_QTKQ,Vec x,Vec f) {
+MoFEMErrorCode ConstrainMatrixMultOpCTC_QTKQ(Mat CTC_QTKQ,Vec x,Vec f) {
   MoFEMFunctionBeginHot;
   
   void *void_ctx;
@@ -305,7 +305,7 @@ PetscErrorCode ConstrainMatrixMultOpCTC_QTKQ(Mat CTC_QTKQ,Vec x,Vec f) {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode ConstrainMatrixDestroyOpPorQ(Mat Q) {
+MoFEMErrorCode ConstrainMatrixDestroyOpPorQ(Mat Q) {
   MoFEMFunctionBeginHot;
   
   void *void_ctx;
@@ -314,7 +314,7 @@ PetscErrorCode ConstrainMatrixDestroyOpPorQ(Mat Q) {
   ierr = ctx->destroyQorP(); CHKERRQ(ierr);
   MoFEMFunctionReturnHot(0);
 }
-PetscErrorCode ConstrainMatrixDestroyOpQTKQ(Mat QTKQ) {
+MoFEMErrorCode ConstrainMatrixDestroyOpQTKQ(Mat QTKQ) {
   MoFEMFunctionBeginHot;
   
   void *void_ctx;

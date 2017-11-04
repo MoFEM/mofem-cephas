@@ -97,7 +97,7 @@ int main(int argc, char *argv[]) {
     /*struct MyMat: public FunctionsToCalculatePiolaKirchhoffI {
     Interface& moAB;
     MyMat(Interface& moab): moAB(moab) {};
-    PetscErrorCode calculateP_PiolaKirchhoffI(
+    MoFEMErrorCode calculateP_PiolaKirchhoffI(
     const BlockData block_data,
     const NumeredEntFiniteElement *fe_ptr) {
     MoFEMFunctionBeginHot;

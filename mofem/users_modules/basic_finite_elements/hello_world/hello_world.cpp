@@ -34,7 +34,7 @@ struct OpRow: public ForcesAndSourcesCore::UserDataOperator {
  OpRow(const std::string& field_name):
  ForcesAndSourcesCore::UserDataOperator(field_name,field_name,OPROW) {
  }
- PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
+ MoFEMErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
    MoFEMFunctionBeginHot;
    if(type == MBVERTEX) {
      // get number of evaluated element in the loop
@@ -57,7 +57,7 @@ struct OpRowCol: public ForcesAndSourcesCore::UserDataOperator {
  ):
  ForcesAndSourcesCore::UserDataOperator(row_field,col_field,OPROWCOL,symm) {
  }
- virtual PetscErrorCode doWork(
+ virtual MoFEMErrorCode doWork(
    int row_side,int col_side,
    EntityType row_type,EntityType col_type,
    DataForcesAndSourcesCore::EntData &row_data,
@@ -79,7 +79,7 @@ struct OpVolume: public VolumeElementForcesAndSourcesCore::UserDataOperator {
  OpVolume(const std::string& field_name):
  VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,field_name,OPROW) {
  }
- PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
+ MoFEMErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
    MoFEMFunctionBeginHot;
    if(type == MBVERTEX) {
     std::cout << "Hello Operator OpVolume:" << " volume " << getVolume() << endl;
@@ -92,7 +92,7 @@ struct OpFace: public FaceElementForcesAndSourcesCore::UserDataOperator {
  OpFace(const std::string& field_name):
  FaceElementForcesAndSourcesCore::UserDataOperator(field_name,OPROW) {
  }
- PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
+ MoFEMErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
    MoFEMFunctionBeginHot;
    if(type == MBVERTEX) {
      std::cout << "Hello Operator OpFace:" << " normal " << getNormal() << endl;
@@ -110,7 +110,7 @@ struct OpFaceSide: public FaceElementForcesAndSourcesCore::UserDataOperator {
  FaceElementForcesAndSourcesCore::UserDataOperator(field_name,OPROW),
  feSidePtr(fe_side_ptr) {
  }
- PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
+ MoFEMErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
    
    MoFEMFunctionBeginHot;
    if(type == MBVERTEX) {
@@ -125,7 +125,7 @@ struct OpVolumeSide: public VolumeElementForcesAndSourcesCoreOnSide::UserDataOpe
  OpVolumeSide(const std::string& field_name):
  VolumeElementForcesAndSourcesCoreOnSide::UserDataOperator(field_name,field_name,OPROW) {
  }
- PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
+ MoFEMErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
    MoFEMFunctionBeginHot;
    if(type == MBVERTEX) {
      std::cout << "Hello Operator OpVolumeSide:"

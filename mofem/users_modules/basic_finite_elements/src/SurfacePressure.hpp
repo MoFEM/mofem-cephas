@@ -42,7 +42,7 @@ struct NeummanForcesSurface {
      * @param  force  returned force
      * @return        error code
      */
-    virtual PetscErrorCode getForce(
+    virtual MoFEMErrorCode getForce(
       const EntityHandle ent,
       const VectorDouble3 &coords,
       const VectorDouble3 &normal,
@@ -111,7 +111,7 @@ struct NeummanForcesSurface {
 
     VectorDouble Nf; //< Local force vector
 
-    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data);
+    MoFEMErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data);
 
   };
 
@@ -136,7 +136,7 @@ struct NeummanForcesSurface {
 
     VectorDouble Nf; //< Local force vector
 
-    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data);
+    MoFEMErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data);
 
   };
 
@@ -158,7 +158,7 @@ struct NeummanForcesSurface {
 
     VectorDouble Nf;
 
-    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data);
+    MoFEMErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data);
 
   };
 
@@ -179,7 +179,7 @@ struct NeummanForcesSurface {
 
     VectorDouble Nf;
 
-    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data);
+    MoFEMErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data);
 
   };
 
@@ -192,7 +192,7 @@ struct NeummanForcesSurface {
    * @param  block_set   If tru get data from block set
    * @return             ErrorCode
    */
-  PetscErrorCode addForce(const std::string field_name,Vec F,int ms_id,bool ho_geometry = false,bool block_set = false);
+  MoFEMErrorCode addForce(const std::string field_name,Vec F,int ms_id,bool ho_geometry = false,bool block_set = false);
 
   /**
    * \brief Add operator to calculate pressure on element
@@ -203,12 +203,12 @@ struct NeummanForcesSurface {
    * @param  block_set   If tru get data from block set
    * @return             ErrorCode
    */
-  PetscErrorCode addPreassure(
+  MoFEMErrorCode addPreassure(
     const std::string field_name,Vec F,int ms_id,bool ho_geometry = false,bool block_set = false
   );
 
   /// Add flux element operator (integration on face)
-  PetscErrorCode addFlux(const std::string field_name,Vec F,int ms_id,bool ho_geometry = false);
+  MoFEMErrorCode addFlux(const std::string field_name,Vec F,int ms_id,bool ho_geometry = false);
 
 };
 
@@ -233,7 +233,7 @@ struct MetaNeummanForces {
    * @param  intersect_ptr         Pointer to range to interect meshset entities
    * @return                       Error code
    */
-  static PetscErrorCode addNeumannBCElements(
+  static MoFEMErrorCode addNeumannBCElements(
     MoFEM::Interface &m_field,
     const std::string field_name,
     const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS",
@@ -339,7 +339,7 @@ struct MetaNeummanForces {
    * @return                       Error code
    *
    */
-  static PetscErrorCode setMomentumFluxOperators(
+  static MoFEMErrorCode setMomentumFluxOperators(
     MoFEM::Interface &m_field,
     boost::ptr_map<std::string,NeummanForcesSurface> &neumann_forces,
     Vec F,const std::string field_name,const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS"
@@ -387,7 +387,7 @@ struct MetaNeummanForces {
 
   // /** \deprecated Use setMomentumFluxOperators() instead
   // */
-  // DEPRECATED static PetscErrorCode setNeumannFiniteElementOperators(
+  // DEPRECATED static MoFEMErrorCode setNeumannFiniteElementOperators(
   //   MoFEM::Interface &m_field,
   //   boost::ptr_map<std::string,NeummanForcesSurface> &neumann_forces,
   //   Vec F,const std::string field_name,const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS"
@@ -400,7 +400,7 @@ struct MetaNeummanForces {
   //   MoFEMFunctionReturnHot(0);
   // }
 
-  static PetscErrorCode addNeumannFluxBCElements(
+  static MoFEMErrorCode addNeumannFluxBCElements(
     MoFEM::Interface &m_field,
     const std::string field_name,
     const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS") {
@@ -425,7 +425,7 @@ struct MetaNeummanForces {
     MoFEMFunctionReturnHot(0);
   }
 
-  static PetscErrorCode setMassFluxOperators(
+  static MoFEMErrorCode setMassFluxOperators(
     MoFEM::Interface &m_field,
     boost::ptr_map<std::string,NeummanForcesSurface> &neumann_forces,
     Vec F,const std::string field_name,const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS"
@@ -448,7 +448,7 @@ struct MetaNeummanForces {
 
   // /** \deprecated Use setMassFluxOperators() instead
   // */
-  // DEPRECATED static PetscErrorCode setNeumannFluxFiniteElementOperators(
+  // DEPRECATED static MoFEMErrorCode setNeumannFluxFiniteElementOperators(
   //   MoFEM::Interface &m_field,
   //   boost::ptr_map<std::string,NeummanForcesSurface> &neumann_forces,
   //   Vec F,const std::string field_name,const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS"

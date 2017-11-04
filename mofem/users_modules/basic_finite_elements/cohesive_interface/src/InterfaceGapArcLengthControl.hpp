@@ -76,7 +76,7 @@ struct ArcLengthIntElemFEMethod: public FEMethod {
   /** \brief remove nodes of prims which are fully damaged
     *
     */
-  PetscErrorCode remove_damaged_prisms_nodes() {
+  MoFEMErrorCode remove_damaged_prisms_nodes() {
     MoFEMFunctionBeginHot;
     Range prisms;
     rval = mOab.get_entities_by_type(0,MBPRISM,prisms,false); CHKERRQ_MOAB(rval);
@@ -98,7 +98,7 @@ struct ArcLengthIntElemFEMethod: public FEMethod {
   }
 
   double lambda_int;
-  PetscErrorCode preProcess() {
+  MoFEMErrorCode preProcess() {
     MoFEMFunctionBeginHot;
     switch(snes_ctx) {
       case CTX_SNESSETFUNCTION: {
@@ -113,7 +113,7 @@ struct ArcLengthIntElemFEMethod: public FEMethod {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode calculate_lambda_int(double &_lambda_int_) {
+  MoFEMErrorCode calculate_lambda_int(double &_lambda_int_) {
     MoFEMFunctionBeginHot;
     ParallelComm* pcomm = ParallelComm::get_pcomm(&mOab,MYPCOMM_INDEX);
     NumeredDofEntityByLocalIdx::iterator dit,hi_dit;
@@ -155,7 +155,7 @@ struct ArcLengthIntElemFEMethod: public FEMethod {
     MoFEMFunctionReturnHot(0);
   }
 
-  virtual PetscErrorCode calculate_db() {
+  virtual MoFEMErrorCode calculate_db() {
     MoFEMFunctionBeginHot;
     ierr = VecZeroEntries(arcPtr->db); CHKERRQ(ierr);
     ierr = VecGhostUpdateBegin(arcPtr->db,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -182,7 +182,7 @@ struct ArcLengthIntElemFEMethod: public FEMethod {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode operator()() {
+  MoFEMErrorCode operator()() {
     MoFEMFunctionBeginHot;
 
     switch(snes_ctx) {
@@ -207,7 +207,7 @@ struct ArcLengthIntElemFEMethod: public FEMethod {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode postProcess() {
+  MoFEMErrorCode postProcess() {
     MoFEMFunctionBeginHot;
     switch(snes_ctx) {
       case CTX_SNESSETJACOBIAN: {
@@ -224,7 +224,7 @@ struct ArcLengthIntElemFEMethod: public FEMethod {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode calculate_dx_and_dlambda(Vec &x) {
+  MoFEMErrorCode calculate_dx_and_dlambda(Vec &x) {
     MoFEMFunctionBeginHot;
     //dx
     ierr = VecCopy(x,arcPtr->dx); CHKERRQ(ierr);
@@ -246,7 +246,7 @@ struct ArcLengthIntElemFEMethod: public FEMethod {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode calculate_init_dlambda(double *dlambda) {
+  MoFEMErrorCode calculate_init_dlambda(double *dlambda) {
     MoFEMFunctionBeginHot;
 
     *dlambda = arcPtr->s/(arcPtr->beta*sqrt(arcPtr->F_lambda2));
@@ -265,7 +265,7 @@ struct ArcLengthIntElemFEMethod: public FEMethod {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode set_dlambda_to_x(Vec &x,double dlambda) {
+  MoFEMErrorCode set_dlambda_to_x(Vec &x,double dlambda) {
     MoFEMFunctionBeginHot;
 
     if(arcPtr->getPetscLocalDofIdx()!=-1) {

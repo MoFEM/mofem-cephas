@@ -22,14 +22,14 @@
 /// Class used to scale loads, f.e. in arc-length control
 struct MethodForForceScaling {
 
-  virtual PetscErrorCode scaleNf(const FEMethod *fe,VectorDouble& Nf) = 0;
-  virtual PetscErrorCode getForceScale(const double ts_t,double& scale) {
+  virtual MoFEMErrorCode scaleNf(const FEMethod *fe,VectorDouble& Nf) = 0;
+  virtual MoFEMErrorCode getForceScale(const double ts_t,double& scale) {
     MoFEMFunctionBeginHot;
     SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
     MoFEMFunctionReturnHot(0);
   }
 
-  static PetscErrorCode applyScale(
+  static MoFEMErrorCode applyScale(
     const FEMethod *fe,
     boost::ptr_vector<MethodForForceScaling> &methodsOp,VectorDouble &Nf) {
       

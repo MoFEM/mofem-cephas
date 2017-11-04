@@ -35,7 +35,7 @@ using namespace boost::numeric;
 // #endif
 
 
-PetscErrorCode PostProcCommonOnRefMesh::OpGetFieldValues::doWork(
+MoFEMErrorCode PostProcCommonOnRefMesh::OpGetFieldValues::doWork(
   int side,
   EntityType type,
   DataForcesAndSourcesCore::EntData &data
@@ -215,7 +215,7 @@ PetscErrorCode PostProcCommonOnRefMesh::OpGetFieldValues::doWork(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode PostProcCommonOnRefMesh::OpGetFieldGradientValues::doWork(
+MoFEMErrorCode PostProcCommonOnRefMesh::OpGetFieldGradientValues::doWork(
   int side,
   EntityType type,
   DataForcesAndSourcesCore::EntData &data
@@ -329,12 +329,12 @@ PetscErrorCode PostProcCommonOnRefMesh::OpGetFieldGradientValues::doWork(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode PostProcFatPrismOnRefinedMesh::generateReferenceElementMesh() {
+MoFEMErrorCode PostProcFatPrismOnRefinedMesh::generateReferenceElementMesh() {
   MoFEMFunctionBeginHot;
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode PostProcFatPrismOnRefinedMesh::setGaussPtsTrianglesOnly(int order_triangles_only) {
+MoFEMErrorCode PostProcFatPrismOnRefinedMesh::setGaussPtsTrianglesOnly(int order_triangles_only) {
   MoFEMFunctionBeginHot;
   // if(gaussPtsTrianglesOnly.size1()==0 || gaussPtsTrianglesOnly.size2()==0) {
   //   SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"post-process mesh not generated");
@@ -481,7 +481,7 @@ PetscErrorCode PostProcFatPrismOnRefinedMesh::setGaussPtsTrianglesOnly(int order
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode PostProcFatPrismOnRefinedMesh::setGaussPtsThroughThickness(int order_thickness) {
+MoFEMErrorCode PostProcFatPrismOnRefinedMesh::setGaussPtsThroughThickness(int order_thickness) {
   MoFEMFunctionBeginHot;
   if(gaussPtsThroughThickness.size1()==0 || gaussPtsThroughThickness.size2()==0) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"post-process mesh not generated");
@@ -489,7 +489,7 @@ PetscErrorCode PostProcFatPrismOnRefinedMesh::setGaussPtsThroughThickness(int or
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode PostProcFatPrismOnRefinedMesh::preProcess() {
+MoFEMErrorCode PostProcFatPrismOnRefinedMesh::preProcess() {
   MoFEMFunctionBeginHot;
   // MoAB
   ParallelComm* pcomm_post_proc_mesh = ParallelComm::get_pcomm(&postProcMesh,MYPCOMM_INDEX);
@@ -500,7 +500,7 @@ PetscErrorCode PostProcFatPrismOnRefinedMesh::preProcess() {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode PostProcFatPrismOnRefinedMesh::postProcess() {
+MoFEMErrorCode PostProcFatPrismOnRefinedMesh::postProcess() {
   MoFEMFunctionBeginHot;
   ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
   ParallelComm* pcomm_post_proc_mesh = ParallelComm::get_pcomm(&postProcMesh,MYPCOMM_INDEX);
@@ -522,7 +522,7 @@ PetscErrorCode PostProcFatPrismOnRefinedMesh::postProcess() {
 }
 
 
-PetscErrorCode PostProcFaceOnRefinedMesh::generateReferenceElementMesh() {
+MoFEMErrorCode PostProcFaceOnRefinedMesh::generateReferenceElementMesh() {
   MoFEMFunctionBeginHot;
 
   gaussPts.resize(3,3,false);
@@ -574,7 +574,7 @@ PetscErrorCode PostProcFaceOnRefinedMesh::generateReferenceElementMesh() {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode PostProcFaceOnRefinedMesh::setGaussPts(int order) {
+MoFEMErrorCode PostProcFaceOnRefinedMesh::setGaussPts(int order) {
   MoFEMFunctionBeginHot;
   if(gaussPts.size1()==0) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"post-process mesh not generated");
@@ -635,7 +635,7 @@ PetscErrorCode PostProcFaceOnRefinedMesh::setGaussPts(int order) {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode PostProcFaceOnRefinedMesh::preProcess() {
+MoFEMErrorCode PostProcFaceOnRefinedMesh::preProcess() {
   MoFEMFunctionBeginHot;
   ParallelComm* pcomm_post_proc_mesh = ParallelComm::get_pcomm(&postProcMesh,MYPCOMM_INDEX);
   if(pcomm_post_proc_mesh != NULL) {
@@ -644,7 +644,7 @@ PetscErrorCode PostProcFaceOnRefinedMesh::preProcess() {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode PostProcFaceOnRefinedMesh::postProcess() {
+MoFEMErrorCode PostProcFaceOnRefinedMesh::postProcess() {
   MoFEMFunctionBeginHot;
   ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
   ParallelComm* pcomm_post_proc_mesh = ParallelComm::get_pcomm(&postProcMesh,MYPCOMM_INDEX);

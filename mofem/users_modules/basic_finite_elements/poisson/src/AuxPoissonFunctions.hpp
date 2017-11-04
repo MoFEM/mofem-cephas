@@ -39,7 +39,7 @@ namespace PoissonExample {
      * @param  ghost_vec pointer to created ghost vector
      * @return           error code
      */
-    PetscErrorCode createGhostVec(Vec *ghost_vec) const {
+    MoFEMErrorCode createGhostVec(Vec *ghost_vec) const {
       
       MoFEMFunctionBeginHot;
       int ghosts[] = { 0 };
@@ -52,7 +52,7 @@ namespace PoissonExample {
     /**
      * \brief Assemble error vector
      */
-    PetscErrorCode assembleGhostVector(Vec ghost_vec) const {
+    MoFEMErrorCode assembleGhostVector(Vec ghost_vec) const {
       
       MoFEMFunctionBeginHot;
       ierr = VecAssemblyBegin(ghost_vec); CHKERRQ(ierr);
@@ -69,7 +69,7 @@ namespace PoissonExample {
     /**
      * \brief Print error
      */
-    PetscErrorCode printError(Vec ghost_vec) {
+    MoFEMErrorCode printError(Vec ghost_vec) {
       
       MoFEMFunctionBeginHot;
       double *e;
@@ -82,7 +82,7 @@ namespace PoissonExample {
     /**
      * \brief Test error
      */
-    PetscErrorCode testError(Vec ghost_vec) {
+    MoFEMErrorCode testError(Vec ghost_vec) {
       
       MoFEMFunctionBeginHot;
       double *e;

@@ -79,7 +79,7 @@ struct PostProcCommonOnRefMesh {
     VectorDouble vAlues;
     VectorDouble *vAluesPtr;
 
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int side,
       EntityType type,
       DataForcesAndSourcesCore::EntData &data
@@ -121,7 +121,7 @@ struct PostProcCommonOnRefMesh {
     VectorDouble vAlues;
     VectorDouble *vAluesPtr;
 
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int side,
       EntityType type,
       DataForcesAndSourcesCore::EntData &data
@@ -165,7 +165,7 @@ struct PostProcTemplateOnRefineMesh: public ELEMENT {
     * \ingroup mofem_fs_post_proc
 
   */
-  PetscErrorCode addFieldValuesPostProc(const std::string field_name,Vec v = PETSC_NULL) {
+  MoFEMErrorCode addFieldValuesPostProc(const std::string field_name,Vec v = PETSC_NULL) {
     MoFEMFunctionBeginHot;
     ELEMENT::getOpPtrVector().push_back(
       new PostProcCommonOnRefMesh::OpGetFieldValues(
@@ -184,7 +184,7 @@ struct PostProcTemplateOnRefineMesh: public ELEMENT {
     * \ingroup mofem_fs_post_proc
 
   */
-  PetscErrorCode addFieldValuesPostProc(const std::string field_name,const std::string tag_name,Vec v = PETSC_NULL) {
+  MoFEMErrorCode addFieldValuesPostProc(const std::string field_name,const std::string tag_name,Vec v = PETSC_NULL) {
     MoFEMFunctionBeginHot;
     ELEMENT::getOpPtrVector().push_back(
       new PostProcCommonOnRefMesh::OpGetFieldValues(
@@ -206,7 +206,7 @@ struct PostProcTemplateOnRefineMesh: public ELEMENT {
     * \ingroup mofem_fs_post_proc
 
   */
-  PetscErrorCode addFieldValuesGradientPostProc(const std::string field_name,Vec v = PETSC_NULL) {
+  MoFEMErrorCode addFieldValuesGradientPostProc(const std::string field_name,Vec v = PETSC_NULL) {
     MoFEMFunctionBeginHot;
     ELEMENT::getOpPtrVector().push_back(
       new PostProcCommonOnRefMesh::OpGetFieldGradientValues(
@@ -225,7 +225,7 @@ struct PostProcTemplateOnRefineMesh: public ELEMENT {
     * \ingroup mofem_fs_post_proc
 
   */
-  PetscErrorCode addFieldValuesGradientPostProc(const std::string field_name,const std::string tag_name,Vec v = PETSC_NULL) {
+  MoFEMErrorCode addFieldValuesGradientPostProc(const std::string field_name,const std::string tag_name,Vec v = PETSC_NULL) {
     MoFEMFunctionBeginHot;
     ELEMENT::getOpPtrVector().push_back(
       new PostProcCommonOnRefMesh::OpGetFieldGradientValues(
@@ -243,7 +243,7 @@ struct PostProcTemplateOnRefineMesh: public ELEMENT {
    * \ingroup mofem_fs_post_proc
 
    */
-  PetscErrorCode writeFile(const std::string file_name) {
+  MoFEMErrorCode writeFile(const std::string file_name) {
     MoFEMFunctionBeginHot;
     // #ifdef MOAB_HDF5_PARALLEL
      rval = postProcMesh.write_file(file_name.c_str(),"MOAB","PARALLEL=WRITE_PART"); CHKERRQ_MOAB(rval);
@@ -311,7 +311,7 @@ struct PostProcTemplateVolumeOnRefinedMesh: public PostProcTemplateOnRefineMesh<
   each node a "moab" tag is attached to store those values.
 
   */
-  PetscErrorCode generateReferenceElementMesh() {
+  MoFEMErrorCode generateReferenceElementMesh() {
     MoFEMFunctionBeginHot;
 
     int max_level = 0;
@@ -440,7 +440,7 @@ struct PostProcTemplateVolumeOnRefinedMesh: public PostProcTemplateOnRefineMesh<
   on post-processing mesh.
 
   */
-  PetscErrorCode setGaussPts(int order) {
+  MoFEMErrorCode setGaussPts(int order) {
     MoFEMFunctionBeginHot;
 
     try {
@@ -523,13 +523,13 @@ struct PostProcTemplateVolumeOnRefinedMesh: public PostProcTemplateOnRefineMesh<
   fields.
 
   */
-  PetscErrorCode clearOperators() {
+  MoFEMErrorCode clearOperators() {
     MoFEMFunctionBeginHot;
     T::getOpPtrVector().clear();
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode preProcess() {
+  MoFEMErrorCode preProcess() {
     MoFEMFunctionBeginHot;
 
     moab::Interface &moab = T::coreMesh;
@@ -541,7 +541,7 @@ struct PostProcTemplateVolumeOnRefinedMesh: public PostProcTemplateOnRefineMesh<
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode postProcess() {
+  MoFEMErrorCode postProcess() {
     MoFEMFunctionBeginHot;
 
     moab::Interface &moab = T::coreMesh;
@@ -584,7 +584,7 @@ struct PostProcTemplateVolumeOnRefinedMesh: public PostProcTemplateOnRefineMesh<
 
   /** \brief Add operator to post-process Hdiv field
   */
-  PetscErrorCode addHdivFunctionsPostProc(const std::string field_name) {
+  MoFEMErrorCode addHdivFunctionsPostProc(const std::string field_name) {
     MoFEMFunctionBeginHot;
     T::getOpPtrVector().push_back(new OpHdivFunctions(T::postProcMesh,T::mapGaussPts,field_name));
     MoFEMFunctionReturnHot(0);
@@ -605,7 +605,7 @@ struct PostProcTemplateVolumeOnRefinedMesh: public PostProcTemplateOnRefineMesh<
     mapGaussPts(map_gauss_pts) {
     }
 
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int side,
       EntityType type,
       DataForcesAndSourcesCore::EntData &data
@@ -735,14 +735,14 @@ struct PostProcFatPrismOnRefinedMesh: public PostProcTemplateOnRefineMesh<MoFEM:
 
   PointsMap3D_multiIndex pointsMap;
 
-  PetscErrorCode setGaussPtsTrianglesOnly(int order_triangles_only);
-  PetscErrorCode setGaussPtsThroughThickness(int order_thickness);
-  PetscErrorCode generateReferenceElementMesh();
+  MoFEMErrorCode setGaussPtsTrianglesOnly(int order_triangles_only);
+  MoFEMErrorCode setGaussPtsThroughThickness(int order_thickness);
+  MoFEMErrorCode generateReferenceElementMesh();
 
   std::map<EntityHandle,EntityHandle> elementsMap;
 
-  PetscErrorCode preProcess();
-  PetscErrorCode postProcess();
+  MoFEMErrorCode preProcess();
+  MoFEMErrorCode postProcess();
 
   struct CommonData: PostProcCommonOnRefMesh::CommonData {
   };
@@ -781,13 +781,13 @@ struct PostProcFaceOnRefinedMesh: public PostProcTemplateOnRefineMesh<MoFEM::Fac
   // Gauss pts set on refined mesh
   int getRule(int order) { return -1; };
 
-  PetscErrorCode generateReferenceElementMesh();
-  PetscErrorCode setGaussPts(int order);
+  MoFEMErrorCode generateReferenceElementMesh();
+  MoFEMErrorCode setGaussPts(int order);
 
   std::map<EntityHandle,EntityHandle> elementsMap;
 
-  PetscErrorCode preProcess();
-  PetscErrorCode postProcess();
+  MoFEMErrorCode preProcess();
+  MoFEMErrorCode postProcess();
 
   struct CommonData: PostProcCommonOnRefMesh::CommonData {
   };

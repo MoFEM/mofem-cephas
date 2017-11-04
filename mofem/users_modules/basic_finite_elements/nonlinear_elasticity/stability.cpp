@@ -43,7 +43,7 @@ struct MyMat_double: public NonlinearElasticElement::FunctionsToCalculatePiolaKi
   ublas::vector<TYPE,ublas::bounded_array<TYPE,6> > sTrain,sTrain0,sTress;
   ublas::matrix<adouble,ublas::row_major,ublas::bounded_array<adouble,9> > invF,CauchyStress;
 
-  virtual PetscErrorCode calculateP_PiolaKirchhoffI(
+  virtual MoFEMErrorCode calculateP_PiolaKirchhoffI(
     const NonlinearElasticElement::BlockData block_data,
     boost::shared_ptr<const NumeredEntFiniteElement> fe_ptr
   ) {
@@ -125,7 +125,7 @@ struct MyMat: public MyMat_double<TYPE> {
 
   int nbActiveVariables0;
 
-  virtual PetscErrorCode setUserActiveVariables(
+  virtual MoFEMErrorCode setUserActiveVariables(
     int &nb_active_variables) {
     MoFEMFunctionBeginHot;
 
@@ -151,7 +151,7 @@ struct MyMat: public MyMat_double<TYPE> {
     MoFEMFunctionReturnHot(0);
   }
 
-  virtual PetscErrorCode setUserActiveVariables(
+  virtual MoFEMErrorCode setUserActiveVariables(
     VectorDouble &active_varibles) {
     MoFEMFunctionBeginHot;
 

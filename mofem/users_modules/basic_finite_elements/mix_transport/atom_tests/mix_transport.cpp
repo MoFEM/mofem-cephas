@@ -37,14 +37,14 @@ struct MyTransport: public MixTransportElement {
 
   MyTransport(MoFEM::Interface &m_field): MixTransportElement(m_field) {};
 
-  PetscErrorCode getSource(EntityHandle ent,const double x,const double y,const double z,double &flux) {
+  MoFEMErrorCode getSource(EntityHandle ent,const double x,const double y,const double z,double &flux) {
     MoFEMFunctionBeginHot;
     //double d = sqrt(x*x+y*y+z*z);
     flux = 1;//-pow(d,5./4.);
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode getBcOnValues(
+  MoFEMErrorCode getBcOnValues(
     const EntityHandle ent,
     const double x,const double y,const double z,
     double &value) {
@@ -53,7 +53,7 @@ struct MyTransport: public MixTransportElement {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode getBcOnFluxes(
+  MoFEMErrorCode getBcOnFluxes(
     const EntityHandle ent,
     const double x,const double y,const double z,
     double &flux) {

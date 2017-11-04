@@ -56,7 +56,7 @@ struct Smoother {
     NonlinearElasticElement::MyVolumeFE(m_field),
     smootherData(smoother_data) {}
 
-    PetscErrorCode preProcess() {
+    MoFEMErrorCode preProcess() {
       MoFEMFunctionBeginHot;
 
 
@@ -105,7 +105,7 @@ struct Smoother {
       MoFEMFunctionReturnHot(0);
     }
 
-    PetscErrorCode postProcess() {
+    MoFEMErrorCode postProcess() {
       MoFEMFunctionBeginHot;
 
 
@@ -161,7 +161,7 @@ struct Smoother {
     ) {
     }
 
-    PetscErrorCode calculateStress(const int gg) {
+    MoFEMErrorCode calculateStress(const int gg) {
       MoFEMFunctionBeginHot;
 
       try {
@@ -204,7 +204,7 @@ struct Smoother {
 
     ublas::vector<int> frontIndices;
 
-    PetscErrorCode aSemble(
+    MoFEMErrorCode aSemble(
       int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
     ) {
       MoFEMFunctionBeginHot;
@@ -276,7 +276,7 @@ struct Smoother {
 
     ublas::vector<int> rowFrontIndices;
 
-    PetscErrorCode aSemble(
+    MoFEMErrorCode aSemble(
       int row_side,int col_side,
       EntityType row_type,EntityType col_type,
       DataForcesAndSourcesCore::EntData &row_data,

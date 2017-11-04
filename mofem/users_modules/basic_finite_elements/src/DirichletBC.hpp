@@ -58,10 +58,10 @@ struct DirichletDisplacementBc: public MoFEM::FEMethod {
   std::vector<int> dofsIndices;
   std::vector<double> dofsValues;
   std::vector<double> dofsXValues;
-  virtual PetscErrorCode iNitalize();
+  virtual MoFEMErrorCode iNitalize();
 
-  PetscErrorCode preProcess();
-  PetscErrorCode postProcess();
+  MoFEMErrorCode preProcess();
+  MoFEMErrorCode postProcess();
 
   boost::ptr_vector<MethodForForceScaling> methodsOp;
 
@@ -98,7 +98,7 @@ struct DirichletSpatialPositionsBc: public DirichletDisplacementBc {
   std::vector<std::string> fixFields;   ///<
 
   VectorDouble cOords;
-  PetscErrorCode iNitalize();
+  MoFEMErrorCode iNitalize();
 
 };
 
@@ -115,7 +115,7 @@ struct DirichletTemperatureBc: public DirichletDisplacementBc {
     MoFEM::Interface& m_field,const std::string &field_name):
     DirichletDisplacementBc(m_field,field_name) {}
 
-  PetscErrorCode iNitalize();
+  MoFEMErrorCode iNitalize();
 
 };
 
@@ -147,9 +147,9 @@ struct DirichletFixFieldAtEntitiesBc: public DirichletDisplacementBc {
     fieldNames.push_back(fieldName);
   }
 
-  PetscErrorCode iNitalize();
-  PetscErrorCode preProcess();
-  PetscErrorCode postProcess();
+  MoFEMErrorCode iNitalize();
+  MoFEMErrorCode preProcess();
+  MoFEMErrorCode postProcess();
 
 };
 
@@ -194,7 +194,7 @@ struct DirichletSetFieldFromBlock: public DirichletDisplacementBc {
   blocksetName(blockset_name) {
   }
 
-  PetscErrorCode iNitalize();
+  MoFEMErrorCode iNitalize();
 
 };
 
@@ -239,7 +239,7 @@ struct DirichletSetFieldFromBlockWithFlags: public DirichletDisplacementBc {
   blocksetName(blockset_name) {
   }
 
-  PetscErrorCode iNitalize();
+  MoFEMErrorCode iNitalize();
 
 };
 

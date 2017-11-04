@@ -65,7 +65,7 @@ struct ThermalStressElement {
     commonData(common_data),
     verb(_verb) {}
 
-    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
+    MoFEMErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
       MoFEMFunctionBeginHot;
       try {
         if(data.getFieldData().size()==0) MoFEMFunctionReturnHot(0);
@@ -104,7 +104,7 @@ struct ThermalStressElement {
     verb(_verb) { }
 
     VectorDouble Nf;
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
         MoFEMFunctionBeginHot;
 
@@ -183,7 +183,7 @@ struct ThermalStressElement {
 
   };
 
-  PetscErrorCode addThermalStressElement(
+  MoFEMErrorCode addThermalStressElement(
     const std::string fe_name,const std::string field_name,const std::string thermal_field_name,
     const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS"
   ) {
@@ -220,7 +220,7 @@ struct ThermalStressElement {
   }
 
   /// \depracted Do not use this fiction with spelling mistake
-  DEPRECATED inline PetscErrorCode addThermalSterssElement(
+  DEPRECATED inline MoFEMErrorCode addThermalSterssElement(
     const std::string fe_name,const std::string field_name,const std::string thermal_field_name,
     const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS"
   ) {
@@ -228,7 +228,7 @@ struct ThermalStressElement {
                                    mesh_nodals_positions);
   }
 
-  PetscErrorCode setThermalStressRhsOperators(string field_name,string thermal_field_name,Vec &F,int verb = 0) {
+  MoFEMErrorCode setThermalStressRhsOperators(string field_name,string thermal_field_name,Vec &F,int verb = 0) {
     MoFEMFunctionBeginHot;
     if(mField.check_field(thermal_field_name)) {
       std::map<int,BlockData>::iterator sit = setOfBlocks.begin();

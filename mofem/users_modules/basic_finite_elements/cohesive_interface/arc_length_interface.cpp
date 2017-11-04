@@ -53,7 +53,7 @@ namespace CohesiveElement {
 
     };
 
-    PetscErrorCode postProcessLoadPath() {
+    MoFEMErrorCode postProcessLoadPath() {
       MoFEMFunctionBeginHot;
       FILE *datafile;
       PetscFOpen(PETSC_COMM_SELF,DATAFILENAME,"a+",&datafile);
@@ -111,7 +111,7 @@ namespace CohesiveElement {
 
     
 
-    PetscErrorCode preProcess() {
+    MoFEMErrorCode preProcess() {
       MoFEMFunctionBeginHot;
 
       switch(snes_ctx) {
@@ -130,7 +130,7 @@ namespace CohesiveElement {
       MoFEMFunctionReturnHot(0);
     }
 
-    PetscErrorCode postProcess() {
+    MoFEMErrorCode postProcess() {
       MoFEMFunctionBeginHot;
       switch(snes_ctx) {
         case CTX_SNESNONE: {}

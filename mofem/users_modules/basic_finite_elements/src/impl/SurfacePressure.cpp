@@ -43,7 +43,7 @@ methodsOp(methods_op),
 hoGeometry(ho_geometry) {
 }
 
-PetscErrorCode NeummanForcesSurface::OpNeumannForce::doWork(
+MoFEMErrorCode NeummanForcesSurface::OpNeumannForce::doWork(
   int side,EntityType type,DataForcesAndSourcesCore::EntData &data
 ) {
 
@@ -133,7 +133,7 @@ analyticalForceOp(analytical_force_op),
 hoGeometry(ho_geometry) {
 }
 
-PetscErrorCode NeummanForcesSurface::OpNeumannForceAnalytical::doWork(
+MoFEMErrorCode NeummanForcesSurface::OpNeumannForceAnalytical::doWork(
   int side,EntityType type,DataForcesAndSourcesCore::EntData &data
 ) {
   MoFEMFunctionBeginHot;
@@ -225,7 +225,7 @@ dAta(data),
 methodsOp(methods_op),
 hoGeometry(ho_geometry) {}
 
-PetscErrorCode NeummanForcesSurface::OpNeumannPreassure::doWork(
+MoFEMErrorCode NeummanForcesSurface::OpNeumannPreassure::doWork(
   int side,EntityType type,DataForcesAndSourcesCore::EntData &data
 ) {
 
@@ -308,7 +308,7 @@ dAta(data),
 methodsOp(methods_op),
 hoGeometry(ho_geometry) {}
 
-PetscErrorCode NeummanForcesSurface::OpNeumannFlux::doWork(
+MoFEMErrorCode NeummanForcesSurface::OpNeumannFlux::doWork(
   int side,EntityType type,DataForcesAndSourcesCore::EntData &data
 ) {
 
@@ -369,7 +369,7 @@ PetscErrorCode NeummanForcesSurface::OpNeumannFlux::doWork(
 }
 
 
-PetscErrorCode NeummanForcesSurface::addForce(const std::string field_name,Vec F,int ms_id,bool ho_geometry,bool block_set) {
+MoFEMErrorCode NeummanForcesSurface::addForce(const std::string field_name,Vec F,int ms_id,bool ho_geometry,bool block_set) {
 
 
   const CubitMeshSets *cubit_meshset_ptr;
@@ -421,7 +421,7 @@ PetscErrorCode NeummanForcesSurface::addForce(const std::string field_name,Vec F
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode NeummanForcesSurface::addPreassure(const std::string field_name,Vec F,int ms_id,bool ho_geometry,bool block_set) {
+MoFEMErrorCode NeummanForcesSurface::addPreassure(const std::string field_name,Vec F,int ms_id,bool ho_geometry,bool block_set) {
 
   const CubitMeshSets *cubit_meshset_ptr;
   MeshsetsManager *mmanager_ptr;
@@ -457,7 +457,7 @@ PetscErrorCode NeummanForcesSurface::addPreassure(const std::string field_name,V
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode NeummanForcesSurface::addFlux(const std::string field_name,Vec F,int ms_id,bool ho_geometry) {
+MoFEMErrorCode NeummanForcesSurface::addFlux(const std::string field_name,Vec F,int ms_id,bool ho_geometry) {
 
 
   const CubitMeshSets *cubit_meshset_ptr;

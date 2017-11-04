@@ -75,7 +75,7 @@ struct MyTransport: public MixTransportElement {
    * @param  flux reference to source term set by function
    * @return      error code
    */
-  PetscErrorCode getSource(EntityHandle ent,const double x,const double y,const double z,double &flux) {
+  MoFEMErrorCode getSource(EntityHandle ent,const double x,const double y,const double z,double &flux) {
     MoFEMFunctionBeginHot;
     flux = 0;
     MoFEMFunctionReturnHot(0);
@@ -90,7 +90,7 @@ struct MyTransport: public MixTransportElement {
    * @param  value reference to value set by function
    * @return       error code
    */
-  PetscErrorCode getBcOnValues(
+  MoFEMErrorCode getBcOnValues(
     const EntityHandle ent,
     const double x,const double y,const double z,
     double &value) {
@@ -108,7 +108,7 @@ struct MyTransport: public MixTransportElement {
    * @param  flux reference to flux which is set by function
    * @return      [description]
    */
-  PetscErrorCode getBcOnFluxes(
+  MoFEMErrorCode getBcOnFluxes(
     const EntityHandle ent,
     const double x,const double y,const double z,
     double &flux) {
@@ -140,7 +140,7 @@ struct MyTransport: public MixTransportElement {
 
    * @return           error code
    */
-  PetscErrorCode addBoundaryElements(BitRefLevel &ref_level) {
+  MoFEMErrorCode addBoundaryElements(BitRefLevel &ref_level) {
     MoFEMFunctionBeginHot;
     Range tets;
     ierr = mField.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(ref_level,BitRefLevel().set(),MBTET,tets);
@@ -204,7 +204,7 @@ struct MyTransport: public MixTransportElement {
    those entities are squashed.
 
    */
-  PetscErrorCode refineMesh(
+  MoFEMErrorCode refineMesh(
     MixTransportElement &ufe,const int nb_levels,const int order
   ) {
     MeshRefinement *refine_ptr;
@@ -310,7 +310,7 @@ struct MyTransport: public MixTransportElement {
 
    * @return error code
    */
-  PetscErrorCode squashBits() {
+  MoFEMErrorCode squashBits() {
 
     MoFEMFunctionBeginHot;
     BitRefLevel all_but_0;
@@ -343,7 +343,7 @@ struct MyTransport: public MixTransportElement {
    * @param  order     appropriate order
    * @return           error code
    */
-  PetscErrorCode updateMeshsetsFieldsAndElements(const int nb_levels) {
+  MoFEMErrorCode updateMeshsetsFieldsAndElements(const int nb_levels) {
     BitRefLevel ref_level;
     MoFEMFunctionBeginHot;
     ref_level.set(nb_levels);

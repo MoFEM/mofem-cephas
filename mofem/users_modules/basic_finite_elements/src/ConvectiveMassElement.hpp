@@ -70,8 +70,8 @@ struct ConvectiveMassElement {
     Vec V;
     double eNergy;
 
-    PetscErrorCode preProcess();
-    PetscErrorCode postProcess();
+    MoFEMErrorCode preProcess();
+    MoFEMErrorCode postProcess();
 
 
   };
@@ -159,7 +159,7 @@ struct ConvectiveMassElement {
     /** \brief operator calculating deformation gradient
       *
       */
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int side,EntityType type,DataForcesAndSourcesCore::EntData &data
     );
 
@@ -172,7 +172,7 @@ struct ConvectiveMassElement {
   struct CommonFunctions {
 
     template<typename TYPE>
-    PetscErrorCode dEterminatnt(
+    MoFEMErrorCode dEterminatnt(
       ublas::matrix<TYPE,ublas::row_major,ublas::bounded_array<TYPE,9> >& a,
       TYPE &det
     ) {
@@ -195,7 +195,7 @@ struct ConvectiveMassElement {
     }
 
     template<typename TYPE>
-    PetscErrorCode iNvert(
+    MoFEMErrorCode iNvert(
       TYPE det,
       ublas::matrix<TYPE,ublas::row_major,ublas::bounded_array<TYPE,9> >& a,
       ublas::matrix<TYPE,ublas::row_major,ublas::bounded_array<TYPE,9> >& inv_a
@@ -248,7 +248,7 @@ struct ConvectiveMassElement {
     > h,H,invH,F,g,G;
     std::vector<double> active;
 
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
     );
 
@@ -263,7 +263,7 @@ struct ConvectiveMassElement {
 
     VectorDouble nf;
 
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
     );
 
@@ -281,9 +281,9 @@ struct ConvectiveMassElement {
 
     MatrixDouble k,jac;
 
-    virtual PetscErrorCode getJac(DataForcesAndSourcesCore::EntData &col_data,int gg);
+    virtual MoFEMErrorCode getJac(DataForcesAndSourcesCore::EntData &col_data,int gg);
 
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int row_side,int col_side,
       EntityType row_type,EntityType col_type,
       DataForcesAndSourcesCore::EntData &row_data,
@@ -297,7 +297,7 @@ struct ConvectiveMassElement {
 
     OpMassLhs_dM_dx(const std::string field_name,const std::string col_field,BlockData &data,CommonData &common_data);
 
-    PetscErrorCode getJac(DataForcesAndSourcesCore::EntData &col_data,int gg);
+    MoFEMErrorCode getJac(DataForcesAndSourcesCore::EntData &col_data,int gg);
 
   };
 
@@ -305,7 +305,7 @@ struct ConvectiveMassElement {
 
     OpMassLhs_dM_dX(const std::string field_name,const std::string col_field,BlockData &data,CommonData &common_data);
 
-    PetscErrorCode getJac(DataForcesAndSourcesCore::EntData &col_data,int gg);
+    MoFEMErrorCode getJac(DataForcesAndSourcesCore::EntData &col_data,int gg);
 
   };
 
@@ -321,7 +321,7 @@ struct ConvectiveMassElement {
     MatrixDouble3by3 h,H,invH,F;
     VectorDouble3 v;
 
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
     );
 
@@ -344,7 +344,7 @@ struct ConvectiveMassElement {
 
     std::vector<double> active;
 
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
     );
 
@@ -359,7 +359,7 @@ struct ConvectiveMassElement {
 
     VectorDouble nf;
 
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
     );
 
@@ -369,7 +369,7 @@ struct ConvectiveMassElement {
 
     OpVelocityLhs_dV_dv(const std::string vel_field,const std::string field_name,BlockData &data,CommonData &common_data);
 
-    virtual PetscErrorCode getJac(DataForcesAndSourcesCore::EntData &col_data,int gg);
+    virtual MoFEMErrorCode getJac(DataForcesAndSourcesCore::EntData &col_data,int gg);
 
   };
 
@@ -377,7 +377,7 @@ struct ConvectiveMassElement {
 
     OpVelocityLhs_dV_dx(const std::string vel_field,const std::string field_name,BlockData &data,CommonData &common_data);
 
-    virtual PetscErrorCode getJac(DataForcesAndSourcesCore::EntData &col_data,int gg);
+    virtual MoFEMErrorCode getJac(DataForcesAndSourcesCore::EntData &col_data,int gg);
 
   };
 
@@ -386,7 +386,7 @@ struct ConvectiveMassElement {
 
     OpVelocityLhs_dV_dX(const std::string vel_field,const std::string field_name,BlockData &data,CommonData &common_data);
 
-    virtual PetscErrorCode getJac(DataForcesAndSourcesCore::EntData &col_data,int gg);
+    virtual MoFEMErrorCode getJac(DataForcesAndSourcesCore::EntData &col_data,int gg);
 
   };
 
@@ -406,7 +406,7 @@ struct ConvectiveMassElement {
     ublas::matrix<adouble,ublas::row_major,ublas::bounded_array<adouble,9> > g,H,invH,h,F,G;
     VectorDouble active;
 
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
     );
 
@@ -424,7 +424,7 @@ struct ConvectiveMassElement {
 
     VectorDouble nf;
 
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
     );
 
@@ -436,7 +436,7 @@ struct ConvectiveMassElement {
       const std::string vel_field,const std::string field_name,BlockData &data,CommonData &common_data,Range *forcesonlyonentities_ptr
     );
 
-    virtual PetscErrorCode getJac(DataForcesAndSourcesCore::EntData &col_data,int gg);
+    virtual MoFEMErrorCode getJac(DataForcesAndSourcesCore::EntData &col_data,int gg);
 
   };
 
@@ -446,7 +446,7 @@ struct ConvectiveMassElement {
       const std::string vel_field,const std::string field_name,BlockData &data,CommonData &common_data,Range *forcesonlyonentities_ptr
     );
 
-    virtual PetscErrorCode getJac(DataForcesAndSourcesCore::EntData &col_data,int gg);
+    virtual MoFEMErrorCode getJac(DataForcesAndSourcesCore::EntData &col_data,int gg);
 
   };
 
@@ -456,7 +456,7 @@ struct ConvectiveMassElement {
       const std::string vel_field,const std::string field_name,BlockData &data,CommonData &common_data,Range *forcesonlyonentities_ptr
     );
 
-    virtual PetscErrorCode getJac(DataForcesAndSourcesCore::EntData &col_data,int gg);
+    virtual MoFEMErrorCode getJac(DataForcesAndSourcesCore::EntData &col_data,int gg);
 
   };
 
@@ -473,28 +473,28 @@ struct ConvectiveMassElement {
       const std::string spatial_position_field
     );
 
-    PetscErrorCode preProcess();
-    PetscErrorCode postProcess();
+    MoFEMErrorCode preProcess();
+    MoFEMErrorCode postProcess();
 
   };
 
-  PetscErrorCode setBlocks();
+  MoFEMErrorCode setBlocks();
 
-  PetscErrorCode addConvectiveMassElement(string element_name,
+  MoFEMErrorCode addConvectiveMassElement(string element_name,
     string velocity_field_name,
     string spatial_position_field_name,
     string material_position_field_name = "MESH_NODE_POSITIONS",
     bool ale = false,BitRefLevel bit = BitRefLevel()
   );
 
-  PetscErrorCode addVelocityElement(string element_name,
+  MoFEMErrorCode addVelocityElement(string element_name,
     string velocity_field_name,
     string spatial_position_field_name,
     string material_position_field_name = "MESH_NODE_POSITIONS",
     bool ale = false,
     BitRefLevel bit = BitRefLevel());
 
-  PetscErrorCode addEshelbyDynamicMaterialMomentum(string element_name,
+  MoFEMErrorCode addEshelbyDynamicMaterialMomentum(string element_name,
     string velocity_field_name,
     string spatial_position_field_name,
     string material_position_field_name = "MESH_NODE_POSITIONS",
@@ -502,7 +502,7 @@ struct ConvectiveMassElement {
     BitRefLevel bit = BitRefLevel(),
     Range *intersected = NULL);
 
-  PetscErrorCode setConvectiveMassOperators(
+  MoFEMErrorCode setConvectiveMassOperators(
     string velocity_field_name,
     string spatial_position_field_name,
     string material_position_field_name = "MESH_NODE_POSITIONS",
@@ -510,21 +510,21 @@ struct ConvectiveMassElement {
     bool linear = false
   );
 
-  PetscErrorCode setVelocityOperators(
+  MoFEMErrorCode setVelocityOperators(
     string velocity_field_name,
     string spatial_position_field_name,
     string material_position_field_name = "MESH_NODE_POSITIONS",
     bool ale = false
   );
 
-  PetscErrorCode setKinematicEshelbyOperators(
+  MoFEMErrorCode setKinematicEshelbyOperators(
     string velocity_field_name,
     string spatial_position_field_name,
     string material_position_field_name = "MESH_NODE_POSITIONS",
     Range *forces_on_entities_ptr = NULL
   );
 
-  PetscErrorCode setShellMatrixMassOperators(
+  MoFEMErrorCode setShellMatrixMassOperators(
     string velocity_field_name,
     string spatial_position_field_name,
     string material_position_field_name = "MESH_NODE_POSITIONS",
@@ -543,12 +543,12 @@ struct ConvectiveMassElement {
 
     Mat barK;
     Vec u,v,Ku,Mv;
-    PetscErrorCode iNit();
+    MoFEMErrorCode iNit();
 
-    PetscErrorCode dEstroy();
+    MoFEMErrorCode dEstroy();
 
-    friend PetscErrorCode MultOpA(Mat A,Vec x,Vec f);
-    friend PetscErrorCode ZeroEntriesOp(Mat A);
+    friend MoFEMErrorCode MultOpA(Mat A,Vec x,Vec f);
+    friend MoFEMErrorCode ZeroEntriesOp(Mat A);
 
   };
 
@@ -576,7 +576,7 @@ struct ConvectiveMassElement {
     * \f]
     *
     */
-  static PetscErrorCode MultOpA(Mat A,Vec x,Vec f) {
+  static MoFEMErrorCode MultOpA(Mat A,Vec x,Vec f) {
     MoFEMFunctionBeginHot;
     
     void *void_ctx;
@@ -609,7 +609,7 @@ struct ConvectiveMassElement {
     MoFEMFunctionReturnHot(0);
   }
 
-  static PetscErrorCode ZeroEntriesOp(Mat A) {
+  static MoFEMErrorCode ZeroEntriesOp(Mat A) {
     MoFEMFunctionBeginHot;
     
     void *void_ctx;
@@ -631,17 +631,17 @@ struct ConvectiveMassElement {
 
     PC pC;
 
-    PetscErrorCode iNit();
+    MoFEMErrorCode iNit();
 
-    PetscErrorCode dEstroy();
+    MoFEMErrorCode dEstroy();
 
-    friend PetscErrorCode PCShellSetUpOp(PC pc);
-    friend PetscErrorCode PCShellDestroy(PC pc);
-    friend PetscErrorCode PCShellApplyOp(PC pc,Vec f,Vec x);
+    friend MoFEMErrorCode PCShellSetUpOp(PC pc);
+    friend MoFEMErrorCode PCShellDestroy(PC pc);
+    friend MoFEMErrorCode PCShellApplyOp(PC pc,Vec f,Vec x);
 
   };
 
-  static PetscErrorCode PCShellSetUpOp(PC pc) {
+  static MoFEMErrorCode PCShellSetUpOp(PC pc) {
     MoFEMFunctionBeginHot;
     
     void *void_ctx;
@@ -656,7 +656,7 @@ struct ConvectiveMassElement {
     MoFEMFunctionReturnHot(0);
   }
 
-  static PetscErrorCode PCShellDestroy(PC pc) {
+  static MoFEMErrorCode PCShellDestroy(PC pc) {
     MoFEMFunctionBeginHot;
     
     void *void_ctx;
@@ -692,7 +692,7 @@ struct ConvectiveMassElement {
     * where \f$\mathbf{v} = \mathbf{r}_v + a\mathbf{u}\f$ and \f$\mathbf{u}=(a\mathbf{M}+\mathbf{K})^{-1}(\mathbf{r}_u - \mathbf{M}\mathbf{r}_v\f$.
     *
     */
-  static PetscErrorCode PCShellApplyOp(PC pc,Vec f,Vec x) {
+  static MoFEMErrorCode PCShellApplyOp(PC pc,Vec f,Vec x) {
     MoFEMFunctionBeginHot;
     
     void *void_ctx;
@@ -732,9 +732,9 @@ struct ConvectiveMassElement {
     //variables bellow need to be set by user
     MatShellCtx *shellMatCtx; 					///< pointer to shell matrix
 
-    PetscErrorCode preProcess();
+    MoFEMErrorCode preProcess();
 
-    PetscErrorCode postProcess();
+    MoFEMErrorCode postProcess();
 
   };
 
@@ -762,7 +762,7 @@ struct ConvectiveMassElement {
     MatShellCtx *shellMatCtx; 					///< pointer to shell matrix
     DirichletSpatialPositionsBc *DirichletBcPtr; 	///< boundary conditions
 
-    PetscErrorCode preProcess();
+    MoFEMErrorCode preProcess();
 
   };
 

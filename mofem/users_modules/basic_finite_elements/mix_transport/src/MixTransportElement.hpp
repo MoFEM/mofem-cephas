@@ -97,7 +97,7 @@ struct MixTransportElement {
    * @param  is indices
    * @return    error code
    */
-  PetscErrorCode getDirichletBCIndices(IS *is) {
+  MoFEMErrorCode getDirichletBCIndices(IS *is) {
     MoFEMFunctionBeginHot;
     std::vector<int> ids;
     ids.insert(ids.begin(),bcIndices.begin(),bcIndices.end());
@@ -119,7 +119,7 @@ struct MixTransportElement {
     * @param  flux reference to source term set by function
     * @return      error code
     */
-  virtual PetscErrorCode getSource(
+  virtual MoFEMErrorCode getSource(
     const EntityHandle ent,
     const double x,const double y,const double z,
     double &flux
@@ -138,7 +138,7 @@ struct MixTransportElement {
     * @param  value reference to value set by function
     * @return       error code
     */
-  virtual PetscErrorCode getResistivity(
+  virtual MoFEMErrorCode getResistivity(
     const EntityHandle ent,
     const double x,const double y,const double z,
     MatrixDouble3by3& inv_k
@@ -160,7 +160,7 @@ struct MixTransportElement {
    * @param  value vale
    * @return       error code
    */
-  virtual PetscErrorCode getBcOnValues(
+  virtual MoFEMErrorCode getBcOnValues(
     const EntityHandle ent,
     const int gg,
     const double x,const double y,const double z,
@@ -179,7 +179,7 @@ struct MixTransportElement {
    * @param  flux reference to flux which is set by function
    * @return      [description]
    */
-  virtual PetscErrorCode getBcOnFluxes(
+  virtual MoFEMErrorCode getBcOnFluxes(
     const EntityHandle ent,
     const double x,const double y,const double z,
     double &flux) {
@@ -205,7 +205,7 @@ struct MixTransportElement {
    * @param  order  order of approximation
    * @return        error code
    */
-  PetscErrorCode addFields(const std::string &values,const std::string &fluxes,const int order) {
+  MoFEMErrorCode addFields(const std::string &values,const std::string &fluxes,const int order) {
 
     MoFEMFunctionBeginHot;
     //Fields
@@ -226,7 +226,7 @@ struct MixTransportElement {
   }
 
   /// \brief add finite elements
-  PetscErrorCode addFiniteElements(
+  MoFEMErrorCode addFiniteElements(
     const std::string &fluxes_name,
     const std::string &values_name,
     const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS"
@@ -323,7 +323,7 @@ struct MixTransportElement {
    * @param  ref_level mesh refinement on which mesh problem you like to built.
    * @return           error code
    */
-  PetscErrorCode buildProblem(BitRefLevel &ref_level) {
+  MoFEMErrorCode buildProblem(BitRefLevel &ref_level) {
 
     MoFEMFunctionBeginHot;
     //build field
@@ -398,7 +398,7 @@ struct MixTransportElement {
     postProcMesh(post_proc_mesh),
     mapGaussPts(map_gauss_pts) {
     }
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int side,
       EntityType type,
       DataForcesAndSourcesCore::EntData &data
@@ -462,7 +462,7 @@ struct MixTransportElement {
    * \brief Post process results
    * @return error code
    */
-  PetscErrorCode postProc(const string out_file) {
+  MoFEMErrorCode postProc(const string out_file) {
 
     MoFEMFunctionBeginHot;
     PostProcVolumeOnRefinedMesh post_proc(mField);
@@ -481,7 +481,7 @@ struct MixTransportElement {
   Mat Aij;
 
   /// \brief create matrices
-  PetscErrorCode createMatrices() {
+  MoFEMErrorCode createMatrices() {
     MoFEMFunctionBeginHot;
     ierr = mField.MatCreateMPIAIJWithArrays("MIX",&Aij); CHKERRQ(ierr);
     ierr = mField.getInterface<VecManager>()->vecCreateGhost("MIX",COL,&D); CHKERRQ(ierr);
@@ -494,7 +494,7 @@ struct MixTransportElement {
    * \brief solve problem
    * @return error code
    */
-  PetscErrorCode solveLinearProblem() {
+  MoFEMErrorCode solveLinearProblem() {
 
     MoFEMFunctionBeginHot;
 
@@ -610,7 +610,7 @@ struct MixTransportElement {
   }
 
   /// \brief calculate residual
-  PetscErrorCode calculateResidual() {
+  MoFEMErrorCode calculateResidual() {
 
     MoFEMFunctionBeginHot;
     ierr = VecZeroEntries(F); CHKERRQ(ierr);
@@ -662,7 +662,7 @@ struct MixTransportElement {
     distributed meshes.
 
   */
-  PetscErrorCode evaluateError() {
+  MoFEMErrorCode evaluateError() {
 
     MoFEMFunctionBeginHot;
     errorMap.clear();
@@ -689,7 +689,7 @@ struct MixTransportElement {
   }
 
   /// \brief destroy matrices
-  PetscErrorCode destroyMatrices() {
+  MoFEMErrorCode destroyMatrices() {
     MoFEMFunctionBeginHot;
     ierr = MatDestroy(&Aij); CHKERRQ(ierr);
     ierr = VecDestroy(&D); CHKERRQ(ierr);
@@ -739,7 +739,7 @@ struct MixTransportElement {
      * @param  col_data data for col
      * @return          error code
      */
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int row_side,int col_side,
       EntityType row_type,EntityType col_type,
       DataForcesAndSourcesCore::EntData &row_data,
@@ -830,7 +830,7 @@ struct MixTransportElement {
      * @param  data data for row
      * @return          error code
      */
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int side,EntityType type,DataForcesAndSourcesCore::EntData &data
     ) {
 
@@ -920,7 +920,7 @@ struct MixTransportElement {
 
     VectorDouble divVec,Nf;
 
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int side,EntityType type,
       DataForcesAndSourcesCore::EntData &data
     ) {
@@ -1002,7 +1002,7 @@ struct MixTransportElement {
      * @param  col_data column data structure carrying information about base functions, DOFs indices, etc.
      * @return          error code
      */
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int row_side,int col_side,
       EntityType row_type,EntityType col_type,
       DataForcesAndSourcesCore::EntData &row_data,
@@ -1051,7 +1051,7 @@ struct MixTransportElement {
       MoFEMFunctionReturnHot(0);
     }
 
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int side,EntityType type,
       DataForcesAndSourcesCore::EntData &data
     ) {
@@ -1104,7 +1104,7 @@ struct MixTransportElement {
     F(f) {}
 
     VectorDouble Nf;
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int side,EntityType type,DataForcesAndSourcesCore::EntData &data
     ) {
 
@@ -1178,7 +1178,7 @@ struct MixTransportElement {
      * @param  data data on entity
      * @return      error code
      */
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int side,EntityType type,DataForcesAndSourcesCore::EntData &data
     ) {
       MoFEMFunctionBeginHot;
@@ -1246,7 +1246,7 @@ struct MixTransportElement {
     VectorDouble Nf;
     FTensor::Index<'i',3> i;
 
-    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
+    MoFEMErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
       MoFEMFunctionBeginHot;
       try {
         if(data.getFieldData().size()==0) MoFEMFunctionReturnHot(0);
@@ -1371,7 +1371,7 @@ struct MixTransportElement {
 
     virtual ~OpValuesAtGaussPts() {}
 
-    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
+    MoFEMErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
       MoFEMFunctionBeginHot;
 
       try {
@@ -1410,7 +1410,7 @@ struct MixTransportElement {
     cTx(ctx) {}
     virtual ~OpValuesGradientAtGaussPts() {}
 
-    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
+    MoFEMErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
       MoFEMFunctionBeginHot;
       try {
         if(data.getFieldData().size() == 0)  MoFEMFunctionReturnHot(0);
@@ -1447,7 +1447,7 @@ struct MixTransportElement {
     cTx(ctx) {}
 
     VectorDouble divVec;
-    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
+    MoFEMErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
       MoFEMFunctionBeginHot;
 
       try {
@@ -1498,7 +1498,7 @@ struct MixTransportElement {
     VectorDouble deltaFlux;
     MatrixDouble3by3 invK;
 
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int side,EntityType type,DataForcesAndSourcesCore::EntData &data
     ) {
 
@@ -1622,7 +1622,7 @@ struct MixTransportElement {
       VolumeElementForcesAndSourcesCoreOnSide::UserDataOperator("VALUES",UserDataOperator::OPROW),
       valMap(val_map) {
       }
-      PetscErrorCode doWork(int side, EntityType type,DataForcesAndSourcesCore::EntData &data) {
+      MoFEMErrorCode doWork(int side, EntityType type,DataForcesAndSourcesCore::EntData &data) {
         MoFEMFunctionBeginHot;
         try {
           if(data.getFieldData().size() == 0)  MoFEMFunctionReturnHot(0);
@@ -1651,7 +1651,7 @@ struct MixTransportElement {
       volSideFe.getOpPtrVector().push_back(new OpSkeleton::OpVolSide(valMap));
     }
 
-    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
+    MoFEMErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
       MoFEMFunctionBeginHot;
       try {
 

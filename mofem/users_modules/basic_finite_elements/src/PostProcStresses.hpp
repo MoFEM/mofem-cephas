@@ -57,7 +57,7 @@ struct PostProcStress: public MoFEM::VolumeElementForcesAndSourcesCore::UserData
 
   NonlinearElasticElement::CommonData nonLinearElementCommonData;
 
-  PetscErrorCode doWork(
+  MoFEMErrorCode doWork(
     int side,
     EntityType type,
     DataForcesAndSourcesCore::EntData &data

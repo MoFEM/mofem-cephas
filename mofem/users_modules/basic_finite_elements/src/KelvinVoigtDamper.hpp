@@ -84,7 +84,7 @@ struct KelvinVoigtDamper {
 
     /** \brief Calculate determinant of 3x3 matrix
     */
-    PetscErrorCode dEterminatnt(ublas::matrix<TYPE> a,TYPE &det) {
+    MoFEMErrorCode dEterminatnt(ublas::matrix<TYPE> a,TYPE &det) {
       MoFEMFunctionBeginHot;
       // a11a22a33
       //+a21a32a13
@@ -106,7 +106,7 @@ struct KelvinVoigtDamper {
 
     /** \brief Calculate inverse of 3x3 matrix
     */
-    PetscErrorCode iNvert(TYPE det,ublas::matrix<TYPE> a,ublas::matrix<TYPE> &inv_a) {
+    MoFEMErrorCode iNvert(TYPE det,ublas::matrix<TYPE> a,ublas::matrix<TYPE> &inv_a) {
       MoFEMFunctionBeginHot;
       //
       inv_a.resize(3,3);
@@ -137,7 +137,7 @@ struct KelvinVoigtDamper {
     \f]
 
     */
-    virtual PetscErrorCode calculateEngineeringStrainDot() {
+    virtual MoFEMErrorCode calculateEngineeringStrainDot() {
       MoFEMFunctionBeginHot;
       gradientUDot.resize(3,3,false);
       noalias(gradientUDot) = FDot;
@@ -167,7 +167,7 @@ struct KelvinVoigtDamper {
     \f]
 
     */
-    virtual PetscErrorCode calculateDashpotCauchyStress() {
+    virtual MoFEMErrorCode calculateDashpotCauchyStress() {
       MoFEMFunctionBeginHot;
       dashpotCauchyStress.resize(3,3,false);
       double a = 2.0*dAta.gBeta;
@@ -186,7 +186,7 @@ struct KelvinVoigtDamper {
     \f]
 
     */
-    virtual PetscErrorCode calculateFirstPiolaKirchhoffStress() {
+    virtual MoFEMErrorCode calculateFirstPiolaKirchhoffStress() {
       MoFEMFunctionBeginHot;
       dashpotFirstPiolaKirchhoffStress.resize(3,3,false);
       if(dAta.lInear) {
@@ -250,7 +250,7 @@ struct KelvinVoigtDamper {
       return order+addToRule;
     }
 
-    PetscErrorCode preProcess() {
+    MoFEMErrorCode preProcess() {
 
       MoFEMFunctionBeginHot;
       ierr = MoFEM::VolumeElementForcesAndSourcesCore::preProcess(); CHKERRQ(ierr);
@@ -266,7 +266,7 @@ struct KelvinVoigtDamper {
       MoFEMFunctionReturnHot(0);
     }
 
-    PetscErrorCode postProcess() {
+    MoFEMErrorCode postProcess() {
 
       MoFEMFunctionBeginHot;
 
@@ -320,7 +320,7 @@ struct KelvinVoigtDamper {
     /** \brief Operator field value
     *
     */
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int side,EntityType type,DataForcesAndSourcesCore::EntData &data
     ) {
       MoFEMFunctionBeginHot;
@@ -427,7 +427,7 @@ struct KelvinVoigtDamper {
     int nbGaussPts;
     VectorDouble activeVariables;
 
-    PetscErrorCode recordDamperStress() {
+    MoFEMErrorCode recordDamperStress() {
       MoFEMFunctionBeginHot;
 
       try {
@@ -481,7 +481,7 @@ struct KelvinVoigtDamper {
       MoFEMFunctionReturnHot(0);
     }
 
-    PetscErrorCode calculateFunction(TagEvaluate te,double *ptr) {
+    MoFEMErrorCode calculateFunction(TagEvaluate te,double *ptr) {
       MoFEMFunctionBeginHot;
 
       int r;
@@ -500,7 +500,7 @@ struct KelvinVoigtDamper {
       MoFEMFunctionReturnHot(0);
     }
 
-    PetscErrorCode calculateJacobian(TagEvaluate te) {
+    MoFEMErrorCode calculateJacobian(TagEvaluate te) {
       MoFEMFunctionBeginHot;
 
       try {
@@ -523,7 +523,7 @@ struct KelvinVoigtDamper {
       MoFEMFunctionReturnHot(0);
     }
 
-    PetscErrorCode calculateAtIntPtsDamperStress() {
+    MoFEMErrorCode calculateAtIntPtsDamperStress() {
       MoFEMFunctionBeginHot;
 
       try {
@@ -594,7 +594,7 @@ struct KelvinVoigtDamper {
       MoFEMFunctionReturnHot(0);
     }
 
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
     ) {
       MoFEMFunctionBeginHot;
@@ -633,7 +633,7 @@ struct KelvinVoigtDamper {
     }
 
     VectorDouble nF;
-    PetscErrorCode aSemble(
+    MoFEMErrorCode aSemble(
       int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
     ) {
       MoFEMFunctionBeginHot;
@@ -662,7 +662,7 @@ struct KelvinVoigtDamper {
     AssembleVector(common_data.spatialPositionName),
     commonData(common_data) {
     }
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
     ) {
       MoFEMFunctionBeginHot;
@@ -711,7 +711,7 @@ struct KelvinVoigtDamper {
     }
 
     MatrixDouble K,transK;
-    PetscErrorCode aSemble(
+    MoFEMErrorCode aSemble(
       int row_side,int col_side,
       EntityType row_type,EntityType col_type,
       DataForcesAndSourcesCore::EntData &row_data,
@@ -763,7 +763,7 @@ struct KelvinVoigtDamper {
     commonData(common_data) {
     }
     MatrixDouble dStress_dx;
-    PetscErrorCode get_dStress_dx(
+    MoFEMErrorCode get_dStress_dx(
       DataForcesAndSourcesCore::EntData &col_data,int gg
     ) {
       MoFEMFunctionBeginHot;
@@ -790,7 +790,7 @@ struct KelvinVoigtDamper {
       }
       MoFEMFunctionReturnHot(0);
     }
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int row_side,int col_side,
       EntityType row_type,EntityType col_type,
       DataForcesAndSourcesCore::EntData &row_data,
@@ -861,7 +861,7 @@ struct KelvinVoigtDamper {
     commonData(common_data) {
     }
     MatrixDouble dStress_dot;
-    PetscErrorCode get_dStress_dot(
+    MoFEMErrorCode get_dStress_dot(
       DataForcesAndSourcesCore::EntData &col_data,int gg
     ) {
       MoFEMFunctionBeginHot;
@@ -888,7 +888,7 @@ struct KelvinVoigtDamper {
       }
       MoFEMFunctionReturnHot(0);
     }
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int row_side,int col_side,
       EntityType row_type,EntityType col_type,
       DataForcesAndSourcesCore::EntData &row_data,
@@ -947,7 +947,7 @@ struct KelvinVoigtDamper {
     }
   };
 
-  PetscErrorCode setBlockDataMap() {
+  MoFEMErrorCode setBlockDataMap() {
     MoFEMFunctionBeginHot;
 
 
@@ -968,7 +968,7 @@ struct KelvinVoigtDamper {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode setOperators(const int tag) {
+  MoFEMErrorCode setOperators(const int tag) {
     MoFEMFunctionBeginHot;
 
     DamperFE *fe_ptr[] = { &feRhs, &feLhs };

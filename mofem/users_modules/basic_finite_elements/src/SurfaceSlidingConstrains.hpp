@@ -204,7 +204,7 @@ struct SurfaceSlidingConstrains {
     {}
     int getRule(int order) { return 2*order; };
 
-    PetscErrorCode preProcess() {
+    MoFEMErrorCode preProcess() {
       MoFEMFunctionBeginHot;
 
 
@@ -260,7 +260,7 @@ struct SurfaceSlidingConstrains {
 
     int elementOrientation;
 
-    virtual PetscErrorCode getElementOrientation(MoFEM::Interface &m_field,const FEMethod *fe_method_ptr) {
+    virtual MoFEMErrorCode getElementOrientation(MoFEM::Interface &m_field,const FEMethod *fe_method_ptr) {
       MoFEMFunctionBeginHot;
       elementOrientation = 1;
       MoFEMFunctionReturnHot(0);
@@ -302,7 +302,7 @@ struct SurfaceSlidingConstrains {
 
     std::vector<bool> nodesWithoutLambda;
 
-    static PetscErrorCode calcSpin(
+    static MoFEMErrorCode calcSpin(
       MatrixDouble &spin,VectorDouble &vec
     ) {
       MoFEMFunctionBeginHot;
@@ -318,7 +318,7 @@ struct SurfaceSlidingConstrains {
     }
 
 
-    PetscErrorCode matrixN(int gg,DataForcesAndSourcesCore::EntData &data) {
+    MoFEMErrorCode matrixN(int gg,DataForcesAndSourcesCore::EntData &data) {
       MoFEMFunctionBeginHot;
       try {
 
@@ -339,7 +339,7 @@ struct SurfaceSlidingConstrains {
       MoFEMFunctionReturnHot(0);
     }
 
-    PetscErrorCode matrixB(int gg,DataForcesAndSourcesCore::EntData &data) {
+    MoFEMErrorCode matrixB(int gg,DataForcesAndSourcesCore::EntData &data) {
       MoFEMFunctionBeginHot;
       try {
         int nb_dofs = data.getN().size2();
@@ -365,7 +365,7 @@ struct SurfaceSlidingConstrains {
       MoFEMFunctionReturnHot(0);
     }
 
-    PetscErrorCode calculateNormal() {
+    MoFEMErrorCode calculateNormal() {
       MoFEMFunctionBeginHot;
 
       try {
@@ -398,7 +398,7 @@ struct SurfaceSlidingConstrains {
     oRientation(orientation)
     {}
 
-    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
+    MoFEMErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
       MoFEMFunctionBeginHot;
 
 
@@ -455,7 +455,7 @@ struct SurfaceSlidingConstrains {
     }
 
 
-    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
+    MoFEMErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
       MoFEMFunctionBeginHot;
       //
 
@@ -531,7 +531,7 @@ struct SurfaceSlidingConstrains {
     VectorDouble nF;
     ublas::vector<int> rowIndices;
 
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
     ) {
 
@@ -622,7 +622,7 @@ struct SurfaceSlidingConstrains {
 
     VectorDouble g,dElta;
 
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
     ) {
 
@@ -720,7 +720,7 @@ struct SurfaceSlidingConstrains {
     MatrixDouble transC;
     ublas::vector<int> transRowIndices;
 
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int row_side,int col_side,
       EntityType row_type,EntityType col_type,
       DataForcesAndSourcesCore::EntData &row_data,
@@ -848,7 +848,7 @@ struct SurfaceSlidingConstrains {
     MatrixDouble B;
     ublas::vector<int> rowIndices;
 
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int row_side,int col_side,
       EntityType row_type,EntityType col_type,
       DataForcesAndSourcesCore::EntData &row_data,
@@ -960,7 +960,7 @@ struct SurfaceSlidingConstrains {
 
     MatrixDouble A;
 
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int row_side,int col_side,
       EntityType row_type,EntityType col_type,
       DataForcesAndSourcesCore::EntData &row_data,
@@ -1036,7 +1036,7 @@ struct SurfaceSlidingConstrains {
 
   /** \brief Driver function setting operators to calculate \b C matrix only
   */
-  PetscErrorCode setOperatorsCOnly(
+  MoFEMErrorCode setOperatorsCOnly(
     const std::string lagrange_multipliers_field_name,
     const std::string material_field_name) {
     MoFEMFunctionBeginHot;
@@ -1060,7 +1060,7 @@ struct SurfaceSlidingConstrains {
 
   /** \brief Driver function setting operators to calculate nonlinear problems with sliding points on the surface
   */
-  PetscErrorCode setOperatorsWithLinearGeometry(
+  MoFEMErrorCode setOperatorsWithLinearGeometry(
     const std::string lagrange_multipliers_field_name,
     const std::string material_field_name,
     bool assemble_transpose,

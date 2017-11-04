@@ -60,7 +60,7 @@ struct VolumeLengthQuality: public NonlinearElasticElement::FunctionsToCalculate
       ierr = getMaterialOptions(); CHKERRABORT(PETSC_COMM_WORLD,ierr);
     }
 
-    PetscErrorCode getMaterialOptions() {
+    MoFEMErrorCode getMaterialOptions() {
       MoFEMFunctionBeginHot;
       ierr = PetscOptionsBegin(
         PETSC_COMM_WORLD,"","Get VolumeLengthQuality material options","none"
@@ -94,7 +94,7 @@ struct VolumeLengthQuality: public NonlinearElasticElement::FunctionsToCalculate
 
     /** Get coordinates of edges using cannonical element numeration
      */
-    PetscErrorCode getEdgesFromElemCoords() {
+    MoFEMErrorCode getEdgesFromElemCoords() {
       MoFEMFunctionBeginHot;
       if(coordsEdges.empty()) {
         coordsEdges.resize(6*2*3,false);
@@ -130,7 +130,7 @@ struct VolumeLengthQuality: public NonlinearElasticElement::FunctionsToCalculate
       \f]
 
      */
-     PetscErrorCode calculateLrms() {
+     MoFEMErrorCode calculateLrms() {
        MoFEMFunctionBeginHot;
        if(deltaChi.size()!=3) {
          deltaChi.resize(3);
@@ -168,7 +168,7 @@ struct VolumeLengthQuality: public NonlinearElasticElement::FunctionsToCalculate
      \f]
 
      */
-     PetscErrorCode calculateQ() {
+     MoFEMErrorCode calculateQ() {
        MoFEMFunctionBeginHot;
        if(Q.size1()==0) {
          Q.resize(3,3);
@@ -199,7 +199,7 @@ struct VolumeLengthQuality: public NonlinearElasticElement::FunctionsToCalculate
       where \f$a\f$ depending on problem could be \f$q\f$ or \f$b\f$.
 
       */
-    virtual PetscErrorCode calculateP_PiolaKirchhoffI(
+    virtual MoFEMErrorCode calculateP_PiolaKirchhoffI(
       const NonlinearElasticElement::BlockData block_data,
       boost::shared_ptr<const NumeredEntFiniteElement> fe_ptr
     ) {

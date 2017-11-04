@@ -39,7 +39,7 @@ struct NitscheMethod {
     addToRule(0) {}
     int getRule(int order) { return order+addToRule; }
     /*int getRule(int order) { return -1; }
-    PetscErrorCode setGaussPts(int order) {
+    MoFEMErrorCode setGaussPts(int order) {
       MoFEMFunctionBeginHot;
       int rule = order+addToRule+1;
       int nb_gauss_pts = triangle_ncc_order_num(rule);
@@ -141,7 +141,7 @@ struct NitscheMethod {
     commonData(common_data) {
     }
 
-    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
+    MoFEMErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
       MoFEMFunctionBeginHot;
 
       int faceInRespectToTet = getFEMethod()->nInTheLoop;
@@ -217,7 +217,7 @@ struct NitscheMethod {
     MyFace faceFE;
     int addToRule;
 
-    virtual PetscErrorCode doAdditionalJobWhenGuassPtsAreCalulated() {
+    virtual MoFEMErrorCode doAdditionalJobWhenGuassPtsAreCalulated() {
       MoFEMFunctionBeginHot;
       MoFEMFunctionReturnHot(0);
     }
@@ -237,7 +237,7 @@ struct NitscheMethod {
 
     int getRule(int order) { return -1; };
 
-    PetscErrorCode setGaussPts(int order) {
+    MoFEMErrorCode setGaussPts(int order) {
       
       MoFEMFunctionBeginHot;
 
@@ -373,7 +373,7 @@ struct NitscheMethod {
     }
 
     double faceRadius;
-    virtual PetscErrorCode getFaceRadius(int ff) {
+    virtual MoFEMErrorCode getFaceRadius(int ff) {
       MoFEMFunctionBeginHot;
       VectorDouble &coords = nitscheCommonData.cOords[ff];
       double center[3];
@@ -383,7 +383,7 @@ struct NitscheMethod {
       MoFEMFunctionReturnHot(0);
     }
     double gammaH;
-    virtual PetscErrorCode getGammaH(double gamma,int gg) {
+    virtual MoFEMErrorCode getGammaH(double gamma,int gg) {
       MoFEMFunctionBeginHot;
       gammaH = gamma;
       //gammaH*= faceRadius;
@@ -422,12 +422,12 @@ struct NitscheMethod {
     MatrixDouble tRac_v;
     MatrixDouble tRac_u;
 
-    virtual PetscErrorCode calculateP(int gg,int fgg,int ff) {
+    virtual MoFEMErrorCode calculateP(int gg,int fgg,int ff) {
       MoFEMFunctionBeginHot;
       MoFEMFunctionReturnHot(0);
     }
 
-    PetscErrorCode getJac(
+    MoFEMErrorCode getJac(
       DataForcesAndSourcesCore::EntData &data,int gg,MatrixDouble &jac
     ) {
       MoFEMFunctionBeginHot;
@@ -454,7 +454,7 @@ struct NitscheMethod {
       MoFEMFunctionReturnHot(0);
     }
 
-    PetscErrorCode getTractionVariance(
+    MoFEMErrorCode getTractionVariance(
       int gg,int fgg,int ff,MatrixDouble &jac,MatrixDouble &trac
     ) {
       MoFEMFunctionBeginHot;
@@ -510,7 +510,7 @@ struct NitscheMethod {
     MatrixDouble kMatrix,kMatrix0,kMatrix1;
     std::vector<MatrixDouble> kMatrixFace,kMatrixFace0,kMatrixFace1;
 
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int row_side,int col_side,
       EntityType row_type,EntityType col_type,
       DataForcesAndSourcesCore::EntData &row_data,DataForcesAndSourcesCore::EntData &col_data
@@ -686,7 +686,7 @@ struct NitscheMethod {
 
     VectorDouble nF;
 
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
     ) {
       MoFEMFunctionBeginHot;

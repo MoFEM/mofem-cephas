@@ -51,7 +51,7 @@ initV(false) {
 
 int ConvectiveMassElement::MyVolumeFE::getRule(int order) { return 2*order; };
 
-PetscErrorCode ConvectiveMassElement::MyVolumeFE::preProcess() {
+MoFEMErrorCode ConvectiveMassElement::MyVolumeFE::preProcess() {
   MoFEMFunctionBeginHot;
   
 
@@ -104,7 +104,7 @@ PetscErrorCode ConvectiveMassElement::MyVolumeFE::preProcess() {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode ConvectiveMassElement::MyVolumeFE::postProcess() {
+MoFEMErrorCode ConvectiveMassElement::MyVolumeFE::postProcess() {
   MoFEMFunctionBeginHot;
   
 
@@ -159,7 +159,7 @@ zeroAtType(MBVERTEX) {
 
 }
 
-PetscErrorCode ConvectiveMassElement::OpGetDataAtGaussPts::doWork(
+MoFEMErrorCode ConvectiveMassElement::OpGetDataAtGaussPts::doWork(
   int side,EntityType type,DataForcesAndSourcesCore::EntData &data
 ) {
   MoFEMFunctionBeginHot;
@@ -270,7 +270,7 @@ fieldDisp(false),
 methodsOp(methods_op) {
 }
 
-PetscErrorCode ConvectiveMassElement::OpMassJacobian::doWork(
+MoFEMErrorCode ConvectiveMassElement::OpMassJacobian::doWork(
   int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
 ) {
   MoFEMFunctionBeginHot;
@@ -490,7 +490,7 @@ PetscErrorCode ConvectiveMassElement::OpMassJacobian::doWork(
   commonData(common_data) {
   }
 
-  PetscErrorCode ConvectiveMassElement::OpMassRhs::doWork(
+  MoFEMErrorCode ConvectiveMassElement::OpMassRhs::doWork(
     int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
   ) {
     MoFEMFunctionBeginHot;
@@ -565,7 +565,7 @@ PetscErrorCode ConvectiveMassElement::OpMassJacobian::doWork(
     }
   }
 
-  PetscErrorCode ConvectiveMassElement::OpMassLhs_dM_dv::getJac(
+  MoFEMErrorCode ConvectiveMassElement::OpMassLhs_dM_dv::getJac(
     DataForcesAndSourcesCore::EntData &col_data,int gg
   ) {
     MoFEMFunctionBeginHot;
@@ -662,7 +662,7 @@ PetscErrorCode ConvectiveMassElement::OpMassJacobian::doWork(
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode ConvectiveMassElement::OpMassLhs_dM_dv::doWork(
+  MoFEMErrorCode ConvectiveMassElement::OpMassLhs_dM_dv::doWork(
     int row_side,int col_side,
     EntityType row_type,EntityType col_type,
     DataForcesAndSourcesCore::EntData &row_data,
@@ -770,7 +770,7 @@ PetscErrorCode ConvectiveMassElement::OpMassJacobian::doWork(
   ):
   OpMassLhs_dM_dv(field_name,col_field,data,common_data) {}
 
-  PetscErrorCode ConvectiveMassElement::OpMassLhs_dM_dx::getJac(DataForcesAndSourcesCore::EntData &col_data,int gg) {
+  MoFEMErrorCode ConvectiveMassElement::OpMassLhs_dM_dx::getJac(DataForcesAndSourcesCore::EntData &col_data,int gg) {
     MoFEMFunctionBeginHot;
     try {
       FTensor::Index<'i',3> i;
@@ -841,7 +841,7 @@ PetscErrorCode ConvectiveMassElement::OpMassJacobian::doWork(
 
   }
 
-  PetscErrorCode ConvectiveMassElement::OpMassLhs_dM_dX::getJac(DataForcesAndSourcesCore::EntData &col_data,int gg) {
+  MoFEMErrorCode ConvectiveMassElement::OpMassLhs_dM_dX::getJac(DataForcesAndSourcesCore::EntData &col_data,int gg) {
     MoFEMFunctionBeginHot;
     try {
       int nb_col = col_data.getIndices().size();
@@ -936,7 +936,7 @@ Vptr(v_ptr),
 lInear(commonData.lInear) {
 }
 
-PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
+MoFEMErrorCode ConvectiveMassElement::OpEnergy::doWork(
   int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
 ) {
     MoFEMFunctionBeginHot;
@@ -1005,7 +1005,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
   jAcobian(jacobian),
   fieldDisp(false) { }
 
-  PetscErrorCode ConvectiveMassElement::OpVelocityJacobian::doWork(
+  MoFEMErrorCode ConvectiveMassElement::OpVelocityJacobian::doWork(
     int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
   ) {
     MoFEMFunctionBeginHot;
@@ -1190,7 +1190,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
     commonData(common_data) {
     }
 
-    PetscErrorCode ConvectiveMassElement::OpVelocityRhs::doWork(
+    MoFEMErrorCode ConvectiveMassElement::OpVelocityRhs::doWork(
       int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
     ) {
       MoFEMFunctionBeginHot;
@@ -1258,7 +1258,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
     OpMassLhs_dM_dv(vel_field,field_name,data,common_data) {
     }
 
-    PetscErrorCode ConvectiveMassElement::OpVelocityLhs_dV_dv::getJac(
+    MoFEMErrorCode ConvectiveMassElement::OpVelocityLhs_dV_dv::getJac(
       DataForcesAndSourcesCore::EntData &col_data,int gg
     ) {
       MoFEMFunctionBeginHot;
@@ -1302,7 +1302,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
     OpVelocityLhs_dV_dv(vel_field,field_name,data,common_data) {
     }
 
-    PetscErrorCode ConvectiveMassElement::OpVelocityLhs_dV_dx::getJac(
+    MoFEMErrorCode ConvectiveMassElement::OpVelocityLhs_dV_dx::getJac(
       DataForcesAndSourcesCore::EntData &col_data,int gg
     ) {
       MoFEMFunctionBeginHot;
@@ -1400,7 +1400,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
     ):
     OpVelocityLhs_dV_dv(vel_field,field_name,data,common_data) {}
 
-    PetscErrorCode ConvectiveMassElement::OpVelocityLhs_dV_dX::getJac(
+    MoFEMErrorCode ConvectiveMassElement::OpVelocityLhs_dV_dX::getJac(
       DataForcesAndSourcesCore::EntData &col_data,int gg
     ) {
       MoFEMFunctionBeginHot;
@@ -1492,7 +1492,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
     jAcobian(jacobian),
     fieldDisp(false) {}
 
-    PetscErrorCode ConvectiveMassElement::OpEshelbyDynamicMaterialMomentumJacobian::doWork(
+    MoFEMErrorCode ConvectiveMassElement::OpEshelbyDynamicMaterialMomentumJacobian::doWork(
       int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
     ) {
       MoFEMFunctionBeginHot;
@@ -1673,7 +1673,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
       }
     }
 
-    PetscErrorCode ConvectiveMassElement::OpEshelbyDynamicMaterialMomentumRhs::doWork(
+    MoFEMErrorCode ConvectiveMassElement::OpEshelbyDynamicMaterialMomentumRhs::doWork(
       int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data) {
       MoFEMFunctionBeginHot;
 
@@ -1759,7 +1759,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
     }
 
 
-    PetscErrorCode ConvectiveMassElement::OpEshelbyDynamicMaterialMomentumLhs_dv::getJac(
+    MoFEMErrorCode ConvectiveMassElement::OpEshelbyDynamicMaterialMomentumLhs_dv::getJac(
       DataForcesAndSourcesCore::EntData &col_data,int gg
     ) {
       MoFEMFunctionBeginHot;
@@ -1855,7 +1855,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
 
     }
 
-    PetscErrorCode ConvectiveMassElement::OpEshelbyDynamicMaterialMomentumLhs_dx::getJac(
+    MoFEMErrorCode ConvectiveMassElement::OpEshelbyDynamicMaterialMomentumLhs_dx::getJac(
       DataForcesAndSourcesCore::EntData &col_data,int gg
     ) {
       MoFEMFunctionBeginHot;
@@ -1927,7 +1927,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
 
     }
 
-    PetscErrorCode ConvectiveMassElement::OpEshelbyDynamicMaterialMomentumLhs_dX::getJac(DataForcesAndSourcesCore::EntData &col_data,int gg) {
+    MoFEMErrorCode ConvectiveMassElement::OpEshelbyDynamicMaterialMomentumLhs_dX::getJac(DataForcesAndSourcesCore::EntData &col_data,int gg) {
       MoFEMFunctionBeginHot;
       int nb_col = col_data.getIndices().size();
       jac.clear();
@@ -2000,7 +2000,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
 
     }
 
-    PetscErrorCode ConvectiveMassElement::UpdateAndControl::preProcess() {
+    MoFEMErrorCode ConvectiveMassElement::UpdateAndControl::preProcess() {
       MoFEMFunctionBeginHot;
       
 
@@ -2026,7 +2026,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
       MoFEMFunctionReturnHot(0);
     }
 
-    PetscErrorCode ConvectiveMassElement::UpdateAndControl::postProcess() {
+    MoFEMErrorCode ConvectiveMassElement::UpdateAndControl::postProcess() {
       MoFEMFunctionBeginHot;
       //
       //SNES snes;
@@ -2037,7 +2037,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
 
 
 
-    PetscErrorCode ConvectiveMassElement::setBlocks() {
+    MoFEMErrorCode ConvectiveMassElement::setBlocks() {
       MoFEMFunctionBeginHot;
       
       
@@ -2080,7 +2080,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
       MoFEMFunctionReturnHot(0);
     }
 
-  PetscErrorCode ConvectiveMassElement::addConvectiveMassElement(
+  MoFEMErrorCode ConvectiveMassElement::addConvectiveMassElement(
     string element_name,
     string velocity_field_name,
     string spatial_position_field_name,
@@ -2126,7 +2126,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode ConvectiveMassElement::addVelocityElement(string element_name,
+  MoFEMErrorCode ConvectiveMassElement::addVelocityElement(string element_name,
     string velocity_field_name,
     string spatial_position_field_name,
     string material_position_field_name,
@@ -2169,7 +2169,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
       MoFEMFunctionReturnHot(0);
     }
 
-  PetscErrorCode ConvectiveMassElement::addEshelbyDynamicMaterialMomentum(string element_name,
+  MoFEMErrorCode ConvectiveMassElement::addEshelbyDynamicMaterialMomentum(string element_name,
     string velocity_field_name,
     string spatial_position_field_name,
     string material_position_field_name,
@@ -2222,7 +2222,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode ConvectiveMassElement::setConvectiveMassOperators(
+  MoFEMErrorCode ConvectiveMassElement::setConvectiveMassOperators(
     string velocity_field_name,
     string spatial_position_field_name,
     string material_position_field_name,
@@ -2301,7 +2301,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode ConvectiveMassElement::setVelocityOperators(
+  MoFEMErrorCode ConvectiveMassElement::setVelocityOperators(
     string velocity_field_name,
     string spatial_position_field_name,
     string material_position_field_name,
@@ -2363,7 +2363,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
   }
 
 
-  PetscErrorCode ConvectiveMassElement::setKinematicEshelbyOperators(
+  MoFEMErrorCode ConvectiveMassElement::setKinematicEshelbyOperators(
     string velocity_field_name,
     string spatial_position_field_name,
     string material_position_field_name,
@@ -2412,7 +2412,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode ConvectiveMassElement::setShellMatrixMassOperators(
+  MoFEMErrorCode ConvectiveMassElement::setShellMatrixMassOperators(
     string velocity_field_name,
     string spatial_position_field_name,
     string material_position_field_name,
@@ -2501,7 +2501,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
     }
   }
 
-  PetscErrorCode ConvectiveMassElement::MatShellCtx::iNit() {
+  MoFEMErrorCode ConvectiveMassElement::MatShellCtx::iNit() {
     MoFEMFunctionBeginHot;
     if(!iNitialized) {
       
@@ -2518,7 +2518,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode ConvectiveMassElement::MatShellCtx::dEstroy() {
+  MoFEMErrorCode ConvectiveMassElement::MatShellCtx::dEstroy() {
     MoFEMFunctionBeginHot;
     if(iNitialized) {
       
@@ -2533,7 +2533,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
   }
 
 
-  PetscErrorCode ConvectiveMassElement::PCShellCtx::iNit() {
+  MoFEMErrorCode ConvectiveMassElement::PCShellCtx::iNit() {
     MoFEMFunctionBeginHot;
     
     if(!initPC) {
@@ -2545,7 +2545,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode ConvectiveMassElement::PCShellCtx::dEstroy() {
+  MoFEMErrorCode ConvectiveMassElement::PCShellCtx::dEstroy() {
     MoFEMFunctionBeginHot;
     
     if(initPC) {
@@ -2561,7 +2561,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
 
   }
 
-  PetscErrorCode ConvectiveMassElement::ShellResidualElement::preProcess() {
+  MoFEMErrorCode ConvectiveMassElement::ShellResidualElement::preProcess() {
     MoFEMFunctionBeginHot;
 
     
@@ -2583,7 +2583,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode ConvectiveMassElement::ShellResidualElement::postProcess() {
+  MoFEMErrorCode ConvectiveMassElement::ShellResidualElement::postProcess() {
     MoFEMFunctionBeginHot;
 
     /*
@@ -2619,7 +2619,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
 
   }
 
-  PetscErrorCode ConvectiveMassElement::ShellMatrixElement::preProcess() {
+  MoFEMErrorCode ConvectiveMassElement::ShellMatrixElement::preProcess() {
     MoFEMFunctionBeginHot;
     
 

@@ -49,7 +49,7 @@ struct BodyForceConstantField {
 
     VectorDouble Nf;
 
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
       MoFEMFunctionBeginHot;
 
@@ -107,7 +107,7 @@ struct BodyForceConstantField {
 
   };
 
-  PetscErrorCode addBlock(const std::string field_name,Vec &F,int ms_id) {
+  MoFEMErrorCode addBlock(const std::string field_name,Vec &F,int ms_id) {
     
     
     const CubitMeshSets *cubit_meshset_ptr;

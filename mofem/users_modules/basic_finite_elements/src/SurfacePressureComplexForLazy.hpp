@@ -31,7 +31,7 @@ struct NeummanForcesSurfaceComplexForLazy {
 
     MyTriangleSpatialFE *myPtr;
     AuxMethodSpatial(const string &field_name,MyTriangleSpatialFE *my_ptr,const char type);
-    PetscErrorCode doWork(int side, EntityType type, DataForcesAndSourcesCore::EntData &data);
+    MoFEMErrorCode doWork(int side, EntityType type, DataForcesAndSourcesCore::EntData &data);
 
   };
 
@@ -39,7 +39,7 @@ struct NeummanForcesSurfaceComplexForLazy {
 
     MyTriangleSpatialFE *myPtr;
     AuxMethodMaterial(const string &field_name,MyTriangleSpatialFE *my_ptr,const char type);
-    PetscErrorCode doWork(int side, EntityType type, DataForcesAndSourcesCore::EntData &data);
+    MoFEMErrorCode doWork(int side, EntityType type, DataForcesAndSourcesCore::EntData &data);
 
   };
 
@@ -123,15 +123,15 @@ struct NeummanForcesSurfaceComplexForLazy {
     double *Kext_face_edge[3];
     double *Kext_edge_edge[3][3];
 
-    virtual PetscErrorCode calcTraction();
-    virtual PetscErrorCode rHs();
-    virtual PetscErrorCode lHs();
+    virtual MoFEMErrorCode calcTraction();
+    virtual MoFEMErrorCode rHs();
+    virtual MoFEMErrorCode lHs();
 
-    PetscErrorCode preProcess();
-    PetscErrorCode operator()();
+    MoFEMErrorCode preProcess();
+    MoFEMErrorCode operator()();
 
-    PetscErrorCode addForce(int ms_id);
-    PetscErrorCode addPreassure(int ms_id);
+    MoFEMErrorCode addForce(int ms_id);
+    MoFEMErrorCode addPreassure(int ms_id);
 
     struct bCForce {
       ForceCubitBcData data;
@@ -143,7 +143,7 @@ struct NeummanForcesSurfaceComplexForLazy {
       Range tRis;
     };
     map<int,bCPreassure> mapPreassure;
-    PetscErrorCode reBaseToFaceLoocalCoordSystem(MatrixDouble &t_glob_nodal);
+    MoFEMErrorCode reBaseToFaceLoocalCoordSystem(MatrixDouble &t_glob_nodal);
 
     boost::ptr_vector<MethodForForceScaling> methodsOp;
 
@@ -153,8 +153,8 @@ struct NeummanForcesSurfaceComplexForLazy {
   //
   //   MyTriangleMaterialFE(MoFEM::Interface &_mField,Mat _Aij,Vec &_F,double *scale_lhs,double *scale_rhs);
   //
-  //   PetscErrorCode rHs();
-  //   PetscErrorCode lHs();
+  //   MoFEMErrorCode rHs();
+  //   MoFEMErrorCode lHs();
   //
   // };
 
@@ -165,7 +165,7 @@ struct NeummanForcesSurfaceComplexForLazy {
   Tag thScale;
 
   double *sCale;
-  PetscErrorCode setForceScale(double scale) {
+  MoFEMErrorCode setForceScale(double scale) {
       MoFEMFunctionBeginHot;
       *sCale = scale;
       MoFEMFunctionReturnHot(0);

@@ -62,7 +62,7 @@ struct FieldApproximationH1 {
 
     /** \brief calculate matrix
       */
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int row_side,int col_side,
       EntityType row_type,EntityType col_type,
       DataForcesAndSourcesCore::EntData &row_data,
@@ -171,7 +171,7 @@ struct FieldApproximationH1 {
 
     /** \brief calculate vector
       */
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
       MoFEMFunctionBeginHot;
 
@@ -288,7 +288,7 @@ struct FieldApproximationH1 {
 
     /** \brief calculate matrix
       */
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int row_side,int col_side,
       EntityType row_type,EntityType col_type,
       DataForcesAndSourcesCore::EntData &row_data,
@@ -380,7 +380,7 @@ struct FieldApproximationH1 {
 
     /** \brief calculate vector
       */
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
       MoFEMFunctionBeginHot;
 
@@ -487,7 +487,7 @@ struct FieldApproximationH1 {
   /** \brief Set operators
   */
   template<typename FUNEVAL>
-  PetscErrorCode setOperatorsVolume(
+  MoFEMErrorCode setOperatorsVolume(
     const std::string &field_name,
     Mat A,
     std::vector<Vec> &vec_F,
@@ -506,7 +506,7 @@ struct FieldApproximationH1 {
   /** \brief Set operators
   */
   template<typename FUNEVAL>
-  PetscErrorCode setOperatorsFace(
+  MoFEMErrorCode setOperatorsFace(
     const std::string &field_name,
     Mat A,
     std::vector<Vec> &vec_F,
@@ -525,7 +525,7 @@ struct FieldApproximationH1 {
   /** \brief assemble matrix and vector
     */
   template<typename FUNEVAL>
-  PetscErrorCode loopMatrixAndVectorVolume(
+  MoFEMErrorCode loopMatrixAndVectorVolume(
     const std::string &problem_name,
     const std::string &fe_name,
     const std::string &field_name,
@@ -554,7 +554,7 @@ struct FieldApproximationH1 {
   // /** \deprecated Use loopMatrixAndVectorVolume instead
   // */
   // template<typename FUNEVAL>
-  // DEPRECATED PetscErrorCode loopMatrixAndVector(
+  // DEPRECATED MoFEMErrorCode loopMatrixAndVector(
   //   const std::string &problem_name,
   //   const std::string &fe_name,
   //   const std::string &field_name,

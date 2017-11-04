@@ -59,11 +59,11 @@ struct NodalForce {
     /** Exeuted for each entity on element, i.e. in this case Vertex element
       has only one entity, that is vertex
     */
-    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data);
+    MoFEMErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data);
 
   };
 
-  PetscErrorCode addForce(const std::string field_name,Vec F,int ms_id,bool use_snes_f = false);
+  MoFEMErrorCode addForce(const std::string field_name,Vec F,int ms_id,bool use_snes_f = false);
 
 };
 
@@ -80,7 +80,7 @@ struct MetaNodalForces {
     Tag thScale;
 
     TagForceScale(MoFEM::Interface &m_field);
-    PetscErrorCode scaleNf(const FEMethod *fe,VectorDouble &Nf);
+    MoFEMErrorCode scaleNf(const FEMethod *fe,VectorDouble &Nf);
 
   };
 
@@ -93,7 +93,7 @@ struct MetaNodalForces {
   struct DofForceScale: public MethodForForceScaling {
     boost::shared_ptr<DofEntity> dOf;
     DofForceScale(boost::shared_ptr<DofEntity> dof): dOf(dof) {}
-    PetscErrorCode scaleNf(const FEMethod *fe,VectorDouble &Nf) {
+    MoFEMErrorCode scaleNf(const FEMethod *fe,VectorDouble &Nf) {
       MoFEMFunctionBeginHot;
       Nf *= dOf->getFieldData();
       MoFEMFunctionReturnHot(0);
@@ -101,7 +101,7 @@ struct MetaNodalForces {
   };
 
   /// Add element taking information from NODESET
-  static PetscErrorCode addElement(
+  static MoFEMErrorCode addElement(
     MoFEM::Interface &m_field,const std::string field_name,Range *intersect_ptr = NULL
   ) {
     MoFEMFunctionBeginHot;
@@ -133,7 +133,7 @@ struct MetaNodalForces {
   }
 
   /// Set integration point operators
-  static PetscErrorCode setOperators(
+  static MoFEMErrorCode setOperators(
     MoFEM::Interface &m_field, boost::ptr_map<std::string,NodalForce> &nodal_forces, Vec F,const std::string field_name
   ) {
     MoFEMFunctionBeginHot;

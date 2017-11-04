@@ -96,7 +96,7 @@ struct OpS: public FaceElementForcesAndSourcesCore::UserDataOperator {
    * @param  col_data data for column
    * @return          error code
    */
-  PetscErrorCode doWork(
+  MoFEMErrorCode doWork(
     int row_side,int col_side,
     EntityType row_type,EntityType col_type,
     DataForcesAndSourcesCore::EntData &row_data,DataForcesAndSourcesCore::EntData &col_data
@@ -148,7 +148,7 @@ private:
    * @param  col_data column data (consist base functions on column entity)
    * @return          error code
    */
-  inline PetscErrorCode iNtegrate(
+  inline MoFEMErrorCode iNtegrate(
     DataForcesAndSourcesCore::EntData &row_data,DataForcesAndSourcesCore::EntData &col_data
   ) {
     MoFEMFunctionBeginHot;
@@ -192,7 +192,7 @@ private:
    * @param  col_data column data (consist base functions on column entity)
    * @return          error code
    */
-  inline PetscErrorCode aSsemble(
+  inline MoFEMErrorCode aSsemble(
     DataForcesAndSourcesCore::EntData &row_data,DataForcesAndSourcesCore::EntData &col_data
   ) {
     MoFEMFunctionBeginHot;

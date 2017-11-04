@@ -574,7 +574,7 @@ following code as follows
 \code
 struct RegisterMaterials {
   static map<std::string,CommonMaterialData::RegisterHook> mapOfRegistredMaterials;
-  PetscErrorCode operator()() const {
+  MoFEMErrorCode operator()() const {
     MoFEMFunctionBeginHot;
     mapOfRegistredMaterials["SimpleDarcy"] = MaterialDarcy::createMatPtr;
     mapOfRegistredMaterials["VanGenuchten"] = MaterialVanGenuchten::createMatPtr;

@@ -99,7 +99,7 @@ struct PostProcHookStress: public MoFEM::VolumeElementForcesAndSourcesCore::User
    * @return           error code
 
    */
-  PetscErrorCode getMatParameters(double *_lambda,double *_mu,int *_block_id) {
+  MoFEMErrorCode getMatParameters(double *_lambda,double *_mu,int *_block_id) {
     MoFEMFunctionBeginHot;
 
     
@@ -144,7 +144,7 @@ struct PostProcHookStress: public MoFEM::VolumeElementForcesAndSourcesCore::User
   /**
    * \brief Here real work is done
    */
-  PetscErrorCode doWork(
+  MoFEMErrorCode doWork(
     int side,
     EntityType type,
     DataForcesAndSourcesCore::EntData &data) {

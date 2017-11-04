@@ -25,7 +25,7 @@ using namespace MoFEM;
 // ********************
 // Arc-length ctx class
 
-PetscErrorCode ArcLengthCtx::setS(double s) {
+MoFEMErrorCode ArcLengthCtx::setS(double s) {
   MoFEMFunctionBeginHot;
   this->s = s;
   ierr = PetscPrintf(mField.get_comm(), "\tSet s = %6.4e\n", this->s);
@@ -33,7 +33,7 @@ PetscErrorCode ArcLengthCtx::setS(double s) {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode ArcLengthCtx::setAlphaBeta(double alpha, double beta) {
+MoFEMErrorCode ArcLengthCtx::setAlphaBeta(double alpha, double beta) {
   MoFEMFunctionBeginHot;
   this->alpha = alpha;
   this->beta = beta;
@@ -136,7 +136,7 @@ ArcLengthMatShell::~ArcLengthMatShell() {
   CHKERRABORT(PETSC_COMM_WORLD, ierr);
 }
 
-PetscErrorCode ArcLengthMatShell::setLambda(Vec ksp_x, double *lambda,
+MoFEMErrorCode ArcLengthMatShell::setLambda(Vec ksp_x, double *lambda,
                                             ScatterMode scattermode) {
   MoFEMFunctionBeginHot;
 
@@ -191,7 +191,7 @@ PetscErrorCode ArcLengthMatShell::setLambda(Vec ksp_x, double *lambda,
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode ArcLengthMatMultShellOp(Mat A, Vec x, Vec f) {
+MoFEMErrorCode ArcLengthMatMultShellOp(Mat A, Vec x, Vec f) {
   MoFEMFunctionBeginHot;
   void *void_ctx;
   ierr = MatShellGetContext(A, &void_ctx);
@@ -262,7 +262,7 @@ PCArcLengthCtx::~PCArcLengthCtx() {
   }
 }
 
-PetscErrorCode PCApplyArcLength(PC pc, Vec pc_f, Vec pc_x) {
+MoFEMErrorCode PCApplyArcLength(PC pc, Vec pc_f, Vec pc_x) {
   MoFEMFunctionBeginHot;
   void *void_ctx;
   ierr = PCShellGetContext(pc, &void_ctx);
@@ -321,7 +321,7 @@ PetscErrorCode PCApplyArcLength(PC pc, Vec pc_f, Vec pc_x) {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode PCSetupArcLength(PC pc) {
+MoFEMErrorCode PCSetupArcLength(PC pc) {
   MoFEMFunctionBeginHot;
   void *void_ctx;
   ierr = PCShellGetContext(pc, &void_ctx);
@@ -357,7 +357,7 @@ PetscErrorCode PCSetupArcLength(PC pc) {
 ZeroFLmabda::ZeroFLmabda(boost::shared_ptr<ArcLengthCtx> arc_ptr)
     : arcPtr(arc_ptr) {}
 
-PetscErrorCode ZeroFLmabda::preProcess() {
+MoFEMErrorCode ZeroFLmabda::preProcess() {
   MoFEMFunctionBeginHot;
   switch (snes_ctx) {
   case CTX_SNESSETFUNCTION: {
@@ -379,15 +379,15 @@ AssembleFlambda::AssembleFlambda(boost::shared_ptr<ArcLengthCtx> arc_ptr,
                                  boost::shared_ptr<DirichletDisplacementBc> bc)
     : arcPtr(arc_ptr), bC(bc) {}
 
-PetscErrorCode AssembleFlambda::preProcess() {
+MoFEMErrorCode AssembleFlambda::preProcess() {
   MoFEMFunctionBeginHot;
   MoFEMFunctionReturnHot(0);
 }
-PetscErrorCode AssembleFlambda::operator()() {
+MoFEMErrorCode AssembleFlambda::operator()() {
   MoFEMFunctionBeginHot;
   MoFEMFunctionReturnHot(0);
 }
-PetscErrorCode AssembleFlambda::postProcess() {
+MoFEMErrorCode AssembleFlambda::postProcess() {
   MoFEMFunctionBeginHot;
   switch (snes_ctx) {
   case CTX_SNESSETFUNCTION: {
@@ -443,7 +443,7 @@ SimpleArcLengthControl::SimpleArcLengthControl(
 
 SimpleArcLengthControl::~SimpleArcLengthControl() {}
 
-PetscErrorCode SimpleArcLengthControl::preProcess() {
+MoFEMErrorCode SimpleArcLengthControl::preProcess() {
   MoFEMFunctionBeginHot;
   switch (snes_ctx) {
   case CTX_SNESSETFUNCTION: {
@@ -472,7 +472,7 @@ PetscErrorCode SimpleArcLengthControl::preProcess() {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode SimpleArcLengthControl::operator()() {
+MoFEMErrorCode SimpleArcLengthControl::operator()() {
   MoFEMFunctionBeginHot;
   switch (snes_ctx) {
   case CTX_SNESSETFUNCTION: {
@@ -493,7 +493,7 @@ PetscErrorCode SimpleArcLengthControl::operator()() {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode SimpleArcLengthControl::postProcess() {
+MoFEMErrorCode SimpleArcLengthControl::postProcess() {
   MoFEMFunctionBeginHot;
   switch (snes_ctx) {
   case CTX_SNESSETFUNCTION: {
@@ -527,7 +527,7 @@ double SimpleArcLengthControl::calculateLambdaInt() {
   return arcPtr->beta * arcPtr->dLambda;
 }
 
-PetscErrorCode SimpleArcLengthControl::calculateDb() {
+MoFEMErrorCode SimpleArcLengthControl::calculateDb() {
   MoFEMFunctionBeginHot;
   ierr = VecZeroEntries(arcPtr->db);
   CHKERRQ(ierr);
@@ -538,7 +538,7 @@ PetscErrorCode SimpleArcLengthControl::calculateDb() {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode SimpleArcLengthControl::calculateDxAndDlambda(Vec x) {
+MoFEMErrorCode SimpleArcLengthControl::calculateDxAndDlambda(Vec x) {
   MoFEMFunctionBeginHot;
   // Calculate dx
   ierr = VecCopy(x, arcPtr->dx);
@@ -588,7 +588,7 @@ SphericalArcLengthControl::SphericalArcLengthControl(
 
 SphericalArcLengthControl::~SphericalArcLengthControl() {}
 
-PetscErrorCode SphericalArcLengthControl::preProcess() {
+MoFEMErrorCode SphericalArcLengthControl::preProcess() {
   MoFEMFunctionBeginHot;
   switch (ts_ctx) {
   case CTX_TSSETIFUNCTION: {
@@ -627,7 +627,7 @@ double SphericalArcLengthControl::calculateLambdaInt() {
              arcPtrRaw->F_lambda2;
 }
 
-PetscErrorCode SphericalArcLengthControl::calculateDb() {
+MoFEMErrorCode SphericalArcLengthControl::calculateDb() {
   MoFEMFunctionBeginHot;
   ierr = VecCopy(arcPtrRaw->dx, arcPtrRaw->db);
   CHKERRQ(ierr);
@@ -636,7 +636,7 @@ PetscErrorCode SphericalArcLengthControl::calculateDb() {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode SphericalArcLengthControl::operator()() {
+MoFEMErrorCode SphericalArcLengthControl::operator()() {
   MoFEMFunctionBeginHot;
   switch (snes_ctx) {
   case CTX_SNESSETFUNCTION: {
@@ -661,7 +661,7 @@ PetscErrorCode SphericalArcLengthControl::operator()() {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode SphericalArcLengthControl::postProcess() {
+MoFEMErrorCode SphericalArcLengthControl::postProcess() {
   MoFEMFunctionBeginHot;
   switch (ts_ctx) {
   case CTX_TSSETIFUNCTION: {
@@ -705,7 +705,7 @@ PetscErrorCode SphericalArcLengthControl::postProcess() {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode SphericalArcLengthControl::calculateDxAndDlambda(Vec x) {
+MoFEMErrorCode SphericalArcLengthControl::calculateDxAndDlambda(Vec x) {
   MoFEMFunctionBeginHot;
   // dx
   ierr = VecCopy(x, arcPtrRaw->dx);
@@ -740,7 +740,7 @@ PetscErrorCode SphericalArcLengthControl::calculateDxAndDlambda(Vec x) {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode
+MoFEMErrorCode
 SphericalArcLengthControl::calculateInitDlambda(double *dlambda) {
   MoFEMFunctionBeginHot;
   *dlambda = sqrt(pow(arcPtrRaw->s, 2) /
@@ -754,7 +754,7 @@ SphericalArcLengthControl::calculateInitDlambda(double *dlambda) {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode SphericalArcLengthControl::setDlambdaToX(Vec x, double dlambda) {
+MoFEMErrorCode SphericalArcLengthControl::setDlambdaToX(Vec x, double dlambda) {
   MoFEMFunctionBeginHot;
   // check if local dof idx is non zero, i.e. that lambda is accessible from
   // this processor

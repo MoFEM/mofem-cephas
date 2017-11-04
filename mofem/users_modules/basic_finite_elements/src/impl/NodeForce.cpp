@@ -36,7 +36,7 @@ NodalForce::OpNodalForce::OpNodalForce(const std::string field_name,Vec _F,bCFor
   dAta(data),
   methodsOp(methods_op) {}
 
-  PetscErrorCode NodalForce::OpNodalForce::doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
+  MoFEMErrorCode NodalForce::OpNodalForce::doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
     MoFEMFunctionBeginHot;
 
     if(data.getIndices().size()==0) MoFEMFunctionReturnHot(0);
@@ -89,7 +89,7 @@ NodalForce::OpNodalForce::OpNodalForce(const std::string field_name,Vec _F,bCFor
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode NodalForce::addForce(const std::string field_name,Vec F,int ms_id,bool use_snes_f) {
+  MoFEMErrorCode NodalForce::addForce(const std::string field_name,Vec F,int ms_id,bool use_snes_f) {
     
     
     const CubitMeshSets *cubit_meshset_ptr;
@@ -117,7 +117,7 @@ NodalForce::OpNodalForce::OpNodalForce(const std::string field_name,Vec _F,bCFor
     }
   }
 
-  PetscErrorCode MetaNodalForces::TagForceScale::scaleNf(const FEMethod *fe,VectorDouble &Nf) {
+  MoFEMErrorCode MetaNodalForces::TagForceScale::scaleNf(const FEMethod *fe,VectorDouble &Nf) {
     MoFEMFunctionBeginHot;
     Nf *= *sCale;
     MoFEMFunctionReturnHot(0);

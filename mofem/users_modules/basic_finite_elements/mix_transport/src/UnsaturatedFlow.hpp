@@ -64,7 +64,7 @@ namespace MixTransport {
     virtual double initalPcEval() const = 0;
     virtual void printMatParameters(const int id,const std::string& prefix) const = 0;
 
-    virtual PetscErrorCode calK() {
+    virtual MoFEMErrorCode calK() {
       MoFEMFunctionBeginHot;
       SETERRQ(
         PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,
@@ -73,7 +73,7 @@ namespace MixTransport {
       MoFEMFunctionReturnHot(0);
     }
 
-    virtual PetscErrorCode calDiffK() {
+    virtual MoFEMErrorCode calDiffK() {
       MoFEMFunctionBeginHot;
       SETERRQ(
         PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,
@@ -82,7 +82,7 @@ namespace MixTransport {
       MoFEMFunctionReturnHot(0);
     }
 
-    virtual PetscErrorCode calC() {
+    virtual MoFEMErrorCode calC() {
       MoFEMFunctionBeginHot;
       SETERRQ(
         PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,
@@ -91,7 +91,7 @@ namespace MixTransport {
       MoFEMFunctionReturnHot(0);
     }
 
-    virtual PetscErrorCode calDiffC() {
+    virtual MoFEMErrorCode calDiffC() {
       MoFEMFunctionBeginHot;
       SETERRQ(
         PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,
@@ -100,7 +100,7 @@ namespace MixTransport {
       MoFEMFunctionReturnHot(0);
     }
 
-    virtual PetscErrorCode calTheta() {
+    virtual MoFEMErrorCode calTheta() {
       MoFEMFunctionBeginHot;
       SETERRQ(
         PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,
@@ -109,7 +109,7 @@ namespace MixTransport {
       MoFEMFunctionReturnHot(0);
     }
 
-    virtual PetscErrorCode calSe() {
+    virtual MoFEMErrorCode calSe() {
       MoFEMFunctionBeginHot;
       SETERRQ(
         PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,
@@ -152,7 +152,7 @@ namespace MixTransport {
      * @param  block_id reference to returned block id
      * @return          error code
      */
-    virtual PetscErrorCode getMaterial(
+    virtual MoFEMErrorCode getMaterial(
       const EntityHandle ent,int &block_id
     ) const {
       MoFEMFunctionBeginHot;
@@ -198,7 +198,7 @@ namespace MixTransport {
      * @param  value returned value
      * @return       error code
      */
-    PetscErrorCode getBcOnValues(
+    MoFEMErrorCode getBcOnValues(
       const EntityHandle ent,const int gg,
       const double x,const double y,const double z,
       double &value
@@ -241,7 +241,7 @@ namespace MixTransport {
      * @param  flux reference to flux which is set by function
      * @return      [description]
      */
-    PetscErrorCode getBcOnFluxes(
+    MoFEMErrorCode getBcOnFluxes(
       const EntityHandle ent,
       const double x,const double y,const double z,
       double &flux
@@ -301,7 +301,7 @@ namespace MixTransport {
        * @param  data data on entity
        * @return      error code
        */
-      PetscErrorCode doWork(
+      MoFEMErrorCode doWork(
         int side,EntityType type,DataForcesAndSourcesCore::EntData &data
       ) {
         MoFEMFunctionBeginHot;
@@ -358,7 +358,7 @@ namespace MixTransport {
       VectorDouble divVec,nF;
       FTensor::Index<'i',3> i;
 
-      PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
+      MoFEMErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
         MoFEMFunctionBeginHot;
         const int nb_dofs = data.getIndices().size();
         if(nb_dofs==0) MoFEMFunctionReturnHot(0);
@@ -435,7 +435,7 @@ namespace MixTransport {
 
       VectorDouble nF;
 
-      PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
+      MoFEMErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
         MoFEMFunctionBeginHot;
         MoFEMFunctionBeginHot;
         const int nb_dofs = data.getIndices().size();
@@ -518,7 +518,7 @@ namespace MixTransport {
        * @param  col_data data for col
        * @return          error code
        */
-      PetscErrorCode doWork(
+      MoFEMErrorCode doWork(
         int row_side,int col_side,
         EntityType row_type,EntityType col_type,
         DataForcesAndSourcesCore::EntData &row_data,
@@ -627,7 +627,7 @@ namespace MixTransport {
        * @param  col_data data for col
        * @return          error code
        */
-      PetscErrorCode doWork(
+      MoFEMErrorCode doWork(
         int row_side,int col_side,
         EntityType row_type,EntityType col_type,
         DataForcesAndSourcesCore::EntData &row_data,
@@ -751,7 +751,7 @@ namespace MixTransport {
        * @param  col_data column data structure carrying information about base functions, DOFs indices, etc.
        * @return          error code
        */
-      PetscErrorCode doWork(
+      MoFEMErrorCode doWork(
         int row_side,int col_side,
         EntityType row_type,EntityType col_type,
         DataForcesAndSourcesCore::EntData &row_data,
@@ -831,7 +831,7 @@ namespace MixTransport {
        * @param  col_data column data structure carrying information about base functions, DOFs indices, etc.
        * @return          error code
        */
-      PetscErrorCode doWork(
+      MoFEMErrorCode doWork(
         int row_side,int col_side,
         EntityType row_type,EntityType col_type,
         DataForcesAndSourcesCore::EntData &row_data,
@@ -924,7 +924,7 @@ namespace MixTransport {
       MatrixDouble nN;
       VectorDouble nF;
 
-      PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
+      MoFEMErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
         MoFEMFunctionBeginHot;
         try {
           if(data.getFieldData().size()==0) MoFEMFunctionReturnHot(0);
@@ -1002,7 +1002,7 @@ namespace MixTransport {
        * @param  data data on entity
        * @return      error code
        */
-      PetscErrorCode doWork(
+      MoFEMErrorCode doWork(
         int side,EntityType type,DataForcesAndSourcesCore::EntData &data
       ) {
         MoFEMFunctionBeginHot;
@@ -1061,7 +1061,7 @@ namespace MixTransport {
       mapGaussPts(map_gauss_pts) {
       }
 
-      PetscErrorCode doWork(
+      MoFEMErrorCode doWork(
         int side,
         EntityType type,
         DataForcesAndSourcesCore::EntData &data
@@ -1182,17 +1182,17 @@ namespace MixTransport {
         fRequency(frequency) {
         }
 
-        PetscErrorCode preProcess() {
+        MoFEMErrorCode preProcess() {
           MoFEMFunctionBeginHot;
           MoFEMFunctionReturnHot(0);
         }
 
-        PetscErrorCode operator()() {
+        MoFEMErrorCode operator()() {
           MoFEMFunctionBeginHot;
           MoFEMFunctionReturnHot(0);
         }
 
-        PetscErrorCode postProcess() {
+        MoFEMErrorCode postProcess() {
           MoFEMFunctionBeginHot;
 
           // Get time step
@@ -1237,7 +1237,7 @@ namespace MixTransport {
 
 
     /// \brief add fields
-    PetscErrorCode addFields(const std::string &values,const std::string &fluxes,const int order) {
+    MoFEMErrorCode addFields(const std::string &values,const std::string &fluxes,const int order) {
       MoFEMFunctionBeginHot;
       //Fields
       ierr = mField.add_field(fluxes,HDIV,DEMKOWICZ_JACOBI_BASE,1); CHKERRQ(ierr);
@@ -1274,7 +1274,7 @@ namespace MixTransport {
     }
 
     /// \brief add finite elements
-    PetscErrorCode addFiniteElements(
+    MoFEMErrorCode addFiniteElements(
       const std::string &fluxes_name,const std::string &values_name
     ) {
       MoFEMFunctionBeginHot;
@@ -1334,7 +1334,7 @@ namespace MixTransport {
      * @param  ref_level mesh refinement on which mesh problem you like to built.
      * @return           error code
      */
-    PetscErrorCode buildProblem(BitRefLevel ref_level = BitRefLevel().set(0)) {
+    MoFEMErrorCode buildProblem(BitRefLevel ref_level = BitRefLevel().set(0)) {
       MoFEMFunctionBeginHot;
 
       // Build fields
@@ -1425,7 +1425,7 @@ namespace MixTransport {
       cTx(ctx),
       fePtr(fe_ptr)/*,mArk(mark)*/ {
       }
-      PetscErrorCode operator()() {
+      MoFEMErrorCode operator()() {
         MoFEMFunctionBeginHot;
         // Update pressure rates
         ierr = fePtr->mField.getInterface<VecManager>()->setOtherLocalGhostVector(
@@ -1490,7 +1490,7 @@ namespace MixTransport {
       cTx(ctx),
       fePtr(fe_ptr)/*,mArk(mark)*/ {
       }
-      PetscErrorCode operator()() {
+      MoFEMErrorCode operator()() {
         MoFEMFunctionBeginHot;
         switch (fePtr->ts_ctx) {
           case TSMethod::CTX_TSSETIJACOBIAN: {
@@ -1546,7 +1546,7 @@ namespace MixTransport {
      * @param  face_rule integration rule for boundary element
      * @return error code
      */
-    PetscErrorCode setFiniteElements(
+    MoFEMErrorCode setFiniteElements(
       ForcesAndSourcesCore::RuleHookFun vol_rule = VolRule(),
       ForcesAndSourcesCore::RuleHookFun face_rule = FaceRule()
     ) {
@@ -1667,7 +1667,7 @@ namespace MixTransport {
      * \brief Create vectors and matrices
      * @return Error code
      */
-    PetscErrorCode createMatrices() {
+    MoFEMErrorCode createMatrices() {
       MoFEMFunctionBeginHot;
       ierr = DMCreateMatrix(dM,&Aij); CHKERRQ(ierr);
       ierr = DMCreateGlobalVector(dM,&D0); CHKERRQ(ierr);
@@ -1687,7 +1687,7 @@ namespace MixTransport {
      * \brief Delete matrices and vector when no longer needed
      * @return error code
      */
-    PetscErrorCode destroyMatrices() {
+    MoFEMErrorCode destroyMatrices() {
       MoFEMFunctionBeginHot;
       ierr = MatDestroy(&Aij); CHKERRQ(ierr);
       ierr = VecDestroy(&D); CHKERRQ(ierr);
@@ -1702,7 +1702,7 @@ namespace MixTransport {
      * \brief Calculate boundary conditions for fluxes
      * @return Error code
      */
-    PetscErrorCode calculateEssentialBc() {
+    MoFEMErrorCode calculateEssentialBc() {
       MoFEMFunctionBeginHot;
       // clear vectors
       ierr = VecZeroEntries(D0); CHKERRQ(ierr);
@@ -1727,7 +1727,7 @@ namespace MixTransport {
      * \brief Calculate inital preassure head distribution
      * @return Error code
      */
-    PetscErrorCode calculateInitialPc() {
+    MoFEMErrorCode calculateInitialPc() {
       MoFEMFunctionBeginHot;
       // clear vectors
       ierr = VecZeroEntries(D1); CHKERRQ(ierr);
@@ -1752,7 +1752,7 @@ namespace MixTransport {
      * \brief solve problem
      * @return error code
      */
-    PetscErrorCode solveProblem(bool set_initial_pc = true) {
+    MoFEMErrorCode solveProblem(bool set_initial_pc = true) {
       MoFEMFunctionBeginHot;
       if(set_initial_pc) {
         // Set initial head
@@ -1795,15 +1795,15 @@ namespace MixTransport {
         ierr = PetscViewerAndFormatCreate(PETSC_VIEWER_STDOUT_WORLD,PETSC_VIEWER_DEFAULT,&vf);CHKERRQ(ierr);
         ierr = SNESMonitorSet(
           snes,
-          (PetscErrorCode (*)(SNES,PetscInt,PetscReal,void*))SNESMonitorFields,
-          vf,(PetscErrorCode (*)(void**))PetscViewerAndFormatDestroy
+          (MoFEMErrorCode (*)(SNES,PetscInt,PetscReal,void*))SNESMonitorFields,
+          vf,(MoFEMErrorCode (*)(void**))PetscViewerAndFormatDestroy
         );CHKERRQ(ierr);
       }
       #else
       {
         ierr = SNESMonitorSet(
           snes,
-          (PetscErrorCode (*)(SNES,PetscInt,PetscReal,void*))SNESMonitorFields,0,0
+          (MoFEMErrorCode (*)(SNES,PetscInt,PetscReal,void*))SNESMonitorFields,0,0
         );CHKERRQ(ierr);
       }
       #endif

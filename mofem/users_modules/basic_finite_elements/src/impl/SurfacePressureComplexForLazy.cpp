@@ -26,11 +26,11 @@ using namespace MoFEM;
 
 extern "C" {
 
-  PetscErrorCode Traction_hierarchical(int order,int *order_edge,
+  MoFEMErrorCode Traction_hierarchical(int order,int *order_edge,
     double *N,double *N_face,double *N_edge[],
     double *t,double *t_edge[],double *t_face,
     double *traction,int gg);
-  PetscErrorCode Fext_h_hierarchical(int order,int *order_edge,
+  MoFEMErrorCode Fext_h_hierarchical(int order,int *order_edge,
     double *N,double *N_face,double *N_edge[],
     double *diffN,double *diffN_face,double *diffN_edge[],
     double *t,double *t_edge[],double *t_face,
@@ -39,21 +39,21 @@ extern "C" {
     double *Fext,double *Fext_egde[],double *Fext_face,
     double *iFext,double *iFext_egde[],double *iFext_face,
     int g_dim,const double *g_w);
-  PetscErrorCode KExt_hh_hierarchical(double eps,int order,int *order_edge,
+  MoFEMErrorCode KExt_hh_hierarchical(double eps,int order,int *order_edge,
     double *N,double *N_face,double *N_edge[],
     double *diffN,double *diffN_face,double *diffN_edge[],
     double *t,double *t_edge[],double *t_face,
     double *dofs_x,double *dofs_x_edge[],double *dofs_x_face,
     double *KExt_hh,double* KExt_egdeh[3],double *KExt_faceh,
     int g_dim,const double *g_w);
-  PetscErrorCode KExt_hh_hierarchical_edge(double eps,int order,int *order_edge,
+  MoFEMErrorCode KExt_hh_hierarchical_edge(double eps,int order,int *order_edge,
     double *N,double *N_face,double *N_edge[],
     double *diffN,double *diffN_face,double *diffN_edge[],
     double *t,double *t_edge[],double *t_face,
     double *dofs_x,double *dofs_x_edge[],double *dofs_x_face,
     double *Khext_edge[3],double *KExt_edgeegde[3][3],double *KExt_faceedge[3],
     int g_dim,const double *g_w);
-  PetscErrorCode KExt_hh_hierarchical_face(double eps,int order,int *order_edge,
+  MoFEMErrorCode KExt_hh_hierarchical_face(double eps,int order,int *order_edge,
     double *N,double *N_face,double *N_edge[],
     double *diffN,double *diffN_face,double *diffN_edge[],
     double *t,double *t_edge[],double *t_face,
@@ -61,14 +61,14 @@ extern "C" {
     double *KExt_hface,double *KExt_egdeface[3],double *KExt_faceface,
     int g_dim,const double *g_w);
   // //External Forces Material
-  // PetscErrorCode Fext_H_hierarchical(int order,int *order_edge,
+  // MoFEMErrorCode Fext_H_hierarchical(int order,int *order_edge,
   //   double *N,double *N_face,double *N_edge[],
   //   double *diffN,double *diffN_face,double *diffN_edge[],
   //   double *t,double *t_edge[],double *t_face,
   //   double *dofs_X,double *dofs_X_edge[],double *dofs_X_face,
   //   double *idofs_X,
   //   double *Fext,double *iFext,int g_dim,const double *g_w);
-  // PetscErrorCode KExt_HH_hierarchical(double eps,int order,int *order_edge,
+  // MoFEMErrorCode KExt_HH_hierarchical(double eps,int order,int *order_edge,
   //   double *N,double *N_face,double *N_edge[],
   //   double *diffN,double *diffN_face,double *diffN_edge[],
   //   double *t,double *t_edge[],double *t_face,
@@ -93,7 +93,7 @@ NeummanForcesSurfaceComplexForLazy::AuxMethodMaterial::AuxMethodMaterial(
 FaceElementForcesAndSourcesCore::UserDataOperator(field_name,type),
 myPtr(my_ptr) {};
 
-PetscErrorCode NeummanForcesSurfaceComplexForLazy::
+MoFEMErrorCode NeummanForcesSurfaceComplexForLazy::
   AuxMethodSpatial::doWork(int side, EntityType type, DataForcesAndSourcesCore::EntData &data) {
   MoFEMFunctionBeginHot;
 
@@ -155,7 +155,7 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode NeummanForcesSurfaceComplexForLazy::
+MoFEMErrorCode NeummanForcesSurfaceComplexForLazy::
   AuxMethodMaterial::doWork(int side, EntityType type, DataForcesAndSourcesCore::EntData &data) {
   MoFEMFunctionBeginHot;
 
@@ -239,7 +239,7 @@ NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::MyTriangleSpatialFE
 
 }
 
-PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::rHs() {
+MoFEMErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::rHs() {
   MoFEMFunctionBeginHot;
 
   //cerr << "MyTriangleSpatialFE::rHs\n";
@@ -349,7 +349,7 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::rHs() {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::lHs() {
+MoFEMErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::lHs() {
   MoFEMFunctionBeginHot;
 
   if(typeOfForces == NONCONSERVATIVE) {
@@ -491,7 +491,7 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::lHs() {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::reBaseToFaceLoocalCoordSystem(MatrixDouble &t_glob_nodal) {
+MoFEMErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::reBaseToFaceLoocalCoordSystem(MatrixDouble &t_glob_nodal) {
   MoFEMFunctionBeginHot;
   double s1[3],s2[3],normal[3],q[9];
   ierr = ShapeFaceBaseMBTRI(diffN,&*coords.data().begin(),normal,s1,s2); CHKERRQ(ierr);
@@ -509,7 +509,7 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::reBaseTo
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::calcTraction() {
+MoFEMErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::calcTraction() {
   MoFEMFunctionBeginHot;
 
   try {
@@ -567,7 +567,7 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::calcTrac
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::preProcess() {
+MoFEMErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::preProcess() {
   MoFEMFunctionBeginHot;
 
   
@@ -597,7 +597,7 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::preProce
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::operator()() {
+MoFEMErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::operator()() {
   MoFEMFunctionBeginHot;
 
   //cerr << "MyTriangleSpatialFE::operator()()\n";
@@ -665,7 +665,7 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::operator
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::addForce(int ms_id) {
+MoFEMErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::addForce(int ms_id) {
   MeshsetsManager *mesh_manager_ptr;
   const CubitMeshSets *cubit_meshset_ptr;
   
@@ -677,7 +677,7 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::addForce
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::addPreassure(int ms_id) {
+MoFEMErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::addPreassure(int ms_id) {
   MeshsetsManager *mesh_manager_ptr;
   const CubitMeshSets *cubit_meshset_ptr;
   
@@ -693,7 +693,7 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::addPreas
 //   (MoFEM::Interface &_mField,Mat _Aij,Vec &_F,double *scale_lhs,double *scale_rhs):
 //   MyTriangleSpatialFE(_mField,_Aij,_F,scale_lhs,scale_rhs) {}
 
-// PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleMaterialFE::rHs() {
+// MoFEMErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleMaterialFE::rHs() {
 //   MoFEMFunctionBeginHot;
 //
 //   //cerr << "MyTriangleMaterialFE::rHs()\n";
@@ -737,7 +737,7 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::addPreas
 //   MoFEMFunctionReturnHot(0);
 // }
 //
-// PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleMaterialFE::lHs() {
+// MoFEMErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleMaterialFE::lHs() {
 //   MoFEMFunctionBeginHot;
 //
 //   try {
@@ -804,7 +804,7 @@ NeummanForcesSurfaceComplexForLazy::NeummanForcesSurfaceComplexForLazy(MoFEM::In
 extern "C" {
 
   //External forces
-  PetscErrorCode Traction_hierarchical(int order,int *order_edge,
+  MoFEMErrorCode Traction_hierarchical(int order,int *order_edge,
     double *N,double *N_face,double *N_edge[],
     double *t,double *t_edge[],double *t_face,
     double *traction,int gg) {
@@ -831,7 +831,7 @@ extern "C" {
     }
     MoFEMFunctionReturnHot(0);
   }
-  PetscErrorCode Fext_h_hierarchical(int order,int *order_edge,
+  MoFEMErrorCode Fext_h_hierarchical(int order,int *order_edge,
     double *N,double *N_face,double *N_edge[],
     double *diffN,double *diffN_face,double *diffN_edge[],
     double *t,double *t_edge[],double *t_face,
@@ -940,7 +940,7 @@ extern "C" {
     }
     MoFEMFunctionReturnHot(0);
   }
-  PetscErrorCode KExt_hh_hierarchical(double eps,int order,int *order_edge,
+  MoFEMErrorCode KExt_hh_hierarchical(double eps,int order,int *order_edge,
     double *N,double *N_face,double *N_edge[],
     double *diffN,double *diffN_face,double *diffN_edge[],
     double *t,double *t_edge[],double *t_face,
@@ -1016,7 +1016,7 @@ extern "C" {
     }
     MoFEMFunctionReturnHot(0);
   }
-  PetscErrorCode KExt_hh_hierarchical_edge(double eps,int order,int *order_edge,
+  MoFEMErrorCode KExt_hh_hierarchical_edge(double eps,int order,int *order_edge,
     double *N,double *N_face,double *N_edge[],
     double *diffN,double *diffN_face,double *diffN_edge[],
     double *t,double *t_edge[],double *t_face,
@@ -1097,7 +1097,7 @@ extern "C" {
     }
     MoFEMFunctionReturnHot(0);
   }
-  PetscErrorCode KExt_hh_hierarchical_face(double eps,int order,int *order_edge,
+  MoFEMErrorCode KExt_hh_hierarchical_face(double eps,int order,int *order_edge,
     double *N,double *N_face,double *N_edge[],
     double *diffN,double *diffN_face,double *diffN_edge[],
     double *t,double *t_edge[],double *t_face,
@@ -1171,7 +1171,7 @@ extern "C" {
     MoFEMFunctionReturnHot(0);
   }
   // //Material
-  // PetscErrorCode Fext_H_hierarchical(
+  // MoFEMErrorCode Fext_H_hierarchical(
   //   int order,int *order_edge,
   //   double *N,double *N_face,double *N_edge[],
   //   double *diffN,double *diffN_face,double *diffN_edge[],
@@ -1224,7 +1224,7 @@ extern "C" {
   //   }
   //   MoFEMFunctionReturnHot(0);
   // }
-  // PetscErrorCode KExt_HH_hierarchical(
+  // MoFEMErrorCode KExt_HH_hierarchical(
   //   double eps,int order,int *order_edge,
   //   double *N,double *N_face,double *N_edge[],
   //   double *diffN,double *diffN_face,double *diffN_edge[],

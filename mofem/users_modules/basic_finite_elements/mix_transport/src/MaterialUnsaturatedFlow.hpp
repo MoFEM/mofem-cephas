@@ -102,37 +102,37 @@ namespace MixTransport {
     CommonMaterialData(data) {
     }
 
-    PetscErrorCode calK() {
+    MoFEMErrorCode calK() {
       MoFEMFunctionBeginHot;
       K = Ks;
       MoFEMFunctionReturnHot(0);
     };
 
-    PetscErrorCode calDiffK() {
+    MoFEMErrorCode calDiffK() {
       MoFEMFunctionBeginHot;
       diffK = 0;
       MoFEMFunctionReturnHot(0);
     };
 
-    PetscErrorCode calC() {
+    MoFEMErrorCode calC() {
       MoFEMFunctionBeginHot;
       C = ePsilon1;
       MoFEMFunctionReturnHot(0);
     }
 
-    PetscErrorCode calDiffC() {
+    MoFEMErrorCode calDiffC() {
       MoFEMFunctionBeginHot;
       diffC = 0;
       MoFEMFunctionReturnHot(0);
     }
 
-    PetscErrorCode calTheta() {
+    MoFEMErrorCode calTheta() {
       MoFEMFunctionBeginHot;
       tHeta = thetaS;
       MoFEMFunctionReturnHot(0);
     }
 
-    virtual PetscErrorCode calSe() {
+    virtual MoFEMErrorCode calSe() {
       MoFEMFunctionBeginHot;
       Se = 1;
       MoFEMFunctionReturnHot(0);
@@ -157,7 +157,7 @@ namespace MixTransport {
     virtual void recordKr() = 0;
 
     double Kr;
-    PetscErrorCode calK() {
+    MoFEMErrorCode calK() {
       MoFEMFunctionBeginHot;
       if(h<hS) {
         int r = ::function(2*blockId+1,1,1,&h,&Kr);
@@ -177,7 +177,7 @@ namespace MixTransport {
     };
 
     double diffKr;
-    PetscErrorCode calDiffK() {
+    MoFEMErrorCode calDiffK() {
       MoFEMFunctionBeginHot;
       if(h<hS) {
         diffK = 0;
@@ -197,7 +197,7 @@ namespace MixTransport {
     };
 
 
-    PetscErrorCode calC() {
+    MoFEMErrorCode calC() {
       MoFEMFunctionBeginHot;
       if(h<hS) {
         int r = ::gradient(2*blockId+0,1,&h,&C);
@@ -215,7 +215,7 @@ namespace MixTransport {
       MoFEMFunctionReturnHot(0);
     }
 
-    PetscErrorCode calDiffC() {
+    MoFEMErrorCode calDiffC() {
       MoFEMFunctionBeginHot;
       if(h<hS) {
         double v = 1;
@@ -233,7 +233,7 @@ namespace MixTransport {
       MoFEMFunctionReturnHot(0);
     }
 
-    PetscErrorCode calTheta() {
+    MoFEMErrorCode calTheta() {
       MoFEMFunctionBeginHot;
       if(h<hS) {
         int r = ::function(2*blockId+0,1,1,&h,&tHeta);
@@ -250,7 +250,7 @@ namespace MixTransport {
       MoFEMFunctionReturnHot(0);
     }
 
-    PetscErrorCode calSe() {
+    MoFEMErrorCode calSe() {
       MoFEMFunctionBeginHot;
       if(h<hS) {
         int r = ::function(2*blockId+0,1,1,&h,&tHeta);
@@ -363,7 +363,7 @@ namespace MixTransport {
 
   struct RegisterMaterials {
     static map<std::string,CommonMaterialData::RegisterHook> mapOfRegistredMaterials;
-    PetscErrorCode operator()() const {
+    MoFEMErrorCode operator()() const {
       MoFEMFunctionBeginHot;
       mapOfRegistredMaterials["SimpleDarcy"] = MaterialDarcy::createMatPtr;
       mapOfRegistredMaterials["VanGenuchten"] = MaterialVanGenuchten::createMatPtr;

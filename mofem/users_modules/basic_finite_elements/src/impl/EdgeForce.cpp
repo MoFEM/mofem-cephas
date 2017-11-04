@@ -35,7 +35,7 @@ methodsOp(methods_op),
 useSnesF(use_snes_f) {
 }
 
-PetscErrorCode EdgeForce::OpEdgeForce::doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
+MoFEMErrorCode EdgeForce::OpEdgeForce::doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
   MoFEMFunctionBeginHot;
 
   if(data.getIndices().size()==0) {
@@ -126,7 +126,7 @@ PetscErrorCode EdgeForce::OpEdgeForce::doWork(int side,EntityType type,DataForce
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode EdgeForce::addForce(const std::string field_name,Vec F,int ms_id,bool use_snes_f) {
+MoFEMErrorCode EdgeForce::addForce(const std::string field_name,Vec F,int ms_id,bool use_snes_f) {
   
   
   const CubitMeshSets *cubit_meshset_ptr;

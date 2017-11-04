@@ -38,7 +38,7 @@ addToRule(1) {
 
 int NonlinearElasticElement::MyVolumeFE::getRule(int order) { return 2*(order-1)+addToRule; };
 
-PetscErrorCode NonlinearElasticElement::MyVolumeFE::preProcess() {
+MoFEMErrorCode NonlinearElasticElement::MyVolumeFE::preProcess() {
   MoFEMFunctionBeginHot;
 
   ierr = VolumeElementForcesAndSourcesCore::preProcess(); CHKERRQ(ierr);
@@ -93,7 +93,7 @@ PetscErrorCode NonlinearElasticElement::MyVolumeFE::preProcess() {
 }
 
 
-PetscErrorCode NonlinearElasticElement::MyVolumeFE::postProcess() {
+MoFEMErrorCode NonlinearElasticElement::MyVolumeFE::postProcess() {
   MoFEMFunctionBeginHot;
 
   double *array;
@@ -135,7 +135,7 @@ NonlinearElasticElement::OpGetDataAtGaussPts::OpGetDataAtGaussPts(const std::str
   gradientAtGaussPts(gardient_at_gauss_pts),
   zeroAtType(MBVERTEX) {}
 
-PetscErrorCode NonlinearElasticElement::OpGetDataAtGaussPts::doWork(
+MoFEMErrorCode NonlinearElasticElement::OpGetDataAtGaussPts::doWork(
   int side,EntityType type,DataForcesAndSourcesCore::EntData &data
 ) {
   MoFEMFunctionBeginHot;
@@ -276,7 +276,7 @@ fieldDisp(field_disp) {
 
 }
 
-PetscErrorCode NonlinearElasticElement::OpJacobianPiolaKirchhoffStress::calculateStress(const int gg) {
+MoFEMErrorCode NonlinearElasticElement::OpJacobianPiolaKirchhoffStress::calculateStress(const int gg) {
   MoFEMFunctionBeginHot;
   try {
 
@@ -301,7 +301,7 @@ PetscErrorCode NonlinearElasticElement::OpJacobianPiolaKirchhoffStress::calculat
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode NonlinearElasticElement::OpJacobianPiolaKirchhoffStress::recordTag(const int gg) {
+MoFEMErrorCode NonlinearElasticElement::OpJacobianPiolaKirchhoffStress::recordTag(const int gg) {
   MoFEMFunctionBeginHot;
 
   trace_on(tAg);
@@ -371,7 +371,7 @@ PetscErrorCode NonlinearElasticElement::OpJacobianPiolaKirchhoffStress::recordTa
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode NonlinearElasticElement::OpJacobianPiolaKirchhoffStress::playTag(const int gg) {
+MoFEMErrorCode NonlinearElasticElement::OpJacobianPiolaKirchhoffStress::playTag(const int gg) {
   MoFEMFunctionBeginHot;
 
   int r;
@@ -404,7 +404,7 @@ PetscErrorCode NonlinearElasticElement::OpJacobianPiolaKirchhoffStress::playTag(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode NonlinearElasticElement::OpJacobianPiolaKirchhoffStress::doWork(
+MoFEMErrorCode NonlinearElasticElement::OpJacobianPiolaKirchhoffStress::doWork(
   int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
 ) {
   MoFEMFunctionBeginHot;
@@ -501,7 +501,7 @@ aLe(ale),
 fieldDisp(field_disp) {
 }
 
-PetscErrorCode NonlinearElasticElement::OpJacobianEnergy::calculateEnergy(const int gg) {
+MoFEMErrorCode NonlinearElasticElement::OpJacobianEnergy::calculateEnergy(const int gg) {
 
   MoFEMFunctionBeginHot;
   try {
@@ -513,7 +513,7 @@ PetscErrorCode NonlinearElasticElement::OpJacobianEnergy::calculateEnergy(const 
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode NonlinearElasticElement::OpJacobianEnergy::recordTag(const int gg) {
+MoFEMErrorCode NonlinearElasticElement::OpJacobianEnergy::recordTag(const int gg) {
 
   MoFEMFunctionBeginHot;
 
@@ -584,7 +584,7 @@ PetscErrorCode NonlinearElasticElement::OpJacobianEnergy::recordTag(const int gg
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode NonlinearElasticElement::OpJacobianEnergy::playTag(const int gg) {
+MoFEMErrorCode NonlinearElasticElement::OpJacobianEnergy::playTag(const int gg) {
   MoFEMFunctionBeginHot;
 
   if(gRadient) {
@@ -626,7 +626,7 @@ PetscErrorCode NonlinearElasticElement::OpJacobianEnergy::playTag(const int gg) 
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode NonlinearElasticElement::OpJacobianEnergy::doWork(
+MoFEMErrorCode NonlinearElasticElement::OpJacobianEnergy::doWork(
   int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
 ) {
   MoFEMFunctionBeginHot;
@@ -705,7 +705,7 @@ NonlinearElasticElement::OpRhsPiolaKirchhoff::OpRhsPiolaKirchhoff(const std::str
   commonData(common_data),
   aLe(false) {}
 
-PetscErrorCode NonlinearElasticElement::OpRhsPiolaKirchhoff::aSemble(
+MoFEMErrorCode NonlinearElasticElement::OpRhsPiolaKirchhoff::aSemble(
   int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
 ) {
   MoFEMFunctionBeginHot;
@@ -734,7 +734,7 @@ PetscErrorCode NonlinearElasticElement::OpRhsPiolaKirchhoff::aSemble(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode NonlinearElasticElement::OpRhsPiolaKirchhoff::doWork(
+MoFEMErrorCode NonlinearElasticElement::OpRhsPiolaKirchhoff::doWork(
   int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
 ) {
   MoFEMFunctionBeginHot;
@@ -803,7 +803,7 @@ Vptr(v_ptr),
 fieldDisp(field_disp) {
 }
 
-PetscErrorCode NonlinearElasticElement::OpEnergy::doWork(
+MoFEMErrorCode NonlinearElasticElement::OpEnergy::doWork(
   int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
 ) {
   MoFEMFunctionBeginHot;
@@ -856,7 +856,7 @@ commonData(common_data),
 aLe(false) {
 }
 
-PetscErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dx::getJac(
+MoFEMErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dx::getJac(
   DataForcesAndSourcesCore::EntData &col_data,int gg
 ) {
   MoFEMFunctionBeginHot;
@@ -899,7 +899,7 @@ PetscErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dx::getJac(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dx::aSemble(
+MoFEMErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dx::aSemble(
   int row_side,int col_side,
   EntityType row_type,EntityType col_type,
   DataForcesAndSourcesCore::EntData &row_data,
@@ -1000,7 +1000,7 @@ PetscErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dx::aSemble(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dx::doWork(
+MoFEMErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dx::doWork(
   int row_side,int col_side,
   EntityType row_type,EntityType col_type,
   DataForcesAndSourcesCore::EntData &row_data,
@@ -1078,7 +1078,7 @@ NonlinearElasticElement::OpLhsPiolaKirchhoff_dX::OpLhsPiolaKirchhoff_dX(
   OpLhsPiolaKirchhoff_dx(vel_field,field_name,data,common_data)
   { sYmm = false; }
 
-PetscErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dX::getJac(DataForcesAndSourcesCore::EntData &col_data,int gg) {
+MoFEMErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dX::getJac(DataForcesAndSourcesCore::EntData &col_data,int gg) {
   MoFEMFunctionBeginHot;
   jac.clear();
   int nb_col = col_data.getFieldData().size();
@@ -1095,7 +1095,7 @@ PetscErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dX::getJac(DataForce
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dX::aSemble(
+MoFEMErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dX::aSemble(
   int row_side,int col_side,
   EntityType row_type,EntityType col_type,
   DataForcesAndSourcesCore::EntData &row_data,
@@ -1163,7 +1163,7 @@ NonlinearElasticElement::OpJacobianEshelbyStress::OpJacobianEshelbyStress(
 OpJacobianPiolaKirchhoffStress(field_name,data,common_data,tag,jacobian,ale,false) {
 }
 
-PetscErrorCode NonlinearElasticElement::OpJacobianEshelbyStress::calculateStress(const int gg) {
+MoFEMErrorCode NonlinearElasticElement::OpJacobianEshelbyStress::calculateStress(const int gg) {
   MoFEMFunctionBeginHot;
   try {
 
@@ -1195,7 +1195,7 @@ NonlinearElasticElement::OpLhsEshelby_dx::OpLhsEshelby_dx(
 ):
 OpLhsPiolaKirchhoff_dX(vel_field,field_name,data,common_data) {}
 
-PetscErrorCode NonlinearElasticElement::OpLhsEshelby_dx::getJac(DataForcesAndSourcesCore::EntData &col_data,int gg) {
+MoFEMErrorCode NonlinearElasticElement::OpLhsEshelby_dx::getJac(DataForcesAndSourcesCore::EntData &col_data,int gg) {
   MoFEMFunctionBeginHot;
   jac.clear();
   FTensor::Index<'i',3> i;
@@ -1251,7 +1251,7 @@ NonlinearElasticElement::OpLhsEshelby_dX::OpLhsEshelby_dX(
 OpLhsPiolaKirchhoff_dx(vel_field,field_name,data,common_data)
 {}
 
-PetscErrorCode NonlinearElasticElement::OpLhsEshelby_dX::getJac(DataForcesAndSourcesCore::EntData &col_data,int gg) {
+MoFEMErrorCode NonlinearElasticElement::OpLhsEshelby_dX::getJac(DataForcesAndSourcesCore::EntData &col_data,int gg) {
   MoFEMFunctionBeginHot;
   jac.clear();
   FTensor::Index<'i',3> i;
@@ -1333,7 +1333,7 @@ PetscErrorCode NonlinearElasticElement::OpLhsEshelby_dX::getJac(DataForcesAndSou
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode NonlinearElasticElement::setBlocks(
+MoFEMErrorCode NonlinearElasticElement::setBlocks(
   boost::shared_ptr<FunctionsToCalculatePiolaKirchhoffI<double> > materialDoublePtr,
   boost::shared_ptr<FunctionsToCalculatePiolaKirchhoffI<adouble> > materialAdoublePtr
 ) {
@@ -1373,7 +1373,7 @@ PetscErrorCode NonlinearElasticElement::setBlocks(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode NonlinearElasticElement::addElement(string element_name,
+MoFEMErrorCode NonlinearElasticElement::addElement(string element_name,
   string spatial_position_field_name,
   string material_position_field_name,bool ale) {
   MoFEMFunctionBeginHot;
@@ -1401,7 +1401,7 @@ PetscErrorCode NonlinearElasticElement::addElement(string element_name,
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode NonlinearElasticElement::setOperators(
+MoFEMErrorCode NonlinearElasticElement::setOperators(
   string spatial_position_field_name,
   string material_position_field_name,
   bool ale,bool field_disp

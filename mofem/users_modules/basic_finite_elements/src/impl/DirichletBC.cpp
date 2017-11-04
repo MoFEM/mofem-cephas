@@ -48,7 +48,7 @@ dIag(1) {
   ts_F = PETSC_NULL;
 };
 
-PetscErrorCode DirichletDisplacementBc::iNitalize() {
+MoFEMErrorCode DirichletDisplacementBc::iNitalize() {
   MoFEMFunctionBeginHot;
   if(mapZeroRows.empty() || !methodsOp.empty()) {
     ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
@@ -116,7 +116,7 @@ PetscErrorCode DirichletDisplacementBc::iNitalize() {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode DirichletDisplacementBc::preProcess() {
+MoFEMErrorCode DirichletDisplacementBc::preProcess() {
   MoFEMFunctionBeginHot;
 
   switch (ts_ctx) {
@@ -150,7 +150,7 @@ PetscErrorCode DirichletDisplacementBc::preProcess() {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode DirichletDisplacementBc::postProcess() {
+MoFEMErrorCode DirichletDisplacementBc::postProcess() {
   MoFEMFunctionBeginHot;
 
   switch (ts_ctx) {
@@ -246,7 +246,7 @@ PetscErrorCode DirichletDisplacementBc::postProcess() {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode DirichletSpatialPositionsBc::iNitalize() {
+MoFEMErrorCode DirichletSpatialPositionsBc::iNitalize() {
   MoFEMFunctionBeginHot;
   if(mapZeroRows.empty() || !methodsOp.empty()) {
     const DofEntity_multiIndex *dofs_ptr;
@@ -354,7 +354,7 @@ PetscErrorCode DirichletSpatialPositionsBc::iNitalize() {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode DirichletTemperatureBc::iNitalize() {
+MoFEMErrorCode DirichletTemperatureBc::iNitalize() {
   MoFEMFunctionBeginHot;
   if(mapZeroRows.empty() || !methodsOp.empty()) {
     ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
@@ -401,7 +401,7 @@ PetscErrorCode DirichletTemperatureBc::iNitalize() {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode DirichletFixFieldAtEntitiesBc::iNitalize() {
+MoFEMErrorCode DirichletFixFieldAtEntitiesBc::iNitalize() {
   MoFEMFunctionBeginHot;
   if(mapZeroRows.empty()) {
     for(std::vector<std::string>::iterator fit = fieldNames.begin();fit!=fieldNames.end();fit++) {
@@ -424,7 +424,7 @@ PetscErrorCode DirichletFixFieldAtEntitiesBc::iNitalize() {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode DirichletFixFieldAtEntitiesBc::preProcess() {
+MoFEMErrorCode DirichletFixFieldAtEntitiesBc::preProcess() {
   MoFEMFunctionBeginHot;
 
   switch (ts_ctx) {
@@ -447,7 +447,7 @@ PetscErrorCode DirichletFixFieldAtEntitiesBc::preProcess() {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode DirichletFixFieldAtEntitiesBc::postProcess() {
+MoFEMErrorCode DirichletFixFieldAtEntitiesBc::postProcess() {
   MoFEMFunctionBeginHot;
   if(snes_ctx == CTX_SNESNONE && ts_ctx == CTX_TSNONE) {
     if(snes_B) {
@@ -504,7 +504,7 @@ PetscErrorCode DirichletFixFieldAtEntitiesBc::postProcess() {
 }
 
 
-PetscErrorCode DirichletSetFieldFromBlock::iNitalize() {
+MoFEMErrorCode DirichletSetFieldFromBlock::iNitalize() {
   MoFEMFunctionBeginHot;
   if(mapZeroRows.empty() || !methodsOp.empty()) {
     ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
@@ -572,7 +572,7 @@ PetscErrorCode DirichletSetFieldFromBlock::iNitalize() {
 }
 
 
-PetscErrorCode DirichletSetFieldFromBlockWithFlags::iNitalize() {
+MoFEMErrorCode DirichletSetFieldFromBlockWithFlags::iNitalize() {
   MoFEMFunctionBeginHot;
   if(mapZeroRows.empty() || !methodsOp.empty()) {
     ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);

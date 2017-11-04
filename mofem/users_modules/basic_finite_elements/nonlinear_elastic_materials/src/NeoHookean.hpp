@@ -42,7 +42,7 @@ struct NeoHookean: public NonlinearElasticElement::FunctionsToCalculatePiolaKirc
       Richard D. Wood
 
       */
-    virtual PetscErrorCode NeoHooke_PiolaKirchhoffII() {
+    virtual MoFEMErrorCode NeoHooke_PiolaKirchhoffII() {
       MoFEMFunctionBeginHot;
       
       invC.resize(3,3);
@@ -63,7 +63,7 @@ struct NeoHookean: public NonlinearElasticElement::FunctionsToCalculatePiolaKirc
       MoFEMFunctionReturnHot(0);
     }
 
-    virtual PetscErrorCode calculateP_PiolaKirchhoffI(
+    virtual MoFEMErrorCode calculateP_PiolaKirchhoffI(
       const NonlinearElasticElement::BlockData block_data,
       boost::shared_ptr<const NumeredEntFiniteElement> fe_ptr
     ) {
@@ -87,7 +87,7 @@ struct NeoHookean: public NonlinearElasticElement::FunctionsToCalculatePiolaKirc
     Richard D. Wood
 
     */
-    virtual PetscErrorCode NeoHookean_ElasticEnergy(){
+    virtual MoFEMErrorCode NeoHookean_ElasticEnergy(){
         MoFEMFunctionBeginHot;
         this->eNergy = 0;
         for(int ii = 0;ii<3;ii++) {
@@ -100,7 +100,7 @@ struct NeoHookean: public NonlinearElasticElement::FunctionsToCalculatePiolaKirc
         MoFEMFunctionReturnHot(0);
     }
 
-    PetscErrorCode calculateElasticEnergy(
+    MoFEMErrorCode calculateElasticEnergy(
       const NonlinearElasticElement::BlockData block_data,
       boost::shared_ptr<const NumeredEntFiniteElement> fe_ptr
     ) {

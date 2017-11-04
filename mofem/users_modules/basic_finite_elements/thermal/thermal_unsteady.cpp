@@ -74,17 +74,17 @@ struct MonitorPostProc: public FEMethod {
     }
   }
 
-  PetscErrorCode preProcess() {
+  MoFEMErrorCode preProcess() {
     MoFEMFunctionBeginHot;
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode operator()() {
+  MoFEMErrorCode operator()() {
     MoFEMFunctionBeginHot;
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode postProcess() {
+  MoFEMErrorCode postProcess() {
     MoFEMFunctionBeginHot;
     
     if(!iNit) {

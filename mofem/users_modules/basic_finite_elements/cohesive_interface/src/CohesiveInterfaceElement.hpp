@@ -81,7 +81,7 @@ struct CohesiveInterfaceElement {
     Create tag on the prism/interface to store damage history variable
 
     */
-    PetscErrorCode iNitailise(const FEMethod *fe_method) {
+    MoFEMErrorCode iNitailise(const FEMethod *fe_method) {
       MoFEMFunctionBeginHot;
 
       double def_damaged = 0;
@@ -113,7 +113,7 @@ struct CohesiveInterfaceElement {
 
     /** \brief Get pointer from the mesh to histoy variables \f$\kappa\f$
     */
-    PetscErrorCode getKappa(int nb_gauss_pts,const FEMethod *fe_method) {
+    MoFEMErrorCode getKappa(int nb_gauss_pts,const FEMethod *fe_method) {
       MoFEMFunctionBeginHot;
       EntityHandle ent = fe_method->numeredEntFiniteElementPtr->getEnt();
 
@@ -145,7 +145,7 @@ struct CohesiveInterfaceElement {
     \f]
 
     */
-    PetscErrorCode calcDglob(const double omega,MatrixDouble &R) {
+    MoFEMErrorCode calcDglob(const double omega,MatrixDouble &R) {
       MoFEMFunctionBeginHot;
       Dglob.resize(3,3);
       Dloc.resize(3,3);
@@ -166,7 +166,7 @@ struct CohesiveInterfaceElement {
     \f]
 
     */
-    PetscErrorCode calcOmega(const double kappa,double& omega) {
+    MoFEMErrorCode calcOmega(const double kappa,double& omega) {
       MoFEMFunctionBeginHot;
       omega = 0;
       if(kappa>=kappa1) {
@@ -182,7 +182,7 @@ struct CohesiveInterfaceElement {
 
     /** \brief Calculate tangent material stiffness
     */
-    PetscErrorCode calcTangetDglob(const double omega,double g,const VectorDouble& gap_loc,MatrixDouble &R) {
+    MoFEMErrorCode calcTangetDglob(const double omega,double g,const VectorDouble& gap_loc,MatrixDouble &R) {
       MoFEMFunctionBeginHot;
       Dglob.resize(3,3);
       Dloc.resize(3,3);
@@ -212,7 +212,7 @@ struct CohesiveInterfaceElement {
     \f]
 
     */
-    virtual PetscErrorCode calculateTraction(
+    virtual MoFEMErrorCode calculateTraction(
       VectorDouble &traction,
       int gg,CommonData &common_data,
       const FEMethod *fe_method
@@ -240,7 +240,7 @@ struct CohesiveInterfaceElement {
 
     /** \brief Calculate tangent stiffness
     */
-    virtual PetscErrorCode calculateTangentStiffeness(
+    virtual MoFEMErrorCode calculateTangentStiffeness(
       MatrixDouble &tangent_matrix,
       int gg,CommonData &common_data,
       const FEMethod *fe_method
@@ -281,7 +281,7 @@ struct CohesiveInterfaceElement {
 
     /** \brief Update history variables when converged
     */
-    virtual PetscErrorCode updateHistory(
+    virtual MoFEMErrorCode updateHistory(
       CommonData &common_data,const FEMethod *fe_method
     ) {
       MoFEMFunctionBeginHot;
@@ -321,7 +321,7 @@ struct CohesiveInterfaceElement {
     OpSetSignToShapeFunctions(const std::string field_name):
     FlatPrismElementForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSourcesCore::UserDataOperator::OPROW) {}
 
-    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
+    MoFEMErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
       MoFEMFunctionBeginHot;
       if(data.getN().size1()==0)  MoFEMFunctionReturnHot(0);
       if(data.getN().size2()==0)  MoFEMFunctionReturnHot(0);
@@ -358,7 +358,7 @@ struct CohesiveInterfaceElement {
       FlatPrismElementForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSourcesCore::UserDataOperator::OPROW),
       commonData(common_data) {}
 
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
       MoFEMFunctionBeginHot;
       try {
@@ -416,7 +416,7 @@ struct CohesiveInterfaceElement {
       FlatPrismElementForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSourcesCore::UserDataOperator::OPROW),
       commonData(common_data) {}
 
-    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
+    MoFEMErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
       MoFEMFunctionBeginHot;
       try {
         if(type == MBVERTEX) {
@@ -449,7 +449,7 @@ struct CohesiveInterfaceElement {
       commonData(common_data),physicalEqations(physical_eqations) {}
 
     VectorDouble traction,Nf;
-    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
+    MoFEMErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
       MoFEMFunctionBeginHot;
 
       try {
@@ -493,7 +493,7 @@ struct CohesiveInterfaceElement {
     commonData(common_data),physicalEqations(physical_eqations) { sYmm = false; }
 
     MatrixDouble K,D,ND;
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int row_side,int col_side,
       EntityType row_type,EntityType col_type,
       DataForcesAndSourcesCore::EntData &row_data,
@@ -562,7 +562,7 @@ struct CohesiveInterfaceElement {
       FlatPrismElementForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSourcesCore::UserDataOperator::OPROW),
       commonData(common_data),physicalEqations(physical_eqations) {}
 
-      PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
+      MoFEMErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
         MoFEMFunctionBeginHot;
 
         if(type != MBVERTEX) MoFEMFunctionReturnHot(0);
@@ -577,7 +577,7 @@ struct CohesiveInterfaceElement {
 
   /** \brief Driver function settting all operators needed for interface element
   */
-  PetscErrorCode addOps(const std::string field_name,boost::ptr_vector<CohesiveInterfaceElement::PhysicalEquation> &interfaces) {
+  MoFEMErrorCode addOps(const std::string field_name,boost::ptr_vector<CohesiveInterfaceElement::PhysicalEquation> &interfaces) {
     MoFEMFunctionBeginHot;
 
     //Rhs

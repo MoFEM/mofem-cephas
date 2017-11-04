@@ -34,7 +34,7 @@ struct VolumeCalculation: public MoFEM::VolumeElementForcesAndSourcesCore::UserD
 
   
 
-  PetscErrorCode doWork(
+  MoFEMErrorCode doWork(
     int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
   ) {
     MoFEMFunctionBeginHot;

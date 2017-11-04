@@ -39,7 +39,7 @@ struct FluidPressure {
     }
     int getRule(int order) { return order+1; };
 
-    PetscErrorCode preProcess() {
+    MoFEMErrorCode preProcess() {
       MoFEMFunctionBeginHot;
       MoFEMFunctionReturnHot(0);
     }
@@ -91,7 +91,7 @@ struct FluidPressure {
 
     VectorDouble Nf;
     
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
       MoFEMFunctionBeginHot;
       if(data.getIndices().size()==0) MoFEMFunctionReturnHot(0);
@@ -182,11 +182,11 @@ struct FluidPressure {
     }
   };
 
-  PetscErrorCode addNeumannFluidPressureBCElements(
+  MoFEMErrorCode addNeumannFluidPressureBCElements(
     const std::string field_name,const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS"
   );
 
-  PetscErrorCode setNeumannFluidPressureFiniteElementOperators(
+  MoFEMErrorCode setNeumannFluidPressureFiniteElementOperators(
     string field_name,Vec F,bool allow_negative_pressure = true,bool ho_geometry = false
   );
   

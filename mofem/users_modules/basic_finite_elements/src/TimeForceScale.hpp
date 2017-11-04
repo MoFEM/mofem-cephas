@@ -51,7 +51,7 @@ struct TimeForceScale: public MethodForForceScaling {
   
   PetscBool fLg;
 
-  PetscErrorCode timeData() {
+  MoFEMErrorCode timeData() {
     MoFEMFunctionBeginHot;
     char time_file_name[255];
     ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,nAme.c_str(),time_file_name,255,&fLg); CHKERRQ(ierr);
@@ -92,7 +92,7 @@ struct TimeForceScale: public MethodForForceScaling {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode getForceScale(const double ts_t,double &scale) {
+  MoFEMErrorCode getForceScale(const double ts_t,double &scale) {
     MoFEMFunctionBeginHot;
     if(!fLg) {
       scale = 1; // not scale at all, no history file
@@ -121,7 +121,7 @@ struct TimeForceScale: public MethodForForceScaling {
 
   //Hassan: this function will loop over data in pair vector ts to find load
   //scale based on ts_t
-  PetscErrorCode scaleNf(const FEMethod *fe,VectorDouble &Nf) {
+  MoFEMErrorCode scaleNf(const FEMethod *fe,VectorDouble &Nf) {
     MoFEMFunctionBeginHot;
     double scale;
     const double ts_t = fe->ts_t;
@@ -148,7 +148,7 @@ struct TimeAccelerogram: public MethodForForceScaling {
   
   
 
-  PetscErrorCode timeData() {
+  MoFEMErrorCode timeData() {
     MoFEMFunctionBeginHot;
     char time_file_name[255];
     PetscBool flg = PETSC_TRUE;
@@ -192,7 +192,7 @@ struct TimeAccelerogram: public MethodForForceScaling {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode scaleNf(const FEMethod *fe,VectorDouble &Nf) {
+  MoFEMErrorCode scaleNf(const FEMethod *fe,VectorDouble &Nf) {
     MoFEMFunctionBeginHot;
     if(readFile==0) {
       SETERRQ(PETSC_COMM_SELF,1,"data file not read");

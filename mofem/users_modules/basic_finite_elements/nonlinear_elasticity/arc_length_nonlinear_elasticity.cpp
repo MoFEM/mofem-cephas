@@ -344,7 +344,7 @@ int main(int argc, char *argv[]) {
         arcPtr(arc_ptr),
         nodeSet(node_set) {}
 
-        PetscErrorCode preProcess() {
+        MoFEMErrorCode preProcess() {
           MoFEMFunctionBeginHot;
 
           //PetscAttachDebugger();
@@ -365,7 +365,7 @@ int main(int argc, char *argv[]) {
           MoFEMFunctionReturnHot(0);
         }
 
-        PetscErrorCode postProcess() {
+        MoFEMErrorCode postProcess() {
           MoFEMFunctionBeginHot;
           switch(snes_ctx) {
             case CTX_SNESSETFUNCTION: {
@@ -382,7 +382,7 @@ int main(int argc, char *argv[]) {
           MoFEMFunctionReturnHot(0);
         }
 
-        PetscErrorCode potsProcessLoadPath() {
+        MoFEMErrorCode potsProcessLoadPath() {
           MoFEMFunctionBeginHot;
           boost::shared_ptr<NumeredDofEntity_multiIndex> numered_dofs_rows = problemPtr->getNumeredDofsRows();
           Range::iterator nit = nodeSet.begin();
@@ -414,15 +414,15 @@ int main(int argc, char *argv[]) {
 
 
 
-        PetscErrorCode preProcess() {
+        MoFEMErrorCode preProcess() {
           MoFEMFunctionBeginHot;
           MoFEMFunctionReturnHot(0);
         }
-        PetscErrorCode operator()() {
+        MoFEMErrorCode operator()() {
           MoFEMFunctionBeginHot;
           MoFEMFunctionReturnHot(0);
         }
-        PetscErrorCode postProcess() {
+        MoFEMErrorCode postProcess() {
           MoFEMFunctionBeginHot;
           switch(snes_ctx) {
             case CTX_SNESSETFUNCTION: {

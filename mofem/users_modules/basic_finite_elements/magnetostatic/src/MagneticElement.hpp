@@ -114,7 +114,7 @@ struct MagneticElement {
    * \ingroup maxwell_element
    * @return      error code
    */
-  PetscErrorCode getNaturalBc() {
+  MoFEMErrorCode getNaturalBc() {
     MoFEMFunctionBeginHot;
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,bit)) {
       if(bit->getName().compare(0,9,"NATURALBC") == 0) {
@@ -134,7 +134,7 @@ struct MagneticElement {
    * \ingroup maxwell_element
    * @return      error code
    */
-  PetscErrorCode getEssentialBc() {
+  MoFEMErrorCode getEssentialBc() {
     MoFEMFunctionBeginHot;
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,bit)) {
       if(bit->getName().compare(0,10,"ESSENTIALBC") == 0) {
@@ -166,7 +166,7 @@ struct MagneticElement {
    * \ingroup maxwell_element
    * @return error code
    */
-  PetscErrorCode createFields() {
+  MoFEMErrorCode createFields() {
     // MoAB
 
     MoFEMFunctionBeginHot;
@@ -233,7 +233,7 @@ struct MagneticElement {
    *
    * @return error code
    */
-  PetscErrorCode createElements() {
+  MoFEMErrorCode createElements() {
 
     MoFEMFunctionBeginHot;
     // //Elements
@@ -268,7 +268,7 @@ struct MagneticElement {
    *
    * @return error code
    */
-  PetscErrorCode createProblem() {
+  MoFEMErrorCode createProblem() {
 
     MoFEMFunctionBeginHot;
     // set up DM
@@ -292,7 +292,7 @@ struct MagneticElement {
    * \ingroup maxwell_element
    * @return [description]
    */
-  PetscErrorCode destroyProblem() {
+  MoFEMErrorCode destroyProblem() {
 
     MoFEMFunctionBeginHot;
     ierr = DMDestroy(&blockData.dM); CHKERRQ(ierr);
@@ -305,7 +305,7 @@ struct MagneticElement {
    * Create matrices; integrate over elements; solve linear system of equations
    *
    */
-  PetscErrorCode solveProblem() {
+  MoFEMErrorCode solveProblem() {
 
     MoFEMFunctionBeginHot;
     ierr = DMCreateMatrix(blockData.dM,&blockData.A); CHKERRQ(ierr);
@@ -384,7 +384,7 @@ struct MagneticElement {
    * \ingroup maxwell_element
    * @return [description]
    */
-  PetscErrorCode postProcessResults() {
+  MoFEMErrorCode postProcessResults() {
 
     MoFEMFunctionBeginHot;
     PostProcVolumeOnRefinedMesh post_proc(mField);
@@ -436,7 +436,7 @@ struct MagneticElement {
      * @param  col_data structure of data, like base functions and associated methods to access those data on rows
      * @return          error code
      */
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int row_side,int col_side,
       EntityType row_type,EntityType col_type,
       DataForcesAndSourcesCore::EntData &row_data,
@@ -568,7 +568,7 @@ struct MagneticElement {
      * @param  col_data structure of data, like base functions and associated methods to access those data on rows
      * @return          error code
      */
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int row_side,int col_side,
       EntityType row_type,EntityType col_type,
       DataForcesAndSourcesCore::EntData &row_data,
@@ -702,7 +702,7 @@ struct MagneticElement {
      * @param  row_data structure of data, like base functions and associated methods to access those data on rows
      * @return          error code
      */
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
     ) {
 
@@ -792,7 +792,7 @@ struct MagneticElement {
     }
     virtual ~OpPostProcessCurl() {}
 
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
     ) {
       MoFEMFunctionBeginHot;

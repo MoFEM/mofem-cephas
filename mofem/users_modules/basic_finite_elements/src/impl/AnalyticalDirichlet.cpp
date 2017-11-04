@@ -31,7 +31,7 @@ AnalyticalDirichletBC::ApproxField::OpHoCoord::OpHoCoord(const std::string field
 FaceElementForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSourcesCore::UserDataOperator::OPROW),
 hoCoords(ho_coords) {}
 
-PetscErrorCode AnalyticalDirichletBC::ApproxField::OpHoCoord::doWork(
+MoFEMErrorCode AnalyticalDirichletBC::ApproxField::OpHoCoord::doWork(
   int side,EntityType type,DataForcesAndSourcesCore::EntData &data
 ) {
   MoFEMFunctionBeginHot;
@@ -68,7 +68,7 @@ hoCoords(ho_coords)
 
 }
 
-PetscErrorCode AnalyticalDirichletBC::ApproxField::OpLhs::doWork(
+MoFEMErrorCode AnalyticalDirichletBC::ApproxField::OpLhs::doWork(
   int row_side,int col_side,
   EntityType row_type,EntityType col_type,
   DataForcesAndSourcesCore::EntData &row_data,
@@ -199,7 +199,7 @@ PetscErrorCode AnalyticalDirichletBC::ApproxField::OpLhs::doWork(
   }
 
 
-  PetscErrorCode AnalyticalDirichletBC::DirichletBC::iNitalize() {
+  MoFEMErrorCode AnalyticalDirichletBC::DirichletBC::iNitalize() {
     MoFEMFunctionBeginHot;
     if(mapZeroRows.empty()) {
       if(!trisPtr) {
@@ -214,7 +214,7 @@ PetscErrorCode AnalyticalDirichletBC::ApproxField::OpLhs::doWork(
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode AnalyticalDirichletBC::DirichletBC::iNitalize(Range &tris) {
+  MoFEMErrorCode AnalyticalDirichletBC::DirichletBC::iNitalize(Range &tris) {
     MoFEMFunctionBeginHot;
     ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
     Range ents;
@@ -239,7 +239,7 @@ PetscErrorCode AnalyticalDirichletBC::ApproxField::OpLhs::doWork(
 
   AnalyticalDirichletBC::AnalyticalDirichletBC(MoFEM::Interface& m_field): approxField(m_field) {};
 
-  PetscErrorCode AnalyticalDirichletBC::setFiniteElement(
+  MoFEMErrorCode AnalyticalDirichletBC::setFiniteElement(
     MoFEM::Interface &m_field,string fe,string field,Range& tris,string nodals_positions
   ) {
     MoFEMFunctionBeginHot;
@@ -255,7 +255,7 @@ PetscErrorCode AnalyticalDirichletBC::ApproxField::OpLhs::doWork(
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode AnalyticalDirichletBC::setUpProblem(
+  MoFEMErrorCode AnalyticalDirichletBC::setUpProblem(
     MoFEM::Interface &m_field,string problem
   ) {
     MoFEMFunctionBeginHot;
@@ -278,7 +278,7 @@ PetscErrorCode AnalyticalDirichletBC::ApproxField::OpLhs::doWork(
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode AnalyticalDirichletBC::solveProblem(
+  MoFEMErrorCode AnalyticalDirichletBC::solveProblem(
     MoFEM::Interface &m_field,string problem,string fe,DirichletBC &bc,Range &tris
   ) {
     MoFEMFunctionBeginHot;
@@ -311,7 +311,7 @@ PetscErrorCode AnalyticalDirichletBC::ApproxField::OpLhs::doWork(
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode AnalyticalDirichletBC::solveProblem(
+  MoFEMErrorCode AnalyticalDirichletBC::solveProblem(
     MoFEM::Interface &m_field,string problem,string fe,DirichletBC &bc
   ) {
     MoFEMFunctionBeginHot;
@@ -322,7 +322,7 @@ PetscErrorCode AnalyticalDirichletBC::ApproxField::OpLhs::doWork(
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode AnalyticalDirichletBC::destroyProblem() {
+  MoFEMErrorCode AnalyticalDirichletBC::destroyProblem() {
     MoFEMFunctionBeginHot;
 
     ierr = KSPDestroy(&kspSolver); CHKERRQ(ierr);

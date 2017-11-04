@@ -86,7 +86,7 @@ struct MonitorPostProc: public FEMethod {
 
   }
 
-  PetscErrorCode preProcess() {
+  MoFEMErrorCode preProcess() {
     MoFEMFunctionBeginHot;
 
 
@@ -133,12 +133,12 @@ struct MonitorPostProc: public FEMethod {
         MoFEMFunctionReturnHot(0);
       }
 
-  PetscErrorCode operator()() {
+  MoFEMErrorCode operator()() {
     MoFEMFunctionBeginHot;
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode postProcess() {
+  MoFEMErrorCode postProcess() {
     MoFEMFunctionBeginHot;
     MoFEMFunctionReturnHot(0);
   }
@@ -187,7 +187,7 @@ struct MonitorRestart: public FEMethod {
 
   }
 
-  PetscErrorCode preProcess() {
+  MoFEMErrorCode preProcess() {
     MoFEMFunctionBeginHot;
 
     //
@@ -204,12 +204,12 @@ struct MonitorRestart: public FEMethod {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode operator()() {
+  MoFEMErrorCode operator()() {
     MoFEMFunctionBeginHot;
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode postProcess() {
+  MoFEMErrorCode postProcess() {
     MoFEMFunctionBeginHot;
     MoFEMFunctionReturnHot(0);
   }

@@ -354,7 +354,7 @@ struct OpRow: public MoFEM::ForcesAndSourcesCore::UserDataOperator {
  OpRow(const std::string& field_name):
  ForcesAndSourcesCore::UserDataOperator(field_name,field_name,OPROW) {
  }
- PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data);
+ MoFEMErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data);
 };
 \endcode
 This users data operator class is derived from
@@ -363,7 +363,7 @@ entity. It is the type of OPROW, which indicates that it only iterates lower
 dimension entities on the element. On each lower entity overload method is
 called
 \code
-PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data);
+MoFEMErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data);
 \endcode
 which as arguments takes entity side number (local entity number on the finite
 element), entity type (e.g. MBVERTEX, MBEDGE, MBTET) and reference to structure
@@ -381,7 +381,7 @@ struct OpRowCol: public MoFEM::ForcesAndSourcesCore::UserDataOperator {
  ):
  ForcesAndSourcesCore::UserDataOperator(row_field,col_field,OPROWCOL,symm) {
  }
- virtual PetscErrorCode doWork(
+ virtual MoFEMErrorCode doWork(
    int row_side,int col_side,
    EntityType row_type,EntityType col_type,
    DataForcesAndSourcesCore::EntData &row_data,

@@ -70,8 +70,8 @@ struct NonlinearElasticElement {
     Vec V;
     double eNergy;
 
-    PetscErrorCode preProcess();
-    PetscErrorCode postProcess();
+    MoFEMErrorCode preProcess();
+    MoFEMErrorCode postProcess();
 
   };
 
@@ -143,7 +143,7 @@ struct NonlinearElasticElement {
 
     /** \brief Calculate determinant of 3x3 matrix
       */
-    PetscErrorCode dEterminatnt(
+    MoFEMErrorCode dEterminatnt(
       ublas::matrix<TYPE,ublas::row_major,ublas::bounded_array<TYPE,9> >& a,TYPE &det
     ) {
       MoFEMFunctionBeginHot;
@@ -167,7 +167,7 @@ struct NonlinearElasticElement {
 
     /** \brief Calculate inverse of 3x3 matrix
       */
-    PetscErrorCode iNvert(
+    MoFEMErrorCode iNvert(
       TYPE det,
       ublas::matrix<TYPE,ublas::row_major,ublas::bounded_array<TYPE,9> >& a,
       ublas::matrix<TYPE,ublas::row_major,ublas::bounded_array<TYPE,9> >& inv_a
@@ -198,14 +198,14 @@ struct NonlinearElasticElement {
     CommonData *commonDataPtr; ///< common data shared between entities (f.e. field values at Gauss pts.)
     MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator *opPtr; ///< pointer to finite element tetrahedral operator
 
-    PetscErrorCode calculateC_CauchyDeformationTensor() {
+    MoFEMErrorCode calculateC_CauchyDeformationTensor() {
       MoFEMFunctionBeginHot;
       C.resize(3,3);
       noalias(C) = prod(trans(F),F);
       MoFEMFunctionReturnHot(0);
     }
 
-    PetscErrorCode calculateE_GreenStrain() {
+    MoFEMErrorCode calculateE_GreenStrain() {
       MoFEMFunctionBeginHot;
       E.resize(3,3);
       noalias(E) = C;
@@ -217,7 +217,7 @@ struct NonlinearElasticElement {
     }
 
     //St. Venant–Kirchhoff Material
-    PetscErrorCode calculateS_PiolaKirchhoffII() {
+    MoFEMErrorCode calculateS_PiolaKirchhoffII() {
       MoFEMFunctionBeginHot;
       TYPE trE = 0;
       for(int dd = 0;dd<3;dd++) {
@@ -254,7 +254,7 @@ struct NonlinearElasticElement {
       Richard D. Wood
 
       */
-    virtual PetscErrorCode calculateP_PiolaKirchhoffI(
+    virtual MoFEMErrorCode calculateP_PiolaKirchhoffI(
       const BlockData block_data,
       boost::shared_ptr<const NumeredEntFiniteElement> fe_ptr
     ) {
@@ -284,7 +284,7 @@ struct NonlinearElasticElement {
      * @param  nb_active_variables number of active variables
      * @return                     error code
      */
-    virtual PetscErrorCode setUserActiveVariables(
+    virtual MoFEMErrorCode setUserActiveVariables(
       int &nb_active_variables
     ) {
       MoFEMFunctionBeginHot;
@@ -302,7 +302,7 @@ struct NonlinearElasticElement {
      *
     * @return                 error code
     */
-    virtual PetscErrorCode setUserActiveVariables(
+    virtual MoFEMErrorCode setUserActiveVariables(
       VectorDouble &activeVariables) {
       MoFEMFunctionBeginHot;
       MoFEMFunctionReturnHot(0);
@@ -312,7 +312,7 @@ struct NonlinearElasticElement {
       *
       * \f[\Psi = \frac{1}{2}\lambda(\textrm{tr}[\mathbf{E}])^2+\mu\mathbf{E}:\mathbf{E}\f]
       */
-    virtual PetscErrorCode calculateElasticEnergy(
+    virtual MoFEMErrorCode calculateElasticEnergy(
       const BlockData block_data,
       boost::shared_ptr<const NumeredEntFiniteElement> fe_ptr
     ) {
@@ -337,7 +337,7 @@ struct NonlinearElasticElement {
 
     /** \brief Calculate Eshelby stress
     */
-    virtual PetscErrorCode calculateSiGma_EshelbyStress(
+    virtual MoFEMErrorCode calculateSiGma_EshelbyStress(
       const BlockData block_data,
       boost::shared_ptr<const NumeredEntFiniteElement> fe_ptr
     ) {
@@ -355,7 +355,7 @@ struct NonlinearElasticElement {
 
     /** \brief Do operations when pre-process
     */
-    virtual PetscErrorCode getDataOnPostProcessor(
+    virtual MoFEMErrorCode getDataOnPostProcessor(
       std::map<std::string,std::vector<VectorDouble > > &field_map,
       std::map<std::string,std::vector<MatrixDouble > > &grad_map
     ) {
@@ -381,7 +381,7 @@ struct NonlinearElasticElement {
       *
       * temperature gradient is calculated multiplying derivatives of shape functions by degrees of freedom
       */
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int side,EntityType type,DataForcesAndSourcesCore::EntData &data
     );
 
@@ -435,19 +435,19 @@ struct NonlinearElasticElement {
      * \brief Calculate Paola-Kirchhoff I stress
      * @return error code
      */
-    virtual PetscErrorCode calculateStress(const int gg);
+    virtual MoFEMErrorCode calculateStress(const int gg);
 
     /**
      * \brief Record ADOL-C tape
      * @return error code
      */
-    virtual PetscErrorCode recordTag(const int gg);
+    virtual MoFEMErrorCode recordTag(const int gg);
 
     /**
      * \brief Play ADOL-C tape
      * @return error code
      */
-    virtual PetscErrorCode playTag(const int gg);
+    virtual MoFEMErrorCode playTag(const int gg);
 
     /**
      * \brief Cgeck if tape is recorded for given integration point
@@ -468,7 +468,7 @@ struct NonlinearElasticElement {
      * @param  row_data
      * @return          error code
      */
-    PetscErrorCode doWork(int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data);
+    MoFEMErrorCode doWork(int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data);
 
   };
 
@@ -517,22 +517,22 @@ struct NonlinearElasticElement {
      * \brief Calculate Paola-Kirchhoff I stress
      * @return error code
      */
-    virtual PetscErrorCode calculateEnergy(const int gg);
+    virtual MoFEMErrorCode calculateEnergy(const int gg);
 
     /**
      * \brief Record ADOL-C tape
      * @return error code
      */
-    virtual PetscErrorCode recordTag(const int gg);
+    virtual MoFEMErrorCode recordTag(const int gg);
 
     /**
      * \brief Play ADOL-C tape
      * @return error code
      */
-    virtual PetscErrorCode playTag(const int gg);
+    virtual MoFEMErrorCode playTag(const int gg);
 
 
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
     );
 
@@ -549,11 +549,11 @@ struct NonlinearElasticElement {
     OpRhsPiolaKirchhoff(const std::string field_name,BlockData &data,CommonData &common_data);
 
     VectorDouble nf;
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
     );
 
-    virtual PetscErrorCode aSemble(
+    virtual MoFEMErrorCode aSemble(
       int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
     );
 
@@ -568,7 +568,7 @@ struct NonlinearElasticElement {
 
     OpEnergy(const std::string field_name,BlockData &data,CommonData &common_data,Vec *v_ptr,bool field_disp);
 
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data);
 
   };
@@ -601,16 +601,16 @@ struct NonlinearElasticElement {
       where second therm \f$\frac{\partial F}{\partial x_\textrm{DOF}}\f$ is derivative of shape function
 
     */
-    virtual PetscErrorCode getJac(DataForcesAndSourcesCore::EntData &col_data,int gg);
+    virtual MoFEMErrorCode getJac(DataForcesAndSourcesCore::EntData &col_data,int gg);
 
-    virtual PetscErrorCode aSemble(
+    virtual MoFEMErrorCode aSemble(
       int row_side,int col_side,
       EntityType row_type,EntityType col_type,
       DataForcesAndSourcesCore::EntData &row_data,
       DataForcesAndSourcesCore::EntData &col_data
     );
 
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int row_side,int col_side,
       EntityType row_type,EntityType col_type,
       DataForcesAndSourcesCore::EntData &row_data,
@@ -629,9 +629,9 @@ struct NonlinearElasticElement {
     );
 
     /// \brief Derivative of Piola Kirchhoff stress over material DOFs
-    PetscErrorCode getJac(DataForcesAndSourcesCore::EntData &col_data,int gg);
+    MoFEMErrorCode getJac(DataForcesAndSourcesCore::EntData &col_data,int gg);
 
-    PetscErrorCode aSemble(
+    MoFEMErrorCode aSemble(
       int row_side,int col_side,
       EntityType row_type,EntityType col_type,
       DataForcesAndSourcesCore::EntData &row_data,
@@ -651,7 +651,7 @@ struct NonlinearElasticElement {
       bool ale
     );
 
-    PetscErrorCode calculateStress(const int gg);
+    MoFEMErrorCode calculateStress(const int gg);
 
   };
 
@@ -674,7 +674,7 @@ struct NonlinearElasticElement {
       const std::string vel_field,const std::string field_name,BlockData &data,CommonData &common_data
     );
 
-    PetscErrorCode getJac(DataForcesAndSourcesCore::EntData &col_data,int gg);
+    MoFEMErrorCode getJac(DataForcesAndSourcesCore::EntData &col_data,int gg);
 
   };
 
@@ -684,16 +684,16 @@ struct NonlinearElasticElement {
       const std::string vel_field,const std::string field_name,BlockData &data,CommonData &common_data
     );
 
-    PetscErrorCode getJac(DataForcesAndSourcesCore::EntData &col_data,int gg);
+    MoFEMErrorCode getJac(DataForcesAndSourcesCore::EntData &col_data,int gg);
 
   };
 
-  PetscErrorCode setBlocks(
+  MoFEMErrorCode setBlocks(
     boost::shared_ptr<FunctionsToCalculatePiolaKirchhoffI<double> > materialDoublePtr,
     boost::shared_ptr<FunctionsToCalculatePiolaKirchhoffI<adouble> > materialAdoublePtr
   );
 
-  PetscErrorCode addElement(string element_name,
+  MoFEMErrorCode addElement(string element_name,
     string spatial_position_field_name,
     string material_position_field_name = "MESH_NODE_POSITIONS",bool ale = false
   );
@@ -706,7 +706,7 @@ struct NonlinearElasticElement {
     * \param ale true if arbitrary Lagrangian Eulerian formulation
     * \param field_disp true if approximation field represents displacements otherwise it is field of spatial positions
     */
-  PetscErrorCode setOperators(
+  MoFEMErrorCode setOperators(
     string spatial_position_field_name,
     string material_position_field_name = "MESH_NODE_POSITIONS",
     bool ale = false,bool field_disp = false

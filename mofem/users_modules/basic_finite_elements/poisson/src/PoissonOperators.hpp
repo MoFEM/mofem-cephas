@@ -51,7 +51,7 @@ namespace PoissonExample {
      * @param  col_data data for column
      * @return          error code
      */
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int row_side,int col_side,
       EntityType row_type,EntityType col_type,
       DataForcesAndSourcesCore::EntData &row_data,DataForcesAndSourcesCore::EntData &col_data
@@ -101,7 +101,7 @@ namespace PoissonExample {
      * @param  col_data column data (consist base functions on column entity)
      * @return          error code
      */
-    virtual PetscErrorCode iNtegrate(
+    virtual MoFEMErrorCode iNtegrate(
       DataForcesAndSourcesCore::EntData &row_data,DataForcesAndSourcesCore::EntData &col_data
     ) {
       MoFEMFunctionBeginHot;
@@ -146,7 +146,7 @@ namespace PoissonExample {
      * @param  col_data column data (consist base functions on column entity)
      * @return          error code
      */
-    virtual PetscErrorCode aSsemble(
+    virtual MoFEMErrorCode aSsemble(
       DataForcesAndSourcesCore::EntData &row_data,DataForcesAndSourcesCore::EntData &col_data
     ) {
       MoFEMFunctionBeginHot;
@@ -189,7 +189,7 @@ namespace PoissonExample {
      * it set values nbRows, and nbIntegrationPts.
      *
      */
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
     ) {
       MoFEMFunctionBeginHot;
@@ -210,14 +210,14 @@ namespace PoissonExample {
      * @param  data entity data on element row
      * @return      error code
      */
-    virtual PetscErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &data) = 0;
+    virtual MoFEMErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &data) = 0;
 
     /**
      * \brief Class dedicated to assemble operator to global system vector
      * @param  data entity data (indices, base functions, etc. ) on element row
      * @return      error code
      */
-    virtual PetscErrorCode aSsemble(DataForcesAndSourcesCore::EntData &data) = 0;
+    virtual MoFEMErrorCode aSsemble(DataForcesAndSourcesCore::EntData &data) = 0;
 
   protected:
 
@@ -259,7 +259,7 @@ namespace PoissonExample {
      * @param  data entity data on element row
      * @return      error code
      */
-    PetscErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &data) {
+    MoFEMErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &data) {
       MoFEMFunctionBeginHot;
       // set size of local vector
       locVec.resize(nbRows,false);
@@ -297,7 +297,7 @@ namespace PoissonExample {
      * @param  data entity data, i.e. global indices of local vector
      * @return      error code
      */
-    PetscErrorCode aSsemble(DataForcesAndSourcesCore::EntData &data) {
+    MoFEMErrorCode aSsemble(DataForcesAndSourcesCore::EntData &data) {
       MoFEMFunctionBeginHot;
       // get global indices of local vector
       const int* indices = &*data.getIndices().data().begin();
@@ -327,7 +327,7 @@ namespace PoissonExample {
     assembleTranspose(assemble_transpose) {
     }
 
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int row_side,int col_side,
       EntityType row_type,EntityType col_type,
       DataForcesAndSourcesCore::EntData &row_data,DataForcesAndSourcesCore::EntData &col_data
@@ -363,7 +363,7 @@ namespace PoissonExample {
 
     /** \brief Integrate local constrains matrix
      */
-    inline PetscErrorCode iNtegrate(
+    inline MoFEMErrorCode iNtegrate(
       DataForcesAndSourcesCore::EntData &row_data,DataForcesAndSourcesCore::EntData &col_data
     ) {
       MoFEMFunctionBeginHot;
@@ -403,7 +403,7 @@ namespace PoissonExample {
     /**
      * \brief integrate local constrains matrix
      */
-    inline PetscErrorCode aSsemble(
+    inline MoFEMErrorCode aSsemble(
       DataForcesAndSourcesCore::EntData &row_data,DataForcesAndSourcesCore::EntData &col_data
     ) {
       MoFEMFunctionBeginHot;
@@ -460,7 +460,7 @@ namespace PoissonExample {
     /**
      * \brief Integrate local constrains vector
      */
-    PetscErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &data) {
+    MoFEMErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &data) {
       MoFEMFunctionBeginHot;
       // set size to local vector
       locVec.resize(nbRows,false);
@@ -495,7 +495,7 @@ namespace PoissonExample {
     /**
      * \brief assemble constrains vectors
      */
-    PetscErrorCode aSsemble(DataForcesAndSourcesCore::EntData &data) {
+    MoFEMErrorCode aSsemble(DataForcesAndSourcesCore::EntData &data) {
       MoFEMFunctionBeginHot;
       const int* indices = &*data.getIndices().data().begin();
       const double* vals = &*locVec.data().begin();
@@ -529,7 +529,7 @@ namespace PoissonExample {
     gradVals(grad_vals) {
     }
 
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
     ) {
       MoFEMFunctionBeginHot;
@@ -558,7 +558,7 @@ namespace PoissonExample {
     /**
      * \brief Integrate error
      */
-    PetscErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &data) {
+    MoFEMErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &data) {
       MoFEMFunctionBeginHot;
       // clear field dofs
       data.getFieldData().clear();
@@ -598,7 +598,7 @@ namespace PoissonExample {
     /**
      * \brief Assemble error
      */
-    PetscErrorCode aSsemble(DataForcesAndSourcesCore::EntData &data) {
+    MoFEMErrorCode aSsemble(DataForcesAndSourcesCore::EntData &data) {
       MoFEMFunctionBeginHot;
       // set error on mesh
       data.getFieldDofs()[0]->getFieldData() = sqrt(data.getFieldData()[0]);
@@ -634,7 +634,7 @@ namespace PoissonExample {
      * @param  col_data column data (consist base functions on column entity)
      * @return          error code
      */
-    inline PetscErrorCode iNtegrate(
+    inline MoFEMErrorCode iNtegrate(
       DataForcesAndSourcesCore::EntData &row_data,DataForcesAndSourcesCore::EntData &col_data
     ) {
       MoFEMFunctionBeginHot;
@@ -715,7 +715,7 @@ namespace PoissonExample {
      * @param  data entity data on element row
      * @return      error code
      */
-    PetscErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &data) {
+    MoFEMErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &data) {
       MoFEMFunctionBeginHot;
       // set size of local vector
       locVec.resize(nbRows,false);
@@ -783,7 +783,7 @@ namespace PoissonExample {
     /**
      * \brief Integrate local constrains vector
      */
-    PetscErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &data) {
+    MoFEMErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &data) {
       MoFEMFunctionBeginHot;
       // set size to local vector
       locVec.resize(nbRows,false);
@@ -835,7 +835,7 @@ namespace PoissonExample {
     /**
      * \brief Integrate local constrains vector
      */
-    PetscErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &data) {
+    MoFEMErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &data) {
       MoFEMFunctionBeginHot;
       // set size to local vector
       locVec.resize(nbRows,false);
@@ -917,7 +917,7 @@ namespace PoissonExample {
     /**
      * \brief Create finite element to calculate matrix and vectors
      */
-    PetscErrorCode createFEToAssembleMatrixAndVector(
+    MoFEMErrorCode createFEToAssembleMatrixAndVector(
       boost::function<double (const double,const double,const double)> f_u,
       boost::function<double (const double,const double,const double)> f_source,
       boost::shared_ptr<ForcesAndSourcesCore>& domain_lhs_fe,
@@ -956,7 +956,7 @@ namespace PoissonExample {
     /**
      * \brief Create finite element to calculate error
      */
-    PetscErrorCode createFEToEvaluateError(
+    MoFEMErrorCode createFEToEvaluateError(
       boost::function<double (const double,const double,const double)> f_u,
       boost::function<FTensor::Tensor1<double,3> (const double,const double,const double)> g_u,
       Vec global_error,
@@ -988,7 +988,7 @@ namespace PoissonExample {
     /**
      * \brief Create finite element to post-process results
      */
-    PetscErrorCode creatFEToPostProcessResults(
+    MoFEMErrorCode creatFEToPostProcessResults(
       boost::shared_ptr<ForcesAndSourcesCore>& post_proc_volume
     ) const {
       
@@ -1021,7 +1021,7 @@ namespace PoissonExample {
     /**
      * \brief Create finite element to calculate matrix and vectors
      */
-    PetscErrorCode createFEToAssembleMatrixAndVectorForNonlinearProblem(
+    MoFEMErrorCode createFEToAssembleMatrixAndVectorForNonlinearProblem(
       boost::function<double (const double,const double,const double)> f_u,
       boost::function<double (const double,const double,const double)> f_source,
       boost::function<double (const double)> a,

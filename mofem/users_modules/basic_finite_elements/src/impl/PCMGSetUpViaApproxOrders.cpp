@@ -66,12 +66,12 @@ struct PCMGSubMatrixCtx_private: public PCMGSubMatrixCtx {
     }
   }
   template<InsertMode MODE>
-  friend PetscErrorCode sub_mat_mult_generic(Mat a,Vec x,Vec f);
-  friend PetscErrorCode sub_mat_sor(
+  friend MoFEMErrorCode sub_mat_mult_generic(Mat a,Vec x,Vec f);
+  friend MoFEMErrorCode sub_mat_sor(
     Mat mat,Vec b,PetscReal omega,MatSORType flag,PetscReal shift,PetscInt its,PetscInt lits,Vec x
   );
 public:
-  PetscErrorCode initData(Vec x) {
+  MoFEMErrorCode initData(Vec x) {
 
     MoFEMFunctionBeginHot;
     if(!isInitisalised) {
@@ -87,7 +87,7 @@ public:
 };
 
 template<InsertMode MODE>
-PetscErrorCode sub_mat_mult_generic(Mat a,Vec x,Vec f) {
+MoFEMErrorCode sub_mat_mult_generic(Mat a,Vec x,Vec f) {
   void *void_ctx;
 
   MoFEMFunctionBeginHot;
@@ -106,15 +106,15 @@ PetscErrorCode sub_mat_mult_generic(Mat a,Vec x,Vec f) {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode sub_mat_mult(Mat a,Vec x,Vec f) {
+MoFEMErrorCode sub_mat_mult(Mat a,Vec x,Vec f) {
   return sub_mat_mult_generic<INSERT_VALUES>(a,x,f);
 }
 
-PetscErrorCode sub_mat_mult_add(Mat a,Vec x,Vec f) {
+MoFEMErrorCode sub_mat_mult_add(Mat a,Vec x,Vec f) {
   return sub_mat_mult_generic<ADD_VALUES>(a,x,f);
 }
 
-PetscErrorCode sub_mat_sor(
+MoFEMErrorCode sub_mat_sor(
   Mat mat,Vec b,PetscReal omega,MatSORType flag,PetscReal shift,PetscInt its,PetscInt lits,Vec x
 ) {
   void *void_ctx;
@@ -154,7 +154,7 @@ DMMGViaApproxOrdersCtx::~DMMGViaApproxOrdersCtx() {
   // std::cerr << "destroy dm data\n";
 }
 
-PetscErrorCode DMMGViaApproxOrdersCtx::query_interface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface) const {
+MoFEMErrorCode DMMGViaApproxOrdersCtx::query_interface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface) const {
   MoFEMFunctionBeginHot;
   *iface = NULL;
   if(uuid == IDD_DMMGVIAAPPROXORDERSCTX) {
@@ -174,7 +174,7 @@ PetscErrorCode DMMGViaApproxOrdersCtx::query_interface(const MOFEMuuid& uuid,MoF
   DMMGViaApproxOrdersCtx *dm_field = static_cast<DMMGViaApproxOrdersCtx*>(iface)
 
 
-PetscErrorCode DMMGViaApproxOrdersGetCtx(DM dm,DMMGViaApproxOrdersCtx **ctx) {
+MoFEMErrorCode DMMGViaApproxOrdersGetCtx(DM dm,DMMGViaApproxOrdersCtx **ctx) {
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   MoFEMFunctionBeginHot;
   GET_DM_FIELD(dm);
@@ -182,7 +182,7 @@ PetscErrorCode DMMGViaApproxOrdersGetCtx(DM dm,DMMGViaApproxOrdersCtx **ctx) {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode DMMGViaApproxOrdersSetAO(DM dm,AO ao) {
+MoFEMErrorCode DMMGViaApproxOrdersSetAO(DM dm,AO ao) {
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   MoFEMFunctionBeginHot;
   GET_DM_FIELD(dm);
@@ -197,7 +197,7 @@ PetscErrorCode DMMGViaApproxOrdersSetAO(DM dm,AO ao) {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode DMMGViaApproxOrdersGetCoarseningISSize(DM dm,int *size) {
+MoFEMErrorCode DMMGViaApproxOrdersGetCoarseningISSize(DM dm,int *size) {
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   MoFEMFunctionBeginHot;
   GET_DM_FIELD(dm);
@@ -205,7 +205,7 @@ PetscErrorCode DMMGViaApproxOrdersGetCoarseningISSize(DM dm,int *size) {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode DMMGViaApproxOrdersPushBackCoarseningIS(
+MoFEMErrorCode DMMGViaApproxOrdersPushBackCoarseningIS(
   DM dm,IS is,Mat A,Mat *subA,bool create_sub_matrix,bool shell_sub_a
 ) {
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
@@ -258,7 +258,7 @@ PetscErrorCode DMMGViaApproxOrdersPushBackCoarseningIS(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode DMMGViaApproxOrdersPopBackCoarseningIS(DM dm) {
+MoFEMErrorCode DMMGViaApproxOrdersPopBackCoarseningIS(DM dm) {
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   MoFEMFunctionBeginHot;
   GET_DM_FIELD(dm);
@@ -274,7 +274,7 @@ PetscErrorCode DMMGViaApproxOrdersPopBackCoarseningIS(DM dm) {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode DMMGViaApproxOrdersReplaceCoarseningIS(DM dm,IS *is_vec,int nb_elems,Mat A,int verb) {
+MoFEMErrorCode DMMGViaApproxOrdersReplaceCoarseningIS(DM dm,IS *is_vec,int nb_elems,Mat A,int verb) {
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   MoFEMFunctionBeginHot;
   GET_DM_FIELD(dm);
@@ -347,7 +347,7 @@ PetscErrorCode DMMGViaApproxOrdersReplaceCoarseningIS(DM dm,IS *is_vec,int nb_el
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode DMMGViaApproxOrdersGetCtx(DM dm,const DMMGViaApproxOrdersCtx **ctx) {
+MoFEMErrorCode DMMGViaApproxOrdersGetCtx(DM dm,const DMMGViaApproxOrdersCtx **ctx) {
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   MoFEMFunctionBeginHot;
   GET_DM_FIELD(dm);
@@ -355,13 +355,13 @@ PetscErrorCode DMMGViaApproxOrdersGetCtx(DM dm,const DMMGViaApproxOrdersCtx **ct
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode DMRegister_MGViaApproxOrders(const char sname[]) {
+MoFEMErrorCode DMRegister_MGViaApproxOrders(const char sname[]) {
   MoFEMFunctionBeginHot;
   ierr = DMRegister(sname,DMCreate_MGViaApproxOrders); CHKERRQ(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
-// PetscErrorCode DMDestroy_MGViaApproxOrders(DM dm) {
+// MoFEMErrorCode DMDestroy_MGViaApproxOrders(DM dm) {
 //   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
 //   MoFEMFunctionBeginHot;
 //   if(!((DMMGViaApproxOrdersCtx*)dm->data)->referenceNumber) {
@@ -382,12 +382,12 @@ PetscErrorCode DMRegister_MGViaApproxOrders(const char sname[]) {
 //   MoFEMFunctionReturnHot(0);
 // }
 
-static PetscErrorCode ksp_set_operators(KSP ksp,Mat A,Mat B,void *ctx) {
+static MoFEMErrorCode ksp_set_operators(KSP ksp,Mat A,Mat B,void *ctx) {
   MoFEMFunctionBeginHot;
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode DMCreate_MGViaApproxOrders(DM dm) {
+MoFEMErrorCode DMCreate_MGViaApproxOrders(DM dm) {
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   MoFEMFunctionBeginHot;
   if(!dm->data) {
@@ -407,7 +407,7 @@ PetscErrorCode DMCreate_MGViaApproxOrders(DM dm) {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode DMCreateMatrix_MGViaApproxOrders(DM dm,Mat *M) {
+MoFEMErrorCode DMCreateMatrix_MGViaApproxOrders(DM dm,Mat *M) {
 
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   MoFEMFunctionBeginHot;
@@ -435,7 +435,7 @@ PetscErrorCode DMCreateMatrix_MGViaApproxOrders(DM dm,Mat *M) {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode DMCoarsen_MGViaApproxOrders(DM dm, MPI_Comm comm, DM *dmc) {
+MoFEMErrorCode DMCoarsen_MGViaApproxOrders(DM dm, MPI_Comm comm, DM *dmc) {
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   MoFEMFunctionBeginHot;
   GET_DM_FIELD(dm);
@@ -450,7 +450,7 @@ PetscErrorCode DMCoarsen_MGViaApproxOrders(DM dm, MPI_Comm comm, DM *dmc) {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode DMCreateInterpolation_MGViaApproxOrders(DM dm1,DM dm2,Mat *mat,Vec *vec) {
+MoFEMErrorCode DMCreateInterpolation_MGViaApproxOrders(DM dm1,DM dm2,Mat *mat,Vec *vec) {
   PetscValidHeaderSpecific(dm1,DM_CLASSID,1);
   PetscValidHeaderSpecific(dm2,DM_CLASSID,1);
   MoFEMFunctionBeginHot;
@@ -544,7 +544,7 @@ PetscErrorCode DMCreateInterpolation_MGViaApproxOrders(DM dm1,DM dm2,Mat *mat,Ve
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode DMCreateGlobalVector_MGViaApproxOrders(DM dm,Vec *g) {
+MoFEMErrorCode DMCreateGlobalVector_MGViaApproxOrders(DM dm,Vec *g) {
 
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   MoFEMFunctionBeginHot;
@@ -565,7 +565,7 @@ PetscErrorCode DMCreateGlobalVector_MGViaApproxOrders(DM dm,Vec *g) {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode PCMGSetUpViaApproxOrdersCtx::getOptions() {
+MoFEMErrorCode PCMGSetUpViaApproxOrdersCtx::getOptions() {
   MoFEMFunctionBeginHot;
   ierr = PetscOptionsBegin(
     PETSC_COMM_WORLD,"",
@@ -609,7 +609,7 @@ PetscErrorCode PCMGSetUpViaApproxOrdersCtx::getOptions() {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode PCMGSetUpViaApproxOrdersCtx::createIsAtLevel(int kk,IS *is) {
+MoFEMErrorCode PCMGSetUpViaApproxOrdersCtx::createIsAtLevel(int kk,IS *is) {
   MoFEM::Interface *m_field_ptr;
   MoFEM::ISManager *is_manager_ptr;
   MoFEMFunctionBeginHot;
@@ -635,13 +635,13 @@ PetscErrorCode PCMGSetUpViaApproxOrdersCtx::createIsAtLevel(int kk,IS *is) {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode PCMGSetUpViaApproxOrdersCtx::destroyIsAtLevel(int kk,IS *is) {
+MoFEMErrorCode PCMGSetUpViaApproxOrdersCtx::destroyIsAtLevel(int kk,IS *is) {
   MoFEMFunctionBeginHot;
   ierr = ISDestroy(is);
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode PCMGSetUpViaApproxOrdersCtx::buildProlongationOperator(
+MoFEMErrorCode PCMGSetUpViaApproxOrdersCtx::buildProlongationOperator(
   bool use_mat_a,int verb
 ) {
   MoFEMFunctionBeginHot;
@@ -707,7 +707,7 @@ PetscErrorCode PCMGSetUpViaApproxOrdersCtx::buildProlongationOperator(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode PCMGSetUpViaApproxOrders(PC pc,PCMGSetUpViaApproxOrdersCtx *ctx,int verb) {
+MoFEMErrorCode PCMGSetUpViaApproxOrders(PC pc,PCMGSetUpViaApproxOrdersCtx *ctx,int verb) {
 
   PetscValidHeaderSpecific(pc,PC_CLASSID,1);
   MoFEMFunctionBeginHot;
