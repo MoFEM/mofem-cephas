@@ -207,14 +207,11 @@ struct UnknownInterface {
     int *version_ptr;
     if (rval == MB_ALREADY_ALLOCATED) {
       const void *tag_data[1];
-      rval = moab.tag_get_by_ptr(th, &root_meshset, 1, tag_data);
-      CHKERRQ_MOAB(rval);
+      CHKERR moab.tag_get_by_ptr(th, &root_meshset, 1, tag_data);
       version_ptr = (int *)tag_data[0];
     } else {
-      CHKERRQ_MOAB(rval);
       const void *tag_data[1];
-      rval = moab.tag_get_by_ptr(th, &root_meshset, 1, tag_data);
-      CHKERRQ_MOAB(rval);
+      CHKERR moab.tag_get_by_ptr(th, &root_meshset, 1, tag_data);
       version_ptr = (int *)tag_data[0];
       version_ptr[0] = MoFEM_VERSION_MAJOR;
       version_ptr[1] = MoFEM_VERSION_MINOR;

@@ -1,8 +1,10 @@
 /** \file cubit_bc_test.cpp
-  \brief Atom test for getting boundary conditions from cubit
-
+ * \example cubit_bc_test.cpp
+ * \brief Atom test for getting boundary conditions from blocksets, sidesets and
+ * nodesets.
+ * 
+ *
 */
-
 
 /* This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
@@ -22,9 +24,6 @@
 
 using namespace MoFEM;
 
-
-
-
 static char help[] = "...\n\n";
 
 int main(int argc, char *argv[]) {
@@ -42,9 +41,12 @@ int main(int argc, char *argv[]) {
   PetscBool flg = PETSC_TRUE;
   char mesh_file_name[255];
   #if PETSC_VERSION_GE(3,6,4)
-  ierr = PetscOptionsGetString(PETSC_NULL,"","-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  CHKERR PetscOptionsGetString(PETSC_NULL, "", "-my_file", mesh_file_name, 255,
+                               &flg);
   #else
-  ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  CHKERR PetscOptionsGetString(PETSC_NULL, PETSC_NULL, "-my_file",
+                               mesh_file_name, 255, &flg);
+  CHKERRQ(ierr);
   #endif
   if(flg != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
@@ -53,7 +55,7 @@ int main(int argc, char *argv[]) {
   //Read mesh to MOAB
   const char *option;
   option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
+  CHKERR moab.load_file(mesh_file_name, 0, option);
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
 
@@ -69,16 +71,16 @@ int main(int argc, char *argv[]) {
   //NODESETs
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,NODESET,it)) {
     std::cout << *it << std::endl;
-    ierr = it->printBcData(std::cout); CHKERRQ(ierr);
+    CHKERR it->printBcData(std::cout);
     std::vector<char> bc_data;
-    ierr = it->getBcData(bc_data); CHKERRQ(ierr);
+    CHKERR it->getBcData(bc_data); 
     if(bc_data.empty()) continue;
 
       //Displacement
       if (strcmp (&bc_data[0],"Displacement") == 0)
       {
           DisplacementCubitBcData mydata;
-          ierr = it->getBcDataStructure(mydata); CHKERRQ(ierr);
+          CHKERR it->getBcDataStructure(mydata);
           //Print data
           std::cout << mydata;
           myfile << mydata;
@@ -88,7 +90,7 @@ int main(int argc, char *argv[]) {
       else if (strcmp (&bc_data[0],"Force") == 0)
       {
           ForceCubitBcData mydata;
-          ierr = it->getBcDataStructure(mydata); CHKERRQ(ierr);
+          CHKERR it->getBcDataStructure(mydata);
           //Print data
           std::cout << mydata;
           myfile << mydata;
@@ -98,7 +100,7 @@ int main(int argc, char *argv[]) {
       else if (strcmp (&bc_data[0],"Velocity") == 0)
       {
           VelocityCubitBcData mydata;
-          ierr = it->getBcDataStructure(mydata); CHKERRQ(ierr);
+          CHKERR it->getBcDataStructure(mydata); 
           //Print data
           std::cout << mydata;
           myfile << mydata;
@@ -108,7 +110,7 @@ int main(int argc, char *argv[]) {
       else if (strcmp (&bc_data[0],"Acceleration") == 0)
       {
           AccelerationCubitBcData mydata;
-          ierr = it->getBcDataStructure(mydata); CHKERRQ(ierr);
+          CHKERR it->getBcDataStructure(mydata); 
           //Print data
           std::cout << mydata;
           myfile << mydata;
@@ -118,7 +120,7 @@ int main(int argc, char *argv[]) {
       else if (strcmp (&bc_data[0],"Temperature") == 0)
       {
           TemperatureCubitBcData mydata;
-          ierr = it->getBcDataStructure(mydata); CHKERRQ(ierr);
+          CHKERR it->getBcDataStructure(mydata); 
           //Print data
           std::cout << mydata;
           myfile << mydata;
@@ -132,16 +134,16 @@ int main(int argc, char *argv[]) {
   //SIDESETs
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,SIDESET,it)) {
     std::cout << *it << std::endl;
-    ierr = it->printBcData(std::cout); CHKERRQ(ierr);
+    CHKERR it->printBcData(std::cout); 
     std::vector<char> bc_data;
-    ierr = it->getBcData(bc_data); CHKERRQ(ierr);
+    CHKERR it->getBcData(bc_data); 
     if(bc_data.empty()) continue;
 
       //Pressure
       if (strcmp (&bc_data[0],"Pressure") == 0)
       {
           PressureCubitBcData mydata;
-          ierr = it->getBcDataStructure(mydata); CHKERRQ(ierr);
+          CHKERR it->getBcDataStructure(mydata); 
           //Print data
           std::cout << mydata;
           myfile << mydata;
@@ -151,7 +153,7 @@ int main(int argc, char *argv[]) {
       else if (strcmp (&bc_data[0],"HeatFlux") == 0)
       {
           HeatFluxCubitBcData mydata;
-          ierr = it->getBcDataStructure(mydata); CHKERRQ(ierr);
+          CHKERR it->getBcDataStructure(mydata); 
           //Print data
           std::cout << mydata;
           myfile << mydata;
@@ -161,7 +163,7 @@ int main(int argc, char *argv[]) {
       else if (strcmp (&bc_data[0],"cfd_bc") == 0)
       {
           CfgCubitBcData mydata;
-          ierr = it->getBcDataStructure(mydata); CHKERRQ(ierr);
+          CHKERR it->getBcDataStructure(mydata); 
 
           //Interface bc (Hex:6 Dec:6)
           if (mydata.data.type == 6) {  // 6 is the decimal value of the corresponding value (hex) in bc_data
@@ -193,7 +195,7 @@ int main(int argc, char *argv[]) {
   }
 
   MeshsetsManager *meshsets_manager_ptr;
-  ierr = m_field.getInterface(meshsets_manager_ptr); CHKERRQ(ierr);
+  CHKERR m_field.getInterface(meshsets_manager_ptr); 
 
   std::cout << "<<<< BLOCKSETs >>>>>" << std::endl;
   //BLOCKSETs
@@ -202,15 +204,15 @@ int main(int argc, char *argv[]) {
       std::cout << std::endl << *it << std::endl;
 
       //Get and print block name
-      ierr = it->printName(std::cout); CHKERRQ(ierr);
-      ierr = it->printName(myfile); CHKERRQ(ierr);
+      CHKERR it->printName(std::cout); 
+      CHKERR it->printName(myfile); 
 
 
       //Get and print block attributes
       std::vector<double> attributes;
-      ierr = it->getAttributes(attributes); CHKERRQ(ierr);
-      ierr = it->printAttributes(std::cout); CHKERRQ(ierr);
-      ierr = it->printAttributes(myfile); CHKERRQ(ierr);
+      CHKERR it->getAttributes(attributes); 
+      CHKERR it->printAttributes(std::cout); 
+      CHKERR it->printAttributes(myfile); 
   }
 
   //Get block attributes and assign them as material properties/solution parameters based on the name of each block
@@ -232,19 +234,19 @@ int main(int argc, char *argv[]) {
     //Elastic material
     if (name.compare(0,20,"MAT_ELASTIC_TRANSISO") == 0) {
       Mat_Elastic_TransIso mydata;
-      ierr = it->getAttributeDataStructure(mydata); CHKERRQ(ierr);
+      CHKERR it->getAttributeDataStructure(mydata); 
       //Print data
       std::cout << mydata;
       myfile << mydata;
     } else if (name.compare(0,11,"MAT_ELASTIC") == 0) {
       Mat_Elastic mydata;
-      ierr = it->getAttributeDataStructure(mydata); CHKERRQ(ierr);
+      CHKERR it->getAttributeDataStructure(mydata); 
       //Print data
       std::cout << mydata;
       myfile << mydata;
     } else if (name.compare(0,10,"MAT_INTERF") == 0) {
       Mat_Interf mydata;
-      ierr = it->getAttributeDataStructure(mydata); CHKERRQ(ierr);
+      CHKERR it->getAttributeDataStructure(mydata); 
       //Print data
       std::cout << mydata;
       myfile << mydata;
@@ -254,7 +256,6 @@ int main(int argc, char *argv[]) {
 
   //Close mesh_file_name.txt
   myfile.close();
-
 
   } catch (MoFEMException const &e) {
     SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);

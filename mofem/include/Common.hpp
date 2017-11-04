@@ -20,25 +20,47 @@
 
 namespace MoFEM {
 
-typedef ErrorCode MoABErrorCode;
+struct MoFEMException : public std::exception {
+  MoFEMErrorCodes errorCode;
+  char errorMessage[255];
+  MoFEMException(MoFEMErrorCodes error_code) : errorCode(error_code) {
+    strcpy(errorMessage, "Huston we have a problem, something is wrong");
+  }
+  MoFEMException(MoFEMErrorCodes error_code, const char error_message[])
+      : errorCode(error_code) {
+    strcpy(errorMessage, error_message);
+  }
+  const char *what() const throw() { return errorMessage; }
+};
 
-template <typename TYPE>
-struct MoFEMErrorCodeGeneric {
+typedef moab::ErrorCode MoABErrorCode;
+
+template <typename TYPE> struct MoFEMErrorCodeGeneric {
   MoFEMErrorCodeGeneric(const TYPE) {}
 };
 
-template<>
-struct MoFEMErrorCodeGeneric<PetscErrorCode> {
+template <> struct MoFEMErrorCodeGeneric<PetscErrorCode> {
   PetscErrorCode iERR;
   MoFEMErrorCodeGeneric(const PetscErrorCode ierr) : iERR(ierr) {}
   inline operator PetscErrorCode() const { return iERR; }
+  inline const MoFEMErrorTypes errorType() const { return PETSC_ERROR; }
+  inline bool getSuccess() const {
+    if (PetscUnlikely(iERR))
+      return false;
+    return true;
+  }
 };
 
-template<>
-struct MoFEMErrorCodeGeneric<moab::ErrorCode> {
+template <> struct MoFEMErrorCodeGeneric<moab::ErrorCode> {
   moab::ErrorCode rVAL;
-  MoFEMErrorCodeGeneric(const moab::ErrorCode rval): rVAL(rval) {}
+  MoFEMErrorCodeGeneric(const moab::ErrorCode rval) : rVAL(rval) {}
   inline operator moab::ErrorCode() const { return rVAL; }
+  inline const MoFEMErrorTypes errorType() const { return MOAB_ERROR; }
+  inline bool getSuccess() const {
+    if (MB_SUCCESS == rVAL)
+      return true;
+    return false;
+  }
 };
 
 typedef MoFEMErrorCodeGeneric<PetscErrorCode> MoFEMErrorCode;
@@ -46,6 +68,56 @@ typedef MoFEMErrorCodeGeneric<PetscErrorCode> MoFEMErrorCode;
 static MoFEMErrorCodeGeneric<moab::ErrorCode> rval =
     MoFEMErrorCodeGeneric<moab::ErrorCode>(MB_SUCCESS);
 static MoFEMErrorCode ierr = MoFEMErrorCode(0);
+
+
+struct ErrorChecker {
+  ErrorChecker(const int line): lINE(line) {}
+  inline void 
+  operator<<(const MoFEMErrorCodeGeneric<PetscErrorCode> err) {
+    if (PetscUnlikely(!err.getSuccess())) {
+      std::string str("MoFEM-PETSc error " +
+                      boost::lexical_cast<std::string>(err) + " at line " +
+                      boost::lexical_cast<std::string>(lINE));
+      throw MoFEMException(MOFEM_MOFEMEXCEPTION_THROW, str.c_str());
+    }
+    return;
+  }
+  inline void
+  operator<<(const MoFEMErrorCodeGeneric<moab::ErrorCode> err) {
+    if (PetscUnlikely(!err.getSuccess())) {
+      std::string str("MOFEM-MOAB error " +
+                      boost::lexical_cast<std::string>(err) + " at line " +
+                      boost::lexical_cast<std::string>(lINE));
+      throw MoFEMException(MOFEM_MOFEMEXCEPTION_THROW, str.c_str());
+    }
+    return;
+  }
+  inline void operator<<(const PetscErrorCode err) {
+    if (PetscUnlikely(err)) {
+      std::string str("PETSc error " + boost::lexical_cast<std::string>(err) +
+                      " at line " + boost::lexical_cast<std::string>(lINE));
+      throw MoFEMException(MOFEM_MOFEMEXCEPTION_THROW, str.c_str());
+    }
+    return;
+  }
+  inline void
+  operator<<(const moab::ErrorCode err) {
+    if (PetscLikely(MB_SUCCESS != err)) {
+      std::string str("MOAB error " + boost::lexical_cast<std::string>(err) +
+                      " at line " + boost::lexical_cast<std::string>(lINE));
+      throw MoFEMException(MOFEM_MOFEMEXCEPTION_THROW, str.c_str());
+    }
+    return;
+  }
+private:
+  int lINE;
+};
+
+struct ErrorCheckerLine {
+  inline ErrorChecker operator<<(int line) {
+    return ErrorChecker(line);
+  }
+};
 
 typedef int DofIdx;                  ///< Index of DOF
 typedef int FEIdx;                   ///< Index of the element
@@ -114,19 +186,6 @@ template <typename id_type> struct HashBit {
   inline unsigned int operator()(const id_type &value) const {
     return value.to_ulong();
   }
-};
-
-struct MoFEMException : public std::exception {
-  MoFEMErrorCodes errorCode;
-  char errorMessage[255];
-  MoFEMException(MoFEMErrorCodes error_code) : errorCode(error_code) {
-    strcpy(errorMessage, "Huston we have a problem, something is wrong");
-  }
-  MoFEMException(MoFEMErrorCodes error_code, const char error_message[])
-      : errorCode(error_code) {
-    strcpy(errorMessage, error_message);
-  }
-  const char *what() const throw() { return errorMessage; }
 };
 
 /**

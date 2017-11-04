@@ -120,6 +120,12 @@ enum MoFEMErrorCodes {
   MOFEM_MOAB_ERROR             = 109
 };
 
+/** \brief Types of error
+ */
+enum MoFEMErrorTypes {
+  PETSC_ERROR, MOAB_ERROR, UNKNON_ERROR
+};
+
 /// \brief approximation base
 enum FieldApproximationBase {
   NOBASE = 0,
@@ -470,7 +476,22 @@ DEPRECATED void macro_is_depracted_using_deprecated_function();
   } while (false)
 
 /**
- * \bried Check error code of MoAB function and throw MoFEM exception
+  * \brief check error code of MoAB function
+  * @param  a MoFEMErrorCode
+  */
+#define CHKERRG(n)                                                             \
+  if (PetscUnlikely(!n.getSuccess())) {                                        \
+    if (n.errorType() == PETSC_ERROR) {                                        \
+      CHKERRQ(n);                                                              \
+    } else if (n.errorType() == MOAB_ERROR) {                                  \
+      CHKERRQ_MOAB(n);                                                         \
+    }                                                                          \
+  }
+
+#define CHKERR ErrorCheckerLine() << __LINE__ << 
+
+/**
+ * \brief Check error code of MoAB function and throw MoFEM exception
  * @param  a MoABErrorCode
  */
 #define MOAB_THROW(a)                                                          \
