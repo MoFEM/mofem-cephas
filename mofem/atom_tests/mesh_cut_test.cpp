@@ -228,15 +228,12 @@ int main(int argc, char *argv[]) {
 
     // Set coordinates for tag data
     CHKERR cut_mesh->setCoords(th);
-    
-
     CHKERR core.getInterface<BitRefManager>()->writeBitLevelByType(
         bit_level0, BitRefLevel().set(), MBTET, "out_tets_shift_level0.vtk",
         "VTK", "");
     CHKERR core.getInterface<BitRefManager>()->writeBitLevelByType(
         bit_level1, BitRefLevel().set(), MBTET, "out_tets_shift_level1.vtk",
         "VTK", "");
-    
 
     Range surface_verts;
     CHKERR moab.get_connectivity(cut_mesh->getSurface(), surface_verts);
@@ -245,7 +242,6 @@ int main(int argc, char *argv[]) {
     CHKERR m_field.delete_ents_by_bit_ref(
         bit_level0 | bit_level1, bit_level0 | bit_level1, true, VERBOSE);
     
-
     {
       EntityHandle meshset;
       CHKERR moab.create_meshset(MESHSET_SET, meshset);
