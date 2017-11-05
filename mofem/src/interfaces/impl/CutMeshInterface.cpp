@@ -1374,9 +1374,11 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
       rval = moab.get_adjacencies(surface, 1, false, surface_edges,
                                   moab::Interface::UNION);
       CHKERRG(rval);
+      // get nodes on the surface
       Range surface_edges_verts;
       rval = moab.get_connectivity(surface_edges, surface_edges_verts, true);
       CHKERRG(rval);
+      // get vertices on the body skin
       Range tets_skin_edges_verts;
       rval =
           moab.get_connectivity(tets_skin_edges, tets_skin_edges_verts, true);
@@ -1426,22 +1428,9 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
       edges_to_merge = subtract(edges_to_merge, edges_to_remove);
       not_merged_edges.merge(edges_to_remove);
 
-      // remove edges self conected to surface
+      // remove edges self connected to surface
       ierr = removeSelfConectingEdges(surface_edges, edges_to_remove, 0, false);
       CHKERRG(ierr);
-      edges_to_merge = subtract(edges_to_merge, edges_to_remove);
-      not_merged_edges.merge(edges_to_remove);
-
-      // remove edges self contected on surface skin
-      {
-        Range ents_nodes_and_edges;
-        ents_nodes_and_edges.merge(surface_skin);
-        ents_nodes_and_edges.merge(fixed_edges_nodes);
-        ents_nodes_and_edges.merge(edges_to_remove);
-        ierr = removeSelfConectingEdges(ents_nodes_and_edges, edges_to_remove,
-                                        0, false);
-        CHKERRG(ierr);
-      }
       edges_to_merge = subtract(edges_to_merge, edges_to_remove);
       not_merged_edges.merge(edges_to_remove);
 
@@ -1649,15 +1638,6 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
     CHKERRG(rval);
     new_surf = intersect(new_surf, adj_faces);
 
-    rval = moab.get_adjacencies(proc_tets, 1, false, adj_edges,
-                                moab::Interface::UNION);
-    CHKERRG(rval);
-    edges_to_merge = intersect(edges_to_merge, adj_edges);
-    ierr = Toplogy(m_field, th, 0.1 * aveLength)
-               .removeBadEdges(new_surf, proc_tets, fixed_edges, corner_nodes,
-                               edges_to_merge, not_merged_edges);
-    CHKERRG(ierr);
-
     PetscPrintf(m_field.get_comm(), "(%d) Number of nodes merged %d\n", pp,
                 nb_nodes_merged);
 
@@ -1678,6 +1658,16 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
 
     if (nb_nodes_merged == nb_nodes_merged_0)
       break;
+
+    rval = moab.get_adjacencies(proc_tets, 1, false, adj_edges,
+                                moab::Interface::UNION);
+    CHKERRG(rval);
+    edges_to_merge = intersect(edges_to_merge, adj_edges);
+    ierr = Toplogy(m_field, th, 0.1 * aveLength)
+               .removeBadEdges(new_surf, proc_tets, fixed_edges, corner_nodes,
+                               edges_to_merge, not_merged_edges);
+    CHKERRG(ierr);
+
   }
 
   if (bit_ptr) {
