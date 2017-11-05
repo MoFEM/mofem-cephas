@@ -40,7 +40,7 @@ struct Hooke: public NonlinearElasticElement::FunctionsToCalculatePiolaKirchhoff
       * \f$\sigma = \lambda\textrm{tr}[\varepsilon]+2\mu\varepsilon\f$
       *
       */
-    virtual PetscErrorCode calculateP_PiolaKirchhoffI(
+    virtual MoFEMErrorCode calculateP_PiolaKirchhoffI(
       const NonlinearElasticElement::BlockData block_data,
       boost::shared_ptr<const NumeredEntFiniteElement> fe_ptr
     ) {
@@ -74,7 +74,7 @@ struct Hooke: public NonlinearElasticElement::FunctionsToCalculatePiolaKirchhoff
       * \f$\Psi = \frac{1}{2}\lambda(\textrm{tr}[\varepsilon])^2+\mu\varepsilon:\varepsilon\f$
       *
       */
-    virtual PetscErrorCode calculateElasticEnergy(
+    virtual MoFEMErrorCode calculateElasticEnergy(
       const NonlinearElasticElement::BlockData block_data,
       boost::shared_ptr<const NumeredEntFiniteElement> fe_ptr
     ) {

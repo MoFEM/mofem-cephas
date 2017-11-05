@@ -1077,7 +1077,7 @@ void tet_type_1(const EntityHandle *conn,const int split_edge,const EntityHandle
 }
 
 //TRIS
-PetscErrorCode tri_type_3(
+MoFEMErrorCode tri_type_3(
   const EntityHandle *conn,const BitRefEdges split_edges,const EntityHandle *edge_new_nodes,EntityHandle *new_tris_conn
 ) {
   MoFEMFunctionBeginHot;
@@ -1107,7 +1107,7 @@ PetscErrorCode tri_type_3(
 }
 
 //PRISM
-PetscErrorCode prism_type_1(
+MoFEMErrorCode prism_type_1(
   const EntityHandle *conn,const BitRefEdges split_edges,const EntityHandle *edge_new_nodes,EntityHandle *new_prism_conn
 ) {
   MoFEMFunctionBeginHot;
@@ -1136,7 +1136,7 @@ PetscErrorCode prism_type_1(
   new_prism_conn[1*6 + 5] = conn[cycle_nodes[ee][4]];
   MoFEMFunctionReturnHot(0);
 }
-PetscErrorCode prism_type_2(
+MoFEMErrorCode prism_type_2(
   const EntityHandle *conn,const BitRefEdges split_edges,const EntityHandle *edge_new_nodes,EntityHandle *new_prism_conn
 ) {
   MoFEMFunctionBeginHot;
@@ -1200,7 +1200,7 @@ PetscErrorCode prism_type_2(
   new_prism_conn[2*6 + 5] = _edge_new_nodes_[8-3];
   MoFEMFunctionReturnHot(0);
 }
-PetscErrorCode prism_type_3(
+MoFEMErrorCode prism_type_3(
   const EntityHandle *conn,const BitRefEdges split_edges,const EntityHandle *edge_new_nodes,EntityHandle *new_prism_conn
 ) {
   MoFEMFunctionBeginHot;

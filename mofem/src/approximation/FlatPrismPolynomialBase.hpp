@@ -32,7 +32,7 @@ namespace MoFEM {
   */
   struct FlatPrismPolynomialBaseCtx: public EntPolynomialBaseCtx {
 
-    PetscErrorCode query_interface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface) const;
+    MoFEMErrorCode query_interface(const MOFEMuuid& uuid,UnknownInterface** iface) const;
 
     moab::Interface &mOab;
     const NumeredEntFiniteElement *fePtr;
@@ -58,12 +58,12 @@ namespace MoFEM {
   */
   struct FlatPrismPolynomialBase: public BaseFunction {
 
-    PetscErrorCode query_interface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface) const;
+    MoFEMErrorCode query_interface(const MOFEMuuid& uuid,UnknownInterface** iface) const;
 
     FlatPrismPolynomialBase();
     ~FlatPrismPolynomialBase();
 
-    PetscErrorCode getValue(
+    MoFEMErrorCode getValue(
       MatrixDouble &pts,boost::shared_ptr<BaseFunctionCtx> ctx_ptr
     );
 
@@ -71,13 +71,13 @@ namespace MoFEM {
 
     FlatPrismPolynomialBaseCtx *cTx;
 
-    PetscErrorCode getValueH1(MatrixDouble &pts);
+    MoFEMErrorCode getValueH1(MatrixDouble &pts);
 
-    PetscErrorCode getValueL2(MatrixDouble &pts);
+    MoFEMErrorCode getValueL2(MatrixDouble &pts);
 
-    PetscErrorCode getValueHdiv(MatrixDouble &pts);
+    MoFEMErrorCode getValueHdiv(MatrixDouble &pts);
 
-    PetscErrorCode getValueHCurl(MatrixDouble &pts);
+    MoFEMErrorCode getValueHCurl(MatrixDouble &pts);
 
     int numNodes;
     const EntityHandle *connPrism;

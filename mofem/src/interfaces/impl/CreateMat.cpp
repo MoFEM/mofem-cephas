@@ -40,7 +40,7 @@ struct CreateRowComressedADJMatrix: public Core {
 
     */
   template<typename TAG>
-  PetscErrorCode createMatArrays(
+  MoFEMErrorCode createMatArrays(
     ProblemsByName::iterator p_miit,
     const MatType type,
     std::vector<PetscInt> &i,std::vector<PetscInt> &j,
@@ -48,7 +48,7 @@ struct CreateRowComressedADJMatrix: public Core {
   );
 
   template<typename TAG>
-  PetscErrorCode createMat(
+  MoFEMErrorCode createMat(
     const std::string &name,Mat *M,const MatType type,
     PetscInt **_i,PetscInt **_j,PetscScalar **_v,
     const bool no_diagonals = true,int verb = -1
@@ -57,7 +57,7 @@ struct CreateRowComressedADJMatrix: public Core {
   /** \brief Get element adjacencies
     */
   template<typename TAG>
-  PetscErrorCode getEntityAdjacenies(
+  MoFEMErrorCode getEntityAdjacenies(
     ProblemsByName::iterator p_miit,
     typename boost::multi_index::index<
       NumeredDofEntity_multiIndex,TAG
@@ -67,7 +67,7 @@ struct CreateRowComressedADJMatrix: public Core {
     int verb
   );
 
-  PetscErrorCode buildFECol(
+  MoFEMErrorCode buildFECol(
     ProblemsByName::iterator p_miit,
     boost::shared_ptr<EntFiniteElement> ent_fe_ptr,
     bool do_cols_prob,
@@ -76,7 +76,7 @@ struct CreateRowComressedADJMatrix: public Core {
 
 };
 
-PetscErrorCode CreateRowComressedADJMatrix::buildFECol(
+MoFEMErrorCode CreateRowComressedADJMatrix::buildFECol(
   ProblemsByName::iterator p_miit,
   boost::shared_ptr<EntFiniteElement> ent_fe_ptr,
   bool do_cols_prob,
@@ -131,7 +131,7 @@ PetscErrorCode CreateRowComressedADJMatrix::buildFECol(
       NumeredDofEntity_multiIndex_uid_view_ordered cols_view;
       ierr = fe_ptr->getEntFiniteElement()->getColDofView(
         *(p_miit->numeredDofsCols),cols_view,moab::Interface::UNION
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
 
       // Reserve memory for field  dofs
       boost::shared_ptr<std::vector<FENumeredDofEntity> > dofs_array =
@@ -175,7 +175,7 @@ PetscErrorCode CreateRowComressedADJMatrix::buildFECol(
 }
 
 template<typename TAG>
-PetscErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
+MoFEMErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
   ProblemsByName::iterator p_miit,
   typename boost::multi_index::index<
     NumeredDofEntity_multiIndex,TAG
@@ -218,7 +218,7 @@ PetscErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
 
       boost::shared_ptr<NumeredEntFiniteElement> fe_ptr;
       // get element, if element is not in database build columns dofs
-      ierr = buildFECol(p_miit,adj_miit->entFePtr,do_cols_prob,fe_ptr); CHKERRQ(ierr);
+      ierr = buildFECol(p_miit,adj_miit->entFePtr,do_cols_prob,fe_ptr); CHKERRG(ierr);
 
       if(fe_ptr) {
         for(
@@ -266,7 +266,7 @@ PetscErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
 }
 
 template<typename TAG>
-PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
+MoFEMErrorCode CreateRowComressedADJMatrix::createMatArrays(
   ProblemsByName::iterator p_miit,
   const MatType type,
   std::vector<PetscInt> &i,std::vector<PetscInt> &j,
@@ -298,13 +298,13 @@ PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
 
     // Get range of local indices
     PetscLayout layout;
-    ierr = PetscLayoutCreate(cOmm, &layout); CHKERRQ(ierr);
-    ierr = PetscLayoutSetBlockSize(layout, 1); CHKERRQ(ierr);
-    ierr = PetscLayoutSetSize(layout, nb_dofs_row); CHKERRQ(ierr);
-    ierr = PetscLayoutSetUp(layout); CHKERRQ(ierr);
+    ierr = PetscLayoutCreate(cOmm, &layout); CHKERRG(ierr);
+    ierr = PetscLayoutSetBlockSize(layout, 1); CHKERRG(ierr);
+    ierr = PetscLayoutSetSize(layout, nb_dofs_row); CHKERRG(ierr);
+    ierr = PetscLayoutSetUp(layout); CHKERRG(ierr);
     PetscInt rstart, rend;
-    ierr = PetscLayoutGetRange(layout, &rstart, &rend); CHKERRQ(ierr);
-    ierr = PetscLayoutDestroy(&layout); CHKERRQ(ierr);
+    ierr = PetscLayoutGetRange(layout, &rstart, &rend); CHKERRG(ierr);
+    ierr = PetscLayoutDestroy(&layout); CHKERRG(ierr);
     if (verb > 0) {
       PetscSynchronizedPrintf(cOmm, "\tcreate_Mat: row lower %d row upper %d\n", rstart, rend);
       PetscSynchronizedFlush(cOmm, PETSC_STDOUT);
@@ -321,7 +321,7 @@ PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
   } else {
 
     // Make sure it is a PETSc cOmm
-    ierr = PetscCommDuplicate(cOmm,&cOmm,NULL); CHKERRQ(ierr);
+    ierr = PetscCommDuplicate(cOmm,&cOmm,NULL); CHKERRG(ierr);
 
     //get adjacent nodes on other partitions
     std::vector<std::vector<int> > dofs_vec(sIze);
@@ -359,7 +359,7 @@ PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
           mofem_ent_ptr = (*mit_row)->getFieldEntityPtr();
           ierr = getEntityAdjacenies<TAG>(
             p_miit,mit_row,mofem_ent_ptr,dofs_col_view,verb
-          ); CHKERRQ(ierr);
+          ); CHKERRG(ierr);
           // Sort, uniqe and resize dofs_col_view
           {
             sort(dofs_col_view.begin(),dofs_col_view.end());
@@ -400,16 +400,16 @@ PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
 
     // Computes the number of messages a node expects to receive
     int nrecvs;	// number of messages received
-    ierr = PetscGatherNumberOfMessages(cOmm,NULL,&dofs_vec_length[0],&nrecvs); CHKERRQ(ierr);
+    ierr = PetscGatherNumberOfMessages(cOmm,NULL,&dofs_vec_length[0],&nrecvs); CHKERRG(ierr);
 
     // Computes info about messages that a MPI-node will receive, including (from-id,length) pairs for each message.
     int *onodes;	// list of node-ids from which messages are expected
     int *olengths;	// corresponding message lengths
-    ierr = PetscGatherMessageLengths(cOmm,nsends,nrecvs,&dofs_vec_length[0],&onodes,&olengths);  CHKERRQ(ierr);
+    ierr = PetscGatherMessageLengths(cOmm,nsends,nrecvs,&dofs_vec_length[0],&onodes,&olengths);  CHKERRG(ierr);
 
     // Gets a unique new tag from a PETSc communicator.
     int tag;
-    ierr = PetscCommGetNewTag(cOmm,&tag); CHKERRQ(ierr);
+    ierr = PetscCommGetNewTag(cOmm,&tag); CHKERRG(ierr);
 
     // Allocate a buffer sufficient to hold messages of size specified in
     // olengths. And post Irecvs on these buffers using node info from onodes
@@ -419,10 +419,10 @@ PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
     // rbuf has a pointers to messages. It has size of of nrecvs (number of
     // messages) +1. In the first index a block is allocated,
     // such that rbuf[i] = rbuf[i-1]+olengths[i-1].
-    ierr = PetscPostIrecvInt(cOmm,tag,nrecvs,onodes,olengths,&rbuf,&r_waits); CHKERRQ(ierr);
+    ierr = PetscPostIrecvInt(cOmm,tag,nrecvs,onodes,olengths,&rbuf,&r_waits); CHKERRG(ierr);
 
     MPI_Request *s_waits; // status of sens messages
-    ierr = PetscMalloc1(nsends,&s_waits);CHKERRQ(ierr);
+    ierr = PetscMalloc1(nsends,&s_waits);CHKERRG(ierr);
 
     // Send messages
     for(int proc=0,kk=0; proc<sIze; proc++) {
@@ -432,17 +432,17 @@ PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
         dofs_vec_length[proc], 	// message length
         MPIU_INT,proc,       	// to proc
         tag,cOmm,s_waits+kk
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
       kk++;
     }
 
     // Wait for received
     if(nrecvs) {
-      ierr = MPI_Waitall(nrecvs,r_waits,&status[0]);CHKERRQ(ierr);
+      ierr = MPI_Waitall(nrecvs,r_waits,&status[0]);CHKERRG(ierr);
     }
     // Wait for send messages
     if(nsends) {
-      ierr = MPI_Waitall(nsends,s_waits,&status[0]);CHKERRQ(ierr);
+      ierr = MPI_Waitall(nsends,s_waits,&status[0]);CHKERRG(ierr);
     }
 
     for(int kk = 0;kk<nrecvs;kk++) {
@@ -474,12 +474,12 @@ PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
     }
 
     // Cleaning
-    ierr = PetscFree(s_waits); CHKERRQ(ierr);
-    ierr = PetscFree(rbuf[0]); CHKERRQ(ierr);
-    ierr = PetscFree(rbuf); CHKERRQ(ierr);
-    ierr = PetscFree(r_waits); CHKERRQ(ierr);
-    ierr = PetscFree(onodes); CHKERRQ(ierr);
-    ierr = PetscFree(olengths); CHKERRQ(ierr);
+    ierr = PetscFree(s_waits); CHKERRG(ierr);
+    ierr = PetscFree(rbuf[0]); CHKERRG(ierr);
+    ierr = PetscFree(rbuf); CHKERRG(ierr);
+    ierr = PetscFree(r_waits); CHKERRG(ierr);
+    ierr = PetscFree(onodes); CHKERRG(ierr);
+    ierr = PetscFree(olengths); CHKERRG(ierr);
 
     miit_row = dofs_row_by_idx.begin();
     hi_miit_row = dofs_row_by_idx.end();
@@ -531,7 +531,7 @@ PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
       mofem_ent_ptr = (*miit_row)->getFieldEntityPtr();
       ierr = getEntityAdjacenies<TAG>(
         p_miit,miit_row,mofem_ent_ptr,dofs_col_view,verb
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
       row_last_evaluated_idx = TAG::get_index(miit_row);
 
       dofs_vec.resize(0);
@@ -654,7 +654,7 @@ PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
 }
 
 template<typename TAG>
-PetscErrorCode CreateRowComressedADJMatrix::createMat(
+MoFEMErrorCode CreateRowComressedADJMatrix::createMat(
   const std::string &name,Mat *M,const MatType type,PetscInt **_i,PetscInt **_j,PetscScalar **_v,
   const bool no_diagonals,int verb
 ) {
@@ -667,10 +667,10 @@ PetscErrorCode CreateRowComressedADJMatrix::createMat(
   }
 
   std::vector<PetscInt> i,j;
-  ierr = createMatArrays<TAG>(p_miit,type,i,j,no_diagonals,verb); CHKERRQ(ierr);
+  ierr = createMatArrays<TAG>(p_miit,type,i,j,no_diagonals,verb); CHKERRG(ierr);
 
-  ierr = PetscMalloc(i.size()*sizeof(PetscInt),_i); CHKERRQ(ierr);
-  ierr = PetscMalloc(j.size()*sizeof(PetscInt),_j); CHKERRQ(ierr);
+  ierr = PetscMalloc(i.size()*sizeof(PetscInt),_i); CHKERRG(ierr);
+  ierr = PetscMalloc(j.size()*sizeof(PetscInt),_j); CHKERRG(ierr);
   copy(i.begin(),i.end(),*_i);
   copy(j.begin(),j.end(),*_j);
 
@@ -680,12 +680,12 @@ PetscErrorCode CreateRowComressedADJMatrix::createMat(
   if(strcmp(type,MATMPIADJ)==0) {
 
     // Adjacency matrix used to partition problems, f.e. METIS
-    ierr = MatCreateMPIAdj(cOmm,i.size()-1,nb_col_dofs,*_i,*_j,PETSC_NULL,M); CHKERRQ(ierr);
-    ierr = MatSetOption(*M,MAT_STRUCTURALLY_SYMMETRIC,PETSC_TRUE); CHKERRQ(ierr);
+    ierr = MatCreateMPIAdj(cOmm,i.size()-1,nb_col_dofs,*_i,*_j,PETSC_NULL,M); CHKERRG(ierr);
+    ierr = MatSetOption(*M,MAT_STRUCTURALLY_SYMMETRIC,PETSC_TRUE); CHKERRG(ierr);
 
   } else if(strcmp(type,MATMPIAIJ)==0) {
     if(_v!=PETSC_NULL) {
-      ierr = PetscMalloc(j.size()*sizeof(PetscScalar),_v); CHKERRQ(ierr);
+      ierr = PetscMalloc(j.size()*sizeof(PetscScalar),_v); CHKERRG(ierr);
     }
     PetscScalar *v = (_v!=PETSC_NULL) ? *_v : PETSC_NULL;
     // Compressed MPIADJ matrix
@@ -693,17 +693,17 @@ PetscErrorCode CreateRowComressedADJMatrix::createMat(
     PetscInt nb_local_dofs_col = p_miit->getNbLocalDofsCol();
     ierr = ::MatCreateMPIAIJWithArrays(
       cOmm,nb_local_dofs_row,nb_local_dofs_col,nb_row_dofs,nb_col_dofs,*_i,*_j,v,M
-    ); CHKERRQ(ierr);
+    ); CHKERRG(ierr);
 
   } else if(strcmp(type,MATAIJ)==0) {
     if(_v!=PETSC_NULL) {
-      ierr = PetscMalloc(j.size()*sizeof(PetscScalar),_v); CHKERRQ(ierr);
+      ierr = PetscMalloc(j.size()*sizeof(PetscScalar),_v); CHKERRG(ierr);
     }
     PetscScalar *v = (_v!=PETSC_NULL) ? *_v : PETSC_NULL;
     // Sequential compressed AIJ matrix
     PetscInt nb_local_dofs_row = p_miit->getNbLocalDofsRow();
     PetscInt nb_local_dofs_col = p_miit->getNbLocalDofsCol();
-    ierr = ::MatCreateSeqAIJWithArrays(cOmm,nb_local_dofs_row,nb_local_dofs_col,*_i,*_j,v,M); CHKERRQ(ierr);
+    ierr = ::MatCreateSeqAIJWithArrays(cOmm,nb_local_dofs_row,nb_local_dofs_col,*_i,*_j,v,M); CHKERRG(ierr);
 
   } else {
 
@@ -715,7 +715,7 @@ PetscErrorCode CreateRowComressedADJMatrix::createMat(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode Core::MatCreateMPIAIJWithArrays(const std::string &name,Mat *Aij,int verb) {
+MoFEMErrorCode Core::MatCreateMPIAIJWithArrays(const std::string &name,Mat *Aij,int verb) {
   MoFEMFunctionBeginHot;
   if(verb==-1) verb = verbose;
   int *_i,*_j;
@@ -723,13 +723,13 @@ PetscErrorCode Core::MatCreateMPIAIJWithArrays(const std::string &name,Mat *Aij,
   static_cast<CreateRowComressedADJMatrix*>(const_cast<Core*>(this));
   ierr = core_ptr->createMat<PetscGlobalIdx_mi_tag>(
     name,Aij,MATMPIAIJ,&_i,&_j,PETSC_NULL,false,verb
-  ); CHKERRQ(ierr);
-  ierr = PetscFree(_i); CHKERRQ(ierr);
-  ierr = PetscFree(_j); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
+  ierr = PetscFree(_i); CHKERRG(ierr);
+  ierr = PetscFree(_j); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode Core::MatCreateMPIAdj_with_Idx_mi_tag(const std::string &name,Mat *Adj,int verb) {
+MoFEMErrorCode Core::MatCreateMPIAdj_with_Idx_mi_tag(const std::string &name,Mat *Adj,int verb) {
   MoFEMFunctionBeginHot;
   int *i,*j;
   if(verb>1) {
@@ -737,7 +737,7 @@ PetscErrorCode Core::MatCreateMPIAdj_with_Idx_mi_tag(const std::string &name,Mat
   }
   try {
     CreateRowComressedADJMatrix *core_ptr = static_cast<CreateRowComressedADJMatrix*>(const_cast<Core*>(this));
-    ierr = core_ptr->createMat<Idx_mi_tag>(name,Adj,MATMPIADJ,&i,&j,PETSC_NULL,true,verb); CHKERRQ(ierr);
+    ierr = core_ptr->createMat<Idx_mi_tag>(name,Adj,MATMPIADJ,&i,&j,PETSC_NULL,true,verb); CHKERRG(ierr);
   } catch (MoFEMException const &e) {
     SETERRQ(cOmm,e.errorCode,e.errorMessage);
   } catch (const std::exception& ex) {
@@ -749,7 +749,7 @@ PetscErrorCode Core::MatCreateMPIAdj_with_Idx_mi_tag(const std::string &name,Mat
 }
 
 
-PetscErrorCode Core::MatCreateSeqAIJWithArrays(
+MoFEMErrorCode Core::MatCreateSeqAIJWithArrays(
   const std::string &name,Mat *Aij,PetscInt **i,PetscInt **j,PetscScalar **v,int verb
 ) {
   MoFEMFunctionBeginHot;
@@ -758,11 +758,11 @@ PetscErrorCode Core::MatCreateSeqAIJWithArrays(
   static_cast<CreateRowComressedADJMatrix*>(const_cast<Core*>(this));
   ierr = core_ptr->createMat<PetscLocalIdx_mi_tag>(
     name,Aij,MATAIJ,i,j,v,false,verb
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode Core::partition_check_matrix_fill_in(const std::string &problem_name,int row_print,int col_print,int verb) {
+MoFEMErrorCode Core::partition_check_matrix_fill_in(const std::string &problem_name,int row_print,int col_print,int verb) {
   MoFEMFunctionBeginHot;
   if(verb==-1) verb = verbose;
 
@@ -779,12 +779,12 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const std::string &problem_n
       mFieldPtr(m_field_ptr),A(a),
       rowPrint(row_print),colPrint(col_print) {};
 
-    PetscErrorCode preProcess() {
+    MoFEMErrorCode preProcess() {
       MoFEMFunctionBeginHot;
       MoFEMFunctionReturnHot(0);
     }
 
-    PetscErrorCode operator()() {
+    MoFEMErrorCode operator()() {
       MoFEMFunctionBeginHot;
 
       if(refinedFiniteElementsPtr->find(numeredEntFiniteElementPtr->getEnt())==refinedFiniteElementsPtr->end()) {
@@ -897,7 +897,7 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const std::string &problem_n
 
           }
 
-          ierr = MatSetValue(A,row,col,1,INSERT_VALUES); CHKERRQ(ierr);
+          ierr = MatSetValue(A,row,col,1,INSERT_VALUES); CHKERRG(ierr);
 
 
         }
@@ -940,13 +940,13 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const std::string &problem_n
       MoFEMFunctionReturnHot(0);
     }
 
-    PetscErrorCode postProcess() {
+    MoFEMErrorCode postProcess() {
       MoFEMFunctionBeginHot;
 
 
       // cerr << mFieldPtr->get_comm_rank() << endl;
-      ierr = MatAssemblyBegin(A,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-      ierr = MatAssemblyEnd(A,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+      ierr = MatAssemblyBegin(A,MAT_FLUSH_ASSEMBLY); CHKERRG(ierr);
+      ierr = MatAssemblyEnd(A,MAT_FLUSH_ASSEMBLY); CHKERRG(ierr);
 
       MoFEMFunctionReturnHot(0);
     }
@@ -955,8 +955,8 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const std::string &problem_n
   };
 
   Mat A;
-  ierr = MatCreateMPIAIJWithArrays(problem_name,&A); CHKERRQ(ierr);
-  ierr = MatSetOption(A,MAT_NEW_NONZERO_ALLOCATION_ERR,PETSC_TRUE);  CHKERRQ(ierr);
+  ierr = MatCreateMPIAIJWithArrays(problem_name,&A); CHKERRG(ierr);
+  ierr = MatSetOption(A,MAT_NEW_NONZERO_ALLOCATION_ERR,PETSC_TRUE);  CHKERRG(ierr);
 
   if(verb>1) {
     MatView(A,PETSC_VIEWER_STDOUT_WORLD);
@@ -990,14 +990,14 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const std::string &problem_n
       PetscPrintf(cOmm,"\tcheck element %s\n",(*fe)->getName().c_str());
     }
 
-    ierr = loop_finite_elements(problem_name,(*fe)->getName(),method,MF_EXIST,verb);  CHKERRQ(ierr);
+    ierr = loop_finite_elements(problem_name,(*fe)->getName(),method,MF_EXIST,verb);  CHKERRG(ierr);
 
   }
 
-  ierr = MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-  ierr = MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+  ierr = MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY); CHKERRG(ierr);
+  ierr = MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY); CHKERRG(ierr);
 
-  ierr = MatDestroy(&A); CHKERRQ(ierr);
+  ierr = MatDestroy(&A); CHKERRG(ierr);
 
   MoFEMFunctionReturnHot(0);
 }

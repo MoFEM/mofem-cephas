@@ -39,7 +39,7 @@ namespace MoFEM {
  \todo Need to implement operators that will make this element work as Volume element
 
  */
-struct FatPrismElementForcesAndSourcesCore: public MoFEM::VolumeElementForcesAndSourcesCore {
+struct FatPrismElementForcesAndSourcesCore: public VolumeElementForcesAndSourcesCore {
 
 
   double aRea[2];
@@ -75,13 +75,13 @@ struct FatPrismElementForcesAndSourcesCore: public MoFEM::VolumeElementForcesAnd
   virtual int getRuleTrianglesOnly(int order) { return 2*order; };
   virtual int getRuleThroughThickness(int order) { return 2*order; };
 
-  virtual PetscErrorCode setGaussPtsTrianglesOnly(int order_triangles_only)  {
+  virtual MoFEMErrorCode setGaussPtsTrianglesOnly(int order_triangles_only)  {
     MoFEMFunctionBeginHot;
     SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
     MoFEMFunctionReturnHot(0);
   }
 
-  virtual PetscErrorCode setGaussPtsThroughThickness(int order_thickness) {
+  virtual MoFEMErrorCode setGaussPtsThroughThickness(int order_thickness) {
     MoFEMFunctionBeginHot;
     SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
     MoFEMFunctionReturnHot(0);
@@ -312,12 +312,12 @@ struct FatPrismElementForcesAndSourcesCore: public MoFEM::VolumeElementForcesAnd
 
   };
 
-  PetscErrorCode preProcess() {
+  MoFEMErrorCode preProcess() {
     MoFEMFunctionBeginHot;
     MoFEMFunctionReturnHot(0);
   }
-  PetscErrorCode operator()();
-  PetscErrorCode postProcess() {
+  MoFEMErrorCode operator()();
+  MoFEMErrorCode postProcess() {
     MoFEMFunctionBeginHot;
     MoFEMFunctionReturnHot(0);
   }
@@ -341,7 +341,7 @@ struct OpCalculateInvJacForFatPrism: public FatPrismElementForcesAndSourcesCore:
   OpCalculateInvJacForFatPrism(MatrixDouble &inv_jac):
   FatPrismElementForcesAndSourcesCore::UserDataOperator(H1),
   invJac(inv_jac) {}
-  PetscErrorCode doWork(
+  MoFEMErrorCode doWork(
     int side,EntityType type,DataForcesAndSourcesCore::EntData &data
   );
 };
@@ -363,7 +363,7 @@ struct OpSetInvJacH1ForFatPrism: public FatPrismElementForcesAndSourcesCore::Use
   }
 
   MatrixDouble diffNinvJac;
-  PetscErrorCode doWork(
+  MoFEMErrorCode doWork(
     int side,EntityType type,DataForcesAndSourcesCore::EntData &data
   );
 

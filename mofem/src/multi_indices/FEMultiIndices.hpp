@@ -291,7 +291,7 @@ struct EntFiniteElement;
   * \ingroup fe_multi_indices
   */
 typedef boost::function<
-  PetscErrorCode (Interface &moab,const Field &field_ptr,const EntFiniteElement &fe_ptr,Range &adjacency)
+  MoFEMErrorCode (Interface &moab,const Field &field_ptr,const EntFiniteElement &fe_ptr,Range &adjacency)
 > ElementAdjacencyFunct;
 
 // /** \brief user adjacency function table
@@ -302,14 +302,14 @@ typedef boost::function<
 // /** \brief user adjacency function table
 //   * \ingroup fe_multi_indices
 //   */
-// typedef PetscErrorCode (*ElementAdjacencyTable[MBMAXTYPE])(
+// typedef MoFEMErrorCode (*ElementAdjacencyTable[MBMAXTYPE])(
 //   Interface &moab,const Field &field_ptr,const EntFiniteElement &fe_ptr,Range &adjacency
 // );
 //
 // /** \brief user adjacency function
 //   * \ingroup fe_multi_indices
 //   */
-// typedef PetscErrorCode (*ElementAdjacencyFunct)(
+// typedef MoFEMErrorCode (*ElementAdjacencyFunct)(
 //   Interface &moab,const Field &field_ptr,const EntFiniteElement &fe_ptr,Range &adjacency
 // );
 
@@ -425,22 +425,22 @@ struct FiniteElement {
   */
 struct DefaultElementAdjacency {
 
-  static PetscErrorCode defaultVertex(
+  static MoFEMErrorCode defaultVertex(
     Interface &moab,const Field& field_ptr,const EntFiniteElement& fe_ptr,Range &adjacency
   );
-  static PetscErrorCode defaultEdge(
+  static MoFEMErrorCode defaultEdge(
     Interface &moab,const Field& field_ptr,const EntFiniteElement& fe_ptr,Range &adjacency
   );
-  static PetscErrorCode defaultTri(
+  static MoFEMErrorCode defaultTri(
     Interface &moab,const Field& field_ptr,const EntFiniteElement& fe_ptr,Range &adjacency
   );
-  static PetscErrorCode defaultTet(
+  static MoFEMErrorCode defaultTet(
     Interface &moab,const Field& field_ptr,const EntFiniteElement& fe_ptr,Range &adjacency
   );
-  static PetscErrorCode defaultPrism(
+  static MoFEMErrorCode defaultPrism(
     Interface &moab,const Field& field_ptr,const EntFiniteElement& fe_ptr,Range &adjacency
   );
-  static PetscErrorCode defaultMeshset(
+  static MoFEMErrorCode defaultMeshset(
     Interface &moab,const Field& field_ptr,const EntFiniteElement& fe_ptr,Range &adjacency
   );
 
@@ -588,51 +588,51 @@ interface_RefElement<RefElement> {
 
   friend std::ostream& operator<<(std::ostream& os,const EntFiniteElement& e);
 
-  PetscErrorCode getRowDofView(
+  MoFEMErrorCode getRowDofView(
     const DofEntity_multiIndex &dofs,DofEntity_multiIndex_active_view &dofs_view,
     const int operation_type = moab::Interface::UNION
   ) const;
 
-  PetscErrorCode getColDofView(
+  MoFEMErrorCode getColDofView(
     const DofEntity_multiIndex &dofs,DofEntity_multiIndex_active_view &dofs_view,
     const int operation_type = moab::Interface::UNION
   ) const;
 
-  PetscErrorCode getDataDofView(
+  MoFEMErrorCode getDataDofView(
     const DofEntity_multiIndex &dofs,DofEntity_multiIndex_active_view &dofs_view,
     const int operation_type = moab::Interface::UNION
   ) const;
 
-  PetscErrorCode getRowDofView(
+  MoFEMErrorCode getRowDofView(
     const DofEntity_multiIndex &dofs,DofEntity_multiIndex_uid_view &dofs_view,
     const int operation_type = moab::Interface::UNION
   ) const;
 
-  PetscErrorCode getColDofView(
+  MoFEMErrorCode getColDofView(
     const DofEntity_multiIndex &dofs,DofEntity_multiIndex_uid_view &dofs_view,
     const int operation_type = moab::Interface::UNION
   ) const;
 
-  PetscErrorCode getRowDofView(
+  MoFEMErrorCode getRowDofView(
     const NumeredDofEntity_multiIndex &dofs,NumeredDofEntity_multiIndex_uid_view_ordered &dofs_view,
     const int operation_type = moab::Interface::UNION
   ) const;
 
-  PetscErrorCode getColDofView(
+  MoFEMErrorCode getColDofView(
     const NumeredDofEntity_multiIndex &dofs,NumeredDofEntity_multiIndex_uid_view_ordered &dofs_view,
     const int operation_type = moab::Interface::UNION) const;
 
-  PetscErrorCode getRowDofView(
+  MoFEMErrorCode getRowDofView(
     const NumeredDofEntity_multiIndex &dofs,NumeredDofEntity_multiIndex_idx_view_hashed &dofs_view,
     const int operation_type = moab::Interface::UNION
   ) const;
 
-  PetscErrorCode getColDofView(
+  MoFEMErrorCode getColDofView(
     const NumeredDofEntity_multiIndex &dofs,NumeredDofEntity_multiIndex_idx_view_hashed &dofs_view,
     const int operation_type = moab::Interface::UNION
   ) const;
 
-  PetscErrorCode getElementAdjacency(
+  MoFEMErrorCode getElementAdjacency(
     const boost::shared_ptr<Field> field_ptr,Range &adjacency
   );
 
@@ -718,13 +718,13 @@ interface_RefElement<T> {
   //   return this->sPtr->getSideNumberTable();
   // }
 
-  inline PetscErrorCode getElementAdjacency(const Field *field_ptr,Range &adjacency) {
+  inline MoFEMErrorCode getElementAdjacency(const Field *field_ptr,Range &adjacency) {
     return this->getElementAdjacency(field_ptr,adjacency);
   }
 
   // /** \deprecated Use getElementAdjacency() instead
   // */
-  // DEPRECATED inline PetscErrorCode get_element_adjacency(
+  // DEPRECATED inline MoFEMErrorCode get_element_adjacency(
   //   const Field *field_ptr,Range &adjacency
   // ) {
   //   return this->getElementAdjacency(field_ptr,adjacency);
@@ -788,11 +788,11 @@ struct NumeredEntFiniteElement: public interface_EntFiniteElement<EntFiniteEleme
   /** \brief get FE dof by petsc index
     * \ingroup mofem_dofs
     */
-  PetscErrorCode getRowDofsByPetscGlobalDofIdx(DofIdx idx,const FENumeredDofEntity **dof_ptr) const;
+  MoFEMErrorCode getRowDofsByPetscGlobalDofIdx(DofIdx idx,const FENumeredDofEntity **dof_ptr) const;
 
   // /** \deprecated Use getRowDofsByPetscGlobalDofIdx() instead
   // */
-  // inline DEPRECATED PetscErrorCode get_row_dofs_by_petsc_gloabl_dof_idx(
+  // inline DEPRECATED MoFEMErrorCode get_row_dofs_by_petsc_gloabl_dof_idx(
   //   DofIdx idx,const FENumeredDofEntity **dof_ptr
   // ) const {
   //   return getRowDofsByPetscGlobalDofIdx(idx,dof_ptr);
@@ -801,11 +801,11 @@ struct NumeredEntFiniteElement: public interface_EntFiniteElement<EntFiniteEleme
   /** \brief get FE dof by petsc index
     * \ingroup mofem_dofs
     */
-  PetscErrorCode getColDofsByPetscGlobalDofIdx(DofIdx idx,const FENumeredDofEntity **dof_ptr) const;
+  MoFEMErrorCode getColDofsByPetscGlobalDofIdx(DofIdx idx,const FENumeredDofEntity **dof_ptr) const;
 
   // /** \deprecated Use getColDofsByPetscGlobalDofIdx() instead
   // */
-  // inline DEPRECATED PetscErrorCode get_col_dofs_by_petsc_gloabl_dof_idx(
+  // inline DEPRECATED MoFEMErrorCode get_col_dofs_by_petsc_gloabl_dof_idx(
   //   DofIdx idx,const FENumeredDofEntity **dof_ptr
   // ) const {
   //   return getColDofsByPetscGlobalDofIdx(idx,dof_ptr);

@@ -66,7 +66,7 @@ struct Core : public Interface {
    * @param  iface returned pointer to interface
    * @return       error code
    */
-  PetscErrorCode query_interface(const MOFEMuuid &uuid,
+  MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
                                  UnknownInterface **iface) const;
 
   /**@}*/
@@ -110,7 +110,7 @@ struct Core : public Interface {
    * @param  verb  verbosity level
    * @return       error code
    */
-  PetscErrorCode addPrismToDatabase(const EntityHandle prism, int verb = -1);
+  MoFEMErrorCode addPrismToDatabase(const EntityHandle prism, int verb = -1);
 
   /**
    * \brief Get flags/semaphores for different stages
@@ -199,12 +199,12 @@ protected:
 
   /**@{*/
 
-  PetscErrorCode
+  MoFEMErrorCode
   check_number_of_ents_in_ents_field(const std::string &name) const;
-  PetscErrorCode check_number_of_ents_in_ents_field() const;
-  PetscErrorCode
+  MoFEMErrorCode check_number_of_ents_in_ents_field() const;
+  MoFEMErrorCode
   check_number_of_ents_in_ents_finite_element(const std::string &name) const;
-  PetscErrorCode check_number_of_ents_in_ents_finite_element() const;
+  MoFEMErrorCode check_number_of_ents_in_ents_finite_element() const;
 
   /**@}*/
 
@@ -212,8 +212,8 @@ protected:
 
   /**@{*/
 
-  PetscErrorCode clear_database(int verb = -1);
-  PetscErrorCode rebuild_database(int verb = -1);
+  MoFEMErrorCode clear_database(int verb = -1);
+  MoFEMErrorCode rebuild_database(int verb = -1);
 
   /**@}*/
 
@@ -238,25 +238,25 @@ protected:
   /**@{*/
 
   // refine
-  PetscErrorCode seed_finite_elements(const Range &entities, int verb = -1);
-  PetscErrorCode seed_finite_elements(const EntityHandle meshset,
+  MoFEMErrorCode seed_finite_elements(const Range &entities, int verb = -1);
+  MoFEMErrorCode seed_finite_elements(const EntityHandle meshset,
                                       int verb = -1);
 
   // remove entities
-  PetscErrorCode delete_ents_by_bit_ref(const BitRefLevel &bit,
+  MoFEMErrorCode delete_ents_by_bit_ref(const BitRefLevel &bit,
                                         const BitRefLevel &mask,
                                         const bool remove_parent = false,
                                         int verb = -1);
-  PetscErrorCode remove_ents_by_bit_ref(const BitRefLevel &bit,
+  MoFEMErrorCode remove_ents_by_bit_ref(const BitRefLevel &bit,
                                         const BitRefLevel &mask, int verb = -1);
-  PetscErrorCode delete_finite_elements_by_bit_ref(const BitRefLevel &bit,
+  MoFEMErrorCode delete_finite_elements_by_bit_ref(const BitRefLevel &bit,
                                                    const BitRefLevel &mask,
                                                    int verb = -1);
 
   // synchronize entities
-  PetscErrorCode synchronise_entities(Range &ent, int verb = -1);
-  PetscErrorCode synchronise_field_entities(const BitFieldId id, int verb = -1);
-  PetscErrorCode synchronise_field_entities(const std::string &name,
+  MoFEMErrorCode synchronise_entities(Range &ent, int verb = -1);
+  MoFEMErrorCode synchronise_field_entities(const BitFieldId id, int verb = -1);
+  MoFEMErrorCode synchronise_field_entities(const std::string &name,
                                             int verb = -1);
 
    /**@}*/
@@ -288,125 +288,125 @@ protected:
   will make only problems
 
   */
-  PetscErrorCode add_field(const std::string &name, const FieldSpace space,
+  MoFEMErrorCode add_field(const std::string &name, const FieldSpace space,
                            const FieldApproximationBase base,
                            const FieldCoefficientsNumber nb_coefficients,
                            const TagType tag_type = MB_TAG_SPARSE,
                            const enum MoFEMTypes bh = MF_EXCL, int verb = -1);
-  PetscErrorCode addEntsToFieldByDim(const Range &ents, const int dim,
+  MoFEMErrorCode addEntsToFieldByDim(const Range &ents, const int dim,
                                      const std::string &name, int verb = -1);
-  PetscErrorCode add_ents_to_field_by_dim(const Range &ents, const int dim,
+  MoFEMErrorCode add_ents_to_field_by_dim(const Range &ents, const int dim,
                                           const std::string &name,
                                           int verb = -1);
-  PetscErrorCode add_ents_to_field_by_type(const Range &ents,
+  MoFEMErrorCode add_ents_to_field_by_type(const Range &ents,
                                            const EntityType type,
                                            const std::string &name,
                                            int verb = -1);
-  PetscErrorCode add_ents_to_field_by_dim(const EntityHandle meshset,
+  MoFEMErrorCode add_ents_to_field_by_dim(const EntityHandle meshset,
                                           const int dim,
                                           const std::string &name,
                                           const bool recursive = true,
                                           int verb = -1);
-  PetscErrorCode add_ents_to_field_by_type(const EntityHandle meshset,
+  MoFEMErrorCode add_ents_to_field_by_type(const EntityHandle meshset,
                                            const EntityType type,
                                            const std::string &name,
                                            const bool recursive = true,
                                            int verb = -1);
 
-  DEPRECATED PetscErrorCode add_ents_to_field_by_VERTICEs(
+  DEPRECATED MoFEMErrorCode add_ents_to_field_by_VERTICEs(
       const Range &nodes, const std::string &name, int verb = -1);
-  DEPRECATED PetscErrorCode add_ents_to_field_by_VERTICEs(
+  DEPRECATED MoFEMErrorCode add_ents_to_field_by_VERTICEs(
       const EntityHandle meshset, const std::string &name, int verb = -1);
-  DEPRECATED PetscErrorCode add_ents_to_field_by_EDGEs(const Range &edges,
+  DEPRECATED MoFEMErrorCode add_ents_to_field_by_EDGEs(const Range &edges,
                                                        const std::string &name,
                                                        int verb = -1);
-  DEPRECATED PetscErrorCode add_ents_to_field_by_EDGEs(
+  DEPRECATED MoFEMErrorCode add_ents_to_field_by_EDGEs(
       const EntityHandle meshset, const std::string &name, int verb = -1);
-  DEPRECATED PetscErrorCode add_ents_to_field_by_TRIs(
+  DEPRECATED MoFEMErrorCode add_ents_to_field_by_TRIs(
       const EntityHandle meshset, const std::string &name, int verb = -1);
-  DEPRECATED PetscErrorCode add_ents_to_field_by_TRIs(const Range &tris,
+  DEPRECATED MoFEMErrorCode add_ents_to_field_by_TRIs(const Range &tris,
                                                       const std::string &name,
                                                       int verb = -1);
-  DEPRECATED PetscErrorCode add_ents_to_field_by_TETs(const Range &tets,
+  DEPRECATED MoFEMErrorCode add_ents_to_field_by_TETs(const Range &tets,
                                                       const std::string &name,
                                                       int verb = -1);
-  DEPRECATED PetscErrorCode add_ents_to_field_by_TETs(
+  DEPRECATED MoFEMErrorCode add_ents_to_field_by_TETs(
       const EntityHandle meshset, const std::string &name, int verb = -1);
-  DEPRECATED PetscErrorCode add_ents_to_field_by_QUADs(const Range &prisms,
+  DEPRECATED MoFEMErrorCode add_ents_to_field_by_QUADs(const Range &prisms,
                                                        const std::string &name,
                                                        int verb = -1);
-  DEPRECATED PetscErrorCode add_ents_to_field_by_QUADs(EntityHandle meshset,
+  DEPRECATED MoFEMErrorCode add_ents_to_field_by_QUADs(EntityHandle meshset,
                                                        const std::string &name,
                                                        int verb = -1);
-  DEPRECATED PetscErrorCode add_ents_to_field_by_PRISMs(const Range &prisms,
+  DEPRECATED MoFEMErrorCode add_ents_to_field_by_PRISMs(const Range &prisms,
                                                         const std::string &name,
                                                         int verb = -1);
-  DEPRECATED PetscErrorCode add_ents_to_field_by_PRISMs(EntityHandle meshset,
+  DEPRECATED MoFEMErrorCode add_ents_to_field_by_PRISMs(EntityHandle meshset,
                                                         const std::string &name,
                                                         int verb = -1);
 
   /// \name Remove field entities
 
-  PetscErrorCode remove_ents_from_field_by_bit_ref(const BitRefLevel &bit,
+  MoFEMErrorCode remove_ents_from_field_by_bit_ref(const BitRefLevel &bit,
                                                    const BitRefLevel &mask,
                                                    int verb = -1);
-  PetscErrorCode remove_ents_from_field(const std::string &name,
+  MoFEMErrorCode remove_ents_from_field(const std::string &name,
                                         const EntityHandle meshset,
                                         const EntityType type, int verb = -1);
-  PetscErrorCode remove_ents_from_field(const std::string &name,
+  MoFEMErrorCode remove_ents_from_field(const std::string &name,
                                         const Range &ents, int verb = -1);
 
   /// \name Set approximation order
 
-  PetscErrorCode set_field_order(const Range &ents, const BitFieldId id,
+  MoFEMErrorCode set_field_order(const Range &ents, const BitFieldId id,
                                  const ApproximationOrder order, int verb = -1);
-  PetscErrorCode set_field_order(const EntityHandle meshset,
+  MoFEMErrorCode set_field_order(const EntityHandle meshset,
                                  const EntityType type, const BitFieldId id,
                                  const ApproximationOrder order, int verb = -1);
-  PetscErrorCode set_field_order(const Range &ents, const std::string &name,
+  MoFEMErrorCode set_field_order(const Range &ents, const std::string &name,
                                  const ApproximationOrder order, int verb = -1);
-  PetscErrorCode set_field_order(const EntityHandle meshset,
+  MoFEMErrorCode set_field_order(const EntityHandle meshset,
                                  const EntityType type, const std::string &name,
                                  const ApproximationOrder order, int verb = -1);
-  PetscErrorCode set_field_order_by_entity_type_and_bit_ref(
+  MoFEMErrorCode set_field_order_by_entity_type_and_bit_ref(
       const BitRefLevel &bit, const BitRefLevel &mask, const EntityType type,
       const BitFieldId id, const ApproximationOrder order, int verb = -1);
-  PetscErrorCode set_field_order_by_entity_type_and_bit_ref(
+  MoFEMErrorCode set_field_order_by_entity_type_and_bit_ref(
       const BitRefLevel &bit, const BitRefLevel &mask, const EntityType type,
       const std::string &name, const ApproximationOrder order, int verb = -1);
 
   /// \name Build fields
 
-  PetscErrorCode buildFieldForNoField(const BitFieldId id,
+  MoFEMErrorCode buildFieldForNoField(const BitFieldId id,
                                       std::map<EntityType, int> &dof_counter,
                                       int verb = -1);
-  PetscErrorCode buildFieldForL2H1HcurlHdiv(
+  MoFEMErrorCode buildFieldForL2H1HcurlHdiv(
       const BitFieldId id, std::map<EntityType, int> &dof_counter,
       std::map<EntityType, int> &inactive_dof_counter, int verb = -1);
-  PetscErrorCode build_fields(int verb = -1);
-  PetscErrorCode clear_inactive_dofs(int verb = -1);
-  PetscErrorCode clear_dofs_fields(const BitRefLevel &bit,
+  MoFEMErrorCode build_fields(int verb = -1);
+  MoFEMErrorCode clear_inactive_dofs(int verb = -1);
+  MoFEMErrorCode clear_dofs_fields(const BitRefLevel &bit,
                                    const BitRefLevel &mask, int verb = -1);
-  PetscErrorCode clear_ents_fields(const BitRefLevel &bit,
+  MoFEMErrorCode clear_ents_fields(const BitRefLevel &bit,
                                    const BitRefLevel &mask, int verb = -1);
-  PetscErrorCode clear_dofs_fields(const std::string &name, const Range ents,
+  MoFEMErrorCode clear_dofs_fields(const std::string &name, const Range ents,
                                    int verb = -1);
-  PetscErrorCode clear_ents_fields(const std::string &name, const Range ents,
+  MoFEMErrorCode clear_ents_fields(const std::string &name, const Range ents,
                                    int verb = -1);
 
   /// \name Other auxiliary functions for fields
 
-  PetscErrorCode list_dofs_by_field_name(const std::string &name) const;
-  PetscErrorCode list_fields() const;
+  MoFEMErrorCode list_dofs_by_field_name(const std::string &name) const;
+  MoFEMErrorCode list_fields() const;
   BitFieldId getBitFieldId(const std::string &name) const;
   std::string getBitFieldIdName(const BitFieldId id) const;
   EntityHandle get_field_meshset(const BitFieldId id) const;
   EntityHandle get_field_meshset(const std::string &name) const;
-  PetscErrorCode get_field_entities_by_dimension(const std::string name,
+  MoFEMErrorCode get_field_entities_by_dimension(const std::string name,
                                                  int dim, Range &ents) const;
-  PetscErrorCode get_field_entities_by_type(const std::string name,
+  MoFEMErrorCode get_field_entities_by_type(const std::string name,
                                             EntityType type, Range &ents) const;
-  PetscErrorCode get_field_entities_by_handle(const std::string name,
+  MoFEMErrorCode get_field_entities_by_handle(const std::string name,
                                               Range &ents) const;
   bool check_field(const std::string &name) const;
   const Field *get_field_structure(const std::string &name);
@@ -418,92 +418,92 @@ protected:
   /**@{*/
 
   bool check_finite_element(const std::string &name) const;
-  PetscErrorCode add_finite_element(const std::string &fe_name,
+  MoFEMErrorCode add_finite_element(const std::string &fe_name,
                                     enum MoFEMTypes bh = MF_EXCL);
-  PetscErrorCode
+  MoFEMErrorCode
   modify_finite_element_adjacency_table(const std::string &fe_name,
                                         const EntityType type,
                                         ElementAdjacencyFunct function);
-  PetscErrorCode
+  MoFEMErrorCode
   modify_finite_element_add_field_data(const std::string &fe_name,
                                        const std::string &name_filed);
-  PetscErrorCode
+  MoFEMErrorCode
   modify_finite_element_add_field_row(const std::string &fe_name,
                                       const std::string &name_row);
-  PetscErrorCode
+  MoFEMErrorCode
   modify_finite_element_add_field_col(const std::string &fe_name,
                                       const std::string &name_col);
-  PetscErrorCode
+  MoFEMErrorCode
   modify_finite_element_off_field_data(const std::string &fe_name,
                                        const std::string &name_filed);
-  PetscErrorCode
+  MoFEMErrorCode
   modify_finite_element_off_field_row(const std::string &fe_name,
                                       const std::string &name_row);
-  PetscErrorCode
+  MoFEMErrorCode
   modify_finite_element_off_field_col(const std::string &fe_name,
                                       const std::string &name_col);
-  PetscErrorCode add_ents_to_finite_element_by_type(
+  MoFEMErrorCode add_ents_to_finite_element_by_type(
       const EntityHandle meshset, const EntityType type,
       const std::string &name, const bool recursive = true);
-  PetscErrorCode add_ents_to_finite_element_by_dim(const EntityHandle meshset,
+  MoFEMErrorCode add_ents_to_finite_element_by_dim(const EntityHandle meshset,
                                                    const int dim,
                                                    const std::string &name,
                                                    const bool recursive = true);
-  PetscErrorCode add_ents_to_finite_element_by_type(const Range &ents,
+  MoFEMErrorCode add_ents_to_finite_element_by_type(const Range &ents,
                                                     const EntityType type,
                                                     const std::string &name);
-  PetscErrorCode add_ents_to_finite_element_by_dim(const Range &ents,
+  MoFEMErrorCode add_ents_to_finite_element_by_dim(const Range &ents,
                                                    const int dim,
                                                    const std::string &name);
-  PetscErrorCode add_ents_to_finite_element_by_bit_ref(const BitRefLevel &bit,
+  MoFEMErrorCode add_ents_to_finite_element_by_bit_ref(const BitRefLevel &bit,
                                                        const BitRefLevel &mask,
                                                        const std::string &name,
                                                        EntityType type,
                                                        int verb = -1);
-  PetscErrorCode
+  MoFEMErrorCode
   add_ents_to_finite_element_by_MESHSET(const EntityHandle meshset,
                                         const std::string &name,
                                         const bool recursive = false);
-  DEPRECATED PetscErrorCode add_ents_to_finite_element_by_VERTICEs(
+  DEPRECATED MoFEMErrorCode add_ents_to_finite_element_by_VERTICEs(
       const Range &vert, const std::string &name);
-  DEPRECATED PetscErrorCode add_ents_to_finite_element_by_EDGEs(
+  DEPRECATED MoFEMErrorCode add_ents_to_finite_element_by_EDGEs(
       const Range &vert, const std::string &name);
-  DEPRECATED PetscErrorCode add_ents_to_finite_element_by_EDGEs(
+  DEPRECATED MoFEMErrorCode add_ents_to_finite_element_by_EDGEs(
       const EntityHandle meshset, const std::string &name,
       const bool recursive = false);
-  DEPRECATED PetscErrorCode add_ents_to_finite_element_by_TRIs(
+  DEPRECATED MoFEMErrorCode add_ents_to_finite_element_by_TRIs(
       const Range &tris, const std::string &name);
-  DEPRECATED PetscErrorCode add_ents_to_finite_element_by_TRIs(
+  DEPRECATED MoFEMErrorCode add_ents_to_finite_element_by_TRIs(
       const EntityHandle meshset, const std::string &name,
       const bool recursive = false);
-  DEPRECATED PetscErrorCode add_ents_to_finite_element_by_TETs(
+  DEPRECATED MoFEMErrorCode add_ents_to_finite_element_by_TETs(
       const Range &tets, const std::string &name);
-  DEPRECATED PetscErrorCode add_ents_to_finite_element_by_TETs(
+  DEPRECATED MoFEMErrorCode add_ents_to_finite_element_by_TETs(
       const EntityHandle meshset, const std::string &name,
       const bool recursive = false);
-  DEPRECATED PetscErrorCode
+  DEPRECATED MoFEMErrorCode
   add_ents_to_finite_element_by_PRISMs(const Range &prims, const BitFEId id);
-  DEPRECATED PetscErrorCode add_ents_to_finite_element_by_PRISMs(
+  DEPRECATED MoFEMErrorCode add_ents_to_finite_element_by_PRISMs(
       const Range &prims, const std::string &name);
-  DEPRECATED PetscErrorCode add_ents_to_finite_element_by_PRISMs(
+  DEPRECATED MoFEMErrorCode add_ents_to_finite_element_by_PRISMs(
       const EntityHandle meshset, const std::string &name,
       const bool recursive = false);
-  DEPRECATED PetscErrorCode add_ents_to_finite_element_EntType_by_bit_ref(
+  DEPRECATED MoFEMErrorCode add_ents_to_finite_element_EntType_by_bit_ref(
       const BitRefLevel &bit, const std::string &name, EntityType type,
       int verb = -1);
-  DEPRECATED PetscErrorCode add_ents_to_finite_element_EntType_by_bit_ref(
+  DEPRECATED MoFEMErrorCode add_ents_to_finite_element_EntType_by_bit_ref(
       const BitRefLevel &bit, const BitRefLevel &mask, const std::string &name,
       EntityType type, int verb = -1);
-  PetscErrorCode remove_ents_from_finite_element_by_bit_ref(
+  MoFEMErrorCode remove_ents_from_finite_element_by_bit_ref(
       const BitRefLevel &bit, const BitRefLevel &mask, int verb = -1);
-  PetscErrorCode remove_ents_from_finite_element(const std::string &name,
+  MoFEMErrorCode remove_ents_from_finite_element(const std::string &name,
                                                  const EntityHandle meshset,
                                                  const EntityType type,
                                                  int verb = -1);
-  PetscErrorCode remove_ents_from_finite_element(const std::string &name,
+  MoFEMErrorCode remove_ents_from_finite_element(const std::string &name,
                                                  const Range &ents,
                                                  int verb = -1);
-  PetscErrorCode delete_finite_element(const std::string name, int verb = -1);
+  MoFEMErrorCode delete_finite_element(const std::string name, int verb = -1);
 
   // \name Other auxiliary functions for finite element
 
@@ -522,15 +522,15 @@ protected:
   std::string getBitFEIdName(const BitFEId id) const;
   EntityHandle get_finite_element_meshset(const BitFEId id) const;
   EntityHandle get_finite_element_meshset(const std::string &name) const;
-  PetscErrorCode
+  MoFEMErrorCode
   get_finite_element_entities_by_dimension(const std::string name, int dim,
                                            Range &ents) const;
-  PetscErrorCode get_finite_element_entities_by_type(const std::string name,
+  MoFEMErrorCode get_finite_element_entities_by_type(const std::string name,
                                                      EntityType type,
                                                      Range &ents) const;
-  PetscErrorCode get_finite_element_entities_by_handle(const std::string name,
+  MoFEMErrorCode get_finite_element_entities_by_handle(const std::string name,
                                                        Range &ents) const;
-  PetscErrorCode list_finite_elements() const;
+  MoFEMErrorCode list_finite_elements() const;
 
   /**@}*/
 
@@ -538,56 +538,56 @@ protected:
 
   /**@{*/
 
-  PetscErrorCode add_problem(const BitProblemId id, const std::string &name);
-  PetscErrorCode add_problem(const std::string &name,
+  MoFEMErrorCode add_problem(const BitProblemId id, const std::string &name);
+  MoFEMErrorCode add_problem(const std::string &name,
                              enum MoFEMTypes bh = MF_EXCL, int verb = -1);
   bool check_problem(const std::string name);
-  PetscErrorCode delete_problem(const std::string name);
-  PetscErrorCode
+  MoFEMErrorCode delete_problem(const std::string name);
+  MoFEMErrorCode
   modify_problem_add_finite_element(const std::string &name_problem,
                                     const std::string &MoFEMFiniteElement_name);
-  PetscErrorCode modify_problem_unset_finite_element(
+  MoFEMErrorCode modify_problem_unset_finite_element(
       const std::string &name_problem,
       const std::string &MoFEMFiniteElement_name);
-  PetscErrorCode
+  MoFEMErrorCode
   modify_problem_ref_level_add_bit(const std::string &name_problem,
                                    const BitRefLevel &bit);
-  PetscErrorCode
+  MoFEMErrorCode
   modify_problem_ref_level_set_bit(const std::string &name_problem,
                                    const BitRefLevel &bit);
-  PetscErrorCode
+  MoFEMErrorCode
   modify_problem_mask_ref_level_set_bit(const std::string &name_problem,
                                         const BitRefLevel &bit);
   BitProblemId getBitProblemId(const std::string &name) const;
-  PetscErrorCode list_problem() const;
-  PetscErrorCode clear_problem(const std::string &name, int verb = -1);
-  PetscErrorCode clear_problems(int verb = -1);
-  PetscErrorCode build_finite_elements(int verb = -1);
-  PetscErrorCode build_finite_elements(const BitRefLevel &bit, int verb = -1);
-  PetscErrorCode
+  MoFEMErrorCode list_problem() const;
+  MoFEMErrorCode clear_problem(const std::string &name, int verb = -1);
+  MoFEMErrorCode clear_problems(int verb = -1);
+  MoFEMErrorCode build_finite_elements(int verb = -1);
+  MoFEMErrorCode build_finite_elements(const BitRefLevel &bit, int verb = -1);
+  MoFEMErrorCode
   build_finite_elements(const boost::shared_ptr<FiniteElement> fe,
                         const Range *ents_ptr = NULL, int verb = -1);
-  PetscErrorCode build_finite_elements(const string fe_name,
+  MoFEMErrorCode build_finite_elements(const string fe_name,
                                        const Range *ents_ptr = NULL,
                                        int verb = -1);
-  PetscErrorCode clear_finite_elements(const BitRefLevel &bit,
+  MoFEMErrorCode clear_finite_elements(const BitRefLevel &bit,
                                        const BitRefLevel &mask, int verb = -1);
-  PetscErrorCode clear_finite_elements(const std::string &name,
+  MoFEMErrorCode clear_finite_elements(const std::string &name,
                                        const Range &ents, int verb = -1);
-  PetscErrorCode resolve_shared_ents(const Problem *problem_ptr,
+  MoFEMErrorCode resolve_shared_ents(const Problem *problem_ptr,
                                      const std::string &fe_name, int verb = -1);
-  PetscErrorCode resolve_shared_ents(const std::string &name,
+  MoFEMErrorCode resolve_shared_ents(const std::string &name,
                                      const std::string &fe_name, int verb = -1);
-  PetscErrorCode
+  MoFEMErrorCode
   get_problem_finite_elements_entities(const std::string &name,
                                        const std::string &fe_name,
                                        const EntityHandle meshset);
 
   // \name Problem building (deprecated)
 
-  DEPRECATED PetscErrorCode build_problem_on_distributed_mesh(int verb = -1);
-  DEPRECATED PetscErrorCode build_problems(int verb = -1);
-  PetscErrorCode partition_check_matrix_fill_in(const std::string &problem_name,
+  DEPRECATED MoFEMErrorCode build_problem_on_distributed_mesh(int verb = -1);
+  DEPRECATED MoFEMErrorCode build_problems(int verb = -1);
+  MoFEMErrorCode partition_check_matrix_fill_in(const std::string &problem_name,
                                                 int row, int col, int verb);
 
   /**@}*/
@@ -596,22 +596,22 @@ protected:
 
   /**@{*/
 
-  PetscErrorCode build_adjacencies(const Range &ents, int verb = -1);
-  PetscErrorCode build_adjacencies(const BitRefLevel &bit, int verb = -1);
-  PetscErrorCode build_adjacencies(const BitRefLevel &bit,
+  MoFEMErrorCode build_adjacencies(const Range &ents, int verb = -1);
+  MoFEMErrorCode build_adjacencies(const BitRefLevel &bit, int verb = -1);
+  MoFEMErrorCode build_adjacencies(const BitRefLevel &bit,
                                    const BitRefLevel &mask, int verb = -1);
-  PetscErrorCode clear_adjacencies_finite_elements(const BitRefLevel &bit,
+  MoFEMErrorCode clear_adjacencies_finite_elements(const BitRefLevel &bit,
                                                    const BitRefLevel &mask,
                                                    int verb = -1);
-  PetscErrorCode clear_adjacencies_entities(const BitRefLevel &bit,
+  MoFEMErrorCode clear_adjacencies_entities(const BitRefLevel &bit,
                                             const BitRefLevel &mask,
                                             int verb = -1);
-  PetscErrorCode clear_adjacencies_finite_elements(const std::string &name,
+  MoFEMErrorCode clear_adjacencies_finite_elements(const std::string &name,
                                                    const Range &ents,
                                                    int verb = -1);
-  PetscErrorCode clear_adjacencies_entities(const std::string &name,
+  MoFEMErrorCode clear_adjacencies_entities(const std::string &name,
                                             const Range &ents, int verb = -1);
-  PetscErrorCode list_adjacencies() const;
+  MoFEMErrorCode list_adjacencies() const;
 
   /**@}*/
 
@@ -619,11 +619,11 @@ protected:
 
   /**@{*/
 
-  PetscErrorCode MatCreateMPIAIJWithArrays(const std::string &name, Mat *Aij,
+  MoFEMErrorCode MatCreateMPIAIJWithArrays(const std::string &name, Mat *Aij,
                                            int verb = -1);
-  PetscErrorCode MatCreateMPIAdj_with_Idx_mi_tag(const std::string &name,
+  MoFEMErrorCode MatCreateMPIAdj_with_Idx_mi_tag(const std::string &name,
                                                  Mat *Adj, int verb = -1);
-  PetscErrorCode MatCreateSeqAIJWithArrays(const std::string &name, Mat *Aij,
+  MoFEMErrorCode MatCreateSeqAIJWithArrays(const std::string &name, Mat *Aij,
                                            PetscInt **i, PetscInt **j,
                                            PetscScalar **v, int verb = -1);
 
@@ -633,44 +633,44 @@ protected:
 
   /**@{*/
 
-  PetscErrorCode problem_basic_method_preProcess(const Problem *problem_ptr,
+  MoFEMErrorCode problem_basic_method_preProcess(const Problem *problem_ptr,
                                                  BasicMethod &method,
                                                  int verb = -1);
-  PetscErrorCode
+  MoFEMErrorCode
   problem_basic_method_preProcess(const std::string &problem_name,
                                   BasicMethod &method, int verb = -1);
-  PetscErrorCode problem_basic_method_postProcess(const Problem *problem_ptr,
+  MoFEMErrorCode problem_basic_method_postProcess(const Problem *problem_ptr,
                                                   BasicMethod &method,
                                                   int verb = -1);
-  PetscErrorCode
+  MoFEMErrorCode
   problem_basic_method_postProcess(const std::string &problem_name,
                                    BasicMethod &method, int verb = -1);
-  PetscErrorCode loop_finite_elements(const Problem *problem_ptr,
+  MoFEMErrorCode loop_finite_elements(const Problem *problem_ptr,
                                       const std::string &fe_name,
                                       FEMethod &method, int lower_rank,
                                       int upper_rank, MoFEMTypes bh = MF_EXIST,
                                       int verb = -1);
-  PetscErrorCode loop_finite_elements(const std::string &problem_name,
+  MoFEMErrorCode loop_finite_elements(const std::string &problem_name,
                                       const std::string &fe_name,
                                       FEMethod &method, int lower_rank,
                                       int upper_rank, MoFEMTypes bh = MF_EXIST,
                                       int verb = -1);
-  PetscErrorCode loop_finite_elements(const std::string &problem_name,
+  MoFEMErrorCode loop_finite_elements(const std::string &problem_name,
                                       const std::string &fe_name,
                                       FEMethod &method,
                                       MoFEMTypes bh = MF_EXIST, int verb = -1);
-  PetscErrorCode loop_dofs(const Problem *problem_ptr,
+  MoFEMErrorCode loop_dofs(const Problem *problem_ptr,
                            const std::string &field_name, RowColData rc,
                            EntMethod &method, int lower_rank, int upper_rank,
                            int verb = -1);
-  PetscErrorCode loop_dofs(const std::string &problem_name,
+  MoFEMErrorCode loop_dofs(const std::string &problem_name,
                            const std::string &field_name, RowColData rc,
                            EntMethod &method, int lower_rank, int upper_rank,
                            int verb = -1);
-  PetscErrorCode loop_dofs(const std::string &problem_name,
+  MoFEMErrorCode loop_dofs(const std::string &problem_name,
                            const std::string &field_name, RowColData rc,
                            EntMethod &method, int verb = -1);
-  PetscErrorCode loop_dofs(const std::string &field_name, EntMethod &method,
+  MoFEMErrorCode loop_dofs(const std::string &field_name, EntMethod &method,
                            int verb = -1);
 
   /**@}*/
@@ -679,21 +679,21 @@ protected:
 
   /**@{*/
 
-  PetscErrorCode get_fields(const Field_multiIndex **fields_ptr) const;
-  PetscErrorCode
+  MoFEMErrorCode get_fields(const Field_multiIndex **fields_ptr) const;
+  MoFEMErrorCode
   get_ref_ents(const RefEntity_multiIndex **refined_entities_ptr) const;
-  PetscErrorCode get_ref_finite_elements(
+  MoFEMErrorCode get_ref_finite_elements(
       const RefElement_multiIndex **refined_finite_elements_ptr) const;
-  PetscErrorCode
+  MoFEMErrorCode
   get_finite_elements(const FiniteElement_multiIndex **fe_ptr) const;
-  PetscErrorCode get_ents_finite_elements(
+  MoFEMErrorCode get_ents_finite_elements(
       const EntFiniteElement_multiIndex **fe_ent_ptr) const;
-  PetscErrorCode
+  MoFEMErrorCode
   get_field_ents(const FieldEntity_multiIndex **field_ents) const;
-  PetscErrorCode get_dofs(const DofEntity_multiIndex **dofs_ptr) const;
-  PetscErrorCode get_problem(const std::string &problem_name,
+  MoFEMErrorCode get_dofs(const DofEntity_multiIndex **dofs_ptr) const;
+  MoFEMErrorCode get_problem(const std::string &problem_name,
                              const Problem **problem_ptr) const;
-  PetscErrorCode get_problems(const Problem_multiIndex **problems_ptr) const;
+  MoFEMErrorCode get_problems(const Problem_multiIndex **problems_ptr) const;
   FieldEntityByFieldName::iterator
   get_ent_field_by_name_begin(const std::string &field_name) const;
   FieldEntityByFieldName::iterator
@@ -783,12 +783,12 @@ private:
    * @param  verb verbosity level
    * @return      error code
    */
-  PetscErrorCode getTags(int verb = -1);
+  MoFEMErrorCode getTags(int verb = -1);
 
   /**
    * \brief Cleaning database
    */
-  PetscErrorCode clearMap();
+  MoFEMErrorCode clearMap();
 
   /**
    * \brief Return unique field Id.
@@ -817,9 +817,9 @@ private:
   /**
    * \brief Initialize database getting information on mesh
    */
-  PetscErrorCode initialiseDatabaseFromMesh(int verb = -1);
+  MoFEMErrorCode initialiseDatabaseFromMesh(int verb = -1);
 
-  template <class IFACE> PetscErrorCode regSubInterface(const MOFEMuuid &uid);
+  template <class IFACE> MoFEMErrorCode regSubInterface(const MOFEMuuid &uid);
 };
 
 } // namespace MoFEM

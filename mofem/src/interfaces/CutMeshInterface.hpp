@@ -31,7 +31,7 @@ static const MOFEMuuid IDD_MOFEMCutMesh =
  */
 struct CutMeshInterface : public UnknownInterface {
 
-  PetscErrorCode query_interface(const MOFEMuuid &uuid,
+  MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
                                  UnknownInterface **iface) const;
 
   MoFEM::Core &cOre;
@@ -46,26 +46,26 @@ struct CutMeshInterface : public UnknownInterface {
    * \brief Get options from command line
    * @return error code
    */
-  PetscErrorCode getOptions() {
+  MoFEMErrorCode getOptions() {
     MoFEMFunctionBeginHot;
     ierr = PetscOptionsBegin(PETSC_COMM_WORLD, "", "MOFEM Cut mesh options",
                              "none");
-    CHKERRQ(ierr);
+    CHKERRG(ierr);
     ierr = PetscOptionsInt("-cut_linesearch_steps",
                            "number of bisection steps which line search do to "
                            "find optimal merged nodes position",
                            "", lineSearchSteps, &lineSearchSteps, PETSC_NULL);
-    CHKERRQ(ierr);
+    CHKERRG(ierr);
     ierr = PetscOptionsInt("-cut_max_merging_cycles",
                            "number of maximal merging cycles", "",
                            nbMaxMergingCycles, &nbMaxMergingCycles, PETSC_NULL);
-    CHKERRQ(ierr);
+    CHKERRG(ierr);
     ierr = PetscOptionsInt(
         "-cut_max_trim_iterations", "number of maximal merging cycles", "",
         nbMaxTrimSearchIterations, &nbMaxTrimSearchIterations, PETSC_NULL);
-    CHKERRQ(ierr);
+    CHKERRG(ierr);
     ierr = PetscOptionsEnd();
-    CHKERRQ(ierr);
+    CHKERRG(ierr);
     MoFEMFunctionReturnHot(0);
   }
 
@@ -74,14 +74,14 @@ struct CutMeshInterface : public UnknownInterface {
    * @param  surface entities which going to be added
    * @return         error code
    */
-  PetscErrorCode setSurface(const Range &surface);
+  MoFEMErrorCode setSurface(const Range &surface);
 
   /**
    * \brief copy surface entities
    * @param  surface entities which going to be added
    * @return         error code
    */
-  PetscErrorCode copySurface(const Range &surface, Tag th = NULL,
+  MoFEMErrorCode copySurface(const Range &surface, Tag th = NULL,
                              double *shift = NULL, double *origin = NULL,
                              double *transform = NULL);
 
@@ -90,36 +90,36 @@ struct CutMeshInterface : public UnknownInterface {
    * @param  volume entities which going to be added
    * @return         error code
    */
-  PetscErrorCode setVolume(const Range &volume);
+  MoFEMErrorCode setVolume(const Range &volume);
 
   /**
    * \brief merge surface entities
    * @param  surface entities which going to be added
    * @return         error code
    */
-  PetscErrorCode mergeSurface(const Range &surface);
+  MoFEMErrorCode mergeSurface(const Range &surface);
 
   /**
    * \brief merge volume entities
    * @param  volume entities which going to be added
    * @return         error code
    */
-  PetscErrorCode mergeVolumes(const Range &volume);
+  MoFEMErrorCode mergeVolumes(const Range &volume);
 
   /**
    * \brief build tree
    * @return error code
    */
-  PetscErrorCode buildTree();
+  MoFEMErrorCode buildTree();
 
-  PetscErrorCode
+  MoFEMErrorCode
   cutAndTrim(const BitRefLevel &bit_level1, const BitRefLevel &bit_level2,
              Tag th, const double tol_cut, const double tol_cut_close,
              const double tol_trim, const double tol_trim_close,
              Range *fixed_edges = NULL, Range *corner_nodes = NULL,
              const bool update_meshsets = false, const bool debug = true);
 
-  PetscErrorCode
+  MoFEMErrorCode
   cutTrimAndMerge(const int fraction_level, const BitRefLevel &bit_level1,
                   const BitRefLevel &bit_level2, const BitRefLevel &bit_level3,
                   Tag th, const double tol_cut, const double tol_cut_close,
@@ -132,9 +132,9 @@ struct CutMeshInterface : public UnknownInterface {
    * @param  verb verbosity level
    * @return      error code
    */
-  PetscErrorCode findEdgesToCut(const double low_tol = 0, int verb = 0);
+  MoFEMErrorCode findEdgesToCut(const double low_tol = 0, int verb = 0);
 
-  PetscErrorCode getZeroDistanceEnts(const double low_tol = 0, int verb = 0);
+  MoFEMErrorCode getZeroDistanceEnts(const double low_tol = 0, int verb = 0);
 
   /**
    * \brief cut edges
@@ -146,13 +146,13 @@ struct CutMeshInterface : public UnknownInterface {
    * @param  bit BitRefLevel of new mesh created by cutting edges
    * @return     error code
    */
-  PetscErrorCode cutEdgesInMiddle(const BitRefLevel bit);
+  MoFEMErrorCode cutEdgesInMiddle(const BitRefLevel bit);
 
   /**
    * \brief projecting of mid edge nodes on new mesh on surface
    * @return error code
    */
-  PetscErrorCode moveMidNodesOnCutEdges(Tag th = NULL);
+  MoFEMErrorCode moveMidNodesOnCutEdges(Tag th = NULL);
 
   /**
    * \brief Find edges to trimEdges
@@ -164,7 +164,7 @@ struct CutMeshInterface : public UnknownInterface {
    * @param  verb verbosity level
    * @return      error code
    */
-  PetscErrorCode findEdgesToTrim(Tag th = NULL, const double tol = 1e-4,
+  MoFEMErrorCode findEdgesToTrim(Tag th = NULL, const double tol = 1e-4,
                                  int verb = 0);
 
   /**
@@ -172,14 +172,14 @@ struct CutMeshInterface : public UnknownInterface {
    * @param  bit bit level of the trimmed mesh
    * @return     error code
    */
-  PetscErrorCode trimEdgesInTheMiddle(const BitRefLevel bit, Tag th = NULL,
+  MoFEMErrorCode trimEdgesInTheMiddle(const BitRefLevel bit, Tag th = NULL,
                                       const double tol = 1e-4);
 
   /**
    * \brief move trimmed edges mid nodes
    * @return error code
    */
-  PetscErrorCode moveMidNodesOnTrimmedEdges(Tag th = NULL);
+  MoFEMErrorCode moveMidNodesOnTrimmedEdges(Tag th = NULL);
 
   /**
    * \brief Remove pathological elements on surface internal front
@@ -194,7 +194,7 @@ struct CutMeshInterface : public UnknownInterface {
    * @param  ents      ents on the surface which is going to be split
    * @return           error code
    */
-  PetscErrorCode removePathologicalFrontTris(const BitRefLevel split_bit,
+  MoFEMErrorCode removePathologicalFrontTris(const BitRefLevel split_bit,
                                              Range &ents);
 
   /**
@@ -204,7 +204,7 @@ struct CutMeshInterface : public UnknownInterface {
    * @param  ents      ents on the surface which is going to be split
    * @return           error code
    */
-  PetscErrorCode splitSides(const BitRefLevel split_bit, const BitRefLevel bit,
+  MoFEMErrorCode splitSides(const BitRefLevel split_bit, const BitRefLevel bit,
                             const Range &ents, Tag th = NULL);
 
   /**
@@ -225,9 +225,9 @@ struct CutMeshInterface : public UnknownInterface {
    * @param th  tag with nodal positons
    * @param bit_ptr set bit ref level to mesh without merged edges
    * @param debug
-   * @return PetscErrorCode
+   * @return MoFEMErrorCode
    */
-  PetscErrorCode mergeBadEdges(const int fraction_level, const Range &tets,
+  MoFEMErrorCode mergeBadEdges(const int fraction_level, const Range &tets,
                                const Range &surface, const Range &fixed_edges,
                                const Range &corner_nodes, Range &merged_nodes,
                                Range &out_tets, Range &new_surf, Tag th,
@@ -242,17 +242,18 @@ struct CutMeshInterface : public UnknownInterface {
    * quality of tets adjacent to the edge. Edge is merged if quality if the mesh
    * is improved.
    */
-  PetscErrorCode mergeBadEdges(const int fraction_level,
+  MoFEMErrorCode mergeBadEdges(const int fraction_level,
                                const BitRefLevel cut_bit,
                                const BitRefLevel trim_bit,
                                const BitRefLevel bit, const Range &surface,
                                const Range &fixed_edges,
                                const Range &corner_nodes, Tag th = NULL,
+                                const bool update_meshsets = false,
                                const bool debug = false);
 
 #ifdef WITH_TETGEN
 
-  PetscErrorCode
+  MoFEMErrorCode
   rebuildMeshWithTetGen(vector<string> &switches, const BitRefLevel &mesh_bit,
                         const BitRefLevel &bit, const Range &surface,
                         const Range &fixed_edges, const Range &corner_nodes,
@@ -265,14 +266,14 @@ struct CutMeshInterface : public UnknownInterface {
    * @param  th tag handle
    * @return    error code
    */
-  PetscErrorCode setTagData(Tag th);
+  MoFEMErrorCode setTagData(Tag th);
 
   /**
    * \brief set coords from tag
    * @param  th tag handle
    * @return    error code
    */
-  PetscErrorCode setCoords(Tag th);
+  MoFEMErrorCode setCoords(Tag th);
 
   inline const Range &getVolume() const { return vOlume; }
   inline const Range &getSurface() const { return sUrface; }
@@ -294,9 +295,9 @@ struct CutMeshInterface : public UnknownInterface {
 
   inline const Range &getTetgenSurfaces() const { return tetgenSurfaces; }
 
-  PetscErrorCode saveCutEdges();
+  MoFEMErrorCode saveCutEdges();
 
-  PetscErrorCode saveTrimEdges();
+  MoFEMErrorCode saveTrimEdges();
   
 
 private:
@@ -344,7 +345,7 @@ private:
 
 #endif
 
-  PetscErrorCode getRayForEdge(const EntityHandle ent, VectorAdaptor ray_point,
+  MoFEMErrorCode getRayForEdge(const EntityHandle ent, VectorAdaptor ray_point,
                                VectorAdaptor unit_ray_dir,
                                double &ray_length) const;
 

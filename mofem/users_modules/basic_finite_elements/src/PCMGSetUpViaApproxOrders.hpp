@@ -36,7 +36,7 @@ struct PCMGSubMatrixCtx {
  */
 struct DMMGViaApproxOrdersCtx: public MoFEM::DMCtx {
 
-  PetscErrorCode query_interface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface) const;
+  MoFEMErrorCode query_interface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface) const;
 
   DMMGViaApproxOrdersCtx();
   virtual ~DMMGViaApproxOrdersCtx();
@@ -51,7 +51,7 @@ struct DMMGViaApproxOrdersCtx: public MoFEM::DMCtx {
 /**
  * Get DM Ctx
  */
- PetscErrorCode DMMGViaApproxOrdersGetCtx(DM dm,DMMGViaApproxOrdersCtx **ctx);
+ MoFEMErrorCode DMMGViaApproxOrdersGetCtx(DM dm,DMMGViaApproxOrdersCtx **ctx);
 
 /**
  * \brief Set DM ordering
@@ -63,7 +63,7 @@ struct DMMGViaApproxOrdersCtx: public MoFEM::DMCtx {
  * @param  ao [description]
  * @return    [description]
  */
-PetscErrorCode DMMGViaApproxOrdersSetAO(DM dm,AO ao);
+MoFEMErrorCode DMMGViaApproxOrdersSetAO(DM dm,AO ao);
 
 /**
  * \brief Gets size of coarseningIS in internal data struture DMMGViaApproxOrdersCtx
@@ -71,7 +71,7 @@ PetscErrorCode DMMGViaApproxOrdersSetAO(DM dm,AO ao);
  * @param  size size of coarseningIS
  * @return      Error code
  */
-PetscErrorCode DMMGViaApproxOrdersGetCoarseningISSize(DM dm,int *size);
+MoFEMErrorCode DMMGViaApproxOrdersGetCoarseningISSize(DM dm,int *size);
 
 /**
  * \brief Push back coarsening level to MG via approximation orders
@@ -85,7 +85,7 @@ PetscErrorCode DMMGViaApproxOrdersGetCoarseningISSize(DM dm,int *size);
  *
  * \ingroup dm
  */
-PetscErrorCode DMMGViaApproxOrdersPushBackCoarseningIS(
+MoFEMErrorCode DMMGViaApproxOrdersPushBackCoarseningIS(
   DM,IS is,Mat A,Mat *subA,bool create_sub_matrix,bool shell_sub_a
 );
 
@@ -97,7 +97,7 @@ PetscErrorCode DMMGViaApproxOrdersPushBackCoarseningIS(
  *
  * \ingroup dm
  */
-PetscErrorCode DMMGViaApproxOrdersPopBackCoarseningIS(DM);
+MoFEMErrorCode DMMGViaApproxOrdersPopBackCoarseningIS(DM);
 
 /**
  * \brief Replace coarsening IS in DM via approximation orders
@@ -107,7 +107,7 @@ PetscErrorCode DMMGViaApproxOrdersPopBackCoarseningIS(DM);
  * @param  A        Fine matrix
  * @return          Error code
  */
-PetscErrorCode DMMGViaApproxOrdersReplaceCoarseningIS(
+MoFEMErrorCode DMMGViaApproxOrdersReplaceCoarseningIS(
   DM dm,IS *is_vec,int nb_elems,Mat A,int verb = 0
 );
 
@@ -117,7 +117,7 @@ PetscErrorCode DMMGViaApproxOrdersReplaceCoarseningIS(
  * @param  ctx  data context
  * @return      error code
  */
-PetscErrorCode DMMGViaApproxOrdersGetCtx(DM dm,const DMMGViaApproxOrdersCtx **ctx);
+MoFEMErrorCode DMMGViaApproxOrdersGetCtx(DM dm,const DMMGViaApproxOrdersCtx **ctx);
 
 /**
  * \brief Register DM for Multi-Grid via approximation orders
@@ -125,7 +125,7 @@ PetscErrorCode DMMGViaApproxOrdersGetCtx(DM dm,const DMMGViaApproxOrdersCtx **ct
  * @return       error code
  * \ingroup dm
  */
-PetscErrorCode DMRegister_MGViaApproxOrders(const char sname[]);
+MoFEMErrorCode DMRegister_MGViaApproxOrders(const char sname[]);
 
 /**
  * \brief Create DM data structure for Multi-Grid via approximation orders
@@ -135,7 +135,7 @@ PetscErrorCode DMRegister_MGViaApproxOrders(const char sname[]);
  * @param  dm Discrete manager
  * @return    Error code
  */
-PetscErrorCode DMCreate_MGViaApproxOrders(DM dm);
+MoFEMErrorCode DMCreate_MGViaApproxOrders(DM dm);
 
 /**
  * \brief Create matrix for Multi-Grid via approximation orders
@@ -147,7 +147,7 @@ PetscErrorCode DMCreate_MGViaApproxOrders(DM dm);
  * @return    Error code
  * \ingroup dm
  */
-PetscErrorCode DMCreateMatrix_MGViaApproxOrders(DM dm,Mat *M);
+MoFEMErrorCode DMCreateMatrix_MGViaApproxOrders(DM dm,Mat *M);
 
 /**
  * \brief Coarsen DM
@@ -161,7 +161,7 @@ PetscErrorCode DMCreateMatrix_MGViaApproxOrders(DM dm,Mat *M);
  *
  * \ingroup dm
  */
-PetscErrorCode DMCoarsen_MGViaApproxOrders(DM dm, MPI_Comm comm, DM *dmc);
+MoFEMErrorCode DMCoarsen_MGViaApproxOrders(DM dm, MPI_Comm comm, DM *dmc);
 
 /**
  * \brief Create interpolation matrix between data managers dm1 and dm2
@@ -171,7 +171,7 @@ PetscErrorCode DMCoarsen_MGViaApproxOrders(DM dm, MPI_Comm comm, DM *dmc);
  * @param  vec Pointer to scaling vector here returned NULL
  * @return     Error code
  */
-PetscErrorCode DMCreateInterpolation_MGViaApproxOrders(DM dm1,DM dm2,Mat *mat,Vec *vec);
+MoFEMErrorCode DMCreateInterpolation_MGViaApproxOrders(DM dm1,DM dm2,Mat *mat,Vec *vec);
 
 /**
  * \brief Create global vector for DMGViaApproxOrders
@@ -179,7 +179,7 @@ PetscErrorCode DMCreateInterpolation_MGViaApproxOrders(DM dm1,DM dm2,Mat *mat,Ve
  * @param  g  returned pointer to vector
  * @return    Error code
  */
-PetscErrorCode DMCreateGlobalVector_MGViaApproxOrders(DM dm,Vec *g);
+MoFEMErrorCode DMCreateGlobalVector_MGViaApproxOrders(DM dm,Vec *g);
 
 /**
  * \brief Set data structures of MG pre-conditioner via approximation orders
@@ -220,7 +220,7 @@ struct PCMGSetUpViaApproxOrdersCtx {
    * \brief get options from line command
    * @return error code
    */
-  virtual PetscErrorCode getOptions();
+  virtual MoFEMErrorCode getOptions();
 
   /**
    * \brief Set IS for levels
@@ -228,7 +228,7 @@ struct PCMGSetUpViaApproxOrdersCtx {
    * @param  is pointer to IS
    * @return    error code
    */
-  virtual PetscErrorCode createIsAtLevel(int kk,IS *is);
+  virtual MoFEMErrorCode createIsAtLevel(int kk,IS *is);
 
   /**
    * \brief Destroy IS if internally created
@@ -236,7 +236,7 @@ struct PCMGSetUpViaApproxOrdersCtx {
    * @param  is pointer to is
    * @return    error code
    */
-  virtual PetscErrorCode destroyIsAtLevel(int kk,IS *is);
+  virtual MoFEMErrorCode destroyIsAtLevel(int kk,IS *is);
 
   /**
    * \brief Set up data structures for MG
@@ -244,10 +244,10 @@ struct PCMGSetUpViaApproxOrdersCtx {
    * @param  verb verbosity level
    * @return      error code
    */
-  virtual PetscErrorCode buildProlongationOperator(bool use_mat_a,int verb = 0);
+  virtual MoFEMErrorCode buildProlongationOperator(bool use_mat_a,int verb = 0);
 
 
-  // DEPRECATED  virtual PetscErrorCode buildProlongationOperator(PC pc,int verb = 0) {
+  // DEPRECATED  virtual MoFEMErrorCode buildProlongationOperator(PC pc,int verb = 0) {
   //   return buildProlongationOperator(false,verb);
   // }
 
@@ -260,7 +260,7 @@ struct PCMGSetUpViaApproxOrdersCtx {
  * @param  verb verbosity level
  * @return      error code
  */
-PetscErrorCode PCMGSetUpViaApproxOrders(
+MoFEMErrorCode PCMGSetUpViaApproxOrders(
   PC pc,PCMGSetUpViaApproxOrdersCtx *ctx,int verb = 0
 );
 

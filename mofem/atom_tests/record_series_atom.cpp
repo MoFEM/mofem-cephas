@@ -37,18 +37,18 @@ int main(int argc, char *argv[]) {
   PetscBool flg = PETSC_TRUE;
   char mesh_file_name[255];
   #if PETSC_VERSION_GE(3,6,4)
-  ierr = PetscOptionsGetString(PETSC_NULL,"","-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  ierr = PetscOptionsGetString(PETSC_NULL,"","-my_file",mesh_file_name,255,&flg); CHKERRG(ierr);
   #else
-  ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRG(ierr);
   #endif
   if(flg != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
   }
   PetscInt order;
   #if PETSC_VERSION_GE(3,6,4)
-  ierr = PetscOptionsGetInt(PETSC_NULL,"","-my_order",&order,&flg); CHKERRQ(ierr);
+  ierr = PetscOptionsGetInt(PETSC_NULL,"","-my_order",&order,&flg); CHKERRG(ierr);
   #else
-  ierr = PetscOptionsGetInt(PETSC_NULL,PETSC_NULL,"-my_order",&order,&flg); CHKERRQ(ierr);
+  ierr = PetscOptionsGetInt(PETSC_NULL,PETSC_NULL,"-my_order",&order,&flg); CHKERRG(ierr);
   #endif
   if(flg != PETSC_TRUE) {
     order = 3;
@@ -57,7 +57,7 @@ int main(int argc, char *argv[]) {
   //Read mesh to MOAB
   const char *option;
   option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERRG(rval);
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
 
@@ -66,79 +66,79 @@ int main(int argc, char *argv[]) {
   MoFEM::Interface& m_field = core;
 
   //ref meshset ref level 0
-  ierr = m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(0,3,0); CHKERRQ(ierr);
+  ierr = m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(0,3,0); CHKERRG(ierr);
 
   // stl::bitset see for more details
   BitRefLevel bit_level0;
   bit_level0.set(0);
   EntityHandle meshset_level0;
-  rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERRQ_MOAB(rval);
-  ierr = m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(0,3,bit_level0); CHKERRQ(ierr);
-  ierr = m_field.getInterface<BitRefManager>()->getEntitiesByRefLevel(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRQ(ierr);
+  rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERRG(rval);
+  ierr = m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(0,3,bit_level0); CHKERRG(ierr);
+  ierr = m_field.getInterface<BitRefManager>()->getEntitiesByRefLevel(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRG(ierr);
 
   /***/
   //Define problem
 
   //Fields
-  ierr = m_field.add_field("FIELD_A",H1,AINSWORTH_LEGENDRE_BASE,3); CHKERRQ(ierr);
-  ierr = m_field.add_field("FIELD_B",H1,AINSWORTH_LEGENDRE_BASE,3); CHKERRQ(ierr);
+  ierr = m_field.add_field("FIELD_A",H1,AINSWORTH_LEGENDRE_BASE,3); CHKERRG(ierr);
+  ierr = m_field.add_field("FIELD_B",H1,AINSWORTH_LEGENDRE_BASE,3); CHKERRG(ierr);
 
-  ierr = m_field.add_ents_to_field_by_type(0,MBTET,"FIELD_A"); CHKERRQ(ierr);
-  ierr = m_field.add_ents_to_field_by_type(0,MBTET,"FIELD_B"); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_field_by_type(0,MBTET,"FIELD_A"); CHKERRG(ierr);
+  ierr = m_field.add_ents_to_field_by_type(0,MBTET,"FIELD_B"); CHKERRG(ierr);
 
-  ierr = m_field.set_field_order(0,MBTET,"FIELD_A",order); CHKERRQ(ierr);
-  ierr = m_field.set_field_order(0,MBTRI,"FIELD_A",order); CHKERRQ(ierr);
-  ierr = m_field.set_field_order(0,MBEDGE,"FIELD_A",order); CHKERRQ(ierr);
-  ierr = m_field.set_field_order(0,MBVERTEX,"FIELD_A",1); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBTET,"FIELD_A",order); CHKERRG(ierr);
+  ierr = m_field.set_field_order(0,MBTRI,"FIELD_A",order); CHKERRG(ierr);
+  ierr = m_field.set_field_order(0,MBEDGE,"FIELD_A",order); CHKERRG(ierr);
+  ierr = m_field.set_field_order(0,MBVERTEX,"FIELD_A",1); CHKERRG(ierr);
 
-  ierr = m_field.set_field_order(0,MBTET,"FIELD_B",order); CHKERRQ(ierr);
-  ierr = m_field.set_field_order(0,MBTRI,"FIELD_B",order); CHKERRQ(ierr);
-  ierr = m_field.set_field_order(0,MBEDGE,"FIELD_B",order); CHKERRQ(ierr);
-  ierr = m_field.set_field_order(0,MBVERTEX,"FIELD_B",1); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBTET,"FIELD_B",order); CHKERRG(ierr);
+  ierr = m_field.set_field_order(0,MBTRI,"FIELD_B",order); CHKERRG(ierr);
+  ierr = m_field.set_field_order(0,MBEDGE,"FIELD_B",order); CHKERRG(ierr);
+  ierr = m_field.set_field_order(0,MBVERTEX,"FIELD_B",1); CHKERRG(ierr);
 
   //build field
-  ierr = m_field.build_fields(); CHKERRQ(ierr);
+  ierr = m_field.build_fields(); CHKERRG(ierr);
 
-  ierr = m_field.getInterface<FieldBlas>()->setField(0,MBVERTEX,"FIELD_B"); CHKERRQ(ierr);
-  ierr = m_field.getInterface<FieldBlas>()->setField(1,MBVERTEX,"FIELD_A"); CHKERRQ(ierr);
+  ierr = m_field.getInterface<FieldBlas>()->setField(0,MBVERTEX,"FIELD_B"); CHKERRG(ierr);
+  ierr = m_field.getInterface<FieldBlas>()->setField(1,MBVERTEX,"FIELD_A"); CHKERRG(ierr);
 
   SeriesRecorder *recorder_ptr;
-  ierr = m_field.getInterface(recorder_ptr); CHKERRQ(ierr);
+  ierr = m_field.getInterface(recorder_ptr); CHKERRG(ierr);
 
-  ierr = recorder_ptr->add_series_recorder("TEST_SERIES1"); CHKERRQ(ierr);
-  ierr = recorder_ptr->add_series_recorder("TEST_SERIES2"); CHKERRQ(ierr);
+  ierr = recorder_ptr->add_series_recorder("TEST_SERIES1"); CHKERRG(ierr);
+  ierr = recorder_ptr->add_series_recorder("TEST_SERIES2"); CHKERRG(ierr);
 
   //initialize
-  ierr = recorder_ptr->initialize_series_recorder("TEST_SERIES1"); CHKERRQ(ierr);
+  ierr = recorder_ptr->initialize_series_recorder("TEST_SERIES1"); CHKERRG(ierr);
 
-  ierr = recorder_ptr->record_begin("TEST_SERIES1"); CHKERRQ(ierr);
-  ierr = recorder_ptr->record_field("TEST_SERIES1","FIELD_B",bit_level0,bit_level0); CHKERRQ(ierr);
-  ierr = recorder_ptr->record_end("TEST_SERIES1",1); CHKERRQ(ierr);
+  ierr = recorder_ptr->record_begin("TEST_SERIES1"); CHKERRG(ierr);
+  ierr = recorder_ptr->record_field("TEST_SERIES1","FIELD_B",bit_level0,bit_level0); CHKERRG(ierr);
+  ierr = recorder_ptr->record_end("TEST_SERIES1",1); CHKERRG(ierr);
 
-  ierr = m_field.getInterface<FieldBlas>()->fieldAxpy(1.,"FIELD_A","FIELD_B"); CHKERRQ(ierr);
-  ierr = recorder_ptr->record_begin("TEST_SERIES1"); CHKERRQ(ierr);
-  ierr = recorder_ptr->record_field("TEST_SERIES1","FIELD_B",bit_level0,bit_level0); CHKERRQ(ierr);
+  ierr = m_field.getInterface<FieldBlas>()->fieldAxpy(1.,"FIELD_A","FIELD_B"); CHKERRG(ierr);
+  ierr = recorder_ptr->record_begin("TEST_SERIES1"); CHKERRG(ierr);
+  ierr = recorder_ptr->record_field("TEST_SERIES1","FIELD_B",bit_level0,bit_level0); CHKERRG(ierr);
 
-  ierr = recorder_ptr->initialize_series_recorder("TEST_SERIES2"); CHKERRQ(ierr);
-  ierr = recorder_ptr->record_begin("TEST_SERIES2"); CHKERRQ(ierr);
-  ierr = recorder_ptr->record_field("TEST_SERIES2","FIELD_A",bit_level0,bit_level0); CHKERRQ(ierr);
-  ierr = recorder_ptr->record_field("TEST_SERIES2","FIELD_B",bit_level0,bit_level0); CHKERRQ(ierr);
-  ierr = recorder_ptr->record_end("TEST_SERIES2",1); CHKERRQ(ierr);
-  ierr = recorder_ptr->finalize_series_recorder("TEST_SERIES2"); CHKERRQ(ierr);
+  ierr = recorder_ptr->initialize_series_recorder("TEST_SERIES2"); CHKERRG(ierr);
+  ierr = recorder_ptr->record_begin("TEST_SERIES2"); CHKERRG(ierr);
+  ierr = recorder_ptr->record_field("TEST_SERIES2","FIELD_A",bit_level0,bit_level0); CHKERRG(ierr);
+  ierr = recorder_ptr->record_field("TEST_SERIES2","FIELD_B",bit_level0,bit_level0); CHKERRG(ierr);
+  ierr = recorder_ptr->record_end("TEST_SERIES2",1); CHKERRG(ierr);
+  ierr = recorder_ptr->finalize_series_recorder("TEST_SERIES2"); CHKERRG(ierr);
 
-  ierr = recorder_ptr->record_end("TEST_SERIES1",2); CHKERRQ(ierr);
+  ierr = recorder_ptr->record_end("TEST_SERIES1",2); CHKERRG(ierr);
 
   //finalize
-  ierr = recorder_ptr->finalize_series_recorder("TEST_SERIES1"); CHKERRQ(ierr);
-  ierr = recorder_ptr->print_series_steps(); CHKERRQ(ierr);
+  ierr = recorder_ptr->finalize_series_recorder("TEST_SERIES1"); CHKERRG(ierr);
+  ierr = recorder_ptr->print_series_steps(); CHKERRG(ierr);
 
-  ierr = m_field.getInterface<FieldBlas>()->fieldScale(2,"FIELD_A"); CHKERRQ(ierr);
+  ierr = m_field.getInterface<FieldBlas>()->fieldScale(2,"FIELD_A"); CHKERRG(ierr);
 
   MoFEM::Core core2(moab);
   MoFEM::Interface& m_field2 = core2;
 
   //build field
-  ierr = m_field2.build_fields(); CHKERRQ(ierr);
+  ierr = m_field2.build_fields(); CHKERRG(ierr);
 
   typedef tee_device<std::ostream, std::ofstream> TeeDevice;
   typedef stream<TeeDevice> TeeStream;
@@ -147,16 +147,16 @@ int main(int argc, char *argv[]) {
   TeeStream my_split(my_tee);
 
   SeriesRecorder *recorder2_ptr;
-  ierr = m_field2.getInterface(recorder2_ptr); CHKERRQ(ierr);
-  ierr = recorder2_ptr->print_series_steps(); CHKERRQ(ierr);
+  ierr = m_field2.getInterface(recorder2_ptr); CHKERRG(ierr);
+  ierr = recorder2_ptr->print_series_steps(); CHKERRG(ierr);
 
   const DofEntity_multiIndex *dofs_ptr;
-  ierr = m_field.get_dofs(&dofs_ptr); CHKERRQ(ierr);
+  ierr = m_field.get_dofs(&dofs_ptr); CHKERRG(ierr);
 
   my_split << "TEST_SERIES1" << std::endl;
   for(_IT_SERIES_STEPS_BY_NAME_FOR_LOOP_(recorder2_ptr,"TEST_SERIES1",sit)) {
 
-    ierr = recorder2_ptr->load_series_data("TEST_SERIES1",sit->get_step_number()); CHKERRQ(ierr);
+    ierr = recorder2_ptr->load_series_data("TEST_SERIES1",sit->get_step_number()); CHKERRG(ierr);
 
     my_split << "next step:\n";
     my_split << *sit << std::endl;
@@ -179,7 +179,7 @@ int main(int argc, char *argv[]) {
   my_split << "TEST_SERIES2" << std::endl;
   for(_IT_SERIES_STEPS_BY_NAME_FOR_LOOP_(recorder2_ptr,"TEST_SERIES2",sit)) {
 
-    ierr = recorder2_ptr->load_series_data("TEST_SERIES2",sit->get_step_number()); CHKERRQ(ierr);
+    ierr = recorder2_ptr->load_series_data("TEST_SERIES2",sit->get_step_number()); CHKERRG(ierr);
 
     my_split << "next step:\n";
     {

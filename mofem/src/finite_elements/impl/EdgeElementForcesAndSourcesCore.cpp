@@ -75,7 +75,7 @@ extern "C" {
 
 namespace MoFEM {
 
-PetscErrorCode EdgeElementForcesAndSourcesCore::operator()() {
+MoFEMErrorCode EdgeElementForcesAndSourcesCore::operator()() {
   MoFEMFunctionBeginHot;
 
   if(numeredEntFiniteElementPtr->getEntType() != MBEDGE) MoFEMFunctionReturnHot(0);
@@ -94,13 +94,13 @@ PetscErrorCode EdgeElementForcesAndSourcesCore::operator()() {
   }
 
   //PetscAttachDebugger();
-  ierr = getSpacesAndBaseOnEntities(dataH1); CHKERRQ(ierr);
-  ierr = getEdgesDataOrder(dataH1,H1); CHKERRQ(ierr);
+  ierr = getSpacesAndBaseOnEntities(dataH1); CHKERRG(ierr);
+  ierr = getEdgesDataOrder(dataH1,H1); CHKERRG(ierr);
   dataH1.dataOnEntities[MBEDGE][0].getSense() = 1; // set sense to 1, this is this entity
 
   //Hcurl
   if(dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
-    ierr = getEdgesDataOrder(dataHcurl,HCURL); CHKERRQ(ierr);
+    ierr = getEdgesDataOrder(dataHcurl,HCURL); CHKERRG(ierr);
     dataHcurl.dataOnEntities[MBEDGE][0].getSense() = 1; // set sense to 1, this is this entity
     dataHcurl.spacesOnEntities[MBEDGE].set(HCURL);
   }
@@ -146,7 +146,7 @@ PetscErrorCode EdgeElementForcesAndSourcesCore::operator()() {
     }
   } else {
     // If rule is negative, set user defined integration points
-    ierr = setGaussPts(order_row,order_col,order_data); CHKERRQ(ierr);
+    ierr = setGaussPts(order_row,order_col,order_data); CHKERRG(ierr);
     nb_gauss_pts = gaussPts.size2();
     dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nb_gauss_pts,2,false);
     if(nb_gauss_pts) {
@@ -177,7 +177,7 @@ PetscErrorCode EdgeElementForcesAndSourcesCore::operator()() {
               boost::shared_ptr<BaseFunctionCtx>(
                 new EntPolynomialBaseCtx(dataH1,H1,ApproximationBaseArray[b],NOBASE)
               )
-            ); CHKERRQ(ierr);
+            ); CHKERRG(ierr);
           }
           if(dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
             ierr = EdgePolynomialBase().getValue(
@@ -185,7 +185,7 @@ PetscErrorCode EdgeElementForcesAndSourcesCore::operator()() {
               boost::shared_ptr<BaseFunctionCtx>(
                 new EntPolynomialBaseCtx(dataHcurl,HCURL,ApproximationBaseArray[b],NOBASE)
               )
-            ); CHKERRQ(ierr);
+            ); CHKERRG(ierr);
           }
           if(dataH1.spacesOnEntities[MBEDGE].test(HDIV)) {
             SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Not yet implemented");
@@ -209,11 +209,11 @@ PetscErrorCode EdgeElementForcesAndSourcesCore::operator()() {
     dataPtr->get<FieldName_mi_tag>().find(meshPositionsFieldName)!=
     dataPtr->get<FieldName_mi_tag>().end()
   ) {
-    ierr = getEdgesDataOrderSpaceAndBase(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
-    ierr = getEdgesFieldData(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
-    ierr = getNodesFieldData(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
+    ierr = getEdgesDataOrderSpaceAndBase(dataH1,meshPositionsFieldName); CHKERRG(ierr);
+    ierr = getEdgesFieldData(dataH1,meshPositionsFieldName); CHKERRG(ierr);
+    ierr = getNodesFieldData(dataH1,meshPositionsFieldName); CHKERRG(ierr);
     try {
-      ierr = opGetHoTangentOnEdge.opRhs(dataH1); CHKERRQ(ierr);
+      ierr = opGetHoTangentOnEdge.opRhs(dataH1); CHKERRG(ierr);
     } catch (std::exception& ex) {
       std::ostringstream ss;
       ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
@@ -225,7 +225,7 @@ PetscErrorCode EdgeElementForcesAndSourcesCore::operator()() {
 
   if(dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
     // cerr << dataHcurl.dataOnEntities[MBEDGE][0].getN(AINSWORTH_LEGENDRE_BASE) << endl;
-    ierr = opCovariantTransform.opRhs(dataHcurl); CHKERRQ(ierr);
+    ierr = opCovariantTransform.opRhs(dataHcurl); CHKERRG(ierr);
   }
 
   const UserDataOperator::OpType types[2] = {
@@ -307,19 +307,19 @@ PetscErrorCode EdgeElementForcesAndSourcesCore::operator()() {
             SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown space");
             case H1:
             if(!ss) {
-              ierr = getRowNodesIndices(*op_data[ss],field_name); CHKERRQ(ierr);
+              ierr = getRowNodesIndices(*op_data[ss],field_name); CHKERRG(ierr);
             } else {
-              ierr = getColNodesIndices(*op_data[ss],field_name); CHKERRQ(ierr);
+              ierr = getColNodesIndices(*op_data[ss],field_name); CHKERRG(ierr);
             }
-            ierr = getNodesFieldData(*op_data[ss],field_name); CHKERRQ(ierr);
+            ierr = getNodesFieldData(*op_data[ss],field_name); CHKERRG(ierr);
             case HCURL:
             if(!ss) {
-              ierr = getEdgesRowIndices(*op_data[ss],field_name); CHKERRQ(ierr);
+              ierr = getEdgesRowIndices(*op_data[ss],field_name); CHKERRG(ierr);
             } else {
-              ierr = getEdgesColIndices(*op_data[ss],field_name); CHKERRQ(ierr);
+              ierr = getEdgesColIndices(*op_data[ss],field_name); CHKERRG(ierr);
             }
-            ierr = getEdgesDataOrderSpaceAndBase(*op_data[ss],field_name); CHKERRQ(ierr);
-            ierr = getEdgesFieldData(*op_data[ss],field_name); CHKERRQ(ierr);
+            ierr = getEdgesDataOrderSpaceAndBase(*op_data[ss],field_name); CHKERRG(ierr);
+            ierr = getEdgesFieldData(*op_data[ss],field_name); CHKERRG(ierr);
             break;
             case HDIV:
             SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not make sanes on edge");
@@ -331,11 +331,11 @@ PetscErrorCode EdgeElementForcesAndSourcesCore::operator()() {
             if(!getNinTheLoop()) {
               // NOFIELD data are the same for each element, can be retreived only once
               if(!ss) {
-                ierr = getNoFieldRowIndices(*op_data[ss],field_name); CHKERRQ(ierr);
+                ierr = getNoFieldRowIndices(*op_data[ss],field_name); CHKERRG(ierr);
               } else {
-                ierr = getNoFieldColIndices(*op_data[ss],field_name); CHKERRQ(ierr);
+                ierr = getNoFieldColIndices(*op_data[ss],field_name); CHKERRG(ierr);
               }
-              ierr = getNoFieldFieldData(*op_data[ss],field_name); CHKERRQ(ierr);
+              ierr = getNoFieldFieldData(*op_data[ss],field_name); CHKERRG(ierr);
             }
             break;
             case LASTSPACE:
@@ -358,7 +358,7 @@ PetscErrorCode EdgeElementForcesAndSourcesCore::operator()() {
           false,
           false,
           false
-        ); CHKERRQ(ierr);
+        ); CHKERRG(ierr);
       } catch (std::exception& ex) {
         std::ostringstream ss;
         ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
@@ -377,7 +377,7 @@ PetscErrorCode EdgeElementForcesAndSourcesCore::operator()() {
           false,
           false,
           false
-        ); CHKERRQ(ierr);
+        ); CHKERRG(ierr);
       } catch (std::exception& ex) {
         std::ostringstream ss;
         ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
@@ -388,7 +388,7 @@ PetscErrorCode EdgeElementForcesAndSourcesCore::operator()() {
 
     if(oit->getOpType()&UserDataOperator::OPROWCOL) {
       try {
-        ierr = oit->opLhs(*op_data[0],*op_data[1],oit->sYmm); CHKERRQ(ierr);
+        ierr = oit->opLhs(*op_data[0],*op_data[1],oit->sYmm); CHKERRG(ierr);
       } catch (std::exception& ex) {
         std::ostringstream ss;
         ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;

@@ -32,7 +32,7 @@ namespace MoFEM {
    */
   struct Simple: public UnknownInterface {
 
-    PetscErrorCode query_interface(const MOFEMuuid& uuid, UnknownInterface** iface) const;
+    MoFEMErrorCode query_interface(const MOFEMuuid& uuid, UnknownInterface** iface) const;
 
     MoFEM::Core& cOre;
     Simple(const MoFEM::Core& core);
@@ -46,14 +46,14 @@ namespace MoFEM {
      * \brief get options
      * @return error code
      */
-    PetscErrorCode getOptions();
+    MoFEMErrorCode getOptions();
 
     /**
      * \brief Load mesh file
      * @param  field_name file name
      * @return            error code
      */
-    PetscErrorCode loadFile();
+    MoFEMErrorCode loadFile();
 
     /**
      * \brief Add field on domain
@@ -66,7 +66,7 @@ namespace MoFEM {
      * @param  verb              verbosity level
      * @return                   error code
      */
-    PetscErrorCode addDomainField(
+    MoFEMErrorCode addDomainField(
       const std::string& name,
       const FieldSpace space,
       const FieldApproximationBase base,
@@ -87,7 +87,7 @@ namespace MoFEM {
      * @param  verb              verbosity level
      * @return                   error code
      */
-    PetscErrorCode addBoundaryField(
+    MoFEMErrorCode addBoundaryField(
       const std::string& name,
       const FieldSpace space,
       const FieldApproximationBase base,
@@ -108,7 +108,7 @@ namespace MoFEM {
      * @param  verb              verbosity level
      * @return                   error code
      */
-    PetscErrorCode addSkeletonField(
+    MoFEMErrorCode addSkeletonField(
       const std::string& name,
       const FieldSpace space,
       const FieldApproximationBase base,
@@ -129,7 +129,7 @@ namespace MoFEM {
      * @param  verb              verbosity level
      * @return                   error code
      */
-    PetscErrorCode addDataField(
+    MoFEMErrorCode addDataField(
       const std::string& name,
       const FieldSpace space,
       const FieldApproximationBase base,
@@ -144,13 +144,13 @@ namespace MoFEM {
      * \brief Define finite elements
      * @return         Error code
      */
-    PetscErrorCode defineFiniteElements();
+    MoFEMErrorCode defineFiniteElements();
 
     /**
      * \brief define problem
      * @return error code
      */
-    PetscErrorCode defineProblem();
+    MoFEMErrorCode defineProblem();
 
     /**
      * \brief Set field order
@@ -159,38 +159,38 @@ namespace MoFEM {
      * @param  range of entities to which order is set (If null it sat to all entities)
      * @return                 error code
      */
-    PetscErrorCode setFieldOrder(const std::string field_name,const int order,const Range* ents = NULL);
+    MoFEMErrorCode setFieldOrder(const std::string field_name,const int order,const Range* ents = NULL);
 
     /**
      * \brief Build fields
      * @return error code
      */
-    PetscErrorCode buildFields();
+    MoFEMErrorCode buildFields();
 
     /**
      * \brief Build finite elements
      * @return error code
      */
-    PetscErrorCode buildFiniteElements();
+    MoFEMErrorCode buildFiniteElements();
 
     /**
      * \brief Build problem
      * @return error code
      */
-    PetscErrorCode buildProblem();
+    MoFEMErrorCode buildProblem();
 
     /**
      * \brief Setup problem
      * @return error code
      */
-    PetscErrorCode setUp();
+    MoFEMErrorCode setUp();
 
     /**
      * \brief Get DM
      * @param  dm discrete manager
      * @return    error code
      */
-    PetscErrorCode getDM(DM *dm);
+    MoFEMErrorCode getDM(DM *dm);
 
     inline int getDim() const { return dIm; }
     inline const std::string& getDomainFEName() { return domainFE; }

@@ -20,17 +20,17 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-PetscErrorCode FluidPressure::addNeumannFluidPressureBCElements(
+MoFEMErrorCode FluidPressure::addNeumannFluidPressureBCElements(
   const std::string field_name,const std::string mesh_nodals_positions 
 ) {
   MoFEMFunctionBeginHot;
 
-  ierr = mField.add_finite_element("FLUID_PRESSURE_FE",MF_ZERO); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_row("FLUID_PRESSURE_FE",field_name); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_col("FLUID_PRESSURE_FE",field_name); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_data("FLUID_PRESSURE_FE",field_name); CHKERRQ(ierr);
+  ierr = mField.add_finite_element("FLUID_PRESSURE_FE",MF_ZERO); CHKERRG(ierr);
+  ierr = mField.modify_finite_element_add_field_row("FLUID_PRESSURE_FE",field_name); CHKERRG(ierr);
+  ierr = mField.modify_finite_element_add_field_col("FLUID_PRESSURE_FE",field_name); CHKERRG(ierr);
+  ierr = mField.modify_finite_element_add_field_data("FLUID_PRESSURE_FE",field_name); CHKERRG(ierr);
   if(mField.check_field(mesh_nodals_positions)) {
-    ierr = mField.modify_finite_element_add_field_data("FLUID_PRESSURE_FE",mesh_nodals_positions); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_data("FLUID_PRESSURE_FE",mesh_nodals_positions); CHKERRG(ierr);
   }
 
   //takes skin of block of entities
@@ -42,7 +42,7 @@ PetscErrorCode FluidPressure::addNeumannFluidPressureBCElements(
 
       //get block attributes
       std::vector<double> attributes;
-      ierr = bit->getAttributes(attributes); CHKERRQ(ierr);
+      ierr = bit->getAttributes(attributes); CHKERRG(ierr);
       if(attributes.size()<7) {
         SETERRQ1(PETSC_COMM_SELF,1,"not enough block attributes to deffine fluid pressure element, attributes.size() = %d ",attributes.size());
       }
@@ -57,18 +57,18 @@ PetscErrorCode FluidPressure::addNeumannFluidPressureBCElements(
       setOfFluids[bit->getMeshsetId()].zEroPressure[2] = attributes[6];
       //get blok tetrahedron and triangles
       Range tets;
-      rval = mField.get_moab().get_entities_by_type(bit->meshset,MBTET,tets,true); CHKERRQ_MOAB(rval);
+      rval = mField.get_moab().get_entities_by_type(bit->meshset,MBTET,tets,true); CHKERRG(rval);
       Range tris;
-      rval = mField.get_moab().get_entities_by_type(bit->meshset,MBTRI,setOfFluids[bit->getMeshsetId()].tRis,true); CHKERRQ_MOAB(rval);
+      rval = mField.get_moab().get_entities_by_type(bit->meshset,MBTRI,setOfFluids[bit->getMeshsetId()].tRis,true); CHKERRG(rval);
       //this get triangles only on block surfaces
       Range tets_skin_tris;
-      rval = skin.find_skin(0,tets,false,tets_skin_tris); CHKERRQ_MOAB(rval);
+      rval = skin.find_skin(0,tets,false,tets_skin_tris); CHKERRG(rval);
       setOfFluids[bit->getMeshsetId()].tRis.merge(tets_skin_tris);
       std::ostringstream ss;
       ss << setOfFluids[bit->getMeshsetId()] << std::endl;
       PetscPrintf(mField.get_comm(),ss.str().c_str());
 
-      ierr = mField.add_ents_to_finite_element_by_type(setOfFluids[bit->getMeshsetId()].tRis,MBTRI,"FLUID_PRESSURE_FE"); CHKERRQ(ierr);
+      ierr = mField.add_ents_to_finite_element_by_type(setOfFluids[bit->getMeshsetId()].tRis,MBTRI,"FLUID_PRESSURE_FE"); CHKERRG(ierr);
 
     }
 
@@ -78,7 +78,7 @@ PetscErrorCode FluidPressure::addNeumannFluidPressureBCElements(
 }
 
 
-PetscErrorCode FluidPressure::setNeumannFluidPressureFiniteElementOperators(
+MoFEMErrorCode FluidPressure::setNeumannFluidPressureFiniteElementOperators(
   string field_name,Vec F,bool allow_negative_pressure,bool ho_geometry
 ) {
   MoFEMFunctionBeginHot;

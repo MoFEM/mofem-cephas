@@ -56,7 +56,7 @@ struct FieldSeries {
   Tag th_SeriesDataHandles;
   Tag th_SeriesTime;
 
-  PetscErrorCode get_nb_steps(Interface &moab,int &nb_setps) const;
+  MoFEMErrorCode get_nb_steps(Interface &moab,int &nb_setps) const;
 
   std::vector<int> ia;
   std::vector<double> time;
@@ -64,23 +64,23 @@ struct FieldSeries {
   std::vector<ShortId> uids;
   std::vector<FieldData> data;
 
-  PetscErrorCode set_time(double time);
-  PetscErrorCode push_dofs(const EntityHandle ent,const ShortId uid,const FieldData val);
+  MoFEMErrorCode set_time(double time);
+  MoFEMErrorCode push_dofs(const EntityHandle ent,const ShortId uid,const FieldData val);
 
   template<typename IT>
-  PetscErrorCode push_dofs(IT it,IT hi_it) {
+  MoFEMErrorCode push_dofs(IT it,IT hi_it) {
     MoFEMFunctionBeginHot;
     
     for(;it!=hi_it;it++) {
-      ierr = push_dofs((*it)->getEnt(),(*it)->getNonNonuniqueShortId(),(*it)->getFieldData()); CHKERRQ(ierr);
+      ierr = push_dofs((*it)->getEnt(),(*it)->getNonNonuniqueShortId(),(*it)->getFieldData()); CHKERRG(ierr);
     }
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode begin();
-  PetscErrorCode end(double time = 0);
-  PetscErrorCode read(Interface &moab);
-  PetscErrorCode save(Interface &moab) const;
+  MoFEMErrorCode begin();
+  MoFEMErrorCode end(double time = 0);
+  MoFEMErrorCode read(Interface &moab);
+  MoFEMErrorCode save(Interface &moab) const;
 
   inline const FieldSeries* get_FieldSeries_ptr() const { return const_cast<FieldSeries*>(this); };
 
@@ -123,10 +123,10 @@ struct FieldSeriesStep: public interface_FieldSeries<FieldSeries> {
   FieldSeriesStep(Interface &moab,const FieldSeries *_FieldSeries_ptr,const int _step_number);
 
   inline int get_step_number() const { return step_number; };
-  PetscErrorCode get(Interface &moab,DofEntity_multiIndex &dofsField) const;
+  MoFEMErrorCode get(Interface &moab,DofEntity_multiIndex &dofsField) const;
 
   double time;
-  PetscErrorCode get_time_init(Interface &moab);
+  MoFEMErrorCode get_time_init(Interface &moab);
   inline double get_time() const { return time; }
 
   friend std::ostream& operator<<(std::ostream& os,const FieldSeriesStep& e);

@@ -35,7 +35,7 @@ static const MOFEMuuid IDD_MOFEMTetGegInterface =
   */
 struct TetGenInterface : public UnknownInterface {
 
-  PetscErrorCode query_interface(const MOFEMuuid &uuid,
+  MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
                                  UnknownInterface **iface) const;
 
   MoFEM::Core &cOre;
@@ -55,7 +55,7 @@ struct TetGenInterface : public UnknownInterface {
     * \param moab_tetgen_map mapping moab to TetGen entities
     * \param tetgen_moab_map mapping tetgen to moab entities
     */
-  PetscErrorCode inData(Range &ents, tetgenio &in,
+  MoFEMErrorCode inData(Range &ents, tetgenio &in,
                         moabTetGen_Map &moab_tetgen_map,
                         tetGenMoab_Map &tetgen_moab_map, Tag th = NULL);
 
@@ -93,7 +93,7 @@ struct TetGenInterface : public UnknownInterface {
   \endcode
 
   */
-  PetscErrorCode setGeomData(tetgenio &in, moabTetGen_Map &moab_tetgen_map,
+  MoFEMErrorCode setGeomData(tetgenio &in, moabTetGen_Map &moab_tetgen_map,
                              tetGenMoab_Map &tetgen_moab_map,
                              std::map<int, Range> &type_ents);
 
@@ -109,7 +109,7 @@ struct TetGenInterface : public UnknownInterface {
     \param error_if_created throw error if node need to be created
 
     */
-  PetscErrorCode outData(tetgenio &in, tetgenio &out,
+  MoFEMErrorCode outData(tetgenio &in, tetgenio &out,
                          moabTetGen_Map &moab_tetgen_map,
                          tetGenMoab_Map &tetgen_moab_map, Range *ents = NULL,
                          bool id_in_tags = false,
@@ -126,7 +126,7 @@ struct TetGenInterface : public UnknownInterface {
     \param error_if_created throw error if node need to be created
 
     */
-  PetscErrorCode outData(tetgenio &in, tetgenio &out,
+  MoFEMErrorCode outData(tetgenio &in, tetgenio &out,
                          moabTetGen_Map &moab_tetgen_map,
                          tetGenMoab_Map &tetgen_moab_map, BitRefLevel bit,
                          bool id_in_tags = false,
@@ -140,7 +140,7 @@ struct TetGenInterface : public UnknownInterface {
     \param tetgen_moab_map mapping TetGen to MoAB entities
 
     */
-  PetscErrorCode setFaceData(std::vector<std::pair<Range, int> > &markers,
+  MoFEMErrorCode setFaceData(std::vector<std::pair<Range, int> > &markers,
                              tetgenio &in, moabTetGen_Map &moab_tetgen_map,
                              tetGenMoab_Map &tetgen_moab_map);
 
@@ -152,36 +152,36 @@ struct TetGenInterface : public UnknownInterface {
     \param tetgen_moab_map mapping TetGen to MoAB entities
 
     */
-  PetscErrorCode getTriangleMarkers(tetGenMoab_Map &tetgen_moab_map,
+  MoFEMErrorCode getTriangleMarkers(tetGenMoab_Map &tetgen_moab_map,
                                     tetgenio &out, Range *ents = NULL,
                                     idxRange_Map *ents_map = NULL,
                                     bool only_non_zero = true);
 
   /** \brief set region data to tetrahedral
     */
-  PetscErrorCode
+  MoFEMErrorCode
   setRegionData(std::vector<std::pair<EntityHandle, int> > &regions, tetgenio &in,
                Tag th = NULL);
 
   /** \brief get region data to tetrahedral
     */
-  PetscErrorCode getRegionData(tetGenMoab_Map &tetgen_moab_map, tetgenio &out,
+  MoFEMErrorCode getRegionData(tetGenMoab_Map &tetgen_moab_map, tetgenio &out,
                               Range *ents = NULL,
                               idxRange_Map *ents_map = NULL);
 
   /** \brief run tetgen
     */
-  PetscErrorCode tetRahedralize(char switches[], tetgenio &in, tetgenio &out);
+  MoFEMErrorCode tetRahedralize(char switches[], tetgenio &in, tetgenio &out);
 
   /** \brief load poly file
     */
-  PetscErrorCode loadPoly(char file_name[], tetgenio &in);
+  MoFEMErrorCode loadPoly(char file_name[], tetgenio &in);
 
   // Tools for TetGen, i.e. geometry reconstruction from mesh
 
-  PetscErrorCode checkPlanar_Trinagle(double coords[], bool *result,
+  MoFEMErrorCode checkPlanar_Trinagle(double coords[], bool *result,
                                       const double eps = 1e-9);
-  PetscErrorCode groupPlanar_Triangle(Range &tris, std::vector<Range> &sorted,
+  MoFEMErrorCode groupPlanar_Triangle(Range &tris, std::vector<Range> &sorted,
                                       const double eps = 1e-9, Tag th = NULL);
 
   /** \brief Group surface triangles in planar regions
@@ -191,7 +191,7 @@ struct TetGenInterface : public UnknownInterface {
     \param eps tolerance
 
   */
-  PetscErrorCode groupRegion_Triangle(Range &tris,
+  MoFEMErrorCode groupRegion_Triangle(Range &tris,
                                       std::vector<std::vector<Range> > &sorted,
                                       const double eps = 1e-9);
 
@@ -206,7 +206,7 @@ struct TetGenInterface : public UnknownInterface {
     \bug assumes that are no holes
 
     */
-  PetscErrorCode makePolygonFacet(Range &ents, Range &polygons,
+  MoFEMErrorCode makePolygonFacet(Range &ents, Range &polygons,
                                   bool reduce_edges = false,
                                   Range *not_reducable_nodes = NULL,
                                   const double eps = 1e-9,Tag th = NULL);

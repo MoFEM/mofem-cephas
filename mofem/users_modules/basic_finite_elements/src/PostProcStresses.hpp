@@ -57,7 +57,7 @@ struct PostProcStress: public MoFEM::VolumeElementForcesAndSourcesCore::UserData
 
   NonlinearElasticElement::CommonData nonLinearElementCommonData;
 
-  PetscErrorCode doWork(
+  MoFEMErrorCode doWork(
     int side,
     EntityType type,
     DataForcesAndSourcesCore::EntData &data
@@ -74,17 +74,17 @@ struct PostProcStress: public MoFEM::VolumeElementForcesAndSourcesCore::UserData
     
 
     const FENumeredDofEntity *dof_ptr;
-    ierr = getNumeredEntFiniteElementPtr()->getRowDofsByPetscGlobalDofIdx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
+    ierr = getNumeredEntFiniteElementPtr()->getRowDofsByPetscGlobalDofIdx(data.getIndices()[0],&dof_ptr); CHKERRG(ierr);
 
     int id  = dAta.iD;
 
     Tag th_id;
     int def_block_id = -1;
     rval = postProcMesh.tag_get_handle(
-      "BLOCK_ID",1,MB_TYPE_INTEGER,th_id,MB_TAG_CREAT|MB_TAG_SPARSE,&def_block_id); CHKERRQ_MOAB(rval);
+      "BLOCK_ID",1,MB_TYPE_INTEGER,th_id,MB_TAG_CREAT|MB_TAG_SPARSE,&def_block_id); CHKERRG(rval);
     Range::iterator tit = commonData.tEts.begin();
     for(;tit!=commonData.tEts.end();tit++) {
-      rval = postProcMesh.tag_set_data(th_id,&*tit,1,&id);  CHKERRQ_MOAB(rval);
+      rval = postProcMesh.tag_set_data(th_id,&*tit,1,&id);  CHKERRG(rval);
     }
 
     string tag_name_piola1 = dof_ptr->getName()+"_PIOLA1_STRESS";
@@ -96,10 +96,10 @@ struct PostProcStress: public MoFEM::VolumeElementForcesAndSourcesCore::UserData
     Tag th_piola1,th_energy;
     rval = postProcMesh.tag_get_handle(
       tag_name_piola1.c_str(),tag_length,MB_TYPE_DOUBLE,th_piola1,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL
-    ); CHKERRQ_MOAB(rval);
+    ); CHKERRG(rval);
     rval = postProcMesh.tag_get_handle(
       tag_name_energy.c_str(),1,MB_TYPE_DOUBLE,th_energy,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL
-    ); CHKERRQ_MOAB(rval);
+    ); CHKERRG(rval);
 
     int nb_gauss_pts = data.getN().size1();
     if(mapGaussPts.size()!=(unsigned int)nb_gauss_pts) {
@@ -116,7 +116,7 @@ struct PostProcStress: public MoFEM::VolumeElementForcesAndSourcesCore::UserData
     dAta.materialDoublePtr->opPtr = this;
     ierr = dAta.materialDoublePtr->getDataOnPostProcessor(
       commonData.fieldMap,commonData.gradMap
-    ); CHKERRQ(ierr);
+    ); CHKERRG(ierr);
 
     nonLinearElementCommonData.dataAtGaussPts = commonData.fieldMap;
     nonLinearElementCommonData.gradAtGaussPts = commonData.gradMap;
@@ -139,15 +139,15 @@ struct PostProcStress: public MoFEM::VolumeElementForcesAndSourcesCore::UserData
         H.resize(3,3);
         invH.resize(3,3);
         noalias(H) = (commonData.gradMap["MESH_NODE_POSITIONS"])[gg];
-        ierr = dAta.materialDoublePtr->dEterminatnt(H,detH);  CHKERRQ(ierr);
-        ierr = dAta.materialDoublePtr->iNvert(detH,H,invH); CHKERRQ(ierr);
+        ierr = dAta.materialDoublePtr->dEterminatnt(H,detH);  CHKERRG(ierr);
+        ierr = dAta.materialDoublePtr->iNvert(detH,H,invH); CHKERRG(ierr);
         noalias(dAta.materialDoublePtr->F) = prod(dAta.materialDoublePtr->F,invH);
       }
 
       int nb_active_variables = 9;
-      ierr = dAta.materialDoublePtr->setUserActiveVariables(nb_active_variables); CHKERRQ(ierr);
-      ierr = dAta.materialDoublePtr->calculateP_PiolaKirchhoffI(dAta,getNumeredEntFiniteElementPtr()); CHKERRQ(ierr);
-      ierr = dAta.materialDoublePtr->calculateElasticEnergy(dAta,getNumeredEntFiniteElementPtr()); CHKERRQ(ierr);
+      ierr = dAta.materialDoublePtr->setUserActiveVariables(nb_active_variables); CHKERRG(ierr);
+      ierr = dAta.materialDoublePtr->calculateP_PiolaKirchhoffI(dAta,getNumeredEntFiniteElementPtr()); CHKERRG(ierr);
+      ierr = dAta.materialDoublePtr->calculateElasticEnergy(dAta,getNumeredEntFiniteElementPtr()); CHKERRG(ierr);
       if(!std::isnormal(dAta.materialDoublePtr->eNergy)&&replaceNonANumberByMaxValue) {
         // If value is non a number because of singularity repleca it max double value
         for(int r  = 0;r!=dAta.materialDoublePtr->P.size1();r++) {
@@ -161,12 +161,12 @@ struct PostProcStress: public MoFEM::VolumeElementForcesAndSourcesCore::UserData
           }
         }
       }
-      rval = postProcMesh.tag_set_data(th_piola1,&mapGaussPts[gg],1,&dAta.materialDoublePtr->P(0,0)); CHKERRQ_MOAB(rval);
+      rval = postProcMesh.tag_set_data(th_piola1,&mapGaussPts[gg],1,&dAta.materialDoublePtr->P(0,0)); CHKERRG(rval);
       if(std::isnormal(dAta.materialDoublePtr->eNergy)&&replaceNonANumberByMaxValue) {
         // I value is infinity at singularity, set max value
         max_energy = std::max(dAta.materialDoublePtr->eNergy,max_energy);
       }
-      rval = postProcMesh.tag_set_data(th_energy,&mapGaussPts[gg],1,&dAta.materialDoublePtr->eNergy); CHKERRQ_MOAB(rval);
+      rval = postProcMesh.tag_set_data(th_energy,&mapGaussPts[gg],1,&dAta.materialDoublePtr->eNergy); CHKERRG(rval);
 
     }
 
@@ -174,16 +174,16 @@ struct PostProcStress: public MoFEM::VolumeElementForcesAndSourcesCore::UserData
       MatrixDouble3by3 P(3,3);
       for(int gg = 0;gg!=nb_gauss_pts;gg++) {
         double val_energy;
-        rval = postProcMesh.tag_get_data(th_energy,&mapGaussPts[gg],1,&val_energy); CHKERRQ_MOAB(rval);
+        rval = postProcMesh.tag_get_data(th_energy,&mapGaussPts[gg],1,&val_energy); CHKERRG(rval);
         if(!std::isnormal(val_energy)) {
-          rval = postProcMesh.tag_set_data(th_energy,&mapGaussPts[gg],1,&max_energy); CHKERRQ_MOAB(rval);
-          rval = postProcMesh.tag_get_data(th_piola1,&mapGaussPts[gg],1,&P(0,0)); CHKERRQ_MOAB(rval);
+          rval = postProcMesh.tag_set_data(th_energy,&mapGaussPts[gg],1,&max_energy); CHKERRG(rval);
+          rval = postProcMesh.tag_get_data(th_piola1,&mapGaussPts[gg],1,&P(0,0)); CHKERRG(rval);
           for(int r  = 0;r!=P.size1();r++) {
             for(int c = 0;c!=P.size2();c++) {
               if(!std::isnormal(P(r,c))) P(r,c) = maxP(r,c);
             }
           }
-          rval = postProcMesh.tag_set_data(th_piola1,&mapGaussPts[gg],1,&P(0,0)); CHKERRQ_MOAB(rval);
+          rval = postProcMesh.tag_set_data(th_piola1,&mapGaussPts[gg],1,&P(0,0)); CHKERRG(rval);
         }
       }
     }

@@ -66,7 +66,7 @@ extern "C" {
 
 namespace MoFEM {
 
-PetscErrorCode ForcesAndSourcesCore::getNumberOfNodes(int &num_nodes) const {
+MoFEMErrorCode ForcesAndSourcesCore::getNumberOfNodes(int &num_nodes) const {
   MoFEMFunctionBeginHot;
 
   EntityHandle ent = numeredEntFiniteElementPtr->getEnt();
@@ -98,7 +98,7 @@ PetscErrorCode ForcesAndSourcesCore::getNumberOfNodes(int &num_nodes) const {
 
 // ** Sense **
 
-PetscErrorCode ForcesAndSourcesCore::getSense(EntityType type,boost::ptr_vector<DataForcesAndSourcesCore::EntData> &data) const {
+MoFEMErrorCode ForcesAndSourcesCore::getSense(EntityType type,boost::ptr_vector<DataForcesAndSourcesCore::EntData> &data) const {
   MoFEMFunctionBeginHot;
   try {
     SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(numeredEntFiniteElementPtr->getSideNumberTable());
@@ -126,24 +126,24 @@ PetscErrorCode ForcesAndSourcesCore::getSense(EntityType type,boost::ptr_vector<
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode ForcesAndSourcesCore::getEdgesSense(DataForcesAndSourcesCore &data) const {
+MoFEMErrorCode ForcesAndSourcesCore::getEdgesSense(DataForcesAndSourcesCore &data) const {
 
   MoFEMFunctionBeginHot;
-  ierr = getSense(MBEDGE,data.dataOnEntities[MBEDGE]); CHKERRQ(ierr);
+  ierr = getSense(MBEDGE,data.dataOnEntities[MBEDGE]); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode ForcesAndSourcesCore::getTrisSense(DataForcesAndSourcesCore &data) const {
+MoFEMErrorCode ForcesAndSourcesCore::getTrisSense(DataForcesAndSourcesCore &data) const {
 
   MoFEMFunctionBeginHot;
-  ierr = getSense(MBTRI,data.dataOnEntities[MBTRI]); CHKERRQ(ierr);
+  ierr = getSense(MBTRI,data.dataOnEntities[MBTRI]); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode ForcesAndSourcesCore::getQuadSense(DataForcesAndSourcesCore &data) const {
+MoFEMErrorCode ForcesAndSourcesCore::getQuadSense(DataForcesAndSourcesCore &data) const {
 
   MoFEMFunctionBeginHot;
-  ierr = getSense(MBQUAD,data.dataOnEntities[MBQUAD]); CHKERRQ(ierr);
+  ierr = getSense(MBQUAD,data.dataOnEntities[MBQUAD]); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -177,7 +177,7 @@ int ForcesAndSourcesCore::getMaxColOrder() const {
   return getMaxOrder(numeredEntFiniteElementPtr->getColsDofs());
 }
 
-PetscErrorCode ForcesAndSourcesCore::getDataOrder(const EntityType type,const FieldSpace space,boost::ptr_vector<DataForcesAndSourcesCore::EntData> &data) const {
+MoFEMErrorCode ForcesAndSourcesCore::getDataOrder(const EntityType type,const FieldSpace space,boost::ptr_vector<DataForcesAndSourcesCore::EntData> &data) const {
   MoFEMFunctionBeginHot;
   try {
     SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(numeredEntFiniteElementPtr->getSideNumberTable());
@@ -220,42 +220,42 @@ PetscErrorCode ForcesAndSourcesCore::getDataOrder(const EntityType type,const Fi
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode ForcesAndSourcesCore::getEdgesDataOrder(DataForcesAndSourcesCore &data,const FieldSpace space) const {
+MoFEMErrorCode ForcesAndSourcesCore::getEdgesDataOrder(DataForcesAndSourcesCore &data,const FieldSpace space) const {
 
   MoFEMFunctionBeginHot;
-  ierr = getDataOrder(MBEDGE,space,data.dataOnEntities[MBEDGE]); CHKERRQ(ierr);
+  ierr = getDataOrder(MBEDGE,space,data.dataOnEntities[MBEDGE]); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode ForcesAndSourcesCore::getTrisDataOrder(DataForcesAndSourcesCore &data,const FieldSpace space) const {
+MoFEMErrorCode ForcesAndSourcesCore::getTrisDataOrder(DataForcesAndSourcesCore &data,const FieldSpace space) const {
 
   MoFEMFunctionBeginHot;
-  ierr = getDataOrder(MBTRI,space,data.dataOnEntities[MBTRI]); CHKERRQ(ierr);
+  ierr = getDataOrder(MBTRI,space,data.dataOnEntities[MBTRI]); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode ForcesAndSourcesCore::getQuadDataOrder(DataForcesAndSourcesCore &data,const FieldSpace space) const {
+MoFEMErrorCode ForcesAndSourcesCore::getQuadDataOrder(DataForcesAndSourcesCore &data,const FieldSpace space) const {
 
   MoFEMFunctionBeginHot;
-  ierr = getDataOrder(MBQUAD,space,data.dataOnEntities[MBQUAD]); CHKERRQ(ierr);
+  ierr = getDataOrder(MBQUAD,space,data.dataOnEntities[MBQUAD]); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode ForcesAndSourcesCore::getTetDataOrder(DataForcesAndSourcesCore &data,const FieldSpace space) const {
+MoFEMErrorCode ForcesAndSourcesCore::getTetDataOrder(DataForcesAndSourcesCore &data,const FieldSpace space) const {
 
   MoFEMFunctionBeginHot;
-  ierr = getDataOrder(MBTET,space,data.dataOnEntities[MBTET]); CHKERRQ(ierr);
+  ierr = getDataOrder(MBTET,space,data.dataOnEntities[MBTET]); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode ForcesAndSourcesCore::getPrismDataOrder(DataForcesAndSourcesCore &data,const FieldSpace space) const {
+MoFEMErrorCode ForcesAndSourcesCore::getPrismDataOrder(DataForcesAndSourcesCore &data,const FieldSpace space) const {
 
   MoFEMFunctionBeginHot;
-  ierr = getDataOrder(MBPRISM,space,data.dataOnEntities[MBPRISM]); CHKERRQ(ierr);
+  ierr = getDataOrder(MBPRISM,space,data.dataOnEntities[MBPRISM]); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode ForcesAndSourcesCore::getDataOrderSpaceAndBase(
+MoFEMErrorCode ForcesAndSourcesCore::getDataOrderSpaceAndBase(
   const std::string &field_name,const EntityType type,boost::ptr_vector<DataForcesAndSourcesCore::EntData> &data
 ) const {
   MoFEMFunctionBeginHot;
@@ -317,44 +317,44 @@ PetscErrorCode ForcesAndSourcesCore::getDataOrderSpaceAndBase(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode ForcesAndSourcesCore::getEdgesDataOrderSpaceAndBase(DataForcesAndSourcesCore &data,const std::string &field_name) const {
+MoFEMErrorCode ForcesAndSourcesCore::getEdgesDataOrderSpaceAndBase(DataForcesAndSourcesCore &data,const std::string &field_name) const {
 
   MoFEMFunctionBeginHot;
-  ierr = getDataOrderSpaceAndBase(field_name,MBEDGE,data.dataOnEntities[MBEDGE]); CHKERRQ(ierr);
+  ierr = getDataOrderSpaceAndBase(field_name,MBEDGE,data.dataOnEntities[MBEDGE]); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode ForcesAndSourcesCore::getTrisDataOrderSpaceAndBase(DataForcesAndSourcesCore &data,const std::string &field_name) const {
+MoFEMErrorCode ForcesAndSourcesCore::getTrisDataOrderSpaceAndBase(DataForcesAndSourcesCore &data,const std::string &field_name) const {
 
   MoFEMFunctionBeginHot;
-  ierr = getDataOrderSpaceAndBase(field_name,MBTRI,data.dataOnEntities[MBTRI]); CHKERRQ(ierr);
+  ierr = getDataOrderSpaceAndBase(field_name,MBTRI,data.dataOnEntities[MBTRI]); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode ForcesAndSourcesCore::getQuadDataOrderSpaceAndBase(DataForcesAndSourcesCore &data,const std::string &field_name) const {
+MoFEMErrorCode ForcesAndSourcesCore::getQuadDataOrderSpaceAndBase(DataForcesAndSourcesCore &data,const std::string &field_name) const {
 
   MoFEMFunctionBeginHot;
-  ierr = getDataOrderSpaceAndBase(field_name,MBQUAD,data.dataOnEntities[MBQUAD]); CHKERRQ(ierr);
+  ierr = getDataOrderSpaceAndBase(field_name,MBQUAD,data.dataOnEntities[MBQUAD]); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode ForcesAndSourcesCore::getTetDataOrderSpaceAndBase(DataForcesAndSourcesCore &data,const std::string &field_name) const {
+MoFEMErrorCode ForcesAndSourcesCore::getTetDataOrderSpaceAndBase(DataForcesAndSourcesCore &data,const std::string &field_name) const {
 
   MoFEMFunctionBeginHot;
-  ierr = getDataOrderSpaceAndBase(field_name,MBTET,data.dataOnEntities[MBTET]); CHKERRQ(ierr);
+  ierr = getDataOrderSpaceAndBase(field_name,MBTET,data.dataOnEntities[MBTET]); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode ForcesAndSourcesCore::getPrismDataOrderSpaceAndBase(DataForcesAndSourcesCore &data,const std::string &field_name) const {
+MoFEMErrorCode ForcesAndSourcesCore::getPrismDataOrderSpaceAndBase(DataForcesAndSourcesCore &data,const std::string &field_name) const {
 
   MoFEMFunctionBeginHot;
-  ierr = getDataOrderSpaceAndBase(field_name,MBPRISM,data.dataOnEntities[MBPRISM]); CHKERRQ(ierr);
+  ierr = getDataOrderSpaceAndBase(field_name,MBPRISM,data.dataOnEntities[MBPRISM]); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
 // ** Indices **
 
-PetscErrorCode ForcesAndSourcesCore::getNodesIndices(
+MoFEMErrorCode ForcesAndSourcesCore::getNodesIndices(
   const boost::string_ref field_name,FENumeredDofEntity_multiIndex &dofs,VectorInt &nodes_indices,VectorInt &local_nodes_indices
 ) const {
 
@@ -365,7 +365,7 @@ PetscErrorCode ForcesAndSourcesCore::getNodesIndices(
   hi_dit = dofs.get<Composite_Name_And_Type_mi_tag>().upper_bound(boost::make_tuple(field_name,MBVERTEX));
 
   int num_nodes;
-  ierr = getNumberOfNodes(num_nodes); CHKERRQ(ierr);
+  ierr = getNumberOfNodes(num_nodes); CHKERRG(ierr);
   int max_nb_dofs = 0;
   if(dit!=hi_dit) {
     max_nb_dofs = (*dit)->getNbOfCoeffs()*num_nodes;
@@ -404,27 +404,27 @@ PetscErrorCode ForcesAndSourcesCore::getNodesIndices(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode ForcesAndSourcesCore::getRowNodesIndices(DataForcesAndSourcesCore &data,const std::string &field_name) const {
+MoFEMErrorCode ForcesAndSourcesCore::getRowNodesIndices(DataForcesAndSourcesCore &data,const std::string &field_name) const {
 
   MoFEMFunctionBeginHot;
   ierr = getNodesIndices(
     field_name,const_cast<FENumeredDofEntity_multiIndex&>(numeredEntFiniteElementPtr->getRowsDofs()),
     data.dataOnEntities[MBVERTEX][0].getIndices(),data.dataOnEntities[MBVERTEX][0].getLocalIndices()
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode ForcesAndSourcesCore::getColNodesIndices(DataForcesAndSourcesCore &data,const std::string &field_name) const {
+MoFEMErrorCode ForcesAndSourcesCore::getColNodesIndices(DataForcesAndSourcesCore &data,const std::string &field_name) const {
 
   MoFEMFunctionBeginHot;
   ierr = getNodesIndices(
     field_name,const_cast<FENumeredDofEntity_multiIndex&>(numeredEntFiniteElementPtr->getColsDofs()),
     data.dataOnEntities[MBVERTEX][0].getIndices(),data.dataOnEntities[MBVERTEX][0].getLocalIndices()
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode ForcesAndSourcesCore::getTypeIndices(
+MoFEMErrorCode ForcesAndSourcesCore::getTypeIndices(
   const boost::string_ref field_name,FENumeredDofEntity_multiIndex &dofs,EntityType type,int side_number,VectorInt &indices,VectorInt &local_indices
 ) const {
   //
@@ -454,7 +454,7 @@ PetscErrorCode ForcesAndSourcesCore::getTypeIndices(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode ForcesAndSourcesCore::getTypeIndices(
+MoFEMErrorCode ForcesAndSourcesCore::getTypeIndices(
   const boost::string_ref field_name,FENumeredDofEntity_multiIndex &dofs,EntityType type,
   boost::ptr_vector<DataForcesAndSourcesCore::EntData> &data
 ) const {
@@ -515,51 +515,51 @@ PetscErrorCode ForcesAndSourcesCore::getTypeIndices(
         side_number,
         data[siit->get()->brother_side_number].getIndices(),
         data[siit->get()->brother_side_number].getLocalIndices()
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
     }
   }
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode ForcesAndSourcesCore::getEdgesRowIndices(DataForcesAndSourcesCore &data,const std::string &field_name) const {
+MoFEMErrorCode ForcesAndSourcesCore::getEdgesRowIndices(DataForcesAndSourcesCore &data,const std::string &field_name) const {
 
   MoFEMFunctionBeginHot;
   ierr = getTypeIndices(
     field_name,const_cast<FENumeredDofEntity_multiIndex&>(numeredEntFiniteElementPtr->getRowsDofs()),MBEDGE,data.dataOnEntities[MBEDGE]
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode ForcesAndSourcesCore::getEdgesColIndices(DataForcesAndSourcesCore &data,const std::string &field_name) const {
+MoFEMErrorCode ForcesAndSourcesCore::getEdgesColIndices(DataForcesAndSourcesCore &data,const std::string &field_name) const {
 
   MoFEMFunctionBeginHot;
   ierr = getTypeIndices(
     field_name,const_cast<FENumeredDofEntity_multiIndex&>(numeredEntFiniteElementPtr->getColsDofs()),MBEDGE,data.dataOnEntities[MBEDGE]
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode ForcesAndSourcesCore::getTrisRowIndices(
+MoFEMErrorCode ForcesAndSourcesCore::getTrisRowIndices(
   DataForcesAndSourcesCore &data,const std::string &field_name
 ) const {
 
   MoFEMFunctionBeginHot;
   ierr = getTypeIndices(
     field_name,const_cast<FENumeredDofEntity_multiIndex&>(numeredEntFiniteElementPtr->getRowsDofs()),MBTRI,data.dataOnEntities[MBTRI]
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode ForcesAndSourcesCore::getTrisColIndices(DataForcesAndSourcesCore &data,const std::string &field_name) const {
+MoFEMErrorCode ForcesAndSourcesCore::getTrisColIndices(DataForcesAndSourcesCore &data,const std::string &field_name) const {
 
   MoFEMFunctionBeginHot;
   ierr = getTypeIndices(
     field_name,const_cast<FENumeredDofEntity_multiIndex&>(numeredEntFiniteElementPtr->getColsDofs()),MBTRI,data.dataOnEntities[MBTRI]
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode ForcesAndSourcesCore::getTetsRowIndices(DataForcesAndSourcesCore &data,const std::string &field_name) const {
+MoFEMErrorCode ForcesAndSourcesCore::getTetsRowIndices(DataForcesAndSourcesCore &data,const std::string &field_name) const {
 
   MoFEMFunctionBeginHot;
   if(data.dataOnEntities[MBTET].size() == 0) {
@@ -568,11 +568,11 @@ PetscErrorCode ForcesAndSourcesCore::getTetsRowIndices(DataForcesAndSourcesCore 
   ierr = getTypeIndices(
     field_name,const_cast<FENumeredDofEntity_multiIndex&>(numeredEntFiniteElementPtr->getRowsDofs()),MBTET,0,
     data.dataOnEntities[MBTET][0].getIndices(),data.dataOnEntities[MBTET][0].getLocalIndices()
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode ForcesAndSourcesCore::getTetsColIndices(DataForcesAndSourcesCore &data,const std::string &field_name) const {
+MoFEMErrorCode ForcesAndSourcesCore::getTetsColIndices(DataForcesAndSourcesCore &data,const std::string &field_name) const {
 
   MoFEMFunctionBeginHot;
   if(data.dataOnEntities[MBTET].size() == 0) {
@@ -581,51 +581,51 @@ PetscErrorCode ForcesAndSourcesCore::getTetsColIndices(DataForcesAndSourcesCore 
   ierr = getTypeIndices(
     field_name,const_cast<FENumeredDofEntity_multiIndex&>(
       numeredEntFiniteElementPtr->getColsDofs()),MBTET,0,data.dataOnEntities[MBTET][0].getIndices(),data.dataOnEntities[MBTET][0].getLocalIndices()
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode ForcesAndSourcesCore::getQuadRowIndices(
+MoFEMErrorCode ForcesAndSourcesCore::getQuadRowIndices(
   DataForcesAndSourcesCore &data,const std::string &field_name
 ) const {
 
   MoFEMFunctionBeginHot;
   ierr = getTypeIndices(
     field_name,const_cast<FENumeredDofEntity_multiIndex&>(numeredEntFiniteElementPtr->getRowsDofs()),MBQUAD,data.dataOnEntities[MBQUAD]
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode ForcesAndSourcesCore::getQuadColIndices(DataForcesAndSourcesCore &data,const std::string &field_name) const {
+MoFEMErrorCode ForcesAndSourcesCore::getQuadColIndices(DataForcesAndSourcesCore &data,const std::string &field_name) const {
 
   MoFEMFunctionBeginHot;
   ierr = getTypeIndices(
     field_name,const_cast<FENumeredDofEntity_multiIndex&>(numeredEntFiniteElementPtr->getColsDofs()),MBQUAD,data.dataOnEntities[MBQUAD]
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode ForcesAndSourcesCore::getPrismRowIndices(
+MoFEMErrorCode ForcesAndSourcesCore::getPrismRowIndices(
   DataForcesAndSourcesCore &data,const std::string &field_name
 ) const {
 
   MoFEMFunctionBeginHot;
   ierr = getTypeIndices(
     field_name,const_cast<FENumeredDofEntity_multiIndex&>(numeredEntFiniteElementPtr->getRowsDofs()),MBPRISM,data.dataOnEntities[MBPRISM]
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode ForcesAndSourcesCore::getPrismColIndices(DataForcesAndSourcesCore &data,const std::string &field_name) const {
+MoFEMErrorCode ForcesAndSourcesCore::getPrismColIndices(DataForcesAndSourcesCore &data,const std::string &field_name) const {
 
   MoFEMFunctionBeginHot;
   ierr = getTypeIndices(
     field_name,const_cast<FENumeredDofEntity_multiIndex&>(numeredEntFiniteElementPtr->getColsDofs()),MBPRISM,data.dataOnEntities[MBPRISM]
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode ForcesAndSourcesCore::getNoFieldIndices(
+MoFEMErrorCode ForcesAndSourcesCore::getNoFieldIndices(
   const std::string &field_name,FENumeredDofEntity_multiIndex &dofs,VectorInt &indices
 ) const {
   //
@@ -641,7 +641,7 @@ PetscErrorCode ForcesAndSourcesCore::getNoFieldIndices(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode ForcesAndSourcesCore::getNoFieldRowIndices(DataForcesAndSourcesCore &data,const std::string &field_name) const {
+MoFEMErrorCode ForcesAndSourcesCore::getNoFieldRowIndices(DataForcesAndSourcesCore &data,const std::string &field_name) const {
 
   MoFEMFunctionBeginHot;
   //EntityType fe_type = numeredEntFiniteElementPtr->getEntType();
@@ -650,11 +650,11 @@ PetscErrorCode ForcesAndSourcesCore::getNoFieldRowIndices(DataForcesAndSourcesCo
   }
   ierr = getNoFieldIndices(
     field_name,const_cast<FENumeredDofEntity_multiIndex&>(numeredEntFiniteElementPtr->getRowsDofs()),data.dataOnEntities[MBENTITYSET][0].getIndices()
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode ForcesAndSourcesCore::getNoFieldColIndices(DataForcesAndSourcesCore &data,const std::string &field_name) const {
+MoFEMErrorCode ForcesAndSourcesCore::getNoFieldColIndices(DataForcesAndSourcesCore &data,const std::string &field_name) const {
 
   MoFEMFunctionBeginHot;
   if(data.dataOnEntities[MBENTITYSET].size() == 0) {
@@ -662,13 +662,13 @@ PetscErrorCode ForcesAndSourcesCore::getNoFieldColIndices(DataForcesAndSourcesCo
   }
   ierr = getNoFieldIndices(
     field_name,const_cast<FENumeredDofEntity_multiIndex&>(numeredEntFiniteElementPtr->getColsDofs()),data.dataOnEntities[MBENTITYSET][0].getIndices()
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
 // ** Indices from problem **
 
-PetscErrorCode ForcesAndSourcesCore::getProblemNodesIndices(
+MoFEMErrorCode ForcesAndSourcesCore::getProblemNodesIndices(
   const std::string &field_name,
   const NumeredDofEntity_multiIndex &dofs,
   VectorInt &nodes_indices
@@ -708,7 +708,7 @@ PetscErrorCode ForcesAndSourcesCore::getProblemNodesIndices(
 
 }
 
-PetscErrorCode ForcesAndSourcesCore::getProblemTypeIndices(
+MoFEMErrorCode ForcesAndSourcesCore::getProblemTypeIndices(
   const std::string &field_name,const NumeredDofEntity_multiIndex &dofs,
   EntityType type,int side_number,VectorInt &indices
 ) const {
@@ -744,37 +744,37 @@ PetscErrorCode ForcesAndSourcesCore::getProblemTypeIndices(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode ForcesAndSourcesCore::getProblemNodesRowIndices(const std::string &field_name,VectorInt &nodes_indices) const {
+MoFEMErrorCode ForcesAndSourcesCore::getProblemNodesRowIndices(const std::string &field_name,VectorInt &nodes_indices) const {
   MoFEMFunctionBeginHot;
 
-  ierr = getProblemNodesIndices(field_name,*(problemPtr->numeredDofsRows),nodes_indices); CHKERRQ(ierr);
+  ierr = getProblemNodesIndices(field_name,*(problemPtr->numeredDofsRows),nodes_indices); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode ForcesAndSourcesCore::getProblemTypeRowIndices(const std::string &field_name,EntityType type,int side_number,VectorInt &indices) const {
+MoFEMErrorCode ForcesAndSourcesCore::getProblemTypeRowIndices(const std::string &field_name,EntityType type,int side_number,VectorInt &indices) const {
   MoFEMFunctionBeginHot;
 
-  ierr = getProblemTypeIndices(field_name,*(problemPtr->numeredDofsRows),type,side_number,indices); CHKERRQ(ierr);
+  ierr = getProblemTypeIndices(field_name,*(problemPtr->numeredDofsRows),type,side_number,indices); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode ForcesAndSourcesCore::getProblemNodesColIndices(const std::string &field_name,VectorInt &nodes_indices) const {
+MoFEMErrorCode ForcesAndSourcesCore::getProblemNodesColIndices(const std::string &field_name,VectorInt &nodes_indices) const {
   MoFEMFunctionBeginHot;
 
-  ierr = getProblemNodesIndices(field_name,*(problemPtr->numeredDofsCols),nodes_indices); CHKERRQ(ierr);
+  ierr = getProblemNodesIndices(field_name,*(problemPtr->numeredDofsCols),nodes_indices); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode ForcesAndSourcesCore::getProblemTypeColIndices(const std::string &field_name,EntityType type,int side_number,VectorInt &indices) const {
+MoFEMErrorCode ForcesAndSourcesCore::getProblemTypeColIndices(const std::string &field_name,EntityType type,int side_number,VectorInt &indices) const {
   MoFEMFunctionBeginHot;
 
-  ierr = getProblemTypeIndices(field_name,*(problemPtr->numeredDofsCols),type,side_number,indices); CHKERRQ(ierr);
+  ierr = getProblemTypeIndices(field_name,*(problemPtr->numeredDofsCols),type,side_number,indices); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
 // ** Data **
 
-PetscErrorCode ForcesAndSourcesCore::getNodesFieldData(
+MoFEMErrorCode ForcesAndSourcesCore::getNodesFieldData(
   const boost::string_ref field_name,
   FEDofEntity_multiIndex &dofs,
   VectorDouble &nodes_data,
@@ -790,7 +790,7 @@ PetscErrorCode ForcesAndSourcesCore::getNodesFieldData(
     hi_dit = dofs.get<Composite_Name_And_Type_mi_tag>().upper_bound(boost::make_tuple(field_name,MBVERTEX));
 
     int num_nodes;
-    ierr = getNumberOfNodes(num_nodes); CHKERRQ(ierr);
+    ierr = getNumberOfNodes(num_nodes); CHKERRG(ierr);
     int max_nb_dofs = 0;
     if(dit!=hi_dit) {
       max_nb_dofs = (*dit)->getNbOfCoeffs()*num_nodes;
@@ -840,7 +840,7 @@ PetscErrorCode ForcesAndSourcesCore::getNodesFieldData(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode ForcesAndSourcesCore::getNodesFieldData(DataForcesAndSourcesCore &data,const std::string &field_name) const {
+MoFEMErrorCode ForcesAndSourcesCore::getNodesFieldData(DataForcesAndSourcesCore &data,const std::string &field_name) const {
   MoFEMFunctionBeginHot;
 
   ierr = getNodesFieldData(
@@ -850,11 +850,11 @@ PetscErrorCode ForcesAndSourcesCore::getNodesFieldData(DataForcesAndSourcesCore 
     data.dataOnEntities[MBVERTEX][0].getFieldDofs(),
     data.dataOnEntities[MBVERTEX][0].getSpace(),
     data.dataOnEntities[MBVERTEX][0].getBase()
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode ForcesAndSourcesCore::getTypeFieldData(
+MoFEMErrorCode ForcesAndSourcesCore::getTypeFieldData(
   const boost::string_ref field_name,
   FEDofEntity_multiIndex &dofs,
   EntityType type,
@@ -888,7 +888,7 @@ PetscErrorCode ForcesAndSourcesCore::getTypeFieldData(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode ForcesAndSourcesCore::getTypeFieldData(
+MoFEMErrorCode ForcesAndSourcesCore::getTypeFieldData(
   const boost::string_ref field_name,
   FEDofEntity_multiIndex &dofs,
   EntityType type,
@@ -956,13 +956,13 @@ PetscErrorCode ForcesAndSourcesCore::getTypeFieldData(
         field_name,dofs,type,side_number,
         data[siit->get()->brother_side_number].getFieldData(),
         data[siit->get()->brother_side_number].getFieldDofs()
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
     }
   }
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode ForcesAndSourcesCore::getNoFieldFieldData(
+MoFEMErrorCode ForcesAndSourcesCore::getNoFieldFieldData(
   const boost::string_ref field_name,
   FEDofEntity_multiIndex &dofs,
   VectorDouble &ent_field_data,
@@ -984,7 +984,7 @@ PetscErrorCode ForcesAndSourcesCore::getNoFieldFieldData(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode ForcesAndSourcesCore::getNoFieldFieldData(
+MoFEMErrorCode ForcesAndSourcesCore::getNoFieldFieldData(
   DataForcesAndSourcesCore &data,const boost::string_ref field_name
 ) const {
 
@@ -996,42 +996,42 @@ PetscErrorCode ForcesAndSourcesCore::getNoFieldFieldData(
     field_name,const_cast<FEDofEntity_multiIndex&>(numeredEntFiniteElementPtr->getDataDofs()),
     data.dataOnEntities[MBENTITYSET][0].getFieldData(),
     data.dataOnEntities[MBENTITYSET][0].getFieldDofs()
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode ForcesAndSourcesCore::getEdgesFieldData(DataForcesAndSourcesCore &data,const std::string &field_name) const {
+MoFEMErrorCode ForcesAndSourcesCore::getEdgesFieldData(DataForcesAndSourcesCore &data,const std::string &field_name) const {
 
   MoFEMFunctionBeginHot;
   ierr = getTypeFieldData(
     field_name,const_cast<FEDofEntity_multiIndex&>(numeredEntFiniteElementPtr->getDataDofs()),MBEDGE,data.dataOnEntities[MBEDGE]
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode ForcesAndSourcesCore::getTrisFieldData(
+MoFEMErrorCode ForcesAndSourcesCore::getTrisFieldData(
   DataForcesAndSourcesCore &data,const std::string &field_name
 ) const {
 
   MoFEMFunctionBeginHot;
   ierr = getTypeFieldData(
     field_name,const_cast<FEDofEntity_multiIndex&>(numeredEntFiniteElementPtr->getDataDofs()),MBTRI,data.dataOnEntities[MBTRI]
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode ForcesAndSourcesCore::getQuadFieldData(
+MoFEMErrorCode ForcesAndSourcesCore::getQuadFieldData(
   DataForcesAndSourcesCore &data,const std::string &field_name
 ) const {
 
   MoFEMFunctionBeginHot;
   ierr = getTypeFieldData(
     field_name,const_cast<FEDofEntity_multiIndex&>(numeredEntFiniteElementPtr->getDataDofs()),MBQUAD,data.dataOnEntities[MBQUAD]
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode ForcesAndSourcesCore::getTetsFieldData(DataForcesAndSourcesCore &data,const std::string &field_name) const {
+MoFEMErrorCode ForcesAndSourcesCore::getTetsFieldData(DataForcesAndSourcesCore &data,const std::string &field_name) const {
 
   MoFEMFunctionBeginHot;
   if(data.dataOnEntities[MBTET].size() == 0) {
@@ -1043,11 +1043,11 @@ PetscErrorCode ForcesAndSourcesCore::getTetsFieldData(DataForcesAndSourcesCore &
     0,
     data.dataOnEntities[MBTET][0].getFieldData(),
     data.dataOnEntities[MBTET][0].getFieldDofs()
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode ForcesAndSourcesCore::getPrismFieldData(DataForcesAndSourcesCore &data,const std::string &field_name) const {
+MoFEMErrorCode ForcesAndSourcesCore::getPrismFieldData(DataForcesAndSourcesCore &data,const std::string &field_name) const {
 
   MoFEMFunctionBeginHot;
   if(data.dataOnEntities[MBPRISM].size() == 0) {
@@ -1060,13 +1060,13 @@ PetscErrorCode ForcesAndSourcesCore::getPrismFieldData(DataForcesAndSourcesCore 
     0,
     data.dataOnEntities[MBPRISM][0].getFieldData(),
     data.dataOnEntities[MBPRISM][0].getFieldDofs()
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
 // ** Face **
 
-PetscErrorCode ForcesAndSourcesCore::getFaceTriNodes(DataForcesAndSourcesCore &data) const {
+MoFEMErrorCode ForcesAndSourcesCore::getFaceTriNodes(DataForcesAndSourcesCore &data) const {
   //
   MoFEMFunctionBeginHot;
   //PetscAttachDebugger();
@@ -1121,7 +1121,7 @@ PetscErrorCode ForcesAndSourcesCore::getFaceTriNodes(DataForcesAndSourcesCore &d
 
 // ** Space and Base **
 
-PetscErrorCode ForcesAndSourcesCore::getSpacesAndBaseOnEntities(DataForcesAndSourcesCore &data) const {
+MoFEMErrorCode ForcesAndSourcesCore::getSpacesAndBaseOnEntities(DataForcesAndSourcesCore &data) const {
   //
   MoFEMFunctionBeginHot;
   try {
@@ -1157,7 +1157,7 @@ PetscErrorCode ForcesAndSourcesCore::getSpacesAndBaseOnEntities(DataForcesAndSou
 
 // **** Data Operator ****
 
-static PetscErrorCode get_porblem_row_indices(
+static MoFEMErrorCode get_porblem_row_indices(
   const ForcesAndSourcesCore *fe_ptr,const EntityType type,const int side,const std::string field_name,VectorInt& indices) {
   MoFEMFunctionBeginHot;
 
@@ -1165,16 +1165,16 @@ static PetscErrorCode get_porblem_row_indices(
 
   switch(type) {
     case MBVERTEX:
-      ierr = fe_ptr->getProblemNodesRowIndices(field_name,indices); CHKERRQ(ierr);
+      ierr = fe_ptr->getProblemNodesRowIndices(field_name,indices); CHKERRG(ierr);
     break;
     default:
-      ierr = fe_ptr->getProblemTypeRowIndices(field_name,type,side,indices); CHKERRQ(ierr);
+      ierr = fe_ptr->getProblemTypeRowIndices(field_name,type,side,indices); CHKERRG(ierr);
   }
 
   MoFEMFunctionReturnHot(0);
 }
 
-static PetscErrorCode get_porblem_col_indices(
+static MoFEMErrorCode get_porblem_col_indices(
   const ForcesAndSourcesCore *fe_ptr,const EntityType type,const int side,const std::string field_name,VectorInt& indices) {
   MoFEMFunctionBeginHot;;
 
@@ -1182,16 +1182,16 @@ static PetscErrorCode get_porblem_col_indices(
 
   switch(type) {
     case MBVERTEX:
-      ierr = fe_ptr->getProblemNodesColIndices(field_name,indices); CHKERRQ(ierr);
+      ierr = fe_ptr->getProblemNodesColIndices(field_name,indices); CHKERRG(ierr);
     break;
     default:
-      ierr = fe_ptr->getProblemTypeColIndices(field_name,type,side,indices); CHKERRQ(ierr);
+      ierr = fe_ptr->getProblemTypeColIndices(field_name,type,side,indices); CHKERRG(ierr);
   }
 
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode ForcesAndSourcesCore::UserDataOperator::getProblemRowIndices(
+MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::getProblemRowIndices(
   const std::string field_name,const EntityType type,const int side,VectorInt& indices
 ) const {
   MoFEMFunctionBeginHot;
@@ -1201,12 +1201,12 @@ PetscErrorCode ForcesAndSourcesCore::UserDataOperator::getProblemRowIndices(
   if(ptrFE == NULL) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
   }
-  ierr = get_porblem_row_indices(ptrFE,type,side,field_name,indices); CHKERRQ(ierr);
+  ierr = get_porblem_row_indices(ptrFE,type,side,field_name,indices); CHKERRG(ierr);
 
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode ForcesAndSourcesCore::UserDataOperator::getProblemColIndices(
+MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::getProblemColIndices(
   const std::string field_name,const EntityType type,const int side,VectorInt& indices
 ) const {
   MoFEMFunctionBeginHot;
@@ -1216,7 +1216,7 @@ PetscErrorCode ForcesAndSourcesCore::UserDataOperator::getProblemColIndices(
   if(ptrFE == NULL) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
   }
-  ierr = get_porblem_col_indices(ptrFE,type,side,field_name,indices); CHKERRQ(ierr);
+  ierr = get_porblem_col_indices(ptrFE,type,side,field_name,indices); CHKERRG(ierr);
 
   MoFEMFunctionReturnHot(0);
 }

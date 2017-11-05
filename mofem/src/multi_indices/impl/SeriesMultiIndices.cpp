@@ -67,14 +67,14 @@ FieldSeries::FieldSeries(Interface &moab,const EntityHandle _meshset):
 
 }
 
-PetscErrorCode FieldSeries::get_nb_steps(Interface &moab,int &nb_steps) const {
+MoFEMErrorCode FieldSeries::get_nb_steps(Interface &moab,int &nb_steps) const {
   MoFEMFunctionBeginHot;
   ErrorCode rval;
   rval = moab.num_contained_meshsets(meshset,&nb_steps); CHKERRQ_MOAB(rval);
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode FieldSeries::push_dofs(const EntityHandle ent,const ShortId uid,const FieldData val) {
+MoFEMErrorCode FieldSeries::push_dofs(const EntityHandle ent,const ShortId uid,const FieldData val) {
   MoFEMFunctionBeginHot;
   if(!record_begin) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"you neet to set recording");
@@ -85,7 +85,7 @@ PetscErrorCode FieldSeries::push_dofs(const EntityHandle ent,const ShortId uid,c
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode FieldSeries::begin() {
+MoFEMErrorCode FieldSeries::begin() {
   MoFEMFunctionBeginHot;
   if(record_begin) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"recording already  begin");
@@ -94,7 +94,7 @@ PetscErrorCode FieldSeries::begin() {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode FieldSeries::end(double t) {
+MoFEMErrorCode FieldSeries::end(double t) {
   MoFEMFunctionBeginHot;
   if(!record_begin) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"recording not begin it can not be ended");
@@ -106,7 +106,7 @@ PetscErrorCode FieldSeries::end(double t) {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode FieldSeries::read(Interface &moab) {
+MoFEMErrorCode FieldSeries::read(Interface &moab) {
   MoFEMFunctionBeginHot;
   ErrorCode rval;
 
@@ -168,7 +168,7 @@ PetscErrorCode FieldSeries::read(Interface &moab) {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode FieldSeries::save(Interface &moab) const {
+MoFEMErrorCode FieldSeries::save(Interface &moab) const {
   MoFEMFunctionBeginHot;
 
   if(record_begin) {
@@ -234,7 +234,7 @@ FieldSeriesStep::FieldSeriesStep(Interface &moab,const FieldSeries *_FieldSeries
   ierr = get_time_init(moab); CHKERRABORT(PETSC_COMM_WORLD,ierr);
 }
 
-PetscErrorCode FieldSeriesStep::get(Interface &moab,DofEntity_multiIndex &dofsField) const {
+MoFEMErrorCode FieldSeriesStep::get(Interface &moab,DofEntity_multiIndex &dofsField) const {
   MoFEMFunctionBeginHot;
   ErrorCode rval;
 
@@ -284,7 +284,7 @@ PetscErrorCode FieldSeriesStep::get(Interface &moab,DofEntity_multiIndex &dofsFi
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode FieldSeriesStep::get_time_init(Interface &moab) {
+MoFEMErrorCode FieldSeriesStep::get_time_init(Interface &moab) {
   MoFEMFunctionBeginHot;
   ErrorCode rval;
   std::vector<EntityHandle> contained;

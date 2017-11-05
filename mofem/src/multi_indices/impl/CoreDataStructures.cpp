@@ -204,7 +204,7 @@ std::ostream& operator<<(std::ostream& os,const FieldEntityEntFiniteElementAdjac
   return os;
 }
 
-PetscErrorCode test_moab(Interface &moab,const EntityHandle ent) {
+MoFEMErrorCode test_moab(Interface &moab,const EntityHandle ent) {
   MoFEMFunctionBeginHot;
   //tets type
   EntityType type = (EntityType)((ent&MB_TYPE_MASK)>>MB_ID_WIDTH);

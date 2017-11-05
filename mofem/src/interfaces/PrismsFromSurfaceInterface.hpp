@@ -25,7 +25,7 @@ static const MOFEMuuid IDD_MOFEMPrismsFromSurface = MOFEMuuid(BitIntefaceId(PRIS
   */
 struct PrismsFromSurfaceInterface: public UnknownInterface {
 
-  PetscErrorCode query_interface(const MOFEMuuid& uuid, UnknownInterface** iface) const;
+  MoFEMErrorCode query_interface(const MOFEMuuid& uuid, UnknownInterface** iface) const;
 
   MoFEM::Core& cOre;
   PrismsFromSurfaceInterface(const MoFEM::Core& core):
@@ -40,7 +40,7 @@ struct PrismsFromSurfaceInterface: public UnknownInterface {
    * @param  verb   Verbosity level
    * @return        Error code
    */
-  PetscErrorCode createPrisms(const Range &ents,Range &prisms,int verb = -1);
+  MoFEMErrorCode createPrisms(const Range &ents,Range &prisms,int verb = -1);
 
   /**
    * \brief Seed prism entities by bit level
@@ -49,7 +49,7 @@ struct PrismsFromSurfaceInterface: public UnknownInterface {
    * @param  verb   Verbosity level
    * @return        Error code
    */
-  PetscErrorCode seedPrismsEntities(Range &prisms,const BitRefLevel &bit,int verb = -1);
+  MoFEMErrorCode seedPrismsEntities(Range &prisms,const BitRefLevel &bit,int verb = -1);
 
   /**
    * \brief Make prisms by extruding top or bottom prisms
@@ -59,7 +59,7 @@ struct PrismsFromSurfaceInterface: public UnknownInterface {
    * @param  verb        Verbosity level
    * @return             Error code
    */
-  PetscErrorCode createPrismsFromPrisms(const Range &prisms,bool from_down,Range &out_prisms,int verb = -1);
+  MoFEMErrorCode createPrismsFromPrisms(const Range &prisms,bool from_down,Range &out_prisms,int verb = -1);
 
 
   /**
@@ -69,7 +69,7 @@ struct PrismsFromSurfaceInterface: public UnknownInterface {
    * @param  director4 Displacement of face 4
    * @return
    */
-  PetscErrorCode setThickness(const Range &prisms,const double director3[],const double director4[]);
+  MoFEMErrorCode setThickness(const Range &prisms,const double director3[],const double director4[]);
 
 };
 

@@ -31,7 +31,7 @@ namespace MoFEM {
  * @param  base_polynomials polynomial base function (f.e. Legendre of Lobatto)
  * @return                  error code
  */
-PetscErrorCode Hcurl_EdgeBaseFunctions_MBTET(
+MoFEMErrorCode Hcurl_EdgeBaseFunctions_MBTET(
   int *sense,int *p,double *N,double *diffN,double *edgeN[],double *diff_edgeN[],int nb_integration_pts,
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 );
@@ -54,7 +54,7 @@ PetscErrorCode Hcurl_EdgeBaseFunctions_MBTET(
  * @param  base_polynomials polynomial base function (f.e. Legendre of Lobatto)
  * @return                  error code
  */
-PetscErrorCode Hcurl_EdgeBaseFunctions_MBTET_ON_EDGE(
+MoFEMErrorCode Hcurl_EdgeBaseFunctions_MBTET_ON_EDGE(
   int sense,int p,double *N,double *diffN,double *edgeN,double *diff_edgeN,int nb_integration_pts,
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 );
@@ -77,7 +77,7 @@ PetscErrorCode Hcurl_EdgeBaseFunctions_MBTET_ON_EDGE(
  * @param  base_polynomials polynomial base function (f.e. Legendre of Lobatto)
  * @return                  error code
  */
-PetscErrorCode Hcurl_EdgeBaseFunctions_MBTET_ON_FACE(
+MoFEMErrorCode Hcurl_EdgeBaseFunctions_MBTET_ON_FACE(
   int *sense,int *p,double *N,double *diffN,double *edgeN[],double *diff_edgeN[],int nb_integration_pts,
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 );
@@ -102,7 +102,7 @@ PetscErrorCode Hcurl_EdgeBaseFunctions_MBTET_ON_FACE(
   * @return                  error code
 
 */
-PetscErrorCode Hcurl_EdgeBasedFaceFunctions_MBTET(
+MoFEMErrorCode Hcurl_EdgeBasedFaceFunctions_MBTET(
   int *faces_nodes,int *p,double *N,double *diffN,double *phi_f_e[4][3],double *diff_phi_f_e[4][3],int nb_integration_pts,
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 );
@@ -125,7 +125,7 @@ PetscErrorCode Hcurl_EdgeBasedFaceFunctions_MBTET(
   * @return                  error code
 
 */
-PetscErrorCode Hcurl_EdgeBasedFaceFunctions_MBTET_ON_FACE(
+MoFEMErrorCode Hcurl_EdgeBasedFaceFunctions_MBTET_ON_FACE(
   int *faces_nodes,int p,double *N,double *diffN,double *phi_f_e[3],double *diff_phi_f_e[3],int nb_integration_pts,
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 );
@@ -147,7 +147,7 @@ PetscErrorCode Hcurl_EdgeBasedFaceFunctions_MBTET_ON_FACE(
   * @return                  error code
 
 */
-PetscErrorCode Hcurl_BubbleFaceFunctions_MBTET(
+MoFEMErrorCode Hcurl_BubbleFaceFunctions_MBTET(
   int *faces_nodes,int *p,double *N,double *diffN,double *phi_f[4],double *diff_phi_f[4],int nb_integration_pts,
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 );
@@ -169,7 +169,7 @@ PetscErrorCode Hcurl_BubbleFaceFunctions_MBTET(
   * @return                  error code
 
 */
-PetscErrorCode Hcurl_BubbleFaceFunctions_MBTET_ON_FACE(
+MoFEMErrorCode Hcurl_BubbleFaceFunctions_MBTET_ON_FACE(
   int *faces_nodes,int p,double *N,double *diffN,double *phi_f,double *diff_phi_f,int nb_integration_pts,
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 );
@@ -193,7 +193,7 @@ See NBFACETRI_FACE_HCURL
 
 
 */
-PetscErrorCode Hcurl_FaceInteriorFunctions_MBTET(
+MoFEMErrorCode Hcurl_FaceInteriorFunctions_MBTET(
   int *faces_nodes,int p,double *N,double *diffN,double *phi_v,double *diff_phi_v,int nb_integration_pts,
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 );
@@ -214,7 +214,7 @@ See NBVOLUMETET_TET_HCURL
 * @return                  error code
 
 */
-PetscErrorCode Hcurl_VolumeInteriorFunctions_MBTET(
+MoFEMErrorCode Hcurl_VolumeInteriorFunctions_MBTET(
   int p,double *N,double *diffN,double *phi_v,double *diff_phi_v,int nb_integration_pts,
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 );
@@ -237,7 +237,7 @@ PetscErrorCode Hcurl_VolumeInteriorFunctions_MBTET(
   * @return                  error code
 
 */
-PetscErrorCode Hcurl_FaceFunctions_MBTET(
+MoFEMErrorCode Hcurl_FaceFunctions_MBTET(
   int *face_nodes,int *p,double *N,double *diffN,double *phi_f[4],double *diff_phi_f[4],int nb_integration_pts,
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 );
@@ -260,7 +260,7 @@ PetscErrorCode Hcurl_FaceFunctions_MBTET(
   * @return                  error code
 
 */
-PetscErrorCode Hcurl_FaceFunctions_MBTET_ON_FACE(
+MoFEMErrorCode Hcurl_FaceFunctions_MBTET_ON_FACE(
   int *faces_nodes,int p,double *N,double *diffN,double *phi_f,double *diff_phi_f,int nb_integration_pts,
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 );
@@ -281,7 +281,7 @@ PetscErrorCode Hcurl_FaceFunctions_MBTET_ON_FACE(
  * @return                  error code
 
  */
-PetscErrorCode Hcurl_VolumeFunctions_MBTET(
+MoFEMErrorCode Hcurl_VolumeFunctions_MBTET(
   int p,double *N,double *diffN,double *phi_v,double *diff_phi_v,int nb_integration_pts,
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 );

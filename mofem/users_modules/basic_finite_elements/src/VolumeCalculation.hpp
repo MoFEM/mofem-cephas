@@ -34,7 +34,7 @@ struct VolumeCalculation: public MoFEM::VolumeElementForcesAndSourcesCore::UserD
 
   
 
-  PetscErrorCode doWork(
+  MoFEMErrorCode doWork(
     int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
   ) {
     MoFEMFunctionBeginHot;
@@ -50,7 +50,7 @@ struct VolumeCalculation: public MoFEM::VolumeElementForcesAndSourcesCore::UserD
         vol *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
       }
 
-      ierr = VecSetValue(volumeVec,0,vol,ADD_VALUES); CHKERRQ(ierr);
+      ierr = VecSetValue(volumeVec,0,vol,ADD_VALUES); CHKERRG(ierr);
 
     }
 

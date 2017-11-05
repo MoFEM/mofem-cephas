@@ -261,7 +261,7 @@ struct PoissonExample::OpK: public VolumeElementForcesAndSourcesCore::UserDataOp
    * @param  col_data data for column
    * @return          error code
    */
-  PetscErrorCode doWork(
+  MoFEMErrorCode doWork(
     int row_side,int col_side,
     EntityType row_type,EntityType col_type,
     DataForcesAndSourcesCore::EntData &row_data,DataForcesAndSourcesCore::EntData &col_data
@@ -285,7 +285,7 @@ private:
    * @param  col_data column data (consist base functions on column entity)
    * @return          error code
    */
-  inline PetscErrorCode iNtegrate(
+  inline MoFEMErrorCode iNtegrate(
     DataForcesAndSourcesCore::EntData &row_data,DataForcesAndSourcesCore::EntData &col_data
   );
 
@@ -295,7 +295,7 @@ private:
    * @param  col_data column data (consist base functions on column entity)
    * @return          error code
    */
-  inline PetscErrorCode aSsemble(
+  inline MoFEMErrorCode aSsemble(
     DataForcesAndSourcesCore::EntData &row_data,DataForcesAndSourcesCore::EntData &col_data
   );
 
@@ -364,7 +364,7 @@ Now we can dissect overloaded function
  * @param  col_data data for column
  * @return          error code
  */
-PetscErrorCode PoissonExample::OpK::doWork(
+MoFEMErrorCode PoissonExample::OpK::doWork(
   int row_side,int col_side,
   EntityType row_type,EntityType col_type,
   DataForcesAndSourcesCore::EntData &row_data,DataForcesAndSourcesCore::EntData &col_data
@@ -390,9 +390,9 @@ PetscErrorCode PoissonExample::OpK::doWork(
     isDiag = false;
   }
   // integrate local matrix for entity block
-  ierr = iNtegrate(row_data,col_data); CHKERRQ(ierr);
+  ierr = iNtegrate(row_data,col_data); CHKERRG(ierr);
   // asseble local matrix
-  ierr = aSsemble(row_data,col_data); CHKERRQ(ierr);
+  ierr = aSsemble(row_data,col_data); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 \endcode
@@ -426,13 +426,13 @@ the finite element) are both the same. Once we have this generic information we
 call function to integrate local entity matrix and assemble results to global
 matrix
 \code
-ierr = iNtegrate(row_data,col_data); CHKERRQ(ierr);
-ierr = aSsemble(row_data,col_data); CHKERRQ(ierr);
+ierr = iNtegrate(row_data,col_data); CHKERRG(ierr);
+ierr = aSsemble(row_data,col_data); CHKERRG(ierr);
 \endcode
 
 The PoissonExample::OpK::iNtegrate method
 \code
-inline PetscErrorCode iNtegrate(
+inline MoFEMErrorCode iNtegrate(
   DataForcesAndSourcesCore::EntData &row_data,DataForcesAndSourcesCore::EntData &col_data
 ) {
   MoFEMFunctionBeginHot;
@@ -487,7 +487,7 @@ where the grad-grad term is added to the local matrix.
 
 Finally, we assemble local matrix using PoissonExample::OpK::aSsemble
 \code
-inline PetscErrorCode PoissonExample::OpK::aSsemble(
+inline MoFEMErrorCode PoissonExample::OpK::aSsemble(
   DataForcesAndSourcesCore::EntData &row_data,DataForcesAndSourcesCore::EntData &col_data
 ) {
   MoFEMFunctionBeginHot;
@@ -501,7 +501,7 @@ inline PetscErrorCode PoissonExample::OpK::aSsemble(
     nbRows,row_indices,
     nbCols,col_indices,
     &*locMat.data().begin(),ADD_VALUES
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
   if(!isDiag) {
     // if not diagonal term and since global matrix is symmetric assemble
     // transpose term.
@@ -511,7 +511,7 @@ inline PetscErrorCode PoissonExample::OpK::aSsemble(
       nbCols,col_indices,
       nbRows,row_indices,
       &*locMat.data().begin(),ADD_VALUES
-    ); CHKERRQ(ierr);
+    ); CHKERRG(ierr);
   }
   MoFEMFunctionReturnHot(0);
 }
@@ -541,7 +541,7 @@ is type OPROW, that means its iterator is over entities
 \f]
 Another element is an overloaded PoissonExample::OpBaseRhs::doWork function
 \code
-PetscErrorCode PoissonExample::OpBaseRhs::doWork(
+MoFEMErrorCode PoissonExample::OpBaseRhs::doWork(
   int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
 ) {
   MoFEMFunctionBeginHot;
@@ -551,9 +551,9 @@ PetscErrorCode PoissonExample::OpBaseRhs::doWork(
   // get number of integration points
   nbIntegrationPts = OPBASE::getGaussPts().size2();
   // integrate local vector
-  ierr = iNtegrate(row_data); CHKERRQ(ierr);
+  ierr = iNtegrate(row_data); CHKERRG(ierr);
   // assemble local vector
-  ierr = aSsemble(row_data); CHKERRQ(ierr);
+  ierr = aSsemble(row_data); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 \endcode
@@ -582,9 +582,9 @@ private:
 
   VectorDouble locVec;
 
-  PetscErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &data);
+  MoFEMErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &data);
 
-  PetscErrorCode aSsemble(DataForcesAndSourcesCore::EntData &data);
+  MoFEMErrorCode aSsemble(DataForcesAndSourcesCore::EntData &data);
 
 };
 \endcode
@@ -593,7 +593,7 @@ private:
 The constructor of this operator takes as an argument pointer to function where
 Laplacian is defined. Then the local right-hand side vector is integrated
 \code
-PetscErrorCode PoissonExample::OpF::iNtegrate(DataForcesAndSourcesCore::EntData &data) {
+MoFEMErrorCode PoissonExample::OpF::iNtegrate(DataForcesAndSourcesCore::EntData &data) {
   MoFEMFunctionBeginHot;
   // set size of local vector
   locVec.resize(nbRows,false);
@@ -628,7 +628,7 @@ PetscErrorCode PoissonExample::OpF::iNtegrate(DataForcesAndSourcesCore::EntData 
 \endcode
 and assembled
 \code
-PetscErrorCode PoissonExample::OpF::aSsemble(DataForcesAndSourcesCore::EntData &data) {
+MoFEMErrorCode PoissonExample::OpF::aSsemble(DataForcesAndSourcesCore::EntData &data) {
   MoFEMFunctionBeginHot;
   // get global indices of local vector
   const int* indices = &*data.getIndices().data().begin();
@@ -637,7 +637,7 @@ PetscErrorCode PoissonExample::OpF::aSsemble(DataForcesAndSourcesCore::EntData &
   // assemble vector
   ierr = VecSetValues(
     getFEMethod()->ksp_f,nbRows,indices,vals,ADD_VALUES
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 \endcode
@@ -689,7 +689,7 @@ with one element only, i.e. TETRAHEDRA.
 
 To integrate error, we have the following code
 \code
-PetscErrorCode PoissonExample::OpError::iNtegrate(DataForcesAndSourcesCore::EntData &data) {
+MoFEMErrorCode PoissonExample::OpError::iNtegrate(DataForcesAndSourcesCore::EntData &data) {
   MoFEMFunctionBeginHot;
   // clear field dofs
   data.getFieldData().clear();
@@ -757,12 +757,12 @@ available functions from volume operator.
 
 Next, we accumulate error for all elements and processors
 \code
-PetscErrorCode PoissonExample::OpError::aSsemble(DataForcesAndSourcesCore::EntData &data) {
+MoFEMErrorCode PoissonExample::OpError::aSsemble(DataForcesAndSourcesCore::EntData &data) {
   MoFEMFunctionBeginHot;
   // set error on mesh
   data.getFieldDofs()[0]->getFieldData() = sqrt(data.getFieldData()[0]);
   // assemble vector to global error
-  ierr = VecSetValue(globalError,0,data.getFieldData()[0],ADD_VALUES); CHKERRQ(ierr);
+  ierr = VecSetValue(globalError,0,data.getFieldData()[0],ADD_VALUES); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 \endcode
@@ -773,7 +773,7 @@ data.getFieldDofs()[0]->getFieldData() = sqrt(data.getFieldData()[0]);
 set values to MoFEM database on ERRO field dofs. Next we assemble contributor to
 global error vector
 \code
-ierr = VecSetValue(globalError,0,data.getFieldData()[0],ADD_VALUES); CHKERRQ(ierr);
+ierr = VecSetValue(globalError,0,data.getFieldData()[0],ADD_VALUES); CHKERRG(ierr);
 \endcode
 
 \section poisson_tut2_exercise Exercise

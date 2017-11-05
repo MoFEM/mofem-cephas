@@ -1,6 +1,6 @@
 /**
- * \file PostPorcHookStress.hpp
- * \brief Post-proc stresses for linear Hooke'e isotropic material
+ * \file PostProcHookStress.hpp
+ * \brief Post-proc stresses for linear Hooke isotropic material
  *
  * \ingroup nonlinear_elastic_elem
  */
@@ -20,20 +20,20 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 /**
- * \brief Operator post-procesing stresses for Hook'e isotropic material
+ * \brief Operator post-procesing stresses for Hook isotropic material
 
  * Example how to use it
 
  \code
  PostProcVolumeOnRefinedMesh post_proc(m_field);
  {
-   ierr = post_proc.generateReferenceElementMesh(); CHKERRQ(ierr);
-   ierr = post_proc.addFieldValuesPostProc("DISPLACEMENT"); CHKERRQ(ierr);
-   ierr = post_proc.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
-   ierr = post_proc.addFieldValuesGradientPostProc("DISPLACEMENT"); CHKERRQ(ierr);
-   //add postpocessing for sresses
+   ierr = post_proc.generateReferenceElementMesh(); CHKERRG(ierr);
+   ierr = post_proc.addFieldValuesPostProc("DISPLACEMENT"); CHKERRG(ierr);
+   ierr = post_proc.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRG(ierr);
+   ierr = post_proc.addFieldValuesGradientPostProc("DISPLACEMENT"); CHKERRG(ierr);
+   //add postprocessing for stresses
    post_proc.getOpPtrVector().push_back(
-     new PostPorcHookStress(
+     new PostProcHookStress(
        m_field,
        post_proc.postProcMesh,
        post_proc.mapGaussPts,
@@ -42,14 +42,14 @@
        &elastic.setOfBlocks
      )
    );
-   ierr = DMoFEMLoopFiniteElements(dm,"ELASTIC",&post_proc); CHKERRQ(ierr);
-   ierr = post_proc.writeFile("out.h5m"); CHKERRQ(ierr);
+   ierr = DMoFEMLoopFiniteElements(dm,"ELASTIC",&post_proc); CHKERRG(ierr);
+   ierr = post_proc.writeFile("out.h5m"); CHKERRG(ierr);
  }
 
  \endcode
 
  */
-struct PostPorcHookStress: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
+struct PostProcHookStress: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
 
   MoFEM::Interface& mField;
   moab::Interface &postProcMesh;
@@ -65,7 +65,7 @@ struct PostPorcHookStress: public MoFEM::VolumeElementForcesAndSourcesCore::User
   /**
    * Constructor
    */
-  PostPorcHookStress(
+  PostProcHookStress(
     MoFEM::Interface& m_field,
     moab::Interface& post_proc_mesh,
     std::vector<EntityHandle> &map_gauss_pts,
@@ -94,12 +94,12 @@ struct PostPorcHookStress: public MoFEM::VolumeElementForcesAndSourcesCore::User
    * use data how are set for elastic element operators.
 
    * @param  _lambda   elastic material constant
-   * @param  _mu       elastci material constant
+   * @param  _mu       elastic material constant
    * @param  _block_id  block id
    * @return           error code
 
    */
-  PetscErrorCode getMatParameters(double *_lambda,double *_mu,int *_block_id) {
+  MoFEMErrorCode getMatParameters(double *_lambda,double *_mu,int *_block_id) {
     MoFEMFunctionBeginHot;
 
     
@@ -111,10 +111,10 @@ struct PostPorcHookStress: public MoFEM::VolumeElementForcesAndSourcesCore::User
     EntityHandle ent = getNumeredEntFiniteElementPtr()->getEnt();
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|MAT_ELASTICSET,it)) {
       Mat_Elastic mydata;
-      ierr = it->getAttributeDataStructure(mydata); CHKERRQ(ierr);
+      ierr = it->getAttributeDataStructure(mydata); CHKERRG(ierr);
 
       Range meshsets;
-      rval = mField.get_moab().get_entities_by_type(it->meshset,MBENTITYSET,meshsets,true); CHKERRQ_MOAB(rval);
+      rval = mField.get_moab().get_entities_by_type(it->meshset,MBENTITYSET,meshsets,true); CHKERRG(rval);
       meshsets.insert(it->meshset);
       for(Range::iterator mit = meshsets.begin();mit != meshsets.end(); mit++) {
         if( mField.get_moab().contains_entities(*mit,&ent,1) ) {
@@ -144,7 +144,7 @@ struct PostPorcHookStress: public MoFEM::VolumeElementForcesAndSourcesCore::User
   /**
    * \brief Here real work is done
    */
-  PetscErrorCode doWork(
+  MoFEMErrorCode doWork(
     int side,
     EntityType type,
     DataForcesAndSourcesCore::EntData &data) {
@@ -160,7 +160,7 @@ struct PostPorcHookStress: public MoFEM::VolumeElementForcesAndSourcesCore::User
 
     int id;
     double lambda,mu;
-    ierr = getMatParameters(&lambda,&mu,&id); CHKERRQ(ierr);
+    ierr = getMatParameters(&lambda,&mu,&id); CHKERRG(ierr);
 
     MatrixDouble D_lambda,D_mu,D;
     D_lambda.resize(6,6);
@@ -182,28 +182,28 @@ struct PostPorcHookStress: public MoFEM::VolumeElementForcesAndSourcesCore::User
     bzero(def_VAL,tag_length*sizeof(double));
     Tag th_stress;
     rval = postProcMesh.tag_get_handle(
-      "STRESS",9,MB_TYPE_DOUBLE,th_stress,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERRQ_MOAB(rval);
+      "STRESS",9,MB_TYPE_DOUBLE,th_stress,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERRG(rval);
 
     Tag th_prin_stress_vect1,th_prin_stress_vect2,th_prin_stress_vect3;
     rval = postProcMesh.tag_get_handle(
-      "S1",3,MB_TYPE_DOUBLE,th_prin_stress_vect1,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERRQ_MOAB(rval);
+      "S1",3,MB_TYPE_DOUBLE,th_prin_stress_vect1,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERRG(rval);
     rval = postProcMesh.tag_get_handle(
-      "S2",3,MB_TYPE_DOUBLE,th_prin_stress_vect2,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERRQ_MOAB(rval);
+      "S2",3,MB_TYPE_DOUBLE,th_prin_stress_vect2,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERRG(rval);
     rval = postProcMesh.tag_get_handle(
-      "S3",3,MB_TYPE_DOUBLE,th_prin_stress_vect3,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERRQ_MOAB(rval);
+      "S3",3,MB_TYPE_DOUBLE,th_prin_stress_vect3,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERRG(rval);
 
     Tag th_prin_stress_vals;
     rval = postProcMesh.tag_get_handle(
-      "PRINCIPAL_STRESS",3,MB_TYPE_DOUBLE,th_prin_stress_vals,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERRQ_MOAB(rval);
+      "PRINCIPAL_STRESS",3,MB_TYPE_DOUBLE,th_prin_stress_vals,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERRG(rval);
 
     Tag th_id;
     int def_block_id = -1;
     rval = postProcMesh.tag_get_handle(
       "BLOCK_ID",1,MB_TYPE_INTEGER,th_id,MB_TAG_CREAT|MB_TAG_SPARSE,&def_block_id
-    ); CHKERRQ_MOAB(rval);
+    ); CHKERRG(rval);
     Range::iterator tit = commonData.tEts.begin();
     for(;tit!=commonData.tEts.end();tit++) {
-      rval = postProcMesh.tag_set_data(th_id,&*tit,1,&id);  CHKERRQ_MOAB(rval);
+      rval = postProcMesh.tag_set_data(th_id,&*tit,1,&id);  CHKERRG(rval);
     }
 
     VectorDouble strain;
@@ -239,7 +239,7 @@ struct PostPorcHookStress: public MoFEM::VolumeElementForcesAndSourcesCore::User
       Stress(1,2) = Stress(2,1) = stress[4];
       Stress(2,0) = Stress(0,2) = stress[5];
 
-      rval = postProcMesh.tag_set_data(th_stress,&mapGaussPts[gg],1,&Stress(0,0)); CHKERRQ_MOAB(rval);
+      rval = postProcMesh.tag_set_data(th_stress,&mapGaussPts[gg],1,&Stress(0,0)); CHKERRG(rval);
 
       ublas::matrix< FieldData > eigen_vectors = Stress;
       VectorDouble eigen_values(3);
@@ -274,10 +274,10 @@ struct PostPorcHookStress: public MoFEM::VolumeElementForcesAndSourcesCore::User
       }
 
       //Tag principle stress vectors 1, 2, 3
-      rval = postProcMesh.tag_set_data(th_prin_stress_vect1,&mapGaussPts[gg],1,&prin_stress_vect(0,0)); CHKERRQ_MOAB(rval);
-      rval = postProcMesh.tag_set_data(th_prin_stress_vect2,&mapGaussPts[gg],1,&prin_stress_vect(1,0)); CHKERRQ_MOAB(rval);
-      rval = postProcMesh.tag_set_data(th_prin_stress_vect3,&mapGaussPts[gg],1,&prin_stress_vect(2,0)); CHKERRQ_MOAB(rval);
-      rval = postProcMesh.tag_set_data(th_prin_stress_vals,&mapGaussPts[gg],1,&prin_vals_vect[0]); CHKERRQ_MOAB(rval);
+      rval = postProcMesh.tag_set_data(th_prin_stress_vect1,&mapGaussPts[gg],1,&prin_stress_vect(0,0)); CHKERRG(rval);
+      rval = postProcMesh.tag_set_data(th_prin_stress_vect2,&mapGaussPts[gg],1,&prin_stress_vect(1,0)); CHKERRG(rval);
+      rval = postProcMesh.tag_set_data(th_prin_stress_vect3,&mapGaussPts[gg],1,&prin_stress_vect(2,0)); CHKERRG(rval);
+      rval = postProcMesh.tag_set_data(th_prin_stress_vals,&mapGaussPts[gg],1,&prin_vals_vect[0]); CHKERRG(rval);
 
     }
 
@@ -285,3 +285,6 @@ struct PostPorcHookStress: public MoFEM::VolumeElementForcesAndSourcesCore::User
   }
 
 };
+
+/// \deprecated Class name with spelling mistake
+DEPRECATED typedef PostProcHookStress PostPorcHookStress;

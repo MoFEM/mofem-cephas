@@ -29,12 +29,12 @@ namespace MoFEM {
    */
   struct TriPolynomialBase: public BaseFunction {
 
-    PetscErrorCode query_interface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface) const;
+    MoFEMErrorCode query_interface(const MOFEMuuid& uuid,UnknownInterface** iface) const;
 
     TriPolynomialBase();
     ~TriPolynomialBase();
 
-    PetscErrorCode getValue(
+    MoFEMErrorCode getValue(
       MatrixDouble &pts,
       boost::shared_ptr<BaseFunctionCtx> ctx_ptr
     );
@@ -43,11 +43,11 @@ namespace MoFEM {
 
     EntPolynomialBaseCtx *cTx;
 
-    PetscErrorCode getValueH1(
+    MoFEMErrorCode getValueH1(
       MatrixDouble &pts
     );
 
-    PetscErrorCode getValueL2(
+    MoFEMErrorCode getValueL2(
       MatrixDouble &pts
     );
 
@@ -56,21 +56,21 @@ namespace MoFEM {
     ublas::matrix<MatrixDouble > diffN_face_edge;
     ublas::vector<MatrixDouble > diffN_face_bubble;
 
-    PetscErrorCode getValueHdiv(
+    MoFEMErrorCode getValueHdiv(
       MatrixDouble &pts
     );
 
-    PetscErrorCode getValueHCurl(
+    MoFEMErrorCode getValueHCurl(
       MatrixDouble &pts
     );
 
   private:
 
-    PetscErrorCode getValueHdivAinsworthBase(
+    MoFEMErrorCode getValueHdivAinsworthBase(
       MatrixDouble &pts
     );
 
-    PetscErrorCode getValueHdivDemkowiczBase(
+    MoFEMErrorCode getValueHdivDemkowiczBase(
       MatrixDouble &pts
     );
 

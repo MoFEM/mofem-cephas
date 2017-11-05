@@ -29,7 +29,7 @@
   #include <FTensor.hpp>
 
   template<class T1,class T2>
-  static inline PetscErrorCode determinantTensor3by3(
+  static inline MoFEMErrorCode determinantTensor3by3(
     T1 &t,T2 &det
   ) {
     MoFEMFunctionBeginHot;
@@ -43,7 +43,7 @@
 
   namespace MoFEM {
 
-  PetscErrorCode
+  MoFEMErrorCode
   TetGenInterface::query_interface(const MOFEMuuid &uuid,
                                    UnknownInterface **iface) const {
     MoFEMFunctionBeginHot;
@@ -57,13 +57,13 @@
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode TetGenInterface::inData(
+  MoFEMErrorCode TetGenInterface::inData(
       Range &ents, tetgenio &in,
       std::map<EntityHandle, unsigned long> &moab_tetgen_map,
       std::map<unsigned long, EntityHandle> &tetgen_moab_map, Tag th) {
     MoFEMFunctionBeginHot;
 
-    MoFEM::Interface &m_field = cOre;
+    Interface &m_field = cOre;
     Range::iterator it;
 
     //
@@ -233,13 +233,13 @@
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode TetGenInterface::setGeomData(tetgenio &in,
+  MoFEMErrorCode TetGenInterface::setGeomData(tetgenio &in,
                                               moabTetGen_Map &moab_tetgen_map,
                                               tetGenMoab_Map &tetgen_moab_map,
                                               std::map<int, Range> &type_ents) {
     MoFEMFunctionBeginHot;
 
-    MoFEM::Interface &m_field = cOre;
+    Interface &m_field = cOre;
     //
     // ErrorCode rval;
     in.pointparamlist = new tetgenio::pointparam[in.numberofpoints];
@@ -281,14 +281,14 @@
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode TetGenInterface::outData(
+  MoFEMErrorCode TetGenInterface::outData(
       tetgenio &in, tetgenio &out,
       std::map<EntityHandle, unsigned long> &moab_tetgen_map,
       std::map<unsigned long, EntityHandle> &tetgen_moab_map, Range *ents,
       bool id_in_tags, bool error_if_created) {
     MoFEMFunctionBeginHot;
 
-    MoFEM::Interface &m_field = cOre;
+    Interface &m_field = cOre;
 
     //
     ErrorCode rval;
@@ -487,7 +487,7 @@
 
     MoFEMFunctionReturnHot(0);
   }
-  PetscErrorCode TetGenInterface::outData(
+  MoFEMErrorCode TetGenInterface::outData(
       tetgenio &in, tetgenio &out,
       std::map<EntityHandle, unsigned long> &moab_tetgen_map,
       std::map<unsigned long, EntityHandle> &tetgen_moab_map, BitRefLevel bit,
@@ -495,7 +495,7 @@
     MoFEMFunctionBeginHot;
 
     //
-    MoFEM::Interface &m_field = cOre;
+    Interface &m_field = cOre;
 
     // ParallelComm* pcomm =
     // ParallelComm::get_pcomm(&m_field.get_moab(),MYPCOMM_INDEX);
@@ -512,7 +512,7 @@
     Range ents;
     ierr = outData(in, out, moab_tetgen_map, tetgen_moab_map, &ents, id_in_tags,
                    error_if_created);
-    CHKERRQ(ierr);
+    CHKERRG(ierr);
 
     // BARRIER_RANK_START(pcomm)
     // {
@@ -526,7 +526,7 @@
     // std::cerr << ents.size() << std::endl;
     ierr = m_field.getInterface<BitRefManager>()->setBitRefLevel(
         ents.subset_by_type(MBTET), bit);
-    CHKERRQ(ierr);
+    CHKERRG(ierr);
 
     // BARRIER_RANK_START(pcomm)
     // {
@@ -539,13 +539,13 @@
 
     MoFEMFunctionReturnHot(0);
   }
-  PetscErrorCode TetGenInterface::setFaceData(
+  MoFEMErrorCode TetGenInterface::setFaceData(
       std::vector<std::pair<Range, int> > &markers, tetgenio &in,
       std::map<EntityHandle, unsigned long> &moab_tetgen_map,
       std::map<unsigned long, EntityHandle> &tetgen_moab_map) {
     MoFEMFunctionBeginHot;
     ErrorCode rval;
-    MoFEM::Interface &m_field = cOre;
+    Interface &m_field = cOre;
     in.numberoffacets = markers.size();
     in.facetlist = new tetgenio::facet[in.numberoffacets];
     in.facetmarkerlist = new int[in.numberoffacets];
@@ -594,12 +594,12 @@
     }
     MoFEMFunctionReturnHot(0);
   }
-  PetscErrorCode TetGenInterface::getTriangleMarkers(
+  MoFEMErrorCode TetGenInterface::getTriangleMarkers(
       std::map<EntityHandle, unsigned long> &tetgen_moab_map, tetgenio &out,
       Range *ents, idxRange_Map *ents_map, bool only_non_zero) {
     MoFEMFunctionBeginHot;
     ErrorCode rval;
-    MoFEM::Interface &m_field = cOre;
+    Interface &m_field = cOre;
     Tag th_marker;
     int def_marker = 0;
     rval = m_field.get_moab().tag_get_handle(
@@ -641,12 +641,12 @@
     }
     MoFEMFunctionReturnHot(0);
   }
-  PetscErrorCode TetGenInterface::setRegionData(
+  MoFEMErrorCode TetGenInterface::setRegionData(
       std::vector<std::pair<EntityHandle, int> > &regions, tetgenio &in,
       Tag th) {
     MoFEMFunctionBeginHot;
     ErrorCode rval;
-    MoFEM::Interface &m_field = cOre;
+    Interface &m_field = cOre;
     in.numberofregions = regions.size();
     in.regionlist = new double[5 * in.numberofregions];
     int kk = 0;
@@ -692,12 +692,12 @@
     }
     MoFEMFunctionReturnHot(0);
   }
-  PetscErrorCode TetGenInterface::getRegionData(
+  MoFEMErrorCode TetGenInterface::getRegionData(
       std::map<EntityHandle, unsigned long> &tetgen_moab_map, tetgenio &out,
       Range *ents, idxRange_Map *ents_map) {
     MoFEMFunctionBeginHot;
     ErrorCode rval;
-    MoFEM::Interface &m_field = cOre;
+    Interface &m_field = cOre;
     int nbattributes = out.numberoftetrahedronattributes;
     if (nbattributes == 0) {
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
@@ -735,7 +735,7 @@
     }
     MoFEMFunctionReturnHot(0);
   }
-  PetscErrorCode TetGenInterface::tetRahedralize(char switches[], tetgenio &in,
+  MoFEMErrorCode TetGenInterface::tetRahedralize(char switches[], tetgenio &in,
                                                  tetgenio &out) {
     MoFEMFunctionBeginHot;
     tetgenbehavior a;
@@ -743,7 +743,7 @@
     tetrahedralize(&a, &in, &out);
     MoFEMFunctionReturnHot(0);
   }
-  PetscErrorCode TetGenInterface::loadPoly(char file_name[], tetgenio &in) {
+  MoFEMErrorCode TetGenInterface::loadPoly(char file_name[], tetgenio &in) {
     MoFEMFunctionBeginHot;
     if (!in.load_poly(file_name)) {
       SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
@@ -751,7 +751,7 @@
     }
     MoFEMFunctionReturnHot(0);
   }
-  PetscErrorCode TetGenInterface::checkPlanar_Trinagle(double coords[],
+  MoFEMErrorCode TetGenInterface::checkPlanar_Trinagle(double coords[],
                                                        bool *result,
                                                        const double eps) {
     MoFEMFunctionBeginHot;
@@ -786,12 +786,12 @@
     *result = fabs(v / pow(l, 3)) < eps ? true : false;
     MoFEMFunctionReturnHot(0);
   }
-  PetscErrorCode
+  MoFEMErrorCode
   TetGenInterface::groupPlanar_Triangle(Range &tris, std::vector<Range> &sorted,
                                         const double eps,Tag th) {
     MoFEMFunctionBeginHot;
 
-    MoFEM::Interface &m_field = cOre;
+    Interface &m_field = cOre;
 
     ErrorCode rval;
     Skinner skin(&m_field.get_moab());
@@ -880,7 +880,7 @@
             }
             bool coplanar;
             ierr = checkPlanar_Trinagle(coords, &coplanar, eps);
-            CHKERRQ(ierr);
+            CHKERRG(ierr);
             if (coplanar) {
               coplanar_tris.insert(*tit);
               noplanar_to_anyother.erase(*tit);
@@ -915,7 +915,7 @@
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode TetGenInterface::groupRegion_Triangle(
+  MoFEMErrorCode TetGenInterface::groupRegion_Triangle(
       Range &tris, std::vector<std::vector<Range> > &sorted, const double eps) {
     MoFEMFunctionBeginHot;
 
@@ -931,7 +931,7 @@
     for (;;) {
       std::vector<Range> &vec = sorted.back();
       ierr = groupPlanar_Triangle(tris, vec, eps);
-      CHKERRQ(ierr);
+      CHKERRG(ierr);
       if (tris.empty()) {
         MoFEMFunctionReturnHot(0);
       } else {
@@ -946,7 +946,7 @@
 
     MoFEMFunctionReturnHot(0);
   }
-  PetscErrorCode TetGenInterface::makePolygonFacet(Range &ents, Range &polygons,
+  MoFEMErrorCode TetGenInterface::makePolygonFacet(Range &ents, Range &polygons,
                                                    bool reduce_edges,
                                                    Range *not_reducable_nodes,
                                                    const double eps,Tag th) {
@@ -958,7 +958,7 @@
               "no ents to build polygon");
     }
 
-    MoFEM::Interface &m_field = cOre;
+    Interface &m_field = cOre;
 
     //
     ErrorCode rval;
@@ -1050,7 +1050,7 @@
                                                                   // mc
         double spin[9];
         ierr = Spin(spin, &coords[3 * 0]);
-        CHKERRQ(ierr);
+        CHKERRG(ierr);
         double l0 = cblas_dnrm2(3, &coords[3 * 0], 1);
         cblas_dgemv(CblasRowMajor, CblasNoTrans, 3, 3, 1. / l0, spin, 3,
                     &coords[3 * 2], 1, 0., &coords[3 * 1], 1);

@@ -39,7 +39,7 @@ struct NitscheMethod {
     addToRule(0) {}
     int getRule(int order) { return order+addToRule; }
     /*int getRule(int order) { return -1; }
-    PetscErrorCode setGaussPts(int order) {
+    MoFEMErrorCode setGaussPts(int order) {
       MoFEMFunctionBeginHot;
       int rule = order+addToRule+1;
       int nb_gauss_pts = triangle_ncc_order_num(rule);
@@ -141,7 +141,7 @@ struct NitscheMethod {
     commonData(common_data) {
     }
 
-    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
+    MoFEMErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
       MoFEMFunctionBeginHot;
 
       int faceInRespectToTet = getFEMethod()->nInTheLoop;
@@ -217,7 +217,7 @@ struct NitscheMethod {
     MyFace faceFE;
     int addToRule;
 
-    virtual PetscErrorCode doAdditionalJobWhenGuassPtsAreCalulated() {
+    virtual MoFEMErrorCode doAdditionalJobWhenGuassPtsAreCalulated() {
       MoFEMFunctionBeginHot;
       MoFEMFunctionReturnHot(0);
     }
@@ -237,7 +237,7 @@ struct NitscheMethod {
 
     int getRule(int order) { return -1; };
 
-    PetscErrorCode setGaussPts(int order) {
+    MoFEMErrorCode setGaussPts(int order) {
       
       MoFEMFunctionBeginHot;
 
@@ -249,7 +249,7 @@ struct NitscheMethod {
         EntityHandle tet = numeredEntFiniteElementPtr->getEnt();
         for(int ff = 0;ff<4;ff++) {
           EntityHandle face;
-          rval = mField.get_moab().side_element(tet,2,ff,face); CHKERRQ_MOAB(rval);
+          rval = mField.get_moab().side_element(tet,2,ff,face); CHKERRG(rval);
           if(blockData.fAces.find(face)!=blockData.fAces.end()) {
             commonData.fAces[ff] = face;
             commonData.nbActiveFaces++;
@@ -298,7 +298,7 @@ struct NitscheMethod {
             faceFE.rowPtr = faceFEPtr->rows_dofs;
             faceFE.colPtr = faceFEPtr->cols_dofs;
             faceFE.addToRule = addToRule;
-            ierr = faceFE(); CHKERRQ(ierr);
+            ierr = faceFE(); CHKERRG(ierr);
           }
         }
       } catch (const std::exception& ex) {
@@ -341,7 +341,7 @@ struct NitscheMethod {
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
 
-      ierr = doAdditionalJobWhenGuassPtsAreCalulated(); CHKERRQ(ierr);
+      ierr = doAdditionalJobWhenGuassPtsAreCalulated(); CHKERRG(ierr);
 
       MoFEMFunctionReturnHot(0);
     }
@@ -373,7 +373,7 @@ struct NitscheMethod {
     }
 
     double faceRadius;
-    virtual PetscErrorCode getFaceRadius(int ff) {
+    virtual MoFEMErrorCode getFaceRadius(int ff) {
       MoFEMFunctionBeginHot;
       VectorDouble &coords = nitscheCommonData.cOords[ff];
       double center[3];
@@ -383,7 +383,7 @@ struct NitscheMethod {
       MoFEMFunctionReturnHot(0);
     }
     double gammaH;
-    virtual PetscErrorCode getGammaH(double gamma,int gg) {
+    virtual MoFEMErrorCode getGammaH(double gamma,int gg) {
       MoFEMFunctionBeginHot;
       gammaH = gamma;
       //gammaH*= faceRadius;
@@ -422,12 +422,12 @@ struct NitscheMethod {
     MatrixDouble tRac_v;
     MatrixDouble tRac_u;
 
-    virtual PetscErrorCode calculateP(int gg,int fgg,int ff) {
+    virtual MoFEMErrorCode calculateP(int gg,int fgg,int ff) {
       MoFEMFunctionBeginHot;
       MoFEMFunctionReturnHot(0);
     }
 
-    PetscErrorCode getJac(
+    MoFEMErrorCode getJac(
       DataForcesAndSourcesCore::EntData &data,int gg,MatrixDouble &jac
     ) {
       MoFEMFunctionBeginHot;
@@ -454,7 +454,7 @@ struct NitscheMethod {
       MoFEMFunctionReturnHot(0);
     }
 
-    PetscErrorCode getTractionVariance(
+    MoFEMErrorCode getTractionVariance(
       int gg,int fgg,int ff,MatrixDouble &jac,MatrixDouble &trac
     ) {
       MoFEMFunctionBeginHot;
@@ -510,7 +510,7 @@ struct NitscheMethod {
     MatrixDouble kMatrix,kMatrix0,kMatrix1;
     std::vector<MatrixDouble> kMatrixFace,kMatrixFace0,kMatrixFace1;
 
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int row_side,int col_side,
       EntityType row_type,EntityType col_type,
       DataForcesAndSourcesCore::EntData &row_data,DataForcesAndSourcesCore::EntData &col_data
@@ -539,16 +539,16 @@ struct NitscheMethod {
         for(int ff = 0;ff<4;ff++) {
           if(!nitscheCommonData.facesFePtr[ff]) continue;
           int nb_face_gauss_pts = nitscheCommonData.faceGaussPts[ff].size2();
-          ierr = getFaceRadius(ff); CHKERRQ(ierr);
+          ierr = getFaceRadius(ff); CHKERRG(ierr);
           kMatrix0.clear();
           kMatrix1.clear();
           for(int fgg = 0;fgg<nb_face_gauss_pts;fgg++,gg++) {
-            ierr = getGammaH(gamma,gg); CHKERRQ(ierr);
+            ierr = getGammaH(gamma,gg); CHKERRG(ierr);
             double val = getGaussPts()(3,gg);
-            ierr = getJac(row_data,gg,jAc_row); CHKERRQ(ierr);
-            ierr = getTractionVariance(gg,fgg,ff,jAc_row,tRac_v); CHKERRQ(ierr);
-            ierr = getJac(col_data,gg,jAc_col); CHKERRQ(ierr);
-            ierr = getTractionVariance(gg,fgg,ff,jAc_col,tRac_u); CHKERRQ(ierr);
+            ierr = getJac(row_data,gg,jAc_row); CHKERRG(ierr);
+            ierr = getTractionVariance(gg,fgg,ff,jAc_row,tRac_v); CHKERRG(ierr);
+            ierr = getJac(col_data,gg,jAc_col); CHKERRG(ierr);
+            ierr = getTractionVariance(gg,fgg,ff,jAc_col,tRac_u); CHKERRG(ierr);
             VectorAdaptor normal = VectorAdaptor(
               3,ublas::shallow_array_adaptor<double>(
                 3,&nitscheCommonData.faceNormals[ff](fgg,0)
@@ -556,7 +556,7 @@ struct NitscheMethod {
             );
             double area = cblas_dnrm2(3,&normal[0],1);
 
-            ierr = calculateP(gg,fgg,ff); CHKERRQ(ierr);
+            ierr = calculateP(gg,fgg,ff); CHKERRG(ierr);
             MatrixDouble &P = nitscheCommonData.P[ff][fgg];
 
             //P
@@ -646,7 +646,7 @@ struct NitscheMethod {
           &col_data.getIndices()[0],
           &kMatrix(0,0),
           ADD_VALUES
-        ); CHKERRQ(ierr);
+        ); CHKERRG(ierr);
 
       } catch (const std::exception& ex) {
         std::ostringstream ss;
@@ -686,7 +686,7 @@ struct NitscheMethod {
 
     VectorDouble nF;
 
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
     ) {
       MoFEMFunctionBeginHot;
@@ -709,13 +709,13 @@ struct NitscheMethod {
         for(int ff = 0;ff<4;ff++) {
           if(!nitscheCommonData.facesFePtr[ff]) continue;
           int nb_face_gauss_pts = nitscheCommonData.faceGaussPts[ff].size2();
-          ierr = getFaceRadius(ff); CHKERRQ(ierr);
+          ierr = getFaceRadius(ff); CHKERRG(ierr);
           for(int fgg = 0;fgg<nb_face_gauss_pts;fgg++,gg++) {
 
-            ierr = getGammaH(gamma,gg); CHKERRQ(ierr);
+            ierr = getGammaH(gamma,gg); CHKERRG(ierr);
             double val = getGaussPts()(3,gg);
-            ierr = getJac(row_data,gg,jAc_row); CHKERRQ(ierr);
-            ierr = getTractionVariance(gg,fgg,ff,jAc_row,tRac_v); CHKERRQ(ierr);
+            ierr = getJac(row_data,gg,jAc_row); CHKERRG(ierr);
+            ierr = getTractionVariance(gg,fgg,ff,jAc_row,tRac_v); CHKERRG(ierr);
             VectorAdaptor normal = VectorAdaptor(
               3,ublas::shallow_array_adaptor<double>(
                 3,&nitscheCommonData.faceNormals[ff](fgg,0)
@@ -723,7 +723,7 @@ struct NitscheMethod {
             );
             double area = cblas_dnrm2(3,&normal[0],1);
 
-            ierr = calculateP(gg,fgg,ff); CHKERRQ(ierr);
+            ierr = calculateP(gg,fgg,ff); CHKERRG(ierr);
             MatrixDouble &P = nitscheCommonData.P[ff][fgg];
 
             VectorDouble &u = (commonData.dataAtGaussPts[commonData.spatialPositions])[gg];
@@ -743,7 +743,7 @@ struct NitscheMethod {
 
         ierr = VecSetValues(
           getFEMethod()->snes_f,nb_dofs_row,&row_data.getIndices()[0],&nF[0],ADD_VALUES
-        ); CHKERRQ(ierr);
+        ); CHKERRG(ierr);
 
       } catch (const std::exception& ex) {
         std::ostringstream ss;

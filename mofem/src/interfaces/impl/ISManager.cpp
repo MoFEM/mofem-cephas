@@ -19,7 +19,7 @@
 
 namespace MoFEM {
 
-  PetscErrorCode ISManager::query_interface(const MOFEMuuid& uuid, UnknownInterface** iface) const {
+  MoFEMErrorCode ISManager::query_interface(const MOFEMuuid& uuid, UnknownInterface** iface) const {
     MoFEMFunctionBeginHot;
     *iface = NULL;
     if(uuid == IDD_MOFEMISManager) {
@@ -37,7 +37,7 @@ namespace MoFEM {
   ISManager::~ISManager() {
   }
 
-  PetscErrorCode ISManager::sectionCreate(
+  MoFEMErrorCode ISManager::sectionCreate(
     const std::string &problem_name,
     PetscSection *s,
     const RowColData row_col
@@ -47,9 +47,9 @@ namespace MoFEM {
     const Field_multiIndex *fields_ptr;
     const FiniteElement_multiIndex *fe_ptr;
     MoFEMFunctionBeginHot;
-    ierr = m_field.get_problem(problem_name,&problem_ptr); CHKERRQ(ierr);
-    ierr = m_field.get_fields(&fields_ptr); CHKERRQ(ierr);
-    ierr = m_field.get_finite_elements(&fe_ptr); CHKERRQ(ierr);
+    ierr = m_field.get_problem(problem_name,&problem_ptr); CHKERRG(ierr);
+    ierr = m_field.get_fields(&fields_ptr); CHKERRG(ierr);
+    ierr = m_field.get_finite_elements(&fe_ptr); CHKERRG(ierr);
     boost::shared_ptr<NumeredDofEntity_multiIndex> dofs;
     BitFieldId fields_ids;
     switch (row_col) {
@@ -84,11 +84,11 @@ namespace MoFEM {
       }
     }
     const int proc = m_field.get_comm_rank();
-    ierr = PetscSectionCreate(PETSC_COMM_WORLD,s); CHKERRQ(ierr);
-    ierr = PetscSectionSetNumFields(*s,fields_map.size()); CHKERRQ(ierr);
+    ierr = PetscSectionCreate(PETSC_COMM_WORLD,s); CHKERRG(ierr);
+    ierr = PetscSectionSetNumFields(*s,fields_map.size()); CHKERRG(ierr);
     for(map<std::string,std::pair<int,int> >::iterator mit = fields_map.begin();mit!=fields_map.end();mit++) {
-      ierr = PetscSectionSetFieldName(*s,mit->second.first,mit->first.c_str()); CHKERRQ(ierr);
-      ierr = PetscSectionSetFieldComponents(*s,mit->second.first,mit->second.second); CHKERRQ(ierr);
+      ierr = PetscSectionSetFieldName(*s,mit->second.first,mit->first.c_str()); CHKERRG(ierr);
+      ierr = PetscSectionSetFieldComponents(*s,mit->second.first,mit->second.second); CHKERRG(ierr);
     }
     // determine number of points
     int nb_charts = 0;
@@ -111,14 +111,14 @@ namespace MoFEM {
     }
     // get layout, i.e. chart
     PetscLayout layout;
-    ierr = PetscLayoutCreate(PETSC_COMM_WORLD,&layout); CHKERRQ(ierr);
-    ierr = PetscLayoutSetBlockSize(layout,1); CHKERRQ(ierr);
-    ierr = PetscLayoutSetLocalSize(layout,nb_charts); CHKERRQ(ierr);
-    ierr = PetscLayoutSetUp(layout); CHKERRQ(ierr);
+    ierr = PetscLayoutCreate(PETSC_COMM_WORLD,&layout); CHKERRG(ierr);
+    ierr = PetscLayoutSetBlockSize(layout,1); CHKERRG(ierr);
+    ierr = PetscLayoutSetLocalSize(layout,nb_charts); CHKERRG(ierr);
+    ierr = PetscLayoutSetUp(layout); CHKERRG(ierr);
     int rstart,rend;
-    ierr = PetscLayoutGetRange(layout,&rstart,&rend); CHKERRQ(ierr);
-    ierr = PetscLayoutDestroy(&layout); CHKERRQ(ierr);
-    ierr = PetscSectionSetChart(*s,rstart,rend); CHKERRQ(ierr);
+    ierr = PetscLayoutGetRange(layout,&rstart,&rend); CHKERRG(ierr);
+    ierr = PetscLayoutDestroy(&layout); CHKERRG(ierr);
+    ierr = PetscSectionSetChart(*s,rstart,rend); CHKERRG(ierr);
     // cerr << rstart << " " << rend << " " << proc << endl;
     // loop of all dofs
     {
@@ -143,9 +143,9 @@ namespace MoFEM {
                 cerr << **dit << endl;
                 SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
               }
-              ierr = PetscSectionAddDof(*s,point,nb_of_dofs_on_ent); CHKERRQ(ierr);
+              ierr = PetscSectionAddDof(*s,point,nb_of_dofs_on_ent); CHKERRG(ierr);
               int field = fields_map.at(field_name).first;
-              ierr = PetscSectionSetFieldDof(*s,point,field,nb_of_dofs_on_ent); CHKERRQ(ierr);
+              ierr = PetscSectionSetFieldDof(*s,point,field,nb_of_dofs_on_ent); CHKERRG(ierr);
             }
             for(int dd = 0;dd!=nb_of_dofs_on_ent;dd++,dit++) {
               if(field_name!=dit->get()->getName()) {
@@ -164,18 +164,18 @@ namespace MoFEM {
       }
     }
     // cerr << "done " << proc << endl;
-    ierr = PetscSectionSetUp(*s); CHKERRQ(ierr);
+    ierr = PetscSectionSetUp(*s); CHKERRG(ierr);
     // cerr << "end " << proc << endl;
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode ISManager::isCreateProblemOrder(
+  MoFEMErrorCode ISManager::isCreateProblemOrder(
     const std::string &problem,RowColData rc,int min_order,int max_order,IS *is
   ) const {
     const MoFEM::Interface &m_field = cOre;
     const Problem *problem_ptr;
     MoFEMFunctionBeginHot;
-    ierr = m_field.get_problem(problem,&problem_ptr); CHKERRQ(ierr);
+    ierr = m_field.get_problem(problem,&problem_ptr); CHKERRG(ierr);
     typedef NumeredDofEntity_multiIndex::index<Composite_Part_And_Order_mi_tag>::type dofs_order;
     int rank = m_field.get_comm_rank();
     dofs_order::iterator it,hi_it;
@@ -202,15 +202,15 @@ namespace MoFEM {
     hi_vit = dof_idx_view.end();
     int size = distance(vit,hi_vit);
     int *id;
-    ierr = PetscMalloc(size*sizeof(int),&id); CHKERRQ(ierr);
+    ierr = PetscMalloc(size*sizeof(int),&id); CHKERRG(ierr);
     for(int ii = 0;vit!=hi_vit;vit++) {
       id[ii++] = (*vit)->getPetscGlobalDofIdx();
     }
-    ierr = ISCreateGeneral(PETSC_COMM_WORLD,size,id,PETSC_OWN_POINTER,is); CHKERRQ(ierr);
+    ierr = ISCreateGeneral(PETSC_COMM_WORLD,size,id,PETSC_OWN_POINTER,is); CHKERRG(ierr);
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode ISManager::isCreateProblemFieldAndRank(
+  MoFEMErrorCode ISManager::isCreateProblemFieldAndRank(
     const std::string &problem,
     RowColData rc,
     const std::string &field,
@@ -221,7 +221,7 @@ namespace MoFEM {
     const MoFEM::Interface &m_field = cOre;
     const Problem *problem_ptr;
     MoFEMFunctionBeginHot;
-    ierr = m_field.get_problem(problem,&problem_ptr); CHKERRQ(ierr);
+    ierr = m_field.get_problem(problem,&problem_ptr); CHKERRG(ierr);
     typedef NumeredDofEntity_multiIndex::index<Composite_Name_And_Part_mi_tag>::type DofsByNamePartAndCoeffIdx;
     int rank = m_field.get_comm_rank();
     DofsByNamePartAndCoeffIdx::iterator it,hi_it;
@@ -260,15 +260,15 @@ namespace MoFEM {
     hi_vit = dof_loc_idx_view.end();
     int size = distance(vit,hi_vit);
     int *id;
-    ierr = PetscMalloc(size*sizeof(int),&id); CHKERRQ(ierr);
+    ierr = PetscMalloc(size*sizeof(int),&id); CHKERRG(ierr);
     for(int ii = 0;vit!=hi_vit;vit++) {
       id[ii++] = (*vit)->getPetscGlobalDofIdx();
     }
-    ierr = ISCreateGeneral(PETSC_COMM_WORLD,size,id,PETSC_OWN_POINTER,is); CHKERRQ(ierr);
+    ierr = ISCreateGeneral(PETSC_COMM_WORLD,size,id,PETSC_OWN_POINTER,is); CHKERRG(ierr);
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode ISManager::isCreateFromProblemFieldToOtherProblemField(
+  MoFEMErrorCode ISManager::isCreateFromProblemFieldToOtherProblemField(
     const std::string &x_problem,
     const std::string &x_field_name,RowColData x_rc,
     const std::string &y_problem,
@@ -279,8 +279,8 @@ namespace MoFEM {
     const Problem *px_ptr;
     const Problem *py_ptr;
     MoFEMFunctionBeginHot;
-    ierr = m_field.get_problem(x_problem,&px_ptr); CHKERRQ(ierr);
-    ierr = m_field.get_problem(y_problem,&py_ptr); CHKERRQ(ierr);
+    ierr = m_field.get_problem(x_problem,&px_ptr); CHKERRG(ierr);
+    ierr = m_field.get_problem(y_problem,&py_ptr); CHKERRG(ierr);
     NumeredDofEntityByLocalIdx::iterator y_dit,hi_y_dit;
     switch (y_rc) {
       case ROW:
@@ -338,7 +338,7 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode ISManager::isCreateFromProblemFieldToOtherProblemField(
+  MoFEMErrorCode ISManager::isCreateFromProblemFieldToOtherProblemField(
     const std::string &x_problem,const std::string &x_field_name,RowColData x_rc,
     const std::string &y_problem,const std::string &y_field_name,RowColData y_rc,
     IS *ix,IS *iy
@@ -348,15 +348,15 @@ namespace MoFEM {
     ierr = isCreateFromProblemFieldToOtherProblemField(
       x_problem,x_field_name,x_rc,
       y_problem,y_field_name,y_rc,idx,idy
-    ); CHKERRQ(ierr);
+    ); CHKERRG(ierr);
     if(ix!=PETSC_NULL) {
       ierr = ISCreateGeneral(
         PETSC_COMM_WORLD,idx.size(),&idx[0],PETSC_COPY_VALUES,ix
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
     }
     ierr = ISCreateGeneral(
       PETSC_COMM_WORLD,idy.size(),&idy[0],PETSC_COPY_VALUES,iy
-    ); CHKERRQ(ierr);
+    ); CHKERRG(ierr);
     if(dEbug) {
       ISView(*ix,PETSC_VIEWER_STDOUT_WORLD);
       ISView(*iy,PETSC_VIEWER_STDOUT_WORLD);
@@ -364,7 +364,7 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode ISManager::isCreateFromProblemToOtherProblem(
+  MoFEMErrorCode ISManager::isCreateFromProblemToOtherProblem(
     const std::string &x_problem,RowColData x_rc,
     const std::string &y_problem,RowColData y_rc,
     std::vector<int> &idx,std::vector<int> &idy
@@ -373,8 +373,8 @@ namespace MoFEM {
     const Problem *px_ptr;
     const Problem *py_ptr;
     MoFEMFunctionBeginHot;
-    ierr = m_field.get_problem(x_problem,&px_ptr); CHKERRQ(ierr);
-    ierr = m_field.get_problem(y_problem,&py_ptr); CHKERRQ(ierr);
+    ierr = m_field.get_problem(x_problem,&px_ptr); CHKERRG(ierr);
+    ierr = m_field.get_problem(y_problem,&py_ptr); CHKERRG(ierr);
     NumeredDofEntityByLocalIdx::iterator y_dit,hi_y_dit;
     switch (y_rc) {
       case ROW:
@@ -412,16 +412,16 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode ISManager::isCreateFromProblemToOtherProblem(
+  MoFEMErrorCode ISManager::isCreateFromProblemToOtherProblem(
     const std::string &x_problem,RowColData x_rc,
     const std::string &y_problem,RowColData y_rc,
     IS *ix,IS *iy
   ) const {
     MoFEMFunctionBeginHot;
     std::vector<int> idx(0),idy(0);
-    ierr = isCreateFromProblemToOtherProblem(x_problem,x_rc,y_problem,y_rc,idx,idy); CHKERRQ(ierr);
-    ierr = ISCreateGeneral(PETSC_COMM_WORLD,idx.size(),&idx[0],PETSC_COPY_VALUES,ix); CHKERRQ(ierr);
-    ierr = ISCreateGeneral(PETSC_COMM_WORLD,idy.size(),&idy[0],PETSC_COPY_VALUES,iy); CHKERRQ(ierr);
+    ierr = isCreateFromProblemToOtherProblem(x_problem,x_rc,y_problem,y_rc,idx,idy); CHKERRG(ierr);
+    ierr = ISCreateGeneral(PETSC_COMM_WORLD,idx.size(),&idx[0],PETSC_COPY_VALUES,ix); CHKERRG(ierr);
+    ierr = ISCreateGeneral(PETSC_COMM_WORLD,idy.size(),&idy[0],PETSC_COPY_VALUES,iy); CHKERRG(ierr);
     if(dEbug) {
       ISView(*ix,PETSC_VIEWER_STDOUT_WORLD);
       ISView(*iy,PETSC_VIEWER_STDOUT_WORLD);

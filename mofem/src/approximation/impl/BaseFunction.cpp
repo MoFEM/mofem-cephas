@@ -25,7 +25,9 @@ using namespace MoFEM;
 
 #include <BaseFunction.hpp>
 
-PetscErrorCode BaseFunctionCtx::query_interface(
+namespace MoFEM {
+
+MoFEMErrorCode BaseFunctionCtx::query_interface(
   const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface
 ) const {
   MoFEMFunctionBeginHot;
@@ -39,7 +41,7 @@ PetscErrorCode BaseFunctionCtx::query_interface(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode BaseFunction::query_interface(
+MoFEMErrorCode BaseFunction::query_interface(
   const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface
 ) const {
   MoFEMFunctionBeginHot;
@@ -53,7 +55,7 @@ PetscErrorCode BaseFunction::query_interface(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode BaseFunction::getValue(
+MoFEMErrorCode BaseFunction::getValue(
   MatrixDouble &pts,
   boost::shared_ptr<BaseFunctionCtx> ctx_ptr
 ) {
@@ -66,7 +68,7 @@ PetscErrorCode BaseFunction::getValue(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode BaseFunction::getValue(
+MoFEMErrorCode BaseFunction::getValue(
   MatrixDouble &pts_x,
   MatrixDouble &pts_t,
   boost::shared_ptr<BaseFunctionCtx> ctx_ptr
@@ -78,4 +80,6 @@ PetscErrorCode BaseFunction::getValue(
     "BaseFunction has not valid implementation of any shape function"
   );
   MoFEMFunctionReturnHot(0);
+}
+
 }

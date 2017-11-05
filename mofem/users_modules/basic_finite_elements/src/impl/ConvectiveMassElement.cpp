@@ -51,11 +51,11 @@ initV(false) {
 
 int ConvectiveMassElement::MyVolumeFE::getRule(int order) { return 2*order; };
 
-PetscErrorCode ConvectiveMassElement::MyVolumeFE::preProcess() {
+MoFEMErrorCode ConvectiveMassElement::MyVolumeFE::preProcess() {
   MoFEMFunctionBeginHot;
   
 
-  ierr = VolumeElementForcesAndSourcesCore::preProcess(); CHKERRQ(ierr);
+  ierr = VolumeElementForcesAndSourcesCore::preProcess(); CHKERRG(ierr);
 
   switch(snes_ctx) {
     case CTX_SNESSETFUNCTION: {
@@ -87,15 +87,15 @@ PetscErrorCode ConvectiveMassElement::MyVolumeFE::preProcess() {
     case CTX_TSNONE:
     if(!initV) {
       if(rank == 0) {
-        ierr = VecCreateGhost(mField.get_comm(),1,1,1,ghosts,&V); CHKERRQ(ierr);
+        ierr = VecCreateGhost(mField.get_comm(),1,1,1,ghosts,&V); CHKERRG(ierr);
       } else {
-        ierr = VecCreateGhost(mField.get_comm(),0,1,1,ghosts,&V); CHKERRQ(ierr);
+        ierr = VecCreateGhost(mField.get_comm(),0,1,1,ghosts,&V); CHKERRG(ierr);
       }
       initV = true;
     }
-    ierr = VecZeroEntries(V); CHKERRQ(ierr);
-    ierr = VecGhostUpdateBegin(V,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    ierr = VecGhostUpdateEnd(V,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = VecZeroEntries(V); CHKERRG(ierr);
+    ierr = VecGhostUpdateBegin(V,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
+    ierr = VecGhostUpdateEnd(V,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
     break;
     default:
     break;
@@ -104,26 +104,26 @@ PetscErrorCode ConvectiveMassElement::MyVolumeFE::preProcess() {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode ConvectiveMassElement::MyVolumeFE::postProcess() {
+MoFEMErrorCode ConvectiveMassElement::MyVolumeFE::postProcess() {
   MoFEMFunctionBeginHot;
   
 
-  ierr = VolumeElementForcesAndSourcesCore::postProcess(); CHKERRQ(ierr);
+  ierr = VolumeElementForcesAndSourcesCore::postProcess(); CHKERRG(ierr);
 
   double *array;
   switch (ts_ctx) {
     case CTX_TSNONE:
-    ierr = VecAssemblyBegin(V); CHKERRQ(ierr);
-    ierr = VecAssemblyEnd(V); CHKERRQ(ierr);
-    ierr = VecGhostUpdateBegin(V,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-    ierr = VecGhostUpdateEnd(V,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-    ierr = VecGhostUpdateBegin(V,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    ierr = VecGhostUpdateEnd(V,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    ierr = VecGetArray(V,&array); CHKERRQ(ierr);
+    ierr = VecAssemblyBegin(V); CHKERRG(ierr);
+    ierr = VecAssemblyEnd(V); CHKERRG(ierr);
+    ierr = VecGhostUpdateBegin(V,ADD_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
+    ierr = VecGhostUpdateEnd(V,ADD_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
+    ierr = VecGhostUpdateBegin(V,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
+    ierr = VecGhostUpdateEnd(V,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
+    ierr = VecGetArray(V,&array); CHKERRG(ierr);
     eNergy = array[0];
-    ierr = VecRestoreArray(V,&array); CHKERRQ(ierr);
+    ierr = VecRestoreArray(V,&array); CHKERRG(ierr);
     if(initV) {
-      ierr = VecDestroy(&V); CHKERRQ(ierr);
+      ierr = VecDestroy(&V); CHKERRG(ierr);
       initV = false;
     }
     break;
@@ -159,7 +159,7 @@ zeroAtType(MBVERTEX) {
 
 }
 
-PetscErrorCode ConvectiveMassElement::OpGetDataAtGaussPts::doWork(
+MoFEMErrorCode ConvectiveMassElement::OpGetDataAtGaussPts::doWork(
   int side,EntityType type,DataForcesAndSourcesCore::EntData &data
 ) {
   MoFEMFunctionBeginHot;
@@ -270,7 +270,7 @@ fieldDisp(false),
 methodsOp(methods_op) {
 }
 
-PetscErrorCode ConvectiveMassElement::OpMassJacobian::doWork(
+MoFEMErrorCode ConvectiveMassElement::OpMassJacobian::doWork(
   int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
 ) {
   MoFEMFunctionBeginHot;
@@ -377,16 +377,16 @@ PetscErrorCode ConvectiveMassElement::OpMassJacobian::doWork(
           }
         }
         adouble detH;
-        ierr = dEterminatnt(H,detH); CHKERRQ(ierr);
-        ierr = iNvert(detH,H,invH); CHKERRQ(ierr);
+        ierr = dEterminatnt(H,detH); CHKERRG(ierr);
+        ierr = iNvert(detH,H,invH); CHKERRG(ierr);
         noalias(G) = prod(g,invH);
         double rho0 = dAta.rho0;
         VectorDouble a0 = dAta.a0;
-        ierr = MethodForForceScaling::applyScale(getFEMethod(),methodsOp,a0); CHKERRQ(ierr);
+        ierr = MethodForForceScaling::applyScale(getFEMethod(),methodsOp,a0); CHKERRG(ierr);
         if(!lInear) {
           noalias(F) = prod(h,invH);
           adouble detF;
-          ierr = dEterminatnt(F,detF); CHKERRQ(ierr);
+          ierr = dEterminatnt(F,detF); CHKERRG(ierr);
           //calculate current density
           adouble rho = rho0*detF;
           //momentum rate
@@ -490,7 +490,7 @@ PetscErrorCode ConvectiveMassElement::OpMassJacobian::doWork(
   commonData(common_data) {
   }
 
-  PetscErrorCode ConvectiveMassElement::OpMassRhs::doWork(
+  MoFEMErrorCode ConvectiveMassElement::OpMassRhs::doWork(
     int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
   ) {
     MoFEMFunctionBeginHot;
@@ -542,7 +542,7 @@ PetscErrorCode ConvectiveMassElement::OpMassJacobian::doWork(
       ierr = VecSetValues(
         getFEMethod()->ts_F,nb_dofs,
         &row_data.getIndices()[0],&nf[0],ADD_VALUES
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
 
     } catch (const std::exception& ex) {
       std::ostringstream ss;
@@ -565,7 +565,7 @@ PetscErrorCode ConvectiveMassElement::OpMassJacobian::doWork(
     }
   }
 
-  PetscErrorCode ConvectiveMassElement::OpMassLhs_dM_dv::getJac(
+  MoFEMErrorCode ConvectiveMassElement::OpMassLhs_dM_dv::getJac(
     DataForcesAndSourcesCore::EntData &col_data,int gg
   ) {
     MoFEMFunctionBeginHot;
@@ -662,7 +662,7 @@ PetscErrorCode ConvectiveMassElement::OpMassJacobian::doWork(
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode ConvectiveMassElement::OpMassLhs_dM_dv::doWork(
+  MoFEMErrorCode ConvectiveMassElement::OpMassLhs_dM_dv::doWork(
     int row_side,int col_side,
     EntityType row_type,EntityType col_type,
     DataForcesAndSourcesCore::EntData &row_data,
@@ -693,7 +693,7 @@ PetscErrorCode ConvectiveMassElement::OpMassJacobian::doWork(
       for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
 
         try {
-          ierr = getJac(col_data,gg); CHKERRQ(ierr);
+          ierr = getJac(col_data,gg); CHKERRG(ierr);
         } catch (const std::exception& ex) {
           std::ostringstream ss;
           ss << "throw in method: " << ex.what() << std::endl;
@@ -747,12 +747,12 @@ PetscErrorCode ConvectiveMassElement::OpMassJacobian::doWork(
         ierr = MatSetValues(getFEMethod()->ts_B,
         nb_row,&indices[0],
         nb_col,&col_data.getIndices()[0],
-        &k(0,0),ADD_VALUES); CHKERRQ(ierr);
+        &k(0,0),ADD_VALUES); CHKERRG(ierr);
       } else {
         ierr = MatSetValues(getFEMethod()->ts_B,
         nb_row,&row_data.getIndices()[0],
         nb_col,&col_data.getIndices()[0],
-        &k(0,0),ADD_VALUES); CHKERRQ(ierr);
+        &k(0,0),ADD_VALUES); CHKERRG(ierr);
       }
 
     } catch (const std::exception& ex) {
@@ -770,7 +770,7 @@ PetscErrorCode ConvectiveMassElement::OpMassJacobian::doWork(
   ):
   OpMassLhs_dM_dv(field_name,col_field,data,common_data) {}
 
-  PetscErrorCode ConvectiveMassElement::OpMassLhs_dM_dx::getJac(DataForcesAndSourcesCore::EntData &col_data,int gg) {
+  MoFEMErrorCode ConvectiveMassElement::OpMassLhs_dM_dx::getJac(DataForcesAndSourcesCore::EntData &col_data,int gg) {
     MoFEMFunctionBeginHot;
     try {
       FTensor::Index<'i',3> i;
@@ -841,7 +841,7 @@ PetscErrorCode ConvectiveMassElement::OpMassJacobian::doWork(
 
   }
 
-  PetscErrorCode ConvectiveMassElement::OpMassLhs_dM_dX::getJac(DataForcesAndSourcesCore::EntData &col_data,int gg) {
+  MoFEMErrorCode ConvectiveMassElement::OpMassLhs_dM_dX::getJac(DataForcesAndSourcesCore::EntData &col_data,int gg) {
     MoFEMFunctionBeginHot;
     try {
       int nb_col = col_data.getIndices().size();
@@ -936,7 +936,7 @@ Vptr(v_ptr),
 lInear(commonData.lInear) {
 }
 
-PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
+MoFEMErrorCode ConvectiveMassElement::OpEnergy::doWork(
   int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
 ) {
     MoFEMFunctionBeginHot;
@@ -967,9 +967,9 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
             H.resize(3,3);
             noalias(H) = (commonData.gradAtGaussPts[commonData.meshPositions][gg]);
             double detH;
-            ierr = dEterminatnt(H,detH); CHKERRQ(ierr);
+            ierr = dEterminatnt(H,detH); CHKERRG(ierr);
             invH.resize(3,3);
-            ierr = iNvert(detH,H,invH); CHKERRQ(ierr);
+            ierr = iNvert(detH,H,invH); CHKERRG(ierr);
             F.resize(3,3);
             noalias(F) = prod(h,invH);
           } else {
@@ -977,13 +977,13 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
             noalias(F) = h;
           }
           double detF;
-          ierr = dEterminatnt(F,detF); CHKERRQ(ierr);
+          ierr = dEterminatnt(F,detF); CHKERRG(ierr);
           rho = detF*rho0;
         }
         v.resize(3);
         noalias(v) = commonData.dataAtGaussPts[commonData.spatialVelocities][gg];
         double energy = 0.5*rho*inner_prod(v,v);
-        ierr = VecSetValue(*Vptr,0,val*energy,ADD_VALUES); CHKERRQ(ierr);
+        ierr = VecSetValue(*Vptr,0,val*energy,ADD_VALUES); CHKERRG(ierr);
       }
 
     } catch (const std::exception& ex) {
@@ -1005,7 +1005,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
   jAcobian(jacobian),
   fieldDisp(false) { }
 
-  PetscErrorCode ConvectiveMassElement::OpVelocityJacobian::doWork(
+  MoFEMErrorCode ConvectiveMassElement::OpVelocityJacobian::doWork(
     int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
   ) {
     MoFEMFunctionBeginHot;
@@ -1088,8 +1088,8 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
           }
           detH = 1;
           if(commonData.gradAtGaussPts[commonData.meshPositions].size()>0) {
-            ierr = dEterminatnt(H,detH); CHKERRQ(ierr);
-            ierr = iNvert(detH,H,invH); CHKERRQ(ierr);
+            ierr = dEterminatnt(H,detH); CHKERRG(ierr);
+            ierr = iNvert(detH,H,invH); CHKERRG(ierr);
             noalias(F) = prod(h,invH);
           } else {
             noalias(F) = h;
@@ -1190,7 +1190,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
     commonData(common_data) {
     }
 
-    PetscErrorCode ConvectiveMassElement::OpVelocityRhs::doWork(
+    MoFEMErrorCode ConvectiveMassElement::OpVelocityRhs::doWork(
       int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
     ) {
       MoFEMFunctionBeginHot;
@@ -1240,7 +1240,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
           SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
         }
         ierr = VecSetValues(getFEMethod()->ts_F,row_data.getIndices().size(),
-        &row_data.getIndices()[0],&nf[0],ADD_VALUES); CHKERRQ(ierr);
+        &row_data.getIndices()[0],&nf[0],ADD_VALUES); CHKERRG(ierr);
 
       } catch (const std::exception& ex) {
         std::ostringstream ss;
@@ -1258,7 +1258,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
     OpMassLhs_dM_dv(vel_field,field_name,data,common_data) {
     }
 
-    PetscErrorCode ConvectiveMassElement::OpVelocityLhs_dV_dv::getJac(
+    MoFEMErrorCode ConvectiveMassElement::OpVelocityLhs_dV_dv::getJac(
       DataForcesAndSourcesCore::EntData &col_data,int gg
     ) {
       MoFEMFunctionBeginHot;
@@ -1302,7 +1302,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
     OpVelocityLhs_dV_dv(vel_field,field_name,data,common_data) {
     }
 
-    PetscErrorCode ConvectiveMassElement::OpVelocityLhs_dV_dx::getJac(
+    MoFEMErrorCode ConvectiveMassElement::OpVelocityLhs_dV_dx::getJac(
       DataForcesAndSourcesCore::EntData &col_data,int gg
     ) {
       MoFEMFunctionBeginHot;
@@ -1400,7 +1400,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
     ):
     OpVelocityLhs_dV_dv(vel_field,field_name,data,common_data) {}
 
-    PetscErrorCode ConvectiveMassElement::OpVelocityLhs_dV_dX::getJac(
+    MoFEMErrorCode ConvectiveMassElement::OpVelocityLhs_dV_dX::getJac(
       DataForcesAndSourcesCore::EntData &col_data,int gg
     ) {
       MoFEMFunctionBeginHot;
@@ -1492,7 +1492,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
     jAcobian(jacobian),
     fieldDisp(false) {}
 
-    PetscErrorCode ConvectiveMassElement::OpEshelbyDynamicMaterialMomentumJacobian::doWork(
+    MoFEMErrorCode ConvectiveMassElement::OpEshelbyDynamicMaterialMomentumJacobian::doWork(
       int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
     ) {
       MoFEMFunctionBeginHot;
@@ -1569,9 +1569,9 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
             adouble detH;
             detH = 1;
             if(commonData.gradAtGaussPts[commonData.meshPositions].size()>0) {
-              ierr = dEterminatnt(H,detH); CHKERRQ(ierr);
+              ierr = dEterminatnt(H,detH); CHKERRG(ierr);
             }
-            ierr = iNvert(detH,H,invH); CHKERRQ(ierr);
+            ierr = iNvert(detH,H,invH); CHKERRG(ierr);
             noalias(F) = prod(h,invH);
             noalias(G) = prod(g,invH);
             double rho0 = dAta.rho0;
@@ -1673,7 +1673,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
       }
     }
 
-    PetscErrorCode ConvectiveMassElement::OpEshelbyDynamicMaterialMomentumRhs::doWork(
+    MoFEMErrorCode ConvectiveMassElement::OpEshelbyDynamicMaterialMomentumRhs::doWork(
       int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data) {
       MoFEMFunctionBeginHot;
 
@@ -1733,10 +1733,10 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
             }
           }
           //std::cerr << indices << std::endl;
-          ierr = VecSetValues(getFEMethod()->ts_F,indices.size(),&indices[0],&nf[0],ADD_VALUES); CHKERRQ(ierr);
+          ierr = VecSetValues(getFEMethod()->ts_F,indices.size(),&indices[0],&nf[0],ADD_VALUES); CHKERRG(ierr);
         } else {
           ierr = VecSetValues(getFEMethod()->ts_F,row_data.getIndices().size(),
-          &row_data.getIndices()[0],&nf[0],ADD_VALUES); CHKERRQ(ierr);
+          &row_data.getIndices()[0],&nf[0],ADD_VALUES); CHKERRG(ierr);
         }
 
       } catch (const std::exception& ex) {
@@ -1759,7 +1759,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
     }
 
 
-    PetscErrorCode ConvectiveMassElement::OpEshelbyDynamicMaterialMomentumLhs_dv::getJac(
+    MoFEMErrorCode ConvectiveMassElement::OpEshelbyDynamicMaterialMomentumLhs_dv::getJac(
       DataForcesAndSourcesCore::EntData &col_data,int gg
     ) {
       MoFEMFunctionBeginHot;
@@ -1855,7 +1855,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
 
     }
 
-    PetscErrorCode ConvectiveMassElement::OpEshelbyDynamicMaterialMomentumLhs_dx::getJac(
+    MoFEMErrorCode ConvectiveMassElement::OpEshelbyDynamicMaterialMomentumLhs_dx::getJac(
       DataForcesAndSourcesCore::EntData &col_data,int gg
     ) {
       MoFEMFunctionBeginHot;
@@ -1927,7 +1927,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
 
     }
 
-    PetscErrorCode ConvectiveMassElement::OpEshelbyDynamicMaterialMomentumLhs_dX::getJac(DataForcesAndSourcesCore::EntData &col_data,int gg) {
+    MoFEMErrorCode ConvectiveMassElement::OpEshelbyDynamicMaterialMomentumLhs_dX::getJac(DataForcesAndSourcesCore::EntData &col_data,int gg) {
       MoFEMFunctionBeginHot;
       int nb_col = col_data.getIndices().size();
       jac.clear();
@@ -2000,7 +2000,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
 
     }
 
-    PetscErrorCode ConvectiveMassElement::UpdateAndControl::preProcess() {
+    MoFEMErrorCode ConvectiveMassElement::UpdateAndControl::preProcess() {
       MoFEMFunctionBeginHot;
       
 
@@ -2010,9 +2010,9 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
           //FIXME: This global scattering because Kuu problem and Dynamic problem
           //not share partitions. Both problem should use the same partitioning to
           //resolve this problem.
-          ierr = mField.getInterface<VecManager>()->setGlobalGhostVector(problemPtr,COL,ts_u,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-          ierr = mField.getInterface<VecManager>()->setOtherGlobalGhostVector(problemPtr,velocityField,"DOT_"+velocityField,COL,ts_u_t,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-          ierr = mField.getInterface<VecManager>()->setOtherGlobalGhostVector(problemPtr,spatialPositionField,"DOT_"+spatialPositionField,COL,ts_u_t,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+          ierr = mField.getInterface<VecManager>()->setGlobalGhostVector(problemPtr,COL,ts_u,INSERT_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
+          ierr = mField.getInterface<VecManager>()->setOtherGlobalGhostVector(problemPtr,velocityField,"DOT_"+velocityField,COL,ts_u_t,INSERT_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
+          ierr = mField.getInterface<VecManager>()->setOtherGlobalGhostVector(problemPtr,spatialPositionField,"DOT_"+spatialPositionField,COL,ts_u_t,INSERT_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
           break;
         }
         case CTX_TSSETIJACOBIAN: {
@@ -2026,18 +2026,18 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
       MoFEMFunctionReturnHot(0);
     }
 
-    PetscErrorCode ConvectiveMassElement::UpdateAndControl::postProcess() {
+    MoFEMErrorCode ConvectiveMassElement::UpdateAndControl::postProcess() {
       MoFEMFunctionBeginHot;
       //
       //SNES snes;
-      //ierr = TSGetSNES(tS,&snes); CHKERRQ(ierr);
-      //ierr = SNESSetLagJacobian(snes,jacobianLag); CHKERRQ(ierr);
+      //ierr = TSGetSNES(tS,&snes); CHKERRG(ierr);
+      //ierr = SNESSetLagJacobian(snes,jacobianLag); CHKERRG(ierr);
       MoFEMFunctionReturnHot(0);
     }
 
 
 
-    PetscErrorCode ConvectiveMassElement::setBlocks() {
+    MoFEMErrorCode ConvectiveMassElement::setBlocks() {
       MoFEMFunctionBeginHot;
       
       
@@ -2046,10 +2046,10 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
       for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|BODYFORCESSET,it)) {
         int id = it->getMeshsetId();
         EntityHandle meshset = it->getMeshset();
-        rval = mField.get_moab().get_entities_by_type(meshset,MBTET,setOfBlocks[id].tEts,true); CHKERRQ_MOAB(rval);
+        rval = mField.get_moab().get_entities_by_type(meshset,MBTET,setOfBlocks[id].tEts,true); CHKERRG(rval);
         added_tets.merge(setOfBlocks[id].tEts);
         Block_BodyForces mydata;
-        ierr = it->getAttributeDataStructure(mydata); CHKERRQ(ierr);
+        ierr = it->getAttributeDataStructure(mydata); CHKERRG(ierr);
         setOfBlocks[id].rho0 = mydata.data.density;
         setOfBlocks[id].a0.resize(3);
         setOfBlocks[id].a0[0] = mydata.data.acceleration_x;
@@ -2060,11 +2060,11 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
 
       for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|MAT_ELASTICSET,it)) {
         Mat_Elastic mydata;
-        ierr = it->getAttributeDataStructure(mydata); CHKERRQ(ierr);
+        ierr = it->getAttributeDataStructure(mydata); CHKERRG(ierr);
         if(mydata.data.User1 == 0) continue;
         Range tets;
         EntityHandle meshset = it->getMeshset();
-        rval = mField.get_moab().get_entities_by_type(meshset,MBTET,tets,true); CHKERRQ_MOAB(rval);
+        rval = mField.get_moab().get_entities_by_type(meshset,MBTET,tets,true); CHKERRG(rval);
         tets = subtract(tets,added_tets);
         if(tets.empty()) continue;
         int id = it->getMeshsetId();
@@ -2080,7 +2080,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
       MoFEMFunctionReturnHot(0);
     }
 
-  PetscErrorCode ConvectiveMassElement::addConvectiveMassElement(
+  MoFEMErrorCode ConvectiveMassElement::addConvectiveMassElement(
     string element_name,
     string velocity_field_name,
     string spatial_position_field_name,
@@ -2091,27 +2091,27 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
     
     //
 
-    ierr = mField.add_finite_element(element_name,MF_ZERO); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_row(element_name,velocity_field_name); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_col(element_name,velocity_field_name); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_data(element_name,velocity_field_name); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_row(element_name,spatial_position_field_name); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_col(element_name,spatial_position_field_name); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_data(element_name,spatial_position_field_name); CHKERRQ(ierr);
+    ierr = mField.add_finite_element(element_name,MF_ZERO); CHKERRG(ierr);
+    ierr = mField.modify_finite_element_add_field_row(element_name,velocity_field_name); CHKERRG(ierr);
+    ierr = mField.modify_finite_element_add_field_col(element_name,velocity_field_name); CHKERRG(ierr);
+    ierr = mField.modify_finite_element_add_field_data(element_name,velocity_field_name); CHKERRG(ierr);
+    ierr = mField.modify_finite_element_add_field_row(element_name,spatial_position_field_name); CHKERRG(ierr);
+    ierr = mField.modify_finite_element_add_field_col(element_name,spatial_position_field_name); CHKERRG(ierr);
+    ierr = mField.modify_finite_element_add_field_data(element_name,spatial_position_field_name); CHKERRG(ierr);
     if(mField.check_field(material_position_field_name)) {
       if(ale) {
-        ierr = mField.modify_finite_element_add_field_row(element_name,material_position_field_name); CHKERRQ(ierr);
-        ierr = mField.modify_finite_element_add_field_col(element_name,material_position_field_name); CHKERRQ(ierr);
-        ierr = mField.modify_finite_element_add_field_data(element_name,"DOT_"+material_position_field_name); CHKERRQ(ierr);
+        ierr = mField.modify_finite_element_add_field_row(element_name,material_position_field_name); CHKERRG(ierr);
+        ierr = mField.modify_finite_element_add_field_col(element_name,material_position_field_name); CHKERRG(ierr);
+        ierr = mField.modify_finite_element_add_field_data(element_name,"DOT_"+material_position_field_name); CHKERRG(ierr);
       }
-      ierr = mField.modify_finite_element_add_field_data(element_name,material_position_field_name); CHKERRQ(ierr);
+      ierr = mField.modify_finite_element_add_field_data(element_name,material_position_field_name); CHKERRG(ierr);
     }
-    ierr = mField.modify_finite_element_add_field_data(element_name,"DOT_"+velocity_field_name); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_data(element_name,"DOT_"+spatial_position_field_name); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_data(element_name,"DOT_"+velocity_field_name); CHKERRG(ierr);
+    ierr = mField.modify_finite_element_add_field_data(element_name,"DOT_"+spatial_position_field_name); CHKERRG(ierr);
 
     Range tets;
     if(bit.any()) {
-      ierr = mField.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(bit,BitRefLevel().set(),MBTET,tets); CHKERRQ(ierr);
+      ierr = mField.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(bit,BitRefLevel().set(),MBTET,tets); CHKERRG(ierr);
     }
 
     std::map<int,BlockData>::iterator sit = setOfBlocks.begin();
@@ -2120,13 +2120,13 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
       if(!tets.empty()) {
         add_tets = intersect(add_tets,tets);
       }
-      ierr = mField.add_ents_to_finite_element_by_type(add_tets,MBTET,element_name); CHKERRQ(ierr);
+      ierr = mField.add_ents_to_finite_element_by_type(add_tets,MBTET,element_name); CHKERRG(ierr);
     }
 
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode ConvectiveMassElement::addVelocityElement(string element_name,
+  MoFEMErrorCode ConvectiveMassElement::addVelocityElement(string element_name,
     string velocity_field_name,
     string spatial_position_field_name,
     string material_position_field_name,
@@ -2136,25 +2136,25 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
       
       //
 
-      ierr = mField.add_finite_element(element_name,MF_ZERO); CHKERRQ(ierr);
-      ierr = mField.modify_finite_element_add_field_row(element_name,velocity_field_name); CHKERRQ(ierr);
-      ierr = mField.modify_finite_element_add_field_col(element_name,velocity_field_name); CHKERRQ(ierr);
-      ierr = mField.modify_finite_element_add_field_data(element_name,velocity_field_name); CHKERRQ(ierr);
-      ierr = mField.modify_finite_element_add_field_col(element_name,spatial_position_field_name); CHKERRQ(ierr);
-      ierr = mField.modify_finite_element_add_field_data(element_name,spatial_position_field_name); CHKERRQ(ierr);
+      ierr = mField.add_finite_element(element_name,MF_ZERO); CHKERRG(ierr);
+      ierr = mField.modify_finite_element_add_field_row(element_name,velocity_field_name); CHKERRG(ierr);
+      ierr = mField.modify_finite_element_add_field_col(element_name,velocity_field_name); CHKERRG(ierr);
+      ierr = mField.modify_finite_element_add_field_data(element_name,velocity_field_name); CHKERRG(ierr);
+      ierr = mField.modify_finite_element_add_field_col(element_name,spatial_position_field_name); CHKERRG(ierr);
+      ierr = mField.modify_finite_element_add_field_data(element_name,spatial_position_field_name); CHKERRG(ierr);
       if(mField.check_field(material_position_field_name)) {
         if(ale) {
-          ierr = mField.modify_finite_element_add_field_col(element_name,material_position_field_name); CHKERRQ(ierr);
-          ierr = mField.modify_finite_element_add_field_data(element_name,"DOT_"+material_position_field_name); CHKERRQ(ierr);
+          ierr = mField.modify_finite_element_add_field_col(element_name,material_position_field_name); CHKERRG(ierr);
+          ierr = mField.modify_finite_element_add_field_data(element_name,"DOT_"+material_position_field_name); CHKERRG(ierr);
         }
-        ierr = mField.modify_finite_element_add_field_data(element_name,material_position_field_name); CHKERRQ(ierr);
+        ierr = mField.modify_finite_element_add_field_data(element_name,material_position_field_name); CHKERRG(ierr);
       }
-      ierr = mField.modify_finite_element_add_field_data(element_name,"DOT_"+velocity_field_name); CHKERRQ(ierr);
-      ierr = mField.modify_finite_element_add_field_data(element_name,"DOT_"+spatial_position_field_name); CHKERRQ(ierr);
+      ierr = mField.modify_finite_element_add_field_data(element_name,"DOT_"+velocity_field_name); CHKERRG(ierr);
+      ierr = mField.modify_finite_element_add_field_data(element_name,"DOT_"+spatial_position_field_name); CHKERRG(ierr);
 
       Range tets;
       if(bit.any()) {
-        ierr = mField.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(bit,BitRefLevel().set(),MBTET,tets); CHKERRQ(ierr);
+        ierr = mField.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(bit,BitRefLevel().set(),MBTET,tets); CHKERRG(ierr);
       }
 
       std::map<int,BlockData>::iterator sit = setOfBlocks.begin();
@@ -2163,13 +2163,13 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
         if(!tets.empty()) {
           add_tets = intersect(add_tets,tets);
         }
-        ierr = mField.add_ents_to_finite_element_by_type(add_tets,MBTET,element_name); CHKERRQ(ierr);
+        ierr = mField.add_ents_to_finite_element_by_type(add_tets,MBTET,element_name); CHKERRG(ierr);
       }
 
       MoFEMFunctionReturnHot(0);
     }
 
-  PetscErrorCode ConvectiveMassElement::addEshelbyDynamicMaterialMomentum(string element_name,
+  MoFEMErrorCode ConvectiveMassElement::addEshelbyDynamicMaterialMomentum(string element_name,
     string velocity_field_name,
     string spatial_position_field_name,
     string material_position_field_name,
@@ -2182,25 +2182,25 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
     
     //
 
-    ierr = mField.add_finite_element(element_name,MF_ZERO); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_col(element_name,velocity_field_name); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_data(element_name,velocity_field_name); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_col(element_name,spatial_position_field_name); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_data(element_name,spatial_position_field_name); CHKERRQ(ierr);
+    ierr = mField.add_finite_element(element_name,MF_ZERO); CHKERRG(ierr);
+    ierr = mField.modify_finite_element_add_field_col(element_name,velocity_field_name); CHKERRG(ierr);
+    ierr = mField.modify_finite_element_add_field_data(element_name,velocity_field_name); CHKERRG(ierr);
+    ierr = mField.modify_finite_element_add_field_col(element_name,spatial_position_field_name); CHKERRG(ierr);
+    ierr = mField.modify_finite_element_add_field_data(element_name,spatial_position_field_name); CHKERRG(ierr);
     if(mField.check_field(material_position_field_name)) {
       if(ale) {
-        ierr = mField.modify_finite_element_add_field_row(element_name,material_position_field_name); CHKERRQ(ierr);
-        ierr = mField.modify_finite_element_add_field_col(element_name,material_position_field_name); CHKERRQ(ierr);
-        ierr = mField.modify_finite_element_add_field_data(element_name,"DOT_"+material_position_field_name); CHKERRQ(ierr);
+        ierr = mField.modify_finite_element_add_field_row(element_name,material_position_field_name); CHKERRG(ierr);
+        ierr = mField.modify_finite_element_add_field_col(element_name,material_position_field_name); CHKERRG(ierr);
+        ierr = mField.modify_finite_element_add_field_data(element_name,"DOT_"+material_position_field_name); CHKERRG(ierr);
       }
-      ierr = mField.modify_finite_element_add_field_data(element_name,material_position_field_name); CHKERRQ(ierr);
+      ierr = mField.modify_finite_element_add_field_data(element_name,material_position_field_name); CHKERRG(ierr);
     }
-    ierr = mField.modify_finite_element_add_field_data(element_name,"DOT_"+velocity_field_name); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_data(element_name,"DOT_"+spatial_position_field_name); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_data(element_name,"DOT_"+velocity_field_name); CHKERRG(ierr);
+    ierr = mField.modify_finite_element_add_field_data(element_name,"DOT_"+spatial_position_field_name); CHKERRG(ierr);
 
     Range tets;
     if(bit.any()) {
-      ierr = mField.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(bit,BitRefLevel().set(),MBTET,tets); CHKERRQ(ierr);
+      ierr = mField.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(bit,BitRefLevel().set(),MBTET,tets); CHKERRG(ierr);
     }
     if(intersected!=NULL) {
       if(tets.empty()) {
@@ -2216,13 +2216,13 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
       if(!tets.empty()) {
         add_tets = intersect(add_tets,tets);
       }
-      ierr = mField.add_ents_to_finite_element_by_type(add_tets,MBTET,element_name); CHKERRQ(ierr);
+      ierr = mField.add_ents_to_finite_element_by_type(add_tets,MBTET,element_name); CHKERRG(ierr);
     }
 
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode ConvectiveMassElement::setConvectiveMassOperators(
+  MoFEMErrorCode ConvectiveMassElement::setConvectiveMassOperators(
     string velocity_field_name,
     string spatial_position_field_name,
     string material_position_field_name,
@@ -2301,7 +2301,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode ConvectiveMassElement::setVelocityOperators(
+  MoFEMErrorCode ConvectiveMassElement::setVelocityOperators(
     string velocity_field_name,
     string spatial_position_field_name,
     string material_position_field_name,
@@ -2363,7 +2363,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
   }
 
 
-  PetscErrorCode ConvectiveMassElement::setKinematicEshelbyOperators(
+  MoFEMErrorCode ConvectiveMassElement::setKinematicEshelbyOperators(
     string velocity_field_name,
     string spatial_position_field_name,
     string material_position_field_name,
@@ -2412,7 +2412,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode ConvectiveMassElement::setShellMatrixMassOperators(
+  MoFEMErrorCode ConvectiveMassElement::setShellMatrixMassOperators(
     string velocity_field_name,
     string spatial_position_field_name,
     string material_position_field_name,
@@ -2501,55 +2501,55 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
     }
   }
 
-  PetscErrorCode ConvectiveMassElement::MatShellCtx::iNit() {
+  MoFEMErrorCode ConvectiveMassElement::MatShellCtx::iNit() {
     MoFEMFunctionBeginHot;
     if(!iNitialized) {
       
       #if PETSC_VERSION_GE(3,5,3)
-      ierr = MatCreateVecs(K,&u,&Ku); CHKERRQ(ierr);
-      ierr = MatCreateVecs(M,&v,&Mv); CHKERRQ(ierr);
+      ierr = MatCreateVecs(K,&u,&Ku); CHKERRG(ierr);
+      ierr = MatCreateVecs(M,&v,&Mv); CHKERRG(ierr);
       #else
-      ierr = MatGetVecs(K,&u,&Ku); CHKERRQ(ierr);
-      ierr = MatGetVecs(M,&v,&Mv); CHKERRQ(ierr);
+      ierr = MatGetVecs(K,&u,&Ku); CHKERRG(ierr);
+      ierr = MatGetVecs(M,&v,&Mv); CHKERRG(ierr);
       #endif
-      ierr = MatDuplicate(K,MAT_SHARE_NONZERO_PATTERN,&barK); CHKERRQ(ierr);
+      ierr = MatDuplicate(K,MAT_SHARE_NONZERO_PATTERN,&barK); CHKERRG(ierr);
       iNitialized = true;
     }
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode ConvectiveMassElement::MatShellCtx::dEstroy() {
+  MoFEMErrorCode ConvectiveMassElement::MatShellCtx::dEstroy() {
     MoFEMFunctionBeginHot;
     if(iNitialized) {
       
-      ierr = VecDestroy(&u); CHKERRQ(ierr);
-      ierr = VecDestroy(&Ku); CHKERRQ(ierr);
-      ierr = VecDestroy(&v); CHKERRQ(ierr);
-      ierr = VecDestroy(&Mv); CHKERRQ(ierr);
-      ierr = MatDestroy(&barK); CHKERRQ(ierr);
+      ierr = VecDestroy(&u); CHKERRG(ierr);
+      ierr = VecDestroy(&Ku); CHKERRG(ierr);
+      ierr = VecDestroy(&v); CHKERRG(ierr);
+      ierr = VecDestroy(&Mv); CHKERRG(ierr);
+      ierr = MatDestroy(&barK); CHKERRG(ierr);
       iNitialized = false;
     }
     MoFEMFunctionReturnHot(0);
   }
 
 
-  PetscErrorCode ConvectiveMassElement::PCShellCtx::iNit() {
+  MoFEMErrorCode ConvectiveMassElement::PCShellCtx::iNit() {
     MoFEMFunctionBeginHot;
     
     if(!initPC) {
       MPI_Comm comm;
-      ierr = PetscObjectGetComm((PetscObject)shellMat,&comm); CHKERRQ(ierr);
-      ierr = PCCreate(comm,&pC); CHKERRQ(ierr);
+      ierr = PetscObjectGetComm((PetscObject)shellMat,&comm); CHKERRG(ierr);
+      ierr = PCCreate(comm,&pC); CHKERRG(ierr);
       initPC = true;
     }
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode ConvectiveMassElement::PCShellCtx::dEstroy() {
+  MoFEMErrorCode ConvectiveMassElement::PCShellCtx::dEstroy() {
     MoFEMFunctionBeginHot;
     
     if(initPC) {
-      ierr = PCDestroy(&pC); CHKERRQ(ierr);
+      ierr = PCDestroy(&pC); CHKERRG(ierr);
       initPC = false;
     }
     MoFEMFunctionReturnHot(0);
@@ -2561,7 +2561,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
 
   }
 
-  PetscErrorCode ConvectiveMassElement::ShellResidualElement::preProcess() {
+  MoFEMErrorCode ConvectiveMassElement::ShellResidualElement::preProcess() {
     MoFEMFunctionBeginHot;
 
     
@@ -2569,21 +2569,21 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
       SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"It is used to residual of velocities");
     }
     if(!shellMatCtx->iNitialized) {
-      ierr = shellMatCtx->iNit(); CHKERRQ(ierr);
+      ierr = shellMatCtx->iNit(); CHKERRG(ierr);
     }
-    ierr = VecScatterBegin(shellMatCtx->scatterU,ts_u_t,shellMatCtx->u,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    ierr = VecScatterEnd(shellMatCtx->scatterU,ts_u_t,shellMatCtx->u,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    ierr = VecScatterBegin(shellMatCtx->scatterV,ts_u,shellMatCtx->v,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    ierr = VecScatterEnd(shellMatCtx->scatterV,ts_u,shellMatCtx->v,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    ierr = VecAXPY(shellMatCtx->v,-1,shellMatCtx->u); CHKERRQ(ierr);
-    ierr = VecScatterBegin(shellMatCtx->scatterV,shellMatCtx->v,ts_F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-    ierr = VecScatterEnd(shellMatCtx->scatterV,shellMatCtx->v,ts_F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = VecScatterBegin(shellMatCtx->scatterU,ts_u_t,shellMatCtx->u,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
+    ierr = VecScatterEnd(shellMatCtx->scatterU,ts_u_t,shellMatCtx->u,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
+    ierr = VecScatterBegin(shellMatCtx->scatterV,ts_u,shellMatCtx->v,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
+    ierr = VecScatterEnd(shellMatCtx->scatterV,ts_u,shellMatCtx->v,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
+    ierr = VecAXPY(shellMatCtx->v,-1,shellMatCtx->u); CHKERRG(ierr);
+    ierr = VecScatterBegin(shellMatCtx->scatterV,shellMatCtx->v,ts_F,ADD_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
+    ierr = VecScatterEnd(shellMatCtx->scatterV,shellMatCtx->v,ts_F,ADD_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
     //VecView(shellMatCtx->v,PETSC_VIEWER_STDOUT_WORLD);
 
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode ConvectiveMassElement::ShellResidualElement::postProcess() {
+  MoFEMErrorCode ConvectiveMassElement::ShellResidualElement::postProcess() {
     MoFEMFunctionBeginHot;
 
     /*
@@ -2591,21 +2591,21 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
       SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"It is used to residual of velocities");
     }
     if(!shellMatCtx->iNitialized) {
-      ierr = shellMatCtx->iNit(); CHKERRQ(ierr);
+      ierr = shellMatCtx->iNit(); CHKERRG(ierr);
     }
-    ierr = VecScatterBegin(shellMatCtx->scatterU,ts_F,shellMatCtx->Ku,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    ierr = VecScatterEnd(shellMatCtx->scatterU,ts_F,shellMatCtx->Ku,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    ierr = VecScatterBegin(shellMatCtx->scatterV,ts_F,shellMatCtx->Mv,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    ierr = VecScatterEnd(shellMatCtx->scatterV,ts_F,shellMatCtx->Mv,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = VecScatterBegin(shellMatCtx->scatterU,ts_F,shellMatCtx->Ku,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
+    ierr = VecScatterEnd(shellMatCtx->scatterU,ts_F,shellMatCtx->Ku,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
+    ierr = VecScatterBegin(shellMatCtx->scatterV,ts_F,shellMatCtx->Mv,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
+    ierr = VecScatterEnd(shellMatCtx->scatterV,ts_F,shellMatCtx->Mv,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
 
     double nrm2_ku,nrm2_mv;
-    ierr = VecNorm(shellMatCtx->Ku,NORM_INFINITY,&nrm2_ku); CHKERRQ(ierr);
-    ierr = VecNorm(shellMatCtx->Mv,NORM_INFINITY,&nrm2_mv); CHKERRQ(ierr);
+    ierr = VecNorm(shellMatCtx->Ku,NORM_INFINITY,&nrm2_ku); CHKERRG(ierr);
+    ierr = VecNorm(shellMatCtx->Mv,NORM_INFINITY,&nrm2_mv); CHKERRG(ierr);
     PetscPrintf(mField.get_comm(),"nrm2 U = %6.4e nrm2 V = %6.4e scale = %6.4e\n",nrm2_ku,nrm2_mv,nrm2_ku/fmax(nrm2_mv,nrm2_ku));
     //shellMatCtx->scale = nrm2_ku/fmax(nrm2_mv,nrm2_ku);
-    //ierr = VecScale(shellMatCtx->Mv,shellMatCtx->scale); CHKERRQ(ierr);
-    ierr = VecScatterBegin(shellMatCtx->scatterV,shellMatCtx->Mv,ts_F,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-    ierr = VecScatterEnd(shellMatCtx->scatterV,shellMatCtx->Mv,ts_F,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);*/
+    //ierr = VecScale(shellMatCtx->Mv,shellMatCtx->scale); CHKERRG(ierr);
+    ierr = VecScatterBegin(shellMatCtx->scatterV,shellMatCtx->Mv,ts_F,INSERT_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
+    ierr = VecScatterEnd(shellMatCtx->scatterV,shellMatCtx->Mv,ts_F,INSERT_VALUES,SCATTER_REVERSE); CHKERRG(ierr);*/
 
     MoFEMFunctionReturnHot(0);
 
@@ -2619,7 +2619,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
 
   }
 
-  PetscErrorCode ConvectiveMassElement::ShellMatrixElement::preProcess() {
+  MoFEMErrorCode ConvectiveMassElement::ShellMatrixElement::preProcess() {
     MoFEMFunctionBeginHot;
     
 
@@ -2632,44 +2632,44 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
 
     DirichletBcPtr->dIag = 1;
     DirichletBcPtr->ts_B = shellMatCtx->K;
-    ierr = MatZeroEntries(shellMatCtx->K); CHKERRQ(ierr);
-    ierr = mField.problem_basic_method_preProcess(problemName,*DirichletBcPtr); CHKERRQ(ierr);
+    ierr = MatZeroEntries(shellMatCtx->K); CHKERRG(ierr);
+    ierr = mField.problem_basic_method_preProcess(problemName,*DirichletBcPtr); CHKERRG(ierr);
     LoopsToDoType::iterator itk = loopK.begin();
     for(;itk!=loopK.end();itk++) {
       itk->second->copyTs(*((TSMethod*)this));
       itk->second->ts_B = shellMatCtx->K;
-      ierr = mField.loop_finite_elements(problemName,itk->first,*itk->second); CHKERRQ(ierr);
+      ierr = mField.loop_finite_elements(problemName,itk->first,*itk->second); CHKERRG(ierr);
     }
     LoopsToDoType::iterator itam = loopAuxM.begin();
     for(;itam!=loopAuxM.end();itam++) {
       itam->second->copyTs(*((TSMethod*)this));
       itam->second->ts_B = shellMatCtx->K;
-      ierr = mField.loop_finite_elements(problemName,itam->first,*itam->second); CHKERRQ(ierr);
+      ierr = mField.loop_finite_elements(problemName,itam->first,*itam->second); CHKERRG(ierr);
     }
-    ierr = mField.problem_basic_method_postProcess(problemName,*DirichletBcPtr); CHKERRQ(ierr);
-    ierr = MatAssemblyBegin(shellMatCtx->K,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-    ierr = MatAssemblyEnd(shellMatCtx->K,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+    ierr = mField.problem_basic_method_postProcess(problemName,*DirichletBcPtr); CHKERRG(ierr);
+    ierr = MatAssemblyBegin(shellMatCtx->K,MAT_FINAL_ASSEMBLY); CHKERRG(ierr);
+    ierr = MatAssemblyEnd(shellMatCtx->K,MAT_FINAL_ASSEMBLY); CHKERRG(ierr);
 
     DirichletBcPtr->dIag = 0;
     DirichletBcPtr->ts_B = shellMatCtx->M;
-    ierr = MatZeroEntries(shellMatCtx->M); CHKERRQ(ierr);
-    //ierr = mField.problem_basic_method_preProcess(problemName,*DirichletBcPtr); CHKERRQ(ierr);
+    ierr = MatZeroEntries(shellMatCtx->M); CHKERRG(ierr);
+    //ierr = mField.problem_basic_method_preProcess(problemName,*DirichletBcPtr); CHKERRG(ierr);
     LoopsToDoType::iterator itm = loopM.begin();
     for(;itm!=loopM.end();itm++) {
       itm->second->copyTs(*((TSMethod*)this));
       itm->second->ts_B = shellMatCtx->M;
-      ierr = mField.loop_finite_elements(problemName,itm->first,*itm->second); CHKERRQ(ierr);
+      ierr = mField.loop_finite_elements(problemName,itm->first,*itm->second); CHKERRG(ierr);
     }
-    ierr = mField.problem_basic_method_postProcess(problemName,*DirichletBcPtr); CHKERRQ(ierr);
-    ierr = MatAssemblyBegin(shellMatCtx->M,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-    ierr = MatAssemblyEnd(shellMatCtx->M,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+    ierr = mField.problem_basic_method_postProcess(problemName,*DirichletBcPtr); CHKERRG(ierr);
+    ierr = MatAssemblyBegin(shellMatCtx->M,MAT_FINAL_ASSEMBLY); CHKERRG(ierr);
+    ierr = MatAssemblyEnd(shellMatCtx->M,MAT_FINAL_ASSEMBLY); CHKERRG(ierr);
 
     //barK
-    ierr = MatZeroEntries(shellMatCtx->barK); CHKERRQ(ierr);
-    ierr = MatCopy(shellMatCtx->K,shellMatCtx->barK,SAME_NONZERO_PATTERN); CHKERRQ(ierr);
-    ierr = MatAXPY(shellMatCtx->barK,ts_a,shellMatCtx->M,SAME_NONZERO_PATTERN); CHKERRQ(ierr);
-    ierr = MatAssemblyBegin(shellMatCtx->barK,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-    ierr = MatAssemblyEnd(shellMatCtx->barK,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+    ierr = MatZeroEntries(shellMatCtx->barK); CHKERRG(ierr);
+    ierr = MatCopy(shellMatCtx->K,shellMatCtx->barK,SAME_NONZERO_PATTERN); CHKERRG(ierr);
+    ierr = MatAXPY(shellMatCtx->barK,ts_a,shellMatCtx->M,SAME_NONZERO_PATTERN); CHKERRG(ierr);
+    ierr = MatAssemblyBegin(shellMatCtx->barK,MAT_FINAL_ASSEMBLY); CHKERRG(ierr);
+    ierr = MatAssemblyEnd(shellMatCtx->barK,MAT_FINAL_ASSEMBLY); CHKERRG(ierr);
 
     //Matrix View
     //MatView(shellMatCtx->barK,PETSC_VIEWER_DRAW_WORLD);//PETSC_VIEWER_STDOUT_WORLD);

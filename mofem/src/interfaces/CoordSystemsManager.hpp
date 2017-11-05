@@ -29,7 +29,7 @@ namespace MoFEM {
 
   struct CoordSystemsManager: public UnknownInterface {
 
-    PetscErrorCode query_interface(const MOFEMuuid& uuid, UnknownInterface** iface) const;
+    MoFEMErrorCode query_interface(const MOFEMuuid& uuid, UnknownInterface** iface) const;
 
     MoFEM::Core& cOre;
     CoordSystemsManager(const MoFEM::Core& core);
@@ -43,19 +43,19 @@ namespace MoFEM {
      * \brief get tags handlers used on meshsets conating information about coordinate systems
 
      */
-    PetscErrorCode getTags(int verb = -1);
+    MoFEMErrorCode getTags(int verb = -1);
 
     /**
      * \brief clear multi-index container
      * @return error code
      */
-    PetscErrorCode clearMap();
+    MoFEMErrorCode clearMap();
 
     /**
      * \brier initialize container form data on mesh
      * @return error code
      */
-    PetscErrorCode initialiseDatabaseFromMesh(int verb = 0);
+    MoFEMErrorCode initialiseDatabaseFromMesh(int verb = 0);
 
     inline CoordSys_multiIndex& getCoordinateSystemsMultindex() {
       return coordinateSystems;
@@ -66,7 +66,7 @@ namespace MoFEM {
       * \param cs_id see \ref CoordSystems for options
       * \param name unique name of coordinate system
       */
-    PetscErrorCode addCoordinateSystem(const int cs_dim[],const std::string name);
+    MoFEMErrorCode addCoordinateSystem(const int cs_dim[],const std::string name);
 
 
     /** \brief Set coordinate system to field
@@ -75,21 +75,21 @@ namespace MoFEM {
       * \param name unique name of coordinate system
       *
       */
-    PetscErrorCode setFieldCoordinateSystem(const std::string field_name,const std::string cs_name);
+    MoFEMErrorCode setFieldCoordinateSystem(const std::string field_name,const std::string cs_name);
 
     /**
      * \brief get coordinate system by id
      * @param  id handle of meshset containing data about CS
      * @return    error code
      */
-    PetscErrorCode getCoordSysPtr(const EntityHandle id,boost::shared_ptr<CoordSys> &cs_ptr);
+    MoFEMErrorCode getCoordSysPtr(const EntityHandle id,boost::shared_ptr<CoordSys> &cs_ptr);
 
     /**
      * \brief get coordinate system by name
      * @param  name name of coordinate system
      * @return    error code
      */
-    PetscErrorCode getCoordSysPtr(const string name,boost::shared_ptr<CoordSys> &cs_ptr);
+    MoFEMErrorCode getCoordSysPtr(const string name,boost::shared_ptr<CoordSys> &cs_ptr);
 
     inline Tag get_th_CoordSysName() const { return th_CoordSysName; }
 

@@ -46,22 +46,22 @@ int main(int argc, char *argv[]) {
 
   ierr = PetscOptionsBegin(
     PETSC_COMM_WORLD,"","Shell prism configure","none"
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
   ierr = PetscOptionsString(
     "-my_file",
     "mesh file name","", "mesh.h5m",mesh_file_name, 255, &flg_file
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
   ierr = PetscOptionsInt(
     "-my_order",
     "default approximation order",
     "",order,&order,PETSC_NULL
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
   ierr = PetscOptionsBool(
     "-my_is_partitioned",
     "set if mesh is partitioned (this result that each process keeps only part of the mesh)",
     "",PETSC_FALSE,&is_partitioned,PETSC_NULL
-  ); CHKERRQ(ierr);
-  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
+  ierr = PetscOptionsEnd(); CHKERRG(ierr);
 
   if(is_partitioned == PETSC_TRUE) {
     //Read mesh to MOAB
@@ -69,11 +69,11 @@ int main(int argc, char *argv[]) {
     option = "PARALLEL=READ_PART;"
       "PARALLEL_RESOLVE_SHARED_ENTS;"
       "PARTITION=PARALLEL_PARTITION;";
-    rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
+    rval = moab.load_file(mesh_file_name, 0, option); CHKERRG(rval);
   } else {
     const char *option;
     option = "";
-    rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
+    rval = moab.load_file(mesh_file_name, 0, option); CHKERRG(rval);
   }
 
   //Create mofem interface
@@ -82,16 +82,16 @@ int main(int argc, char *argv[]) {
 
   MagneticElement magnetic(m_field);
   magnetic.blockData.oRder = order;
-  ierr = magnetic.getNaturalBc(); CHKERRQ(ierr);
-  ierr = magnetic.getEssentialBc(); CHKERRQ(ierr);
-  ierr = magnetic.createFields(); CHKERRQ(ierr);
-  ierr = magnetic.createElements(); CHKERRQ(ierr);
-  ierr = magnetic.createProblem(); CHKERRQ(ierr);
-  ierr = magnetic.solveProblem(); CHKERRQ(ierr);
-  ierr = magnetic.postProcessResults(); CHKERRQ(ierr);
-  ierr = magnetic.destroyProblem(); CHKERRQ(ierr);
+  ierr = magnetic.getNaturalBc(); CHKERRG(ierr);
+  ierr = magnetic.getEssentialBc(); CHKERRG(ierr);
+  ierr = magnetic.createFields(); CHKERRG(ierr);
+  ierr = magnetic.createElements(); CHKERRG(ierr);
+  ierr = magnetic.createProblem(); CHKERRG(ierr);
+  ierr = magnetic.solveProblem(); CHKERRG(ierr);
+  ierr = magnetic.postProcessResults(); CHKERRG(ierr);
+  ierr = magnetic.destroyProblem(); CHKERRG(ierr);
 
-  ierr = PetscFinalize(); CHKERRQ(ierr);
+  ierr = PetscFinalize(); CHKERRG(ierr);
 
   return 0;
 }

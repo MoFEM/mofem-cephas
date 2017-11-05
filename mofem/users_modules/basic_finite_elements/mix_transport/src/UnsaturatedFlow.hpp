@@ -64,7 +64,7 @@ namespace MixTransport {
     virtual double initalPcEval() const = 0;
     virtual void printMatParameters(const int id,const std::string& prefix) const = 0;
 
-    virtual PetscErrorCode calK() {
+    virtual MoFEMErrorCode calK() {
       MoFEMFunctionBeginHot;
       SETERRQ(
         PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,
@@ -73,7 +73,7 @@ namespace MixTransport {
       MoFEMFunctionReturnHot(0);
     }
 
-    virtual PetscErrorCode calDiffK() {
+    virtual MoFEMErrorCode calDiffK() {
       MoFEMFunctionBeginHot;
       SETERRQ(
         PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,
@@ -82,7 +82,7 @@ namespace MixTransport {
       MoFEMFunctionReturnHot(0);
     }
 
-    virtual PetscErrorCode calC() {
+    virtual MoFEMErrorCode calC() {
       MoFEMFunctionBeginHot;
       SETERRQ(
         PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,
@@ -91,7 +91,7 @@ namespace MixTransport {
       MoFEMFunctionReturnHot(0);
     }
 
-    virtual PetscErrorCode calDiffC() {
+    virtual MoFEMErrorCode calDiffC() {
       MoFEMFunctionBeginHot;
       SETERRQ(
         PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,
@@ -100,7 +100,7 @@ namespace MixTransport {
       MoFEMFunctionReturnHot(0);
     }
 
-    virtual PetscErrorCode calTheta() {
+    virtual MoFEMErrorCode calTheta() {
       MoFEMFunctionBeginHot;
       SETERRQ(
         PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,
@@ -109,7 +109,7 @@ namespace MixTransport {
       MoFEMFunctionReturnHot(0);
     }
 
-    virtual PetscErrorCode calSe() {
+    virtual MoFEMErrorCode calSe() {
       MoFEMFunctionBeginHot;
       SETERRQ(
         PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,
@@ -152,7 +152,7 @@ namespace MixTransport {
      * @param  block_id reference to returned block id
      * @return          error code
      */
-    virtual PetscErrorCode getMaterial(
+    virtual MoFEMErrorCode getMaterial(
       const EntityHandle ent,int &block_id
     ) const {
       MoFEMFunctionBeginHot;
@@ -198,7 +198,7 @@ namespace MixTransport {
      * @param  value returned value
      * @return       error code
      */
-    PetscErrorCode getBcOnValues(
+    MoFEMErrorCode getBcOnValues(
       const EntityHandle ent,const int gg,
       const double x,const double y,const double z,
       double &value
@@ -241,7 +241,7 @@ namespace MixTransport {
      * @param  flux reference to flux which is set by function
      * @return      [description]
      */
-    PetscErrorCode getBcOnFluxes(
+    MoFEMErrorCode getBcOnFluxes(
       const EntityHandle ent,
       const double x,const double y,const double z,
       double &flux
@@ -301,7 +301,7 @@ namespace MixTransport {
        * @param  data data on entity
        * @return      error code
        */
-      PetscErrorCode doWork(
+      MoFEMErrorCode doWork(
         int side,EntityType type,DataForcesAndSourcesCore::EntData &data
       ) {
         MoFEMFunctionBeginHot;
@@ -321,7 +321,7 @@ namespace MixTransport {
             z = getCoordsAtGaussPts()(gg,2);
             double value;
             // get value of boundary condition
-            ierr = cTx.getBcOnValues(fe_ent,gg,x,y,z,value); CHKERRQ(ierr);
+            ierr = cTx.getBcOnValues(fe_ent,gg,x,y,z,value); CHKERRG(ierr);
             const double w = getGaussPts()(2,gg)*0.5;
             const double beta = w*(value-z);
             noalias(nF) += beta*prod(data.getHdivN(gg),getNormal());
@@ -329,12 +329,12 @@ namespace MixTransport {
           // Scale vector if history  evaluating method is given
           Vec f = getFEMethod()->ts_F;
           if(valueScale) {
-            ierr = valueScale->scaleNf(getFEMethod(),nF); CHKERRQ(ierr);
+            ierr = valueScale->scaleNf(getFEMethod(),nF); CHKERRG(ierr);
           }
           // Assemble vector
           ierr = VecSetValues(
             f,data.getIndices().size(),&data.getIndices()[0],&nF[0],ADD_VALUES
-          ); CHKERRQ(ierr);
+          ); CHKERRG(ierr);
         } catch (const std::exception& ex) {
           std::ostringstream ss;
           ss << "throw in method: " << ex.what() << std::endl;
@@ -358,7 +358,7 @@ namespace MixTransport {
       VectorDouble divVec,nF;
       FTensor::Index<'i',3> i;
 
-      PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
+      MoFEMErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
         MoFEMFunctionBeginHot;
         const int nb_dofs = data.getIndices().size();
         if(nb_dofs==0) MoFEMFunctionReturnHot(0);
@@ -368,7 +368,7 @@ namespace MixTransport {
         EntityHandle fe_ent = getNumeredEntFiniteElementPtr()->getEnt();
         // Get material block id
         int block_id;
-        ierr = cTx.getMaterial(fe_ent,block_id); CHKERRQ(ierr);
+        ierr = cTx.getMaterial(fe_ent,block_id); CHKERRG(ierr);
         // Get material block
         boost::shared_ptr<GenericMaterial>& block_data = cTx.dMatMap.at(block_id);
         // block_data->printMatParameters(block_id,"Read material");
@@ -388,13 +388,13 @@ namespace MixTransport {
         int nb_gauss_pts = data.getHdivN().size1();
         for(int gg = 0;gg!=nb_gauss_pts;gg++) {
           // Get divergence
-          ierr = getDivergenceOfHDivBaseFunctions(side,type,data,gg,divVec); CHKERRQ(ierr);
+          ierr = getDivergenceOfHDivBaseFunctions(side,type,data,gg,divVec); CHKERRG(ierr);
           const double alpha = t_w*vol;
           block_data->h = t_h;
           block_data->x = t_coords(0);
           block_data->y = t_coords(1);
           block_data->z = t_coords(2);
-          ierr = block_data->calK(); CHKERRQ(ierr);
+          ierr = block_data->calK(); CHKERRG(ierr);
           const double K = block_data->K;
           const double z = t_coords(2); /// z-coordinate at Gauss pt
           // Calculate pressure gradient
@@ -415,7 +415,7 @@ namespace MixTransport {
         ierr = VecSetValues(
           getFEMethod()->ts_F,nb_dofs,
           &*data.getIndices().begin(),&*nF.begin(),ADD_VALUES
-        ); CHKERRQ(ierr);
+        ); CHKERRG(ierr);
         MoFEMFunctionReturnHot(0);
       }
 
@@ -435,7 +435,7 @@ namespace MixTransport {
 
       VectorDouble nF;
 
-      PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
+      MoFEMErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
         MoFEMFunctionBeginHot;
         MoFEMFunctionBeginHot;
         const int nb_dofs = data.getIndices().size();
@@ -447,7 +447,7 @@ namespace MixTransport {
         EntityHandle fe_ent = getNumeredEntFiniteElementPtr()->getEnt();
         // Get material block id
         int block_id;
-        ierr = cTx.getMaterial(fe_ent,block_id); CHKERRQ(ierr);
+        ierr = cTx.getMaterial(fe_ent,block_id); CHKERRG(ierr);
         // Get material block
         boost::shared_ptr<GenericMaterial>& block_data = cTx.dMatMap.at(block_id);
         // Get pressure
@@ -472,7 +472,7 @@ namespace MixTransport {
           block_data->x = t_coords(0);
           block_data->y = t_coords(1);
           block_data->z = t_coords(2);
-          ierr = block_data->calC(); CHKERRQ(ierr);
+          ierr = block_data->calC(); CHKERRG(ierr);
           const double C = block_data->C;
           // Calculate flux conservation
           noalias(nF) += (alpha*(t_div_flux+C*t_h_t))*data.getN(gg);
@@ -486,7 +486,7 @@ namespace MixTransport {
         Vec f = getFEMethod()->ts_F;
         ierr = VecSetValues(
           f,nb_dofs,&*data.getIndices().begin(),&*nF.begin(),ADD_VALUES
-        ); CHKERRQ(ierr);
+        ); CHKERRG(ierr);
         MoFEMFunctionReturnHot(0);
       }
 
@@ -518,7 +518,7 @@ namespace MixTransport {
        * @param  col_data data for col
        * @return          error code
        */
-      PetscErrorCode doWork(
+      MoFEMErrorCode doWork(
         int row_side,int col_side,
         EntityType row_type,EntityType col_type,
         DataForcesAndSourcesCore::EntData &row_data,
@@ -536,7 +536,7 @@ namespace MixTransport {
           EntityHandle fe_ent = getNumeredEntFiniteElementPtr()->getEnt();
           // Get material block id
           int block_id;
-          ierr = cTx.getMaterial(fe_ent,block_id); CHKERRQ(ierr);
+          ierr = cTx.getMaterial(fe_ent,block_id); CHKERRG(ierr);
           // Get material block
           boost::shared_ptr<GenericMaterial>& block_data = cTx.dMatMap.at(block_id);
           // Get pressure
@@ -555,7 +555,7 @@ namespace MixTransport {
             block_data->x = t_coords(0);
             block_data->y = t_coords(1);
             block_data->z = t_coords(2);
-            ierr = block_data->calK(); CHKERRQ(ierr);
+            ierr = block_data->calK(); CHKERRG(ierr);
             const double K = block_data->K;
             // get integration weight and multiply by element volume
             const double alpha = t_w*vol;
@@ -580,7 +580,7 @@ namespace MixTransport {
             nb_row,&*row_data.getIndices().begin(),
             nb_col,&*col_data.getIndices().begin(),
             &*nN.data().begin(),ADD_VALUES
-          ); CHKERRQ(ierr);
+          ); CHKERRG(ierr);
           // matrix is symmetric, assemble other part
           if(row_side != col_side || row_type != col_type) {
             transNN.resize(nb_col,nb_row);
@@ -590,7 +590,7 @@ namespace MixTransport {
               nb_col,&*col_data.getIndices().begin(),
               nb_row,&*row_data.getIndices().begin(),
               &*transNN.data().begin(),ADD_VALUES
-            ); CHKERRQ(ierr);
+            ); CHKERRG(ierr);
           }
         } catch (const std::exception& ex) {
           std::ostringstream ss;
@@ -627,7 +627,7 @@ namespace MixTransport {
        * @param  col_data data for col
        * @return          error code
        */
-      PetscErrorCode doWork(
+      MoFEMErrorCode doWork(
         int row_side,int col_side,
         EntityType row_type,EntityType col_type,
         DataForcesAndSourcesCore::EntData &row_data,
@@ -645,7 +645,7 @@ namespace MixTransport {
           EntityHandle fe_ent = getNumeredEntFiniteElementPtr()->getEnt();
           // Get material block id
           int block_id;
-          ierr = cTx.getMaterial(fe_ent,block_id); CHKERRQ(ierr);
+          ierr = cTx.getMaterial(fe_ent,block_id); CHKERRG(ierr);
           // Get material block
           boost::shared_ptr<GenericMaterial>& block_data = cTx.dMatMap.at(block_id);
           // Get pressure
@@ -677,8 +677,8 @@ namespace MixTransport {
             block_data->x = t_coords(0);
             block_data->y = t_coords(1);
             block_data->z = t_coords(2);
-            ierr = block_data->calC(); CHKERRQ(ierr);
-            ierr = block_data->calDiffC(); CHKERRQ(ierr);
+            ierr = block_data->calC(); CHKERRG(ierr);
+            ierr = block_data->calDiffC(); CHKERRG(ierr);
             const double C = block_data->C;
             const double diffC = block_data->diffC;
             // assemble local entity tangent matrix
@@ -708,7 +708,7 @@ namespace MixTransport {
             nb_row,&row_data.getIndices()[0],
             nb_col,&col_data.getIndices()[0],
             &*nN.data().begin(),ADD_VALUES
-          ); CHKERRQ(ierr);
+          ); CHKERRG(ierr);
         } catch (const std::exception& ex) {
           std::ostringstream ss;
           ss << "throw in method: " << ex.what() << std::endl;
@@ -751,7 +751,7 @@ namespace MixTransport {
        * @param  col_data column data structure carrying information about base functions, DOFs indices, etc.
        * @return          error code
        */
-      PetscErrorCode doWork(
+      MoFEMErrorCode doWork(
         int row_side,int col_side,
         EntityType row_type,EntityType col_type,
         DataForcesAndSourcesCore::EntData &row_data,
@@ -767,7 +767,7 @@ namespace MixTransport {
           EntityHandle fe_ent = getNumeredEntFiniteElementPtr()->getEnt();
           // Get material block id
           int block_id;
-          ierr = cTx.getMaterial(fe_ent,block_id); CHKERRQ(ierr);
+          ierr = cTx.getMaterial(fe_ent,block_id); CHKERRG(ierr);
           // Get material block
           boost::shared_ptr<GenericMaterial>& block_data = cTx.dMatMap.at(block_id);
           nN.resize(nb_row,nb_col,false);
@@ -780,7 +780,7 @@ namespace MixTransport {
             double alpha = getGaussPts()(3,gg)*getVolume()*scale;
             ierr = getDivergenceOfHDivBaseFunctions(
               col_side,col_type,col_data,gg,divVec
-            ); CHKERRQ(ierr);
+            ); CHKERRG(ierr);
             noalias(nN) += alpha*outer_prod(row_data.getN(gg),divVec);
           }
           ierr = MatSetValues(
@@ -788,7 +788,7 @@ namespace MixTransport {
             nb_row,&row_data.getIndices()[0],
             nb_col,&col_data.getIndices()[0],
             &nN(0,0),ADD_VALUES
-          ); CHKERRQ(ierr);
+          ); CHKERRG(ierr);
         } catch (const std::exception& ex) {
           std::ostringstream ss;
           ss << "throw in method: " << ex.what() << std::endl;
@@ -831,7 +831,7 @@ namespace MixTransport {
        * @param  col_data column data structure carrying information about base functions, DOFs indices, etc.
        * @return          error code
        */
-      PetscErrorCode doWork(
+      MoFEMErrorCode doWork(
         int row_side,int col_side,
         EntityType row_type,EntityType col_type,
         DataForcesAndSourcesCore::EntData &row_data,
@@ -850,7 +850,7 @@ namespace MixTransport {
           EntityHandle fe_ent = getNumeredEntFiniteElementPtr()->getEnt();
           // Get material block id
           int block_id;
-          ierr = cTx.getMaterial(fe_ent,block_id); CHKERRQ(ierr);
+          ierr = cTx.getMaterial(fe_ent,block_id); CHKERRG(ierr);
           // Get material block
           boost::shared_ptr<GenericMaterial>& block_data = cTx.dMatMap.at(block_id);
           // Get pressure
@@ -871,8 +871,8 @@ namespace MixTransport {
             block_data->x = t_coords(0);
             block_data->y = t_coords(1);
             block_data->z = t_coords(2);
-            ierr = block_data->calK(); CHKERRQ(ierr);
-            ierr = block_data->calDiffK(); CHKERRQ(ierr);
+            ierr = block_data->calK(); CHKERRG(ierr);
+            ierr = block_data->calDiffK(); CHKERRG(ierr);
             const double K = block_data->K;
             // const double z = t_coords(2);
             const double KK = K*K;
@@ -880,7 +880,7 @@ namespace MixTransport {
             double alpha = t_w*vol;
             ierr = getDivergenceOfHDivBaseFunctions(
               row_side,row_type,row_data,gg,divVec
-            ); CHKERRQ(ierr);
+            ); CHKERRG(ierr);
             noalias(nN) -= alpha*outer_prod(divVec,col_data.getN(gg));
             FTensor::Tensor0<double*> t_a(&*nN.data().begin());
             for(int rr = 0;rr!=nb_row;rr++) {
@@ -903,7 +903,7 @@ namespace MixTransport {
             nb_row,&row_data.getIndices()[0],
             nb_col,&col_data.getIndices()[0],
             &nN(0,0),ADD_VALUES
-          ); CHKERRQ(ierr);
+          ); CHKERRG(ierr);
         } catch (const std::exception& ex) {
           std::ostringstream ss;
           ss << "throw in method: " << ex.what() << std::endl;
@@ -924,7 +924,7 @@ namespace MixTransport {
       MatrixDouble nN;
       VectorDouble nF;
 
-      PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
+      MoFEMErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
         MoFEMFunctionBeginHot;
         try {
           if(data.getFieldData().size()==0) MoFEMFunctionReturnHot(0);
@@ -942,7 +942,7 @@ namespace MixTransport {
           EntityHandle fe_ent = getFEEntityHandle();
           // Get material block id
           int block_id;
-          ierr = cTx.getMaterial(fe_ent,block_id); CHKERRQ(ierr);
+          ierr = cTx.getMaterial(fe_ent,block_id); CHKERRG(ierr);
           // Get material block
           boost::shared_ptr<GenericMaterial>& block_data = cTx.dMatMap.at(block_id);
 
@@ -967,7 +967,7 @@ namespace MixTransport {
           ierr = VecSetValues(
             cTx.D1,nb_dofs,&*data.getIndices().begin(),
             &*nF.begin(),INSERT_VALUES
-          ); CHKERRQ(ierr);
+          ); CHKERRG(ierr);
 
         } catch (const std::exception& ex) {
           std::ostringstream ss;
@@ -1002,7 +1002,7 @@ namespace MixTransport {
        * @param  data data on entity
        * @return      error code
        */
-      PetscErrorCode doWork(
+      MoFEMErrorCode doWork(
         int side,EntityType type,DataForcesAndSourcesCore::EntData &data
       ) {
         MoFEMFunctionBeginHot;
@@ -1026,7 +1026,7 @@ namespace MixTransport {
             }
             ++t_w;
           }
-          ierr = VecSetValue(cTx.ghostFlux,0,flux_on_entity,ADD_VALUES); CHKERRQ(ierr);
+          ierr = VecSetValue(cTx.ghostFlux,0,flux_on_entity,ADD_VALUES); CHKERRG(ierr);
         } catch (const std::exception& ex) {
           std::ostringstream ss;
           ss << "throw in method: " << ex.what() << std::endl;
@@ -1061,7 +1061,7 @@ namespace MixTransport {
       mapGaussPts(map_gauss_pts) {
       }
 
-      PetscErrorCode doWork(
+      MoFEMErrorCode doWork(
         int side,
         EntityType type,
         DataForcesAndSourcesCore::EntData &data
@@ -1075,7 +1075,7 @@ namespace MixTransport {
         EntityHandle fe_ent = getNumeredEntFiniteElementPtr()->getEnt();
         // Get material block id
         int block_id;
-        ierr = cTx.getMaterial(fe_ent,block_id); CHKERRQ(ierr);
+        ierr = cTx.getMaterial(fe_ent,block_id); CHKERRG(ierr);
         // Get material block
         boost::shared_ptr<GenericMaterial>& block_data = cTx.dMatMap.at(block_id);
 
@@ -1085,8 +1085,8 @@ namespace MixTransport {
         rval = postProcMesh.tag_get_handle(
           "BLOCK_ID",1,MB_TYPE_INTEGER,th_id,
           MB_TAG_CREAT|MB_TAG_SPARSE,&def_block_id
-        ); CHKERRQ_MOAB(rval);
-        rval = postProcMesh.tag_set_data(th_id,&fe_ent,1,&block_id);  CHKERRQ_MOAB(rval);
+        ); CHKERRG(rval);
+        rval = postProcMesh.tag_set_data(th_id,&fe_ent,1,&block_id);  CHKERRG(rval);
 
         // Create mesh tag. Tags are created on post-processing mesh and
         // visable in post-processor, e.g. Paraview
@@ -1095,28 +1095,28 @@ namespace MixTransport {
         rval = postProcMesh.tag_get_handle(
           "THETA",1,MB_TYPE_DOUBLE,th_theta,
           MB_TAG_CREAT|MB_TAG_SPARSE,&zero
-        ); CHKERRQ_MOAB(rval);
+        ); CHKERRG(rval);
         Tag th_se;
         rval = postProcMesh.tag_get_handle(
           "Se",1,MB_TYPE_DOUBLE,th_se,
           MB_TAG_CREAT|MB_TAG_SPARSE,&zero
-        ); CHKERRQ_MOAB(rval);
+        ); CHKERRG(rval);
         // Tag th_ks;
         // rval = postProcMesh.tag_get_handle(
         //   "Ks",1,MB_TYPE_DOUBLE,th_ks,
         //   MB_TAG_CREAT|MB_TAG_SPARSE,&zero
-        // ); CHKERRQ_MOAB(rval);
-        // rval = postProcMesh.tag_set_data(th_ks,&fe_ent,1,&block_data->Ks); CHKERRQ_MOAB(rval);
+        // ); CHKERRG(rval);
+        // rval = postProcMesh.tag_set_data(th_ks,&fe_ent,1,&block_data->Ks); CHKERRG(rval);
         Tag th_k;
         rval = postProcMesh.tag_get_handle(
           "K",1,MB_TYPE_DOUBLE,th_k,
           MB_TAG_CREAT|MB_TAG_SPARSE,&zero
-        ); CHKERRQ_MOAB(rval);
+        ); CHKERRG(rval);
         Tag th_c;
         rval = postProcMesh.tag_get_handle(
           "C",1,MB_TYPE_DOUBLE,th_c,
           MB_TAG_CREAT|MB_TAG_SPARSE,&zero
-        ); CHKERRQ_MOAB(rval);
+        ); CHKERRG(rval);
 
 
         // Get pressure at integration points
@@ -1131,21 +1131,21 @@ namespace MixTransport {
           block_data->y = t_coords(1);
           block_data->z = t_coords(2);
           // Calculate theta (water content) and save it on mesh tags
-          ierr = block_data->calTheta(); CHKERRQ(ierr);
+          ierr = block_data->calTheta(); CHKERRG(ierr);
           double theta = block_data->tHeta;
-          rval = postProcMesh.tag_set_data(th_theta,&mapGaussPts[gg],1,&theta); CHKERRQ_MOAB(rval);
-          ierr = block_data->calSe(); CHKERRQ(ierr);
+          rval = postProcMesh.tag_set_data(th_theta,&mapGaussPts[gg],1,&theta); CHKERRG(rval);
+          ierr = block_data->calSe(); CHKERRG(ierr);
           // Calculate Se (effective saturation and save it on the mesh tags)
           double Se = block_data->Se;
-          rval = postProcMesh.tag_set_data(th_se,&mapGaussPts[gg],1,&Se); CHKERRQ_MOAB(rval);
+          rval = postProcMesh.tag_set_data(th_se,&mapGaussPts[gg],1,&Se); CHKERRG(rval);
           // Calculate K (hydraulic conductivity) and save it on the mesh tags
-          ierr = block_data->calK(); CHKERRQ(ierr);
+          ierr = block_data->calK(); CHKERRG(ierr);
           double K = block_data->K;
-          rval = postProcMesh.tag_set_data(th_k,&mapGaussPts[gg],1,&K); CHKERRQ_MOAB(rval);
+          rval = postProcMesh.tag_set_data(th_k,&mapGaussPts[gg],1,&K); CHKERRG(rval);
           // Calculate water capacity and save it on the mesh tags
-          ierr = block_data->calC(); CHKERRQ(ierr);
+          ierr = block_data->calC(); CHKERRG(ierr);
           double C = block_data->C;
-          rval = postProcMesh.tag_set_data(th_c,&mapGaussPts[gg],1,&C); CHKERRQ_MOAB(rval);
+          rval = postProcMesh.tag_set_data(th_c,&mapGaussPts[gg],1,&C); CHKERRG(rval);
           ++t_h;
           ++t_coords;
         }
@@ -1182,53 +1182,53 @@ namespace MixTransport {
         fRequency(frequency) {
         }
 
-        PetscErrorCode preProcess() {
+        MoFEMErrorCode preProcess() {
           MoFEMFunctionBeginHot;
           MoFEMFunctionReturnHot(0);
         }
 
-        PetscErrorCode operator()() {
+        MoFEMErrorCode operator()() {
           MoFEMFunctionBeginHot;
           MoFEMFunctionReturnHot(0);
         }
 
-        PetscErrorCode postProcess() {
+        MoFEMErrorCode postProcess() {
           MoFEMFunctionBeginHot;
 
           // Get time step
           int step;
-          ierr = TSGetTimeStepNumber(ts,&step); CHKERRQ(ierr);
+          ierr = TSGetTimeStepNumber(ts,&step); CHKERRG(ierr);
 
           if((step)%fRequency==0) {
             // Post-process results and save in the file
             PetscPrintf(PETSC_COMM_WORLD,"Output results %d - %d\n",step,fRequency);
-            ierr = DMoFEMLoopFiniteElements(cTx.dM,"MIX",postProc); CHKERRQ(ierr);
+            ierr = DMoFEMLoopFiniteElements(cTx.dM,"MIX",postProc); CHKERRG(ierr);
             ierr = postProc->writeFile(
               string("out_")+boost::lexical_cast<std::string>(step)+".h5m"
-            ); CHKERRQ(ierr);
+            ); CHKERRG(ierr);
 
           }
 
           // Integrate fluxes on faces where pressure head is applied
-          ierr = VecZeroEntries(cTx.ghostFlux); CHKERRQ(ierr);
-          ierr = VecGhostUpdateBegin(cTx.ghostFlux,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-          ierr = VecGhostUpdateEnd(cTx.ghostFlux,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+          ierr = VecZeroEntries(cTx.ghostFlux); CHKERRG(ierr);
+          ierr = VecGhostUpdateBegin(cTx.ghostFlux,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
+          ierr = VecGhostUpdateEnd(cTx.ghostFlux,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
           // Run finite element to integrate fluxes
-          ierr = DMoFEMLoopFiniteElements(cTx.dM,"MIX_BCVALUE",fluxIntegrate); CHKERRQ(ierr);
-          ierr = VecAssemblyBegin(cTx.ghostFlux); CHKERRQ(ierr);
-          ierr = VecAssemblyEnd(cTx.ghostFlux); CHKERRQ(ierr);
+          ierr = DMoFEMLoopFiniteElements(cTx.dM,"MIX_BCVALUE",fluxIntegrate); CHKERRG(ierr);
+          ierr = VecAssemblyBegin(cTx.ghostFlux); CHKERRG(ierr);
+          ierr = VecAssemblyEnd(cTx.ghostFlux); CHKERRG(ierr);
           // accumulate errors from processors
-          ierr = VecGhostUpdateBegin(cTx.ghostFlux,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-          ierr = VecGhostUpdateEnd(cTx.ghostFlux,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+          ierr = VecGhostUpdateBegin(cTx.ghostFlux,ADD_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
+          ierr = VecGhostUpdateEnd(cTx.ghostFlux,ADD_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
           // scatter errors to all processors
-          ierr = VecGhostUpdateBegin(cTx.ghostFlux,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-          ierr = VecGhostUpdateEnd(cTx.ghostFlux,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+          ierr = VecGhostUpdateBegin(cTx.ghostFlux,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
+          ierr = VecGhostUpdateEnd(cTx.ghostFlux,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
           double *ghost_flux;
-          ierr = VecGetArray(cTx.ghostFlux,&ghost_flux); CHKERRQ(ierr);
+          ierr = VecGetArray(cTx.ghostFlux,&ghost_flux); CHKERRG(ierr);
           ierr = PetscPrintf(
             PETSC_COMM_WORLD,"Flux at time %6.4g %6.4g\n",ts_t,ghost_flux[0]
-          ); CHKERRQ(ierr);
-          ierr = VecRestoreArray(cTx.ghostFlux,&ghost_flux); CHKERRQ(ierr);
+          ); CHKERRG(ierr);
+          ierr = VecRestoreArray(cTx.ghostFlux,&ghost_flux); CHKERRG(ierr);
 
           MoFEMFunctionReturnHot(0);
         }
@@ -1237,13 +1237,13 @@ namespace MixTransport {
 
 
     /// \brief add fields
-    PetscErrorCode addFields(const std::string &values,const std::string &fluxes,const int order) {
+    MoFEMErrorCode addFields(const std::string &values,const std::string &fluxes,const int order) {
       MoFEMFunctionBeginHot;
       //Fields
-      ierr = mField.add_field(fluxes,HDIV,DEMKOWICZ_JACOBI_BASE,1); CHKERRQ(ierr);
-      ierr = mField.add_field(values,L2,AINSWORTH_LEGENDRE_BASE,1); CHKERRQ(ierr);
-      ierr = mField.add_field(values+"_t",L2,AINSWORTH_LEGENDRE_BASE,1); CHKERRQ(ierr);
-      // ierr = mField.add_field(fluxes+"_residual",L2,AINSWORTH_LEGENDRE_BASE,1); CHKERRQ(ierr);
+      ierr = mField.add_field(fluxes,HDIV,DEMKOWICZ_JACOBI_BASE,1); CHKERRG(ierr);
+      ierr = mField.add_field(values,L2,AINSWORTH_LEGENDRE_BASE,1); CHKERRG(ierr);
+      ierr = mField.add_field(values+"_t",L2,AINSWORTH_LEGENDRE_BASE,1); CHKERRG(ierr);
+      // ierr = mField.add_field(fluxes+"_residual",L2,AINSWORTH_LEGENDRE_BASE,1); CHKERRG(ierr);
 
       //meshset consisting all entities in mesh
       EntityHandle root_set = mField.get_moab().get_root_set();
@@ -1253,77 +1253,77 @@ namespace MixTransport {
         if(it->getName().compare(0,4,"SOIL")!=0) continue;
         ierr = mField.add_ents_to_field_by_type(
           dMatMap[it->getMeshsetId()]->tEts,MBTET,fluxes
-        ); CHKERRQ(ierr);
+        ); CHKERRG(ierr);
         ierr = mField.add_ents_to_field_by_type(
           dMatMap[it->getMeshsetId()]->tEts,MBTET,values
-        ); CHKERRQ(ierr);
+        ); CHKERRG(ierr);
         ierr = mField.add_ents_to_field_by_type(
           dMatMap[it->getMeshsetId()]->tEts,MBTET,values+"_t"
-        ); CHKERRQ(ierr);
+        ); CHKERRG(ierr);
         // ierr = mField.add_ents_to_field_by_type(
         //   dMatMap[it->getMeshsetId()]->tEts,MBTET,fluxes+"_residual"
-        // ); CHKERRQ(ierr);
+        // ); CHKERRG(ierr);
       }
 
-      ierr = mField.set_field_order(root_set,MBTET,fluxes,order+1); CHKERRQ(ierr);
-      ierr = mField.set_field_order(root_set,MBTRI,fluxes,order+1); CHKERRQ(ierr);
-      ierr = mField.set_field_order(root_set,MBTET,values,order); CHKERRQ(ierr);
-      ierr = mField.set_field_order(root_set,MBTET,values+"_t",order); CHKERRQ(ierr);
-      // ierr = mField.set_field_order(root_set,MBTET,fluxes+"_residual",order); CHKERRQ(ierr);
+      ierr = mField.set_field_order(root_set,MBTET,fluxes,order+1); CHKERRG(ierr);
+      ierr = mField.set_field_order(root_set,MBTRI,fluxes,order+1); CHKERRG(ierr);
+      ierr = mField.set_field_order(root_set,MBTET,values,order); CHKERRG(ierr);
+      ierr = mField.set_field_order(root_set,MBTET,values+"_t",order); CHKERRG(ierr);
+      // ierr = mField.set_field_order(root_set,MBTET,fluxes+"_residual",order); CHKERRG(ierr);
       MoFEMFunctionReturnHot(0);
     }
 
     /// \brief add finite elements
-    PetscErrorCode addFiniteElements(
+    MoFEMErrorCode addFiniteElements(
       const std::string &fluxes_name,const std::string &values_name
     ) {
       MoFEMFunctionBeginHot;
 
       // Define element "MIX". Note that this element will work with fluxes_name and
       // values_name. This reflect bilinear form for the problem
-      ierr = mField.add_finite_element("MIX",MF_ZERO); CHKERRQ(ierr);
-      ierr = mField.modify_finite_element_add_field_row("MIX",fluxes_name); CHKERRQ(ierr);
-      ierr = mField.modify_finite_element_add_field_col("MIX",fluxes_name); CHKERRQ(ierr);
-      ierr = mField.modify_finite_element_add_field_row("MIX",values_name); CHKERRQ(ierr);
-      ierr = mField.modify_finite_element_add_field_col("MIX",values_name); CHKERRQ(ierr);
-      ierr = mField.modify_finite_element_add_field_data("MIX",fluxes_name); CHKERRQ(ierr);
-      ierr = mField.modify_finite_element_add_field_data("MIX",values_name); CHKERRQ(ierr);
-      ierr = mField.modify_finite_element_add_field_data("MIX",values_name+"_t"); CHKERRQ(ierr);
-      // ierr = mField.modify_finite_element_add_field_data("MIX",fluxes_name+"_residual"); CHKERRQ(ierr);
+      ierr = mField.add_finite_element("MIX",MF_ZERO); CHKERRG(ierr);
+      ierr = mField.modify_finite_element_add_field_row("MIX",fluxes_name); CHKERRG(ierr);
+      ierr = mField.modify_finite_element_add_field_col("MIX",fluxes_name); CHKERRG(ierr);
+      ierr = mField.modify_finite_element_add_field_row("MIX",values_name); CHKERRG(ierr);
+      ierr = mField.modify_finite_element_add_field_col("MIX",values_name); CHKERRG(ierr);
+      ierr = mField.modify_finite_element_add_field_data("MIX",fluxes_name); CHKERRG(ierr);
+      ierr = mField.modify_finite_element_add_field_data("MIX",values_name); CHKERRG(ierr);
+      ierr = mField.modify_finite_element_add_field_data("MIX",values_name+"_t"); CHKERRG(ierr);
+      // ierr = mField.modify_finite_element_add_field_data("MIX",fluxes_name+"_residual"); CHKERRG(ierr);
 
       for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
         if(it->getName().compare(0,4,"SOIL")!=0) continue;
         ierr = mField.add_ents_to_finite_element_by_type(
           dMatMap[it->getMeshsetId()]->tEts,MBTET,"MIX"
-        ); CHKERRQ(ierr);
+        ); CHKERRG(ierr);
       }
 
       // Define element to integrate natural boundary conditions, i.e. set values.
-      ierr = mField.add_finite_element("MIX_BCVALUE",MF_ZERO); CHKERRQ(ierr);
-      ierr = mField.modify_finite_element_add_field_row("MIX_BCVALUE",fluxes_name); CHKERRQ(ierr);
-      ierr = mField.modify_finite_element_add_field_col("MIX_BCVALUE",fluxes_name); CHKERRQ(ierr);
-      ierr = mField.modify_finite_element_add_field_data("MIX_BCVALUE",fluxes_name); CHKERRQ(ierr);
-      ierr = mField.modify_finite_element_add_field_data("MIX_BCVALUE",values_name); CHKERRQ(ierr);
+      ierr = mField.add_finite_element("MIX_BCVALUE",MF_ZERO); CHKERRG(ierr);
+      ierr = mField.modify_finite_element_add_field_row("MIX_BCVALUE",fluxes_name); CHKERRG(ierr);
+      ierr = mField.modify_finite_element_add_field_col("MIX_BCVALUE",fluxes_name); CHKERRG(ierr);
+      ierr = mField.modify_finite_element_add_field_data("MIX_BCVALUE",fluxes_name); CHKERRG(ierr);
+      ierr = mField.modify_finite_element_add_field_data("MIX_BCVALUE",values_name); CHKERRG(ierr);
 
       for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
         if(it->getName().compare(0,4,"HEAD")!=0) continue;
         ierr = mField.add_ents_to_finite_element_by_type(
           bcValueMap[it->getMeshsetId()]->eNts,MBTRI,"MIX_BCVALUE"
-        ); CHKERRQ(ierr);
+        ); CHKERRG(ierr);
       }
 
       // Define element to apply essential boundary conditions.
-      ierr = mField.add_finite_element("MIX_BCFLUX",MF_ZERO); CHKERRQ(ierr);
-      ierr = mField.modify_finite_element_add_field_row("MIX_BCFLUX",fluxes_name); CHKERRQ(ierr);
-      ierr = mField.modify_finite_element_add_field_col("MIX_BCFLUX",fluxes_name); CHKERRQ(ierr);
-      ierr = mField.modify_finite_element_add_field_data("MIX_BCFLUX",fluxes_name); CHKERRQ(ierr);
-      ierr = mField.modify_finite_element_add_field_data("MIX_BCFLUX",values_name); CHKERRQ(ierr);
+      ierr = mField.add_finite_element("MIX_BCFLUX",MF_ZERO); CHKERRG(ierr);
+      ierr = mField.modify_finite_element_add_field_row("MIX_BCFLUX",fluxes_name); CHKERRG(ierr);
+      ierr = mField.modify_finite_element_add_field_col("MIX_BCFLUX",fluxes_name); CHKERRG(ierr);
+      ierr = mField.modify_finite_element_add_field_data("MIX_BCFLUX",fluxes_name); CHKERRG(ierr);
+      ierr = mField.modify_finite_element_add_field_data("MIX_BCFLUX",values_name); CHKERRG(ierr);
 
       for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
         if(it->getName().compare(0,4,"FLUX")!=0) continue;
         ierr = mField.add_ents_to_finite_element_by_type(
           bcFluxMap[it->getMeshsetId()]->eNts,MBTRI,"MIX_BCFLUX"
-        ); CHKERRQ(ierr);
+        ); CHKERRG(ierr);
       }
 
       MoFEMFunctionReturnHot(0);
@@ -1334,43 +1334,43 @@ namespace MixTransport {
      * @param  ref_level mesh refinement on which mesh problem you like to built.
      * @return           error code
      */
-    PetscErrorCode buildProblem(BitRefLevel ref_level = BitRefLevel().set(0)) {
+    MoFEMErrorCode buildProblem(BitRefLevel ref_level = BitRefLevel().set(0)) {
       MoFEMFunctionBeginHot;
 
       // Build fields
-      ierr = mField.build_fields(); CHKERRQ(ierr);
+      ierr = mField.build_fields(); CHKERRG(ierr);
       // Build finite elements
-      ierr = mField.build_finite_elements("MIX"); CHKERRQ(ierr);
-      ierr = mField.build_finite_elements("MIX_BCFLUX"); CHKERRQ(ierr);
-      ierr = mField.build_finite_elements("MIX_BCVALUE"); CHKERRQ(ierr);
+      ierr = mField.build_finite_elements("MIX"); CHKERRG(ierr);
+      ierr = mField.build_finite_elements("MIX_BCFLUX"); CHKERRG(ierr);
+      ierr = mField.build_finite_elements("MIX_BCVALUE"); CHKERRG(ierr);
       //Build adjacencies of degrees of freedom and elements
-      ierr = mField.build_adjacencies(ref_level); CHKERRQ(ierr);
+      ierr = mField.build_adjacencies(ref_level); CHKERRG(ierr);
 
       //  create DM instance
-      ierr = DMCreate(PETSC_COMM_WORLD,&dM);CHKERRQ(ierr);
+      ierr = DMCreate(PETSC_COMM_WORLD,&dM);CHKERRG(ierr);
       // setting that DM is type of DMMOFEM, i.e. MOFEM implementation manages DM
-      ierr = DMSetType(dM,"DMMOFEM");CHKERRQ(ierr);
+      ierr = DMSetType(dM,"DMMOFEM");CHKERRG(ierr);
       // mesh is portioned, each process keeps only part of problem
       ierr = DMMoFEMSetIsPartitioned(dM,PETSC_TRUE);
       // creates problem in DM
-      ierr = DMMoFEMCreateMoFEM(dM,&mField,"MIX",ref_level); CHKERRQ(ierr);
+      ierr = DMMoFEMCreateMoFEM(dM,&mField,"MIX",ref_level); CHKERRG(ierr);
       // discretised problem creates square matrix (that makes some optimizations)
-      ierr = DMMoFEMSetIsPartitioned(dM,PETSC_TRUE); CHKERRQ(ierr);
+      ierr = DMMoFEMSetIsPartitioned(dM,PETSC_TRUE); CHKERRG(ierr);
       // set DM options from command line
-      ierr = DMSetFromOptions(dM); CHKERRQ(ierr);
+      ierr = DMSetFromOptions(dM); CHKERRG(ierr);
       // add finite elements
-      ierr = DMMoFEMAddElement(dM,"MIX"); CHKERRQ(ierr);
-      ierr = DMMoFEMAddElement(dM,"MIX_BCFLUX"); CHKERRQ(ierr);
-      ierr = DMMoFEMAddElement(dM,"MIX_BCVALUE"); CHKERRQ(ierr);
+      ierr = DMMoFEMAddElement(dM,"MIX"); CHKERRG(ierr);
+      ierr = DMMoFEMAddElement(dM,"MIX_BCFLUX"); CHKERRG(ierr);
+      ierr = DMMoFEMAddElement(dM,"MIX_BCVALUE"); CHKERRG(ierr);
       // constructor data structures
-      ierr = DMSetUp(dM); CHKERRQ(ierr);
+      ierr = DMSetUp(dM); CHKERRG(ierr);
 
       PetscSection section;
-      ierr = mField.getInterface<ISManager>()->sectionCreate("MIX",&section); CHKERRQ(ierr);
-      ierr = DMSetDefaultSection(dM,section); CHKERRQ(ierr);
-      ierr = DMSetDefaultGlobalSection(dM,section); CHKERRQ(ierr);
+      ierr = mField.getInterface<ISManager>()->sectionCreate("MIX",&section); CHKERRG(ierr);
+      ierr = DMSetDefaultSection(dM,section); CHKERRG(ierr);
+      ierr = DMSetDefaultGlobalSection(dM,section); CHKERRG(ierr);
       // ierr = PetscSectionView(section,PETSC_VIEWER_STDOUT_WORLD);
-      ierr = PetscSectionDestroy(&section); CHKERRQ(ierr);
+      ierr = PetscSectionDestroy(&section); CHKERRG(ierr);
 
       MoFEMFunctionReturnHot(0);
     }
@@ -1425,18 +1425,18 @@ namespace MixTransport {
       cTx(ctx),
       fePtr(fe_ptr)/*,mArk(mark)*/ {
       }
-      PetscErrorCode operator()() {
+      MoFEMErrorCode operator()() {
         MoFEMFunctionBeginHot;
         // Update pressure rates
         ierr = fePtr->mField.getInterface<VecManager>()->setOtherLocalGhostVector(
           fePtr->problemPtr,"VALUES",string("VALUES")+"_t",
           ROW,fePtr->ts_u_t,INSERT_VALUES,SCATTER_REVERSE
-        ); CHKERRQ(ierr);
+        ); CHKERRG(ierr);
         switch (fePtr->ts_ctx) {
           case TSMethod::CTX_TSSETIFUNCTION:
           if(!cTx.bcIndices.empty()) {
             double scale;
-            ierr = cTx.scaleMethodFlux->getForceScale(fePtr->ts_t,scale); CHKERRQ(ierr);
+            ierr = cTx.scaleMethodFlux->getForceScale(fePtr->ts_t,scale); CHKERRG(ierr);
             if(cTx.bcVecIds.size()!=cTx.bcIndices.size()) {
               cTx.bcVecIds.insert(cTx.bcVecIds.begin(),cTx.bcIndices.begin(),cTx.bcIndices.end());
               cTx.bcVecVals.resize(cTx.bcVecIds.size(),false);
@@ -1444,10 +1444,10 @@ namespace MixTransport {
             }
             ierr = VecGetValues(
               cTx.D0,cTx.bcVecIds.size(),&*cTx.bcVecIds.begin(),&*cTx.bcVecVals.begin()
-            ); CHKERRQ(ierr);
+            ); CHKERRG(ierr);
             ierr = VecGetValues(
               fePtr->ts_u,cTx.bcVecIds.size(),&*cTx.bcVecIds.begin(),&*cTx.vecValsOnBc.begin()
-            ); CHKERRQ(ierr);
+            ); CHKERRG(ierr);
             cTx.bcVecVals *= scale;
             // cerr << mArk << endl;
             // cerr << "v " << cTx.vecValsOnBc << endl;
@@ -1458,7 +1458,7 @@ namespace MixTransport {
               std::vector<int>::iterator it = cTx.bcVecIds.begin();
               it!=cTx.bcVecIds.end();it++,vit++
             ) {
-              ierr = fePtr->problemPtr->getColDofsByPetscGlobalDofIdx(*it,&dof_ptr); CHKERRQ(ierr);
+              ierr = fePtr->problemPtr->getColDofsByPetscGlobalDofIdx(*it,&dof_ptr); CHKERRG(ierr);
               dof_ptr->getFieldData() = *vit;
             }
           } else {
@@ -1490,28 +1490,28 @@ namespace MixTransport {
       cTx(ctx),
       fePtr(fe_ptr)/*,mArk(mark)*/ {
       }
-      PetscErrorCode operator()() {
+      MoFEMErrorCode operator()() {
         MoFEMFunctionBeginHot;
         switch (fePtr->ts_ctx) {
           case TSMethod::CTX_TSSETIJACOBIAN: {
-            ierr = MatAssemblyBegin(fePtr->ts_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-            ierr = MatAssemblyEnd(fePtr->ts_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+            ierr = MatAssemblyBegin(fePtr->ts_B,MAT_FINAL_ASSEMBLY); CHKERRG(ierr);
+            ierr = MatAssemblyEnd(fePtr->ts_B,MAT_FINAL_ASSEMBLY); CHKERRG(ierr);
             // MatView(fePtr->ts_B,PETSC_VIEWER_DRAW_WORLD);
             // std::string wait;
             // std::cin >> wait;
             ierr = MatZeroRowsColumns(
               fePtr->ts_B,cTx.bcVecIds.size(),&*cTx.bcVecIds.begin(),1,PETSC_NULL,PETSC_NULL
-            ); CHKERRQ(ierr);
-            ierr = MatAssemblyBegin(fePtr->ts_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-            ierr = MatAssemblyEnd(fePtr->ts_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+            ); CHKERRG(ierr);
+            ierr = MatAssemblyBegin(fePtr->ts_B,MAT_FINAL_ASSEMBLY); CHKERRG(ierr);
+            ierr = MatAssemblyEnd(fePtr->ts_B,MAT_FINAL_ASSEMBLY); CHKERRG(ierr);
             // MatView(fePtr->ts_B,PETSC_VIEWER_DRAW_WORLD);
             // std::string wait;
             // std::cin >> wait;
           }
           break;
           case TSMethod::CTX_TSSETIFUNCTION: {
-            ierr = VecAssemblyBegin(fePtr->ts_F); CHKERRQ(ierr);
-            ierr = VecAssemblyEnd(fePtr->ts_F); CHKERRQ(ierr);
+            ierr = VecAssemblyBegin(fePtr->ts_F); CHKERRG(ierr);
+            ierr = VecAssemblyEnd(fePtr->ts_F); CHKERRG(ierr);
             if(!cTx.bcVecIds.empty()) {
               cTx.vecValsOnBc -= cTx.bcVecVals;
               // cerr << mArk << endl;
@@ -1521,15 +1521,15 @@ namespace MixTransport {
                 fePtr->ts_F,cTx.bcVecIds.size(),
                 &*cTx.bcVecIds.begin(),
                 &*cTx.vecValsOnBc.begin(),INSERT_VALUES
-              ); CHKERRQ(ierr);
+              ); CHKERRG(ierr);
             }
-            ierr = VecAssemblyBegin(fePtr->ts_F); CHKERRQ(ierr);
-            ierr = VecAssemblyEnd(fePtr->ts_F); CHKERRQ(ierr);
-            // ierr = VecView(fePtr->ts_F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+            ierr = VecAssemblyBegin(fePtr->ts_F); CHKERRG(ierr);
+            ierr = VecAssemblyEnd(fePtr->ts_F); CHKERRG(ierr);
+            // ierr = VecView(fePtr->ts_F,PETSC_VIEWER_STDOUT_WORLD); CHKERRG(ierr);
             // ierr = fePtr->mField.getInterface<VecManager>()->setOtherLocalGhostVector(
             //   fePtr->problemPtr,"VALUES",string("FLUXES")+"_residual",
             //   ROW,fePtr->ts_F,INSERT_VALUES,SCATTER_REVERSE
-            // ); CHKERRQ(ierr);
+            // ); CHKERRG(ierr);
           }
           break;
           default:
@@ -1546,7 +1546,7 @@ namespace MixTransport {
      * @param  face_rule integration rule for boundary element
      * @return error code
      */
-    PetscErrorCode setFiniteElements(
+    MoFEMErrorCode setFiniteElements(
       ForcesAndSourcesCore::RuleHookFun vol_rule = VolRule(),
       ForcesAndSourcesCore::RuleHookFun face_rule = FaceRule()
     ) {
@@ -1616,17 +1616,17 @@ namespace MixTransport {
       // Adding finite elements to DM, time solver will ask for it to assemble
       // tangent matrices and residuals
       boost::shared_ptr<FEMethod> null;
-      ierr = DMMoFEMTSSetIFunction(dM,"MIX_BCVALUE",feFaceRhs,null,null); CHKERRQ(ierr);
-      ierr = DMMoFEMTSSetIFunction(dM,"MIX",feVolRhs,null,null); CHKERRQ(ierr);
-      ierr = DMMoFEMTSSetIJacobian(dM,"MIX",feVolLhs,null,null); CHKERRQ(ierr);
+      ierr = DMMoFEMTSSetIFunction(dM,"MIX_BCVALUE",feFaceRhs,null,null); CHKERRG(ierr);
+      ierr = DMMoFEMTSSetIFunction(dM,"MIX",feVolRhs,null,null); CHKERRG(ierr);
+      ierr = DMMoFEMTSSetIJacobian(dM,"MIX",feVolLhs,null,null); CHKERRG(ierr);
 
       // setting up post-processing
       boost::shared_ptr<PostProcVolumeOnRefinedMesh> post_process(new PostProcVolumeOnRefinedMesh(mField));
-      ierr = post_process->generateReferenceElementMesh(); CHKERRQ(ierr);
-      ierr = post_process->addFieldValuesPostProc("VALUES"); CHKERRQ(ierr);
-      ierr = post_process->addFieldValuesPostProc("VALUES_t"); CHKERRQ(ierr);
-      // ierr = post_process->addFieldValuesPostProc("FLUXES_residual"); CHKERRQ(ierr);
-      ierr = post_process->addFieldValuesPostProc("FLUXES"); CHKERRQ(ierr);
+      ierr = post_process->generateReferenceElementMesh(); CHKERRG(ierr);
+      ierr = post_process->addFieldValuesPostProc("VALUES"); CHKERRG(ierr);
+      ierr = post_process->addFieldValuesPostProc("VALUES_t"); CHKERRG(ierr);
+      // ierr = post_process->addFieldValuesPostProc("FLUXES_residual"); CHKERRG(ierr);
+      ierr = post_process->addFieldValuesPostProc("FLUXES"); CHKERRG(ierr);
       post_process->getOpPtrVector().push_back(new OpValuesAtGaussPts(*this,"VALUES"));
       post_process->getOpPtrVector().push_back(
         new OpPostProcMaterial(
@@ -1643,13 +1643,13 @@ namespace MixTransport {
       int frequency = 1;
       ierr = PetscOptionsBegin(
         PETSC_COMM_WORLD,"","Monitor post proc","none"
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
       ierr = PetscOptionsInt(
         "-how_often_output",
         "frequency how often results are dumped on hard disk","",
         frequency,&frequency,NULL
-      ); CHKERRQ(ierr);
-      ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
+      ierr = PetscOptionsEnd(); CHKERRG(ierr);
 
       tsMonitor = boost::shared_ptr<FEMethod>(
         new MonitorPostProc(*this,post_process,flux_integrate,frequency)
@@ -1667,19 +1667,19 @@ namespace MixTransport {
      * \brief Create vectors and matrices
      * @return Error code
      */
-    PetscErrorCode createMatrices() {
+    MoFEMErrorCode createMatrices() {
       MoFEMFunctionBeginHot;
-      ierr = DMCreateMatrix(dM,&Aij); CHKERRQ(ierr);
-      ierr = DMCreateGlobalVector(dM,&D0); CHKERRQ(ierr);
-      ierr = VecDuplicate(D0,&D1); CHKERRQ(ierr);
-      ierr = VecDuplicate(D0,&D); CHKERRQ(ierr);
-      ierr = VecDuplicate(D0,&F); CHKERRQ(ierr);
+      ierr = DMCreateMatrix(dM,&Aij); CHKERRG(ierr);
+      ierr = DMCreateGlobalVector(dM,&D0); CHKERRG(ierr);
+      ierr = VecDuplicate(D0,&D1); CHKERRG(ierr);
+      ierr = VecDuplicate(D0,&D); CHKERRG(ierr);
+      ierr = VecDuplicate(D0,&F); CHKERRG(ierr);
       int ghosts[] = { 0 };
       int nb_locals = mField.get_comm_rank()==0?1:0;
       int nb_ghosts = mField.get_comm_rank()>0?1:0;
       ierr = VecCreateGhost(
         PETSC_COMM_WORLD,nb_locals,1,nb_ghosts,ghosts,&ghostFlux
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
       MoFEMFunctionReturnHot(0);
     }
 
@@ -1687,14 +1687,14 @@ namespace MixTransport {
      * \brief Delete matrices and vector when no longer needed
      * @return error code
      */
-    PetscErrorCode destroyMatrices() {
+    MoFEMErrorCode destroyMatrices() {
       MoFEMFunctionBeginHot;
-      ierr = MatDestroy(&Aij); CHKERRQ(ierr);
-      ierr = VecDestroy(&D); CHKERRQ(ierr);
-      ierr = VecDestroy(&D0); CHKERRQ(ierr);
-      ierr = VecDestroy(&D1); CHKERRQ(ierr);
-      ierr = VecDestroy(&F); CHKERRQ(ierr);
-      ierr = VecDestroy(&ghostFlux); CHKERRQ(ierr);
+      ierr = MatDestroy(&Aij); CHKERRG(ierr);
+      ierr = VecDestroy(&D); CHKERRG(ierr);
+      ierr = VecDestroy(&D0); CHKERRG(ierr);
+      ierr = VecDestroy(&D1); CHKERRG(ierr);
+      ierr = VecDestroy(&F); CHKERRG(ierr);
+      ierr = VecDestroy(&ghostFlux); CHKERRG(ierr);
       MoFEMFunctionReturnHot(0);
     }
 
@@ -1702,23 +1702,23 @@ namespace MixTransport {
      * \brief Calculate boundary conditions for fluxes
      * @return Error code
      */
-    PetscErrorCode calculateEssentialBc() {
+    MoFEMErrorCode calculateEssentialBc() {
       MoFEMFunctionBeginHot;
       // clear vectors
-      ierr = VecZeroEntries(D0); CHKERRQ(ierr);
-      ierr = VecGhostUpdateBegin(D0,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-      ierr = VecGhostUpdateEnd(D0,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      ierr = VecZeroEntries(D0); CHKERRG(ierr);
+      ierr = VecGhostUpdateBegin(D0,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
+      ierr = VecGhostUpdateEnd(D0,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
       // clear essential bc indices, it could have dofs from other mesh refinement
       bcIndices.clear();
       // set operator to calculate essential boundary conditions
-      ierr = DMoFEMLoopFiniteElements(dM,"MIX_BCFLUX",feFaceBc); CHKERRQ(ierr);
-      ierr = VecGhostUpdateBegin(D0,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-      ierr = VecGhostUpdateEnd(D0,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-      ierr = VecAssemblyBegin(D0); CHKERRQ(ierr);
-      ierr = VecAssemblyEnd(D0); CHKERRQ(ierr);
+      ierr = DMoFEMLoopFiniteElements(dM,"MIX_BCFLUX",feFaceBc); CHKERRG(ierr);
+      ierr = VecGhostUpdateBegin(D0,INSERT_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
+      ierr = VecGhostUpdateEnd(D0,INSERT_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
+      ierr = VecAssemblyBegin(D0); CHKERRG(ierr);
+      ierr = VecAssemblyEnd(D0); CHKERRG(ierr);
       double norm2D0;
-      ierr = VecNorm(D0,NORM_2,&norm2D0); CHKERRQ(ierr);
-      // ierr = VecView(D0,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+      ierr = VecNorm(D0,NORM_2,&norm2D0); CHKERRG(ierr);
+      // ierr = VecView(D0,PETSC_VIEWER_STDOUT_WORLD); CHKERRG(ierr);
       PetscPrintf(PETSC_COMM_WORLD,"norm2D0 = %6.4e\n",norm2D0);
       MoFEMFunctionReturnHot(0);
     }
@@ -1727,23 +1727,23 @@ namespace MixTransport {
      * \brief Calculate inital preassure head distribution
      * @return Error code
      */
-    PetscErrorCode calculateInitialPc() {
+    MoFEMErrorCode calculateInitialPc() {
       MoFEMFunctionBeginHot;
       // clear vectors
-      ierr = VecZeroEntries(D1); CHKERRQ(ierr);
-      ierr = VecGhostUpdateBegin(D1,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-      ierr = VecGhostUpdateEnd(D1,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      ierr = VecZeroEntries(D1); CHKERRG(ierr);
+      ierr = VecGhostUpdateBegin(D1,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
+      ierr = VecGhostUpdateEnd(D1,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
       // Calculate initial pressure head on each element
-      ierr = DMoFEMLoopFiniteElements(dM,"MIX",feVolInitialPc); CHKERRQ(ierr);
+      ierr = DMoFEMLoopFiniteElements(dM,"MIX",feVolInitialPc); CHKERRG(ierr);
       // Assemble vector
-      ierr = VecGhostUpdateBegin(D1,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-      ierr = VecGhostUpdateEnd(D1,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-      ierr = VecAssemblyBegin(D1); CHKERRQ(ierr);
-      ierr = VecAssemblyEnd(D1); CHKERRQ(ierr);
+      ierr = VecGhostUpdateBegin(D1,INSERT_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
+      ierr = VecGhostUpdateEnd(D1,INSERT_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
+      ierr = VecAssemblyBegin(D1); CHKERRG(ierr);
+      ierr = VecAssemblyEnd(D1); CHKERRG(ierr);
       // Calculate norm
       double norm2D1;
-      ierr = VecNorm(D1,NORM_2,&norm2D1); CHKERRQ(ierr);
-      // ierr = VecView(D0,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+      ierr = VecNorm(D1,NORM_2,&norm2D1); CHKERRG(ierr);
+      // ierr = VecView(D0,PETSC_VIEWER_STDOUT_WORLD); CHKERRG(ierr);
       PetscPrintf(PETSC_COMM_WORLD,"norm2D1 = %6.4e\n",norm2D1);
       MoFEMFunctionReturnHot(0);
     }
@@ -1752,73 +1752,73 @@ namespace MixTransport {
      * \brief solve problem
      * @return error code
      */
-    PetscErrorCode solveProblem(bool set_initial_pc = true) {
+    MoFEMErrorCode solveProblem(bool set_initial_pc = true) {
       MoFEMFunctionBeginHot;
       if(set_initial_pc) {
         // Set initial head
-        ierr = DMoFEMMeshToLocalVector(dM,D1,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+        ierr = DMoFEMMeshToLocalVector(dM,D1,INSERT_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
       }
 
       // Initiate vector from data on the mesh
-      ierr = DMoFEMMeshToLocalVector(dM,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      ierr = DMoFEMMeshToLocalVector(dM,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
 
       // Create time solver
       TS ts;
-      ierr = TSCreate(PETSC_COMM_WORLD,&ts); CHKERRQ(ierr);
+      ierr = TSCreate(PETSC_COMM_WORLD,&ts); CHKERRG(ierr);
       // Use backward Euler method
-      ierr = TSSetType(ts,TSBEULER); CHKERRQ(ierr);
+      ierr = TSSetType(ts,TSBEULER); CHKERRG(ierr);
       // Set final time
       double ftime = 1;
-      ierr = TSSetDuration(ts,PETSC_DEFAULT,ftime); CHKERRQ(ierr);
+      ierr = TSSetDuration(ts,PETSC_DEFAULT,ftime); CHKERRG(ierr);
       // Setup solver from commabd line
-      ierr = TSSetFromOptions(ts); CHKERRQ(ierr);
+      ierr = TSSetFromOptions(ts); CHKERRG(ierr);
       // Set DM to TS
-      ierr = TSSetDM(ts,dM); CHKERRQ(ierr);
+      ierr = TSSetDM(ts,dM); CHKERRG(ierr);
       #if PETSC_VERSION_GE(3,7,0)
-      ierr = TSSetExactFinalTime(ts,TS_EXACTFINALTIME_STEPOVER); CHKERRQ(ierr);
+      ierr = TSSetExactFinalTime(ts,TS_EXACTFINALTIME_STEPOVER); CHKERRG(ierr);
       #endif
       // Set-up monitor
       TsCtx *ts_ctx;
       DMMoFEMGetTsCtx(dM,&ts_ctx);
-      ierr = TSMonitorSet(ts,f_TSMonitorSet,ts_ctx,PETSC_NULL); CHKERRQ(ierr);
+      ierr = TSMonitorSet(ts,f_TSMonitorSet,ts_ctx,PETSC_NULL); CHKERRG(ierr);
 
       //This add SNES monitor, to show error by fields. It is dirty trick
       //to add monitor, so code is hidden from doxygen
-      ierr = TSSetSolution(ts,D); CHKERRQ(ierr);
-      ierr = TSSetUp(ts); CHKERRQ(ierr);
+      ierr = TSSetSolution(ts,D); CHKERRG(ierr);
+      ierr = TSSetUp(ts); CHKERRG(ierr);
       SNES snes;
-      ierr = TSGetSNES(ts,&snes); CHKERRQ(ierr);
+      ierr = TSGetSNES(ts,&snes); CHKERRG(ierr);
 
       #if PETSC_VERSION_GE(3,7,0)
       {
         PetscViewerAndFormat *vf;
-        ierr = PetscViewerAndFormatCreate(PETSC_VIEWER_STDOUT_WORLD,PETSC_VIEWER_DEFAULT,&vf);CHKERRQ(ierr);
+        ierr = PetscViewerAndFormatCreate(PETSC_VIEWER_STDOUT_WORLD,PETSC_VIEWER_DEFAULT,&vf);CHKERRG(ierr);
         ierr = SNESMonitorSet(
           snes,
-          (PetscErrorCode (*)(SNES,PetscInt,PetscReal,void*))SNESMonitorFields,
-          vf,(PetscErrorCode (*)(void**))PetscViewerAndFormatDestroy
-        );CHKERRQ(ierr);
+          (MoFEMErrorCode (*)(SNES,PetscInt,PetscReal,void*))SNESMonitorFields,
+          vf,(MoFEMErrorCode (*)(void**))PetscViewerAndFormatDestroy
+        );CHKERRG(ierr);
       }
       #else
       {
         ierr = SNESMonitorSet(
           snes,
-          (PetscErrorCode (*)(SNES,PetscInt,PetscReal,void*))SNESMonitorFields,0,0
-        );CHKERRQ(ierr);
+          (MoFEMErrorCode (*)(SNES,PetscInt,PetscReal,void*))SNESMonitorFields,0,0
+        );CHKERRG(ierr);
       }
       #endif
 
 
-      ierr = TSSolve(ts,D); CHKERRQ(ierr);
+      ierr = TSSolve(ts,D); CHKERRG(ierr);
 
       // Get statistic form TS and print it
-      ierr = TSGetTime(ts,&ftime); CHKERRQ(ierr);
+      ierr = TSGetTime(ts,&ftime); CHKERRG(ierr);
       PetscInt steps,snesfails,rejects,nonlinits,linits;
-      ierr = TSGetTimeStepNumber(ts,&steps); CHKERRQ(ierr);
-      ierr = TSGetSNESFailures(ts,&snesfails); CHKERRQ(ierr);
-      ierr = TSGetStepRejections(ts,&rejects); CHKERRQ(ierr);
-      ierr = TSGetSNESIterations(ts,&nonlinits); CHKERRQ(ierr);
-      ierr = TSGetKSPIterations(ts,&linits); CHKERRQ(ierr);
+      ierr = TSGetTimeStepNumber(ts,&steps); CHKERRG(ierr);
+      ierr = TSGetSNESFailures(ts,&snesfails); CHKERRG(ierr);
+      ierr = TSGetStepRejections(ts,&rejects); CHKERRG(ierr);
+      ierr = TSGetSNESIterations(ts,&nonlinits); CHKERRG(ierr);
+      ierr = TSGetKSPIterations(ts,&linits); CHKERRG(ierr);
       PetscPrintf(PETSC_COMM_WORLD,
         "steps %D (%D rejected, %D SNES fails), ftime %g, nonlinits %D, linits %D\n",
         steps,rejects,snesfails,ftime,nonlinits,linits

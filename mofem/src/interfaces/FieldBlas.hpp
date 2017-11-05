@@ -32,7 +32,7 @@ namespace MoFEM {
    */
   struct FieldBlas: public UnknownInterface {
 
-    PetscErrorCode query_interface(const MOFEMuuid& uuid, UnknownInterface** iface) const;
+    MoFEMErrorCode query_interface(const MOFEMuuid& uuid, UnknownInterface** iface) const;
 
     const MoFEM::Interface& cOre;
     bool dEbug;
@@ -58,7 +58,7 @@ namespace MoFEM {
       * \param create_if_missing creat dof in field_y from fiedl_x if it is not database
       *
       */
-    PetscErrorCode fieldAxpy(
+    MoFEMErrorCode fieldAxpy(
       const double alpha,const std::string& field_name_x,const std::string& field_name_y,
       bool error_if_missing = false,bool creat_if_missing = false
     );
@@ -72,7 +72,7 @@ namespace MoFEM {
       * \field_name  is a field name
       *
       */
-    PetscErrorCode setField(const double val,const EntityType type,const std::string& field_name);
+    MoFEMErrorCode setField(const double val,const EntityType type,const std::string& field_name);
 
     /** \brief set field
       * \ingroup mofem_field_algebra
@@ -85,7 +85,7 @@ namespace MoFEM {
       * \param field_name
       *
       */
-    PetscErrorCode setField(
+    MoFEMErrorCode setField(
       const double val,const EntityType type,const Range &ents,const std::string& field_name
     );
 
@@ -101,7 +101,7 @@ namespace MoFEM {
       * \param field_name
       *
       */
-    PetscErrorCode fieldScale(const double alpha,const std::string& field_name);
+    MoFEMErrorCode fieldScale(const double alpha,const std::string& field_name);
 
   };
 

@@ -16,7 +16,7 @@
 
 using namespace MoFEM;
 
-PetscErrorCode MoFEM::Hdiv_Ainsworth_EdgeFaceShapeFunctions_MBTET(
+MoFEMErrorCode MoFEM::Hdiv_Ainsworth_EdgeFaceShapeFunctions_MBTET(
   int *faces_nodes,int *p,double *N,double *diffN,double *phi_f_e[4][3],double *diff_phi_f_e[4][3],int gdim,
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 ) {
@@ -26,17 +26,17 @@ PetscErrorCode MoFEM::Hdiv_Ainsworth_EdgeFaceShapeFunctions_MBTET(
     if(diff_phi_f_e!=NULL) {
       ierr = Hdiv_Ainsworth_EdgeFaceShapeFunctions_MBTET_ON_FACE(
         &faces_nodes[3*ff],p[ff],N,diffN,phi_f_e[ff],diff_phi_f_e[ff],gdim,4,base_polynomials
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
     } else {
       ierr = Hdiv_Ainsworth_EdgeFaceShapeFunctions_MBTET_ON_FACE(
         &faces_nodes[3*ff],p[ff],N,diffN,phi_f_e[ff],NULL,gdim,4,base_polynomials
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
     }
   }
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode MoFEM::Hdiv_Ainsworth_EdgeFaceShapeFunctions_MBTET_ON_FACE(
+MoFEMErrorCode MoFEM::Hdiv_Ainsworth_EdgeFaceShapeFunctions_MBTET_ON_FACE(
   int *faces_nodes,int p,double *N,double *diffN,double *phi_f_e[3],double *diff_phi_f_e[3],int gdim,int nb,
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 ) {
@@ -105,9 +105,9 @@ PetscErrorCode MoFEM::Hdiv_Ainsworth_EdgeFaceShapeFunctions_MBTET_ON_FACE(
       const double lambda = N[node_shift+iO];
       const double ksi0i = n1 - n0;
       if(diff_phi_f_e) {
-        ierr = base_polynomials(p,ksi0i,&t_diff_ksi0i[ee](0),psi_l,diff_psi_l,3); CHKERRQ(ierr);
+        ierr = base_polynomials(p,ksi0i,&t_diff_ksi0i[ee](0),psi_l,diff_psi_l,3); CHKERRG(ierr);
       } else {
-        ierr = base_polynomials(p,ksi0i,NULL,psi_l,NULL,3); CHKERRQ(ierr);
+        ierr = base_polynomials(p,ksi0i,NULL,psi_l,NULL,3); CHKERRG(ierr);
       }
       FTensor::Tensor0<double*> t_psi_l(&psi_l[0]);
       FTensor::Tensor1<double*,3> t_diff_psi_l(
@@ -129,7 +129,7 @@ PetscErrorCode MoFEM::Hdiv_Ainsworth_EdgeFaceShapeFunctions_MBTET_ON_FACE(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode MoFEM::Hdiv_Ainsworth_FaceBubbleShapeFunctions(
+MoFEMErrorCode MoFEM::Hdiv_Ainsworth_FaceBubbleShapeFunctions(
   int *faces_nodes,int *p,double *N,double *diffN,double *phi_f[],double *diff_phi_f[],int gdim,
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 ) {
@@ -144,12 +144,12 @@ PetscErrorCode MoFEM::Hdiv_Ainsworth_FaceBubbleShapeFunctions(
     }
     ierr = Hdiv_Ainsworth_FaceBubbleShapeFunctions_ON_FACE(
       &faces_nodes[3*ff],p[ff],N,diffN,phi_f[ff],diff,gdim,4,base_polynomials
-    ); CHKERRQ(ierr);
+    ); CHKERRG(ierr);
   }
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode MoFEM::Hdiv_Ainsworth_FaceBubbleShapeFunctions_ON_FACE(
+MoFEMErrorCode MoFEM::Hdiv_Ainsworth_FaceBubbleShapeFunctions_ON_FACE(
   int *face_nodes,int p,double *N,double *diffN,double *phi_f,double *diff_phi_f,int gdim,int nb,
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 ) {
@@ -224,11 +224,11 @@ PetscErrorCode MoFEM::Hdiv_Ainsworth_FaceBubbleShapeFunctions_ON_FACE(
       (ni*nj)*t_node_diff_ksi[i0](i)+
       (n0*nj)*t_node_diff_ksi[vert_i](i)+
       (n0*ni)*t_node_diff_ksi[vert_j](i);
-      ierr = base_polynomials(p,ksi0i,&t_diff_ksi0i(0),psi_l,diff_psi_l,3); CHKERRQ(ierr);
-      ierr = base_polynomials(p,ksi0j,&t_diff_ksi0j(0),psi_m,diff_psi_m,3); CHKERRQ(ierr);
+      ierr = base_polynomials(p,ksi0i,&t_diff_ksi0i(0),psi_l,diff_psi_l,3); CHKERRG(ierr);
+      ierr = base_polynomials(p,ksi0j,&t_diff_ksi0j(0),psi_m,diff_psi_m,3); CHKERRG(ierr);
     } else {
-      ierr = base_polynomials(p,ksi0i,NULL,psi_l,NULL,3); CHKERRQ(ierr);
-      ierr = base_polynomials(p,ksi0j,NULL,psi_m,NULL,3); CHKERRQ(ierr);
+      ierr = base_polynomials(p,ksi0i,NULL,psi_l,NULL,3); CHKERRG(ierr);
+      ierr = base_polynomials(p,ksi0j,NULL,psi_m,NULL,3); CHKERRG(ierr);
     }
 
     int jj = 0;
@@ -270,7 +270,7 @@ PetscErrorCode MoFEM::Hdiv_Ainsworth_FaceBubbleShapeFunctions_ON_FACE(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode MoFEM::Hdiv_Ainsworth_EdgeBasedVolumeShapeFunctions_MBTET(
+MoFEMErrorCode MoFEM::Hdiv_Ainsworth_EdgeBasedVolumeShapeFunctions_MBTET(
   int p,
   double *N,
   double *diffN,
@@ -338,9 +338,9 @@ PetscErrorCode MoFEM::Hdiv_Ainsworth_EdgeBasedVolumeShapeFunctions_MBTET(
         t_diff_beta_e(i) =
         ni*t_node_diff_ksi[edges_nodes[ee][0]](i)+
         t_node_diff_ksi[edges_nodes[ee][1]](i)*n0;
-        ierr = base_polynomials(p,ksi0i,&t_diff_ksi0i(0),psi_l,diff_psi_l,3); CHKERRQ(ierr);
+        ierr = base_polynomials(p,ksi0i,&t_diff_ksi0i(0),psi_l,diff_psi_l,3); CHKERRG(ierr);
       } else {
-        ierr = base_polynomials(p,ksi0i,NULL,psi_l,NULL,3); CHKERRQ(ierr);
+        ierr = base_polynomials(p,ksi0i,NULL,psi_l,NULL,3); CHKERRG(ierr);
       }
       FTensor::Tensor0<double*> t_psi_l(&psi_l[0]);
       FTensor::Tensor1<double*,3> t_diff_psi_l(
@@ -364,7 +364,7 @@ PetscErrorCode MoFEM::Hdiv_Ainsworth_EdgeBasedVolumeShapeFunctions_MBTET(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode MoFEM::Hdiv_Ainsworth_FaceBasedVolumeShapeFunctions_MBTET(
+MoFEMErrorCode MoFEM::Hdiv_Ainsworth_FaceBasedVolumeShapeFunctions_MBTET(
   int p,double *N,double *diffN,double *phi_v_f[],double *diff_phi_v_f[],int gdim,
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 ) {
@@ -430,8 +430,8 @@ PetscErrorCode MoFEM::Hdiv_Ainsworth_FaceBasedVolumeShapeFunctions_MBTET(
       (n0*ni)*t_node_diff_ksi[vj](i);
       const double ksi0i = ni-n0;
       const double ksi0j = nj-n0;
-      ierr = base_polynomials(p,ksi0i,&t_diff_ksi0i[ff](0),psi_l,diff_psi_l,3); CHKERRQ(ierr);
-      ierr = base_polynomials(p,ksi0j,&t_diff_ksi0j[ff](0),psi_m,diff_psi_m,3); CHKERRQ(ierr);
+      ierr = base_polynomials(p,ksi0i,&t_diff_ksi0i[ff](0),psi_l,diff_psi_l,3); CHKERRG(ierr);
+      ierr = base_polynomials(p,ksi0j,&t_diff_ksi0j[ff](0),psi_m,diff_psi_m,3); CHKERRG(ierr);
       FTensor::Tensor1<double,3> t_diff_a;
       int jj = 0;
       for(int oo = 0;oo<=p-3;oo++) {
@@ -481,7 +481,7 @@ PetscErrorCode MoFEM::Hdiv_Ainsworth_FaceBasedVolumeShapeFunctions_MBTET(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode MoFEM::Hdiv_Ainsworth_VolumeBubbleShapeFunctions_MBTET(
+MoFEMErrorCode MoFEM::Hdiv_Ainsworth_VolumeBubbleShapeFunctions_MBTET(
   int p,double *N,double *diffN,double *phi_v,double *diff_phi_v,int gdim,
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 ) {
@@ -540,9 +540,9 @@ PetscErrorCode MoFEM::Hdiv_Ainsworth_VolumeBubbleShapeFunctions_MBTET(
     (n0*nj*nk)*t_node_diff_ksi[1](i)+
     (n0*ni*nk)*t_node_diff_ksi[2](i)+
     (n0*ni*nj)*t_node_diff_ksi[3](i);
-    ierr = base_polynomials(p,ksi0i,&t_diff_ksi0i(0),psi_l,diff_psi_l,3); CHKERRQ(ierr);
-    ierr = base_polynomials(p,ksi0j,&t_diff_ksi0j(0),psi_m,diff_psi_m,3); CHKERRQ(ierr);
-    ierr = base_polynomials(p,ksi0k,&t_diff_ksi0k(0),psi_n,diff_psi_n,3); CHKERRQ(ierr);
+    ierr = base_polynomials(p,ksi0i,&t_diff_ksi0i(0),psi_l,diff_psi_l,3); CHKERRG(ierr);
+    ierr = base_polynomials(p,ksi0j,&t_diff_ksi0j(0),psi_m,diff_psi_m,3); CHKERRG(ierr);
+    ierr = base_polynomials(p,ksi0k,&t_diff_ksi0k(0),psi_n,diff_psi_n,3); CHKERRG(ierr);
 
     FTensor::Tensor1<double,3> t_diff_a;
 
@@ -616,7 +616,7 @@ PetscErrorCode MoFEM::Hdiv_Ainsworth_VolumeBubbleShapeFunctions_MBTET(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode MoFEM::Hdiv_Demkowicz_Face_MBTET_ON_FACE(
+MoFEMErrorCode MoFEM::Hdiv_Demkowicz_Face_MBTET_ON_FACE(
   int *faces_nodes,
   int p,
   double *N,double *diffN,
@@ -707,13 +707,13 @@ PetscErrorCode MoFEM::Hdiv_Demkowicz_Face_MBTET_ON_FACE(
     double *diff_n0_p_n1 = (diff_phi_f) ? &t_diff_n0_p_n1(0) : NULL;
     ierr = Jacobi_polynomials(
       p,0,n1,n0+n1,diff_n1,diff_n0_p_n1,fi,diff_phi_f?diff_fi:NULL,3
-    ); CHKERRQ(ierr);
+    ); CHKERRG(ierr);
     for(int pp = 0;pp<=p;pp++) {
       double *diff_n2 = (diff_phi_f) ? &t_node_diff_ksi[i2](0) : NULL;
       double *diff_n0_p_n1_p_n2 = (diff_phi_f) ? &t_diff_n0_p_n1_p_n2(0) : NULL;
       ierr = Jacobi_polynomials(
         pp,2*pp+1,n2,n0+n1+n2,diff_n2,diff_n0_p_n1_p_n2,tmp_fj,diff_phi_f?tmp_diff_fj:NULL,3
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
       fj[pp] = tmp_fj[pp];
       if(diff_phi_f) {
         diff_fj[0*(p+1)+pp] = tmp_diff_fj[0*(pp+1)+pp];
@@ -771,7 +771,7 @@ PetscErrorCode MoFEM::Hdiv_Demkowicz_Face_MBTET_ON_FACE(
 }
 
 
-PetscErrorCode MoFEM::Hdiv_Demkowicz_Interior_MBTET(
+MoFEMErrorCode MoFEM::Hdiv_Demkowicz_Interior_MBTET(
   int p,
   double *N,double *diffN,
   int p_f[],
@@ -814,7 +814,7 @@ PetscErrorCode MoFEM::Hdiv_Demkowicz_Interior_MBTET(
       for(int pp = 0;pp<=p;pp++) {
         ierr = Jacobi_polynomials(
           pp,2*pp+2,nO,nO,&t_node_diff_ksi[iO](0),&t_node_diff_ksi[iO](0),tmp_fk,tmp_diff_fk,3
-        ); CHKERRQ(ierr);
+        ); CHKERRG(ierr);
         fk(ff,pp) = tmp_fk[pp];
         diff_fk(ff,0*(p+1)+pp) = tmp_diff_fk[0*(pp+1)+pp];
         diff_fk(ff,1*(p+1)+pp) = tmp_diff_fk[1*(pp+1)+pp];

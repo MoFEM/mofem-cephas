@@ -32,7 +32,7 @@ namespace MoFEM {
    */
   struct ISManager: public UnknownInterface {
 
-    PetscErrorCode query_interface(const MOFEMuuid& uuid, UnknownInterface** iface) const;
+    MoFEMErrorCode query_interface(const MOFEMuuid& uuid, UnknownInterface** iface) const;
 
     const MoFEM::Interface& cOre;
     bool dEbug;
@@ -58,7 +58,7 @@ namespace MoFEM {
      * @param  row_col      ROE or COL, default is ROW
      * @return              error code
      */
-    PetscErrorCode sectionCreate(
+    MoFEMErrorCode sectionCreate(
       const std::string &problem_name,
       PetscSection *s,
       const RowColData row_col = COL
@@ -75,7 +75,7 @@ namespace MoFEM {
       * \retval is out value
 
       */
-    PetscErrorCode isCreateProblemOrder(
+    MoFEMErrorCode isCreateProblemOrder(
       const std::string &problem,RowColData rc,int min_order,int max_order,IS *is
     ) const;
 
@@ -91,7 +91,7 @@ namespace MoFEM {
       * \retval is out value
 
       */
-    PetscErrorCode isCreateProblemFieldAndRank(
+    MoFEMErrorCode isCreateProblemFieldAndRank(
       const std::string &problem,
       RowColData rc,
       const std::string &field,
@@ -116,7 +116,7 @@ namespace MoFEM {
       \retval idy indexes in problem_y
 
       */
-    PetscErrorCode isCreateFromProblemFieldToOtherProblemField(
+    MoFEMErrorCode isCreateFromProblemFieldToOtherProblemField(
       const std::string &x_problem,
       const std::string &x_field_name,RowColData x_rc,
       const std::string &y_problem,
@@ -140,19 +140,19 @@ namespace MoFEM {
       \retval iy IS indexes in problem_y
 
       */
-    PetscErrorCode isCreateFromProblemFieldToOtherProblemField(
+    MoFEMErrorCode isCreateFromProblemFieldToOtherProblemField(
       const std::string &x_problem,const std::string &x_field_name,RowColData x_rc,
       const std::string &y_problem,const std::string &y_field_name,RowColData y_rc,
       IS *ix,IS *iy
     ) const;
 
-    PetscErrorCode isCreateFromProblemToOtherProblem(
+    MoFEMErrorCode isCreateFromProblemToOtherProblem(
       const std::string &x_problem,RowColData x_rc,
       const std::string &y_problem,RowColData y_rc,
       std::vector<int> &idx,std::vector<int> &idy
     ) const;
 
-    PetscErrorCode isCreateFromProblemToOtherProblem(
+    MoFEMErrorCode isCreateFromProblemToOtherProblem(
       const std::string &x_problem,RowColData x_rc,
       const std::string &y_problem,RowColData y_rc,
       IS *ix,IS *iy

@@ -81,7 +81,7 @@ struct CohesiveInterfaceElement {
     Create tag on the prism/interface to store damage history variable
 
     */
-    PetscErrorCode iNitailise(const FEMethod *fe_method) {
+    MoFEMErrorCode iNitailise(const FEMethod *fe_method) {
       MoFEMFunctionBeginHot;
 
       double def_damaged = 0;
@@ -90,7 +90,7 @@ struct CohesiveInterfaceElement {
       ); MOAB_THROW(rval);
       const int def_len = 0;
       rval = mField.get_moab().tag_get_handle("_KAPPA",def_len,MB_TYPE_DOUBLE,
-      thKappa,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_VARLEN,NULL); CHKERRQ_MOAB(rval);
+      thKappa,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_VARLEN,NULL); CHKERRG(rval);
       E0 = youngModulus/h;
       g0 = ft/E0;
       kappa1 = 2*Gf/ft;
@@ -113,7 +113,7 @@ struct CohesiveInterfaceElement {
 
     /** \brief Get pointer from the mesh to histoy variables \f$\kappa\f$
     */
-    PetscErrorCode getKappa(int nb_gauss_pts,const FEMethod *fe_method) {
+    MoFEMErrorCode getKappa(int nb_gauss_pts,const FEMethod *fe_method) {
       MoFEMFunctionBeginHot;
       EntityHandle ent = fe_method->numeredEntFiniteElementPtr->getEnt();
 
@@ -125,8 +125,8 @@ struct CohesiveInterfaceElement {
         int tag_size[1];
         tag_size[0] = nb_gauss_pts;
         void const* tag_data[] = { &kappa[0] };
-        rval = mField.get_moab().tag_set_by_ptr(thKappa,&ent,1,tag_data,tag_size);  CHKERRQ_MOAB(rval);
-        rval = mField.get_moab().tag_get_by_ptr(thKappa,&ent,1,(const void **)&kappaPtr,&kappaSize);  CHKERRQ_MOAB(rval);
+        rval = mField.get_moab().tag_set_by_ptr(thKappa,&ent,1,tag_data,tag_size);  CHKERRG(rval);
+        rval = mField.get_moab().tag_get_by_ptr(thKappa,&ent,1,(const void **)&kappaPtr,&kappaSize);  CHKERRG(rval);
       }
       MoFEMFunctionReturnHot(0);
     }
@@ -145,7 +145,7 @@ struct CohesiveInterfaceElement {
     \f]
 
     */
-    PetscErrorCode calcDglob(const double omega,MatrixDouble &R) {
+    MoFEMErrorCode calcDglob(const double omega,MatrixDouble &R) {
       MoFEMFunctionBeginHot;
       Dglob.resize(3,3);
       Dloc.resize(3,3);
@@ -166,7 +166,7 @@ struct CohesiveInterfaceElement {
     \f]
 
     */
-    PetscErrorCode calcOmega(const double kappa,double& omega) {
+    MoFEMErrorCode calcOmega(const double kappa,double& omega) {
       MoFEMFunctionBeginHot;
       omega = 0;
       if(kappa>=kappa1) {
@@ -182,7 +182,7 @@ struct CohesiveInterfaceElement {
 
     /** \brief Calculate tangent material stiffness
     */
-    PetscErrorCode calcTangetDglob(const double omega,double g,const VectorDouble& gap_loc,MatrixDouble &R) {
+    MoFEMErrorCode calcTangetDglob(const double omega,double g,const VectorDouble& gap_loc,MatrixDouble &R) {
       MoFEMFunctionBeginHot;
       Dglob.resize(3,3);
       Dloc.resize(3,3);
@@ -212,7 +212,7 @@ struct CohesiveInterfaceElement {
     \f]
 
     */
-    virtual PetscErrorCode calculateTraction(
+    virtual MoFEMErrorCode calculateTraction(
       VectorDouble &traction,
       int gg,CommonData &common_data,
       const FEMethod *fe_method
@@ -220,18 +220,18 @@ struct CohesiveInterfaceElement {
       MoFEMFunctionBeginHot;
 
       if(!isInitialised) {
-        ierr = iNitailise(fe_method); CHKERRQ(ierr);
+        ierr = iNitailise(fe_method); CHKERRG(ierr);
         isInitialised = true;
       }
       if(gg==0) {
-        ierr = getKappa(common_data.gapGlob.size1(),fe_method); CHKERRQ(ierr);
+        ierr = getKappa(common_data.gapGlob.size1(),fe_method); CHKERRG(ierr);
       }
       double g = calcG(gg,common_data.gapLoc);
       double kappa = fmax(g-g0,kappaPtr[gg]);
       double omega = 0;
-      ierr = calcOmega(kappa,omega); CHKERRQ(ierr);
+      ierr = calcOmega(kappa,omega); CHKERRG(ierr);
       //std::cerr << gg << " " << omega << std::endl;
-      ierr = calcDglob(omega,common_data.R[gg]); CHKERRQ(ierr);
+      ierr = calcDglob(omega,common_data.R[gg]); CHKERRG(ierr);
       traction.resize(3);
       ublas::matrix_row<MatrixDouble > gap_glob(common_data.gapGlob,gg);
       noalias(traction) = prod(Dglob,gap_glob);
@@ -240,7 +240,7 @@ struct CohesiveInterfaceElement {
 
     /** \brief Calculate tangent stiffness
     */
-    virtual PetscErrorCode calculateTangentStiffeness(
+    virtual MoFEMErrorCode calculateTangentStiffeness(
       MatrixDouble &tangent_matrix,
       int gg,CommonData &common_data,
       const FEMethod *fe_method
@@ -249,21 +249,21 @@ struct CohesiveInterfaceElement {
 
       try {
         if(!isInitialised) {
-          ierr = iNitailise(fe_method); CHKERRQ(ierr);
+          ierr = iNitailise(fe_method); CHKERRG(ierr);
           isInitialised = true;
         }
         if(gg==0) {
-          ierr = getKappa(common_data.gapGlob.size1(),fe_method); CHKERRQ(ierr);
+          ierr = getKappa(common_data.gapGlob.size1(),fe_method); CHKERRG(ierr);
         }
         double g = calcG(gg,common_data.gapLoc);
         double kappa = fmax(g-g0,kappaPtr[gg]);
         double omega = 0;
-        ierr = calcOmega(kappa,omega); CHKERRQ(ierr);
+        ierr = calcOmega(kappa,omega); CHKERRG(ierr);
         //std::cerr << gg << " " << omega << std::endl;
         int iter;
-        ierr = SNESGetIterationNumber(fe_method->snes,&iter); CHKERRQ(ierr);
+        ierr = SNESGetIterationNumber(fe_method->snes,&iter); CHKERRG(ierr);
         if((kappa <= kappaPtr[gg])||(kappa>=kappa1)||(iter <= 1)) {
-          ierr = calcDglob(omega,common_data.R[gg]); CHKERRQ(ierr);
+          ierr = calcDglob(omega,common_data.R[gg]); CHKERRG(ierr);
         } else {
           ublas::matrix_row<MatrixDouble > g_loc(common_data.gapLoc,gg);
           ierr = calcTangetDglob(omega,g,g_loc,common_data.R[gg]);
@@ -281,24 +281,24 @@ struct CohesiveInterfaceElement {
 
     /** \brief Update history variables when converged
     */
-    virtual PetscErrorCode updateHistory(
+    virtual MoFEMErrorCode updateHistory(
       CommonData &common_data,const FEMethod *fe_method
     ) {
       MoFEMFunctionBeginHot;
 
 
       if(!isInitialised) {
-        ierr = iNitailise(fe_method); CHKERRQ(ierr);
+        ierr = iNitailise(fe_method); CHKERRG(ierr);
         isInitialised = true;
       }
-      ierr = getKappa(common_data.gapGlob.size1(),fe_method); CHKERRQ(ierr);
+      ierr = getKappa(common_data.gapGlob.size1(),fe_method); CHKERRG(ierr);
       bool all_gauss_pts_damaged = true;
       for(unsigned int gg = 0;gg<common_data.gapGlob.size1();gg++) {
         double omega = 0;
         double g = calcG(gg,common_data.gapLoc);
         double kappa = fmax(g-g0,kappaPtr[gg]);
         kappaPtr[gg] = kappa;
-        ierr = calcOmega(kappa,omega); CHKERRQ(ierr);
+        ierr = calcOmega(kappa,omega); CHKERRG(ierr);
         //if(omega < 1.) {
         all_gauss_pts_damaged = false;
         //}
@@ -306,7 +306,7 @@ struct CohesiveInterfaceElement {
       if(all_gauss_pts_damaged) {
         EntityHandle ent = fe_method->numeredEntFiniteElementPtr->getEnt();
         int set_prism_as_demaged = 1;
-        rval = mField.get_moab().tag_set_data(thDamagedPrism,&ent,1,&set_prism_as_demaged); CHKERRQ_MOAB(rval);
+        rval = mField.get_moab().tag_set_data(thDamagedPrism,&ent,1,&set_prism_as_demaged); CHKERRG(rval);
       }
       MoFEMFunctionReturnHot(0);
     }
@@ -321,7 +321,7 @@ struct CohesiveInterfaceElement {
     OpSetSignToShapeFunctions(const std::string field_name):
     FlatPrismElementForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSourcesCore::UserDataOperator::OPROW) {}
 
-    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
+    MoFEMErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
       MoFEMFunctionBeginHot;
       if(data.getN().size1()==0)  MoFEMFunctionReturnHot(0);
       if(data.getN().size2()==0)  MoFEMFunctionReturnHot(0);
@@ -358,7 +358,7 @@ struct CohesiveInterfaceElement {
       FlatPrismElementForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSourcesCore::UserDataOperator::OPROW),
       commonData(common_data) {}
 
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
       MoFEMFunctionBeginHot;
       try {
@@ -416,7 +416,7 @@ struct CohesiveInterfaceElement {
       FlatPrismElementForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSourcesCore::UserDataOperator::OPROW),
       commonData(common_data) {}
 
-    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
+    MoFEMErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
       MoFEMFunctionBeginHot;
       try {
         if(type == MBVERTEX) {
@@ -449,7 +449,7 @@ struct CohesiveInterfaceElement {
       commonData(common_data),physicalEqations(physical_eqations) {}
 
     VectorDouble traction,Nf;
-    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
+    MoFEMErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
       MoFEMFunctionBeginHot;
 
       try {
@@ -462,7 +462,7 @@ struct CohesiveInterfaceElement {
         Nf.clear();
         int nb_gauss_pts = data.getN().size1();
         for(int gg = 0;gg<nb_gauss_pts;gg++) {
-          ierr = physicalEqations.calculateTraction(traction,gg,commonData,getFEMethod()); CHKERRQ(ierr);
+          ierr = physicalEqations.calculateTraction(traction,gg,commonData,getFEMethod()); CHKERRG(ierr);
           double w = getGaussPts()(2,gg)*cblas_dnrm2(3,&getNormalsAtGaussPtF3()(gg,0),1)*0.5;
           for(int nn = 0;nn<nb_dofs/3;nn++) {
             for(int dd = 0;dd<3;dd++) {
@@ -471,7 +471,7 @@ struct CohesiveInterfaceElement {
           }
         }
         ierr = VecSetValues(getFEMethod()->snes_f,
-        data.getIndices().size(),&data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
+        data.getIndices().size(),&data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRG(ierr);
       } catch (const std::exception& ex) {
         std::ostringstream ss;
         ss << "throw in method: " << ex.what() << std::endl;
@@ -493,7 +493,7 @@ struct CohesiveInterfaceElement {
     commonData(common_data),physicalEqations(physical_eqations) { sYmm = false; }
 
     MatrixDouble K,D,ND;
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int row_side,int col_side,
       EntityType row_type,EntityType col_type,
       DataForcesAndSourcesCore::EntData &row_data,
@@ -517,7 +517,7 @@ struct CohesiveInterfaceElement {
         K.clear();
         int nb_gauss_pts = row_data.getN().size1();
         for(int gg = 0;gg<nb_gauss_pts;gg++) {
-          ierr = physicalEqations.calculateTangentStiffeness(D,gg,commonData,getFEMethod()); CHKERRQ(ierr);
+          ierr = physicalEqations.calculateTangentStiffeness(D,gg,commonData,getFEMethod()); CHKERRG(ierr);
           double w = getGaussPts()(2,gg)*cblas_dnrm2(3,&getNormalsAtGaussPtF3()(gg,0),1)*0.5;
           ND.clear();
           for(int nn = 0; nn<nb_row/3;nn++) {
@@ -541,7 +541,7 @@ struct CohesiveInterfaceElement {
           nb_row,&row_data.getIndices()[0],
           nb_col,&col_data.getIndices()[0],
           &K(0,0),ADD_VALUES
-        ); CHKERRQ(ierr);
+        ); CHKERRG(ierr);
       } catch (const std::exception& ex) {
         std::ostringstream ss;
         ss << "throw in method: " << ex.what() << std::endl;
@@ -562,14 +562,14 @@ struct CohesiveInterfaceElement {
       FlatPrismElementForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSourcesCore::UserDataOperator::OPROW),
       commonData(common_data),physicalEqations(physical_eqations) {}
 
-      PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
+      MoFEMErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
         MoFEMFunctionBeginHot;
 
         if(type != MBVERTEX) MoFEMFunctionReturnHot(0);
         if(physicalEqations.pRisms.find(getNumeredEntFiniteElementPtr()->getEnt()) == physicalEqations.pRisms.end()) {
           MoFEMFunctionReturnHot(0);
         }
-        ierr = physicalEqations.updateHistory(commonData,getFEMethod()); CHKERRQ(ierr);
+        ierr = physicalEqations.updateHistory(commonData,getFEMethod()); CHKERRG(ierr);
         MoFEMFunctionReturnHot(0);
       }
 
@@ -577,7 +577,7 @@ struct CohesiveInterfaceElement {
 
   /** \brief Driver function settting all operators needed for interface element
   */
-  PetscErrorCode addOps(const std::string field_name,boost::ptr_vector<CohesiveInterfaceElement::PhysicalEquation> &interfaces) {
+  MoFEMErrorCode addOps(const std::string field_name,boost::ptr_vector<CohesiveInterfaceElement::PhysicalEquation> &interfaces) {
     MoFEMFunctionBeginHot;
 
     //Rhs

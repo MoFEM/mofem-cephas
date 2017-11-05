@@ -174,7 +174,7 @@ like to load
 \code{.cpp}
 PetscBool flg = PETSC_TRUE;   ///< Is true of option is set in line command
 char mesh_file_name[255];     ///< File name
-ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRG(ierr);
 \endcode
 where here we are using PETSc function to do that,
 see <http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/Sys/PetscOptionsGetString.html> for
@@ -182,7 +182,7 @@ more details. Having mesh file name, we can load mesh, created in Gmsh, to datab
 \code{.cpp}
 const char *option;
 option = "";
-rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
+rval = moab.load_file(mesh_file_name, 0, option); CHKERRG(rval);
 \endcode
 
 MoFEM can read various file format in this example we are using mesh from Gmsh,
@@ -234,13 +234,13 @@ interface can easily share information through it. To get access to interface,
 user needs to query MoFEM for it, as follows
 \code{.cpp}
 MoFEM::MeshsetsManager *meshsets_manager_ptr; //< Click on class to see more details
-ierr = m_field.getInterface(meshsets_manager_ptr); CHKERRQ(ierr);
+ierr = m_field.getInterface(meshsets_manager_ptr); CHKERRG(ierr);
 \endcode
 using interface we can read file \b bc.cfg, parse it and
 add boundary conditions. All this is automatized for user convenience and done with
 single interface method
 \code{.cpp}
-ierr = meshsets_manager_ptr->setMeshsetFromFile(); CHKERRQ(ierr);  //<- Click on function to see more details
+ierr = meshsets_manager_ptr->setMeshsetFromFile(); CHKERRG(ierr);  //<- Click on function to see more details
 \endcode
 
 In general, user can query about range of interfaces giving access to specific
@@ -286,17 +286,17 @@ The general procedure to solve problem looks like follows
 BcFluxMap bc_flux_map;
 ExampleMix ufe(m_field,bc_flux_map);
 // Initially calculate problem on coarse mesh
-ierr = ufe.addFields("VALUES","FLUXES",order); CHKERRQ(ierr);
-ierr = ufe.addFiniteElements("FLUXES","VALUES"); CHKERRQ(ierr);
+ierr = ufe.addFields("VALUES","FLUXES",order); CHKERRG(ierr);
+ierr = ufe.addFiniteElements("FLUXES","VALUES"); CHKERRG(ierr);
 // Set boundary conditions
 ierr = ufe.addBoundaryElements(ref_level);
-ierr = ufe.buildProblem(ref_level); CHKERRQ(ierr);
-ierr = ufe.createMatrices(); CHKERRQ(ierr);
-ierr = ufe.solveLinearProblem(); CHKERRQ(ierr);
-ierr = ufe.calculateResidual(); CHKERRQ(ierr);
-ierr = ufe.evaluateError(); CHKERRQ(ierr);
-ierr = ufe.destroyMatrices(); CHKERRQ(ierr);
-ierr = ufe.postProc("out_0.h5m"); CHKERRQ(ierr);
+ierr = ufe.buildProblem(ref_level); CHKERRG(ierr);
+ierr = ufe.createMatrices(); CHKERRG(ierr);
+ierr = ufe.solveLinearProblem(); CHKERRG(ierr);
+ierr = ufe.calculateResidual(); CHKERRG(ierr);
+ierr = ufe.evaluateError(); CHKERRG(ierr);
+ierr = ufe.destroyMatrices(); CHKERRG(ierr);
+ierr = ufe.postProc("out_0.h5m"); CHKERRG(ierr);
 \endcode
 such procedure will look very similar to other problems, where we set-up
 problem, apply boundary conditions, solve problem and postprocess results.
@@ -310,20 +310,20 @@ In \ref MixTransport::MixTransportElement::addFields we declare and define field
 add entities to those on which given field is spanning.
 
 \code{.cpp}
-PetscErrorCode MixTransport::MixTransportElement::addFields(const std::string &values,const std::string &fluxes,const int order) {
+MoFEMErrorCode MixTransport::MixTransportElement::addFields(const std::string &values,const std::string &fluxes,const int order) {
   
   MoFEMFunctionBeginHot;
   //Fields
-  ierr = mField.add_field(fluxes,HDIV,DEMKOWICZ_JACOBI_BASE,1); CHKERRQ(ierr);
-  ierr = mField.add_field(values,L2,AINSWORTH_LEGENDRE_BASE,1); CHKERRQ(ierr);
+  ierr = mField.add_field(fluxes,HDIV,DEMKOWICZ_JACOBI_BASE,1); CHKERRG(ierr);
+  ierr = mField.add_field(values,L2,AINSWORTH_LEGENDRE_BASE,1); CHKERRG(ierr);
   //meshset consisting all entities in mesh
   EntityHandle root_set = mField.get_moab().get_root_set();
   //add entities to field
-  ierr = mField.add_ents_to_field_by_type(root_set,MBTET,fluxes); CHKERRQ(ierr);
-  ierr = mField.add_ents_to_field_by_type(root_set,MBTET,values); CHKERRQ(ierr);
-  ierr = mField.set_field_order(root_set,MBTET,fluxes,order+1); CHKERRQ(ierr);
-  ierr = mField.set_field_order(root_set,MBTRI,fluxes,order+1); CHKERRQ(ierr);
-  ierr = mField.set_field_order(root_set,MBTET,values,order); CHKERRQ(ierr);
+  ierr = mField.add_ents_to_field_by_type(root_set,MBTET,fluxes); CHKERRG(ierr);
+  ierr = mField.add_ents_to_field_by_type(root_set,MBTET,values); CHKERRG(ierr);
+  ierr = mField.set_field_order(root_set,MBTET,fluxes,order+1); CHKERRG(ierr);
+  ierr = mField.set_field_order(root_set,MBTRI,fluxes,order+1); CHKERRG(ierr);
+  ierr = mField.set_field_order(root_set,MBTET,values,order); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 \endcode
@@ -371,7 +371,7 @@ In this example, we have four kinds of finite elements \e MIX,
   Note that in mix transport formulation Neumann boundary conditions are essential.
 
 \code{.cpp}
-PetscErrorCode MixTransport::MixTransportElement::addFiniteElements(
+MoFEMErrorCode MixTransport::MixTransportElement::addFiniteElements(
   const std::string &fluxes_name,
   const std::string &values_name,
   const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS"
@@ -387,21 +387,21 @@ PetscErrorCode MixTransport::MixTransportElement::addFiniteElements(
 
   // Declare element "MIX". Note that this element will work with fluxes_name and
   // values_name. This reflect bilinear form for the problem
-  ierr = mField.add_finite_element("MIX",MF_ZERO); CHKERRQ(ierr);
+  ierr = mField.add_finite_element("MIX",MF_ZERO); CHKERRG(ierr);
   // Define element
-  ierr = mField.modify_finite_element_add_field_row("MIX",fluxes_name); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_col("MIX",fluxes_name); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_row("MIX",values_name); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_col("MIX",values_name); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_data("MIX",fluxes_name); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_data("MIX",values_name); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_row("MIX",fluxes_name); CHKERRG(ierr);
+  ierr = mField.modify_finite_element_add_field_col("MIX",fluxes_name); CHKERRG(ierr);
+  ierr = mField.modify_finite_element_add_field_row("MIX",values_name); CHKERRG(ierr);
+  ierr = mField.modify_finite_element_add_field_col("MIX",values_name); CHKERRG(ierr);
+  ierr = mField.modify_finite_element_add_field_data("MIX",fluxes_name); CHKERRG(ierr);
+  ierr = mField.modify_finite_element_add_field_data("MIX",values_name); CHKERRG(ierr);
 
   // Declare finite element to integrate over skeleton, we need that to evaluate error
-  ierr = mField.add_finite_element("MIX_SKELETON",MF_ZERO); CHKERRQ(ierr);
+  ierr = mField.add_finite_element("MIX_SKELETON",MF_ZERO); CHKERRG(ierr);
   // Define element
-  ierr = mField.modify_finite_element_add_field_row("MIX_SKELETON",fluxes_name); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_col("MIX_SKELETON",fluxes_name); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_data("MIX_SKELETON",fluxes_name); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_row("MIX_SKELETON",fluxes_name); CHKERRG(ierr);
+  ierr = mField.modify_finite_element_add_field_col("MIX_SKELETON",fluxes_name); CHKERRG(ierr);
+  ierr = mField.modify_finite_element_add_field_data("MIX_SKELETON",fluxes_name); CHKERRG(ierr);
 
   // In some cases you like to use HO geometry to describe shape of the body, curved edges and faces, for
   // example body is a sphere. HO geometry is approximated by a field,  which can be hierarchical, so shape of
@@ -410,8 +410,8 @@ PetscErrorCode MixTransport::MixTransportElement::addFiniteElements(
   // Check if field "mesh_nodals_positions" is declared, and if it is add that field to data of finite
   // element. MoFEM will use that that to calculate Jacobian as result that geometry in nonlinear.
   if(mField.check_field(mesh_nodals_positions)) {
-    ierr = mField.modify_finite_element_add_field_data("MIX",mesh_nodals_positions); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_data("MIX_SKELETON",mesh_nodals_positions); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_data("MIX",mesh_nodals_positions); CHKERRG(ierr);
+    ierr = mField.modify_finite_element_add_field_data("MIX_SKELETON",mesh_nodals_positions); CHKERRG(ierr);
   }
   // Look for all BLOCKSET which are MAT_THERMALSET, takes entities from those BLOCKSETS
   // and add them to "MIX" finite element. In addition get data from that meshset
@@ -422,15 +422,15 @@ PetscErrorCode MixTransport::MixTransportElement::addFiniteElements(
     // cerr << *it << endl;
 
     Mat_Thermal temp_data;
-    ierr = it->getAttributeDataStructure(temp_data); CHKERRQ(ierr);
+    ierr = it->getAttributeDataStructure(temp_data); CHKERRG(ierr);
     setOfBlocks[it->getMeshsetId()].cOnductivity = temp_data.data.Conductivity;
     setOfBlocks[it->getMeshsetId()].cApacity = temp_data.data.HeatCapacity;
     rval = mField.get_moab().get_entities_by_type(
       it->meshset,MBTET,setOfBlocks[it->getMeshsetId()].tEts,true
-    ); CHKERRQ_MOAB(rval);
+    ); CHKERRG(rval);
     ierr = mField.add_ents_to_finite_element_by_TETs(
       setOfBlocks[it->getMeshsetId()].tEts,"MIX"
-    ); CHKERRQ(ierr);
+    ); CHKERRG(ierr);
 
     Range skeleton;
     rval = mField.get_moab().get_adjacencies(
@@ -438,30 +438,30 @@ PetscErrorCode MixTransport::MixTransportElement::addFiniteElements(
     );
     ierr = mField.add_ents_to_finite_element_by_type(
       skeleton,MBTRI,"MIX_SKELETON"
-    ); CHKERRQ(ierr);
+    ); CHKERRG(ierr);
 
   }
 
   // Declare element to integrate natural boundary conditions, i.e. set values.
-  ierr = mField.add_finite_element("MIX_BCVALUE",MF_ZERO); CHKERRQ(ierr);
+  ierr = mField.add_finite_element("MIX_BCVALUE",MF_ZERO); CHKERRG(ierr);
   // Define element
-  ierr = mField.modify_finite_element_add_field_row("MIX_BCVALUE",fluxes_name); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_col("MIX_BCVALUE",fluxes_name); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_data("MIX_BCVALUE",fluxes_name); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_data("MIX_BCVALUE",values_name); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_row("MIX_BCVALUE",fluxes_name); CHKERRG(ierr);
+  ierr = mField.modify_finite_element_add_field_col("MIX_BCVALUE",fluxes_name); CHKERRG(ierr);
+  ierr = mField.modify_finite_element_add_field_data("MIX_BCVALUE",fluxes_name); CHKERRG(ierr);
+  ierr = mField.modify_finite_element_add_field_data("MIX_BCVALUE",values_name); CHKERRG(ierr);
   if(mField.check_field(mesh_nodals_positions)) {
-    ierr = mField.modify_finite_element_add_field_data("MIX_BCVALUE",mesh_nodals_positions); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_data("MIX_BCVALUE",mesh_nodals_positions); CHKERRG(ierr);
   }
 
   // Declare element to apply essential boundary conditions.
-  ierr = mField.add_finite_element("MIX_BCFLUX",MF_ZERO); CHKERRQ(ierr);
+  ierr = mField.add_finite_element("MIX_BCFLUX",MF_ZERO); CHKERRG(ierr);
   // Define element
-  ierr = mField.modify_finite_element_add_field_row("MIX_BCFLUX",fluxes_name); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_col("MIX_BCFLUX",fluxes_name); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_data("MIX_BCFLUX",fluxes_name); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_data("MIX_BCFLUX",values_name); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_row("MIX_BCFLUX",fluxes_name); CHKERRG(ierr);
+  ierr = mField.modify_finite_element_add_field_col("MIX_BCFLUX",fluxes_name); CHKERRG(ierr);
+  ierr = mField.modify_finite_element_add_field_data("MIX_BCFLUX",fluxes_name); CHKERRG(ierr);
+  ierr = mField.modify_finite_element_add_field_data("MIX_BCFLUX",values_name); CHKERRG(ierr);
   if(mField.check_field(mesh_nodals_positions)) {
-    ierr = mField.modify_finite_element_add_field_data("MIX_BCFLUX",mesh_nodals_positions); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_data("MIX_BCFLUX",mesh_nodals_positions); CHKERRG(ierr);
   }
 
   MoFEMFunctionReturnHot(0);
@@ -513,7 +513,7 @@ In ExampleMix::addBoundaryElements loop over boundary BLOCKSETs is made to
 get triangles in that BLOCKSET. Then appropriate triangles are added to \e
 MIX_BCVALUE and \e MIX_BCFLUX
 \code{.cpp}
-PetscErrorCode ExampleMix::addBoundaryElements(BitRefLevel &ref_level) {
+MoFEMErrorCode ExampleMix::addBoundaryElements(BitRefLevel &ref_level) {
   MoAB
   
   MoFEMFunctionBeginHot;
@@ -521,20 +521,20 @@ PetscErrorCode ExampleMix::addBoundaryElements(BitRefLevel &ref_level) {
   ierr = mField.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(ref_level,BitRefLevel().set(),MBTET,tets);
   Skinner skin(&mField.get_moab());
   Range skin_faces; // skin faces from 3d ents
-  rval = skin.find_skin(0,tets,false,skin_faces); CHKERRQ_MOAB(rval);
+  rval = skin.find_skin(0,tets,false,skin_faces); CHKERRG(rval);
   // note: what is essential (dirichlet) is natural (neumann) for mix-FE compared to classical FE
   Range natural_bc;
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NODESET|TEMPERATURESET,it)) {
     Range tris;
-    ierr = it->getMeshsetIdEntitiesByDimension(mField.get_moab(),2,tris,true); CHKERRQ(ierr);
+    ierr = it->getMeshsetIdEntitiesByDimension(mField.get_moab(),2,tris,true); CHKERRG(ierr);
     natural_bc.insert(tris.begin(),tris.end());
   }
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SIDESET|HEATFLUXSET,it)) {
     HeatFluxCubitBcData mydata;
-    ierr = it->getBcDataStructure(mydata); CHKERRQ(ierr);
+    ierr = it->getBcDataStructure(mydata); CHKERRG(ierr);
     if(mydata.data.flag1==1) {
       Range tris;
-      ierr = it->getMeshsetIdEntitiesByDimension(mField.get_moab(),2,tris,true); CHKERRQ(ierr);
+      ierr = it->getMeshsetIdEntitiesByDimension(mField.get_moab(),2,tris,true); CHKERRG(ierr);
       bcFluxMap[it->getMeshsetId()].eNts = tris;
       bcFluxMap[it->getMeshsetId()].fLux = mydata.data.value1;
       // cerr << bcFluxMap[it->getMeshsetId()].eNts << endl;
@@ -546,9 +546,9 @@ PetscErrorCode ExampleMix::addBoundaryElements(BitRefLevel &ref_level) {
   ierr = mField.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(ref_level,BitRefLevel().set(),MBTRI,bit_tris);
   essential_bc = intersect(bit_tris,essential_bc);
   natural_bc = intersect(bit_tris,natural_bc);
-  ierr = mField.add_ents_to_finite_element_by_type(essential_bc,MBTRI,"MIX_BCFLUX"); CHKERRQ(ierr);
-  ierr = mField.add_ents_to_finite_element_by_type(natural_bc,MBTRI,"MIX_BCVALUE"); CHKERRQ(ierr);
-  // ierr = mField.add_ents_to_finite_element_by_type(skin_faces,MBTRI,"MIX_BCVALUE"); CHKERRQ(ierr);
+  ierr = mField.add_ents_to_finite_element_by_type(essential_bc,MBTRI,"MIX_BCFLUX"); CHKERRG(ierr);
+  ierr = mField.add_ents_to_finite_element_by_type(natural_bc,MBTRI,"MIX_BCVALUE"); CHKERRG(ierr);
+  // ierr = mField.add_ents_to_finite_element_by_type(skin_faces,MBTRI,"MIX_BCVALUE"); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 \endcode
@@ -565,7 +565,7 @@ This is not the case here.
 
 In addition, function
 \code{.cpp}
-PetscErrorCode ExampleMix::getBcOnValues(
+MoFEMErrorCode ExampleMix::getBcOnValues(
   const EntityHandle ent,
   const double x,const double y,const double z,
   double &value) {
@@ -576,7 +576,7 @@ PetscErrorCode ExampleMix::getBcOnValues(
 \endcode
 and
 \code{.cpp}
-PetscErrorCode ExampleMix::getBcOnFluxes(
+MoFEMErrorCode ExampleMix::getBcOnFluxes(
   const EntityHandle ent,
   const double x,const double y,const double z,
   double &flux) {
@@ -620,66 +620,66 @@ However, here we assume that mesh is the same on all processors only
 calculations, matrices and vectors are distributed.
 
 \code{.cpp}
-PetscErrorCode MixTransport::MixTransportElement::buildProblem(BitRefLevel &ref_level) {
+MoFEMErrorCode MixTransport::MixTransportElement::buildProblem(BitRefLevel &ref_level) {
   
   MoFEMFunctionBeginHot;
   //build field
-  ierr = mField.build_fields(); CHKERRQ(ierr);
+  ierr = mField.build_fields(); CHKERRG(ierr);
   // get tetrahedrons which has been build previously and now in so called garbage bit level
   Range done_tets;
   ierr = mField.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
     BitRefLevel().set(0),BitRefLevel().set(),MBTET,done_tets
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
   ierr = mField.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
     BitRefLevel().set(BITREFLEVEL_SIZE-1),BitRefLevel().set(),MBTET,done_tets
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
   // get tetrahedrons which belong to problem bit level
   Range ref_tets;
   ierr = mField.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
     ref_level,BitRefLevel().set(),MBTET,ref_tets
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
   ref_tets = subtract(ref_tets,done_tets);
-  ierr = mField.build_finite_elements("MIX",&ref_tets,2); CHKERRQ(ierr);
+  ierr = mField.build_finite_elements("MIX",&ref_tets,2); CHKERRG(ierr);
   // get triangles which has been build previously and now in so called garbage bit level
   Range done_faces;
   ierr = mField.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
     BitRefLevel().set(0),BitRefLevel().set(),MBTRI,done_faces
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
   ierr = mField.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
     BitRefLevel().set(BITREFLEVEL_SIZE-1),BitRefLevel().set(),MBTRI,done_faces
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
   // get triangles which belong to problem bit level
   Range ref_faces;
   ierr = mField.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
     ref_level,BitRefLevel().set(),MBTRI,ref_faces
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
   ref_faces = subtract(ref_faces,done_faces);
   //build finite elements structures
-  ierr = mField.build_finite_elements("MIX_BCFLUX",&ref_faces,2); CHKERRQ(ierr);
-  ierr = mField.build_finite_elements("MIX_BCVALUE",&ref_faces,2); CHKERRQ(ierr);
-  ierr = mField.build_finite_elements("MIX_SKELETON",&ref_faces,2); CHKERRQ(ierr);
+  ierr = mField.build_finite_elements("MIX_BCFLUX",&ref_faces,2); CHKERRG(ierr);
+  ierr = mField.build_finite_elements("MIX_BCVALUE",&ref_faces,2); CHKERRG(ierr);
+  ierr = mField.build_finite_elements("MIX_SKELETON",&ref_faces,2); CHKERRG(ierr);
   //Build adjacencies of degrees of freedom and elements
-  ierr = mField.build_adjacencies(ref_level); CHKERRQ(ierr);
+  ierr = mField.build_adjacencies(ref_level); CHKERRG(ierr);
   //Declare problem
-  ierr = mField.add_problem("MIX",MF_ZERO); CHKERRQ(ierr);
+  ierr = mField.add_problem("MIX",MF_ZERO); CHKERRG(ierr);
   //set refinement level for problem
-  ierr = mField.modify_problem_ref_level_set_bit("MIX",ref_level); CHKERRQ(ierr);
+  ierr = mField.modify_problem_ref_level_set_bit("MIX",ref_level); CHKERRG(ierr);
   // Add element to problem
-  ierr = mField.modify_problem_add_finite_element("MIX","MIX"); CHKERRQ(ierr);
-  ierr = mField.modify_problem_add_finite_element("MIX","MIX_SKELETON"); CHKERRQ(ierr);
+  ierr = mField.modify_problem_add_finite_element("MIX","MIX"); CHKERRG(ierr);
+  ierr = mField.modify_problem_add_finite_element("MIX","MIX_SKELETON"); CHKERRG(ierr);
   // Boundary conditions
-  ierr = mField.modify_problem_add_finite_element("MIX","MIX_BCFLUX"); CHKERRQ(ierr);
-  ierr = mField.modify_problem_add_finite_element("MIX","MIX_BCVALUE"); CHKERRQ(ierr);
+  ierr = mField.modify_problem_add_finite_element("MIX","MIX_BCFLUX"); CHKERRG(ierr);
+  ierr = mField.modify_problem_add_finite_element("MIX","MIX_BCVALUE"); CHKERRG(ierr);
   //build problem
   ProblemsManager *prb_mng_ptr;
-  ierr = mField.getInterface(prb_mng_ptr); CHKERRQ(ierr);
-  ierr = prb_mng_ptr->buildProblems(); CHKERRQ(ierr);
+  ierr = mField.getInterface(prb_mng_ptr); CHKERRG(ierr);
+  ierr = prb_mng_ptr->buildProblems(); CHKERRG(ierr);
   //mesh partitioning
   //partition
-  ierr = prb_mng_ptr->partitionProblem("MIX"); CHKERRQ(ierr);
-  ierr = prb_mng_ptr->partitionFiniteElements("MIX"); CHKERRQ(ierr);
+  ierr = prb_mng_ptr->partitionProblem("MIX"); CHKERRG(ierr);
+  ierr = prb_mng_ptr->partitionFiniteElements("MIX"); CHKERRG(ierr);
   //what are ghost nodes, see Petsc Manual
-  ierr = prb_mng_ptr->partitionGhostDofs("MIX"); CHKERRQ(ierr);
+  ierr = prb_mng_ptr->partitionGhostDofs("MIX"); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 \endcode
@@ -748,13 +748,13 @@ adjacencies and other bookkeeping operations are handled by MoFEM and PETSc.
 
 Functions and use of below code was explained earlier in \ref minimal_surface_equation;
 \code
-PetscErrorCode MixTransport::MixTransportElement::createMatrices() {
+MoFEMErrorCode MixTransport::MixTransportElement::createMatrices() {
   
   MoFEMFunctionBeginHot;
-  ierr = mField.MatCreateMPIAIJWithArrays("MIX",&Aij); CHKERRQ(ierr);
-  ierr = mField.getInterface<VecManager>()->vecCreateGhost("MIX",COL,&D); CHKERRQ(ierr);
-  ierr = mField.getInterface<VecManager>()->vecCreateGhost("MIX",COL,&D0); CHKERRQ(ierr);
-  ierr = mField.getInterface<VecManager>()->vecCreateGhost("MIX",ROW,&F); CHKERRQ(ierr);
+  ierr = mField.MatCreateMPIAIJWithArrays("MIX",&Aij); CHKERRG(ierr);
+  ierr = mField.getInterface<VecManager>()->vecCreateGhost("MIX",COL,&D); CHKERRG(ierr);
+  ierr = mField.getInterface<VecManager>()->vecCreateGhost("MIX",COL,&D0); CHKERRG(ierr);
+  ierr = mField.getInterface<VecManager>()->vecCreateGhost("MIX",ROW,&F); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 \endcode
@@ -827,7 +827,7 @@ is handled by the MoFEM.
 
 The function
 \code{.cpp}
-PetscErrorCode MixTransport::MixTransportElement::solveLinearProblem() {
+MoFEMErrorCode MixTransport::MixTransportElement::solveLinearProblem() {
     
     MoFEMFunctionBeginHot;
     \\ Code inside
@@ -845,7 +845,7 @@ solved.
 \code{.cpp}
 feTri.getOpPtrVector().clear();
 feTri.getOpPtrVector().push_back(new OpEvaluateBcOnFluxes(*this,"FLUXES",D0));
-ierr = mField.loop_finite_elements("MIX","MIX_BCFLUX",feTri); CHKERRQ(ierr);
+ierr = mField.loop_finite_elements("MIX","MIX_BCFLUX",feTri); CHKERRG(ierr);
 \endcode
 Note that first line in the code above clean vector of operators on the element
 instance (element object could be used before to do other tasks), second line add operator
@@ -866,7 +866,7 @@ feVol.getOpPtrVector().push_back(new MixTransport::MixTransportElement::OpValues
 feVol.getOpPtrVector().push_back(new MixTransport::MixTransportElement::OpDivTauU_HdivL2(*this,"FLUXES","VALUES",Aij,F));
 feVol.getOpPtrVector().push_back(new MixTransport::MixTransportElement::OpTauDotSigma_HdivHdiv(*this,"FLUXES",Aij,F));
 feVol.getOpPtrVector().push_back(new MixTransport::MixTransportElement::OpVDivSigma_L2Hdiv(*this,"VALUES","FLUXES",Aij,F));
-ierr = mField.loop_finite_elements("MIX","MIX",feVol); CHKERRQ(ierr);
+ierr = mField.loop_finite_elements("MIX","MIX",feVol); CHKERRG(ierr);
 \endcode
 where the calculation of matrix and right-hand side vector is broken down into
 several stages, where each sub-matrix is calculated by an user operator acting
@@ -881,7 +881,7 @@ enforce Dirichlet boundary condition
 \code
 feTri.getOpPtrVector().clear();
 feTri.getOpPtrVector().push_back(new OpRhsBcOnValues(*this,"FLUXES",F));
-ierr = mField.loop_finite_elements("MIX","MIX_BCVALUE",feTri); CHKERRQ(ierr);
+ierr = mField.loop_finite_elements("MIX","MIX_BCVALUE",feTri); CHKERRG(ierr);
 \endcode
 This procedure looks very similar what was before; we clear existing operators
 on MixTransport::MixTransportElement::feTri, add operator
@@ -894,8 +894,8 @@ be explained later. At this point, we will show how to enforce essential
 boundary conditions. We have calculated values of DOFs already; now we have to
 modify matrix and the right-hand side vector
 \code
-ierr = getDirichletBCIndices(&essential_bc_ids); CHKERRQ(ierr);
-ierr = MatZeroRowsIS(Aij,essential_bc_ids,1,D0,F); CHKERRQ(ierr);
+ierr = getDirichletBCIndices(&essential_bc_ids); CHKERRG(ierr);
+ierr = MatZeroRowsIS(Aij,essential_bc_ids,1,D0,F); CHKERRG(ierr);
 \endcode
 while operator MixTransport::MixTransportElement::OpEvaluateBcOnFluxes is executed it
 records indices of DOFs for which essential boundary conditions are applied.
@@ -908,21 +908,21 @@ D0. This operation is performed with PETSc function MatZeroRowsIS
 At that point we can solve system of equations
 \code
 KSP solver;
-ierr = KSPCreate(PETSC_COMM_WORLD,&solver); CHKERRQ(ierr);
-ierr = KSPSetOperators(solver,Aij,Aij); CHKERRQ(ierr);
-ierr = KSPSetFromOptions(solver); CHKERRQ(ierr);
-ierr = KSPSetUp(solver); CHKERRQ(ierr);
-ierr = KSPSolve(solver,F,D); CHKERRQ(ierr);
-ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-ierr = KSPDestroy(&solver); CHKERRQ(ierr);
+ierr = KSPCreate(PETSC_COMM_WORLD,&solver); CHKERRG(ierr);
+ierr = KSPSetOperators(solver,Aij,Aij); CHKERRG(ierr);
+ierr = KSPSetFromOptions(solver); CHKERRG(ierr);
+ierr = KSPSetUp(solver); CHKERRG(ierr);
+ierr = KSPSolve(solver,F,D); CHKERRG(ierr);
+ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
+ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
+ierr = KSPDestroy(&solver); CHKERRG(ierr);
 \endcode
 For details abut above code we refer to PETSc user manual
 <https://www.mcs.anl.gov/petsc/documentation/index.html>.
 
 The last operation at that stage is to store results on the mesh
 \code
-ierr = mField.getInterface<VecManager>()->setGlobalGhostVector("MIX",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+ierr = mField.getInterface<VecManager>()->setGlobalGhostVector("MIX",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
 \endcode
 You can think about MoFEM as a link between algebraic structures (e.g. vector)
 and mesh. Function MoFEM::Interface::set_global_ghost_vector is an example of
@@ -998,10 +998,10 @@ MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator or
 MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator and other users
 operator classes associated with vertices and edges. User operator class has two
 types of functions which need to be overloaded to do calculations, and that is
-\code virtual PetscErrorCode MoFEM::DataOperator::doWork( int row_side,int
+\code virtual MoFEMErrorCode MoFEM::DataOperator::doWork( int row_side,int
 col_side, EntityType row_type,EntityType col_type,
 DataForcesAndSourcesCore::EntData &row_data, DataForcesAndSourcesCore::EntData
-&col_data ); \endcode and \code virtual PetscErrorCode
+&col_data ); \endcode and \code virtual MoFEMErrorCode
 MoFEM::DataOperator::doWork( int side, EntityType type,
 DataForcesAndSourcesCore::EntData &data ) \endcode You have seen how we use those
 operators in the previous section here we show how to implement particular
@@ -1062,7 +1062,7 @@ struct MixTransport::MixTransportElement::OpVDivSigma_L2Hdiv: public MoFEM::Volu
   }
   MatrixDouble C;
   VectorDouble divVec,Nf;
-  PetscErrorCode doWork(
+  MoFEMErrorCode doWork(
     int row_side,int col_side,
     EntityType row_type,EntityType col_type,
     DataForcesAndSourcesCore::EntData &row_data,
@@ -1082,7 +1082,7 @@ struct MixTransport::MixTransportElement::OpVDivSigma_L2Hdiv: public MoFEM::Volu
       double w = getGaussPts()(3,gg)*getVolume();
       ierr = getDivergenceOfHDivBaseFunctions(
         row_side,row_type,col_data,gg,divVec
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
       noalias(C) += w*outer_prod(divVec,row_data.getN(gg));
     }
     ierr = MatSetValues(
@@ -1090,7 +1090,7 @@ struct MixTransport::MixTransportElement::OpVDivSigma_L2Hdiv: public MoFEM::Volu
       nb_row,&row_data.getIndices()[0],
       nb_col,&col_data.getIndices()[0],
       &C(0,0),ADD_VALUES
-    ); CHKERRQ(ierr);
+    ); CHKERRG(ierr);
     MoFEMFunctionReturnHot(0);
   }
 };
@@ -1110,7 +1110,7 @@ type MoFEM::ForcesAndSourcesCore::UserDataOperator::OpType.
 
 The real work is done in
 \code
-PetscErrorCode MixTransport::MixTransportElement::OpVDivSigma_L2Hdiv::doWork(
+MoFEMErrorCode MixTransport::MixTransportElement::OpVDivSigma_L2Hdiv::doWork(
   int row_side,int col_side,
   EntityType row_type,EntityType col_type,
   DataForcesAndSourcesCore::EntData &row_data,
@@ -1163,7 +1163,7 @@ for(int gg = 0;gg<nb_gauss_pts;gg++) {
   double w = getGaussPts()(3,gg)*getVolume();
   ierr = getDivergenceOfHDivBaseFunctions(
     row_side,row_type,col_data,gg,divVec
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
   noalias(C) += w*outer_prod(divVec,row_data.getN(gg));
 }
 \endcode
@@ -1176,7 +1176,7 @@ ierr = MatSetValues(
   nb_row,&row_data.getIndices()[0],
   nb_col,&col_data.getIndices()[0],
   &C(0,0),ADD_VALUES
-); CHKERRQ(ierr);
+); CHKERRG(ierr);
 \endcode
 where global indices on entities on rows and columns are easily retrieved by
 \code
@@ -1212,7 +1212,7 @@ struct MixTransport::MixTransportElement::OpRhsBcOnValues: public MoFEM::FaceEle
   cTx(ctx),
   F(f) {}
   VectorDouble Nf;
-  PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
+  MoFEMErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
     
     MoFEMFunctionBeginHot;
     if(data.getFieldData().size()==0) MoFEMFunctionReturnHot(0);
@@ -1224,11 +1224,11 @@ struct MixTransport::MixTransportElement::OpRhsBcOnValues: public MoFEM::FaceEle
       const double y = getCoordsAtGaussPts()(gg,1);
       const double z = getCoordsAtGaussPts()(gg,2);
       double value;
-      ierr = cTx.getBcOnValues(x,y,z,value); CHKERRQ(ierr);
+      ierr = cTx.getBcOnValues(x,y,z,value); CHKERRG(ierr);
       double w = getGaussPts()(2,gg)*0.5;
       noalias(Nf) += w*prod(data.getHdivN(gg),getNormal())*value;
     }
-    ierr = VecSetValues(F,data.getIndices().size(),&data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
+    ierr = VecSetValues(F,data.getIndices().size(),&data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRG(ierr);
     MoFEMFunctionReturnHot(0);
   }
 };
@@ -1246,7 +1246,7 @@ MoFEM::ForcesAndSourcesCore::UserDataOperator::OpType.
 
 The real work is done in
 \code
-PetscErrorCode MixTransport::MixTransportElement::OpRhsBcOnValues::doWork(
+MoFEMErrorCode MixTransport::MixTransportElement::OpRhsBcOnValues::doWork(
   int side,EntityType type,DataForcesAndSourcesCore::EntData &data
 );
 \endcode
@@ -1271,7 +1271,7 @@ for(int gg = 0;gg<nb_gauss_pts;gg++) {
   const double y = getCoordsAtGaussPts()(gg,1);
   const double z = getCoordsAtGaussPts()(gg,2);
   double value;
-  ierr = cTx.getBcOnValues(x,y,z,value); CHKERRQ(ierr);
+  ierr = cTx.getBcOnValues(x,y,z,value); CHKERRG(ierr);
   double w = getGaussPts()(2,gg)*0.5;
   noalias(Nf) += w*prod(data.getHdivN(gg),getNormal())*value;
 }
@@ -1281,7 +1281,7 @@ calculates value of boundary condition at coordinates of integration point.
 
 Finally, local entity local vector is assembled,
 \code
-ierr = VecSetValues(F,data.getIndices().size(),&data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
+ierr = VecSetValues(F,data.getIndices().size(),&data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRG(ierr);
 \endcode
 where VecSetValues is PETSc function, see
 <http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/Vec/VecSetValues.html>
@@ -1380,21 +1380,21 @@ executing following code
 \code
 for(int ll = 1;ll!=nb_levels;ll++) {
   const int nb_levels = ll;
-  ierr = ufe.squashBits(); CHKERRQ(ierr);
-  ierr = ufe.refineMesh(ufe,nb_levels,order); CHKERRQ(ierr);
+  ierr = ufe.squashBits(); CHKERRG(ierr);
+  ierr = ufe.refineMesh(ufe,nb_levels,order); CHKERRG(ierr);
   ref_level = BitRefLevel().set(nb_levels);
   bc_flux_map.clear();
   ierr = ufe.addBoundaryElements(ref_level);
-  ierr = ufe.buildProblem(ref_level); CHKERRQ(ierr);
-  ierr = ufe.createMatrices(); CHKERRQ(ierr);
-  ierr = ufe.solveLinearProblem(); CHKERRQ(ierr);
-  ierr = ufe.calculateResidual(); CHKERRQ(ierr);
-  ierr = ufe.evaluateError(); CHKERRQ(ierr);
-  ierr = ufe.destroyMatrices(); CHKERRQ(ierr);
+  ierr = ufe.buildProblem(ref_level); CHKERRG(ierr);
+  ierr = ufe.createMatrices(); CHKERRG(ierr);
+  ierr = ufe.solveLinearProblem(); CHKERRG(ierr);
+  ierr = ufe.calculateResidual(); CHKERRG(ierr);
+  ierr = ufe.evaluateError(); CHKERRG(ierr);
+  ierr = ufe.destroyMatrices(); CHKERRG(ierr);
   ierr = ufe.postProc(
     static_cast<std::ostringstream&>
     (std::ostringstream().seekp(0) << "out_" << nb_levels << ".h5m").str()
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
 }
 \endcode
 where \e nb_levels is number of refinement levels.
@@ -1403,7 +1403,7 @@ We focus attention on mesh refinement procedures in next section, but first we
 will show how to calculate residual error estimator using users operators.
 Function evaluating error is implemented as follows
 \code
-PetscErrorCode MixTransport::MixTransportElement::evaluateError() {
+MoFEMErrorCode MixTransport::MixTransportElement::evaluateError() {
   
   MoFEMFunctionBeginHot;
   errorMap.clear();
@@ -1412,14 +1412,14 @@ PetscErrorCode MixTransport::MixTransportElement::evaluateError() {
   sumErrorJump = 0;
   feTri.getOpPtrVector().clear();
   feTri.getOpPtrVector().push_back(new MixTransport::MixTransportElement::OpSkeleton(*this,"FLUXES"));
-  ierr = mField.loop_finite_elements("MIX","MIX_SKELETON",feTri,0,mField.get_comm_size()); CHKERRQ(ierr);
+  ierr = mField.loop_finite_elements("MIX","MIX_SKELETON",feTri,0,mField.get_comm_size()); CHKERRG(ierr);
   feVol.getOpPtrVector().clear();
   feVol.getOpPtrVector().push_back(new MixTransport::MixTransportElement::OpFluxDivergenceAtGaussPts(*this,"FLUXES"));
   feVol.getOpPtrVector().push_back(new MixTransport::MixTransportElement::OpValuesGradientAtGaussPts(*this,"VALUES"));
   feVol.getOpPtrVector().push_back(new MixTransport::MixTransportElement::OpError(*this,"VALUES"));
-  ierr = mField.loop_finite_elements("MIX","MIX",feVol,0,mField.get_comm_size()); CHKERRQ(ierr);
+  ierr = mField.loop_finite_elements("MIX","MIX",feVol,0,mField.get_comm_size()); CHKERRG(ierr);
   const Problem *problem_ptr;
-  ierr = mField.get_problem("MIX",&problem_ptr); CHKERRQ(ierr);
+  ierr = mField.get_problem("MIX",&problem_ptr); CHKERRG(ierr);
   PetscPrintf(
     mField.get_comm(),
     "Nb dofs %d error flux^2 = %6.4e error div^2 = %6.4e error jump^2 = %6.4e error tot^2 = %6.4e\n",
@@ -1436,7 +1436,7 @@ entity operator to the element object and looping over all triangular elements
 in the problem, as follows
 \code
 feTri.getOpPtrVector().push_back(new MixTransport::MixTransportElement::OpSkeleton(*this,"FLUXES"));
-ierr = mField.loop_finite_elements("MIX","MIX_SKELETON",feTri,0,mField.get_comm_size()); CHKERRQ(ierr);
+ierr = mField.loop_finite_elements("MIX","MIX_SKELETON",feTri,0,mField.get_comm_size()); CHKERRG(ierr);
 \endcode
 Note that entity operator MixTransport::MixTransportElement::OpSkeleton is executed for
 every element \e MIX_SKELETON. How this entity operator is implemented is
@@ -1448,7 +1448,7 @@ sequence of entity operators on each volume element, as follows,
 feVol.getOpPtrVector().push_back(new MixTransport::MixTransportElement::OpFluxDivergenceAtGaussPts(*this,"FLUXES"));
   feVol.getOpPtrVector().push_back(new MixTransport::MixTransportElement::OpValuesGradientAtGaussPts(*this,"VALUES"));
   feVol.getOpPtrVector().push_back(new MixTransport::MixTransportElement::OpError(*this,"VALUES"));
-  ierr = mField.loop_finite_elements("MIX","MIX",feVol,0,mField.get_comm_size()); CHKERRQ(ierr);
+  ierr = mField.loop_finite_elements("MIX","MIX",feVol,0,mField.get_comm_size()); CHKERRG(ierr);
 \endcode
 
 Once we loop over all elements and calculate error, we aggregate all element
@@ -1501,7 +1501,7 @@ struct MixTransport::MixTransportElement::OpSkeleton: public MoFEM::FaceElementF
   cTx(ctx) {
     volSideFe.getOpPtrVector().push_back(new OpSkeleton::OpVolSide(valMap));
   }
-  PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data);
+  MoFEMErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data);
 };
 \endcode
 
@@ -1534,7 +1534,7 @@ struct MixTransport::MixTransportElement::OpSkeleton::OpVolSide: public MoFEM::V
   VolumeElementForcesAndSourcesCoreOnSide::UserDataOperator("VALUES",UserDataOperator::OPROW),
   valMap(val_map) {
   }
-  PetscErrorCode doWork(int side, EntityType type,DataForcesAndSourcesCore::EntData &data) {
+  MoFEMErrorCode doWork(int side, EntityType type,DataForcesAndSourcesCore::EntData &data) {
     MoFEMFunctionBeginHot;
     if(data.getFieldData().size() == 0)  MoFEMFunctionReturnHot(0);
     int nb_gauss_pts = data.getN().size1();
@@ -1556,7 +1556,7 @@ accessed by \b getFaceSense().
 Once we evaluated approximation functions values at each face, we can calculate
 error \f$\eta_{e,R}\f$, using face operator
 \code{.cpp}
-PetscErrorCode MixTransport::MixTransportElement::OpSkeleton::doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
+MoFEMErrorCode MixTransport::MixTransportElement::OpSkeleton::doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
   MoAB
   
   MoFEMFunctionBeginHot;
@@ -1566,11 +1566,11 @@ PetscErrorCode MixTransport::MixTransportElement::OpSkeleton::doWork(int side,En
     Tag th_error_jump;
     rval = cTx.mField.get_moab().tag_get_handle(
       "ERROR_JUMP",1,MB_TYPE_DOUBLE,th_error_jump,MB_TAG_CREAT|MB_TAG_SPARSE,&def_val
-    ); CHKERRQ_MOAB(rval);
+    ); CHKERRG(rval);
     double* error_jump_ptr;
     rval = cTx.mField.get_moab().tag_get_by_ptr(
       th_error_jump,&fe_ent,1,(const void**)&error_jump_ptr
-    ); CHKERRQ_MOAB(rval);
+    ); CHKERRG(rval);
     *error_jump_ptr = 0;
     // check if this is essential boundary condition
     EntityHandle essential_bc_meshset = cTx.mField.get_finite_element_meshset("MIX_BCFLUX");
@@ -1580,7 +1580,7 @@ PetscErrorCode MixTransport::MixTransportElement::OpSkeleton::doWork(int side,En
     }
     // calculate values form adjacent tets
     valMap.clear();
-    ierr = loopSideVolumes("MIX",volSideFe); CHKERRQ(ierr);
+    ierr = loopSideVolumes("MIX",volSideFe); CHKERRG(ierr);
     int nb_gauss_pts = data.getHdivN().size1();
     // it is only one face, so it has to be bc natural boundary condition
     if(valMap.size()==1) {
@@ -1592,7 +1592,7 @@ PetscErrorCode MixTransport::MixTransportElement::OpSkeleton::doWork(int side,En
         const double y = getCoordsAtGaussPts()(gg,1);
         const double z = getCoordsAtGaussPts()(gg,2);
         double value;
-        ierr = cTx.getBcOnValues(fe_ent,x,y,z,value); CHKERRQ(ierr);
+        ierr = cTx.getBcOnValues(fe_ent,x,y,z,value); CHKERRG(ierr);
         double w = getGaussPts()(2,gg);
         w *= getArea();
         *error_jump_ptr += w*pow(value-valMap.begin()->second[gg],2);
@@ -1613,7 +1613,7 @@ Note that we have to consider three scenarios, first, on the face is essential
 boundary condition. In that case, jump on face values is zero. If
 that is not a case, we run loop over adjacent volume elements
 \code
- ierr = loopSideVolumes("MIX",volSideFe); CHKERRQ(ierr);
+ ierr = loopSideVolumes("MIX",volSideFe); CHKERRG(ierr);
 \endcode
 At this point nested volume element instance is called and then operator on this
 element executed. Results of this operation are stored in \b valMap.
@@ -1627,7 +1627,7 @@ do that for us, using
 \code
  rval = cTx.mField.get_moab().tag_get_by_ptr(
     th_error_jump,&fe_ent,1,(const void**)&error_jump_ptr
- ); CHKERRQ_MOAB(rval);
+ ); CHKERRG(rval);
 \endcode
 which returns pointer to value stored (tagged) on face. Look here
 <http://ftp.mcs.anl.gov/pub/fathom/moab-docs/contents.html#twofour> to learn
@@ -1649,7 +1649,7 @@ struct MixTransport::MixTransportElement::OpError: public MoFEM::VolumeElementFo
   cTx(ctx) {}
   VectorDouble deltaFlux;
   MatrixDouble invK;
-  PetscErrorCode doWork(
+  MoFEMErrorCode doWork(
     int side,EntityType type,DataForcesAndSourcesCore::EntData &data
   ) {
     
@@ -1663,36 +1663,36 @@ struct MixTransport::MixTransportElement::OpError: public MoFEM::VolumeElementFo
     Tag th_error_flux,th_error_div;
     rval = cTx.mField.get_moab().tag_get_handle(
       "ERROR_FLUX",1,MB_TYPE_DOUBLE,th_error_flux,MB_TAG_CREAT|MB_TAG_SPARSE,&def_val
-    ); CHKERRQ_MOAB(rval);
+    ); CHKERRG(rval);
     double* error_flux_ptr;
     rval = cTx.mField.get_moab().tag_get_by_ptr(
       th_error_flux,&fe_ent,1,(const void**)&error_flux_ptr
-    ); CHKERRQ_MOAB(rval);
+    ); CHKERRG(rval);
     rval = cTx.mField.get_moab().tag_get_handle(
       "ERROR_DIV",1,MB_TYPE_DOUBLE,th_error_div,MB_TAG_CREAT|MB_TAG_SPARSE,&def_val
-    ); CHKERRQ_MOAB(rval);
+    ); CHKERRG(rval);
     double* error_div_ptr;
     rval = cTx.mField.get_moab().tag_get_by_ptr(
       th_error_div,&fe_ent,1,(const void**)&error_div_ptr
-    ); CHKERRQ_MOAB(rval);
+    ); CHKERRG(rval);
     Tag th_error_jump;
     rval = cTx.mField.get_moab().tag_get_handle(
       "ERROR_JUMP",1,MB_TYPE_DOUBLE,th_error_jump,MB_TAG_CREAT|MB_TAG_SPARSE,&def_val
-    ); CHKERRQ_MOAB(rval);
+    ); CHKERRG(rval);
     double* error_jump_ptr;
     rval = cTx.mField.get_moab().tag_get_by_ptr(
       th_error_jump,&fe_ent,1,(const void**)&error_jump_ptr
-    ); CHKERRQ_MOAB(rval);
+    ); CHKERRG(rval);
     *error_jump_ptr = 0;
     /// characteristic size of the element
     const double h = pow(getVolume()*12/sqrt(2),(double)1/3);
     for(int ff = 0;ff!=4;ff++) {
       EntityHandle face;
-      rval = cTx.mField.get_moab().side_element(fe_ent,2,ff,face); CHKERRQ_MOAB(rval);
+      rval = cTx.mField.get_moab().side_element(fe_ent,2,ff,face); CHKERRG(rval);
       double* error_face_jump_ptr;
       rval = cTx.mField.get_moab().tag_get_by_ptr(
         th_error_jump,&face,1,(const void**)&error_face_jump_ptr
-      ); CHKERRQ_MOAB(rval);
+      ); CHKERRG(rval);
       *error_face_jump_ptr = (1/sqrt(h))*sqrt(*error_face_jump_ptr);
       *error_face_jump_ptr = pow(*error_face_jump_ptr,2);
       *error_jump_ptr += *error_face_jump_ptr;
@@ -1706,9 +1706,9 @@ struct MixTransport::MixTransportElement::OpError: public MoFEM::VolumeElementFo
       const double y = getCoordsAtGaussPts()(gg,1);
       const double z = getCoordsAtGaussPts()(gg,2);
       double flux;
-      ierr = cTx.getSource(fe_ent,x,y,z,flux); CHKERRQ(ierr);
+      ierr = cTx.getSource(fe_ent,x,y,z,flux); CHKERRG(ierr);
       *error_div_ptr += w*pow(cTx.divergenceAtGaussPts[gg]-flux,2);
-      ierr = cTx.getResistivity(fe_ent,x,y,z,invK); CHKERRQ(ierr);
+      ierr = cTx.getResistivity(fe_ent,x,y,z,invK); CHKERRG(ierr);
       noalias(deltaFlux) = prod(invK,cTx.fluxesAtGaussPts[gg])+cTx.valuesGradientAtGaussPts[gg];
       *error_flux_ptr += w*inner_prod(deltaFlux,deltaFlux);
     }
@@ -1753,7 +1753,7 @@ To get edges which have been refined in previous steps we run
 \code
 const RefEntity_multiIndex *ref_ents_ptr;
 // get pointer to multi-index in databse having all entities
-ierr = mField.get_ref_ents(&ref_ents_ptr); CHKERRQ(ierr);
+ierr = mField.get_ref_ents(&ref_ents_ptr); CHKERRG(ierr);
 typedef RefEntity_multiIndex::index<Composite_EntType_and_ParentEntType_mi_tag>::type RefEntsByComposite;
 const RefEntsByComposite &ref_ents = ref_ents_ptr->get<Composite_EntType_and_ParentEntType_mi_tag>();
 RefEntsByComposite::iterator rit,hi_rit;
@@ -1790,7 +1790,7 @@ Once we have elements we can find adjacent edges
 Range tets_to_refine_edges;
 rval = mField.get_moab().get_adjacencies(
   tets_to_refine,1,false,tets_to_refine_edges,moab::Interface::UNION
-); CHKERRQ_MOAB(rval);
+); CHKERRG(rval);
 \endcode
 and merge edges into the set of all edges which are refined or going to be refined
 \code
@@ -1802,7 +1802,7 @@ Mesh refinement is managed by interface MoFEM::MeshRefinement, we can query
 for that interface as follows,
 \code
 MoFEM::MeshRefinement *refine_ptr;
-ierr = mField.getInterface(refine_ptr); CHKERRQ(ierr);
+ierr = mField.getInterface(refine_ptr); CHKERRG(ierr);
 \endcode
 with this interface at hand, we do
 \code
@@ -1811,20 +1811,20 @@ for(int ll = 0;ll!=nb_levels;ll++) {
   Range edges;
   ierr = mField.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
     BitRefLevel().set(ll),BitRefLevel().set(),MBEDGE,edges
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
   // get intersection of all edges to refine and edges of previous level
   edges = intersect(edges,refined_edges);
   // refine edges by creation of node in middle of edge, if node was previously created use that node, and set BitRefLevel to that node
-  ierr = refine_ptr->add_verices_in_the_middel_of_edges(edges,BitRefLevel().set(ll+1)); CHKERRQ(ierr);
+  ierr = refine_ptr->add_verices_in_the_middel_of_edges(edges,BitRefLevel().set(ll+1)); CHKERRG(ierr);
   //  get all tetrahderals for current refined level
   Range tets;
   ierr = mField.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
     BitRefLevel().set(ll),BitRefLevel().set(),MBTET,tets
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
   // refine those tetrahedrals using nodes in middle of refined edges
-  ierr = refine_ptr->refine_TET(tets,BitRefLevel().set(ll+1)); CHKERRQ(ierr);
+  ierr = refine_ptr->refine_TET(tets,BitRefLevel().set(ll+1)); CHKERRG(ierr);
   // update meshsets with boundary conditons, etc.
-  ierr = updateMeshsetsFieldsAndElements(ll+1); CHKERRQ(ierr);
+  ierr = updateMeshsetsFieldsAndElements(ll+1); CHKERRG(ierr);
 }
 \endcode
 

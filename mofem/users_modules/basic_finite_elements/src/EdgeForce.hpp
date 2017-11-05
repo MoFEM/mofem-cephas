@@ -64,47 +64,47 @@ struct EdgeForce {
       VectorDouble wEights;
       VectorDouble Nf;
 
-      PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data);
+      MoFEMErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data);
 
 
     };
 
-    PetscErrorCode addForce(const std::string field_name,Vec F,int ms_id,bool use_snes_f = false);
+    MoFEMErrorCode addForce(const std::string field_name,Vec F,int ms_id,bool use_snes_f = false);
 
   };
 
   struct MetaEdgeForces {
 
     /// Add element taking information from NODESET
-    static PetscErrorCode addElement(MoFEM::Interface &m_field,const std::string field_name,Range *intersect_ptr = NULL) {
+    static MoFEMErrorCode addElement(MoFEM::Interface &m_field,const std::string field_name,Range *intersect_ptr = NULL) {
       MoFEMFunctionBeginHot;
       
       
-      ierr = m_field.add_finite_element("FORCE_FE",MF_ZERO); CHKERRQ(ierr);
-      ierr = m_field.modify_finite_element_add_field_row("FORCE_FE",field_name); CHKERRQ(ierr);
-      ierr = m_field.modify_finite_element_add_field_col("FORCE_FE",field_name); CHKERRQ(ierr);
-      ierr = m_field.modify_finite_element_add_field_data("FORCE_FE",field_name); CHKERRQ(ierr);
+      ierr = m_field.add_finite_element("FORCE_FE",MF_ZERO); CHKERRG(ierr);
+      ierr = m_field.modify_finite_element_add_field_row("FORCE_FE",field_name); CHKERRG(ierr);
+      ierr = m_field.modify_finite_element_add_field_col("FORCE_FE",field_name); CHKERRG(ierr);
+      ierr = m_field.modify_finite_element_add_field_data("FORCE_FE",field_name); CHKERRG(ierr);
       if(m_field.check_field("MESH_NODE_POSITIONS")) {
-        ierr = m_field.modify_finite_element_add_field_data("FORCE_FE","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+        ierr = m_field.modify_finite_element_add_field_data("FORCE_FE","MESH_NODE_POSITIONS"); CHKERRG(ierr);
       }
       for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,NODESET|FORCESET,it)) {
         Range tris;
-        rval = m_field.get_moab().get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERRQ_MOAB(rval);
+        rval = m_field.get_moab().get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERRG(rval);
         Range edges;
-        rval = m_field.get_moab().get_entities_by_type(it->meshset,MBEDGE,edges,true); CHKERRQ_MOAB(rval);
+        rval = m_field.get_moab().get_entities_by_type(it->meshset,MBEDGE,edges,true); CHKERRG(rval);
         Range tris_edges;
-        rval = m_field.get_moab().get_adjacencies(tris,1,false,tris_edges,moab::Interface::UNION); CHKERRQ_MOAB(rval);
+        rval = m_field.get_moab().get_adjacencies(tris,1,false,tris_edges,moab::Interface::UNION); CHKERRG(rval);
         edges = subtract(edges,tris_edges);
         if(intersect_ptr) {
           edges = intersect(edges,*intersect_ptr);
         }
-        ierr = m_field.add_ents_to_finite_element_by_type(edges,MBEDGE,"FORCE_FE"); CHKERRQ(ierr);
+        ierr = m_field.add_ents_to_finite_element_by_type(edges,MBEDGE,"FORCE_FE"); CHKERRG(ierr);
       }
       MoFEMFunctionReturnHot(0);
     }
 
     /// Set integration point operators
-    static PetscErrorCode setOperators(
+    static MoFEMErrorCode setOperators(
       MoFEM::Interface &m_field,
       boost::ptr_map<std::string,EdgeForce> &edge_forces,
       Vec F,const std::string field_name
@@ -114,7 +114,7 @@ struct EdgeForce {
       string fe_name = "FORCE_FE";
       edge_forces.insert(fe_name,new EdgeForce(m_field));
       for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,NODESET|FORCESET,it)) {
-        ierr = edge_forces.at(fe_name).addForce(field_name,F,it->getMeshsetId());  CHKERRQ(ierr);
+        ierr = edge_forces.at(fe_name).addForce(field_name,F,it->getMeshsetId());  CHKERRG(ierr);
       }
       MoFEMFunctionReturnHot(0);
     }

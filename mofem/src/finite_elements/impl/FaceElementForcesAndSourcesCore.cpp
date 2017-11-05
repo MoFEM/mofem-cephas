@@ -76,7 +76,7 @@ extern "C" {
 
 namespace MoFEM {
 
-PetscErrorCode FaceElementForcesAndSourcesCore::UserDataOperator::loopSideVolumes(
+MoFEMErrorCode FaceElementForcesAndSourcesCore::UserDataOperator::loopSideVolumes(
   const string &fe_name,VolumeElementForcesAndSourcesCoreOnSide &method
 ) {
 
@@ -85,7 +85,7 @@ PetscErrorCode FaceElementForcesAndSourcesCore::UserDataOperator::loopSideVolume
   const EntityHandle ent = getNumeredEntFiniteElementPtr()->getEnt();
   const Problem *problem_ptr = getFEMethod()->problemPtr;
   Range adjacent_volumes;
-  ierr = getFaceFE()->mField.getInterface<BitRefManager>()->getAdjacenciesAny(ent,3,adjacent_volumes); CHKERRQ(ierr);
+  ierr = getFaceFE()->mField.getInterface<BitRefManager>()->getAdjacenciesAny(ent,3,adjacent_volumes); CHKERRG(ierr);
   typedef NumeredEntFiniteElement_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type FEByComposite;
   FEByComposite &numered_fe =
   (const_cast<NumeredEntFiniteElement_multiIndex&>(
@@ -94,14 +94,14 @@ PetscErrorCode FaceElementForcesAndSourcesCore::UserDataOperator::loopSideVolume
 
   method.feName = fe_name;
 
-  ierr = method.setFaceFEPtr(getFaceFE()); CHKERRQ(ierr);
-  ierr = method.copyBasicMethod(*getFEMethod()); CHKERRQ(ierr);
-  ierr = method.copyKsp(*getFEMethod()); CHKERRQ(ierr);
-  ierr = method.copySnes(*getFEMethod()); CHKERRQ(ierr);
-  ierr = method.copyTs(*getFEMethod()); CHKERRQ(ierr);
+  ierr = method.setFaceFEPtr(getFaceFE()); CHKERRG(ierr);
+  ierr = method.copyBasicMethod(*getFEMethod()); CHKERRG(ierr);
+  ierr = method.copyKsp(*getFEMethod()); CHKERRG(ierr);
+  ierr = method.copySnes(*getFEMethod()); CHKERRG(ierr);
+  ierr = method.copyTs(*getFEMethod()); CHKERRG(ierr);
 
   try {
-    ierr = method.preProcess(); CHKERRQ(ierr);
+    ierr = method.preProcess(); CHKERRG(ierr);
   } catch (const std::exception& ex) {
     std::ostringstream ss;
     ss << "throw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << std::endl;
@@ -123,7 +123,7 @@ PetscErrorCode FaceElementForcesAndSourcesCore::UserDataOperator::loopSideVolume
       method.colPtr = (*miit)->cols_dofs;
 
       try {
-        ierr = method(); CHKERRQ(ierr);
+        ierr = method(); CHKERRG(ierr);
       } catch (const std::exception& ex) {
         std::ostringstream ss;
         ss << "throw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << std::endl;
@@ -133,7 +133,7 @@ PetscErrorCode FaceElementForcesAndSourcesCore::UserDataOperator::loopSideVolume
   }
 
   try {
-    ierr = method.postProcess(); CHKERRQ(ierr);
+    ierr = method.postProcess(); CHKERRG(ierr);
   } catch (const std::exception& ex) {
     std::ostringstream ss;
     ss << "throw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << std::endl;
@@ -143,18 +143,18 @@ PetscErrorCode FaceElementForcesAndSourcesCore::UserDataOperator::loopSideVolume
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode FaceElementForcesAndSourcesCore::calculateAreaAndNormal() {
+MoFEMErrorCode FaceElementForcesAndSourcesCore::calculateAreaAndNormal() {
   MoFEMFunctionBeginHot;
   EntityHandle ent = numeredEntFiniteElementPtr->getEnt();
   rval = mField.get_moab().get_connectivity(ent,conn,num_nodes,true); CHKERRQ_MOAB(rval);
   coords.resize(num_nodes*3,false);
   rval = mField.get_moab().get_coords(conn,num_nodes,&*coords.data().begin()); CHKERRQ_MOAB(rval);
   double diff_n[6];
-  ierr = ShapeDiffMBTRI(diff_n); CHKERRQ(ierr);
+  ierr = ShapeDiffMBTRI(diff_n); CHKERRG(ierr);
   nOrmal.resize(3,false);
   ierr = ShapeFaceNormalMBTRI(
     diff_n,&*coords.data().begin(),&*nOrmal.data().begin()
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
   aRea = cblas_dnrm2(3,&*nOrmal.data().begin(),1)*0.5;
   tangentOne.resize(3,false);
   tangentTwo.resize(3,false);
@@ -165,7 +165,7 @@ PetscErrorCode FaceElementForcesAndSourcesCore::calculateAreaAndNormal() {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode FaceElementForcesAndSourcesCore::setIntegartionPts() {
+MoFEMErrorCode FaceElementForcesAndSourcesCore::setIntegartionPts() {
   MoFEMFunctionBeginHot;
   // Set integration points
   int order_data = getMaxDataOrder();
@@ -208,7 +208,7 @@ PetscErrorCode FaceElementForcesAndSourcesCore::setIntegartionPts() {
     }
   } else {
     // If rule is negative, set user defined integration points
-    ierr = setGaussPts(order_row,order_col,order_data); CHKERRQ(ierr);
+    ierr = setGaussPts(order_row,order_col,order_data); CHKERRG(ierr);
     nbGaussPts = gaussPts.size2();
     dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nbGaussPts,3,false);
     if(nbGaussPts) {
@@ -217,58 +217,58 @@ PetscErrorCode FaceElementForcesAndSourcesCore::setIntegartionPts() {
         &gaussPts(0,0),
         &gaussPts(1,0),
         nbGaussPts
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
     }
   }
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode FaceElementForcesAndSourcesCore::getSpaceBaseAndOrderOnElement() {
+MoFEMErrorCode FaceElementForcesAndSourcesCore::getSpaceBaseAndOrderOnElement() {
   MoFEMFunctionBeginHot;
   // Get spaces order/base and sense of entities.
 
-  ierr = getSpacesAndBaseOnEntities(dataH1); CHKERRQ(ierr);
+  ierr = getSpacesAndBaseOnEntities(dataH1); CHKERRG(ierr);
 
   //H1
   if(dataH1.spacesOnEntities[MBEDGE].test(H1)) {
-    ierr = getEdgesSense(dataH1); CHKERRQ(ierr);
-    ierr = getEdgesDataOrder(dataH1,H1); CHKERRQ(ierr);
+    ierr = getEdgesSense(dataH1); CHKERRG(ierr);
+    ierr = getEdgesDataOrder(dataH1,H1); CHKERRG(ierr);
   }
   if(dataH1.spacesOnEntities[MBTRI].test(H1)) {
-    ierr = getTrisSense(dataH1); CHKERRQ(ierr);
-    ierr = getTrisDataOrder(dataH1,H1); CHKERRQ(ierr);
+    ierr = getTrisSense(dataH1); CHKERRG(ierr);
+    ierr = getTrisDataOrder(dataH1,H1); CHKERRG(ierr);
   }
 
   //Hcurl
   if(dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
-    ierr = getEdgesSense(dataHcurl); CHKERRQ(ierr);
-    ierr = getEdgesDataOrder(dataHcurl,HCURL); CHKERRQ(ierr);
+    ierr = getEdgesSense(dataHcurl); CHKERRG(ierr);
+    ierr = getEdgesDataOrder(dataHcurl,HCURL); CHKERRG(ierr);
     dataHcurl.spacesOnEntities[MBEDGE].set(HCURL);
   }
   if(dataH1.spacesOnEntities[MBTRI].test(HCURL)) {
-    ierr = getTrisSense(dataHcurl); CHKERRQ(ierr);
-    ierr = getTrisDataOrder(dataHcurl,HCURL); CHKERRQ(ierr);
+    ierr = getTrisSense(dataHcurl); CHKERRG(ierr);
+    ierr = getTrisDataOrder(dataHcurl,HCURL); CHKERRG(ierr);
     dataHcurl.spacesOnEntities[MBTRI].set(HCURL);
   }
 
   //Hdiv
   if(dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
-    ierr = getTrisSense(dataHdiv); CHKERRQ(ierr);
-    ierr = getTrisDataOrder(dataHdiv,HDIV); CHKERRQ(ierr);
+    ierr = getTrisSense(dataHdiv); CHKERRG(ierr);
+    ierr = getTrisDataOrder(dataHdiv,HDIV); CHKERRG(ierr);
     dataHcurl.spacesOnEntities[MBTRI].set(HDIV);
   }
 
   //L2
   if(dataH1.spacesOnEntities[MBTRI].test(L2)) {
-    ierr = getTrisSense(dataL2); CHKERRQ(ierr);
-    ierr = getTrisDataOrder(dataL2,L2); CHKERRQ(ierr);
+    ierr = getTrisSense(dataL2); CHKERRG(ierr);
+    ierr = getTrisDataOrder(dataL2,L2); CHKERRG(ierr);
     dataHcurl.spacesOnEntities[MBTRI].set(L2);
   }
 
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode FaceElementForcesAndSourcesCore::calculateCoordinatesAtGaussPts() {
+MoFEMErrorCode FaceElementForcesAndSourcesCore::calculateCoordinatesAtGaussPts() {
   MoFEMFunctionBeginHot;
   double *shape_functions = &*dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin();
   coordsAtGaussPts.resize(nbGaussPts,3,false);
@@ -280,7 +280,7 @@ PetscErrorCode FaceElementForcesAndSourcesCore::calculateCoordinatesAtGaussPts()
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode FaceElementForcesAndSourcesCore::calculateBaseFunctionsOnElement() {
+MoFEMErrorCode FaceElementForcesAndSourcesCore::calculateBaseFunctionsOnElement() {
   MoFEMFunctionBeginHot;
   // Calculate base base functions for faces.
   try {
@@ -301,7 +301,7 @@ PetscErrorCode FaceElementForcesAndSourcesCore::calculateBaseFunctionsOnElement(
               boost::shared_ptr<BaseFunctionCtx>(
                 new EntPolynomialBaseCtx(dataH1,H1,ApproximationBaseArray[b],NOBASE)
               )
-            ); CHKERRQ(ierr);
+            ); CHKERRG(ierr);
           }
           if(
             dataH1.spacesOnEntities[MBEDGE].test(HCURL)&&
@@ -312,7 +312,7 @@ PetscErrorCode FaceElementForcesAndSourcesCore::calculateBaseFunctionsOnElement(
               boost::shared_ptr<BaseFunctionCtx>(
                 new EntPolynomialBaseCtx(dataHcurl,HCURL,ApproximationBaseArray[b],NOBASE)
               )
-            ); CHKERRQ(ierr);
+            ); CHKERRG(ierr);
           }
           if(
             dataH1.spacesOnEntities[MBTRI].test(HDIV)&&
@@ -323,7 +323,7 @@ PetscErrorCode FaceElementForcesAndSourcesCore::calculateBaseFunctionsOnElement(
               boost::shared_ptr<BaseFunctionCtx>(
                 new EntPolynomialBaseCtx(dataHdiv,HDIV,ApproximationBaseArray[b],NOBASE)
               )
-            ); CHKERRQ(ierr);
+            ); CHKERRG(ierr);
           }
           if(
             dataH1.spacesOnEntities[MBTRI].test(L2)&&
@@ -334,7 +334,7 @@ PetscErrorCode FaceElementForcesAndSourcesCore::calculateBaseFunctionsOnElement(
               boost::shared_ptr<BaseFunctionCtx>(
                 new EntPolynomialBaseCtx(dataL2,L2,ApproximationBaseArray[b],NOBASE)
               )
-            ); CHKERRQ(ierr);
+            ); CHKERRG(ierr);
           }
           break;
           case DEMKOWICZ_JACOBI_BASE:
@@ -347,7 +347,7 @@ PetscErrorCode FaceElementForcesAndSourcesCore::calculateBaseFunctionsOnElement(
               boost::shared_ptr<BaseFunctionCtx>(
                 new EntPolynomialBaseCtx(dataHdiv,HDIV,ApproximationBaseArray[b],NOBASE)
               )
-            ); CHKERRQ(ierr);
+            ); CHKERRG(ierr);
           }
           break;
           default:
@@ -368,7 +368,7 @@ PetscErrorCode FaceElementForcesAndSourcesCore::calculateBaseFunctionsOnElement(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode FaceElementForcesAndSourcesCore::calculateHoNormal() {
+MoFEMErrorCode FaceElementForcesAndSourcesCore::calculateHoNormal() {
   MoFEMFunctionBeginHot;
   // Check if field for high-order geometry is set and if it is set calculate
   // higher-order normals and face tangent vectors.
@@ -384,14 +384,14 @@ PetscErrorCode FaceElementForcesAndSourcesCore::calculateHoNormal() {
     }
 
     // Calculate normal for high-order geometry
-    ierr = getEdgesDataOrderSpaceAndBase(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
-    ierr = getTrisDataOrderSpaceAndBase(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
-    ierr = getNodesFieldData(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
-    ierr = getEdgesFieldData(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
-    ierr = getTrisFieldData(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
+    ierr = getEdgesDataOrderSpaceAndBase(dataH1,meshPositionsFieldName); CHKERRG(ierr);
+    ierr = getTrisDataOrderSpaceAndBase(dataH1,meshPositionsFieldName); CHKERRG(ierr);
+    ierr = getNodesFieldData(dataH1,meshPositionsFieldName); CHKERRG(ierr);
+    ierr = getEdgesFieldData(dataH1,meshPositionsFieldName); CHKERRG(ierr);
+    ierr = getTrisFieldData(dataH1,meshPositionsFieldName); CHKERRG(ierr);
     try {
-      ierr = opHOCoordsAndNormals.opRhs(dataH1); CHKERRQ(ierr);
-      ierr = opHOCoordsAndNormals.calculateNormals(); CHKERRQ(ierr);
+      ierr = opHOCoordsAndNormals.opRhs(dataH1); CHKERRG(ierr);
+      ierr = opHOCoordsAndNormals.calculateNormals(); CHKERRG(ierr);
     } catch (std::exception& ex) {
       std::ostringstream ss;
       ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
@@ -407,26 +407,26 @@ PetscErrorCode FaceElementForcesAndSourcesCore::calculateHoNormal() {
 }
 
 
-PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
+MoFEMErrorCode FaceElementForcesAndSourcesCore::operator()() {
   MoFEMFunctionBeginHot;
 
   if(numeredEntFiniteElementPtr->getEntType() != MBTRI) MoFEMFunctionReturnHot(0);
 
   // Calculate normal and tangent vectors for face geometry given by 3 nodes.
-  ierr = calculateAreaAndNormal(); CHKERRQ(ierr);
-  ierr = getSpaceBaseAndOrderOnElement(); CHKERRQ(ierr);
+  ierr = calculateAreaAndNormal(); CHKERRG(ierr);
+  ierr = getSpaceBaseAndOrderOnElement(); CHKERRG(ierr);
 
-  ierr = setIntegartionPts(); CHKERRQ(ierr);
+  ierr = setIntegartionPts(); CHKERRG(ierr);
   if(nbGaussPts == 0) MoFEMFunctionReturnHot(0);
 
   dataH1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE).resize(3,2,false);
   ierr = ShapeDiffMBTRI(
     &*dataH1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE).data().begin()
-  ); CHKERRQ(ierr);
+  ); CHKERRG(ierr);
 
   /// Use the some node base
 
-  ierr = calculateCoordinatesAtGaussPts(); CHKERRQ(ierr);
+  ierr = calculateCoordinatesAtGaussPts(); CHKERRG(ierr);
 
   // Share base shape functions between spaces
   dataHdiv.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE) = dataH1.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE);
@@ -436,17 +436,17 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
   dataHcurl.dataOnEntities[MBVERTEX][0].getDiffNSharedPtr(NOBASE) = dataH1.dataOnEntities[MBVERTEX][0].getDiffNSharedPtr(NOBASE);
   dataL2.dataOnEntities[MBVERTEX][0].getDiffNSharedPtr(NOBASE) = dataH1.dataOnEntities[MBVERTEX][0].getDiffNSharedPtr(NOBASE);
 
-  ierr = calculateBaseFunctionsOnElement(); CHKERRQ(ierr);
-  ierr = calculateHoNormal(); CHKERRQ(ierr);
+  ierr = calculateBaseFunctionsOnElement(); CHKERRG(ierr);
+  ierr = calculateHoNormal(); CHKERRG(ierr);
 
   // Apply Piola transform to HDiv and HCurl spaces, uses previously calculated
   // faces normal and tangent vectors.
   if(dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
-    ierr = opContravariantTransform.opRhs(dataHdiv); CHKERRQ(ierr);
+    ierr = opContravariantTransform.opRhs(dataHdiv); CHKERRG(ierr);
   }
   if(dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
     // cerr << dataHcurl.dataOnEntities[MBEDGE][0].getN(AINSWORTH_LEGENDRE_BASE) << endl;
-    ierr = opCovariantTransform.opRhs(dataHcurl); CHKERRQ(ierr);
+    ierr = opCovariantTransform.opRhs(dataHcurl); CHKERRG(ierr);
   }
 
   const UserDataOperator::OpType types[2] = {
@@ -505,7 +505,7 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
         oit->doTris,
         false,
         false
-      ); CHKERRQ(ierr);
+      ); CHKERRG(ierr);
 
     } else {
 
@@ -567,38 +567,38 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
               SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown space");
               case H1:
               if(!ss) {
-                ierr = getRowNodesIndices(*op_data[ss],field_name); CHKERRQ(ierr);
+                ierr = getRowNodesIndices(*op_data[ss],field_name); CHKERRG(ierr);
               } else {
-                ierr = getColNodesIndices(*op_data[ss],field_name); CHKERRQ(ierr);
+                ierr = getColNodesIndices(*op_data[ss],field_name); CHKERRG(ierr);
               }
-              ierr = getNodesFieldData(*op_data[ss],field_name); CHKERRQ(ierr);
+              ierr = getNodesFieldData(*op_data[ss],field_name); CHKERRG(ierr);
               case HCURL:
               if(!ss) {
-                ierr = getEdgesRowIndices(*op_data[ss],field_name); CHKERRQ(ierr);
+                ierr = getEdgesRowIndices(*op_data[ss],field_name); CHKERRG(ierr);
               } else {
-                ierr = getEdgesColIndices(*op_data[ss],field_name); CHKERRQ(ierr);
+                ierr = getEdgesColIndices(*op_data[ss],field_name); CHKERRG(ierr);
               }
-              ierr = getEdgesDataOrderSpaceAndBase(*op_data[ss],field_name); CHKERRQ(ierr);
-              ierr = getEdgesFieldData(*op_data[ss],field_name); CHKERRQ(ierr);
+              ierr = getEdgesDataOrderSpaceAndBase(*op_data[ss],field_name); CHKERRG(ierr);
+              ierr = getEdgesFieldData(*op_data[ss],field_name); CHKERRG(ierr);
               case HDIV:
               case L2:
               if(!ss) {
-                ierr = getTrisRowIndices(*op_data[ss],field_name); CHKERRQ(ierr);
+                ierr = getTrisRowIndices(*op_data[ss],field_name); CHKERRG(ierr);
               } else {
-                ierr = getTrisColIndices(*op_data[ss],field_name); CHKERRQ(ierr);
+                ierr = getTrisColIndices(*op_data[ss],field_name); CHKERRG(ierr);
               }
-              ierr = getTrisDataOrderSpaceAndBase(*op_data[ss],field_name); CHKERRQ(ierr);
-              ierr = getTrisFieldData(*op_data[ss],field_name); CHKERRQ(ierr);
+              ierr = getTrisDataOrderSpaceAndBase(*op_data[ss],field_name); CHKERRG(ierr);
+              ierr = getTrisFieldData(*op_data[ss],field_name); CHKERRG(ierr);
               break;
               case NOFIELD:
               if(!getNinTheLoop()) {
                 // NOFIELD data are the same for each element, can be retrieved only once
                 if(!ss) {
-                  ierr = getNoFieldRowIndices(*op_data[ss],field_name); CHKERRQ(ierr);
+                  ierr = getNoFieldRowIndices(*op_data[ss],field_name); CHKERRG(ierr);
                 } else {
-                  ierr = getNoFieldColIndices(*op_data[ss],field_name); CHKERRQ(ierr);
+                  ierr = getNoFieldColIndices(*op_data[ss],field_name); CHKERRG(ierr);
                 }
-                ierr = getNoFieldFieldData(*op_data[ss],field_name); CHKERRQ(ierr);
+                ierr = getNoFieldFieldData(*op_data[ss],field_name); CHKERRG(ierr);
               }
               break;
               case LASTSPACE:
@@ -620,7 +620,7 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
             oit->doTris,
             false,
             false
-          ); CHKERRQ(ierr);
+          ); CHKERRG(ierr);
         } catch (std::exception& ex) {
           std::ostringstream ss;
           ss << "Operator "
@@ -644,7 +644,7 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
             oit->doTris,
             false,
             false
-          ); CHKERRQ(ierr);
+          ); CHKERRG(ierr);
         } catch (std::exception& ex) {
           std::ostringstream ss;
           ss << "Operator "
@@ -660,7 +660,7 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
 
       if(oit->getOpType()&UserDataOperator::OPROWCOL) {
         try {
-          ierr = oit->opLhs(*op_data[0],*op_data[1],oit->sYmm); CHKERRQ(ierr);
+          ierr = oit->opLhs(*op_data[0],*op_data[1],oit->sYmm); CHKERRG(ierr);
         } catch (std::exception& ex) {
           std::ostringstream ss;
           ss << "Operator "
@@ -681,7 +681,7 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode OpCalculateInvJacForFace::doWork(
+MoFEMErrorCode OpCalculateInvJacForFace::doWork(
   int side,
   EntityType type,
   DataForcesAndSourcesCore::EntData &data
@@ -703,7 +703,7 @@ PetscErrorCode OpCalculateInvJacForFace::doWork(
       VectorDouble &coords = getCoords();
       double *coords_ptr = &*coords.data().begin();
       double diff_n[6];
-      ierr = ShapeDiffMBTRI(diff_n); CHKERRQ(ierr);
+      ierr = ShapeDiffMBTRI(diff_n); CHKERRG(ierr);
       double j00,j01,j10,j11;
       for(int gg = 0;gg<1;gg++) {
         // this is triangle, derivative of nodal shape functions is constant.
@@ -736,7 +736,7 @@ PetscErrorCode OpCalculateInvJacForFace::doWork(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode OpSetInvJacH1ForFace::doWork(
+MoFEMErrorCode OpSetInvJacH1ForFace::doWork(
   int side,
   EntityType type,
   DataForcesAndSourcesCore::EntData &data
@@ -814,7 +814,7 @@ PetscErrorCode OpSetInvJacH1ForFace::doWork(
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode OpSetInvJacHcurlFace::doWork(
+MoFEMErrorCode OpSetInvJacHcurlFace::doWork(
   int side,EntityType type,DataForcesAndSourcesCore::EntData &data
 ) {
   MoFEMFunctionBeginHot;

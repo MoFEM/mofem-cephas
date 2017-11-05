@@ -40,9 +40,9 @@ int main(int argc, char *argv[]) {
   PetscBool flg = PETSC_TRUE;
   char mesh_file_name[255];
   #if PETSC_VERSION_GE(3,6,4)
-  ierr = PetscOptionsGetString(PETSC_NULL,"","-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  ierr = PetscOptionsGetString(PETSC_NULL,"","-my_file",mesh_file_name,255,&flg); CHKERRG(ierr);
   #else
-  ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRG(ierr);
   #endif
   if(flg != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
@@ -50,142 +50,142 @@ int main(int argc, char *argv[]) {
 
   const char *option;
   option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERRG(rval);
 
   //Create MoFEM (Joseph) database
   MoFEM::Core core(moab);
   MoFEM::Interface& m_field = core;
   PrismInterface *interface;
-  ierr = m_field.getInterface(interface); CHKERRQ(ierr);
+  ierr = m_field.getInterface(interface); CHKERRG(ierr);
 
   //set entitities bit level
-  ierr = m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(0,3,BitRefLevel().set(0)); CHKERRQ(ierr);
+  ierr = m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(0,3,BitRefLevel().set(0)); CHKERRG(ierr);
   std::vector<BitRefLevel> bit_levels;
   bit_levels.push_back(BitRefLevel().set(0));
 
   int ll = 1;
   //for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,SIDESET|INTERFACESET,cit)) {
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,SIDESET,cit)) {
-    ierr = PetscPrintf(PETSC_COMM_WORLD,"Insert Interface %d\n",cit->getMeshsetId()); CHKERRQ(ierr);
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"Insert Interface %d\n",cit->getMeshsetId()); CHKERRG(ierr);
     EntityHandle cubit_meshset = cit->getMeshset();
     {
       //get tet enties form back bit_level
       EntityHandle ref_level_meshset = 0;
-      rval = moab.create_meshset(MESHSET_SET,ref_level_meshset); CHKERRQ_MOAB(rval);
-      ierr = m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(bit_levels.back(),BitRefLevel().set(),MBTET,ref_level_meshset); CHKERRQ(ierr);
-      ierr = m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(bit_levels.back(),BitRefLevel().set(),MBPRISM,ref_level_meshset); CHKERRQ(ierr);
+      rval = moab.create_meshset(MESHSET_SET,ref_level_meshset); CHKERRG(rval);
+      ierr = m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(bit_levels.back(),BitRefLevel().set(),MBTET,ref_level_meshset); CHKERRG(ierr);
+      ierr = m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(bit_levels.back(),BitRefLevel().set(),MBPRISM,ref_level_meshset); CHKERRG(ierr);
       Range ref_level_tets;
-      rval = moab.get_entities_by_handle(ref_level_meshset,ref_level_tets,true); CHKERRQ_MOAB(rval);
+      rval = moab.get_entities_by_handle(ref_level_meshset,ref_level_tets,true); CHKERRG(rval);
       //get faces and test to split
-      ierr = interface->getSides(cubit_meshset,bit_levels.back(),true,0); CHKERRQ(ierr);
+      ierr = interface->getSides(cubit_meshset,bit_levels.back(),true,0); CHKERRG(ierr);
       //set new bit level
       bit_levels.push_back(BitRefLevel().set(ll++));
       //split faces and
-      ierr = interface->splitSides(ref_level_meshset,bit_levels.back(),cubit_meshset,true,true,0); CHKERRQ(ierr);
+      ierr = interface->splitSides(ref_level_meshset,bit_levels.back(),cubit_meshset,true,true,0); CHKERRG(ierr);
       //clean meshsets
-      rval = moab.delete_entities(&ref_level_meshset,1); CHKERRQ_MOAB(rval);
+      rval = moab.delete_entities(&ref_level_meshset,1); CHKERRG(rval);
     }
     //update cubit meshsets
     for(_IT_CUBITMESHSETS_FOR_LOOP_(m_field,ciit)) {
       EntityHandle cubit_meshset = ciit->meshset;
-      ierr = m_field.getInterface<BitRefManager>()->updateMeshsetByEntitiesChildren(cubit_meshset,bit_levels.back(),cubit_meshset,MBVERTEX,true); CHKERRQ(ierr);
-      ierr = m_field.getInterface<BitRefManager>()->updateMeshsetByEntitiesChildren(cubit_meshset,bit_levels.back(),cubit_meshset,MBEDGE,true); CHKERRQ(ierr);
-      ierr = m_field.getInterface<BitRefManager>()->updateMeshsetByEntitiesChildren(cubit_meshset,bit_levels.back(),cubit_meshset,MBTRI,true); CHKERRQ(ierr);
-      ierr = m_field.getInterface<BitRefManager>()->updateMeshsetByEntitiesChildren(cubit_meshset,bit_levels.back(),cubit_meshset,MBTET,true); CHKERRQ(ierr);
+      ierr = m_field.getInterface<BitRefManager>()->updateMeshsetByEntitiesChildren(cubit_meshset,bit_levels.back(),cubit_meshset,MBVERTEX,true); CHKERRG(ierr);
+      ierr = m_field.getInterface<BitRefManager>()->updateMeshsetByEntitiesChildren(cubit_meshset,bit_levels.back(),cubit_meshset,MBEDGE,true); CHKERRG(ierr);
+      ierr = m_field.getInterface<BitRefManager>()->updateMeshsetByEntitiesChildren(cubit_meshset,bit_levels.back(),cubit_meshset,MBTRI,true); CHKERRG(ierr);
+      ierr = m_field.getInterface<BitRefManager>()->updateMeshsetByEntitiesChildren(cubit_meshset,bit_levels.back(),cubit_meshset,MBTET,true); CHKERRG(ierr);
     }
   }
 
   //Fields
-  ierr = m_field.add_field("FIELD1",H1,AINSWORTH_LEGENDRE_BASE,3); CHKERRQ(ierr);
-  ierr = m_field.add_field("MESH_NODE_POSITIONS",H1,AINSWORTH_LEGENDRE_BASE,3); CHKERRQ(ierr);
-  ierr = m_field.add_field("FIELD2",NOFIELD,AINSWORTH_LEGENDRE_BASE,3); CHKERRQ(ierr);
+  ierr = m_field.add_field("FIELD1",H1,AINSWORTH_LEGENDRE_BASE,3); CHKERRG(ierr);
+  ierr = m_field.add_field("MESH_NODE_POSITIONS",H1,AINSWORTH_LEGENDRE_BASE,3); CHKERRG(ierr);
+  ierr = m_field.add_field("FIELD2",NOFIELD,AINSWORTH_LEGENDRE_BASE,3); CHKERRG(ierr);
 
   {
     // Creating and adding no field entities.
     const double coords[] = {0,0,0};
     EntityHandle no_field_vertex;
-    rval = m_field.get_moab().create_vertex(coords,no_field_vertex); CHKERRQ_MOAB(rval);
+    rval = m_field.get_moab().create_vertex(coords,no_field_vertex); CHKERRG(rval);
     Range range_no_field_vertex;
     range_no_field_vertex.insert(no_field_vertex);
-    ierr = m_field.getInterface<BitRefManager>()->setBitRefLevel(range_no_field_vertex,BitRefLevel().set()); CHKERRQ(ierr);
+    ierr = m_field.getInterface<BitRefManager>()->setBitRefLevel(range_no_field_vertex,BitRefLevel().set()); CHKERRG(ierr);
     EntityHandle meshset = m_field.get_field_meshset("FIELD2");
-    rval = m_field.get_moab().add_entities(meshset,range_no_field_vertex); CHKERRQ_MOAB(rval);
+    rval = m_field.get_moab().add_entities(meshset,range_no_field_vertex); CHKERRG(rval);
   }
 
   //FE
-  ierr = m_field.add_finite_element("TEST_FE1"); CHKERRQ(ierr);
-  ierr = m_field.add_finite_element("TEST_FE2"); CHKERRQ(ierr);
+  ierr = m_field.add_finite_element("TEST_FE1"); CHKERRG(ierr);
+  ierr = m_field.add_finite_element("TEST_FE2"); CHKERRG(ierr);
 
   //Define rows/cols and element data
-  ierr = m_field.modify_finite_element_add_field_row("TEST_FE1","FIELD1"); CHKERRQ(ierr);
-  ierr = m_field.modify_finite_element_add_field_col("TEST_FE1","FIELD1"); CHKERRQ(ierr);
-  ierr = m_field.modify_finite_element_add_field_data("TEST_FE1","FIELD1"); CHKERRQ(ierr);
-  ierr = m_field.modify_finite_element_add_field_data("TEST_FE1","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_row("TEST_FE1","FIELD1"); CHKERRG(ierr);
+  ierr = m_field.modify_finite_element_add_field_col("TEST_FE1","FIELD1"); CHKERRG(ierr);
+  ierr = m_field.modify_finite_element_add_field_data("TEST_FE1","FIELD1"); CHKERRG(ierr);
+  ierr = m_field.modify_finite_element_add_field_data("TEST_FE1","MESH_NODE_POSITIONS"); CHKERRG(ierr);
 
-  ierr = m_field.modify_finite_element_add_field_row("TEST_FE2","FIELD1"); CHKERRQ(ierr);
-  //ierr = m_field.modify_finite_element_add_field_row("TEST_FE2","FIELD2"); CHKERRQ(ierr);
-  //ierr = m_field.modify_finite_element_add_field_col("TEST_FE2","FIELD1"); CHKERRQ(ierr);
-  ierr = m_field.modify_finite_element_add_field_col("TEST_FE2","FIELD2"); CHKERRQ(ierr);
-  ierr = m_field.modify_finite_element_add_field_data("TEST_FE2","FIELD1"); CHKERRQ(ierr);
-  ierr = m_field.modify_finite_element_add_field_data("TEST_FE2","FIELD2"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_row("TEST_FE2","FIELD1"); CHKERRG(ierr);
+  //ierr = m_field.modify_finite_element_add_field_row("TEST_FE2","FIELD2"); CHKERRG(ierr);
+  //ierr = m_field.modify_finite_element_add_field_col("TEST_FE2","FIELD1"); CHKERRG(ierr);
+  ierr = m_field.modify_finite_element_add_field_col("TEST_FE2","FIELD2"); CHKERRG(ierr);
+  ierr = m_field.modify_finite_element_add_field_data("TEST_FE2","FIELD1"); CHKERRG(ierr);
+  ierr = m_field.modify_finite_element_add_field_data("TEST_FE2","FIELD2"); CHKERRG(ierr);
 
   //Problem
-  ierr = m_field.add_problem("TEST_PROBLEM"); CHKERRQ(ierr);
+  ierr = m_field.add_problem("TEST_PROBLEM"); CHKERRG(ierr);
 
   //set finite elements for problem
-  ierr = m_field.modify_problem_add_finite_element("TEST_PROBLEM","TEST_FE1"); CHKERRQ(ierr);
-  ierr = m_field.modify_problem_add_finite_element("TEST_PROBLEM","TEST_FE2"); CHKERRQ(ierr);
+  ierr = m_field.modify_problem_add_finite_element("TEST_PROBLEM","TEST_FE1"); CHKERRG(ierr);
+  ierr = m_field.modify_problem_add_finite_element("TEST_PROBLEM","TEST_FE2"); CHKERRG(ierr);
   //set refinement level for problem
-  ierr = m_field.modify_problem_ref_level_add_bit("TEST_PROBLEM",bit_levels.back()); CHKERRQ(ierr);
+  ierr = m_field.modify_problem_ref_level_add_bit("TEST_PROBLEM",bit_levels.back()); CHKERRG(ierr);
 
   //meshset consisting all entities in mesh
   EntityHandle root_set = moab.get_root_set();
   //add entities to field
-  ierr = m_field.add_ents_to_field_by_type(root_set,MBTET,"FIELD1"); CHKERRQ(ierr);
-  ierr = m_field.add_ents_to_field_by_type(root_set,MBTET,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_field_by_type(root_set,MBTET,"FIELD1"); CHKERRG(ierr);
+  ierr = m_field.add_ents_to_field_by_type(root_set,MBTET,"MESH_NODE_POSITIONS"); CHKERRG(ierr);
   //add entities to finite element
-  ierr = m_field.add_ents_to_finite_element_by_type(root_set,MBPRISM,"TEST_FE1",10); CHKERRQ(ierr);
-  ierr = m_field.add_ents_to_finite_element_by_type(root_set,MBPRISM,"TEST_FE2",10); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_finite_element_by_type(root_set,MBPRISM,"TEST_FE1",10); CHKERRG(ierr);
+  ierr = m_field.add_ents_to_finite_element_by_type(root_set,MBPRISM,"TEST_FE2",10); CHKERRG(ierr);
 
   //set app. order
   //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
   int order = 3;
-  ierr = m_field.set_field_order(root_set,MBTET,"FIELD1",order); CHKERRQ(ierr);
-  ierr = m_field.set_field_order(root_set,MBTRI,"FIELD1",order); CHKERRQ(ierr);
-  ierr = m_field.set_field_order(root_set,MBEDGE,"FIELD1",order); CHKERRQ(ierr);
-  ierr = m_field.set_field_order(root_set,MBVERTEX,"FIELD1",1); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(root_set,MBTET,"FIELD1",order); CHKERRG(ierr);
+  ierr = m_field.set_field_order(root_set,MBTRI,"FIELD1",order); CHKERRG(ierr);
+  ierr = m_field.set_field_order(root_set,MBEDGE,"FIELD1",order); CHKERRG(ierr);
+  ierr = m_field.set_field_order(root_set,MBVERTEX,"FIELD1",1); CHKERRG(ierr);
 
-  ierr = m_field.set_field_order(root_set,MBTET,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
-  ierr = m_field.set_field_order(root_set,MBTRI,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
-  ierr = m_field.set_field_order(root_set,MBEDGE,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
-  ierr = m_field.set_field_order(root_set,MBVERTEX,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(root_set,MBTET,"MESH_NODE_POSITIONS",2); CHKERRG(ierr);
+  ierr = m_field.set_field_order(root_set,MBTRI,"MESH_NODE_POSITIONS",2); CHKERRG(ierr);
+  ierr = m_field.set_field_order(root_set,MBEDGE,"MESH_NODE_POSITIONS",2); CHKERRG(ierr);
+  ierr = m_field.set_field_order(root_set,MBVERTEX,"MESH_NODE_POSITIONS",1); CHKERRG(ierr);
 
   /****/
   //build database
   //build field
-  ierr = m_field.build_fields(); CHKERRQ(ierr);
+  ierr = m_field.build_fields(); CHKERRG(ierr);
   //set FIELD1 from positions of 10 node tets
   Projection10NodeCoordsOnField ent_method_field1(m_field,"FIELD1");
-  ierr = m_field.loop_dofs("FIELD1",ent_method_field1); CHKERRQ(ierr);
+  ierr = m_field.loop_dofs("FIELD1",ent_method_field1); CHKERRG(ierr);
   Projection10NodeCoordsOnField ent_method_mesh_positions(m_field,"MESH_NODE_POSITIONS");
-  ierr = m_field.loop_dofs("MESH_NODE_POSITIONS",ent_method_mesh_positions); CHKERRQ(ierr);
+  ierr = m_field.loop_dofs("MESH_NODE_POSITIONS",ent_method_mesh_positions); CHKERRG(ierr);
 
   //build finite elemnts
-  ierr = m_field.build_finite_elements(); CHKERRQ(ierr);
+  ierr = m_field.build_finite_elements(); CHKERRG(ierr);
   //build adjacencies
-  ierr = m_field.build_adjacencies(bit_levels.back()); CHKERRQ(ierr);
+  ierr = m_field.build_adjacencies(bit_levels.back()); CHKERRG(ierr);
   //build problem
   ProblemsManager *prb_mng_ptr;
-  ierr = m_field.getInterface(prb_mng_ptr); CHKERRQ(ierr);
-  ierr = prb_mng_ptr->buildProblem("TEST_PROBLEM",false); CHKERRQ(ierr);
+  ierr = m_field.getInterface(prb_mng_ptr); CHKERRG(ierr);
+  ierr = prb_mng_ptr->buildProblem("TEST_PROBLEM",false); CHKERRG(ierr);
 
   /****/
   //mesh partitioning
   //partition
-  ierr = prb_mng_ptr->partitionSimpleProblem("TEST_PROBLEM"); CHKERRQ(ierr);
-  ierr = prb_mng_ptr->partitionFiniteElements("TEST_PROBLEM"); CHKERRQ(ierr);
+  ierr = prb_mng_ptr->partitionSimpleProblem("TEST_PROBLEM"); CHKERRG(ierr);
+  ierr = prb_mng_ptr->partitionFiniteElements("TEST_PROBLEM"); CHKERRG(ierr);
   //what are ghost nodes, see Petsc Manual
-  ierr = prb_mng_ptr->partitionGhostDofs("TEST_PROBLEM"); CHKERRQ(ierr);
+  ierr = prb_mng_ptr->partitionGhostDofs("TEST_PROBLEM"); CHKERRG(ierr);
 
   typedef tee_device<std::ostream, std::ofstream> TeeDevice;
   typedef stream<TeeDevice> TeeStream;
@@ -202,7 +202,7 @@ int main(int argc, char *argv[]) {
       mySplit(mySplit)
     {}
 
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int side,
       EntityType type,
       DataForcesAndSourcesCore::EntData &data) {
@@ -272,7 +272,7 @@ int main(int argc, char *argv[]) {
       MoFEMFunctionReturnHot(0);
     }
 
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int row_side,int col_side,
       EntityType row_type,EntityType col_type,
       DataForcesAndSourcesCore::EntData &row_data,
@@ -300,7 +300,7 @@ int main(int argc, char *argv[]) {
     FaceElementForcesAndSourcesCore::UserDataOperator("FIELD1","FIELD2",type),
       mySplit(my_split) {}
 
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int side,
       EntityType type,
       DataForcesAndSourcesCore::EntData &data) {
@@ -314,7 +314,7 @@ int main(int argc, char *argv[]) {
       MoFEMFunctionReturnHot(0);
     }
 
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int row_side,int col_side,
       EntityType row_type,EntityType col_type,
       DataForcesAndSourcesCore::EntData &row_data,
@@ -340,19 +340,19 @@ int main(int argc, char *argv[]) {
   FlatPrismElementForcesAndSourcesCore fe1(m_field);
   fe1.getOpPtrVector().push_back(new MyOp(my_split,ForcesAndSourcesCore::UserDataOperator::OPROW));
   fe1.getOpPtrVector().push_back(new MyOp(my_split,ForcesAndSourcesCore::UserDataOperator::OPROWCOL));
-  ierr = m_field.loop_finite_elements("TEST_PROBLEM","TEST_FE1",fe1);  CHKERRQ(ierr);
+  ierr = m_field.loop_finite_elements("TEST_PROBLEM","TEST_FE1",fe1);  CHKERRG(ierr);
 
   FlatPrismElementForcesAndSourcesCore fe2(m_field);
   fe2.getOpPtrVector().push_back(new MyOp2(my_split,ForcesAndSourcesCore::UserDataOperator::OPCOL));
   fe2.getOpPtrVector().push_back(new MyOp2(my_split,ForcesAndSourcesCore::UserDataOperator::OPROWCOL));
-  ierr = m_field.loop_finite_elements("TEST_PROBLEM","TEST_FE2",fe2);  CHKERRQ(ierr);
+  ierr = m_field.loop_finite_elements("TEST_PROBLEM","TEST_FE2",fe2);  CHKERRG(ierr);
 
 
   } catch (MoFEMException const &e) {
     SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
   }
 
-  ierr = PetscFinalize(); CHKERRQ(ierr);
+  ierr = PetscFinalize(); CHKERRG(ierr);
 
   return 0;
 

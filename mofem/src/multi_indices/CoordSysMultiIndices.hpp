@@ -99,25 +99,25 @@ namespace MoFEM {
     };
 
 
-    virtual PetscErrorCode get_E_Base(const double m[]) const {
+    virtual MoFEMErrorCode get_E_Base(const double m[]) const {
       MoFEMFunctionBeginHot;
       SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
       MoFEMFunctionReturnHot(0);
     }
 
-    virtual PetscErrorCode get_E_DualBase(const double m[]) const {
+    virtual MoFEMErrorCode get_E_DualBase(const double m[]) const {
       MoFEMFunctionBeginHot;
       SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
       MoFEMFunctionReturnHot(0);
     }
 
-    virtual PetscErrorCode get_e_Base(const double m[]) const {
+    virtual MoFEMErrorCode get_e_Base(const double m[]) const {
       MoFEMFunctionBeginHot;
       SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
       MoFEMFunctionReturnHot(0);
     }
 
-    virtual PetscErrorCode get_e_DualBase(const double m[]) const {
+    virtual MoFEMErrorCode get_e_DualBase(const double m[]) const {
       MoFEMFunctionBeginHot;
       SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
       MoFEMFunctionReturnHot(0);

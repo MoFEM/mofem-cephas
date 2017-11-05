@@ -18,7 +18,7 @@ cmake_minimum_required(VERSION 2.8.7)
 #serch inlude directories before system directories
 set(CMAKE_INCLUDE_DIRECTORIES_BEFORE ON)
 
-find_package(MoFEM 0.5.99
+find_package(MoFEM 0.6.1
   REQUIRED HINTS ${MOFEM_DIR} ../ ../../ $ENV{MOFEM_DIR}
 )
 message(STATUS "MoFEM version ${MoFEM_VERSION}")

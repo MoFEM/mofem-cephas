@@ -65,7 +65,7 @@ struct ThermalStressElement {
     commonData(common_data),
     verb(_verb) {}
 
-    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
+    MoFEMErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
       MoFEMFunctionBeginHot;
       try {
         if(data.getFieldData().size()==0) MoFEMFunctionReturnHot(0);
@@ -104,7 +104,7 @@ struct ThermalStressElement {
     verb(_verb) { }
 
     VectorDouble Nf;
-    PetscErrorCode doWork(
+    MoFEMErrorCode doWork(
       int side,EntityType type,DataForcesAndSourcesCore::EntData &data) {
         MoFEMFunctionBeginHot;
 
@@ -116,7 +116,7 @@ struct ThermalStressElement {
           
 
           const FENumeredDofEntity *dof_ptr;
-          ierr = getNumeredEntFiniteElementPtr()->getRowDofsByPetscGlobalDofIdx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
+          ierr = getNumeredEntFiniteElementPtr()->getRowDofsByPetscGlobalDofIdx(data.getIndices()[0],&dof_ptr); CHKERRG(ierr);
           int rank = dof_ptr->getNbOfCoeffs();
           if(rank != 3) {
             SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
@@ -170,7 +170,7 @@ struct ThermalStressElement {
         }*/
 
         ierr = VecSetValues(F,data.getIndices().size(),
-        &data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
+        &data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRG(ierr);
 
       } catch (const std::exception& ex) {
         std::ostringstream ss;
@@ -183,7 +183,7 @@ struct ThermalStressElement {
 
   };
 
-  PetscErrorCode addThermalSterssElement(
+  MoFEMErrorCode addThermalStressElement(
     const std::string fe_name,const std::string field_name,const std::string thermal_field_name,
     const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS"
   ) {
@@ -191,25 +191,25 @@ struct ThermalStressElement {
     if(mField.check_field(thermal_field_name)) {
       
       
-      ierr = mField.add_finite_element(fe_name,MF_ZERO); CHKERRQ(ierr);
-      ierr = mField.modify_finite_element_add_field_row(fe_name,field_name); CHKERRQ(ierr);
-      ierr = mField.modify_finite_element_add_field_col(fe_name,field_name); CHKERRQ(ierr);
-      ierr = mField.modify_finite_element_add_field_data(fe_name,field_name); CHKERRQ(ierr);
-      ierr = mField.modify_finite_element_add_field_data(fe_name,thermal_field_name); CHKERRQ(ierr);
+      ierr = mField.add_finite_element(fe_name,MF_ZERO); CHKERRG(ierr);
+      ierr = mField.modify_finite_element_add_field_row(fe_name,field_name); CHKERRG(ierr);
+      ierr = mField.modify_finite_element_add_field_col(fe_name,field_name); CHKERRG(ierr);
+      ierr = mField.modify_finite_element_add_field_data(fe_name,field_name); CHKERRG(ierr);
+      ierr = mField.modify_finite_element_add_field_data(fe_name,thermal_field_name); CHKERRG(ierr);
       if(mField.check_field(mesh_nodals_positions)) {
-        ierr = mField.modify_finite_element_add_field_data(fe_name,mesh_nodals_positions); CHKERRQ(ierr);
+        ierr = mField.modify_finite_element_add_field_data(fe_name,mesh_nodals_positions); CHKERRG(ierr);
       }
       for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|MAT_ELASTICSET,it)) {
         Mat_Elastic mydata;
-        ierr = it->getAttributeDataStructure(mydata); CHKERRQ(ierr);
+        ierr = it->getAttributeDataStructure(mydata); CHKERRG(ierr);
         setOfBlocks[it->getMeshsetId()].youngModulus = mydata.data.Young;
         setOfBlocks[it->getMeshsetId()].poissonRatio = mydata.data.Poisson;
         setOfBlocks[it->getMeshsetId()].thermalExpansion = mydata.data.ThermalExpansion;
-        rval = mField.get_moab().get_entities_by_type(it->meshset,MBTET,setOfBlocks[it->getMeshsetId()].tEts,true); CHKERRQ_MOAB(rval);
-        ierr = mField.add_ents_to_finite_element_by_type(setOfBlocks[it->getMeshsetId()].tEts,MBTET,fe_name); CHKERRQ(ierr);
+        rval = mField.get_moab().get_entities_by_type(it->meshset,MBTET,setOfBlocks[it->getMeshsetId()].tEts,true); CHKERRG(rval);
+        ierr = mField.add_ents_to_finite_element_by_type(setOfBlocks[it->getMeshsetId()].tEts,MBTET,fe_name); CHKERRG(ierr);
         double ref_temp;
         PetscBool flg;
-        ierr = PetscOptionsGetReal(PETSC_NULL,PETSC_NULL,"-my_ref_temp",&ref_temp,&flg); CHKERRQ(ierr);
+        ierr = PetscOptionsGetReal(PETSC_NULL,PETSC_NULL,"-my_ref_temp",&ref_temp,&flg); CHKERRG(ierr);
         if(flg == PETSC_TRUE) {
           PetscPrintf(mField.get_comm(),"set refernce temperature %3.2f\n",ref_temp);
           setOfBlocks[it->getMeshsetId()].refTemperature = ref_temp;
@@ -219,7 +219,16 @@ struct ThermalStressElement {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscErrorCode setThermalStressRhsOperators(string field_name,string thermal_field_name,Vec &F,int verb = 0) {
+  /// \depracted Do not use this fiction with spelling mistake
+  DEPRECATED inline MoFEMErrorCode addThermalSterssElement(
+    const std::string fe_name,const std::string field_name,const std::string thermal_field_name,
+    const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS"
+  ) {
+    return addThermalStressElement(fe_name, field_name, thermal_field_name,
+                                   mesh_nodals_positions);
+  }
+
+  MoFEMErrorCode setThermalStressRhsOperators(string field_name,string thermal_field_name,Vec &F,int verb = 0) {
     MoFEMFunctionBeginHot;
     if(mField.check_field(thermal_field_name)) {
       std::map<int,BlockData>::iterator sit = setOfBlocks.begin();

@@ -223,19 +223,19 @@ Following code is practically the same which we used to linear Poisson example.
 In nonlinear case, instead of KSP solver,  we set-up SNES solver, first by
 adding finite elements instances to MoFEM SNES solver context
 \code
-ierr = DMMoFEMSNESSetJacobian(dm,simple_interface->getDomainFEName(),domain_lhs_fe,null,null); CHKERRQ(ierr);
-ierr = DMMoFEMSNESSetJacobian(dm,simple_interface->getBoundaryFEName(),boundary_lhs_fe,null,null); CHKERRQ(ierr);
-ierr = DMMoFEMSNESSetFunction(dm,simple_interface->getDomainFEName(),domain_rhs_fe,null,null); CHKERRQ(ierr);
-ierr = DMMoFEMSNESSetFunction(dm,simple_interface->getBoundaryFEName(),boundary_rhs_fe,null,null); CHKERRQ(ierr);
+ierr = DMMoFEMSNESSetJacobian(dm,simple_interface->getDomainFEName(),domain_lhs_fe,null,null); CHKERRG(ierr);
+ierr = DMMoFEMSNESSetJacobian(dm,simple_interface->getBoundaryFEName(),boundary_lhs_fe,null,null); CHKERRG(ierr);
+ierr = DMMoFEMSNESSetFunction(dm,simple_interface->getDomainFEName(),domain_rhs_fe,null,null); CHKERRG(ierr);
+ierr = DMMoFEMSNESSetFunction(dm,simple_interface->getBoundaryFEName(),boundary_rhs_fe,null,null); CHKERRG(ierr);
 \endcode
 Once we have done this, we create solver instance and kick-start calculations
 \code
 SNES solver;
-ierr = SNESCreate(PETSC_COMM_WORLD,&solver); CHKERRQ(ierr);
-ierr = SNESSetFromOptions(solver); CHKERRQ(ierr);
-ierr = SNESSetDM(solver,dm); CHKERRQ(ierr);
-ierr = SNESSetUp(solver); CHKERRQ(ierr);
-ierr = SNESSolve(solver,F,D); CHKERRQ(ierr);
+ierr = SNESCreate(PETSC_COMM_WORLD,&solver); CHKERRG(ierr);
+ierr = SNESSetFromOptions(solver); CHKERRG(ierr);
+ierr = SNESSetDM(solver,dm); CHKERRG(ierr);
+ierr = SNESSetUp(solver); CHKERRG(ierr);
+ierr = SNESSolve(solver,F,D); CHKERRG(ierr);
 \endcode
 Note that SNES solver controls DM, and implicitly query of DM to create
 necessary matrices and assembly of the tangent matrix and residual vectors.

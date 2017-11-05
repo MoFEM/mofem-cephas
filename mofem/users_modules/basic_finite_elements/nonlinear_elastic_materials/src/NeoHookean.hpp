@@ -42,14 +42,14 @@ struct NeoHookean: public NonlinearElasticElement::FunctionsToCalculatePiolaKirc
       Richard D. Wood
 
       */
-    virtual PetscErrorCode NeoHooke_PiolaKirchhoffII() {
+    virtual MoFEMErrorCode NeoHooke_PiolaKirchhoffII() {
       MoFEMFunctionBeginHot;
       
       invC.resize(3,3);
       this->S.resize(3,3);
-      ierr = this->dEterminatnt(this->C,detC); CHKERRQ(ierr);
-      ierr = this->iNvert(detC,this->C,invC); CHKERRQ(ierr);
-      ierr = this->dEterminatnt(this->F,this->J); CHKERRQ(ierr);
+      ierr = this->dEterminatnt(this->C,detC); CHKERRG(ierr);
+      ierr = this->iNvert(detC,this->C,invC); CHKERRG(ierr);
+      ierr = this->dEterminatnt(this->F,this->J); CHKERRG(ierr);
       // if(this->J<=0) {
       //   cerr << this->J << endl;
       //   cerr << this->F << endl;
@@ -63,7 +63,7 @@ struct NeoHookean: public NonlinearElasticElement::FunctionsToCalculatePiolaKirc
       MoFEMFunctionReturnHot(0);
     }
 
-    virtual PetscErrorCode calculateP_PiolaKirchhoffI(
+    virtual MoFEMErrorCode calculateP_PiolaKirchhoffI(
       const NonlinearElasticElement::BlockData block_data,
       boost::shared_ptr<const NumeredEntFiniteElement> fe_ptr
     ) {
@@ -71,8 +71,8 @@ struct NeoHookean: public NonlinearElasticElement::FunctionsToCalculatePiolaKirc
       
       this->lambda = LAMBDA(block_data.E,block_data.PoissonRatio);
       this->mu = MU(block_data.E,block_data.PoissonRatio);
-      ierr = this->calculateC_CauchyDeformationTensor(); CHKERRQ(ierr);
-      ierr = this->NeoHooke_PiolaKirchhoffII(); CHKERRQ(ierr);
+      ierr = this->calculateC_CauchyDeformationTensor(); CHKERRG(ierr);
+      ierr = this->NeoHooke_PiolaKirchhoffII(); CHKERRG(ierr);
       this->P.resize(3,3);
       noalias(this->P) = prod(this->F,this->S);
       //std::cerr << "P: " << P << std::endl;
@@ -87,7 +87,7 @@ struct NeoHookean: public NonlinearElasticElement::FunctionsToCalculatePiolaKirc
     Richard D. Wood
 
     */
-    virtual PetscErrorCode NeoHookean_ElasticEnergy(){
+    virtual MoFEMErrorCode NeoHookean_ElasticEnergy(){
         MoFEMFunctionBeginHot;
         this->eNergy = 0;
         for(int ii = 0;ii<3;ii++) {
@@ -100,7 +100,7 @@ struct NeoHookean: public NonlinearElasticElement::FunctionsToCalculatePiolaKirc
         MoFEMFunctionReturnHot(0);
     }
 
-    PetscErrorCode calculateElasticEnergy(
+    MoFEMErrorCode calculateElasticEnergy(
       const NonlinearElasticElement::BlockData block_data,
       boost::shared_ptr<const NumeredEntFiniteElement> fe_ptr
     ) {
@@ -108,9 +108,9 @@ struct NeoHookean: public NonlinearElasticElement::FunctionsToCalculatePiolaKirc
       
       this->lambda = LAMBDA(block_data.E,block_data.PoissonRatio);
       this->mu = MU(block_data.E,block_data.PoissonRatio);
-      ierr = this->calculateC_CauchyDeformationTensor(); CHKERRQ(ierr);
-      ierr = this->dEterminatnt(this->F,this->J); CHKERRQ(ierr);
-      ierr = this->NeoHookean_ElasticEnergy(); CHKERRQ(ierr);
+      ierr = this->calculateC_CauchyDeformationTensor(); CHKERRG(ierr);
+      ierr = this->dEterminatnt(this->F,this->J); CHKERRG(ierr);
+      ierr = this->NeoHookean_ElasticEnergy(); CHKERRG(ierr);
       MoFEMFunctionReturnHot(0);
     }
 

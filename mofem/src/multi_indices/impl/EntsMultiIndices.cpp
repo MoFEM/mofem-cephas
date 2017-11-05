@@ -120,7 +120,7 @@ BitRefLevel* RefEntity::getBitRefLevelPtr() const {
   );
 }
 
-PetscErrorCode getParentEnt(Interface &moab,Range ents,std::vector<EntityHandle> vec_patent_ent) {
+MoFEMErrorCode getParentEnt(Interface &moab,Range ents,std::vector<EntityHandle> vec_patent_ent) {
   
   MoFEMFunctionBeginHot;
   Tag th_ref_parent_handle;
@@ -130,7 +130,7 @@ PetscErrorCode getParentEnt(Interface &moab,Range ents,std::vector<EntityHandle>
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode RefEntity::getBitRefLevel(Interface &moab,Range ents,std::vector<BitRefLevel> vec_bit_ref_level) {
+MoFEMErrorCode RefEntity::getBitRefLevel(Interface &moab,Range ents,std::vector<BitRefLevel> vec_bit_ref_level) {
   
   MoFEMFunctionBeginHot;
   Tag th_ref_bit_level;

@@ -37,9 +37,9 @@ int main(int argc, char *argv[]) {
     PetscBool flg = PETSC_TRUE;
     char mesh_file_name[255];
     #if PETSC_VERSION_GE(3,6,4)
-    ierr = PetscOptionsGetString(PETSC_NULL,"","-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+    ierr = PetscOptionsGetString(PETSC_NULL,"","-my_file",mesh_file_name,255,&flg); CHKERRG(ierr);
     #else
-    ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+    ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRG(ierr);
     #endif
     if(flg != PETSC_TRUE) {
       SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
@@ -56,7 +56,7 @@ int main(int argc, char *argv[]) {
       // "PARALLEL_RESOLVE_SHARED_ENTS;"
       // "PARTITION=PARALLEL_PARTITION;";
 
-      rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
+      rval = moab.load_file(mesh_file_name, 0, option); CHKERRG(rval);
     }
     MoFEM::Core core(moab);
     MoFEM::Interface& m_field = core;
@@ -69,21 +69,21 @@ int main(int argc, char *argv[]) {
     int def_val = 1;
     rval = moab.tag_get_handle(
       "VERTEX_WEIGHT",1,MB_TYPE_INTEGER,th_vertex_weight,MB_TAG_CREAT|MB_TAG_DENSE,&def_val
-    ); CHKERRQ(ierr);
+    ); CHKERRG(ierr);
 
     ProblemsManager *prb_mng_ptr;
-    ierr = m_field.getInterface(prb_mng_ptr); CHKERRQ(ierr);
-    ierr = prb_mng_ptr->partitionMesh(tets,3,2,2,&th_vertex_weight,NULL,NULL); CHKERRQ(ierr);
+    ierr = m_field.getInterface(prb_mng_ptr); CHKERRG(ierr);
+    ierr = prb_mng_ptr->partitionMesh(tets,3,2,2,&th_vertex_weight,NULL,NULL); CHKERRG(ierr);
 
     EntityHandle meshset;
-    rval = moab.create_meshset(MESHSET_SET,meshset); CHKERRQ_MOAB(rval);
-    rval = moab.add_entities(meshset,tets); CHKERRQ_MOAB(rval);
+    rval = moab.create_meshset(MESHSET_SET,meshset); CHKERRG(rval);
+    rval = moab.add_entities(meshset,tets); CHKERRG(rval);
     // // resolve shared entities
     // ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
     if(!m_field.get_comm_rank()) {
-      // rval = moab.write_file("partitioned_mesh.h5m","MOAB","",&meshset,1); CHKERRQ_MOAB(rval);
-      rval = moab.write_file("partitioned_mesh.h5m"); CHKERRQ_MOAB(rval);
-      // rval = moab.write_file("partitioned_mesh.h5m"); CHKERRQ_MOAB(rval);
+      // rval = moab.write_file("partitioned_mesh.h5m","MOAB","",&meshset,1); CHKERRG(rval);
+      rval = moab.write_file("partitioned_mesh.h5m"); CHKERRG(rval);
+      // rval = moab.write_file("partitioned_mesh.h5m"); CHKERRG(rval);
     }
 
   } catch (MoFEMException const &e) {
@@ -100,10 +100,10 @@ int main(int argc, char *argv[]) {
     "PARALLEL=BCAST_DELETE;"
     "PARALLEL_RESOLVE_SHARED_ENTS;"
     "PARTITION=PARALLEL_PARTITION;";
-    rval = moab2.load_file("partitioned_mesh.h5m",0,option); CHKERRQ_MOAB(rval);
+    rval = moab2.load_file("partitioned_mesh.h5m",0,option); CHKERRG(rval);
   }
 
-  ierr = PetscFinalize(); CHKERRQ(ierr);
+  ierr = PetscFinalize(); CHKERRG(ierr);
 
   return 0;
 

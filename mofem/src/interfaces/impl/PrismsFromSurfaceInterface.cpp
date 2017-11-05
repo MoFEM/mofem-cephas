@@ -17,7 +17,7 @@
 
 namespace MoFEM {
 
-PetscErrorCode PrismsFromSurfaceInterface::query_interface(const MOFEMuuid& uuid, UnknownInterface** iface) const {
+MoFEMErrorCode PrismsFromSurfaceInterface::query_interface(const MOFEMuuid& uuid, UnknownInterface** iface) const {
   MoFEMFunctionBeginHot;
   *iface = NULL;
   if(uuid == IDD_MOFEMPrismsFromSurface) {
@@ -28,10 +28,10 @@ PetscErrorCode PrismsFromSurfaceInterface::query_interface(const MOFEMuuid& uuid
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode PrismsFromSurfaceInterface::createPrisms(const Range &ents,Range &prisms,int verb) {
+MoFEMErrorCode PrismsFromSurfaceInterface::createPrisms(const Range &ents,Range &prisms,int verb) {
   MoFEMFunctionBeginHot;
 
-  MoFEM::Interface& m_field = cOre;
+  Interface& m_field = cOre;
   Range tris = ents.subset_by_type(MBTRI);
   for(Range::iterator tit = tris.begin();tit!=tris.end();tit++) {
     const EntityHandle* conn;
@@ -53,7 +53,7 @@ PetscErrorCode PrismsFromSurfaceInterface::createPrisms(const Range &ents,Range 
       }
     }
     EntityHandle prism;
-    rval = m_field.get_moab().create_element(MBPRISM,prism_nodes,6,prism); CHKERRQ(rval);
+    rval = m_field.get_moab().create_element(MBPRISM,prism_nodes,6,prism); CHKERRG(rval);
     Range edges;
     rval = m_field.get_moab().get_adjacencies(&prism,1,1,true,edges,moab::Interface::UNION); CHKERRQ_MOAB(rval);
     Range faces;
@@ -95,13 +95,13 @@ PetscErrorCode PrismsFromSurfaceInterface::createPrisms(const Range &ents,Range 
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode PrismsFromSurfaceInterface::seedPrismsEntities(Range &prisms,const BitRefLevel &bit,int verb) {
+MoFEMErrorCode PrismsFromSurfaceInterface::seedPrismsEntities(Range &prisms,const BitRefLevel &bit,int verb) {
   MoFEMFunctionBeginHot;
 
 
-  MoFEM::Interface& m_field = cOre;
+  Interface& m_field = cOre;
   const RefEntity_multiIndex *const_refined_entities_ptr;
-  ierr = m_field.get_ref_ents(&const_refined_entities_ptr); CHKERRQ(ierr);
+  ierr = m_field.get_ref_ents(&const_refined_entities_ptr); CHKERRG(ierr);
   MPI_Comm comm = m_field.get_comm();
   RefEntity_multiIndex *refined_entities_ptr;
   refined_entities_ptr = const_cast<RefEntity_multiIndex *>(const_refined_entities_ptr);
@@ -130,11 +130,11 @@ PetscErrorCode PrismsFromSurfaceInterface::seedPrismsEntities(Range &prisms,cons
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode PrismsFromSurfaceInterface::createPrismsFromPrisms(const Range &prisms,bool from_down,Range &out_prisms,int verb) {
+MoFEMErrorCode PrismsFromSurfaceInterface::createPrismsFromPrisms(const Range &prisms,bool from_down,Range &out_prisms,int verb) {
 
 
   MoFEMFunctionBeginHot;
-  MoFEM::Interface& m_field = cOre;
+  Interface& m_field = cOre;
   Range tris;
   for(Range::iterator pit = prisms.begin();pit!=prisms.end();pit++) {
     EntityHandle face;
@@ -145,14 +145,14 @@ PetscErrorCode PrismsFromSurfaceInterface::createPrismsFromPrisms(const Range &p
     }
     tris.insert(face);
   }
-  ierr = createPrisms(tris,out_prisms,verb); CHKERRQ(ierr);
+  ierr = createPrisms(tris,out_prisms,verb); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode PrismsFromSurfaceInterface::setThickness(const Range &prisms,const double director3[],const double director4[]) {
+MoFEMErrorCode PrismsFromSurfaceInterface::setThickness(const Range &prisms,const double director3[],const double director4[]) {
 
   MoFEMFunctionBeginHot;
-  MoFEM::Interface& m_field = cOre;
+  Interface& m_field = cOre;
   Range nodes_f3,nodes_f4;
   for(Range::iterator pit = prisms.begin();pit!=prisms.end();pit++) {
     for(int ff = 3;ff<=4;ff++) {

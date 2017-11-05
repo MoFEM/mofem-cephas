@@ -21,18 +21,18 @@ namespace MoFEM {
   void tet_type_1(const EntityHandle *conn,const int split_edge,const EntityHandle edge_new_node,EntityHandle *new_tets_conn);
 
   //TRIS
-  PetscErrorCode tri_type_3(
+  MoFEMErrorCode tri_type_3(
     const EntityHandle *conn,const BitRefEdges split_edges,const EntityHandle *edge_new_nodes,EntityHandle *new_tris_conn
   );
 
   //PRISM
-  PetscErrorCode prism_type_1(
+  MoFEMErrorCode prism_type_1(
     const EntityHandle *conn,const BitRefEdges split_edges,const EntityHandle *edge_new_nodes,EntityHandle *new_prism_conn
   );
-  PetscErrorCode prism_type_2(
+  MoFEMErrorCode prism_type_2(
     const EntityHandle *conn,const BitRefEdges split_edges,const EntityHandle *edge_new_nodes,EntityHandle *new_prism_conn
   );
-  PetscErrorCode prism_type_3(
+  MoFEMErrorCode prism_type_3(
     const EntityHandle *conn,const BitRefEdges split_edges,const EntityHandle *edge_new_nodes,EntityHandle *new_prism_conn
   );
 
