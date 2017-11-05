@@ -159,7 +159,6 @@ int main(int argc, char *argv[]) {
     CHKERR meshsets_mng_ptr->printDisplacementSet();
     CHKERR meshsets_mng_ptr->printForceSet();
     CHKERR meshsets_mng_ptr->printMaterialsSet();
-    
 
     // Set bit refinement level to all entities (we do not refine mesh in this
     // example
@@ -167,7 +166,6 @@ int main(int argc, char *argv[]) {
     BitRefLevel bit_level0;
     bit_level0.set(0);
     CHKERR m_field.seed_ref_level_3D(0, bit_level0);
-    
 
     // Declare approximation fields
     CHKERR m_field.add_field("DISPLACEMENT", H1, AINSWORTH_LOBATTO_BASE, 3,
@@ -176,7 +174,6 @@ int main(int argc, char *argv[]) {
     // We can use higher oder geometry to define body
     CHKERR m_field.add_field("MESH_NODE_POSITIONS", H1, AINSWORTH_LEGENDRE_BASE,
                              3, MB_TAG_SPARSE, MF_ZERO);
-    
 
     // Declare problem
 
@@ -185,7 +182,6 @@ int main(int argc, char *argv[]) {
     CHKERR m_field.add_ents_to_field_by_type(0, MBTET, "DISPLACEMENT");
     CHKERR m_field.add_ents_to_field_by_type(0, MBTET, "MESH_NODE_POSITIONS");
     
-
     // Set apportion order.
     // See Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes.
     CHKERR m_field.set_field_order(0, MBTET, "DISPLACEMENT", order);
@@ -344,7 +340,6 @@ int main(int argc, char *argv[]) {
         m_field.get_moab().get_entities_by_type(it->meshset, MBTET, tets, true);
     CHKERR
         m_field.add_ents_to_finite_element_by_type(tets, MBTET, "BODY_FORCE");
-    
   }
 
   // Add Neumann forces, i.e. pressure or traction forces applied on body surface. This
@@ -412,8 +407,7 @@ int main(int argc, char *argv[]) {
   }
 
   // Build database for elements. Actual implementation of element is not need
-  // here,
-  // only elements has to be declared.
+  // here, only elements has to be declared.
   CHKERR m_field.build_finite_elements();
   // Build adjacencies between elements and field entities
   CHKERR m_field.build_adjacencies(bit_level0);
@@ -542,19 +536,16 @@ int main(int argc, char *argv[]) {
     for (; fit != nodal_forces.end(); fit++) {
       CHKERR DMoFEMLoopFiniteElements(dm, fit->first.c_str(),
                                       &fit->second->getLoopFe());
-      
     }
   }
   // Assemble edge forces
   boost::ptr_map<std::string, EdgeForce> edge_forces;
   CHKERR MetaEdgeForces::setOperators(m_field, edge_forces, F, "DISPLACEMENT");
-  
   {
     boost::ptr_map<std::string, EdgeForce>::iterator fit = edge_forces.begin();
     for (; fit != edge_forces.end(); fit++) {
       CHKERR DMoFEMLoopFiniteElements(dm, fit->first.c_str(),
                                       &fit->second->getLoopFe());
-      
     }
   }
   // Assemble body forces, implemented in BodyForceConstantField
@@ -566,15 +557,12 @@ int main(int argc, char *argv[]) {
   }
   CHKERR DMoFEMLoopFiniteElements(dm, "BODY_FORCE",
                                   &body_forces_methods.getLoopFe());
-  
   // Assemble fluid pressure forces
   CHKERR fluid_pressure_fe.setNeumannFluidPressureFiniteElementOperators(
       "DISPLACEMENT", F, false, true);
   
   CHKERR DMoFEMLoopFiniteElements(dm, "FLUID_PRESSURE_FE",
                                   &fluid_pressure_fe.getLoopFe());
-  
-
   // Apply kinematic constrain to right hand side vector and matrix
   CHKERR DMoFEMPostProcessFiniteElements(dm, dirichlet_bc_ptr.get());
   
@@ -670,7 +658,6 @@ int main(int argc, char *argv[]) {
         
         CHKERR VecZeroEntries(F_thermal); 
         CHKERR VecGhostUpdateBegin(F_thermal, INSERT_VALUES, SCATTER_FORWARD);
-        
         CHKERR VecGhostUpdateEnd(F_thermal, INSERT_VALUES, SCATTER_FORWARD);
         
         // Calculate the right-hand side vector as result of thermal stresses.
@@ -686,9 +673,7 @@ int main(int argc, char *argv[]) {
         CHKERR VecAssemblyEnd(F_thermal); 
         // Accumulate ghost dofs
         CHKERR VecGhostUpdateBegin(F_thermal, ADD_VALUES, SCATTER_REVERSE);
-        
         CHKERR VecGhostUpdateEnd(F_thermal, ADD_VALUES, SCATTER_REVERSE);
-        
 
         // Calculate norm of vector and print values
         PetscReal nrm_F;
@@ -697,20 +682,17 @@ int main(int argc, char *argv[]) {
         PetscPrintf(PETSC_COMM_WORLD, "norm2 F = %6.4e\n", nrm_F);
         PetscReal nrm_F_thermal;
         CHKERR VecNorm(F_thermal, NORM_2, &nrm_F_thermal);
-        
         PetscPrintf(PETSC_COMM_WORLD, "norm2 F_thermal = %6.4e\n",
                     nrm_F_thermal);
 
         CHKERR VecScale(F_thermal, -1);
          // check this !!!
         CHKERR VecAXPY(F_thermal, 1, F);
-        
 
         // Set dirichlet boundary to thermal stresses vector
         dirichlet_bc_ptr->snes_x = D;
         dirichlet_bc_ptr->snes_f = F_thermal;
         CHKERR DMoFEMPostProcessFiniteElements(dm, dirichlet_bc_ptr.get());
-        
 
         // Solve problem
         CHKERR KSPSolve(solver, F_thermal, D);
@@ -718,11 +700,9 @@ int main(int argc, char *argv[]) {
         CHKERR VecAXPY(D, 1., D0);
         CHKERR VecGhostUpdateBegin(D, INSERT_VALUES, SCATTER_FORWARD);
         CHKERR VecGhostUpdateEnd(D, INSERT_VALUES, SCATTER_FORWARD);
-        
 
         // Save data on the mesh
         CHKERR DMoFEMMeshToLocalVector(dm, D, INSERT_VALUES, SCATTER_REVERSE);
-        
 
         // Save data on mesh
         CHKERR DMoFEMPreProcessFiniteElements(dm, dirichlet_bc_ptr.get());
@@ -752,7 +732,6 @@ int main(int argc, char *argv[]) {
       // Accumulate ghost dofs
       CHKERR VecGhostUpdateBegin(F_thermal, ADD_VALUES, SCATTER_REVERSE);
       CHKERR VecGhostUpdateEnd(F_thermal, ADD_VALUES, SCATTER_REVERSE);
-      
 
       // Calculate norm
       PetscReal nrm_F;
@@ -767,7 +746,6 @@ int main(int argc, char *argv[]) {
       // Add thermal stress vector and other forces vector
       CHKERR VecScale(F_thermal, -1);
       CHKERR VecAXPY(F_thermal, 1, F);
-      
 
       // Apply kinetic boundary conditions
       dirichlet_bc_ptr->snes_x = D;
@@ -781,7 +759,6 @@ int main(int argc, char *argv[]) {
       // Update ghost values for solution vector
       CHKERR VecGhostUpdateBegin(D, INSERT_VALUES, SCATTER_FORWARD);
       CHKERR VecGhostUpdateEnd(D, INSERT_VALUES, SCATTER_FORWARD);
-      
 
       // Save data on mesh
       CHKERR DMoFEMMeshToLocalVector(dm, D, INSERT_VALUES, SCATTER_REVERSE);
@@ -806,7 +783,7 @@ int main(int argc, char *argv[]) {
     CHKERR VecGhostUpdateEnd(D, INSERT_VALUES, SCATTER_FORWARD);
     // Save data from vector on mesh
     CHKERR DMoFEMMeshToLocalVector(dm, D, INSERT_VALUES, SCATTER_REVERSE);
-    // Porticoes results by running post_proc implementation of element
+    // Post-process results
     CHKERR DMoFEMLoopFiniteElements(dm, "ELASTIC", &post_proc);
     // Write mesh in parallel (using h5m MOAB format, writing is in parallel)
     CHKERR post_proc.writeFile("out.h5m");
