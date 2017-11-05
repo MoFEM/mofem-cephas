@@ -521,11 +521,14 @@ DEPRECATED void macro_is_depracted_using_deprecated_function();
  * @param  a MoABErrorCode
  */
 #define MOAB_THROW(a)                                                          \
-  if (PetscUnlikely(MB_SUCCESS != (a))) {                                      \
-    std::string str("MOAB error " + boost::lexical_cast<std::string>((a)) +    \
-                    " at line " + boost::lexical_cast<std::string>(__LINE__) + \
-                    " : " + std::string(__FILE__));                            \
-    throw MoFEMException(MOFEM_MOAB_ERROR, str.c_str());                       \
+  {                                                                            \
+    if (PetscUnlikely(MB_SUCCESS != (a))) {                                    \
+      std::string str("MOAB error " + boost::lexical_cast<std::string>((a)) +  \
+                      " at line " +                                            \
+                      boost::lexical_cast<std::string>(__LINE__) + " : " +     \
+                      std::string(__FILE__));                                  \
+      throw MoFEMException(MOFEM_MOAB_ERROR, str.c_str());                     \
+    }                                                                          \
   }
 
 /**
