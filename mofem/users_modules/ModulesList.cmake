@@ -87,14 +87,14 @@ if(WITH_MODULE_MINIMAL_SURFACE_EQUATION)
   endif(NOT EXISTS ${UM_SOURCE_DIR}/minimal_surface_equation)
 endif(WITH_MODULE_MINIMAL_SURFACE_EQUATION)
 
-if(WITH_MODULE_MINIMAL_HELMHOLTZ)
+if(WITH_MODULE_HELMHOLTZ)
   if(NOT EXISTS ${UM_SOURCE_DIR}/helmholtz)
     execute_process(
       COMMAND ${GIT_EXECUTABLE} clone https://bitbucket.org/likask/mofem_um_helmholtz helmholtz
       WORKING_DIRECTORY ${UM_SOURCE_DIR}
     )
   endif(NOT EXISTS ${UM_SOURCE_DIR}/helmholtz)
-endif(WITH_MODULE_MINIMAL_HELMHOLTZ)
+endif(WITH_MODULE_HELMHOLTZ)
 
 file(
   GLOB_RECURSE INSTLLED_MODULES
