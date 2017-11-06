@@ -1,6 +1,6 @@
 #!/bin/sh
 
-export LD_LIBRARY_PATH=/opt/local_boost_1_54_0/lib
+export LD_LIBRARY_PATH=/opt/local_boost_1_65_1/lib
 
 if [ -e $HOME/tests_cephas.lock ]
 then
