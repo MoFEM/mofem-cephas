@@ -1643,7 +1643,7 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
     PetscPrintf(m_field.get_comm(), "(%d) Number of nodes merged %d\n", pp,
                 nb_nodes_merged);
 
-    if (1) {
+    if (debug) {
       // current surface and merged edges in step
       EntityHandle meshset;
       std::string name;
