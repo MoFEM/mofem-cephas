@@ -171,8 +171,7 @@ int main(int argc, char *argv[]) {
                                   const int expected_size) {
           MoFEMFunctionBeginHot;
           Range ents;
-          CHKERR mngPtr->getEntitiesByRefLevel(bit, bit, ents);
-          
+          ierr = mngPtr->getEntitiesByRefLevel(bit, bit, ents); CHKERRG(ierr);
           cout << "bit_level nb ents " << ents.size() << endl;
           if (expected_size != -1 && expected_size != ents.size()) {
             SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
@@ -181,9 +180,9 @@ int main(int argc, char *argv[]) {
           MoFEMFunctionReturnHot(0);
         }
       };
-      CHKERR TestBitLevel(core.getInterface<BitRefManager>())(bit_level1, -1);
-      CHKERR TestBitLevel(core.getInterface<BitRefManager>())(bit_level2, -1);
-      CHKERR TestBitLevel(core.getInterface<BitRefManager>())(bit_level3, -1);
+      CHKERR TestBitLevel(core.getInterface<BitRefManager>())(bit_level1, 408);
+      CHKERR TestBitLevel(core.getInterface<BitRefManager>())(bit_level2, 1517);
+      CHKERR TestBitLevel(core.getInterface<BitRefManager>())(bit_level3, 1443);
     }
 
     // Improve mesh with tetgen

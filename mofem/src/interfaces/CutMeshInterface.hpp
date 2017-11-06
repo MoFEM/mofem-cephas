@@ -366,7 +366,9 @@ private:
   //   double &s
   // ) const;
 
-  double aveLength;
+  double aveLength; ///< Average edge length
+  double maxLength; ///< Maximal edge length
+  
 };
 } // namespace MoFEM
 
