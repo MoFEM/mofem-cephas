@@ -591,8 +591,6 @@ MoFEMErrorCode CutMeshInterface::trimEdgesInTheMiddle(const BitRefLevel bit,
   CHKERR m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
       bit, bit, MBTET, trimNewVolumes);
   // Get vertices which are on trim edges
-  verticesOnTrimEdges.clear();
-  trimNewVertices.clear();
   for (map<EntityHandle, TreeData>::iterator mit = edgesToTrim.begin();
        mit != edgesToTrim.end(); mit++) {
     boost::shared_ptr<RefEntity> ref_ent =
@@ -736,6 +734,8 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Tag th, const double tol,
   // clear data ranges
   trimEdges.clear();
   edgesToTrim.clear();
+  verticesOnTrimEdges.clear();
+  trimNewVertices.clear();
 
   struct ClosestPointProjection {
 
@@ -843,12 +843,17 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Tag th, const double tol,
         ray = itersection_point - trimmed_end;
         dist = norm_2(ray);
       }
+      // check if edges should be trimmed, i.e. if edge is trimmed at very end
+      // simply move closed node rather than trim
       if (fabs(dist - length) / length > tol) {
         edgesToTrim[*eit].dIst = dist;
         edgesToTrim[*eit].lEngth = dist;
         edgesToTrim[*eit].unitRayDir = ray / dist;
         edgesToTrim[*eit].rayPoint = trimmed_end;
         trimEdges.insert(*eit);
+      } else {
+        // move closest node
+
       }
     }
   }
