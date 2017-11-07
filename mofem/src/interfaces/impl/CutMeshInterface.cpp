@@ -150,89 +150,66 @@ MoFEMErrorCode CutMeshInterface::cutAndTrim(
     const double tol_trim_close, Range *fixed_edges, Range *corner_nodes,
     const bool update_meshsets,const bool debug) {
   CoreInterface &m_field = cOre;
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   // cut mesh
-  ierr = findEdgesToCut(tol_cut);
-  CHKERRG(ierr);
-  ierr = getZeroDistanceEnts(tol_cut_close);
-  CHKERRG(ierr);
-  ierr = cutEdgesInMiddle(bit_level1);
-  CHKERRG(ierr);
+  CHKERR findEdgesToCut(tol_cut);
+  CHKERR getZeroDistanceEnts(tol_cut_close);
+  CHKERR cutEdgesInMiddle(bit_level1);
   if (fixed_edges) {
-    ierr = cOre.getInterface<BitRefManager>()->updateRange(*fixed_edges,
+    CHKERR cOre.getInterface<BitRefManager>()->updateRange(*fixed_edges,
                                                            *fixed_edges);
-    CHKERRG(ierr);
   }
   if (corner_nodes) {
-    ierr = cOre.getInterface<BitRefManager>()->updateRange(*corner_nodes,
+    CHKERR cOre.getInterface<BitRefManager>()->updateRange(*corner_nodes,
                                                            *corner_nodes);
-    CHKERRG(ierr);
   }
   if (update_meshsets) {
-    ierr = UpdateMeshsets()(cOre, bit_level1);
-    CHKERRG(ierr);
+    CHKERR UpdateMeshsets()(cOre, bit_level1);
   }
-  ierr = moveMidNodesOnCutEdges(th);
-  CHKERRG(ierr);
+  CHKERR moveMidNodesOnCutEdges(th);
 
   if(debug) {
-    ierr = cOre.getInterface<BitRefManager>()->writeBitLevelByType(
+    CHKERR cOre.getInterface<BitRefManager>()->writeBitLevelByType(
         bit_level1, BitRefLevel().set(), MBTET, "out_tets_cut.vtk", "VTK", "");
-    CHKERRG(ierr);
     {
       EntityHandle meshset;
-      rval = m_field.get_moab().create_meshset(MESHSET_SET, meshset);
-      CHKERRG(rval);
-      rval = m_field.get_moab().add_entities(meshset, cutNewSurfaces);
-      CHKERRG(rval);
-      rval = m_field.get_moab().write_file("cut_new_surfaces.vtk", "VTK", "", &meshset, 1);
-      CHKERRG(rval);
-      rval = m_field.get_moab().delete_entities(&meshset, 1);
-      CHKERRG(rval);
+      CHKERR m_field.get_moab().create_meshset(MESHSET_SET, meshset);
+      CHKERR m_field.get_moab().add_entities(meshset, cutNewSurfaces);
+      CHKERR m_field.get_moab().write_file("cut_new_surfaces.vtk", "VTK", "", &meshset, 1);
+      CHKERR m_field.get_moab().delete_entities(&meshset, 1);
     }
   }
 
   // trim mesh
-  ierr = findEdgesToTrim(th, tol_trim);
-  CHKERRG(ierr);
-  ierr = trimEdgesInTheMiddle(bit_level2, th, tol_trim_close);
-  CHKERRG(ierr);
+  CHKERR findEdgesToTrim(th, tol_trim);
+  CHKERR trimEdgesInTheMiddle(bit_level2, th, tol_trim_close);
   if (fixed_edges) {
-    ierr = cOre.getInterface<BitRefManager>()->updateRange(*fixed_edges,
+    CHKERR cOre.getInterface<BitRefManager>()->updateRange(*fixed_edges,
                                                            *fixed_edges);
-    CHKERRG(ierr);
   }
   if (corner_nodes) {
-    ierr = cOre.getInterface<BitRefManager>()->updateRange(*corner_nodes,
+    CHKERR cOre.getInterface<BitRefManager>()->updateRange(*corner_nodes,
                                                            *corner_nodes);
-    CHKERRG(ierr);
   }
   if (update_meshsets) {
-    ierr = UpdateMeshsets()(cOre, bit_level2);
-    CHKERRG(ierr);
+    CHKERR UpdateMeshsets()(cOre, bit_level2);
   }
-  ierr = moveMidNodesOnTrimmedEdges(th);
-  CHKERRG(ierr);
+  CHKERR moveMidNodesOnTrimmedEdges(th);
 
   if(debug) {
-    ierr = cOre.getInterface<BitRefManager>()->writeBitLevelByType(
+    CHKERR cOre.getInterface<BitRefManager>()->writeBitLevelByType(
         bit_level2, BitRefLevel().set(), MBTET, "out_tets_trim.vtk", "VTK", "");
-    CHKERRG(ierr);
     {
       EntityHandle meshset;
-      rval = m_field.get_moab().create_meshset(MESHSET_SET, meshset);
-      CHKERRG(rval);
-      rval = m_field.get_moab().add_entities(meshset, trimNewSurfaces);
-      CHKERRG(rval);
-      rval = m_field.get_moab().write_file("trim_new_surfaces.vtk", "VTK", "",
+      CHKERR m_field.get_moab().create_meshset(MESHSET_SET, meshset);
+      CHKERR m_field.get_moab().add_entities(meshset, trimNewSurfaces);
+      CHKERR m_field.get_moab().write_file("trim_new_surfaces.vtk", "VTK", "",
                                            &meshset, 1);
-      CHKERRG(rval);
-      rval = m_field.get_moab().delete_entities(&meshset, 1);
-      CHKERRG(rval);
+      CHKERR m_field.get_moab().delete_entities(&meshset, 1);
     }
   }
 
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode CutMeshInterface::cutTrimAndMerge(
