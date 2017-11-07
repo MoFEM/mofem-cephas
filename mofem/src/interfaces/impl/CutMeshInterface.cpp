@@ -452,6 +452,8 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(const double low_tol,
       CHKERR moab.get_coords(conn, num_nodes, coords);
       CHKERRG(ierr);
       for (int nn = 0; nn != num_nodes; nn++) {
+        // check if entity is on the skin, if it nothing can be done here
+        // is not part of the surface in the body
         if (tets_skin_verts.find(conn[nn]) == tets_skin_verts.end()) {
           VectorAdaptor s0(
               3, ublas::shallow_array_adaptor<double>(3, &coords[3 * nn]));
