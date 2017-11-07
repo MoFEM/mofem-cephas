@@ -636,6 +636,8 @@ MoFEMErrorCode CutMeshInterface::trimEdgesInTheMiddle(const BitRefLevel bit,
       intersect(all_surfaces_on_bit_level, cutNewSurfaces);
   trimNewSurfaces = unite(trimNewSurfaces, all_surfaces_on_bit_level);
 
+  // check of nodes are outside surface and if it are remove adjacent faces to
+  // those nodes.
   Range check_verts;
   CHKERR moab.get_connectivity(trimNewSurfaces, check_verts, true);
   check_verts = subtract(check_verts, trimNewVertices);
