@@ -153,7 +153,7 @@ MoFEMErrorCode CutMeshInterface::cutAndTrim(
   MoFEMFunctionBegin;
   // cut mesh
   CHKERR findEdgesToCut(tol_cut);
-  CHKERR getZeroDistanceEnts(tol_cut_close);
+  CHKERR projectZeroDistanceEnts(tol_cut_close);
   CHKERR cutEdgesInMiddle(bit_level1);
   if (fixed_edges) {
     CHKERR cOre.getInterface<BitRefManager>()->updateRange(*fixed_edges,
@@ -404,7 +404,7 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(const double low_tol,
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode CutMeshInterface::getZeroDistanceEnts(const double low_tol,
+MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(const double low_tol,
                                                      int verb) {
   CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();

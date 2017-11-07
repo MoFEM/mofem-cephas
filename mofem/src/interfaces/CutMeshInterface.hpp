@@ -134,7 +134,7 @@ struct CutMeshInterface : public UnknownInterface {
    */
   MoFEMErrorCode findEdgesToCut(const double low_tol = 0, int verb = 0);
 
-  MoFEMErrorCode getZeroDistanceEnts(const double low_tol = 0, int verb = 0);
+  MoFEMErrorCode projectZeroDistanceEnts(const double low_tol = 0, int verb = 0);
 
   /**
    * \brief cut edges
@@ -283,7 +283,7 @@ struct CutMeshInterface : public UnknownInterface {
   inline const Range &getNewCutVolumes() const { return cutNewVolumes; }
   inline const Range &getNewCutSurfaces() const { return cutNewSurfaces; }
   inline const Range &getNewCutVertices() const { return cutNewVertices; }
-  inline const Range &getZeroDistanceEnts() const { return zeroDistanceEnts; }
+  inline const Range &projectZeroDistanceEnts() const { return zeroDistanceEnts; }
 
   inline const Range &getTrimEdges() const { return trimEdges; }
   inline const Range &getNewTrimVolumes() const { return trimNewVolumes; }
