@@ -613,20 +613,15 @@ MoFEMErrorCode CutMeshInterface::trimEdgesInTheMiddle(const BitRefLevel bit,
   moab::Interface &moab = m_field.get_moab();
   MeshRefinement *refiner;
   const RefEntity_multiIndex *ref_ents_ptr;
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
 
-  ierr = m_field.getInterface(refiner);
-  CHKERRG(ierr);
-  ierr = m_field.get_ref_ents(&ref_ents_ptr);
-  CHKERRG(ierr);
-  ierr = refiner->add_verices_in_the_middel_of_edges(trimEdges, bit);
-  CHKERRG(ierr);
-  ierr = refiner->refine_TET(cutNewVolumes, bit, false);
-  CHKERRG(ierr);
+  CHKERR m_field.getInterface(refiner);
+  CHKERR m_field.get_ref_ents(&ref_ents_ptr);
+  CHKERR refiner->add_verices_in_the_middel_of_edges(trimEdges, bit);
+  CHKERR refiner->refine_TET(cutNewVolumes, bit, false);
   trimNewVolumes.clear();
-  ierr = m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
+  CHKERR m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
       bit, bit, MBTET, trimNewVolumes);
-  CHKERRG(ierr);
   // Get vertices which are on trim edges
   verticesOnTrimEdges.clear();
   trimNewVertices.clear();
@@ -644,58 +639,50 @@ MoFEMErrorCode CutMeshInterface::trimEdgesInTheMiddle(const BitRefLevel bit,
 
   // Get faces which are trimmed
   trimNewSurfaces.clear();
-  ierr = m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
+  CHKERR m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
       bit, bit, MBTRI, trimNewSurfaces);
-  CHKERRG(ierr);
   Range trim_new_surfaces_nodes;
-  rval = moab.get_connectivity(trimNewSurfaces, trim_new_surfaces_nodes, true);
-  CHKERRG(rval);
+  CHKERR moab.get_connectivity(trimNewSurfaces, trim_new_surfaces_nodes, true);
   trim_new_surfaces_nodes = subtract(trim_new_surfaces_nodes, trimNewVertices);
   trim_new_surfaces_nodes = subtract(trim_new_surfaces_nodes, cutNewVertices);
   Range faces_not_on_surface;
-  rval = moab.get_adjacencies(trim_new_surfaces_nodes, 2, false,
+  CHKERR moab.get_adjacencies(trim_new_surfaces_nodes, 2, false,
                               faces_not_on_surface, moab::Interface::UNION);
   trimNewSurfaces = subtract(trimNewSurfaces, faces_not_on_surface);
 
   // Get surfaces which are not trimmed and add them to surface
   Range all_surfaces_on_bit_level;
-  ierr = m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
+  CHKERR m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
       bit, BitRefLevel().set(), MBTRI, all_surfaces_on_bit_level);
-  CHKERRG(ierr);
   all_surfaces_on_bit_level =
       intersect(all_surfaces_on_bit_level, cutNewSurfaces);
   trimNewSurfaces = unite(trimNewSurfaces, all_surfaces_on_bit_level);
 
   Range check_verts;
-  rval = moab.get_connectivity(trimNewSurfaces, check_verts, true);
-  CHKERRG(rval);
+  CHKERR moab.get_connectivity(trimNewSurfaces, check_verts, true);
   check_verts = subtract(check_verts, trimNewVertices);
   for (Range::iterator vit = check_verts.begin(); vit != check_verts.end();
        vit++) {
     double coords[3];
     if (th) {
-      rval = moab.tag_get_data(th, &*vit, 1, coords);
-      CHKERRG(rval);
+      CHKERR moab.tag_get_data(th, &*vit, 1, coords);
     } else {
-      rval = moab.get_coords(&*vit, 1, coords);
-      CHKERRG(rval);
+      CHKERR moab.get_coords(&*vit, 1, coords);
     }
     double point_out[3];
     EntityHandle facets_out;
-    rval = treeSurfPtr->closest_to_location(coords, rootSetSurf, point_out,
+    CHKERR treeSurfPtr->closest_to_location(coords, rootSetSurf, point_out,
                                             facets_out);
-    CHKERRG(rval);
     VectorAdaptor s(3, ublas::shallow_array_adaptor<double>(3, coords));
     VectorAdaptor p(3, ublas::shallow_array_adaptor<double>(3, point_out));
     if (norm_2(s - p) / aveLength > tol) {
       Range adj;
-      rval = moab.get_adjacencies(&*vit, 1, 2, false, adj);
-      CHKERRG(rval);
+      CHKERR moab.get_adjacencies(&*vit, 1, 2, false, adj);
       trimNewSurfaces = subtract(trimNewSurfaces, adj);
     }
   }
 
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode CutMeshInterface::moveMidNodesOnCutEdges(Tag th) {
