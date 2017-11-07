@@ -175,7 +175,8 @@ MoFEMErrorCode CutMeshInterface::cutAndTrim(
       EntityHandle meshset;
       CHKERR m_field.get_moab().create_meshset(MESHSET_SET, meshset);
       CHKERR m_field.get_moab().add_entities(meshset, cutNewSurfaces);
-      CHKERR m_field.get_moab().write_file("cut_new_surfaces.vtk", "VTK", "", &meshset, 1);
+      CHKERR m_field.get_moab().write_file("cut_new_surfaces.vtk", "VTK", "",
+                                           &meshset, 1);
       CHKERR m_field.get_moab().delete_entities(&meshset, 1);
     }
   }
