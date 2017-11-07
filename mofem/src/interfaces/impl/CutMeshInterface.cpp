@@ -726,23 +726,20 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Tag th, const double tol,
                                                  int verb) {
   CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
 
   // takes edges on body skin
   Skinner skin(&moab);
   Range tets_skin;
-  rval = skin.find_skin(0, cutNewVolumes, false, tets_skin);
-  CHKERRG(rval);
+  CHKERR skin.find_skin(0, cutNewVolumes, false, tets_skin);
   Range adj_edges_tets_skin;
-  rval = moab.get_adjacencies(tets_skin, 1, false, adj_edges_tets_skin,
+  CHKERR moab.get_adjacencies(tets_skin, 1, false, adj_edges_tets_skin,
                               moab::Interface::UNION);
-  CHKERRG(rval);
 
   // get edges on new surface
   Range edges;
-  rval = moab.get_adjacencies(cutNewSurfaces, 1, false, edges,
+  CHKERR moab.get_adjacencies(cutNewSurfaces, 1, false, edges,
                               moab::Interface::UNION);
-  CHKERRG(rval);
 
   // clear data ranges
   trimEdges.clear();
@@ -791,15 +788,12 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Tag th, const double tol,
     // Get edge connectivity and coords
     int num_nodes;
     const EntityHandle *conn;
-    rval = moab.get_connectivity(*eit, conn, num_nodes, true);
-    CHKERRG(rval);
+    CHKERR moab.get_connectivity(*eit, conn, num_nodes, true);
     double coords[3 * num_nodes];
     if (th) {
-      rval = moab.tag_get_data(th, conn, num_nodes, coords);
-      CHKERRG(rval);
+      CHKERR moab.tag_get_data(th, conn, num_nodes, coords);
     } else {
-      rval = moab.get_coords(conn, num_nodes, coords);
-      CHKERRG(rval);
+      CHKERR moab.get_coords(conn, num_nodes, coords);
     }
     // Put edges coords into boost vectors
     VectorAdaptor s0(3, ublas::shallow_array_adaptor<double>(3, &coords[0]));
@@ -810,15 +804,13 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Tag th, const double tol,
     double point_out0[3];
     EntityHandle facets_out0;
     // find closet point on the surface from first node
-    rval = treeSurfPtr->closest_to_location(&coords[0], rootSetSurf, point_out0,
+    CHKERR treeSurfPtr->closest_to_location(&coords[0], rootSetSurf, point_out0,
                                             facets_out0);
-    CHKERRG(rval);
     // find closest point on the surface from second node
     double point_out1[3];
     EntityHandle facets_out1;
-    rval = treeSurfPtr->closest_to_location(&coords[3], rootSetSurf, point_out1,
+    CHKERR treeSurfPtr->closest_to_location(&coords[3], rootSetSurf, point_out1,
                                             facets_out1);
-    CHKERRG(rval);
     // Put closest point in boost vectors
     VectorAdaptor p0(3, ublas::shallow_array_adaptor<double>(3, point_out0));
     VectorAdaptor p1(3, ublas::shallow_array_adaptor<double>(3, point_out1));
@@ -835,7 +827,7 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Tag th, const double tol,
     double max_dist = fmax(dist0, dist1);
     // If one of nodes is on the surface and other is not, that edge is to trim
     if (min_dist / length < tol && max_dist / length > tol) {
-      // add ege to trim
+      // add edge to trim
       double dist;
       VectorDouble3 ray;
       VectorDouble3 trimmed_end;
@@ -869,7 +861,7 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Tag th, const double tol,
     }
   }
 
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode CutMeshInterface::getRayForEdge(const EntityHandle ent,
