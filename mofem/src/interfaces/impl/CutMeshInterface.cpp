@@ -491,18 +491,60 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(const double low_tol,
       double coords[3];
       CHKERR moab.get_coords(&*vit, 1, coords);
       VectorAdaptor s0(3, ublas::shallow_array_adaptor<double>(3, &coords[0]));
-      double p_out[3];
-      EntityHandle facets_out;
-      CHKERR treeSurfPtr->closest_to_location(&s0[0], rootSetSurf, p_out,
-                                              facets_out);
-      VectorAdaptor point_out(3,
-                              ublas::shallow_array_adaptor<double>(3, p_out));
-      VectorDouble3 ray = point_out - s0;
-      double dist0 = norm_2(ray);
-      verticesOnCutEdges[*vit].dIst = dist0;
-      verticesOnCutEdges[*vit].lEngth = dist0;
-      verticesOnCutEdges[*vit].unitRayDir = dist0 > 0 ? ray / dist0 : ray;
-      verticesOnCutEdges[*vit].rayPoint = s0;
+      // Vertex is in the body, just project in on the surface
+      if (tets_skin_verts.find(*vit) == tets_skin_verts.end()) {
+        double p_out[3];
+        EntityHandle facets_out;
+        CHKERR treeSurfPtr->closest_to_location(&s0[0], rootSetSurf, p_out,
+                                                facets_out);
+        VectorAdaptor point_out(3,
+                                ublas::shallow_array_adaptor<double>(3, p_out));
+        VectorDouble3 ray                   = point_out - s0;
+        double dist0                        = norm_2(ray);
+        verticesOnCutEdges[*vit].dIst       = dist0;
+        verticesOnCutEdges[*vit].lEngth     = dist0;
+        verticesOnCutEdges[*vit].unitRayDir = dist0 > 0 ? ray / dist0 : ray;
+        verticesOnCutEdges[*vit].rayPoint   = s0;
+      } else {
+        double ray_length;
+        double ray_point[3], unit_ray_dir[3];
+        VectorAdaptor vec_unit_ray_dir(
+            3, ublas::shallow_array_adaptor<double>(3, unit_ray_dir));
+        VectorAdaptor vec_ray_point(
+            3, ublas::shallow_array_adaptor<double>(3, ray_point));
+        // Vertex is on the skin
+        adj_edges = intersect(adj_edges,tets_skin_edges);
+        if(adj_edges.empty()) {
+          SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY,
+                  "Huston we have a problem, how vertex can be on surface but "
+                  "not have adjacent surface edges to it?");
+        }
+        // Make a loop over all adjacent surface edges, to find direction of the
+        // ray. 
+        for (Range::iterator eit = adj_edges.begin(); eit != adj_edges.end();
+             eit++) {
+          CHKERR getRayForEdge(*eit, vec_ray_point, vec_unit_ray_dir,
+                               ray_length);
+          // FIXME: Pick one edge on the skin and send ray to move vertex. Edge
+          // should be pick one from corner edges, now is arbitrary
+          std::vector<double> distances_out;
+          std::vector<EntityHandle> facets_out;
+          CHKERR treeSurfPtr->ray_intersect_triangles(
+              distances_out, facets_out, rootSetSurf, low_tol, ray_point,
+              unit_ray_dir, &ray_length);
+          if (!distances_out.empty()) {
+            VectorDouble point_out(vec_ray_point +
+                                   distances_out[0] * vec_unit_ray_dir);
+            VectorDouble3 ray                   = point_out - s0;
+            double dist0                        = norm_2(ray);
+            verticesOnCutEdges[*vit].dIst       = dist0;
+            verticesOnCutEdges[*vit].lEngth     = dist0;
+            verticesOnCutEdges[*vit].unitRayDir = dist0 > 0 ? ray / dist0 : ray;
+            verticesOnCutEdges[*vit].rayPoint   = s0;
+            break;
+          }
+        }
+      }
     }
   }
   MoFEMFunctionReturn(0);
