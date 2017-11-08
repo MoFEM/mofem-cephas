@@ -609,84 +609,7 @@ MoFEMErrorCode CutMeshInterface::cutEdgesInMiddle(const BitRefLevel bit) {
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode CutMeshInterface::trimEdgesInTheMiddle(const BitRefLevel bit,
-                                                      Tag th,
-                                                      const double tol) {
-  CoreInterface &m_field = cOre;
-  moab::Interface &moab = m_field.get_moab();
-  MeshRefinement *refiner;
-  const RefEntity_multiIndex *ref_ents_ptr;
-  MoFEMFunctionBegin;
 
-  CHKERR m_field.getInterface(refiner);
-  CHKERR m_field.get_ref_ents(&ref_ents_ptr);
-  CHKERR refiner->add_verices_in_the_middel_of_edges(trimEdges, bit);
-  CHKERR refiner->refine_TET(cutNewVolumes, bit, false);
-  trimNewVolumes.clear();
-  CHKERR m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
-      bit, bit, MBTET, trimNewVolumes);
-  // Get vertices which are on trim edges
-  for (map<EntityHandle, TreeData>::iterator mit = edgesToTrim.begin();
-       mit != edgesToTrim.end(); mit++) {
-    boost::shared_ptr<RefEntity> ref_ent =
-        *(ref_ents_ptr->get<Composite_ParentEnt_And_EntType_mi_tag>().find(
-            boost::make_tuple(mit->first, MBVERTEX)));
-    if ((ref_ent->getBitRefLevel() & bit).any()) {
-      EntityHandle vert = ref_ent->getRefEnt();
-      trimNewVertices.insert(vert);
-      verticesOnTrimEdges[vert] = mit->second;
-    }
-  }
-
-  // Get faces which are trimmed
-  trimNewSurfaces.clear();
-  CHKERR m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
-      bit, bit, MBTRI, trimNewSurfaces);
-  Range trim_new_surfaces_nodes;
-  CHKERR moab.get_connectivity(trimNewSurfaces, trim_new_surfaces_nodes, true);
-  trim_new_surfaces_nodes = subtract(trim_new_surfaces_nodes, trimNewVertices);
-  trim_new_surfaces_nodes = subtract(trim_new_surfaces_nodes, cutNewVertices);
-  Range faces_not_on_surface;
-  CHKERR moab.get_adjacencies(trim_new_surfaces_nodes, 2, false,
-                              faces_not_on_surface, moab::Interface::UNION);
-  trimNewSurfaces = subtract(trimNewSurfaces, faces_not_on_surface);
-
-  // Get surfaces which are not trimmed and add them to surface
-  Range all_surfaces_on_bit_level;
-  CHKERR m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
-      bit, BitRefLevel().set(), MBTRI, all_surfaces_on_bit_level);
-  all_surfaces_on_bit_level =
-      intersect(all_surfaces_on_bit_level, cutNewSurfaces);
-  trimNewSurfaces = unite(trimNewSurfaces, all_surfaces_on_bit_level);
-
-  // check of nodes are outside surface and if it are remove adjacent faces to
-  // those nodes.
-  Range check_verts;
-  CHKERR moab.get_connectivity(trimNewSurfaces, check_verts, true);
-  check_verts = subtract(check_verts, trimNewVertices);
-  for (Range::iterator vit = check_verts.begin(); vit != check_verts.end();
-       vit++) {
-    double coords[3];
-    if (th) {
-      CHKERR moab.tag_get_data(th, &*vit, 1, coords);
-    } else {
-      CHKERR moab.get_coords(&*vit, 1, coords);
-    }
-    double point_out[3];
-    EntityHandle facets_out;
-    CHKERR treeSurfPtr->closest_to_location(coords, rootSetSurf, point_out,
-                                            facets_out);
-    VectorAdaptor s(3, ublas::shallow_array_adaptor<double>(3, coords));
-    VectorAdaptor p(3, ublas::shallow_array_adaptor<double>(3, point_out));
-    if (norm_2(s - p) / aveLength > tol) {
-      Range adj;
-      CHKERR moab.get_adjacencies(&*vit, 1, 2, false, adj);
-      trimNewSurfaces = subtract(trimNewSurfaces, adj);
-    }
-  }
-
-  MoFEMFunctionReturn(0);
-}
 
 MoFEMErrorCode CutMeshInterface::moveMidNodesOnCutEdges(Tag th) {
   MoFEMFunctionBeginHot;
@@ -886,10 +809,80 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Tag th, const double tol,
         edgesToTrim[*eit].unitRayDir = ray / dist;
         edgesToTrim[*eit].rayPoint = trimmed_end;
         trimEdges.insert(*eit);
-      } else {
-        // move closest node
+MoFEMErrorCode CutMeshInterface::trimEdgesInTheMiddle(const BitRefLevel bit,
+                                                      Tag th,
+                                                      const double tol) {
+  CoreInterface &m_field = cOre;
+  moab::Interface &moab  = m_field.get_moab();
+  MeshRefinement *refiner;
+  const RefEntity_multiIndex *ref_ents_ptr;
+  MoFEMFunctionBegin;
 
+  CHKERR m_field.getInterface(refiner);
+  CHKERR m_field.get_ref_ents(&ref_ents_ptr);
+  CHKERR refiner->add_verices_in_the_middel_of_edges(trimEdges, bit);
+  CHKERR refiner->refine_TET(cutNewVolumes, bit, false);
+
+  trimNewVolumes.clear();
+  CHKERR m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
+      bit, bit, MBTET, trimNewVolumes);
+  // Get vertices which are on trim edges
+  for (map<EntityHandle, TreeData>::iterator mit = edgesToTrim.begin();
+       mit != edgesToTrim.end(); mit++) {
+    boost::shared_ptr<RefEntity> ref_ent =
+        *(ref_ents_ptr->get<Composite_ParentEnt_And_EntType_mi_tag>().find(
+            boost::make_tuple(mit->first, MBVERTEX)));
+    if ((ref_ent->getBitRefLevel() & bit).any()) {
+      EntityHandle vert = ref_ent->getRefEnt();
+      trimNewVertices.insert(vert);
+      verticesOnTrimEdges[vert] = mit->second;
+    }
+  }
+
+  // Get faces which are trimmed
+  trimNewSurfaces.clear();
+  CHKERR m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
+      bit, bit, MBTRI, trimNewSurfaces);
+  Range trim_new_surfaces_nodes;
+  CHKERR moab.get_connectivity(trimNewSurfaces, trim_new_surfaces_nodes, true);
+  trim_new_surfaces_nodes = subtract(trim_new_surfaces_nodes, trimNewVertices);
+  trim_new_surfaces_nodes = subtract(trim_new_surfaces_nodes, cutNewVertices);
+  Range faces_not_on_surface;
+  CHKERR moab.get_adjacencies(trim_new_surfaces_nodes, 2, false,
+                              faces_not_on_surface, moab::Interface::UNION);
+  trimNewSurfaces = subtract(trimNewSurfaces, faces_not_on_surface);
+
+  // Get surfaces which are not trimmed and add them to surface
+  Range all_surfaces_on_bit_level;
+  CHKERR m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
+      bit, BitRefLevel().set(), MBTRI, all_surfaces_on_bit_level);
+  all_surfaces_on_bit_level =
+      intersect(all_surfaces_on_bit_level, cutNewSurfaces);
+  trimNewSurfaces = unite(trimNewSurfaces, all_surfaces_on_bit_level);
+
+  // check of nodes are outside surface and if it are remove adjacent faces to
+  // those nodes.
+  Range check_verts;
+  CHKERR moab.get_connectivity(trimNewSurfaces, check_verts, true);
+  check_verts = subtract(check_verts, trimNewVertices);
+  for (Range::iterator vit = check_verts.begin(); vit != check_verts.end();
+       vit++) {
+    double coords[3];
+    if (th) {
+      CHKERR moab.tag_get_data(th, &*vit, 1, coords);
+      } else {
+      CHKERR moab.get_coords(&*vit, 1, coords);
       }
+    double point_out[3];
+    EntityHandle facets_out;
+    CHKERR treeSurfPtr->closest_to_location(coords, rootSetSurf, point_out,
+                                            facets_out);
+    VectorAdaptor s(3, ublas::shallow_array_adaptor<double>(3, coords));
+    VectorAdaptor p(3, ublas::shallow_array_adaptor<double>(3, point_out));
+    if (norm_2(s - p) / aveLength > tol) {
+      Range adj;
+      CHKERR moab.get_adjacencies(&*vit, 1, 2, false, adj);
+      trimNewSurfaces = subtract(trimNewSurfaces, adj);
     }
   }
 
