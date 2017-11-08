@@ -219,48 +219,39 @@ MoFEMErrorCode CutMeshInterface::cutTrimAndMerge(
     const double tol_cut, const double tol_cut_close, const double tol_trim,
     const double tol_trim_close, Range &fixed_edges, Range &corner_nodes,
     const bool update_meshsets, const bool debug) {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   if(debug) {
-    ierr = cOre.getInterface<BitRefManager>()->writeEntitiesNotInDatabase(
+    CHKERR cOre.getInterface<BitRefManager>()->writeEntitiesNotInDatabase(
         "ents_not_in_database.vtk", "VTK", "");
-    CHKERRG(ierr);
   }
   ierr = cutAndTrim(bit_level1, bit_level2, th, tol_cut, tol_cut_close,
                     tol_trim, tol_trim_close, &fixed_edges, &corner_nodes,
                     update_meshsets, debug);
-  CHKERRG(ierr);
   if(debug) {
-    ierr = cOre.getInterface<BitRefManager>()->writeEntitiesNotInDatabase(
+    CHKERR cOre.getInterface<BitRefManager>()->writeEntitiesNotInDatabase(
         "cut_trim_ents_not_in_database.vtk", "VTK", "");
-    CHKERRG(ierr);
   }
 
-  ierr = mergeBadEdges(fraction_level, bit_level2, bit_level1, bit_level3,
+  CHKERR mergeBadEdges(fraction_level, bit_level2, bit_level1, bit_level3,
                        getNewTrimSurfaces(), fixed_edges, corner_nodes, th,
                        update_meshsets, debug);
-  CHKERRG(ierr);
-  ierr = removePathologicalFrontTris(bit_level3,
+  CHKERR removePathologicalFrontTris(bit_level3,
                                      const_cast<Range &>(getMergedSurfaces()));
-  CHKERRG(ierr);
 
   if(debug) {
-    ierr = cOre.getInterface<BitRefManager>()->writeBitLevelByType(
+    CHKERR cOre.getInterface<BitRefManager>()->writeBitLevelByType(
         bit_level3, BitRefLevel().set(), MBTET, "out_tets_merged.vtk", "VTK",
         "");
-    CHKERRG(ierr);
-    ierr = cOre.getInterface<BitRefManager>()->writeEntitiesNotInDatabase(
+    CHKERR cOre.getInterface<BitRefManager>()->writeEntitiesNotInDatabase(
         "cut_trim_merge_ents_not_in_database.vtk", "VTK", "");
-    CHKERRG(ierr);
   }
 
-  ierr =
+  CHKERR
       cOre.getInterface<BitRefManager>()->updateRange(fixed_edges, fixed_edges);
-  CHKERRG(ierr);
-  ierr = cOre.getInterface<BitRefManager>()->updateRange(corner_nodes,
+  CHKERR cOre.getInterface<BitRefManager>()->updateRange(corner_nodes,
                                                          corner_nodes);
-  CHKERRG(ierr);
 
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode CutMeshInterface::findEdgesToCut(const double low_tol,
