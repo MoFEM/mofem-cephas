@@ -160,7 +160,7 @@ int main(int argc, char *argv[]) {
 
     // Cut mesh, trim surface and merge bad edges
     CHKERR cut_mesh->cutTrimAndMerge(1, bit_level1, bit_level2, bit_level3, th,
-                                     1e-4, 1e-2, 1e-4, 1e-2, fixed_edges,
+                                     1e-4, 1e-2, 1e-3, 1e-3, fixed_edges,
                                      corner_nodes, true, true);
 
     if (test) {
@@ -194,10 +194,10 @@ int main(int argc, char *argv[]) {
 
     // Switches controling TetGen
     vector<string> switches; 
-    switches.push_back("rp180YsqORJS0VV");
+    switches.push_back("rp178YsqORJS0VV");
     CHKERR cut_mesh->rebuildMeshWithTetGen(switches, bit_level3, bit_level4,
                                            cut_mesh->getMergedSurfaces(),
-                                           fixed_edges, corner_nodes, th);
+                                           fixed_edges, corner_nodes, th, true);
     // CHKERR core.getInterface<BitRefManager>()->writeBitLevelByType(
     //     bit_level4, BitRefLevel().set(), MBTET, "out_tets_tetgen.vtk", "VTK",
     //     "");
