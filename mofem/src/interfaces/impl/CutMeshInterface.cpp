@@ -794,33 +794,34 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Tag th, const double tol,
         trimmed_end = s1;
         ray         = s0 - trimmed_end;
       }
-    }
-    itersection_point =
-        ClosestPointProjection(treeSurfPtr, rootSetSurf, trimmed_end,
-                               ray)(nbMaxTrimSearchIterations, tol * 1e-4);
-    ray  = itersection_point - trimmed_end;
-    dist = norm_2(ray);
 
-    // If one of nodes is on the surface and other is not, that edge is to trim
-    if (min_dist / length < tol && max_dist / length > tol) {
-      // check if edges should be trimmed, i.e. if edge is trimmed at very end
-      // simply move closed node rather than trim
-      if ((1 - dist / length) > tol) {
-        edgesToTrim[*eit].dIst       = dist;
-        edgesToTrim[*eit].lEngth     = dist;
-        edgesToTrim[*eit].unitRayDir = ray / dist;
-        edgesToTrim[*eit].rayPoint   = trimmed_end;
-        trimEdges.insert(*eit);
-      } else if ((1 - dist / length) > 0) {
-        cerr << "AAAA " << endl;
-        trimNewVertices.insert(vert);
-        verticesOnTrimEdges[vert].dIst       = dist;
-        verticesOnTrimEdges[vert].lEngth     = dist;
-        verticesOnTrimEdges[vert].unitRayDir = ray / dist;
-        verticesOnTrimEdges[vert].rayPoint   = trimmed_end;
+      itersection_point =
+          ClosestPointProjection(treeSurfPtr, rootSetSurf, trimmed_end,
+                                 ray)(nbMaxTrimSearchIterations, tol * 1e-4);
+      ray  = itersection_point - trimmed_end;
+      dist = norm_2(ray);
+
+      // If one of nodes is on the surface and other is not, that edge is to
+      // trim
+      if (min_dist / length < tol && max_dist / length > tol) {
+        // check if edges should be trimmed, i.e. if edge is trimmed at very end
+        // simply move closed node rather than trim
+        if ((1 - dist / length) > tol) {
+          edgesToTrim[*eit].dIst       = dist;
+          edgesToTrim[*eit].lEngth     = dist;
+          edgesToTrim[*eit].unitRayDir = ray / dist;
+          edgesToTrim[*eit].rayPoint   = trimmed_end;
+          trimEdges.insert(*eit);
+        } else if ((1 - dist / length) > 0) {
+          cerr << "AAAA " << endl;
+          trimNewVertices.insert(vert);
+          verticesOnTrimEdges[vert].dIst       = dist;
+          verticesOnTrimEdges[vert].lEngth     = dist;
+          verticesOnTrimEdges[vert].unitRayDir = ray / dist;
+          verticesOnTrimEdges[vert].rayPoint   = trimmed_end;
+        }
       }
     }
-
   }
 
   MoFEMFunctionReturn(0);
