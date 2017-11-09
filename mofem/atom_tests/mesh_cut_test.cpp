@@ -63,7 +63,6 @@ int main(int argc, char *argv[]) {
     const char *option;
     option = ""; //"PARALLEL=BCAST";//;DEBUG_IO";
     CHKERR moab.load_file(mesh_file_name, 0, option);
-    
 
     MoFEM::Core core(moab);
     MoFEM::CoreInterface &m_field =
@@ -159,7 +158,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Cut mesh, trim surface and merge bad edges
-    CHKERR cut_mesh->cutTrimAndMerge(1, bit_level1, bit_level2, bit_level3, th,
+    CHKERR cut_mesh->cutTrimAndMerge(2, bit_level1, bit_level2, bit_level3, th,
                                      1e-4, 1e-2, 1e-3, 1e-3, fixed_edges,
                                      corner_nodes, true, true);
 
@@ -180,7 +179,7 @@ int main(int argc, char *argv[]) {
           MoFEMFunctionReturnHot(0);
         }
       };
-      CHKERR TestBitLevel(core.getInterface<BitRefManager>())(bit_level1, 408);
+      CHKERR TestBitLevel(core.getInterface<BitRefManager>())(bit_level1, 405);
       // FIXME: Mesh refinement is based on entities numbers and depend how entities are
       // indexed internally by moab. That can change resuluts. This test have 
       // to be fixed when mesh refinement algorithm is fixed. Thus result can be
@@ -191,7 +190,6 @@ int main(int argc, char *argv[]) {
 
     // Improve mesh with tetgen
 #ifdef WITH_TETGEN
-
     // Switches controling TetGen
     vector<string> switches; 
     switches.push_back("rp178YsqORJS0VV");
@@ -277,7 +275,7 @@ int main(int argc, char *argv[]) {
                  "Inconsistent number of ents %d!=%d", no_of_ents_not_in_database,
                  ents.size());
       }
-    } 
+    }
 
   }
   CATCH_ERRORS;
