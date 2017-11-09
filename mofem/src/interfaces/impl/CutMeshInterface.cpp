@@ -713,7 +713,6 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Tag th, const double tol,
           vecPointOut(3,
                       ublas::shallow_array_adaptor<double>(3, &pointOut[0])) {}
     VectorDouble3 &operator()(const int max_it, const double tol) {
-      MoFEMFunctionBeginHot;
       // cerr << "\n\n" << endl;
       VectorDouble3 w;
       double length = norm_2(rAY);
