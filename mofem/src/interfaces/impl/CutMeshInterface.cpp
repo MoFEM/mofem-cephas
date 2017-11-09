@@ -365,7 +365,7 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(const double low_tol,
   CHKERRG(rval);
   edges = subtract(edges, cutEdges);
 
-  // add to cut set edges which are cutted by extension of cutting surfaca
+  // add to cut set edges which are cutted by extension of cutting surface
   for (Range::iterator eit = edges.begin(); eit != edges.end(); eit++) {
     int num_nodes;
     const EntityHandle *conn;
