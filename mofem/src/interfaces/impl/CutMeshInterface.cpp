@@ -224,7 +224,7 @@ MoFEMErrorCode CutMeshInterface::cutTrimAndMerge(
     CHKERR cOre.getInterface<BitRefManager>()->writeEntitiesNotInDatabase(
         "ents_not_in_database.vtk", "VTK", "");
   }
-  ierr = cutAndTrim(bit_level1, bit_level2, th, tol_cut, tol_cut_close,
+  CHKERR cutAndTrim(bit_level1, bit_level2, th, tol_cut, tol_cut_close,
                     tol_trim, tol_trim_close, &fixed_edges, &corner_nodes,
                     update_meshsets, debug);
   if(debug) {
