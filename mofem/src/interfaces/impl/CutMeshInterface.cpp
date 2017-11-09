@@ -680,10 +680,13 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Tag th, const double tol,
   Skinner skin(&moab);
   Range tets_skin;
   CHKERR skin.find_skin(0, cutNewVolumes, false, tets_skin);
+  // vertives on the skin
+  Range tets_skin_verts;
+  CHKERR moab.get_connectivity(tets_skin,tets_skin_verts,true);
+  // edges on the skin
   Range adj_edges_tets_skin;
   CHKERR moab.get_adjacencies(tets_skin, 1, false, adj_edges_tets_skin,
                               moab::Interface::UNION);
-
   // get edges on new surface
   Range edges;
   CHKERR moab.get_adjacencies(cutNewSurfaces, 1, false, edges,
@@ -695,23 +698,20 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Tag th, const double tol,
   verticesOnTrimEdges.clear();
   trimNewVertices.clear();
 
+  // Solve nonlinera problem of finding point on surface front
   struct ClosestPointProjection {
-
     boost::shared_ptr<OrientedBoxTreeTool> treeSurfPtr;
     EntityHandle rootSetSurf;
     VectorDouble3 S0;
     VectorDouble3 rAY;
-    double aveLength;
     double pointOut[3];
     VectorAdaptor vecPointOut;
     ClosestPointProjection(boost::shared_ptr<OrientedBoxTreeTool> &tree,
                             EntityHandle root_set, VectorDouble3 &s0,
-                            VectorDouble3 &ray, double ave_length)
+                            VectorDouble3 &ray)
         : treeSurfPtr(tree), rootSetSurf(root_set), S0(s0), rAY(ray),
-          aveLength(ave_length),
           vecPointOut(3,
                       ublas::shallow_array_adaptor<double>(3, &pointOut[0])) {}
-
     VectorDouble3 &operator()(const int max_it, const double tol) {
       MoFEMFunctionBeginHot;
       // cerr << "\n\n" << endl;
@@ -726,7 +726,7 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Tag th, const double tol,
         double s = inner_prod(rAY, w);
         S0 += s * rAY;
         // cerr << "s " << ii << " " << s << " " << norm_2(w) << endl;
-        if (s / aveLength < tol)
+        if (s / length < tol)
           break;
       }
       return S0;
@@ -775,40 +775,58 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Tag th, const double tol,
     double dist1 = norm_2(delta1);
     double min_dist = fmin(dist0, dist1);
     double max_dist = fmax(dist0, dist1);
-    // If one of nodes is on the surface and other is not, that edge is to trim
-    if (min_dist / length < tol && max_dist / length > tol) {
-      // add edge to trim
-      double dist;
-      VectorDouble3 ray;
-      VectorDouble3 trimmed_end;
-      VectorDouble3 itersection_point;
+
+    // add edge to trim
+    double dist;
+    VectorDouble3 ray;
+    VectorDouble3 trimmed_end;
+    VectorDouble3 itersection_point;
+    EntityHandle vert;
+
+    if (min_dist / length < tol && max_dist / length > 0) {
       if (max_dist == dist0) {
         // move mid node in reference to node 0
+        vert        = conn[1];
         trimmed_end = s0;
-        ray = s1 - trimmed_end;
-        itersection_point =
-            ClosestPointProjection(treeSurfPtr, rootSetSurf, trimmed_end, ray,
-                                    aveLength)(nbMaxTrimSearchIterations, tol);
-        ray = itersection_point - trimmed_end;
-        dist = norm_2(ray);
+        ray         = s1 - trimmed_end;
       } else {
         // move node in reference to node 1
+        vert        = conn[0];
         trimmed_end = s1;
-        ray = s0 - trimmed_end;
-        itersection_point =
-            ClosestPointProjection(treeSurfPtr, rootSetSurf, trimmed_end, ray,
-                                    aveLength)(nbMaxTrimSearchIterations, tol);
-        ray = itersection_point - trimmed_end;
-        dist = norm_2(ray);
+        ray         = s0 - trimmed_end;
       }
+    }
+    itersection_point =
+        ClosestPointProjection(treeSurfPtr, rootSetSurf, trimmed_end,
+                               ray)(nbMaxTrimSearchIterations, tol * 1e-4);
+    ray  = itersection_point - trimmed_end;
+    dist = norm_2(ray);
+
+    // If one of nodes is on the surface and other is not, that edge is to trim
+    if (min_dist / length < tol && max_dist / length > tol) {
       // check if edges should be trimmed, i.e. if edge is trimmed at very end
       // simply move closed node rather than trim
-      if (fabs(dist - length) / length > tol) {
-        edgesToTrim[*eit].dIst = dist;
-        edgesToTrim[*eit].lEngth = dist;
+      if ((1 - dist / length) > tol) {
+        edgesToTrim[*eit].dIst       = dist;
+        edgesToTrim[*eit].lEngth     = dist;
         edgesToTrim[*eit].unitRayDir = ray / dist;
-        edgesToTrim[*eit].rayPoint = trimmed_end;
+        edgesToTrim[*eit].rayPoint   = trimmed_end;
         trimEdges.insert(*eit);
+      } else if ((1 - dist / length) > 0) {
+        cerr << "AAAA " << endl;
+        trimNewVertices.insert(vert);
+        verticesOnTrimEdges[vert].dIst       = dist;
+        verticesOnTrimEdges[vert].lEngth     = dist;
+        verticesOnTrimEdges[vert].unitRayDir = ray / dist;
+        verticesOnTrimEdges[vert].rayPoint   = trimmed_end;
+      }
+    }
+
+  }
+
+  MoFEMFunctionReturn(0);
+}
+
 MoFEMErrorCode CutMeshInterface::trimEdgesInTheMiddle(const BitRefLevel bit,
                                                       Tag th,
                                                       const double tol) {
@@ -870,9 +888,9 @@ MoFEMErrorCode CutMeshInterface::trimEdgesInTheMiddle(const BitRefLevel bit,
     double coords[3];
     if (th) {
       CHKERR moab.tag_get_data(th, &*vit, 1, coords);
-      } else {
+    } else {
       CHKERR moab.get_coords(&*vit, 1, coords);
-      }
+    }
     double point_out[3];
     EntityHandle facets_out;
     CHKERR treeSurfPtr->closest_to_location(coords, rootSetSurf, point_out,
@@ -1973,7 +1991,9 @@ MoFEMErrorCode CutMeshInterface::rebuildMeshWithTetGen(
   if (tetGenData.size() == 1) {
 
     Range ents_to_tetgen = surf_ents.sVols;
-    for (int dd = 2; dd >= 0; dd--) {
+    CHKERR m_field.get_moab().get_connectivity(surf_ents.sVols, ents_to_tetgen,
+                                               true);
+    for (int dd = 2; dd >= 1; dd--) {
       CHKERR m_field.get_moab().get_adjacencies(
           surf_ents.sVols, dd, false, ents_to_tetgen, moab::Interface::UNION);
     }
@@ -1983,7 +2003,6 @@ MoFEMErrorCode CutMeshInterface::rebuildMeshWithTetGen(
                                 tetGenMoabMap, th);
     CHKERR tetgen_iface->setGeomData(in, moabTetGenMap, tetGenMoabMap,
                                      types_ents);
-
     std::vector<pair<Range, int> > markers;
     for (Range::iterator tit = surface.begin(); tit != surface.end(); tit++) {
       Range facet;
