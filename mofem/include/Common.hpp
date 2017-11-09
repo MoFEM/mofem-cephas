@@ -26,12 +26,26 @@ namespace MoFEM {
 struct MoFEMException : public std::exception {
   MoFEMErrorCodes errorCode;
   char errorMessage[255];
-  MoFEMException(MoFEMErrorCodes error_code) : errorCode(error_code) {
+  MoFEMException(const MoFEMErrorCodes error_code) : errorCode(error_code) {
     strcpy(errorMessage, "Huston we have a problem, something is wrong");
   }
-  MoFEMException(MoFEMErrorCodes error_code, const char error_message[])
+  MoFEMException(const MoFEMErrorCodes error_code, const char error_message[])
       : errorCode(error_code) {
     strcpy(errorMessage, error_message);
+  }
+  const char *what() const throw() { return errorMessage; }
+};
+
+struct MoFEMExceptionRepeat : public MoFEMException {
+  const int lINE;
+  const char* fILE;
+  const char* fUN;
+  const bool rEPEAT;
+  MoFEMExceptionRepeat(const MoFEMErrorCodes error_code, const int line,
+                       const char *file, const char *fun, bool repeat = true)
+      : MoFEMException(error_code), lINE(line), fILE(file), fUN(fun),
+        rEPEAT(repeat) {
+    strcpy(errorMessage, " ");
   }
   const char *what() const throw() { return errorMessage; }
 };
@@ -60,9 +74,6 @@ static MoFEMErrorCodeGeneric<moab::ErrorCode> rval =
 static MoFEMErrorCodeGeneric<PetscErrorCode> ierr =
     MoFEMErrorCodeGeneric<PetscErrorCode>(0);
 
-struct ErrorCheckerFunction;
-struct ErrorCheckerLine;
-
 /** 
  * \brief Error check form inline erro check
  * 
@@ -76,35 +87,26 @@ struct ErrorCheckerLine;
  * \endcode
  * 
  */
-struct ErrorCheckerCode {
+template <int LINE> struct ErrorCheckerCode {
   inline void operator<<(const MoFEMErrorCode err) {
     if (PetscUnlikely(err)) {
-      std::string str;
-      if (err >= MOFEM_DATA_INCONSISTENCY && err <= MOFEM_MOAB_ERROR) {
-        str = "Error Code ( " +
-               std::string(
-                   MoFEMErrorCodesNames[err - (MOFEM_DATA_INCONSISTENCY - 1)]) +
-               " )";
-      } else {
-        str = " Error Code ( " + boost::lexical_cast<std::string>(err) + " )";
-      }
-      str += " at line " + boost::lexical_cast<std::string>(lINE) + " : " +
-             std::string(fILE) + " in " + std::string(fUNC);
       switch (err) {
       case MOFEM_DATA_INCONSISTENCY:
-        throw MoFEMException(MOFEM_DATA_INCONSISTENCY, str.c_str());
+        throw MoFEMExceptionRepeat(MOFEM_DATA_INCONSISTENCY, LINE, fILE, fUNC);
       case MOFEM_NOT_IMPLEMENTED:
-        throw MoFEMException(MOFEM_NOT_IMPLEMENTED, str.c_str());
+        throw MoFEMExceptionRepeat(MOFEM_NOT_IMPLEMENTED, LINE, fILE, fUNC);
       case MOFEM_NOT_FOUND:
-        throw MoFEMException(MOFEM_NOT_FOUND, str.c_str());
+        throw MoFEMExceptionRepeat(MOFEM_NOT_FOUND, LINE, fILE, fUNC);
       case MOFEM_OPERATION_UNSUCCESSFUL:
-        throw MoFEMException(MOFEM_OPERATION_UNSUCCESSFUL, str.c_str());
+        throw MoFEMExceptionRepeat(MOFEM_OPERATION_UNSUCCESSFUL, LINE, fILE,
+                                   fUNC);
       case MOFEM_IMPOSIBLE_CASE:
-        throw MoFEMException(MOFEM_IMPOSIBLE_CASE, str.c_str());
+        throw MoFEMExceptionRepeat(MOFEM_IMPOSIBLE_CASE, LINE, fILE, fUNC);
       case MOFEM_INVALID_DATA:
-        throw MoFEMException(MOFEM_INVALID_DATA, str.c_str());
+        throw MoFEMExceptionRepeat(MOFEM_INVALID_DATA, LINE, fILE, fUNC);
       default:
-        throw MoFEMException(MOFEM_MOFEMEXCEPTION_THROW, str.c_str());
+        throw MoFEMExceptionRepeat(MOFEM_MOFEMEXCEPTION_THROW, LINE, fILE,
+                                   fUNC);
       }
     }
     return;
@@ -112,37 +114,17 @@ struct ErrorCheckerCode {
   inline void
   operator<<(const moab::ErrorCode err) {
     if (PetscLikely(MB_SUCCESS != err)) {
-      std::string str("MOAB error " + boost::lexical_cast<std::string>(err) +
-                      " at line " + boost::lexical_cast<std::string>(lINE) +
-                      " : " + std::string(fILE) + " in " + std::string(fUNC));
-      throw MoFEMException(MOFEM_MOAB_ERROR, str.c_str());
+      std::string str("MOAB error " + boost::lexical_cast<std::string>(err));
+      PetscError(PETSC_COMM_SELF, LINE, fUNC, fILE, MOFEM_MOAB_ERROR,
+                 PETSC_ERROR_INITIAL, str.c_str());
+      throw MoFEMExceptionRepeat(MOFEM_MOAB_ERROR, LINE, fILE, fUNC, false);
     }
     return;
   }
-  static const char *fUNC;
-  static const char *fILE;
-  static int lINE;
-};
-
-struct ErrorCheckerFunction {
-  inline ErrorCheckerCode operator<<(const char *func) {
-    ErrorCheckerCode::fUNC = func;
-    return ErrorCheckerCode();
-  }
- };
-
-struct ErrorCheckerFile {
-  inline ErrorCheckerFunction operator<<(const char *file) {
-    ErrorCheckerCode::fILE = file;
-    return ErrorCheckerFunction();
-  }
-};
-
-struct ErrorCheckerLine {
-  inline ErrorCheckerFile operator<<(int line) {
-    ErrorCheckerCode::lINE = line;
-    return ErrorCheckerFile();
-  }
+  inline ErrorCheckerCode(const char *func, const char *file)
+      : fUNC(func), fILE(file) {}
+  const char * restrict fUNC;
+  const char * restrict fILE;
 };
 
 typedef int DofIdx;                  ///< Index of DOF

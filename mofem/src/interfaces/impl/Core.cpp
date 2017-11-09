@@ -22,10 +22,6 @@ extern "C" {
 
 namespace MoFEM {
 
-int ErrorCheckerCode::lINE;
-const char *ErrorCheckerCode::fILE;
-const char *ErrorCheckerCode::fUNC;
-
 MoFEMErrorCode Core::query_interface(const MOFEMuuid &uuid,
                                      UnknownInterface **iface) const {
   MoFEMFunctionBeginHot;
