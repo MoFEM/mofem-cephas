@@ -423,7 +423,14 @@ DEPRECATED void macro_is_depracted_using_deprecated_function();
 #define MoFEMFunctionReturn(a)                                                 \
   }                                                                            \
   catch (MoFEMException const &e) {                                            \
-    SETERRQ(PETSC_COMM_SELF, e.errorCode, e.errorMessage);                     \
+    SETERRQ(PETSC_COMM_WORLD, e.errorCode, e.errorMessage);                    \
+  }                                                                            \
+  catch (std::exception const &ex) {                                           \
+    std::string message("Error: " + std::string(ex.what()) + " at " +          \
+                        boost::lexical_cast<std::string>(__LINE__) + " : " +   \
+                        std::string(__FILE__) + " in " +                       \
+                        std::string(PETSC_FUNCTION_NAME));                     \
+    SETERRQ(PETSC_COMM_WORLD, MOFEM_STD_EXCEPTION_THROW, message.c_str());     \
   }                                                                            \
   PetscFunctionReturn(a)
 
@@ -448,7 +455,14 @@ DEPRECATED void macro_is_depracted_using_deprecated_function();
 #define MoFEMFunctionReturnVoid()                                              \
   }                                                                            \
   catch (MoFEMException const &e) {                                            \
-    SETERRQ(PETSC_COMM_SELF, e.errorCode, e.errorMessage);                     \
+    SETERRQ(PETSC_COMM_WORLD, e.errorCode, e.errorMessage);                    \
+  }                                                                            \
+  catch (std::exception const &ex) {                                           \
+    std::string message("Error: " + std::string(ex.what()) + " at " +          \
+                        boost::lexical_cast<std::string>(__LINE__) + " : " +   \
+                        std::string(__FILE__) + " in " +                       \
+                        std::string(PETSC_FUNCTION_NAME));                     \
+    SETERRQ(PETSC_COMM_WORLD, MOFEM_STD_EXCEPTION_THROW, message.c_str());     \
   }                                                                            \
   PetscFunctionReturnVoid()
 
@@ -460,10 +474,6 @@ DEPRECATED void macro_is_depracted_using_deprecated_function();
   *
   */
 #define MoFEMFunctionReturnHotVoid()                                           \
-  }                                                                            \
-  catch (MoFEMException const &e) {                                            \
-    SETERRQ(PETSC_COMM_SELF, e.errorCode, e.errorMessage);                     \
-  }                                                                            \
   PetscFunctionReturnVoid()
 
 #define CHKERRQ_PETSC(n) CHKERRQ(n)
