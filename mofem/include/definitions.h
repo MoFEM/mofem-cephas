@@ -535,7 +535,7 @@ DEPRECATED void macro_is_depracted_using_deprecated_function();
  *
  */
 #define CHKERR                                                                 \
-  ERROR_CHECKER_AND_RUNNER_CODE(__LINE__, __FILE__, __FUNCTION__) <<
+  ERROR_CHECKER_AND_RUNNER_CODE(__LINE__, __FILE__, PETSC_FUNCTION_NAME) <<
 
 /**
  * \brief Check error code of MoAB function and throw MoFEM exception
