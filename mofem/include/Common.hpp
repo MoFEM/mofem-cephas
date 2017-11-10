@@ -40,11 +40,18 @@ struct MoFEMExceptionRepeat : public MoFEMException {
   const int lINE;
   const char* fILE;
   const char* fUN;
-  const bool rEPEAT;
   MoFEMExceptionRepeat(const MoFEMErrorCodes error_code, const int line,
-                       const char *file, const char *fun, bool repeat = true)
-      : MoFEMException(error_code), lINE(line), fILE(file), fUN(fun),
-        rEPEAT(repeat) {
+                       const char *file, const char *fun)
+      : MoFEMException(error_code), lINE(line), fILE(file), fUN(fun) {
+    strcpy(errorMessage, " ");
+  }
+  const char *what() const throw() { return errorMessage; }
+};
+
+struct MoFEMExceptionNoRepeat : public MoFEMExceptionRepeat {
+  MoFEMExceptionNoRepeat(const MoFEMErrorCodes error_code, const int line,
+                         const char *file, const char *fun)
+      : MoFEMExceptionRepeat(error_code, line, file, fun) {
     strcpy(errorMessage, " ");
   }
   const char *what() const throw() { return errorMessage; }
@@ -117,7 +124,7 @@ template <int LINE> struct ErrorCheckerCode {
       std::string str("MOAB error " + boost::lexical_cast<std::string>(err));
       PetscError(PETSC_COMM_SELF, LINE, fUNC, fILE, MOFEM_MOAB_ERROR,
                  PETSC_ERROR_INITIAL, str.c_str());
-      throw MoFEMExceptionRepeat(MOFEM_MOAB_ERROR, LINE, fILE, fUNC, false);
+      throw MoFEMExceptionNoRepeat(MOFEM_MOAB_ERROR, LINE, fILE, fUNC);
     }
     return;
   }

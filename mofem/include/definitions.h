@@ -415,12 +415,12 @@ DEPRECATED void macro_is_depracted_using_deprecated_function();
  *
  */
 #define CATCH_ERRORS                                                           \
+  catch (MoFEMExceptionNoRepeat const &e) {                                    \
+    return e.errorCode;                                                        \
+  }                                                                            \
   catch (MoFEMExceptionRepeat const &e) {                                      \
-    if (e.rEPEAT) {                                                            \
-      return PetscError(PETSC_COMM_WORLD, e.lINE, e.fUN, e.fILE, e.errorCode,  \
-                        PETSC_ERROR_REPEAT, " ");                              \
-    } else                                                                     \
-      return e.errorCode;                                                      \
+    return PetscError(PETSC_COMM_WORLD, e.lINE, e.fUN, e.fILE, e.errorCode,    \
+                      PETSC_ERROR_REPEAT, " ");                                \
   }                                                                            \
   catch (MoFEMException const &e) {                                            \
     SETERRQ(PETSC_COMM_WORLD, e.errorCode, e.errorMessage);                    \
