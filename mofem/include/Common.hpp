@@ -138,8 +138,8 @@ template <int LINE> struct ErrorCheckerCode {
 
   inline ErrorCheckerCode(const char *func, const char *file)
       : fUNC(func), fILE(file) {}
-  const char * PETSC_CXX_RESTRICT fUNC;
-  const char * PETSC_CXX_RESTRICT fILE;
+  const char *PETSC_CXX_RESTRICT fUNC;
+  const char *PETSC_CXX_RESTRICT fILE;
 };
 
 typedef int DofIdx;                  ///< Index of DOF

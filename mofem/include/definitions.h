@@ -515,7 +515,7 @@ DEPRECATED void macro_is_depracted_using_deprecated_function();
     OP_ERR_MOFEM_ERROR_CODE(LINE, FILE, fUNC);                                 \
     OP_ERR_MOAB_ERROR_CODE(LINE, FILE, fUNC);                                  \
     inline ErrorCheckerCode##LINE(const char *func) : fUNC(func) {}            \
-    const char PETSC_CXX_RESTRICT *fUNC;                                       \
+    const char *PETSC_CXX_RESTRICT fUNC;                                       \
   }
 
 #define ERROR_RUNNER_CODE(LINE) ErrorCheckerCode##LINE
