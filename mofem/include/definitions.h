@@ -510,6 +510,12 @@ DEPRECATED void macro_is_depracted_using_deprecated_function();
     CHKERRQ_MOAB((n));                                                         \
   }
 
+/**
+ * @brief Creeate line error code checker
+ * 
+ * \note Do not used directly, part of the other definition
+ * 
+ */
 #define ERROR_CHECKER_CODE(LINE, FILE)                                         \
   struct ErrorCheckerCode##LINE {                                              \
     OP_ERR_MOFEM_ERROR_CODE(LINE, FILE, fUNC);                                 \
@@ -518,8 +524,20 @@ DEPRECATED void macro_is_depracted_using_deprecated_function();
     const char *PETSC_CXX_RESTRICT fUNC;                                       \
   }
 
+/**
+ * @brief Create line error checker instance
+ * 
+ * \note Do not used directly, part of the other definition
+ * 
+ */
 #define ERROR_RUNNER_CODE(LINE) ErrorCheckerCode##LINE
 
+/**
+ * @brief Declare line error checker class and its instance.
+ *
+ * \note Do not used directly, part of the other definition
+ * 
+ */
 #define ERROR_CHECKER_AND_RUNNER_CODE(LINE, FILE, FUNC)                        \
   ERROR_CHECKER_CODE(LINE, FILE);                                              \
   ERROR_RUNNER_CODE(LINE)(FUNC)

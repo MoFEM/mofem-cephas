@@ -81,21 +81,26 @@ static MoFEMErrorCodeGeneric<moab::ErrorCode> rval =
 static MoFEMErrorCodeGeneric<PetscErrorCode> ierr =
     MoFEMErrorCodeGeneric<PetscErrorCode>(0);
 
-/** 
+/**
  * \brief Error check form inline erro check
- * 
+ *
+ * \note This class is not used directly, only for testing. See
+ * ERROR_CHECKER_CODE, ERROR_RUNNER_CODE, ERROR_CHECKER_AND_RUNNER_CODE and
+ * CHKERR for details.
+ *
  * A sequence of overloaded operators << is called, starting from line number
- * file name, function name and error code. Use this using definition CHKERR, for
- * example
- * \code
- * CHKERR fun_moab();
- * CHKERR fun_petsc();
- * CHKERR fun_mofem();
+ * file name, function name and error code. Use this using definition CHKERR,
+ * for example \code CHKERR fun_moab(); CHKERR fun_petsc(); CHKERR fun_mofem();
  * \endcode
- * 
+ *
  */
 template <int LINE> struct ErrorCheckerCode {
 
+/**
+ * @brief Definition for error checker class to create checker operator for
+ * PetscErrorCode and MoFEMErrorCode
+ *
+ */
 #define OP_ERR_MOFEM_ERROR_CODE(LINE, FILE, FUNC)                              \
   inline void operator<<(const MoFEMErrorCode err) {                           \
     if (PetscUnlikely(err)) {                                                  \
@@ -122,6 +127,11 @@ template <int LINE> struct ErrorCheckerCode {
     return;                                                                    \
   }
 
+/**
+ * @brief Definition for error checker class to create checker operator for
+ * moab::ErrorCode
+ *
+ */
 #define OP_ERR_MOAB_ERROR_CODE(LINE, FILE, FUNC)                               \
   inline void operator<<(const moab::ErrorCode err) {                          \
     if (PetscLikely(MB_SUCCESS != err)) {                                      \
