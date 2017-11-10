@@ -40,11 +40,18 @@ struct MoFEMExceptionRepeat : public MoFEMException {
   const int lINE;
   const char* fILE;
   const char* fUN;
-  const bool rEPEAT;
   MoFEMExceptionRepeat(const MoFEMErrorCodes error_code, const int line,
-                       const char *file, const char *fun, bool repeat = true)
-      : MoFEMException(error_code), lINE(line), fILE(file), fUN(fun),
-        rEPEAT(repeat) {
+                       const char *file, const char *fun)
+      : MoFEMException(error_code), lINE(line), fILE(file), fUN(fun) {
+    strcpy(errorMessage, " ");
+  }
+  const char *what() const throw() { return errorMessage; }
+};
+
+struct MoFEMExceptionNoRepeat : public MoFEMExceptionRepeat {
+  MoFEMExceptionNoRepeat(const MoFEMErrorCodes error_code, const int line,
+                         const char *file, const char *fun)
+      : MoFEMExceptionRepeat(error_code, line, file, fun) {
     strcpy(errorMessage, " ");
   }
   const char *what() const throw() { return errorMessage; }
@@ -88,43 +95,51 @@ static MoFEMErrorCodeGeneric<PetscErrorCode> ierr =
  * 
  */
 template <int LINE> struct ErrorCheckerCode {
-  inline void operator<<(const MoFEMErrorCode err) {
-    if (PetscUnlikely(err)) {
-      switch (err) {
-      case MOFEM_DATA_INCONSISTENCY:
-        throw MoFEMExceptionRepeat(MOFEM_DATA_INCONSISTENCY, LINE, fILE, fUNC);
-      case MOFEM_NOT_IMPLEMENTED:
-        throw MoFEMExceptionRepeat(MOFEM_NOT_IMPLEMENTED, LINE, fILE, fUNC);
-      case MOFEM_NOT_FOUND:
-        throw MoFEMExceptionRepeat(MOFEM_NOT_FOUND, LINE, fILE, fUNC);
-      case MOFEM_OPERATION_UNSUCCESSFUL:
-        throw MoFEMExceptionRepeat(MOFEM_OPERATION_UNSUCCESSFUL, LINE, fILE,
-                                   fUNC);
-      case MOFEM_IMPOSIBLE_CASE:
-        throw MoFEMExceptionRepeat(MOFEM_IMPOSIBLE_CASE, LINE, fILE, fUNC);
-      case MOFEM_INVALID_DATA:
-        throw MoFEMExceptionRepeat(MOFEM_INVALID_DATA, LINE, fILE, fUNC);
-      default:
-        throw MoFEMExceptionRepeat(MOFEM_MOFEMEXCEPTION_THROW, LINE, fILE,
-                                   fUNC);
-      }
-    }
-    return;
+
+#define OP_ERR_MOFEM_ERROR_CODE(LINE, FILE, FUNC)                              \
+  inline void operator<<(const MoFEMErrorCode err) {                           \
+    if (PetscUnlikely(err)) {                                                  \
+      switch (err) {                                                           \
+      case MOFEM_DATA_INCONSISTENCY:                                           \
+        throw MoFEMExceptionRepeat(MOFEM_DATA_INCONSISTENCY, LINE, FILE,       \
+                                   FUNC);                                      \
+      case MOFEM_NOT_IMPLEMENTED:                                              \
+        throw MoFEMExceptionRepeat(MOFEM_NOT_IMPLEMENTED, LINE, FILE, FUNC);   \
+      case MOFEM_NOT_FOUND:                                                    \
+        throw MoFEMExceptionRepeat(MOFEM_NOT_FOUND, LINE, FILE, FUNC);         \
+      case MOFEM_OPERATION_UNSUCCESSFUL:                                       \
+        throw MoFEMExceptionRepeat(MOFEM_OPERATION_UNSUCCESSFUL, LINE, FILE,   \
+                                   FUNC);                                      \
+      case MOFEM_IMPOSIBLE_CASE:                                               \
+        throw MoFEMExceptionRepeat(MOFEM_IMPOSIBLE_CASE, LINE, FILE, FUNC);    \
+      case MOFEM_INVALID_DATA:                                                 \
+        throw MoFEMExceptionRepeat(MOFEM_INVALID_DATA, LINE, FILE, FUNC);      \
+      default:                                                                 \
+        throw MoFEMExceptionRepeat(MOFEM_MOFEMEXCEPTION_THROW, LINE, FILE,     \
+                                   FUNC);                                      \
+      }                                                                        \
+    }                                                                          \
+    return;                                                                    \
   }
-  inline void
-  operator<<(const moab::ErrorCode err) {
-    if (PetscLikely(MB_SUCCESS != err)) {
-      std::string str("MOAB error " + boost::lexical_cast<std::string>(err));
-      PetscError(PETSC_COMM_SELF, LINE, fUNC, fILE, MOFEM_MOAB_ERROR,
-                 PETSC_ERROR_INITIAL, str.c_str());
-      throw MoFEMExceptionRepeat(MOFEM_MOAB_ERROR, LINE, fILE, fUNC, false);
-    }
-    return;
+
+#define OP_ERR_MOAB_ERROR_CODE(LINE, FILE, FUNC)                               \
+  inline void operator<<(const moab::ErrorCode err) {                          \
+    if (PetscLikely(MB_SUCCESS != err)) {                                      \
+      std::string str("MOAB error " + boost::lexical_cast<std::string>(err));  \
+      PetscError(PETSC_COMM_SELF, LINE, FUNC, FILE, MOFEM_MOAB_ERROR,          \
+                 PETSC_ERROR_INITIAL, str.c_str());                            \
+      throw MoFEMExceptionNoRepeat(MOFEM_MOAB_ERROR, LINE, FILE, FUNC);        \
+    }                                                                          \
+    return;                                                                    \
   }
+
+  OP_ERR_MOFEM_ERROR_CODE(LINE,fILE,fUNC);
+  OP_ERR_MOAB_ERROR_CODE(LINE,fILE,fUNC);
+
   inline ErrorCheckerCode(const char *func, const char *file)
       : fUNC(func), fILE(file) {}
-  const char * restrict fUNC;
-  const char * restrict fILE;
+  const char *PETSC_CXX_RESTRICT fUNC;
+  const char *PETSC_CXX_RESTRICT fILE;
 };
 
 typedef int DofIdx;                  ///< Index of DOF
