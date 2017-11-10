@@ -369,7 +369,6 @@ DEPRECATED void macro_is_depracted_using_deprecated_function();
 }
 #endif
 
-
 /**
  * \brief First executable line of each MoFEM function, used for error handling. Final
       line of MoFEM functions should be MoFEMFunctionReturn(0);
@@ -386,8 +385,8 @@ DEPRECATED void macro_is_depracted_using_deprecated_function();
    \endcode
 
  */
-#define MoFEMFunctionBegin \
-  PetscFunctionBegin; \
+#define MoFEMFunctionBegin                                                     \
+  PetscFunctionBegin;                                                          \
   try {
 
 /**
@@ -415,12 +414,12 @@ DEPRECATED void macro_is_depracted_using_deprecated_function();
  *
  */
 #define CATCH_ERRORS                                                           \
+  catch (MoFEMExceptionNoRepeat const &e) {                                    \
+    return e.errorCode;                                                        \
+  }                                                                            \
   catch (MoFEMExceptionRepeat const &e) {                                      \
-    if (e.rEPEAT) {                                                            \
-      return PetscError(PETSC_COMM_WORLD, e.lINE, e.fUN, e.fILE, e.errorCode,  \
-                        PETSC_ERROR_REPEAT, " ");                              \
-    } else                                                                     \
-      return e.errorCode;                                                      \
+    return PetscError(PETSC_COMM_WORLD, e.lINE, e.fUN, e.fILE, e.errorCode,    \
+                      PETSC_ERROR_REPEAT, " ");                                \
   }                                                                            \
   catch (MoFEMException const &e) {                                            \
     SETERRQ(PETSC_COMM_WORLD, e.errorCode, e.errorMessage);                    \
@@ -511,6 +510,20 @@ DEPRECATED void macro_is_depracted_using_deprecated_function();
     CHKERRQ_MOAB((n));                                                         \
   }
 
+#define ERROR_CHECKER_CODE(LINE, FILE)                                         \
+  struct ErrorCheckerCode##LINE {                                              \
+    OP_ERR_MOFEM_ERROR_CODE(LINE, FILE, fUNC);                                 \
+    OP_ERR_MOAB_ERROR_CODE(LINE, FILE, fUNC);                                  \
+    inline ErrorCheckerCode##LINE(const char *func) : fUNC(func) {}            \
+    const char PETSC_CXX_RESTRICT *fUNC;                                       \
+  }
+
+#define ERROR_RUNNER_CODE(LINE) ErrorCheckerCode##LINE
+
+#define ERROR_CHECKER_AND_RUNNER_CODE(LINE, FILE, FUNC)                        \
+  ERROR_CHECKER_CODE(LINE, FILE);                                              \
+  ERROR_RUNNER_CODE(LINE)(FUNC)
+
 /**
  * @brief Inline error check
  *
@@ -521,7 +534,8 @@ DEPRECATED void macro_is_depracted_using_deprecated_function();
  * \endcode
  *
  */
-#define CHKERR ErrorCheckerCode<__LINE__>(PETSC_FUNCTION_NAME, __FILE__) <<
+#define CHKERR                                                                 \
+  ERROR_CHECKER_AND_RUNNER_CODE(__LINE__, __FILE__, __FUNCTION__) <<
 
 /**
  * \brief Check error code of MoAB function and throw MoFEM exception
