@@ -63,7 +63,6 @@ int main(int argc, char *argv[]) {
     const char *option;
     option = ""; //"PARALLEL=BCAST";//;DEBUG_IO";
     CHKERR moab.load_file(mesh_file_name, 0, option);
-    
 
     MoFEM::Core core(moab);
     MoFEM::CoreInterface &m_field =
@@ -159,8 +158,8 @@ int main(int argc, char *argv[]) {
     }
 
     // Cut mesh, trim surface and merge bad edges
-    CHKERR cut_mesh->cutTrimAndMerge(1, bit_level1, bit_level2, bit_level3, th,
-                                     1e-4, 1e-2, 1e-4, 1e-2, fixed_edges,
+    CHKERR cut_mesh->cutTrimAndMerge(2, bit_level1, bit_level2, bit_level3, th,
+                                     1e-4, 1e-2, 1e-3, 1e-3, fixed_edges,
                                      corner_nodes, true, true);
 
     if (test) {
@@ -180,7 +179,7 @@ int main(int argc, char *argv[]) {
           MoFEMFunctionReturnHot(0);
         }
       };
-      CHKERR TestBitLevel(core.getInterface<BitRefManager>())(bit_level1, 408);
+      CHKERR TestBitLevel(core.getInterface<BitRefManager>())(bit_level1, 405);
       // FIXME: Mesh refinement is based on entities numbers and depend how entities are
       // indexed internally by moab. That can change resuluts. This test have 
       // to be fixed when mesh refinement algorithm is fixed. Thus result can be
@@ -191,13 +190,12 @@ int main(int argc, char *argv[]) {
 
     // Improve mesh with tetgen
 #ifdef WITH_TETGEN
-
     // Switches controling TetGen
     vector<string> switches; 
-    switches.push_back("rp180YsqORJS0VV");
+    switches.push_back("rp178YsqORJS0VV");
     CHKERR cut_mesh->rebuildMeshWithTetGen(switches, bit_level3, bit_level4,
                                            cut_mesh->getMergedSurfaces(),
-                                           fixed_edges, corner_nodes, th);
+                                           fixed_edges, corner_nodes, th, true);
     // CHKERR core.getInterface<BitRefManager>()->writeBitLevelByType(
     //     bit_level4, BitRefLevel().set(), MBTET, "out_tets_tetgen.vtk", "VTK",
     //     "");
@@ -277,11 +275,10 @@ int main(int argc, char *argv[]) {
                  "Inconsistent number of ents %d!=%d", no_of_ents_not_in_database,
                  ents.size());
       }
-    } 
+    }
 
-  } catch (MoFEMException const &e) {
-    SETERRQ(PETSC_COMM_SELF, e.errorCode, e.errorMessage);
   }
+  CATCH_ERRORS;
 
   PetscFinalize();
 

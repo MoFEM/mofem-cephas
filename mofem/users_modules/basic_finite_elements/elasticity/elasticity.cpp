@@ -808,10 +808,8 @@ int main(int argc, char *argv[]) {
   CHKERR DMDestroy(&dm);
 
   MPI_Comm_free(&moab_comm_world);
-
-  } catch (MoFEMException const &e) {
-    SETERRQ(PETSC_COMM_SELF, e.errorCode, e.errorMessage);
   }
+  CATCH_ERRORS;
 
   PetscFinalize();
 

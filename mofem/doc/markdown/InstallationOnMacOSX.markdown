@@ -46,7 +46,7 @@ cd $MOFEM_INSTALL_DIR
 git clone https://bitbucket.org/petsc/petsc.git
 cd $MOFEM_INSTALL_DIR/petsc
 
-# Fix PETSc vetsio
+# Fix PETSc version
 export PETSC_VERSION=3.8.0
 git checkout tags/v$PETSC_VERSION
 

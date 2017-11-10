@@ -150,89 +150,67 @@ MoFEMErrorCode CutMeshInterface::cutAndTrim(
     const double tol_trim_close, Range *fixed_edges, Range *corner_nodes,
     const bool update_meshsets,const bool debug) {
   CoreInterface &m_field = cOre;
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   // cut mesh
-  ierr = findEdgesToCut(tol_cut);
-  CHKERRG(ierr);
-  ierr = getZeroDistanceEnts(tol_cut_close);
-  CHKERRG(ierr);
-  ierr = cutEdgesInMiddle(bit_level1);
-  CHKERRG(ierr);
+  CHKERR findEdgesToCut(tol_cut);
+  CHKERR projectZeroDistanceEnts(tol_cut_close);
+  CHKERR cutEdgesInMiddle(bit_level1);
   if (fixed_edges) {
-    ierr = cOre.getInterface<BitRefManager>()->updateRange(*fixed_edges,
+    CHKERR cOre.getInterface<BitRefManager>()->updateRange(*fixed_edges,
                                                            *fixed_edges);
-    CHKERRG(ierr);
   }
   if (corner_nodes) {
-    ierr = cOre.getInterface<BitRefManager>()->updateRange(*corner_nodes,
+    CHKERR cOre.getInterface<BitRefManager>()->updateRange(*corner_nodes,
                                                            *corner_nodes);
-    CHKERRG(ierr);
   }
   if (update_meshsets) {
-    ierr = UpdateMeshsets()(cOre, bit_level1);
-    CHKERRG(ierr);
+    CHKERR UpdateMeshsets()(cOre, bit_level1);
   }
-  ierr = moveMidNodesOnCutEdges(th);
-  CHKERRG(ierr);
+  CHKERR moveMidNodesOnCutEdges(th);
 
   if(debug) {
-    ierr = cOre.getInterface<BitRefManager>()->writeBitLevelByType(
+    CHKERR cOre.getInterface<BitRefManager>()->writeBitLevelByType(
         bit_level1, BitRefLevel().set(), MBTET, "out_tets_cut.vtk", "VTK", "");
-    CHKERRG(ierr);
     {
       EntityHandle meshset;
-      rval = m_field.get_moab().create_meshset(MESHSET_SET, meshset);
-      CHKERRG(rval);
-      rval = m_field.get_moab().add_entities(meshset, cutNewSurfaces);
-      CHKERRG(rval);
-      rval = m_field.get_moab().write_file("cut_new_surfaces.vtk", "VTK", "", &meshset, 1);
-      CHKERRG(rval);
-      rval = m_field.get_moab().delete_entities(&meshset, 1);
-      CHKERRG(rval);
+      CHKERR m_field.get_moab().create_meshset(MESHSET_SET, meshset);
+      CHKERR m_field.get_moab().add_entities(meshset, cutNewSurfaces);
+      CHKERR m_field.get_moab().write_file("cut_new_surfaces.vtk", "VTK", "",
+                                           &meshset, 1);
+      CHKERR m_field.get_moab().delete_entities(&meshset, 1);
     }
   }
 
   // trim mesh
-  ierr = findEdgesToTrim(th, tol_trim);
-  CHKERRG(ierr);
-  ierr = trimEdgesInTheMiddle(bit_level2, th, tol_trim_close);
-  CHKERRG(ierr);
+  CHKERR findEdgesToTrim(th, tol_trim);
+  CHKERR trimEdgesInTheMiddle(bit_level2, th, tol_trim_close);
   if (fixed_edges) {
-    ierr = cOre.getInterface<BitRefManager>()->updateRange(*fixed_edges,
+    CHKERR cOre.getInterface<BitRefManager>()->updateRange(*fixed_edges,
                                                            *fixed_edges);
-    CHKERRG(ierr);
   }
   if (corner_nodes) {
-    ierr = cOre.getInterface<BitRefManager>()->updateRange(*corner_nodes,
+    CHKERR cOre.getInterface<BitRefManager>()->updateRange(*corner_nodes,
                                                            *corner_nodes);
-    CHKERRG(ierr);
   }
   if (update_meshsets) {
-    ierr = UpdateMeshsets()(cOre, bit_level2);
-    CHKERRG(ierr);
+    CHKERR UpdateMeshsets()(cOre, bit_level2);
   }
-  ierr = moveMidNodesOnTrimmedEdges(th);
-  CHKERRG(ierr);
+  CHKERR moveMidNodesOnTrimmedEdges(th);
 
   if(debug) {
-    ierr = cOre.getInterface<BitRefManager>()->writeBitLevelByType(
+    CHKERR cOre.getInterface<BitRefManager>()->writeBitLevelByType(
         bit_level2, BitRefLevel().set(), MBTET, "out_tets_trim.vtk", "VTK", "");
-    CHKERRG(ierr);
     {
       EntityHandle meshset;
-      rval = m_field.get_moab().create_meshset(MESHSET_SET, meshset);
-      CHKERRG(rval);
-      rval = m_field.get_moab().add_entities(meshset, trimNewSurfaces);
-      CHKERRG(rval);
-      rval = m_field.get_moab().write_file("trim_new_surfaces.vtk", "VTK", "",
+      CHKERR m_field.get_moab().create_meshset(MESHSET_SET, meshset);
+      CHKERR m_field.get_moab().add_entities(meshset, trimNewSurfaces);
+      CHKERR m_field.get_moab().write_file("trim_new_surfaces.vtk", "VTK", "",
                                            &meshset, 1);
-      CHKERRG(rval);
-      rval = m_field.get_moab().delete_entities(&meshset, 1);
-      CHKERRG(rval);
+      CHKERR m_field.get_moab().delete_entities(&meshset, 1);
     }
   }
 
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode CutMeshInterface::cutTrimAndMerge(
@@ -241,48 +219,39 @@ MoFEMErrorCode CutMeshInterface::cutTrimAndMerge(
     const double tol_cut, const double tol_cut_close, const double tol_trim,
     const double tol_trim_close, Range &fixed_edges, Range &corner_nodes,
     const bool update_meshsets, const bool debug) {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   if(debug) {
-    ierr = cOre.getInterface<BitRefManager>()->writeEntitiesNotInDatabase(
+    CHKERR cOre.getInterface<BitRefManager>()->writeEntitiesNotInDatabase(
         "ents_not_in_database.vtk", "VTK", "");
-    CHKERRG(ierr);
   }
-  ierr = cutAndTrim(bit_level1, bit_level2, th, tol_cut, tol_cut_close,
+  CHKERR cutAndTrim(bit_level1, bit_level2, th, tol_cut, tol_cut_close,
                     tol_trim, tol_trim_close, &fixed_edges, &corner_nodes,
                     update_meshsets, debug);
-  CHKERRG(ierr);
   if(debug) {
-    ierr = cOre.getInterface<BitRefManager>()->writeEntitiesNotInDatabase(
+    CHKERR cOre.getInterface<BitRefManager>()->writeEntitiesNotInDatabase(
         "cut_trim_ents_not_in_database.vtk", "VTK", "");
-    CHKERRG(ierr);
   }
 
-  ierr = mergeBadEdges(fraction_level, bit_level2, bit_level1, bit_level3,
+  CHKERR mergeBadEdges(fraction_level, bit_level2, bit_level1, bit_level3,
                        getNewTrimSurfaces(), fixed_edges, corner_nodes, th,
                        update_meshsets, debug);
-  CHKERRG(ierr);
-  ierr = removePathologicalFrontTris(bit_level3,
+  CHKERR removePathologicalFrontTris(bit_level3,
                                      const_cast<Range &>(getMergedSurfaces()));
-  CHKERRG(ierr);
 
   if(debug) {
-    ierr = cOre.getInterface<BitRefManager>()->writeBitLevelByType(
+    CHKERR cOre.getInterface<BitRefManager>()->writeBitLevelByType(
         bit_level3, BitRefLevel().set(), MBTET, "out_tets_merged.vtk", "VTK",
         "");
-    CHKERRG(ierr);
-    ierr = cOre.getInterface<BitRefManager>()->writeEntitiesNotInDatabase(
+    CHKERR cOre.getInterface<BitRefManager>()->writeEntitiesNotInDatabase(
         "cut_trim_merge_ents_not_in_database.vtk", "VTK", "");
-    CHKERRG(ierr);
   }
 
-  ierr =
+  CHKERR
       cOre.getInterface<BitRefManager>()->updateRange(fixed_edges, fixed_edges);
-  CHKERRG(ierr);
-  ierr = cOre.getInterface<BitRefManager>()->updateRange(corner_nodes,
+  CHKERR cOre.getInterface<BitRefManager>()->updateRange(corner_nodes,
                                                          corner_nodes);
-  CHKERRG(ierr);
 
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode CutMeshInterface::findEdgesToCut(const double low_tol,
@@ -396,7 +365,7 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(const double low_tol,
   CHKERRG(rval);
   edges = subtract(edges, cutEdges);
 
-  // add to cut set edges which are cutted by extension of cutting surfaca
+  // add to cut set edges which are cutted by extension of cutting surface
   for (Range::iterator eit = edges.begin(); eit != edges.end(); eit++) {
     int num_nodes;
     const EntityHandle *conn;
@@ -426,67 +395,63 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(const double low_tol,
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode CutMeshInterface::getZeroDistanceEnts(const double low_tol,
+MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(const double low_tol,
                                                      int verb) {
   CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   Skinner skin(&moab);
   Range tets_skin;
   rval = skin.find_skin(0, vOlume, false, tets_skin);
+  Range tets_skin_edges;
+  CHKERR moab.get_adjacencies(tets_skin, 1, false, tets_skin_edges,
+                              moab::Interface::UNION);
   Range tets_skin_verts;
-  rval = moab.get_connectivity(tets_skin, tets_skin_verts, true);
-  CHKERRG(rval);
+  CHKERR moab.get_connectivity(tets_skin, tets_skin_verts, true);
   Tag th_dist;
-  rval = moab.tag_get_handle("DIST_NORMAL", th_dist);
-  CHKERRG(rval);
+  CHKERR moab.tag_get_handle("DIST_NORMAL", th_dist);
   Range cut_edge_verts;
-  rval = moab.get_connectivity(cutEdges, cut_edge_verts, false);
-  CHKERRG(rval);
+  CHKERR moab.get_connectivity(cutEdges, cut_edge_verts, false);
   // get faces and edges
   Range cut_edges_faces;
-  rval = moab.get_adjacencies(cut_edge_verts, 1, true, cut_edges_faces,
+  CHKERR moab.get_adjacencies(cut_edge_verts, 1, true, cut_edges_faces,
                               moab::Interface::UNION);
-  CHKERRG(rval);
-  rval = moab.get_adjacencies(cut_edge_verts, 2, true, cut_edges_faces,
+  CHKERR moab.get_adjacencies(cut_edge_verts, 2, true, cut_edges_faces,
                               moab::Interface::UNION);
-  CHKERRG(rval);
   zeroDistanceEnts.clear();
   verticesOnCutEdges.clear();
   for (Range::iterator fit = cut_edges_faces.begin();
        fit != cut_edges_faces.end(); fit++) {
     int num_nodes;
     const EntityHandle *conn;
-    rval = moab.get_connectivity(*fit, conn, num_nodes, true);
-    CHKERRG(rval);
+    CHKERR moab.get_connectivity(*fit, conn, num_nodes, true);
     double dist[] = {0, 0, 0};
-    rval = moab.tag_get_data(th_dist, conn, num_nodes, dist);
-    CHKERRG(rval);
+    CHKERR moab.tag_get_data(th_dist, conn, num_nodes, dist);
     if (fabs(dist[0]) < low_tol * aveLength &&
         fabs(dist[1]) < low_tol * aveLength &&
         fabs(dist[2]) < low_tol * aveLength) {
       zeroDistanceEnts.insert(*fit);
       Range adj_edges;
-      rval = moab.get_adjacencies(conn, num_nodes, 1, false, adj_edges,
+      CHKERR moab.get_adjacencies(conn, num_nodes, 1, false, adj_edges,
                                   moab::Interface::UNION);
-      CHKERRG(rval);
       for (Range::iterator eit = adj_edges.begin(); eit != adj_edges.end();
            eit++) {
         cutEdges.erase(*eit);
         edgesToCut.erase(*eit);
       }
       double coords[9];
-      rval = moab.get_coords(conn, num_nodes, coords);
+      CHKERR moab.get_coords(conn, num_nodes, coords);
       CHKERRG(ierr);
       for (int nn = 0; nn != num_nodes; nn++) {
+        // check if entity is on the skin, if it nothing can be done here
+        // is not part of the surface in the body
         if (tets_skin_verts.find(conn[nn]) == tets_skin_verts.end()) {
           VectorAdaptor s0(
               3, ublas::shallow_array_adaptor<double>(3, &coords[3 * nn]));
           double p_out[3];
           EntityHandle facets_out;
-          rval = treeSurfPtr->closest_to_location(&s0[0], rootSetSurf, p_out,
+          CHKERR treeSurfPtr->closest_to_location(&s0[0], rootSetSurf, p_out,
                                                   facets_out);
-          CHKERRG(rval);
           VectorAdaptor point_out(
               3, ublas::shallow_array_adaptor<double>(3, p_out));
           VectorDouble3 ray = point_out - s0;
@@ -500,42 +465,80 @@ MoFEMErrorCode CutMeshInterface::getZeroDistanceEnts(const double low_tol,
       }
     }
   }
-  rval = moab.tag_get_handle("DIST", th_dist);
+  CHKERR moab.tag_get_handle("DIST", th_dist);
   for (Range::iterator vit = cut_edge_verts.begin();
        vit != cut_edge_verts.end(); vit++) {
     double dist[] = {0};
-    rval = moab.tag_get_data(th_dist, &*vit, 1, dist);
-    CHKERRG(rval);
+    CHKERR moab.tag_get_data(th_dist, &*vit, 1, dist);
     if (fabs(dist[0]) < low_tol * aveLength) {
       zeroDistanceVerts.insert(*vit);
       Range adj_edges;
-      rval = moab.get_adjacencies(&*vit, 1, 1, false, adj_edges);
-      CHKERRG(rval);
+      CHKERR moab.get_adjacencies(&*vit, 1, 1, false, adj_edges);
       for (Range::iterator eit = adj_edges.begin(); eit != adj_edges.end();
            eit++) {
         cutEdges.erase(*eit);
         edgesToCut.erase(*eit);
       }
       double coords[3];
-      rval = moab.get_coords(&*vit, 1, coords);
-      CHKERRG(ierr);
+      CHKERR moab.get_coords(&*vit, 1, coords);
       VectorAdaptor s0(3, ublas::shallow_array_adaptor<double>(3, &coords[0]));
-      double p_out[3];
-      EntityHandle facets_out;
-      rval = treeSurfPtr->closest_to_location(&s0[0], rootSetSurf, p_out,
-                                              facets_out);
-      CHKERRG(rval);
-      VectorAdaptor point_out(3,
-                              ublas::shallow_array_adaptor<double>(3, p_out));
-      VectorDouble3 ray = point_out - s0;
-      double dist0 = norm_2(ray);
-      verticesOnCutEdges[*vit].dIst = dist0;
-      verticesOnCutEdges[*vit].lEngth = dist0;
-      verticesOnCutEdges[*vit].unitRayDir = dist0 > 0 ? ray / dist0 : ray;
-      verticesOnCutEdges[*vit].rayPoint = s0;
+      // Vertex is in the body, just project in on the surface
+      if (tets_skin_verts.find(*vit) == tets_skin_verts.end()) {
+        double p_out[3];
+        EntityHandle facets_out;
+        CHKERR treeSurfPtr->closest_to_location(&s0[0], rootSetSurf, p_out,
+                                                facets_out);
+        VectorAdaptor point_out(3,
+                                ublas::shallow_array_adaptor<double>(3, p_out));
+        VectorDouble3 ray                   = point_out - s0;
+        double dist0                        = norm_2(ray);
+        verticesOnCutEdges[*vit].dIst       = dist0;
+        verticesOnCutEdges[*vit].lEngth     = dist0;
+        verticesOnCutEdges[*vit].unitRayDir = dist0 > 0 ? ray / dist0 : ray;
+        verticesOnCutEdges[*vit].rayPoint   = s0;
+      } else {
+        double ray_length;
+        double ray_point[3], unit_ray_dir[3];
+        VectorAdaptor vec_unit_ray_dir(
+            3, ublas::shallow_array_adaptor<double>(3, unit_ray_dir));
+        VectorAdaptor vec_ray_point(
+            3, ublas::shallow_array_adaptor<double>(3, ray_point));
+        // Vertex is on the skin
+        adj_edges = intersect(adj_edges,tets_skin_edges);
+        if(adj_edges.empty()) {
+          SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY,
+                  "Huston we have a problem, how vertex can be on surface but "
+                  "not have adjacent surface edges to it?");
+        }
+        // Make a loop over all adjacent surface edges, to find direction of the
+        // ray. 
+        for (Range::iterator eit = adj_edges.begin(); eit != adj_edges.end();
+             eit++) {
+          CHKERR getRayForEdge(*eit, vec_ray_point, vec_unit_ray_dir,
+                               ray_length);
+          // FIXME: Pick one edge on the skin and send ray to move vertex. Edge
+          // should be pick one from corner edges, now is arbitrary
+          std::vector<double> distances_out;
+          std::vector<EntityHandle> facets_out;
+          CHKERR treeSurfPtr->ray_intersect_triangles(
+              distances_out, facets_out, rootSetSurf, low_tol, ray_point,
+              unit_ray_dir, &ray_length);
+          if (!distances_out.empty()) {
+            VectorDouble point_out(vec_ray_point +
+                                   distances_out[0] * vec_unit_ray_dir);
+            VectorDouble3 ray                   = point_out - s0;
+            double dist0                        = norm_2(ray);
+            verticesOnCutEdges[*vit].dIst       = dist0;
+            verticesOnCutEdges[*vit].lEngth     = dist0;
+            verticesOnCutEdges[*vit].unitRayDir = dist0 > 0 ? ray / dist0 : ray;
+            verticesOnCutEdges[*vit].rayPoint   = s0;
+            break;
+          }
+        }
+      }
     }
   }
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode CutMeshInterface::cutEdgesInMiddle(const BitRefLevel bit) {
@@ -606,97 +609,7 @@ MoFEMErrorCode CutMeshInterface::cutEdgesInMiddle(const BitRefLevel bit) {
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode CutMeshInterface::trimEdgesInTheMiddle(const BitRefLevel bit,
-                                                      Tag th,
-                                                      const double tol) {
-  CoreInterface &m_field = cOre;
-  moab::Interface &moab = m_field.get_moab();
-  MeshRefinement *refiner;
-  const RefEntity_multiIndex *ref_ents_ptr;
-  MoFEMFunctionBeginHot;
 
-  ierr = m_field.getInterface(refiner);
-  CHKERRG(ierr);
-  ierr = m_field.get_ref_ents(&ref_ents_ptr);
-  CHKERRG(ierr);
-  ierr = refiner->add_verices_in_the_middel_of_edges(trimEdges, bit);
-  CHKERRG(ierr);
-  ierr = refiner->refine_TET(cutNewVolumes, bit, false);
-  CHKERRG(ierr);
-  trimNewVolumes.clear();
-  ierr = m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
-      bit, bit, MBTET, trimNewVolumes);
-  CHKERRG(ierr);
-  // Get vertices which are on trim edges
-  verticesOnTrimEdges.clear();
-  trimNewVertices.clear();
-  for (map<EntityHandle, TreeData>::iterator mit = edgesToTrim.begin();
-       mit != edgesToTrim.end(); mit++) {
-    boost::shared_ptr<RefEntity> ref_ent =
-        *(ref_ents_ptr->get<Composite_ParentEnt_And_EntType_mi_tag>().find(
-            boost::make_tuple(mit->first, MBVERTEX)));
-    if ((ref_ent->getBitRefLevel() & bit).any()) {
-      EntityHandle vert = ref_ent->getRefEnt();
-      trimNewVertices.insert(vert);
-      verticesOnTrimEdges[vert] = mit->second;
-    }
-  }
-
-  // Get faces which are trimmed
-  trimNewSurfaces.clear();
-  ierr = m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
-      bit, bit, MBTRI, trimNewSurfaces);
-  CHKERRG(ierr);
-  Range trim_new_surfaces_nodes;
-  rval = moab.get_connectivity(trimNewSurfaces, trim_new_surfaces_nodes, true);
-  CHKERRG(rval);
-  trim_new_surfaces_nodes = subtract(trim_new_surfaces_nodes, trimNewVertices);
-  trim_new_surfaces_nodes = subtract(trim_new_surfaces_nodes, cutNewVertices);
-  Range faces_not_on_surface;
-  rval = moab.get_adjacencies(trim_new_surfaces_nodes, 2, false,
-                              faces_not_on_surface, moab::Interface::UNION);
-  trimNewSurfaces = subtract(trimNewSurfaces, faces_not_on_surface);
-
-  // Get surfaces which are not trimmed and add them to surface
-  Range all_surfaces_on_bit_level;
-  ierr = m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
-      bit, BitRefLevel().set(), MBTRI, all_surfaces_on_bit_level);
-  CHKERRG(ierr);
-  all_surfaces_on_bit_level =
-      intersect(all_surfaces_on_bit_level, cutNewSurfaces);
-  trimNewSurfaces = unite(trimNewSurfaces, all_surfaces_on_bit_level);
-
-  Range check_verts;
-  rval = moab.get_connectivity(trimNewSurfaces, check_verts, true);
-  CHKERRG(rval);
-  check_verts = subtract(check_verts, trimNewVertices);
-  for (Range::iterator vit = check_verts.begin(); vit != check_verts.end();
-       vit++) {
-    double coords[3];
-    if (th) {
-      rval = moab.tag_get_data(th, &*vit, 1, coords);
-      CHKERRG(rval);
-    } else {
-      rval = moab.get_coords(&*vit, 1, coords);
-      CHKERRG(rval);
-    }
-    double point_out[3];
-    EntityHandle facets_out;
-    rval = treeSurfPtr->closest_to_location(coords, rootSetSurf, point_out,
-                                            facets_out);
-    CHKERRG(rval);
-    VectorAdaptor s(3, ublas::shallow_array_adaptor<double>(3, coords));
-    VectorAdaptor p(3, ublas::shallow_array_adaptor<double>(3, point_out));
-    if (norm_2(s - p) / aveLength > tol) {
-      Range adj;
-      rval = moab.get_adjacencies(&*vit, 1, 2, false, adj);
-      CHKERRG(rval);
-      trimNewSurfaces = subtract(trimNewSurfaces, adj);
-    }
-  }
-
-  MoFEMFunctionReturnHot(0);
-}
 
 MoFEMErrorCode CutMeshInterface::moveMidNodesOnCutEdges(Tag th) {
   MoFEMFunctionBeginHot;
@@ -761,47 +674,45 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Tag th, const double tol,
                                                  int verb) {
   CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
 
   // takes edges on body skin
   Skinner skin(&moab);
   Range tets_skin;
-  rval = skin.find_skin(0, cutNewVolumes, false, tets_skin);
-  CHKERRG(rval);
+  CHKERR skin.find_skin(0, cutNewVolumes, false, tets_skin);
+  // vertives on the skin
+  Range tets_skin_verts;
+  CHKERR moab.get_connectivity(tets_skin,tets_skin_verts,true);
+  // edges on the skin
   Range adj_edges_tets_skin;
-  rval = moab.get_adjacencies(tets_skin, 1, false, adj_edges_tets_skin,
+  CHKERR moab.get_adjacencies(tets_skin, 1, false, adj_edges_tets_skin,
                               moab::Interface::UNION);
-  CHKERRG(rval);
-
   // get edges on new surface
   Range edges;
-  rval = moab.get_adjacencies(cutNewSurfaces, 1, false, edges,
+  CHKERR moab.get_adjacencies(cutNewSurfaces, 1, false, edges,
                               moab::Interface::UNION);
-  CHKERRG(rval);
 
   // clear data ranges
   trimEdges.clear();
   edgesToTrim.clear();
+  verticesOnTrimEdges.clear();
+  trimNewVertices.clear();
 
+  // Solve nonlinera problem of finding point on surface front
   struct ClosestPointProjection {
-
     boost::shared_ptr<OrientedBoxTreeTool> treeSurfPtr;
     EntityHandle rootSetSurf;
     VectorDouble3 S0;
     VectorDouble3 rAY;
-    double aveLength;
     double pointOut[3];
     VectorAdaptor vecPointOut;
     ClosestPointProjection(boost::shared_ptr<OrientedBoxTreeTool> &tree,
                             EntityHandle root_set, VectorDouble3 &s0,
-                            VectorDouble3 &ray, double ave_length)
+                            VectorDouble3 &ray)
         : treeSurfPtr(tree), rootSetSurf(root_set), S0(s0), rAY(ray),
-          aveLength(ave_length),
           vecPointOut(3,
                       ublas::shallow_array_adaptor<double>(3, &pointOut[0])) {}
-
     VectorDouble3 &operator()(const int max_it, const double tol) {
-      MoFEMFunctionBeginHot;
       // cerr << "\n\n" << endl;
       VectorDouble3 w;
       double length = norm_2(rAY);
@@ -814,7 +725,7 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Tag th, const double tol,
         double s = inner_prod(rAY, w);
         S0 += s * rAY;
         // cerr << "s " << ii << " " << s << " " << norm_2(w) << endl;
-        if (s / aveLength < tol)
+        if (s / length < tol)
           break;
       }
       return S0;
@@ -826,15 +737,12 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Tag th, const double tol,
     // Get edge connectivity and coords
     int num_nodes;
     const EntityHandle *conn;
-    rval = moab.get_connectivity(*eit, conn, num_nodes, true);
-    CHKERRG(rval);
+    CHKERR moab.get_connectivity(*eit, conn, num_nodes, true);
     double coords[3 * num_nodes];
     if (th) {
-      rval = moab.tag_get_data(th, conn, num_nodes, coords);
-      CHKERRG(rval);
+      CHKERR moab.tag_get_data(th, conn, num_nodes, coords);
     } else {
-      rval = moab.get_coords(conn, num_nodes, coords);
-      CHKERRG(rval);
+      CHKERR moab.get_coords(conn, num_nodes, coords);
     }
     // Put edges coords into boost vectors
     VectorAdaptor s0(3, ublas::shallow_array_adaptor<double>(3, &coords[0]));
@@ -845,15 +753,13 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Tag th, const double tol,
     double point_out0[3];
     EntityHandle facets_out0;
     // find closet point on the surface from first node
-    rval = treeSurfPtr->closest_to_location(&coords[0], rootSetSurf, point_out0,
+    CHKERR treeSurfPtr->closest_to_location(&coords[0], rootSetSurf, point_out0,
                                             facets_out0);
-    CHKERRG(rval);
     // find closest point on the surface from second node
     double point_out1[3];
     EntityHandle facets_out1;
-    rval = treeSurfPtr->closest_to_location(&coords[3], rootSetSurf, point_out1,
+    CHKERR treeSurfPtr->closest_to_location(&coords[3], rootSetSurf, point_out1,
                                             facets_out1);
-    CHKERRG(rval);
     // Put closest point in boost vectors
     VectorAdaptor p0(3, ublas::shallow_array_adaptor<double>(3, point_out0));
     VectorAdaptor p1(3, ublas::shallow_array_adaptor<double>(3, point_out1));
@@ -868,43 +774,137 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Tag th, const double tol,
     double dist1 = norm_2(delta1);
     double min_dist = fmin(dist0, dist1);
     double max_dist = fmax(dist0, dist1);
-    // If one of nodes is on the surface and other is not, that edge is to trim
-    if (min_dist / length < tol && max_dist / length > tol) {
-      // add ege to trim
-      double dist;
-      VectorDouble3 ray;
-      VectorDouble3 trimmed_end;
-      VectorDouble3 itersection_point;
+
+    // add edge to trim
+    double dist;
+    VectorDouble3 ray;
+    VectorDouble3 trimmed_end;
+    VectorDouble3 itersection_point;
+    EntityHandle vert;
+
+    if (min_dist / length < tol && max_dist / length > 0) {
       if (max_dist == dist0) {
         // move mid node in reference to node 0
+        vert        = conn[1];
         trimmed_end = s0;
-        ray = s1 - trimmed_end;
-        itersection_point =
-            ClosestPointProjection(treeSurfPtr, rootSetSurf, trimmed_end, ray,
-                                    aveLength)(nbMaxTrimSearchIterations, tol);
-        ray = itersection_point - trimmed_end;
-        dist = norm_2(ray);
+        ray         = s1 - trimmed_end;
       } else {
         // move node in reference to node 1
+        vert        = conn[0];
         trimmed_end = s1;
-        ray = s0 - trimmed_end;
-        itersection_point =
-            ClosestPointProjection(treeSurfPtr, rootSetSurf, trimmed_end, ray,
-                                    aveLength)(nbMaxTrimSearchIterations, tol);
-        ray = itersection_point - trimmed_end;
-        dist = norm_2(ray);
+        ray         = s0 - trimmed_end;
       }
-      if (fabs(dist - length) / length > tol) {
-        edgesToTrim[*eit].dIst = dist;
-        edgesToTrim[*eit].lEngth = dist;
-        edgesToTrim[*eit].unitRayDir = ray / dist;
-        edgesToTrim[*eit].rayPoint = trimmed_end;
-        trimEdges.insert(*eit);
+
+      itersection_point =
+          ClosestPointProjection(treeSurfPtr, rootSetSurf, trimmed_end,
+                                 ray)(nbMaxTrimSearchIterations, tol * 1e-4);
+      ray  = itersection_point - trimmed_end;
+      dist = norm_2(ray);
+
+      // If one of nodes is on the surface and other is not, that edge is to
+      // trim
+      if (min_dist / length < tol && max_dist / length > tol) {
+        // check if edges should be trimmed, i.e. if edge is trimmed at very end
+        // simply move closed node rather than trim
+        if ((1 - dist / length) > tol) {
+          edgesToTrim[*eit].dIst       = dist;
+          edgesToTrim[*eit].lEngth     = dist;
+          edgesToTrim[*eit].unitRayDir = ray / dist;
+          edgesToTrim[*eit].rayPoint   = trimmed_end;
+          trimEdges.insert(*eit);
+        } else if ((1 - dist / length) > 0) {
+          cerr << "AAAA " << endl;
+          trimNewVertices.insert(vert);
+          verticesOnTrimEdges[vert].dIst       = dist;
+          verticesOnTrimEdges[vert].lEngth     = dist;
+          verticesOnTrimEdges[vert].unitRayDir = ray / dist;
+          verticesOnTrimEdges[vert].rayPoint   = trimmed_end;
+        }
       }
     }
   }
 
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode CutMeshInterface::trimEdgesInTheMiddle(const BitRefLevel bit,
+                                                      Tag th,
+                                                      const double tol) {
+  CoreInterface &m_field = cOre;
+  moab::Interface &moab  = m_field.get_moab();
+  MeshRefinement *refiner;
+  const RefEntity_multiIndex *ref_ents_ptr;
+  MoFEMFunctionBegin;
+
+  CHKERR m_field.getInterface(refiner);
+  CHKERR m_field.get_ref_ents(&ref_ents_ptr);
+  CHKERR refiner->add_verices_in_the_middel_of_edges(trimEdges, bit);
+  CHKERR refiner->refine_TET(cutNewVolumes, bit, false);
+
+  trimNewVolumes.clear();
+  CHKERR m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
+      bit, bit, MBTET, trimNewVolumes);
+  // Get vertices which are on trim edges
+  for (map<EntityHandle, TreeData>::iterator mit = edgesToTrim.begin();
+       mit != edgesToTrim.end(); mit++) {
+    boost::shared_ptr<RefEntity> ref_ent =
+        *(ref_ents_ptr->get<Composite_ParentEnt_And_EntType_mi_tag>().find(
+            boost::make_tuple(mit->first, MBVERTEX)));
+    if ((ref_ent->getBitRefLevel() & bit).any()) {
+      EntityHandle vert = ref_ent->getRefEnt();
+      trimNewVertices.insert(vert);
+      verticesOnTrimEdges[vert] = mit->second;
+    }
+  }
+
+  // Get faces which are trimmed
+  trimNewSurfaces.clear();
+  CHKERR m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
+      bit, bit, MBTRI, trimNewSurfaces);
+  Range trim_new_surfaces_nodes;
+  CHKERR moab.get_connectivity(trimNewSurfaces, trim_new_surfaces_nodes, true);
+  trim_new_surfaces_nodes = subtract(trim_new_surfaces_nodes, trimNewVertices);
+  trim_new_surfaces_nodes = subtract(trim_new_surfaces_nodes, cutNewVertices);
+  Range faces_not_on_surface;
+  CHKERR moab.get_adjacencies(trim_new_surfaces_nodes, 2, false,
+                              faces_not_on_surface, moab::Interface::UNION);
+  trimNewSurfaces = subtract(trimNewSurfaces, faces_not_on_surface);
+
+  // Get surfaces which are not trimmed and add them to surface
+  Range all_surfaces_on_bit_level;
+  CHKERR m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
+      bit, BitRefLevel().set(), MBTRI, all_surfaces_on_bit_level);
+  all_surfaces_on_bit_level =
+      intersect(all_surfaces_on_bit_level, cutNewSurfaces);
+  trimNewSurfaces = unite(trimNewSurfaces, all_surfaces_on_bit_level);
+
+  // check of nodes are outside surface and if it are remove adjacent faces to
+  // those nodes.
+  Range check_verts;
+  CHKERR moab.get_connectivity(trimNewSurfaces, check_verts, true);
+  check_verts = subtract(check_verts, trimNewVertices);
+  for (Range::iterator vit = check_verts.begin(); vit != check_verts.end();
+       vit++) {
+    double coords[3];
+    if (th) {
+      CHKERR moab.tag_get_data(th, &*vit, 1, coords);
+    } else {
+      CHKERR moab.get_coords(&*vit, 1, coords);
+    }
+    double point_out[3];
+    EntityHandle facets_out;
+    CHKERR treeSurfPtr->closest_to_location(coords, rootSetSurf, point_out,
+                                            facets_out);
+    VectorAdaptor s(3, ublas::shallow_array_adaptor<double>(3, coords));
+    VectorAdaptor p(3, ublas::shallow_array_adaptor<double>(3, point_out));
+    if (norm_2(s - p) / aveLength > tol) {
+      Range adj;
+      CHKERR moab.get_adjacencies(&*vit, 1, 2, false, adj);
+      trimNewSurfaces = subtract(trimNewSurfaces, adj);
+    }
+  }
+
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode CutMeshInterface::getRayForEdge(const EntityHandle ent,
@@ -1743,9 +1743,8 @@ MoFEMErrorCode CutMeshInterface::rebuildMeshWithTetGen(
   CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   TetGenInterface *tetgen_iface;
-  MoFEMFunctionBeginHot;
-  ierr = m_field.getInterface(tetgen_iface);
-  CHKERRG(ierr);
+  MoFEMFunctionBegin;
+  CHKERR m_field.getInterface(tetgen_iface);
 
   tetGenData.clear();
   moabTetGenMap.clear();
@@ -1770,18 +1769,14 @@ MoFEMErrorCode CutMeshInterface::rebuildMeshWithTetGen(
 
     MoFEMErrorCode getLevelEnts() {
       MoFEMFunctionBeginHot;
-      ierr = mField.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
+      CHKERR mField.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
           bIt, BitRefLevel().set(), MBTET, mTets);
-      CHKERRG(ierr);
-      ierr = mField.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
+      CHKERR mField.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
           bIt, BitRefLevel().set(), MBTRI, mTris);
-      CHKERRG(ierr);
-      ierr = mField.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
+      CHKERR mField.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
           bIt, BitRefLevel().set(), MBEDGE, mEdges);
-      CHKERRG(ierr);
-      ierr = mField.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
+      CHKERR mField.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
           bIt, BitRefLevel().set(), MBVERTEX, mNodes);
-      CHKERRG(ierr);
       MoFEMFunctionReturnHot(0);
     }
 
@@ -1793,13 +1788,10 @@ MoFEMErrorCode CutMeshInterface::rebuildMeshWithTetGen(
       moab::Interface &moab = mField.get_moab();
       MoFEMFunctionBeginHot;
       Skinner skin(&moab);
-      rval = skin.find_skin(0, mTets, false, mSkin);
-      CHKERRG(rval);
-      rval = mField.get_moab().get_connectivity(mSkin, mSkinNodes, true);
-      CHKERRG(rval);
-      rval = mField.get_moab().get_adjacencies(mSkin, 1, false, mSkinEdges,
+      CHKERR skin.find_skin(0, mTets, false, mSkin);
+      CHKERR mField.get_moab().get_connectivity(mSkin, mSkinNodes, true);
+      CHKERR mField.get_moab().get_adjacencies(mSkin, 1, false, mSkinEdges,
                                                moab::Interface::UNION);
-      CHKERRG(rval);
       MoFEMFunctionReturnHot(0);
     }
   };
@@ -1817,17 +1809,13 @@ MoFEMErrorCode CutMeshInterface::rebuildMeshWithTetGen(
     MoFEMErrorCode getVolume(const BitEnts &bit_ents, const Range &tris) {
       moab::Interface &moab = mField.get_moab();
       MoFEMFunctionBeginHot;
-      rval = moab.get_connectivity(tris, sNodes, true);
-      CHKERRG(rval);
-      rval =
+      CHKERR moab.get_connectivity(tris, sNodes, true);
+      CHKERR
           moab.get_adjacencies(tris, 1, false, sEdges, moab::Interface::UNION);
-      CHKERRG(rval);
-      rval =
+      CHKERR
           moab.get_adjacencies(sNodes, 3, false, sVols, moab::Interface::UNION);
-      CHKERRG(rval);
       sVols = intersect(sVols, bit_ents.mTets);
-      rval = moab.get_connectivity(sVols, vNodes, true);
-      CHKERRG(rval);
+      CHKERR moab.get_connectivity(sVols, vNodes, true);
       MoFEMFunctionReturnHot(0);
     }
 
@@ -1846,29 +1834,21 @@ MoFEMErrorCode CutMeshInterface::rebuildMeshWithTetGen(
       MoFEMFunctionBeginHot;
       Skinner skin(&moab);
       rval = skin.find_skin(0, sVols, false, vSkin);
-      CHKERRG(rval);
       for (int ll = 0; ll != levels; ll++) {
-        rval = moab.get_adjacencies(vSkin, 3, false, sVols,
+        CHKERR moab.get_adjacencies(vSkin, 3, false, sVols,
                                     moab::Interface::UNION);
-        CHKERRG(rval);
         sVols = intersect(sVols, bit_ents.mTets);
         vSkin.clear();
-        rval = skin.find_skin(0, sVols, false, vSkin);
-        CHKERRG(rval);
+        CHKERR skin.find_skin(0, sVols, false, vSkin);
       }
       vSkinWithoutBodySkin = subtract(vSkin, bit_ents.mSkin);
       vSkinOnBodySkin = intersect(vSkin, bit_ents.mSkin);
-      rval = moab.get_connectivity(vSkinOnBodySkin, vSkinOnBodySkinNodes, true);
-      CHKERRG(rval);
-      rval = moab.get_connectivity(sVols, vNodes, true);
-      CHKERRG(rval);
-      rval = moab.get_connectivity(vSkin, vSkinNodes, true);
-      CHKERRG(rval);
+      CHKERR moab.get_connectivity(vSkinOnBodySkin, vSkinOnBodySkinNodes, true);
+      CHKERR moab.get_connectivity(sVols, vNodes, true);
+      CHKERR moab.get_connectivity(vSkin, vSkinNodes, true);
       vSkinNodesWithoutBodySkin = subtract(vSkinNodes, bit_ents.mSkinNodes);
-      rval = skin.find_skin(0, tris, false, sSkin);
-      CHKERRG(rval);
-      rval = moab.get_connectivity(sSkin, sSkinNodes, true);
-      CHKERRG(rval);
+      CHKERR skin.find_skin(0, tris, false, sSkin);
+      CHKERR moab.get_connectivity(sSkin, sSkinNodes, true);
       tVols = sVols;
       MoFEMFunctionReturnHot(0);
     }
@@ -1883,16 +1863,13 @@ MoFEMErrorCode CutMeshInterface::rebuildMeshWithTetGen(
       rval = moab.get_adjacencies(vSkinOnBodySkinNodes, 3, false,
                                   tets_with_four_nodes_on_skin,
                                   moab::Interface::UNION);
-      CHKERRG(rval);
       Range tets_nodes;
-      rval =
+      CHKERR
           moab.get_connectivity(tets_with_four_nodes_on_skin, tets_nodes, true);
-      CHKERRG(rval);
       tets_nodes = subtract(tets_nodes, vSkinOnBodySkinNodes);
       Range other_tets;
-      rval = moab.get_adjacencies(tets_nodes, 3, false, other_tets,
+      CHKERR moab.get_adjacencies(tets_nodes, 3, false, other_tets,
                                   moab::Interface::UNION);
-      CHKERRG(rval);
       tets_with_four_nodes_on_skin =
           subtract(tets_with_four_nodes_on_skin, other_tets);
       Range to_remove;
@@ -1900,15 +1877,12 @@ MoFEMErrorCode CutMeshInterface::rebuildMeshWithTetGen(
            tit != tets_with_four_nodes_on_skin.end(); tit++) {
         int num_nodes;
         const EntityHandle *conn;
-        rval = moab.get_connectivity(*tit, conn, num_nodes, true);
-        CHKERRG(rval);
+        CHKERR moab.get_connectivity(*tit, conn, num_nodes, true);
         double coords[12];
         if (th) {
-          rval = moab.tag_get_data(th, conn, num_nodes, coords);
-          CHKERRG(rval);
+          CHKERR moab.tag_get_data(th, conn, num_nodes, coords);
         } else {
-          rval = moab.get_coords(conn, num_nodes, coords);
-          CHKERRG(rval);
+          CHKERR moab.get_coords(conn, num_nodes, coords);
         }
         double quality = Tools::volumeLengthQuality(coords);
         if (quality < 1e-2) {
@@ -1920,41 +1894,29 @@ MoFEMErrorCode CutMeshInterface::rebuildMeshWithTetGen(
 
       Skinner skin(&moab);
       vSkin.clear();
-      rval = skin.find_skin(0, sVols, false, vSkin);
-      CHKERRG(rval);
+      CHKERR skin.find_skin(0, sVols, false, vSkin);
       Range m_skin;
-      rval =
+      CHKERR
           skin.find_skin(0, subtract(bit_ents.mSkin, to_remove), false, m_skin);
-      CHKERRG(rval);
-
       vSkinWithoutBodySkin = subtract(vSkin, m_skin);
       vSkinOnBodySkin = intersect(vSkin, m_skin);
       vNodes.clear();
       vSkinNodes.clear();
       vSkinOnBodySkinNodes.clear();
-      rval = moab.get_connectivity(sVols, vNodes, true);
-      CHKERRG(rval);
-      rval = moab.get_connectivity(vSkinOnBodySkin, vSkinOnBodySkinNodes, true);
-      CHKERRG(rval);
-      rval = moab.get_connectivity(vSkin, vSkinNodes, true);
-      CHKERRG(rval);
-
+      CHKERR moab.get_connectivity(sVols, vNodes, true);
+      CHKERR moab.get_connectivity(vSkinOnBodySkin, vSkinOnBodySkinNodes, true);
+      CHKERR moab.get_connectivity(vSkin, vSkinNodes, true);
       MoFEMFunctionReturnHot(0);
     }
   };
 
   BitEnts bit_ents(m_field, mesh_bit);
-  ierr = bit_ents.getLevelEnts();
-  CHKERRG(ierr);
-  ierr = bit_ents.getSkin();
-  CHKERRG(ierr);
+  CHKERR bit_ents.getLevelEnts();
+  CHKERR bit_ents.getSkin();
   SurfaceEnts surf_ents(m_field);
-  ierr = surf_ents.getVolume(bit_ents, surface);
-  CHKERRG(ierr);
-  ierr = surf_ents.getSkin(bit_ents, surface);
-  CHKERRG(ierr);
-  ierr = surf_ents.getTetsForRemesh(bit_ents);
-  CHKERRG(ierr);
+  CHKERR surf_ents.getVolume(bit_ents, surface);
+  CHKERR surf_ents.getSkin(bit_ents, surface);
+  CHKERR surf_ents.getTetsForRemesh(bit_ents);
 
   map<int, Range> types_ents;
   types_ents[TetGenInterface::RIDGEVERTEX].merge(
@@ -1986,22 +1948,18 @@ MoFEMErrorCode CutMeshInterface::rebuildMeshWithTetGen(
 
   Tag th_marker;
   int def_marker = 0;
-  rval = m_field.get_moab().tag_get_handle(
+  CHKERR m_field.get_moab().tag_get_handle(
       "TETGEN_MARKER", 1, MB_TYPE_INTEGER, th_marker,
       MB_TAG_CREAT | MB_TAG_SPARSE, &def_marker);
-  CHKERRG(rval);
 
   vector<int> markers(surf_ents.vNodes.size(), 0);
-  rval = moab.tag_set_data(th_marker, surf_ents.vNodes, &*markers.begin());
-  CHKERRG(rval);
+  CHKERR moab.tag_set_data(th_marker, surf_ents.vNodes, &*markers.begin());
   {
-    rval =
-        m_field.get_moab().tag_get_data(th_marker, surface, &*markers.begin());
-    CHKERRG(rval);
+    CHKERR m_field.get_moab().tag_get_data(th_marker, surface,
+                                           &*markers.begin());
     fill(markers.begin(), markers.end(), 1);
-    rval =
-        m_field.get_moab().tag_set_data(th_marker, surface, &*markers.begin());
-    CHKERRG(rval);
+    CHKERR m_field.get_moab().tag_set_data(th_marker, surface,
+                                           &*markers.begin());
   }
   int shift = 3;
   map<int, int> id_shift_map; // each meshset has set unique bit
@@ -2011,46 +1969,40 @@ MoFEMErrorCode CutMeshInterface::rebuildMeshWithTetGen(
     id_shift_map[ms_id] = 1 << shift; // shift bit
     shift++;
     Range sideset_faces;
-    ierr = m_field.getInterface<MeshsetsManager>()->getEntitiesByDimension(
+    CHKERR m_field.getInterface<MeshsetsManager>()->getEntitiesByDimension(
         ms_id, SIDESET, 2, sideset_faces, true);
-    CHKERRG(ierr);
     sideset_faces = intersect(sideset_faces, surf_ents.vNodes);
     markers.resize(sideset_faces.size());
-    rval = m_field.get_moab().tag_get_data(th_marker, sideset_faces,
+    CHKERR m_field.get_moab().tag_get_data(th_marker, sideset_faces,
                                            &*markers.begin());
-    CHKERRG(rval);
     for (unsigned int ii = 0; ii < markers.size(); ii++) {
       markers[ii] |= id_shift_map[ms_id]; // add bit to marker
     }
-    rval = m_field.get_moab().tag_set_data(th_marker, sideset_faces,
+    CHKERR m_field.get_moab().tag_set_data(th_marker, sideset_faces,
                                            &*markers.begin());
-    CHKERRG(rval);
   }
   Range nodes_to_remove; // none
   markers.resize(nodes_to_remove.size());
   fill(markers.begin(), markers.end(), -1);
-  rval = m_field.get_moab().tag_set_data(th_marker, nodes_to_remove,
+  CHKERR m_field.get_moab().tag_set_data(th_marker, nodes_to_remove,
                                          &*markers.begin());
-  CHKERRG(rval);
 
   // nodes
   if (tetGenData.size() == 1) {
 
     Range ents_to_tetgen = surf_ents.sVols;
-    for (int dd = 2; dd >= 0; dd--) {
-      rval = m_field.get_moab().get_adjacencies(
+    CHKERR m_field.get_moab().get_connectivity(surf_ents.sVols, ents_to_tetgen,
+                                               true);
+    for (int dd = 2; dd >= 1; dd--) {
+      CHKERR m_field.get_moab().get_adjacencies(
           surf_ents.sVols, dd, false, ents_to_tetgen, moab::Interface::UNION);
-      CHKERRG(rval);
     }
 
     // Load mesh to TetGen data structures
-    ierr = tetgen_iface->inData(ents_to_tetgen, in, moabTetGenMap,
+    CHKERR tetgen_iface->inData(ents_to_tetgen, in, moabTetGenMap,
                                 tetGenMoabMap, th);
-    CHKERRG(ierr);
-    ierr =
-        tetgen_iface->setGeomData(in, moabTetGenMap, tetGenMoabMap, types_ents);
-    CHKERRG(ierr);
-
+    CHKERR tetgen_iface->setGeomData(in, moabTetGenMap, tetGenMoabMap,
+                                     types_ents);
     std::vector<pair<Range, int> > markers;
     for (Range::iterator tit = surface.begin(); tit != surface.end(); tit++) {
       Range facet;
@@ -2071,8 +2023,7 @@ MoFEMErrorCode CutMeshInterface::rebuildMeshWithTetGen(
       facet.insert(*tit);
       markers.push_back(pair<Range, int>(facet, 0));
     }
-    ierr = tetgen_iface->setFaceData(markers, in, moabTetGenMap, tetGenMoabMap);
-    CHKERRG(ierr);
+    CHKERR tetgen_iface->setFaceData(markers, in, moabTetGenMap, tetGenMoabMap);
   }
 
   if (debug) {
@@ -2094,8 +2045,7 @@ MoFEMErrorCode CutMeshInterface::rebuildMeshWithTetGen(
       tetGenData.push_back(new tetgenio);
       tetgenio &_out_ = tetGenData.back();
       char *s = const_cast<char *>(sw->c_str());
-      ierr = tetgen_iface->tetRahedralize(s, _in_, _out_);
-      CHKERRG(ierr);
+      CHKERR tetgen_iface->tetRahedralize(s, _in_, _out_);
     }
   }
   tetgenio &out = tetGenData.back();
@@ -2109,25 +2059,21 @@ MoFEMErrorCode CutMeshInterface::rebuildMeshWithTetGen(
     out.save_poly(tetgen_out_file_name);
   }
 
-  ierr = tetgen_iface->outData(in, out, moabTetGenMap, tetGenMoabMap, bit,
+  CHKERR tetgen_iface->outData(in, out, moabTetGenMap, tetGenMoabMap, bit,
                                false, false);
-  CHKERRG(ierr);
 
   Range rest_of_ents = subtract(bit_ents.mTets, surf_ents.tVols);
   for (int dd = 2; dd >= 0; dd--) {
-    rval = moab.get_adjacencies(rest_of_ents.subset_by_dimension(3), dd, false,
+    CHKERR moab.get_adjacencies(rest_of_ents.subset_by_dimension(3), dd, false,
                                 rest_of_ents, moab::Interface::UNION);
-    CHKERRG(rval);
   }
-  ierr =
-      m_field.getInterface<BitRefManager>()->addBitRefLevel(rest_of_ents, bit);
-  CHKERRG(ierr);
+  CHKERR m_field.getInterface<BitRefManager>()->addBitRefLevel(rest_of_ents,
+                                                               bit);
 
   Range tetgen_faces;
   map<int, Range> face_markers_map;
-  ierr = tetgen_iface->getTriangleMarkers(tetGenMoabMap, out, &tetgen_faces,
+  CHKERR tetgen_iface->getTriangleMarkers(tetGenMoabMap, out, &tetgen_faces,
                                           &face_markers_map);
-  CHKERRG(ierr);
 
   tetgenSurfaces = face_markers_map[1];
   for (map<int, Range>::iterator mit = face_markers_map.begin();
@@ -2137,14 +2083,13 @@ MoFEMErrorCode CutMeshInterface::rebuildMeshWithTetGen(
       int msId = it->getMeshsetId();
       if (id_shift_map[msId] & mit->first) {
         EntityHandle meshset = it->getMeshset();
-        ierr = m_field.get_moab().add_entities(
+        CHKERR m_field.get_moab().add_entities(
             meshset, mit->second.subset_by_type(MBTRI));
-        CHKERRG(ierr);
       }
     }
   }
 
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 #endif // WITH_TETGEN
