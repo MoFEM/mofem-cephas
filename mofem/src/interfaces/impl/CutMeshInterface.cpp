@@ -813,7 +813,6 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Tag th, const double tol,
           edgesToTrim[*eit].rayPoint   = trimmed_end;
           trimEdges.insert(*eit);
         } else if ((1 - dist / length) > 0) {
-          cerr << "AAAA " << endl;
           trimNewVertices.insert(vert);
           verticesOnTrimEdges[vert].dIst       = dist;
           verticesOnTrimEdges[vert].lEngth     = dist;
