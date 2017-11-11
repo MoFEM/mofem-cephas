@@ -63,9 +63,9 @@ cOmm(0),
 verbose(verbose) {
 
   if (!isGloballyPetscInitialised) {
-    PetscPushErrorHandler(mofem_error_handler, PETSC_NULL);
     isGloballyPetscInitialised = true;
   }
+  PetscPushErrorHandler(mofem_error_handler, PETSC_NULL);
 
   // Register interfaces for this implementation
   ierr = registerInterface<UnknownInterface>(IDD_MOFEMUnknown);
