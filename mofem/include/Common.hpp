@@ -24,7 +24,7 @@ namespace MoFEM {
  * \brief Exception to catch
  */
 struct MoFEMException : public std::exception {
-  MoFEMErrorCodes errorCode;
+  const int errorCode;
   char errorMessage[255];
   MoFEMException(const MoFEMErrorCodes error_code) : errorCode(error_code) {
     strcpy(errorMessage, "Huston we have a problem, something is wrong");
@@ -34,19 +34,23 @@ struct MoFEMException : public std::exception {
     strcpy(errorMessage, error_message);
   }
   const char *what() const throw() { return errorMessage; }
+protected:
+  MoFEMException(const int error_code) : errorCode(error_code) {
+    strcpy(errorMessage, "Huston we have a problem, something is wrong");
+  }
 };
 
 struct MoFEMExceptionRepeat : public MoFEMException {
   const int lINE;
-  MoFEMExceptionRepeat(const MoFEMErrorCodes error_code, const int line)
+  MoFEMExceptionRepeat(const int error_code, const int line)
       : MoFEMException(error_code), lINE(line) {
     strcpy(errorMessage, " ");
   }
 };
 
 struct MoFEMExceptionInitial : public MoFEMExceptionRepeat {
-  MoFEMExceptionInitial(const MoFEMErrorCodes error_code,
-                        const char error_message[], const int line)
+  MoFEMExceptionInitial(const int error_code, const char error_message[],
+                        const int line)
       : MoFEMExceptionRepeat(error_code, line) {
     strcpy(errorMessage, error_message);
   }
@@ -82,7 +86,7 @@ static MoFEMErrorCodeGeneric<PetscErrorCode> ierr =
  * This class is not used directly, it is called in CHKERR. In case of the error
  * pass line number to exception and that is catch at the end of the function.
  * Information is enriched by function name and file name and error is push to
- * petsc error stack.
+ * PETSc error stack.
  *
  * \note This class has no variables and line number is set at compilation.
  * Adding variables to this function can will reduce efficiency of the code. Do
@@ -97,22 +101,7 @@ template <int LINE> struct ErrorCheckerCode {
    */
   inline void operator<<(const MoFEMErrorCode err) {
     if (PetscUnlikely(err)) {
-      switch (err) {
-      case MOFEM_DATA_INCONSISTENCY:
-        throw MoFEMExceptionRepeat(MOFEM_DATA_INCONSISTENCY, LINE);
-      case MOFEM_NOT_IMPLEMENTED:
-        throw MoFEMExceptionRepeat(MOFEM_NOT_IMPLEMENTED, LINE);
-      case MOFEM_NOT_FOUND:
-        throw MoFEMExceptionRepeat(MOFEM_NOT_FOUND, LINE);
-      case MOFEM_OPERATION_UNSUCCESSFUL:
-        throw MoFEMExceptionRepeat(MOFEM_OPERATION_UNSUCCESSFUL, LINE);
-      case MOFEM_IMPOSIBLE_CASE:
-        throw MoFEMExceptionRepeat(MOFEM_IMPOSIBLE_CASE, LINE);
-      case MOFEM_INVALID_DATA:
-        throw MoFEMExceptionRepeat(MOFEM_INVALID_DATA, LINE);
-      default:
-        throw MoFEMExceptionRepeat(MOFEM_MOFEMEXCEPTION_THROW, LINE);
-      }
+      throw MoFEMExceptionRepeat(err, LINE);
     }
     return;
   }

@@ -54,6 +54,7 @@ const static int debug = 1;
 #include <moab/AdaptiveKDTree.hpp>
 #include <BitLevelCoupler.hpp>
 
+#include "impl/ErrorHandler.cpp"
 #include "impl/LoopMethods.cpp"
 #include "impl/Core.cpp"
 #include "impl/DeprecatedCoreInterface.cpp"
