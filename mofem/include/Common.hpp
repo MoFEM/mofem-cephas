@@ -82,7 +82,7 @@ static MoFEMErrorCodeGeneric<PetscErrorCode> ierr =
  * This class is not used directly, it is called in CHKERR. In case of the error
  * pass line number to exception and that is catch at the end of the function.
  * Information is enriched by function name and file name and error is push to
- * petsc error stack.
+ * PETSc error stack.
  *
  * \note This class has no variables and line number is set at compilation.
  * Adding variables to this function can will reduce efficiency of the code. Do

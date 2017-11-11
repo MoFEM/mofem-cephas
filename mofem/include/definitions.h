@@ -408,7 +408,6 @@ DEPRECATED void macro_is_depracted_using_deprecated_function();
  * PetscFinalize();
  *
  * return 0;
- *
  * }
  * \endcode
  *
@@ -489,19 +488,22 @@ DEPRECATED void macro_is_depracted_using_deprecated_function();
   }
 
 /**
-  * \brief Check error code of MoAB function
-  * @param  a MoFEMErrorCode
-  *
-  * \code
-  * rval = fun_moab(); CHKERRG(rval);
-  * ierr = fun_petsc(); CHKERRG(rval);
-  * ierr = fun_mofem(); CHKERRG(rval);
-  * \endcode
-  *
-  * \note Function detect type of errocode using specialized template function
-  * getErrorType, i.e. condition is evaluated at compilation time.
-  *
-  */
+ * \brief Check error code of MoAB function
+ * @param  a MoFEMErrorCode
+ *
+ * \code
+ * MoFEMErrorCode fun() {
+ * MoFEMFunctionBeginHot;
+ * rval = fun_moab(); CHKERRG(rval);
+ * ierr = fun_petsc(); CHKERRG(rval);
+ * ierr = fun_mofem(); CHKERRG(rval);
+ * MoFEMFunctionReturnHot(0);
+ * \endcode
+ *
+ * \note Function detect type of errocode using specialized template function
+ * getErrorType, i.e. condition is evaluated at compilation time.
+ *
+ */
 #define CHKERRG(n)                                                             \
   if ((boost::is_same<BOOST_TYPEOF((n)),                                       \
                       MoFEMErrorCodeGeneric<PetscErrorCode> >::value)) {       \
@@ -515,9 +517,33 @@ DEPRECATED void macro_is_depracted_using_deprecated_function();
  * @brief Inline error check
  *
  * \code
+ *
+ * MoFEMErrorCode foo() {
+ * MoFEMFunctionBegin;
+ *
  * CHKERR fun_moab();
  * CHKERR fun_petsc();
  * CHKERR fun_mofem();
+ *
+ * MoFEMFunctionReturn(0);
+ * }
+ *
+ * int main(int argc, char *argv[]) {
+ *
+ * PetscInitialize(&argc, &argv, (char *)0, help);
+ *
+ * try {
+ *
+ * CHKERR foo();
+ *
+ * }
+ * CATCH_ERRORS;
+ *
+ * PetscFinalize();
+ *
+ * return 0;
+ * }
+ *
  * \endcode
  *
  */
