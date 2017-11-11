@@ -63,9 +63,9 @@ cOmm(0),
 verbose(verbose) {
 
   if (!isGloballyPetscInitialised) {
+    PetscPushErrorHandler(mofem_error_handler, PETSC_NULL);
     isGloballyPetscInitialised = true;
   }
-  PetscPushErrorHandler(mofem_error_handler, PETSC_NULL);
 
   // Register interfaces for this implementation
   ierr = registerInterface<UnknownInterface>(IDD_MOFEMUnknown);
@@ -147,7 +147,8 @@ verbose(verbose) {
       "lib version %d.%d.%d\n",
       MoFEM_VERSION_MAJOR,MoFEM_VERSION_MINOR,MoFEM_VERSION_BUILD
     ); CHKERRABORT(cOmm,ierr);
-    ierr = PetscPrintf(cOmm,"git commit id %s\n",GIT_SHA1_NAME); CHKERRABORT(cOmm,ierr);
+    ierr = PetscPrintf(cOmm, "git commit id %s\n", GIT_SHA1_NAME);
+    CHKERRABORT(cOmm, ierr);
   }
 
 }
@@ -209,32 +210,33 @@ MoFEMErrorCode Core::clearMap() {
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode Core::addPrismToDatabase(const EntityHandle prism,int verb) {
-  MoFEMFunctionBeginHot;
-  if(verb==-1) verb = verbose;
-  try {
-    std::pair<RefEntity_multiIndex::iterator,bool> p_ent;
-    p_ent = refinedEntities.insert(boost::make_shared<RefEntity>(basicEntityDataPtr,prism));
-    if(p_ent.second) {
-      std::pair<RefElement_multiIndex::iterator,bool> p_MoFEMFiniteElement;
-      p_MoFEMFiniteElement = refinedFiniteElements.insert(
-	      ptrWrapperRefElement(boost::shared_ptr<RefElement>(new RefElement_PRISM(*p_ent.first)))
-      );
-      int num_nodes;
-      const EntityHandle* conn;
-      rval = moab.get_connectivity(prism,conn,num_nodes,true); MOAB_THROW(rval);
-      Range face_side3,face_side4;
-      rval = moab.get_adjacencies(conn,3,2,false,face_side3); CHKERRQ_MOAB(rval);
-      rval = moab.get_adjacencies(&conn[3],3,2,false,face_side4); CHKERRQ_MOAB(rval);
-      if(face_side3.size()!=1) SETERRQ(PETSC_COMM_SELF,1,"prism don't have side face 3");
-      if(face_side4.size()!=1) SETERRQ(PETSC_COMM_SELF,1,"prims don't have side face 4");
-      p_MoFEMFiniteElement.first->getSideNumberPtr(*face_side3.begin());
-      p_MoFEMFiniteElement.first->getSideNumberPtr(*face_side4.begin());
-    }
-  } catch (MoFEMException const &e) {
-    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
+MoFEMErrorCode Core::addPrismToDatabase(const EntityHandle prism, int verb) {
+  MoFEMFunctionBegin;
+  if (verb == -1)
+    verb = verbose;
+  std::pair<RefEntity_multiIndex::iterator, bool> p_ent;
+  p_ent = refinedEntities.insert(
+      boost::make_shared<RefEntity>(basicEntityDataPtr, prism));
+  if (p_ent.second) {
+    std::pair<RefElement_multiIndex::iterator, bool> p_MoFEMFiniteElement;
+    p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(
+        boost::shared_ptr<RefElement>(new RefElement_PRISM(*p_ent.first))));
+    int num_nodes;
+    const EntityHandle *conn;
+    CHKERR moab.get_connectivity(prism, conn, num_nodes, true);
+    Range face_side3, face_side4;
+    CHKERR moab.get_adjacencies(conn, 3, 2, false, face_side3);
+    CHKERR moab.get_adjacencies(&conn[3], 3, 2, false, face_side4);
+    if (face_side3.size() != 1)
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "prism don't have side face 3");
+    if (face_side4.size() != 1)
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "prims don't have side face 4");
+    p_MoFEMFiniteElement.first->getSideNumberPtr(*face_side3.begin());
+    p_MoFEMFiniteElement.first->getSideNumberPtr(*face_side4.begin());
   }
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode Core::getTags(int verb) {
