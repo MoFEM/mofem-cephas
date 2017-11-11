@@ -776,7 +776,7 @@ private:
   mutable boost::ptr_map<unsigned long, UnknownInterface> iFaces;
 
   mutable int *buildMoFEM; ///< keeps flags/semaphores for different stages
-  static bool isGloballyInitialised; ///< Core base globally initialized
+  static bool isGloballyPetscInitialised; ///< Core base globally initialized
 
   /**
    * \brief Get tag handles

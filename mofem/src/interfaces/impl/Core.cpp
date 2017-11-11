@@ -46,73 +46,7 @@ MoFEMErrorCode Core::query_interface(const MOFEMuuid &uuid,
   MoFEMFunctionReturnHot(0);
 }
 
-bool Core::isGloballyInitialised = false;
-
-static void error_printf_highlight(void) {
-#if defined(PETSC_HAVE_UNISTD_H) && defined(PETSC_USE_ISATTY)
-  if (PetscErrorPrintf == PetscErrorPrintfDefault) {
-    if (isatty(fileno(PETSC_STDERR))) fprintf(PETSC_STDERR,"\033[1;32m");
-  }
-#endif
-}
-
-static void error_printf_normal(void) {
-#if defined(PETSC_HAVE_UNISTD_H) && defined(PETSC_USE_ISATTY)
-  if (PetscErrorPrintf == PetscErrorPrintfDefault) {
-    if (isatty(fileno(PETSC_STDERR))) fprintf(PETSC_STDERR,"\033[0;39m\033[0;49m");
-  }
-#endif
-}
-
-static PetscErrorCode mofem_error_handler(
-  MPI_Comm comm,int line,const char *fun,const char *file,PetscErrorCode n,PetscErrorType p,const char *mess,void *ctx
-) {
-  MoFEMFunctionBeginHot;
-
-  int rank = 0;
-  if (comm != PETSC_COMM_SELF) MPI_Comm_rank(comm,&rank);
-
-  if(!rank) {
-
-    if(p == PETSC_ERROR_INITIAL) {
-      error_printf_highlight();
-      (*PetscErrorPrintf)("--------------------- MoFEM Error Message---------------------------------------------------------------------------\n");
-      (*PetscErrorPrintf)("MoFEM version %d.%d.%d\n",MoFEM_VERSION_MAJOR,MoFEM_VERSION_MINOR,MoFEM_VERSION_BUILD);
-      (*PetscErrorPrintf)("MoFEM git commit id %s\n",GIT_SHA1_NAME);
-      (*PetscErrorPrintf)("See http://mofem.eng.gla.ac.uk/mofem/html/guidelines_bug_reporting.html for bug reporting.\n");
-      (*PetscErrorPrintf)("See http://mofem.eng.gla.ac.uk/mofem/html/faq_and_bugs.html for trouble shooting.\n");
-      error_printf_normal();
-    }
-
-    PetscTraceBackErrorHandler(PETSC_COMM_SELF,line,fun,file,n,p,mess,ctx);
-
-    PetscBool ismain,isunknown;
-
-    PetscStrncmp(fun,"main",4,&ismain);
-    PetscStrncmp(fun,"unknown",7,&isunknown);
-
-    if(ismain || isunknown) {
-
-      std::stringstream strs_version;
-      strs_version << "MoFEM_version_" << MoFEM_VERSION_MAJOR << "." << MoFEM_VERSION_MINOR << "." << MoFEM_VERSION_BUILD;
-
-      error_printf_highlight();
-      (*PetscErrorPrintf)("----------MoFEM End of Error Message -------send entire error message to mofem-group@googlegroups.com ----------\n");
-      error_printf_normal();
-
-    }
-
-  } else {
-
-    /* do not print error messages since process 0 will print them, sleep before
-     * aborting so will not accidentally kill process 0*/
-    PetscSleep(10.0);
-    abort();
-
-  }
-
-  MoFEMFunctionReturnHot(n);
-}
+bool Core::isGloballyPetscInitialised = false;
 
 template<class IFACE>
 MoFEMErrorCode Core::regSubInterface(const MOFEMuuid& uid) {
@@ -128,9 +62,9 @@ moab(moab),
 cOmm(0),
 verbose(verbose) {
 
-  if(!isGloballyInitialised) {
-    PetscPushErrorHandler(mofem_error_handler,PETSC_NULL);
-    isGloballyInitialised = true;
+  if (!isGloballyPetscInitialised) {
+    PetscPushErrorHandler(mofem_error_handler, PETSC_NULL);
+    isGloballyPetscInitialised = true;
   }
 
   // Register interfaces for this implementation
@@ -219,19 +153,16 @@ verbose(verbose) {
 }
 
 Core::~Core() {
-  int flg;
-  MPI_Finalized(&flg);
+  PetscBool is_finalized;
+  PetscFinalized(&is_finalized);
   // Destroy interfaces
   iFaces.clear();
-  // Pop error handler
-  if(isGloballyInitialised) {
-    if(!flg) {
-      PetscPopErrorHandler();
-    }
-    isGloballyInitialised = false;
+  // Reseat MoFEM/PETSc initialisation
+  if (isGloballyPetscInitialised && is_finalized) {
+    isGloballyPetscInitialised = false;
   }
   // Destroy communicator
-  if(!flg) {
+  if (!is_finalized) {
     ierr = PetscCommDestroy(&cOmm); CHKERRABORT(cOmm,ierr);
   }
 }
