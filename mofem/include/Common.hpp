@@ -38,23 +38,18 @@ struct MoFEMException : public std::exception {
 
 struct MoFEMExceptionRepeat : public MoFEMException {
   const int lINE;
-  const char* fILE;
-  const char* fUN;
-  MoFEMExceptionRepeat(const MoFEMErrorCodes error_code, const int line,
-                       const char *file, const char *fun)
-      : MoFEMException(error_code), lINE(line), fILE(file), fUN(fun) {
+  MoFEMExceptionRepeat(const MoFEMErrorCodes error_code, const int line)
+      : MoFEMException(error_code), lINE(line) {
     strcpy(errorMessage, " ");
   }
-  const char *what() const throw() { return errorMessage; }
 };
 
-struct MoFEMExceptionNoRepeat : public MoFEMExceptionRepeat {
-  MoFEMExceptionNoRepeat(const MoFEMErrorCodes error_code, const int line,
-                         const char *file, const char *fun)
-      : MoFEMExceptionRepeat(error_code, line, file, fun) {
-    strcpy(errorMessage, " ");
+struct MoFEMExceptionInitial : public MoFEMExceptionRepeat {
+  MoFEMExceptionInitial(const MoFEMErrorCodes error_code,
+                        const char error_message[], const int line)
+      : MoFEMExceptionRepeat(error_code, line) {
+    strcpy(errorMessage, error_message);
   }
-  const char *what() const throw() { return errorMessage; }
 };
 
 typedef moab::ErrorCode MoABErrorCode;  ///< MoAB error code
@@ -82,74 +77,57 @@ static MoFEMErrorCodeGeneric<PetscErrorCode> ierr =
     MoFEMErrorCodeGeneric<PetscErrorCode>(0);
 
 /**
- * \brief Error check form inline erro check
+ * \brief Error check for inline function check.
  *
- * \note This class is not used directly, only for testing. See
- * ERROR_CHECKER_CODE, ERROR_RUNNER_CODE, ERROR_CHECKER_AND_RUNNER_CODE and
- * CHKERR for details.
+ * This class is not used directly, it is called in CHKERR. In case of the error
+ * pass line number to exception and that is catch at the end of the function.
+ * Information is enriched by function name and file name and error is push to
+ * petsc error stack.
  *
- * A sequence of overloaded operators << is called, starting from line number
- * file name, function name and error code. Use this using definition CHKERR,
- * for example \code CHKERR fun_moab(); CHKERR fun_petsc(); CHKERR fun_mofem();
- * \endcode
+ * \note This class has no variables and line number is set at compilation.
+ * Adding variables to this function can will reduce efficiency of the code. Do
+ * not do that.
  *
  */
 template <int LINE> struct ErrorCheckerCode {
 
-/**
- * @brief Definition for error checker class to create checker operator for
- * PetscErrorCode and MoFEMErrorCode
- *
- */
-#define OP_ERR_MOFEM_ERROR_CODE(LINE, FILE, FUNC)                              \
-  inline void operator<<(const MoFEMErrorCode err) {                           \
-    if (PetscUnlikely(err)) {                                                  \
-      switch (err) {                                                           \
-      case MOFEM_DATA_INCONSISTENCY:                                           \
-        throw MoFEMExceptionRepeat(MOFEM_DATA_INCONSISTENCY, LINE, FILE,       \
-                                   FUNC);                                      \
-      case MOFEM_NOT_IMPLEMENTED:                                              \
-        throw MoFEMExceptionRepeat(MOFEM_NOT_IMPLEMENTED, LINE, FILE, FUNC);   \
-      case MOFEM_NOT_FOUND:                                                    \
-        throw MoFEMExceptionRepeat(MOFEM_NOT_FOUND, LINE, FILE, FUNC);         \
-      case MOFEM_OPERATION_UNSUCCESSFUL:                                       \
-        throw MoFEMExceptionRepeat(MOFEM_OPERATION_UNSUCCESSFUL, LINE, FILE,   \
-                                   FUNC);                                      \
-      case MOFEM_IMPOSIBLE_CASE:                                               \
-        throw MoFEMExceptionRepeat(MOFEM_IMPOSIBLE_CASE, LINE, FILE, FUNC);    \
-      case MOFEM_INVALID_DATA:                                                 \
-        throw MoFEMExceptionRepeat(MOFEM_INVALID_DATA, LINE, FILE, FUNC);      \
-      default:                                                                 \
-        throw MoFEMExceptionRepeat(MOFEM_MOFEMEXCEPTION_THROW, LINE, FILE,     \
-                                   FUNC);                                      \
-      }                                                                        \
-    }                                                                          \
-    return;                                                                    \
+  /**
+   * @brief Operator for handling PetscErrorCode and MoFEMErrorCode
+   *
+   */
+  inline void operator<<(const MoFEMErrorCode err) {
+    if (PetscUnlikely(err)) {
+      switch (err) {
+      case MOFEM_DATA_INCONSISTENCY:
+        throw MoFEMExceptionRepeat(MOFEM_DATA_INCONSISTENCY, LINE);
+      case MOFEM_NOT_IMPLEMENTED:
+        throw MoFEMExceptionRepeat(MOFEM_NOT_IMPLEMENTED, LINE);
+      case MOFEM_NOT_FOUND:
+        throw MoFEMExceptionRepeat(MOFEM_NOT_FOUND, LINE);
+      case MOFEM_OPERATION_UNSUCCESSFUL:
+        throw MoFEMExceptionRepeat(MOFEM_OPERATION_UNSUCCESSFUL, LINE);
+      case MOFEM_IMPOSIBLE_CASE:
+        throw MoFEMExceptionRepeat(MOFEM_IMPOSIBLE_CASE, LINE);
+      case MOFEM_INVALID_DATA:
+        throw MoFEMExceptionRepeat(MOFEM_INVALID_DATA, LINE);
+      default:
+        throw MoFEMExceptionRepeat(MOFEM_MOFEMEXCEPTION_THROW, LINE);
+      }
+    }
+    return;
   }
 
-/**
- * @brief Definition for error checker class to create checker operator for
- * moab::ErrorCode
- *
- */
-#define OP_ERR_MOAB_ERROR_CODE(LINE, FILE, FUNC)                               \
-  inline void operator<<(const moab::ErrorCode err) {                          \
-    if (PetscLikely(MB_SUCCESS != err)) {                                      \
-      std::string str("MOAB error " + boost::lexical_cast<std::string>(err));  \
-      PetscError(PETSC_COMM_SELF, LINE, FUNC, FILE, MOFEM_MOAB_ERROR,          \
-                 PETSC_ERROR_INITIAL, str.c_str());                            \
-      throw MoFEMExceptionNoRepeat(MOFEM_MOAB_ERROR, LINE, FILE, FUNC);        \
-    }                                                                          \
-    return;                                                                    \
+  /**
+   * @brief Operator for handling moab::ErrorCode
+   *
+   */
+  inline void operator<<(const moab::ErrorCode err) {
+    if (PetscLikely(MB_SUCCESS != err)) {
+      std::string str("MOAB error " + boost::lexical_cast<std::string>(err));
+      throw MoFEMExceptionInitial(MOFEM_MOAB_ERROR, str.c_str(), LINE);
+    }
+    return;
   }
-
-  OP_ERR_MOFEM_ERROR_CODE(LINE,fILE,fUNC);
-  OP_ERR_MOAB_ERROR_CODE(LINE,fILE,fUNC);
-
-  inline ErrorCheckerCode(const char *func, const char *file)
-      : fUNC(func), fILE(file) {}
-  const char *PETSC_CXX_RESTRICT fUNC;
-  const char *PETSC_CXX_RESTRICT fILE;
 };
 
 typedef int DofIdx;                  ///< Index of DOF

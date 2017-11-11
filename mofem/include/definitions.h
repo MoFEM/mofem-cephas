@@ -414,15 +414,16 @@ DEPRECATED void macro_is_depracted_using_deprecated_function();
  *
  */
 #define CATCH_ERRORS                                                           \
-  catch (MoFEMExceptionNoRepeat const &e) {                                    \
-    return e.errorCode;                                                        \
+  catch (MoFEMExceptionInitial const &ex) {                                    \
+    return PetscError(PETSC_COMM_SELF, ex.lINE, PETSC_FUNCTION_NAME, __FILE__, \
+                      ex.errorCode, PETSC_ERROR_INITIAL, ex.what());           \
   }                                                                            \
-  catch (MoFEMExceptionRepeat const &e) {                                      \
-    return PetscError(PETSC_COMM_WORLD, e.lINE, e.fUN, e.fILE, e.errorCode,    \
-                      PETSC_ERROR_REPEAT, " ");                                \
+  catch (MoFEMExceptionRepeat const &ex) {                                     \
+    return PetscError(PETSC_COMM_WORLD, ex.lINE, PETSC_FUNCTION_NAME,          \
+                      __FILE__, ex.errorCode, PETSC_ERROR_REPEAT, " ");        \
   }                                                                            \
-  catch (MoFEMException const &e) {                                            \
-    SETERRQ(PETSC_COMM_WORLD, e.errorCode, e.errorMessage);                    \
+  catch (MoFEMException const &ex) {                                           \
+    SETERRQ(PETSC_COMM_WORLD, ex.errorCode, ex.errorMessage);                  \
   }                                                                            \
   catch (std::exception const &ex) {                                           \
     std::string message("Error: " + std::string(ex.what()) + " at " +          \
@@ -511,38 +512,6 @@ DEPRECATED void macro_is_depracted_using_deprecated_function();
   }
 
 /**
- * @brief Creeate line error code checker
- * 
- * \note Do not used directly, part of the other definition
- * 
- */
-#define ERROR_CHECKER_CODE(LINE, FILE)                                         \
-  struct ErrorCheckerCode##LINE {                                              \
-    OP_ERR_MOFEM_ERROR_CODE(LINE, FILE, fUNC);                                 \
-    OP_ERR_MOAB_ERROR_CODE(LINE, FILE, fUNC);                                  \
-    inline ErrorCheckerCode##LINE(const char *func) : fUNC(func) {}            \
-    const char *PETSC_CXX_RESTRICT fUNC;                                       \
-  }
-
-/**
- * @brief Create line error checker instance
- * 
- * \note Do not used directly, part of the other definition
- * 
- */
-#define ERROR_RUNNER_CODE(LINE) ErrorCheckerCode##LINE
-
-/**
- * @brief Declare line error checker class and its instance.
- *
- * \note Do not used directly, part of the other definition
- * 
- */
-#define ERROR_CHECKER_AND_RUNNER_CODE(LINE, FILE, FUNC)                        \
-  ERROR_CHECKER_CODE(LINE, FILE);                                              \
-  ERROR_RUNNER_CODE(LINE)(FUNC)
-
-/**
  * @brief Inline error check
  *
  * \code
@@ -552,8 +521,7 @@ DEPRECATED void macro_is_depracted_using_deprecated_function();
  * \endcode
  *
  */
-#define CHKERR                                                                 \
-  ERROR_CHECKER_AND_RUNNER_CODE(__LINE__, __FILE__, PETSC_FUNCTION_NAME) <<
+#define CHKERR ErrorCheckerCode<__LINE__>() <<
 
 /**
  * \brief Check error code of MoAB function and throw MoFEM exception
