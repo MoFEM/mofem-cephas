@@ -488,15 +488,15 @@ DEPRECATED void macro_is_depracted_using_deprecated_function();
   }
 
 /**
- * \brief Check error code of MoAB function
+ * \brief Check error code of MoFEM/MOAB/PETSc function
  * @param  a MoFEMErrorCode
  *
  * \code
  * MoFEMErrorCode fun() {
  * MoFEMFunctionBeginHot;
  * rval = fun_moab(); CHKERRG(rval);
- * ierr = fun_petsc(); CHKERRG(rval);
- * ierr = fun_mofem(); CHKERRG(rval);
+ * ierr = fun_petsc(); CHKERRG(ierr);
+ * merr = fun_mofem(); CHKERRG(merr);
  * MoFEMFunctionReturnHot(0);
  * \endcode
  *
@@ -521,9 +521,9 @@ DEPRECATED void macro_is_depracted_using_deprecated_function();
  * MoFEMErrorCode foo() {
  * MoFEMFunctionBegin;
  *
- * CHKERR fun_moab();
- * CHKERR fun_petsc();
- * CHKERR fun_mofem();
+ *   CHKERR fun_moab();
+ *   CHKERR fun_petsc();
+ *   CHKERR fun_mofem();
  *
  * MoFEMFunctionReturn(0);
  * }
@@ -534,7 +534,7 @@ DEPRECATED void macro_is_depracted_using_deprecated_function();
  *
  * try {
  *
- * CHKERR foo();
+ *   CHKERR foo();
  *
  * }
  * CATCH_ERRORS;
