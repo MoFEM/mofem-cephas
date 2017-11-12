@@ -83,9 +83,7 @@ static PetscErrorCode mofem_error_handler(MPI_Comm comm, int line,
 
     if (p == PETSC_ERROR_INITIAL) {
       error_printf_highlight();
-      mofem_error_printf("--------------------- MoFEM Error "
-                         "Message---------------------------------------------"
-                         "------\n");
+      mofem_error_printf("--------------------- MoFEM Error Message ---------------------------------------------------\n");
       mofem_error_printf("MoFEM version %d.%d.%d\n", MoFEM_VERSION_MAJOR,
                          MoFEM_VERSION_MINOR, MoFEM_VERSION_BUILD);
       mofem_error_printf("MoFEM git commit id %s\n", GIT_SHA1_NAME);
@@ -99,6 +97,10 @@ static PetscErrorCode mofem_error_handler(MPI_Comm comm, int line,
     }
 
     if (n >= MOFEM_DATA_INCONSISTENCY) {
+      if (p == PETSC_ERROR_INITIAL) {
+        if (mess)
+          mofem_error_printf("%s\n", mess);
+      }
       mofem_error_printf("#%d %s() line %d in %s\n", cnt++, fun, line, file);
     } else {
       PetscTraceBackErrorHandler(PETSC_COMM_SELF, line, fun, file, n, p, mess,
@@ -115,9 +117,7 @@ static PetscErrorCode mofem_error_handler(MPI_Comm comm, int line,
                    << MoFEM_VERSION_MINOR << "." << MoFEM_VERSION_BUILD;
 
       error_printf_highlight();
-      mofem_error_printf("----------MoFEM End of Error Message -------send "
-                         "entire error message to "
-                         "mofem-group@googlegroups.com ----------\n");
+      mofem_error_printf("-- MoFEM End of Error Message -- send entire error message to mofem-group@googlegroups.com --\n");
       error_printf_normal();
     }
 
