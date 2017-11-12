@@ -175,7 +175,6 @@ int main(int argc, char *argv[]) {
     if (output_vtk) {
       EntityHandle meshset;
       CHKERR moab.create_meshset(MESHSET_SET, meshset);
-      CHKERRQ_MOAB(rval);
       BitRefLevel bit;
       if (squash_bit_levels)
         bit = bit_levels[0];
