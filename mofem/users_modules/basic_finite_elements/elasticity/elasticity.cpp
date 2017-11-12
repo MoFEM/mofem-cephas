@@ -195,12 +195,10 @@ int main(int argc, char *argv[]) {
       Skinner skin(&m_field.get_moab());
       Range faces, tets;
       CHKERR m_field.get_moab().get_entities_by_type(0, MBTET, tets);
-      CHKERRG(rval);
       // CHKERR skin.find_skin(0,tets,false,faces); CHKERRG(rval);
       Range edges;
       CHKERR m_field.get_moab().get_adjacencies(tets, 1, false, edges,
                                                 moab::Interface::UNION);
-      CHKERRG(rval);
       // CHKERR m_field.get_moab().get_adjacencies(
       //   faces,1,false,edges,moab::Interface::UNION
       // ); CHKERRG(rval);
