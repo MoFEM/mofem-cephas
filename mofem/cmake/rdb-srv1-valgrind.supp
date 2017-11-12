@@ -1,6 +1,42 @@
 {
    <insert_a_suppression_name_here>
    Memcheck:Leak
+   fun:memalign
+   fun:PetscMallocAlign
+   fun:PetscPushErrorHandler
+   fun:_ZN5MoFEM4CoreC1ERN4moab9InterfaceEP19ompi_communicator_ti
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:malloc
+   obj:/usr/lib/openmpi/lib/libmpi.so.0.0.2
+   fun:ompi_attr_create_keyval
+   fun:PMPI_Keyval_create
+   fun:PetscViewerASCIIGetStdout
+   fun:PetscOptionsGetViewer
+   fun:KSPMonitorSetFromOptions
+   fun:KSPSetFromOptions
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:malloc
+   obj:/usr/lib/openmpi/lib/libmpi.so.0.0.2
+   fun:ompi_attr_create_keyval
+   fun:PMPI_Keyval_create
+   fun:PetscViewerASCIIOpen
+   fun:PetscViewerASCIIGetStdout
+   fun:PetscOptionsGetViewer
+   fun:KSPMonitorSetFromOptions
+   fun:KSPSetFromOptions
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
    fun:malloc
    fun:opal_class_initialize
    fun:ompi_comm_nextcid
