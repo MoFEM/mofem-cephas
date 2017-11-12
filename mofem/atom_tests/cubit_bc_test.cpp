@@ -258,9 +258,7 @@ int main(int argc, char *argv[]) {
     // Close mesh_file_name.txt
     myfile.close();
 
-  } catch (MoFEMException const &e) {
-    SETERRQ(PETSC_COMM_SELF, e.errorCode, e.errorMessage);
-  }
+  } CATCH_ERRORS;
 
   PetscFinalize();
 }

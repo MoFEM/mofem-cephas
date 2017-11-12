@@ -488,15 +488,15 @@ DEPRECATED void macro_is_depracted_using_deprecated_function();
   }
 
 /**
- * \brief Check error code of MoAB function
+ * \brief Check error code of MoFEM/MOAB/PETSc function
  * @param  a MoFEMErrorCode
  *
  * \code
  * MoFEMErrorCode fun() {
  * MoFEMFunctionBeginHot;
  * rval = fun_moab(); CHKERRG(rval);
- * ierr = fun_petsc(); CHKERRG(rval);
- * ierr = fun_mofem(); CHKERRG(rval);
+ * ierr = fun_petsc(); CHKERRG(ierr);
+ * merr = fun_mofem(); CHKERRG(merr);
  * MoFEMFunctionReturnHot(0);
  * \endcode
  *
@@ -519,22 +519,32 @@ DEPRECATED void macro_is_depracted_using_deprecated_function();
  * \code
  *
  * MoFEMErrorCode foo() {
- * MoFEMFunctionBegin;
+ *   MoFEMFunctionBegin;
  *
- * CHKERR fun_moab();
- * CHKERR fun_petsc();
- * CHKERR fun_mofem();
+ *   // Call other functions
+ *   CHKERR fun_moab();
+ *   CHKERR fun_petsc();
+ *   CHKERR fun_mofem();
  *
- * MoFEMFunctionReturn(0);
+ *   // Throw error
+ *   SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY, "Some error message");
+ *
+ *   MoFEMFunctionReturn(0);
  * }
  *
  * int main(int argc, char *argv[]) {
  *
+ * // Initailise Petsc
  * PetscInitialize(&argc, &argv, (char *)0, help);
  *
  * try {
  *
- * CHKERR foo();
+ *   moab::Core mb_instance; // MoAB database
+ *   moab::Interface &moab = mb_instance;
+ *   MoFEM::Core core(moab); // MOFEM database
+ *   MoFEM::CoreInterface &m_field = core;
+ *
+ *   CHKERR foo(); // Call function
  *
  * }
  * CATCH_ERRORS;
