@@ -191,7 +191,7 @@ int main(int argc, char *argv[]) {
 #ifdef WITH_TETGEN
     // Switches controling TetGen
     vector<string> switches;
-    switches.push_back("rp178YsqORJS0VV");
+    switches.push_back("rp180YsqORJS0VV");
     CHKERR cut_mesh->rebuildMeshWithTetGen(switches, bit_level3, bit_level4,
                                            cut_mesh->getMergedSurfaces(),
                                            fixed_edges, corner_nodes, th);
@@ -232,7 +232,15 @@ int main(int argc, char *argv[]) {
     CHKERR moab.delete_entities(surface_verts);
 
     if(flg_create_surface_side_set) {
-      CHKERR meshset_manager->addMeshset(SIDESET, create_surface_side_set);
+      // Check is meshset is there
+      if (!core.getInterface<MeshsetsManager>()->checkMeshset(
+              create_surface_side_set, SIDESET)) {
+        CHKERR meshset_manager->addMeshset(SIDESET, create_surface_side_set);
+      } else {
+        PetscPrintf(PETSC_COMM_SELF,
+                    "<<< Warring >>> sideset %d is on the mesh\n",
+                    create_surface_side_set);
+      }
       CHKERR meshset_manager->addEntitiesToMeshset(
           SIDESET, create_surface_side_set, cut_mesh->getTetgenSurfaces());
     }
