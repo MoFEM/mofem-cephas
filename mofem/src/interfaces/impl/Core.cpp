@@ -141,16 +141,17 @@ verbose(verbose) {
   ierr = initialiseDatabaseFromMesh(verbose); CHKERRABORT(cOmm,ierr);
 
   // Print version
-  if(verbose>0) {
-    ierr = PetscPrintf(
-      cOmm,
-      "lib version %d.%d.%d\n",
-      MoFEM_VERSION_MAJOR,MoFEM_VERSION_MINOR,MoFEM_VERSION_BUILD
-    ); CHKERRABORT(cOmm,ierr);
+  if (verbose > 0) {
+    char petsc_version[255];
+    ierr = PetscGetVersion(petsc_version, 255);
+    CHKERRABORT(cOmm, ierr);
+    ierr = PetscPrintf(cOmm, "MoFEM version %d.%d.%d (%s %s) \n",
+                       MoFEM_VERSION_MAJOR, MoFEM_VERSION_MINOR,
+                       MoFEM_VERSION_BUILD, MOAB_VERSION_STRING, petsc_version);
+    CHKERRABORT(cOmm, ierr);
     ierr = PetscPrintf(cOmm, "git commit id %s\n", GIT_SHA1_NAME);
     CHKERRABORT(cOmm, ierr);
   }
-
 }
 
 Core::~Core() {

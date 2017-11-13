@@ -85,11 +85,18 @@ static PetscErrorCode mofem_error_handler(MPI_Comm comm, int line,
 
   if (!rank) {
 
+
     if (p == PETSC_ERROR_INITIAL) {
+
+      char petsc_version[255];
+      PetscGetVersion(petsc_version, 255);
+
       error_printf_highlight();
       mofem_error_printf("--------------------- MoFEM Error Message ---------------------------------------------------\n");
-      mofem_error_printf("MoFEM version %d.%d.%d\n", MoFEM_VERSION_MAJOR,
-                         MoFEM_VERSION_MINOR, MoFEM_VERSION_BUILD);
+      mofem_error_printf("MoFEM version %d.%d.%d (%s %s)"
+                         "Version %d.%d.%d)\n",
+                         MoFEM_VERSION_MAJOR, MoFEM_VERSION_MINOR,
+                         MoFEM_VERSION_BUILD, MOAB_VERSION_STRING, petsc_version);
       mofem_error_printf("MoFEM git commit id %s\n", GIT_SHA1_NAME);
       mofem_error_printf("See "
                          "http://mofem.eng.gla.ac.uk/mofem/html/"
