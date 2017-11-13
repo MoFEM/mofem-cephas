@@ -25,7 +25,6 @@ namespace MoFEM {
 // This is to have obsolete back compatibility
 struct MeshsetsManager;
 
-
 /** \brief Core (interface) class
 * \ingroup mofem
 * \nosubgrouping
@@ -41,6 +40,11 @@ Interface structure.
 
 Such deign to hide complexities for users and allow low development
 without interfering with users modules programmer work.
+
+\todo Implement static functions for Initialization and Finalization of MoFEM.
+Those functions should keep all static variables and initialize/finalize other
+libs like PETSc. Moreover initialization functions should set error handlers,
+etc.
 
 */
 struct Core : public Interface {
