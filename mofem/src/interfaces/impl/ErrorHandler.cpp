@@ -12,6 +12,10 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
  */
 
+#if PETSC_VERSION_GE(3, 8, 0)
+#include <petsc/private/petscimpl.h>
+#endif
+
 static PetscErrorCode mofem_error_printf(const char format[], ...) {
   va_list Argp;
   static PetscBool PetscErrorPrintfCalled = PETSC_FALSE;

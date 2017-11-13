@@ -47,12 +47,11 @@ git clone https://bitbucket.org/petsc/petsc.git
 cd $MOFEM_INSTALL_DIR/petsc
 
 # Fix PETSc version
-export PETSC_VERSION=3.8.0
+export PETSC_VERSION=3.8.2
 git checkout tags/v$PETSC_VERSION
 
 # Configure and compile petsc:
-wget ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-4.3.3.1.tar.gz
-./configure --with-debugging=0 --download-fblaslapack=1 --download-superlu_dist=1 --download-metis=1 --download-parmetis=1 --download-hypre=1 --download-mumps=1 --download-scalapack=1 --download-blacs=1 --download-moab=1 --download-hdf5=1 --download-netcdf=$MOFEM_INSTALL_DIR/petsc/netcdf-4.3.3.1.tar.gz --download-mumps=1 --download-openmpi=1
+./configure --with-debugging=0 --download-fblaslapack=1 --download-superlu_dist=1 --download-metis=1 --download-parmetis=1 --download-hypre=1 --download-mumps=1 --download-scalapack=1 --download-blacs=1 --download-moab=1 --download-hdf5=1 --download-netcdf=1 --download-mumps=1 --download-openmpi=1
 make PETSC_DIR=$PWD PETSC_ARCH=arch-darwin-c-opt all
 ~~~~~~
 
