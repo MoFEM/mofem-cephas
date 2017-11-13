@@ -31,6 +31,8 @@
 //STD
 #include <fstream>
 #include <iostream>
+#include <stdio.h>
+#include <stdarg.h>
 
 //PETSc
 #include <petscsys.h>
