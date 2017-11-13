@@ -38,26 +38,16 @@ int main(int argc, char *argv[]) {
     int nb_sidesets = 10;
     int sidesets[nb_sidesets];
 
-    ierr = PetscOptionsBegin(PETSC_COMM_WORLD, "", "Split sides options", "none");
-    CHKERRQ(ierr);
-    ierr = PetscOptionsString("-my_file", "mesh file name", "", "mesh.h5m",
+    CHKERR PetscOptionsBegin(PETSC_COMM_WORLD, "", "Split sides options", "none");
+    CHKERR PetscOptionsString("-my_file", "mesh file name", "", "mesh.h5m",
                               mesh_file_name, 255, &flg_file);
-    CHKERRQ(ierr);
-
-    ierr = PetscOptionsBool("-squash_bit_levels", "squash bit levels", "",
+    CHKERR PetscOptionsBool("-squash_bit_levels", "squash bit levels", "",
                             squash_bit_levels, &squash_bit_levels, NULL);
-    CHKERRQ(ierr);
-
-    ierr = PetscOptionsIntArray("-side_sets", "get list of sidesets", "",
+    CHKERR PetscOptionsIntArray("-side_sets", "get list of sidesets", "",
                                 sidesets, &nb_sidesets, &flg_list_of_sidesets);
-    CHKERRQ(ierr);
-    ierr = PetscOptionsBool("-output_vtk", "if true outout vtk file", "",
+    CHKERR PetscOptionsBool("-output_vtk", "if true outout vtk file", "",
                             output_vtk, &output_vtk, PETSC_NULL);
-    CHKERRQ(ierr);
- 
-
-    ierr = PetscOptionsEnd();
-    CHKERRQ(ierr);
+    ierr = PetscOptionsEnd(); CHKERRG(ierr);
 
     moab::Core mb_instance;
     moab::Interface &moab = mb_instance;
@@ -66,8 +56,7 @@ int main(int argc, char *argv[]) {
       pcomm = new ParallelComm(&moab, PETSC_COMM_WORLD);
     const char *option;
     option = "";
-    rval = moab.load_file(mesh_file_name, 0, option);
-    CHKERRQ_MOAB(rval);
+    CHKERR moab.load_file(mesh_file_name, 0, option);
 
     // Create MoFEM  database
     MoFEM::Core core(moab);
@@ -84,19 +73,15 @@ int main(int argc, char *argv[]) {
 
     // Get interface to meshsets manager
     MeshsetsManager *m_mng;
-    ierr = m_field.getInterface(m_mng);
-    CHKERRQ(ierr);
+    CHKERR m_field.getInterface(m_mng);
     // Get interface for splitting manager
     PrismInterface *interface_ptr;
-    ierr = m_field.getInterface(interface_ptr);
-    CHKERRQ(ierr);
+    CHKERR m_field.getInterface(interface_ptr);
     BitRefManager *bit_mng;
-    ierr = m_field.getInterface(bit_mng);
-    CHKERRQ(ierr);
+    CHKERR m_field.getInterface(bit_mng);
 
     // Seed mesh with bit levels
-    ierr = bit_mng->setBitRefLevelByDim(0, 3, BitRefLevel().set(0));
-    CHKERRQ(ierr);
+    CHKERR bit_mng->setBitRefLevelByDim(0, 3, BitRefLevel().set(0));
     std::vector<BitRefLevel> bit_levels;
     bit_levels.push_back(BitRefLevel().set(0));
 
@@ -131,104 +116,81 @@ int main(int argc, char *argv[]) {
         SETERRQ1(PETSC_COMM_SELF, MOFEM_INVALID_DATA,
                  "No sideset in database id = %d", sidesets[mm]);
       }
-      ierr = PetscPrintf(PETSC_COMM_WORLD, "Split sideset %d\n",
+      CHKERR PetscPrintf(PETSC_COMM_WORLD, "Split sideset %d\n",
                          mit->getMeshsetId());
-      CHKERRQ(ierr);
 
       EntityHandle cubit_meshset = mit->getMeshset();
       {
         // get tet entities form back bit_level
         EntityHandle ref_level_meshset = 0;
-        rval = moab.create_meshset(MESHSET_SET, ref_level_meshset);
-        CHKERRQ_MOAB(rval);
-        ierr = bit_mng->getEntitiesByTypeAndRefLevel(
+        CHKERR moab.create_meshset(MESHSET_SET, ref_level_meshset);
+        CHKERR bit_mng->getEntitiesByTypeAndRefLevel(
             bit_levels.back(), BitRefLevel().set(), MBTET, ref_level_meshset);
-        CHKERRQ(ierr);
-        ierr = bit_mng->getEntitiesByTypeAndRefLevel(
+        CHKERR bit_mng->getEntitiesByTypeAndRefLevel(
             bit_levels.back(), BitRefLevel().set(), MBPRISM, ref_level_meshset);
-        CHKERRQ(ierr);
         Range ref_level_tets;
-        rval = moab.get_entities_by_handle(ref_level_meshset, ref_level_tets,
+        CHKERR moab.get_entities_by_handle(ref_level_meshset, ref_level_tets,
                                            true);
-        CHKERRQ_MOAB(rval);
 
         // get faces and test to split
-        ierr =
-            interface_ptr->getSides(cubit_meshset, bit_levels.back(), true, 0);
-        CHKERRQ(ierr);
+        CHKERR interface_ptr->getSides(cubit_meshset, bit_levels.back(), true,
+                                       0);
         // set new bit level
         bit_levels.push_back(BitRefLevel().set(mm + 1));
         // split faces and
-        ierr = interface_ptr->splitSides(ref_level_meshset, bit_levels.back(),
+        CHKERR interface_ptr->splitSides(ref_level_meshset, bit_levels.back(),
                                          cubit_meshset, false, true, 0);
-        CHKERRQ(ierr);
 
         // clean meshsets
-        rval = moab.delete_entities(&ref_level_meshset, 1);
-        CHKERRQ_MOAB(rval);
+        CHKERR moab.delete_entities(&ref_level_meshset, 1);
       }
       // Update cubit meshsets
       for (_IT_CUBITMESHSETS_FOR_LOOP_(
         (core.getInterface<MeshsetsManager &, 0>()),ciit) ) {
 
         EntityHandle cubit_meshset = ciit->meshset;
-        ierr = bit_mng->updateMeshsetByEntitiesChildren(
+        CHKERR bit_mng->updateMeshsetByEntitiesChildren(
                        cubit_meshset, bit_levels.back(), cubit_meshset,
                        MBVERTEX, true);
-        CHKERRQ(ierr);
-        ierr = bit_mng->updateMeshsetByEntitiesChildren(
+        CHKERR bit_mng->updateMeshsetByEntitiesChildren(
                        cubit_meshset, bit_levels.back(), cubit_meshset, MBEDGE,
                        true);
-        CHKERRQ(ierr);
-        ierr = bit_mng->updateMeshsetByEntitiesChildren(
+        CHKERR bit_mng->updateMeshsetByEntitiesChildren(
                        cubit_meshset, bit_levels.back(), cubit_meshset, MBTRI,
                        true);
-        CHKERRQ(ierr);
-        ierr = bit_mng->updateMeshsetByEntitiesChildren(
+        CHKERR bit_mng->updateMeshsetByEntitiesChildren(
                        cubit_meshset, bit_levels.back(), cubit_meshset, MBTET,
                        true);
-        CHKERRQ(ierr);
-        
       }
     }
 
     if (squash_bit_levels == PETSC_TRUE) {
       for (int ll = 0; ll != bit_levels.size() - 1; ll++) {
-        ierr = m_field.delete_ents_by_bit_ref(bit_levels[ll], bit_levels[ll],
+        CHKERR m_field.delete_ents_by_bit_ref(bit_levels[ll], bit_levels[ll],
                                               true);
-        CHKERRQ(ierr);
       }
-      ierr = bit_mng->shiftRightBitRef(bit_levels.size() - 1);
-      CHKERRQ(ierr);
+      CHKERR bit_mng->shiftRightBitRef(bit_levels.size() - 1);
     }
 
     if (output_vtk) {
       EntityHandle meshset;
-      rval = moab.create_meshset(MESHSET_SET, meshset);
-      CHKERRQ_MOAB(rval);
+      CHKERR moab.create_meshset(MESHSET_SET, meshset);
       BitRefLevel bit;
       if (squash_bit_levels)
         bit = bit_levels[0];
       else
         bit = bit_levels.back();
-      ierr = bit_mng->getEntitiesByTypeAndRefLevel(
+      CHKERR bit_mng->getEntitiesByTypeAndRefLevel(
           bit, BitRefLevel().set(), MBTET, meshset);
-      CHKERRQ(ierr);
-      rval = moab.write_file("out.vtk", "VTK", "", &meshset, 1);
-      CHKERRQ_MOAB(rval);
-      rval = moab.delete_entities(&meshset, 1);
-      CHKERRQ_MOAB(rval);
+      CHKERR moab.write_file("out.vtk", "VTK", "", &meshset, 1);
+      CHKERR moab.delete_entities(&meshset, 1);
     }
 
-    rval = moab.write_file("out.h5m");
-    CHKERRQ_MOAB(rval);
-
-  } catch (MoFEMException const &e) {
-    SETERRQ(PETSC_COMM_SELF, e.errorCode, e.errorMessage);
+    CHKERR moab.write_file("out.h5m");
   }
+  CATCH_ERRORS;
 
-  ierr = PetscFinalize();
-  CHKERRQ(ierr);
+  CHKERR PetscFinalize();
 
   return 0;
 }

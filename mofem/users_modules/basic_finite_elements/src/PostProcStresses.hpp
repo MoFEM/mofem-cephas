@@ -27,7 +27,8 @@
   #error "MoFEM need to be compiled with ADOL-C"
 #endif
 
-struct PostProcStress: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
+struct PostProcStress
+    : public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
 
   moab::Interface &postProcMesh;
   std::vector<EntityHandle> &mapGaussPts;
@@ -37,51 +38,45 @@ struct PostProcStress: public MoFEM::VolumeElementForcesAndSourcesCore::UserData
   bool fieldDisp;
   bool replaceNonANumberByMaxValue;
 
-  PostProcStress(
-    moab::Interface &post_proc_mesh,
-    std::vector<EntityHandle> &map_gauss_pts,
-    const std::string field_name,
-    NonlinearElasticElement::BlockData &data,
-    PostProcVolumeOnRefinedMesh::CommonData &common_data,
-    bool field_disp = false,
-    bool replace_nonanumber_by_max_value = false
-  ):
-  MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSourcesCore::UserDataOperator::OPROW),
-  postProcMesh(post_proc_mesh),
-  mapGaussPts(map_gauss_pts),
-  dAta(data),
-  commonData(common_data),
-  fieldDisp(field_disp),
-  replaceNonANumberByMaxValue(replace_nonanumber_by_max_value)
-  {}
+  PostProcStress(moab::Interface &post_proc_mesh,
+                 std::vector<EntityHandle> &map_gauss_pts,
+                 const std::string field_name,
+                 NonlinearElasticElement::BlockData &data,
+                 PostProcVolumeOnRefinedMesh::CommonData &common_data,
+                 bool field_disp                      = false,
+                 bool replace_nonanumber_by_max_value = false)
+      : MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator(
+            field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
+        postProcMesh(post_proc_mesh), mapGaussPts(map_gauss_pts), dAta(data),
+        commonData(common_data), fieldDisp(field_disp),
+        replaceNonANumberByMaxValue(replace_nonanumber_by_max_value) {}
 
   NonlinearElasticElement::CommonData nonLinearElementCommonData;
 
-  MoFEMErrorCode doWork(
-    int side,
-    EntityType type,
-    DataForcesAndSourcesCore::EntData &data
-  ) {
-    MoFEMFunctionBeginHot;
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        DataForcesAndSourcesCore::EntData &data) {
+    MoFEMFunctionBegin;
 
-    if(type != MBVERTEX) MoFEMFunctionReturnHot(0);
-    if(data.getIndices().size()==0) MoFEMFunctionReturnHot(0);
-    if(dAta.tEts.find(getNumeredEntFiniteElementPtr()->getEnt()) == dAta.tEts.end()) {
+    if (type != MBVERTEX)
+      MoFEMFunctionReturnHot(0);
+    if (data.getIndices().size() == 0)
+      MoFEMFunctionReturnHot(0);
+    if (dAta.tEts.find(getNumeredEntFiniteElementPtr()->getEnt()) ==
+        dAta.tEts.end()) {
       MoFEMFunctionReturnHot(0);
     }
 
-    
-    
-
     const FENumeredDofEntity *dof_ptr;
-    ierr = getNumeredEntFiniteElementPtr()->getRowDofsByPetscGlobalDofIdx(data.getIndices()[0],&dof_ptr); CHKERRG(ierr);
+    CHKERR getNumeredEntFiniteElementPtr()->getRowDofsByPetscGlobalDofIdx(
+        data.getIndices()[0], &dof_ptr);
 
     int id  = dAta.iD;
 
     Tag th_id;
     int def_block_id = -1;
-    rval = postProcMesh.tag_get_handle(
-      "BLOCK_ID",1,MB_TYPE_INTEGER,th_id,MB_TAG_CREAT|MB_TAG_SPARSE,&def_block_id); CHKERRG(rval);
+    CHKERR postProcMesh.tag_get_handle("BLOCK_ID", 1, MB_TYPE_INTEGER, th_id,
+                                       MB_TAG_CREAT | MB_TAG_SPARSE,
+                                       &def_block_id);
     Range::iterator tit = commonData.tEts.begin();
     for(;tit!=commonData.tEts.end();tit++) {
       rval = postProcMesh.tag_set_data(th_id,&*tit,1,&id);  CHKERRG(rval);
@@ -94,104 +89,121 @@ struct PostProcStress: public MoFEM::VolumeElementForcesAndSourcesCore::UserData
     double def_VAL[tag_length];
     bzero(def_VAL,tag_length*sizeof(double));
     Tag th_piola1,th_energy;
-    rval = postProcMesh.tag_get_handle(
+    CHKERR postProcMesh.tag_get_handle(
       tag_name_piola1.c_str(),tag_length,MB_TYPE_DOUBLE,th_piola1,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL
-    ); CHKERRG(rval);
-    rval = postProcMesh.tag_get_handle(
+    ); 
+    CHKERR postProcMesh.tag_get_handle(
       tag_name_energy.c_str(),1,MB_TYPE_DOUBLE,th_energy,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL
-    ); CHKERRG(rval);
+    ); 
 
     int nb_gauss_pts = data.getN().size1();
-    if(mapGaussPts.size()!=(unsigned int)nb_gauss_pts) {
-      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
+    if (mapGaussPts.size() != (unsigned int)nb_gauss_pts) {
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "Nb. of integration points is not equal to number points on "
+              "post-processing mesh");
     }
-    if(commonData.gradMap[rowFieldName].size()!=(unsigned int)nb_gauss_pts) {
-      SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency, filed <%s> not found",rowFieldName.c_str());
+    if (commonData.gradMap[rowFieldName].size() != (unsigned int)nb_gauss_pts) {
+      SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+               "Gradient of field not found, filed <%s> not found",
+               rowFieldName.c_str());
     }
 
-    MatrixDouble3by3 H,invH;
+    MatrixDouble3by3 H, invH;
     double detH;
 
     dAta.materialDoublePtr->commonDataPtr = &nonLinearElementCommonData;
-    dAta.materialDoublePtr->opPtr = this;
-    ierr = dAta.materialDoublePtr->getDataOnPostProcessor(
-      commonData.fieldMap,commonData.gradMap
-    ); CHKERRG(ierr);
+    dAta.materialDoublePtr->opPtr         = this;
+    CHKERR dAta.materialDoublePtr->getDataOnPostProcessor(commonData.fieldMap,
+                                                          commonData.gradMap);
 
     nonLinearElementCommonData.dataAtGaussPts = commonData.fieldMap;
     nonLinearElementCommonData.gradAtGaussPts = commonData.gradMap;
 
     double max_energy = 0;
-    MatrixDouble3by3 maxP(3,3);
+    MatrixDouble3by3 maxP(3, 3);
     maxP.clear();
 
-    for(int gg = 0;gg<nb_gauss_pts;gg++) {
+    for (int gg = 0; gg != nb_gauss_pts; ++gg) {
 
       dAta.materialDoublePtr->gG = gg;
-      dAta.materialDoublePtr->F.resize(3,3);
-      noalias(dAta.materialDoublePtr->F) = (commonData.gradMap[rowFieldName])[gg];
-      if(fieldDisp) {
-        for(int dd = 0;dd<3;dd++) {
-          dAta.materialDoublePtr->F(dd,dd) += 1;
+      dAta.materialDoublePtr->F.resize(3, 3);
+      noalias(dAta.materialDoublePtr->F) =
+          (commonData.gradMap[rowFieldName])[gg];
+      if (fieldDisp) {
+        for (int dd = 0; dd != 3; dd++) {
+          dAta.materialDoublePtr->F(dd, dd) += 1;
         }
       }
-      if(commonData.gradMap["MESH_NODE_POSITIONS"].size()==(unsigned int)nb_gauss_pts) {
-        H.resize(3,3);
-        invH.resize(3,3);
+      if (commonData.gradMap["MESH_NODE_POSITIONS"].size() ==
+          (unsigned int)nb_gauss_pts) {
+        H.resize(3, 3);
+        invH.resize(3, 3);
         noalias(H) = (commonData.gradMap["MESH_NODE_POSITIONS"])[gg];
-        ierr = dAta.materialDoublePtr->dEterminatnt(H,detH);  CHKERRG(ierr);
-        ierr = dAta.materialDoublePtr->iNvert(detH,H,invH); CHKERRG(ierr);
-        noalias(dAta.materialDoublePtr->F) = prod(dAta.materialDoublePtr->F,invH);
+
+        CHKERR dAta.materialDoublePtr->dEterminatnt(H, detH);
+        CHKERR dAta.materialDoublePtr->iNvert(detH, H, invH);
+        noalias(dAta.materialDoublePtr->F) =
+            prod(dAta.materialDoublePtr->F, invH);
       }
 
       int nb_active_variables = 9;
-      ierr = dAta.materialDoublePtr->setUserActiveVariables(nb_active_variables); CHKERRG(ierr);
-      ierr = dAta.materialDoublePtr->calculateP_PiolaKirchhoffI(dAta,getNumeredEntFiniteElementPtr()); CHKERRG(ierr);
-      ierr = dAta.materialDoublePtr->calculateElasticEnergy(dAta,getNumeredEntFiniteElementPtr()); CHKERRG(ierr);
-      if(!std::isnormal(dAta.materialDoublePtr->eNergy)&&replaceNonANumberByMaxValue) {
-        // If value is non a number because of singularity repleca it max double value
-        for(int r  = 0;r!=dAta.materialDoublePtr->P.size1();r++) {
-          for(int c = 0;c!=dAta.materialDoublePtr->P.size2();c++) {
-            if(std::isnormal(dAta.materialDoublePtr->P(r,c))) {
-              maxP(r,c) = copysign(
-                std::max(fabs(dAta.materialDoublePtr->P(r,c)),fabs(maxP(r,c))),
-                dAta.materialDoublePtr->P(r,c)
-              );
+      CHKERR dAta.materialDoublePtr->setUserActiveVariables(
+          nb_active_variables);
+      CHKERR dAta.materialDoublePtr->calculateP_PiolaKirchhoffI(
+          dAta, getNumeredEntFiniteElementPtr());
+      CHKERR dAta.materialDoublePtr->calculateElasticEnergy(
+          dAta, getNumeredEntFiniteElementPtr());
+      if (!std::isnormal(dAta.materialDoublePtr->eNergy) &&
+          replaceNonANumberByMaxValue) {
+        // If value is non a number because of singularity repleca it max double
+        // value
+        for (int r = 0; r != dAta.materialDoublePtr->P.size1(); r++) {
+          for (int c = 0; c != dAta.materialDoublePtr->P.size2(); c++) {
+            if (std::isnormal(dAta.materialDoublePtr->P(r, c))) {
+              maxP(r, c) =
+                  copysign(std::max(fabs(dAta.materialDoublePtr->P(r, c)),
+                                    fabs(maxP(r, c))),
+                           dAta.materialDoublePtr->P(r, c));
             }
           }
         }
       }
-      rval = postProcMesh.tag_set_data(th_piola1,&mapGaussPts[gg],1,&dAta.materialDoublePtr->P(0,0)); CHKERRG(rval);
-      if(std::isnormal(dAta.materialDoublePtr->eNergy)&&replaceNonANumberByMaxValue) {
+      CHKERR postProcMesh.tag_set_data(th_piola1, &mapGaussPts[gg], 1,
+                                       &dAta.materialDoublePtr->P(0, 0));
+      if (std::isnormal(dAta.materialDoublePtr->eNergy) &&
+          replaceNonANumberByMaxValue) {
         // I value is infinity at singularity, set max value
-        max_energy = std::max(dAta.materialDoublePtr->eNergy,max_energy);
+        max_energy = std::max(dAta.materialDoublePtr->eNergy, max_energy);
       }
-      rval = postProcMesh.tag_set_data(th_energy,&mapGaussPts[gg],1,&dAta.materialDoublePtr->eNergy); CHKERRG(rval);
-
+      CHKERR postProcMesh.tag_set_data(th_energy, &mapGaussPts[gg], 1,
+                                       &dAta.materialDoublePtr->eNergy);
     }
 
-    if(replaceNonANumberByMaxValue&&max_energy>0) {
-      MatrixDouble3by3 P(3,3);
-      for(int gg = 0;gg!=nb_gauss_pts;gg++) {
+    if (replaceNonANumberByMaxValue && max_energy > 0) {
+      MatrixDouble3by3 P(3, 3);
+      for (int gg = 0; gg != nb_gauss_pts; gg++) {
         double val_energy;
-        rval = postProcMesh.tag_get_data(th_energy,&mapGaussPts[gg],1,&val_energy); CHKERRG(rval);
-        if(!std::isnormal(val_energy)) {
-          rval = postProcMesh.tag_set_data(th_energy,&mapGaussPts[gg],1,&max_energy); CHKERRG(rval);
-          rval = postProcMesh.tag_get_data(th_piola1,&mapGaussPts[gg],1,&P(0,0)); CHKERRG(rval);
-          for(int r  = 0;r!=P.size1();r++) {
-            for(int c = 0;c!=P.size2();c++) {
-              if(!std::isnormal(P(r,c))) P(r,c) = maxP(r,c);
+        CHKERR postProcMesh.tag_get_data(th_energy, &mapGaussPts[gg], 1,
+                                         &val_energy);
+        if (!std::isnormal(val_energy)) {
+          CHKERR postProcMesh.tag_set_data(th_energy, &mapGaussPts[gg], 1,
+                                           &max_energy);
+          CHKERR postProcMesh.tag_get_data(th_piola1, &mapGaussPts[gg], 1,
+                                           &P(0, 0));
+          for (int r = 0; r != P.size1(); r++) {
+            for (int c = 0; c != P.size2(); c++) {
+              if (!std::isnormal(P(r, c)))
+                P(r, c) = maxP(r, c);
             }
           }
-          rval = postProcMesh.tag_set_data(th_piola1,&mapGaussPts[gg],1,&P(0,0)); CHKERRG(rval);
+          CHKERR postProcMesh.tag_set_data(th_piola1, &mapGaussPts[gg], 1,
+                                           &P(0, 0));
         }
       }
     }
 
-    MoFEMFunctionReturnHot(0);
-
+    MoFEMFunctionReturn(0);
   }
-
 };
 
 /// \brief USe PostProcStress
