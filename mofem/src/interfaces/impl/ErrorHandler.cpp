@@ -122,12 +122,13 @@ static PetscErrorCode mofem_error_handler(MPI_Comm comm, int line,
     PetscStrncmp(fun, "unknown", 7, &isunknown);
     if (ismain || isunknown) {
 
-      std::stringstream strs_version;
-      strs_version << "MoFEM_version_" << MoFEM_VERSION_MAJOR << "."
-                   << MoFEM_VERSION_MINOR << "." << MoFEM_VERSION_BUILD;
+      if (n >= MOFEM_DATA_INCONSISTENCY) {
+        PetscOptionsView(NULL, PETSC_VIEWER_STDERR_SELF);
+      }
 
       error_printf_highlight();
-      mofem_error_printf("-- MoFEM End of Error Message -- send entire error message to mofem-group@googlegroups.com --\n");
+      mofem_error_printf("-- MoFEM End of Error Message -- send entire error "
+                         "message to mofem-group@googlegroups.com --\n");
       error_printf_normal();
     }
 
