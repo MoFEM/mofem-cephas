@@ -123,7 +123,11 @@ static PetscErrorCode mofem_error_handler(MPI_Comm comm, int line,
     if (ismain || isunknown) {
 
       if (n >= MOFEM_DATA_INCONSISTENCY) {
+#if PETSC_VERSION_GE(3, 7, 0)
         PetscOptionsView(NULL, PETSC_VIEWER_STDERR_SELF);
+#else
+        PetscOptionsView(PETSC_VIEWER_STDERR_SELF);
+#endif
       }
 
       error_printf_highlight();
