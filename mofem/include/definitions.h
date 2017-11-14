@@ -397,7 +397,7 @@ DEPRECATED void macro_is_depracted_using_deprecated_function();
  * \code
  * int main(int argc, char *argv[]) {
  *
- * PetscInitialize(&argc, &argv, (char *)0, help);
+ * MoFEM::Core::Initialize(&argc, &argv, (char *)0, help);
  *
  * try {
  *
@@ -406,9 +406,8 @@ DEPRECATED void macro_is_depracted_using_deprecated_function();
  * }
  * CATCH_ERRORS;
  *
- * PetscFinalize();
+ * return MoFEM::Core::Finalize();
  *
- * return 0;
  * }
  * \endcode
  *
@@ -535,8 +534,8 @@ DEPRECATED void macro_is_depracted_using_deprecated_function();
  *
  * int main(int argc, char *argv[]) {
  *
- * // Initailise Petsc
- * PetscInitialize(&argc, &argv, (char *)0, help);
+ * // Initailise MoFEM and Petsc
+ * MoFEM::Core::Initialize(&argc, &argv, (char *)0, help);
  *
  * try {
  *
@@ -550,9 +549,8 @@ DEPRECATED void macro_is_depracted_using_deprecated_function();
  * }
  * CATCH_ERRORS;
  *
- * PetscFinalize();
- *
- * return 0;
+ * return MoFEM::Core::Finalize();
+ * 
  * }
  *
  * \endcode
