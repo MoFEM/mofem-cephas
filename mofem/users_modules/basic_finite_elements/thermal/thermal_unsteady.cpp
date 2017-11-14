@@ -1,6 +1,10 @@
 /** \file thermal_unsteady.cpp
  \ingroup mofem_thermal_elem
  \brief Example of thermal unsteady analyze.
+
+ TODO:
+ \todo Make it work in distributed meshes with multigird solver. At the moment
+ it is not working efficient as can.
 */
 
 /* This file is part of MoFEM.
