@@ -58,6 +58,62 @@ struct Core : public Interface {
   );
   ~Core();
 
+  /**
+   * @brief Initializes the MoFEM database PETSc, MOAB and MPI.
+   *
+   * \note This function calls PetscInitialize, for more details see
+   * <http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/Sys/PetscInitialize.html>
+   *
+   * Example:
+   * \code
+   *
+   * int main(int argc, char *argv[]) {
+   *
+   * // Initailise MoFEM and Petsc
+   * MoFEM::Core::Initialize(&argc, &argv, (char *)0, help);
+   *
+   * try {
+   *
+   *   moab::Core mb_instance; // MoAB database
+   *   moab::Interface &moab = mb_instance;
+   *   MoFEM::Core core(moab); // MOFEM database
+   *   MoFEM::CoreInterface &m_field = core;
+   *
+   *   CHKERR foo(); // Call function
+   *
+   * }
+   * CATCH_ERRORS;
+   *
+   * return MoFEM::Core::Finalize();
+   *
+   * }
+   *
+   * \endcode
+   *
+   * @param argc count of number of command line arguments
+   * @param args the command line arguments
+   * @param file [optional] PETSc database file, also checks ~username/.petscrc
+   * * and .petscrc use NULL to not check for code specific file. Use *
+   * -skip_petscrc in the code specific file to skip the .petscrc files
+   * @param help [optional] Help message to print, use NULL for no message
+   * @return MoFEMErrorCode
+   */
+  static MoFEMErrorCode Initialize(int *argc, char ***args, const char file[],
+                                   const char help[]);
+
+  /**
+   * @brief Checks for options to be called at the conclusion of the program.
+   *
+   * MPI_Finalize() is called only if the user had not called MPI_Init() before
+   * calling Initialize.
+   *
+   * \note This function calls PetscInitialize, for more details see
+   * <http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/Sys/PetscFinalize.html>
+   *
+   * @return MoFEMErrorCode
+   */
+  static MoFEMErrorCode Finalize();
+
   /**@}*/
 
   /** \name Assessing interfaces */
@@ -780,7 +836,7 @@ private:
   mutable boost::ptr_map<unsigned long, UnknownInterface> iFaces;
 
   mutable int *buildMoFEM; ///< keeps flags/semaphores for different stages
-  static bool isGloballyPetscInitialised; ///< Core base globally initialized
+  static bool isGloballyInitialised; ///< Core base globally initialized
 
   /**
    * \brief Get tag handles
