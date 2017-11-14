@@ -93,8 +93,7 @@ static PetscErrorCode mofem_error_handler(MPI_Comm comm, int line,
 
       error_printf_highlight();
       mofem_error_printf("--------------------- MoFEM Error Message ---------------------------------------------------\n");
-      mofem_error_printf("MoFEM version %d.%d.%d (%s %s)"
-                         "Version %d.%d.%d)\n",
+      mofem_error_printf("MoFEM version %d.%d.%d (%s %s)\n",
                          MoFEM_VERSION_MAJOR, MoFEM_VERSION_MINOR,
                          MoFEM_VERSION_BUILD, MOAB_VERSION_STRING, petsc_version);
       mofem_error_printf("MoFEM git commit id %s\n", GIT_SHA1_NAME);
