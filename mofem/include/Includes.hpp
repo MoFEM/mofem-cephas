@@ -111,6 +111,7 @@
 #include <boost/utility/enable_if.hpp>
 
 //MOAB
+#include <moab/MOABConfig.h>
 #include <moab/ParallelComm.hpp>
 #include <moab/Core.hpp>
 #include <moab/Interface.hpp>
