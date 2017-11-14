@@ -46,7 +46,25 @@ MoFEMErrorCode Core::query_interface(const MOFEMuuid &uuid,
   MoFEMFunctionReturnHot(0);
 }
 
-bool Core::isGloballyPetscInitialised = false;
+bool Core::isGloballyInitialised = false;
+
+MoFEMErrorCode Core::Initialize(int *argc, char ***args, const char file[],
+                                const char help[]) {
+  ierr = PetscInitialize(argc, args, file, help);
+  CHKERRG(ierr);
+  ierr = PetscPushErrorHandler(mofem_error_handler, PETSC_NULL);
+  CHKERRG(ierr);
+  isGloballyInitialised = true;
+  return MOFEM_SUCESS;
+}
+
+MoFEMErrorCode Core::Finalize() {
+   CHKERRQ(ierr);
+  ierr = PetscPopErrorHandler();
+  CHKERRG(ierr);
+  isGloballyInitialised = false;
+  return PetscFinalize();
+}
 
 template<class IFACE>
 MoFEMErrorCode Core::regSubInterface(const MOFEMuuid& uid) {
@@ -62,9 +80,10 @@ moab(moab),
 cOmm(0),
 verbose(verbose) {
 
-  if (!isGloballyPetscInitialised) {
+  // This is deprecated ONE should use MoFEM::Core::Initialize
+  if (!isGloballyInitialised) {
     PetscPushErrorHandler(mofem_error_handler, PETSC_NULL);
-    isGloballyPetscInitialised = true;
+    isGloballyInitialised = true;
   }
 
   // Register interfaces for this implementation
@@ -159,9 +178,9 @@ Core::~Core() {
   PetscFinalized(&is_finalized);
   // Destroy interfaces
   iFaces.clear();
-  // Reseat MoFEM/PETSc initialisation
-  if (isGloballyPetscInitialised && is_finalized) {
-    isGloballyPetscInitialised = false;
+  // This is deprecated ONE should use MoFEM::Core::Initialize
+  if (isGloballyInitialised && is_finalized) {
+    isGloballyInitialised = false;
   }
   // Destroy communicator
   if (!is_finalized) {

@@ -58,6 +58,10 @@ struct Core : public Interface {
   );
   ~Core();
 
+  static MoFEMErrorCode Initialize(int *argc, char ***args, const char file[],
+                                   const char help[]);
+  static MoFEMErrorCode Finalize();
+
   /**@}*/
 
   /** \name Assessing interfaces */
@@ -780,7 +784,7 @@ private:
   mutable boost::ptr_map<unsigned long, UnknownInterface> iFaces;
 
   mutable int *buildMoFEM; ///< keeps flags/semaphores for different stages
-  static bool isGloballyPetscInitialised; ///< Core base globally initialized
+  static bool isGloballyInitialised; ///< Core base globally initialized
 
   /**
    * \brief Get tag handles
