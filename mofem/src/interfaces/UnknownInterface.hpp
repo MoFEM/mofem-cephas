@@ -210,7 +210,7 @@ struct UnknownInterface {
    *
    * \endcode
    *
-   * @return *IFACE
+   * @return IFACE*
    */
   template <
     class IFACE, 
@@ -246,7 +246,7 @@ struct UnknownInterface {
    *
    * \endcode
    *
-   * @return &IFACE
+   * @return IFACE&
    */
   template <
     class IFACE, 
