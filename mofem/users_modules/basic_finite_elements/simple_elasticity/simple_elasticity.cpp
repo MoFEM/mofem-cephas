@@ -1,49 +1,9 @@
-/** \file elasticity.cpp
+/** \file simple_elasticity.cpp
  * \ingroup nonlinear_elastic_elem
- * \example elasticity.cpp
+ * \example simple_elasticity.cpp
 
- The example shows how to solve the linear elastic problem. An example can read
- file with temperature field, then thermal stresses are included.
-
- What example can do:
- - take into account temperature field, i.e. calculate thermal stresses and
-deformation
- - stationary and time depend field is considered
- - take into account gravitational body forces
- - take in account fluid pressure
- - can work with higher order geometry definition
- - works on distributed meshes
- - multi-grid solver where each grid level is approximation order level
- - each mesh block can have different material parameters and approximation
-order
-
-See example how code can be used \cite jordi:2017,
- \image html SquelaDamExampleByJordi.png "Example what you can do with this
-code. Analysis of the arch dam of Susqueda, located in Catalonia (Spain)"
-width=800px
-
- This is an example of application code; it does not show how elements are
-implemented. Example presents how to:
- - read mesh
- - set-up problem
- - run finite elements on the problem
- - assemble matrices and vectors
- - solve the linear system of equations
- - save results
-
-
- If you like to see how to implement finite elements, material, are other parts
-of the code, look here;
- - Hooke material, see \ref Hooke
- - Thermal-stress assembly, see \ref  ThermalElement
- - Body forces element, see \ref BodyFroceConstantField
- - Fluid pressure element, see \ref FluidPressure
- - The general implementation of an element for arbitrary Lagrangian-Eulerian
- aformulation for a nonlinear elastic problem is here \ref
- NonlinearElasticElement. Here we limit ourselves to Hooke equation and fix
- mesh, so the problem becomes linear. Not that elastic element is implemented
- with automatic differentiation.
-
+ The example shows how to solve the linear elastic problem.
+ 
 */
 
 /* MoFEM is free software: you can redistribute it and/or modify it under
@@ -64,8 +24,7 @@ of the code, look here;
 
 #include "../poisson/src/AuxPoissonFunctions.hpp"
 #include "../poisson/src/PoissonOperators.hpp"
-#include <ElasticityNewOperator.hpp>
-#include <Hooke.hpp>
+#include <SimpleElasticityOperator.hpp>
 
 using namespace boost::numeric;
 using namespace MoFEM;
@@ -75,16 +34,6 @@ namespace po = boost::program_options;
 static char help[] = "-my_block_config set block data\n"
                      "\n";
 
-// const double young_modulus = 1;
-// const double poisson_ratio = 0.0;
-
-struct BlockOptionData {
-  int oRder;
-  double yOung;
-  double pOisson;
-  double initTemp;
-  BlockOptionData() : oRder(-1), yOung(-1), pOisson(-2), initTemp(0) {}
-};
 
 struct OpK : public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
@@ -128,7 +77,7 @@ struct OpK : public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
   MoFEMErrorCode makeB(const MatrixAdaptor &diffN, MatrixDouble &B) {
 
-    MoFEMFunctionBeginHot;
+    MoFEMFunctionBegin;
     unsigned int nb_dofs = diffN.size1();
     B.resize(6, 3 * nb_dofs, false);
     B.clear();
@@ -149,7 +98,7 @@ struct OpK : public VolumeElementForcesAndSourcesCore::UserDataOperator {
       B(5, dd3 + 2) = diff[0];
     }
 
-    MoFEMFunctionReturnHot(0);
+    MoFEMFunctionReturn(0);
   }
 
   /**
@@ -167,7 +116,7 @@ struct OpK : public VolumeElementForcesAndSourcesCore::UserDataOperator {
                         DataForcesAndSourcesCore::EntData &row_data,
                         DataForcesAndSourcesCore::EntData &col_data) {
     
-    MoFEMFunctionBeginHot;
+    MoFEMFunctionBegin;
     // get number of dofs on row
     nbRows = row_data.getIndices().size();
     // if no dofs on row, exit that work, nothing to do here
@@ -180,9 +129,9 @@ struct OpK : public VolumeElementForcesAndSourcesCore::UserDataOperator {
       MoFEMFunctionReturnHot(0);
     // get number of integration points
     nbIntegrationPts = getGaussPts().size2();
-    // chekk if entity block is on matrix diagonal
-    if (row_side == col_side && row_type == col_type) { // ASK
-      isDiag = true;                                    // yes, it is
+    // check if entity block is on matrix diagonal
+    if (row_side == col_side && row_type == col_type) { 
+      isDiag = true;                                    
     } else {
       isDiag = false;
     }
@@ -192,7 +141,7 @@ struct OpK : public VolumeElementForcesAndSourcesCore::UserDataOperator {
     // asseble local matrix
     CHKERR aSsemble(row_data, col_data);
 
-    MoFEMFunctionReturnHot(0);
+    MoFEMFunctionReturn(0);
   }
 
 protected:
@@ -212,7 +161,7 @@ protected:
   virtual MoFEMErrorCode
   iNtegrate(DataForcesAndSourcesCore::EntData &row_data,
             DataForcesAndSourcesCore::EntData &col_data) {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
 
     int nb_dofs_row = row_data.getFieldData().size();
     if (nb_dofs_row == 0)
@@ -229,19 +178,18 @@ protected:
       // get element volume
       // get integration weight
       double val = getVolume() * getGaussPts()(3, gg);
-      // ASK
+      
       const MatrixAdaptor &diffN_row = row_data.getDiffN(gg, nb_dofs_row / 3);
       const MatrixAdaptor &diffN_col = col_data.getDiffN(gg, nb_dofs_col / 3);
-      //     printf("\nGauss Point %d at row:\n", gg);
+      
       CHKERR makeB(diffN_row, rowB);
 
-      // printf("\nGauss Point %d at col:\n", gg);
       CHKERR makeB(diffN_col, colB);
 
       noalias(CB) = prod(D, colB);
       noalias(K) += val * prod(trans(rowB), CB);
     }
-    MoFEMFunctionReturnHot(0);
+    MoFEMFunctionReturn(0);
   }
 
   /**
@@ -252,7 +200,7 @@ protected:
      */
   virtual MoFEMErrorCode aSsemble(DataForcesAndSourcesCore::EntData &row_data,
                                   DataForcesAndSourcesCore::EntData &col_data) {
-    MoFEMFunctionBeginHot;
+    MoFEMFunctionBegin;
     // get pointer to first global index on row
     const int *row_indices = &*row_data.getIndices().data().begin();
     // get pointer to first global index on column
@@ -270,7 +218,7 @@ protected:
       CHKERR MatSetValues(B, nbCols, col_indices, nbRows, row_indices,
                           &*K.data().begin(), ADD_VALUES);
     }
-    MoFEMFunctionReturnHot(0);
+    MoFEMFunctionReturn(0);
   }
 };
 
@@ -287,7 +235,7 @@ struct ApplyDirichletBc : public MoFEM::FEMethod {
 
   MoFEMErrorCode postProcess() {
 
-    MoFEMFunctionBeginHot;
+    MoFEMFunctionBegin;
     std::set<int> set_fix_dofs;
     cerr << fixFaces << endl;
     cerr << fixNodes << endl;
@@ -325,7 +273,7 @@ struct ApplyDirichletBc : public MoFEM::FEMethod {
     CHKERR VecAssemblyEnd(ksp_f);
 
     Vec x;
-    // ASK
+    
     CHKERR VecDuplicate(ksp_f, &x);
 
     CHKERR VecZeroEntries(x);
@@ -335,7 +283,7 @@ struct ApplyDirichletBc : public MoFEM::FEMethod {
 
     CHKERR VecDestroy(&x);
 
-   MoFEMFunctionReturnHot(0);
+   MoFEMFunctionReturn(0);
   }
 };
 
@@ -348,7 +296,7 @@ struct OpPressure : MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator {
 
         MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator("U", OPROW),
         pressureVal(pressure_val) {}
-  //  virtual ~OpPressure();
+ 
 
   VectorDouble nF;
 
@@ -357,7 +305,7 @@ struct OpPressure : MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator {
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data) {
 
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
 
     const int nb_dofs = data.getIndices().size();
     if (nb_dofs == 0)
@@ -383,7 +331,7 @@ struct OpPressure : MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator {
     CHKERR VecSetValues(getFEMethod()->ksp_f, nb_dofs, &data.getIndices()[0],
                         &nF[0], ADD_VALUES);
 
-    MoFEMFunctionReturnHot(0);
+    MoFEMFunctionReturn(0);
   }
 };
 
@@ -544,7 +492,7 @@ CHKERRQ(ierr);
     CHKERR DMMoFEMKSPSetComputeRHS(dm, "PRESSURE", pressure_fe, nullFE, nullFE);
 
     Mat A;
-    Vec x, f; // ASK
+    Vec x, f; 
 
     CHKERR DMCreateMatrix(dm, &A);
 

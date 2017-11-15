@@ -40,10 +40,10 @@ namespace ElasticitySimpleExample {
     }
 
 
-/**
+    /**
      * \brief Create finite element to calculate matrix and vectors
      */
-    PetscErrorCode createFEToAssmbleMatrixAndVector(
+    MoFEMErrorCode createFEToAssmbleMatrixAndVector(
       boost::function<double (const double,const double,const double)> f_u,
       boost::function<double (const double,const double,const double)> f_source,
       boost::shared_ptr<ForcesAndSourcesCore>& domain_lhs_fe,
@@ -52,7 +52,7 @@ namespace ElasticitySimpleExample {
       boost::shared_ptr<ForcesAndSourcesCore>& boundary_rhs_fe,
       bool trans = true
     ) const {
-      PetscFunctionBegin;
+      MoFEMFunctionBegin;
 
       // Create elements element instances
       domain_lhs_fe = boost::shared_ptr<ForcesAndSourcesCore>(new VolumeElementForcesAndSourcesCore(mField));
@@ -65,18 +65,8 @@ namespace ElasticitySimpleExample {
       domain_rhs_fe->getRuleHook = VolRule();
       boundary_lhs_fe->getRuleHook = FaceRule();
       boundary_rhs_fe->getRuleHook = FaceRule();
-
-      // Add operators to element instances
-      // Add operator grad-grad for calculaye matrix
-      /* domain_lhs_fe->getOpPtrVector().push_back(new OpK());
-      // Add operator to calculate source terms
-      domain_rhs_fe->getOpPtrVector().push_back(new OpF(f_source));
-      // Add operator calculating constrains matrix
-      boundary_lhs_fe->getOpPtrVector().push_back(new OpC(trans));
-      // Add operator calculating constrains vector
-      boundary_rhs_fe->getOpPtrVector().push_back(new Op_g(f_u));
-      */
-      PetscFunctionReturn(0);
+     
+      MoFEMFunctionReturn(0);
     }
 
 
@@ -90,4 +80,4 @@ namespace ElasticitySimpleExample {
 
 }
 
-#endif //__ELASTICITYNEWOPERATOR_HPP__
+#endif //__SIMPLEELASTICITYOPERATOR_HPP__
