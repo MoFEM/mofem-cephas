@@ -315,7 +315,7 @@ struct UnknownInterface {
   */
   virtual const MoFEMErrorCode getFileVersion(moab::Interface &moab,
                                               Version &version) const {
-    MoFEMFunctionBeginHot;
+    MoFEMFunctionBegin;
     const EntityHandle root_meshset = 0;
     const int def_version[] = {-1, -1, -1};
     Tag th;
@@ -335,7 +335,7 @@ struct UnknownInterface {
       version_ptr[2] = MoFEM_VERSION_BUILD;
     }
     version = Version(version_ptr);
-    MoFEMFunctionReturnHot(0);
+    MoFEMFunctionReturn(0);
   }
 
   /**
