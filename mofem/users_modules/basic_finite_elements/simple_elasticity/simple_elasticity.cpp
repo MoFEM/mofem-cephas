@@ -1,6 +1,6 @@
 /** \file elasticity.cpp
  * \ingroup nonlinear_elastic_elem
- * \example elasticity.cpp
+ * \example simple_elasticity.cpp
 
  The example shows how to solve the linear elastic problem. An example can read
  file with temperature field, then thermal stresses are included.
