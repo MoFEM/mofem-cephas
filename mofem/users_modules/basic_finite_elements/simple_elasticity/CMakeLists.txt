@@ -21,9 +21,8 @@ include_directories(
 )
 
 
-if(ADOL-C_LIBRARY)
 
-  bfe_add_executable(simple_elasticity
+ bfe_add_executable(simple_elasticity
     ${UM_SOURCE_DIR}/basic_finite_elements/simple_elasticity/simple_elasticity.cpp
   )
   target_link_libraries(simple_elasticity
@@ -47,25 +46,4 @@ if(ADOL-C_LIBRARY)
     DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/
   )
 
-  #testing
-  add_test(ElasticityTest
-    ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 2 ${CMAKE_CURRENT_BINARY_DIR}/simple_elasticity
-    -my_file cubit01.h5m
-    -ksp_type cg -pc_type asm -sub_pc_type lu
-    -ksp_monitor -log_view
-  )
 
-  add_test(MultiGridViaOrderSolver
-    ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 2 ${CMAKE_CURRENT_BINARY_DIR}/simple_elasticity
-    -my_file help.h5m -my_is_partitioned
-    -ksp_type fgmres -ksp_monitor
-    -my_order 4
-    -pc_type mg
-    -mofem_mg_verbose 1 -mofem_mg_coarse_order 2 -mofem_mg_levels 3
-    -mg_coarse_ksp_type preonly -mg_coarse_pc_type bjacobi
-    -pc_mg_smoothup 10 -pc_mg_smoothdown 10
-    -pc_mg_type multiplicative
-    -log_view
-  )
-
-endif(ADOL-C_LIBRARY)
