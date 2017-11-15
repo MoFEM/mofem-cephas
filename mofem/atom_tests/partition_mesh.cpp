@@ -30,7 +30,7 @@ int main(int argc, char *argv[]) {
 
 
   //initialize petsc
-  PetscInitialize(&argc,&argv,(char *)0,help);
+  MoFEM::Core::Initialize(&argc,&argv,(char *)0,help);
 
   try {
 
@@ -103,7 +103,7 @@ int main(int argc, char *argv[]) {
     rval = moab2.load_file("partitioned_mesh.h5m",0,option); CHKERRG(rval);
   }
 
-  ierr = PetscFinalize(); CHKERRG(ierr);
+  ierr = MoFEM::Core::Finalize(); CHKERRG(ierr);
 
   return 0;
 
