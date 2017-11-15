@@ -69,9 +69,15 @@ struct UnknownInterface {
   /**
    * @brief Register interface
    *
+   * Example:
+   * \code
+   * ierr = regSubInterface<Simple>(IDD_MOFEMSimple);
+   * CHKERRABORT(PETSC_COMM_SELF, ierr);
+   * \endcode
+   *
    * @param uuid
    * @param true
-   * @return template <class IFACE> MoFEMErrorCode
+   * @return MoFEMErrorCode
    */
   template <class IFACE>
   MoFEMErrorCode registerInterface(const MOFEMuuid &uuid,
@@ -91,9 +97,15 @@ struct UnknownInterface {
   /**
    * @brief Get interface by uuid and return reference to pointer of interface
    *
+   * \note uuid of interface and interface are verified, if second template
+   * parameter is true. Function throw error if both do not match.
+   *
+   * \note Do not use this function directly, it is called by other overload
+   * getInterface methods.
+   *
    * @param uuid
-   * @param iface
-   * @return template <class IFACE, bool VERIFY>  MoFEMErrorCode
+   * @param iface reference to a interface pointer
+   * @return MoFEMErrorCode
    */
   template <class IFACE, bool VERIFY /* =false C++11 needed to have this */ >
   inline MoFEMErrorCode getInterface(const MOFEMuuid &uuid,
@@ -115,8 +127,28 @@ struct UnknownInterface {
   /**
    * @brief Get interface refernce to pointer of interface
    *
-   * @param iface
-   * @return template <class IFACE>  MoFEMErrorCode
+   * \code
+   * // Create moab database
+   * moab::Core mb_instance;
+   * // Access moab database by interface
+   * moab::Interface &moab = mb_instance;
+   *
+   * // Create MoFEM database
+   * MoFEM::Core core(moab);
+   * // Acces MoFEM database by Interface
+   * MoFEM::Interface &m_field = core;
+   *
+   * // Get interface
+   * // Get simple interface is simplified version enabling quick and
+   * // easy construction of problem.
+   * Simple *simple_interface;
+   * // Query interface and get pointer to Simple interface
+   *  CHKERR m_field.getInterface(simple_interface);
+   *
+   * \endcode
+   *
+   * @param iface reference to a interface pointer
+   * @return MoFEMErrorCode
    */
   template <class IFACE>
   inline MoFEMErrorCode getInterface(IFACE *&iface) const {
@@ -127,8 +159,29 @@ struct UnknownInterface {
   /**
    * @brief Get interface pointer to pointer of interface
    *
-   * @param iface
-   * @return template <class IFACE>  MoFEMErrorCode
+   * \code
+   * // Create moab database
+   * moab::Core mb_instance;
+   * // Access moab database by interface
+   * moab::Interface &moab = mb_instance;
+   *
+   * // Create MoFEM database
+   * MoFEM::Core core(moab);
+   * // Acces MoFEM database by Interface
+   * MoFEM::Interface &m_field = core;
+   *
+   * // Get interface
+   * // Get simple interface is simplified version enabling quick and
+   * // easy construction of problem.
+   * Simple *simple_interface;
+   * // Query interface and get pointer to Simple interface
+   *  CHKERR m_field.getInterface(&simple_interface);
+   *
+   * \endcode
+   *
+   *
+   * @param iface const pointer to a interface pointer
+   * @return MoFEMErrorCode
    */
   template <class IFACE>
   inline MoFEMErrorCode getInterface(IFACE **const iface) const {
@@ -136,6 +189,29 @@ struct UnknownInterface {
                                       *iface);
   }
 
+  /**
+   * @brief Get interface pointer to pointer of interface
+   *
+   * \code
+   * // Create moab database
+   * moab::Core mb_instance;
+   * // Access moab database by interface
+   * moab::Interface &moab = mb_instance;
+   *
+   * // Create MoFEM database
+   * MoFEM::Core core(moab);
+   * // Acces MoFEM database by Interface
+   * MoFEM::Interface &m_field = core;
+   *
+   * // Get interface
+   * // Get simple interface is simplified version enabling quick and
+   * // easy construction of problem.
+   * Simple *simple_interface = m_field.getInterface<Simple*,0>();
+   *
+   * \endcode
+   *
+   * @return IFACE*
+   */
   template <
     class IFACE, 
     typename boost::enable_if<boost::is_pointer<IFACE>, int>::type /* =0 C++11 needed to have this */  
@@ -149,6 +225,29 @@ struct UnknownInterface {
     return iface;
   }
 
+ /**
+   * @brief Get reference to interface 
+   *
+   * \code
+   * // Create moab database
+   * moab::Core mb_instance;
+   * // Access moab database by interface
+   * moab::Interface &moab = mb_instance;
+   *
+   * // Create MoFEM database
+   * MoFEM::Core core(moab);
+   * // Acces MoFEM database by Interface
+   * MoFEM::Interface &m_field = core;
+   *
+   * // Get interface
+   * // Get simple interface is simplified version enabling quick and
+   * // easy construction of problem.
+   * Simple &simple_interface = m_field.getInterface<Simple&,0>();
+   *
+   * \endcode
+   *
+   * @return IFACE&
+   */
   template <
     class IFACE, 
     typename boost::enable_if<boost::is_reference<IFACE>, int>::type /* =0 C++11 needed to have this */  
@@ -165,7 +264,25 @@ struct UnknownInterface {
   /**
    * @brief Function returning pointer to interface
    *
-   * @return template <class IFACE>  IFACE*
+   * \code
+   * // Create moab database
+   * moab::Core mb_instance;
+   * // Access moab database by interface
+   * moab::Interface &moab = mb_instance;
+   *
+   * // Create MoFEM database
+   * MoFEM::Core core(moab);
+   * // Acces MoFEM database by Interface
+   * MoFEM::Interface &m_field = core;
+   *
+   * // Get interface
+   * // Get simple interface is simplified version enabling quick and
+   * // easy construction of problem.
+   * Simple *simple_interface = m_field.getInterface<Simple,0>();
+   *
+   * \endcode
+   *
+   * @return IFACE*
    */
   template <class IFACE>
   inline IFACE* getInterface() const {
@@ -198,7 +315,7 @@ struct UnknownInterface {
   */
   virtual const MoFEMErrorCode getFileVersion(moab::Interface &moab,
                                               Version &version) const {
-    MoFEMFunctionBeginHot;
+    MoFEMFunctionBegin;
     const EntityHandle root_meshset = 0;
     const int def_version[] = {-1, -1, -1};
     Tag th;
@@ -218,7 +335,7 @@ struct UnknownInterface {
       version_ptr[2] = MoFEM_VERSION_BUILD;
     }
     version = Version(version_ptr);
-    MoFEMFunctionReturnHot(0);
+    MoFEMFunctionReturn(0);
   }
 
   /**

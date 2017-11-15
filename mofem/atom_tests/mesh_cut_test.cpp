@@ -26,7 +26,7 @@ static char help[] = "testing mesh cut test\n\n";
 
 int main(int argc, char *argv[]) {
 
-  PetscInitialize(&argc, &argv, (char *)0, help);
+  MoFEM::Core::Initialize(&argc, &argv, (char *)0, help);
 
   try {
 
@@ -280,7 +280,7 @@ int main(int argc, char *argv[]) {
   }
   CATCH_ERRORS;
 
-  PetscFinalize();
+  MoFEM::Core::Finalize();
 
   return 0;
 }
