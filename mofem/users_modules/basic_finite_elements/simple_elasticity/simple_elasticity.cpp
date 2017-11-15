@@ -2,48 +2,7 @@
  * \ingroup nonlinear_elastic_elem
  * \example simple_elasticity.cpp
 
- The example shows how to solve the linear elastic problem. An example can read
- file with temperature field, then thermal stresses are included.
-
- What example can do:
- - take into account temperature field, i.e. calculate thermal stresses and
-deformation
- - stationary and time depend field is considered
- - take into account gravitational body forces
- - take in account fluid pressure
- - can work with higher order geometry definition
- - works on distributed meshes
- - multi-grid solver where each grid level is approximation order level
- - each mesh block can have different material parameters and approximation
-order
-
-See example how code can be used \cite jordi:2017,
- \image html SquelaDamExampleByJordi.png "Example what you can do with this
-code. Analysis of the arch dam of Susqueda, located in Catalonia (Spain)"
-width=800px
-
- This is an example of application code; it does not show how elements are
-implemented. Example presents how to:
- - read mesh
- - set-up problem
- - run finite elements on the problem
- - assemble matrices and vectors
- - solve the linear system of equations
- - save results
-
-
- If you like to see how to implement finite elements, material, are other parts
-of the code, look here;
- - Hooke material, see \ref Hooke
- - Thermal-stress assembly, see \ref  ThermalElement
- - Body forces element, see \ref BodyFroceConstantField
- - Fluid pressure element, see \ref FluidPressure
- - The general implementation of an element for arbitrary Lagrangian-Eulerian
- aformulation for a nonlinear elastic problem is here \ref
- NonlinearElasticElement. Here we limit ourselves to Hooke equation and fix
- mesh, so the problem becomes linear. Not that elastic element is implemented
- with automatic differentiation.
-
+ The example shows how to solve the linear elastic problem.
 */
 
 /* MoFEM is free software: you can redistribute it and/or modify it under
