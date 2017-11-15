@@ -171,7 +171,7 @@ int main(int argc, char *argv[]) {
       CHKERR m_field.modify_problem_ref_level_add_bit("ELASTIC_MECHANICS",
                                                       problem_bit_level);
 
-      // add entitities (by tets) to the field
+      // add entities (by tets) to the field
       CHKERR m_field.add_ents_to_field_by_type(0, MBTET, "SPATIAL_POSITION");
       CHKERR m_field.add_ents_to_field_by_type(0, MBTET, "MESH_NODE_POSITIONS");
 
@@ -215,30 +215,30 @@ int main(int argc, char *argv[]) {
       CHKERR m_field.set_field_order(0, MBVERTEX, "MESH_NODE_POSITIONS", 1);
 
       // add Neumman finite elements to add static boundary conditions
-      CHKERR m_field.add_finite_element("NEUAMNN_FE");
-      CHKERR m_field.modify_finite_element_add_field_row("NEUAMNN_FE",
+      CHKERR m_field.add_finite_element("NEUMANN_FE");
+      CHKERR m_field.modify_finite_element_add_field_row("NEUMANN_FE",
                                                          "SPATIAL_POSITION");
-      CHKERR m_field.modify_finite_element_add_field_col("NEUAMNN_FE",
+      CHKERR m_field.modify_finite_element_add_field_col("NEUMANN_FE",
                                                          "SPATIAL_POSITION");
-      CHKERR m_field.modify_finite_element_add_field_data("NEUAMNN_FE",
+      CHKERR m_field.modify_finite_element_add_field_data("NEUMANN_FE",
                                                           "SPATIAL_POSITION");
       CHKERR m_field.modify_finite_element_add_field_data(
-          "NEUAMNN_FE", "MESH_NODE_POSITIONS");
+          "NEUMANN_FE", "MESH_NODE_POSITIONS");
       CHKERR m_field.modify_problem_add_finite_element("ELASTIC_MECHANICS",
-                                                       "NEUAMNN_FE");
+                                                       "NEUMANN_FE");
       for (_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,
                                                       NODESET | FORCESET, it)) {
         Range tris;
         CHKERR moab.get_entities_by_type(it->meshset, MBTRI, tris, true);
         CHKERR m_field.add_ents_to_finite_element_by_type(tris, MBTRI,
-                                                          "NEUAMNN_FE");
+                                                          "NEUMANN_FE");
       }
       for (_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(
                m_field, SIDESET | PRESSURESET, it)) {
         Range tris;
         CHKERR moab.get_entities_by_type(it->meshset, MBTRI, tris, true);
         CHKERR m_field.add_ents_to_finite_element_by_type(tris, MBTRI,
-                                                          "NEUAMNN_FE");
+                                                          "NEUMANN_FE");
       }
       // add nodal force element
       CHKERR MetaNodalForces::addElement(m_field, "SPATIAL_POSITION");
@@ -548,7 +548,7 @@ int main(int argc, char *argv[]) {
         SnesCtx::PairNameFEMethodPtr("ELASTIC", &elastic.getLoopFeRhs()));
     // surface forces and pressures
     loops_to_do_Rhs.push_back(
-        SnesCtx::PairNameFEMethodPtr("NEUAMNN_FE", &fe_neumann));
+        SnesCtx::PairNameFEMethodPtr("NEUMANN_FE", &fe_neumann));
 
     // edge forces
     boost::ptr_map<std::string, EdgeForce> edge_forces;
@@ -596,7 +596,7 @@ int main(int argc, char *argv[]) {
     loops_to_do_Mat.push_back(
         SnesCtx::PairNameFEMethodPtr("ELASTIC", &elastic.getLoopFeLhs()));
     loops_to_do_Mat.push_back(
-        SnesCtx::PairNameFEMethodPtr("NEUAMNN_FE", &fe_neumann));
+        SnesCtx::PairNameFEMethodPtr("NEUMANN_FE", &fe_neumann));
     loops_to_do_Mat.push_back(
         SnesCtx::PairNameFEMethodPtr("ARC_LENGTH", &arc_method));
     snes_ctx.get_postProcess_to_do_Mat().push_back(&my_dirichlet_bc);
