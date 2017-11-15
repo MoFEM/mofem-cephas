@@ -723,7 +723,7 @@ MoFEMErrorCode PCMGSetUpViaApproxOrders(PC pc, PCMGSetUpViaApproxOrdersCtx *ctx,
   CHKERR ctx->buildProlongationOperator(true, verb);
 
 #if PETSC_VERSION_GE(3, 8, 0)
-  CHKERR PCMGSetGalerkin(pc, PC_MG_GALERKIN_BOTH);
+  CHKERR PCMGSetGalerkin(pc, PC_MG_GALERKIN_NONE);
 #else
   CHKERR PCMGSetGalerkin(pc, PETSC_FALSE);
 #endif
