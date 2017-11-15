@@ -447,12 +447,12 @@ int main(int argc, char *argv[]) {
       }
     };
 
-    struct AddLambdaVectorToFinternal : public FEMethod {
+    struct AddLambdaVectorToFInternal : public FEMethod {
 
       ArcLengthCtx *arcPtr;
       DirichletSpatialPositionsBc *bC;
 
-      AddLambdaVectorToFinternal(ArcLengthCtx *arc_ptr,
+      AddLambdaVectorToFInternal(ArcLengthCtx *arc_ptr,
                                  DirichletSpatialPositionsBc *bc)
           : arcPtr(arc_ptr), bC(bc) {}
 
@@ -500,7 +500,7 @@ int main(int argc, char *argv[]) {
     };
 
     AssembleRhsVectors pre_post_method(arc_ctx, node_set);
-    AddLambdaVectorToFinternal assemble_F_lambda(arc_ctx, &my_dirichlet_bc);
+    AddLambdaVectorToFInternal assemble_F_lambda(arc_ctx, &my_dirichlet_bc);
 
     SNES snes;
     CHKERR SNESCreate(PETSC_COMM_WORLD, &snes);
@@ -626,9 +626,9 @@ int main(int argc, char *argv[]) {
     if (flg != PETSC_TRUE) {
       its_d = 4;
     }
-    PetscScalar max_reudction = 10, min_reduction = 0.1;
+    PetscScalar max_reduction = 10, min_reduction = 0.1;
     CHKERR PetscOptionsGetReal(PETSC_NULL, PETSC_NULL, "-my_max_step_reduction",
-                               &max_reudction, &flg);
+                               &max_reduction, &flg);
     CHKERR PetscOptionsGetReal(PETSC_NULL, PETSC_NULL, "-my_min_step_reduction",
                                &min_reduction, &flg);
 
@@ -705,8 +705,8 @@ int main(int argc, char *argv[]) {
 
         CHKERR arc_method.calculateDxAndDlambda(D);
         step_size *= reduction;
-        if (step_size > max_reudction * step_size0) {
-          step_size = max_reudction * step_size0;
+        if (step_size > max_reduction * step_size0) {
+          step_size = max_reduction * step_size0;
         } else if (step_size < min_reduction * step_size0) {
           step_size = min_reduction * step_size0;
         }
@@ -754,7 +754,7 @@ int main(int argc, char *argv[]) {
         if (step > 1 && converged_state) {
 
           reduction = pow((double)its_d / (double)(its + 1), gamma);
-          if (step_size >= max_reudction * step_size0 && reduction > 1) {
+          if (step_size >= max_reduction * step_size0 && reduction > 1) {
             reduction = 1;
           } else if (step_size <= min_reduction * step_size0 && reduction < 1) {
             reduction = 1;
