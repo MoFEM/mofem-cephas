@@ -302,7 +302,7 @@ int main(int argc, char *argv[]) {
     bool check_if_spatial_field_exist = m_field.check_field("SPATIAL_POSITION");
     CHKERR m_field.add_field("SPATIAL_POSITION", H1, AINSWORTH_LEGENDRE_BASE, 3,
                              MB_TAG_SPARSE, MF_ZERO);
-    // add entitities (by tets) to the field
+    // add entities (by tets) to the field
     CHKERR m_field.add_ents_to_field_by_type(0, MBTET, "SPATIAL_POSITION");
 
     // set app. order
@@ -636,7 +636,7 @@ int main(int argc, char *argv[]) {
         ConvectiveMassElement::ShellMatrixElement::PairNameFEMethodPtr(
             "ELASTIC", &inertia.getLoopFeMassAuxLhs()));
 
-    // Element to calualte shell matrix residual
+    // Element to calculate shell matrix residual
     ConvectiveMassElement::ShellResidualElement shell_matrix_residual(m_field);
     shell_matrix_residual.shellMatCtx = shellAij_ctx;
 
