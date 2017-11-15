@@ -28,7 +28,7 @@ static char help[] = "Read file and print boundary conditions (ex. "
 
 int main(int argc, char *argv[]) {
 
-  PetscInitialize(&argc, &argv, (char *)0, help);
+  MoFEM::Core::Initialize(&argc, &argv, (char *)0, help);
 
   try {
 
@@ -260,5 +260,5 @@ int main(int argc, char *argv[]) {
 
   } CATCH_ERRORS;
 
-  PetscFinalize();
+  return MoFEM::Core::Finalize();
 }

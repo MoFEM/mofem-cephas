@@ -114,9 +114,10 @@ enum MoFEMErrorCodes {
   MOFEM_OPERATION_UNSUCCESSFUL = 103,
   MOFEM_IMPOSIBLE_CASE         = 104,
   MOFEM_INVALID_DATA           = 105,
-  MOFEM_MOFEMEXCEPTION_THROW   = 106,
-  MOFEM_STD_EXCEPTION_THROW    = 107,
-  MOFEM_ATOM_TEST_INVALID      = 108,
+  MOFEM_NOT_INSTALLED          = 106,
+  MOFEM_MOFEMEXCEPTION_THROW   = 107,
+  MOFEM_STD_EXCEPTION_THROW    = 108,
+  MOFEM_ATOM_TEST_INVALID      = 109,
   MOFEM_MOAB_ERROR             = 110
 };
 
@@ -396,7 +397,7 @@ DEPRECATED void macro_is_depracted_using_deprecated_function();
  * \code
  * int main(int argc, char *argv[]) {
  *
- * PetscInitialize(&argc, &argv, (char *)0, help);
+ * MoFEM::Core::Initialize(&argc, &argv, (char *)0, help);
  *
  * try {
  *
@@ -405,9 +406,8 @@ DEPRECATED void macro_is_depracted_using_deprecated_function();
  * }
  * CATCH_ERRORS;
  *
- * PetscFinalize();
+ * return MoFEM::Core::Finalize();
  *
- * return 0;
  * }
  * \endcode
  *
@@ -534,8 +534,8 @@ DEPRECATED void macro_is_depracted_using_deprecated_function();
  *
  * int main(int argc, char *argv[]) {
  *
- * // Initailise Petsc
- * PetscInitialize(&argc, &argv, (char *)0, help);
+ * // Initailise MoFEM and Petsc
+ * MoFEM::Core::Initialize(&argc, &argv, (char *)0, help);
  *
  * try {
  *
@@ -549,9 +549,8 @@ DEPRECATED void macro_is_depracted_using_deprecated_function();
  * }
  * CATCH_ERRORS;
  *
- * PetscFinalize();
- *
- * return 0;
+ * return MoFEM::Core::Finalize();
+ * 
  * }
  *
  * \endcode

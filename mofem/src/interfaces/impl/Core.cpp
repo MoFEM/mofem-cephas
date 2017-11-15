@@ -46,7 +46,25 @@ MoFEMErrorCode Core::query_interface(const MOFEMuuid &uuid,
   MoFEMFunctionReturnHot(0);
 }
 
-bool Core::isGloballyPetscInitialised = false;
+bool Core::isGloballyInitialised = false;
+
+MoFEMErrorCode Core::Initialize(int *argc, char ***args, const char file[],
+                                const char help[]) {
+  ierr = PetscInitialize(argc, args, file, help);
+  CHKERRG(ierr);
+  ierr = PetscPushErrorHandler(mofem_error_handler, PETSC_NULL);
+  CHKERRG(ierr);
+  isGloballyInitialised = true;
+  return MOFEM_SUCESS;
+}
+
+MoFEMErrorCode Core::Finalize() {
+   CHKERRQ(ierr);
+  ierr = PetscPopErrorHandler();
+  CHKERRG(ierr);
+  isGloballyInitialised = false;
+  return PetscFinalize();
+}
 
 template<class IFACE>
 MoFEMErrorCode Core::regSubInterface(const MOFEMuuid& uid) {
@@ -62,9 +80,10 @@ moab(moab),
 cOmm(0),
 verbose(verbose) {
 
-  if (!isGloballyPetscInitialised) {
+  // This is deprecated ONE should use MoFEM::Core::Initialize
+  if (!isGloballyInitialised) {
     PetscPushErrorHandler(mofem_error_handler, PETSC_NULL);
-    isGloballyPetscInitialised = true;
+    isGloballyInitialised = true;
   }
 
   // Register interfaces for this implementation
@@ -141,16 +160,17 @@ verbose(verbose) {
   ierr = initialiseDatabaseFromMesh(verbose); CHKERRABORT(cOmm,ierr);
 
   // Print version
-  if(verbose>0) {
-    ierr = PetscPrintf(
-      cOmm,
-      "lib version %d.%d.%d\n",
-      MoFEM_VERSION_MAJOR,MoFEM_VERSION_MINOR,MoFEM_VERSION_BUILD
-    ); CHKERRABORT(cOmm,ierr);
+  if (verbose > 0) {
+    char petsc_version[255];
+    ierr = PetscGetVersion(petsc_version, 255);
+    CHKERRABORT(cOmm, ierr);
+    ierr = PetscPrintf(cOmm, "MoFEM version %d.%d.%d (%s %s) \n",
+                       MoFEM_VERSION_MAJOR, MoFEM_VERSION_MINOR,
+                       MoFEM_VERSION_BUILD, MOAB_VERSION_STRING, petsc_version);
+    CHKERRABORT(cOmm, ierr);
     ierr = PetscPrintf(cOmm, "git commit id %s\n", GIT_SHA1_NAME);
     CHKERRABORT(cOmm, ierr);
   }
-
 }
 
 Core::~Core() {
@@ -158,9 +178,9 @@ Core::~Core() {
   PetscFinalized(&is_finalized);
   // Destroy interfaces
   iFaces.clear();
-  // Reseat MoFEM/PETSc initialisation
-  if (isGloballyPetscInitialised && is_finalized) {
-    isGloballyPetscInitialised = false;
+  // This is deprecated ONE should use MoFEM::Core::Initialize
+  if (isGloballyInitialised && is_finalized) {
+    isGloballyInitialised = false;
   }
   // Destroy communicator
   if (!is_finalized) {
