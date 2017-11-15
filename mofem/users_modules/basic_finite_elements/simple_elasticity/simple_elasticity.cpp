@@ -390,7 +390,7 @@ struct OpPressure : MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator {
 int main(int argc, char *argv[]) {
 
   // Initialize PETSCc
-  PetscInitialize(&argc, &argv, (char *)0, help);
+  MoFEM::Core::Initialize(&argc, &argv, (char *)0, help);
 
   // Create mesh databse
   moab::Core mb_instance;              // create database
@@ -434,7 +434,6 @@ CHKERRQ(ierr);
     boost::shared_ptr<ForcesAndSourcesCore> null;
 
     Simple *simple_interface = m_field.getInterface<MoFEM::Simple>();
-//    CHKERR m_field.query_interface(simple_interface);
 
     CHKERR simple_interface->getOptions();
 
@@ -613,7 +612,7 @@ CHKERRQ(ierr);
   }
 
   // finish work cleaning memory, getting statistics, etc
-   PetscFinalize();
+   MoFEM::Core::Finalize();//PetscFinalize();
 
   return 0;
 }

@@ -90,7 +90,7 @@ Initially, PETSc has to be initialised through the code line below
 
 \code
   // Initialize PETSCc
-  PetscInitialize(&argc, &argv, (char *)0, help);
+ MoFEM::Core::Initialize(&argc, &argv, (char *)0, help);
 \endcode
 
 and now PETSc objects can now be declared.
