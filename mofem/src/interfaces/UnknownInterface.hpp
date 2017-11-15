@@ -69,6 +69,12 @@ struct UnknownInterface {
   /**
    * @brief Register interface
    *
+   * Example:
+   * \code
+   * ierr = regSubInterface<Simple>(IDD_MOFEMSimple);
+   * CHKERRABORT(PETSC_COMM_SELF, ierr);
+   * \endcode
+   *
    * @param uuid
    * @param true
    * @return MoFEMErrorCode
@@ -93,6 +99,9 @@ struct UnknownInterface {
    *
    * \note uuid of interface and interface are verified, if second template
    * parameter is true. Function throw error if both do not match.
+   *
+   * \note Do not use this function directly, it is called by other overload
+   * getInterface methods.
    *
    * @param uuid
    * @param iface reference to a interface pointer
