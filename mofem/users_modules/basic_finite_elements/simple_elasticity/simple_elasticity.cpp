@@ -1,4 +1,4 @@
-/** \file elasticity.cpp
+/** \file simple_elasticity.cpp
  * \ingroup nonlinear_elastic_elem
  * \example simple_elasticity.cpp
 
