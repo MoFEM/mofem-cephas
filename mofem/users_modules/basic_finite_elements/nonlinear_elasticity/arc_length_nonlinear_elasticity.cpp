@@ -110,7 +110,8 @@ int main(int argc, char *argv[]) {
     MoFEM::Interface& m_field = core;
 
     // ref meshset ref level 0
-    CHKERR m_field.seed_ref_level_3D(0, BitRefLevel().set(0));
+    CHKERR m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(
+        0, 3, BitRefLevel().set(0));
     std::vector<BitRefLevel> bit_levels;
     bit_levels.push_back(BitRefLevel().set(0));
     BitRefLevel problem_bit_level;
@@ -184,8 +185,8 @@ int main(int argc, char *argv[]) {
           CHKERR m_field.get_moab().create_vertex(coords, no_field_vertex);
           Range range_no_field_vertex;
           range_no_field_vertex.insert(no_field_vertex);
-          CHKERR m_field.seed_ref_level(range_no_field_vertex,
-                                        BitRefLevel().set());
+          CHKERR m_field.getInterface<BitRefManager>()->setBitRefLevel(
+              range_no_field_vertex, BitRefLevel().set());
           EntityHandle lambda_meshset = m_field.get_field_meshset("LAMBDA");
           CHKERR m_field.get_moab().add_entities(lambda_meshset,
                                                  range_no_field_vertex);
@@ -195,8 +196,8 @@ int main(int argc, char *argv[]) {
         {
           CHKERR moab.create_meshset(MESHSET_SET, meshset_fe_arc_length);
           CHKERR moab.add_entities(meshset_fe_arc_length, &no_field_vertex, 1);
-          CHKERR m_field.seed_ref_level_MESHSET(meshset_fe_arc_length,
-                                                BitRefLevel().set());
+          CHKERR m_field.getInterface<BitRefManager>()->setBitLevelToMeshset(
+              meshset_fe_arc_length, BitRefLevel().set());
         }
         // finally add created meshset to the ARC_LENGTH finite element
         CHKERR m_field.add_ents_to_finite_element_by_MESHSET(
@@ -277,11 +278,16 @@ int main(int argc, char *argv[]) {
       Projection10NodeCoordsOnField ent_method_material(m_field,
                                                         "MESH_NODE_POSITIONS");
       CHKERR m_field.loop_dofs("MESH_NODE_POSITIONS", ent_method_material, 0);
-      CHKERR m_field.set_field(0, MBVERTEX, "SPATIAL_POSITION");
-      CHKERR m_field.set_field(0, MBEDGE, "SPATIAL_POSITION");
-      CHKERR m_field.field_axpy(1., "MESH_NODE_POSITIONS", "SPATIAL_POSITION");
-      CHKERR m_field.set_field(0, MBTRI, "SPATIAL_POSITION");
-      CHKERR m_field.set_field(0, MBTET, "SPATIAL_POSITION");
+      CHKERR m_field.getInterface<FieldBlas>()->setField(0, MBVERTEX,
+                                                         "SPATIAL_POSITION");
+      CHKERR m_field.getInterface<FieldBlas>()->setField(0, MBEDGE,
+                                                         "SPATIAL_POSITION");
+      CHKERR m_field.getInterface<FieldBlas>()->fieldAxpy(
+          1., "MESH_NODE_POSITIONS", "SPATIAL_POSITION");
+      CHKERR m_field.getInterface<FieldBlas>()->setField(0, MBTRI,
+                                                         "SPATIAL_POSITION");
+      CHKERR m_field.getInterface<FieldBlas>()->setField(0, MBTET,
+                                                         "SPATIAL_POSITION");
     }
 
     // build finite elements
