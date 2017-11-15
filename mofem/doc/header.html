@@ -14,6 +14,16 @@
 $treeview
 $search
 $mathjax
+<script type="text/javascript " src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML "></script>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+      extensions: ["AMSmath.js"],
+      TeX: { equationNumbers: { autoNumber: ["all"],
+                                useLabelIds: true
+      } 
+      }
+  });
+  </script>
 <link href="$relpath^$stylesheet" rel="stylesheet" type="text/css" />
 $extrastylesheet
 </head>

@@ -34,7 +34,7 @@ brew install gnu-sed
 
 Set the default fortran compiler
 ~~~~~~
-ln -s /usr/local/bin/gfortran-4.9 /usr/local/bin/gfortran`
+ln -s /usr/local/bin/gfortran-4.9 /usr/local/bin/gfortran
 ~~~~~~
 
 ###3. Install PETSc and other libraries
@@ -47,7 +47,7 @@ git clone https://bitbucket.org/petsc/petsc.git
 cd $MOFEM_INSTALL_DIR/petsc
 
 # Fix PETSc version
-export PETSC_VERSION=3.8.0
+export PETSC_VERSION=3.8
 git checkout tags/v$PETSC_VERSION
 
 # Configure and compile petsc:

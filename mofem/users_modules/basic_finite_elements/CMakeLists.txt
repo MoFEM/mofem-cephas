@@ -13,6 +13,7 @@
 
 add_subdirectory(${PROJECT_SOURCE_DIR}/basic_finite_elements/atom_tests)
 add_subdirectory(${PROJECT_SOURCE_DIR}/basic_finite_elements/elasticity)
+add_subdirectory(${PROJECT_SOURCE_DIR}/basic_finite_elements/simple_elasticity)
 add_subdirectory(${PROJECT_SOURCE_DIR}/basic_finite_elements/nonlinear_elasticity)
 add_subdirectory(${PROJECT_SOURCE_DIR}/basic_finite_elements/mix_transport)
 add_subdirectory(${PROJECT_SOURCE_DIR}/basic_finite_elements/thermal)
@@ -20,3 +21,4 @@ add_subdirectory(${PROJECT_SOURCE_DIR}/basic_finite_elements/cohesive_interface)
 add_subdirectory(${PROJECT_SOURCE_DIR}/basic_finite_elements/magnetostatic)
 add_subdirectory(${PROJECT_SOURCE_DIR}/basic_finite_elements/poisson)
 add_subdirectory(${PROJECT_SOURCE_DIR}/basic_finite_elements/hello_world)
+add_subdirectory(${PROJECT_SOURCE_DIR}/basic_finite_elements/hierarchical_approximation)

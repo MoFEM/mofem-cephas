@@ -14,6 +14,7 @@
 
 include_directories(
   ${UM_SOURCE_DIR}/basic_finite_elements/nonlinear_elastic_materials/src
+  ${UM_SOURCE_DIR}/basic_finite_elements/simple_elastic
 )
 
 if(ADOL-C_LIBRARY)
@@ -62,5 +63,7 @@ if(ADOL-C_LIBRARY)
     -pc_mg_type multiplicative
     -log_view
   )
+
+  
 
 endif(ADOL-C_LIBRARY)
