@@ -279,11 +279,9 @@ int main(int argc, char *argv[]) {
     CHKERR DMDestroy(&dm); 
 
     // Destroy ghost vector
-    CHKERR VecDestroy(&global_error); 
-
-  } catch (MoFEMException const &e) {
-    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
+    CHKERR VecDestroy(&global_error);
   }
+  CATCH_ERRORS;
 
   // finish work cleaning memory, getting statistics, etc.
   ierr = PetscFinalize(); CHKERRG(ierr);

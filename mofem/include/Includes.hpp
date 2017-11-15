@@ -31,6 +31,8 @@
 //STD
 #include <fstream>
 #include <iostream>
+#include <stdio.h>
+#include <stdarg.h>
 
 //PETSc
 #include <petscsys.h>
@@ -109,6 +111,7 @@
 #include <boost/utility/enable_if.hpp>
 
 //MOAB
+#include <moab/MOABConfig.h>
 #include <moab/ParallelComm.hpp>
 #include <moab/Core.hpp>
 #include <moab/Interface.hpp>

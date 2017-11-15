@@ -43,11 +43,11 @@ if(${GROUND_SURFACE_TEMPERATURE})
   )
 else(${GROUND_SURFACE_TEMPERATURE})
   bfe_add_executable(
-    thermal_unseady ${CMAKE_CURRENT_SOURCE_DIR}/thermal_unsteady.cpp
+    thermal_unsteady ${CMAKE_CURRENT_SOURCE_DIR}/thermal_unsteady.cpp
   )
 endif()
 
-target_link_libraries(thermal_unseady
+target_link_libraries(thermal_unsteady
   users_modules
   mofem_finite_elements
   mofem_interfaces

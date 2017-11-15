@@ -433,8 +433,8 @@ CHKERRQ(ierr);
         post_proc_volume; ///< Volume element to Post-process results
     boost::shared_ptr<ForcesAndSourcesCore> null;
 
-    Simple *simple_interface;
-    CHKERR m_field.query_interface(simple_interface);
+    Simple *simple_interface = m_field.getInterface<MoFEM::Simple>();
+//    CHKERR m_field.query_interface(simple_interface);
 
     CHKERR simple_interface->getOptions();
 
@@ -613,7 +613,7 @@ CHKERRQ(ierr);
   }
 
   // finish work cleaning memory, getting statistics, etc
-  CHKERR PetscFinalize();
+   PetscFinalize();
 
   return 0;
 }

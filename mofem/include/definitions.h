@@ -114,9 +114,10 @@ enum MoFEMErrorCodes {
   MOFEM_OPERATION_UNSUCCESSFUL = 103,
   MOFEM_IMPOSIBLE_CASE         = 104,
   MOFEM_INVALID_DATA           = 105,
-  MOFEM_MOFEMEXCEPTION_THROW   = 106,
-  MOFEM_STD_EXCEPTION_THROW    = 107,
-  MOFEM_ATOM_TEST_INVALID      = 108,
+  MOFEM_NOT_INSTALLED          = 106,
+  MOFEM_MOFEMEXCEPTION_THROW   = 107,
+  MOFEM_STD_EXCEPTION_THROW    = 108,
+  MOFEM_ATOM_TEST_INVALID      = 109,
   MOFEM_MOAB_ERROR             = 110
 };
 
@@ -369,7 +370,6 @@ DEPRECATED void macro_is_depracted_using_deprecated_function();
 }
 #endif
 
-
 /**
  * \brief First executable line of each MoFEM function, used for error handling. Final
       line of MoFEM functions should be MoFEMFunctionReturn(0);
@@ -386,9 +386,65 @@ DEPRECATED void macro_is_depracted_using_deprecated_function();
    \endcode
 
  */
-#define MoFEMFunctionBegin \
-  PetscFunctionBegin; \
+#define MoFEMFunctionBegin                                                     \
+  PetscFunctionBegin;                                                          \
   try {
+
+/**
+ * @brief \brief Catch errors
+ *
+ * Usage in main functions
+ * \code
+ * int main(int argc, char *argv[]) {
+ *
+ * MoFEM::Core::Initialize(&argc, &argv, (char *)0, help);
+ *
+ * try {
+ *
+ * // More code here
+ *
+ * }
+ * CATCH_ERRORS;
+ *
+ * return MoFEM::Core::Finalize();
+ *
+ * }
+ * \endcode
+ *
+ */
+#define CATCH_ERRORS                                                           \
+  catch (MoFEMExceptionInitial const &ex) {                                    \
+    return PetscError(PETSC_COMM_SELF, ex.lINE, PETSC_FUNCTION_NAME, __FILE__, \
+                      ex.errorCode, PETSC_ERROR_INITIAL, ex.what());           \
+  }                                                                            \
+  catch (MoFEMExceptionRepeat const &ex) {                                     \
+    return PetscError(PETSC_COMM_WORLD, ex.lINE, PETSC_FUNCTION_NAME,          \
+                      __FILE__, ex.errorCode, PETSC_ERROR_REPEAT, " ");        \
+  }                                                                            \
+  catch (MoFEMException const &ex) {                                           \
+    SETERRQ(PETSC_COMM_WORLD, ex.errorCode, ex.errorMessage);                  \
+  }                                                                            \
+  catch (std::exception const &ex) {                                           \
+    std::string message("Error: " + std::string(ex.what()) + " at " +          \
+                        boost::lexical_cast<std::string>(__LINE__) + " : " +   \
+                        std::string(__FILE__) + " in " +                       \
+                        std::string(PETSC_FUNCTION_NAME));                     \
+    SETERRQ(PETSC_COMM_WORLD, MOFEM_STD_EXCEPTION_THROW, message.c_str());     \
+  }
+
+/**
+  * \brief Last executable line of each PETSc function used for error handling. Replaces return()
+  * @param  a error code
+  *
+  * \note MoFEMFunctionReturn has to be used with MoFEMFunctionBegin and can be
+  * used only at the end of the function. If is need to return function in
+  * earlier use MoFEMFunctionReturnHot
+  *
+  */
+#define MoFEMFunctionReturn(a)                                                 \
+  }                                                                            \
+  CATCH_ERRORS                                                                 \
+  PetscFunctionReturn(a)
 
 /**
   * \brief First executable line of each MoFEM function, used for error handling. Final
@@ -412,62 +468,13 @@ DEPRECATED void macro_is_depracted_using_deprecated_function();
 #define MoFEMFunctionBeginHot PetscFunctionBeginHot
 
 /**
-  * \brief Last executable line of each PETSc function used for error handling. Replaces return()
-  * @param  a error code
-  *
-  * \note MoFEMFunctionReturn has to be used with MoFEMFunctionBegin and can be
-  * used only at the end of the function. If is need to return function in
-  * earlier use MoFEMFunctionReturnHot
-  *
-  */
-#define MoFEMFunctionReturn(a)                                                 \
-  }                                                                            \
-  catch (MoFEMException const &e) {                                            \
-    SETERRQ(PETSC_COMM_SELF, e.errorCode, e.errorMessage);                     \
-  }                                                                            \
-  PetscFunctionReturn(a)
-
-/**
  * \brief Last executable line of each PETSc function used for error handling. Replaces return()
  * @param  a error code
  */
 #define MoFEMFunctionReturnHot(a) \
   PetscFunctionReturn(a)
 
-/**
-  * \brief Last executable line of each PETSc function used for error handling. Replaces return()
-  * @param  a error code.
-  *
-  * \note Return void, whereas MoFEMFunctionReturn returns error code
-  *
-  * \note MoFEMFunctionReturn has to be used with MoFEMFunctionBegin and can be
-  * used only at the end of the function. If is need to return function in
-  * earlier use MoFEMFunctionReturnHot
-  *
-  */
-#define MoFEMFunctionReturnVoid()                                              \
-  }                                                                            \
-  catch (MoFEMException const &e) {                                            \
-    SETERRQ(PETSC_COMM_SELF, e.errorCode, e.errorMessage);                     \
-  }                                                                            \
-  PetscFunctionReturnVoid()
-
-/**
-  * \brief Last executable line of each PETSc function used for error handling. Replaces return()
-  * @param  a error code.
-  *
-  * \note Return void, whereas MoFEMFunctionReturn returns error code
-  *
-  */
-#define MoFEMFunctionReturnHotVoid()                                           \
-  }                                                                            \
-  catch (MoFEMException const &e) {                                            \
-    SETERRQ(PETSC_COMM_SELF, e.errorCode, e.errorMessage);                     \
-  }                                                                            \
-  PetscFunctionReturnVoid()
-
 #define CHKERRQ_PETSC(n) CHKERRQ(n)
-
 /**
  * \brief check error code of MoAB function
  * @param  a MoABErrorCode
@@ -481,19 +488,22 @@ DEPRECATED void macro_is_depracted_using_deprecated_function();
   }
 
 /**
-  * \brief Check error code of MoAB function
-  * @param  a MoFEMErrorCode
-  *
-  * \code
-  * rval = fun_moab(); CHKERRG(rval);
-  * ierr = fun_petsc(); CHKERRG(rval);
-  * ierr = fun_mofem(); CHKERRG(rval);
-  * \endcode
-  *
-  * \note Function detect type of errocode using specialized template function
-  * getErrorType, i.e. condition is evaluated at compilation time.
-  *
-  */
+ * \brief Check error code of MoFEM/MOAB/PETSc function
+ * @param  a MoFEMErrorCode
+ *
+ * \code
+ * MoFEMErrorCode fun() {
+ * MoFEMFunctionBeginHot;
+ * rval = fun_moab(); CHKERRG(rval);
+ * ierr = fun_petsc(); CHKERRG(ierr);
+ * merr = fun_mofem(); CHKERRG(merr);
+ * MoFEMFunctionReturnHot(0);
+ * \endcode
+ *
+ * \note Function detect type of errocode using specialized template function
+ * getErrorType, i.e. condition is evaluated at compilation time.
+ *
+ */
 #define CHKERRG(n)                                                             \
   if ((boost::is_same<BOOST_TYPEOF((n)),                                       \
                       MoFEMErrorCodeGeneric<PetscErrorCode> >::value)) {       \
@@ -507,14 +517,46 @@ DEPRECATED void macro_is_depracted_using_deprecated_function();
  * @brief Inline error check
  *
  * \code
- * CHKERR fun_moab();
- * CHKERR fun_petsc();
- * CHKERR fun_mofem();
+ *
+ * MoFEMErrorCode foo() {
+ *   MoFEMFunctionBegin;
+ *
+ *   // Call other functions
+ *   CHKERR fun_moab();
+ *   CHKERR fun_petsc();
+ *   CHKERR fun_mofem();
+ *
+ *   // Throw error
+ *   SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY, "Some error message");
+ *
+ *   MoFEMFunctionReturn(0);
+ * }
+ *
+ * int main(int argc, char *argv[]) {
+ *
+ * // Initailise MoFEM and Petsc
+ * MoFEM::Core::Initialize(&argc, &argv, (char *)0, help);
+ *
+ * try {
+ *
+ *   moab::Core mb_instance; // MoAB database
+ *   moab::Interface &moab = mb_instance;
+ *   MoFEM::Core core(moab); // MOFEM database
+ *   MoFEM::CoreInterface &m_field = core;
+ *
+ *   CHKERR foo(); // Call function
+ *
+ * }
+ * CATCH_ERRORS;
+ *
+ * return MoFEM::Core::Finalize();
+ * 
+ * }
+ *
  * \endcode
  *
  */
-#define CHKERR                                                                 \
-  ErrorCheckerLine() << __LINE__ << __FILE__ << PETSC_FUNCTION_NAME <<
+#define CHKERR ErrorCheckerCode<__LINE__>() <<
 
 /**
  * \brief Check error code of MoAB function and throw MoFEM exception
@@ -537,7 +579,7 @@ DEPRECATED void macro_is_depracted_using_deprecated_function();
  */
 #define THROW_MESSAGE(a)                                                       \
   {                                                                            \
-    std::string str("MOAB error " + boost::lexical_cast<std::string>((a)) +    \
+    std::string str("MoFEM error " + boost::lexical_cast<std::string>((a)) +   \
                     " at line " + boost::lexical_cast<std::string>(__LINE__) + \
                     " : " + std::string(__FILE__));                            \
     throw MoFEMException(MOFEM_MOFEMEXCEPTION_THROW, str.c_str());             \

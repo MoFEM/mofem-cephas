@@ -195,12 +195,10 @@ int main(int argc, char *argv[]) {
       Skinner skin(&m_field.get_moab());
       Range faces, tets;
       CHKERR m_field.get_moab().get_entities_by_type(0, MBTET, tets);
-      CHKERRG(rval);
       // CHKERR skin.find_skin(0,tets,false,faces); CHKERRG(rval);
       Range edges;
       CHKERR m_field.get_moab().get_adjacencies(tets, 1, false, edges,
                                                 moab::Interface::UNION);
-      CHKERRG(rval);
       // CHKERR m_field.get_moab().get_adjacencies(
       //   faces,1,false,edges,moab::Interface::UNION
       // ); CHKERRG(rval);
@@ -808,10 +806,8 @@ int main(int argc, char *argv[]) {
   CHKERR DMDestroy(&dm);
 
   MPI_Comm_free(&moab_comm_world);
-
-  } catch (MoFEMException const &e) {
-    SETERRQ(PETSC_COMM_SELF, e.errorCode, e.errorMessage);
   }
+  CATCH_ERRORS;
 
   PetscFinalize();
 

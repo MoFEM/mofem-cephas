@@ -28,7 +28,7 @@ static char help[] = "Read file and print boundary conditions (ex. "
 
 int main(int argc, char *argv[]) {
 
-  PetscInitialize(&argc, &argv, (char *)0, help);
+  MoFEM::Core::Initialize(&argc, &argv, (char *)0, help);
 
   try {
 
@@ -258,9 +258,7 @@ int main(int argc, char *argv[]) {
     // Close mesh_file_name.txt
     myfile.close();
 
-  } catch (MoFEMException const &e) {
-    SETERRQ(PETSC_COMM_SELF, e.errorCode, e.errorMessage);
-  }
+  } CATCH_ERRORS;
 
-  PetscFinalize();
+  return MoFEM::Core::Finalize();
 }
