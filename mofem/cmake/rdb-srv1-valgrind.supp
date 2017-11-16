@@ -2,6 +2,704 @@
    <insert_a_suppression_name_here>
    Memcheck:Leak
    fun:malloc
+   obj:*
+   obj:*
+   obj:*
+   obj:/usr/lib/openmpi/lib/libmpi.so.0.0.2
+   fun:PMPI_Init_thread
+   fun:PetscInitialize
+   fun:_ZN5MoFEM4Core10InitializeEPiPPPcPKcS6_
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:malloc
+   obj:*
+   obj:*
+   obj:*
+   obj:/usr/lib/openmpi/lib/libmpi.so.0.0.2
+   fun:PMPI_Init_thread
+   fun:PetscInitialize
+   fun:_ZN5MoFEM4Core10InitializeEPiPPPcPKcS6_
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:malloc
+   fun:opal_class_initialize
+   obj:*
+   obj:*
+   obj:*
+   fun:mca_mpool_base_module_create
+   obj:*
+   obj:*
+   obj:*
+   obj:/usr/lib/openmpi/lib/libmpi.so.0.0.2
+   fun:PMPI_Init_thread
+   fun:PetscInitialize
+   fun:_ZN5MoFEM4Core10InitializeEPiPPPcPKcS6_
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:calloc
+   obj:*
+   obj:*
+   obj:*
+   obj:/usr/lib/openmpi/lib/libmpi.so.0.0.2
+   fun:PMPI_Init_thread
+   fun:PetscInitialize
+   fun:_ZN5MoFEM4Core10InitializeEPiPPPcPKcS6_
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:calloc
+   obj:*
+   obj:*
+   obj:*
+   obj:/usr/lib/openmpi/lib/libmpi.so.0.0.2
+   fun:PMPI_Init_thread
+   fun:PetscInitialize
+   fun:_ZN5MoFEM4Core10InitializeEPiPPPcPKcS6_
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:malloc
+   obj:*
+   obj:*
+   obj:*
+   obj:/usr/lib/openmpi/lib/libmpi.so.0.0.2
+   fun:PMPI_Init_thread
+   fun:PetscInitialize
+   fun:_ZN5MoFEM4Core10InitializeEPiPPPcPKcS6_
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:malloc
+   fun:opal_class_initialize
+   obj:*
+   obj:*
+   obj:*
+   fun:mca_mpool_base_module_create
+   obj:*
+   obj:*
+   obj:*
+   obj:/usr/lib/openmpi/lib/libmpi.so.0.0.2
+   fun:PMPI_Init_thread
+   fun:PetscInitialize
+   fun:_ZN5MoFEM4Core10InitializeEPiPPPcPKcS6_
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:calloc
+   obj:*
+   obj:*
+   obj:*
+   obj:/usr/lib/openmpi/lib/libmpi.so.0.0.2
+   fun:PMPI_Init_thread
+   fun:PetscInitialize
+   fun:_ZN5MoFEM4Core10InitializeEPiPPPcPKcS6_
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:malloc
+   obj:*
+   obj:*
+   obj:*
+   obj:/usr/lib/openmpi/lib/libmpi.so.0.0.2
+   fun:PMPI_Init_thread
+   fun:PetscInitialize
+   fun:_ZN5MoFEM4Core10InitializeEPiPPPcPKcS6_
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:malloc
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:/usr/lib/openmpi/lib/libmpi.so.0.0.2
+   fun:PMPI_Init_thread
+   fun:PetscInitialize
+   fun:_ZN5MoFEM4Core10InitializeEPiPPPcPKcS6_
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:malloc
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:/usr/lib/openmpi/lib/libmpi.so.0.0.2
+   fun:PMPI_Init_thread
+   fun:PetscInitialize
+   fun:_ZN5MoFEM4Core10InitializeEPiPPPcPKcS6_
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:malloc
+   fun:opal_class_initialize
+   fun:mca_mpool_base_module_create
+   obj:*
+   obj:*
+   obj:*
+   obj:/usr/lib/openmpi/lib/libmpi.so.0.0.2
+   fun:PMPI_Init_thread
+   fun:PetscInitialize
+   fun:_ZN5MoFEM4Core10InitializeEPiPPPcPKcS6_
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:malloc
+   fun:opal_class_initialize
+   fun:opal_free_list_grow
+   obj:*
+   obj:*
+   obj:*
+   obj:/usr/lib/openmpi/lib/libmpi.so.0.0.2
+   fun:PMPI_Init_thread
+   fun:PetscInitialize
+   fun:_ZN5MoFEM4Core10InitializeEPiPPPcPKcS6_
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:malloc
+   fun:opal_class_initialize
+   fun:mca_mpool_base_module_create
+   obj:*
+   obj:*
+   obj:*
+   obj:/usr/lib/openmpi/lib/libmpi.so.0.0.2
+   fun:PMPI_Init_thread
+   fun:PetscInitialize
+   fun:_ZN5MoFEM4Core10InitializeEPiPPPcPKcS6_
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:malloc
+   fun:opal_class_initialize
+   fun:opal_free_list_grow
+   obj:*
+   obj:*
+   obj:*
+   obj:/usr/lib/openmpi/lib/libmpi.so.0.0.2
+   fun:PMPI_Init_thread
+   fun:PetscInitialize
+   fun:_ZN5MoFEM4Core10InitializeEPiPPPcPKcS6_
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:malloc
+   fun:opal_class_initialize
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:/usr/lib/openmpi/lib/libmpi.so.0.0.2
+   fun:PMPI_Init_thread
+   fun:PetscInitialize
+   fun:_ZN5MoFEM4Core10InitializeEPiPPPcPKcS6_
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:malloc
+   fun:opal_class_initialize
+   obj:*
+   obj:*
+   obj:*
+   obj:/usr/lib/openmpi/lib/libmpi.so.0.0.2
+   fun:PMPI_Init_thread
+   fun:PetscInitialize
+   fun:_ZN5MoFEM4Core10InitializeEPiPPPcPKcS6_
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:malloc
+   fun:orte_grpcomm_base_get_proc_attr
+   fun:ompi_modex_recv
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:/usr/lib/openmpi/lib/libmpi.so.0.0.2
+   fun:PMPI_Init_thread
+   fun:PetscInitialize
+   fun:_ZN5MoFEM4Core10InitializeEPiPPPcPKcS6_
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:malloc
+   fun:opal_class_initialize
+   fun:ompi_free_list_grow
+   obj:*
+   obj:*
+   obj:*
+   obj:/usr/lib/openmpi/lib/libmpi.so.0.0.2
+   fun:PMPI_Init_thread
+   fun:PetscInitialize
+   fun:_ZN5MoFEM4Core10InitializeEPiPPPcPKcS6_
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:malloc
+   fun:opal_class_initialize
+   fun:ompi_free_list_grow
+   obj:*
+   obj:*
+   obj:*
+   obj:/usr/lib/openmpi/lib/libmpi.so.0.0.2
+   fun:PMPI_Init_thread
+   fun:PetscInitialize
+   fun:_ZN5MoFEM4Core10InitializeEPiPPPcPKcS6_
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:malloc
+   obj:*
+   obj:*
+   obj:*
+   obj:/usr/lib/openmpi/lib/libmpi.so.0.0.2
+   fun:PMPI_Init_thread
+   fun:PetscInitialize
+   fun:_ZN5MoFEM4Core10InitializeEPiPPPcPKcS6_
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:malloc
+   obj:*
+   obj:*
+   fun:mca_mpool_base_module_create
+   obj:*
+   obj:*
+   obj:*
+   obj:/usr/lib/openmpi/lib/libmpi.so.0.0.2
+   fun:PMPI_Init_thread
+   fun:PetscInitialize
+   fun:_ZN5MoFEM4Core10InitializeEPiPPPcPKcS6_
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:malloc
+   fun:orte_grpcomm_base_get_proc_attr
+   fun:ompi_modex_recv
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:/usr/lib/openmpi/lib/libmpi.so.0.0.2
+   fun:PMPI_Init_thread
+   fun:PetscInitialize
+   fun:_ZN5MoFEM4Core10InitializeEPiPPPcPKcS6_
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:malloc
+   obj:*
+   fun:mca_mpool_base_module_create
+   obj:*
+   obj:*
+   obj:*
+   obj:/usr/lib/openmpi/lib/libmpi.so.0.0.2
+   fun:PMPI_Init_thread
+   fun:PetscInitialize
+   fun:_ZN5MoFEM4Core10InitializeEPiPPPcPKcS6_
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:malloc
+   fun:opal_class_initialize
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:/usr/lib/openmpi/lib/libmpi.so.0.0.2
+   fun:PMPI_Init_thread
+   fun:PetscInitialize
+   fun:_ZN5MoFEM4Core10InitializeEPiPPPcPKcS6_
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:malloc
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:/usr/lib/openmpi/lib/libmpi.so.0.0.2
+   fun:PMPI_Init_thread
+   fun:PetscInitialize
+   fun:_ZN5MoFEM4Core10InitializeEPiPPPcPKcS6_
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:malloc
+   fun:opal_class_initialize
+   obj:*
+   obj:*
+   obj:*
+   obj:/usr/lib/openmpi/lib/libmpi.so.0.0.2
+   fun:PMPI_Init_thread
+   fun:PetscInitialize
+   fun:_ZN5MoFEM4Core10InitializeEPiPPPcPKcS6_
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:realloc
+   fun:opal_class_initialize
+   obj:*
+   obj:/usr/lib/openmpi/lib/libmpi.so.0.0.2
+   obj:/usr/lib/openmpi/lib/libmpi.so.0.0.2
+   obj:/usr/lib/openmpi/lib/libmpi.so.0.0.2
+   fun:PMPI_Init_thread
+   fun:PetscInitialize
+   fun:_ZN5MoFEM4Core10InitializeEPiPPPcPKcS6_
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:malloc
+   fun:orte_grpcomm_base_get_proc_attr
+   fun:ompi_modex_recv
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:/usr/lib/openmpi/lib/libmpi.so.0.0.2
+   fun:PMPI_Init_thread
+   fun:PetscInitialize
+   fun:_ZN5MoFEM4Core10InitializeEPiPPPcPKcS6_
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:malloc
+   fun:opal_free_list_grow
+   obj:*
+   obj:*
+   obj:*
+   obj:/usr/lib/openmpi/lib/libmpi.so.0.0.2
+   fun:PMPI_Init_thread
+   fun:PetscInitialize
+   fun:_ZN5MoFEM4Core10InitializeEPiPPPcPKcS6_
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:malloc
+   fun:ompi_free_list_grow
+   obj:*
+   obj:*
+   obj:*
+   obj:/usr/lib/openmpi/lib/libmpi.so.0.0.2
+   fun:PMPI_Init_thread
+   fun:PetscInitialize
+   fun:_ZN5MoFEM4Core10InitializeEPiPPPcPKcS6_
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:malloc
+   obj:*
+   obj:*
+   obj:*
+   fun:mca_mpool_base_module_create
+   obj:*
+   obj:*
+   obj:*
+   obj:/usr/lib/openmpi/lib/libmpi.so.0.0.2
+   fun:PMPI_Init_thread
+   fun:PetscInitialize
+   fun:_ZN5MoFEM4Core10InitializeEPiPPPcPKcS6_
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:malloc
+   fun:ompi_free_list_grow
+   obj:*
+   obj:*
+   obj:*
+   obj:/usr/lib/openmpi/lib/libmpi.so.0.0.2
+   fun:PMPI_Init_thread
+   fun:PetscInitialize
+   fun:_ZN5MoFEM4Core10InitializeEPiPPPcPKcS6_
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:calloc
+   obj:*
+   obj:*
+   obj:*
+   obj:/usr/lib/openmpi/lib/libmpi.so.0.0.2
+   fun:PMPI_Init_thread
+   fun:PetscInitialize
+   fun:_ZN5MoFEM4Core10InitializeEPiPPPcPKcS6_
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:malloc
+   fun:opal_class_initialize
+   fun:ompi_free_list_grow
+   obj:*
+   obj:*
+   obj:*
+   obj:/usr/lib/openmpi/lib/libmpi.so.0.0.2
+   fun:PMPI_Init_thread
+   fun:PetscInitialize
+   fun:_ZN5MoFEM4Core10InitializeEPiPPPcPKcS6_
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:malloc
+   fun:opal_class_initialize
+   fun:ompi_free_list_grow
+   obj:*
+   obj:*
+   obj:*
+   obj:/usr/lib/openmpi/lib/libmpi.so.0.0.2
+   fun:PMPI_Init_thread
+   fun:PetscInitialize
+   fun:_ZN5MoFEM4Core10InitializeEPiPPPcPKcS6_
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:malloc
+   obj:*
+   obj:*
+   obj:*
+   obj:/usr/lib/openmpi/lib/libmpi.so.0.0.2
+   fun:PMPI_Init_thread
+   fun:PetscInitialize
+   fun:_ZN5MoFEM4Core10InitializeEPiPPPcPKcS6_
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:malloc
+   obj:*
+   obj:*
+   fun:mca_mpool_base_module_create
+   obj:*
+   obj:*
+   obj:*
+   obj:/usr/lib/openmpi/lib/libmpi.so.0.0.2
+   fun:PMPI_Init_thread
+   fun:PetscInitialize
+   fun:_ZN5MoFEM4Core10InitializeEPiPPPcPKcS6_
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:calloc
+   obj:*
+   obj:*
+   obj:*
+   obj:/usr/lib/openmpi/lib/libmpi.so.0.0.2
+   fun:PMPI_Init_thread
+   fun:PetscInitialize
+   fun:_ZN5MoFEM4Core10InitializeEPiPPPcPKcS6_
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:malloc
+   fun:orte_grpcomm_base_get_proc_attr
+   fun:ompi_modex_recv
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:/usr/lib/openmpi/lib/libmpi.so.0.0.2
+   fun:PMPI_Init_thread
+   fun:PetscInitialize
+   fun:_ZN5MoFEM4Core10InitializeEPiPPPcPKcS6_
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:malloc
+   obj:*
+   fun:mca_mpool_base_module_create
+   obj:*
+   obj:*
+   obj:*
+   obj:/usr/lib/openmpi/lib/libmpi.so.0.0.2
+   fun:PMPI_Init_thread
+   fun:PetscInitialize
+   fun:_ZN5MoFEM4Core10InitializeEPiPPPcPKcS6_
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:malloc
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:/usr/lib/openmpi/lib/libmpi.so.0.0.2
+   fun:PMPI_Init_thread
+   fun:PetscInitialize
+   fun:_ZN5MoFEM4Core10InitializeEPiPPPcPKcS6_
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:realloc
+   fun:opal_class_initialize
+   obj:*
+   obj:/usr/lib/openmpi/lib/libmpi.so.0.0.2
+   obj:/usr/lib/openmpi/lib/libmpi.so.0.0.2
+   obj:/usr/lib/openmpi/lib/libmpi.so.0.0.2
+   fun:PMPI_Init_thread
+   fun:PetscInitialize
+   fun:_ZN5MoFEM4Core10InitializeEPiPPPcPKcS6_
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:malloc
+   fun:opal_free_list_grow
+   obj:*
+   obj:*
+   obj:*
+   obj:/usr/lib/openmpi/lib/libmpi.so.0.0.2
+   fun:PMPI_Init_thread
+   fun:PetscInitialize
+   fun:_ZN5MoFEM4Core10InitializeEPiPPPcPKcS6_
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:malloc
+   fun:ompi_free_list_grow
+   obj:*
+   obj:*
+   obj:*
+   obj:/usr/lib/openmpi/lib/libmpi.so.0.0.2
+   fun:PMPI_Init_thread
+   fun:PetscInitialize
+   fun:_ZN5MoFEM4Core10InitializeEPiPPPcPKcS6_
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:malloc
+   fun:ompi_free_list_grow
+   obj:*
+   obj:*
+   obj:*
+   obj:/usr/lib/openmpi/lib/libmpi.so.0.0.2
+   fun:PMPI_Init_thread
+   fun:PetscInitialize
+   fun:_ZN5MoFEM4Core10InitializeEPiPPPcPKcS6_
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:malloc
+   obj:*
+   obj:*
+   obj:*
+   fun:mca_mpool_base_module_create
+   obj:*
+   obj:*
+   obj:*
+   obj:/usr/lib/openmpi/lib/libmpi.so.0.0.2
+   fun:PMPI_Init_thread
+   fun:PetscInitialize
+   fun:_ZN5MoFEM4Core10InitializeEPiPPPcPKcS6_
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:calloc
+   obj:*
+   obj:*
+   obj:*
+   obj:/usr/lib/openmpi/lib/libmpi.so.0.0.2
+   fun:PMPI_Init_thread
+   fun:PetscInitialize
+   fun:_ZN5MoFEM4Core10InitializeEPiPPPcPKcS6_
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:malloc
    fun:strdup
    obj:/usr/lib/openmpi/lib/libopen-pal.so.0.0.0
    fun:mca_base_param_reg_string_name
