@@ -27,7 +27,7 @@ static char help[] = "mesh cutting\n\n";
 
 int main(int argc, char *argv[]) {
 
-  PetscInitialize(&argc, &argv, (char *)0, help);
+  MoFEM::Core::Initialize(&argc, &argv, (char *)0, help);
 
   try {
 
@@ -253,7 +253,7 @@ int main(int argc, char *argv[]) {
       if(flg_vol_block_set) {
         Range ents;
         meshset_manager->getEntitiesByDimension(vol_block_set, BLOCKSET, 3,
-                                                ents);
+                                                ents, true);
         CHKERR moab.add_entities(meshset, ents);
       } else {
         BitRefLevel bit;
@@ -262,7 +262,7 @@ int main(int argc, char *argv[]) {
         else
           bit = bit_level4;
         CHKERR bit_ref_manager->getEntitiesByTypeAndRefLevel(
-            bit, BitRefLevel().set(), MBTET, meshset);
+            bit_level4, BitRefLevel().set(), MBTET, meshset);
       }
       CHKERR moab.add_entities(meshset, cut_mesh->getTetgenSurfaces());
       CHKERR moab.write_file("out.vtk","VTK","",&meshset,1); 
@@ -272,7 +272,7 @@ int main(int argc, char *argv[]) {
   } 
   CATCH_ERRORS;
 
-  PetscFinalize();
+  MoFEM::Core::Finalize();
 
   return 0;
 }
