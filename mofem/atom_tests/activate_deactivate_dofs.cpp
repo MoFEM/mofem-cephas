@@ -31,7 +31,7 @@ int main(int argc, char *argv[]) {
   
   
 
-  PetscInitialize(&argc,&argv,(char *)0,help);
+  MoFEM::Core::Initialize(&argc,&argv,(char *)0,help);
 
   try {
 
@@ -113,7 +113,7 @@ int main(int argc, char *argv[]) {
   }
 
   //finish work cleaning memory, getting statistics, ect.
-  ierr = PetscFinalize(); CHKERRG(ierr);
+  ierr = MoFEM::Core::Finalize(); CHKERRG(ierr);
 
   return 0;
 
