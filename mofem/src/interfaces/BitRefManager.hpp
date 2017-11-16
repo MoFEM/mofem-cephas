@@ -278,7 +278,8 @@ struct BitRefManager : public UnknownInterface {
    */
   MoFEMErrorCode getEntitiesByRefLevel(const BitRefLevel &bit,
                                        const BitRefLevel &mask,
-                                       const EntityHandle meshset) const;
+                                       const EntityHandle meshset,
+                                       const int verb = QUIET) const;
 
   /**\brief add all ents from ref level given by bit to meshset
    * \ingroup mofem_bit_ref
@@ -290,8 +291,8 @@ struct BitRefManager : public UnknownInterface {
    * \retval ents
    */
   MoFEMErrorCode getEntitiesByRefLevel(const BitRefLevel &bit,
-                                       const BitRefLevel &mask,
-                                       Range &ents) const;
+                                       const BitRefLevel &mask, Range &ents,
+                                       const int verb = QUIET) const;
 
   /**
    * \brief get entities by bit ref level and type of parent
