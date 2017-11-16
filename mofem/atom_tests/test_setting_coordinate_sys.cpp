@@ -23,7 +23,7 @@ static char help[] = "...\n\n";
 
 int main(int argc, char *argv[]) {
 
-  PetscInitialize(&argc,&argv,PETSC_NULL,help);
+  MoFEM::Core::Initialize(&argc,&argv,PETSC_NULL,help);
 
   try {
 
@@ -125,7 +125,7 @@ int main(int argc, char *argv[]) {
     SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
   }
 
-  PetscFinalize();
+  MoFEM::Core::Finalize();
   return 0;
 
 }
