@@ -531,16 +531,16 @@ MoFEMErrorCode BitRefManager::writeEntitiesNotInDatabase(
   MoFEMFunctionBeginHot;
   EntityHandle meshset;
   rval = moab.create_meshset(MESHSET_SET, meshset);
-  CHKERRQ_MOAB(rval);
+  CHKERRG(rval);
   Range ents;
   ierr = getAllEntitiesNotInDatabase(ents);
   CHKERRG(ierr);
   rval = moab.add_entities(meshset, ents);
-  CHKERRQ_MOAB(rval);
+  CHKERRG(rval);
   rval = moab.write_file(file_name, file_type, options, &meshset, 1);
-  CHKERRQ_MOAB(rval);
+  CHKERRG(rval);
   rval = moab.delete_entities(&meshset, 1);
-  CHKERRQ_MOAB(rval);
+  CHKERRG(rval);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -554,7 +554,7 @@ MoFEMErrorCode BitRefManager::getEntitiesByTypeAndRefLevel(
   ierr = getEntitiesByTypeAndRefLevel(bit, mask, type, ents, verb);
   CHKERRG(ierr);
   rval = moab.add_entities(meshset, ents);
-  CHKERRQ_MOAB(rval);
+  CHKERRG(rval);
   MoFEMFunctionReturnHot(0);
 }
 
