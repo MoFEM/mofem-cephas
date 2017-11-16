@@ -196,9 +196,9 @@ int main(int argc, char *argv[]) {
     CHKERR cut_mesh->rebuildMeshWithTetGen(switches, bit_level3, bit_level4,
                                            cut_mesh->getMergedSurfaces(),
                                            fixed_edges, corner_nodes, th, true);
-    // CHKERR core.getInterface<BitRefManager>()->writeBitLevelByType(
-    //     bit_level4, BitRefLevel().set(), MBTET, "out_tets_tetgen.vtk", "VTK",
-    //     "");
+    CHKERR core.getInterface<BitRefManager>()->writeBitLevelByType(
+        bit_level4, BitRefLevel().set(), MBTET, "out_tets_tetgen.vtk", "VTK",
+        "");
 #else
     bit_level4 = bit_level3;
     const_cast<Range &>(cut_mesh->getTetgenSurfaces()) =
@@ -211,10 +211,9 @@ int main(int argc, char *argv[]) {
     CHKERR core.getInterface<MeshsetsManager>()
                ->updateAllMeshsetsByEntitiesChildren(bit_level5);
 
-  //  CHKERR core.getInterface<BitRefManager>()->writeBitLevelByType(
-  //       bit_level5, BitRefLevel().set(), MBTET, "out_tets_level5.vtk", "VTK",
-  //       "");
-  //   
+    CHKERR core.getInterface<BitRefManager>()->writeBitLevelByType(
+        bit_level5, BitRefLevel().set(), MBTET, "out_tets_level5.vtk", "VTK",
+        "");
 
     // Finally shift bits
     BitRefLevel shift_mask;

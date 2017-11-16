@@ -112,7 +112,11 @@ template <int LINE> struct ErrorCheckerCode {
    */
   inline void operator<<(const moab::ErrorCode err) {
     if (PetscLikely(MB_SUCCESS != err)) {
-      std::string str("MOAB error " + boost::lexical_cast<std::string>(err));
+      std::string error_str = (unsigned)err <= (unsigned)MB_FAILURE
+                                  ? moab::ErrorCodeStr[err]
+                                  : "INVALID ERROR CODE";
+      std::string str("MOAB error (" + boost::lexical_cast<std::string>(err) +
+                      ") " + error_str);
       throw MoFEMExceptionInitial(MOFEM_MOAB_ERROR, str.c_str(), LINE);
     }
     return;
