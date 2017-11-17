@@ -21,6 +21,120 @@
 }
 {
    <insert_a_suppression_name_here>
+   Memcheck:Addr8
+   fun:_wordcopy_fwd_dest_aligned
+   fun:__GI_memmove
+   fun:argz_insert
+   obj:/usr/lib/openmpi/lib/libopen-pal.so.0.0.0
+   obj:/usr/lib/openmpi/lib/libopen-pal.so.0.0.0
+   obj:/usr/lib/openmpi/lib/libopen-pal.so.0.0.0
+   fun:lt_dlforeachfile
+   fun:mca_base_component_find
+   fun:mca_base_components_open
+   fun:opal_paffinity_base_open
+   fun:opal_init
+   fun:orte_init
+   obj:/usr/lib/openmpi/lib/libmpi.so.0.0.2
+   fun:PMPI_Init_thread
+   fun:PetscInitialize
+   fun:_ZN5MoFEM4Core10InitializeEPiPPPcPKcS6_
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Param
+   sched_setaffinity(mask)
+   fun:syscall
+   obj:/usr/lib/openmpi/lib/openmpi/mca_paffinity_linux.so
+   obj:/usr/lib/openmpi/lib/openmpi/mca_paffinity_linux.so
+   obj:/usr/lib/openmpi/lib/openmpi/mca_paffinity_linux.so
+   obj:/usr/lib/openmpi/lib/openmpi/mca_paffinity_linux.so
+   fun:opal_paffinity_base_select
+   fun:opal_init
+   fun:orte_init
+   obj:/usr/lib/openmpi/lib/libmpi.so.0.0.2
+   fun:PMPI_Init_thread
+   fun:PetscInitialize
+   fun:_ZN5MoFEM4Core10InitializeEPiPPPcPKcS6_
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Param
+   sched_setaffinity(mask)
+   fun:syscall
+   obj:/usr/lib/openmpi/lib/openmpi/mca_paffinity_linux.so
+   obj:/usr/lib/openmpi/lib/openmpi/mca_paffinity_linux.so
+   obj:/usr/lib/openmpi/lib/openmpi/mca_paffinity_linux.so
+   obj:/usr/lib/openmpi/lib/openmpi/mca_paffinity_linux.so
+   fun:opal_paffinity_base_select
+   fun:opal_init
+   fun:orte_init
+   obj:/usr/lib/openmpi/lib/libmpi.so.0.0.2
+   fun:PMPI_Init_thread
+   fun:PetscInitialize
+   fun:_ZN5MoFEM4Core10InitializeEPiPPPcPKcS6_
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Param
+   writev(vector[...])
+   fun:writev
+   obj:/usr/lib/openmpi/lib/openmpi/mca_oob_tcp.so
+   obj:/usr/lib/openmpi/lib/openmpi/mca_oob_tcp.so
+   obj:/usr/lib/openmpi/lib/openmpi/mca_oob_tcp.so
+   obj:/usr/lib/openmpi/lib/openmpi/mca_rml_oob.so
+   obj:/usr/lib/openmpi/lib/openmpi/mca_rml_oob.so
+   obj:/usr/lib/openmpi/lib/openmpi/mca_grpcomm_bad.so
+   obj:/usr/lib/openmpi/lib/openmpi/mca_grpcomm_bad.so
+   obj:/usr/lib/openmpi/lib/libmpi.so.0.0.2
+   fun:PMPI_Init_thread
+   fun:PetscInitialize
+   fun:_ZN5MoFEM4Core10InitializeEPiPPPcPKcS6_
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Param
+   writev(vector[...])
+   fun:writev
+   obj:/usr/lib/openmpi/lib/openmpi/mca_oob_tcp.so
+   obj:/usr/lib/openmpi/lib/openmpi/mca_oob_tcp.so
+   obj:/usr/lib/openmpi/lib/openmpi/mca_oob_tcp.so
+   obj:/usr/lib/openmpi/lib/openmpi/mca_rml_oob.so
+   obj:/usr/lib/openmpi/lib/openmpi/mca_rml_oob.so
+   obj:/usr/lib/openmpi/lib/openmpi/mca_grpcomm_bad.so
+   obj:/usr/lib/openmpi/lib/openmpi/mca_grpcomm_bad.so
+   obj:/usr/lib/openmpi/lib/libmpi.so.0.0.2
+   fun:PMPI_Init_thread
+   fun:PetscInitialize
+   fun:_ZN5MoFEM4Core10InitializeEPiPPPcPKcS6_
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Addr8
+   fun:_wordcopy_fwd_dest_aligned
+   fun:__GI_memmove
+   fun:argz_insert
+   obj:/usr/lib/openmpi/lib/libopen-pal.so.0.0.0
+   obj:/usr/lib/openmpi/lib/libopen-pal.so.0.0.0
+   obj:/usr/lib/openmpi/lib/libopen-pal.so.0.0.0
+   fun:lt_dlforeachfile
+   fun:mca_base_component_find
+   fun:mca_base_components_open
+   fun:opal_paffinity_base_open
+   fun:opal_init
+   fun:orte_init
+   obj:/usr/lib/openmpi/lib/libmpi.so.0.0.2
+   fun:PMPI_Init_thread
+   fun:PetscInitialize
+   fun:_ZN5MoFEM4Core10InitializeEPiPPPcPKcS6_
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
    Memcheck:Param
    sched_setaffinity(mask)
    fun:syscall
