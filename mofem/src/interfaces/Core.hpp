@@ -444,9 +444,9 @@ protected:
       const BitFieldId id, std::map<EntityType, int> &dof_counter,
       std::map<EntityType, int> &inactive_dof_counter, int verb = -1);
   MoFEMErrorCode build_fields(int verb = -1);
-  MoFEMErrorCode clear_inactive_dofs(int verb = -1);
 
   /// \name Clear DOFs
+  MoFEMErrorCode clear_inactive_dofs(int verb = -1);
   MoFEMErrorCode clear_dofs_fields(const BitRefLevel &bit,
                                    const BitRefLevel &mask, int verb = -1);
   MoFEMErrorCode clear_dofs_fields(const Range &ents, int verb = -1);

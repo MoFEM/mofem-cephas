@@ -1062,7 +1062,13 @@ namespace MoFEM {
                                              const BitRefLevel &mask,
                                              int verb = -1) = 0;
 
-    /** Clear dofs by field name
+    /** Clear dofs by ents
+     * \ingroup mofem_field
+     */
+    virtual MoFEMErrorCode clear_dofs_fields(const Range &ents,
+                                             int verb = -1) = 0;
+
+    /** Clear dofs by field name and ents
      * \ingroup mofem_field
      */
     virtual MoFEMErrorCode clear_dofs_fields(const std::string &name,
