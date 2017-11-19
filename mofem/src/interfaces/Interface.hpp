@@ -1137,6 +1137,11 @@ namespace MoFEM {
 
     /** clear finite elements
      */
+    virtual MoFEMErrorCode clear_finite_elements(const Range &ents,
+                                                 int verb = -1) = 0;
+
+    /** clear finite elements
+     */
     virtual MoFEMErrorCode clear_finite_elements(const std::string &name,
                                                  const Range &ents,
                                                  int verb = -1) = 0;

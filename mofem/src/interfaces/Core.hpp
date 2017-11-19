@@ -292,8 +292,7 @@ protected:
 
   /**@}*/
 
-  /** \name Seed and synchronize entities (Following functions in future will be
-   * deprecated) */
+  /** \name Seed and synchronize entities (Following functions in future will be deprecated) */
 
   /**@{*/
 
@@ -638,6 +637,7 @@ protected:
                                        int verb = -1);
   MoFEMErrorCode clear_finite_elements(const BitRefLevel &bit,
                                        const BitRefLevel &mask, int verb = -1);
+  MoFEMErrorCode clear_finite_elements(const Range &ents, int verb = -1);
   MoFEMErrorCode clear_finite_elements(const std::string &name,
                                        const Range &ents, int verb = -1);
   MoFEMErrorCode resolve_shared_ents(const Problem *problem_ptr,
@@ -674,6 +674,8 @@ protected:
                                             const Range &ents, int verb = -1);
   MoFEMErrorCode clear_adjacencies_finite_elements(const BitRefLevel &bit,
                                                    const BitRefLevel &mask,
+                                                   int verb = -1);
+  MoFEMErrorCode clear_adjacencies_finite_elements(const Range &ents,
                                                    int verb = -1);
   MoFEMErrorCode clear_adjacencies_finite_elements(const std::string &name,
                                                    const Range &ents,

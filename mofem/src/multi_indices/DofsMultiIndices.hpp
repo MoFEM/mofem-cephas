@@ -37,7 +37,7 @@ struct DofEntity: public interface_FieldEntity<FieldEntity> {
    *
    * UId is constructed such that all DOFs are ordered by processor, entity, field
    * and dof index on entity, On entity dofs index is constructed such that
-   * coffient number and dofs increase with dofs index on entity.
+   * coefficient number and dofs increase with dofs index on entity.
    *
    * @param  dof     dof index on entity
    * @param  ent_ptr pointer to field entity
