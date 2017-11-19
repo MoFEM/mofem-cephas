@@ -1,5 +1,15 @@
 /** \file DeleteCore.cpp
  * \brief Core interface methods for managing deletions and insertion dofs
+ *
+ * \note If entity/dof/finite element is cleared it mean that is erased from
+ * multi-index database
+ *
+ * \note If entity/dof/finite element is removed is is clearded and
+ * removed from filed or finite element meshset
+ *
+ * \note If entity if deleted is cleated, removed and deleted from MoAB
+ * database.
+ *
  */
 
 /* MoFEM is free software: you can redistribute it and/or modify it under
@@ -22,13 +32,11 @@ MoFEMErrorCode Core::clear_inactive_dofs(int verb) {
   MoFEMFunctionBeginHot;
   if (verb == -1)
     verb = verbose;
-  DofEntity_multiIndex::iterator dit;
-  dit = dofsField.begin();
-  for (; dit != dofsField.end(); dit++) {
+  for (DofEntity_multiIndex::iterator dit = dofsField.begin();
+       dit != dofsField.end();) {
     if (!(*dit)->getActive()) {
       FieldEntityEntFiniteElementAdjacencyMap_multiIndex::index<
-          Unique_mi_tag>::type::iterator ait,
-          hi_ait;
+          Unique_mi_tag>::type::iterator ait, hi_ait;
       ait = entFEAdjacencies.get<Unique_mi_tag>().lower_bound(
           (*dit)->getFieldEntityPtr()->getGlobalUniqueId());
       hi_ait = entFEAdjacencies.get<Unique_mi_tag>().upper_bound(
@@ -36,16 +44,20 @@ MoFEMErrorCode Core::clear_inactive_dofs(int verb) {
       for (; ait != hi_ait; ait++) {
         boost::shared_ptr<EntFiniteElement> ent_fe_ptr;
         ent_fe_ptr = ait->entFePtr;
+        // clear DOFs from finite element rows  & cols
         ent_fe_ptr->row_dof_view->erase((*dit)->getGlobalUniqueId());
         if (ent_fe_ptr->row_dof_view != ent_fe_ptr->col_dof_view) {
           ent_fe_ptr->col_dof_view->erase((*dit)->getGlobalUniqueId());
         }
+        // clear DOFs from finite elementdata
         ent_fe_ptr->data_dofs->get<Unique_mi_tag>().erase(
             (*dit)->getGlobalUniqueId());
       }
       dit = dofsField.erase(dit);
       if (dit == dofsField.end())
         break;
+    } else {
+      ++dit;
     }
   }
   MoFEMFunctionReturnHot(0);
@@ -74,8 +86,7 @@ MoFEMErrorCode Core::clear_dofs_fields(const BitRefLevel &bit,
         continue;
       }
       FieldEntityEntFiniteElementAdjacencyMap_multiIndex::index<
-          Unique_mi_tag>::type::iterator ait,
-          hi_ait;
+          Unique_mi_tag>::type::iterator ait, hi_ait;
       ait = entFEAdjacencies.get<Unique_mi_tag>().lower_bound(
           (*dit)->getFieldEntityPtr()->getGlobalUniqueId());
       hi_ait = entFEAdjacencies.get<Unique_mi_tag>().upper_bound(
@@ -112,8 +123,7 @@ MoFEMErrorCode Core::clear_dofs_fields(const BitRefLevel &bit,
           boost::make_tuple(name, second));
       for (; dit != hi_dit;) {
         FieldEntityEntFiniteElementAdjacencyMap_multiIndex::index<
-            Unique_mi_tag>::type::iterator ait,
-            hi_ait;
+            Unique_mi_tag>::type::iterator ait, hi_ait;
         ait = entFEAdjacencies.get<Unique_mi_tag>().lower_bound(
             (*dit)->getFieldEntityPtr()->getGlobalUniqueId());
         hi_ait = entFEAdjacencies.get<Unique_mi_tag>().upper_bound(
@@ -125,6 +135,8 @@ MoFEMErrorCode Core::clear_dofs_fields(const BitRefLevel &bit,
           if (ent_fe_ptr->row_dof_view != ent_fe_ptr->col_dof_view) {
             ent_fe_ptr->col_dof_view->erase((*dit)->getGlobalUniqueId());
           }
+          ent_fe_ptr->data_dofs->get<Unique_mi_tag>().erase(
+              (*dit)->getGlobalUniqueId());
         }
         dit = dofsField.get<Composite_Name_And_Ent_mi_tag>().erase(dit);
       }
@@ -132,35 +144,36 @@ MoFEMErrorCode Core::clear_dofs_fields(const BitRefLevel &bit,
     MoFEMFunctionReturnHot(0);
   }
 
-  MoFEMErrorCode Core::clear_ents_fields(const BitRefLevel &bit,const BitRefLevel &mask,int verb) {
-    MoFEMFunctionBeginHot;
-    if(verb==-1) verb = verbose;
-    ierr = clear_dofs_fields(bit,mask,verb); CHKERRG(ierr);
-    ierr = clear_adjacencies_entities(bit,mask,verb); CHKERRG(ierr);
-    FieldEntity_multiIndex::iterator eit;
-    eit = entsFields.begin();
-    for(;eit!=entsFields.end();) {
-      if((*eit)->getEntType()==MBENTITYSET) {
+  MoFEMErrorCode Core::clear_ents_fields(const BitRefLevel &bit,
+                                         const BitRefLevel &mask, int verb) {
+    MoFEMFunctionBegin;
+    if (verb == -1)
+      verb = verbose;
+    CHKERR clear_dofs_fields(bit, mask, verb);
+    CHKERR clear_adjacencies_entities(bit, mask, verb);
+    for (FieldEntity_multiIndex::iterator eit = entsFields.begin();
+         eit != entsFields.end();) {
+      if ((*eit)->getEntType() == MBENTITYSET) {
         eit++;
         continue;
       }
       BitRefLevel bit2 = (*eit)->getBitRefLevel();
-      if((bit2&mask)!=bit2) {
+      if ((bit2 & mask) != bit2) {
         eit++;
         continue;
       }
-      if((bit2&bit).none()) {
+      if ((bit2 & bit).none()) {
         eit++;
         continue;
       }
       EntityHandle ent = (*eit)->getEnt();
-      rval = moab.tag_delete_data((*eit)->sFieldPtr->th_AppOrder,&ent,1); CHKERRQ_MOAB(rval);
-      if((*eit)->tag_FieldData_size>0) {
-        rval = moab.tag_delete_data((*eit)->sFieldPtr->th_FieldData,&ent,1); CHKERRQ_MOAB(rval);
+      CHKERR moab.tag_delete_data((*eit)->sFieldPtr->th_AppOrder, &ent, 1);
+      if ((*eit)->tag_FieldData_size > 0) {
+        CHKERR moab.tag_delete_data((*eit)->sFieldPtr->th_FieldData, &ent, 1);
       }
       eit = entsFields.erase(eit);
     }
-    MoFEMFunctionReturnHot(0);
+    MoFEMFunctionReturn(0);
   }
 
   MoFEMErrorCode Core::clear_ents_fields(const std::string &name,
@@ -176,12 +189,25 @@ MoFEMErrorCode Core::clear_dofs_fields(const BitRefLevel &bit,
       EntityHandle second = p_eit->second;
       FieldEntity_multiIndex::index<
           Composite_Name_And_Ent_mi_tag>::type::iterator dit,
-          hi_dit;
+          hi_dit, last_dit;
       dit = entsFields.get<Composite_Name_And_Ent_mi_tag>().lower_bound(
           boost::make_tuple(name, first));
       hi_dit = entsFields.get<Composite_Name_And_Ent_mi_tag>().upper_bound(
           boost::make_tuple(name, second));
-      entsFields.get<Composite_Name_And_Ent_mi_tag>().erase(dit, hi_dit);
+      entsFields.get<Composite_Name_And_Ent_mi_tag>().erase(dit,hi_dit);
+    }
+    const Field *field_ptr = get_field_structure(name);
+    rval = moab.tag_delete_data(field_ptr->th_AppOrder, ents);
+    if (rval != MB_SUCCESS && rval != MB_TAG_NOT_FOUND) {
+      CHKERRG(rval);
+    } else {
+      rval = MB_SUCCESS;
+    }
+    rval = moab.tag_delete_data(field_ptr->th_FieldData, ents);
+    if (rval != MB_SUCCESS && rval != MB_TAG_NOT_FOUND) {
+      CHKERRG(rval);
+    } else {
+      rval = MB_SUCCESS;
     }
     MoFEMFunctionReturn(0);
   }
@@ -291,97 +317,102 @@ MoFEMErrorCode Core::clear_dofs_fields(const BitRefLevel &bit,
     MoFEMFunctionReturnHot(0);
   }
 
-  MoFEMErrorCode Core::clear_adjacencies_entities(const std::string &name,const Range &ents,int verb) {
+  MoFEMErrorCode Core::clear_adjacencies_entities(const std::string &name,
+                                                  const Range &ents, int verb) {
     MoFEMFunctionBeginHot;
-    if(verb==-1) verb = verbose;
-    Range::iterator eit = ents.begin();
-    for(;eit!=ents.end();eit++) {
-      FieldEntityEntFiniteElementAdjacencyMap_multiIndex::index<Ent_mi_tag>::type::iterator ait,hi_ait;
-      ait = entFEAdjacencies.get<Ent_mi_tag>().lower_bound(*eit);
-      hi_ait = entFEAdjacencies.get<Ent_mi_tag>().upper_bound(*eit);
-      for(;ait!=hi_ait;) {
-        if(ait->entFieldPtr->getName() == name) {
-          ait = entFEAdjacencies.get<Ent_mi_tag>().erase(ait);
-        } else {
-          ait++;
-        }
-      }
+    if (verb == -1)
+      verb = verbose;
+    for (Range::const_pair_iterator p_eit = ents.pair_begin();
+         p_eit != ents.pair_end(); p_eit++) {
+      const EntityHandle first  = p_eit->first;
+      const EntityHandle second = p_eit->second;
+      FieldEntityEntFiniteElementAdjacencyMap_multiIndex::index<
+          Ent_mi_tag>::type::iterator ait,
+          hi_ait;
+      ait    = entFEAdjacencies.get<Ent_mi_tag>().lower_bound(first);
+      hi_ait = entFEAdjacencies.get<Ent_mi_tag>().upper_bound(second);
+      entFEAdjacencies.get<Ent_mi_tag>().erase(ait, hi_ait);
     }
     MoFEMFunctionReturnHot(0);
   }
 
-  MoFEMErrorCode Core::remove_ents_from_field_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,int verb) {
-    MoFEMFunctionBeginHot;
-    if(verb==-1) verb = verbose;
-    ierr = clear_ents_fields(bit,mask,verb); CHKERRG(ierr);
+  MoFEMErrorCode
+  Core::remove_ents_from_field_by_bit_ref(const BitRefLevel &bit,
+                                          const BitRefLevel &mask, int verb) {
+    MoFEMFunctionBegin;
+    if (verb == -1)
+      verb = verbose;
+    CHKERR clear_ents_fields(bit, mask, verb);
     Field_multiIndex::iterator f_it = fIelds.begin();
-    for(;f_it!=fIelds.end();f_it++) {
+    for (; f_it != fIelds.end(); f_it++) {
       EntityHandle meshset = (*f_it)->getMeshset();
       Range ents_to_remove;
-      rval = moab.get_entities_by_handle(
-        meshset,ents_to_remove,false); CHKERRQ_MOAB(rval);
+      CHKERR moab.get_entities_by_handle(meshset, ents_to_remove, false);
       Range::iterator eit = ents_to_remove.begin();
-      for(;eit!=ents_to_remove.end();) {
-        if(moab.type_from_handle(*eit)==MBENTITYSET) {
+      for (; eit != ents_to_remove.end();) {
+        if (moab.type_from_handle(*eit) == MBENTITYSET) {
           eit = ents_to_remove.erase(eit);
           continue;
         }
         BitRefLevel bit2;
-        rval = moab.tag_get_data(th_RefBitLevel,&*eit,1,&bit2); CHKERRQ_MOAB(rval);
-        if((bit2&mask)!=bit2) {
+        CHKERR moab.tag_get_data(th_RefBitLevel, &*eit, 1, &bit2);
+        if ((bit2 & mask) != bit2) {
           eit = ents_to_remove.erase(eit);
           continue;
         }
-        if((bit2&bit).none()) {
+        if ((bit2 & bit).none()) {
           eit = ents_to_remove.erase(eit);
           continue;
         }
-        FieldEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator iit;
-        iit = entsFields.get<Composite_Name_And_Ent_mi_tag>().find(boost::make_tuple((*f_it)->getName(),*eit));
-        if(iit != entsFields.get<Composite_Name_And_Ent_mi_tag>().end()) {
-          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
+        FieldEntity_multiIndex::index<
+            Composite_Name_And_Ent_mi_tag>::type::iterator iit;
+        iit = entsFields.get<Composite_Name_And_Ent_mi_tag>().find(
+            boost::make_tuple((*f_it)->getName(), *eit));
+        if (iit != entsFields.get<Composite_Name_And_Ent_mi_tag>().end()) {
+          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                  "Entity in the filed found, should not be there");
         }
-        eit++;
+        ++eit;
       }
-      rval = moab.remove_entities(meshset,ents_to_remove); CHKERRQ_MOAB(rval);
-      if(verb>0) {
-        PetscPrintf(cOmm,
-          "number of removed entities = %u from field %s\n",
-          ents_to_remove.size(),
-          (*f_it)->getName().c_str()
-        );
-        if(verb>1) {
+      CHKERR moab.remove_entities(meshset, ents_to_remove);
+      if (verb > 0) {
+        PetscPrintf(cOmm, "number of removed entities = %u from field %s\n",
+                    ents_to_remove.size(), (*f_it)->getName().c_str());
+        if (verb > 1) {
           int num_entities;
-          rval = moab.get_number_entities_by_handle(meshset,num_entities); CHKERRQ_MOAB(rval);
-          PetscPrintf(cOmm,"\tnumber of entities in database = %u and meshset = %u\n",
-          entsFields.get<FieldName_mi_tag>().count((*f_it)->getNameRef()),num_entities);
+          CHKERR moab.get_number_entities_by_handle(meshset, num_entities);
+          PetscPrintf(
+              cOmm, "\tnumber of entities in database = %u and meshset = %u\n",
+              entsFields.get<FieldName_mi_tag>().count((*f_it)->getNameRef()),
+              num_entities);
         }
       }
     }
-    MoFEMFunctionReturnHot(0);
+    MoFEMFunctionReturn(0);
   }
 
-  MoFEMErrorCode Core::remove_ents_from_field(const std::string& name,const EntityHandle meshset,const EntityType type,int verb) {
-    MoFEMFunctionBeginHot;
-    if(verb==-1) verb = verbose;
+  MoFEMErrorCode Core::remove_ents_from_field(const std::string &name,
+                                              const EntityHandle meshset,
+                                              const EntityType type, int verb) {
+    MoFEMFunctionBegin;
+    if (verb == -1)
+      verb = verbose;
     Range ents;
-    rval = moab.get_entities_by_type(meshset,type,ents); CHKERRQ_MOAB(rval);
-    ierr = remove_ents_from_field(name,ents,verb); CHKERRG(ierr);
-    MoFEMFunctionReturnHot(0);
+    CHKERR moab.get_entities_by_type(meshset, type, ents);
+    CHKERR remove_ents_from_field(name, ents, verb);
+    MoFEMFunctionReturn(0);
   }
 
-  MoFEMErrorCode Core::remove_ents_from_field(const std::string& name,const Range &ents,int verb) {
-    MoFEMFunctionBeginHot;
-    if(verb==-1) verb = verbose;
+  MoFEMErrorCode Core::remove_ents_from_field(const std::string &name,
+                                              const Range &ents, int verb) {
+    MoFEMFunctionBegin;
+    if (verb == -1)
+      verb = verbose;
     EntityHandle meshset;
-    try {
-      meshset = get_field_meshset(name);
-    } catch (MoFEMException const &e) {
-      SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
-    }
-    rval = moab.remove_entities(meshset,ents); CHKERRQ_MOAB(rval);
-    ierr = clear_ents_fields(name,ents,verb); CHKERRG(ierr);
-    MoFEMFunctionReturnHot(0);
+    meshset = get_field_meshset(name);
+    CHKERR moab.remove_entities(meshset, ents);
+    CHKERR clear_ents_fields(name, ents, verb);
+    MoFEMFunctionReturn(0);
   }
 
   MoFEMErrorCode Core::remove_ents_from_finite_element_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,int verb) {
@@ -479,10 +510,9 @@ MoFEMErrorCode Core::clear_dofs_fields(const BitRefLevel &bit,
                                               const BitRefLevel &mask,
                                               const bool remove_parent,
                                               int verb) {
-    MoFEMFunctionBeginHot;
+    MoFEMFunctionBegin;
     Range ents_to_delete;
-    rval = moab.get_entities_by_handle(0, ents_to_delete, false);
-    CHKERRQ_MOAB(rval);
+    CHKERR moab.get_entities_by_handle(0, ents_to_delete, false);
     {
       Range::iterator eit = ents_to_delete.begin();
       for (; eit != ents_to_delete.end();) {
@@ -491,8 +521,7 @@ MoFEMErrorCode Core::clear_dofs_fields(const BitRefLevel &bit,
           continue;
         }
         BitRefLevel bit2;
-        rval = moab.tag_get_data(th_RefBitLevel, &*eit, 1, &bit2);
-        CHKERRQ_MOAB(rval);
+        CHKERR moab.tag_get_data(th_RefBitLevel, &*eit, 1, &bit2);
         if ((bit2 & mask) != bit2) {
           eit = ents_to_delete.erase(eit);
           continue;
@@ -531,19 +560,15 @@ MoFEMErrorCode Core::clear_dofs_fields(const BitRefLevel &bit,
            cubit_it != getInterface<MeshsetsManager>()->getEnd(); cubit_it++) {
         EntityHandle cubit_meshset = cubit_it->meshset;
         rval = moab.remove_entities(cubit_meshset, ents_to_delete);
-        CHKERRQ_MOAB(rval);
         Range meshsets;
-        rval = moab.get_entities_by_type(cubit_meshset, MBENTITYSET, meshsets);
-        CHKERRQ_MOAB(rval);
+        CHKERR moab.get_entities_by_type(cubit_meshset, MBENTITYSET, meshsets);
         for (Range::iterator mit = meshsets.begin(); mit != meshsets.end();
              mit++) {
-          rval = moab.remove_entities(*mit, ents_to_delete);
-          CHKERRQ_MOAB(rval);
+          CHKERR moab.remove_entities(*mit, ents_to_delete);
         }
       }
     }
-    ierr = remove_ents_by_bit_ref(bit, mask, verb);
-    CHKERRG(ierr);
+    CHKERR remove_ents_by_bit_ref(bit, mask, verb);
     if (verb >= VERBOSE) {
       PetscSynchronizedPrintf(cOmm, "number of deleted entities = %u\n",
                               ents_to_delete.size());
@@ -551,26 +576,22 @@ MoFEMErrorCode Core::clear_dofs_fields(const BitRefLevel &bit,
     }
     if (verb >= VERY_VERBOSE) {
       EntityHandle out_meshset;
-      rval =
-          moab.create_meshset(MESHSET_SET | MESHSET_TRACK_OWNER, out_meshset);
-      CHKERRQ_MOAB(rval);
-      rval =
-          moab.add_entities(out_meshset, ents_to_delete);
-      CHKERRQ_MOAB(rval);
-      rval = moab.write_file("debug_ents_to_delete.vtk", "VTK", "",
+      CHKERR moab.create_meshset(MESHSET_SET | MESHSET_TRACK_OWNER,
+                                 out_meshset);
+      CHKERR moab.add_entities(out_meshset, ents_to_delete);
+      CHKERR moab.write_file("debug_ents_to_delete.vtk", "VTK", "",
                              &out_meshset, 1);
-      CHKERRQ_MOAB(rval);
-      rval = moab.delete_entities(&out_meshset, 1);
-      CHKERRQ_MOAB(rval);
+      CHKERR moab.delete_entities(&out_meshset, 1);
     }
     Range meshsets;
-    rval = moab.get_entities_by_type(0, MBENTITYSET, meshsets, true);
+    CHKERR moab.get_entities_by_type(0, MBENTITYSET, meshsets, true);
     for (Range::iterator mit = meshsets.begin(); mit != meshsets.end(); mit++) {
-      rval = moab.remove_entities(*mit, ents_to_delete);
+      CHKERR moab.remove_entities(*mit, ents_to_delete);
     }
-    rval = moab.delete_entities(ents_to_delete); CHKERRQ_MOAB(rval);
-    MoFEMFunctionReturnHot(0);
+    CHKERR moab.delete_entities(ents_to_delete); CHKERRQ_MOAB(rval);
+    MoFEMFunctionReturn(0);
   }
+
   MoFEMErrorCode Core::delete_finite_elements_by_bit_ref(
     const BitRefLevel &bit,const BitRefLevel &mask,int verb
   ) {
@@ -596,6 +617,7 @@ MoFEMErrorCode Core::clear_dofs_fields(const BitRefLevel &bit,
     }
     MoFEMFunctionReturnHot(0);
   }
+
   MoFEMErrorCode Core::delete_finite_element(const std::string name,int verb) {
     MoFEMFunctionBeginHot;
     typedef FiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type FiniteElements_by_name;
