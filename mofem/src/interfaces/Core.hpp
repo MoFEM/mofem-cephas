@@ -456,6 +456,7 @@ protected:
   /// \name Clear ENTs
   MoFEMErrorCode clear_ents_fields(const BitRefLevel &bit,
                                    const BitRefLevel &mask, int verb = -1);
+  MoFEMErrorCode clear_ents_fields(const Range &ents, int verb = -1);
   MoFEMErrorCode clear_ents_fields(const std::string &name, const Range &ents,
                                    int verb = -1);
 
@@ -671,11 +672,12 @@ protected:
   MoFEMErrorCode clear_adjacencies_entities(const BitRefLevel &bit,
                                             const BitRefLevel &mask,
                                             int verb = -1);
+  MoFEMErrorCode clear_adjacencies_entities(const Range &ents, int verb = -1);
+  MoFEMErrorCode clear_adjacencies_entities(const std::string &name,
+                                            const Range &ents, int verb = -1);
   MoFEMErrorCode clear_adjacencies_finite_elements(const std::string &name,
                                                    const Range &ents,
                                                    int verb = -1);
-  MoFEMErrorCode clear_adjacencies_entities(const std::string &name,
-                                            const Range &ents, int verb = -1);
   MoFEMErrorCode list_adjacencies() const;
 
   /**@}*/

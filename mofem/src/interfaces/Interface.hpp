@@ -1055,13 +1055,6 @@ namespace MoFEM {
                                              const BitRefLevel &mask,
                                              int verb = -1) = 0;
 
-    /** Clear ents by bit level
-     * \ingroup mofem_field
-     */
-    virtual MoFEMErrorCode clear_ents_fields(const BitRefLevel &bit,
-                                             const BitRefLevel &mask,
-                                             int verb = -1) = 0;
-
     /** Clear dofs by ents
      * \ingroup mofem_field
      */
@@ -1078,9 +1071,23 @@ namespace MoFEM {
     /** Clear entities by field name
      * \ingroup mofem_field
      */
+    virtual MoFEMErrorCode clear_ents_fields(const Range &ents,
+                                             int verb = -1) = 0;
+
+    /** Clear entities by field name
+     * \ingroup mofem_field
+     */
     virtual MoFEMErrorCode clear_ents_fields(const std::string &name,
                                              const Range &ents,
                                              int verb = -1) = 0;
+
+    /** Clear ents by bit level
+     * \ingroup mofem_field
+     */
+    virtual MoFEMErrorCode clear_ents_fields(const BitRefLevel &bit,
+                                             const BitRefLevel &mask,
+                                             int verb = -1) = 0;
+
 
     /**@}*/
 
