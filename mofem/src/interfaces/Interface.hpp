@@ -1066,14 +1066,14 @@ namespace MoFEM {
      * \ingroup mofem_field
      */
     virtual MoFEMErrorCode clear_dofs_fields(const std::string &name,
-                                             const Range ents,
+                                             const Range &ents,
                                              int verb = -1) = 0;
 
     /** Clear entities by field name
      * \ingroup mofem_field
      */
     virtual MoFEMErrorCode clear_ents_fields(const std::string &name,
-                                             const Range ents,
+                                             const Range &ents,
                                              int verb = -1) = 0;
 
     /**@}*/

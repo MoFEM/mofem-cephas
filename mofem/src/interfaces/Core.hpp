@@ -449,9 +449,9 @@ protected:
                                    const BitRefLevel &mask, int verb = -1);
   MoFEMErrorCode clear_ents_fields(const BitRefLevel &bit,
                                    const BitRefLevel &mask, int verb = -1);
-  MoFEMErrorCode clear_dofs_fields(const std::string &name, const Range ents,
+  MoFEMErrorCode clear_dofs_fields(const std::string &name, const Range &ents,
                                    int verb = -1);
-  MoFEMErrorCode clear_ents_fields(const std::string &name, const Range ents,
+  MoFEMErrorCode clear_ents_fields(const std::string &name, const Range &ents,
                                    int verb = -1);
 
   /// \name Other auxiliary functions for fields

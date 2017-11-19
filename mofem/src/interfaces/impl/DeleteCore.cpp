@@ -82,23 +82,33 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  MoFEMErrorCode Core::clear_dofs_fields(const std::string &name,const Range ents,int verb) {
+  MoFEMErrorCode Core::clear_dofs_fields(const std::string &name,
+                                         const Range &ents, int verb) {
     MoFEMFunctionBeginHot;
-    if(verb==-1) verb = verbose;
-    Range::iterator eit = ents.begin();
-    for(;eit!=ents.end();eit++) {
-      DofEntityByNameAndEnt::iterator dit,hi_dit;
-      dit = dofsField.get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple(name,*eit));
-      hi_dit = dofsField.get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple(name,*eit));
-      for(;dit!=hi_dit;) {
-        FieldEntityEntFiniteElementAdjacencyMap_multiIndex::index<Unique_mi_tag>::type::iterator ait,hi_ait;
-        ait = entFEAdjacencies.get<Unique_mi_tag>().lower_bound((*dit)->getFieldEntityPtr()->getGlobalUniqueId());
-        hi_ait = entFEAdjacencies.get<Unique_mi_tag>().upper_bound((*dit)->getFieldEntityPtr()->getGlobalUniqueId());
-        for(;ait!=hi_ait;ait++) {
+    if (verb == -1)
+      verb = verbose;
+    for (Range::const_pair_iterator p_eit = ents.pair_begin();
+         p_eit != ents.pair_end(); p_eit++) {
+      EntityHandle first = p_eit->first;
+      EntityHandle second = p_eit->second;
+      DofEntityByNameAndEnt::iterator dit, hi_dit;
+      dit = dofsField.get<Composite_Name_And_Ent_mi_tag>().lower_bound(
+          boost::make_tuple(name, first));
+      hi_dit = dofsField.get<Composite_Name_And_Ent_mi_tag>().upper_bound(
+          boost::make_tuple(name, second));
+      for (; dit != hi_dit;) {
+        FieldEntityEntFiniteElementAdjacencyMap_multiIndex::index<
+            Unique_mi_tag>::type::iterator ait,
+            hi_ait;
+        ait = entFEAdjacencies.get<Unique_mi_tag>().lower_bound(
+            (*dit)->getFieldEntityPtr()->getGlobalUniqueId());
+        hi_ait = entFEAdjacencies.get<Unique_mi_tag>().upper_bound(
+            (*dit)->getFieldEntityPtr()->getGlobalUniqueId());
+        for (; ait != hi_ait; ait++) {
           boost::shared_ptr<EntFiniteElement> ent_fe_ptr;
           ent_fe_ptr = ait->entFePtr;
           ent_fe_ptr->row_dof_view->erase((*dit)->getGlobalUniqueId());
-          if(ent_fe_ptr->row_dof_view!=ent_fe_ptr->col_dof_view) {
+          if (ent_fe_ptr->row_dof_view != ent_fe_ptr->col_dof_view) {
             ent_fe_ptr->col_dof_view->erase((*dit)->getGlobalUniqueId());
           }
         }
@@ -139,24 +149,27 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  MoFEMErrorCode Core::clear_ents_fields(const std::string &name,const Range ents,int verb) {
-    MoFEMFunctionBeginHot;
-    if(verb==-1) verb = verbose;
-    ierr = clear_dofs_fields(name,ents,verb); CHKERRG(ierr);
-    ierr = clear_adjacencies_entities(name,ents,verb); CHKERRG(ierr);
-    Range::iterator eit = ents.begin();
-    for(;eit!=ents.end();eit++) {
-      FieldEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator dit,hi_dit;
-      dit = entsFields.get<Composite_Name_And_Ent_mi_tag>().find(boost::make_tuple(name,*eit));
-      if(dit!=entsFields.get<Composite_Name_And_Ent_mi_tag>().end()) {
-        entsFields.get<Composite_Name_And_Ent_mi_tag>().erase(dit);
-      }
-      // hi_dit = entsFields.get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple(name,*eit));
-      // for(;dit!=hi_dit;) {
-      //   dit = entsFields.get<Composite_Name_And_Ent_mi_tag>().erase(dit);
-      // }
+  MoFEMErrorCode Core::clear_ents_fields(const std::string &name,
+                                         const Range &ents, int verb) {
+    MoFEMFunctionBegin;
+    if (verb == -1)
+      verb = verbose;
+    CHKERR clear_dofs_fields(name, ents, verb);
+    CHKERR clear_adjacencies_entities(name, ents, verb);
+    for (Range::const_pair_iterator p_eit = ents.pair_begin();
+         p_eit != ents.pair_end(); p_eit++) {
+      EntityHandle first  = p_eit->first;
+      EntityHandle second = p_eit->second;
+      FieldEntity_multiIndex::index<
+          Composite_Name_And_Ent_mi_tag>::type::iterator dit,
+          hi_dit;
+      dit = entsFields.get<Composite_Name_And_Ent_mi_tag>().lower_bound(
+          boost::make_tuple(name, first));
+      hi_dit = entsFields.get<Composite_Name_And_Ent_mi_tag>().upper_bound(
+          boost::make_tuple(name, second));
+      entsFields.get<Composite_Name_And_Ent_mi_tag>().erase(dit, hi_dit);
     }
-    MoFEMFunctionReturnHot(0);
+    MoFEMFunctionReturn(0);
   }
 
   MoFEMErrorCode Core::clear_finite_elements(const BitRefLevel &bit,const BitRefLevel &mask,int verb) {
