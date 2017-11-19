@@ -209,6 +209,81 @@ MoFEMErrorCode Core::clear_ents_fields(const std::string &name,
   MoFEMFunctionReturn(0);
 }
 
+MoFEMErrorCode Core::clear_adjacencies_entities(const BitRefLevel &bit,
+                                                const BitRefLevel &mask,
+                                                int verb) {
+  MoFEMFunctionBegin;
+  if (verb == -1)
+    verb = verbose;
+  Range ents;
+  CHKERR BitRefManager(*this).getEntitiesByRefLevel(bit, mask, ents, verb);
+  CHKERR clear_adjacencies_entities(ents, verb);
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode Core::clear_adjacencies_entities(const Range &ents, int verb) {
+  MoFEMFunctionBeginHot;
+  if (verb == -1)
+    verb = verbose;
+  for (Range::const_pair_iterator p_eit = ents.pair_begin();
+       p_eit != ents.pair_end(); p_eit++) {
+    const EntityHandle first  = p_eit->first;
+    const EntityHandle second = p_eit->second;
+    FieldEntityEntFiniteElementAdjacencyMap_multiIndex::index<
+        Ent_mi_tag>::type::iterator ait,
+        hi_ait;
+    ait    = entFEAdjacencies.get<Ent_mi_tag>().lower_bound(first);
+    hi_ait = entFEAdjacencies.get<Ent_mi_tag>().upper_bound(second);
+    entFEAdjacencies.get<Ent_mi_tag>().erase(ait, hi_ait);
+  }
+  MoFEMFunctionReturnHot(0);
+}
+
+MoFEMErrorCode Core::clear_adjacencies_entities(const std::string &name,
+                                                const Range &ents, int verb) {
+  MoFEMFunctionBeginHot;
+  if (verb == -1)
+    verb = verbose;
+
+  const Field *field_ptr   = get_field_structure(name);
+  int field_bit_number     = field_ptr->getBitNumber();
+  bool is_distributed_mesh = basicEntityDataPtr->trueIfDistributedMesh();
+  ParallelComm *pcomm      = ParallelComm::get_pcomm(&moab, MYPCOMM_INDEX);
+
+  for (Range::const_pair_iterator p_eit = ents.pair_begin();
+       p_eit != ents.pair_end(); p_eit++) {
+
+    // First and last handle
+    const EntityHandle first  = p_eit->first;
+    const EntityHandle second = p_eit->second;
+
+    // Get owner proc and owner handle
+    int f_owner_proc;
+    EntityHandle f_moab_owner_handle;
+    CHKERR pcomm->get_owner_handle(first, f_owner_proc, f_moab_owner_handle);
+    int s_owner_proc;
+    EntityHandle s_moab_owner_handle;
+    CHKERR pcomm->get_owner_handle(second, s_owner_proc, s_moab_owner_handle);
+
+    // Get UId
+    UId first_uid = FieldEntity::getGlobalUniqueIdCalculate(
+        f_owner_proc, field_bit_number, f_moab_owner_handle,
+        is_distributed_mesh);
+    UId second_uid = FieldEntity::getGlobalUniqueIdCalculate(
+        s_owner_proc, field_bit_number, s_moab_owner_handle,
+        is_distributed_mesh);
+
+    // Find adjacencies
+    FieldEntityEntFiniteElementAdjacencyMap_multiIndex::index<
+        Unique_mi_tag>::type::iterator ait,
+        hi_ait;
+    ait    = entFEAdjacencies.get<Unique_mi_tag>().lower_bound(first_uid);
+    hi_ait = entFEAdjacencies.get<Unique_mi_tag>().upper_bound(second_uid);
+    entFEAdjacencies.get<Unique_mi_tag>().erase(ait, hi_ait);
+  }
+  MoFEMFunctionReturnHot(0);
+}
+
 MoFEMErrorCode Core::clear_finite_elements(const BitRefLevel &bit,
                                            const BitRefLevel &mask, int verb) {
   MoFEMFunctionBeginHot;
@@ -294,95 +369,6 @@ MoFEMErrorCode Core::clear_finite_elements(const BitRefLevel &bit,
     MoFEMFunctionReturnHot(0);
   }
 
-  MoFEMErrorCode Core::clear_adjacencies_entities(const BitRefLevel &bit,
-                                                  const BitRefLevel &mask,
-                                                  int verb) {
-    MoFEMFunctionBeginHot;
-    if (verb == -1)
-      verb = verbose;
-    FieldEntityEntFiniteElementAdjacencyMap_multiIndex::iterator ait;
-    ait = entFEAdjacencies.begin();
-    for (; ait != entFEAdjacencies.end();) {
-      BitRefLevel bit2 = ait->entFieldPtr->getBitRefLevel();
-      if (ait->entFieldPtr->getEntType() == MBENTITYSET) {
-        ait++;
-        continue;
-      }
-      if ((bit2 & mask) != bit2) {
-        ait++;
-        continue;
-      }
-      if ((bit2 & bit).none()) {
-        ait++;
-        continue;
-      }
-      ait = entFEAdjacencies.erase(ait);
-    }
-    MoFEMFunctionReturnHot(0);
-  }
-
-  MoFEMErrorCode Core::clear_adjacencies_entities(const Range &ents, int verb) {
-    MoFEMFunctionBeginHot;
-    if (verb == -1)
-      verb = verbose;
-    for (Range::const_pair_iterator p_eit = ents.pair_begin();
-         p_eit != ents.pair_end(); p_eit++) {
-      const EntityHandle first  = p_eit->first;
-      const EntityHandle second = p_eit->second;
-      FieldEntityEntFiniteElementAdjacencyMap_multiIndex::index<
-          Ent_mi_tag>::type::iterator ait,
-          hi_ait;
-      ait    = entFEAdjacencies.get<Ent_mi_tag>().lower_bound(first);
-      hi_ait = entFEAdjacencies.get<Ent_mi_tag>().upper_bound(second);
-      entFEAdjacencies.get<Ent_mi_tag>().erase(ait, hi_ait);
-    }
-    MoFEMFunctionReturnHot(0);
-  }
-
-  MoFEMErrorCode Core::clear_adjacencies_entities(const std::string &name,
-                                                  const Range &ents, int verb) {
-    MoFEMFunctionBeginHot;
-    if (verb == -1)
-      verb = verbose;
-
-    const Field *field_ptr   = get_field_structure(name);
-    int field_bit_number     = field_ptr->getBitNumber();
-    bool is_distributed_mesh = basicEntityDataPtr->trueIfDistributedMesh();
-    ParallelComm *pcomm      = ParallelComm::get_pcomm(&moab, MYPCOMM_INDEX);
-
-    for (Range::const_pair_iterator p_eit = ents.pair_begin();
-         p_eit != ents.pair_end(); p_eit++) {
-
-      // First and last handle
-      const EntityHandle first  = p_eit->first;
-      const EntityHandle second = p_eit->second;
-
-      // Get owner proc and owner handle
-      int f_owner_proc;
-      EntityHandle f_moab_owner_handle;
-      CHKERR pcomm->get_owner_handle(first, f_owner_proc, f_moab_owner_handle);
-      int s_owner_proc;
-      EntityHandle s_moab_owner_handle;
-      CHKERR pcomm->get_owner_handle(second, s_owner_proc, s_moab_owner_handle);
-
-      // Get UId
-      UId first_uid = FieldEntity::getGlobalUniqueIdCalculate(
-          f_owner_proc, field_bit_number, f_moab_owner_handle,
-          is_distributed_mesh);
-      UId second_uid = FieldEntity::getGlobalUniqueIdCalculate(
-          s_owner_proc, field_bit_number, s_moab_owner_handle,
-          is_distributed_mesh);
-
-      // Find adjacencies
-      FieldEntityEntFiniteElementAdjacencyMap_multiIndex::index<
-          Unique_mi_tag>::type::iterator ait,
-          hi_ait;
-      ait    = entFEAdjacencies.get<Unique_mi_tag>().lower_bound(first_uid);
-      hi_ait = entFEAdjacencies.get<Unique_mi_tag>().upper_bound(second_uid);
-      entFEAdjacencies.get<Unique_mi_tag>().erase(ait, hi_ait);
-    }
-    MoFEMFunctionReturnHot(0);
-  }
 
   MoFEMErrorCode
   Core::remove_ents_from_field_by_bit_ref(const BitRefLevel &bit,

@@ -666,15 +666,15 @@ protected:
   MoFEMErrorCode build_adjacencies(const BitRefLevel &bit, int verb = -1);
   MoFEMErrorCode build_adjacencies(const BitRefLevel &bit,
                                    const BitRefLevel &mask, int verb = -1);
-  MoFEMErrorCode clear_adjacencies_finite_elements(const BitRefLevel &bit,
-                                                   const BitRefLevel &mask,
-                                                   int verb = -1);
   MoFEMErrorCode clear_adjacencies_entities(const BitRefLevel &bit,
                                             const BitRefLevel &mask,
                                             int verb = -1);
   MoFEMErrorCode clear_adjacencies_entities(const Range &ents, int verb = -1);
   MoFEMErrorCode clear_adjacencies_entities(const std::string &name,
                                             const Range &ents, int verb = -1);
+  MoFEMErrorCode clear_adjacencies_finite_elements(const BitRefLevel &bit,
+                                                   const BitRefLevel &mask,
+                                                   int verb = -1);
   MoFEMErrorCode clear_adjacencies_finite_elements(const std::string &name,
                                                    const Range &ents,
                                                    int verb = -1);
