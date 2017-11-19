@@ -1,12 +1,8 @@
 /** \file TagMultiIndices.hpp
- * \brief Tags for Myltindex containers
+ * \brief Tags for Multi-index containers
  */
 
-/* The MoFEM package is copyrighted by Lukasz Kaczmarczyk.
- * It can be freely used for educational and research purposes
- * by other institutions. If you use this softwre pleas cite my work.
- *
- * MoFEM is free software: you can redistribute it and/or modify it under
+/* MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or (at your
  * option) any later version.
@@ -108,12 +104,6 @@ namespace MoFEM {
   struct Composite_SeriesName_And_Time_mi_tag {};
 
   struct CoordSysName_mi_tag {};
-
-  // /** \deprecated Composite_Name_And_Ent_And_EntDofIdx_mi_tag instead
-  // */
-  // OFF_DEPRECATED typedef Composite_Name_And_Ent_And_EntDofIdx_mi_tag
-  // Composite_Name_And_Ent_And_EntDofIdx_mi_tag;
-
 
 }
 
