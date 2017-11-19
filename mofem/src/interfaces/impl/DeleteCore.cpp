@@ -18,68 +18,82 @@
 
 namespace MoFEM {
 
-  MoFEMErrorCode Core::clear_inactive_dofs(int verb) {
-    MoFEMFunctionBeginHot;
-    if(verb==-1) verb = verbose;
+MoFEMErrorCode Core::clear_inactive_dofs(int verb) {
+  MoFEMFunctionBeginHot;
+  if (verb == -1)
+    verb = verbose;
+  DofEntity_multiIndex::iterator dit;
+  dit = dofsField.begin();
+  for (; dit != dofsField.end(); dit++) {
+    if (!(*dit)->getActive()) {
+      FieldEntityEntFiniteElementAdjacencyMap_multiIndex::index<
+          Unique_mi_tag>::type::iterator ait,
+          hi_ait;
+      ait = entFEAdjacencies.get<Unique_mi_tag>().lower_bound(
+          (*dit)->getFieldEntityPtr()->getGlobalUniqueId());
+      hi_ait = entFEAdjacencies.get<Unique_mi_tag>().upper_bound(
+          (*dit)->getFieldEntityPtr()->getGlobalUniqueId());
+      for (; ait != hi_ait; ait++) {
+        boost::shared_ptr<EntFiniteElement> ent_fe_ptr;
+        ent_fe_ptr = ait->entFePtr;
+        ent_fe_ptr->row_dof_view->erase((*dit)->getGlobalUniqueId());
+        if (ent_fe_ptr->row_dof_view != ent_fe_ptr->col_dof_view) {
+          ent_fe_ptr->col_dof_view->erase((*dit)->getGlobalUniqueId());
+        }
+        ent_fe_ptr->data_dofs->get<Unique_mi_tag>().erase(
+            (*dit)->getGlobalUniqueId());
+      }
+      dit = dofsField.erase(dit);
+      if (dit == dofsField.end())
+        break;
+    }
+  }
+  MoFEMFunctionReturnHot(0);
+}
+
+MoFEMErrorCode Core::clear_dofs_fields(const BitRefLevel &bit,
+                                       const BitRefLevel &mask, int verb) {
+  MoFEMFunctionBeginHot;
+  if (verb == -1)
+    verb = verbose;
+  {
     DofEntity_multiIndex::iterator dit;
     dit = dofsField.begin();
-    for(;dit!=dofsField.end();dit++) {
-      if(!(*dit)->getActive()) {
-        FieldEntityEntFiniteElementAdjacencyMap_multiIndex::index<Unique_mi_tag>::type::iterator ait,hi_ait;
-        ait = entFEAdjacencies.get<Unique_mi_tag>().lower_bound((*dit)->getFieldEntityPtr()->getGlobalUniqueId());
-        hi_ait = entFEAdjacencies.get<Unique_mi_tag>().upper_bound((*dit)->getFieldEntityPtr()->getGlobalUniqueId());
-        for(;ait!=hi_ait;ait++) {
-          boost::shared_ptr<EntFiniteElement> ent_fe_ptr;
-          ent_fe_ptr = ait->entFePtr;
-          ent_fe_ptr->row_dof_view->erase((*dit)->getGlobalUniqueId());
-          if(ent_fe_ptr->row_dof_view!=ent_fe_ptr->col_dof_view) {
-            ent_fe_ptr->col_dof_view->erase((*dit)->getGlobalUniqueId());
-          }
-          ent_fe_ptr->data_dofs->get<Unique_mi_tag>().erase((*dit)->getGlobalUniqueId());
-        }
-        dit = dofsField.erase(dit);
-        if(dit==dofsField.end()) break;
+    for (; dit != dofsField.end();) {
+      BitRefLevel bit2 = (*dit)->getBitRefLevel();
+      if ((*dit)->getEntType() == MBENTITYSET) {
+        dit++;
+        continue;
       }
+      if ((bit2 & mask) != bit2) {
+        dit++;
+        continue;
+      }
+      if ((bit2 & bit).none()) {
+        dit++;
+        continue;
+      }
+      FieldEntityEntFiniteElementAdjacencyMap_multiIndex::index<
+          Unique_mi_tag>::type::iterator ait,
+          hi_ait;
+      ait = entFEAdjacencies.get<Unique_mi_tag>().lower_bound(
+          (*dit)->getFieldEntityPtr()->getGlobalUniqueId());
+      hi_ait = entFEAdjacencies.get<Unique_mi_tag>().upper_bound(
+          (*dit)->getFieldEntityPtr()->getGlobalUniqueId());
+      for (; ait != hi_ait; ait++) {
+        boost::shared_ptr<EntFiniteElement> ent_fe_ptr;
+        ent_fe_ptr = ait->entFePtr;
+        ent_fe_ptr->row_dof_view->erase((*dit)->getGlobalUniqueId());
+        if (ent_fe_ptr->row_dof_view != ent_fe_ptr->col_dof_view) {
+          ent_fe_ptr->col_dof_view->erase((*dit)->getGlobalUniqueId());
+        }
+        ent_fe_ptr->data_dofs->get<Unique_mi_tag>().erase(
+            (*dit)->getGlobalUniqueId());
+      }
+      dit = dofsField.erase(dit);
     }
-    MoFEMFunctionReturnHot(0);
   }
-
-  MoFEMErrorCode Core::clear_dofs_fields(const BitRefLevel &bit,const BitRefLevel &mask,int verb) {
-    MoFEMFunctionBeginHot;
-    if(verb==-1) verb = verbose;
-    {
-      DofEntity_multiIndex::iterator dit;
-      dit = dofsField.begin();
-      for(;dit!=dofsField.end();) {
-        BitRefLevel bit2 = (*dit)->getBitRefLevel();
-        if((*dit)->getEntType()==MBENTITYSET) {
-          dit++;
-          continue;
-        }
-        if((bit2&mask)!=bit2) {
-          dit++;
-          continue;
-        }
-        if((bit2&bit).none()) {
-          dit++;
-          continue;
-        }
-        FieldEntityEntFiniteElementAdjacencyMap_multiIndex::index<Unique_mi_tag>::type::iterator ait,hi_ait;
-        ait = entFEAdjacencies.get<Unique_mi_tag>().lower_bound((*dit)->getFieldEntityPtr()->getGlobalUniqueId());
-        hi_ait = entFEAdjacencies.get<Unique_mi_tag>().upper_bound((*dit)->getFieldEntityPtr()->getGlobalUniqueId());
-        for(;ait!=hi_ait;ait++) {
-          boost::shared_ptr<EntFiniteElement> ent_fe_ptr;
-          ent_fe_ptr = ait->entFePtr;
-          ent_fe_ptr->row_dof_view->erase((*dit)->getGlobalUniqueId());
-          if(ent_fe_ptr->row_dof_view!=ent_fe_ptr->col_dof_view) {
-            ent_fe_ptr->col_dof_view->erase((*dit)->getGlobalUniqueId());
-          }
-          ent_fe_ptr->data_dofs->get<Unique_mi_tag>().erase((*dit)->getGlobalUniqueId());
-        }
-        dit = dofsField.erase(dit);
-      }
-    }
-    MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturnHot(0);
   }
 
   MoFEMErrorCode Core::clear_dofs_fields(const std::string &name,
