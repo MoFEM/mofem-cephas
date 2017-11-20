@@ -209,6 +209,47 @@ MoFEMErrorCode Core::clear_ents_fields(const std::string &name,
   MoFEMFunctionReturn(0);
 }
 
+MoFEMErrorCode Core::remove_ents_from_field(const std::string &name,
+                                            const EntityHandle meshset,
+                                            const EntityType type, int verb) {
+  MoFEMFunctionBegin;
+  if (verb == -1)
+    verb = verbose;
+  Range ents;
+  CHKERR moab.get_entities_by_type(meshset, type, ents);
+  CHKERR remove_ents_from_field(name, ents, verb);
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode Core::remove_ents_from_field(const std::string &name,
+                                            const Range &ents, int verb) {
+  MoFEMFunctionBegin;
+  if (verb == -1)
+    verb = verbose;
+  EntityHandle meshset;
+  meshset = get_field_meshset(name);
+  CHKERR moab.remove_entities(meshset, ents);
+  CHKERR clear_ents_fields(name, ents, verb);
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode Core::remove_ents_from_field_by_bit_ref(const BitRefLevel &bit,
+                                                       const BitRefLevel &mask,
+                                                       int verb) {
+  MoFEMFunctionBegin;
+  if (verb == -1)
+    verb = verbose;
+  Range ents;
+  CHKERR BitRefManager(*this).getEntitiesByRefLevel(bit, mask, ents, verb);
+  CHKERR clear_ents_fields(ents, verb);
+  for (Field_multiIndex::iterator f_it = fIelds.begin(); f_it != fIelds.end();
+       f_it++) {
+    EntityHandle meshset = (*f_it)->getMeshset();
+    CHKERR moab.remove_entities(meshset, ents);
+  }
+  MoFEMFunctionReturn(0);
+}
+
 MoFEMErrorCode Core::clear_adjacencies_entities(const BitRefLevel &bit,
                                                 const BitRefLevel &mask,
                                                 int verb) {
@@ -453,86 +494,9 @@ MoFEMErrorCode Core::remove_ents_from_finite_element_by_bit_ref(
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode Core::remove_ents_from_field_by_bit_ref(const BitRefLevel &bit,
-                                                       const BitRefLevel &mask,
-                                                       int verb) {
-  MoFEMFunctionBegin;
-  if (verb == -1)
-    verb = verbose;
-  CHKERR clear_ents_fields(bit, mask, verb);
-  Field_multiIndex::iterator f_it = fIelds.begin();
-  for (; f_it != fIelds.end(); f_it++) {
-    EntityHandle meshset = (*f_it)->getMeshset();
-    Range ents_to_remove;
-    CHKERR moab.get_entities_by_handle(meshset, ents_to_remove, false);
-    Range::iterator eit = ents_to_remove.begin();
-    for (; eit != ents_to_remove.end();) {
-      if (moab.type_from_handle(*eit) == MBENTITYSET) {
-        eit = ents_to_remove.erase(eit);
-        continue;
-      }
-      BitRefLevel bit2;
-      CHKERR moab.tag_get_data(th_RefBitLevel, &*eit, 1, &bit2);
-      if ((bit2 & mask) != bit2) {
-        eit = ents_to_remove.erase(eit);
-        continue;
-      }
-      if ((bit2 & bit).none()) {
-        eit = ents_to_remove.erase(eit);
-        continue;
-      }
-      FieldEntity_multiIndex::index<
-          Composite_Name_And_Ent_mi_tag>::type::iterator iit;
-      iit = entsFields.get<Composite_Name_And_Ent_mi_tag>().find(
-          boost::make_tuple((*f_it)->getName(), *eit));
-      if (iit != entsFields.get<Composite_Name_And_Ent_mi_tag>().end()) {
-        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                "Entity in the filed found, should not be there");
-      }
-      ++eit;
-    }
-    CHKERR moab.remove_entities(meshset, ents_to_remove);
-    if (verb > 0) {
-      PetscPrintf(cOmm, "number of removed entities = %u from field %s\n",
-                  ents_to_remove.size(), (*f_it)->getName().c_str());
-      if (verb > 1) {
-        int num_entities;
-        CHKERR moab.get_number_entities_by_handle(meshset, num_entities);
-        PetscPrintf(
-            cOmm, "\tnumber of entities in database = %u and meshset = %u\n",
-            entsFields.get<FieldName_mi_tag>().count((*f_it)->getNameRef()),
-            num_entities);
-      }
-    }
-  }
-  MoFEMFunctionReturn(0);
-}
 
-MoFEMErrorCode Core::remove_ents_from_field(const std::string &name,
-                                            const EntityHandle meshset,
-                                            const EntityType type, int verb) {
-  MoFEMFunctionBegin;
-  if (verb == -1)
-    verb = verbose;
-  Range ents;
-  CHKERR moab.get_entities_by_type(meshset, type, ents);
-  CHKERR remove_ents_from_field(name, ents, verb);
-  MoFEMFunctionReturn(0);
-}
 
-MoFEMErrorCode Core::remove_ents_from_field(const std::string &name,
-                                            const Range &ents, int verb) {
-  MoFEMFunctionBegin;
-  if (verb == -1)
-    verb = verbose;
-  EntityHandle meshset;
-  meshset = get_field_meshset(name);
-  CHKERR moab.remove_entities(meshset, ents);
-  CHKERR clear_ents_fields(name, ents, verb);
-  MoFEMFunctionReturn(0);
-}
-
-  
+ 
 
   MoFEMErrorCode Core::remove_ents_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,int verb) {
     MoFEMFunctionBeginHot;
