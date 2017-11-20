@@ -268,7 +268,7 @@ struct MixTransportElement {
     }
     // Look for all BLOCKSET which are MAT_THERMALSET, takes entities from those BLOCKSETS
     // and add them to "MIX" finite element. In addition get data form that meshset
-    // and set cOnductivity which is used to calculate fluxes from gradients of concentration
+    // and set conductivity which is used to calculate fluxes from gradients of concentration
     // or gradient of temperature, depending how you interpret variables.
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|MAT_THERMALSET,it)) {
 

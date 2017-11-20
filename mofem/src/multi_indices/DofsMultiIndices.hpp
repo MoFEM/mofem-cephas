@@ -37,7 +37,7 @@ struct DofEntity: public interface_FieldEntity<FieldEntity> {
    *
    * UId is constructed such that all DOFs are ordered by processor, entity, field
    * and dof index on entity, On entity dofs index is constructed such that
-   * coffient number and dofs increase with dofs index on entity.
+   * coefficient number and dofs increase with dofs index on entity.
    *
    * @param  dof     dof index on entity
    * @param  ent_ptr pointer to field entity
@@ -359,8 +359,6 @@ typedef multi_index_container<
     ordered_non_unique<
       tag<Unique_Ent_mi_tag>, const_mem_fun<DofEntity,UId,&DofEntity::getEntGlobalUniqueId> >,
     ordered_non_unique<
-      const_mem_fun<DofEntity,char,&DofEntity::getActive> >,
-    ordered_non_unique<
       tag<FieldName_mi_tag>, const_mem_fun<DofEntity::interface_type_Field,boost::string_ref,&DofEntity::getNameRef> >,
     ordered_non_unique<
       tag<Ent_mi_tag>, const_mem_fun<DofEntity,EntityHandle,&DofEntity::getEnt> >,
@@ -391,19 +389,25 @@ typedef multi_index_container<
   >
 > DofEntity_multiIndex;
 
-/** \brief Dof entity multi-index by field name
+/** \brief Dof multi-index by field name
   *
   * \ingroup dof_multi_indices
   */
 typedef DofEntity_multiIndex::index<FieldName_mi_tag>::type DofEntityByFieldName;
 
-/** \brief Dof entity multi-index by field name and entity
+/** \brief Dof multi-index by entity
+  *
+  * \ingroup dof_multi_indices
+  */
+typedef DofEntity_multiIndex::index<Ent_mi_tag>::type DofEntityByEnt;
+
+/** \brief Dof multi-index by field name and entity
   *
   * \ingroup dof_multi_indices
   */
 typedef DofEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type DofEntityByNameAndEnt;
 
-/** \brief Dof entity multi-index by field name and entity type
+/** \brief Dof multi-index by field name and entity type
   *
   * \ingroup dof_multi_indices
   */

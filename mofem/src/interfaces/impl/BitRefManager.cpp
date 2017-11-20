@@ -565,28 +565,44 @@ MoFEMErrorCode BitRefManager::filterEntitiesByRefLevel(const BitRefLevel &bit,
   MoFEM::Interface &m_field = cOre;
   moab::Interface &moab(m_field.get_moab());
   MoFEMFunctionBeginHot;
+
   const BitRefLevel *tag_bit;
-  Range::iterator eit = ents.begin();
-  for (; eit != ents.end(); tag_bit++) {
-    rval = moab.tag_get_by_ptr(cOre.get_th_RefBitLevel(), &*eit, 1,
-                               (const void **)(&tag_bit));
-    CHKERRQ_MOAB(rval);
-    if (mask.any() && tag_bit->none()) {
-      eit = ents.erase(eit);
-      continue;
+
+  Range swap_ents;
+  for (Range::pair_iterator p_eit = ents.pair_begin(); p_eit != ents.pair_end();
+       ++p_eit) {
+    EntityHandle f = p_eit->first;
+    EntityHandle s = p_eit->second;
+
+    EntityHandle ff = 0;
+    EntityHandle ss = 0;
+
+    for (; f <= s; ++f) {
+      rval = moab.tag_get_by_ptr(cOre.get_th_RefBitLevel(), &f, 1,
+                                 (const void **)(&tag_bit));
+      CHKERRG(rval);
+
+      if ((mask.any() && tag_bit->none()) ||
+          ((*tag_bit) & mask) != (*tag_bit) || (((*tag_bit) & bit).none())) {
+        if(ff != 0) {
+          swap_ents.insert(ff,ss);
+          ff = ss = 0;
+        }
+      } else {
+        if (ff == 0)
+          ff = ss = f;
+        else
+          ss = f;
+      }
     }
-    // Not masked
-    if (((*tag_bit) & mask) != (*tag_bit)) {
-      eit = ents.erase(eit);
-      continue;
+    if (ff != 0) {
+      swap_ents.insert(ff, ss);
     }
-    // Not in bit
-    if (((*tag_bit) & bit).none()) {
-      eit = ents.erase(eit);
-      continue;
-    }
-    eit++;
+    
   }
+
+  ents.swap(swap_ents);
+
   MoFEMFunctionReturnHot(0);
 }
 
