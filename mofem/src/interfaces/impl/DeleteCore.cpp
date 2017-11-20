@@ -444,54 +444,13 @@ MoFEMErrorCode Core::remove_ents_from_finite_element(const Range &ents,
 
 MoFEMErrorCode Core::remove_ents_from_finite_element_by_bit_ref(
     const BitRefLevel &bit, const BitRefLevel &mask, int verb) {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   if (verb == -1)
     verb = verbose;
-  ierr = clear_finite_elements(bit, mask, verb);
-  CHKERRG(ierr);
-  FiniteElement_multiIndex::iterator fe_it = finiteElements.begin();
-  for (; fe_it != finiteElements.end(); fe_it++) {
-    EntityHandle meshset = (*fe_it)->getMeshset();
-    Range ents_to_remove;
-    rval = moab.get_entities_by_handle(meshset, ents_to_remove, false);
-    CHKERRQ_MOAB(rval);
-    Range::iterator eit = ents_to_remove.begin();
-    for (; eit != ents_to_remove.end();) {
-      if (moab.type_from_handle(*eit) == MBENTITYSET) {
-        eit = ents_to_remove.erase(eit);
-        continue;
-      }
-      BitRefLevel bit2;
-      rval = moab.tag_get_data(th_RefBitLevel, &*eit, 1, &bit2);
-      CHKERRQ_MOAB(rval);
-      if ((bit2 & mask) != bit2) {
-        eit = ents_to_remove.erase(eit);
-        continue;
-      }
-      if ((bit2 & bit).none()) {
-        eit = ents_to_remove.erase(eit);
-        continue;
-      }
-      EntFiniteElement_multiIndex::index<
-          Composite_Name_And_Ent_mi_tag>::type::iterator iit;
-      iit = entsFiniteElements.get<Composite_Name_And_Ent_mi_tag>().find(
-          boost::make_tuple((*fe_it)->getName(), *eit));
-      if (iit !=
-          entsFiniteElements.get<Composite_Name_And_Ent_mi_tag>().end()) {
-        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                "data inconsistency");
-      }
-      eit++;
-    }
-    rval = moab.remove_entities(meshset, ents_to_remove);
-    CHKERRQ_MOAB(rval);
-    if (verb > 0) {
-      PetscPrintf(cOmm,
-                  "number of removed entities = %u from finite element %s\n",
-                  ents_to_remove.size(), (*fe_it)->getName().c_str());
-    }
-  }
-  MoFEMFunctionReturnHot(0);
+  Range ents;                                                       
+  CHKERR BitRefManager(*this).getEntitiesByRefLevel(bit, mask, ents, verb);
+  CHKERR clear_finite_elements(ents, verb);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode Core::remove_ents_from_field_by_bit_ref(const BitRefLevel &bit,
