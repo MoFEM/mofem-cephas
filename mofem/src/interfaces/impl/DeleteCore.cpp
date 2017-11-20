@@ -601,7 +601,7 @@ MoFEMErrorCode Core::delete_finite_element(const std::string name, int verb) {
   Range ents;
   CHKERR moab.get_entities_by_handle(meshset, ents, false);
   CHKERR remove_ents_from_finite_element(name, ents, verb);
-  fe.erase(miit);
+  fe.erase(mit);
   CHKERR moab.delete_entities(&meshset, 1);
   MoFEMFunctionReturn(0);
 }
