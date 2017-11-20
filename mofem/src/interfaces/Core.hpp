@@ -301,17 +301,17 @@ protected:
   MoFEMErrorCode seed_finite_elements(const EntityHandle meshset,
                                       int verb = -1);
 
-  // remove entities
+  // remove and delete entities
+
+  MoFEMErrorCode remove_ents_by_bit_ref(const Range &ents, int verb = -1);
+
+
+  MoFEMErrorCode remove_ents_by_bit_ref(const BitRefLevel &bit,
+                                        const BitRefLevel &mask, int verb = -1);
   MoFEMErrorCode delete_ents_by_bit_ref(const BitRefLevel &bit,
                                         const BitRefLevel &mask,
                                         const bool remove_parent = false,
                                         int verb = -1);
-  MoFEMErrorCode remove_ents_by_bit_ref(const BitRefLevel &bit,
-                                        const BitRefLevel &mask, int verb = -1);
-  MoFEMErrorCode delete_finite_elements_by_bit_ref(const BitRefLevel &bit,
-                                                   const BitRefLevel &mask,
-                                                   int verb = -1);
-
   // synchronize entities
   MoFEMErrorCode synchronise_entities(Range &ent, int verb = -1);
   MoFEMErrorCode synchronise_field_entities(const BitFieldId id, int verb = -1);
@@ -404,16 +404,6 @@ protected:
                                                         const std::string &name,
                                                         int verb = -1);
 
-  /// \name Remove field entities
-
-  MoFEMErrorCode remove_ents_from_field_by_bit_ref(const BitRefLevel &bit,
-                                                   const BitRefLevel &mask,
-                                                   int verb = -1);
-  MoFEMErrorCode remove_ents_from_field(const std::string &name,
-                                        const EntityHandle meshset,
-                                        const EntityType type, int verb = -1);
-  MoFEMErrorCode remove_ents_from_field(const std::string &name,
-                                        const Range &ents, int verb = -1);
 
   /// \name Set approximation order
 
@@ -458,6 +448,18 @@ protected:
   MoFEMErrorCode clear_ents_fields(const Range &ents, int verb = -1);
   MoFEMErrorCode clear_ents_fields(const std::string &name, const Range &ents,
                                    int verb = -1);
+
+  /// \name Remove field entities
+
+  MoFEMErrorCode remove_ents_from_field_by_bit_ref(const BitRefLevel &bit,
+                                                   const BitRefLevel &mask,
+                                                   int verb = -1);
+  MoFEMErrorCode remove_ents_from_field(const std::string &name,
+                                        const EntityHandle meshset,
+                                        const EntityType type, int verb = -1);
+  MoFEMErrorCode remove_ents_from_field(const std::string &name,
+                                        const Range &ents, int verb = -1);
+  MoFEMErrorCode remove_ents_from_field(const Range &ents, int verb = -1);
 
   /// \name Other auxiliary functions for fields
 
@@ -559,6 +561,7 @@ protected:
   DEPRECATED MoFEMErrorCode add_ents_to_finite_element_EntType_by_bit_ref(
       const BitRefLevel &bit, const BitRefLevel &mask, const std::string &name,
       EntityType type, int verb = -1);
+
   MoFEMErrorCode remove_ents_from_finite_element_by_bit_ref(
       const BitRefLevel &bit, const BitRefLevel &mask, int verb = -1);
   MoFEMErrorCode remove_ents_from_finite_element(const std::string &name,
@@ -567,6 +570,8 @@ protected:
                                                  int verb = -1);
   MoFEMErrorCode remove_ents_from_finite_element(const std::string &name,
                                                  const Range &ents,
+                                                 int verb = -1);
+  MoFEMErrorCode remove_ents_from_finite_element(const Range &ents,
                                                  int verb = -1);
   MoFEMErrorCode delete_finite_element(const std::string name, int verb = -1);
 

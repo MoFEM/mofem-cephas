@@ -240,11 +240,6 @@ namespace MoFEM {
                                                   const BitRefLevel &mask,
                                                   int verb = -1) = 0;
 
-    /** \brief remove finite element from mofem database
-     */
-    virtual MoFEMErrorCode delete_finite_elements_by_bit_ref(
-        const BitRefLevel &bit, const BitRefLevel &mask, int verb = -1) = 0;
-
     /** \brief delete finite element from mofem database
      */
     virtual MoFEMErrorCode delete_finite_element(const std::string name,
