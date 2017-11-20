@@ -303,8 +303,7 @@ protected:
 
   // remove and delete entities
 
-  MoFEMErrorCode remove_ents_by_bit_ref(const Range &ents, int verb = -1);
-
+  MoFEMErrorCode remove_ents(const Range &ents, int verb = -1);
 
   MoFEMErrorCode remove_ents_by_bit_ref(const BitRefLevel &bit,
                                         const BitRefLevel &mask, int verb = -1);
