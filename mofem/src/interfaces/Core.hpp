@@ -892,11 +892,6 @@ private:
    */
   MoFEMErrorCode initialiseDatabaseFromMesh(int verb = -1);
 
-
-  MoFEMErrorCode delete_finite_elements_by_bit_ref(
-    const BitRefLevel &bit,const BitRefLevel &mask,int verb
-  );
-
   template <class IFACE> MoFEMErrorCode regSubInterface(const MOFEMuuid &uid);
 };
 
