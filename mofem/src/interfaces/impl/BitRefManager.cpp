@@ -708,11 +708,11 @@ BitRefManager::getAllEntitiesNotInDatabase(Range &ents) const {
   MoFEMFunctionBeginHot;
   rval = moab.get_entities_by_handle(0,ents,false); CHKERRQ_MOAB(rval);
   ents = subtract(ents,ents.subset_by_type(MBENTITYSET));
-  ierr = getEntitiesNotInDatabase(ents); CHKERRG(ierr);
+  ierr = filterEntitiesNotInDatabase(ents); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode BitRefManager::getEntitiesNotInDatabase(Range &ents) const {
+MoFEMErrorCode BitRefManager::filterEntitiesNotInDatabase(Range &ents) const {
   MoFEM::Interface &m_field = cOre;
   const RefEntity_multiIndex *ref_ents_ptr;
   MoFEMFunctionBeginHot;
