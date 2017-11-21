@@ -477,15 +477,14 @@ MoFEMErrorCode BitRefManager::shiftRightBitRef(const int shift,
                                                int verb) const {
   MoFEM::Interface &m_field = cOre;
   const RefEntity_multiIndex *ref_ent_ptr;
-  MoFEMFunctionBeginHot;
-  ierr = m_field.get_ref_ents(&ref_ent_ptr);
+  MoFEMFunctionBegin;
+  CHKERR m_field.get_ref_ents(&ref_ent_ptr);
   for (int ii = 0; ii < shift; ii++) {
     // delete bits on the right which are shifted to zero
     BitRefLevel delete_bits = BitRefLevel().set(0) & mask;
     if (delete_bits.any()) {
-      ierr =
-          m_field.delete_ents_by_bit_ref(delete_bits, delete_bits, true, verb);
-      CHKERRG(ierr);
+      CHKERR m_field.delete_ents_by_bit_ref(delete_bits, delete_bits, true,
+                                            verb);
     }
     for (RefEntity_multiIndex::iterator ent_it = ref_ent_ptr->begin();
          ent_it != ref_ent_ptr->end(); ent_it++) {
@@ -503,7 +502,7 @@ MoFEMErrorCode BitRefManager::shiftRightBitRef(const int shift,
       }
     }
   }
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode BitRefManager::writeBitLevelByType(
@@ -708,11 +707,11 @@ BitRefManager::getAllEntitiesNotInDatabase(Range &ents) const {
   MoFEMFunctionBeginHot;
   rval = moab.get_entities_by_handle(0,ents,false); CHKERRQ_MOAB(rval);
   ents = subtract(ents,ents.subset_by_type(MBENTITYSET));
-  ierr = getEntitiesNotInDatabase(ents); CHKERRG(ierr);
+  ierr = filterEntitiesNotInDatabase(ents); CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode BitRefManager::getEntitiesNotInDatabase(Range &ents) const {
+MoFEMErrorCode BitRefManager::filterEntitiesNotInDatabase(Range &ents) const {
   MoFEM::Interface &m_field = cOre;
   const RefEntity_multiIndex *ref_ents_ptr;
   MoFEMFunctionBeginHot;
