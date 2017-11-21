@@ -135,6 +135,13 @@ typedef multi_index_container<
       >
     >,
     ordered_non_unique<
+      tag<FE_Unique_mi_tag>,
+      const_mem_fun<
+        FieldEntityEntFiniteElementAdjacencyMap,UId,
+        &FieldEntityEntFiniteElementAdjacencyMap::getFeUniqueId
+      >
+    >,
+    ordered_non_unique<
       tag<FEEnt_mi_tag>,
       const_mem_fun<
         FieldEntityEntFiniteElementAdjacencyMap,EntityHandle,

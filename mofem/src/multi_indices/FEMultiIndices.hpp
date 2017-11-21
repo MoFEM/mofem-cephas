@@ -319,21 +319,15 @@ typedef boost::function<
  */
 struct FiniteElement {
 
-  // typedef multi_index_container<
-  //   boost::weak_ptr<std::vector<EntFiniteElement> >,
-  //   indexed_by<
-  //     sequenced<>
-  //   >
-  // > SequenceFEContainer;
-
-  EntityHandle meshset;     ///< meshset stores FE ents
-  BitFEId* tagId;     ///< ptr to tag storing FE id
-  void* tagName;      ///< ptr to tag storing FE name
-  int tagNameSize;        ///< numer of characters in FE name
-  BitFieldId* tag_BitFieldId_col_data;  ///< tag stores col id_id for fields
-  BitFieldId* tag_BitFieldId_row_data;  ///< tag stores row id_id for fields
-  BitFieldId* tag_BitFieldId_data;      ///< tag stores data id_id for fields
-  FiniteElement(Interface &moab,const EntityHandle _meshset);
+  EntityHandle meshset;                ///< meshset stores FE ents
+  BitFEId *tagId;                      ///< ptr to tag storing FE id
+  void *tagName;                       ///< ptr to tag storing FE name
+  int tagNameSize;                     ///< numer of characters in FE name
+  BitFieldId *tag_BitFieldId_col_data; ///< tag stores col id_id for fields
+  BitFieldId *tag_BitFieldId_row_data; ///< tag stores row id_id for fields
+  BitFieldId *tag_BitFieldId_data;     ///< tag stores data id_id for fields
+  
+  FiniteElement(Interface &moab, const EntityHandle _meshset);
 
   /**
    * \brief Get finite element id
@@ -351,31 +345,41 @@ struct FiniteElement {
    * \brief Get finite element name
    * @return string_ref
    */
-  inline boost::string_ref getNameRef() const { return boost::string_ref((char *)tagName,tagNameSize); }
+  inline boost::string_ref getNameRef() const {
+    return boost::string_ref((char *)tagName, tagNameSize);
+  }
 
   /**
    * \brief Get finite element name
    * @return string
    */
-  inline std::string getName() const { return std::string((char *)tagName,tagNameSize); }
+  inline std::string getName() const {
+    return std::string((char *)tagName, tagNameSize);
+  }
 
   /**
    * \brief Get field ids on columns
    * @return Bit field ids
    */
-  inline BitFieldId getBitFieldIdCol() const { return *((BitFieldId*)tag_BitFieldId_col_data); }
+  inline BitFieldId getBitFieldIdCol() const {
+    return *((BitFieldId *)tag_BitFieldId_col_data);
+  }
 
   /**
    * \brief Get field ids on rows
    * @return Bit field ids
    */
-  inline BitFieldId getBitFieldIdRow() const { return *((BitFieldId*)tag_BitFieldId_row_data); }
+  inline BitFieldId getBitFieldIdRow() const {
+    return *((BitFieldId *)tag_BitFieldId_row_data);
+  }
 
   /**
    * \brief Get field ids on data
    * @return Bit field ids
    */
-  inline BitFieldId getBitFieldIdData() const { return *((BitFieldId*)tag_BitFieldId_data); }
+  inline BitFieldId getBitFieldIdData() const {
+    return *((BitFieldId *)tag_BitFieldId_data);
+  }
 
   /**
    * \brief Get bit identifying this element
@@ -385,7 +389,9 @@ struct FiniteElement {
    *
    * @return Bit number
    */
-  inline unsigned int getBitNumber() const { return ffsl(((BitFieldId*)tagId)->to_ulong()); }
+  inline unsigned int getBitNumber() const {
+    return ffsl(((BitFieldId *)tagId)->to_ulong());
+  }
 
   /**
    * \brief Table of functions retrieving adjacencies for finite element
@@ -397,26 +403,6 @@ struct FiniteElement {
    * \brief print finite element
    */
   friend std::ostream& operator<<(std::ostream& os, const FiniteElement& e);
-
-//   /**
-//    * \brief Get reference to sequence data container
-//    *
-//    * In sequence data container data are physically stored. The purpose of this
-//    * is to allocate MoFEM::EntFiniteElement data in bulk, having only one allocation instead
-//    * each time entity is inserted. That makes code efficient.
-//    *
-//    * The vector in sequence is destroyed if last entity inside that vector is
-//    * destroyed. All MoFEM::EntFiniteElement have aliased shared_ptr which points to the vector.
-//    *
-//    * @return MoFEM::Field::SequenceFEContainer
-//    */
-//   inline boost::shared_ptr<SequenceFEContainer> getFESequenceContainer() const {
-//     return sequenceFEContainer;
-//   }
-//
-// private:
-//
-//   mutable boost::shared_ptr<SequenceFEContainer> sequenceFEContainer;
 
 };
 
@@ -514,7 +500,7 @@ struct interface_FiniteElement {
 };
 
 /**
- * \brief Finite element data for entitiy
+ * \brief Finite element data for entity
  * \ingroup fe_multi_indices
  */
 struct EntFiniteElement:
@@ -539,17 +525,25 @@ interface_RefElement<RefElement> {
    * \brief Get unique UId for finite element entity
    * @return UId
    */
-  const UId& getGlobalUniqueId() const { return globalUid; }
+  inline const UId& getGlobalUniqueId() const { return globalUid; }
 
   /**
    * \brief Generate UId for finite element entity
    * @return finite element entity unique Id
    */
-  UId getGlobalUniqueIdCalculate() const {
-    assert(getBitNumber()<=32);
-    return
-    static_cast<UId>(sPtr->getRefEnt())|
-    static_cast<UId>(getBitNumber())<<8*sizeof(EntityHandle);
+  static inline  UId getGlobalUniqueIdCalculate(const EntityHandle ent,
+                                        const int bit_number) {
+    assert(bit_number <= 32);
+    return static_cast<UId>(ent) | static_cast<UId>(bit_number)
+                                       << 8 * sizeof(EntityHandle);
+  }
+
+  /**
+   * \brief Generate UId for finite element entity
+   * @return finite element entity unique Id
+   */
+  inline UId getGlobalUniqueIdCalculate() const {
+    return getGlobalUniqueIdCalculate(sPtr->getRefEnt(),getBitNumber());
   }
 
   /**

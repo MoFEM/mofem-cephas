@@ -941,7 +941,7 @@ typedef multi_index_container<
       tag<FieldName_mi_tag>,
       const_mem_fun<FieldEntity::interface_type_Field,boost::string_ref,&FieldEntity::getNameRef>
     >,
-    hashed_non_unique<
+    ordered_non_unique<
       tag<Ent_mi_tag>,
       const_mem_fun<FieldEntity,EntityHandle,&FieldEntity::getEnt>
     >,

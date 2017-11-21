@@ -481,9 +481,13 @@ DEPRECATED void macro_is_depracted_using_deprecated_function();
  */
 #define CHKERRQ_MOAB(a)                                                        \
   if (PetscUnlikely(MB_SUCCESS != (a))) {                                      \
-    std::string str("MOAB error " + boost::lexical_cast<std::string>((a)) +    \
-                    " at line " + boost::lexical_cast<std::string>(__LINE__) + \
-                    " : " + std::string(__FILE__));                            \
+    std::string error_str = (unsigned)(a) <= (unsigned)MB_FAILURE              \
+                                ? moab::ErrorCodeStr[a]                        \
+                                : "INVALID ERROR CODE";                        \
+    std::string str("MOAB error (" + boost::lexical_cast<std::string>((a)) +   \
+                    ") " + error_str + " at line " +                           \
+                    boost::lexical_cast<std::string>(__LINE__) + " : " +       \
+                    std::string(__FILE__));                                    \
     SETERRQ(PETSC_COMM_SELF, MOFEM_MOAB_ERROR, str.c_str());                   \
   }
 

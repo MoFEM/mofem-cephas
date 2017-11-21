@@ -34,7 +34,7 @@ static double sum_matrix(MatrixDouble &m) {
 
 int main(int argc, char *argv[]) {
 
-  PetscInitialize(&argc,&argv,(char *)0,help);
+  MoFEM::Core::Initialize(&argc,&argv,(char *)0,help);
 
   try {
 
@@ -732,6 +732,6 @@ int main(int argc, char *argv[]) {
     SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
   }
 
-  PetscFinalize();
+  MoFEM::Core::Finalize();
 
 }
