@@ -8,13 +8,11 @@ Here, differences between the node oriented (that most readers are familiar with
 Aspects of MoFEM implementation of this approach will be described for the user to understand the FEM implementation within the present framework.
 These concepts are presented as briefly as possible with sole aim to clarify their implementation within MoFEM.
 
-
-
 \subsection hierarchical_approximation_motivation Motivation for using Hierarchical shape functions
 
 Advantages of the Hierarchical shape functions are not going to be described in the present tutorial.
 The key points for choosing MoFEM implementation of the FEM method with Hierarchical basis functions 
-instead of the node oriented approach are presented in this Section to clearly set the motivation behind 
+instead of the node oriented approach are presented in this section to clearly set the motivation behind 
 this particular choice. Choosing Hierarchical basis functions over node oriented basis is that it results 
 to:
 

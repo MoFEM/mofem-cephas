@@ -20,12 +20,9 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 #include <BasicFiniteElements.hpp>
-#include <boost/program_options.hpp>
 
 using namespace boost::numeric;
 using namespace MoFEM;
-using namespace std;
-namespace po = boost::program_options;
 
 static char help[] = "-my_block_config set block data\n"
                      "\n";
@@ -309,19 +306,14 @@ struct ApplyDirichletBc : public MoFEM::FEMethod {
     std::copy(set_fix_dofs.begin(), set_fix_dofs.end(), fix_dofs.begin());
 
     CHKERR MatAssemblyBegin(ksp_B, MAT_FINAL_ASSEMBLY);
-
     CHKERR MatAssemblyEnd(ksp_B, MAT_FINAL_ASSEMBLY);
-
     CHKERR VecAssemblyBegin(ksp_f);
-
     CHKERR VecAssemblyEnd(ksp_f);
 
     Vec x;
 
     CHKERR VecDuplicate(ksp_f, &x);
-
     CHKERR VecZeroEntries(x);
-
     CHKERR MatZeroRowsColumns(ksp_B, fix_dofs.size(), &fix_dofs[0], 1, x,
                               ksp_f);
 
@@ -398,28 +390,12 @@ struct OpPressure : MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator {
   }
 };
 
-MoFEMErrorCode testError(Vec ghost_vec) {
-
-  MoFEMFunctionBeginHot;
-  // double *e;
-  // ierr = VecGetArray(ghost_vec,&e); CHKERRG(ierr);
-  // // Check if error is zero, otherwise throw error
-  // const double eps = 1e-8;
-  // if( (sqrt(e[0])>eps) || (!boost::math::isnormal(e[0]) )
-  // ) {
-  //   SETERRQ(PETSC_COMM_SELF,MOFEM_ATOM_TEST_INVALID,"Test failed, error too
-  //   big");
-  // }
-  // ierr = VecRestoreArray(ghost_vec,&e); CHKERRG(ierr);
-  MoFEMFunctionReturnHot(0);
-}
-
 int main(int argc, char *argv[]) {
 
-  // Initialize PETSCc
+  // Initialize MoFEM
   MoFEM::Core::Initialize(&argc, &argv, (char *)0, help);
 
-  // Create mesh databse
+  // Create mesh database
   moab::Core mb_instance;              // create database
   moab::Interface &moab = mb_instance; // create interface to database
 
@@ -445,36 +421,30 @@ int main(int argc, char *argv[]) {
                             &flg_test, PETSC_NULL);
 
     ierr = PetscOptionsEnd();
-    CHKERRQ(ierr);
-
-    boost::shared_ptr<ForcesAndSourcesCore>
-        domain_lhs_fe; ///< Volume element for the matrix
-    boost::shared_ptr<ForcesAndSourcesCore>
-        domain_rhs_fe; ///< Volume element to assemble vector
-    boost::shared_ptr<ForcesAndSourcesCore>
-        domain_error; ///< Volume element evaluate error
-    boost::shared_ptr<ForcesAndSourcesCore>
-        post_proc_volume; ///< Volume element to Post-process results
-    boost::shared_ptr<ForcesAndSourcesCore> null;
+    CHKERRG(ierr);
 
     Simple *simple_interface = m_field.getInterface<MoFEM::Simple>();
 
     CHKERR simple_interface->getOptions();
-
     CHKERR simple_interface->loadFile();
-
     CHKERR simple_interface->addDomainField("U", H1, AINSWORTH_LEGENDRE_BASE,
                                             3);
-
     CHKERR simple_interface->setFieldOrder("U", order);
 
     Range fix_faces, pressure_faces, fix_nodes, fix_second_node;
+
+    enum MyBcTypes {
+      FIX_BRICK_FACES      = 1,
+      FIX_NODES            = 2,
+      BRICK_PRESSURE_FACES = 3,
+      FIX_NODES_Y_DIR      = 4
+    };
 
     for (_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field, BLOCKSET, bit)) {
       EntityHandle meshset = bit->getMeshset();
       int id               = bit->getMeshsetId();
 
-      if (id == 1) { // brick-faces
+      if (id == FIX_BRICK_FACES) { // brick-faces
 
         CHKERR m_field.get_moab().get_entities_by_dimension(meshset, 2,
                                                             fix_faces, true);
@@ -486,16 +456,17 @@ int main(int argc, char *argv[]) {
         CHKERR m_field.get_moab().get_adjacencies(fix_faces, 1, false, adj_ents,
                                                   moab::Interface::UNION);
         fix_faces.merge(adj_ents);
-      } else if (id == 2) { // node(s)
+      } else if (id == FIX_NODES) { // node(s)
 
         CHKERR m_field.get_moab().get_entities_by_dimension(meshset, 0,
                                                             fix_nodes, true);
 
-      } else if (id == 3) { // brick pressure faces
+      } else if (id == BRICK_PRESSURE_FACES) { // brick pressure faces
         CHKERR m_field.get_moab().get_entities_by_dimension(
             meshset, 2, pressure_faces, true);
 
-      } else if (id == 4) { // restrained second node in y direction
+      } else if (id ==
+                 FIX_NODES_Y_DIR) { // restrained second node in y direction
         CHKERR m_field.get_moab().get_entities_by_dimension(
             meshset, 0, fix_second_node, true);
 
@@ -523,22 +494,17 @@ int main(int argc, char *argv[]) {
     CHKERR simple_interface->getDM(&dm);
 
     CHKERR DMMoFEMAddElement(dm, "PRESSURE");
-
     CHKERR DMMoFEMSetIsPartitioned(dm, PETSC_TRUE);
 
     CHKERR simple_interface->buildFields();
-
     CHKERR simple_interface->buildFiniteElements();
 
     CHKERR m_field.add_ents_to_finite_element_by_dim(
         0, simple_interface->getDim(), simple_interface->getDomainFEName(),
         true);
-
     CHKERR m_field.build_finite_elements(simple_interface->getDomainFEName());
-
     CHKERR m_field.add_ents_to_finite_element_by_dim(pressure_faces, 2,
                                                      "PRESSURE");
-
     CHKERR m_field.build_finite_elements("PRESSURE", &pressure_faces);
 
     CHKERR simple_interface->buildProblem();
@@ -603,7 +569,7 @@ int main(int argc, char *argv[]) {
     // make available a KSP solver
     KSP solver;
 
-    // make the solver available for parallel computiong by determining its MPI
+    // make the solver available for parallel computing by determining its MPI
     // communicator
     CHKERR KSPCreate(PETSC_COMM_WORLD, &solver);
 
@@ -620,6 +586,9 @@ int main(int argc, char *argv[]) {
     // solve the system of linear equations
     CHKERR KSPSolve(solver, f, x);
 
+    // destroy solver no needed any more
+    CHKERR KSPDestroy(&solver);
+
     // make vector x available for parallel computations for visualization
     // context
     VecView(x, PETSC_VIEWER_STDOUT_WORLD);
@@ -627,7 +596,7 @@ int main(int argc, char *argv[]) {
     // save solution in vector x on mesh
     CHKERR DMoFEMMeshToGlobalVector(dm, x, INSERT_VALUES, SCATTER_REVERSE);
 
-    // Set up post-procesor. It is some generic implementation of finite
+    // Set up post-processor. It is some generic implementation of finite
     // element
     PostProcVolumeOnRefinedMesh post_proc(m_field);
     // Add operators to the elements, starting with some generic
@@ -666,9 +635,8 @@ int main(int argc, char *argv[]) {
     CHKERR DMDestroy(&dm);
 
     // This is a good reference for the future
-  } catch (MoFEMException const &e) {
-    SETERRQ(PETSC_COMM_SELF, e.errorCode, e.errorMessage);
   }
+  CATCH_ERRORS;
 
   // finish work cleaning memory, getting statistics, etc
   MoFEM::Core::Finalize();

@@ -14,7 +14,6 @@
 
 include_directories(
   ${UM_SOURCE_DIR}/basic_finite_elements/nonlinear_elastic_materials/src
-  ${UM_SOURCE_DIR}/basic_finite_elements/simple_elastic
 )
 
 if(ADOL-C_LIBRARY)

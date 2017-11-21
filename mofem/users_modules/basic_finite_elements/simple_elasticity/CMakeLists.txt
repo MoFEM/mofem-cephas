@@ -20,31 +20,29 @@ include_directories(
   ${UM_SOURCE_DIR}/basic_finite_elements/simple_elasticity/src
 )
 
+bfe_add_executable(simple_elasticity
+  ${UM_SOURCE_DIR}/basic_finite_elements/simple_elasticity/simple_elasticity.cpp
+)
+target_link_libraries(simple_elasticity
+  users_modules
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_third_party
+  mofem_cblas
+  ${MoFEM_PROJECT_LIBS}
+)
 
+cm_export_file("cubit01.h5m" export_files_simple_elasticity)
+cm_export_file("simple_elasticity.h5m" export_files_simple_elasticity)
 
- bfe_add_executable(simple_elasticity
-    ${UM_SOURCE_DIR}/basic_finite_elements/simple_elasticity/simple_elasticity.cpp
-  )
-  target_link_libraries(simple_elasticity
-    users_modules
-    mofem_finite_elements
-    mofem_interfaces
-    mofem_multi_indices
-    mofem_petsc
-    mofem_approx
-    mofem_third_party
-    mofem_cblas
-    ${MoFEM_PROJECT_LIBS}
-  )
-
-  cm_export_file("cubit01.h5m" export_files_simple_elasticity)
-  cm_export_file("simple_elasticity.h5m" export_files_simple_elasticity)
-
-  file(
-    COPY
-    ${CMAKE_CURRENT_SOURCE_DIR}/README
-    DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/
-  )
+file(
+  COPY
+  ${CMAKE_CURRENT_SOURCE_DIR}/README
+  DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/
+)
 
 add_test(simple_elasticity
   ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 2
