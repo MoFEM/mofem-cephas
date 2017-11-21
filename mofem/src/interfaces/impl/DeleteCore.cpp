@@ -582,7 +582,28 @@ MoFEMErrorCode Core::delete_ents_by_bit_ref(const BitRefLevel &bit,
     CHKERR moab.remove_entities(*mit, ents);
   }
 
-  CHKERR moab.delete_entities(ents);
+  rval = moab.delete_entities(ents);
+  if(rval != MB_SUCCESS) {
+    if(verb >= VERY_VERBOSE) {
+      for (Range::iterator eit = ents.begin(); eit != ents.end(); ++eit) {
+        try {
+          RefEntity ref_ent(basicEntityDataPtr, *eit);
+          cerr << "Error: " << RefEntity(basicEntityDataPtr, *eit) << " "
+               << ref_ent.getBitRefLevel() << endl;
+        } catch (std::exception const &ex) {
+        }
+      };
+    }
+    EntityHandle out_meshset;
+    CHKERR moab.create_meshset(MESHSET_SET, out_meshset);
+    CHKERR moab.add_entities(out_meshset,ents);
+    CHKERR moab.write_file("error.vtk", "VTK", "", &out_meshset, 1);
+    THROW_MESSAGE("Can not delete entities from MoAB database (see error.vtk)");
+  }
+
+  if(verb >= VERBOSE) {
+    PetscPrintf(get_comm(),"Nb. of deleted entities %d\n",ents.size());
+  }
 
   MoFEMFunctionReturn(0);
 }

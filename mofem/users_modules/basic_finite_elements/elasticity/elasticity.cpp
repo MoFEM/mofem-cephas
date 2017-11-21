@@ -79,7 +79,7 @@ struct BlockOptionData {
 int main(int argc, char *argv[]) {
 
   // Initialize PETSCc
-  PetscInitialize(&argc,&argv,(char *)0,help);
+  MoFEM::Core::Initialize(&argc,&argv,(char *)0,help);
 
   try {
 
@@ -809,7 +809,7 @@ int main(int argc, char *argv[]) {
   }
   CATCH_ERRORS;
 
-  PetscFinalize();
+  MoFEM::Core::Finalize();
 
   return 0;
 }
