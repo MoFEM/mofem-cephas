@@ -3,7 +3,7 @@
  * \example simple_elasticity.cpp
 
  The example shows how to solve the linear elastic problem.
- 
+
 */
 
 /* MoFEM is free software: you can redistribute it and/or modify it under
@@ -22,10 +22,6 @@
 #include <BasicFiniteElements.hpp>
 #include <boost/program_options.hpp>
 
-#include "../poisson/src/AuxPoissonFunctions.hpp"
-#include "../poisson/src/PoissonOperators.hpp"
-#include <SimpleElasticityOperator.hpp>
-
 using namespace boost::numeric;
 using namespace MoFEM;
 using namespace std;
@@ -34,25 +30,42 @@ namespace po = boost::program_options;
 static char help[] = "-my_block_config set block data\n"
                      "\n";
 
-
 struct OpK : public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
+  // B_i matrix
   MatrixDouble rowB;
-  MatrixDouble colB;
-  MatrixDouble CB;
-  MatrixDouble K, transK;
 
+  // B_j matrix
+  MatrixDouble colB;
+
+  // Matrix used to evaluate matrix product D B_j
+  MatrixDouble CB;
+
+  // Finite element stiffness sub-matrix K_ij
+  MatrixDouble K;
+
+  // Elastic stiffness matrix
   MatrixDouble D;
+
+  // Young's modulus
   double yOung;
+  // Poisson's ratio
   double pOisson;
-  double coefficient;
 
   OpK(bool symm = true)
       : VolumeElementForcesAndSourcesCore::UserDataOperator("U", "U", OPROWCOL,
                                                             symm) {
 
-    pOisson     = 0.1;
-    yOung       = 10;
+    // Evaluation of the elastic stiffness matrix, D, in the Voigt notation is
+    // done in the constructor
+
+    // hardcoded choice of elastic parameters
+    pOisson = 0.1;
+    yOung   = 10;
+
+    // coefficient used in intermediate calculation
+    double coefficient = 0.;
+
     coefficient = yOung / ((1 + pOisson) * (1 - 2 * pOisson));
     D.resize(6, 6, false);
     D.clear();
@@ -75,16 +88,38 @@ struct OpK : public VolumeElementForcesAndSourcesCore::UserDataOperator {
     D *= coefficient;
   }
 
+  /**
+  Evaluates B matrix of
+  @param diffN array of gradients of shape functions
+  @param B returning B matrix
+  */
   MoFEMErrorCode makeB(const MatrixAdaptor &diffN, MatrixDouble &B) {
 
+    // initiation of error handler
     MoFEMFunctionBegin;
+
+    // number of gradients of shape functions is passed to nb_dofs variable
+    // total number of degrees of freedom is nb_dofs*3
     unsigned int nb_dofs = diffN.size1();
+
+    // inidialise B matrix
+    // 6 rows equal to the number of strains in Voigt notation
+    // 3 * nb_dofs number of columns equal to the number of degrees of freedom
+    // of the element
     B.resize(6, 3 * nb_dofs, false);
+
+    // B matrix is cleared
     B.clear();
-    for (unsigned int dd = 0; dd < nb_dofs; dd++) {
+
+    // Loop over degrees of freedom treated as groups of three
+    for (unsigned int dd = 0; dd < nb_dofs; ++dd) {
+
+      // array diff containing the gradients of shape functions
+      // gradient in x direction for 0, in y direction for 1 and in x for 2
       const double diff[] = {diffN(dd, 0), diffN(dd, 1), diffN(dd, 2)};
       const int dd3       = 3 * dd;
-      for (int rr = 0; rr < 3; rr++) {
+      for (int rr = 0; rr < 3; ++rr) {
+        // gamma_xx for rr = 0, gamma_yy for rr = 1 and gamma_zz for rr = 2
         B(rr, dd3 + rr) = diff[rr];
       }
       // gamma_xy
@@ -98,24 +133,25 @@ struct OpK : public VolumeElementForcesAndSourcesCore::UserDataOperator {
       B(5, dd3 + 2) = diff[0];
     }
 
+    // End of error handling
     MoFEMFunctionReturn(0);
   }
 
   /**
-     * \brief Do calculations for give operator
-     * @param  row_side row side number (local number) of entity on element
-     * @param  col_side column side number (local number) of entity on element
-     * @param  row_type type of row entity MBVERTEX, MBEDGE, MBTRI or MBTET
-     * @param  col_type type of column entity MBVERTEX, MBEDGE, MBTRI or MBTET
-     * @param  row_data data for row
-     * @param  col_data data for column
-     * @return          error code
-     */
-    MoFEMErrorCode doWork(int row_side, int col_side, EntityType row_type,
+   * \brief Do calculations for give operator
+   * @param  row_side row side number (local number) of entity on element
+   * @param  col_side column side number (local number) of entity on element
+   * @param  row_type type of row entity MBVERTEX, MBEDGE, MBTRI or MBTET
+   * @param  col_type type of column entity MBVERTEX, MBEDGE, MBTRI or MBTET
+   * @param  row_data data for row
+   * @param  col_data data for column
+   * @return          error code
+   */
+  MoFEMErrorCode doWork(int row_side, int col_side, EntityType row_type,
                         EntityType col_type,
                         DataForcesAndSourcesCore::EntData &row_data,
                         DataForcesAndSourcesCore::EntData &col_data) {
-    
+
     MoFEMFunctionBegin;
     // get number of dofs on row
     nbRows = row_data.getIndices().size();
@@ -130,39 +166,38 @@ struct OpK : public VolumeElementForcesAndSourcesCore::UserDataOperator {
     // get number of integration points
     nbIntegrationPts = getGaussPts().size2();
     // check if entity block is on matrix diagonal
-    if (row_side == col_side && row_type == col_type) { 
-      isDiag = true;                                    
+    if (row_side == col_side && row_type == col_type) {
+      isDiag = true;
     } else {
       isDiag = false;
     }
     // integrate local matrix for entity block
     CHKERR iNtegrate(row_data, col_data);
 
-    // asseble local matrix
+    // assemble local matrix
     CHKERR aSsemble(row_data, col_data);
 
     MoFEMFunctionReturn(0);
   }
 
 protected:
-  ///< error code
-
   int nbRows;           ///< number of dofs on rows
   int nbCols;           ///< number if dof on column
   int nbIntegrationPts; ///< number of integration points
   bool isDiag;          ///< true if this block is on diagonal
 
   /**
-     * \brief Integrate grad-grad operator
-     * @param  row_data row data (consist base functions on row entity)
-     * @param  col_data column data (consist base functions on column entity)
-     * @return          error code
-     */
+   * \brief Integrate B^T D B operator
+   * @param  row_data row data (consist base functions on row entity)
+   * @param  col_data column data (consist base functions on column entity)
+   * @return error code
+   */
   virtual MoFEMErrorCode
   iNtegrate(DataForcesAndSourcesCore::EntData &row_data,
             DataForcesAndSourcesCore::EntData &col_data) {
-  MoFEMFunctionBegin;
+    MoFEMFunctionBegin;
 
+    // check if one of i-th or j-th entity sets are not populated
     int nb_dofs_row = row_data.getFieldData().size();
     if (nb_dofs_row == 0)
       MoFEMFunctionReturnHot(0);
@@ -170,34 +205,47 @@ protected:
     if (nb_dofs_col == 0)
       MoFEMFunctionReturnHot(0);
 
+    // K_ij matrix will have 3 times the number of degrees of freedom of the
+    // i-th entity set (nb_dofs_row)
+    // and 3 times the number of degrees of freedom of the j-th entity set
+    // (nb_dofs_col)
     K.resize(nb_dofs_row, nb_dofs_col, false);
     K.clear();
+
+    // matrix CB will have 6 rows since D matrix has 6 rows
+    // number of columns nb_dofs_col  that is equal to the number of columns of
+    // B_j matrix
     CB.resize(6, nb_dofs_col, false);
 
-    for (int gg = 0; gg != nbIntegrationPts; gg++) {
+    for (int gg = 0; gg != nbIntegrationPts; ++gg) {
       // get element volume
       // get integration weight
       double val = getVolume() * getGaussPts()(3, gg);
-      
+
       const MatrixAdaptor &diffN_row = row_data.getDiffN(gg, nb_dofs_row / 3);
       const MatrixAdaptor &diffN_col = col_data.getDiffN(gg, nb_dofs_col / 3);
-      
+
+      // evaluate B_i
       CHKERR makeB(diffN_row, rowB);
 
+      // evaluate B_j
       CHKERR makeB(diffN_col, colB);
 
+      // compute matrix product D B_i
       noalias(CB) = prod(D, colB);
+
+      // compute product (B_j)^T D B_i
       noalias(K) += val * prod(trans(rowB), CB);
     }
     MoFEMFunctionReturn(0);
   }
 
   /**
-     * \brief Assemble local entity block matrix
-     * @param  row_data row data (consist base functions on row entity)
-     * @param  col_data column data (consist base functions on column entity)
-     * @return          error code
-     */
+   * \brief Assemble local entity block matrix
+   * @param  row_data row data (consist base functions on row entity)
+   * @param  col_data column data (consist base functions on column entity)
+   * @return          error code
+   */
   virtual MoFEMErrorCode aSsemble(DataForcesAndSourcesCore::EntData &row_data,
                                   DataForcesAndSourcesCore::EntData &col_data) {
     MoFEMFunctionBegin;
@@ -237,9 +285,6 @@ struct ApplyDirichletBc : public MoFEM::FEMethod {
 
     MoFEMFunctionBegin;
     std::set<int> set_fix_dofs;
-    cerr << fixFaces << endl;
-    cerr << fixNodes << endl;
-    cerr << fixSecondNode << endl;
 
     for (_IT_NUMEREDDOF_ROW_FOR_LOOP_(problemPtr, dit)) {
       if (dit->get()->getDofCoeffIdx() == 2) {
@@ -250,7 +295,6 @@ struct ApplyDirichletBc : public MoFEM::FEMethod {
 
       if (fixSecondNode.find(dit->get()->getEnt()) != fixSecondNode.end()) {
         if (dit->get()->getDofCoeffIdx() == 1) {
-          printf("The extra node \n");
           set_fix_dofs.insert(dit->get()->getPetscGlobalDofIdx());
         }
       }
@@ -273,7 +317,7 @@ struct ApplyDirichletBc : public MoFEM::FEMethod {
     CHKERR VecAssemblyEnd(ksp_f);
 
     Vec x;
-    
+
     CHKERR VecDuplicate(ksp_f, &x);
 
     CHKERR VecZeroEntries(x);
@@ -283,7 +327,7 @@ struct ApplyDirichletBc : public MoFEM::FEMethod {
 
     CHKERR VecDestroy(&x);
 
-   MoFEMFunctionReturn(0);
+    MoFEMFunctionReturn(0);
   }
 };
 
@@ -296,8 +340,8 @@ struct OpPressure : MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator {
 
         MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator("U", OPROW),
         pressureVal(pressure_val) {}
- 
 
+  // vector used to store force vector for each degree of freedom
   VectorDouble nF;
 
   FTensor::Index<'i', 3> i;
@@ -305,35 +349,70 @@ struct OpPressure : MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator {
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data) {
 
-  MoFEMFunctionBegin;
-
+    MoFEMFunctionBegin;
+    // check that the faces have associated degrees of freedom
     const int nb_dofs = data.getIndices().size();
     if (nb_dofs == 0)
       MoFEMFunctionReturnHot(0);
 
+    // size of force vector associated to the entity
+    // set equal to the number of degrees of freedom of associated with the
+    // entity
     nF.resize(nb_dofs, false);
     nF.clear();
 
+    // get number of gauss points
     const int nb_gauss_pts = data.getN().size1();
+
+    // create a 3d vector to be used as the normal to the face with length equal
+    // to the face area
     FTensor::Tensor1<double *, 3> t_normal = getTensor1Normal();
+
+    // vector of base functions
     FTensor::Tensor0<double *> t_base = data.getFTensor0N();
 
-    for (int gg = 0; gg != nb_gauss_pts; gg++) {
-      double w = 0.5 * getGaussPts()(2, gg); // ASK
+    // loop over all gauss points of the face
+    for (int gg = 0; gg != nb_gauss_pts; ++gg) {
+      // weight of gg gauss point
+      double w = 0.5 * getGaussPts()(2, gg);
+
+      // create a vector t_nf whose pointer points an array of 3 pointers
+      // pointing to nF  memory location of components
       FTensor::Tensor1<double *, 3> t_nf(&nF[0], &nF[1], &nF[2], 3);
-      for (int bb = 0; bb != nb_dofs / 3; bb++) {
+      for (int bb = 0; bb != nb_dofs / 3; ++bb) {
+        // scale the three components of t_normal and pass them to the t_nf
+        // (hence to nF)
         t_nf(i) += (w * pressureVal * t_base) * t_normal(i);
+        // move the pointer to next element of t_nf
         ++t_nf;
+        // move to next base function
         ++t_base;
       }
     }
 
+    // add computed values of pressure in the global right hand side vector
     CHKERR VecSetValues(getFEMethod()->ksp_f, nb_dofs, &data.getIndices()[0],
                         &nF[0], ADD_VALUES);
 
     MoFEMFunctionReturn(0);
   }
 };
+
+MoFEMErrorCode testError(Vec ghost_vec) {
+
+  MoFEMFunctionBeginHot;
+  // double *e;
+  // ierr = VecGetArray(ghost_vec,&e); CHKERRG(ierr);
+  // // Check if error is zero, otherwise throw error
+  // const double eps = 1e-8;
+  // if( (sqrt(e[0])>eps) || (!boost::math::isnormal(e[0]) )
+  // ) {
+  //   SETERRQ(PETSC_COMM_SELF,MOFEM_ATOM_TEST_INVALID,"Test failed, error too
+  //   big");
+  // }
+  // ierr = VecRestoreArray(ghost_vec,&e); CHKERRG(ierr);
+  MoFEMFunctionReturnHot(0);
+}
 
 int main(int argc, char *argv[]) {
 
@@ -366,10 +445,7 @@ int main(int argc, char *argv[]) {
                             &flg_test, PETSC_NULL);
 
     ierr = PetscOptionsEnd();
-CHKERRQ(ierr);
-
-    Vec global_error;
-    CHKERR PoissonExample::AuxFunctions(m_field).createGhostVec(&global_error);
+    CHKERRQ(ierr);
 
     boost::shared_ptr<ForcesAndSourcesCore>
         domain_lhs_fe; ///< Volume element for the matrix
@@ -414,11 +490,11 @@ CHKERRQ(ierr);
 
         CHKERR m_field.get_moab().get_entities_by_dimension(meshset, 0,
                                                             fix_nodes, true);
-        
+
       } else if (id == 3) { // brick pressure faces
         CHKERR m_field.get_moab().get_entities_by_dimension(
             meshset, 2, pressure_faces, true);
-        
+
       } else if (id == 4) { // restrained second node in y direction
         CHKERR m_field.get_moab().get_entities_by_dimension(
             meshset, 0, fix_second_node, true);
@@ -437,11 +513,8 @@ CHKERRQ(ierr);
 
     // Add pressure element
     CHKERR m_field.add_finite_element("PRESSURE");
-
     CHKERR m_field.modify_finite_element_add_field_row("PRESSURE", "U");
-
     CHKERR m_field.modify_finite_element_add_field_col("PRESSURE", "U");
-
     CHKERR m_field.modify_finite_element_add_field_data("PRESSURE", "U");
 
     CHKERR simple_interface->defineProblem();
@@ -483,26 +556,39 @@ CHKERRQ(ierr);
     boost::shared_ptr<FEMethod> fix_dofs_fe(
         new ApplyDirichletBc(fix_faces, fix_nodes, fix_second_node));
 
-    boost::shared_ptr<FEMethod> nullFE;
+    boost::shared_ptr<FEMethod> null_fe;
 
     // Set operators for KSP solver
     CHKERR DMMoFEMKSPSetComputeOperators(
-        dm, simple_interface->getDomainFEName(), elastic_fe, nullFE, nullFE);
+        dm, simple_interface->getDomainFEName(), elastic_fe, null_fe, null_fe);
 
-    CHKERR DMMoFEMKSPSetComputeRHS(dm, "PRESSURE", pressure_fe, nullFE, nullFE);
+    CHKERR DMMoFEMKSPSetComputeRHS(dm, "PRESSURE", pressure_fe, null_fe,
+                                   null_fe);
 
+    // initialise matrix A used as the global stiffness matrix
     Mat A;
-    Vec x, f; 
 
+    // initialise left hand side vector x and right hand side vector f
+    Vec x, f;
+
+    // allocate memory handled by MoFEM discrete manager for matrix A
     CHKERR DMCreateMatrix(dm, &A);
 
+    // allocate memory handled by MoFEM discrete manager for vector x
     CHKERR DMCreateGlobalVector(dm, &x);
 
+    // allocate memory handled by MoFEM discrete manager for vector f of the
+    // same size as x
     CHKERR VecDuplicate(x, &f);
 
-    fix_dofs_fe->ksp_B = A;
-    fix_dofs_fe->ksp_f = f;
+    // precondition matrix A according to fix_dofs_fe  and elastic_fe finite
+    // elements
     elastic_fe->ksp_B  = A;
+    fix_dofs_fe->ksp_B = A;
+
+    // precondition the right hand side vector f according to fix_dofs_fe  and
+    // elastic_fe finite elements
+    fix_dofs_fe->ksp_f = f;
     pressure_fe->ksp_f = f;
 
     CHKERR DMoFEMLoopFiniteElements(dm, simple_interface->getDomainFEName(),
@@ -514,25 +600,35 @@ CHKERRQ(ierr);
     // ApplyDirichletBc struct
     CHKERR DMoFEMPostProcessFiniteElements(dm, fix_dofs_fe.get());
 
+    // make available a KSP solver
     KSP solver;
 
+    // make the solver available for parallel computiong by determining its MPI
+    // communicator
     CHKERR KSPCreate(PETSC_COMM_WORLD, &solver);
 
+    // making available running all options available for KSP solver in running
+    // command
     CHKERR KSPSetFromOptions(solver);
 
+    // set A matrix with preconditioner
     CHKERR KSPSetOperators(solver, A, A);
 
+    // set up the solver data strucure for the iterative solver
     CHKERR KSPSetUp(solver);
 
+    // solve the system of linear equations
     CHKERR KSPSolve(solver, f, x);
 
+    // make vector x available for parallel computations for visualization
+    // context
     VecView(x, PETSC_VIEWER_STDOUT_WORLD);
 
     // save solution in vector x on mesh
     CHKERR DMoFEMMeshToGlobalVector(dm, x, INSERT_VALUES, SCATTER_REVERSE);
 
     // Set up post-procesor. It is some generic implementation of finite
-    // element.
+    // element
     PostProcVolumeOnRefinedMesh post_proc(m_field);
     // Add operators to the elements, starting with some generic
     CHKERR post_proc.generateReferenceElementMesh();
@@ -544,14 +640,29 @@ CHKERRQ(ierr);
     CHKERR DMoFEMLoopFiniteElements(
         dm, simple_interface->getDomainFEName().c_str(), &post_proc);
 
+    // write output
     CHKERR post_proc.writeFile("out.h5m");
 
+    {
+      if (flg_test == PETSC_TRUE) {
+
+        const PetscReal x_vec_norm_const = 4.975588;
+
+        // Check norm_1  value
+        PetscReal norm_check;
+        CHKERR VecNorm(x, NORM_1, &norm_check);
+        if (fabs(norm_check - x_vec_norm_const) < 1.e-8) {
+          SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID, "test failed");
+        }
+      }
+    }
+
+    // free memory handled by mofem discrete manager for A, x and f
     CHKERR MatDestroy(&A);
-
     CHKERR VecDestroy(&x);
-
     CHKERR VecDestroy(&f);
 
+    // free memory allocated for mofem discrete manager
     CHKERR DMDestroy(&dm);
 
     // This is a good reference for the future
@@ -560,7 +671,7 @@ CHKERRQ(ierr);
   }
 
   // finish work cleaning memory, getting statistics, etc
-   MoFEM::Core::Finalize();//PetscFinalize();
+  MoFEM::Core::Finalize();
 
   return 0;
 }

@@ -38,7 +38,7 @@ include_directories(
   )
 
   cm_export_file("cubit01.h5m" export_files_simple_elasticity)
-  cm_export_file("help.h5m" export_files_simple_elasticity)
+  cm_export_file("simple_elasticity.h5m" export_files_simple_elasticity)
 
   file(
     COPY
@@ -46,4 +46,10 @@ include_directories(
     DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/
   )
 
+add_test(simple_elasticity
+  ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 2
+  ${CMAKE_CURRENT_BINARY_DIR}/simple_elasticity
+  -file_name simple_elasticity.h5m -order 3
+  -test 1
+)
 

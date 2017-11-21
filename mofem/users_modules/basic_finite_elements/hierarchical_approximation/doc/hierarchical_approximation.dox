@@ -37,7 +37,7 @@ the \f$n\f$ number of degrees of freedom \f$u_i\f$ of a particular choice.
 
 
 Node oriented shape functions are always associated with the degrees of freedom corresponding to a node.
-Node oriented shape functions are presented for a 1D element in \ref Figure_1 a, b and c 
+Node oriented shape functions are presented for a 1D element in \ref Figure_1 "Figure 1" a, b and c 
 for first, second and third order, respectively.
 For simplicity we will be restricted to 1D element for the moment.
 Each degree of freedom is associated with a node and has a physical meaning.
@@ -49,8 +49,8 @@ new meshes with extra nodes must be generated.
 \image html Figure1.png "Figure 1: Node oriented shape functions of a 1D element: (a) linear, (b) second order and (c) third order. Each shape functions is equal to unity at the location of its associated node." width=700px
 
 These complexities can be resolved by using hierarchical shape functions.
-Examples of hierarchical shape functions in a 1D element are presented in \ref Figure_2 a, b and c for first, second and third order, respectively.
-By inspection of \ref Figure_2 b and c it can be seen that no extra nodes are added for functions of order higher than the first one.
+Examples of hierarchical shape functions in a 1D element are presented in \ref Figure_2 "Figure 2" a, b and c for first, second and third order, respectively.
+By inspection of \ref Figure_2 "Figure 2" b and c it can be seen that no extra nodes are added for functions of order higher than the first one.
 This feature makes the p- and hp- adaptivity implementation much easier since no extra nodes are needed to be introduced into the mesh.
 
 \anchor Figure_2
@@ -120,7 +120,7 @@ In 1D the two entities that were presented were vertex and edge.
 The extra entities that emerge in the 2D and 3D domains are phases and volumes, respectively.
 
 Shape functions that can be found implemented in MoFEM now are associated with vertices, edges, triangular phases and tetrahedral volumes.
-The shape functions for edges that are part of triangular faces and the shape functions of triangular faces are presented in \ref Figure_4 and \ref Figure_5, respectively.
+The shape functions for edges that are part of triangular faces and the shape functions of triangular faces are presented in \ref Figure_4 "Figure 4" and \ref Figure_5 "Figure 5", respectively.
 The values of the shape functions along the 2D space of a face can be thought as the varying height or depth of the nonlinear surfaces from the planar triangular face.
 When the curved surface is below or above the planar face, the shape function takes negative or positive values, respectively.
 Vertex shape functions are equal to unity at their associated vertices and identically zero along the opposite edge and one the other two vertices.
@@ -160,7 +160,7 @@ Now the vector of the degrees of freedom \f${\mathbf {u}^e}\f$ of one element is
 
 where \f${\mathbf { f}^e}\f$ and \f${\mathbf { v}^e}\f$ are the sub-vectors containing the degrees of freedom associated with the face and volume shape functions, respectively.
 Therefore, the number of degrees of freedom for each sub-vector associated with an entity is equal to the number of shape functions associated with that particular entity. 
-For instance, when the shape functions presented in \ref Figure_4 and \ref Figure_5 are used, \f${\mathbf { e}^e}\f$ and \f${\mathbf { f}^e}\f$ contain nine and ten degrees of freedom, respectively.
+For instance, when the shape functions presented in \ref Figure_4 "Figure 4" and \ref Figure_5 "Figure 5" are used, \f${\mathbf { e}^e}\f$ and \f${\mathbf { f}^e}\f$ contain nine and ten degrees of freedom, respectively.
 
 
 Similarly, the vector of shape functions of an element can be decomposed into four sub vectors 

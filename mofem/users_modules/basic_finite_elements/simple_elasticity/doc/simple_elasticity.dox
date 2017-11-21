@@ -3,27 +3,35 @@
 
 \section simple_elasticity_introduction Introduction
 
-This tutorial presents in detail a number of basic Finite Element processes implemented in MoFEM through a user module implementation that solves a simple linear elastic problem.
-The aim of this presentation is to facilitate new developers to familiarise themselves with certain practices and formulations regarding finite element processes and mesh information manipulation.
-Readers are encouraged to read \ref general_data_structure, \ref hierarchical_approximation_1 and \ref hello_world_tut1 before starting the present tutorial.    
+This tutorial presents in detail a number of basic Finite Element processes implemented in MoFEM through a user module 
+implementation that solves a simple linear elastic problem.
+The aim of this presentation is to facilitate new developers to familiarise themselves with certain practices and formulations 
+regarding finite element processes and mesh information manipulation.
+Readers are encouraged to read \ref general_data_structure, \ref hierarchical_approximation_1 and \ref hello_world_tut1 before 
+starting the present tutorial.    
 Initially, generation of a mesh is presented and then the module developed for this tutorial is dissected.
 Finally, code run and post processing of the results are discussed.
 
 \section simple_elasticity_problem The problem
 
-The linear elastic problem modelled here is an orthogonal parallelepiped of dimensions \f$1.0\times1.0\times4.0 \,\,\rm{m}\f$, subjected to a uniformly distributed normal traction \f$\bar t\f$  on one face while its opposite face being simply supported.
-The geometry of the problem is schematically presented in \ref Figure_1.
+The linear elastic problem modelled here is an orthogonal parallelepiped of dimensions \f$1.0\times1.0\times4.0 \,\,\rm{m}\f$, 
+subjected to a uniformly distributed normal traction \f$\bar t\f$  on one face while its opposite face being simply supported.
+The geometry of the problem is schematically presented in \ref Figure_1_Elastic "Figure 1".
 Boundary conditions are applied on the two faces with both edges equal to \f$1\,\,\rm m\f$.
 Vertical displacements (along z direction) along the whole area of the bottom face are restricted.
-To prevent rigid body motion, one of the bottom corners displacements along the x and y direction are restricted by the supports numbered 3 and 2 presented in \ref Figure_1, respectively.
-Finally, displacements along y direction is restricted at a different corner of the bottom face by the support number 1 to prevent rigid body rotation.
+To prevent rigid body motion, one of the bottom corners displacements along the x and y direction are restricted by the supports 
+numbered 3 and 2 presented in \ref Figure_1_Elastic "Figure 1", respectively.
+Finally, displacements along y direction is restricted at a different corner of the bottom face by the support number 1 to prevent 
+rigid body rotation.
 
-\anchor Figure_1
+\anchor Figure_1_Elastic
 \image html Problem.png "Figure 1: Geometry of the problem under consideration: orthogonal parallelepiped with dimensions of 1 m along x and y axis and 4 m along z axis that is simply supported on the bottom face and uniformly distributed normal tractions along the upper face." width = 300px
 
 The boundary conditions where chosen to allow the body to deform freely on both horizontal directions. 
-In this way, verification will be possible by checking the match between Poisson ratio recovered by the analysis results with the one used as input as a material parameter. 
-Since only normal tractions are applied on the top face, no bending will occur along the faces parallel to the z axis and therefore no extra support is needed along the bottom edge connecting support 1 and 2.
+In this way, verification will be possible by checking the match between Poisson ratio recovered by the analysis results with the 
+one used as input as a material parameter. 
+Since only normal tractions are applied on the top face, no bending will occur along the faces parallel to the z axis and therefore 
+no extra support is needed along the bottom edge connecting support 1 and 2.
 
 Particular features associated to mesh input to solve the problem described here will be presented next.
 
@@ -35,38 +43,44 @@ There is no intention to provide detail guidelines for using the mesh generator.
 Mesh generators that can be used to run analyses in MoFEM are Salome, GMsh and Cubit.
 Mesh features presented here are identical to those found in all three aforementioned software packages.
 
-The mesh presented in \ref Figure_2 corresponds to the geometry of the problem illustrated in \ref Figure_1.
+The mesh presented in \ref Figure_2_Elastic "Figure 2" corresponds to the geometry of the problem illustrated in 
+\ref Figure_1_Elastic "Figure 1".
 However, it should be noted that the mesh generator as well as MoFEM do not require a particular choice of units.
 Instead, the user is responsible to be consisted with her/his own choice of units for any input parameter.
 
 
-\anchor Figure_2
+\anchor Figure_2_Elastic
 \image html CubitMesh1_1.png "Figure 2: Mesh geometry of an orthogonal parallelepiped of dimensions of 1x1x4 along x, y and z axis, respectively." width = 600px
 
 
-To prescribe the boundary conditions for the generated mesh presented in \ref Figure_1, a number of blocks must be added to the mesh.
-To prescribe the restriction on the vertical displacements on the bottom face and the normal traction on the upper face, surface blocks 1 and 3 are added on the corresponding faces as presented in \ref Figure_3 and \ref Figure_4, respectively.
-Moreover, to assign the displacement restrictions represented by rollers 1, 2 and 3 in \ref Figure_1,  vertex blocks have to be added as presented in \ref Figure_5 and \ref Figure_6.
+To prescribe the boundary conditions for the generated mesh presented in \ref Figure_1_Elastic "Figure 1", a number of blocks must be 
+added to the mesh.
+To prescribe the restriction on the vertical displacements on the bottom face and the normal traction on the upper face, surface 
+blocks 1 and 3 are added on the corresponding faces as presented in \ref Figure_3_Elastic "Figure 3" and \ref Figure_4_Elastic "Figure 4",
+ respectively.
+Moreover, to assign the displacement restrictions represented by rollers 1, 2 and 3 in \ref Figure_1_Elastic "Figure 1",
+ vertex blocks have to be added as presented in \ref Figure_5_Elastic "Figure 5" and \ref Figure_6_Elastic "Figure 6".
 
 
 
-\anchor Figure_3
+\anchor Figure_3_Elastic
 \image html Block1_1.png "Figure 3: Face block added to the bottom face of the orthogonal parallelepiped that will be used to restrain vertical displacements along that face." width = 600px
 
-\anchor Figure_4
+\anchor Figure_4_Elastic
 \image html Block3_1.png "Figure 4: Face block added to the top face of the orthogonal parallelepiped that will be used to apply uniformly distributed normal tractions along that face." width = 600px
 
-\anchor Figure_5
-\image html Block2_1.png "Figure 5: Vertex block added to one of the corners of the bottom face of the orthogonal parallelepiped that will be used to prescribe the boundary conditions represented by the rollers 2 and 3 presented in \ref Figure_1." width = 600px
+\anchor Figure_5_Elastic
+\image html Block2_1.png "Figure 5: Vertex block added to one of the corners of the bottom face of the orthogonal parallelepiped that will be used to prescribe the boundary conditions represented by the rollers 2 and 3 presented in Figure 1." width = 600px
 
-\anchor Figure_6
-\image html Block4_1.png "Figure 6: Vertex block added to one of the corners of the bottom face of the orthogonal parallelepiped that will be used to prescribe the boundary conditions represented by the roller 1 presented in \ref Figure_1." width = 600px
+\anchor Figure_6_Elastic
+\image html Block4_1.png "Figure 6: Vertex block added to one of the corners of the bottom face of the orthogonal parallelepiped that will be used to prescribe the boundary conditions represented by the roller 1 presented in Figure 1." width = 600px
 
 No specific boundary conditions are applied through the mesh generator.
 To achieve prescription of boundary conditions, certain  mesh regions have to be numbered and characterised as ''Blocks''.
 As explained earlier, block feature exists in Salome, GMsh and Cubit. 
 Therefore, this feature is not restricted to the particular choice of mesh generator.
-MoFEM user module executable will read the mesh input file and apply boundary conditions (see Sections \ref simple_elasticity_mesh_block and \ref ).
+MoFEM user module executable will read the mesh input file and apply boundary conditions (see Sections \ref simple_elasticity_mesh_block
+ and \ref ).
 
 \section simple_elasticity_code_dissection Code dissection
 
@@ -94,7 +108,8 @@ Initially, PETSc has to be initialised through the code line below
 \endcode
 
 and now PETSc objects can now be declared.
-As discussed in \ref general_data_structure article, PETSc objects are used to solve the large computational problem of the system of linear equations.  
+As discussed in \ref general_data_structure article, PETSc objects are used to solve the large computational problem of the system of
+ linear equations.  
 
 To initialise the mesh database and an interface to interact with it, the following piece of code is included
 
@@ -111,13 +126,15 @@ MoFEM data base is initialised along with an interface object that will be used 
     MoFEM::Interface &m_field = core; //create interface to database
 \endcode
 
-This interaction is schematically presented as the interaction of level 1 and 2 in \ref Figure_7 on the right hand side.
+This interaction is schematically presented as the interaction of level 1 and 2 in \ref Figure_7_Elastic "Figure 7" on the right hand
+ side.
 
 
-\anchor Figure_7
+\anchor Figure_7_Elastic
 \image html Interface.png "Figure 7: Data base interaction using interface objects Discrete Manager, m\_field and Simple interface." width = 600px
 
-Moreover, the Discrete Manager that is the PETSc implementation within MoFEM has to be register to PETSc (schematically presented as interaction of levels 1 and 2 on the left hand side in \refFigure_7)
+Moreover, the Discrete Manager that is the PETSc implementation within MoFEM has to be register to PETSc (schematically presented as
+ interaction of levels 1 and 2 on the left hand side in \ref Figure_7_Elastic "Figure 7")
 
 \code
     CHKERR DMRegister_MoFEM("DMMOFEM");
@@ -171,9 +188,11 @@ A pointer to an object of type simple\_interface is declared.
   CHKERR m_field.query_interface(simple_interface);
 \endcode
 
-The second line of code creates a link between simple\_interface  and m\_field interface (schematically presented in \ref Figure_7 as the interaction of levels 2 and 3 by the left hand side arrow). 
+The second line of code creates a link between simple\_interface  and m\_field interface (schematically presented in
+ \ref Figure_7_Elastic "Figure 7" as the interaction of levels 2 and 3 by the left hand side arrow). 
  
-Struct simple\_interface has a number of functions implemented that allows the user to build and manipulate PETSc , MoAB core and MoFEM core data bases.
+Struct simple\_interface has a number of functions implemented that allows the user to build and manipulate PETSc,
+ MoAB core and MoFEM core data bases.
 For instance, using the code below the mesh file is loaded and information of the mesh is passed to MoAB data base.
 
 \code
@@ -184,7 +203,8 @@ For instance, using the code below the mesh file is loaded and information of th
 
 \subsection{Fields}
 
-Fields of user's interest can be introduced to the MoAB database through simple\_interface object as presented below for the shape functions field  in our 3D domain. 
+Fields of user's interest can be introduced to the MoAB database through simple\_interface object as presented below for the shape
+ functions field  in our 3D domain. 
 
 \code
   CHKERR simple_interface->addDomainField("U", H1, AINSWORTH_LEGENDRE_BASE, 3);
@@ -193,13 +213,15 @@ Fields of user's interest can be introduced to the MoAB database through simple\
 \endcode
 
 By using addDomainField function the name of the field chosen by the user can be introduced (in this case the name chosen is U).
-The space chosen to operate is H1 and the type of shape functions is chosen through the key-word AINSWORTH\_LEGENDRE\_BASE are Legendre polynomials proposed by Ainsworth and Coyle.
+The space chosen to operate is H1 and the type of shape functions is chosen through the key-word AINSWORTH\_LEGENDRE\_BASE are
+ Legendre polynomials proposed by Ainsworth and Coyle.
 Finally, the hard-coded number 3 determines the dimensions of the degrees of freedom related to each shape functions.
 Here, this number is 3 since it is a displacement field in a 3D domain.
 Should the unknown field be pressure, then the hard-coded number will be 1 instead of 3 since pressure always has one dimension.
 
 Furthermore, the order of the approximation field is introduced through function setFieldOrder.
-As explained earlier, the order of the approximated field can be chosen and the appropriate Hierarchical shape functions will be taken into account accordingly.
+As explained earlier, the order of the approximated field can be chosen and the appropriate Hierarchical shape functions will be
+ taken into account accordingly.
 
 Other types of fields can also be introduced to MoAB database. 
 For instance, an error field can be introduced to evaluate the error variance of the solution throughout the domain.
@@ -214,7 +236,8 @@ First, four Range objects (that are part of MoAB library) are declared for each 
 Range fix_faces, pressure_faces, fix_nodes, fix_second_node;
 \endcode
 
-By using the MoFEM core interface m\_field, we loop through all meshSets in our MoFEM m\_field through the macro \_IT\_CUBITMESHSETS\_BY\_BCDATA\_TYPE\_FOR\_LOOP\_(m\_field, BLOCKSET, bit) as
+By using the MoFEM core interface m\_field, we loop through all meshSets in our MoFEM m\_field through the macro
+ \_IT\_CUBITMESHSETS\_BY\_BCDATA\_TYPE\_FOR\_LOOP\_(m\_field, BLOCKSET, bit) as
 
 \code
     for (_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field, BLOCKSET, bit))
@@ -261,7 +284,8 @@ the identity of each meshSet is found as
 \endcode
 
 the id values correspond to the block numbering presented in Section \ref simple_elasticity_mesh_input.
-When the value of id is equal to 1, 2, 3 or 4 boundary conditions are prescribed following the schematic in \ref Figure_1.
+When the value of id is equal to 1, 2, 3 or 4 boundary conditions are prescribed following the schematic in
+ \ref Figure_1_Elastic "Figure 1".
 
 For id equal to 1, the meshSet is copied to object fix\_faces through the MoAB function
 
@@ -272,9 +296,12 @@ For id equal to 1, the meshSet is copied to object fix\_faces through the MoAB f
 were the hard coded number 2, refers to the type of entity under consideration which in this case is a face.
 Numbers 0, 1 and 3 correspond to vertices, edges and volumes, respectively.
 
-Since we are interested in prescribing all degrees of freedom lying along the faces, we need to copy all corresponding entities i.e. vertices and edges, to the fix_faces object.
-This can be achieved by using the MoAB function get\_adjacencies that provides information for the entities adjacent to the input meshSet (in this case fix\_faces).
-To implement this, another Range object with name adj\_ents is created where all the information of the adjacent entities are going to be copied as presented below.
+Since we are interested in prescribing all degrees of freedom lying along the faces, we need to copy all corresponding entities
+ i.e. vertices and edges, to the fix_faces object.
+This can be achieved by using the MoAB function get\_adjacencies that provides information for the entities adjacent to the input
+ meshSet (in this case fix\_faces).
+To implement this, another Range object with name adj\_ents is created where all the information of the adjacent entities are going
+ to be copied as presented below.
 
 \code
   Range adj_ents;
@@ -290,24 +317,29 @@ Thereafter, all information passed to the new Range object adj\_ents is copied t
 fix_faces.merge(adj_ents);
 \endcode
 
-For the vertex type meshSets, no adjacencies are needed since only the degrees of freedom associated to each block is going to be prescribed.
+For the vertex type meshSets, no adjacencies are needed since only the degrees of freedom associated to each block is going
+ to be prescribed.
 Therefore, invoking get\_entities\_by\_dimension function is sufficient.
 
 For the case of the block of the upper face (id = 3), only the degrees of freedom associated to the face are needed.
-Since the traction is uniform and normal to the upper surface, it can be implemented as pressure and therefore its implementation requires only degrees of freedom associated to the face as presented in section ``Application of boundary conditions''.
+Since the traction is uniform and normal to the upper surface, it can be implemented as pressure and therefore its implementation
+ requires only degrees of freedom associated to the face as presented in section ``Application of boundary conditions''.
 
-Finally, the rest of blocks are of vertex type and there is no need to search for adjacencies since only the degrees of freedom at those points are needed to be prescribed.
+Finally, the rest of blocks are of vertex type and there is no need to search for adjacencies since only the degrees of freedom at
+ those points are needed to be prescribed.
 
 
 \subsection{MoFEM Finite Element Method work flow}
 
 All problems tackled by user modules proceed with the same workflow for construction of the FEM solution. 
-The workflow implemented in MoFEM is schematically presented in \ref Figure_8 and consists of Definition, Build and Assemble processes.
+The workflow implemented in MoFEM is schematically presented in \ref Figure_8_Elastic "Figure 8" and consists of Definition,
+ Build and Assemble processes.
 
-\anchor Figure_8
+\anchor Figure_8_Elastic
 \image html WorkFlow.png "Figure 8: MoFEM work flow." width = 200px
 
-Definition process encompasses creation of stencils of finite elements, fields and problems that are going to be used for the problem solution.
+Definition process encompasses creation of stencils of finite elements, fields and problems that are going to be used for the
+ problem solution.
 
 Field stencils include name, dimension and order and are defined as
 
@@ -317,34 +349,36 @@ Field stencils include name, dimension and order and are defined as
    CHKERR simple_interface->setFieldOrder("U", order);
 \endcode
 
-For the elements, the stencil includes element's name, dimension, type of fields that are going to be approximated in this element and the location of the element that the fields operate (volume, boundary or skeleton).
+For the elements, the stencil includes element's name, dimension, type of fields that are going to be approximated in this element
+ and the location of the element that the fields operate (volume, boundary or skeleton).
 Each kind of element used needs a different kind of stencil to be defined.
 
 \code
     CHKERR simple_interface->defineFiniteElements();
 \endcode
 
-For reasons that will be apparent in Section \ref simple_elasticity_op_pressure, we will apply traction boundary conditions through a new element.
+For reasons that will be apparent in Section \ref simple_elasticity_op_pressure, we will apply traction boundary conditions through
+ a new element.
 Since this element is unknown to the simple interface structure we need to explicitly define the element to be included in m\_field
 
 \code
     // Add pressure element
     CHKERR m_field.add_finite_element("PRESSURE");
-    
     CHKERR m_field.modify_finite_element_add_field_row("PRESSURE", "U");
-    
-    CHKERR m_field.modify_finite_element_add_field_col("PRESSURE", "U");
-    
+    CHKERR m_field.modify_finite_element_add_field_col("PRESSURE", "U");   
     CHKERR m_field.modify_finite_element_add_field_data("PRESSURE", "U");
 \endcode
 
-Initially, the new finite element type with name is added to MoFEM core database through the function add\_finite_element(``PRESSURE''), where the string ``PRESSURE'' used as input is the name that we chose to call the new element.
+Initially, the new finite element type with name is added to MoFEM core database through the function add\_finite_element(``PRESSURE''),
+ where the string ``PRESSURE'' used as input is the name that we chose to call the new element.
 Then, the row and col field information of the ``PRESSURE'' element are set to be those of ``U'' type.
-Furthermore, the list of fields that are associated with ``PRESSURE'' element listed in the elements data is then set to be only the ``U'' type field.
+Furthermore, the list of fields that are associated with ``PRESSURE'' element listed in the elements data is then set to be only the ``U''
+ type field.
 In a more complicated case, more than one fields can be added to the data, row and col structures of a finite element.
 
 
-Similarly, definition of each problem stencil consists of problem's name and the stencils of the various elements previously presented and are defined using the code lines below
+Similarly, definition of each problem stencil consists of problem's name and the stencils of the various elements previously presented 
+and are defined using the code lines below
 
 \code
     CHKERR simple_interface->defineProblem();
@@ -370,7 +404,7 @@ and then the ``PRESSURE'' finite element is going to be added to DMMoFEM as
   CHKERR DMMoFEMAddElement(dm, "PRESSURE");
 \endcode
 
-This is schematically illustrated as the interaction of levels 2 and 3 on the left hand side of \ref Figure_7 .
+This is schematically illustrated as the interaction of levels 2 and 3 on the left hand side of \ref Figure_7_Elastic "Figure 7".
 Then all information introduced to DMMoFEM manager is partitioned
 
 \code
@@ -381,7 +415,7 @@ This has to be explicitly defined in order to be able to solve the problem in pa
 
 \subsection simple_elastic_build Build
 
-Then, fields and finite elements declared through simple\_interface are built (second stage presented in \ref Figure_8).
+Then, fields and finite elements declared through simple\_interface are built (second stage presented in \ref Figure_8_Elastic "Figure 8").
 
 \code
     CHKERR simple_interface->buildFields();
@@ -390,8 +424,10 @@ Then, fields and finite elements declared through simple\_interface are built (s
 \endcode
 
 First, the dimension and order of fields according to the specific input chosen is added to the field.
-In this case, the approximation field of Hierarchic shape functions of Hainsworth and Coyle Legendre polynomials type of order 3 and dimension 3 will be set to the field.
-Thereafter, finite elements are built i.e. entities of the finite elements are linked to the field components that were previously built and the order of approximation is set to each entity.
+In this case, the approximation field of Hierarchic shape functions of Hainsworth and Coyle Legendre polynomials type of order 3
+ and dimension 3 will be set to the field.
+Thereafter, finite elements are built i.e. entities of the finite elements are linked to the field components that were previously
+ built and the order of approximation is set to each entity.
 
 
 \code
@@ -408,30 +444,35 @@ entities associated with the user defined ``PRESSURE'' finite element have to be
     CHKERR m_field.build_finite_elements("PRESSURE", &pressure_faces);
 \endcode
 
-Then to build all information regarding the element connectivities, and fields associated to element entities into MoFEM core, the function below is invoked. 
+Then to build all information regarding the element connectivities, and fields associated to element entities into MoFEM core,
+ the function below is invoked. 
 
 \code
     CHKERR simple_interface->buildProblem();
 \endcode
 
-Moreover, to create stiffness matrices and apply boundary conditions we will need to create vectors of finite elements and attach User Defined Operators (UDOs).
+Moreover, to create stiffness matrices and apply boundary conditions we will need to create vectors of finite elements and attach
+ User Defined Operators (UDOs).
 
-For the stiffness matrix evaluation a new shared pointer elastic\_fe is instantiated to build elastic finite elements and a UDO is pushed to the elastic finite elements
+For the stiffness matrix evaluation a new shared pointer elastic\_fe is instantiated to build elastic finite elements and a UDO
+ is pushed to the elastic finite elements
 
 \code
     boost::shared_ptr<VolumeElementForcesAndSourcesCore> elastic_fe(new VolumeElementForcesAndSourcesCore(m_field));
     elastic_fe->getOpPtrVector().push_back(new OpK());
 \endcode
 
-schematically presented in \ref Figure_9.
+schematically presented in \ref Figure_9_Elastic "Figure 9".
 
-\anchor Figure_9
+\anchor Figure_9_Elastic
 \image html OperatorPush.png "Figure 9: Schematic representation inclusion process of User Defined Operators to finite element data structure." width = 600px
 
 
-It is important to state that each instance of the structs of elastic finite elements pointed by shared pointed elastic\_fe carries with it the operator OpK().
+It is important to state that each instance of the structs of elastic finite elements pointed by shared pointed elastic\_fe
+ carries with it the operator OpK().
 
-To apply the traction boundary conditions, shared pointer pressure\_fe is instantiated and then the operator OpPressure is attached to it to prescribe the traction boundary conditions.
+To apply the traction boundary conditions, shared pointer pressure\_fe is instantiated and then the operator OpPressure is attached
+ to it to prescribe the traction boundary conditions.
 
 \code
     // push operators to elastic_fe
@@ -439,13 +480,15 @@ To apply the traction boundary conditions, shared pointer pressure\_fe is instan
     pressure_fe->getOpPtrVector().push_back(new OpPressure());
 \endcode
 
-Finally, to prescribe the Dirichlet boundary conditions, the shared pointer fix\_dofs\_fe is instantiated as a ApplyDirichletBc that is inherited by FEMethod type (which lies within the structs that are in the finite elements family within MoFEM) as
+Finally, to prescribe the Dirichlet boundary conditions, the shared pointer fix\_dofs\_fe is instantiated as a ApplyDirichletBc
+ that is inherited by FEMethod type (which lies within the structs that are in the finite elements family within MoFEM) as
 
 \code
     boost::shared_ptr<FEMethod> fix_dofs_fe(new ApplyDirichletBc(fix_faces, fix_nodes, fix_second_node));
 \endcode
 
-The Ranges of fix\_faces, fix\_nodes and fix\_second\_node are given as input to the constructor of ApplyDirichletBc to provide the mesh information regarding the location of the degrees of freedom that will be prescribed.
+The Ranges of fix\_faces, fix\_nodes and fix\_second\_node are given as input to the constructor of ApplyDirichletBc to provide
+ the mesh information regarding the location of the degrees of freedom that will be prescribed.
 
 Implementation of OpK(), opPressure and fix_dofs_fe is presented in Section \ref simple_elastic_UDO.
 A more general implementation for application of boundary conditions will be presented in future tutorials.
@@ -469,30 +512,42 @@ Then, right hand side vector is evaluated and KSP operators are set to handle it
         dm, "PRESSURE", pressure_fe, nullFE, nullFE);
 \endcode
 
-Thereafter, stiffness matrix A, vector of degrees of freedom x and right hand side vector f are declared and associated to the Discrete Manager DM  
+Thereafter, stiffness matrix A, vector of degrees of freedom x and right hand side vector f are declared and associated to
+ the Discrete Manager DM  
 
 \code
+   //initialise matrix A used as the global stiffness matrix
     Mat A;
-    Vec x, f;
 
+    //initialise left hand side vector x and right hand side vector f
+    Vec x, f; 
+
+    //allocate memory handled by MoFEM discrete manager for matrix A
     CHKERR DMCreateMatrix(dm, &A);
 
+    //allocate memory handled by MoFEM discrete manager for vector x
     CHKERR DMCreateGlobalVector(dm, &x);
 
+    //allocate memory handled by MoFEM discrete manager for vector f of the same size as x
     CHKERR VecDuplicate(x, &f);
 \endcode
 
 Thereafter, members of finite elements structs are set to point to the aforementioned objects
 
 \code
+    //precondition matrix A according to fix_dofs_fe  and elastic_fe finite elements
+    elastic_fe->ksp_B  = A;
     fix_dofs_fe->ksp_B = A;
+
+     //precondition the right hand side vector f according to fix_dofs_fe  and elastic_fe finite elements
     fix_dofs_fe->ksp_f = f;
-    elastic_fe->ksp_B = A;
     pressure_fe->ksp_f = f;
 \endcode
 
 
-Now all finite elements are prepared to be looped (all operators have been pushed to the elements and their members point to the structural problem A, f and x objects) in order to Assembly the problem, i.e. the third part of the work flow presented in \ref Figure_8.
+Now all finite elements are prepared to be looped (all operators have been pushed to the elements and their members
+ point to the structural problem A, f and x objects) in order to Assembly the problem, i.e. the third part of the work flow
+  presented in \ref Figure_8_Elastic "Figure 8".
 Now, each element created is looped to compute and assemble the stiffness matrix and left hand and right hand vectors as 
 
 \code
@@ -514,30 +569,37 @@ At this point matrix and two vectors have been assembled and we can now solve ou
 Solver is declared first and then connected to the MoFEM core as
 
 \code
+     //make available a KSP solver
     KSP solver;
-
+    
+    //make the solver available for parallel computiong by determining its MPI communicator
     CHKERR KSPCreate(PETSC_COMM_WORLD, &solver);
 \endcode
 
  The solver object operators have to be prepared 
 
 \code
+    //making available running all options available for KSP solver in running command
     CHKERR KSPSetFromOptions(solver);
 
+    //set A matrix with preconditioner
     CHKERR KSPSetOperators(solver, A, A);
 
+    //set up the solver data strucure for the iterative solver
     CHKERR KSPSetUp(solver);
 \endcode
 
 and finally the problem is solved
 
 \code
+    //solve the system of linear equations
     CHKERR KSPSolve(solver, f, x);
 \endcode
 
  the results are written in left hand side vector x
 
 \code
+    //make vector x available for parallel computations for visualization context
     VecView(x, PETSC_VIEWER_STDOUT_WORLD);
 \endcode
 
@@ -550,11 +612,14 @@ and all values of degrees of freedom in x are mapped onto mesh entities
 
 \section simple_elastic_post_processing Post processing
 
-To post process numerical results, initially a post processor object of type PostProcVolumeOnRefinedMesh has to be created based on MoAB database
+To post process numerical results, initially a post processor object of type PostProcVolumeOnRefinedMesh has to be created
+ based on MoAB database
 
 \code
-// Set up post-procesor. It is some generic implementation of finite element.
+    // Set up post-procesor. It is some generic implementation of finite
+    // element
     PostProcVolumeOnRefinedMesh post_proc(m_field);
+    \endcode
 \endcode
 
 Thereafter, information of the problem solution is passed to the post processor as  
@@ -570,11 +635,14 @@ Thereafter, information of the problem solution is passed to the post processor 
     CHKERR DMoFEMLoopFiniteElements(dm, simple_interface->getDomainFEName().c_str(), &post_proc);
 \endcode
 
-where initially a reference mesh is created is created, then field values are added and finally all information related to finite elements such ass stain and stresses are added into the post processor.
+where initially a reference mesh is created is created, then field values are added and finally all information related 
+to finite elements such ass stain and stresses are added into the post processor.
 
-Finally, all information introduced to the post processor object is written to an output file (in this case named out.h5m) as presented below
+Finally, all information introduced to the post processor object is written to an output file (in this case named out.h5m) 
+as presented below
 
 \code
+    //write output
     CHKERR post_proc.writeFile("out.h5m");
 \endcode
 
@@ -584,13 +652,13 @@ Finally, all information introduced to the post processor object is written to a
 All dynamic memory objects A, x, f and DM that were created have to be destroyed as presented below
 
 \code
-  CHKERR MatDestroy(&A);
+    //free memory handled by mofem discrete manager for A, x and f
+    CHKERR MatDestroy(&A);
+    CHKERR VecDestroy(&x);
+    CHKERR VecDestroy(&f);
 
-  CHKERR VecDestroy(&x);
-
-  CHKERR VecDestroy(&f);
-
-  CHKERR DMDestroy(&dm);
+    //free memory allocated for mofem discrete manager
+    CHKERR DMDestroy(&dm);
 \endcode
 
  to free the heap memory and prevent any memory leaks.
@@ -601,55 +669,161 @@ All dynamic memory objects A, x, f and DM that were created have to be destroyed
 
 In structural computational mechanics, the most common relationship to evaluate the stiffness matrix for an element is given by
  
-\f[
+ \f[
 \begin{equation}
 {\mathbf {K}^{e}} = 
-\int_{\Omega^e} { \mathbf{B}}^{\rm T} {\mathbf {D}} {\mathbf{B}} \, {d\Omega^e}
+\int_{\Omega^e} { \mathbf{B}}^{\textrm T} {\mathbf {D}} {\mathbf{B}} \, {d\Omega^e}
 \label{eq:StiffnessIntegral}
 \end{equation}
 \f]
 
-where \f${\Omega^e}\f$ is the element volume, \f${\mathbf {D}}\f$ is the elastic material stiffness matrix and \f${\mathbf{B}}\f$ is the matrix containing the first derivatives of the element shape functions as presented in Hierarchical approach tutorial as
+where \f${\Omega^e}\f$ is the element volume, \f${\mathbf {D}}\f$ is the elastic material stiffness matrix and \f${\mathbf{B}}\f$
+ is the matrix containing the first derivatives of the element shape functions as presented in Hierarchical approach tutorial as
+
 
 \f[
 \begin{equation}
-\begin{split}
-{\mathbf {B}} = {\mathbf {\nabla N}^e} = \left[
-\begin{array}{c}
-\dfrac{\partial}{\partial x}\\
-\dfrac{\partial}{\partial y}\\
-\dfrac{\partial}{\partial z}\\
-\end{array} \right]
-\left[ 
- \begin{array}{c}
-{\mathbf {N}^e_{\textrm ver}} \\
-{\mathbf {N}^e_{\textrm edge}} \\
-{\mathbf {N}^e_{\textrm face}} \\
-{\mathbf {N}^e_{\textrm vol}} \\
-\end{array} \right] = \left[
- \begin{array}{cccc}
-\dfrac{\partial {\mathbf {N}^e_{\textrm ver}} }{\partial x} & \dfrac{\partial {\mathbf {N}^e_{\textrm edge}} }{\partial x} 
-& \dfrac{\partial {\mathbf {N}^e_{\textrm face}} }{\partial x} & \dfrac{\partial {\mathbf {N}^e_{\textrm vol}} }{\partial x} \\ 
-\dfrac{\partial {\mathbf {N}^e_{\textrm ver}} }{\partial y} & \dfrac{\partial {\mathbf {N}^e_{\textrm edge}} }{\partial y} 
-& \dfrac{\partial {\mathbf {N}^e_{\textrm face}} }{\partial y} & \dfrac{\partial {\mathbf {N}^e_{\textrm vol}} }{\partial y}\\ 
-\dfrac{\partial {\mathbf {N}^e_{\textrm ver}} }{\partial z} & \dfrac{\partial {\mathbf {N}^e_{\textrm edge}} }{\partial z} 
-& \dfrac{\partial {\mathbf {N}^e_{\textrm face}} }{\partial z} & \dfrac{\partial {\mathbf {N}^e_{\textrm vol}} }{\partial z} \\
-\end{array} \right] = \\
-= \left[ 
- \begin{array}{cccc}
-{\mathbf {\nabla N}^e_{\textrm ver}} & {\mathbf {\nabla N}^e_{\textrm edge}} & {\mathbf {\nabla N}^e_{\textrm face}} & {\mathbf {\nabla N}^e_{\textrm vol}}
-\end{array} \right] \hspace{2.5cm} 
-\end{split}
-\label{eq:NablaShapeSimpleElastiic}
+{\mathbf {B}} = {\mathbf {L}} {\mathbf {H}}^e
+\label{eq:HL}
 \end{equation}
 \f]
 
-In the continuation of this tutorial, evaluation of the stiffness matrix at each element, and consequently in each Gauss point, is going to be performed through calculation of \f${\mathbf{B}}\f$.
+\f${\mathbf {L}}\f$ is the kinematic operator matrix defined as 
 
+\f[
+\begin{equation}
+{{\mathbf {L}}}= 
+\left[\begin{array}{ccc}
+ \dfrac{\partial}{\partial x} & 0 & 0\\
+0 & \dfrac{\partial}{\partial y} & 0\\
+0 & 0 & \dfrac{\partial}{\partial z}\\
+ \dfrac{\partial}{\partial y} & \dfrac{\partial}{\partial x} & 0\\
+0 & \dfrac{\partial}{\partial z} & \dfrac{\partial}{\partial y}\\
+\dfrac{\partial}{\partial z} & 0 & \dfrac{\partial}{\partial x}\\
+\end{array} 
+\right]
+\label{eq:L}
+\end{equation}
+\f]
+
+ and the matrix \f${\mathbf {H}}^e\f$ is a block matrix defined as
+
+\f[
+\begin{equation}
+{\mathbf {H}}^e =
+{\mathbf {H}}_{j}^{e}
+\label{eq:H}
+\end{equation}
+\f]
+
+where the set \f$j\f$ is defined as
+
+\f[
+\begin{equation}
+j := \{\textrm{ver, edge, face, vol} \}
+\label{eq:setJ}
+\end{equation}
+\f]
+
+
+thus \f${\mathbf {H}}^e\f$ is a matrix containing sub-matrices \f${\mathbf {H}}_{\textrm {ver}}^{e}\f$, \f${\mathbf {H}}_{\textrm {edge}}^{e}\f$,
+ \f${\mathbf {H}}_{\textrm {face}}^{e}\f$ and \f${\mathbf {H}}_{\textrm {vol}}^{e}\f$ associated 
+to shape function vectors of vertices, edges, faces and volumes, respectively.
+Each submatrix \f${\mathbf {H}}_{j}^{e}\f$ is defined as
+
+\f[
+\newcommand{\myarray}[1]{{\overset{\xrightarrow[\hphantom{#1}]{\text{$n$ degrees of freedom of all entities of set $j$}}}{#1}}}
+\begin{equation}
+{\mathbf {H}}_{j}^{e} = 
+\myarray{
+\left[
+\begin{array}{ccccccc}
+  {N}^e_{j1} & 0 & 0 & \dots & {N}^e_{jn} & 0 & 0\\
+  0 & {N}^e_{j1} & 0 & \dots & 0 & {N}^e_{jn}  & 0\\
+  0 & 0 & {N}^e_{j1} & \dots & 0 & 0 & {N}^e_{jn}  \\
+\end{array} 
+\right]
+}
+\label{eq:Hver}
+\end{equation}
+\f]
+
+where \f${N}^e_{jn}\f$ is the shape function of the \f$n\f$-th degree of freedom of the \f$j\f$-th set of entities.
+ 
+For instance, multiplication of \f${\mathbf {L}}\f$ with the first three columns of \f${\mathbf {H}}_{j}^{e}\f$ i.e. all columns
+ associated with a single degree of freedom of \f$j\f$-th set of entities is
+
+\f[
+\begin{equation}
+\left[
+\begin{array}{ccc}
+ \dfrac{\partial {N}^e_{j\textrm {1}}}{\partial x} & 0 & 0\\
+0 & \dfrac{\partial {N}^e_{j\textrm {1}}}{\partial y} & 0\\
+0 & 0 & \dfrac{\partial {N}^e_{j\textrm {1}}}{\partial z}\\
+\dfrac{\partial {N}^e_{j\textrm {1}}}{\partial y} & \dfrac{\partial {N}^e_{j\textrm {1}}}{\partial x} & 0\\
+0 & \dfrac{\partial {N}^e_{j\textrm {1}}}{\partial z} & \dfrac{\partial {N}^e_{j\textrm {1}}}{\partial y}\\
+\dfrac{\partial {N}^e_{j\textrm {1}}}{\partial z} & 0 & \dfrac{\partial {N}^e_{j\textrm {1}}}{\partial x}\\
+\end{array} 
+\right]
+\label{eq:example}
+\end{equation}
+\f]
+
+All non-zero entries of \f$\eqref {eq:example}\f$ can be directly populated by elements of the matrix presented in equation (13)
+ in \ref hierarchical_approximation_1.
+
+Furthermore, the matrix product presented in \f$\eqref {eq:StiffnessIntegral}\f$ by substitution of \f$\eqref {eq:HL}\f$ and
+ \f$\eqref{eq:H}\f$ can be evaluated as
+
+\f[
+\begin{equation}
+{ \mathbf{B}}^{\rm T} {\mathbf {D}} {\mathbf{B}} = { \mathbf{B}_{i}}^{\rm T} {\mathbf {D}} {\mathbf{B}_{j}} = ({\mathbf {L}} {\mathbf {H}}_{i}^e)^{\textrm T} {\mathbf D}  {\mathbf {L}} {\mathbf {H}}_{j}^e
+\label{eq:MatProduct}
+\end{equation}
+\f]
+
+where the set \f$i\f$ is defined similarly to set \f$j\f$ as
+
+\f[
+\begin{equation}
+i := \{\textrm{ver, edge, face, vol} \}
+\label{eq:setI}
+\end{equation}
+\f]
+
+In MoFEM, for each gauss point evaluation of stiffness matrix as presented in \f$\eqref {eq:StiffnessIntegral}\f$ 
+is evaluated by computing all permutations of the entities \f$i\f$-\f$j\f$ combinations for the expression presented
+ in \f$\eqref{eq:MatProduct}\f$.
+For each permutation,matrices \f$\mathbf{B}_{i}\f$ and \f$\mathbf{B}_{j}\f$ are evaluated and multiplied with the 
+gauss point's weight and its associated volume.
+
+Then, element stiffness matrix is evaluated and assembled by calculating all block matrices defined in \f$\eqref {eq:MatProduct}\f$
+ all permutations of sets \f$i\f$ and \f$j\f$ as
+
+\f[
+\begin{equation}
+\mathbf{K}^e = \mathbf{K}_{ij}^e = 
+\left[
+\begin{array}{cccc} 
+ \mathbf{K}_{\textrm {ver ver}} & \mathbf{K}_{\textrm {ver edge}} & \mathbf{K}_{\textrm {ver face}} & \mathbf{K}_{\textrm {ver vol}}\\ 
+ \mathbf{K}_{\textrm {edge ver}} & \mathbf{K}_{\textrm {edge edge}} & \mathbf{K}_{\textrm {edge face}} & \mathbf{K}_{\textrm {edge vol}}\\ 
+ \mathbf{K}_{\textrm {face ver}} & \mathbf{K}_{\textrm {face edge}} & \mathbf{K}_{\textrm {face face}} & \mathbf{K}_{\textrm {face vol}}\\ 
+ \mathbf{K}_{\textrm {vol ver}} & \mathbf{K}_{\textrm {vol edge}} & \mathbf{K}_{\textrm {vol face}} & \mathbf{K}_{\textrm {vol vol}}\\
+ \end{array} 
+\right]
+\label{eq:StiffStiff}
+\end{equation}
+\f]
+
+When the field of interpolation of the element is isotropic then the element stiffness matrix \f$\mathbf{K}^e\f$ is
+ symmetric and only the upper diagonal part is needed to be evaluated.
+
+In the continuation of this tutorial, evaluation of the stiffness matrix at each element, and consequently
+ in each Gauss point, is going to be performed through calculations of \f${\mathbf{B}_i}\f$ and \f${\mathbf{B}_j}\f$.
 
 \subsection simple_elasticisty_OpK OpK()
 
-The operator called OpK is implemented as a struct inhereting struct VolumeElementForcesAndSourcesCore::UserDataOperator
+The operator called OpK is implemented as a struct inheriting struct VolumeElementForcesAndSourcesCore::UserDataOperator
 
 \code
 struct OpK : public VolumeElementForcesAndSourcesCore::UserDataOperator
@@ -658,53 +832,73 @@ struct OpK : public VolumeElementForcesAndSourcesCore::UserDataOperator
 Struct's public members are 
 
 \code
+  //B_i matrix
   MatrixDouble rowB;
+  
+  //B_j matrix
   MatrixDouble colB;
+  
+  //Matrix used to evaluate matrix product D B_j
   MatrixDouble CB;
-  MatrixDouble K, transK;
+  
+  //Finite element stiffness sub-matrix K_ij
+  MatrixDouble K;
 
+  //Elastic stiffness matrix
   MatrixDouble D;
+
+  //Young's modulus
   double yOung;
+  //Poisson's ratio
   double pOisson;
-  double coefficient;
 \endcode
 
-The first four lines encompass the declaration of matrices used for the calculation of the elements striffness matrix as presented in Section \ref simple_elastic_element_stiffness.
-The next three variables are associated to the material stiffness matrix where D is used to evaluate the elastic material stiffness matrix, yOung is the Young's modulus and pOisson is Poisson's ratio.
+The first four lines encompass the declaration of matrices used for the calculation of the elements striffness matrix as presented
+ in Section \ref simple_elastic_element_stiffness.
+The next three variables are associated to the material stiffness matrix where D is used to evaluate the elastic material stiffness
+ matrix, yOung is the Young's modulus and pOisson is Poisson's ratio.
 
 When the struct's constructor is invoked 
 
 \code
  OpK(bool symm = true) : VolumeElementForcesAndSourcesCore::UserDataOperator("U", "U", OPROWCOL, symm)
   {
-  pOisson = 0.1;
-  yOung = 10;
-  yOung /= ((1 + pOisson) * (1 - 2 * pOisson));
-  D.resize(6, 6, false);
-  D.clear();
+  //Evaluation of the elastic stiffness matrix, D, in the Voigt notation is done in the constructor
+    
+    //hardcoded choice of elastic parameters
+    pOisson     = 0.1;
+    yOung       = 10;
 
-  D(0, 0) = 1 - pOisson;
-  D(1, 1) = 1 - pOisson;
-  D(2, 2) = 1 - pOisson;
-  D(3, 3) = 0.5 * (1 - 2 * pOisson);
-  D(4, 4) = 0.5 * (1 - 2 * pOisson);
-  D(5, 5) = 0.5 * (1 - 2 * pOisson);
+    //coefficient used in intermediate calculation
+    double coefficient = 0.; 
+    
+    coefficient = yOung / ((1 + pOisson) * (1 - 2 * pOisson));
+    D.resize(6, 6, false);
+    D.clear();
 
-  D(0, 1) = pOisson;
-  D(0, 2) = pOisson;
-  D(1, 0) = pOisson;
+    D(0, 0) = 1 - pOisson;
+    D(1, 1) = 1 - pOisson;
+    D(2, 2) = 1 - pOisson;
+    D(3, 3) = 0.5 * (1 - 2 * pOisson);
+    D(4, 4) = 0.5 * (1 - 2 * pOisson);
+    D(5, 5) = 0.5 * (1 - 2 * pOisson);
 
-  D(1, 2) = pOisson;
-  D(2, 0) = pOisson;
-  D(2, 1) = pOisson;
+    D(0, 1) = pOisson;
+    D(0, 2) = pOisson;
+    D(1, 0) = pOisson;
 
-  D *= yOung;
+    D(1, 2) = pOisson;
+    D(2, 0) = pOisson;
+    D(2, 1) = pOisson;
+
+    D *= coefficient;
   }
 \endcode
 
 where the Elastic stiffness matrix is evaluated
 
-When solving the problem, as presented in Section \ref simple_elastic_solve_problem, all finite elements are looped where this loop invokes the doWork method of each operator of the finite element.
+When solving the problem, as presented in Section \ref simple_elastic_solve_problem, all finite elements are looped where
+ this loop invokes the doWork method of each operator of the finite element.
 The doWork method of operator OpK is presented below
 
 \code
@@ -748,8 +942,10 @@ MoFEMErrorCode doWork(
 \endcode
 
 
-The element's column and row data structures as described in ``Hierarchic approximation'' tutorial are passed to this function as col\_type and row\_type respectively.
-The number of degrees of freedom associated to each structure (which are equal to the length of the column and row) is then passed to variables nbCols and nbRows and checked that they are non-zero
+The element's column and row data structures as described in ``Hierarchic approximation'' tutorial are passed to this
+ function as col\_type and row\_type respectively.
+The number of degrees of freedom associated to each structure (which are equal to the length of the column and row) is
+ then passed to variables nbCols and nbRows and checked that they are non-zero
 
 \code
 // get number of dofs on row
@@ -764,7 +960,8 @@ The number of degrees of freedom associated to each structure (which are equal t
       MoFEMFunctionReturnHot(0);
 \endcode
 
-Thereafter, integration presented in \f$\eqref {eq:StiffnessIntegral}\f$ to evaluate element's stiffness matrix and the its assembly to the element's row and column data structures is performed by invoking iNtegrate and aSsemble functions 
+Thereafter, integration presented in \f$\eqref {eq:StiffnessIntegral}\f$ to evaluate element's stiffness matrix
+ and the its assembly to the element's row and column data structures is performed by invoking iNtegrate and aSsemble functions 
 
 \code
     // integrate local matrix for entity block
@@ -775,48 +972,90 @@ Thereafter, integration presented in \f$\eqref {eq:StiffnessIntegral}\f$ to eval
 \endcode
 
 
-Lets first see the iNtegrate implementation that performs the two inner loops described in Section \ref hierarchical_approximation_data_structures of \ref hierarchical_approximation_1 tutorial
+Lets first see the iNtegrate implementation that performs the two inner loops described in Section \ref hierarchical_approximation_data_structures
+ of \ref hierarchical_approximation_1 tutorial
 
 \code
 virtual MoFEMErrorCode iNtegrate(
       DataForcesAndSourcesCore::EntData &row_data, DataForcesAndSourcesCore::EntData &col_data)
   {
-    MoFEMFunctionBeginHot;
+    MoFEMFunctionBegin;
 
-    int nb_dofs_row = row_data.getFieldData().size();
+  //check if one of i-th or j-th entity sets are not populated  
+  int nb_dofs_row = row_data.getFieldData().size();
     if (nb_dofs_row == 0)
       MoFEMFunctionReturnHot(0);
     int nb_dofs_col = col_data.getFieldData().size();
     if (nb_dofs_col == 0)
       MoFEMFunctionReturnHot(0);
 
+    //K_ij matrix will have 3 times the number of degrees of freedom of the i-th entity set (nb_dofs_row)
+    // and 3 times the number of degrees of freedom of the j-th entity set (nb_dofs_col)
     K.resize(nb_dofs_row, nb_dofs_col, false);
     K.clear();
+
+    //matrix CB will have 6 rows since D matrix has 6 rows
+    //number of columns nb_dofs_col  that is equal to the number of columns of B_j matrix
     CB.resize(6, nb_dofs_col, false);
 
-    for (int gg = 0; gg != nbIntegrationPts; gg++)
-    {
+    for (int gg = 0; gg != nbIntegrationPts; gg++) {
       // get element volume
       // get integration weight
       double val = getVolume() * getGaussPts()(3, gg);
-
+      
       const MatrixAdaptor &diffN_row = row_data.getDiffN(gg, nb_dofs_row / 3);
       const MatrixAdaptor &diffN_col = col_data.getDiffN(gg, nb_dofs_col / 3);
+      
+      //evaluate B_i
+      CHKERR makeB(diffN_row, rowB);
 
-      ierr = makeB(diffN_row, rowB);
-      CHKERRQ(ierr);
+      //evaluate B_j
+      CHKERR makeB(diffN_col, colB);
 
-      ierr = makeB(diffN_col, colB);
-      CHKERRQ(ierr);
-
+      //compute matrix product D B_i 
       noalias(CB) = prod(D, colB);
+
+      //compute product (B_j)^T D B_i 
       noalias(K) += val * prod(trans(rowB), CB);
     }
-    MoFEMFunctionReturnHot(0);
+    MoFEMFunctionReturn(0);
   }
+
+  /**
+     * \brief Assemble local entity block matrix
+     * @param  row_data row data (consist base functions on row entity)
+     * @param  col_data column data (consist base functions on column entity)
+     * @return          error code
+     */
+  virtual MoFEMErrorCode aSsemble(DataForcesAndSourcesCore::EntData &row_data,
+                                  DataForcesAndSourcesCore::EntData &col_data) {
+    MoFEMFunctionBegin;
+    // get pointer to first global index on row
+    const int *row_indices = &*row_data.getIndices().data().begin();
+    // get pointer to first global index on column
+    const int *col_indices = &*col_data.getIndices().data().begin();
+    Mat B = getFEMethod()->ksp_B != PETSC_NULL ? getFEMethod()->ksp_B
+                                               : getFEMethod()->snes_B;
+    // assemble local matrix
+    CHKERR MatSetValues(B, nbRows, row_indices, nbCols, col_indices,
+                        &*K.data().begin(), ADD_VALUES);
+
+    if (!isDiag && sYmm) {
+      // if not diagonal term and since global matrix is symmetric assemble
+      // transpose term.
+      K = trans(K);
+      CHKERR MatSetValues(B, nbCols, col_indices, nbRows, row_indices,
+                          &*K.data().begin(), ADD_VALUES);
+    }
+    MoFEMFunctionReturn(0);
+   }
 \endcode
 
-after the element's lengths of row and columns are passed to nb\_dofs\_row and nb\_dofs\_columns and checked to be non-zero, memory for the element's stiffness matrix K that is allocated so that the number of rows equal to the number of degrees of freedom stored in the row data structure. Similarly the number of columns of K matrix is equal to the degrees of freedom stored in the column data structure as can be undestrood by inspection of equation \f$\eqref {eq:FullStiffness} \f$ in ``Hierachical Approach'' tutorial.
+after the element's lengths of row and columns are passed to nb\_dofs\_row and nb\_dofs\_columns and checked to be non-zero, 
+memory for the element's stiffness matrix K that is allocated so that the number of rows is equal to three number of degrees of freedom 
+stored in the row data structure.
+Similarly the number of columns of K matrix is equal to three times the degrees of freedom stored in the column data structure as
+ can be undestrood by inspection of equation (13) in ``Hierachical Approach'' tutorial.
 Finally, data stored in K is set equal to zero
 
 \code
@@ -824,15 +1063,17 @@ Finally, data stored in K is set equal to zero
  K.clear();
 \endcode
  
-Then, we allocate memory for the CB matrix used to evaluate K matrix according to \f$\eqref{eq:StiffnessIntegral}\f$.
+Then, we allocate memory for the CB matrix used to evaluate K matrix that is the matrix product \f$\mathbf{D}\mathbf{B}_j\f$ used
+ to evaluate \f$\mathbf{K}_{ij}\f$.
+Moreover, the number of columns of CB matrix is equal to the number of columns of matrix \f$\mathbf{B}_j\f$ that is nb\_dofs\_col
+ alligned with dimensions of \f$\mathbf{K}_{ij}\f$ matrix.
 
 \code
   CB.resize(6, nb_dofs_col, false);
 \endcode
 
-The above code line resizes CB matrix to have 6 rows while keeping the number of columns the same as The stiffness matrix.
-This is done since the material stiffness matrix is \f$6\times 6\f$ and we know there is a dimention matching between the matrices according to (10) in ``Hierachical Approach'' tutorial.
-
+The above code line resizes CB matrix to have 6 rows while keeping the number of columns the same as the material stiffness matrix D.
+This is done since the material stiffness matrix is \f$6\times 6\f$.
 Then, the integration process is performed for each gauss point associated to the finite element under consideration
 
 \code
@@ -845,24 +1086,37 @@ Within the loop, initially the element's volume is evaluated
  double val = getVolume() * getGaussPts()(3, gg);
 \endcode
  
-We can now have a closer look in makeB function that is used to evaluate the B matrix and its transpose
+We can now have a closer look in makeB function that is used to evaluate either \f$\mathbf{B}_i\f$ or \f$\mathbf{B}_j\f$ matrix
 
 \code
 MoFEMErrorCode makeB(const MatrixAdaptor &diffN,
                        MatrixDouble &B)
   {
-    MoFEMFunctionBeginHot;
 
+    //initiation of error handler
+    MoFEMFunctionBegin;
+
+    //number of gradients of shape functions is passed to nb_dofs variable
+    //total number of degrees of freedom is nb_dofs*3
     unsigned int nb_dofs = diffN.size1();
+
+    //inidialise B matrix 
+    //6 rows equal to the number of strains in Voigt notation
+    //3 * nb_dofs number of columns equal to the number of degrees of freedom of the element
     B.resize(6, 3 * nb_dofs, false);
+    
+    //B matrix is cleared
     B.clear();
-    for (unsigned int dd = 0; dd < nb_dofs; dd++)
-    {
-      const double diff[] = {
-          diffN(dd, 0), diffN(dd, 1), diffN(dd, 2)};
-      const int dd3 = 3 * dd;
-      for (int rr = 0; rr < 3; rr++)
-      {
+
+    // Loop over degrees of freedom treated as groups of three
+    for (unsigned int dd = 0; dd < nb_dofs; dd++) {
+
+      //array diff containing the gradients of shape functions
+      //gradient in x direction for 0, in y direction for 1 and in x for 2
+      const double diff[] = {diffN(dd, 0), diffN(dd, 1), diffN(dd, 2)};
+      const int dd3       = 3 * dd;
+      for (int rr = 0; rr < 3; rr++) {
+        // gamma_xx for rr = 0, gamma_yy for rr = 1 and gamma_zz for rr = 2
         B(rr, dd3 + rr) = diff[rr];
       }
       // gamma_xy
@@ -876,11 +1130,17 @@ MoFEMErrorCode makeB(const MatrixAdaptor &diffN,
       B(5, dd3 + 2) = diff[0];
     }
 
-    MoFEMFunctionReturnHot(0);
+    //End of error handling
+    MoFEMFunctionReturn(0);
   }
 \endcode
 
-where initially the number of degrees of freedom associated to the element is evaluated and then th B matrix is declared and resized to have number of columns equal to the number of degrees of freedom
+where initially the number of degrees of freedom associated with the entity block under considertion is evaluated and
+ then \f$\mathbf{B}_i\f$ or \f$\mathbf{B}_j\f$ 
+matix is declared as B and resized to have number of columns equal to three times the number of degrees of freedom according
+ since it will result from the product
+ \f${\mathbf {L}}{\mathbf {H}}_{j}^{e}\f$ where the number of columns of the resulting matrix is going to be equal to that of
+  the matrix in \f$\eqref{eq:Hver}\f$
 
 \code
   unsigned int nb_dofs = 3 * diffN.size1();
@@ -888,12 +1148,14 @@ where initially the number of degrees of freedom associated to the element is ev
     B.clear();
 \endcode
 
-the number of degrees of freedom is equal to three times the number of shape function gradients since they operate in three dimensions (they have x, y and z components).
+the number of degrees of freedom is equal to three times the number of shape function gradients since they operate in three
+ dimensions (they have x, y and z components).
 If the unknown field would be pressure, the number of degrees of freedom would be equal to the number of shape function gradients. 
 
 \subsection simple_elasticity_op_pressure OpPressure
 
-The operator created for the ``PRESSURE'' finite element that is used to evaluate and assign Neuman boundary conditions according to (12) presented in ``Hierarchical Approach'' tutorial will be presented in detail.
+The operator created for the "PRESSURE" finite element that is used to evaluate and assign Neuman boundary conditions according to
+ (12) presented in \ref hierarchical_approximation_1 will be presented in detail.
 The operator is the struct presented below 
 
 \code
@@ -905,6 +1167,7 @@ The operator is the struct presented below
   }
   //  virtual ~OpPressure();
 
+  //vector used to store force vector for each degree of freedom
   VectorDouble nF;
 
   FTensor::Index<'i', 3> i;
@@ -914,25 +1177,41 @@ The operator is the struct presented below
 
     MoFEMFunctionBeginHot;
 
+   MoFEMFunctionBegin;
+    // check that the faces have associated degrees of freedom
     const int nb_dofs = data.getIndices().size();
     if (nb_dofs == 0)
       MoFEMFunctionReturnHot(0);
 
+    //size of force vector associated to the entity 
+    //set equal to the number of degrees of freedom of associated with the entity
     nF.resize(nb_dofs, false);
     nF.clear();
 
+    // get number of gauss points
     const int nb_gauss_pts = data.getN().size1();
-    FTensor::Tensor1<double *, 3> t_normal = getTensor1Normal();
-    FTensor::Tensor0<double *> t_base = data.getFTensor0N();
 
-    for (int gg = 0; gg != nb_gauss_pts; gg++)
-    {
+    // create a 3d vector to be used as the normal to the face with length equal
+    // to the face area
+    FTensor::Tensor1<double *, 3> t_normal = getTensor1Normal();
+
+    //vector of base functions 
+    FTensor::Tensor0<double *> t_base      = data.getFTensor0N();
+
+    // loop over all gauss points of the face
+    for (int gg = 0; gg != nb_gauss_pts; ++gg) {
+      // weight of gg gauss point
       double w = 0.5 * getGaussPts()(2, gg);
+
+      //create a vector t_nf whose pointer points an array of 3 pointers pointing to nF 
+      //memory location of components
       FTensor::Tensor1<double *, 3> t_nf(&nF[0], &nF[1], &nF[2], 3);
-      for (int bb = 0; bb != nb_dofs / 3; bb++)
-      {
+      for (int bb = 0; bb != nb_dofs / 3; ++bb) {
+        //scale the three components of t_normal and pass them to the t_nf (hence to nF)
         t_nf(i) += (w * pressureVal * t_base) * t_normal(i);
+        //move the pointer to next element of t_nf
         ++t_nf;
+        //move to next base function
         ++t_base;
       }
     }
@@ -948,18 +1227,18 @@ The operator is the struct presented below
 Initially, vector nF that will contain the boundary condition forces is declared and index i is defined to be used to perform compact operations later discussed
  
 \code
+   //vector used to store force vector for each degree of freedom
   VectorDouble nF;
 
   FTensor::Index<'i', 3> i;
-
-    if (nb_dofs == 0)
-    MoFEMFunctionReturnHot(0);
 \endcode
 
 The evaluation of boundary conditions for each element that are applied is performed within the doWork function.
 The number of degrees of freedom is initially passed to nb\_dofs that is used to aproprietly resize vector nF.
 
 \code
+    //size of force vector associated to the entity 
+    //set equal to the number of degrees of freedom of associated with the entity
     nF.resize(nb_dofs, false);
     nF.clear();
 \endcode
@@ -968,36 +1247,50 @@ The number of degrees of freedom is initially passed to nb\_dofs that is used to
 Thereafter, the number of gauss points associated to the triangular element is assigned to variable nb\_gauss\_pts
 
 \code
+    // get number of gauss points
     const int nb_gauss_pts = data.getN().size1();
 \endcode
 
 the normal to the face is passed to t\_normal variable
 
 \code
+    // create a 3d vector to be used as the normal to the face with length equal
+    // to the face area
     FTensor::Tensor1<double *, 3> t_normal = getTensor1Normal();
 \endcode 
 
 Vector t\_normal has 3 component (one for each global axis). 
-Its magnitude is equal to the double of the area of the triangualr face since getTensor1Norma() function returns the vector evaluated by the cross product of the vectors having a common origin on one of the faces vertex and their non-coinciding ends located at the other two vertices.
+Its magnitude is equal to the double of the area of the triangualr face since getTensor1Norma() function returns the vector 
+evaluated by the cross product of the vectors having a common origin on one of the faces vertex and their non-coinciding ends 
+located at the other two vertices.
 This product is the area defined by the parallelogram rule.
 
 Furthermore, t\_base vector containing the element's shape functions is initialised 
 
 \code 
-  FTensor::Tensor0<double *> t_base = data.getFTensor0N();
+    //vector of base functions 
+    FTensor::Tensor0<double *> t_base      = data.getFTensor0N();
+
 \endcode 
 
-Then, the loop over all gauss points is performed to evaluate the area integral presented in (12) in ``Hierarchical Approximation'' tutorial
+Then, the loop over all gauss points is performed to evaluate the area integral presented in (12) in ``Hierarchical Approximation'' 
+tutorial
 
 \code 
-    for (int gg = 0; gg != nb_gauss_pts; gg++)
-    {
-      double w = getGaussPts()(2, gg);
+    // loop over all gauss points of the face
+    for (int gg = 0; gg != nb_gauss_pts; ++gg) {
+      // weight of gg gauss point
+      double w = 0.5 * getGaussPts()(2, gg);
+
+      //create a vector t_nf whose pointer points an array of 3 pointers pointing to nF 
+      //memory location of components
       FTensor::Tensor1<double *, 3> t_nf(&nF[0], &nF[1], &nF[2], 3);
-      for (int bb = 0; bb != nb_dofs / 3; bb++)
-      {
+      for (int bb = 0; bb != nb_dofs / 3; ++bb) {
+        //scale the three components of t_normal and pass them to the t_nf (hence to nF)
         t_nf(i) += (w * pressureVal * t_base) * t_normal(i);
+        //move the pointer to next element of t_nf
         ++t_nf;
+        //move to next base function
         ++t_base;
       }
     }
@@ -1215,7 +1508,7 @@ cd $HOME/mofem_installation//users_modules/basic_finite_elements/simple_elastici
 Then run the command
 
 \code
-./simple_elasticity -file_name help.h5m -ksp_type gmres -pc_type lu -pc_factor_mat_solver_package mumps -ksp_monitor -my_order 2
+./simple_elasticity -file_name cubit.h5m -ksp_type gmres -pc_type lu -pc_factor_mat_solver_package mumps -ksp_monitor -my_order 2
 \endcode
 
 To vizualise results first convert the out put file from .h5m format to a vtk one
