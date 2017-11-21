@@ -477,15 +477,14 @@ MoFEMErrorCode BitRefManager::shiftRightBitRef(const int shift,
                                                int verb) const {
   MoFEM::Interface &m_field = cOre;
   const RefEntity_multiIndex *ref_ent_ptr;
-  MoFEMFunctionBeginHot;
-  ierr = m_field.get_ref_ents(&ref_ent_ptr);
+  MoFEMFunctionBegin;
+  CHKERR m_field.get_ref_ents(&ref_ent_ptr);
   for (int ii = 0; ii < shift; ii++) {
     // delete bits on the right which are shifted to zero
     BitRefLevel delete_bits = BitRefLevel().set(0) & mask;
     if (delete_bits.any()) {
-      ierr =
-          m_field.delete_ents_by_bit_ref(delete_bits, delete_bits, true, verb);
-      CHKERRG(ierr);
+      CHKERR m_field.delete_ents_by_bit_ref(delete_bits, delete_bits, true,
+                                            verb);
     }
     for (RefEntity_multiIndex::iterator ent_it = ref_ent_ptr->begin();
          ent_it != ref_ent_ptr->end(); ent_it++) {
@@ -503,7 +502,7 @@ MoFEMErrorCode BitRefManager::shiftRightBitRef(const int shift,
       }
     }
   }
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode BitRefManager::writeBitLevelByType(
