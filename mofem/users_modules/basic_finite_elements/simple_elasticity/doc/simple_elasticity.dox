@@ -1,5 +1,10 @@
 /*! \page simple_elasticity_1 Simple elasticity
 
+This tutorial motivation to show how finite element is implemented using
+basic blocks, like the Lego block where one can combine them in arbitrarily
+restricted only by his or her imagination. That is not short and compact
+code, where PDE can be in single line, but code which can be modified and
+changed in a way that was not imagined by developers.
 
 \section simple_elasticity_introduction Introduction
 
@@ -13,6 +18,8 @@ manipulation. Readers are encouraged to read \ref general_data_structure,
 the present tutorial. Initially, generation of a mesh is presented and then
 the module developed for this tutorial is dissected. Finally, code run and
 post processing of the results are discussed.
+
+\tableofcontents
 
 \section simple_elasticity_problem The problem
 
@@ -184,7 +191,7 @@ interaction of levels 2 and 3 by the left hand side arrow).
 Interface \e simple\_interface has a number of functions implemented that allows
 the user to build and manipulate PETSc, MoAB core and MoFEM core data bases.
 For instance, using the code below the mesh file is loaded and information of
-the mesh is passed to MoAB data base.
+the mesh is passed to MoFEM data base.
 \code
   CHKERR simple_interface->getOptions();
   CHKERR simple_interface->loadFile();
@@ -192,8 +199,8 @@ the mesh is passed to MoAB data base.
 
 \subsection{Fields}
 
-Fields of user's interest can be introduced to the MoAB database through
-simple\_interface object as presented below for the shape functions field in
+Fields of user's interest can be introduced to the MoFEM database through
+\e simple\_interface object as presented below for the shape functions field in
 our 3D domain.
 \code
   CHKERR simple_interface->addDomainField("U", H1, AINSWORTH_LEGENDRE_BASE, 3);
@@ -206,15 +213,15 @@ space chosen to operate is H1 and the type of shape functions is chosen
 through the key-word AINSWORTH\_LEGENDRE\_BASE are Legendre polynomials
 proposed by Ainsworth and Coyle. Finally, the hard-coded number 3 determines
 the dimensions of the degrees of freedom related to each shape functions.
-Here, this number is 3 since it is a displacement field in a 3D domain.
+Here, this number is 3 since it is a displacement field in a 3D space.
 Should the unknown field be pressure, then the hard-coded number will be 1
 instead of 3 since pressure always has one dimension. Furthermore, the order
-of the approximation field is introduced through function setFieldOrder. As
+of the approximation field is introduced through function MoFEM::Simple::setFieldOrder. As
 explained earlier, the order of the approximated field can be chosen and the
 appropriate Hierarchical shape functions will be taken into account
 accordingly.
 
-Other types of fields can also be introduced to MoAB database. For instance,
+Other types of fields can also be introduced to MoFEM database. For instance,
 an error field can be introduced to evaluate the error variance of the
 solution throughout the domain. There will be explicit presentation of
 introduction of other fields in next tutorials.
@@ -300,7 +307,7 @@ through the MoAB function
  CHKERR m_field.get_moab().get_entities_by_dimension(meshset, 2, fix_faces, true);
 \endcode
 
-were the hard coded number 2, refers to the type of entity under
+were the hard coded number 2, refers to the dimension of entity under
 consideration which in this case is a face. Numbers 0, 1 and 3 correspond to
 vertices, edges and volumes, respectively.
 
@@ -330,7 +337,7 @@ For the vertex type \e meshsets, no adjacencies are needed since only the
 degrees of freedom associated to each block is going to be prescribed.
 Therefore, invoking \e get\_entities\_by\_dimension function is sufficient.
 
-For the case of the block of the upper face (id = 3), only the degrees of
+For the case of the block of the upper face (\e id = 3), only the degrees of
 freedom associated to the face are needed. Since the traction is uniform and
 normal to the upper surface, it can be implemented as pressure and therefore
 its implementation requires only degrees of freedom associated to the face as
@@ -386,12 +393,9 @@ database through the function \e add\_finite_element("PRESSURE"), where the
 string "PRESSURE" used as input is the name that we chose to call the new
 element. Then, the row and col field information of the "PRESSURE" element
 are set to be those of "U" type. Furthermore, the list of fields that are
-associated with "PRESSURE" element listed in the elements data is then set
-to be only the "U" type field.
-
-In a more complicated case, more than one fields can be added to the data,
-row and col structures of a finite element.
-
+associated with "PRESSURE" element listed in the elements data is then set to
+be only the "U" type field. In a more complicated case, more than one fields
+can be added to the data, row and col structures of a finite element.
 Similarly, definition of each problem stencil consists of problem's name and
 the stencils of the various elements previously presented and are defined
 using the code lines below
@@ -408,7 +412,7 @@ defined.
 \subsection simple_elastic_DMM DMMoFEM
 
 The new ``PRESSURE'' finite element has to be explicitly added to DMMoFEM
-since it was not created through simple\_interface. Hence, a DM object is
+since it was not created through \e simple\_interface. Hence, a DM object is
 declared and it is set to point to the DMMoFEM create by the interface as
 \code
   DM dm;
@@ -430,11 +434,12 @@ introduced to DMMoFEM manager is partitioned
 \endcode
 
 This has to be explicitly defined in order to be able to solve the problem in
-parallel computing fashion.
+parallel computing where matrix assembly, linear system of equations and mesh
+is distributed between processors.
 
 \subsection simple_elastic_build Build
 
-Then, fields and finite elements declared through simple\_interface are built
+Then, fields and finite elements declared through \e simple\_interface are built
 (second stage presented in \ref Figure_8_Elastic "Figure 8").
 
 \code
@@ -472,13 +477,26 @@ invoked.
     CHKERR simple_interface->buildProblem();
 \endcode
 
-Moreover, to create stiffness matrices and apply boundary conditions we will
-need to finite element instance and attach User Defined Operators
-(UDOs).
+\subsection simple_elastic_fe_instances Finite element instances
 
+MoFEM is designed such that approximation fields definition, FE element
+declaration, FE element definition and FE implementation is explicitly
+disentangled. That gives us great flexibility allowing for combining
+individual parts of the code in a countless number of variations.
+
+Implementation FE element can be done on range levels of abstractions. Here
+we present implementation which introduces the concept of \e User \e Defined
+\e Operator. Using its implementation is not constrained to finite element
+shape or approximation base of fields. In case of coupled or mix formulation,
+it enables to break down complex code into smaller easy sub-tasks. Here we
+only introduce basic concepts of this technology.
+
+To create stiffness matrices and apply boundary conditions we will need to
+finite element instance and attach \e User \e Defined \e Operators (UDOs).
 For the stiffness matrix evaluation a new shared pointer \e elastic\_fe is
 instantiated to build elastic finite element instance and a UDO is pushed to the
 elastic finite elements
+
 \code
     boost::shared_ptr<VolumeElementForcesAndSourcesCore> elastic_fe(new VolumeElementForcesAndSourcesCore(m_field));
     elastic_fe->getOpPtrVector().push_back(new OpK());
@@ -676,10 +694,10 @@ destroyed as presented below
 to free the heap memory and prevent any memory leaks.
 \section simple_elastic_UDO User Defined Operators (UDOs)
 
-\note Following implementation is intended to be most efficient, to make fast
+\note Following implementation is NOT intended to be most efficient, to make fast
 matrix assembly use FTensor. In this tutorial, we aim to present
-implementation which is familiar to most of the users with the use of
-\f$\mathbf{B}\f$ of undergraduate students.
+implementation which is familiar to most of the users, using concept of
+\f$\mathbf{B}\f$ matrix.
 
 \subsection simple_elastic_element_stiffness Element stiffness matrix
 
