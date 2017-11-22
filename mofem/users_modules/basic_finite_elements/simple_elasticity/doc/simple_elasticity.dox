@@ -1489,7 +1489,6 @@ public variables of the struct are inserted to vector of integers
 \e set\_fix\_dofs through insert function
 
 \code
-MoFEMFunctionBeginHot;
      std::set<int> set_fix_dofs;
 
      for (_IT_NUMEREDDOF_ROW_FOR_LOOP_(problemPtr, dit)) {
