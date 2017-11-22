@@ -12,6 +12,20 @@ implementation of finite element with users data operators.
 
 - \subpage hello_world_tut1
 
+
+\section hierarchical_approximation Hierarchical approximation
+
+Introduces the reader to the basic concepts of finite element approach using 
+Hierarchical basis functions.
+
+- \subpage hierarchical_approximation_1
+
+\section simple_elasticity Simple elastic problem
+
+Introduction to fundamental MoFEM functionalities and capabilities by solving a simple linear elastic problem.
+
+- \subpage simple_elasticity_1
+
 \section poisson_problem The Poisson equation
 
 The Poisson equation is solved using MoFEM::Simple interface. The generic

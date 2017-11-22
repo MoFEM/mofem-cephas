@@ -324,7 +324,7 @@ struct BitRefManager : public UnknownInterface {
    * @param ents
    * @return MoFEMErrorCode
    */
-  MoFEMErrorCode getEntitiesNotInDatabase(Range &ents) const;
+  MoFEMErrorCode filterEntitiesNotInDatabase(Range &ents) const;
 
   /**@}*/
 
