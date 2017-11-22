@@ -267,62 +267,6 @@ protected:
   }
 };
 
-struct ApplyDirichletBc : public MoFEM::FEMethod {
-
-  Range fixFaces, fixNodes, fixSecondNode;
-
-  ApplyDirichletBc(const Range &fix_faces, const Range &fix_nodes,
-                   const Range &fix_second_node)
-      : MoFEM::FEMethod(), fixFaces(fix_faces), fixNodes(fix_nodes),
-        fixSecondNode(fix_second_node) {
-    // constructor
-  }
-
-  MoFEMErrorCode postProcess() {
-
-    MoFEMFunctionBegin;
-    std::set<int> set_fix_dofs;
-
-    for (_IT_NUMEREDDOF_ROW_FOR_LOOP_(problemPtr, dit)) {
-      if (dit->get()->getDofCoeffIdx() == 2) {
-        if (fixFaces.find(dit->get()->getEnt()) != fixFaces.end()) {
-          set_fix_dofs.insert(dit->get()->getPetscGlobalDofIdx());
-        }
-      }
-
-      if (fixSecondNode.find(dit->get()->getEnt()) != fixSecondNode.end()) {
-        if (dit->get()->getDofCoeffIdx() == 1) {
-          set_fix_dofs.insert(dit->get()->getPetscGlobalDofIdx());
-        }
-      }
-
-      if (fixNodes.find(dit->get()->getEnt()) != fixNodes.end()) {
-        set_fix_dofs.insert(dit->get()->getPetscGlobalDofIdx());
-      }
-    }
-
-    std::vector<int> fix_dofs(set_fix_dofs.size());
-
-    std::copy(set_fix_dofs.begin(), set_fix_dofs.end(), fix_dofs.begin());
-
-    CHKERR MatAssemblyBegin(ksp_B, MAT_FINAL_ASSEMBLY);
-    CHKERR MatAssemblyEnd(ksp_B, MAT_FINAL_ASSEMBLY);
-    CHKERR VecAssemblyBegin(ksp_f);
-    CHKERR VecAssemblyEnd(ksp_f);
-
-    Vec x;
-
-    CHKERR VecDuplicate(ksp_f, &x);
-    CHKERR VecZeroEntries(x);
-    CHKERR MatZeroRowsColumns(ksp_B, fix_dofs.size(), &fix_dofs[0], 1, x,
-                              ksp_f);
-
-    CHKERR VecDestroy(&x);
-
-    MoFEMFunctionReturn(0);
-  }
-};
-
 struct OpPressure : MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator {
 
   double pressureVal;
@@ -385,6 +329,62 @@ struct OpPressure : MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator {
     // add computed values of pressure in the global right hand side vector
     CHKERR VecSetValues(getFEMethod()->ksp_f, nb_dofs, &data.getIndices()[0],
                         &nF[0], ADD_VALUES);
+
+    MoFEMFunctionReturn(0);
+  }
+};
+
+struct ApplyDirichletBc : public MoFEM::FEMethod {
+
+  Range fixFaces, fixNodes, fixSecondNode;
+
+  ApplyDirichletBc(const Range &fix_faces, const Range &fix_nodes,
+                   const Range &fix_second_node)
+      : MoFEM::FEMethod(), fixFaces(fix_faces), fixNodes(fix_nodes),
+        fixSecondNode(fix_second_node) {
+    // constructor
+  }
+
+  MoFEMErrorCode postProcess() {
+
+    MoFEMFunctionBegin;
+    std::set<int> set_fix_dofs;
+
+    for (_IT_NUMEREDDOF_ROW_FOR_LOOP_(problemPtr, dit)) {
+      if (dit->get()->getDofCoeffIdx() == 2) {
+        if (fixFaces.find(dit->get()->getEnt()) != fixFaces.end()) {
+          set_fix_dofs.insert(dit->get()->getPetscGlobalDofIdx());
+        }
+      }
+
+      if (fixSecondNode.find(dit->get()->getEnt()) != fixSecondNode.end()) {
+        if (dit->get()->getDofCoeffIdx() == 1) {
+          set_fix_dofs.insert(dit->get()->getPetscGlobalDofIdx());
+        }
+      }
+
+      if (fixNodes.find(dit->get()->getEnt()) != fixNodes.end()) {
+        set_fix_dofs.insert(dit->get()->getPetscGlobalDofIdx());
+      }
+    }
+
+    std::vector<int> fix_dofs(set_fix_dofs.size());
+
+    std::copy(set_fix_dofs.begin(), set_fix_dofs.end(), fix_dofs.begin());
+
+    CHKERR MatAssemblyBegin(ksp_B, MAT_FINAL_ASSEMBLY);
+    CHKERR MatAssemblyEnd(ksp_B, MAT_FINAL_ASSEMBLY);
+    CHKERR VecAssemblyBegin(ksp_f);
+    CHKERR VecAssemblyEnd(ksp_f);
+
+    Vec x;
+
+    CHKERR VecDuplicate(ksp_f, &x);
+    CHKERR VecZeroEntries(x);
+    CHKERR MatZeroRowsColumns(ksp_B, fix_dofs.size(), &fix_dofs[0], 1, x,
+                              ksp_f);
+
+    CHKERR VecDestroy(&x);
 
     MoFEMFunctionReturn(0);
   }
