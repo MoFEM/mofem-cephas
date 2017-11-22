@@ -353,9 +353,9 @@ Similar to the element stiffness matrix, the matrix quantity in the integrals is
 \section hierarchical_approximation_data_structures Entity approximation functions
 
 To assemble the global stiffness matrix to solve the discretised problem,
-three nested loops are performed. The out most loop operates over the total
-number of elements, the second loop operated over the element entities and
-the innermost loop operates over the element gauss points. 
+three nested loops are performed. The out most loop operates over the finite
+elements, the second loop operated over the element entities and the
+innermost loop operates over the element gauss points.
 
 In a typical implementation, the user can access base functions on the finite
 element for each sub-entity of finite element. For example, the quadrilateral
