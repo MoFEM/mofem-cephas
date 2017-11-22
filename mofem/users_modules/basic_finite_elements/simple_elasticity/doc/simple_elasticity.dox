@@ -1586,7 +1586,7 @@ approximation is sufficient to get the exact the solution. Thus setting second
 order approximation does not improve solution. Note that all DOFs on edges
 for this case have zero values.
 
-\section Exercises
+\section simple_elasticity_exercises Exercises
 
 - Change boundary conditions to have fix cantilever and apply tractions to
 bend beam in \e x or \e y direction? Check how displacements would
