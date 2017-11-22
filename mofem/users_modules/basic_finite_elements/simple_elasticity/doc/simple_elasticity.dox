@@ -1596,4 +1596,11 @@ hand plot convergence for beam subjected bending and torsion.
 If you have problems with understanding this tutorial or exercises, please
 contact us on Q&A forum, see <a href=https://groups.google.com/forum/#!forum/mofem-group>link</a>.
 
+
+\section mai_minimal_surface_equation The plain program
+
+The plain program is located in \e users_modules/basic_finite_elements/simple_elasticity/simple_elasticity.cpp
+
+\include users_modules/basic_finite_elements/simple_elasticity/simple_elasticity.cpp
+
 */
