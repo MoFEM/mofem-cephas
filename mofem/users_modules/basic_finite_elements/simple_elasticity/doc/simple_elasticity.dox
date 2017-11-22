@@ -1,3 +1,6 @@
+#include <BasicFiniteElements.hpp>
+using namespace MoFEM;
+
 /*! \page simple_elasticity_1 Simple elasticity
 
 This tutorial motivation to show how finite element is implemented using
