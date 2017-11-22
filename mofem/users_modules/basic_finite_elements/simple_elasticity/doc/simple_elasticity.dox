@@ -1,3 +1,6 @@
+#include <BasicFiniteElements.hpp>
+using namespace MoFEM;
+
 /*! \page simple_elasticity_1 Simple elasticity
 
 This tutorial motivation to show how finite element is implemented using
@@ -995,8 +998,8 @@ approximation'' tutorial are passed to this function as \e col\_type and
 \e row\_type respectively.
 
 The number of degrees of freedom associated to each structure (which are
-equal to the length of the column and row) is then passed to variables nbCols
-and nbRows and checked that they are non-zero
+equal to the length of the column and row) is then passed to variables \e nbCols
+and \e nbRows and checked that they are non-zero
 \code
     // get number of dofs on row
     nbRows = row_data.getIndices().size();
@@ -1489,7 +1492,6 @@ public variables of the struct are inserted to vector of integers
 \e set\_fix\_dofs through insert function
 
 \code
-MoFEMFunctionBeginHot;
      std::set<int> set_fix_dofs;
 
      for (_IT_NUMEREDDOF_ROW_FOR_LOOP_(problemPtr, dit)) {
@@ -1596,5 +1598,12 @@ hand plot convergence for beam subjected bending and torsion.
 
 If you have problems with understanding this tutorial or exercises, please
 contact us on Q&A forum, see <a href=https://groups.google.com/forum/#!forum/mofem-group>link</a>.
+
+
+\section mai_minimal_surface_equation The plain program
+
+The plain program is located in \e users_modules/basic_finite_elements/simple_elasticity/simple_elasticity.cpp
+
+\include users_modules/basic_finite_elements/simple_elasticity/simple_elasticity.cpp
 
 */
