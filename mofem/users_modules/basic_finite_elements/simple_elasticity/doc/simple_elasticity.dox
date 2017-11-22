@@ -14,6 +14,8 @@ the present tutorial. Initially, generation of a mesh is presented and then
 the module developed for this tutorial is dissected. Finally, code run and
 post processing of the results are discussed.
 
+\tableofcontents
+
 \section simple_elasticity_problem The problem
 
 The linear elastic problem modelled here is an orthogonal parallelepiped of
@@ -193,7 +195,7 @@ the mesh is passed to MoAB data base.
 \subsection{Fields}
 
 Fields of user's interest can be introduced to the MoAB database through
-simple\_interface object as presented below for the shape functions field in
+\e simple\_interface object as presented below for the shape functions field in
 our 3D domain.
 \code
   CHKERR simple_interface->addDomainField("U", H1, AINSWORTH_LEGENDRE_BASE, 3);
@@ -209,7 +211,7 @@ the dimensions of the degrees of freedom related to each shape functions.
 Here, this number is 3 since it is a displacement field in a 3D domain.
 Should the unknown field be pressure, then the hard-coded number will be 1
 instead of 3 since pressure always has one dimension. Furthermore, the order
-of the approximation field is introduced through function setFieldOrder. As
+of the approximation field is introduced through function MoFEM::Simple::setFieldOrder. As
 explained earlier, the order of the approximated field can be chosen and the
 appropriate Hierarchical shape functions will be taken into account
 accordingly.
@@ -386,12 +388,9 @@ database through the function \e add\_finite_element("PRESSURE"), where the
 string "PRESSURE" used as input is the name that we chose to call the new
 element. Then, the row and col field information of the "PRESSURE" element
 are set to be those of "U" type. Furthermore, the list of fields that are
-associated with "PRESSURE" element listed in the elements data is then set
-to be only the "U" type field.
-
-In a more complicated case, more than one fields can be added to the data,
-row and col structures of a finite element.
-
+associated with "PRESSURE" element listed in the elements data is then set to
+be only the "U" type field. In a more complicated case, more than one fields
+can be added to the data, row and col structures of a finite element.
 Similarly, definition of each problem stencil consists of problem's name and
 the stencils of the various elements previously presented and are defined
 using the code lines below
@@ -408,7 +407,7 @@ defined.
 \subsection simple_elastic_DMM DMMoFEM
 
 The new ``PRESSURE'' finite element has to be explicitly added to DMMoFEM
-since it was not created through simple\_interface. Hence, a DM object is
+since it was not created through \e simple\_interface. Hence, a DM object is
 declared and it is set to point to the DMMoFEM create by the interface as
 \code
   DM dm;
@@ -434,7 +433,7 @@ parallel computing fashion.
 
 \subsection simple_elastic_build Build
 
-Then, fields and finite elements declared through simple\_interface are built
+Then, fields and finite elements declared through \e simple\_interface are built
 (second stage presented in \ref Figure_8_Elastic "Figure 8").
 
 \code
@@ -676,10 +675,10 @@ destroyed as presented below
 to free the heap memory and prevent any memory leaks.
 \section simple_elastic_UDO User Defined Operators (UDOs)
 
-\note Following implementation is intended to be most efficient, to make fast
+\note Following implementation is NOT intended to be most efficient, to make fast
 matrix assembly use FTensor. In this tutorial, we aim to present
-implementation which is familiar to most of the users with the use of
-\f$\mathbf{B}\f$ of undergraduate students.
+implementation which is familiar to most of the users, using concept of
+\f$\mathbf{B}\f$ matrix.
 
 \subsection simple_elastic_element_stiffness Element stiffness matrix
 

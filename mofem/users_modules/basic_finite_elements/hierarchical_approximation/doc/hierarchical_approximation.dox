@@ -1,4 +1,4 @@
-/*! \page hierarchical_approximation_1 Hierarchical approximation
+/*! \page hierarchical_approximation_1 Basics of hierarchical approximation
 
 \section hierarchical_approximation_introduction Introduction 
 The present tutorial is aimed to introduce elementary concepts of the Finite Element Method (FEM) with hierarchical shape functions and their implementation in MoFEM.
@@ -7,6 +7,8 @@ The reader is assumed to be familiar with the FEM approach to solve Partial Diff
 Here, differences between the node oriented (that most readers are familiar with) and hierarchical shape functions is described.
 Aspects of MoFEM implementation of this approach will be described for the user to understand the FEM implementation within the present framework.
 These concepts are presented as briefly as possible with sole aim to clarify their implementation within MoFEM.
+
+\tableofcontents
 
 \subsection hierarchical_approximation_motivation Motivation for using Hierarchical shape functions
 
