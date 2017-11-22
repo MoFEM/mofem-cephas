@@ -995,8 +995,8 @@ approximation'' tutorial are passed to this function as \e col\_type and
 \e row\_type respectively.
 
 The number of degrees of freedom associated to each structure (which are
-equal to the length of the column and row) is then passed to variables nbCols
-and nbRows and checked that they are non-zero
+equal to the length of the column and row) is then passed to variables \e nbCols
+and \e nbRows and checked that they are non-zero
 \code
     // get number of dofs on row
     nbRows = row_data.getIndices().size();
