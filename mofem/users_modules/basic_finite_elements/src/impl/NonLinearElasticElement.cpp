@@ -1229,53 +1229,7 @@ NonlinearElasticElement::OpLhsEshelby_dx::OpLhsEshelby_dx(
 OpLhsPiolaKirchhoff_dX(vel_field,field_name,data,common_data) {}
 
 MoFEMErrorCode NonlinearElasticElement::OpLhsEshelby_dx::getJac(DataForcesAndSourcesCore::EntData &col_data,int gg) {
-  MoFEMFunctionBeginHot;
-  jac.clear();
-  FTensor::Index<'i',3> i;
-  FTensor::Index<'j',3> j;
-  FTensor::Index<'k',3> k;
-  MatrixDouble &jac_stress = commonData.jacStress[gg];
-  int nb_col = col_data.getFieldData().size();
-  double *diff_ptr = const_cast<double*>(&(col_data.getDiffN(gg,nb_col/3)(0,0)));
-  FTensor::Tensor1<double*,3> diff(diff_ptr,&diff_ptr[1],&diff_ptr[2],3);
-  for(int dd = 0;dd!=nb_col/3;dd++) {
-    for(int rr = 0;rr!=3;rr++) {
-      // Derivate of 1st Piola-stress multiplied by gradient of defamation for
-      // base function (dd) and displacement component (rr)
-      FTensor::Tensor2<double*,3,3> t2_1(
-        &jac(0,3*dd+rr),&jac(1,3*dd+rr),&jac(2,3*dd+rr),
-        &jac(3,3*dd+rr),&jac(4,3*dd+rr),&jac(5,3*dd+rr),
-        &jac(6,3*dd+rr),&jac(7,3*dd+rr),&jac(8,3*dd+rr)
-      );
-      // First two indices 'i','j' derivatives of 1st Piola-stress, third index 'k' is
-      // displacement component
-      FTensor::Tensor3<double*,3,3,3> t3_1(
-        &jac_stress(3*0+0,3*rr+0),&jac_stress(3*0+0,3*rr+1),&jac_stress(3*0+0,3*rr+2),
-        &jac_stress(3*0+1,3*rr+0),&jac_stress(3*0+1,3*rr+1),&jac_stress(3*0+1,3*rr+2),
-        &jac_stress(3*0+2,3*rr+0),&jac_stress(3*0+2,3*rr+1),&jac_stress(3*0+2,3*rr+2),
-        &jac_stress(3*1+0,3*rr+0),&jac_stress(3*1+0,3*rr+1),&jac_stress(3*1+0,3*rr+2),
-        &jac_stress(3*1+1,3*rr+0),&jac_stress(3*1+1,3*rr+1),&jac_stress(3*1+1,3*rr+2),
-        &jac_stress(3*1+2,3*rr+0),&jac_stress(3*1+2,3*rr+1),&jac_stress(3*1+2,3*rr+2),
-        &jac_stress(3*2+0,3*rr+0),&jac_stress(3*2+0,3*rr+1),&jac_stress(3*2+0,3*rr+2),
-        &jac_stress(3*2+1,3*rr+0),&jac_stress(3*2+1,3*rr+1),&jac_stress(3*2+1,3*rr+2),
-        &jac_stress(3*2+2,3*rr+0),&jac_stress(3*2+2,3*rr+1),&jac_stress(3*2+2,3*rr+2)
-      );
-      t2_1(i,j) += t3_1(i,j,k)*diff(k);
-    }
-    ++diff;
-  }
-  // int nb_col = col_data.getFieldData().size();
-  // const MatrixAdaptor diffN = col_data.getDiffN(gg,nb_col/3);
-  // for(int dd = 0;dd<nb_col/3;dd++) {
-  //   for(int rr = 0;rr<3;rr++) {
-  //     for(int ii = 0;ii<9;ii++) {
-  //       for(int jj = 0;jj<3;jj++) {
-  //         jac(ii,3*dd+rr) += commonData.jacStress[gg](ii,3*rr+jj)*diffN(dd,jj);
-  //       }
-  //     }
-  //   }
-  // }
-  MoFEMFunctionReturnHot(0);
+  return OpLhsPiolaKirchhoff_dx::getJac(col_data,gg);
 }
 
 NonlinearElasticElement::OpLhsEshelby_dX::OpLhsEshelby_dX(
@@ -1322,47 +1276,6 @@ MoFEMErrorCode NonlinearElasticElement::OpLhsEshelby_dX::getJac(DataForcesAndSou
     }
     ++t3_1;
   }
-  // MatrixDouble &jac_stress = commonData.jacStress[gg];
-  // int nb_col = col_data.getFieldData().size();
-  // double *diff_ptr = const_cast<double*>(&(col_data.getDiffN(gg,nb_col/3)(0,0)));
-  // FTensor::Tensor1<double*,3> diff(diff_ptr,&diff_ptr[1],&diff_ptr[2],3);
-  // for(int dd = 0;dd!=nb_col/3;dd++) {
-  //   for(int rr = 0;rr!=3;rr++) {
-  //     // Derivate of 1st Piola-stress multiplied by gradient of defamation for
-  //     // base function (dd) and displacement component (rr)
-  //     FTensor::Tensor2<double*,3,3> t2_1(
-  //       &jac(0,3*dd+rr),&jac(1,3*dd+rr),&jac(2,3*dd+rr),
-  //       &jac(3,3*dd+rr),&jac(4,3*dd+rr),&jac(5,3*dd+rr),
-  //       &jac(6,3*dd+rr),&jac(7,3*dd+rr),&jac(8,3*dd+rr)
-  //     );
-  //     // First two indices 'i','j' derivatives of 1st Piola-stress, third index 'k' is
-  //     // displacement component
-  //     FTensor::Tensor3<double*,3,3,3> t3_1(
-  //       &jac_stress(3*0+0,9+3*rr+0),&jac_stress(3*0+0,9+3*rr+1),&jac_stress(3*0+0,9+3*rr+2),
-  //       &jac_stress(3*0+1,9+3*rr+0),&jac_stress(3*0+1,9+3*rr+1),&jac_stress(3*0+1,9+3*rr+2),
-  //       &jac_stress(3*0+2,9+3*rr+0),&jac_stress(3*0+2,9+3*rr+1),&jac_stress(3*0+2,9+3*rr+2),
-  //       &jac_stress(3*1+0,9+3*rr+0),&jac_stress(3*1+0,9+3*rr+1),&jac_stress(3*1+0,9+3*rr+2),
-  //       &jac_stress(3*1+1,9+3*rr+0),&jac_stress(3*1+1,9+3*rr+1),&jac_stress(3*1+1,9+3*rr+2),
-  //       &jac_stress(3*1+2,9+3*rr+0),&jac_stress(3*1+2,9+3*rr+1),&jac_stress(3*1+2,9+3*rr+2),
-  //       &jac_stress(3*2+0,9+3*rr+0),&jac_stress(3*2+0,9+3*rr+1),&jac_stress(3*2+0,9+3*rr+2),
-  //       &jac_stress(3*2+1,9+3*rr+0),&jac_stress(3*2+1,9+3*rr+1),&jac_stress(3*2+1,9+3*rr+2),
-  //       &jac_stress(3*2+2,9+3*rr+0),&jac_stress(3*2+2,9+3*rr+1),&jac_stress(3*2+2,9+3*rr+2)
-  //     );
-  //     t2_1(i,j) += t3_1(i,j,k)*diff(k);
-  //   }
-  //   ++diff;
-  // }
-  // int nb_col = col_data.getFieldData().size();
-  // const MatrixAdaptor diffN = col_data.getDiffN(gg,nb_col/3);
-  // for(int dd = 0;dd<nb_col/3;dd++) {
-  //   for(int rr = 0;rr<3;rr++) {
-  //     for(int ii = 0;ii<9;ii++) {
-  //       for(int jj = 0;jj<3;jj++) {
-  //         jac(ii,3*dd+rr) += commonData.jacStress[gg](ii,9+3*rr+jj)*diffN(dd,jj);
-  //       }
-  //     }
-  //   }
-  // }
   MoFEMFunctionReturnHot(0);
 }
 
