@@ -1084,17 +1084,18 @@ MoFEMErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dx::doWork(
         &jac(3*2+1,0),&jac(3*2+1,1),&jac(3*2+1,2),
         &jac(3*2+2,0),&jac(3*2+2,1),&jac(3*2+2,2),3
       );
-      for(int rr = 0;rr!=nb_col/3;rr++) {
-        FTensor::Tensor1<double*,3> diff_base_functions = row_data.getFTensor1DiffN<3>(gg,0);
-        int bb = 0;
-        for(;bb!=nb_row/3;bb++) {
-          FTensor::Tensor2<double*,3,3> lhs(
-            &k(3*bb+0,3*rr+0),&k(3*bb+0,3*rr+1),&k(3*bb+0,3*rr+2),
-            &k(3*bb+1,3*rr+0),&k(3*bb+1,3*rr+1),&k(3*bb+1,3*rr+2),
-            &k(3*bb+2,3*rr+0),&k(3*bb+2,3*rr+1),&k(3*bb+2,3*rr+2)
-          );
+      for (int cc = 0; cc != nb_col / 3; cc++) {
+        FTensor::Tensor1<double *, 3> diff_base_functions =
+            row_data.getFTensor1DiffN<3>(gg, 0);
+        FTensor::Tensor2<double*,3,3> lhs(
+          &k(0,3*cc+0),&k(0,3*cc+1),&k(0,3*cc+2),
+          &k(1,3*cc+0),&k(1,3*cc+1),&k(1,3*cc+2),
+          &k(2,3*cc+0),&k(2,3*cc+1),&k(2,3*cc+2),3*nb_col
+        );
+        for (int rr = 0; rr != nb_row / 3; rr++) {
           lhs(i,j) += val*t3_1(i,m,j)*diff_base_functions(m);
           ++diff_base_functions;
+          ++lhs;
         }
         ++t3_1;
       }
