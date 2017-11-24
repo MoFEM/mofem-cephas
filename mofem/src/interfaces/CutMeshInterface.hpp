@@ -83,7 +83,8 @@ struct CutMeshInterface : public UnknownInterface {
    */
   MoFEMErrorCode copySurface(const Range &surface, Tag th = NULL,
                              double *shift = NULL, double *origin = NULL,
-                             double *transform = NULL);
+                             double *transform           = NULL,
+                             const std::string save_mesh = "");
 
   /**
    * \brief set volume entities

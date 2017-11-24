@@ -45,23 +45,21 @@ MoFEMErrorCode CutMeshInterface::setSurface(const Range &surface) {
 
 MoFEMErrorCode CutMeshInterface::copySurface(const Range &surface, Tag th,
                                              double *shift, double *origin,
-                                             double *transform) {
+                                             double *transform,
+                                             const std::string save_mesh) {
   CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   for (Range::const_iterator tit = surface.begin(); tit != surface.end();
        tit++) {
     int num_nodes;
     const EntityHandle *conn;
-    rval = moab.get_connectivity(*tit, conn, num_nodes, true);
-    CHKERRG(rval);
+    CHKERR moab.get_connectivity(*tit, conn, num_nodes, true);
     MatrixDouble coords(num_nodes, 3);
     if (th) {
-      rval = moab.tag_get_data(th, conn, num_nodes, &coords(0, 0));
-      CHKERRG(rval);
+      CHKERR moab.tag_get_data(th, conn, num_nodes, &coords(0, 0));
     } else {
-      rval = moab.get_coords(conn, num_nodes, &coords(0, 0));
-      CHKERRG(rval);
+      CHKERR moab.get_coords(conn, num_nodes, &coords(0, 0));
     }
     EntityHandle new_verts[num_nodes];
     for (int nn = 0; nn != num_nodes; nn++) {
@@ -87,15 +85,21 @@ MoFEMErrorCode CutMeshInterface::copySurface(const Range &surface, Tag th,
                                 ublas::shallow_array_adaptor<double>(3, shift));
         mr = mr + vec_shift;
       }
-      rval = moab.create_vertex(&coords(nn, 0), new_verts[nn]);
-      CHKERRG(rval);
+      CHKERR moab.create_vertex(&coords(nn, 0), new_verts[nn]);
     }
     EntityHandle ele;
-    rval = moab.create_element(MBTRI, new_verts, num_nodes, ele);
-    CHKERRG(rval);
+    CHKERR moab.create_element(MBTRI, new_verts, num_nodes, ele);
     sUrface.insert(ele);
   }
-  MoFEMFunctionReturnHot(0);
+  if (!save_mesh.empty()) {
+    EntityHandle meshset;
+    CHKERR m_field.get_moab().create_meshset(MESHSET_SET, meshset);
+    CHKERR m_field.get_moab().add_entities(meshset, sUrface);
+    CHKERR m_field.get_moab().write_file(save_mesh.c_str(), "VTK", "", &meshset,
+                                         1);
+    CHKERR m_field.get_moab().delete_entities(&meshset, 1);
+  }
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode CutMeshInterface::setVolume(const Range &volume) {
