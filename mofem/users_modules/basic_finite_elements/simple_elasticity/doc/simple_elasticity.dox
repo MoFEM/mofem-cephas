@@ -4,7 +4,7 @@ using namespace MoFEM;
 /*! \page simple_elasticity_1 Simple elasticity
 
 This tutorial motivation to show how finite element is implemented using
-basic blocks, like the Lego block where one can combine them in arbitrarily
+basic blocks, like the Lego block where one can combine them in arbitrarily,
 restricted only by his or her imagination. That is not short and compact
 code, where PDE can be in single line, but code which can be modified and
 changed in a way that was not imagined by developers.
@@ -487,7 +487,7 @@ declaration, FE element definition and FE implementation is explicitly
 disentangled. That gives us great flexibility allowing for combining
 individual parts of the code in a countless number of variations.
 
-Implementation FE element can be done on range levels of abstractions. Here
+Implementation FE element can be done on range of levels of abstractions. Here
 we present implementation which introduces the concept of \e User \e Defined
 \e Operator. Using its implementation is not constrained to finite element
 shape or approximation base of fields. In case of coupled or mix formulation,
@@ -1586,10 +1586,11 @@ approximation is sufficient to get the exact the solution. Thus setting second
 order approximation does not improve solution. Note that all DOFs on edges
 for this case have zero values.
 
-\section Excercises
+\section simple_elasticity_exercises Exercises
 
-- Change pressure to bend beam in \e x or \e y direction? Can you
-check how displacements would converge with increasing approximation order?
+- Change boundary conditions to have fix cantilever and apply tractions to
+bend beam in \e x or \e y direction? Check how displacements would
+converge with increasing approximation order?
 
 - Modify code to apply torsion to the beam.
 
