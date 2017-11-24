@@ -601,7 +601,8 @@ struct NonlinearElasticElement {
       where second therm \f$\frac{\partial F}{\partial x_\textrm{DOF}}\f$ is derivative of shape function
 
     */
-    virtual MoFEMErrorCode getJac(DataForcesAndSourcesCore::EntData &col_data,int gg);
+    virtual MoFEMErrorCode getJac(DataForcesAndSourcesCore::EntData &col_data,
+                                  int gg);
 
     virtual MoFEMErrorCode aSemble(
       int row_side,int col_side,
