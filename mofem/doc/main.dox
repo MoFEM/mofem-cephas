@@ -88,7 +88,9 @@ notably so far has been used to solve
 \subsection mofem_features_ho Higher-order finite element spaces
 
 - MoFEM supports wide range of spaces, L2, H1, H-div and H-curl
+
 - Numerical trace (interfacial) spaces, on faces and edges
+
 - Integration on skeleton, (enabling easy implementation of Discontinuous Galerkin or Nitsche method)
 
 \subsection mofem_features_discretisation Flexible discretization
@@ -144,7 +146,11 @@ implementations are tailored for massive parallel calculations.
 
 \htmlinclude doc/twitter_widged.html
 
-\section mofem_openhub Stats
+\section mofem_openhub Stats and long-term development 
+
+- Stable, systematic, continuous development and reliable over an extended period. 
+
+- A team of passionate developers and contributors.
 
 \htmlonly
 <script type='text/javascript' src='https://www.openhub.net/p/mofem/widgets/project_basic_stats?format=js'></script>
