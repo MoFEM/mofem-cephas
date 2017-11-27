@@ -94,7 +94,7 @@ namespace MoFEM {
 
   MoFEMErrorCode ProblemsManager::partitionMesh(
     const Range &ents,const int dim,const int adj_dim,const int n_parts,
-    Tag *th_vertex_weights,Tag *th_edge_weights,Tag *th_part_veights,
+    Tag *th_vertex_weights,Tag *th_edge_weights,Tag *th_part_weights,
     int verb
   ) {
     MoFEM::Interface &m_field = cOre;
@@ -169,7 +169,7 @@ namespace MoFEM {
       copy(j.begin(),j.end(),_j);
     }
 
-    // get veighths
+    // get weights
     int* vertex_weights = NULL;
     if(th_vertex_weights!=NULL) {
       ierr = PetscMalloc(weigth_ents.size()*sizeof(int),&vertex_weights); CHKERRG(ierr);
@@ -621,7 +621,7 @@ namespace MoFEM {
       //fe_miit iterator for finite elements
       EntFiniteElement_multiIndex::iterator fe_miit = fe_ent_ptr->begin();
       EntFiniteElement_multiIndex::iterator hi_fe_miit = fe_ent_ptr->end();
-      //iterate all finite elemen entities in database
+      //iterate all finite elements entities in database
       for(;fe_miit!=hi_fe_miit;fe_miit++) {
         //if element is in problem
         if(((*fe_miit)->getId()&problem_ptr->getBitFEId()).any()) {
@@ -640,7 +640,7 @@ namespace MoFEM {
       }
     }
 
-    // Add DOFS to the proble by searching all the fileds, and adding to problem
+    // Add DOFS to the proble by searching all the filedes, and adding to problem
     // owned or shared DOFs
     if(buildProblemFromFields==PETSC_TRUE) {
       // Get fields IDs on elements
