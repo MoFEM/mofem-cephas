@@ -239,7 +239,7 @@ ierr = SNESSolve(solver,F,D); CHKERRG(ierr);
 \endcode
 Note that SNES solver controls DM, and implicitly query of DM to create
 necessary matrices and assembly of the tangent matrix and residual vectors.
-SNES solver can be configured from a command line, see for details <a href=http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/SNES/SNESSetFromOptions.html>see for details</a>.
+SNES solver can be configured from a command line, <a href=http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/SNES/SNESSetFromOptions.html>see for details</a>.
 
 
 \subsection poisson_tut4_main_running_code Running code
@@ -299,7 +299,7 @@ Approximation error 4.109e-10
 \endverbatim
 Note fast convergence, after first two interactions, once iterative approximation
 approaches the exact solution. To obtain this solution, we are using Newton method with line-searcher, in this case,
-we use critical point secant line search, <a href=http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/SNES/SNESLINESEARCHCP.html>see details</a
+we use critical point secant line search, <a href=http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/SNES/SNESLINESEARCHCP.html>see details</a>
 Line-search method has several alternative types and can be setup independently
 from solver, they can be found  <a href=http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/SNES/SNESLineSearchSetFromOptions.html>here</a>.
 

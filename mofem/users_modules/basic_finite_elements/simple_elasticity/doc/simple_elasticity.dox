@@ -174,10 +174,6 @@ are introduced
 
 \endcode
 
-\code
-    Vec global_error;
-    CHKERR PoissonExample::AuxFunctions(m_field).createGhostVec(&global_error);
-\endcode
 
 \subsection simple_elasticity_createFE Accessing simple interface
 
@@ -964,7 +960,7 @@ MoFEMErrorCode doWork(
     // get number of dofs on column
     nbCols = col_data.getIndices().size();
     
-    // if no dofs on Columbia, exit nothing to do here
+    // if no dofs on columns, exit nothing to do here
     if (!nbCols)
       MoFEMFunctionReturnHot(0);
 
@@ -1008,7 +1004,7 @@ and \e nbRows and checked that they are non-zero
       MoFEMFunctionReturnHot(0);
     // get number of dofs on column
     nbCols = col_data.getIndices().size();
-    // if no dofs on Columbia, exit nothing to do here
+    // if no dofs on columns, exit nothing to do here
     if (!nbCols)
       MoFEMFunctionReturnHot(0);
 \endcode
@@ -1218,7 +1214,7 @@ of freedom would be equal to the number of shape function gradients.
 \subsection simple_elasticity_op_pressure OpPressure
 
 The operator created for the "PRESSURE" finite element that is used to
-evaluate and assign Neuman boundary conditions according to (12) presented in
+evaluate and assign Neumann boundary conditions according to (12) presented in
 \ref hierarchical_approximation_1 will be presented in detail. The operator
 is the struct presented below
 \code
