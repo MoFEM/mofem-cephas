@@ -267,14 +267,15 @@ struct CutMeshInterface : public UnknownInterface {
    * @param  th tag handle
    * @return    error code
    */
-  MoFEMErrorCode setTagData(Tag th);
+  MoFEMErrorCode setTagData(Tag th,const BitRefLevel bit = BitRefLevel());
 
   /**
    * \brief set coords from tag
    * @param  th tag handle
    * @return    error code
    */
-  MoFEMErrorCode setCoords(Tag th);
+  MoFEMErrorCode setCoords(Tag th, const BitRefLevel bit = BitRefLevel(),
+                           const BitRefLevel mask = BitRefLevel().set());
 
   inline const Range &getVolume() const { return vOlume; }
   inline const Range &getSurface() const { return sUrface; }
