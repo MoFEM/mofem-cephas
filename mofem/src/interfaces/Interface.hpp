@@ -236,6 +236,10 @@ namespace MoFEM {
 
     /** \brief remove entities form mofem database
      */
+    virtual MoFEMErrorCode remove_ents(const Range &ents, int verb = -1) = 0;
+
+    /** \brief remove entities form mofem database
+     */
     virtual MoFEMErrorCode remove_ents_by_bit_ref(const BitRefLevel &bit,
                                                   const BitRefLevel &mask,
                                                   int verb = -1) = 0;
@@ -532,6 +536,14 @@ namespace MoFEM {
      */
     virtual MoFEMErrorCode remove_ents_from_field(const std::string &name,
                                                   const Range &ents,
+                                                  int verb = -1) = 0;
+
+    /**
+     * \brief remove entities from all fields
+     * \ingroup mofem_field
+     *
+     */
+    virtual MoFEMErrorCode remove_ents_from_field(const Range &ents,
                                                   int verb = -1) = 0;
 
     /**
@@ -881,6 +893,13 @@ namespace MoFEM {
     virtual MoFEMErrorCode
     remove_ents_from_finite_element(const std::string &name, const Range &ents,
                                     int verb = -1) = 0;
+
+    /** \brief remove entities from finite elements in database
+     * \ingroup mofem_fe
+     *
+     */
+    virtual MoFEMErrorCode remove_ents_from_finite_element(const Range &ents,
+                                                 int verb = -1) = 0;
 
     /** \brief add MESHSET element to finite element database given by name
      * \ingroup mofem_fe
