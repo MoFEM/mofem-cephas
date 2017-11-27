@@ -42,6 +42,24 @@ if(WITH_MODULE_HOMOGENISATION)
   endif(NOT EXISTS ${UM_SOURCE_DIR}/homogenisation)
 endif(WITH_MODULE_HOMOGENISATION)
 
+if(WITH_MODULE_BONE_REMODELLING)
+  if(NOT EXISTS ${UM_SOURCE_DIR}/bone_remodelling)
+    execute_process(
+      COMMAND ${GIT_EXECUTABLE} git clone https://bitbucket.org/likask/mofem_um_bone_remodelling.git bone_remodelling
+      WORKING_DIRECTORY ${UM_SOURCE_DIR}
+    )
+  endif(NOT EXISTS ${UM_SOURCE_DIR}/bone_remodelling)
+endif(WITH_MODULE_BONE_REMODELLING)
+
+ if(WITH_MODULE_MWLS_APPROX)
+  if(NOT EXISTS ${UM_SOURCE_DIR}/mwls_approx)
+    execute_process(
+      COMMAND ${GIT_EXECUTABLE} clone git clone https://bitbucket.org/karol41/mofem_um_mwls.git mwls_approx
+      WORKING_DIRECTORY ${UM_SOURCE_DIR}
+    )
+  endif(NOT EXISTS ${UM_SOURCE_DIR}/mwls_approx)
+endif(WITH_MODULE_MWLS_APPROX)
+
 if(WITH_MODULE_FRACTURE_MECHANICS)
   if(NOT EXISTS ${UM_SOURCE_DIR}/fracture_mechanics)
     execute_process(

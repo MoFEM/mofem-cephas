@@ -47,26 +47,26 @@ struct CutMeshInterface : public UnknownInterface {
    * @return error code
    */
   MoFEMErrorCode getOptions() {
-    MoFEMFunctionBeginHot;
-    ierr = PetscOptionsBegin(PETSC_COMM_WORLD, "", "MOFEM Cut mesh options",
+    MoFEMFunctionBegin;
+    CHKERR PetscOptionsBegin(PETSC_COMM_WORLD, "", "MOFEM Cut mesh options",
                              "none");
-    CHKERRG(ierr);
-    ierr = PetscOptionsInt("-cut_linesearch_steps",
+    
+    CHKERR PetscOptionsInt("-cut_linesearch_steps",
                            "number of bisection steps which line search do to "
                            "find optimal merged nodes position",
                            "", lineSearchSteps, &lineSearchSteps, PETSC_NULL);
-    CHKERRG(ierr);
-    ierr = PetscOptionsInt("-cut_max_merging_cycles",
+    
+    CHKERR PetscOptionsInt("-cut_max_merging_cycles",
                            "number of maximal merging cycles", "",
                            nbMaxMergingCycles, &nbMaxMergingCycles, PETSC_NULL);
-    CHKERRG(ierr);
-    ierr = PetscOptionsInt(
+    
+    CHKERR PetscOptionsInt(
         "-cut_max_trim_iterations", "number of maximal merging cycles", "",
         nbMaxTrimSearchIterations, &nbMaxTrimSearchIterations, PETSC_NULL);
-    CHKERRG(ierr);
+
     ierr = PetscOptionsEnd();
     CHKERRG(ierr);
-    MoFEMFunctionReturnHot(0);
+    MoFEMFunctionReturn(0);
   }
 
   /**
@@ -83,7 +83,8 @@ struct CutMeshInterface : public UnknownInterface {
    */
   MoFEMErrorCode copySurface(const Range &surface, Tag th = NULL,
                              double *shift = NULL, double *origin = NULL,
-                             double *transform = NULL);
+                             double *transform           = NULL,
+                             const std::string save_mesh = "");
 
   /**
    * \brief set volume entities
@@ -266,14 +267,15 @@ struct CutMeshInterface : public UnknownInterface {
    * @param  th tag handle
    * @return    error code
    */
-  MoFEMErrorCode setTagData(Tag th);
+  MoFEMErrorCode setTagData(Tag th,const BitRefLevel bit = BitRefLevel());
 
   /**
    * \brief set coords from tag
    * @param  th tag handle
    * @return    error code
    */
-  MoFEMErrorCode setCoords(Tag th);
+  MoFEMErrorCode setCoords(Tag th, const BitRefLevel bit = BitRefLevel(),
+                           const BitRefLevel mask = BitRefLevel().set());
 
   inline const Range &getVolume() const { return vOlume; }
   inline const Range &getSurface() const { return sUrface; }

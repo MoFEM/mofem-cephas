@@ -18,14 +18,18 @@ principal, it should be your first priority to return the repository code to a
 compilable state and next to make sure that all tests (ctest) runs without
 errors.
 
-Finished proration of work should be committed by pull-request to CDashTesting
-branch. Commits to the CDashTesting branch should also come with a non-trivial,
-useful, non-verbose log message. It is required that before pull request user
-merge current CDashTesting branch and verify if all tests run without fails. If
-pull request is accepted it is user responsibility to verify results on
-CDash server <http://cdash.eng.gla.ac.uk/cdash/>. The first priority will be to
-eliminate compilation errors, completion warnings, failed tests and memory
-leaks.
+Intermediate development stages should be committed by pull-request to
+develop branch. The committed code has to compile, and committer should
+verify if tests are running successfully.
+
+Finished portion of work should be committed by pull-request to CDashTesting
+branch. Commits to the CDashTesting branch should also come with a
+non-trivial, useful, non-verbose log message. It is required that before pull
+request user merge current CDashTesting branch and verify if all tests run
+without fails. If pull request is accepted it is user responsibility to
+verify results on CDash server <http://cdash.eng.gla.ac.uk/cdash/>. The first
+priority will be to eliminate compilation errors, completion warnings, failed
+tests and memory leaks.
 
 Some guidance about branches:
 - Make often updates (git pull)
@@ -34,6 +38,8 @@ Some guidance about branches:
 - Before marking pull request, pull from branch to which you like to commit.
 - Pull regularly form CDashTesting branch.
 - If you working on two different tasks make two different branches. This simplifies code revision.
+- We have use three major branches, i.e. \e major  branch, \e CDashTesting branch and \e develop  branch.
+- User branches should have name as follows \e john/branch_name, for example \e lukas/work_on_new_aprox_base. 
 
 \section Source Code Style and Best Practices
 
