@@ -169,7 +169,7 @@ namespace MoFEM {
       copy(j.begin(),j.end(),_j);
     }
 
-    // get veighths
+    // get weights
     int* vertex_weights = NULL;
     if(th_vertex_weights!=NULL) {
       ierr = PetscMalloc(weigth_ents.size()*sizeof(int),&vertex_weights); CHKERRG(ierr);
