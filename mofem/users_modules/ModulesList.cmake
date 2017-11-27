@@ -51,7 +51,7 @@ if(WITH_MODULE_BONE_REMODELLING)
   endif(NOT EXISTS ${UM_SOURCE_DIR}/bone_remodelling)
 endif(WITH_MODULE_BONE_REMODELLING)
 
-  if(WITH_MODULE_MWLS_APPROX)
+ if(WITH_MODULE_MWLS_APPROX)
   if(NOT EXISTS ${UM_SOURCE_DIR}/mwls_approx)
     execute_process(
       COMMAND ${GIT_EXECUTABLE} clone git clone https://bitbucket.org/karol41/mofem_um_mwls.git mwls_approx
