@@ -94,7 +94,7 @@ namespace MoFEM {
 
   MoFEMErrorCode ProblemsManager::partitionMesh(
     const Range &ents,const int dim,const int adj_dim,const int n_parts,
-    Tag *th_vertex_weights,Tag *th_edge_weights,Tag *th_part_veights,
+    Tag *th_vertex_weights,Tag *th_edge_weights,Tag *th_part_weights,
     int verb
   ) {
     MoFEM::Interface &m_field = cOre;
