@@ -1,6 +1,9 @@
 ﻿---
 BasedOnStyle: LLVM
 Standard: Cpp03
-AlignConsecutiveAssignments: true
+
+AlignTrailingComments: true
+AlignOperands:   true
+AllowAllParametersOfDeclarationOnNextLine: true
 
 ...

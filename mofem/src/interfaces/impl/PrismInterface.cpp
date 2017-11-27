@@ -994,7 +994,8 @@ MoFEMErrorCode PrismInterface::splitSides(
         rval = moab.get_adjacencies(new_conn, 3, 2, false, new_ent);
         CHKERRQ_MOAB(rval);
         if (new_ent.size() != 1)
-          SETERRQ(PETSC_COMM_SELF, 1, "this tri should be in moab database");
+          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                  "this tri should be in moab database");
         int new_side = 1;
         rval = moab.tag_set_data(th_interface_side, &*new_ent.begin(), 1,
                                  &new_side);
@@ -1004,7 +1005,7 @@ MoFEMErrorCode PrismInterface::splitSides(
         //add prism element
         if(add_interface_entities) {
           if(inhered_from_bit_level.any()) {
-            SETERRQ(PETSC_COMM_SELF, 1,
+            SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                     "not implemented for inhered_from_bit_level");
           }
           //set prism connectivity
