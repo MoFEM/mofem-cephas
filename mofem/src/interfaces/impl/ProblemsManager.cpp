@@ -621,7 +621,7 @@ namespace MoFEM {
       //fe_miit iterator for finite elements
       EntFiniteElement_multiIndex::iterator fe_miit = fe_ent_ptr->begin();
       EntFiniteElement_multiIndex::iterator hi_fe_miit = fe_ent_ptr->end();
-      //iterate all finite elemen entities in database
+      //iterate all finite elements entities in database
       for(;fe_miit!=hi_fe_miit;fe_miit++) {
         //if element is in problem
         if(((*fe_miit)->getId()&problem_ptr->getBitFEId()).any()) {
@@ -640,7 +640,7 @@ namespace MoFEM {
       }
     }
 
-    // Add DOFS to the proble by searching all the fileds, and adding to problem
+    // Add DOFS to the proble by searching all the filedes, and adding to problem
     // owned or shared DOFs
     if(buildProblemFromFields==PETSC_TRUE) {
       // Get fields IDs on elements
