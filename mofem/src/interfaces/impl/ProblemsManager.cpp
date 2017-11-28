@@ -228,7 +228,8 @@ namespace MoFEM {
       ierr = ISGetIndices(is_gather_num,&gids);  CHKERRG(ierr);
 
       // set partition tag and gid tag to entities
-      ParallelComm* pcomm = ParallelComm::get_pcomm(&m_field.get_moab(),MYPCOMM_INDEX);
+      ParallelComm *pcomm = ParallelComm::get_pcomm(
+          &m_field.get_moab(), m_field.get_basic_entity_data_ptr()->pcommID);
       Tag gid_tag;
       Tag part_tag = pcomm->part_tag();
       {
@@ -760,7 +761,6 @@ namespace MoFEM {
     // used to keep shared_ptr
     std::vector<boost::shared_ptr<NumeredDofEntity> > dofs_shared_array;
 
-    // ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
     // Loop over dofs on this processor and prepare those dofs to send on another proc
     for(int ss = 0;ss<loop_size;ss++) {
 
@@ -2358,9 +2358,6 @@ namespace MoFEM {
 
     if(low_proc == -1) low_proc = m_field.get_comm_rank();
     if(hi_proc == -1) hi_proc = m_field.get_comm_rank();
-
-    // ParallelComm* pcomm = ParallelComm::get_pcomm(&m_field.get_moab(),MYPCOMM_INDEX);
-    // Tag part_tag = pcomm->part_tag();
 
     // Find pointer to problem of given name
     typedef Problem_multiIndex::index<Problem_mi_tag>::type ProblemByName;
