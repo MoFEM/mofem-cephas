@@ -56,14 +56,16 @@ inline void* get_tag_ptr(SequenceManager *sequence_manager,Tag th,EntityHandle e
   }
 }
 
-BasicEntityData::BasicEntityData(const moab::Interface &moab):
-moab(const_cast<moab::Interface&>(moab)),
-distributedMesh(true) {
-  rval = moab.tag_get_handle("_RefParentHandle",th_RefParentHandle); MOAB_THROW(rval);
-  rval = moab.tag_get_handle("_RefBitLevel",th_RefBitLevel); MOAB_THROW(rval);
+BasicEntityData::BasicEntityData(const moab::Interface &moab,
+                                 const int pcomm_id)
+    : moab(const_cast<moab::Interface &>(moab)), pcommID(pcomm_id),
+      distributedMesh(true) {
+  rval = moab.tag_get_handle("_RefParentHandle", th_RefParentHandle);
+  MOAB_THROW(rval);
+  rval = moab.tag_get_handle("_RefBitLevel", th_RefBitLevel);
+  MOAB_THROW(rval);
 }
-BasicEntityData::~BasicEntityData() {
-}
+BasicEntityData::~BasicEntityData() {}
 
 //basic moab ent
 BasicEntity::BasicEntity(
@@ -84,20 +86,20 @@ ent(ent) {
     default:
     THROW_MESSAGE("this entity type is currently not implemented");
   }
-  ParallelComm* pcomm = ParallelComm::get_pcomm(&basicDataPtr->moab,MYPCOMM_INDEX);
+  ParallelComm *pcomm =
+      ParallelComm::get_pcomm(&basicDataPtr->moab, basicDataPtr->pcommID);
   if(pcomm == NULL) THROW_MESSAGE("pcomm is null");
-  // unsigned char pstatus;
-  // rval = basicDataPtr->
-  // moab.tag_get_data(pcomm->pstatus_tag(),&ent,1,&pstatus); MOAB_THROW(rval);
-  rval = pcomm->get_owner_handle(ent,owner_proc,moab_owner_handle); MOAB_THROW(rval);
+  rval = pcomm->get_owner_handle(ent, owner_proc, moab_owner_handle);
+  MOAB_THROW(rval);
   part_proc = owner_proc;
 }
 
 unsigned char BasicEntity::getPStatus() const {
-  ParallelComm* pcomm = ParallelComm::get_pcomm(&basicDataPtr->moab,MYPCOMM_INDEX);
-  return *((unsigned char*)MoFEM::get_tag_ptr(
-    static_cast<moab::Core*>(&basicDataPtr->moab)->sequence_manager(),pcomm->pstatus_tag(),ent,NULL
-  ));
+  ParallelComm *pcomm =
+      ParallelComm::get_pcomm(&basicDataPtr->moab, basicDataPtr->pcommID);
+  return *((unsigned char *)MoFEM::get_tag_ptr(
+      static_cast<moab::Core *>(&basicDataPtr->moab)->sequence_manager(),
+      pcomm->pstatus_tag(), ent, NULL));
 }
 
 //ref moab ent
