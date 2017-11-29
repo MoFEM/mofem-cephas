@@ -25,6 +25,7 @@ helmholtz
 optimal_mass_transport
 cell_engineering
 contact_mechanics
+contact_mechanics_zahur
 
 _Store
 *.swp
