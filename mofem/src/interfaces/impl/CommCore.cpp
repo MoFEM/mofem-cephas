@@ -21,8 +21,6 @@ namespace MoFEM {
     MoFEMFunctionBeginHot;
     if(verb==-1) verb = verbose;
 
-    //ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
-
     //make a buffer
     std::vector<std::vector<EntityHandle> > sbuffer(sIze);
 
@@ -219,7 +217,8 @@ namespace MoFEM {
 
   MoFEMErrorCode Core::resolve_shared_ents(const Problem *problem_ptr,const std::string &fe_name,int verb) {
     MoFEMFunctionBeginHot;
-    ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
+    ParallelComm *pcomm =
+        ParallelComm::get_pcomm(&moab, basicEntityDataPtr->pcommID);
     std::vector<int> shprocs(MAX_SHARING_PROCS,0);
     std::vector<EntityHandle> shhandles(MAX_SHARING_PROCS,0);
     Range ents;

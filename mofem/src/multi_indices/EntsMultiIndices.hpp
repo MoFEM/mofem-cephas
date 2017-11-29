@@ -73,13 +73,16 @@ typedef multi_index_container<
  */
 struct BasicEntityData {
   moab::Interface &moab;
+  int pcommID;
   Tag th_RefParentHandle;
   Tag th_RefBitLevel;
-  BasicEntityData(const moab::Interface &mfield);
+  BasicEntityData(const moab::Interface &mfield,
+                  const int pcomm_id = MYPCOMM_INDEX);
   virtual ~BasicEntityData();
   inline void setDistributedMesh() { distributedMesh = true; }
   inline void unSetDistributedMesh() { distributedMesh = false; }
   inline bool trueIfDistributedMesh() const { return distributedMesh; }
+
 private:
   bool distributedMesh;
 };
@@ -193,16 +196,16 @@ struct BasicEntity {
   \endcode
 
   */
-  int* getSharingProcsPtr() const {
+  int *getSharingProcsPtr() const {
     moab::Interface &moab = basicDataPtr->moab;
     int *sharing_procs_ptr = NULL;
-    ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
-    if(getPStatus() & PSTATUS_MULTISHARED) {
+    ParallelComm *pcomm = ParallelComm::get_pcomm(&moab, basicDataPtr->pcommID);
+    if (getPStatus() & PSTATUS_MULTISHARED) {
       // entity is multi shared
       rval = moab.tag_get_by_ptr(pcomm->sharedps_tag(), &ent, 1,
                                  (const void **)&sharing_procs_ptr);
       MOAB_THROW(rval);
-    } else if(getPStatus() & PSTATUS_SHARED) {
+    } else if (getPStatus() & PSTATUS_SHARED) {
       // shared
       rval = moab.tag_get_by_ptr(pcomm->sharedp_tag(), &ent, 1,
                                  (const void **)&sharing_procs_ptr);
@@ -233,16 +236,16 @@ struct BasicEntity {
 \endcode
 
     */
-  inline EntityHandle* getSharingHandlersPtr() const {
+  inline EntityHandle *getSharingHandlersPtr() const {
     EntityHandle *sharing_handlers_ptr = NULL;
     moab::Interface &moab = basicDataPtr->moab;
-    ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
-    if(getPStatus() & PSTATUS_MULTISHARED) {
+    ParallelComm *pcomm = ParallelComm::get_pcomm(&moab, basicDataPtr->pcommID);
+    if (getPStatus() & PSTATUS_MULTISHARED) {
       // entity is multi shared
       rval = moab.tag_get_by_ptr(pcomm->sharedhs_tag(), &ent, 1,
                                  (const void **)&sharing_handlers_ptr);
       MOAB_THROW(rval);
-    } else if(getPStatus() & PSTATUS_SHARED) {
+    } else if (getPStatus() & PSTATUS_SHARED) {
       // shared
       rval = moab.tag_get_by_ptr(pcomm->sharedh_tag(), &ent, 1,
                                  (const void **)&sharing_handlers_ptr);
@@ -250,7 +253,6 @@ struct BasicEntity {
     }
     return sharing_handlers_ptr;
   }
-
 };
 
 /**
@@ -477,40 +479,29 @@ typedef multi_index_container<
   >
 > RefEntity_multiIndex_view_by_parent_entity;
 
-template<class T>
-struct Entity_update_pcomm_data {
-  ErrorCode rval;
-  Entity_update_pcomm_data() {
-  }
+template <class T> struct Entity_update_pcomm_data {
+  const int pcommID;
+  Entity_update_pcomm_data(const int pcomm_id = MYPCOMM_INDEX)
+      : pcommID(pcomm_id) {}
   void operator()(boost::shared_ptr<T> &e) {
-    ParallelComm* pcomm = ParallelComm::get_pcomm(&e->getBasicDataPtr()->moab,MYPCOMM_INDEX);
-    if(pcomm == NULL) THROW_MESSAGE("pcomm is null");
-    if(e->getBasicDataPtr()->trueIfDistributedMesh()) {
+    e->getBasicDataPtr()->pcommID = pcommID;
+    ParallelComm *pcomm =
+        ParallelComm::get_pcomm(&e->getBasicDataPtr()->moab, pcommID);
+    if (pcomm == NULL)
+      THROW_MESSAGE("pcomm is null");
+    if (e->getBasicDataPtr()->trueIfDistributedMesh()) {
       THROW_MESSAGE("Can not change owner proc if distributed mesh, this will "
                     "make undetermined behavior");
     }
     rval = pcomm->get_owner_handle(e->getRefEnt(), e->getOwnerProc(),
                                    e->getOwnerEnt());
     MOAB_THROW(rval);
-  }
-};
-
-template<class T>
-struct Entity_update_part_proc {
-  ErrorCode rval;
-  Entity_update_part_proc() {
-  }
-  void operator()(boost::shared_ptr<T> &e) {
-    ParallelComm *pcomm =
-        ParallelComm::get_pcomm(&e->getBasicDataPtr()->moab, MYPCOMM_INDEX);
-    if(pcomm == NULL) THROW_MESSAGE("pcomm is null");
     EntityHandle ent = e->getRefEnt();
-    rval = e->getBasicDataPtr()->moab.tag_get_data(
-      pcomm->part_tag(),&ent,1,&e->getPartProc()
-    ); MOAB_THROW(rval);
+    rval = e->getBasicDataPtr()->moab.tag_get_data(pcomm->part_tag(), &ent, 1,
+                                                   &e->getPartProc());
+    MOAB_THROW(rval);
   }
 };
-
 
 /** \brief ref mofem entity, remove parent
  * \ingroup ent_multi_indices

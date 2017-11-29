@@ -94,7 +94,7 @@ namespace MoFEM {
 
   MoFEMErrorCode ProblemsManager::partitionMesh(
     const Range &ents,const int dim,const int adj_dim,const int n_parts,
-    Tag *th_vertex_weights,Tag *th_edge_weights,Tag *th_part_veights,
+    Tag *th_vertex_weights,Tag *th_edge_weights,Tag *th_part_weights,
     int verb
   ) {
     MoFEM::Interface &m_field = cOre;
@@ -169,7 +169,7 @@ namespace MoFEM {
       copy(j.begin(),j.end(),_j);
     }
 
-    // get veighths
+    // get weights
     int* vertex_weights = NULL;
     if(th_vertex_weights!=NULL) {
       ierr = PetscMalloc(weigth_ents.size()*sizeof(int),&vertex_weights); CHKERRG(ierr);
@@ -228,7 +228,8 @@ namespace MoFEM {
       ierr = ISGetIndices(is_gather_num,&gids);  CHKERRG(ierr);
 
       // set partition tag and gid tag to entities
-      ParallelComm* pcomm = ParallelComm::get_pcomm(&m_field.get_moab(),MYPCOMM_INDEX);
+      ParallelComm *pcomm = ParallelComm::get_pcomm(
+          &m_field.get_moab(), m_field.get_basic_entity_data_ptr()->pcommID);
       Tag gid_tag;
       Tag part_tag = pcomm->part_tag();
       {
@@ -621,7 +622,7 @@ namespace MoFEM {
       //fe_miit iterator for finite elements
       EntFiniteElement_multiIndex::iterator fe_miit = fe_ent_ptr->begin();
       EntFiniteElement_multiIndex::iterator hi_fe_miit = fe_ent_ptr->end();
-      //iterate all finite elemen entities in database
+      //iterate all finite elements entities in database
       for(;fe_miit!=hi_fe_miit;fe_miit++) {
         //if element is in problem
         if(((*fe_miit)->getId()&problem_ptr->getBitFEId()).any()) {
@@ -640,7 +641,7 @@ namespace MoFEM {
       }
     }
 
-    // Add DOFS to the proble by searching all the fileds, and adding to problem
+    // Add DOFS to the proble by searching all the filedes, and adding to problem
     // owned or shared DOFs
     if(buildProblemFromFields==PETSC_TRUE) {
       // Get fields IDs on elements
@@ -760,7 +761,6 @@ namespace MoFEM {
     // used to keep shared_ptr
     std::vector<boost::shared_ptr<NumeredDofEntity> > dofs_shared_array;
 
-    // ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
     // Loop over dofs on this processor and prepare those dofs to send on another proc
     for(int ss = 0;ss<loop_size;ss++) {
 
@@ -2358,9 +2358,6 @@ namespace MoFEM {
 
     if(low_proc == -1) low_proc = m_field.get_comm_rank();
     if(hi_proc == -1) hi_proc = m_field.get_comm_rank();
-
-    // ParallelComm* pcomm = ParallelComm::get_pcomm(&m_field.get_moab(),MYPCOMM_INDEX);
-    // Tag part_tag = pcomm->part_tag();
 
     // Find pointer to problem of given name
     typedef Problem_multiIndex::index<Problem_mi_tag>::type ProblemByName;
