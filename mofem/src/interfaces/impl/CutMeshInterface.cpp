@@ -947,22 +947,31 @@ CutMeshInterface::removePathologicalFrontTris(const BitRefLevel split_bit,
   CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   PrismInterface *interface;
-  MoFEMFunctionBeginHot;
-  ierr = m_field.getInterface(interface);
-  CHKERRG(ierr);
-  EntityHandle meshset;
-  rval = moab.create_meshset(MESHSET_SET, meshset);
-  CHKERRG(rval);
-  rval = moab.add_entities(meshset, ents);
-  CHKERRG(rval);
-  Range front_tris;
-  ierr = interface->findIfTringleHasThreeNodesOnInternalSurfaceSkin(
-      meshset, split_bit, true, front_tris);
-  CHKERRG(ierr);
-  ents = subtract(ents, front_tris);
-  rval = moab.delete_entities(&meshset, 1);
-  CHKERRG(rval);
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionBegin;
+  CHKERR m_field.getInterface(interface);
+  // Remove tris on surface front 
+  {
+    Range front_tris;
+    EntityHandle meshset;
+    CHKERR moab.create_meshset(MESHSET_SET, meshset);
+    CHKERR moab.add_entities(meshset, ents);
+    CHKERR interface->findIfTringleHasThreeNodesOnInternalSurfaceSkin(
+        meshset, split_bit, true, front_tris);
+    CHKERR moab.delete_entities(&meshset, 1);
+    ents = subtract(ents, front_tris);
+  }
+  // Remove entities on skin
+  Range tets;
+  CHKERR m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
+    split_bit,BitRefLevel().set(),MBTET,tets
+  );
+  // Remove entities on skin
+  Skinner skin(&moab);
+  Range tets_skin;
+  rval = skin.find_skin(0, tets, false, tets_skin);
+  ents = subtract(ents, tets_skin);
+
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode CutMeshInterface::splitSides(const BitRefLevel split_bit,
@@ -1932,27 +1941,29 @@ MoFEMErrorCode CutMeshInterface::rebuildMeshWithTetGen(
                types_ents[TetGenInterface::FREEFACETVERTEX]);
 
   Tag th_marker;
+  // Clean markers
+  rval = m_field.get_moab().tag_get_handle("TETGEN_MARKER", th_marker);
+  if(rval == MB_SUCCESS) {
+    CHKERR m_field.get_moab().tag_delete(th_marker);
+    rval = MB_SUCCESS;
+  }
+
   int def_marker = 0;
   CHKERR m_field.get_moab().tag_get_handle(
       "TETGEN_MARKER", 1, MB_TYPE_INTEGER, th_marker,
       MB_TAG_CREAT | MB_TAG_SPARSE, &def_marker);
 
-  vector<int> markers(surf_ents.vNodes.size(), 0);
-  CHKERR moab.tag_set_data(th_marker, surf_ents.vNodes, &*markers.begin());
-  {
-    CHKERR m_field.get_moab().tag_get_data(th_marker, surface,
-                                           &*markers.begin());
-    fill(markers.begin(), markers.end(), 1);
-    CHKERR m_field.get_moab().tag_set_data(th_marker, surface,
-                                           &*markers.begin());
-  }
-  int shift = 3;
+  // Mark surface with id = 1
+  vector<int> markers(surface.size(), 1);
+  CHKERR m_field.get_moab().tag_set_data(th_marker, surface, &*markers.begin());
+  // Mark all side sets
+  int shift = 1;
   map<int, int> id_shift_map; // each meshset has set unique bit
   for (_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(
            (*cOre.getInterface<MeshsetsManager>()), SIDESET, it)) {
     int ms_id = it->getMeshsetId();
     id_shift_map[ms_id] = 1 << shift; // shift bit
-    shift++;
+    ++shift;
     Range sideset_faces;
     CHKERR m_field.getInterface<MeshsetsManager>()->getEntitiesByDimension(
         ms_id, SIDESET, 2, sideset_faces, true);
