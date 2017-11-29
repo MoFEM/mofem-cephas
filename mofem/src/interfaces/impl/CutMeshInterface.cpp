@@ -1462,30 +1462,26 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
                                             const bool length,
                                             bool debug) const {
       moab::Interface &moab(mField.get_moab());
-      MoFEMFunctionBeginHot;
+      MoFEMFunctionBegin;
       // get nodes
       Range ents_nodes = ents.subset_by_type(MBVERTEX);
       if (ents_nodes.empty()) {
-        rval = moab.get_connectivity(ents, ents_nodes, true);
-        CHKERRG(rval);
+        CHKERR moab.get_connectivity(ents, ents_nodes, true);
       }
       // edges adj. to nodes
       Range ents_nodes_edges;
-      rval = moab.get_adjacencies(ents_nodes, 1, false, ents_nodes_edges,
+      CHKERR moab.get_adjacencies(ents_nodes, 1, false, ents_nodes_edges,
                                   moab::Interface::UNION);
-      CHKERRG(rval);
       // nodes of adj. edges
       Range ents_nodes_edges_nodes;
-      rval =
-          moab.get_connectivity(ents_nodes_edges, ents_nodes_edges_nodes, true);
-      CHKERRG(rval);
+      CHKERR moab.get_connectivity(ents_nodes_edges, ents_nodes_edges_nodes,
+                                   true);
       // hanging nodes
       ents_nodes_edges_nodes = subtract(ents_nodes_edges_nodes, ents_nodes);
       Range ents_nodes_edges_nodes_edges;
-      rval = moab.get_adjacencies(ents_nodes_edges_nodes, 1, false,
+      CHKERR moab.get_adjacencies(ents_nodes_edges_nodes, 1, false,
                                   ents_nodes_edges_nodes_edges,
                                   moab::Interface::UNION);
-      CHKERRG(rval);
       // remove edges adj. to hanging edges
       ents_nodes_edges =
           subtract(ents_nodes_edges, ents_nodes_edges_nodes_edges);
@@ -1497,14 +1493,11 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
           int num_nodes;
           const EntityHandle *conn;
           rval = moab.get_connectivity(*eit, conn, num_nodes, true);
-          CHKERRG(rval);
           double coords[6];
           if(tH) {
-            rval = moab.tag_get_data(tH, conn, num_nodes, coords);
-            CHKERRG(rval);
+            CHKERR moab.tag_get_data(tH, conn, num_nodes, coords);
           } else {
-            rval = moab.get_coords(conn, num_nodes, coords);
-            CHKERRG(rval);
+            CHKERR moab.get_coords(conn, num_nodes, coords);
           }
           VectorAdaptor s0(3,
                            ublas::shallow_array_adaptor<double>(3, &coords[0]));
@@ -1521,16 +1514,12 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
       edges_to_remove.swap(ents_nodes_edges);
       if (debug) {
         EntityHandle meshset;
-        rval = moab.create_meshset(MESHSET_SET, meshset);
-        CHKERRG(rval);
-        rval = moab.add_entities(meshset, edges_to_remove);
-        CHKERRG(rval);
-        rval = moab.write_file("edges_to_remove.vtk", "VTK", "", &meshset, 1);
-        CHKERRG(rval);
-        rval = moab.delete_entities(&meshset, 1);
-        CHKERRG(rval);
+        CHKERR moab.create_meshset(MESHSET_SET, meshset);
+        CHKERR moab.add_entities(meshset, edges_to_remove);
+        CHKERR moab.write_file("edges_to_remove.vtk", "VTK", "", &meshset, 1);
+        CHKERR moab.delete_entities(&meshset, 1);
       }
-      MoFEMFunctionReturnHot(0);
+      MoFEMFunctionReturn(0);
     }
   };
 
@@ -1967,7 +1956,7 @@ MoFEMErrorCode CutMeshInterface::rebuildMeshWithTetGen(
     Range sideset_faces;
     CHKERR m_field.getInterface<MeshsetsManager>()->getEntitiesByDimension(
         ms_id, SIDESET, 2, sideset_faces, true);
-    sideset_faces = intersect(sideset_faces, surf_ents.vNodes);
+    sideset_faces = intersect(sideset_faces, surf_ents.vNodes); 
     markers.resize(sideset_faces.size());
     CHKERR m_field.get_moab().tag_get_data(th_marker, sideset_faces,
                                            &*markers.begin());
