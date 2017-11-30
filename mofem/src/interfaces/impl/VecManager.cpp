@@ -223,7 +223,7 @@ namespace MoFEM {
     default:
       SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented");
     }
-    CHKERR VecDestroy(&Vlocal);
+    CHKERR VecGhostRestoreLocalForm(V,&Vlocal);
     MoFEMFunctionReturn(0);
   }
 
