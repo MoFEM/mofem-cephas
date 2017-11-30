@@ -140,85 +140,91 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  MoFEMErrorCode VecManager::setLocalGhostVector(
-    const Problem *problem_ptr,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode
-  ) const {
-    MoFEMFunctionBeginHot;
+  MoFEMErrorCode
+  VecManager::setLocalGhostVector(const Problem *problem_ptr, RowColData rc,
+                                  Vec V, InsertMode mode,
+                                  ScatterMode scatter_mode) const {
+    MoFEMFunctionBegin;
     NumeredDofEntityByLocalIdx *dofs;
     DofIdx nb_local_dofs,nb_ghost_dofs;
     switch (rc) {
-      case ROW:
-        nb_local_dofs = problem_ptr->getNbLocalDofsRow();
-        nb_ghost_dofs = problem_ptr->getNbGhostDofsRow();
-        dofs = const_cast<NumeredDofEntityByLocalIdx*>(&problem_ptr->numeredDofsRows->get<PetscLocalIdx_mi_tag>());
-        break;
-      case COL:
-        nb_local_dofs = problem_ptr->getNbLocalDofsCol();
-        nb_ghost_dofs = problem_ptr->getNbGhostDofsCol();
-        dofs = const_cast<NumeredDofEntityByLocalIdx*>(&problem_ptr->numeredDofsCols->get<PetscLocalIdx_mi_tag>());
-        break;
-      default:
-       SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
+    case ROW:
+      nb_local_dofs = problem_ptr->getNbLocalDofsRow();
+      nb_ghost_dofs = problem_ptr->getNbGhostDofsRow();
+      dofs = const_cast<NumeredDofEntityByLocalIdx *>(
+          &problem_ptr->numeredDofsRows->get<PetscLocalIdx_mi_tag>());
+      break;
+    case COL:
+      nb_local_dofs = problem_ptr->getNbLocalDofsCol();
+      nb_ghost_dofs = problem_ptr->getNbGhostDofsCol();
+      dofs = const_cast<NumeredDofEntityByLocalIdx *>(
+          &problem_ptr->numeredDofsCols->get<PetscLocalIdx_mi_tag>());
+      break;
+    default:
+      SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented");
     }
     Vec Vlocal;
-    ierr = VecGhostGetLocalForm(V,&Vlocal); CHKERRG(ierr);
+    CHKERR VecGhostGetLocalForm(V, &Vlocal);
     int size;
-    ierr = VecGetLocalSize(V,&size); CHKERRG(ierr);
-    if(size!=nb_local_dofs) {
-      SETERRQ(
-        PETSC_COMM_SELF,
-        MOFEM_DATA_INCONSISTENCY,
-        "data inconsistency: check ghost vector, problem with nb. of local nodes"
-      );
+    CHKERR VecGetLocalSize(V, &size);
+    if (size != nb_local_dofs) {
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "data inconsistency: check ghost vector, problem with nb. of "
+              "local nodes");
     }
-    ierr = VecGetLocalSize(Vlocal,&size); CHKERRG(ierr);
-    if(size!=nb_local_dofs+nb_ghost_dofs) {
-      SETERRQ(
-        PETSC_COMM_SELF,
-        MOFEM_DATA_INCONSISTENCY,
-        "data inconsistency: check ghost vector, problem with nb. of ghost nodes"
-      );
+    CHKERR VecGetLocalSize(Vlocal, &size);
+    if (size != nb_local_dofs + nb_ghost_dofs) {
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "data inconsistency: check ghost vector, problem with nb. of "
+              "ghost nodes");
     }
     NumeredDofEntityByLocalIdx::iterator miit = dofs->lower_bound(0);
-    NumeredDofEntityByLocalIdx::iterator hi_miit = dofs->upper_bound(nb_local_dofs+nb_ghost_dofs);
-    PetscScalar *array;
-    ierr = VecGetArray(Vlocal,&array); CHKERRG(ierr);
+    NumeredDofEntityByLocalIdx::iterator hi_miit =
+        dofs->upper_bound(nb_local_dofs + nb_ghost_dofs);
     DofIdx ii = 0;
     switch (scatter_mode) {
-      case SCATTER_FORWARD:
+    case SCATTER_FORWARD: {
+      PetscScalar *array;
+      CHKERR VecGetArray(Vlocal, &array);
       switch (mode) {
-        case INSERT_VALUES:
-        for(;miit!=hi_miit;miit++,ii++) array[ii] = (*miit)->getFieldData();
+      case INSERT_VALUES:
+        for (; miit != hi_miit; ++miit, ++ii)
+          array[ii] = (*miit)->getFieldData();
         break;
-        case ADD_VALUES:
-        for(;miit!=hi_miit;miit++,ii++) array[ii] += (*miit)->getFieldData();
+      case ADD_VALUES:
+        for (; miit != hi_miit; ++miit, ++ii)
+          array[ii] += (*miit)->getFieldData();
         break;
-        default:
-        SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
+      default:
+        SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented");
       }
-      break;
-      case SCATTER_REVERSE:
+      CHKERR VecRestoreArray(Vlocal,&array); 
+    }; break;
+    case SCATTER_REVERSE: {
+      const PetscScalar *array;
+      CHKERR VecGetArrayRead(Vlocal, &array);
       switch (mode) {
-        case INSERT_VALUES:
-        for(;miit!=hi_miit;miit++,ii++) {
-          //std::cerr << *miit << std::endl;
-          //std::cerr << array[ii] << std::endl;
+      case INSERT_VALUES:
+        for (; miit != hi_miit; ++miit, ++ii) {
+          // std::cerr << *miit << std::endl;
+          // std::cerr << array[ii] << std::endl;
           (*miit)->getFieldData() = array[ii];
         }
         break;
-        case ADD_VALUES:
-        for(;miit!=hi_miit;miit++,ii++) (*miit)->getFieldData() += array[ii];
+      case ADD_VALUES:
+        for (; miit != hi_miit; ++miit, ++ii)
+          (*miit)->getFieldData() += array[ii];
         break;
-        default:
-        SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
-      }
-      break;
       default:
-      SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
+        SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented");
+      }
+      CHKERR VecRestoreArrayRead(Vlocal, &array);
+    }; break;
+    default:
+      SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented");
     }
-    ierr = VecRestoreArray(Vlocal,&array); CHKERRG(ierr);
-    ierr = VecDestroy(&Vlocal); CHKERRG(ierr);
-    MoFEMFunctionReturnHot(0);
+    CHKERR VecDestroy(&Vlocal);
+    MoFEMFunctionReturn(0);
   }
 
   MoFEMErrorCode VecManager::setLocalGhostVector(
