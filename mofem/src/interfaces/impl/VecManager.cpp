@@ -182,7 +182,7 @@ namespace MoFEM {
     NumeredDofEntityByLocalIdx::iterator miit = dofs->lower_bound(0);
     NumeredDofEntityByLocalIdx::iterator hi_miit = dofs->upper_bound(nb_local_dofs+nb_ghost_dofs);
     PetscScalar *array;
-    VecGetArray(Vlocal,&array);
+    ierr = VecGetArray(Vlocal,&array); CHKERRG(ierr);
     DofIdx ii = 0;
     switch (scatter_mode) {
       case SCATTER_FORWARD:
@@ -216,8 +216,8 @@ namespace MoFEM {
       default:
       SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
     }
-    VecRestoreArray(Vlocal,&array);
-    VecDestroy(&Vlocal);
+    ierr = VecRestoreArray(Vlocal,&array); CHKERRG(ierr);
+    ierr = VecDestroy(&Vlocal); CHKERRG(ierr);
     MoFEMFunctionReturnHot(0);
   }
 
