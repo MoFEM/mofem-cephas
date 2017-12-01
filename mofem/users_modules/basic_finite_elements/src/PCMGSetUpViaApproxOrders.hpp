@@ -41,6 +41,8 @@ struct DMMGViaApproxOrdersCtx: public MoFEM::DMCtx {
   DMMGViaApproxOrdersCtx();
   virtual ~DMMGViaApproxOrdersCtx();
 
+  MoFEMErrorCode destroyCoarseningIS();
+
   AO aO;
   std::vector<IS> coarseningIS;   ///< Coarsening IS
   std::vector<Mat> kspOperators;  ///< Get KSP operators
@@ -98,6 +100,15 @@ MoFEMErrorCode DMMGViaApproxOrdersPushBackCoarseningIS(
  * \ingroup dm
  */
 MoFEMErrorCode DMMGViaApproxOrdersPopBackCoarseningIS(DM);
+
+/**
+ * \brief Clear approximation orders
+ * @param  DM dm
+ * @return Error code
+ *
+ * \ingroup dm
+ */
+MoFEMErrorCode DMMGViaApproxOrdersClearCoarseningIS(DM);
 
 /**
  * \brief Replace coarsening IS in DM via approximation orders
