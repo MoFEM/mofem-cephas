@@ -39,7 +39,8 @@ namespace CohesiveElement {
 struct ArcLengthElement : public ArcLengthIntElemFEMethod {
   MoFEM::Interface &mField;
   Range postProcNodes;
-  ArcLengthElement(MoFEM::Interface &m_field, ArcLengthCtx *arc_ptr)
+  ArcLengthElement(MoFEM::Interface &m_field,
+                   boost::shared_ptr<ArcLengthCtx>& arc_ptr)
       : ArcLengthIntElemFEMethod(m_field.get_moab(), arc_ptr), mField(m_field) {
 
     for (_IT_CUBITMESHSETS_BY_NAME_FOR_LOOP_(mField, "LoadPath", cit)) {
@@ -96,10 +97,10 @@ struct AssembleRhsVectors : public FEMethod {
 
   MoFEM::Interface &mField;
   Vec &bodyForce;
-  ArcLengthCtx *arcPtr;
+  boost::shared_ptr<ArcLengthCtx> arcPtr;
 
   AssembleRhsVectors(MoFEM::Interface &m_field, Vec &body_force,
-                     ArcLengthCtx *arc_ptr)
+                     boost::shared_ptr<ArcLengthCtx> &arc_ptr)
       : mField(m_field), bodyForce(body_force), arcPtr(arc_ptr) {}
 
   MoFEMErrorCode preProcess() {
@@ -587,10 +588,10 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    ArcLengthCtx *arc_ctx = new ArcLengthCtx(m_field, "ELASTIC_MECHANICS");
-    ArcLengthElement *my_arc_method_ptr =
-        new ArcLengthElement(m_field, arc_ctx);
-    ArcLengthElement &my_arc_method = *my_arc_method_ptr;
+    boost::shared_ptr<ArcLengthCtx> arc_ctx = boost::shared_ptr<ArcLengthCtx>(
+        new ArcLengthCtx(m_field, "ELASTIC_MECHANICS"));
+    boost::scoped_ptr<ArcLengthElement> my_arc_method_ptr(
+        new ArcLengthElement(m_field, arc_ctx));
     ArcLengthSnesCtx snes_ctx(m_field, "ELASTIC_MECHANICS", arc_ctx);
     AssembleRhsVectors pre_post_proc_fe(m_field, F_body_force, arc_ctx);
 
@@ -622,10 +623,10 @@ int main(int argc, char *argv[]) {
     CHKERR MatGetSize(Aij, &M, &N);
     PetscInt m, n;
     MatGetLocalSize(Aij, &m, &n);
-    ArcLengthMatShell *mat_ctx =
-        new ArcLengthMatShell(Aij, arc_ctx, "ELASTIC_MECHANICS");
+    boost::scoped_ptr<ArcLengthMatShell> mat_ctx(
+        new ArcLengthMatShell(Aij, arc_ctx, "ELASTIC_MECHANICS"));
     Mat ShellAij;
-    CHKERR MatCreateShell(PETSC_COMM_WORLD, m, n, M, N, (void *)mat_ctx,
+    CHKERR MatCreateShell(PETSC_COMM_WORLD, m, n, M, N, (void *)mat_ctx.get(),
                           &ShellAij);
     CHKERR MatShellSetOperation(ShellAij, MATOP_MULT,
                                 (void (*)(void))ArcLengthMatMultShellOp);
@@ -684,9 +685,10 @@ int main(int argc, char *argv[]) {
     CHKERR SNESGetKSP(snes, &ksp);
     PC pc;
     CHKERR KSPGetPC(ksp, &pc);
-    PCArcLengthCtx *pc_ctx = new PCArcLengthCtx(ShellAij, Aij, arc_ctx);
+    boost::scoped_ptr<PCArcLengthCtx> pc_ctx(
+        new PCArcLengthCtx(ShellAij, Aij, arc_ctx));
     CHKERR PCSetType(pc, PCSHELL);
-    CHKERR PCShellSetContext(pc, pc_ctx);
+    CHKERR PCShellSetContext(pc, pc_ctx.get());
     CHKERR PCShellSetApply(pc, PCApplyArcLength);
     CHKERR PCShellSetSetUp(pc, PCSetupArcLength);
 
@@ -700,7 +702,7 @@ int main(int argc, char *argv[]) {
     loops_to_do_Rhs.push_back(
         SnesCtx::PairNameFEMethodPtr("ELASTIC", &elastic.getLoopFeRhs()));
     loops_to_do_Rhs.push_back(
-        SnesCtx::PairNameFEMethodPtr("ARC_LENGTH", &my_arc_method));
+        SnesCtx::PairNameFEMethodPtr("ARC_LENGTH", my_arc_method_ptr.get()));
     snes_ctx.get_postProcess_to_do_Rhs().push_back(&pre_post_proc_fe);
     snes_ctx.get_postProcess_to_do_Rhs().push_back(&my_dirichlet_bc);
 
@@ -713,7 +715,7 @@ int main(int argc, char *argv[]) {
     loops_to_do_Mat.push_back(
         SnesCtx::PairNameFEMethodPtr("ELASTIC", &elastic.getLoopFeLhs()));
     loops_to_do_Mat.push_back(
-        SnesCtx::PairNameFEMethodPtr("ARC_LENGTH", &my_arc_method));
+        SnesCtx::PairNameFEMethodPtr("ARC_LENGTH", my_arc_method_ptr.get()));
     snes_ctx.get_postProcess_to_do_Mat().push_back(&my_dirichlet_bc);
 
     double gamma = 0.5, reduction = 1;
@@ -786,12 +788,12 @@ int main(int argc, char *argv[]) {
         CHKERR arc_ctx->setAlphaBeta(0, 1);
         CHKERR VecCopy(D, arc_ctx->x0);
         double dlambda;
-        CHKERR my_arc_method.calculate_init_dlambda(&dlambda);
-        CHKERR my_arc_method.set_dlambda_to_x(D, dlambda);
+        CHKERR my_arc_method_ptr->calculate_init_dlambda(&dlambda);
+        CHKERR my_arc_method_ptr->set_dlambda_to_x(D, dlambda);
       } else if (step == 2) {
         CHKERR arc_ctx->setAlphaBeta(1, 0);
-        CHKERR my_arc_method.calculate_dx_and_dlambda(D);
-        CHKERR my_arc_method.calculate_lambda_int(step_size);
+        CHKERR my_arc_method_ptr->calculate_dx_and_dlambda(D);
+        CHKERR my_arc_method_ptr->calculate_lambda_int(step_size);
         CHKERR arc_ctx->setS(step_size);
         double dlambda = arc_ctx->dLambda;
         double dx_nrm;
@@ -802,10 +804,10 @@ int main(int argc, char *argv[]) {
                            step, step_size, dlambda, dx_nrm, arc_ctx->dx2);
         CHKERR VecCopy(D, arc_ctx->x0);
         CHKERR VecAXPY(D, 1., arc_ctx->dx);
-        CHKERR my_arc_method.set_dlambda_to_x(D, dlambda);
+        CHKERR my_arc_method_ptr->set_dlambda_to_x(D, dlambda);
       } else {
-        CHKERR my_arc_method.calculate_dx_and_dlambda(D);
-        CHKERR my_arc_method.calculate_lambda_int(step_size);
+        CHKERR my_arc_method_ptr->calculate_dx_and_dlambda(D);
+        CHKERR my_arc_method_ptr->calculate_lambda_int(step_size);
         // step_size0_1/step_size0 = step_stize1/step_size
         // step_size0_1 = step_size0*(step_stize1/step_size)
         step_size *= reduction;
@@ -820,7 +822,7 @@ int main(int argc, char *argv[]) {
                            step, step_size, dlambda, dx_nrm, arc_ctx->dx2);
         CHKERR VecCopy(D, arc_ctx->x0);
         CHKERR VecAXPY(D, 1., arc_ctx->dx);
-        CHKERR my_arc_method.set_dlambda_to_x(D, dlambda);
+        CHKERR my_arc_method_ptr->set_dlambda_to_x(D, dlambda);
       }
 
       CHKERR SNESSolve(snes, PETSC_NULL, D);
@@ -832,7 +834,7 @@ int main(int argc, char *argv[]) {
                                           cohesive_elements.getFeHistory(), 0,
                                           m_field.get_comm_size());
       // Remove nodes of damaged prisms
-      CHKERR my_arc_method.remove_damaged_prisms_nodes();
+      CHKERR my_arc_method_ptr->remove_damaged_prisms_nodes();
 
       int its;
       CHKERR SNESGetIterationNumber(snes, &its);
@@ -868,7 +870,7 @@ int main(int argc, char *argv[]) {
         PetscFOpen(PETSC_COMM_SELF, DATAFILENAME, "a+", &datafile);
         PetscFPrintf(PETSC_COMM_WORLD, datafile, "%d %d ", reason, its);
         fclose(datafile);
-        CHKERR my_arc_method.postProcessLoadPath();
+        CHKERR my_arc_method_ptr->postProcessLoadPath();
       }
 
       if (step % 1 == 0) {
@@ -898,10 +900,6 @@ int main(int argc, char *argv[]) {
     CHKERR MatDestroy(&Aij);
     CHKERR SNESDestroy(&snes);
     CHKERR MatDestroy(&ShellAij);
-    delete arc_ctx;
-    delete mat_ctx;
-    delete pc_ctx;
-    delete my_arc_method_ptr;
   }
   CATCH_ERRORS;
 

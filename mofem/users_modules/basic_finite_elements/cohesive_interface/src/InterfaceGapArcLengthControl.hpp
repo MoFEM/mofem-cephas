@@ -23,10 +23,9 @@ namespace CohesiveElement {
 
 struct ArcLengthIntElemFEMethod: public FEMethod {
   moab::Interface& mOab;
-  
-  
 
-  ArcLengthCtx* arcPtr;
+  boost::shared_ptr<ArcLengthCtx> arcPtr;
+  
   Vec GhostLambdaInt;
   Range Faces3,Faces4;
   Range Edges3,Edges4;
@@ -36,7 +35,7 @@ struct ArcLengthIntElemFEMethod: public FEMethod {
 
   ArcLengthIntElemFEMethod(
     moab::Interface& moab,
-    ArcLengthCtx *arcptr):
+    boost::shared_ptr<ArcLengthCtx> arcptr):
     FEMethod(),mOab(moab),arcPtr(arcptr) {
     PetscInt ghosts[1] = { 0 };
     ParallelComm* pcomm = ParallelComm::get_pcomm(&mOab,MYPCOMM_INDEX);
