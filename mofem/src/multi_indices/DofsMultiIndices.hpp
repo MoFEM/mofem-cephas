@@ -161,7 +161,7 @@ struct interface_DofEntity: public interface_FieldEntity<T> {
   /// @return return dof unique id
   inline const UId getGlobalUniqueId() const { return this->sPtr->getGlobalUniqueId(); }
 
-  /// @return return entity uniqe id
+  /// @return return entity unique id
   inline const UId getEntGlobalUniqueId() const { return this->sPtr->getEntGlobalUniqueId(); }
 
   /// @return return short id (used by data recorder)
