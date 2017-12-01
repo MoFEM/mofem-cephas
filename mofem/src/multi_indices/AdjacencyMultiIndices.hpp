@@ -107,7 +107,7 @@ struct FieldEntityEntFiniteElementAdjacencyMap {
 
 /**
  * @relates multi_index_container
- * \brief MultiIndex container keeps Adjacencies Element and dof entities adjacencies and vice veras.
+ * \brief MultiIndex container keeps Adjacencies Element and dof entities adjacencies and vice versa.
 
  */
 typedef multi_index_container<
