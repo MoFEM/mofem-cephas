@@ -259,7 +259,8 @@ int main(int argc, char *argv[]) {
     if (step == 1) {
 
       // ref meshset ref level 0
-      CHKERR m_field.seed_ref_level_3D(0, BitRefLevel().set(0));
+      CHKERR m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(
+          0, 3, BitRefLevel().set(0));
 
       std::vector<BitRefLevel> bit_levels;
       bit_levels.push_back(BitRefLevel().set(0));
@@ -392,7 +393,7 @@ int main(int argc, char *argv[]) {
       /***/
       // Declare problem
 
-      // add entitities (by tets) to the field
+      // add entities (by tets) to the field
       CHKERR m_field.add_ents_to_field_by_type(0, MBTET, "DISPLACEMENT");
       CHKERR m_field.add_ents_to_field_by_type(0, MBTET, "MESH_NODE_POSITIONS");
 
@@ -412,8 +413,8 @@ int main(int argc, char *argv[]) {
           CHKERRG(rval);
           Range range_no_field_vertex;
           range_no_field_vertex.insert(no_field_vertex);
-          CHKERR m_field.seed_ref_level(range_no_field_vertex,
-                                        BitRefLevel().set());
+          CHKERR m_field.getInterface<BitRefManager>()->setBitRefLevel(
+              range_no_field_vertex, BitRefLevel().set());
 
           EntityHandle lambda_meshset = m_field.get_field_meshset("LAMBDA");
           CHKERR m_field.get_moab().add_entities(lambda_meshset,
@@ -424,11 +425,9 @@ int main(int argc, char *argv[]) {
         EntityHandle meshset_fe_arc_length;
         {
           CHKERR moab.create_meshset(MESHSET_SET, meshset_fe_arc_length);
-          CHKERRG(rval);
           CHKERR moab.add_entities(meshset_fe_arc_length, &no_field_vertex, 1);
-          CHKERRG(rval);
-          CHKERR m_field.seed_ref_level_MESHSET(meshset_fe_arc_length,
-                                                BitRefLevel().set());
+          CHKERR m_field.getInterface<BitRefManager>()->setBitLevelToMeshset(
+              meshset_fe_arc_length, BitRefLevel().set());
         }
         // finally add created meshset to the ARC_LENGTH finite element
         CHKERR m_field.add_ents_to_finite_element_by_MESHSET(
