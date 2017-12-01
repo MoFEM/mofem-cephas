@@ -1,6 +1,10 @@
 /** \file arc_length_interface.cpp
   * \brief Example of arc-length with interface element
 
+  \todo Mak it work with multi-grid and distributed mesh
+
+  \todo Make more clever step adaptation
+
 */
 
 /* This file is part of MoFEM.
