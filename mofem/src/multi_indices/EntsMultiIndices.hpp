@@ -917,6 +917,6 @@ typedef multi_index_container<
 #endif // __ENTSMULTIINDICES_HPP__
 
 /***************************************************************************/ /**
-                                                                               * \defgroup ent_multi_indices Entities structures and multi-indices
-                                                                               * \ingroup mofem
-                                                                               ******************************************************************************/
+* \defgroup ent_multi_indices Entities structures and multi-indices
+* \ingroup mofem
+******************************************************************************/
