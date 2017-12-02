@@ -333,6 +333,8 @@ template <typename T> struct interface_RefEntity {
   interface_RefEntity(const interface_RefEntity<T> &interface)
       : sPtr(interface.getRefEntityPtr()) {}
 
+  virtual ~interface_RefEntity() {}
+
   inline boost::shared_ptr<BasicEntityData> &getBasicDataPtr() {
     return this->sPtr->getBasicDataPtr();
   }
@@ -384,8 +386,6 @@ template <typename T> struct interface_RefEntity {
   inline EntityHandle *getSharingHandlersPtr() const {
     return this->sPtr->getSharingHandlersPtr();
   }
-
-  virtual ~interface_RefEntity() {}
 
   inline boost::shared_ptr<T> &getRefEntityPtr() const { return this->sPtr; }
 };
