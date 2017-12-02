@@ -933,7 +933,7 @@ MoFEMErrorCode Core::buildFieldForL2H1HcurlHdiv(
       // this entity
       field_ent->getDofsSequence() = dofs_array;
 
-      // Temerary vector to store shared pointers
+      // Temporary vector to store shared pointers
       dofs_shared_array.clear();
       dofs_shared_array.reserve(nb_dofs_on_ent);
 
@@ -945,7 +945,7 @@ MoFEMErrorCode Core::buildFieldForL2H1HcurlHdiv(
         for (int dd = 0; dd < field_ent->getOrderNbDofsDiff(oo); dd++) {
           // Loop rank
           for (int rr = 0; rr < rank; rr++, DD++) {
-            // push back dofs instanca
+            // push back dofs instance
             // dofs_array->emplace_back(
             //   DofEntity(field_ent,oo,rr,DD,true)
             // );
