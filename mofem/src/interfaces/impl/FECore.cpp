@@ -691,6 +691,7 @@ Core::build_finite_elements(const boost::shared_ptr<FiniteElement> fe,
     }
   }
 
+  // Reserve memory
   std::map<EntityHandle, boost::shared_ptr<std::vector<FEDofEntity> > >
       data_dofs_array;
   for (std::map<EntityHandle, int>::iterator mit = data_dofs_size.begin();
@@ -701,6 +702,8 @@ Core::build_finite_elements(const boost::shared_ptr<FiniteElement> fe,
       data_dofs_array[mit->first]->reserve(mit->second);
     }
   }
+
+  // Vector of (aliased) shared pointers
   std::vector<boost::shared_ptr<FEDofEntity> > data_dofs_shared_array;
 
   typedef DofEntity_multiIndex::index<Unique_Ent_mi_tag>::type DofsByEntUId;
@@ -716,6 +719,10 @@ Core::build_finite_elements(const boost::shared_ptr<FiniteElement> fe,
     for (; dit != hi_dit; dit++) {
       // cerr << mit->first << endl;
       // cerr << **dit << endl;
+      if(PetscUnlikely(!(*dit))) {
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "Null pointer to DOF");
+      }
       const BitFieldId field_id = dit->get()->getId();
       const EntityHandle dof_ent = dit->get()->getEnt();
       std::vector<boost::weak_ptr<EntFiniteElement> >::const_iterator fe_it,
@@ -744,8 +751,8 @@ Core::build_finite_elements(const boost::shared_ptr<FiniteElement> fe,
         const EntityHandle fe_ent = fe_it->lock().get()->getEnt();
         if (data_dofs_size[fe_ent] != 0 &&
             (field_id & fe_it->lock().get()->getBitFieldIdData()).any()) {
-          // There are data dofs on this element
 
+          // There are data dofs on this element
           side_number_ptr = fe_it->lock().get()->getSideNumberPtr(dof_ent);
           data_dofs_array[fe_ent]->push_back(
               FEDofEntity(side_number_ptr, *dit));
@@ -760,6 +767,7 @@ Core::build_finite_elements(const boost::shared_ptr<FiniteElement> fe,
             for (std::vector<FEDofEntity>::iterator vit =
                      data_dofs_array[fe_ent]->begin();
                  vit != data_dofs_array[fe_ent]->end(); vit++) {
+              // Create aliased shared pointer
               data_dofs_shared_array.push_back(boost::shared_ptr<FEDofEntity>(
                   data_dofs_array[fe_ent], &(*vit)));
             }
@@ -767,11 +775,6 @@ Core::build_finite_elements(const boost::shared_ptr<FiniteElement> fe,
                 data_dofs_shared_array.begin(), data_dofs_shared_array.end());
             fe_it->lock().get()->getDofsSequence() = data_dofs_array[fe_ent];
           }
-          // // add dofs to finite element multi_index database
-          // fe_it->lock().get()->data_dofs.get<Unique_mi_tag>().insert(
-          //   boost::shared_ptr<FEDofEntity>(new
-          //   FEDofEntity(side_number_ptr,*dit))
-          // );
         }
       }
     }
@@ -888,9 +891,9 @@ MoFEMErrorCode Core::build_adjacencies(const Range &ents, int verb) {
         by |= BYDATA;
       FieldEntityEntFiniteElementAdjacencyMap_change_ByWhat modify_row(by);
       UId ent_uid = UId(0);
-      DofEntity_multiIndex_uid_view::iterator rvit;
-      rvit = (*fit)->row_dof_view->begin();
-      for (; rvit != (*fit)->row_dof_view->end(); rvit++) {
+      for (DofEntity_multiIndex_uid_view::iterator rvit =
+               (*fit)->row_dof_view->begin();
+           rvit != (*fit)->row_dof_view->end(); ++rvit) {
         if (ent_uid == (*rvit)->getFieldEntityPtr()->getGlobalUniqueId())
           continue;
         ent_uid = (*rvit)->getFieldEntityPtr()->getGlobalUniqueId();
@@ -910,9 +913,9 @@ MoFEMErrorCode Core::build_adjacencies(const Range &ents, int verb) {
           by |= BYDATA;
         FieldEntityEntFiniteElementAdjacencyMap_change_ByWhat modify_col(by);
         ent_uid = UId(0);
-        DofEntity_multiIndex_uid_view::iterator cvit;
-        cvit = (*fit)->col_dof_view->begin();
-        for (; cvit != (*fit)->col_dof_view->end(); cvit++) {
+        for (DofEntity_multiIndex_uid_view::iterator cvit =
+                 (*fit)->col_dof_view->begin();
+             cvit != (*fit)->col_dof_view->end(); cvit++) {
           if (ent_uid == (*cvit)->getFieldEntityPtr()->getGlobalUniqueId())
             continue;
           ent_uid = (*cvit)->getFieldEntityPtr()->getGlobalUniqueId();
@@ -933,9 +936,8 @@ MoFEMErrorCode Core::build_adjacencies(const Range &ents, int verb) {
         FieldEntityEntFiniteElementAdjacencyMap_change_ByWhat modify_data(
             BYDATA);
         ent_uid = UId(0);
-        FEDofEntity_multiIndex::iterator dvit;
-        dvit = (*fit)->data_dofs->begin();
-        for (; dvit != (*fit)->data_dofs->end(); dvit++) {
+        for (FEDofEntity_multiIndex::iterator dvit = (*fit)->data_dofs->begin();
+             dvit != (*fit)->data_dofs->end(); dvit++) {
           if (PetscUnlikely(!(*dvit) || !(*dvit)->sPtr)) {
             std::ostringstream ss;
             ss << "null pointer to dof on data on element: " << **fit;
