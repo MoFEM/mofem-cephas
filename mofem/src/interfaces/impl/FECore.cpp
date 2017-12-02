@@ -749,14 +749,15 @@ Core::build_finite_elements(const boost::shared_ptr<FiniteElement> fe,
         // is already reserved. Then create shared pointers and finally add
         // th_FEName to element multi-index
         const EntityHandle fe_ent = fe_it->lock().get()->getEnt();
+        boost::shared_ptr<std::vector<FEDofEntity> > &data_dofs_array_vec =
+            data_dofs_array[fe_ent];
         if (data_dofs_size[fe_ent] != 0 &&
             (field_id & fe_it->lock().get()->getBitFieldIdData()).any()) {
 
           // There are data dofs on this element
           side_number_ptr = fe_it->lock().get()->getSideNumberPtr(dof_ent);
-          data_dofs_array[fe_ent]->push_back(
-              FEDofEntity(side_number_ptr, *dit));
-          if (data_dofs_array[fe_ent]->size() ==
+          data_dofs_array_vec->push_back(FEDofEntity(side_number_ptr, *dit));
+          if (data_dofs_array_vec->size() ==
               (unsigned int)data_dofs_size[fe_ent]) {
             // That means that FEDofEntity vector is full, and can be added to
             // multi-index
@@ -765,15 +766,15 @@ Core::build_finite_elements(const boost::shared_ptr<FiniteElement> fe,
             data_dofs_shared_array.clear();
             data_dofs_shared_array.reserve(data_dofs_size[fe_ent]);
             for (std::vector<FEDofEntity>::iterator vit =
-                     data_dofs_array[fe_ent]->begin();
-                 vit != data_dofs_array[fe_ent]->end(); vit++) {
+                     data_dofs_array_vec->begin();
+                 vit != data_dofs_array_vec->end(); vit++) {
               // Create aliased shared pointer
-              data_dofs_shared_array.push_back(boost::shared_ptr<FEDofEntity>(
-                  data_dofs_array[fe_ent], &(*vit)));
+              data_dofs_shared_array.push_back(
+                  boost::shared_ptr<FEDofEntity>(data_dofs_array_vec, &(*vit)));
             }
             fe_it->lock().get()->data_dofs->get<Unique_mi_tag>().insert(
                 data_dofs_shared_array.begin(), data_dofs_shared_array.end());
-            fe_it->lock().get()->getDofsSequence() = data_dofs_array[fe_ent];
+            fe_it->lock().get()->getDofsSequence() = data_dofs_array_vec;
           }
         }
       }
@@ -938,7 +939,14 @@ MoFEMErrorCode Core::build_adjacencies(const Range &ents, int verb) {
         ent_uid = UId(0);
         for (FEDofEntity_multiIndex::iterator dvit = (*fit)->data_dofs->begin();
              dvit != (*fit)->data_dofs->end(); dvit++) {
-          if (PetscUnlikely(!(*dvit) || !(*dvit)->sPtr)) {
+          bool null_ptr = false;
+          if (PetscLikely((*dvit)->getDofEntityPtr())) {
+            if (PetscUnlikely(!(*dvit)->getFieldEntityPtr()))
+              null_ptr = true;
+          } else {
+            null_ptr = true;
+          }
+          if (PetscUnlikely(null_ptr)) {
             std::ostringstream ss;
             ss << "null pointer to dof on data on element: " << **fit;
             SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, ss.str().c_str());
