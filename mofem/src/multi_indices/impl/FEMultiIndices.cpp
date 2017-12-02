@@ -1049,12 +1049,16 @@ std::ostream &operator<<(std::ostream &os, const EntFiniteElement &e) {
   dit = e.data_dofs->begin();
   for (; dit != e.data_dofs->end(); dit++) {
     if (!(*dit)) {
-      os << "null ";
+      os << "null ptr";
     } else {
-      if (!(*dit)->sPtr) {
-        os << "( null ) ";
+      if (!(*dit)->getDofEntityPtr()) {
+        os << "( null ptr to dof ) ";
       } else {
-        os << (*dit)->getGlobalUniqueId() << " ";
+        if (!(*dit)->getFieldEntityPtr()) {
+          os << "(( null ptr to field entity )) ";
+        } else {
+          os << (*dit)->getGlobalUniqueId() << " ";
+        }
       }
     }
   }
