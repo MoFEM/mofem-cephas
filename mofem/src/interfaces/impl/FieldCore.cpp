@@ -815,14 +815,13 @@ MoFEMErrorCode Core::buildFieldForNoField(
   }
   MoFEMFunctionReturnHot(0);
 }
+
 MoFEMErrorCode Core::buildFieldForL2H1HcurlHdiv(
-  const BitFieldId id,
-  std::map<EntityType,int> &dof_counter,
-  std::map<EntityType,int> &inactive_dof_counter,
-  int verb
-) {
+    const BitFieldId id, std::map<EntityType, int> &dof_counter,
+    std::map<EntityType, int> &inactive_dof_counter, int verb) {
   MoFEMFunctionBeginHot;
-  if(verb==-1) verb = verbose;
+  if (verb == -1)
+    verb = verbose;
 
   // Field by ID
   typedef Field_multiIndex::index<BitFieldId_mi_tag>::type FieldSetById;
@@ -830,57 +829,60 @@ MoFEMErrorCode Core::buildFieldForL2H1HcurlHdiv(
   // Find field
   const FieldSetById &set_id = fIelds.get<BitFieldId_mi_tag>();
   FieldSetById::iterator field_it = set_id.find(id);
-  if(field_it == set_id.end()) {
-    SETERRQ(cOmm,MOFEM_NOT_FOUND,"field not found");
+  if (field_it == set_id.end()) {
+    SETERRQ(cOmm, MOFEM_NOT_FOUND, "field not found");
   }
   const int rank = field_it->get()->getNbOfCoeffs();
 
   // Just check if there are any DOFs of given field are in database
   const bool dofs_on_field =
-  dofsField.get<FieldName_mi_tag>().find(field_it->get()->getNameRef())!=
-  dofsField.get<FieldName_mi_tag>().end();
+      dofsField.get<FieldName_mi_tag>().find(field_it->get()->getNameRef()) !=
+      dofsField.get<FieldName_mi_tag>().end();
 
   // Ents in the field meshset
   Range ents_of_id_meshset;
-  rval = moab.get_entities_by_handle((*field_it)->meshSet,ents_of_id_meshset,false); CHKERRQ_MOAB(rval);
-  if(verb>5) {
-    PetscSynchronizedPrintf(
-      cOmm,"ents in field %s meshset %d\n",(*field_it)->getName().c_str(),ents_of_id_meshset.size()
-    );
+  rval = moab.get_entities_by_handle((*field_it)->meshSet, ents_of_id_meshset,
+                                     false);
+  CHKERRQ_MOAB(rval);
+  if (verb > VERY_NOISY) {
+    PetscSynchronizedPrintf(cOmm, "ents in field %s meshset %d\n",
+                            (*field_it)->getName().c_str(),
+                            ents_of_id_meshset.size());
   }
 
   // View of vertex entities to which dofs in given field are added
   FieldEntity_multiIndex_ent_view ents_view;
   std::vector<boost::shared_ptr<DofEntity> > dofs_shared_array;
 
-  // Loop over all entities and insert dofs by Sequences on edges, faces and volumes
+  // Loop over all entities and insert dofs by Sequences on edges, faces and
+  // volumes
   Range::iterator eit = ents_of_id_meshset.begin();
-  for(;eit!=ents_of_id_meshset.end();eit++) {
+  for (; eit != ents_of_id_meshset.end(); eit++) {
 
     // Find mofem entity
-    FieldEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator e_miit;
+    FieldEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator
+        e_miit;
     e_miit = entsFields.get<Composite_Name_And_Ent_mi_tag>().find(
-      boost::make_tuple((*field_it)->getNameRef(),*eit)
-    );
-    if(e_miit == entsFields.get<Composite_Name_And_Ent_mi_tag>().end()) continue;
+        boost::make_tuple((*field_it)->getNameRef(), *eit));
+    if (e_miit == entsFields.get<Composite_Name_And_Ent_mi_tag>().end())
+      continue;
 
     // Get shared ptr to entity
     boost::shared_ptr<FieldEntity> field_ent = *e_miit;
 
     // Current dofs on entity
     const int current_nb_dofs_on_ent =
-    !dofs_on_field ? 0 : dofsField.get<Composite_Name_And_Ent_mi_tag>().count(
-      boost::make_tuple(field_it->get()->getNameRef(),*eit)
-    );
+        !dofs_on_field
+            ? 0
+            : dofsField.get<Composite_Name_And_Ent_mi_tag>().count(
+                  boost::make_tuple(field_it->get()->getNameRef(), *eit));
 
     // Insert DOFs into databse
     const int nb_dofs_on_ent = field_ent->getNbDofsOnEnt();
-    const int nb_active_dosf_on_ent = rank*field_ent->getOrderNbDofs(field_ent->getMaxOrder());
+    const int nb_active_dosf_on_ent =
+        rank * field_ent->getOrderNbDofs(field_ent->getMaxOrder());
 
-    if(
-      field_ent->getEntType() == MBVERTEX &&
-      current_nb_dofs_on_ent == 0
-    ) {
+    if (field_ent->getEntType() == MBVERTEX && current_nb_dofs_on_ent == 0) {
 
       ents_view.push_back(field_ent);
 
@@ -892,36 +894,30 @@ MoFEMErrorCode Core::buildFieldForL2H1HcurlHdiv(
       //   boost::make_shared<DofEntity>(field_ent,0,0,0,true)
       // );
 
-    } else if(current_nb_dofs_on_ent>nb_active_dosf_on_ent) {
+    } else if (current_nb_dofs_on_ent > nb_active_dosf_on_ent) {
 
       // This is when order is reduced, or no dofs on entity are deleted,
       // then some DOFs are set to inactive.
 
       // Get all DOFs which index is bigger than number of active DOFs
-      DofEntity_multiIndex::index<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>::type::iterator
-      dit,hi_dit;
-      dit = dofsField.get<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>().lower_bound(
-        boost::make_tuple(
-          field_it->get()->getNameRef(),*eit,nb_dofs_on_ent
-        )
-      );
-      hi_dit = dofsField.get<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>().upper_bound(
-        boost::make_tuple(
-          field_it->get()->getNameRef(),*eit,current_nb_dofs_on_ent
-        )
-      );
+      DofEntity_multiIndex::index<
+          Composite_Name_And_Ent_And_EntDofIdx_mi_tag>::type::iterator dit,
+          hi_dit;
+      dit = dofsField.get<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>()
+                .lower_bound(boost::make_tuple(field_it->get()->getNameRef(),
+                                               *eit, nb_dofs_on_ent));
+      hi_dit =
+          dofsField.get<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>()
+              .upper_bound(boost::make_tuple(field_it->get()->getNameRef(),
+                                             *eit, current_nb_dofs_on_ent));
 
       // Modify DOFs as inactive
-      for(;dit!=hi_dit;dit++) {
-        bool success = dofsField.modify(
-          dofsField.project<0>(dit),DofEntity_active_change(false)
-        );
-        if(!success) {
-          SETERRQ(
-            cOmm,
-            MOFEM_OPERATION_UNSUCCESSFUL,
-            "modification unsuccessful"
-          );
+      for (; dit != hi_dit; dit++) {
+        bool success = dofsField.modify(dofsField.project<0>(dit),
+                                        DofEntity_active_change(false));
+        if (!success) {
+          SETERRQ(cOmm, MOFEM_OPERATION_UNSUCCESSFUL,
+                  "modification unsuccessful");
         }
         ++inactive_dof_counter[dit->get()->getEntType()];
       }
@@ -929,8 +925,8 @@ MoFEMErrorCode Core::buildFieldForL2H1HcurlHdiv(
     } else {
 
       // Allocate space for all dofs on this entity
-      boost::shared_ptr<std::vector<DofEntity> > dofs_array
-      = boost::make_shared<std::vector<DofEntity> >(std::vector<DofEntity>());
+      boost::shared_ptr<std::vector<DofEntity> > dofs_array =
+          boost::make_shared<std::vector<DofEntity> >(std::vector<DofEntity>());
       dofs_array->reserve(nb_dofs_on_ent);
 
       // Set weak pointer on entity to vector/Sequence with allocated dofs on
@@ -944,43 +940,39 @@ MoFEMErrorCode Core::buildFieldForL2H1HcurlHdiv(
       // Create dofs instances and shared pointers
       int DD = 0;
       // Loop orders (loop until max entity order is set)
-      for(int oo = 0;oo<=field_ent->getMaxOrder();oo++) {
+      for (int oo = 0; oo <= field_ent->getMaxOrder(); oo++) {
         // Loop nb. dofs at order oo
-        for(int dd = 0;dd<field_ent->getOrderNbDofsDiff(oo);dd++) {
+        for (int dd = 0; dd < field_ent->getOrderNbDofsDiff(oo); dd++) {
           // Loop rank
-          for(int rr = 0;rr<rank;rr++,DD++) {
+          for (int rr = 0; rr < rank; rr++, DD++) {
             // push back dofs instanca
             // dofs_array->emplace_back(
             //   DofEntity(field_ent,oo,rr,DD,true)
             // );
-            dofs_array->push_back(
-              DofEntity(field_ent,oo,rr,DD,true)
-            );
+            dofs_array->push_back(DofEntity(field_ent, oo, rr, DD, true));
             // Push back shared_ptr for DoFS. Note shared pointer is aliased
             // to vector keeping all DOFs on the entity
             // dofs_shared_array.emplace_back(
             //   boost::shared_ptr<DofEntity>(dofs_array,&dofs_array->back())
             // );
             dofs_shared_array.push_back(
-              boost::shared_ptr<DofEntity>(dofs_array,&dofs_array->back())
-            );
+                boost::shared_ptr<DofEntity>(dofs_array, &dofs_array->back()));
           }
         }
       }
-      if(DD != field_ent->getNbDofsOnEnt()) {
+      if (DD != field_ent->getNbDofsOnEnt()) {
         std::ostringstream ss;
         ss << "rank " << rAnk << " ";
         ss << *field_ent << std::endl;
-        SETERRQ3(
-          cOmm,MOFEM_DATA_INCONSISTENCY,
-          "Expected number of DOFs on entity not equal to number added to database (DD = %d != %d = field_ent->getNbDofsOnEnt())\n"
-          "%s",
-          DD,field_ent->getNbDofsOnEnt(),ss.str().c_str()
-        );
+        SETERRQ3(cOmm, MOFEM_DATA_INCONSISTENCY,
+                 "Expected number of DOFs on entity not equal to number added "
+                 "to database (DD = %d != %d = field_ent->getNbDofsOnEnt())\n"
+                 "%s",
+                 DD, field_ent->getNbDofsOnEnt(), ss.str().c_str());
       }
 
       // Finally add dofs to multi-index
-      if(!dofs_shared_array.empty()) {
+      if (!dofs_shared_array.empty()) {
 
         // This is in case if some DOFs are already there, then need to
         // replace existing shared_ptr with new one. Then old sequence will be
@@ -989,61 +981,53 @@ MoFEMErrorCode Core::buildFieldForL2H1HcurlHdiv(
 
         std::vector<boost::shared_ptr<DofEntity> >::iterator vit;
         vit = dofs_shared_array.begin();
-        for(int ii = 0;ii!=current_nb_dofs_on_ent;ii++,vit++) {
+        for (int ii = 0; ii != current_nb_dofs_on_ent; ii++, vit++) {
           DofEntity_multiIndex::iterator d_miit;
           d_miit = dofsField.find(vit->get()->getGlobalUniqueId());
-          if(d_miit == dofsField.end()) {
-            SETERRQ(cOmm,MOFEM_DATA_INCONSISTENCY,"DOFs is not there, but should be");
+          if (d_miit == dofsField.end()) {
+            SETERRQ(cOmm, MOFEM_DATA_INCONSISTENCY,
+                    "DOFs is not there, but should be");
           }
-          bool success = dofsField.modify(
-            d_miit,Dof_shared_ptr_change<DofEntity>(*vit)
-          );
-          if(!success) {
-            SETERRQ(
-              cOmm,
-              MOFEM_OPERATION_UNSUCCESSFUL,
-              "modification unsuccessful"
-            );
+          bool success =
+              dofsField.modify(d_miit, Dof_shared_ptr_change<DofEntity>(*vit));
+          if (!success) {
+            SETERRQ(cOmm, MOFEM_OPERATION_UNSUCCESSFUL,
+                    "modification unsuccessful");
           }
         }
-        if(vit!=dofs_shared_array.end()) {
+        if (vit != dofs_shared_array.end()) {
           // Those DOFs are added
-          dof_counter[vit->get()->getEntType()] += std::distance(vit,dofs_shared_array.end());
+          dof_counter[vit->get()->getEntType()] +=
+              std::distance(vit, dofs_shared_array.end());
           // Finally insert DOFs to database
-          dofsField.insert(vit,dofs_shared_array.end());
+          dofsField.insert(vit, dofs_shared_array.end());
         }
-
       }
-
     }
-
   }
 
   // Add vertices DOFs by bulk
-  boost::shared_ptr<std::vector<DofEntity> > dofs_array
-  = boost::make_shared<std::vector<DofEntity> >(std::vector<DofEntity>());
+  boost::shared_ptr<std::vector<DofEntity> > dofs_array =
+      boost::make_shared<std::vector<DofEntity> >(std::vector<DofEntity>());
   // Add Sequence of DOFs to sequence container as weak_ptr
-  dofs_array->reserve(rank*ents_view.size());
+  dofs_array->reserve(rank * ents_view.size());
   // Add Sequence of DOFs to sequence container as weak_ptr
   field_it->get()->getDofSequenceContainer()->push_back(dofs_array);
   dofs_shared_array.clear();
   dofs_shared_array.reserve(dofs_array->size());
-  for(
-    FieldEntity_multiIndex_ent_view::iterator
-    eit = ents_view.begin();eit!=ents_view.end();eit++
-  ) {
-    for(int r = 0;r!=rank;r++) {
+  for (FieldEntity_multiIndex_ent_view::iterator eit = ents_view.begin();
+       eit != ents_view.end(); eit++) {
+    for (int r = 0; r != rank; r++) {
       // Construct DOF
-      dofs_array->push_back(DofEntity(*eit,1,r,r,true));
+      dofs_array->push_back(DofEntity(*eit, 1, r, r, true));
       // Construct aliased shared pointer
       dofs_shared_array.push_back(
-        boost::shared_ptr<DofEntity>(dofs_array,&dofs_array->back())
-      );
+          boost::shared_ptr<DofEntity>(dofs_array, &dofs_array->back()));
       ++dof_counter[MBVERTEX];
     }
   }
   // Insert into Multi-Index container
-  dofsField.insert(dofs_shared_array.begin(),dofs_shared_array.end());
+  dofsField.insert(dofs_shared_array.begin(), dofs_shared_array.end());
 
   MoFEMFunctionReturnHot(0);
 }
