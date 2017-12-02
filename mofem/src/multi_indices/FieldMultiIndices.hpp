@@ -357,6 +357,8 @@ template <typename T> struct interface_Field {
   interface_Field(const interface_Field<T> &interface)
       : sFieldPtr(interface.getFieldPtr()) {}
 
+  virtual ~interface_Field() {}
+
   inline EntityHandle getMeshset() const {
     return this->sFieldPtr->getMeshset();
   }
