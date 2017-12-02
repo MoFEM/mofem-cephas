@@ -1065,7 +1065,7 @@ namespace MoFEM {
     /** Clear dofs by bit level
      * \ingroup mofem_field
      */
-    virtual MoFEMErrorCode clear_dofs_fields(const BitRefLevel &bit,
+    virtual MoFEMErrorCode clear_dofs_fields_by_bit_ref(const BitRefLevel &bit,
                                              const BitRefLevel &mask,
                                              int verb = -1) = 0;
 

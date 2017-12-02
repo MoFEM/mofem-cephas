@@ -435,7 +435,7 @@ protected:
 
   /// \name Clear DOFs
   MoFEMErrorCode clear_inactive_dofs(int verb = -1);
-  MoFEMErrorCode clear_dofs_fields(const BitRefLevel &bit,
+  MoFEMErrorCode clear_dofs_fields_by_bit_ref(const BitRefLevel &bit,
                                    const BitRefLevel &mask, int verb = -1);
   MoFEMErrorCode clear_dofs_fields(const Range &ents, int verb = -1);
   MoFEMErrorCode clear_dofs_fields(const std::string &name, const Range &ents,
