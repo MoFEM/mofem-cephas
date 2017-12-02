@@ -26,13 +26,12 @@ namespace MoFEM {
   *
   */
 struct FieldEntityEntFiniteElementAdjacencyMap {
-  unsigned int byWhat; ///< see options \ref ByWhat
+  unsigned int byWhat;                              ///< see options \ref ByWhat
   const boost::shared_ptr<FieldEntity> entFieldPtr; ///< field entity
   const boost::shared_ptr<EntFiniteElement> entFePtr; ///< finite element entity
   FieldEntityEntFiniteElementAdjacencyMap(
-    const boost::shared_ptr<FieldEntity> ent_field_ptr,
-    const boost::shared_ptr<EntFiniteElement> ent_fe_ptr
-  );
+      const boost::shared_ptr<FieldEntity> &ent_field_ptr,
+      const boost::shared_ptr<EntFiniteElement> &ent_fe_ptr);
 
   /**
    * \brief get unique iD of finite element entity

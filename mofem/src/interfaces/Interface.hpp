@@ -882,7 +882,7 @@ namespace MoFEM {
      *
      */
     virtual MoFEMErrorCode
-    remove_ents_from_finite_element(const std::string &name,
+    remove_ents_from_finite_element(const std::string& name,
                                     const EntityHandle meshset,
                                     const EntityType type, int verb = -1) = 0;
 
@@ -891,7 +891,7 @@ namespace MoFEM {
      *
      */
     virtual MoFEMErrorCode
-    remove_ents_from_finite_element(const std::string &name, const Range &ents,
+    remove_ents_from_finite_element(const std::string& name, const Range &ents,
                                     int verb = -1) = 0;
 
     /** \brief remove entities from finite elements in database

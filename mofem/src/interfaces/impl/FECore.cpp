@@ -575,14 +575,14 @@ Core::build_finite_elements(const boost::shared_ptr<FiniteElement> fe,
 
   // map entity uid to pointers
   typedef std::vector<boost::weak_ptr<EntFiniteElement> > VecOfWeakFEPtrs;
-  typedef std::pair<const UId *, VecOfWeakFEPtrs> EntUIdAndVecEakFEPtrs;
+  typedef std::pair<const UId *, VecOfWeakFEPtrs> EntUIdAndVecOfWeakFEPtrs;
   typedef multi_index_container<
-      EntUIdAndVecEakFEPtrs,
-      indexed_by<sequenced<>,
-                 hashed_non_unique<member<EntUIdAndVecEakFEPtrs, const UId *,
-                                          &EntUIdAndVecEakFEPtrs::first> > > >
-      EntUIdAndVecEakFEPtrs_multi_index;
-  EntUIdAndVecEakFEPtrs_multi_index entUIdAndFEVec;
+      EntUIdAndVecOfWeakFEPtrs,
+      indexed_by<sequenced<>, hashed_non_unique<
+                                  member<EntUIdAndVecOfWeakFEPtrs, const UId *,
+                                         &EntUIdAndVecOfWeakFEPtrs::first> > > >
+      EntUIdAndVecOfWeakFEPtrs_multi_index;
+  EntUIdAndVecOfWeakFEPtrs_multi_index entUIdAndFEVec;
 
   std::map<EntityHandle, int> data_dofs_size;
 
@@ -615,10 +615,7 @@ Core::build_finite_elements(const boost::shared_ptr<FiniteElement> fe,
 
       if (fe_fields[ROW] == fe_fields[COL]) {
         p.first->get()->col_dof_view = p.first->get()->row_dof_view;
-      }
-
-      if (fe_fields[ROW] != fe_fields[COL] &&
-          p.first->get()->col_dof_view == p.first->get()->row_dof_view) {
+      } else if (p.first->get()->col_dof_view == p.first->get()->row_dof_view) {
         p.first->get()->col_dof_view =
             boost::make_shared<DofEntity_multiIndex_uid_view>();
       }
@@ -658,14 +655,21 @@ Core::build_finite_elements(const boost::shared_ptr<FiniteElement> fe,
         const bool add_to_data =
             (field_id & p.first->get()->getBitFieldIdData()).any();
         FieldEntity_multiIndex::index<
-            Composite_Name_And_Ent_mi_tag>::type::iterator meit;
-        for (Range::iterator eit = adj_ents.begin(); eit != adj_ents.end();
-             eit++) {
-          meit = entsFields.get<Composite_Name_And_Ent_mi_tag>().find(
-              boost::make_tuple(field_name, *eit));
-          if (meit != entsFields.get<Composite_Name_And_Ent_mi_tag>().end()) {
+            Composite_Name_And_Ent_mi_tag>::type::iterator meit,hi_meit;
+        for (Range::pair_iterator p_eit = adj_ents.pair_begin();
+             p_eit != adj_ents.pair_end(); ++p_eit) {
+          const EntityHandle first = p_eit->first;
+          const EntityHandle second = p_eit->second;
+          meit = entsFields.get<Composite_Name_And_Ent_mi_tag>().lower_bound(
+              boost::make_tuple(field_name, first));
+          if (meit == entsFields.get<Composite_Name_And_Ent_mi_tag>().end()) {
+            continue;
+          }
+          hi_meit = entsFields.get<Composite_Name_And_Ent_mi_tag>().upper_bound(
+              boost::make_tuple(field_name, second));         
+          for(;meit!=hi_meit;++meit) {
             const UId *uid_ptr = &(meit->get()->getGlobalUniqueId());
-            EntUIdAndVecEakFEPtrs_multi_index::nth_index<1>::type::iterator
+            EntUIdAndVecOfWeakFEPtrs_multi_index::nth_index<1>::type::iterator
                 e_uid_vec_fe_it;
             e_uid_vec_fe_it = entUIdAndFEVec.get<1>().find(uid_ptr);
             if (e_uid_vec_fe_it == entUIdAndFEVec.get<1>().end()) {
@@ -704,7 +708,7 @@ Core::build_finite_elements(const boost::shared_ptr<FiniteElement> fe,
 
   // Loop over hash map, which has all entities on given elemnts
   boost::shared_ptr<SideNumber> side_number_ptr;
-  for (EntUIdAndVecEakFEPtrs_multi_index::iterator mit = entUIdAndFEVec.begin();
+  for (EntUIdAndVecOfWeakFEPtrs_multi_index::iterator mit = entUIdAndFEVec.begin();
        mit != entUIdAndFEVec.end(); mit++) {
     DofsByEntUId::iterator dit, hi_dit;
     dit = dofs_by_ent_uid.lower_bound(*mit->first);
@@ -867,80 +871,90 @@ MoFEMErrorCode Core::build_adjacencies(const Range &ents, int verb) {
     SETERRQ(cOmm, MOFEM_NOT_FOUND, "field not build");
   if (!((*buildMoFEM) & BUILD_FE))
     SETERRQ(cOmm, MOFEM_NOT_FOUND, "fe not build");
-  EntFiniteElement_multiIndex::iterator fit = entsFiniteElements.begin();
-  for (; fit != entsFiniteElements.end(); fit++) {
-    if ((*fit)->getBitFieldIdRow().none() &&
-        (*fit)->getBitFieldIdCol().none() && (*fit)->getBitFieldIdData().none())
-      continue;
-    if (!ents.empty()) {
-      if (ents.find((*fit)->getEnt()) == ents.end())
+  for (Range::const_pair_iterator peit = ents.pair_begin();
+       peit != ents.pair_end();++peit) {
+    EntFiniteElement_multiIndex::index<Ent_mi_tag>::type::iterator fit, hi_fit;
+    fit = entsFiniteElements.get<Ent_mi_tag>().lower_bound(peit->first);
+    hi_fit = entsFiniteElements.get<Ent_mi_tag>().upper_bound(peit->second);
+    for (; fit != hi_fit; ++fit) {
+      if ((*fit)->getBitFieldIdRow().none() &&
+          (*fit)->getBitFieldIdCol().none() &&
+          (*fit)->getBitFieldIdData().none())
         continue;
-    }
-    int by = BYROW;
-    if ((*fit)->getBitFieldIdRow() != (*fit)->getBitFieldIdCol())
-      by |= BYCOL;
-    if ((*fit)->getBitFieldIdRow() != (*fit)->getBitFieldIdData())
-      by |= BYDATA;
-    FieldEntityEntFiniteElementAdjacencyMap_change_ByWhat modify_row(by);
-    UId ent_uid = UId(0);
-    DofEntity_multiIndex_uid_view::iterator rvit;
-    rvit = (*fit)->row_dof_view->begin();
-    for (; rvit != (*fit)->row_dof_view->end(); rvit++) {
-      if (ent_uid == (*rvit)->getFieldEntityPtr()->getGlobalUniqueId())
-        continue;
-      ent_uid = (*rvit)->getFieldEntityPtr()->getGlobalUniqueId();
-      std::pair<FieldEntityEntFiniteElementAdjacencyMap_multiIndex::iterator,
-                bool>
-          p;
-      p = entFEAdjacencies.insert(FieldEntityEntFiniteElementAdjacencyMap(
-          (*rvit)->getFieldEntityPtr(), *fit));
-      bool success = entFEAdjacencies.modify(p.first, modify_row);
-      if (!success)
-        SETERRQ(cOmm, MOFEM_OPERATION_UNSUCCESSFUL,
-                "modification unsuccessful");
-    }
-    if ((*fit)->getBitFieldIdRow() != (*fit)->getBitFieldIdCol()) {
-      int by = BYCOL;
-      if ((*fit)->getBitFieldIdCol() != (*fit)->getBitFieldIdData())
+      int by = BYROW;
+      if ((*fit)->getBitFieldIdRow() != (*fit)->getBitFieldIdCol())
+        by |= BYCOL;
+      if ((*fit)->getBitFieldIdRow() != (*fit)->getBitFieldIdData())
         by |= BYDATA;
-      FieldEntityEntFiniteElementAdjacencyMap_change_ByWhat modify_col(by);
-      ent_uid = UId(0);
-      DofEntity_multiIndex_uid_view::iterator cvit;
-      cvit = (*fit)->col_dof_view->begin();
-      for (; cvit != (*fit)->col_dof_view->end(); cvit++) {
-        if (ent_uid == (*cvit)->getFieldEntityPtr()->getGlobalUniqueId())
+      FieldEntityEntFiniteElementAdjacencyMap_change_ByWhat modify_row(by);
+      UId ent_uid = UId(0);
+      DofEntity_multiIndex_uid_view::iterator rvit;
+      rvit = (*fit)->row_dof_view->begin();
+      for (; rvit != (*fit)->row_dof_view->end(); rvit++) {
+        if (ent_uid == (*rvit)->getFieldEntityPtr()->getGlobalUniqueId())
           continue;
-        ent_uid = (*cvit)->getFieldEntityPtr()->getGlobalUniqueId();
+        ent_uid = (*rvit)->getFieldEntityPtr()->getGlobalUniqueId();
         std::pair<FieldEntityEntFiniteElementAdjacencyMap_multiIndex::iterator,
                   bool>
             p;
         p = entFEAdjacencies.insert(FieldEntityEntFiniteElementAdjacencyMap(
-            (*cvit)->getFieldEntityPtr(), *fit));
-        bool success = entFEAdjacencies.modify(p.first, modify_col);
+            (*rvit)->getFieldEntityPtr(), *fit));
+        bool success = entFEAdjacencies.modify(p.first, modify_row);
         if (!success)
           SETERRQ(cOmm, MOFEM_OPERATION_UNSUCCESSFUL,
                   "modification unsuccessful");
       }
-    }
-    if ((*fit)->getBitFieldIdRow() != (*fit)->getBitFieldIdData() ||
-        (*fit)->getBitFieldIdCol() != (*fit)->getBitFieldIdData()) {
-      FieldEntityEntFiniteElementAdjacencyMap_change_ByWhat modify_data(BYDATA);
-      ent_uid = UId(0);
-      FEDofEntity_multiIndex::iterator dvit;
-      dvit = (*fit)->data_dofs->begin();
-      for (; dvit != (*fit)->data_dofs->end(); dvit++) {
-        if (ent_uid == (*dvit)->getFieldEntityPtr()->getGlobalUniqueId())
-          continue;
-        ent_uid = (*dvit)->getFieldEntityPtr()->getGlobalUniqueId();
-        std::pair<FieldEntityEntFiniteElementAdjacencyMap_multiIndex::iterator,
-                  bool>
-            p;
-        p = entFEAdjacencies.insert(FieldEntityEntFiniteElementAdjacencyMap(
-            (*dvit)->getFieldEntityPtr(), *fit));
-        bool success = entFEAdjacencies.modify(p.first, modify_data);
-        if (!success)
-          SETERRQ(cOmm, MOFEM_OPERATION_UNSUCCESSFUL,
-                  "modification unsuccessful");
+      if ((*fit)->getBitFieldIdRow() != (*fit)->getBitFieldIdCol()) {
+        int by = BYCOL;
+        if ((*fit)->getBitFieldIdCol() != (*fit)->getBitFieldIdData())
+          by |= BYDATA;
+        FieldEntityEntFiniteElementAdjacencyMap_change_ByWhat modify_col(by);
+        ent_uid = UId(0);
+        DofEntity_multiIndex_uid_view::iterator cvit;
+        cvit = (*fit)->col_dof_view->begin();
+        for (; cvit != (*fit)->col_dof_view->end(); cvit++) {
+          if (ent_uid == (*cvit)->getFieldEntityPtr()->getGlobalUniqueId())
+            continue;
+          ent_uid = (*cvit)->getFieldEntityPtr()->getGlobalUniqueId();
+          std::pair<
+              FieldEntityEntFiniteElementAdjacencyMap_multiIndex::iterator,
+              bool>
+              p;
+          p = entFEAdjacencies.insert(FieldEntityEntFiniteElementAdjacencyMap(
+              (*cvit)->getFieldEntityPtr(), *fit));
+          bool success = entFEAdjacencies.modify(p.first, modify_col);
+          if (!success)
+            SETERRQ(cOmm, MOFEM_OPERATION_UNSUCCESSFUL,
+                    "modification unsuccessful");
+        }
+      }
+      if ((*fit)->getBitFieldIdRow() != (*fit)->getBitFieldIdData() ||
+          (*fit)->getBitFieldIdCol() != (*fit)->getBitFieldIdData()) {
+        FieldEntityEntFiniteElementAdjacencyMap_change_ByWhat modify_data(
+            BYDATA);
+        ent_uid = UId(0);
+        FEDofEntity_multiIndex::iterator dvit;
+        dvit = (*fit)->data_dofs->begin();
+        for (; dvit != (*fit)->data_dofs->end(); dvit++) {
+          if (PetscUnlikely(!(*dvit) || !(*dvit)->sPtr)) {
+            std::ostringstream ss;
+            ss << "null pointer to dof on data on element: " << **fit;
+            SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, ss.str().c_str());
+          }
+          if (ent_uid == (*dvit)->getFieldEntityPtr()->getGlobalUniqueId())
+            continue;
+          ent_uid = (*dvit)->getFieldEntityPtr()->getGlobalUniqueId();
+          std::pair<
+              FieldEntityEntFiniteElementAdjacencyMap_multiIndex::iterator,
+              bool>
+              p;
+          p = entFEAdjacencies.insert(FieldEntityEntFiniteElementAdjacencyMap(
+              (*dvit)->getFieldEntityPtr(), *fit));
+          bool success = entFEAdjacencies.modify(p.first, modify_data);
+          if (!success)
+            SETERRQ(cOmm, MOFEM_OPERATION_UNSUCCESSFUL,
+                    "modification unsuccessful");
+        }
       }
     }
   }

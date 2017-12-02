@@ -563,11 +563,11 @@ protected:
 
   MoFEMErrorCode remove_ents_from_finite_element_by_bit_ref(
       const BitRefLevel &bit, const BitRefLevel &mask, int verb = -1);
-  MoFEMErrorCode remove_ents_from_finite_element(const std::string &name,
+  MoFEMErrorCode remove_ents_from_finite_element(const std::string& name,
                                                  const EntityHandle meshset,
                                                  const EntityType type,
                                                  int verb = -1);
-  MoFEMErrorCode remove_ents_from_finite_element(const std::string &name,
+  MoFEMErrorCode remove_ents_from_finite_element(const std::string& name,
                                                  const Range &ents,
                                                  int verb = -1);
   MoFEMErrorCode remove_ents_from_finite_element(const Range &ents,

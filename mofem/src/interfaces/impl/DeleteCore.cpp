@@ -34,12 +34,30 @@ MoFEMErrorCode Core::clear_inactive_dofs(int verb) {
     verb = verbose;
   Range ents;
   for (DofEntity_multiIndex::iterator dit = dofsField.begin();
-       dit != dofsField.end();++dit) {
+       dit != dofsField.end();) {
     if (!dit->get()->getActive()) {
-      ents.insert(dit->get()->getEnt());
+      FieldEntityEntFiniteElementAdjacencyMap_multiIndex::index<
+          Unique_mi_tag>::type::iterator ait,
+          hi_ait;
+      ait = entFEAdjacencies.get<Unique_mi_tag>().lower_bound(
+          (*dit)->getFieldEntityPtr()->getGlobalUniqueId());
+      hi_ait = entFEAdjacencies.get<Unique_mi_tag>().upper_bound(
+          (*dit)->getFieldEntityPtr()->getGlobalUniqueId());
+      for (; ait != hi_ait; ait++) {
+        boost::shared_ptr<EntFiniteElement> ent_fe_ptr;
+        ent_fe_ptr = ait->entFePtr;
+        ent_fe_ptr->row_dof_view->erase((*dit)->getGlobalUniqueId());
+        if (ent_fe_ptr->row_dof_view != ent_fe_ptr->col_dof_view) {
+          ent_fe_ptr->col_dof_view->erase((*dit)->getGlobalUniqueId());
+        }
+        ent_fe_ptr->data_dofs->get<Unique_mi_tag>().erase(
+            (*dit)->getGlobalUniqueId());
+      }
+      dit = dofsField.erase(dit);
+    } else {
+      ++dit;
     }
   }
-  CHKERR clear_dofs_fields(ents, verb);
   MoFEMFunctionReturn(0);
 }
 
@@ -62,29 +80,49 @@ MoFEMErrorCode Core::clear_dofs_fields(const Range &ents, int verb) {
        p_eit != ents.pair_end(); p_eit++) {
     EntityHandle first  = p_eit->first;
     EntityHandle second = p_eit->second;
-    DofEntityByEnt::iterator dit, hi_dit;
-    dit    = dofsField.get<Ent_mi_tag>().lower_bound(first);
+    // get dofs range
+    DofEntityByEnt::iterator dit, hi_dit,last_dit;
+    dit = dofsField.get<Ent_mi_tag>().lower_bound(first);
+    if (dit == dofsField.get<Ent_mi_tag>().end())
+      continue;
     hi_dit = dofsField.get<Ent_mi_tag>().upper_bound(second);
-    for (; dit != hi_dit;) {
-      FieldEntityEntFiniteElementAdjacencyMap_multiIndex::index<
-          Unique_mi_tag>::type::iterator ait,
-          hi_ait;
-      ait = entFEAdjacencies.get<Unique_mi_tag>().lower_bound(
-          (*dit)->getFieldEntityPtr()->getGlobalUniqueId());
-      hi_ait = entFEAdjacencies.get<Unique_mi_tag>().upper_bound(
-          (*dit)->getFieldEntityPtr()->getGlobalUniqueId());
-      for (; ait != hi_ait; ait++) {
-        boost::shared_ptr<EntFiniteElement> ent_fe_ptr;
-        ent_fe_ptr = ait->entFePtr;
-        ent_fe_ptr->row_dof_view->erase((*dit)->getGlobalUniqueId());
-        if (ent_fe_ptr->row_dof_view != ent_fe_ptr->col_dof_view) {
-          ent_fe_ptr->col_dof_view->erase((*dit)->getGlobalUniqueId());
-        }
-        ent_fe_ptr->data_dofs->get<Unique_mi_tag>().erase(
-            (*dit)->getGlobalUniqueId());
+    last_dit = hi_dit;
+    --last_dit;
+    // clear dofs in finite elements
+    FieldEntityEntFiniteElementAdjacencyMap_multiIndex::index<
+        Ent_mi_tag>::type::iterator ait,
+        hi_ait;
+    ait = entFEAdjacencies.get<Ent_mi_tag>().lower_bound(first);
+    hi_ait = entFEAdjacencies.get<Ent_mi_tag>().lower_bound(second);
+    for (; ait != hi_ait; ait++) {
+      // Delete data dofs on element
+      {
+        FEDofEntity_multiIndex::iterator diit, hi_diit;
+        diit = ait->entFePtr->data_dofs->lower_bound(
+            dit->get()->getGlobalUniqueId());
+        hi_diit = ait->entFePtr->data_dofs->upper_bound(
+            last_dit->get()->getGlobalUniqueId());
+        ait->entFePtr->data_dofs->erase(diit, hi_diit);
       }
-      dit = dofsField.get<Ent_mi_tag>().erase(dit);
+      // Delete dofs view on rows and columns on elements
+      {
+        DofEntity_multiIndex_uid_view::iterator diit, hi_diit;
+        diit = ait->entFePtr->row_dof_view->lower_bound(
+            dit->get()->getGlobalUniqueId());
+        hi_diit = ait->entFePtr->row_dof_view->upper_bound(
+            last_dit->get()->getGlobalUniqueId());
+        ait->entFePtr->row_dof_view->erase(diit, hi_diit);
+        if (ait->entFePtr->row_dof_view != ait->entFePtr->col_dof_view) {
+          diit = ait->entFePtr->col_dof_view->lower_bound(
+              dit->get()->getGlobalUniqueId());
+          hi_diit = ait->entFePtr->col_dof_view->upper_bound(
+              last_dit->get()->getGlobalUniqueId());
+          ait->entFePtr->col_dof_view->erase(diit, hi_diit);
+        }
+      }
     }
+    // finally clear dofs
+    dofsField.get<Ent_mi_tag>().erase(dit,hi_dit);
   }
   MoFEMFunctionReturnHot(0);
 }
@@ -151,7 +189,7 @@ MoFEMErrorCode Core::clear_ents_fields(const Range &ents, int verb) {
     EntityHandle first  = p_eit->first;
     EntityHandle second = p_eit->second;
     FieldEntity_multiIndex::index<Ent_mi_tag>::type::iterator dit, hi_dit;
-    dit    = entsFields.get<Ent_mi_tag>().lower_bound(first);
+    dit = entsFields.get<Ent_mi_tag>().lower_bound(first);
     hi_dit = entsFields.get<Ent_mi_tag>().upper_bound(second);
     entsFields.get<Ent_mi_tag>().erase(dit, hi_dit);
   }
@@ -186,7 +224,7 @@ MoFEMErrorCode Core::clear_ents_fields(const std::string &name,
     EntityHandle second = p_eit->second;
     FieldEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator
         dit,
-        hi_dit, last_dit;
+        hi_dit;
     dit = entsFields.get<Composite_Name_And_Ent_mi_tag>().lower_bound(
         boost::make_tuple(name, first));
     hi_dit = entsFields.get<Composite_Name_And_Ent_mi_tag>().upper_bound(
@@ -194,7 +232,7 @@ MoFEMErrorCode Core::clear_ents_fields(const std::string &name,
     entsFields.get<Composite_Name_And_Ent_mi_tag>().erase(dit, hi_dit);
   }
   const Field *field_ptr = get_field_structure(name);
-  rval                   = moab.tag_delete_data(field_ptr->th_AppOrder, ents);
+  rval = moab.tag_delete_data(field_ptr->th_AppOrder, ents);
   if (rval != MB_SUCCESS && rval != MB_TAG_NOT_FOUND) {
     CHKERRG(rval);
   } else {
@@ -275,13 +313,13 @@ MoFEMErrorCode Core::clear_adjacencies_entities(const Range &ents, int verb) {
   if (verb == -1)
     verb = verbose;
   for (Range::const_pair_iterator p_eit = ents.pair_begin();
-       p_eit != ents.pair_end(); p_eit++) {
+       p_eit != ents.pair_end(); ++p_eit) {
     const EntityHandle first  = p_eit->first;
     const EntityHandle second = p_eit->second;
     FieldEntityEntFiniteElementAdjacencyMap_multiIndex::index<
         Ent_mi_tag>::type::iterator ait,
         hi_ait;
-    ait    = entFEAdjacencies.get<Ent_mi_tag>().lower_bound(first);
+    ait = entFEAdjacencies.get<Ent_mi_tag>().lower_bound(first);
     hi_ait = entFEAdjacencies.get<Ent_mi_tag>().upper_bound(second);
     entFEAdjacencies.get<Ent_mi_tag>().erase(ait, hi_ait);
   }
@@ -327,7 +365,7 @@ MoFEMErrorCode Core::clear_adjacencies_entities(const std::string &name,
     FieldEntityEntFiniteElementAdjacencyMap_multiIndex::index<
         Unique_mi_tag>::type::iterator ait,
         hi_ait;
-    ait    = entFEAdjacencies.get<Unique_mi_tag>().lower_bound(first_uid);
+    ait = entFEAdjacencies.get<Unique_mi_tag>().lower_bound(first_uid);
     hi_ait = entFEAdjacencies.get<Unique_mi_tag>().upper_bound(second_uid);
     entFEAdjacencies.get<Unique_mi_tag>().erase(ait, hi_ait);
   }
@@ -352,10 +390,10 @@ MoFEMErrorCode Core::clear_finite_elements(const Range &ents, int verb) {
   CHKERR clear_adjacencies_finite_elements(ents, verb);
   for (Range::const_pair_iterator p_eit = ents.pair_begin();
        p_eit != ents.pair_end(); p_eit++) {
-    EntityHandle first  = p_eit->first;
+    EntityHandle first = p_eit->first;
     EntityHandle second = p_eit->second;
     EntFiniteElement_multiIndex::index<Ent_mi_tag>::type::iterator fit, hi_fit;
-    fit    = entsFiniteElements.get<Ent_mi_tag>().lower_bound(first);
+    fit = entsFiniteElements.get<Ent_mi_tag>().lower_bound(first);
     hi_fit = entsFiniteElements.get<Ent_mi_tag>().upper_bound(second);
     entsFiniteElements.get<Ent_mi_tag>().erase(fit, hi_fit);
   }
@@ -403,12 +441,12 @@ MoFEMErrorCode Core::clear_adjacencies_finite_elements(const Range &ents,
     verb = verbose;
   for (Range::const_pair_iterator p_eit = ents.pair_begin();
        p_eit != ents.pair_end(); p_eit++) {
-    EntityHandle first  = p_eit->first;
+    EntityHandle first = p_eit->first;
     EntityHandle second = p_eit->second;
     FieldEntityEntFiniteElementAdjacencyMap_multiIndex::index<
         FEEnt_mi_tag>::type::iterator ait,
         hi_ait;
-    ait    = entFEAdjacencies.get<FEEnt_mi_tag>().lower_bound(first);
+    ait = entFEAdjacencies.get<FEEnt_mi_tag>().lower_bound(first);
     hi_ait = entFEAdjacencies.get<FEEnt_mi_tag>().upper_bound(second);
     entFEAdjacencies.get<FEEnt_mi_tag>().erase(ait, hi_ait);
   }
@@ -445,7 +483,7 @@ MoFEMErrorCode Core::clear_adjacencies_finite_elements(const std::string &name,
       FieldEntityEntFiniteElementAdjacencyMap_multiIndex::index<
           FE_Unique_mi_tag>::type::iterator ait,
           hi_ait;
-      ait    = entFEAdjacencies.get<FE_Unique_mi_tag>().lower_bound(first_uid);
+      ait = entFEAdjacencies.get<FE_Unique_mi_tag>().lower_bound(first_uid);
       hi_ait = entFEAdjacencies.get<FE_Unique_mi_tag>().upper_bound(second_uid);
       entFEAdjacencies.get<FE_Unique_mi_tag>().erase(ait, hi_ait);
     }
@@ -453,7 +491,7 @@ MoFEMErrorCode Core::clear_adjacencies_finite_elements(const std::string &name,
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode Core::remove_ents_from_finite_element(const std::string &name,
+MoFEMErrorCode Core::remove_ents_from_finite_element(const std::string& name,
                                                      const EntityHandle meshset,
                                                      const EntityType type,
                                                      int verb) {
@@ -466,7 +504,7 @@ MoFEMErrorCode Core::remove_ents_from_finite_element(const std::string &name,
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode Core::remove_ents_from_finite_element(const std::string &name,
+MoFEMErrorCode Core::remove_ents_from_finite_element(const std::string& name,
                                                      const Range &ents,
                                                      int verb) {
   MoFEMFunctionBegin;
@@ -499,7 +537,7 @@ MoFEMErrorCode Core::remove_ents_from_finite_element_by_bit_ref(
     verb = verbose;
   Range ents;                                                       
   CHKERR BitRefManager(*this).getEntitiesByRefLevel(bit, mask, ents, verb);
-  CHKERR clear_finite_elements(ents, verb);
+  CHKERR remove_ents_from_finite_element(ents,verb);
   MoFEMFunctionReturn(0);
 }
 
@@ -507,22 +545,23 @@ MoFEMErrorCode Core::remove_ents(const Range &ents, int verb) {
    MoFEMFunctionBegin;
   if (verb == -1)
     verb = verbose;
-  CHKERR remove_ents_from_field(ents, verb);
   CHKERR remove_ents_from_finite_element(ents, verb);
+  CHKERR remove_ents_from_field(ents, verb);
 
-  for (Range::const_pair_iterator p_eit = ents.begin(); p_eit != ents.end();
-       ++p_eit) {
-
-    RefEntity_multiIndex::index<Ent_mi_tag>::type::iterator rit, hi_rit;
-    rit    = refinedEntities.get<Ent_mi_tag>().lower_bound(p_eit->first);
-    hi_rit = refinedEntities.get<Ent_mi_tag>().upper_bound(p_eit->second);
-    refinedEntities.get<Ent_mi_tag>().erase(rit, hi_rit);
+  for (Range::const_pair_iterator p_eit = ents.pair_begin();
+       p_eit != ents.pair_end(); ++p_eit) {
 
     RefElement_multiIndex::index<Ent_mi_tag>::type::iterator frit, hi_frit;
     frit = refinedFiniteElements.get<Ent_mi_tag>().lower_bound(p_eit->first);
     hi_frit =
         refinedFiniteElements.get<Ent_mi_tag>().upper_bound(p_eit->second);
     refinedFiniteElements.get<Ent_mi_tag>().erase(frit, hi_frit);
+
+    RefEntity_multiIndex::index<Ent_mi_tag>::type::iterator rit, hi_rit;
+    rit = refinedEntities.get<Ent_mi_tag>().lower_bound(p_eit->first);
+    hi_rit = refinedEntities.get<Ent_mi_tag>().upper_bound(p_eit->second);
+    refinedEntities.get<Ent_mi_tag>().erase(rit, hi_rit);
+
   }
 
   MoFEMFunctionReturn(0); 
@@ -556,17 +595,13 @@ MoFEMErrorCode Core::delete_ents_by_bit_ref(const BitRefLevel &bit,
   CHKERR remove_ents(ents, verb);
 
   // remove parent
-  if (remove_parent) { 
-    Range::iterator eit = ents.begin();
-    for (; eit != ents.end(); eit++) {
+  if (remove_parent) {
+    for (Range::pair_iterator p_eit = ents.pair_begin(); p_eit != ents.pair_end();
+         p_eit++) {
       RefEntity_multiIndex::index<Ent_Ent_mi_tag>::type::iterator pit, hi_pit;
-      pit    = refinedEntities.get<Ent_Ent_mi_tag>().lower_bound(*eit);
-      hi_pit = refinedEntities.get<Ent_Ent_mi_tag>().upper_bound(*eit);
+      pit = refinedEntities.get<Ent_Ent_mi_tag>().lower_bound(p_eit->first);
+      hi_pit = refinedEntities.get<Ent_Ent_mi_tag>().upper_bound(p_eit->second);
       for (; pit != hi_pit; pit++) {
-        EntityHandle ent = (*pit)->getRefEnt();
-        if (ents.find(ent) != ents.end()) {
-          continue;
-        }
         bool success = refinedEntities.modify(refinedEntities.project<0>(pit),
                                               RefEntity_change_remove_parent());
         if (!success) {
