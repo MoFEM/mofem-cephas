@@ -515,7 +515,6 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
   int nb_ents_set_order_new = 0;
 
   Range new_ents;
-  // for(Range::iterator eit = field_ents.begin();eit!=field_ents.end();eit++) {
   for (Range::const_pair_iterator pit = field_ents.const_pair_begin();
        pit != field_ents.const_pair_end(); pit++) {
     EntityHandle first = pit->first;
@@ -554,7 +553,6 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
 
     // Entity is in database, change order only if needed
     FieldEntity_multiIndex_ent_view::nth_index<1>::type::iterator vit, hi_vit;
-    // vit = ents_id_view.get<1>().lower_bound(*eit);
     vit = ents_id_view.get<1>().lower_bound(first);
     hi_vit = ents_id_view.get<1>().upper_bound(second);
     for (; vit != hi_vit; vit++, first++) {
@@ -565,7 +563,6 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
         first++;
       }
 
-      // if(vit!=ents_id_view.get<1>().end()) {
       // entity is in database and order is changed or reset
       const ApproximationOrder old_approximation_order = (*vit)->getMaxOrder();
       if (old_approximation_order == order)
@@ -611,17 +608,11 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
     }
 
     if (first <= second) {
-      // This entity is not in databse, added to the vector of entities to which
+      // This entity is not in database, added to the vector of entities to which
       // tag with new order have to be set.
       new_ents.insert(first, second);
     }
 
-    // else {
-    //   // This entity is not in databse, added to the vector of entities to
-    //   which
-    //   // tag with new order have to be set.
-    //   new_ents.insert(*eit);
-    // }
   }
 
   // reserve memory for field  dofs
