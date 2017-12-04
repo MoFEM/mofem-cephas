@@ -24,9 +24,11 @@
 
 // A scheme for Edge-based Adaptive Tetrahedral Subdivision; Delft Ruprecht
 
-#include <Common.hpp>
-#include <Includes.hpp>
+
 #include <definitions.h>
+
+#include <Includes.hpp>
+#include <Common.hpp>
 
 namespace MoFEM {
 
@@ -1132,7 +1134,7 @@ MoFEMErrorCode tri_type_3(const EntityHandle *conn,
   int ee = 0;
   for (; ee < 3; ee++) {
     if (!split_edges.test(ee)) {
-      SETERRQ(PETSC_COMM_SELF, 1, "data inconsistency");
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
     }
   }
   // TRI0
@@ -1166,15 +1168,15 @@ MoFEMErrorCode prism_type_1(const EntityHandle *conn,
       break;
   }
   if (ee > 2)
-    SETERRQ(PETSC_COMM_SELF, 1, "data inconsistency");
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
   const int cycle_edges[3][6] = {
       {0, 1, 2, 3, 4, 5}, {1, 2, 0, 4, 5, 3}, {2, 0, 1, 5, 3, 4}};
   const int cycle_nodes[3][6] = {
       {0, 1, 2, 3, 4, 5}, {1, 2, 0, 4, 5, 3}, {2, 0, 1, 5, 3, 4}};
   if (edge_new_nodes[cycle_nodes[ee][0]] == no_handle)
-    SETERRQ(PETSC_COMM_SELF, 1, "data inconsistency");
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
   if (edge_new_nodes[cycle_nodes[ee][3]] == no_handle)
-    SETERRQ(PETSC_COMM_SELF, 1, "data inconsistency");
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
   // PRISM0
   new_prism_conn[0 * 6 + 0] = edge_new_nodes[cycle_edges[ee][0]];
   new_prism_conn[0 * 6 + 1] = conn[cycle_nodes[ee][2]];
@@ -1211,7 +1213,7 @@ MoFEMErrorCode prism_type_2(const EntityHandle *conn,
       break;
   }
   if (ee > 2)
-    SETERRQ(PETSC_COMM_SELF, 1, "data inonsisetncy");
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
   EntityHandle _conn_[6], _edge_new_nodes_[6];
   int nn = 0;
   for (; nn < 6; nn++) {
@@ -1234,13 +1236,13 @@ MoFEMErrorCode prism_type_2(const EntityHandle *conn,
     _edge_new_nodes_[8 - 3] = _conn____;
   }
   if (_edge_new_nodes_[0] == no_handle)
-    SETERRQ(PETSC_COMM_SELF, 1, "data inconsistency");
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
   if (_edge_new_nodes_[2] == no_handle)
-    SETERRQ(PETSC_COMM_SELF, 1, "data inconsistency");
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
   if (_edge_new_nodes_[6 - 3] == no_handle)
-    SETERRQ(PETSC_COMM_SELF, 1, "data inconsistency");
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
   if (_edge_new_nodes_[8 - 3] == no_handle)
-    SETERRQ(PETSC_COMM_SELF, 1, "data inconsistency");
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
   // PRIMS0
   new_prism_conn[0 * 6 + 0] = _conn_[0];
   new_prism_conn[0 * 6 + 1] = _edge_new_nodes_[0];
@@ -1272,7 +1274,7 @@ MoFEMErrorCode prism_type_3(const EntityHandle *conn,
   int ee = 0;
   for (; ee < 6; ee++) {
     if (!split_edges.test(ee))
-      SETERRQ(PETSC_COMM_SELF, 1, "data inconsistency");
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
   }
   // PRISM0
   new_prism_conn[0 * 6 + 0] = edge_new_nodes[0];
