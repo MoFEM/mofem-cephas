@@ -36,6 +36,23 @@ MoFEMErrorCode Core::clear_inactive_dofs(int verb) {
   for (DofEntity_multiIndex::iterator dit = dofsField.begin();
        dit != dofsField.end();) {
     if (!dit->get()->getActive()) {
+      FieldEntityEntFiniteElementAdjacencyMap_multiIndex::index<
+          Unique_mi_tag>::type::iterator ait,
+          hi_ait;
+      ait = entFEAdjacencies.get<Unique_mi_tag>().lower_bound(
+          (*dit)->getFieldEntityPtr()->getGlobalUniqueId());
+      hi_ait = entFEAdjacencies.get<Unique_mi_tag>().upper_bound(
+          (*dit)->getFieldEntityPtr()->getGlobalUniqueId());
+      for (; ait != hi_ait; ait++) {
+        boost::shared_ptr<EntFiniteElement> ent_fe_ptr;
+        ent_fe_ptr = ait->entFePtr;
+        ent_fe_ptr->row_dof_view->erase((*dit)->getGlobalUniqueId());
+        if (ent_fe_ptr->row_dof_view != ent_fe_ptr->col_dof_view) {
+          ent_fe_ptr->col_dof_view->erase((*dit)->getGlobalUniqueId());
+        }
+        ent_fe_ptr->data_dofs->get<Unique_mi_tag>().erase(
+            (*dit)->getGlobalUniqueId());
+      }
       dit = dofsField.erase(dit);
     } else {
       ++dit;
@@ -59,6 +76,7 @@ MoFEMErrorCode Core::clear_dofs_fields(const Range &ents, int verb) {
   MoFEMFunctionBeginHot;
   if (verb == -1)
     verb = verbose;
+
   for (Range::const_pair_iterator p_eit = ents.pair_begin();
        p_eit != ents.pair_end(); p_eit++) {
     EntityHandle first  = p_eit->first;
@@ -69,6 +87,59 @@ MoFEMErrorCode Core::clear_dofs_fields(const Range &ents, int verb) {
     if (dit == dofsField.get<Ent_mi_tag>().end())
       continue;
     hi_dit = dofsField.get<Ent_mi_tag>().upper_bound(second);
+    bool last_hi_dit;
+    if (hi_dit == dofsField.get<Ent_mi_tag>().end()) {
+      last_hi_dit = true;
+    } else {
+      last_hi_dit = false;
+    }
+
+    // clear dofs in finite elements
+    FieldEntityEntFiniteElementAdjacencyMap_multiIndex::index<
+        Ent_mi_tag>::type::iterator ait,
+        hi_ait;
+    ait = entFEAdjacencies.get<Ent_mi_tag>().lower_bound(first);
+    hi_ait = entFEAdjacencies.get<Ent_mi_tag>().upper_bound(second);
+    for (; ait != hi_ait; ++ait) {
+      // Delete data dofs on element
+      {
+        FEDofEntity_multiIndex::iterator diit, hi_diit;
+        diit = ait->entFePtr->data_dofs->lower_bound(
+            dit->get()->getGlobalUniqueId());
+        if (last_hi_dit) {
+          hi_diit = ait->entFePtr->data_dofs->end();
+        } else {
+          hi_diit = ait->entFePtr->data_dofs->lower_bound(
+              hi_dit->get()->getGlobalUniqueId());
+        }
+        ait->entFePtr->data_dofs->erase(diit, hi_diit);
+      }
+      // Delete dofs view on rows and columns on elements
+      {
+        DofEntity_multiIndex_uid_view::iterator diit, hi_diit;
+        diit = ait->entFePtr->row_dof_view->lower_bound(
+            dit->get()->getGlobalUniqueId());
+        if (last_hi_dit) {
+          hi_diit = ait->entFePtr->row_dof_view->end();
+        } else {
+          hi_diit = ait->entFePtr->row_dof_view->lower_bound(
+              hi_dit->get()->getGlobalUniqueId());
+        }
+        ait->entFePtr->row_dof_view->erase(diit, hi_diit);
+        if (ait->entFePtr->row_dof_view != ait->entFePtr->col_dof_view) {
+          diit = ait->entFePtr->col_dof_view->lower_bound(
+              dit->get()->getGlobalUniqueId());
+          if (last_hi_dit) {
+            hi_diit = ait->entFePtr->col_dof_view->end();
+          } else {
+            hi_diit = ait->entFePtr->col_dof_view->lower_bound(
+                hi_dit->get()->getGlobalUniqueId());
+          }
+          ait->entFePtr->col_dof_view->erase(diit, hi_diit);
+        }
+      }
+    }
+    // finally clear dofs
     dofsField.get<Ent_mi_tag>().erase(dit,hi_dit);
   }
   MoFEMFunctionReturnHot(0);
@@ -79,6 +150,13 @@ MoFEMErrorCode Core::clear_dofs_fields(const std::string &name,
   MoFEMFunctionBeginHot;
   if (verb == -1)
     verb = verbose;
+
+  const Field *field_ptr = get_field_structure(name);
+  int field_bit_number = field_ptr->getBitNumber();
+  bool is_distributed_mesh = basicEntityDataPtr->trueIfDistributedMesh();
+  ParallelComm *pcomm =
+      ParallelComm::get_pcomm(&moab, basicEntityDataPtr->pcommID);
+
   for (Range::const_pair_iterator p_eit = ents.pair_begin();
        p_eit != ents.pair_end(); p_eit++) {
     EntityHandle first  = p_eit->first;
@@ -88,12 +166,81 @@ MoFEMErrorCode Core::clear_dofs_fields(const std::string &name,
         boost::make_tuple(name, first));
     hi_dit = dofsField.get<Composite_Name_And_Ent_mi_tag>().upper_bound(
         boost::make_tuple(name, second));
+    bool last_hi_dit;
+    if (hi_dit == dofsField.get<Composite_Name_And_Ent_mi_tag>().end()) {
+      last_hi_dit = true;
+    } else {
+      last_hi_dit = false;
+    }
+
+    // Get owner proc and owner handle
+    int f_owner_proc;
+    EntityHandle f_moab_owner_handle;
+    CHKERR pcomm->get_owner_handle(first, f_owner_proc, f_moab_owner_handle);
+    int s_owner_proc;
+    EntityHandle s_moab_owner_handle;
+    CHKERR pcomm->get_owner_handle(second, s_owner_proc, s_moab_owner_handle);
+
+    // Get UId
+    UId first_uid = FieldEntity::getGlobalUniqueIdCalculate(
+        f_owner_proc, field_bit_number, f_moab_owner_handle,
+        is_distributed_mesh);
+    UId second_uid = FieldEntity::getGlobalUniqueIdCalculate(
+        s_owner_proc, field_bit_number, s_moab_owner_handle,
+        is_distributed_mesh);
+
+    FieldEntityEntFiniteElementAdjacencyMap_multiIndex::index<
+        Unique_mi_tag>::type::iterator ait,
+        hi_ait;
+    ait = entFEAdjacencies.get<Unique_mi_tag>().lower_bound(
+        first_uid);
+    hi_ait = entFEAdjacencies.get<Unique_mi_tag>().upper_bound(
+        second_uid);
+    for (; ait != hi_ait; ++ait) {
+      // Delete data dofs on element
+      {
+        FEDofEntity_multiIndex::iterator diit, hi_diit;
+        diit = ait->entFePtr->data_dofs->lower_bound(
+            dit->get()->getGlobalUniqueId());
+        if (last_hi_dit) {
+          hi_diit = ait->entFePtr->data_dofs->end();
+        } else {
+          hi_diit = ait->entFePtr->data_dofs->lower_bound(
+              hi_dit->get()->getGlobalUniqueId());
+        }
+        ait->entFePtr->data_dofs->erase(diit, hi_diit);
+      }
+      // Delete dofs view on rows and columns on elements
+      {
+        DofEntity_multiIndex_uid_view::iterator diit, hi_diit;
+        diit = ait->entFePtr->row_dof_view->lower_bound(
+            dit->get()->getGlobalUniqueId());
+        if (last_hi_dit) {
+          hi_diit = ait->entFePtr->row_dof_view->end();
+        } else {
+          hi_diit = ait->entFePtr->row_dof_view->lower_bound(
+              hi_dit->get()->getGlobalUniqueId());
+        }
+        ait->entFePtr->row_dof_view->erase(diit, hi_diit);
+        if (ait->entFePtr->row_dof_view != ait->entFePtr->col_dof_view) {
+          diit = ait->entFePtr->col_dof_view->lower_bound(
+              dit->get()->getGlobalUniqueId());
+          if (last_hi_dit) {
+            hi_diit = ait->entFePtr->col_dof_view->end();
+          } else {
+            hi_diit = ait->entFePtr->col_dof_view->lower_bound(
+                hi_dit->get()->getGlobalUniqueId());
+          }
+          ait->entFePtr->col_dof_view->erase(diit, hi_diit);
+        }
+      }
+    }
     dofsField.get<Composite_Name_And_Ent_mi_tag>().erase(dit, hi_dit);
   }
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode Core::clear_ents_fields(const BitRefLevel &bit,
+MoFEMErrorCode Core::clear_ents_fields_by_bit_ref(const BitRefLevel &bit,
                                        const BitRefLevel &mask, int verb) {
   MoFEMFunctionBegin;
   if (verb == -1)
@@ -121,21 +268,6 @@ MoFEMErrorCode Core::clear_ents_fields(const Range &ents, int verb) {
     hi_dit = entsFields.get<Ent_mi_tag>().upper_bound(second);
     entsFields.get<Ent_mi_tag>().erase(dit, hi_dit);
   }
-  for (Field_multiIndex::iterator fit = fIelds.begin(); fit != fIelds.end();
-      fit++) {
-    rval = moab.tag_delete_data(fit->get()->th_AppOrder, ents);
-    if (rval != MB_SUCCESS && rval != MB_TAG_NOT_FOUND) {
-      CHKERRG(rval);
-    } else {
-      rval = MB_SUCCESS;
-    }
-    rval = moab.tag_delete_data(fit->get()->th_FieldData, ents);
-    if (rval != MB_SUCCESS && rval != MB_TAG_NOT_FOUND) {
-      CHKERRG(rval);
-    } else {
-      rval = MB_SUCCESS;
-    }
-  }
   MoFEMFunctionReturn(0);
 }
 
@@ -160,18 +292,6 @@ MoFEMErrorCode Core::clear_ents_fields(const std::string &name,
     entsFields.get<Composite_Name_And_Ent_mi_tag>().erase(dit, hi_dit);
   }
   const Field *field_ptr = get_field_structure(name);
-  rval = moab.tag_delete_data(field_ptr->th_AppOrder, ents);
-  if (rval != MB_SUCCESS && rval != MB_TAG_NOT_FOUND) {
-    CHKERRG(rval);
-  } else {
-    rval = MB_SUCCESS;
-  }
-  rval = moab.tag_delete_data(field_ptr->th_FieldData, ents);
-  if (rval != MB_SUCCESS && rval != MB_TAG_NOT_FOUND) {
-    CHKERRG(rval);
-  } else {
-    rval = MB_SUCCESS;
-  }
   MoFEMFunctionReturn(0);
 }
 
@@ -300,8 +420,9 @@ MoFEMErrorCode Core::clear_adjacencies_entities(const std::string &name,
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode Core::clear_finite_elements(const BitRefLevel &bit,
-                                           const BitRefLevel &mask, int verb) {
+MoFEMErrorCode Core::clear_finite_elements_by_bit_ref(const BitRefLevel &bit,
+                                                      const BitRefLevel &mask,
+                                                      int verb) {
   MoFEMFunctionBegin;
   if (verb == -1)
     verb = verbose;
