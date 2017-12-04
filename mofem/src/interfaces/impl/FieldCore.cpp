@@ -933,167 +933,74 @@ MoFEMErrorCode Core::buildFieldForL2H1HcurlHdiv(
     hi_feit = entsFields.get<Composite_Name_And_Ent_mi_tag>().upper_bound(
         boost::make_tuple(field_name, second));
 
-    FieldEntity_multiIndex_ent_view sequence_of_ents_to_insert;
+    // If there are DOFs in that range is more pragmatic to remove them rather
+    // than to find sub-ranges or make them inactive
+    typedef DofEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type
+        DofByNameEnt;
+    DofByNameEnt::iterator dit, hi_dit;
+    dit = dofsField.get<Composite_Name_And_Ent_mi_tag>().lower_bound(
+        boost::make_tuple(field_name, first));
+    hi_dit = dofsField.get<Composite_Name_And_Ent_mi_tag>().upper_bound(
+        boost::make_tuple(field_name, second));
+    dofsField.get<Composite_Name_And_Ent_mi_tag>().erase(dit,hi_dit);
 
+    // Add vertices DOFs by bulk
+    boost::shared_ptr<std::vector<DofEntity> > dofs_array =
+        boost::make_shared<std::vector<DofEntity> >(std::vector<DofEntity>());
+    // Add Sequence of DOFs to sequence container as weak_ptr
+    std::vector<boost::shared_ptr<DofEntity> > dofs_shared_array;
+    int nb_dofs_on_ents = 0;
+    for (FieldEntByNameAndEnt::iterator tmp_feit = feit; tmp_feit != hi_feit;
+         ++tmp_feit) {
+      nb_dofs_on_ents += rank * tmp_feit->get()->getOrderNbDofs(
+                                    tmp_feit->get()->getMaxOrder());
+    }
+    // Add Sequence of DOFs to sequence container as weak_ptr
+    dofs_array->reserve(nb_dofs_on_ents);
+    dofs_shared_array.reserve(dofs_array->size());
     for (; feit != hi_feit; ++feit) {
-
-      typedef DofEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type
-          DofByNameEnt;
-      DofByNameEnt::iterator dit;
-      dit = dofsField.get<Composite_Name_And_Ent_mi_tag>().lower_bound(
-          boost::make_tuple(field_name, feit->get()->getEnt()));
-      if (dit == dofsField.get<Composite_Name_And_Ent_mi_tag>().end()) {
-        std::copy(feit, hi_feit,
-                  std::back_inserter(sequence_of_ents_to_insert));
-        break;
-      } else if (dit->get()->getNameRef() != field_name) {
-         std::copy(feit, hi_feit,
-                  std::back_inserter(sequence_of_ents_to_insert));
-         break;
-      } else {
-
-        for (; feit != hi_feit; ++feit) {
-          if (dit->get()->getEnt() > feit->get()->getEnt()) {
-            sequence_of_ents_to_insert.push_back(*feit);
-          } else {
-            break;
+      // Create dofs instances and shared pointers
+      int DD = 0;
+      // Loop orders (loop until max entity order is set)
+      for (int oo = 0; oo <= feit->get()->getMaxOrder(); ++oo) {
+        // Loop nb. dofs at order oo
+        for (int dd = 0; dd < feit->get()->getOrderNbDofsDiff(oo); ++dd) {
+          // Loop rank
+          for (int rr = 0; rr < rank; ++rr, ++DD) {
+            dofs_array->push_back(DofEntity(*feit, oo, rr, DD, true));
+            dofs_shared_array.push_back(
+                boost::shared_ptr<DofEntity>(dofs_array, &dofs_array->back()));
+            ++dof_counter[feit->get()->getEntType()];
           }
         }
-        if(feit == hi_feit) {
-          break;
-        }
-
-        const int nb_active_dofs_on_ent =
-            rank * feit->get()->getOrderNbDofs(feit->get()->getMaxOrder());
-
-        // Current dofs on entity
-        const int current_nb_dofs_on_ent =
-            dofsField.get<Unique_Ent_mi_tag>().count(
-                feit->get()->getGlobalUniqueId());
-
-        // There are some DOFs on entity
-        if (current_nb_dofs_on_ent < nb_active_dofs_on_ent) {
-
-          int DD = 0;
-          // Create dofs instances and shared pointers int DD = 0;
-          // Loop orders (loop until max entity order is set)
-          for (int oo = 0; oo <= feit->get()->getMaxOrder(); ++oo) {
-            // Loop nb. dofs at order oo
-            for (int dd = 0; dd < feit->get()->getOrderNbDofsDiff(oo); ++dd) {
-              // Loop rank
-              for (int rr = 0; rr < rank; ++rr, ++DD) {
-                if (DD < current_nb_dofs_on_ent)
-                  continue;
-                std::pair<DofEntity_multiIndex::iterator, bool> p =
-                    dofsField.insert(
-                        boost::make_shared<DofEntity>(*feit, oo, rr, DD, true));
-                if (p.second) {
-                  ++dof_counter[p.first->get()->getEntType()];
-                } else {
-                  SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                          "Dof is not added, should not be there");
-                }
-              }
-            }
-          }
-
-          if (DD != feit->get()->getNbDofsOnEnt()) {
-            std::ostringstream ss;
-            ss << "rank " << rAnk << " ";
-            ss << **feit << std::endl;
-            SETERRQ3(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                     "Expected number of DOFs on entity not equal to "
-                     "number added "
-                     "to database (DD = %d != %d = "
-                     "field_ent->getNbDofsOnEnt())\n"
-                     "%s",
-                     DD, feit->get()->getNbDofsOnEnt(), ss.str().c_str());
-          }
-        } else if (current_nb_dofs_on_ent > nb_active_dofs_on_ent) {
-
-          const int nb_dofs_on_ent = feit->get()->getNbDofsOnEnt();
-
-          // This is when order is reduced, or no dofs on entity are
-          // deleted, then some DOFs are set to inactive.
-
-          // Get all DOFs which index is bigger than number of active DOFs
-          DofEntity_multiIndex::index<
-              Composite_Name_And_Ent_And_EntDofIdx_mi_tag>::type::iterator dit,
-              hi_dit;
-          dit = dofsField.get<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>()
-                    .lower_bound(boost::make_tuple(
-                        field_it->get()->getNameRef(), feit->get()->getEnt(),
-                        nb_dofs_on_ent));
-          hi_dit = dofsField.get<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>()
-                       .upper_bound(boost::make_tuple(
-                           field_it->get()->getNameRef(), feit->get()->getEnt(),
-                           current_nb_dofs_on_ent));
-
-          // Modify DOFs as inactive
-          for (; dit != hi_dit; dit++) {
-            bool success = dofsField.modify(dofsField.project<0>(dit),
-                                            DofEntity_active_change(false));
-            if (!success) {
-              SETERRQ(cOmm, MOFEM_OPERATION_UNSUCCESSFUL,
-                      "modification unsuccessful");
-            }
-            ++inactive_dof_counter[dit->get()->getEntType()];
-          }
-        }
+      }
+      if (DD != feit->get()->getNbDofsOnEnt()) {
+        std::ostringstream ss;
+        ss << "rank " << rAnk << " ";
+        ss << **feit << std::endl;
+        SETERRQ3(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                 "Expected number of DOFs on entity not equal to number added "
+                 "to database (DD = %d != %d = "
+                 "feit->get()->getNbDofsOnEnt())\n"
+                 "%s",
+                 DD, feit->get()->getNbDofsOnEnt(), ss.str().c_str());
       }
     }
-
-    if (!sequence_of_ents_to_insert.empty()) {
-      // Add vertices DOFs by bulk
-      boost::shared_ptr<std::vector<DofEntity> > dofs_array =
-          boost::make_shared<std::vector<DofEntity> >(std::vector<DofEntity>());
-      // Add Sequence of DOFs to sequence container as weak_ptr
-      field_it->get()->getDofSequenceContainer()->push_back(dofs_array);
-      std::vector<boost::shared_ptr<DofEntity> > dofs_shared_array;
-      int nb_dofs_on_ents = 0;
-      for (FieldEntity_multiIndex_ent_view::iterator feit =
-               sequence_of_ents_to_insert.begin();
-           feit != sequence_of_ents_to_insert.end(); ++feit) {
-        nb_dofs_on_ents +=
-            rank * feit->get()->getOrderNbDofs(feit->get()->getMaxOrder());
-      }
-      // Add Sequence of DOFs to sequence container as weak_ptr
-      dofs_array->reserve(rank * nb_dofs_on_ents);
-      dofs_shared_array.reserve(dofs_array->size());
-      for (FieldEntity_multiIndex_ent_view::iterator feit =
-               sequence_of_ents_to_insert.begin();
-           feit != sequence_of_ents_to_insert.end(); ++feit) {
-        // Create dofs instances and shared pointers
-        int DD = 0;
-        // Loop orders (loop until max entity order is set)
-        for (int oo = 0; oo <= feit->get()->getMaxOrder(); ++oo) {
-          // Loop nb. dofs at order oo
-          for (int dd = 0; dd < feit->get()->getOrderNbDofsDiff(oo); ++dd) {
-            // Loop rank
-            for (int rr = 0; rr < rank; ++rr, ++DD) {
-              dofs_array->push_back(DofEntity(*feit, oo, rr, DD, true));
-              dofs_shared_array.push_back(boost::shared_ptr<DofEntity>(
-                  dofs_array, &dofs_array->back()));
-              ++dof_counter[feit->get()->getEntType()];
-            }
-          }
-        }
-        if (DD != feit->get()->getNbDofsOnEnt()) {
-          std::ostringstream ss;
-          ss << "rank " << rAnk << " ";
-          ss << **feit << std::endl;
-          SETERRQ3(
-              PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-              "Expected number of DOFs on entity not equal to number added "
-              "to database (DD = %d != %d = "
-              "feit->get()->getNbDofsOnEnt())\n"
-              "%s",
-              DD, feit->get()->getNbDofsOnEnt(), ss.str().c_str());
-        }
-      }
-      // Insert into Multi-Index container
-      dofsField.insert(dofs_shared_array.begin(), dofs_shared_array.end());
+    // Insert into Multi-Index container
+    int dofs_field_size0 = dofsField.size();
+    dofsField.insert(dofs_shared_array.begin(), dofs_shared_array.end());
+    field_it->get()->getDofSequenceContainer()->push_back(dofs_array);
+    if (dofs_array.use_count() != 2 * dofs_shared_array.size() + 1) {
+      SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+               "Wrong use count %d != %d", dofs_array.use_count(),
+               2 * dofs_shared_array.size() + 1);
     }
+    if (dofs_field_size0 + dofs_shared_array.size() != dofsField.size()) {
+      SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+               "Wrong number of inserted DOFs %d != %d",
+               dofs_shared_array.size(), dofsField.size() - dofs_field_size0);
+    }
+
   }
   MoFEMFunctionReturn(0);
 }
