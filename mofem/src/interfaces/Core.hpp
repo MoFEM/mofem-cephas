@@ -442,7 +442,7 @@ protected:
                                    int verb = -1);
 
   /// \name Clear ENTs
-  MoFEMErrorCode clear_ents_fields(const BitRefLevel &bit,
+  MoFEMErrorCode clear_ents_fields_by_bit_ref(const BitRefLevel &bit,
                                    const BitRefLevel &mask, int verb = -1);
   MoFEMErrorCode clear_ents_fields(const Range &ents, int verb = -1);
   MoFEMErrorCode clear_ents_fields(const std::string &name, const Range &ents,
@@ -633,14 +633,15 @@ protected:
   MoFEMErrorCode clear_problems(int verb = -1);
   MoFEMErrorCode build_finite_elements(int verb = -1);
   MoFEMErrorCode build_finite_elements(const BitRefLevel &bit, int verb = -1);
-  MoFEMErrorCode
-  build_finite_elements(const boost::shared_ptr<FiniteElement> fe,
-                        const Range *ents_ptr = NULL, int verb = -1);
   MoFEMErrorCode build_finite_elements(const string fe_name,
                                        const Range *ents_ptr = NULL,
                                        int verb = -1);
-  MoFEMErrorCode clear_finite_elements(const BitRefLevel &bit,
-                                       const BitRefLevel &mask, int verb = -1);
+  MoFEMErrorCode buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
+                                     const Range *ents_ptr = NULL,
+                                     int verb = -1);
+  MoFEMErrorCode clear_finite_elements_by_bit_ref(const BitRefLevel &bit,
+                                                  const BitRefLevel &mask,
+                                                  int verb = -1);
   MoFEMErrorCode clear_finite_elements(const Range &ents, int verb = -1);
   MoFEMErrorCode clear_finite_elements(const std::string &name,
                                        const Range &ents, int verb = -1);

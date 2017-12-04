@@ -1307,6 +1307,13 @@ struct DeprecatedCoreInterface : public CoreInterface {
                                               const BitRefLevel &mask,
                                               int verb = -1);
 
+  DEPRECATED MoFEMErrorCode clear_ents_fields(const BitRefLevel &bit,
+                                             const BitRefLevel &mask,
+                                             int verb = -1);
+
+  DEPRECATED MoFEMErrorCode clear_finite_elements(
+      const BitRefLevel &bit, const BitRefLevel &mask, int verb = -1);
+
   /**@}*/
 };
 

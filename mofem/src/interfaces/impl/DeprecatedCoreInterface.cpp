@@ -466,4 +466,15 @@ DeprecatedCoreInterface::clear_dofs_fields(const BitRefLevel &bit,
   return clear_dofs_fields_by_bit_ref(bit, mask, verb);
 }
 
+MoFEMErrorCode
+DeprecatedCoreInterface::clear_ents_fields(const BitRefLevel &bit,
+                                           const BitRefLevel &mask, int verb) {
+  return clear_ents_fields_by_bit_ref(bit, mask, verb);
+}
+
+DEPRECATED MoFEMErrorCode DeprecatedCoreInterface::clear_finite_elements(
+    const BitRefLevel &bit, const BitRefLevel &mask, int verb) {
+  return clear_finite_elements_by_bit_ref(bit, mask, verb);
+}
+
 } // namespace MoFEM
