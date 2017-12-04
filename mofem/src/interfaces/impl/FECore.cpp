@@ -548,8 +548,8 @@ MoFEMErrorCode Core::add_ents_to_finite_element_by_MESHSET(
 }
 
 MoFEMErrorCode
-Core::build_finite_elements(const boost::shared_ptr<FiniteElement> fe,
-                            const Range *ents_ptr, int verb) {
+Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
+                          const Range *ents_ptr, int verb) {
   MoFEMFunctionBegin;
   if (verb == -1)
     verb = verbose;
@@ -719,10 +719,10 @@ Core::build_finite_elements(const boost::shared_ptr<FiniteElement> fe,
     for (; dit != hi_dit; dit++) {
       // cerr << mit->first << endl;
       // cerr << **dit << endl;
-      if(PetscUnlikely(!(*dit))) {
-        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                "Null pointer to DOF");
-      }
+      // if(PetscUnlikely(!(*dit))) {
+      //   SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+      //           "Null pointer to DOF");
+      // }
       const BitFieldId field_id = dit->get()->getId();
       const EntityHandle dof_ent = dit->get()->getEnt();
       std::vector<boost::weak_ptr<EntFiniteElement> >::const_iterator fe_it,
@@ -772,7 +772,7 @@ Core::build_finite_elements(const boost::shared_ptr<FiniteElement> fe,
               data_dofs_shared_array.push_back(
                   boost::shared_ptr<FEDofEntity>(data_dofs_array_vec, &(*vit)));
             }
-            fe_it->lock().get()->data_dofs->get<Unique_mi_tag>().insert(
+            fe_it->lock().get()->data_dofs->insert(
                 data_dofs_shared_array.begin(), data_dofs_shared_array.end());
             fe_it->lock().get()->getDofsSequence() = data_dofs_array_vec;
           }
@@ -796,7 +796,7 @@ MoFEMErrorCode Core::build_finite_elements(int verb) {
     if (verb > 0)
       PetscPrintf(cOmm, "Build Finite Elements %s\n",
                   (*fe_miit)->getName().c_str());
-    CHKERR build_finite_elements(*fe_miit, NULL, verb);
+    CHKERR buildFiniteElements(*fe_miit, NULL, verb);
   }
 
   if (verb > 0) {
@@ -845,7 +845,7 @@ MoFEMErrorCode Core::build_finite_elements(const string fe_name,
 
   if (verb > 0)
     PetscPrintf(cOmm, "Build Finite Elements %s\n", fe_name.c_str());
-  CHKERR build_finite_elements(*fe_miit, ents_ptr, verb);
+  CHKERR buildFiniteElements(*fe_miit, ents_ptr, verb);
 
   if (verb > 0) {
     typedef EntFiniteElement_multiIndex::index<BitFEId_mi_tag>::type
@@ -939,18 +939,6 @@ MoFEMErrorCode Core::build_adjacencies(const Range &ents, int verb) {
         ent_uid = UId(0);
         for (FEDofEntity_multiIndex::iterator dvit = (*fit)->data_dofs->begin();
              dvit != (*fit)->data_dofs->end(); dvit++) {
-          bool null_ptr = false;
-          if (PetscLikely((*dvit)->getDofEntityPtr())) {
-            if (PetscUnlikely(!(*dvit)->getFieldEntityPtr()))
-              null_ptr = true;
-          } else {
-            null_ptr = true;
-          }
-          if (PetscUnlikely(null_ptr)) {
-            std::ostringstream ss;
-            ss << "null pointer to dof on data on element: " << **fit;
-            SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, ss.str().c_str());
-          }
           if (ent_uid == (*dvit)->getFieldEntityPtr()->getGlobalUniqueId())
             continue;
           ent_uid = (*dvit)->getFieldEntityPtr()->getGlobalUniqueId();
