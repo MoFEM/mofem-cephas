@@ -1098,7 +1098,7 @@ namespace MoFEM {
     /** Clear ents by bit level
      * \ingroup mofem_field
      */
-    virtual MoFEMErrorCode clear_ents_fields(const BitRefLevel &bit,
+    virtual MoFEMErrorCode clear_ents_fields_by_bit_ref(const BitRefLevel &bit,
                                              const BitRefLevel &mask,
                                              int verb = -1) = 0;
 
@@ -1145,9 +1145,8 @@ namespace MoFEM {
 
     /** clear finite elements
      */
-    virtual MoFEMErrorCode clear_finite_elements(const BitRefLevel &bit,
-                                                 const BitRefLevel &mask,
-                                                 int verb = -1) = 0;
+    virtual MoFEMErrorCode clear_finite_elements_by_bit_ref(
+        const BitRefLevel &bit, const BitRefLevel &mask, int verb = -1) = 0;
 
     /** clear finite elements
      */
