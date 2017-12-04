@@ -741,18 +741,6 @@ struct FieldEntity : public interface_Field<Field>,
   friend std::ostream &operator<<(std::ostream &os, const FieldEntity &e);
 
   /**
-   * \brief Get weak_ptr reference to sequence/vector storing dofs on entity.
-   *
-   * Vector is automatically destroy when last DOF in vector os destroyed. Every
-   * shared_ptr to the DOF has aliased shared_ptr to vector of DOFs in that
-   * vector. That do the trick.
-   *
-   */
-  inline boost::weak_ptr<std::vector<DofEntity> > &getDofsSequence() const {
-    return dofsSequce;
-  }
-
-  /**
    * \brief get hash-map relating dof index on entity with its order
    *
    * DOFs of given field are indexed on entity
@@ -764,9 +752,6 @@ struct FieldEntity : public interface_Field<Field>,
     return getFieldPtr()->getDofOrderMap(getEntType());
   }
 
-private:
-  // Keep vector of DoFS on entity
-  mutable boost::weak_ptr<std::vector<DofEntity> > dofsSequce;
 };
 
 // /// \deprecated use FieldEntity
