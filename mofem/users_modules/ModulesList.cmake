@@ -84,7 +84,7 @@ if(WITH_MODULE_STRAIN_PLASTICITY)
       COMMAND ${GIT_EXECUTABLE} clone https://bitbucket.org/likask/mofem_um_small_strain_plasticity small_strain_plasticity
       WORKING_DIRECTORY ${UM_SOURCE_DIR}
     )
-  endif(NOT EXISTS ${UM_SOURCE_DIR}/strain_plasticity)
+  endif(NOT EXISTS ${UM_SOURCE_DIR}/small_strain_plasticity)
 endif(WITH_MODULE_STRAIN_PLASTICITY)
 
 if(WITH_MODULE_SOLID_SHELL_PRISM_ELEMENT)
