@@ -1,22 +1,22 @@
 /** \file DeprecatedCoreInterface.hpp
-* \brief Deprecated interface functions
-*/
+ * \brief Deprecated interface functions
+ */
 
 /*
-* MoFEM is distributed in the hope that it will be useful, but WITHOUT
-* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
-* License for more details.
-*
-* You should have received a copy of the GNU Lesser General Public
-* License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
-*/
+ * MoFEM is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
+ * License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
+ */
 
 #ifndef __INTERFACE_DEPRECATED_HPP__
 #define __INTERFACE_DEPRECATED_HPP__
 
 /** \brief name space of MoFEM library functions and classes
-*/
+ */
 namespace MoFEM {
 
 /**
@@ -1252,9 +1252,9 @@ struct DeprecatedCoreInterface : public CoreInterface {
    * bit ref level of adjacent entities is equal to bit ref level of adjacent
    * entities
    */
-  MoFEMErrorCode get_adjacencies_equality(const EntityHandle from_entiti,
-                                          const int to_dimension,
-                                          Range &adj_entities) const;
+  DEPRECATED MoFEMErrorCode
+  get_adjacencies_equality(const EntityHandle from_entiti,
+                           const int to_dimension, Range &adj_entities) const;
 
   /** \brief Get the adjacencies associated with a entity to entities of a
    * specified dimension. \ingroup mofem_ref_ents
@@ -1262,9 +1262,9 @@ struct DeprecatedCoreInterface : public CoreInterface {
    * bit ref level of adjacent entities is any of bit ref level of adjacent
    * entities
    */
-  MoFEMErrorCode get_adjacencies_any(const EntityHandle from_entiti,
-                                     const int to_dimension,
-                                     Range &adj_entities) const;
+  DEPRECATED MoFEMErrorCode get_adjacencies_any(const EntityHandle from_entiti,
+                                                const int to_dimension,
+                                                Range &adj_entities) const;
 
   /** \brief Get the adjacencies associated with a entity to entities of a
    * specified dimension. \ingroup mofem_ref_ents \todo Should be outsourced to
@@ -1273,12 +1273,11 @@ struct DeprecatedCoreInterface : public CoreInterface {
    * bit ref level of adjacent entities is equal to bit ref level of adjacent
    * entities
    */
-  MoFEMErrorCode
-  get_adjacencies(const Problem *problem_ptr, const EntityHandle *from_entities,
-                  const int num_netities, const int to_dimension,
-                  Range &adj_entities,
-                  const int operation_type = moab::Interface::INTERSECT,
-                  const int verb = 0) const;
+  DEPRECATED MoFEMErrorCode get_adjacencies(
+      const Problem *problem_ptr, const EntityHandle *from_entities,
+      const int num_netities, const int to_dimension, Range &adj_entities,
+      const int operation_type = moab::Interface::INTERSECT,
+      const int verb = 0) const;
 
   /** \brief Get the adjacencies associated with a entity to entities of a
    * specified dimension. \ingroup mofem_ref_ents \todo Should be outsourced to
@@ -1287,12 +1286,33 @@ struct DeprecatedCoreInterface : public CoreInterface {
    * bit ref level of adjacent entities is equal to bit ref level of adjacent
    * entities
    */
-  MoFEMErrorCode
-  get_adjacencies(const BitRefLevel &bit, const EntityHandle *from_entities,
-                  const int num_netities, const int to_dimension,
-                  Range &adj_entities,
-                  const int operation_type = moab::Interface::INTERSECT,
-                  const int verb = 0) const;
+  DEPRECATED MoFEMErrorCode get_adjacencies(
+      const BitRefLevel &bit, const EntityHandle *from_entities,
+      const int num_netities, const int to_dimension, Range &adj_entities,
+      const int operation_type = moab::Interface::INTERSECT,
+      const int verb = 0) const;
+
+  /**@}*/
+
+  /**@}*/
+
+  /** \name Clear and remove */
+
+  /**@{*/
+
+  /** Clear dofs by bit level
+   * \ingroup mofem_field
+   */
+  DEPRECATED MoFEMErrorCode clear_dofs_fields(const BitRefLevel &bit,
+                                              const BitRefLevel &mask,
+                                              int verb = -1);
+
+  DEPRECATED MoFEMErrorCode clear_ents_fields(const BitRefLevel &bit,
+                                             const BitRefLevel &mask,
+                                             int verb = -1);
+
+  DEPRECATED MoFEMErrorCode clear_finite_elements(
+      const BitRefLevel &bit, const BitRefLevel &mask, int verb = -1);
 
   /**@}*/
 };

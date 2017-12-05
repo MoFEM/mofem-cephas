@@ -882,7 +882,7 @@ namespace MoFEM {
      *
      */
     virtual MoFEMErrorCode
-    remove_ents_from_finite_element(const std::string &name,
+    remove_ents_from_finite_element(const std::string& name,
                                     const EntityHandle meshset,
                                     const EntityType type, int verb = -1) = 0;
 
@@ -891,7 +891,7 @@ namespace MoFEM {
      *
      */
     virtual MoFEMErrorCode
-    remove_ents_from_finite_element(const std::string &name, const Range &ents,
+    remove_ents_from_finite_element(const std::string& name, const Range &ents,
                                     int verb = -1) = 0;
 
     /** \brief remove entities from finite elements in database
@@ -1065,7 +1065,7 @@ namespace MoFEM {
     /** Clear dofs by bit level
      * \ingroup mofem_field
      */
-    virtual MoFEMErrorCode clear_dofs_fields(const BitRefLevel &bit,
+    virtual MoFEMErrorCode clear_dofs_fields_by_bit_ref(const BitRefLevel &bit,
                                              const BitRefLevel &mask,
                                              int verb = -1) = 0;
 
@@ -1098,7 +1098,7 @@ namespace MoFEM {
     /** Clear ents by bit level
      * \ingroup mofem_field
      */
-    virtual MoFEMErrorCode clear_ents_fields(const BitRefLevel &bit,
+    virtual MoFEMErrorCode clear_ents_fields_by_bit_ref(const BitRefLevel &bit,
                                              const BitRefLevel &mask,
                                              int verb = -1) = 0;
 
@@ -1145,9 +1145,8 @@ namespace MoFEM {
 
     /** clear finite elements
      */
-    virtual MoFEMErrorCode clear_finite_elements(const BitRefLevel &bit,
-                                                 const BitRefLevel &mask,
-                                                 int verb = -1) = 0;
+    virtual MoFEMErrorCode clear_finite_elements_by_bit_ref(
+        const BitRefLevel &bit, const BitRefLevel &mask, int verb = -1) = 0;
 
     /** clear finite elements
      */
