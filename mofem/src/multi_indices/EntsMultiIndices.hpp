@@ -1,5 +1,6 @@
 /** \file EntsMultiIndices.hpp
- * \brief Multi-index contains, for mofem entities data structures and other low-level functions
+ * \brief Multi-index contains, for mofem entities data structures and other
+ * low-level functions
  */
 
 /*
@@ -15,7 +16,7 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
-*/
+ */
 
 #ifndef __ENTSMULTIINDICES_HPP__
 #define __ENTSMULTIINDICES_HPP__
@@ -26,23 +27,19 @@ namespace MoFEM {
  * \brief keeps information about side number for the finite element
  * \ingroup ent_multi_indices
  */
-struct __attribute__((__packed__))  SideNumber {
+struct __attribute__((__packed__)) SideNumber {
   EntityHandle ent;
   char side_number;
   char sense;
   char offset;
   char brother_side_number;
   inline EntityType getEntType() const {
-    return (EntityType)((ent&MB_TYPE_MASK)>>MB_ID_WIDTH);
+    return (EntityType)((ent & MB_TYPE_MASK) >> MB_ID_WIDTH);
   }
 
-  SideNumber(EntityHandle _ent,int _side_number,int _sense,int _offset):
-  ent(_ent),
-  side_number(_side_number),
-  sense(_sense),
-  offset(_offset),
-  brother_side_number(-1) {
-  }
+  SideNumber(EntityHandle _ent, int _side_number, int _sense, int _offset)
+      : ent(_ent), side_number(_side_number), sense(_sense), offset(_offset),
+        brother_side_number(-1) {}
 };
 
 /**
@@ -52,21 +49,16 @@ struct __attribute__((__packed__))  SideNumber {
  *
  */
 typedef multi_index_container<
-  boost::shared_ptr<SideNumber>,
-  indexed_by<
-    hashed_unique<
-      member<SideNumber,EntityHandle,&SideNumber::ent>
-    >,
-    ordered_non_unique<
-      composite_key<
-      SideNumber,
-      const_mem_fun<SideNumber,EntityType,&SideNumber::getEntType>,
-      member<SideNumber,char,&SideNumber::side_number> >
-    >,
-    ordered_non_unique<
-      const_mem_fun<SideNumber,EntityType,&SideNumber::getEntType>
-    >
-  > > SideNumber_multiIndex;
+    boost::shared_ptr<SideNumber>,
+    indexed_by<
+        hashed_unique<member<SideNumber, EntityHandle, &SideNumber::ent> >,
+        ordered_non_unique<composite_key<
+            SideNumber,
+            const_mem_fun<SideNumber, EntityType, &SideNumber::getEntType>,
+            member<SideNumber, char, &SideNumber::side_number> > >,
+        ordered_non_unique<
+            const_mem_fun<SideNumber, EntityType, &SideNumber::getEntType> > > >
+    SideNumber_multiIndex;
 
 /**
  * \brief Basic data. like access to moab interface and basic tag handlers.
@@ -103,74 +95,67 @@ struct BasicEntity {
   EntityHandle ent;
 
   int owner_proc; ///< this never can not be changed if distributed mesh
-  int part_proc; ///< this can be changed on distributed
+  int part_proc;  ///< this can be changed on distributed
 
   EntityHandle moab_owner_handle;
 
-  BasicEntity(
-    const boost::shared_ptr<BasicEntityData> &basic_data_ptr,
-    const EntityHandle ent
-  );
+  BasicEntity(const boost::shared_ptr<BasicEntityData> &basic_data_ptr,
+              const EntityHandle ent);
 
-  inline boost::shared_ptr<BasicEntityData>& getBasicDataPtr() {
+  inline boost::shared_ptr<BasicEntityData> &getBasicDataPtr() {
     return basicDataPtr;
   }
 
-  inline const boost::shared_ptr<BasicEntityData>& getBasicDataPtr() const {
+  inline const boost::shared_ptr<BasicEntityData> &getBasicDataPtr() const {
     return basicDataPtr;
   }
-
 
   /** \brief Get entity type
-  */
+   */
   inline EntityType getEntType() const {
     return (EntityType)((ent & MB_TYPE_MASK) >> MB_ID_WIDTH);
   }
 
   /** \brief get entity id
-  */
+   */
   inline EntityID getEntId() const { return (EntityID)(ent & MB_ID_MASK); };
 
   /** \brief Owner handle on this or other processors
-    */
+   */
   inline EntityHandle getOwnerEnt() const { return moab_owner_handle; }
 
   /** \brief Owner handle on this or other processors
-    */
-  inline EntityHandle& getOwnerEnt() {
-    return moab_owner_handle;
-  }
+   */
+  inline EntityHandle &getOwnerEnt() { return moab_owner_handle; }
 
   /** \brief Get processor owning entity
-    */
+   */
   inline int getOwnerProc() const { return owner_proc; }
 
   /** \brief Get processor owning entity
-    */
-  inline int& getOwnerProc() {
-    return owner_proc;
-  }
+   */
+  inline int &getOwnerProc() { return owner_proc; }
 
   /** \brief Get processor
-    */
+   */
   inline int getPartProc() const { return part_proc; }
 
   /** \brief Get processor owning entity
-    */
-  inline int& getPartProc() { return part_proc; }
+   */
+  inline int &getPartProc() { return part_proc; }
 
   /** \brief get pstatus
-    * This tag stores various aspects of parallel status in bits; see also
-    * define following, to be used in bit mask operations.  If an entity is
-    * not shared with any other processors, the pstatus is 0, otherwise it's > 0
-    *
-    * bit 0: !owned (0=owned, 1=not owned)
-    * bit 1: shared (0=not shared, 1=shared)
-    * bit 2: multishared (shared by > 2 procs; 0=not shared, 1=shared)
-    * bit 3: interface (0=not interface, 1=interface)
-    * bit 4: ghost (0=not ghost, 1=ghost)
-    *
-    */
+   * This tag stores various aspects of parallel status in bits; see also
+   * define following, to be used in bit mask operations.  If an entity is
+   * not shared with any other processors, the pstatus is 0, otherwise it's > 0
+   *
+   * bit 0: !owned (0=owned, 1=not owned)
+   * bit 1: shared (0=not shared, 1=shared)
+   * bit 2: multishared (shared by > 2 procs; 0=not shared, 1=shared)
+   * bit 3: interface (0=not interface, 1=interface)
+   * bit 4: ghost (0=not ghost, 1=ghost)
+   *
+   */
   unsigned char getPStatus() const;
 
   /** \brief get shared processors
@@ -182,15 +167,16 @@ struct BasicEntity {
 
   \code
     BasicEntity *ent_ptr = BasicEntity(moan,entity_handle);
-    for(int proc = 0; proc<MAX_SHARING_PROCS && -1 != ent_ptr->getSharingProcsPtr[proc]; proc++) {
+    for(int proc = 0; proc<MAX_SHARING_PROCS && -1 !=
+  ent_ptr->getSharingProcsPtr[proc]; proc++) {
         if(ent_ptr->getSharingProcsPtr[proc] == -1) {
-  	// End of the list
-  	break;
+        // End of the list
+        break;
         }
         int sharing_proc = ent_ptr->getSharingProcsPtr[proc];
         EntityHandle sharing_ent = ent_ptr->getSharingHandlersPtr[proc];
         if(!(ent_ptr->getPStatus()&PSTATUS_MULTISHARED)) {
-  	break;
+        break;
         }
       }
   \endcode
@@ -220,17 +206,18 @@ struct BasicEntity {
 
   DO NOT MODIFY LIST.
 
-\code
-  BasicEntity *ent_ptr = BasicEntity(moan,entity_handle);
-  for(int proc = 0; proc<MAX_SHARING_PROCS && -1 != ent_ptr->getSharingProcsPtr[proc]; proc++) {
+  \code
+    BasicEntity *ent_ptr = BasicEntity(moan,entity_handle);
+    for(int proc = 0; proc<MAX_SHARING_PROCS && -1 !=
+     ent_ptr->getSharingProcsPtr[proc]; proc++) {
       if(ent_ptr->getSharingProcsPtr[proc] == -1) {
-	// End of the list
-	break;
+        // End of the list
+        break;
       }
       int sharing_proc = ent_ptr->getSharingProcsPtr[proc];
       EntityHandle sharing_ent = ent_ptr->getSharingHandlersPtr[proc];
       if(!(ent_ptr->getPStatus()&PSTATUS_MULTISHARED)) {
-	break;
+        break;
       }
     }
 \endcode
@@ -263,12 +250,10 @@ struct BasicEntity {
   waste of space.
 
  */
-struct RefEntity: public BasicEntity {
+struct RefEntity : public BasicEntity {
 
-  RefEntity(
-    const boost::shared_ptr<BasicEntityData>& basic_data_ptr,
-    const EntityHandle ent
-  );
+  RefEntity(const boost::shared_ptr<BasicEntityData> &basic_data_ptr,
+            const EntityHandle ent);
 
   static MoFEMErrorCode getParentEnt(Interface &moab, Range ents,
                                      std::vector<EntityHandle> vec_patent_ent);
@@ -285,76 +270,76 @@ struct RefEntity: public BasicEntity {
    *
    * @return Pointer to tag on entity
    */
-  EntityHandle* getParentEntPtr() const;
+  EntityHandle *getParentEntPtr() const;
 
   /**
    * \brief Get pointer to bit ref level tag
 
-   * Every entity belongs to some refinement level or levels. Each level is marked
+   * Every entity belongs to some refinement level or levels. Each level is
+   marked
    * by bit set in BitRefLevel() (bitset) structure.
    *
    * See \ref mix_mesh_refinement for explanation.
 
    * @return Return pointer to tag.
    */
-  BitRefLevel* getBitRefLevelPtr() const;
+  BitRefLevel *getBitRefLevelPtr() const;
 
   /** \brief Get entity
-  */
+   */
   inline EntityHandle getRefEnt() const { return ent; }
 
   /** \brief Get patent entity
-  */
+   */
   inline EntityType getParentEntType() const {
-    EntityHandle* tag_parent_ent = getParentEntPtr();
-    if(*tag_parent_ent == 0)  return MBMAXTYPE;
-    return (EntityType)((*tag_parent_ent&MB_TYPE_MASK)>>MB_ID_WIDTH);
+    EntityHandle *tag_parent_ent = getParentEntPtr();
+    if (*tag_parent_ent == 0)
+      return MBMAXTYPE;
+    return (EntityType)((*tag_parent_ent & MB_TYPE_MASK) >> MB_ID_WIDTH);
   }
 
   /** \brief Get parent entity, i.e. entity form one refinement level up
-  */
+   */
   inline EntityHandle getParentEnt() const {
-    EntityHandle* tag_parent_ent = getParentEntPtr();
+    EntityHandle *tag_parent_ent = getParentEntPtr();
     return *tag_parent_ent;
   }
 
   /** \brief Get entity ref bit refinement signature
-  */
+   */
   inline const BitRefLevel &getBitRefLevel() const {
     return *getBitRefLevelPtr();
   }
 
   /** \brief Get entity ref bit refinement as ulong
-  */
+   */
   inline unsigned long int getBitRefLevelULong() const {
     return getBitRefLevel().to_ulong();
   }
 
-  friend std::ostream& operator<<(std::ostream& os,const RefEntity& e);
-
+  friend std::ostream &operator<<(std::ostream &os, const RefEntity &e);
 };
-
 
 /**
  * \brief interface to RefEntity
  * \ingroup ent_multi_indices
  */
-template <typename T>
-struct interface_RefEntity {
+template <typename T> struct interface_RefEntity {
 
   mutable boost::shared_ptr<T> sPtr;
 
-  interface_RefEntity(const boost::shared_ptr<T>& sptr):
-  sPtr(sptr) {}
+  interface_RefEntity(const boost::shared_ptr<T> &sptr) : sPtr(sptr) {}
 
-  interface_RefEntity(const interface_RefEntity<T> &interface):
-  sPtr(interface.getRefEntityPtr()) {}
+  interface_RefEntity(const interface_RefEntity<T> &interface)
+      : sPtr(interface.getRefEntityPtr()) {}
 
-  inline boost::shared_ptr<BasicEntityData>& getBasicDataPtr() {
+  virtual ~interface_RefEntity() {}
+
+  inline boost::shared_ptr<BasicEntityData> &getBasicDataPtr() {
     return this->sPtr->getBasicDataPtr();
   }
 
-  inline const boost::shared_ptr<BasicEntityData>& getBasicDataPtr() const {
+  inline const boost::shared_ptr<BasicEntityData> &getBasicDataPtr() const {
     return this->sPtr->getBasicDataPtr();
   }
 
@@ -364,9 +349,11 @@ struct interface_RefEntity {
     return this->sPtr->getParentEntType();
   };
 
-  inline EntityHandle getParentEnt() const { return this->sPtr->getParentEnt(); }
+  inline EntityHandle getParentEnt() const {
+    return this->sPtr->getParentEnt();
+  }
 
-  inline const BitRefLevel& getBitRefLevel() const {
+  inline const BitRefLevel &getBitRefLevel() const {
     return this->sPtr->getBitRefLevel();
   }
 
@@ -380,15 +367,15 @@ struct interface_RefEntity {
 
   inline EntityHandle getOwnerEnt() const { return this->sPtr->getOwnerEnt(); }
 
-  inline EntityHandle& getOwnerEnt() { return this->sPtr->getOwnerEnt(); }
+  inline EntityHandle &getOwnerEnt() { return this->sPtr->getOwnerEnt(); }
 
   inline int getOwnerProc() const { return this->sPtr->getOwnerProc(); }
 
-  inline int& getOwnerProc() { return this->sPtr->getOwnerProc(); }
+  inline int &getOwnerProc() { return this->sPtr->getOwnerProc(); }
 
   inline int getPartProc() const { return this->sPtr->getPartProc(); }
 
-  inline int& getPartProc() { return this->sPtr->getPartProc(); }
+  inline int &getPartProc() { return this->sPtr->getPartProc(); }
 
   inline unsigned char getPStatus() const { return this->sPtr->getPStatus(); }
 
@@ -396,16 +383,11 @@ struct interface_RefEntity {
     return this->sPtr->getSharingProcsPtr();
   }
 
-  inline EntityHandle* getSharingHandlersPtr() const {
+  inline EntityHandle *getSharingHandlersPtr() const {
     return this->sPtr->getSharingHandlersPtr();
   }
 
-  virtual ~interface_RefEntity() {}
-
-  inline boost::shared_ptr<T>& getRefEntityPtr() const {
-    return this->sPtr;
-  }
-
+  inline boost::shared_ptr<T> &getRefEntityPtr() const { return this->sPtr; }
 };
 
 /**
@@ -422,62 +404,54 @@ struct interface_RefEntity {
  * \param ordered_non_unique Composite_ParentEnt_And_EntType_mi_tag
  */
 typedef multi_index_container<
-  boost::shared_ptr<RefEntity>,
-  indexed_by<
-    ordered_unique<
-      tag<Ent_mi_tag>, 
-      member<RefEntity::BasicEntity,EntityHandle,&RefEntity::ent>
-    >,
-    ordered_non_unique<
-      tag<Ent_Ent_mi_tag>, 
-      const_mem_fun<RefEntity,EntityHandle,&RefEntity::getParentEnt>
-    >,
-    ordered_non_unique<
-      tag<EntType_mi_tag>, 
-      const_mem_fun<RefEntity::BasicEntity,EntityType,&RefEntity::getEntType>
-    >,
-    ordered_non_unique<
-      tag<ParentEntType_mi_tag>, 
-      const_mem_fun<RefEntity,EntityType,&RefEntity::getParentEntType>
-    >,
-    ordered_non_unique<
-      tag<Composite_EntType_and_ParentEntType_mi_tag>,
-      composite_key<
-      	RefEntity,
-      	const_mem_fun<RefEntity::BasicEntity,EntityType,&RefEntity::getEntType>,
-      	const_mem_fun<RefEntity,EntityType,&RefEntity::getParentEntType>
-      >
-    >,
-    ordered_non_unique<
-      tag<Composite_ParentEnt_And_EntType_mi_tag>,
-      composite_key<
-      	RefEntity,
-      	const_mem_fun<RefEntity,EntityHandle,&RefEntity::getParentEnt>,
-      	const_mem_fun<RefEntity::BasicEntity,EntityType,&RefEntity::getEntType>
-      >
-    >
-  >
-> RefEntity_multiIndex;
+    boost::shared_ptr<RefEntity>,
+    indexed_by<
+        ordered_unique<tag<Ent_mi_tag>, member<RefEntity::BasicEntity,
+                                               EntityHandle, &RefEntity::ent> >,
+        ordered_non_unique<
+            tag<Ent_Ent_mi_tag>,
+            const_mem_fun<RefEntity, EntityHandle, &RefEntity::getParentEnt> >,
+        ordered_non_unique<tag<EntType_mi_tag>,
+                           const_mem_fun<RefEntity::BasicEntity, EntityType,
+                                         &RefEntity::getEntType> >,
+        ordered_non_unique<tag<ParentEntType_mi_tag>,
+                           const_mem_fun<RefEntity, EntityType,
+                                         &RefEntity::getParentEntType> >,
+        ordered_non_unique<
+            tag<Composite_EntType_and_ParentEntType_mi_tag>,
+            composite_key<RefEntity,
+                          const_mem_fun<RefEntity::BasicEntity, EntityType,
+                                        &RefEntity::getEntType>,
+                          const_mem_fun<RefEntity, EntityType,
+                                        &RefEntity::getParentEntType> > >,
+        ordered_non_unique<
+            tag<Composite_ParentEnt_And_EntType_mi_tag>,
+            composite_key<RefEntity,
+                          const_mem_fun<RefEntity, EntityHandle,
+                                        &RefEntity::getParentEnt>,
+                          const_mem_fun<RefEntity::BasicEntity, EntityType,
+                                        &RefEntity::getEntType> > > > >
+    RefEntity_multiIndex;
 
 /** \brief multi-index view of RefEntity by parent entity
   \ingroup ent_multi_indices
 */
 typedef multi_index_container<
-  boost::shared_ptr<RefEntity>,
-  indexed_by<
-    hashed_unique<
-      const_mem_fun<RefEntity,EntityHandle,&RefEntity::getParentEnt>
-    >,
-    hashed_unique<
-      tag<Composite_EntType_and_ParentEntType_mi_tag>,
-      composite_key<
-	     boost::shared_ptr<RefEntity>,
-	     const_mem_fun<RefEntity,EntityHandle,&RefEntity::getRefEnt>,
-	     const_mem_fun<RefEntity,EntityHandle,&RefEntity::getParentEnt>
-      >
+    boost::shared_ptr<RefEntity>,
+    indexed_by<
+
+        hashed_non_unique<
+            const_mem_fun<RefEntity, EntityHandle, &RefEntity::getParentEnt> >,
+        hashed_unique<
+            tag<Composite_EntType_and_ParentEntType_mi_tag>,
+            composite_key<
+                boost::shared_ptr<RefEntity>,
+                const_mem_fun<RefEntity, EntityHandle, &RefEntity::getRefEnt>,
+                const_mem_fun<RefEntity, EntityHandle,
+                              &RefEntity::getParentEnt> > > >
+
     >
-  >
-> RefEntity_multiIndex_view_by_parent_entity;
+    RefEntity_multiIndex_view_by_parent_entity;
 
 template <class T> struct Entity_update_pcomm_data {
   const int pcommID;
@@ -508,12 +482,11 @@ template <class T> struct Entity_update_pcomm_data {
  */
 struct RefEntity_change_remove_parent {
   ErrorCode rval;
-  RefEntity_change_remove_parent() {
-  }
+  RefEntity_change_remove_parent() {}
   inline void operator()(boost::shared_ptr<RefEntity> &e) {
     rval = e->basicDataPtr->moab.tag_delete_data(
-      e->basicDataPtr->th_RefParentHandle,&e->ent,1
-    ); MOAB_THROW(rval);
+        e->basicDataPtr->th_RefParentHandle, &e->ent, 1);
+    MOAB_THROW(rval);
   }
 };
 
@@ -530,26 +503,26 @@ struct RefEntity_change_remove_parent {
 struct RefEntity_change_parent {
   EntityHandle pArent;
   ErrorCode rval;
-  RefEntity_change_parent(EntityHandle parent): pArent(parent) {}
+  RefEntity_change_parent(EntityHandle parent) : pArent(parent) {}
   inline void operator()(boost::shared_ptr<RefEntity> &e) {
     *(e->getParentEntPtr()) = pArent;
   }
 };
 
 /** \brief ref mofem entity, left shift
-  * \ingroup ent_multi_indices
-  */
+ * \ingroup ent_multi_indices
+ */
 struct RefEntity_change_left_shift {
   int shift;
-  RefEntity_change_left_shift(const int _shift): shift(_shift) {}
+  RefEntity_change_left_shift(const int _shift) : shift(_shift) {}
   inline void operator()(boost::shared_ptr<RefEntity> &e) {
-    (*e->getBitRefLevelPtr())<<=shift;
+    (*e->getBitRefLevelPtr()) <<= shift;
   };
 };
 
 /** \brief ref mofem entity, right shift
  * \ingroup ent_multi_indices
-  */
+ */
 struct RefEntity_change_right_shift {
   int shift;
   BitRefLevel mask;
@@ -558,16 +531,16 @@ struct RefEntity_change_right_shift {
       : shift(_shift), mask(_mask) {}
   inline void operator()(boost::shared_ptr<RefEntity> &e) {
     BitRefLevel bit = *(e->getBitRefLevelPtr());
-    *(e->getBitRefLevelPtr())=((bit&mask)>>shift)|(bit&~mask);
+    *(e->getBitRefLevelPtr()) = ((bit & mask) >> shift) | (bit & ~mask);
   };
 };
 
 /** \brief ref mofem entity, change bit
-  * \ingroup ent_multi_indices
-  */
+ * \ingroup ent_multi_indices
+ */
 struct RefEntity_change_add_bit {
   BitRefLevel bit;
-  RefEntity_change_add_bit(const BitRefLevel &_bit): bit(_bit) {};
+  RefEntity_change_add_bit(const BitRefLevel &_bit) : bit(_bit){};
   inline void operator()(RefEntity &e) {
     bit |= e.getBitRefLevel();
     *(e.getBitRefLevelPtr()) = bit;
@@ -578,11 +551,11 @@ struct RefEntity_change_add_bit {
 };
 
 /** \brief ref mofem entity, change bit
-  * \ingroup ent_multi_indices
-  */
+ * \ingroup ent_multi_indices
+ */
 struct RefEntity_change_and_bit {
   BitRefLevel bit;
-  RefEntity_change_and_bit(const BitRefLevel &_bit): bit(_bit) {};
+  RefEntity_change_and_bit(const BitRefLevel &_bit) : bit(_bit){};
   inline void operator()(boost::shared_ptr<RefEntity> &e) {
     bit &= *(e->getBitRefLevelPtr());
     *(e->getBitRefLevelPtr()) = bit;
@@ -590,11 +563,11 @@ struct RefEntity_change_and_bit {
 };
 
 /** \brief ref mofem entity, change bit
-  * \ingroup ent_multi_indices
-  */
+ * \ingroup ent_multi_indices
+ */
 struct RefEntity_change_xor_bit {
   BitRefLevel bit;
-  RefEntity_change_xor_bit(const BitRefLevel &_bit): bit(_bit) {};
+  RefEntity_change_xor_bit(const BitRefLevel &_bit) : bit(_bit){};
   inline void operator()(boost::shared_ptr<RefEntity> &e) {
     bit ^= *(e->getBitRefLevelPtr());
     *(e->getBitRefLevelPtr()) = bit;
@@ -602,23 +575,23 @@ struct RefEntity_change_xor_bit {
 };
 
 /** \brief ref mofem entity, change bit
-  * \ingroup ent_multi_indices
-  */
+ * \ingroup ent_multi_indices
+ */
 struct RefEntity_change_set_bit {
   BitRefLevel bit;
-  RefEntity_change_set_bit(const BitRefLevel &_bit): bit(_bit) {};
+  RefEntity_change_set_bit(const BitRefLevel &_bit) : bit(_bit){};
   inline void operator()(boost::shared_ptr<RefEntity> &e) {
     *(e->getBitRefLevelPtr()) = bit;
   }
 };
 
 /** \brief ref mofem entity, change bit
-  * \ingroup ent_multi_indices
-  */
+ * \ingroup ent_multi_indices
+ */
 struct RefEntity_change_set_nth_bit {
   int n;
   bool b;
-  RefEntity_change_set_nth_bit(const int _n,bool _b): n(_n),b(_b) {};
+  RefEntity_change_set_nth_bit(const int _n, bool _b) : n(_n), b(_b){};
   inline void operator()(boost::shared_ptr<RefEntity> &e) {
     (*(e->getBitRefLevelPtr()))[n] = b;
   }
@@ -627,22 +600,18 @@ struct RefEntity_change_set_nth_bit {
 struct DofEntity;
 
 /**
-  * \brief Struct keeps handle to entity in the field.
-  * \ingroup ent_multi_indices
-  */
-struct FieldEntity:
-  public
-  interface_Field<Field>,
-  interface_RefEntity<RefEntity> {
+ * \brief Struct keeps handle to entity in the field.
+ * \ingroup ent_multi_indices
+ */
+struct FieldEntity : public interface_Field<Field>,
+                     interface_RefEntity<RefEntity> {
 
   typedef interface_Field<Field> interface_type_Field;
   typedef interface_RefEntity<RefEntity> interface_type_RefEntity;
-  const FieldData* tag_FieldData;
+  const FieldData *tag_FieldData;
   int tag_FieldData_size;
-  FieldEntity(
-    const boost::shared_ptr<Field>& field_ptr,
-    const boost::shared_ptr<RefEntity>& ref_ent_ptr
-  );
+  FieldEntity(const boost::shared_ptr<Field> &field_ptr,
+              const boost::shared_ptr<RefEntity> &ref_ent_ptr);
   ~FieldEntity();
 
   /**
@@ -665,8 +634,9 @@ struct FieldEntity:
    */
   inline VectorAdaptor getEntFieldData() const {
     int size = getNbDofsOnEnt();
-    double* ptr = const_cast<FieldData*>(tag_FieldData);
-    return VectorAdaptor(size,ublas::shallow_array_adaptor<FieldData>(size,ptr));
+    double *ptr = const_cast<FieldData *>(tag_FieldData);
+    return VectorAdaptor(size,
+                         ublas::shallow_array_adaptor<FieldData>(size, ptr));
   }
 
   /**
@@ -691,7 +661,7 @@ struct FieldEntity:
    * \brief Get pinter to Tag keeping approximation order
    * @return Pointer to Tag
    */
-  ApproximationOrder* getMaxOrderPtr();
+  ApproximationOrder *getMaxOrderPtr();
 
   /**
    * \brief Get order set to the entity (Allocated tag size for such number)
@@ -705,53 +675,45 @@ struct FieldEntity:
    * \brief Get global unique id
    * @return Global UId
    */
-  const UId& getGlobalUniqueId() const { return globalUid; }
+  const UId &getGlobalUniqueId() const { return globalUid; }
 
   /**
    * \brief Calculate UId for field entity
    *
-   * UId is constructed such that all DOFs are ordered by processor, entity, field.
+   * UId is constructed such that all DOFs are ordered by processor, entity,
+   * field.
    *
    * @param  owner_proc               owning processor
    * @param  bit_number               field bit number
    * @param  moab_owner_handle        entity handle on owning processor
-   * @param  true_if_distributed_mesh if true UId is constructed for distributed meshes
+   * @param  true_if_distributed_mesh if true UId is constructed for distributed
+   * meshes
    * @return                          UId
    */
-  static inline UId getGlobalUniqueIdCalculate(
-    const int owner_proc,
-    const char bit_number,
-    const EntityHandle moab_owner_handle,
-    const bool true_if_distributed_mesh
-  ) {
-    assert(bit_number<32);
-    assert(owner_proc<1024);
-    if(true_if_distributed_mesh) {
-      return
-      static_cast<UId>(bit_number)|
-      static_cast<UId>(moab_owner_handle) << 5|
-      static_cast<UId>(owner_proc) << 5+8*sizeof(EntityHandle);
+  static inline UId
+  getGlobalUniqueIdCalculate(const int owner_proc, const char bit_number,
+                             const EntityHandle moab_owner_handle,
+                             const bool true_if_distributed_mesh) {
+    assert(bit_number < 32);
+    assert(owner_proc < 1024);
+    if (true_if_distributed_mesh) {
+      return static_cast<UId>(bit_number) |
+             static_cast<UId>(moab_owner_handle) << 5 |
+             static_cast<UId>(owner_proc) << 5 + 8 * sizeof(EntityHandle);
     } else {
-      return
-      static_cast<UId>(bit_number)|
-      static_cast<UId>(moab_owner_handle) << 5;
+      return static_cast<UId>(bit_number) | static_cast<UId>(moab_owner_handle)
+                                                << 5;
     }
   }
 
-  static inline UId getGlobalUniqueIdCalculate_Low_Proc(
-    const int owner_proc
-  ) {
-    return
-    (UId)owner_proc << 5+8*sizeof(EntityHandle);
+  static inline UId getGlobalUniqueIdCalculate_Low_Proc(const int owner_proc) {
+    return (UId)owner_proc << 5 + 8 * sizeof(EntityHandle);
   }
 
-  static inline UId getGlobalUniqueIdCalculate_Hi_Proc(
-    const int owner_proc
-  ) {
-    return
-    (UId)MBMAXTYPE
-    |(UId)(BITFIELDID_SIZE-1) << 8*sizeof(EntityHandle)
-    |(UId)owner_proc << 5+8*sizeof(EntityHandle);
+  static inline UId getGlobalUniqueIdCalculate_Hi_Proc(const int owner_proc) {
+    return (UId)MBMAXTYPE |
+           (UId)(BITFIELDID_SIZE - 1) << 8 * sizeof(EntityHandle) |
+           (UId)owner_proc << 5 + 8 * sizeof(EntityHandle);
   }
 
   /**
@@ -760,54 +722,35 @@ struct FieldEntity:
    */
   inline UId getGlobalUniqueIdCalculate() const {
     return getGlobalUniqueIdCalculate(
-      sPtr->owner_proc,
-      getBitNumber(),
-      sPtr->moab_owner_handle,
-      getBasicDataPtr()->trueIfDistributedMesh()
-    );
+        sPtr->owner_proc, getBitNumber(), sPtr->moab_owner_handle,
+        getBasicDataPtr()->trueIfDistributedMesh());
   }
 
   /**
    * \brief Get pointer to RefEntity
    */
-  inline boost::shared_ptr<RefEntity>& getRefEntityPtr() { return this->sPtr; }
+  inline boost::shared_ptr<RefEntity> &getRefEntityPtr() { return this->sPtr; }
 
   /**
    * \brief Get pointer to Field data structure associated with this entity
    */
-  inline boost::shared_ptr<Field>& getFieldPtr() const { return this->sFieldPtr; }
-
-  friend std::ostream& operator<<(std::ostream& os,const FieldEntity& e);
-
-  /**
-   * \brief Get weak_ptr reference to sequence/vector storing dofs on entity.
-   *
-   * Vector is automatically destroy when last DOF in vector os destroyed. Every
-   * shared_ptr to the DOF has aliased shared_ptr to vector of DOFs in that vector.
-   * That do the trick.
-   *
-   */
-  inline boost::weak_ptr<std::vector<DofEntity> >& getDofsSequence() const {
-    return dofsSequce;
+  inline boost::shared_ptr<Field> &getFieldPtr() const {
+    return this->sFieldPtr;
   }
+
+  friend std::ostream &operator<<(std::ostream &os, const FieldEntity &e);
 
   /**
    * \brief get hash-map relating dof index on entity with its order
    *
    * DOFs of given field are indexed on entity
-   * of the same type, same space, approximation base and number of coefficients,
-   * are sorted in the way.
+   * of the same type, same space, approximation base and number of
+   * coefficients, are sorted in the way.
    *
    */
-  inline std::vector<ApproximationOrder>& getDofOrderMap() const {
+  inline std::vector<ApproximationOrder> &getDofOrderMap() const {
     return getFieldPtr()->getDofOrderMap(getEntType());
   }
-
-
-private:
-
-  // Keep vector of DoFS on entity
-  mutable boost::weak_ptr<std::vector<DofEntity> > dofsSequce;
 
 };
 
@@ -821,15 +764,11 @@ private:
  * interface to FieldEntity
  */
 template <typename T>
-struct interface_FieldEntity:
-public
-interface_Field<T>,
-interface_RefEntity<T> {
+struct interface_FieldEntity : public interface_Field<T>,
+                               interface_RefEntity<T> {
 
-  interface_FieldEntity(const boost::shared_ptr<T>& sptr):
-  interface_Field<T>(sptr),
-  interface_RefEntity<T>(sptr) {
-  }
+  interface_FieldEntity(const boost::shared_ptr<T> &sptr)
+      : interface_Field<T>(sptr), interface_RefEntity<T>(sptr) {}
 
   /// @return get entity handle
   inline EntityHandle getEnt() const { return this->sPtr->getEnt(); }
@@ -878,7 +817,8 @@ interface_RefEntity<T> {
   };
 
   // /// \deprecated use getFieldEntityPtr instead
-  // DEPRECATED inline boost::shared_ptr<FieldEntity>& getMoFEMEntityPtr() const {
+  // DEPRECATED inline boost::shared_ptr<FieldEntity>& getMoFEMEntityPtr() const
+  // {
   //   return getFieldEntityPtr();
   // }
 
@@ -886,14 +826,13 @@ interface_RefEntity<T> {
    * \brief get hash-map relating dof index on entity with its order
    *
    * DOFs of given field are indexed on entity
-   * of the same type, same space, approximation base and number of coefficients,
-   * are sorted in the way.
+   * of the same type, same space, approximation base and number of
+   * coefficients, are sorted in the way.
    *
    */
-  inline std::vector<ApproximationOrder>& getDofOrderMap() const {
+  inline std::vector<ApproximationOrder> &getDofOrderMap() const {
     return this->sPtr->getDofOrderMap();
   }
-
 };
 
 /**
@@ -905,14 +844,11 @@ struct FieldEntity_change_order {
   std::vector<FieldData> data;
   std::vector<ApproximationOrder> data_dof_order;
   std::vector<FieldCoefficientsNumber> data_dof_rank;
-  FieldEntity_change_order(ApproximationOrder order):
-  order(order) {
-  }
+  FieldEntity_change_order(ApproximationOrder order) : order(order) {}
   inline void operator()(boost::shared_ptr<FieldEntity> &e) {
     (*this)(e.get());
   }
   void operator()(FieldEntity *e);
-
 };
 
 /**
@@ -922,55 +858,50 @@ struct FieldEntity_change_order {
  *
  */
 typedef multi_index_container<
-  boost::shared_ptr<FieldEntity>,
-  indexed_by<
-    ordered_unique<
-      tag<Unique_mi_tag>,
-      member<FieldEntity,UId,&FieldEntity::globalUid>
-    >,
-    ordered_non_unique<
-      tag<FieldName_mi_tag>,
-      const_mem_fun<FieldEntity::interface_type_Field,boost::string_ref,&FieldEntity::getNameRef>
-    >,
-    ordered_non_unique<
-      tag<Ent_mi_tag>,
-      const_mem_fun<FieldEntity,EntityHandle,&FieldEntity::getEnt>
-    >,
-    ordered_non_unique<
-      tag<Composite_Name_And_Ent_mi_tag>,
-      composite_key<
-      	FieldEntity,
-      	const_mem_fun<FieldEntity::interface_type_Field,boost::string_ref,&FieldEntity::getNameRef>,
-      	const_mem_fun<FieldEntity,EntityHandle,&FieldEntity::getEnt>
-      >
-    >
-  >
-> FieldEntity_multiIndex;
+    boost::shared_ptr<FieldEntity>,
+    indexed_by<
+        ordered_unique<tag<Unique_mi_tag>,
+                       member<FieldEntity, UId, &FieldEntity::globalUid> >,
+        ordered_non_unique<
+            tag<FieldName_mi_tag>,
+            const_mem_fun<FieldEntity::interface_type_Field, boost::string_ref,
+                          &FieldEntity::getNameRef> >,
+        ordered_non_unique<
+            tag<Ent_mi_tag>,
+            const_mem_fun<FieldEntity, EntityHandle, &FieldEntity::getEnt> >,
+        ordered_non_unique<
+            tag<Composite_Name_And_Ent_mi_tag>,
+            composite_key<
+                FieldEntity,
+                const_mem_fun<FieldEntity::interface_type_Field,
+                              boost::string_ref, &FieldEntity::getNameRef>,
+                const_mem_fun<FieldEntity, EntityHandle,
+                              &FieldEntity::getEnt> > > > >
+    FieldEntity_multiIndex;
 
 // /// \deprecated use FieldEntity_multiIndex
 // DEPRECATED typedef FieldEntity_multiIndex MoFEMEntity_multiIndex;
 
 /** \brief Entity index by field name
-  *
-  * \ingroup ent_multi_indices
-  */
-typedef FieldEntity_multiIndex::index<FieldName_mi_tag>::type FieldEntityByFieldName;
+ *
+ * \ingroup ent_multi_indices
+ */
+typedef FieldEntity_multiIndex::index<FieldName_mi_tag>::type
+    FieldEntityByFieldName;
 
 typedef multi_index_container<
-  boost::shared_ptr<FieldEntity>,
-  indexed_by<
-    sequenced<>,
-    ordered_non_unique<
-      tag<Ent_mi_tag>, const_mem_fun<FieldEntity,EntityHandle,&FieldEntity::getEnt>
-    >
-  >
-> FieldEntity_multiIndex_ent_view;
+    boost::shared_ptr<FieldEntity>,
+    indexed_by<sequenced<>,
+               ordered_non_unique<tag<Ent_mi_tag>,
+                                  const_mem_fun<FieldEntity, EntityHandle,
+                                                &FieldEntity::getEnt> > > >
+    FieldEntity_multiIndex_ent_view;
 
-}
+} // namespace MoFEM
 
 #endif // __ENTSMULTIINDICES_HPP__
 
-/***************************************************************************//**
- * \defgroup ent_multi_indices Entities structures and multi-indices
- * \ingroup mofem
- ******************************************************************************/
+/***************************************************************************/ /**
+* \defgroup ent_multi_indices Entities structures and multi-indices
+* \ingroup mofem
+******************************************************************************/
