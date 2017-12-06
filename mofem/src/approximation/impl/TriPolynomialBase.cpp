@@ -319,13 +319,13 @@ MoFEMErrorCode TriPolynomialBase::getValueHCurl(
       }
       sense[ee] = data.dataOnEntities[MBEDGE][ee].getSense();
       order[ee] = data.dataOnEntities[MBEDGE][ee].getDataOrder();
-      int nb_dofs = NBEDGE_HCURL(data.dataOnEntities[MBEDGE][ee].getDataOrder());
+      int nb_dofs = NBEDGE_AINSWORTH_HCURL(data.dataOnEntities[MBEDGE][ee].getDataOrder());
       data.dataOnEntities[MBEDGE][ee].getN(base).resize(nb_gauss_pts,3*nb_dofs,false);
       data.dataOnEntities[MBEDGE][ee].getDiffN(base).resize(nb_gauss_pts,2*3*nb_dofs,false);
       hcurl_edge_n[ee] = &*data.dataOnEntities[MBEDGE][ee].getN(base).data().begin();
       diff_hcurl_edge_n[ee] = &*data.dataOnEntities[MBEDGE][ee].getDiffN(base).data().begin();
     }
-    ierr = Hcurl_EdgeBaseFunctions_MBTET_ON_FACE(
+    ierr = Hcurl_Ainsworth_EdgeBaseFunctions_MBTET_ON_FACE(
       sense,
       order,
       &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
@@ -356,12 +356,12 @@ MoFEMErrorCode TriPolynomialBase::getValueHCurl(
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
     }
     int order = data.dataOnEntities[MBTRI][0].getDataOrder();
-    int nb_dofs = NBFACETRI_HCURL(order);
+    int nb_dofs = NBFACETRI_AINSWORTH_HCURL(order);
     data.dataOnEntities[MBTRI][0].getN(base).resize(nb_gauss_pts,3*nb_dofs,false);
     data.dataOnEntities[MBTRI][0].getDiffN(base).resize(nb_gauss_pts,3*2*nb_dofs,false);
     // cerr << data.dataOnEntities[MBVERTEX][0].getDiffN(base) << endl;
     int face_nodes[] = { 0,1,2 };
-    ierr = Hcurl_FaceFunctions_MBTET_ON_FACE(
+    ierr = Hcurl_Ainsworth_FaceFunctions_MBTET_ON_FACE(
       face_nodes,
       order,
       &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),

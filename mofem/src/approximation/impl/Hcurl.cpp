@@ -8,18 +8,19 @@
 
 */
 
+#include <definitions.h>
+#include <h1_hdiv_hcurl_l2.h>
+
+#include <Includes.hpp>
 #include <Common.hpp>
 #include <FTensor.hpp>
 #include <Hcurl.hpp>
-#include <Includes.hpp>
-#include <definitions.h>
-#include <h1_hdiv_hcurl_l2.h>
 
 using namespace MoFEM;
 
 #ifndef GENERATE_VTK_WITH_CURL_BASE
 
-MoFEMErrorCode MoFEM::Hcurl_EdgeBaseFunctions_MBTET(
+MoFEMErrorCode MoFEM::Hcurl_Ainsworth_EdgeBaseFunctions_MBTET(
     int *sense, int *p, double *N, double *diffN, double *edge_n[],
     double *diff_edge_n[], int nb_integration_pts,
     PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s,
@@ -31,7 +32,7 @@ MoFEMErrorCode MoFEM::Hcurl_EdgeBaseFunctions_MBTET(
                                  {0, 3}, {1, 3}, {2, 3}};
   int P[6];
   for (int ee = 0; ee != 6; ee++)
-    P[ee] = NBEDGE_HCURL(p[ee]);
+    P[ee] = NBEDGE_AINSWORTH_HCURL(p[ee]);
 
   FTensor::Index<'i', 3> i;
   FTensor::Index<'j', 3> j;
@@ -178,7 +179,7 @@ MoFEMErrorCode MoFEM::Hcurl_EdgeBaseFunctions_MBTET(
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode MoFEM::Hcurl_EdgeBaseFunctions_MBTET_ON_EDGE(
+MoFEMErrorCode MoFEM::Hcurl_Ainsworth_EdgeBaseFunctions_MBTET_ON_EDGE(
     int sense, int p, double *N, double *diffN, double *edge_n,
     double *diff_edge_n, int nb_integration_pts,
     PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s,
@@ -186,7 +187,7 @@ MoFEMErrorCode MoFEM::Hcurl_EdgeBaseFunctions_MBTET_ON_EDGE(
                                        const int dim)) {
   MoFEMFunctionBeginHot;
 
-  if (NBEDGE_HCURL(p) == 0)
+  if (NBEDGE_AINSWORTH_HCURL(p) == 0)
     MoFEMFunctionReturnHot(0);
   if (diff_edge_n != NULL) {
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
@@ -224,7 +225,7 @@ MoFEMErrorCode MoFEM::Hcurl_EdgeBaseFunctions_MBTET_ON_EDGE(
       double psi_l[p + 1];
       ierr = base_polynomials(p, ksi_0i, NULL, psi_l, NULL, 3);
       CHKERRG(ierr);
-      for (int ll = 2; ll != NBEDGE_HCURL(p); ll++) {
+      for (int ll = 2; ll != NBEDGE_AINSWORTH_HCURL(p); ll++) {
         const double a = (double)(2 * ll + 1) / (double)(ll + 1);
         const double b = (double)(ll) / (double)(ll + 1);
         t_edge_n(i) =
@@ -237,7 +238,7 @@ MoFEMErrorCode MoFEM::Hcurl_EdgeBaseFunctions_MBTET_ON_EDGE(
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode MoFEM::Hcurl_EdgeBaseFunctions_MBTET_ON_FACE(
+MoFEMErrorCode MoFEM::Hcurl_Ainsworth_EdgeBaseFunctions_MBTET_ON_FACE(
     int *sense, int *p, double *N, double *diffN, double *edge_n[],
     double *diff_edge_n[], int nb_integration_pts,
     PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s,
@@ -251,7 +252,7 @@ MoFEMErrorCode MoFEM::Hcurl_EdgeBaseFunctions_MBTET_ON_FACE(
   const int edges_nodes[3][2] = {{0, 1}, {1, 2}, {2, 0}};
   int P[3];
   for (int ee = 0; ee < 3; ee++)
-    P[ee] = NBEDGE_HCURL(p[ee]);
+    P[ee] = NBEDGE_AINSWORTH_HCURL(p[ee]);
 
   FTensor::Index<'i', 3> i;
   FTensor::Index<'j', 2> j;
@@ -363,7 +364,7 @@ MoFEMErrorCode MoFEM::Hcurl_EdgeBaseFunctions_MBTET_ON_FACE(
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode MoFEM::Hcurl_EdgeBasedFaceFunctions_MBTET(
+MoFEMErrorCode MoFEM::Hcurl_Ainsworth_EdgeBasedFaceFunctions_MBTET(
     int *faces_nodes, int *p, double *N, double *diffN, double *phi_f_e[4][3],
     double *diff_phi_f_e[4][3], int nb_integration_pts,
     PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s,
@@ -400,7 +401,7 @@ MoFEMErrorCode MoFEM::Hcurl_EdgeBasedFaceFunctions_MBTET(
                                       &diffN[3 * o_nodes[2] + 2])};
     double psi_l[p[ff] + 1], diff_psi_l[3 * p[ff] + 3];
 
-    const int nb_base_fun_on_face = NBFACETRI_EDGE_HCURL(p[ff]);
+    const int nb_base_fun_on_face = NBFACETRI_AINSWORTH_EDGE_HCURL(p[ff]);
     // cerr << nb_base_fun_on_face << " " << p[ff] << endl;
     if (nb_base_fun_on_face == 0)
       continue;
@@ -458,7 +459,7 @@ MoFEMErrorCode MoFEM::Hcurl_EdgeBasedFaceFunctions_MBTET(
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode MoFEM::Hcurl_EdgeBasedFaceFunctions_MBTET_ON_FACE(
+MoFEMErrorCode MoFEM::Hcurl_Ainsworth_EdgeBasedFaceFunctions_MBTET_ON_FACE(
     int *faces_nodes, int p, double *N, double *diffN, double *phi_f_e[3],
     double *diff_phi_f_e[3], int nb_integration_pts,
     PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s,
@@ -467,7 +468,7 @@ MoFEMErrorCode MoFEM::Hcurl_EdgeBasedFaceFunctions_MBTET_ON_FACE(
 
   MoFEMFunctionBeginHot;
 
-  const int nb_base_fun_on_face = NBFACETRI_EDGE_HCURL(p);
+  const int nb_base_fun_on_face = NBFACETRI_AINSWORTH_EDGE_HCURL(p);
   if (nb_base_fun_on_face == 0)
     MoFEMFunctionReturnHot(0);
 
@@ -544,7 +545,7 @@ MoFEMErrorCode MoFEM::Hcurl_EdgeBasedFaceFunctions_MBTET_ON_FACE(
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode MoFEM::Hcurl_BubbleFaceFunctions_MBTET(
+MoFEMErrorCode MoFEM::Hcurl_Ainsworth_BubbleFaceFunctions_MBTET(
     int *faces_nodes, int *p, double *N, double *diffN, double *phi_f[4],
     double *diff_phi_f[4], int nb_integration_pts,
     PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s,
@@ -576,7 +577,7 @@ MoFEMErrorCode MoFEM::Hcurl_BubbleFaceFunctions_MBTET(
 
   for (int ff = 0; ff != 4; ff++) {
 
-    if (NBFACETRI_FACE_HCURL(p[ff]) == 0)
+    if (NBFACETRI_AINSWORTH_FACE_HCURL(p[ff]) == 0)
       continue;
 
     int n0 = faces_nodes[3 * ff + 0];
@@ -652,7 +653,7 @@ MoFEMErrorCode MoFEM::Hcurl_BubbleFaceFunctions_MBTET(
           }
         }
       }
-      const int nb_base_fun_on_face = NBFACETRI_FACE_HCURL(p[ff]);
+      const int nb_base_fun_on_face = NBFACETRI_AINSWORTH_FACE_HCURL(p[ff]);
       if (cc != nb_base_fun_on_face) {
         SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                  "Wrong number of base functions %d != %d", cc,
@@ -663,7 +664,7 @@ MoFEMErrorCode MoFEM::Hcurl_BubbleFaceFunctions_MBTET(
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode MoFEM::Hcurl_BubbleFaceFunctions_MBTET_ON_FACE(
+MoFEMErrorCode MoFEM::Hcurl_Ainsworth_BubbleFaceFunctions_MBTET_ON_FACE(
     int *faces_nodes, int p, double *N, double *diffN, double *phi_f,
     double *diff_phi_f, int nb_integration_pts,
     PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s,
@@ -680,7 +681,7 @@ MoFEMErrorCode MoFEM::Hcurl_BubbleFaceFunctions_MBTET_ON_FACE(
   FTensor::Index<'i', 3> i;
   FTensor::Index<'j', 2> j;
 
-  if (NBFACETRI_FACE_HCURL(p) == 0)
+  if (NBFACETRI_AINSWORTH_FACE_HCURL(p) == 0)
     MoFEMFunctionReturnHot(0);
 
   FTensor::Number<0> N0;
@@ -765,7 +766,7 @@ MoFEMErrorCode MoFEM::Hcurl_BubbleFaceFunctions_MBTET_ON_FACE(
       }
     }
 
-    const int nb_base_fun_on_face = NBFACETRI_FACE_HCURL(p);
+    const int nb_base_fun_on_face = NBFACETRI_AINSWORTH_FACE_HCURL(p);
     if (cc != nb_base_fun_on_face) {
       SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                "Wrong number of base functions %d != %d", cc,
@@ -776,7 +777,7 @@ MoFEMErrorCode MoFEM::Hcurl_BubbleFaceFunctions_MBTET_ON_FACE(
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode MoFEM::Hcurl_FaceInteriorFunctions_MBTET(
+MoFEMErrorCode MoFEM::Hcurl_Ainsworth_FaceInteriorFunctions_MBTET(
     int *faces_nodes, int p, double *N, double *diffN, double *phi_v,
     double *diff_phi_v, int nb_integration_pts,
     PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s,
@@ -785,7 +786,7 @@ MoFEMErrorCode MoFEM::Hcurl_FaceInteriorFunctions_MBTET(
 
   MoFEMFunctionBeginHot;
 
-  if (NBVOLUMETET_FACE_HCURL(p) == 0)
+  if (NBVOLUMETET_AINSWORTH_FACE_HCURL(p) == 0)
     MoFEMFunctionReturnHot(0);
 
   const int face_opposite_nodes[] = {2, 0, 1, 3};
@@ -901,7 +902,7 @@ MoFEMErrorCode MoFEM::Hcurl_FaceInteriorFunctions_MBTET(
       }
     }
 
-    const int nb_base_fun_on_face = NBVOLUMETET_FACE_HCURL(p);
+    const int nb_base_fun_on_face = NBVOLUMETET_AINSWORTH_FACE_HCURL(p);
     if (cc != nb_base_fun_on_face) {
       SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                "Wrong number of base functions %d != %d", cc,
@@ -912,7 +913,7 @@ MoFEMErrorCode MoFEM::Hcurl_FaceInteriorFunctions_MBTET(
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode MoFEM::Hcurl_VolumeInteriorFunctions_MBTET(
+MoFEMErrorCode MoFEM::Hcurl_Ainsworth_VolumeInteriorFunctions_MBTET(
     int p, double *N, double *diffN, double *phi_v, double *diff_phi_v,
     int nb_integration_pts,
     PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s,
@@ -921,7 +922,7 @@ MoFEMErrorCode MoFEM::Hcurl_VolumeInteriorFunctions_MBTET(
 
   MoFEMFunctionBeginHot;
 
-  if (NBVOLUMETET_TET_HCURL(p) == 0)
+  if (NBVOLUMETET_AINSOWRTH_TET_HCURL(p) == 0)
     MoFEMFunctionReturnHot(0);
 
   FTensor::Index<'i', 3> i;
@@ -1046,7 +1047,7 @@ MoFEMErrorCode MoFEM::Hcurl_VolumeInteriorFunctions_MBTET(
       }
     }
 
-    const int nb_base_fun_on_face = NBVOLUMETET_TET_HCURL(p);
+    const int nb_base_fun_on_face = NBVOLUMETET_AINSOWRTH_TET_HCURL(p);
     if (cc != nb_base_fun_on_face) {
       SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                "Wrong number of base functions %d != %d", cc,
@@ -1056,7 +1057,7 @@ MoFEMErrorCode MoFEM::Hcurl_VolumeInteriorFunctions_MBTET(
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode MoFEM::Hcurl_FaceFunctions_MBTET(
+MoFEMErrorCode MoFEM::Hcurl_Ainsworth_FaceFunctions_MBTET(
     int *face_nodes, int *p, double *N, double *diffN, double *phi_f[4],
     double *diff_phi_f[4], int nb_integration_pts,
     PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s,
@@ -1072,16 +1073,16 @@ MoFEMErrorCode MoFEM::Hcurl_FaceFunctions_MBTET(
     double *phi_f_e[4][3];
     double *diff_phi_f_e[4][3];
     for (int ff = 0; ff != 4; ff++) {
-      if (NBFACETRI_EDGE_HCURL(p[ff]) == 0) {
+      if (NBFACETRI_AINSWORTH_EDGE_HCURL(p[ff]) == 0) {
         for (int ee = 0; ee != 3; ee++) {
           phi_f_e[ff][ee] = NULL;
           diff_phi_f_e[ff][ee] = NULL;
         }
       } else {
-        base_face_edge_functions[ff].resize(3, 3 * NBFACETRI_EDGE_HCURL(p[ff]) *
-                                                   nb_integration_pts);
+        base_face_edge_functions[ff].resize(
+            3, 3 * NBFACETRI_AINSWORTH_EDGE_HCURL(p[ff]) * nb_integration_pts);
         diff_base_face_edge_functions[ff].resize(
-            3, 9 * NBFACETRI_EDGE_HCURL(p[ff]) * nb_integration_pts);
+            3, 9 * NBFACETRI_AINSWORTH_EDGE_HCURL(p[ff]) * nb_integration_pts);
         // base_face_edge_functions[ff].clear();
         // diff_base_face_edge_functions[ff].clear();
         for (int ee = 0; ee != 3; ee++) {
@@ -1090,9 +1091,9 @@ MoFEMErrorCode MoFEM::Hcurl_FaceFunctions_MBTET(
         }
       }
     }
-    ierr = Hcurl_EdgeBasedFaceFunctions_MBTET(face_nodes, p, N, diffN, phi_f_e,
-                                              diff_phi_f_e, nb_integration_pts,
-                                              base_polynomials);
+    ierr = Hcurl_Ainsworth_EdgeBasedFaceFunctions_MBTET(
+        face_nodes, p, N, diffN, phi_f_e, diff_phi_f_e, nb_integration_pts,
+        base_polynomials);
     CHKERRG(ierr);
 
     VectorDouble base_face_bubble_functions[4];
@@ -1100,7 +1101,7 @@ MoFEMErrorCode MoFEM::Hcurl_FaceFunctions_MBTET(
     double *phi_f_f[4];
     double *diff_phi_f_f[4];
     for (int ff = 0; ff != 4; ff++) {
-      int nb_dofs = NBFACETRI_FACE_HCURL(p[ff]);
+      int nb_dofs = NBFACETRI_AINSWORTH_FACE_HCURL(p[ff]);
       if (nb_dofs == 0) {
         phi_f_f[ff] = NULL;
         diff_phi_f_f[ff] = NULL;
@@ -1113,9 +1114,9 @@ MoFEMErrorCode MoFEM::Hcurl_FaceFunctions_MBTET(
         diff_phi_f_f[ff] = &*diff_base_face_bubble_functions[ff].data().begin();
       }
     }
-    ierr = Hcurl_BubbleFaceFunctions_MBTET(face_nodes, p, N, diffN, phi_f_f,
-                                           diff_phi_f_f, nb_integration_pts,
-                                           base_polynomials);
+    ierr = Hcurl_Ainsworth_BubbleFaceFunctions_MBTET(
+        face_nodes, p, N, diffN, phi_f_f, diff_phi_f_f, nb_integration_pts,
+        base_polynomials);
     CHKERRG(ierr);
 
     FTensor::Index<'i', 3> i;
@@ -1123,7 +1124,7 @@ MoFEMErrorCode MoFEM::Hcurl_FaceFunctions_MBTET(
 
     for (int ff = 0; ff != 4; ff++) {
 
-      if (NBFACETRI_EDGE_HCURL(p[ff]) == 0)
+      if (NBFACETRI_AINSWORTH_EDGE_HCURL(p[ff]) == 0)
         continue;
 
       FTensor::Tensor1<double *, 3> t_face_edge_base[] = {
@@ -1160,7 +1161,7 @@ MoFEMErrorCode MoFEM::Hcurl_FaceFunctions_MBTET(
           &diff_phi_f[ff][1], &diff_phi_f[ff][4], &diff_phi_f[ff][7],
           &diff_phi_f[ff][2], &diff_phi_f[ff][5], &diff_phi_f[ff][8], 9);
 
-      if (NBFACETRI_FACE_HCURL(p[ff]) > 0) {
+      if (NBFACETRI_AINSWORTH_FACE_HCURL(p[ff]) > 0) {
         FTensor::Tensor1<double *, 3> t_face_face_base(
             &phi_f_f[ff][0], &phi_f_f[ff][1], &phi_f_f[ff][2], 3);
         FTensor::Tensor2<double *, 3, 3> t_diff_face_face_base(
@@ -1174,8 +1175,8 @@ MoFEMErrorCode MoFEM::Hcurl_FaceFunctions_MBTET(
             // Face-edge base
             if (oo > 1) {
               for (int ee = 0; ee != 3; ee++) {
-                for (int ll = NBFACETRI_EDGE_HCURL(oo - 1);
-                     ll != NBFACETRI_EDGE_HCURL(oo); ll++) {
+                for (int ll = NBFACETRI_AINSWORTH_EDGE_HCURL(oo - 1);
+                     ll != NBFACETRI_AINSWORTH_EDGE_HCURL(oo); ll++) {
                   t_face_base(i) = t_face_edge_base[ee](i);
                   ++cc;
                   ++t_face_base;
@@ -1184,14 +1185,14 @@ MoFEMErrorCode MoFEM::Hcurl_FaceFunctions_MBTET(
                   ++t_diff_face_base;
                   ++t_diff_face_edge_base[ee];
                   // cerr << oo << " " << ll << " " << cc << " " <<
-                  // NBFACETRI_EDGE_HCURL(oo) << endl;
+                  // NBFACETRI_AINSWORTH_EDGE_HCURL(oo) << endl;
                 }
               }
             }
             // Face-face base
             if (oo > 2) {
-              for (int ll = NBFACETRI_FACE_HCURL(oo - 1);
-                   ll != NBFACETRI_FACE_HCURL(oo); ll++) {
+              for (int ll = NBFACETRI_AINSWORTH_FACE_HCURL(oo - 1);
+                   ll != NBFACETRI_AINSWORTH_FACE_HCURL(oo); ll++) {
                 t_face_base(i) = t_face_face_base(i);
                 ++cc;
                 ++t_face_base;
@@ -1203,7 +1204,7 @@ MoFEMErrorCode MoFEM::Hcurl_FaceFunctions_MBTET(
             }
           }
           // check consistency
-          const int nb_base_fun_on_face = NBFACETRI_HCURL(p[ff]);
+          const int nb_base_fun_on_face = NBFACETRI_AINSWORTH_HCURL(p[ff]);
           if (cc != nb_base_fun_on_face) {
             SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                      "Wrong number of base functions %d != %d", cc,
@@ -1217,8 +1218,8 @@ MoFEMErrorCode MoFEM::Hcurl_FaceFunctions_MBTET(
             // Face-edge base
             if (oo > 1) {
               for (int ee = 0; ee != 3; ee++) {
-                for (int ll = NBFACETRI_EDGE_HCURL(oo - 1);
-                     ll != NBFACETRI_EDGE_HCURL(oo); ll++) {
+                for (int ll = NBFACETRI_AINSWORTH_EDGE_HCURL(oo - 1);
+                     ll != NBFACETRI_AINSWORTH_EDGE_HCURL(oo); ll++) {
                   t_face_base(i) = t_face_edge_base[ee](i);
                   ++cc;
                   ++t_face_base;
@@ -1227,13 +1228,13 @@ MoFEMErrorCode MoFEM::Hcurl_FaceFunctions_MBTET(
                   ++t_diff_face_base;
                   ++t_diff_face_edge_base[ee];
                   // cerr << oo << " " << ll << " " << cc << " " <<
-                  // NBFACETRI_EDGE_HCURL(oo) << endl;
+                  // NBFACETRI_AINSWORTH_EDGE_HCURL(oo) << endl;
                 }
               }
             }
           }
           // check consistency
-          const int nb_base_fun_on_face = NBFACETRI_HCURL(p[ff]);
+          const int nb_base_fun_on_face = NBFACETRI_AINSWORTH_HCURL(p[ff]);
           if (cc != nb_base_fun_on_face) {
             SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                      "Wrong number of base functions %d != %d", cc,
@@ -1255,7 +1256,7 @@ MoFEMErrorCode MoFEM::Hcurl_FaceFunctions_MBTET(
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode MoFEM::Hcurl_FaceFunctions_MBTET_ON_FACE(
+MoFEMErrorCode MoFEM::Hcurl_Ainsworth_FaceFunctions_MBTET_ON_FACE(
     int *faces_nodes, int p, double *N, double *diffN, double *phi_f,
     double *diff_phi_f, int nb_integration_pts,
     PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s,
@@ -1264,22 +1265,22 @@ MoFEMErrorCode MoFEM::Hcurl_FaceFunctions_MBTET_ON_FACE(
 
   MoFEMFunctionBeginHot;
 
-  if (NBFACETRI_EDGE_HCURL(p) == 0)
+  if (NBFACETRI_AINSWORTH_EDGE_HCURL(p) == 0)
     MoFEMFunctionReturnHot(0);
 
   MatrixDouble base_face_edge_functions, diff_base_face_edge_functions;
   double *phi_f_e[3];
   double *diff_phi_f_e[3];
-  base_face_edge_functions.resize(3, 3 * NBFACETRI_EDGE_HCURL(p) *
+  base_face_edge_functions.resize(3, 3 * NBFACETRI_AINSWORTH_EDGE_HCURL(p) *
                                          nb_integration_pts);
-  diff_base_face_edge_functions.resize(3, 2 * 3 * NBFACETRI_EDGE_HCURL(p) *
-                                              nb_integration_pts);
+  diff_base_face_edge_functions.resize(
+      3, 2 * 3 * NBFACETRI_AINSWORTH_EDGE_HCURL(p) * nb_integration_pts);
   // base_face_edge_functions.clear();
   for (int ee = 0; ee != 3; ee++) {
     phi_f_e[ee] = &base_face_edge_functions(ee, 0);
     diff_phi_f_e[ee] = &diff_base_face_edge_functions(ee, 0);
   }
-  ierr = Hcurl_EdgeBasedFaceFunctions_MBTET_ON_FACE(
+  ierr = Hcurl_Ainsworth_EdgeBasedFaceFunctions_MBTET_ON_FACE(
       faces_nodes, p, N, diffN, phi_f_e, diff_phi_f_e, nb_integration_pts,
       base_polynomials);
   CHKERRG(ierr);
@@ -1287,13 +1288,13 @@ MoFEMErrorCode MoFEM::Hcurl_FaceFunctions_MBTET_ON_FACE(
   VectorDouble base_face_bubble_functions;
   VectorDouble diff_base_face_bubble_functions;
   double *phi_f_f, *diff_phi_f_f;
-  base_face_bubble_functions.resize(3 * NBFACETRI_FACE_HCURL(p) *
+  base_face_bubble_functions.resize(3 * NBFACETRI_AINSWORTH_FACE_HCURL(p) *
                                     nb_integration_pts);
-  diff_base_face_bubble_functions.resize(2 * 3 * NBFACETRI_FACE_HCURL(p) *
-                                         nb_integration_pts);
+  diff_base_face_bubble_functions.resize(
+      2 * 3 * NBFACETRI_AINSWORTH_FACE_HCURL(p) * nb_integration_pts);
   phi_f_f = &*base_face_bubble_functions.data().begin();
   diff_phi_f_f = &*diff_base_face_bubble_functions.data().begin();
-  ierr = Hcurl_BubbleFaceFunctions_MBTET_ON_FACE(
+  ierr = Hcurl_Ainsworth_BubbleFaceFunctions_MBTET_ON_FACE(
       faces_nodes, p, N, diffN, phi_f_f, diff_phi_f_f, nb_integration_pts,
       base_polynomials);
   CHKERRG(ierr);
@@ -1328,7 +1329,7 @@ MoFEMErrorCode MoFEM::Hcurl_FaceFunctions_MBTET_ON_FACE(
       &diff_phi_f[HCURL0_0], &diff_phi_f[HCURL0_1], &diff_phi_f[HCURL1_0],
       &diff_phi_f[HCURL1_1], &diff_phi_f[HCURL2_0], &diff_phi_f[HCURL2_1], 6);
 
-  if (NBFACETRI_FACE_HCURL(p) > 0) {
+  if (NBFACETRI_AINSWORTH_FACE_HCURL(p) > 0) {
     FTensor::Tensor1<double *, 3> t_face_face_base(
         &phi_f_f[HCURL0], &phi_f_f[HCURL1], &phi_f_f[HCURL2], 3);
     FTensor::Tensor2<double *, 3, 2> t_diff_face_face_base(
@@ -1341,8 +1342,8 @@ MoFEMErrorCode MoFEM::Hcurl_FaceFunctions_MBTET_ON_FACE(
         // Face-edge base
         if (oo > 1) {
           for (int ee = 0; ee != 3; ee++) {
-            for (int ll = NBFACETRI_EDGE_HCURL(oo - 1);
-                 ll != NBFACETRI_EDGE_HCURL(oo); ll++) {
+            for (int ll = NBFACETRI_AINSWORTH_EDGE_HCURL(oo - 1);
+                 ll != NBFACETRI_AINSWORTH_EDGE_HCURL(oo); ll++) {
               t_face_base(i) = t_face_edge_base[ee](i);
               t_diff_face_base(i, j) = t_diff_face_edge_base[ee](i, j);
               ++cc;
@@ -1355,8 +1356,8 @@ MoFEMErrorCode MoFEM::Hcurl_FaceFunctions_MBTET_ON_FACE(
         }
         // Face-face base
         if (oo > 2) {
-          for (int ll = NBFACETRI_FACE_HCURL(oo - 1);
-               ll != NBFACETRI_FACE_HCURL(oo); ll++) {
+          for (int ll = NBFACETRI_AINSWORTH_FACE_HCURL(oo - 1);
+               ll != NBFACETRI_AINSWORTH_FACE_HCURL(oo); ll++) {
             t_face_base(i) = t_face_face_base(i);
             t_diff_face_base(i, j) = t_diff_face_face_base(i, j);
             ++cc;
@@ -1368,7 +1369,7 @@ MoFEMErrorCode MoFEM::Hcurl_FaceFunctions_MBTET_ON_FACE(
         }
       }
       // check consistency
-      const int nb_base_fun_on_face = NBFACETRI_HCURL(p);
+      const int nb_base_fun_on_face = NBFACETRI_AINSWORTH_HCURL(p);
       if (cc != nb_base_fun_on_face) {
         SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                  "Wrong number of base functions %d != %d", cc,
@@ -1382,8 +1383,8 @@ MoFEMErrorCode MoFEM::Hcurl_FaceFunctions_MBTET_ON_FACE(
         // Face-edge base
         if (oo > 1) {
           for (int ee = 0; ee != 3; ee++) {
-            for (int ll = NBFACETRI_EDGE_HCURL(oo - 1);
-                 ll != NBFACETRI_EDGE_HCURL(oo); ll++) {
+            for (int ll = NBFACETRI_AINSWORTH_EDGE_HCURL(oo - 1);
+                 ll != NBFACETRI_AINSWORTH_EDGE_HCURL(oo); ll++) {
               t_face_base(i) = t_face_edge_base[ee](i);
               t_diff_face_base(i, j) = t_diff_face_edge_base[ee](i, j);
               ++cc;
@@ -1392,13 +1393,13 @@ MoFEMErrorCode MoFEM::Hcurl_FaceFunctions_MBTET_ON_FACE(
               ++t_diff_face_base;
               ++t_diff_face_edge_base[ee];
               // cerr << oo << " " << ll << " " << cc << " " <<
-              // NBFACETRI_EDGE_HCURL(oo) << endl;
+              // NBFACETRI_AINSWORTH_EDGE_HCURL(oo) << endl;
             }
           }
         }
       }
       // check consistency
-      const int nb_base_fun_on_face = NBFACETRI_HCURL(p);
+      const int nb_base_fun_on_face = NBFACETRI_AINSWORTH_HCURL(p);
       if (cc != nb_base_fun_on_face) {
         SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                  "Wrong number of base functions %d != %d", cc,
@@ -1410,7 +1411,7 @@ MoFEMErrorCode MoFEM::Hcurl_FaceFunctions_MBTET_ON_FACE(
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode MoFEM::Hcurl_VolumeFunctions_MBTET(
+MoFEMErrorCode MoFEM::Hcurl_Ainsworth_VolumeFunctions_MBTET(
     int p, double *N, double *diffN, double *phi_v, double *diff_phi_v,
     int nb_integration_pts,
     PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s,
@@ -1419,29 +1420,29 @@ MoFEMErrorCode MoFEM::Hcurl_VolumeFunctions_MBTET(
 
   MoFEMFunctionBeginHot;
 
-  VectorDouble base_face_inetrior_functions(3 * NBVOLUMETET_FACE_HCURL(p) *
-                                            nb_integration_pts);
-  VectorDouble diff_base_face_inetrior_functions(9 * NBVOLUMETET_FACE_HCURL(p) *
-                                                 nb_integration_pts);
+  VectorDouble base_face_inetrior_functions(
+      3 * NBVOLUMETET_AINSWORTH_FACE_HCURL(p) * nb_integration_pts);
+  VectorDouble diff_base_face_inetrior_functions(
+      9 * NBVOLUMETET_AINSWORTH_FACE_HCURL(p) * nb_integration_pts);
   // base_face_inetrior_functions.clear();
   // diff_base_face_inetrior_functions.clear();
   double *phi_v_f = &*base_face_inetrior_functions.data().begin();
   double *diff_phi_v_f = &*diff_base_face_inetrior_functions.data().begin();
   int faces_nodes[] = {0, 1, 3, 1, 2, 3, 0, 2, 3, 0, 1, 2};
-  ierr = Hcurl_FaceInteriorFunctions_MBTET(faces_nodes, p, N, diffN, phi_v_f,
-                                           diff_phi_v_f, nb_integration_pts,
-                                           base_polynomials);
+  ierr = Hcurl_Ainsworth_FaceInteriorFunctions_MBTET(
+      faces_nodes, p, N, diffN, phi_v_f, diff_phi_v_f, nb_integration_pts,
+      base_polynomials);
   CHKERRG(ierr);
 
-  VectorDouble base_interior_functions(3 * NBVOLUMETET_TET_HCURL(p) *
+  VectorDouble base_interior_functions(3 * NBVOLUMETET_AINSOWRTH_TET_HCURL(p) *
                                        nb_integration_pts);
-  VectorDouble diff_base_interior_functions(9 * NBVOLUMETET_TET_HCURL(p) *
-                                            nb_integration_pts);
+  VectorDouble diff_base_interior_functions(
+      9 * NBVOLUMETET_AINSOWRTH_TET_HCURL(p) * nb_integration_pts);
   // base_interior_functions.clear();
   // diff_base_interior_functions.clear();
   double *phi_v_v = &*base_interior_functions.data().begin();
   double *diff_phi_v_v = &*diff_base_interior_functions.data().begin();
-  ierr = Hcurl_VolumeInteriorFunctions_MBTET(
+  ierr = Hcurl_Ainsworth_VolumeInteriorFunctions_MBTET(
       p, N, diffN, phi_v_v, diff_phi_v_v, nb_integration_pts, base_polynomials);
   CHKERRG(ierr);
 
@@ -1461,7 +1462,7 @@ MoFEMErrorCode MoFEM::Hcurl_VolumeFunctions_MBTET(
       &diff_phi_v[4], &diff_phi_v[7], &diff_phi_v[2], &diff_phi_v[5],
       &diff_phi_v[8], 9);
 
-  if (NBVOLUMETET_TET_HCURL(p) > 0) {
+  if (NBVOLUMETET_AINSOWRTH_TET_HCURL(p) > 0) {
     FTensor::Tensor1<double *, 3> t_volume_interior(&phi_v_v[0], &phi_v_v[1],
                                                     &phi_v_v[2], 3);
     FTensor::Tensor2<double *, 3, 3> t_diff_volume_interior(
@@ -1471,8 +1472,8 @@ MoFEMErrorCode MoFEM::Hcurl_VolumeFunctions_MBTET(
     for (int ii = 0; ii != nb_integration_pts; ii++) {
       int cc = 0;
       for (int oo = 0; oo <= p; oo++) {
-        for (int ll = NBVOLUMETET_FACE_HCURL(oo - 1);
-             ll != NBVOLUMETET_FACE_HCURL(oo); ll++) {
+        for (int ll = NBVOLUMETET_AINSWORTH_FACE_HCURL(oo - 1);
+             ll != NBVOLUMETET_AINSWORTH_FACE_HCURL(oo); ll++) {
           t_phi_v(i) = t_face_interior(i);
           ++t_phi_v;
           ++t_face_interior;
@@ -1481,8 +1482,8 @@ MoFEMErrorCode MoFEM::Hcurl_VolumeFunctions_MBTET(
           ++t_diff_phi_v;
           ++t_diff_face_interior;
         }
-        for (int ll = NBVOLUMETET_TET_HCURL(oo - 1);
-             ll != NBVOLUMETET_TET_HCURL(oo); ll++) {
+        for (int ll = NBVOLUMETET_AINSOWRTH_TET_HCURL(oo - 1);
+             ll != NBVOLUMETET_AINSOWRTH_TET_HCURL(oo); ll++) {
           t_phi_v(i) = t_volume_interior(i);
           ++t_phi_v;
           ++t_volume_interior;
@@ -1504,8 +1505,8 @@ MoFEMErrorCode MoFEM::Hcurl_VolumeFunctions_MBTET(
     for (int ii = 0; ii != nb_integration_pts; ii++) {
       int cc = 0;
       for (int oo = 0; oo <= p; oo++) {
-        for (int ll = NBVOLUMETET_FACE_HCURL(oo - 1);
-             ll != NBVOLUMETET_FACE_HCURL(oo); ll++) {
+        for (int ll = NBVOLUMETET_AINSWORTH_FACE_HCURL(oo - 1);
+             ll != NBVOLUMETET_AINSWORTH_FACE_HCURL(oo); ll++) {
           t_phi_v(i) = t_face_interior(i);
           ++t_phi_v;
           ++t_face_interior;
@@ -1536,7 +1537,7 @@ MoFEMErrorCode MoFEM::Hcurl_VolumeFunctions_MBTET(
 using namespace MoFEM;
 using namespace boost::numeric;
 
-MoFEMErrorCode VTK_Hcurl_MBTET(const string file_name) {
+MoFEMErrorCode VTK_Ainsworth_Hcurl_MBTET(const string file_name) {
   MoFEMFunctionBeginHot;
 
   ErrorCode rval;
@@ -1549,11 +1550,11 @@ MoFEMErrorCode VTK_Hcurl_MBTET(const string file_name) {
   EntityHandle nodes[4];
   for (int nn = 0; nn < 4; nn++) {
     rval = moab_ref.create_vertex(&base_coords[3 * nn], nodes[nn]);
-    CHKERRQ_MOAB(rval);
+    CHKERRG(rval);
   }
   EntityHandle tet;
   rval = moab_ref.create_element(MBTET, nodes, 4, tet);
-  CHKERRQ_MOAB(rval);
+  CHKERRG(rval);
 
   MoFEM::Core m_core_ref(moab_ref, PETSC_COMM_SELF, -2);
   MoFEM::Interface &m_field_ref = m_core_ref;
@@ -1596,21 +1597,21 @@ MoFEMErrorCode VTK_Hcurl_MBTET(const string file_name) {
   if (1) {
 
     // Range edges;
-    // rval = moab_ref.get_adjacencies(tets,1,true,edges); CHKERRQ_MOAB(rval);
+    // rval = moab_ref.get_adjacencies(tets,1,true,edges); CHKERRG(rval);
     EntityHandle meshset;
     rval = moab_ref.create_meshset(MESHSET_SET | MESHSET_TRACK_OWNER, meshset);
-    CHKERRQ_MOAB(rval);
+    CHKERRG(rval);
     rval = moab_ref.add_entities(meshset, tets);
-    CHKERRQ_MOAB(rval);
+    CHKERRG(rval);
     rval = moab_ref.convert_entities(meshset, true, false, false);
-    CHKERRQ_MOAB(rval);
+    CHKERRG(rval);
     rval = moab_ref.delete_entities(&meshset, 1);
-    CHKERRQ_MOAB(rval);
+    CHKERRG(rval);
   }
 
   Range elem_nodes;
   rval = moab_ref.get_connectivity(tets, elem_nodes, false);
-  CHKERRQ_MOAB(rval);
+  CHKERRG(rval);
 
   const int nb_gauss_pts = elem_nodes.size();
   MatrixDouble gauss_pts(nb_gauss_pts, 4);
@@ -1618,7 +1619,7 @@ MoFEMErrorCode VTK_Hcurl_MBTET(const string file_name) {
   Range::iterator nit = elem_nodes.begin();
   for (int gg = 0; nit != elem_nodes.end(); nit++, gg++) {
     rval = moab_ref.get_coords(&*nit, 1, &gauss_pts(gg, 0));
-    CHKERRQ_MOAB(rval);
+    CHKERRG(rval);
   }
   gauss_pts = trans(gauss_pts);
 
@@ -1639,8 +1640,9 @@ MoFEMErrorCode VTK_Hcurl_MBTET(const string file_name) {
   int faces_order[] = {order, order, order, order};
   int faces_nodes[] = {0, 1, 3, 1, 2, 3, 0, 2, 3, 0, 1, 2};
 
-  // cout << "NBEDGE_HCURL " <<  NBEDGE_HCURL(order) << endl;
-  // MatrixDouble base_edge_functions(6,3*nb_gauss_pts*NBEDGE_HCURL(order));
+  // cout << "NBEDGE_AINSWORTH_HCURL " <<  NBEDGE_AINSWORTH_HCURL(order) <<
+  // endl; MatrixDouble
+  // base_edge_functions(6,3*nb_gauss_pts*NBEDGE_AINSWORTH_HCURL(order));
   // double* edge_n[] = {
   //   &base_edge_functions(0,0),
   //   &base_edge_functions(1,0),
@@ -1651,8 +1653,8 @@ MoFEMErrorCode VTK_Hcurl_MBTET(const string file_name) {
   // };
   //
   // MatrixDouble
-  // diff_base_edge_functions(6,9*nb_gauss_pts*NBEDGE_HCURL(order)); double*
-  // diff_edge_n[] = {
+  // diff_base_edge_functions(6,9*nb_gauss_pts*NBEDGE_AINSWORTH_HCURL(order));
+  // double* diff_edge_n[] = {
   //   &diff_base_edge_functions(0,0),
   //   &diff_base_edge_functions(1,0),
   //   &diff_base_edge_functions(2,0),
@@ -1661,7 +1663,7 @@ MoFEMErrorCode VTK_Hcurl_MBTET(const string file_name) {
   //   &diff_base_edge_functions(5,0)
   // };
   //
-  // ierr = Hcurl_EdgeBaseFunctions_MBTET(
+  // ierr = Hcurl_Ainsworth_EdgeBaseFunctions_MBTET(
   //   edge_sense,
   //   edge_order,
   //   &*shape_fun.data().begin(),
@@ -1674,57 +1676,58 @@ MoFEMErrorCode VTK_Hcurl_MBTET(const string file_name) {
   //
   //
   // for(int  ee = 0;ee!=6;ee++) {
-  //   for(int ll = 0;ll!=NBEDGE_HCURL(order);ll++) {
+  //   for(int ll = 0;ll!=NBEDGE_AINSWORTH_HCURL(order);ll++) {
   //     std::ostringstream ss;
   //     ss << "curl_edge_" << ee << "_" << ll;
   //     Tag th;
   //     rval = moab_ref.tag_get_handle(
   //       ss.str().c_str(),3,MB_TYPE_DOUBLE,th,MB_TAG_CREAT|MB_TAG_SPARSE,def_val
-  //     ); CHKERRQ_MOAB(rval);
+  //     ); CHKERRG(rval);
   //     std::ostringstream ss_grad;
   //     ss_grad << "grad_curl_edge_" << ee << "_" << ll;
   //     Tag th_grad;
   //     rval = moab_ref.tag_get_handle(
   //       ss_grad.str().c_str(),9,MB_TYPE_DOUBLE,th_grad,MB_TAG_CREAT|MB_TAG_SPARSE,def_val
-  //     ); CHKERRQ_MOAB(rval);
+  //     ); CHKERRG(rval);
   //
   //     int gg = 0;
   //     for(Range::iterator nit =
   //     elem_nodes.begin();nit!=elem_nodes.end();nit++,gg++) {
   //       rval = moab_ref.tag_set_data(
-  //         th,&*nit,1,&(edge_n[ee][gg*3*NBEDGE_HCURL(order)+ll*3])
-  //       ); CHKERRQ_MOAB(rval);
-  //       int sh = gg*9*NBEDGE_HCURL(order)+ll*9;
+  //         th,&*nit,1,&(edge_n[ee][gg*3*NBEDGE_AINSWORTH_HCURL(order)+ll*3])
+  //       ); CHKERRG(rval);
+  //       int sh = gg*9*NBEDGE_AINSWORTH_HCURL(order)+ll*9;
   //       double grad[9] = {
   //         diff_edge_n[ee][sh+0],diff_edge_n[ee][sh+3],diff_edge_n[ee][sh+6],
   //         diff_edge_n[ee][sh+1],diff_edge_n[ee][sh+4],diff_edge_n[ee][sh+7],
   //         diff_edge_n[ee][sh+2],diff_edge_n[ee][sh+5],diff_edge_n[ee][sh+8]
   //       };
   //       rval = moab_ref.tag_set_data(th_grad,&*nit,1,grad);
-  //       CHKERRQ_MOAB(rval);
+  //       CHKERRG(rval);
   //     }
   //   }
   // }
 
-  // cout << "NBFACETRI_EDGE_HCURL(order) " << NBFACETRI_EDGE_HCURL(order) <<
-  // endl; MatrixDouble base_face_edge_functions(
-  //   4,3*3*NBFACETRI_EDGE_HCURL(order)*nb_gauss_pts
+  // cout << "NBFACETRI_AINSWORTH_EDGE_HCURL(order) " <<
+  // NBFACETRI_AINSWORTH_EDGE_HCURL(order) << endl; MatrixDouble
+  // base_face_edge_functions(
+  //   4,3*3*NBFACETRI_AINSWORTH_EDGE_HCURL(order)*nb_gauss_pts
   // );
   // MatrixDouble diff_base_face_edge_functions(
-  //   4,3*9*NBFACETRI_EDGE_HCURL(order)*nb_gauss_pts
+  //   4,3*9*NBFACETRI_AINSWORTH_EDGE_HCURL(order)*nb_gauss_pts
   // );
   // double *phi_f_e[4][3];
   // double *diff_phi_f_e[4][3];
   // for(int ff = 0;ff!=4;ff++) {
   //   for(int ee = 0;ee!=3;ee++) {
   //     phi_f_e[ff][ee] =
-  //     &base_face_edge_functions(ff,ee*3*NBFACETRI_EDGE_HCURL(order)*nb_gauss_pts);
+  //     &base_face_edge_functions(ff,ee*3*NBFACETRI_AINSWORTH_EDGE_HCURL(order)*nb_gauss_pts);
   //     diff_phi_f_e[ff][ee] =
-  //     &diff_base_face_edge_functions(ff,ee*9*NBFACETRI_EDGE_HCURL(order)*nb_gauss_pts);
+  //     &diff_base_face_edge_functions(ff,ee*9*NBFACETRI_AINSWORTH_EDGE_HCURL(order)*nb_gauss_pts);
   //   }
   // }
   //
-  // ierr = Hcurl_EdgeBasedFaceFunctions_MBTET(
+  // ierr = Hcurl_Ainsworth_EdgeBasedFaceFunctions_MBTET(
   //   faces_nodes,
   //   faces_order,
   //   &*shape_fun.data().begin(),
@@ -1737,53 +1740,54 @@ MoFEMErrorCode VTK_Hcurl_MBTET(const string file_name) {
   //
   // for(int ff = 0;ff!=4;ff++) {
   //   for(int  ee = 0;ee!=3;ee++) {
-  //     for(int ll = 0;ll!=NBFACETRI_EDGE_HCURL(order);ll++) {
+  //     for(int ll = 0;ll!=NBFACETRI_AINSWORTH_EDGE_HCURL(order);ll++) {
   //       std::ostringstream ss;
   //       ss << "curl_face_edge_" << ff << "_" << ee << "_" << ll;
   //       Tag th;
   //       rval = moab_ref.tag_get_handle(
   //         ss.str().c_str(),3,MB_TYPE_DOUBLE,th,MB_TAG_CREAT|MB_TAG_SPARSE,def_val
-  //       ); CHKERRQ_MOAB(rval);
+  //       ); CHKERRG(rval);
   //
   //       std::ostringstream ss_grad;
   //       ss_grad << "grad_curl_face_edge_" << ff << "_" << ee << "_" << ll;
   //       Tag th_grad;
   //       rval = moab_ref.tag_get_handle(
   //         ss_grad.str().c_str(),9,MB_TYPE_DOUBLE,th_grad,MB_TAG_CREAT|MB_TAG_SPARSE,def_val
-  //       ); CHKERRQ_MOAB(rval);
+  //       ); CHKERRG(rval);
   //
   //       int gg = 0;
   //       for(Range::iterator nit =
   //       elem_nodes.begin();nit!=elem_nodes.end();nit++,gg++) {
   //
   //         int idx =
-  //         3*NBFACETRI_EDGE_HCURL(order)*gg+ll*3;
+  //         3*NBFACETRI_AINSWORTH_EDGE_HCURL(order)*gg+ll*3;
   //         if(idx >= base_face_edge_functions.size2()) {
   //           cerr << ff << " " << ee << " " << ll << " " << gg << endl;
   //         }
   //
   //         rval = moab_ref.tag_set_data(th,&*nit,1,&(phi_f_e[ff][ee][idx]));
-  //         CHKERRQ_MOAB(rval);
+  //         CHKERRG(rval);
   //
-  //         int sh = gg*9*NBFACETRI_EDGE_HCURL(order)+ll*9;
+  //         int sh = gg*9*NBFACETRI_AINSWORTH_EDGE_HCURL(order)+ll*9;
   //         double grad[9] = {
   //           diff_phi_f_e[ff][ee][sh+0],diff_phi_f_e[ff][ee][sh+3],diff_phi_f_e[ff][ee][sh+6],
   //           diff_phi_f_e[ff][ee][sh+1],diff_phi_f_e[ff][ee][sh+4],diff_phi_f_e[ff][ee][sh+7],
   //           diff_phi_f_e[ff][ee][sh+2],diff_phi_f_e[ff][ee][sh+5],diff_phi_f_e[ff][ee][sh+8]
   //         };
   //         rval = moab_ref.tag_set_data(th_grad,&*nit,1,grad);
-  //         CHKERRQ_MOAB(rval);
+  //         CHKERRG(rval);
   //
   //       }
   //     }
   //   }
   // }
   //
-  cout << "NBFACETRI_FACE_HCURL " << NBFACETRI_FACE_HCURL(order) << endl;
-  MatrixDouble base_face_bubble_functions(4, 3 * NBFACETRI_FACE_HCURL(order) *
-                                                 nb_gauss_pts);
+  cout << "NBFACETRI_AINSWORTH_FACE_HCURL "
+       << NBFACETRI_AINSWORTH_FACE_HCURL(order) << endl;
+  MatrixDouble base_face_bubble_functions(
+      4, 3 * NBFACETRI_AINSWORTH_FACE_HCURL(order) * nb_gauss_pts);
   MatrixDouble diff_base_face_bubble_functions(
-      4, 9 * NBFACETRI_FACE_HCURL(order) * nb_gauss_pts);
+      4, 9 * NBFACETRI_AINSWORTH_FACE_HCURL(order) * nb_gauss_pts);
   double *phi_f[4];
   double *diff_phi_f[4];
   for (int ff = 0; ff != 4; ff++) {
@@ -1791,53 +1795,53 @@ MoFEMErrorCode VTK_Hcurl_MBTET(const string file_name) {
     diff_phi_f[ff] = &diff_base_face_bubble_functions(ff, 0);
   }
 
-  ierr = Hcurl_BubbleFaceFunctions_MBTET(
+  ierr = Hcurl_Ainsworth_BubbleFaceFunctions_MBTET(
       faces_nodes, faces_order, &*shape_fun.data().begin(), diff_shape_fun,
       phi_f, diff_phi_f, nb_gauss_pts, Legendre_polynomials);
   CHKERRG(ierr);
 
   for (int ff = 0; ff != 4; ff++) {
-    for (int ll = 0; ll != NBFACETRI_FACE_HCURL(order); ll++) {
+    for (int ll = 0; ll != NBFACETRI_AINSWORTH_FACE_HCURL(order); ll++) {
       std::ostringstream ss;
       ss << "curl_face_bubble_" << ff << "_" << ll;
       Tag th;
       rval = moab_ref.tag_get_handle(ss.str().c_str(), 3, MB_TYPE_DOUBLE, th,
                                      MB_TAG_CREAT | MB_TAG_SPARSE, def_val);
-      CHKERRQ_MOAB(rval);
+      CHKERRG(rval);
       std::ostringstream grad_ss;
       grad_ss << "grad_curl_face_bubble_" << ff << "_" << ll;
       Tag th_grad;
       rval = moab_ref.tag_get_handle(grad_ss.str().c_str(), 9, MB_TYPE_DOUBLE,
                                      th_grad, MB_TAG_CREAT | MB_TAG_SPARSE,
                                      def_val);
-      CHKERRQ_MOAB(rval);
+      CHKERRG(rval);
 
       int gg = 0;
       for (Range::iterator nit = elem_nodes.begin(); nit != elem_nodes.end();
            nit++, gg++) {
-        int idx = 3 * NBFACETRI_FACE_HCURL(order) * gg + ll * 3;
+        int idx = 3 * NBFACETRI_AINSWORTH_FACE_HCURL(order) * gg + ll * 3;
         rval = moab_ref.tag_set_data(th, &*nit, 1, &(phi_f[ff][idx]));
-        CHKERRQ_MOAB(rval);
-        int sh = gg * 9 * NBFACETRI_FACE_HCURL(order) + ll * 9;
+        CHKERRG(rval);
+        int sh = gg * 9 * NBFACETRI_AINSWORTH_FACE_HCURL(order) + ll * 9;
         double grad[9] = {diff_phi_f[ff][sh + 0], diff_phi_f[ff][sh + 3],
                           diff_phi_f[ff][sh + 6], diff_phi_f[ff][sh + 1],
                           diff_phi_f[ff][sh + 4], diff_phi_f[ff][sh + 7],
                           diff_phi_f[ff][sh + 2], diff_phi_f[ff][sh + 5],
                           diff_phi_f[ff][sh + 8]};
         rval = moab_ref.tag_set_data(th_grad, &*nit, 1, grad);
-        CHKERRQ_MOAB(rval);
+        CHKERRG(rval);
       }
     }
   }
 
-  // cout << "NBVOLUMETET_FACE_HCURL " << NBVOLUMETET_FACE_HCURL(order) << endl;
+  // cout << "NBVOLUMETET_AINSWORTH_FACE_HCURL " <<
+  // NBVOLUMETET_AINSWORTH_FACE_HCURL(order) << endl; VectorDouble
+  // base_face_inetrior_functions(3*NBVOLUMETET_AINSWORTH_FACE_HCURL(order)*nb_gauss_pts);
   // VectorDouble
-  // base_face_inetrior_functions(3*NBVOLUMETET_FACE_HCURL(order)*nb_gauss_pts);
-  // VectorDouble
-  // diff_base_face_inetrior_functions(9*NBVOLUMETET_FACE_HCURL(order)*nb_gauss_pts);
+  // diff_base_face_inetrior_functions(9*NBVOLUMETET_AINSWORTH_FACE_HCURL(order)*nb_gauss_pts);
   // double *phi_v_f = &base_face_inetrior_functions[0];
   // double *diff_phi_v_f = &diff_base_face_inetrior_functions[0];
-  // ierr = Hcurl_FaceInteriorFunctions_MBTET(
+  // ierr = Hcurl_Ainsworth_FaceInteriorFunctions_MBTET(
   //   faces_nodes,
   //   order,
   //   &*shape_fun.data().begin(),
@@ -1847,46 +1851,46 @@ MoFEMErrorCode VTK_Hcurl_MBTET(const string file_name) {
   //   nb_gauss_pts,
   //   Legendre_polynomials
   // ); CHKERRG(ierr);
-  // for(int ll = 0;ll!=NBVOLUMETET_FACE_HCURL(order);ll++) {
+  // for(int ll = 0;ll!=NBVOLUMETET_AINSWORTH_FACE_HCURL(order);ll++) {
   //
   //   std::ostringstream ss;
   //   ss << "curl_face_interior_" << ll;
   //   Tag th;
   //   rval = moab_ref.tag_get_handle(
   //     ss.str().c_str(),3,MB_TYPE_DOUBLE,th,MB_TAG_CREAT|MB_TAG_SPARSE,def_val
-  //   ); CHKERRQ_MOAB(rval);
+  //   ); CHKERRG(rval);
   //
   //   std::ostringstream ss_grad;
   //   ss_grad << "grad_curl_face_interior_" << ll;
   //   Tag th_grad;
   //   rval = moab_ref.tag_get_handle(
   //     ss_grad.str().c_str(),9,MB_TYPE_DOUBLE,th_grad,MB_TAG_CREAT|MB_TAG_SPARSE,def_val
-  //   ); CHKERRQ_MOAB(rval);
+  //   ); CHKERRG(rval);
   //
   //
   //   int gg = 0;
   //   for(Range::iterator nit =
   //   elem_nodes.begin();nit!=elem_nodes.end();nit++,gg++) {
-  //     int idx = 3*NBVOLUMETET_FACE_HCURL(order)*gg+ll*3;
+  //     int idx = 3*NBVOLUMETET_AINSWORTH_FACE_HCURL(order)*gg+ll*3;
   //     rval = moab_ref.tag_set_data(th,&*nit,1,&(phi_v_f[idx]));
-  //     CHKERRQ_MOAB(rval); int sh = gg*9*NBVOLUMETET_FACE_HCURL(order)+ll*9;
-  //     double grad[9] = {
+  //     CHKERRG(rval); int sh =
+  //     gg*9*NBVOLUMETET_AINSWORTH_FACE_HCURL(order)+ll*9; double grad[9] = {
   //       diff_phi_v_f[sh+0],diff_phi_v_f[sh+3],diff_phi_v_f[sh+6],
   //       diff_phi_v_f[sh+1],diff_phi_v_f[sh+4],diff_phi_v_f[sh+7],
   //       diff_phi_v_f[sh+2],diff_phi_v_f[sh+5],diff_phi_v_f[sh+8]
   //     };
-  //     rval = moab_ref.tag_set_data(th_grad,&*nit,1,grad); CHKERRQ_MOAB(rval);
+  //     rval = moab_ref.tag_set_data(th_grad,&*nit,1,grad); CHKERRG(rval);
   //   }
   // }
 
-  // cout << "NBVOLUMETET_TET_HCURL " << NBVOLUMETET_TET_HCURL(order) << endl;
+  // cout << "NBVOLUMETET_AINSOWRTH_TET_HCURL " <<
+  // NBVOLUMETET_AINSOWRTH_TET_HCURL(order) << endl; VectorDouble
+  // base_interior_functions(3*NBVOLUMETET_AINSOWRTH_TET_HCURL(order)*nb_gauss_pts);
   // VectorDouble
-  // base_interior_functions(3*NBVOLUMETET_TET_HCURL(order)*nb_gauss_pts);
-  // VectorDouble
-  // diff_base_interior_functions(9*NBVOLUMETET_TET_HCURL(order)*nb_gauss_pts);
+  // diff_base_interior_functions(9*NBVOLUMETET_AINSOWRTH_TET_HCURL(order)*nb_gauss_pts);
   // double *phi_v = &base_interior_functions[0];
   // double *diff_phi_v = &diff_base_interior_functions[0];
-  // ierr = Hcurl_VolumeInteriorFunctions_MBTET(
+  // ierr = Hcurl_Ainsworth_VolumeInteriorFunctions_MBTET(
   //   order,
   //   &*shape_fun.data().begin(),
   //   diff_shape_fun,
@@ -1895,49 +1899,49 @@ MoFEMErrorCode VTK_Hcurl_MBTET(const string file_name) {
   //   nb_gauss_pts,
   //   Legendre_polynomials
   // ); CHKERRG(ierr);
-  // for(int ll = 0;ll!=NBVOLUMETET_TET_HCURL(order);ll++) {
+  // for(int ll = 0;ll!=NBVOLUMETET_AINSOWRTH_TET_HCURL(order);ll++) {
   //
   //   std::ostringstream ss;
   //   ss << "curl_interior_" << ll;
   //   Tag th;
   //   rval = moab_ref.tag_get_handle(
   //     ss.str().c_str(),3,MB_TYPE_DOUBLE,th,MB_TAG_CREAT|MB_TAG_SPARSE,def_val
-  //   ); CHKERRQ_MOAB(rval);
+  //   ); CHKERRG(rval);
   //
   //   std::ostringstream ss_gard;
   //   ss_gard << "grad_curl_interior_" << ll;
   //   Tag th_grad;
   //   rval = moab_ref.tag_get_handle(
   //     ss_gard.str().c_str(),9,MB_TYPE_DOUBLE,th_grad,MB_TAG_CREAT|MB_TAG_SPARSE,def_val
-  //   ); CHKERRQ_MOAB(rval);
+  //   ); CHKERRG(rval);
   //
   //   int gg = 0;
   //   for(Range::iterator nit =
   //   elem_nodes.begin();nit!=elem_nodes.end();nit++,gg++) {
-  //     int idx = 3*NBVOLUMETET_TET_HCURL(order)*gg+ll*3;
+  //     int idx = 3*NBVOLUMETET_AINSOWRTH_TET_HCURL(order)*gg+ll*3;
   //     rval = moab_ref.tag_set_data(th,&*nit,1,&(phi_v[idx]));
-  //     CHKERRQ_MOAB(rval); int sh = gg*9*NBVOLUMETET_TET_HCURL(order)+ll*9;
-  //     double grad[9] = {
+  //     CHKERRG(rval); int sh =
+  //     gg*9*NBVOLUMETET_AINSOWRTH_TET_HCURL(order)+ll*9; double grad[9] = {
   //       diff_phi_v[sh+0],diff_phi_v[sh+3],diff_phi_v[sh+6],
   //       diff_phi_v[sh+1],diff_phi_v[sh+4],diff_phi_v[sh+7],
   //       diff_phi_v[sh+2],diff_phi_v[sh+5],diff_phi_v[sh+8]
   //     };
-  //     rval = moab_ref.tag_set_data(th_grad,&*nit,1,grad); CHKERRQ_MOAB(rval);
+  //     rval = moab_ref.tag_set_data(th_grad,&*nit,1,grad); CHKERRG(rval);
   //   }
   // }
 
-  // cout << "NBFACETRI_HCURL(order) " << NBFACETRI_HCURL(order) << endl;
-  // MatrixDouble base_face_functions(
-  //   4,3*NBFACETRI_HCURL(order)*nb_gauss_pts
+  // cout << "NBFACETRI_AINSWORTH_HCURL(order) " <<
+  // NBFACETRI_AINSWORTH_HCURL(order) << endl; MatrixDouble base_face_functions(
+  //   4,3*NBFACETRI_AINSWORTH_HCURL(order)*nb_gauss_pts
   // );
   // MatrixDouble diff_base_face_functions(
-  //   4,9*NBFACETRI_HCURL(order)*nb_gauss_pts
+  //   4,9*NBFACETRI_AINSWORTH_HCURL(order)*nb_gauss_pts
   // );
   // for(int ff=0;ff!=4;ff++) {
   //   phi_f[ff] = &base_face_functions(ff,0);
   //   diff_phi_f[ff] = &diff_base_face_functions(ff,0);
   // }
-  // ierr =  Hcurl_FaceFunctions_MBTET(
+  // ierr =  Hcurl_Ainsworth_FaceFunctions_MBTET(
   //   faces_nodes,
   //   faces_order,
   //   &*shape_fun.data().begin(),
@@ -1948,31 +1952,31 @@ MoFEMErrorCode VTK_Hcurl_MBTET(const string file_name) {
   //   Legendre_polynomials
   // ); CHKERRG(ierr);
   // for(int ff = 0;ff!=4;ff++) {
-  //   for(int ll = 0;ll!=NBFACETRI_HCURL(order);ll++) {
+  //   for(int ll = 0;ll!=NBFACETRI_AINSWORTH_HCURL(order);ll++) {
   //     std::ostringstream ss;
   //     ss << "curl_face_" << ff << "_" << ll;
   //     Tag th;
   //     rval = moab_ref.tag_get_handle(
   //       ss.str().c_str(),3,MB_TYPE_DOUBLE,th,MB_TAG_CREAT|MB_TAG_SPARSE,def_val
-  //     ); CHKERRQ_MOAB(rval);
+  //     ); CHKERRG(rval);
   //
   //     int gg = 0;
   //     for(Range::iterator nit =
   //     elem_nodes.begin();nit!=elem_nodes.end();nit++,gg++) {
-  //       int idx = 3*NBFACETRI_HCURL   (order)*gg+ll*3;
+  //       int idx = 3*NBFACETRI_AINSWORTH_HCURL   (order)*gg+ll*3;
   //       rval = moab_ref.tag_set_data(th,&*nit,1,&(phi_f[ff][idx]));
-  //       CHKERRQ_MOAB(rval);
+  //       CHKERRG(rval);
   //     }
   //   }
   // }
   //
-  // cout << "NBVOLUMETET_TET_HCURL(order) " << NBVOLUMETET_HCURL(order) <<
-  // endl; VectorDouble
+  // cout << "NBVOLUMETET_AINSOWRTH_TET_HCURL(order) " <<
+  // NBVOLUMETET_HCURL(order) << endl; VectorDouble
   // base_volume_functions(3*NBVOLUMETET_HCURL(order)*nb_gauss_pts);
   // VectorDouble
   // diff_base_volume_functions(9*NBVOLUMETET_HCURL(order)*nb_gauss_pts); phi_v
   // = &base_volume_functions[0]; diff_phi_v = &diff_base_volume_functions[0];
-  // ierr = MoFEM::Hcurl_VolumeFunctions_MBTET(
+  // ierr = MoFEM::Hcurl_Ainsworth_VolumeFunctions_MBTET(
   //   order,
   //   &*shape_fun.data().begin(),
   //   diff_shape_fun,
@@ -1987,24 +1991,24 @@ MoFEMErrorCode VTK_Hcurl_MBTET(const string file_name) {
   //   Tag th;
   //   rval = moab_ref.tag_get_handle(
   //     ss.str().c_str(),3,MB_TYPE_DOUBLE,th,MB_TAG_CREAT|MB_TAG_SPARSE,def_val
-  //   ); CHKERRQ_MOAB(rval);
+  //   ); CHKERRG(rval);
   //
   //   int gg = 0;
   //   for(Range::iterator nit =
   //   elem_nodes.begin();nit!=elem_nodes.end();nit++,gg++) {
   //     int idx = 3*NBVOLUMETET_HCURL(order)*gg+ll*3;
   //     rval = moab_ref.tag_set_data(th,&*nit,1,&(phi_v[idx]));
-  //     CHKERRQ_MOAB(rval);
+  //     CHKERRG(rval);
   //   }
   // }
 
   EntityHandle meshset;
   rval = moab_ref.create_meshset(MESHSET_SET | MESHSET_TRACK_OWNER, meshset);
-  CHKERRQ_MOAB(rval);
+  CHKERRG(rval);
   rval = moab_ref.add_entities(meshset, tets);
-  CHKERRQ_MOAB(rval);
+  CHKERRG(rval);
   rval = moab_ref.write_file(file_name.c_str(), "VTK", "", &meshset, 1);
-  CHKERRQ_MOAB(rval);
+  CHKERRG(rval);
 
   MoFEMFunctionReturnHot(0);
 }
@@ -2013,12 +2017,14 @@ static char help[] = "...\n\n";
 
 int main(int argc, char *argv[]) {
 
-  PetscInitialize(&argc, &argv, (char *)0, help);
+  MoFEM::Core::Initialize(&argc, &argv, (char *)0, help);
 
-  ierr = VTK_Hcurl_MBTET("out_curl_vtk_base_on_tet.vtk");
-  CHKERRG(ierr);
+  try {
+    CHKERR VTK_Ainsworth_Hcurl_MBTET("out_curl_vtk_base_on_tet.vtk");
+  }
+  CATCH_ERRORS;
 
-  PetscFinalize();
+  MoFEM::Core::Finalize();
 
   return 0;
 }

@@ -305,8 +305,8 @@ MoFEMErrorCode TetPolynomialBase::getValueHdivAinsworthBase(
   N_volume_face.resize(4,false);
   diffN_volume_face.resize(4,false);
   for(int ff = 0;ff<4;ff++) {
-    N_volume_face[ff].resize(nb_gauss_pts,3*NBVOLUMETET_AINSOWRTH_FACE_HDIV(volume_order),false);
-    diffN_volume_face[ff].resize(nb_gauss_pts,9*NBVOLUMETET_AINSOWRTH_FACE_HDIV(volume_order),false);
+    N_volume_face[ff].resize(nb_gauss_pts,3*NBVOLUMETET_AINSWORTH_FACE_HDIV(volume_order),false);
+    diffN_volume_face[ff].resize(nb_gauss_pts,9*NBVOLUMETET_AINSWORTH_FACE_HDIV(volume_order),false);
     phi_v_f[ff] = &*(N_volume_face[ff].data().begin());
     diff_phi_v_f[ff] = &*(diffN_volume_face[ff].data().begin());
   }
@@ -467,7 +467,7 @@ MoFEMErrorCode TetPolynomialBase::getValueHdivAinsworthBase(
     t_base_v_f.reserve(4);
     std::vector<FTensor::Tensor2<double*,3,3> > t_diff_base_v_f;
     t_diff_base_v_f.reserve(4);
-    if(NBVOLUMETET_AINSOWRTH_FACE_HDIV(volume_order)>0) {
+    if(NBVOLUMETET_AINSWORTH_FACE_HDIV(volume_order)>0) {
       for(int ff = 0;ff!=4;ff++) {
         base_ptr = phi_v_f[ff];
         diff_base_ptr = diff_phi_v_f[ff];
@@ -513,7 +513,7 @@ MoFEMErrorCode TetPolynomialBase::getValueHdivAinsworthBase(
             ++t_diff_base_v_e[ee];
           }
         }
-        for(int dd = NBVOLUMETET_AINSOWRTH_FACE_HDIV(oo);dd<NBVOLUMETET_AINSOWRTH_FACE_HDIV(oo+1);dd++) {
+        for(int dd = NBVOLUMETET_AINSWORTH_FACE_HDIV(oo);dd<NBVOLUMETET_AINSWORTH_FACE_HDIV(oo+1);dd++) {
           for(int ff = 0;ff<4;ff++) {
             t_base(i) = t_base_v_f[ff](i);
             ++t_base;
@@ -668,13 +668,13 @@ MoFEMErrorCode TetPolynomialBase::getValueHCurl(
       }
       sense[ee] = data.dataOnEntities[MBEDGE][ee].getSense();
       order[ee] = data.dataOnEntities[MBEDGE][ee].getDataOrder();
-      int nb_dofs = NBEDGE_HCURL(data.dataOnEntities[MBEDGE][ee].getDataOrder());
+      int nb_dofs = NBEDGE_AINSWORTH_HCURL(data.dataOnEntities[MBEDGE][ee].getDataOrder());
       data.dataOnEntities[MBEDGE][ee].getN(base).resize(nb_gauss_pts,3*nb_dofs,false);
       data.dataOnEntities[MBEDGE][ee].getDiffN(base).resize(nb_gauss_pts,9*nb_dofs,false);
       hcurl_edge_n[ee] = &*data.dataOnEntities[MBEDGE][ee].getN(base).data().begin();
       diff_hcurl_edge_n[ee] = &*data.dataOnEntities[MBEDGE][ee].getDiffN(base).data().begin();
     }
-    ierr = Hcurl_EdgeBaseFunctions_MBTET(
+    ierr = Hcurl_Ainsworth_EdgeBaseFunctions_MBTET(
       sense,
       order,
       &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
@@ -704,7 +704,7 @@ MoFEMErrorCode TetPolynomialBase::getValueHCurl(
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
       }
       order[ff] = data.dataOnEntities[MBTRI][ff].getDataOrder();
-      int nb_dofs = NBFACETRI_HCURL(order[ff] );
+      int nb_dofs = NBFACETRI_AINSWORTH_HCURL(order[ff] );
       data.dataOnEntities[MBTRI][ff].getN(base).resize(nb_gauss_pts,3*nb_dofs,false);
       data.dataOnEntities[MBTRI][ff].getDiffN(base).resize(nb_gauss_pts,9*nb_dofs,false);
       hcurl_base_n[ff] = &*data.dataOnEntities[MBTRI][ff].getN(base).data().begin();
@@ -716,7 +716,7 @@ MoFEMErrorCode TetPolynomialBase::getValueHCurl(
     if(data.facesNodes.size2() != 3) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
     }
-    ierr = Hcurl_FaceFunctions_MBTET(
+    ierr = Hcurl_Ainsworth_FaceFunctions_MBTET(
       &*data.facesNodes.data().begin(),
       order,
       &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
@@ -741,7 +741,7 @@ MoFEMErrorCode TetPolynomialBase::getValueHCurl(
     data.dataOnEntities[MBTET][0].getN(base).resize(nb_gauss_pts,3*nb_vol_dofs,false);
     data.dataOnEntities[MBTET][0].getDiffN(base).resize(nb_gauss_pts,9*nb_vol_dofs,false);
     // cerr << data.dataOnEntities[MBVERTEX][0].getDiffN(base) << endl;
-    ierr = Hcurl_VolumeFunctions_MBTET(
+    ierr = Hcurl_Ainsworth_VolumeFunctions_MBTET(
       data.dataOnEntities[MBTET][0].getDataOrder(),
       &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
       &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
