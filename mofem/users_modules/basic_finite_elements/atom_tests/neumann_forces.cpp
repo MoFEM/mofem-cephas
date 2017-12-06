@@ -176,7 +176,7 @@ int main(int argc, char *argv[]) {
       fe_name << "PRESSURE_FE_" << it->getMeshsetId();
       string fe_name_str = fe_name.str();
       neumann_forces.insert(fe_name_str,new NeummanForcesSurface(m_field));
-      neumann_forces.at(fe_name_str).addPreassure("DISPLACEMENT",F,it->getMeshsetId()); CHKERRG(ierr);
+      neumann_forces.at(fe_name_str).addPressure("DISPLACEMENT",F,it->getMeshsetId()); CHKERRG(ierr);
       PressureCubitBcData data;
       ierr = it->getBcDataStructure(data); CHKERRG(ierr);
       my_split << *it << std::endl;

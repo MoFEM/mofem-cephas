@@ -216,8 +216,8 @@ MoFEMErrorCode NeummanForcesSurface::OpNeumannForceAnalytical::doWork(
 }
 
 
-NeummanForcesSurface::OpNeumannPreassure::OpNeumannPreassure(
-  const std::string field_name, Vec _F,bCPreassure &data,boost::ptr_vector<MethodForForceScaling> &methods_op,bool ho_geometry
+NeummanForcesSurface::OpNeumannPressure::OpNeumannPressure(
+  const std::string field_name, Vec _F,bCPressure &data,boost::ptr_vector<MethodForForceScaling> &methods_op,bool ho_geometry
 ):
 FaceElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
 F(_F),
@@ -225,7 +225,7 @@ dAta(data),
 methodsOp(methods_op),
 hoGeometry(ho_geometry) {}
 
-MoFEMErrorCode NeummanForcesSurface::OpNeumannPreassure::doWork(
+MoFEMErrorCode NeummanForcesSurface::OpNeumannPressure::doWork(
   int side,EntityType type,DataForcesAndSourcesCore::EntData &data
 ) {
 
@@ -299,7 +299,7 @@ MoFEMErrorCode NeummanForcesSurface::OpNeumannPreassure::doWork(
 
 NeummanForcesSurface::OpNeumannFlux::OpNeumannFlux(
   const std::string field_name,Vec _F,
-  bCPreassure &data,boost::ptr_vector<MethodForForceScaling> &methods_op,
+  bCPressure &data,boost::ptr_vector<MethodForForceScaling> &methods_op,
   bool ho_geometry
 ):
 FaceElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
@@ -421,7 +421,7 @@ MoFEMErrorCode NeummanForcesSurface::addForce(const std::string field_name,Vec F
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode NeummanForcesSurface::addPreassure(const std::string field_name,Vec F,int ms_id,bool ho_geometry,bool block_set) {
+MoFEMErrorCode NeummanForcesSurface::addPressure(const std::string field_name,Vec F,int ms_id,bool ho_geometry,bool block_set) {
 
   const CubitMeshSets *cubit_meshset_ptr;
   MeshsetsManager *mmanager_ptr;
@@ -439,24 +439,28 @@ MoFEMErrorCode NeummanForcesSurface::addPreassure(const std::string field_name,V
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Pressure not given");
     }
     const string name = "Pressure";
-    strncpy(mapPreassure[ms_id].data.data.name,name.c_str(),name.size()>8?8:name.size());
-    mapPreassure[ms_id].data.data.flag1 = 0;
-    mapPreassure[ms_id].data.data.flag2 = 1;
-    mapPreassure[ms_id].data.data.value1 = pressure[0];
-    mapPreassure[ms_id].data.data.zero = 0;
+    strncpy(mapPressure[ms_id].data.data.name,name.c_str(),name.size()>8?8:name.size());
+    mapPressure[ms_id].data.data.flag1 = 0;
+    mapPressure[ms_id].data.data.flag2 = 1;
+    mapPressure[ms_id].data.data.value1 = pressure[0];
+    mapPressure[ms_id].data.data.zero = 0;
     // std::cerr << "TETSING ONLY:" << std::endl;
-    // std::cerr << mapPreassure[ms_id].data << std::endl;
-    rval = mField.get_moab().get_entities_by_type(cubit_meshset_ptr->meshset,MBTRI,mapPreassure[ms_id].tRis,true); CHKERRG(rval);
-    fe.getOpPtrVector().push_back(new OpNeumannPreassure(field_name,F,mapPreassure[ms_id],methodsOp,ho_geometry));
+    // std::cerr << mapPressure[ms_id].data << std::endl;
+    rval = mField.get_moab().get_entities_by_type(cubit_meshset_ptr->meshset,MBTRI,mapPressure[ms_id].tRis,true); CHKERRG(rval);
+    fe.getOpPtrVector().push_back(new OpNeumannPressure(field_name,F,mapPressure[ms_id],methodsOp,ho_geometry));
   } else {
     ierr = mmanager_ptr->getCubitMeshsetPtr(ms_id,SIDESET,&cubit_meshset_ptr); CHKERRG(ierr);
-    ierr = cubit_meshset_ptr->getBcDataStructure(mapPreassure[ms_id].data); CHKERRG(ierr);
-    rval = mField.get_moab().get_entities_by_type(cubit_meshset_ptr->meshset,MBTRI,mapPreassure[ms_id].tRis,true); CHKERRG(rval);
-    fe.getOpPtrVector().push_back(new OpNeumannPreassure(field_name,F,mapPreassure[ms_id],methodsOp,ho_geometry));
+    ierr = cubit_meshset_ptr->getBcDataStructure(mapPressure[ms_id].data); CHKERRG(ierr);
+    rval = mField.get_moab().get_entities_by_type(cubit_meshset_ptr->meshset,MBTRI,mapPressure[ms_id].tRis,true); CHKERRG(rval);
+    fe.getOpPtrVector().push_back(new OpNeumannPressure(field_name,F,mapPressure[ms_id],methodsOp,ho_geometry));
   }
   MoFEMFunctionReturnHot(0);
 }
 
+DEPRECATED MoFEMErrorCode NeummanForcesSurface::addPreassure(const std::string field_name,Vec F,int ms_id,bool ho_geometry,bool block_set) {
+  NeummanForcesSurface::addPreassure(field_name,F,ms_id,ho_geometry,block_set); 
+
+}
 MoFEMErrorCode NeummanForcesSurface::addFlux(const std::string field_name,Vec F,int ms_id,bool ho_geometry) {
 
 
@@ -465,8 +469,8 @@ MoFEMErrorCode NeummanForcesSurface::addFlux(const std::string field_name,Vec F,
   MoFEMFunctionBeginHot;
   ierr = mField.getInterface(mmanager_ptr); CHKERRG(ierr);
   ierr = mmanager_ptr->getCubitMeshsetPtr(ms_id,SIDESET,&cubit_meshset_ptr); CHKERRG(ierr);
-  ierr = cubit_meshset_ptr->getBcDataStructure(mapPreassure[ms_id].data); CHKERRG(ierr);
-  rval = mField.get_moab().get_entities_by_type(cubit_meshset_ptr->meshset,MBTRI,mapPreassure[ms_id].tRis,true); CHKERRG(rval);
-  fe.getOpPtrVector().push_back(new OpNeumannFlux(field_name,F,mapPreassure[ms_id],methodsOp,ho_geometry));
+  ierr = cubit_meshset_ptr->getBcDataStructure(mapPressure[ms_id].data); CHKERRG(ierr);
+  rval = mField.get_moab().get_entities_by_type(cubit_meshset_ptr->meshset,MBTRI,mapPressure[ms_id].tRis,true); CHKERRG(rval);
+  fe.getOpPtrVector().push_back(new OpNeumannFlux(field_name,F,mapPressure[ms_id],methodsOp,ho_geometry));
   MoFEMFunctionReturnHot(0);
 }

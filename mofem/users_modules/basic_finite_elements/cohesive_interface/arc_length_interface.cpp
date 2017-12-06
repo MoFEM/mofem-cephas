@@ -584,7 +584,7 @@ int main(int argc, char *argv[]) {
     fe_name_str = "PRESSURE_FE";
     neumann_forces.insert(fe_name_str,new NeummanForcesSurface(m_field));
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,SIDESET|PRESSURESET,it)) {
-      ierr = neumann_forces.at(fe_name_str).addPreassure("DISPLACEMENT",arc_ctx->F_lambda,it->getMeshsetId()); CHKERRG(ierr);
+      ierr = neumann_forces.at(fe_name_str).addPressure("DISPLACEMENT",arc_ctx->F_lambda,it->getMeshsetId()); CHKERRG(ierr);
     }
     //add nodal forces
     boost::ptr_map<std::string,NodalForce> nodal_forces;

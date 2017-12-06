@@ -357,7 +357,7 @@ int main(int argc, char *argv[]) {
     ierr = neumann.addForce(it->getMeshsetId()); CHKERRG(ierr);
   }
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,SIDESET|PRESSURESET,it)) {
-    ierr = neumann.addPreassure(it->getMeshsetId()); CHKERRG(ierr);
+    ierr = neumann.addPressure(it->getMeshsetId()); CHKERRG(ierr);
   }
   DirichletSpatialPositionsBc my_Dirichlet_bc(m_field,"SPATIAL_POSITION",Aij,D,F);
 
