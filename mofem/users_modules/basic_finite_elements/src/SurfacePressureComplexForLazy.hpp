@@ -131,18 +131,19 @@ struct NeummanForcesSurfaceComplexForLazy {
     MoFEMErrorCode operator()();
 
     MoFEMErrorCode addForce(int ms_id);
-    MoFEMErrorCode addPreassure(int ms_id);
+    MoFEMErrorCode addPressure(int ms_id);
+    DEPRECATED MoFEMErrorCode addPreassure(int ms_id);
 
     struct bCForce {
       ForceCubitBcData data;
       Range tRis;
     };
     map<int,bCForce> mapForce;
-    struct bCPreassure {
+    struct bCPressure {
       PressureCubitBcData data;
       Range tRis;
     };
-    map<int,bCPreassure> mapPreassure;
+    map<int,bCPressure> mapPressure;
     MoFEMErrorCode reBaseToFaceLoocalCoordSystem(MatrixDouble &t_glob_nodal);
 
     boost::ptr_vector<MethodForForceScaling> methodsOp;

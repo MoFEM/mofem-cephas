@@ -6,42 +6,42 @@ A l2, h1, h-div and h-curl spaces are implemented.
 */
 
 /* This file is part of MoFEM.
-* MoFEM is free software: you can redistribute it and/or modify it under
-* the terms of the GNU Lesser General Public License as published by the
-* Free Software Foundation, either version 3 of the License, or (at your
-* option) any later version.
-*
-* MoFEM is distributed in the hope that it will be useful, but WITHOUT
-* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
-* License for more details.
-*
-* You should have received a copy of the GNU Lesser General Public
-* License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
+ * MoFEM is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU Lesser General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or (at your
+ * option) any later version.
+ *
+ * MoFEM is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
+ * License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#include <version.h>
+#include <Includes.hpp>
 #include <config.h>
 #include <definitions.h>
-#include <Includes.hpp>
+#include <version.h>
 
+#include <Common.hpp>
+#include <UnknownInterface.hpp>
 #include <base_functions.h>
 #include <fem_tools.h>
 #include <h1_hdiv_hcurl_l2.h>
-#include <Common.hpp>
-#include <UnknownInterface.hpp>
 using namespace MoFEM;
 
-#include <FTensor.hpp>
-#include <TagMultiIndices.hpp>
-#include <CoordSysMultiIndices.hpp>
-#include <FieldMultiIndices.hpp>
-#include <EntsMultiIndices.hpp>
-#include <DofsMultiIndices.hpp>
-#include <FEMultiIndices.hpp>
-#include <DataStructures.hpp>
-#include <ProblemsMultiIndices.hpp>
 #include <AdjacencyMultiIndices.hpp>
+#include <CoordSysMultiIndices.hpp>
+#include <DataStructures.hpp>
+#include <DofsMultiIndices.hpp>
+#include <EntsMultiIndices.hpp>
+#include <FEMultiIndices.hpp>
+#include <FTensor.hpp>
+#include <FieldMultiIndices.hpp>
 #include <LoopMethods.hpp>
+#include <ProblemsMultiIndices.hpp>
+#include <TagMultiIndices.hpp>
 
 #include <BaseFunction.hpp>
 #include <EntPolynomialBaseCtx.hpp>
@@ -50,19 +50,20 @@ using namespace MoFEM;
 #include <Hcurl.hpp>
 #include <Hdiv.hpp>
 
-MoFEMErrorCode TetPolynomialBase::query_interface(
-  const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface
-) const {
+MoFEMErrorCode
+TetPolynomialBase::query_interface(const MOFEMuuid &uuid,
+                                   MoFEM::UnknownInterface **iface) const {
 
   MoFEMFunctionBeginHot;
   *iface = NULL;
-  if(uuid == IDD_TET_BASE_FUNCTION) {
-    *iface = const_cast<TetPolynomialBase*>(this);
+  if (uuid == IDD_TET_BASE_FUNCTION) {
+    *iface = const_cast<TetPolynomialBase *>(this);
     MoFEMFunctionReturnHot(0);
   } else {
-    SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"wrong interference");
+    SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY, "wrong interference");
   }
-  ierr = BaseFunction::query_interface(uuid,iface); CHKERRG(ierr);
+  ierr = BaseFunction::query_interface(uuid, iface);
+  CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -73,210 +74,218 @@ MoFEMErrorCode TetPolynomialBase::getValueH1(MatrixDouble &pts) {
 
   MoFEMFunctionBeginHot;
 
-  DataForcesAndSourcesCore& data = cTx->dAta;
+  DataForcesAndSourcesCore &data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
-  PetscErrorCode (*base_polynomials)(
-    int p,double s,double *diff_s,double *L,double *diffL,const int dim
-  ) = cTx->basePolynomialsType0;
+  PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s, double *L,
+                                     double *diffL, const int dim) =
+      cTx->basePolynomialsType0;
 
   int nb_gauss_pts = pts.size2();
 
-  int sense[6],order[6];
-  if(data.spacesOnEntities[MBEDGE].test(H1)) {
-    //edges
-    if(data.dataOnEntities[MBEDGE].size()!=6) {
-      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
+  int sense[6], order[6];
+  if (data.spacesOnEntities[MBEDGE].test(H1)) {
+    // edges
+    if (data.dataOnEntities[MBEDGE].size() != 6) {
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
     }
-    double *h1_edge_n[6],*diff_h1_egde_n[6];
-    for(int ee = 0;ee<6;ee++) {
-      if(data.dataOnEntities[MBEDGE][ee].getSense() == 0) {
-        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
+    double *h1_edge_n[6], *diff_h1_egde_n[6];
+    for (int ee = 0; ee < 6; ee++) {
+      if (data.dataOnEntities[MBEDGE][ee].getSense() == 0) {
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "data inconsistency");
       }
       sense[ee] = data.dataOnEntities[MBEDGE][ee].getSense();
       order[ee] = data.dataOnEntities[MBEDGE][ee].getDataOrder();
       int nb_dofs = NBEDGE_H1(data.dataOnEntities[MBEDGE][ee].getDataOrder());
-      data.dataOnEntities[MBEDGE][ee].getN(base).resize(nb_gauss_pts,nb_dofs,false);
-      data.dataOnEntities[MBEDGE][ee].getDiffN(base).resize(nb_gauss_pts,3*nb_dofs,false);
-      h1_edge_n[ee] = &*data.dataOnEntities[MBEDGE][ee].getN(base).data().begin();
-      diff_h1_egde_n[ee] = &*data.dataOnEntities[MBEDGE][ee].getDiffN(base).data().begin();
+      data.dataOnEntities[MBEDGE][ee].getN(base).resize(nb_gauss_pts, nb_dofs,
+                                                        false);
+      data.dataOnEntities[MBEDGE][ee].getDiffN(base).resize(nb_gauss_pts,
+                                                            3 * nb_dofs, false);
+      h1_edge_n[ee] =
+          &*data.dataOnEntities[MBEDGE][ee].getN(base).data().begin();
+      diff_h1_egde_n[ee] =
+          &*data.dataOnEntities[MBEDGE][ee].getDiffN(base).data().begin();
     }
     ierr = H1_EdgeShapeFunctions_MBTET(
-      sense,order,
-      &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
-      &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
-      h1_edge_n,diff_h1_egde_n,nb_gauss_pts,base_polynomials
-    ); CHKERRG(ierr);
+        sense, order,
+        &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
+        &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
+        h1_edge_n, diff_h1_egde_n, nb_gauss_pts, base_polynomials);
+    CHKERRG(ierr);
   } else {
-    for(int ee = 0;ee<6;ee++) {
-      data.dataOnEntities[MBEDGE][ee].getN(base).resize(0,0,false);
-      data.dataOnEntities[MBEDGE][ee].getDiffN(base).resize(0,0,false);
+    for (int ee = 0; ee < 6; ee++) {
+      data.dataOnEntities[MBEDGE][ee].getN(base).resize(0, 0, false);
+      data.dataOnEntities[MBEDGE][ee].getDiffN(base).resize(0, 0, false);
     }
   }
 
-  if(data.spacesOnEntities[MBTRI].test(H1)) {
-    //faces
-    if(data.dataOnEntities[MBTRI].size()!=4) {
-      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
+  if (data.spacesOnEntities[MBTRI].test(H1)) {
+    // faces
+    if (data.dataOnEntities[MBTRI].size() != 4) {
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
     }
-    double *h1_face_n[4],*diff_h1_face_n[4];
-    for(int ff = 0;ff<4;ff++) {
-      if(data.dataOnEntities[MBTRI][ff].getSense() == 0) {
-        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
+    double *h1_face_n[4], *diff_h1_face_n[4];
+    for (int ff = 0; ff < 4; ff++) {
+      if (data.dataOnEntities[MBTRI][ff].getSense() == 0) {
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "data inconsistency");
       }
       int nb_dofs = NBFACETRI_H1(data.dataOnEntities[MBTRI][ff].getDataOrder());
       order[ff] = data.dataOnEntities[MBTRI][ff].getDataOrder();
-      data.dataOnEntities[MBTRI][ff].getN(base).resize(nb_gauss_pts,nb_dofs,false);
-      data.dataOnEntities[MBTRI][ff].getDiffN(base).resize(nb_gauss_pts,3*nb_dofs,false);
-      h1_face_n[ff] = &*data.dataOnEntities[MBTRI][ff].getN(base).data().begin();
-      diff_h1_face_n[ff] = &*data.dataOnEntities[MBTRI][ff].getDiffN(base).data().begin();
+      data.dataOnEntities[MBTRI][ff].getN(base).resize(nb_gauss_pts, nb_dofs,
+                                                       false);
+      data.dataOnEntities[MBTRI][ff].getDiffN(base).resize(nb_gauss_pts,
+                                                           3 * nb_dofs, false);
+      h1_face_n[ff] =
+          &*data.dataOnEntities[MBTRI][ff].getN(base).data().begin();
+      diff_h1_face_n[ff] =
+          &*data.dataOnEntities[MBTRI][ff].getDiffN(base).data().begin();
     }
-    if(data.facesNodes.size1() != 4) {
-      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
+    if (data.facesNodes.size1() != 4) {
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
     }
-    if(data.facesNodes.size2() != 3) {
-      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
+    if (data.facesNodes.size2() != 3) {
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
     }
     ierr = H1_FaceShapeFunctions_MBTET(
-      &*data.facesNodes.data().begin(),
-      order,
-      &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
-      &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
-      h1_face_n,
-      diff_h1_face_n,
-      nb_gauss_pts,
-      base_polynomials
-    ); CHKERRG(ierr);
+        &*data.facesNodes.data().begin(), order,
+        &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
+        &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
+        h1_face_n, diff_h1_face_n, nb_gauss_pts, base_polynomials);
+    CHKERRG(ierr);
 
     // std::cerr << "Aaaaa2\n";
     // std::cerr << data.dataOnEntities[MBVERTEX][0].getN(base) << std::endl;
     // std::cerr << ApproximationBaseNames[base] << std::endl;
 
   } else {
-    for(int ff = 0;ff<4;ff++) {
-      data.dataOnEntities[MBTRI][ff].getN(base).resize(0,false);
-      data.dataOnEntities[MBTRI][ff].getDiffN(base).resize(0,0,false);
+    for (int ff = 0; ff < 4; ff++) {
+      data.dataOnEntities[MBTRI][ff].getN(base).resize(0, false);
+      data.dataOnEntities[MBTRI][ff].getDiffN(base).resize(0, 0, false);
     }
   }
 
-  if(data.spacesOnEntities[MBTET].test(H1)) {
-    //volume
+  if (data.spacesOnEntities[MBTET].test(H1)) {
+    // volume
     int order = data.dataOnEntities[MBTET][0].getDataOrder();
     int nb_vol_dofs = NBVOLUMETET_H1(order);
-    data.dataOnEntities[MBTET][0].getN(base).resize(nb_gauss_pts,nb_vol_dofs,false);
-    data.dataOnEntities[MBTET][0].getDiffN(base).resize(nb_gauss_pts,3*nb_vol_dofs,false);
+    data.dataOnEntities[MBTET][0].getN(base).resize(nb_gauss_pts, nb_vol_dofs,
+                                                    false);
+    data.dataOnEntities[MBTET][0].getDiffN(base).resize(nb_gauss_pts,
+                                                        3 * nb_vol_dofs, false);
     ierr = H1_VolumeShapeFunctions_MBTET(
+        data.dataOnEntities[MBTET][0].getDataOrder(),
+        &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
+        &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
+        &*data.dataOnEntities[MBTET][0].getN(base).data().begin(),
+        &*data.dataOnEntities[MBTET][0].getDiffN(base).data().begin(),
+        nb_gauss_pts, base_polynomials);
+    CHKERRG(ierr);
+  } else {
+    data.dataOnEntities[MBTET][0].getN(base).resize(0, 0, false);
+    data.dataOnEntities[MBTET][0].getDiffN(base).resize(0, 0, false);
+  }
+
+  MoFEMFunctionReturnHot(0);
+}
+
+MoFEMErrorCode TetPolynomialBase::getValueL2(MatrixDouble &pts) {
+
+  MoFEMFunctionBeginHot;
+
+  DataForcesAndSourcesCore &data = cTx->dAta;
+  const FieldApproximationBase base = cTx->bAse;
+  PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s, double *L,
+                                     double *diffL, const int dim) =
+      cTx->basePolynomialsType0;
+
+  int nb_gauss_pts = pts.size2();
+
+  data.dataOnEntities[MBTET][0].getN(base).resize(
+      nb_gauss_pts,
+      NBVOLUMETET_L2(data.dataOnEntities[MBTET][0].getDataOrder()), false);
+  data.dataOnEntities[MBTET][0].getDiffN(base).resize(
+      nb_gauss_pts,
+      3 * NBVOLUMETET_L2(data.dataOnEntities[MBTET][0].getDataOrder()), false);
+
+  ierr = L2_ShapeFunctions_MBTET(
       data.dataOnEntities[MBTET][0].getDataOrder(),
       &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
       &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
       &*data.dataOnEntities[MBTET][0].getN(base).data().begin(),
       &*data.dataOnEntities[MBTET][0].getDiffN(base).data().begin(),
-      nb_gauss_pts,
-      base_polynomials
-    ); CHKERRG(ierr);
-  } else {
-    data.dataOnEntities[MBTET][0].getN(base).resize(0,0,false);
-    data.dataOnEntities[MBTET][0].getDiffN(base).resize(0,0,false);
-  }
+      nb_gauss_pts, base_polynomials);
+  CHKERRG(ierr);
 
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode TetPolynomialBase::getValueL2(
-  MatrixDouble &pts
-) {
+MoFEMErrorCode TetPolynomialBase::getValueHdivAinsworthBase(MatrixDouble &pts) {
 
   MoFEMFunctionBeginHot;
 
-  DataForcesAndSourcesCore& data = cTx->dAta;
+  DataForcesAndSourcesCore &data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
-  PetscErrorCode (*base_polynomials)(
-    int p,double s,double *diff_s,double *L,double *diffL,const int dim
-  ) = cTx->basePolynomialsType0;
+  PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s, double *L,
+                                     double *diffL, const int dim) =
+      cTx->basePolynomialsType0;
 
   int nb_gauss_pts = pts.size2();
 
-  data.dataOnEntities[MBTET][0].getN(base).resize(
-    nb_gauss_pts,NBVOLUMETET_L2(data.dataOnEntities[MBTET][0].getDataOrder()),false
-  );
-  data.dataOnEntities[MBTET][0].getDiffN(base).resize(
-    nb_gauss_pts,3*NBVOLUMETET_L2(data.dataOnEntities[MBTET][0].getDataOrder()),false
-  );
-
-  ierr = L2_ShapeFunctions_MBTET(
-    data.dataOnEntities[MBTET][0].getDataOrder(),
-    &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
-    &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
-    &*data.dataOnEntities[MBTET][0].getN(base).data().begin(),
-    &*data.dataOnEntities[MBTET][0].getDiffN(base).data().begin(),
-    nb_gauss_pts,
-    base_polynomials
-  ); CHKERRG(ierr);
-
-  MoFEMFunctionReturnHot(0);
-}
-
-MoFEMErrorCode TetPolynomialBase::getValueHdivAinsworthBase(
-  MatrixDouble &pts
-) {
-
-  MoFEMFunctionBeginHot;
-
-  DataForcesAndSourcesCore& data = cTx->dAta;
-  const FieldApproximationBase base = cTx->bAse;
-  PetscErrorCode (*base_polynomials)(
-    int p,double s,double *diff_s,double *L,double *diffL,const int dim
-  ) = cTx->basePolynomialsType0;
-
-  int nb_gauss_pts = pts.size2();
-
-  //face shape functions
+  // face shape functions
 
   double *phi_f_e[4][3];
   double *phi_f[4];
   double *diff_phi_f_e[4][3];
   double *diff_phi_f[4];
 
-  N_face_edge.resize(4,3,false);
-  N_face_bubble.resize(4,false);
-  diffN_face_edge.resize(4,3,false);
-  diffN_face_bubble.resize(4,false);
+  N_face_edge.resize(4, 3, false);
+  N_face_bubble.resize(4, false);
+  diffN_face_edge.resize(4, 3, false);
+  diffN_face_bubble.resize(4, false);
 
   int faces_order[4];
-  for(int ff = 0;ff<4;ff++) {
-    if(data.dataOnEntities[MBTRI][ff].getSense() == 0) {
-      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
+  for (int ff = 0; ff < 4; ff++) {
+    if (data.dataOnEntities[MBTRI][ff].getSense() == 0) {
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
     }
     faces_order[ff] = data.dataOnEntities[MBTRI][ff].getDataOrder();
-    //three edges on face
-    for(int ee = 0;ee<3;ee++) {
-      N_face_edge(ff,ee).resize(nb_gauss_pts,3*NBFACETRI_AINSWORTH_EDGE_HDIV(faces_order[ff]),false);
-      diffN_face_edge(ff,ee).resize(nb_gauss_pts,9*NBFACETRI_AINSWORTH_EDGE_HDIV(faces_order[ff]),false);
-      phi_f_e[ff][ee] = &((N_face_edge(ff,ee))(0,0));
-      diff_phi_f_e[ff][ee] = &((diffN_face_edge(ff,ee))(0,0));
+    // three edges on face
+    for (int ee = 0; ee < 3; ee++) {
+      N_face_edge(ff, ee).resize(
+          nb_gauss_pts, 3 * NBFACETRI_AINSWORTH_EDGE_HDIV(faces_order[ff]),
+          false);
+      diffN_face_edge(ff, ee).resize(
+          nb_gauss_pts, 9 * NBFACETRI_AINSWORTH_EDGE_HDIV(faces_order[ff]),
+          false);
+      phi_f_e[ff][ee] = &((N_face_edge(ff, ee))(0, 0));
+      diff_phi_f_e[ff][ee] = &((diffN_face_edge(ff, ee))(0, 0));
     }
-    N_face_bubble[ff].resize(nb_gauss_pts,3*NBFACETRI_AINSWORTH_FACE_HDIV(faces_order[ff]),false);
-    diffN_face_bubble[ff].resize(nb_gauss_pts,9*NBFACETRI_AINSWORTH_FACE_HDIV(faces_order[ff]),false);
+    N_face_bubble[ff].resize(nb_gauss_pts,
+                             3 * NBFACETRI_AINSWORTH_FACE_HDIV(faces_order[ff]),
+                             false);
+    diffN_face_bubble[ff].resize(
+        nb_gauss_pts, 9 * NBFACETRI_AINSWORTH_FACE_HDIV(faces_order[ff]),
+        false);
     phi_f[ff] = &*(N_face_bubble[ff].data().begin());
     diff_phi_f[ff] = &*(diffN_face_bubble[ff].data().begin());
   }
 
   ierr = Hdiv_Ainsworth_EdgeFaceShapeFunctions_MBTET(
-    &data.facesNodes(0,0),faces_order,
-    &data.dataOnEntities[MBVERTEX][0].getN(base)(0,0),
-    &data.dataOnEntities[MBVERTEX][0].getDiffN(base)(0,0),
-    phi_f_e,diff_phi_f_e,nb_gauss_pts,
-    base_polynomials
-  ); CHKERRG(ierr);
+      &data.facesNodes(0, 0), faces_order,
+      &data.dataOnEntities[MBVERTEX][0].getN(base)(0, 0),
+      &data.dataOnEntities[MBVERTEX][0].getDiffN(base)(0, 0), phi_f_e,
+      diff_phi_f_e, nb_gauss_pts, base_polynomials);
+  CHKERRG(ierr);
 
   ierr = Hdiv_Ainsworth_FaceBubbleShapeFunctions(
-    &data.facesNodes(0,0),faces_order,
-    &data.dataOnEntities[MBVERTEX][0].getN(base)(0,0),
-    &data.dataOnEntities[MBVERTEX][0].getDiffN(base)(0,0),
-    phi_f,diff_phi_f,nb_gauss_pts,
-    base_polynomials
-  ); CHKERRG(ierr);
+      &data.facesNodes(0, 0), faces_order,
+      &data.dataOnEntities[MBVERTEX][0].getN(base)(0, 0),
+      &data.dataOnEntities[MBVERTEX][0].getDiffN(base)(0, 0), phi_f, diff_phi_f,
+      nb_gauss_pts, base_polynomials);
+  CHKERRG(ierr);
 
-  //volume shape functions
+  // volume shape functions
 
   double *phi_v_e[6];
   double *phi_v_f[4];
@@ -287,143 +296,159 @@ MoFEMErrorCode TetPolynomialBase::getValueHdivAinsworthBase(
 
   int volume_order = data.dataOnEntities[MBTET][0].getDataOrder();
 
-  N_volume_edge.resize(6,false);
-  diffN_volume_edge.resize(6,false);
-  for(int ee = 0;ee<6;ee++) {
-    N_volume_edge[ee].resize(nb_gauss_pts,3*NBVOLUMETET_AINSWORTH_EDGE_HDIV(volume_order),false);
-    diffN_volume_edge[ee].resize(nb_gauss_pts,9*NBVOLUMETET_AINSWORTH_EDGE_HDIV(volume_order),false);
+  N_volume_edge.resize(6, false);
+  diffN_volume_edge.resize(6, false);
+  for (int ee = 0; ee < 6; ee++) {
+    N_volume_edge[ee].resize(
+        nb_gauss_pts, 3 * NBVOLUMETET_AINSWORTH_EDGE_HDIV(volume_order), false);
+    diffN_volume_edge[ee].resize(
+        nb_gauss_pts, 9 * NBVOLUMETET_AINSWORTH_EDGE_HDIV(volume_order), false);
     phi_v_e[ee] = &*(N_volume_edge[ee].data().begin());
     diff_phi_v_e[ee] = &*(diffN_volume_edge[ee].data().begin());
   }
   ierr = Hdiv_Ainsworth_EdgeBasedVolumeShapeFunctions_MBTET(
-    volume_order,&data.dataOnEntities[MBVERTEX][0].getN(base)(0,0),
-    &data.dataOnEntities[MBVERTEX][0].getDiffN(base)(0,0),
-    phi_v_e,diff_phi_v_e,nb_gauss_pts,
-    base_polynomials
-  ); CHKERRG(ierr);
+      volume_order, &data.dataOnEntities[MBVERTEX][0].getN(base)(0, 0),
+      &data.dataOnEntities[MBVERTEX][0].getDiffN(base)(0, 0), phi_v_e,
+      diff_phi_v_e, nb_gauss_pts, base_polynomials);
+  CHKERRG(ierr);
 
-  N_volume_face.resize(4,false);
-  diffN_volume_face.resize(4,false);
-  for(int ff = 0;ff<4;ff++) {
-    N_volume_face[ff].resize(nb_gauss_pts,3*NBVOLUMETET_AINSOWRTH_FACE_HDIV(volume_order),false);
-    diffN_volume_face[ff].resize(nb_gauss_pts,9*NBVOLUMETET_AINSOWRTH_FACE_HDIV(volume_order),false);
+  N_volume_face.resize(4, false);
+  diffN_volume_face.resize(4, false);
+  for (int ff = 0; ff < 4; ff++) {
+    N_volume_face[ff].resize(
+        nb_gauss_pts, 3 * NBVOLUMETET_AINSWORTH_FACE_HDIV(volume_order), false);
+    diffN_volume_face[ff].resize(
+        nb_gauss_pts, 9 * NBVOLUMETET_AINSWORTH_FACE_HDIV(volume_order), false);
     phi_v_f[ff] = &*(N_volume_face[ff].data().begin());
     diff_phi_v_f[ff] = &*(diffN_volume_face[ff].data().begin());
   }
   ierr = Hdiv_Ainsworth_FaceBasedVolumeShapeFunctions_MBTET(
-    volume_order,&data.dataOnEntities[MBVERTEX][0].getN(base)(0,0),
-    &data.dataOnEntities[MBVERTEX][0].getDiffN(base)(0,0),
-    phi_v_f,diff_phi_v_f,nb_gauss_pts,
-    base_polynomials
-  ); CHKERRG(ierr);
+      volume_order, &data.dataOnEntities[MBVERTEX][0].getN(base)(0, 0),
+      &data.dataOnEntities[MBVERTEX][0].getDiffN(base)(0, 0), phi_v_f,
+      diff_phi_v_f, nb_gauss_pts, base_polynomials);
+  CHKERRG(ierr);
 
-  N_volume_bubble.resize(nb_gauss_pts,3*NBVOLUMETET_AINSWORTH_VOLUME_HDIV(volume_order),false);
-  diffN_volume_bubble.resize(nb_gauss_pts,9*NBVOLUMETET_AINSWORTH_VOLUME_HDIV(volume_order),false);
+  N_volume_bubble.resize(
+      nb_gauss_pts, 3 * NBVOLUMETET_AINSWORTH_VOLUME_HDIV(volume_order), false);
+  diffN_volume_bubble.resize(
+      nb_gauss_pts, 9 * NBVOLUMETET_AINSWORTH_VOLUME_HDIV(volume_order), false);
   phi_v = &*(N_volume_bubble.data().begin());
   diff_phi_v = &*(diffN_volume_bubble.data().begin());
   ierr = Hdiv_Ainsworth_VolumeBubbleShapeFunctions_MBTET(
-    volume_order,&data.dataOnEntities[MBVERTEX][0].getN(base)(0,0),
-    &data.dataOnEntities[MBVERTEX][0].getDiffN(base)(0,0),
-    phi_v,diff_phi_v,nb_gauss_pts,
-    base_polynomials
-  ); CHKERRG(ierr);
+      volume_order, &data.dataOnEntities[MBVERTEX][0].getN(base)(0, 0),
+      &data.dataOnEntities[MBVERTEX][0].getDiffN(base)(0, 0), phi_v, diff_phi_v,
+      nb_gauss_pts, base_polynomials);
+  CHKERRG(ierr);
 
   // Set shape functions into data structure Shape functions hast to be put
   // in arrays in order which guarantee hierarchical series of degrees of
   // freedom, i.e. in other words dofs form sub-entities has to be group
   // by order.
 
-  FTensor::Index<'i',3> i;
-  FTensor::Index<'j',3> j;
+  FTensor::Index<'i', 3> i;
+  FTensor::Index<'j', 3> j;
 
-  //faces
-  if(data.dataOnEntities[MBTRI].size()!=4) {
-    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
+  // faces
+  if (data.dataOnEntities[MBTRI].size() != 4) {
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
   }
-  for(int ff = 0;ff!=4;ff++) {
-    data.dataOnEntities[MBTRI][ff].getHdivN(base).resize(nb_gauss_pts,3*NBFACETRI_AINSWORTH_HDIV(faces_order[ff]),false);
-    data.dataOnEntities[MBTRI][ff].getDiffHdivN(base).resize(nb_gauss_pts,9*NBFACETRI_AINSWORTH_HDIV(faces_order[ff]),false);
-    if(NBFACETRI_AINSWORTH_HDIV(faces_order[ff])==0) continue;
+  for (int ff = 0; ff != 4; ff++) {
+    data.dataOnEntities[MBTRI][ff].getHdivN(base).resize(
+        nb_gauss_pts, 3 * NBFACETRI_AINSWORTH_HDIV(faces_order[ff]), false);
+    data.dataOnEntities[MBTRI][ff].getDiffHdivN(base).resize(
+        nb_gauss_pts, 9 * NBFACETRI_AINSWORTH_HDIV(faces_order[ff]), false);
+    if (NBFACETRI_AINSWORTH_HDIV(faces_order[ff]) == 0)
+      continue;
     // face
-    double *base_ptr = &*data.dataOnEntities[MBTRI][ff].getHdivN(base).data().begin();
-    FTensor::Tensor1<double*,3> t_base(base_ptr,&base_ptr[HDIV1],&base_ptr[HDIV2],3);
-    double *diff_base_ptr = &*data.dataOnEntities[MBTRI][ff].getDiffHdivN(base).data().begin();
-    FTensor::Tensor2<double*,3,3> t_diff_base(
-      &diff_base_ptr[HDIV0_0],&diff_base_ptr[HDIV0_1],&diff_base_ptr[HDIV0_2],
-      &diff_base_ptr[HDIV1_0],&diff_base_ptr[HDIV1_1],&diff_base_ptr[HDIV1_2],
-      &diff_base_ptr[HDIV2_0],&diff_base_ptr[HDIV2_1],&diff_base_ptr[HDIV2_2],9
-    );
+    double *base_ptr =
+        &*data.dataOnEntities[MBTRI][ff].getHdivN(base).data().begin();
+    FTensor::Tensor1<double *, 3> t_base(base_ptr, &base_ptr[HDIV1],
+                                         &base_ptr[HDIV2], 3);
+    double *diff_base_ptr =
+        &*data.dataOnEntities[MBTRI][ff].getDiffHdivN(base).data().begin();
+    FTensor::Tensor2<double *, 3, 3> t_diff_base(
+        &diff_base_ptr[HDIV0_0], &diff_base_ptr[HDIV0_1],
+        &diff_base_ptr[HDIV0_2], &diff_base_ptr[HDIV1_0],
+        &diff_base_ptr[HDIV1_1], &diff_base_ptr[HDIV1_2],
+        &diff_base_ptr[HDIV2_0], &diff_base_ptr[HDIV2_1],
+        &diff_base_ptr[HDIV2_2], 9);
     // face-face
-    boost::shared_ptr<FTensor::Tensor1<double*,3> > t_base_f;
-    boost::shared_ptr<FTensor::Tensor2<double*,3,3> > t_diff_base_f;
-    if(NBFACETRI_AINSWORTH_FACE_HDIV(faces_order[ff])>0) {
+    boost::shared_ptr<FTensor::Tensor1<double *, 3> > t_base_f;
+    boost::shared_ptr<FTensor::Tensor2<double *, 3, 3> > t_diff_base_f;
+    if (NBFACETRI_AINSWORTH_FACE_HDIV(faces_order[ff]) > 0) {
       base_ptr = phi_f[ff];
-      t_base_f = boost::shared_ptr<FTensor::Tensor1<double*,3> >(
-        new FTensor::Tensor1<double*,3>
-        (base_ptr,&base_ptr[HDIV1],&base_ptr[HDIV2],3)
-      );
+      t_base_f = boost::shared_ptr<FTensor::Tensor1<double *, 3> >(
+          new FTensor::Tensor1<double *, 3>(base_ptr, &base_ptr[HDIV1],
+                                            &base_ptr[HDIV2], 3));
       diff_base_ptr = diff_phi_f[ff];
-      t_diff_base_f = boost::shared_ptr<FTensor::Tensor2<double*,3,3> >(
-        new FTensor::Tensor2<double*,3,3>
-        (
-          &diff_base_ptr[HDIV0_0],&diff_base_ptr[HDIV0_1],&diff_base_ptr[HDIV0_2],
-          &diff_base_ptr[HDIV1_0],&diff_base_ptr[HDIV1_1],&diff_base_ptr[HDIV1_2],
-          &diff_base_ptr[HDIV2_0],&diff_base_ptr[HDIV2_1],&diff_base_ptr[HDIV2_2],9
-        )
-      );
+      t_diff_base_f = boost::shared_ptr<FTensor::Tensor2<double *, 3, 3> >(
+          new FTensor::Tensor2<double *, 3, 3>(
+              &diff_base_ptr[HDIV0_0], &diff_base_ptr[HDIV0_1],
+              &diff_base_ptr[HDIV0_2], &diff_base_ptr[HDIV1_0],
+              &diff_base_ptr[HDIV1_1], &diff_base_ptr[HDIV1_2],
+              &diff_base_ptr[HDIV2_0], &diff_base_ptr[HDIV2_1],
+              &diff_base_ptr[HDIV2_2], 9));
     }
     // edge-face
     base_ptr = phi_f_e[ff][0];
-    FTensor::Tensor1<double*,3> t_base_f_e0(base_ptr,&base_ptr[HDIV1],&base_ptr[HDIV2],3);
+    FTensor::Tensor1<double *, 3> t_base_f_e0(base_ptr, &base_ptr[HDIV1],
+                                              &base_ptr[HDIV2], 3);
     diff_base_ptr = diff_phi_f_e[ff][0];
-    FTensor::Tensor2<double*,3,3> t_diff_base_f_e0(
-      &diff_base_ptr[HDIV0_0],&diff_base_ptr[HDIV0_1],&diff_base_ptr[HDIV0_2],
-      &diff_base_ptr[HDIV1_0],&diff_base_ptr[HDIV1_1],&diff_base_ptr[HDIV1_2],
-      &diff_base_ptr[HDIV2_0],&diff_base_ptr[HDIV2_1],&diff_base_ptr[HDIV2_2],9
-    );
+    FTensor::Tensor2<double *, 3, 3> t_diff_base_f_e0(
+        &diff_base_ptr[HDIV0_0], &diff_base_ptr[HDIV0_1],
+        &diff_base_ptr[HDIV0_2], &diff_base_ptr[HDIV1_0],
+        &diff_base_ptr[HDIV1_1], &diff_base_ptr[HDIV1_2],
+        &diff_base_ptr[HDIV2_0], &diff_base_ptr[HDIV2_1],
+        &diff_base_ptr[HDIV2_2], 9);
     base_ptr = phi_f_e[ff][1];
-    FTensor::Tensor1<double*,3> t_base_f_e1(base_ptr,&base_ptr[HDIV1],&base_ptr[HDIV2],3);
+    FTensor::Tensor1<double *, 3> t_base_f_e1(base_ptr, &base_ptr[HDIV1],
+                                              &base_ptr[HDIV2], 3);
     diff_base_ptr = diff_phi_f_e[ff][1];
-    FTensor::Tensor2<double*,3,3> t_diff_base_f_e1(
-      &diff_base_ptr[HDIV0_0],&diff_base_ptr[HDIV0_1],&diff_base_ptr[HDIV0_2],
-      &diff_base_ptr[HDIV1_0],&diff_base_ptr[HDIV1_1],&diff_base_ptr[HDIV1_2],
-      &diff_base_ptr[HDIV2_0],&diff_base_ptr[HDIV2_1],&diff_base_ptr[HDIV2_2],9
-    );
+    FTensor::Tensor2<double *, 3, 3> t_diff_base_f_e1(
+        &diff_base_ptr[HDIV0_0], &diff_base_ptr[HDIV0_1],
+        &diff_base_ptr[HDIV0_2], &diff_base_ptr[HDIV1_0],
+        &diff_base_ptr[HDIV1_1], &diff_base_ptr[HDIV1_2],
+        &diff_base_ptr[HDIV2_0], &diff_base_ptr[HDIV2_1],
+        &diff_base_ptr[HDIV2_2], 9);
     base_ptr = phi_f_e[ff][2];
-    FTensor::Tensor1<double*,3> t_base_f_e2(base_ptr,&base_ptr[HDIV1],&base_ptr[HDIV2],3);
+    FTensor::Tensor1<double *, 3> t_base_f_e2(base_ptr, &base_ptr[HDIV1],
+                                              &base_ptr[HDIV2], 3);
     diff_base_ptr = diff_phi_f_e[ff][2];
-    FTensor::Tensor2<double*,3,3> t_diff_base_f_e2(
-      &diff_base_ptr[HDIV0_0],&diff_base_ptr[HDIV0_1],&diff_base_ptr[HDIV0_2],
-      &diff_base_ptr[HDIV1_0],&diff_base_ptr[HDIV1_1],&diff_base_ptr[HDIV1_2],
-      &diff_base_ptr[HDIV2_0],&diff_base_ptr[HDIV2_1],&diff_base_ptr[HDIV2_2],9
-    );
-    for(int gg = 0;gg!=nb_gauss_pts;gg++) {
-      for(int oo = 0;oo!=faces_order[ff];oo++) {
-        for(int dd = NBFACETRI_AINSWORTH_EDGE_HDIV(oo);dd!=NBFACETRI_AINSWORTH_EDGE_HDIV(oo+1);dd++) {
+    FTensor::Tensor2<double *, 3, 3> t_diff_base_f_e2(
+        &diff_base_ptr[HDIV0_0], &diff_base_ptr[HDIV0_1],
+        &diff_base_ptr[HDIV0_2], &diff_base_ptr[HDIV1_0],
+        &diff_base_ptr[HDIV1_1], &diff_base_ptr[HDIV1_2],
+        &diff_base_ptr[HDIV2_0], &diff_base_ptr[HDIV2_1],
+        &diff_base_ptr[HDIV2_2], 9);
+    for (int gg = 0; gg != nb_gauss_pts; gg++) {
+      for (int oo = 0; oo != faces_order[ff]; oo++) {
+        for (int dd = NBFACETRI_AINSWORTH_EDGE_HDIV(oo);
+             dd != NBFACETRI_AINSWORTH_EDGE_HDIV(oo + 1); dd++) {
           t_base(i) = t_base_f_e0(i);
           ++t_base;
           ++t_base_f_e0;
-          t_diff_base(i,j) = t_diff_base_f_e0(i,j);
+          t_diff_base(i, j) = t_diff_base_f_e0(i, j);
           ++t_diff_base;
           ++t_diff_base_f_e0;
           t_base(i) = t_base_f_e1(i);
           ++t_base;
           ++t_base_f_e1;
-          t_diff_base(i,j) = t_diff_base_f_e1(i,j);
+          t_diff_base(i, j) = t_diff_base_f_e1(i, j);
           ++t_diff_base;
           ++t_diff_base_f_e1;
           t_base(i) = t_base_f_e2(i);
           ++t_base;
           ++t_base_f_e2;
-          t_diff_base(i,j) = t_diff_base_f_e2(i,j);
+          t_diff_base(i, j) = t_diff_base_f_e2(i, j);
           ++t_diff_base;
           ++t_diff_base_f_e2;
         }
-        for(int dd = NBFACETRI_AINSWORTH_FACE_HDIV(oo);dd!=NBFACETRI_AINSWORTH_FACE_HDIV(oo+1);dd++) {
+        for (int dd = NBFACETRI_AINSWORTH_FACE_HDIV(oo);
+             dd != NBFACETRI_AINSWORTH_FACE_HDIV(oo + 1); dd++) {
           t_base(i) = (*t_base_f)(i);
           ++t_base;
           ++(*t_base_f);
-          t_diff_base(i,j) = (*t_diff_base_f)(i,j);
+          t_diff_base(i, j) = (*t_diff_base_f)(i, j);
           ++t_diff_base;
           ++(*t_diff_base_f);
         }
@@ -431,103 +456,106 @@ MoFEMErrorCode TetPolynomialBase::getValueHdivAinsworthBase(
     }
   }
 
-  //volume
-  data.dataOnEntities[MBTET][0].getHdivN(base).resize(nb_gauss_pts,3*NBVOLUMETET_AINSWORTH_HDIV(volume_order),false);
-  data.dataOnEntities[MBTET][0].getDiffHdivN(base).resize(nb_gauss_pts,9*NBVOLUMETET_AINSWORTH_HDIV(volume_order),false);
-  if(NBVOLUMETET_AINSWORTH_HDIV(volume_order)>0) {
-    double *base_ptr = &*data.dataOnEntities[MBTET][0].getHdivN(base).data().begin();
-    FTensor::Tensor1<double*,3> t_base(base_ptr,&base_ptr[HDIV1],&base_ptr[HDIV2],3);
-    double *diff_base_ptr = &*data.dataOnEntities[MBTET][0].getDiffHdivN(base).data().begin();
-    FTensor::Tensor2<double*,3,3> t_diff_base(
-      &diff_base_ptr[HDIV0_0],&diff_base_ptr[HDIV0_1],&diff_base_ptr[HDIV0_2],
-      &diff_base_ptr[HDIV1_0],&diff_base_ptr[HDIV1_1],&diff_base_ptr[HDIV1_2],
-      &diff_base_ptr[HDIV2_0],&diff_base_ptr[HDIV2_1],&diff_base_ptr[HDIV2_2],9
-    );
+  // volume
+  data.dataOnEntities[MBTET][0].getHdivN(base).resize(
+      nb_gauss_pts, 3 * NBVOLUMETET_AINSWORTH_HDIV(volume_order), false);
+  data.dataOnEntities[MBTET][0].getDiffHdivN(base).resize(
+      nb_gauss_pts, 9 * NBVOLUMETET_AINSWORTH_HDIV(volume_order), false);
+  if (NBVOLUMETET_AINSWORTH_HDIV(volume_order) > 0) {
+    double *base_ptr =
+        &*data.dataOnEntities[MBTET][0].getHdivN(base).data().begin();
+    FTensor::Tensor1<double *, 3> t_base(base_ptr, &base_ptr[HDIV1],
+                                         &base_ptr[HDIV2], 3);
+    double *diff_base_ptr =
+        &*data.dataOnEntities[MBTET][0].getDiffHdivN(base).data().begin();
+    FTensor::Tensor2<double *, 3, 3> t_diff_base(
+        &diff_base_ptr[HDIV0_0], &diff_base_ptr[HDIV0_1],
+        &diff_base_ptr[HDIV0_2], &diff_base_ptr[HDIV1_0],
+        &diff_base_ptr[HDIV1_1], &diff_base_ptr[HDIV1_2],
+        &diff_base_ptr[HDIV2_0], &diff_base_ptr[HDIV2_1],
+        &diff_base_ptr[HDIV2_2], 9);
     // edges
-    std::vector<FTensor::Tensor1<double*,3> > t_base_v_e;
+    std::vector<FTensor::Tensor1<double *, 3> > t_base_v_e;
     t_base_v_e.reserve(6);
-    std::vector<FTensor::Tensor2<double*,3,3> > t_diff_base_v_e;
+    std::vector<FTensor::Tensor2<double *, 3, 3> > t_diff_base_v_e;
     t_diff_base_v_e.reserve(6);
-    for(int ee = 0;ee!=6;ee++) {
+    for (int ee = 0; ee != 6; ee++) {
       base_ptr = phi_v_e[ee];
       diff_base_ptr = diff_phi_v_e[ee];
-      t_base_v_e.push_back(
-        FTensor::Tensor1<double*,3>(base_ptr,&base_ptr[HDIV1],&base_ptr[HDIV2],3)
-      );
-      t_diff_base_v_e.push_back(
-        FTensor::Tensor2<double*,3,3>(
-          &diff_base_ptr[HDIV0_0],&diff_base_ptr[HDIV0_1],&diff_base_ptr[HDIV0_2],
-          &diff_base_ptr[HDIV1_0],&diff_base_ptr[HDIV1_1],&diff_base_ptr[HDIV1_2],
-          &diff_base_ptr[HDIV2_0],&diff_base_ptr[HDIV2_1],&diff_base_ptr[HDIV2_2],9
-        )
-      );
+      t_base_v_e.push_back(FTensor::Tensor1<double *, 3>(
+          base_ptr, &base_ptr[HDIV1], &base_ptr[HDIV2], 3));
+      t_diff_base_v_e.push_back(FTensor::Tensor2<double *, 3, 3>(
+          &diff_base_ptr[HDIV0_0], &diff_base_ptr[HDIV0_1],
+          &diff_base_ptr[HDIV0_2], &diff_base_ptr[HDIV1_0],
+          &diff_base_ptr[HDIV1_1], &diff_base_ptr[HDIV1_2],
+          &diff_base_ptr[HDIV2_0], &diff_base_ptr[HDIV2_1],
+          &diff_base_ptr[HDIV2_2], 9));
     }
     // faces
-    std::vector<FTensor::Tensor1<double*,3> > t_base_v_f;
+    std::vector<FTensor::Tensor1<double *, 3> > t_base_v_f;
     t_base_v_f.reserve(4);
-    std::vector<FTensor::Tensor2<double*,3,3> > t_diff_base_v_f;
+    std::vector<FTensor::Tensor2<double *, 3, 3> > t_diff_base_v_f;
     t_diff_base_v_f.reserve(4);
-    if(NBVOLUMETET_AINSOWRTH_FACE_HDIV(volume_order)>0) {
-      for(int ff = 0;ff!=4;ff++) {
+    if (NBVOLUMETET_AINSWORTH_FACE_HDIV(volume_order) > 0) {
+      for (int ff = 0; ff != 4; ff++) {
         base_ptr = phi_v_f[ff];
         diff_base_ptr = diff_phi_v_f[ff];
-        t_base_v_f.push_back(
-          FTensor::Tensor1<double*,3>(base_ptr,&base_ptr[HDIV1],&base_ptr[HDIV2],3)
-        );
-        t_diff_base_v_f.push_back(
-          FTensor::Tensor2<double*,3,3>(
-            &diff_base_ptr[HDIV0_0],&diff_base_ptr[HDIV0_1],&diff_base_ptr[HDIV0_2],
-            &diff_base_ptr[HDIV1_0],&diff_base_ptr[HDIV1_1],&diff_base_ptr[HDIV1_2],
-            &diff_base_ptr[HDIV2_0],&diff_base_ptr[HDIV2_1],&diff_base_ptr[HDIV2_2],9
-          )
-        );
+        t_base_v_f.push_back(FTensor::Tensor1<double *, 3>(
+            base_ptr, &base_ptr[HDIV1], &base_ptr[HDIV2], 3));
+        t_diff_base_v_f.push_back(FTensor::Tensor2<double *, 3, 3>(
+            &diff_base_ptr[HDIV0_0], &diff_base_ptr[HDIV0_1],
+            &diff_base_ptr[HDIV0_2], &diff_base_ptr[HDIV1_0],
+            &diff_base_ptr[HDIV1_1], &diff_base_ptr[HDIV1_2],
+            &diff_base_ptr[HDIV2_0], &diff_base_ptr[HDIV2_1],
+            &diff_base_ptr[HDIV2_2], 9));
       }
     }
-    boost::shared_ptr<FTensor::Tensor1<double*,3> > t_base_v;
-    boost::shared_ptr<FTensor::Tensor2<double*,3,3> > t_diff_base_v;
-    if(NBVOLUMETET_AINSWORTH_VOLUME_HDIV(volume_order)>0) {
+    boost::shared_ptr<FTensor::Tensor1<double *, 3> > t_base_v;
+    boost::shared_ptr<FTensor::Tensor2<double *, 3, 3> > t_diff_base_v;
+    if (NBVOLUMETET_AINSWORTH_VOLUME_HDIV(volume_order) > 0) {
       base_ptr = phi_v;
-      t_base_v = boost::shared_ptr<FTensor::Tensor1<double*,3> >(
-        new FTensor::Tensor1<double*,3>
-        (base_ptr,&base_ptr[HDIV1],&base_ptr[HDIV2],3)
-      );
+      t_base_v = boost::shared_ptr<FTensor::Tensor1<double *, 3> >(
+          new FTensor::Tensor1<double *, 3>(base_ptr, &base_ptr[HDIV1],
+                                            &base_ptr[HDIV2], 3));
       diff_base_ptr = diff_phi_v;
-      t_diff_base_v = boost::shared_ptr<FTensor::Tensor2<double*,3,3> >(
-        new FTensor::Tensor2<double*,3,3>
-        (
-          &diff_base_ptr[HDIV0_0],&diff_base_ptr[HDIV0_1],&diff_base_ptr[HDIV0_2],
-          &diff_base_ptr[HDIV1_0],&diff_base_ptr[HDIV1_1],&diff_base_ptr[HDIV1_2],
-          &diff_base_ptr[HDIV2_0],&diff_base_ptr[HDIV2_1],&diff_base_ptr[HDIV2_2],9
-        )
-      );
+      t_diff_base_v = boost::shared_ptr<FTensor::Tensor2<double *, 3, 3> >(
+          new FTensor::Tensor2<double *, 3, 3>(
+              &diff_base_ptr[HDIV0_0], &diff_base_ptr[HDIV0_1],
+              &diff_base_ptr[HDIV0_2], &diff_base_ptr[HDIV1_0],
+              &diff_base_ptr[HDIV1_1], &diff_base_ptr[HDIV1_2],
+              &diff_base_ptr[HDIV2_0], &diff_base_ptr[HDIV2_1],
+              &diff_base_ptr[HDIV2_2], 9));
     }
-    for(int gg = 0;gg!=nb_gauss_pts;gg++) {
-      for(int oo = 0;oo<volume_order;oo++) {
-        for(int dd = NBVOLUMETET_AINSWORTH_EDGE_HDIV(oo);dd<NBVOLUMETET_AINSWORTH_EDGE_HDIV(oo+1);dd++) {
-          for(int ee = 0;ee<6;ee++) {
+    for (int gg = 0; gg != nb_gauss_pts; gg++) {
+      for (int oo = 0; oo < volume_order; oo++) {
+        for (int dd = NBVOLUMETET_AINSWORTH_EDGE_HDIV(oo);
+             dd < NBVOLUMETET_AINSWORTH_EDGE_HDIV(oo + 1); dd++) {
+          for (int ee = 0; ee < 6; ee++) {
             t_base(i) = t_base_v_e[ee](i);
             ++t_base;
             ++t_base_v_e[ee];
-            t_diff_base(i,j) = t_diff_base_v_e[ee](i,j);
+            t_diff_base(i, j) = t_diff_base_v_e[ee](i, j);
             ++t_diff_base;
             ++t_diff_base_v_e[ee];
           }
         }
-        for(int dd = NBVOLUMETET_AINSOWRTH_FACE_HDIV(oo);dd<NBVOLUMETET_AINSOWRTH_FACE_HDIV(oo+1);dd++) {
-          for(int ff = 0;ff<4;ff++) {
+        for (int dd = NBVOLUMETET_AINSWORTH_FACE_HDIV(oo);
+             dd < NBVOLUMETET_AINSWORTH_FACE_HDIV(oo + 1); dd++) {
+          for (int ff = 0; ff < 4; ff++) {
             t_base(i) = t_base_v_f[ff](i);
             ++t_base;
             ++t_base_v_f[ff];
-            t_diff_base(i,j) = t_diff_base_v_f[ff](i,j);
+            t_diff_base(i, j) = t_diff_base_v_f[ff](i, j);
             ++t_diff_base;
             ++t_diff_base_v_f[ff];
           }
         }
-        for(int dd = NBVOLUMETET_AINSWORTH_VOLUME_HDIV(oo);dd<NBVOLUMETET_AINSWORTH_VOLUME_HDIV(oo+1);dd++) {
+        for (int dd = NBVOLUMETET_AINSWORTH_VOLUME_HDIV(oo);
+             dd < NBVOLUMETET_AINSWORTH_VOLUME_HDIV(oo + 1); dd++) {
           t_base(i) = (*t_base_v)(i);
           ++t_base;
           ++(*t_base_v);
-          t_diff_base(i,j) = (*t_diff_base_v)(i,j);
+          t_diff_base(i, j) = (*t_diff_base_v)(i, j);
           ++t_diff_base;
           ++(*t_diff_base_v);
         }
@@ -538,21 +566,17 @@ MoFEMErrorCode TetPolynomialBase::getValueHdivAinsworthBase(
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode TetPolynomialBase::getValueHdivDemkowiczBase(
-  MatrixDouble &pts
-) {
+MoFEMErrorCode TetPolynomialBase::getValueHdivDemkowiczBase(MatrixDouble &pts) {
 
   MoFEMFunctionBeginHot;
 
-  DataForcesAndSourcesCore& data = cTx->dAta;
+  DataForcesAndSourcesCore &data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
-  if(base != DEMKOWICZ_JACOBI_BASE) {
-    SETERRQ1(
-      PETSC_COMM_SELF,
-      MOFEM_DATA_INCONSISTENCY,
-      "This should be used only with DEMKOWICZ_JACOBI_BASE "
-      "but base is %s",ApproximationBaseNames[base]
-    );
+  if (base != DEMKOWICZ_JACOBI_BASE) {
+    SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+             "This should be used only with DEMKOWICZ_JACOBI_BASE "
+             "but base is %s",
+             ApproximationBaseNames[base]);
   }
   int nb_gauss_pts = pts.size2();
 
@@ -563,264 +587,264 @@ MoFEMErrorCode TetPolynomialBase::getValueHdivDemkowiczBase(
   double *diff_phi_f[4];
 
   // Calculate base function on tet faces
-  for(int ff = 0;ff!=4;ff++) {
+  for (int ff = 0; ff != 4; ff++) {
     int face_order = data.dataOnEntities[MBTRI][ff].getDataOrder();
-    int order = volume_order>face_order ? volume_order : face_order;
+    int order = volume_order > face_order ? volume_order : face_order;
     data.dataOnEntities[MBTRI][ff].getHdivN(base).resize(
-      nb_gauss_pts,3*NBFACETRI_DEMKOWICZ_HDIV(order),false
-    );
+        nb_gauss_pts, 3 * NBFACETRI_DEMKOWICZ_HDIV(order), false);
     data.dataOnEntities[MBTRI][ff].getDiffHdivN(base).resize(
-      nb_gauss_pts,9*NBFACETRI_DEMKOWICZ_HDIV(order),false
-    );
+        nb_gauss_pts, 9 * NBFACETRI_DEMKOWICZ_HDIV(order), false);
     p_f[ff] = order;
     phi_f[ff] = &*data.dataOnEntities[MBTRI][ff].getHdivN(base).data().begin();
     diff_phi_f[ff] =
-    &*data.dataOnEntities[MBTRI][ff].getDiffHdivN(base).data().begin();
-    if(NBFACETRI_DEMKOWICZ_HDIV(order)==0) continue;
+        &*data.dataOnEntities[MBTRI][ff].getDiffHdivN(base).data().begin();
+    if (NBFACETRI_DEMKOWICZ_HDIV(order) == 0)
+      continue;
     ierr = Hdiv_Demkowicz_Face_MBTET_ON_FACE(
-      &data.facesNodes(ff,0),
-      order,
-      &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
-      &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
-      phi_f[ff],diff_phi_f[ff],nb_gauss_pts,4
-    ); CHKERRG(ierr);
+        &data.facesNodes(ff, 0), order,
+        &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
+        &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
+        phi_f[ff], diff_phi_f[ff], nb_gauss_pts, 4);
+    CHKERRG(ierr);
   }
 
   // Calculate base functions in tet interior
-  if(NBVOLUMETET_DEMKOWICZ_HDIV(volume_order)>0) {
+  if (NBVOLUMETET_DEMKOWICZ_HDIV(volume_order) > 0) {
     data.dataOnEntities[MBTET][0].getHdivN(base).resize(
-      nb_gauss_pts,3*NBVOLUMETET_DEMKOWICZ_HDIV(volume_order),false
-    );
+        nb_gauss_pts, 3 * NBVOLUMETET_DEMKOWICZ_HDIV(volume_order), false);
     data.dataOnEntities[MBTET][0].getDiffHdivN(base).resize(
-      nb_gauss_pts,9*NBVOLUMETET_DEMKOWICZ_HDIV(volume_order),false
-    );
-    double *phi_v = &*data.dataOnEntities[MBTET][0].getHdivN(base).data().begin();
-    double *diff_phi_v = &*data.dataOnEntities[MBTET][0].getDiffHdivN(base).data().begin();
+        nb_gauss_pts, 9 * NBVOLUMETET_DEMKOWICZ_HDIV(volume_order), false);
+    double *phi_v =
+        &*data.dataOnEntities[MBTET][0].getHdivN(base).data().begin();
+    double *diff_phi_v =
+        &*data.dataOnEntities[MBTET][0].getDiffHdivN(base).data().begin();
     ierr = Hdiv_Demkowicz_Interior_MBTET(
-      volume_order,
-      &data.dataOnEntities[MBVERTEX][0].getN(base)(0,0),
-      &data.dataOnEntities[MBVERTEX][0].getDiffN(base)(0,0),
-      p_f,phi_f,diff_phi_f,
-      phi_v,diff_phi_v,
-      nb_gauss_pts
-    ); CHKERRG(ierr);
+        volume_order, &data.dataOnEntities[MBVERTEX][0].getN(base)(0, 0),
+        &data.dataOnEntities[MBVERTEX][0].getDiffN(base)(0, 0), p_f, phi_f,
+        diff_phi_f, phi_v, diff_phi_v, nb_gauss_pts);
+    CHKERRG(ierr);
   }
 
   // Set size of face base correctly
-  for(int ff = 0;ff!=4;ff++) {
+  for (int ff = 0; ff != 4; ff++) {
     int face_order = data.dataOnEntities[MBTRI][ff].getDataOrder();
     data.dataOnEntities[MBTRI][ff].getHdivN(base).resize(
-      nb_gauss_pts,3*NBFACETRI_DEMKOWICZ_HDIV(face_order),true
-    );
+        nb_gauss_pts, 3 * NBFACETRI_DEMKOWICZ_HDIV(face_order), true);
     data.dataOnEntities[MBTRI][ff].getDiffHdivN(base).resize(
-      nb_gauss_pts,9*NBFACETRI_DEMKOWICZ_HDIV(face_order),true
-    );
+        nb_gauss_pts, 9 * NBFACETRI_DEMKOWICZ_HDIV(face_order), true);
   }
 
   MoFEMFunctionReturnHot(0);
 }
 
-
-MoFEMErrorCode TetPolynomialBase::getValueHdiv(
-  MatrixDouble &pts
-) {
+MoFEMErrorCode TetPolynomialBase::getValueHdiv(MatrixDouble &pts) {
   MoFEMFunctionBeginHot;
 
   switch (cTx->bAse) {
-    case AINSWORTH_LEGENDRE_BASE:
-    case AINSWORTH_LOBATTO_BASE:
+  case AINSWORTH_LEGENDRE_BASE:
+  case AINSWORTH_LOBATTO_BASE:
     return getValueHdivAinsworthBase(pts);
-    case DEMKOWICZ_JACOBI_BASE:
+  case DEMKOWICZ_JACOBI_BASE:
     return getValueHdivDemkowiczBase(pts);
-    default:
-    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"Not implemented");
+  default:
+    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Not implemented");
   }
 
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode TetPolynomialBase::getValueHCurl(
-  MatrixDouble &pts
-) {
+MoFEMErrorCode TetPolynomialBase::getValueHCurl(MatrixDouble &pts) {
 
   MoFEMFunctionBeginHot;
 
   try {
 
-  DataForcesAndSourcesCore& data = cTx->dAta;
-  const FieldApproximationBase base = cTx->bAse;
-  PetscErrorCode (*base_polynomials)(
-    int p,double s,double *diff_s,double *L,double *diffL,const int dim
-  ) = cTx->basePolynomialsType0;
+    DataForcesAndSourcesCore &data = cTx->dAta;
+    const FieldApproximationBase base = cTx->bAse;
+    PetscErrorCode (*base_polynomials)(
+        int p, double s, double *diff_s, double *L, double *diffL,
+        const int dim) = cTx->basePolynomialsType0;
 
-  int nb_gauss_pts = pts.size2();
+    int nb_gauss_pts = pts.size2();
 
-  // edges
-  if(data.spacesOnEntities[MBEDGE].test(HCURL)) {
-    int sense[6],order[6];
-    if(data.dataOnEntities[MBEDGE].size()!=6) {
-      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
-    }
-    double *hcurl_edge_n[6],*diff_hcurl_edge_n[6];
-    for(int ee = 0;ee!=6;ee++) {
-      if(data.dataOnEntities[MBEDGE][ee].getSense() == 0) {
-        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
+    // edges
+    if (data.spacesOnEntities[MBEDGE].test(HCURL)) {
+      int sense[6], order[6];
+      if (data.dataOnEntities[MBEDGE].size() != 6) {
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "data inconsistency");
       }
-      sense[ee] = data.dataOnEntities[MBEDGE][ee].getSense();
-      order[ee] = data.dataOnEntities[MBEDGE][ee].getDataOrder();
-      int nb_dofs = NBEDGE_HCURL(data.dataOnEntities[MBEDGE][ee].getDataOrder());
-      data.dataOnEntities[MBEDGE][ee].getN(base).resize(nb_gauss_pts,3*nb_dofs,false);
-      data.dataOnEntities[MBEDGE][ee].getDiffN(base).resize(nb_gauss_pts,9*nb_dofs,false);
-      hcurl_edge_n[ee] = &*data.dataOnEntities[MBEDGE][ee].getN(base).data().begin();
-      diff_hcurl_edge_n[ee] = &*data.dataOnEntities[MBEDGE][ee].getDiffN(base).data().begin();
-    }
-    ierr = Hcurl_EdgeBaseFunctions_MBTET(
-      sense,
-      order,
-      &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
-      &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
-      hcurl_edge_n,
-      diff_hcurl_edge_n,
-      nb_gauss_pts,
-      base_polynomials
-    ); CHKERRG(ierr);
-  } else {
-    for(int ee = 0;ee!=6;ee++) {
-      data.dataOnEntities[MBEDGE][ee].getN(base).resize(nb_gauss_pts,0,false);
-      data.dataOnEntities[MBEDGE][ee].getDiffN(base).resize(nb_gauss_pts,0,false);
-    }
-  }
-
-  // triangles
-  if(data.spacesOnEntities[MBTRI].test(HCURL)) {
-    int order[4];
-    //faces
-    if(data.dataOnEntities[MBTRI].size()!=4) {
-      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
-    }
-    double *hcurl_base_n[4],*diff_hcurl_base_n[4];
-    for(int ff = 0;ff!=4;ff++) {
-      if(data.dataOnEntities[MBTRI][ff].getSense() == 0) {
-        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
+      double *hcurl_edge_n[6], *diff_hcurl_edge_n[6];
+      for (int ee = 0; ee != 6; ee++) {
+        if (data.dataOnEntities[MBEDGE][ee].getSense() == 0) {
+          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                  "data inconsistency");
+        }
+        sense[ee] = data.dataOnEntities[MBEDGE][ee].getSense();
+        order[ee] = data.dataOnEntities[MBEDGE][ee].getDataOrder();
+        int nb_dofs = NBEDGE_AINSWORTH_HCURL(
+            data.dataOnEntities[MBEDGE][ee].getDataOrder());
+        data.dataOnEntities[MBEDGE][ee].getN(base).resize(nb_gauss_pts,
+                                                          3 * nb_dofs, false);
+        data.dataOnEntities[MBEDGE][ee].getDiffN(base).resize(
+            nb_gauss_pts, 9 * nb_dofs, false);
+        hcurl_edge_n[ee] =
+            &*data.dataOnEntities[MBEDGE][ee].getN(base).data().begin();
+        diff_hcurl_edge_n[ee] =
+            &*data.dataOnEntities[MBEDGE][ee].getDiffN(base).data().begin();
       }
-      order[ff] = data.dataOnEntities[MBTRI][ff].getDataOrder();
-      int nb_dofs = NBFACETRI_HCURL(order[ff] );
-      data.dataOnEntities[MBTRI][ff].getN(base).resize(nb_gauss_pts,3*nb_dofs,false);
-      data.dataOnEntities[MBTRI][ff].getDiffN(base).resize(nb_gauss_pts,9*nb_dofs,false);
-      hcurl_base_n[ff] = &*data.dataOnEntities[MBTRI][ff].getN(base).data().begin();
-      diff_hcurl_base_n[ff] = &*data.dataOnEntities[MBTRI][ff].getDiffN(base).data().begin();
+      ierr = Hcurl_Ainsworth_EdgeBaseFunctions_MBTET(
+          sense, order,
+          &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
+          &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
+          hcurl_edge_n, diff_hcurl_edge_n, nb_gauss_pts, base_polynomials);
+      CHKERRG(ierr);
+    } else {
+      for (int ee = 0; ee != 6; ee++) {
+        data.dataOnEntities[MBEDGE][ee].getN(base).resize(nb_gauss_pts, 0,
+                                                          false);
+        data.dataOnEntities[MBEDGE][ee].getDiffN(base).resize(nb_gauss_pts, 0,
+                                                              false);
+      }
     }
-    if(data.facesNodes.size1() != 4) {
-      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
-    }
-    if(data.facesNodes.size2() != 3) {
-      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
-    }
-    ierr = Hcurl_FaceFunctions_MBTET(
-      &*data.facesNodes.data().begin(),
-      order,
-      &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
-      &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
-      hcurl_base_n,
-      diff_hcurl_base_n,
-      nb_gauss_pts,
-      base_polynomials
-    ); CHKERRG(ierr);
-  } else {
-    for(int ff = 0;ff!=4;ff++) {
-      data.dataOnEntities[MBTRI][ff].getN(base).resize(nb_gauss_pts,0,false);
-      data.dataOnEntities[MBTRI][ff].getDiffN(base).resize(nb_gauss_pts,0,false);
-    }
-  }
 
-  if(data.spacesOnEntities[MBTET].test(HCURL)) {
+    // triangles
+    if (data.spacesOnEntities[MBTRI].test(HCURL)) {
+      int order[4];
+      // faces
+      if (data.dataOnEntities[MBTRI].size() != 4) {
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "data inconsistency");
+      }
+      double *hcurl_base_n[4], *diff_hcurl_base_n[4];
+      for (int ff = 0; ff != 4; ff++) {
+        if (data.dataOnEntities[MBTRI][ff].getSense() == 0) {
+          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                  "data inconsistency");
+        }
+        order[ff] = data.dataOnEntities[MBTRI][ff].getDataOrder();
+        int nb_dofs = NBFACETRI_AINSWORTH_HCURL(order[ff]);
+        data.dataOnEntities[MBTRI][ff].getN(base).resize(nb_gauss_pts,
+                                                         3 * nb_dofs, false);
+        data.dataOnEntities[MBTRI][ff].getDiffN(base).resize(
+            nb_gauss_pts, 9 * nb_dofs, false);
+        hcurl_base_n[ff] =
+            &*data.dataOnEntities[MBTRI][ff].getN(base).data().begin();
+        diff_hcurl_base_n[ff] =
+            &*data.dataOnEntities[MBTRI][ff].getDiffN(base).data().begin();
+      }
+      if (data.facesNodes.size1() != 4) {
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "data inconsistency");
+      }
+      if (data.facesNodes.size2() != 3) {
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "data inconsistency");
+      }
+      ierr = Hcurl_Ainsworth_FaceFunctions_MBTET(
+          &*data.facesNodes.data().begin(), order,
+          &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
+          &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
+          hcurl_base_n, diff_hcurl_base_n, nb_gauss_pts, base_polynomials);
+      CHKERRG(ierr);
+    } else {
+      for (int ff = 0; ff != 4; ff++) {
+        data.dataOnEntities[MBTRI][ff].getN(base).resize(nb_gauss_pts, 0,
+                                                         false);
+        data.dataOnEntities[MBTRI][ff].getDiffN(base).resize(nb_gauss_pts, 0,
+                                                             false);
+      }
+    }
 
-    //volume
-    int order = data.dataOnEntities[MBTET][0].getDataOrder();
-    int nb_vol_dofs = NBVOLUMETET_HCURL(order);
-    data.dataOnEntities[MBTET][0].getN(base).resize(nb_gauss_pts,3*nb_vol_dofs,false);
-    data.dataOnEntities[MBTET][0].getDiffN(base).resize(nb_gauss_pts,9*nb_vol_dofs,false);
-    // cerr << data.dataOnEntities[MBVERTEX][0].getDiffN(base) << endl;
-    ierr = Hcurl_VolumeFunctions_MBTET(
-      data.dataOnEntities[MBTET][0].getDataOrder(),
-      &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
-      &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
-      &*data.dataOnEntities[MBTET][0].getN(base).data().begin(),
-      &*data.dataOnEntities[MBTET][0].getDiffN(base).data().begin(),
-      nb_gauss_pts,
-      base_polynomials
-    ); CHKERRG(ierr);
+    if (data.spacesOnEntities[MBTET].test(HCURL)) {
 
-  } else {
-    data.dataOnEntities[MBTET][0].getN(base).resize(nb_gauss_pts,0,false);
-    data.dataOnEntities[MBTET][0].getDiffN(base).resize(nb_gauss_pts,0,false);
-  }
+      // volume
+      int order = data.dataOnEntities[MBTET][0].getDataOrder();
+      int nb_vol_dofs = NBVOLUMETET_HCURL(order);
+      data.dataOnEntities[MBTET][0].getN(base).resize(nb_gauss_pts,
+                                                      3 * nb_vol_dofs, false);
+      data.dataOnEntities[MBTET][0].getDiffN(base).resize(
+          nb_gauss_pts, 9 * nb_vol_dofs, false);
+      // cerr << data.dataOnEntities[MBVERTEX][0].getDiffN(base) << endl;
+      ierr = Hcurl_Ainsworth_VolumeFunctions_MBTET(
+          data.dataOnEntities[MBTET][0].getDataOrder(),
+          &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
+          &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
+          &*data.dataOnEntities[MBTET][0].getN(base).data().begin(),
+          &*data.dataOnEntities[MBTET][0].getDiffN(base).data().begin(),
+          nb_gauss_pts, base_polynomials);
+      CHKERRG(ierr);
+
+    } else {
+      data.dataOnEntities[MBTET][0].getN(base).resize(nb_gauss_pts, 0, false);
+      data.dataOnEntities[MBTET][0].getDiffN(base).resize(nb_gauss_pts, 0,
+                                                          false);
+    }
 
   } catch (MoFEMException const &e) {
-    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
-  } catch (std::exception& ex) {
+    SETERRQ(PETSC_COMM_SELF, e.errorCode, e.errorMessage);
+  } catch (std::exception &ex) {
     std::ostringstream ss;
-    ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
-    SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
+    ss << "thorw in method: " << ex.what() << " at line " << __LINE__
+       << " in file " << __FILE__;
+    SETERRQ(PETSC_COMM_SELF, MOFEM_STD_EXCEPTION_THROW, ss.str().c_str());
   }
 
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode TetPolynomialBase::getValue(
-  MatrixDouble &pts,
-  boost::shared_ptr<BaseFunctionCtx> ctx_ptr
-) {
+MoFEMErrorCode
+TetPolynomialBase::getValue(MatrixDouble &pts,
+                            boost::shared_ptr<BaseFunctionCtx> ctx_ptr) {
 
   MoFEMFunctionBeginHot;
 
   MoFEM::UnknownInterface *iface;
-  ierr = ctx_ptr->query_interface(IDD_TET_BASE_FUNCTION,&iface); CHKERRG(ierr);
-  cTx = reinterpret_cast<EntPolynomialBaseCtx*>(iface);
+  ierr = ctx_ptr->query_interface(IDD_TET_BASE_FUNCTION, &iface);
+  CHKERRG(ierr);
+  cTx = reinterpret_cast<EntPolynomialBaseCtx *>(iface);
 
   int nb_gauss_pts = pts.size2();
-  if(!nb_gauss_pts) {
+  if (!nb_gauss_pts) {
     MoFEMFunctionReturnHot(0);
   }
 
-  if(pts.size1()<3) {
+  if (pts.size1() < 3) {
     SETERRQ(
-      PETSC_COMM_SELF,
-      MOFEM_DATA_INCONSISTENCY,
-      "Wrong dimension of pts, should be at least 3 rows with coordinates"
-    );
+        PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+        "Wrong dimension of pts, should be at least 3 rows with coordinates");
   }
 
   const FieldApproximationBase base = cTx->bAse;
-  DataForcesAndSourcesCore& data = cTx->dAta;
-  if(cTx->copyNodeBase==LASTBASE) {
-    data.dataOnEntities[MBVERTEX][0].getN(base).resize(nb_gauss_pts,4,false);
-    ierr = ShapeMBTET(
-      &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
-      &pts(0,0),
-      &pts(1,0),
-      &pts(2,0),
-      nb_gauss_pts
-    ); CHKERRG(ierr);
+  DataForcesAndSourcesCore &data = cTx->dAta;
+  if (cTx->copyNodeBase == LASTBASE) {
+    data.dataOnEntities[MBVERTEX][0].getN(base).resize(nb_gauss_pts, 4, false);
+    ierr =
+        ShapeMBTET(&*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
+                   &pts(0, 0), &pts(1, 0), &pts(2, 0), nb_gauss_pts);
+    CHKERRG(ierr);
   } else {
-    data.dataOnEntities[MBVERTEX][0].getNSharedPtr(base) = data.dataOnEntities[MBVERTEX][0].getNSharedPtr(cTx->copyNodeBase);
+    data.dataOnEntities[MBVERTEX][0].getNSharedPtr(base) =
+        data.dataOnEntities[MBVERTEX][0].getNSharedPtr(cTx->copyNodeBase);
   }
-  if(data.dataOnEntities[MBVERTEX][0].getN(base).size1()!=(unsigned int)nb_gauss_pts) {
-    SETERRQ1(
-      PETSC_COMM_SELF,
-      MOFEM_DATA_INCONSISTENCY,
-      "Base functions or nodes has wrong number of integration points for base %s",
-      ApproximationBaseNames[base]
-    );
+  if (data.dataOnEntities[MBVERTEX][0].getN(base).size1() !=
+      (unsigned int)nb_gauss_pts) {
+    SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+             "Base functions or nodes has wrong number of integration points "
+             "for base %s",
+             ApproximationBaseNames[base]);
   }
-  data.dataOnEntities[MBVERTEX][0].getDiffN(base).resize(4,3,false);
-  ierr = ShapeDiffMBTET(&*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin()); CHKERRG(ierr);
+  data.dataOnEntities[MBVERTEX][0].getDiffN(base).resize(4, 3, false);
+  ierr = ShapeDiffMBTET(
+      &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin());
+  CHKERRG(ierr);
   // if(cTx->sPace==H1) {
   //   MatrixDouble diffN(nb_gauss_pts,12);
   //   for(int gg = 0;gg<nb_gauss_pts;gg++) {
   //     for(int nn = 0;nn<4;nn++) {
   //       for(int dd = 0;dd<3;dd++) {
-  //         diffN(gg,nn*3+dd) = data.dataOnEntities[MBVERTEX][0].getDiffN(base)(nn,dd);
+  //         diffN(gg,nn*3+dd) =
+  //         data.dataOnEntities[MBVERTEX][0].getDiffN(base)(nn,dd);
   //       }
   //     }
   //   }
@@ -829,20 +853,24 @@ MoFEMErrorCode TetPolynomialBase::getValue(
   // }
 
   switch (cTx->sPace) {
-    case H1:
-    return getValueH1(pts); CHKERRG(ierr);
+  case H1:
+    return getValueH1(pts);
+    CHKERRG(ierr);
     break;
-    case HDIV:
-    ierr = getValueHdiv(pts); CHKERRG(ierr);
+  case HDIV:
+    ierr = getValueHdiv(pts);
+    CHKERRG(ierr);
     break;
-    case HCURL:
-    ierr = getValueHCurl(pts); CHKERRG(ierr);
+  case HCURL:
+    ierr = getValueHCurl(pts);
+    CHKERRG(ierr);
     break;
-    case L2:
-    ierr = getValueL2(pts); CHKERRG(ierr);
+  case L2:
+    ierr = getValueL2(pts);
+    CHKERRG(ierr);
     break;
-    default:
-    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"Unknown space");
+  default:
+    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Unknown space");
   }
 
   MoFEMFunctionReturnHot(0);

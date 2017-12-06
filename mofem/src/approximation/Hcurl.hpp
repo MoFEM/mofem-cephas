@@ -19,11 +19,12 @@ namespace MoFEM {
  Function generates hierarchical base of h-curl comforting functions on
  tetrahedral edge.  For more details see \cite ainsworth2011bernstein.
 
- On each tetrahedral's edge we have P+1 functions. See NBEDGE_HCURL
+ On each tetrahedral's edge we have P+1 functions. See NBEDGE_AINSWORTH_HCURL
 
  * @param  sense            sense fo edge (i.e. unique orientation)
  * @param  p                array of oder for each edge
- * @param  N                array shape functions evaluated at each integration point
+ * @param  N                array shape functions evaluated at each integration
+ point
  * @param  diffN            derivatives of shape functions
  * @param  edgeN            base functions on edges
  * @param  diff_edgeN       derivatives of edge shape functions
@@ -31,10 +32,12 @@ namespace MoFEM {
  * @param  base_polynomials polynomial base function (f.e. Legendre of Lobatto)
  * @return                  error code
  */
-MoFEMErrorCode Hcurl_EdgeBaseFunctions_MBTET(
-  int *sense,int *p,double *N,double *diffN,double *edgeN[],double *diff_edgeN[],int nb_integration_pts,
-  PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
-);
+MoFEMErrorCode Hcurl_Ainsworth_EdgeBaseFunctions_MBTET(
+    int *sense, int *p, double *N, double *diffN, double *edgeN[],
+    double *diff_edgeN[], int nb_integration_pts,
+    PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s,
+                                       double *L, double *diffL,
+                                       const int dim));
 
 /**
  * \brief Edge based H-curl base functions on edge
@@ -42,11 +45,12 @@ MoFEMErrorCode Hcurl_EdgeBaseFunctions_MBTET(
  Function generates hierarchical base of h-curl comforting functions on
  tetrahedral edge.  For more details see \cite ainsworth2011bernstein.
 
- On each edge we have P+1 functions. See NBEDGE_HCURL
+ On each edge we have P+1 functions. See NBEDGE_AINSWORTH_HCURL
 
  * @param  sense            sense fo edge (i.e. unique orientation)
  * @param  p                array of oder for each edge
- * @param  N                array shape functions evaluated at each integration point
+ * @param  N                array shape functions evaluated at each integration
+ point
  * @param  diffN            derivatives of shape functions
  * @param  edgeN            base functions on edges
  * @param  diff_edgeN       derivatives of edge shape functions
@@ -54,10 +58,12 @@ MoFEMErrorCode Hcurl_EdgeBaseFunctions_MBTET(
  * @param  base_polynomials polynomial base function (f.e. Legendre of Lobatto)
  * @return                  error code
  */
-MoFEMErrorCode Hcurl_EdgeBaseFunctions_MBTET_ON_EDGE(
-  int sense,int p,double *N,double *diffN,double *edgeN,double *diff_edgeN,int nb_integration_pts,
-  PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
-);
+MoFEMErrorCode Hcurl_Ainsworth_EdgeBaseFunctions_MBTET_ON_EDGE(
+    int sense, int p, double *N, double *diffN, double *edgeN,
+    double *diff_edgeN, int nb_integration_pts,
+    PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s,
+                                       double *L, double *diffL,
+                                       const int dim));
 
 /**
  * \brief Edge based H-curl base functions on face
@@ -65,11 +71,12 @@ MoFEMErrorCode Hcurl_EdgeBaseFunctions_MBTET_ON_EDGE(
  Function generates hierarchical base of h-curl comforting functions on
  tetrahedral edge.  For more details see \cite ainsworth2011bernstein.
 
- On each face's edge we have P+1 functions. See NBEDGE_HCURL
+ On each face's edge we have P+1 functions. See NBEDGE_AINSWORTH_HCURL
 
  * @param  sense            sense fo edge (i.e. unique orientation)
  * @param  p                array of oder for each edge
- * @param  N                array shape functions evaluated at each integration point
+ * @param  N                array shape functions evaluated at each integration
+ point
  * @param  diffN            derivatives of shape functions
  * @param  edgeN            base functions on edges
  * @param  diff_edgeN       derivatives of edge shape functions
@@ -77,23 +84,24 @@ MoFEMErrorCode Hcurl_EdgeBaseFunctions_MBTET_ON_EDGE(
  * @param  base_polynomials polynomial base function (f.e. Legendre of Lobatto)
  * @return                  error code
  */
-MoFEMErrorCode Hcurl_EdgeBaseFunctions_MBTET_ON_FACE(
-  int *sense,int *p,double *N,double *diffN,double *edgeN[],double *diff_edgeN[],int nb_integration_pts,
-  PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
-);
-
-
+MoFEMErrorCode Hcurl_Ainsworth_EdgeBaseFunctions_MBTET_ON_FACE(
+    int *sense, int *p, double *N, double *diffN, double *edgeN[],
+    double *diff_edgeN[], int nb_integration_pts,
+    PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s,
+                                       double *L, double *diffL,
+                                       const int dim));
 
 /** \brief Face edge base functions of Hcurl space on tetrahedral.
 
   On each edge we have (P-1) base functions, and each face has 3 edges and are 4
   faces on tetrahedral.
 
-  See NBFACETRI_EDGE_HCURL
+  See NBFACETRI_AINSWORTH_EDGE_HCURL
 
   * @param  face_nodes       array [4*3] of local indices of face nodes
   * @param  p                approximation order
-  * @param  N                array shape functions evaluated at each integration point
+  * @param  N                array shape functions evaluated at each integration
+  point
   * @param  diffN            derivatives of nodal shape functions
   * @param  phi_f[4]         calculated shape functions for each face
   * @param  diff_phi_v[4]    derivatives of shape functions for each face
@@ -102,21 +110,24 @@ MoFEMErrorCode Hcurl_EdgeBaseFunctions_MBTET_ON_FACE(
   * @return                  error code
 
 */
-MoFEMErrorCode Hcurl_EdgeBasedFaceFunctions_MBTET(
-  int *faces_nodes,int *p,double *N,double *diffN,double *phi_f_e[4][3],double *diff_phi_f_e[4][3],int nb_integration_pts,
-  PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
-);
+MoFEMErrorCode Hcurl_Ainsworth_EdgeBasedFaceFunctions_MBTET(
+    int *faces_nodes, int *p, double *N, double *diffN, double *phi_f_e[4][3],
+    double *diff_phi_f_e[4][3], int nb_integration_pts,
+    PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s,
+                                       double *L, double *diffL,
+                                       const int dim));
 
 /** \brief Face edge base functions of Hcurl space.
 
   On each edge we have (P-1) base functions, and each face has 3 edges and are 4
   faces on tetrahedral.
 
-  See NBFACETRI_EDGE_HCURL
+  See NBFACETRI_AINSWORTH_EDGE_HCURL
 
   * @param  face_nodes       array [4*3] of local indices of face nodes
   * @param  p                approximation order
-  * @param  N                array shape functions evaluated at each integration point
+  * @param  N                array shape functions evaluated at each integration
+  point
   * @param  diffN            derivatives of nodal shape functions
   * @param  phi_f[4]         calculated shape functions for each face
   * @param  diff_phi_v[4]    derivatives of shape functions for each face
@@ -125,20 +136,23 @@ MoFEMErrorCode Hcurl_EdgeBasedFaceFunctions_MBTET(
   * @return                  error code
 
 */
-MoFEMErrorCode Hcurl_EdgeBasedFaceFunctions_MBTET_ON_FACE(
-  int *faces_nodes,int p,double *N,double *diffN,double *phi_f_e[3],double *diff_phi_f_e[3],int nb_integration_pts,
-  PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
-);
+MoFEMErrorCode Hcurl_Ainsworth_EdgeBasedFaceFunctions_MBTET_ON_FACE(
+    int *faces_nodes, int p, double *N, double *diffN, double *phi_f_e[3],
+    double *diff_phi_f_e[3], int nb_integration_pts,
+    PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s,
+                                       double *L, double *diffL,
+                                       const int dim));
 
 /** \brief Face edge base functions of Hcurl space on face on tetrahedral.
 
   On each face we have P*(P-1) base functions and are 4 faces.
 
-  See NBFACETRI_EDGE_HCURL
+  See NBFACETRI_AINSWORTH_EDGE_HCURL
 
   * @param  face_nodes       array [4*3] of local indices of face nodes
   * @param  p                approximation order
-  * @param  N                array shape functions evaluated at each integration point
+  * @param  N                array shape functions evaluated at each integration
+  point
   * @param  diffN            derivatives of nodal shape functions
   * @param  phi_f[4]         calculated shape functions for each face
   * @param  diff_phi_v[4]    derivatives of shape functions for each face
@@ -147,20 +161,23 @@ MoFEMErrorCode Hcurl_EdgeBasedFaceFunctions_MBTET_ON_FACE(
   * @return                  error code
 
 */
-MoFEMErrorCode Hcurl_BubbleFaceFunctions_MBTET(
-  int *faces_nodes,int *p,double *N,double *diffN,double *phi_f[4],double *diff_phi_f[4],int nb_integration_pts,
-  PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
-);
+MoFEMErrorCode Hcurl_Ainsworth_BubbleFaceFunctions_MBTET(
+    int *faces_nodes, int *p, double *N, double *diffN, double *phi_f[4],
+    double *diff_phi_f[4], int nb_integration_pts,
+    PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s,
+                                       double *L, double *diffL,
+                                       const int dim));
 
 /** \brief Face edge base functions of Hcurl space on face.
 
   On each face we have P*(P-1) base functions and are 4 faces.
 
-  See NBFACETRI_EDGE_HCURL
+  See NBFACETRI_AINSWORTH_EDGE_HCURL
 
   * @param  face_nodes       array [4*3] of local indices of face nodes
   * @param  p                approximation order
-  * @param  N                array shape functions evaluated at each integration point
+  * @param  N                array shape functions evaluated at each integration
+  point
   * @param  diffN            derivatives of nodal shape functions
   * @param  phi_f[4]         calculated shape functions for each face
   * @param  diff_phi_v[4]    derivatives of shape functions for each face
@@ -169,17 +186,18 @@ MoFEMErrorCode Hcurl_BubbleFaceFunctions_MBTET(
   * @return                  error code
 
 */
-MoFEMErrorCode Hcurl_BubbleFaceFunctions_MBTET_ON_FACE(
-  int *faces_nodes,int p,double *N,double *diffN,double *phi_f,double *diff_phi_f,int nb_integration_pts,
-  PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
-);
-
+MoFEMErrorCode Hcurl_Ainsworth_BubbleFaceFunctions_MBTET_ON_FACE(
+    int *faces_nodes, int p, double *N, double *diffN, double *phi_f,
+    double *diff_phi_f, int nb_integration_pts,
+    PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s,
+                                       double *L, double *diffL,
+                                       const int dim));
 
 /** \brief Face base interior function
 
 On each face we have P*(P-1)/2 and are 4 faces on Tetrahedral.
 
-See NBFACETRI_FACE_HCURL
+See NBFACETRI_AINSWORTH_FACE_HCURL
 
 * @param  face_nodes       array [4*3] of local indices of face nodes
 * @param  p                approximation order
@@ -193,16 +211,18 @@ See NBFACETRI_FACE_HCURL
 
 
 */
-MoFEMErrorCode Hcurl_FaceInteriorFunctions_MBTET(
-  int *faces_nodes,int p,double *N,double *diffN,double *phi_v,double *diff_phi_v,int nb_integration_pts,
-  PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
-);
+MoFEMErrorCode Hcurl_Ainsworth_FaceInteriorFunctions_MBTET(
+    int *faces_nodes, int p, double *N, double *diffN, double *phi_v,
+    double *diff_phi_v, int nb_integration_pts,
+    PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s,
+                                       double *L, double *diffL,
+                                       const int dim));
 
 /** \brief Volume interior function
 
 On volume have (P-3)*(P-2)*(P-1)/2.
 
-See NBVOLUMETET_TET_HCURL
+See NBVOLUMETET_AINSOWRTH_TET_HCURL
 
 * @param  p                approximation order
 * @param  N                nodal shape functions
@@ -214,17 +234,20 @@ See NBVOLUMETET_TET_HCURL
 * @return                  error code
 
 */
-MoFEMErrorCode Hcurl_VolumeInteriorFunctions_MBTET(
-  int p,double *N,double *diffN,double *phi_v,double *diff_phi_v,int nb_integration_pts,
-  PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
-);
+MoFEMErrorCode Hcurl_Ainsworth_VolumeInteriorFunctions_MBTET(
+    int p, double *N, double *diffN, double *phi_v, double *diff_phi_v,
+    int nb_integration_pts,
+    PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s,
+                                       double *L, double *diffL,
+                                       const int dim));
 
 /** \brief Face H-curl functions
 
   Face H-curl functions are set of Eddge-Based Face functions
-  (Hcurl_EdgeBasedFaceFunctions_MBTET) and Bubble-Face functions (Hcurl_BubbleFaceFunctions_MBTET).
+  (Hcurl_Ainsworth_EdgeBasedFaceFunctions_MBTET) and Bubble-Face functions
+  (Hcurl_Ainsworth_BubbleFaceFunctions_MBTET).
 
-  See NBVOLUMETET_FACE_HCURL
+  See NBVOLUMETET_AINSWORTH_FACE_HCURL
 
   * @param  face_nodes       array [4*3] of local indices of face nodes
   * @param  p                approximation order
@@ -237,17 +260,20 @@ MoFEMErrorCode Hcurl_VolumeInteriorFunctions_MBTET(
   * @return                  error code
 
 */
-MoFEMErrorCode Hcurl_FaceFunctions_MBTET(
-  int *face_nodes,int *p,double *N,double *diffN,double *phi_f[4],double *diff_phi_f[4],int nb_integration_pts,
-  PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
-);
+MoFEMErrorCode Hcurl_Ainsworth_FaceFunctions_MBTET(
+    int *face_nodes, int *p, double *N, double *diffN, double *phi_f[4],
+    double *diff_phi_f[4], int nb_integration_pts,
+    PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s,
+                                       double *L, double *diffL,
+                                       const int dim));
 
 /** \brief Face H-curl functions
 
   Face H-curl functions are set of Eddge-Based Face functions
-  (Hcurl_EdgeBasedFaceFunctions_MBTET) and Bubble-Face functions (Hcurl_BubbleFaceFunctions_MBTET).
+  (Hcurl_Ainsworth_EdgeBasedFaceFunctions_MBTET) and Bubble-Face functions
+  (Hcurl_Ainsworth_BubbleFaceFunctions_MBTET).
 
-  See NBVOLUMETET_FACE_HCURL
+  See NBVOLUMETET_AINSWORTH_FACE_HCURL
 
   * @param  face_nodes       array [4*3] of local indices of face nodes
   * @param  p                approximation order
@@ -260,10 +286,12 @@ MoFEMErrorCode Hcurl_FaceFunctions_MBTET(
   * @return                  error code
 
 */
-MoFEMErrorCode Hcurl_FaceFunctions_MBTET_ON_FACE(
-  int *faces_nodes,int p,double *N,double *diffN,double *phi_f,double *diff_phi_f,int nb_integration_pts,
-  PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
-);
+MoFEMErrorCode Hcurl_Ainsworth_FaceFunctions_MBTET_ON_FACE(
+    int *faces_nodes, int p, double *N, double *diffN, double *phi_f,
+    double *diff_phi_f, int nb_integration_pts,
+    PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s,
+                                       double *L, double *diffL,
+                                       const int dim));
 
 /**
  \brief H-curl volume base functions
@@ -281,14 +309,13 @@ MoFEMErrorCode Hcurl_FaceFunctions_MBTET_ON_FACE(
  * @return                  error code
 
  */
-MoFEMErrorCode Hcurl_VolumeFunctions_MBTET(
-  int p,double *N,double *diffN,double *phi_v,double *diff_phi_v,int nb_integration_pts,
-  PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
-);
+MoFEMErrorCode Hcurl_Ainsworth_VolumeFunctions_MBTET(
+    int p, double *N, double *diffN, double *phi_v, double *diff_phi_v,
+    int nb_integration_pts,
+    PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s,
+                                       double *L, double *diffL,
+                                       const int dim));
 
-
-
-
-}
+} // namespace MoFEM
 
 #endif // __HCURL_HPP__

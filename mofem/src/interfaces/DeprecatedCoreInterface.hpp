@@ -1300,17 +1300,20 @@ struct DeprecatedCoreInterface : public CoreInterface {
 
   /**@{*/
 
-  /** Clear dofs by bit level
-   * \ingroup mofem_field
+  /** \deprecated Clear dofs by bit level
    */
   DEPRECATED MoFEMErrorCode clear_dofs_fields(const BitRefLevel &bit,
                                               const BitRefLevel &mask,
                                               int verb = -1);
 
+  /** \deprecated use clear_ents_fields_by_bit_ref
+   */
   DEPRECATED MoFEMErrorCode clear_ents_fields(const BitRefLevel &bit,
                                              const BitRefLevel &mask,
                                              int verb = -1);
 
+  /** \deprecated use clear_finite_elements_by_bit_ref
+   */
   DEPRECATED MoFEMErrorCode clear_finite_elements(
       const BitRefLevel &bit, const BitRefLevel &mask, int verb = -1);
 
