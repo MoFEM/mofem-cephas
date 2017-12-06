@@ -23,7 +23,8 @@ namespace MoFEM {
 
  * @param  sense            sense fo edge (i.e. unique orientation)
  * @param  p                array of oder for each edge
- * @param  N                array shape functions evaluated at each integration point
+ * @param  N                array shape functions evaluated at each integration
+ point
  * @param  diffN            derivatives of shape functions
  * @param  edgeN            base functions on edges
  * @param  diff_edgeN       derivatives of edge shape functions
@@ -32,9 +33,11 @@ namespace MoFEM {
  * @return                  error code
  */
 MoFEMErrorCode Hcurl_EdgeBaseFunctions_MBTET(
-  int *sense,int *p,double *N,double *diffN,double *edgeN[],double *diff_edgeN[],int nb_integration_pts,
-  PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
-);
+    int *sense, int *p, double *N, double *diffN, double *edgeN[],
+    double *diff_edgeN[], int nb_integration_pts,
+    PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s,
+                                       double *L, double *diffL,
+                                       const int dim));
 
 /**
  * \brief Edge based H-curl base functions on edge
@@ -46,7 +49,8 @@ MoFEMErrorCode Hcurl_EdgeBaseFunctions_MBTET(
 
  * @param  sense            sense fo edge (i.e. unique orientation)
  * @param  p                array of oder for each edge
- * @param  N                array shape functions evaluated at each integration point
+ * @param  N                array shape functions evaluated at each integration
+ point
  * @param  diffN            derivatives of shape functions
  * @param  edgeN            base functions on edges
  * @param  diff_edgeN       derivatives of edge shape functions
@@ -55,9 +59,11 @@ MoFEMErrorCode Hcurl_EdgeBaseFunctions_MBTET(
  * @return                  error code
  */
 MoFEMErrorCode Hcurl_EdgeBaseFunctions_MBTET_ON_EDGE(
-  int sense,int p,double *N,double *diffN,double *edgeN,double *diff_edgeN,int nb_integration_pts,
-  PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
-);
+    int sense, int p, double *N, double *diffN, double *edgeN,
+    double *diff_edgeN, int nb_integration_pts,
+    PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s,
+                                       double *L, double *diffL,
+                                       const int dim));
 
 /**
  * \brief Edge based H-curl base functions on face
@@ -69,7 +75,8 @@ MoFEMErrorCode Hcurl_EdgeBaseFunctions_MBTET_ON_EDGE(
 
  * @param  sense            sense fo edge (i.e. unique orientation)
  * @param  p                array of oder for each edge
- * @param  N                array shape functions evaluated at each integration point
+ * @param  N                array shape functions evaluated at each integration
+ point
  * @param  diffN            derivatives of shape functions
  * @param  edgeN            base functions on edges
  * @param  diff_edgeN       derivatives of edge shape functions
@@ -78,11 +85,11 @@ MoFEMErrorCode Hcurl_EdgeBaseFunctions_MBTET_ON_EDGE(
  * @return                  error code
  */
 MoFEMErrorCode Hcurl_EdgeBaseFunctions_MBTET_ON_FACE(
-  int *sense,int *p,double *N,double *diffN,double *edgeN[],double *diff_edgeN[],int nb_integration_pts,
-  PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
-);
-
-
+    int *sense, int *p, double *N, double *diffN, double *edgeN[],
+    double *diff_edgeN[], int nb_integration_pts,
+    PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s,
+                                       double *L, double *diffL,
+                                       const int dim));
 
 /** \brief Face edge base functions of Hcurl space on tetrahedral.
 
@@ -93,7 +100,8 @@ MoFEMErrorCode Hcurl_EdgeBaseFunctions_MBTET_ON_FACE(
 
   * @param  face_nodes       array [4*3] of local indices of face nodes
   * @param  p                approximation order
-  * @param  N                array shape functions evaluated at each integration point
+  * @param  N                array shape functions evaluated at each integration
+  point
   * @param  diffN            derivatives of nodal shape functions
   * @param  phi_f[4]         calculated shape functions for each face
   * @param  diff_phi_v[4]    derivatives of shape functions for each face
@@ -103,9 +111,11 @@ MoFEMErrorCode Hcurl_EdgeBaseFunctions_MBTET_ON_FACE(
 
 */
 MoFEMErrorCode Hcurl_EdgeBasedFaceFunctions_MBTET(
-  int *faces_nodes,int *p,double *N,double *diffN,double *phi_f_e[4][3],double *diff_phi_f_e[4][3],int nb_integration_pts,
-  PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
-);
+    int *faces_nodes, int *p, double *N, double *diffN, double *phi_f_e[4][3],
+    double *diff_phi_f_e[4][3], int nb_integration_pts,
+    PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s,
+                                       double *L, double *diffL,
+                                       const int dim));
 
 /** \brief Face edge base functions of Hcurl space.
 
@@ -116,7 +126,8 @@ MoFEMErrorCode Hcurl_EdgeBasedFaceFunctions_MBTET(
 
   * @param  face_nodes       array [4*3] of local indices of face nodes
   * @param  p                approximation order
-  * @param  N                array shape functions evaluated at each integration point
+  * @param  N                array shape functions evaluated at each integration
+  point
   * @param  diffN            derivatives of nodal shape functions
   * @param  phi_f[4]         calculated shape functions for each face
   * @param  diff_phi_v[4]    derivatives of shape functions for each face
@@ -126,9 +137,11 @@ MoFEMErrorCode Hcurl_EdgeBasedFaceFunctions_MBTET(
 
 */
 MoFEMErrorCode Hcurl_EdgeBasedFaceFunctions_MBTET_ON_FACE(
-  int *faces_nodes,int p,double *N,double *diffN,double *phi_f_e[3],double *diff_phi_f_e[3],int nb_integration_pts,
-  PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
-);
+    int *faces_nodes, int p, double *N, double *diffN, double *phi_f_e[3],
+    double *diff_phi_f_e[3], int nb_integration_pts,
+    PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s,
+                                       double *L, double *diffL,
+                                       const int dim));
 
 /** \brief Face edge base functions of Hcurl space on face on tetrahedral.
 
@@ -138,7 +151,8 @@ MoFEMErrorCode Hcurl_EdgeBasedFaceFunctions_MBTET_ON_FACE(
 
   * @param  face_nodes       array [4*3] of local indices of face nodes
   * @param  p                approximation order
-  * @param  N                array shape functions evaluated at each integration point
+  * @param  N                array shape functions evaluated at each integration
+  point
   * @param  diffN            derivatives of nodal shape functions
   * @param  phi_f[4]         calculated shape functions for each face
   * @param  diff_phi_v[4]    derivatives of shape functions for each face
@@ -148,9 +162,11 @@ MoFEMErrorCode Hcurl_EdgeBasedFaceFunctions_MBTET_ON_FACE(
 
 */
 MoFEMErrorCode Hcurl_BubbleFaceFunctions_MBTET(
-  int *faces_nodes,int *p,double *N,double *diffN,double *phi_f[4],double *diff_phi_f[4],int nb_integration_pts,
-  PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
-);
+    int *faces_nodes, int *p, double *N, double *diffN, double *phi_f[4],
+    double *diff_phi_f[4], int nb_integration_pts,
+    PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s,
+                                       double *L, double *diffL,
+                                       const int dim));
 
 /** \brief Face edge base functions of Hcurl space on face.
 
@@ -160,7 +176,8 @@ MoFEMErrorCode Hcurl_BubbleFaceFunctions_MBTET(
 
   * @param  face_nodes       array [4*3] of local indices of face nodes
   * @param  p                approximation order
-  * @param  N                array shape functions evaluated at each integration point
+  * @param  N                array shape functions evaluated at each integration
+  point
   * @param  diffN            derivatives of nodal shape functions
   * @param  phi_f[4]         calculated shape functions for each face
   * @param  diff_phi_v[4]    derivatives of shape functions for each face
@@ -170,10 +187,11 @@ MoFEMErrorCode Hcurl_BubbleFaceFunctions_MBTET(
 
 */
 MoFEMErrorCode Hcurl_BubbleFaceFunctions_MBTET_ON_FACE(
-  int *faces_nodes,int p,double *N,double *diffN,double *phi_f,double *diff_phi_f,int nb_integration_pts,
-  PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
-);
-
+    int *faces_nodes, int p, double *N, double *diffN, double *phi_f,
+    double *diff_phi_f, int nb_integration_pts,
+    PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s,
+                                       double *L, double *diffL,
+                                       const int dim));
 
 /** \brief Face base interior function
 
@@ -194,9 +212,11 @@ See NBFACETRI_FACE_HCURL
 
 */
 MoFEMErrorCode Hcurl_FaceInteriorFunctions_MBTET(
-  int *faces_nodes,int p,double *N,double *diffN,double *phi_v,double *diff_phi_v,int nb_integration_pts,
-  PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
-);
+    int *faces_nodes, int p, double *N, double *diffN, double *phi_v,
+    double *diff_phi_v, int nb_integration_pts,
+    PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s,
+                                       double *L, double *diffL,
+                                       const int dim));
 
 /** \brief Volume interior function
 
@@ -215,14 +235,17 @@ See NBVOLUMETET_TET_HCURL
 
 */
 MoFEMErrorCode Hcurl_VolumeInteriorFunctions_MBTET(
-  int p,double *N,double *diffN,double *phi_v,double *diff_phi_v,int nb_integration_pts,
-  PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
-);
+    int p, double *N, double *diffN, double *phi_v, double *diff_phi_v,
+    int nb_integration_pts,
+    PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s,
+                                       double *L, double *diffL,
+                                       const int dim));
 
 /** \brief Face H-curl functions
 
   Face H-curl functions are set of Eddge-Based Face functions
-  (Hcurl_EdgeBasedFaceFunctions_MBTET) and Bubble-Face functions (Hcurl_BubbleFaceFunctions_MBTET).
+  (Hcurl_EdgeBasedFaceFunctions_MBTET) and Bubble-Face functions
+  (Hcurl_BubbleFaceFunctions_MBTET).
 
   See NBVOLUMETET_FACE_HCURL
 
@@ -238,14 +261,17 @@ MoFEMErrorCode Hcurl_VolumeInteriorFunctions_MBTET(
 
 */
 MoFEMErrorCode Hcurl_FaceFunctions_MBTET(
-  int *face_nodes,int *p,double *N,double *diffN,double *phi_f[4],double *diff_phi_f[4],int nb_integration_pts,
-  PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
-);
+    int *face_nodes, int *p, double *N, double *diffN, double *phi_f[4],
+    double *diff_phi_f[4], int nb_integration_pts,
+    PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s,
+                                       double *L, double *diffL,
+                                       const int dim));
 
 /** \brief Face H-curl functions
 
   Face H-curl functions are set of Eddge-Based Face functions
-  (Hcurl_EdgeBasedFaceFunctions_MBTET) and Bubble-Face functions (Hcurl_BubbleFaceFunctions_MBTET).
+  (Hcurl_EdgeBasedFaceFunctions_MBTET) and Bubble-Face functions
+  (Hcurl_BubbleFaceFunctions_MBTET).
 
   See NBVOLUMETET_FACE_HCURL
 
@@ -261,9 +287,11 @@ MoFEMErrorCode Hcurl_FaceFunctions_MBTET(
 
 */
 MoFEMErrorCode Hcurl_FaceFunctions_MBTET_ON_FACE(
-  int *faces_nodes,int p,double *N,double *diffN,double *phi_f,double *diff_phi_f,int nb_integration_pts,
-  PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
-);
+    int *faces_nodes, int p, double *N, double *diffN, double *phi_f,
+    double *diff_phi_f, int nb_integration_pts,
+    PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s,
+                                       double *L, double *diffL,
+                                       const int dim));
 
 /**
  \brief H-curl volume base functions
@@ -282,13 +310,12 @@ MoFEMErrorCode Hcurl_FaceFunctions_MBTET_ON_FACE(
 
  */
 MoFEMErrorCode Hcurl_VolumeFunctions_MBTET(
-  int p,double *N,double *diffN,double *phi_v,double *diff_phi_v,int nb_integration_pts,
-  PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
-);
+    int p, double *N, double *diffN, double *phi_v, double *diff_phi_v,
+    int nb_integration_pts,
+    PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s,
+                                       double *L, double *diffL,
+                                       const int dim));
 
-
-
-
-}
+} // namespace MoFEM
 
 #endif // __HCURL_HPP__
