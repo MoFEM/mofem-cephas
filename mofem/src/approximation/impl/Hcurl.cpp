@@ -8,12 +8,11 @@
 
 */
 
-#include <definitions.h>
-#include <h1_hdiv_hcurl_l2.h>
-
 #include <Includes.hpp>
-#include <Common.hpp>
 #include <FTensor.hpp>
+#include <h1_hdiv_hcurl_l2.h>
+#include <definitions.h>
+#include <Common.hpp>
 #include <Hcurl.hpp>
 
 using namespace MoFEM;
