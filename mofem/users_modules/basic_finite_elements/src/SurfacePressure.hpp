@@ -85,11 +85,15 @@ struct NeummanForcesSurface {
     Range tRis;
   };
   std::map<int,bCForce> mapForce;
-  struct bCPreassure {
+
+
+
+  struct bCPressure {
     PressureCubitBcData data;
     Range tRis;
   };
-  std::map<int,bCPreassure> mapPreassure;
+  DEPRECATED typedef bCPressure bCPreassure; ///< \deprecated Do not use spelling mistake
+  std::map<int,bCPressure> mapPressure;
 
   boost::ptr_vector<MethodForForceScaling> methodsOp;
   boost::ptr_vector<MethodForAnalyticalForce> analyticalForceOp;
@@ -142,16 +146,16 @@ struct NeummanForcesSurface {
 
 
   /// Operator for pressure element
-  struct OpNeumannPreassure:public MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator {
+  struct OpNeumannPressure:public MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator {
 
     Vec F;
-    bCPreassure &dAta;
+    bCPressure &dAta;
     boost::ptr_vector<MethodForForceScaling> &methodsOp;
     bool hoGeometry;
 
-    OpNeumannPreassure(
+    OpNeumannPressure(
       const std::string field_name,Vec _F,
-      bCPreassure &data,
+      bCPressure &data,
       boost::ptr_vector<MethodForForceScaling> &methods_op,
       bool ho_geometry = false
     );
@@ -161,18 +165,18 @@ struct NeummanForcesSurface {
     MoFEMErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data);
 
   };
-
+  DEPRECATED typedef OpNeumannPressure OpNeumannPreassure;
   /// Operator for flux element
   struct OpNeumannFlux:public MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator {
 
     Vec F;
-    bCPreassure &dAta;
+    bCPressure &dAta;
     boost::ptr_vector<MethodForForceScaling> &methodsOp;
     bool hoGeometry;
 
     OpNeumannFlux(
       const std::string field_name,Vec _F,
-      bCPreassure &data,
+      bCPressure &data,
       boost::ptr_vector<MethodForForceScaling> &methods_op,
       bool ho_geometry
     );
@@ -203,7 +207,10 @@ struct NeummanForcesSurface {
    * @param  block_set   If tru get data from block set
    * @return             ErrorCode
    */
-  MoFEMErrorCode addPreassure(
+  MoFEMErrorCode addPressure(
+    const std::string field_name,Vec F,int ms_id,bool ho_geometry = false,bool block_set = false
+  );
+  DEPRECATED MoFEMErrorCode addPreassure(
     const std::string field_name,Vec F,int ms_id,bool ho_geometry = false,bool block_set = false
   );
 
@@ -368,7 +375,7 @@ struct MetaNeummanForces {
     fe_name = "PRESSURE_FE";
     neumann_forces.insert(fe_name,new NeummanForcesSurface(m_field));
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,SIDESET|PRESSURESET,it)) {
-      ierr =  neumann_forces.at(fe_name).addPreassure(field_name,F,it->getMeshsetId(),ho_geometry,false); CHKERRG(ierr);
+      ierr =  neumann_forces.at(fe_name).addPressure(field_name,F,it->getMeshsetId(),ho_geometry,false); CHKERRG(ierr);
       /*PressureCubitBcData data;
       ierr = it->getBcDataStructure(data); CHKERRG(ierr);
       my_split << *it << std::endl;
@@ -378,7 +385,7 @@ struct MetaNeummanForces {
     const string block_set_pressure_name("PRESSURE");
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
       if(it->getName().compare(0,block_set_pressure_name.length(),block_set_pressure_name) == 0) {
-        ierr =  neumann_forces.at(fe_name).addPreassure(field_name,F,it->getMeshsetId(),ho_geometry,true); CHKERRG(ierr);
+        ierr =  neumann_forces.at(fe_name).addPressure(field_name,F,it->getMeshsetId(),ho_geometry,true); CHKERRG(ierr);
       }
     }
 

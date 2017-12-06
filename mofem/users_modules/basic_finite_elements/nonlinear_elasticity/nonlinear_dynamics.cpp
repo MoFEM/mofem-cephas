@@ -615,7 +615,7 @@ int main(int argc, char *argv[]) {
     }
     for (_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(
              m_field, SIDESET | PRESSURESET, it)) {
-      CHKERR surface_force.addPreassure(it->getMeshsetId());
+      CHKERR surface_force.addPressure(it->getMeshsetId());
     }
     surface_force.methodsOp.push_back(new TimeForceScale());
     shell_matrix_element.loopK.push_back(
@@ -661,7 +661,7 @@ int main(int argc, char *argv[]) {
     }
     for (_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(
              m_field, SIDESET | PRESSURESET, it)) {
-      CHKERR surface_force.addPreassure(it->getMeshsetId());
+      CHKERR surface_force.addPressure(it->getMeshsetId());
     }
     surface_force.methodsOp.push_back(new TimeForceScale());
 
