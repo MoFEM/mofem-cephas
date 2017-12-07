@@ -132,8 +132,8 @@ Field::Field(const Interface &moab, const EntityHandle meshset,
       break;
     case HCURL:
       forder_table[MBVERTEX] = fNBVERTEX_HCURL;
-      forder_table[MBEDGE] = fNBEDGE_HCURL;
-      forder_table[MBTRI] = fNBFACETRI_HCURL;
+      forder_table[MBEDGE] = fNBEDGE_AINSWORTH_HCURL;
+      forder_table[MBTRI] = fNBFACETRI_AINSWORTH_HCURL;
       forder_table[MBTET] = fNBVOLUMETET_HCURL;
       break;
     case L2:

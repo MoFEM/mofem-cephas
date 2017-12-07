@@ -469,12 +469,12 @@ MoFEMErrorCode MoFEM::Hdiv_Ainsworth_FaceBasedVolumeShapeFunctions_MBTET(
           }
         }
       }
-      if(jj!=NBVOLUMETET_AINSOWRTH_FACE_HDIV(p)) {
+      if(jj!=NBVOLUMETET_AINSWORTH_FACE_HDIV(p)) {
         SETERRQ2(
           PETSC_COMM_SELF,
           MOFEM_DATA_INCONSISTENCY,
           "wrong order %d != %d",
-          jj,NBVOLUMETET_AINSOWRTH_FACE_HDIV(p));
+          jj,NBVOLUMETET_AINSWORTH_FACE_HDIV(p));
       }
     }
   }

@@ -377,7 +377,7 @@ int main(int argc, char *argv[]) {
     }
     for (_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(
              m_field, SIDESET | PRESSURESET, it)) {
-      CHKERR fe_neumann.addPreassure(it->getMeshsetId());
+      CHKERR fe_neumann.addPressure(it->getMeshsetId());
     }
     DirichletSpatialPositionsBc my_dirichlet_bc(m_field, "SPATIAL_POSITION",
                                                 Aij, D, F);

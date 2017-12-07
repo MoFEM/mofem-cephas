@@ -515,10 +515,10 @@ MoFEMErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::calcTrac
   try {
 
   EntityHandle ent = numeredEntFiniteElementPtr->getEnt();
-  map<int,bCPreassure>::iterator mip = mapPreassure.begin();
+  map<int,bCPressure>::iterator mip = mapPressure.begin();
   tLoc.resize(3);
   tLoc[0] = tLoc[1] = tLoc[2] = 0;
-  for(;mip!=mapPreassure.end();mip++) {
+  for(;mip!=mapPressure.end();mip++) {
     if(mip->second.tRis.find(ent)!=mip->second.tRis.end()) {
       tLoc[2] -= mip->second.data.data.value1;
     }
@@ -570,7 +570,7 @@ MoFEMErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::calcTrac
 MoFEMErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::preProcess() {
   MoFEMFunctionBeginHot;
 
-  
+
   ierr = PetscOptionsBegin(mField.get_comm(),"","Surface Pressure (complex for lazy)","none"); CHKERRG(ierr);
   PetscBool is_conservative = PETSC_TRUE;
   ierr = PetscOptionsBool("-is_conservative_force","is conservative force","",PETSC_TRUE,&is_conservative,PETSC_NULL); CHKERRG(ierr);
@@ -668,7 +668,7 @@ MoFEMErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::operator
 MoFEMErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::addForce(int ms_id) {
   MeshsetsManager *mesh_manager_ptr;
   const CubitMeshSets *cubit_meshset_ptr;
-  
+
   MoFEMFunctionBeginHot;
   ierr = mField.getInterface(mesh_manager_ptr); CHKERRG(ierr);
   ierr = mesh_manager_ptr->getCubitMeshsetPtr(ms_id,NODESET,&cubit_meshset_ptr); CHKERRG(ierr);
@@ -677,15 +677,27 @@ MoFEMErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::addForce
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::addPreassure(int ms_id) {
+MoFEMErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::addPressure(int ms_id) {
   MeshsetsManager *mesh_manager_ptr;
   const CubitMeshSets *cubit_meshset_ptr;
-  
+
   MoFEMFunctionBeginHot;
   ierr = mField.getInterface(mesh_manager_ptr); CHKERRG(ierr);
   ierr = mesh_manager_ptr->getCubitMeshsetPtr(ms_id,SIDESET,&cubit_meshset_ptr); CHKERRG(ierr);
-  ierr = cubit_meshset_ptr->getBcDataStructure(mapPreassure[ms_id].data); CHKERRG(ierr);
-  rval = mField.get_moab().get_entities_by_type(cubit_meshset_ptr->meshset,MBTRI,mapPreassure[ms_id].tRis,true); CHKERRG(rval);
+  ierr = cubit_meshset_ptr->getBcDataStructure(mapPressure[ms_id].data); CHKERRG(ierr);
+  rval = mField.get_moab().get_entities_by_type(cubit_meshset_ptr->meshset,MBTRI,mapPressure[ms_id].tRis,true); CHKERRG(rval);
+  MoFEMFunctionReturnHot(0);
+}
+
+  DEPRECATED MoFEMErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::addPreassure(int ms_id) {
+  MeshsetsManager *mesh_manager_ptr;
+  const CubitMeshSets *cubit_meshset_ptr;
+
+  MoFEMFunctionBeginHot;
+  ierr = mField.getInterface(mesh_manager_ptr); CHKERRG(ierr);
+  ierr = mesh_manager_ptr->getCubitMeshsetPtr(ms_id,SIDESET,&cubit_meshset_ptr); CHKERRG(ierr);
+  ierr = cubit_meshset_ptr->getBcDataStructure(mapPressure[ms_id].data); CHKERRG(ierr);
+  rval = mField.get_moab().get_entities_by_type(cubit_meshset_ptr->meshset,MBTRI,mapPressure[ms_id].tRis,true); CHKERRG(rval);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -773,7 +785,7 @@ MoFEMErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::addPreas
 NeummanForcesSurfaceComplexForLazy::NeummanForcesSurfaceComplexForLazy(MoFEM::Interface &m_field,Mat _Aij,Vec _F):
   mField(m_field),feSpatial(m_field,_Aij,_F,NULL,NULL) /*,feMaterial(m_field,_Aij,_F,NULL,NULL)*/ {
 
-  
+
 
   double def_scale = 1.;
   const EntityHandle root_meshset = mField.get_moab().get_root_set();

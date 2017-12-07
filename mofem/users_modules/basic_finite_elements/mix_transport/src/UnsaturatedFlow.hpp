@@ -1724,7 +1724,7 @@ namespace MixTransport {
     }
 
     /**
-     * \brief Calculate inital preassure head distribution
+     * \brief Calculate inital pressure head distribution
      * @return Error code
      */
     MoFEMErrorCode calculateInitialPc() {

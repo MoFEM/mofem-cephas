@@ -12,7 +12,7 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
-*/
+ */
 
 #ifndef __MESHREFINE_HPP__
 #define __MESHREFINE_HPP__
@@ -33,7 +33,8 @@ static const MOFEMuuid IDD_MOFEMMeshRefine =
   \bug Need to be implemented as a stand alone interface not as a part of core
   structure which should be only basic database
   \bug If outsourced, class member functions should follow name convention
-  \bug Spelling mistakes will be corrected with names fix to follow name convetion
+  \bug Spelling mistakes will be corrected with names fix to follow name
+  convetion
 
   \ingroup mofem_refiner
   */
@@ -115,7 +116,7 @@ struct MeshRefinement : public UnknownInterface {
   virtual MoFEMErrorCode refine_PRISM(const EntityHandle meshset,
                                       const BitRefLevel &bit, int verb = 0);
 
-  /**\brief refinem meshset, i.e. add child of refined entities to meshset
+  /**\brief refine meshset, i.e. add child of refined entities to meshset
    *
    * \param EntityHandle meshset where to save the child refined entities
    * \param BitRefLevel bitLevel
@@ -129,17 +130,12 @@ struct MeshRefinement : public UnknownInterface {
                                         int verb = 0);
 };
 
-// DEPRECATED typedef MeshRefinement MeshRefinment;
-
-}
+} // namespace MoFEM
 
 #endif // __MESHREFINE_HPP__
 
 /***************************************************************************/ /**
-  * \defgroup mofem_refiner MeshRefinement
-  * \brief Refine mesh by splitting edges
-  *
-  *
-  *
-  * \ingroup mofem
-  ******************************************************************************/
+ * \defgroup mofem_refiner MeshRefinement
+ * \brief Refine mesh by splitting edges
+ *
+ ******************************************************************************/

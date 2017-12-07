@@ -10,6 +10,9 @@
  * \note If entity if deleted is cleated, removed and deleted from MoAB
  * database.
  *
+ * \todo Implement tag_field_delete, tag_field_delete_by_bit_ref to remove field
+ * tags from entities. This is for entities which are as well removed, thus
+ * cleared as well.
  */
 
 /* MoFEM is free software: you can redistribute it and/or modify it under
@@ -268,6 +271,23 @@ MoFEMErrorCode Core::clear_ents_fields(const Range &ents, int verb) {
     hi_dit = entsFields.get<Ent_mi_tag>().upper_bound(second);
     entsFields.get<Ent_mi_tag>().erase(dit, hi_dit);
   }
+  // TODO: FIXME: Tag are not deleteted, some additional set of interface functions
+  // need to be implemented for example tag_field_delete(...)
+  // for (Field_multiIndex::iterator fit = fIelds.begin(); fit != fIelds.end();
+  //     fit++) {
+  //   rval = moab.tag_delete_data(fit->get()->th_AppOrder, ents);
+  //   if (rval != MB_SUCCESS && rval != MB_TAG_NOT_FOUND) {
+  //     CHKERRG(rval);
+  //   } else {
+  //     rval = MB_SUCCESS;
+  //   }
+  //   rval = moab.tag_delete_data(fit->get()->th_FieldData, ents);
+  //   if (rval != MB_SUCCESS && rval != MB_TAG_NOT_FOUND) {
+  //     CHKERRG(rval);
+  //   } else {
+  //     rval = MB_SUCCESS;
+  //   }
+  // }
   MoFEMFunctionReturn(0);
 }
 
@@ -291,7 +311,21 @@ MoFEMErrorCode Core::clear_ents_fields(const std::string &name,
         boost::make_tuple(name, second));
     entsFields.get<Composite_Name_And_Ent_mi_tag>().erase(dit, hi_dit);
   }
-  const Field *field_ptr = get_field_structure(name);
+  // TODO: FIXME: Tag are not deleteted, some additional set of interface functions
+  // need to be implemented for example tag_field_delete(...)
+  // const Field *field_ptr = get_field_structure(name);
+  // rval = moab.tag_delete_data(field_ptr->th_AppOrder, ents);
+  // if (rval != MB_SUCCESS && rval != MB_TAG_NOT_FOUND) {
+  //   CHKERRG(rval);
+  // } else {
+  //   rval = MB_SUCCESS;
+  // }
+  // rval = moab.tag_delete_data(field_ptr->th_FieldData, ents);
+  // if (rval != MB_SUCCESS && rval != MB_TAG_NOT_FOUND) {
+  //   CHKERRG(rval);
+  // } else {
+  //   rval = MB_SUCCESS;
+  // }
   MoFEMFunctionReturn(0);
 }
 
