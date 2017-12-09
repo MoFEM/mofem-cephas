@@ -2012,6 +2012,89 @@ MoFEMErrorCode VTK_Ainsworth_Hcurl_MBTET(const string file_name) {
   MoFEMFunctionReturnHot(0);
 }
 
+MoFEMErrorCode Hcurl_Demkowicz_EdgeBaseFunctions_MBTET(int *sense, int *p,
+                                                       double *n, double *diff_n,
+                                                       double *phi[],
+                                                       double *diff_phi[],
+                                                       int nb_integration_pts) {
+
+  const int e_nodes[6][2] = {{0, 1}, {1, 2}, {2, 0}, {0, 3}, {1, 3}, {2, 3}};
+
+  FTensor::Index<'i', 3> i;
+  FTensor::Index<'j', 3> j;
+
+  MoFEMFunctionBegin;
+
+  FTensor::Tensor1<double, 3> t_grad_n[4];
+  for (int nn = 0; nn != 4; ++nn) {
+    t_grad_n[nn] = FTensor::Tensor1<double, 3>(
+        diff_n[3 * nn + 0], diff_n[3 * nn + 1], diff_n[3 * nn + 2]);
+  };
+
+
+  for (int ee = 0; ee != 6; ++ee) {
+
+    FTensor::Tensor1<double *, 3> t_phi(&phi[ee][HCURL0], &phi[ee][HCURL1],
+                                        &phi[ee][HCURL2], 3);
+
+    FTensor::Tensor2<double *, 3, 3> t_diff_phi(
+        &diff_phi[ee][HDIV0_0], &diff_phi[ee][HDIV0_1], &diff_phi[ee][HDIV0_2],
+        &diff_phi[ee][HDIV1_0], &diff_phi[ee][HDIV1_1], &diff_phi[ee][HDIV1_2],
+        &diff_phi[ee][HDIV2_0], &diff_phi[ee][HDIV2_1], &diff_phi[ee][HDIV2_2],
+        9);
+
+    const int n0_idx = e_nodes[ee][0];
+    const int n1_idx = e_nodes[ee][1];
+
+    for (int gg = 0; gg != nb_integration_pts; ++gg) {
+      const int shift_n = 4 * gg;
+      const double n0 = n[shift_n + n0_idx];
+      const double n1 = n[shift_n + n1_idx];
+      FTensor::Tensor1<double, 3> &t_grad_n0 = t_grad_n[n0_idx];
+      FTensor::Tensor1<double, 3> &t_grad_n1 = t_grad_n[n1_idx];
+      t_phi(i) = n0 * t_grad_n1(i) - n1 * t_grad_n0(i);
+      t_diff_phi(i, j) = t_grad_n0(j) * t_grad_n1(i) -
+                         t_grad_n1(j) * t_grad_n0(i);
+      FTensor::Tensor1<double, 3> t_phi_0;
+      t_phi_0(i) = t_phi(i);
+      FTensor::Tensor2<double, 3, 3> t_diff_phi_0;
+      t_diff_phi_0(i,j) = t_diff_phi(i,j);
+      ++t_phi;
+      ++t_diff_phi;
+
+      FTensor::Tensor1<double, 3> t_grad_n0_p_n1;
+      t_grad_n0_p_n1(i) = t_grad_n0(i) + t_grad_n1(i);
+
+      double fi[p[ee] + 1], diff_fi[3 * p[ee] + 3];
+      CHKERR Jacobi_polynomials(p[ee]-1, 0, n1, n0 + n1, &t_grad_n0(0),
+                                &t_grad_n0_p_n1(0), fi, diff_fi, 3);
+
+      const double a = n0 + n1;
+      const double s0 = n0 / a;
+      const double s1 = n1 / a;
+
+      for (int oo = 1; oo <= p[ee] - 1; ++oo) {
+        const double b = pow(n0 + n1, oo);
+        t_phi(i) = (b * fi[oo]) * t_phi_0(i);
+        t_diff_phi_0(i, j) = (b * fi[oo]) * t_diff_phi_0(i, j);
+        ++t_phi;
+        ++t_diff_phi;
+      }
+    }
+  }
+
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode Hcurl_Demkowicz_FaceInteriorFunctions_MBTET(
+    int *faces_nodes, int p, double *n, double *diff_n, double *phi_v,
+    double *diff_phi_v, int nb_integration_pts) {
+  MoFEMFunctionBegin;
+
+
+  MoFEMFunctionReturn(0);
+}
+
 static char help[] = "...\n\n";
 
 int main(int argc, char *argv[]) {
@@ -2019,7 +2102,7 @@ int main(int argc, char *argv[]) {
   MoFEM::Core::Initialize(&argc, &argv, (char *)0, help);
 
   try {
-    CHKERR VTK_Ainsworth_Hcurl_MBTET("out_curl_vtk_base_on_tet.vtk");
+    CHKERR VTK_Ainsworth_Hcurl_MBTET("out_curl_vtk_ainsworth_base_on_tet.vtk");
   }
   CATCH_ERRORS;
 

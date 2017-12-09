@@ -47,6 +47,7 @@ int main(int argc, char *argv[]) {
     LEGENDREPOLYNOMIAL,
     LOBATTOPOLYNOMIAL,
     JACOBIPOLYNOMIAL,
+    INTEGRATEDJACOBIPOLYNOMIAL,
     H1TET,
     HDIVTET_AINSWORTH,
     HDIVTET_DEMKOWICZ,
@@ -68,6 +69,7 @@ int main(int argc, char *argv[]) {
     "legendre",
     "lobatto",
     "jacobi",
+    "integrated_jacobi",
     "h1tet",
     "hdivtet_ainsworth",
     "hdivtet_demkowicz",
@@ -225,7 +227,7 @@ int main(int argc, char *argv[]) {
     for(int ii = 0;ii!=n;ii++) {
       double s = pts_1d(0,ii);
       std::cerr
-      << "lobatto_plot "
+      << "jacobi_plot "
       << s << " "
       << (*base_ptr)(ii,4) << " "
       << (*diff_base_ptr)(ii,4)
@@ -247,6 +249,56 @@ int main(int argc, char *argv[]) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong result");
       }
     }
+  }
+
+  if (choise_value == INTEGRATEDJACOBIPOLYNOMIAL) {
+
+    int n = 21;
+    MatrixDouble pts_1d(1,n);
+    pts_1d.resize(1,n,false);
+    MatrixDouble pts_1d_t(1,n);
+    for(int ii = 0;ii!=n;ii++) {
+      pts_1d(0,ii) = (double)ii/20.;
+      pts_1d_t(0,ii) = 1;
+    }
+
+    base_ptr->clear();
+    diff_base_ptr->clear();
+
+    double diff_x = 1;
+    double diff_t = 0;
+    ierr = IntegratedJacobiPolynomial().getValue(
+        pts_1d, pts_1d_t,
+        boost::shared_ptr<BaseFunctionCtx>(new IntegratedJacobiPolynomialCtx(
+            6, &diff_x, &diff_t, 1, 0, base_ptr, diff_base_ptr)));
+    CHKERRG(ierr);
+    for(int ii = 0;ii!=n;ii++) {
+      double s = pts_1d(0,ii);
+      std::cerr
+      << "integrated_jacobi_plot "
+      << s << " "
+      << (*base_ptr)(ii,4) << " "
+      << (*diff_base_ptr)(ii,4)
+      << std::endl;
+    }
+    std::cout << "IntegratedJacobiPolynomial\n";
+    std::cout << pts_1d << std::endl;
+    std::cout << *base_ptr << std::endl;
+    std::cout << *diff_base_ptr << std::endl;
+    {
+      double sum = sum_matrix(*base_ptr);
+      double diff_sum = sum_matrix(*diff_base_ptr);
+      std::cout << sum << std::endl;
+      std::cout << diff_sum << std::endl;
+      // if(fabs(23.2164-sum)>eps) {
+      //   SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong result");
+      // }
+      // if(fabs(167.995-diff_sum)>eps) {
+      //   SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong result");
+      // }
+    }
+
+
   }
 
   DataForcesAndSourcesCore tet_data(MBTET);

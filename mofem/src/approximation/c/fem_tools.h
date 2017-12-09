@@ -112,10 +112,10 @@ void print_mat_sym_upper(double *M,int m,int n);
 /// priint complex matrix
 void print_mat_complex(__CLPK_doublecomplex *M,int m,int n);
 
-/// \brief calculate shape functions on trianangle
+/// \brief calculate shape functions on triangle
 /// \param N shape function array
-/// \param X array of Guass X coordinates
-/// \param Y array of Guass Y coordinates
+/// \param X array of Gauss X coordinates
+/// \param Y array of Gauss Y coordinates
 /// \param G_DIM number of Gauss points
 PetscErrorCode ShapeMBTRI(double *N,const double *X,const double *Y,const int G_DIM);
 /// calculate derivatives of shape functions
@@ -182,7 +182,7 @@ PetscErrorCode ShapeMBTET_inverse(
 );
 
 /**
- * \brief calculate local coordinates of trianular element for given global coordinates in 2D (Assume e.g. z=0)
+ * \brief calculate local coordinates of triangle element for given global coordinates in 2D (Assume e.g. z=0)
  \f[
  \left[\begin{array}{cc}
 \frac{\partial N_{1}}{\partial\xi}x_{N_{1}}+\frac{\partial N_{2}}{\partial\xi}x_{N_{2}}+\frac{\partial N_{3}}{\partial\xi}x_{N_{3}} & \frac{\partial N_{1}}{\partial\eta}x_{N_{1}}+\frac{\partial N_{2}}{\partial\eta}x_{N_{2}}+\frac{\partial N_{3}}{\partial\eta}x_{N_{3}}\\

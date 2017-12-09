@@ -43,15 +43,18 @@ extern "C" {
 
 // H curl
 
-/// Number of base functions H curl on faces
 #define NBEDGE_AINSWORTH_HCURL(P) ((P > 0) ? (P + 1) : 0)
 #define NBFACETRI_AINSWORTH_EDGE_HCURL(P) ((P > 1) ? P - 1 : 0)
 #define NBFACETRI_AINSWORTH_FACE_HCURL(P) ((P > 2) ? (P - 1) * (P - 2) : 0)
 #define NBFACETRI_AINSWORTH_HCURL(P) ((P > 1) ? (P - 1) * (P + 1) : 0)
-#define NBVOLUMETET_AINSWORTH_FACE_HCURL(P) ((P > 2) ? (2 * (P - 1) * (P - 2)) : 0)
-#define NBVOLUMETET_AINSOWRTH_TET_HCURL(P)                                               \
+#define NBVOLUMETET_AINSWORTH_FACE_HCURL(P)                                    \
+  ((P > 2) ? (2 * (P - 1) * (P - 2)) : 0)
+#define NBVOLUMETET_AINSOWRTH_TET_HCURL(P)                                     \
   ((P > 3) ? ((P - 3) * (P - 2) * (P - 1) / 2) : 0)
 #define NBVOLUMETET_HCURL(P) ((P > 2) ? (P - 2) * (P - 1) * (P + 1) / 2 : 0)
+
+#define NBEDGE_DEMKOWICZ_HCURL(P) ((P > 0) ? P : 0)
+#define NBFACETRI_DEMKOWICZ_HCURL(P) ((P > 1) ? P * (P - 1) : 0)
 
 // H div
 
