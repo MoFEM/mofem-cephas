@@ -334,12 +334,9 @@ MoFEMErrorCode Hcurl_Ainsworth_VolumeFunctions_MBTET(
  * @param  nb_integration_pts             number of integration points
  * @return                  error code
  */
-MoFEMErrorCode Hcurl_Demkowicz_EdgeBaseFunctions_MBTET(int *sense, int *p,
-                                                       double *n, double *diff_n,
-                                                       double *phi[],
-                                                       double *diff_phi[],
-                                                       int nb_integration_pts);
-
+MoFEMErrorCode Hcurl_Demkowicz_EdgeBaseFunctions_MBTET(
+    int *sense, int *p, double *n, double *diff_n, double *phi[],
+    double *diff_phi[], int nb_integration_pts);
 
 /** \brief Face base interior function
 
