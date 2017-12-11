@@ -355,9 +355,9 @@ See NBFACETRI_AINSWORTH_FACE_HCURL
 
 
 */
-MoFEMErrorCode Hcurl_Demkowicz_FaceInteriorFunctions_MBTET(
-    int *faces_nodes, int p, double *n, double *diff_n, double *phi_v,
-    double *diff_phi_v, int nb_integration_pts);
+MoFEMErrorCode Hcurl_Demkowicz_FaceBaseFunctions_MBTET(
+    int *faces_nodes, int *p, double *n, double *diff_n, double *phi[],
+    double *diff_phi[], int nb_integration_pts);
 
 } // namespace MoFEM
 
