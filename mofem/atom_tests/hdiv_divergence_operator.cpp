@@ -371,9 +371,7 @@ int main(int argc, char *argv[]) {
   }
 
 
-  } catch (MoFEMException const &e) {
-    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
-  }
+  } CATCH_ERRORS;
 
   ierr = MoFEM::Core::Finalize(); CHKERRG(ierr);
 }
