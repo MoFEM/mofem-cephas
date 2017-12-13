@@ -322,8 +322,6 @@ MoFEMErrorCode Hcurl_Ainsworth_VolumeFunctions_MBTET(
  Function generates hierarchical base of h-curl comforting functions on
  tetrahedral edge.  For more details see \cite ainsworth2011bernstein.
 
- On each tetrahedral's edge we have P+1 functions. See NBEDGE_AINSWORTH_HCURL
-
  * @param  sense            sense fo edge (i.e. unique orientation)
  * @param  p                array of oder for each edge
  * @param  n                array shape functions evaluated at each integration
@@ -340,16 +338,12 @@ MoFEMErrorCode Hcurl_Demkowicz_EdgeBaseFunctions_MBTET(
 
 /** \brief Face base interior function
 
-On each face we have P*(P-1)/2 and are 4 faces on Tetrahedral.
-
-See NBFACETRI_AINSWORTH_FACE_HCURL
-
 * @param  face_nodes       array [4*3] of local indices of face nodes
 * @param  p                approximation order
-* @param  N                nodal shape functions
-* @param  diffN            derivatives of nodal shape functions
-* @param  phi_v            calculated shape functions
-* @param  diff_phi_v       derivatives of shape functions
+* @param  n                nodal shape functions
+* @param  diff_n            derivatives of nodal shape functions
+* @param  phi            calculated shape functions
+* @param  diff_phi       derivatives of shape functions
 * @param  nb_integration_pts             number of shape functions
 * @return                  error code
 
@@ -358,6 +352,23 @@ See NBFACETRI_AINSWORTH_FACE_HCURL
 MoFEMErrorCode Hcurl_Demkowicz_FaceBaseFunctions_MBTET(
     int *faces_nodes, int *p, double *n, double *diff_n, double *phi[],
     double *diff_phi[], int nb_integration_pts);
+
+/** \brief Volume base interior function
+
+* @param  p                approximation order
+* @param  n                nodal shape functions
+* @param  diff_n            derivatives of nodal shape functions
+* @param  phi            calculated shape functions
+* @param  diff_phi       derivatives of shape functions
+* @param  nb_integration_pts             number of shape functions
+* @return                  error code
+
+
+*/
+MoFEMErrorCode Hcurl_Demkowicz_VolumeBaseFunctions_MBTET(
+    int p, double *n, double *diff_n, double *phi,
+    double *diff_phi, int nb_integration_pts);
+
 
 } // namespace MoFEM
 
