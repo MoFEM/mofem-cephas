@@ -140,7 +140,7 @@ struct PostProcStress
         invH.resize(3, 3);
         noalias(H) = (commonData.gradMap["MESH_NODE_POSITIONS"])[gg];
 
-        CHKERR dAta.materialDoublePtr->dEterminatnt(H, detH);
+        CHKERR dAta.materialDoublePtr->dEterminant(H, detH);
         CHKERR dAta.materialDoublePtr->iNvert(detH, H, invH);
         noalias(dAta.materialDoublePtr->F) =
             prod(dAta.materialDoublePtr->F, invH);

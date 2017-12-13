@@ -211,7 +211,7 @@ struct VolumeLengthQuality: public NonlinearElasticElement::FunctionsToCalculate
 
         ierr = getEdgesFromElemCoords(); CHKERRG(ierr);
 
-        ierr = this->dEterminatnt(this->F,detF); CHKERRG(ierr);
+        ierr = this->dEterminant(this->F,detF); CHKERRG(ierr);
         if(this->invF.size1()!=3) {
           this->invF.resize(3,3);
         }
