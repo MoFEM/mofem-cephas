@@ -653,8 +653,7 @@ MoFEMErrorCode TetPolynomialBase::getValueHdiv(MatrixDouble &pts) {
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode TetPolynomialBase::getValueHCurl(MatrixDouble &pts) {
-
+MoFEMErrorCode TetPolynomialBase::getValueHCurlAinsworthBase(MatrixDouble &pts) {
   MoFEMFunctionBeginHot;
 
   try {
@@ -760,7 +759,7 @@ MoFEMErrorCode TetPolynomialBase::getValueHCurl(MatrixDouble &pts) {
 
       // volume
       int order = data.dataOnEntities[MBTET][0].getDataOrder();
-      int nb_vol_dofs = NBVOLUMETET_HCURL(order);
+      int nb_vol_dofs = NBVOLUMETET_AINSWORTH_HCURL(order);
       data.dataOnEntities[MBTET][0].getN(base).resize(nb_gauss_pts,
                                                       3 * nb_vol_dofs, false);
       data.dataOnEntities[MBTET][0].getDiffN(base).resize(
@@ -791,6 +790,157 @@ MoFEMErrorCode TetPolynomialBase::getValueHCurl(MatrixDouble &pts) {
   }
 
   MoFEMFunctionReturnHot(0);
+}
+
+MoFEMErrorCode
+TetPolynomialBase::getValueHCurlDemkowiczBase(MatrixDouble &pts) {
+  MoFEMFunctionBegin;
+
+  DataForcesAndSourcesCore &data = cTx->dAta;
+  const FieldApproximationBase base = cTx->bAse;
+  if (base != DEMKOWICZ_JACOBI_BASE) {
+    SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+             "This should be used only with DEMKOWICZ_JACOBI_BASE "
+             "but base is %s",
+             ApproximationBaseNames[base]);
+  }
+
+  int nb_gauss_pts = pts.size2();
+
+  // edges
+  if (data.spacesOnEntities[MBEDGE].test(HCURL)) {
+    int sense[6], order[6];
+    if (data.dataOnEntities[MBEDGE].size() != 6) {
+      SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+               "wrong size of data structure, expected space for six edges "
+               "but is %d",
+               data.dataOnEntities[MBEDGE].size());
+    }
+    double *hcurl_edge_n[6], *diff_hcurl_edge_n[6];
+    for (int ee = 0; ee != 6; ee++) {
+      if (data.dataOnEntities[MBEDGE][ee].getSense() == 0) {
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "orintation of edges is not set");
+      }
+      sense[ee] = data.dataOnEntities[MBEDGE][ee].getSense();
+      order[ee] = data.dataOnEntities[MBEDGE][ee].getDataOrder();
+      int nb_dofs = NBEDGE_DEMKOWICZ_HCURL(
+          data.dataOnEntities[MBEDGE][ee].getDataOrder());
+      data.dataOnEntities[MBEDGE][ee].getN(base).resize(nb_gauss_pts,
+                                                        3 * nb_dofs, false);
+      data.dataOnEntities[MBEDGE][ee].getDiffN(base).resize(nb_gauss_pts,
+                                                            9 * nb_dofs, false);
+      hcurl_edge_n[ee] =
+          &*data.dataOnEntities[MBEDGE][ee].getN(base).data().begin();
+      diff_hcurl_edge_n[ee] =
+          &*data.dataOnEntities[MBEDGE][ee].getDiffN(base).data().begin();
+    }
+    CHKERR Hcurl_Demkowicz_EdgeBaseFunctions_MBTET(
+        sense, order,
+        &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
+        &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
+        hcurl_edge_n, diff_hcurl_edge_n, nb_gauss_pts);
+  } else {
+    // No DOFs on edges, resize base function matrices, indicating that no
+    // dofs on them.
+    for (int ee = 0; ee != 6; ee++) {
+      data.dataOnEntities[MBEDGE][ee].getN(base).resize(nb_gauss_pts, 0, false);
+      data.dataOnEntities[MBEDGE][ee].getDiffN(base).resize(nb_gauss_pts, 0,
+                                                            false);
+    }
+  }
+
+  // triangles
+  if (data.spacesOnEntities[MBTRI].test(HCURL)) {
+    int order[4];
+    // faces
+    if (data.dataOnEntities[MBTRI].size() != 4) {
+      SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "data structure for storing face h-curl base have wrong size "
+              "should be four but is %d",
+              data.dataOnEntities[MBTRI].size());
+    }
+    double *hcurl_base_n[4], *diff_hcurl_base_n[4];
+    for (int ff = 0; ff != 4; ff++) {
+      if (data.dataOnEntities[MBTRI][ff].getSense() == 0) {
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "orintation of face is not set");
+      }
+      order[ff] = data.dataOnEntities[MBTRI][ff].getDataOrder();
+      int nb_dofs = NBFACETRI_DEMKOWICZ_HCURL(order[ff]);
+      data.dataOnEntities[MBTRI][ff].getN(base).resize(nb_gauss_pts,
+                                                       3 * nb_dofs, false);
+      data.dataOnEntities[MBTRI][ff].getDiffN(base).resize(nb_gauss_pts,
+                                                           9 * nb_dofs, false);
+      hcurl_base_n[ff] =
+          &*data.dataOnEntities[MBTRI][ff].getN(base).data().begin();
+      diff_hcurl_base_n[ff] =
+          &*data.dataOnEntities[MBTRI][ff].getDiffN(base).data().begin();
+    }
+    if (data.facesNodes.size1() != 4) {
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "data inconsistency, should be four faces");
+    }
+    if (data.facesNodes.size2() != 3) {
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "data inconsistency, should be three nodes on face");
+    }
+    CHKERR Hcurl_Demkowicz_FaceBaseFunctions_MBTET(
+        &*data.facesNodes.data().begin(), order,
+        &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
+        &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
+        hcurl_base_n, diff_hcurl_base_n, nb_gauss_pts);
+  } else {
+    // No DOFs on faces, resize base function matrices, indicating that no
+    // dofs on them.
+    for (int ff = 0; ff != 4; ff++) {
+      data.dataOnEntities[MBTRI][ff].getN(base).resize(nb_gauss_pts, 0, false);
+      data.dataOnEntities[MBTRI][ff].getDiffN(base).resize(nb_gauss_pts, 0,
+                                                           false);
+    }
+  }
+
+  if (data.spacesOnEntities[MBTET].test(HCURL)) {
+    // volume
+    int order = data.dataOnEntities[MBTET][0].getDataOrder();
+    int nb_vol_dofs = NBVOLUMETET_DEMKOWICZ_HCURL(order);
+    data.dataOnEntities[MBTET][0].getN(base).resize(nb_gauss_pts,
+                                                    3 * nb_vol_dofs, false);
+    data.dataOnEntities[MBTET][0].getDiffN(base).resize(nb_gauss_pts,
+                                                        9 * nb_vol_dofs, false);
+    CHKERR Hcurl_Demkowicz_VolumeBaseFunctions_MBTET(
+        data.dataOnEntities[MBTET][0].getDataOrder(),
+        &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
+        &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
+        &*data.dataOnEntities[MBTET][0].getN(base).data().begin(),
+        &*data.dataOnEntities[MBTET][0].getDiffN(base).data().begin(),
+        nb_gauss_pts);
+  } else {
+    // No DOFs on faces, resize base function matrices, indicating that no
+    // dofs on them.
+    data.dataOnEntities[MBTET][0].getN(base).resize(nb_gauss_pts, 0, false);
+    data.dataOnEntities[MBTET][0].getDiffN(base).resize(nb_gauss_pts, 0, false);
+  }
+
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode TetPolynomialBase::getValueHCurl(MatrixDouble &pts) {
+  MoFEMFunctionBegin;
+
+  switch (cTx->bAse) {
+  case AINSWORTH_LEGENDRE_BASE:
+  case AINSWORTH_LOBATTO_BASE:
+    CHKERR getValueHCurlAinsworthBase(pts);
+    break;
+  case DEMKOWICZ_JACOBI_BASE:
+    CHKERR getValueHCurlDemkowiczBase(pts);
+    break;
+  default:
+    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Not implemented");
+  }
+
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode

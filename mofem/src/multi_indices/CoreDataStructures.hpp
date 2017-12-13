@@ -49,7 +49,7 @@ inline int fNBVOLUMEPRISM_H1(int P) { return NBVOLUMEPRISM_H1(P); }
 inline int fNBVERTEX_HCURL(int P) { (void)P; return 0; }
 inline int fNBEDGE_AINSWORTH_HCURL(int P) { return NBEDGE_AINSWORTH_HCURL(P); }
 inline int fNBFACETRI_AINSWORTH_HCURL(int P) { return NBFACETRI_AINSWORTH_HCURL(P); }
-inline int fNBVOLUMETET_HCURL(int P) { return NBVOLUMETET_HCURL(P); }
+inline int fNBVOLUMETET_AINSWORTH_HCURL(int P) { return NBVOLUMETET_AINSWORTH_HCURL(P); }
 
 /// \brief number of approx. functions for HDIV space on vertex
 ///
