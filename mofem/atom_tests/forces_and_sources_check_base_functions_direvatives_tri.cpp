@@ -81,18 +81,18 @@ int main(int argc, char *argv[]) {
   }
   EntityHandle tri;
   rval = moab.create_element(MBTRI,nodes,3,tri); CHKERRG(rval);
-  // Create adjacencies entitities
+  // Create adjacencies entities
   Range adj;
   rval = moab.get_adjacencies(&tri,1,1,true,adj); CHKERRG(ierr);
 
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
 
-  //Create MoFEM (Joseph) database
+  //Create MoFEM database
   MoFEM::Core core(moab);
   MoFEM::Interface& m_field = core;
 
-  //set entitities bit level
+  //set entities bit level
   BitRefLevel bit_level0;
   bit_level0.set(0);
   ierr = m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(0,2,bit_level0); CHKERRG(ierr);
@@ -338,9 +338,7 @@ int main(int argc, char *argv[]) {
   // cerr << inv_jac << endl;
 
 
-  } catch (MoFEMException const &e) {
-    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
-  }
+  } CATCH_ERRORS;
 
   ierr = MoFEM::Core::Finalize(); CHKERRG(ierr);
 }
