@@ -210,6 +210,8 @@ struct NeummanForcesSurface {
   MoFEMErrorCode addPressure(
     const std::string field_name,Vec F,int ms_id,bool ho_geometry = false,bool block_set = false
   );
+
+  /// \deprecated function is deprecated because spelling mistake, use addPressure instead
   DEPRECATED MoFEMErrorCode addPreassure(
     const std::string field_name,Vec F,int ms_id,bool ho_geometry = false,bool block_set = false
   );
