@@ -92,7 +92,7 @@ struct MyMat_double: public NonlinearElasticElement::FunctionsToCalculatePiolaKi
         //std::cerr << this->P << std::endl;
       } else {
         adouble J;
-        ierr = this->dEterminatnt(this->F,J); CHKERRG(ierr);
+        ierr = this->dEterminant(this->F,J); CHKERRG(ierr);
         invF.resize(3,3);
         ierr = this->iNvert(J,this->F,invF); CHKERRG(ierr);
         sTrain0.resize(6,0);

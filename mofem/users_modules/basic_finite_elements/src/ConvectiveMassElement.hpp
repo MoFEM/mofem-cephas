@@ -172,7 +172,7 @@ struct ConvectiveMassElement {
   struct CommonFunctions {
 
     template<typename TYPE>
-    MoFEMErrorCode dEterminatnt(
+    MoFEMErrorCode dEterminant(
       ublas::matrix<TYPE,ublas::row_major,ublas::bounded_array<TYPE,9> >& a,
       TYPE &det
     ) {
