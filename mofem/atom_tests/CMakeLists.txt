@@ -1075,6 +1075,7 @@ list(INSERT testing_base_list
   legendre
   lobatto
   jacobi
+  integrated_jacobi
   h1tet
   hcurltet
   hdivtet_ainsworth

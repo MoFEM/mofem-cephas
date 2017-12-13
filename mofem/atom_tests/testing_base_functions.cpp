@@ -261,12 +261,12 @@ int main(int argc, char *argv[]) {
         double diff_sum = sum_matrix(*diff_base_ptr);
         std::cout << sum << std::endl;
         std::cout << diff_sum << std::endl;
-        // if(fabs(23.2164-sum)>eps) {
-        //   SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong result");
-        // }
-        // if(fabs(167.995-diff_sum)>eps) {
-        //   SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong result");
-        // }
+        if(fabs(7.1915-sum)>eps) {
+          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong result");
+        }
+        if(fabs(23.2164-diff_sum)>eps) {
+          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong result");
+        }
       }
     }
 
