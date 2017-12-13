@@ -62,6 +62,8 @@ private:
   MoFEMErrorCode getValueHcurlAinsworthBase(MatrixDouble &pts);
 
   MoFEMErrorCode getValueHdivDemkowiczBase(MatrixDouble &pts);
+  MoFEMErrorCode getValueHcurlDemkowiczBase(MatrixDouble &pts);
+
 };
 
 } // namespace MoFEM
