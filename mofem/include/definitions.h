@@ -174,8 +174,8 @@ enum FieldSpace {
   NOSPACE = 0,
   NOFIELD = 1, ///< scalar or vector of scalars describe (no true field)
   H1,          ///< continuous field
-  HDIV,        ///< field with continuous normal traction
   HCURL,       ///< field with continuous tangents
+  HDIV,        ///< field with continuous normal traction
   L2,          ///< field with C-1 continuity
   LASTSPACE    ///< FieldSpace in [ 0, LASTSPACE )
 };

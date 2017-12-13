@@ -14,27 +14,36 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
-*/
+ */
 
 #ifndef __DATASTRUCTURES_HPP__
 #define __DATASTRUCTURES_HPP__
 
 namespace MoFEM {
 
-const int prism_adj_edges[] = { 6,7,8, -1,-1,-1, 0,1,2 };
-const int prism_edges_conn[6][2] = { {0,1},{1,2},{2,0}, {3,4}, {4,5}, {5,3} };
+const int prism_adj_edges[] = {6, 7, 8, -1, -1, -1, 0, 1, 2};
+const int prism_edges_conn[6][2] = {{0, 1}, {1, 2}, {2, 0},
+                                    {3, 4}, {4, 5}, {5, 3}};
 
-inline int fNBENTITY_GENERIC(int P) { (void)P; return 0; }
-inline int fNBENTITYSET_NOFIELD(int P) { (void)P; return 1; }
+inline int fNBENTITY_GENERIC(int P) {
+  (void)P;
+  return 0;
+}
+inline int fNBENTITYSET_NOFIELD(int P) {
+  (void)P;
+  return 1;
+}
 //
-inline int fNBVERTEX_L2(int P) { (void)P; return 0; }
+inline int fNBVERTEX_L2(int P) {
+  (void)P;
+  return 0;
+}
 inline int fNBVOLUMETET_L2(int P) { return NBVOLUMETET_L2(P); }
 inline int fNBFACETRI_L2(int P) { return NBFACETRI_L2(P); }
 inline int fNBEDGE_L2(int P) { return NBEDGE_L2(P); }
 
-//
 /// number of approx. functions for H1 space on vertex
-inline int fNBVERTEX_H1(int P) { return (P==1) ? 1 : 0; }
+inline int fNBVERTEX_H1(int P) { return (P == 1) ? 1 : 0; }
 /// number of approx. functions for H1 space on edge
 inline int fNBEDGE_H1(int P) { return NBEDGE_H1(P); }
 /// number of approx. functions for H1 space on face
@@ -44,32 +53,60 @@ inline int fNBFACEQUAD_H1(int P) { return NBFACEQUAD_H1(P); }
 inline int fNBVOLUMETET_H1(int P) { return NBVOLUMETET_H1(P); }
 inline int fNBVOLUMEPRISM_H1(int P) { return NBVOLUMEPRISM_H1(P); }
 
-//
 /// number of approx. functions for HCURL space on vertex
-inline int fNBVERTEX_HCURL(int P) { (void)P; return 0; }
+inline int fNBVERTEX_HCURL(int P) {
+  (void)P;
+  return 0;
+}
 inline int fNBEDGE_AINSWORTH_HCURL(int P) { return NBEDGE_AINSWORTH_HCURL(P); }
-inline int fNBFACETRI_AINSWORTH_HCURL(int P) { return NBFACETRI_AINSWORTH_HCURL(P); }
-inline int fNBVOLUMETET_AINSWORTH_HCURL(int P) { return NBVOLUMETET_AINSWORTH_HCURL(P); }
+inline int fNBFACETRI_AINSWORTH_HCURL(int P) {
+  return NBFACETRI_AINSWORTH_HCURL(P);
+}
+inline int fNBVOLUMETET_AINSWORTH_HCURL(int P) {
+  return NBVOLUMETET_AINSWORTH_HCURL(P);
+}
+
+inline int fNBEDGE_DEMKOWICZ_HCURL(int P) { return NBEDGE_DEMKOWICZ_HCURL(P); }
+inline int fNBFACETRI_DEMKOWICZ_HCURL(int P) {
+  return NBFACETRI_DEMKOWICZ_HCURL(P);
+}
+inline int fNBVOLUMETET_DEMKOWICZ_HCURL(int P) {
+  return NBVOLUMETET_DEMKOWICZ_HCURL(P);
+}
 
 /// \brief number of approx. functions for HDIV space on vertex
 ///
 /// zero number of digrees of freedom on vertex for that space
-inline int fNBVERTEX_HDIV(int P) { (void)P; return 0; }
+inline int fNBVERTEX_HDIV(int P) {
+  (void)P;
+  return 0;
+}
 /// number of approx. functions for HDIV space on edge
-inline int fNBEDGE_HDIV(int P) { (void)P; return NBEDGE_HDIV(P); }
+inline int fNBEDGE_HDIV(int P) {
+  (void)P;
+  return NBEDGE_HDIV(P);
+}
 /// number of approx. functions for HDIV space on face
-inline int fNBFACETRI_AINSWORTH_HDIV(int P) { return NBFACETRI_AINSWORTH_HDIV(P); }
+inline int fNBFACETRI_AINSWORTH_HDIV(int P) {
+  return NBFACETRI_AINSWORTH_HDIV(P);
+}
 /// number of approx. functions for HDIV space on volume
-inline int fNBVOLUMETET_AINSWORTH_HDIV(int P) { return NBVOLUMETET_AINSWORTH_HDIV(P); }
+inline int fNBVOLUMETET_AINSWORTH_HDIV(int P) {
+  return NBVOLUMETET_AINSWORTH_HDIV(P);
+}
 
-inline int fNBFACETRI_DEMKOWICZ_HDIV(int P) { return NBFACETRI_DEMKOWICZ_HDIV(P); }
+inline int fNBFACETRI_DEMKOWICZ_HDIV(int P) {
+  return NBFACETRI_DEMKOWICZ_HDIV(P);
+}
 /// number of approx. functions for HDIV space on volume
-inline int fNBVOLUMETET_DEMKOWICZ_HDIV(int P) { return NBVOLUMETET_DEMKOWICZ_HDIV(P); }
+inline int fNBVOLUMETET_DEMKOWICZ_HDIV(int P) {
+  return NBVOLUMETET_DEMKOWICZ_HDIV(P);
+}
 
 /** \brief Test MoAB entity handle if has structure as is assumed by MoFEM
-  */
-MoFEMErrorCode test_moab(Interface &moab,const EntityHandle ent);
+ */
+MoFEMErrorCode test_moab(Interface &moab, const EntityHandle ent);
 
-}
+} // namespace MoFEM
 
 #endif //__DATASTRUCTURES_HPP__
