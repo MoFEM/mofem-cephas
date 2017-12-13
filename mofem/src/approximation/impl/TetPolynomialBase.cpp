@@ -653,7 +653,7 @@ MoFEMErrorCode TetPolynomialBase::getValueHdiv(MatrixDouble &pts) {
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode TetPolynomialBase::getValueHCurlAinsworthBase(MatrixDouble &pts) {
+MoFEMErrorCode TetPolynomialBase::getValueHcurlAinsworthBase(MatrixDouble &pts) {
   MoFEMFunctionBeginHot;
 
   try {
@@ -793,7 +793,7 @@ MoFEMErrorCode TetPolynomialBase::getValueHCurlAinsworthBase(MatrixDouble &pts) 
 }
 
 MoFEMErrorCode
-TetPolynomialBase::getValueHCurlDemkowiczBase(MatrixDouble &pts) {
+TetPolynomialBase::getValueHcurlDemkowiczBase(MatrixDouble &pts) {
   MoFEMFunctionBegin;
 
   DataForcesAndSourcesCore &data = cTx->dAta;
@@ -925,16 +925,16 @@ TetPolynomialBase::getValueHCurlDemkowiczBase(MatrixDouble &pts) {
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode TetPolynomialBase::getValueHCurl(MatrixDouble &pts) {
+MoFEMErrorCode TetPolynomialBase::getValueHcurl(MatrixDouble &pts) {
   MoFEMFunctionBegin;
 
   switch (cTx->bAse) {
   case AINSWORTH_LEGENDRE_BASE:
   case AINSWORTH_LOBATTO_BASE:
-    CHKERR getValueHCurlAinsworthBase(pts);
+    CHKERR getValueHcurlAinsworthBase(pts);
     break;
   case DEMKOWICZ_JACOBI_BASE:
-    CHKERR getValueHCurlDemkowiczBase(pts);
+    CHKERR getValueHcurlDemkowiczBase(pts);
     break;
   default:
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Not implemented");
@@ -1012,7 +1012,7 @@ TetPolynomialBase::getValue(MatrixDouble &pts,
     CHKERRG(ierr);
     break;
   case HCURL:
-    ierr = getValueHCurl(pts);
+    ierr = getValueHcurl(pts);
     CHKERRG(ierr);
     break;
   case L2:

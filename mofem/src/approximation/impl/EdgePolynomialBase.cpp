@@ -122,7 +122,7 @@ EdgePolynomialBase::getValue(MatrixDouble &pts,
     CHKERRG(ierr);
     break;
   case HCURL:
-    ierr = getValueHCurl(pts);
+    ierr = getValueHcurl(pts);
     CHKERRG(ierr);
     break;
   case L2:
@@ -226,7 +226,7 @@ MoFEMErrorCode EdgePolynomialBase::getValueHdiv(MatrixDouble &pts) {
           "Make no sense, unless problem is 2d (2d not implemented yet)");
 }
 
-MoFEMErrorCode EdgePolynomialBase::getValueHCurl(MatrixDouble &pts) {
+MoFEMErrorCode EdgePolynomialBase::getValueHcurl(MatrixDouble &pts) {
 
   MoFEMFunctionBeginHot;
 

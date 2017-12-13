@@ -285,8 +285,8 @@ MoFEMErrorCode TriPolynomialBase::getValueHdiv(MatrixDouble &pts) {
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode TriPolynomialBase::getValueHCurl(MatrixDouble &pts) {
-
+MoFEMErrorCode
+TriPolynomialBase::getValueHcurlAinsworthBase(MatrixDouble &pts) {
   MoFEMFunctionBeginHot;
 
   DataForcesAndSourcesCore &data = cTx->dAta;
@@ -375,6 +375,24 @@ MoFEMErrorCode TriPolynomialBase::getValueHCurl(MatrixDouble &pts) {
   MoFEMFunctionReturnHot(0);
 }
 
+MoFEMErrorCode TriPolynomialBase::getValueHcurl(MatrixDouble &pts) {
+  MoFEMFunctionBegin;
+
+  switch (cTx->bAse) {
+  case AINSWORTH_LEGENDRE_BASE:
+  case AINSWORTH_LOBATTO_BASE:
+    CHKERR getValueHcurlAinsworthBase(pts);
+    break;
+  case DEMKOWICZ_JACOBI_BASE:
+    // CHKERR getValueHdivDemkowiczBase(pts);
+    break;
+  default:
+    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Not implemented");
+  }
+
+  MoFEMFunctionReturn(0);
+}
+
 MoFEMErrorCode
 TriPolynomialBase::getValue(MatrixDouble &pts,
                             boost::shared_ptr<BaseFunctionCtx> ctx_ptr) {
@@ -453,7 +471,7 @@ TriPolynomialBase::getValue(MatrixDouble &pts,
     CHKERRG(ierr);
     break;
   case HCURL:
-    ierr = getValueHCurl(pts);
+    ierr = getValueHcurl(pts);
     CHKERRG(ierr);
     break;
   case L2:

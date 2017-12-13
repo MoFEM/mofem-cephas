@@ -55,10 +55,11 @@ private:
 
   MoFEMErrorCode getValueHdiv(MatrixDouble &pts);
 
-  MoFEMErrorCode getValueHCurl(MatrixDouble &pts);
+  MoFEMErrorCode getValueHcurl(MatrixDouble &pts);
 
 private:
   MoFEMErrorCode getValueHdivAinsworthBase(MatrixDouble &pts);
+  MoFEMErrorCode getValueHcurlAinsworthBase(MatrixDouble &pts);
 
   MoFEMErrorCode getValueHdivDemkowiczBase(MatrixDouble &pts);
 };
