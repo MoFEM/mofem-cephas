@@ -2145,6 +2145,85 @@ MoFEMErrorCode MoFEM::Hcurl_Demkowicz_EdgeBaseFunctions_MBTET(
   MoFEMFunctionReturn(0);
 }
 
+MoFEMErrorCode MoFEM::Hcurl_Demkowicz_EdgeBaseFunctions_MBTRI(
+    int *sense, int *p, double *n, double *diff_n, double *phi[],
+    double *diff_phi[], int nb_integration_pts) {
+
+  const int e_nodes[3][2] = {{0, 1}, {1, 2}, {2, 0}};
+
+  MoFEMFunctionBegin;
+
+  FTensor::Tensor1<double, 3> t_grad_n[3];
+  for (int nn = 0; nn != 3; ++nn) {
+    t_grad_n[nn] = FTensor::Tensor1<double, 3>(
+        diff_n[3 * nn + 0], diff_n[3 * nn + 1], diff_n[3 * nn + 2]);
+  };
+
+  HcurlEdgeBase h_curl_base_on_edge;
+
+  for (int ee = 0; ee != 3; ++ee) {
+
+    FTensor::Tensor1<double *, 3> t_phi(&phi[ee][HCURL0], &phi[ee][HCURL1],
+                                        &phi[ee][HCURL2], 3);
+
+    FTensor::Tensor2<double *, 3, 3> t_diff_phi(
+        &diff_phi[ee][HCURL0_0], &diff_phi[ee][HCURL0_1],
+        &diff_phi[ee][HCURL0_2], &diff_phi[ee][HCURL1_0],
+        &diff_phi[ee][HCURL1_1], &diff_phi[ee][HCURL1_2],
+        &diff_phi[ee][HCURL2_0], &diff_phi[ee][HCURL2_1],
+        &diff_phi[ee][HCURL2_2], 9);
+
+    int n0_idx = e_nodes[ee][0];
+    int n1_idx = e_nodes[ee][1];
+    if(sense[ee]==-1) {
+      int n_tmp = n0_idx;
+      n0_idx = n1_idx;
+      n1_idx = n_tmp;
+    }
+
+    CHKERR h_curl_base_on_edge(3, p[ee], nb_integration_pts, n0_idx, n1_idx, n,
+                               t_grad_n, t_phi, t_diff_phi);
+  }
+
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode MoFEM::Hcurl_Demkowicz_EdgeBaseFunctions_MBEDGE(
+    int sense, int p, double *n, double *diff_n, double *phi,
+    double *diff_phi, int nb_integration_pts) {
+  MoFEMFunctionBegin;
+
+  FTensor::Tensor1<double, 3> t_grad_n[3];
+  for (int nn = 0; nn != 3; ++nn) {
+    t_grad_n[nn] = FTensor::Tensor1<double, 3>(
+        diff_n[3 * nn + 0], diff_n[3 * nn + 1], diff_n[3 * nn + 2]);
+  };
+
+  HcurlEdgeBase h_curl_base_on_edge;
+
+  FTensor::Tensor1<double *, 3> t_phi(&phi[HCURL0], &phi[HCURL1],
+                                      &phi[HCURL2], 3);
+
+  FTensor::Tensor2<double *, 3, 3> t_diff_phi(
+      &diff_phi[HCURL0_0], &diff_phi[HCURL0_1], &diff_phi[HCURL0_2],
+      &diff_phi[HCURL1_0], &diff_phi[HCURL1_1], &diff_phi[HCURL1_2],
+      &diff_phi[HCURL2_0], &diff_phi[HCURL2_1], &diff_phi[HCURL2_2],
+      9);
+
+  int n0_idx = 0;
+  int n1_idx = 1;
+  if (sense == -1) {
+    int n_tmp = n0_idx;
+    n0_idx = n1_idx;
+    n1_idx = n_tmp;
+  }
+
+  CHKERR h_curl_base_on_edge(3, p, nb_integration_pts, n0_idx, n1_idx, n,
+                             t_grad_n, t_phi, t_diff_phi);
+
+  MoFEMFunctionReturn(0);
+}
+
 struct HcurlFaceBase {
   HcurlEdgeBase hCurlBaseOnEdge;
   VectorDouble f0PhiII,diffF0PhiII;
@@ -2436,6 +2515,52 @@ MoFEM::Hcurl_Demkowicz_FaceBaseFunctions_MBTET(int *faces_nodes, int *p,
                             n2f0_idx, n0f1_idx, n1f1_idx, n2f1_idx, n, t_grad_n,
                             t_phi, t_diff_phi);
   }
+
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode
+MoFEM::Hcurl_Demkowicz_FaceBaseFunctions_MBTRI(int *faces_nodes, int p,
+                                               double *n, double *diff_n,
+                                               double *phi,
+                                               double *diff_phi,
+                                               int nb_integration_pts) {
+  FTensor::Index<'i',3> i;
+  FTensor::Index<'j',3> j;
+  MoFEMFunctionBegin;
+
+  FTensor::Tensor1<double, 3> t_grad_n[4];
+  for (int nn = 0; nn != 4; ++nn) {
+    t_grad_n[nn] = FTensor::Tensor1<double, 3>(
+        diff_n[3 * nn + 0], diff_n[3 * nn + 1], diff_n[3 * nn + 2]);
+  };
+
+  HcurlFaceBase h_curl_face_base;
+
+  if (p < 2)
+    MoFEMFunctionReturnHot(0);
+
+  FTensor::Tensor1<double *, 3> t_phi(&phi[HCURL0], &phi[HCURL1],
+                                      &phi[HCURL2], 3);
+
+  FTensor::Tensor2<double *, 3, 3> t_diff_phi(
+      &diff_phi[HCURL0_0], &diff_phi[HCURL0_1], &diff_phi[HCURL0_2],
+      &diff_phi[HCURL1_0], &diff_phi[HCURL1_1], &diff_phi[HCURL1_2],
+      &diff_phi[HCURL2_0], &diff_phi[HCURL2_1], &diff_phi[HCURL2_2],
+      9);
+
+  // f0, f1 - family I and family II
+  const int n0f0_idx = faces_nodes[0];
+  const int n1f0_idx = faces_nodes[1];
+  const int n2f0_idx = faces_nodes[2];
+  // family II
+  const int n0f1_idx = faces_nodes[1];
+  const int n1f1_idx = faces_nodes[2];
+  const int n2f1_idx = faces_nodes[0];
+
+  CHKERR h_curl_face_base(3, p, nb_integration_pts, n0f0_idx, n1f0_idx,
+                          n2f0_idx, n0f1_idx, n1f1_idx, n2f1_idx, n, t_grad_n,
+                          t_phi, t_diff_phi);
 
   MoFEMFunctionReturn(0);
 }
