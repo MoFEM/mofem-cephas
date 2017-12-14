@@ -291,7 +291,7 @@ VolumeElementForcesAndSourcesCore::getSpaceBaseAndOrderOnElement() {
 MoFEMErrorCode
 VolumeElementForcesAndSourcesCore::calculateBaseFunctionsOnElement(
     const int b) {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   if (dataH1.bAse.test(b)) {
     switch (ApproximationBaseArray[b]) {
     case NOBASE:
@@ -300,45 +300,40 @@ VolumeElementForcesAndSourcesCore::calculateBaseFunctionsOnElement(
     case AINSWORTH_LOBATTO_BASE:
       if (dataH1.spacesOnEntities[MBVERTEX].test(H1) &&
           dataH1.basesOnEntities[MBVERTEX].test(b)) {
-        ierr = TetPolynomialBase().getValue(
+        CHKERR TetPolynomialBase().getValue(
             gaussPts,
             boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
                 dataH1, H1, ApproximationBaseArray[b], NOBASE)));
-        CHKERRG(ierr);
       }
       if (dataH1.spacesOnEntities[MBEDGE].test(HCURL) &&
           dataH1.basesOnEntities[MBEDGE].test(b)) {
-        ierr = TetPolynomialBase().getValue(
+        CHKERR TetPolynomialBase().getValue(
             gaussPts,
             boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
                 dataHcurl, HCURL, ApproximationBaseArray[b], NOBASE)));
-        CHKERRG(ierr);
       }
       if (dataH1.spacesOnEntities[MBTRI].test(HDIV) &&
           dataH1.basesOnEntities[MBTRI].test(b)) {
-        ierr = TetPolynomialBase().getValue(
+        CHKERR TetPolynomialBase().getValue(
             gaussPts,
             boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
                 dataHdiv, HDIV, ApproximationBaseArray[b], NOBASE)));
-        CHKERRG(ierr);
       }
       if (dataH1.spacesOnEntities[MBTET].test(L2) &&
           dataH1.basesOnEntities[MBTET].test(b)) {
-        ierr = TetPolynomialBase().getValue(
+        CHKERR TetPolynomialBase().getValue(
             gaussPts,
             boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
                 dataL2, L2, ApproximationBaseArray[b], NOBASE)));
-        CHKERRG(ierr);
       }
       break;
     case DEMKOWICZ_JACOBI_BASE:
       if (dataH1.spacesOnEntities[MBTRI].test(HDIV) &&
           dataH1.basesOnEntities[MBTRI].test(b)) {
-        ierr = TetPolynomialBase().getValue(
+        CHKERR TetPolynomialBase().getValue(
             gaussPts,
             boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
                 dataHdiv, HDIV, ApproximationBaseArray[b], NOBASE)));
-        CHKERRG(ierr);
       }
       break;
     default:
@@ -347,7 +342,7 @@ VolumeElementForcesAndSourcesCore::calculateBaseFunctionsOnElement(
                ApproximationBaseNames[ApproximationBaseArray[b]]);
     }
   }
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode
