@@ -213,79 +213,54 @@ VolumeElementForcesAndSourcesCore::calculateCoordinatesAtGaussPts() {
 
 MoFEMErrorCode
 VolumeElementForcesAndSourcesCore::getSpaceBaseAndOrderOnElement() {
-  MoFEMFunctionBeginHot;
-  try {
-    ierr = getSpacesAndBaseOnEntities(dataH1);
-    CHKERRG(ierr);
-    ierr = getFaceTriNodes(dataH1);
-    CHKERRG(ierr);
-    // H1
-    if ((dataH1.spacesOnEntities[MBEDGE]).test(H1)) {
-      ierr = getEdgesSense(dataH1);
-      CHKERRG(ierr);
-      ierr = getEdgesDataOrder(dataH1, H1);
-      CHKERRG(ierr);
-    }
-    if ((dataH1.spacesOnEntities[MBTRI]).test(H1)) {
-      ierr = getTrisSense(dataH1);
-      CHKERRG(ierr);
-      ierr = getTrisDataOrder(dataH1, H1);
-      CHKERRG(ierr);
-    }
-    if ((dataH1.spacesOnEntities[MBTET]).test(H1)) {
-      ierr = getTetDataOrder(dataH1, H1);
-      CHKERRG(ierr);
-    }
-    // Hcurl
-    if ((dataH1.spacesOnEntities[MBEDGE]).test(HCURL)) {
-      ierr = getEdgesSense(dataHcurl);
-      CHKERRG(ierr);
-      ierr = getEdgesDataOrder(dataHcurl, HCURL);
-      CHKERRG(ierr);
-      dataHcurl.spacesOnEntities[MBEDGE].set(HCURL);
-    }
-    if ((dataH1.spacesOnEntities[MBTRI]).test(HCURL)) {
-      ierr = getTrisSense(dataHcurl);
-      CHKERRG(ierr);
-      ierr = getFaceTriNodes(dataHcurl);
-      CHKERRG(ierr);
-      ierr = getTrisDataOrder(dataHcurl, HCURL);
-      CHKERRG(ierr);
-      dataHcurl.spacesOnEntities[MBTRI].set(HCURL);
-    }
-    if ((dataH1.spacesOnEntities[MBTET]).test(HCURL)) {
-      ierr = getTetDataOrder(dataHcurl, HCURL);
-      CHKERRG(ierr);
-      dataHcurl.spacesOnEntities[MBTET].set(HCURL);
-    }
-    // Hdiv
-    if ((dataH1.spacesOnEntities[MBTRI]).test(HDIV)) {
-      ierr = getTrisSense(dataHdiv);
-      CHKERRG(ierr);
-      ierr = getFaceTriNodes(dataHdiv);
-      CHKERRG(ierr);
-      ierr = getTrisDataOrder(dataHdiv, HDIV);
-      CHKERRG(ierr);
-      dataHdiv.spacesOnEntities[MBTRI].set(HDIV);
-    }
-    if ((dataH1.spacesOnEntities[MBTET]).test(HDIV)) {
-      ierr = getTetDataOrder(dataHdiv, HDIV);
-      CHKERRG(ierr);
-      dataHdiv.spacesOnEntities[MBTET].set(HDIV);
-    }
-    // L2
-    if ((dataH1.spacesOnEntities[MBTET]).test(L2)) {
-      ierr = getTetDataOrder(dataL2, L2);
-      CHKERRG(ierr);
-      dataL2.spacesOnEntities[MBTET].set(L2);
-    }
-  } catch (std::exception &ex) {
-    std::ostringstream ss;
-    ss << "thorw in method: " << ex.what() << " at line " << __LINE__
-       << " in file " << __FILE__;
-    SETERRQ(mField.get_comm(), MOFEM_STD_EXCEPTION_THROW, ss.str().c_str());
+  MoFEMFunctionBegin;
+  CHKERR getSpacesAndBaseOnEntities(dataH1);
+  CHKERR getFaceTriNodes(dataH1);
+  // H1
+  if ((dataH1.spacesOnEntities[MBEDGE]).test(H1)) {
+    CHKERR getEdgesSense(dataH1);
+    CHKERR getEdgesDataOrder(dataH1, H1);
   }
-  MoFEMFunctionReturnHot(0);
+  if ((dataH1.spacesOnEntities[MBTRI]).test(H1)) {
+    CHKERR getTrisSense(dataH1);
+    CHKERR getTrisDataOrder(dataH1, H1);
+  }
+  if ((dataH1.spacesOnEntities[MBTET]).test(H1)) {
+    CHKERR getTetDataOrder(dataH1, H1);
+  }
+  // Hcurl
+  if ((dataH1.spacesOnEntities[MBEDGE]).test(HCURL)) {
+    CHKERR getEdgesSense(dataHcurl);
+    CHKERR getEdgesDataOrder(dataHcurl, HCURL);
+    dataHcurl.spacesOnEntities[MBEDGE].set(HCURL);
+  }
+  if ((dataH1.spacesOnEntities[MBTRI]).test(HCURL)) {
+    CHKERR getTrisSense(dataHcurl);
+    CHKERR getFaceTriNodes(dataHcurl);
+    CHKERR getTrisDataOrder(dataHcurl, HCURL);
+    dataHcurl.spacesOnEntities[MBTRI].set(HCURL);
+  }
+  if ((dataH1.spacesOnEntities[MBTET]).test(HCURL)) {
+    CHKERR getTetDataOrder(dataHcurl, HCURL);
+    dataHcurl.spacesOnEntities[MBTET].set(HCURL);
+  }
+  // Hdiv
+  if ((dataH1.spacesOnEntities[MBTRI]).test(HDIV)) {
+    CHKERR getTrisSense(dataHdiv);
+    CHKERR getFaceTriNodes(dataHdiv);
+    CHKERR getTrisDataOrder(dataHdiv, HDIV);
+    dataHdiv.spacesOnEntities[MBTRI].set(HDIV);
+  }
+  if ((dataH1.spacesOnEntities[MBTET]).test(HDIV)) {
+    CHKERR getTetDataOrder(dataHdiv, HDIV);
+    dataHdiv.spacesOnEntities[MBTET].set(HDIV);
+  }
+  // L2
+  if ((dataH1.spacesOnEntities[MBTET]).test(L2)) {
+    CHKERR getTetDataOrder(dataL2, L2);
+    dataL2.spacesOnEntities[MBTET].set(L2);
+  }
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode
