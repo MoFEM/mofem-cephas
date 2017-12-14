@@ -610,10 +610,10 @@ add_test(check_hcurl_demkowicz_base_functions_direvatives_on_tet
 )
 
 my_add_executable(
-  forces_and_sources_check_base_functions_direvatives_tri
-  forces_and_sources_check_base_functions_direvatives_tri.cpp
+  check_base_functions_direvatives_tri
+  check_base_functions_direvatives_tri.cpp
 )
-target_link_libraries(forces_and_sources_check_base_functions_direvatives_tri
+target_link_libraries(check_base_functions_direvatives_tri
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
@@ -625,11 +625,11 @@ target_link_libraries(forces_and_sources_check_base_functions_direvatives_tri
 )
 add_test(forces_and_sources_check_h1_base_functions_direvatives_tri_atom
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
-  ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_check_base_functions_direvatives_tri -base h1tri
+  ${CMAKE_CURRENT_BINARY_DIR}/check_base_functions_direvatives_tri -base h1tri
 )
 add_test(forces_and_sources_check_hcurl_base_functions_direvatives_tri_atom
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
-  ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_check_base_functions_direvatives_tri -base hcurltri
+  ${CMAKE_CURRENT_BINARY_DIR}/check_base_functions_direvatives_tri -base hcurltri
 )
 
 # Continuity check on tet for h1 space
