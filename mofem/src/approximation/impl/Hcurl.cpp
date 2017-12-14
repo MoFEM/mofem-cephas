@@ -2032,7 +2032,6 @@ struct HcurlEdgeBase {
     FTensor::Tensor1<double, 3> &t_grad_n1 = t_grad_n[n1_idx];
     FTensor::Tensor1<double, 3> t_grad_n0_p_n1;
     t_grad_n0_p_n1(i) = t_grad_n0(i) + t_grad_n1(i);
-    FTensor::Tensor1<double, 3> t_grad_s0_p_s1, t_grad_s0, t_grad_s1;
     FTensor::Tensor1<double, 3> t_phi_0;
     FTensor::Tensor2<double, 3, 3> t_diff_phi_0;
 
@@ -2055,42 +2054,26 @@ struct HcurlEdgeBase {
 
       if (p > 1) {
 
-        const double a = n0 + n1;
-        if (a > 0) {
+        CHKERR Jacobi_polynomials(p, 0, n1, n0 + n1, &t_grad_n1(0),
+                                  &t_grad_n0_p_n1(0), fi, diff_fi, 3);
 
-          const double s0 = n0 / a;
-          const double s1 = n1 / a;
-          t_grad_s0(i) = (1 / a) * t_grad_n1(i);
-          t_grad_s1(i) = (1 / a) * t_grad_n1(i);
-          t_grad_s0_p_s1(i) = t_grad_s0(i) + t_grad_s1(i);
+        FTensor::Tensor1<double *, 3> t_diff_fi(&diff_fi[0 * (p + 1) + 1],
+                                                &diff_fi[1 * (p + 1) + 1],
+                                                &diff_fi[2 * (p + 1) + 1], 1);
 
-          CHKERR Jacobi_polynomials(p, 0, s1, s0 + s1, &t_grad_s1(0),
-                                    &t_grad_s0_p_s1(0), fi, diff_fi, 3);
+        FTensor::Tensor1<double, 3> t_diff_b;
+        for (int oo = 1; oo <= p - 1; ++oo) {
+          const double b = pow(n0 + n1, oo);
+          t_diff_b(i) =
+              oo * pow(n0 + n1, oo - 1) * (t_grad_n0(i) + t_grad_n1(i));
+          t_phi(i) = b * fi[oo] * t_phi_0(i);
+          t_diff_phi(i, j) = (b * fi[oo]) * t_diff_phi_0(i, j) +
+                             (b * t_diff_fi(j)) * t_phi_0(i) +
+                             t_diff_b(j) * fi[oo] * t_phi_0(i);
 
-          FTensor::Tensor1<double *, 3> t_diff_fi(
-              &diff_fi[0 * (p + 1) + 1], &diff_fi[1 * (p + 1) + 1],
-              &diff_fi[2 * (p + 1) + 1], 1);
-
-          FTensor::Tensor1<double, 3> t_diff_b;
-          for (int oo = 1; oo <= p - 1; ++oo) {
-            const double b = pow(a, oo);
-            t_diff_b(i) = oo * pow(a, oo - 1) * (t_grad_n0(i) + t_grad_n1(i));
-            t_phi(i) = b * fi[oo] * t_phi_0(i);
-            t_diff_phi(i, j) = (b * fi[oo]) * t_diff_phi_0(i, j) +
-                               (b * t_diff_fi(j)) * t_phi_0(i) +
-                               t_diff_b(j) * fi[oo] * t_phi_0(i);
-
-            ++t_diff_fi;
-            ++t_phi;
-            ++t_diff_phi;
-          }
-        } else {
-          for (int oo = 1; oo <= p - 1; ++oo) {
-            t_phi(i) = 0;
-            t_diff_phi(i, j) = 0;
-            ++t_phi;
-            ++t_diff_phi;
-          }
+          ++t_diff_fi;
+          ++t_phi;
+          ++t_diff_phi;
         }
       }
     }
@@ -2837,7 +2820,7 @@ MoFEMErrorCode VTK_Demkowicz_Hcurl_MBTET(const string file_name) {
                                  &edge_diff_phi(2, 0), &edge_diff_phi(3, 0),
                                  &edge_diff_phi(4, 0), &edge_diff_phi(5, 0)};
 
-  CHKERR Hcurl_Demkowicz_FaceBaseFunctions_MBTET(
+  CHKERR Hcurl_Demkowicz_EdgeBaseFunctions_MBTET(
       edge_sense, edge_order, &*shape_fun.data().begin(), diff_shape_fun,
       edge_phi_ptr, edge_diff_phi_ptr, nb_gauss_pts);
 
