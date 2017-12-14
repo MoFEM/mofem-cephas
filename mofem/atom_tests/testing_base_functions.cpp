@@ -56,7 +56,7 @@ int main(int argc, char *argv[]) {
       HCURLTRI,
       L2TRI,
       H1EDGE,
-      HCURLEDGE,
+      HCURLEDGE_AINSWORTH,
       H1FLATPRIS,
       H1FATPRISM,
       LASTOP
@@ -77,7 +77,7 @@ int main(int argc, char *argv[]) {
                           "hcurltri",
                           "l2tri",
                           "h1edge",
-                          "hcurledge",
+                          "hcurledge_ainsworth",
                           "h1flatprism",
                           "h1fatprism"};
 
@@ -805,7 +805,7 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    if (choise_value == HCURLEDGE) {
+    if (choise_value == HCURLEDGE_AINSWORTH) {
       ierr = EdgePolynomialBase().getValue(
           pts_edge, boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
                         edge_data, HCURL, AINSWORTH_LEGENDRE_BASE, NOBASE)));

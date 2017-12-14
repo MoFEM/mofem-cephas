@@ -94,11 +94,11 @@ int main(int argc, char *argv[]) {
     if (pcomm == NULL)
       pcomm = new ParallelComm(&moab, PETSC_COMM_WORLD);
 
-    // Create MoFEM (Joseph) database
+    // Create MoFEM database
     MoFEM::Core core(moab);
     MoFEM::Interface &m_field = core;
 
-    // set entitities bit level
+    // set entities bit level
     BitRefLevel bit_level0;
     bit_level0.set(0);
     CHKERR m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(
@@ -203,10 +203,12 @@ int main(int argc, char *argv[]) {
 
       MoFEMErrorCode doWork(int side, EntityType type,
                             DataForcesAndSourcesCore::EntData &data) {
-        MoFEMFunctionBeginHot;
+        MoFEMFunctionBegin;
 
         if (data.getFieldData().size() == 0)
           MoFEMFunctionReturnHot(0);
+
+        mySplit << "Type  " << type << " side " << side << endl;
 
         if (data.getFieldDofs()[0]->getSpace() == H1) {
 
@@ -317,7 +319,7 @@ int main(int argc, char *argv[]) {
           }
         }
 
-        MoFEMFunctionReturnHot(0);
+        MoFEMFunctionReturn(0);
       }
     };
 

@@ -603,6 +603,11 @@ add_test(check_hcurl_ainsworth_base_functions_direvatives_on_tet
   ${CMAKE_CURRENT_BINARY_DIR}/check_base_functions_direvatives_on_tet
   -space HCURLTET -base ainsworth
 )
+add_test(check_hcurl_demkowicz_base_functions_direvatives_on_tet
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/check_base_functions_direvatives_on_tet
+  -space HCURLTET -base demkowicz
+)
 
 my_add_executable(
   forces_and_sources_check_base_functions_direvatives_tri
@@ -1087,7 +1092,7 @@ list(INSERT testing_base_list
   hcurltri
   l2tri
   h1edge
-  hcurledge
+  hcurledge_ainsworth
 )
 foreach(test_base ${testing_base_list})
   add_test(testing_base_functions_${test_base}
