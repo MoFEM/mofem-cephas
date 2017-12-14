@@ -443,7 +443,7 @@ TriPolynomialBase::getValueHcurlDemkowiczBase(MatrixDouble &pts) {
               "No data struture to keep base functions on face");
     }
     int order = data.dataOnEntities[MBTRI][0].getDataOrder();
-    int nb_dofs = NBFACETRI_AINSWORTH_HCURL(order);
+    int nb_dofs = NBFACETRI_DEMKOWICZ_HCURL(order);
     data.dataOnEntities[MBTRI][0].getN(base).resize(nb_gauss_pts, 3 * nb_dofs,
                                                     false);
     data.dataOnEntities[MBTRI][0].getDiffN(base).resize(nb_gauss_pts,

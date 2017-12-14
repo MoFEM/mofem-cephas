@@ -199,7 +199,7 @@ int main(int argc, char *argv[]) {
 
       MoFEMErrorCode doWork(int side, EntityType type,
                             DataForcesAndSourcesCore::EntData &data) {
-        MoFEMFunctionBeginHot;
+        MoFEMFunctionBegin;
 
         if (data.getFieldData().size() == 0)
           MoFEMFunctionReturnHot(0);
@@ -306,7 +306,7 @@ int main(int argc, char *argv[]) {
 
         mySplit << endl;
 
-        MoFEMFunctionReturnHot(0);
+        MoFEMFunctionReturn(0);
       }
     };
 
