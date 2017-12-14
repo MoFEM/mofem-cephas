@@ -236,61 +236,48 @@ MoFEMErrorCode FaceElementForcesAndSourcesCore::setIntegrationPts() {
 
 MoFEMErrorCode
 FaceElementForcesAndSourcesCore::getSpaceBaseAndOrderOnElement() {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   // Get spaces order/base and sense of entities.
 
-  ierr = getSpacesAndBaseOnEntities(dataH1);
-  CHKERRG(ierr);
+  CHKERR getSpacesAndBaseOnEntities(dataH1);
 
   // H1
   if (dataH1.spacesOnEntities[MBEDGE].test(H1)) {
-    ierr = getEdgesSense(dataH1);
-    CHKERRG(ierr);
-    ierr = getEdgesDataOrder(dataH1, H1);
-    CHKERRG(ierr);
+    CHKERR getEdgesSense(dataH1);
+    CHKERR getEdgesDataOrder(dataH1, H1);
   }
   if (dataH1.spacesOnEntities[MBTRI].test(H1)) {
-    ierr = getTrisSense(dataH1);
-    CHKERRG(ierr);
-    ierr = getTrisDataOrder(dataH1, H1);
-    CHKERRG(ierr);
+    CHKERR getTrisSense(dataH1);
+    CHKERR getTrisDataOrder(dataH1, H1);
   }
 
   // Hcurl
   if (dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
-    ierr = getEdgesSense(dataHcurl);
-    CHKERRG(ierr);
-    ierr = getEdgesDataOrder(dataHcurl, HCURL);
-    CHKERRG(ierr);
+    CHKERR getEdgesSense(dataHcurl);
+    CHKERR getEdgesDataOrder(dataHcurl, HCURL);
     dataHcurl.spacesOnEntities[MBEDGE].set(HCURL);
   }
   if (dataH1.spacesOnEntities[MBTRI].test(HCURL)) {
-    ierr = getTrisSense(dataHcurl);
-    CHKERRG(ierr);
-    ierr = getTrisDataOrder(dataHcurl, HCURL);
-    CHKERRG(ierr);
+    CHKERR getTrisSense(dataHcurl);
+    CHKERR getTrisDataOrder(dataHcurl, HCURL);
     dataHcurl.spacesOnEntities[MBTRI].set(HCURL);
   }
 
   // Hdiv
   if (dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
-    ierr = getTrisSense(dataHdiv);
-    CHKERRG(ierr);
-    ierr = getTrisDataOrder(dataHdiv, HDIV);
-    CHKERRG(ierr);
+    CHKERR getTrisSense(dataHdiv);
+    CHKERR getTrisDataOrder(dataHdiv, HDIV);
     dataHcurl.spacesOnEntities[MBTRI].set(HDIV);
   }
 
   // L2
   if (dataH1.spacesOnEntities[MBTRI].test(L2)) {
-    ierr = getTrisSense(dataL2);
-    CHKERRG(ierr);
-    ierr = getTrisDataOrder(dataL2, L2);
-    CHKERRG(ierr);
+    CHKERR getTrisSense(dataL2);
+    CHKERR getTrisDataOrder(dataL2, L2);
     dataHcurl.spacesOnEntities[MBTRI].set(L2);
   }
 
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode
@@ -310,74 +297,62 @@ FaceElementForcesAndSourcesCore::calculateCoordinatesAtGaussPts() {
 
 MoFEMErrorCode
 FaceElementForcesAndSourcesCore::calculateBaseFunctionsOnElement() {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   // Calculate base base functions for faces.
-  try {
 
-    for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
-      if (dataH1.bAse.test(b)) {
-        switch (ApproximationBaseArray[b]) {
-        case NOBASE:
-          break;
-        case AINSWORTH_LEGENDRE_BASE:
-        case AINSWORTH_LOBATTO_BASE:
-          if (dataH1.spacesOnEntities[MBVERTEX].test(H1) &&
-              dataH1.basesOnEntities[MBVERTEX].test(b)) {
-            ierr = TriPolynomialBase().getValue(
-                gaussPts,
-                boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
-                    dataH1, H1, ApproximationBaseArray[b], NOBASE)));
-            CHKERRG(ierr);
-          }
-          if (dataH1.spacesOnEntities[MBEDGE].test(HCURL) &&
-              dataH1.basesOnEntities[MBEDGE].test(b)) {
-            ierr = TriPolynomialBase().getValue(
-                gaussPts,
-                boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
-                    dataHcurl, HCURL, ApproximationBaseArray[b], NOBASE)));
-            CHKERRG(ierr);
-          }
-          if (dataH1.spacesOnEntities[MBTRI].test(HDIV) &&
-              dataH1.basesOnEntities[MBTRI].test(b)) {
-            ierr = TriPolynomialBase().getValue(
-                gaussPts,
-                boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
-                    dataHdiv, HDIV, ApproximationBaseArray[b], NOBASE)));
-            CHKERRG(ierr);
-          }
-          if (dataH1.spacesOnEntities[MBTRI].test(L2) &&
-              dataH1.basesOnEntities[MBTRI].test(b)) {
-            ierr = TriPolynomialBase().getValue(
-                gaussPts,
-                boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
-                    dataL2, L2, ApproximationBaseArray[b], NOBASE)));
-            CHKERRG(ierr);
-          }
-          break;
-        case DEMKOWICZ_JACOBI_BASE:
-          if (dataH1.spacesOnEntities[MBTRI].test(HDIV) &&
-              dataH1.basesOnEntities[MBTRI].test(b)) {
-            ierr = TriPolynomialBase().getValue(
-                gaussPts,
-                boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
-                    dataHdiv, HDIV, ApproximationBaseArray[b], NOBASE)));
-            CHKERRG(ierr);
-          }
-          break;
-        default:
-          SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                   "Base <%s> not yet implemented",
-                   ApproximationBaseNames[ApproximationBaseArray[b]]);
+  for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
+    if (dataH1.bAse.test(b)) {
+      switch (ApproximationBaseArray[b]) {
+      case NOBASE:
+        break;
+      case AINSWORTH_LEGENDRE_BASE:
+      case AINSWORTH_LOBATTO_BASE:
+        if (dataH1.spacesOnEntities[MBVERTEX].test(H1) &&
+            dataH1.basesOnEntities[MBVERTEX].test(b)) {
+          CHKERR TriPolynomialBase().getValue(
+              gaussPts,
+              boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
+                  dataH1, H1, ApproximationBaseArray[b], NOBASE)));
         }
+        if (dataH1.spacesOnEntities[MBEDGE].test(HCURL) &&
+            dataH1.basesOnEntities[MBEDGE].test(b)) {
+          CHKERR TriPolynomialBase().getValue(
+              gaussPts,
+              boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
+                  dataHcurl, HCURL, ApproximationBaseArray[b], NOBASE)));
+        }
+        if (dataH1.spacesOnEntities[MBTRI].test(HDIV) &&
+            dataH1.basesOnEntities[MBTRI].test(b)) {
+          CHKERR TriPolynomialBase().getValue(
+              gaussPts,
+              boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
+                  dataHdiv, HDIV, ApproximationBaseArray[b], NOBASE)));
+        }
+        if (dataH1.spacesOnEntities[MBTRI].test(L2) &&
+            dataH1.basesOnEntities[MBTRI].test(b)) {
+          CHKERR TriPolynomialBase().getValue(
+              gaussPts,
+              boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
+                  dataL2, L2, ApproximationBaseArray[b], NOBASE)));
+        }
+        break;
+      case DEMKOWICZ_JACOBI_BASE:
+        if (dataH1.spacesOnEntities[MBTRI].test(HDIV) &&
+            dataH1.basesOnEntities[MBTRI].test(b)) {
+          CHKERR TriPolynomialBase().getValue(
+              gaussPts,
+              boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
+                  dataHdiv, HDIV, ApproximationBaseArray[b], NOBASE)));
+        }
+        break;
+      default:
+        SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                 "Base <%s> not yet implemented",
+                 ApproximationBaseNames[ApproximationBaseArray[b]]);
       }
     }
-  } catch (std::exception &ex) {
-    std::ostringstream ss;
-    ss << "thorw in method: " << ex.what() << " at line " << __LINE__
-       << " in file " << __FILE__;
-    SETERRQ(PETSC_COMM_SELF, MOFEM_STD_EXCEPTION_THROW, ss.str().c_str());
   }
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode FaceElementForcesAndSourcesCore::calculateHoNormal() {
