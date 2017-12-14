@@ -623,12 +623,12 @@ target_link_libraries(check_base_functions_direvatives_tri
   mofem_third_party
   ${PROJECT_LIBS}
 )
-add_test(check_h1_base_functions_direvatives_tri_atom
+add_test(check_h1_base_functions_direvatives_tri
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/check_base_functions_direvatives_tri 
   -space h1tri -base ainsworth
 )
-add_test(check_hcurl_base_functions_direvatives_tri_atom
+add_test(check_hcurl_base_functions_direvatives_tri
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/check_base_functions_direvatives_tri -space hcurltri 
   -base ainsworth
