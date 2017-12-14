@@ -179,7 +179,7 @@ PetscErrorCode IntegratedJacobi_polynomials(int p, double alpha, double x,
       diffL[d * p + 0] = diff_x[d];
     }
   }
-  if (p == 1)
+  if (p == 0)
     MoFEMFunctionReturnHot(0);
   double jacobi[(p + 1)];
   double diff_jacobi[(p + 1) * dim];
@@ -198,9 +198,9 @@ PetscErrorCode IntegratedJacobi_polynomials(int p, double alpha, double x,
       for (int dd = 0; dd != dim; ++dd) {
         diffL[dd * p + l] = a * diff_jacobi[dd * (p + 1) + i] +
                             b * (t * diff_jacobi[dd * (p + 1) + i - 1] +
-                                 diff_t[dd] * jacobi[l - 1]) -
+                                 diff_t[dd] * jacobi[i - 1]) -
                             c * (t * t * diff_jacobi[dd * (p + 1) + i - 2] +
-                                 2 * t * diff_t[dd] * jacobi[l - 2]);
+                                 2 * t * diff_t[dd] * jacobi[i - 2]);
       }
     }
   }
