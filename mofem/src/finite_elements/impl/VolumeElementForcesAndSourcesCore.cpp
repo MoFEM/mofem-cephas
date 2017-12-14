@@ -362,22 +362,16 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCore::calculateBaseFunctionsOnElemen
 }
 
 MoFEMErrorCode VolumeElementForcesAndSourcesCore::calculateBaseFunctionsOnElement() {
-  MoFEMFunctionBeginHot;
-  try {
-    /// Use the some node base
-    dataHdiv.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE) = dataH1.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE);
-    dataHcurl.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE) = dataH1.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE);
-    dataL2.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE) = dataH1.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE);
-    std::vector<FieldApproximationBase> shape_functions_for_bases;
-    for(int b = AINSWORTH_LEGENDRE_BASE;b!=LASTBASE;b++) {
-      ierr = calculateBaseFunctionsOnElement(b); CHKERRG(ierr);
-    }
-  } catch (std::exception& ex) {
-    std::ostringstream ss;
-    ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
-    SETERRQ(mField.get_comm(),MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
+  MoFEMFunctionBegin;
+  /// Use the some node base
+  dataHdiv.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE) = dataH1.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE);
+  dataHcurl.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE) = dataH1.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE);
+  dataL2.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE) = dataH1.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE);
+  std::vector<FieldApproximationBase> shape_functions_for_bases;
+  for(int b = AINSWORTH_LEGENDRE_BASE;b!=LASTBASE;b++) {
+    CHKERR calculateBaseFunctionsOnElement(b); 
   }
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode VolumeElementForcesAndSourcesCore::transformBaseFunctions() {
