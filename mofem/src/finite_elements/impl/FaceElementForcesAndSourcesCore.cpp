@@ -183,7 +183,7 @@ MoFEMErrorCode FaceElementForcesAndSourcesCore::calculateAreaAndNormal() {
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode FaceElementForcesAndSourcesCore::setIntegartionPts() {
+MoFEMErrorCode FaceElementForcesAndSourcesCore::setIntegrationPts() {
   MoFEMFunctionBeginHot;
   // Set integration points
   int order_data = getMaxDataOrder();
@@ -438,7 +438,7 @@ MoFEMErrorCode FaceElementForcesAndSourcesCore::operator()() {
   ierr = getSpaceBaseAndOrderOnElement();
   CHKERRG(ierr);
 
-  ierr = setIntegartionPts();
+  ierr = setIntegrationPts();
   CHKERRG(ierr);
   if (nbGaussPts == 0)
     MoFEMFunctionReturnHot(0);

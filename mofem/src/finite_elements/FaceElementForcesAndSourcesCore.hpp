@@ -375,7 +375,10 @@ struct FaceElementForcesAndSourcesCore : public ForcesAndSourcesCore {
    * \brief Set integration points
    * @return Error code
    */
-  virtual MoFEMErrorCode setIntegartionPts();
+  virtual MoFEMErrorCode setIntegrationPts();
+
+  /// \deprecated method with spelling mistake, use setIntegrationPts
+  DEPRECATED MoFEMErrorCode setIntegartionPts() { return setIntegrationPts(); }
 
   /**
    * \brief Determine approximation space and order of base functions
