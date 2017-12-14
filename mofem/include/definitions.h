@@ -184,8 +184,8 @@ const static char * const FieldSpaceNames[] = {
   "NOSPACE",
   "NOFIELD",
   "H1",
-  "HDIV",
   "HCURL",
+  "HDIV",
   "L2",
   "LASTSPACE"
 };
