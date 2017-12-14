@@ -42,7 +42,7 @@ int main(int argc, char *argv[]) {
                                 LASTSPACEOP, &choise_space_value, &flg);
     
     if (flg != PETSC_TRUE) {
-      SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "base not set");
+      SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "space not set");
     }
 
     FieldSpace space = LASTSPACE;
@@ -59,18 +59,18 @@ int main(int argc, char *argv[]) {
 
     const char *list_bases[] = {"ainsworth", "demkowicz"};
 
-    PetscInt choise_base_value = AINSWORTH;
+    PetscInt choice_base_value = AINSWORTH;
     CHKERR PetscOptionsGetEList(PETSC_NULL, NULL, "-base", list_bases,
-                                LASBASETOP, &choise_base_value, &flg);
+                                LASBASETOP, &choice_base_value, &flg);
     
     if (flg != PETSC_TRUE) {
       SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "base not set");
     }
 
     FieldApproximationBase base;
-    if (choise_base_value == AINSWORTH) {
+    if (choice_base_value == AINSWORTH) {
       base = AINSWORTH_LEGENDRE_BASE;
-    } else if (choise_base_value == DEMKOWICZ) {
+    } else if (choice_base_value == DEMKOWICZ) {
       base = DEMKOWICZ_JACOBI_BASE;
     }
 

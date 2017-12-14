@@ -31,13 +31,13 @@ int main(int argc, char *argv[]) {
 
   try {
 
-    enum bases { H1TRI, HCURLTRI, LASTOP };
+    enum spaces { H1TRI, HCURLTRI, LASTOP };
 
-    const char *list[] = {"h1tri", "hcurltri"};
+    const char *list_spaces[] = {"h1tri", "hcurltri"};
 
     PetscBool flg;
     PetscInt choice_value = H1TRI;
-    CHKERR PetscOptionsGetEList(PETSC_NULL, NULL, "-base", list, LASTOP,
+    CHKERR PetscOptionsGetEList(PETSC_NULL, NULL, "-space", list_spaces, LASTOP,
                                 &choice_value, &flg);
     
     if (flg != PETSC_TRUE) {
@@ -50,6 +50,27 @@ int main(int argc, char *argv[]) {
     } else if (choice_value == HCURLTRI) {
       space = HCURL;
     }
+
+    // Select base
+    enum bases { AINSWORTH, DEMKOWICZ, LASBASETOP };
+
+    const char *list_bases[] = {"ainsworth", "demkowicz"};
+
+    PetscInt choice_base_value = AINSWORTH;
+    CHKERR PetscOptionsGetEList(PETSC_NULL, NULL, "-base", list_bases,
+                                LASBASETOP, &choice_base_value, &flg);
+
+    if (flg != PETSC_TRUE) {
+      SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "base not set");
+    }
+
+    FieldApproximationBase base;
+    if (choice_base_value == AINSWORTH) {
+      base = AINSWORTH_LEGENDRE_BASE;
+    } else if (choice_base_value == DEMKOWICZ) {
+      base = DEMKOWICZ_JACOBI_BASE;
+    }
+
 
     moab::Core mb_instance;
     moab::Interface &moab = mb_instance;
@@ -93,7 +114,7 @@ int main(int argc, char *argv[]) {
     
 
     // Fields
-    CHKERR m_field.add_field("FIELD", space, AINSWORTH_LEGENDRE_BASE, 1);
+    CHKERR m_field.add_field("FIELD", space, base, 1);
     
 
     // FE TET
