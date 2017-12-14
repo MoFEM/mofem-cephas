@@ -316,7 +316,12 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSourcesCore {
    * \brief Set integration points
    * @return Error code
    */
-  virtual MoFEMErrorCode setIntegartionPts();
+  virtual MoFEMErrorCode setIntegrationPts();
+
+  /// \deprecated function with spelling mistake, use setIntegrationPts
+  DEPRECATED virtual MoFEMErrorCode setIntegartionPts() {
+    return setIntegrationPts();
+  }
 
   /**
    * \brief Calculate element volume and Jacobian

@@ -115,7 +115,7 @@ tInvJac(
 ) {
 }
 
-MoFEMErrorCode VolumeElementForcesAndSourcesCore::setIntegartionPts() {
+MoFEMErrorCode VolumeElementForcesAndSourcesCore::setIntegrationPts() {
   MoFEMFunctionBeginHot;
   int order_data = getMaxDataOrder();
   int order_row = getMaxRowOrder();
@@ -504,7 +504,7 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCore::operator()() {
 
     ierr = calculateVolumeAndJacobian(); CHKERRG(ierr);
     ierr = getSpaceBaseAndOrderOnElement(); CHKERRG(ierr);
-    ierr = setIntegartionPts(); CHKERRG(ierr);
+    ierr = setIntegrationPts(); CHKERRG(ierr);
     if(nbGaussPts == 0) MoFEMFunctionReturnHot(0);
     ierr = calculateCoordinatesAtGaussPts(); CHKERRG(ierr);
     ierr = calculateBaseFunctionsOnElement(); CHKERRG(ierr);
