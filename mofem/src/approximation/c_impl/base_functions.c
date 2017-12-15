@@ -175,7 +175,8 @@ PetscErrorCode IntegratedJacobi_polynomials(int p, double alpha, double x,
     SETERRQ(PETSC_COMM_SELF, MOFEM_INVALID_DATA, "p < 1");
   L[0] = x;
   if (diffL != NULL) {
-    for (int d = 0; d != dim; ++d) {
+    int d = 0;
+    for (; d != dim; ++d) {
       diffL[d * p + 0] = diff_x[d];
     }
   }
@@ -195,7 +196,8 @@ PetscErrorCode IntegratedJacobi_polynomials(int p, double alpha, double x,
     const double c = (i - 1) / ((2 * i + alpha - 2) * (2 * i + alpha - 1));
     L[l] = a * jacobi[i] + b * t * jacobi[i - 1] - c * t * t * jacobi[i - 2];
     if (diffL != NULL) {
-      for (int dd = 0; dd != dim; ++dd) {
+      int dd = 0;
+      for (; dd != dim; ++dd) {
         diffL[dd * p + l] = a * diff_jacobi[dd * (p + 1) + i] +
                             b * (t * diff_jacobi[dd * (p + 1) + i - 1] +
                                  diff_t[dd] * jacobi[i - 1]) -
