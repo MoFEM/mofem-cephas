@@ -24,320 +24,378 @@ static char help[] = "...\n\n";
 
 int main(int argc, char *argv[]) {
 
-
-
-
-  MoFEM::Core::Initialize(&argc,&argv,(char *)0,help);
+  MoFEM::Core::Initialize(&argc, &argv, (char *)0, help);
 
   try {
 
-  moab::Core mb_instance;
-  moab::Interface& moab = mb_instance;
-  int rank;
-  MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
+    moab::Core mb_instance;
+    moab::Interface &moab = mb_instance;
+    int rank;
+    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
 
-  PetscBool flg = PETSC_TRUE;
-  char mesh_file_name[255];
-  #if PETSC_VERSION_GE(3,6,4)
-  ierr = PetscOptionsGetString(PETSC_NULL,"","-my_file",mesh_file_name,255,&flg); CHKERRG(ierr);
-  #else
-  ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRG(ierr);
-  #endif
-  if(flg != PETSC_TRUE) {
-    SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
-  }
-  const char *option;
-  option = "";
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERRG(rval);
-
-  ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
-  if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
-
-  // //create one tet
-  // double tet_coords[] = {
-  //   0,0,0,
-  //   2.,0,0,
-  //   0,2.,0,
-  //   0,0,2.
-  // };
-  //
-  // EntityHandle nodes[4];
-  // for(int nn = 0;nn<4;nn++) {
-  //   rval = moab.create_vertex(&tet_coords[3*nn],nodes[nn]); CHKERRG(rval);
-  // }
-  //
-  // EntityHandle tet;
-  // rval = moab.create_element(MBTET,nodes,4,tet); CHKERRG(rval);
-  //
-  // ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
-  // if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
-
-  //create MoFEM (Joseph) database
-  MoFEM::Core core(moab);
-  MoFEM::Interface& m_field = core;
-  //meshset consisting all entities in mesh
-  EntityHandle root_set = moab.get_root_set();
-
-  //set entitities bit level
-  BitRefLevel bit_level0;
-  bit_level0.set(0);
-  EntityHandle meshset_level0;
-  rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERRG(rval);
-  ierr = m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(0,3,bit_level0); CHKERRG(ierr);
-
-  //fields
-  ierr = m_field.add_field("HCURL",HCURL,AINSWORTH_LEGENDRE_BASE,1); CHKERRG(ierr);
-  //add entities to field
-  ierr = m_field.add_ents_to_field_by_type(root_set,MBTET,"HCURL"); CHKERRG(ierr);
-  //set app. order
-  int order = 5;
-  ierr = m_field.set_field_order(root_set,MBTET,"HCURL",order); CHKERRG(ierr);
-  ierr = m_field.set_field_order(root_set,MBTRI,"HCURL",order); CHKERRG(ierr);
-  ierr = m_field.set_field_order(root_set,MBEDGE,"HCURL",order); CHKERRG(ierr);
-  //build field
-  ierr = m_field.build_fields(); CHKERRG(ierr);
-
-  //finite elements
-  ierr = m_field.add_finite_element("TET_FE"); CHKERRG(ierr);
-  ierr = m_field.add_finite_element("SKIN_FE"); CHKERRG(ierr);
-
-  //Define rows/cols and element data
-  ierr = m_field.modify_finite_element_add_field_row("TET_FE","HCURL"); CHKERRG(ierr);
-  ierr = m_field.modify_finite_element_add_field_col("TET_FE","HCURL"); CHKERRG(ierr);
-  ierr = m_field.modify_finite_element_add_field_data("TET_FE","HCURL"); CHKERRG(ierr);
-  ierr = m_field.modify_finite_element_add_field_row("SKIN_FE","HCURL"); CHKERRG(ierr);
-  ierr = m_field.modify_finite_element_add_field_col("SKIN_FE","HCURL"); CHKERRG(ierr);
-  ierr = m_field.modify_finite_element_add_field_data("SKIN_FE","HCURL"); CHKERRG(ierr);
-  //add entities to finite element
-  ierr = m_field.add_ents_to_finite_element_by_type(root_set,MBTET,"TET_FE"); CHKERRG(ierr);
-  Range tets;
-  ierr = m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
-    BitRefLevel().set(0),BitRefLevel().set(),MBTET,tets
-  ); CHKERRG(ierr);
-  Skinner skin(&moab);
-  Range skin_faces; // skin faces from 3d ents
-  rval = skin.find_skin(0,tets,false,skin_faces); CHKERRG(rval);
-  ierr = m_field.add_ents_to_finite_element_by_type(skin_faces,MBTRI,"SKIN_FE"); CHKERRG(ierr);
-
-  //build finite elemnts
-  ierr = m_field.build_finite_elements(); CHKERRG(ierr);
-
-  //build adjacencies
-  ierr = m_field.build_adjacencies(bit_level0); CHKERRG(ierr);
-
-  //problem
-  ierr = m_field.add_problem("TEST_PROBLEM"); CHKERRG(ierr);
-  //set finite elements for problem
-  ierr = m_field.modify_problem_add_finite_element("TEST_PROBLEM","TET_FE"); CHKERRG(ierr);
-  ierr = m_field.modify_problem_add_finite_element("TEST_PROBLEM","SKIN_FE"); CHKERRG(ierr);
-  //set refinement level for problem
-  ierr = m_field.modify_problem_ref_level_add_bit("TEST_PROBLEM",bit_level0); CHKERRG(ierr);
-
-  //build problem
-  ProblemsManager *prb_mng_ptr;
-  ierr = m_field.getInterface(prb_mng_ptr); CHKERRG(ierr);
-  ierr = prb_mng_ptr->buildProblem("TEST_PROBLEM",true); CHKERRG(ierr);
-
-  //mesh partitioning
-  //partition
-  ierr = prb_mng_ptr->partitionSimpleProblem("TEST_PROBLEM"); CHKERRG(ierr);
-  ierr = prb_mng_ptr->partitionFiniteElements("TEST_PROBLEM"); CHKERRG(ierr);
-  //what are ghost nodes, see Petsc Manual
-  ierr = prb_mng_ptr->partitionGhostDofs("TEST_PROBLEM"); CHKERRG(ierr);
-
-  Vec v;
-  ierr = m_field.getInterface<VecManager>()->vecCreateGhost("TEST_PROBLEM",ROW,&v);
-  ierr = VecSetRandom(v,PETSC_NULL); CHKERRG(ierr);
-  ierr = m_field.getInterface<VecManager>()->setLocalGhostVector("TEST_PROBLEM",ROW,v,INSERT_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
-  ierr = VecDestroy(&v); CHKERRG(ierr);
-
-  struct OpTetCurl: public VolumeElementForcesAndSourcesCore::UserDataOperator {
-
-    FTensor::Tensor1<double*,3> &cUrl;
-    OpTetCurl(FTensor::Tensor1<double*,3> &curl):
-    VolumeElementForcesAndSourcesCore::UserDataOperator("HCURL",UserDataOperator::OPROW),
-    cUrl(curl) {}
-
-    MoFEMErrorCode doWork(
-      int side,
-      EntityType type,
-      DataForcesAndSourcesCore::EntData &data) {
-      MoFEMFunctionBeginHot;
-
-
-
-      if(data.getFieldData().size()==0) MoFEMFunctionReturnHot(0);
-
-      const unsigned int nb_gauss_pts = data.getDiffHcurlN().size1();
-      const unsigned int nb_dofs = data.getFieldData().size();
-
-      MatrixDouble curl_mat;
-      FTensor::Index<'i',3> i;
-
-      unsigned int gg = 0;
-      for(;gg<nb_gauss_pts;gg++) {
-        double w = getGaussPts()(3,gg)*getVolume();
-        if(getHoGaussPtsDetJac().size()==nb_gauss_pts) {
-          // if ho geometry is given
-          w *= getHoGaussPtsDetJac()(gg);
-        }
-        ierr = getCurlOfHCurlBaseFunctions(side,type,data,gg,curl_mat); CHKERRG(ierr);
-        FTensor::Tensor1<double*,3> t_curl(&curl_mat(0,0),&curl_mat(0,1),&curl_mat(0,2),3);
-        for(unsigned int dd = 0;dd!=nb_dofs;dd++) {
-          cUrl(i) += w*t_curl(i)*data.getFieldData()[dd];
-          ++t_curl;
-        }
-      }
-
-      MoFEMFunctionReturnHot(0);
+    PetscBool flg = PETSC_TRUE;
+    char mesh_file_name[255];
+#if PETSC_VERSION_GE(3, 6, 4)
+    ierr = PetscOptionsGetString(PETSC_NULL, "", "-my_file", mesh_file_name,
+                                 255, &flg);
+    CHKERRG(ierr);
+#else
+    ierr = PetscOptionsGetString(PETSC_NULL, PETSC_NULL, "-my_file",
+                                 mesh_file_name, 255, &flg);
+    CHKERRG(ierr);
+#endif
+    if (flg != PETSC_TRUE) {
+      SETERRQ(PETSC_COMM_SELF, 1, "*** ERROR -my_file (MESH FILE NEEDED)");
     }
+    const char *option;
+    option = "";
+    rval = moab.load_file(mesh_file_name, 0, option);
+    CHKERRG(rval);
 
-  };
+    ParallelComm *pcomm = ParallelComm::get_pcomm(&moab, MYPCOMM_INDEX);
+    if (pcomm == NULL)
+      pcomm = new ParallelComm(&moab, PETSC_COMM_WORLD);
 
-  struct MyFE: public VolumeElementForcesAndSourcesCore {
+    // //create one tet
+    // double tet_coords[] = {
+    //   0,0,0,
+    //   2.,0,0,
+    //   0,2.,0,
+    //   0,0,2.
+    // };
+    //
+    // EntityHandle nodes[4];
+    // for(int nn = 0;nn<4;nn++) {
+    //   rval = moab.create_vertex(&tet_coords[3*nn],nodes[nn]); CHKERRG(rval);
+    // }
+    //
+    // EntityHandle tet;
+    // rval = moab.create_element(MBTET,nodes,4,tet); CHKERRG(rval);
+    //
+    // ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
+    // if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
 
-    MyFE(MoFEM::Interface &m_field):
-    VolumeElementForcesAndSourcesCore(m_field) {}
-    int getRule(int order) { return 2*order; }; //order/2; };
+    // create MoFEM (Joseph) database
+    MoFEM::Core core(moab);
+    MoFEM::Interface &m_field = core;
+    // meshset consisting all entities in mesh
+    EntityHandle root_set = moab.get_root_set();
 
-  };
+    // set entitities bit level
+    BitRefLevel bit_level0;
+    bit_level0.set(0);
+    EntityHandle meshset_level0;
+    rval = moab.create_meshset(MESHSET_SET, meshset_level0);
+    CHKERRG(rval);
+    ierr = m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(
+        0, 3, bit_level0);
+    CHKERRG(ierr);
 
-  struct MyTriFE: public FaceElementForcesAndSourcesCore {
+    // fields
+    ierr = m_field.add_field("HCURL", HCURL, AINSWORTH_LEGENDRE_BASE, 1);
+    CHKERRG(ierr);
+    // add entities to field
+    ierr = m_field.add_ents_to_field_by_type(root_set, MBTET, "HCURL");
+    CHKERRG(ierr);
+    // set app. order
+    int order = 5;
+    ierr = m_field.set_field_order(root_set, MBTET, "HCURL", order);
+    CHKERRG(ierr);
+    ierr = m_field.set_field_order(root_set, MBTRI, "HCURL", order);
+    CHKERRG(ierr);
+    ierr = m_field.set_field_order(root_set, MBEDGE, "HCURL", order);
+    CHKERRG(ierr);
+    // build field
+    ierr = m_field.build_fields();
+    CHKERRG(ierr);
 
-    MyTriFE(MoFEM::Interface &m_field):
-    FaceElementForcesAndSourcesCore(m_field) {}
-    int getRule(int order) { return 2*order; };//2*order; }; //order/2; };
+    // finite elements
+    ierr = m_field.add_finite_element("TET_FE");
+    CHKERRG(ierr);
+    ierr = m_field.add_finite_element("SKIN_FE");
+    CHKERRG(ierr);
 
-  };
+    // Define rows/cols and element data
+    ierr = m_field.modify_finite_element_add_field_row("TET_FE", "HCURL");
+    CHKERRG(ierr);
+    ierr = m_field.modify_finite_element_add_field_col("TET_FE", "HCURL");
+    CHKERRG(ierr);
+    ierr = m_field.modify_finite_element_add_field_data("TET_FE", "HCURL");
+    CHKERRG(ierr);
+    ierr = m_field.modify_finite_element_add_field_row("SKIN_FE", "HCURL");
+    CHKERRG(ierr);
+    ierr = m_field.modify_finite_element_add_field_col("SKIN_FE", "HCURL");
+    CHKERRG(ierr);
+    ierr = m_field.modify_finite_element_add_field_data("SKIN_FE", "HCURL");
+    CHKERRG(ierr);
+    // add entities to finite element
+    ierr =
+        m_field.add_ents_to_finite_element_by_type(root_set, MBTET, "TET_FE");
+    CHKERRG(ierr);
+    Range tets;
+    ierr = m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
+        BitRefLevel().set(0), BitRefLevel().set(), MBTET, tets);
+    CHKERRG(ierr);
+    Skinner skin(&moab);
+    Range skin_faces; // skin faces from 3d ents
+    rval = skin.find_skin(0, tets, false, skin_faces);
+    CHKERRG(rval);
+    ierr = m_field.add_ents_to_finite_element_by_type(skin_faces, MBTRI,
+                                                      "SKIN_FE");
+    CHKERRG(ierr);
 
-  struct OpFacesRot: public FaceElementForcesAndSourcesCore::UserDataOperator {
+    // build finite elemnts
+    ierr = m_field.build_finite_elements();
+    CHKERRG(ierr);
 
-    FTensor::Tensor1<double*,3> &cUrl;
-    OpFacesRot(FTensor::Tensor1<double*,3> &curl):
-    FaceElementForcesAndSourcesCore::UserDataOperator("HCURL",UserDataOperator::OPROW),
-    cUrl(curl) {}
+    // build adjacencies
+    ierr = m_field.build_adjacencies(bit_level0);
+    CHKERRG(ierr);
 
-    MoFEMErrorCode doWork(
-      int side,
-      EntityType type,
-      DataForcesAndSourcesCore::EntData &data
-    ) {
-      MoFEMFunctionBeginHot;
+    // problem
+    ierr = m_field.add_problem("TEST_PROBLEM");
+    CHKERRG(ierr);
+    // set finite elements for problem
+    ierr = m_field.modify_problem_add_finite_element("TEST_PROBLEM", "TET_FE");
+    CHKERRG(ierr);
+    ierr = m_field.modify_problem_add_finite_element("TEST_PROBLEM", "SKIN_FE");
+    CHKERRG(ierr);
+    // set refinement level for problem
+    ierr = m_field.modify_problem_ref_level_add_bit("TEST_PROBLEM", bit_level0);
+    CHKERRG(ierr);
 
-      int nb_dofs = data.getFieldData().size();
-      if(nb_dofs==0) MoFEMFunctionReturnHot(0);
-      int nb_gauss_pts = data.getHcurlN().size1();
+    // build problem
+    ProblemsManager *prb_mng_ptr;
+    ierr = m_field.getInterface(prb_mng_ptr);
+    CHKERRG(ierr);
+    ierr = prb_mng_ptr->buildProblem("TEST_PROBLEM", true);
+    CHKERRG(ierr);
 
-      FTensor::Tensor1<double*,3> t_curl_base = data.getFTensor1HcurlN<3>();
-      // double area = getArea();
-      double n0 = getNormal()[0]*0.5;
-      double n1 = getNormal()[1]*0.5;
-      double n2 = getNormal()[2]*0.5;
+    // mesh partitioning
+    // partition
+    ierr = prb_mng_ptr->partitionSimpleProblem("TEST_PROBLEM");
+    CHKERRG(ierr);
+    ierr = prb_mng_ptr->partitionFiniteElements("TEST_PROBLEM");
+    CHKERRG(ierr);
+    // what are ghost nodes, see Petsc Manual
+    ierr = prb_mng_ptr->partitionGhostDofs("TEST_PROBLEM");
+    CHKERRG(ierr);
 
-      FTensor::Index<'i',3> i;
-      FTensor::Index<'j',3> j;
+    Vec v;
+    ierr = m_field.getInterface<VecManager>()->vecCreateGhost("TEST_PROBLEM",
+                                                              ROW, &v);
+    ierr = VecSetRandom(v, PETSC_NULL);
+    CHKERRG(ierr);
+    ierr = m_field.getInterface<VecManager>()->setLocalGhostVector(
+        "TEST_PROBLEM", ROW, v, INSERT_VALUES, SCATTER_REVERSE);
+    CHKERRG(ierr);
+    ierr = VecDestroy(&v);
+    CHKERRG(ierr);
 
-      for(int gg = 0;gg<nb_gauss_pts;gg++) {
-        for(int dd = 0;dd<nb_dofs;dd++) {
-          double w = getGaussPts()(2,gg);
-          if(getNormalsAtGaussPt().size1() == (unsigned int)nb_gauss_pts) {
-            n0 = getNormalsAtGaussPt(gg)[0]*0.5;
-            n1 = getNormalsAtGaussPt(gg)[1]*0.5;
-            n2 = getNormalsAtGaussPt(gg)[2]*0.5;
+    struct OpTetCurl
+        : public VolumeElementForcesAndSourcesCore::UserDataOperator {
+
+      FTensor::Tensor1<double *, 3> &cUrl;
+      OpTetCurl(FTensor::Tensor1<double *, 3> &curl)
+          : VolumeElementForcesAndSourcesCore::UserDataOperator(
+                "HCURL", UserDataOperator::OPROW),
+            cUrl(curl) {}
+
+      MoFEMErrorCode doWork(int side, EntityType type,
+                            DataForcesAndSourcesCore::EntData &data) {
+        MoFEMFunctionBeginHot;
+
+        if (data.getFieldData().size() == 0)
+          MoFEMFunctionReturnHot(0);
+
+        const unsigned int nb_gauss_pts = data.getDiffHcurlN().size1();
+        const unsigned int nb_dofs = data.getFieldData().size();
+
+        MatrixDouble curl_mat;
+        FTensor::Index<'i', 3> i;
+
+        unsigned int gg = 0;
+        for (; gg < nb_gauss_pts; gg++) {
+          double w = getGaussPts()(3, gg) * getVolume();
+          if (getHoGaussPtsDetJac().size() == nb_gauss_pts) {
+            // if ho geometry is given
+            w *= getHoGaussPtsDetJac()(gg);
           }
-          double v = data.getFieldData()[dd];
-          cUrl(0) += (n1*t_curl_base(2)-n2*t_curl_base(1))*w*v;
-          cUrl(1) += (n2*t_curl_base(0)-n0*t_curl_base(2))*w*v;
-          cUrl(2) += (n0*t_curl_base(1)-n1*t_curl_base(0))*w*v;
-          ++t_curl_base;
+          ierr = getCurlOfHCurlBaseFunctions(side, type, data, gg, curl_mat);
+          CHKERRG(ierr);
+          FTensor::Tensor1<double *, 3> t_curl(&curl_mat(0, 0), &curl_mat(0, 1),
+                                               &curl_mat(0, 2), 3);
+          for (unsigned int dd = 0; dd != nb_dofs; dd++) {
+            cUrl(i) += w * t_curl(i) * data.getFieldData()[dd];
+            ++t_curl;
+          }
         }
-      }
 
-      MoFEMFunctionReturnHot(0);
+        MoFEMFunctionReturnHot(0);
+      }
+    };
+
+    struct MyFE : public VolumeElementForcesAndSourcesCore {
+
+      MyFE(MoFEM::Interface &m_field)
+          : VolumeElementForcesAndSourcesCore(m_field) {}
+      int getRule(int order) { return 2 * order; }; // order/2; };
+    };
+
+    struct MyTriFE : public FaceElementForcesAndSourcesCore {
+
+      MyTriFE(MoFEM::Interface &m_field)
+          : FaceElementForcesAndSourcesCore(m_field) {}
+      int getRule(int order) { return 2 * order; }; // 2*order; }; //order/2; };
+    };
+
+    struct OpFacesRot
+        : public FaceElementForcesAndSourcesCore::UserDataOperator {
+
+      FTensor::Tensor1<double *, 3> &cUrl;
+      OpFacesRot(FTensor::Tensor1<double *, 3> &curl)
+          : FaceElementForcesAndSourcesCore::UserDataOperator(
+                "HCURL", UserDataOperator::OPROW),
+            cUrl(curl) {}
+
+      MoFEMErrorCode doWork(int side, EntityType type,
+                            DataForcesAndSourcesCore::EntData &data) {
+        MoFEMFunctionBeginHot;
+
+        int nb_dofs = data.getFieldData().size();
+        if (nb_dofs == 0)
+          MoFEMFunctionReturnHot(0);
+        int nb_gauss_pts = data.getHcurlN().size1();
+
+        FTensor::Tensor1<double *, 3> t_curl_base = data.getFTensor1HcurlN<3>();
+        // double area = getArea();
+        double n0 = getNormal()[0] * 0.5;
+        double n1 = getNormal()[1] * 0.5;
+        double n2 = getNormal()[2] * 0.5;
+
+        FTensor::Index<'i', 3> i;
+        FTensor::Index<'j', 3> j;
+
+        for (int gg = 0; gg < nb_gauss_pts; gg++) {
+          for (int dd = 0; dd < nb_dofs; dd++) {
+            double w = getGaussPts()(2, gg);
+            if (getNormalsAtGaussPt().size1() == (unsigned int)nb_gauss_pts) {
+              n0 = getNormalsAtGaussPt(gg)[0] * 0.5;
+              n1 = getNormalsAtGaussPt(gg)[1] * 0.5;
+              n2 = getNormalsAtGaussPt(gg)[2] * 0.5;
+            }
+            double v = data.getFieldData()[dd];
+            cUrl(0) += (n1 * t_curl_base(2) - n2 * t_curl_base(1)) * w * v;
+            cUrl(1) += (n2 * t_curl_base(0) - n0 * t_curl_base(2)) * w * v;
+            cUrl(2) += (n0 * t_curl_base(1) - n1 * t_curl_base(0)) * w * v;
+            ++t_curl_base;
+          }
+        }
+
+        MoFEMFunctionReturnHot(0);
+      }
+    };
+
+    VectorDouble curl_vol(3);
+    VectorDouble curl_skin(3);
+    FTensor::Tensor1<double *, 3> t_curl_vol(&curl_vol[0], &curl_vol[1],
+                                             &curl_vol[2]);
+    FTensor::Tensor1<double *, 3> t_curl_skin(&curl_skin[0], &curl_skin[1],
+                                              &curl_skin[2]);
+    curl_vol.clear();
+    curl_skin.clear();
+
+    MyFE tet_fe(m_field);
+    tet_fe.getOpPtrVector().push_back(new OpTetCurl(t_curl_vol));
+    MyTriFE skin_fe(m_field);
+    skin_fe.getOpPtrVector().push_back(new OpFacesRot(t_curl_skin));
+
+    ierr = m_field.loop_finite_elements("TEST_PROBLEM", "TET_FE", tet_fe);
+    CHKERRG(ierr);
+    ierr = m_field.loop_finite_elements("TEST_PROBLEM", "SKIN_FE", skin_fe);
+    CHKERRG(ierr);
+
+    std::cout.precision(12);
+
+    std::cout << "curl_vol " << curl_vol << std::endl;
+    std::cout << "curl_skin " << curl_skin << std::endl;
+
+    FTensor::Index<'i', 3> i;
+    t_curl_vol(i) -= t_curl_skin(i);
+    double nrm2 = sqrt(t_curl_vol(i) * t_curl_vol(i));
+
+    const double eps = 1e-8;
+    if (fabs(nrm2) > eps) {
+      SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+              "Curl operator not passed test\n");
     }
 
-  };
+    ierr = m_field.add_field("MESH_NODE_POSITIONS", H1, AINSWORTH_LEGENDRE_BASE,
+                             3);
+    CHKERRG(ierr);
 
-  VectorDouble curl_vol(3);
-  VectorDouble curl_skin(3);
-  FTensor::Tensor1<double*,3> t_curl_vol(&curl_vol[0],&curl_vol[1],&curl_vol[2]);
-  FTensor::Tensor1<double*,3> t_curl_skin(&curl_skin[0],&curl_skin[1],&curl_skin[2]);
-  curl_vol.clear();
-  curl_skin.clear();
+    ierr = m_field.add_ents_to_field_by_type(0, MBTET, "MESH_NODE_POSITIONS");
+    CHKERRG(ierr);
+    ierr = m_field.set_field_order(0, MBVERTEX, "MESH_NODE_POSITIONS", 1);
+    CHKERRG(ierr);
+    ierr = m_field.set_field_order(0, MBEDGE, "MESH_NODE_POSITIONS", 2);
+    CHKERRG(ierr);
+    ierr = m_field.set_field_order(0, MBTRI, "MESH_NODE_POSITIONS", 2);
+    CHKERRG(ierr);
+    ierr = m_field.set_field_order(0, MBTET, "MESH_NODE_POSITIONS", 2);
+    CHKERRG(ierr);
 
-  MyFE tet_fe(m_field);
-  tet_fe.getOpPtrVector().push_back(new OpTetCurl(t_curl_vol));
-  MyTriFE skin_fe(m_field);
-  skin_fe.getOpPtrVector().push_back(new OpFacesRot(t_curl_skin));
+    ierr = m_field.modify_finite_element_add_field_data("TET_FE",
+                                                        "MESH_NODE_POSITIONS");
+    CHKERRG(ierr);
+    ierr = m_field.modify_finite_element_add_field_data("SKIN_FE",
+                                                        "MESH_NODE_POSITIONS");
+    CHKERRG(ierr);
 
-  ierr = m_field.loop_finite_elements("TEST_PROBLEM","TET_FE",tet_fe);  CHKERRG(ierr);
-  ierr = m_field.loop_finite_elements("TEST_PROBLEM","SKIN_FE",skin_fe);  CHKERRG(ierr);
+    ierr = m_field.build_fields();
+    CHKERRG(ierr);
+    // project geometry form 10 node tets on higher order approx. functions
+    Projection10NodeCoordsOnField ent_method(m_field, "MESH_NODE_POSITIONS");
+    ierr = m_field.loop_dofs("MESH_NODE_POSITIONS", ent_method);
+    CHKERRG(ierr);
 
-  std::cout.precision(12);
+    ierr = m_field.build_finite_elements();
+    CHKERRG(ierr);
+    ierr = m_field.build_adjacencies(bit_level0);
+    CHKERRG(ierr);
 
-  std::cout << "curl_vol " << curl_vol << std::endl;
-  std::cout << "curl_skin " << curl_skin << std::endl;
+    // mesh partitioning
+    ierr = prb_mng_ptr->buildProblem("TEST_PROBLEM", true);
+    CHKERRG(ierr);
+    ierr = prb_mng_ptr->partitionSimpleProblem("TEST_PROBLEM");
+    CHKERRG(ierr);
+    ierr = prb_mng_ptr->partitionFiniteElements("TEST_PROBLEM");
+    CHKERRG(ierr);
+    ierr = prb_mng_ptr->partitionGhostDofs("TEST_PROBLEM");
+    CHKERRG(ierr);
 
-  FTensor::Index<'i',3> i;
-  t_curl_vol(i)-=t_curl_skin(i);
-  double nrm2 = sqrt(t_curl_vol(i)*t_curl_vol(i));
+    t_curl_vol(i) = 0;
+    t_curl_skin(i) = 0;
 
-  const double eps = 1e-8;
-  if(fabs(nrm2)>eps) {
-     SETERRQ(
-       PETSC_COMM_SELF,
-       MOFEM_ATOM_TEST_INVALID,
-       "Curl operator not passed test\n"
-     );
-  }
+    ierr = m_field.loop_finite_elements("TEST_PROBLEM", "TET_FE", tet_fe);
+    CHKERRG(ierr);
+    ierr = m_field.loop_finite_elements("TEST_PROBLEM", "SKIN_FE", skin_fe);
+    CHKERRG(ierr);
 
-  ierr = m_field.add_field("MESH_NODE_POSITIONS",H1,AINSWORTH_LEGENDRE_BASE,3); CHKERRG(ierr);
+    std::cout << "curl_vol " << curl_vol << std::endl;
+    std::cout << "curl_skin " << curl_skin << std::endl;
 
-  ierr = m_field.add_ents_to_field_by_type(0,MBTET,"MESH_NODE_POSITIONS"); CHKERRG(ierr);
-  ierr = m_field.set_field_order(0,MBVERTEX,"MESH_NODE_POSITIONS",1); CHKERRG(ierr);
-  ierr = m_field.set_field_order(0,MBEDGE,"MESH_NODE_POSITIONS",2); CHKERRG(ierr);
-  ierr = m_field.set_field_order(0,MBTRI,"MESH_NODE_POSITIONS",2); CHKERRG(ierr);
-  ierr = m_field.set_field_order(0,MBTET,"MESH_NODE_POSITIONS",2); CHKERRG(ierr);
-
-  ierr = m_field.modify_finite_element_add_field_data("TET_FE","MESH_NODE_POSITIONS"); CHKERRG(ierr);
-  ierr = m_field.modify_finite_element_add_field_data("SKIN_FE","MESH_NODE_POSITIONS"); CHKERRG(ierr);
-
-  ierr = m_field.build_fields(); CHKERRG(ierr);
-  //project geometry form 10 node tets on higher order approx. functions
-  Projection10NodeCoordsOnField ent_method(m_field,"MESH_NODE_POSITIONS");
-  ierr = m_field.loop_dofs("MESH_NODE_POSITIONS",ent_method); CHKERRG(ierr);
-
-  ierr = m_field.build_finite_elements(); CHKERRG(ierr);
-  ierr = m_field.build_adjacencies(bit_level0); CHKERRG(ierr);
-
-  //mesh partitioning
-  ierr = prb_mng_ptr->buildProblem("TEST_PROBLEM",true); CHKERRG(ierr);
-  ierr = prb_mng_ptr->partitionSimpleProblem("TEST_PROBLEM"); CHKERRG(ierr);
-  ierr = prb_mng_ptr->partitionFiniteElements("TEST_PROBLEM"); CHKERRG(ierr);
-  ierr = prb_mng_ptr->partitionGhostDofs("TEST_PROBLEM"); CHKERRG(ierr);
-
-  t_curl_vol(i) = 0;
-  t_curl_skin(i) = 0;
-
-  ierr = m_field.loop_finite_elements("TEST_PROBLEM","TET_FE",tet_fe);  CHKERRG(ierr);
-  ierr = m_field.loop_finite_elements("TEST_PROBLEM","SKIN_FE",skin_fe);  CHKERRG(ierr);
-
-  std::cout << "curl_vol " << curl_vol << std::endl;
-  std::cout << "curl_skin " << curl_skin << std::endl;
-
-  t_curl_vol(i)-=t_curl_skin(i);
-  nrm2 = sqrt(t_curl_vol(i)*t_curl_vol(i));
-  if(fabs(nrm2)>eps) {
-     SETERRQ(
-       PETSC_COMM_SELF,
-       MOFEM_ATOM_TEST_INVALID,
-       "Curl operator not passed test\n"
-     );
-  }
+    t_curl_vol(i) -= t_curl_skin(i);
+    nrm2 = sqrt(t_curl_vol(i) * t_curl_vol(i));
+    if (fabs(nrm2) > eps) {
+      SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+              "Curl operator not passed test\n");
+    }
 
   } catch (MoFEMException const &e) {
-    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
+    SETERRQ(PETSC_COMM_SELF, e.errorCode, e.errorMessage);
   }
 
-  ierr = MoFEM::Core::Finalize(); CHKERRG(ierr);
+  ierr = MoFEM::Core::Finalize();
+  CHKERRG(ierr);
 }
