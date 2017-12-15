@@ -143,7 +143,7 @@ struct NonlinearElasticElement {
 
     /** \brief Calculate determinant of 3x3 matrix
       */
-    MoFEMErrorCode dEterminatnt(
+    MoFEMErrorCode dEterminant(
       ublas::matrix<TYPE,ublas::row_major,ublas::bounded_array<TYPE,9> >& a,TYPE &det
     ) {
       MoFEMFunctionBeginHot;

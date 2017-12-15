@@ -84,7 +84,7 @@ struct KelvinVoigtDamper {
 
     /** \brief Calculate determinant of 3x3 matrix
     */
-    MoFEMErrorCode dEterminatnt(ublas::matrix<TYPE> a,TYPE &det) {
+    MoFEMErrorCode dEterminant(ublas::matrix<TYPE> a,TYPE &det) {
       MoFEMFunctionBeginHot;
       // a11a22a33
       //+a21a32a13
@@ -194,7 +194,7 @@ struct KelvinVoigtDamper {
       } else {
 
         invF.resize(3,3,false);
-        ierr = dEterminatnt(F,J); CHKERRG(ierr);
+        ierr = dEterminant(F,J); CHKERRG(ierr);
         ierr = iNvert(J,F,invF); CHKERRG(ierr);
         noalias(dashpotFirstPiolaKirchhoffStress) = J*prod(dashpotCauchyStress,trans(invF));
       }

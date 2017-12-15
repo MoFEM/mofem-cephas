@@ -377,7 +377,7 @@ MoFEMErrorCode ConvectiveMassElement::OpMassJacobian::doWork(
           }
         }
         adouble detH;
-        ierr = dEterminatnt(H,detH); CHKERRG(ierr);
+        ierr = dEterminant(H,detH); CHKERRG(ierr);
         ierr = iNvert(detH,H,invH); CHKERRG(ierr);
         noalias(G) = prod(g,invH);
         double rho0 = dAta.rho0;
@@ -386,7 +386,7 @@ MoFEMErrorCode ConvectiveMassElement::OpMassJacobian::doWork(
         if(!lInear) {
           noalias(F) = prod(h,invH);
           adouble detF;
-          ierr = dEterminatnt(F,detF); CHKERRG(ierr);
+          ierr = dEterminant(F,detF); CHKERRG(ierr);
           //calculate current density
           adouble rho = rho0*detF;
           //momentum rate
@@ -967,7 +967,7 @@ MoFEMErrorCode ConvectiveMassElement::OpEnergy::doWork(
             H.resize(3,3);
             noalias(H) = (commonData.gradAtGaussPts[commonData.meshPositions][gg]);
             double detH;
-            ierr = dEterminatnt(H,detH); CHKERRG(ierr);
+            ierr = dEterminant(H,detH); CHKERRG(ierr);
             invH.resize(3,3);
             ierr = iNvert(detH,H,invH); CHKERRG(ierr);
             F.resize(3,3);
@@ -977,7 +977,7 @@ MoFEMErrorCode ConvectiveMassElement::OpEnergy::doWork(
             noalias(F) = h;
           }
           double detF;
-          ierr = dEterminatnt(F,detF); CHKERRG(ierr);
+          ierr = dEterminant(F,detF); CHKERRG(ierr);
           rho = detF*rho0;
         }
         v.resize(3);
@@ -1088,7 +1088,7 @@ MoFEMErrorCode ConvectiveMassElement::OpEnergy::doWork(
           }
           detH = 1;
           if(commonData.gradAtGaussPts[commonData.meshPositions].size()>0) {
-            ierr = dEterminatnt(H,detH); CHKERRG(ierr);
+            ierr = dEterminant(H,detH); CHKERRG(ierr);
             ierr = iNvert(detH,H,invH); CHKERRG(ierr);
             noalias(F) = prod(h,invH);
           } else {
@@ -1569,7 +1569,7 @@ MoFEMErrorCode ConvectiveMassElement::OpEnergy::doWork(
             adouble detH;
             detH = 1;
             if(commonData.gradAtGaussPts[commonData.meshPositions].size()>0) {
-              ierr = dEterminatnt(H,detH); CHKERRG(ierr);
+              ierr = dEterminant(H,detH); CHKERRG(ierr);
             }
             ierr = iNvert(detH,H,invH); CHKERRG(ierr);
             noalias(F) = prod(h,invH);

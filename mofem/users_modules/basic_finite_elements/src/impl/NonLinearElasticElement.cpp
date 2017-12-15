@@ -345,7 +345,7 @@ MoFEMErrorCode NonlinearElasticElement::OpJacobianPiolaKirchhoffStress::recordTa
         }
       }
 
-      ierr = dAta.materialAdoublePtr->dEterminatnt(
+      ierr = dAta.materialAdoublePtr->dEterminant(
         dAta.materialAdoublePtr->H,dAta.materialAdoublePtr->detH
       ); CHKERRG(ierr);
       dAta.materialAdoublePtr->invH.resize(3,3,false);
@@ -558,7 +558,7 @@ MoFEMErrorCode NonlinearElasticElement::OpJacobianEnergy::recordTag(const int gg
         }
       }
 
-      ierr = dAta.materialAdoublePtr->dEterminatnt(
+      ierr = dAta.materialAdoublePtr->dEterminant(
         dAta.materialAdoublePtr->H,dAta.materialAdoublePtr->detH
       ); CHKERRG(ierr);
       dAta.materialAdoublePtr->invH.resize(3,3,false);
