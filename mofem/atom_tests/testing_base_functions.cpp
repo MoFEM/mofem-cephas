@@ -57,6 +57,7 @@ int main(int argc, char *argv[]) {
       L2TRI,
       H1EDGE,
       HCURLEDGE_AINSWORTH,
+      HCURLEDGE_DEMKOWICZ,
       H1FLATPRIS,
       H1FATPRISM,
       LASTOP
@@ -78,6 +79,7 @@ int main(int argc, char *argv[]) {
                           "l2tri",
                           "h1edge",
                           "hcurledge_ainsworth",
+                          "hcurledge_demkowicz",
                           "h1flatprism",
                           "h1fatprism"};
 
@@ -825,6 +827,29 @@ int main(int argc, char *argv[]) {
           edge_data.dataOnEntities[MBEDGE][0].getN(AINSWORTH_LEGENDRE_BASE));
       std::cout << "sum  " << sum << std::endl;
       if (fabs(-4 - sum) > eps) {
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "wrong result");
+      }
+    }
+
+    if (choise_value == HCURLEDGE_DEMKOWICZ) {
+      CHKERR EdgePolynomialBase().getValue(
+          pts_edge, boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
+                        edge_data, HCURL, DEMKOWICZ_JACOBI_BASE, NOBASE)));
+      if (edge_data.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE).get() !=
+          edge_data.dataOnEntities[MBVERTEX][0]
+              .getNSharedPtr(DEMKOWICZ_JACOBI_BASE)
+              .get()) {
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "Different pointers");
+      }
+      std::cout << edge_data.dataOnEntities[MBEDGE][0].getN(
+                       DEMKOWICZ_JACOBI_BASE)
+                << std::endl;
+      int sum = 0;
+      sum += sum_matrix(
+          edge_data.dataOnEntities[MBEDGE][0].getN(DEMKOWICZ_JACOBI_BASE));
+      std::cout << "sum  " << sum << std::endl;
+      if (fabs(-5 - sum) > eps) {
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "wrong result");
       }
     }

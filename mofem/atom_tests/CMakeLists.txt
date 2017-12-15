@@ -1100,6 +1100,7 @@ list(INSERT testing_base_list
   l2tri
   h1edge
   hcurledge_ainsworth
+  hcurledge_demkowicz
 )
 foreach(test_base ${testing_base_list})
   add_test(testing_base_functions_${test_base}

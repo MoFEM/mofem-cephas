@@ -2288,7 +2288,7 @@ MoFEMErrorCode MoFEM::Hcurl_Demkowicz_EdgeBaseFunctions_MBEDGE(
 
   FTensor::Tensor1<double, 3> t_grad_n[2];
   for (int nn = 0; nn != 2; ++nn) {
-    t_grad_n[nn] = FTensor::Tensor1<double, 3>(diff_n[3 * nn + 0], 0, 0);
+    t_grad_n[nn] = FTensor::Tensor1<double, 3>(diff_n[nn], 0, 0);
   };
 
   HcurlEdgeBase h_curl_base_on_edge;
@@ -2309,7 +2309,7 @@ MoFEMErrorCode MoFEM::Hcurl_Demkowicz_EdgeBaseFunctions_MBEDGE(
     n1_idx = n_tmp;
   }
 
-  CHKERR h_curl_base_on_edge(3, p, nb_integration_pts, n0_idx, n1_idx, n,
+  CHKERR h_curl_base_on_edge(1, p, nb_integration_pts, n0_idx, n1_idx, n,
                              t_grad_n, t_phi);
 
   MoFEMFunctionReturn(0);
