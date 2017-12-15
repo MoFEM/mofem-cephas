@@ -48,12 +48,12 @@ int main(int argc, char *argv[]) {
       H1TET,
       HDIVTET_AINSWORTH,
       HDIVTET_DEMKOWICZ,
-      HCURLTET,
+      HCURLTET_AINSWORTH,
       L2TET,
       H1TRI,
       HDIVTRI_AINSWORTH,
       HDIVTRI_DEMKOWICZ,
-      HCURLTRI,
+      HCURLTRI_AINSWORTH,
       L2TRI,
       H1EDGE,
       HCURLEDGE_AINSWORTH,
@@ -470,7 +470,7 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    if (choise_value == HCURLTET) {
+    if (choise_value == HCURLTET_AINSWORTH) {
       ierr = TetPolynomialBase().getValue(
           pts_tet, boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
                        tet_data, HCURL, AINSWORTH_LEGENDRE_BASE)));
@@ -685,7 +685,7 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    if (choise_value == HCURLTRI) {
+    if (choise_value == HCURLTRI_AINSWORTH) {
       ierr = TriPolynomialBase().getValue(
           pts_tri, boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
                        tri_data, HCURL, AINSWORTH_LEGENDRE_BASE, NOBASE)));
