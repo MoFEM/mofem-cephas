@@ -54,6 +54,7 @@ int main(int argc, char *argv[]) {
       HDIVTRI_AINSWORTH,
       HDIVTRI_DEMKOWICZ,
       HCURLTRI_AINSWORTH,
+      HCURLTRI_DEMKOWICZ,
       L2TRI,
       H1EDGE,
       HCURLEDGE_AINSWORTH,
@@ -76,6 +77,7 @@ int main(int argc, char *argv[]) {
                           "hdivtri_ainsworth",
                           "hdivtri_demkowicz",
                           "hcurltri_ainsworth",
+                          "hcurltri_demkowicz",
                           "l2tri",
                           "h1edge",
                           "hcurledge_ainsworth",
@@ -716,6 +718,38 @@ int main(int argc, char *argv[]) {
           tri_data.dataOnEntities[MBTRI][0].getN(AINSWORTH_LEGENDRE_BASE));
       std::cout << "sum  " << sum << std::endl;
       if (fabs(0.333333 - sum) > eps) {
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "wrong result");
+      }
+    }
+
+    if (choise_value == HCURLTRI_DEMKOWICZ) {
+      CHKERR TriPolynomialBase().getValue(
+          pts_tri, boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
+                       tri_data, HCURL, DEMKOWICZ_JACOBI_BASE, NOBASE)));
+      if (tri_data.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE).get() !=
+          tri_data.dataOnEntities[MBVERTEX][0]
+              .getNSharedPtr(DEMKOWICZ_JACOBI_BASE)
+              .get()) {
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "Different pointers");
+      }
+      double sum = 0; //,diff_sum = 0;
+      std::cout << "Edges\n";
+      for (int ee = 0; ee < 3; ee++) {
+        std::cout << tri_data.dataOnEntities[MBEDGE][ee].getN(
+                         DEMKOWICZ_JACOBI_BASE)
+                  << std::endl;
+        sum += sum_matrix(
+            tri_data.dataOnEntities[MBEDGE][ee].getN(DEMKOWICZ_JACOBI_BASE));
+      }
+      std::cout << "Face\n";
+      std::cout << tri_data.dataOnEntities[MBTRI][0].getN(
+                       DEMKOWICZ_JACOBI_BASE)
+                << std::endl;
+      sum += sum_matrix(
+          tri_data.dataOnEntities[MBTRI][0].getN(DEMKOWICZ_JACOBI_BASE));
+      std::cout << "sum  " << sum << std::endl;
+      if (fabs(0.557154 - sum) > eps) {
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "wrong result");
       }
     }

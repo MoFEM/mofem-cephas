@@ -1097,6 +1097,7 @@ list(INSERT testing_base_list
   hdivtri_ainsworth
   hdivtri_demkowicz
   hcurltri_ainsworth
+  hcurltri_demkowicz
   l2tri
   h1edge
   hcurledge_ainsworth
