@@ -58,11 +58,17 @@ struct EdgeElementForcesAndSourcesCore : public ForcesAndSourcesCore {
         opCovariantTransform(dIrection, tAngent_at_GaussPt) {}
 
   double lEngth;
-  ;
+  
   VectorDouble dIrection;
   VectorDouble cOords;
   MatrixDouble gaussPts;
   MatrixDouble coordsAtGaussPts;
+
+  MoFEMErrorCode calculateEdgeDirection();
+  MoFEMErrorCode setIntegrationPts();
+  MoFEMErrorCode calculateCoordsAtIntegrationPts();
+  MoFEMErrorCode calculateBaseFunctionsOnElement();
+  MoFEMErrorCode calculateHoCoordsAtIntegrationPts();
 
   /** \brief default operator for EDGE element
     \ingroup mofem_forces_and_sources_edge_element

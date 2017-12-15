@@ -75,49 +75,23 @@ extern "C" {
 
 namespace MoFEM {
 
-MoFEMErrorCode EdgeElementForcesAndSourcesCore::operator()() {
-  MoFEMFunctionBeginHot;
-
-  if (numeredEntFiniteElementPtr->getEntType() != MBEDGE)
-    MoFEMFunctionReturnHot(0);
-
+MoFEMErrorCode EdgeElementForcesAndSourcesCore::calculateEdgeDirection() {
+  MoFEMFunctionBegin;
   EntityHandle ent = numeredEntFiniteElementPtr->getEnt();
-  {
-    int num_nodes;
-    const EntityHandle *conn;
-    rval = mField.get_moab().get_connectivity(ent, conn, num_nodes, true);
-    CHKERRQ_MOAB(rval);
-    cOords.resize(num_nodes * 3, false);
-    rval =
-        mField.get_moab().get_coords(conn, num_nodes, &*cOords.data().begin());
-    CHKERRQ_MOAB(rval);
-    dIrection.resize(3, false);
-    cblas_dcopy(3, &cOords[3], 1, &*dIrection.data().begin(), 1);
-    cblas_daxpy(3, -1., &cOords[0], 1, &*dIrection.data().begin(), 1);
-    lEngth = cblas_dnrm2(3, &*dIrection.data().begin(), 1);
-  }
+  int num_nodes;
+  const EntityHandle *conn;
+  CHKERR mField.get_moab().get_connectivity(ent, conn, num_nodes, true);
+  cOords.resize(num_nodes * 3, false);
+  CHKERR mField.get_moab().get_coords(conn, num_nodes, &*cOords.data().begin());
+  dIrection.resize(3, false);
+  cblas_dcopy(3, &cOords[3], 1, &*dIrection.data().begin(), 1);
+  cblas_daxpy(3, -1., &cOords[0], 1, &*dIrection.data().begin(), 1);
+  lEngth = cblas_dnrm2(3, &*dIrection.data().begin(), 1);
+  MoFEMFunctionReturn(0);
+}
 
-  // PetscAttachDebugger();
-  ierr = getSpacesAndBaseOnEntities(dataH1);
-  CHKERRG(ierr);
-  ierr = getEdgesDataOrder(dataH1, H1);
-  CHKERRG(ierr);
-  dataH1.dataOnEntities[MBEDGE][0].getSense() =
-      1; // set sense to 1, this is this entity
-
-  // Hcurl
-  if (dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
-    ierr = getEdgesDataOrder(dataHcurl, HCURL);
-    CHKERRG(ierr);
-    dataHcurl.dataOnEntities[MBEDGE][0].getSense() =
-        1; // set sense to 1, this is this entity
-    dataHcurl.spacesOnEntities[MBEDGE].set(HCURL);
-  }
-
-  /// Use the some node base
-  dataHcurl.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE) =
-      dataH1.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE);
-
+MoFEMErrorCode EdgeElementForcesAndSourcesCore::setIntegrationPts() {
+  MoFEMFunctionBeginHot;
   int order_data = getMaxDataOrder();
   int order_row = getMaxRowOrder();
   int order_col = getMaxColOrder();
@@ -165,78 +139,109 @@ MoFEMErrorCode EdgeElementForcesAndSourcesCore::operator()() {
       }
     }
   }
+  MoFEMFunctionReturnHot(0);
+}
 
+MoFEMErrorCode
+EdgeElementForcesAndSourcesCore::calculateCoordsAtIntegrationPts() {
+  MoFEMFunctionBeginHot;
+  int nb_gauss_pts = gaussPts.size2();
   coordsAtGaussPts.resize(nb_gauss_pts, 3, false);
-  for (int gg = 0; gg < nb_gauss_pts; gg++) {
-    for (int dd = 0; dd < 3; dd++) {
+  for (int gg = 0; gg != nb_gauss_pts; ++gg) {
+    for (int dd = 0; dd != 3; ++dd) {
       coordsAtGaussPts(gg, dd) = N_MBEDGE0(gaussPts(0, gg)) * cOords[dd] +
                                  N_MBEDGE1(gaussPts(0, gg)) * cOords[3 + dd];
     }
   }
+  MoFEMFunctionReturnHot(0);
+}
 
-  try {
-
-    for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
-      if (dataH1.bAse.test(b)) {
-        switch (ApproximationBaseArray[b]) {
-        case AINSWORTH_LEGENDRE_BASE:
-        case AINSWORTH_LOBATTO_BASE:
-          if (dataH1.spacesOnEntities[MBVERTEX].test(H1)) {
-            ierr = EdgePolynomialBase().getValue(
-                gaussPts,
-                boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
-                    dataH1, H1, ApproximationBaseArray[b], NOBASE)));
-            CHKERRG(ierr);
-          }
-          if (dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
-            ierr = EdgePolynomialBase().getValue(
-                gaussPts,
-                boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
-                    dataHcurl, HCURL, ApproximationBaseArray[b], NOBASE)));
-            CHKERRG(ierr);
-          }
-          if (dataH1.spacesOnEntities[MBEDGE].test(HDIV)) {
-            SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                    "Not yet implemented");
-          }
-          if (dataH1.spacesOnEntities[MBEDGE].test(L2)) {
-            SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                    "Not yet implemented");
-          }
-          break;
-        default:
+MoFEMErrorCode
+EdgeElementForcesAndSourcesCore::calculateBaseFunctionsOnElement() {
+  MoFEMFunctionBegin;
+  for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
+    if (dataH1.bAse.test(b)) {
+      switch (ApproximationBaseArray[b]) {
+      case AINSWORTH_LEGENDRE_BASE:
+      case AINSWORTH_LOBATTO_BASE:
+      case DEMKOWICZ_JACOBI_BASE:
+        if (dataH1.spacesOnEntities[MBVERTEX].test(H1)) {
+          CHKERR EdgePolynomialBase().getValue(
+              gaussPts,
+              boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
+                  dataH1, H1, ApproximationBaseArray[b], NOBASE)));
+        }
+        if (dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
+          CHKERR EdgePolynomialBase().getValue(
+              gaussPts,
+              boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
+                  dataHcurl, HCURL, ApproximationBaseArray[b], NOBASE)));
+        }
+        if (dataH1.spacesOnEntities[MBEDGE].test(HDIV)) {
+          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                  "Make no sense to have Hdiv space on edge (If you need h-div "
+                  "space in 2d use h-curl space intead and use orthogonal "
+                  "vector");
+        }
+        if (dataH1.spacesOnEntities[MBEDGE].test(L2)) {
           SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                   "Not yet implemented");
         }
+        break;
+      default:
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "Not yet implemented");
       }
     }
-  } catch (std::exception &ex) {
-    std::ostringstream ss;
-    ss << "thorw in method: " << ex.what() << " at line " << __LINE__
-       << " in file " << __FILE__;
-    SETERRQ(PETSC_COMM_SELF, MOFEM_STD_EXCEPTION_THROW, ss.str().c_str());
   }
+  MoFEMFunctionReturn(0);
+}
 
+MoFEMErrorCode
+EdgeElementForcesAndSourcesCore::calculateHoCoordsAtIntegrationPts() {
+  MoFEMFunctionBeginHot;
   if (dataPtr->get<FieldName_mi_tag>().find(meshPositionsFieldName) !=
       dataPtr->get<FieldName_mi_tag>().end()) {
-    ierr = getEdgesDataOrderSpaceAndBase(dataH1, meshPositionsFieldName);
-    CHKERRG(ierr);
-    ierr = getEdgesFieldData(dataH1, meshPositionsFieldName);
-    CHKERRG(ierr);
-    ierr = getNodesFieldData(dataH1, meshPositionsFieldName);
-    CHKERRG(ierr);
-    try {
-      ierr = opGetHoTangentOnEdge.opRhs(dataH1);
-      CHKERRG(ierr);
-    } catch (std::exception &ex) {
-      std::ostringstream ss;
-      ss << "thorw in method: " << ex.what() << " at line " << __LINE__
-         << " in file " << __FILE__;
-      SETERRQ(PETSC_COMM_SELF, 1, ss.str().c_str());
-    }
+    CHKERR getEdgesDataOrderSpaceAndBase(dataH1, meshPositionsFieldName);
+    CHKERR getEdgesFieldData(dataH1, meshPositionsFieldName);
+    CHKERR getNodesFieldData(dataH1, meshPositionsFieldName);
+    CHKERR opGetHoTangentOnEdge.opRhs(dataH1);
   } else {
     tAngent_at_GaussPt.resize(0, 3, false);
   }
+  MoFEMFunctionReturnHot(0);
+}
+
+MoFEMErrorCode EdgeElementForcesAndSourcesCore::operator()() {
+  MoFEMFunctionBegin;
+
+  if (numeredEntFiniteElementPtr->getEntType() != MBEDGE)
+    MoFEMFunctionReturnHot(0);
+
+  EntityHandle ent = numeredEntFiniteElementPtr->getEnt();
+  
+  CHKERR calculateEdgeDirection();
+  CHKERR getSpacesAndBaseOnEntities(dataH1);
+  CHKERR getEdgesDataOrder(dataH1, H1);
+  dataH1.dataOnEntities[MBEDGE][0].getSense() =
+      1; // set sense to 1, this is this entity
+
+  // Hcurl
+  if (dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
+    CHKERR getEdgesDataOrder(dataHcurl, HCURL);
+    dataHcurl.dataOnEntities[MBEDGE][0].getSense() =
+        1; // set sense to 1, this is this entity
+    dataHcurl.spacesOnEntities[MBEDGE].set(HCURL);
+  }
+
+  /// Use the some node base
+  dataHcurl.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE) =
+      dataH1.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE);
+
+  CHKERR setIntegrationPts();
+  CHKERR calculateCoordsAtIntegrationPts();
+  CHKERR calculateBaseFunctionsOnElement();
+  CHKERR calculateHoCoordsAtIntegrationPts();
 
   if (dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
     // cerr << dataHcurl.dataOnEntities[MBEDGE][0].getN(AINSWORTH_LEGENDRE_BASE)
@@ -322,26 +327,19 @@ MoFEMErrorCode EdgeElementForcesAndSourcesCore::operator()() {
             SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "unknown space");
           case H1:
             if (!ss) {
-              ierr = getRowNodesIndices(*op_data[ss], field_name);
-              CHKERRG(ierr);
+              CHKERR getRowNodesIndices(*op_data[ss], field_name);
             } else {
-              ierr = getColNodesIndices(*op_data[ss], field_name);
-              CHKERRG(ierr);
+              CHKERR getColNodesIndices(*op_data[ss], field_name);
             }
-            ierr = getNodesFieldData(*op_data[ss], field_name);
-            CHKERRG(ierr);
+            CHKERR getNodesFieldData(*op_data[ss], field_name);
           case HCURL:
             if (!ss) {
-              ierr = getEdgesRowIndices(*op_data[ss], field_name);
-              CHKERRG(ierr);
+              CHKERR getEdgesRowIndices(*op_data[ss], field_name);
             } else {
-              ierr = getEdgesColIndices(*op_data[ss], field_name);
-              CHKERRG(ierr);
+              CHKERR getEdgesColIndices(*op_data[ss], field_name);
             }
-            ierr = getEdgesDataOrderSpaceAndBase(*op_data[ss], field_name);
-            CHKERRG(ierr);
-            ierr = getEdgesFieldData(*op_data[ss], field_name);
-            CHKERRG(ierr);
+            CHKERR getEdgesDataOrderSpaceAndBase(*op_data[ss], field_name);
+            CHKERR getEdgesFieldData(*op_data[ss], field_name);
             break;
           case HDIV:
             SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
@@ -353,17 +351,14 @@ MoFEMErrorCode EdgeElementForcesAndSourcesCore::operator()() {
             break;
           case NOFIELD:
             if (!getNinTheLoop()) {
-              // NOFIELD data are the same for each element, can be retreived
+              // NOFIELD data are the same for each element, can be retrieved
               // only once
               if (!ss) {
-                ierr = getNoFieldRowIndices(*op_data[ss], field_name);
-                CHKERRG(ierr);
+                CHKERR getNoFieldRowIndices(*op_data[ss], field_name);
               } else {
-                ierr = getNoFieldColIndices(*op_data[ss], field_name);
-                CHKERRG(ierr);
+                CHKERR getNoFieldColIndices(*op_data[ss], field_name);
               }
-              ierr = getNoFieldFieldData(*op_data[ss], field_name);
-              CHKERRG(ierr);
+              CHKERR getNoFieldFieldData(*op_data[ss], field_name);
             }
             break;
           case LASTSPACE:
@@ -382,7 +377,12 @@ MoFEMErrorCode EdgeElementForcesAndSourcesCore::operator()() {
         CHKERRG(ierr);
       } catch (std::exception &ex) {
         std::ostringstream ss;
-        ss << "thorw in method: " << ex.what() << " at line " << __LINE__
+        ss << "Operator "
+           << boost::typeindex::type_id_runtime(*oit).pretty_name()
+           << " operator number "
+           << std::distance<boost::ptr_vector<UserDataOperator>::iterator>(
+                  opPtrVector.begin(), oit)
+           << " throw in method: " << ex.what() << " at line " << __LINE__
            << " in file " << __FILE__;
         SETERRQ(PETSC_COMM_SELF, MOFEM_STD_EXCEPTION_THROW, ss.str().c_str());
       }
@@ -395,7 +395,12 @@ MoFEMErrorCode EdgeElementForcesAndSourcesCore::operator()() {
         CHKERRG(ierr);
       } catch (std::exception &ex) {
         std::ostringstream ss;
-        ss << "thorw in method: " << ex.what() << " at line " << __LINE__
+        ss << "Operator "
+           << boost::typeindex::type_id_runtime(*oit).pretty_name()
+           << " operator number "
+           << std::distance<boost::ptr_vector<UserDataOperator>::iterator>(
+                  opPtrVector.begin(), oit)
+           << " throw in method: " << ex.what() << " at line " << __LINE__
            << " in file " << __FILE__;
         SETERRQ(PETSC_COMM_SELF, MOFEM_STD_EXCEPTION_THROW, ss.str().c_str());
       }
@@ -407,14 +412,19 @@ MoFEMErrorCode EdgeElementForcesAndSourcesCore::operator()() {
         CHKERRG(ierr);
       } catch (std::exception &ex) {
         std::ostringstream ss;
-        ss << "thorw in method: " << ex.what() << " at line " << __LINE__
+        ss << "Operator "
+           << boost::typeindex::type_id_runtime(*oit).pretty_name()
+           << " operator number "
+           << std::distance<boost::ptr_vector<UserDataOperator>::iterator>(
+                  opPtrVector.begin(), oit)
+           << " throw in method: " << ex.what() << " at line " << __LINE__
            << " in file " << __FILE__;
         SETERRQ(PETSC_COMM_SELF, MOFEM_STD_EXCEPTION_THROW, ss.str().c_str());
-      }
+      } 
     }
   }
 
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 } // namespace MoFEM
