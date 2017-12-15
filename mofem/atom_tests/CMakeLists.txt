@@ -716,8 +716,8 @@ add_test(forces_and_sources_hcurl_approximation_functions_atom_compare ${CMAKE_C
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_hcurl_approximation_functions.txt
 )
 
-my_add_executable(forces_and_sources_hcurl_continuity_check forces_and_sources_hcurl_continuity_check.cpp)
-target_link_libraries(forces_and_sources_hcurl_continuity_check
+my_add_executable(hcurl_continuity_check hcurl_continuity_check.cpp)
+target_link_libraries(hcurl_continuity_check
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
@@ -727,9 +727,9 @@ target_link_libraries(forces_and_sources_hcurl_continuity_check
   mofem_third_party
   ${PROJECT_LIBS}
 )
-add_test(forces_and_sources_hcurl_continuity_check_atom
+add_test(hcurl_ainsworth_continuity_check
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
-  ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_hcurl_continuity_check -my_file sphere.h5m
+  ${CMAKE_CURRENT_BINARY_DIR}/hcurl_continuity_check -my_file sphere.h5m
 )
 
 # add test for hdiv space
