@@ -36,21 +36,19 @@ int main(int argc, char *argv[]) {
     PetscBool flg = PETSC_TRUE;
     char mesh_file_name[255];
 #if PETSC_VERSION_GE(3, 6, 4)
-    ierr = PetscOptionsGetString(PETSC_NULL, "", "-my_file", mesh_file_name,
+    CHKERR PetscOptionsGetString(PETSC_NULL, "", "-my_file", mesh_file_name,
                                  255, &flg);
-    CHKERRG(ierr);
 #else
-    ierr = PetscOptionsGetString(PETSC_NULL, PETSC_NULL, "-my_file",
+    CHKERR PetscOptionsGetString(PETSC_NULL, PETSC_NULL, "-my_file",
                                  mesh_file_name, 255, &flg);
-    CHKERRG(ierr);
 #endif
     if (flg != PETSC_TRUE) {
       SETERRQ(PETSC_COMM_SELF, 1, "*** ERROR -my_file (MESH FILE NEEDED)");
     }
     const char *option;
     option = "";
-    rval = moab.load_file(mesh_file_name, 0, option);
-    CHKERRG(rval);
+    CHKERR moab.load_file(mesh_file_name, 0, option);
+    
 
     ParallelComm *pcomm = ParallelComm::get_pcomm(&moab, MYPCOMM_INDEX);
     if (pcomm == NULL)
@@ -66,11 +64,11 @@ int main(int argc, char *argv[]) {
     //
     // EntityHandle nodes[4];
     // for(int nn = 0;nn<4;nn++) {
-    //   rval = moab.create_vertex(&tet_coords[3*nn],nodes[nn]); CHKERRG(rval);
+    //   CHKERR moab.create_vertex(&tet_coords[3*nn],nodes[nn]); 
     // }
     //
     // EntityHandle tet;
-    // rval = moab.create_element(MBTET,nodes,4,tet); CHKERRG(rval);
+    // CHKERR moab.create_element(MBTET,nodes,4,tet); 
     //
     // ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
     // if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
@@ -85,112 +83,92 @@ int main(int argc, char *argv[]) {
     BitRefLevel bit_level0;
     bit_level0.set(0);
     EntityHandle meshset_level0;
-    rval = moab.create_meshset(MESHSET_SET, meshset_level0);
-    CHKERRG(rval);
-    ierr = m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(
+    CHKERR moab.create_meshset(MESHSET_SET, meshset_level0);
+    
+    CHKERR m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(
         0, 3, bit_level0);
-    CHKERRG(ierr);
+    
 
     // fields
-    ierr = m_field.add_field("HCURL", HCURL, AINSWORTH_LEGENDRE_BASE, 1);
-    CHKERRG(ierr);
+    CHKERR m_field.add_field("HCURL", HCURL, AINSWORTH_LEGENDRE_BASE, 1);
+    
     // add entities to field
-    ierr = m_field.add_ents_to_field_by_type(root_set, MBTET, "HCURL");
-    CHKERRG(ierr);
+    CHKERR m_field.add_ents_to_field_by_type(root_set, MBTET, "HCURL");
+    
     // set app. order
     int order = 5;
-    ierr = m_field.set_field_order(root_set, MBTET, "HCURL", order);
-    CHKERRG(ierr);
-    ierr = m_field.set_field_order(root_set, MBTRI, "HCURL", order);
-    CHKERRG(ierr);
-    ierr = m_field.set_field_order(root_set, MBEDGE, "HCURL", order);
-    CHKERRG(ierr);
+    CHKERR m_field.set_field_order(root_set, MBTET, "HCURL", order);
+    CHKERR m_field.set_field_order(root_set, MBTRI, "HCURL", order);
+    CHKERR m_field.set_field_order(root_set, MBEDGE, "HCURL", order);
+    
     // build field
-    ierr = m_field.build_fields();
-    CHKERRG(ierr);
+    CHKERR m_field.build_fields();
 
     // finite elements
-    ierr = m_field.add_finite_element("TET_FE");
-    CHKERRG(ierr);
-    ierr = m_field.add_finite_element("SKIN_FE");
-    CHKERRG(ierr);
+    CHKERR m_field.add_finite_element("TET_FE");
+    CHKERR m_field.add_finite_element("SKIN_FE");
+    
 
     // Define rows/cols and element data
-    ierr = m_field.modify_finite_element_add_field_row("TET_FE", "HCURL");
-    CHKERRG(ierr);
-    ierr = m_field.modify_finite_element_add_field_col("TET_FE", "HCURL");
-    CHKERRG(ierr);
-    ierr = m_field.modify_finite_element_add_field_data("TET_FE", "HCURL");
-    CHKERRG(ierr);
-    ierr = m_field.modify_finite_element_add_field_row("SKIN_FE", "HCURL");
-    CHKERRG(ierr);
-    ierr = m_field.modify_finite_element_add_field_col("SKIN_FE", "HCURL");
-    CHKERRG(ierr);
-    ierr = m_field.modify_finite_element_add_field_data("SKIN_FE", "HCURL");
-    CHKERRG(ierr);
+    CHKERR m_field.modify_finite_element_add_field_row("TET_FE", "HCURL");
+    CHKERR m_field.modify_finite_element_add_field_col("TET_FE", "HCURL");
+    CHKERR m_field.modify_finite_element_add_field_data("TET_FE", "HCURL");
+    CHKERR m_field.modify_finite_element_add_field_row("SKIN_FE", "HCURL");
+    CHKERR m_field.modify_finite_element_add_field_col("SKIN_FE", "HCURL");
+    CHKERR m_field.modify_finite_element_add_field_data("SKIN_FE", "HCURL");
+    
     // add entities to finite element
-    ierr =
+    CHKERR
         m_field.add_ents_to_finite_element_by_type(root_set, MBTET, "TET_FE");
-    CHKERRG(ierr);
+    
     Range tets;
-    ierr = m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
+    CHKERR m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
         BitRefLevel().set(0), BitRefLevel().set(), MBTET, tets);
-    CHKERRG(ierr);
+    
     Skinner skin(&moab);
     Range skin_faces; // skin faces from 3d ents
-    rval = skin.find_skin(0, tets, false, skin_faces);
-    CHKERRG(rval);
-    ierr = m_field.add_ents_to_finite_element_by_type(skin_faces, MBTRI,
+    CHKERR skin.find_skin(0, tets, false, skin_faces);
+    
+    CHKERR m_field.add_ents_to_finite_element_by_type(skin_faces, MBTRI,
                                                       "SKIN_FE");
-    CHKERRG(ierr);
 
     // build finite elemnts
-    ierr = m_field.build_finite_elements();
-    CHKERRG(ierr);
+    CHKERR m_field.build_finite_elements();
 
     // build adjacencies
-    ierr = m_field.build_adjacencies(bit_level0);
-    CHKERRG(ierr);
+    CHKERR m_field.build_adjacencies(bit_level0);
 
     // problem
-    ierr = m_field.add_problem("TEST_PROBLEM");
-    CHKERRG(ierr);
+    CHKERR m_field.add_problem("TEST_PROBLEM");
+    
     // set finite elements for problem
-    ierr = m_field.modify_problem_add_finite_element("TEST_PROBLEM", "TET_FE");
-    CHKERRG(ierr);
-    ierr = m_field.modify_problem_add_finite_element("TEST_PROBLEM", "SKIN_FE");
-    CHKERRG(ierr);
+    CHKERR m_field.modify_problem_add_finite_element("TEST_PROBLEM", "TET_FE");
+    CHKERR m_field.modify_problem_add_finite_element("TEST_PROBLEM", "SKIN_FE");
+    
     // set refinement level for problem
-    ierr = m_field.modify_problem_ref_level_add_bit("TEST_PROBLEM", bit_level0);
-    CHKERRG(ierr);
+    CHKERR m_field.modify_problem_ref_level_add_bit("TEST_PROBLEM", bit_level0);
 
     // build problem
     ProblemsManager *prb_mng_ptr;
-    ierr = m_field.getInterface(prb_mng_ptr);
-    CHKERRG(ierr);
-    ierr = prb_mng_ptr->buildProblem("TEST_PROBLEM", true);
-    CHKERRG(ierr);
-
+    CHKERR m_field.getInterface(prb_mng_ptr);
+    
+    CHKERR prb_mng_ptr->buildProblem("TEST_PROBLEM", true);
+    
     // mesh partitioning
     // partition
-    ierr = prb_mng_ptr->partitionSimpleProblem("TEST_PROBLEM");
-    CHKERRG(ierr);
-    ierr = prb_mng_ptr->partitionFiniteElements("TEST_PROBLEM");
-    CHKERRG(ierr);
+    CHKERR prb_mng_ptr->partitionSimpleProblem("TEST_PROBLEM");
+    CHKERR prb_mng_ptr->partitionFiniteElements("TEST_PROBLEM");
+    
     // what are ghost nodes, see Petsc Manual
-    ierr = prb_mng_ptr->partitionGhostDofs("TEST_PROBLEM");
-    CHKERRG(ierr);
+    CHKERR prb_mng_ptr->partitionGhostDofs("TEST_PROBLEM");
 
     Vec v;
-    ierr = m_field.getInterface<VecManager>()->vecCreateGhost("TEST_PROBLEM",
+    CHKERR m_field.getInterface<VecManager>()->vecCreateGhost("TEST_PROBLEM",
                                                               ROW, &v);
-    ierr = VecSetRandom(v, PETSC_NULL);
-    CHKERRG(ierr);
-    ierr = m_field.getInterface<VecManager>()->setLocalGhostVector(
+    CHKERR VecSetRandom(v, PETSC_NULL);
+    CHKERR m_field.getInterface<VecManager>()->setLocalGhostVector(
         "TEST_PROBLEM", ROW, v, INSERT_VALUES, SCATTER_REVERSE);
-    CHKERRG(ierr);
-    ierr = VecDestroy(&v);
-    CHKERRG(ierr);
+    CHKERR VecDestroy(&v);
 
     struct OpTetCurl
         : public VolumeElementForcesAndSourcesCore::UserDataOperator {
@@ -203,7 +181,7 @@ int main(int argc, char *argv[]) {
 
       MoFEMErrorCode doWork(int side, EntityType type,
                             DataForcesAndSourcesCore::EntData &data) {
-        MoFEMFunctionBeginHot;
+        MoFEMFunctionBegin;
 
         if (data.getFieldData().size() == 0)
           MoFEMFunctionReturnHot(0);
@@ -221,8 +199,7 @@ int main(int argc, char *argv[]) {
             // if ho geometry is given
             w *= getHoGaussPtsDetJac()(gg);
           }
-          ierr = getCurlOfHCurlBaseFunctions(side, type, data, gg, curl_mat);
-          CHKERRG(ierr);
+          CHKERR getCurlOfHCurlBaseFunctions(side, type, data, gg, curl_mat);
           FTensor::Tensor1<double *, 3> t_curl(&curl_mat(0, 0), &curl_mat(0, 1),
                                                &curl_mat(0, 2), 3);
           for (unsigned int dd = 0; dd != nb_dofs; dd++) {
@@ -231,7 +208,7 @@ int main(int argc, char *argv[]) {
           }
         }
 
-        MoFEMFunctionReturnHot(0);
+        MoFEMFunctionReturn(0);
       }
     };
 
@@ -260,7 +237,7 @@ int main(int argc, char *argv[]) {
 
       MoFEMErrorCode doWork(int side, EntityType type,
                             DataForcesAndSourcesCore::EntData &data) {
-        MoFEMFunctionBeginHot;
+        MoFEMFunctionBegin;
 
         int nb_dofs = data.getFieldData().size();
         if (nb_dofs == 0)
@@ -292,7 +269,7 @@ int main(int argc, char *argv[]) {
           }
         }
 
-        MoFEMFunctionReturnHot(0);
+        MoFEMFunctionReturn(0);
       }
     };
 
@@ -310,10 +287,8 @@ int main(int argc, char *argv[]) {
     MyTriFE skin_fe(m_field);
     skin_fe.getOpPtrVector().push_back(new OpFacesRot(t_curl_skin));
 
-    ierr = m_field.loop_finite_elements("TEST_PROBLEM", "TET_FE", tet_fe);
-    CHKERRG(ierr);
-    ierr = m_field.loop_finite_elements("TEST_PROBLEM", "SKIN_FE", skin_fe);
-    CHKERRG(ierr);
+    CHKERR m_field.loop_finite_elements("TEST_PROBLEM", "TET_FE", tet_fe);
+    CHKERR m_field.loop_finite_elements("TEST_PROBLEM", "SKIN_FE", skin_fe);
 
     std::cout.precision(12);
 
@@ -330,57 +305,40 @@ int main(int argc, char *argv[]) {
               "Curl operator not passed test\n");
     }
 
-    ierr = m_field.add_field("MESH_NODE_POSITIONS", H1, AINSWORTH_LEGENDRE_BASE,
+    CHKERR m_field.add_field("MESH_NODE_POSITIONS", H1, AINSWORTH_LEGENDRE_BASE,
                              3);
-    CHKERRG(ierr);
+    
 
-    ierr = m_field.add_ents_to_field_by_type(0, MBTET, "MESH_NODE_POSITIONS");
-    CHKERRG(ierr);
-    ierr = m_field.set_field_order(0, MBVERTEX, "MESH_NODE_POSITIONS", 1);
-    CHKERRG(ierr);
-    ierr = m_field.set_field_order(0, MBEDGE, "MESH_NODE_POSITIONS", 2);
-    CHKERRG(ierr);
-    ierr = m_field.set_field_order(0, MBTRI, "MESH_NODE_POSITIONS", 2);
-    CHKERRG(ierr);
-    ierr = m_field.set_field_order(0, MBTET, "MESH_NODE_POSITIONS", 2);
-    CHKERRG(ierr);
-
-    ierr = m_field.modify_finite_element_add_field_data("TET_FE",
+    CHKERR m_field.add_ents_to_field_by_type(0, MBTET, "MESH_NODE_POSITIONS");
+    CHKERR m_field.set_field_order(0, MBVERTEX, "MESH_NODE_POSITIONS", 1);
+    CHKERR m_field.set_field_order(0, MBEDGE, "MESH_NODE_POSITIONS", 2);
+    CHKERR m_field.set_field_order(0, MBTRI, "MESH_NODE_POSITIONS", 2);
+    CHKERR m_field.set_field_order(0, MBTET, "MESH_NODE_POSITIONS", 2);
+    
+    CHKERR m_field.modify_finite_element_add_field_data("TET_FE",
                                                         "MESH_NODE_POSITIONS");
-    CHKERRG(ierr);
-    ierr = m_field.modify_finite_element_add_field_data("SKIN_FE",
+    CHKERR m_field.modify_finite_element_add_field_data("SKIN_FE",
                                                         "MESH_NODE_POSITIONS");
-    CHKERRG(ierr);
-
-    ierr = m_field.build_fields();
-    CHKERRG(ierr);
+    CHKERR m_field.build_fields();
+    
     // project geometry form 10 node tets on higher order approx. functions
     Projection10NodeCoordsOnField ent_method(m_field, "MESH_NODE_POSITIONS");
-    ierr = m_field.loop_dofs("MESH_NODE_POSITIONS", ent_method);
-    CHKERRG(ierr);
+    CHKERR m_field.loop_dofs("MESH_NODE_POSITIONS", ent_method);
 
-    ierr = m_field.build_finite_elements();
-    CHKERRG(ierr);
-    ierr = m_field.build_adjacencies(bit_level0);
-    CHKERRG(ierr);
+    CHKERR m_field.build_finite_elements();
+    CHKERR m_field.build_adjacencies(bit_level0);
 
     // mesh partitioning
-    ierr = prb_mng_ptr->buildProblem("TEST_PROBLEM", true);
-    CHKERRG(ierr);
-    ierr = prb_mng_ptr->partitionSimpleProblem("TEST_PROBLEM");
-    CHKERRG(ierr);
-    ierr = prb_mng_ptr->partitionFiniteElements("TEST_PROBLEM");
-    CHKERRG(ierr);
-    ierr = prb_mng_ptr->partitionGhostDofs("TEST_PROBLEM");
-    CHKERRG(ierr);
+    CHKERR prb_mng_ptr->buildProblem("TEST_PROBLEM", true);
+    CHKERR prb_mng_ptr->partitionSimpleProblem("TEST_PROBLEM");
+    CHKERR prb_mng_ptr->partitionFiniteElements("TEST_PROBLEM");
+    CHKERR prb_mng_ptr->partitionGhostDofs("TEST_PROBLEM");
 
     t_curl_vol(i) = 0;
     t_curl_skin(i) = 0;
 
-    ierr = m_field.loop_finite_elements("TEST_PROBLEM", "TET_FE", tet_fe);
-    CHKERRG(ierr);
-    ierr = m_field.loop_finite_elements("TEST_PROBLEM", "SKIN_FE", skin_fe);
-    CHKERRG(ierr);
+    CHKERR m_field.loop_finite_elements("TEST_PROBLEM", "TET_FE", tet_fe);
+    CHKERR m_field.loop_finite_elements("TEST_PROBLEM", "SKIN_FE", skin_fe);
 
     std::cout << "curl_vol " << curl_vol << std::endl;
     std::cout << "curl_skin " << curl_skin << std::endl;
@@ -391,11 +349,9 @@ int main(int argc, char *argv[]) {
       SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
               "Curl operator not passed test\n");
     }
-
-  } catch (MoFEMException const &e) {
-    SETERRQ(PETSC_COMM_SELF, e.errorCode, e.errorMessage);
   }
+  CATCH_ERRORS;
 
-  ierr = MoFEM::Core::Finalize();
-  CHKERRG(ierr);
+  MoFEM::Core::Finalize();
+  
 }
