@@ -253,7 +253,7 @@ MoFEMErrorCode EdgePolynomialBase::getValueHcurlAinsworthBase(MatrixDouble &pts)
     // cerr << data.dataOnEntities[MBVERTEX][0].getDiffN(base) << endl;
     ierr = Hcurl_Ainsworth_EdgeBaseFunctions_MBTET_ON_EDGE(
         sense, order, &data.dataOnEntities[MBVERTEX][0].getN(base)(0, 0),
-        &data.dataOnEntities[MBVERTEX][0].getDiffN(base)(0, 0),
+        &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
         &*data.dataOnEntities[MBEDGE][0].getN(base).data().begin(), NULL,
         nb_gauss_pts, base_polynomials);
     CHKERRG(ierr);
@@ -283,7 +283,7 @@ EdgePolynomialBase::getValueHcurlDemkowiczBase(MatrixDouble &pts) {
     int sense = data.dataOnEntities[MBEDGE][0].getSense();
     int order = data.dataOnEntities[MBEDGE][0].getDataOrder();
     int nb_dofs =
-        NBEDGE_AINSWORTH_HCURL(data.dataOnEntities[MBEDGE][0].getDataOrder());
+        NBEDGE_DEMKOWICZ_HCURL(data.dataOnEntities[MBEDGE][0].getDataOrder());
     data.dataOnEntities[MBEDGE][0].getN(base).resize(nb_gauss_pts, 3 * nb_dofs,
                                                      false);
     data.dataOnEntities[MBEDGE][0].getDiffN(base).resize(nb_gauss_pts, 0,
@@ -291,7 +291,7 @@ EdgePolynomialBase::getValueHcurlDemkowiczBase(MatrixDouble &pts) {
     // cerr << data.dataOnEntities[MBVERTEX][0].getDiffN(base) << endl;
     CHKERR  Hcurl_Demkowicz_EdgeBaseFunctions_MBEDGE (
         sense, order, &data.dataOnEntities[MBVERTEX][0].getN(base)(0, 0),
-        &data.dataOnEntities[MBVERTEX][0].getDiffN(base)(0, 0),
+        &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
         &*data.dataOnEntities[MBEDGE][0].getN(base).data().begin(), NULL,
         nb_gauss_pts);
   } else {

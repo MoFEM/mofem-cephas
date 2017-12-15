@@ -65,6 +65,26 @@ int main(int argc, char *argv[]) {
     if (pcomm == NULL)
       pcomm = new ParallelComm(&moab, PETSC_COMM_WORLD);
 
+    // Select base
+    enum bases { AINSWORTH, DEMKOWICZ, LASBASETOP };
+
+    const char *list_bases[] = {"ainsworth", "demkowicz"};
+
+    PetscInt choice_base_value = AINSWORTH;
+    CHKERR PetscOptionsGetEList(PETSC_NULL, NULL, "-base", list_bases,
+                                LASBASETOP, &choice_base_value, &flg);
+    
+    if (flg != PETSC_TRUE) {
+      SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "base not set");
+    }
+
+    FieldApproximationBase base = AINSWORTH_LEGENDRE_BASE;
+    if (choice_base_value == AINSWORTH) {
+      base = AINSWORTH_LEGENDRE_BASE;
+    } else if (choice_base_value == DEMKOWICZ) {
+      base = DEMKOWICZ_JACOBI_BASE;
+    }
+
     // Create MoFEM (Joseph) database
     MoFEM::Core core(moab);
     MoFEM::Interface &m_field = core;
@@ -83,7 +103,7 @@ int main(int argc, char *argv[]) {
     CHKERR m_field.add_field("MESH_NODE_POSITIONS", H1, AINSWORTH_LEGENDRE_BASE,
                              3);
     
-    CHKERR m_field.add_field("HCURL", HCURL, AINSWORTH_LEGENDRE_BASE, 1);
+    CHKERR m_field.add_field("HCURL", HCURL, base, 1);
     
 
     // FE
@@ -555,9 +575,15 @@ int main(int argc, char *argv[]) {
                   getTangetAtGaussPts()(0, 2) * t_ptr[2];
 
         double tn = 0;
-        int nb_dofs = data.getHcurlN().size2() / 3;
-        int dd = 0;
-        for (; dd < nb_dofs; dd++) {
+        unsigned int nb_dofs = data.getHcurlN().size2() / 3;
+        if(nb_dofs != data.getFieldData().size()) {
+          SETERRQ2(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY,
+                   "Number of dofs on edge and number of base functions not "
+                   "equla %d != %d",
+                   nb_dofs, data.getFieldData().size());
+        }
+
+        for (unsigned int dd = 0; dd != nb_dofs; ++dd) {
           double val = data.getFieldData()[dd];
           tn += getTangetAtGaussPts()(0, 0) * data.getHcurlN()(0, 3 * dd + 0) *
                     val +

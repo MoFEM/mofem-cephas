@@ -729,7 +729,13 @@ target_link_libraries(hcurl_continuity_check
 )
 add_test(hcurl_ainsworth_continuity_check
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
-  ${CMAKE_CURRENT_BINARY_DIR}/hcurl_continuity_check -my_file sphere.h5m
+  ${CMAKE_CURRENT_BINARY_DIR}/hcurl_continuity_check 
+  -my_file sphere.h5m -base ainsworth
+)
+add_test(hcurl_demkowicz_continuity_check
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/hcurl_continuity_check 
+  -my_file sphere.h5m -base demkowicz
 )
 
 # add test for hdiv space

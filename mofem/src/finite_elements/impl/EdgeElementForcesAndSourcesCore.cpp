@@ -165,13 +165,15 @@ EdgeElementForcesAndSourcesCore::calculateBaseFunctionsOnElement() {
       case AINSWORTH_LEGENDRE_BASE:
       case AINSWORTH_LOBATTO_BASE:
       case DEMKOWICZ_JACOBI_BASE:
-        if (dataH1.spacesOnEntities[MBVERTEX].test(H1)) {
+        if (dataH1.spacesOnEntities[MBVERTEX].test(H1) &&
+            dataH1.basesOnEntities[MBVERTEX].test(b)) {
           CHKERR EdgePolynomialBase().getValue(
               gaussPts,
               boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
                   dataH1, H1, ApproximationBaseArray[b], NOBASE)));
         }
-        if (dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
+        if (dataH1.spacesOnEntities[MBEDGE].test(HCURL) &&
+            dataH1.basesOnEntities[MBEDGE].test(b)) {
           CHKERR EdgePolynomialBase().getValue(
               gaussPts,
               boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
@@ -312,8 +314,8 @@ MoFEMErrorCode EdgeElementForcesAndSourcesCore::operator()() {
         base[ss] = field_struture->getApproxBase();
         switch (base[ss]) {
         case AINSWORTH_LEGENDRE_BASE:
-          break;
         case AINSWORTH_LOBATTO_BASE:
+        case DEMKOWICZ_JACOBI_BASE:
           break;
         default:
           SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
