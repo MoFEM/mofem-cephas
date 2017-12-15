@@ -49,6 +49,7 @@ int main(int argc, char *argv[]) {
       HDIVTET_AINSWORTH,
       HDIVTET_DEMKOWICZ,
       HCURLTET_AINSWORTH,
+      HCURLTET_DEMKOWICZ,
       L2TET,
       H1TRI,
       HDIVTRI_AINSWORTH,
@@ -72,6 +73,7 @@ int main(int argc, char *argv[]) {
                           "hdivtet_ainsworth",
                           "hdivtet_demkowicz",
                           "hcurltet_ainsworth",
+                          "hcurltet_demkowicz",
                           "l2tet",
                           "h1tri",
                           "hdivtri_ainsworth",
@@ -523,6 +525,58 @@ int main(int argc, char *argv[]) {
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "wrong result");
       }
       if (fabs(-67.1793 - diff_sum) > eps) {
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "wrong result");
+      }
+    }
+
+    if (choise_value == HCURLTET_DEMKOWICZ) {
+      CHKERR TetPolynomialBase().getValue(
+          pts_tet, boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
+                       tet_data, HCURL, DEMKOWICZ_JACOBI_BASE)));
+      double sum = 0, diff_sum = 0;
+      std::cout << "Edges\n";
+      for (int ee = 0; ee < 6; ee++) {
+        std::cout << tet_data.dataOnEntities[MBEDGE][ee].getN(
+                         DEMKOWICZ_JACOBI_BASE)
+                  << std::endl;
+        std::cout << tet_data.dataOnEntities[MBEDGE][ee].getDiffN(
+                         DEMKOWICZ_JACOBI_BASE)
+                  << std::endl;
+        sum += sum_matrix(
+            tet_data.dataOnEntities[MBEDGE][ee].getN(DEMKOWICZ_JACOBI_BASE));
+        diff_sum += sum_matrix(tet_data.dataOnEntities[MBEDGE][ee].getDiffN(
+            DEMKOWICZ_JACOBI_BASE));
+      }
+      std::cout << "Faces\n";
+      for (int ff = 0; ff < 4; ff++) {
+        std::cout << tet_data.dataOnEntities[MBTRI][ff].getN(
+                         DEMKOWICZ_JACOBI_BASE)
+                  << std::endl;
+        std::cout << tet_data.dataOnEntities[MBTRI][ff].getDiffN(
+                         DEMKOWICZ_JACOBI_BASE)
+                  << std::endl;
+        sum += sum_matrix(
+            tet_data.dataOnEntities[MBTRI][ff].getN(DEMKOWICZ_JACOBI_BASE));
+        diff_sum += sum_matrix(tet_data.dataOnEntities[MBTRI][ff].getDiffN(
+            DEMKOWICZ_JACOBI_BASE));
+      }
+      std::cout << "Tets\n";
+      std::cout << tet_data.dataOnEntities[MBTET][0].getN(
+                       DEMKOWICZ_JACOBI_BASE)
+                << std::endl;
+      std::cout << tet_data.dataOnEntities[MBTET][0].getDiffN(
+                       DEMKOWICZ_JACOBI_BASE)
+                << std::endl;
+      sum += sum_matrix(
+          tet_data.dataOnEntities[MBTET][0].getN(DEMKOWICZ_JACOBI_BASE));
+      diff_sum += sum_matrix(
+          tet_data.dataOnEntities[MBTET][0].getDiffN(DEMKOWICZ_JACOBI_BASE));
+      std::cout << "sum  " << sum << std::endl;
+      std::cout << "diff_sum " << diff_sum << std::endl;
+      if (fabs(7.3491 - sum) > eps) {
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "wrong result");
+      }
+      if (fabs(73.5424 - diff_sum) > eps) {
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "wrong result");
       }
     }

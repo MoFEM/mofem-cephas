@@ -1090,6 +1090,7 @@ list(INSERT testing_base_list
   integrated_jacobi
   h1tet
   hcurltet_ainsworth
+  hcurltet_demkowicz
   hdivtet_ainsworth
   hdivtet_demkowicz
   l2tet
