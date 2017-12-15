@@ -1089,14 +1089,14 @@ list(INSERT testing_base_list
   jacobi
   integrated_jacobi
   h1tet
-  hcurltet
+  hcurltet_ainsworth
   hdivtet_ainsworth
   hdivtet_demkowicz
   l2tet
   h1tri
   hdivtri_ainsworth
   hdivtri_demkowicz
-  hcurltri
+  hcurltri_ainsworth
   l2tri
   h1edge
   hcurledge_ainsworth
