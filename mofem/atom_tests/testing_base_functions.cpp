@@ -88,9 +88,9 @@ int main(int argc, char *argv[]) {
                           "h1fatprism"};
 
     PetscBool flg;
-    PetscInt choise_value = LEGENDREPOLYNOMIAL;
+    PetscInt choice_value = LEGENDREPOLYNOMIAL;
     ierr = PetscOptionsGetEList(PETSC_NULL, NULL, "-base", list, LASTOP,
-                                &choise_value, &flg);
+                                &choice_value, &flg);
     CHKERRG(ierr);
     if (flg != PETSC_TRUE) {
       SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "base not set");
@@ -106,7 +106,7 @@ int main(int argc, char *argv[]) {
 
     const double eps = 1e-3;
 
-    if (choise_value == LEGENDREPOLYNOMIAL) {
+    if (choice_value == LEGENDREPOLYNOMIAL) {
       double diff_s = 1;
       ierr = LegendrePolynomial().getValue(
           pts_1d, boost::shared_ptr<BaseFunctionCtx>(new LegendrePolynomialCtx(
@@ -137,7 +137,7 @@ int main(int argc, char *argv[]) {
     boost::shared_ptr<MatrixDouble> kernel_base_ptr(new MatrixDouble);
     boost::shared_ptr<MatrixDouble> diff_kernel_base_ptr(new MatrixDouble);
 
-    if (choise_value == LOBATTOPOLYNOMIAL) {
+    if (choice_value == LOBATTOPOLYNOMIAL) {
       double diff_s = 1;
       ierr = LobattoPolynomial().getValue(
           pts_1d, boost::shared_ptr<BaseFunctionCtx>(new LobattoPolynomialCtx(
@@ -188,7 +188,7 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    if (choise_value == JACOBIPOLYNOMIAL) {
+    if (choice_value == JACOBIPOLYNOMIAL) {
 
       int n = 21;
       MatrixDouble pts_1d(1, n);
@@ -232,7 +232,7 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    if (choise_value == INTEGRATEDJACOBIPOLYNOMIAL) {
+    if (choice_value == INTEGRATEDJACOBIPOLYNOMIAL) {
 
       int n = 21;
       MatrixDouble pts_1d(1, n);
@@ -325,7 +325,7 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    if (choise_value == H1TET) {
+    if (choice_value == H1TET) {
 
       tet_data.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nb_gauss_pts, 4,
                                                                false);
@@ -394,7 +394,7 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    if (choise_value == HDIVTET_AINSWORTH) {
+    if (choice_value == HDIVTET_AINSWORTH) {
       ierr = TetPolynomialBase().getValue(
           pts_tet, boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
                        tet_data, HDIV, AINSWORTH_LEGENDRE_BASE)));
@@ -434,7 +434,7 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    if (choise_value == HDIVTET_DEMKOWICZ) {
+    if (choice_value == HDIVTET_DEMKOWICZ) {
       ierr = TetPolynomialBase().getValue(
           pts_tet, boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
                        tet_data, HDIV, DEMKOWICZ_JACOBI_BASE)));
@@ -476,7 +476,7 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    if (choise_value == HCURLTET_AINSWORTH) {
+    if (choice_value == HCURLTET_AINSWORTH) {
       ierr = TetPolynomialBase().getValue(
           pts_tet, boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
                        tet_data, HCURL, AINSWORTH_LEGENDRE_BASE)));
@@ -529,7 +529,7 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    if (choise_value == HCURLTET_DEMKOWICZ) {
+    if (choice_value == HCURLTET_DEMKOWICZ) {
       CHKERR TetPolynomialBase().getValue(
           pts_tet, boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
                        tet_data, HCURL, DEMKOWICZ_JACOBI_BASE)));
@@ -581,7 +581,7 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    if (choise_value == L2TET) {
+    if (choice_value == L2TET) {
       ierr = TetPolynomialBase().getValue(
           pts_tet, boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
                        tet_data, L2, AINSWORTH_LEGENDRE_BASE)));
@@ -646,7 +646,7 @@ int main(int argc, char *argv[]) {
         &*tri_data.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE).data().begin());
     CHKERRG(ierr);
 
-    if (choise_value == H1TRI) {
+    if (choice_value == H1TRI) {
       ierr = TriPolynomialBase().getValue(
           pts_tri, boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
                        tri_data, H1, AINSWORTH_LEGENDRE_BASE, NOBASE)));
@@ -693,7 +693,7 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    if (choise_value == HDIVTRI_AINSWORTH) {
+    if (choice_value == HDIVTRI_AINSWORTH) {
       ierr = TriPolynomialBase().getValue(
           pts_tri, boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
                        tri_data, HDIV, AINSWORTH_LEGENDRE_BASE, NOBASE)));
@@ -718,7 +718,7 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    if (choise_value == HDIVTRI_DEMKOWICZ) {
+    if (choice_value == HDIVTRI_DEMKOWICZ) {
       ierr = TriPolynomialBase().getValue(
           pts_tri, boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
                        tri_data, HDIV, DEMKOWICZ_JACOBI_BASE, NOBASE)));
@@ -743,7 +743,7 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    if (choise_value == HCURLTRI_AINSWORTH) {
+    if (choice_value == HCURLTRI_AINSWORTH) {
       ierr = TriPolynomialBase().getValue(
           pts_tri, boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
                        tri_data, HCURL, AINSWORTH_LEGENDRE_BASE, NOBASE)));
@@ -776,7 +776,7 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    if (choise_value == HCURLTRI_DEMKOWICZ) {
+    if (choice_value == HCURLTRI_DEMKOWICZ) {
       CHKERR TriPolynomialBase().getValue(
           pts_tri, boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
                        tri_data, HCURL, DEMKOWICZ_JACOBI_BASE, NOBASE)));
@@ -808,7 +808,7 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    if (choise_value == L2TRI) {
+    if (choice_value == L2TRI) {
       ierr = TriPolynomialBase().getValue(
           pts_tri, boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
                        tri_data, L2, AINSWORTH_LEGENDRE_BASE, NOBASE)));
@@ -861,7 +861,7 @@ int main(int argc, char *argv[]) {
                   shape_ptr, 1);
     }
 
-    if (choise_value == H1EDGE) {
+    if (choice_value == H1EDGE) {
       ierr = EdgePolynomialBase().getValue(
           pts_edge, boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
                         edge_data, H1, AINSWORTH_LEGENDRE_BASE, NOBASE)));
@@ -895,7 +895,7 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    if (choise_value == HCURLEDGE_AINSWORTH) {
+    if (choice_value == HCURLEDGE_AINSWORTH) {
       ierr = EdgePolynomialBase().getValue(
           pts_edge, boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
                         edge_data, HCURL, AINSWORTH_LEGENDRE_BASE, NOBASE)));
@@ -919,7 +919,7 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    if (choise_value == HCURLEDGE_DEMKOWICZ) {
+    if (choice_value == HCURLEDGE_DEMKOWICZ) {
       CHKERR EdgePolynomialBase().getValue(
           pts_edge, boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
                         edge_data, HCURL, DEMKOWICZ_JACOBI_BASE, NOBASE)));
