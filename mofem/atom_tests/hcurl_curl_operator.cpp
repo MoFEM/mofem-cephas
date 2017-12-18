@@ -48,8 +48,6 @@ int main(int argc, char *argv[]) {
     const char *option;
     option = "";
     CHKERR moab.load_file(mesh_file_name, 0, option);
-    
-
     ParallelComm *pcomm = ParallelComm::get_pcomm(&moab, MYPCOMM_INDEX);
     if (pcomm == NULL)
       pcomm = new ParallelComm(&moab, PETSC_COMM_WORLD);
@@ -64,14 +62,33 @@ int main(int argc, char *argv[]) {
     //
     // EntityHandle nodes[4];
     // for(int nn = 0;nn<4;nn++) {
-    //   CHKERR moab.create_vertex(&tet_coords[3*nn],nodes[nn]); 
+    //   CHKERR moab.create_vertex(&tet_coords[3*nn],nodes[nn]);
     // }
     //
     // EntityHandle tet;
-    // CHKERR moab.create_element(MBTET,nodes,4,tet); 
+    // CHKERR moab.create_element(MBTET,nodes,4,tet);
     //
     // ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
     // if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
+
+    // Select base
+    enum bases { AINSWORTH, DEMKOWICZ, LASBASETOP };
+    const char *list_bases[] = {"ainsworth", "demkowicz"};
+
+    PetscInt choice_base_value = AINSWORTH;
+    CHKERR PetscOptionsGetEList(PETSC_NULL, NULL, "-base", list_bases,
+                                LASBASETOP, &choice_base_value, &flg);
+
+    if (flg != PETSC_TRUE) {
+      SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "base not set");
+    }
+
+    FieldApproximationBase base = AINSWORTH_LEGENDRE_BASE;
+    if (choice_base_value == AINSWORTH) {
+      base = AINSWORTH_LEGENDRE_BASE;
+    } else if (choice_base_value == DEMKOWICZ) {
+      base = DEMKOWICZ_JACOBI_BASE;
+    }
 
     // create MoFEM (Joseph) database
     MoFEM::Core core(moab);
@@ -79,7 +96,7 @@ int main(int argc, char *argv[]) {
     // meshset consisting all entities in mesh
     EntityHandle root_set = moab.get_root_set();
 
-    // set entitities bit level
+    // set entities bit level
     BitRefLevel bit_level0;
     bit_level0.set(0);
     EntityHandle meshset_level0;
@@ -87,16 +104,15 @@ int main(int argc, char *argv[]) {
     
     CHKERR m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(
         0, 3, bit_level0);
-    
 
     // fields
-    CHKERR m_field.add_field("HCURL", HCURL, AINSWORTH_LEGENDRE_BASE, 1);
+    CHKERR m_field.add_field("HCURL", HCURL, base, 1);
     
     // add entities to field
     CHKERR m_field.add_ents_to_field_by_type(root_set, MBTET, "HCURL");
     
     // set app. order
-    int order = 5;
+    int order = 4;
     CHKERR m_field.set_field_order(root_set, MBTET, "HCURL", order);
     CHKERR m_field.set_field_order(root_set, MBTRI, "HCURL", order);
     CHKERR m_field.set_field_order(root_set, MBEDGE, "HCURL", order);
@@ -118,9 +134,9 @@ int main(int argc, char *argv[]) {
     CHKERR m_field.modify_finite_element_add_field_data("SKIN_FE", "HCURL");
     
     // add entities to finite element
-    CHKERR
-        m_field.add_ents_to_finite_element_by_type(root_set, MBTET, "TET_FE");
-    
+    CHKERR m_field.add_ents_to_finite_element_by_type(root_set, MBTET,
+                                                      "TET_FE");
+
     Range tets;
     CHKERR m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
         BitRefLevel().set(0), BitRefLevel().set(), MBTET, tets);
@@ -216,14 +232,14 @@ int main(int argc, char *argv[]) {
 
       MyFE(MoFEM::Interface &m_field)
           : VolumeElementForcesAndSourcesCore(m_field) {}
-      int getRule(int order) { return 2 * order; }; // order/2; };
+      int getRule(int order) { return 2 * order+1; }; 
     };
 
     struct MyTriFE : public FaceElementForcesAndSourcesCore {
 
       MyTriFE(MoFEM::Interface &m_field)
           : FaceElementForcesAndSourcesCore(m_field) {}
-      int getRule(int order) { return 2 * order; }; // 2*order; }; //order/2; };
+      int getRule(int order) { return 2 * order+1; }; 
     };
 
     struct OpFacesRot

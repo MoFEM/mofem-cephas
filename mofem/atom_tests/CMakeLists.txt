@@ -807,8 +807,8 @@ add_test(hdiv_divergence_operator_demkowicz_atom
 )
 
 # add test for hcurl curl operator
-my_add_executable(forces_and_sources_hcurl_curl_operator forces_and_sources_hcurl_curl_operator.cpp)
-target_link_libraries(forces_and_sources_hcurl_curl_operator
+my_add_executable(hcurl_curl_operator hcurl_curl_operator.cpp)
+target_link_libraries(hcurl_curl_operator
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
@@ -818,8 +818,13 @@ target_link_libraries(forces_and_sources_hcurl_curl_operator
   mofem_third_party
   ${PROJECT_LIBS}
 )
-add_test(forces_and_sources_hcurl_curl_operator_atom
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_hcurl_curl_operator -my_file sphere.h5m
+add_test(hcurl_curl_operator_ainsworth_atom
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/hcurl_curl_operator 
+  -my_file sphere.h5m -base ainsworth
+)
+add_test(hcurl_curl_operator_demkowicz_atom
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/hcurl_curl_operator 
+  -my_file sphere.h5m -base demkowicz
 )
 
 #test integration on skeleton
