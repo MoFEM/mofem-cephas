@@ -91,7 +91,7 @@ namespace MoFEM {
 
     MoFEMErrorCode getValueHdiv(MatrixDouble &pts);
 
-    MoFEMErrorCode getValueHCurl(MatrixDouble &pts);
+    MoFEMErrorCode getValueHcurl(MatrixDouble &pts);
 
     // int faceNodes[2][3];
     MatrixDouble N;

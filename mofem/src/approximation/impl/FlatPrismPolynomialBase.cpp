@@ -197,7 +197,7 @@ MoFEMErrorCode FlatPrismPolynomialBase::getValue(
     ierr = getValueHdiv(pts); CHKERRG(ierr);
     break;
     case HCURL:
-    ierr = getValueHCurl(pts); CHKERRG(ierr);
+    ierr = getValueHcurl(pts); CHKERRG(ierr);
     break;
     case L2:
     ierr = getValueL2(pts); CHKERRG(ierr);
@@ -298,6 +298,6 @@ MoFEMErrorCode FlatPrismPolynomialBase::getValueHdiv(MatrixDouble &pts) {
   SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"Not yet implemented");
 }
 
-MoFEMErrorCode FlatPrismPolynomialBase::getValueHCurl(MatrixDouble &pts) {
+MoFEMErrorCode FlatPrismPolynomialBase::getValueHcurl(MatrixDouble &pts) {
   SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"Not yet implemented");
 }

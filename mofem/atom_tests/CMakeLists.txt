@@ -603,12 +603,17 @@ add_test(check_hcurl_ainsworth_base_functions_direvatives_on_tet
   ${CMAKE_CURRENT_BINARY_DIR}/check_base_functions_direvatives_on_tet
   -space HCURLTET -base ainsworth
 )
+add_test(check_hcurl_demkowicz_base_functions_direvatives_on_tet
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/check_base_functions_direvatives_on_tet
+  -space HCURLTET -base demkowicz
+)
 
 my_add_executable(
-  forces_and_sources_check_base_functions_direvatives_tri
-  forces_and_sources_check_base_functions_direvatives_tri.cpp
+  check_base_functions_direvatives_tri
+  check_base_functions_direvatives_tri.cpp
 )
-target_link_libraries(forces_and_sources_check_base_functions_direvatives_tri
+target_link_libraries(check_base_functions_direvatives_tri
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
@@ -618,13 +623,20 @@ target_link_libraries(forces_and_sources_check_base_functions_direvatives_tri
   mofem_third_party
   ${PROJECT_LIBS}
 )
-add_test(forces_and_sources_check_h1_base_functions_direvatives_tri_atom
+add_test(check_h1_ainsworth_base_functions_direvatives_tri
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
-  ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_check_base_functions_direvatives_tri -base h1tri
+  ${CMAKE_CURRENT_BINARY_DIR}/check_base_functions_direvatives_tri 
+  -space h1tri -base ainsworth
 )
-add_test(forces_and_sources_check_hcurl_base_functions_direvatives_tri_atom
+add_test(check_hcurl_ainsworth_base_functions_direvatives_tri
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
-  ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_check_base_functions_direvatives_tri -base hcurltri
+  ${CMAKE_CURRENT_BINARY_DIR}/check_base_functions_direvatives_tri -space hcurltri 
+  -base ainsworth
+)
+add_test(check_hcurl_demkowicz_base_functions_direvatives_tri
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/check_base_functions_direvatives_tri -space hcurltri 
+  -base demkowicz
 )
 
 # Continuity check on tet for h1 space
@@ -704,8 +716,8 @@ add_test(forces_and_sources_hcurl_approximation_functions_atom_compare ${CMAKE_C
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_hcurl_approximation_functions.txt
 )
 
-my_add_executable(forces_and_sources_hcurl_continuity_check forces_and_sources_hcurl_continuity_check.cpp)
-target_link_libraries(forces_and_sources_hcurl_continuity_check
+my_add_executable(hcurl_continuity_check hcurl_continuity_check.cpp)
+target_link_libraries(hcurl_continuity_check
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
@@ -715,9 +727,15 @@ target_link_libraries(forces_and_sources_hcurl_continuity_check
   mofem_third_party
   ${PROJECT_LIBS}
 )
-add_test(forces_and_sources_hcurl_continuity_check_atom
+add_test(hcurl_ainsworth_continuity_check
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
-  ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_hcurl_continuity_check -my_file sphere.h5m
+  ${CMAKE_CURRENT_BINARY_DIR}/hcurl_continuity_check 
+  -my_file sphere.h5m -base ainsworth
+)
+add_test(hcurl_demkowicz_continuity_check
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/hcurl_continuity_check 
+  -my_file sphere.h5m -base demkowicz
 )
 
 # add test for hdiv space
@@ -789,8 +807,8 @@ add_test(hdiv_divergence_operator_demkowicz_atom
 )
 
 # add test for hcurl curl operator
-my_add_executable(forces_and_sources_hcurl_curl_operator forces_and_sources_hcurl_curl_operator.cpp)
-target_link_libraries(forces_and_sources_hcurl_curl_operator
+my_add_executable(hcurl_curl_operator hcurl_curl_operator.cpp)
+target_link_libraries(hcurl_curl_operator
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
@@ -800,8 +818,13 @@ target_link_libraries(forces_and_sources_hcurl_curl_operator
   mofem_third_party
   ${PROJECT_LIBS}
 )
-add_test(forces_and_sources_hcurl_curl_operator_atom
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_hcurl_curl_operator -my_file sphere.h5m
+add_test(hcurl_curl_operator_ainsworth_atom
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/hcurl_curl_operator 
+  -my_file sphere.h5m -base ainsworth
+)
+add_test(hcurl_curl_operator_demkowicz_atom
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/hcurl_curl_operator 
+  -my_file sphere.h5m -base demkowicz
 )
 
 #test integration on skeleton
@@ -1075,18 +1098,22 @@ list(INSERT testing_base_list
   legendre
   lobatto
   jacobi
+  integrated_jacobi
   h1tet
-  hcurltet
+  hcurltet_ainsworth
+  hcurltet_demkowicz
   hdivtet_ainsworth
   hdivtet_demkowicz
   l2tet
   h1tri
   hdivtri_ainsworth
   hdivtri_demkowicz
-  hcurltri
+  hcurltri_ainsworth
+  hcurltri_demkowicz
   l2tri
   h1edge
-  hcurledge
+  hcurledge_ainsworth
+  hcurledge_demkowicz
 )
 foreach(test_base ${testing_base_list})
   add_test(testing_base_functions_${test_base}

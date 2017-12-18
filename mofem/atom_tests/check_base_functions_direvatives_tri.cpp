@@ -23,7 +23,7 @@ using namespace MoFEM;
 static char help[] = "...\n\n";
 
 static const double eps = 1e-6;
-static const double eps_diff = 1e-8;
+static const double eps_diff = 1e-4;
 
 int main(int argc, char *argv[]) {
 
@@ -31,26 +31,23 @@ int main(int argc, char *argv[]) {
 
   try {
 
-    // Select space
-    enum spaces { H1TET, HDIVTET, HCURLTET, LASTSPACEOP };
+    enum spaces { H1TRI, HCURLTRI, LASTOP };
 
-    const char *list_spaces[] = {"h1tet", "hdivtet", "hcurltet"};
+    const char *list_spaces[] = {"h1tri", "hcurltri"};
 
     PetscBool flg;
-    PetscInt choise_space_value = H1TET;
-    CHKERR PetscOptionsGetEList(PETSC_NULL, NULL, "-space", list_spaces,
-                                LASTSPACEOP, &choise_space_value, &flg);
+    PetscInt choice_value = H1TRI;
+    CHKERR PetscOptionsGetEList(PETSC_NULL, NULL, "-space", list_spaces, LASTOP,
+                                &choice_value, &flg);
     
     if (flg != PETSC_TRUE) {
-      SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "space not set");
+      SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "base not set");
     }
 
     FieldSpace space = LASTSPACE;
-    if (choise_space_value == H1TET) {
+    if (choice_value == H1TRI) {
       space = H1;
-    } else if (choise_space_value == HDIVTET) {
-      space = HDIV;
-    } else if (choise_space_value == HCURLTET) {
+    } else if (choice_value == HCURLTRI) {
       space = HCURL;
     }
 
@@ -62,7 +59,7 @@ int main(int argc, char *argv[]) {
     PetscInt choice_base_value = AINSWORTH;
     CHKERR PetscOptionsGetEList(PETSC_NULL, NULL, "-base", list_bases,
                                 LASBASETOP, &choice_base_value, &flg);
-    
+
     if (flg != PETSC_TRUE) {
       SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "base not set");
     }
@@ -74,21 +71,32 @@ int main(int argc, char *argv[]) {
       base = DEMKOWICZ_JACOBI_BASE;
     }
 
+
     moab::Core mb_instance;
     moab::Interface &moab = mb_instance;
     int rank;
     MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
 
     // create one tet
-    double tet_coords[] = {0, 0, 0, 0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5};
-    EntityHandle nodes[4];
-    for (int nn = 0; nn < 4; nn++) {
-      CHKERR moab.create_vertex(&tet_coords[3 * nn], nodes[nn]);
-      CHKERRG(rval);
+    double tri_coords[] = {
+        0, 0, 0,  .5, 0,
+        0, 0, 1., 0
+        // 0,0,0,
+        // 1,0,0,
+        // 0,1,0
+    };
+    EntityHandle nodes[3];
+    for (int nn = 0; nn < 3; nn++) {
+      CHKERR moab.create_vertex(&tri_coords[3 * nn], nodes[nn]);
+      
     }
-    EntityHandle tet;
-    CHKERR moab.create_element(MBTET, nodes, 4, tet);
-    CHKERRG(rval);
+    EntityHandle tri;
+    CHKERR moab.create_element(MBTRI, nodes, 3, tri);
+    
+    // Create adjacencies entities
+    Range adj;
+    CHKERR moab.get_adjacencies(&tri, 1, 1, true, adj);
+    
 
     ParallelComm *pcomm = ParallelComm::get_pcomm(&moab, MYPCOMM_INDEX);
     if (pcomm == NULL)
@@ -102,27 +110,27 @@ int main(int argc, char *argv[]) {
     BitRefLevel bit_level0;
     bit_level0.set(0);
     CHKERR m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(
-        0, 3, bit_level0);
+        0, 2, bit_level0);
     
 
     // Fields
     CHKERR m_field.add_field("FIELD", space, base, 1);
+    
 
     // FE TET
-    CHKERR m_field.add_finite_element("TET_FE");
+    CHKERR m_field.add_finite_element("TRI_FE");
     
     // Define rows/cols and element data
-    CHKERR m_field.modify_finite_element_add_field_row("TET_FE", "FIELD");
-    CHKERR m_field.modify_finite_element_add_field_col("TET_FE", "FIELD");
-    CHKERR m_field.modify_finite_element_add_field_data("TET_FE", "FIELD");
+    CHKERR m_field.modify_finite_element_add_field_row("TRI_FE", "FIELD");
+    CHKERR m_field.modify_finite_element_add_field_col("TRI_FE", "FIELD");
+    CHKERR m_field.modify_finite_element_add_field_data("TRI_FE", "FIELD");
     
 
     // Problem
     CHKERR m_field.add_problem("TEST_PROBLEM");
-    
 
     // set finite elements for problem
-    CHKERR m_field.modify_problem_add_finite_element("TEST_PROBLEM", "TET_FE");
+    CHKERR m_field.modify_problem_add_finite_element("TEST_PROBLEM", "TRI_FE");
     
     // set refinement level for problem
     CHKERR m_field.modify_problem_ref_level_add_bit("TEST_PROBLEM", bit_level0);
@@ -131,35 +139,25 @@ int main(int argc, char *argv[]) {
     // meshset consisting all entities in mesh
     EntityHandle root_set = moab.get_root_set();
     // add entities to field
-    CHKERR m_field.add_ents_to_field_by_type(root_set, MBTET, "FIELD");
+    CHKERR m_field.add_ents_to_field_by_type(root_set, MBTRI, "FIELD");
     
     // add entities to finite element
-    CHKERR
-        m_field.add_ents_to_finite_element_by_type(root_set, MBTET, "TET_FE");
-    
+    CHKERR m_field.add_ents_to_finite_element_by_type(root_set, MBTRI,
+                                                      "TRI_FE");
 
     // set app. order
     int order = 5;
     if (space == H1) {
-      CHKERR m_field.set_field_order(root_set, MBTET, "FIELD", order);
       CHKERR m_field.set_field_order(root_set, MBTRI, "FIELD", order);
       CHKERR m_field.set_field_order(root_set, MBEDGE, "FIELD", order);
       CHKERR m_field.set_field_order(root_set, MBVERTEX, "FIELD", 1);
       
     }
     if (space == HCURL) {
-      CHKERR m_field.set_field_order(root_set, MBTET, "FIELD", order);
       CHKERR m_field.set_field_order(root_set, MBTRI, "FIELD", order);
       CHKERR m_field.set_field_order(root_set, MBEDGE, "FIELD", order);
-      
-    }
-    if (space == HDIV) {
-      CHKERR m_field.set_field_order(root_set, MBTET, "FIELD", order);
-      CHKERR m_field.set_field_order(root_set, MBTRI, "FIELD", order);
     }
 
-    /****/
-    // build database
     // build field
     CHKERR m_field.build_fields();
     
@@ -169,15 +167,13 @@ int main(int argc, char *argv[]) {
     // build adjacencies
     CHKERR m_field.build_adjacencies(bit_level0);
     
-
-    /****/
+    // build problem
     ProblemsManager *prb_mng_ptr;
     CHKERR m_field.getInterface(prb_mng_ptr);
     
-    // build problem
     CHKERR prb_mng_ptr->buildProblem("TEST_PROBLEM", true);
     
-    // mesh partitioning
+
     // partition
     CHKERR prb_mng_ptr->partitionSimpleProblem("TEST_PROBLEM");
     CHKERR prb_mng_ptr->partitionFiniteElements("TEST_PROBLEM");
@@ -193,11 +189,11 @@ int main(int argc, char *argv[]) {
     TeeStream my_split(my_tee);
 
     struct OpCheckingDirevatives
-        : public VolumeElementForcesAndSourcesCore::UserDataOperator {
+        : public FaceElementForcesAndSourcesCore::UserDataOperator {
 
       TeeStream &mySplit;
       OpCheckingDirevatives(TeeStream &my_split)
-          : VolumeElementForcesAndSourcesCore::UserDataOperator(
+          : FaceElementForcesAndSourcesCore::UserDataOperator(
                 "FIELD", UserDataOperator::OPROW),
             mySplit(my_split) {}
 
@@ -207,8 +203,7 @@ int main(int argc, char *argv[]) {
 
         if (data.getFieldData().size() == 0)
           MoFEMFunctionReturnHot(0);
-
-        mySplit << "Type  " << type << " side " << side << endl;
+        mySplit << "type " << type << " side " << side << endl;
 
         if (data.getFieldDofs()[0]->getSpace() == H1) {
 
@@ -217,171 +212,159 @@ int main(int argc, char *argv[]) {
 
           const int nb_dofs = data.getN().size2();
           for (int dd = 0; dd != nb_dofs; dd++) {
-            const double dksi = (data.getN()(1, dd) - data.getN()(0, dd)) / eps;
-            const double deta = (data.getN()(3, dd) - data.getN()(2, dd)) / eps;
-            const double dzeta =
-                (data.getN()(5, dd) - data.getN()(4, dd)) / eps;
-            mySplit << "DKsi " << dksi - data.getDiffN()(6, 3 * dd + 0)
-                    << std::endl;
-            mySplit << "DEta " << deta - data.getDiffN()(6, 3 * dd + 1)
-                    << std::endl;
-            mySplit << "DZeta " << dzeta - data.getDiffN()(6, 3 * dd + 2)
-                    << std::endl;
-            if (fabs(dksi - data.getDiffN()(6, 3 * dd + 0)) > eps_diff) {
+            const double dksi =
+                (data.getN()(1, dd) - data.getN()(0, dd)) / (eps);
+            const double deta =
+                (data.getN()(3, dd) - data.getN()(2, dd)) / (2 * eps);
+            mySplit << "DKsi " << dksi << std::endl;
+            mySplit << "DEta " << deta << std::endl;
+            mySplit << "diffN " << data.getDiffN()(4, 2 * dd + 0) << std::endl;
+            mySplit << "diffN " << data.getDiffN()(4, 2 * dd + 1) << std::endl;
+            if (fabs(dksi - data.getDiffN()(4, 2 * dd + 0)) > eps_diff) {
               SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                       "H1 inconsistent dKsi derivative");
             }
-            if (fabs(deta - data.getDiffN()(6, 3 * dd + 1)) > eps_diff) {
+            if (fabs(deta - data.getDiffN()(4, 2 * dd + 1)) > eps_diff) {
               SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                       "H1 inconsistent dEta derivative");
-            }
-            if (fabs(dzeta - data.getDiffN()(6, 3 * dd + 2)) > eps_diff) {
-              SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-                      "H1 inconsistent dZeta derivative");
             }
           }
         }
 
-        if (data.getFieldDofs()[0]->getSpace() == HDIV ||
-            data.getFieldDofs()[0]->getSpace() == HCURL) {
+        if (data.getFieldDofs()[0]->getSpace() == HCURL) {
 
-          FTensor::Tensor1<double *, 3> base_ksi_m(
-              &data.getN()(0, 0), &data.getN()(0, 1), &data.getN()(0, 2), 3);
-          FTensor::Tensor1<double *, 3> base_ksi_p(
-              &data.getN()(1, 0), &data.getN()(1, 1), &data.getN()(1, 2), 3);
-          FTensor::Tensor1<double *, 3> base_eta_m(
-              &data.getN()(2, 0), &data.getN()(2, 1), &data.getN()(2, 2), 3);
-          FTensor::Tensor1<double *, 3> base_eta_p(
-              &data.getN()(3, 0), &data.getN()(3, 1), &data.getN()(3, 2), 3);
-          FTensor::Tensor1<double *, 3> base_zeta_m(
-              &data.getN()(4, 0), &data.getN()(4, 1), &data.getN()(4, 2), 3);
-          FTensor::Tensor1<double *, 3> base_zeta_p(
-              &data.getN()(5, 0), &data.getN()(5, 1), &data.getN()(5, 2), 3);
+          FTensor::Tensor1<double *, 3> base_ksi_m(&data.getN()(0, HCURL0),
+                                                   &data.getN()(0, HCURL1),
+                                                   &data.getN()(0, HCURL2), 3);
+          FTensor::Tensor1<double *, 3> base_ksi_p(&data.getN()(1, HCURL0),
+                                                   &data.getN()(1, HCURL1),
+                                                   &data.getN()(1, HCURL2), 3);
+          FTensor::Tensor1<double *, 3> base_eta_m(&data.getN()(2, HCURL0),
+                                                   &data.getN()(2, HCURL1),
+                                                   &data.getN()(2, HCURL2), 3);
+          FTensor::Tensor1<double *, 3> base_eta_p(&data.getN()(3, HCURL0),
+                                                   &data.getN()(3, HCURL1),
+                                                   &data.getN()(3, HCURL2), 3);
 
-          FTensor::Tensor2<double *, 3, 3> diff_base(
-              &data.getDiffN()(6, 0), &data.getDiffN()(6, 3),
-              &data.getDiffN()(6, 6), &data.getDiffN()(6, 1),
-              &data.getDiffN()(6, 4), &data.getDiffN()(6, 7),
-              &data.getDiffN()(6, 2), &data.getDiffN()(6, 5),
-              &data.getDiffN()(6, 8), 9);
+          // cerr << data.getN() << endl;
+          // cerr << data.getDiffN() << endl;
+
+          FTensor::Tensor2<double *, 3, 2> diff_base(
+              &data.getDiffN()(4, HCURL0_0), &data.getDiffN()(4, HCURL0_1),
+              &data.getDiffN()(4, HCURL1_0), &data.getDiffN()(4, HCURL1_1),
+              &data.getDiffN()(4, HCURL2_0), &data.getDiffN()(4, HCURL2_1), 6);
 
           FTensor::Index<'i', 3> i;
           FTensor::Number<0> N0;
           FTensor::Number<1> N1;
-          FTensor::Number<2> N2;
 
           const int nb_dofs = data.getN().size2() / 3;
           for (int dd = 0; dd != nb_dofs; dd++) {
+
+            mySplit << "MoFEM " << diff_base(0, 0) << " " << diff_base(1, 0)
+                    << " " << diff_base(2, 0) << endl;
+            mySplit << "MoFEM " << diff_base(0, 1) << " " << diff_base(1, 1)
+                    << " " << diff_base(2, 1) << endl;
+
             FTensor::Tensor1<double, 3> dksi;
-            dksi(i) = (base_ksi_p(i) - base_ksi_m(i)) / eps;
+            dksi(i) = (base_ksi_p(i) - base_ksi_m(i)) / (eps);
             FTensor::Tensor1<double, 3> deta;
-            deta(i) = (base_eta_p(i) - base_eta_m(i)) / eps;
-            FTensor::Tensor1<double, 3> dzeta;
-            dzeta(i) = (base_zeta_p(i) - base_zeta_m(i)) / eps;
+            deta(i) = (base_eta_p(i) - base_eta_m(i)) / (2 * eps);
+            mySplit << "Finite difference dKsi " << dksi(0) << "  " << dksi(1)
+                    << " " << dksi(2) << endl;
+            mySplit << "Finite difference dEta " << deta(0) << "  " << deta(1)
+                    << " " << deta(2) << endl;
 
             dksi(i) -= diff_base(i, N0);
             deta(i) -= diff_base(i, N1);
-            dzeta(i) -= diff_base(i, N2);
-
-            mySplit << "dKsi " << dksi(0) << "  " << dksi(1) << " " << dksi(2)
-                    << " " << sqrt(dksi(i) * dksi(i)) << endl;
-            mySplit << "dEta " << deta(0) << "  " << deta(1) << " " << deta(2)
-                    << " " << sqrt(deta(i) * deta(i)) << endl;
-            mySplit << "dZeta " << dzeta(0) << "  " << dzeta(1) << " "
-                    << dzeta(2) << " " << sqrt(dzeta(i) * dzeta(i)) << endl;
-
             if (sqrt(dksi(i) * dksi(i)) > eps_diff) {
+              // mySplit << "KSI ERROR\n";
               SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                        "%s inconsistent dKsi derivative  for type %d",
                        FieldSpaceNames[data.getFieldDofs()[0]->getSpace()],
                        type);
+            } else {
+              mySplit << "OK" << std::endl;
             }
             if (sqrt(deta(i) * deta(i)) > eps_diff) {
+              // mySplit << "ETA ERROR\n";
               SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                        "%s inconsistent dEta derivative for type %d",
                        FieldSpaceNames[data.getFieldDofs()[0]->getSpace()],
                        type);
-            }
-            if (sqrt(dzeta(i) * dzeta(i)) > eps_diff) {
-              SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-                       "%s inconsistent dZeta derivative for type %d",
-                       FieldSpaceNames[data.getFieldDofs()[0]->getSpace()],
-                       type);
+            } else {
+              mySplit << "OK" << std::endl;
             }
 
             ++base_ksi_m;
             ++base_ksi_p;
             ++base_eta_m;
             ++base_eta_p;
-            ++base_zeta_m;
-            ++base_zeta_p;
             ++diff_base;
           }
         }
+
+        mySplit << endl;
 
         MoFEMFunctionReturn(0);
       }
     };
 
-    struct MyFE : public VolumeElementForcesAndSourcesCore {
+    struct MyFE : public FaceElementForcesAndSourcesCore {
 
       MyFE(MoFEM::Interface &m_field)
-          : VolumeElementForcesAndSourcesCore(m_field) {}
+          : FaceElementForcesAndSourcesCore(m_field) {}
       int getRule(int order) { return -1; };
 
       MoFEMErrorCode setGaussPts(int order) {
         MoFEMFunctionBeginHot;
 
-        const double ksi = G_TET_X1[0];
-        const double eta = G_TET_Y1[0];
-        const double zeta = G_TET_Z1[0];
+        const double ksi = G_TRI_X1[0];
+        const double eta = G_TRI_Y1[0];
 
-        gaussPts.resize(4, 7);
+        gaussPts.resize(3, 5);
         gaussPts.clear();
 
         gaussPts(0, 0) = ksi - eps;
         gaussPts(1, 0) = eta;
-        gaussPts(2, 0) = zeta;
         gaussPts(0, 1) = ksi + eps;
         gaussPts(1, 1) = eta;
-        gaussPts(2, 1) = zeta;
 
         gaussPts(0, 2) = ksi;
         gaussPts(1, 2) = eta - eps;
-        gaussPts(2, 2) = zeta;
         gaussPts(0, 3) = ksi;
         gaussPts(1, 3) = eta + eps;
-        gaussPts(2, 3) = zeta;
 
         gaussPts(0, 4) = ksi;
         gaussPts(1, 4) = eta;
-        gaussPts(2, 4) = zeta - eps;
-        gaussPts(0, 5) = ksi;
-        gaussPts(1, 5) = eta;
-        gaussPts(2, 5) = zeta + eps;
-
-        gaussPts(0, 6) = ksi;
-        gaussPts(1, 6) = eta;
-        gaussPts(2, 6) = zeta;
 
         for (unsigned int ii = 0; ii != gaussPts.size2(); ii++) {
-          gaussPts(3, ii) = 1;
+          gaussPts(2, ii) = 1;
         }
 
-        cerr << gaussPts << endl;
+        // cerr << gaussPts << endl;
 
         MoFEMFunctionReturnHot(0);
       }
     };
 
-    MyFE tet_fe(m_field);
+    MyFE tri_fe(m_field);
 
-    tet_fe.getOpPtrVector().push_back(new OpCheckingDirevatives(my_split));
-    CHKERR m_field.loop_finite_elements("TEST_PROBLEM", "TET_FE", tet_fe);
+    MatrixDouble inv_jac;
+    tri_fe.getOpPtrVector().push_back(new OpCalculateInvJacForFace(inv_jac));
+    if (space == H1) {
+      tri_fe.getOpPtrVector().push_back(new OpSetInvJacH1ForFace(inv_jac));
+    }
+    if (space == HCURL) {
+      tri_fe.getOpPtrVector().push_back(new OpSetInvJacHcurlFace(inv_jac));
+    }
+    tri_fe.getOpPtrVector().push_back(new OpCheckingDirevatives(my_split));
+    CHKERR m_field.loop_finite_elements("TEST_PROBLEM", "TRI_FE", tri_fe);
     
+    // cerr << inv_jac << endl;
   }
   CATCH_ERRORS;
 
-  MoFEM::Core::Finalize();
+  CHKERR MoFEM::Core::Finalize();
   
 }

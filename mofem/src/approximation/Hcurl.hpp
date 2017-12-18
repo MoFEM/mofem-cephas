@@ -3,7 +3,7 @@
   \brief Implementation of H-curl base function.
 
   Based on Hierarchic Finite Element Bases on Unstructured Tetrahedral
-  Meshes, by Mark Ainsworth and Joe Coyle
+  Meshes, by \cite NME:NME847 and \cite fuentes2015orientation
   Shape functions for MBTRI/MBTET and HCurl space
 
 */
@@ -315,6 +315,115 @@ MoFEMErrorCode Hcurl_Ainsworth_VolumeFunctions_MBTET(
     PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s,
                                        double *L, double *diffL,
                                        const int dim));
+
+/**
+ * \brief Edge based H-curl base functions on tetrahedral
+
+ Function generates hierarchical base of h-curl comforting functions on
+ tetrahedral edge.  For more details see \cite ainsworth2011bernstein.
+
+ * @param  sense            sense fo edge (i.e. unique orientation)
+ * @param  p                array of oder for each edge
+ * @param  n                array shape functions evaluated at each integration
+ point
+ * @param  diff_n           derivatives of shape functions
+ * @param  phi              base functions on edges
+ * @param  diff_phi         derivatives of edge shape functions
+ * @param  nb_integration_pts             number of integration points
+ * @return                  error code
+ */
+MoFEMErrorCode Hcurl_Demkowicz_EdgeBaseFunctions_MBTET(
+    int *sense, int *p, double *n, double *diff_n, double *phi[],
+    double *diff_phi[], int nb_integration_pts);
+
+/**
+ * \brief Edge based H-curl base functions on teriangle
+
+ Function generates hierarchical base of h-curl comforting functions on
+ tetrahedral edge.  For more details see \cite ainsworth2011bernstein.
+
+ * @param  sense            sense fo edge (i.e. unique orientation)
+ * @param  p                array of oder for each edge
+ * @param  n                array shape functions evaluated at each integration
+ point
+ * @param  diff_n           derivatives of shape functions
+ * @param  phi              base functions on edges
+ * @param  diff_phi         derivatives of edge shape functions
+ * @param  nb_integration_pts             number of integration points
+ * @return                  error code
+ */
+MoFEMErrorCode Hcurl_Demkowicz_EdgeBaseFunctions_MBTRI(
+    int *sense, int *p, double *n, double *diff_n, double *phi[],
+    double *diff_phi[], int nb_integration_pts);
+
+/**
+ * \brief Edge based H-curl base functions on edge
+
+ Function generates hierarchical base of h-curl comforting functions on
+ tetrahedral edge.  For more details see \cite ainsworth2011bernstein.
+
+ * @param  sense            sense fo edge (i.e. unique orientation)
+ * @param  p                array of oder for each edge
+ * @param  n                array shape functions evaluated at each integration
+ point
+ * @param  diff_n           derivatives of shape functions
+ * @param  phi              base functions on edges
+ * @param  diff_phi         derivatives of edge shape functions
+ * @param  nb_integration_pts             number of integration points
+ * @return                  error code
+ */
+MoFEMErrorCode Hcurl_Demkowicz_EdgeBaseFunctions_MBEDGE(
+    int sense, int p, double *n, double *diff_n, double *phi,
+    double *diff_phi, int nb_integration_pts);
+
+/** \brief Face base interior function
+
+* @param  face_nodes       array [4*3] of local indices of face nodes
+* @param  p                approximation order
+* @param  n                nodal shape functions
+* @param  diff_n            derivatives of nodal shape functions
+* @param  phi            calculated shape functions
+* @param  diff_phi       derivatives of shape functions
+* @param  nb_integration_pts             number of shape functions
+* @return                  error code
+
+*/
+MoFEMErrorCode Hcurl_Demkowicz_FaceBaseFunctions_MBTET(
+    int *faces_nodes, int *p, double *n, double *diff_n, double *phi[],
+    double *diff_phi[], int nb_integration_pts);
+
+/** \brief Face base interior function
+
+* @param  face_nodes       array [4*3] of local indices of face nodes
+* @param  p                approximation order
+* @param  n                nodal shape functions
+* @param  diff_n            derivatives of nodal shape functions
+* @param  phi            calculated shape functions
+* @param  diff_phi       derivatives of shape functions
+* @param  nb_integration_pts             number of shape functions
+* @return                  error code
+
+*/
+MoFEMErrorCode Hcurl_Demkowicz_FaceBaseFunctions_MBTRI(
+    int *faces_nodes, int p, double *n, double *diff_n, double *phi,
+    double *diff_phi, int nb_integration_pts);
+
+/** \brief Volume base interior function
+
+* @param  p                approximation order
+* @param  n                nodal shape functions
+* @param  diff_n            derivatives of nodal shape functions
+* @param  phi            calculated shape functions
+* @param  diff_phi       derivatives of shape functions
+* @param  nb_integration_pts             number of shape functions
+* @return                  error code
+
+
+*/
+MoFEMErrorCode Hcurl_Demkowicz_VolumeBaseFunctions_MBTET(
+    int p, double *n, double *diff_n, double *phi,
+    double *diff_phi, int nb_integration_pts);
+
 
 } // namespace MoFEM
 

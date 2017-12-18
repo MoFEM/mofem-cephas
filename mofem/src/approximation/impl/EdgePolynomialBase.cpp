@@ -122,7 +122,7 @@ EdgePolynomialBase::getValue(MatrixDouble &pts,
     CHKERRG(ierr);
     break;
   case HCURL:
-    ierr = getValueHCurl(pts);
+    ierr = getValueHcurl(pts);
     CHKERRG(ierr);
     break;
   case L2:
@@ -226,18 +226,17 @@ MoFEMErrorCode EdgePolynomialBase::getValueHdiv(MatrixDouble &pts) {
           "Make no sense, unless problem is 2d (2d not implemented yet)");
 }
 
-MoFEMErrorCode EdgePolynomialBase::getValueHCurl(MatrixDouble &pts) {
-
+MoFEMErrorCode EdgePolynomialBase::getValueHcurlAinsworthBase(MatrixDouble &pts) {
   MoFEMFunctionBeginHot;
 
   DataForcesAndSourcesCore &data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
+
   PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s, double *L,
                                      double *diffL, const int dim) =
       cTx->basePolynomialsType0;
 
   int nb_gauss_pts = pts.size2();
-
   if (data.spacesOnEntities[MBEDGE].test(HCURL)) {
     // edges
     if (data.dataOnEntities[MBEDGE].size() != 1) {
@@ -254,7 +253,7 @@ MoFEMErrorCode EdgePolynomialBase::getValueHCurl(MatrixDouble &pts) {
     // cerr << data.dataOnEntities[MBVERTEX][0].getDiffN(base) << endl;
     ierr = Hcurl_Ainsworth_EdgeBaseFunctions_MBTET_ON_EDGE(
         sense, order, &data.dataOnEntities[MBVERTEX][0].getN(base)(0, 0),
-        &data.dataOnEntities[MBVERTEX][0].getDiffN(base)(0, 0),
+        &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
         &*data.dataOnEntities[MBEDGE][0].getN(base).data().begin(), NULL,
         nb_gauss_pts, base_polynomials);
     CHKERRG(ierr);
@@ -265,4 +264,59 @@ MoFEMErrorCode EdgePolynomialBase::getValueHCurl(MatrixDouble &pts) {
   }
 
   MoFEMFunctionReturnHot(0);
+}
+
+MoFEMErrorCode
+EdgePolynomialBase::getValueHcurlDemkowiczBase(MatrixDouble &pts) {
+  MoFEMFunctionBegin;
+
+  DataForcesAndSourcesCore &data = cTx->dAta;
+  const FieldApproximationBase base = cTx->bAse;
+
+  int nb_gauss_pts = pts.size2();
+  if (data.spacesOnEntities[MBEDGE].test(HCURL)) {
+    // edges
+    if (data.dataOnEntities[MBEDGE].size() != 1) {
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "No data structure to store base functions");
+    }
+    int sense = data.dataOnEntities[MBEDGE][0].getSense();
+    int order = data.dataOnEntities[MBEDGE][0].getDataOrder();
+    int nb_dofs =
+        NBEDGE_DEMKOWICZ_HCURL(data.dataOnEntities[MBEDGE][0].getDataOrder());
+    data.dataOnEntities[MBEDGE][0].getN(base).resize(nb_gauss_pts, 3 * nb_dofs,
+                                                     false);
+    data.dataOnEntities[MBEDGE][0].getDiffN(base).resize(nb_gauss_pts, 0,
+                                                         false);
+    // cerr << data.dataOnEntities[MBVERTEX][0].getDiffN(base) << endl;
+    CHKERR  Hcurl_Demkowicz_EdgeBaseFunctions_MBEDGE (
+        sense, order, &data.dataOnEntities[MBVERTEX][0].getN(base)(0, 0),
+        &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
+        &*data.dataOnEntities[MBEDGE][0].getN(base).data().begin(), NULL,
+        nb_gauss_pts);
+  } else {
+    data.dataOnEntities[MBEDGE][0].getN(base).resize(nb_gauss_pts, 0, false);
+    data.dataOnEntities[MBEDGE][0].getDiffN(base).resize(nb_gauss_pts, 0,
+                                                         false);
+  }
+
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode EdgePolynomialBase::getValueHcurl(MatrixDouble &pts) {
+  MoFEMFunctionBegin;
+
+  switch (cTx->bAse) {
+  case AINSWORTH_LEGENDRE_BASE:
+  case AINSWORTH_LOBATTO_BASE:
+    CHKERR getValueHcurlAinsworthBase(pts);
+    break;
+  case DEMKOWICZ_JACOBI_BASE:
+    CHKERR getValueHcurlDemkowiczBase(pts);
+    break;
+  default:
+    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Not implemented");
+  }
+
+  MoFEMFunctionReturn(0);
 }
