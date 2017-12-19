@@ -2354,8 +2354,7 @@ struct HcurlFaceBase {
     FTensor::Tensor1<double, 3> &t_grad_n1f0 = t_grad_n[n1f0_idx];
     FTensor::Tensor1<double, 3> &t_grad_n2f0 = t_grad_n[n2f0_idx];
     FTensor::Tensor1<double, 3> t_grad_n0f0_p_n1f0;
-    t_grad_n0f0_p_n1f0(i) =
-        t_grad_n0f0(i) + t_grad_n1f0(i);
+    t_grad_n0f0_p_n1f0(i) = t_grad_n0f0(i) + t_grad_n1f0(i) + t_grad_n2f0(i);
 
     iFiF0.resize(p + 1, false);
     diffIFiF0.resize(3 * p + 3, false);
@@ -2393,14 +2392,14 @@ struct HcurlFaceBase {
           int jj = oo - 2 - ii;
 
           // family I
-          CHKERR Jacobi_polynomials(jj + 1, 2 * ii + 1, n2f0, n2f0,
-                                    &t_grad_n2f0(0), &t_grad_n2f0(0), ifif0,
-                                    diff_ifif0, 3);
+          CHKERR IntegratedJacobi_polynomials(
+              jj + 1, 2 * ii + 1, n2f0, n0f0 + n1f0 + n2f0, &t_grad_n2f0(0),
+              &t_grad_n0f0_p_n1f0(0), ifif0, diff_ifif0, 3);
           FTensor::Tensor1<double, 3> t_diff_ifif0(
-              diff_ifif0[0 + jj + 1], diff_ifif0[(jj + 2) + jj + 1],
-              diff_ifif0[2 * (jj + 2) + jj + 1]);
-          t_phi(i) = ifif0[jj + 1] * t_f0_phi_ii(i);
-          t_diff_phi(i, j) = ifif0[jj + 1] * t_diff_f0_phi_ii(i, j) +
+              diff_ifif0[0 + jj], diff_ifif0[(jj + 1) + jj],
+              diff_ifif0[2 * (jj + 1) + jj]);
+          t_phi(i) = ifif0[jj] * t_f0_phi_ii(i);
+          t_diff_phi(i, j) = ifif0[jj] * t_diff_f0_phi_ii(i, j) +
                              t_diff_ifif0(j) * t_f0_phi_ii(i);
           ++t_phi;
           ++t_diff_phi;
@@ -2529,15 +2528,15 @@ struct HcurlFaceBase {
           int jj = oo - 2 - ii;
 
           // family I
-          CHKERR Jacobi_polynomials(jj + 1, 2 * ii + 1, n2f0, n2f0,
-                                    &t_grad_n2f0(0), &t_grad_n2f0(0),
-                                    ifif0, diff_ifif0, 3);
+          CHKERR IntegratedJacobi_polynomials(
+              jj + 1, 2 * ii + 1, n2f0, n0f0 + n1f0, &t_grad_n2f0(0),
+              &t_grad_n0f0_p_n1f0(0), ifif0, diff_ifif0, 3);
           FTensor::Tensor1<double, 3> t_diff_ifif0(
-              diff_ifif0[0 + jj + 1], diff_ifif0[(jj + 2) + jj + 1],
-              diff_ifif0[2 * (jj + 2) + jj + 1]);
+              diff_ifif0[0 + jj], diff_ifif0[(jj + 1) + jj],
+              diff_ifif0[2 * (jj + 1) + jj]);
 
-          t_phi(i) = ifif0[jj + 1] * t_f0_phi_ii(i);
-          t_diff_phi(i, j) = ifif0[jj + 1] * t_diff_f0_phi_ii(i, j) +
+          t_phi(i) = ifif0[jj] * t_f0_phi_ii(i);
+          t_diff_phi(i, j) = ifif0[jj] * t_diff_f0_phi_ii(i, j) +
                              t_diff_ifif0(j) * t_f0_phi_ii(i);
 
           ++t_phi;
@@ -2547,14 +2546,14 @@ struct HcurlFaceBase {
           ++kk;
 
           // family II
-          CHKERR Jacobi_polynomials(jj + 1, 2 * ii + 1, n2f1, n2f1,
-                                    &t_grad_n2f1(0), &t_grad_n2f1(0),
-                                    ifif1, diff_ifif1, 3);
+          CHKERR IntegratedJacobi_polynomials(
+              jj + 1, 2 * ii + 1, n2f1, n0f1 + n1f1, &t_grad_n2f1(0),
+              &t_grad_n0f1_p_n1f1(0), ifif1, diff_ifif1, 3);
           FTensor::Tensor1<double, 3> t_diff_ifif1(
-              diff_ifif1[0 + jj + 1], diff_ifif1[(jj + 2) + jj + 1],
-              diff_ifif1[2 * (jj + 2) + jj + 1]);
-          t_phi(i) = ifif1[jj + 1] * t_f1_phi_ii(i);
-          t_diff_phi(i, j) = ifif1[jj + 1] * t_diff_f1_phi_ii(i, j) +
+              diff_ifif1[0 + jj], diff_ifif1[(jj + 1) + jj],
+              diff_ifif1[2 * (jj + 1) + jj]);
+          t_phi(i) = ifif1[jj] * t_f1_phi_ii(i);
+          t_diff_phi(i, j) = ifif1[jj] * t_diff_f1_phi_ii(i, j) +
                              t_diff_ifif1(j) * t_f1_phi_ii(i);
           ++t_phi;
           ++t_diff_phi;
@@ -2679,13 +2678,13 @@ struct HcurlFaceBase {
           int jj = oo - 2 - ii;
 
           // family I
-          CHKERR Jacobi_polynomials(jj + 1, 2 * ii + 1, n2f0, n2f0,
-                                    &t_grad_n2f0(0), &t_grad_n2f0(0), ifif0,
-                                    diff_ifif0, 2);
+          CHKERR IntegratedJacobi_polynomials(
+              jj + 1, 2 * ii + 1, n2f0, n0f0 + n1f0, &t_grad_n2f0(0),
+              &t_grad_n0f0_p_n1f0(0), ifif0, diff_ifif0, 2);
           FTensor::Tensor1<double, 2> t_diff_ifif0(
-              diff_ifif0[0 + jj + 1], diff_ifif0[(jj + 2) + jj + 1]);
-          t_phi(i) = ifif0[jj + 1] * t_f0_phi_ii(i);
-          t_diff_phi(i, j) = ifif0[jj + 1] * t_diff_f0_phi_ii(i, j) +
+              diff_ifif0[0 + jj], diff_ifif0[(jj + 1) + jj]);
+          t_phi(i) = ifif0[jj] * t_f0_phi_ii(i);
+          t_diff_phi(i, j) = ifif0[jj] * t_diff_f0_phi_ii(i, j) +
                              t_f0_phi_ii(i) * t_diff_ifif0(j);
 
           ++t_phi;
@@ -2695,13 +2694,13 @@ struct HcurlFaceBase {
           ++kk;
 
           // family II
-          CHKERR Jacobi_polynomials(jj + 1, 2 * ii + 1, n2f1, n2f1,
-                                    &t_grad_n2f1(0), &t_grad_n2f1(0),
+          CHKERR IntegratedJacobi_polynomials(jj + 1, 2 * ii + 1, n2f1, n0f1+n1f1,
+                                    &t_grad_n2f1(0), &t_grad_n0f1_p_n1f1(0),
                                     ifif1, diff_ifif1, 2);
-          FTensor::Tensor1<double, 2> t_diff_ifif1(
-              diff_ifif1[0 + jj + 1], diff_ifif1[(jj + 2) + jj + 1]);
-          t_phi(i) = ifif1[jj + 1] * t_f1_phi_ii(i);
-          t_diff_phi(i, j) = ifif1[jj + 1] * t_diff_f1_phi_ii(i, j) +
+          FTensor::Tensor1<double, 2> t_diff_ifif1(diff_ifif1[0 + jj],
+                                                   diff_ifif1[(jj + 1) + jj]);
+          t_phi(i) = ifif1[jj] * t_f1_phi_ii(i);
+          t_diff_phi(i, j) = ifif1[jj] * t_diff_f1_phi_ii(i, j) +
                              t_f1_phi_ii(i) * t_diff_ifif1(j);
           ++t_phi;
           ++t_diff_phi;
@@ -2871,6 +2870,13 @@ MoFEMErrorCode MoFEM::Hcurl_Demkowicz_VolumeBaseFunctions_MBTET(
   FTensor::Tensor1<double, 3> &t_grad_n3f1 = t_grad_n[family[1][3]];
   FTensor::Tensor1<double, 3> &t_grad_n3f2 = t_grad_n[family[2][3]];
 
+  FTensor::Tensor1<double, 3> t_sum_f0;
+  t_sum_f0(i) = -t_grad_n3f0(i);
+  FTensor::Tensor1<double, 3> t_sum_f1;
+  t_sum_f1(i) = -t_grad_n3f1(i);
+  FTensor::Tensor1<double, 3> t_sum_f2;
+  t_sum_f2(i) = -t_grad_n3f2(i);
+
   for (int gg = 0; gg != nb_integration_pts; ++gg) {
 
     int shift_n = 4 * gg;
@@ -2879,6 +2885,7 @@ MoFEMErrorCode MoFEM::Hcurl_Demkowicz_VolumeBaseFunctions_MBTET(
     double n3f1 = n[shift_n + family[1][3]];
     double n3f2 = n[shift_n + family[2][3]];
 
+    int kk = 0;
     for (int oo = 3; oo <= p; ++oo) {
 
       int phi_shift = 3 * nb_face_functions * gg;
@@ -2927,55 +2934,62 @@ MoFEMErrorCode MoFEM::Hcurl_Demkowicz_VolumeBaseFunctions_MBTET(
           &diff_phi_ij(2, diff_phi_shift + HCURL2_2), 9);
 
       int ij = 0;
-      for (int oo_ij = 2; oo_ij <= oo-1; ++oo_ij) {
+      for (int oo_ij = 2; oo_ij != oo; ++oo_ij) {
         int  k = oo-oo_ij;
 
-        CHKERR Jacobi_polynomials(k, 2 * oo_ij, n3f0, n3f0, &t_grad_n3f0(0),
-                                  &t_grad_n3f0(0), &fi_k(0, 0),
-                                  &diff_fi_k(0, 0), 3);
-        CHKERR Jacobi_polynomials(k, 2 * oo_ij, n3f1, n3f1, &t_grad_n3f1(0),
-                                  &t_grad_n3f1(0), &fi_k(1, 0),
-                                  &diff_fi_k(1, 0), 3);
-        CHKERR Jacobi_polynomials(k, 2 * oo_ij, n3f2, n3f2, &t_grad_n3f2(0),
-                                  &t_grad_n3f2(0), &fi_k(2, 0),
-                                  &diff_fi_k(2, 0), 3);
+        CHKERR IntegratedJacobi_polynomials(
+            k, 2 * oo_ij, n3f0, 1 - n3f0, &t_grad_n3f0(0),
+            &t_sum_f0(0), &fi_k(0, 0), &diff_fi_k(0, 0), 3);
+        CHKERR IntegratedJacobi_polynomials(
+            k, 2 * oo_ij, n3f1, 1 - n3f1, &t_grad_n3f1(0),
+            &t_sum_f1(0), &fi_k(1, 0), &diff_fi_k(1, 0), 3);
+        CHKERR IntegratedJacobi_polynomials(
+            k, 2 * oo_ij, n3f2, 1 - n3f2, &t_grad_n3f2(0),
+            &t_sum_f2(0), &fi_k(2, 0), &diff_fi_k(2, 0), 3);
 
-        FTensor::Tensor1<double, 3> t_diff_fi_k_f0(
-            diff_fi_k(0, 0 + k), diff_fi_k(0, (k + 1) + k),
-            diff_fi_k(0, 2 * (k + 1) + k));
-        FTensor::Tensor1<double, 3> t_diff_fi_k_f1(
-            diff_fi_k(1, 0 + k), diff_fi_k(1, (k + 1) + k),
-            diff_fi_k(1, 2 * (k + 1) + k));
-        FTensor::Tensor1<double, 3> t_diff_fi_k_f2(
-            diff_fi_k(2, 0 + k), diff_fi_k(2, (k + 1) + k),
-            diff_fi_k(2, 2 * (k + 1) + k));
+        FTensor::Tensor1<double, 3> t_diff_fi_k_f0(diff_fi_k(0, 0 + k - 1),
+                                                   diff_fi_k(0, k + k - 1),
+                                                   diff_fi_k(0, 2 * k + k - 1));
+        FTensor::Tensor1<double, 3> t_diff_fi_k_f1(diff_fi_k(1, 0 + k - 1),
+                                                   diff_fi_k(1, k + k - 1),
+                                                   diff_fi_k(1, 2 * k + k - 1));
+        FTensor::Tensor1<double, 3> t_diff_fi_k_f2(diff_fi_k(2, 0 + k - 1),
+                                                   diff_fi_k(2, k + k - 1),
+                                                   diff_fi_k(2, 2 * k + k - 1));
 
         for (; ij != NBFACETRI_DEMKOWICZ_HCURL(oo_ij) / 2; ++ij) {
-          t_phi(i) = fi_k(0, k) * t_phi_face_f0(i);
+          t_phi(i) = fi_k(0, k - 1) * t_phi_face_f0(i);
           t_diff_phi(i, j) = t_diff_fi_k_f0(j) * t_phi_face_f0(i) +
-                             fi_k(0, k) * t_diff_phi_face_f0(i, j);
+                             fi_k(0, k - 1) * t_diff_phi_face_f0(i, j);
           ++t_phi;
           ++t_diff_phi;
           ++t_phi_face_f0;
           ++t_diff_phi_face_f0;
+          ++kk;
 
-          t_phi(i) = fi_k(1,k) * t_phi_face_f1(i);
+          t_phi(i) = fi_k(1, k - 1) * t_phi_face_f1(i);
           t_diff_phi(i, j) = t_diff_fi_k_f1(j) * t_phi_face_f1(i) +
-                             fi_k(1, k) * t_diff_phi_face_f1(i, j);
+                             fi_k(1, k - 1) * t_diff_phi_face_f1(i, j);
           ++t_phi;
           ++t_diff_phi;
           ++t_phi_face_f1;
           ++t_diff_phi_face_f1;
+          ++kk;
 
-          t_phi(i) = fi_k(2,k) * t_phi_face_f2(i);
+          t_phi(i) = fi_k(2, k - 1) * t_phi_face_f2(i);
           t_diff_phi(i, j) = t_diff_fi_k_f2(j) * t_phi_face_f2(i) +
-                             fi_k(2, k) * t_diff_phi_face_f2(i, j);
+                             fi_k(2, k - 1) * t_diff_phi_face_f2(i, j);
           ++t_phi;
           ++t_diff_phi;
           ++t_phi_face_f2;
           ++t_diff_phi_face_f2;
+          ++kk;
         }
       }
+    }
+    if (kk != NBVOLUMETET_DEMKOWICZ_HCURL(p)) {
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "Wrong number of base functions");
     }
   }
 
