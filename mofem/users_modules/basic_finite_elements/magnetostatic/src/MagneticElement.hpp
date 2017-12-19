@@ -113,20 +113,18 @@ struct MagneticElement {
    * @return      error code
    */
   MoFEMErrorCode getNaturalBc() {
-    MoFEMFunctionBeginHot;
+    MoFEMFunctionBegin;
     for (_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField, BLOCKSET, bit)) {
       if (bit->getName().compare(0, 9, "NATURALBC") == 0) {
         Range faces;
-        rval = mField.get_moab().get_entities_by_type(bit->meshset, MBTRI,
+        CHKERR mField.get_moab().get_entities_by_type(bit->meshset, MBTRI,
                                                       faces, true);
-        CHKERRG(rval);
-        rval = mField.get_moab().get_adjacencies(
+        CHKERR mField.get_moab().get_adjacencies(
             faces, 1, true, blockData.naturalBc, moab::Interface::UNION);
-        CHKERRG(rval);
         blockData.naturalBc.merge(faces);
       }
     }
-    MoFEMFunctionReturnHot(0);
+    MoFEMFunctionReturn(0);
   }
 
   /**
@@ -135,34 +133,29 @@ struct MagneticElement {
    * @return      error code
    */
   MoFEMErrorCode getEssentialBc() {
-    MoFEMFunctionBeginHot;
+    MoFEMFunctionBegin;
     for (_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField, BLOCKSET, bit)) {
       if (bit->getName().compare(0, 10, "ESSENTIALBC") == 0) {
         Range faces;
-        rval = mField.get_moab().get_entities_by_type(bit->meshset, MBTRI,
+        CHKERR mField.get_moab().get_entities_by_type(bit->meshset, MBTRI,
                                                       faces, true);
-        CHKERRG(rval);
-        rval = mField.get_moab().get_adjacencies(
+        CHKERR mField.get_moab().get_adjacencies(
             faces, 1, true, blockData.essentialBc, moab::Interface::UNION);
-        CHKERRG(rval);
         blockData.essentialBc.merge(faces);
       }
     }
     if (blockData.essentialBc.empty()) {
       Range tets;
-      rval = mField.get_moab().get_entities_by_type(0, MBTET, tets);
-      CHKERRG(rval);
+      CHKERR mField.get_moab().get_entities_by_type(0, MBTET, tets);
       Skinner skin(&mField.get_moab());
       Range skin_faces; // skin faces from 3d ents
-      rval = skin.find_skin(0, tets, false, skin_faces);
-      CHKERRG(rval);
+      CHKERR skin.find_skin(0, tets, false, skin_faces);
       skin_faces = subtract(skin_faces, blockData.naturalBc);
-      rval = mField.get_moab().get_adjacencies(
+      CHKERR mField.get_moab().get_adjacencies(
           skin_faces, 1, true, blockData.essentialBc, moab::Interface::UNION);
-      CHKERRG(rval);
       blockData.essentialBc.merge(skin_faces);
     }
-    MoFEMFunctionReturnHot(0);
+    MoFEMFunctionReturn(0);
   }
 
   /**
@@ -171,30 +164,25 @@ struct MagneticElement {
    * @return error code
    */
   MoFEMErrorCode createFields() {
-    // MoAB
-
-    MoFEMFunctionBeginHot;
+    MoFEMFunctionBegin;
 
     // Set entities bit level. each entity has bit level depending for example
     // on refinement level. In this case we do not refine mesh or not do
     // topological changes, simply set refinement level to zero on all entities.
 
-    ierr = mField.seed_ref_level_3D(0, BitRefLevel().set(0));
-    CHKERRG(ierr);
+    CHKERR mField.getInterface<BitRefManager>()->setBitRefLevelByDim(
+      0, 3,BitRefLevel().set(0));
 
     // add fields
-    ierr =
-        mField.add_field(blockData.fieldName, HCURL, AINSWORTH_LOBATTO_BASE, 1);
-    CHKERRG(ierr);
-    ierr =
-        mField.add_field("MESH_NODE_POSITIONS", H1, AINSWORTH_LEGENDRE_BASE, 3);
-    CHKERRG(ierr);
+    CHKERR mField.add_field(blockData.fieldName, HCURL, DEMKOWICZ_JACOBI_BASE,
+                            1);
+    CHKERR mField.add_field("MESH_NODE_POSITIONS", H1, AINSWORTH_LEGENDRE_BASE,
+                            3);
     // meshset consisting all entities in mesh
     EntityHandle root_set = mField.get_moab().get_root_set();
     // add entities to field
-    ierr =
-        mField.add_ents_to_field_by_type(root_set, MBTET, blockData.fieldName);
-    CHKERRG(ierr);
+    CHKERR mField.add_ents_to_field_by_type(root_set, MBTET,
+                                            blockData.fieldName);
 
     // // The higher-order gradients can be gauged by locally skipping the
     // // corresponding degrees of freedom and basis functions in the
@@ -202,57 +190,44 @@ struct MagneticElement {
     // // edge-based, face-based and cell-based finite element subspaces.
     //
     // Range tris,edges;
-    // rval = mField.get_moab().get_entities_by_type(root_set,MBTRI,tris,true);
-    // CHKERRG(rval); rval =
+    // CHKERR mField.get_moab().get_entities_by_type(root_set,MBTRI,tris,true);
     // mField.get_moab().get_entities_by_type(root_set,MBEDGE,edges,true);
-    // CHKERRG(rval);
     //
     // // Set order in volume
     // Range bc_ents = unite(blockData.naturalBc,blockData.essentialBc);
     // Range vol_ents = subtract(unite(tris,edges),bc_ents);
-    // ierr =
-    // mField.set_field_order(vol_ents,blockData.fieldName,blockData.oRder);
-    // CHKERRG(ierr); int gauged_order = 1; ierr =
+    // CHKERR
+    // mField.set_field_order(vol_ents,blockData.fieldName,blockData.oRder); int
+    // gauged_order = 1; CHKERR
     // mField.set_field_order(bc_ents,blockData.fieldName,gauged_order);
-    // CHKERRG(ierr);
 
     // Set order on tets
-    ierr = mField.set_field_order(root_set, MBTET, blockData.fieldName,
+    CHKERR mField.set_field_order(root_set, MBTET, blockData.fieldName,
                                   blockData.oRder);
-    CHKERRG(ierr);
-    ierr = mField.set_field_order(root_set, MBTRI, blockData.fieldName,
+    CHKERR mField.set_field_order(root_set, MBTRI, blockData.fieldName,
                                   blockData.oRder);
-    CHKERRG(ierr);
-    ierr = mField.set_field_order(root_set, MBEDGE, blockData.fieldName,
+    CHKERR mField.set_field_order(root_set, MBEDGE, blockData.fieldName,
                                   blockData.oRder);
-    CHKERRG(ierr);
 
     // Set geometry approximation ordered
-    ierr = mField.add_ents_to_field_by_type(root_set, MBTET,
+    CHKERR mField.add_ents_to_field_by_type(root_set, MBTET,
                                             "MESH_NODE_POSITIONS");
-    CHKERRG(ierr);
-    ierr = mField.set_field_order(root_set, MBTET, "MESH_NODE_POSITIONS", 2);
-    CHKERRG(ierr);
-    ierr = mField.set_field_order(root_set, MBTRI, "MESH_NODE_POSITIONS", 2);
-    CHKERRG(ierr);
-    ierr = mField.set_field_order(root_set, MBEDGE, "MESH_NODE_POSITIONS", 2);
-    CHKERRG(ierr);
-    ierr = mField.set_field_order(root_set, MBVERTEX, "MESH_NODE_POSITIONS", 1);
-    CHKERRG(ierr);
+    CHKERR mField.set_field_order(root_set, MBTET, "MESH_NODE_POSITIONS", 2);
+    CHKERR mField.set_field_order(root_set, MBTRI, "MESH_NODE_POSITIONS", 2);
+    CHKERR mField.set_field_order(root_set, MBEDGE, "MESH_NODE_POSITIONS", 2);
+    CHKERR mField.set_field_order(root_set, MBVERTEX, "MESH_NODE_POSITIONS", 1);
 
     // build field
-    ierr = mField.build_fields();
-    CHKERRG(ierr);
+    CHKERR mField.build_fields();
 
     // get HO geometry for 10 node tets
     // This method takes coordinates form edges mid nodes in 10 node tet and
     // project values on 2nd order hierarchical basis used to approx. geometry.
     Projection10NodeCoordsOnField ent_method_material(mField,
                                                       "MESH_NODE_POSITIONS");
-    ierr = mField.loop_dofs("MESH_NODE_POSITIONS", ent_method_material);
-    CHKERRG(ierr);
+    CHKERR mField.loop_dofs("MESH_NODE_POSITIONS", ent_method_material);
 
-    MoFEMFunctionReturnHot(0);
+    MoFEMFunctionReturn(0);
   }
 
   /**
@@ -265,50 +240,35 @@ struct MagneticElement {
    * @return error code
    */
   MoFEMErrorCode createElements() {
-
-    MoFEMFunctionBeginHot;
+    MoFEMFunctionBegin;
     // //Elements
-    ierr = mField.add_finite_element(blockData.feName);
-    CHKERRG(ierr);
-    ierr = mField.modify_finite_element_add_field_row(blockData.feName,
+    CHKERR mField.add_finite_element(blockData.feName);
+    CHKERR mField.modify_finite_element_add_field_row(blockData.feName,
                                                       blockData.fieldName);
-    CHKERRG(ierr);
-    ierr = mField.modify_finite_element_add_field_col(blockData.feName,
+    CHKERR mField.modify_finite_element_add_field_col(blockData.feName,
                                                       blockData.fieldName);
-    CHKERRG(ierr);
-    ierr = mField.modify_finite_element_add_field_data(blockData.feName,
+    CHKERR mField.modify_finite_element_add_field_data(blockData.feName,
                                                        blockData.fieldName);
-    CHKERRG(ierr);
-    ierr = mField.modify_finite_element_add_field_data(blockData.feName,
+    CHKERR mField.modify_finite_element_add_field_data(blockData.feName,
                                                        "MESH_NODE_POSITIONS");
-    CHKERRG(ierr);
-    ierr = mField.add_finite_element(blockData.feNaturalBCName);
-    CHKERRG(ierr);
-    ierr = mField.modify_finite_element_add_field_row(blockData.feNaturalBCName,
+    CHKERR mField.add_finite_element(blockData.feNaturalBCName);
+    CHKERR mField.modify_finite_element_add_field_row(blockData.feNaturalBCName,
                                                       blockData.fieldName);
-    CHKERRG(ierr);
-    ierr = mField.modify_finite_element_add_field_col(blockData.feNaturalBCName,
+    CHKERR mField.modify_finite_element_add_field_col(blockData.feNaturalBCName,
                                                       blockData.fieldName);
-    CHKERRG(ierr);
-    ierr = mField.modify_finite_element_add_field_data(
+    CHKERR mField.modify_finite_element_add_field_data(
         blockData.feNaturalBCName, blockData.fieldName);
-    CHKERRG(ierr);
-    ierr = mField.modify_finite_element_add_field_data(
+    CHKERR mField.modify_finite_element_add_field_data(
         blockData.feNaturalBCName, "MESH_NODE_POSITIONS");
-    CHKERRG(ierr);
-    ierr =
-        mField.add_ents_to_finite_element_by_type(0, MBTET, blockData.feName);
-    CHKERRG(ierr);
-    ierr = mField.add_ents_to_finite_element_by_type(blockData.naturalBc, MBTRI,
+    CHKERR mField.add_ents_to_finite_element_by_type(0, MBTET,
+                                                     blockData.feName);
+    CHKERR mField.add_ents_to_finite_element_by_type(blockData.naturalBc, MBTRI,
                                                      blockData.feNaturalBCName);
-    CHKERRG(ierr);
     // build finite elemnts
-    ierr = mField.build_finite_elements();
-    CHKERRG(ierr);
+    CHKERR mField.build_finite_elements();
     // build adjacencies
-    ierr = mField.build_adjacencies(BitRefLevel().set(0));
-    CHKERRG(ierr);
-    MoFEMFunctionReturnHot(0);
+    CHKERR mField.build_adjacencies(BitRefLevel().set(0));
+    MoFEMFunctionReturn(0);
   }
 
   /**
@@ -324,32 +284,22 @@ struct MagneticElement {
    * @return error code
    */
   MoFEMErrorCode createProblem() {
-
-    MoFEMFunctionBeginHot;
+    MoFEMFunctionBegin;
     // set up DM
     DMType dm_name = "MAGNETIC_PROBLEM";
-    ierr = DMRegister_MoFEM(dm_name);
-    CHKERRG(ierr);
-    ierr = DMCreate(PETSC_COMM_WORLD, &blockData.dM);
-    CHKERRG(ierr);
-    ierr = DMSetType(blockData.dM, dm_name);
-    CHKERRG(ierr);
-    ierr = DMMoFEMCreateMoFEM(blockData.dM, &mField, dm_name,
+    CHKERR DMRegister_MoFEM(dm_name);
+    CHKERR DMCreate(PETSC_COMM_WORLD, &blockData.dM);
+    CHKERR DMSetType(blockData.dM, dm_name);
+    CHKERR DMMoFEMCreateMoFEM(blockData.dM, &mField, dm_name,
                               BitRefLevel().set(0));
-    CHKERRG(ierr);
-    ierr = DMSetFromOptions(blockData.dM);
-    CHKERRG(ierr);
+    CHKERR DMSetFromOptions(blockData.dM);
     // add elements to blockData.dM
-    ierr = DMMoFEMAddElement(blockData.dM, blockData.feName.c_str());
-    CHKERRG(ierr);
-    ierr = DMMoFEMAddElement(blockData.dM, blockData.feNaturalBCName.c_str());
-    CHKERRG(ierr);
-    ierr = DMSetUp(blockData.dM);
-    CHKERRG(ierr);
+    CHKERR DMMoFEMAddElement(blockData.dM, blockData.feName.c_str());
+    CHKERR DMMoFEMAddElement(blockData.dM, blockData.feNaturalBCName.c_str());
+    CHKERR DMSetUp(blockData.dM);
     // create matrices and vectors
-    ierr = DMCreateGlobalVector(blockData.dM, &blockData.D);
-    CHKERRG(ierr);
-    MoFEMFunctionReturnHot(0);
+    CHKERR DMCreateGlobalVector(blockData.dM, &blockData.D);
+    MoFEMFunctionReturn(0);
   }
 
   /**
@@ -372,14 +322,10 @@ struct MagneticElement {
    *
    */
   MoFEMErrorCode solveProblem() {
-
-    MoFEMFunctionBeginHot;
-    ierr = DMCreateMatrix(blockData.dM, &blockData.A);
-    CHKERRG(ierr);
-    ierr = DMCreateGlobalVector(blockData.dM, &blockData.F);
-    CHKERRG(ierr);
-    ierr = VecDuplicate(blockData.F, &blockData.D);
-    CHKERRG(ierr);
+    MoFEMFunctionBegin;
+    CHKERR DMCreateMatrix(blockData.dM, &blockData.A);
+    CHKERR DMCreateGlobalVector(blockData.dM, &blockData.F);
+    CHKERR VecDuplicate(blockData.F, &blockData.D);
 
     VolumeFE vol_fe(mField);
     vol_fe.getOpPtrVector().push_back(new OpCurlCurl(blockData));
@@ -387,40 +333,27 @@ struct MagneticElement {
     TriFE tri_fe(mField);
     tri_fe.getOpPtrVector().push_back(new OpNaturalBC(blockData));
 
-    ierr = MatZeroEntries(blockData.A);
-    CHKERRG(ierr);
-    ierr = VecZeroEntries(blockData.F);
-    CHKERRG(ierr);
-    ierr = VecGhostUpdateBegin(blockData.F, ADD_VALUES, SCATTER_FORWARD);
-    CHKERRG(ierr);
-    ierr = VecGhostUpdateEnd(blockData.F, ADD_VALUES, SCATTER_FORWARD);
-    CHKERRG(ierr);
+    CHKERR MatZeroEntries(blockData.A);
+    CHKERR VecZeroEntries(blockData.F);
+    CHKERR VecGhostUpdateBegin(blockData.F, ADD_VALUES, SCATTER_FORWARD);
+    CHKERR VecGhostUpdateEnd(blockData.F, ADD_VALUES, SCATTER_FORWARD);
 
-    ierr = DMoFEMLoopFiniteElements(blockData.dM, blockData.feName.c_str(),
+    CHKERR DMoFEMLoopFiniteElements(blockData.dM, blockData.feName.c_str(),
                                     &vol_fe);
-    CHKERRG(ierr);
-    ierr = DMoFEMLoopFiniteElements(blockData.dM,
+    CHKERR DMoFEMLoopFiniteElements(blockData.dM,
                                     blockData.feNaturalBCName.c_str(), &tri_fe);
-    CHKERRG(ierr);
 
-    ierr = MatAssemblyBegin(blockData.A, MAT_FINAL_ASSEMBLY);
-    CHKERRG(ierr);
-    ierr = MatAssemblyEnd(blockData.A, MAT_FINAL_ASSEMBLY);
-    CHKERRG(ierr);
-    ierr = VecGhostUpdateBegin(blockData.F, ADD_VALUES, SCATTER_REVERSE);
-    CHKERRG(ierr);
-    ierr = VecGhostUpdateEnd(blockData.F, ADD_VALUES, SCATTER_REVERSE);
-    CHKERRG(ierr);
-    ierr = VecAssemblyBegin(blockData.F);
-    CHKERRG(ierr);
-    ierr = VecAssemblyEnd(blockData.F);
-    CHKERRG(ierr);
+    CHKERR MatAssemblyBegin(blockData.A, MAT_FINAL_ASSEMBLY);
+    CHKERR MatAssemblyEnd(blockData.A, MAT_FINAL_ASSEMBLY);
+    CHKERR VecGhostUpdateBegin(blockData.F, ADD_VALUES, SCATTER_REVERSE);
+    CHKERR VecGhostUpdateEnd(blockData.F, ADD_VALUES, SCATTER_REVERSE);
+    CHKERR VecAssemblyBegin(blockData.F);
+    CHKERR VecAssemblyEnd(blockData.F);
 
     // Boundary conditions
     std::vector<int> dofs_bc_indices;
     const MoFEM::Problem *problem_ptr;
     ierr = DMMoFEMGetProblemPtr(blockData.dM, &problem_ptr);
-    CHKERRG(ierr);
     for (Range::iterator eit = blockData.essentialBc.begin();
          eit != blockData.essentialBc.end(); eit++) {
       for (_IT_NUMEREDDOF_ROW_BY_NAME_ENT_PART_FOR_LOOP_(
@@ -434,45 +367,30 @@ struct MagneticElement {
     }
 
     const double diag = 1;
-    ierr = MatZeroRowsColumns(
+    CHKERR MatZeroRowsColumns(
         blockData.A, dofs_bc_indices.size(),
         dofs_bc_indices.empty() ? PETSC_NULL : &*dofs_bc_indices.begin(), diag,
         PETSC_NULL, PETSC_NULL);
-    CHKERRG(ierr);
 
     KSP solver;
-    ierr = KSPCreate(PETSC_COMM_WORLD, &solver);
-    CHKERRG(ierr);
-    // ierr = KSPSetDM(solver,blockData.dM); CHKERRG(ierr);
-    ierr = KSPSetOperators(solver, blockData.A, blockData.A);
-    CHKERRG(ierr);
-    ierr = KSPSetFromOptions(solver);
-    CHKERRG(ierr);
-    ierr = KSPSetUp(solver);
-    CHKERRG(ierr);
-    ierr = KSPSolve(solver, blockData.F, blockData.D);
-    CHKERRG(ierr);
-    ierr = VecGhostUpdateBegin(blockData.D, INSERT_VALUES, SCATTER_FORWARD);
-    CHKERRG(ierr);
-    ierr = VecGhostUpdateEnd(blockData.D, INSERT_VALUES, SCATTER_FORWARD);
-    CHKERRG(ierr);
-    ierr = KSPDestroy(&solver);
-    CHKERRG(ierr);
-    ierr = VecDestroy(&blockData.F);
-    CHKERRG(ierr);
-    ierr = MatDestroy(&blockData.A);
-    CHKERRG(ierr);
+    CHKERR KSPCreate(PETSC_COMM_WORLD, &solver);
+    // CHKERR KSPSetDM(solver,blockData.dM); CHKERRG(ierr);
+    CHKERR KSPSetOperators(solver, blockData.A, blockData.A);
+    CHKERR KSPSetFromOptions(solver);
+    CHKERR KSPSetUp(solver);
+    CHKERR KSPSolve(solver, blockData.F, blockData.D);
+    CHKERR VecGhostUpdateBegin(blockData.D, INSERT_VALUES, SCATTER_FORWARD);
+    CHKERR VecGhostUpdateEnd(blockData.D, INSERT_VALUES, SCATTER_FORWARD);
+    CHKERR KSPDestroy(&solver);
+    CHKERR VecDestroy(&blockData.F);
+    CHKERR MatDestroy(&blockData.A);
 
-    ierr = VecGhostUpdateBegin(blockData.D, INSERT_VALUES, SCATTER_FORWARD);
-    CHKERRG(ierr);
-    ierr = VecGhostUpdateEnd(blockData.D, INSERT_VALUES, SCATTER_FORWARD);
-    CHKERRG(ierr);
-    ierr = DMoFEMMeshToLocalVector(blockData.dM, blockData.D, INSERT_VALUES,
+    CHKERR VecGhostUpdateBegin(blockData.D, INSERT_VALUES, SCATTER_FORWARD);
+    CHKERR VecGhostUpdateEnd(blockData.D, INSERT_VALUES, SCATTER_FORWARD);
+    CHKERR DMoFEMMeshToLocalVector(blockData.dM, blockData.D, INSERT_VALUES,
                                    SCATTER_REVERSE);
-    CHKERRG(ierr);
-    ierr = VecDestroy(&blockData.D);
-    CHKERRG(ierr);
-    MoFEMFunctionReturnHot(0);
+    CHKERR VecDestroy(&blockData.D);
+    MoFEMFunctionReturn(0);
   }
 
   /**
@@ -482,22 +400,17 @@ struct MagneticElement {
    */
   MoFEMErrorCode postProcessResults() {
 
-    MoFEMFunctionBeginHot;
+    MoFEMFunctionBegin;
     PostProcVolumeOnRefinedMesh post_proc(mField);
-    ierr = post_proc.generateReferenceElementMesh();
-    CHKERRG(ierr);
-    ierr = post_proc.addFieldValuesPostProc("MESH_NODE_POSITIONS");
-    CHKERRG(ierr);
-    ierr = post_proc.addFieldValuesPostProc(blockData.fieldName);
-    CHKERRG(ierr);
+    CHKERR post_proc.generateReferenceElementMesh();
+    CHKERR post_proc.addFieldValuesPostProc("MESH_NODE_POSITIONS");
+    CHKERR post_proc.addFieldValuesPostProc(blockData.fieldName);
     post_proc.getOpPtrVector().push_back(new OpPostProcessCurl(
         blockData, post_proc.postProcMesh, post_proc.mapGaussPts));
-    ierr = DMoFEMLoopFiniteElements(blockData.dM, blockData.feName.c_str(),
+    CHKERR DMoFEMLoopFiniteElements(blockData.dM, blockData.feName.c_str(),
                                     &post_proc);
-    CHKERRG(ierr);
-    ierr = post_proc.writeFile("out_values.h5m");
-    CHKERRG(ierr);
-    MoFEMFunctionReturnHot(0);
+    CHKERR post_proc.writeFile("out_values.h5m");
+    MoFEMFunctionReturn(0);
   }
 
   /** \brief calculate and assemble CurlCurl matrix
@@ -919,7 +832,7 @@ struct MagneticElement {
         double *ptr = &((double *)tags_ptr[gg])[0];
         FTensor::Tensor1<double *, 3> t_curl(ptr, &ptr[1], &ptr[2]);
 
-        // caclulate curl value
+        // calculate curl value
         for (int aa = 0; aa != nb_row_dofs; aa++) {
           t_curl(i) += row_data.getFieldData()[aa] * t_base_curl(i);
           ++t_base_curl;
