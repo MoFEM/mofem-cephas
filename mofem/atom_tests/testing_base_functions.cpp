@@ -251,7 +251,7 @@ int main(int argc, char *argv[]) {
       ierr = IntegratedJacobiPolynomial().getValue(
           pts_1d, pts_1d_t,
           boost::shared_ptr<BaseFunctionCtx>(new IntegratedJacobiPolynomialCtx(
-              6, &diff_x, &diff_t, 1, 0, base_ptr, diff_base_ptr)));
+              6, &diff_x, &diff_t, 1, 1, base_ptr, diff_base_ptr)));
       CHKERRG(ierr);
       for (int ii = 0; ii != n; ii++) {
         double s = pts_1d(0, ii);
@@ -469,8 +469,8 @@ int main(int argc, char *argv[]) {
           tet_data.dataOnEntities[MBTET][0].getDiffN(DEMKOWICZ_JACOBI_BASE));
       std::cout << "sum  " << sum << std::endl;
       std::cout << "diff_sum " << diff_sum << std::endl;
-      const double expected_result = -74.0942;
-      const double expected_diff_result = 1083.47;
+      const double expected_result = -2.70651;
+      const double expected_diff_result = 289.421;
       if (fabs((expected_result - sum) / expected_result) > eps) {
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "wrong result");
       }
@@ -577,10 +577,10 @@ int main(int argc, char *argv[]) {
           tet_data.dataOnEntities[MBTET][0].getDiffN(DEMKOWICZ_JACOBI_BASE));
       std::cout << "sum  " << sum << std::endl;
       std::cout << "diff_sum " << diff_sum << std::endl;
-      if (fabs(18.0319 - sum) > eps) {
+      if (fabs(7.35513 - sum) > eps) {
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "wrong result");
       }
-      if (fabs(255.505 - diff_sum) > eps) {
+      if (fabs(62.4549 - diff_sum) > eps) {
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "wrong result");
       }
     }
@@ -807,7 +807,7 @@ int main(int argc, char *argv[]) {
       sum += sum_matrix(
           tri_data.dataOnEntities[MBTRI][0].getN(DEMKOWICZ_JACOBI_BASE));
       std::cout << "sum  " << sum << std::endl;
-      if (fabs(2.85301 - sum) > eps) {
+      if (fabs(1.04591 - sum) > eps) {
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "wrong result");
       }
     }
