@@ -2130,7 +2130,7 @@ struct HcurlEdgeBase {
 
         FTensor::Tensor1<double *, 2> t_diff_fi(&diff_fi(0, 1), &diff_fi(1, 1));
 
-        cerr << diff_fi << endl;
+        // cerr << diff_fi << endl;
 
         FTensor::Tensor1<double, 2> t_diff_b;
         for (int oo = 1; oo <= p - 1; ++oo) {
