@@ -190,9 +190,8 @@ PetscErrorCode IntegratedJacobi_polynomials(int p, double alpha, double x,
   int l = 1;
   for (; l < p; l++) {
     int i = l + 1;
-    const double z = (2 * i + alpha - 1) * (2 * i + alpha);
-    const double a = (i + alpha) / z;
-    const double b = alpha / z;
+    const double a = (i + alpha) / ((2 * i + alpha - 1) * (2 * i + alpha));
+    const double b = alpha / ((2 * i + alpha - 2) * (2 * i + alpha));
     const double c = (i - 1) / ((2 * i + alpha - 2) * (2 * i + alpha - 1));
     L[l] = a * jacobi[i] + b * t * jacobi[i - 1] - c * t * t * jacobi[i - 2];
     if (diffL != NULL) {

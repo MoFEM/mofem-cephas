@@ -1,9 +1,10 @@
 /** \file magnetostatic.cpp
-  * \ingroup maxwell_element
-  *
-  * \brief Example implementation of magnetostaic problem
-  *
-  */
+ * \example magnetostatic.cpp
+ * \ingroup maxwell_element
+ *
+ * \brief Example implementation of magnetostatics problem
+ *
+ */
 
 /* This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
@@ -27,71 +28,66 @@ static char help[] = "...\n\n";
 
 int main(int argc, char *argv[]) {
 
-  
-  
+  MoFEM::Core::Initialize(&argc,&argv,(char *)0,help);
 
-  PetscInitialize(&argc,&argv,(char *)0,help);
+  try {
 
-  moab::Core mb_instance;
-  moab::Interface& moab = mb_instance;
+    moab::Core mb_instance;
+    moab::Interface &moab = mb_instance;
 
-  ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
-  if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
+    ParallelComm *pcomm = ParallelComm::get_pcomm(&moab, MYPCOMM_INDEX);
+    if (pcomm == NULL)
+      pcomm = new ParallelComm(&moab, PETSC_COMM_WORLD);
 
-  //Read parameters from line command
-  PetscBool flg_file;
-  char mesh_file_name[255];
-  PetscInt order = 2;
-  PetscBool is_partitioned = PETSC_FALSE;
+    // Read parameters from line command
+    PetscBool flg_file;
+    char mesh_file_name[255];
+    PetscInt order = 2;
+    PetscBool is_partitioned = PETSC_FALSE;
 
-  ierr = PetscOptionsBegin(
-    PETSC_COMM_WORLD,"","Shell prism configure","none"
-  ); CHKERRG(ierr);
-  ierr = PetscOptionsString(
-    "-my_file",
-    "mesh file name","", "mesh.h5m",mesh_file_name, 255, &flg_file
-  ); CHKERRG(ierr);
-  ierr = PetscOptionsInt(
-    "-my_order",
-    "default approximation order",
-    "",order,&order,PETSC_NULL
-  ); CHKERRG(ierr);
-  ierr = PetscOptionsBool(
-    "-my_is_partitioned",
-    "set if mesh is partitioned (this result that each process keeps only part of the mesh)",
-    "",PETSC_FALSE,&is_partitioned,PETSC_NULL
-  ); CHKERRG(ierr);
-  ierr = PetscOptionsEnd(); CHKERRG(ierr);
+    CHKERR PetscOptionsBegin(PETSC_COMM_WORLD, "", "Shell prism configure",
+                             "none");
+    CHKERR PetscOptionsString("-my_file", "mesh file name", "", "mesh.h5m",
+                              mesh_file_name, 255, &flg_file);
+    CHKERR PetscOptionsInt("-my_order", "default approximation order", "",
+                           order, &order, PETSC_NULL);
+    CHKERR PetscOptionsBool("-my_is_partitioned",
+                            "set if mesh is partitioned (this result that each "
+                            "process keeps only part of the mesh)",
+                            "", PETSC_FALSE, &is_partitioned, PETSC_NULL);
+    ierr = PetscOptionsEnd();
 
-  if(is_partitioned == PETSC_TRUE) {
-    //Read mesh to MOAB
-    const char *option;
-    option = "PARALLEL=READ_PART;"
-      "PARALLEL_RESOLVE_SHARED_ENTS;"
-      "PARTITION=PARALLEL_PARTITION;";
-    rval = moab.load_file(mesh_file_name, 0, option); CHKERRG(rval);
-  } else {
-    const char *option;
-    option = "";
-    rval = moab.load_file(mesh_file_name, 0, option); CHKERRG(rval);
+    if (is_partitioned == PETSC_TRUE) {
+      // Read mesh to MOAB
+      const char *option;
+      option = "PARALLEL=READ_PART;"
+               "PARALLEL_RESOLVE_SHARED_ENTS;"
+               "PARTITION=PARALLEL_PARTITION;";
+      CHKERR moab.load_file(mesh_file_name, 0, option);
+    } else {
+      const char *option;
+      option = "";
+      CHKERR moab.load_file(mesh_file_name, 0, option);
+    }
+
+    // Create mofem interface
+    MoFEM::Core core(moab);
+    MoFEM::Interface &m_field = core;
+
+    MagneticElement magnetic(m_field);
+    magnetic.blockData.oRder = order;
+    CHKERR magnetic.getNaturalBc();
+    CHKERR magnetic.getEssentialBc();
+    CHKERR magnetic.createFields();
+    CHKERR magnetic.createElements();
+    CHKERR magnetic.createProblem();
+    CHKERR magnetic.solveProblem();
+    CHKERR magnetic.postProcessResults();
+    CHKERR magnetic.destroyProblem();
   }
+  CATCH_ERRORS;
 
-  //Create mofem interface
-  MoFEM::Core core(moab);
-  MoFEM::Interface& m_field = core;
-
-  MagneticElement magnetic(m_field);
-  magnetic.blockData.oRder = order;
-  ierr = magnetic.getNaturalBc(); CHKERRG(ierr);
-  ierr = magnetic.getEssentialBc(); CHKERRG(ierr);
-  ierr = magnetic.createFields(); CHKERRG(ierr);
-  ierr = magnetic.createElements(); CHKERRG(ierr);
-  ierr = magnetic.createProblem(); CHKERRG(ierr);
-  ierr = magnetic.solveProblem(); CHKERRG(ierr);
-  ierr = magnetic.postProcessResults(); CHKERRG(ierr);
-  ierr = magnetic.destroyProblem(); CHKERRG(ierr);
-
-  ierr = PetscFinalize(); CHKERRG(ierr);
+  MoFEM::Core::Finalize(); CHKERRG(ierr);
 
   return 0;
 }
