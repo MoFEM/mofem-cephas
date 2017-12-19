@@ -770,7 +770,7 @@ MoFEMErrorCode MoFEM::Hdiv_Demkowicz_Interior_MBTET(
   const int opposite_face_node[4] = {2, 0, 1, 3};
   // list of zero node faces
   const int znf[] = {0, 2, 3};
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
 
   FTensor::Index<'i', 3> i;
   FTensor::Index<'j', 3> j;
@@ -784,6 +784,11 @@ MoFEMErrorCode MoFEM::Hdiv_Demkowicz_Interior_MBTET(
       FTensor::Tensor1<double, 3>(diffN[6], diffN[7], diffN[8]);
   t_node_diff_ksi[3] =
       FTensor::Tensor1<double, 3>(diffN[9], diffN[10], diffN[11]);
+  FTensor::Tensor1<double, 3> t_m_node_diff_ksi[4];
+  for (int ff = 0; ff != 4; ++ff) {
+    t_m_node_diff_ksi[ff](i) = -t_node_diff_ksi[ff](i);
+  }
+
 
   FTensor::Tensor1<double *, 3> t_phi_v(&phi_v[HDIV0], &phi_v[HDIV1],
                                         &phi_v[HDIV2], 3);
@@ -793,7 +798,6 @@ MoFEMErrorCode MoFEM::Hdiv_Demkowicz_Interior_MBTET(
       &diff_phi_v[HDIV2_0], &diff_phi_v[HDIV2_1], &diff_phi_v[HDIV2_2], 9);
 
   MatrixDouble fk(3, p + 1), diff_fk(3, 3 * p + 3);
-  double tmp_fk[p + 1], tmp_diff_fk[3 * p + 3];
 
   for (int ii = 0; ii != gdim; ii++) {
     const int shift = 4 * ii;
@@ -802,15 +806,10 @@ MoFEMErrorCode MoFEM::Hdiv_Demkowicz_Interior_MBTET(
       const int fff = znf[ff];
       const int iO = opposite_face_node[fff];
       const double nO = N[shift + iO];
-      for (int pp = 0; pp <= p; pp++) {
-        ierr =
-            Jacobi_polynomials(pp, 2 * pp + 2, nO, nO, &t_node_diff_ksi[iO](0),
-                               &t_node_diff_ksi[iO](0), tmp_fk, tmp_diff_fk, 3);
-        CHKERRG(ierr);
-        fk(ff, pp) = tmp_fk[pp];
-        diff_fk(ff, 0 * (p + 1) + pp) = tmp_diff_fk[0 * (pp + 1) + pp];
-        diff_fk(ff, 1 * (p + 1) + pp) = tmp_diff_fk[1 * (pp + 1) + pp];
-        diff_fk(ff, 2 * (p + 1) + pp) = tmp_diff_fk[2 * (pp + 1) + pp];
+      for (int pp = 1; pp <= p; pp++) {
+        CHKERR IntegratedJacobi_polynomials(
+            pp, 2 * pp + 2, nO, 1 - nO, &t_node_diff_ksi[iO](0),
+            &t_m_node_diff_ksi[iO](0), &fk(ff, 0), &diff_fk(ff, 0), 3);
       }
     }
 
@@ -870,12 +869,12 @@ MoFEMErrorCode MoFEM::Hdiv_Demkowicz_Interior_MBTET(
                   &diff_phi_f[znf[2]][sdp[2] + HDIV2_2], 9)};
           for (int ij = s; ij != NBFACETRI_DEMKOWICZ_HDIV(OO); ij++) {
             for (int ff = 0; ff != 3; ff++) {
-              FTensor::Tensor1<double, 3> t_diff_fk(
-                  diff_fk(ff, 0 * (p + 1) + k), diff_fk(ff, 1 * (p + 1) + k),
-                  diff_fk(ff, 2 * (p + 1) + k));
-              t_phi_v(i) = fk(ff, k) * t_phi_f[ff](i);
+              FTensor::Tensor1<double, 3> t_diff_fk(diff_fk(ff, 0 * p + k - 1),
+                                                    diff_fk(ff, 1 * p + k - 1),
+                                                    diff_fk(ff, 2 * p + k - 1));
+              t_phi_v(i) = fk(ff, k - 1) * t_phi_f[ff](i);
               t_diff_phi_v(i, j) = t_diff_fk(j) * t_phi_f[ff](i) +
-                                   fk(ff, k) * t_diff_phi_f[ff](i, j);
+                                   fk(ff, k - 1) * t_diff_phi_f[ff](i, j);
               ++t_phi_v;
               ++t_diff_phi_v;
               ++t_phi_f[ff];
@@ -895,5 +894,5 @@ MoFEMErrorCode MoFEM::Hdiv_Demkowicz_Interior_MBTET(
     }
   }
 
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
