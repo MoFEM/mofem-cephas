@@ -457,9 +457,7 @@ int main(int argc, char *argv[]) {
   rval = moab.write_file("out.vtk","VTK","",&meshset,1); CHKERRG(rval);
 
 
-  } catch (MoFEMException const &e) {
-    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
-  }
+  } CATCH_ERRORS;
 
   ierr = MoFEM::Core::Finalize(); CHKERRG(ierr);
 }

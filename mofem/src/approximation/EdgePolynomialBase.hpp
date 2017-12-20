@@ -52,7 +52,12 @@ private:
 
   MoFEMErrorCode getValueHdiv(MatrixDouble &pts);
 
-  MoFEMErrorCode getValueHCurl(MatrixDouble &pts);
+  MoFEMErrorCode getValueHcurl(MatrixDouble &pts);
+
+  MoFEMErrorCode getValueHcurlAinsworthBase(MatrixDouble &pts);
+
+  MoFEMErrorCode getValueHcurlDemkowiczBase(MatrixDouble &pts);
+
 };
 
 } // namespace MoFEM

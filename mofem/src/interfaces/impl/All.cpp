@@ -4,7 +4,6 @@ const static int debug = 1;
 
 #include <version.h>
 #include <Includes.hpp>
-#include <version.h>
 #include <definitions.h>
 #include <Common.hpp>
 

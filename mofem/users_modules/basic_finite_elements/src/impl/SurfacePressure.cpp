@@ -457,9 +457,8 @@ MoFEMErrorCode NeummanForcesSurface::addPressure(const std::string field_name,Ve
   MoFEMFunctionReturnHot(0);
 }
 
-DEPRECATED MoFEMErrorCode NeummanForcesSurface::addPreassure(const std::string field_name,Vec F,int ms_id,bool ho_geometry,bool block_set) {
-  NeummanForcesSurface::addPressure(field_name,F,ms_id,ho_geometry,block_set); 
-
+MoFEMErrorCode NeummanForcesSurface::addPreassure(const std::string field_name,Vec F,int ms_id,bool ho_geometry,bool block_set) {
+  return NeummanForcesSurface::addPressure(field_name,F,ms_id,ho_geometry,block_set); 
 }
 MoFEMErrorCode NeummanForcesSurface::addFlux(const std::string field_name,Vec F,int ms_id,bool ho_geometry) {
 

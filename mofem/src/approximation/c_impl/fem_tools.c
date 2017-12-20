@@ -275,7 +275,7 @@ PetscErrorCode ShapeJacMBTET(double *diffN,const double *coords,double *jac) {
   bzero(jac,sizeof(double)*9);
   for(ii = 0; ii<4; ii++) 	//shape func.
     for(jj = 0; jj<3; jj++) 	//space
-      for(kk = 0; kk<3; kk++) 	//direvative of shape func.
+      for(kk = 0; kk<3; kk++) 	//derivative of shape func.
 	jac[ jj*3+kk ] +=
 	diffN[ ii*3+kk ]*coords[ ii*3+jj ];
   MoFEMFunctionReturnHot(0);

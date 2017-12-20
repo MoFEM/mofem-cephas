@@ -170,7 +170,7 @@ MoFEMErrorCode FatPrismPolynomialBase::getValue(
     ierr = getValueHdiv(pts); CHKERRG(ierr);
     break;
     case HCURL:
-    ierr = getValueHCurl(pts); CHKERRG(ierr);
+    ierr = getValueHcurl(pts); CHKERRG(ierr);
     break;
     case L2:
     ierr = getValueL2(pts); CHKERRG(ierr);
@@ -480,6 +480,6 @@ MoFEMErrorCode FatPrismPolynomialBase::getValueHdiv(MatrixDouble &pts) {
   SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"Not yet implemented");
 }
 
-MoFEMErrorCode FatPrismPolynomialBase::getValueHCurl(MatrixDouble &pts) {
+MoFEMErrorCode FatPrismPolynomialBase::getValueHcurl(MatrixDouble &pts) {
   SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"Not yet implemented");
 }

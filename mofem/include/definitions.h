@@ -90,6 +90,7 @@ enum BaseIntefaces {
   LOBATTO_BASE_FUNCTION_INTERFACE   = 1 << 5 | 1 << 8,
   KERNEL_BASE_FUNCTION_INTERFACE    = 1 << 5 | 1 << 9,
   JACOBI_BASE_FUNCTION_INTERFACE    = 1 << 5 | 1 << 10,
+  INTEGRATED_JACOBI_BASE_FUNCTION_INTERFACE = 1 << 5 | 1 << 11,
   ENT_BASE_FUNCTION_INTERFACE       = 1 << 5 | 1 << 6 | 1 << 7,
   TET_BASE_FUNCTION_INTERFACE       = 1 << 5 | 1 << 6 | 1 << 8,
   TRI_BASE_FUNCTION_INTERFACE       = 1 << 5 | 1 << 6 | 1 << 9,
@@ -173,8 +174,8 @@ enum FieldSpace {
   NOSPACE = 0,
   NOFIELD = 1, ///< scalar or vector of scalars describe (no true field)
   H1,          ///< continuous field
-  HDIV,        ///< field with continuous normal traction
   HCURL,       ///< field with continuous tangents
+  HDIV,        ///< field with continuous normal traction
   L2,          ///< field with C-1 continuity
   LASTSPACE    ///< FieldSpace in [ 0, LASTSPACE )
 };
@@ -183,8 +184,8 @@ const static char * const FieldSpaceNames[] = {
   "NOSPACE",
   "NOFIELD",
   "H1",
-  "HDIV",
   "HCURL",
+  "HDIV",
   "L2",
   "LASTSPACE"
 };

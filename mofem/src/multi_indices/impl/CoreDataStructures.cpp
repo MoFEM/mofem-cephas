@@ -1,5 +1,5 @@
 /** \file CoreDataStructures.cpp
- * \brief Myltindex containers, data structures and other low-level functions
+ * \brief Multi-index containers, data structures and other low-level functions
  */
 
 /* MoFEM is free software: you can redistribute it and/or modify it under
@@ -124,17 +124,17 @@ Field::Field(const Interface &moab, const EntityHandle meshset,
       forder_table[MBTET] = fNBVOLUMETET_H1;
       forder_table[MBPRISM] = fNBVOLUMEPRISM_H1;
       break;
+    case HCURL:
+      forder_table[MBVERTEX] = fNBVERTEX_HCURL;
+      forder_table[MBEDGE] = fNBEDGE_AINSWORTH_HCURL;
+      forder_table[MBTRI] = fNBFACETRI_AINSWORTH_HCURL;
+      forder_table[MBTET] = fNBVOLUMETET_AINSWORTH_HCURL;
+      break;
     case HDIV:
       forder_table[MBVERTEX] = fNBVERTEX_HDIV;
       forder_table[MBEDGE] = fNBEDGE_HDIV;
       forder_table[MBTRI] = fNBFACETRI_AINSWORTH_HDIV;
       forder_table[MBTET] = fNBVOLUMETET_AINSWORTH_HDIV;
-      break;
-    case HCURL:
-      forder_table[MBVERTEX] = fNBVERTEX_HCURL;
-      forder_table[MBEDGE] = fNBEDGE_AINSWORTH_HCURL;
-      forder_table[MBTRI] = fNBFACETRI_AINSWORTH_HCURL;
-      forder_table[MBTET] = fNBVOLUMETET_HCURL;
       break;
     case L2:
       forder_table[MBVERTEX] = fNBVERTEX_L2;
@@ -154,6 +154,12 @@ Field::Field(const Interface &moab, const EntityHandle meshset,
     break;
   case DEMKOWICZ_JACOBI_BASE:
     switch (*tag_space_data) {
+    case HCURL:
+      forder_table[MBVERTEX] = fNBVERTEX_HCURL;
+      forder_table[MBEDGE] = fNBEDGE_DEMKOWICZ_HCURL;
+      forder_table[MBTRI] = fNBFACETRI_DEMKOWICZ_HCURL;
+      forder_table[MBTET] = fNBVOLUMETET_DEMKOWICZ_HCURL;
+      break;
     case HDIV:
       forder_table[MBVERTEX] = fNBVERTEX_HDIV;
       forder_table[MBEDGE] = fNBEDGE_HDIV;

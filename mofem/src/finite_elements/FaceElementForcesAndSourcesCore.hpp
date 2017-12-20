@@ -8,18 +8,18 @@
 */
 
 /* This file is part of MoFEM.
-* MoFEM is free software: you can redistribute it and/or modify it under
-* the terms of the GNU Lesser General Public License as published by the
-* Free Software Foundation, either version 3 of the License, or (at your
-* option) any later version.
-*
-* MoFEM is distributed in the hope that it will be useful, but WITHOUT
-* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
-* License for more details.
-*
-* You should have received a copy of the GNU Lesser General Public
-* License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
+ * MoFEM is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU Lesser General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or (at your
+ * option) any later version.
+ *
+ * MoFEM is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
+ * License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 #ifndef __FACEELEMENTFORCESANDSOURCESCORE_HPP__
 #define __FACEELEMENTFORCESANDSOURCESCORE_HPP__
@@ -36,12 +36,13 @@ namespace MoFEM {
  number of operator added pushing objects to OpPtrVector
 
  */
-struct FaceElementForcesAndSourcesCore: public ForcesAndSourcesCore {
+struct FaceElementForcesAndSourcesCore : public ForcesAndSourcesCore {
 
-  double aRea;;
+  double aRea;
+  ;
   int num_nodes;
-  const EntityHandle* conn;
-  VectorDouble nOrmal,tangentOne,tangentTwo;
+  const EntityHandle *conn;
+  VectorDouble nOrmal, tangentOne, tangentTwo;
   VectorDouble coords;
   MatrixDouble gaussPts;
   MatrixDouble coordsAtGaussPts;
@@ -54,7 +55,7 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSourcesCore {
   DerivedDataForcesAndSourcesCore derivedDataHcurl;
   DataForcesAndSourcesCore dataL2;
   DerivedDataForcesAndSourcesCore derivedDataL2;
-  DataForcesAndSourcesCore dataNoField,dataNoFieldCol;
+  DataForcesAndSourcesCore dataNoField, dataNoFieldCol;
 
   std::string meshPositionsFieldName; ///< Name of the field with geometry
 
@@ -66,111 +67,105 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSourcesCore {
   OpSetContravariantPiolaTransformOnTriangle opContravariantTransform;
   OpSetCovariantPiolaTransformOnTriangle opCovariantTransform;
 
-  FaceElementForcesAndSourcesCore(Interface &m_field):
-  ForcesAndSourcesCore(m_field),
-  dataH1(MBTRI),derivedDataH1(dataH1),
-  dataHdiv(MBTRI),derivedDataHdiv(dataHdiv),
-  dataHcurl(MBTRI),derivedDataHcurl(dataHcurl),
-  dataL2(MBTRI),derivedDataL2(dataL2),
-  dataNoField(MBTRI),dataNoFieldCol(MBTRI),
-  meshPositionsFieldName("MESH_NODE_POSITIONS"),
-  opHOCoordsAndNormals(
-    hoCoordsAtGaussPts,normalsAtGaussPt,tangentOneAtGaussPt,tangentTwoAtGaussPt
-  ),
-  opContravariantTransform(nOrmal,normalsAtGaussPt),
-  opCovariantTransform(
-    nOrmal,normalsAtGaussPt,
-    tangentOne,tangentOneAtGaussPt,
-    tangentTwo,tangentTwoAtGaussPt
-  ) {
-  }
+  FaceElementForcesAndSourcesCore(Interface &m_field)
+      : ForcesAndSourcesCore(m_field), dataH1(MBTRI), derivedDataH1(dataH1),
+        dataHdiv(MBTRI), derivedDataHdiv(dataHdiv), dataHcurl(MBTRI),
+        derivedDataHcurl(dataHcurl), dataL2(MBTRI), derivedDataL2(dataL2),
+        dataNoField(MBTRI), dataNoFieldCol(MBTRI),
+        meshPositionsFieldName("MESH_NODE_POSITIONS"),
+        opHOCoordsAndNormals(hoCoordsAtGaussPts, normalsAtGaussPt,
+                             tangentOneAtGaussPt, tangentTwoAtGaussPt),
+        opContravariantTransform(nOrmal, normalsAtGaussPt),
+        opCovariantTransform(nOrmal, normalsAtGaussPt, tangentOne,
+                             tangentOneAtGaussPt, tangentTwo,
+                             tangentTwoAtGaussPt) {}
 
   /** \brief default operator for TRI element
-    * \ingroup mofem_forces_and_sources_tri_element
-    */
-  struct UserDataOperator: public ForcesAndSourcesCore::UserDataOperator {
+   * \ingroup mofem_forces_and_sources_tri_element
+   */
+  struct UserDataOperator : public ForcesAndSourcesCore::UserDataOperator {
 
-    UserDataOperator(const FieldSpace space):
-    ForcesAndSourcesCore::UserDataOperator(space) {}
+    UserDataOperator(const FieldSpace space)
+        : ForcesAndSourcesCore::UserDataOperator(space) {}
 
-    UserDataOperator(const std::string &field_name,const char type):
-    ForcesAndSourcesCore::UserDataOperator(field_name,type) {}
+    UserDataOperator(const std::string &field_name, const char type)
+        : ForcesAndSourcesCore::UserDataOperator(field_name, type) {}
 
-    UserDataOperator(
-    const std::string &row_field_name,const std::string &col_field_name,const char type,const bool symm = true):
-    ForcesAndSourcesCore::UserDataOperator(row_field_name,col_field_name,type,symm) {};
+    UserDataOperator(const std::string &row_field_name,
+                     const std::string &col_field_name, const char type,
+                     const bool symm = true)
+        : ForcesAndSourcesCore::UserDataOperator(row_field_name, col_field_name,
+                                                 type, symm){};
 
     /**
      * \brief get area of face
      * @return area of face
      */
     inline double getArea() {
-      return static_cast<FaceElementForcesAndSourcesCore*>(ptrFE)->aRea;
+      return static_cast<FaceElementForcesAndSourcesCore *>(ptrFE)->aRea;
     }
 
     /**
      * \brief get measure of element
      * @return area of face
      */
-    inline double getMeasure() {
-      return getArea();
-    }
+    inline double getMeasure() { return getArea(); }
 
     /** \brief get triangle normal
      */
-    inline VectorDouble& getNormal() {
-      return static_cast<FaceElementForcesAndSourcesCore*>(ptrFE)->nOrmal;
+    inline VectorDouble &getNormal() {
+      return static_cast<FaceElementForcesAndSourcesCore *>(ptrFE)->nOrmal;
     }
 
     /** \brief get triangle tangent 1
      */
-    inline VectorDouble& getTangent1() {
-      return static_cast<FaceElementForcesAndSourcesCore*>(ptrFE)->tangentOne;
+    inline VectorDouble &getTangent1() {
+      return static_cast<FaceElementForcesAndSourcesCore *>(ptrFE)->tangentOne;
     }
 
     /** \brief get triangle tangent 2
      */
-    inline VectorDouble& getTangent2() {
-      return static_cast<FaceElementForcesAndSourcesCore*>(ptrFE)->tangentTwo;
+    inline VectorDouble &getTangent2() {
+      return static_cast<FaceElementForcesAndSourcesCore *>(ptrFE)->tangentTwo;
     }
 
     /** \brief get normal as tensor
-    */
-    inline FTensor::Tensor1<double*,3> getTensor1Normal() {
+     */
+    inline FTensor::Tensor1<double *, 3> getTensor1Normal() {
       double *ptr = &*getNormal().data().begin();
-      return FTensor::Tensor1<double*,3>(ptr,&ptr[1],&ptr[2]);
+      return FTensor::Tensor1<double *, 3>(ptr, &ptr[1], &ptr[2]);
     }
 
     /** \brief get tangentOne as tensor
-    */
-    inline FTensor::Tensor1<double*,3> getTensor1Tangent1() {
+     */
+    inline FTensor::Tensor1<double *, 3> getTensor1Tangent1() {
       double *ptr = &*getTangent1().data().begin();
-      return FTensor::Tensor1<double*,3>(ptr,&ptr[1],&ptr[2]);
+      return FTensor::Tensor1<double *, 3>(ptr, &ptr[1], &ptr[2]);
     }
 
     /** \brief get tangentTwo as tensor
-    */
-    inline FTensor::Tensor1<double*,3> getTensor2Tangent1() {
+     */
+    inline FTensor::Tensor1<double *, 3> getTensor2Tangent1() {
       double *ptr = &*getTangent2().data().begin();
-      return FTensor::Tensor1<double*,3>(ptr,&ptr[1],&ptr[2]);
+      return FTensor::Tensor1<double *, 3>(ptr, &ptr[1], &ptr[2]);
     }
 
     /** \brief get element number of nodes
-    */
+     */
     inline int getNumNodes() {
-      return static_cast<FaceElementForcesAndSourcesCore*>(ptrFE)->num_nodes;
+      return static_cast<FaceElementForcesAndSourcesCore *>(ptrFE)->num_nodes;
     }
 
     /** \brief get element connectivity
      */
-    inline const EntityHandle* getConn() {
-      return static_cast<FaceElementForcesAndSourcesCore*>(ptrFE)->conn;
+    inline const EntityHandle *getConn() {
+      return static_cast<FaceElementForcesAndSourcesCore *>(ptrFE)->conn;
     }
 
     /** \brief get triangle coordinates
      */
-    inline VectorDouble& getCoords() {
-      return static_cast<FaceElementForcesAndSourcesCore*>(ptrFE)->coords;
+    inline VectorDouble &getCoords() {
+      return static_cast<FaceElementForcesAndSourcesCore *>(ptrFE)->coords;
     }
 
     /**
@@ -189,21 +184,22 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSourcesCore {
     \endcode
 
      */
-    inline FTensor::Tensor1<double*,3> getTensor1Coords() {
+    inline FTensor::Tensor1<double *, 3> getTensor1Coords() {
       double *ptr = &*getCoords().data().begin();
-      return FTensor::Tensor1<double*,3>(ptr,&ptr[1],&ptr[2],3);
+      return FTensor::Tensor1<double *, 3>(ptr, &ptr[1], &ptr[2], 3);
     }
 
     /** \brief get matrix of integration (Gauss) points on Face Element
-    *  where columns 0,1 are x,y coordinates respectively and column 2 is a value of weight
-    * for example getGaussPts()(1,13) returns y coordinate of 13th Gauss point on particular face element
-    */
-    inline MatrixDouble& getGaussPts() {
-      return static_cast<FaceElementForcesAndSourcesCore*>(ptrFE)->gaussPts;
+     *  where columns 0,1 are x,y coordinates respectively and column 2 is a
+     * value of weight for example getGaussPts()(1,13) returns y coordinate of
+     * 13th Gauss point on particular face element
+     */
+    inline MatrixDouble &getGaussPts() {
+      return static_cast<FaceElementForcesAndSourcesCore *>(ptrFE)->gaussPts;
     }
 
-    inline FTensor::Tensor0<double*> getFTensor0IntegrationWeight() {
-      return FTensor::Tensor0<double*>(&(getGaussPts()(2,0)),1);
+    inline FTensor::Tensor0<double *> getFTensor0IntegrationWeight() {
+      return FTensor::Tensor0<double *>(&(getGaussPts()(2, 0)), 1);
     }
 
     /** \brief Gauss points and weight, matrix (nb. of points x 3)
@@ -212,38 +208,40 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSourcesCore {
     integration points.
 
     */
-    inline MatrixDouble& getCoordsAtGaussPts() {
-      return static_cast<FaceElementForcesAndSourcesCore*>(ptrFE)->coordsAtGaussPts;
+    inline MatrixDouble &getCoordsAtGaussPts() {
+      return static_cast<FaceElementForcesAndSourcesCore *>(ptrFE)
+          ->coordsAtGaussPts;
     }
 
     /** \brief get coordinates at Gauss pts.
      */
-    inline FTensor::Tensor1<double*,3> getTensor1CoordsAtGaussPts() {
+    inline FTensor::Tensor1<double *, 3> getTensor1CoordsAtGaussPts() {
       double *ptr = &*getCoordsAtGaussPts().data().begin();
-      return FTensor::Tensor1<double*,3>(ptr,&ptr[1],&ptr[2],3);
+      return FTensor::Tensor1<double *, 3>(ptr, &ptr[1], &ptr[2], 3);
     }
 
-    /** \brief coordinate at Gauss points (if hierarchical approximation of element geometry)
+    /** \brief coordinate at Gauss points (if hierarchical approximation of
+    element geometry)
 
     Note: returned matrix has size 0 in rows and columns if no HO approximation
     of geometry is available.
 
       */
-    inline MatrixDouble& getHoCoordsAtGaussPts() {
-      return static_cast<FaceElementForcesAndSourcesCore*>(ptrFE)->hoCoordsAtGaussPts;
+    inline MatrixDouble &getHoCoordsAtGaussPts() {
+      return static_cast<FaceElementForcesAndSourcesCore *>(ptrFE)
+          ->hoCoordsAtGaussPts;
     }
 
-    /** \brief get coordinates at Gauss pts (takes in account ho approx. of geometry)
+    /** \brief get coordinates at Gauss pts (takes in account ho approx. of
+     * geometry)
      */
-    inline FTensor::Tensor1<double*,3> getTensor1HoCoordsAtGaussPts() {
-      if(
-        getHoCoordsAtGaussPts().size1()==0 &&
-        getHoCoordsAtGaussPts().size2()!=3
-      ) {
+    inline FTensor::Tensor1<double *, 3> getTensor1HoCoordsAtGaussPts() {
+      if (getHoCoordsAtGaussPts().size1() == 0 &&
+          getHoCoordsAtGaussPts().size2() != 3) {
         return getTensor1Coords();
       }
       double *ptr = &*getHoCoordsAtGaussPts().data().begin();
-      return FTensor::Tensor1<double*,3>(ptr,&ptr[1],&ptr[2],3);
+      return FTensor::Tensor1<double *, 3>(ptr, &ptr[1], &ptr[2], 3);
     }
 
     /** \brief if higher order geometry return normals at Gauss pts.
@@ -252,36 +250,44 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSourcesCore {
     of geometry is available.
 
      */
-    inline MatrixDouble& getNormalsAtGaussPt() {
-      return static_cast<FaceElementForcesAndSourcesCore*>(ptrFE)->normalsAtGaussPt;
+    inline MatrixDouble &getNormalsAtGaussPt() {
+      return static_cast<FaceElementForcesAndSourcesCore *>(ptrFE)
+          ->normalsAtGaussPt;
     }
 
     /** \brief if higher order geometry return normals at Gauss pts.
-      *
-      * \param gg gauss point number
-      */
-    inline ublas::matrix_row<MatrixDouble > getNormalsAtGaussPt(const int gg) {
-      return ublas::matrix_row<MatrixDouble >(static_cast<FaceElementForcesAndSourcesCore*>(ptrFE)->normalsAtGaussPt,gg);
+     *
+     * \param gg gauss point number
+     */
+    inline ublas::matrix_row<MatrixDouble> getNormalsAtGaussPt(const int gg) {
+      return ublas::matrix_row<MatrixDouble>(
+          static_cast<FaceElementForcesAndSourcesCore *>(ptrFE)
+              ->normalsAtGaussPt,
+          gg);
     }
 
-    /** \brief if higher order geometry return tangent vector to triangle at Gauss pts.
+    /** \brief if higher order geometry return tangent vector to triangle at
+    Gauss pts.
 
     Note: returned matrix has size 0 in rows and columns if no HO approximation
     of geometry is avaliable.
 
      */
-    inline MatrixDouble& getTangent1AtGaussPt() {
-      return static_cast<FaceElementForcesAndSourcesCore*>(ptrFE)->tangentOneAtGaussPt;
+    inline MatrixDouble &getTangent1AtGaussPt() {
+      return static_cast<FaceElementForcesAndSourcesCore *>(ptrFE)
+          ->tangentOneAtGaussPt;
     }
 
-    /** \brief if higher order geometry return tangent vector to triangle at Gauss pts.
+    /** \brief if higher order geometry return tangent vector to triangle at
+    Gauss pts.
 
     Note: returned matrix has size 0 in rows and columns if no HO approximation
     of geometry is avaliable.
 
      */
-    inline MatrixDouble& getTangent2AtGaussPt() {
-      return static_cast<FaceElementForcesAndSourcesCore*>(ptrFE)->tangentTwoAtGaussPt;
+    inline MatrixDouble &getTangent2AtGaussPt() {
+      return static_cast<FaceElementForcesAndSourcesCore *>(ptrFE)
+          ->tangentTwoAtGaussPt;
     }
 
     /** \brief get normal at integration points
@@ -298,43 +304,44 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSourcesCore {
       \endcode
 
     */
-    inline FTensor::Tensor1<double*,3> getTensor1NormalsAtGaussPt() {
+    inline FTensor::Tensor1<double *, 3> getTensor1NormalsAtGaussPt() {
       double *ptr = &*getNormalsAtGaussPt().data().begin();
-      return FTensor::Tensor1<double*,3>(ptr,&ptr[1],&ptr[2],3);
+      return FTensor::Tensor1<double *, 3>(ptr, &ptr[1], &ptr[2], 3);
     }
 
     /** \brief get tangent 1 at integration points
 
     */
-    inline FTensor::Tensor1<double*,3> getTensor1Tangent1AtGaussPt() {
+    inline FTensor::Tensor1<double *, 3> getTensor1Tangent1AtGaussPt() {
       double *ptr = &*getTangent1AtGaussPt().data().begin();
-      return FTensor::Tensor1<double*,3>(ptr,&ptr[1],&ptr[2],3);
+      return FTensor::Tensor1<double *, 3>(ptr, &ptr[1], &ptr[2], 3);
     }
 
     /** \brief get tangent 2 at integration points
 
     */
-    inline FTensor::Tensor1<double*,3> getTensor1Tangent2AtGaussPt() {
+    inline FTensor::Tensor1<double *, 3> getTensor1Tangent2AtGaussPt() {
       double *ptr = &*getTangent2AtGaussPt().data().begin();
-      return FTensor::Tensor1<double*,3>(ptr,&ptr[1],&ptr[2],3);
+      return FTensor::Tensor1<double *, 3>(ptr, &ptr[1], &ptr[2], 3);
     }
 
     /** \deprecated use getFaceFE instead
      */
-    DEPRECATED inline const FaceElementForcesAndSourcesCore* getFaceElementForcesAndSourcesCore() {
+    DEPRECATED inline const FaceElementForcesAndSourcesCore *
+    getFaceElementForcesAndSourcesCore() {
       return getFaceFE();
     }
 
     /** \deprecated use getFaceFE instead
      */
-    DEPRECATED inline const FaceElementForcesAndSourcesCore* getTriFE() {
+    DEPRECATED inline const FaceElementForcesAndSourcesCore *getTriFE() {
       return getFaceFE();
     }
 
     /** \brief return pointer to Generic Triangle Finite Element object
      */
-    inline const FaceElementForcesAndSourcesCore* getFaceFE() {
-      return static_cast<FaceElementForcesAndSourcesCore*>(ptrFE);
+    inline const FaceElementForcesAndSourcesCore *getFaceFE() {
+      return static_cast<FaceElementForcesAndSourcesCore *>(ptrFE);
     }
 
     /**
@@ -347,12 +354,10 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSourcesCore {
      * @param  method  Finite element object
      * @return         error code
      */
-    MoFEMErrorCode loopSideVolumes(
-      const string &fe_name,VolumeElementForcesAndSourcesCoreOnSide &method
-    );
-
+    MoFEMErrorCode
+    loopSideVolumes(const string &fe_name,
+                    VolumeElementForcesAndSourcesCoreOnSide &method);
   };
-
 
   /**
    * \brief Calculate element area and normal of the face
@@ -364,14 +369,16 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSourcesCore {
    */
   virtual MoFEMErrorCode calculateAreaAndNormal();
 
-
   int nbGaussPts; ///< Number of integration points
 
   /**
    * \brief Set integration points
    * @return Error code
    */
-  virtual MoFEMErrorCode setIntegartionPts();
+  virtual MoFEMErrorCode setIntegrationPts();
+
+  /// \deprecated method with spelling mistake, use setIntegrationPts
+  DEPRECATED MoFEMErrorCode setIntegartionPts() { return setIntegrationPts(); }
 
   /**
    * \brief Determine approximation space and order of base functions
@@ -401,7 +408,6 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSourcesCore {
   virtual MoFEMErrorCode calculateHoNormal();
 
   MoFEMErrorCode operator()();
-
 };
 
 /** \brief Calculate inverse of jacobian for face element
@@ -414,90 +420,90 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSourcesCore {
   \ingroup mofem_forces_and_sources_tri_element
 
 */
-struct OpCalculateInvJacForFace: public FaceElementForcesAndSourcesCore::UserDataOperator {
+struct OpCalculateInvJacForFace
+    : public FaceElementForcesAndSourcesCore::UserDataOperator {
   MatrixDouble &invJac;
 
   // /**
   //  * \deprecated Field name do not needed to construct class, change v0.5.17.
   //  */
-  // DEPRECATED OpCalculateInvJacForFace(const std::string &field_name,MatrixDouble &inv_jac):
+  // DEPRECATED OpCalculateInvJacForFace(const std::string
+  // &field_name,MatrixDouble &inv_jac):
   // FaceElementForcesAndSourcesCore::UserDataOperator(H1),
   // invJac(inv_jac) {}
 
-  OpCalculateInvJacForFace(MatrixDouble &inv_jac):
-  FaceElementForcesAndSourcesCore::UserDataOperator(H1),
-  invJac(inv_jac) {}
+  OpCalculateInvJacForFace(MatrixDouble &inv_jac)
+      : FaceElementForcesAndSourcesCore::UserDataOperator(H1), invJac(inv_jac) {
+  }
 
-  MoFEMErrorCode doWork(
-    int side,EntityType type,DataForcesAndSourcesCore::EntData &data
-  );
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        DataForcesAndSourcesCore::EntData &data);
 };
 
-/** \brief Transform local reference derivatives of shape functions to global derivatives
+/** \brief Transform local reference derivatives of shape functions to global
+derivatives
 
 \ingroup mofem_forces_and_sources_tri_element
 
 */
-struct OpSetInvJacH1ForFace: public FaceElementForcesAndSourcesCore::UserDataOperator {
+struct OpSetInvJacH1ForFace
+    : public FaceElementForcesAndSourcesCore::UserDataOperator {
   MatrixDouble &invJac;
 
   // /**
   //  * \deprecated Field name do not needed to construct class, change v0.5.17.
   //  */
-  // DEPRECATED OpSetInvJacH1ForFace(const std::string &field_name,MatrixDouble &inv_jac):
-  // FaceElementForcesAndSourcesCore::UserDataOperator(H1),
+  // DEPRECATED OpSetInvJacH1ForFace(const std::string &field_name,MatrixDouble
+  // &inv_jac): FaceElementForcesAndSourcesCore::UserDataOperator(H1),
   // invJac(inv_jac) {}
 
-  OpSetInvJacH1ForFace(MatrixDouble &inv_jac):
-  FaceElementForcesAndSourcesCore::UserDataOperator(H1),
-  invJac(inv_jac) {}
+  OpSetInvJacH1ForFace(MatrixDouble &inv_jac)
+      : FaceElementForcesAndSourcesCore::UserDataOperator(H1), invJac(inv_jac) {
+  }
 
   MatrixDouble diffNinvJac;
-  MoFEMErrorCode doWork(
-    int side,EntityType type,DataForcesAndSourcesCore::EntData &data
-  );
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        DataForcesAndSourcesCore::EntData &data);
 };
 
 /**
- * \brief brief Transform local reference derivatives of shape function to global derivatives for face
+ * \brief brief Transform local reference derivatives of shape function to
+ global derivatives for face
 
  * \ingroup mofem_forces_and_sources_tri_element
  */
-struct OpSetInvJacHcurlFace: public FaceElementForcesAndSourcesCore::UserDataOperator {
+struct OpSetInvJacHcurlFace
+    : public FaceElementForcesAndSourcesCore::UserDataOperator {
 
   MatrixDouble &invJac;
 
   // /**
   //  * \deprecated Field name do not needed to construct class, change v0.5.17.
   //  */
-  // DEPRECATED OpSetInvJacHcurlFace(const std::string &field_name,MatrixDouble &inv_jac):
-  // FaceElementForcesAndSourcesCore::UserDataOperator(HCURL),
+  // DEPRECATED OpSetInvJacHcurlFace(const std::string &field_name,MatrixDouble
+  // &inv_jac): FaceElementForcesAndSourcesCore::UserDataOperator(HCURL),
   // invJac(inv_jac) {
   // }
 
-  OpSetInvJacHcurlFace(MatrixDouble &inv_jac):
-  FaceElementForcesAndSourcesCore::UserDataOperator(HCURL),
-  invJac(inv_jac) {
-  }
-
+  OpSetInvJacHcurlFace(MatrixDouble &inv_jac)
+      : FaceElementForcesAndSourcesCore::UserDataOperator(HCURL),
+        invJac(inv_jac) {}
 
   MatrixDouble diffHcurlInvJac;
 
-  MoFEMErrorCode doWork(
-    int side,EntityType type,DataForcesAndSourcesCore::EntData &data
-  );
-
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        DataForcesAndSourcesCore::EntData &data);
 };
 
 /// \deprecated Use FaceElementForcesAndSourcesCore
-DEPRECATED typedef FaceElementForcesAndSourcesCore FaceElementForcesAndSurcesCore;
+DEPRECATED typedef FaceElementForcesAndSourcesCore
+    FaceElementForcesAndSurcesCore;
 
-
-}
+} // namespace MoFEM
 
 #endif //__FACEELEMENTFORCESANDSOURCESCORE_HPP__
 
-/***************************************************************************//**
+/**
  * \defgroup mofem_forces_and_sources_tri_element Face Element
  * \ingroup mofem_forces_and_sources
  ******************************************************************************/

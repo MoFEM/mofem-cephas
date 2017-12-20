@@ -77,7 +77,7 @@ namespace MoFEM {
 
     MoFEMErrorCode getValueHdiv(MatrixDouble &pts);
 
-    MoFEMErrorCode getValueHCurl(MatrixDouble &pts);
+    MoFEMErrorCode getValueHcurl(MatrixDouble &pts);
 
     int numNodes;
     const EntityHandle *connPrism;
