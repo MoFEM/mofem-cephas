@@ -226,7 +226,7 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
   ierr = m_field.get_ref_finite_elements(&refined_finite_elements_ptr);
 
   // FIXME: refinement is based on entity handlers, should work on global ids of
-  // nodes, this will allow parallelize algorithm in the future
+  // nodes, this will allow parallelise algorithm in the future
 
   typedef const RefEntity_multiIndex::index<Ent_mi_tag>::type RefEntsByEnt;
   RefEntsByEnt &ref_ents_ent = refined_ents_ptr->get<Ent_mi_tag>();
@@ -945,7 +945,7 @@ MoFEMErrorCode MeshRefinement::refine_PRISM(const EntityHandle meshset,
   const RefElement_multiIndex *refined_finite_elements_ptr;
 
   // FIXME: refinement is based on entity handlers, should work on global ids of
-  // nodes, this will allow parallelize algorithm in the future
+  // nodes, this will allow parallelise algorithm in the future
 
   MoFEMFunctionBeginHot;
 
