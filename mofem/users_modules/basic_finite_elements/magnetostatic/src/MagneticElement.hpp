@@ -47,7 +47,7 @@ struct MagneticElement {
   struct VolumeFE : public MoFEM::VolumeElementForcesAndSourcesCore {
     VolumeFE(MoFEM::Interface &m_field)
         : MoFEM::VolumeElementForcesAndSourcesCore(m_field) {}
-    int getRule(int order) { return 2 * order + 1; };
+    int getRule(int order) { return 2 * (order - 1); };
   };
 
   // /// \brief  definition of volume element
@@ -64,7 +64,7 @@ struct MagneticElement {
   struct TriFE : public MoFEM::FaceElementForcesAndSourcesCore {
     TriFE(MoFEM::Interface &m_field)
         : MoFEM::FaceElementForcesAndSourcesCore(m_field) {}
-    int getRule(int order) { return 2 * order + 1; };
+    int getRule(int order) { return 2 * (order - 1); };
   };
 
   MagneticElement(MoFEM::Interface &m_field) : mField(m_field) {}
@@ -321,7 +321,7 @@ struct MagneticElement {
    * Create matrices; integrate over elements; solve linear system of equations
    *
    */
-  MoFEMErrorCode solveProblem() {
+  MoFEMErrorCode solveProblem(const bool regression_test = false) {
     MoFEMFunctionBegin;
     CHKERR DMCreateMatrix(blockData.dM, &blockData.A);
     CHKERR DMCreateGlobalVector(blockData.dM, &blockData.F);
@@ -389,6 +389,19 @@ struct MagneticElement {
     CHKERR VecGhostUpdateEnd(blockData.D, INSERT_VALUES, SCATTER_FORWARD);
     CHKERR DMoFEMMeshToLocalVector(blockData.dM, blockData.D, INSERT_VALUES,
                                    SCATTER_REVERSE);
+
+    if (regression_test) {
+      // This test is for order = 1 only
+      double nrm2;
+      CHKERR VecNorm(blockData.D, NORM_2, &nrm2);
+      const double expected_value = 4.6772e+01;
+      const double tol = 1e-4;
+      if ((nrm2 - expected_value) / expected_value > tol) {
+        SETERRQ2(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY,
+                 "Regression test failed %6.4e != %6.4e", nrm2, expected_value);
+      }
+    }
+
     CHKERR VecDestroy(&blockData.D);
     MoFEMFunctionReturn(0);
   }
@@ -726,8 +739,8 @@ struct MagneticElement {
       FTensor::Tensor1<double *, 3> t_row_base =
           row_data.getFTensor1HcurlN<3>();
 
-      FTensor::Tensor1<double *, 3> t_tangent1 = getTensor1Tangent1AtGaussPt();
-      FTensor::Tensor1<double *, 3> t_tangent2 = getTensor1Tangent2AtGaussPt();
+      // FTensor::Tensor1<double *, 3> t_tangent1 = getTensor1Tangent1AtGaussPt();
+      // FTensor::Tensor1<double *, 3> t_tangent2 = getTensor1Tangent2AtGaussPt();
 
       for (int gg = 0; gg != nb_gauss_pts; gg++) {
 
@@ -746,12 +759,12 @@ struct MagneticElement {
         t_j(1) = +x / r;
         t_j(2) = 0;
 
-        double a = t_j(i) * t_tangent1(i);
-        double b = t_j(i) * t_tangent2(i);
-        t_j(i) = a * t_tangent1(i) + b * t_tangent2(i);
+        //double a = t_j(i) * t_tangent1(i);
+        //double b = t_j(i) * t_tangent2(i);
+        //t_j(i) = a * t_tangent1(i) + b * t_tangent2(i);
 
-        ++t_tangent1;
-        ++t_tangent2;
+        // ++t_tangent1;
+        // ++t_tangent2;
 
         FTensor::Tensor0<double *> t_f(&naturalBC[0]);
         for (int aa = 0; aa != nb_row_dofs; aa++) {
