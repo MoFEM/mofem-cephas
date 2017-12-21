@@ -321,7 +321,7 @@ struct MagneticElement {
    * Create matrices; integrate over elements; solve linear system of equations
    *
    */
-  MoFEMErrorCode solveProblem() {
+  MoFEMErrorCode solveProblem(const bool regression_test = false) {
     MoFEMFunctionBegin;
     CHKERR DMCreateMatrix(blockData.dM, &blockData.A);
     CHKERR DMCreateGlobalVector(blockData.dM, &blockData.F);
@@ -389,6 +389,19 @@ struct MagneticElement {
     CHKERR VecGhostUpdateEnd(blockData.D, INSERT_VALUES, SCATTER_FORWARD);
     CHKERR DMoFEMMeshToLocalVector(blockData.dM, blockData.D, INSERT_VALUES,
                                    SCATTER_REVERSE);
+
+    if (regression_test) {
+      // This test is for order = 1 only
+      double nrm2;
+      CHKERR VecNorm(blockData.D, NORM_2, &nrm2);
+      const double expected_value = 4.6772e+01;
+      const double tol = 1e-4;
+      if ((nrm2 - expected_value) / expected_value > tol) {
+        SETERRQ2(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY,
+                 "Regression test failed %6.4e != %6.4e", nrm2, expected_value);
+      }
+    }
+
     CHKERR VecDestroy(&blockData.D);
     MoFEMFunctionReturn(0);
   }
