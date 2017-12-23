@@ -360,51 +360,44 @@ MoFEMErrorCode AssembleFlambda::operator()() {
   MoFEMFunctionBeginHot;
   MoFEMFunctionReturnHot(0);
 }
+
 MoFEMErrorCode AssembleFlambda::postProcess() {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   switch (snes_ctx) {
   case CTX_SNESSETFUNCTION: {
     // F_lambda
-    ierr = VecAssemblyBegin(arcPtr->F_lambda);
-    CHKERRG(ierr);
-    ierr = VecAssemblyEnd(arcPtr->F_lambda);
-    CHKERRG(ierr);
-    ierr = VecGhostUpdateBegin(arcPtr->F_lambda, ADD_VALUES, SCATTER_REVERSE);
-    CHKERRG(ierr);
-    ierr = VecGhostUpdateEnd(arcPtr->F_lambda, ADD_VALUES, SCATTER_REVERSE);
-    CHKERRG(ierr);
+    CHKERR VecAssemblyBegin(arcPtr->F_lambda);
+    CHKERR VecAssemblyEnd(arcPtr->F_lambda);
+    CHKERR VecGhostUpdateBegin(arcPtr->F_lambda, ADD_VALUES, SCATTER_REVERSE);
+    CHKERR VecGhostUpdateEnd(arcPtr->F_lambda, ADD_VALUES, SCATTER_REVERSE);
     if (bC) {
       for (std::vector<int>::iterator vit = bC->dofsIndices.begin();
            vit != bC->dofsIndices.end(); vit++) {
-        ierr = VecSetValue(arcPtr->F_lambda, *vit, 0, INSERT_VALUES);
-        CHKERRG(ierr);
+        CHKERR VecSetValue(arcPtr->F_lambda, *vit, 0, INSERT_VALUES);
       }
-      ierr = VecAssemblyBegin(arcPtr->F_lambda);
-      CHKERRG(ierr);
-      ierr = VecAssemblyEnd(arcPtr->F_lambda);
-      CHKERRG(ierr);
+      CHKERR VecAssemblyBegin(arcPtr->F_lambda);
+      CHKERR VecAssemblyEnd(arcPtr->F_lambda);
     }
-    ierr = VecDot(arcPtr->F_lambda, arcPtr->F_lambda, &arcPtr->F_lambda2);
-    CHKERRG(ierr);
+    CHKERR VecDot(arcPtr->F_lambda, arcPtr->F_lambda, &arcPtr->F_lambda2);
     PetscPrintf(PETSC_COMM_WORLD, "\tF_lambda2 = %6.4e\n", arcPtr->F_lambda2);
     // add F_lambda
-    ierr = VecAssemblyBegin(snes_f);
-    CHKERRG(ierr);
-    ierr = VecAssemblyEnd(snes_f);
-    CHKERRG(ierr);
+    CHKERR VecAssemblyBegin(snes_f);
+    CHKERR VecAssemblyEnd(snes_f);
     double lambda = arcPtr->getFieldData();
-    ierr = VecAXPY(snes_f, lambda, arcPtr->F_lambda);
-    CHKERRG(ierr);
+    CHKERR VecAXPY(snes_f, lambda, arcPtr->F_lambda);
     double fnorm;
-    ierr = VecNorm(snes_f, NORM_2, &fnorm);
-    CHKERRG(ierr);
+    CHKERR VecNorm(snes_f, NORM_2, &fnorm);
     PetscPrintf(PETSC_COMM_WORLD, "\tfnorm = %6.4e lambda = %6.4g\n", fnorm,
                 lambda);
+    if (!boost::math::isfinite(fnorm)) {
+      CHKERR arcPtr->mField.getInterface<Tools>()->checkVectorForNotANumber(
+          problemPtr, ROW, snes_f);
+    }
   } break;
   default:
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Impossible case");
   }
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 // ************************
