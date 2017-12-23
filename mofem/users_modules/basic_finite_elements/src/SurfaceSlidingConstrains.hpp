@@ -400,7 +400,9 @@ struct SurfaceSlidingConstrains {
         int nb_gauss_pts = data.getN().size1();
         if (type == MBVERTEX) {
           aUx.resize(nb_gauss_pts);
-          oRientation.getElementOrientation(getFaceFE()->mField, getFEMethod());
+          ierr = oRientation.getElementOrientation(getFaceFE()->mField,
+                                                   getFEMethod());
+          CHKERRG(ierr);
           for (int gg = 0; gg < nb_gauss_pts; gg++) {
             aUx[gg].pOsition.resize(3, false);
             aUx[gg].dXdKsi.resize(3, false);
@@ -523,10 +525,16 @@ struct SurfaceSlidingConstrains {
 
       try {
 
-        int nb_dofs = row_data.getFieldData().size();
+        unsigned int nb_dofs = row_data.getIndices().size();
         if (nb_dofs == 0) {
           MoFEMFunctionReturnHot(0);
         }
+        // if (nb_dofs != row_data.getIndices().size()) {
+        //   SETERRQ4(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+        //            "FE %s Field %s data inconsistency %d != %d",
+        //            getNumeredEntFiniteElementPtr()->getName().c_str(),
+        //            rowFieldName.c_str(), nb_dofs, row_data.getIndices().size());
+        // }
         int nb_gauss_pts = row_data.getN().size1();
 
         if (row_type == MBVERTEX) {
