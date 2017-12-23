@@ -145,7 +145,7 @@ namespace MoFEM {
   * @param  snes SNES solver
   * @param  x    Solution vector at current iteration
   * @param  f    The right hand side vector
-  * @param  ctx  Pointer to context thata, i.e. SnesCtx
+  * @param  ctx  Pointer to context i.e. SnesCtx
   * @return      Error code
   */
   PetscErrorCode SnesRhs(SNES snes,Vec x,Vec f,void *ctx);
@@ -160,7 +160,7 @@ namespace MoFEM {
   * @param  x    Solution vector at current iteration
   * @param  A    Tangent matrix
   * @param  B    Preconditioner tangent matrix
-  * @param  ctx  Pointer to context thata, i.e. SnesCtx
+  * @param  ctx  Pointer to context i.e. SnesCtx
   * @return      Error code
   */
   PetscErrorCode SnesMat(SNES snes,Vec x,Mat A,Mat B,void *ctx);
