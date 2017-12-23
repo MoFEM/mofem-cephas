@@ -37,9 +37,7 @@
 
 #include <LoopMethods.hpp>
 #include <Interface.hpp>
-#include <MeshRefinement.hpp>
-#include <PrismInterface.hpp>
-#include <SeriesRecorder.hpp>
+#include <Tools.hpp>
 #include <Core.hpp>
 
 #include <VecManager.hpp>
@@ -61,6 +59,17 @@ PetscErrorCode SnesRhs(SNES snes, Vec x, Vec f, void *ctx) {
   PetscLogEventBegin(snes_ctx->MOFEM_EVENT_SnesRhs, 0, 0, 0, 0);
   CHKERR VecGhostUpdateBegin(x, INSERT_VALUES, SCATTER_FORWARD);
   CHKERR VecGhostUpdateEnd(x, INSERT_VALUES, SCATTER_FORWARD);
+  if (snes_ctx->vErify) {
+    // Verify finite elements, check for not a number
+    CHKERR VecAssemblyBegin(f);
+    CHKERR VecAssemblyEnd(f);
+    MPI_Comm comm = PetscObjectComm((PetscObject)f);
+    PetscSynchronizedPrintf(comm, "SNES Verify x\n");
+    const Problem *prb_ptr;
+    CHKERR snes_ctx->mField.get_problem(snes_ctx->problemName, &prb_ptr);
+    CHKERR snes_ctx->mField.getInterface<Tools>()->checkVectorForNotANumber(
+        prb_ptr, COL, x);
+  }
   CHKERR snes_ctx->mField.getInterface<VecManager>()->setLocalGhostVector(
       snes_ctx->problemName, COL, x, INSERT_VALUES, SCATTER_REVERSE);
   CHKERR VecZeroEntries(f);
@@ -69,13 +78,13 @@ PetscErrorCode SnesRhs(SNES snes, Vec x, Vec f, void *ctx) {
   SnesCtx::BasicMethodsSequence::iterator bit =
       snes_ctx->preProcess_Rhs.begin();
   for (; bit != snes_ctx->preProcess_Rhs.end(); bit++) {
-    CHKERR (*bit)->setSnes(snes);
+    CHKERR(*bit)->setSnes(snes);
     (*bit)->snes_x = x;
     (*bit)->snes_f = f;
-    CHKERR (*bit)->setSnesCtx(SnesMethod::CTX_SNESSETFUNCTION);
+    CHKERR(*bit)->setSnesCtx(SnesMethod::CTX_SNESSETFUNCTION);
     CHKERR snes_ctx->mField.problem_basic_method_preProcess(
         snes_ctx->problemName, *(*(bit)));
-    CHKERR (*bit)->setSnesCtx(SnesMethod::CTX_SNESNONE);
+    CHKERR(*bit)->setSnesCtx(SnesMethod::CTX_SNESNONE);
   }
   SnesCtx::FEMethodsSequence::iterator lit = snes_ctx->loops_to_do_Rhs.begin();
   for (; lit != snes_ctx->loops_to_do_Rhs.end(); lit++) {
@@ -83,11 +92,21 @@ PetscErrorCode SnesRhs(SNES snes, Vec x, Vec f, void *ctx) {
     CHKERR lit->second->setSnes(snes);
     lit->second->snes_x = x;
     lit->second->snes_f = f;
-    // PetscSynchronizedPrintf(PETSC_COMM_WORLD,"\t\tLoop FE for Rhs:
-    // %s\n",lit->first.c_str());  PetscSynchronizedFlush(PETSC_COMM_WORLD);
     CHKERR snes_ctx->mField.loop_finite_elements(
         snes_ctx->problemName, lit->first, *(lit->second), snes_ctx->bH);
     CHKERR lit->second->setSnesCtx(SnesMethod::CTX_SNESNONE);
+    if (snes_ctx->vErify) {
+      // Verify finite elements, check for not a number
+      CHKERR VecAssemblyBegin(f);
+      CHKERR VecAssemblyEnd(f);
+      MPI_Comm comm = PetscObjectComm((PetscObject)f);
+      PetscSynchronizedPrintf(comm, "SNES Verify f FE < %s >\n",
+                              lit->first.c_str());
+      const Problem *prb_ptr;
+      CHKERR snes_ctx->mField.get_problem(snes_ctx->problemName, &prb_ptr);
+      CHKERR snes_ctx->mField.getInterface<Tools>()->checkVectorForNotANumber(
+          prb_ptr, ROW, f);
+    }
   }
   bit = snes_ctx->postProcess_Rhs.begin();
   for (; bit != snes_ctx->postProcess_Rhs.end(); bit++) {
@@ -160,7 +179,7 @@ PetscErrorCode SnesMat(SNES snes, Vec x, Mat A, Mat B, void *ctx) {
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode SNESMoFEMSetAssmblyType(SNES snes, MatAssemblyType type) {
+MoFEMErrorCode SNESMoFEMSetAssemblyType(SNES snes, MatAssemblyType type) {
   SnesCtx *snes_ctx;
   // PetscValidHeaderSpecific(snes,SNES_CLASSID,1);
   MoFEMFunctionBeginHot;
@@ -168,6 +187,10 @@ MoFEMErrorCode SNESMoFEMSetAssmblyType(SNES snes, MatAssemblyType type) {
   CHKERRG(ierr);
   snes_ctx->typeOfAssembly = type;
   MoFEMFunctionReturnHot(0);
+}
+
+MoFEMErrorCode SNESMoFEMSetAssmblyType(SNES snes, MatAssemblyType type) {
+  return SNESMoFEMSetAssemblyType(snes, type);
 }
 
 MoFEMErrorCode SNESMoFEMSetBehavior(SNES snes, MoFEMTypes bh) {

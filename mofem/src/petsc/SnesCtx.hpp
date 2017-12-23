@@ -33,6 +33,7 @@ namespace MoFEM {
     MoFEMTypes bH;              ///< If set to MF_EXIST check if element exist, default MF_EXIST
     bool zeroPreCondMatrixB;    ///< If true zero matrix, otherwise user need to do it, default true
     MatAssemblyType typeOfAssembly; ///< type of assembly at the end
+    bool vErify;                    ///< If true verify vector
 
     /// \deprecated use PairNameFEMethodPtr
     DEPRECATED  typedef MoFEM::PairNameFEMethodPtr loop_pair_type;
@@ -73,13 +74,10 @@ namespace MoFEM {
     PetscLogEvent MOFEM_EVENT_SnesRhs; ///< Log events to assemble residual
     PetscLogEvent MOFEM_EVENT_SnesMat; ///< Log events to assemble tangent matrix
 
-    SnesCtx(Interface &m_field,const std::string &problem_name):
-    mField(m_field),
-    moab(m_field.get_moab()),
-    problemName(problem_name),
-    bH(MF_EXIST),
-    zeroPreCondMatrixB(true),
-    typeOfAssembly(MAT_FINAL_ASSEMBLY) {
+    SnesCtx(Interface &m_field, const std::string &problem_name)
+        : mField(m_field), moab(m_field.get_moab()), problemName(problem_name),
+          bH(MF_EXIST), zeroPreCondMatrixB(true),
+          typeOfAssembly(MAT_FINAL_ASSEMBLY), vErify(false) {
       PetscLogEventRegister("LoopSNESRhs",0,&MOFEM_EVENT_SnesRhs);
       PetscLogEventRegister("LoopSNESMat",0,&MOFEM_EVENT_SnesMat);
     }
@@ -176,7 +174,11 @@ namespace MoFEM {
    * @param  type type of assembly, either MAT_FLUSH_ASSEMBLY or MAT_FINAL_ASSEMBLY
    * @return      error code
    */
-  MoFEMErrorCode SNESMoFEMSetAssmblyType(SNES snes,MatAssemblyType type);
+  MoFEMErrorCode SNESMoFEMSetAssemblyType(SNES snes,MatAssemblyType type);
+
+  /** \deprecated Function with spelling mistake, do no use this
+   */
+  DEPRECATED MoFEMErrorCode SNESMoFEMSetAssmblyType(SNES snes,MatAssemblyType type);
 
   /**
    * \brief Set behavior if finite element in sequence does not exist
