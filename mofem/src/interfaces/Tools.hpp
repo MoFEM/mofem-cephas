@@ -73,6 +73,17 @@ namespace MoFEM {
 
     /**@}*/
 
+    /** \name Debugging */
+
+    /**@{*/
+
+    /** \brief Print all DOFs for which element of vector is not a number
+     * 
+     */
+    MoFEMErrorCode checkVectorForNotANumber(const Problem *prb_ptr,
+                                            const RowColData row_or_col, Vec v);
+
+    /**@}*/
 
   };
 
