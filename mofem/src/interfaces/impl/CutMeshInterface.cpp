@@ -1707,11 +1707,9 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
   CHKERR m_field.get_moab().get_entities_by_type(0, MBENTITYSET, meshsets,
                                                  true);
   for (Range::iterator mit = meshsets.begin(); mit != meshsets.end(); mit++) {
-    rval = m_field.get_moab().remove_entities(*mit,
-                                       all_ents_not_in_database_after);
-    CHKERRG(rval);
+    CHKERR m_field.get_moab().remove_entities(*mit,
+                                              all_ents_not_in_database_after);
   }
-
   m_field.get_moab().delete_entities(all_ents_not_in_database_after);
 
   mergedVolumes.swap(out_new_tets);
