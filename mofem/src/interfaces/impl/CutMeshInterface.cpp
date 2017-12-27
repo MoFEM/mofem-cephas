@@ -1793,10 +1793,10 @@ MoFEMErrorCode CutMeshInterface::rebuildMeshWithTetGen(
       moab::Interface &moab = mField.get_moab();
       MoFEMFunctionBeginHot;
       CHKERR moab.get_connectivity(tris, sNodes, true);
-      CHKERR
-          moab.get_adjacencies(tris, 1, false, sEdges, moab::Interface::UNION);
-      CHKERR
-          moab.get_adjacencies(sNodes, 3, false, sVols, moab::Interface::UNION);
+      CHKERR moab.get_adjacencies(tris, 1, false, sEdges,
+                                  moab::Interface::UNION);
+      CHKERR moab.get_adjacencies(sNodes, 3, false, sVols,
+                                  moab::Interface::UNION);
       sVols = intersect(sVols, bit_ents.mTets);
       CHKERR moab.get_connectivity(sVols, vNodes, true);
       MoFEMFunctionReturnHot(0);
