@@ -1956,7 +1956,7 @@ MoFEMErrorCode CutMeshInterface::rebuildMeshWithTetGen(
     Range sideset_faces;
     CHKERR m_field.getInterface<MeshsetsManager>()->getEntitiesByDimension(
         ms_id, SIDESET, 2, sideset_faces, true);
-    sideset_faces = intersect(sideset_faces, surf_ents.vNodes); 
+    // sideset_faces = intersect(sideset_faces, surf_ents.vSkinOnBodySkin);
     markers.resize(sideset_faces.size());
     CHKERR m_field.get_moab().tag_get_data(th_marker, sideset_faces,
                                            &*markers.begin());
