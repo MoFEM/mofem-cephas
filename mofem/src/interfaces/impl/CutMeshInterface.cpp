@@ -1703,13 +1703,15 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
   // delete hanging entities
   all_ents_not_in_database_after =
       subtract(all_ents_not_in_database_after, all_ents_not_in_database_before);
-
-  for (_IT_CUBITMESHSETS_FOR_LOOP_((cOre.getInterface<MeshsetsManager&,0>()),
-                                   cubit_it)) {
-    rval = m_field.get_moab().remove_entities(cubit_it->getMeshset(),
+  Range meshsets;
+  CHKERR m_field.get_moab().get_entities_by_type(0, MBENTITYSET, meshsets,
+                                                 true);
+  for (Range::iterator mit = meshsets.begin(); mit != meshsets.end(); mit++) {
+    rval = m_field.get_moab().remove_entities(*mit,
                                        all_ents_not_in_database_after);
     CHKERRG(rval);
   }
+
   m_field.get_moab().delete_entities(all_ents_not_in_database_after);
 
   mergedVolumes.swap(out_new_tets);
