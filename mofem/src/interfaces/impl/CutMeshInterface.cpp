@@ -1847,8 +1847,8 @@ MoFEMErrorCode CutMeshInterface::rebuildMeshWithTetGen(
                                   tets_with_four_nodes_on_skin,
                                   moab::Interface::UNION);
       Range tets_nodes;
-      CHKERR
-          moab.get_connectivity(tets_with_four_nodes_on_skin, tets_nodes, true);
+      CHKERR moab.get_connectivity(tets_with_four_nodes_on_skin, tets_nodes,
+                                   true);
       tets_nodes = subtract(tets_nodes, vSkinOnBodySkinNodes);
       Range other_tets;
       CHKERR moab.get_adjacencies(tets_nodes, 3, false, other_tets,
