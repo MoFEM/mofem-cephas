@@ -102,18 +102,17 @@ struct SetBitRefLevelTool {
                                std::vector<boost::shared_ptr<RefEntity> >
                                    *shared_ref_ents_vec_for_fe = NULL) const {
     MoFEMFunctionBeginHot;
+    if (bIt.none())
+      MoFEMFunctionReturnHot(0);
     // add entities to database
     boost::shared_ptr<std::vector<RefEntity> > ref_ents_vec =
         boost::make_shared<std::vector<RefEntity> >();
     ref_ents_vec->reserve(seed_ents_vec.size());
     // create ref entity instances
-    if (bIt.any()) {
-      for (std::vector<EntityHandle>::const_iterator vit =
-               seed_ents_vec.begin();
-           vit != seed_ents_vec.end(); vit++) {
-        ref_ents_vec->push_back(RefEntity(baseEntData, *vit));
-        RefEntity_change_add_bit(bIt).operator()(ref_ents_vec->back());
-      }
+    for (std::vector<EntityHandle>::const_iterator vit = seed_ents_vec.begin();
+         vit != seed_ents_vec.end(); vit++) {
+      ref_ents_vec->push_back(RefEntity(baseEntData, *vit));
+      RefEntity_change_add_bit(bIt).operator()(ref_ents_vec->back());
     }
     std::vector<boost::shared_ptr<RefEntity> > shared_ref_ents_vec;
     shared_ref_ents_vec.reserve(ref_ents_vec->size());
@@ -154,26 +153,31 @@ MoFEMErrorCode BitRefManager::setBitRefLevel(const Range &ents,
   CHKERR setEntsBitRefLevel(ents,bit,verb);
 
   if (!ents.empty()) {
-    for (int dd = 0; dd <= 3; dd++) {
-      Range adj_ents;
-      CHKERR m_field.get_moab().get_adjacencies(ents, dd, true, adj_ents,
-                                                moab::Interface::UNION);
-      if (dd == 2 && only_tets) {
-        adj_ents = adj_ents.subset_by_type(MBTRI);
+    for (int d = 3; d >= 1; --d) {
+      Range dim_ents;
+      if(only_tets && d == 3) {
+        dim_ents = ents.subset_by_type(MBTET);
+      } else {
+        dim_ents = ents.subset_by_dimension(d);
       }
-      std::vector<EntityHandle>
-          seed_ents_vec; // entities seeded not in database
-      for (Range::pair_iterator pit = adj_ents.pair_begin();
-           pit != adj_ents.pair_end(); pit++) {
-        seed_ents_vec.clear();
-        // get first and last element of range
-        EntityHandle f = pit->first;
-        EntityHandle s = pit->second;
-        CHKERR SetBitRefLevelTool(m_field, bit, ref_ents_ptr)
-            .findEntsToAdd(f, s, seed_ents_vec);
-        if (!seed_ents_vec.empty()) {
+      for (int dd = 0; dd < d; ++dd) {
+        Range adj_ents;
+        CHKERR m_field.get_moab().get_adjacencies(dim_ents, dd, true, adj_ents,
+                                                  moab::Interface::UNION);
+        std::vector<EntityHandle>
+            seed_ents_vec; // entities seeded not in database
+        for (Range::pair_iterator pit = adj_ents.pair_begin();
+             pit != adj_ents.pair_end(); ++pit) {
+          seed_ents_vec.clear();
+          // get first and last element of range
+          EntityHandle f = pit->first;
+          EntityHandle s = pit->second;
           CHKERR SetBitRefLevelTool(m_field, bit, ref_ents_ptr)
-              .addToDatabase(seed_ents_vec);
+              .findEntsToAdd(f, s, seed_ents_vec);
+          if (!seed_ents_vec.empty()) {
+            CHKERR SetBitRefLevelTool(m_field, bit, ref_ents_ptr)
+                .addToDatabase(seed_ents_vec);
+          }
         }
       }
     }
