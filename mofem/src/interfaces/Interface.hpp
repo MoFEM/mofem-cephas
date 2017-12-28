@@ -195,34 +195,6 @@ namespace MoFEM {
 
     /**@}*/
 
-    /** \name Seed entities */
-
-    /**@{*/
-
-    /**
-     * Create finite elements based from entities in meshsets. Throw error if
-     * entity is not in database \todo Should be outsourced to separate
-     * interface, i.e. BitLevelManager
-     *
-     * \param EntityHandle meshset
-     *
-     */
-    virtual MoFEMErrorCode seed_finite_elements(const EntityHandle meshset,
-                                                int verb = -1) = 0;
-
-    /**
-     * Create finite elements based from entities in meshsets. Throw error if
-     * entity is not in database \todo Should be outsourced to separate
-     * interface, i.e. BitLevelManager
-     *
-     * \param Range entities
-     *
-     */
-    virtual MoFEMErrorCode seed_finite_elements(const Range &entities,
-                                                int verb = -1) = 0;
-
-    /**@}*/
-
     /** \name Delete and remove */
 
     /**@{*/

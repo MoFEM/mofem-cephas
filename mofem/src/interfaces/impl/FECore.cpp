@@ -351,9 +351,7 @@ MoFEMErrorCode Core::add_ents_to_finite_element_by_type(
   idm = get_finite_element_meshset(getBitFEId(name));
   Range ents;
   CHKERR moab.get_entities_by_type(meshset, type, ents, recursive);
-
-  CHKERR seed_finite_elements(ents.subset_by_type(MBEDGE));
-
+  CHKERR getInterface<BitRefManager>()->setEntsBitRefLevel(ents);
   CHKERR moab.add_entities(idm, ents);
 
   MoFEMFunctionReturn(0);
@@ -366,16 +364,11 @@ Core::add_ents_to_finite_element_by_dim(const EntityHandle meshset,
   EntityHandle idm = no_handle;
   *buildMoFEM &= 1 << 0;
   MoFEMFunctionBegin;
-
   idm = get_finite_element_meshset(getBitFEId(name));
-
   Range ents;
   CHKERR moab.get_entities_by_dimension(meshset, dim, ents, recursive);
-
-  CHKERR seed_finite_elements(ents.subset_by_dimension(dim));
-
+  CHKERR getInterface<BitRefManager>()->setEntsBitRefLevel(ents);
   CHKERR moab.add_entities(idm, ents);
-
   MoFEMFunctionReturn(0);
 }
 
@@ -384,13 +377,10 @@ MoFEMErrorCode Core::add_ents_to_finite_element_by_type(
   EntityHandle idm = no_handle;
   *buildMoFEM &= 1 << 0;
   MoFEMFunctionBegin;
-
   idm = get_finite_element_meshset(getBitFEId(name));
-
-  CHKERR seed_finite_elements(ents.subset_by_type(type));
-
+  CHKERR getInterface<BitRefManager>()->setEntsBitRefLevel(
+      ents.subset_by_type(type));
   CHKERR moab.add_entities(idm, ents.subset_by_type(type));
-
   MoFEMFunctionReturn(0);
 } // namespace MoFEM
 
@@ -400,13 +390,10 @@ Core::add_ents_to_finite_element_by_dim(const Range &ents, const int dim,
   EntityHandle idm = no_handle;
   *buildMoFEM &= 1 << 0;
   MoFEMFunctionBegin;
-
   idm = get_finite_element_meshset(getBitFEId(name));
-
-  CHKERR seed_finite_elements(ents.subset_by_dimension(dim));
-
+  CHKERR getInterface<BitRefManager>()->setEntsBitRefLevel(
+      ents.subset_by_dimension(dim));
   CHKERR moab.add_entities(idm, ents.subset_by_dimension(dim));
-
   MoFEMFunctionReturn(0);
 }
 
@@ -985,68 +972,6 @@ MoFEMErrorCode Core::build_adjacencies(const BitRefLevel &bit, int verb) {
   if (verb == -1)
     verb = verbose;
   CHKERR build_adjacencies(bit, BitRefLevel().set(), verb);
-
-  MoFEMFunctionReturn(0);
-}
-
-MoFEMErrorCode Core::seed_finite_elements(const Range &entities, int verb) {
-  MoFEMFunctionBeginHot;
-  for (Range::const_pair_iterator pit = entities.const_pair_begin();
-       pit != entities.const_pair_end(); pit++) {
-    EntityHandle first = pit->first;
-    EntityHandle second = pit->second;
-    // for(Range::iterator eit = entities.begin();eit!=entities.end();eit++) {
-    RefEntity_multiIndex::index<Ent_mi_tag>::type::iterator eiit, hi_eiit;
-    eiit = refinedEntities.get<Ent_mi_tag>().lower_bound(first);
-    if (eiit == refinedEntities.get<Ent_mi_tag>().end()) {
-      SETERRQ(cOmm, MOFEM_NOT_FOUND, "entity is not in database");
-    }
-    if ((*eiit)->getBitRefLevel().none())
-      continue;
-    hi_eiit = refinedEntities.get<Ent_mi_tag>().upper_bound(second);
-    for (; eiit != hi_eiit; eiit++) {
-      std::pair<RefElement_multiIndex::iterator, bool> p_MoFEMFiniteElement;
-      switch ((*eiit)->getEntType()) {
-      case MBVERTEX:
-        p_MoFEMFiniteElement =
-            refinedFiniteElements.insert(ptrWrapperRefElement(
-                boost::shared_ptr<RefElement>(new RefElement_VERTEX(*eiit))));
-        break;
-      case MBEDGE:
-        p_MoFEMFiniteElement =
-            refinedFiniteElements.insert(ptrWrapperRefElement(
-                boost::shared_ptr<RefElement>(new RefElement_EDGE(*eiit))));
-        break;
-      case MBTRI:
-        p_MoFEMFiniteElement =
-            refinedFiniteElements.insert(ptrWrapperRefElement(
-                boost::shared_ptr<RefElement>(new RefElement_TRI(*eiit))));
-        break;
-      case MBTET:
-        p_MoFEMFiniteElement =
-            refinedFiniteElements.insert(ptrWrapperRefElement(
-                boost::shared_ptr<RefElement>(new RefElement_TET(*eiit))));
-        break;
-      case MBPRISM:
-        p_MoFEMFiniteElement =
-            refinedFiniteElements.insert(ptrWrapperRefElement(
-                boost::shared_ptr<RefElement>(new RefElement_PRISM(*eiit))));
-        break;
-      default:
-        SETERRQ(cOmm, MOFEM_DATA_INCONSISTENCY, "not implemented");
-      }
-    }
-  }
-  MoFEMFunctionReturnHot(0);
-}
-
-MoFEMErrorCode Core::seed_finite_elements(const EntityHandle meshset,
-                                          int verb) {
-  MoFEMFunctionBegin;
-  Range entities;
-  CHKERR moab.get_entities_by_handle(meshset, entities, true);
-
-  CHKERR seed_finite_elements(entities, verb);
 
   MoFEMFunctionReturn(0);
 }

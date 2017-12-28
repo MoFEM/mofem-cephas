@@ -114,6 +114,30 @@ struct DeprecatedCoreInterface : public CoreInterface {
                                                    const BitRefLevel &bit,
                                                    int verb = -1);
 
+
+    /** \deprecated use BitRefManager and setEntsBitRefLevel
+     * Create finite elements based from entities in meshsets. Throw error if
+     * entity is not in database \todo Should be outsourced to separate
+     * interface, i.e. BitLevelManager
+     *
+     * \param EntityHandle meshset
+     *
+     */
+    DEPRECATED MoFEMErrorCode seed_finite_elements(const EntityHandle meshset,
+                                                int verb = -1);
+
+    /** \deprecated use BitRefManager and setEntsBitRefLevel
+     * Create finite elements based from entities in meshsets. Throw error if
+     * entity is not in database \todo Should be outsourced to separate
+     * interface, i.e. BitLevelManager
+     *
+     * \param Range entities
+     *
+     */
+    DEPRECATED MoFEMErrorCode seed_finite_elements(const Range &entities,
+                                                int verb = -1);
+
+
   /**@}*/
 
   /** \name Getting entities by BitRefLevel */
