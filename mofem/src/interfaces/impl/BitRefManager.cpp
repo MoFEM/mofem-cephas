@@ -577,27 +577,41 @@ MoFEMErrorCode BitRefManager::filterEntitiesByRefLevel(const BitRefLevel &bit,
     EntityHandle ss = 0;
 
     for (; f <= s; ++f) {
+      // Get entity bit ref level
       rval = moab.tag_get_by_ptr(cOre.get_th_RefBitLevel(), &f, 1,
                                  (const void **)(&tag_bit));
-      CHKERRG(rval);
-
-      if ((mask.any() && tag_bit->none()) ||
-          ((*tag_bit) & mask) != (*tag_bit) || (((*tag_bit) & bit).none())) {
-        if(ff != 0) {
-          swap_ents.insert(ff,ss);
-          ff = ss = 0;
+      if (PetscLikely(rval == MB_SUCCESS)) {
+        if ((mask.any() && tag_bit->none()) ||
+            ((*tag_bit) & mask) != (*tag_bit) || (((*tag_bit) & bit).none())) {
+          // Entity not on BitRefLevel.
+          if (ff != 0) {
+            // Add sub-range
+            swap_ents.insert(ff, ss);
+            ff = ss = 0;
+          }
+        } else {
+          if (ff == 0) {
+            // Start new sub-range
+            ff = ss = f;
+          } else {
+            // Add entity to sub-range
+            ss = f;
+          }
         }
       } else {
-        if (ff == 0)
-          ff = ss = f;
-        else
-          ss = f;
+        if (ff != 0) {
+          // Add sub-range
+          swap_ents.insert(ff, ss);
+        }
+        // Start new sub-range
+        ff = ss = 0;
       }
     }
+
     if (ff != 0) {
       swap_ents.insert(ff, ss);
     }
-    
+
   }
 
   ents.swap(swap_ents);
