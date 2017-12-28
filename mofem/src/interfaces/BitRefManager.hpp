@@ -89,7 +89,26 @@ struct BitRefManager : public UnknownInterface {
    */
   MoFEMErrorCode setBitRefLevel(const Range &ents, const BitRefLevel &bit,
                                 const bool only_tets = true,
-                                int verb             = 0) const;
+                                int verb = 0) const;
+
+  /**
+   * @brief add entities to database and set bit ref level
+   * \ingroup mofem_bit_ref
+   *
+   * \note behaviour of this method is different than when bit ref level is passed
+   * as reference. When is bit ref level is passed by reference lower dimension
+   * entities adjacent to entities in passed range are added. In THIS variant only
+   * entities in range are added.
+   * 
+   * @param ents
+   * @param bit
+   * @param only_tets
+   * @param verb
+   * @return MoFEMErrorCode setBitRefLevel
+   */
+  MoFEMErrorCode setEntsBitRefLevel(const Range &ents,
+                                    const BitRefLevel bit = BitRefLevel(),
+                                    int verb = 0) const;
 
   MoFEMErrorCode addToDatabaseBitRefLevelByType(const EntityType type,
                                                 const BitRefLevel &bit,
@@ -480,6 +499,8 @@ struct BitRefManager : public UnknownInterface {
                                             const char *options) const;
 
   /**@}*/
+
+
   };
 }
 
