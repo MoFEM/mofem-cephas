@@ -98,7 +98,7 @@ struct SetBitRefLevelTool {
   }
 
   /// add entities to database
-  MoFEMErrorCode addToDatabase(std::vector<EntityHandle> &seed_ents_vec,
+  MoFEMErrorCode addEntsToDatabase(std::vector<EntityHandle> &seed_ents_vec,
                                std::vector<boost::shared_ptr<RefEntity> >
                                    *shared_ref_ents_vec_for_fe = NULL) const {
     MoFEMFunctionBeginHot;
@@ -176,7 +176,7 @@ MoFEMErrorCode BitRefManager::setBitRefLevel(const Range &ents,
               .findEntsToAdd(f, s, seed_ents_vec);
           if (!seed_ents_vec.empty()) {
             CHKERR SetBitRefLevelTool(m_field, bit, ref_ents_ptr)
-                .addToDatabase(seed_ents_vec);
+                .addEntsToDatabase(seed_ents_vec);
           }
         }
       }
@@ -209,7 +209,7 @@ MoFEMErrorCode BitRefManager::setEntsBitRefLevel(const Range &ents,
     // add elements
     if (!seed_ents_vec.empty()) {
       CHKERR SetBitRefLevelTool(m_field, bit, ref_ents_ptr)
-          .addToDatabase(seed_ents_vec, &shared_ref_ents_vec_for_fe);
+          .addEntsToDatabase(seed_ents_vec, &shared_ref_ents_vec_for_fe);
     }
 
     // create finite elements
