@@ -538,10 +538,10 @@ MoFEMErrorCode ForcesAndSourcesCore::getTypeIndices(
     local_indices.resize((*dit)->getNbDofsOnEnt(), false);
     for (; dit != hi_dit; dit++) {
       int idx = (*dit)->getPetscGlobalDofIdx();
-      int elemem_idx = (*dit)->getEntDofIdx();
-      indices[elemem_idx] = idx;
+      int elem_idx = (*dit)->getEntDofIdx();
+      indices[elem_idx] = idx;
       int local_idx = (*dit)->getPetscLocalDofIdx();
-      local_indices[elemem_idx] = local_idx;
+      local_indices[elem_idx] = local_idx;
     }
   } else {
     indices.resize(0);
