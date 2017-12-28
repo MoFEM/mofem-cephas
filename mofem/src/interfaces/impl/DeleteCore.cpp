@@ -154,7 +154,7 @@ MoFEMErrorCode Core::clear_dofs_fields(const std::string &name,
   if (verb == -1)
     verb = verbose;
 
-  const Field *field_ptr = get_field_structure(name);
+  // const Field *field_ptr = get_field_structure(name);
   // int field_bit_number = field_ptr->getBitNumber();
   // bool is_distributed_mesh = basicEntityDataPtr->trueIfDistributedMesh();
   // ParallelComm *pcomm =
