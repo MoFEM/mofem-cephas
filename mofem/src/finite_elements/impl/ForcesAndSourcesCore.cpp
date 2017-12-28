@@ -311,12 +311,13 @@ MoFEMErrorCode ForcesAndSourcesCore::getDataOrderSpaceAndBase(
              side_table.get<2>().count(type));
   }
 
-  for (unsigned int side = 0; side < data.size(); side++) {
+  for (unsigned int side = 0; side != data.size(); ++side) {
     data[side].getDataOrder() = 0;
     data[side].getBase() = NOBASE;
     data[side].getSpace() = NOSPACE;
   }
 
+  // get dofs by name, type and side
   const FEDofEntity_multiIndex::index<
       Composite_Name_Type_And_Side_Number_mi_tag>::type &data_dofs =
       numeredEntFiniteElementPtr->getDataDofs()
@@ -329,19 +330,24 @@ MoFEMErrorCode ForcesAndSourcesCore::getDataOrderSpaceAndBase(
     MoFEMFunctionReturnHot(0);
   }
   hi_dit =
-      data_dofs.lower_bound(boost::make_tuple(field_name, type, data.size()));
+      data_dofs.upper_bound(boost::make_tuple(field_name, type, data.size()));
 
   for (; dit != hi_dit;) {
 
     // std::cerr << ApproximationBaseNames[dit->getApproxBase()] << std::endl;
 
     int side_number = (*dit)->sideNumberPtr->side_number;
-    if (data[side_number].getDataOrder())
+    if (data[side_number].getDataOrder()) {
+      const int nb_dofs_on_ent = (*dit)->getNbDofsOnEnt();
+      for (int i = 0; i != nb_dofs_on_ent; ++i, ++dit) {
+      }
       continue;
+    }
 
     ApproximationOrder ent_order = (*dit)->getMaxOrder();
-    if (side_number < 0) {
-      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
+    if (PetscUnlikely(side_number < 0)) {
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "Side number is not set to dof entity");
     }
     data[side_number].getBase() = (*dit)->getApproxBase();
     data[side_number].getSpace() = (*dit)->getSpace();
@@ -364,7 +370,7 @@ MoFEMErrorCode ForcesAndSourcesCore::getDataOrderSpaceAndBase(
     }
 
     const int nb_dofs_on_ent = (*dit)->getNbDofsOnEnt();
-    for (int i = 0; i != nb_dofs_on_ent; i++, dit++) {
+    for (int i = 0; i != nb_dofs_on_ent; ++i, ++dit) {
     }
   }
 
