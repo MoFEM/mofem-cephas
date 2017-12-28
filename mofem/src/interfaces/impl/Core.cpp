@@ -238,9 +238,9 @@ MoFEMErrorCode Core::addPrismToDatabase(const EntityHandle prism, int verb) {
   p_ent = refinedEntities.insert(
       boost::make_shared<RefEntity>(basicEntityDataPtr, prism));
   if (p_ent.second) {
-    std::pair<RefElement_multiIndex::iterator, bool> p_MoFEMFiniteElement;
-    p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(
-        boost::shared_ptr<RefElement>(new RefElement_PRISM(*p_ent.first))));
+    std::pair<RefElement_multiIndex::iterator, bool> p;
+    p = refinedFiniteElements.insert(
+        boost::shared_ptr<RefElement>(new RefElement_PRISM(*p_ent.first)));
     int num_nodes;
     const EntityHandle *conn;
     CHKERR moab.get_connectivity(prism, conn, num_nodes, true);
@@ -253,8 +253,8 @@ MoFEMErrorCode Core::addPrismToDatabase(const EntityHandle prism, int verb) {
     if (face_side4.size() != 1)
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
               "prims don't have side face 4");
-    p_MoFEMFiniteElement.first->getSideNumberPtr(*face_side3.begin());
-    p_MoFEMFiniteElement.first->getSideNumberPtr(*face_side4.begin());
+    p.first->get()->getSideNumberPtr(*face_side3.begin());
+    p.first->get()->getSideNumberPtr(*face_side4.begin());
   }
   MoFEMFunctionReturn(0);
 }
@@ -623,46 +623,40 @@ MoFEMErrorCode Core::initialiseDatabaseFromMesh(int verb) {
         std::pair<RefEntity_multiIndex::iterator, bool> p_ref_ent;
         p_ref_ent = refinedEntities.insert(boost::shared_ptr<RefEntity>(
             new RefEntity(basicEntityDataPtr, *eit)));
-        std::pair<RefElement_multiIndex::iterator, bool> p_MoFEMFiniteElement;
+        std::pair<RefElement_multiIndex::iterator, bool> p;
         try {
           switch (moab.type_from_handle(*eit)) {
           case MBVERTEX:
-            p_MoFEMFiniteElement = refinedFiniteElements.insert(
-                ptrWrapperRefElement(boost::shared_ptr<RefElement>(
-                    new RefElement_VERTEX(*p_ref_ent.first))));
+            p = refinedFiniteElements.insert(boost::shared_ptr<RefElement>(
+                new RefElement_VERTEX(*p_ref_ent.first)));
             break;
           case MBEDGE:
-            p_MoFEMFiniteElement = refinedFiniteElements.insert(
-                ptrWrapperRefElement(boost::shared_ptr<RefElement>(
-                    new RefElement_EDGE(*p_ref_ent.first))));
+            p = refinedFiniteElements.insert(boost::shared_ptr<RefElement>(
+                new RefElement_EDGE(*p_ref_ent.first)));
             break;
           case MBTRI:
-            p_MoFEMFiniteElement = refinedFiniteElements.insert(
-                ptrWrapperRefElement(boost::shared_ptr<RefElement>(
-                    new RefElement_TRI(*p_ref_ent.first))));
+            p = refinedFiniteElements.insert(boost::shared_ptr<RefElement>(
+                new RefElement_TRI(*p_ref_ent.first)));
             break;
           case MBTET:
-            p_MoFEMFiniteElement = refinedFiniteElements.insert(
-                ptrWrapperRefElement(boost::shared_ptr<RefElement>(
-                    new RefElement_TET(*p_ref_ent.first))));
+            p = refinedFiniteElements.insert(boost::shared_ptr<RefElement>(
+                new RefElement_TET(*p_ref_ent.first)));
             break;
           case MBPRISM:
             CHKERR addPrismToDatabase(*eit, verb);
-            p_MoFEMFiniteElement = refinedFiniteElements.insert(
-                ptrWrapperRefElement(boost::shared_ptr<RefElement>(
-                    new RefElement_PRISM(*p_ref_ent.first))));
+            p = refinedFiniteElements.insert(boost::shared_ptr<RefElement>(
+                new RefElement_PRISM(*p_ref_ent.first)));
             break;
           case MBENTITYSET:
-            p_MoFEMFiniteElement = refinedFiniteElements.insert(
-                ptrWrapperRefElement(boost::shared_ptr<RefElement>(
-                    new RefElement_MESHSET(*p_ref_ent.first))));
+            p = refinedFiniteElements.insert(boost::shared_ptr<RefElement>(
+                new RefElement_MESHSET(*p_ref_ent.first)));
             break;
           default:
             SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                     "Only finite elements of type MBTET, MBPRISM and "
                     "MBENTITYSET are implemented");
           }
-          if (p_MoFEMFiniteElement.second) {
+          if (p.second) {
             // PetscPrintf(cOmm,"Warring: this entity should be already in
             // refined finite elements database");
             // SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, this entity should

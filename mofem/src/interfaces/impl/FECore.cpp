@@ -499,11 +499,11 @@ MoFEMErrorCode Core::add_ents_to_finite_element_by_bit_ref(
   }
   int nb_add_FEs = 0;
   for (; miit != hi_miit; miit++) {
-    BitRefLevel bit2 = miit->getBitRefLevel();
+    BitRefLevel bit2 = miit->get()->getBitRefLevel();
     if ((bit2 & mask) != bit2)
       continue;
     if ((bit2 & bit).any()) {
-      EntityHandle ent = miit->getRefEnt();
+      EntityHandle ent = miit->get()->getRefEnt();
       CHKERR moab.add_entities(idm, &ent, 1);
       nb_add_FEs++;
     }
@@ -598,7 +598,7 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
 
       std::pair<EntFiniteElement_multiIndex::iterator, bool> p =
           entsFiniteElements.insert(boost::make_shared<EntFiniteElement>(
-              ref_fe_miit->getRefElement(), fe));
+              *ref_fe_miit, fe));
 
       if (fe_fields[ROW] == fe_fields[COL]) {
         p.first->get()->col_dof_view = p.first->get()->row_dof_view;

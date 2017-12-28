@@ -502,7 +502,7 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
         (unsigned int)nb_new_tets) {
       for (int tt = 0; miit_composite != hi_miit_composite;
            miit_composite++, tt++) {
-        EntityHandle tet = miit_composite->getRefEnt();
+        EntityHandle tet = miit_composite->get()->getRefEnt();
         // set ref tets entities
         ref_tets[tt] = tet;
         ref_tets_bit.set(tt, 1);
@@ -543,7 +543,7 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
         // verbose
         if (verb > 2) {
           std::ostringstream ss;
-          ss << miit_composite->getRefElement() << std::endl;
+          ss << **miit_composite << std::endl;
           PetscPrintf(m_field.get_comm(), ss.str().c_str());
         }
       }
@@ -624,17 +624,16 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
           try {
             p_MoFEMFiniteElement =
                 const_cast<RefElement_multiIndex *>(refined_finite_elements_ptr)
-                    ->insert(ptrWrapperRefElement(boost::shared_ptr<RefElement>(
-                        new RefElement_TET(*p_FieldEntity.first))));
+                    ->insert(boost::shared_ptr<RefElement>(
+                        new RefElement_TET(*p_FieldEntity.first)));
           } catch (MoFEMException const &e) {
             SETERRQ(m_field.get_comm(), e.errorCode, e.errorMessage);
           }
-          // set bit that this element is now in databse
+          // set bit that this element is now in database
           ref_tets_bit.set(tt);
           if (verb > 2) {
             std::ostringstream ss;
-            ss << "add tet: " << *(p_MoFEMFiniteElement.first->getRefElement())
-               << std::endl;
+            ss << "add tet: " << **p_MoFEMFiniteElement.first << std::endl;
             PetscPrintf(m_field.get_comm(), ss.str().c_str());
           }
         }
@@ -1078,12 +1077,12 @@ MoFEMErrorCode MeshRefinement::refine_PRISM(const EntityHandle meshset,
          miit_composite2++, pp++) {
       // add this tet to this ref
       const_cast<RefEntity_multiIndex *>(refined_ents_ptr)
-          ->modify(refined_ents_ptr->find(miit_composite2->getRefEnt()),
+          ->modify(refined_ents_ptr->find(miit_composite2->get()->getRefEnt()),
                    RefEntity_change_add_bit(bit));
       ref_prism_bit.set(pp, 1);
       if (verb > 2) {
         std::ostringstream ss;
-        ss << "is refined " << *(miit_composite2->getRefElement()) << std::endl;
+        ss << "is refined " << *miit_composite2 << std::endl;
         PetscPrintf(m_field.get_comm(), ss.str().c_str());
       }
     }
@@ -1121,8 +1120,8 @@ MoFEMErrorCode MeshRefinement::refine_PRISM(const EntityHandle meshset,
           try {
             p_fe =
                 const_cast<RefElement_multiIndex *>(refined_finite_elements_ptr)
-                    ->insert(ptrWrapperRefElement(boost::shared_ptr<RefElement>(
-                        new RefElement_PRISM(*p_ent.first))));
+                    ->insert(boost::shared_ptr<RefElement>(
+                        new RefElement_PRISM(*p_ent.first)));
           } catch (MoFEMException const &e) {
             SETERRQ(PETSC_COMM_SELF, e.errorCode, e.errorMessage);
           }
@@ -1131,7 +1130,7 @@ MoFEMErrorCode MeshRefinement::refine_PRISM(const EntityHandle meshset,
           CHKERRG(ierr);
           if (verb > 2) {
             std::ostringstream ss;
-            ss << "add prism: " << *(p_fe.first->getRefElement()) << std::endl;
+            ss << "add prism: " << **p_fe.first << std::endl;
             if (verb > 7) {
               for (int nn = 0; nn < 6; nn++) {
                 ss << new_prism_conn[nn] << " ";

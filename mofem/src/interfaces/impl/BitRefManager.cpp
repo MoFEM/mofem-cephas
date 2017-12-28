@@ -220,33 +220,33 @@ MoFEMErrorCode BitRefManager::setEntsBitRefLevel(const Range &ents,
       switch ((*vit)->getEntType()) {
       case MBVERTEX:
         p_fe = const_cast<RefElement_multiIndex *>(ref_fe_ptr)
-                   ->insert(ptrWrapperRefElement(boost::shared_ptr<RefElement>(
-                       new RefElement_VERTEX(*vit))));
+                   ->insert(boost::shared_ptr<RefElement>(
+                       new RefElement_VERTEX(*vit)));
         break;
       case MBEDGE:
         p_fe = const_cast<RefElement_multiIndex *>(ref_fe_ptr)
-                   ->insert(ptrWrapperRefElement(boost::shared_ptr<RefElement>(
-                       new RefElement_EDGE(*vit))));
+                   ->insert(boost::shared_ptr<RefElement>(
+                       new RefElement_EDGE(*vit)));
         break;
       case MBTRI:
         p_fe = const_cast<RefElement_multiIndex *>(ref_fe_ptr)
-                   ->insert(ptrWrapperRefElement(boost::shared_ptr<RefElement>(
-                       new RefElement_TRI(*vit))));
+                   ->insert(
+                       boost::shared_ptr<RefElement>(new RefElement_TRI(*vit)));
         break;
       case MBTET:
         p_fe = const_cast<RefElement_multiIndex *>(ref_fe_ptr)
-                   ->insert(ptrWrapperRefElement(boost::shared_ptr<RefElement>(
-                       new RefElement_TET(*vit))));
+                   ->insert(
+                       boost::shared_ptr<RefElement>(new RefElement_TET(*vit)));
         break;
       case MBPRISM:
         p_fe = const_cast<RefElement_multiIndex *>(ref_fe_ptr)
-                   ->insert(ptrWrapperRefElement(boost::shared_ptr<RefElement>(
-                       new RefElement_PRISM(*vit))));
+                   ->insert(boost::shared_ptr<RefElement>(
+                       new RefElement_PRISM(*vit)));
         break;
       case MBENTITYSET:
         p_fe = const_cast<RefElement_multiIndex *>(ref_fe_ptr)
-                   ->insert(ptrWrapperRefElement(boost::shared_ptr<RefElement>(
-                       new RefElement_MESHSET(*vit))));
+                   ->insert(boost::shared_ptr<RefElement>(
+                       new RefElement_MESHSET(*vit)));
         break;
       default:
         SETERRQ(m_field.get_comm(), MOFEM_NOT_IMPLEMENTED, "not implemented");
@@ -296,14 +296,13 @@ MoFEMErrorCode BitRefManager::setBitLevelToMeshset(const EntityHandle meshset,
               new RefEntity(m_field.get_basic_entity_data_ptr(), meshset)));
   const_cast<RefEntity_multiIndex *>(ref_ents_ptr)
       ->modify(p_ent.first, RefEntity_change_add_bit(bit));
-  ptrWrapperRefElement pack_fe(
-      boost::shared_ptr<RefElement>(new RefElement_MESHSET(*p_ent.first)));
+ boost::shared_ptr<RefElement> fe_ptr =
+      boost::shared_ptr<RefElement>(new RefElement_MESHSET(*p_ent.first));
   std::pair<RefElement_multiIndex::iterator, bool> p_fe =
-      const_cast<RefElement_multiIndex *>(ref_fe_ptr)->insert(pack_fe);
+      const_cast<RefElement_multiIndex *>(ref_fe_ptr)->insert(fe_ptr);
   if (verb > 0) {
     std::ostringstream ss;
-    ss << "add meshset as ref_ent " << *(p_fe.first->getRefElement())
-       << std::endl;
+    ss << "add meshset as ref_ent " << **p_fe.first << std::endl;
     PetscPrintf(m_field.get_comm(), ss.str().c_str());
   }
   MoFEMFunctionReturnHot(0);

@@ -169,23 +169,10 @@ template <typename T> struct interface_RefElement : interface_RefEntity<T> {
     return this->sPtr->getSideNumberTable();
   }
 
-  // DEPRECATED inline SideNumber_multiIndex &get_side_number_table() const
-  // { return this->sPtr->getSideNumberTable(); }
-
   inline const boost::shared_ptr<SideNumber> &
   getSideNumberPtr(const EntityHandle ent) const {
     return this->sPtr->getSideNumberPtr(ent);
   }
-
-  // /**
-  //  * \deprecated First argument is no longer needed
-  //  */
-  // virtual DEPRECATED boost::shared_ptr<SideNumber> getSideNumberPtr(
-  //   const moab::Interface &moab,const EntityHandle ent
-  // ) const {
-  //   NOT_USED(moab);
-  //   return getSideNumberPtr(ent);
-  // }
 
   inline boost::shared_ptr<RefEntity> &getRefEntityPtr() const {
     return this->sPtr->getRefEntityPtr();
@@ -198,8 +185,6 @@ template <typename T> struct interface_RefElement : interface_RefEntity<T> {
   virtual ~interface_RefElement() {}
 };
 
-typedef interface_RefElement<RefElement> ptrWrapperRefElement;
-
 /**
  * \typedef RefElement_multiIndex
  * type multiIndex container for RefElement
@@ -211,39 +196,40 @@ typedef interface_RefElement<RefElement> ptrWrapperRefElement;
  * \param ordered_non_unique Composite_ParentEnt_And_BitsOfRefinedEdges_mi_tag
  */
 typedef multi_index_container<
-    ptrWrapperRefElement,
+    boost::shared_ptr<RefElement>,
+    // ptrWrapperRefElement,
     indexed_by<
         ordered_unique<
             tag<Ent_mi_tag>,
-            const_mem_fun<ptrWrapperRefElement::interface_type_RefEntity,
-                          EntityHandle, &ptrWrapperRefElement::getRefEnt> >,
+            const_mem_fun<RefElement::interface_type_RefEntity,
+                          EntityHandle, &RefElement::getRefEnt> >,
         ordered_non_unique<
             tag<Ent_Ent_mi_tag>,
-            const_mem_fun<ptrWrapperRefElement::interface_type_RefEntity,
-                          EntityHandle, &ptrWrapperRefElement::getParentEnt> >,
+            const_mem_fun<RefElement::interface_type_RefEntity,
+                          EntityHandle, &RefElement::getParentEnt> >,
         ordered_non_unique<
             tag<EntType_mi_tag>,
-            const_mem_fun<ptrWrapperRefElement::interface_type_RefEntity,
-                          EntityType, &ptrWrapperRefElement::getEntType> >,
+            const_mem_fun<RefElement::interface_type_RefEntity,
+                          EntityType, &RefElement::getEntType> >,
         ordered_non_unique<
             tag<Composite_ParentEnt_And_BitsOfRefinedEdges_mi_tag>,
             composite_key<
-                ptrWrapperRefElement,
-                const_mem_fun<ptrWrapperRefElement::interface_type_RefEntity,
+                RefElement,
+                const_mem_fun<RefElement::interface_type_RefEntity,
                               EntityHandle,
-                              &ptrWrapperRefElement::getParentEnt>,
-                const_mem_fun<ptrWrapperRefElement::interface_type_RefElement,
+                              &RefElement::getParentEnt>,
+                const_mem_fun<RefElement,
                               int,
-                              &ptrWrapperRefElement::getBitRefEdgesUlong> > >,
+                              &RefElement::getBitRefEdgesUlong> > >,
         hashed_unique<
             tag<Composite_EntType_and_ParentEntType_mi_tag>,
             composite_key<
-                ptrWrapperRefElement,
-                const_mem_fun<ptrWrapperRefElement::interface_type_RefEntity,
-                              EntityHandle, &ptrWrapperRefElement::getRefEnt>,
-                const_mem_fun<ptrWrapperRefElement::interface_type_RefEntity,
+                RefElement,
+                const_mem_fun<RefElement::interface_type_RefEntity,
+                              EntityHandle, &RefElement::getRefEnt>,
+                const_mem_fun<RefElement::interface_type_RefEntity,
                               EntityHandle,
-                              &ptrWrapperRefElement::getParentEnt> > > > >
+                              &RefElement::getParentEnt> > > > >
     RefElement_multiIndex;
 
 /** \brief change parent
@@ -266,7 +252,7 @@ struct RefElement_change_parent {
                            RefEntity_multiIndex::iterator ref_ent_it,
                            EntityHandle parent)
       : refEntPtr(ref_ent_ptr), refEntIt(ref_ent_it), pArent(parent) {}
-  void operator()(ptrWrapperRefElement &e) {
+  void operator()(boost::shared_ptr<RefElement> &e) {
     const_cast<RefEntity_multiIndex *>(refEntPtr)->modify(
         refEntIt, RefEntity_change_parent(pArent));
   }

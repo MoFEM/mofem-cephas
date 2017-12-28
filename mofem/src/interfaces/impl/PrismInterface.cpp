@@ -839,7 +839,7 @@ MoFEMErrorCode PrismInterface::splitSides(
         refined_finite_elements_ptr->get<Ent_Ent_mi_tag>().upper_bound(*eit3d);
     for(;child_iit!=hi_child_iit;child_iit++) {
       const EntityHandle* conn_ref_tet;
-      rval = moab.get_connectivity(child_iit->getRefEnt(), conn_ref_tet,
+      rval = moab.get_connectivity(child_iit->get()->getRefEnt(), conn_ref_tet,
                                    num_nodes, true);
       CHKERRQ_MOAB(rval);
       int nn = 0;
@@ -853,7 +853,7 @@ MoFEMErrorCode PrismInterface::splitSides(
           SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
                   "database inconsistency");
         }
-        existing_ent = child_iit->getRefEnt();
+        existing_ent = child_iit->get()->getRefEnt();
       }
     }
     switch (moab.type_from_handle(*eit3d)) {
