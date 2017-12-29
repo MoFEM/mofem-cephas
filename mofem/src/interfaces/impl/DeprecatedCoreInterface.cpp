@@ -53,7 +53,7 @@ DeprecatedCoreInterface::seed_finite_elements(const EntityHandle meshset,
   MoFEMFunctionBegin;
   Range entities;
   CHKERR get_moab().get_entities_by_handle(meshset, entities, true);
-  CHKERR getInterface<BitRefManager>()->setEntsBitRefLevel(entities,
+  CHKERR getInterface<BitRefManager>()->setElementsBitRefLevel(entities,
                                                            BitRefLevel(), verb);
   MoFEMFunctionReturn(0);
 }
@@ -61,7 +61,7 @@ DeprecatedCoreInterface::seed_finite_elements(const EntityHandle meshset,
 MoFEMErrorCode
 DeprecatedCoreInterface::seed_finite_elements(const Range &entities,
                                               int verb) {
-  return getInterface<BitRefManager>()->setEntsBitRefLevel(entities,
+  return getInterface<BitRefManager>()->setElementsBitRefLevel(entities,
                                                            BitRefLevel(), verb);
 }
 

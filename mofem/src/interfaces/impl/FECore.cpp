@@ -351,7 +351,7 @@ MoFEMErrorCode Core::add_ents_to_finite_element_by_type(
   idm = get_finite_element_meshset(getBitFEId(name));
   Range ents;
   CHKERR moab.get_entities_by_type(meshset, type, ents, recursive);
-  CHKERR getInterface<BitRefManager>()->setEntsBitRefLevel(ents);
+  CHKERR getInterface<BitRefManager>()->setElementsBitRefLevel(ents);
   CHKERR moab.add_entities(idm, ents);
 
   MoFEMFunctionReturn(0);
@@ -367,7 +367,7 @@ Core::add_ents_to_finite_element_by_dim(const EntityHandle meshset,
   idm = get_finite_element_meshset(getBitFEId(name));
   Range ents;
   CHKERR moab.get_entities_by_dimension(meshset, dim, ents, recursive);
-  CHKERR getInterface<BitRefManager>()->setEntsBitRefLevel(ents);
+  CHKERR getInterface<BitRefManager>()->setElementsBitRefLevel(ents);
   CHKERR moab.add_entities(idm, ents);
   MoFEMFunctionReturn(0);
 }
@@ -378,7 +378,7 @@ MoFEMErrorCode Core::add_ents_to_finite_element_by_type(
   *buildMoFEM &= 1 << 0;
   MoFEMFunctionBegin;
   idm = get_finite_element_meshset(getBitFEId(name));
-  CHKERR getInterface<BitRefManager>()->setEntsBitRefLevel(
+  CHKERR getInterface<BitRefManager>()->setElementsBitRefLevel(
       ents.subset_by_type(type));
   CHKERR moab.add_entities(idm, ents.subset_by_type(type));
   MoFEMFunctionReturn(0);
@@ -391,7 +391,7 @@ Core::add_ents_to_finite_element_by_dim(const Range &ents, const int dim,
   *buildMoFEM &= 1 << 0;
   MoFEMFunctionBegin;
   idm = get_finite_element_meshset(getBitFEId(name));
-  CHKERR getInterface<BitRefManager>()->setEntsBitRefLevel(
+  CHKERR getInterface<BitRefManager>()->setElementsBitRefLevel(
       ents.subset_by_dimension(dim));
   CHKERR moab.add_entities(idm, ents.subset_by_dimension(dim));
   MoFEMFunctionReturn(0);

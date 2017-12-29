@@ -65,9 +65,6 @@ int main(int argc, char *argv[]) {
   MoFEM::Core core(moab);
   MoFEM::Interface& m_field = core;
 
-  //ref meshset ref level 0
-  ierr = m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(0,3,0); CHKERRG(ierr);
-
   // stl::bitset see for more details
   BitRefLevel bit_level0;
   bit_level0.set(0);
@@ -210,9 +207,7 @@ int main(int argc, char *argv[]) {
 
   }
 
-  } catch (MoFEMException const &e) {
-    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
-  }
+  } CATCH_ERRORS;
 
   MoFEM::Core::Finalize();
   return 0;

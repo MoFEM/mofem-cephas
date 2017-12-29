@@ -102,7 +102,7 @@ int main(int argc, char *argv[]) {
     CHKERR moab.get_entities_by_type(0, MBTET, tets, true);
     Range edges;
     CHKERR moab.get_entities_by_type(0, MBEDGE, edges, true);
-    CHKERR m_field.getInterface<BitRefManager>()->setEntsBitRefLevel(edges);
+    CHKERR m_field.getInterface<BitRefManager>()->setElementsBitRefLevel(edges);
 
     // add ents to field and set app. order
 

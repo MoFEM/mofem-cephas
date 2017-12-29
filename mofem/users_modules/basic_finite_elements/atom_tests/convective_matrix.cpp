@@ -28,7 +28,7 @@ static char help[] = "...\n\n";
 
 int main(int argc, char *argv[]) {
 
-  PetscInitialize(&argc,&argv,(char *)0,help);
+  MoFEM::Core::Initialize(&argc,&argv,(char *)0,help);
 
   try {
 
@@ -54,13 +54,13 @@ int main(int argc, char *argv[]) {
     MoFEM::Interface& m_field = core;
 
     //ref meshset ref level 0
-    ierr = m_field.seed_ref_level_3D(0,0); CHKERRG(ierr);
     BitRefLevel bit_level0;
     bit_level0.set(0);
     EntityHandle meshset_level0;
-    rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERRG(rval);
-    ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRG(ierr);
-    ierr = m_field.getInterface<BitRefManager>()->getEntitiesByRefLevel(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRG(ierr);
+    CHKERR moab.create_meshset(MESHSET_SET,meshset_level0); 
+    CHKERR m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(
+        0, 3, bit_level0);
+    CHKERR m_field.getInterface<BitRefManager>()->getEntitiesByRefLevel(bit_level0,BitRefLevel().set(),meshset_level0); 
 
     //Fields
     ierr = m_field.add_field("SPATIAL_POSITION",H1,AINSWORTH_LEGENDRE_BASE,3); CHKERRG(ierr);
@@ -280,11 +280,9 @@ int main(int argc, char *argv[]) {
 
 
 
-  } catch (MoFEMException const &e) {
-    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
-  }
+  } CATCH_ERRORS;
 
-  PetscFinalize();
+  MoFEM::Core::Finalize();
 
   return 0;
 
