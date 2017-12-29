@@ -333,6 +333,34 @@ MoFEMErrorCode BitRefManager::setElementsBitRefLevel(const Range &ents,
   MoFEMFunctionReturn(0);
 }
 
+MoFEMErrorCode BitRefManager::setEntitiesBitRefLevel(const Range &ents,
+                                                     const BitRefLevel bit,
+                                                     int verb) const {
+  MoFEM::Interface &m_field = cOre;
+  const RefEntity_multiIndex *ref_ents_ptr;
+  const RefElement_multiIndex *ref_fe_ptr;
+  MoFEMFunctionBegin;
+  CHKERR m_field.get_ref_ents(&ref_ents_ptr);
+  CHKERR m_field.get_ref_finite_elements(&ref_fe_ptr);
+
+  for (Range::const_pair_iterator pit = ents.pair_begin();
+       pit != ents.pair_end(); pit++) {
+    // get first and last element of range
+    EntityHandle f = pit->first;
+    EntityHandle s = pit->second;
+    Range seed_ents_range; // entities seeded not in database
+    // find ents to add
+    CHKERR SetBitRefLevelTool(m_field, bit, ref_ents_ptr, ref_fe_ptr)
+        .findEntsToAdd(f, s, seed_ents_range);
+    // add elements
+    if (!seed_ents_range.empty()) {
+      CHKERR SetBitRefLevelTool(m_field, bit, ref_ents_ptr, ref_fe_ptr)
+          .addEntsToDatabase(seed_ents_range);
+    }
+  }
+  MoFEMFunctionReturn(0);
+}
+
 MoFEMErrorCode BitRefManager::addToDatabaseBitRefLevelByType(
     const EntityType type, const BitRefLevel &bit, const bool only_tets,
     int verb) const {
@@ -340,7 +368,7 @@ MoFEMErrorCode BitRefManager::addToDatabaseBitRefLevelByType(
   Range ents;
   CHKERR getEntitiesByTypeAndRefLevel(bit, BitRefLevel().set(), type, ents);
   // Add bit ref level to database
-  CHKERR setBitRefLevel(ents, bit);
+  CHKERR setEntitiesBitRefLevel(ents, bit);
   MoFEMFunctionReturn(0);
 }
 
@@ -351,7 +379,7 @@ MoFEMErrorCode BitRefManager::addToDatabaseBitRefLevelByDim(
   Range ents;
   CHKERR getEntitiesByDimAndRefLevel(bit, BitRefLevel().set(), dim, ents);
   // Add bit ref level to database
-  CHKERR setBitRefLevel(ents, bit);
+  CHKERR setEntitiesBitRefLevel(ents, bit);
   MoFEMFunctionReturn(0);
 }
 
@@ -389,14 +417,12 @@ MoFEMErrorCode BitRefManager::setBitRefLevelByDim(const EntityHandle meshset,
                                                   const BitRefLevel &bit,
                                                   int verb) const {
   MoFEM::Interface &m_field = cOre;
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   Range ents;
-  rval =
-      m_field.get_moab().get_entities_by_dimension(meshset, dim, ents, false);
-  CHKERRQ_MOAB(rval);
-  ierr = setBitRefLevel(ents, bit, false, verb);
-  CHKERRG(ierr);
-  MoFEMFunctionReturnHot(0);
+  CHKERR m_field.get_moab().get_entities_by_dimension(meshset, dim, ents,
+                                                      false);
+  CHKERR setBitRefLevel(ents, bit, false, verb);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode BitRefManager::setBitRefLevelByType(const EntityHandle meshset,
@@ -404,13 +430,11 @@ MoFEMErrorCode BitRefManager::setBitRefLevelByType(const EntityHandle meshset,
                                                    const BitRefLevel &bit,
                                                    int verb) const {
   MoFEM::Interface &m_field = cOre;
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   Range ents;
-  rval = m_field.get_moab().get_entities_by_type(meshset, type, ents, false);
-  CHKERRQ_MOAB(rval);
-  ierr = setBitRefLevel(ents, bit, false, verb);
-  CHKERRG(ierr);
-  MoFEMFunctionReturnHot(0);
+  CHKERR m_field.get_moab().get_entities_by_type(meshset, type, ents, false);
+  CHKERR setBitRefLevel(ents, bit, false, verb);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode BitRefManager::addBitRefLevel(const Range &ents,
