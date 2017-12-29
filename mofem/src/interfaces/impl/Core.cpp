@@ -559,7 +559,7 @@ MoFEMErrorCode Core::initialiseDatabaseFromMesh(int verb) {
       std::pair<FiniteElement_multiIndex::iterator, bool> p =
           finiteElements.insert(
               boost::shared_ptr<FiniteElement>(new FiniteElement(moab, *mit)));
-      if (verb > VERBOSE) {
+      if (verb >= VERBOSE) {
         std::ostringstream ss;
         ss << "read finite element " << **p.first << std::endl;
         PetscPrintf(cOmm, ss.str().c_str());
@@ -577,7 +577,7 @@ MoFEMErrorCode Core::initialiseDatabaseFromMesh(int verb) {
     if (problem_id != 0) {
       std::pair<Problem_multiIndex::iterator, bool> p =
           pRoblems.insert(Problem(moab, *mit));
-      if (verb > VERBOSE) {
+      if (verb >= VERBOSE) {
         std::ostringstream ss;
         ss << "read problem " << *p.first << std::endl;
         PetscPrintf(cOmm, ss.str().c_str());
