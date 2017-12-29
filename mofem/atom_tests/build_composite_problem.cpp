@@ -43,7 +43,7 @@ int main(int argc, char *argv[]) {
       SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
     }
 
-    //read mesh and create moab and mofem datastrutures
+    //read mesh and create moab and mofem data structures
 
     moab::Core mb_instance;
     moab::Interface& moab = mb_instance;
@@ -251,9 +251,7 @@ int main(int argc, char *argv[]) {
 
     ierr = DMDestroy(&dm); CHKERRG(ierr);
 
-  } catch (MoFEMException const &e) {
-    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
-  }
+  } CATCH_ERRORS;
 
   // Finish work cleaning memory, getting statistics, etc.
   ierr = MoFEM::Core::Finalize(); CHKERRG(ierr);

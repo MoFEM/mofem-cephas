@@ -519,7 +519,7 @@ MoFEMErrorCode Core::initialiseDatabaseFromMesh(int verb) {
   // Initialize coordinate systems
   CHKERR cs_manger_ptr->initialiseDatabaseFromMesh(verb);
 
-  Range ref_ents_to_add, ref_elems_to_add;
+  Range ref_elems_to_add;
 
   // Initialize database
   Range meshsets;
@@ -548,13 +548,6 @@ MoFEMErrorCode Core::initialiseDatabaseFromMesh(int verb) {
         std::ostringstream ss;
         ss << "read field " << **p.first << std::endl;
         PetscPrintf(cOmm, ss.str().c_str());
-      }
-      if ((*p.first)->getSpace() == NOFIELD) {
-        ref_ents_to_add.insert(*mit);
-      } else {
-        Range ents;
-        CHKERR moab.get_entities_by_handle(*mit, ents, false);
-        ref_ents_to_add.merge(ents);
       }
     }
     // Check for finite elements
@@ -593,8 +586,11 @@ MoFEMErrorCode Core::initialiseDatabaseFromMesh(int verb) {
   }
 
   // Add entities to database
-  ref_ents_to_add.merge(ref_elems_to_add);
-  CHKERR getInterface<BitRefManager>()->setEntitiesBitRefLevel(ref_ents_to_add);
+  Range bit_ref_ents;
+  CHKERR moab.get_entities_by_handle(0, bit_ref_ents, false);
+  CHKERR getInterface<BitRefManager>()->filterEntitiesByRefLevel(
+      BitRefLevel().set(), BitRefLevel().set(), bit_ref_ents);
+  CHKERR getInterface<BitRefManager>()->setEntitiesBitRefLevel(bit_ref_ents);
   CHKERR getInterface<BitRefManager>()->setElementsBitRefLevel(
       ref_elems_to_add);
 
