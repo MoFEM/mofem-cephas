@@ -492,18 +492,20 @@ MoFEMErrorCode Core::getTags(int verb) {
 }
 
 MoFEMErrorCode Core::clear_database(int verb) {
-  MoFEMFunctionBeginHot;
-  if(verb==-1) verb = verbose;
-  ierr = clearMap(); CHKERRG(ierr);
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionBegin;
+  if (verb == -1)
+    verb = verbose;
+  CHKERR clearMap();
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode Core::rebuild_database(int verb) {
-  MoFEMFunctionBeginHot;
-  if(verb==-1) verb = verbose;
-  ierr = clearMap(); CHKERRG(ierr);
-  ierr = initialiseDatabaseFromMesh(verb); CHKERRG(ierr);
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionBegin;
+  if (verb == -1)
+    verb = verbose;
+  CHKERR clearMap();
+  CHKERR initialiseDatabaseFromMesh(verb);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode Core::initialiseDatabaseFromMesh(int verb) {
@@ -517,6 +519,8 @@ MoFEMErrorCode Core::initialiseDatabaseFromMesh(int verb) {
   // Initialize coordinate systems
   CHKERR cs_manger_ptr->initialiseDatabaseFromMesh(verb);
 
+  Range ref_ents_to_add, ref_elems_to_add;
+
   // Initialize database
   Range meshsets;
   CHKERR moab.get_entities_by_type(0, MBENTITYSET, meshsets, true);
@@ -527,76 +531,30 @@ MoFEMErrorCode Core::initialiseDatabaseFromMesh(int verb) {
     // Check if meshset if field meshset
     if (field_id != 0) {
       std::pair<Field_multiIndex::iterator, bool> p;
-      try {
-        const char *cs_name;
-        int cs_name_size;
-        boost::shared_ptr<CoordSys> cs_ptr;
-        rval = moab.tag_get_by_ptr(cs_manger_ptr->get_th_CoordSysName(), &*mit,
-                                   1, (const void **)&cs_name, &cs_name_size);
-        if (rval ==  MB_SUCCESS && cs_name_size) {
-          CHKERR cs_manger_ptr->getCoordSysPtr(
-              std::string(cs_name, cs_name_size), cs_ptr);
-        } else {
-          CHKERR cs_manger_ptr->getCoordSysPtr("UNDEFINED", cs_ptr);
-        }
-        p = fIelds.insert(
-            boost::shared_ptr<Field>(new Field(moab, *mit, cs_ptr)));
-        if (verb > 0) {
-          std::ostringstream ss;
-          ss << "read field " << **p.first << std::endl;
-          ;
-          PetscPrintf(cOmm, ss.str().c_str());
-        }
-      } catch (MoFEMException const &e) {
-        SETERRQ(PETSC_COMM_SELF, e.errorCode, e.errorMessage);
+      const char *cs_name;
+      int cs_name_size;
+      boost::shared_ptr<CoordSys> cs_ptr;
+      rval = moab.tag_get_by_ptr(cs_manger_ptr->get_th_CoordSysName(), &*mit, 1,
+                                 (const void **)&cs_name, &cs_name_size);
+      if (rval == MB_SUCCESS && cs_name_size) {
+        CHKERR cs_manger_ptr->getCoordSysPtr(std::string(cs_name, cs_name_size),
+                                             cs_ptr);
+      } else {
+        CHKERR cs_manger_ptr->getCoordSysPtr("UNDEFINED", cs_ptr);
+      }
+      p = fIelds.insert(
+          boost::shared_ptr<Field>(new Field(moab, *mit, cs_ptr)));
+      if (verb >= VERBOSE) {
+        std::ostringstream ss;
+        ss << "read field " << **p.first << std::endl;
+        PetscPrintf(cOmm, ss.str().c_str());
       }
       if ((*p.first)->getSpace() == NOFIELD) {
-        assert((*p.first)->meshSet == *mit);
-        // add field to ref ents
-        std::pair<RefEntity_multiIndex::iterator, bool> p_ref_ent;
-        p_ref_ent = refinedEntities.insert(
-            boost::make_shared<RefEntity>(basicEntityDataPtr, *mit));
-        NOT_USED(p_ref_ent);
+        ref_ents_to_add.insert(*mit);
       } else {
         Range ents;
         CHKERR moab.get_entities_by_handle(*mit, ents, false);
-        if (verb > 1) {
-          std::ostringstream ss;
-          ss << "read field ents " << ents.size() << std::endl;
-          ;
-          PetscPrintf(cOmm, ss.str().c_str());
-        }
-        boost::shared_ptr<std::vector<FieldEntity> > ents_array =
-            boost::make_shared<std::vector<FieldEntity> >(
-                std::vector<FieldEntity>());
-        // Add sequence to field data structure. Note that entities are
-        // allocated once into vector. This vector is passed into sequence as a
-        // weak_ptr. Vector is destroyed at the point last entity inside that
-        // vector is destroyed.
-        p.first->get()->getEntSequenceContainer()->push_back(ents_array);
-        ents_array->reserve(ents.size());
-        std::vector<boost::shared_ptr<FieldEntity> > ents_shared_array;
-        ents_shared_array.reserve(ents.size());
-        for (Range::iterator eit = ents.begin(); eit != ents.end(); eit++) {
-          std::pair<RefEntity_multiIndex::iterator, bool> p_ref_ent;
-          p_ref_ent = refinedEntities.insert(
-              boost::make_shared<RefEntity>(basicEntityDataPtr, *eit));
-          try {
-            // NOTE: This will work with newer compiler only, use push_back for
-            // back compatibility.
-            // ents_array->emplace_back(*p.first,*p_ref_ent.first);
-            // ents_shared_array.emplace_back(ents_array,&ents_array->back());
-            ents_array->push_back(FieldEntity(*p.first, *p_ref_ent.first));
-            ents_shared_array.push_back(boost::shared_ptr<FieldEntity>(
-                ents_array, &ents_array->back()));
-          } catch (const std::exception &ex) {
-            std::ostringstream ss;
-            ss << ex.what() << std::endl;
-            SETERRQ(PETSC_COMM_SELF, MOFEM_STD_EXCEPTION_THROW,
-                    ss.str().c_str());
-          }
-        }
-        entsFields.insert(ents_shared_array.begin(), ents_shared_array.end());
+        ref_ents_to_add.merge(ents);
       }
     }
     // Check for finite elements
@@ -608,64 +566,16 @@ MoFEMErrorCode Core::initialiseDatabaseFromMesh(int verb) {
       std::pair<FiniteElement_multiIndex::iterator, bool> p =
           finiteElements.insert(
               boost::shared_ptr<FiniteElement>(new FiniteElement(moab, *mit)));
-      if (verb > 0) {
+      if (verb > VERBOSE) {
         std::ostringstream ss;
         ss << "read finite element " << **p.first << std::endl;
-        ;
         PetscPrintf(cOmm, ss.str().c_str());
       }
       NOT_USED(p);
-      assert((*p.first)->meshset == *mit);
       Range ents;
       CHKERR moab.get_entities_by_type(*mit, MBENTITYSET, ents, false);
       CHKERR moab.get_entities_by_handle(*mit, ents, true);
-      for (Range::iterator eit = ents.begin(); eit != ents.end(); eit++) {
-        std::pair<RefEntity_multiIndex::iterator, bool> p_ref_ent;
-        p_ref_ent = refinedEntities.insert(boost::shared_ptr<RefEntity>(
-            new RefEntity(basicEntityDataPtr, *eit)));
-        std::pair<RefElement_multiIndex::iterator, bool> p;
-        try {
-          switch (moab.type_from_handle(*eit)) {
-          case MBVERTEX:
-            p = refinedFiniteElements.insert(boost::shared_ptr<RefElement>(
-                new RefElement_VERTEX(*p_ref_ent.first)));
-            break;
-          case MBEDGE:
-            p = refinedFiniteElements.insert(boost::shared_ptr<RefElement>(
-                new RefElement_EDGE(*p_ref_ent.first)));
-            break;
-          case MBTRI:
-            p = refinedFiniteElements.insert(boost::shared_ptr<RefElement>(
-                new RefElement_TRI(*p_ref_ent.first)));
-            break;
-          case MBTET:
-            p = refinedFiniteElements.insert(boost::shared_ptr<RefElement>(
-                new RefElement_TET(*p_ref_ent.first)));
-            break;
-          case MBPRISM:
-            CHKERR addPrismToDatabase(*eit, verb);
-            p = refinedFiniteElements.insert(boost::shared_ptr<RefElement>(
-                new RefElement_PRISM(*p_ref_ent.first)));
-            break;
-          case MBENTITYSET:
-            p = refinedFiniteElements.insert(boost::shared_ptr<RefElement>(
-                new RefElement_MESHSET(*p_ref_ent.first)));
-            break;
-          default:
-            SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                    "Only finite elements of type MBTET, MBPRISM and "
-                    "MBENTITYSET are implemented");
-          }
-          if (p.second) {
-            // PetscPrintf(cOmm,"Warring: this entity should be already in
-            // refined finite elements database");
-            // SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, this entity should
-            // be already in refined finite elements database");
-          }
-        } catch (MoFEMException const &e) {
-          SETERRQ(PETSC_COMM_SELF, e.errorCode, e.errorMessage);
-        }
-      }
+      ref_elems_to_add.merge(ents);
     }
     BitProblemId problem_id;
     // get bit id form problem tag
@@ -674,41 +584,34 @@ MoFEMErrorCode Core::initialiseDatabaseFromMesh(int verb) {
     if (problem_id != 0) {
       std::pair<Problem_multiIndex::iterator, bool> p =
           pRoblems.insert(Problem(moab, *mit));
-      if (verb > 0) {
+      if (verb > VERBOSE) {
         std::ostringstream ss;
         ss << "read problem " << *p.first << std::endl;
-        ;
         PetscPrintf(cOmm, ss.str().c_str());
       }
     }
   }
-  //build ref entities meshset
-  for (int dd = 0; dd <= 3; dd++) {
-    Range ents;
-    CHKERR moab.get_entities_by_dimension(0, dd, ents, false);
-    for (Range::iterator eit = ents.begin(); eit != ents.end(); eit++) {
-      switch (moab.type_from_handle(*eit)) {
-      case MBVERTEX:
-      case MBEDGE:
-      case MBTRI:
-      case MBTET:
-      case MBPRISM:
-        break;
-      default:
-        continue;
-      }
-      boost::shared_ptr<RefEntity> mofem_ent(
-          new RefEntity(basicEntityDataPtr, *eit));
-      BitRefLevel bit = mofem_ent->getBitRefLevel();
-      if (bit.none()) {
-        continue;
-      }
-      std::pair<RefEntity_multiIndex::iterator, bool> p;
-      p = refinedEntities.insert(mofem_ent);
-    }
+
+  // Add entities to database
+  ref_ents_to_add.merge(ref_elems_to_add);
+  CHKERR getInterface<BitRefManager>()->setEntitiesBitRefLevel(ref_ents_to_add);
+  CHKERR getInterface<BitRefManager>()->setElementsBitRefLevel(
+      ref_elems_to_add);
+
+  // Build field entities
+  for (Field_multiIndex::iterator fit = fIelds.begin(); fit != fIelds.end();
+       ++fit) {
+      Range ents_of_id_meshset;
+      CHKERR moab.get_entities_by_handle(fit->get()->getMeshset(),
+                                         ents_of_id_meshset, false);
+      CHKERR set_field_order(ents_of_id_meshset, fit->get()->getId(), -1);
   }
 
-  if (verb > 2) {
+  // Build fields 
+  CHKERR build_fields(verb);
+  CHKERR build_finite_elements(verb);
+
+  if (verb > VERY_NOISY) {
     list_fields();
     list_finite_elements();
     list_problem();
@@ -733,39 +636,43 @@ MoFEMErrorCode Core::get_fields(const Field_multiIndex **fields_ptr) const {
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode Core::get_ref_ents(const RefEntity_multiIndex **refined_entities_ptr) const {
+MoFEMErrorCode
+Core::get_ref_ents(const RefEntity_multiIndex **refined_entities_ptr) const {
   MoFEMFunctionBeginHot;
   *refined_entities_ptr = &refinedEntities;
   MoFEMFunctionReturnHot(0);
 }
-MoFEMErrorCode Core::get_ref_finite_elements(const RefElement_multiIndex **refined_finite_elements_ptr) const {
+MoFEMErrorCode Core::get_ref_finite_elements(
+    const RefElement_multiIndex **refined_finite_elements_ptr) const {
   MoFEMFunctionBeginHot;
   *refined_finite_elements_ptr = &refinedFiniteElements;
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode Core::get_problem(const std::string &problem_name,const Problem **problem_ptr) const {
+MoFEMErrorCode Core::get_problem(const std::string &problem_name,
+                                 const Problem **problem_ptr) const {
   MoFEMFunctionBeginHot;
   typedef Problem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
   const ProblemsByName &problems = pRoblems.get<Problem_mi_tag>();
   ProblemsByName::iterator p_miit = problems.find(problem_name);
-  if(p_miit == problems.end()) {
-    SETERRQ1(
-      PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,
-      "problem < %s > not found, (top tip: check spelling)",problem_name.c_str()
-    );
+  if (p_miit == problems.end()) {
+    SETERRQ1(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
+             "problem < %s > not found, (top tip: check spelling)",
+             problem_name.c_str());
   }
   *problem_ptr = &*p_miit;
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode Core::get_problems(const Problem_multiIndex **problems_ptr) const {
+MoFEMErrorCode
+Core::get_problems(const Problem_multiIndex **problems_ptr) const {
   MoFEMFunctionBeginHot;
   *problems_ptr = &pRoblems;
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode Core::get_field_ents(const FieldEntity_multiIndex **field_ents) const {
+MoFEMErrorCode
+Core::get_field_ents(const FieldEntity_multiIndex **field_ents) const {
   MoFEMFunctionBeginHot;
   *field_ents = &entsFields;
   MoFEMFunctionReturnHot(0);
@@ -776,16 +683,16 @@ MoFEMErrorCode Core::get_dofs(const DofEntity_multiIndex **dofs_ptr) const {
   MoFEMFunctionReturnHot(0);
 }
 
-MeshsetsManager* Core::get_meshsets_manager_ptr() {
-  MeshsetsManager* meshsets_manager_ptr;
+MeshsetsManager *Core::get_meshsets_manager_ptr() {
+  MeshsetsManager *meshsets_manager_ptr;
   getInterface(meshsets_manager_ptr);
   return meshsets_manager_ptr;
 }
 
-const MeshsetsManager* Core::get_meshsets_manager_ptr() const {
-  MeshsetsManager* meshsets_manager_ptr;
+const MeshsetsManager *Core::get_meshsets_manager_ptr() const {
+  MeshsetsManager *meshsets_manager_ptr;
   getInterface(meshsets_manager_ptr);
   return meshsets_manager_ptr;
 }
 
-}
+} // namespace MoFEM
