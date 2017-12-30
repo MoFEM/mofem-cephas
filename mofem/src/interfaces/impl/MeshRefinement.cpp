@@ -213,20 +213,11 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
       Composite_EntType_and_ParentEntType_mi_tag>::type RefEntsByComposite;
   RefEntsByComposite &ref_ents =
       refined_ents_ptr->get<Composite_EntType_and_ParentEntType_mi_tag>();
-  RefEntsByComposite::iterator miit =
-      ref_ents.lower_bound(boost::make_tuple(MBVERTEX, MBEDGE));
-  RefEntsByComposite::iterator hi_miit =
-      ref_ents.upper_bound(boost::make_tuple(MBVERTEX, MBEDGE));
   RefEntity_multiIndex_view_by_parent_entity ref_parent_ents_view;
-  for (; miit != hi_miit; miit++) {
-    std::pair<RefEntity_multiIndex_view_by_parent_entity::iterator, bool>
-        p_ref_ent_view;
-    p_ref_ent_view = ref_parent_ents_view.insert(*miit);
-    if (!p_ref_ent_view.second) {
-      SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
-              "non unique insertion");
-    }
-  }
+  ref_parent_ents_view.insert(
+    ref_ents.lower_bound(boost::make_tuple(MBVERTEX, MBEDGE)),
+    ref_ents.upper_bound(boost::make_tuple(MBVERTEX, MBEDGE))
+  );
   typedef const RefElement_multiIndex::index<Ent_mi_tag>::type RefElementByEnt;
   RefElementByEnt &ref_finite_element =
       refined_finite_elements_ptr->get<Ent_mi_tag>();
@@ -252,8 +243,7 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
   Range::iterator tit = tets.begin();
   for (; tit != tets.end(); tit++) {
 
-    RefElementByEnt::iterator miit2 = ref_finite_element.find(*tit);
-    if (miit2 == ref_finite_element.end()) {
+    if (ref_finite_element.find(*tit) == ref_finite_element.end()) {
       SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
               "this tet is not in refinedFiniteElements");
     }
