@@ -224,7 +224,7 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
     p_ref_ent_view = ref_parent_ents_view.insert(*miit);
     if (!p_ref_ent_view.second) {
       SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
-              "non uniqe insertion");
+              "non unique insertion");
     }
   }
   typedef const RefElement_multiIndex::index<Ent_mi_tag>::type RefElementByEnt;
