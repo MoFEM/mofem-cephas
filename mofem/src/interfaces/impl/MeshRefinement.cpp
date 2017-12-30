@@ -37,7 +37,6 @@ MeshRefinement::MeshRefinement(const Core &core)
 MoFEMErrorCode MeshRefinement::add_verices_in_the_middel_of_edges(
     const EntityHandle meshset, const BitRefLevel &bit, const bool recursive,
     int verb) {
-
   Interface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   MoFEMFunctionBeginHot;
