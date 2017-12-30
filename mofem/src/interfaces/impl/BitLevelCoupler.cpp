@@ -268,7 +268,7 @@ MoFEMErrorCode BitLevelCoupler::buildAdjacenciesVerticesOnTets(
     EntityHandle parent = 0;
     ierr = getParent(coords, parent, false, iter_tol, inside_tol, verb);
     CHKERRG(ierr);
-    ierr = chanegParent(refined_ptr->project<0>(it), parent, vertex_elements);
+    ierr = chanegParent(refined_ptr->project<0>(it), parent);
     CHKERRG(ierr);
     if (throw_error && parent == 0) {
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
@@ -373,8 +373,7 @@ MoFEMErrorCode BitLevelCoupler::buildAdjacenciesEdgesFacesVolumes(
         CHKERRQ_MOAB(rval);
         parent_ents.erase((*it)->getRefEnt());
         if (!parent_ents.empty()) {
-          ierr = chanegParent(refined_ptr->project<0>(it), *parent_ents.begin(),
-                              elements);
+          ierr = chanegParent(refined_ptr->project<0>(it), *parent_ents.begin());
           CHKERRG(ierr);
           if (verb > 1) {
             std::cout << "after: " << **it << std::endl << std::endl;
@@ -384,7 +383,7 @@ MoFEMErrorCode BitLevelCoupler::buildAdjacenciesEdgesFacesVolumes(
       }
 
       if (!vErify && max_dim > 3) {
-        ierr = chanegParent(refined_ptr->project<0>(it), 0, elements);
+        ierr = chanegParent(refined_ptr->project<0>(it), 0);
         CHKERRG(ierr);
         if (verb > 1) {
           std::cout << "parent not found\n";
@@ -397,8 +396,7 @@ MoFEMErrorCode BitLevelCoupler::buildAdjacenciesEdgesFacesVolumes(
 }
 
 MoFEMErrorCode BitLevelCoupler::chanegParent(RefEntity_multiIndex::iterator it,
-                                             EntityHandle parent,
-                                             bool element) {
+                                             EntityHandle parent) {
   MoFEMFunctionBeginHot;
 
   Interface &m_field = cOre;
@@ -411,37 +409,12 @@ MoFEMErrorCode BitLevelCoupler::chanegParent(RefEntity_multiIndex::iterator it,
     CHKERRG(ierr);
   }
 
-  bool parent_is_set = false;
-  if (element) {
-    EntityHandle ent;
-    ent = (*it)->getRefEnt();
-    const RefElement_multiIndex *refined_finite_elements_ptr;
-    ierr = m_field.get_ref_finite_elements(&refined_finite_elements_ptr);
-    CHKERRG(ierr);
-    RefElement_multiIndex::index<Ent_mi_tag>::type::iterator eit;
-    eit = refined_finite_elements_ptr->get<Ent_mi_tag>().find(ent);
-    if (eit != refined_finite_elements_ptr->get<Ent_mi_tag>().end()) {
-      RefElement_change_parent modifier(refined_ptr, it, parent);
-      bool success;
-      success =
-          const_cast<RefElement_multiIndex *>(refined_finite_elements_ptr)
-              ->modify(refined_finite_elements_ptr->project<0>(eit), modifier);
-      if (!success) {
-        SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
-                "unsuccessful operation");
-      }
-      parent_is_set = true;
-    }
-  }
-
-  if (!parent_is_set) {
-    RefEntity_change_parent modifier(parent);
-    bool success =
-        const_cast<RefEntity_multiIndex *>(refined_ptr)->modify(it, modifier);
-    if (!success) {
-      SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
-              "unsuccessful operation");
-    }
+  RefEntity_change_parent modifier(parent);
+  bool success =
+      const_cast<RefEntity_multiIndex *>(refined_ptr)->modify(it, modifier);
+  if (!success) {
+    SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
+            "unsuccessful operation");
   }
 
   MoFEMFunctionReturnHot(0);
@@ -468,7 +441,7 @@ MoFEMErrorCode BitLevelCoupler::resetParents(Range &children, bool elements,
     it = refined_ptr->get<Ent_mi_tag>().find(*eit);
 
     // resent entity parent
-    ierr = chanegParent(refined_ptr->project<0>(it), 0, elements);
+    ierr = chanegParent(refined_ptr->project<0>(it), 0);
     CHKERRG(ierr);
   }
 

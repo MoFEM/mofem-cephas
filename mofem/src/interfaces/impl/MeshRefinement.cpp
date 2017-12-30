@@ -230,12 +230,17 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
   typedef const RefElement_multiIndex::index<Ent_mi_tag>::type RefElementByEnt;
   RefElementByEnt &ref_finite_element =
       refined_finite_elements_ptr->get<Ent_mi_tag>();
-  typedef const RefElement_multiIndex::index<
+  typedef const RefElement_multiIndex_parents_view::index<
       Composite_ParentEnt_And_BitsOfRefinedEdges_mi_tag>::type
-      RefEntByComposite;
-  RefEntByComposite &by_composite =
-      refined_finite_elements_ptr
-          ->get<Composite_ParentEnt_And_BitsOfRefinedEdges_mi_tag>();
+      RefEntByParentAndRefEdges;
+  RefElement_multiIndex_parents_view ref_ele_parent_view;
+  ref_ele_parent_view.insert(
+    refined_finite_elements_ptr->get<EntType_mi_tag>().lower_bound(MBTET),
+    refined_finite_elements_ptr->get<EntType_mi_tag>().upper_bound(MBTET)
+  );
+  RefEntByParentAndRefEdges &ref_ele_by_parent_and_ref_edges =
+      ref_ele_parent_view
+          .get<Composite_ParentEnt_And_BitsOfRefinedEdges_mi_tag>();
 
   if (respect_interface) {
     SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
@@ -465,16 +470,18 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
     // find that tets
     EntityHandle ref_tets[8];
     std::bitset<8> ref_tets_bit(0);
-    RefEntByComposite::iterator miit_composite = by_composite.lower_bound(
-        boost::make_tuple(*tit, parent_edges_bit.to_ulong()));
-    RefEntByComposite::iterator hi_miit_composite = by_composite.upper_bound(
-        boost::make_tuple(*tit, parent_edges_bit.to_ulong()));
+    RefEntByParentAndRefEdges::iterator it_by_ref_edges =
+        ref_ele_by_parent_and_ref_edges.lower_bound(
+            boost::make_tuple(*tit, parent_edges_bit.to_ulong()));
+    RefEntByParentAndRefEdges::iterator hi_it_by_ref_edges =
+        ref_ele_by_parent_and_ref_edges.upper_bound(
+            boost::make_tuple(*tit, parent_edges_bit.to_ulong()));
     // check if tet with this refinement shame already exits
-    if (distance(miit_composite, hi_miit_composite) ==
+    if (distance(it_by_ref_edges, hi_it_by_ref_edges) ==
         (unsigned int)nb_new_tets) {
-      for (int tt = 0; miit_composite != hi_miit_composite;
-           miit_composite++, tt++) {
-        EntityHandle tet = miit_composite->get()->getRefEnt();
+      for (int tt = 0; it_by_ref_edges != hi_it_by_ref_edges;
+           it_by_ref_edges++, tt++) {
+        EntityHandle tet = it_by_ref_edges->get()->getRefEnt();
         // set ref tets entities
         ref_tets[tt] = tet;
         ref_tets_bit.set(tt, 1);
@@ -513,7 +520,7 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
         // verbose
         if (verb >= VERY_VERBOSE) {
           std::ostringstream ss;
-          ss << **miit_composite << std::endl;
+          ss << **it_by_ref_edges << std::endl;
           PetscPrintf(m_field.get_comm(), ss.str().c_str());
         }
       }
@@ -522,7 +529,7 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
       // of split edges create new elements
       for (int tt = 0; tt < nb_new_tets; tt++) {
         if (!ref_tets_bit.test(tt)) {
-          if (miit_composite != hi_miit_composite) {
+          if (it_by_ref_edges != hi_it_by_ref_edges) {
             Range new_tets_conns_tet;
             CHKERR moab.get_adjacencies(&new_tets_conns[4 * tt], 4, 2, false,
                                         new_tets_conns_tet);
@@ -608,15 +615,15 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
       }
     }
     // //debug
-    // miit_composite =
-    // by_composite.lower_bound(boost::make_tuple(*tit,parent_edges_bit.to_ulong()));
-    // hi_miit_composite =
-    // by_composite.upper_bound(boost::make_tuple(*tit,parent_edges_bit.to_ulong()));
-    // if(miit_composite!=hi_miit_composite) {
-    //   if(distance(miit_composite,hi_miit_composite)!=(unsigned
+    // it_by_ref_edges =
+    // ref_ele_by_parent_and_ref_edges.lower_bound(boost::make_tuple(*tit,parent_edges_bit.to_ulong()));
+    // hi_it_by_ref_edges =
+    // ref_ele_by_parent_and_ref_edges.upper_bound(boost::make_tuple(*tit,parent_edges_bit.to_ulong()));
+    // if(it_by_ref_edges!=hi_it_by_ref_edges) {
+    //   if(distance(it_by_ref_edges,hi_it_by_ref_edges)!=(unsigned
     //   int)nb_new_tets) {
     //     SETERRQ2(m_field.get_comm(),1,"data inconsistency %u != %u",
-    //     distance(miit_composite,hi_miit_composite),(unsigned
+    //     distance(it_by_ref_edges,hi_it_by_ref_edges),(unsigned
     //     int)nb_new_tets);
     //   }
     // }
@@ -908,11 +915,18 @@ MoFEMErrorCode MeshRefinement::refine_PRISM(const EntityHandle meshset,
   ierr = m_field.get_ref_finite_elements(&refined_finite_elements_ptr);
 
   typedef const RefEntity_multiIndex::index<Ent_mi_tag>::type RefEntsByEnt;
-  typedef const RefElement_multiIndex::index<
-      Composite_ParentEnt_And_BitsOfRefinedEdges_mi_tag>::type RefFeByComposite;
-  RefFeByComposite &ref_fe_by_comp =
-      refined_finite_elements_ptr
-          ->get<Composite_ParentEnt_And_BitsOfRefinedEdges_mi_tag>();
+
+  typedef const RefElement_multiIndex_parents_view::index<
+      Composite_ParentEnt_And_BitsOfRefinedEdges_mi_tag>::type
+      RefEntByParentAndRefEdges;
+  RefElement_multiIndex_parents_view ref_ele_parent_view;
+  ref_ele_parent_view.insert(
+    refined_finite_elements_ptr->get<EntType_mi_tag>().lower_bound(MBPRISM),
+    refined_finite_elements_ptr->get<EntType_mi_tag>().upper_bound(MBPRISM)
+  );
+  RefEntByParentAndRefEdges &ref_ele_by_parent_and_ref_edges =
+      ref_ele_parent_view
+          .get<Composite_ParentEnt_And_BitsOfRefinedEdges_mi_tag>();
   // find all vertices which parent is edge
   typedef const RefEntity_multiIndex::index<
       Composite_EntType_and_ParentEntType_mi_tag>::type RefEntsByComposite;
@@ -1023,25 +1037,27 @@ MoFEMErrorCode MeshRefinement::refine_PRISM(const EntityHandle meshset,
     }
     // find that prism
     std::bitset<4> ref_prism_bit(0);
-    RefFeByComposite::iterator miit_composite = ref_fe_by_comp.lower_bound(
-        boost::make_tuple(*pit, split_edges.to_ulong()));
-    RefFeByComposite::iterator hi_miit_composite = ref_fe_by_comp.upper_bound(
-        boost::make_tuple(*pit, split_edges.to_ulong()));
-    RefFeByComposite::iterator miit_composite2 = miit_composite;
-    for (int pp = 0; miit_composite2 != hi_miit_composite;
-         miit_composite2++, pp++) {
+    RefEntByParentAndRefEdges::iterator it_by_ref_edges =
+        ref_ele_by_parent_and_ref_edges.lower_bound(
+            boost::make_tuple(*pit, split_edges.to_ulong()));
+    RefEntByParentAndRefEdges::iterator hi_it_by_ref_edges =
+        ref_ele_by_parent_and_ref_edges.upper_bound(
+            boost::make_tuple(*pit, split_edges.to_ulong()));
+    RefEntByParentAndRefEdges::iterator it_by_ref_edges2 = it_by_ref_edges;
+    for (int pp = 0; it_by_ref_edges2 != hi_it_by_ref_edges;
+         it_by_ref_edges2++, pp++) {
       // add this tet to this ref
       const_cast<RefEntity_multiIndex *>(refined_ents_ptr)
-          ->modify(refined_ents_ptr->find(miit_composite2->get()->getRefEnt()),
+          ->modify(refined_ents_ptr->find(it_by_ref_edges2->get()->getRefEnt()),
                    RefEntity_change_add_bit(bit));
       ref_prism_bit.set(pp, 1);
       if (verb > 2) {
         std::ostringstream ss;
-        ss << "is refined " << *miit_composite2 << std::endl;
+        ss << "is refined " << *it_by_ref_edges2 << std::endl;
         PetscPrintf(m_field.get_comm(), ss.str().c_str());
       }
     }
-    if (miit_composite != hi_miit_composite) {
+    if (it_by_ref_edges != hi_it_by_ref_edges) {
       if (ref_prism_bit.count() != (unsigned int)nb_new_prisms)
         SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
                 "data inconsistency");

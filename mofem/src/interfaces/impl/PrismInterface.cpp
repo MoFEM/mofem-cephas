@@ -825,18 +825,19 @@ MoFEMErrorCode PrismInterface::splitSides(
       continue;
     }
 
-    const RefElement_multiIndex *refined_finite_elements_ptr;
-    ierr = m_field.get_ref_finite_elements(&refined_finite_elements_ptr);
+    const RefEntity_multiIndex *refined_ent_ptr;
+    ierr = m_field.get_ref_ents(&refined_ent_ptr);
     CHKERRG(ierr);
 
     //here is created new or prism is on interface
     EntityHandle existing_ent = 0;
     /* check if tet element with new connectivity is in database*/
-    RefElement_multiIndex::index<Ent_Ent_mi_tag>::type::iterator child_iit,hi_child_iit;
+    RefEntity_multiIndex::index<Ent_Ent_mi_tag>::type::iterator child_iit,
+        hi_child_iit;
     child_iit =
-        refined_finite_elements_ptr->get<Ent_Ent_mi_tag>().lower_bound(*eit3d);
+        refined_ent_ptr->get<Ent_Ent_mi_tag>().lower_bound(*eit3d);
     hi_child_iit =
-        refined_finite_elements_ptr->get<Ent_Ent_mi_tag>().upper_bound(*eit3d);
+        refined_ent_ptr->get<Ent_Ent_mi_tag>().upper_bound(*eit3d);
     for(;child_iit!=hi_child_iit;child_iit++) {
       const EntityHandle* conn_ref_tet;
       rval = moab.get_connectivity(child_iit->get()->getRefEnt(), conn_ref_tet,
@@ -871,16 +872,16 @@ MoFEMErrorCode PrismInterface::splitSides(
                                      &*eit3d);
             CHKERRQ_MOAB(rval);
           } else {
-            RefElement_multiIndex::index<Ent_mi_tag>::type::iterator rit,
+            RefEntity_multiIndex::index<Ent_mi_tag>::type::iterator rit,
                 new_rit;
-            rit = refined_finite_elements_ptr->get<Ent_mi_tag>().find(*eit3d);
-            if(rit==refined_finite_elements_ptr->get<Ent_mi_tag>().end()) {
+            rit = refined_ent_ptr->get<Ent_mi_tag>().find(*eit3d);
+            if(rit==refined_ent_ptr->get<Ent_mi_tag>().end()) {
               SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
                       "can't find this in database");
             }
-            new_rit = refined_finite_elements_ptr->get<Ent_mi_tag>().find(
+            new_rit = refined_ent_ptr->get<Ent_mi_tag>().find(
                 *new_conn_tet.begin());
-            if(new_rit==refined_finite_elements_ptr->get<Ent_mi_tag>().end()) {
+            if(new_rit==refined_ent_ptr->get<Ent_mi_tag>().end()) {
               SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
                       "can't find this in database");
             }

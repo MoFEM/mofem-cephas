@@ -198,64 +198,35 @@ typedef multi_index_container<
     boost::shared_ptr<RefElement>,
     // ptrWrapperRefElement,
     indexed_by<
-        ordered_unique<
-            tag<Ent_mi_tag>,
-            const_mem_fun<RefElement::interface_type_RefEntity,
-                          EntityHandle, &RefElement::getRefEnt> >,
-        ordered_non_unique<
-            tag<Ent_Ent_mi_tag>,
-            const_mem_fun<RefElement::interface_type_RefEntity,
-                          EntityHandle, &RefElement::getParentEnt> >,
+        ordered_unique<tag<Ent_mi_tag>,
+                       const_mem_fun<RefElement::interface_type_RefEntity,
+                                     EntityHandle, &RefElement::getRefEnt> >,
         ordered_non_unique<
             tag<EntType_mi_tag>,
-            const_mem_fun<RefElement::interface_type_RefEntity,
-                          EntityType, &RefElement::getEntType> >,
+            const_mem_fun<RefElement::interface_type_RefEntity, EntityType,
+                          &RefElement::getEntType> > > >
+    RefElement_multiIndex;
+
+typedef multi_index_container<
+    boost::shared_ptr<RefElement>,
+    // ptrWrapperRefElement,
+    indexed_by<
+        ordered_unique<tag<Ent_mi_tag>,
+                       const_mem_fun<RefElement::interface_type_RefEntity,
+                                     EntityHandle, &RefElement::getRefEnt> >,
+        ordered_non_unique<
+            tag<Ent_Ent_mi_tag>,
+            const_mem_fun<RefElement::interface_type_RefEntity, EntityHandle,
+                          &RefElement::getParentEnt> >,
         ordered_non_unique<
             tag<Composite_ParentEnt_And_BitsOfRefinedEdges_mi_tag>,
             composite_key<
                 RefElement,
                 const_mem_fun<RefElement::interface_type_RefEntity,
-                              EntityHandle,
-                              &RefElement::getParentEnt>,
-                const_mem_fun<RefElement,
-                              int,
-                              &RefElement::getBitRefEdgesUlong> > >,
-        hashed_unique<
-            tag<Composite_EntType_and_ParentEntType_mi_tag>,
-            composite_key<
-                RefElement,
-                const_mem_fun<RefElement::interface_type_RefEntity,
-                              EntityHandle, &RefElement::getRefEnt>,
-                const_mem_fun<RefElement::interface_type_RefEntity,
-                              EntityHandle,
-                              &RefElement::getParentEnt> > > > >
-    RefElement_multiIndex;
-
-/** \brief change parent
-  * \ingroup  fe_multi_indices
-  *
-  * Using this function with care. Some other multi-indices can deponent on
-  this.
-
-  Known dependent multi-indices (verify if that list is full):
-  - RefEntity_multiIndex
-  - RefElement_multiIndex
-
-  */
-struct RefElement_change_parent {
-  const RefEntity_multiIndex *refEntPtr;
-  RefEntity_multiIndex::iterator refEntIt;
-  EntityHandle pArent;
-  ErrorCode rval;
-  RefElement_change_parent(const RefEntity_multiIndex *ref_ent_ptr,
-                           RefEntity_multiIndex::iterator ref_ent_it,
-                           EntityHandle parent)
-      : refEntPtr(ref_ent_ptr), refEntIt(ref_ent_it), pArent(parent) {}
-  void operator()(boost::shared_ptr<RefElement> &e) {
-    const_cast<RefEntity_multiIndex *>(refEntPtr)->modify(
-        refEntIt, RefEntity_change_parent(pArent));
-  }
-};
+                              EntityHandle, &RefElement::getParentEnt>,
+                const_mem_fun<RefElement, int,
+                              &RefElement::getBitRefEdgesUlong> > > > >
+    RefElement_multiIndex_parents_view;
 
 struct EntFiniteElement;
 
