@@ -39,23 +39,23 @@ MoFEMErrorCode Core::clear_inactive_dofs(int verb) {
   for (DofEntity_multiIndex::iterator dit = dofsField.begin();
        dit != dofsField.end();) {
     if (!dit->get()->getActive()) {
-      FieldEntityEntFiniteElementAdjacencyMap_multiIndex::index<
-          Unique_mi_tag>::type::iterator ait,
-          hi_ait;
-      ait = entFEAdjacencies.get<Unique_mi_tag>().lower_bound(
-          (*dit)->getFieldEntityPtr()->getGlobalUniqueId());
-      hi_ait = entFEAdjacencies.get<Unique_mi_tag>().upper_bound(
-          (*dit)->getFieldEntityPtr()->getGlobalUniqueId());
-      for (; ait != hi_ait; ait++) {
-        boost::shared_ptr<EntFiniteElement> ent_fe_ptr;
-        ent_fe_ptr = ait->entFePtr;
-        ent_fe_ptr->row_dof_view->erase((*dit)->getGlobalUniqueId());
-        if (ent_fe_ptr->row_dof_view != ent_fe_ptr->col_dof_view) {
-          ent_fe_ptr->col_dof_view->erase((*dit)->getGlobalUniqueId());
-        }
-        ent_fe_ptr->data_dofs->get<Unique_mi_tag>().erase(
-            (*dit)->getGlobalUniqueId());
-      }
+      // FieldEntityEntFiniteElementAdjacencyMap_multiIndex::index<
+      //     Unique_mi_tag>::type::iterator ait,
+      //     hi_ait;
+      // ait = entFEAdjacencies.get<Unique_mi_tag>().lower_bound(
+      //     (*dit)->getFieldEntityPtr()->getGlobalUniqueId());
+      // hi_ait = entFEAdjacencies.get<Unique_mi_tag>().upper_bound(
+      //     (*dit)->getFieldEntityPtr()->getGlobalUniqueId());
+      // for (; ait != hi_ait; ait++) {
+      //   boost::shared_ptr<EntFiniteElement> ent_fe_ptr;
+      //   ent_fe_ptr = ait->entFePtr;
+      //   ent_fe_ptr->row_dof_view->erase((*dit)->getGlobalUniqueId());
+      //   if (ent_fe_ptr->row_dof_view != ent_fe_ptr->col_dof_view) {
+      //     ent_fe_ptr->col_dof_view->erase((*dit)->getGlobalUniqueId());
+      //   }
+      //   ent_fe_ptr->data_dofs->get<Unique_mi_tag>().erase(
+      //       (*dit)->getGlobalUniqueId());
+      // }
       dit = dofsField.erase(dit);
     } else {
       ++dit;
