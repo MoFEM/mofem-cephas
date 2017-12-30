@@ -113,7 +113,6 @@ struct RefElement_TET : public RefElement {
   };
   const BitRefEdges &getBitRefEdges() const { return *tag_BitRefEdges; }
   int getBitRefEdgesUlong() const { return getBitRefEdges().to_ulong(); }
-  inline int getRefType() const { return tag_type_data[0]; }
 };
 
 /**
