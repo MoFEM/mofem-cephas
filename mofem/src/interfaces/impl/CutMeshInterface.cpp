@@ -545,6 +545,9 @@ MoFEMErrorCode CutMeshInterface::cutEdgesInMiddle(const BitRefLevel bit) {
   MeshRefinement *refiner;
   const RefEntity_multiIndex *ref_ents_ptr;
   MoFEMFunctionBegin;
+  if(cutEdges.size() != edgesToCut.size()) {
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Data inconsistency");
+  }
   CHKERR m_field.getInterface(refiner);
   CHKERR m_field.get_ref_ents(&ref_ents_ptr);
   CHKERR refiner->add_verices_in_the_middel_of_edges(cutEdges, bit);
@@ -560,22 +563,26 @@ MoFEMErrorCode CutMeshInterface::cutEdgesInMiddle(const BitRefLevel bit) {
   cutNewSurfaces.clear();
   CHKERR m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
       bit, bit, MBTRI, cutNewSurfaces);
-  // Find new vertices on catted edges
+  // Find new vertices on cut edges
   cutNewVertices.clear();
   CHKERR moab.get_connectivity(zeroDistanceEnts, cutNewVertices, true);
   cutNewVertices.merge(zeroDistanceVerts);
   for (map<EntityHandle, TreeData>::iterator mit = edgesToCut.begin();
-       mit != edgesToCut.end(); mit++) {
-    boost::shared_ptr<RefEntity> ref_ent =
-        *(ref_ents_ptr->get<Composite_ParentEnt_And_EntType_mi_tag>().find(
-            boost::make_tuple(mit->first, MBVERTEX)));
+       mit != edgesToCut.end(); ++mit) {
+    RefEntity_multiIndex::index<
+        Composite_ParentEnt_And_EntType_mi_tag>::type::iterator vit =
+        ref_ents_ptr->get<Composite_ParentEnt_And_EntType_mi_tag>().find(
+            boost::make_tuple(mit->first, MBVERTEX));
+    if (vit ==
+        ref_ents_ptr->get<Composite_ParentEnt_And_EntType_mi_tag>().end()) {
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "No vertex on cut edges, that make no sense");
+    }
+    const boost::shared_ptr<RefEntity> &ref_ent = *vit;
     if ((ref_ent->getBitRefLevel() & bit).any()) {
       EntityHandle vert = ref_ent->getRefEnt();
       cutNewVertices.insert(vert);
       verticesOnCutEdges[vert] = mit->second;
-      // rval =
-      // moab.tag_set_data(th_ray_dir,&vert,1,&mit->second.unitRayDir[0]);
-      // CHKERRG(rval);
     }
   }
   // Add zero distance entities faces
@@ -832,9 +839,16 @@ MoFEMErrorCode CutMeshInterface::trimEdgesInTheMiddle(const BitRefLevel bit,
   // Get vertices which are on trim edges
   for (map<EntityHandle, TreeData>::iterator mit = edgesToTrim.begin();
        mit != edgesToTrim.end(); mit++) {
-    boost::shared_ptr<RefEntity> ref_ent =
-        *(ref_ents_ptr->get<Composite_ParentEnt_And_EntType_mi_tag>().find(
-            boost::make_tuple(mit->first, MBVERTEX)));
+    RefEntity_multiIndex::index<
+        Composite_ParentEnt_And_EntType_mi_tag>::type::iterator vit =
+        ref_ents_ptr->get<Composite_ParentEnt_And_EntType_mi_tag>().find(
+            boost::make_tuple(mit->first, MBVERTEX));
+    if (vit ==
+        ref_ents_ptr->get<Composite_ParentEnt_And_EntType_mi_tag>().end()) {
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "No vertex on trim edges, that make no sense");
+    }
+    const boost::shared_ptr<RefEntity> &ref_ent = *vit;
     if ((ref_ent->getBitRefLevel() & bit).any()) {
       EntityHandle vert = ref_ent->getRefEnt();
       trimNewVertices.insert(vert);
