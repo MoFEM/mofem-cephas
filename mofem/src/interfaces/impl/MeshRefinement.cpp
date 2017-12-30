@@ -115,7 +115,7 @@ MoFEMErrorCode MeshRefinement::add_verices_in_the_middel_of_edges(
   std::vector<double> vert_coords[3];
   for (int dd = 0; dd != 3; dd++) {
     vert_coords[dd].reserve(edges.size());
-    }
+  }
   std::vector<EntityHandle> parent_edge;
   parent_edge.reserve(edges.size());
   for (Range::iterator eit = edges.begin(); eit != edges.end(); ++eit) {
@@ -162,7 +162,7 @@ MoFEMErrorCode MeshRefinement::add_verices_in_the_middel_of_edges(
       ReadUtilIface *iface;
       CHKERR moab.query_interface(iface);
       CHKERR iface->get_node_coords(3, num_nodes, 0, startv, arrays_coord);
-}
+    }
     Range verts(startv, startv + num_nodes - 1);
     for (int dd = 0; dd != 3; ++dd) {
       std::copy(vert_coords[dd].begin(), vert_coords[dd].end(),
@@ -180,16 +180,13 @@ MoFEMErrorCode MeshRefinement::refine_TET(const EntityHandle meshset,
                                           const BitRefLevel &bit,
                                           const bool respect_interface,
                                           int verb) {
-
   Interface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   Range tets;
-  rval = moab.get_entities_by_type(meshset, MBTET, tets, false);
-  CHKERRQ_MOAB(rval);
-  ierr = refine_TET(tets, bit, respect_interface);
-  CHKERRG(ierr);
-  MoFEMFunctionReturnHot(0);
+  CHKERR moab.get_entities_by_type(meshset, MBTET, tets, false);
+  CHKERR refine_TET(tets, bit, respect_interface);
+  MoFEMFunctionReturn(0);
 }
 MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
                                           const BitRefLevel &bit,
@@ -200,11 +197,10 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
   moab::Interface &moab = m_field.get_moab();
   const RefEntity_multiIndex *refined_ents_ptr;
   const RefElement_multiIndex *refined_finite_elements_ptr;
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
 
-  ierr = m_field.get_ref_ents(&refined_ents_ptr);
-  CHKERRG(ierr);
-  ierr = m_field.get_ref_finite_elements(&refined_finite_elements_ptr);
+  CHKERR m_field.get_ref_ents(&refined_ents_ptr);
+  CHKERR m_field.get_ref_finite_elements(&refined_finite_elements_ptr);
 
   // FIXME: refinement is based on entity handlers, should work on global ids of
   // nodes, this will allow parallelise algorithm in the future
@@ -280,18 +276,17 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
     int split_edges[6];
     std::fill(&split_edges[0], &split_edges[6], -1);
     // hash map of nodes (RefEntity) by edges (EntityHandle)
-    std::map<EntityHandle /*edge*/, const RefEntity * /*node*/>
+    std::map<EntityHandle /*edge*/, boost::shared_ptr<RefEntity> /*node*/>
         map_ref_nodes_by_edges;
     for (int ee = 0; ee < 6; ee++) {
       EntityHandle edge;
-      rval = moab.side_element(*tit, 1, ee, edge);
-      CHKERRQ_MOAB(rval);
+      CHKERR moab.side_element(*tit, 1, ee, edge);
       RefEntity_multiIndex_view_by_parent_entity::iterator miit_view;
       miit_view = ref_parent_ents_view.find(edge);
       if (miit_view != ref_parent_ents_view.end()) {
         if (((*miit_view)->getBitRefLevel() & bit).any()) {
           edge_new_nodes[ee] = (*miit_view)->getRefEnt();
-          map_ref_nodes_by_edges[(*miit_view)->getParentEnt()] = &**miit_view;
+          map_ref_nodes_by_edges[(*miit_view)->getParentEnt()] = *miit_view;
           {
             const EntityHandle *conn_edge;
             int num_nodes;
@@ -323,11 +318,10 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
           // << edge_new_nodes[ee] << std::endl;
           for (int eee = 0; eee < 6; eee++) {
             EntityHandle edge;
-            rval = moab.side_element(*tit, 1, eee, edge);
-            CHKERRQ_MOAB(rval);
+            CHKERR moab.side_element(*tit, 1, eee, edge);
             const EntityHandle *conn_edge;
             int num_nodes;
-            moab.get_connectivity(edge, conn_edge, num_nodes, true);
+            CHKERR moab.get_connectivity(edge, conn_edge, num_nodes, true);
             std::cerr << conn_edge[0] << " " << conn_edge[1] << std::endl;
           }
           SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
@@ -354,8 +348,7 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
       if (!success)
         SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY, "impossible tet");
       Range tit_conn;
-      rval = moab.get_connectivity(&*tit, 1, tit_conn, true);
-      CHKERRQ_MOAB(rval);
+      CHKERR moab.get_connectivity(&*tit, 1, tit_conn, true);
       for (Range::iterator nit = tit_conn.begin(); nit != tit_conn.end();
            nit++) {
         RefEntsByEnt::iterator nit_miit = ref_ents_ent.find(*nit);
@@ -371,8 +364,7 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
         }
       }
       Range tit_edges;
-      rval = moab.get_adjacencies(&*tit, 1, 1, false, tit_edges);
-      CHKERRQ_MOAB(rval);
+      CHKERR moab.get_adjacencies(&*tit, 1, 1, false, tit_edges);
       for (Range::iterator eit = tit_edges.begin(); eit != tit_edges.end();
            eit++) {
         RefEntsByEnt::iterator eit_miit = ref_ents_ent.find(*eit);
@@ -387,8 +379,7 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
                   "impossible edge");
       }
       Range tit_faces;
-      rval = moab.get_adjacencies(&*tit, 1, 2, false, tit_faces);
-      CHKERRQ_MOAB(rval);
+      CHKERR moab.get_adjacencies(&*tit, 1, 2, false, tit_faces);
       if (tit_faces.size() != 4) {
         SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
                 "existing tet in mofem database should have 4 adjacent edges");
@@ -502,10 +493,8 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
         }
         // change bit for adjacent entities of existing tet
         Range adj_ents;
-        rval = moab.get_adjacencies(&tet, 1, 1, false, adj_ents);
-        CHKERRQ_MOAB(rval);
-        rval = moab.get_adjacencies(&tet, 1, 2, false, adj_ents);
-        CHKERRQ_MOAB(rval);
+        CHKERR moab.get_adjacencies(&tet, 1, 1, false, adj_ents);
+        CHKERR moab.get_adjacencies(&tet, 1, 2, false, adj_ents);
         for (Range::iterator ait = adj_ents.begin(); ait != adj_ents.end();
              ait++) {
           RefEntity_multiIndex::iterator ref_it;
@@ -522,7 +511,7 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
           }
         }
         // verbose
-        if (verb > 2) {
+        if (verb >= VERY_VERBOSE) {
           std::ostringstream ss;
           ss << **miit_composite << std::endl;
           PetscPrintf(m_field.get_comm(), ss.str().c_str());
@@ -535,13 +524,11 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
         if (!ref_tets_bit.test(tt)) {
           if (miit_composite != hi_miit_composite) {
             Range new_tets_conns_tet;
-            rval = moab.get_adjacencies(&new_tets_conns[4 * tt], 4, 2, false,
+            CHKERR moab.get_adjacencies(&new_tets_conns[4 * tt], 4, 2, false,
                                         new_tets_conns_tet);
-            CHKERRQ_MOAB(rval);
             if (new_tets_conns_tet.empty()) {
-              rval = moab.create_element(MBTET, &new_tets_conns[4 * tt], 4,
+              CHKERR moab.create_element(MBTET, &new_tets_conns[4 * tt], 4,
                                          ref_tets[tt]);
-              CHKERRQ_MOAB(rval);
             } else {
               if (new_tets_conns_tet.size() != 1) {
                 SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
@@ -550,13 +537,11 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
               ref_tets[tt] = new_tets_conns_tet[0];
             }
           } else {
-            rval = moab.create_element(MBTET, &new_tets_conns[4 * tt], 4,
+            CHKERR moab.create_element(MBTET, &new_tets_conns[4 * tt], 4,
                                        ref_tets[tt]);
-            CHKERRQ_MOAB(rval);
           }
           Range ref_tet_nodes;
-          rval = moab.get_connectivity(&ref_tets[tt], 1, ref_tet_nodes, true);
-          CHKERRQ_MOAB(rval);
+          CHKERR moab.get_connectivity(&ref_tets[tt], 1, ref_tet_nodes, true);
           if (ref_tet_nodes.size() != 4) {
             std::cerr << tt << " " << nb_new_tets << " " << sub_type << " "
                       << parent_edges_bit << std::endl;
@@ -583,38 +568,40 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
           int ref_type[2];
           ref_type[0] = parent_edges_bit.count();
           ref_type[1] = sub_type;
-          rval = moab.tag_set_data(cOre.get_th_RefType(), &ref_tets[tt], 1,
+          CHKERR moab.tag_set_data(cOre.get_th_RefType(), &ref_tets[tt], 1,
                                    ref_type);
-          CHKERRQ_MOAB(rval);
-          rval = moab.tag_set_data(cOre.get_th_RefParentHandle(), &ref_tets[tt],
-                                   1, &*tit);
-          CHKERRQ_MOAB(rval);
-          rval = moab.tag_set_data(cOre.get_th_RefBitLevel(), &ref_tets[tt], 1,
-                                   &bit);
-          CHKERRQ_MOAB(rval);
-          rval = moab.tag_set_data(cOre.get_th_RefBitEdge(), &ref_tets[tt], 1,
+          CHKERR moab.tag_set_data(cOre.get_th_RefBitEdge(), &ref_tets[tt], 1,
                                    &parent_edges_bit);
-          CHKERRQ_MOAB(rval);
           // add refined entity
-          std::pair<RefEntity_multiIndex::iterator, bool> p_FieldEntity =
+          std::pair<RefEntity_multiIndex::iterator, bool> p_ent =
               const_cast<RefEntity_multiIndex *>(refined_ents_ptr)
                   ->insert(boost::shared_ptr<RefEntity>(new RefEntity(
                       m_field.get_basic_entity_data_ptr(), ref_tets[tt])));
-          // add refined element
-          std::pair<RefElement_multiIndex::iterator, bool> p_MoFEMFiniteElement;
-          try {
-            p_MoFEMFiniteElement =
-                const_cast<RefElement_multiIndex *>(refined_finite_elements_ptr)
-                    ->insert(boost::shared_ptr<RefElement>(
-                        new RefElement_TET(*p_FieldEntity.first)));
-          } catch (MoFEMException const &e) {
-            SETERRQ(m_field.get_comm(), e.errorCode, e.errorMessage);
+          bool success;
+          success = const_cast<RefEntity_multiIndex *>(refined_ents_ptr)
+                        ->modify(p_ent.first, RefEntity_change_parent(*tit));
+          if (!success) {
+            SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
+                    "impossible to set edge parent");
           }
+          success = const_cast<RefEntity_multiIndex *>(refined_ents_ptr)
+                        ->modify(p_ent.first, RefEntity_change_add_bit(bit));
+          if (!success) {
+            SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
+                    "impossible to set edge bit");
+          }
+          // add refined element
+          std::pair<RefElement_multiIndex::iterator, bool> p_element;
+          p_element =
+              const_cast<RefElement_multiIndex *>(refined_finite_elements_ptr)
+                  ->insert(boost::shared_ptr<RefElement>(
+                      new RefElement_TET(*p_ent.first)));
+
           // set bit that this element is now in database
           ref_tets_bit.set(tt);
-          if (verb > 2) {
+          if (verb >= NOISY) {
             std::ostringstream ss;
-            ss << "add tet: " << **p_MoFEMFiniteElement.first << std::endl;
+            ss << "add tet: " << **p_element.first << std::endl;
             PetscPrintf(m_field.get_comm(), ss.str().c_str());
           }
         }
@@ -636,19 +623,16 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
     // find parents for new edges and faces
     // get tet edges and faces
     Range tit_edges, tit_faces;
-    rval = moab.get_adjacencies(&*tit, 1, 1, false, tit_edges);
-    CHKERRQ_MOAB(rval);
-    rval = moab.get_adjacencies(&*tit, 1, 2, false, tit_faces);
-    CHKERRQ_MOAB(rval);
+    CHKERR moab.get_adjacencies(&*tit, 1, 1, false, tit_edges);
+    CHKERR moab.get_adjacencies(&*tit, 1, 2, false, tit_faces);
     Range edges_nodes[6], faces_nodes[4];
     // for edges - add ref nodes
     // edges_nodes[ee] - contains all nodes on edge ee including mid nodes if
     // exist
     Range::iterator eit = tit_edges.begin();
     for (int ee = 0; eit != tit_edges.end(); eit++, ee++) {
-      rval = moab.get_connectivity(&*eit, 1, edges_nodes[ee], true);
-      CHKERRQ_MOAB(rval);
-      std::map<EntityHandle, const RefEntity *>::iterator map_miit =
+      CHKERR moab.get_connectivity(&*eit, 1, edges_nodes[ee], true);
+      std::map<EntityHandle, boost::shared_ptr<RefEntity> >::iterator map_miit =
           map_ref_nodes_by_edges.find(*eit);
       if (map_miit != map_ref_nodes_by_edges.end()) {
         edges_nodes[ee].insert(map_miit->second->getRefEnt());
@@ -659,16 +643,14 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
     // exist
     Range::iterator fit = tit_faces.begin();
     for (int ff = 0; fit != tit_faces.end(); fit++, ff++) {
-      rval = moab.get_connectivity(&*fit, 1, faces_nodes[ff], true);
-      CHKERRQ_MOAB(rval);
+      CHKERR moab.get_connectivity(&*fit, 1, faces_nodes[ff], true);
       // Get edges on face and loop over those edges to add mid-nodes to range
       Range fit_edges;
-      rval = moab.get_adjacencies(&*fit, 1, 1, false, fit_edges);
-      CHKERRQ_MOAB(rval);
+      CHKERR moab.get_adjacencies(&*fit, 1, 1, false, fit_edges);
       for (Range::iterator eit2 = fit_edges.begin(); eit2 != fit_edges.end();
            eit2++) {
-        std::map<EntityHandle, const RefEntity *>::iterator map_miit =
-            map_ref_nodes_by_edges.find(*eit2);
+        std::map<EntityHandle, boost::shared_ptr<RefEntity> >::iterator
+            map_miit = map_ref_nodes_by_edges.find(*eit2);
         if (map_miit != map_ref_nodes_by_edges.end()) {
           faces_nodes[ff].insert(map_miit->second->getRefEnt());
         }
@@ -677,24 +659,21 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
     // add ref nodes to tet
     // tet_nodes contains all nodes on tet including mid edge nodes
     Range tet_nodes;
-    rval = moab.get_connectivity(&*tit, 1, tet_nodes, true);
-    CHKERRQ_MOAB(rval);
-    for (std::map<EntityHandle, const RefEntity *>::iterator map_miit =
-             map_ref_nodes_by_edges.begin();
+    CHKERR moab.get_connectivity(&*tit, 1, tet_nodes, true);
+    for (std::map<EntityHandle, boost::shared_ptr<RefEntity> >::iterator
+             map_miit = map_ref_nodes_by_edges.begin();
          map_miit != map_ref_nodes_by_edges.end(); map_miit++) {
       tet_nodes.insert(map_miit->second->getRefEnt());
     }
     Range ref_edges;
     // Get all all edges of refined tets
-    rval = moab.get_adjacencies(ref_tets, nb_new_tets, 1, true, ref_edges,
+    CHKERR moab.get_adjacencies(ref_tets, nb_new_tets, 1, true, ref_edges,
                                 moab::Interface::UNION);
-    CHKERRQ_MOAB(rval);
     // Check for all ref edge and set parents
     for (Range::iterator reit = ref_edges.begin(); reit != ref_edges.end();
          reit++) {
       Range ref_edges_nodes;
-      rval = moab.get_connectivity(&*reit, 1, ref_edges_nodes, true);
-      CHKERRQ_MOAB(rval);
+      CHKERR moab.get_connectivity(&*reit, 1, ref_edges_nodes, true);
       if (ref_edges_nodes.size() != 2) {
         SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
                 "data inconsistency, edge should have 2 nodes");
@@ -710,18 +689,15 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
               const_cast<RefEntity_multiIndex *>(refined_ents_ptr)
                   ->insert(boost::shared_ptr<RefEntity>(new RefEntity(
                       m_field.get_basic_entity_data_ptr(), *reit)));
-          if (p_ent.second) {
-            bool success =
-                const_cast<RefEntity_multiIndex *>(refined_ents_ptr)
-                    ->modify(p_ent.first, RefEntity_change_parent(edge));
-            if (!success) {
-              SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
-                      "impossible to set edge parent");
-            }
+          bool success;
+          success = const_cast<RefEntity_multiIndex *>(refined_ents_ptr)
+                        ->modify(p_ent.first, RefEntity_change_parent(edge));
+          if (!success) {
+            SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
+                    "impossible to set edge parent");
           }
-          bool success =
-              const_cast<RefEntity_multiIndex *>(refined_ents_ptr)
-                  ->modify(p_ent.first, RefEntity_change_add_bit(bit));
+          success = const_cast<RefEntity_multiIndex *>(refined_ents_ptr)
+                        ->modify(p_ent.first, RefEntity_change_add_bit(bit));
           if (!success) {
             SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
                     "impossible to set edge bit");
@@ -742,7 +718,7 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
       int ff = 0;
       for (; ff < 4; ff++) {
         // two nodes are common (node[0],node[1],ref_node (if exist))
-        // this tests if given edge is contained by face of  tetrahedral
+        // this tests if given face is contained by face of  tetrahedral
         if (intersect(faces_nodes[ff], ref_edges_nodes).size() == 2) {
           EntityHandle face = tit_faces[ff];
           // add edge to refinedEntities
@@ -750,18 +726,15 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
               const_cast<RefEntity_multiIndex *>(refined_ents_ptr)
                   ->insert(boost::shared_ptr<RefEntity>(new RefEntity(
                       m_field.get_basic_entity_data_ptr(), *reit)));
-          if (p_ent.second) {
-            bool success =
-                const_cast<RefEntity_multiIndex *>(refined_ents_ptr)
-                    ->modify(p_ent.first, RefEntity_change_parent(face));
-            if (!success) {
-              SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
-                      "impossible to set edge parent");
-            }
+          bool success;
+          success = const_cast<RefEntity_multiIndex *>(refined_ents_ptr)
+                        ->modify(p_ent.first, RefEntity_change_parent(face));
+          if (!success) {
+            SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
+                    "impossible to set edge parent");
           }
-          bool success =
-              const_cast<RefEntity_multiIndex *>(refined_ents_ptr)
-                  ->modify(p_ent.first, RefEntity_change_add_bit(bit));
+          success = const_cast<RefEntity_multiIndex *>(refined_ents_ptr)
+                        ->modify(p_ent.first, RefEntity_change_add_bit(bit));
           if (!success) {
             SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
                     "impossible to set edge bit");
@@ -781,15 +754,19 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
       // check if ref edge is in coarse tetrahedral (i.e. that is internal edge
       // of refined tetrahedral)
       if (intersect(tet_nodes, ref_edges_nodes).size() == 2) {
-        rval =
-            moab.tag_set_data(cOre.get_th_RefParentHandle(), &*reit, 1, &*tit);
-        CHKERRQ_MOAB(rval);
         // add edge to refinedEntities
         std::pair<RefEntity_multiIndex::iterator, bool> p_ent =
             const_cast<RefEntity_multiIndex *>(refined_ents_ptr)
                 ->insert(boost::shared_ptr<RefEntity>(
                     new RefEntity(m_field.get_basic_entity_data_ptr(), *reit)));
-        bool success = const_cast<RefEntity_multiIndex *>(refined_ents_ptr)
+        bool success;
+        success = const_cast<RefEntity_multiIndex *>(refined_ents_ptr)
+                      ->modify(p_ent.first, RefEntity_change_parent(*tit));
+        if (!success) {
+          SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
+                  "impossible to set edge parent");
+        }
+        success = const_cast<RefEntity_multiIndex *>(refined_ents_ptr)
                            ->modify(p_ent.first, RefEntity_change_add_bit(bit));
         if (!success) {
           SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
@@ -807,22 +784,17 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
 
       // This will help to debug error
       Range ref_edges_nodes_tets;
-      rval = moab.get_adjacencies(ref_edges_nodes, 3, true,
+      CHKERR moab.get_adjacencies(ref_edges_nodes, 3, true,
                                   ref_edges_nodes_tets, moab::Interface::UNION);
-      CHKERRQ_MOAB(rval);
       ref_edges_nodes_tets = intersect(ref_edges_nodes_tets, tets);
       ref_edges_nodes_tets.insert(*reit);
 
       EntityHandle meshset_out;
-      rval =
-          moab.create_meshset(MESHSET_SET | MESHSET_TRACK_OWNER, meshset_out);
-      CHKERRQ_MOAB(rval);
-      rval = moab.add_entities(meshset_out, ref_edges_nodes_tets);
-      CHKERRQ_MOAB(rval);
-      rval = moab.write_file("debug_error.vtk", "VTK", "", &meshset_out, 1);
-      CHKERRQ_MOAB(rval);
-      rval = moab.delete_entities(&meshset_out, 1);
-      CHKERRQ_MOAB(rval);
+      CHKERR moab.create_meshset(MESHSET_SET | MESHSET_TRACK_OWNER,
+                                 meshset_out);
+      CHKERR moab.add_entities(meshset_out, ref_edges_nodes_tets);
+      CHKERR moab.write_file("debug_error.vtk", "VTK", "", &meshset_out, 1);
+      CHKERR moab.delete_entities(&meshset_out, 1);
 
       // Refined edge is not child of any edge, face or tetrahedral, this is
       // imposible edge
@@ -831,44 +803,42 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
     }
 
     Range ref_faces;
-    rval = moab.get_adjacencies(ref_tets, nb_new_tets, 2, true, ref_faces,
+    CHKERR moab.get_adjacencies(ref_tets, nb_new_tets, 2, true, ref_faces,
                                 moab::Interface::UNION);
-    CHKERRQ_MOAB(rval);
     Tag th_interface_side;
     const int def_side[] = {0};
-    rval = moab.tag_get_handle("INTERFACE_SIDE", 1, MB_TYPE_INTEGER,
+    CHKERR moab.tag_get_handle("INTERFACE_SIDE", 1, MB_TYPE_INTEGER,
                                th_interface_side, MB_TAG_CREAT | MB_TAG_SPARSE,
                                def_side);
-    CHKERRQ_MOAB(rval);
     // Check for all ref faces
     for (Range::iterator rfit = ref_faces.begin(); rfit != ref_faces.end();
          rfit++) {
       Range ref_faces_nodes;
-      rval = moab.get_connectivity(&*rfit, 1, ref_faces_nodes, true);
-      CHKERRQ_MOAB(rval);
+      CHKERR moab.get_connectivity(&*rfit, 1, ref_faces_nodes, true);
       // Check if ref face is in coarse face
       int ff = 0;
       for (; ff < 4; ff++) {
         // Check if refined triangle is contained by face of tetrahedral
         if (intersect(faces_nodes[ff], ref_faces_nodes).size() == 3) {
           EntityHandle face = tit_faces[ff];
-          rval = moab.tag_set_data(cOre.get_th_RefParentHandle(), &*rfit, 1,
-                                   &face);
-          CHKERRQ_MOAB(rval);
           int side = 0;
           // Set face side if it is on interface
-          rval = moab.tag_get_data(th_interface_side, &face, 1, &side);
-          CHKERRQ_MOAB(rval);
-          rval = moab.tag_set_data(th_interface_side, &*rfit, 1, &side);
-          CHKERRQ_MOAB(rval);
+          CHKERR moab.tag_get_data(th_interface_side, &face, 1, &side);
+          CHKERR moab.tag_set_data(th_interface_side, &*rfit, 1, &side);
           // Add face to refinedEntities
           std::pair<RefEntity_multiIndex::iterator, bool> p_ent =
               const_cast<RefEntity_multiIndex *>(refined_ents_ptr)
                   ->insert(boost::shared_ptr<RefEntity>(new RefEntity(
                       m_field.get_basic_entity_data_ptr(), *rfit)));
-          bool success =
-              const_cast<RefEntity_multiIndex *>(refined_ents_ptr)
-                  ->modify(p_ent.first, RefEntity_change_add_bit(bit));
+          bool success;
+          success = const_cast<RefEntity_multiIndex *>(refined_ents_ptr)
+                        ->modify(p_ent.first, RefEntity_change_parent(face));
+          if (!success) {
+            SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
+                    "impossible to set face parent");
+          }
+          success = const_cast<RefEntity_multiIndex *>(refined_ents_ptr)
+                        ->modify(p_ent.first, RefEntity_change_add_bit(bit));
           if (!success) {
             SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
                     "impossible to set face bit level");
@@ -888,15 +858,19 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
       // check if ref face is in coarse tetrahedral
       // this is ref face which is contained by tetrahedral volume
       if (intersect(tet_nodes, ref_faces_nodes).size() == 3) {
-        rval =
-            moab.tag_set_data(cOre.get_th_RefParentHandle(), &*rfit, 1, &*tit);
-        CHKERRQ_MOAB(rval);
         std::pair<RefEntity_multiIndex::iterator, bool> p_ent =
             const_cast<RefEntity_multiIndex *>(refined_ents_ptr)
                 ->insert(boost::shared_ptr<RefEntity>(
                     new RefEntity(m_field.get_basic_entity_data_ptr(), *rfit)));
         // add face to refinedEntities
-        bool success = const_cast<RefEntity_multiIndex *>(refined_ents_ptr)
+        bool success;
+        success = const_cast<RefEntity_multiIndex *>(refined_ents_ptr)
+                      ->modify(p_ent.first, RefEntity_change_parent(*tit));
+        if (!success) {
+          SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
+                  "impossible to set face parent");
+        }
+        success = const_cast<RefEntity_multiIndex *>(refined_ents_ptr)
                            ->modify(p_ent.first, RefEntity_change_add_bit(bit));
         if (!success)
           SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
@@ -914,7 +888,7 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
               "impossible refined face");
     }
   }
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 MoFEMErrorCode MeshRefinement::refine_PRISM(const EntityHandle meshset,
                                             const BitRefLevel &bit, int verb) {
