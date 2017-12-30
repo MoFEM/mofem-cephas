@@ -39,7 +39,7 @@ MoFEMErrorCode MeshRefinement::add_verices_in_the_middel_of_edges(
     int verb) {
   Interface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   Range edges;
   rval = moab.get_entities_by_type(meshset, MBEDGE, edges, recursive);
   CHKERRQ_MOAB(rval);
