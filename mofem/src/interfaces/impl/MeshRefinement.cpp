@@ -41,74 +41,60 @@ MoFEMErrorCode MeshRefinement::add_verices_in_the_middel_of_edges(
   moab::Interface &moab = m_field.get_moab();
   MoFEMFunctionBegin;
   Range edges;
-  rval = moab.get_entities_by_type(meshset, MBEDGE, edges, recursive);
-  CHKERRQ_MOAB(rval);
+  CHKERR moab.get_entities_by_type(meshset, MBEDGE, edges, recursive);
   if (edges.empty()) {
     Range tets;
-    rval = moab.get_entities_by_type(meshset, MBTET, tets, recursive);
-    CHKERRQ_MOAB(rval);
-    rval = moab.get_adjacencies(tets, 1, true, edges, moab::Interface::UNION);
-    CHKERRQ_MOAB(rval);
+    CHKERR moab.get_entities_by_type(meshset, MBTET, tets, recursive);
+    CHKERR moab.get_adjacencies(tets, 1, true, edges, moab::Interface::UNION);
     if (tets.empty()) {
       Range prisms;
-      rval = moab.get_entities_by_type(meshset, MBPRISM, prisms, recursive);
-      CHKERRQ_MOAB(rval);
+      CHKERR moab.get_entities_by_type(meshset, MBPRISM, prisms, recursive);
       for (Range::iterator pit = prisms.begin(); pit != prisms.end(); pit++) {
         const EntityHandle *conn;
         int num_nodes;
-        rval = moab.get_connectivity(*pit, conn, num_nodes, true);
-        CHKERRQ_MOAB(rval);
+        CHKERR moab.get_connectivity(*pit, conn, num_nodes, true);
         assert(num_nodes == 6);
         //
         Range edge;
-        rval = moab.get_adjacencies(&conn[0], 2, 1, true, edge);
-        CHKERRQ_MOAB(rval);
+        CHKERR moab.get_adjacencies(&conn[0], 2, 1, true, edge);
         assert(edge.size() == 1);
         edges.insert(edge[0]);
         edge.clear();
-        rval = moab.get_adjacencies(&conn[1], 2, 1, true, edge);
-        CHKERRQ_MOAB(rval);
+        CHKERR moab.get_adjacencies(&conn[1], 2, 1, true, edge);
         assert(edge.size() == 1);
         edges.insert(edge[0]);
         EntityHandle conn_edge2[] = {conn[2], conn[0]};
         edge.clear();
-        rval = moab.get_adjacencies(conn_edge2, 2, 1, true, edge);
-        CHKERRQ_MOAB(rval);
+        CHKERR moab.get_adjacencies(conn_edge2, 2, 1, true, edge);
         assert(edge.size() == 1);
         edges.insert(edge[0]);
         //
         edge.clear();
-        rval = moab.get_adjacencies(&conn[3], 2, 1, true, edge);
-        CHKERRQ_MOAB(rval);
+        CHKERR moab.get_adjacencies(&conn[3], 2, 1, true, edge);
         assert(edge.size() == 1);
         edges.insert(edge[0]);
         edge.clear();
-        rval = moab.get_adjacencies(&conn[4], 2, 1, true, edge);
-        CHKERRQ_MOAB(rval);
+        CHKERR moab.get_adjacencies(&conn[4], 2, 1, true, edge);
         assert(edge.size() == 1);
         edges.insert(edge[0]);
         EntityHandle conn_edge8[] = {conn[5], conn[3]};
         edge.clear();
-        rval = moab.get_adjacencies(conn_edge8, 2, 1, true, edge);
-        CHKERRQ_MOAB(rval);
+        CHKERR moab.get_adjacencies(conn_edge8, 2, 1, true, edge);
         assert(edge.size() == 1);
         edges.insert(edge[0]);
       }
     }
   }
-  ierr = add_verices_in_the_middel_of_edges(edges, bit, verb);
-  CHKERRG(ierr);
-  MoFEMFunctionReturnHot(0);
+  CHKERR add_verices_in_the_middel_of_edges(edges, bit, verb);
+  MoFEMFunctionReturn(0);
 }
 MoFEMErrorCode MeshRefinement::add_verices_in_the_middel_of_edges(
     const Range &_edges, const BitRefLevel &bit, int verb) {
-
   Interface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   const RefEntity_multiIndex *refined_ents_ptr;
-  MoFEMFunctionBeginHot;
-  ierr = m_field.get_ref_ents(&refined_ents_ptr);
-  CHKERRG(ierr);
+  MoFEMFunctionBegin;
+  CHKERR m_field.get_ref_ents(&refined_ents_ptr);
   Range edges = _edges.subset_by_type(MBEDGE);
   typedef const RefEntity_multiIndex::index<
       Composite_EntType_and_ParentEntType_mi_tag>::type RefEntsByComposite;
@@ -119,81 +105,77 @@ MoFEMErrorCode MeshRefinement::add_verices_in_the_middel_of_edges(
   RefEntsByComposite::iterator hi_miit =
       ref_ents.upper_bound(boost::make_tuple(MBVERTEX, MBEDGE));
   RefEntity_multiIndex_view_by_parent_entity ref_parent_ents_view;
-  for (; miit != hi_miit; miit++) {
-    std::pair<RefEntity_multiIndex_view_by_parent_entity::iterator, bool>
-        p_ref_ent_view;
-    p_ref_ent_view = ref_parent_ents_view.insert(*miit);
-    if (!p_ref_ent_view.second) {
-      SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
-              "non unique insertion");
-    }
-  }
-  if (verb > 0) {
+  ref_parent_ents_view.insert(miit,hi_miit);
+  if (verb >= VERBOSE) {
     std::ostringstream ss;
     ss << "ref level " << bit << " nb. edges to refine " << edges.size()
        << std::endl;
     PetscPrintf(m_field.get_comm(), ss.str().c_str());
   }
-  Range::iterator eit = edges.begin();
-  for (; eit != edges.end(); eit++) {
-    // bool add_vertex = false;
-    RefEntity_multiIndex_view_by_parent_entity::iterator miit_view;
-    if (ref_parent_ents_view.empty()) {
-      // add_vertex = true;
-    } else {
-      miit_view = ref_parent_ents_view.find(*eit);
+  std::vector<double> vert_coords[3];
+  for (int dd = 0; dd != 3; dd++) {
+    vert_coords[dd].reserve(edges.size());
     }
-    if (ref_parent_ents_view.empty() ||
-        miit_view == ref_parent_ents_view.end()) {
+  std::vector<EntityHandle> parent_edge;
+  parent_edge.reserve(edges.size());
+  for (Range::iterator eit = edges.begin(); eit != edges.end(); ++eit) {
+    RefEntity_multiIndex_view_by_parent_entity::iterator miit_view =
+        ref_parent_ents_view.find(*eit);
+    if (miit_view == ref_parent_ents_view.end()) {
       const EntityHandle *conn;
       int num_nodes;
-      rval = moab.get_connectivity(*eit, conn, num_nodes, true);
-      CHKERRQ_MOAB(rval);
+      CHKERR moab.get_connectivity(*eit, conn, num_nodes, true);
       if (num_nodes != 2) {
-        SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                 "edge should have 2 edges");
       }
-      double coords[num_nodes * 3];
-      rval = moab.get_coords(conn, num_nodes, coords);
-      CHKERRQ_MOAB(rval);
+      double coords[6];
+      CHKERR moab.get_coords(conn, num_nodes, coords);
       cblas_daxpy(3, 1., &coords[3], 1, coords, 1);
       cblas_dscal(3, 0.5, coords, 1);
-      EntityHandle node;
-      rval = moab.create_vertex(coords, node);
-      CHKERRQ_MOAB(rval);
-      rval = moab.tag_set_data(cOre.get_th_RefParentHandle(), &node, 1, &*eit);
-      CHKERRQ_MOAB(rval);
-      rval = moab.tag_set_data(cOre.get_th_RefBitLevel(), &node, 1, &bit);
-      CHKERRQ_MOAB(rval);
-      std::pair<RefEntity_multiIndex::iterator, bool> p_ent =
-          const_cast<RefEntity_multiIndex *>(refined_ents_ptr)
-              ->insert(boost::shared_ptr<RefEntity>(
-                  new RefEntity(m_field.get_basic_entity_data_ptr(), node)));
-      if (!p_ent.second)
-        SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
-                "this entity is there");
-      if (verb > 2) {
-        std::ostringstream ss;
-        ss << *(p_ent.first) << std::endl;
-        PetscPrintf(m_field.get_comm(), ss.str().c_str());
-      }
+      for(int dd = 0;dd!=3;++dd)
+        vert_coords[dd].push_back(coords[dd]);
+      parent_edge.push_back(*eit);
     } else {
-      const EntityHandle node = (*miit_view)->getRefEnt();
       if ((*miit_view)->getEntType() != MBVERTEX) {
-        SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                 "child of edge should be vertex");
       }
-      bool success =
-          const_cast<RefEntity_multiIndex *>(refined_ents_ptr)
-              ->modify(refined_ents_ptr->get<Ent_mi_tag>().find(node),
-                       RefEntity_change_add_bit(bit));
+      const EntityHandle node = (*miit_view)->getRefEnt();
+      RefEntity_multiIndex::iterator nit = refined_ents_ptr->find(node);
+      if(nit->get()->getParentEnt() != *eit) {
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "parent edge does not much");
+      }
+      bool success = const_cast<RefEntity_multiIndex *>(refined_ents_ptr)
+                         ->modify(nit, RefEntity_change_add_bit(bit));
       if (!success)
-        SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                 "inconsistency in data");
     }
   }
-  MoFEMFunctionReturnHot(0);
+  if (!vert_coords[0].empty()) {
+    int num_nodes = vert_coords[0].size();
+    vector<double *> arrays_coord;
+    EntityHandle startv;
+    {
+      ReadUtilIface *iface;
+      CHKERR moab.query_interface(iface);
+      CHKERR iface->get_node_coords(3, num_nodes, 0, startv, arrays_coord);
 }
+    Range verts(startv, startv + num_nodes - 1);
+    for (int dd = 0; dd != 3; ++dd) {
+      std::copy(vert_coords[dd].begin(), vert_coords[dd].end(),
+                arrays_coord[dd]);
+    }
+    CHKERR moab.tag_set_data(cOre.get_th_RefParentHandle(), verts,
+                             &*parent_edge.begin());
+    CHKERR m_field.getInterface<BitRefManager>()->setEntitiesBitRefLevel(
+        verts, bit, verb);
+  }
+  MoFEMFunctionReturn(0);
+}
+
 MoFEMErrorCode MeshRefinement::refine_TET(const EntityHandle meshset,
                                           const BitRefLevel &bit,
                                           const bool respect_interface,
