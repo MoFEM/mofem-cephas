@@ -922,20 +922,11 @@ MoFEMErrorCode MeshRefinement::refine_PRISM(const EntityHandle meshset,
       Composite_EntType_and_ParentEntType_mi_tag>::type RefEntsByComposite;
   RefEntsByComposite &ref_ents_by_comp =
       refined_ents_ptr->get<Composite_EntType_and_ParentEntType_mi_tag>();
-  RefEntsByComposite::iterator miit =
-      ref_ents_by_comp.lower_bound(boost::make_tuple(MBVERTEX, MBEDGE));
-  RefEntsByComposite::iterator hi_miit =
-      ref_ents_by_comp.upper_bound(boost::make_tuple(MBVERTEX, MBEDGE));
   RefEntity_multiIndex_view_by_parent_entity ref_parent_ents_view;
-  for (; miit != hi_miit; miit++) {
-    std::pair<RefEntity_multiIndex_view_by_parent_entity::iterator, bool>
-        p_ref_ent_view;
-    p_ref_ent_view = ref_parent_ents_view.insert(*miit);
-    if (!p_ref_ent_view.second) {
-      SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
-              "non uniqe insertion");
-    }
-  }
+  ref_parent_ents_view.insert(
+    ref_ents_by_comp.lower_bound(boost::make_tuple(MBVERTEX, MBEDGE)),
+    ref_ents_by_comp.upper_bound(boost::make_tuple(MBVERTEX, MBEDGE))
+  );
   Range prisms;
   rval = moab.get_entities_by_type(meshset, MBPRISM, prisms, false);
   CHKERRQ_MOAB(rval);
@@ -947,9 +938,9 @@ MoFEMErrorCode MeshRefinement::refine_PRISM(const EntityHandle meshset,
       SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
               "this prism is not in ref database");
     }
-    if (verb > 3) {
+    if (verb >= NOISY) {
       std::ostringstream ss;
-      ss << "ref prism " << *miit << std::endl;
+      ss << "ref prism " << **miit_prism << std::endl;
       PetscPrintf(m_field.get_comm(), ss.str().c_str());
     }
     // prism connectivity
@@ -985,12 +976,12 @@ MoFEMErrorCode MeshRefinement::refine_PRISM(const EntityHandle meshset,
     if (split_edges.count() == 0) {
       const_cast<RefEntity_multiIndex *>(refined_ents_ptr)
           ->modify(miit_prism, RefEntity_change_add_bit(bit));
-      if (verb > 6)
+      if (verb >= VERY_NOISY)
         PetscPrintf(m_field.get_comm(), "no refinement");
       continue;
     }
     // check consistency
-    if (verb > 3) {
+    if (verb >= NOISY) {
       std::ostringstream ss;
       ss << "prism split edges " << split_edges << " count "
          << split_edges.count() << std::endl;
