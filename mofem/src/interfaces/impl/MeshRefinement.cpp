@@ -222,26 +222,41 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
   };
 
   struct SetParent {
+    map<EntityHandle,EntityHandle> parentsToChange;
     MoFEMErrorCode operator()(const EntityHandle ent, const EntityHandle parent,
                               const RefEntity_multiIndex *ref_ents_ptr,
-                              MoFEM::Core &cOre) const {
+                              MoFEM::Core &cOre) {
       MoFEM::Interface &m_field = cOre;
       MoFEMFunctionBegin;
       RefEntity_multiIndex::iterator it = ref_ents_ptr->find(ent);
       if (it != ref_ents_ptr->end()) {
-        bool success = const_cast<RefEntity_multiIndex *>(ref_ents_ptr)
-                      ->modify(it, RefEntity_change_parent(parent));
-        if (!success) {
-          SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
-                  "impossible to set parent");
+        if(it->get()->getParentEnt()!=parent) {
+          parentsToChange[ent] = parent;
         }
-      } else {
+     } else {
         CHKERR m_field.get_moab().tag_set_data(cOre.get_th_RefParentHandle(),
                                                &ent, 1, &parent);
       }
       MoFEMFunctionReturn(0);
     }
+    MoFEMErrorCode operator()(const RefEntity_multiIndex *ref_ents_ptr,
+                              MoFEM::Core &cOre) {
+      MoFEM::Interface &m_field = cOre;
+      MoFEMFunctionBegin;
+      for(map<EntityHandle,EntityHandle>::iterator mit = parentsToChange.begin();
+      mit!=parentsToChange.end();++mit) {
+        RefEntity_multiIndex::iterator it = ref_ents_ptr->find(mit->first);
+        bool success = const_cast<RefEntity_multiIndex *>(ref_ents_ptr)
+                           ->modify(it, RefEntity_change_parent(mit->second));
+        if (!success) {
+          SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
+                  "impossible to set parent");
+        }
+      }
+      MoFEMFunctionReturn(0);
+    }
   };
+  SetParent set_parent;
 
   Range ents_to_set_bit;
 
@@ -557,7 +572,7 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
         // this tests if given edge is contained by edge of refined tetrahedral
         if (intersect(edges_nodes[ee], ref_edges_nodes).size() == 2) {
           EntityHandle edge = tit_edges[ee];
-          CHKERR SetParent()(*reit,edge,refined_ents_ptr,cOre);
+          CHKERR set_parent(*reit,edge,refined_ents_ptr,cOre);
           break;
         }
       }
@@ -570,7 +585,7 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
         // this tests if given face is contained by face of  tetrahedral
         if (intersect(faces_nodes[ff], ref_edges_nodes).size() == 2) {
           EntityHandle face = tit_faces[ff];
-          CHKERR SetParent()(*reit, face, refined_ents_ptr, cOre);
+          CHKERR set_parent(*reit, face, refined_ents_ptr, cOre);
           break;
         }
       }
@@ -580,7 +595,7 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
       // check if ref edge is in coarse tetrahedral (i.e. that is internal edge
       // of refined tetrahedral)
       if (intersect(tet_nodes, ref_edges_nodes).size() == 2) {
-        CHKERR SetParent()(*reit, *tit, refined_ents_ptr, cOre);
+        CHKERR set_parent(*reit, *tit, refined_ents_ptr, cOre);
         continue;
       }
      
@@ -609,7 +624,7 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
         // Check if refined triangle is contained by face of tetrahedral
         if (intersect(faces_nodes[ff], ref_faces_nodes).size() == 3) {
           EntityHandle face = tit_faces[ff];
-          CHKERR SetParent()(*rfit, face, refined_ents_ptr, cOre);
+          CHKERR set_parent(*rfit, face, refined_ents_ptr, cOre);
           int side = 0;
           // Set face side if it is on interface
           CHKERR moab.tag_get_data(th_interface_side, &face, 1, &side);
@@ -622,7 +637,7 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
       // check if ref face is in coarse tetrahedral
       // this is ref face which is contained by tetrahedral volume
       if (intersect(tet_nodes, ref_faces_nodes).size() == 3) {
-        CHKERR SetParent()(*rfit, *tit, refined_ents_ptr, cOre);
+        CHKERR set_parent(*rfit, *tit, refined_ents_ptr, cOre);
         continue;
       }
       SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
@@ -630,6 +645,7 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
     }
   }
 
+  CHKERR set_parent(refined_ents_ptr,cOre);
   CHKERR m_field.getInterface<BitRefManager>()->setBitRefLevel(ents_to_set_bit,
                                                                bit, true, verb);
 
