@@ -896,7 +896,7 @@ struct ProblemClearComposedProblemData {
 
 #endif //__PROBLEMSMULTIINDICES_HPP__
 
-/***************************************************************************/ /**
-                                                                               * \defgroup problems_multi_indices Problems structures and multi-indices
-                                                                               * \ingroup mofem
-                                                                               ******************************************************************************/
+/**
+ * \defgroup problems_multi_indices Problems structures and multi-indices
+ * \ingroup mofem
+ ******************************************************************************/
