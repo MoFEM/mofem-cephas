@@ -551,7 +551,7 @@ MoFEMErrorCode CutMeshInterface::cutEdgesInMiddle(const BitRefLevel bit) {
   CHKERR m_field.getInterface(refiner);
   CHKERR m_field.get_ref_ents(&ref_ents_ptr);
   CHKERR refiner->add_verices_in_the_middel_of_edges(cutEdges, bit);
-  CHKERR refiner->refine_TET(vOlume, bit, false);
+  CHKERR refiner->refine_TET(vOlume, bit, false, QUIET);
   // Tag th_ray_dir;
   // double def_val[] = {0,0,0};
   // CHKERR moab.tag_get_handle(
@@ -831,7 +831,7 @@ MoFEMErrorCode CutMeshInterface::trimEdgesInTheMiddle(const BitRefLevel bit,
   CHKERR m_field.getInterface(refiner);
   CHKERR m_field.get_ref_ents(&ref_ents_ptr);
   CHKERR refiner->add_verices_in_the_middel_of_edges(trimEdges, bit);
-  CHKERR refiner->refine_TET(cutNewVolumes, bit, false);
+  CHKERR refiner->refine_TET(cutNewVolumes, bit, false, QUIET);
 
   trimNewVolumes.clear();
   CHKERR m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
