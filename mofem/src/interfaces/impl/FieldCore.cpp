@@ -862,7 +862,7 @@ Core::buildFieldForNoField(const BitFieldId id,
       // check if dof is in darabase
       d_miit.first = dofsField.project<0>(dofsField.get<Unique_mi_tag>().find(
           DofEntity::getGlobalUniqueIdCalculate(rank, *(e_miit.first))));
-      // if dof is not in databse
+      // if dof is not in database
       if (d_miit.first == dofsField.end()) {
         // insert dof
         d_miit = dofsField.insert(
@@ -985,7 +985,7 @@ MoFEMErrorCode Core::buildFieldForL2H1HcurlHdiv(
           }
         }
       }
-      if (DD != feit->get()->getNbDofsOnEnt()) {
+      if (DD > feit->get()->getNbDofsOnEnt()) {
         std::ostringstream ss;
         ss << "rank " << rAnk << " ";
         ss << **feit << std::endl;

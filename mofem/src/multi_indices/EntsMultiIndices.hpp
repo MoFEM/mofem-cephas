@@ -608,8 +608,8 @@ struct FieldEntity : public interface_Field<Field>,
 
   typedef interface_Field<Field> interface_type_Field;
   typedef interface_RefEntity<RefEntity> interface_type_RefEntity;
-  const FieldData *tag_FieldData;
-  int tag_FieldData_size;
+  UId globalUid; ///< Global unique id for this entity
+  // const ApproximationOrder *tag_FieldOrder;
   FieldEntity(const boost::shared_ptr<Field> &field_ptr,
               const boost::shared_ptr<RefEntity> &ref_ent_ptr);
   ~FieldEntity();
@@ -621,23 +621,18 @@ struct FieldEntity : public interface_Field<Field>,
   inline EntityHandle getEnt() const { return getRefEnt(); }
 
   /**
-   * \brief Get number of DOFs on entity
+   * \brief Get number of active DOFs on entity
    * @return Number of DOFs
    */
   inline int getNbDofsOnEnt() const {
-    return tag_FieldData_size / sizeof(FieldData);
+    return getOrderNbDofs(getMaxOrder()) * getNbOfCoeffs();
   }
 
   /**
-   * \brief Get Vector of DOFs values on entity
+   * \brief Get vector of DOFs active values on entity
    * @return Vector of DOFs values
    */
-  inline VectorAdaptor getEntFieldData() const {
-    int size = getNbDofsOnEnt();
-    double *ptr = const_cast<FieldData *>(tag_FieldData);
-    return VectorAdaptor(size,
-                         ublas::shallow_array_adaptor<FieldData>(size, ptr));
-  }
+  VectorAdaptor getEntFieldData() const;
 
   /**
    * \brief Get number of DOFs on entity for given order of approximation
@@ -668,8 +663,6 @@ struct FieldEntity : public interface_Field<Field>,
    * @return Approximation order
    */
   ApproximationOrder getMaxOrder() const;
-
-  UId globalUid; ///< Global unique id for this entity
 
   /**
    * \brief Get global unique id
