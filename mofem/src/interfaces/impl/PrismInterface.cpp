@@ -701,15 +701,15 @@ MoFEMErrorCode PrismInterface::splitSides(
       }
     }
   }
+  
   //maps nodes on "father" and "mather" side
   std::map<
     EntityHandle, /*node on "mather" side*/
     EntityHandle /*node on "father" side*/
   > map_nodes;
   //add new nodes on interface and create map
-  Range::iterator nit = nodes.begin();
-  double coord[3];
-  for(;nit!=nodes.end();nit++) {
+  for (Range::iterator nit = nodes.begin(); nit != nodes.end(); nit++) {
+    double coord[3];
     //find ref enet
     RefEntsByEntType::iterator miit_ref_ent = ref_ents_by_type.find(*nit);
     if(miit_ref_ent == ref_ents_by_type.end()) {
