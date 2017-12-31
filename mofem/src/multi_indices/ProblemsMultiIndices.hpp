@@ -208,7 +208,7 @@ struct Problem {
    * \brief Get main problem of sub-problem is
    * @return    sub problem data structure
    */
-  inline boost::shared_ptr<SubProblemData> getSubData() const {
+  inline boost::shared_ptr<SubProblemData> &getSubData() const {
     return subProblemData;
   }
 
@@ -220,7 +220,8 @@ struct Problem {
   /**
    * \brief Het composed problems data structure
    */
-  inline boost::shared_ptr<ComposedProblemsData> getComposedProblemsData() const {
+  inline boost::shared_ptr<ComposedProblemsData> &
+  getComposedProblemsData() const {
     return composedProblemsData;
   }
 
@@ -652,7 +653,7 @@ struct Problem {
 
    * @return MoFEM::Problem::SequenceDofContainer
    */
-  inline boost::shared_ptr<SequenceDofContainer> getRowDofsSequence() const {
+  inline boost::shared_ptr<SequenceDofContainer>& getRowDofsSequence() const {
     return sequenceRowDofContainer;
   }
 
@@ -668,7 +669,7 @@ struct Problem {
 
    * @return MoFEM::Problem::SequenceDofContainer
    */
-  inline boost::shared_ptr<SequenceDofContainer> getColDofsSequence() const {
+  inline boost::shared_ptr<SequenceDofContainer>& getColDofsSequence() const {
     return sequenceColDofContainer;
   }
 
