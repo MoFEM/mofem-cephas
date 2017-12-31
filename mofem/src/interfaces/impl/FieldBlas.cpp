@@ -45,32 +45,33 @@ namespace MoFEM {
     const Field_multiIndex *fields_ptr;
     const FieldEntity_multiIndex *field_ents;
     const DofEntity_multiIndex *dofs_ptr;
-    MoFEMFunctionBeginHot;
-    ierr = m_field.get_fields(&fields_ptr); CHKERRG(ierr);
-    ierr = m_field.get_field_ents(&field_ents); CHKERRG(ierr);
-    ierr = m_field.get_dofs(&dofs_ptr); CHKERRG(ierr);
+    MoFEMFunctionBegin;
+    CHKERR m_field.get_fields(&fields_ptr);
+    CHKERR m_field.get_field_ents(&field_ents);
+    CHKERR m_field.get_dofs(&dofs_ptr);
     Field_multiIndex::index<FieldName_mi_tag>::type::iterator x_fit = fields_ptr->get<FieldName_mi_tag>().find(field_name_x);
     if(x_fit==fields_ptr->get<FieldName_mi_tag>().end()) {
-      SETERRQ1(PETSC_COMM_SELF,1,"x field < %s > not found, (top tip: check spelling)",field_name_x.c_str());
+      SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"x field < %s > not found, (top tip: check spelling)",field_name_x.c_str());
     }
     Field_multiIndex::index<FieldName_mi_tag>::type::iterator y_fit = fields_ptr->get<FieldName_mi_tag>().find(field_name_y);
     if(y_fit==fields_ptr->get<FieldName_mi_tag>().end()) {
-      SETERRQ1(PETSC_COMM_SELF,1,"y field < %s > not found, (top tip: check spelling)",field_name_y.c_str());
+      SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"y field < %s > not found, (top tip: check spelling)",field_name_y.c_str());
     }
     if((*x_fit)->getSpace() != (*y_fit)->getSpace()) {
-      SETERRQ2(PETSC_COMM_SELF,1,"space for field < %s > and field <%s> are not compatible",field_name_x.c_str(),field_name_y.c_str());
+      SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"space for field < %s > and field <%s> are not compatible",field_name_x.c_str(),field_name_y.c_str());
     }
     if((*x_fit)->getNbOfCoeffs() != (*y_fit)->getNbOfCoeffs()) {
-      SETERRQ2(PETSC_COMM_SELF,1,"rank for field < %s > and field <%s> are not compatible",field_name_x.c_str(),field_name_y.c_str());
+      SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"rank for field < %s > and field <%s> are not compatible",field_name_x.c_str(),field_name_y.c_str());
     }
     FieldEntityByFieldName::iterator x_eit;
     x_eit = field_ents->get<FieldName_mi_tag>().lower_bound(field_name_x.c_str());
     for(;x_eit!=field_ents->get<FieldName_mi_tag>().upper_bound(field_name_x.c_str());x_eit++) {
-      int nb_dofs_on_x_entity = (*x_eit)->tag_FieldData_size/sizeof(FieldData);
-      for(int dd = 0;dd<nb_dofs_on_x_entity;dd++) {
+      int nb_dofs_on_x_entity = (*x_eit)->getNbDofsOnEnt();
+      VectorAdaptor field_data = (*x_eit)->getEntFieldData();
+      for(int dd = 0;dd!=nb_dofs_on_x_entity;++dd) {
         ApproximationOrder dof_order = (*x_eit)->getDofOrderMap()[dd];
         FieldCoefficientsNumber dof_rank = dd%(*x_eit)->getNbOfCoeffs();
-        FieldData data = (*x_eit)->tag_FieldData[dd];
+        FieldData data = field_data[dd];
         DofEntity_multiIndex::index<Composite_Name_Ent_Order_And_CoeffIdx_mi_tag>::type::iterator dit;
         dit = dofs_ptr->get<Composite_Name_Ent_Order_And_CoeffIdx_mi_tag>().find(
           boost::make_tuple(field_name_y.c_str(),(*x_eit)->getEnt(),dof_order,dof_rank)
@@ -91,7 +92,7 @@ namespace MoFEM {
         (*dit)->getFieldData() += alpha*data;
       }
     }
-    MoFEMFunctionReturnHot(0);
+    MoFEMFunctionReturn(0);
   }
 
   MoFEMErrorCode FieldBlas::setField(const double val,const EntityType type,const std::string& field_name) {
