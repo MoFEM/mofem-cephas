@@ -630,44 +630,36 @@ MoFEMErrorCode PrismInterface::splitSides(
 
   Interface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   std::vector<EntityHandle> children;
   //get children meshsets
-  rval = moab.get_child_meshsets(sideset,children);  CHKERRQ_MOAB(rval);
+  CHKERR moab.get_child_meshsets(sideset,children);
   if(children.size()!=3) {
-    SETERRQ(
-      m_field.get_comm(),MOFEM_DATA_INCONSISTENCY,
-      "should be 3 child meshsets, each of them contains tets on two sides of interface"
-    );
+    SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
+            "should be 3 child meshsets, each of them contains tets on two "
+            "sides of interface");
   }
   //3d ents on "father" side
   Range side_ents3d;
-  rval = moab.get_entities_by_handle(children[0], side_ents3d, false);
-  CHKERRQ_MOAB(rval);
+  CHKERR moab.get_entities_by_handle(children[0], side_ents3d, false);
   //3d ents on "mather" side
   Range other_ents3d;
-  rval = moab.get_entities_by_handle(children[1], other_ents3d, false);
-  CHKERRQ_MOAB(rval);
+  CHKERR moab.get_entities_by_handle(children[1], other_ents3d, false);
   //faces of interface
   Range triangles;
-  rval = moab.get_entities_by_type(sideset, MBTRI, triangles, recursive);
-  CHKERRQ_MOAB(rval);
+  CHKERR moab.get_entities_by_type(sideset, MBTRI, triangles, recursive);
   Range side_ents3d_tris;
-  rval = moab.get_adjacencies(side_ents3d, 2, true, side_ents3d_tris,
+  CHKERR moab.get_adjacencies(side_ents3d, 2, true, side_ents3d_tris,
                               moab::Interface::UNION);
-  CHKERRQ_MOAB(rval);
   triangles = intersect(triangles,side_ents3d_tris);
   //nodes on interface but not on crack front (those should not be splitted)
   Range nodes;
-  rval = moab.get_entities_by_type(children[2], MBVERTEX, nodes, false);
-  CHKERRQ_MOAB(rval);
+  CHKERR moab.get_entities_by_type(children[2], MBVERTEX, nodes, false);
   Range meshset_3d_ents,meshset_2d_ents;
-  rval = moab.get_entities_by_dimension(meshset, 3, meshset_3d_ents, true);
-  CHKERRQ_MOAB(rval);
+  CHKERR moab.get_entities_by_dimension(meshset, 3, meshset_3d_ents, true);
   Range meshset_tets = meshset_3d_ents.subset_by_type(MBTET);
-  rval = moab.get_adjacencies(meshset_tets, 2, false, meshset_2d_ents,
+  CHKERR moab.get_adjacencies(meshset_tets, 2, false, meshset_2d_ents,
                               moab::Interface::UNION);
-  CHKERRQ_MOAB(rval);
   side_ents3d = intersect(meshset_3d_ents,side_ents3d);
   other_ents3d = intersect(meshset_3d_ents,other_ents3d);
   triangles = intersect(meshset_2d_ents,triangles);
@@ -687,20 +679,23 @@ MoFEMErrorCode PrismInterface::splitSides(
     typedef RefEntity_multiIndex::index<
         Composite_EntType_and_ParentEntType_mi_tag>::type RefEntsByComposite;
     const RefEntsByComposite &ref_ents =
-    refined_ents_ptr->get<Composite_EntType_and_ParentEntType_mi_tag>();
+        refined_ents_ptr->get<Composite_EntType_and_ParentEntType_mi_tag>();
 
     RefEntsByComposite::iterator miit;
     RefEntsByComposite::iterator hi_miit;
-    //view by parent type (VERTEX)
-    miit = ref_ents.lower_bound(boost::make_tuple(MBVERTEX,MBVERTEX));
-    hi_miit = ref_ents.upper_bound(boost::make_tuple(MBVERTEX,MBVERTEX));
-    for(;miit!=hi_miit;miit++) {
-      if(((*miit)->getBitRefLevel()&inhered_from_bit_level_mask) == (*miit)->getBitRefLevel()) {
-        if(((*miit)->getBitRefLevel()&inhered_from_bit_level).any()) {
-          std::pair<RefEntity_multiIndex_view_by_parent_entity::iterator,bool> p_ref_ent_view;
+    // view by parent type (VERTEX)
+    miit = ref_ents.lower_bound(boost::make_tuple(MBVERTEX, MBVERTEX));
+    hi_miit = ref_ents.upper_bound(boost::make_tuple(MBVERTEX, MBVERTEX));
+    for (; miit != hi_miit; miit++) {
+      if (((*miit)->getBitRefLevel() & inhered_from_bit_level_mask) ==
+          (*miit)->getBitRefLevel()) {
+        if (((*miit)->getBitRefLevel() & inhered_from_bit_level).any()) {
+          std::pair<RefEntity_multiIndex_view_by_parent_entity::iterator, bool>
+              p_ref_ent_view;
           p_ref_ent_view = ref_parent_ents_view.insert(*miit);
-          if(!p_ref_ent_view.second) {
-            SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"non unique insertion");
+          if (!p_ref_ent_view.second) {
+            SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                    "non unique insertion");
           }
         }
       }
@@ -735,13 +730,14 @@ MoFEMErrorCode PrismInterface::splitSides(
     //
     bool success;
     if(child_entity == 0) {
-      rval = moab.get_coords(&*nit,1,coord); CHKERRQ_MOAB(rval);
+      CHKERR moab.get_coords(&*nit,1,coord); 
       EntityHandle new_node;
-      rval = moab.create_vertex(coord,new_node); CHKERRQ_MOAB(rval);
+      CHKERR moab.create_vertex(coord,new_node); 
       map_nodes[*nit] = new_node;
       //create new node on "father" side
       //parent is node on "mather" side
-      rval = moab.tag_set_data(cOre.get_th_RefParentHandle(),&new_node,1,&*nit); CHKERRQ_MOAB(rval);
+      CHKERR moab.tag_set_data(cOre.get_th_RefParentHandle(), &new_node, 1,
+                               &*nit);
       std::pair<RefEntity_multiIndex::iterator,bool> p_ref_ent =
       const_cast<RefEntity_multiIndex*>(refined_ents_ptr)->insert(
         boost::shared_ptr<RefEntity>
@@ -771,20 +767,16 @@ MoFEMErrorCode PrismInterface::splitSides(
   }
   //crete meshset for new mesh bit level
   EntityHandle meshset_for_bit_level;
-  rval = moab.create_meshset(MESHSET_SET | MESHSET_TRACK_OWNER,
+  CHKERR moab.create_meshset(MESHSET_SET | MESHSET_TRACK_OWNER,
                              meshset_for_bit_level);
-  CHKERRQ_MOAB(rval);
   //subtract those elements which will be refined, i.e. disconnected form other side elements, and connected to new prisms, if they area created
   meshset_3d_ents = subtract(meshset_3d_ents,side_ents3d);
-  rval = moab.add_entities(meshset_for_bit_level, meshset_3d_ents);
-  CHKERRQ_MOAB(rval);
+  CHKERR moab.add_entities(meshset_for_bit_level, meshset_3d_ents);
   for(int dd = 0;dd<3;dd++) {
     Range ents_dd;
-    rval = moab.get_adjacencies(meshset_3d_ents, dd, false, ents_dd,
+    CHKERR moab.get_adjacencies(meshset_3d_ents, dd, false, ents_dd,
                                 moab::Interface::UNION);
-    CHKERRQ_MOAB(rval);
-    rval = moab.add_entities(meshset_for_bit_level, ents_dd);
-    CHKERRQ_MOAB(rval);
+    CHKERR moab.add_entities(meshset_for_bit_level, ents_dd);
   }
   //
   //typedef RefEntity_multiIndex::index<Composite_ParentEnt_And_EntType_mi_tag>::type ref_ent_by_composite;
@@ -800,8 +792,7 @@ MoFEMErrorCode PrismInterface::splitSides(
     }
     int num_nodes;
     const EntityHandle* conn;
-    rval = moab.get_connectivity(*eit3d, conn, num_nodes, true);
-    CHKERRQ_MOAB(rval);
+    CHKERR moab.get_connectivity(*eit3d, conn, num_nodes, true);
     EntityHandle new_conn[num_nodes];
     int nb_new_conn = 0;
     for (int ii = 0; ii < num_nodes; ii++) {
@@ -820,14 +811,13 @@ MoFEMErrorCode PrismInterface::splitSides(
     }
     if (nb_new_conn == 0) {
       // Add this tet to bit ref level
-      rval = moab.add_entities(meshset_for_bit_level, &*eit3d, 1);
-      rval = moab.add_entities(meshset_for_bit_level, conn, num_nodes);
+      CHKERR moab.add_entities(meshset_for_bit_level, &*eit3d, 1);
+      CHKERR moab.add_entities(meshset_for_bit_level, conn, num_nodes);
       continue;
     }
 
     const RefEntity_multiIndex *refined_ent_ptr;
-    ierr = m_field.get_ref_ents(&refined_ent_ptr);
-    CHKERRG(ierr);
+    CHKERR m_field.get_ref_ents(&refined_ent_ptr);
 
     //here is created new or prism is on interface
     EntityHandle existing_ent = 0;
@@ -840,9 +830,8 @@ MoFEMErrorCode PrismInterface::splitSides(
         refined_ent_ptr->get<Ent_Ent_mi_tag>().upper_bound(*eit3d);
     for(;child_iit!=hi_child_iit;child_iit++) {
       const EntityHandle* conn_ref_tet;
-      rval = moab.get_connectivity(child_iit->get()->getRefEnt(), conn_ref_tet,
+      CHKERR moab.get_connectivity(child_iit->get()->getRefEnt(), conn_ref_tet,
                                    num_nodes, true);
-      CHKERRQ_MOAB(rval);
       int nn = 0;
       for(;nn<num_nodes;nn++) {
         if(conn_ref_tet[nn]!=new_conn[nn]) {
@@ -863,14 +852,11 @@ MoFEMErrorCode PrismInterface::splitSides(
         EntityHandle tet;
         if(existing_ent == 0) {
           Range new_conn_tet;
-          rval = moab.get_adjacencies(new_conn, 4, 3, false, new_conn_tet);
-          CHKERRQ_MOAB(rval);
+          CHKERR moab.get_adjacencies(new_conn, 4, 3, false, new_conn_tet);
           if(new_conn_tet.empty()) {
-            rval = moab.create_element(MBTET, new_conn, 4, tet);
-            CHKERRQ_MOAB(rval);
-            rval = moab.tag_set_data(cOre.get_th_RefParentHandle(), &tet, 1,
+            CHKERR moab.create_element(MBTET, new_conn, 4, tet);
+            CHKERR moab.tag_set_data(cOre.get_th_RefParentHandle(), &tet, 1,
                                      &*eit3d);
-            CHKERRQ_MOAB(rval);
           } else {
             RefEntity_multiIndex::index<Ent_mi_tag>::type::iterator rit,
                 new_rit;
@@ -899,10 +885,8 @@ MoFEMErrorCode PrismInterface::splitSides(
         } else {
           tet = existing_ent;
         }
-        rval = moab.add_entities(meshset_for_bit_level, &tet, 1);
-        CHKERRQ_MOAB(rval);
-        rval = moab.add_entities(meshset_for_bit_level, new_conn, 4);
-        CHKERRQ_MOAB(rval);
+        CHKERR moab.add_entities(meshset_for_bit_level, &tet, 1);
+        CHKERR moab.add_entities(meshset_for_bit_level, new_conn, 4);
         new_3d_ents.insert(tet);
       } break;
       case MBPRISM: {
@@ -913,14 +897,11 @@ MoFEMErrorCode PrismInterface::splitSides(
         }
         if(existing_ent == 0) {
           Range new_conn_prism;
-          rval = moab.get_adjacencies(new_conn, 6, 3, false, new_conn_prism);
-          CHKERRQ_MOAB(rval);
+          CHKERR moab.get_adjacencies(new_conn, 6, 3, false, new_conn_prism);
           if(new_conn_prism.empty()) {
-            rval = moab.create_element(MBPRISM, new_conn, 6, prism);
-            CHKERRQ_MOAB(rval);
-            rval = moab.tag_set_data(cOre.get_th_RefParentHandle(), &prism, 1,
+            CHKERR moab.create_element(MBPRISM, new_conn, 6, prism);
+            CHKERR moab.tag_set_data(cOre.get_th_RefParentHandle(), &prism, 1,
                                      &*eit3d);
-            CHKERRQ_MOAB(rval);
           } else {
             SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
                     "data inconsistency");
@@ -928,10 +909,8 @@ MoFEMErrorCode PrismInterface::splitSides(
         } else {
           prism = existing_ent;
         }
-        rval = moab.add_entities(meshset_for_bit_level, &prism, 1);
-        CHKERRQ_MOAB(rval);
-        rval = moab.add_entities(meshset_for_bit_level, new_conn, 4);
-        CHKERRQ_MOAB(rval);
+        CHKERR moab.add_entities(meshset_for_bit_level, &prism, 1);
+        CHKERR moab.add_entities(meshset_for_bit_level, new_conn, 4);
         new_3d_ents.insert(prism);
       } break;
       default:
@@ -940,31 +919,26 @@ MoFEMErrorCode PrismInterface::splitSides(
   }
   Range new_ents;
   //create new entities by adjacencies form new tets
-  rval = moab.get_adjacencies(new_3d_ents.subset_by_type(MBTET), 2, true,
+  CHKERR moab.get_adjacencies(new_3d_ents.subset_by_type(MBTET), 2, true,
                               new_ents, moab::Interface::UNION);
-  CHKERRQ_MOAB(rval);
-  rval = moab.get_adjacencies(new_3d_ents.subset_by_type(MBTET), 1, true,
+  CHKERR moab.get_adjacencies(new_3d_ents.subset_by_type(MBTET), 1, true,
                               new_ents, moab::Interface::UNION);
-  CHKERRQ_MOAB(rval);
   //Tags for setting side
   Tag th_interface_side;
   const int def_side[] = {0};
-  rval = moab.tag_get_handle("INTERFACE_SIDE", 1, MB_TYPE_INTEGER,
+  CHKERR moab.tag_get_handle("INTERFACE_SIDE", 1, MB_TYPE_INTEGER,
                              th_interface_side, MB_TAG_CREAT | MB_TAG_SPARSE,
                              def_side);
-  CHKERRQ_MOAB(rval);
   //add new edges and triangles to mofem database
   Range ents;
-  rval =
-      moab.get_adjacencies(triangles, 1, false, ents, moab::Interface::UNION);
-  CHKERRQ_MOAB(rval);
+  CHKERR moab.get_adjacencies(triangles, 1, false, ents,
+                              moab::Interface::UNION);
   ents.insert(triangles.begin(),triangles.end());
   Range new_ents_in_database; //this range contains all new entities
   for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {
     int num_nodes;
     const EntityHandle* conn;
-    rval = moab.get_connectivity(*eit, conn, num_nodes, true);
-    CHKERRQ_MOAB(rval);
+    CHKERR moab.get_connectivity(*eit, conn, num_nodes, true);
     EntityHandle new_conn[num_nodes];
     int nb_new_conn = 0;
     int ii = 0;
@@ -992,15 +966,13 @@ MoFEMErrorCode PrismInterface::splitSides(
     switch (moab.type_from_handle(*eit)) {
       case MBTRI: {
         //get entity based on its connectivity
-        rval = moab.get_adjacencies(new_conn, 3, 2, false, new_ent);
-        CHKERRQ_MOAB(rval);
+        CHKERR moab.get_adjacencies(new_conn, 3, 2, false, new_ent);
         if (new_ent.size() != 1)
           SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                   "this tri should be in moab database");
         int new_side = 1;
-        rval = moab.tag_set_data(th_interface_side, &*new_ent.begin(), 1,
+        CHKERR moab.tag_set_data(th_interface_side, &*new_ent.begin(), 1,
                                  &new_side);
-        CHKERRQ_MOAB(rval);
         if (verb >= VERY_VERBOSE)
           PetscPrintf(m_field.get_comm(), "new_ent %u\n", new_ent.size());
         //add prism element
@@ -1015,60 +987,40 @@ MoFEMErrorCode PrismInterface::splitSides(
             new_conn[0],new_conn[1],new_conn[2]
           };
           EntityHandle prism;
-          rval = moab.create_element(MBPRISM, prism_conn, 6, prism);
-          CHKERRQ_MOAB(rval);
-          ierr = cOre.addPrismToDatabase(prism, verb);
-          CHKERRG(ierr);
-          rval = moab.add_entities(meshset_for_bit_level, &prism, 1);
-          CHKERRQ_MOAB(rval);
+          CHKERR moab.create_element(MBPRISM, prism_conn, 6, prism);
+          CHKERR cOre.addPrismToDatabase(prism, verb);
+          CHKERR moab.add_entities(meshset_for_bit_level, &prism, 1);
         }
       } break;
       case MBEDGE: {
-        rval = moab.get_adjacencies(new_conn, 2, 1, false, new_ent);
-        CHKERRQ_MOAB(rval);
+        CHKERR moab.get_adjacencies(new_conn, 2, 1, false, new_ent);
         if (new_ent.size() != 1) {
           if (m_field.get_comm_rank() == 0) {
             EntityHandle out_meshset;
-            rval = moab.create_meshset(MESHSET_SET | MESHSET_TRACK_OWNER,
+            CHKERR moab.create_meshset(MESHSET_SET | MESHSET_TRACK_OWNER,
                                        out_meshset);
-            CHKERRQ_MOAB(rval);
-            rval = moab.add_entities(out_meshset, &*eit, 1);
-            CHKERRQ_MOAB(rval);
-            rval = moab.write_file("debug_splitSides.vtk", "VTK", "",
+            CHKERR moab.add_entities(out_meshset, &*eit, 1);
+            CHKERR moab.write_file("debug_splitSides.vtk", "VTK", "",
                                    &out_meshset, 1);
-            CHKERRQ_MOAB(rval);
-            rval = moab.delete_entities(&out_meshset, 1);
-            CHKERRQ_MOAB(rval);
-            rval = moab.create_meshset(MESHSET_SET | MESHSET_TRACK_OWNER,
+            CHKERR moab.delete_entities(&out_meshset, 1);
+            CHKERR moab.create_meshset(MESHSET_SET | MESHSET_TRACK_OWNER,
                                        out_meshset);
-            CHKERRQ_MOAB(rval);
-            rval = moab.add_entities(out_meshset, side_ents3d);
-            CHKERRQ_MOAB(rval);
-            rval = moab.write_file("debug_splitSides_side_ents3d.vtk", "VTK",
+            CHKERR moab.add_entities(out_meshset, side_ents3d);
+            CHKERR moab.write_file("debug_splitSides_side_ents3d.vtk", "VTK",
                                    "", &out_meshset, 1);
-            CHKERRQ_MOAB(rval);
-            rval = moab.delete_entities(&out_meshset, 1);
-            CHKERRQ_MOAB(rval);
-            rval = moab.create_meshset(MESHSET_SET | MESHSET_TRACK_OWNER,
+            CHKERR moab.delete_entities(&out_meshset, 1);
+            CHKERR moab.create_meshset(MESHSET_SET | MESHSET_TRACK_OWNER,
                                        out_meshset);
-            CHKERRQ_MOAB(rval);
-            rval = moab.add_entities(out_meshset, other_ents3d);
-            CHKERRQ_MOAB(rval);
-            rval = moab.write_file("debug_splitSides_other_ents3d.vtk", "VTK",
+            CHKERR moab.add_entities(out_meshset, other_ents3d);
+            CHKERR moab.write_file("debug_splitSides_other_ents3d.vtk", "VTK",
                                    "", &out_meshset, 1);
-            CHKERRQ_MOAB(rval);
-            rval = moab.delete_entities(&out_meshset, 1);
-            CHKERRQ_MOAB(rval);
-            rval = moab.create_meshset(MESHSET_SET | MESHSET_TRACK_OWNER,
+            CHKERR moab.delete_entities(&out_meshset, 1);
+            CHKERR moab.create_meshset(MESHSET_SET | MESHSET_TRACK_OWNER,
                                        out_meshset);
-            CHKERRQ_MOAB(rval);
-            rval = moab.add_entities(out_meshset, triangles);
-            CHKERRQ_MOAB(rval);
-            rval = moab.write_file("debug_get_msId_3dENTS_split_triangles.vtk",
+            CHKERR moab.add_entities(out_meshset, triangles);
+            CHKERR moab.write_file("debug_get_msId_3dENTS_split_triangles.vtk",
                                    "VTK", "", &out_meshset, 1);
-            CHKERRQ_MOAB(rval);
-            rval = moab.delete_entities(&out_meshset, 1);
-            CHKERRQ_MOAB(rval);
+            CHKERR moab.delete_entities(&out_meshset, 1);
           }
           SETERRQ2(PETSC_COMM_SELF, 1, "this edge should be in moab database "
                                        "new_ent.size() = %u nb_new_conn = %d",
@@ -1084,9 +1036,8 @@ MoFEMErrorCode PrismInterface::splitSides(
                  new_ent.size());
     }
     //set parent
-    rval = moab.tag_set_data(cOre.get_th_RefParentHandle(), &*new_ent.begin(),
+    CHKERR moab.tag_set_data(cOre.get_th_RefParentHandle(), &*new_ent.begin(),
                              1, &*eit);
-    CHKERRQ_MOAB(rval);
     // add to database
     std::pair<RefEntity_multiIndex::iterator, bool> p_ref_ent =
         const_cast<RefEntity_multiIndex *>(refined_ents_ptr)
@@ -1098,12 +1049,10 @@ MoFEMErrorCode PrismInterface::splitSides(
   }
   //all other entities, some ents like triangles and faces on the side of tets
   Range side_adj_faces_and_edges;
-  rval = moab.get_adjacencies(side_ents3d.subset_by_type(MBTET), 1, true,
+  CHKERR moab.get_adjacencies(side_ents3d.subset_by_type(MBTET), 1, true,
                               side_adj_faces_and_edges, moab::Interface::UNION);
-  CHKERRQ_MOAB(rval);
-  rval = moab.get_adjacencies(side_ents3d.subset_by_type(MBTET), 2, true,
+  CHKERR moab.get_adjacencies(side_ents3d.subset_by_type(MBTET), 2, true,
                               side_adj_faces_and_edges, moab::Interface::UNION);
-  CHKERRQ_MOAB(rval);
   //subtract entities already added to mofem database
   side_adj_faces_and_edges =
       subtract(side_adj_faces_and_edges, new_ents_in_database);
@@ -1111,8 +1060,7 @@ MoFEMErrorCode PrismInterface::splitSides(
        eit != side_adj_faces_and_edges.end(); eit++) {
     int num_nodes;
     const EntityHandle* conn;
-    rval = moab.get_connectivity(*eit, conn, num_nodes, true);
-    CHKERRQ_MOAB(rval);
+    CHKERR moab.get_connectivity(*eit, conn, num_nodes, true);
     EntityHandle new_conn[num_nodes];
     int nb_new_conn = 0;
     int ii = 0;
@@ -1140,12 +1088,10 @@ MoFEMErrorCode PrismInterface::splitSides(
     Range new_ent;
     switch (moab.type_from_handle(*eit)) {
     case MBTRI: {
-      rval = moab.get_adjacencies(new_conn, 3, 2, false, new_ent);
-      CHKERRQ_MOAB(rval);
+      CHKERR moab.get_adjacencies(new_conn, 3, 2, false, new_ent);
     } break;
     case MBEDGE: {
-      rval = moab.get_adjacencies(new_conn, 2, 1, false, new_ent);
-      CHKERRQ_MOAB(rval);
+      CHKERR moab.get_adjacencies(new_conn, 2, 1, false, new_ent);
     } break;
     default:
       SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
@@ -1156,9 +1102,8 @@ MoFEMErrorCode PrismInterface::splitSides(
                "database inconsistency, new_ent.size() = %u", new_ent.size());
     }
     // add entity to mofem database
-    rval = moab.tag_set_data(cOre.get_th_RefParentHandle(), &*new_ent.begin(),
+    CHKERR moab.tag_set_data(cOre.get_th_RefParentHandle(), &*new_ent.begin(),
                              1, &*eit);
-    CHKERRQ_MOAB(rval);
     std::pair<RefEntity_multiIndex::iterator, bool> p_ref_ent =
         const_cast<RefEntity_multiIndex *>(refined_ents_ptr)
             ->insert(boost::shared_ptr<RefEntity>(new RefEntity(
@@ -1173,13 +1118,11 @@ MoFEMErrorCode PrismInterface::splitSides(
   Range new_3d_prims = new_3d_ents.subset_by_type(MBPRISM);
   for (Range::iterator pit = new_3d_prims.begin(); pit != new_3d_prims.end();
        pit++) {
-    ierr = cOre.addPrismToDatabase(*pit, verb);
-    CHKERRG(ierr);
+    CHKERR cOre.addPrismToDatabase(*pit, verb);
     // get parent entity
     EntityHandle parent_prism;
-    rval = moab.tag_get_data(cOre.get_th_RefParentHandle(), &*pit, 1,
+    CHKERR moab.tag_get_data(cOre.get_th_RefParentHandle(), &*pit, 1,
                              &parent_prism);
-    CHKERRQ_MOAB(rval);
     const EntityHandle root_meshset = moab.get_root_set();
     if (parent_prism == root_meshset) {
       SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
@@ -1192,14 +1135,10 @@ MoFEMErrorCode PrismInterface::splitSides(
     int num_nodes;
     // parent prism
     const EntityHandle *conn_parent;
-    rval = moab.get_connectivity(parent_prism, conn_parent, num_nodes, true);
-    MOAB_THROW(rval);
+    CHKERR moab.get_connectivity(parent_prism, conn_parent, num_nodes, true);
     Range face_side3_parent, face_side4_parent;
-    rval = moab.get_adjacencies(conn_parent, 3, 2, false, face_side3_parent);
-    CHKERRQ_MOAB(rval);
-    rval =
-        moab.get_adjacencies(&conn_parent[3], 3, 2, false, face_side4_parent);
-    CHKERRQ_MOAB(rval);
+    CHKERR moab.get_adjacencies(conn_parent, 3, 2, false, face_side3_parent);
+    CHKERR moab.get_adjacencies(&conn_parent[3], 3, 2, false, face_side4_parent);
     if (face_side3_parent.size() != 1) {
       SETERRQ1(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
                "parent face3.size() = %u", face_side3_parent.size());
@@ -1210,13 +1149,10 @@ MoFEMErrorCode PrismInterface::splitSides(
     }
     // new prism
     const EntityHandle *conn;
-    rval = moab.get_connectivity(*pit, conn, num_nodes, true);
-    MOAB_THROW(rval);
+    CHKERR moab.get_connectivity(*pit, conn, num_nodes, true);
     Range face_side3, face_side4;
-    rval = moab.get_adjacencies(conn, 3, 2, false, face_side3);
-    CHKERRQ_MOAB(rval);
-    rval = moab.get_adjacencies(&conn[3], 3, 2, false, face_side4);
-    CHKERRQ_MOAB(rval);
+    CHKERR moab.get_adjacencies(conn, 3, 2, false, face_side3);
+    CHKERR moab.get_adjacencies(&conn[3], 3, 2, false, face_side4);
     if (face_side3.size() != 1) {
       SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY, "face3 is missing");
     }
@@ -1233,16 +1169,13 @@ MoFEMErrorCode PrismInterface::splitSides(
       if (parent_face[ff] == face[ff])
         continue;
       int interface_side;
-      rval = moab.tag_get_data(th_interface_side, &parent_face[ff], 1,
+      CHKERR moab.tag_get_data(th_interface_side, &parent_face[ff], 1,
                                &interface_side);
-      CHKERRQ_MOAB(rval);
-      rval =
-          moab.tag_set_data(th_interface_side, &face[ff], 1, &interface_side);
-      CHKERRQ_MOAB(rval);
+      CHKERR moab.tag_set_data(th_interface_side, &face[ff], 1,
+                               &interface_side);
       EntityHandle parent_tri;
-      rval = moab.tag_get_data(cOre.get_th_RefParentHandle(), &face[ff], 1,
+      CHKERR moab.tag_get_data(cOre.get_th_RefParentHandle(), &face[ff], 1,
                                &parent_tri);
-      CHKERRQ_MOAB(rval);
       if (parent_tri != parent_face[ff]) {
         SETERRQ1(PETSC_COMM_SELF, 1, "wrong parent %lu", parent_tri);
       }
@@ -1257,13 +1190,10 @@ MoFEMErrorCode PrismInterface::splitSides(
     }
   }
   // finalise by adding new tets and prism ti bit level
-  ierr = m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(
+  CHKERR m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(
       meshset_for_bit_level, 3, bit);
-  CHKERRG(ierr);
-  rval = moab.delete_entities(&meshset_for_bit_level, 1);
-  CHKERRQ_MOAB(rval);
-  ierr = moab.clear_meshset(&children[0], 3);
-  CHKERRG(ierr);
-  MoFEMFunctionReturnHot(0);
+  CHKERR moab.delete_entities(&meshset_for_bit_level, 1);
+  CHKERR moab.clear_meshset(&children[0], 3);
+  MoFEMFunctionReturn(0);
 }
 }
