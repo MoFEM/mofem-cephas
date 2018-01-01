@@ -957,43 +957,39 @@ MoFEMErrorCode BitRefManager::updateMeshsetByEntitiesChildren(
   MoFEM::Interface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   const RefEntity_multiIndex *ref_ents_ptr;
-  MoFEMFunctionBeginHot;
-  ierr = m_field.get_ref_ents(&ref_ents_ptr);
-  CHKERRG(ierr);
+  MoFEMFunctionBegin;
+  CHKERR m_field.get_ref_ents(&ref_ents_ptr);
   Range ents;
-  rval = moab.get_entities_by_handle(parent, ents, recursive);
+  CHKERR moab.get_entities_by_handle(parent, ents, recursive);
   if (rval != MB_SUCCESS) {
     std::cerr << parent << std::endl;
     std::cerr << moab.type_from_handle(parent) << " " << MBENTITYSET
               << std::endl;
   }
-  CHKERRQ_MOAB(rval);
 
   typedef RefEntity_multiIndex::index<
       Composite_ParentEnt_And_EntType_mi_tag>::type RefEntsByComposite;
   RefEntsByComposite &ref_ents =
       const_cast<RefEntity_multiIndex *>(ref_ents_ptr)
           ->get<Composite_ParentEnt_And_EntType_mi_tag>();
-  for (Range::iterator eit = ents.begin(); eit != ents.end(); eit++) {
-    if (verb > 2) {
+  for (Range::iterator eit = ents.begin(); eit != ents.end(); ++eit) {
+    if (verb >= NOISY) {
       std::ostringstream ss;
       ss << "ent " << *eit << std::endl;
       ;
       PetscPrintf(m_field.get_comm(), ss.str().c_str());
     }
-    RefEntsByComposite::iterator miit =
-        ref_ents.lower_bound(boost::make_tuple(*eit, child_type));
-    RefEntsByComposite::iterator hi_miit =
-        ref_ents.upper_bound(boost::make_tuple(*eit, child_type));
-    for (; miit != hi_miit; miit++) {
-      if (verb > 2) {
+    std::pair<RefEntsByComposite::iterator, RefEntsByComposite::iterator> miit =
+        ref_ents.equal_range(boost::make_tuple(*eit, child_type));
+    for (; miit.first != miit.second; ++miit.first) {
+      if (verb >= NOISY) {
         std::ostringstream ss;
-        ss << "any bit " << *miit << std::endl;
+        ss << "any bit " << *miit.first << std::endl;
         ;
         PetscPrintf(m_field.get_comm(), ss.str().c_str());
       }
-      if (((*miit)->getBitRefLevel() & child_bit).any()) {
-        EntityHandle ref_ent = (*miit)->getRefEnt();
+      if (((*miit.first)->getBitRefLevel() & child_bit).any()) {
+        EntityHandle ref_ent = (*miit.first)->getRefEnt();
         if (ref_ent == *eit)
           continue;
         if (ref_ent == 0) {
@@ -1004,43 +1000,37 @@ MoFEMErrorCode BitRefManager::updateMeshsetByEntitiesChildren(
           SETERRQ(m_field.get_comm(), MOFEM_IMPOSIBLE_CASE,
                   "this should not happen");
         }
-        rval = moab.add_entities(child, &ref_ent, 1);
-        CHKERRQ_MOAB(rval);
+        CHKERR moab.add_entities(child, &ref_ent, 1);
         if (verb > 1) {
           std::ostringstream ss;
-          ss << "good bit " << *miit << std::endl;
+          ss << "good bit " << *miit.first << std::endl;
           PetscPrintf(m_field.get_comm(), ss.str().c_str());
         }
       }
     }
   }
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode BitRefManager::updateFieldMeshsetByEntitiesChildren(
     const BitRefLevel &child_bit, int verb) {
   MoFEM::Interface &m_field = cOre;
   const Field_multiIndex *fields_ptr;
-  MoFEMFunctionBeginHot;
-  ierr = m_field.get_fields(&fields_ptr);
-  CHKERRG(ierr);
+  MoFEMFunctionBegin;
+  CHKERR m_field.get_fields(&fields_ptr);
   Field_multiIndex::iterator fit = fields_ptr->begin();
   for (; fit != fields_ptr->end(); fit++) {
     EntityHandle meshset = (*fit)->getMeshset();
-    ierr = updateMeshsetByEntitiesChildren(meshset, child_bit, meshset, MBTET,
+    CHKERR updateMeshsetByEntitiesChildren(meshset, child_bit, meshset, MBTET,
                                            false, verb);
-    CHKERRG(ierr);
-    ierr = updateMeshsetByEntitiesChildren(meshset, child_bit, meshset, MBTRI,
+    CHKERR updateMeshsetByEntitiesChildren(meshset, child_bit, meshset, MBTRI,
                                            false, verb);
-    CHKERRG(ierr);
-    ierr = updateMeshsetByEntitiesChildren(meshset, child_bit, meshset, MBEDGE,
+    CHKERR updateMeshsetByEntitiesChildren(meshset, child_bit, meshset, MBEDGE,
                                            false, verb);
-    CHKERRG(ierr);
-    ierr = updateMeshsetByEntitiesChildren(meshset, child_bit, meshset,
+    CHKERR updateMeshsetByEntitiesChildren(meshset, child_bit, meshset,
                                            MBVERTEX, false, verb);
-    CHKERRG(ierr);
   }
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode BitRefManager::updateFieldMeshsetByEntitiesChildren(
