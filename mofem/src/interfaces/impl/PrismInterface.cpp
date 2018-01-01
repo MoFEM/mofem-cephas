@@ -849,12 +849,6 @@ MoFEMErrorCode PrismInterface::splitSides(
   // side elements, and connected to new prisms, if they area created
   meshset_3d_ents = subtract(meshset_3d_ents,side_ents3d);
   CHKERR moab.add_entities(meshset_for_bit_level, meshset_3d_ents);
-  for(int dd = 0;dd<3;dd++) {
-    Range ents_dd;
-    CHKERR moab.get_adjacencies(meshset_3d_ents, dd, false, ents_dd,
-                                moab::Interface::UNION);
-    CHKERR moab.add_entities(meshset_for_bit_level, ents_dd);
-  }
 
   // create new 3d ents on "father" side
   Range new_3d_ents;
