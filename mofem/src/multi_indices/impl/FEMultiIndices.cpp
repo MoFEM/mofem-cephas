@@ -88,11 +88,20 @@ RefElement_PRISM::RefElement_PRISM(
   rval = moab.get_connectivity(prism, conn, num_nodes, true);
   MOAB_THROW(rval);
   assert(num_nodes == 6);
-  for (int nn = 0; nn < 6; nn++) {
+  for (int nn = 0; nn != 6; ++nn) {
     const_cast<SideNumber_multiIndex &>(side_number_table)
         .insert(
             boost::shared_ptr<SideNumber>(new SideNumber(conn[nn], nn, 0, -1)));
   }
+  // Range face_side3, face_side4;
+  // CHKERR moab.get_adjacencies(conn, 3, 2, true, face_side3);
+  // CHKERR moab.get_adjacencies(&conn[3], 3, 2, true, face_side4);
+  // if (face_side3.size() != 1)
+  //   THROW_MESSAGE("prism don't have side face 3");
+  // if (face_side4.size() != 1)
+  //   THROW_MESSAGE("prims don't have side face 4");
+  // getSideNumberPtr(*face_side3.begin());
+  // getSideNumberPtr(*face_side4.begin());
 }
 const boost::shared_ptr<SideNumber> &
 RefElement_PRISM::getSideNumberPtr(const EntityHandle ent) const {

@@ -989,7 +989,6 @@ MoFEMErrorCode PrismInterface::splitSides(
   CHKERR moab.get_adjacencies(triangles, 1, false, ents,
                               moab::Interface::UNION);
   ents.insert(triangles.begin(),triangles.end());
-  Range new_ents_in_database; //this range contains all new entities
   for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {
     int num_nodes;
     const EntityHandle* conn;
@@ -1014,7 +1013,7 @@ MoFEMErrorCode PrismInterface::splitSides(
     if(nb_new_conn==0) continue;
     RefEntity_multiIndex::iterator miit_ref_ent = refined_ents_ptr->find(*eit);
     if (miit_ref_ent == refined_ents_ptr->end()) {
-      SETERRQ(PETSC_COMM_SELF, 1,
+      SETERRQ(m_field.get_comm(), 1,
               "this entity (edge or tri) should be already in database");
     }
     Range new_ent; //contains all entities (edges or triangles) added to mofem database
@@ -1023,7 +1022,7 @@ MoFEMErrorCode PrismInterface::splitSides(
         //get entity based on its connectivity
         CHKERR moab.get_adjacencies(new_conn, 3, 2, false, new_ent);
         if (new_ent.size() != 1)
-          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+          SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
                   "this tri should be in moab database");
         int new_side = 1;
         CHKERR moab.tag_set_data(th_interface_side, &*new_ent.begin(), 1,
@@ -1033,7 +1032,7 @@ MoFEMErrorCode PrismInterface::splitSides(
         //add prism element
         if(add_interface_entities) {
           if(inhered_from_bit_level.any()) {
-            SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
                     "not implemented for inhered_from_bit_level");
           }
           //set prism connectivity
@@ -1049,44 +1048,17 @@ MoFEMErrorCode PrismInterface::splitSides(
       case MBEDGE: {
         CHKERR moab.get_adjacencies(new_conn, 2, 1, false, new_ent);
         if (new_ent.size() != 1) {
-          if (m_field.get_comm_rank() == 0) {
-            EntityHandle out_meshset;
-            CHKERR moab.create_meshset(MESHSET_SET | MESHSET_TRACK_OWNER,
-                                       out_meshset);
-            CHKERR moab.add_entities(out_meshset, &*eit, 1);
-            CHKERR moab.write_file("debug_splitSides.vtk", "VTK", "",
-                                   &out_meshset, 1);
-            CHKERR moab.delete_entities(&out_meshset, 1);
-            CHKERR moab.create_meshset(MESHSET_SET | MESHSET_TRACK_OWNER,
-                                       out_meshset);
-            CHKERR moab.add_entities(out_meshset, side_ents3d);
-            CHKERR moab.write_file("debug_splitSides_side_ents3d.vtk", "VTK",
-                                   "", &out_meshset, 1);
-            CHKERR moab.delete_entities(&out_meshset, 1);
-            CHKERR moab.create_meshset(MESHSET_SET | MESHSET_TRACK_OWNER,
-                                       out_meshset);
-            CHKERR moab.add_entities(out_meshset, other_ents3d);
-            CHKERR moab.write_file("debug_splitSides_other_ents3d.vtk", "VTK",
-                                   "", &out_meshset, 1);
-            CHKERR moab.delete_entities(&out_meshset, 1);
-            CHKERR moab.create_meshset(MESHSET_SET | MESHSET_TRACK_OWNER,
-                                       out_meshset);
-            CHKERR moab.add_entities(out_meshset, triangles);
-            CHKERR moab.write_file("debug_get_msId_3dENTS_split_triangles.vtk",
-                                   "VTK", "", &out_meshset, 1);
-            CHKERR moab.delete_entities(&out_meshset, 1);
-          }
-          SETERRQ2(PETSC_COMM_SELF, 1, "this edge should be in moab database "
+          SETERRQ2(m_field.get_comm(), 1, "this edge should be in moab database "
                                        "new_ent.size() = %u nb_new_conn = %d",
                    new_ent.size(), nb_new_conn);
         }
       } break;
       default:
-        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+        SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
                 "Houston we have a problem !!!");
       }
       if (new_ent.size() != 1) {
-        SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+        SETERRQ1(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
                  "new_ent.size() = %u, size always should be 1",
                  new_ent.size());
     }
@@ -1100,9 +1072,6 @@ MoFEMErrorCode PrismInterface::splitSides(
                               side_adj_faces_and_edges, moab::Interface::UNION);
   CHKERR moab.get_adjacencies(side_ents3d.subset_by_type(MBTET), 2, true,
                               side_adj_faces_and_edges, moab::Interface::UNION);
-  //subtract entities already added to mofem database
-  side_adj_faces_and_edges =
-      subtract(side_adj_faces_and_edges, new_ents_in_database);
   for (Range::iterator eit = side_adj_faces_and_edges.begin();
        eit != side_adj_faces_and_edges.end(); eit++) {
     int num_nodes;
@@ -1110,8 +1079,7 @@ MoFEMErrorCode PrismInterface::splitSides(
     CHKERR moab.get_connectivity(*eit, conn, num_nodes, true);
     EntityHandle new_conn[num_nodes];
     int nb_new_conn = 0;
-    int ii = 0;
-    for (; ii < num_nodes; ii++) {
+    for (int ii = 0; ii < num_nodes; ii++) {
       std::map<EntityHandle, EntityHandle>::iterator mit =
           map_nodes.find(conn[ii]);
       if (mit != map_nodes.end()) {
@@ -1129,17 +1097,17 @@ MoFEMErrorCode PrismInterface::splitSides(
       continue;
     RefEntity_multiIndex::iterator miit_ref_ent = refined_ents_ptr->find(*eit);
     if (miit_ref_ent == refined_ents_ptr->end()) {
-      SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+      SETERRQ1(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
                "entity should be in MoFem database, num_nodes = %d", num_nodes);
     }
     Range new_ent;
     switch (moab.type_from_handle(*eit)) {
-    case MBTRI: {
-      CHKERR moab.get_adjacencies(new_conn, 3, 2, false, new_ent);
-    } break;
-    case MBEDGE: {
+    case MBEDGE:
       CHKERR moab.get_adjacencies(new_conn, 2, 1, false, new_ent);
-    } break;
+      break;
+    case MBTRI:
+      CHKERR moab.get_adjacencies(new_conn, 3, 2, false, new_ent);
+      break;
     default:
       SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
               "Houston we have a problem");
@@ -1148,33 +1116,18 @@ MoFEMErrorCode PrismInterface::splitSides(
       SETERRQ1(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
                "database inconsistency, new_ent.size() = %u", new_ent.size());
     }
-    // add entity to mofem database
-    CHKERR moab.tag_set_data(cOre.get_th_RefParentHandle(), &*new_ent.begin(),
-                             1, &*eit);
-    std::pair<RefEntity_multiIndex::iterator, bool> p_ref_ent =
-        const_cast<RefEntity_multiIndex *>(refined_ents_ptr)
-            ->insert(boost::shared_ptr<RefEntity>(new RefEntity(
-                m_field.get_basic_entity_data_ptr(), new_ent[0])));
-    const_cast<RefEntity_multiIndex *>(refined_ents_ptr)
-        ->modify(p_ref_ent.first, RefEntity_change_add_bit(bit));
-    if (verb > VERY_VERBOSE)
-      PetscPrintf(m_field.get_comm(), "new_ent %u\n", new_ent.size());
-    new_ents_in_database.insert(new_ent.begin(), new_ent.end());
+    CHKERR set_parent(new_ent[0], *eit, refined_ents_ptr, cOre);
   }
+  
   // add new prisms which parents are part of other intefaces
   Range new_3d_prims = new_3d_ents.subset_by_type(MBPRISM);
   for (Range::iterator pit = new_3d_prims.begin(); pit != new_3d_prims.end();
        pit++) {
-    CHKERR cOre.addPrismToDatabase(*pit, verb);
     // get parent entity
     EntityHandle parent_prism;
     CHKERR moab.tag_get_data(cOre.get_th_RefParentHandle(), &*pit, 1,
                              &parent_prism);
     const EntityHandle root_meshset = moab.get_root_set();
-    if (parent_prism == root_meshset) {
-      SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
-              "this prism should have parent");
-    }
     if (moab.type_from_handle(parent_prism) != MBPRISM) {
       SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
               "this prism should have parent which is prism as well");
@@ -1206,7 +1159,6 @@ MoFEMErrorCode PrismInterface::splitSides(
     if (face_side4.size() != 1) {
       SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY, "face4 is missing");
     }
-    //
     std::vector<EntityHandle> face(2), parent_face(2);
     face[0] = *face_side3.begin();
     face[1] = *face_side4.begin();
@@ -1224,15 +1176,8 @@ MoFEMErrorCode PrismInterface::splitSides(
       CHKERR moab.tag_get_data(cOre.get_th_RefParentHandle(), &face[ff], 1,
                                &parent_tri);
       if (parent_tri != parent_face[ff]) {
-        SETERRQ1(PETSC_COMM_SELF, 1, "wrong parent %lu", parent_tri);
-      }
-      if (new_ents_in_database.find(face[ff]) == new_ents_in_database.end()) {
-        RefEntity_multiIndex::index<Ent_mi_tag>::type::iterator miit_ref_ent =
-            refined_ents_ptr->get<Ent_mi_tag>().find(face[ff]);
-        if (miit_ref_ent == refined_ents_ptr->get<Ent_mi_tag>().end()) {
-          SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
-                  "this is not in database, but should not be");
-        }
+        SETERRQ1(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
+                 "wrong parent %lu", parent_tri);
       }
     }
   }
