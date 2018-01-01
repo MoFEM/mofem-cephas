@@ -774,77 +774,28 @@ MoFEMErrorCode PrismInterface::splitSides(
     Range add_bit_nodes;
     for (Range::const_iterator nit = nodes.begin(); nit != nodes.end(); ++nit) {
 
-    //   // find ref enet
-    //   RefEntity_multiIndex::iterator miit_ref_ent =
-    //       refined_ents_ptr->find(*nit);
-    //   if (miit_ref_ent == refined_ents_ptr->end()) {
-    //     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-    //             "can not find node in MoFEM database");
-    //   }
-    //   EntityHandle child_entity = 0;
-    //   RefEntity_multiIndex::iterator child_it;
-    //   RefEntity_multiIndex_view_by_parent_entity::iterator child_iit;
-    //   child_iit = ref_parent_ents_view.find(*nit);
+      // find ref enet by parent node
+      RefEntity_multiIndex::iterator miit_ref_ent =
+          refined_ents_ptr->find(*nit);
+      if (miit_ref_ent == refined_ents_ptr->end()) {
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "can not find node in MoFEM database");
+      }
+      EntityHandle child_entity = 0;
+      RefEntity_multiIndex_view_by_parent_entity::iterator child_it =
+          ref_parent_ents_view.find(*nit);
+      if (child_it != ref_parent_ents_view.end()) {
+        child_entity = (*child_it)->getRefEnt();
+      }
 
-    //   bool success;
-    //   if (child_entity == 0) {
-    //     double coord[3];
-    //     CHKERR moab.get_coords(&*nit, 1, coord);
-    //     EntityHandle new_node;
-    //     CHKERR moab.create_vertex(coord, new_node);
-    //     map_nodes[*nit] = new_node;
-    //     // create new node on "father" side
-    //     // parent is node on "mather" side
-    //     CHKERR moab.tag_set_data(cOre.get_th_RefParentHandle(), &new_node, 1,
-    //                              &*nit);
-    //     std::pair<RefEntity_multiIndex::iterator, bool> p_ref_ent =
-    //         const_cast<RefEntity_multiIndex *>(refined_ents_ptr)
-    //             ->insert(boost::shared_ptr<RefEntity>(new RefEntity(
-    //                 m_field.get_basic_entity_data_ptr(), new_node)));
-    //     // set ref bit level to node on "father" side
-    //     success = const_cast<RefEntity_multiIndex *>(refined_ents_ptr)
-    //                   ->modify(p_ref_ent.first, RefEntity_change_add_bit(bit));
-    //     if (!success)
-    //       SETERRQ(m_field.get_comm(), MOFEM_OPERATION_UNSUCCESSFUL,
-    //               "modification unsuccessful");
-    //   } else {
-    //     map_nodes[*nit] = child_entity;
-    //     // set ref bit level to node on "father" side
-    //     success = const_cast<RefEntity_multiIndex *>(refined_ents_ptr)
-    //                   ->modify(child_it, RefEntity_change_add_bit(bit));
-    //     if (!success)
-    //       SETERRQ(m_field.get_comm(), MOFEM_OPERATION_UNSUCCESSFUL,
-    //               "modification unsuccessful");
-    //   }
-    //   // set ref bit level to node on "mather" side
-    //   success = const_cast<RefEntity_multiIndex *>(refined_ents_ptr)
-    //                 ->modify(miit_ref_ent, RefEntity_change_add_bit(bit));
-    //   if (!success)
-    //     SETERRQ(m_field.get_comm(), MOFEM_OPERATION_UNSUCCESSFUL,
-    //             "modification unsuccessful");
-    // }
-
-    // find ref enet by parent node
-    RefEntity_multiIndex::iterator miit_ref_ent = refined_ents_ptr->find(*nit);
-    if (miit_ref_ent == refined_ents_ptr->end()) {
-      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-              "can not find node in MoFEM database");
-    }
-    EntityHandle child_entity = 0;
-    RefEntity_multiIndex_view_by_parent_entity::iterator child_it =
-        ref_parent_ents_view.find(*nit);
-    if (child_it != ref_parent_ents_view.end()) {
-      child_entity = (*child_it)->getRefEnt();
-    }
-
-    if (child_entity == 0) {
-      double coords[3];
-      CHKERR moab.get_coords(&*nit, 1, coords);
-      CHKERR create_side_nodes(coords, *nit);
-    } else {
-      map_nodes[*nit] = child_entity;
-      add_bit_nodes.insert(child_entity);
-    }
+      if (child_entity == 0) {
+        double coords[3];
+        CHKERR moab.get_coords(&*nit, 1, coords);
+        CHKERR create_side_nodes(coords, *nit);
+      } else {
+        map_nodes[*nit] = child_entity;
+        add_bit_nodes.insert(child_entity);
+      }
     }
     add_bit_nodes.merge(nodes);
     CHKERR m_field.getInterface<BitRefManager>()->addBitRefLevel(add_bit_nodes,
