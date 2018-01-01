@@ -885,7 +885,7 @@ MoFEMErrorCode PrismInterface::splitSides(
       continue;
     }
 
-    //here is created new or prism is on interface
+    // here is created new or prism is on interface
     EntityHandle existing_ent = 0;
     /* check if tet element with new connectivity is in database*/
     RefEntity_multiIndex::index<Ent_Ent_mi_tag>::type::iterator child_iit,
@@ -894,6 +894,8 @@ MoFEMErrorCode PrismInterface::splitSides(
         refined_ents_ptr->get<Ent_Ent_mi_tag>().lower_bound(*eit3d);
     hi_child_iit =
         refined_ents_ptr->get<Ent_Ent_mi_tag>().upper_bound(*eit3d);
+
+    // Check if child entity has the same connectivity 
     for(;child_iit!=hi_child_iit;child_iit++) {
       const EntityHandle* conn_ref_tet;
       CHKERR moab.get_connectivity(child_iit->get()->getRefEnt(), conn_ref_tet,
@@ -912,6 +914,7 @@ MoFEMErrorCode PrismInterface::splitSides(
         existing_ent = child_iit->get()->getRefEnt();
       }
     }
+    
     switch (moab.type_from_handle(*eit3d)) {
       case MBTET: {
         RefEntity_multiIndex::iterator child_it;
@@ -938,29 +941,15 @@ MoFEMErrorCode PrismInterface::splitSides(
                       "can't find this in database");
             }
             tet = *new_conn_tet.begin();
-            /*std::ostringstream ss;
-            ss << "nb new conns: " << nb_new_conn << std::endl;
-            ss << "new_conn_tets.size() " << new_conn_tet.size() << std::endl;
-            ss << "data inconsistency\n";
-            ss << "this ent:\n";
-            ss << *rit->ref_ptr << std::endl;
-            ss << "found this ent:\n";
-            ss << *new_rit->ref_ptr << std::endl;
-            SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());*/
           }
         } else {
           tet = existing_ent;
         }
         CHKERR moab.add_entities(meshset_for_bit_level, &tet, 1);
-        CHKERR moab.add_entities(meshset_for_bit_level, new_conn, 4);
         new_3d_ents.insert(tet);
       } break;
       case MBPRISM: {
         EntityHandle prism;
-        if(verb>3) {
-          PetscPrintf(m_field.get_comm(), "prims nb_new_nodes %d\n",
-                      nb_new_conn);
-        }
         if(existing_ent == 0) {
           Range new_conn_prism;
           CHKERR moab.get_adjacencies(new_conn, 6, 3, false, new_conn_prism);
@@ -976,7 +965,6 @@ MoFEMErrorCode PrismInterface::splitSides(
           prism = existing_ent;
         }
         CHKERR moab.add_entities(meshset_for_bit_level, &prism, 1);
-        CHKERR moab.add_entities(meshset_for_bit_level, new_conn, 4);
         new_3d_ents.insert(prism);
       } break;
       default:
