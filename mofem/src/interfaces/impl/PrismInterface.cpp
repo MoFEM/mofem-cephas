@@ -630,7 +630,11 @@ MoFEMErrorCode PrismInterface::splitSides(
 
   Interface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
+  const RefEntity_multiIndex *refined_ents_ptr;
   MoFEMFunctionBegin;
+
+  CHKERR m_field.get_ref_ents(&refined_ents_ptr);
+
   std::vector<EntityHandle> children;
   //get children meshsets
   CHKERR moab.get_child_meshsets(sideset,children);
@@ -669,103 +673,111 @@ MoFEMErrorCode PrismInterface::splitSides(
     PetscPrintf(m_field.get_comm(),"nodes %u\n",nodes.size());
   }
 
-  const RefEntity_multiIndex *refined_ents_ptr;
-  ierr = m_field.get_ref_ents(&refined_ents_ptr); CHKERRG(ierr);
-  typedef RefEntity_multiIndex::index<Ent_mi_tag>::type RefEntsByEntType;
-  const RefEntsByEntType &ref_ents_by_type = refined_ents_ptr->get<Ent_mi_tag>();
   RefEntity_multiIndex_view_by_parent_entity ref_parent_ents_view;
-  //create view index by parent entity
-  {
+
+  struct CreateParentEntView {
     typedef RefEntity_multiIndex::index<
         Composite_EntType_and_ParentEntType_mi_tag>::type RefEntsByComposite;
-    const RefEntsByComposite &ref_ents =
-        refined_ents_ptr->get<Composite_EntType_and_ParentEntType_mi_tag>();
-
-    RefEntsByComposite::iterator miit;
-    RefEntsByComposite::iterator hi_miit;
-    // view by parent type (VERTEX)
-    miit = ref_ents.lower_bound(boost::make_tuple(MBVERTEX, MBVERTEX));
-    hi_miit = ref_ents.upper_bound(boost::make_tuple(MBVERTEX, MBVERTEX));
-    for (; miit != hi_miit; miit++) {
-      if (((*miit)->getBitRefLevel() & inhered_from_bit_level_mask) ==
-          (*miit)->getBitRefLevel()) {
-        if (((*miit)->getBitRefLevel() & inhered_from_bit_level).any()) {
-          std::pair<RefEntity_multiIndex_view_by_parent_entity::iterator, bool>
-              p_ref_ent_view;
-          p_ref_ent_view = ref_parent_ents_view.insert(*miit);
-          if (!p_ref_ent_view.second) {
-            SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                    "non unique insertion");
+    MoFEMErrorCode operator()(
+      const BitRefLevel &bit, const BitRefLevel &mask,
+      const RefEntity_multiIndex *refined_ents_ptr,
+                              RefEntity_multiIndex_view_by_parent_entity
+                                  &ref_parent_ents_view) const {
+      MoFEMFunctionBegin;
+      const RefEntsByComposite &ref_ents =
+          refined_ents_ptr->get<Composite_EntType_and_ParentEntType_mi_tag>();
+      RefEntsByComposite::iterator miit;
+      RefEntsByComposite::iterator hi_miit;
+      // view by parent type (VERTEX)
+      miit = ref_ents.lower_bound(boost::make_tuple(MBVERTEX, MBVERTEX));
+      hi_miit = ref_ents.upper_bound(boost::make_tuple(MBVERTEX, MBVERTEX));
+      for (; miit != hi_miit; miit++) {
+        if (((*miit)->getBitRefLevel() & mask) == (*miit)->getBitRefLevel()) {
+          if (((*miit)->getBitRefLevel() & bit).any()) {
+            std::pair<RefEntity_multiIndex_view_by_parent_entity::iterator,
+                      bool>
+                p_ref_ent_view;
+            p_ref_ent_view = ref_parent_ents_view.insert(*miit);
+            if (!p_ref_ent_view.second) {
+              SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                      "non unique insertion");
+            }
           }
         }
       }
+      MoFEMFunctionReturn(0);
     }
-  }
-  
+  };
+  CHKERR CreateParentEntView()(inhered_from_bit_level,
+                               inhered_from_bit_level_mask, refined_ents_ptr,
+                               ref_parent_ents_view);
+
   //maps nodes on "father" and "mather" side
   std::map<
     EntityHandle, /*node on "mather" side*/
     EntityHandle /*node on "father" side*/
   > map_nodes;
-  //add new nodes on interface and create map
-  for (Range::iterator nit = nodes.begin(); nit != nodes.end(); nit++) {
+
+  // add new nodes on interface and create map
+  for (Range::const_iterator nit = nodes.begin(); nit != nodes.end(); nit++) {
     double coord[3];
-    //find ref enet
-    RefEntsByEntType::iterator miit_ref_ent = ref_ents_by_type.find(*nit);
-    if(miit_ref_ent == ref_ents_by_type.end()) {
-      SETERRQ(PETSC_COMM_SELF,1,"can not find node in MoFEM database");
+    // find ref enet
+    RefEntity_multiIndex::iterator miit_ref_ent = refined_ents_ptr->find(*nit);
+    if (miit_ref_ent == refined_ents_ptr->end()) {
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "can not find node in MoFEM database");
     }
     EntityHandle child_entity = 0;
     RefEntity_multiIndex::iterator child_it;
     RefEntity_multiIndex_view_by_parent_entity::iterator child_iit;
     child_iit = ref_parent_ents_view.find(*nit);
-    if(child_iit != ref_parent_ents_view.end()) {
+    if (child_iit != ref_parent_ents_view.end()) {
       child_it = refined_ents_ptr->find((*child_iit)->getRefEnt());
-      BitRefLevel bit_child = (*child_it)->getBitRefLevel();
-      if( (inhered_from_bit_level&bit_child).none() ) {
-        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
+      const BitRefLevel &bit_child = (*child_it)->getBitRefLevel();
+      if ((bit & bit_child).none()) {
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "data inconsistency");
       }
       child_entity = (*child_it)->getRefEnt();
     }
-    //
     bool success;
-    if(child_entity == 0) {
-      CHKERR moab.get_coords(&*nit,1,coord); 
+    if (child_entity == 0) {
+      CHKERR moab.get_coords(&*nit, 1, coord);
       EntityHandle new_node;
-      CHKERR moab.create_vertex(coord,new_node); 
+      CHKERR moab.create_vertex(coord, new_node);
       map_nodes[*nit] = new_node;
-      //create new node on "father" side
-      //parent is node on "mather" side
+      // create new node on "father" side
+      // parent is node on "mather" side
       CHKERR moab.tag_set_data(cOre.get_th_RefParentHandle(), &new_node, 1,
                                &*nit);
-      std::pair<RefEntity_multiIndex::iterator,bool> p_ref_ent =
-      const_cast<RefEntity_multiIndex*>(refined_ents_ptr)->insert(
-        boost::shared_ptr<RefEntity>
-        (new RefEntity(m_field.get_basic_entity_data_ptr(),new_node))
-      );
-      //set ref bit level to node on "father" side
-      success = const_cast<RefEntity_multiIndex*>(refined_ents_ptr)->
-      modify(p_ref_ent.first,RefEntity_change_add_bit(bit));
+      std::pair<RefEntity_multiIndex::iterator, bool> p_ref_ent =
+          const_cast<RefEntity_multiIndex *>(refined_ents_ptr)
+              ->insert(boost::shared_ptr<RefEntity>(new RefEntity(
+                  m_field.get_basic_entity_data_ptr(), new_node)));
+      // set ref bit level to node on "father" side
+      success = const_cast<RefEntity_multiIndex *>(refined_ents_ptr)
+                    ->modify(p_ref_ent.first, RefEntity_change_add_bit(bit));
       if (!success)
         SETERRQ(m_field.get_comm(), MOFEM_OPERATION_UNSUCCESSFUL,
                 "modification unsuccessful");
     } else {
       map_nodes[*nit] = child_entity;
-      //set ref bit level to node on "father" side
-      success = const_cast<RefEntity_multiIndex*>(refined_ents_ptr)->
-      modify(child_it,RefEntity_change_add_bit(bit));
+      // set ref bit level to node on "father" side
+      success = const_cast<RefEntity_multiIndex *>(refined_ents_ptr)
+                    ->modify(child_it, RefEntity_change_add_bit(bit));
       if (!success)
         SETERRQ(m_field.get_comm(), MOFEM_OPERATION_UNSUCCESSFUL,
                 "modification unsuccessful");
     }
-    //set ref bit level to node on "mather" side
-    success = const_cast<RefEntity_multiIndex*>(refined_ents_ptr)->
-    modify(miit_ref_ent,RefEntity_change_add_bit(bit));
+    // set ref bit level to node on "mather" side
+    success = const_cast<RefEntity_multiIndex *>(refined_ents_ptr)
+                  ->modify(miit_ref_ent, RefEntity_change_add_bit(bit));
     if (!success)
       SETERRQ(m_field.get_comm(), MOFEM_OPERATION_UNSUCCESSFUL,
               "modification unsuccessful");
   }
-  //crete meshset for new mesh bit level
+
+  // crete meshset for new mesh bit level
   EntityHandle meshset_for_bit_level;
   CHKERR moab.create_meshset(MESHSET_SET | MESHSET_TRACK_OWNER,
                              meshset_for_bit_level);
@@ -785,8 +797,9 @@ MoFEMErrorCode PrismInterface::splitSides(
   Range new_3d_ents;
   for (Range::iterator eit3d = side_ents3d.begin(); eit3d != side_ents3d.end();
        eit3d++) {
-    RefEntsByEntType::iterator miit_ref_ent = ref_ents_by_type.find(*eit3d);
-    if(miit_ref_ent==ref_ents_by_type.end()) {
+    RefEntity_multiIndex::iterator miit_ref_ent =
+        refined_ents_ptr->find(*eit3d);
+    if (miit_ref_ent == refined_ents_ptr->end()) {
       SETERRQ(m_field.get_comm(), MOFEM_OPERATION_UNSUCCESSFUL,
               "tet not in database");
     }
@@ -848,7 +861,7 @@ MoFEMErrorCode PrismInterface::splitSides(
     }
     switch (moab.type_from_handle(*eit3d)) {
       case MBTET: {
-        RefEntsByEntType::iterator child_it;
+        RefEntity_multiIndex::iterator child_it;
         EntityHandle tet;
         if(existing_ent == 0) {
           Range new_conn_tet;
@@ -957,8 +970,8 @@ MoFEMErrorCode PrismInterface::splitSides(
       }
     }
     if(nb_new_conn==0) continue;
-    RefEntsByEntType::iterator miit_ref_ent = ref_ents_by_type.find(*eit);
-    if(miit_ref_ent == ref_ents_by_type.end()) {
+    RefEntity_multiIndex::iterator miit_ref_ent = refined_ents_ptr->find(*eit);
+    if (miit_ref_ent == refined_ents_ptr->end()) {
       SETERRQ(PETSC_COMM_SELF, 1,
               "this entity (edge or tri) should be already in database");
     }
@@ -1080,9 +1093,9 @@ MoFEMErrorCode PrismInterface::splitSides(
     }
     if (nb_new_conn == 0)
       continue;
-    RefEntsByEntType::iterator miit_ref_ent = ref_ents_by_type.find(*eit);
-    if (miit_ref_ent == ref_ents_by_type.end()) {
-      SETERRQ1(PETSC_COMM_SELF, 1,
+    RefEntity_multiIndex::iterator miit_ref_ent = refined_ents_ptr->find(*eit);
+    if (miit_ref_ent == refined_ents_ptr->end()) {
+      SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                "entity should be in MoFem database, num_nodes = %d", num_nodes);
     }
     Range new_ent;
