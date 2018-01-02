@@ -66,7 +66,7 @@ struct MeshRefinement : public UnknownInterface {
    */
   virtual MoFEMErrorCode add_verices_in_the_middel_of_edges(
       const EntityHandle meshset, const BitRefLevel &bit,
-      const bool recursive = false, int verb = -1);
+      const bool recursive = false, int verb = -1, EntityHandle start_v = 0);
 
   /**
    * \brief make vertices in the middle of edges in meshset and add them to
@@ -85,7 +85,7 @@ struct MeshRefinement : public UnknownInterface {
    */
   virtual MoFEMErrorCode
   add_verices_in_the_middel_of_edges(const Range &edges, const BitRefLevel &bit,
-                                     int verb = 0);
+                                     int verb = 0, EntityHandle start_v = 0);
 
   /**\brief refine TET in the meshset
    *
@@ -96,7 +96,7 @@ struct MeshRefinement : public UnknownInterface {
   virtual MoFEMErrorCode refine_TET(const EntityHandle meshset,
                                     const BitRefLevel &bit,
                                     const bool respect_interface = false,
-                                    int verb = 0);
+                                    int verb = 0, Range *ref_edges = NULL);
 
   /**\brief refine TET in the meshset
    *

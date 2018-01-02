@@ -972,20 +972,14 @@ MoFEMErrorCode BitRefManager::updateMeshsetByEntitiesChildren(
       const_cast<RefEntity_multiIndex *>(ref_ents_ptr)
           ->get<Composite_ParentEnt_And_EntType_mi_tag>();
   Range children_ents;
-  for (Range::iterator eit = ents.begin(); eit != ents.end(); ++eit) {
-   std::pair<RefEntsByComposite::iterator, RefEntsByComposite::iterator> miit =
-        ref_ents.equal_range(boost::make_tuple(*eit, child_type));
-    for (; miit.first != miit.second; ++miit.first) {
-     EntityHandle ref_ent = (*miit.first)->getRefEnt();
-      if (ref_ent == 0) {
-        SETERRQ(m_field.get_comm(), MOFEM_IMPOSIBLE_CASE,
-                "this should not happen");
-      }
-      if (moab.type_from_handle(*eit) == MBENTITYSET) {
-        SETERRQ(m_field.get_comm(), MOFEM_IMPOSIBLE_CASE,
-                "this should not happen");
-      }
-      children_ents.insert(ref_ent);
+  for (Range::pair_iterator pit = ents.pair_begin(); pit != ents.pair_end();
+       ++pit) {
+    const EntityHandle f = pit->first;
+    const EntityHandle s = pit->second;
+    for (RefEntsByComposite::iterator mit =
+             ref_ents.lower_bound(boost::make_tuple(f, child_type));
+         mit != ref_ents.upper_bound(boost::make_tuple(s, child_type)); ++mit) {
+      children_ents.insert(mit->get()->getRefEnt());
     }
   }
   CHKERR filterEntitiesByRefLevel(child_bit, child_mask, children_ents, verb);
@@ -1002,8 +996,8 @@ MoFEMErrorCode BitRefManager::updateMeshsetByEntitiesChildren(
     int verb) {
   MoFEMFunctionBegin;
   CHKERR updateMeshsetByEntitiesChildren(
-      parent, BitRefLevel().set(), BitRefLevel().set(), child_bit,
-      BitRefLevel().set(), child, child_type, recursive, verb);
+      parent, BitRefLevel().set(), BitRefLevel().set(), child_bit, child_bit,
+      child, child_type, recursive, verb);
   MoFEMFunctionReturn(0);
 }
 
