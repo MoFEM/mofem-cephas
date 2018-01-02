@@ -412,7 +412,7 @@ MeshsetsManager::query_interface(const MOFEMuuid &uuid,
   }
 
   MoFEMErrorCode MeshsetsManager::deleteMeshset(const CubitBCType cubit_bc_type,
-                                                const int ms_id) {
+                                                const int ms_id,const MoFEMTypes bh) {
     Interface &m_field = cOre;
     moab::Interface &moab = m_field.get_moab();
     MoFEMFunctionBeginHot;
@@ -420,11 +420,14 @@ MeshsetsManager::query_interface(const MOFEMuuid &uuid,
         Composite_Cubit_msId_And_MeshSetType_mi_tag>::type::iterator miit =
         cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().find(
             boost::make_tuple(ms_id, cubit_bc_type.to_ulong()));
-    if (miit ==
-        cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>()
-            .end()) {
-      SETERRQ1(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
-               "such cubit meshset is already there", ms_id);
+    if (miit == cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>()
+                    .end()) {
+      if (bh & MF_EXIST) {
+        SETERRQ1(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
+                 "meshset not found", ms_id);
+      } else {
+        MoFEMFunctionReturnHot(0);
+      }
     }
     EntityHandle meshset = miit->getMeshset();
     cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().erase(

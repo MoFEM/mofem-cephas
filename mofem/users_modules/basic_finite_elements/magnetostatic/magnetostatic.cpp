@@ -44,6 +44,7 @@ int main(int argc, char *argv[]) {
     char mesh_file_name[255];
     PetscInt order = 2;
     PetscBool is_partitioned = PETSC_FALSE;
+    PetscBool regression_test = PETSC_FALSE;
 
     CHKERR PetscOptionsBegin(PETSC_COMM_WORLD, "", "Shell prism configure",
                              "none");
@@ -55,6 +56,12 @@ int main(int argc, char *argv[]) {
                             "set if mesh is partitioned (this result that each "
                             "process keeps only part of the mesh)",
                             "", PETSC_FALSE, &is_partitioned, PETSC_NULL);
+    CHKERR PetscOptionsBool(
+        "-regression_test",
+        "if set norm of solution vector is check agains expected value ",
+        "",
+        PETSC_FALSE, &regression_test, PETSC_NULL);
+
     ierr = PetscOptionsEnd();
 
     if (is_partitioned == PETSC_TRUE) {
@@ -81,7 +88,7 @@ int main(int argc, char *argv[]) {
     CHKERR magnetic.createFields();
     CHKERR magnetic.createElements();
     CHKERR magnetic.createProblem();
-    CHKERR magnetic.solveProblem();
+    CHKERR magnetic.solveProblem(regression_test == PETSC_TRUE);
     CHKERR magnetic.postProcessResults();
     CHKERR magnetic.destroyProblem();
   }

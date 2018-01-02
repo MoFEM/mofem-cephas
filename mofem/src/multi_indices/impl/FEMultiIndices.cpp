@@ -88,11 +88,20 @@ RefElement_PRISM::RefElement_PRISM(
   rval = moab.get_connectivity(prism, conn, num_nodes, true);
   MOAB_THROW(rval);
   assert(num_nodes == 6);
-  for (int nn = 0; nn < 6; nn++) {
+  for (int nn = 0; nn != 6; ++nn) {
     const_cast<SideNumber_multiIndex &>(side_number_table)
         .insert(
             boost::shared_ptr<SideNumber>(new SideNumber(conn[nn], nn, 0, -1)));
   }
+  // Range face_side3, face_side4;
+  // CHKERR moab.get_adjacencies(conn, 3, 2, true, face_side3);
+  // CHKERR moab.get_adjacencies(&conn[3], 3, 2, true, face_side4);
+  // if (face_side3.size() != 1)
+  //   THROW_MESSAGE("prism don't have side face 3");
+  // if (face_side4.size() != 1)
+  //   THROW_MESSAGE("prims don't have side face 4");
+  // getSideNumberPtr(*face_side3.begin());
+  // getSideNumberPtr(*face_side4.begin());
 }
 const boost::shared_ptr<SideNumber> &
 RefElement_PRISM::getSideNumberPtr(const EntityHandle ent) const {
@@ -295,6 +304,7 @@ RefElement_PRISM::getSideNumberPtr(const EntityHandle ent) const {
   THROW_MESSAGE("not implemented");
   return nullSideNumber;
 }
+
 RefElement_TET::RefElement_TET(const boost::shared_ptr<RefEntity> &ref_ent_ptr)
     : RefElement(ref_ent_ptr), tag_BitRefEdges(NULL) {
   ErrorCode rval;
@@ -305,26 +315,17 @@ RefElement_TET::RefElement_TET(const boost::shared_ptr<RefEntity> &ref_ent_ptr)
   rval = moab.tag_get_by_ptr(th_RefBitEdge, &ref_ent_ptr->ent, 1,
                              (const void **)&tag_BitRefEdges);
   MOAB_THROW(rval);
-  Tag th_RefType;
   switch (ref_ent_ptr->getEntType()) {
   case MBTET:
     break;
   default:
-    PetscTraceBackErrorHandler(PETSC_COMM_WORLD, __LINE__, PETSC_FUNCTION_NAME,
-                               __FILE__, MOFEM_DATA_INCONSISTENCY,
-                               PETSC_ERROR_INITIAL, "this work only for TETs",
-                               PETSC_NULL);
     THROW_MESSAGE("this work only for TETs");
   }
-  rval = moab.tag_get_handle("_RefType", th_RefType);
-  MOAB_THROW(rval);
-  rval = moab.tag_get_by_ptr(th_RefType, &sPtr->ent, 1,
-                             (const void **)&tag_type_data);
-  MOAB_THROW(rval);
   const_cast<SideNumber_multiIndex &>(side_number_table)
       .insert(
           boost::shared_ptr<SideNumber>(new SideNumber(sPtr->ent, 0, 0, 0)));
 }
+
 const boost::shared_ptr<SideNumber> &
 RefElement_TET::getSideNumberPtr(const EntityHandle ent) const {
   moab::Interface &moab = getRefEntityPtr()->basicDataPtr->moab;

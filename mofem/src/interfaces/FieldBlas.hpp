@@ -26,8 +26,8 @@ namespace MoFEM {
   static const MOFEMuuid IDD_MOFEMFieldBlas = MOFEMuuid( BitIntefaceId(FIELDBLAS_INTERFACE) );
 
   /**
-   * \brief Section manager is used to create sections
-   * \mofem_is_managers
+   * \brief Basic algebra on fields
+   * \ingroup mofem_field_algebra
    *
    */
   struct FieldBlas: public UnknownInterface {

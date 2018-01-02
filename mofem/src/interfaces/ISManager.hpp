@@ -26,8 +26,8 @@ namespace MoFEM {
   static const MOFEMuuid IDD_MOFEMISManager = MOFEMuuid( BitIntefaceId(ISMANAGER_INTERFACE) );
 
   /**
-   * \brief Section manager is used to create sections
-   * \mofem_is_managers
+   * \brief Section manager is used to create indexes and sections
+   * \ingroup mofem_is_managers
    *
    */
   struct ISManager: public UnknownInterface {

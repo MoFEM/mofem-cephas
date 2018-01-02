@@ -545,10 +545,13 @@ MoFEMErrorCode CutMeshInterface::cutEdgesInMiddle(const BitRefLevel bit) {
   MeshRefinement *refiner;
   const RefEntity_multiIndex *ref_ents_ptr;
   MoFEMFunctionBegin;
+  if(cutEdges.size() != edgesToCut.size()) {
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Data inconsistency");
+  }
   CHKERR m_field.getInterface(refiner);
   CHKERR m_field.get_ref_ents(&ref_ents_ptr);
   CHKERR refiner->add_verices_in_the_middel_of_edges(cutEdges, bit);
-  CHKERR refiner->refine_TET(vOlume, bit, false);
+  CHKERR refiner->refine_TET(vOlume, bit, false, QUIET);
   // Tag th_ray_dir;
   // double def_val[] = {0,0,0};
   // CHKERR moab.tag_get_handle(
@@ -560,22 +563,26 @@ MoFEMErrorCode CutMeshInterface::cutEdgesInMiddle(const BitRefLevel bit) {
   cutNewSurfaces.clear();
   CHKERR m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
       bit, bit, MBTRI, cutNewSurfaces);
-  // Find new vertices on catted edges
+  // Find new vertices on cut edges
   cutNewVertices.clear();
   CHKERR moab.get_connectivity(zeroDistanceEnts, cutNewVertices, true);
   cutNewVertices.merge(zeroDistanceVerts);
   for (map<EntityHandle, TreeData>::iterator mit = edgesToCut.begin();
-       mit != edgesToCut.end(); mit++) {
-    boost::shared_ptr<RefEntity> ref_ent =
-        *(ref_ents_ptr->get<Composite_ParentEnt_And_EntType_mi_tag>().find(
-            boost::make_tuple(mit->first, MBVERTEX)));
+       mit != edgesToCut.end(); ++mit) {
+    RefEntity_multiIndex::index<
+        Composite_ParentEnt_And_EntType_mi_tag>::type::iterator vit =
+        ref_ents_ptr->get<Composite_ParentEnt_And_EntType_mi_tag>().find(
+            boost::make_tuple(mit->first, MBVERTEX));
+    if (vit ==
+        ref_ents_ptr->get<Composite_ParentEnt_And_EntType_mi_tag>().end()) {
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "No vertex on cut edges, that make no sense");
+    }
+    const boost::shared_ptr<RefEntity> &ref_ent = *vit;
     if ((ref_ent->getBitRefLevel() & bit).any()) {
       EntityHandle vert = ref_ent->getRefEnt();
       cutNewVertices.insert(vert);
       verticesOnCutEdges[vert] = mit->second;
-      // rval =
-      // moab.tag_set_data(th_ray_dir,&vert,1,&mit->second.unitRayDir[0]);
-      // CHKERRG(rval);
     }
   }
   // Add zero distance entities faces
@@ -824,7 +831,7 @@ MoFEMErrorCode CutMeshInterface::trimEdgesInTheMiddle(const BitRefLevel bit,
   CHKERR m_field.getInterface(refiner);
   CHKERR m_field.get_ref_ents(&ref_ents_ptr);
   CHKERR refiner->add_verices_in_the_middel_of_edges(trimEdges, bit);
-  CHKERR refiner->refine_TET(cutNewVolumes, bit, false);
+  CHKERR refiner->refine_TET(cutNewVolumes, bit, false, QUIET);
 
   trimNewVolumes.clear();
   CHKERR m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
@@ -832,9 +839,16 @@ MoFEMErrorCode CutMeshInterface::trimEdgesInTheMiddle(const BitRefLevel bit,
   // Get vertices which are on trim edges
   for (map<EntityHandle, TreeData>::iterator mit = edgesToTrim.begin();
        mit != edgesToTrim.end(); mit++) {
-    boost::shared_ptr<RefEntity> ref_ent =
-        *(ref_ents_ptr->get<Composite_ParentEnt_And_EntType_mi_tag>().find(
-            boost::make_tuple(mit->first, MBVERTEX)));
+    RefEntity_multiIndex::index<
+        Composite_ParentEnt_And_EntType_mi_tag>::type::iterator vit =
+        ref_ents_ptr->get<Composite_ParentEnt_And_EntType_mi_tag>().find(
+            boost::make_tuple(mit->first, MBVERTEX));
+    if (vit ==
+        ref_ents_ptr->get<Composite_ParentEnt_And_EntType_mi_tag>().end()) {
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "No vertex on trim edges, that make no sense");
+    }
+    const boost::shared_ptr<RefEntity> &ref_ent = *vit;
     if ((ref_ent->getBitRefLevel() & bit).any()) {
       EntityHandle vert = ref_ent->getRefEnt();
       trimNewVertices.insert(vert);
@@ -1703,12 +1717,12 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
   // delete hanging entities
   all_ents_not_in_database_after =
       subtract(all_ents_not_in_database_after, all_ents_not_in_database_before);
-
-  for (_IT_CUBITMESHSETS_FOR_LOOP_((cOre.getInterface<MeshsetsManager&,0>()),
-                                   cubit_it)) {
-    rval = m_field.get_moab().remove_entities(cubit_it->getMeshset(),
-                                       all_ents_not_in_database_after);
-    CHKERRG(rval);
+  Range meshsets;
+  CHKERR m_field.get_moab().get_entities_by_type(0, MBENTITYSET, meshsets,
+                                                 true);
+  for (Range::iterator mit = meshsets.begin(); mit != meshsets.end(); mit++) {
+    CHKERR m_field.get_moab().remove_entities(*mit,
+                                              all_ents_not_in_database_after);
   }
   m_field.get_moab().delete_entities(all_ents_not_in_database_after);
 
@@ -1793,10 +1807,10 @@ MoFEMErrorCode CutMeshInterface::rebuildMeshWithTetGen(
       moab::Interface &moab = mField.get_moab();
       MoFEMFunctionBeginHot;
       CHKERR moab.get_connectivity(tris, sNodes, true);
-      CHKERR
-          moab.get_adjacencies(tris, 1, false, sEdges, moab::Interface::UNION);
-      CHKERR
-          moab.get_adjacencies(sNodes, 3, false, sVols, moab::Interface::UNION);
+      CHKERR moab.get_adjacencies(tris, 1, false, sEdges,
+                                  moab::Interface::UNION);
+      CHKERR moab.get_adjacencies(sNodes, 3, false, sVols,
+                                  moab::Interface::UNION);
       sVols = intersect(sVols, bit_ents.mTets);
       CHKERR moab.get_connectivity(sVols, vNodes, true);
       MoFEMFunctionReturnHot(0);
@@ -1847,8 +1861,8 @@ MoFEMErrorCode CutMeshInterface::rebuildMeshWithTetGen(
                                   tets_with_four_nodes_on_skin,
                                   moab::Interface::UNION);
       Range tets_nodes;
-      CHKERR
-          moab.get_connectivity(tets_with_four_nodes_on_skin, tets_nodes, true);
+      CHKERR moab.get_connectivity(tets_with_four_nodes_on_skin, tets_nodes,
+                                   true);
       tets_nodes = subtract(tets_nodes, vSkinOnBodySkinNodes);
       Range other_tets;
       CHKERR moab.get_adjacencies(tets_nodes, 3, false, other_tets,
@@ -1956,7 +1970,6 @@ MoFEMErrorCode CutMeshInterface::rebuildMeshWithTetGen(
     Range sideset_faces;
     CHKERR m_field.getInterface<MeshsetsManager>()->getEntitiesByDimension(
         ms_id, SIDESET, 2, sideset_faces, true);
-    sideset_faces = intersect(sideset_faces, surf_ents.vNodes); 
     markers.resize(sideset_faces.size());
     CHKERR m_field.get_moab().tag_get_data(th_marker, sideset_faces,
                                            &*markers.begin());

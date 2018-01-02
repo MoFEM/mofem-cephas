@@ -503,8 +503,8 @@ struct MeshsetsManager : public UnknownInterface {
     * \param ms_id id of the BLOCKSET/SIDESET/BLOCKSET: from CUBIT
     *
     */
-  MoFEMErrorCode deleteMeshset(const CubitBCType cubit_bc_type,
-                               const int ms_id);
+  MoFEMErrorCode deleteMeshset(const CubitBCType cubit_bc_type, const int ms_id,
+                               const MoFEMTypes bh = MF_EXIST);
 
   /**
     * \brief get cubit meshset

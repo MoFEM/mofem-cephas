@@ -183,6 +183,8 @@ int main(int argc, char *argv[]) {
   //PetscInitialize(&argc,&argv,(char *)0,help);
   SlepcInitialize(&argc,&argv,(char*)0,help);
 
+  try {
+
   moab::Core mb_instance;
   moab::Interface& moab = mb_instance;
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
@@ -219,16 +221,19 @@ int main(int argc, char *argv[]) {
   MoFEM::Interface& m_field = core;
 
   Range CubitSIDESETs_meshsets;
-  ierr = m_field.get_cubit_meshsets(SIDESET,CubitSIDESETs_meshsets); CHKERRG(ierr);
+  CHKERR m_field.getInterface<MeshsetsManager>()->getMeshsetsByType(
+      SIDESET, CubitSIDESETs_meshsets);
 
   //ref meshset ref level 0
-  ierr = m_field.seed_ref_level_3D(0,0); CHKERRG(ierr);
   BitRefLevel bit_level0;
   bit_level0.set(0);
   EntityHandle meshset_level0;
-  rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERRG(rval);
-  ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRG(ierr);
-  ierr = m_field.getInterface<BitRefManager>()->getEntitiesByRefLevel(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRG(ierr);
+  CHKERR moab.create_meshset(MESHSET_SET,meshset_level0); CHKERRG(rval);
+  CHKERR m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(0, 3,
+                                                                    bit_level0);
+  CHKERR m_field.getInterface<BitRefManager>()->getEntitiesByRefLevel(
+      bit_level0, BitRefLevel().set(), meshset_level0);
+  CHKERRG(ierr);
 
   //Fields
   ierr = m_field.add_field("MESH_NODE_POSITIONS",H1,AINSWORTH_LEGENDRE_BASE,3,MB_TAG_SPARSE,MF_ZERO); CHKERRG(ierr);
@@ -503,7 +508,7 @@ int main(int argc, char *argv[]) {
   ST st;
   EPSType type;
   PetscReal tol;
-  PetscInt nev,maxit,its,lits;
+  PetscInt nev,maxit,its;
 
   /*
     Create eigensolver context
@@ -569,6 +574,8 @@ int main(int argc, char *argv[]) {
   ierr = MatDestroy(&Aij); CHKERRG(ierr);
   ierr = MatDestroy(&Bij); CHKERRG(ierr);
   ierr = EPSDestroy(&eps); CHKERRG(ierr);
+
+  } CATCH_ERRORS;
 
   SlepcFinalize();
   //PetscFinalize();

@@ -258,6 +258,14 @@ MoFEMErrorCode Core::clear_problem(const std::string &problem_name, int verb) {
   if (!success)
     SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
             "modification unsuccessful");
+  if (p_miit->getRowDofsSequence())
+    p_miit->getRowDofsSequence()->clear();
+  if (p_miit->getColDofsSequence())
+    p_miit->getColDofsSequence()->clear();
+  if (p_miit->getSubData())
+    p_miit->getSubData().reset();
+  if (p_miit->getComposedProblemsData())
+    p_miit->getComposedProblemsData().reset();
   MoFEMFunctionReturnHot(0);
 }
 

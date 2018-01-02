@@ -39,3 +39,11 @@ target_link_libraries(magnetostatic
   mofem_cblas
   ${MoFEM_PROJECT_LIBS}
 )
+
+add_test(MagnetostaticTest
+  ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 2 
+  ${CMAKE_CURRENT_BINARY_DIR}/magnetostatic
+  -my_file magnetic_coil.cub -my_order 1 
+  -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package mumps 
+  -ksp_monitor -my_max_post_proc_ref_level 0 -regression_test 1
+)

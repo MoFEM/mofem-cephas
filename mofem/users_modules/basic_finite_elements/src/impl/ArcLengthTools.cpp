@@ -263,92 +263,65 @@ PCArcLengthCtx::~PCArcLengthCtx() {
 }
 
 MoFEMErrorCode PCApplyArcLength(PC pc, Vec pc_f, Vec pc_x) {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   void *void_ctx;
-  ierr = PCShellGetContext(pc, &void_ctx);
-  CHKERRG(ierr);
+  CHKERR PCShellGetContext(pc, &void_ctx);
   PCArcLengthCtx *ctx = (PCArcLengthCtx *)void_ctx;
   void *void_MatCtx;
   MatShellGetContext(ctx->shellAij, &void_MatCtx);
   ArcLengthMatShell *mat_ctx = (ArcLengthMatShell *)void_MatCtx;
-  ierr = KSPSetInitialGuessNonzero(ctx->kSP, PETSC_FALSE);
-  CHKERRG(ierr);
-  ierr = KSPSolve(ctx->kSP, pc_f, pc_x);
-  CHKERRG(ierr);
+  CHKERR KSPSetInitialGuessNonzero(ctx->kSP, PETSC_FALSE);
+  CHKERR KSPSolve(ctx->kSP, pc_f, pc_x);
   PetscBool same;
   PetscObjectTypeCompare((PetscObject)ctx->kSP, KSPPREONLY, &same);
   if (same != PETSC_TRUE) {
-    ierr = KSPSetInitialGuessNonzero(ctx->kSP, PETSC_TRUE);
-    CHKERRG(ierr);
+    CHKERR KSPSetInitialGuessNonzero(ctx->kSP, PETSC_TRUE);
   }
-  ierr = KSPSolve(ctx->kSP, ctx->arcPtrRaw->F_lambda, ctx->arcPtrRaw->xLambda);
-  CHKERRG(ierr);
+  CHKERR KSPSolve(ctx->kSP, ctx->arcPtrRaw->F_lambda, ctx->arcPtrRaw->xLambda);
   double db_dot_pc_x, db_dot_x_lambda;
-  ierr = VecDot(ctx->arcPtrRaw->db, pc_x, &db_dot_pc_x);
-  CHKERRG(ierr);
-  ierr = VecDot(ctx->arcPtrRaw->db, ctx->arcPtrRaw->xLambda, &db_dot_x_lambda);
-  CHKERRG(ierr);
+  CHKERR VecDot(ctx->arcPtrRaw->db, pc_x, &db_dot_pc_x);
+  CHKERR VecDot(ctx->arcPtrRaw->db, ctx->arcPtrRaw->xLambda, &db_dot_x_lambda);
   double denominator = ctx->arcPtrRaw->dIag + db_dot_x_lambda;
   double res_lambda;
-  ierr = mat_ctx->setLambda(pc_f, &res_lambda, SCATTER_FORWARD);
-  CHKERRG(ierr);
+  CHKERR mat_ctx->setLambda(pc_f, &res_lambda, SCATTER_FORWARD);
   double ddlambda = (res_lambda - db_dot_pc_x) / denominator;
-  // cerr << denominator << " " << res_lambda << " " << ddlambda << endl;
   if (ddlambda != ddlambda || denominator == 0) {
     double nrm2_pc_f, nrm2_db, nrm2_pc_x, nrm2_xLambda;
-    ierr = VecNorm(pc_f, NORM_2, &nrm2_pc_f);
-    CHKERRG(ierr);
-    ierr = VecNorm(ctx->arcPtrRaw->db, NORM_2, &nrm2_db);
-    CHKERRG(ierr);
-    ierr = VecNorm(pc_x, NORM_2, &nrm2_pc_x);
-    CHKERRG(ierr);
-    ierr = VecNorm(ctx->arcPtrRaw->xLambda, NORM_2, &nrm2_xLambda);
-    CHKERRG(ierr);
+    CHKERR VecNorm(pc_f, NORM_2, &nrm2_pc_f);
+    CHKERR VecNorm(ctx->arcPtrRaw->db, NORM_2, &nrm2_db);
+    CHKERR VecNorm(pc_x, NORM_2, &nrm2_pc_x);
+    CHKERR VecNorm(ctx->arcPtrRaw->xLambda, NORM_2, &nrm2_xLambda);
     std::ostringstream ss;
-    ss << "problem with ddlambda=" << res_lambda << " res_lambda=" << res_lambda
-       << " denominator=" << denominator << " ddlamnda=" << ddlambda
-       << " db_dot_pc_x=" << db_dot_pc_x
-       << " db_dot_x_lambda=" << db_dot_x_lambda
-       << " diag=" << ctx->arcPtrRaw->dIag << " nrm2_db=" << nrm2_db
-       << " nrm2_pc_f=" << nrm2_pc_f << " nrm2_pc_x=" << nrm2_pc_x
-       << " nrm2_xLambda=" << nrm2_xLambda;
+    ss << "problem with ddlambda=" << ddlambda << "\nres_lambda=" << res_lambda
+       << "\ndenominator=" << denominator << "\ndb_dot_pc_x=" << db_dot_pc_x
+       << "\ndb_dot_x_lambda=" << db_dot_x_lambda
+       << "\ndiag=" << ctx->arcPtrRaw->dIag << "\nnrm2_db=" << nrm2_db
+       << "\nnrm2_pc_f=" << nrm2_pc_f << "\nnrm2_pc_x=" << nrm2_pc_x
+       << "\nnrm2_xLambda=" << nrm2_xLambda;
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, ss.str().c_str());
   }
-  ierr = VecAXPY(pc_x, ddlambda, ctx->arcPtrRaw->xLambda);
-  CHKERRG(ierr);
-  ierr = mat_ctx->setLambda(pc_x, &ddlambda, SCATTER_REVERSE);
-  CHKERRG(ierr);
-  MoFEMFunctionReturnHot(0);
+  CHKERR VecAXPY(pc_x, ddlambda, ctx->arcPtrRaw->xLambda);
+  CHKERR mat_ctx->setLambda(pc_x, &ddlambda, SCATTER_REVERSE);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode PCSetupArcLength(PC pc) {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   void *void_ctx;
-  ierr = PCShellGetContext(pc, &void_ctx);
-  CHKERRG(ierr);
+  CHKERR PCShellGetContext(pc, &void_ctx);
   PCArcLengthCtx *ctx = (PCArcLengthCtx *)void_ctx;
-  ierr = PCSetFromOptions(ctx->pC);
-  CHKERRG(ierr);
-  ierr = PCGetOperators(pc, &ctx->shellAij, &ctx->Aij);
-  CHKERRG(ierr);
-  ierr = PCSetOperators(ctx->pC, ctx->Aij, ctx->Aij);
-  CHKERRG(ierr);
-  ierr = PCSetUp(ctx->pC);
-  CHKERRG(ierr);
+  CHKERR PCSetFromOptions(ctx->pC);
+  CHKERR PCGetOperators(pc, &ctx->shellAij, &ctx->Aij);
+  CHKERR PCSetOperators(ctx->pC, ctx->Aij, ctx->Aij);
+  CHKERR PCSetUp(ctx->pC);
   // SetUp PC KSP solver
-  ierr = KSPSetType(ctx->kSP, KSPPREONLY);
-  CHKERRG(ierr);
-  ierr = KSPSetTabLevel(ctx->kSP, 3);
-  CHKERRG(ierr);
-  ierr = KSPSetFromOptions(ctx->kSP);
-  CHKERRG(ierr);
-  ierr = KSPSetOperators(ctx->kSP, ctx->Aij, ctx->Aij);
-  CHKERRG(ierr);
-  ierr = KSPSetPC(ctx->kSP, ctx->pC);
-  CHKERRG(ierr);
-  ierr = KSPSetUp(ctx->kSP);
-  CHKERRG(ierr);
-  MoFEMFunctionReturnHot(0);
+  CHKERR KSPSetType(ctx->kSP, KSPPREONLY);
+  CHKERR KSPSetTabLevel(ctx->kSP, 3);
+  CHKERR KSPSetFromOptions(ctx->kSP);
+  CHKERR KSPSetOperators(ctx->kSP, ctx->Aij, ctx->Aij);
+  CHKERR KSPSetPC(ctx->kSP, ctx->pC);
+  CHKERR KSPSetUp(ctx->kSP);
+  MoFEMFunctionReturn(0);
 }
 
 // ***********************
@@ -387,51 +360,44 @@ MoFEMErrorCode AssembleFlambda::operator()() {
   MoFEMFunctionBeginHot;
   MoFEMFunctionReturnHot(0);
 }
+
 MoFEMErrorCode AssembleFlambda::postProcess() {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   switch (snes_ctx) {
   case CTX_SNESSETFUNCTION: {
     // F_lambda
-    ierr = VecAssemblyBegin(arcPtr->F_lambda);
-    CHKERRG(ierr);
-    ierr = VecAssemblyEnd(arcPtr->F_lambda);
-    CHKERRG(ierr);
-    ierr = VecGhostUpdateBegin(arcPtr->F_lambda, ADD_VALUES, SCATTER_REVERSE);
-    CHKERRG(ierr);
-    ierr = VecGhostUpdateEnd(arcPtr->F_lambda, ADD_VALUES, SCATTER_REVERSE);
-    CHKERRG(ierr);
+    CHKERR VecAssemblyBegin(arcPtr->F_lambda);
+    CHKERR VecAssemblyEnd(arcPtr->F_lambda);
+    CHKERR VecGhostUpdateBegin(arcPtr->F_lambda, ADD_VALUES, SCATTER_REVERSE);
+    CHKERR VecGhostUpdateEnd(arcPtr->F_lambda, ADD_VALUES, SCATTER_REVERSE);
     if (bC) {
       for (std::vector<int>::iterator vit = bC->dofsIndices.begin();
            vit != bC->dofsIndices.end(); vit++) {
-        ierr = VecSetValue(arcPtr->F_lambda, *vit, 0, INSERT_VALUES);
-        CHKERRG(ierr);
+        CHKERR VecSetValue(arcPtr->F_lambda, *vit, 0, INSERT_VALUES);
       }
-      ierr = VecAssemblyBegin(arcPtr->F_lambda);
-      CHKERRG(ierr);
-      ierr = VecAssemblyEnd(arcPtr->F_lambda);
-      CHKERRG(ierr);
+      CHKERR VecAssemblyBegin(arcPtr->F_lambda);
+      CHKERR VecAssemblyEnd(arcPtr->F_lambda);
     }
-    ierr = VecDot(arcPtr->F_lambda, arcPtr->F_lambda, &arcPtr->F_lambda2);
-    CHKERRG(ierr);
+    CHKERR VecDot(arcPtr->F_lambda, arcPtr->F_lambda, &arcPtr->F_lambda2);
     PetscPrintf(PETSC_COMM_WORLD, "\tF_lambda2 = %6.4e\n", arcPtr->F_lambda2);
     // add F_lambda
-    ierr = VecAssemblyBegin(snes_f);
-    CHKERRG(ierr);
-    ierr = VecAssemblyEnd(snes_f);
-    CHKERRG(ierr);
+    CHKERR VecAssemblyBegin(snes_f);
+    CHKERR VecAssemblyEnd(snes_f);
     double lambda = arcPtr->getFieldData();
-    ierr = VecAXPY(snes_f, lambda, arcPtr->F_lambda);
-    CHKERRG(ierr);
+    CHKERR VecAXPY(snes_f, lambda, arcPtr->F_lambda);
     double fnorm;
-    ierr = VecNorm(snes_f, NORM_2, &fnorm);
-    CHKERRG(ierr);
+    CHKERR VecNorm(snes_f, NORM_2, &fnorm);
     PetscPrintf(PETSC_COMM_WORLD, "\tfnorm = %6.4e lambda = %6.4g\n", fnorm,
                 lambda);
+    if (!boost::math::isfinite(fnorm)) {
+      CHKERR arcPtr->mField.getInterface<Tools>()->checkVectorForNotANumber(
+          problemPtr, ROW, snes_f);
+    }
   } break;
   default:
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Impossible case");
   }
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 // ************************
