@@ -131,13 +131,11 @@ struct BitRefManager : public UnknownInterface {
 
   MoFEMErrorCode addToDatabaseBitRefLevelByType(const EntityType type,
                                                 const BitRefLevel &bit,
-                                                const bool only_tets = true,
-                                                int verb             = 0) const;
+                                                int verb = 0) const;
 
   MoFEMErrorCode addToDatabaseBitRefLevelByDim(const int dim,
                                                const BitRefLevel &bit,
-                                               const bool only_tets = true,
-                                               int verb             = 0) const;
+                                               int verb = 0) const;
 
   MoFEMErrorCode setBitRefLevelByDim(const EntityHandle meshset, const int dim,
                                      const BitRefLevel &bit,

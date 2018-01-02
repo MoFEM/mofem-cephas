@@ -362,24 +362,22 @@ MoFEMErrorCode BitRefManager::setEntitiesBitRefLevel(const Range &ents,
 }
 
 MoFEMErrorCode BitRefManager::addToDatabaseBitRefLevelByType(
-    const EntityType type, const BitRefLevel &bit, const bool only_tets,
-    int verb) const {
+    const EntityType type, const BitRefLevel &bit, int verb) const {
   MoFEMFunctionBegin;
   Range ents;
   CHKERR getEntitiesByTypeAndRefLevel(bit, BitRefLevel().set(), type, ents);
   // Add bit ref level to database
-  CHKERR setEntitiesBitRefLevel(ents, bit);
+  CHKERR setBitRefLevel(ents, bit);
   MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode BitRefManager::addToDatabaseBitRefLevelByDim(
-    const int dim, const BitRefLevel &bit, const bool only_tets,
-    int verb) const {
+    const int dim, const BitRefLevel &bit, int verb) const {
   MoFEMFunctionBegin;
   Range ents;
   CHKERR getEntitiesByDimAndRefLevel(bit, BitRefLevel().set(), dim, ents);
   // Add bit ref level to database
-  CHKERR setEntitiesBitRefLevel(ents, bit);
+  CHKERR setBitRefLevel(ents, bit);
   MoFEMFunctionReturn(0);
 }
 
