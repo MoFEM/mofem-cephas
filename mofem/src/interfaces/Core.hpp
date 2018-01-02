@@ -624,6 +624,9 @@ protected:
   modify_problem_ref_level_set_bit(const std::string &name_problem,
                                    const BitRefLevel &bit);
   MoFEMErrorCode
+  modify_problem_mask_ref_level_add_bit(const std::string &name_problem,
+                                        const BitRefLevel &bit);
+  MoFEMErrorCode
   modify_problem_mask_ref_level_set_bit(const std::string &name_problem,
                                         const BitRefLevel &bit);
   BitProblemId getBitProblemId(const std::string &name) const;

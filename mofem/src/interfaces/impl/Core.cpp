@@ -524,6 +524,7 @@ MoFEMErrorCode Core::initialiseDatabaseFromMesh(int verb) {
   // Initialize database
   Range meshsets;
   CHKERR moab.get_entities_by_type(0, MBENTITYSET, meshsets, true);
+  Range special_meshsets;
   for (Range::iterator mit = meshsets.begin(); mit != meshsets.end(); mit++) {
     BitFieldId field_id;
     // Get bit id form field tag
@@ -549,6 +550,7 @@ MoFEMErrorCode Core::initialiseDatabaseFromMesh(int verb) {
         ss << "read field " << **p.first << std::endl;
         PetscPrintf(cOmm, ss.str().c_str());
       }
+      special_meshsets.insert(*mit);
     }
     // Check for finite elements
     BitFieldId fe_id;
@@ -569,6 +571,7 @@ MoFEMErrorCode Core::initialiseDatabaseFromMesh(int verb) {
       CHKERR moab.get_entities_by_type(*mit, MBENTITYSET, ents, false);
       CHKERR moab.get_entities_by_handle(*mit, ents, true);
       ref_elems_to_add.merge(ents);
+      special_meshsets.insert(*mit);
     }
     BitProblemId problem_id;
     // get bit id form problem tag
@@ -579,15 +582,19 @@ MoFEMErrorCode Core::initialiseDatabaseFromMesh(int verb) {
           pRoblems.insert(Problem(moab, *mit));
       if (verb >= VERBOSE) {
         std::ostringstream ss;
-        ss << "read problem " << *p.first << std::endl;
+        ss << "read problem " << *p.first << " bit ref "
+           << p.first->getBitRefLevel() << " bit mask "
+           << p.first->getMaskBitRefLevel() << std::endl;
         PetscPrintf(cOmm, ss.str().c_str());
       }
+      special_meshsets.insert(*mit);
     }
   }
 
   // Add entities to database
   Range bit_ref_ents;
   CHKERR moab.get_entities_by_handle(0, bit_ref_ents, false);
+  bit_ref_ents = subtract(bit_ref_ents,special_meshsets);
   CHKERR getInterface<BitRefManager>()->filterEntitiesByRefLevel(
       BitRefLevel().set(), BitRefLevel().set(), bit_ref_ents);
   CHKERR getInterface<BitRefManager>()->setEntitiesBitRefLevel(bit_ref_ents);

@@ -188,6 +188,26 @@ Core::modify_problem_ref_level_set_bit(const std::string &name_problem,
 }
 
 MoFEMErrorCode
+Core::modify_problem_mask_ref_level_add_bit(const std::string &name_problem,
+                                            const BitRefLevel &bit) {
+  MoFEMFunctionBeginHot;
+  typedef Problem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
+  ProblemsByName &set           = pRoblems.get<Problem_mi_tag>();
+  ProblemsByName::iterator miit = set.find(name_problem);
+  if (miit == set.end()) {
+    std::ostringstream ss;
+    ss << name_problem;
+    SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_FOUND, "this problem <%s> is there",
+             ss.str().c_str());
+  }
+  bool success = set.modify(miit, ProblemChangeRefLevelBitDofMaskAdd(bit));
+  if (!success)
+    SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
+            "modification unsuccessful");
+  MoFEMFunctionReturnHot(0);
+}
+
+MoFEMErrorCode
 Core::modify_problem_mask_ref_level_set_bit(const std::string &name_problem,
                                             const BitRefLevel &bit) {
   MoFEMFunctionBeginHot;

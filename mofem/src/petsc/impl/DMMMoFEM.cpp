@@ -176,7 +176,7 @@ PetscErrorCode DMMoFEMCreateMoFEM(DM dm, MoFEM::Interface *m_field_ptr,
   ierr = dm_field->mField_ptr->modify_problem_ref_level_add_bit(
       dm_field->problemName, bit_level);
   CHKERRG(ierr);
-  ierr = dm_field->mField_ptr->modify_problem_mask_ref_level_set_bit(
+  ierr = dm_field->mField_ptr->modify_problem_mask_ref_level_add_bit(
       dm_field->problemName, bit_mask);
   CHKERRG(ierr);
   dm_field->kspCtx =
