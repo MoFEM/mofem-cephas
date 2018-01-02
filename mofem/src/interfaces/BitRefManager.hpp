@@ -89,7 +89,45 @@ struct BitRefManager : public UnknownInterface {
    */
   MoFEMErrorCode setBitRefLevel(const Range &ents, const BitRefLevel &bit,
                                 const bool only_tets = true,
-                                int verb             = 0) const;
+                                int verb = 0) const;
+
+  /**
+   * @brief add entities to database and set bit ref level
+   * \ingroup mofem_bit_ref
+   *
+   * \note behaviour of this method is different than when bit ref level is passed
+   * as reference. When is bit ref level is passed by reference lower dimension
+   * entities adjacent to entities are added to database. In THIS variant only
+   * entities in range are added.
+   * 
+   * @param ents
+   * @param bit
+   * @param only_tets
+   * @param verb
+   * @return MoFEMErrorCode setBitRefLevel
+   */
+  MoFEMErrorCode setElementsBitRefLevel(const Range &ents,
+                                    const BitRefLevel bit = BitRefLevel(),
+                                    int verb = 0) const;
+
+  /**
+   * @brief add entities to database and set bit ref level
+   * \ingroup mofem_bit_ref
+   *
+   * \note behaviour of this method is different than when bit ref level is passed
+   * as reference. When is bit ref level is passed by reference lower dimension
+   * entities adjacent to entities are added to database. In THIS variant only
+   * entities in range are added. And DO NOT create elements.
+   * 
+   * @param ents
+   * @param bit
+   * @param only_tets
+   * @param verb
+   * @return MoFEMErrorCode setBitRefLevel
+   */
+  MoFEMErrorCode setEntitiesBitRefLevel(const Range &ents,
+                                    const BitRefLevel bit = BitRefLevel(),
+                                    int verb = 0) const;
 
   MoFEMErrorCode addToDatabaseBitRefLevelByType(const EntityType type,
                                                 const BitRefLevel &bit,
@@ -389,8 +427,43 @@ struct BitRefManager : public UnknownInterface {
   /**@{*/
 
   /** \brief Get child entities form meshset containing parent entities
-    * \ingroup mofem_update_meshsets_and_ranges
-    *
+   * \ingroup mofem_bit_ref
+   *
+   * Search for refined entities of given type whose parent are entities in
+   *the
+   * parent meshset. It can be used for example to transfer information about
+   * boundary conditions to refined mesh or split mesh by interface
+   * elements. It is used by function refine_MESHSET, to update MESHSET
+   *finite elements.
+   *
+   * \param parent meshset
+   * \param parent_bit refinement level
+   * \param mask of parent bit ref level
+   * \param child_bit refinement level
+   * \param mask of child bit ref level
+   * \param type of refined entity
+   * \param child_type meshset where child entities are stored (if the child
+   *meshset is set to be the parent meshset, the parent would be updated with
+   *the refined entities)
+   * \param recursive if true parent meshset is searched recursively
+   *
+   **/
+  MoFEMErrorCode updateMeshsetByEntitiesChildren(const EntityHandle parent,
+                                                 const BitRefLevel &parent_bit,
+                                                 const BitRefLevel &parent_mask,
+                                                 const BitRefLevel &child_bit,
+                                                 const BitRefLevel &child_mask,
+                                                 const EntityHandle child,
+                                                 EntityType child_type,
+                                                 const bool recursive = false,
+                                                 int verb = 0);
+
+  /** \brief Get child entities form meshset containing parent entities
+    * \ingroup mofem_bit_ref
+    * 
+    * \note this calls updateMeshsetByEntitiesChildren with setting masks and 
+    * parent to all bit levels.
+    * 
     * Search for refined entities of given type whose parent are entities in
     *the
     * parent meshset. It can be used for example to transfer information about
@@ -412,10 +485,13 @@ struct BitRefManager : public UnknownInterface {
                                                  const EntityHandle child,
                                                  EntityType child_type,
                                                  const bool recursive = false,
-                                                 int verb             = 0);
+                                                 int verb = 0);
 
   /** \brief update fields meshesets by child entities
     * \ingroup mofem_update_meshsets_and_ranges
+    *
+    * \note this calls updateMeshsetByEntitiesChildren with setting masks and 
+    * parent to all bit levels for all entities
     *
     */
   MoFEMErrorCode
@@ -480,6 +556,8 @@ struct BitRefManager : public UnknownInterface {
                                             const char *options) const;
 
   /**@}*/
+
+
   };
 }
 

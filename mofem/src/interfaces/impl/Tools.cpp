@@ -84,4 +84,52 @@ MoFEMErrorCode Tools::minTetsQuality(const Range &tets, double &min_quality,
   }
   MoFEMFunctionReturnHot(0);
 }
+
+MoFEMErrorCode Tools::checkVectorForNotANumber(const Problem *prb_ptr,
+                                               const RowColData row_or_col,
+                                               Vec v) {
+  MoFEMFunctionBegin;
+  int loc_size;
+  CHKERR VecGetLocalSize(v, &loc_size);
+  int prb_loc_size = 0;
+  boost::shared_ptr< NumeredDofEntity_multiIndex > prb_dofs;
+  switch(row_or_col) {
+    case ROW:
+      prb_loc_size = prb_ptr->getNbLocalDofsRow();
+      prb_dofs = prb_ptr->getNumeredDofsRows();
+      break;
+    case COL:
+      prb_loc_size = prb_ptr->getNbLocalDofsCol();
+      prb_dofs = prb_ptr->getNumeredDofsCols();
+      break;
+    break;
+   default:
+     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+             "Wrong argument, row_or_col should be row or column");
+  }
+  if(loc_size != prb_loc_size) {
+    SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+             "Inconsistent size of vector and problem %d != %d", loc_size,
+             prb_loc_size);
+  }
+  const double *a;
+  CHKERR VecGetArrayRead(v, &a);
+  MPI_Comm comm = PetscObjectComm((PetscObject)v);
+  for (int ii = 0; ii != loc_size; ++ii) {
+    if (!boost::math::isfinite(a[ii])) {
+      NumeredDofEntityByLocalIdx::iterator dit =
+          prb_dofs->get<PetscLocalIdx_mi_tag>().find(ii);
+      std::ostringstream ss;
+      ss << "Not a number " << a[ii] << " on dof: " << endl
+         << **dit << endl
+         << endl;
+      PetscSynchronizedPrintf(comm, "%s", ss.str().c_str());
+    }
+  }
+  CHKERR VecRestoreArrayRead(v, &a);
+  PetscSynchronizedFlush(comm, PETSC_STDOUT);
+  MoFEMFunctionReturn(0);
+}
+
+
 }

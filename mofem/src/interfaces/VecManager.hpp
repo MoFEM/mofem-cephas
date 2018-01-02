@@ -26,8 +26,8 @@ namespace MoFEM {
   static const MOFEMuuid IDD_MOFEMVEC = MOFEMuuid( BitIntefaceId(VECMANAGER_INTERFACE) );
 
   /**
-   * \brief Section manager is used to create sections
-   * \mofem_section_manager
+   * \brief Vector manager is used to create vectors
+   * \mofem_vectors
    *
    * Managing Vectors, creation, scatter, etc.
    *

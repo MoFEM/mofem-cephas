@@ -292,16 +292,9 @@ protected:
 
   /**@}*/
 
-  /** \name Seed and synchronize entities (Following functions in future will be deprecated) */
+  /** \name Remove and delete entities */
 
   /**@{*/
-
-  // refine
-  MoFEMErrorCode seed_finite_elements(const Range &entities, int verb = -1);
-  MoFEMErrorCode seed_finite_elements(const EntityHandle meshset,
-                                      int verb = -1);
-
-  // remove and delete entities
 
   MoFEMErrorCode remove_ents(const Range &ents, int verb = -1);
 
@@ -311,7 +304,13 @@ protected:
                                         const BitRefLevel &mask,
                                         const bool remove_parent = false,
                                         int verb = -1);
-  // synchronize entities
+  /**@}*/
+  
+  /** \name Synchronize entities (Following functions in future will be
+   * deprecated) */
+
+  /**@{*/
+
   MoFEMErrorCode synchronise_entities(Range &ent, int verb = -1);
   MoFEMErrorCode synchronise_field_entities(const BitFieldId id, int verb = -1);
   MoFEMErrorCode synchronise_field_entities(const std::string &name,

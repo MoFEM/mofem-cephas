@@ -181,7 +181,7 @@ struct BitLevelCoupler: public UnknownInterface {
 
   private:
 
-  MoFEMErrorCode chanegParent(RefEntity_multiIndex::iterator it,EntityHandle parent,bool element);
+  MoFEMErrorCode chanegParent(RefEntity_multiIndex::iterator it,EntityHandle parent);
   MoFEMErrorCode verifyParent(RefEntity_multiIndex::iterator it,EntityHandle parent);
 
   double cOords[12+3];

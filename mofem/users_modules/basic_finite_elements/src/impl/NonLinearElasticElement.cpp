@@ -29,69 +29,73 @@ using namespace MoFEM;
 #include <adolc/adolc.h>
 #include <NonLinearElasticElement.hpp>
 
-NonlinearElasticElement::MyVolumeFE::MyVolumeFE(MoFEM::Interface &m_field):
-VolumeElementForcesAndSourcesCore(m_field),
-A(PETSC_NULL),
-F(PETSC_NULL),
-addToRule(1) {
-}
+NonlinearElasticElement::MyVolumeFE::MyVolumeFE(MoFEM::Interface &m_field)
+    : VolumeElementForcesAndSourcesCore(m_field), A(PETSC_NULL), F(PETSC_NULL),
+      addToRule(1) {}
 
-int NonlinearElasticElement::MyVolumeFE::getRule(int order) { return 2*(order-1)+addToRule; };
+int NonlinearElasticElement::MyVolumeFE::getRule(int order) {
+  return 2 * (order - 1) + addToRule;
+};
 
 MoFEMErrorCode NonlinearElasticElement::MyVolumeFE::preProcess() {
   MoFEMFunctionBeginHot;
 
-  ierr = VolumeElementForcesAndSourcesCore::preProcess(); CHKERRG(ierr);
+  ierr = VolumeElementForcesAndSourcesCore::preProcess();
+  CHKERRG(ierr);
 
-  if(A != PETSC_NULL) {
+  if (A != PETSC_NULL) {
     snes_B = A;
   }
 
-  if(F != PETSC_NULL) {
+  if (F != PETSC_NULL) {
     snes_f = F;
   }
 
   switch (ts_ctx) {
-    case CTX_TSSETIFUNCTION: {
-      if(!F) {
-        snes_ctx = CTX_SNESSETFUNCTION;
-        snes_f = ts_F;
-      }
-      break;
+  case CTX_TSSETIFUNCTION: {
+    if (!F) {
+      snes_ctx = CTX_SNESSETFUNCTION;
+      snes_f = ts_F;
     }
-    case CTX_TSSETIJACOBIAN: {
-      if(!A) {
-        snes_ctx = CTX_SNESSETJACOBIAN;
-        snes_B = ts_B;
-      }
-      break;
+    break;
+  }
+  case CTX_TSSETIJACOBIAN: {
+    if (!A) {
+      snes_ctx = CTX_SNESSETJACOBIAN;
+      snes_B = ts_B;
     }
-    default:
+    break;
+  }
+  default:
     break;
   }
 
-  int ghosts[] = { 0 };
+  int ghosts[] = {0};
   int rank;
-  MPI_Comm_rank(mField.get_comm(),&rank);
+  MPI_Comm_rank(mField.get_comm(), &rank);
 
   switch (snes_ctx) {
-    case CTX_SNESNONE:
-    if(rank == 0) {
-      ierr = VecCreateGhost(mField.get_comm(),1,1,1,ghosts,&V); CHKERRG(ierr);
+  case CTX_SNESNONE:
+    if (rank == 0) {
+      ierr = VecCreateGhost(mField.get_comm(), 1, 1, 1, ghosts, &V);
+      CHKERRG(ierr);
     } else {
-      ierr = VecCreateGhost(mField.get_comm(),0,1,1,ghosts,&V); CHKERRG(ierr);
+      ierr = VecCreateGhost(mField.get_comm(), 0, 1, 1, ghosts, &V);
+      CHKERRG(ierr);
     }
-    ierr = VecZeroEntries(V); CHKERRG(ierr);
-    ierr = VecGhostUpdateBegin(V,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
-    ierr = VecGhostUpdateEnd(V,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
+    ierr = VecZeroEntries(V);
+    CHKERRG(ierr);
+    ierr = VecGhostUpdateBegin(V, INSERT_VALUES, SCATTER_FORWARD);
+    CHKERRG(ierr);
+    ierr = VecGhostUpdateEnd(V, INSERT_VALUES, SCATTER_FORWARD);
+    CHKERRG(ierr);
     break;
-    default:
+  default:
     break;
   }
 
   MoFEMFunctionReturnHot(0);
 }
-
 
 MoFEMErrorCode NonlinearElasticElement::MyVolumeFE::postProcess() {
   MoFEMFunctionBeginHot;
@@ -99,122 +103,129 @@ MoFEMErrorCode NonlinearElasticElement::MyVolumeFE::postProcess() {
   double *array;
 
   switch (snes_ctx) {
-    case CTX_SNESNONE:
-      ierr = VecAssemblyBegin(V); CHKERRG(ierr);
-      ierr = VecAssemblyEnd(V); CHKERRG(ierr);
-      ierr = VecGhostUpdateBegin(V,ADD_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
-      ierr = VecGhostUpdateEnd(V,ADD_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
-      ierr = VecGhostUpdateBegin(V,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
-      ierr = VecGhostUpdateEnd(V,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
-      ierr = VecGetArray(V,&array); CHKERRG(ierr);
-      eNergy = array[0];
-      ierr = VecRestoreArray(V,&array); CHKERRG(ierr);
-      ierr = VecDestroy(&V); CHKERRG(ierr);
-      break;
-    default:
-      break;
+  case CTX_SNESNONE:
+    ierr = VecAssemblyBegin(V);
+    CHKERRG(ierr);
+    ierr = VecAssemblyEnd(V);
+    CHKERRG(ierr);
+    ierr = VecGhostUpdateBegin(V, ADD_VALUES, SCATTER_REVERSE);
+    CHKERRG(ierr);
+    ierr = VecGhostUpdateEnd(V, ADD_VALUES, SCATTER_REVERSE);
+    CHKERRG(ierr);
+    ierr = VecGhostUpdateBegin(V, INSERT_VALUES, SCATTER_FORWARD);
+    CHKERRG(ierr);
+    ierr = VecGhostUpdateEnd(V, INSERT_VALUES, SCATTER_FORWARD);
+    CHKERRG(ierr);
+    ierr = VecGetArray(V, &array);
+    CHKERRG(ierr);
+    eNergy = array[0];
+    ierr = VecRestoreArray(V, &array);
+    CHKERRG(ierr);
+    ierr = VecDestroy(&V);
+    CHKERRG(ierr);
+    break;
+  default:
+    break;
   }
 
-  ierr = VolumeElementForcesAndSourcesCore::postProcess(); CHKERRG(ierr);
-
+  ierr = VolumeElementForcesAndSourcesCore::postProcess();
+  CHKERRG(ierr);
 
   MoFEMFunctionReturnHot(0);
 }
 
-NonlinearElasticElement::NonlinearElasticElement(
-  MoFEM::Interface &m_field,short int tag):
-  feRhs(m_field),feLhs(m_field),
-  feEnergy(m_field),
-  mField(m_field),tAg(tag) {}
+NonlinearElasticElement::NonlinearElasticElement(MoFEM::Interface &m_field,
+                                                 short int tag)
+    : feRhs(m_field), feLhs(m_field), feEnergy(m_field), mField(m_field),
+      tAg(tag) {}
 
-NonlinearElasticElement::OpGetDataAtGaussPts::OpGetDataAtGaussPts(const std::string field_name,
-  std::vector<VectorDouble > &values_at_gauss_pts,
-  std::vector<MatrixDouble > &gardient_at_gauss_pts):
-  VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
-  valuesAtGaussPts(values_at_gauss_pts),
-  gradientAtGaussPts(gardient_at_gauss_pts),
-  zeroAtType(MBVERTEX) {}
+NonlinearElasticElement::OpGetDataAtGaussPts::OpGetDataAtGaussPts(
+    const std::string field_name,
+    std::vector<VectorDouble> &values_at_gauss_pts,
+    std::vector<MatrixDouble> &gardient_at_gauss_pts)
+    : VolumeElementForcesAndSourcesCore::UserDataOperator(
+          field_name, UserDataOperator::OPROW),
+      valuesAtGaussPts(values_at_gauss_pts),
+      gradientAtGaussPts(gardient_at_gauss_pts), zeroAtType(MBVERTEX) {}
 
 MoFEMErrorCode NonlinearElasticElement::OpGetDataAtGaussPts::doWork(
-  int side,EntityType type,DataForcesAndSourcesCore::EntData &data
-) {
+    int side, EntityType type, DataForcesAndSourcesCore::EntData &data) {
   MoFEMFunctionBeginHot;
   try {
 
     const int nb_dofs = data.getFieldData().size();
     const int nb_base_functions = data.getN().size2();
-    if(nb_dofs == 0) {
+    if (nb_dofs == 0) {
       MoFEMFunctionReturnHot(0);
     }
     const int nb_gauss_pts = data.getN().size1();
     const int rank = data.getFieldDofs()[0]->getNbOfCoeffs();
 
-    //initialize
-    if(type == zeroAtType) {
+    // initialize
+    if (type == zeroAtType) {
       valuesAtGaussPts.resize(nb_gauss_pts);
       gradientAtGaussPts.resize(nb_gauss_pts);
-      for(int gg = 0;gg!=nb_gauss_pts;gg++) {
-        valuesAtGaussPts[gg].resize(rank,false);
-        gradientAtGaussPts[gg].resize(rank,3,false);
+      for (int gg = 0; gg != nb_gauss_pts; gg++) {
+        valuesAtGaussPts[gg].resize(rank, false);
+        gradientAtGaussPts[gg].resize(rank, 3, false);
       }
-      for(int gg = 0;gg!=nb_gauss_pts;gg++) {
+      for (int gg = 0; gg != nb_gauss_pts; gg++) {
         valuesAtGaussPts[gg].clear();
         gradientAtGaussPts[gg].clear();
       }
     }
 
-    FTensor::Tensor0<double*> base_function = data.getFTensor0N();
-    FTensor::Tensor1<double*,3> diff_base_functions = data.getFTensor1DiffN<3>();
-    FTensor::Index<'i',3> i;
-    FTensor::Index<'j',3> j;
+    FTensor::Tensor0<double *> base_function = data.getFTensor0N();
+    FTensor::Tensor1<double *, 3> diff_base_functions =
+        data.getFTensor1DiffN<3>();
+    FTensor::Index<'i', 3> i;
+    FTensor::Index<'j', 3> j;
 
-    if(rank==1) {
+    if (rank == 1) {
 
-      for(int gg = 0;gg!=nb_gauss_pts;gg++) {
-        FTensor::Tensor0<double*> field_data = data.getFTensor0FieldData();
+      for (int gg = 0; gg != nb_gauss_pts; gg++) {
+        FTensor::Tensor0<double *> field_data = data.getFTensor0FieldData();
         double &val = valuesAtGaussPts[gg][0];
-        FTensor::Tensor1<double*,3> grad(
-          &gradientAtGaussPts[gg](0,0),
-          &gradientAtGaussPts[gg](0,1),
-          &gradientAtGaussPts[gg](0,2)
-        );
+        FTensor::Tensor1<double *, 3> grad(&gradientAtGaussPts[gg](0, 0),
+                                           &gradientAtGaussPts[gg](0, 1),
+                                           &gradientAtGaussPts[gg](0, 2));
         int bb = 0;
-        for(;bb!=nb_dofs;bb++) {
-          val += base_function*field_data;
-          grad(i) += diff_base_functions(i)*field_data;
+        for (; bb != nb_dofs; bb++) {
+          val += base_function * field_data;
+          grad(i) += diff_base_functions(i) * field_data;
           ++diff_base_functions;
           ++base_function;
           ++field_data;
         }
-        for(;bb!=nb_base_functions;bb++) {
+        for (; bb != nb_base_functions; bb++) {
           ++diff_base_functions;
           ++base_function;
         }
       }
 
-    } else if(rank==3) {
+    } else if (rank == 3) {
 
-      for(int gg = 0;gg!=nb_gauss_pts;gg++) {
-        FTensor::Tensor1<double*,3> field_data = data.getFTensor1FieldData<3>();
-        FTensor::Tensor1<double*,3> values(
-          &valuesAtGaussPts[gg][0],
-          &valuesAtGaussPts[gg][1],
-          &valuesAtGaussPts[gg][2]
-        );
-        FTensor::Tensor2<double*,3,3> gradient(
-          &gradientAtGaussPts[gg](0,0),&gradientAtGaussPts[gg](0,1),&gradientAtGaussPts[gg](0,2),
-          &gradientAtGaussPts[gg](1,0),&gradientAtGaussPts[gg](1,1),&gradientAtGaussPts[gg](1,2),
-          &gradientAtGaussPts[gg](2,0),&gradientAtGaussPts[gg](2,1),&gradientAtGaussPts[gg](2,2)
-        );
+      for (int gg = 0; gg != nb_gauss_pts; gg++) {
+        FTensor::Tensor1<double *, 3> field_data =
+            data.getFTensor1FieldData<3>();
+        FTensor::Tensor1<double *, 3> values(&valuesAtGaussPts[gg][0],
+                                             &valuesAtGaussPts[gg][1],
+                                             &valuesAtGaussPts[gg][2]);
+        FTensor::Tensor2<double *, 3, 3> gradient(
+            &gradientAtGaussPts[gg](0, 0), &gradientAtGaussPts[gg](0, 1),
+            &gradientAtGaussPts[gg](0, 2), &gradientAtGaussPts[gg](1, 0),
+            &gradientAtGaussPts[gg](1, 1), &gradientAtGaussPts[gg](1, 2),
+            &gradientAtGaussPts[gg](2, 0), &gradientAtGaussPts[gg](2, 1),
+            &gradientAtGaussPts[gg](2, 2));
         int bb = 0;
-        for(;bb!=nb_dofs/3;bb++) {
-          values(i) += base_function*field_data(i);
-          gradient(i,j) += field_data(i)*diff_base_functions(j);
+        for (; bb != nb_dofs / 3; bb++) {
+          values(i) += base_function * field_data(i);
+          gradient(i, j) += field_data(i) * diff_base_functions(j);
           ++diff_base_functions;
           ++base_function;
           ++field_data;
         }
-        for(;bb!=nb_base_functions;bb++) {
+        for (; bb != nb_base_functions; bb++) {
           ++diff_base_functions;
           ++base_function;
         }
@@ -222,103 +233,101 @@ MoFEMErrorCode NonlinearElasticElement::OpGetDataAtGaussPts::doWork(
 
     } else {
       // FIXME: THat part is inefficient
-      VectorDouble& values = data.getFieldData();
-      //std::cerr << valuesAtGaussPts[0] << " : ";
-      for(int gg = 0;gg<nb_gauss_pts;gg++) {
-        VectorAdaptor N = data.getN(gg,nb_dofs/rank);
-        MatrixAdaptor diffN = data.getDiffN(gg,nb_dofs/rank);
-        for(int dd = 0;dd<nb_dofs/rank;dd++) {
-          for(int rr1 = 0;rr1<rank;rr1++) {
-            valuesAtGaussPts[gg][rr1] += N[dd]*values[rank*dd+rr1];
-            for(int rr2 = 0;rr2<3;rr2++) {
-              gradientAtGaussPts[gg](rr1,rr2) += diffN(dd,rr2)*values[rank*dd+rr1];
+      VectorDouble &values = data.getFieldData();
+      // std::cerr << valuesAtGaussPts[0] << " : ";
+      for (int gg = 0; gg < nb_gauss_pts; gg++) {
+        VectorAdaptor N = data.getN(gg, nb_dofs / rank);
+        MatrixAdaptor diffN = data.getDiffN(gg, nb_dofs / rank);
+        for (int dd = 0; dd < nb_dofs / rank; dd++) {
+          for (int rr1 = 0; rr1 < rank; rr1++) {
+            valuesAtGaussPts[gg][rr1] += N[dd] * values[rank * dd + rr1];
+            for (int rr2 = 0; rr2 < 3; rr2++) {
+              gradientAtGaussPts[gg](rr1, rr2) +=
+                  diffN(dd, rr2) * values[rank * dd + rr1];
             }
           }
         }
       }
     }
 
-    //std::cerr << row_field_name << " " << col_field_name << std::endl;
-    //std::cerr << side << " " << type << std::endl;
-    //std::cerr << values << std::endl;
-    //std::cerr << valuesAtGaussPts[0] << std::endl;
+    // std::cerr << row_field_name << " " << col_field_name << std::endl;
+    // std::cerr << side << " " << type << std::endl;
+    // std::cerr << values << std::endl;
+    // std::cerr << valuesAtGaussPts[0] << std::endl;
 
   } catch (MoFEMException const &e) {
-    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
+    SETERRQ(PETSC_COMM_SELF, e.errorCode, e.errorMessage);
   }
 
   MoFEMFunctionReturnHot(0);
 }
 
-NonlinearElasticElement::OpGetCommonDataAtGaussPts::OpGetCommonDataAtGaussPts(const std::string field_name,CommonData &common_data):
-  OpGetDataAtGaussPts(field_name,
-  common_data.dataAtGaussPts[field_name],
-  common_data.gradAtGaussPts[field_name]) {}
+NonlinearElasticElement::OpGetCommonDataAtGaussPts::OpGetCommonDataAtGaussPts(
+    const std::string field_name, CommonData &common_data)
+    : OpGetDataAtGaussPts(field_name, common_data.dataAtGaussPts[field_name],
+                          common_data.gradAtGaussPts[field_name]) {}
 
-NonlinearElasticElement::OpJacobianPiolaKirchhoffStress::OpJacobianPiolaKirchhoffStress(
-  const std::string field_name,
-  BlockData &data,
-  CommonData &common_data,
-  int tag,
-  bool jacobian,
-  bool ale,
-  bool field_disp
-):
-VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
-dAta(data),
-commonData(common_data),
-tAg(tag),
-adlocReturnValue(0),
-jAcobian(jacobian),
-fUnction(!jacobian),
-aLe(ale),
-fieldDisp(field_disp) {
+NonlinearElasticElement::OpJacobianPiolaKirchhoffStress::
+    OpJacobianPiolaKirchhoffStress(const std::string field_name,
+                                   BlockData &data, CommonData &common_data,
+                                   int tag, bool jacobian, bool ale,
+                                   bool field_disp)
+    : VolumeElementForcesAndSourcesCore::UserDataOperator(
+          field_name, UserDataOperator::OPROW),
+      dAta(data), commonData(common_data), tAg(tag), adlocReturnValue(0),
+      jAcobian(jacobian), fUnction(!jacobian), aLe(ale), fieldDisp(field_disp) {
 
 }
 
-MoFEMErrorCode NonlinearElasticElement::OpJacobianPiolaKirchhoffStress::calculateStress(const int gg) {
+MoFEMErrorCode
+NonlinearElasticElement::OpJacobianPiolaKirchhoffStress::calculateStress(
+    const int gg) {
   MoFEMFunctionBeginHot;
   try {
 
     ierr = dAta.materialAdoublePtr->calculateP_PiolaKirchhoffI(
-      dAta,getNumeredEntFiniteElementPtr()
-    ); CHKERRG(ierr);
-    if(aLe) {
-      dAta.materialAdoublePtr->P =
-        dAta.materialAdoublePtr->detH*prod(dAta.materialAdoublePtr->P,trans(dAta.materialAdoublePtr->invH));
+        dAta, getNumeredEntFiniteElementPtr());
+    CHKERRG(ierr);
+    if (aLe) {
+      dAta.materialAdoublePtr->P = dAta.materialAdoublePtr->detH *
+                                   prod(dAta.materialAdoublePtr->P,
+                                        trans(dAta.materialAdoublePtr->invH));
     }
-    commonData.sTress[gg].resize(3,3,false);
-    for(int dd1 = 0;dd1<3;dd1++) {
-      for(int dd2 = 0;dd2<3;dd2++) {
-        dAta.materialAdoublePtr->P(dd1,dd2) >>= (commonData.sTress[gg])(dd1,dd2);
+    commonData.sTress[gg].resize(3, 3, false);
+    for (int dd1 = 0; dd1 < 3; dd1++) {
+      for (int dd2 = 0; dd2 < 3; dd2++) {
+        dAta.materialAdoublePtr->P(dd1, dd2) >>=
+            (commonData.sTress[gg])(dd1, dd2);
       }
     }
-    //std::cerr << "P " << dAta.materialAdoublePtr->P << std::endl;
+    // std::cerr << "P " << dAta.materialAdoublePtr->P << std::endl;
   } catch (MoFEMException const &e) {
-    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
+    SETERRQ(PETSC_COMM_SELF, e.errorCode, e.errorMessage);
   }
 
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode NonlinearElasticElement::OpJacobianPiolaKirchhoffStress::recordTag(const int gg) {
+MoFEMErrorCode
+NonlinearElasticElement::OpJacobianPiolaKirchhoffStress::recordTag(
+    const int gg) {
   MoFEMFunctionBeginHot;
 
   trace_on(tAg);
 
   try {
 
-    dAta.materialAdoublePtr->F.resize(3,3,false);
+    dAta.materialAdoublePtr->F.resize(3, 3, false);
 
-    if(!aLe) {
+    if (!aLe) {
 
       nbActiveVariables = 0;
-      for(int dd1 = 0;dd1<3;dd1++) {
-        for(int dd2 = 0;dd2<3;dd2++) {
-          dAta.materialAdoublePtr->F(dd1,dd2) <<= (*ptrh)[gg](dd1,dd2);
-          if(fieldDisp) {
-            if(dd1 == dd2) {
-              dAta.materialAdoublePtr->F(dd1,dd2) += 1;
+      for (int dd1 = 0; dd1 < 3; dd1++) {
+        for (int dd2 = 0; dd2 < 3; dd2++) {
+          dAta.materialAdoublePtr->F(dd1, dd2) <<= (*ptrh)[gg](dd1, dd2);
+          if (fieldDisp) {
+            if (dd1 == dd2) {
+              dAta.materialAdoublePtr->F(dd1, dd2) += 1;
             }
           }
           nbActiveVariables++;
@@ -329,75 +338,78 @@ MoFEMErrorCode NonlinearElasticElement::OpJacobianPiolaKirchhoffStress::recordTa
 
       nbActiveVariables = 0;
 
-      dAta.materialAdoublePtr->h.resize(3,3,false);
-      for(int dd1 = 0;dd1<3;dd1++) {
-        for(int dd2 = 0;dd2<3;dd2++) {
-          dAta.materialAdoublePtr->h(dd1,dd2) <<= (*ptrh)[gg](dd1,dd2);
+      dAta.materialAdoublePtr->h.resize(3, 3, false);
+      for (int dd1 = 0; dd1 < 3; dd1++) {
+        for (int dd2 = 0; dd2 < 3; dd2++) {
+          dAta.materialAdoublePtr->h(dd1, dd2) <<= (*ptrh)[gg](dd1, dd2);
           nbActiveVariables++;
         }
       }
 
-      dAta.materialAdoublePtr->H.resize(3,3,false);
-      for(int dd1 = 0;dd1<3;dd1++) {
-        for(int dd2 = 0;dd2<3;dd2++) {
-          dAta.materialAdoublePtr->H(dd1,dd2) <<= (*ptrH)[gg](dd1,dd2);
+      dAta.materialAdoublePtr->H.resize(3, 3, false);
+      for (int dd1 = 0; dd1 < 3; dd1++) {
+        for (int dd2 = 0; dd2 < 3; dd2++) {
+          dAta.materialAdoublePtr->H(dd1, dd2) <<= (*ptrH)[gg](dd1, dd2);
           nbActiveVariables++;
         }
       }
 
       ierr = dAta.materialAdoublePtr->dEterminant(
-        dAta.materialAdoublePtr->H,dAta.materialAdoublePtr->detH
-      ); CHKERRG(ierr);
-      dAta.materialAdoublePtr->invH.resize(3,3,false);
-      ierr = dAta.materialAdoublePtr->iNvert(
-        dAta.materialAdoublePtr->detH,dAta.materialAdoublePtr->H,
-        dAta.materialAdoublePtr->invH
-      ); CHKERRG(ierr);
-      noalias(dAta.materialAdoublePtr->F) = prod(
-        dAta.materialAdoublePtr->h,dAta.materialAdoublePtr->invH
-      );
-
+          dAta.materialAdoublePtr->H, dAta.materialAdoublePtr->detH);
+      CHKERRG(ierr);
+      dAta.materialAdoublePtr->invH.resize(3, 3, false);
+      ierr = dAta.materialAdoublePtr->iNvert(dAta.materialAdoublePtr->detH,
+                                             dAta.materialAdoublePtr->H,
+                                             dAta.materialAdoublePtr->invH);
+      CHKERRG(ierr);
+      noalias(dAta.materialAdoublePtr->F) =
+          prod(dAta.materialAdoublePtr->h, dAta.materialAdoublePtr->invH);
     }
 
-    ierr = dAta.materialAdoublePtr->setUserActiveVariables(nbActiveVariables); CHKERRG(ierr);
-    ierr = calculateStress(gg); CHKERRG(ierr);
+    ierr = dAta.materialAdoublePtr->setUserActiveVariables(nbActiveVariables);
+    CHKERRG(ierr);
+    ierr = calculateStress(gg);
+    CHKERRG(ierr);
 
     trace_off();
 
   } catch (MoFEMException const &e) {
-    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
+    SETERRQ(PETSC_COMM_SELF, e.errorCode, e.errorMessage);
   }
 
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode NonlinearElasticElement::OpJacobianPiolaKirchhoffStress::playTag(const int gg) {
+MoFEMErrorCode
+NonlinearElasticElement::OpJacobianPiolaKirchhoffStress::playTag(const int gg) {
   MoFEMFunctionBeginHot;
 
   int r;
 
-  if(fUnction) {
-    commonData.sTress[gg].resize(3,3,false);
-    //play recorder for values
-    r = ::function(tAg,9,nbActiveVariables,&activeVariables[0],&commonData.sTress[gg](0,0));
-    if(r<adlocReturnValue) { // function is locally analytic
-      SETERRQ1(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"ADOL-C function evaluation with error r = %d",r);
+  if (fUnction) {
+    commonData.sTress[gg].resize(3, 3, false);
+    // play recorder for values
+    r = ::function(tAg, 9, nbActiveVariables, &activeVariables[0],
+                   &commonData.sTress[gg](0, 0));
+    if (r < adlocReturnValue) { // function is locally analytic
+      SETERRQ1(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
+               "ADOL-C function evaluation with error r = %d", r);
     }
   }
 
-  if(jAcobian) {
-    commonData.jacStress[gg].resize(9,nbActiveVariables,false);
+  if (jAcobian) {
+    commonData.jacStress[gg].resize(9, nbActiveVariables, false);
     double *jac_ptr[] = {
-      &(commonData.jacStress[gg](0,0)),&(commonData.jacStress[gg](1,0)),&(commonData.jacStress[gg](2,0)),
-      &(commonData.jacStress[gg](3,0)),&(commonData.jacStress[gg](4,0)),&(commonData.jacStress[gg](5,0)),
-      &(commonData.jacStress[gg](6,0)),&(commonData.jacStress[gg](7,0)),&(commonData.jacStress[gg](8,0))
-    };
-    //play recorder for jacobians
-    r = jacobian(
-      tAg,9,nbActiveVariables,&activeVariables[0],jac_ptr
-    );
-    if(r<adlocReturnValue) {
-      SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"ADOL-C function evaluation with error");
+        &(commonData.jacStress[gg](0, 0)), &(commonData.jacStress[gg](1, 0)),
+        &(commonData.jacStress[gg](2, 0)), &(commonData.jacStress[gg](3, 0)),
+        &(commonData.jacStress[gg](4, 0)), &(commonData.jacStress[gg](5, 0)),
+        &(commonData.jacStress[gg](6, 0)), &(commonData.jacStress[gg](7, 0)),
+        &(commonData.jacStress[gg](8, 0))};
+    // play recorder for jacobians
+    r = jacobian(tAg, 9, nbActiveVariables, &activeVariables[0], jac_ptr);
+    if (r < adlocReturnValue) {
+      SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
+              "ADOL-C function evaluation with error");
     }
   }
 
@@ -405,20 +417,22 @@ MoFEMErrorCode NonlinearElasticElement::OpJacobianPiolaKirchhoffStress::playTag(
 }
 
 MoFEMErrorCode NonlinearElasticElement::OpJacobianPiolaKirchhoffStress::doWork(
-  int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
-) {
+    int row_side, EntityType row_type,
+    DataForcesAndSourcesCore::EntData &row_data) {
   MoFEMFunctionBeginHot;
 
-  //do it only once, no need to repeat this for edges,faces or tets
-  if(row_type != MBVERTEX) MoFEMFunctionReturnHot(0);
+  // do it only once, no need to repeat this for edges,faces or tets
+  if (row_type != MBVERTEX)
+    MoFEMFunctionReturnHot(0);
 
-
-  if(dAta.tEts.find(getNumeredEntFiniteElementPtr()->getEnt()) == dAta.tEts.end()) {
+  if (dAta.tEts.find(getNumeredEntFiniteElementPtr()->getEnt()) ==
+      dAta.tEts.end()) {
     MoFEMFunctionReturnHot(0);
   }
 
   int nb_dofs = row_data.getFieldData().size();
-  if(nb_dofs==0) MoFEMFunctionReturnHot(0);
+  if (nb_dofs == 0)
+    MoFEMFunctionReturnHot(0);
   dAta.materialAdoublePtr->commonDataPtr = &commonData;
   dAta.materialAdoublePtr->opPtr = this;
 
@@ -429,91 +443,86 @@ MoFEMErrorCode NonlinearElasticElement::OpJacobianPiolaKirchhoffStress::doWork(
     commonData.jacStress.resize(nb_gauss_pts);
 
     ptrh = &(commonData.gradAtGaussPts[commonData.spatialPositions]);
-    if(aLe) {
+    if (aLe) {
       ptrH = &(commonData.gradAtGaussPts[commonData.meshPositions]);
     }
 
-    for(int gg = 0;gg!=nb_gauss_pts;gg++) {
+    for (int gg = 0; gg != nb_gauss_pts; gg++) {
 
       dAta.materialAdoublePtr->gG = gg;
 
       // Record tag and calualte stress
-      if(recordTagForIntegrationPoint(gg)) {
-        ierr = recordTag(gg); CHKERRG(ierr);
+      if (recordTagForIntegrationPoint(gg)) {
+        ierr = recordTag(gg);
+        CHKERRG(ierr);
       }
 
       // Set active variables vector
-      if(jAcobian||(!recordTagForIntegrationPoint(gg))) {
-        activeVariables.resize(nbActiveVariables,false);
-        if(!aLe) {
-          for(int dd1 = 0;dd1<3;dd1++) {
-            for(int dd2 = 0;dd2<3;dd2++) {
-              activeVariables(dd1*3+dd2) = (*ptrh)[gg](dd1,dd2);
+      if (jAcobian || (!recordTagForIntegrationPoint(gg))) {
+        activeVariables.resize(nbActiveVariables, false);
+        if (!aLe) {
+          for (int dd1 = 0; dd1 < 3; dd1++) {
+            for (int dd2 = 0; dd2 < 3; dd2++) {
+              activeVariables(dd1 * 3 + dd2) = (*ptrh)[gg](dd1, dd2);
             }
           }
         } else {
-          for(int dd1 = 0;dd1<3;dd1++) {
-            for(int dd2 = 0;dd2<3;dd2++) {
-              activeVariables(dd1*3+dd2) = (*ptrh)[gg](dd1,dd2);
+          for (int dd1 = 0; dd1 < 3; dd1++) {
+            for (int dd2 = 0; dd2 < 3; dd2++) {
+              activeVariables(dd1 * 3 + dd2) = (*ptrh)[gg](dd1, dd2);
             }
           }
-          for(int dd1 = 0;dd1<3;dd1++) {
-            for(int dd2 = 0;dd2<3;dd2++) {
-              activeVariables(9+dd1*3+dd2) = (*ptrH)[gg](dd1,dd2);
+          for (int dd1 = 0; dd1 < 3; dd1++) {
+            for (int dd2 = 0; dd2 < 3; dd2++) {
+              activeVariables(9 + dd1 * 3 + dd2) = (*ptrH)[gg](dd1, dd2);
             }
           }
         }
-        ierr = dAta.materialAdoublePtr->setUserActiveVariables(activeVariables); CHKERRG(ierr);
+        ierr = dAta.materialAdoublePtr->setUserActiveVariables(activeVariables);
+        CHKERRG(ierr);
 
         // Play tag and calculate stress or tangent
-        if(jAcobian||(!recordTagForIntegrationPoint(gg))) {
-          ierr = playTag(gg); CHKERRG(ierr);
+        if (jAcobian || (!recordTagForIntegrationPoint(gg))) {
+          ierr = playTag(gg);
+          CHKERRG(ierr);
         }
-
       }
-
     }
 
   } catch (MoFEMException const &e) {
-    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
+    SETERRQ(PETSC_COMM_SELF, e.errorCode, e.errorMessage);
   }
 
   MoFEMFunctionReturnHot(0);
 }
 
 NonlinearElasticElement::OpJacobianEnergy::OpJacobianEnergy(
-  const std::string field_name, ///< field name for spatial positions or displacements
-  BlockData &data,
-  CommonData &common_data,
-  int tag,
-  bool gradient,
-  bool hessian,
-  bool ale,
-  bool field_disp
-):
-VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
-dAta(data),
-commonData(common_data),
-tAg(tag),
-gRadient(gradient),
-hEssian(hessian),
-aLe(ale),
-fieldDisp(field_disp) {
-}
+    const std::string
+        field_name, ///< field name for spatial positions or displacements
+    BlockData &data, CommonData &common_data, int tag, bool gradient,
+    bool hessian, bool ale, bool field_disp)
+    : VolumeElementForcesAndSourcesCore::UserDataOperator(
+          field_name, UserDataOperator::OPROW),
+      dAta(data), commonData(common_data), tAg(tag), gRadient(gradient),
+      hEssian(hessian), aLe(ale), fieldDisp(field_disp) {}
 
-MoFEMErrorCode NonlinearElasticElement::OpJacobianEnergy::calculateEnergy(const int gg) {
+MoFEMErrorCode
+NonlinearElasticElement::OpJacobianEnergy::calculateEnergy(const int gg) {
 
   MoFEMFunctionBeginHot;
   try {
-    ierr = dAta.materialAdoublePtr->calculateElasticEnergy(dAta,getNumeredEntFiniteElementPtr()); CHKERRG(ierr);
+    ierr = dAta.materialAdoublePtr->calculateElasticEnergy(
+        dAta, getNumeredEntFiniteElementPtr());
+    CHKERRG(ierr);
     dAta.materialAdoublePtr->eNergy >>= commonData.eNergy[gg];
   } catch (MoFEMException const &e) {
-    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
+    SETERRQ(PETSC_COMM_SELF, e.errorCode, e.errorMessage);
   }
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode NonlinearElasticElement::OpJacobianEnergy::recordTag(const int gg) {
+MoFEMErrorCode
+NonlinearElasticElement::OpJacobianEnergy::recordTag(const int gg) {
 
   MoFEMFunctionBeginHot;
 
@@ -521,17 +530,17 @@ MoFEMErrorCode NonlinearElasticElement::OpJacobianEnergy::recordTag(const int gg
 
   try {
 
-    dAta.materialAdoublePtr->F.resize(3,3,false);
+    dAta.materialAdoublePtr->F.resize(3, 3, false);
 
-    if(!aLe) {
+    if (!aLe) {
 
       nbActiveVariables = 0;
-      for(int dd1 = 0;dd1<3;dd1++) {
-        for(int dd2 = 0;dd2<3;dd2++) {
-          dAta.materialAdoublePtr->F(dd1,dd2) <<= (*ptrh)[gg](dd1,dd2);
-          if(fieldDisp) {
-            if(dd1 == dd2) {
-              dAta.materialAdoublePtr->F(dd1,dd2) += 1;
+      for (int dd1 = 0; dd1 < 3; dd1++) {
+        for (int dd2 = 0; dd2 < 3; dd2++) {
+          dAta.materialAdoublePtr->F(dd1, dd2) <<= (*ptrh)[gg](dd1, dd2);
+          if (fieldDisp) {
+            if (dd1 == dd2) {
+              dAta.materialAdoublePtr->F(dd1, dd2) += 1;
             }
           }
           nbActiveVariables++;
@@ -542,84 +551,77 @@ MoFEMErrorCode NonlinearElasticElement::OpJacobianEnergy::recordTag(const int gg
 
       nbActiveVariables = 0;
 
-      dAta.materialAdoublePtr->h.resize(3,3,false);
-      for(int dd1 = 0;dd1<3;dd1++) {
-        for(int dd2 = 0;dd2<3;dd2++) {
-          dAta.materialAdoublePtr->h(dd1,dd2) <<= (*ptrh)[gg](dd1,dd2);
+      dAta.materialAdoublePtr->h.resize(3, 3, false);
+      for (int dd1 = 0; dd1 < 3; dd1++) {
+        for (int dd2 = 0; dd2 < 3; dd2++) {
+          dAta.materialAdoublePtr->h(dd1, dd2) <<= (*ptrh)[gg](dd1, dd2);
           nbActiveVariables++;
         }
       }
 
-      dAta.materialAdoublePtr->H.resize(3,3,false);
-      for(int dd1 = 0;dd1<3;dd1++) {
-        for(int dd2 = 0;dd2<3;dd2++) {
-          dAta.materialAdoublePtr->H(dd1,dd2) <<= (*ptrH)[gg](dd1,dd2);
+      dAta.materialAdoublePtr->H.resize(3, 3, false);
+      for (int dd1 = 0; dd1 < 3; dd1++) {
+        for (int dd2 = 0; dd2 < 3; dd2++) {
+          dAta.materialAdoublePtr->H(dd1, dd2) <<= (*ptrH)[gg](dd1, dd2);
           nbActiveVariables++;
         }
       }
 
       ierr = dAta.materialAdoublePtr->dEterminant(
-        dAta.materialAdoublePtr->H,dAta.materialAdoublePtr->detH
-      ); CHKERRG(ierr);
-      dAta.materialAdoublePtr->invH.resize(3,3,false);
-      ierr = dAta.materialAdoublePtr->iNvert(
-        dAta.materialAdoublePtr->detH,dAta.materialAdoublePtr->H,
-        dAta.materialAdoublePtr->invH
-      ); CHKERRG(ierr);
-      noalias(dAta.materialAdoublePtr->F) = prod(
-        dAta.materialAdoublePtr->h,dAta.materialAdoublePtr->invH
-      );
-
+          dAta.materialAdoublePtr->H, dAta.materialAdoublePtr->detH);
+      CHKERRG(ierr);
+      dAta.materialAdoublePtr->invH.resize(3, 3, false);
+      ierr = dAta.materialAdoublePtr->iNvert(dAta.materialAdoublePtr->detH,
+                                             dAta.materialAdoublePtr->H,
+                                             dAta.materialAdoublePtr->invH);
+      CHKERRG(ierr);
+      noalias(dAta.materialAdoublePtr->F) =
+          prod(dAta.materialAdoublePtr->h, dAta.materialAdoublePtr->invH);
     }
 
-    ierr = dAta.materialAdoublePtr->setUserActiveVariables(nbActiveVariables); CHKERRG(ierr);
-    ierr = calculateEnergy(gg); CHKERRG(ierr);
+    ierr = dAta.materialAdoublePtr->setUserActiveVariables(nbActiveVariables);
+    CHKERRG(ierr);
+    ierr = calculateEnergy(gg);
+    CHKERRG(ierr);
 
     trace_off();
 
   } catch (MoFEMException const &e) {
-    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
+    SETERRQ(PETSC_COMM_SELF, e.errorCode, e.errorMessage);
   }
 
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode NonlinearElasticElement::OpJacobianEnergy::playTag(const int gg) {
+MoFEMErrorCode
+NonlinearElasticElement::OpJacobianEnergy::playTag(const int gg) {
   MoFEMFunctionBeginHot;
 
-  if(gRadient) {
-    commonData.jacEnergy[gg].resize(nbActiveVariables,false);
-    int r = ::gradient(
-      tAg,nbActiveVariables,&activeVariables[0],&commonData.jacEnergy[gg][0]
-    );
-    if(r<0) {
+  if (gRadient) {
+    commonData.jacEnergy[gg].resize(nbActiveVariables, false);
+    int r = ::gradient(tAg, nbActiveVariables, &activeVariables[0],
+                       &commonData.jacEnergy[gg][0]);
+    if (r < 0) {
       // That means that energy function is not smooth and derivative
       // can not be calculated,
-      SETERRQ(
-        PETSC_COMM_SELF,
-        MOFEM_OPERATION_UNSUCCESSFUL,
-        "ADOL-C function evaluation with error"
-      );
+      SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
+              "ADOL-C function evaluation with error");
     }
   }
 
-  if(hEssian) {
-    commonData.hessianEnergy[gg].resize(
-      nbActiveVariables*nbActiveVariables,false
-    );
-    double* H[nbActiveVariables];
-    for(int n = 0;n!=nbActiveVariables;n++) {
-      H[n] = &(commonData.hessianEnergy[gg][n*nbActiveVariables]);
+  if (hEssian) {
+    commonData.hessianEnergy[gg].resize(nbActiveVariables * nbActiveVariables,
+                                        false);
+    double *H[nbActiveVariables];
+    for (int n = 0; n != nbActiveVariables; n++) {
+      H[n] = &(commonData.hessianEnergy[gg][n * nbActiveVariables]);
     }
-    int r = ::hessian(tAg,nbActiveVariables,&*activeVariables.begin(),H);
-    if(r<0) {
+    int r = ::hessian(tAg, nbActiveVariables, &*activeVariables.begin(), H);
+    if (r < 0) {
       // That means that energy function is not smooth and derivative
       // can not be calculated,
-      SETERRQ(
-        PETSC_COMM_SELF,
-        MOFEM_OPERATION_UNSUCCESSFUL,
-        "ADOL-C function evaluation with error"
-      );
+      SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
+              "ADOL-C function evaluation with error");
     }
   }
 
@@ -627,21 +629,23 @@ MoFEMErrorCode NonlinearElasticElement::OpJacobianEnergy::playTag(const int gg) 
 }
 
 MoFEMErrorCode NonlinearElasticElement::OpJacobianEnergy::doWork(
-  int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
-) {
+    int row_side, EntityType row_type,
+    DataForcesAndSourcesCore::EntData &row_data) {
   MoFEMFunctionBeginHot;
   MoFEMFunctionBeginHot;
 
-  //do it only once, no need to repeat this for edges,faces or tets
-  if(row_type != MBVERTEX) MoFEMFunctionReturnHot(0);
+  // do it only once, no need to repeat this for edges,faces or tets
+  if (row_type != MBVERTEX)
+    MoFEMFunctionReturnHot(0);
 
-
-  if(dAta.tEts.find(getNumeredEntFiniteElementPtr()->getEnt()) == dAta.tEts.end()) {
+  if (dAta.tEts.find(getNumeredEntFiniteElementPtr()->getEnt()) ==
+      dAta.tEts.end()) {
     MoFEMFunctionReturnHot(0);
   }
 
   int nb_dofs = row_data.getFieldData().size();
-  if(nb_dofs==0) MoFEMFunctionReturnHot(0);
+  if (nb_dofs == 0)
+    MoFEMFunctionReturnHot(0);
   dAta.materialAdoublePtr->commonDataPtr = &commonData;
   dAta.materialAdoublePtr->opPtr = this;
 
@@ -652,277 +656,287 @@ MoFEMErrorCode NonlinearElasticElement::OpJacobianEnergy::doWork(
     commonData.jacEnergy.resize(nb_gauss_pts);
 
     ptrh = &(commonData.gradAtGaussPts[commonData.spatialPositions]);
-    if(aLe) {
+    if (aLe) {
       ptrH = &(commonData.gradAtGaussPts[commonData.meshPositions]);
     }
 
-    for(int gg = 0;gg!=nb_gauss_pts;gg++) {
+    for (int gg = 0; gg != nb_gauss_pts; gg++) {
 
       dAta.materialAdoublePtr->gG = gg;
 
       // Record tag and calualte stress
-      if(recordTagForIntegrationPoint(gg)) {
-        ierr = recordTag(gg); CHKERRG(ierr);
+      if (recordTagForIntegrationPoint(gg)) {
+        ierr = recordTag(gg);
+        CHKERRG(ierr);
       }
 
-      activeVariables.resize(nbActiveVariables,false);
-      if(!aLe) {
-        for(int dd1 = 0;dd1<3;dd1++) {
-          for(int dd2 = 0;dd2<3;dd2++) {
-            activeVariables(dd1*3+dd2) = (*ptrh)[gg](dd1,dd2);
+      activeVariables.resize(nbActiveVariables, false);
+      if (!aLe) {
+        for (int dd1 = 0; dd1 < 3; dd1++) {
+          for (int dd2 = 0; dd2 < 3; dd2++) {
+            activeVariables(dd1 * 3 + dd2) = (*ptrh)[gg](dd1, dd2);
           }
         }
       } else {
-        for(int dd1 = 0;dd1<3;dd1++) {
-          for(int dd2 = 0;dd2<3;dd2++) {
-            activeVariables(dd1*3+dd2) = (*ptrh)[gg](dd1,dd2);
+        for (int dd1 = 0; dd1 < 3; dd1++) {
+          for (int dd2 = 0; dd2 < 3; dd2++) {
+            activeVariables(dd1 * 3 + dd2) = (*ptrh)[gg](dd1, dd2);
           }
         }
-        for(int dd1 = 0;dd1<3;dd1++) {
-          for(int dd2 = 0;dd2<3;dd2++) {
-            activeVariables(9+dd1*3+dd2) = (*ptrH)[gg](dd1,dd2);
+        for (int dd1 = 0; dd1 < 3; dd1++) {
+          for (int dd2 = 0; dd2 < 3; dd2++) {
+            activeVariables(9 + dd1 * 3 + dd2) = (*ptrH)[gg](dd1, dd2);
           }
         }
       }
-      ierr = dAta.materialAdoublePtr->setUserActiveVariables(activeVariables); CHKERRG(ierr);
+      ierr = dAta.materialAdoublePtr->setUserActiveVariables(activeVariables);
+      CHKERRG(ierr);
 
       // Play tag and calculate stress or tangent
-      ierr = playTag(gg); CHKERRG(ierr);
-
+      ierr = playTag(gg);
+      CHKERRG(ierr);
     }
 
   } catch (MoFEMException const &e) {
-    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
+    SETERRQ(PETSC_COMM_SELF, e.errorCode, e.errorMessage);
   }
 
   MoFEMFunctionReturnHot(0);
 }
 
-
-NonlinearElasticElement::OpRhsPiolaKirchhoff::OpRhsPiolaKirchhoff(const std::string field_name,BlockData &data,CommonData &common_data):
-  VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
-  dAta(data),
-  commonData(common_data),
-  aLe(false) {}
+NonlinearElasticElement::OpRhsPiolaKirchhoff::OpRhsPiolaKirchhoff(
+    const std::string field_name, BlockData &data, CommonData &common_data)
+    : VolumeElementForcesAndSourcesCore::UserDataOperator(
+          field_name, UserDataOperator::OPROW),
+      dAta(data), commonData(common_data), aLe(false) {}
 
 MoFEMErrorCode NonlinearElasticElement::OpRhsPiolaKirchhoff::aSemble(
-  int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
-) {
+    int row_side, EntityType row_type,
+    DataForcesAndSourcesCore::EntData &row_data) {
   MoFEMFunctionBeginHot;
 
   int nb_dofs = row_data.getIndices().size();
   int *indices_ptr = &row_data.getIndices()[0];
-  if(!dAta.forcesOnlyOnEntitiesRow.empty()) {
-    iNdices.resize(nb_dofs,false);
+  if (!dAta.forcesOnlyOnEntitiesRow.empty()) {
+    iNdices.resize(nb_dofs, false);
     noalias(iNdices) = row_data.getIndices();
     indices_ptr = &iNdices[0];
-    VectorDofs& dofs = row_data.getFieldDofs();
+    VectorDofs &dofs = row_data.getFieldDofs();
     VectorDofs::iterator dit = dofs.begin();
-    for(int ii = 0;dit!=dofs.end();dit++,ii++) {
-      if(dAta.forcesOnlyOnEntitiesRow.find((*dit)->getEnt())==dAta.forcesOnlyOnEntitiesRow.end()) {
+    for (int ii = 0; dit != dofs.end(); dit++, ii++) {
+      if (dAta.forcesOnlyOnEntitiesRow.find((*dit)->getEnt()) ==
+          dAta.forcesOnlyOnEntitiesRow.end()) {
         iNdices[ii] = -1;
       }
     }
   }
-  ierr = VecSetValues(
-    getFEMethod()->snes_f,
-    nb_dofs,
-    indices_ptr,
-    &nf[0],
-    ADD_VALUES
-  ); CHKERRG(ierr);
+  ierr = VecSetValues(getFEMethod()->snes_f, nb_dofs, indices_ptr, &nf[0],
+                      ADD_VALUES);
+  CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
 MoFEMErrorCode NonlinearElasticElement::OpRhsPiolaKirchhoff::doWork(
-  int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
-) {
+    int row_side, EntityType row_type,
+    DataForcesAndSourcesCore::EntData &row_data) {
   MoFEMFunctionBeginHot;
 
-
-  if(dAta.tEts.find(getNumeredEntFiniteElementPtr()->getEnt()) == dAta.tEts.end()) {
+  if (dAta.tEts.find(getNumeredEntFiniteElementPtr()->getEnt()) ==
+      dAta.tEts.end()) {
     MoFEMFunctionReturnHot(0);
   }
 
   const int nb_dofs = row_data.getIndices().size();
-  if(nb_dofs==0) MoFEMFunctionReturnHot(0);
-  if((unsigned int)nb_dofs > 3*row_data.getN().size2()) {
-    SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+  if (nb_dofs == 0)
+    MoFEMFunctionReturnHot(0);
+  if ((unsigned int)nb_dofs > 3 * row_data.getN().size2()) {
+    SETERRQ(PETSC_COMM_SELF, 1, "data inconsistency");
   }
   const int nb_base_functions = row_data.getN().size2();
   const int nb_gauss_pts = row_data.getN().size1();
 
   try {
 
-    nf.resize(nb_dofs,false);
+    nf.resize(nb_dofs, false);
     nf.clear();
 
-    FTensor::Tensor1<double*,3> diff_base_functions = row_data.getFTensor1DiffN<3>();
-    FTensor::Index<'i',3> i;
-    FTensor::Index<'j',3> j;
+    FTensor::Tensor1<double *, 3> diff_base_functions =
+        row_data.getFTensor1DiffN<3>();
+    FTensor::Index<'i', 3> i;
+    FTensor::Index<'j', 3> j;
 
-    for(int gg = 0;gg!=nb_gauss_pts;gg++) {
-      double val = getVolume()*getGaussPts()(3,gg);
-      if((!aLe)&&getHoGaussPtsDetJac().size()>0) {
+    for (int gg = 0; gg != nb_gauss_pts; gg++) {
+      double val = getVolume() * getGaussPts()(3, gg);
+      if ((!aLe) && getHoGaussPtsDetJac().size() > 0) {
         val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
       }
-      const MatrixDouble& stress = commonData.sTress[gg];
-      FTensor::Tensor2<const double *,3,3> t3(
-        &stress(0,0),&stress(0,1),&stress(0,2),
-        &stress(1,0),&stress(1,1),&stress(1,2),
-        &stress(2,0),&stress(2,1),&stress(2,2)
-      );
-      FTensor::Tensor1<double*,3> rhs(&nf[0],&nf[1],&nf[2],3);
+      const MatrixDouble &stress = commonData.sTress[gg];
+      FTensor::Tensor2<const double *, 3, 3> t3(
+          &stress(0, 0), &stress(0, 1), &stress(0, 2), &stress(1, 0),
+          &stress(1, 1), &stress(1, 2), &stress(2, 0), &stress(2, 1),
+          &stress(2, 2));
+      FTensor::Tensor1<double *, 3> rhs(&nf[0], &nf[1], &nf[2], 3);
       int bb = 0;
-      for(;bb!=nb_dofs/3;bb++) {
-        rhs(i) += val*t3(i,j)*diff_base_functions(j);
+      for (; bb != nb_dofs / 3; bb++) {
+        rhs(i) += val * t3(i, j) * diff_base_functions(j);
         ++rhs;
         ++diff_base_functions;
       }
-      for(;bb!=nb_base_functions;bb++) {
+      for (; bb != nb_base_functions; bb++) {
         ++diff_base_functions;
       }
     }
 
-    //std::cerr << "nf : " << nf << std::endl;
-    ierr = aSemble(row_side,row_type,row_data); CHKERRG(ierr);
+    // std::cerr << "nf : " << nf << std::endl;
+    ierr = aSemble(row_side, row_type, row_data);
+    CHKERRG(ierr);
 
   } catch (MoFEMException const &e) {
-    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
+    SETERRQ(PETSC_COMM_SELF, e.errorCode, e.errorMessage);
   }
 
   MoFEMFunctionReturnHot(0);
 }
 
-NonlinearElasticElement::OpEnergy::OpEnergy(
-  const std::string field_name,BlockData &data,CommonData &common_data,Vec *v_ptr,bool field_disp
-):
-VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
-dAta(data),commonData(common_data),
-Vptr(v_ptr),
-fieldDisp(field_disp) {
-}
+NonlinearElasticElement::OpEnergy::OpEnergy(const std::string field_name,
+                                            BlockData &data,
+                                            CommonData &common_data, Vec *v_ptr,
+                                            bool field_disp)
+    : VolumeElementForcesAndSourcesCore::UserDataOperator(
+          field_name, UserDataOperator::OPROW),
+      dAta(data), commonData(common_data), Vptr(v_ptr), fieldDisp(field_disp) {}
 
 MoFEMErrorCode NonlinearElasticElement::OpEnergy::doWork(
-  int row_side,EntityType row_type,DataForcesAndSourcesCore::EntData &row_data
-) {
+    int row_side, EntityType row_type,
+    DataForcesAndSourcesCore::EntData &row_data) {
   MoFEMFunctionBeginHot;
 
-
-  if(row_type != MBVERTEX) MoFEMFunctionReturnHot(0);
-  if(dAta.tEts.find(getNumeredEntFiniteElementPtr()->getEnt()) == dAta.tEts.end()) {
+  if (row_type != MBVERTEX)
+    MoFEMFunctionReturnHot(0);
+  if (dAta.tEts.find(getNumeredEntFiniteElementPtr()->getEnt()) ==
+      dAta.tEts.end()) {
     MoFEMFunctionReturnHot(0);
   }
 
   try {
 
-    std::vector<MatrixDouble > &F = (commonData.gradAtGaussPts[commonData.spatialPositions]);
+    std::vector<MatrixDouble> &F =
+        (commonData.gradAtGaussPts[commonData.spatialPositions]);
 
-    for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
-      double val = getVolume()*getGaussPts()(3,gg);
-      if(getHoGaussPtsDetJac().size()>0) {
+    for (unsigned int gg = 0; gg < row_data.getN().size1(); gg++) {
+      double val = getVolume() * getGaussPts()(3, gg);
+      if (getHoGaussPtsDetJac().size() > 0) {
         val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
       }
 
-      dAta.materialDoublePtr->F.resize(3,3,false);
+      dAta.materialDoublePtr->F.resize(3, 3, false);
       noalias(dAta.materialDoublePtr->F) = F[gg];
-      if(fieldDisp) {
-        for(int dd = 0;dd<3;dd++) {
-          dAta.materialDoublePtr->F(dd,dd) += 1;
+      if (fieldDisp) {
+        for (int dd = 0; dd < 3; dd++) {
+          dAta.materialDoublePtr->F(dd, dd) += 1;
         }
       }
 
       int nb_active_variables = 0;
-      ierr = dAta.materialDoublePtr->setUserActiveVariables(nb_active_variables); CHKERRG(ierr);
-      ierr = dAta.materialDoublePtr->calculateElasticEnergy(dAta,getNumeredEntFiniteElementPtr()); CHKERRG(ierr);
-      ierr = VecSetValue(*Vptr,0,val*dAta.materialDoublePtr->eNergy,ADD_VALUES); CHKERRG(ierr);
-
+      ierr =
+          dAta.materialDoublePtr->setUserActiveVariables(nb_active_variables);
+      CHKERRG(ierr);
+      ierr = dAta.materialDoublePtr->calculateElasticEnergy(
+          dAta, getNumeredEntFiniteElementPtr());
+      CHKERRG(ierr);
+      ierr = VecSetValue(*Vptr, 0, val * dAta.materialDoublePtr->eNergy,
+                         ADD_VALUES);
+      CHKERRG(ierr);
     }
 
   } catch (MoFEMException const &e) {
-    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
+    SETERRQ(PETSC_COMM_SELF, e.errorCode, e.errorMessage);
   }
 
   MoFEMFunctionReturnHot(0);
 }
 
-
 NonlinearElasticElement::OpLhsPiolaKirchhoff_dx::OpLhsPiolaKirchhoff_dx(
-  const std::string vel_field,const std::string field_name,BlockData &data,CommonData &common_data
-):
-VolumeElementForcesAndSourcesCore::UserDataOperator(vel_field,field_name,UserDataOperator::OPROWCOL),
-dAta(data),
-commonData(common_data),
-aLe(false) {
-}
+    const std::string vel_field, const std::string field_name, BlockData &data,
+    CommonData &common_data)
+    : VolumeElementForcesAndSourcesCore::UserDataOperator(
+          vel_field, field_name, UserDataOperator::OPROWCOL),
+      dAta(data), commonData(common_data), aLe(false) {}
 
 template <int S>
 static MoFEMErrorCode get_jac(DataForcesAndSourcesCore::EntData &col_data,
                               int gg, MatrixDouble &jac_stress,
                               MatrixDouble &jac) {
   jac.clear();
-  FTensor::Index<'i',3> i;
-  FTensor::Index<'j',3> j;
-  FTensor::Index<'k',3> k;
+  FTensor::Index<'i', 3> i;
+  FTensor::Index<'j', 3> j;
+  FTensor::Index<'k', 3> k;
   int nb_col = col_data.getFieldData().size();
-  double *diff_ptr = const_cast<double*>(&(col_data.getDiffN(gg,nb_col/3)(0,0)));
-  // First two indices 'i','j' derivatives of 1st Piola-stress, third index 'k' is
-  // displacement component
-  FTensor::Tensor3<double*,3,3,3> t3_1_0(
-    &jac_stress(3*0+0,S+0),&jac_stress(3*0+0,S+1),&jac_stress(3*0+0,S+2),
-    &jac_stress(3*0+1,S+0),&jac_stress(3*0+1,S+1),&jac_stress(3*0+1,S+2),
-    &jac_stress(3*0+2,S+0),&jac_stress(3*0+2,S+1),&jac_stress(3*0+2,S+2),
-    &jac_stress(3*1+0,S+0),&jac_stress(3*1+0,S+1),&jac_stress(3*1+0,S+2),
-    &jac_stress(3*1+1,S+0),&jac_stress(3*1+1,S+1),&jac_stress(3*1+1,S+2),
-    &jac_stress(3*1+2,S+0),&jac_stress(3*1+2,S+1),&jac_stress(3*1+2,S+2),
-    &jac_stress(3*2+0,S+0),&jac_stress(3*2+0,S+1),&jac_stress(3*2+0,S+2),
-    &jac_stress(3*2+1,S+0),&jac_stress(3*2+1,S+1),&jac_stress(3*2+1,S+2),
-    &jac_stress(3*2+2,S+0),&jac_stress(3*2+2,S+1),&jac_stress(3*2+2,S+2),3
-  );
-  FTensor::Tensor3<double*,3,3,3> t3_1_1(
-    &jac_stress(3*0+0,S+3),&jac_stress(3*0+0,S+4),&jac_stress(3*0+0,S+5),
-    &jac_stress(3*0+1,S+3),&jac_stress(3*0+1,S+4),&jac_stress(3*0+1,S+5),
-    &jac_stress(3*0+2,S+3),&jac_stress(3*0+2,S+4),&jac_stress(3*0+2,S+5),
-    &jac_stress(3*1+0,S+3),&jac_stress(3*1+0,S+4),&jac_stress(3*1+0,S+5),
-    &jac_stress(3*1+1,S+3),&jac_stress(3*1+1,S+4),&jac_stress(3*1+1,S+5),
-    &jac_stress(3*1+2,S+3),&jac_stress(3*1+2,S+4),&jac_stress(3*1+2,S+5),
-    &jac_stress(3*2+0,S+3),&jac_stress(3*2+0,S+4),&jac_stress(3*2+0,S+5),
-    &jac_stress(3*2+1,S+3),&jac_stress(3*2+1,S+4),&jac_stress(3*2+1,S+5),
-    &jac_stress(3*2+2,S+3),&jac_stress(3*2+2,S+4),&jac_stress(3*2+2,S+5),3
-  );
-  FTensor::Tensor3<double*,3,3,3> t3_1_2(
-    &jac_stress(3*0+0,S+6),&jac_stress(3*0+0,S+7),&jac_stress(3*0+0,S+8),
-    &jac_stress(3*0+1,S+6),&jac_stress(3*0+1,S+7),&jac_stress(3*0+1,S+8),
-    &jac_stress(3*0+2,S+6),&jac_stress(3*0+2,S+7),&jac_stress(3*0+2,S+8),
-    &jac_stress(3*1+0,S+6),&jac_stress(3*1+0,S+7),&jac_stress(3*1+0,S+8),
-    &jac_stress(3*1+1,S+6),&jac_stress(3*1+1,S+7),&jac_stress(3*1+1,S+8),
-    &jac_stress(3*1+2,S+6),&jac_stress(3*1+2,S+7),&jac_stress(3*1+2,S+8),
-    &jac_stress(3*2+0,S+6),&jac_stress(3*2+0,S+7),&jac_stress(3*2+0,S+8),
-    &jac_stress(3*2+1,S+6),&jac_stress(3*2+1,S+7),&jac_stress(3*2+1,S+8),
-    &jac_stress(3*2+2,S+6),&jac_stress(3*2+2,S+7),&jac_stress(3*2+2,S+8),3
-  );
+  double *diff_ptr =
+      const_cast<double *>(&(col_data.getDiffN(gg, nb_col / 3)(0, 0)));
+  // First two indices 'i','j' derivatives of 1st Piola-stress, third index 'k'
+  // is displacement component
+  FTensor::Tensor3<double *, 3, 3, 3> t3_1_0(
+      &jac_stress(3 * 0 + 0, S + 0), &jac_stress(3 * 0 + 0, S + 1),
+      &jac_stress(3 * 0 + 0, S + 2), &jac_stress(3 * 0 + 1, S + 0),
+      &jac_stress(3 * 0 + 1, S + 1), &jac_stress(3 * 0 + 1, S + 2),
+      &jac_stress(3 * 0 + 2, S + 0), &jac_stress(3 * 0 + 2, S + 1),
+      &jac_stress(3 * 0 + 2, S + 2), &jac_stress(3 * 1 + 0, S + 0),
+      &jac_stress(3 * 1 + 0, S + 1), &jac_stress(3 * 1 + 0, S + 2),
+      &jac_stress(3 * 1 + 1, S + 0), &jac_stress(3 * 1 + 1, S + 1),
+      &jac_stress(3 * 1 + 1, S + 2), &jac_stress(3 * 1 + 2, S + 0),
+      &jac_stress(3 * 1 + 2, S + 1), &jac_stress(3 * 1 + 2, S + 2),
+      &jac_stress(3 * 2 + 0, S + 0), &jac_stress(3 * 2 + 0, S + 1),
+      &jac_stress(3 * 2 + 0, S + 2), &jac_stress(3 * 2 + 1, S + 0),
+      &jac_stress(3 * 2 + 1, S + 1), &jac_stress(3 * 2 + 1, S + 2),
+      &jac_stress(3 * 2 + 2, S + 0), &jac_stress(3 * 2 + 2, S + 1),
+      &jac_stress(3 * 2 + 2, S + 2), 3);
+  FTensor::Tensor3<double *, 3, 3, 3> t3_1_1(
+      &jac_stress(3 * 0 + 0, S + 3), &jac_stress(3 * 0 + 0, S + 4),
+      &jac_stress(3 * 0 + 0, S + 5), &jac_stress(3 * 0 + 1, S + 3),
+      &jac_stress(3 * 0 + 1, S + 4), &jac_stress(3 * 0 + 1, S + 5),
+      &jac_stress(3 * 0 + 2, S + 3), &jac_stress(3 * 0 + 2, S + 4),
+      &jac_stress(3 * 0 + 2, S + 5), &jac_stress(3 * 1 + 0, S + 3),
+      &jac_stress(3 * 1 + 0, S + 4), &jac_stress(3 * 1 + 0, S + 5),
+      &jac_stress(3 * 1 + 1, S + 3), &jac_stress(3 * 1 + 1, S + 4),
+      &jac_stress(3 * 1 + 1, S + 5), &jac_stress(3 * 1 + 2, S + 3),
+      &jac_stress(3 * 1 + 2, S + 4), &jac_stress(3 * 1 + 2, S + 5),
+      &jac_stress(3 * 2 + 0, S + 3), &jac_stress(3 * 2 + 0, S + 4),
+      &jac_stress(3 * 2 + 0, S + 5), &jac_stress(3 * 2 + 1, S + 3),
+      &jac_stress(3 * 2 + 1, S + 4), &jac_stress(3 * 2 + 1, S + 5),
+      &jac_stress(3 * 2 + 2, S + 3), &jac_stress(3 * 2 + 2, S + 4),
+      &jac_stress(3 * 2 + 2, S + 5), 3);
+  FTensor::Tensor3<double *, 3, 3, 3> t3_1_2(
+      &jac_stress(3 * 0 + 0, S + 6), &jac_stress(3 * 0 + 0, S + 7),
+      &jac_stress(3 * 0 + 0, S + 8), &jac_stress(3 * 0 + 1, S + 6),
+      &jac_stress(3 * 0 + 1, S + 7), &jac_stress(3 * 0 + 1, S + 8),
+      &jac_stress(3 * 0 + 2, S + 6), &jac_stress(3 * 0 + 2, S + 7),
+      &jac_stress(3 * 0 + 2, S + 8), &jac_stress(3 * 1 + 0, S + 6),
+      &jac_stress(3 * 1 + 0, S + 7), &jac_stress(3 * 1 + 0, S + 8),
+      &jac_stress(3 * 1 + 1, S + 6), &jac_stress(3 * 1 + 1, S + 7),
+      &jac_stress(3 * 1 + 1, S + 8), &jac_stress(3 * 1 + 2, S + 6),
+      &jac_stress(3 * 1 + 2, S + 7), &jac_stress(3 * 1 + 2, S + 8),
+      &jac_stress(3 * 2 + 0, S + 6), &jac_stress(3 * 2 + 0, S + 7),
+      &jac_stress(3 * 2 + 0, S + 8), &jac_stress(3 * 2 + 1, S + 6),
+      &jac_stress(3 * 2 + 1, S + 7), &jac_stress(3 * 2 + 1, S + 8),
+      &jac_stress(3 * 2 + 2, S + 6), &jac_stress(3 * 2 + 2, S + 7),
+      &jac_stress(3 * 2 + 2, S + 8), 3);
   // Derivate of 1st Piola-stress multiplied by gradient of defamation for
   // base function (dd) and displacement component (rr)
-  FTensor::Tensor2<double*,3,3> t2_1_0(
-    &jac(0,0),&jac(1,0),&jac(2,0),
-    &jac(3,0),&jac(4,0),&jac(5,0),
-    &jac(6,0),&jac(7,0),&jac(8,0),3
-  );
-  FTensor::Tensor2<double*,3,3> t2_1_1(
-    &jac(0,1),&jac(1,1),&jac(2,1),
-    &jac(3,1),&jac(4,1),&jac(5,1),
-    &jac(6,1),&jac(7,1),&jac(8,1),3
-  );
-  FTensor::Tensor2<double*,3,3> t2_1_2(
-    &jac(0,2),&jac(1,2),&jac(2,2),
-    &jac(3,2),&jac(4,2),&jac(5,2),
-    &jac(6,2),&jac(7,2),&jac(8,2),3
-  );
-  FTensor::Tensor1<double*,3> diff(diff_ptr,&diff_ptr[1],&diff_ptr[2],3);
-  for(int dd = 0;dd!=nb_col/3;++dd) {
-    t2_1_0(i,j) += t3_1_0(i,j,k)*diff(k);
-    t2_1_1(i,j) += t3_1_1(i,j,k)*diff(k);
-    t2_1_2(i,j) += t3_1_2(i,j,k)*diff(k);
+  FTensor::Tensor2<double *, 3, 3> t2_1_0(
+      &jac(0, 0), &jac(1, 0), &jac(2, 0), &jac(3, 0), &jac(4, 0), &jac(5, 0),
+      &jac(6, 0), &jac(7, 0), &jac(8, 0), 3);
+  FTensor::Tensor2<double *, 3, 3> t2_1_1(
+      &jac(0, 1), &jac(1, 1), &jac(2, 1), &jac(3, 1), &jac(4, 1), &jac(5, 1),
+      &jac(6, 1), &jac(7, 1), &jac(8, 1), 3);
+  FTensor::Tensor2<double *, 3, 3> t2_1_2(
+      &jac(0, 2), &jac(1, 2), &jac(2, 2), &jac(3, 2), &jac(4, 2), &jac(5, 2),
+      &jac(6, 2), &jac(7, 2), &jac(8, 2), 3);
+  FTensor::Tensor1<double *, 3> diff(diff_ptr, &diff_ptr[1], &diff_ptr[2], 3);
+  for (int dd = 0; dd != nb_col / 3; ++dd) {
+    t2_1_0(i, j) += t3_1_0(i, j, k) * diff(k);
+    t2_1_1(i, j) += t3_1_1(i, j, k) * diff(k);
+    t2_1_2(i, j) += t3_1_2(i, j, k) * diff(k);
     ++t2_1_0;
     ++t2_1_1;
     ++t2_1_2;
@@ -937,13 +951,10 @@ MoFEMErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dx::getJac(
 }
 
 MoFEMErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dx::aSemble(
-  int row_side,int col_side,
-  EntityType row_type,EntityType col_type,
-  DataForcesAndSourcesCore::EntData &row_data,
-  DataForcesAndSourcesCore::EntData &col_data
-) {
+    int row_side, int col_side, EntityType row_type, EntityType col_type,
+    DataForcesAndSourcesCore::EntData &row_data,
+    DataForcesAndSourcesCore::EntData &col_data) {
   MoFEMFunctionBeginHot;
-
 
   int nb_row = row_data.getIndices().size();
   int nb_col = col_data.getIndices().size();
@@ -959,141 +970,140 @@ MoFEMErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dx::aSemble(
     }
   }*/
 
-  if(!dAta.forcesOnlyOnEntitiesRow.empty()) {
-    rowIndices.resize(nb_row,false);
+  if (!dAta.forcesOnlyOnEntitiesRow.empty()) {
+    rowIndices.resize(nb_row, false);
     noalias(rowIndices) = row_data.getIndices();
     row_indices_ptr = &rowIndices[0];
-    VectorDofs& dofs = row_data.getFieldDofs();
+    VectorDofs &dofs = row_data.getFieldDofs();
     VectorDofs::iterator dit = dofs.begin();
-    for(int ii = 0;dit!=dofs.end();dit++,ii++) {
-      if(dAta.forcesOnlyOnEntitiesRow.find((*dit)->getEnt())==dAta.forcesOnlyOnEntitiesRow.end()) {
+    for (int ii = 0; dit != dofs.end(); dit++, ii++) {
+      if (dAta.forcesOnlyOnEntitiesRow.find((*dit)->getEnt()) ==
+          dAta.forcesOnlyOnEntitiesRow.end()) {
         rowIndices[ii] = -1;
       }
     }
   }
 
-  if(!dAta.forcesOnlyOnEntitiesCol.empty()) {
-    colIndices.resize(nb_col,false);
+  if (!dAta.forcesOnlyOnEntitiesCol.empty()) {
+    colIndices.resize(nb_col, false);
     noalias(colIndices) = col_data.getIndices();
     col_indices_ptr = &colIndices[0];
-    VectorDofs& dofs = col_data.getFieldDofs();
+    VectorDofs &dofs = col_data.getFieldDofs();
     VectorDofs::iterator dit = dofs.begin();
-    for(int ii = 0;dit!=dofs.end();dit++,ii++) {
-      if(dAta.forcesOnlyOnEntitiesCol.find((*dit)->getEnt())==dAta.forcesOnlyOnEntitiesCol.end()) {
+    for (int ii = 0; dit != dofs.end(); dit++, ii++) {
+      if (dAta.forcesOnlyOnEntitiesCol.find((*dit)->getEnt()) ==
+          dAta.forcesOnlyOnEntitiesCol.end()) {
         colIndices[ii] = -1;
       }
     }
   }
 
-  ierr = MatSetValues(
-    getFEMethod()->snes_B,
-    nb_row,row_indices_ptr,
-    nb_col,col_indices_ptr,
-    &k(0,0),ADD_VALUES
-  ); CHKERRG(ierr);
+  ierr = MatSetValues(getFEMethod()->snes_B, nb_row, row_indices_ptr, nb_col,
+                      col_indices_ptr, &k(0, 0), ADD_VALUES);
+  CHKERRG(ierr);
 
-  //is symmetric
-  if(row_side != col_side || row_type != col_type) {
+  // is symmetric
+  if (row_side != col_side || row_type != col_type) {
 
     row_indices_ptr = &row_data.getIndices()[0];
     col_indices_ptr = &col_data.getIndices()[0];
 
-    if(!dAta.forcesOnlyOnEntitiesCol.empty()) {
-      rowIndices.resize(nb_row,false);
+    if (!dAta.forcesOnlyOnEntitiesCol.empty()) {
+      rowIndices.resize(nb_row, false);
       noalias(rowIndices) = row_data.getIndices();
       row_indices_ptr = &rowIndices[0];
-      VectorDofs& dofs = row_data.getFieldDofs();
+      VectorDofs &dofs = row_data.getFieldDofs();
       VectorDofs::iterator dit = dofs.begin();
-      for(int ii = 0;dit!=dofs.end();dit++,ii++) {
-        if(dAta.forcesOnlyOnEntitiesCol.find((*dit)->getEnt())==dAta.forcesOnlyOnEntitiesCol.end()) {
+      for (int ii = 0; dit != dofs.end(); dit++, ii++) {
+        if (dAta.forcesOnlyOnEntitiesCol.find((*dit)->getEnt()) ==
+            dAta.forcesOnlyOnEntitiesCol.end()) {
           rowIndices[ii] = -1;
         }
       }
     }
 
-    if(!dAta.forcesOnlyOnEntitiesRow.empty()) {
-      colIndices.resize(nb_col,false);
+    if (!dAta.forcesOnlyOnEntitiesRow.empty()) {
+      colIndices.resize(nb_col, false);
       noalias(colIndices) = col_data.getIndices();
       col_indices_ptr = &colIndices[0];
-      VectorDofs& dofs = col_data.getFieldDofs();
+      VectorDofs &dofs = col_data.getFieldDofs();
       VectorDofs::iterator dit = dofs.begin();
-      for(int ii = 0;dit!=dofs.end();dit++,ii++) {
-        if(dAta.forcesOnlyOnEntitiesRow.find((*dit)->getEnt())==dAta.forcesOnlyOnEntitiesRow.end()) {
+      for (int ii = 0; dit != dofs.end(); dit++, ii++) {
+        if (dAta.forcesOnlyOnEntitiesRow.find((*dit)->getEnt()) ==
+            dAta.forcesOnlyOnEntitiesRow.end()) {
           colIndices[ii] = -1;
         }
       }
     }
 
-    trans_k.resize(nb_col,nb_row,false);
+    trans_k.resize(nb_col, nb_row, false);
     noalias(trans_k) = trans(k);
-    ierr = MatSetValues(
-      getFEMethod()->snes_B,
-      nb_col,col_indices_ptr,
-      nb_row,row_indices_ptr,
-      &trans_k(0,0),ADD_VALUES
-    ); CHKERRG(ierr);
+    ierr = MatSetValues(getFEMethod()->snes_B, nb_col, col_indices_ptr, nb_row,
+                        row_indices_ptr, &trans_k(0, 0), ADD_VALUES);
+    CHKERRG(ierr);
   }
 
   MoFEMFunctionReturnHot(0);
 }
 
 MoFEMErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dx::doWork(
-  int row_side,int col_side,
-  EntityType row_type,EntityType col_type,
-  DataForcesAndSourcesCore::EntData &row_data,
-  DataForcesAndSourcesCore::EntData &col_data
-) {
+    int row_side, int col_side, EntityType row_type, EntityType col_type,
+    DataForcesAndSourcesCore::EntData &row_data,
+    DataForcesAndSourcesCore::EntData &col_data) {
   MoFEMFunctionBeginHot;
 
   int nb_row = row_data.getIndices().size();
   int nb_col = col_data.getIndices().size();
-  if(nb_row == 0) MoFEMFunctionReturnHot(0);
-  if(nb_col == 0) MoFEMFunctionReturnHot(0);
+  if (nb_row == 0)
+    MoFEMFunctionReturnHot(0);
+  if (nb_col == 0)
+    MoFEMFunctionReturnHot(0);
 
-  if(dAta.tEts.find(getNumeredEntFiniteElementPtr()->getEnt()) == dAta.tEts.end()) {
+  if (dAta.tEts.find(getNumeredEntFiniteElementPtr()->getEnt()) ==
+      dAta.tEts.end()) {
     MoFEMFunctionReturnHot(0);
   }
 
   // const int nb_base_functions = row_data.getN().size2();
   const int nb_gauss_pts = row_data.getN().size1();
 
-  FTensor::Index<'i',3> i;
-  FTensor::Index<'j',3> j;
-  FTensor::Index<'m',3> m;
+  FTensor::Index<'i', 3> i;
+  FTensor::Index<'j', 3> j;
+  FTensor::Index<'m', 3> m;
 
   try {
 
-    k.resize(nb_row,nb_col,false);
+    k.resize(nb_row, nb_col, false);
     k.clear();
-    jac.resize(9,nb_col,false);
+    jac.resize(9, nb_col, false);
 
-    for(unsigned int gg = 0;gg!=nb_gauss_pts;gg++) {
-      ierr = getJac(col_data,gg); CHKERRG(ierr);
-      double val = getVolume()*getGaussPts()(3,gg);
-      if((!aLe)&&(getHoGaussPtsDetJac().size()>0)) {
+    for (unsigned int gg = 0; gg != nb_gauss_pts; gg++) {
+      ierr = getJac(col_data, gg);
+      CHKERRG(ierr);
+      double val = getVolume() * getGaussPts()(3, gg);
+      if ((!aLe) && (getHoGaussPtsDetJac().size() > 0)) {
         val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
       }
-      FTensor::Tensor3<double*,3,3,3> t3_1(
-        &jac(3*0+0,0),&jac(3*0+0,1),&jac(3*0+0,2),
-        &jac(3*0+1,0),&jac(3*0+1,1),&jac(3*0+1,2),
-        &jac(3*0+2,0),&jac(3*0+2,1),&jac(3*0+2,2),
-        &jac(3*1+0,0),&jac(3*1+0,1),&jac(3*1+0,2),
-        &jac(3*1+1,0),&jac(3*1+1,1),&jac(3*1+1,2),
-        &jac(3*1+2,0),&jac(3*1+2,1),&jac(3*1+2,2),
-        &jac(3*2+0,0),&jac(3*2+0,1),&jac(3*2+0,2),
-        &jac(3*2+1,0),&jac(3*2+1,1),&jac(3*2+1,2),
-        &jac(3*2+2,0),&jac(3*2+2,1),&jac(3*2+2,2),3
-      );
+      FTensor::Tensor3<double *, 3, 3, 3> t3_1(
+          &jac(3 * 0 + 0, 0), &jac(3 * 0 + 0, 1), &jac(3 * 0 + 0, 2),
+          &jac(3 * 0 + 1, 0), &jac(3 * 0 + 1, 1), &jac(3 * 0 + 1, 2),
+          &jac(3 * 0 + 2, 0), &jac(3 * 0 + 2, 1), &jac(3 * 0 + 2, 2),
+          &jac(3 * 1 + 0, 0), &jac(3 * 1 + 0, 1), &jac(3 * 1 + 0, 2),
+          &jac(3 * 1 + 1, 0), &jac(3 * 1 + 1, 1), &jac(3 * 1 + 1, 2),
+          &jac(3 * 1 + 2, 0), &jac(3 * 1 + 2, 1), &jac(3 * 1 + 2, 2),
+          &jac(3 * 2 + 0, 0), &jac(3 * 2 + 0, 1), &jac(3 * 2 + 0, 2),
+          &jac(3 * 2 + 1, 0), &jac(3 * 2 + 1, 1), &jac(3 * 2 + 1, 2),
+          &jac(3 * 2 + 2, 0), &jac(3 * 2 + 2, 1), &jac(3 * 2 + 2, 2), 3);
       for (int cc = 0; cc != nb_col / 3; cc++) {
         FTensor::Tensor1<double *, 3> diff_base_functions =
             row_data.getFTensor1DiffN<3>(gg, 0);
-        FTensor::Tensor2<double*,3,3> lhs(
-          &k(0,3*cc+0),&k(0,3*cc+1),&k(0,3*cc+2),
-          &k(1,3*cc+0),&k(1,3*cc+1),&k(1,3*cc+2),
-          &k(2,3*cc+0),&k(2,3*cc+1),&k(2,3*cc+2),3*nb_col
-        );
+        FTensor::Tensor2<double *, 3, 3> lhs(
+            &k(0, 3 * cc + 0), &k(0, 3 * cc + 1), &k(0, 3 * cc + 2),
+            &k(1, 3 * cc + 0), &k(1, 3 * cc + 1), &k(1, 3 * cc + 2),
+            &k(2, 3 * cc + 0), &k(2, 3 * cc + 1), &k(2, 3 * cc + 2),
+            3 * nb_col);
         for (int rr = 0; rr != nb_row / 3; rr++) {
-          lhs(i,j) += val*t3_1(i,m,j)*diff_base_functions(m);
+          lhs(i, j) += val * t3_1(i, m, j) * diff_base_functions(m);
           ++diff_base_functions;
           ++lhs;
         }
@@ -1101,20 +1111,24 @@ MoFEMErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dx::doWork(
       }
     }
 
-    //std::cerr << "N " << getNumeredEntFiniteElementPtr()->getRefEnt() << std::endl << k << std::endl;
-    ierr = aSemble(row_side,col_side,row_type,col_type,row_data,col_data); CHKERRG(ierr);
+    // std::cerr << "N " << getNumeredEntFiniteElementPtr()->getRefEnt() <<
+    // std::endl << k << std::endl;
+    ierr = aSemble(row_side, col_side, row_type, col_type, row_data, col_data);
+    CHKERRG(ierr);
 
   } catch (MoFEMException const &e) {
-    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
+    SETERRQ(PETSC_COMM_SELF, e.errorCode, e.errorMessage);
   }
 
   MoFEMFunctionReturnHot(0);
 }
 
 NonlinearElasticElement::OpLhsPiolaKirchhoff_dX::OpLhsPiolaKirchhoff_dX(
-  const std::string vel_field,const std::string field_name,BlockData &data,CommonData &common_data):
-  OpLhsPiolaKirchhoff_dx(vel_field,field_name,data,common_data)
-  { sYmm = false; }
+    const std::string vel_field, const std::string field_name, BlockData &data,
+    CommonData &common_data)
+    : OpLhsPiolaKirchhoff_dx(vel_field, field_name, data, common_data) {
+  sYmm = false;
+}
 
 MoFEMErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dX::getJac(
     DataForcesAndSourcesCore::EntData &col_data, int gg) {
@@ -1122,39 +1136,39 @@ MoFEMErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dX::getJac(
 }
 
 MoFEMErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dX::aSemble(
-  int row_side,int col_side,
-  EntityType row_type,EntityType col_type,
-  DataForcesAndSourcesCore::EntData &row_data,
-  DataForcesAndSourcesCore::EntData &col_data
-) {
+    int row_side, int col_side, EntityType row_type, EntityType col_type,
+    DataForcesAndSourcesCore::EntData &row_data,
+    DataForcesAndSourcesCore::EntData &col_data) {
   MoFEMFunctionBeginHot;
 
   int nb_row = row_data.getIndices().size();
   int nb_col = col_data.getIndices().size();
 
   int *row_indices_ptr = &row_data.getIndices()[0];
-  if(!dAta.forcesOnlyOnEntitiesRow.empty()) {
-    rowIndices.resize(nb_row,false);
+  if (!dAta.forcesOnlyOnEntitiesRow.empty()) {
+    rowIndices.resize(nb_row, false);
     noalias(rowIndices) = row_data.getIndices();
     row_indices_ptr = &rowIndices[0];
-    VectorDofs& dofs = row_data.getFieldDofs();
+    VectorDofs &dofs = row_data.getFieldDofs();
     VectorDofs::iterator dit = dofs.begin();
-    for(int ii = 0;dit!=dofs.end();dit++,ii++) {
-      if(dAta.forcesOnlyOnEntitiesRow.find((*dit)->getEnt())==dAta.forcesOnlyOnEntitiesRow.end()) {
+    for (int ii = 0; dit != dofs.end(); dit++, ii++) {
+      if (dAta.forcesOnlyOnEntitiesRow.find((*dit)->getEnt()) ==
+          dAta.forcesOnlyOnEntitiesRow.end()) {
         rowIndices[ii] = -1;
       }
     }
   }
 
   int *col_indices_ptr = &col_data.getIndices()[0];
-  if(!dAta.forcesOnlyOnEntitiesCol.empty()) {
-    colIndices.resize(nb_col,false);
+  if (!dAta.forcesOnlyOnEntitiesCol.empty()) {
+    colIndices.resize(nb_col, false);
     noalias(colIndices) = col_data.getIndices();
     col_indices_ptr = &colIndices[0];
-    VectorDofs& dofs = col_data.getFieldDofs();
+    VectorDofs &dofs = col_data.getFieldDofs();
     VectorDofs::iterator dit = dofs.begin();
-    for(int ii = 0;dit!=dofs.end();dit++,ii++) {
-      if(dAta.forcesOnlyOnEntitiesCol.find((*dit)->getEnt())==dAta.forcesOnlyOnEntitiesCol.end()) {
+    for (int ii = 0; dit != dofs.end(); dit++, ii++) {
+      if (dAta.forcesOnlyOnEntitiesCol.find((*dit)->getEnt()) ==
+          dAta.forcesOnlyOnEntitiesCol.end()) {
         colIndices[ii] = -1;
       }
     }
@@ -1168,58 +1182,55 @@ MoFEMErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dX::aSemble(
     }
   }*/
 
-  ierr = MatSetValues(
-    getFEMethod()->snes_B,
-    nb_row,row_indices_ptr,
-    nb_col,col_indices_ptr,
-    &k(0,0),ADD_VALUES
-  ); CHKERRG(ierr);
+  ierr = MatSetValues(getFEMethod()->snes_B, nb_row, row_indices_ptr, nb_col,
+                      col_indices_ptr, &k(0, 0), ADD_VALUES);
+  CHKERRG(ierr);
 
   MoFEMFunctionReturnHot(0);
 }
 
 NonlinearElasticElement::OpJacobianEshelbyStress::OpJacobianEshelbyStress(
-  const std::string field_name,
-  BlockData &data,
-  CommonData &common_data,
-  int tag,
-  bool jacobian,
-  bool ale
-):
-OpJacobianPiolaKirchhoffStress(field_name,data,common_data,tag,jacobian,ale,false) {
-}
+    const std::string field_name, BlockData &data, CommonData &common_data,
+    int tag, bool jacobian, bool ale)
+    : OpJacobianPiolaKirchhoffStress(field_name, data, common_data, tag,
+                                     jacobian, ale, false) {}
 
-MoFEMErrorCode NonlinearElasticElement::OpJacobianEshelbyStress::calculateStress(const int gg) {
+MoFEMErrorCode
+NonlinearElasticElement::OpJacobianEshelbyStress::calculateStress(
+    const int gg) {
   MoFEMFunctionBeginHot;
   try {
 
-    ierr = dAta.materialAdoublePtr->calculateSiGma_EshelbyStress(dAta,getNumeredEntFiniteElementPtr()); CHKERRG(ierr);
-    if(aLe) {
+    ierr = dAta.materialAdoublePtr->calculateSiGma_EshelbyStress(
+        dAta, getNumeredEntFiniteElementPtr());
+    CHKERRG(ierr);
+    if (aLe) {
       dAta.materialAdoublePtr->SiGma =
-      dAta.materialAdoublePtr->detH*prod(dAta.materialAdoublePtr->SiGma,trans(dAta.materialAdoublePtr->invH));
+          dAta.materialAdoublePtr->detH *
+          prod(dAta.materialAdoublePtr->SiGma,
+               trans(dAta.materialAdoublePtr->invH));
     }
-    commonData.sTress[gg].resize(3,3,false);
-    for(int dd1 = 0;dd1<3;dd1++) {
-      for(int dd2 = 0;dd2<3;dd2++) {
-        dAta.materialAdoublePtr->SiGma(dd1,dd2) >>= (commonData.sTress[gg])(dd1,dd2);
+    commonData.sTress[gg].resize(3, 3, false);
+    for (int dd1 = 0; dd1 < 3; dd1++) {
+      for (int dd2 = 0; dd2 < 3; dd2++) {
+        dAta.materialAdoublePtr->SiGma(dd1, dd2) >>=
+            (commonData.sTress[gg])(dd1, dd2);
       }
     }
   } catch (MoFEMException const &e) {
-    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
+    SETERRQ(PETSC_COMM_SELF, e.errorCode, e.errorMessage);
   }
   MoFEMFunctionReturnHot(0);
 }
 
 NonlinearElasticElement::OpRhsEshelbyStress::OpRhsEshelbyStress(
-  const std::string field_name,BlockData &data,CommonData &common_data
-):
-OpRhsPiolaKirchhoff(field_name,data,common_data)
-{}
+    const std::string field_name, BlockData &data, CommonData &common_data)
+    : OpRhsPiolaKirchhoff(field_name, data, common_data) {}
 
 NonlinearElasticElement::OpLhsEshelby_dx::OpLhsEshelby_dx(
-  const std::string vel_field,const std::string field_name,BlockData &data,CommonData &common_data
-):
-OpLhsPiolaKirchhoff_dX(vel_field,field_name,data,common_data) {}
+    const std::string vel_field, const std::string field_name, BlockData &data,
+    CommonData &common_data)
+    : OpLhsPiolaKirchhoff_dX(vel_field, field_name, data, common_data) {}
 
 MoFEMErrorCode NonlinearElasticElement::OpLhsEshelby_dx::getJac(
     DataForcesAndSourcesCore::EntData &col_data, int gg) {
@@ -1227,10 +1238,9 @@ MoFEMErrorCode NonlinearElasticElement::OpLhsEshelby_dx::getJac(
 }
 
 NonlinearElasticElement::OpLhsEshelby_dX::OpLhsEshelby_dX(
-  const std::string vel_field,const std::string field_name,BlockData &data,CommonData &common_data
-):
-OpLhsPiolaKirchhoff_dx(vel_field,field_name,data,common_data)
-{}
+    const std::string vel_field, const std::string field_name, BlockData &data,
+    CommonData &common_data)
+    : OpLhsPiolaKirchhoff_dx(vel_field, field_name, data, common_data) {}
 
 MoFEMErrorCode NonlinearElasticElement::OpLhsEshelby_dX::getJac(
     DataForcesAndSourcesCore::EntData &col_data, int gg) {
@@ -1238,117 +1248,138 @@ MoFEMErrorCode NonlinearElasticElement::OpLhsEshelby_dX::getJac(
 }
 
 MoFEMErrorCode NonlinearElasticElement::setBlocks(
-  boost::shared_ptr<FunctionsToCalculatePiolaKirchhoffI<double> > materialDoublePtr,
-  boost::shared_ptr<FunctionsToCalculatePiolaKirchhoffI<adouble> > materialAdoublePtr
-) {
+    boost::shared_ptr<FunctionsToCalculatePiolaKirchhoffI<double> >
+        materialDoublePtr,
+    boost::shared_ptr<FunctionsToCalculatePiolaKirchhoffI<adouble> >
+        materialAdoublePtr) {
   MoFEMFunctionBeginHot;
 
-
-
-  if(!materialDoublePtr) {
-    SETERRQ(
-      mField.get_comm(),
-      MOFEM_DATA_INCONSISTENCY,
-      "Pointer for materialDoublePtr not allocated"
-    );
+  if (!materialDoublePtr) {
+    SETERRQ(mField.get_comm(), MOFEM_DATA_INCONSISTENCY,
+            "Pointer for materialDoublePtr not allocated");
   }
-  if(!materialAdoublePtr) {
-    SETERRQ(
-      mField.get_comm(),
-      MOFEM_DATA_INCONSISTENCY,
-      "Pointer for materialAdoublePtr not allocated"
-    );
+  if (!materialAdoublePtr) {
+    SETERRQ(mField.get_comm(), MOFEM_DATA_INCONSISTENCY,
+            "Pointer for materialAdoublePtr not allocated");
   }
 
-  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|MAT_ELASTICSET,it)) {
+  for (_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(
+           mField, BLOCKSET | MAT_ELASTICSET, it)) {
     Mat_Elastic mydata;
-    ierr = it->getAttributeDataStructure(mydata); CHKERRG(ierr);
+    ierr = it->getAttributeDataStructure(mydata);
+    CHKERRG(ierr);
     int id = it->getMeshsetId();
     EntityHandle meshset = it->getMeshset();
-    rval = mField.get_moab().get_entities_by_type(meshset,MBTET,setOfBlocks[id].tEts,true); CHKERRG(rval);
+    rval = mField.get_moab().get_entities_by_type(meshset, MBTET,
+                                                  setOfBlocks[id].tEts, true);
+    CHKERRG(rval);
     setOfBlocks[id].iD = id;
     setOfBlocks[id].E = mydata.data.Young;
     setOfBlocks[id].PoissonRatio = mydata.data.Poisson;
     setOfBlocks[id].materialDoublePtr = materialDoublePtr;
     setOfBlocks[id].materialAdoublePtr = materialAdoublePtr;
-    //std::cerr << setOfBlocks[id].tEts << std::endl;
+    // std::cerr << setOfBlocks[id].tEts << std::endl;
   }
 
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode NonlinearElasticElement::addElement(string element_name,
-  string spatial_position_field_name,
-  string material_position_field_name,bool ale) {
+MoFEMErrorCode NonlinearElasticElement::addElement(
+    string element_name, string spatial_position_field_name,
+    string material_position_field_name, bool ale) {
   MoFEMFunctionBeginHot;
-
 
   //
 
-  ierr = mField.add_finite_element(element_name,MF_ZERO); CHKERRG(ierr);
-  ierr = mField.modify_finite_element_add_field_row(element_name,spatial_position_field_name); CHKERRG(ierr);
-  ierr = mField.modify_finite_element_add_field_col(element_name,spatial_position_field_name); CHKERRG(ierr);
-  ierr = mField.modify_finite_element_add_field_data(element_name,spatial_position_field_name); CHKERRG(ierr);
-  if(mField.check_field(material_position_field_name)) {
-    if(ale) {
-      ierr = mField.modify_finite_element_add_field_row(element_name,material_position_field_name); CHKERRG(ierr);
-      ierr = mField.modify_finite_element_add_field_col(element_name,material_position_field_name); CHKERRG(ierr);
+  ierr = mField.add_finite_element(element_name, MF_ZERO);
+  CHKERRG(ierr);
+  ierr = mField.modify_finite_element_add_field_row(
+      element_name, spatial_position_field_name);
+  CHKERRG(ierr);
+  ierr = mField.modify_finite_element_add_field_col(
+      element_name, spatial_position_field_name);
+  CHKERRG(ierr);
+  ierr = mField.modify_finite_element_add_field_data(
+      element_name, spatial_position_field_name);
+  CHKERRG(ierr);
+  if (mField.check_field(material_position_field_name)) {
+    if (ale) {
+      ierr = mField.modify_finite_element_add_field_row(
+          element_name, material_position_field_name);
+      CHKERRG(ierr);
+      ierr = mField.modify_finite_element_add_field_col(
+          element_name, material_position_field_name);
+      CHKERRG(ierr);
     }
-    ierr = mField.modify_finite_element_add_field_data(element_name,material_position_field_name); CHKERRG(ierr);
+    ierr = mField.modify_finite_element_add_field_data(
+        element_name, material_position_field_name);
+    CHKERRG(ierr);
   }
 
-  std::map<int,BlockData>::iterator sit = setOfBlocks.begin();
-  for(;sit!=setOfBlocks.end();sit++) {
-    ierr = mField.add_ents_to_finite_element_by_type(sit->second.tEts,MBTET,element_name); CHKERRG(ierr);
+  std::map<int, BlockData>::iterator sit = setOfBlocks.begin();
+  for (; sit != setOfBlocks.end(); sit++) {
+    ierr = mField.add_ents_to_finite_element_by_type(sit->second.tEts, MBTET,
+                                                     element_name);
+    CHKERRG(ierr);
   }
 
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode NonlinearElasticElement::setOperators(
-  string spatial_position_field_name,
-  string material_position_field_name,
-  bool ale,bool field_disp
-) {
+MoFEMErrorCode
+NonlinearElasticElement::setOperators(string spatial_position_field_name,
+                                      string material_position_field_name,
+                                      bool ale, bool field_disp) {
   MoFEMFunctionBeginHot;
 
   commonData.spatialPositions = spatial_position_field_name;
   commonData.meshPositions = material_position_field_name;
 
-  //Rhs
-  feRhs.getOpPtrVector().push_back(new OpGetCommonDataAtGaussPts(spatial_position_field_name,commonData));
-  if(mField.check_field(material_position_field_name)) {
-    feRhs.getOpPtrVector().push_back(new OpGetCommonDataAtGaussPts(material_position_field_name,commonData));
+  // Rhs
+  feRhs.getOpPtrVector().push_back(
+      new OpGetCommonDataAtGaussPts(spatial_position_field_name, commonData));
+  if (mField.check_field(material_position_field_name)) {
+    feRhs.getOpPtrVector().push_back(new OpGetCommonDataAtGaussPts(
+        material_position_field_name, commonData));
   }
-  std::map<int,BlockData>::iterator sit = setOfBlocks.begin();
-  for(;sit!=setOfBlocks.end();sit++) {
-    feRhs.getOpPtrVector().push_back(
-      new OpJacobianPiolaKirchhoffStress(spatial_position_field_name,sit->second,commonData,tAg,false,ale,field_disp)
-    );
-    feRhs.getOpPtrVector().push_back(new OpRhsPiolaKirchhoff(spatial_position_field_name,sit->second,commonData));
-  }
-
-  //Energy
-  feEnergy.getOpPtrVector().push_back(new OpGetCommonDataAtGaussPts(spatial_position_field_name,commonData));
-  if(mField.check_field(material_position_field_name)) {
-    feEnergy.getOpPtrVector().push_back(new OpGetCommonDataAtGaussPts(material_position_field_name,commonData));
-  }
-  sit = setOfBlocks.begin();
-  for(;sit!=setOfBlocks.end();sit++) {
-    feEnergy.getOpPtrVector().push_back(new OpEnergy(spatial_position_field_name,sit->second,commonData,&feEnergy.V,field_disp));
+  std::map<int, BlockData>::iterator sit = setOfBlocks.begin();
+  for (; sit != setOfBlocks.end(); sit++) {
+    feRhs.getOpPtrVector().push_back(new OpJacobianPiolaKirchhoffStress(
+        spatial_position_field_name, sit->second, commonData, tAg, false, ale,
+        field_disp));
+    feRhs.getOpPtrVector().push_back(new OpRhsPiolaKirchhoff(
+        spatial_position_field_name, sit->second, commonData));
   }
 
-  //Lhs
-  feLhs.getOpPtrVector().push_back(new OpGetCommonDataAtGaussPts(spatial_position_field_name,commonData));
-  if(mField.check_field(material_position_field_name)) {
-    feLhs.getOpPtrVector().push_back(new OpGetCommonDataAtGaussPts(material_position_field_name,commonData));
+  // Energy
+  feEnergy.getOpPtrVector().push_back(
+      new OpGetCommonDataAtGaussPts(spatial_position_field_name, commonData));
+  if (mField.check_field(material_position_field_name)) {
+    feEnergy.getOpPtrVector().push_back(new OpGetCommonDataAtGaussPts(
+        material_position_field_name, commonData));
   }
   sit = setOfBlocks.begin();
-  for(;sit!=setOfBlocks.end();sit++) {
-    feLhs.getOpPtrVector().push_back(
-      new OpJacobianPiolaKirchhoffStress(spatial_position_field_name,sit->second,commonData,tAg,true,ale,field_disp)
-    );
-    feLhs.getOpPtrVector().push_back(new OpLhsPiolaKirchhoff_dx(spatial_position_field_name,spatial_position_field_name,sit->second,commonData));
+  for (; sit != setOfBlocks.end(); sit++) {
+    feEnergy.getOpPtrVector().push_back(
+        new OpEnergy(spatial_position_field_name, sit->second, commonData,
+                     &feEnergy.V, field_disp));
+  }
+
+  // Lhs
+  feLhs.getOpPtrVector().push_back(
+      new OpGetCommonDataAtGaussPts(spatial_position_field_name, commonData));
+  if (mField.check_field(material_position_field_name)) {
+    feLhs.getOpPtrVector().push_back(new OpGetCommonDataAtGaussPts(
+        material_position_field_name, commonData));
+  }
+  sit = setOfBlocks.begin();
+  for (; sit != setOfBlocks.end(); sit++) {
+    feLhs.getOpPtrVector().push_back(new OpJacobianPiolaKirchhoffStress(
+        spatial_position_field_name, sit->second, commonData, tAg, true, ale,
+        field_disp));
+    feLhs.getOpPtrVector().push_back(new OpLhsPiolaKirchhoff_dx(
+        spatial_position_field_name, spatial_position_field_name, sit->second,
+        commonData));
   }
 
   MoFEMFunctionReturnHot(0);

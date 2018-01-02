@@ -465,7 +465,7 @@ MoFEMErrorCode Core::add_ents_to_field_by_PRISMs(EntityHandle meshset,
 
 MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
                                      const ApproximationOrder order, int verb) {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   if (verb == -1)
     verb = verbose;
   *buildMoFEM = 0;
@@ -485,8 +485,7 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
 
   // intersection with field meshset
   Range ents_of_id_meshset;
-  rval = moab.get_entities_by_handle(idm, ents_of_id_meshset, false);
-  CHKERRQ_MOAB(rval);
+  CHKERR moab.get_entities_by_handle(idm, ents_of_id_meshset, false);
   Range field_ents = intersect(ents, ents_of_id_meshset);
   if (verb > VERBOSE) {
     PetscSynchronizedPrintf(
@@ -524,7 +523,7 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
     switch ((*miit)->getSpace()) {
     case H1:
       if (moab.type_from_handle(first) == MBVERTEX) {
-        if (order != 1) {
+        if (order >= 0 && order != 1) {
           SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                   "approximation order for H1 space and vertex different than "
                   "1 makes not sense");
@@ -555,30 +554,31 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
     FieldEntity_multiIndex_ent_view::nth_index<1>::type::iterator vit, hi_vit;
     vit = ents_id_view.get<1>().lower_bound(first);
     hi_vit = ents_id_view.get<1>().upper_bound(second);
-    for (; vit != hi_vit; vit++, first++) {
+    for (; vit != hi_vit; ++vit, ++first) {
 
       // It is a gap in field entities, those need to be added to the field
       while (first != vit->get()->getEnt() && first <= second) {
         new_ents.insert(first);
-        first++;
+        ++first;
       }
 
-      // entity is in database and order is changed or reset
-      const ApproximationOrder old_approximation_order = (*vit)->getMaxOrder();
-      if (old_approximation_order == order)
-        continue;
-      FieldEntity_multiIndex::iterator miit =
-          entsFields.get<Unique_mi_tag>().find((*vit)->getGlobalUniqueId());
+      if (PetscLikely(order >= 0)) {
 
-      if ((*miit)->getMaxOrder() < order)
-        nb_ents_set_order_up++;
-      if ((*miit)->getMaxOrder() > order)
-        nb_ents_set_order_down++;
+        // entity is in database and order is changed or reset
+        const ApproximationOrder old_approximation_order =
+            (*vit)->getMaxOrder();
+        if (old_approximation_order == order)
+          continue;
+        FieldEntity_multiIndex::iterator miit =
+            entsFields.get<Unique_mi_tag>().find((*vit)->getGlobalUniqueId());
 
-      {
+        if ((*miit)->getMaxOrder() < order)
+          nb_ents_set_order_up++;
+        if ((*miit)->getMaxOrder() > order)
+          nb_ents_set_order_down++;
 
-        // set dofs inactive if order is reduced, and set new order to entity if
-        // order is increased (note that dofs are not build if order is
+        // set dofs inactive if order is reduced, and set new order to entity
+        // if order is increased (note that dofs are not build if order is
         // increased)
 
         DofEntityByNameAndEnt &dofs_by_name =
@@ -626,7 +626,6 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
   ents_array->reserve(new_ents.size());
 
   FieldEntity_change_order modify_order(order);
-
   for (Range::const_pair_iterator pit = new_ents.const_pair_begin();
        pit != new_ents.const_pair_end(); pit++) {
     EntityHandle first = pit->first;
@@ -634,10 +633,12 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
 
     // get tags on entities
     Range new_pair(first, second);
-    std::vector<ApproximationOrder *> tag_data_order(new_pair.size());
-    rval = moab.tag_get_by_ptr((*miit)->th_AppOrder, new_pair,
-                               (const void **)&tag_data_order[0]);
-    CHKERRQ_MOAB(rval);
+    std::vector<ApproximationOrder *> tag_data_order;
+    if (order >= 0) {
+      tag_data_order.resize(new_pair.size());
+      CHKERR moab.tag_get_by_ptr((*miit)->th_AppOrder, new_pair,
+                                 (const void **)&tag_data_order[0]);
+    }
 
     // Entity is not in database and order is changed or reset
     RefEntity_multiIndex::index<Ent_mi_tag>::type::iterator miit_ref_ent,
@@ -645,24 +646,34 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
     miit_ref_ent = refinedEntities.get<Ent_mi_tag>().lower_bound(first);
     hi_miit_ref_ent = refinedEntities.get<Ent_mi_tag>().upper_bound(second);
     for (int ee = 0; miit_ref_ent != hi_miit_ref_ent;
-         miit_ref_ent++, first++, ee++) {
-      // Set tag value
-      *tag_data_order[ee] = order;
-      // NOTE: This will work with newer compiler only, use push_back for back
-      // compatibility. ents_array->emplace_back(*miit,*miit_ref_ent);
-      ents_array->push_back(FieldEntity(*miit, *miit_ref_ent));
-      modify_order(&(ents_array->back()));
-      nb_ents_set_order_new++;
-    }
-    for (; first <= second; first++) {
-      RefEntity ref_ent(basicEntityDataPtr, first);
-      // FIXME: need some consistent policy in that case
-      if (ref_ent.getBitRefLevel().none())
-        continue; // not on any mesh and not in database
-      std::cerr << ref_ent << std::endl;
-      std::cerr << "bit level " << ref_ent.getBitRefLevel() << std::endl;
-      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-              "Try to add entities which are not seeded or added to database");
+         ++miit_ref_ent, ++first, ++ee) {
+      if (PetscUnlikely(first != miit_ref_ent->get()->getRefEnt())) {
+        RefEntity ref_ent(basicEntityDataPtr, first);
+        // FIXME: need some consistent policy in that case
+        if (ref_ent.getBitRefLevel().none()) {
+          ++ee;
+          ++first;
+          continue; // not on any mesh and not in database
+        }
+        std::cerr << ref_ent << std::endl;
+        std::cerr << "bit level " << ref_ent.getBitRefLevel() << std::endl;
+        SETERRQ(
+            PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            "Try to add entities which are not seeded or added to database");
+      } else {
+        // Set tag value
+        if (order >= 0) {
+          *tag_data_order[ee] = order;
+          // NOTE: This will work with newer compiler only, use push_back for
+          // back
+          // compatibility. ents_array->emplace_back(*miit,*miit_ref_ent);
+          ents_array->push_back(FieldEntity(*miit, *miit_ref_ent));
+          modify_order(&(ents_array->back()));
+          nb_ents_set_order_new++;
+        } else {
+          ents_array->push_back(FieldEntity(*miit, *miit_ref_ent));
+        }
+      }
     }
   }
 
@@ -697,7 +708,7 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
     PetscSynchronizedFlush(cOmm, PETSC_STDOUT);
   }
 
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 MoFEMErrorCode Core::set_field_order(const EntityHandle meshset,
                                      const EntityType type, const BitFieldId id,
@@ -851,7 +862,7 @@ Core::buildFieldForNoField(const BitFieldId id,
       // check if dof is in darabase
       d_miit.first = dofsField.project<0>(dofsField.get<Unique_mi_tag>().find(
           DofEntity::getGlobalUniqueIdCalculate(rank, *(e_miit.first))));
-      // if dof is not in databse
+      // if dof is not in database
       if (d_miit.first == dofsField.end()) {
         // insert dof
         d_miit = dofsField.insert(
@@ -974,7 +985,7 @@ MoFEMErrorCode Core::buildFieldForL2H1HcurlHdiv(
           }
         }
       }
-      if (DD != feit->get()->getNbDofsOnEnt()) {
+      if (DD > feit->get()->getNbDofsOnEnt()) {
         std::ostringstream ss;
         ss << "rank " << rAnk << " ";
         ss << **feit << std::endl;

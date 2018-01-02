@@ -106,7 +106,7 @@ struct MeshRefinement : public UnknownInterface {
    */
   virtual MoFEMErrorCode refine_TET(const Range &tets, const BitRefLevel &bit,
                                     const bool respect_interface = false,
-                                    int verb = 0);
+                                    int verb = 0, Range *ref_edges = NULL);
 
   /**\brief refine PRISM in the meshset
    *
