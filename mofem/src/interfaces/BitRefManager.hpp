@@ -426,6 +426,28 @@ struct BitRefManager : public UnknownInterface {
 
   /**@{*/
 
+  /** \brief Get child entities form meshset containing parent entities
+   * \ingroup mofem_bit_ref
+   *
+   * Search for refined entities of given type whose parent are entities in
+   *the
+   * parent meshset. It can be used for example to transfer information about
+   * boundary conditions to refined mesh or split mesh by interface
+   * elements. It is used by function refine_MESHSET, to update MESHSET
+   *finite elements.
+   *
+   * \param parent meshset
+   * \param parent_bit refinement level
+   * \param mask of parent bit ref level
+   * \param child_bit refinement level
+   * \param mask of child bit ref level
+   * \param type of refined entity
+   * \param child_type meshset where child entities are stored (if the child
+   *meshset is set to be the parent meshset, the parent would be updated with
+   *the refined entities)
+   * \param recursive if true parent meshset is searched recursively
+   *
+   **/
   MoFEMErrorCode updateMeshsetByEntitiesChildren(const EntityHandle parent,
                                                  const BitRefLevel &parent_bit,
                                                  const BitRefLevel &parent_mask,
@@ -437,8 +459,11 @@ struct BitRefManager : public UnknownInterface {
                                                  int verb = 0);
 
   /** \brief Get child entities form meshset containing parent entities
-    * \ingroup mofem_update_meshsets_and_ranges
-    *
+    * \ingroup mofem_bit_ref
+    * 
+    * \note this calls updateMeshsetByEntitiesChildren with setting masks and 
+    * parent to all bit levels.
+    * 
     * Search for refined entities of given type whose parent are entities in
     *the
     * parent meshset. It can be used for example to transfer information about
@@ -464,6 +489,9 @@ struct BitRefManager : public UnknownInterface {
 
   /** \brief update fields meshesets by child entities
     * \ingroup mofem_update_meshsets_and_ranges
+    *
+    * \note this calls updateMeshsetByEntitiesChildren with setting masks and 
+    * parent to all bit levels for all entities
     *
     */
   MoFEMErrorCode
