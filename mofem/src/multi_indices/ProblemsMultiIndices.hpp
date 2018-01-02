@@ -848,6 +848,15 @@ struct ProblemFiniteElementChangeBitAdd {
   void operator()(Problem &p);
 };
 
+/** \brief set prof dof bit ref mask
+ * \ingroup problems_multi_indices
+ */
+struct ProblemChangeRefLevelBitDofMaskAdd {
+  BitRefLevel bit;
+  ProblemChangeRefLevelBitDofMaskAdd(const BitRefLevel _bit) : bit(_bit){};
+  void operator()(Problem &p) { *(p.tagMaskBitRefLevel) |= bit; };
+};
+
 /** \brief remove finite element from problem
  * \ingroup problems_multi_indices
  */
