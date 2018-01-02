@@ -939,8 +939,7 @@ MoFEMErrorCode PrismInterface::splitSides(
     CHKERR moab.get_connectivity(*eit, conn, num_nodes, true);
     EntityHandle new_conn[num_nodes];
     int nb_new_conn = 0;
-    int ii = 0;
-    for(;ii<num_nodes; ii++) {
+    for (int ii = 0; ii != num_nodes; ++ii) {
       std::map<EntityHandle, EntityHandle>::iterator mit =
           map_nodes.find(conn[ii]);
       if(mit != map_nodes.end()) {
@@ -954,13 +953,15 @@ MoFEMErrorCode PrismInterface::splitSides(
         new_conn[ii] = conn[ii];
       }
     }
-    if(nb_new_conn==0) continue;
+    if (nb_new_conn == 0)
+      continue;
     RefEntity_multiIndex::iterator miit_ref_ent = refined_ents_ptr->find(*eit);
     if (miit_ref_ent == refined_ents_ptr->end()) {
       SETERRQ(m_field.get_comm(), 1,
               "this entity (edge or tri) should be already in database");
     }
-    Range new_ent; //contains all entities (edges or triangles) added to mofem database
+    Range new_ent; // contains all entities (edges or triangles) added to mofem
+                   // database
     switch (moab.type_from_handle(*eit)) {
       case MBTRI: {
         //get entity based on its connectivity
@@ -1009,8 +1010,7 @@ MoFEMErrorCode PrismInterface::splitSides(
     CHKERR set_parent(new_ent[0],*eit,refined_ents_ptr,cOre);
   }
 
-
-  //all other entities, some ents like triangles and faces on the side of tets
+  // all other entities, some ents like triangles and faces on the side of tets
   Range side_adj_faces_and_edges;
   CHKERR moab.get_adjacencies(side_ents3d.subset_by_type(MBTET), 1, true,
                               side_adj_faces_and_edges, moab::Interface::UNION);
@@ -1071,7 +1071,6 @@ MoFEMErrorCode PrismInterface::splitSides(
     EntityHandle parent_prism;
     CHKERR moab.tag_get_data(cOre.get_th_RefParentHandle(), &*pit, 1,
                              &parent_prism);
-    const EntityHandle root_meshset = moab.get_root_set();
     if (moab.type_from_handle(parent_prism) != MBPRISM) {
       SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
               "this prism should have parent which is prism as well");
