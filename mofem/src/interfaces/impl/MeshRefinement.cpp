@@ -36,7 +36,7 @@ MeshRefinement::MeshRefinement(const Core &core)
 
 MoFEMErrorCode MeshRefinement::add_verices_in_the_middel_of_edges(
     const EntityHandle meshset, const BitRefLevel &bit, const bool recursive,
-    int verb) {
+    int verb, EntityHandle start_v) {
   Interface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   MoFEMFunctionBegin;
@@ -85,11 +85,12 @@ MoFEMErrorCode MeshRefinement::add_verices_in_the_middel_of_edges(
       }
     }
   }
-  CHKERR add_verices_in_the_middel_of_edges(edges, bit, verb);
+  CHKERR add_verices_in_the_middel_of_edges(edges, bit, verb, start_v);
   MoFEMFunctionReturn(0);
 }
 MoFEMErrorCode MeshRefinement::add_verices_in_the_middel_of_edges(
-    const Range &_edges, const BitRefLevel &bit, int verb) {
+    const Range &_edges, const BitRefLevel &bit, int verb,
+    EntityHandle start_v) {
   Interface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   const RefEntity_multiIndex *refined_ents_ptr;
@@ -161,7 +162,8 @@ MoFEMErrorCode MeshRefinement::add_verices_in_the_middel_of_edges(
     {
       ReadUtilIface *iface;
       CHKERR moab.query_interface(iface);
-      CHKERR iface->get_node_coords(3, num_nodes, 0, startv, arrays_coord);
+      CHKERR iface->get_node_coords(3, num_nodes, start_v, startv,
+                                    arrays_coord);
     }
     Range verts(startv, startv + num_nodes - 1);
     for (int dd = 0; dd != 3; ++dd) {
@@ -179,13 +181,13 @@ MoFEMErrorCode MeshRefinement::add_verices_in_the_middel_of_edges(
 MoFEMErrorCode MeshRefinement::refine_TET(const EntityHandle meshset,
                                           const BitRefLevel &bit,
                                           const bool respect_interface,
-                                          int verb) {
+                                          int verb, Range *ref_edges_ptr) {
   Interface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   MoFEMFunctionBegin;
   Range tets;
   CHKERR moab.get_entities_by_type(meshset, MBTET, tets, false);
-  CHKERR refine_TET(tets, bit, respect_interface);
+  CHKERR refine_TET(tets, bit, respect_interface, verb, ref_edges_ptr);
   MoFEMFunctionReturn(0);
 }
 
