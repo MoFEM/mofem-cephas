@@ -426,6 +426,16 @@ struct BitRefManager : public UnknownInterface {
 
   /**@{*/
 
+  MoFEMErrorCode updateMeshsetByEntitiesChildren(const EntityHandle parent,
+                                                 const BitRefLevel &parent_bit,
+                                                 const BitRefLevel &parent_mask,
+                                                 const BitRefLevel &child_bit,
+                                                 const BitRefLevel &child_mask,
+                                                 const EntityHandle child,
+                                                 EntityType child_type,
+                                                 const bool recursive = false,
+                                                 int verb = 0);
+
   /** \brief Get child entities form meshset containing parent entities
     * \ingroup mofem_update_meshsets_and_ranges
     *
@@ -450,7 +460,7 @@ struct BitRefManager : public UnknownInterface {
                                                  const EntityHandle child,
                                                  EntityType child_type,
                                                  const bool recursive = false,
-                                                 int verb             = 0);
+                                                 int verb = 0);
 
   /** \brief update fields meshesets by child entities
     * \ingroup mofem_update_meshsets_and_ranges

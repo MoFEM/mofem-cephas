@@ -951,9 +951,10 @@ MoFEMErrorCode BitRefManager::getAdjacencies(
 }
 
 MoFEMErrorCode BitRefManager::updateMeshsetByEntitiesChildren(
-    const EntityHandle parent, const BitRefLevel &child_bit,
-    const EntityHandle child, EntityType child_type, const bool recursive,
-    int verb) {
+    const EntityHandle parent, const BitRefLevel &parent_bit,
+    const BitRefLevel &parent_mask, const BitRefLevel &child_bit,
+    const BitRefLevel &child_mask, const EntityHandle child,
+    EntityType child_type, const bool recursive, int verb) {
   MoFEM::Interface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   const RefEntity_multiIndex *ref_ents_ptr;
@@ -961,6 +962,7 @@ MoFEMErrorCode BitRefManager::updateMeshsetByEntitiesChildren(
   CHKERR m_field.get_ref_ents(&ref_ents_ptr);
   Range ents;
   CHKERR moab.get_entities_by_handle(parent, ents, recursive);
+  CHKERR filterEntitiesByRefLevel(parent_bit, parent_mask, ents, verb);
   if (rval != MB_SUCCESS) {
     std::cerr << parent << std::endl;
     std::cerr << moab.type_from_handle(parent) << " " << MBENTITYSET
@@ -972,6 +974,7 @@ MoFEMErrorCode BitRefManager::updateMeshsetByEntitiesChildren(
   RefEntsByComposite &ref_ents =
       const_cast<RefEntity_multiIndex *>(ref_ents_ptr)
           ->get<Composite_ParentEnt_And_EntType_mi_tag>();
+  Range children_ents;
   for (Range::iterator eit = ents.begin(); eit != ents.end(); ++eit) {
     if (verb >= NOISY) {
       std::ostringstream ss;
@@ -988,27 +991,31 @@ MoFEMErrorCode BitRefManager::updateMeshsetByEntitiesChildren(
         ;
         PetscPrintf(m_field.get_comm(), ss.str().c_str());
       }
-      if (((*miit.first)->getBitRefLevel() & child_bit).any()) {
-        EntityHandle ref_ent = (*miit.first)->getRefEnt();
-        if (ref_ent == *eit)
-          continue;
-        if (ref_ent == 0) {
-          SETERRQ(m_field.get_comm(), MOFEM_IMPOSIBLE_CASE,
-                  "this should not happen");
-        }
-        if (moab.type_from_handle(*eit) == MBENTITYSET) {
-          SETERRQ(m_field.get_comm(), MOFEM_IMPOSIBLE_CASE,
-                  "this should not happen");
-        }
-        CHKERR moab.add_entities(child, &ref_ent, 1);
-        if (verb > 1) {
-          std::ostringstream ss;
-          ss << "good bit " << *miit.first << std::endl;
-          PetscPrintf(m_field.get_comm(), ss.str().c_str());
-        }
+      EntityHandle ref_ent = (*miit.first)->getRefEnt();
+      if (ref_ent == 0) {
+        SETERRQ(m_field.get_comm(), MOFEM_IMPOSIBLE_CASE,
+                "this should not happen");
       }
+      if (moab.type_from_handle(*eit) == MBENTITYSET) {
+        SETERRQ(m_field.get_comm(), MOFEM_IMPOSIBLE_CASE,
+                "this should not happen");
+      }
+      children_ents.insert(ref_ent);
     }
   }
+  CHKERR filterEntitiesByRefLevel(child_bit, child_mask, children_ents, verb);
+  CHKERR moab.add_entities(child, children_ents);
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode BitRefManager::updateMeshsetByEntitiesChildren(
+    const EntityHandle parent, const BitRefLevel &child_bit,
+    const EntityHandle child, EntityType child_type, const bool recursive,
+    int verb) {
+  MoFEMFunctionBegin;
+  CHKERR updateMeshsetByEntitiesChildren(
+      parent, BitRefLevel().set(), BitRefLevel().set(), child_bit,
+      BitRefLevel().set(), child, child_type, recursive, verb);
   MoFEMFunctionReturn(0);
 }
 
@@ -1021,7 +1028,11 @@ MoFEMErrorCode BitRefManager::updateFieldMeshsetByEntitiesChildren(
   Field_multiIndex::iterator fit = fields_ptr->begin();
   for (; fit != fields_ptr->end(); fit++) {
     EntityHandle meshset = (*fit)->getMeshset();
+    CHKERR updateMeshsetByEntitiesChildren(meshset, child_bit, meshset, MBPRISM,
+                                           false, verb);
     CHKERR updateMeshsetByEntitiesChildren(meshset, child_bit, meshset, MBTET,
+                                           false, verb);
+    CHKERR updateMeshsetByEntitiesChildren(meshset, child_bit, meshset, MBQUAD,
                                            false, verb);
     CHKERR updateMeshsetByEntitiesChildren(meshset, child_bit, meshset, MBTRI,
                                            false, verb);
