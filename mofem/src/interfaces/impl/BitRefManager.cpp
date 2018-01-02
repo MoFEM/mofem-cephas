@@ -963,12 +963,9 @@ MoFEMErrorCode BitRefManager::updateMeshsetByEntitiesChildren(
   Range ents;
   CHKERR moab.get_entities_by_handle(parent, ents, recursive);
   CHKERR filterEntitiesByRefLevel(parent_bit, parent_mask, ents, verb);
-  if (rval != MB_SUCCESS) {
-    std::cerr << parent << std::endl;
-    std::cerr << moab.type_from_handle(parent) << " " << MBENTITYSET
-              << std::endl;
+  if (verb >= VERY_VERBOSE) {
+    std::cerr << "Parnets:" << endl << parent << std::endl;
   }
-
   typedef RefEntity_multiIndex::index<
       Composite_ParentEnt_And_EntType_mi_tag>::type RefEntsByComposite;
   RefEntsByComposite &ref_ents =
@@ -976,22 +973,10 @@ MoFEMErrorCode BitRefManager::updateMeshsetByEntitiesChildren(
           ->get<Composite_ParentEnt_And_EntType_mi_tag>();
   Range children_ents;
   for (Range::iterator eit = ents.begin(); eit != ents.end(); ++eit) {
-    if (verb >= NOISY) {
-      std::ostringstream ss;
-      ss << "ent " << *eit << std::endl;
-      ;
-      PetscPrintf(m_field.get_comm(), ss.str().c_str());
-    }
-    std::pair<RefEntsByComposite::iterator, RefEntsByComposite::iterator> miit =
+   std::pair<RefEntsByComposite::iterator, RefEntsByComposite::iterator> miit =
         ref_ents.equal_range(boost::make_tuple(*eit, child_type));
     for (; miit.first != miit.second; ++miit.first) {
-      if (verb >= NOISY) {
-        std::ostringstream ss;
-        ss << "any bit " << *miit.first << std::endl;
-        ;
-        PetscPrintf(m_field.get_comm(), ss.str().c_str());
-      }
-      EntityHandle ref_ent = (*miit.first)->getRefEnt();
+     EntityHandle ref_ent = (*miit.first)->getRefEnt();
       if (ref_ent == 0) {
         SETERRQ(m_field.get_comm(), MOFEM_IMPOSIBLE_CASE,
                 "this should not happen");
@@ -1004,6 +989,9 @@ MoFEMErrorCode BitRefManager::updateMeshsetByEntitiesChildren(
     }
   }
   CHKERR filterEntitiesByRefLevel(child_bit, child_mask, children_ents, verb);
+  if (verb >= VERY_VERBOSE) {
+    std::cerr << "Children: " << endl << parent << std::endl;
+  }
   CHKERR moab.add_entities(child, children_ents);
   MoFEMFunctionReturn(0);
 }
