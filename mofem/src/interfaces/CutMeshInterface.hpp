@@ -133,7 +133,8 @@ struct CutMeshInterface : public UnknownInterface {
    * @param  verb verbosity level
    * @return      error code
    */
-  MoFEMErrorCode findEdgesToCut(const double low_tol = 0, int verb = 0);
+  MoFEMErrorCode findEdgesToCut(const double low_tol = 0, int verb = 0,
+                                const bool debug = false);
 
   MoFEMErrorCode projectZeroDistanceEnts(const double low_tol = 0, int verb = 0);
 

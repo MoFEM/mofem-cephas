@@ -149,7 +149,7 @@ MoFEMErrorCode CutMeshInterface::cutAndTrim(
   CoreInterface &m_field = cOre;
   MoFEMFunctionBegin;
   // cut mesh
-  CHKERR findEdgesToCut(tol_cut);
+  CHKERR findEdgesToCut(tol_cut,QUIET,debug);
   CHKERR projectZeroDistanceEnts(tol_cut_close);
   CHKERR cutEdgesInMiddle(bit_level1);
   if (fixed_edges) {
@@ -166,16 +166,7 @@ MoFEMErrorCode CutMeshInterface::cutAndTrim(
   CHKERR moveMidNodesOnCutEdges(th);
 
   if(debug) {
-    CHKERR cOre.getInterface<BitRefManager>()->writeBitLevelByType(
-        bit_level1, BitRefLevel().set(), MBTET, "out_tets_cut.vtk", "VTK", "");
-    {
-      EntityHandle meshset;
-      CHKERR m_field.get_moab().create_meshset(MESHSET_SET, meshset);
-      CHKERR m_field.get_moab().add_entities(meshset, cutNewSurfaces);
-      CHKERR m_field.get_moab().write_file("cut_new_surfaces.vtk", "VTK", "",
-                                           &meshset, 1);
-      CHKERR m_field.get_moab().delete_entities(&meshset, 1);
-    }
+    CHKERR saveCutEdges();
   }
 
   // trim mesh
@@ -252,7 +243,7 @@ MoFEMErrorCode CutMeshInterface::cutTrimAndMerge(
 }
 
 MoFEMErrorCode CutMeshInterface::findEdgesToCut(const double low_tol,
-                                                int verb) {
+                                                int verb,const bool debug) {
   CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   MoFEMFunctionBegin;
@@ -348,11 +339,48 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(const double low_tol,
   }
   aveLength /= nb_ave_length;
 
-  // tak all volumes adjacent to cut edges
   cutVolumes.clear();
+  // take all volumes adjacent to cut edges
   CHKERR moab.get_adjacencies(cutEdges, 3, false, cutVolumes,
                               moab::Interface::UNION);
   cutVolumes = intersect(cutVolumes,vOlume);
+
+  Range vert_surface;
+  CHKERR moab.get_connectivity(sUrface,vert_surface,true);
+  std::vector<double> vert_surf_coords[3];
+  for(int d = 0;d!=3;++d) {
+    vert_surf_coords[d].resize(vert_surface.size());
+  }
+  CHKERR moab.get_coords(vert_surface, &*vert_surf_coords[0].begin(),
+                    &*vert_surf_coords[1].begin(),
+                    &*vert_surf_coords[2].begin());
+  Range test_volumes = subtract(vOlume,cutVolumes);
+  for (Range::iterator tit = test_volumes.begin(); tit != test_volumes.end();
+       ++tit) {
+    int num_nodes;
+    const EntityHandle *conn;
+    CHKERR moab.get_connectivity(*tit, conn, num_nodes, true);
+    double dist[4];
+    CHKERR moab.tag_get_data(th_dist, conn, 4, dist);
+    if (dist[0] > maxLength || dist[1] > maxLength || dist[2] > maxLength ||
+        dist[3] > maxLength) {
+      continue;
+    }
+    double tet_coords[12];
+    CHKERR moab.get_coords(conn, num_nodes, tet_coords);
+    bool in = false;
+    for (int n = 0; n != vert_surface.size(); ++n) {
+      double glob_coords[] = {vert_surf_coords[0][n], vert_surf_coords[1][n],
+                              vert_surf_coords[2][n]};
+      CHKERR Tools::checkIfPointIsInTet(tet_coords, glob_coords,
+                                        aveLength * low_tol, in);
+      if(in) {
+        cutVolumes.insert(*tit);
+        break;
+      }
+    }
+  }
+
   // get edges on the cut volumes
   Range edges;
   CHKERR moab.get_adjacencies(cutVolumes, 1, false, edges,
@@ -381,6 +409,15 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(const double low_tol,
       cutEdges.insert(*eit);
     }
   }
+
+  // if(debug) {
+  //   EntityHandle out_meshset;
+  //   CHKERR m_field.get_moab().create_meshset(MESHSET_SET, out_meshset);
+  //   CHKERR m_field.get_moab().add_entities(out_meshset, cutEdges);
+  //   CHKERR m_field.get_moab().write_file("cut_edges.vtk", "VTK", "",
+  //                                        &out_meshset, 1);
+  //   CHKERR m_field.get_moab().delete_entities(&out_meshset, 1);
+  // }
 
   MoFEMFunctionReturn(0);
 }
