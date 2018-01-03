@@ -1069,31 +1069,23 @@ MoFEMErrorCode BitRefManager::updateRange(const Range &parent_ents,
   MoFEM::Interface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   const RefEntity_multiIndex *ref_ents_ptr;
-  MoFEMFunctionBeginHot;
-  ierr = m_field.get_ref_ents(&ref_ents_ptr);
-  CHKERRG(ierr);
+  MoFEMFunctionBegin;
+  CHKERR m_field.get_ref_ents(&ref_ents_ptr);
   typedef RefEntity_multiIndex::index<Ent_Ent_mi_tag>::type RefEntsByParent;
   RefEntsByParent &ref_ents =
       const_cast<RefEntity_multiIndex *>(ref_ents_ptr)->get<Ent_Ent_mi_tag>();
-  for (Range::iterator eit = parent_ents.begin(); eit != parent_ents.end();
-       eit++) {
-    RefEntsByParent::iterator miit = ref_ents.lower_bound(*eit);
-    RefEntsByParent::iterator hi_miit = ref_ents.upper_bound(*eit);
-    for (; miit != hi_miit; miit++) {
-      EntityHandle ref_ent = (*miit)->getRefEnt();
-      if (ref_ent == *eit)
-        continue;
-      if (ref_ent == 0) {
+  for (Range::const_pair_iterator pit = parent_ents.const_pair_begin();
+       pit != parent_ents.const_pair_end(); pit++) {
+    RefEntsByParent::iterator it = ref_ents.lower_bound(pit->first);
+    RefEntsByParent::iterator hi_it = ref_ents.upper_bound(pit->second);
+    for (; it != hi_it; it++) {
+      if (it->get()->getEntType() == MBENTITYSET) {
         SETERRQ(m_field.get_comm(), MOFEM_IMPOSIBLE_CASE,
                 "this should not happen");
       }
-      if (moab.type_from_handle(*eit) == MBENTITYSET) {
-        SETERRQ(m_field.get_comm(), MOFEM_IMPOSIBLE_CASE,
-                "this should not happen");
-      }
-      child_ents.insert(ref_ent);
+      child_ents.insert((*it)->getRefEnt());
     }
   }
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 } // namespace MoFEM
