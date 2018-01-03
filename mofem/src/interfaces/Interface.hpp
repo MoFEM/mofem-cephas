@@ -967,6 +967,14 @@ namespace MoFEM {
     modify_problem_ref_level_add_bit(const std::string &name_problem,
                                      const BitRefLevel &bit) = 0;
 
+    /** \brief set dof mask ref level for problem
+     * \ingroup mofem_problems
+     *
+     */
+    virtual MoFEMErrorCode
+    modify_problem_mask_ref_level_add_bit(const std::string &name_problem,
+                                          const BitRefLevel &bit) = 0;
+
     /** \brief set ref level for problem
     * \ingroup mofem_problems
     *
