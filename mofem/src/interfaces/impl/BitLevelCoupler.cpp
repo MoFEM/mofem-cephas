@@ -485,12 +485,10 @@ MoFEMErrorCode BitLevelCoupler::getLocCoordsOnTet(EntityHandle tet,
   CHKERRG(ierr);
   locCoords[0] = locCoords[1] = locCoords[2] = 0;
   ierr = ShapeMBTET(N, &locCoords[0], &locCoords[1], &locCoords[2], 1);
-  ;
   CHKERRG(ierr);
   ierr = ShapeMBTET_inverse(N, diffN, cOords, shifted_glob_coors, locCoords);
   CHKERRG(ierr);
   ierr = ShapeMBTET(N, &locCoords[0], &locCoords[1], &locCoords[2], 1);
-  ;
   CHKERRG(ierr);
 
   if (verb > 1) {
