@@ -55,42 +55,25 @@ struct SetBitRefLevelTool {
   MoFEMErrorCode findEntsToAdd(EntityHandle f, EntityHandle s,
                                Range &seed_ents_range) const {
     MoFEMFunctionBeginHot;
+    seed_ents_range.insert(f, s);
     RefEntity_multiIndex::iterator rit, hi_rit;
     // get lower bound of multi-index
     rit = refEntsPtr->lower_bound(f);
     if (rit == refEntsPtr->end()) {
       // all enties in range are added to database
-      seed_ents_range.insert(f,s);
+      MoFEMFunctionReturnHot(0);
     } else {
       // some entities from range are in database
       hi_rit = refEntsPtr->upper_bound(s);
-      for (; f <= s;) {
-        if (f == rit->get()->getRefEnt()) {
-          if (bIt.any()) {
-            // entity is in database, change bit level only
-            bool success = const_cast<RefEntity_multiIndex *>(refEntsPtr)
-                               ->modify(rit, RefEntity_change_add_bit(bIt));
-            if (!success) {
-              SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
-                      "modification unsuccessful");
-            }
-          }
-          rit++; // move to next one
-          if (rit == hi_rit) {
-            // break loop, rest of the entities in range are not in database
-            ++f;
-            break;
-          }
-        } else {
-          // this entities added to database
-          seed_ents_range.insert(f);
-          ++f;
+      for (; rit != hi_rit; ++rit) {
+        // entity is in database, change bit level only
+        bool success = const_cast<RefEntity_multiIndex *>(refEntsPtr)
+                           ->modify(rit, RefEntity_change_add_bit(bIt));
+        if (!success) {
+          SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
+                  "modification unsuccessful");
         }
-      }
-      // add rest entities to vector of entities going to be added to
-      // database
-      if (f <= s) {
-        seed_ents_range.insert(f, s);
+        seed_ents_range.erase(rit->get()->getRefEnt());
       }
     }
     MoFEMFunctionReturnHot(0);
@@ -110,49 +93,42 @@ struct SetBitRefLevelTool {
       EntityHandle s = pit->second;
       boost::shared_ptr<std::vector<RefEntity> > ref_ents_vec =
           boost::make_shared<std::vector<RefEntity> >();
-      ref_ents_vec->reserve(s-f+1);
-      for(;f<=s;++f) {
+      ref_ents_vec->reserve(s - f + 1);
+      for (; f != (s+1); ++f) {
         ref_ents_vec->push_back(RefEntity(baseEntData, f));
         RefEntity_change_add_bit(bIt).operator()(ref_ents_vec->back());
         shared_ref_ents_vec.push_back(
             boost::shared_ptr<RefEntity>(ref_ents_vec, &ref_ents_vec->back()));
       }
     }
-    const_cast<RefEntity_multiIndex *>(refEntsPtr)
-        ->insert(shared_ref_ents_vec.begin(), shared_ref_ents_vec.end());
+    if (!shared_ref_ents_vec.empty()) {
+      int s0 = refEntsPtr->size();
+      const_cast<RefEntity_multiIndex *>(refEntsPtr)
+          ->insert(shared_ref_ents_vec.begin(), shared_ref_ents_vec.end());
+      if ((refEntsPtr->size() - s0) != shared_ref_ents_vec.size()) {
+        SETERRQ2(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY,
+                "Data inconsistency %d != %d", refEntsPtr->size() - s0,
+                shared_ref_ents_vec.size());
+      }
+    }
     MoFEMFunctionReturnHot(0);
   }
 
   MoFEMErrorCode findElementsToAdd(EntityHandle f, EntityHandle s,
                                Range &seed_fe_range) const {
     MoFEMFunctionBeginHot;
+    seed_fe_range.insert(f, s);
     RefElement_multiIndex::iterator rit, hi_rit;
     // get lower bound of multi-index
     rit = refElementPtr->lower_bound(f);
     if (rit == refElementPtr->end()) {
       // all enties in range are added to database
-      seed_fe_range.insert(f, s);
+      MoFEMFunctionReturnHot(0);
     } else {
       // some entities from range are in database
       hi_rit = refElementPtr->upper_bound(s);
-      for (; f <= s;) {
-        if (f == rit->get()->getRefEnt()) {
-         rit++; // move to next one
-         if (rit == hi_rit) {
-            // break loop, rest of the entities in range are not in database
-            ++f;
-            break;
-          }
-        } else {
-          // this entities added to database
-          seed_fe_range.insert(f);
-          ++f;
-        }
-      }
-      // add rest entities to vector of entities going to be added to
-      // database
-      if (f <= s) {
-        seed_fe_range.insert(f, s);
+      for (; rit != hi_rit; ++rit) {
+        seed_fe_range.erase(rit->get()->getRefEnt());
       }
     }
     MoFEMFunctionReturnHot(0);
@@ -167,7 +143,6 @@ struct SetBitRefLevelTool {
          pit != seed_fe_range.const_pair_end(); ++pit) {
       RefEntity_multiIndex::iterator rit, hi_rit;
       rit = refEntsPtr->lower_bound(pit->first);
-      // if (rit == refEntsPtr->end() && bIt.none()) continue;
       hi_rit = refEntsPtr->upper_bound(pit->second);
       if(std::distance(rit,hi_rit) != (pit->second-pit->first+1)) {
         SETERRQ2(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY,
@@ -659,7 +634,7 @@ MoFEMErrorCode BitRefManager::filterEntitiesByRefLevel(const BitRefLevel &bit,
     EntityHandle ff = 0;
     EntityHandle ss = 0;
 
-    for (; f <= s; ++f) {
+    for (; f != (s + 1); ++f) {
       // Get entity bit ref level
       rval = moab.tag_get_by_ptr(cOre.get_th_RefBitLevel(), &f, 1,
                                  (const void **)(&tag_bit));
