@@ -119,6 +119,7 @@ MoFEMErrorCode MeshRefinement::add_verices_in_the_middel_of_edges(
   }
   std::vector<EntityHandle> parent_edge;
   parent_edge.reserve(edges.size());
+  Range add_bit;
   for (Range::iterator eit = edges.begin(); eit != edges.end(); ++eit) {
     RefEntity_multiIndex_view_by_parent_entity::iterator miit_view =
         ref_parent_ents_view.find(*eit);
@@ -148,13 +149,10 @@ MoFEMErrorCode MeshRefinement::add_verices_in_the_middel_of_edges(
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                 "parent edge does not much");
       }
-      bool success = const_cast<RefEntity_multiIndex *>(refined_ents_ptr)
-                         ->modify(nit, RefEntity_change_add_bit(bit));
-      if (!success)
-        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                "inconsistency in data");
+      add_bit.insert(node);
     }
   }
+  CHKERR m_field.getInterface<BitRefManager>()->addBitRefLevel(add_bit, bit);
   if (!vert_coords[0].empty()) {
     int num_nodes = vert_coords[0].size();
     vector<double *> arrays_coord;
@@ -648,9 +646,12 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
     }
   }
 
+  CHKERR Check()(ref_edges_ptr, refined_ents_ptr);
   CHKERR set_parent(refined_ents_ptr,cOre);
+  CHKERR Check()(ref_edges_ptr, refined_ents_ptr);
   CHKERR m_field.getInterface<BitRefManager>()->setBitRefLevel(ents_to_set_bit,
                                                                bit, true, verb);
+  CHKERR Check()(ref_edges_ptr, refined_ents_ptr);
 
   MoFEMFunctionReturn(0);
 }
