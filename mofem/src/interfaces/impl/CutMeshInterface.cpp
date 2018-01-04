@@ -1259,8 +1259,8 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
         if (q != q)
           q = -1;
         noalias(delta) = (s0 - s1) / maxLength;
-        double dot     = inner_prod(delta, delta);
-        length_map.insert(LengthMapData(q * dot, *eit));
+        double dot = inner_prod(delta, delta);
+        length_map.insert(LengthMapData(pow(q, 2) * sqrt(dot), *eit));
       }
       MoFEMFunctionReturn(0);
     }
