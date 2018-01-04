@@ -301,8 +301,7 @@ struct RefEntity : public BasicEntity {
   /** \brief Get parent entity, i.e. entity form one refinement level up
    */
   inline EntityHandle getParentEnt() const {
-    EntityHandle *tag_parent_ent = getParentEntPtr();
-    return *tag_parent_ent;
+    return *(getParentEntPtr());
   }
 
   /** \brief Get entity ref bit refinement signature
@@ -477,19 +476,6 @@ template <class T> struct Entity_update_pcomm_data {
   }
 };
 
-/** \brief ref mofem entity, remove parent
- * \ingroup ent_multi_indices
- */
-struct RefEntity_change_remove_parent {
-  ErrorCode rval;
-  RefEntity_change_remove_parent() {}
-  inline void operator()(boost::shared_ptr<RefEntity> &e) {
-    rval = e->basicDataPtr->moab.tag_delete_data(
-        e->basicDataPtr->th_RefParentHandle, &e->ent, 1);
-    MOAB_THROW(rval);
-  }
-};
-
 /** \brief change parent
   * \ingroup ent_multi_indices
   *
@@ -502,7 +488,6 @@ struct RefEntity_change_remove_parent {
   */
 struct RefEntity_change_parent {
   EntityHandle pArent;
-  ErrorCode rval;
   RefEntity_change_parent(EntityHandle parent) : pArent(parent) {}
   inline void operator()(boost::shared_ptr<RefEntity> &e) {
     *(e->getParentEntPtr()) = pArent;

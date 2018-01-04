@@ -679,14 +679,12 @@ MoFEMErrorCode Core::delete_ents_by_bit_ref(const BitRefLevel &bit,
 
   // remove parent
   if (remove_parent) {
-    for (Range::pair_iterator p_eit = ents.pair_begin(); p_eit != ents.pair_end();
-         p_eit++) {
-      RefEntity_multiIndex::index<Ent_Ent_mi_tag>::type::iterator pit, hi_pit;
-      pit = refinedEntities.get<Ent_Ent_mi_tag>().lower_bound(p_eit->first);
-      hi_pit = refinedEntities.get<Ent_Ent_mi_tag>().upper_bound(p_eit->second);
-      for (; pit != hi_pit; pit++) {
-        bool success = refinedEntities.modify(refinedEntities.project<0>(pit),
-                                              RefEntity_change_remove_parent());
+    for (Range::iterator eit = ents.begin(); eit != ents.end(); ++eit) {
+      RefEntity_multiIndex::index<Ent_Ent_mi_tag>::type::iterator it;
+      while ((it = refinedEntities.get<Ent_Ent_mi_tag>().find(*eit)) !=
+                   refinedEntities.get<Ent_Ent_mi_tag>().end()) {
+        bool success = refinedEntities.modify(refinedEntities.project<0>(it),
+                                              RefEntity_change_parent(0));
         if (!success) {
           SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
                   "Operation of removing parent unsuccessful");
