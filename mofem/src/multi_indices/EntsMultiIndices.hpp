@@ -260,7 +260,11 @@ struct RefEntity : public BasicEntity {
 
   static MoFEMErrorCode
   getBitRefLevel(Interface &moab, Range ents,
-                 std::vector<BitRefLevel> vec_bit_ref_level);
+                 std::vector<BitRefLevel> &vec_bit_ref_level);
+
+  static MoFEMErrorCode
+  getBitRefLevel(Interface &moab, Range ents,
+                 std::vector<const BitRefLevel *> &vec_ptr_bit_ref_level);
 
   /**
    * \brief Get pointer to parent entity tag.
@@ -442,7 +446,6 @@ typedef multi_index_container<
 typedef multi_index_container<
     boost::shared_ptr<RefEntity>,
     indexed_by<
-
         hashed_non_unique<
             const_mem_fun<RefEntity, EntityHandle, &RefEntity::getParentEnt> >,
         hashed_unique<
@@ -454,7 +457,7 @@ typedef multi_index_container<
                               &RefEntity::getParentEnt> > > >
 
     >
-    RefEntity_multiIndex_view_by_parent_entity;
+    RefEntity_multiIndex_view_by_hashed_parent_entity;
 
 template <class T> struct Entity_update_pcomm_data {
   const int pcommID;

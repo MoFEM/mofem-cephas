@@ -105,7 +105,7 @@ MoFEMErrorCode MeshRefinement::add_verices_in_the_middel_of_edges(
       ref_ents.lower_bound(boost::make_tuple(MBVERTEX, MBEDGE));
   RefEntsByComposite::iterator hi_miit =
       ref_ents.upper_bound(boost::make_tuple(MBVERTEX, MBEDGE));
-  RefEntity_multiIndex_view_by_parent_entity ref_parent_ents_view;
+  RefEntity_multiIndex_view_by_hashed_parent_entity ref_parent_ents_view;
   ref_parent_ents_view.insert(miit,hi_miit);
   if (verb >= VERBOSE) {
     std::ostringstream ss;
@@ -121,7 +121,7 @@ MoFEMErrorCode MeshRefinement::add_verices_in_the_middel_of_edges(
   parent_edge.reserve(edges.size());
   Range add_bit;
   for (Range::iterator eit = edges.begin(); eit != edges.end(); ++eit) {
-    RefEntity_multiIndex_view_by_parent_entity::iterator miit_view =
+    RefEntity_multiIndex_view_by_hashed_parent_entity::iterator miit_view =
         ref_parent_ents_view.find(*eit);
     if (miit_view == ref_parent_ents_view.end()) {
       const EntityHandle *conn;
@@ -295,7 +295,7 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
       Composite_EntType_and_ParentEntType_mi_tag>::type RefEntsByComposite;
   RefEntsByComposite &ref_ents =
       refined_ents_ptr->get<Composite_EntType_and_ParentEntType_mi_tag>();
-  RefEntity_multiIndex_view_by_parent_entity ref_parent_ents_view;
+  RefEntity_multiIndex_view_by_hashed_parent_entity ref_parent_ents_view;
   ref_parent_ents_view.insert(
     ref_ents.lower_bound(boost::make_tuple(MBVERTEX, MBEDGE)),
     ref_ents.upper_bound(boost::make_tuple(MBVERTEX, MBEDGE))
@@ -347,7 +347,7 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
     for (int ee = 0; ee < 6; ee++) {
       EntityHandle edge;
       CHKERR moab.side_element(*tit, 1, ee, edge);
-      RefEntity_multiIndex_view_by_parent_entity::iterator miit_view;
+      RefEntity_multiIndex_view_by_hashed_parent_entity::iterator miit_view;
       miit_view = ref_parent_ents_view.find(edge);
       if (miit_view != ref_parent_ents_view.end()) {
         if (((*miit_view)->getBitRefLevel() & bit).any()) {
@@ -711,7 +711,7 @@ MoFEMErrorCode MeshRefinement::refine_PRISM(const EntityHandle meshset,
       Composite_EntType_and_ParentEntType_mi_tag>::type RefEntsByComposite;
   RefEntsByComposite &ref_ents_by_comp =
       refined_ents_ptr->get<Composite_EntType_and_ParentEntType_mi_tag>();
-  RefEntity_multiIndex_view_by_parent_entity ref_parent_ents_view;
+  RefEntity_multiIndex_view_by_hashed_parent_entity ref_parent_ents_view;
   ref_parent_ents_view.insert(
     ref_ents_by_comp.lower_bound(boost::make_tuple(MBVERTEX, MBEDGE)),
     ref_ents_by_comp.upper_bound(boost::make_tuple(MBVERTEX, MBEDGE))
@@ -753,7 +753,7 @@ MoFEMErrorCode MeshRefinement::refine_PRISM(const EntityHandle meshset,
     EntityHandle edge_nodes[6];
     std::fill(&edge_nodes[0], &edge_nodes[6], no_handle);
     for (int ee = 0; ee < 6; ee++) {
-      RefEntity_multiIndex_view_by_parent_entity::iterator miit_view =
+      RefEntity_multiIndex_view_by_hashed_parent_entity::iterator miit_view =
           ref_parent_ents_view.find(edges[ee]);
       if (miit_view != ref_parent_ents_view.end()) {
         if (((*miit_view)->getBitRefLevel() & bit).any()) {

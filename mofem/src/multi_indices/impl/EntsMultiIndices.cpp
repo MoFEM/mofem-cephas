@@ -137,16 +137,27 @@ MoFEMErrorCode getParentEnt(Interface &moab, Range ents,
 
 MoFEMErrorCode
 RefEntity::getBitRefLevel(Interface &moab, Range ents,
-                          std::vector<BitRefLevel> vec_bit_ref_level) {
+                          std::vector<BitRefLevel> &vec_bit_ref_level) {
 
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   Tag th_ref_bit_level;
-  rval = moab.tag_get_handle("_RefBitLevel", th_ref_bit_level);
-  MOAB_THROW(rval);
+  CHKERR moab.tag_get_handle("_RefBitLevel", th_ref_bit_level);
   vec_bit_ref_level.resize(ents.size());
-  rval = moab.tag_get_data(th_ref_bit_level, ents, &*vec_bit_ref_level.begin());
-  CHKERRQ_MOAB(rval);
-  MoFEMFunctionReturnHot(0);
+  CHKERR moab.tag_get_data(th_ref_bit_level, ents, &*vec_bit_ref_level.begin());
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode RefEntity::getBitRefLevel(
+    Interface &moab, Range ents,
+    std::vector<const BitRefLevel *> &vec_ptr_bit_ref_level) {
+  MoFEMFunctionBegin;
+  Tag th_ref_bit_level;
+  CHKERR moab.tag_get_handle("_RefBitLevel", th_ref_bit_level);
+  vec_ptr_bit_ref_level.resize(ents.size());
+  CHKERR moab.tag_get_by_ptr(
+      th_ref_bit_level, ents,
+      reinterpret_cast<const void **>(&*vec_ptr_bit_ref_level.begin()));
+  MoFEMFunctionReturn(0);
 }
 
 std::ostream &operator<<(std::ostream &os, const RefEntity &e) {

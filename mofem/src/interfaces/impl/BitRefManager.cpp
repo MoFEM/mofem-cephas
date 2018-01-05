@@ -407,28 +407,14 @@ MoFEMErrorCode BitRefManager::addBitRefLevel(const Range &ents,
                                              const BitRefLevel &bit,
                                              int verb) const {
   MoFEM::Interface &m_field = cOre;
-  const RefEntity_multiIndex *ref_ent_ptr;
-  MoFEMFunctionBeginHot;
-  ierr = m_field.get_ref_ents(&ref_ent_ptr);
-  for (Range::const_pair_iterator pit = ents.const_pair_begin();
-       pit != ents.const_pair_end(); pit++) {
-    EntityHandle first = pit->first;
-    EntityHandle second = pit->second;
-    RefEntity_multiIndex::index<Ent_mi_tag>::type::iterator dit;
-    dit = ref_ent_ptr->get<Ent_mi_tag>().lower_bound(first);
-    if (dit == ref_ent_ptr->get<Ent_mi_tag>().end())
-      continue;
-    RefEntity_multiIndex::index<Ent_mi_tag>::type::iterator hi_dit;
-    hi_dit = ref_ent_ptr->get<Ent_mi_tag>().upper_bound(second);
-    for (; dit != hi_dit; dit++) {
-      *(const_cast<RefEntity *>(dit->get())->getBitRefLevelPtr()) |= bit;
-      if (verb >= VERY_NOISY) {
-        cerr << **dit << endl;
-      }
-    }
+  MoFEMFunctionBegin;
+  std::vector<const BitRefLevel *> ents_bits_vec;
+  CHKERR RefEntity::getBitRefLevel(m_field.get_moab(), ents, ents_bits_vec);
+  for (std::vector<const BitRefLevel *>::iterator it = ents_bits_vec.begin();
+       it != ents_bits_vec.end(); ++it) {
+    const_cast<BitRefLevel&>(**it) |= bit;
   }
-
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode BitRefManager::addBitRefLevelByDim(const EntityHandle meshset,
@@ -438,64 +424,17 @@ MoFEMErrorCode BitRefManager::addBitRefLevelByDim(const EntityHandle meshset,
   MoFEM::Interface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   Range ents, adj;
-  MoFEMFunctionBeginHot;
-  rval = moab.get_entities_by_dimension(meshset, dim, ents, true);
-  CHKERRQ_MOAB(rval);
+  MoFEMFunctionBegin;
+  CHKERR moab.get_entities_by_dimension(meshset, dim, ents, true);
   for (int dd = dim - 1; dd >= 0; dd--) {
-    rval = moab.get_adjacencies(ents, dd, false, adj, moab::Interface::UNION);
-    CHKERRQ_MOAB(rval);
+    CHKERR moab.get_adjacencies(ents, dd, false, adj, moab::Interface::UNION);
   }
   ents.merge(adj);
   if (verb == VERY_NOISY) {
     cerr << ents << endl;
   }
-  ierr = addBitRefLevel(ents, bit, verb);
-  CHKERRG(ierr);
-  MoFEMFunctionReturnHot(0);
-}
-
-MoFEMErrorCode BitRefManager::setNthBitRefLevel(const Range &ents, const int n,
-                                                const bool b, int verb) const {
-  MoFEM::Interface &m_field = cOre;
-  const RefEntity_multiIndex *ref_ent_ptr;
-  MoFEMFunctionBeginHot;
-  ierr = m_field.get_ref_ents(&ref_ent_ptr);
-  for (Range::const_pair_iterator pit = ents.const_pair_begin();
-       pit != ents.const_pair_end(); pit++) {
-    EntityHandle first = pit->first;
-    EntityHandle second = pit->second;
-    RefEntity_multiIndex::index<Ent_mi_tag>::type::iterator dit;
-    dit = ref_ent_ptr->get<Ent_mi_tag>().lower_bound(first);
-    if (dit == ref_ent_ptr->get<Ent_mi_tag>().end())
-      continue;
-    RefEntity_multiIndex::index<Ent_mi_tag>::type::iterator hi_dit;
-    hi_dit = ref_ent_ptr->get<Ent_mi_tag>().upper_bound(second);
-    for (; dit != hi_dit; dit++) {
-      (*const_cast<RefEntity *>(dit->get())->getBitRefLevelPtr())[n] = b;
-     if (verb >= VERY_VERBOSE) {
-        cerr << **dit << endl;
-      }
-    }
-  }
-  MoFEMFunctionReturnHot(0);
-}
-
-MoFEMErrorCode BitRefManager::setNthBitRefLevel(const int n, const bool b,
-                                                int verb) const {
-  MoFEM::Interface &m_field = cOre;
-  const RefEntity_multiIndex *ref_ent_ptr;
-  MoFEMFunctionBeginHot;
-  ierr = m_field.get_ref_ents(&ref_ent_ptr);
-  RefEntity_multiIndex::iterator dit, hi_dit;
-  dit = ref_ent_ptr->begin();
-  hi_dit = ref_ent_ptr->end();
-  for (; dit != hi_dit; dit++) {
-    (*const_cast<RefEntity *>(dit->get())->getBitRefLevelPtr())[n] = b;
-    if (verb >= VERY_VERBOSE) {
-      cerr << **dit << endl;
-    }
-  }
-  MoFEMFunctionReturnHot(0);
+  CHKERR addBitRefLevel(ents, bit, verb);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode BitRefManager::shiftLeftBitRef(const int shift,
