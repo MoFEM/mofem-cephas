@@ -356,17 +356,16 @@ MoFEMErrorCode BitRefManager::setBitLevelToMeshset(const EntityHandle meshset,
   MoFEM::Interface &m_field = cOre;
   const RefEntity_multiIndex *ref_ents_ptr;
   const RefElement_multiIndex *ref_fe_ptr;
-  MoFEMFunctionBeginHot;
-  ierr = m_field.get_ref_ents(&ref_ents_ptr);
-  CHKERRG(ierr);
-  ierr = m_field.get_ref_finite_elements(&ref_fe_ptr);
-  CHKERRG(ierr);
+  MoFEMFunctionBegin;
+  CHKERR m_field.get_ref_ents(&ref_ents_ptr);
+  CHKERR m_field.get_ref_finite_elements(&ref_fe_ptr);
+  // Add ref entity
   std::pair<RefEntity_multiIndex::iterator, bool> p_ent =
       const_cast<RefEntity_multiIndex *>(ref_ents_ptr)
           ->insert(boost::shared_ptr<RefEntity>(
               new RefEntity(m_field.get_basic_entity_data_ptr(), meshset)));
-  const_cast<RefEntity_multiIndex *>(ref_ents_ptr)
-      ->modify(p_ent.first, RefEntity_change_add_bit(bit));
+  *(const_cast<RefEntity *>(p_ent.first->get())->getBitRefLevelPtr()) |= bit;
+  // Add ref element
   boost::shared_ptr<RefElement> fe_ptr =
       boost::shared_ptr<RefElement>(new RefElement_MESHSET(*p_ent.first));
   std::pair<RefElement_multiIndex::iterator, bool> p_fe =
@@ -376,7 +375,7 @@ MoFEMErrorCode BitRefManager::setBitLevelToMeshset(const EntityHandle meshset,
     ss << "add meshset as ref_ent " << **p_fe.first << std::endl;
     PetscPrintf(m_field.get_comm(), ss.str().c_str());
   }
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode BitRefManager::setBitRefLevelByDim(const EntityHandle meshset,
@@ -422,13 +421,7 @@ MoFEMErrorCode BitRefManager::addBitRefLevel(const Range &ents,
     RefEntity_multiIndex::index<Ent_mi_tag>::type::iterator hi_dit;
     hi_dit = ref_ent_ptr->get<Ent_mi_tag>().upper_bound(second);
     for (; dit != hi_dit; dit++) {
-      bool success = const_cast<RefEntity_multiIndex *>(ref_ent_ptr)
-                         ->modify(ref_ent_ptr->project<0>(dit),
-                                  RefEntity_change_add_bit(bit));
-      if (!success) {
-        SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
-                "operation unsuccessful");
-      };
+      *(const_cast<RefEntity *>(dit->get())->getBitRefLevelPtr()) |= bit;
       if (verb >= VERY_NOISY) {
         cerr << **dit << endl;
       }
@@ -478,14 +471,8 @@ MoFEMErrorCode BitRefManager::setNthBitRefLevel(const Range &ents, const int n,
     RefEntity_multiIndex::index<Ent_mi_tag>::type::iterator hi_dit;
     hi_dit = ref_ent_ptr->get<Ent_mi_tag>().upper_bound(second);
     for (; dit != hi_dit; dit++) {
-      bool success = const_cast<RefEntity_multiIndex *>(ref_ent_ptr)
-                         ->modify(ref_ent_ptr->project<0>(dit),
-                                  RefEntity_change_set_nth_bit(n, b));
-      if (!success) {
-        SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
-                "operation unsuccessful");
-      };
-      if (verb > 0) {
+      (*const_cast<RefEntity *>(dit->get())->getBitRefLevelPtr())[n] = b;
+     if (verb >= VERY_VERBOSE) {
         cerr << **dit << endl;
       }
     }
@@ -503,13 +490,8 @@ MoFEMErrorCode BitRefManager::setNthBitRefLevel(const int n, const bool b,
   dit = ref_ent_ptr->begin();
   hi_dit = ref_ent_ptr->end();
   for (; dit != hi_dit; dit++) {
-    bool success = const_cast<RefEntity_multiIndex *>(ref_ent_ptr)
-                       ->modify(dit, RefEntity_change_set_nth_bit(n, b));
-    if (!success) {
-      SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
-              "operation unsuccessful");
-    };
-    if (verb > 0) {
+    (*const_cast<RefEntity *>(dit->get())->getBitRefLevelPtr())[n] = b;
+    if (verb >= VERY_VERBOSE) {
       cerr << **dit << endl;
     }
   }
@@ -531,6 +513,7 @@ MoFEMErrorCode BitRefManager::shiftRightBitRef(const int shift,
   const RefEntity_multiIndex *ref_ent_ptr;
   MoFEMFunctionBegin;
   CHKERR m_field.get_ref_ents(&ref_ent_ptr);
+  RefEntity_change_right_shift right_shift(1, mask);
   for (int ii = 0; ii < shift; ii++) {
     // delete bits on the right which are shifted to zero
     BitRefLevel delete_bits = BitRefLevel().set(0) & mask;
@@ -543,12 +526,7 @@ MoFEMErrorCode BitRefManager::shiftRightBitRef(const int shift,
       if (verb > NOISY) {
         std::cerr << (*ent_it)->getBitRefLevel() << " : ";
       }
-      bool success =
-          const_cast<RefEntity_multiIndex *>(ref_ent_ptr)
-              ->modify(ent_it, RefEntity_change_right_shift(1, mask));
-      if (!success)
-        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                "inconsistency in data");
+      right_shift(const_cast<boost::shared_ptr<RefEntity> &>(*ent_it));
       if (verb >= VERY_NOISY) {
         std::cerr << (*ent_it)->getBitRefLevel() << std::endl;
       }

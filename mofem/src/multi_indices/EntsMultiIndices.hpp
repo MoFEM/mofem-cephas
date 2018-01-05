@@ -352,6 +352,10 @@ template <typename T> struct interface_RefEntity {
     return this->sPtr->getParentEnt();
   }
 
+  inline BitRefLevel *getBitRefLevelPtr() const {
+    return this->sPtr->getBitRefLevelPtr();
+  }
+
   inline const BitRefLevel &getBitRefLevel() const {
     return this->sPtr->getBitRefLevel();
   }
@@ -518,68 +522,6 @@ struct RefEntity_change_right_shift {
     BitRefLevel bit = *(e->getBitRefLevelPtr());
     *(e->getBitRefLevelPtr()) = ((bit & mask) >> shift) | (bit & ~mask);
   };
-};
-
-/** \brief ref mofem entity, change bit
- * \ingroup ent_multi_indices
- */
-struct RefEntity_change_add_bit {
-  BitRefLevel bit;
-  RefEntity_change_add_bit(const BitRefLevel &_bit) : bit(_bit){};
-  inline void operator()(RefEntity &e) {
-    bit |= e.getBitRefLevel();
-    *(e.getBitRefLevelPtr()) = bit;
-  }
-  inline void operator()(boost::shared_ptr<RefEntity> &e) {
-    this->operator()(*e);
-  }
-};
-
-/** \brief ref mofem entity, change bit
- * \ingroup ent_multi_indices
- */
-struct RefEntity_change_and_bit {
-  BitRefLevel bit;
-  RefEntity_change_and_bit(const BitRefLevel &_bit) : bit(_bit){};
-  inline void operator()(boost::shared_ptr<RefEntity> &e) {
-    bit &= *(e->getBitRefLevelPtr());
-    *(e->getBitRefLevelPtr()) = bit;
-  }
-};
-
-/** \brief ref mofem entity, change bit
- * \ingroup ent_multi_indices
- */
-struct RefEntity_change_xor_bit {
-  BitRefLevel bit;
-  RefEntity_change_xor_bit(const BitRefLevel &_bit) : bit(_bit){};
-  inline void operator()(boost::shared_ptr<RefEntity> &e) {
-    bit ^= *(e->getBitRefLevelPtr());
-    *(e->getBitRefLevelPtr()) = bit;
-  }
-};
-
-/** \brief ref mofem entity, change bit
- * \ingroup ent_multi_indices
- */
-struct RefEntity_change_set_bit {
-  BitRefLevel bit;
-  RefEntity_change_set_bit(const BitRefLevel &_bit) : bit(_bit){};
-  inline void operator()(boost::shared_ptr<RefEntity> &e) {
-    *(e->getBitRefLevelPtr()) = bit;
-  }
-};
-
-/** \brief ref mofem entity, change bit
- * \ingroup ent_multi_indices
- */
-struct RefEntity_change_set_nth_bit {
-  int n;
-  bool b;
-  RefEntity_change_set_nth_bit(const int _n, bool _b) : n(_n), b(_b){};
-  inline void operator()(boost::shared_ptr<RefEntity> &e) {
-    (*(e->getBitRefLevelPtr()))[n] = b;
-  }
 };
 
 struct DofEntity;
