@@ -437,6 +437,40 @@ MoFEMErrorCode BitRefManager::addBitRefLevelByDim(const EntityHandle meshset,
   MoFEMFunctionReturn(0);
 }
 
+MoFEMErrorCode BitRefManager::setNthBitRefLevel(const Range &ents, const int n,
+                                                const bool b, int verb) const {
+  MoFEM::Interface &m_field = cOre;
+  MoFEMFunctionBegin;
+  std::vector<const BitRefLevel *> ents_bits_vec;
+  CHKERR RefEntity::getBitRefLevel(m_field.get_moab(), ents, ents_bits_vec);
+  for (std::vector<const BitRefLevel *>::iterator it = ents_bits_vec.begin();
+       it != ents_bits_vec.end(); ++it) {
+    const_cast<BitRefLevel &>(**it)[n] = b;
+  }
+  if (verb == VERY_NOISY) {
+    cerr << ents << endl;
+  }
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode BitRefManager::setNthBitRefLevel(const int n, const bool b,
+                                                int verb) const {
+  MoFEM::Interface &m_field = cOre;
+  const RefEntity_multiIndex *ref_ent_ptr;
+  MoFEMFunctionBeginHot;
+  ierr = m_field.get_ref_ents(&ref_ent_ptr);
+  RefEntity_multiIndex::iterator dit, hi_dit;
+  dit = ref_ent_ptr->begin();
+  hi_dit = ref_ent_ptr->end();
+  for (; dit != hi_dit; dit++) {
+    (*const_cast<RefEntity *>(dit->get())->getBitRefLevelPtr())[n] = b;
+    if (verb >= VERY_VERBOSE) {
+      cerr << **dit << endl;
+    }
+  }
+  MoFEMFunctionReturnHot(0);
+}
+
 MoFEMErrorCode BitRefManager::shiftLeftBitRef(const int shift,
                                               const BitRefLevel mask,
                                               int verb) const {
@@ -479,37 +513,28 @@ MoFEMErrorCode BitRefManager::writeBitLevelByType(
     const char *file_name, const char *file_type, const char *options) const {
   MoFEM::Interface &m_field = cOre;
   moab::Interface &moab(m_field.get_moab());
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   EntityHandle meshset;
-  rval = moab.create_meshset(MESHSET_SET, meshset);
-  CHKERRQ_MOAB(rval);
-  ierr = getEntitiesByTypeAndRefLevel(bit, mask, type, meshset);
-  CHKERRG(ierr);
-  rval = moab.write_file(file_name, file_type, options, &meshset, 1);
-  CHKERRQ_MOAB(rval);
-  rval = moab.delete_entities(&meshset, 1);
-  CHKERRQ_MOAB(rval);
-  MoFEMFunctionReturnHot(0);
+  CHKERR moab.create_meshset(MESHSET_SET, meshset);
+  CHKERR getEntitiesByTypeAndRefLevel(bit, mask, type, meshset);
+  CHKERR moab.write_file(file_name, file_type, options, &meshset, 1);
+  CHKERR moab.delete_entities(&meshset, 1);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode BitRefManager::writeEntitiesNotInDatabase(
     const char *file_name, const char *file_type, const char *options) const {
   MoFEM::Interface &m_field = cOre;
   moab::Interface &moab(m_field.get_moab());
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   EntityHandle meshset;
-  rval = moab.create_meshset(MESHSET_SET, meshset);
-  CHKERRG(rval);
+  CHKERR moab.create_meshset(MESHSET_SET, meshset);
   Range ents;
   ierr = getAllEntitiesNotInDatabase(ents);
-  CHKERRG(ierr);
-  rval = moab.add_entities(meshset, ents);
-  CHKERRG(rval);
-  rval = moab.write_file(file_name, file_type, options, &meshset, 1);
-  CHKERRG(rval);
-  rval = moab.delete_entities(&meshset, 1);
-  CHKERRG(rval);
-  MoFEMFunctionReturnHot(0);
+  CHKERR moab.add_entities(meshset, ents);
+  CHKERR moab.write_file(file_name, file_type, options, &meshset, 1);
+  CHKERR moab.delete_entities(&meshset, 1);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode BitRefManager::getEntitiesByTypeAndRefLevel(
