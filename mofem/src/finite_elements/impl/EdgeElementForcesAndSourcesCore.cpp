@@ -220,8 +220,6 @@ MoFEMErrorCode EdgeElementForcesAndSourcesCore::operator()() {
   if (numeredEntFiniteElementPtr->getEntType() != MBEDGE)
     MoFEMFunctionReturnHot(0);
 
-  EntityHandle ent = numeredEntFiniteElementPtr->getEnt();
-  
   CHKERR calculateEdgeDirection();
   CHKERR getSpacesAndBaseOnEntities(dataH1);
   CHKERR getEdgesDataOrder(dataH1, H1);

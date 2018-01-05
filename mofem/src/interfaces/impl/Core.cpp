@@ -78,7 +78,9 @@ MoFEMErrorCode Core::regSubInterface(const MOFEMuuid& uid) {
 Core::Core(moab::Interface& moab,MPI_Comm comm,int verbose):
 moab(moab),
 cOmm(0),
-verbose(verbose) {
+verbose(verbose),
+initaliseAndBuildField(PETSC_FALSE),
+initaliseAndBuildFiniteElements(PETSC_FALSE) {
 
   // This is deprecated ONE should use MoFEM::Core::Initialize
   if (!isGloballyInitialised) {
@@ -157,10 +159,11 @@ verbose(verbose) {
   ierr = getTags(); CHKERRABORT(cOmm,ierr);
   ierr = clearMap(); CHKERRABORT(cOmm,ierr);
   basicEntityDataPtr = boost::make_shared<BasicEntityData>(moab);
+  ierr = getOptions(verbose); CHKERRABORT(cOmm,ierr);
   ierr = initialiseDatabaseFromMesh(verbose); CHKERRABORT(cOmm,ierr);
 
   // Print version
-  if (verbose > 0) {
+  if (verbose > QUIET) {
     char petsc_version[255];
     ierr = PetscGetVersion(petsc_version, 255);
     CHKERRABORT(cOmm, ierr);
@@ -508,6 +511,31 @@ MoFEMErrorCode Core::rebuild_database(int verb) {
   MoFEMFunctionReturn(0);
 }
 
+MoFEMErrorCode Core::getOptions(int verb) {
+  MoFEMFunctionBegin;
+  if (verb == -1)
+    verb = verbose;
+
+  CHKERR PetscOptionsBegin(cOmm, optionsPrefix.c_str(), "Mesh cut options",
+                           "See MoFEM documentation");
+
+  CHKERR PetscOptionsBool(
+      "-mofem_init_fields", "Initialise fields on construction", "",
+      initaliseAndBuildField, &initaliseAndBuildField, NULL);
+
+  CHKERR PetscOptionsBool(
+      "-mofem_init_fields", "Initialise fields on construction", "",
+      initaliseAndBuildFiniteElements, &initaliseAndBuildFiniteElements, NULL);
+
+  // TODO: Add read verbosity level
+  // TODO: Add option to initalise problems ??? -  DO WE REALLY NEED THAT
+
+  ierr = PetscOptionsEnd();
+  CHKERRG(ierr);
+
+  MoFEMFunctionReturn(0);
+}
+
 MoFEMErrorCode Core::initialiseDatabaseFromMesh(int verb) {
   MoFEMFunctionBegin;
   if (verb == -1)
@@ -610,9 +638,12 @@ MoFEMErrorCode Core::initialiseDatabaseFromMesh(int verb) {
       CHKERR set_field_order(ents_of_id_meshset, fit->get()->getId(), -1);
   }
 
-  // Build fields 
-  CHKERR build_fields(verb);
-  CHKERR build_finite_elements(verb);
+  if (initaliseAndBuildField || initaliseAndBuildFiniteElements) {
+    CHKERR build_fields(verb);
+    if (initaliseAndBuildFiniteElements) {
+      CHKERR build_finite_elements(verb);
+    }
+  }
 
   if (verb > VERY_NOISY) {
     list_fields();
