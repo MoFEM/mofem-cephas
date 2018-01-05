@@ -50,6 +50,7 @@ MoFEMErrorCode CutMeshInterface::copySurface(const Range &surface, Tag th,
   CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   MoFEMFunctionBegin;
+  std::map<EntityHandle,EntityHandle> verts_map;
   for (Range::const_iterator tit = surface.begin(); tit != surface.end();
        tit++) {
     int num_nodes;
@@ -63,6 +64,9 @@ MoFEMErrorCode CutMeshInterface::copySurface(const Range &surface, Tag th,
     }
     EntityHandle new_verts[num_nodes];
     for (int nn = 0; nn != num_nodes; nn++) {
+      if(verts_map.find(conn[nn])!=verts_map.end()) {
+        new_verts[nn] = verts_map[conn[nn]];
+      } else {
       if (transform) {
         ublas::matrix_row<MatrixDouble> mr(coords, nn);
         if (origin) {
@@ -81,11 +85,13 @@ MoFEMErrorCode CutMeshInterface::copySurface(const Range &surface, Tag th,
       }
       if (shift) {
         ublas::matrix_row<MatrixDouble> mr(coords, nn);
-        VectorAdaptor vec_shift(3,
-                                ublas::shallow_array_adaptor<double>(3, shift));
+          VectorAdaptor vec_shift(
+              3, ublas::shallow_array_adaptor<double>(3, shift));
         mr = mr + vec_shift;
       }
       CHKERR moab.create_vertex(&coords(nn, 0), new_verts[nn]);
+        verts_map[conn[nn]] = new_verts[nn];
+    }
     }
     EntityHandle ele;
     CHKERR moab.create_element(MBTRI, new_verts, num_nodes, ele);
