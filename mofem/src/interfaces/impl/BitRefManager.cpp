@@ -66,13 +66,7 @@ struct SetBitRefLevelTool {
       // some entities from range are in database
       hi_rit = refEntsPtr->upper_bound(s);
       for (; rit != hi_rit; ++rit) {
-        // entity is in database, change bit level only
-        bool success = const_cast<RefEntity_multiIndex *>(refEntsPtr)
-                           ->modify(rit, RefEntity_change_add_bit(bIt));
-        if (!success) {
-          SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
-                  "modification unsuccessful");
-        }
+        *(const_cast<RefEntity *>(rit->get())->getBitRefLevelPtr()) |= bIt;
         seed_ents_range.erase(rit->get()->getRefEnt());
       }
     }
@@ -96,7 +90,7 @@ struct SetBitRefLevelTool {
       ref_ents_vec->reserve(s - f + 1);
       for (; f != (s+1); ++f) {
         ref_ents_vec->push_back(RefEntity(baseEntData, f));
-        RefEntity_change_add_bit(bIt).operator()(ref_ents_vec->back());
+        *(ref_ents_vec->back().getBitRefLevelPtr()) |= bIt;
         shared_ref_ents_vec.push_back(
             boost::shared_ptr<RefEntity>(ref_ents_vec, &ref_ents_vec->back()));
       }
