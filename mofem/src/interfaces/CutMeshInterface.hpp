@@ -148,7 +148,7 @@ struct CutMeshInterface : public UnknownInterface {
    * @param  bit BitRefLevel of new mesh created by cutting edges
    * @return     error code
    */
-  MoFEMErrorCode cutEdgesInMiddle(const BitRefLevel bit);
+  MoFEMErrorCode cutEdgesInMiddle(const BitRefLevel bit,const bool debug = false);
 
   /**
    * \brief projecting of mid edge nodes on new mesh on surface
@@ -175,7 +175,8 @@ struct CutMeshInterface : public UnknownInterface {
    * @return     error code
    */
   MoFEMErrorCode trimEdgesInTheMiddle(const BitRefLevel bit, Tag th = NULL,
-                                      const double tol = 1e-4);
+                                      const double tol = 1e-4,
+                                      const bool debug = false);
 
   /**
    * \brief move trimmed edges mid nodes
