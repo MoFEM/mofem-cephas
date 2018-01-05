@@ -58,6 +58,10 @@ struct Core : public Interface {
   );
   ~Core();
 
+  /** \name Global initialisation and finalisation  */
+
+  /**@{*/
+
   /**
    * @brief Initializes the MoFEM database PETSc, MOAB and MPI.
    *
@@ -162,6 +166,11 @@ struct Core : public Interface {
   };
 
   /**
+   * \brief Get flags/semaphores for different stages
+   */
+  inline int &getBuildMoFEM() const { return *buildMoFEM; }
+
+  /**
    * \brief add prim element
    *
    * FIXME: This is dirt solution, need to be fixed
@@ -171,11 +180,6 @@ struct Core : public Interface {
    * @return       error code
    */
   MoFEMErrorCode addPrismToDatabase(const EntityHandle prism, int verb = -1);
-
-  /**
-   * \brief Get flags/semaphores for different stages
-   */
-  inline int &getBuildMoFEM() const { return *buildMoFEM; }
 
   /**@}*/
 
@@ -854,6 +858,14 @@ private:
   mutable int *buildMoFEM; ///< keeps flags/semaphores for different stages
   static bool isGloballyInitialised; ///< Core base globally initialized
 
+  std::string optionsPrefix; ///< Prefix for options on command line
+
+  PetscBool initaliseAndBuildField; ///< If true build field on database
+                                    ///< initialisation
+
+  PetscBool initaliseAndBuildFiniteElements; // If true build finite elements on
+                                             // database initialisation
+
   /**
    * \brief Get tag handles
    * @param  verb verbosity level
@@ -894,6 +906,13 @@ private:
    * \brief Initialize database getting information on mesh
    */
   MoFEMErrorCode initialiseDatabaseFromMesh(int verb = -1);
+
+  /**
+   * @brief Get core options from command line
+   * 
+   * @return MoFEMErrorCode 
+   */
+  MoFEMErrorCode getOptions(int verb = -1);
 
   template <class IFACE> MoFEMErrorCode regSubInterface(const MOFEMuuid &uid);
 };
