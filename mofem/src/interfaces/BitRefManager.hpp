@@ -180,26 +180,6 @@ struct BitRefManager : public UnknownInterface {
                                      const BitRefLevel &bit,
                                      int verb = QUIET) const;
 
-  /**
-   * \brief Set nth bit ref level
-   * @param  ents entities to set bit ref level
-   * @param  n    nth bit
-   * @param  b    value to set
-   * @return      error code
-   */
-  MoFEMErrorCode setNthBitRefLevel(const Range &ents, const int n, const bool b,
-                                   int verb = 0) const;
-
-  /**
-   * \brief Set nth bit ref level
-   * \ingroup mofem_bit_ref
-   * @param  n    nth bit
-   * @param  b    value to set
-   * @return      error code
-   */
-  MoFEMErrorCode setNthBitRefLevel(const int n, const bool b,
-                                   int verb = 0) const;
-
   /** \brief left shift bit ref level
     * \ingroup mofem_bit_ref
     * this results of deletion of entities on far left side

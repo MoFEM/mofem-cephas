@@ -631,7 +631,7 @@ MoFEMErrorCode PrismInterface::splitSides(
       std::vector<EntityHandle> splitNodes;
       std::vector<double> splitCoords[3];
 
-      RefEntity_multiIndex_view_by_parent_entity refParentEntsView;
+      RefEntity_multiIndex_view_by_hashed_parent_entity refParentEntsView;
 
       CreateSideNodes(MoFEM::Core &core, int split_size = 0)
           : cOre(core), m_field(core) {
@@ -677,13 +677,13 @@ MoFEMErrorCode PrismInterface::splitSides(
     };
     CreateSideNodes create_side_nodes(cOre, nodes.size());
 
-    RefEntity_multiIndex_view_by_parent_entity ref_parent_ents_view;
+    RefEntity_multiIndex_view_by_hashed_parent_entity ref_parent_ents_view;
     struct CreateParentEntView {
       typedef RefEntity_multiIndex::index<
           Composite_EntType_and_ParentEntType_mi_tag>::type RefEntsByComposite;
       MoFEMErrorCode operator()(const BitRefLevel &bit, const BitRefLevel &mask,
                                 const RefEntity_multiIndex *refined_ents_ptr,
-                                RefEntity_multiIndex_view_by_parent_entity
+                                RefEntity_multiIndex_view_by_hashed_parent_entity
                                     &ref_parent_ents_view) const {
         MoFEMFunctionBegin;
         const RefEntsByComposite &ref_ents =
@@ -696,7 +696,7 @@ MoFEMErrorCode PrismInterface::splitSides(
         for (; miit != hi_miit; miit++) {
           if (((*miit)->getBitRefLevel() & mask) == (*miit)->getBitRefLevel()) {
             if (((*miit)->getBitRefLevel() & bit).any()) {
-              std::pair<RefEntity_multiIndex_view_by_parent_entity::iterator,
+              std::pair<RefEntity_multiIndex_view_by_hashed_parent_entity::iterator,
                         bool>
                   p_ref_ent_view;
               p_ref_ent_view = ref_parent_ents_view.insert(*miit);
@@ -726,7 +726,7 @@ MoFEMErrorCode PrismInterface::splitSides(
                 "can not find node in MoFEM database");
       }
       EntityHandle child_entity = 0;
-      RefEntity_multiIndex_view_by_parent_entity::iterator child_it =
+      RefEntity_multiIndex_view_by_hashed_parent_entity::iterator child_it =
           ref_parent_ents_view.find(*nit);
       if (child_it != ref_parent_ents_view.end()) {
         child_entity = (*child_it)->getRefEnt();
@@ -899,7 +899,8 @@ MoFEMErrorCode PrismInterface::splitSides(
       MoFEMFunctionBegin;
       RefEntity_multiIndex::iterator it = ref_ents_ptr->find(ent);
       if (it != ref_ents_ptr->end()) {
-        if (it->get()->getParentEnt() != parent) {
+        if (it->get()->getParentEnt() != parent ||
+            it->get()->getParentEnt() == 0) {
           parentsToChange[ent] = parent;
         }
       } else {

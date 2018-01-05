@@ -339,7 +339,7 @@ MoFEMErrorCode Core::getTags(int verb) {
                                &def_handle);
     CHKERRG(rval);
     BitRefLevel def_bit_level = 0;
-    rval                      = moab.tag_get_handle(
+    rval = moab.tag_get_handle(
         "_RefBitLevel", sizeof(BitRefLevel), MB_TYPE_OPAQUE, th_RefBitLevel,
         MB_TAG_CREAT | MB_TAG_BYTES | MB_TAG_SPARSE, &def_bit_level);
     CHKERRG(rval);
@@ -350,7 +350,7 @@ MoFEMErrorCode Core::getTags(int verb) {
                                &def_bit_level_mask);
     CHKERRG(rval);
     BitRefEdges def_bit_edge = 0;
-    rval                     = moab.tag_get_handle(
+    rval = moab.tag_get_handle(
         "_RefBitEdge", sizeof(BitRefEdges), MB_TYPE_OPAQUE, th_RefBitEdge,
         MB_TAG_CREAT | MB_TAG_SPARSE | MB_TAG_BYTES, &def_bit_edge);
     CHKERRG(rval);
@@ -379,7 +379,7 @@ MoFEMErrorCode Core::getTags(int verb) {
         th_FieldBase, MB_TAG_CREAT | MB_TAG_BYTES | MB_TAG_SPARSE, &def_base);
     CHKERRG(rval);
     const int def_val_len = 0;
-    rval                  = moab.tag_get_handle(
+    rval = moab.tag_get_handle(
         "_FieldName", def_val_len, MB_TYPE_OPAQUE, th_FieldName,
         MB_TAG_CREAT | MB_TAG_BYTES | MB_TAG_VARLEN | MB_TAG_SPARSE, NULL);
     CHKERRG(rval);

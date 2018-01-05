@@ -40,7 +40,7 @@ struct BcFluxData {
   Range eNts;
   double fLux;
 };
-typedef map<int,BcFluxData> BcFluxMap;
+typedef map<int, BcFluxData> BcFluxMap;
 
 /** \brief Application of mix transport data structure
   *
@@ -53,18 +53,15 @@ typedef map<int,BcFluxData> BcFluxMap;
 
   * \ingroup mofem_mix_transport_elem
   */
-struct MyTransport: public MixTransportElement {
+struct MyTransport : public MixTransportElement {
 
   BcFluxMap &bcFluxMap;
   EntityHandle lastEnt;
   double lastFlux;
 
-  MyTransport(MoFEM::Interface &m_field,BcFluxMap &bc_flux_map):
-  MixTransportElement(m_field),
-  bcFluxMap(bc_flux_map),
-  lastEnt(0),
-  lastFlux(0) {
-  }
+  MyTransport(MoFEM::Interface &m_field, BcFluxMap &bc_flux_map)
+      : MixTransportElement(m_field), bcFluxMap(bc_flux_map), lastEnt(0),
+        lastFlux(0) {}
 
   /**
    * \brief set source term
@@ -75,7 +72,8 @@ struct MyTransport: public MixTransportElement {
    * @param  flux reference to source term set by function
    * @return      error code
    */
-  MoFEMErrorCode getSource(EntityHandle ent,const double x,const double y,const double z,double &flux) {
+  MoFEMErrorCode getSource(EntityHandle ent, const double x, const double y,
+                           const double z, double &flux) {
     MoFEMFunctionBeginHot;
     flux = 0;
     MoFEMFunctionReturnHot(0);
@@ -90,10 +88,8 @@ struct MyTransport: public MixTransportElement {
    * @param  value reference to value set by function
    * @return       error code
    */
-  MoFEMErrorCode getBcOnValues(
-    const EntityHandle ent,
-    const double x,const double y,const double z,
-    double &value) {
+  MoFEMErrorCode getBcOnValues(const EntityHandle ent, const double x,
+                               const double y, const double z, double &value) {
     MoFEMFunctionBeginHot;
     value = 0;
     MoFEMFunctionReturnHot(0);
@@ -108,18 +104,17 @@ struct MyTransport: public MixTransportElement {
    * @param  flux reference to flux which is set by function
    * @return      [description]
    */
-  MoFEMErrorCode getBcOnFluxes(
-    const EntityHandle ent,
-    const double x,const double y,const double z,
-    double &flux) {
+  MoFEMErrorCode getBcOnFluxes(const EntityHandle ent, const double x,
+                               const double y, const double z, double &flux) {
     MoFEMFunctionBeginHot;
-    if(lastEnt==ent) {
+    if (lastEnt == ent) {
       flux = lastFlux;
     } else {
       flux = 0;
-      for(BcFluxMap::iterator mit = bcFluxMap.begin();mit!=bcFluxMap.end();mit++) {
+      for (BcFluxMap::iterator mit = bcFluxMap.begin(); mit != bcFluxMap.end();
+           mit++) {
         Range &tris = mit->second.eNts;
-        if(tris.find(ent)!=tris.end()) {
+        if (tris.find(ent) != tris.end()) {
           flux = mit->second.fLux;
         }
       }
@@ -130,51 +125,61 @@ struct MyTransport: public MixTransportElement {
   }
 
   /**
-   * \bried set-up boundary conditions
+   * \brief set-up boundary conditions
    * @param  ref_level mesh refinement level
 
-   \note It is assumed that user would like to something non-standard with boundary
-   conditions, have a own type of data structures to pass to functions calculating
-   values and fluxes on boundary. For example BcFluxMap. That way this function
-   is implemented here not in generic class MixTransportElement.
+   \note It is assumed that user would like to something non-standard with
+   boundary conditions, have a own type of data structures to pass to functions
+   calculating values and fluxes on boundary. For example BcFluxMap. That way
+   this function is implemented here not in generic class MixTransportElement.
 
    * @return           error code
    */
   MoFEMErrorCode addBoundaryElements(BitRefLevel &ref_level) {
-    MoFEMFunctionBeginHot;
+    MoFEMFunctionBegin;
     Range tets;
-    ierr = mField.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(ref_level,BitRefLevel().set(),MBTET,tets);
+    CHKERR mField.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
+        ref_level, BitRefLevel().set(), MBTET, tets);
     Skinner skin(&mField.get_moab());
     Range skin_faces; // skin faces from 3d ents
-    rval = skin.find_skin(0,tets,false,skin_faces); CHKERRG(rval);
-    // note: what is essential (dirichlet) is natural (neumann) for mix-FE compared to classical FE
+    CHKERR skin.find_skin(0, tets, false, skin_faces);
+    // note: what is essential (dirichlet) is natural (neumann) for mix-FE
+    // compared to classical FE
     Range natural_bc;
-    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NODESET|TEMPERATURESET,it)) {
+    for (_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(
+             mField, NODESET | TEMPERATURESET, it)) {
       Range tris;
-      ierr = it->getMeshsetIdEntitiesByDimension(mField.get_moab(),2,tris,true); CHKERRG(ierr);
-      natural_bc.insert(tris.begin(),tris.end());
+      CHKERR it->getMeshsetIdEntitiesByDimension(mField.get_moab(), 2, tris,
+                                                 true);
+      natural_bc.insert(tris.begin(), tris.end());
     }
-    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SIDESET|HEATFLUXSET,it)) {
+    for (_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(
+             mField, SIDESET | HEATFLUXSET, it)) {
       HeatFluxCubitBcData mydata;
-      ierr = it->getBcDataStructure(mydata); CHKERRG(ierr);
-      if(mydata.data.flag1==1) {
+      CHKERR it->getBcDataStructure(mydata);
+      if (mydata.data.flag1 == 1) {
         Range tris;
-        ierr = it->getMeshsetIdEntitiesByDimension(mField.get_moab(),2,tris,true); CHKERRG(ierr);
+        CHKERR it->getMeshsetIdEntitiesByDimension(mField.get_moab(), 2, tris,
+                                                   true);
         bcFluxMap[it->getMeshsetId()].eNts = tris;
         bcFluxMap[it->getMeshsetId()].fLux = mydata.data.value1;
         // cerr << bcFluxMap[it->getMeshsetId()].eNts << endl;
         // cerr << bcFluxMap[it->getMeshsetId()].fLux << endl;
       }
     }
-    Range essential_bc = subtract(skin_faces,natural_bc);
+    Range essential_bc = subtract(skin_faces, natural_bc);
     Range bit_tris;
-    ierr = mField.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(ref_level,BitRefLevel().set(),MBTRI,bit_tris);
-    essential_bc = intersect(bit_tris,essential_bc);
-    natural_bc = intersect(bit_tris,natural_bc);
-    ierr = mField.add_ents_to_finite_element_by_type(essential_bc,MBTRI,"MIX_BCFLUX"); CHKERRG(ierr);
-    ierr = mField.add_ents_to_finite_element_by_type(natural_bc,MBTRI,"MIX_BCVALUE"); CHKERRG(ierr);
-    // ierr = mField.add_ents_to_finite_element_by_type(skin_faces,MBTRI,"MIX_BCVALUE"); CHKERRG(ierr);
-    MoFEMFunctionReturnHot(0);
+    CHKERR mField.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
+        ref_level, BitRefLevel().set(), MBTRI, bit_tris);
+    essential_bc = intersect(bit_tris, essential_bc);
+    natural_bc = intersect(bit_tris, natural_bc);
+    CHKERR mField.add_ents_to_finite_element_by_type(essential_bc, MBTRI,
+                                                     "MIX_BCFLUX");
+    CHKERR mField.add_ents_to_finite_element_by_type(natural_bc, MBTRI,
+                                                     "MIX_BCVALUE");
+    // CHKERR
+    // mField.add_ents_to_finite_element_by_type(skin_faces,MBTRI,"MIX_BCVALUE");
+    MoFEMFunctionReturn(0);
   }
 
   /**
@@ -204,137 +209,137 @@ struct MyTransport: public MixTransportElement {
    those entities are squashed.
 
    */
-  MoFEMErrorCode refineMesh(
-    MixTransportElement &ufe,const int nb_levels,const int order
-  ) {
+  MoFEMErrorCode refineMesh(MixTransportElement &ufe, const int nb_levels,
+                            const int order) {
     MeshRefinement *refine_ptr;
-    MoFEMFunctionBeginHot;
+    MoFEMFunctionBegin;
     // get refined edges having child vertex
     const RefEntity_multiIndex *ref_ents_ptr;
-    ierr = mField.get_ref_ents(&ref_ents_ptr); CHKERRG(ierr);
-    typedef RefEntity_multiIndex::index<Composite_EntType_and_ParentEntType_mi_tag>::type RefEntsByComposite;
-    const RefEntsByComposite &ref_ents = ref_ents_ptr->get<Composite_EntType_and_ParentEntType_mi_tag>();
-    RefEntsByComposite::iterator rit,hi_rit;
-    rit = ref_ents.lower_bound(boost::make_tuple(MBVERTEX,MBEDGE));
-    hi_rit = ref_ents.upper_bound(boost::make_tuple(MBVERTEX,MBEDGE));
+    CHKERR mField.get_ref_ents(&ref_ents_ptr);
+    typedef RefEntity_multiIndex::index<
+        Composite_EntType_and_ParentEntType_mi_tag>::type RefEntsByComposite;
+    const RefEntsByComposite &ref_ents =
+        ref_ents_ptr->get<Composite_EntType_and_ParentEntType_mi_tag>();
+    RefEntsByComposite::iterator rit, hi_rit;
+    rit = ref_ents.lower_bound(boost::make_tuple(MBVERTEX, MBEDGE));
+    hi_rit = ref_ents.upper_bound(boost::make_tuple(MBVERTEX, MBEDGE));
     Range refined_edges;
     // thist loop is over vertices which parent is edge
-    for(;rit!=hi_rit;rit++) {
+    for (; rit != hi_rit; rit++) {
       refined_edges.insert((*rit)->getParentEnt()); // get parent edge
     }
     // get tets which has large error
     Range tets_to_refine;
     const double max_error = ufe.errorMap.rbegin()->first;
     // int size = ((double)5/6)*ufe.errorMap.size();
-    for(
-      map<double,EntityHandle>::iterator mit = ufe.errorMap.begin();
-      mit!=ufe.errorMap.end();
-      mit++
-    ) {
+    for (map<double, EntityHandle>::iterator mit = ufe.errorMap.begin();
+         mit != ufe.errorMap.end(); mit++) {
       // cerr << mit->first << " " << mit->second << endl;
       // if((size--)>0) continue;
-      if(mit->first<0.25*max_error) continue;
+      if (mit->first < 0.25 * max_error)
+        continue;
       tets_to_refine.insert(mit->second);
     }
     Range tets_to_refine_edges;
-    rval = mField.get_moab().get_adjacencies(
-      tets_to_refine,1,false,tets_to_refine_edges,moab::Interface::UNION
-    ); CHKERRG(rval);
+    CHKERR mField.get_moab().get_adjacencies(
+        tets_to_refine, 1, false, tets_to_refine_edges, moab::Interface::UNION);
     refined_edges.merge(tets_to_refine_edges);
-    ierr = mField.getInterface(refine_ptr); CHKERRG(ierr);
-    for(int ll = 0;ll!=nb_levels;ll++) {
+    CHKERR mField.getInterface(refine_ptr);
+    for (int ll = 0; ll != nb_levels; ll++) {
       Range edges;
-      ierr = mField.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
-        BitRefLevel().set(ll),BitRefLevel().set(),MBEDGE,edges
-      ); CHKERRG(ierr);
-      edges = intersect(edges,refined_edges);
-      // add edges to refine at current level edges (some of the where refined before)
-      ierr = refine_ptr->add_verices_in_the_middel_of_edges(edges,BitRefLevel().set(ll+1)); CHKERRG(ierr);
+      CHKERR mField.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
+          BitRefLevel().set(ll), BitRefLevel().set(), MBEDGE, edges);
+      edges = intersect(edges, refined_edges);
+      // add edges to refine at current level edges (some of the where refined
+      // before)
+      CHKERR refine_ptr->add_verices_in_the_middel_of_edges(
+          edges, BitRefLevel().set(ll + 1));
       //  get tets at current level
       Range tets;
-      ierr = mField.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
-        BitRefLevel().set(ll),BitRefLevel().set(),MBTET,tets
-      ); CHKERRG(ierr);
-      ierr = refine_ptr->refine_TET(tets,BitRefLevel().set(ll+1)); CHKERRG(ierr);
-      ierr = updateMeshsetsFieldsAndElements(ll+1); CHKERRG(ierr);
+      CHKERR mField.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
+          BitRefLevel().set(ll), BitRefLevel().set(), MBTET, tets);
+      CHKERR refine_ptr->refine_TET(tets, BitRefLevel().set(ll + 1));
+      CHKERR updateMeshsetsFieldsAndElements(ll + 1);
     }
 
     // update fields and elements
     EntityHandle ref_meshset;
-    rval = mField.get_moab().create_meshset(MESHSET_SET,ref_meshset); CHKERRG(rval);
+    CHKERR mField.get_moab().create_meshset(MESHSET_SET, ref_meshset);
     {
       // cerr << BitRefLevel().set(nb_levels) << endl;
-      ierr = mField.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
-        BitRefLevel().set(nb_levels),BitRefLevel().set(),MBTET,ref_meshset
-      ); CHKERRG(ierr);
+      CHKERR mField.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
+          BitRefLevel().set(nb_levels), BitRefLevel().set(), MBTET,
+          ref_meshset);
 
       Range ref_tets;
-      rval = mField.get_moab().get_entities_by_type(ref_meshset,MBTET,ref_tets); CHKERRG(rval);
+      CHKERR mField.get_moab().get_entities_by_type(ref_meshset, MBTET,
+                                                    ref_tets);
 
-      //add entities to field
-      ierr = mField.add_ents_to_field_by_type(ref_meshset,MBTET,"FLUXES"); CHKERRG(ierr);
-      ierr = mField.add_ents_to_field_by_type(ref_meshset,MBTET,"VALUES"); CHKERRG(ierr);
-      ierr = mField.set_field_order(0,MBTET,"FLUXES",order+1); CHKERRG(ierr);
-      ierr = mField.set_field_order(0,MBTRI,"FLUXES",order+1); CHKERRG(ierr);
-      ierr = mField.set_field_order(0,MBTET,"VALUES",order); CHKERRG(ierr);
+      // add entities to field
+      CHKERR mField.add_ents_to_field_by_type(ref_meshset, MBTET, "FLUXES");
+      CHKERR mField.add_ents_to_field_by_type(ref_meshset, MBTET, "VALUES");
+      CHKERR mField.set_field_order(0, MBTET, "FLUXES", order + 1);
+      CHKERR mField.set_field_order(0, MBTRI, "FLUXES", order + 1);
+      CHKERR mField.set_field_order(0, MBTET, "VALUES", order);
 
       // add entities to skeleton
       Range ref_tris;
-      ierr = mField.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
-        BitRefLevel().set(nb_levels),BitRefLevel().set(),MBTRI,ref_tris
-      ); CHKERRG(ierr);
-      ierr = mField.add_ents_to_finite_element_by_type(
-        ref_tris,MBTRI,"MIX_SKELETON"
-      ); CHKERRG(ierr);
+      CHKERR mField.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
+          BitRefLevel().set(nb_levels), BitRefLevel().set(), MBTRI, ref_tris);
+      CHKERR mField.add_ents_to_finite_element_by_type(ref_tris, MBTRI,
+                                                       "MIX_SKELETON");
 
-      //add entities to finite elements
-      for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|MAT_THERMALSET,it)) {
+      // add entities to finite elements
+      for (_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(
+               mField, BLOCKSET | MAT_THERMALSET, it)) {
         Mat_Thermal temp_data;
-        ierr = it->getAttributeDataStructure(temp_data); CHKERRG(ierr);
-        setOfBlocks[it->getMeshsetId()].cOnductivity = temp_data.data.Conductivity;
+        CHKERR it->getAttributeDataStructure(temp_data);
+        setOfBlocks[it->getMeshsetId()].cOnductivity =
+            temp_data.data.Conductivity;
         setOfBlocks[it->getMeshsetId()].cApacity = temp_data.data.HeatCapacity;
-        rval = mField.get_moab().get_entities_by_type(it->meshset,MBTET,setOfBlocks[it->getMeshsetId()].tEts,true); CHKERRG(rval);
-        setOfBlocks[it->getMeshsetId()].tEts = intersect(ref_tets,setOfBlocks[it->getMeshsetId()].tEts);
-        ierr = mField.add_ents_to_finite_element_by_type(setOfBlocks[it->getMeshsetId()].tEts,MBTET,"MIX"); CHKERRG(ierr);
+        CHKERR mField.get_moab().get_entities_by_type(
+            it->meshset, MBTET, setOfBlocks[it->getMeshsetId()].tEts, true);
+        setOfBlocks[it->getMeshsetId()].tEts =
+            intersect(ref_tets, setOfBlocks[it->getMeshsetId()].tEts);
+        CHKERR mField.add_ents_to_finite_element_by_type(
+            setOfBlocks[it->getMeshsetId()].tEts, MBTET, "MIX");
       }
     }
-    rval = mField.get_moab().delete_entities(&ref_meshset,1); CHKERRG(rval);
-    MoFEMFunctionReturnHot(0);
+    CHKERR mField.get_moab().delete_entities(&ref_meshset, 1);
+    MoFEMFunctionReturn(0);
   }
 
   /**
    * \brief Squash bits of entities
 
-   Information about hierarchy of meshses is lost, but entities are not deleted
-   from the mesh. After squshing entities bits, new hierarchy can be created.
+   Information about hierarchy of meshsets is lost, but entities are not deleted
+   from the mesh. After squash entities bits, new hierarchy can be created.
 
    * @return error code
    */
   MoFEMErrorCode squashBits() {
-
-    MoFEMFunctionBeginHot;
+    MoFEMFunctionBegin;
     BitRefLevel all_but_0;
     all_but_0.set(0);
     all_but_0.flip();
     BitRefLevel garbage_bit;
-    garbage_bit.set(BITREFLEVEL_SIZE-1); // Garbage level
+    garbage_bit.set(BITREFLEVEL_SIZE - 1); // Garbage level
     const RefEntity_multiIndex *refined_ents_ptr;
-    ierr = mField.get_ref_ents(&refined_ents_ptr); CHKERRG(ierr);
+    CHKERR mField.get_ref_ents(&refined_ents_ptr);
     RefEntity_multiIndex::iterator mit = refined_ents_ptr->begin();
-    for(;mit!=refined_ents_ptr->end();mit++) {
-      if(mit->get()->getEntType() == MBENTITYSET) continue;
+    for (; mit != refined_ents_ptr->end(); mit++) {
+      if (mit->get()->getEntType() == MBENTITYSET)
+        continue;
       BitRefLevel bit = mit->get()->getBitRefLevel();
-      if((all_but_0&bit)==bit) {
-        const_cast<RefEntity_multiIndex*>(refined_ents_ptr)->modify(
-          mit,RefEntity_change_set_bit(garbage_bit)
-        );
+      if ((all_but_0 & bit) == bit) {
+        *(const_cast<RefEntity *>(mit->get())->getBitRefLevelPtr()) =
+            garbage_bit;
       } else {
-        const_cast<RefEntity_multiIndex*>(refined_ents_ptr)->modify(
-          mit,RefEntity_change_set_bit(BitRefLevel().set(0))
-        );
+        *(const_cast<RefEntity *>(mit->get())->getBitRefLevelPtr()) =
+            BitRefLevel().set(0);
       }
     }
-    MoFEMFunctionReturnHot(0);
+    MoFEMFunctionReturn(0);
   }
 
   /**
@@ -345,129 +350,140 @@ struct MyTransport: public MixTransportElement {
    */
   MoFEMErrorCode updateMeshsetsFieldsAndElements(const int nb_levels) {
     BitRefLevel ref_level;
-    MoFEMFunctionBeginHot;
+    MoFEMFunctionBegin;
     ref_level.set(nb_levels);
-    for(_IT_CUBITMESHSETS_FOR_LOOP_(mField,it)) {
+    for (_IT_CUBITMESHSETS_FOR_LOOP_(mField, it)) {
       EntityHandle meshset = it->meshset;
-      ierr = mField.getInterface<BitRefManager>()->updateMeshsetByEntitiesChildren(meshset,ref_level,meshset,MBVERTEX,true); CHKERRG(ierr);
-      ierr = mField.getInterface<BitRefManager>()->updateMeshsetByEntitiesChildren(meshset,ref_level,meshset,MBEDGE,true); CHKERRG(ierr);
-      ierr = mField.getInterface<BitRefManager>()->updateMeshsetByEntitiesChildren(meshset,ref_level,meshset,MBTRI,true); CHKERRG(ierr);
-      ierr = mField.getInterface<BitRefManager>()->updateMeshsetByEntitiesChildren(meshset,ref_level,meshset,MBTET,true); CHKERRG(ierr);
+      CHKERR mField.getInterface<BitRefManager>()
+          ->updateMeshsetByEntitiesChildren(meshset, ref_level, meshset,
+                                            MBVERTEX, true);
+      CHKERR mField.getInterface<BitRefManager>()
+          ->updateMeshsetByEntitiesChildren(meshset, ref_level, meshset, MBEDGE,
+                                            true);
+      CHKERR mField.getInterface<BitRefManager>()
+          ->updateMeshsetByEntitiesChildren(meshset, ref_level, meshset, MBTRI,
+                                            true);
+      CHKERR mField.getInterface<BitRefManager>()
+          ->updateMeshsetByEntitiesChildren(meshset, ref_level, meshset, MBTET,
+                                            true);
     }
-    MoFEMFunctionReturnHot(0);
+    MoFEMFunctionReturn(0);
   }
-
-
-
 };
 
 int main(int argc, char *argv[]) {
 
-  PetscInitialize(&argc,&argv,(char *)0,help);
+  MoFEM::Core::Initialize(&argc, &argv, (char *)0, help);
 
   try {
 
     moab::Core mb_instance;
-    moab::Interface& moab = mb_instance;
+    moab::Interface &moab = mb_instance;
     int rank;
-    MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
+    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
 
     // get file name form command line
     PetscBool flg = PETSC_TRUE;
     char mesh_file_name[255];
-    ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRG(ierr);
-    if(flg != PETSC_TRUE) {
-      SETERRQ(PETSC_COMM_SELF,MOFEM_INVALID_DATA,"*** ERROR -my_file (MESH FILE NEEDED)");
+    CHKERR PetscOptionsGetString(PETSC_NULL, PETSC_NULL, "-my_file",
+                                 mesh_file_name, 255, &flg);
+    if (flg != PETSC_TRUE) {
+      SETERRQ(PETSC_COMM_SELF, MOFEM_INVALID_DATA,
+              "*** ERROR -my_file (MESH FILE NEEDED)");
     }
 
     // create MOAB communicator
-    ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
-    if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
+    ParallelComm *pcomm = ParallelComm::get_pcomm(&moab, MYPCOMM_INDEX);
+    if (pcomm == NULL)
+      pcomm = new ParallelComm(&moab, PETSC_COMM_WORLD);
 
     const char *option;
     option = "";
-    rval = moab.load_file(mesh_file_name, 0, option); CHKERRG(rval);
+    CHKERR moab.load_file(mesh_file_name, 0, option);
 
-    //Create mofem interface
+    // Create mofem interface
     MoFEM::Core core(moab);
-    MoFEM::Interface& m_field = core;
+    MoFEM::Interface &m_field = core;
 
     // Add meshsets with material and boundary conditions
     MeshsetsManager *meshsets_manager_ptr;
-    ierr = m_field.getInterface(meshsets_manager_ptr); CHKERRG(ierr);
-    ierr = meshsets_manager_ptr->setMeshsetFromFile(); CHKERRG(ierr);
+    CHKERR m_field.getInterface(meshsets_manager_ptr);
+    CHKERR meshsets_manager_ptr->setMeshsetFromFile();
 
-    PetscPrintf(PETSC_COMM_WORLD,"Read meshsets add added meshsets for bc.cfg\n");
-    for(_IT_CUBITMESHSETS_FOR_LOOP_(m_field,it)) {
-      PetscPrintf(
-        PETSC_COMM_WORLD,
-        "%s",static_cast<std::ostringstream&>(std::ostringstream().seekp(0) << *it << endl).str().c_str()
-      );
+    PetscPrintf(PETSC_COMM_WORLD,
+                "Read meshsets add added meshsets for bc.cfg\n");
+    for (_IT_CUBITMESHSETS_FOR_LOOP_(m_field, it)) {
+      PetscPrintf(PETSC_COMM_WORLD, "%s",
+                  static_cast<std::ostringstream &>(
+                      std::ostringstream().seekp(0) << *it << endl)
+                      .str()
+                      .c_str());
       cerr << *it << endl;
     }
 
-    //set entities bit level
+    // set entities bit level
     BitRefLevel ref_level;
     ref_level.set(0);
-    ierr = m_field.seed_ref_level_3D(0,ref_level); CHKERRG(ierr);
+    CHKERR m_field.seed_ref_level_3D(0, ref_level);
 
-    //set app. order
-    //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
+    // set app. order
+    // see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes
+    // (Mark Ainsworth & Joe Coyle)
     PetscInt order;
-    ierr = PetscOptionsGetInt(PETSC_NULL,PETSC_NULL,"-my_order",&order,&flg); CHKERRG(ierr);
-    if(flg != PETSC_TRUE) {
+    CHKERR PetscOptionsGetInt(PETSC_NULL, PETSC_NULL, "-my_order", &order,
+                              &flg);
+    if (flg != PETSC_TRUE) {
       order = 0;
     }
 
-    //finite elements
+    // finite elements
 
     BcFluxMap bc_flux_map;
-    MyTransport ufe(m_field,bc_flux_map);
+    MyTransport ufe(m_field, bc_flux_map);
 
     // Initially calculate problem on coarse mesh
 
-    ierr = ufe.addFields("VALUES","FLUXES",order); CHKERRG(ierr);
-    ierr = ufe.addFiniteElements("FLUXES","VALUES"); CHKERRG(ierr);
+    CHKERR ufe.addFields("VALUES", "FLUXES", order);
+    CHKERR ufe.addFiniteElements("FLUXES", "VALUES");
     // Set boundary conditions
-    ierr = ufe.addBoundaryElements(ref_level);
-    ierr = ufe.buildProblem(ref_level); CHKERRG(ierr);
-    ierr = ufe.createMatrices(); CHKERRG(ierr);
-    ierr = ufe.solveLinearProblem(); CHKERRG(ierr);
-    ierr = ufe.calculateResidual(); CHKERRG(ierr);
-    ierr = ufe.evaluateError(); CHKERRG(ierr);
-    ierr = ufe.destroyMatrices(); CHKERRG(ierr);
-    ierr = ufe.postProc("out_0.h5m"); CHKERRG(ierr);
+    CHKERR ufe.addBoundaryElements(ref_level);
+    CHKERR ufe.buildProblem(ref_level);
+    CHKERR ufe.createMatrices();
+    CHKERR ufe.solveLinearProblem();
+    CHKERR ufe.calculateResidual();
+    CHKERR ufe.evaluateError();
+    CHKERR ufe.destroyMatrices();
+    CHKERR ufe.postProc("out_0.h5m");
 
     int nb_levels = 5; // default number of refinement levels
     // get number of refinement levels form command line
-    ierr = PetscOptionsGetInt(PETSC_NULL,PETSC_NULL,"-nb_levels",&nb_levels,PETSC_NULL); CHKERRG(ierr);
+    CHKERR PetscOptionsGetInt(PETSC_NULL, PETSC_NULL, "-nb_levels", &nb_levels,
+                              PETSC_NULL);
 
-    // refine mesh, solve problem and do it again until number of refinement levels are exceeded.
-    for(int ll = 1;ll!=nb_levels;ll++) {
+    // refine mesh, solve problem and do it again until number of refinement
+    // levels are exceeded.
+    for (int ll = 1; ll != nb_levels; ll++) {
       const int nb_levels = ll;
-      ierr = ufe.squashBits(); CHKERRG(ierr);
-      ierr = ufe.refineMesh(ufe,nb_levels,order); CHKERRG(ierr);
+      CHKERR ufe.squashBits();
+      CHKERR ufe.refineMesh(ufe, nb_levels, order);
       ref_level = BitRefLevel().set(nb_levels);
       bc_flux_map.clear();
-      ierr = ufe.addBoundaryElements(ref_level);
-      ierr = ufe.buildProblem(ref_level); CHKERRG(ierr);
-      ierr = ufe.createMatrices(); CHKERRG(ierr);
-      ierr = ufe.solveLinearProblem(); CHKERRG(ierr);
-      ierr = ufe.calculateResidual(); CHKERRG(ierr);
-      ierr = ufe.evaluateError(); CHKERRG(ierr);
-      ierr = ufe.destroyMatrices(); CHKERRG(ierr);
-      ierr = ufe.postProc(
-        static_cast<std::ostringstream&>
-        (std::ostringstream().seekp(0) << "out_" << nb_levels << ".h5m").str()
-      ); CHKERRG(ierr);
+      CHKERR ufe.addBoundaryElements(ref_level);
+      CHKERR ufe.buildProblem(ref_level);
+      CHKERR ufe.createMatrices();
+      CHKERR ufe.solveLinearProblem();
+      CHKERR ufe.calculateResidual();
+      CHKERR ufe.evaluateError();
+      CHKERR ufe.destroyMatrices();
+      CHKERR ufe.postProc(
+          static_cast<std::ostringstream &>(std::ostringstream().seekp(0)
+                                            << "out_" << nb_levels << ".h5m")
+              .str());
     }
-
-  } catch (MoFEMException const &e) {
-    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
   }
+  CATCH_ERRORS;
 
-  ierr = PetscFinalize(); CHKERRG(ierr);
+  MoFEM::Core::Finalize();
 
   return 0;
-
 }

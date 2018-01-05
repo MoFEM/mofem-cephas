@@ -95,44 +95,41 @@ MoFEMErrorCode PrismsFromSurfaceInterface::createPrisms(const Range &ents,Range 
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode PrismsFromSurfaceInterface::seedPrismsEntities(Range &prisms,const BitRefLevel &bit,int verb) {
-  MoFEMFunctionBeginHot;
-
-
-  Interface& m_field = cOre;
+MoFEMErrorCode PrismsFromSurfaceInterface::seedPrismsEntities(
+    Range &prisms, const BitRefLevel &bit, int verb) {
+  MoFEMFunctionBegin;
+  Interface &m_field = cOre;
   const RefEntity_multiIndex *const_refined_entities_ptr;
-  ierr = m_field.get_ref_ents(&const_refined_entities_ptr); CHKERRG(ierr);
+  CHKERR m_field.get_ref_ents(&const_refined_entities_ptr);
   MPI_Comm comm = m_field.get_comm();
   RefEntity_multiIndex *refined_entities_ptr;
-  refined_entities_ptr = const_cast<RefEntity_multiIndex *>(const_refined_entities_ptr);
-  if(!prisms.empty()) {
+  refined_entities_ptr =
+      const_cast<RefEntity_multiIndex *>(const_refined_entities_ptr);
+  if (!prisms.empty()) {
     int dim = m_field.get_moab().dimension_from_handle(prisms[0]);
-    for(int dd = 0;dd<=dim;dd++) {
+    for (int dd = 0; dd <= dim; dd++) {
       Range ents;
-      rval = m_field.get_moab().get_adjacencies(prisms,dd,true,ents,moab::Interface::UNION); CHKERRQ_MOAB(rval);
+      CHKERR m_field.get_moab().get_adjacencies(prisms, dd, true, ents,
+                                                moab::Interface::UNION);
       Range::iterator eit = ents.begin();
-      for(;eit!=ents.end();eit++) {
-        std::pair<RefEntity_multiIndex::iterator,bool> p_ent = refined_entities_ptr->insert(
-          boost::shared_ptr<RefEntity>(new RefEntity(m_field.get_basic_entity_data_ptr(),*eit))
-        );
-        bool success = refined_entities_ptr->modify(p_ent.first,RefEntity_change_add_bit(bit));
-        if(!success) {
-          SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
-        }
-        if(verb>2) {
+      for (; eit != ents.end(); eit++) {
+        std::pair<RefEntity_multiIndex::iterator, bool> p_ent =
+            refined_entities_ptr->insert(boost::shared_ptr<RefEntity>(
+                new RefEntity(m_field.get_basic_entity_data_ptr(), *eit)));
+        *(const_cast<RefEntity *>(p_ent.first->get())->getBitRefLevelPtr()) |=
+            bit;
+        if (verb >= VERY_VERBOSE) {
           std::ostringstream ss;
           ss << *(p_ent.first);
-          PetscSynchronizedPrintf(comm,"%s\n",ss.str().c_str());
+          PetscSynchronizedPrintf(comm, "%s\n", ss.str().c_str());
         }
       }
     }
   }
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode PrismsFromSurfaceInterface::createPrismsFromPrisms(const Range &prisms,bool from_down,Range &out_prisms,int verb) {
-
-
   MoFEMFunctionBeginHot;
   Interface& m_field = cOre;
   Range tris;
