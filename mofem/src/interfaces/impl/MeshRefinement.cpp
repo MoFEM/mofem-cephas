@@ -201,10 +201,14 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
   MoFEMFunctionBegin;
 
   struct Check {
+    map<EntityHandle, EntityHandle> entParentMap;
     MoFEMErrorCode operator()(Range *ref_edges,
-                              const RefEntity_multiIndex *ref_ents_ptr) const {
+                              const RefEntity_multiIndex *ref_ents_ptr,
+                              MoFEM::Core &core) {
+      Interface &m_field = core;
       MoFEMFunctionBegin;
-      if(!ref_edges) MoFEMFunctionReturnHot(0);
+      if (!ref_edges)
+        MoFEMFunctionReturnHot(0);
       for (Range::iterator eit = ref_edges->begin(); eit != ref_edges->end();
            ++eit) {
         RefEntity_multiIndex::index<
@@ -213,8 +217,25 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
                 boost::make_tuple(*eit, MBVERTEX));
         if (vit ==
             ref_ents_ptr->get<Composite_ParentEnt_And_EntType_mi_tag>().end()) {
+          RefEntity_multiIndex::iterator e_eit = ref_ents_ptr->find(*eit);
+          if (e_eit == ref_ents_ptr->end()) {
+            SETERRQ1(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY,
+                     "Edge not found %ld", *eit);
+          }
+          cerr << "Parent edge" << endl << **e_eit << endl;
+          if (entParentMap.find(*eit) != entParentMap.end()) {
+            RefEntity_multiIndex::iterator v_eit =
+                ref_ents_ptr->find(entParentMap[*eit]);
+            if (v_eit == ref_ents_ptr->end()) {
+              SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY,
+                      "Vertex not found");
+            }
+            cerr << "Vertex " << **v_eit << endl;
+          }
           SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                   "No vertex on trim edges, that make no sense");
+        } else {
+          entParentMap[vit->get()->getParentEnt()] = vit->get()->getRefEnt();
         }
       }
       MoFEMFunctionReturn(0);
@@ -264,7 +285,8 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
   CHKERR m_field.get_ref_ents(&refined_ents_ptr);
   CHKERR m_field.get_ref_finite_elements(&refined_finite_elements_ptr);
 
-  CHKERR Check()(ref_edges_ptr,refined_ents_ptr);
+  Check check;
+  CHKERR check(ref_edges_ptr,refined_ents_ptr,cOre);
 
   // FIXME: refinement is based on entity handlers, should work on global ids of
   // nodes, this will allow parallelise algorithm in the future
@@ -646,12 +668,12 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
     }
   }
 
-  CHKERR Check()(ref_edges_ptr, refined_ents_ptr);
+  CHKERR check(ref_edges_ptr, refined_ents_ptr,cOre);
   CHKERR set_parent(refined_ents_ptr,cOre);
-  CHKERR Check()(ref_edges_ptr, refined_ents_ptr);
+  CHKERR check(ref_edges_ptr, refined_ents_ptr, cOre);
   CHKERR m_field.getInterface<BitRefManager>()->setBitRefLevel(ents_to_set_bit,
                                                                bit, true, verb);
-  CHKERR Check()(ref_edges_ptr, refined_ents_ptr);
+  CHKERR check(ref_edges_ptr, refined_ents_ptr, cOre);
 
   MoFEMFunctionReturn(0);
 }
