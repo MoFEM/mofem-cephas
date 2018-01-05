@@ -112,15 +112,15 @@ RefEntity::RefEntity(const boost::shared_ptr<BasicEntityData> &basic_data_ptr,
     : BasicEntity(basic_data_ptr, ent) {}
 
 EntityHandle *RefEntity::getParentEntPtr() const {
-  return (EntityHandle *)get_tag_ptr(
+  return static_cast<EntityHandle *>(get_tag_ptr(
       static_cast<moab::Core *>(&basicDataPtr->moab)->sequence_manager(),
-      basicDataPtr->th_RefParentHandle, ent, NULL);
+      basicDataPtr->th_RefParentHandle, ent, NULL));
 }
 
 BitRefLevel *RefEntity::getBitRefLevelPtr() const {
-  return (BitRefLevel *)get_tag_ptr(
+  return static_cast<BitRefLevel *>(get_tag_ptr(
       static_cast<moab::Core *>(&basicDataPtr->moab)->sequence_manager(),
-      basicDataPtr->th_RefBitLevel, ent, NULL);
+      basicDataPtr->th_RefBitLevel, ent, NULL));
 }
 
 MoFEMErrorCode getParentEnt(Interface &moab, Range ents,
