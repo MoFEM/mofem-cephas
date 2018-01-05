@@ -978,7 +978,6 @@ MoFEMErrorCode BitRefManager::updateFiniteElementMeshsetByEntitiesChildren(
 MoFEMErrorCode BitRefManager::updateRange(const Range &parent_ents,
                                           Range &child_ents) {
   MoFEM::Interface &m_field = cOre;
-  moab::Interface &moab = m_field.get_moab();
   const RefEntity_multiIndex *ref_ents_ptr;
   MoFEMFunctionBegin;
   CHKERR m_field.get_ref_ents(&ref_ents_ptr);
