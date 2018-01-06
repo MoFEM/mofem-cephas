@@ -497,7 +497,9 @@ struct RefEntity_change_parent {
   EntityHandle pArent;
   RefEntity_change_parent(EntityHandle parent) : pArent(parent) {}
   inline void operator()(boost::shared_ptr<RefEntity> &e) {
-    *(e->getParentEntPtr()) = pArent;
+    rval = e->getBasicDataPtr()->moab.tag_set_data(
+        e->getBasicDataPtr()->th_RefParentHandle, &e->ent, 1, &pArent);
+    MOAB_THROW(rval);
   }
 };
 
