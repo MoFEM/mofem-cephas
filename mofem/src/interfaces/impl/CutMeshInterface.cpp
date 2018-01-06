@@ -607,7 +607,7 @@ MoFEMErrorCode CutMeshInterface::cutEdgesInMiddle(const BitRefLevel bit,
     RefEntity_multiIndex::index<
         Composite_ParentEnt_And_EntType_mi_tag>::type::iterator vit =
         ref_ents_ptr->get<Composite_ParentEnt_And_EntType_mi_tag>().find(
-            boost::make_tuple(mit->first, MBVERTEX));
+            boost::make_tuple(MBVERTEX, mit->first));
     if (vit ==
         ref_ents_ptr->get<Composite_ParentEnt_And_EntType_mi_tag>().end()) {
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
@@ -881,7 +881,7 @@ MoFEMErrorCode CutMeshInterface::trimEdgesInTheMiddle(const BitRefLevel bit,
     RefEntity_multiIndex::index<
         Composite_ParentEnt_And_EntType_mi_tag>::type::iterator vit =
         ref_ents_ptr->get<Composite_ParentEnt_And_EntType_mi_tag>().find(
-            boost::make_tuple(mit->first, MBVERTEX));
+            boost::make_tuple(MBVERTEX, mit->first));
     if (vit ==
         ref_ents_ptr->get<Composite_ParentEnt_And_EntType_mi_tag>().end()) {
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
