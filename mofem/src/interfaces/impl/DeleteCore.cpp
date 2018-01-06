@@ -683,8 +683,8 @@ MoFEMErrorCode Core::delete_ents_by_bit_ref(const BitRefLevel &bit,
       RefEntity_multiIndex::index<Ent_Ent_mi_tag>::type::iterator it;
       while ((it = refinedEntities.get<Ent_Ent_mi_tag>().find(*eit)) !=
                    refinedEntities.get<Ent_Ent_mi_tag>().end()) {
-        bool success = refinedEntities.modify(refinedEntities.project<0>(it),
-                                              RefEntity_change_parent(0));
+        bool success = refinedEntities.get<Ent_Ent_mi_tag>().modify(
+            it, RefEntity_change_parent(0));
         if (!success) {
           SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
                   "Operation of removing parent unsuccessful");
