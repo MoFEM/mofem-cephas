@@ -899,8 +899,7 @@ MoFEMErrorCode PrismInterface::splitSides(
       MoFEMFunctionBegin;
       RefEntity_multiIndex::iterator it = ref_ents_ptr->find(ent);
       if (it != ref_ents_ptr->end()) {
-        if (it->get()->getParentEnt() != parent ||
-            it->get()->getParentEnt() == 0) {
+        if (it->get()->getParentEnt() != parent) {
           parentsToChange[ent] = parent;
         }
       } else {
@@ -909,9 +908,7 @@ MoFEMErrorCode PrismInterface::splitSides(
       }
       MoFEMFunctionReturn(0);
     }
-    MoFEMErrorCode operator()(const RefEntity_multiIndex *ref_ents_ptr,
-                              MoFEM::Core &cOre) {
-      MoFEM::Interface &m_field = cOre;
+    MoFEMErrorCode operator()(const RefEntity_multiIndex *ref_ents_ptr) {
       MoFEMFunctionBegin;
       for (map<EntityHandle, EntityHandle>::iterator mit =
                parentsToChange.begin();
@@ -920,7 +917,7 @@ MoFEMErrorCode PrismInterface::splitSides(
         bool success = const_cast<RefEntity_multiIndex *>(ref_ents_ptr)
                            ->modify(it, RefEntity_change_parent(mit->second));
         if (!success) {
-          SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
+          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                   "impossible to set parent");
         }
       }
@@ -1127,7 +1124,7 @@ MoFEMErrorCode PrismInterface::splitSides(
   }
   // finalise by adding new tets and prism ti bit level
 
-  CHKERR set_parent(refined_ents_ptr,cOre);
+  CHKERR set_parent(refined_ents_ptr);
   CHKERR m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(
       meshset_for_bit_level, 3, bit);
   CHKERR moab.delete_entities(&meshset_for_bit_level, 1);

@@ -267,8 +267,7 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
       MoFEMFunctionBegin;
       RefEntity_multiIndex::iterator it = ref_ents_ptr->find(ent);
       if (it != ref_ents_ptr->end()) {
-        if (it->get()->getParentEnt() != parent ||
-            it->get()->getParentEnt() == 0) {
+        if (it->get()->getParentEnt() != parent) {
           parentsToChange[ent] = parent;
         }
      } else {
@@ -277,17 +276,16 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
       }
       MoFEMFunctionReturn(0);
     }
-    MoFEMErrorCode operator()(const RefEntity_multiIndex *ref_ents_ptr,
-                              MoFEM::Core &cOre) {
-      MoFEM::Interface &m_field = cOre;
+    MoFEMErrorCode operator()(const RefEntity_multiIndex *ref_ents_ptr) {
       MoFEMFunctionBegin;
-      for(map<EntityHandle,EntityHandle>::iterator mit = parentsToChange.begin();
-      mit!=parentsToChange.end();++mit) {
+      for (map<EntityHandle, EntityHandle>::iterator mit =
+               parentsToChange.begin();
+           mit != parentsToChange.end(); ++mit) {
         RefEntity_multiIndex::iterator it = ref_ents_ptr->find(mit->first);
         bool success = const_cast<RefEntity_multiIndex *>(ref_ents_ptr)
                            ->modify(it, RefEntity_change_parent(mit->second));
         if (!success) {
-          SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
+          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                   "impossible to set parent");
         }
       }
@@ -685,7 +683,7 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
   }
 
   CHKERR check(ref_edges_ptr, refined_ents_ptr,cOre);
-  CHKERR set_parent(refined_ents_ptr,cOre);
+  CHKERR set_parent(refined_ents_ptr);
   CHKERR check(ref_edges_ptr, refined_ents_ptr, cOre);
   CHKERR m_field.getInterface<BitRefManager>()->setBitRefLevel(ents_to_set_bit,
                                                                bit, true, verb);
