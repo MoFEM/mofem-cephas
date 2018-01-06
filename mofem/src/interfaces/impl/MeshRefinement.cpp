@@ -213,7 +213,7 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
         RefEntity_multiIndex::index<
             Composite_ParentEnt_And_EntType_mi_tag>::type::iterator vit =
             ref_ents_ptr->get<Composite_ParentEnt_And_EntType_mi_tag>().find(
-                boost::make_tuple(*eit, MBVERTEX));
+                boost::make_tuple(MBVERTEX, *eit));
         if (vit ==
             ref_ents_ptr->get<Composite_ParentEnt_And_EntType_mi_tag>().end()) {
           RefEntity_multiIndex::iterator e_eit = ref_ents_ptr->find(*eit);

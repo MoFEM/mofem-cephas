@@ -434,10 +434,10 @@ typedef multi_index_container<
         ordered_non_unique<
             tag<Composite_ParentEnt_And_EntType_mi_tag>,
             composite_key<RefEntity,
-                          const_mem_fun<RefEntity, EntityHandle,
-                                        &RefEntity::getParentEnt>,
                           const_mem_fun<RefEntity::BasicEntity, EntityType,
-                                        &RefEntity::getEntType> > > > >
+                                        &RefEntity::getEntType>,
+                          const_mem_fun<RefEntity, EntityHandle,
+                                        &RefEntity::getParentEnt> > > > >
     RefEntity_multiIndex;
 
 /** \brief multi-index view of RefEntity by parent entity

@@ -886,8 +886,8 @@ MoFEMErrorCode BitRefManager::updateMeshsetByEntitiesChildren(
     const EntityHandle f = pit->first;
     const EntityHandle s = pit->second;
     for (RefEntsByComposite::iterator mit =
-             ref_ents.lower_bound(boost::make_tuple(f, child_type));
-         mit != ref_ents.upper_bound(boost::make_tuple(s, child_type)); ++mit) {
+             ref_ents.lower_bound(boost::make_tuple(child_type, f));
+         mit != ref_ents.upper_bound(boost::make_tuple(child_type, s)); ++mit) {
       children_ents.insert(mit->get()->getRefEnt());
     }
   }
