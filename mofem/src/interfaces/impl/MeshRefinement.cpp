@@ -231,6 +231,23 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
             }
             cerr << "Vertex " << **v_eit << endl;
           }
+          RefEntity_multiIndex::index<Ent_Ent_mi_tag>::type::iterator ee_it,
+              ee_hi_it;
+          ee_it = ref_ents_ptr->get<Ent_Ent_mi_tag>().lower_bound(*eit);
+          ee_hi_it = ref_ents_ptr->get<Ent_Ent_mi_tag>().upper_bound(*eit);
+          for(;ee_it != ee_hi_it; ++ee_it) {
+            cerr << "Ent having edge parent by parent " << **ee_it << endl;
+          }
+          RefEntity_multiIndex tmp_index;
+          tmp_index.insert(ref_ents_ptr->begin(),ref_ents_ptr->end());
+          RefEntity_multiIndex::index<
+              Composite_ParentEnt_And_EntType_mi_tag>::type::iterator vvit =
+              tmp_index.get<Composite_ParentEnt_And_EntType_mi_tag>().find(
+                  boost::make_tuple(MBVERTEX, *eit));
+          if (vvit !=
+              tmp_index.get<Composite_ParentEnt_And_EntType_mi_tag>().end()) {
+              cerr << "Tmp idx Vertex " << **vvit << endl;
+          }        
           SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                   "No vertex on trim edges, that make no sense");
         } else {
