@@ -382,39 +382,6 @@ protected:
                                            const bool recursive = true,
                                            int verb = -1);
 
-  DEPRECATED MoFEMErrorCode add_ents_to_field_by_VERTICEs(
-      const Range &nodes, const std::string &name, int verb = -1);
-  DEPRECATED MoFEMErrorCode add_ents_to_field_by_VERTICEs(
-      const EntityHandle meshset, const std::string &name, int verb = -1);
-  DEPRECATED MoFEMErrorCode add_ents_to_field_by_EDGEs(const Range &edges,
-                                                       const std::string &name,
-                                                       int verb = -1);
-  DEPRECATED MoFEMErrorCode add_ents_to_field_by_EDGEs(
-      const EntityHandle meshset, const std::string &name, int verb = -1);
-  DEPRECATED MoFEMErrorCode add_ents_to_field_by_TRIs(
-      const EntityHandle meshset, const std::string &name, int verb = -1);
-  DEPRECATED MoFEMErrorCode add_ents_to_field_by_TRIs(const Range &tris,
-                                                      const std::string &name,
-                                                      int verb = -1);
-  DEPRECATED MoFEMErrorCode add_ents_to_field_by_TETs(const Range &tets,
-                                                      const std::string &name,
-                                                      int verb = -1);
-  DEPRECATED MoFEMErrorCode add_ents_to_field_by_TETs(
-      const EntityHandle meshset, const std::string &name, int verb = -1);
-  DEPRECATED MoFEMErrorCode add_ents_to_field_by_QUADs(const Range &prisms,
-                                                       const std::string &name,
-                                                       int verb = -1);
-  DEPRECATED MoFEMErrorCode add_ents_to_field_by_QUADs(EntityHandle meshset,
-                                                       const std::string &name,
-                                                       int verb = -1);
-  DEPRECATED MoFEMErrorCode add_ents_to_field_by_PRISMs(const Range &prisms,
-                                                        const std::string &name,
-                                                        int verb = -1);
-  DEPRECATED MoFEMErrorCode add_ents_to_field_by_PRISMs(EntityHandle meshset,
-                                                        const std::string &name,
-                                                        int verb = -1);
-
-
   /// \name Set approximation order
 
   MoFEMErrorCode set_field_order(const Range &ents, const BitFieldId id,

@@ -1342,6 +1342,158 @@ struct DeprecatedCoreInterface : public CoreInterface {
       const BitRefLevel &bit, const BitRefLevel &mask, int verb = -1);
 
   /**@}*/
+
+  /**@}*/
+
+  /** \name Clear and remove */
+
+  /**@{*/
+
+  /**
+   * \brief set field entities on vertices
+   * \ingroup mofem_field
+   *
+   * The lower dimension entities are added depending on the space type
+   * \param nodes contains set vertices
+   * \param name of the field
+   */
+  DEPRECATED MoFEMErrorCode add_ents_to_field_by_VERTICEs(const Range &nodes,
+                                                       const std::string &name,
+                                                       int verb = -1);
+
+  /**
+   * \brief set field entities on vertices
+   * \ingroup mofem_field
+   *
+   * The lower dimension entities are added depending on the space type
+   * \param meshset contains set vertices
+   * \param name of the field
+   */
+  DEPRECATED MoFEMErrorCode
+  add_ents_to_field_by_VERTICEs(const EntityHandle meshset,
+                                const std::string &name, int verb = -1);
+
+  /**
+   * \brief set field entities form adjacencies of edges
+   * \ingroup mofem_field
+   *
+   * The lower dimension entities are added depending on the space type
+   * \param range contains set edges
+   * \param name of the field
+   */
+  DEPRECATED MoFEMErrorCode add_ents_to_field_by_EDGEs(const Range &edges,
+                                                    const std::string &name,
+                                                    int verb = -1);
+
+  /**
+   * \brief set field entities form adjacencies of edges
+   * \ingroup mofem_field
+   *
+   * The lower dimension entities are added depending on the space type
+   * \param meshset contains set edges
+   * \param name of the field
+   */
+  DEPRECATED MoFEMErrorCode add_ents_to_field_by_EDGEs(const EntityHandle meshset,
+                                                    const std::string &name,
+                                                    int verb = -1);
+
+  /**
+   * \brief set field entities form adjacencies of triangles
+   * \ingroup mofem_field
+   *
+   * The lower dimension entities are added depending on the space type
+   * \param meshset contains set triangles
+   * \param name of the field
+   */
+  DEPRECATED MoFEMErrorCode add_ents_to_field_by_TRIs(const EntityHandle meshset,
+                                                   const std::string &name,
+                                                   int verb = -1);
+
+  /**
+   * \brief set field entities form adjacencies of triangles
+   * \ingroup mofem_field
+   *
+   * The lower dimension entities are added depending on the space type
+   * \param range triangles
+   * \param name of the field
+   */
+  DEPRECATED MoFEMErrorCode add_ents_to_field_by_TRIs(const Range &tris,
+                                                   const std::string &name,
+                                                   int verb = -1);
+
+  /**
+   * \brief set field entities from adjacencies of tetrahedron
+   * \ingroup mofem_field
+   *
+   * The lower dimension entities are added depending on the space type
+   * \param meshset contains set tetrahedron
+   * \param name of the field
+   */
+  DEPRECATED MoFEMErrorCode add_ents_to_field_by_TETs(const EntityHandle meshset,
+                                                   const std::string &name,
+                                                   int verb = -1);
+
+  /**
+   * \brief set field entities from adjacencies of tetrahedron
+   * \ingroup mofem_field
+   *
+   * The lower dimension entities are added depending on the space type
+   * \param range contains set tetrahedron
+   * \param name of the field
+   */
+  DEPRECATED MoFEMErrorCode add_ents_to_field_by_TETs(const Range &tets,
+                                                   const std::string &name,
+                                                   int verb = -1);
+
+  /**
+   * \brief set field entities from adjacencies of quads
+   * \ingroup mofem_field
+   *
+   * The lower dimension entities are added depending on the space type
+   * \param quads range contains set quads
+   * \param name of the field
+   */
+  DEPRECATED MoFEMErrorCode add_ents_to_field_by_QUADs(const Range &quads,
+                                                    const std::string &name,
+                                                    int verb = -1);
+
+  /**
+   * \brief set field entities from adjacencies of quads
+   * \ingroup mofem_field
+   *
+   * The lower dimension entities are added depending on the space type
+   * \param meshset contains set quads
+   * \param name of the field
+   */
+  DEPRECATED MoFEMErrorCode add_ents_to_field_by_QUADs(EntityHandle meshset,
+                                                    const std::string &name,
+                                                    int verb = -1);
+
+  /**
+   * \brief set field entities from adjacencies of prisms
+   * \ingroup mofem_field
+   *
+   * The lower dimension entities are added depending on the space type
+   * \param prisms range contains set prisms
+   * \param name of the field
+   */
+  DEPRECATED MoFEMErrorCode add_ents_to_field_by_PRISMs(const Range &prisms,
+                                                     const std::string &name,
+                                                     int verb = -1);
+
+  /**
+   * \brief set field entities from adjacencies of prisms
+   * \ingroup mofem_field
+   *
+   * The lower dimension entities are added depending on the space type
+   * \param meshset contains set prisms
+   * \param name of the field
+   */
+  DEPRECATED MoFEMErrorCode add_ents_to_field_by_PRISMs(EntityHandle meshset,
+                                                     const std::string &name,
+                                                     int verb = -1);
+
+   /**@}*/
 };
 
 } // namespace MoFEM
