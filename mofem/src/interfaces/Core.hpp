@@ -300,6 +300,14 @@ protected:
 
   /**@{*/
 
+  MoFEMErrorCode remove_parents_by_ents(const Range &ents, int verb = -1);
+
+  MoFEMErrorCode remove_parents_by_by_bit_ref(const BitRefLevel &bit,
+                                              const BitRefLevel &mask,
+                                              int verb = -1);
+
+  MoFEMErrorCode remove_parents_by_parents(const Range &ents, int verb = -1);
+
   MoFEMErrorCode remove_ents(const Range &ents, int verb = -1);
 
   MoFEMErrorCode remove_ents_by_bit_ref(const BitRefLevel &bit,

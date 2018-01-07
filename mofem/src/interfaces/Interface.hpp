@@ -199,6 +199,24 @@ namespace MoFEM {
 
     /**@{*/
 
+    /**
+     * @brief Remove parents from entities
+     * 
+     */
+    virtual MoFEMErrorCode remove_parents_by_ents(const Range &ents,
+                                                  int verb = -1) = 0;
+
+    virtual MoFEMErrorCode remove_parents_by_by_bit_ref(const BitRefLevel &bit,
+                                                        const BitRefLevel &mask,
+                                                        int verb = -1) = 0;
+
+    /**
+     * @brief Remove paremts from entities having parents in passed range
+     * 
+     */
+    virtual MoFEMErrorCode remove_parents_by_parents(const Range &ents,
+                                                     int verb = -1) = 0;
+
     /** \brief delete entities form mofem and moab database
      *
      */
