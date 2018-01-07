@@ -71,6 +71,10 @@ namespace MoFEM {
     MoFEMErrorCode minTetsQuality(const Range &tets, double &min_quality,
                                   Tag th = NULL);
 
+    static MoFEMErrorCode checkIfPointIsInTet(const double tet_coords[],
+                                              const double global_coord[],
+                                              const double tol, bool &result);
+
     /**@}*/
 
     /** \name Debugging */

@@ -78,7 +78,9 @@ MoFEMErrorCode Core::regSubInterface(const MOFEMuuid& uid) {
 Core::Core(moab::Interface& moab,MPI_Comm comm,int verbose):
 moab(moab),
 cOmm(0),
-verbose(verbose) {
+verbose(verbose),
+initaliseAndBuildField(PETSC_FALSE),
+initaliseAndBuildFiniteElements(PETSC_FALSE) {
 
   // This is deprecated ONE should use MoFEM::Core::Initialize
   if (!isGloballyInitialised) {
@@ -157,10 +159,11 @@ verbose(verbose) {
   ierr = getTags(); CHKERRABORT(cOmm,ierr);
   ierr = clearMap(); CHKERRABORT(cOmm,ierr);
   basicEntityDataPtr = boost::make_shared<BasicEntityData>(moab);
+  ierr = getOptions(verbose); CHKERRABORT(cOmm,ierr);
   ierr = initialiseDatabaseFromMesh(verbose); CHKERRABORT(cOmm,ierr);
 
   // Print version
-  if (verbose > 0) {
+  if (verbose > QUIET) {
     char petsc_version[255];
     ierr = PetscGetVersion(petsc_version, 255);
     CHKERRABORT(cOmm, ierr);
@@ -339,7 +342,7 @@ MoFEMErrorCode Core::getTags(int verb) {
                                &def_handle);
     CHKERRG(rval);
     BitRefLevel def_bit_level = 0;
-    rval                      = moab.tag_get_handle(
+    rval = moab.tag_get_handle(
         "_RefBitLevel", sizeof(BitRefLevel), MB_TYPE_OPAQUE, th_RefBitLevel,
         MB_TAG_CREAT | MB_TAG_BYTES | MB_TAG_SPARSE, &def_bit_level);
     CHKERRG(rval);
@@ -350,7 +353,7 @@ MoFEMErrorCode Core::getTags(int verb) {
                                &def_bit_level_mask);
     CHKERRG(rval);
     BitRefEdges def_bit_edge = 0;
-    rval                     = moab.tag_get_handle(
+    rval = moab.tag_get_handle(
         "_RefBitEdge", sizeof(BitRefEdges), MB_TYPE_OPAQUE, th_RefBitEdge,
         MB_TAG_CREAT | MB_TAG_SPARSE | MB_TAG_BYTES, &def_bit_edge);
     CHKERRG(rval);
@@ -379,7 +382,7 @@ MoFEMErrorCode Core::getTags(int verb) {
         th_FieldBase, MB_TAG_CREAT | MB_TAG_BYTES | MB_TAG_SPARSE, &def_base);
     CHKERRG(rval);
     const int def_val_len = 0;
-    rval                  = moab.tag_get_handle(
+    rval = moab.tag_get_handle(
         "_FieldName", def_val_len, MB_TYPE_OPAQUE, th_FieldName,
         MB_TAG_CREAT | MB_TAG_BYTES | MB_TAG_VARLEN | MB_TAG_SPARSE, NULL);
     CHKERRG(rval);
@@ -508,6 +511,31 @@ MoFEMErrorCode Core::rebuild_database(int verb) {
   MoFEMFunctionReturn(0);
 }
 
+MoFEMErrorCode Core::getOptions(int verb) {
+  MoFEMFunctionBegin;
+  if (verb == -1)
+    verb = verbose;
+
+  CHKERR PetscOptionsBegin(cOmm, optionsPrefix.c_str(), "Mesh cut options",
+                           "See MoFEM documentation");
+
+  CHKERR PetscOptionsBool(
+      "-mofem_init_fields", "Initialise fields on construction", "",
+      initaliseAndBuildField, &initaliseAndBuildField, NULL);
+
+  CHKERR PetscOptionsBool(
+      "-mofem_init_fields", "Initialise fields on construction", "",
+      initaliseAndBuildFiniteElements, &initaliseAndBuildFiniteElements, NULL);
+
+  // TODO: Add read verbosity level
+  // TODO: Add option to initalise problems ??? -  DO WE REALLY NEED THAT
+
+  ierr = PetscOptionsEnd();
+  CHKERRG(ierr);
+
+  MoFEMFunctionReturn(0);
+}
+
 MoFEMErrorCode Core::initialiseDatabaseFromMesh(int verb) {
   MoFEMFunctionBegin;
   if (verb == -1)
@@ -610,9 +638,12 @@ MoFEMErrorCode Core::initialiseDatabaseFromMesh(int verb) {
       CHKERR set_field_order(ents_of_id_meshset, fit->get()->getId(), -1);
   }
 
-  // Build fields 
-  CHKERR build_fields(verb);
-  CHKERR build_finite_elements(verb);
+  if (initaliseAndBuildField || initaliseAndBuildFiniteElements) {
+    CHKERR build_fields(verb);
+    if (initaliseAndBuildFiniteElements) {
+      CHKERR build_finite_elements(verb);
+    }
+  }
 
   if (verb > VERY_NOISY) {
     list_fields();

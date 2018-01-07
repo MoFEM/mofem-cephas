@@ -182,6 +182,9 @@ struct BitRefManager : public UnknownInterface {
 
   /**
    * \brief Set nth bit ref level
+   * 
+   * \note This function modify bits only on entities in RefEntity_multiindex
+   * 
    * @param  ents entities to set bit ref level
    * @param  n    nth bit
    * @param  b    value to set

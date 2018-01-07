@@ -631,7 +631,7 @@ MoFEMErrorCode PrismInterface::splitSides(
       std::vector<EntityHandle> splitNodes;
       std::vector<double> splitCoords[3];
 
-      RefEntity_multiIndex_view_by_parent_entity refParentEntsView;
+      RefEntity_multiIndex_view_by_hashed_parent_entity refParentEntsView;
 
       CreateSideNodes(MoFEM::Core &core, int split_size = 0)
           : cOre(core), m_field(core) {
@@ -677,13 +677,13 @@ MoFEMErrorCode PrismInterface::splitSides(
     };
     CreateSideNodes create_side_nodes(cOre, nodes.size());
 
-    RefEntity_multiIndex_view_by_parent_entity ref_parent_ents_view;
+    RefEntity_multiIndex_view_by_hashed_parent_entity ref_parent_ents_view;
     struct CreateParentEntView {
       typedef RefEntity_multiIndex::index<
           Composite_EntType_and_ParentEntType_mi_tag>::type RefEntsByComposite;
       MoFEMErrorCode operator()(const BitRefLevel &bit, const BitRefLevel &mask,
                                 const RefEntity_multiIndex *refined_ents_ptr,
-                                RefEntity_multiIndex_view_by_parent_entity
+                                RefEntity_multiIndex_view_by_hashed_parent_entity
                                     &ref_parent_ents_view) const {
         MoFEMFunctionBegin;
         const RefEntsByComposite &ref_ents =
@@ -696,7 +696,7 @@ MoFEMErrorCode PrismInterface::splitSides(
         for (; miit != hi_miit; miit++) {
           if (((*miit)->getBitRefLevel() & mask) == (*miit)->getBitRefLevel()) {
             if (((*miit)->getBitRefLevel() & bit).any()) {
-              std::pair<RefEntity_multiIndex_view_by_parent_entity::iterator,
+              std::pair<RefEntity_multiIndex_view_by_hashed_parent_entity::iterator,
                         bool>
                   p_ref_ent_view;
               p_ref_ent_view = ref_parent_ents_view.insert(*miit);
@@ -726,7 +726,7 @@ MoFEMErrorCode PrismInterface::splitSides(
                 "can not find node in MoFEM database");
       }
       EntityHandle child_entity = 0;
-      RefEntity_multiIndex_view_by_parent_entity::iterator child_it =
+      RefEntity_multiIndex_view_by_hashed_parent_entity::iterator child_it =
           ref_parent_ents_view.find(*nit);
       if (child_it != ref_parent_ents_view.end()) {
         child_entity = (*child_it)->getRefEnt();
@@ -908,9 +908,7 @@ MoFEMErrorCode PrismInterface::splitSides(
       }
       MoFEMFunctionReturn(0);
     }
-    MoFEMErrorCode operator()(const RefEntity_multiIndex *ref_ents_ptr,
-                              MoFEM::Core &cOre) {
-      MoFEM::Interface &m_field = cOre;
+    MoFEMErrorCode operator()(const RefEntity_multiIndex *ref_ents_ptr) {
       MoFEMFunctionBegin;
       for (map<EntityHandle, EntityHandle>::iterator mit =
                parentsToChange.begin();
@@ -919,7 +917,7 @@ MoFEMErrorCode PrismInterface::splitSides(
         bool success = const_cast<RefEntity_multiIndex *>(ref_ents_ptr)
                            ->modify(it, RefEntity_change_parent(mit->second));
         if (!success) {
-          SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
+          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                   "impossible to set parent");
         }
       }
@@ -1126,7 +1124,7 @@ MoFEMErrorCode PrismInterface::splitSides(
   }
   // finalise by adding new tets and prism ti bit level
 
-  CHKERR set_parent(refined_ents_ptr,cOre);
+  CHKERR set_parent(refined_ents_ptr);
   CHKERR m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(
       meshset_for_bit_level, 3, bit);
   CHKERR moab.delete_entities(&meshset_for_bit_level, 1);

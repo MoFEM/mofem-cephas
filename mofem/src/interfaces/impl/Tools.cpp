@@ -85,6 +85,26 @@ MoFEMErrorCode Tools::minTetsQuality(const Range &tets, double &min_quality,
   MoFEMFunctionReturnHot(0);
 }
 
+MoFEMErrorCode Tools::checkIfPointIsInTet(const double tet_coords[],
+                                          const double global_coord[],
+                                          const double tol,bool &result) {
+  double loc_coord[] = {0, 0, 0};
+  double N[4],diffN[12];
+  MoFEMFunctionBegin;
+  CHKERR ShapeDiffMBTET(diffN);
+  CHKERR ShapeMBTET(N, &loc_coord[0], &loc_coord[1], &loc_coord[2], 1);
+  CHKERR ShapeMBTET_inverse(N, diffN, tet_coords, global_coord, loc_coord);
+  CHKERR ShapeMBTET(N, &loc_coord[0], &loc_coord[1], &loc_coord[2], 1);
+  result = true;
+  for (int n = 0; n != 4; ++n) {
+    if (N[n] < -tol || (N[n] - 1) > tol) {
+      result = false;
+      break;
+    }
+  }
+  MoFEMFunctionReturn(0);
+}
+
 MoFEMErrorCode Tools::checkVectorForNotANumber(const Problem *prb_ptr,
                                                const RowColData row_or_col,
                                                Vec v) {

@@ -260,7 +260,11 @@ struct RefEntity : public BasicEntity {
 
   static MoFEMErrorCode
   getBitRefLevel(Interface &moab, Range ents,
-                 std::vector<BitRefLevel> vec_bit_ref_level);
+                 std::vector<BitRefLevel> &vec_bit_ref_level);
+
+  static MoFEMErrorCode
+  getBitRefLevel(Interface &moab, Range ents,
+                 std::vector<const BitRefLevel *> &vec_ptr_bit_ref_level);
 
   /**
    * \brief Get pointer to parent entity tag.
@@ -301,8 +305,7 @@ struct RefEntity : public BasicEntity {
   /** \brief Get parent entity, i.e. entity form one refinement level up
    */
   inline EntityHandle getParentEnt() const {
-    EntityHandle *tag_parent_ent = getParentEntPtr();
-    return *tag_parent_ent;
+    return *(getParentEntPtr());
   }
 
   /** \brief Get entity ref bit refinement signature
@@ -351,6 +354,10 @@ template <typename T> struct interface_RefEntity {
 
   inline EntityHandle getParentEnt() const {
     return this->sPtr->getParentEnt();
+  }
+
+  inline BitRefLevel *getBitRefLevelPtr() const {
+    return this->sPtr->getBitRefLevelPtr();
   }
 
   inline const BitRefLevel &getBitRefLevel() const {
@@ -427,10 +434,10 @@ typedef multi_index_container<
         ordered_non_unique<
             tag<Composite_ParentEnt_And_EntType_mi_tag>,
             composite_key<RefEntity,
-                          const_mem_fun<RefEntity, EntityHandle,
-                                        &RefEntity::getParentEnt>,
                           const_mem_fun<RefEntity::BasicEntity, EntityType,
-                                        &RefEntity::getEntType> > > > >
+                                        &RefEntity::getEntType>,
+                          const_mem_fun<RefEntity, EntityHandle,
+                                        &RefEntity::getParentEnt> > > > >
     RefEntity_multiIndex;
 
 /** \brief multi-index view of RefEntity by parent entity
@@ -439,7 +446,6 @@ typedef multi_index_container<
 typedef multi_index_container<
     boost::shared_ptr<RefEntity>,
     indexed_by<
-
         hashed_non_unique<
             const_mem_fun<RefEntity, EntityHandle, &RefEntity::getParentEnt> >,
         hashed_unique<
@@ -451,7 +457,7 @@ typedef multi_index_container<
                               &RefEntity::getParentEnt> > > >
 
     >
-    RefEntity_multiIndex_view_by_parent_entity;
+    RefEntity_multiIndex_view_by_hashed_parent_entity;
 
 template <class T> struct Entity_update_pcomm_data {
   const int pcommID;
@@ -477,19 +483,6 @@ template <class T> struct Entity_update_pcomm_data {
   }
 };
 
-/** \brief ref mofem entity, remove parent
- * \ingroup ent_multi_indices
- */
-struct RefEntity_change_remove_parent {
-  ErrorCode rval;
-  RefEntity_change_remove_parent() {}
-  inline void operator()(boost::shared_ptr<RefEntity> &e) {
-    rval = e->basicDataPtr->moab.tag_delete_data(
-        e->basicDataPtr->th_RefParentHandle, &e->ent, 1);
-    MOAB_THROW(rval);
-  }
-};
-
 /** \brief change parent
   * \ingroup ent_multi_indices
   *
@@ -502,10 +495,11 @@ struct RefEntity_change_remove_parent {
   */
 struct RefEntity_change_parent {
   EntityHandle pArent;
-  ErrorCode rval;
   RefEntity_change_parent(EntityHandle parent) : pArent(parent) {}
   inline void operator()(boost::shared_ptr<RefEntity> &e) {
-    *(e->getParentEntPtr()) = pArent;
+    rval = e->getBasicDataPtr()->moab.tag_set_data(
+        e->getBasicDataPtr()->th_RefParentHandle, &e->ent, 1, &pArent);
+    MOAB_THROW(rval);
   }
 };
 
@@ -533,68 +527,6 @@ struct RefEntity_change_right_shift {
     BitRefLevel bit = *(e->getBitRefLevelPtr());
     *(e->getBitRefLevelPtr()) = ((bit & mask) >> shift) | (bit & ~mask);
   };
-};
-
-/** \brief ref mofem entity, change bit
- * \ingroup ent_multi_indices
- */
-struct RefEntity_change_add_bit {
-  BitRefLevel bit;
-  RefEntity_change_add_bit(const BitRefLevel &_bit) : bit(_bit){};
-  inline void operator()(RefEntity &e) {
-    bit |= e.getBitRefLevel();
-    *(e.getBitRefLevelPtr()) = bit;
-  }
-  inline void operator()(boost::shared_ptr<RefEntity> &e) {
-    this->operator()(*e);
-  }
-};
-
-/** \brief ref mofem entity, change bit
- * \ingroup ent_multi_indices
- */
-struct RefEntity_change_and_bit {
-  BitRefLevel bit;
-  RefEntity_change_and_bit(const BitRefLevel &_bit) : bit(_bit){};
-  inline void operator()(boost::shared_ptr<RefEntity> &e) {
-    bit &= *(e->getBitRefLevelPtr());
-    *(e->getBitRefLevelPtr()) = bit;
-  }
-};
-
-/** \brief ref mofem entity, change bit
- * \ingroup ent_multi_indices
- */
-struct RefEntity_change_xor_bit {
-  BitRefLevel bit;
-  RefEntity_change_xor_bit(const BitRefLevel &_bit) : bit(_bit){};
-  inline void operator()(boost::shared_ptr<RefEntity> &e) {
-    bit ^= *(e->getBitRefLevelPtr());
-    *(e->getBitRefLevelPtr()) = bit;
-  }
-};
-
-/** \brief ref mofem entity, change bit
- * \ingroup ent_multi_indices
- */
-struct RefEntity_change_set_bit {
-  BitRefLevel bit;
-  RefEntity_change_set_bit(const BitRefLevel &_bit) : bit(_bit){};
-  inline void operator()(boost::shared_ptr<RefEntity> &e) {
-    *(e->getBitRefLevelPtr()) = bit;
-  }
-};
-
-/** \brief ref mofem entity, change bit
- * \ingroup ent_multi_indices
- */
-struct RefEntity_change_set_nth_bit {
-  int n;
-  bool b;
-  RefEntity_change_set_nth_bit(const int _n, bool _b) : n(_n), b(_b){};
-  inline void operator()(boost::shared_ptr<RefEntity> &e) {
-    (*(e->getBitRefLevelPtr()))[n] = b;
-  }
 };
 
 struct DofEntity;

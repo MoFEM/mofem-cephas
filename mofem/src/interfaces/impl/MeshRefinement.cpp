@@ -105,7 +105,7 @@ MoFEMErrorCode MeshRefinement::add_verices_in_the_middel_of_edges(
       ref_ents.lower_bound(boost::make_tuple(MBVERTEX, MBEDGE));
   RefEntsByComposite::iterator hi_miit =
       ref_ents.upper_bound(boost::make_tuple(MBVERTEX, MBEDGE));
-  RefEntity_multiIndex_view_by_parent_entity ref_parent_ents_view;
+  RefEntity_multiIndex_view_by_hashed_parent_entity ref_parent_ents_view;
   ref_parent_ents_view.insert(miit,hi_miit);
   if (verb >= VERBOSE) {
     std::ostringstream ss;
@@ -119,8 +119,9 @@ MoFEMErrorCode MeshRefinement::add_verices_in_the_middel_of_edges(
   }
   std::vector<EntityHandle> parent_edge;
   parent_edge.reserve(edges.size());
+  Range add_bit;
   for (Range::iterator eit = edges.begin(); eit != edges.end(); ++eit) {
-    RefEntity_multiIndex_view_by_parent_entity::iterator miit_view =
+    RefEntity_multiIndex_view_by_hashed_parent_entity::iterator miit_view =
         ref_parent_ents_view.find(*eit);
     if (miit_view == ref_parent_ents_view.end()) {
       const EntityHandle *conn;
@@ -148,13 +149,10 @@ MoFEMErrorCode MeshRefinement::add_verices_in_the_middel_of_edges(
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                 "parent edge does not much");
       }
-      bool success = const_cast<RefEntity_multiIndex *>(refined_ents_ptr)
-                         ->modify(nit, RefEntity_change_add_bit(bit));
-      if (!success)
-        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                "inconsistency in data");
+      add_bit.insert(node);
     }
   }
+  CHKERR m_field.getInterface<BitRefManager>()->addBitRefLevel(add_bit, bit);
   if (!vert_coords[0].empty()) {
     int num_nodes = vert_coords[0].size();
     vector<double *> arrays_coord;
@@ -203,20 +201,57 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
   MoFEMFunctionBegin;
 
   struct Check {
+    map<EntityHandle, EntityHandle> entParentMap;
     MoFEMErrorCode operator()(Range *ref_edges,
-                              const RefEntity_multiIndex *ref_ents_ptr) const {
+                              const RefEntity_multiIndex *ref_ents_ptr,
+                              MoFEM::Core &core) {
       MoFEMFunctionBegin;
-      if(!ref_edges) MoFEMFunctionReturnHot(0);
+      if (!ref_edges)
+        MoFEMFunctionReturnHot(0);
       for (Range::iterator eit = ref_edges->begin(); eit != ref_edges->end();
            ++eit) {
         RefEntity_multiIndex::index<
             Composite_ParentEnt_And_EntType_mi_tag>::type::iterator vit =
             ref_ents_ptr->get<Composite_ParentEnt_And_EntType_mi_tag>().find(
-                boost::make_tuple(*eit, MBVERTEX));
+                boost::make_tuple(MBVERTEX, *eit));
         if (vit ==
             ref_ents_ptr->get<Composite_ParentEnt_And_EntType_mi_tag>().end()) {
+          RefEntity_multiIndex::iterator e_eit = ref_ents_ptr->find(*eit);
+          if (e_eit == ref_ents_ptr->end()) {
+            SETERRQ1(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY,
+                     "Edge not found %ld", *eit);
+          }
+          cerr << "Parent edge" << endl << **e_eit << endl;
+          if (entParentMap.find(*eit) != entParentMap.end()) {
+            RefEntity_multiIndex::iterator v_eit =
+                ref_ents_ptr->find(entParentMap[*eit]);
+            if (v_eit == ref_ents_ptr->end()) {
+              SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY,
+                      "Vertex not found");
+            }
+            cerr << "Vertex " << **v_eit << endl;
+          }
+          RefEntity_multiIndex::index<Ent_Ent_mi_tag>::type::iterator ee_it,
+              ee_hi_it;
+          ee_it = ref_ents_ptr->get<Ent_Ent_mi_tag>().lower_bound(*eit);
+          ee_hi_it = ref_ents_ptr->get<Ent_Ent_mi_tag>().upper_bound(*eit);
+          for(;ee_it != ee_hi_it; ++ee_it) {
+            cerr << "Ent having edge parent by parent " << **ee_it << endl;
+          }
+          RefEntity_multiIndex tmp_index;
+          tmp_index.insert(ref_ents_ptr->begin(),ref_ents_ptr->end());
+          RefEntity_multiIndex::index<
+              Composite_ParentEnt_And_EntType_mi_tag>::type::iterator vvit =
+              tmp_index.get<Composite_ParentEnt_And_EntType_mi_tag>().find(
+                  boost::make_tuple(MBVERTEX, *eit));
+          if (vvit !=
+              tmp_index.get<Composite_ParentEnt_And_EntType_mi_tag>().end()) {
+              cerr << "Tmp idx Vertex " << **vvit << endl;
+          }        
           SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                   "No vertex on trim edges, that make no sense");
+        } else {
+          entParentMap[vit->get()->getParentEnt()] = vit->get()->getRefEnt();
         }
       }
       MoFEMFunctionReturn(0);
@@ -232,7 +267,7 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
       MoFEMFunctionBegin;
       RefEntity_multiIndex::iterator it = ref_ents_ptr->find(ent);
       if (it != ref_ents_ptr->end()) {
-        if(it->get()->getParentEnt()!=parent) {
+        if (it->get()->getParentEnt() != parent) {
           parentsToChange[ent] = parent;
         }
      } else {
@@ -241,17 +276,16 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
       }
       MoFEMFunctionReturn(0);
     }
-    MoFEMErrorCode operator()(const RefEntity_multiIndex *ref_ents_ptr,
-                              MoFEM::Core &cOre) {
-      MoFEM::Interface &m_field = cOre;
+    MoFEMErrorCode operator()(const RefEntity_multiIndex *ref_ents_ptr) {
       MoFEMFunctionBegin;
-      for(map<EntityHandle,EntityHandle>::iterator mit = parentsToChange.begin();
-      mit!=parentsToChange.end();++mit) {
+      for (map<EntityHandle, EntityHandle>::iterator mit =
+               parentsToChange.begin();
+           mit != parentsToChange.end(); ++mit) {
         RefEntity_multiIndex::iterator it = ref_ents_ptr->find(mit->first);
         bool success = const_cast<RefEntity_multiIndex *>(ref_ents_ptr)
                            ->modify(it, RefEntity_change_parent(mit->second));
         if (!success) {
-          SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
+          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                   "impossible to set parent");
         }
       }
@@ -265,7 +299,8 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
   CHKERR m_field.get_ref_ents(&refined_ents_ptr);
   CHKERR m_field.get_ref_finite_elements(&refined_finite_elements_ptr);
 
-  CHKERR Check()(ref_edges_ptr,refined_ents_ptr);
+  Check check;
+  CHKERR check(ref_edges_ptr,refined_ents_ptr,cOre);
 
   // FIXME: refinement is based on entity handlers, should work on global ids of
   // nodes, this will allow parallelise algorithm in the future
@@ -275,7 +310,7 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
       Composite_EntType_and_ParentEntType_mi_tag>::type RefEntsByComposite;
   RefEntsByComposite &ref_ents =
       refined_ents_ptr->get<Composite_EntType_and_ParentEntType_mi_tag>();
-  RefEntity_multiIndex_view_by_parent_entity ref_parent_ents_view;
+  RefEntity_multiIndex_view_by_hashed_parent_entity ref_parent_ents_view;
   ref_parent_ents_view.insert(
     ref_ents.lower_bound(boost::make_tuple(MBVERTEX, MBEDGE)),
     ref_ents.upper_bound(boost::make_tuple(MBVERTEX, MBEDGE))
@@ -327,7 +362,7 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
     for (int ee = 0; ee < 6; ee++) {
       EntityHandle edge;
       CHKERR moab.side_element(*tit, 1, ee, edge);
-      RefEntity_multiIndex_view_by_parent_entity::iterator miit_view;
+      RefEntity_multiIndex_view_by_hashed_parent_entity::iterator miit_view;
       miit_view = ref_parent_ents_view.find(edge);
       if (miit_view != ref_parent_ents_view.end()) {
         if (((*miit_view)->getBitRefLevel() & bit).any()) {
@@ -647,9 +682,12 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
     }
   }
 
-  CHKERR set_parent(refined_ents_ptr,cOre);
+  CHKERR check(ref_edges_ptr, refined_ents_ptr,cOre);
+  CHKERR set_parent(refined_ents_ptr);
+  CHKERR check(ref_edges_ptr, refined_ents_ptr, cOre);
   CHKERR m_field.getInterface<BitRefManager>()->setBitRefLevel(ents_to_set_bit,
                                                                bit, true, verb);
+  CHKERR check(ref_edges_ptr, refined_ents_ptr, cOre);
 
   MoFEMFunctionReturn(0);
 }
@@ -688,7 +726,7 @@ MoFEMErrorCode MeshRefinement::refine_PRISM(const EntityHandle meshset,
       Composite_EntType_and_ParentEntType_mi_tag>::type RefEntsByComposite;
   RefEntsByComposite &ref_ents_by_comp =
       refined_ents_ptr->get<Composite_EntType_and_ParentEntType_mi_tag>();
-  RefEntity_multiIndex_view_by_parent_entity ref_parent_ents_view;
+  RefEntity_multiIndex_view_by_hashed_parent_entity ref_parent_ents_view;
   ref_parent_ents_view.insert(
     ref_ents_by_comp.lower_bound(boost::make_tuple(MBVERTEX, MBEDGE)),
     ref_ents_by_comp.upper_bound(boost::make_tuple(MBVERTEX, MBEDGE))
@@ -730,7 +768,7 @@ MoFEMErrorCode MeshRefinement::refine_PRISM(const EntityHandle meshset,
     EntityHandle edge_nodes[6];
     std::fill(&edge_nodes[0], &edge_nodes[6], no_handle);
     for (int ee = 0; ee < 6; ee++) {
-      RefEntity_multiIndex_view_by_parent_entity::iterator miit_view =
+      RefEntity_multiIndex_view_by_hashed_parent_entity::iterator miit_view =
           ref_parent_ents_view.find(edges[ee]);
       if (miit_view != ref_parent_ents_view.end()) {
         if (((*miit_view)->getBitRefLevel() & bit).any()) {
@@ -740,8 +778,7 @@ MoFEMErrorCode MeshRefinement::refine_PRISM(const EntityHandle meshset,
       }
     }
     if (split_edges.count() == 0) {
-      const_cast<RefEntity_multiIndex *>(refined_ents_ptr)
-          ->modify(miit_prism, RefEntity_change_add_bit(bit));
+      *(const_cast<RefEntity *>(miit_prism->get())->getBitRefLevelPtr()) |= bit;
       if (verb >= VERY_NOISY)
         PetscPrintf(m_field.get_comm(), "no refinement");
       continue;
@@ -793,10 +830,9 @@ MoFEMErrorCode MeshRefinement::refine_PRISM(const EntityHandle meshset,
     RefEntByParentAndRefEdges::iterator it_by_ref_edges2 = it_by_ref_edges;
     for (int pp = 0; it_by_ref_edges2 != hi_it_by_ref_edges;
          it_by_ref_edges2++, pp++) {
-      // add this tet to this ref
-      const_cast<RefEntity_multiIndex *>(refined_ents_ptr)
-          ->modify(refined_ents_ptr->find(it_by_ref_edges2->get()->getRefEnt()),
-                   RefEntity_change_add_bit(bit));
+      // Add this tet to this ref
+      *(const_cast<RefElement *>(it_by_ref_edges2->get())
+            ->getBitRefLevelPtr()) |= bit;
       ref_prism_bit.set(pp, 1);
       if (verb > 2) {
         std::ostringstream ss;
@@ -866,32 +902,24 @@ MoFEMErrorCode MeshRefinement::refine_PRISM(const EntityHandle meshset,
 MoFEMErrorCode MeshRefinement::refine_MESHSET(const EntityHandle meshset,
                                               const BitRefLevel &bit,
                                               const bool recursive, int verb) {
-
-  //
   Interface &m_field = cOre;
-  // moab::Interface &moab = m_field.get_moab();
   const RefEntity_multiIndex *refined_ents_ptr;
-  MoFEMFunctionBeginHot;
-  ierr = m_field.get_ref_ents(&refined_ents_ptr);
-  CHKERRG(ierr);
+  MoFEMFunctionBegin;
+  CHKERR m_field.get_ref_ents(&refined_ents_ptr);
   typedef const RefEntity_multiIndex::index<Ent_mi_tag>::type RefEntsByEnt;
   RefEntsByEnt::iterator miit = refined_ents_ptr->find(meshset);
   if (miit == refined_ents_ptr->end()) {
     SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
             "this meshset is not in ref database");
   }
-  ierr = m_field.getInterface<BitRefManager>()->updateMeshsetByEntitiesChildren(
+  CHKERR m_field.getInterface<BitRefManager>()->updateMeshsetByEntitiesChildren(
       meshset, bit, meshset, MBEDGE, recursive, verb);
-  CHKERRG(ierr);
-  ierr = m_field.getInterface<BitRefManager>()->updateMeshsetByEntitiesChildren(
+  CHKERR m_field.getInterface<BitRefManager>()->updateMeshsetByEntitiesChildren(
       meshset, bit, meshset, MBTRI, recursive, verb);
-  CHKERRG(ierr);
-  ierr = m_field.getInterface<BitRefManager>()->updateMeshsetByEntitiesChildren(
+  CHKERR m_field.getInterface<BitRefManager>()->updateMeshsetByEntitiesChildren(
       meshset, bit, meshset, MBTET, recursive, verb);
-  CHKERRG(ierr);
-  const_cast<RefEntity_multiIndex *>(refined_ents_ptr)
-      ->modify(miit, RefEntity_change_add_bit(bit));
-  MoFEMFunctionReturnHot(0);
+  *(const_cast<RefEntity *>(miit->get())->getBitRefLevelPtr()) |= bit;
+  MoFEMFunctionReturn(0);
 }
 
 } // namespace MoFEM
