@@ -31,13 +31,14 @@ int main(int argc, char *argv[]) {
 
   try {
 
-    PetscBool flg = PETSC_TRUE;
+    PetscBool flg_myfile = PETSC_TRUE;
     char mesh_file_name[255];
     int surface_side_set = 200;
     PetscBool flg_vol_block_set;
     int vol_block_set = 1;
     int edges_block_set = 1;
     int vertex_block_set = 2;
+    PetscBool flg_shift;
     double shift[] = {0, 0, 0};
     int nmax = 3;
     int fraction_level = 2;
@@ -49,7 +50,7 @@ int main(int argc, char *argv[]) {
 
     CHKERR PetscOptionsBegin(PETSC_COMM_WORLD, "", "Mesh cut options", "none");
     CHKERR PetscOptionsString("-my_file", "mesh file name", "", "mesh.h5m",
-                              mesh_file_name, 255, &flg);
+                              mesh_file_name, 255, &flg_myfile);
     CHKERR PetscOptionsInt("-surface_side_set", "surface side set", "",
                            surface_side_set, &surface_side_set, PETSC_NULL);
     CHKERR PetscOptionsInt("-vol_block_set", "volume side set", "",
@@ -59,7 +60,7 @@ int main(int argc, char *argv[]) {
     CHKERR PetscOptionsInt("-vertex_block_set", "vertex side set", "",
                            vertex_block_set, &vertex_block_set, PETSC_NULL);
     CHKERR PetscOptionsRealArray("-shift", "shift surface by vector", "", shift,
-                                 &nmax, &flg);
+                                 &nmax, &flg_shift);
     CHKERR PetscOptionsInt("-fraction_level", "fraction of merges merged", "",
                            fraction_level, &fraction_level, PETSC_NULL);
     CHKERR PetscOptionsBool("-squash_bits", "true to squash bits at the end",
@@ -73,11 +74,11 @@ int main(int argc, char *argv[]) {
                            &flg_create_surface_side_set);
     ierr = PetscOptionsEnd(); CHKERRG(ierr);
 
-    if (flg != PETSC_TRUE) {
+    if (flg_myfile != PETSC_TRUE) {
       SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
               "*** ERROR -my_file (MESH FILE NEEDED)");
     }
-    if (flg && nmax != 3) {
+    if (flg_shift && nmax != 3) {
       SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
               "three values expected");
     }
