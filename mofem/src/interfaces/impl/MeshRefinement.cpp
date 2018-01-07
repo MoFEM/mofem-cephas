@@ -267,7 +267,8 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
       MoFEMFunctionBegin;
       RefEntity_multiIndex::iterator it = ref_ents_ptr->find(ent);
       if (it != ref_ents_ptr->end()) {
-        if (it->get()->getParentEnt() != parent) {
+        if (it->get()->getParentEnt() != parent &&
+            it->get()->getParentEnt() != it->get()->getRefEnt()) {
           parentsToChange[ent] = parent;
         }
      } else {
