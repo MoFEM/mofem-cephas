@@ -338,7 +338,7 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
   // make loop over all tets which going to be refined
   Range tets = _tets.subset_by_type(MBTET);
   Range::iterator tit = tets.begin();
-  for (; tit != tets.end(); tit++) {
+  for (; tit != tets.end(); ++tit) {
 
     if (ref_finite_element.find(*tit) == ref_finite_element.end()) {
       SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
@@ -352,34 +352,32 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
 
     // get edges
     BitRefEdges parent_edges_bit(0);
-    EntityHandle edge_new_nodes[6];
-    std::fill(&edge_new_nodes[0], &edge_new_nodes[6], no_handle);
-    int split_edges[6];
-    std::fill(&split_edges[0], &split_edges[6], -1);
+    EntityHandle edge_new_nodes[] = { 0,0,0,0,0,0 };
+    int split_edges[] = {-1, -1, -1, -1, -1, -1};
     // hash map of nodes (RefEntity) by edges (EntityHandle)
     std::map<EntityHandle /*edge*/, EntityHandle /*node*/>
         map_ref_nodes_by_edges;
-    for (int ee = 0; ee < 6; ee++) {
+    for (int ee = 0; ee != 6; ++ee) {
       EntityHandle edge;
       CHKERR moab.side_element(*tit, 1, ee, edge);
-      RefEntity_multiIndex_view_by_hashed_parent_entity::iterator miit_view;
-      miit_view = ref_parent_ents_view.find(edge);
-      if (miit_view != ref_parent_ents_view.end()) {
-        if (((*miit_view)->getBitRefLevel() & bit).any()) {
-          edge_new_nodes[ee] = (*miit_view)->getRefEnt();
-          map_ref_nodes_by_edges[(*miit_view)->getParentEnt()] =
-              miit_view->get()->getRefEnt();
+      RefEntity_multiIndex_view_by_hashed_parent_entity::iterator eit =
+          ref_parent_ents_view.find(edge);
+      if (eit != ref_parent_ents_view.end()) {
+        if (((*eit)->getBitRefLevel() & bit).any()) {
+          edge_new_nodes[ee] = (*eit)->getRefEnt();
+          map_ref_nodes_by_edges[(*eit)->getParentEnt()] =
+              eit->get()->getRefEnt();
           {
             const EntityHandle *conn_edge;
             int num_nodes;
             moab.get_connectivity(edge, conn_edge, num_nodes, true);
             if (conn_edge[0] == edge_new_nodes[ee]) {
               SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
-                      "data inconsistency");
+                      "node 0 on the edges is mid node, that make no sense");
             }
             if (conn_edge[1] == edge_new_nodes[ee]) {
               SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
-                      "data inconsistency");
+                      "node 0 on the edges is mid node, that make no sense");
             }
           }
           split_edges[parent_edges_bit.count()] = ee;
@@ -389,26 +387,26 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
     }
 
     // test if nodes used to refine are not part of tet
-    for (int ee = 0; ee < 6; ee++) {
+    for (int ee = 0; ee != 6; ee++) {
       if (edge_new_nodes[ee] == no_handle)
         continue;
-      for (int nn = 0; nn < 4; nn++) {
+      for (int nn = 0; nn != 4; nn++) {
         if (conn[nn] == edge_new_nodes[ee]) {
-          // std::cerr << conn[0] << " "
-          // << conn[1] << " "
-          // << conn[2] << " "
-          // << conn[3] << " : "
-          // << edge_new_nodes[ee] << std::endl;
-          for (int eee = 0; eee < 6; eee++) {
+          std::cerr << "problem on edge: " << ee << endl;
+          std::cerr << "tet conn : " << conn[0] << " " << conn[1] << " "
+                    << conn[2] << " " << conn[3] << " : " << edge_new_nodes[ee]
+                    << std::endl;
+          for (int eee = 0; eee != 6; ++eee) {
             EntityHandle edge;
             CHKERR moab.side_element(*tit, 1, eee, edge);
             const EntityHandle *conn_edge;
             int num_nodes;
             CHKERR moab.get_connectivity(edge, conn_edge, num_nodes, true);
-            std::cerr << conn_edge[0] << " " << conn_edge[1] << std::endl;
+            std::cerr << eee << " : " << conn_edge[0] << " " << conn_edge[1]
+                      << std::endl;
           }
           SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
-                  "data inconsistency");
+                  "nodes used to refine are not part of tet");
         }
       }
     }
