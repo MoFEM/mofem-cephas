@@ -1446,6 +1446,7 @@ struct DeprecatedCoreInterface : public CoreInterface {
                                                    int verb = -1);
 
   /**
+   * \deprecated use add_ents_to_field_by_type
    * \brief set field entities from adjacencies of quads
    * \ingroup mofem_field
    *
@@ -1458,6 +1459,7 @@ struct DeprecatedCoreInterface : public CoreInterface {
                                                     int verb = -1);
 
   /**
+   * \deprecated use add_ents_to_field_by_type 
    * \brief set field entities from adjacencies of quads
    * \ingroup mofem_field
    *
@@ -1470,6 +1472,7 @@ struct DeprecatedCoreInterface : public CoreInterface {
                                                     int verb = -1);
 
   /**
+   * \deprecated use add_ents_to_field_by_type
    * \brief set field entities from adjacencies of prisms
    * \ingroup mofem_field
    *
@@ -1482,6 +1485,7 @@ struct DeprecatedCoreInterface : public CoreInterface {
                                                      int verb = -1);
 
   /**
+   * \deprecated use add_ents_to_field_by_type
    * \brief set field entities from adjacencies of prisms
    * \ingroup mofem_field
    *
