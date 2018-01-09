@@ -201,16 +201,7 @@ MoFEMErrorCode ISManager::isCreateProblemOrder(const std::string &problem,
   }
   NumeredDofEntity_multiIndex_petsc_global_dof_view_ordered_non_unique
       dof_idx_view;
-  for (; it != hi_it; it++) {
-    std::pair<
-        NumeredDofEntity_multiIndex_petsc_global_dof_view_ordered_non_unique::
-            iterator,
-        bool>
-        p;
-    if ((*it)->getPart() != (unsigned int)rank)
-      continue;
-    p = dof_idx_view.insert(*it);
-  }
+  dof_idx_view.insert(it,hi_it);
   NumeredDofEntity_multiIndex_petsc_global_dof_view_ordered_non_unique::iterator
       vit,
       hi_vit;
@@ -219,8 +210,8 @@ MoFEMErrorCode ISManager::isCreateProblemOrder(const std::string &problem,
   int size = distance(vit, hi_vit);
   int *id;
   CHKERR PetscMalloc(size * sizeof(int), &id);
-  for (int ii = 0; vit != hi_vit; vit++) {
-    id[ii++] = (*vit)->getPetscGlobalDofIdx();
+  for (int ii = 0; vit != hi_vit; ++vit, ++ii) {
+    id[ii] = (*vit)->getPetscGlobalDofIdx();
   }
   CHKERR ISCreateGeneral(PETSC_COMM_WORLD, size, id, PETSC_OWN_POINTER, is);
   MoFEMFunctionReturn(0);
