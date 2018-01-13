@@ -1070,6 +1070,17 @@ namespace MoFEM {
                                                       const BitRefLevel &mask,
                                                       int verb = -1) = 0;
 
+    /** \brief clear adjacencies for field entities by entities
+     */
+    virtual MoFEMErrorCode clear_adjacencies_entities(const Range &ents,
+                                                      int verb = -1) = 0;
+
+    /** \brief clear adjacencies for field entities by entities and field namd
+     */
+    virtual MoFEMErrorCode clear_adjacencies_entities(const std::string &name,
+                                                      const Range &ents,
+                                                      int verb = -1) = 0;
+
     /**@}*/
 
     /** \name Problems */
