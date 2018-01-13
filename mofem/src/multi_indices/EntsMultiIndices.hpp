@@ -459,6 +459,14 @@ typedef multi_index_container<
     >
     RefEntity_multiIndex_view_by_hashed_parent_entity;
 
+typedef multi_index_container<
+    indexed_by<sequenced<>,
+    boost::shared_ptr<RefEntity>,
+    indexed_by<ordered_unique<
+        tag<Ent_mi_tag>,
+        member<RefEntity::BasicEntity, EntityHandle, &RefEntity::ent> > > >
+    RefEntity_multiIndex_view_sequence_ordered_view;
+
 template <class T> struct Entity_update_pcomm_data {
   const int pcommID;
   Entity_update_pcomm_data(const int pcomm_id = MYPCOMM_INDEX)
