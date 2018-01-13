@@ -337,24 +337,52 @@ enum VERBOSITY_LEVELS { QUIET = 0, VERBOSE, VERY_VERBOSE, NOISY, VERY_NOISY };
  * code.
  *
  */
-#define BARRIER_RANK_START(PCMB)                                               \
+#define BARRIER_PCOMM_RANK_START(PCMB)                                         \
   {                                                                            \
     for (unsigned int i = 0; i < PCMB->proc_config().proc_rank(); i++)         \
       MPI_Barrier(PCMB->proc_config().proc_comm());                            \
   };
 
+
 /** \brief set barrier start
-  * Run code in sequence, starting from process 0, and ends on last process.
-  *
-  * It can be only used for testing. Do not use that function as a part of these
-  * code.
-  *
-  */
-#define BARRIER_RANK_END(PCMB)                                                 \
+ * Run code in sequence, starting from process 0, and ends on last process.
+ *
+ * It can be only used for testing. Do not use that function as a part of these
+ * code.
+ *
+ */
+#define BARRIER_PCOMM_RANK_END(PCMB)                                           \
   {                                                                            \
     for (unsigned int i = PCMB->proc_config().proc_rank();                     \
          i < PCMB->proc_config().proc_size(); i++)                             \
       MPI_Barrier(PCMB->proc_config().proc_comm());                            \
+  };
+
+/** \brief set barrier start
+ * Run code in sequence, starting from process 0, and ends on last process.
+ *
+ * It can be only used for testing. Do not use that function as a part of these
+ * code.
+ *
+ */
+#define BARRIER_MOFEM_RANK_START(MOFEM)                                        \
+  {                                                                            \
+    for (unsigned int i = 0; i < (MOFEM)->get_comm_rank(); i++)                \
+      MPI_Barrier((MOFEM)->get_comm());                                        \
+  };
+
+/** \brief set barrier start
+ * Run code in sequence, starting from process 0, and ends on last process.
+ *
+ * It can be only used for testing. Do not use that function as a part of these
+ * code.
+ *
+ */
+#define BARRIER_MOFEM_RANK_END(MOFEM)                                          \
+  {                                                                            \
+    for (unsigned int i = (MOFEM)->get_comm_rank();                            \
+         i < (MOFEM)->get_comm_size(); i++)                                    \
+      MPI_Barrier((MOFEM)->get_comm());                                        \
   };
 
 #ifdef __cplusplus
