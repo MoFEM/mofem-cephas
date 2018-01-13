@@ -52,10 +52,18 @@ struct Core : public Interface {
   /**
    * Construct core database
    */
-  Core(moab::Interface &moab,            ///< MoAB interface
-       MPI_Comm comm = PETSC_COMM_WORLD, ///< MPI communicator
-       int verbose = 1                   ///< Verbosity level
+  Core(moab::Interface &moab,             ///< MoAB interface
+       MPI_Comm comm = PETSC_COMM_WORLD,  ///< MPI communicator
+       const int verbose = VERBOSE,       ///< Verbosity level
+       const bool distributed_mesh = true ///< UId of entities and dofs depends
+                                          ///< on owing processor, assumed that
+                                          ///< mesh is distributed. Otherwise
+                                          ///< is assumed that all processors
+                                          ///< have the same meshes and same
+                                          ///< entity handlers.
+
   );
+
   ~Core();
 
   /** \name Global initialisation and finalisation  */
