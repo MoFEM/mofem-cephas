@@ -419,18 +419,18 @@ DEPRECATED void macro_is_depracted_using_deprecated_function();
                       ex.errorCode, PETSC_ERROR_INITIAL, ex.what());           \
   }                                                                            \
   catch (MoFEMExceptionRepeat const &ex) {                                     \
-    return PetscError(PETSC_COMM_WORLD, ex.lINE, PETSC_FUNCTION_NAME,          \
-                      __FILE__, ex.errorCode, PETSC_ERROR_REPEAT, " ");        \
+    return PetscError(PETSC_COMM_SELF, ex.lINE, PETSC_FUNCTION_NAME, __FILE__, \
+                      ex.errorCode, PETSC_ERROR_REPEAT, " ");                  \
   }                                                                            \
   catch (MoFEMException const &ex) {                                           \
-    SETERRQ(PETSC_COMM_WORLD, ex.errorCode, ex.errorMessage);                  \
+    SETERRQ(PETSC_COMM_SELF, ex.errorCode, ex.errorMessage);                   \
   }                                                                            \
   catch (std::exception const &ex) {                                           \
     std::string message("Error: " + std::string(ex.what()) + " at " +          \
                         boost::lexical_cast<std::string>(__LINE__) + " : " +   \
                         std::string(__FILE__) + " in " +                       \
                         std::string(PETSC_FUNCTION_NAME));                     \
-    SETERRQ(PETSC_COMM_WORLD, MOFEM_STD_EXCEPTION_THROW, message.c_str());     \
+    SETERRQ(PETSC_COMM_SELF, MOFEM_STD_EXCEPTION_THROW, message.c_str());      \
   }
 
 /**
