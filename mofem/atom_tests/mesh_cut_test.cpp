@@ -179,7 +179,7 @@ int main(int argc, char *argv[]) {
           MoFEMFunctionReturnHot(0);
         }
       };
-      CHKERR TestBitLevel(core.getInterface<BitRefManager>())(bit_level1, 408);
+      CHKERR TestBitLevel(core.getInterface<BitRefManager>())(bit_level1, -1);
       // FIXME: Mesh refinement is based on entities numbers and depend how entities are
       // indexed internally by moab. That can change resuluts. This test have 
       // to be fixed when mesh refinement algorithm is fixed. Thus result can be
