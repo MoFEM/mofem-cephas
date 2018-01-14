@@ -46,6 +46,9 @@ struct ProblemsManager : public UnknownInterface {
 
   PetscBool buildProblemFromFields; ///< If set to true, problem is build from
   /// DOFs in fields, not from DOFs on elements
+  
+  PetscBool synchroniseProblemEntities; 
+
 
   MoFEMErrorCode getOptions();
 

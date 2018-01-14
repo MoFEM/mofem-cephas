@@ -73,7 +73,8 @@ ProblemsManager::query_interface(const MOFEMuuid &uuid,
 
 ProblemsManager::ProblemsManager(const MoFEM::Core &core)
     : cOre(const_cast<MoFEM::Core &>(core)),
-      buildProblemFromFields(PETSC_FALSE) {
+      buildProblemFromFields(PETSC_FALSE),
+      synchroniseProblemEntities(PETSC_FALSE) {
   PetscLogEventRegister("ProblemsManager", 0, &MOFEM_EVENT_ProblemsManager);
 }
 ProblemsManager::~ProblemsManager() {}
@@ -696,6 +697,8 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
         }
       }
     }
+
+    
   }
 
   // Add DOFS to the proble by searching all the filedes, and adding to problem
@@ -740,6 +743,55 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
             if ((fit->get()->getId() & fields_ids_col).any()) {
               dofs_cols.insert(*dit);
             }
+          }
+        }
+      }
+    }
+  }
+
+  if (synchroniseProblemEntities) {
+    // Get fields IDs on elements
+    BitFieldId fields_ids_row, fields_ids_col;
+    BitFieldId *fields_ids[2] = {&fields_ids_row, &fields_ids_col};
+    for (FiniteElement_multiIndex::iterator fit = fe_ptr->begin();
+         fit != fe_ptr->end(); fit++) {
+      if ((fit->get()->getId() & problem_ptr->getBitFEId()).any()) {
+        fields_ids_row |= fit->get()->getBitFieldIdRow();
+        fields_ids_col |= fit->get()->getBitFieldIdCol();
+      }
+    }
+
+    DofEntity_multiIndex_active_view *dofs_ptr[] = {&dofs_rows, &dofs_cols};
+    for (int ss = 0; ss != ((square_matrix) ? 1 : 2); ++ss) {
+      DofEntity_multiIndex_active_view::nth_index<1>::type::iterator miit,
+          hi_miit;
+      miit = dofs_ptr[ss]->get<1>().lower_bound(1);
+      hi_miit = dofs_ptr[ss]->get<1>().upper_bound(1);
+      Range ents_to_synchronise;
+      for (; miit != hi_miit; ++miit) {
+        if (miit->get()->getEntDofIdx() != 0)
+          continue;
+        ents_to_synchronise.insert(miit->get()->getEnt());
+      }
+      Range tmp_ents = ents_to_synchronise;
+      CHKERR m_field.synchronise_entities(ents_to_synchronise, verb);
+      ents_to_synchronise = subtract(ents_to_synchronise, tmp_ents);
+      for (Field_multiIndex::iterator fit = fields_ptr->begin();
+           fit != fields_ptr->end(); fit++) {
+        if ((fit->get()->getId() & *fields_ids[ss]).any()) {
+          for (Range::pair_iterator pit = ents_to_synchronise.pair_begin();
+               pit != ents_to_synchronise.pair_end(); ++pit) {
+            const EntityHandle f = pit->first;
+            const EntityHandle s = pit->second;
+            DofEntity_multiIndex::index<
+                Composite_Name_And_Ent_mi_tag>::type::iterator dit,
+                hi_dit;
+            dit = dofs_field_ptr->get<Composite_Name_And_Ent_mi_tag>()
+                      .lower_bound(boost::make_tuple(fit->get()->getName(), f));
+            hi_dit =
+                dofs_field_ptr->get<Composite_Name_And_Ent_mi_tag>()
+                    .upper_bound(boost::make_tuple(fit->get()->getName(), s));
+            dofs_ptr[ss]->insert(dit, hi_dit);
           }
         }
       }
@@ -820,7 +872,7 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
 
   // Loop over dofs on this processor and prepare those dofs to send on another
   // proc
-  for (int ss = 0; ss < loop_size; ss++) {
+  for (int ss = 0; ss != loop_size; ++ss) {
 
     DofEntity_multiIndex_active_view::nth_index<0>::type::iterator miit,
         hi_miit;
@@ -831,7 +883,7 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
             new std::vector<NumeredDofEntity>());
     int nb_dofs_to_add = 0;
     miit = dofs_ptr[ss]->get<0>().begin();
-    for (; miit != hi_miit; miit++) {
+    for (; miit != hi_miit; ++miit) {
       // Only set global idx for dofs on this processor part
       if (!(miit->get()->getActive()))
         continue;
@@ -848,7 +900,7 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
 
     int &local_idx = *local_nbdof_ptr[ss];
     miit = dofs_ptr[ss]->get<0>().begin();
-    for (; miit != hi_miit; miit++) {
+    for (; miit != hi_miit; ++miit) {
 
       // Only set global idx for dofs on this processor part
       if (!(miit->get()->getActive()))
@@ -1082,7 +1134,7 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
   CHKERR PetscFree(status);
 
   // set values received from other processors
-  for (int ss = 0; ss < loop_size; ss++) {
+  for (int ss = 0; ss != loop_size; ++ss) {
 
     int nrecvs;
     int *olengths;
@@ -1097,9 +1149,12 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
       data_procs = rbuf_col;
     }
 
+    const DofEntity_multiIndex *dofs_ptr;
+    CHKERR m_field.get_dofs(&dofs_ptr);
+
     UId uid;
     NumeredDofEntity_multiIndex::iterator dit;
-    for (int kk = 0; kk < nrecvs; kk++) {
+    for (int kk = 0; kk != nrecvs; ++kk) {
       int len = olengths[kk];
       int *data_from_proc = data_procs[kk];
       for (int dd = 0; dd < len; dd += data_block_size) {
@@ -1109,9 +1164,6 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
           // Dof is shared to this processor, however there is no element which
           // have this dof
           // continue;
-          const DofEntity_multiIndex *dofs_ptr;
-          ierr = m_field.get_dofs(&dofs_ptr);
-          CHKERRG(ierr);
           DofEntity_multiIndex::iterator ddit = dofs_ptr->find(uid);
           if (ddit != dofs_ptr->end()) {
             unsigned char pstatus = ddit->get()->getPStatus();
