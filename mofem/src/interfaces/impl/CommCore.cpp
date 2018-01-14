@@ -17,191 +17,198 @@
 */
 namespace MoFEM {
 
-  MoFEMErrorCode Core::synchronise_entities(Range &ents,int verb) {
-    MoFEMFunctionBeginHot;
-    if(verb==-1) verb = verbose;
+MoFEMErrorCode Core::synchronise_entities(Range &ents, int verb) {
+  MoFEMFunctionBegin;
+  if (verb == -1)
+    verb = verbose;
 
-    //make a buffer
-    std::vector<std::vector<EntityHandle> > sbuffer(sIze);
+  // make a buffer
+  std::vector<std::vector<EntityHandle> > sbuffer(sIze);
 
-    Range::iterator eit = ents.begin();
-    for(;eit!=ents.end();eit++) {
+  Range::iterator eit = ents.begin();
+  for (; eit != ents.end(); eit++) {
 
-      RefEntity_multiIndex::iterator meit;
-      meit = refinedEntities.get<Ent_mi_tag>().find(*eit);
-      if(meit == refinedEntities.get<Ent_mi_tag>().end()) {
+    RefEntity_multiIndex::iterator meit;
+    meit = refinedEntities.get<Ent_mi_tag>().find(*eit);
+    if (meit == refinedEntities.get<Ent_mi_tag>().end()) {
+      continue;
+      SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+               "rank %d entity %lu not exist on database, local entity can not "
+               "be found for this owner",
+               rAnk, *eit);
+    }
+
+    unsigned char pstatus = (*meit)->getPStatus();
+
+    if (pstatus == 0)
+      continue;
+
+    if (verb >= NOISY) {
+      std::ostringstream zz;
+      zz << "pstatus " << std::bitset<8>(pstatus) << " ";
+      PetscSynchronizedPrintf(cOmm, "%s", zz.str().c_str());
+    }
+
+    for (int proc = 0;
+         proc < MAX_SHARING_PROCS && -1 != (*meit)->getSharingProcsPtr()[proc];
+         proc++) {
+      if ((*meit)->getSharingProcsPtr()[proc] == -1) {
+        SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE,
+                "sharing processor not set");
+      }
+      if ((*meit)->getSharingProcsPtr()[proc] == rAnk) {
         continue;
-        SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
-          "rank %d entity %lu not exist on database, local entity can not be found for this owner",
-          rAnk,*eit);
       }
-
-      unsigned char pstatus = (*meit)->getPStatus();
-
-      if(pstatus == 0) continue;
-
-      if(verb>1) {
-        std::ostringstream zz;
-        zz << "pstatus " <<  std::bitset<8>(pstatus) << " ";
-        PetscSynchronizedPrintf(cOmm,"%s",zz.str().c_str());
+      EntityHandle handle_on_sharing_proc =
+          (*meit)->getSharingHandlersPtr()[proc];
+      sbuffer[(*meit)->getSharingProcsPtr()[proc]].push_back(
+          handle_on_sharing_proc);
+      if (verb >= NOISY) {
+        PetscSynchronizedPrintf(cOmm, "send %lu (%lu) to %d at %d\n",
+                                (*meit)->getRefEnt(), handle_on_sharing_proc,
+                                (*meit)->getSharingProcsPtr()[proc], rAnk);
       }
-
-      for(int proc = 0; proc<MAX_SHARING_PROCS && -1 != (*meit)->getSharingProcsPtr()[proc]; proc++) {
-        if((*meit)->getSharingProcsPtr()[proc] == -1) {
-          SETERRQ(PETSC_COMM_SELF,MOFEM_IMPOSIBLE_CASE,"sharing processor not set");
-        }
-        if((*meit)->getSharingProcsPtr()[proc] == rAnk) {
-          continue;
-        }
-        EntityHandle handle_on_sharing_proc = (*meit)->getSharingHandlersPtr()[proc];
-        sbuffer[(*meit)->getSharingProcsPtr()[proc]].push_back(handle_on_sharing_proc);
-        if(verb>1) {
-          PetscSynchronizedPrintf(cOmm,"send %lu (%lu) to %d at %d\n",
-          (*meit)->getRefEnt(),handle_on_sharing_proc,(*meit)->getSharingProcsPtr()[proc],rAnk);
-        }
-        if(!(pstatus&PSTATUS_MULTISHARED)) {
-          break;
-        }
+      if (!(pstatus & PSTATUS_MULTISHARED)) {
+        break;
       }
-
-
     }
-
-    int nsends = 0; 			// number of messages to send
-    std::vector<int> sbuffer_lengths(sIze); 	// length of the message to proc
-    const size_t block_size = sizeof(EntityHandle)/sizeof(int);
-    for(int proc  = 0;proc<sIze;proc++) {
-
-      if(!sbuffer[proc].empty()) {
-
-        sbuffer_lengths[proc] = sbuffer[proc].size()*block_size;
-        nsends++;
-
-      } else {
-
-        sbuffer_lengths[proc] = 0;
-
-      }
-
-    }
-
-    // Make sure it is a PETSc cOmm
-    ierr = PetscCommDuplicate(cOmm,&cOmm,NULL); CHKERRG(ierr);
-
-    std::vector<MPI_Status> status(sIze);
-
-    // Computes the number of messages a node expects to receive
-    int nrecvs;	// number of messages received
-    ierr = PetscGatherNumberOfMessages(cOmm,NULL,&sbuffer_lengths[0],&nrecvs); CHKERRG(ierr);
-
-    // Computes info about messages that a MPI-node will receive, including (from-id,length) pairs for each message.
-    int *onodes;		// list of node-ids from which messages are expected
-    int *olengths;	// corresponding message lengths
-    ierr = PetscGatherMessageLengths(cOmm,nsends,nrecvs,&sbuffer_lengths[0],&onodes,&olengths);  CHKERRG(ierr);
-
-    // Gets a unique new tag from a PETSc communicator. All processors that share
-    // the communicator MUST call this routine EXACTLY the same number of times.
-    // This tag should only be used with the current objects communicator; do NOT
-    // use it with any other MPI communicator.
-    int tag;
-    ierr = PetscCommGetNewTag(cOmm,&tag); CHKERRG(ierr);
-
-    // Allocate a buffer sufficient to hold messages of size specified in
-    // olengths. And post Irecvs on these buffers using node info from onodes
-    int **rbuf;		// must bee freed by user
-    MPI_Request *r_waits; // must bee freed by user
-    // rbuf has a pointers to messages. It has size of of nrecvs (number of
-    // messages) +1. In the first index a block is allocated,
-    // such that rbuf[i] = rbuf[i-1]+olengths[i-1].
-    ierr = PetscPostIrecvInt(cOmm,tag,nrecvs,onodes,olengths,&rbuf,&r_waits); CHKERRG(ierr);
-
-    MPI_Request *s_waits; // status of sens messages
-    ierr = PetscMalloc1(nsends,&s_waits); CHKERRG(ierr);
-
-    // Send messeges
-    for(int proc=0,kk=0; proc<sIze; proc++) {
-      if(!sbuffer_lengths[proc]) continue; // no message to send to this proc
-      ierr = MPI_Isend(
-        &(sbuffer[proc])[0], 	// buffer to send
-        sbuffer_lengths[proc], 	// message length
-        MPIU_INT,proc,       	// to proc
-        tag,cOmm,s_waits+kk); CHKERRG(ierr);
-      kk++;
-    }
-
-    // Wait for received
-    if(nrecvs) {
-      ierr = MPI_Waitall(nrecvs,r_waits,&status[0]);CHKERRG(ierr);
-    }
-    // Wait for send messages
-    if(nsends) {
-      ierr = MPI_Waitall(nsends,s_waits,&status[0]);CHKERRG(ierr);
-    }
-
-    if(verb>0) {
-      PetscSynchronizedPrintf(cOmm,"Rank %d nb. before ents %u\n",rAnk,ents.size());
-    }
-
-    // synchronise range
-    for(int kk = 0;kk<nrecvs;kk++) {
-
-      int len = olengths[kk];
-      int *data_from_proc = rbuf[kk];
-
-      for(int ee = 0;ee<len;ee+=block_size) {
-
-        EntityHandle ent;
-        bcopy(&data_from_proc[ee],&ent,sizeof(EntityHandle));
-        RefEntity_multiIndex::index<Ent_mi_tag>::type::iterator meit;
-        meit = refinedEntities.get<Ent_mi_tag>().find(ent);
-        if(meit == refinedEntities.get<Ent_mi_tag>().end()) {
-          SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
-            "rank %d entity %lu not exist on database, local entity can not be found for this owner",rAnk,ent);
-          }
-          if(verb>2) {
-            PetscSynchronizedPrintf(cOmm,"received %ul (%ul) from %d at %d\n",(*meit)->getRefEnt(),ent,onodes[kk],rAnk);
-          }
-          ents.insert((*meit)->getRefEnt());
-
-        }
-
-    }
-
-    if(verb>0) {
-      PetscSynchronizedPrintf(cOmm,"Rank %d nb. after ents %u\n",rAnk,ents.size());
-    }
-
-
-    // Cleaning
-    ierr = PetscFree(s_waits); CHKERRG(ierr);
-    ierr = PetscFree(rbuf[0]); CHKERRG(ierr);
-    ierr = PetscFree(rbuf); CHKERRG(ierr);
-    ierr = PetscFree(r_waits); CHKERRG(ierr);
-    ierr = PetscFree(onodes); CHKERRG(ierr);
-    ierr = PetscFree(olengths); CHKERRG(ierr);
-
-    if(verb>0) {
-      PetscSynchronizedFlush(cOmm,PETSC_STDOUT);
-    }
-
-    MoFEMFunctionReturnHot(0);
   }
 
-  MoFEMErrorCode Core::synchronise_field_entities(const BitFieldId id,int verb) {
-    MoFEMFunctionBeginHot;
-    if(verb==-1) verb = verbose;
-    EntityHandle idm;
-    try {
-      idm = get_field_meshset(id);
-    } catch (MoFEMException const &e) {
-      SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
+  int nsends = 0;                         // number of messages to send
+  std::vector<int> sbuffer_lengths(sIze); // length of the message to proc
+  const size_t block_size = sizeof(EntityHandle) / sizeof(int);
+  for (int proc = 0; proc < sIze; proc++) {
+
+    if (!sbuffer[proc].empty()) {
+
+      sbuffer_lengths[proc] = sbuffer[proc].size() * block_size;
+      nsends++;
+
+    } else {
+
+      sbuffer_lengths[proc] = 0;
     }
-    Range ents;
-    ierr = moab.get_entities_by_handle(idm,ents,false); CHKERRG(ierr);
-    ierr = synchronise_entities(ents,verb); CHKERRG(ierr);
-    rval = moab.add_entities(idm,ents); CHKERRQ_MOAB(rval);
-    MoFEMFunctionReturnHot(0);
   }
+
+  // Make sure it is a PETSc cOmm
+  CHKERR PetscCommDuplicate(cOmm, &cOmm, NULL);
+
+  std::vector<MPI_Status> status(sIze);
+
+  // Computes the number of messages a node expects to receive
+  int nrecvs; // number of messages received
+  CHKERR PetscGatherNumberOfMessages(cOmm, NULL, &sbuffer_lengths[0], &nrecvs);
+
+  // Computes info about messages that a MPI-node will receive, including
+  // (from-id,length) pairs for each message.
+  int *onodes;   // list of node-ids from which messages are expected
+  int *olengths; // corresponding message lengths
+  CHKERR PetscGatherMessageLengths(cOmm, nsends, nrecvs, &sbuffer_lengths[0],
+                                   &onodes, &olengths);
+
+  // Gets a unique new tag from a PETSc communicator. All processors that share
+  // the communicator MUST call this routine EXACTLY the same number of times.
+  // This tag should only be used with the current objects communicator; do NOT
+  // use it with any other MPI communicator.
+  int tag;
+  CHKERR PetscCommGetNewTag(cOmm, &tag);
+
+  // Allocate a buffer sufficient to hold messages of size specified in
+  // olengths. And post Irecvs on these buffers using node info from onodes
+  int **rbuf;           // must bee freed by user
+  MPI_Request *r_waits; // must bee freed by user
+  // rbuf has a pointers to messages. It has size of of nrecvs (number of
+  // messages) +1. In the first index a block is allocated,
+  // such that rbuf[i] = rbuf[i-1]+olengths[i-1].
+  CHKERR PetscPostIrecvInt(cOmm, tag, nrecvs, onodes, olengths, &rbuf,
+                           &r_waits);
+
+  MPI_Request *s_waits; // status of sens messages
+  CHKERR PetscMalloc1(nsends, &s_waits);
+
+  // Send messages
+  for (int proc = 0, kk = 0; proc < sIze; proc++) {
+    if (!sbuffer_lengths[proc])
+      continue;                             // no message to send to this proc
+    CHKERR MPI_Isend(&(sbuffer[proc])[0],   // buffer to send
+                     sbuffer_lengths[proc], // message length
+                     MPIU_INT, proc,        // to proc
+                     tag, cOmm, s_waits + kk);
+    kk++;
+  }
+
+  // Wait for received
+  if (nrecvs) {
+    CHKERR MPI_Waitall(nrecvs, r_waits, &status[0]);
+  }
+  // Wait for send messages
+  if (nsends) {
+    CHKERR MPI_Waitall(nsends, s_waits, &status[0]);
+  }
+
+  if (verb >= VERY_VERBOSE) {
+    PetscSynchronizedPrintf(cOmm, "Rank %d nb. before ents %u\n", rAnk,
+                            ents.size());
+  }
+
+  // synchronise range
+  for (int kk = 0; kk < nrecvs; kk++) {
+
+    int len = olengths[kk];
+    int *data_from_proc = rbuf[kk];
+
+    for (int ee = 0; ee < len; ee += block_size) {
+
+      EntityHandle ent;
+      bcopy(&data_from_proc[ee], &ent, sizeof(EntityHandle));
+      RefEntity_multiIndex::index<Ent_mi_tag>::type::iterator meit;
+      meit = refinedEntities.get<Ent_mi_tag>().find(ent);
+      if (meit == refinedEntities.get<Ent_mi_tag>().end()) {
+        SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                 "rank %d entity %lu not exist on database, local entity can "
+                 "not be found for this owner",
+                 rAnk, ent);
+      }
+      if (verb >= VERY_VERBOSE) {
+        PetscSynchronizedPrintf(cOmm, "received %ul (%ul) from %d at %d\n",
+                                (*meit)->getRefEnt(), ent, onodes[kk], rAnk);
+      }
+      ents.insert((*meit)->getRefEnt());
+    }
+  }
+
+  if (verb >= VERBOSE) {
+    PetscSynchronizedPrintf(cOmm, "Rank %d nb. after ents %u\n", rAnk,
+                            ents.size());
+  }
+
+  // Cleaning
+  CHKERR PetscFree(s_waits);
+  CHKERR PetscFree(rbuf[0]);
+  CHKERR PetscFree(rbuf);
+  CHKERR PetscFree(r_waits);
+  CHKERR PetscFree(onodes);
+  CHKERR PetscFree(olengths);
+
+  if (verb >= VERBOSE) {
+    PetscSynchronizedFlush(cOmm, PETSC_STDOUT);
+  }
+
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode Core::synchronise_field_entities(const BitFieldId id, int verb) {
+  MoFEMFunctionBegin;
+  if (verb == -1)
+    verb = verbose;
+  EntityHandle idm;
+  idm = get_field_meshset(id);
+  Range ents;
+  CHKERR moab.get_entities_by_handle(idm, ents, false);
+  CHKERR synchronise_entities(ents, verb);
+  CHKERR moab.add_entities(idm, ents);
+  MoFEMFunctionReturn(0);
+}
 
   MoFEMErrorCode Core::synchronise_field_entities(const std::string& name,int verb) {
     MoFEMFunctionBeginHot;
