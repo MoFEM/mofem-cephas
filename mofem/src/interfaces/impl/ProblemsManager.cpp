@@ -638,32 +638,22 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
   const FiniteElement_multiIndex *fe_ptr;
   const EntFiniteElement_multiIndex *fe_ent_ptr;
   const DofEntity_multiIndex *dofs_field_ptr;
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   PetscLogEventBegin(MOFEM_EVENT_ProblemsManager, 0, 0, 0, 0);
 
   // clear data structures
-  ierr = m_field.clear_problem(problem_ptr->getName());
-  CHKERRG(ierr);
+  CHKERR m_field.clear_problem(problem_ptr->getName());
 
-  ierr = getOptions();
-  CHKERRG(ierr);
-
-  ierr = m_field.get_fields(&fields_ptr);
-  CHKERRG(ierr);
-  ierr = m_field.get_finite_elements(&fe_ptr);
-  CHKERRG(ierr);
-  ierr = m_field.get_ents_finite_elements(&fe_ent_ptr);
-  CHKERRG(ierr);
-  ierr = m_field.get_dofs(&dofs_field_ptr);
-  CHKERRG(ierr);
+  CHKERR getOptions();
+  CHKERR m_field.get_fields(&fields_ptr);
+  CHKERR m_field.get_finite_elements(&fe_ptr);
+  CHKERR m_field.get_ents_finite_elements(&fe_ent_ptr);
+  CHKERR m_field.get_dofs(&dofs_field_ptr);
 
   if (problem_ptr->getBitRefLevel().none()) {
     SETERRQ1(PETSC_COMM_SELF, 1, "problem <%s> refinement level not set",
              problem_ptr->getName().c_str());
   }
-
-  ierr = m_field.clear_problem(problem_ptr->getName());
-  CHKERRG(ierr);
 
   int loop_size = 2;
   if (square_matrix) {
@@ -700,11 +690,9 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
           continue;
 
         // get dof uids for rows and columns
-        ierr = (*fe_miit)->getRowDofView(*dofs_field_ptr, dofs_rows);
-        CHKERRG(ierr);
+        CHKERR (*fe_miit)->getRowDofView(*dofs_field_ptr, dofs_rows);
         if (!square_matrix) {
-          ierr = (*fe_miit)->getColDofView(*dofs_field_ptr, dofs_cols);
-          CHKERRG(ierr);
+          CHKERR (*fe_miit)->getColDofView(*dofs_field_ptr, dofs_cols);
         }
       }
     }
@@ -793,20 +781,13 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
   int start_ranges[2], end_ranges[2];
   for (int ss = 0; ss != loop_size; ss++) {
     PetscLayout layout;
-    ierr = PetscLayoutCreate(m_field.get_comm(), &layout);
-    CHKERRG(ierr);
-    ierr = PetscLayoutSetBlockSize(layout, 1);
-    CHKERRG(ierr);
-    ierr = PetscLayoutSetLocalSize(layout, nb_local_dofs[ss]);
-    CHKERRG(ierr);
-    ierr = PetscLayoutSetUp(layout);
-    CHKERRG(ierr);
-    ierr = PetscLayoutGetSize(layout, &*nbdof_ptr[ss]);
-    CHKERRG(ierr); // get global size
-    ierr = PetscLayoutGetRange(layout, &start_ranges[ss], &end_ranges[ss]);
-    CHKERRG(ierr); // get ranges
-    ierr = PetscLayoutDestroy(&layout);
-    CHKERRG(ierr);
+    CHKERR PetscLayoutCreate(m_field.get_comm(), &layout);
+    CHKERR PetscLayoutSetBlockSize(layout, 1);
+    CHKERR PetscLayoutSetLocalSize(layout, nb_local_dofs[ss]);
+    CHKERR PetscLayoutSetUp(layout);
+    CHKERR PetscLayoutGetSize(layout, &*nbdof_ptr[ss]);
+    CHKERR PetscLayoutGetRange(layout, &start_ranges[ss], &end_ranges[ss]);
+    CHKERR PetscLayoutDestroy(&layout);
   }
   if (square_matrix) {
     nbdof_ptr[1] = nbdof_ptr[0];
@@ -974,8 +955,7 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
   }
 
   MPI_Status *status;
-  ierr = PetscMalloc1(m_field.get_comm_size(), &status);
-  CHKERRG(ierr);
+  CHKERR PetscMalloc1(m_field.get_comm_size(), &status);
 
   // Do rows
   int nrecvs_rows;    // number of messages received
@@ -986,31 +966,27 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
   {
 
     // make sure it is a PETSc comm
-    ierr = PetscCommDuplicate(m_field.get_comm(), &m_field.get_comm(), NULL);
-    CHKERRG(ierr);
+    CHKERR PetscCommDuplicate(m_field.get_comm(), &m_field.get_comm(), NULL);
 
     // rows
 
     // Computes the number of messages a node expects to receive
-    ierr = PetscGatherNumberOfMessages(m_field.get_comm(), NULL,
+    CHKERR PetscGatherNumberOfMessages(m_field.get_comm(), NULL,
                                        &lengths_rows[0], &nrecvs_rows);
-    CHKERRG(ierr);
     // std::cerr << nrecvs_rows << std::endl;
 
     // Computes info about messages that a MPI-node will receive, including
     // (from-id,length) pairs for each message.
-    ierr = PetscGatherMessageLengths(m_field.get_comm(), nsends_rows,
+    CHKERR PetscGatherMessageLengths(m_field.get_comm(), nsends_rows,
                                      nrecvs_rows, &lengths_rows[0],
                                      &onodes_rows, &olengths_rows);
-    CHKERRG(ierr);
 
     // Gets a unique new tag from a PETSc communicator. All processors that
     // share the communicator MUST call this routine EXACTLY the same number of
     // times. This tag should only be used with the current objects
     // communicator; do NOT use it with any other MPI communicator.
     int tag_row;
-    ierr = PetscCommGetNewTag(m_field.get_comm(), &tag_row);
-    CHKERRG(ierr);
+    CHKERR PetscCommGetNewTag(m_field.get_comm(), &tag_row);
 
     // Allocate a buffer sufficient to hold messages of size specified in
     // olengths. And post Irecvs on these buffers using node info from onodes
@@ -1018,42 +994,35 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
     // rbuf has a pointers to messeges. It has size of of nrecvs (number of
     // messages) +1. In the first index a block is allocated,
     // such that rbuf[i] = rbuf[i-1]+olengths[i-1].
-    ierr =
-        PetscPostIrecvInt(m_field.get_comm(), tag_row, nrecvs_rows, onodes_rows,
-                          olengths_rows, &rbuf_row, &r_waits_row);
-    CHKERRG(ierr);
-    ierr = PetscFree(onodes_rows);
-    CHKERRG(ierr);
+
+    CHKERR PetscPostIrecvInt(m_field.get_comm(), tag_row, nrecvs_rows,
+                             onodes_rows, olengths_rows, &rbuf_row,
+                             &r_waits_row);
+    CHKERR PetscFree(onodes_rows);
 
     MPI_Request *s_waits_row; // status of sens messages
-    ierr = PetscMalloc1(nsends_rows, &s_waits_row);
-    CHKERRG(ierr);
+    CHKERR PetscMalloc1(nsends_rows, &s_waits_row);
 
     // Send messeges
     for (int proc = 0, kk = 0; proc < m_field.get_comm_size(); proc++) {
       if (!lengths_rows[proc])
         continue; // no message to send to this proc
-      ierr = MPI_Isend(&(ids_data_packed_rows[proc])[0], // buffer to send
+      CHKERR MPI_Isend(&(ids_data_packed_rows[proc])[0], // buffer to send
                        lengths_rows[proc],               // message length
                        MPIU_INT, proc,                   // to proc
                        tag_row, m_field.get_comm(), s_waits_row + kk);
-      CHKERRG(ierr);
       kk++;
     }
 
     if (nrecvs_rows) {
-      ierr = MPI_Waitall(nrecvs_rows, r_waits_row, status);
-      CHKERRG(ierr);
+      CHKERR MPI_Waitall(nrecvs_rows, r_waits_row, status);
     }
     if (nsends_rows) {
-      ierr = MPI_Waitall(nsends_rows, s_waits_row, status);
-      CHKERRG(ierr);
+      CHKERR MPI_Waitall(nsends_rows, s_waits_row, status);
     }
 
-    ierr = PetscFree(r_waits_row);
-    CHKERRG(ierr);
-    ierr = PetscFree(s_waits_row);
-    CHKERRG(ierr);
+    CHKERR PetscFree(r_waits_row);
+    CHKERR PetscFree(s_waits_row);
   }
 
   // cols
@@ -1063,66 +1032,54 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
   if (!square_matrix) {
 
     // Computes the number of messages a node expects to receive
-    ierr = PetscGatherNumberOfMessages(m_field.get_comm(), NULL,
+    CHKERR PetscGatherNumberOfMessages(m_field.get_comm(), NULL,
                                        &lengths_cols[0], &nrecvs_cols);
-    CHKERRG(ierr);
 
     // Computes info about messages that a MPI-node will receive, including
     // (from-id,length) pairs for each message.
     int *onodes_cols;
-    ierr = PetscGatherMessageLengths(m_field.get_comm(), nsends_cols,
+    CHKERR PetscGatherMessageLengths(m_field.get_comm(), nsends_cols,
                                      nrecvs_cols, &lengths_cols[0],
                                      &onodes_cols, &olengths_cols);
-    CHKERRG(ierr);
 
     // Gets a unique new tag from a PETSc communicator.
     int tag_col;
-    ierr = PetscCommGetNewTag(m_field.get_comm(), &tag_col);
-    CHKERRG(ierr);
+    CHKERR PetscCommGetNewTag(m_field.get_comm(), &tag_col);
 
     // Allocate a buffer sufficient to hold messages of size specified in
     // olengths. And post Irecvs on these buffers using node info from onodes
     MPI_Request *r_waits_col; // must bee freed by user
-    ierr =
-        PetscPostIrecvInt(m_field.get_comm(), tag_col, nrecvs_cols, onodes_cols,
-                          olengths_cols, &rbuf_col, &r_waits_col);
-    CHKERRG(ierr);
-    ierr = PetscFree(onodes_cols);
-    CHKERRG(ierr);
+    CHKERR PetscPostIrecvInt(m_field.get_comm(), tag_col, nrecvs_cols,
+                             onodes_cols, olengths_cols, &rbuf_col,
+                             &r_waits_col);
+    CHKERR PetscFree(onodes_cols);
 
     MPI_Request *s_waits_col; // status of sens messages
-    ierr = PetscMalloc1(nsends_cols, &s_waits_col);
-    CHKERRG(ierr);
+    CHKERR PetscMalloc1(nsends_cols, &s_waits_col);
 
     // Send messeges
     for (int proc = 0, kk = 0; proc < m_field.get_comm_size(); proc++) {
       if (!lengths_cols[proc])
         continue; // no message to send to this proc
-      ierr = MPI_Isend(&(ids_data_packed_cols[proc])[0], // buffer to send
+      CHKERR MPI_Isend(&(ids_data_packed_cols[proc])[0], // buffer to send
                        lengths_cols[proc],               // message length
                        MPIU_INT, proc,                   // to proc
                        tag_col, m_field.get_comm(), s_waits_col + kk);
-      CHKERRG(ierr);
       kk++;
     }
 
     if (nrecvs_cols) {
-      ierr = MPI_Waitall(nrecvs_cols, r_waits_col, status);
-      CHKERRG(ierr);
+      CHKERR MPI_Waitall(nrecvs_cols, r_waits_col, status);
     }
     if (nsends_cols) {
-      ierr = MPI_Waitall(nsends_cols, s_waits_col, status);
-      CHKERRG(ierr);
+      CHKERR MPI_Waitall(nsends_cols, s_waits_col, status);
     }
 
-    ierr = PetscFree(r_waits_col);
-    CHKERRG(ierr);
-    ierr = PetscFree(s_waits_col);
-    CHKERRG(ierr);
+    CHKERR PetscFree(r_waits_col);
+    CHKERR PetscFree(s_waits_col);
   }
 
-  ierr = PetscFree(status);
-  CHKERRG(ierr);
+  CHKERR PetscFree(status);
 
   // set values received from other processors
   for (int ss = 0; ss < loop_size; ss++) {
@@ -1205,19 +1162,13 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
     (problem_ptr->nbLocDofsCol) = (problem_ptr->nbLocDofsRow);
   }
 
-  ierr = PetscFree(olengths_rows);
-  CHKERRG(ierr);
-  ierr = PetscFree(rbuf_row[0]);
-  CHKERRG(ierr);
-  ierr = PetscFree(rbuf_row);
-  CHKERRG(ierr);
+  CHKERR PetscFree(olengths_rows);
+  CHKERR PetscFree(rbuf_row[0]);
+  CHKERR PetscFree(rbuf_row);
   if (!square_matrix) {
-    ierr = PetscFree(olengths_cols);
-    CHKERRG(ierr);
-    ierr = PetscFree(rbuf_col[0]);
-    CHKERRG(ierr);
-    ierr = PetscFree(rbuf_col);
-    CHKERRG(ierr);
+    CHKERR PetscFree(olengths_cols);
+    CHKERR PetscFree(rbuf_col[0]);
+    CHKERR PetscFree(rbuf_col);
   }
 
   if (square_matrix) {
@@ -1232,14 +1183,12 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
     }
   }
 
-  ierr = printPartitionedProblem(problem_ptr, verb);
-  CHKERRG(ierr);
-  ierr = debugPartitionedProblem(problem_ptr, verb);
-  CHKERRG(ierr);
+  CHKERR printPartitionedProblem(problem_ptr, verb);
+  CHKERR debugPartitionedProblem(problem_ptr, verb);
 
   PetscLogEventEnd(MOFEM_EVENT_ProblemsManager, 0, 0, 0, 0);
 
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode ProblemsManager::buildSubProblem(
