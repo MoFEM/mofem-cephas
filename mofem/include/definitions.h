@@ -343,6 +343,14 @@ enum VERBOSITY_LEVELS { QUIET = 0, VERBOSE, VERY_VERBOSE, NOISY, VERY_NOISY };
       MPI_Barrier(PCMB->proc_config().proc_comm());                            \
   };
 
+/** \deprecated Do use this macro, instead use BARRIER_PCOMM_RANK_START
+ */
+#define BARRIER_RANK_START(PCMB)                                               \
+  {                                                                            \
+    macro_is_depracted_using_deprecated_function();                            \
+    for (unsigned int i = 0; i < PCMB->proc_config().proc_rank(); i++)         \
+      MPI_Barrier(PCMB->proc_config().proc_comm());                            \
+  };
 
 /** \brief set barrier start
  * Run code in sequence, starting from process 0, and ends on last process.
@@ -353,6 +361,16 @@ enum VERBOSITY_LEVELS { QUIET = 0, VERBOSE, VERY_VERBOSE, NOISY, VERY_NOISY };
  */
 #define BARRIER_PCOMM_RANK_END(PCMB)                                           \
   {                                                                            \
+    for (unsigned int i = PCMB->proc_config().proc_rank();                     \
+         i < PCMB->proc_config().proc_size(); i++)                             \
+      MPI_Barrier(PCMB->proc_config().proc_comm());                            \
+  };
+
+/** \deprecated Do use this macro, instead use BARRIER_PCOMM_RANK_START
+ */
+#define BARRIER_RANK_END(PCMB)                                                 \
+  {                                                                            \
+    macro_is_depracted_using_deprecated_function();                            \
     for (unsigned int i = PCMB->proc_config().proc_rank();                     \
          i < PCMB->proc_config().proc_size(); i++)                             \
       MPI_Barrier(PCMB->proc_config().proc_comm());                            \
