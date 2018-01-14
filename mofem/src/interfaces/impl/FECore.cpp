@@ -830,11 +830,11 @@ MoFEMErrorCode Core::build_finite_elements(const string fe_name,
              fe_name.c_str());
   }
 
-  if (verb > 0)
+  if (verb >= VERBOSE)
     PetscPrintf(cOmm, "Build Finite Elements %s\n", fe_name.c_str());
   CHKERR buildFiniteElements(*fe_miit, ents_ptr, verb);
 
-  if (verb > 0) {
+  if (verb >= VERBOSE) {
     typedef EntFiniteElement_multiIndex::index<BitFEId_mi_tag>::type
         FiniteElementById;
     FiniteElementById &finite_elements_by_id =

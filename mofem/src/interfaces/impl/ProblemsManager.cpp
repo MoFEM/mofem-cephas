@@ -73,7 +73,8 @@ ProblemsManager::query_interface(const MOFEMuuid &uuid,
 
 ProblemsManager::ProblemsManager(const MoFEM::Core &core)
     : cOre(const_cast<MoFEM::Core &>(core)),
-      buildProblemFromFields(PETSC_FALSE) {
+      buildProblemFromFields(PETSC_FALSE),
+      synchroniseProblemEntities(PETSC_FALSE) {
   PetscLogEventRegister("ProblemsManager", 0, &MOFEM_EVENT_ProblemsManager);
 }
 ProblemsManager::~ProblemsManager() {}
@@ -95,38 +96,29 @@ MoFEMErrorCode ProblemsManager::getOptions() {
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode ProblemsManager::partitionMesh(const Range &ents, const int dim,
-                                              const int adj_dim,
-                                              const int n_parts,
-                                              Tag *th_vertex_weights,
-                                              Tag *th_edge_weights,
-                                              Tag *th_part_weights, int verb) {
+MoFEMErrorCode ProblemsManager::partitionMesh(
+    const Range &ents, const int dim, const int adj_dim, const int n_parts,
+    Tag *th_vertex_weights, Tag *th_edge_weights, Tag *th_part_weights,
+    int verb, const bool debug) {
   MoFEM::Interface &m_field = cOre;
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
 
   // get layout
   int rstart, rend, nb_elems;
   {
     PetscLayout layout;
-    ierr = PetscLayoutCreate(m_field.get_comm(), &layout);
-    CHKERRG(ierr);
-    ierr = PetscLayoutSetBlockSize(layout, 1);
-    CHKERRG(ierr);
-    ierr = PetscLayoutSetSize(layout, ents.size());
-    CHKERRG(ierr);
-    ierr = PetscLayoutSetUp(layout);
-    CHKERRG(ierr);
-    ierr = PetscLayoutGetSize(layout, &nb_elems);
-    CHKERRG(ierr);
-    ierr = PetscLayoutGetRange(layout, &rstart, &rend);
-    CHKERRG(ierr);
-    ierr = PetscLayoutDestroy(&layout);
-    CHKERRG(ierr);
-    if (verb > 0) {
+    CHKERR PetscLayoutCreate(m_field.get_comm(), &layout);
+    CHKERR PetscLayoutSetBlockSize(layout, 1);
+    CHKERR PetscLayoutSetSize(layout, ents.size());
+    CHKERR PetscLayoutSetUp(layout);
+    CHKERR PetscLayoutGetSize(layout, &nb_elems);
+    CHKERR PetscLayoutGetRange(layout, &rstart, &rend);
+    CHKERR PetscLayoutDestroy(&layout);
+    if (verb >= VERBOSE) {
       PetscSynchronizedPrintf(m_field.get_comm(),
                               "Finite elements partition in problem: row lower "
-                              "%d row upper %d nb elems %d\n",
-                              rstart, rend, nb_elems);
+                              "%d row upper %d nb elems %d ( %d )\n",
+                              rstart, rend, nb_elems, ents.size());
       PetscSynchronizedFlush(m_field.get_comm(), PETSC_STDOUT);
     }
   }
@@ -139,12 +131,17 @@ MoFEMErrorCode ProblemsManager::partitionMesh(const Range &ents, const int dim,
     }
   }
 
-  Range weigth_ents;
+  std::vector<EntityHandle> weight_ents;
+  weight_ents.reserve(rend - rstart + 1);
+
+  Range all_dim_ents;
+  CHKERR m_field.get_moab().get_adjacencies(ents, adj_dim, true, all_dim_ents,
+                                            moab::Interface::UNION);
 
   int *_i;
   int *_j;
   {
-    MeshTopoUtil mtu(&m_field.get_moab());
+    // MeshTopoUtil mtu(&m_field.get_moab());
     std::vector<int> i(rend - rstart + 1, 0), j;
     {
       int jj = 0;
@@ -160,8 +157,13 @@ MoFEMErrorCode ProblemsManager::partitionMesh(const Range &ents, const int dim,
               "not yet implemented, don't know what to do for meshset element");
         } else {
           Range adj_ents;
-          rval = mtu.get_bridge_adjacencies(*fe_it, adj_dim, dim, adj_ents);
-          CHKERRQ_MOAB(rval);
+          // CHKERR mtu.get_bridge_adjacencies(*fe_it, adj_dim, dim, adj_ents);
+          Range dim_ents;
+          CHKERR m_field.get_moab().get_adjacencies(&*fe_it, 1, adj_dim, false,
+                                                    dim_ents);
+          dim_ents = intersect(dim_ents, all_dim_ents);
+          CHKERR m_field.get_moab().get_adjacencies(
+              dim_ents, dim, false, adj_ents, moab::Interface::UNION);
           adj_ents = intersect(adj_ents, ents);
           i[jj] = j.size();
           for (Range::iterator eit = adj_ents.begin(); eit != adj_ents.end();
@@ -171,15 +173,13 @@ MoFEMErrorCode ProblemsManager::partitionMesh(const Range &ents, const int dim,
             j.push_back(problem_fe_ents[*eit]);
           }
         }
-        weigth_ents.insert(*fe_it);
+        weight_ents.push_back(*fe_it);
         jj++;
       }
       i[jj] = j.size();
     }
-    ierr = PetscMalloc(i.size() * sizeof(int), &_i);
-    CHKERRG(ierr);
-    ierr = PetscMalloc(j.size() * sizeof(int), &_j);
-    CHKERRG(ierr);
+    CHKERR PetscMalloc(i.size() * sizeof(int), &_i);
+    CHKERR PetscMalloc(j.size() * sizeof(int), &_j);
     copy(i.begin(), i.end(), _i);
     copy(j.begin(), j.end(), _j);
   }
@@ -187,73 +187,65 @@ MoFEMErrorCode ProblemsManager::partitionMesh(const Range &ents, const int dim,
   // get weights
   int *vertex_weights = NULL;
   if (th_vertex_weights != NULL) {
-    ierr = PetscMalloc(weigth_ents.size() * sizeof(int), &vertex_weights);
-    CHKERRG(ierr);
-    rval = m_field.get_moab().tag_get_data(*th_vertex_weights, weigth_ents,
-                                           vertex_weights);
-    CHKERRQ_MOAB(rval);
+    CHKERR PetscMalloc(weight_ents.size() * sizeof(int), &vertex_weights);
+    CHKERR m_field.get_moab().tag_get_data(*th_vertex_weights,
+                                           &*weight_ents.begin(),
+                                           weight_ents.size(), vertex_weights);
   }
 
   {
     Mat Adj;
     // Adjacency matrix used to partition problems, f.e. METIS
-    ierr = MatCreateMPIAdj(m_field.get_comm(), rend - rstart, nb_elems, _i, _j,
+    CHKERR MatCreateMPIAdj(m_field.get_comm(), rend - rstart, nb_elems, _i, _j,
                            PETSC_NULL, &Adj);
-    CHKERRG(ierr);
-    ierr = MatSetOption(Adj, MAT_STRUCTURALLY_SYMMETRIC, PETSC_TRUE);
-    CHKERRG(ierr);
+    CHKERR MatSetOption(Adj, MAT_STRUCTURALLY_SYMMETRIC, PETSC_TRUE);
 
-    // if(1) {
-    //   Mat A;
-    //   MatConvert(Adj,MATMPIAIJ,MAT_INITIAL_MATRIX,&A);
-    //   MatView(A,PETSC_VIEWER_DRAW_WORLD);
-    //   std::string wait;
-    //   std::cin >> wait;
-    //   MatDestroy(&A);
-    // }
+    if (debug) {
+      Mat A;
+      CHKERR MatConvert(Adj, MATMPIAIJ, MAT_INITIAL_MATRIX, &A);
+      CHKERR MatView(A, PETSC_VIEWER_DRAW_WORLD);
+      std::string wait;
+      std::cin >> wait;
+      CHKERR MatDestroy(&A);
+    }
 
     // run pets to do partitioning
+    if(verb >= VERBOSE) {
+      CHKERR PetscPrintf(m_field.get_comm(),"Partition mesh");
+    }
     MatPartitioning part;
     IS is;
-    ierr = MatPartitioningCreate(m_field.get_comm(), &part);
-    CHKERRG(ierr);
+    CHKERR MatPartitioningCreate(m_field.get_comm(), &part);
 
-    ierr = MatPartitioningSetAdjacency(part, Adj);
-    CHKERRG(ierr);
-    ierr = MatPartitioningSetFromOptions(part);
-    CHKERRG(ierr);
-    ierr = MatPartitioningSetNParts(part, n_parts);
-    CHKERRG(ierr);
+    CHKERR MatPartitioningSetAdjacency(part, Adj);
+    CHKERR MatPartitioningSetFromOptions(part);
+    CHKERR MatPartitioningSetNParts(part, n_parts);
     if (th_vertex_weights != NULL) {
-      ierr = MatPartitioningSetVertexWeights(part, vertex_weights);
-      CHKERRG(ierr);
+      CHKERR MatPartitioningSetVertexWeights(part, vertex_weights);
     }
     PetscBool same;
     PetscObjectTypeCompare((PetscObject)part, MATPARTITIONINGPARMETIS, &same);
     if (same) {
 #ifdef PARMETIS
-      ierr = MatPartitioningApply_Parmetis_MoFEM(part, &is);
-      CHKERRG(ierr);
+      CHKERR MatPartitioningApply_Parmetis_MoFEM(part, &is);
 #endif
     } else {
-      ierr = MatPartitioningApply(part, &is);
-      CHKERRG(ierr);
+      CHKERR MatPartitioningApply(part, &is);
+    }
+
+    if(verb >= VERBOSE) {
+      CHKERR PetscPrintf(m_field.get_comm()," <- Done\n");
     }
 
     // gather
     IS is_gather, is_num, is_gather_num;
-    ierr = ISAllGather(is, &is_gather);
-    CHKERRG(ierr);
-    ierr = ISPartitioningToNumbering(is, &is_num);
-    CHKERRG(ierr);
-    ierr = ISAllGather(is_num, &is_gather_num);
-    CHKERRG(ierr);
+    CHKERR ISAllGather(is, &is_gather);
+    CHKERR ISPartitioningToNumbering(is, &is_num);
+    CHKERR ISAllGather(is_num, &is_gather_num);
 
     const int *part_number, *gids;
-    ierr = ISGetIndices(is_gather, &part_number);
-    CHKERRG(ierr);
-    ierr = ISGetIndices(is_gather_num, &gids);
-    CHKERRG(ierr);
+    CHKERR ISGetIndices(is_gather, &part_number);
+    CHKERR ISGetIndices(is_gather_num, &gids);
 
     // set partition tag and gid tag to entities
     ParallelComm *pcomm = ParallelComm::get_pcomm(
@@ -262,13 +254,11 @@ MoFEMErrorCode ProblemsManager::partitionMesh(const Range &ents, const int dim,
     Tag part_tag = pcomm->part_tag();
     {
       const int zero = 0;
-      rval = m_field.get_moab().tag_get_handle(
+      CHKERR m_field.get_moab().tag_get_handle(
           GLOBAL_ID_TAG_NAME, 1, MB_TYPE_INTEGER, gid_tag,
           MB_TAG_DENSE | MB_TAG_CREAT, &zero);
-      CHKERRQ_MOAB(rval);
       // get any sets already with this tag, and clear them
-      rval = m_field.get_moab().tag_set_data(part_tag, ents, part_number);
-      CHKERRQ_MOAB(rval);
+      CHKERR m_field.get_moab().tag_set_data(part_tag, ents, part_number);
       // rval = moab.tag_set_data(gid_tag,ents,&gids[0]); CHKERRQ_MOAB(rval);
       // std::vector<int> add_one(ents.size());
       // for(int ii = 0;ii<ents.size();ii++) {
@@ -285,26 +275,23 @@ MoFEMErrorCode ProblemsManager::partitionMesh(const Range &ents, const int dim,
         parts_ents[part_number[ii]].insert(*eit);
       }
       Range tagged_sets;
-      rval = m_field.get_moab().get_entities_by_type_and_tag(
+      CHKERR m_field.get_moab().get_entities_by_type_and_tag(
           0, MBENTITYSET, &part_tag, NULL, 1, tagged_sets,
           moab::Interface::UNION);
-      CHKERRQ_MOAB(rval);
       // if(!tagged_sets.empty()) {
-      //   rval = m_field.get_moab().delete_entities(tagged_sets);
-      //   CHKERRQ_MOAB(rval); tagged_sets.clear();
+      //   CHKERR m_field.get_moab().delete_entities(tagged_sets);
+      //   tagged_sets.clear();
       // }
       if (!tagged_sets.empty()) {
-        rval = m_field.get_moab().tag_delete_data(part_tag, tagged_sets);
-        CHKERRQ_MOAB(rval);
+        CHKERR m_field.get_moab().tag_delete_data(part_tag, tagged_sets);
       }
       if (n_parts > (int)tagged_sets.size()) {
         // too few partition sets - create missing ones
         int num_new = n_parts - tagged_sets.size();
         for (int i = 0; i < num_new; i++) {
           EntityHandle new_set;
-          rval = m_field.get_moab().create_meshset(
+          CHKERR m_field.get_moab().create_meshset(
               MESHSET_SET | MESHSET_TRACK_OWNER, new_set);
-          CHKERRQ_MOAB(rval);
           tagged_sets.insert(new_set);
         }
       } else if (n_parts < (int)tagged_sets.size()) {
@@ -312,8 +299,7 @@ MoFEMErrorCode ProblemsManager::partitionMesh(const Range &ents, const int dim,
         int num_del = tagged_sets.size() - n_parts;
         for (int i = 0; i < num_del; i++) {
           EntityHandle old_set = tagged_sets.pop_back();
-          rval = m_field.get_moab().delete_entities(&old_set, 1);
-          CHKERRQ_MOAB(rval);
+          CHKERR m_field.get_moab().delete_entities(&old_set, 1);
         }
       }
       // write a tag to those sets denoting they're partition sets, with a value
@@ -321,11 +307,9 @@ MoFEMErrorCode ProblemsManager::partitionMesh(const Range &ents, const int dim,
       std::vector<int> dum_ids(n_parts);
       for (int i = 0; i < n_parts; i++)
         dum_ids[i] = i;
-      rval = m_field.get_moab().tag_set_data(part_tag, tagged_sets,
+      CHKERR m_field.get_moab().tag_set_data(part_tag, tagged_sets,
                                              &*dum_ids.begin());
-      CHKERRQ_MOAB(rval);
-      rval = m_field.get_moab().clear_meshset(tagged_sets);
-      CHKERRQ_MOAB(rval);
+      CHKERR m_field.get_moab().clear_meshset(tagged_sets);
 
       // get lower dimension entities on each part
       for (int pp = 0; pp != n_parts; pp++) {
@@ -333,13 +317,11 @@ MoFEMErrorCode ProblemsManager::partitionMesh(const Range &ents, const int dim,
         for (int dd = dim - 1; dd != -1; dd--) {
           Range adj_ents;
           if (dim > 0) {
-            rval = m_field.get_moab().get_adjacencies(
+            CHKERR m_field.get_moab().get_adjacencies(
                 dim_ents, dd, true, adj_ents, moab::Interface::UNION);
-            CHKERRQ_MOAB(rval);
           } else {
-            rval =
-                m_field.get_moab().get_connectivity(dim_ents, adj_ents, true);
-            CHKERRQ_MOAB(rval);
+            CHKERR m_field.get_moab().get_connectivity(dim_ents, adj_ents,
+                                                       true);
           }
           parts_ents[pp].merge(adj_ents);
           // std::cerr << pp << " add " << parts_ents[pp].size() << std::endl;
@@ -353,25 +335,20 @@ MoFEMErrorCode ProblemsManager::partitionMesh(const Range &ents, const int dim,
           // std::cerr << " " << parts_ents[pp].size() << std::endl;
         }
       }
-      if (verb > 1) {
+      if (debug) {
         for (int rr = 0; rr != m_field.get_comm_size(); rr++) {
           ostringstream ss;
           ss << "out_part_" << rr << ".vtk";
           EntityHandle meshset;
-          rval = m_field.get_moab().create_meshset(MESHSET_SET, meshset);
-          CHKERRQ_MOAB(rval);
-          rval = m_field.get_moab().add_entities(meshset, parts_ents[rr]);
-          CHKERRQ_MOAB(rval);
-          rval = m_field.get_moab().write_file(ss.str().c_str(), "VTK", "",
+          CHKERR m_field.get_moab().create_meshset(MESHSET_SET, meshset);
+          CHKERR m_field.get_moab().add_entities(meshset, parts_ents[rr]);
+          CHKERR m_field.get_moab().write_file(ss.str().c_str(), "VTK", "",
                                                &meshset, 1);
-          CHKERRQ_MOAB(rval);
-          rval = m_field.get_moab().delete_entities(&meshset, 1);
-          CHKERRQ_MOAB(rval);
+          CHKERR m_field.get_moab().delete_entities(&meshset, 1);
         }
       }
       for (int pp = 0; pp != n_parts; pp++) {
-        rval = m_field.get_moab().add_entities(tagged_sets[pp], parts_ents[pp]);
-        CHKERRQ_MOAB(rval);
+        CHKERR m_field.get_moab().add_entities(tagged_sets[pp], parts_ents[pp]);
       }
       // for(int rr = 0;rr!=m_field.get_comm_size();rr++) {
       //   ostringstream ss;
@@ -392,38 +369,28 @@ MoFEMErrorCode ProblemsManager::partitionMesh(const Range &ents, const int dim,
           for (Range::iterator eit = dim_ents.begin(); eit != dim_ents.end();
                eit++) {
             if (dd > 0) {
-              rval = m_field.get_moab().tag_set_data(part_tag, &*eit, 1, &pp);
-              CHKERRQ_MOAB(rval);
+              CHKERR m_field.get_moab().tag_set_data(part_tag, &*eit, 1, &pp);
             }
-            rval = m_field.get_moab().tag_set_data(gid_tag, &*eit, 1, &gid);
-            CHKERRQ_MOAB(rval);
+            CHKERR m_field.get_moab().tag_set_data(gid_tag, &*eit, 1, &gid);
             gid++;
           }
         }
       }
     }
 
-    ierr = ISRestoreIndices(is_gather, &part_number);
-    CHKERRG(ierr);
-    ierr = ISRestoreIndices(is_gather_num, &gids);
-    CHKERRG(ierr);
-    ierr = ISDestroy(&is_num);
-    CHKERRG(ierr);
-    ierr = ISDestroy(&is_gather_num);
-    CHKERRG(ierr);
-    ierr = ISDestroy(&is_gather);
-    CHKERRG(ierr);
-    ierr = ISDestroy(&is);
-    CHKERRG(ierr);
-    ierr = MatPartitioningDestroy(&part);
-    CHKERRG(ierr);
-    ierr = MatDestroy(&Adj);
-    CHKERRG(ierr);
+    CHKERR ISRestoreIndices(is_gather, &part_number);
+    CHKERR ISRestoreIndices(is_gather_num, &gids);
+    CHKERR ISDestroy(&is_num);
+    CHKERR ISDestroy(&is_gather_num);
+    CHKERR ISDestroy(&is_gather);
+    CHKERR ISDestroy(&is);
+    CHKERR MatPartitioningDestroy(&part);
+    CHKERR MatDestroy(&Adj);
   }
 
   cOre.getBuildMoFEM() |= Core::PARTITION_MESH;
 
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode ProblemsManager::buildProblem(const std::string &name,
@@ -672,32 +639,22 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
   const FiniteElement_multiIndex *fe_ptr;
   const EntFiniteElement_multiIndex *fe_ent_ptr;
   const DofEntity_multiIndex *dofs_field_ptr;
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   PetscLogEventBegin(MOFEM_EVENT_ProblemsManager, 0, 0, 0, 0);
 
   // clear data structures
-  ierr = m_field.clear_problem(problem_ptr->getName());
-  CHKERRG(ierr);
+  CHKERR m_field.clear_problem(problem_ptr->getName());
 
-  ierr = getOptions();
-  CHKERRG(ierr);
-
-  ierr = m_field.get_fields(&fields_ptr);
-  CHKERRG(ierr);
-  ierr = m_field.get_finite_elements(&fe_ptr);
-  CHKERRG(ierr);
-  ierr = m_field.get_ents_finite_elements(&fe_ent_ptr);
-  CHKERRG(ierr);
-  ierr = m_field.get_dofs(&dofs_field_ptr);
-  CHKERRG(ierr);
+  CHKERR getOptions();
+  CHKERR m_field.get_fields(&fields_ptr);
+  CHKERR m_field.get_finite_elements(&fe_ptr);
+  CHKERR m_field.get_ents_finite_elements(&fe_ent_ptr);
+  CHKERR m_field.get_dofs(&dofs_field_ptr);
 
   if (problem_ptr->getBitRefLevel().none()) {
     SETERRQ1(PETSC_COMM_SELF, 1, "problem <%s> refinement level not set",
              problem_ptr->getName().c_str());
   }
-
-  ierr = m_field.clear_problem(problem_ptr->getName());
-  CHKERRG(ierr);
 
   int loop_size = 2;
   if (square_matrix) {
@@ -734,14 +691,14 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
           continue;
 
         // get dof uids for rows and columns
-        ierr = (*fe_miit)->getRowDofView(*dofs_field_ptr, dofs_rows);
-        CHKERRG(ierr);
+        CHKERR (*fe_miit)->getRowDofView(*dofs_field_ptr, dofs_rows);
         if (!square_matrix) {
-          ierr = (*fe_miit)->getColDofView(*dofs_field_ptr, dofs_cols);
-          CHKERRG(ierr);
+          CHKERR (*fe_miit)->getColDofView(*dofs_field_ptr, dofs_cols);
         }
       }
     }
+
+    
   }
 
   // Add DOFS to the proble by searching all the filedes, and adding to problem
@@ -792,6 +749,55 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
     }
   }
 
+  if (synchroniseProblemEntities) {
+    // Get fields IDs on elements
+    BitFieldId fields_ids_row, fields_ids_col;
+    BitFieldId *fields_ids[2] = {&fields_ids_row, &fields_ids_col};
+    for (FiniteElement_multiIndex::iterator fit = fe_ptr->begin();
+         fit != fe_ptr->end(); fit++) {
+      if ((fit->get()->getId() & problem_ptr->getBitFEId()).any()) {
+        fields_ids_row |= fit->get()->getBitFieldIdRow();
+        fields_ids_col |= fit->get()->getBitFieldIdCol();
+      }
+    }
+
+    DofEntity_multiIndex_active_view *dofs_ptr[] = {&dofs_rows, &dofs_cols};
+    for (int ss = 0; ss != ((square_matrix) ? 1 : 2); ++ss) {
+      DofEntity_multiIndex_active_view::nth_index<1>::type::iterator miit,
+          hi_miit;
+      miit = dofs_ptr[ss]->get<1>().lower_bound(1);
+      hi_miit = dofs_ptr[ss]->get<1>().upper_bound(1);
+      Range ents_to_synchronise;
+      for (; miit != hi_miit; ++miit) {
+        if (miit->get()->getEntDofIdx() != 0)
+          continue;
+        ents_to_synchronise.insert(miit->get()->getEnt());
+      }
+      Range tmp_ents = ents_to_synchronise;
+      CHKERR m_field.synchronise_entities(ents_to_synchronise, verb);
+      ents_to_synchronise = subtract(ents_to_synchronise, tmp_ents);
+      for (Field_multiIndex::iterator fit = fields_ptr->begin();
+           fit != fields_ptr->end(); fit++) {
+        if ((fit->get()->getId() & *fields_ids[ss]).any()) {
+          for (Range::pair_iterator pit = ents_to_synchronise.pair_begin();
+               pit != ents_to_synchronise.pair_end(); ++pit) {
+            const EntityHandle f = pit->first;
+            const EntityHandle s = pit->second;
+            DofEntity_multiIndex::index<
+                Composite_Name_And_Ent_mi_tag>::type::iterator dit,
+                hi_dit;
+            dit = dofs_field_ptr->get<Composite_Name_And_Ent_mi_tag>()
+                      .lower_bound(boost::make_tuple(fit->get()->getName(), f));
+            hi_dit =
+                dofs_field_ptr->get<Composite_Name_And_Ent_mi_tag>()
+                    .upper_bound(boost::make_tuple(fit->get()->getName(), s));
+            dofs_ptr[ss]->insert(dit, hi_dit);
+          }
+        }
+      }
+    }
+  }
+
   // add dofs for rows and cols and set ownership
   DofEntity_multiIndex_active_view *dofs_ptr[] = {&dofs_rows, &dofs_cols};
   boost::shared_ptr<NumeredDofEntity_multiIndex> numered_dofs_ptr[] = {
@@ -827,20 +833,13 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
   int start_ranges[2], end_ranges[2];
   for (int ss = 0; ss != loop_size; ss++) {
     PetscLayout layout;
-    ierr = PetscLayoutCreate(m_field.get_comm(), &layout);
-    CHKERRG(ierr);
-    ierr = PetscLayoutSetBlockSize(layout, 1);
-    CHKERRG(ierr);
-    ierr = PetscLayoutSetLocalSize(layout, nb_local_dofs[ss]);
-    CHKERRG(ierr);
-    ierr = PetscLayoutSetUp(layout);
-    CHKERRG(ierr);
-    ierr = PetscLayoutGetSize(layout, &*nbdof_ptr[ss]);
-    CHKERRG(ierr); // get global size
-    ierr = PetscLayoutGetRange(layout, &start_ranges[ss], &end_ranges[ss]);
-    CHKERRG(ierr); // get ranges
-    ierr = PetscLayoutDestroy(&layout);
-    CHKERRG(ierr);
+    CHKERR PetscLayoutCreate(m_field.get_comm(), &layout);
+    CHKERR PetscLayoutSetBlockSize(layout, 1);
+    CHKERR PetscLayoutSetLocalSize(layout, nb_local_dofs[ss]);
+    CHKERR PetscLayoutSetUp(layout);
+    CHKERR PetscLayoutGetSize(layout, &*nbdof_ptr[ss]);
+    CHKERR PetscLayoutGetRange(layout, &start_ranges[ss], &end_ranges[ss]);
+    CHKERR PetscLayoutDestroy(&layout);
   }
   if (square_matrix) {
     nbdof_ptr[1] = nbdof_ptr[0];
@@ -873,7 +872,7 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
 
   // Loop over dofs on this processor and prepare those dofs to send on another
   // proc
-  for (int ss = 0; ss < loop_size; ss++) {
+  for (int ss = 0; ss != loop_size; ++ss) {
 
     DofEntity_multiIndex_active_view::nth_index<0>::type::iterator miit,
         hi_miit;
@@ -884,7 +883,7 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
             new std::vector<NumeredDofEntity>());
     int nb_dofs_to_add = 0;
     miit = dofs_ptr[ss]->get<0>().begin();
-    for (; miit != hi_miit; miit++) {
+    for (; miit != hi_miit; ++miit) {
       // Only set global idx for dofs on this processor part
       if (!(miit->get()->getActive()))
         continue;
@@ -901,7 +900,7 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
 
     int &local_idx = *local_nbdof_ptr[ss];
     miit = dofs_ptr[ss]->get<0>().begin();
-    for (; miit != hi_miit; miit++) {
+    for (; miit != hi_miit; ++miit) {
 
       // Only set global idx for dofs on this processor part
       if (!(miit->get()->getActive()))
@@ -1008,8 +1007,7 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
   }
 
   MPI_Status *status;
-  ierr = PetscMalloc1(m_field.get_comm_size(), &status);
-  CHKERRG(ierr);
+  CHKERR PetscMalloc1(m_field.get_comm_size(), &status);
 
   // Do rows
   int nrecvs_rows;    // number of messages received
@@ -1020,31 +1018,27 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
   {
 
     // make sure it is a PETSc comm
-    ierr = PetscCommDuplicate(m_field.get_comm(), &m_field.get_comm(), NULL);
-    CHKERRG(ierr);
+    CHKERR PetscCommDuplicate(m_field.get_comm(), &m_field.get_comm(), NULL);
 
     // rows
 
     // Computes the number of messages a node expects to receive
-    ierr = PetscGatherNumberOfMessages(m_field.get_comm(), NULL,
+    CHKERR PetscGatherNumberOfMessages(m_field.get_comm(), NULL,
                                        &lengths_rows[0], &nrecvs_rows);
-    CHKERRG(ierr);
     // std::cerr << nrecvs_rows << std::endl;
 
     // Computes info about messages that a MPI-node will receive, including
     // (from-id,length) pairs for each message.
-    ierr = PetscGatherMessageLengths(m_field.get_comm(), nsends_rows,
+    CHKERR PetscGatherMessageLengths(m_field.get_comm(), nsends_rows,
                                      nrecvs_rows, &lengths_rows[0],
                                      &onodes_rows, &olengths_rows);
-    CHKERRG(ierr);
 
     // Gets a unique new tag from a PETSc communicator. All processors that
     // share the communicator MUST call this routine EXACTLY the same number of
     // times. This tag should only be used with the current objects
     // communicator; do NOT use it with any other MPI communicator.
     int tag_row;
-    ierr = PetscCommGetNewTag(m_field.get_comm(), &tag_row);
-    CHKERRG(ierr);
+    CHKERR PetscCommGetNewTag(m_field.get_comm(), &tag_row);
 
     // Allocate a buffer sufficient to hold messages of size specified in
     // olengths. And post Irecvs on these buffers using node info from onodes
@@ -1052,42 +1046,35 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
     // rbuf has a pointers to messeges. It has size of of nrecvs (number of
     // messages) +1. In the first index a block is allocated,
     // such that rbuf[i] = rbuf[i-1]+olengths[i-1].
-    ierr =
-        PetscPostIrecvInt(m_field.get_comm(), tag_row, nrecvs_rows, onodes_rows,
-                          olengths_rows, &rbuf_row, &r_waits_row);
-    CHKERRG(ierr);
-    ierr = PetscFree(onodes_rows);
-    CHKERRG(ierr);
+
+    CHKERR PetscPostIrecvInt(m_field.get_comm(), tag_row, nrecvs_rows,
+                             onodes_rows, olengths_rows, &rbuf_row,
+                             &r_waits_row);
+    CHKERR PetscFree(onodes_rows);
 
     MPI_Request *s_waits_row; // status of sens messages
-    ierr = PetscMalloc1(nsends_rows, &s_waits_row);
-    CHKERRG(ierr);
+    CHKERR PetscMalloc1(nsends_rows, &s_waits_row);
 
     // Send messeges
     for (int proc = 0, kk = 0; proc < m_field.get_comm_size(); proc++) {
       if (!lengths_rows[proc])
         continue; // no message to send to this proc
-      ierr = MPI_Isend(&(ids_data_packed_rows[proc])[0], // buffer to send
+      CHKERR MPI_Isend(&(ids_data_packed_rows[proc])[0], // buffer to send
                        lengths_rows[proc],               // message length
                        MPIU_INT, proc,                   // to proc
                        tag_row, m_field.get_comm(), s_waits_row + kk);
-      CHKERRG(ierr);
       kk++;
     }
 
     if (nrecvs_rows) {
-      ierr = MPI_Waitall(nrecvs_rows, r_waits_row, status);
-      CHKERRG(ierr);
+      CHKERR MPI_Waitall(nrecvs_rows, r_waits_row, status);
     }
     if (nsends_rows) {
-      ierr = MPI_Waitall(nsends_rows, s_waits_row, status);
-      CHKERRG(ierr);
+      CHKERR MPI_Waitall(nsends_rows, s_waits_row, status);
     }
 
-    ierr = PetscFree(r_waits_row);
-    CHKERRG(ierr);
-    ierr = PetscFree(s_waits_row);
-    CHKERRG(ierr);
+    CHKERR PetscFree(r_waits_row);
+    CHKERR PetscFree(s_waits_row);
   }
 
   // cols
@@ -1097,69 +1084,57 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
   if (!square_matrix) {
 
     // Computes the number of messages a node expects to receive
-    ierr = PetscGatherNumberOfMessages(m_field.get_comm(), NULL,
+    CHKERR PetscGatherNumberOfMessages(m_field.get_comm(), NULL,
                                        &lengths_cols[0], &nrecvs_cols);
-    CHKERRG(ierr);
 
     // Computes info about messages that a MPI-node will receive, including
     // (from-id,length) pairs for each message.
     int *onodes_cols;
-    ierr = PetscGatherMessageLengths(m_field.get_comm(), nsends_cols,
+    CHKERR PetscGatherMessageLengths(m_field.get_comm(), nsends_cols,
                                      nrecvs_cols, &lengths_cols[0],
                                      &onodes_cols, &olengths_cols);
-    CHKERRG(ierr);
 
     // Gets a unique new tag from a PETSc communicator.
     int tag_col;
-    ierr = PetscCommGetNewTag(m_field.get_comm(), &tag_col);
-    CHKERRG(ierr);
+    CHKERR PetscCommGetNewTag(m_field.get_comm(), &tag_col);
 
     // Allocate a buffer sufficient to hold messages of size specified in
     // olengths. And post Irecvs on these buffers using node info from onodes
     MPI_Request *r_waits_col; // must bee freed by user
-    ierr =
-        PetscPostIrecvInt(m_field.get_comm(), tag_col, nrecvs_cols, onodes_cols,
-                          olengths_cols, &rbuf_col, &r_waits_col);
-    CHKERRG(ierr);
-    ierr = PetscFree(onodes_cols);
-    CHKERRG(ierr);
+    CHKERR PetscPostIrecvInt(m_field.get_comm(), tag_col, nrecvs_cols,
+                             onodes_cols, olengths_cols, &rbuf_col,
+                             &r_waits_col);
+    CHKERR PetscFree(onodes_cols);
 
     MPI_Request *s_waits_col; // status of sens messages
-    ierr = PetscMalloc1(nsends_cols, &s_waits_col);
-    CHKERRG(ierr);
+    CHKERR PetscMalloc1(nsends_cols, &s_waits_col);
 
     // Send messeges
     for (int proc = 0, kk = 0; proc < m_field.get_comm_size(); proc++) {
       if (!lengths_cols[proc])
         continue; // no message to send to this proc
-      ierr = MPI_Isend(&(ids_data_packed_cols[proc])[0], // buffer to send
+      CHKERR MPI_Isend(&(ids_data_packed_cols[proc])[0], // buffer to send
                        lengths_cols[proc],               // message length
                        MPIU_INT, proc,                   // to proc
                        tag_col, m_field.get_comm(), s_waits_col + kk);
-      CHKERRG(ierr);
       kk++;
     }
 
     if (nrecvs_cols) {
-      ierr = MPI_Waitall(nrecvs_cols, r_waits_col, status);
-      CHKERRG(ierr);
+      CHKERR MPI_Waitall(nrecvs_cols, r_waits_col, status);
     }
     if (nsends_cols) {
-      ierr = MPI_Waitall(nsends_cols, s_waits_col, status);
-      CHKERRG(ierr);
+      CHKERR MPI_Waitall(nsends_cols, s_waits_col, status);
     }
 
-    ierr = PetscFree(r_waits_col);
-    CHKERRG(ierr);
-    ierr = PetscFree(s_waits_col);
-    CHKERRG(ierr);
+    CHKERR PetscFree(r_waits_col);
+    CHKERR PetscFree(s_waits_col);
   }
 
-  ierr = PetscFree(status);
-  CHKERRG(ierr);
+  CHKERR PetscFree(status);
 
   // set values received from other processors
-  for (int ss = 0; ss < loop_size; ss++) {
+  for (int ss = 0; ss != loop_size; ++ss) {
 
     int nrecvs;
     int *olengths;
@@ -1174,9 +1149,12 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
       data_procs = rbuf_col;
     }
 
+    const DofEntity_multiIndex *dofs_ptr;
+    CHKERR m_field.get_dofs(&dofs_ptr);
+
     UId uid;
     NumeredDofEntity_multiIndex::iterator dit;
-    for (int kk = 0; kk < nrecvs; kk++) {
+    for (int kk = 0; kk != nrecvs; ++kk) {
       int len = olengths[kk];
       int *data_from_proc = data_procs[kk];
       for (int dd = 0; dd < len; dd += data_block_size) {
@@ -1186,9 +1164,6 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
           // Dof is shared to this processor, however there is no element which
           // have this dof
           // continue;
-          const DofEntity_multiIndex *dofs_ptr;
-          ierr = m_field.get_dofs(&dofs_ptr);
-          CHKERRG(ierr);
           DofEntity_multiIndex::iterator ddit = dofs_ptr->find(uid);
           if (ddit != dofs_ptr->end()) {
             unsigned char pstatus = ddit->get()->getPStatus();
@@ -1239,19 +1214,13 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
     (problem_ptr->nbLocDofsCol) = (problem_ptr->nbLocDofsRow);
   }
 
-  ierr = PetscFree(olengths_rows);
-  CHKERRG(ierr);
-  ierr = PetscFree(rbuf_row[0]);
-  CHKERRG(ierr);
-  ierr = PetscFree(rbuf_row);
-  CHKERRG(ierr);
+  CHKERR PetscFree(olengths_rows);
+  CHKERR PetscFree(rbuf_row[0]);
+  CHKERR PetscFree(rbuf_row);
   if (!square_matrix) {
-    ierr = PetscFree(olengths_cols);
-    CHKERRG(ierr);
-    ierr = PetscFree(rbuf_col[0]);
-    CHKERRG(ierr);
-    ierr = PetscFree(rbuf_col);
-    CHKERRG(ierr);
+    CHKERR PetscFree(olengths_cols);
+    CHKERR PetscFree(rbuf_col[0]);
+    CHKERR PetscFree(rbuf_col);
   }
 
   if (square_matrix) {
@@ -1266,14 +1235,12 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
     }
   }
 
-  ierr = printPartitionedProblem(problem_ptr, verb);
-  CHKERRG(ierr);
-  ierr = debugPartitionedProblem(problem_ptr, verb);
-  CHKERRG(ierr);
+  CHKERR printPartitionedProblem(problem_ptr, verb);
+  CHKERR debugPartitionedProblem(problem_ptr, verb);
 
   PetscLogEventEnd(MOFEM_EVENT_ProblemsManager, 0, 0, 0, 0);
 
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode ProblemsManager::buildSubProblem(

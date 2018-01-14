@@ -46,6 +46,9 @@ struct ProblemsManager : public UnknownInterface {
 
   PetscBool buildProblemFromFields; ///< If set to true, problem is build from
   /// DOFs in fields, not from DOFs on elements
+  
+  PetscBool synchroniseProblemEntities; 
+
 
   MoFEMErrorCode getOptions();
 
@@ -67,13 +70,16 @@ struct ProblemsManager : public UnknownInterface {
   MoFEMErrorCode partitionMesh(const Range &ents, const int dim,
                                const int adj_dim, const int n_parts,
                                Tag *th_vertex_weights, Tag *th_edge_weights,
-                               Tag *th_part_weights, int verb = 1);
+                               Tag *th_part_weights, int verb = 1,
+                               const bool debug = false);
 
   /// \deprecated do not use this one
   DEPRECATED MoFEMErrorCode partitionMesh(const Range &ents, const int dim,
                                           const int adj_dim, const int n_parts,
-                                          int verb = 1) {
-    return partitionMesh(ents, dim, adj_dim, n_parts, NULL, NULL, NULL, verb);
+                                          int verb = 1,
+                                          const bool debug = false) {
+    return partitionMesh(ents, dim, adj_dim, n_parts, NULL, NULL, NULL, verb,
+                         debug);
   }
 
   /** \brief build problem data structures

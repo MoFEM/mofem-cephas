@@ -52,10 +52,18 @@ struct Core : public Interface {
   /**
    * Construct core database
    */
-  Core(moab::Interface &moab,            ///< MoAB interface
-       MPI_Comm comm = PETSC_COMM_WORLD, ///< MPI communicator
-       int verbose = 1                   ///< Verbosity level
+  Core(moab::Interface &moab,             ///< MoAB interface
+       MPI_Comm comm = PETSC_COMM_WORLD,  ///< MPI communicator
+       const int verbose = VERBOSE,       ///< Verbosity level
+       const bool distributed_mesh = true ///< UId of entities and dofs depends
+                                          ///< on owing processor, assumed that
+                                          ///< mesh is distributed. Otherwise
+                                          ///< is assumed that all processors
+                                          ///< have the same meshes and same
+                                          ///< entity handlers.
+
   );
+
   ~Core();
 
   /** \name Global initialisation and finalisation  */
@@ -381,39 +389,6 @@ protected:
                                            const std::string &name,
                                            const bool recursive = true,
                                            int verb = -1);
-
-  DEPRECATED MoFEMErrorCode add_ents_to_field_by_VERTICEs(
-      const Range &nodes, const std::string &name, int verb = -1);
-  DEPRECATED MoFEMErrorCode add_ents_to_field_by_VERTICEs(
-      const EntityHandle meshset, const std::string &name, int verb = -1);
-  DEPRECATED MoFEMErrorCode add_ents_to_field_by_EDGEs(const Range &edges,
-                                                       const std::string &name,
-                                                       int verb = -1);
-  DEPRECATED MoFEMErrorCode add_ents_to_field_by_EDGEs(
-      const EntityHandle meshset, const std::string &name, int verb = -1);
-  DEPRECATED MoFEMErrorCode add_ents_to_field_by_TRIs(
-      const EntityHandle meshset, const std::string &name, int verb = -1);
-  DEPRECATED MoFEMErrorCode add_ents_to_field_by_TRIs(const Range &tris,
-                                                      const std::string &name,
-                                                      int verb = -1);
-  DEPRECATED MoFEMErrorCode add_ents_to_field_by_TETs(const Range &tets,
-                                                      const std::string &name,
-                                                      int verb = -1);
-  DEPRECATED MoFEMErrorCode add_ents_to_field_by_TETs(
-      const EntityHandle meshset, const std::string &name, int verb = -1);
-  DEPRECATED MoFEMErrorCode add_ents_to_field_by_QUADs(const Range &prisms,
-                                                       const std::string &name,
-                                                       int verb = -1);
-  DEPRECATED MoFEMErrorCode add_ents_to_field_by_QUADs(EntityHandle meshset,
-                                                       const std::string &name,
-                                                       int verb = -1);
-  DEPRECATED MoFEMErrorCode add_ents_to_field_by_PRISMs(const Range &prisms,
-                                                        const std::string &name,
-                                                        int verb = -1);
-  DEPRECATED MoFEMErrorCode add_ents_to_field_by_PRISMs(EntityHandle meshset,
-                                                        const std::string &name,
-                                                        int verb = -1);
-
 
   /// \name Set approximation order
 
