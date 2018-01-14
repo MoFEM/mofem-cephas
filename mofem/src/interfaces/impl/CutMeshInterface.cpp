@@ -340,11 +340,11 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(const double low_tol,
         edgesToCut[*eit].unitRayDir = vec_unit_ray_dir;
         edgesToCut[*eit].rayPoint = vec_ray_point;
         cutEdges.insert(*eit);
-      } else if(dist_normal[0] * dist_normal[1] != 0) {
+      } else if (dist_normal[0] * dist_normal[1] != 0) {
         const double b = dist_normal[0];
         const double a = dist_normal[1] - b;
-        const double s = (-b/a)*ray_length;
-        double point[3] = {0,0,0};
+        const double s = (-b / a) * ray_length;
+        double point[3] = {0, 0, 0};
         VectorAdaptor vec_point(3,
                                 ublas::shallow_array_adaptor<double>(3, point));
         noalias(vec_point) = vec_ray_point + s * vec_unit_ray_dir;
@@ -360,7 +360,7 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(const double low_tol,
           aveLength += ray_length;
           maxLength = fmax(maxLength, ray_length);
           nb_ave_length++;
-          edgesToCut[*eit].dIst = dist;
+          edgesToCut[*eit].dIst = s;
           edgesToCut[*eit].lEngth = ray_length;
           edgesToCut[*eit].unitRayDir = vec_unit_ray_dir;
           edgesToCut[*eit].rayPoint = vec_ray_point;
@@ -1079,10 +1079,11 @@ MoFEMErrorCode CutMeshInterface::splitSides(const BitRefLevel split_bit,
 
 struct LengthMapData {
   double lEngth;
+  double qUality;
   EntityHandle eDge;
   bool skip;
-  LengthMapData(const double l, const EntityHandle e)
-      : lEngth(l), eDge(e), skip(false) {}
+  LengthMapData(const double l, double q, const EntityHandle e)
+      : lEngth(l), qUality(q), eDge(e), skip(false) {}
 };
 
 typedef multi_index_container<
@@ -1237,7 +1238,8 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
           maxLength(max_length) {}
 
     MoFEMErrorCode operator()(const Range &tets, const Range &edges,
-                              LengthMapData_multi_index &length_map) const {
+                              LengthMapData_multi_index &length_map,
+                              double &ave) const {
       int num_nodes;
       const EntityHandle *conn;
       double coords[6];
@@ -1262,8 +1264,16 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
           q = -1;
         noalias(delta) = (s0 - s1) / maxLength;
         double dot = inner_prod(delta, delta);
-        length_map.insert(LengthMapData(pow(q, 2) * sqrt(dot), *eit));
+        double val = q * pow(dot,1./8.);
+        length_map.insert(LengthMapData(val, q, *eit));
       }
+      ave = 0;
+      for (LengthMapData_multi_index::nth_index<0>::type::iterator mit =
+               length_map.get<0>().begin();
+           mit != length_map.get<0>().end(); mit++) {
+        ave += mit->qUality;
+      }
+      ave /= length_map.size();
       MoFEMFunctionReturn(0);
     }
   };
@@ -1602,12 +1612,20 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
   LengthMapData_multi_index length_map;
   new_surf = surface;
 
+  double ave0, ave, min0, min, min_p, min_pp;
   for (int pp = 0; pp != nbMaxMergingCycles; pp++) {
 
-    int nb_nodes_merged_0 = nb_nodes_merged;
+    int nb_nodes_merged_p = nb_nodes_merged;
     length_map.clear();
-    CHKERR LengthMap(m_field, th, maxLength)(proc_tets, edges_to_merge,
-                                             length_map);
+    min_pp = min_p;
+    min_p = min;  
+    CHKERR LengthMap(m_field, th, aveLength)(proc_tets, edges_to_merge,
+                                             length_map, ave);
+    min = length_map.get<0>().begin()->qUality;
+    if(pp == 0) {
+      ave0 = ave;
+      min0 = length_map.get<0>().begin()->qUality;
+    }
 
     int nn = 0;
     Range collapsed_edges;
@@ -1669,6 +1687,8 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
 
       if (nn > length_map.size() / fraction_level)
         break;
+      if (mit->qUality > ave)
+        break;
     }
 
     Range adj_faces, adj_edges;
@@ -1676,8 +1696,9 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
                                 moab::Interface::UNION);
     new_surf = intersect(new_surf, adj_faces);
 
-    PetscPrintf(m_field.get_comm(), "(%d) Number of nodes merged %d\n", pp,
-                nb_nodes_merged);
+    PetscPrintf(m_field.get_comm(),
+                "(%d) Number of nodes merged %d ave q %3.4e min q %3.4e\n", pp,
+                nb_nodes_merged, ave, min);
 
     if (debug) {
       // current surface and merged edges in step
@@ -1698,7 +1719,11 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
       CHKERR moab.delete_entities(&meshset, 1);
     }
 
-    if (nb_nodes_merged == nb_nodes_merged_0)
+    if (nb_nodes_merged == nb_nodes_merged_p)
+      break;
+    if (min == min_pp)
+      break;
+    if (min > ave0)
       break;
 
     CHKERR moab.get_adjacencies(proc_tets, 1, false, adj_edges,

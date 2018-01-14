@@ -228,21 +228,15 @@ MoFEMErrorCode Core::addEntsToFieldByDim(const Range &ents, const int dim,
   EntityHandle idm = no_handle;
   if (verb == -1)
     verb = verbose;
-  MoFEMFunctionBeginHot;
-  try {
-    idm = get_field_meshset(name);
-  } catch (MoFEMException const &e) {
-    SETERRQ(PETSC_COMM_SELF, e.errorCode, e.errorMessage);
-  }
+  MoFEMFunctionBegin;
+  idm = get_field_meshset(name);
   FieldSpace space;
-  rval = moab.tag_get_data(th_FieldSpace, &idm, 1, &space);
-  CHKERRQ_MOAB(rval);
-  Range nodes, faces, edges;
+  CHKERR moab.tag_get_data(th_FieldSpace, &idm, 1, &space);
+  std::vector<int> nb_ents_on_dim(3, 0);
   switch (space) {
   case L2:
-    rval = moab.add_entities(idm, ents);
-    CHKERRQ_MOAB(rval);
-    if (verb > 1) {
+    CHKERR moab.add_entities(idm, ents);
+    if (verb >= VERY_VERBOSE) {
       std::ostringstream ss;
       ss << "add entities to field " << name;
       ss << " nb. add ents " << ents.size();
@@ -251,104 +245,59 @@ MoFEMErrorCode Core::addEntsToFieldByDim(const Range &ents, const int dim,
     }
     break;
   case H1:
-    rval = moab.add_entities(idm, ents);
-    CHKERRQ_MOAB(rval);
-    if (dim > 0) {
-      rval =
-          moab.get_adjacencies(ents, 0, false, nodes, moab::Interface::UNION);
-      CHKERRQ_MOAB(rval);
-      {
+    CHKERR moab.add_entities(idm, ents);
+    for (int dd = 0; dd != dim; ++dd) {
+      Range adj_ents;
+      CHKERR moab.get_adjacencies(ents, dd, false, adj_ents,
+                                  moab::Interface::UNION);
+      if (dd == 0) {
         Range topo_nodes;
-        rval = moab.get_connectivity(ents, topo_nodes, true);
-        CHKERRQ_MOAB(rval);
+        CHKERR moab.get_connectivity(ents, topo_nodes, true);
         Range mid_nodes;
-        rval = moab.get_connectivity(ents, mid_nodes, false);
-        CHKERRQ_MOAB(rval);
+        CHKERR moab.get_connectivity(ents, mid_nodes, false);
         mid_nodes = subtract(mid_nodes, topo_nodes);
-        nodes = subtract(nodes, mid_nodes);
+        adj_ents = subtract(adj_ents, mid_nodes);
       }
-      rval = moab.add_entities(idm, nodes);
-      CHKERRQ_MOAB(rval);
-    }
-    if (dim > 2) {
-      rval =
-          moab.get_adjacencies(ents, 2, false, faces, moab::Interface::UNION);
-      CHKERRQ_MOAB(rval);
-      rval = moab.add_entities(idm, faces);
-      CHKERRQ_MOAB(rval);
-    }
-    if (dim > 1) {
-      rval =
-          moab.get_adjacencies(ents, 1, false, edges, moab::Interface::UNION);
-      CHKERRQ_MOAB(rval);
-      rval = moab.add_entities(idm, edges);
-      CHKERRQ_MOAB(rval);
-    }
-    if (verb > 1) {
-      std::ostringstream ss;
-      ss << "add entities to field " << name;
-      ss << " nb. add ents " << ents.size();
-      ss << " nb. add faces " << faces.size();
-      ss << " nb. add edges " << edges.size();
-      ss << " nb. add nodes " << nodes.size();
-      ss << std::endl;
-      PetscSynchronizedPrintf(cOmm, ss.str().c_str());
+      CHKERR moab.add_entities(idm, adj_ents);
+      nb_ents_on_dim[dd] = adj_ents.size();
     }
     break;
   case HCURL:
-    rval = moab.add_entities(idm, ents);
-    CHKERRQ_MOAB(rval);
-    if (dim > 2) {
-      rval =
-          moab.get_adjacencies(ents, 2, false, faces, moab::Interface::UNION);
-      CHKERRQ_MOAB(rval);
-      rval = moab.add_entities(idm, faces);
-      CHKERRQ_MOAB(rval);
-    }
-    if (dim > 1) {
-      rval =
-          moab.get_adjacencies(ents, 1, false, edges, moab::Interface::UNION);
-      CHKERRQ_MOAB(rval);
-      rval = moab.add_entities(idm, edges);
-      CHKERRQ_MOAB(rval);
-    }
-    if (verb > 1) {
-      std::ostringstream ss;
-      ss << "add entities to field " << name;
-      ss << " nb. add ents " << ents.size();
-      ss << " nb. add faces " << faces.size();
-      ss << " nb. add edges " << edges.size();
-      ss << std::endl;
-      PetscSynchronizedPrintf(cOmm, ss.str().c_str());
+    CHKERR moab.add_entities(idm, ents);
+    for (int dd = 1; dd != dim; ++dd) {
+      Range adj_ents;
+      CHKERR moab.get_adjacencies(ents, dd, false, adj_ents,
+                                  moab::Interface::UNION);
+      CHKERR moab.add_entities(idm, adj_ents);
+      nb_ents_on_dim[dd] = adj_ents.size();
     }
     break;
   case HDIV:
-    rval = moab.add_entities(idm, ents);
-    CHKERRQ_MOAB(rval);
+    CHKERR moab.add_entities(idm, ents);
     if (dim > 2) {
-      rval =
-          moab.get_adjacencies(ents, 2, false, faces, moab::Interface::UNION);
-      CHKERRQ_MOAB(rval);
-      rval = moab.add_entities(idm, faces);
-      CHKERRQ_MOAB(rval);
-    }
-    if (verb > 1) {
-      std::ostringstream ss;
-      ss << "add entities to field " << name;
-      ss << " nb. add ents " << ents.size();
-      ss << " nb. add faces " << faces.size();
-      ss << std::endl;
-      PetscSynchronizedPrintf(cOmm, ss.str().c_str());
+      Range adj_ents;
+      CHKERR moab.get_adjacencies(ents, 2, false, adj_ents,
+                                  moab::Interface::UNION);
+      CHKERR moab.add_entities(idm, adj_ents);
+      nb_ents_on_dim[2] = adj_ents.size();
     }
     break;
   default:
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "sorry, unknown space added to entity");
   }
-  if (verb > 1) {
+  if (verb >= VERY_VERBOSE) {
+    std::ostringstream ss;
+    ss << "add entities to field " << name;
+    ss << " nb. add ents " << ents.size();
+    ss << " nb. add faces " << nb_ents_on_dim[2];
+    ss << " nb. add edges " << nb_ents_on_dim[1];
+    ss << " nb. add nodes " << nb_ents_on_dim[0];
+    ss << std::endl;
+    PetscSynchronizedPrintf(cOmm, ss.str().c_str());
     PetscSynchronizedFlush(cOmm, PETSC_STDOUT);
   }
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode Core::add_ents_to_field_by_dim(const Range &ents, const int dim,
@@ -402,67 +351,6 @@ MoFEMErrorCode Core::add_ents_to_field_by_type(const EntityHandle meshset,
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode Core::add_ents_to_field_by_EDGEs(const Range &edges,
-                                                const std::string &name,
-                                                int verb) {
-  return add_ents_to_field_by_type(edges, MBEDGE, name, verb);
-}
-MoFEMErrorCode Core::add_ents_to_field_by_EDGEs(const EntityHandle meshset,
-                                                const std::string &name,
-                                                int verb) {
-  return add_ents_to_field_by_type(meshset, MBEDGE, name, true, verb);
-}
-MoFEMErrorCode Core::add_ents_to_field_by_TRIs(const EntityHandle meshset,
-                                               const std::string &name,
-                                               int verb) {
-  return add_ents_to_field_by_type(meshset, MBTRI, name, true, verb);
-}
-MoFEMErrorCode Core::add_ents_to_field_by_TRIs(const Range &tris,
-                                               const std::string &name,
-                                               int verb) {
-  return add_ents_to_field_by_type(tris, MBTRI, name, verb);
-}
-MoFEMErrorCode Core::add_ents_to_field_by_VERTICEs(const Range &nodes,
-                                                   const std::string &name,
-                                                   int verb) {
-  return add_ents_to_field_by_type(nodes, MBVERTEX, name, verb);
-}
-MoFEMErrorCode Core::add_ents_to_field_by_VERTICEs(const EntityHandle meshset,
-                                                   const std::string &name,
-                                                   int verb) {
-  return add_ents_to_field_by_type(meshset, MBVERTEX, name, true, verb);
-}
-MoFEMErrorCode Core::add_ents_to_field_by_TETs(const Range &tets,
-                                               const std::string &name,
-                                               int verb) {
-  return add_ents_to_field_by_type(tets, MBTET, name, verb);
-}
-MoFEMErrorCode Core::add_ents_to_field_by_TETs(const EntityHandle meshset,
-                                               const std::string &name,
-                                               int verb) {
-  return add_ents_to_field_by_type(meshset, MBTET, name, true, verb);
-}
-MoFEMErrorCode Core::add_ents_to_field_by_QUADs(const Range &quads,
-                                                const std::string &name,
-                                                int verb) {
-  return add_ents_to_field_by_type(quads, MBQUAD, name, verb);
-}
-MoFEMErrorCode Core::add_ents_to_field_by_QUADs(EntityHandle meshset,
-                                                const std::string &name,
-                                                int verb) {
-  return add_ents_to_field_by_type(meshset, MBQUAD, name, true, verb);
-}
-MoFEMErrorCode Core::add_ents_to_field_by_PRISMs(const Range &prisms,
-                                                 const std::string &name,
-                                                 int verb) {
-  return add_ents_to_field_by_type(prisms, MBPRISM, name, verb);
-}
-MoFEMErrorCode Core::add_ents_to_field_by_PRISMs(EntityHandle meshset,
-                                                 const std::string &name,
-                                                 int verb) {
-  return add_ents_to_field_by_type(meshset, MBPRISM, name, true, verb);
-}
-
 MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
                                      const ApproximationOrder order, int verb) {
   MoFEMFunctionBegin;
@@ -513,7 +401,8 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
   int nb_ents_set_order_down = 0;
   int nb_ents_set_order_new = 0;
 
-  Range new_ents;
+  FieldEntity_change_order modify_order(order);
+
   for (Range::const_pair_iterator pit = field_ents.const_pair_begin();
        pit != field_ents.const_pair_end(); pit++) {
     EntityHandle first = pit->first;
@@ -551,19 +440,13 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
     }
 
     // Entity is in database, change order only if needed
+    Range ents_in_database;
     FieldEntity_multiIndex_ent_view::nth_index<1>::type::iterator vit, hi_vit;
     vit = ents_id_view.get<1>().lower_bound(first);
     hi_vit = ents_id_view.get<1>().upper_bound(second);
-    for (; vit != hi_vit; ++vit, ++first) {
-
-      // It is a gap in field entities, those need to be added to the field
-      while (first != vit->get()->getEnt() && first <= second) {
-        new_ents.insert(first);
-        ++first;
-      }
-
-      if (PetscLikely(order >= 0)) {
-
+    for (; vit != hi_vit; ++vit) {
+      ents_in_database.insert(vit->get()->getEnt());
+      if (order >= 0) {
         // entity is in database and order is changed or reset
         const ApproximationOrder old_approximation_order =
             (*vit)->getMaxOrder();
@@ -598,99 +481,83 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
                       "modification unsuccessful");
           }
         }
-
-        bool success = entsFields.modify(entsFields.project<0>(miit),
-                                         FieldEntity_change_order(order));
+        bool success =
+            entsFields.modify(entsFields.project<0>(miit), modify_order);
         if (!success)
           SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
                   "modification unsuccessful");
       }
     }
 
-    if (first <= second) {
-      // This entity is not in database, added to the vector of entities to
-      // which tag with new order have to be set.
-      new_ents.insert(first, second);
-    }
-  }
+    Range new_ents = subtract(Range(first,second),ents_in_database);
+    for (Range::const_pair_iterator pit = new_ents.const_pair_begin();
+         pit != new_ents.const_pair_end(); ++pit) {
+      EntityHandle first = pit->first;
+      EntityHandle second = pit->second;
 
-  // reserve memory for field  dofs
-  boost::shared_ptr<std::vector<FieldEntity> > ents_array =
-      boost::make_shared<std::vector<FieldEntity> >(std::vector<FieldEntity>());
+      // reserve memory for field  dofs
+      boost::shared_ptr<std::vector<FieldEntity> > ents_array =
+          boost::make_shared<std::vector<FieldEntity> >(
+              std::vector<FieldEntity>());
 
-  // Add sequence to field data structure. Note that entities are allocated
-  // once into vector. This vector is passed into sequence as a weak_ptr.
-  // Vector is destroyed at the point last entity inside that vector is
-  // destroyed.
-  miit->get()->getEntSequenceContainer()->push_back(ents_array);
-  ents_array->reserve(new_ents.size());
+      // Add sequence to field data structure. Note that entities are allocated
+      // once into vector. This vector is passed into sequence as a weak_ptr.
+      // Vector is destroyed at the point last entity inside that vector is
+      // destroyed.
+      miit->get()->getEntSequenceContainer()->push_back(ents_array);
+      ents_array->reserve(second-first+1);
 
-  FieldEntity_change_order modify_order(order);
-  for (Range::const_pair_iterator pit = new_ents.const_pair_begin();
-       pit != new_ents.const_pair_end(); pit++) {
-    EntityHandle first = pit->first;
-    EntityHandle second = pit->second;
+      // Entity is not in database and order is changed or reset
+      RefEntity_multiIndex::index<Ent_mi_tag>::type::iterator miit_ref_ent,
+          hi_miit_ref_ent;
+      miit_ref_ent = refinedEntities.get<Ent_mi_tag>().lower_bound(first);
+      hi_miit_ref_ent = refinedEntities.get<Ent_mi_tag>().upper_bound(second);
+      Range ents_in_ref_ent;
+      for (; miit_ref_ent != hi_miit_ref_ent; ++miit_ref_ent) {
+        const EntityHandle ent = miit_ref_ent->get()->getRefEnt();
+        ents_in_ref_ent.insert(ent);
+        // CHKERR moab.tag_set_data((*miit)->th_AppOrder, &ent, 1, &order);
+        // NOTE: This will work with newer compiler only, use push_back for
+        // back
+        // compatibility. ents_array->emplace_back(*miit,*miit_ref_ent);
+        ents_array->push_back(FieldEntity(*miit, *miit_ref_ent));
+        if (order >= 0) {
+          modify_order(&(ents_array->back()));
+        }
+        nb_ents_set_order_new++;
+      }
 
-    // get tags on entities
-    Range new_pair(first, second);
-    std::vector<ApproximationOrder *> tag_data_order;
-    if (order >= 0) {
-      tag_data_order.resize(new_pair.size());
-      CHKERR moab.tag_get_by_ptr((*miit)->th_AppOrder, new_pair,
-                                 (const void **)&tag_data_order[0]);
-    }
-
-    // Entity is not in database and order is changed or reset
-    RefEntity_multiIndex::index<Ent_mi_tag>::type::iterator miit_ref_ent,
-        hi_miit_ref_ent;
-    miit_ref_ent = refinedEntities.get<Ent_mi_tag>().lower_bound(first);
-    hi_miit_ref_ent = refinedEntities.get<Ent_mi_tag>().upper_bound(second);
-    for (int ee = 0; miit_ref_ent != hi_miit_ref_ent;
-         ++miit_ref_ent, ++first, ++ee) {
-      if (PetscUnlikely(first != miit_ref_ent->get()->getRefEnt())) {
-        RefEntity ref_ent(basicEntityDataPtr, first);
+      Range ents_not_in_database =
+          subtract(Range(first, second), ents_in_ref_ent);
+      for (Range::iterator eit = ents_not_in_database.begin();
+           eit != ents_not_in_database.end(); ++eit) {
+        RefEntity ref_ent(basicEntityDataPtr, *eit);
         // FIXME: need some consistent policy in that case
         if (ref_ent.getBitRefLevel().none()) {
-          ++ee;
-          ++first;
           continue; // not on any mesh and not in database
         }
         std::cerr << ref_ent << std::endl;
-        std::cerr << "bit level " << ref_ent.getBitRefLevel() << std::endl;
         SETERRQ(
             PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "Try to add entities which are not seeded or added to database");
-      } else {
-        // Set tag value
-        if (order >= 0) {
-          *tag_data_order[ee] = order;
-          // NOTE: This will work with newer compiler only, use push_back for
-          // back
-          // compatibility. ents_array->emplace_back(*miit,*miit_ref_ent);
-          ents_array->push_back(FieldEntity(*miit, *miit_ref_ent));
-          modify_order(&(ents_array->back()));
-          nb_ents_set_order_new++;
-        } else {
-          ents_array->push_back(FieldEntity(*miit, *miit_ref_ent));
-        }
       }
+
+      // Add entities to database
+      std::vector<boost::shared_ptr<FieldEntity> > ents_shared_array;
+      ents_shared_array.reserve(ents_array->size());
+      for (std::vector<FieldEntity>::iterator vit = ents_array->begin();
+           vit != ents_array->end(); vit++) {
+        // ents_shared_array.emplace_back(ents_array,&*vit);
+        ents_shared_array.push_back(
+            boost::shared_ptr<FieldEntity>(ents_array, &*vit));
+      }
+      // Add new ents to database
+      entsFields.insert(ents_shared_array.begin(), ents_shared_array.end());
     }
+
   }
 
-  // Add entities to database
-  std::vector<boost::shared_ptr<FieldEntity> > ents_shared_array;
-  ents_shared_array.reserve(ents_array->size());
-  for (std::vector<FieldEntity>::iterator vit = ents_array->begin();
-       vit != ents_array->end(); vit++) {
-    // ents_shared_array.emplace_back(ents_array,&*vit);
-    ents_shared_array.push_back(
-        boost::shared_ptr<FieldEntity>(ents_array, &*vit));
-  }
-
-  // Add new ents to database
-  entsFields.insert(ents_shared_array.begin(), ents_shared_array.end());
-
-  if (verb > 1) {
+  if (verb >= VERY_VERBOSE) {
     PetscSynchronizedPrintf(cOmm,
                             "nb. of entities in field <%s> for which order was "
                             "increased %d (order %d)\n",
@@ -835,7 +702,7 @@ Core::buildFieldForNoField(const BitFieldId id,
     miit_ref_ent = refinedEntities.get<Ent_mi_tag>().find(*eit);
     if (miit_ref_ent == refinedEntities.get<Ent_mi_tag>().end()) {
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-              "Entity is not in MoFEM databse, entities in field meshset need "
+              "Entity is not in MoFEM database, entities in field meshset need "
               "to be seeded (i.e. bit ref level add to them)");
     }
     std::pair<FieldEntity_multiIndex::iterator, bool> e_miit;

@@ -267,13 +267,14 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
       MoFEMFunctionBegin;
       RefEntity_multiIndex::iterator it = ref_ents_ptr->find(ent);
       if (it != ref_ents_ptr->end()) {
-        if (it->get()->getParentEnt() != parent &&
-            it->get()->getParentEnt() != it->get()->getRefEnt()) {
+        if (it->get()->getParentEnt() != parent && ent != parent) {
           parentsToChange[ent] = parent;
         }
      } else {
-        CHKERR m_field.get_moab().tag_set_data(cOre.get_th_RefParentHandle(),
-                                               &ent, 1, &parent);
+       if (ent != parent) {
+         CHKERR m_field.get_moab().tag_set_data(cOre.get_th_RefParentHandle(),
+                                                &ent, 1, &parent);
+       }
       }
       MoFEMFunctionReturn(0);
     }

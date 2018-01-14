@@ -56,9 +56,9 @@ int main(int argc, char *argv[]) {
 
   const char *option;
   option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
-  BARRIER_RANK_START(pcomm)
+  BARRIER_PCOMM_RANK_START(pcomm)
   rval = moab.load_file(mesh_file_name, 0, option); CHKERRG(rval);
-  BARRIER_RANK_END(pcomm)
+  BARRIER_PCOMM_RANK_END(pcomm)
 
   //set entitities bit level
   BitRefLevel bit_level0;

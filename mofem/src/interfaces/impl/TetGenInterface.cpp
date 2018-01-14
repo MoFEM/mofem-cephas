@@ -436,7 +436,7 @@
         // rval = m_field.get_moab().get_adjacencies(&tet,1,2,true,tris);
         // ParallelComm* pcomm =
         // ParallelComm::get_pcomm(&m_field.get_moab(),MYPCOMM_INDEX);
-        // BARRIER_RANK_START(pcomm)
+        // BARRIER_PCOMM_RANK_START(pcomm)
         // cerr << pcomm->rank() << " : ";
         // cerr << tet << " : ";
         // // cerr << tet_nodes << endl;
@@ -447,7 +447,7 @@
         // << edges[4] << " " << edges[5] << " : ";
         // cerr << tris[0] << " " << tris[1] << " " << tris[2] << " " << tris[3]
         // << endl;
-        // BARRIER_RANK_END(pcomm)
+        // BARRIER_PCOMM_RANK_END(pcomm)
       } else {
         // if(tets.size()!=1) {
         //   SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data
@@ -500,42 +500,42 @@
     // ParallelComm* pcomm =
     // ParallelComm::get_pcomm(&m_field.get_moab(),MYPCOMM_INDEX);
     //
-    // BARRIER_RANK_START(pcomm)
+    // BARRIER_PCOMM_RANK_START(pcomm)
     // {
     //   ostringstream ss;
     //   ss << "t0_" << pcomm->rank() << ".vtk";
     //   rval = m_field.get_moab().write_file(ss.str().c_str(),"VTK");
     //   CHKERRQ_MOAB(rval);
     // }
-    // BARRIER_RANK_END(pcomm)
+    // BARRIER_PCOMM_RANK_END(pcomm)
 
     Range ents;
     ierr = outData(in, out, moab_tetgen_map, tetgen_moab_map, &ents, id_in_tags,
                    error_if_created);
     CHKERRG(ierr);
 
-    // BARRIER_RANK_START(pcomm)
+    // BARRIER_PCOMM_RANK_START(pcomm)
     // {
     //   ostringstream ss;
     //   ss << "t1_" << pcomm->rank() << ".vtk";
     //   rval = m_field.get_moab().write_file(ss.str().c_str(),"VTK");
     //   CHKERRQ_MOAB(rval);
     // }
-    // BARRIER_RANK_END(pcomm)
+    // BARRIER_PCOMM_RANK_END(pcomm)
 
     // std::cerr << ents.size() << std::endl;
     ierr = m_field.getInterface<BitRefManager>()->setBitRefLevel(
         ents.subset_by_type(MBTET), bit);
     CHKERRG(ierr);
 
-    // BARRIER_RANK_START(pcomm)
+    // BARRIER_PCOMM_RANK_START(pcomm)
     // {
     //   ostringstream ss;
     //   ss << "t2_" << pcomm->rank() << ".vtk";
     //   rval = m_field.get_moab().write_file(ss.str().c_str(),"VTK");
     //   CHKERRQ_MOAB(rval);
     // }
-    // BARRIER_RANK_END(pcomm)
+    // BARRIER_PCOMM_RANK_END(pcomm)
 
     MoFEMFunctionReturnHot(0);
   }

@@ -337,24 +337,70 @@ enum VERBOSITY_LEVELS { QUIET = 0, VERBOSE, VERY_VERBOSE, NOISY, VERY_NOISY };
  * code.
  *
  */
-#define BARRIER_RANK_START(PCMB)                                               \
+#define BARRIER_PCOMM_RANK_START(PCMB)                                         \
   {                                                                            \
     for (unsigned int i = 0; i < PCMB->proc_config().proc_rank(); i++)         \
       MPI_Barrier(PCMB->proc_config().proc_comm());                            \
   };
 
+/** \deprecated Do use this macro, instead use BARRIER_PCOMM_RANK_START
+ */
+#define BARRIER_RANK_START(PCMB)                                               \
+  {                                                                            \
+    macro_is_depracted_using_deprecated_function();                            \
+    for (unsigned int i = 0; i < PCMB->proc_config().proc_rank(); i++)         \
+      MPI_Barrier(PCMB->proc_config().proc_comm());                            \
+  };
+
 /** \brief set barrier start
-  * Run code in sequence, starting from process 0, and ends on last process.
-  *
-  * It can be only used for testing. Do not use that function as a part of these
-  * code.
-  *
-  */
-#define BARRIER_RANK_END(PCMB)                                                 \
+ * Run code in sequence, starting from process 0, and ends on last process.
+ *
+ * It can be only used for testing. Do not use that function as a part of these
+ * code.
+ *
+ */
+#define BARRIER_PCOMM_RANK_END(PCMB)                                           \
   {                                                                            \
     for (unsigned int i = PCMB->proc_config().proc_rank();                     \
          i < PCMB->proc_config().proc_size(); i++)                             \
       MPI_Barrier(PCMB->proc_config().proc_comm());                            \
+  };
+
+/** \deprecated Do use this macro, instead use BARRIER_PCOMM_RANK_START
+ */
+#define BARRIER_RANK_END(PCMB)                                                 \
+  {                                                                            \
+    macro_is_depracted_using_deprecated_function();                            \
+    for (unsigned int i = PCMB->proc_config().proc_rank();                     \
+         i < PCMB->proc_config().proc_size(); i++)                             \
+      MPI_Barrier(PCMB->proc_config().proc_comm());                            \
+  };
+
+/** \brief set barrier start
+ * Run code in sequence, starting from process 0, and ends on last process.
+ *
+ * It can be only used for testing. Do not use that function as a part of these
+ * code.
+ *
+ */
+#define BARRIER_MOFEM_RANK_START(MOFEM)                                        \
+  {                                                                            \
+    for (unsigned int i = 0; i < (MOFEM)->get_comm_rank(); i++)                \
+      MPI_Barrier((MOFEM)->get_comm());                                        \
+  };
+
+/** \brief set barrier start
+ * Run code in sequence, starting from process 0, and ends on last process.
+ *
+ * It can be only used for testing. Do not use that function as a part of these
+ * code.
+ *
+ */
+#define BARRIER_MOFEM_RANK_END(MOFEM)                                          \
+  {                                                                            \
+    for (unsigned int i = (MOFEM)->get_comm_rank();                            \
+         i < (MOFEM)->get_comm_size(); i++)                                    \
+      MPI_Barrier((MOFEM)->get_comm());                                        \
   };
 
 #ifdef __cplusplus
@@ -419,18 +465,18 @@ DEPRECATED void macro_is_depracted_using_deprecated_function();
                       ex.errorCode, PETSC_ERROR_INITIAL, ex.what());           \
   }                                                                            \
   catch (MoFEMExceptionRepeat const &ex) {                                     \
-    return PetscError(PETSC_COMM_WORLD, ex.lINE, PETSC_FUNCTION_NAME,          \
-                      __FILE__, ex.errorCode, PETSC_ERROR_REPEAT, " ");        \
+    return PetscError(PETSC_COMM_SELF, ex.lINE, PETSC_FUNCTION_NAME, __FILE__, \
+                      ex.errorCode, PETSC_ERROR_REPEAT, " ");                  \
   }                                                                            \
   catch (MoFEMException const &ex) {                                           \
-    SETERRQ(PETSC_COMM_WORLD, ex.errorCode, ex.errorMessage);                  \
+    SETERRQ(PETSC_COMM_SELF, ex.errorCode, ex.errorMessage);                   \
   }                                                                            \
   catch (std::exception const &ex) {                                           \
     std::string message("Error: " + std::string(ex.what()) + " at " +          \
                         boost::lexical_cast<std::string>(__LINE__) + " : " +   \
                         std::string(__FILE__) + " in " +                       \
                         std::string(PETSC_FUNCTION_NAME));                     \
-    SETERRQ(PETSC_COMM_WORLD, MOFEM_STD_EXCEPTION_THROW, message.c_str());     \
+    SETERRQ(PETSC_COMM_SELF, MOFEM_STD_EXCEPTION_THROW, message.c_str());      \
   }
 
 /**

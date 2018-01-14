@@ -75,12 +75,11 @@ MoFEMErrorCode Core::regSubInterface(const MOFEMuuid& uid) {
   MoFEMFunctionReturnHot(0);
 }
 
-Core::Core(moab::Interface& moab,MPI_Comm comm,int verbose):
-moab(moab),
-cOmm(0),
-verbose(verbose),
-initaliseAndBuildField(PETSC_FALSE),
-initaliseAndBuildFiniteElements(PETSC_FALSE) {
+Core::Core(moab::Interface &moab, MPI_Comm comm, const int verbose,
+           const bool distributed_mesh)
+    : moab(moab), cOmm(0), verbose(verbose),
+      initaliseAndBuildField(PETSC_FALSE),
+      initaliseAndBuildFiniteElements(PETSC_FALSE) {
 
   // This is deprecated ONE should use MoFEM::Core::Initialize
   if (!isGloballyInitialised) {
@@ -158,7 +157,13 @@ initaliseAndBuildFiniteElements(PETSC_FALSE) {
   // Initialize database
   ierr = getTags(); CHKERRABORT(cOmm,ierr);
   ierr = clearMap(); CHKERRABORT(cOmm,ierr);
+
   basicEntityDataPtr = boost::make_shared<BasicEntityData>(moab);
+  if (distributed_mesh)
+    basicEntityDataPtr->setDistributedMesh();
+  else
+    basicEntityDataPtr->unSetDistributedMesh();
+
   ierr = getOptions(verbose); CHKERRABORT(cOmm,ierr);
   ierr = initialiseDatabaseFromMesh(verbose); CHKERRABORT(cOmm,ierr);
 
