@@ -340,11 +340,11 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(const double low_tol,
         edgesToCut[*eit].unitRayDir = vec_unit_ray_dir;
         edgesToCut[*eit].rayPoint = vec_ray_point;
         cutEdges.insert(*eit);
-      } else if(dist_normal[0] * dist_normal[1] != 0) {
+      } else if (dist_normal[0] * dist_normal[1] != 0) {
         const double b = dist_normal[0];
         const double a = dist_normal[1] - b;
-        const double s = (-b/a)*ray_length;
-        double point[3] = {0,0,0};
+        const double s = (-b / a) * ray_length;
+        double point[3] = {0, 0, 0};
         VectorAdaptor vec_point(3,
                                 ublas::shallow_array_adaptor<double>(3, point));
         noalias(vec_point) = vec_ray_point + s * vec_unit_ray_dir;
@@ -360,7 +360,7 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(const double low_tol,
           aveLength += ray_length;
           maxLength = fmax(maxLength, ray_length);
           nb_ave_length++;
-          edgesToCut[*eit].dIst = dist;
+          edgesToCut[*eit].dIst = s;
           edgesToCut[*eit].lEngth = ray_length;
           edgesToCut[*eit].unitRayDir = vec_unit_ray_dir;
           edgesToCut[*eit].rayPoint = vec_ray_point;
