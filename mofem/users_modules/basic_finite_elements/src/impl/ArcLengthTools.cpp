@@ -375,18 +375,43 @@ MoFEMErrorCode AssembleFlambda::postProcess() {
       CHKERR VecAssemblyBegin(arcPtr->F_lambda);
       CHKERR VecAssemblyEnd(arcPtr->F_lambda);
     }
+    CHKERR VecGhostUpdateBegin(arcPtr->F_lambda, INSERT_VALUES,
+                               SCATTER_FORWARD);
+    CHKERR VecGhostUpdateEnd(arcPtr->F_lambda, INSERT_VALUES, SCATTER_FORWARD);
     CHKERR VecDot(arcPtr->F_lambda, arcPtr->F_lambda, &arcPtr->F_lambda2);
-    PetscPrintf(PETSC_COMM_WORLD, "\tF_lambda2 = %6.4e\n", arcPtr->F_lambda2);
+    
     // add F_lambda
     CHKERR VecAssemblyBegin(snes_f);
     CHKERR VecAssemblyEnd(snes_f);
+    Vec l_snes_f, l_f_lambda;
+    CHKERR VecGhostGetLocalForm(snes_f, &l_snes_f);
+    CHKERR VecGhostGetLocalForm(arcPtr->F_lambda, &l_f_lambda);
     double lambda = arcPtr->getFieldData();
-    CHKERR VecAXPY(snes_f, lambda, arcPtr->F_lambda);
-    double fnorm;
-    CHKERR VecNorm(snes_f, NORM_2, &fnorm);
-    PetscPrintf(PETSC_COMM_WORLD, "\tfnorm = %6.4e lambda = %6.4g\n", fnorm,
-                lambda);
-    if (!boost::math::isfinite(fnorm)) {
+    int local_lambda_idx = arcPtr->getPetscLocalDofIdx();
+    {
+      double *f_array, *f_lambda_array;
+      CHKERR VecGetArray(l_snes_f, &f_array);
+      CHKERR VecGetArray(l_f_lambda, &f_lambda_array);
+      int size = problemPtr->getNbLocalDofsRow();
+      f_lambda_array[local_lambda_idx] = 0;
+      for(int i = 0;i!=size;++i) {
+        f_array[i] += lambda * f_lambda_array[i];
+      }
+      CHKERR VecRestoreArray(l_snes_f, &f_array);
+      CHKERR VecRestoreArray(l_f_lambda, &f_lambda_array);
+    }
+    CHKERR VecGhostRestoreLocalForm(snes_f, &l_snes_f);
+    CHKERR VecGhostRestoreLocalForm(arcPtr->F_lambda, &l_f_lambda);
+
+    double snes_fnorm, snes_xnorm;
+    CHKERR VecNorm(snes_f, NORM_2, &snes_fnorm);
+    CHKERR VecNorm(snes_x, NORM_2, &snes_xnorm);
+    PetscPrintf(PETSC_COMM_WORLD,
+                "\tF_lambda2 = %6.4e snes_f norm = %6.4e "
+                "snes_x norm = %6.4e "
+                "lambda = %6.4g\n",
+                arcPtr->F_lambda2, snes_fnorm, snes_xnorm, lambda);
+    if (!boost::math::isfinite(snes_fnorm)) {
       CHKERR arcPtr->mField.getInterface<Tools>()->checkVectorForNotANumber(
           problemPtr, ROW, snes_f);
     }
@@ -485,41 +510,55 @@ MoFEMErrorCode SimpleArcLengthControl::calculateDb() {
 }
 
 MoFEMErrorCode SimpleArcLengthControl::calculateDxAndDlambda(Vec x) {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   // Calculate dx
-  ierr = VecCopy(x, arcPtr->dx);
-  CHKERRG(ierr);
-  ierr = VecAXPY(arcPtr->dx, -1, arcPtr->x0);
-  CHKERRG(ierr);
-  ierr = VecGhostUpdateBegin(arcPtr->x0, INSERT_VALUES, SCATTER_FORWARD);
-  CHKERRG(ierr);
-  ierr = VecGhostUpdateEnd(arcPtr->x0, INSERT_VALUES, SCATTER_FORWARD);
-  CHKERRG(ierr);
-  ierr = VecGhostUpdateBegin(arcPtr->dx, INSERT_VALUES, SCATTER_FORWARD);
-  CHKERRG(ierr);
-  ierr = VecGhostUpdateEnd(arcPtr->dx, INSERT_VALUES, SCATTER_FORWARD);
-  CHKERRG(ierr);
+  CHKERR VecGhostUpdateBegin(arcPtr->x0, INSERT_VALUES, SCATTER_FORWARD);
+  CHKERR VecGhostUpdateEnd(arcPtr->x0, INSERT_VALUES, SCATTER_FORWARD);
+
+  Vec l_x, l_x0, l_dx;
+  CHKERR VecGhostGetLocalForm(x, &l_x);
+  CHKERR VecGhostGetLocalForm(arcPtr->x0, &l_x0);
+  CHKERR VecGhostGetLocalForm(arcPtr->dx, &l_dx);
+  {
+    double *x_array, *x0_array, *dx_array;
+    CHKERR VecGetArray(l_x, &x_array);
+    CHKERR VecGetArray(l_x0, &x0_array);
+    CHKERR VecGetArray(l_dx, &dx_array);
+    int size =
+        problemPtr->getNbLocalDofsRow() + problemPtr->getNbGhostDofsRow();
+    for (int i = 0; i != size; ++i) {
+      dx_array[i] = x_array[i]-x0_array[i];
+    }
+    CHKERR VecRestoreArray(l_x, &x_array);
+    CHKERR VecRestoreArray(l_x0, &x0_array);
+    CHKERR VecRestoreArray(l_dx, &dx_array);
+  }
+  CHKERR VecGhostRestoreLocalForm(x, &l_x);
+  CHKERR VecGhostRestoreLocalForm(arcPtr->x0, &l_x0);
+  CHKERR VecGhostRestoreLocalForm(arcPtr->dx, &l_dx);
+
   // Calculate dlambda
   if (arcPtr->getPetscLocalDofIdx() != -1) {
     double *array;
-    ierr = VecGetArray(arcPtr->dx, &array);
-    CHKERRG(ierr);
+    CHKERR VecGetArray(arcPtr->dx, &array);
     arcPtr->dLambda = array[arcPtr->getPetscLocalDofIdx()];
     array[arcPtr->getPetscLocalDofIdx()] = 0;
-    ierr = VecRestoreArray(arcPtr->dx, &array);
-    CHKERRG(ierr);
+    CHKERR VecRestoreArray(arcPtr->dx, &array);
   }
-  ierr =
-      VecGhostUpdateBegin(arcPtr->ghosTdLambda, INSERT_VALUES, SCATTER_FORWARD);
-  CHKERRG(ierr);
-  ierr =
-      VecGhostUpdateEnd(arcPtr->ghosTdLambda, INSERT_VALUES, SCATTER_FORWARD);
-  CHKERRG(ierr);
+  CHKERR VecGhostUpdateBegin(arcPtr->ghosTdLambda, INSERT_VALUES,
+                             SCATTER_FORWARD);
+  CHKERR VecGhostUpdateEnd(arcPtr->ghosTdLambda, INSERT_VALUES,
+                           SCATTER_FORWARD);
+
   // Calculate dx2
-  ierr = VecDot(arcPtr->dx, arcPtr->dx, &arcPtr->dx2);
-  CHKERRG(ierr);
-  PetscPrintf(PETSC_COMM_WORLD, "\tdx2 = %6.4e\n", arcPtr->dx2);
-  MoFEMFunctionReturnHot(0);
+  double x_nrm, x0_nrm;
+  CHKERR VecNorm(x, NORM_2, &x_nrm);
+  CHKERR VecNorm(arcPtr->x0, NORM_2, &x0_nrm);
+  CHKERR VecDot(arcPtr->dx, arcPtr->dx, &arcPtr->dx2);
+  PetscPrintf(PETSC_COMM_WORLD,
+              "\tx norm = %6.4e x0 norm = %6.4e dx2 = %6.4e\n", x_nrm, x0_nrm,
+              arcPtr->dx2);
+  MoFEMFunctionReturn(0);
 }
 
 // ***************************
