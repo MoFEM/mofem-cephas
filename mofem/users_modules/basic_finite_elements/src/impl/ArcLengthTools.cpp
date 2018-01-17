@@ -407,83 +407,69 @@ SimpleArcLengthControl::SimpleArcLengthControl(
 SimpleArcLengthControl::~SimpleArcLengthControl() {}
 
 MoFEMErrorCode SimpleArcLengthControl::preProcess() {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   switch (snes_ctx) {
   case CTX_SNESSETFUNCTION: {
     if (aSsemble) {
-      ierr = VecAssemblyBegin(snes_f);
-      CHKERRG(ierr);
-      ierr = VecAssemblyEnd(snes_f);
-      CHKERRG(ierr);
+      CHKERR VecAssemblyBegin(snes_f);
+      CHKERR VecAssemblyEnd(snes_f);
     }
-    ierr = calculateDxAndDlambda(snes_x);
-    CHKERRG(ierr);
-    ierr = calculateDb();
-    CHKERRG(ierr);
+    CHKERR calculateDxAndDlambda(snes_x);
+    CHKERR calculateDb();
   } break;
   case CTX_SNESSETJACOBIAN: {
     if (aSsemble) {
-      ierr = MatAssemblyBegin(snes_B, MAT_FLUSH_ASSEMBLY);
-      CHKERRG(ierr);
-      ierr = MatAssemblyEnd(snes_B, MAT_FLUSH_ASSEMBLY);
-      CHKERRG(ierr);
+      CHKERR MatAssemblyBegin(snes_B, MAT_FLUSH_ASSEMBLY);
+      CHKERR MatAssemblyEnd(snes_B, MAT_FLUSH_ASSEMBLY);
     }
   } break;
   default:
     break;
   }
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode SimpleArcLengthControl::operator()() {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   switch (snes_ctx) {
   case CTX_SNESSETFUNCTION: {
     arcPtr->res_lambda = calculateLambdaInt() - arcPtr->s;
-    ierr = VecSetValue(snes_f, arcPtr->getPetscGlobalDofIdx(),
+    CHKERR VecSetValue(snes_f, arcPtr->getPetscGlobalDofIdx(),
                        arcPtr->res_lambda, ADD_VALUES);
-    CHKERRG(ierr);
   } break;
   case CTX_SNESSETJACOBIAN: {
     arcPtr->dIag = arcPtr->beta;
-    ierr = MatSetValue(snes_B, arcPtr->getPetscGlobalDofIdx(),
+    CHKERR MatSetValue(snes_B, arcPtr->getPetscGlobalDofIdx(),
                        arcPtr->getPetscGlobalDofIdx(), 1, ADD_VALUES);
-    CHKERRG(ierr);
   } break;
   default:
     break;
   }
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode SimpleArcLengthControl::postProcess() {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   switch (snes_ctx) {
   case CTX_SNESSETFUNCTION: {
     if (aSsemble) {
-      ierr = VecAssemblyBegin(snes_f);
-      CHKERRG(ierr);
-      ierr = VecAssemblyEnd(snes_f);
-      CHKERRG(ierr);
+      CHKERR VecAssemblyBegin(snes_f);
+      CHKERR VecAssemblyEnd(snes_f);
     }
   } break;
   case CTX_SNESSETJACOBIAN: {
     if (aSsemble) {
-      ierr = MatAssemblyBegin(snes_B, MAT_FLUSH_ASSEMBLY);
-      CHKERRG(ierr);
-      ierr = MatAssemblyEnd(snes_B, MAT_FLUSH_ASSEMBLY);
-      CHKERRG(ierr);
+      CHKERR MatAssemblyBegin(snes_B, MAT_FLUSH_ASSEMBLY);
+      CHKERR MatAssemblyEnd(snes_B, MAT_FLUSH_ASSEMBLY);
     }
-    ierr =
-        VecGhostUpdateBegin(arcPtr->ghostDiag, INSERT_VALUES, SCATTER_FORWARD);
-    CHKERRG(ierr);
-    ierr = VecGhostUpdateEnd(arcPtr->ghostDiag, INSERT_VALUES, SCATTER_FORWARD);
-    CHKERRG(ierr);
+    CHKERR VecGhostUpdateBegin(arcPtr->ghostDiag, INSERT_VALUES,
+                               SCATTER_FORWARD);
+    CHKERR VecGhostUpdateEnd(arcPtr->ghostDiag, INSERT_VALUES, SCATTER_FORWARD);
   } break;
   default:
     break;
   }
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 double SimpleArcLengthControl::calculateLambdaInt() {
@@ -491,14 +477,11 @@ double SimpleArcLengthControl::calculateLambdaInt() {
 }
 
 MoFEMErrorCode SimpleArcLengthControl::calculateDb() {
-  MoFEMFunctionBeginHot;
-  ierr = VecZeroEntries(arcPtr->db);
-  CHKERRG(ierr);
-  ierr = VecGhostUpdateBegin(arcPtr->db, INSERT_VALUES, SCATTER_FORWARD);
-  CHKERRG(ierr);
-  ierr = VecGhostUpdateEnd(arcPtr->db, INSERT_VALUES, SCATTER_FORWARD);
-  CHKERRG(ierr);
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionBegin;
+  CHKERR VecZeroEntries(arcPtr->db);
+  CHKERR VecGhostUpdateBegin(arcPtr->db, INSERT_VALUES, SCATTER_FORWARD);
+  CHKERR VecGhostUpdateEnd(arcPtr->db, INSERT_VALUES, SCATTER_FORWARD);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode SimpleArcLengthControl::calculateDxAndDlambda(Vec x) {
