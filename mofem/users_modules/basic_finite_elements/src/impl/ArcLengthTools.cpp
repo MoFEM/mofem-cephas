@@ -331,21 +331,18 @@ ZeroFLmabda::ZeroFLmabda(boost::shared_ptr<ArcLengthCtx> arc_ptr)
     : arcPtr(arc_ptr) {}
 
 MoFEMErrorCode ZeroFLmabda::preProcess() {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   switch (snes_ctx) {
   case CTX_SNESSETFUNCTION: {
-    ierr = VecZeroEntries(arcPtr->F_lambda);
-    CHKERRG(ierr);
-    ierr =
-        VecGhostUpdateBegin(arcPtr->F_lambda, INSERT_VALUES, SCATTER_FORWARD);
-    CHKERRG(ierr);
-    ierr = VecGhostUpdateEnd(arcPtr->F_lambda, INSERT_VALUES, SCATTER_FORWARD);
-    CHKERRG(ierr);
+    CHKERR VecZeroEntries(arcPtr->F_lambda);
+    CHKERR VecGhostUpdateBegin(arcPtr->F_lambda, INSERT_VALUES,
+                               SCATTER_FORWARD);
+    CHKERR VecGhostUpdateEnd(arcPtr->F_lambda, INSERT_VALUES, SCATTER_FORWARD);
   } break;
   default:
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Impossible case");
   }
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 AssembleFlambda::AssembleFlambda(boost::shared_ptr<ArcLengthCtx> arc_ptr,
