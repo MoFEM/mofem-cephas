@@ -71,6 +71,17 @@ namespace MoFEM {
       MoFEMFunctionReturnHot(0);
     }
 
+    MoFEMErrorCode clearLoops() {
+      MoFEMFunctionBeginHot;
+      loops_to_do_Mat.clear();
+      loops_to_do_Rhs.clear();
+      preProcess_Mat.clear();
+      postProcess_Mat.clear();
+      preProcess_Rhs.clear();
+      postProcess_Rhs.clear();
+      MoFEMFunctionReturnHot(0);
+    }
+
     PetscLogEvent MOFEM_EVENT_SnesRhs; ///< Log events to assemble residual
     PetscLogEvent MOFEM_EVENT_SnesMat; ///< Log events to assemble tangent matrix
 
