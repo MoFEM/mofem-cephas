@@ -1721,7 +1721,7 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
 
     if (nb_nodes_merged == nb_nodes_merged_p)
       break;
-    if (min == min_pp)
+    if (min > 0 && min == min_pp)
       break;
     if (min > ave0)
       break;
