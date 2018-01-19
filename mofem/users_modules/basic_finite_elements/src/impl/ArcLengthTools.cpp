@@ -331,21 +331,18 @@ ZeroFLmabda::ZeroFLmabda(boost::shared_ptr<ArcLengthCtx> arc_ptr)
     : arcPtr(arc_ptr) {}
 
 MoFEMErrorCode ZeroFLmabda::preProcess() {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   switch (snes_ctx) {
   case CTX_SNESSETFUNCTION: {
-    ierr = VecZeroEntries(arcPtr->F_lambda);
-    CHKERRG(ierr);
-    ierr =
-        VecGhostUpdateBegin(arcPtr->F_lambda, INSERT_VALUES, SCATTER_FORWARD);
-    CHKERRG(ierr);
-    ierr = VecGhostUpdateEnd(arcPtr->F_lambda, INSERT_VALUES, SCATTER_FORWARD);
-    CHKERRG(ierr);
+    CHKERR VecZeroEntries(arcPtr->F_lambda);
+    CHKERR VecGhostUpdateBegin(arcPtr->F_lambda, INSERT_VALUES,
+                               SCATTER_FORWARD);
+    CHKERR VecGhostUpdateEnd(arcPtr->F_lambda, INSERT_VALUES, SCATTER_FORWARD);
   } break;
   default:
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Impossible case");
   }
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 AssembleFlambda::AssembleFlambda(boost::shared_ptr<ArcLengthCtx> arc_ptr,
@@ -378,18 +375,43 @@ MoFEMErrorCode AssembleFlambda::postProcess() {
       CHKERR VecAssemblyBegin(arcPtr->F_lambda);
       CHKERR VecAssemblyEnd(arcPtr->F_lambda);
     }
+    CHKERR VecGhostUpdateBegin(arcPtr->F_lambda, INSERT_VALUES,
+                               SCATTER_FORWARD);
+    CHKERR VecGhostUpdateEnd(arcPtr->F_lambda, INSERT_VALUES, SCATTER_FORWARD);
     CHKERR VecDot(arcPtr->F_lambda, arcPtr->F_lambda, &arcPtr->F_lambda2);
-    PetscPrintf(PETSC_COMM_WORLD, "\tF_lambda2 = %6.4e\n", arcPtr->F_lambda2);
+    
     // add F_lambda
     CHKERR VecAssemblyBegin(snes_f);
     CHKERR VecAssemblyEnd(snes_f);
+    Vec l_snes_f, l_f_lambda;
+    CHKERR VecGhostGetLocalForm(snes_f, &l_snes_f);
+    CHKERR VecGhostGetLocalForm(arcPtr->F_lambda, &l_f_lambda);
     double lambda = arcPtr->getFieldData();
-    CHKERR VecAXPY(snes_f, lambda, arcPtr->F_lambda);
-    double fnorm;
-    CHKERR VecNorm(snes_f, NORM_2, &fnorm);
-    PetscPrintf(PETSC_COMM_WORLD, "\tfnorm = %6.4e lambda = %6.4g\n", fnorm,
-                lambda);
-    if (!boost::math::isfinite(fnorm)) {
+    int local_lambda_idx = arcPtr->getPetscLocalDofIdx();
+    {
+      double *f_array, *f_lambda_array;
+      CHKERR VecGetArray(l_snes_f, &f_array);
+      CHKERR VecGetArray(l_f_lambda, &f_lambda_array);
+      int size = problemPtr->getNbLocalDofsRow();
+      f_lambda_array[local_lambda_idx] = 0;
+      for(int i = 0;i!=size;++i) {
+        f_array[i] += lambda * f_lambda_array[i];
+      }
+      CHKERR VecRestoreArray(l_snes_f, &f_array);
+      CHKERR VecRestoreArray(l_f_lambda, &f_lambda_array);
+    }
+    CHKERR VecGhostRestoreLocalForm(snes_f, &l_snes_f);
+    CHKERR VecGhostRestoreLocalForm(arcPtr->F_lambda, &l_f_lambda);
+
+    double snes_fnorm, snes_xnorm;
+    CHKERR VecNorm(snes_f, NORM_2, &snes_fnorm);
+    CHKERR VecNorm(snes_x, NORM_2, &snes_xnorm);
+    PetscPrintf(PETSC_COMM_WORLD,
+                "\tF_lambda2 = %6.4e snes_f norm = %6.4e "
+                "snes_x norm = %6.4e "
+                "lambda = %6.4g\n",
+                arcPtr->F_lambda2, snes_fnorm, snes_xnorm, lambda);
+    if (!boost::math::isfinite(snes_fnorm)) {
       CHKERR arcPtr->mField.getInterface<Tools>()->checkVectorForNotANumber(
           problemPtr, ROW, snes_f);
     }
@@ -410,83 +432,69 @@ SimpleArcLengthControl::SimpleArcLengthControl(
 SimpleArcLengthControl::~SimpleArcLengthControl() {}
 
 MoFEMErrorCode SimpleArcLengthControl::preProcess() {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   switch (snes_ctx) {
   case CTX_SNESSETFUNCTION: {
     if (aSsemble) {
-      ierr = VecAssemblyBegin(snes_f);
-      CHKERRG(ierr);
-      ierr = VecAssemblyEnd(snes_f);
-      CHKERRG(ierr);
+      CHKERR VecAssemblyBegin(snes_f);
+      CHKERR VecAssemblyEnd(snes_f);
     }
-    ierr = calculateDxAndDlambda(snes_x);
-    CHKERRG(ierr);
-    ierr = calculateDb();
-    CHKERRG(ierr);
+    CHKERR calculateDxAndDlambda(snes_x);
+    CHKERR calculateDb();
   } break;
   case CTX_SNESSETJACOBIAN: {
     if (aSsemble) {
-      ierr = MatAssemblyBegin(snes_B, MAT_FLUSH_ASSEMBLY);
-      CHKERRG(ierr);
-      ierr = MatAssemblyEnd(snes_B, MAT_FLUSH_ASSEMBLY);
-      CHKERRG(ierr);
+      CHKERR MatAssemblyBegin(snes_B, MAT_FLUSH_ASSEMBLY);
+      CHKERR MatAssemblyEnd(snes_B, MAT_FLUSH_ASSEMBLY);
     }
   } break;
   default:
     break;
   }
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode SimpleArcLengthControl::operator()() {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   switch (snes_ctx) {
   case CTX_SNESSETFUNCTION: {
     arcPtr->res_lambda = calculateLambdaInt() - arcPtr->s;
-    ierr = VecSetValue(snes_f, arcPtr->getPetscGlobalDofIdx(),
+    CHKERR VecSetValue(snes_f, arcPtr->getPetscGlobalDofIdx(),
                        arcPtr->res_lambda, ADD_VALUES);
-    CHKERRG(ierr);
   } break;
   case CTX_SNESSETJACOBIAN: {
     arcPtr->dIag = arcPtr->beta;
-    ierr = MatSetValue(snes_B, arcPtr->getPetscGlobalDofIdx(),
+    CHKERR MatSetValue(snes_B, arcPtr->getPetscGlobalDofIdx(),
                        arcPtr->getPetscGlobalDofIdx(), 1, ADD_VALUES);
-    CHKERRG(ierr);
   } break;
   default:
     break;
   }
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode SimpleArcLengthControl::postProcess() {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   switch (snes_ctx) {
   case CTX_SNESSETFUNCTION: {
     if (aSsemble) {
-      ierr = VecAssemblyBegin(snes_f);
-      CHKERRG(ierr);
-      ierr = VecAssemblyEnd(snes_f);
-      CHKERRG(ierr);
+      CHKERR VecAssemblyBegin(snes_f);
+      CHKERR VecAssemblyEnd(snes_f);
     }
   } break;
   case CTX_SNESSETJACOBIAN: {
     if (aSsemble) {
-      ierr = MatAssemblyBegin(snes_B, MAT_FLUSH_ASSEMBLY);
-      CHKERRG(ierr);
-      ierr = MatAssemblyEnd(snes_B, MAT_FLUSH_ASSEMBLY);
-      CHKERRG(ierr);
+      CHKERR MatAssemblyBegin(snes_B, MAT_FLUSH_ASSEMBLY);
+      CHKERR MatAssemblyEnd(snes_B, MAT_FLUSH_ASSEMBLY);
     }
-    ierr =
-        VecGhostUpdateBegin(arcPtr->ghostDiag, INSERT_VALUES, SCATTER_FORWARD);
-    CHKERRG(ierr);
-    ierr = VecGhostUpdateEnd(arcPtr->ghostDiag, INSERT_VALUES, SCATTER_FORWARD);
-    CHKERRG(ierr);
+    CHKERR VecGhostUpdateBegin(arcPtr->ghostDiag, INSERT_VALUES,
+                               SCATTER_FORWARD);
+    CHKERR VecGhostUpdateEnd(arcPtr->ghostDiag, INSERT_VALUES, SCATTER_FORWARD);
   } break;
   default:
     break;
   }
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 double SimpleArcLengthControl::calculateLambdaInt() {
@@ -494,52 +502,63 @@ double SimpleArcLengthControl::calculateLambdaInt() {
 }
 
 MoFEMErrorCode SimpleArcLengthControl::calculateDb() {
-  MoFEMFunctionBeginHot;
-  ierr = VecZeroEntries(arcPtr->db);
-  CHKERRG(ierr);
-  ierr = VecGhostUpdateBegin(arcPtr->db, INSERT_VALUES, SCATTER_FORWARD);
-  CHKERRG(ierr);
-  ierr = VecGhostUpdateEnd(arcPtr->db, INSERT_VALUES, SCATTER_FORWARD);
-  CHKERRG(ierr);
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionBegin;
+  CHKERR VecZeroEntries(arcPtr->db);
+  CHKERR VecGhostUpdateBegin(arcPtr->db, INSERT_VALUES, SCATTER_FORWARD);
+  CHKERR VecGhostUpdateEnd(arcPtr->db, INSERT_VALUES, SCATTER_FORWARD);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode SimpleArcLengthControl::calculateDxAndDlambda(Vec x) {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   // Calculate dx
-  ierr = VecCopy(x, arcPtr->dx);
-  CHKERRG(ierr);
-  ierr = VecAXPY(arcPtr->dx, -1, arcPtr->x0);
-  CHKERRG(ierr);
-  ierr = VecGhostUpdateBegin(arcPtr->x0, INSERT_VALUES, SCATTER_FORWARD);
-  CHKERRG(ierr);
-  ierr = VecGhostUpdateEnd(arcPtr->x0, INSERT_VALUES, SCATTER_FORWARD);
-  CHKERRG(ierr);
-  ierr = VecGhostUpdateBegin(arcPtr->dx, INSERT_VALUES, SCATTER_FORWARD);
-  CHKERRG(ierr);
-  ierr = VecGhostUpdateEnd(arcPtr->dx, INSERT_VALUES, SCATTER_FORWARD);
-  CHKERRG(ierr);
+  CHKERR VecGhostUpdateBegin(arcPtr->x0, INSERT_VALUES, SCATTER_FORWARD);
+  CHKERR VecGhostUpdateEnd(arcPtr->x0, INSERT_VALUES, SCATTER_FORWARD);
+
+  Vec l_x, l_x0, l_dx;
+  CHKERR VecGhostGetLocalForm(x, &l_x);
+  CHKERR VecGhostGetLocalForm(arcPtr->x0, &l_x0);
+  CHKERR VecGhostGetLocalForm(arcPtr->dx, &l_dx);
+  {
+    double *x_array, *x0_array, *dx_array;
+    CHKERR VecGetArray(l_x, &x_array);
+    CHKERR VecGetArray(l_x0, &x0_array);
+    CHKERR VecGetArray(l_dx, &dx_array);
+    int size =
+        problemPtr->getNbLocalDofsRow() + problemPtr->getNbGhostDofsRow();
+    for (int i = 0; i != size; ++i) {
+      dx_array[i] = x_array[i]-x0_array[i];
+    }
+    CHKERR VecRestoreArray(l_x, &x_array);
+    CHKERR VecRestoreArray(l_x0, &x0_array);
+    CHKERR VecRestoreArray(l_dx, &dx_array);
+  }
+  CHKERR VecGhostRestoreLocalForm(x, &l_x);
+  CHKERR VecGhostRestoreLocalForm(arcPtr->x0, &l_x0);
+  CHKERR VecGhostRestoreLocalForm(arcPtr->dx, &l_dx);
+
   // Calculate dlambda
   if (arcPtr->getPetscLocalDofIdx() != -1) {
     double *array;
-    ierr = VecGetArray(arcPtr->dx, &array);
-    CHKERRG(ierr);
+    CHKERR VecGetArray(arcPtr->dx, &array);
     arcPtr->dLambda = array[arcPtr->getPetscLocalDofIdx()];
     array[arcPtr->getPetscLocalDofIdx()] = 0;
-    ierr = VecRestoreArray(arcPtr->dx, &array);
-    CHKERRG(ierr);
+    CHKERR VecRestoreArray(arcPtr->dx, &array);
   }
-  ierr =
-      VecGhostUpdateBegin(arcPtr->ghosTdLambda, INSERT_VALUES, SCATTER_FORWARD);
-  CHKERRG(ierr);
-  ierr =
-      VecGhostUpdateEnd(arcPtr->ghosTdLambda, INSERT_VALUES, SCATTER_FORWARD);
-  CHKERRG(ierr);
+  CHKERR VecGhostUpdateBegin(arcPtr->ghosTdLambda, INSERT_VALUES,
+                             SCATTER_FORWARD);
+  CHKERR VecGhostUpdateEnd(arcPtr->ghosTdLambda, INSERT_VALUES,
+                           SCATTER_FORWARD);
+
   // Calculate dx2
-  ierr = VecDot(arcPtr->dx, arcPtr->dx, &arcPtr->dx2);
-  CHKERRG(ierr);
-  PetscPrintf(PETSC_COMM_WORLD, "\tdx2 = %6.4e\n", arcPtr->dx2);
-  MoFEMFunctionReturnHot(0);
+  double x_nrm, x0_nrm;
+  CHKERR VecNorm(x, NORM_2, &x_nrm);
+  CHKERR VecNorm(arcPtr->x0, NORM_2, &x0_nrm);
+  CHKERR VecDot(arcPtr->dx, arcPtr->dx, &arcPtr->dx2);
+  PetscPrintf(PETSC_COMM_WORLD,
+              "\tx norm = %6.4e x0 norm = %6.4e dx2 = %6.4e\n", x_nrm, x0_nrm,
+              arcPtr->dx2);
+  MoFEMFunctionReturn(0);
 }
 
 // ***************************
