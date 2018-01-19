@@ -32,7 +32,7 @@ enum VolumeLengthQualityType {
   LASTOP_VOLUMELENGTHQUALITYTYPE
 };
 
-const char *VolumeLengthQualityTypeNames[] = {
+static const char *VolumeLengthQualityTypeNames[] = {
   "QUALITY",
   "BARRIER_AND_QUALITY",
   "BARRIER_AND_CHANGE_QUALITY",

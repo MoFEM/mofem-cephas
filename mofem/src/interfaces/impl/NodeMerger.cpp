@@ -472,7 +472,7 @@ MoFEMErrorCode NodeMergerInterface::lineSearch(
 
     double min_quality = 1;
     double alpha = (alpha_i+alpha_k)*0.5;
-    t_move(i) = t_coords(i)+alpha*t_delta(i);
+    t_move(i) = t_coords(i) + alpha * t_delta(i);
     ierr = minQuality(
       check_tests,father,mother,&t_move(0),min_quality,th
     ); CHKERRG(ierr);

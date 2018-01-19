@@ -1005,6 +1005,7 @@ struct SurfaceSlidingConstrains {
     MoFEMFunctionBeginHot;
 
     // Adding operators to calculate the right hand side
+    feRhs.getOpPtrVector().clear();
     feRhs.getOpPtrVector().push_back(
         new OpPositions(material_field_name, cUrrent, crackFrontOrientation));
     feRhs.getOpPtrVector().push_back(
@@ -1015,6 +1016,7 @@ struct SurfaceSlidingConstrains {
                                              cUrrent, crackFrontOrientation));
 
     // Adding operators to calculate the left hand side
+    feLhs.getOpPtrVector().clear();
     feLhs.getOpPtrVector().push_back(
         new OpPositions(material_field_name, cUrrent, crackFrontOrientation));
     feLhs.getOpPtrVector().push_back(
