@@ -66,7 +66,7 @@ MoFEMErrorCode SeriesRecorder::initialiseDatabaseFromMesh(int verb) {
     th_SeriesName,MB_TAG_CREAT|MB_TAG_BYTES|MB_TAG_VARLEN|MB_TAG_SPARSE,NULL
   ); CHKERRQ_MOAB(rval);
 
-  rval = moab.get_entities_by_type(0,MBENTITYSET,meshsets,true);  CHKERRQ_MOAB(rval);
+  rval = moab.get_entities_by_type(0,MBENTITYSET,meshsets,false);  CHKERRQ_MOAB(rval);
   for(Range::iterator mit = meshsets.begin();mit!=meshsets.end();mit++) {
     const void* tagName;
     int tagNameSize;

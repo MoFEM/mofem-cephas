@@ -1783,7 +1783,7 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
       subtract(all_ents_not_in_database_after, all_ents_not_in_database_before);
   Range meshsets;
   CHKERR m_field.get_moab().get_entities_by_type(0, MBENTITYSET, meshsets,
-                                                 true);
+                                                 false);
   for (Range::iterator mit = meshsets.begin(); mit != meshsets.end(); mit++) {
     CHKERR m_field.get_moab().remove_entities(*mit,
                                               all_ents_not_in_database_after);
