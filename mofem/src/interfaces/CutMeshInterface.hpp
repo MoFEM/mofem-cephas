@@ -136,7 +136,10 @@ struct CutMeshInterface : public UnknownInterface {
   MoFEMErrorCode findEdgesToCut(const double low_tol = 0, int verb = 0,
                                 const bool debug = false);
 
-  MoFEMErrorCode projectZeroDistanceEnts(const double low_tol = 0, int verb = 0);
+  MoFEMErrorCode projectZeroDistanceEnts(Range *fixed_edges,
+                                         Range *corner_nodes,
+                                         const double low_tol = 0,
+                                         int verb = 0);
 
   /**
    * \brief cut edges
