@@ -150,7 +150,7 @@ namespace MoFEM {
      * \brief define problem
      * @return error code
      */
-    MoFEMErrorCode defineProblem();
+    MoFEMErrorCode defineProblem(const PetscBool is_partitioned = PETSC_TRUE);
 
     /**
      * \brief Set field order
@@ -159,7 +159,8 @@ namespace MoFEM {
      * @param  range of entities to which order is set (If null it sat to all entities)
      * @return                 error code
      */
-    MoFEMErrorCode setFieldOrder(const std::string field_name,const int order,const Range* ents = NULL);
+    MoFEMErrorCode setFieldOrder(const std::string field_name, const int order,
+                                 const Range *ents = NULL);
 
     /**
      * \brief Build fields
@@ -193,9 +194,17 @@ namespace MoFEM {
     MoFEMErrorCode getDM(DM *dm);
 
     inline int getDim() const { return dIm; }
-    inline const std::string& getDomainFEName() { return domainFE; }
-    inline const std::string& getBoundaryFEName() { return boundaryFE; }
-    inline const std::string& getSkeletonFEName() { return skeletonFE; }
+    inline const std::string& getDomainFEName() const { return domainFE; }
+    inline const std::string& getBoundaryFEName() const { return boundaryFE; }
+    inline const std::string& getSkeletonFEName() const { return skeletonFE; }
+
+    inline std::string &getDomainFEName() { return domainFE; }
+    inline std::string &getBoundaryFEName() { return boundaryFE; }
+    inline std::string &getSkeletonFEName() { return skeletonFE; }
+
+    inline std::vector<std::string> getOtherFiniteElements() {
+      return otherFEs;
+    }
 
   private:
 
@@ -218,8 +227,10 @@ namespace MoFEM {
     std::map<std::string,std::pair<int,Range> > fieldsOrder;    ///< fields order
 
     std::string domainFE;      ///< domain finite element
-    std::string boundaryFE;     ///< boundary finite element
-    std::string skeletonFE;     ///< skeleton finite element
+    std::string boundaryFE;    ///< boundary finite element
+    std::string skeletonFE;    ///< skeleton finite element
+
+    std::vector<std::string> otherFEs; ///< Other finite elements
 
     char meshFileName[255]; ///< mesh file name
     int dIm;                ///< dimension of problem
