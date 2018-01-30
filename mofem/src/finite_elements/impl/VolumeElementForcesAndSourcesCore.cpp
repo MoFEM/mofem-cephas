@@ -471,312 +471,49 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCore::transformHoBaseFunctions() {
 }
 
 MoFEMErrorCode VolumeElementForcesAndSourcesCore::operator()() {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
+
+  if (numeredEntFiniteElementPtr->getEntType() != MBTET)
+    MoFEMFunctionReturnHot(0);
+
+  CHKERR calculateVolumeAndJacobian();
+  CHKERR getSpaceBaseAndOrderOnElement();
+  CHKERR setIntegrationPts();
+  if (nbGaussPts == 0)
+    MoFEMFunctionReturnHot(0);
+  CHKERR calculateCoordinatesAtGaussPts();
+  CHKERR calculateBaseFunctionsOnElement();
+  CHKERR transformBaseFunctions();
 
   try {
-
-    if (numeredEntFiniteElementPtr->getEntType() != MBTET)
-      MoFEMFunctionReturnHot(0);
-
-    ierr = calculateVolumeAndJacobian();
-    CHKERRG(ierr);
-    ierr = getSpaceBaseAndOrderOnElement();
-    CHKERRG(ierr);
-    ierr = setIntegrationPts();
-    CHKERRG(ierr);
-    if (nbGaussPts == 0)
-      MoFEMFunctionReturnHot(0);
-    ierr = calculateCoordinatesAtGaussPts();
-    CHKERRG(ierr);
-    ierr = calculateBaseFunctionsOnElement();
-    CHKERRG(ierr);
-    ierr = transformBaseFunctions();
-    CHKERRG(ierr);
-
-    try {
-      MatrixDouble new_diff_n;
-      for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
-        FTensor::Index<'i', 3> i;
-        FieldApproximationBase base = ApproximationBaseArray[b];
-        DataForcesAndSourcesCore::EntData &data =
-            dataH1.dataOnEntities[MBVERTEX][0];
-        if ((data.getDiffN(base).size1() == 4) &&
-            (data.getDiffN(base).size2() == 3)) {
-          const unsigned int nb_base_functions = 4;
-          new_diff_n.resize(nbGaussPts, 3 * nb_base_functions, false);
-          double *new_diff_n_ptr = &*new_diff_n.data().begin();
-          FTensor::Tensor1<double *, 3> t_new_diff_n(
-              new_diff_n_ptr, &new_diff_n_ptr[1], &new_diff_n_ptr[2], 3);
-          double *t_diff_n_ptr = &*data.getDiffN(base).data().begin();
-          for (unsigned int gg = 0; gg != nbGaussPts; gg++) {
-            FTensor::Tensor1<double *, 3> t_diff_n(
-                t_diff_n_ptr, &t_diff_n_ptr[1], &t_diff_n_ptr[2], 3);
-            for (unsigned int bb = 0; bb != nb_base_functions; bb++) {
-              t_new_diff_n(i) = t_diff_n(i);
-              ++t_new_diff_n;
-              ++t_diff_n;
-            }
-          }
-          data.getDiffN(base).resize(new_diff_n.size1(), new_diff_n.size2(),
-                                     false);
-          data.getDiffN(base).data().swap(new_diff_n.data());
-        }
-      }
-    } catch (std::exception &ex) {
-      std::ostringstream ss;
-      ss << "thorw in method: " << ex.what() << " at line " << __LINE__
-         << " in file " << __FILE__;
-      SETERRQ(mField.get_comm(), MOFEM_STD_EXCEPTION_THROW, ss.str().c_str());
-    }
-
-    ierr = calculateHoJacobian();
-    CHKERRG(ierr);
-    ierr = transformHoBaseFunctions();
-    CHKERRG(ierr);
-
-    const UserDataOperator::OpType types[2] = {UserDataOperator::OPROW,
-                                               UserDataOperator::OPCOL};
-    std::vector<std::string> last_eval_field_name(2);
-    DataForcesAndSourcesCore *op_data[2];
-    FieldSpace space[2];
-    FieldApproximationBase base[2];
-
-    boost::ptr_vector<UserDataOperator>::iterator oit, hi_oit;
-    oit = opPtrVector.begin();
-    hi_oit = opPtrVector.end();
-
-    for (; oit != hi_oit; oit++) {
-
-      oit->setPtrFE(this);
-
-      if (oit->sPace != LASTSPACE) {
-        // Set field
-        switch (oit->sPace) {
-        case NOSPACE:
-          SETERRQ(mField.get_comm(), MOFEM_DATA_INCONSISTENCY, "unknown space");
-        case H1:
-          op_data[0] = &dataH1;
-          break;
-        case HCURL:
-          op_data[0] = &dataHcurl;
-          break;
-        case HDIV:
-          op_data[0] = &dataHdiv;
-          break;
-        case L2:
-          op_data[0] = &dataL2;
-          break;
-        case NOFIELD:
-          op_data[0] = &dataNoField;
-          break;
-        case LASTSPACE:
-          SETERRQ(mField.get_comm(), MOFEM_DATA_INCONSISTENCY, "unknown space");
-        }
-
-        // Reseat all data which all field dependent
-        op_data[0]->resetFieldDependentData();
-        last_eval_field_name[0] = "";
-        last_eval_field_name[1] = "";
-
-        // Run operator
-        ierr = oit->opRhs(*op_data[0], oit->doVertices, oit->doEdges,
-                          oit->doQuads, oit->doTris, oit->doTets, false);
-        CHKERRG(ierr);
-
-      } else {
-
-        for (int ss = 0; ss != 2; ss++) {
-
-          std::string field_name = !ss ? oit->rowFieldName : oit->colFieldName;
-          const Field *field_struture = mField.get_field_structure(field_name);
-          BitFieldId data_id = field_struture->getId();
-
-          if ((oit->getNumeredEntFiniteElementPtr()->getBitFieldIdData() &
-               data_id)
-                  .none()) {
-            SETERRQ2(mField.get_comm(), MOFEM_DATA_INCONSISTENCY,
-                     "no data field < %s > on finite element < %s >",
-                     field_name.c_str(), feName.c_str());
-          }
-
-          if (oit->getOpType() & types[ss] ||
-              oit->getOpType() & UserDataOperator::OPROWCOL) {
-
-            space[ss] = field_struture->getSpace();
-            switch (space[ss]) {
-            case NOSPACE:
-              SETERRQ(mField.get_comm(), MOFEM_DATA_INCONSISTENCY,
-                      "unknown space");
-              break;
-            case H1:
-              op_data[ss] = !ss ? &dataH1 : &derivedDataH1;
-              break;
-            case HCURL:
-              op_data[ss] = !ss ? &dataHcurl : &derivedDataHcurl;
-              break;
-            case HDIV:
-              op_data[ss] = !ss ? &dataHdiv : &derivedDataHdiv;
-              break;
-            case L2:
-              op_data[ss] = !ss ? &dataL2 : &derivedDataL2;
-              break;
-            case NOFIELD:
-              op_data[ss] = !ss ? &dataNoField : &dataNoFieldCol;
-              break;
-            case LASTSPACE:
-              SETERRQ(mField.get_comm(), MOFEM_DATA_INCONSISTENCY,
-                      "unknown space");
-              break;
-            }
-
-            base[ss] = field_struture->getApproxBase();
-            switch (base[ss]) {
-            case NOBASE:
-            case AINSWORTH_LEGENDRE_BASE:
-            case AINSWORTH_LOBATTO_BASE:
-            case DEMKOWICZ_JACOBI_BASE:
-              break;
-            default:
-              SETERRQ(mField.get_comm(), MOFEM_DATA_INCONSISTENCY,
-                      "unknown or not implemented base");
-              break;
-            }
-
-            if (last_eval_field_name[ss] != field_name) {
-
-              switch (space[ss]) {
-              case NOSPACE:
-                SETERRQ(mField.get_comm(), MOFEM_DATA_INCONSISTENCY,
-                        "unknown space");
-                break;
-              case H1:
-                if (!ss) {
-                  ierr = getRowNodesIndices(*op_data[ss], field_name);
-                  CHKERRG(ierr);
-                } else {
-                  ierr = getColNodesIndices(*op_data[ss], field_name);
-                  CHKERRG(ierr);
-                }
-                ierr = getNodesFieldData(*op_data[ss], field_name);
-                CHKERRG(ierr);
-              case HCURL:
-                if (!ss) {
-                  ierr = getEdgesRowIndices(*op_data[ss], field_name);
-                  CHKERRG(ierr);
-                } else {
-                  ierr = getEdgesColIndices(*op_data[ss], field_name);
-                  CHKERRG(ierr);
-                }
-                ierr = getEdgesDataOrderSpaceAndBase(*op_data[ss], field_name);
-                CHKERRG(ierr);
-                ierr = getEdgesFieldData(*op_data[ss], field_name);
-                CHKERRG(ierr);
-              case HDIV:
-                if (!ss) {
-                  ierr = getTrisRowIndices(*op_data[ss], field_name);
-                  CHKERRG(ierr);
-                } else {
-                  ierr = getTrisColIndices(*op_data[ss], field_name);
-                  CHKERRG(ierr);
-                }
-                ierr = getTrisDataOrderSpaceAndBase(*op_data[ss], field_name);
-                CHKERRG(ierr);
-                ierr = getTrisFieldData(*op_data[ss], field_name);
-                CHKERRG(ierr);
-              case L2:
-                if (!ss) {
-                  ierr = getTetsRowIndices(*op_data[ss], field_name);
-                  CHKERRG(ierr);
-                } else {
-                  ierr = getTetsColIndices(*op_data[ss], field_name);
-                  CHKERRG(ierr);
-                }
-                ierr = getTetDataOrderSpaceAndBase(*op_data[ss], field_name);
-                CHKERRG(ierr);
-                ierr = getTetsFieldData(*op_data[ss], field_name);
-                CHKERRG(ierr);
-                break;
-              case NOFIELD:
-                if (!getNinTheLoop()) {
-                  // NOFIELD data are the same for each element, can be
-                  // retrieved only once
-                  if (!ss) {
-                    ierr = getNoFieldRowIndices(*op_data[ss], field_name);
-                    CHKERRG(ierr);
-                  } else {
-                    ierr = getNoFieldColIndices(*op_data[ss], field_name);
-                    CHKERRG(ierr);
-                  }
-                  ierr = getNoFieldFieldData(*op_data[ss], field_name);
-                  CHKERRG(ierr);
-                }
-                break;
-              case LASTSPACE:
-                SETERRQ(mField.get_comm(), MOFEM_DATA_INCONSISTENCY,
-                        "unknown space");
-                break;
-              }
-              last_eval_field_name[ss] = field_name;
-            }
+    MatrixDouble new_diff_n;
+    for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
+      FTensor::Index<'i', 3> i;
+      FieldApproximationBase base = ApproximationBaseArray[b];
+      DataForcesAndSourcesCore::EntData &data =
+          dataH1.dataOnEntities[MBVERTEX][0];
+      if ((data.getDiffN(base).size1() == 4) &&
+          (data.getDiffN(base).size2() == 3)) {
+        const unsigned int nb_base_functions = 4;
+        new_diff_n.resize(nbGaussPts, 3 * nb_base_functions, false);
+        double *new_diff_n_ptr = &*new_diff_n.data().begin();
+        FTensor::Tensor1<double *, 3> t_new_diff_n(
+            new_diff_n_ptr, &new_diff_n_ptr[1], &new_diff_n_ptr[2], 3);
+        double *t_diff_n_ptr = &*data.getDiffN(base).data().begin();
+        for (unsigned int gg = 0; gg != nbGaussPts; gg++) {
+          FTensor::Tensor1<double *, 3> t_diff_n(t_diff_n_ptr, &t_diff_n_ptr[1],
+                                                 &t_diff_n_ptr[2], 3);
+          for (unsigned int bb = 0; bb != nb_base_functions; bb++) {
+            t_new_diff_n(i) = t_diff_n(i);
+            ++t_new_diff_n;
+            ++t_diff_n;
           }
         }
-
-        if (oit->getOpType() & UserDataOperator::OPROW) {
-          try {
-            ierr = oit->opRhs(*op_data[0], false);
-            CHKERRG(ierr);
-          } catch (std::exception &ex) {
-            std::ostringstream ss;
-            ss << "Operator "
-               << boost::typeindex::type_id_runtime(*oit).pretty_name()
-               << " operator number "
-               << std::distance<boost::ptr_vector<UserDataOperator>::iterator>(
-                      opPtrVector.begin(), oit)
-               << " thorw in method: " << ex.what() << " at line " << __LINE__
-               << " in file " << __FILE__;
-            SETERRQ(mField.get_comm(), MOFEM_STD_EXCEPTION_THROW,
-                    ss.str().c_str());
-          }
-        }
-
-        if (oit->getOpType() & UserDataOperator::OPCOL) {
-          try {
-            ierr = oit->opRhs(*op_data[1], false);
-            CHKERRG(ierr);
-          } catch (std::exception &ex) {
-            std::ostringstream ss;
-            ss << "Operator "
-               << boost::typeindex::type_id_runtime(*oit).pretty_name()
-               << " operator number "
-               << std::distance<boost::ptr_vector<UserDataOperator>::iterator>(
-                      opPtrVector.begin(), oit)
-               << " thorw in method: " << ex.what() << " at line " << __LINE__
-               << " in file " << __FILE__;
-            SETERRQ(mField.get_comm(), MOFEM_STD_EXCEPTION_THROW,
-                    ss.str().c_str());
-          }
-        }
-
-        if (oit->getOpType() & UserDataOperator::OPROWCOL) {
-          try {
-            ierr = oit->opLhs(*op_data[0], *op_data[1], oit->sYmm);
-            CHKERRG(ierr);
-          } catch (std::exception &ex) {
-            std::ostringstream ss;
-            ss << "Operator "
-               << boost::typeindex::type_id_runtime(*oit).pretty_name()
-               << " operator number "
-               << std::distance<boost::ptr_vector<UserDataOperator>::iterator>(
-                      opPtrVector.begin(), oit)
-               << " thorw in method: " << ex.what() << " at line " << __LINE__
-               << " in file " << __FILE__;
-            SETERRQ(mField.get_comm(), MOFEM_STD_EXCEPTION_THROW,
-                    ss.str().c_str());
-          }
-        }
+        data.getDiffN(base).resize(new_diff_n.size1(), new_diff_n.size2(),
+                                   false);
+        data.getDiffN(base).data().swap(new_diff_n.data());
       }
     }
-
   } catch (std::exception &ex) {
     std::ostringstream ss;
     ss << "thorw in method: " << ex.what() << " at line " << __LINE__
@@ -784,7 +521,236 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCore::operator()() {
     SETERRQ(mField.get_comm(), MOFEM_STD_EXCEPTION_THROW, ss.str().c_str());
   }
 
-  MoFEMFunctionReturnHot(0);
+  CHKERR calculateHoJacobian();
+  CHKERR transformHoBaseFunctions();
+
+  const UserDataOperator::OpType types[2] = {UserDataOperator::OPROW,
+                                             UserDataOperator::OPCOL};
+  std::vector<std::string> last_eval_field_name(2);
+  DataForcesAndSourcesCore *op_data[2];
+  FieldSpace space[2];
+  FieldApproximationBase base[2];
+
+  boost::ptr_vector<UserDataOperator>::iterator oit, hi_oit;
+  oit = opPtrVector.begin();
+  hi_oit = opPtrVector.end();
+
+  for (; oit != hi_oit; oit++) {
+
+    oit->setPtrFE(this);
+
+    if (oit->opType == UserDataOperator::OPLAST) {
+
+      // Set field
+      switch (oit->sPace) {
+      case NOSPACE:
+        SETERRQ(mField.get_comm(), MOFEM_DATA_INCONSISTENCY, "unknown space");
+      case H1 :
+        op_data[0] = &dataH1;
+        break;
+      case HCURL:
+        op_data[0] = &dataHcurl;
+        break;
+      case HDIV:
+        op_data[0] = &dataHdiv;
+        break;
+      case L2:
+        op_data[0] = &dataL2;
+        break;
+      case NOFIELD:
+        op_data[0] = &dataNoField;
+        break;
+      case LASTSPACE:
+        SETERRQ(mField.get_comm(), MOFEM_DATA_INCONSISTENCY, "unknown space");
+        break;
+      }
+
+      // Reseat all data which all field dependent
+      op_data[0]->resetFieldDependentData();
+      last_eval_field_name[0] = "";
+      last_eval_field_name[1] = "";
+
+      // Run operator
+      CHKERR oit->opRhs(*op_data[0], oit->doVertices, oit->doEdges,
+                        oit->doQuads, oit->doTris, oit->doTets, false);
+
+    } else {
+
+      for (int ss = 0; ss != 2; ss++) {
+
+        std::string field_name = !ss ? oit->rowFieldName : oit->colFieldName;
+        const Field *field_struture = mField.get_field_structure(field_name);
+        BitFieldId data_id = field_struture->getId();
+
+        if ((oit->getNumeredEntFiniteElementPtr()->getBitFieldIdData() &
+             data_id)
+                .none()) {
+          SETERRQ2(mField.get_comm(), MOFEM_DATA_INCONSISTENCY,
+                   "no data field < %s > on finite element < %s >",
+                   field_name.c_str(), feName.c_str());
+        }
+
+        if (oit->getOpType() & types[ss] ||
+            oit->getOpType() & UserDataOperator::OPROWCOL) {
+
+          space[ss] = field_struture->getSpace();
+          switch (space[ss]) {
+          case NOSPACE:
+            SETERRQ(mField.get_comm(), MOFEM_DATA_INCONSISTENCY,
+                    "unknown space");
+            break;
+          case H1:
+            op_data[ss] = !ss ? &dataH1 : &derivedDataH1;
+            break;
+          case HCURL:
+            op_data[ss] = !ss ? &dataHcurl : &derivedDataHcurl;
+            break;
+          case HDIV:
+            op_data[ss] = !ss ? &dataHdiv : &derivedDataHdiv;
+            break;
+          case L2:
+            op_data[ss] = !ss ? &dataL2 : &derivedDataL2;
+            break;
+          case NOFIELD:
+            op_data[ss] = !ss ? &dataNoField : &dataNoFieldCol;
+            break;
+          case LASTSPACE:
+            SETERRQ(mField.get_comm(), MOFEM_DATA_INCONSISTENCY,
+                    "unknown space");
+            break;
+          }
+
+          base[ss] = field_struture->getApproxBase();
+          switch (base[ss]) {
+          case NOBASE:
+          case AINSWORTH_LEGENDRE_BASE:
+          case AINSWORTH_LOBATTO_BASE:
+          case DEMKOWICZ_JACOBI_BASE:
+            break;
+          default:
+            SETERRQ(mField.get_comm(), MOFEM_DATA_INCONSISTENCY,
+                    "unknown or not implemented base");
+            break;
+          }
+
+          if (last_eval_field_name[ss] != field_name) {
+
+            switch (space[ss]) {
+            case NOSPACE:
+              SETERRQ(mField.get_comm(), MOFEM_DATA_INCONSISTENCY,
+                      "unknown space");
+              break;
+            case H1:
+              if (!ss) {
+                CHKERR getRowNodesIndices(*op_data[ss], field_name);
+              } else {
+                CHKERR getColNodesIndices(*op_data[ss], field_name);
+              }
+              CHKERR getNodesFieldData(*op_data[ss], field_name);
+            case HCURL:
+              if (!ss) {
+                CHKERR getEdgesRowIndices(*op_data[ss], field_name);
+              } else {
+                CHKERR getEdgesColIndices(*op_data[ss], field_name);
+              }
+              CHKERR getEdgesDataOrderSpaceAndBase(*op_data[ss], field_name);
+              CHKERR getEdgesFieldData(*op_data[ss], field_name);
+            case HDIV:
+              if (!ss) {
+                CHKERR getTrisRowIndices(*op_data[ss], field_name);
+              } else {
+                CHKERR getTrisColIndices(*op_data[ss], field_name);
+              }
+              CHKERR getTrisDataOrderSpaceAndBase(*op_data[ss], field_name);
+              CHKERR getTrisFieldData(*op_data[ss], field_name);
+            case L2:
+              if (!ss) {
+                CHKERR getTetsRowIndices(*op_data[ss], field_name);
+              } else {
+                CHKERR getTetsColIndices(*op_data[ss], field_name);
+              }
+              CHKERR getTetDataOrderSpaceAndBase(*op_data[ss], field_name);
+              CHKERR getTetsFieldData(*op_data[ss], field_name);
+              break;
+            case NOFIELD:
+              if (!getNinTheLoop()) {
+                // NOFIELD data are the same for each element, can be
+                // retrieved only once
+                if (!ss) {
+                  CHKERR getNoFieldRowIndices(*op_data[ss], field_name);
+                } else {
+                  CHKERR getNoFieldColIndices(*op_data[ss], field_name);
+                }
+                CHKERR getNoFieldFieldData(*op_data[ss], field_name);
+              }
+              break;
+            case LASTSPACE:
+              SETERRQ(mField.get_comm(), MOFEM_DATA_INCONSISTENCY,
+                      "unknown space");
+              break;
+            }
+            last_eval_field_name[ss] = field_name;
+          }
+        }
+      }
+
+      if (oit->getOpType() & UserDataOperator::OPROW) {
+        try {
+          ierr = oit->opRhs(*op_data[0], false);
+          CHKERRG(ierr);
+        } catch (std::exception &ex) {
+          std::ostringstream ss;
+          ss << "Operator "
+             << boost::typeindex::type_id_runtime(*oit).pretty_name()
+             << " operator number "
+             << std::distance<boost::ptr_vector<UserDataOperator>::iterator>(
+                    opPtrVector.begin(), oit)
+             << " thorw in method: " << ex.what() << " at line " << __LINE__
+             << " in file " << __FILE__;
+          SETERRQ(mField.get_comm(), MOFEM_STD_EXCEPTION_THROW,
+                  ss.str().c_str());
+        }
+      }
+
+      if (oit->getOpType() & UserDataOperator::OPCOL) {
+        try {
+          ierr = oit->opRhs(*op_data[1], false);
+          CHKERRG(ierr);
+        } catch (std::exception &ex) {
+          std::ostringstream ss;
+          ss << "Operator "
+             << boost::typeindex::type_id_runtime(*oit).pretty_name()
+             << " operator number "
+             << std::distance<boost::ptr_vector<UserDataOperator>::iterator>(
+                    opPtrVector.begin(), oit)
+             << " thorw in method: " << ex.what() << " at line " << __LINE__
+             << " in file " << __FILE__;
+          SETERRQ(mField.get_comm(), MOFEM_STD_EXCEPTION_THROW,
+                  ss.str().c_str());
+        }
+      }
+
+      if (oit->getOpType() & UserDataOperator::OPROWCOL) {
+        try {
+          ierr = oit->opLhs(*op_data[0], *op_data[1], oit->sYmm);
+          CHKERRG(ierr);
+        } catch (std::exception &ex) {
+          std::ostringstream ss;
+          ss << "Operator "
+             << boost::typeindex::type_id_runtime(*oit).pretty_name()
+             << " operator number "
+             << std::distance<boost::ptr_vector<UserDataOperator>::iterator>(
+                    opPtrVector.begin(), oit)
+             << " thorw in method: " << ex.what() << " at line " << __LINE__
+             << " in file " << __FILE__;
+          SETERRQ(mField.get_comm(), MOFEM_STD_EXCEPTION_THROW,
+                  ss.str().c_str());
+        }
+      }
+    }
+  }
+
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode VolumeElementForcesAndSourcesCore::UserDataOperator::
