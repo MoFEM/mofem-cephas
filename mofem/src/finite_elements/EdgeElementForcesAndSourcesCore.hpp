@@ -1,4 +1,4 @@
-/** \file ForcesAndSourcesCore.hpp
+/** \file EdgeElementForcesAndSourcesCore.hpp
 
   \brief Implementation of elements on entities.
 
@@ -190,10 +190,10 @@ DEPRECATED typedef EdgeElementForcesAndSourcesCore
 
 #endif //__EDGEELEMENTFORCESANDSURCESCORE_HPP__
 
-/*****************************************************************************
+/**
  * \defgroup mofem_forces_and_sources_edge_element Edge Element
- *
- * \brief Implementation of general edge element.
+ * 
+ * \brief Implementation of edge element.
  *
  * \ingroup mofem_forces_and_sources
- ******************************************************************************/
+ */

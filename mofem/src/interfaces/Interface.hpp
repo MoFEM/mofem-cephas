@@ -1506,8 +1506,9 @@ struct CoreInterface : public UnknownInterface {
 
   /**
    * \brief get begin iterator of filed ents of given name (instead you can
-   * use _IT_GET_ENT_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT) \ingroup
-   * mofem_field
+   * use _IT_GET_ENT_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT) 
+   * 
+   * \ingroup mofem_field
    *
    * for(_IT_GET_ENT_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)) {
    * 	...
@@ -1520,8 +1521,8 @@ struct CoreInterface : public UnknownInterface {
 
   /**
    * \brief get begin iterator of filed dofs of given name (instead you can
-   * use _IT_GET_ENT_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT) \ingroup
-   * mofem_field
+   * use _IT_GET_ENT_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT) 
+   * \ingroup mofem_field
    *
    * for(_IT_GET_ENT_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)) {
    * 	...
@@ -1543,8 +1544,8 @@ struct CoreInterface : public UnknownInterface {
 
   /**
    * \brief get begin iterator of filed dofs of given name (instead you can
-   * use _IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT) \ingroup
-   * mofem_field
+   * use _IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT) 
+   * \ingroup mofem_field
    *
    * for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)) {
    * 	...
@@ -1557,8 +1558,8 @@ struct CoreInterface : public UnknownInterface {
 
   /**
    * \brief get begin iterator of filed dofs of given name (instead you can
-   * use _IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT) \ingroup
-   * mofem_field
+   * use _IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT) 
+   * \ingroup mofem_field
    *
    * for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)) {
    * 	...
@@ -1579,8 +1580,9 @@ struct CoreInterface : public UnknownInterface {
 
   /**
    * \brief get begin iterator of filed dofs of given name and ent(instead you
-   * can use _IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,ENT,IT) \ingroup
-   * mofem_field
+   * can use _IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,ENT,IT) 
+   * 
+   * \ingroup mofem_field
    *
    * for(_IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_(MFIELD,NAME,ENT,IT)) {
    * 	...
@@ -1670,8 +1672,9 @@ struct CoreInterface : public UnknownInterface {
   /**
    * \brief get begin iterator of filed dofs of given name and ent type
    * (instead you can use
-   * _IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,TYPE,IT) \ingroup
-   * mofem_field
+   * _IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,TYPE,IT) 
+   * 
+   * \ingroup mofem_field
    *
    * for(_IT_GET_DOFS_FIELD_BY_NAME_AND_TYPE_FOR_LOOP_(MFIELD,NAME,TYPE,IT)) {
    * 	...
@@ -1686,8 +1689,9 @@ struct CoreInterface : public UnknownInterface {
   /**
    * \brief get begin iterator of filed dofs of given name end ent
    * type(instead you can use
-   * _IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,TYPE,IT) \ingroup
-   * mofem_field
+   * _IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,TYPE,IT) 
+   * 
+   * \ingroup mofem_field
    *
    * for(_IT_GET_DOFS_FIELD_BY_NAME_AND_TYPE_FOR_LOOP_(MFIELD,NAME,TYPE,IT)) {
    * 	...
@@ -1710,8 +1714,9 @@ struct CoreInterface : public UnknownInterface {
 
   /**
    * \brief get begin iterator of finite elements of given name (instead you
-   * can use _IT_GET_FES_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT) \ingroup
-   * mofem_access
+   * can use _IT_GET_FES_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT) 
+   * 
+   * \ingroup mofem_access
    *
    * for(_IT_GET_FES_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)) {
    * 	...
@@ -1724,7 +1729,9 @@ struct CoreInterface : public UnknownInterface {
 
   /**
    * \brief get end iterator of finite elements of given name (instead you can
-   * use _IT_GET_FES_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT) \ingroup mofem_access
+   * use _IT_GET_FES_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT) 
+   * 
+   * \ingroup mofem_access
    *
    * for(_IT_GET_FES_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)) {
    * 	...

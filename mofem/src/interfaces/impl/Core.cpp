@@ -17,7 +17,7 @@
 */
 
 extern "C" {
-  void macro_is_depracted_using_deprecated_function() {}
+  void macro_is_deprecated_using_deprecated_function() {}
 }
 
 namespace MoFEM {

@@ -347,7 +347,7 @@ enum VERBOSITY_LEVELS { QUIET = 0, VERBOSE, VERY_VERBOSE, NOISY, VERY_NOISY };
  */
 #define BARRIER_RANK_START(PCMB)                                               \
   {                                                                            \
-    macro_is_depracted_using_deprecated_function();                            \
+    macro_is_deprecated_using_deprecated_function();                            \
     for (unsigned int i = 0; i < PCMB->proc_config().proc_rank(); i++)         \
       MPI_Barrier(PCMB->proc_config().proc_comm());                            \
   };
@@ -370,7 +370,7 @@ enum VERBOSITY_LEVELS { QUIET = 0, VERBOSE, VERY_VERBOSE, NOISY, VERY_NOISY };
  */
 #define BARRIER_RANK_END(PCMB)                                                 \
   {                                                                            \
-    macro_is_depracted_using_deprecated_function();                            \
+    macro_is_deprecated_using_deprecated_function();                            \
     for (unsigned int i = PCMB->proc_config().proc_rank();                     \
          i < PCMB->proc_config().proc_size(); i++)                             \
       MPI_Barrier(PCMB->proc_config().proc_comm());                            \
@@ -411,7 +411,7 @@ extern "C" {
  * \brief Is used to indicate that macro is deprecated
  * Do nothing just triggers error at the compilation
  */
-DEPRECATED void macro_is_depracted_using_deprecated_function();
+DEPRECATED void macro_is_deprecated_using_deprecated_function();
 
 #ifdef __cplusplus
 }
