@@ -645,4 +645,26 @@ DEPRECATED void macro_is_deprecated_using_deprecated_function();
  */
 #define SSTR(x) toString(x)
 
+#define TENSOR1_VEC_PTR(VEC) &VEC[0], &VEC[1], &VEC[2]
+
+#define SYMMETRIC_TENSOR4_MAT_PTR(MAT)                                         \
+  &MAT(0, 0), &MAT(0, 1), &MAT(0, 2), &MAT(0, 3), &MAT(0, 4), &MAT(0, 5),      \
+      &MAT(1, 0), &MAT(1, 1), &MAT(1, 2), &MAT(1, 3), &MAT(1, 4), &MAT(1, 5),  \
+      &MAT(2, 0), &MAT(2, 1), &MAT(2, 2), &MAT(2, 3), &MAT(2, 4), &MAT(2, 5),  \
+      &MAT(3, 0), &MAT(3, 1), &MAT(3, 2), &MAT(3, 3), &MAT(3, 4), &MAT(3, 5),  \
+      &MAT(4, 0), &MAT(4, 1), &MAT(4, 2), &MAT(4, 3), &MAT(4, 4), &MAT(4, 5),  \
+      &MAT(5, 0), &MAT(5, 1), &MAT(5, 2), &MAT(5, 3), &MAT(5, 4), &MAT(5, 5)
+
+#define TENSOR4_MAT_PTR(MAT) &MAT(0, 0), MAT.size2()
+
+#define TENSOR2_MAT_PTR(MAT)                                                   \
+  &MAT(0, 0), &MAT(1, 0), &MAT(2, 0), &MAT(3, 0), &MAT(4, 0), &MAT(5, 0),      \
+      &MAT(6, 0), &MAT(7, 0), &MAT(8, 0)
+
+#define SYMMETRIC_TENSOR2_MAT_PTR(MAT)                                         \
+  &MAT(0, 0), &MAT(0, 1), &MAT(0, 2), &MAT(0, 3), &MAT(0, 4), &MAT(0, 5)
+
+#define SYMMETRIC_TENSOR2_VEC_PTR(VEC)                                         \
+  &VEC[0], &VEC[1], &VEC[2], &VEC[3], &VEC[4], &VEC[5]
+
 #endif //__DEFINITONS_H__

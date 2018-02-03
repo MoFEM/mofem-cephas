@@ -4,6 +4,7 @@
 using namespace FTensor;
 using namespace std;
 
+void test_T2_iostream();
 void test_T2_01(const Tensor1<double,3> &t1_1, const Tensor1<double,3> &t1_2);
 void test_T2_02(const Tensor1<double,3> &t1_1);
 void test_T2_03();
@@ -52,6 +53,7 @@ void test_T2(const Tensor1<double,3> &t1_1, const Tensor1<double,3> &t1_2,
 	     const Tensor2<double,3,3> &t2_1, const Tensor2<double,3,3> &t2_2,
 	     const Tensor2<double,3,3> &t2_3)
 {
+  test_T2_iostream();
   test_T2_01(t1_1,t1_2);
   test_T2_02(t1_1);
   test_T2_03();

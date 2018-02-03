@@ -7,7 +7,7 @@ using namespace std;
 void test_T3dg_02(Tensor2_symmetric<double,3> &t2s_1,
                   const Tensor2_symmetric<double,3> &t2s_2,
                   const Tensor2_symmetric<double,3> &t2s_3,
-                  Tensor3_dg<double,3,3> &t3dg_1)
+                  Dg<double,3,3> &t3dg_1)
 {
   Index<'i',3> i;
   Index<'j',3> j;

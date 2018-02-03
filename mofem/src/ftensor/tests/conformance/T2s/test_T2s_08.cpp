@@ -5,7 +5,7 @@ using namespace FTensor;
 using namespace std;
 
 void test_T2s_08(Tensor1<double,3> &t1_1, const Tensor1<double,3> &t1_2,
-                 Tensor2_symmetric<double,3> &t2s_1)
+                 const Tensor2_symmetric<double,3> &t2s_1)
 {
   Index<'i',3> i;
   Index<'j',3> j;
