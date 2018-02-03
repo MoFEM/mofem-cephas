@@ -10,7 +10,7 @@
 
 // #include <adolc/adolc.h>
 #include <adolc/adtl.h>
-typedef adtl::adouble adouble;
+// typedef adtl::adouble adouble;
 
 #define FTENSOR_DEBUG
 #include <FTensor.hpp>
@@ -25,8 +25,8 @@ int main(int argc, char *argv[]) {
   FTensor::Tensor1<double,2> t1(1,1);
   FTensor::Tensor2<double,2,2> t2(1,0,0,1);
 
-  FTensor::Tensor1<adouble,2> a_t1;
-  FTensor::Tensor2<adouble,2,2> a_t2;
+  FTensor::Tensor1<adtl::adouble,2> a_t1;
+  FTensor::Tensor2<adtl::adouble,2,2> a_t2;
 
   int dd0 = 0;
   for(int ii = 0;ii!=2;ii++,dd0++) {
@@ -60,7 +60,7 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  adouble a_t0 = a_t1(I)*a_t2(I,J)*a_t1(J);
+  adtl::adouble a_t0 = a_t1(I)*a_t2(I,J)*a_t1(J);
 
   double t0;
   t0 = a_t0.getValue();

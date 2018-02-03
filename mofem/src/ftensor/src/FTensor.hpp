@@ -27,6 +27,11 @@
 #endif
 #include "FTensor/Layout.hpp"
 
+#ifdef WITH_ADOL_C
+#include <adolc/adolc.h>
+#include <adolc/adtl.h>
+#endif
+
 /**
  * \brief Tensors class implemented by Walter Landry.
  * \ingroup ftensor

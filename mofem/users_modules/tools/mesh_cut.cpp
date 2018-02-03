@@ -115,7 +115,7 @@ int main(int argc, char *argv[]) {
 
     BitRefLevel bit_level0;
     bit_level0.set(0);
-    CHKERR bit_ref_manager->setBitRefLevelByDim(0, 3, bit_level0);
+    CHKERR bit_ref_manager->setBitRefLevelByType(0, MBTET, bit_level0);
 
     // get surface entities form side set
     Range surface;
@@ -186,7 +186,7 @@ int main(int argc, char *argv[]) {
     // Cut mesh, trim surface and merge bad edges
     CHKERR cut_mesh->cutTrimAndMerge(fraction_level, bit_level1, bit_level2,
                                      bit_level3, th, 1e-4, 1e-2, 1e-3, 1e-3,
-                                     fixed_edges, corner_nodes, true, false);
+                                     fixed_edges, corner_nodes, true, true);
 
     // Improve mesh with tetgen
 #ifdef WITH_TETGEN
@@ -219,7 +219,7 @@ int main(int argc, char *argv[]) {
       shift_mask.set(3);
       shift_mask.set(4);
       CHKERR core.getInterface<BitRefManager>()->shiftRightBitRef(4, shift_mask,
-                                                                  VERBOSE);
+                                                                  VERY_VERBOSE);
     }
 
     if (set_coords) {

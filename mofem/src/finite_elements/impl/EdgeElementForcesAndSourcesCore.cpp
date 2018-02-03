@@ -209,7 +209,7 @@ EdgeElementForcesAndSourcesCore::calculateHoCoordsAtIntegrationPts() {
     CHKERR getNodesFieldData(dataH1, meshPositionsFieldName);
     CHKERR opGetHoTangentOnEdge.opRhs(dataH1);
   } else {
-    tAngent_at_GaussPt.resize(0, 3, false);
+    tangentAtGaussPts.resize(0, 3, false);
   }
   MoFEMFunctionReturnHot(0);
 }

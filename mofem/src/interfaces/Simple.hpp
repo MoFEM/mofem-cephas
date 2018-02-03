@@ -202,7 +202,7 @@ namespace MoFEM {
     inline std::string &getBoundaryFEName() { return boundaryFE; }
     inline std::string &getSkeletonFEName() { return skeletonFE; }
 
-    inline std::vector<std::string> getOtherFiniteElements() {
+    inline std::vector<std::string>& getOtherFiniteElements() {
       return otherFEs;
     }
 

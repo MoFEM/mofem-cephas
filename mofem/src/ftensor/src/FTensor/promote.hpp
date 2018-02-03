@@ -23,4 +23,15 @@ DECLARE_PROMOTE(std::complex<double>,int,std::complex<double>);
 DECLARE_PROMOTE(double,std::complex<double>,std::complex<double>);
 DECLARE_PROMOTE(std::complex<double>,double,std::complex<double>);
 
+#ifdef WITH_ADOL_C
+DECLARE_PROMOTE(adouble, double, adouble);
+DECLARE_PROMOTE(double, adouble, adouble);
+DECLARE_PROMOTE(adouble, int, adouble);
+DECLARE_PROMOTE(int, adouble, adouble);
+DECLARE_PROMOTE(adtl::adouble, double, adtl::adouble);
+DECLARE_PROMOTE(double, adtl::adouble, adtl::adouble);
+DECLARE_PROMOTE(adtl::adouble, int, adtl::adouble);
+DECLARE_PROMOTE(int, adtl::adouble, adtl::adouble);
+#endif // WITH_ADOL_C
+
 #undef DECLARE_PROMOTE

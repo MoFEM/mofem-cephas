@@ -593,18 +593,13 @@ MoFEMErrorCode Simple::buildProblem() {
 }
 
 MoFEMErrorCode Simple::setUp() {
-  MoFEMFunctionBeginHot;
-  ierr = defineFiniteElements();
-  CHKERRG(ierr);
-  ierr = defineProblem();
-  CHKERRG(ierr);
-  ierr = buildFields();
-  CHKERRG(ierr);
-  ierr = buildFiniteElements();
-  CHKERRG(ierr);
-  ierr = buildProblem();
-  CHKERRG(ierr);
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionBegin;
+  CHKERR defineFiniteElements();
+  CHKERR defineProblem();
+  CHKERR buildFields();
+  CHKERR buildFiniteElements();
+  CHKERR buildProblem();
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode Simple::getDM(DM *dm) {

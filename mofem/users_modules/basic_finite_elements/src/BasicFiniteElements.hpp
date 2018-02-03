@@ -24,21 +24,6 @@ using namespace MoFEM;
 
 #ifdef WITH_ADOL_C
 #include <adolc/adolc.h>
-
-#include <FTensor/promote.hpp>
-
-#define DECLARE_PROMOTE(A, B, C)                                               \
-  template <> class promote<A, B> {                                            \
-  public:                                                                      \
-    typedef C V;                                                               \
-  }
-DECLARE_PROMOTE(adouble, double, adouble);
-DECLARE_PROMOTE(double, adouble, adouble);
-DECLARE_PROMOTE(adouble, int, adouble);
-DECLARE_PROMOTE(int, adouble, adouble);
-
-#undef DECLARE_PROMOTE
-
 #endif // WITH_ADOL_C
 
 extern "C" {
