@@ -946,7 +946,7 @@ struct DataForcesAndSourcesCore {
     \code
     FTensor::Index<'i',3> i;
     int nb_dofs = data.getFieldData().size();
-    FTensor::Tensor1<double*,3> t_n_hdiv = data.getFTensor1HdivN<3>();
+    auto t_n_hdiv = data.getFTensor1HdivN<3>();
     for(int gg = 0;gg!=nb_gauss_pts;gg++) {
       int ll = 0;
       for(;ll!=nb_dofs;ll++) {
@@ -960,8 +960,9 @@ struct DataForcesAndSourcesCore {
     \endcode
 
     */
-    template<int Tensor_Dim>
-    FTensor::Tensor1<double*,Tensor_Dim> getFTensor1HdivN(FieldApproximationBase base);
+    template <int Tensor_Dim>
+    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, Tensor_Dim>
+    getFTensor1HdivN(FieldApproximationBase base);
 
     /** \brief Get base functions for Hdiv space
 
@@ -969,7 +970,7 @@ struct DataForcesAndSourcesCore {
     \code
     FTensor::Index<'i',3> i;
     int nb_dofs = data.getFieldData().size();
-    FTensor::Tensor1<double*,3> t_n_hdiv = data.getFTensor1HdivN<3>();
+    auto t_n_hdiv = data.getFTensor1HdivN<3>();
     for(int gg = 0;gg!=nb_gauss_pts;gg++) {
       int ll = 0;
       for(;ll!=nb_dofs;ll++) {
@@ -984,7 +985,7 @@ struct DataForcesAndSourcesCore {
 
     */
     template<int Tensor_Dim>
-    FTensor::Tensor1<double*,Tensor_Dim> getFTensor1HdivN() {
+    auto getFTensor1HdivN() {
       return getFTensor1HdivN<Tensor_Dim>(bAse);
     }
 
@@ -1022,14 +1023,14 @@ struct DataForcesAndSourcesCore {
     /** \brief Get base functions for Hcurl space
     */
     template<int Tensor_Dim>
-    inline FTensor::Tensor1<double*,Tensor_Dim> getFTensor1HcurlN(FieldApproximationBase base) {
+    inline auto getFTensor1HcurlN(FieldApproximationBase base) {
       return getFTensor1HdivN<Tensor_Dim>(base);
     }
 
     /** \brief Get base functions for Hcurl space
     */
     template<int Tensor_Dim>
-    inline FTensor::Tensor1<double*,Tensor_Dim> getFTensor1HcurlN() {
+    inline auto getFTensor1HcurlN() {
       return getFTensor1HcurlN<Tensor_Dim>(bAse);
     }
 
@@ -1072,7 +1073,7 @@ struct DataForcesAndSourcesCore {
      \code
      FTensor::Index<'i',3> i;
      for(int gg = 0;gg!=nb_gauss_pts;gg++) {
-      FTensor::Tensor1<double*,3> t_base = data.getFTensor1HdivN(base,gg,bb);
+      auto t_base = data.getFTensor1HdivN(base,gg,bb);
       for(int bb = 0;bb!=nb_base_functions;bb++) {
         FTensor::Tensor0<double> dot = t_base(i)*t_base(i);
       }
@@ -1080,10 +1081,9 @@ struct DataForcesAndSourcesCore {
      \endcode
 
      */
-    template<int Tensor_Dim>
-    FTensor::Tensor1<double*,Tensor_Dim> getFTensor1HdivN(
-      FieldApproximationBase base,const int gg,const int bb
-    );
+    template <int Tensor_Dim>
+    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, Tensor_Dim>
+    getFTensor1HdivN(FieldApproximationBase base, const int gg, const int bb);
 
     /**
      * \brief Get Hdiv base functions at integration point
@@ -1091,7 +1091,7 @@ struct DataForcesAndSourcesCore {
      \code
      FTensor::Index<'i',3> i;
      for(int gg = 0;gg!=nb_gauss_pts;gg++) {
-      FTensor::Tensor1<double*,3> t_base = data.getFTensor1HdivN(gg,0);
+      auto t_base = data.getFTensor1HdivN(gg,0);
       for(int bb = 0;bb!=nb_base_functions;bb++) {
         FTensor::Tensor0<double> dot = t_base(i)*t_base(i);
       }
@@ -1100,7 +1100,7 @@ struct DataForcesAndSourcesCore {
 
      */
     template<int Tensor_Dim>
-    inline FTensor::Tensor1<double*,Tensor_Dim> getFTensor1HdivN(
+    inline auto getFTensor1HdivN(
       const int gg,const int bb
     ) {
       return getFTensor1HdivN<Tensor_Dim>(bAse,gg,bb);
@@ -1112,7 +1112,7 @@ struct DataForcesAndSourcesCore {
      \code
      FTensor::Index<'i',3> i;
      for(int gg = 0;gg!=nb_gauss_pts;gg++) {
-      FTensor::Tensor1<double*,3> t_base = data.getFTensor1HdivN(base,gg,0);
+      auto t_base = data.getFTensor1HdivN(base,gg,0);
       for(int bb = 0;bb!=nb_base_functions;bb++) {
         FTensor::Tensor0<double> dot = t_base(i)*t_base(i);
       }
@@ -1121,7 +1121,7 @@ struct DataForcesAndSourcesCore {
 
      */
     template<int Tensor_Dim>
-    inline FTensor::Tensor1<double*,Tensor_Dim> getFTensor1HcurlN(
+    inline auto getFTensor1HcurlN(
       FieldApproximationBase base,const int gg,const int bb
     ) {
       return getFTensor1HdivN<Tensor_Dim>(base,gg,bb);
@@ -1133,7 +1133,7 @@ struct DataForcesAndSourcesCore {
      \code
      FTensor::Index<'i',3> i;
      for(int gg = 0;gg!=nb_gauss_pts;gg++) {
-      FTensor::Tensor1<double*,3> t_base = data.getFTensor1HcurlN(gg);
+      auto t_base = data.getFTensor1HcurlN(gg);
       for(int bb = 0;bb!=nb_base_functions;bb++) {
         FTensor::Tensor0<double> dot = t_base(i)*t_base(i);
       }
@@ -1142,7 +1142,7 @@ struct DataForcesAndSourcesCore {
 
      */
     template<int Tensor_Dim>
-    inline FTensor::Tensor1<double*,Tensor_Dim> getFTensor1HcurlN(
+    inline auto getFTensor1HcurlN(
       const int gg,const int bb
     ) {
       return getFTensor1HcurlN<Tensor_Dim>(bAse,gg,bb);
@@ -1272,22 +1272,22 @@ FTensor::Tensor1<double*,2> DataForcesAndSourcesCore::EntData::getFTensor1DiffN<
 
 /**@{*/
 
-template<>
-FTensor::Tensor1<double*,3> DataForcesAndSourcesCore::EntData::getFTensor1HdivN<3>(
-  FieldApproximationBase base
-);
-template<>
-FTensor::Tensor2<double*,3,3> DataForcesAndSourcesCore::EntData::getFTensor2DiffHdivN<3,3>(
-  FieldApproximationBase base
-);
-template<>
-FTensor::Tensor1<double*,3> DataForcesAndSourcesCore::EntData::getFTensor1HdivN<3>(
-  FieldApproximationBase base,const int gg,const int bb
-);
-template<>
-FTensor::Tensor2<double*,3,3> DataForcesAndSourcesCore::EntData::getFTensor2DiffHdivN<3,3>(
-  FieldApproximationBase base,const int gg,const int bb
-);
+template <>
+FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>
+DataForcesAndSourcesCore::EntData::getFTensor1HdivN<3>(
+    FieldApproximationBase base);
+template <>
+FTensor::Tensor2<double *, 3, 3>
+DataForcesAndSourcesCore::EntData::getFTensor2DiffHdivN<3, 3>(
+    FieldApproximationBase base);
+template <>
+FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>
+DataForcesAndSourcesCore::EntData::getFTensor1HdivN<3>(
+    FieldApproximationBase base, const int gg, const int bb);
+template <>
+FTensor::Tensor2<double *, 3, 3>
+DataForcesAndSourcesCore::EntData::getFTensor2DiffHdivN<3, 3>(
+    FieldApproximationBase base, const int gg, const int bb);
 
 /**@}*/
 

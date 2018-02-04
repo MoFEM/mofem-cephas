@@ -21,6 +21,10 @@ namespace FTensor
 {
   template <class T> class Tensor0;
 
+  template <class T,const int I> class PackPtr {
+
+  };
+
   template <class T, int Dim> class Tensor1;
   template<class A, class T, int Dim, char i> class Tensor1_Expr;
 

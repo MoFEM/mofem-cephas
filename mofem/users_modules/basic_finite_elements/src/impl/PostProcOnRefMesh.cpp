@@ -160,7 +160,7 @@ MoFEMErrorCode PostProcCommonOnRefMesh::OpGetFieldValues::doWork(
     rval = postProcMesh.tag_get_by_ptr(th,&mapGaussPts[0],mapGaussPts.size(),tags_ptr); CHKERRG(rval);
     {
       FTensor::Index<'i',3> i;
-      FTensor::Tensor1<double*,3> t_n_hcurl = data.getFTensor1HcurlN<3>();
+      auto t_n_hcurl = data.getFTensor1HcurlN<3>();
       for(int gg = 0;gg!=nb_gauss_pts;gg++) {
         double *ptr = &((double*)tags_ptr[gg])[0];
         int ll = 0;
@@ -189,7 +189,7 @@ MoFEMErrorCode PostProcCommonOnRefMesh::OpGetFieldValues::doWork(
     rval = postProcMesh.tag_get_by_ptr(th,&mapGaussPts[0],mapGaussPts.size(),tags_ptr); CHKERRG(rval);
     {
       FTensor::Index<'i',3> i;
-      FTensor::Tensor1<double*,3> t_n_hdiv = data.getFTensor1HdivN<3>();
+      auto t_n_hdiv = data.getFTensor1HdivN<3>();
       for(int gg = 0;gg!=nb_gauss_pts;gg++) {
         double *ptr = &((double*)tags_ptr[gg])[0];
         int ll = 0;
