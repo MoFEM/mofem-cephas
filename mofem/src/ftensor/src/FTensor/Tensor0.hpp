@@ -20,7 +20,7 @@ namespace FTensor
   template <class T>
   class Tensor0<T*>
   {
-    mutable int inc;
+    const int inc;
     mutable T * restrict data;
   public:
     Tensor0(T *d,const int i = 1): inc(i), data(d) {}

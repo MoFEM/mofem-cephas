@@ -8,7 +8,7 @@ namespace FTensor
             Layout layout>
   class Tensor2<T*,Tensor_Dim0,Tensor_Dim1,layout>
   {
-    mutable int inc;
+    const int inc;
     mutable T * restrict data[(layout==column_major) ? Tensor_Dim0 : Tensor_Dim1]
     [(layout==column_major) ? Tensor_Dim1 : Tensor_Dim0];
   public:

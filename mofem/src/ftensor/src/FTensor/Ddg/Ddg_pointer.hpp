@@ -7,7 +7,7 @@ namespace FTensor
   template <class T, int Tensor_Dim01, int Tensor_Dim23>
   class Ddg<T*,Tensor_Dim01,Tensor_Dim23>
   {
-    mutable int inc;
+    const int inc;
     mutable T * restrict data[(Tensor_Dim01*(Tensor_Dim01+1))/2][(Tensor_Dim23*(Tensor_Dim23+1))/2];
   public:
     Ddg(T *d0000, T *d0010, T *d0011, T *d1000, T *d1010, T *d1011, T *d1100,

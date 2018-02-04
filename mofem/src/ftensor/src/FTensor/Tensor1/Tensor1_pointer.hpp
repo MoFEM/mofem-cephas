@@ -8,10 +8,12 @@ namespace FTensor
   template <class T, int Tensor_Dim>
   class Tensor1<T*,Tensor_Dim>
   {
+
+    const int inc;
+
     /* Note that the T *'s are mutable, so the pointer can change,
        allowing iterating over a array. */
 
-    mutable int inc;
     mutable T * restrict data[Tensor_Dim];
   public:
     /* Initializations for varying numbers of elements, with each one
