@@ -159,8 +159,10 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCore::calculateVolumeAndJacobian() {
   double diff_n[12];
   ierr = ShapeDiffMBTET(diff_n);
   CHKERRG(ierr);
-  FTensor::Tensor1<double *, 3> t_diff_n(&diff_n[0], &diff_n[1], &diff_n[2], 3);
-  FTensor::Tensor1<double *, 3> t_coords(&coords[0], &coords[1], &coords[2], 3);
+  FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_diff_n(
+      &diff_n[0], &diff_n[1], &diff_n[2]);
+  FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_coords(
+      &coords[0], &coords[1], &coords[2]);
   FTensor::Index<'i', 3> i;
   FTensor::Index<'j', 3> j;
   jAc.clear();
@@ -187,13 +189,13 @@ VolumeElementForcesAndSourcesCore::calculateCoordinatesAtGaussPts() {
         &*dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin();
     coordsAtGaussPts.resize(nbGaussPts, 3, false);
     coordsAtGaussPts.clear();
-    FTensor::Tensor1<double *, 3> t_coords_at_gauss_ptr(
+    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_coords_at_gauss_ptr(
         &coordsAtGaussPts(0, 0), &coordsAtGaussPts(0, 1),
-        &coordsAtGaussPts(0, 2), 3);
+        &coordsAtGaussPts(0, 2));
     FTensor::Tensor0<double *> t_shape_functions(shape_functions_ptr);
     for (unsigned int gg = 0; gg < nbGaussPts; gg++) {
-      FTensor::Tensor1<double *, 3> t_coords(&coords[0], &coords[1], &coords[2],
-                                             3);
+      FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_coords(
+          &coords[0], &coords[1], &coords[2]);
       for (int bb = 0; bb < 4; bb++) {
         t_coords_at_gauss_ptr(i) += t_coords(i) * t_shape_functions;
         ++t_coords;
@@ -395,16 +397,16 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCore::calculateHoJacobian() {
       hoGaussPtsInvJac.resize(hoGaussPtsJac.size1(), hoGaussPtsJac.size2(),
                               false);
       // Express Jacobian as tensor
-      FTensor::Tensor2<double *, 3, 3> jac(
+      FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3> jac(
           &hoGaussPtsJac(0, 0), &hoGaussPtsJac(0, 1), &hoGaussPtsJac(0, 2),
           &hoGaussPtsJac(0, 3), &hoGaussPtsJac(0, 4), &hoGaussPtsJac(0, 5),
-          &hoGaussPtsJac(0, 6), &hoGaussPtsJac(0, 7), &hoGaussPtsJac(0, 8), 9);
-      FTensor::Tensor2<double *, 3, 3> inv_jac(
+          &hoGaussPtsJac(0, 6), &hoGaussPtsJac(0, 7), &hoGaussPtsJac(0, 8));
+      FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3> inv_jac(
           &hoGaussPtsInvJac(0, 0), &hoGaussPtsInvJac(0, 1),
           &hoGaussPtsInvJac(0, 2), &hoGaussPtsInvJac(0, 3),
           &hoGaussPtsInvJac(0, 4), &hoGaussPtsInvJac(0, 5),
           &hoGaussPtsInvJac(0, 6), &hoGaussPtsInvJac(0, 7),
-          &hoGaussPtsInvJac(0, 8), 9);
+          &hoGaussPtsInvJac(0, 8));
       hoGaussPtsDetJac.resize(nbGaussPts, false);
       FTensor::Tensor0<double *> det(&hoGaussPtsDetJac[0]);
       // Calculate inverse and determinant
@@ -497,12 +499,12 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCore::operator()() {
         const unsigned int nb_base_functions = 4;
         new_diff_n.resize(nbGaussPts, 3 * nb_base_functions, false);
         double *new_diff_n_ptr = &*new_diff_n.data().begin();
-        FTensor::Tensor1<double *, 3> t_new_diff_n(
-            new_diff_n_ptr, &new_diff_n_ptr[1], &new_diff_n_ptr[2], 3);
+        FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_new_diff_n(
+            new_diff_n_ptr, &new_diff_n_ptr[1], &new_diff_n_ptr[2]);
         double *t_diff_n_ptr = &*data.getDiffN(base).data().begin();
         for (unsigned int gg = 0; gg != nbGaussPts; gg++) {
-          FTensor::Tensor1<double *, 3> t_diff_n(t_diff_n_ptr, &t_diff_n_ptr[1],
-                                                 &t_diff_n_ptr[2], 3);
+          FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_diff_n(
+              t_diff_n_ptr, &t_diff_n_ptr[1], &t_diff_n_ptr[2]);
           for (unsigned int bb = 0; bb != nb_base_functions; bb++) {
             t_new_diff_n(i) = t_diff_n(i);
             ++t_new_diff_n;
@@ -784,8 +786,8 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCore::UserDataOperator::
 
     FTensor::Tensor0<double *> t_div(&*div.data().begin());
     const double *grad_ptr = &data.getDiffHdivN()(gg, 0);
-    FTensor::Tensor1<const double *, 3> t_grad_base(
-        grad_ptr, &grad_ptr[HDIV1_1], &grad_ptr[HDIV2_2], 9);
+    FTensor::Tensor1<FTensor::PackPtr<const double *, 9>, 3> t_grad_base(
+        grad_ptr, &grad_ptr[HDIV1_1], &grad_ptr[HDIV2_2]);
     FTensor::Index<'i', 3> i;
     for (int dd = 0; dd < nb_dofs; dd++) {
       t_div = t_grad_base(0) + t_grad_base(1) + t_grad_base(2);
@@ -832,16 +834,16 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCore::UserDataOperator::
     }
 
     curl.resize(nb_dofs, 3, false);
-    FTensor::Tensor1<double *, 3> t_curl(&curl(0, 0), &curl(0, 1), &curl(0, 2),
-                                         3);
+    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_curl(
+        &curl(0, 0), &curl(0, 1), &curl(0, 2));
     const double *grad_ptr = &data.getDiffHcurlN()(gg, 0);
 
-    FTensor::Tensor2<const double *, 3, 3> t_grad_base(
+    FTensor::Tensor2<FTensor::PackPtr<const double *, 9>, 3, 3> t_grad_base(
         grad_ptr, &grad_ptr[HCURL0_1], &grad_ptr[HCURL0_2], &grad_ptr[HCURL1_0],
         &grad_ptr[HCURL1_1], &grad_ptr[HCURL1_2], &grad_ptr[HCURL2_0],
-        &grad_ptr[HCURL2_1], &grad_ptr[HCURL2_2], 9);
+        &grad_ptr[HCURL2_1], &grad_ptr[HCURL2_2]);
     FTensor::Index<'i', 3> i;
-    for (int dd = 0; dd < nb_dofs; dd++) {
+    for (int dd = 0; dd != nb_dofs; ++dd) {
       t_curl(0) = t_grad_base(2, 1) - t_grad_base(1, 2);
       t_curl(1) = t_grad_base(0, 2) - t_grad_base(2, 0);
       t_curl(2) = t_grad_base(1, 0) - t_grad_base(0, 1);
