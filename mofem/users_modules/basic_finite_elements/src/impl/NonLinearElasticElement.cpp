@@ -923,16 +923,17 @@ static MoFEMErrorCode get_jac(DataForcesAndSourcesCore::EntData &col_data,
       &jac_stress(3 * 2 + 2, S + 8));
   // Derivate of 1st Piola-stress multiplied by gradient of defamation for
   // base function (dd) and displacement component (rr)
-  FTensor::Tensor2<double *, 3, 3> t2_1_0(
+  FTensor::Tensor2<FTensor::PackPtr<double *, 3>, 3, 3> t2_1_0(
       &jac(0, 0), &jac(1, 0), &jac(2, 0), &jac(3, 0), &jac(4, 0), &jac(5, 0),
-      &jac(6, 0), &jac(7, 0), &jac(8, 0), 3);
-  FTensor::Tensor2<double *, 3, 3> t2_1_1(
+      &jac(6, 0), &jac(7, 0), &jac(8, 0));
+  FTensor::Tensor2<FTensor::PackPtr<double *, 3>, 3, 3> t2_1_1(
       &jac(0, 1), &jac(1, 1), &jac(2, 1), &jac(3, 1), &jac(4, 1), &jac(5, 1),
-      &jac(6, 1), &jac(7, 1), &jac(8, 1), 3);
-  FTensor::Tensor2<double *, 3, 3> t2_1_2(
+      &jac(6, 1), &jac(7, 1), &jac(8, 1));
+  FTensor::Tensor2<FTensor::PackPtr<double *, 3>, 3, 3> t2_1_2(
       &jac(0, 2), &jac(1, 2), &jac(2, 2), &jac(3, 2), &jac(4, 2), &jac(5, 2),
-      &jac(6, 2), &jac(7, 2), &jac(8, 2), 3);
-  FTensor::Tensor1<double *, 3> diff(diff_ptr, &diff_ptr[1], &diff_ptr[2], 3);
+      &jac(6, 2), &jac(7, 2), &jac(8, 2));
+  FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> diff(
+      diff_ptr, &diff_ptr[1], &diff_ptr[2]);
   for (int dd = 0; dd != nb_col / 3; ++dd) {
     t2_1_0(i, j) += t3_1_0(i, j, k) * diff(k);
     t2_1_1(i, j) += t3_1_1(i, j, k) * diff(k);
