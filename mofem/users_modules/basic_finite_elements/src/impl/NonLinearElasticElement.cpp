@@ -876,7 +876,7 @@ static MoFEMErrorCode get_jac(DataForcesAndSourcesCore::EntData &col_data,
       const_cast<double *>(&(col_data.getDiffN(gg, nb_col / 3)(0, 0)));
   // First two indices 'i','j' derivatives of 1st Piola-stress, third index 'k'
   // is displacement component
-  FTensor::Tensor3<double *, 3, 3, 3> t3_1_0(
+  FTensor::Tensor3<FTensor::PackPtr<double *,3>, 3, 3, 3> t3_1_0(
       &jac_stress(3 * 0 + 0, S + 0), &jac_stress(3 * 0 + 0, S + 1),
       &jac_stress(3 * 0 + 0, S + 2), &jac_stress(3 * 0 + 1, S + 0),
       &jac_stress(3 * 0 + 1, S + 1), &jac_stress(3 * 0 + 1, S + 2),
@@ -890,8 +890,8 @@ static MoFEMErrorCode get_jac(DataForcesAndSourcesCore::EntData &col_data,
       &jac_stress(3 * 2 + 0, S + 2), &jac_stress(3 * 2 + 1, S + 0),
       &jac_stress(3 * 2 + 1, S + 1), &jac_stress(3 * 2 + 1, S + 2),
       &jac_stress(3 * 2 + 2, S + 0), &jac_stress(3 * 2 + 2, S + 1),
-      &jac_stress(3 * 2 + 2, S + 2), 3);
-  FTensor::Tensor3<double *, 3, 3, 3> t3_1_1(
+      &jac_stress(3 * 2 + 2, S + 2));
+  FTensor::Tensor3<FTensor::PackPtr<double *,3>, 3, 3, 3> t3_1_1(
       &jac_stress(3 * 0 + 0, S + 3), &jac_stress(3 * 0 + 0, S + 4),
       &jac_stress(3 * 0 + 0, S + 5), &jac_stress(3 * 0 + 1, S + 3),
       &jac_stress(3 * 0 + 1, S + 4), &jac_stress(3 * 0 + 1, S + 5),
@@ -905,8 +905,8 @@ static MoFEMErrorCode get_jac(DataForcesAndSourcesCore::EntData &col_data,
       &jac_stress(3 * 2 + 0, S + 5), &jac_stress(3 * 2 + 1, S + 3),
       &jac_stress(3 * 2 + 1, S + 4), &jac_stress(3 * 2 + 1, S + 5),
       &jac_stress(3 * 2 + 2, S + 3), &jac_stress(3 * 2 + 2, S + 4),
-      &jac_stress(3 * 2 + 2, S + 5), 3);
-  FTensor::Tensor3<double *, 3, 3, 3> t3_1_2(
+      &jac_stress(3 * 2 + 2, S + 5));
+  FTensor::Tensor3<FTensor::PackPtr<double *,3>, 3, 3, 3> t3_1_2(
       &jac_stress(3 * 0 + 0, S + 6), &jac_stress(3 * 0 + 0, S + 7),
       &jac_stress(3 * 0 + 0, S + 8), &jac_stress(3 * 0 + 1, S + 6),
       &jac_stress(3 * 0 + 1, S + 7), &jac_stress(3 * 0 + 1, S + 8),
@@ -920,7 +920,7 @@ static MoFEMErrorCode get_jac(DataForcesAndSourcesCore::EntData &col_data,
       &jac_stress(3 * 2 + 0, S + 8), &jac_stress(3 * 2 + 1, S + 6),
       &jac_stress(3 * 2 + 1, S + 7), &jac_stress(3 * 2 + 1, S + 8),
       &jac_stress(3 * 2 + 2, S + 6), &jac_stress(3 * 2 + 2, S + 7),
-      &jac_stress(3 * 2 + 2, S + 8), 3);
+      &jac_stress(3 * 2 + 2, S + 8));
   // Derivate of 1st Piola-stress multiplied by gradient of defamation for
   // base function (dd) and displacement component (rr)
   FTensor::Tensor2<double *, 3, 3> t2_1_0(
@@ -1084,7 +1084,7 @@ MoFEMErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dx::doWork(
       if ((!aLe) && (getHoGaussPtsDetJac().size() > 0)) {
         val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
       }
-      FTensor::Tensor3<double *, 3, 3, 3> t3_1(
+      FTensor::Tensor3<FTensor::PackPtr<double *, 3>, 3, 3, 3> t3_1(
           &jac(3 * 0 + 0, 0), &jac(3 * 0 + 0, 1), &jac(3 * 0 + 0, 2),
           &jac(3 * 0 + 1, 0), &jac(3 * 0 + 1, 1), &jac(3 * 0 + 1, 2),
           &jac(3 * 0 + 2, 0), &jac(3 * 0 + 2, 1), &jac(3 * 0 + 2, 2),
@@ -1093,7 +1093,7 @@ MoFEMErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dx::doWork(
           &jac(3 * 1 + 2, 0), &jac(3 * 1 + 2, 1), &jac(3 * 1 + 2, 2),
           &jac(3 * 2 + 0, 0), &jac(3 * 2 + 0, 1), &jac(3 * 2 + 0, 2),
           &jac(3 * 2 + 1, 0), &jac(3 * 2 + 1, 1), &jac(3 * 2 + 1, 2),
-          &jac(3 * 2 + 2, 0), &jac(3 * 2 + 2, 1), &jac(3 * 2 + 2, 2), 3);
+          &jac(3 * 2 + 2, 0), &jac(3 * 2 + 2, 1), &jac(3 * 2 + 2, 2));
       for (int cc = 0; cc != nb_col / 3; cc++) {
         FTensor::Tensor1<double *, 3> diff_base_functions =
             row_data.getFTensor1DiffN<3>(gg, 0);
