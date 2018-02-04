@@ -452,6 +452,8 @@ struct SurfaceSlidingConstrains: public GenericSliding {
       }
 
       FTensor::Index<'i', 3> i;
+      FTensor::Index<'j', 3> j;
+      FTensor::Index<'k', 3> k;
       FTensor::Number<0> N0;
       FTensor::Number<1> N1;
       FTensor::Number<2> N2;
@@ -502,13 +504,7 @@ struct SurfaceSlidingConstrains: public GenericSliding {
         }
 
         t_delta(i) = t_position(i) - t_coord_ref(i);
-
-        t_normal(0) = t_position_ksi(1) * t_position_eta(2) -
-                      t_position_ksi(2) * t_position_eta(1);
-        t_normal(1) = t_position_ksi(2) * t_position_eta(0) -
-                      t_position_ksi(0) * t_position_eta(2);
-        t_normal(2) = t_position_ksi(0) * t_position_eta(1) -
-                      t_position_ksi(1) * t_position_eta(0);
+        t_normal(k) = FTensor::cross(t_position_ksi(i), t_position_eta(j), k);
 
         double w = getGaussPts()(2, gg) * 0.5;
         adouble val;
@@ -845,6 +841,12 @@ struct EdgeSlidingConstrains: public GenericSliding {
       t_base0(i) /= sqrt(t_base0(i) * t_base0(i));
       t_base1(i) /= sqrt(t_base1(i) * t_base1(i));
 
+      // cerr << t_edge_base0 << " : " << t_base0 << " : "
+      //      << t_edge_base0(i) * t_base0(i) << endl;
+      // cerr << t_edge_base1 << " : " << t_base1 << " : "
+      //      << t_edge_base1(i) * t_base1(i) << endl;
+      // cerr << endl;
+
       FTensor::Tensor0<double *> t_base_fun1 = data.getFTensor0N();
       FTensor::Tensor0<double *> t_base_fun2 = data.getFTensor0N();
       FTensor::Tensor1<adouble, 3> t_position;
@@ -877,6 +879,8 @@ struct EdgeSlidingConstrains: public GenericSliding {
         }
 
         t_delta(i) = t_position(i) - t_coord_ref(i);
+        adouble dot0 = t_base0(i) * t_delta(i);
+        adouble dot1 = t_base1(i) * t_delta(i);
 
         double w = getGaussPts()(1, gg) * getLength();
         adouble val, val1, val2;
@@ -885,8 +889,8 @@ struct EdgeSlidingConstrains: public GenericSliding {
         for (int bb = 0; bb != nb_base_functions; ++bb) {
           if (indices[2 * bb] != -1) {
             val = w * t_base_fun2;
-            t_c(N0) += val * t_base0(i) * t_delta(i);
-            t_c(N1) += val * t_base1(i) * t_delta(i);
+            t_c(N0) += val * dot0;
+            t_c(N1) += val * dot1;
             val1 = val * t_lambda(N0);
             val2 = val * t_lambda(N1);
             t_f(i) += val1 * t_base0(i) + val2 * t_base1(i);
