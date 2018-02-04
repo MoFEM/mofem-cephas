@@ -89,28 +89,28 @@ FTensor::Tensor1<double*,2> getTensor1FormData<2,double,ublas::row_major,DoubleA
   return FTensor::Tensor1<double*,2>(&data(0,0),&data(1,0));
 }
 
-template<>
-FTensor::Tensor2<double*,3,3> getTensor2FormData<3,3,double,ublas::row_major,DoubleAllocator>(
-  MatrixDouble &data
-) {
-  if(data.size1()!=9) {
+template <>
+FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 3, 3>
+getTensor2FormData<3, 3, double, ublas::row_major, DoubleAllocator>(
+    MatrixDouble &data) {
+  if (data.size1() != 9) {
     THROW_MESSAGE("Wrong size of data matrix");
   }
-  return FTensor::Tensor2<double*,3,3>(
-    &data(0,0),&data(1,0),&data(2,0),&data(3,0),&data(4,0),&data(5,0),&data(6,0),&data(7,0),&data(8,0)
-  );
+  return FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 3, 3>(
+      &data(0, 0), &data(1, 0), &data(2, 0), &data(3, 0), &data(4, 0),
+      &data(5, 0), &data(6, 0), &data(7, 0), &data(8, 0));
 }
 
-template<>
-FTensor::Tensor2<double*,3,2> getTensor2FormData<3,2,double,ublas::row_major,DoubleAllocator>(
-  MatrixDouble &data
-) {
-  if(data.size1()!=6) {
+template <>
+FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 3, 2>
+getTensor2FormData<3, 2, double, ublas::row_major, DoubleAllocator>(
+    MatrixDouble &data) {
+  if (data.size1() != 6) {
     THROW_MESSAGE("Wrong size of data matrix");
   }
-  return FTensor::Tensor2<double*,3,2>(
-    &data(0,0),&data(1,0),&data(2,0),&data(3,0),&data(4,0),&data(5,0)
-  );
+  return FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 3, 2>(
+      &data(0, 0), &data(1, 0), &data(2, 0), &data(3, 0), &data(4, 0),
+      &data(5, 0));
 }
 
 DataForcesAndSourcesCore::EntData::EntData():

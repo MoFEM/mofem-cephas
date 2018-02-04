@@ -296,17 +296,17 @@ int main(int argc, char *argv[]) {
       FTensor::Tensor3<double,3,3,3> t3;
 
       for(int br = 0;br!=nb_base_functions_row;br++) {
-        FTensor::Tensor0<double*> base_row = row_data.getFTensor0N(br);
-        FTensor::Tensor1<double*,3> diff_base_row = row_data.getFTensor1DiffN<3>(br);
+        auto base_row = row_data.getFTensor0N(br);
+        auto diff_base_row = row_data.getFTensor1DiffN<3>(br);
 
         for(int bc = 0;bc!=nb_base_functions_col;bc++) {
-          FTensor::Tensor0<double*> base_col = col_data.getFTensor0N(bc);
-          FTensor::Tensor1<double*,3> diff_base_col= row_data.getFTensor1DiffN<3>(bc);
+          auto base_col = col_data.getFTensor0N(bc);
+          auto diff_base_col= row_data.getFTensor1DiffN<3>(bc);
 
-          FTensor::Tensor1<double*,3> field1_values = getTensor1FormData<3>(*field1ValuesDataPtr);
-          FTensor::Tensor0<double*> field2_values = getTensor0FormData(*field2ValuesDataPtr);
-          FTensor::Tensor2<double*,3,3> grad1_values = getTensor2FormData<3,3>(*grad1ValuesDataPtr);
-          FTensor::Tensor1<double*,3> grad2_values = getTensor1FormData<3>(*grad2ValuesDataPtr);
+          auto field1_values = getTensor1FormData<3>(*field1ValuesDataPtr);
+          auto field2_values = getTensor0FormData(*field2ValuesDataPtr);
+          auto grad1_values = getTensor2FormData<3,3>(*grad1ValuesDataPtr);
+          auto grad2_values = getTensor1FormData<3>(*grad2ValuesDataPtr);
 
           for(int gg = 0;gg!=nb_gauss_pts;gg++) {
             // This make no sense (just do some calculations)

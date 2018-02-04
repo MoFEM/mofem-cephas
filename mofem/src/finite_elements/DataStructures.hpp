@@ -109,12 +109,12 @@ FTensor::Tensor1<double*,2> getTensor1FormData<2,double,ublas::row_major,DoubleA
  * \brief Get tensor rank 2 (matrix) form data matrix
  * \ingroup mofem_forces_and_sources_user_data_operators
  */
-template<int Tensor_Dim0, int Tensor_Dim1, class T, class L, class A>
-FTensor::Tensor2<T*,Tensor_Dim0,Tensor_Dim1> getTensor2FormData(
-  ublas::matrix<T,L,A> &data
-) {
+template <int Tensor_Dim0, int Tensor_Dim1, class T, class L, class A>
+FTensor::Tensor2<FTensor::PackPtr<T *, 1>, Tensor_Dim0, Tensor_Dim1>
+getTensor2FormData(ublas::matrix<T, L, A> &data) {
   std::stringstream s;
-  s << "Not implemented for T = " << typeid(T).name(); //boost::core::demangle(typeid(T).name());
+  s << "Not implemented for T = "
+    << typeid(T).name(); // boost::core::demangle(typeid(T).name());
   s << " and dim0 = " << Tensor_Dim0;
   s << " dim1 = " << Tensor_Dim1;
   THROW_MESSAGE(s.str());
@@ -124,26 +124,26 @@ FTensor::Tensor2<T*,Tensor_Dim0,Tensor_Dim1> getTensor2FormData(
 /**
  * Template specialization for getTensor2FormData
  */
-template<>
-FTensor::Tensor2<double*,3,3> getTensor2FormData(MatrixDouble &data);
+template <>
+FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 3, 3>
+getTensor2FormData(MatrixDouble &data);
 
 /**
  * Template specialization for getTensor2FormData
  */
-template<>
-FTensor::Tensor2<double*,3,2> getTensor2FormData(MatrixDouble &data);
+template <>
+FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 3, 2>
+getTensor2FormData(MatrixDouble &data);
 
 /**
  * \brief Get tensor rank 2 (matrix) form data matrix (specialization)
  * \ingroup mofem_forces_and_sources_user_data_operators
  */
-template<int Tensor_Dim0, int Tensor_Dim1>
-FTensor::Tensor2<double*,Tensor_Dim0,Tensor_Dim1> getTensor2FormData(
-  MatrixDouble &data
-) {
-  return getTensor2FormData<
-  Tensor_Dim0,Tensor_Dim1,double,ublas::row_major,DoubleAllocator
-  >(data);
+template <int Tensor_Dim0, int Tensor_Dim1>
+FTensor::Tensor2<FTensor::PackPtr<double *, 1>, Tensor_Dim0, Tensor_Dim1>
+getTensor2FormData(MatrixDouble &data) {
+  return getTensor2FormData<Tensor_Dim0, Tensor_Dim1, double, ublas::row_major,
+                            DoubleAllocator>(data);
 }
 
 /** \brief data structure for finite element entity

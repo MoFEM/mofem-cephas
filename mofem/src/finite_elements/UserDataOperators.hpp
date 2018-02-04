@@ -556,8 +556,8 @@ Tensor_Dim0,Tensor_Dim1,double,ublas::row_major,DoubleAllocator
     mat.resize(Tensor_Dim0*Tensor_Dim1,nb_gauss_pts,false);
     mat.clear();
   }
-  FTensor::Tensor1<double*,Tensor_Dim1> diff_base_function = data.getFTensor1DiffN<Tensor_Dim1>();
-  FTensor::Tensor2<double*,Tensor_Dim0,Tensor_Dim1> gradients_at_gauss_pts = getTensor2FormData<Tensor_Dim0,Tensor_Dim1>(mat);
+  auto diff_base_function = data.getFTensor1DiffN<Tensor_Dim1>();
+  auto gradients_at_gauss_pts = getTensor2FormData<Tensor_Dim0,Tensor_Dim1>(mat);
   FTensor::Index<'I',Tensor_Dim0> I;
   FTensor::Index<'J',Tensor_Dim1> J;
   int size = nb_dofs/Tensor_Dim0;
@@ -565,7 +565,7 @@ Tensor_Dim0,Tensor_Dim1,double,ublas::row_major,DoubleAllocator
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Data inconsistency");
   }
   for(int gg = 0;gg<nb_gauss_pts;gg++) {
-    FTensor::Tensor1<double*,Tensor_Dim0> field_data = data.getFTensor1FieldData<Tensor_Dim0>();
+    auto field_data = data.getFTensor1FieldData<Tensor_Dim0>();
     int bb = 0;
     for(;bb<size;bb++) {
       gradients_at_gauss_pts(I,J) += field_data(I)*diff_base_function(J);
