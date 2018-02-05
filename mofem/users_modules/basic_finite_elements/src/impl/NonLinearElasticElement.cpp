@@ -175,16 +175,15 @@ MoFEMErrorCode NonlinearElasticElement::OpGetDataAtGaussPts::doWork(
       }
     }
 
-    FTensor::Tensor0<double *> base_function = data.getFTensor0N();
-    FTensor::Tensor1<double *, 3> diff_base_functions =
-        data.getFTensor1DiffN<3>();
+    auto base_function = data.getFTensor0N();
+    auto diff_base_functions = data.getFTensor1DiffN<3>();
     FTensor::Index<'i', 3> i;
     FTensor::Index<'j', 3> j;
 
     if (rank == 1) {
 
       for (int gg = 0; gg != nb_gauss_pts; gg++) {
-        FTensor::Tensor0<double *> field_data = data.getFTensor0FieldData();
+        auto field_data = data.getFTensor0FieldData();
         double &val = valuesAtGaussPts[gg][0];
         FTensor::Tensor1<double *, 3> grad(&gradientAtGaussPts[gg](0, 0),
                                            &gradientAtGaussPts[gg](0, 1),

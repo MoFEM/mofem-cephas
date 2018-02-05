@@ -17,9 +17,68 @@ namespace FTensor
   class Tensor0
   {};
 
+  template <class T, int I> class Tensor0<PackPtr<T *, I> > {
+    mutable T *restrict data;
+
+  public:
+    Tensor0(T *d) : data(d) {}
+
+    const Tensor0 &operator=(const Tensor0 &a) {
+      *data = *(a.data);
+      return *this;
+    }
+
+    template <class U> const Tensor0<PackPtr<T *, I> > &operator=(const U &d) {
+      *data = d;
+      return *this;
+    }
+    template <class U> const Tensor0<PackPtr<T *, I> > &operator+=(const U &d) {
+      *data += d;
+      return *this;
+    }
+    template <class U> const Tensor0<PackPtr<T *, I> > &operator-=(const U &d) {
+      *data -= d;
+      return *this;
+    }
+    template <class U> const Tensor0<PackPtr<T *, I> > &operator*=(const U &d) {
+      *data *= d;
+      return *this;
+    }
+    template <class U> const Tensor0<PackPtr<T *, I> > &operator/=(const U &d) {
+      *data /= d;
+      return *this;
+    }
+
+    /* Assignments operator for ADOL-C */
+    template <class U> const Tensor0<PackPtr<T *, I> > &operator>>=(U &d) {
+      d >>= *data;
+      return *this;
+    }
+
+    template <class U> const Tensor0<PackPtr<T *, I> > &operator<<=(const U d) {
+      *data <<= d;
+      return *this;
+    }
+
+    /* Note that the conversion operator& to T * only works on
+       consts, so it doesn't allow you to change the value of *data.
+       You have to use the = operators to change that.  The idea is that
+       operator& is only used for stencils and such.  */
+
+    const T *operator&() const { return data; }
+    operator T() const { return *data; }
+
+    /* The ++ operator increments the pointer, not the number that the
+       pointer points to.  This allows iterating over a grid. */
+
+    const Tensor0<PackPtr<T *, I> > &operator++() const {
+      data += I;
+      return *this;
+    }
+  };
+
   template <class T>
-  class Tensor0<T*>
-  {
+  class Tensor0<T *> {
     const int inc;
     mutable T * restrict data;
   public:

@@ -63,9 +63,11 @@ extern "C" {
 namespace MoFEM {
 
 template <>
-FTensor::Tensor0<double *> getTensor0FormData<double, DoubleAllocator>(
+FTensor::Tensor0<FTensor::PackPtr<double *, 1> >
+getTensor0FormData<double, DoubleAllocator>(
     ublas::vector<double, DoubleAllocator> &data) {
-  return FTensor::Tensor0<double *>(&*data.data().begin());
+  return FTensor::Tensor0<FTensor::PackPtr<double *, 1> >(
+      &*data.data().begin());
 }
 
 template <>
@@ -291,7 +293,7 @@ DataForcesAndSourcesCore::EntData::getFTensor1FieldData<2>() {
   return FTensor::Tensor1<double *, 2>(ptr, &ptr[1], 2);
 }
 
-FTensor::Tensor0<double *>
+FTensor::Tensor0<FTensor::PackPtr<double *,1> >
 DataForcesAndSourcesCore::EntData::getFTensor0FieldData() {
   if (dOfs[0]->getNbOfCoeffs() != 1) {
     std::stringstream s;
@@ -299,7 +301,8 @@ DataForcesAndSourcesCore::EntData::getFTensor0FieldData() {
     s << " but expected scalar field, tensor of rank 0";
     THROW_MESSAGE(s.str());
   }
-  return FTensor::Tensor0<double *>(&*fieldData.data().begin());
+  return FTensor::Tensor0<FTensor::PackPtr<double *, 1> >(
+      &*fieldData.data().begin());
 }
 
 template <int Tensor_Dim>

@@ -42,7 +42,7 @@ Example how to use it.
 VectorDouble vec;
 vec.resize(nb_gauss_pts,false);
 vec.clear();
-FTensor::Tensor0<double*> t0 = getTensor0FormData(data);
+auto t0 = getTensor0FormData(data);
 for(int gg = 0;gg!=nb_gauss_pts;gg++) {
 
   ++t0;
@@ -51,7 +51,8 @@ for(int gg = 0;gg!=nb_gauss_pts;gg++) {
 
 */
 template <class T, class A>
-FTensor::Tensor0<T *> getTensor0FormData(ublas::vector<T, A> &data) {
+FTensor::Tensor0<FTensor::PackPtr<double *, 1> >
+getTensor0FormData(ublas::vector<T, A> &data) {
   std::stringstream s;
   s << "Not implemented for T = "
     << typeid(T).name(); // boost::core::demangle(typeid(T).name());
@@ -60,7 +61,8 @@ FTensor::Tensor0<T *> getTensor0FormData(ublas::vector<T, A> &data) {
 }
 
 template <>
-FTensor::Tensor0<double *> getTensor0FormData<double, DoubleAllocator>(
+FTensor::Tensor0<FTensor::PackPtr<double *, 1> >
+getTensor0FormData<double, DoubleAllocator>(
     ublas::vector<double, DoubleAllocator> &data);
 
 /**
@@ -242,7 +244,7 @@ struct DataForcesAndSourcesCore {
       THROW_MESSAGE(s.str());
     }
 
-    FTensor::Tensor0<double *> getFTensor0FieldData();
+    FTensor::Tensor0<FTensor::PackPtr<double *,1> > getFTensor0FieldData();
 
     inline VectorDofs &getFieldDofs() { return dOfs; }
 
@@ -751,10 +753,10 @@ struct DataForcesAndSourcesCore {
      * \return Tensor0
      *
      */
-    inline FTensor::Tensor0<double *>
+    inline FTensor::Tensor0<FTensor::PackPtr<double *, 1> >
     getFTensor0N(const FieldApproximationBase base) {
       double *ptr = &*getN(base).data().begin();
-      return FTensor::Tensor0<double *>(ptr);
+      return FTensor::Tensor0<FTensor::PackPtr<double *, 1> >(ptr);
     };
 
     /**
@@ -765,7 +767,7 @@ struct DataForcesAndSourcesCore {
      * \return Tensor0
      *
      */
-    inline FTensor::Tensor0<double *> getFTensor0N() {
+    inline FTensor::Tensor0<FTensor::PackPtr<double *, 1> > getFTensor0N() {
       return getFTensor0N(bAse);
     };
 
@@ -824,11 +826,11 @@ struct DataForcesAndSourcesCore {
 
      *
      */
-    inline FTensor::Tensor0<double *>
+    inline FTensor::Tensor0<FTensor::PackPtr<double *, 1> >
     getFTensor0N(const FieldApproximationBase base, const int gg,
                  const int bb) {
       double *ptr = &getN(base)(gg, bb);
-      return FTensor::Tensor0<double *>(ptr);
+      return FTensor::Tensor0<FTensor::PackPtr<double *, 1> >(ptr);
     };
 
     /**
@@ -840,7 +842,8 @@ struct DataForcesAndSourcesCore {
      * \return Tensor0
      *
      */
-    inline FTensor::Tensor0<double *> getFTensor0N(const int gg, const int bb) {
+    inline FTensor::Tensor0<FTensor::PackPtr<double *, 1> >
+    getFTensor0N(const int gg, const int bb) {
       return getFTensor0N(bAse, gg, bb);
     };
 
@@ -1113,7 +1116,7 @@ struct DataForcesAndSourcesCore {
      for(int gg = 0;gg!=nb_gauss_pts;gg++) {
       auto t_base = data.getFTensor1HdivN(base,gg,bb);
       for(int bb = 0;bb!=nb_base_functions;bb++) {
-        FTensor::Tensor0<double> dot = t_base(i)*t_base(i);
+        auto dot = t_base(i)*t_base(i);
       }
      }
      \endcode
@@ -1131,7 +1134,7 @@ struct DataForcesAndSourcesCore {
      for(int gg = 0;gg!=nb_gauss_pts;gg++) {
       auto t_base = data.getFTensor1HdivN(gg,0);
       for(int bb = 0;bb!=nb_base_functions;bb++) {
-        FTensor::Tensor0<double> dot = t_base(i)*t_base(i);
+        double dot = t_base(i)*t_base(i);
       }
      }
      \endcode
@@ -1150,7 +1153,7 @@ struct DataForcesAndSourcesCore {
      for(int gg = 0;gg!=nb_gauss_pts;gg++) {
       auto t_base = data.getFTensor1HdivN(base,gg,0);
       for(int bb = 0;bb!=nb_base_functions;bb++) {
-        FTensor::Tensor0<double> dot = t_base(i)*t_base(i);
+        double dot = t_base(i)*t_base(i);
       }
      }
      \endcode
@@ -1170,7 +1173,7 @@ struct DataForcesAndSourcesCore {
      for(int gg = 0;gg!=nb_gauss_pts;gg++) {
       auto t_base = data.getFTensor1HcurlN(gg);
       for(int bb = 0;bb!=nb_base_functions;bb++) {
-        FTensor::Tensor0<double> dot = t_base(i)*t_base(i);
+        double dot = t_base(i)*t_base(i);
       }
      }
      \endcode

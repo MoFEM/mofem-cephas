@@ -464,9 +464,9 @@ struct SurfaceSlidingConstrains: public GenericSliding {
 
       int nb_gauss_pts = data.getN().size1();
       int nb_base_functions = data.getN().size2();
-      FTensor::Tensor0<double *> t_base1 = data.getFTensor0N();
-      FTensor::Tensor0<double *> t_base2 = data.getFTensor0N();
-      FTensor::Tensor1<double *, 2> t_diff_base = data.getFTensor1DiffN<2>();
+      auto t_base1 = data.getFTensor0N();
+      auto t_base2 = data.getFTensor0N();
+      auto t_diff_base = data.getFTensor1DiffN<2>();
       FTensor::Tensor1<adouble, 3> t_position;
       FTensor::Tensor1<adouble, 3> t_position_ksi;
       FTensor::Tensor1<adouble, 3> t_position_eta;
@@ -479,7 +479,7 @@ struct SurfaceSlidingConstrains: public GenericSliding {
       c_vec.clear();
       f_vec.clear();
 
-      FTensor::Tensor1<double *, 3> t_coord_ref = getTensor1CoordsAtGaussPts();
+      auto t_coord_ref = getTensor1CoordsAtGaussPts();
 
       for (int gg = 0; gg != nb_gauss_pts; ++gg) {
 
@@ -847,12 +847,12 @@ struct EdgeSlidingConstrains: public GenericSliding {
       //      << t_edge_base1(i) * t_base1(i) << endl;
       // cerr << endl;
 
-      FTensor::Tensor0<double *> t_base_fun1 = data.getFTensor0N();
-      FTensor::Tensor0<double *> t_base_fun2 = data.getFTensor0N();
+      auto t_base_fun1 = data.getFTensor0N();
+      auto t_base_fun2 = data.getFTensor0N();
       FTensor::Tensor1<adouble, 3> t_position;
       FTensor::Tensor1<adouble, 2> t_lambda;
       FTensor::Tensor1<adouble, 3> t_delta;
-      FTensor::Tensor1<double *, 3> t_coord_ref = getTensor1CoordsAtGaussPts();
+      auto t_coord_ref = getTensor1CoordsAtGaussPts();
 
       ublas::vector<adouble> c_vec(4);
       ublas::vector<adouble> f_vec(6);

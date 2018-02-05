@@ -125,10 +125,10 @@ public OpCalculateScalarFieldValues_General<double,DoubleAllocator> {
       vec.resize(nb_gauss_pts,false);
       vec.clear();
     }
-    FTensor::Tensor0<double*> base_function = data.getFTensor0N();
-    FTensor::Tensor0<double*> values_at_gauss_pts = getTensor0FormData(vec);
+    auto base_function = data.getFTensor0N();
+    auto values_at_gauss_pts = getTensor0FormData(vec);
     for(int gg = 0;gg<nb_gauss_pts;gg++) {
-      FTensor::Tensor0<double*> field_data = data.getFTensor0FieldData();
+      auto field_data = data.getFTensor0FieldData();
       int bb = 0;
       for(;bb<nb_dofs;bb++) {
         values_at_gauss_pts += field_data*base_function;
@@ -246,8 +246,8 @@ MoFEMErrorCode OpCalculateVectorFieldValues_General<Tensor_Dim,double,ublas::row
     mat.resize(Tensor_Dim,nb_gauss_pts,false);
     mat.clear();
   }
-  FTensor::Tensor0<double*> base_function = data.getFTensor0N();
-  FTensor::Tensor1<double*,Tensor_Dim> values_at_gauss_pts = getTensor1FormData<Tensor_Dim>(mat);
+  auto base_function = data.getFTensor0N();
+  auto values_at_gauss_pts = getTensor1FormData<Tensor_Dim>(mat);
   FTensor::Index<'I',Tensor_Dim> I;
   const int size = nb_dofs/Tensor_Dim;
   if(nb_dofs % Tensor_Dim) {
@@ -446,19 +446,20 @@ MoFEMErrorCode OpCalculateScalarFieldGradient_General<Tensor_Dim,double,ublas::r
     mat.resize(Tensor_Dim,nb_gauss_pts,false);
     mat.clear();
   }
-  FTensor::Tensor1<double*,Tensor_Dim> diff_base_function = data.getFTensor1DiffN<Tensor_Dim>();
-  FTensor::Tensor1<double*,Tensor_Dim> gradients_at_gauss_pts = getTensor1FormData<Tensor_Dim>(mat);
-  FTensor::Index<'I',Tensor_Dim> I;
-  for(int gg = 0;gg<nb_gauss_pts;gg++) {
-    FTensor::Tensor0<double*> field_data = data.getFTensor0FieldData();
+  auto diff_base_function = data.getFTensor1DiffN<Tensor_Dim>();
+  auto gradients_at_gauss_pts = getTensor1FormData<Tensor_Dim>(mat);
+  FTensor::Index<'I', Tensor_Dim> I;
+  for (int gg = 0; gg < nb_gauss_pts; gg++) {
+    auto field_data = data.getFTensor0FieldData();
     int bb = 0;
-    for(;bb<nb_dofs;bb++) {
-      gradients_at_gauss_pts(I) += field_data*diff_base_function(I);
+    for (; bb < nb_dofs; bb++) {
+      gradients_at_gauss_pts(I) += field_data * diff_base_function(I);
       ++field_data;
       ++diff_base_function;
     }
     // Number of dofs can be smaller than number of base functions
-    for(;bb!=nb_base_functions;bb++) ++diff_base_function;
+    for (; bb != nb_base_functions; bb++)
+      ++diff_base_function;
     ++gradients_at_gauss_pts;
   }
   MoFEMFunctionReturnHot(0);
@@ -701,7 +702,7 @@ MoFEMErrorCode OpCalculateHdivVectorField_General<Tensor_Dim,double,ublas::row_m
   FTensor::Tensor1<double*,Tensor_Dim> t_n_hdiv = data.getFTensor1HdivN<Tensor_Dim>();
   FTensor::Tensor1<double*,Tensor_Dim> t_data = getTensor1FormData<3>(*dataPtr);
   for(int gg = 0;gg!=nb_integration_points;gg++) {
-    FTensor::Tensor0<double*> t_dof = data.getFTensor0FieldData();
+    auto t_dof = data.getFTensor0FieldData();
     int bb = 0;
     for(;bb!=nb_dofs;bb++) {
       t_data(i) += t_n_hdiv(i)*t_dof;

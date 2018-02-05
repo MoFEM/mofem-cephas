@@ -1757,9 +1757,9 @@ MoFEMErrorCode OpGetDataAndGradient<3,3>::calculateValAndGrad(
   const unsigned int nb_base_functions = data.getN().size2();
   const unsigned int nb_dofs = data.getFieldData().size();
   if(!nb_dofs) MoFEMFunctionReturnHot(0);
-  FTensor::Tensor0<double*> t_n = data.getFTensor0N();
-  FTensor::Tensor1<double*,3> t_val = getValAtGaussPtsTensor<3>(dataAtGaussPts);
-  FTensor::Tensor2<double*,3,3> t_grad = getGradAtGaussPtsTensor<3,3>(dataGradAtGaussPts);
+  auto t_n = data.getFTensor0N();
+  auto t_val = getValAtGaussPtsTensor<3>(dataAtGaussPts);
+  auto t_grad = getGradAtGaussPtsTensor<3,3>(dataGradAtGaussPts);
   FTensor::Index<'i',3> i;
   FTensor::Index<'j',3> j;
   if(
@@ -1767,8 +1767,8 @@ MoFEMErrorCode OpGetDataAndGradient<3,3>::calculateValAndGrad(
     data.getDiffN().data().size()==3*nb_base_functions
   ) {
     for(unsigned int gg = 0;gg!=nb_gauss_pts;gg++) {
-      FTensor::Tensor1<double*,3> t_data = data.getFTensor1FieldData<3>();
-      FTensor::Tensor1<double*,3>  t_diff_n = data.getFTensor1DiffN<3>();
+      auto t_data = data.getFTensor1FieldData<3>();
+      auto t_diff_n = data.getFTensor1DiffN<3>();
       unsigned int bb = 0;
       for(;bb!=nb_dofs/3;bb++) {
         t_val(i) += t_data(i)*t_n;
@@ -1784,9 +1784,9 @@ MoFEMErrorCode OpGetDataAndGradient<3,3>::calculateValAndGrad(
       }
     }
   } else {
-    FTensor::Tensor1<double*,3> t_diff_n = data.getFTensor1DiffN<3>();
+    auto t_diff_n = data.getFTensor1DiffN<3>();
     for(unsigned int gg = 0;gg!=nb_gauss_pts;gg++) {
-      FTensor::Tensor1<double*,3> t_data = data.getFTensor1FieldData<3>();
+      auto t_data = data.getFTensor1FieldData<3>();
       unsigned int bb = 0;
       for(;bb!=nb_dofs/3;bb++) {
         t_val(i) += t_data(i)*t_n;
@@ -1817,7 +1817,7 @@ MoFEMErrorCode OpGetDataAndGradient<1,3>::calculateValAndGrad(
   const unsigned int nb_base_functions = data.getN().size2();
   //bool constant_diff = false;
   const unsigned int nb_dofs = data.getFieldData().size();
-  FTensor::Tensor0<double*> t_n = data.getFTensor0N();
+  auto t_n = data.getFTensor0N();
   FTensor::Tensor0<double *> t_val =
       FTensor::Tensor0<double *>(&*dataAtGaussPts.data().begin(), 1);
   double *ptr = &*dataGradAtGaussPts.data().begin();
@@ -1829,8 +1829,8 @@ MoFEMErrorCode OpGetDataAndGradient<1,3>::calculateValAndGrad(
     data.getDiffN().data().size()==3*nb_base_functions
   ) {
     for(unsigned int gg = 0;gg!=nb_gauss_pts;gg++) {
-      FTensor::Tensor0<double*> t_data = data.getFTensor0FieldData();
-      FTensor::Tensor1<double*,3>  t_diff_n = data.getFTensor1DiffN<3>();
+      auto t_data = data.getFTensor0FieldData();
+      auto t_diff_n = data.getFTensor1DiffN<3>();
       unsigned int bb = 0;
       for(;bb!=nb_dofs/3;bb++) {
         t_val += t_data*t_n;
@@ -1846,9 +1846,9 @@ MoFEMErrorCode OpGetDataAndGradient<1,3>::calculateValAndGrad(
       }
     }
   } else {
-    FTensor::Tensor1<double*,3> t_diff_n = data.getFTensor1DiffN<3>();
+    auto t_diff_n = data.getFTensor1DiffN<3>();
     for(unsigned int gg = 0;gg!=nb_gauss_pts;gg++) {
-      FTensor::Tensor0<double*> t_data = data.getFTensor0FieldData();
+      auto t_data = data.getFTensor0FieldData();
       unsigned int bb = 0;
       for(;bb!=nb_dofs/3;bb++) {
         t_val = t_data*t_n;

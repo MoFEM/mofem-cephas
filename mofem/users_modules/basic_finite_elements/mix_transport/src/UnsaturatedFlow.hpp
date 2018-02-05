@@ -451,15 +451,15 @@ namespace MixTransport {
         // Get material block
         boost::shared_ptr<GenericMaterial>& block_data = cTx.dMatMap.at(block_id);
         // Get pressure
-        FTensor::Tensor0<double*> t_h = getTensor0FormData(cTx.valuesAtGaussPts);
+        auto t_h = getTensor0FormData(cTx.valuesAtGaussPts);
         // Get pressure rate
-        FTensor::Tensor0<double*> t_h_t = getTensor0FormData(*cTx.headRateAtGaussPts);
+        auto t_h_t = getTensor0FormData(*cTx.headRateAtGaussPts);
         // Flux divergence
-        FTensor::Tensor0<double*> t_div_flux = getTensor0FormData(cTx.divergenceAtGaussPts);
+        auto t_div_flux = getTensor0FormData(cTx.divergenceAtGaussPts);
         // Get integration weight
-        FTensor::Tensor0<double*> t_w = getFTensor0IntegrationWeight();
+        auto t_w = getFTensor0IntegrationWeight();
         // Coords at integration points
-        FTensor::Tensor1<double*,3> t_coords = getTensor1CoordsAtGaussPts();
+        auto t_coords = getTensor1CoordsAtGaussPts();
         // Scale eq.
         const double scale = block_data->sCale;
         // Get volume
@@ -649,15 +649,15 @@ namespace MixTransport {
           // Get material block
           boost::shared_ptr<GenericMaterial>& block_data = cTx.dMatMap.at(block_id);
           // Get pressure
-          FTensor::Tensor0<double*> t_h = getTensor0FormData(cTx.valuesAtGaussPts);
+          auto t_h = getTensor0FormData(cTx.valuesAtGaussPts);
           // // Get pressure
-          // FTensor::Tensor0<double*> t_flux_residual = getTensor0FormData(*cTx.resAtGaussPts);
+          // auto t_flux_residual = getTensor0FormData(*cTx.resAtGaussPts);
           // Get pressure rate
-          FTensor::Tensor0<double*> t_h_t = getTensor0FormData(*cTx.headRateAtGaussPts);
+          auto t_h_t = getTensor0FormData(*cTx.headRateAtGaussPts);
           // Get integration weight
-          FTensor::Tensor0<double*> t_w = getFTensor0IntegrationWeight();
+          auto t_w = getFTensor0IntegrationWeight();
           // Coords at integration points
-          FTensor::Tensor1<double*,3> t_coords = getTensor1CoordsAtGaussPts();
+          auto t_coords = getTensor1CoordsAtGaussPts();
           // Scale eq.
           const double scale = block_data->sCale;
           // Time step factor
@@ -666,7 +666,7 @@ namespace MixTransport {
           const double vol = getVolume();
           int nb_gauss_pts = row_data.getN().size1();
           // get base functions on rows
-          FTensor::Tensor0<double*> t_n_row = row_data.getFTensor0N();
+          auto t_n_row = row_data.getFTensor0N();
           for(int gg = 0;gg!=nb_gauss_pts;gg++) {
             // get integration weight and multiply by element volume
             double alpha = t_w*vol*scale;
@@ -682,11 +682,11 @@ namespace MixTransport {
             const double C = block_data->C;
             const double diffC = block_data->diffC;
             // assemble local entity tangent matrix
-            FTensor::Tensor0<double*> t_a(&*nN.data().begin());
+            FTensor::Tensor0<FTensor::PackPtr<double*,1> > t_a(&*nN.data().begin());
             // iterate base functions on rows
             for(int kk = 0;kk!=nb_row;kk++) {
               // get first base function on column at integration point gg
-              FTensor::Tensor0<double*> t_n_col = col_data.getFTensor0N(gg,0);
+              auto t_n_col = col_data.getFTensor0N(gg,0);
               // iterate base functions on columns
               for(int ll = 0;ll!=nb_col;ll++) {
                 // assemble elements of local matrix
@@ -885,7 +885,7 @@ namespace MixTransport {
             FTensor::Tensor0<double*> t_a(&*nN.data().begin());
             for(int rr = 0;rr!=nb_row;rr++) {
               double beta = alpha*(-diffK/KK)*(t_n_hdiv_row(i)*t_flux(i));
-              FTensor::Tensor0<double*> t_n_col = col_data.getFTensor0N(gg,0);
+              auto t_n_col = col_data.getFTensor0N(gg,0);
               for(int cc =0;cc!=nb_col;cc++) {
                 t_a += beta*t_n_col;
                 ++t_n_col;
@@ -1018,7 +1018,7 @@ namespace MixTransport {
           double flux_on_entity = 0;
           int nb_gauss_pts = data.getHdivN().size1();
           for(int gg = 0;gg<nb_gauss_pts;gg++) {
-            FTensor::Tensor0<double*> t_data = data.getFTensor0FieldData();
+            auto t_data = data.getFTensor0FieldData();
             for(int rr = 0;rr!=nb_dofs;rr++) {
               flux_on_entity -= (0.5*t_data*t_w)*(t_n_hdiv(i)*t_normal(i));
               ++t_n_hdiv;
@@ -1120,9 +1120,9 @@ namespace MixTransport {
 
 
         // Get pressure at integration points
-        FTensor::Tensor0<double*> t_h = getTensor0FormData(cTx.valuesAtGaussPts);
+        auto t_h = getTensor0FormData(cTx.valuesAtGaussPts);
         // Coords at integration points
-        FTensor::Tensor1<double*,3> t_coords = getTensor1CoordsAtGaussPts();
+        auto t_coords = getTensor1CoordsAtGaussPts();
 
         int nb_gauss_pts = data.getN().size1();
         for(int gg = 0;gg<nb_gauss_pts;gg++) {
