@@ -6,9 +6,9 @@ void test_T3ch(const int &T, Tensor0<double*> &t0_1, const Tensor0<double*> &t0_
 	       Tensor2_symmetric<double,3> &t2s_1,
 	       const Tensor2_symmetric<double,3> &t2s_2,
 	       const Tensor2_symmetric<double,3> &t2s_3,
-	       Tensor3_dg<double,3,3> &t3dg_1,
-	       const Tensor3_dg<double,3,3> &t3dg_2,
-	       const Tensor3_dg<double,3,3> &t3dg_3,
-	       Tensor3_christof<double,3,3> &t3ch_1,
-	       const Tensor3_christof<double,3,3> &t3ch_2,
-	       const Tensor3_christof<double,3,3> &t3ch_3);
+	       Dg<double,3,3> &t3dg_1,
+	       const Dg<double,3,3> &t3dg_2,
+	       const Dg<double,3,3> &t3dg_3,
+	       Christof<double,3,3> &t3ch_1,
+	       const Christof<double,3,3> &t3ch_2,
+	       const Christof<double,3,3> &t3ch_3);

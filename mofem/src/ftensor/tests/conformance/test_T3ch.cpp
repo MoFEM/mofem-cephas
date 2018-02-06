@@ -11,12 +11,12 @@ void test_T3ch(const int &, Tensor0<double*> &, const Tensor0<double*> &,
 	       Tensor2_symmetric<double,3> &t2s_1,
 	       const Tensor2_symmetric<double,3> &,
 	       const Tensor2_symmetric<double,3> &,
-	       Tensor3_dg<double,3,3> &,
-	       const Tensor3_dg<double,3,3> &t3dg_2,
-	       const Tensor3_dg<double,3,3> &,
-	       Tensor3_christof<double,3,3> &t3ch_1,
-	       const Tensor3_christof<double,3,3> &t3ch_2,
-	       const Tensor3_christof<double,3,3> &)
+	       Dg<double,3,3> &,
+	       const Dg<double,3,3> &t3dg_2,
+	       const Dg<double,3,3> &,
+	       Christof<double,3,3> &t3ch_1,
+	       const Christof<double,3,3> &t3ch_2,
+	       const Christof<double,3,3> &)
 {
   Index<'i',3> i;
   Index<'j',3> j;

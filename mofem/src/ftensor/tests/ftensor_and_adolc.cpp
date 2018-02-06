@@ -100,7 +100,7 @@ int main(int argc, char *argv[]) {
   /*int ret_val_hessian =*/ ::hessian(tag,3,&input[0],H);
   std::cout << Hessian << std::endl;
 
-  FTensor::Tensor4_ddg<double*,2,2> t4(
+  FTensor::Ddg<double*,2,2> t4(
     &Hessian(0,0),&Hessian(0,1),&Hessian(0,2),
     &Hessian(1,0),&Hessian(1,1),&Hessian(1,2),
     &Hessian(2,0),&Hessian(2,1),&Hessian(2,2)

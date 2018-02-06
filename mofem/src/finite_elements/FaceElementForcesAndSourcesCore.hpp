@@ -505,5 +505,7 @@ DEPRECATED typedef FaceElementForcesAndSourcesCore
 
 /**
  * \defgroup mofem_forces_and_sources_tri_element Face Element
+ * \brief Implementation of face element
+ * 
  * \ingroup mofem_forces_and_sources
  ******************************************************************************/

@@ -4,7 +4,7 @@
 using namespace FTensor;
 using namespace std;
 
-void test_T3as_06(Tensor3_dg<double,3,3> &t3dg_1,
+void test_T3as_06(Dg<double,3,3> &t3dg_1,
                   const Tensor3_antisymmetric<double,3,3> &t3as_2)
 {
   Index<'i',3> i;

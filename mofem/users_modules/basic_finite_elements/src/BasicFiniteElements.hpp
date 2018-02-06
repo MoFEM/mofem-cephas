@@ -23,7 +23,7 @@
 using namespace MoFEM;
 
 #ifdef WITH_ADOL_C
-  #include <adolc/adolc.h>
+#include <adolc/adolc.h>
 #endif // WITH_ADOL_C
 
 extern "C" {

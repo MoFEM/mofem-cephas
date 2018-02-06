@@ -260,7 +260,7 @@ int main(int argc, char *argv[]) {
           MoFEMFunctionReturnHot(0);
         int nb_gauss_pts = data.getHcurlN().size1();
 
-        FTensor::Tensor1<double *, 3> t_curl_base = data.getFTensor1HcurlN<3>();
+        auto t_curl_base = data.getFTensor1HcurlN<3>();
         // double area = getArea();
         double n0 = getNormal()[0] * 0.5;
         double n1 = getNormal()[1] * 0.5;

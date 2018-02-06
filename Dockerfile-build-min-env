@@ -1,4 +1,4 @@
-FROM ubuntu:precise
+FROM ubuntu
 
 MAINTAINER Lukasz.Kaczmarczyk@glasgow.ac.uk
 
@@ -67,6 +67,7 @@ RUN cd /opt/moab \
 --libdir=/opt/petsc/arch-linux2-c-opt/lib \
 CC=mpicc CFLAGS="-fPIC -O" \
 AR=/usr/bin/ar ARFLAGS=cr \
+F77=gfortran FC=gfortran \
 CXX=mpicxx CXXFLAGS="-fPIC" \
 --disable-fortran \
 --enable-shared --with-mpi= \
@@ -91,13 +92,5 @@ RUN cd /opt \
 && cd ADOL-C-2.5.2 \
 && ./configure  CC=${CMAKE_C_COMPILER} CXX=${CMAKE_CXX_COMPILER} --disable-shared --prefix=/opt/local \
 && make && make install
-
-# CMAKE (no ssl support, so it will be not able download from some sites)
-RUN cd /opt \
-&& wget https://cmake.org/files/v3.0/cmake-3.0.1.tar.gz \
-&& tar -xzf cmake-3.0.1.tar.gz \
-&& cd cmake-3.0.1 && cmake -DCMAKE_INSTALL_PREFIX=/opt/local \
-&& make install \
-&& cd /opt && rm -rvf cmake-3.0.1*
 
 RUN sed -i 's/PATH.*/&\":\/opt\/petsc\/arch-linux2-c-opt\/bin\"/' /etc/environment

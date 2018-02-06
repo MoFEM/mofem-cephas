@@ -16,9 +16,14 @@
    is likely to lead to errors, since the program thinks that i and j
    are identical. */
 
-template<char i, int Dim>
-class Index
+#pragma once
+
+namespace FTensor
 {
-public:
-  Index() {};
-};
+  template<char i, int Dim>
+  class Index
+  {
+  public:
+    Index() {};
+  };
+}

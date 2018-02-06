@@ -114,7 +114,7 @@ struct PostProcHookStress: public MoFEM::VolumeElementForcesAndSourcesCore::User
       ierr = it->getAttributeDataStructure(mydata); CHKERRG(ierr);
 
       Range meshsets;
-      rval = mField.get_moab().get_entities_by_type(it->meshset,MBENTITYSET,meshsets,true); CHKERRG(rval);
+      rval = mField.get_moab().get_entities_by_type(it->meshset,MBENTITYSET,meshsets,false); CHKERRG(rval);
       meshsets.insert(it->meshset);
       for(Range::iterator mit = meshsets.begin();mit != meshsets.end(); mit++) {
         if( mField.get_moab().contains_entities(*mit,&ent,1) ) {

@@ -1,4 +1,4 @@
-/** \file ForcesAndSourcesCore.hpp
+/** \file EdgeElementForcesAndSourcesCore.hpp
 
   \brief Implementation of elements on entities.
 
@@ -46,7 +46,7 @@ struct EdgeElementForcesAndSourcesCore : public ForcesAndSourcesCore {
   DataForcesAndSourcesCore dataNoField, dataNoFieldCol;
   std::string meshPositionsFieldName;
 
-  MatrixDouble tAngent_at_GaussPt;
+  MatrixDouble tangentAtGaussPts;
   OpGetHoTangentOnEdge opGetHoTangentOnEdge;
   OpSetCovariantPiolaTransformOnEdge opCovariantTransform;
 
@@ -54,8 +54,8 @@ struct EdgeElementForcesAndSourcesCore : public ForcesAndSourcesCore {
       : ForcesAndSourcesCore(m_field), dataH1(MBEDGE), derivedDataH1(dataH1),
         dataHcurl(MBEDGE), derivedDataHcurl(dataHcurl), dataNoField(MBEDGE),
         dataNoFieldCol(MBEDGE), meshPositionsFieldName("MESH_NODE_POSITIONS"),
-        opGetHoTangentOnEdge(tAngent_at_GaussPt),
-        opCovariantTransform(dIrection, tAngent_at_GaussPt) {}
+        opGetHoTangentOnEdge(tangentAtGaussPts),
+        opCovariantTransform(dIrection, tangentAtGaussPts) {}
 
   double lEngth;
   
@@ -132,12 +132,19 @@ struct EdgeElementForcesAndSourcesCore : public ForcesAndSourcesCore {
           ->coordsAtGaussPts;
     }
 
+    /** \brief get coordinates at Gauss pts.
+     */
+    inline FTensor::Tensor1<double *, 3> getTensor1CoordsAtGaussPts() {
+      double *ptr = &*getCoordsAtGaussPts().data().begin();
+      return FTensor::Tensor1<double *, 3>(ptr, &ptr[1], &ptr[2], 3);
+    }
+
     /**
      * \brief get tangent vector to edge curve at integration points
      */
     inline MatrixDouble &getTangetAtGaussPts() {
       return static_cast<EdgeElementForcesAndSourcesCore *>(ptrFE)
-          ->tAngent_at_GaussPt;
+          ->tangentAtGaussPts;
     }
 
     /**
@@ -190,10 +197,10 @@ DEPRECATED typedef EdgeElementForcesAndSourcesCore
 
 #endif //__EDGEELEMENTFORCESANDSURCESCORE_HPP__
 
-/*****************************************************************************
+/**
  * \defgroup mofem_forces_and_sources_edge_element Edge Element
- *
- * \brief Implementation of general edge element.
+ * 
+ * \brief Implementation of edge element.
  *
  * \ingroup mofem_forces_and_sources
- ******************************************************************************/
+ */

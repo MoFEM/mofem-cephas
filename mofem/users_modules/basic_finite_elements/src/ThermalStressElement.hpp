@@ -219,7 +219,7 @@ struct ThermalStressElement {
     MoFEMFunctionReturnHot(0);
   }
 
-  /// \depracted Do not use this fiction with spelling mistake
+  /// \deprecated Do not use this fiction with spelling mistake
   DEPRECATED inline MoFEMErrorCode addThermalSterssElement(
     const std::string fe_name,const std::string field_name,const std::string thermal_field_name,
     const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS"

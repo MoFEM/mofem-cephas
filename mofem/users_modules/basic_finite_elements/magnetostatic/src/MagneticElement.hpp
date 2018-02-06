@@ -736,11 +736,7 @@ struct MagneticElement {
       FTensor::Index<'i', 3> i;
 
       const int nb_gauss_pts = row_data.getHcurlN().size1();
-      FTensor::Tensor1<double *, 3> t_row_base =
-          row_data.getFTensor1HcurlN<3>();
-
-      // FTensor::Tensor1<double *, 3> t_tangent1 = getTensor1Tangent1AtGaussPt();
-      // FTensor::Tensor1<double *, 3> t_tangent2 = getTensor1Tangent2AtGaussPt();
+      auto t_row_base = row_data.getFTensor1HcurlN<3>();
 
       for (int gg = 0; gg != nb_gauss_pts; gg++) {
 

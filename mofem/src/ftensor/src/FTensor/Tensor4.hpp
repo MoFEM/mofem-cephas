@@ -1,11 +1,12 @@
-/* Declarations for a Tensor4. */
+/* Declarations for Tensor4 */
 
-// #include "Tensor4/Tensor4_number.hpp"
-// #include "Tensor4/Tensor4_numeral.hpp"
+
+
+
+
+#include "Tensor4/Tensor4_value.hpp"
 
 #include "Tensor4/Tensor4_constructor.hpp"
-#include "Tensor4/Tensor4_value.hpp"
 #include "Tensor4/Tensor4_pointer.hpp"
-
 
 #include "Tensor4/Tensor4_Expr.hpp"

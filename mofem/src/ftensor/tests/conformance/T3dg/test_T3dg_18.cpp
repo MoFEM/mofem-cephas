@@ -6,8 +6,8 @@ using namespace std;
 
 void test_T3dg_18(const Tensor1<double,3> &t1_2,
                   Tensor2<double,3,3> &t2_1,
-                  const Tensor3_dg<double,3,3> &t3dg_2,
-                  const Tensor3_dg<double,3,3> &t3dg_3)
+                  const Dg<double,3,3> &t3dg_2,
+                  const Dg<double,3,3> &t3dg_3)
 {
   Index<'i',3> i;
   Index<'j',3> j;
@@ -20,7 +20,7 @@ void test_T3dg_18(const Tensor1<double,3> &t1_2,
   Number<1> N1;
   Number<2> N2;
 
-  /* Tensor3_dg tests */
+  /* Dg tests */
 
   t2_1(i,j)=t3dg_2(i,k,j)*t1_2(k);
   test_for_zero(t2_1(0,0) - (t3dg_2(0,0,0)*t1_2(0)

@@ -112,9 +112,9 @@ namespace PoissonExample {
       // get element volume
       double vol = getVolume();
       // get integration weights
-      FTensor::Tensor0<double*> t_w = getFTensor0IntegrationWeight();
+      auto t_w = getFTensor0IntegrationWeight();
       // get base function gradient on rows
-      FTensor::Tensor1<double*,3> t_row_grad = row_data.getFTensor1DiffN<3>();
+      auto t_row_grad = row_data.getFTensor1DiffN<3>();
       // loop over integration points
       for(int gg = 0;gg!=nbIntegrationPts;gg++) {
         // take into account Jacobean
@@ -125,7 +125,7 @@ namespace PoissonExample {
         // loop over rows base functions
         for(int rr = 0;rr!=nbRows;rr++) {
           // get column base functions gradient at gauss point gg
-          FTensor::Tensor1<double*,3> t_col_grad = col_data.getFTensor1DiffN<3>(gg,0);
+          auto t_col_grad = col_data.getFTensor1DiffN<3>(gg,0);
           // loop over columns
           for(int cc = 0;cc!=nbCols;cc++) {
             // calculate element of local matrix
@@ -146,30 +146,30 @@ namespace PoissonExample {
      * @param  col_data column data (consist base functions on column entity)
      * @return          error code
      */
-    virtual MoFEMErrorCode aSsemble(
-      DataForcesAndSourcesCore::EntData &row_data,DataForcesAndSourcesCore::EntData &col_data
-    ) {
+    virtual MoFEMErrorCode
+    aSsemble(DataForcesAndSourcesCore::EntData &row_data,
+             DataForcesAndSourcesCore::EntData &col_data) {
       MoFEMFunctionBeginHot;
       // get pointer to first global index on row
-      const int* row_indices = &*row_data.getIndices().data().begin();
+      const int *row_indices = &*row_data.getIndices().data().begin();
       // get pointer to first global index on column
-      const int* col_indices = &*col_data.getIndices().data().begin();
-      Mat B = getFEMethod()->ksp_B!=PETSC_NULL? getFEMethod()->ksp_B : getFEMethod()->snes_B;
+      const int *col_indices = &*col_data.getIndices().data().begin();
+      Mat B = getFEMethod()->ksp_B != PETSC_NULL ? getFEMethod()->ksp_B
+                                                 : getFEMethod()->snes_B;
       // assemble local matrix
-      ierr = MatSetValues(
-        B, nbRows,row_indices,nbCols,col_indices,&*locMat.data().begin(),ADD_VALUES
-      ); CHKERRG(ierr);
-      if(!isDiag&&sYmm) {
+      ierr = MatSetValues(B, nbRows, row_indices, nbCols, col_indices,
+                          &*locMat.data().begin(), ADD_VALUES);
+      CHKERRG(ierr);
+      if (!isDiag && sYmm) {
         // if not diagonal term and since global matrix is symmetric assemble
         // transpose term.
         locMat = trans(locMat);
-        ierr = MatSetValues(
-          B,nbCols,col_indices,nbRows,row_indices,&*locMat.data().begin(),ADD_VALUES
-        ); CHKERRG(ierr);
+        ierr = MatSetValues(B, nbCols, col_indices, nbRows, row_indices,
+                            &*locMat.data().begin(), ADD_VALUES);
+        CHKERRG(ierr);
       }
       MoFEMFunctionReturnHot(0);
     }
-
   };
 
   /**
@@ -268,17 +268,19 @@ namespace PoissonExample {
       // get finite element volume
       double vol = getVolume();
       // get integration weights
-      FTensor::Tensor0<double*> t_w = getFTensor0IntegrationWeight();
+      auto t_w = getFTensor0IntegrationWeight();
       // get base functions on entity
-      FTensor::Tensor0<double*> t_v = data.getFTensor0N();
+      auto t_v = data.getFTensor0N();
       // get coordinates at integration points
-      FTensor::Tensor1<double*,3> t_coords = getTensor1CoordsAtGaussPts();
+      auto t_coords = getTensor1CoordsAtGaussPts();
       // loop over all integration points
       for(int gg = 0;gg!=nbIntegrationPts;gg++) {
         // evaluate constant term
-        const double alpha = vol*t_w*fSource(t_coords(NX),t_coords(NY),t_coords(NZ));
+        const double alpha =
+            vol * t_w * fSource(t_coords(NX), t_coords(NY), t_coords(NZ));
         // get element of local vector
-        FTensor::Tensor0<double*> t_a(&*locVec.data().begin());
+        FTensor::Tensor0<FTensor::PackPtr<double *, 1> > t_a(
+            &*locVec.data().begin());
         // loop over base functions
         for(int rr = 0;rr!=nbRows;rr++) {
           // add to local vector source term
@@ -374,18 +376,19 @@ namespace PoissonExample {
       // get area of element
       const double area = getArea();
       // get integration weights
-      FTensor::Tensor0<double*> t_w = getFTensor0IntegrationWeight();
+      auto t_w = getFTensor0IntegrationWeight();
       // get base functions on entity
-      FTensor::Tensor0<double*> t_row = row_data.getFTensor0N();
+      auto t_row = row_data.getFTensor0N();
       // run over integration points
       for(int gg = 0;gg!=nbIntegrationPts;gg++) {
         const double alpha = area*t_w;
         // get element of local matrix
-        FTensor::Tensor0<double*> c(&*locMat.data().begin());
+        FTensor::Tensor0<FTensor::PackPtr<double *, 1> > c(
+            &*locMat.data().begin());
         // run over base functions on rows
         for(int rr = 0;rr!=nbRows;rr++) {
           // get first base functions on column for integration point gg
-          FTensor::Tensor0<double*> t_col = col_data.getFTensor0N(gg,0);
+          auto t_col = col_data.getFTensor0N(gg,0);
           // run over base function on column
           for(int cc = 0;cc!=nbCols;cc++) {
             // integrate element of constrains matrix
@@ -469,17 +472,18 @@ namespace PoissonExample {
       // get face area
       const double area = getArea()*bEta;
       // get integration weight
-      FTensor::Tensor0<double*> t_w = getFTensor0IntegrationWeight();
+      auto t_w = getFTensor0IntegrationWeight();
       // get base function
-      FTensor::Tensor0<double*> t_l = data.getFTensor0N();
+      auto t_l = data.getFTensor0N();
       // get coordinates at integration point
-      FTensor::Tensor1<double*,3> t_coords = getTensor1CoordsAtGaussPts();
+      auto t_coords = getTensor1CoordsAtGaussPts();
       // make loop over integration points
       for(int gg = 0;gg!=nbIntegrationPts;gg++) {
         // evaluate function on boundary and scale it by area and integration weight
         double alpha = area*t_w*fValue(t_coords(NX),t_coords(NY),t_coords(NZ));
         // get element of vector
-        FTensor::Tensor0<double*> t_a(&*locVec.data().begin());
+        FTensor::Tensor0<FTensor::PackPtr<double *, 1> > t_a(
+            &*locVec.data().begin());
         //
         for(int rr = 0;rr!=nbRows;rr++) {
           t_a += alpha*t_l;
@@ -565,13 +569,13 @@ namespace PoissonExample {
       // get volume of element
       const double vol = getVolume();
       // get integration weight
-      FTensor::Tensor0<double*> t_w = getFTensor0IntegrationWeight();
+      auto t_w = getFTensor0IntegrationWeight();
       // get solution at integration point
-      FTensor::Tensor0<double*> t_u = getTensor0FormData(*fieldVals);
+      auto t_u = getTensor0FormData(*fieldVals);
       // get solution at integration point
-      FTensor::Tensor1<double*,3> t_grad = getTensor1FormData<3>(*gradVals);
+      auto t_grad = getTensor1FormData<3>(*gradVals);
       // get coordinates at integration point
-      FTensor::Tensor1<double*,3> t_coords = getTensor1CoordsAtGaussPts();
+      auto t_coords = getTensor1CoordsAtGaussPts();
       // keep exact gradient and error or gradient
       FTensor::Tensor1<double,3> t_exact_grad,t_error_grad;
       // integrate over
@@ -645,13 +649,13 @@ namespace PoissonExample {
       // get element volume
       double vol = getVolume();
       // get integration weights
-      FTensor::Tensor0<double*> t_w = getFTensor0IntegrationWeight();
+      auto t_w = getFTensor0IntegrationWeight();
       // get solution at integration point
-      FTensor::Tensor0<double*> t_u = getTensor0FormData(*fieldVals);
+      auto t_u = getTensor0FormData(*fieldVals);
       // get solution at integration point
-      FTensor::Tensor1<double*,3> t_grad = getTensor1FormData<3>(*gradVals);
+      auto t_grad = getTensor1FormData<3>(*gradVals);
       // get base function gradient on rows
-      FTensor::Tensor1<double*,3> t_row_grad = row_data.getFTensor1DiffN<3>();
+      auto t_row_grad = row_data.getFTensor1DiffN<3>();
       // loop over integration points
       for(int gg = 0;gg!=nbIntegrationPts;gg++) {
         // take into account Jacobian
@@ -660,13 +664,14 @@ namespace PoissonExample {
         FTensor::Tensor1<double,3> t_gamma;
         t_gamma(i) = (alpha*diffA(t_u))*t_grad(i);
         // take fist element to local matrix
-        FTensor::Tensor0<double*> a(&*locMat.data().begin());
+        FTensor::Tensor0<FTensor::PackPtr<double *, 1> > a(
+            &*locMat.data().begin());
         // loop over rows base functions
         for(int rr = 0;rr!=nbRows;rr++) {
           // get column base function
-          FTensor::Tensor0<double*> t_col = col_data.getFTensor0N(gg,0);
+          auto t_col = col_data.getFTensor0N(gg,0);
           // get column base functions gradient at gauss point gg
-          FTensor::Tensor1<double*,3> t_col_grad = col_data.getFTensor1DiffN<3>(gg,0);
+          auto t_col_grad = col_data.getFTensor1DiffN<3>(gg,0);
           // loop over columns
           for(int cc = 0;cc!=nbCols;cc++) {
             // calculate element of local matrix
@@ -724,26 +729,28 @@ namespace PoissonExample {
       // get finite element volume
       double vol = getVolume();
       // get integration weights
-      FTensor::Tensor0<double*> t_w = getFTensor0IntegrationWeight();
+      auto t_w = getFTensor0IntegrationWeight();
       // get solution at integration point
-      FTensor::Tensor0<double*> t_u = getTensor0FormData(*fieldVals);
+      auto t_u = getTensor0FormData(*fieldVals);
       // get solution at integration point
-      FTensor::Tensor1<double*,3> t_grad = getTensor1FormData<3>(*gradVals);
+      auto t_grad = getTensor1FormData<3>(*gradVals);
       // get base functions on entity
-      FTensor::Tensor0<double*> t_v = data.getFTensor0N();
+      auto t_v = data.getFTensor0N();
       // get base function gradient on rows
-      FTensor::Tensor1<double*,3> t_v_grad = data.getFTensor1DiffN<3>();
+      auto t_v_grad = data.getFTensor1DiffN<3>();
       // get coordinates at integration points
-      FTensor::Tensor1<double*,3> t_coords = getTensor1CoordsAtGaussPts();
+      auto t_coords = getTensor1CoordsAtGaussPts();
       // loop over all integration points
       for(int gg = 0;gg!=nbIntegrationPts;gg++) {
         // evaluate constant term
         const double alpha = vol*t_w;
-        const double source_term = alpha*fSource(t_coords(NX),t_coords(NY),t_coords(NZ));
+        const double source_term =
+            alpha * fSource(t_coords(NX), t_coords(NY), t_coords(NZ));
         FTensor::Tensor1<double,3> grad_term;
         grad_term(i) = (alpha*A(t_u))*t_grad(i);
         // get element of local vector
-        FTensor::Tensor0<double*> t_a(&*locVec.data().begin());
+        FTensor::Tensor0<FTensor::PackPtr<double *, 1> > t_a(
+            &*locVec.data().begin());
         // loop over base functions
         for(int rr = 0;rr!=nbRows;rr++) {
           // add to local vector source term
@@ -792,19 +799,20 @@ namespace PoissonExample {
       // get face area
       const double area = getArea()*bEta;
       // get integration weight
-      FTensor::Tensor0<double*> t_w = getFTensor0IntegrationWeight();
+      auto t_w = getFTensor0IntegrationWeight();
       // get base function
-      FTensor::Tensor0<double*> t_l = data.getFTensor0N();
+      auto t_l = data.getFTensor0N();
       // get solution at integration point
-      FTensor::Tensor0<double*> t_u = getTensor0FormData(*fieldVals);
+      auto t_u = getTensor0FormData(*fieldVals);
       // get coordinates at integration point
-      FTensor::Tensor1<double*,3> t_coords = getTensor1CoordsAtGaussPts();
+      auto t_coords = getTensor1CoordsAtGaussPts();
       // make loop over integration points
       for(int gg = 0;gg!=nbIntegrationPts;gg++) {
         // evaluate function on boundary and scale it by area and integration weight
         double alpha = area*t_w;
         // get element of vector
-        FTensor::Tensor0<double*> t_a(&*locVec.data().begin());
+        FTensor::Tensor0<FTensor::PackPtr<double *, 1> > t_a(
+            &*locVec.data().begin());
         for(int rr = 0;rr!=nbRows;rr++) {
           t_a += alpha*t_l*(t_u-fValue(t_coords(NX),t_coords(NY),t_coords(NZ)));
           ++t_a;
@@ -844,17 +852,18 @@ namespace PoissonExample {
       // get face area
       const double area = getArea()*bEta;
       // get integration weight
-      FTensor::Tensor0<double*> t_w = getFTensor0IntegrationWeight();
+      auto t_w = getFTensor0IntegrationWeight();
       // get base function
-      FTensor::Tensor0<double*> t_u = data.getFTensor0N();
+      auto t_u = data.getFTensor0N();
       // get solution at integration point
-      FTensor::Tensor0<double*> t_lambda = getTensor0FormData(*lambdaVals);
+      auto t_lambda = getTensor0FormData(*lambdaVals);
       // make loop over integration points
       for(int gg = 0;gg!=nbIntegrationPts;gg++) {
         // evaluate function on boundary and scale it by area and integration weight
         double alpha = area*t_w;
         // get element of vector
-        FTensor::Tensor0<double*> t_a(&*locVec.data().begin());
+        FTensor::Tensor0<FTensor::PackPtr<double *, 1> > t_a(
+            &*locVec.data().begin());
         for(int rr = 0;rr!=nbRows;rr++) {
           t_a += alpha*t_u*t_lambda;
           ++t_a;
@@ -929,10 +938,14 @@ namespace PoissonExample {
       MoFEMFunctionBeginHot;
 
       // Create elements element instances
-      domain_lhs_fe = boost::shared_ptr<ForcesAndSourcesCore>(new VolumeElementForcesAndSourcesCore(mField));
-      boundary_lhs_fe = boost::shared_ptr<ForcesAndSourcesCore>(new FaceElementForcesAndSourcesCore(mField));
-      domain_rhs_fe = boost::shared_ptr<ForcesAndSourcesCore>(new VolumeElementForcesAndSourcesCore(mField));
-      boundary_rhs_fe = boost::shared_ptr<ForcesAndSourcesCore>(new FaceElementForcesAndSourcesCore(mField));
+      domain_lhs_fe = boost::shared_ptr<ForcesAndSourcesCore>(
+          new VolumeElementForcesAndSourcesCore(mField));
+      boundary_lhs_fe = boost::shared_ptr<ForcesAndSourcesCore>(
+          new FaceElementForcesAndSourcesCore(mField));
+      domain_rhs_fe = boost::shared_ptr<ForcesAndSourcesCore>(
+          new VolumeElementForcesAndSourcesCore(mField));
+      boundary_rhs_fe = boost::shared_ptr<ForcesAndSourcesCore>(
+          new FaceElementForcesAndSourcesCore(mField));
 
       // Set integration rule to elements instances
       domain_lhs_fe->getRuleHook = VolRule();

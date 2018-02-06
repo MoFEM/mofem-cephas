@@ -6,8 +6,8 @@ using namespace std;
 
 void test_T3dg_37(const Tensor2<double,3,3> &t2_2,
 		  const Tensor2_symmetric<double,3> &t2s_2,
-		  const Tensor3_dg<double,3,3> &t3dg_2,
-		  const Tensor3_dg<double,3,3> &t3dg_3)
+		  const Dg<double,3,3> &t3dg_2,
+		  const Dg<double,3,3> &t3dg_3)
 {
   Index<'i',3> i;
   Index<'j',3> j;

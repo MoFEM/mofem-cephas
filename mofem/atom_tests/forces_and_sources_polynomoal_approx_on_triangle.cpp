@@ -71,7 +71,7 @@ struct OpAssembleMatAndVec: public MoFEM::FaceElementForcesAndSourcesCore::UserD
     const int nb_gauss_pts = data.getN().size1();
     nF.resize(nb_dofs,false);
     nF.clear();
-    FTensor::Tensor1<double*,3> t_base_fun = data.getFTensor1HcurlN<3>();
+    auto t_base_fun = data.getFTensor1HcurlN<3>();
     for(int gg = 0;gg!=nb_gauss_pts;gg++) {
       const double val = getArea()*getGaussPts()(2,gg);
       for(int bb = 0;bb!=nb_dofs;bb++) {
@@ -105,11 +105,11 @@ struct OpAssembleMatAndVec: public MoFEM::FaceElementForcesAndSourcesCore::UserD
     nA.resize(nb_dofs_row,nb_dofs_col,false);
     nA.clear();
     const int nb_gauss_pts = row_data.getN().size1();
-    FTensor::Tensor1<double*,3> t_base_row = row_data.getFTensor1HcurlN<3>();
+    auto t_base_row = row_data.getFTensor1HcurlN<3>();
     for(int gg = 0;gg!=nb_gauss_pts;gg++) {
       const double val = getArea()*getGaussPts()(2,gg);
       for(int rr = 0;rr!=nb_dofs_row;rr++) {
-        FTensor::Tensor1<double*,3> t_base_col = col_data.getFTensor1HcurlN<3>(gg,0);
+        auto t_base_col = col_data.getFTensor1HcurlN<3>(gg,0);
         for(int cc = 0;cc!=nb_dofs_col;cc++) {
           nA(rr,cc) += val*t_base_row(i)*t_base_col(i);
           ++t_base_col;
@@ -154,12 +154,12 @@ struct OpValsDiffVals: public MoFEM::FaceElementForcesAndSourcesCore::UserDataOp
       vAls.clear();
       diffVals.clear();
     }
-    FTensor::Tensor1<double*,3> t_vals = getTensor1FormData<3>(vAls);
-    FTensor::Tensor2<double*,3,2> t_diff_vals = getTensor2FormData<3,2>(diffVals);
-    FTensor::Tensor1<double*,3> t_base_fun = data.getFTensor1HcurlN<3>();
-    FTensor::Tensor2<double*,3,2> t_diff_base_fun = data.getFTensor2DiffHcurlN<3,2>();
+    auto t_vals = getTensor1FormData<3>(vAls);
+    auto t_diff_vals = getTensor2FormData<3,2>(diffVals);
+    auto t_base_fun = data.getFTensor1HcurlN<3>();
+    auto t_diff_base_fun = data.getFTensor2DiffHcurlN<3,2>();
     for(int gg = 0;gg!=nb_gauss_pts;gg++) {
-      FTensor::Tensor0<double*> t_data = data.getFTensor0FieldData();
+      auto t_data = data.getFTensor0FieldData();
       for(int bb = 0;bb!=nb_dofs;bb++) {
         t_vals(i) += t_base_fun(i)*t_data;
         t_diff_vals(i,j) += t_diff_base_fun(i,j)*t_data;
@@ -195,8 +195,8 @@ struct OpCheckValsDiffVals: public MoFEM::FaceElementForcesAndSourcesCore::UserD
     const double eps = 1e-6;
     if(type == MBEDGE && side == 0) {
       const int nb_gauss_pts = data.getN().size1();
-      FTensor::Tensor1<double*,3> t_vals = getTensor1FormData<3>(vAls);
-      FTensor::Tensor2<double*,3,2> t_diff_vals = getTensor2FormData<3,2>(diffVals);
+      auto t_vals = getTensor1FormData<3>(vAls);
+      auto t_diff_vals = getTensor2FormData<3,2>(diffVals);
       for(int gg = 0;gg!=nb_gauss_pts;gg++) {
         const double x = getCoordsAtGaussPts()(gg,0);
         const double y = getCoordsAtGaussPts()(gg,1);

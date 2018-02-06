@@ -20,7 +20,7 @@ void test_T4ddg_03(Tensor2<double,3,3> &t2_1,
   Number<1> N1;
   Number<2> N2;
 
-  Tensor4_ddg<double,3,3> t4ddg_1, t4ddg_2;
+  Ddg<double,3,3> t4ddg_1, t4ddg_2;
 
   t4ddg_2(i,k,j,l)=t2s_2(i,k)*t2s_3(j,l);
   t2_1(i,k)=t4ddg_2(i,j,k,l)*t2s_2(j,l);
@@ -1704,7 +1704,7 @@ void test_T4ddg_03(Tensor2<double,3,3> &t2_1,
 		,"T2s(k,l)%T4ddg(i,j,k,l)(2,2,2,2)");
 
   /* I originally put these declarations for unknown reasons, but they
-     won't work because the result is not a Tensor4_ddg.  The
+     won't work because the result is not a Ddg.  The
      multiplication messes up the symmetries. */
 
 

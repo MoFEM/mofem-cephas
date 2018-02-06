@@ -10,7 +10,7 @@ void test_T4ddg_04(const Tensor1<double,3> &t1_2,
                    Tensor2_symmetric<double,3> &t2s_1,
                    const Tensor2_symmetric<double,3> &t2s_2,
                    const Tensor2_symmetric<double,3> &t2s_3,
-                   Tensor3_dg<double,3,3> &t3dg_1)
+                   Dg<double,3,3> &t3dg_1)
 {
   Index<'i',3> i;
   Index<'j',3> j;
@@ -23,7 +23,7 @@ void test_T4ddg_04(const Tensor1<double,3> &t1_2,
   Number<1> N1;
   Number<2> N2;
 
-  Tensor4_ddg<double,3,3> t4ddg_2;
+  Ddg<double,3,3> t4ddg_2;
 
   t4ddg_2(i,j,l,m)=t2s_2(i,j)*t2s_2(l,m);
   t2s_1(i,k)=(t4ddg_2(i,j,k,l) ^ t2s_2(j,l));

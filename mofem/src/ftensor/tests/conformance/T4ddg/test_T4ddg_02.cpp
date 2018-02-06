@@ -17,7 +17,7 @@ void test_T4ddg_02(const Tensor2_symmetric<double,3> &t2s_2)
   Number<1> N1;
   Number<2> N2;
 
-  Tensor4_ddg<double,3,3> t4ddg_1, t4ddg_2, t4ddg_3;
+  Ddg<double,3,3> t4ddg_1, t4ddg_2, t4ddg_3;
 
   t4ddg_2(i,k,j,l)=t2s_2(i,k)*t2s_2(j,l);
   t4ddg_3(i,l,j,k)=t2s_2(i,l)*t2s_2(j,k);
