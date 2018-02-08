@@ -640,8 +640,9 @@ struct EdgeSlidingConstrains: public GenericSliding {
                                  MB_TAG_CREAT | MB_TAG_SPARSE, def_val);
       CHKERR moab.tag_get_handle("EDGE_BASE1", 3, MB_TYPE_DOUBLE, th1,
                                  MB_TAG_CREAT | MB_TAG_SPARSE, def_val);
+      int def_int_val[] = {-1};
       CHKERR moab.tag_get_handle("PATCH_NUMBER", 1, MB_TYPE_INTEGER, th2,
-                                 MB_TAG_CREAT | MB_TAG_SPARSE, def_val);
+                                 MB_TAG_CREAT | MB_TAG_SPARSE, def_int_val);
       MoFEMFunctionReturn(0);
     }
 
@@ -649,50 +650,52 @@ struct EdgeSlidingConstrains: public GenericSliding {
                                          Range tris) {
       MoFEMFunctionBegin;
 
-      // auto get_edges = [&](const Range &ents) {
-      //   Range edges;
-      //   CHKERR moab.get_adjacencies(ents, 1, false, edges, true,
-      //                               moab::Interface::UNION);
-      //   return edges;
-      // };
+      auto get_edges = [&](const Range &ents) {
+        Range edges;
+        CHKERR moab.get_adjacencies(ents, 1, false, edges,
+                                    moab::Interface::UNION);
+        return edges;
+      };
 
-      // auto get_face_adj = [&, get_edges](const Range &faces) {
-      //   Range adj_faces;
-      //   CHKERR mob.get_adjacencies(subtract(get_edges(faces), edges), 2, false,
-      //                              adj_faces, moab::Interface::UNION);
-      //   return intersec(adj_faces, tris);
-      // };
+      auto get_face_adj = [&, get_edges](const Range &faces) {
+        Range adj_faces;
+        CHKERR moab.get_adjacencies(subtract(get_edges(faces), edges), 2, false,
+                                   adj_faces, moab::Interface::UNION);
+        return intersect(adj_faces, tris);
+      };
 
-      // auto get_patch = [&, get_face_adj](const EntityHandle face) {
-      //   Range patch_ents;
-      //   patch_ents.insert(face);
-      //   unsigned int nb0;
-      //   do {
-      //     n0 = patch_ents.size();
-      //     patch_ents.merge(get_face_adj(patch_ents));
-      //   } while(n0 != patch_ents.size());
-      //   return path_ents;
-      // };
+      auto get_patch = [&, get_face_adj](const EntityHandle face) {
+        Range patch_ents;
+        patch_ents.insert(face);
+        unsigned int nb0;
+        do {
+          nb0 = patch_ents.size();
+          patch_ents.merge(get_face_adj(patch_ents));
+        } while(nb0 != patch_ents.size());
+        return patch_ents;
+      };
 
-      // auto get_pathes = [&]() {
-      //   std::vector<Range> patches;
-      //   while (!tris.empty()) {
-      //     patches.push_back(get_patch(tris[0]));
-      //     tris = subtract(tris.patches.back());
-      //   }
-      //   return patches;
-      // };
+      auto get_patches = [&]() {
+        std::vector<Range> patches;
+        while (!tris.empty()) {
+          patches.push_back(get_patch(tris[0]));
+          tris = subtract(tris,patches.back());
+        }
+        return patches;
+      };
 
-      // Tag th0, th1, th2;
-      // CHKERR createTag(moab, th0, th1, th2);
+      Tag th0, th1, th2;
+      CHKERR createTag(moab, th0, th1, th2);
 
-      // auto patches = get_patches();
-      // int pp = 0;
-      // for(auto patch : patches) {
-      //   std::vector<int> tags_vals(patch.size(),pp);
-      //   CHKERR moab.tag_set_data(th2,patch,&tags_vals);
-      //   ++pp;
-      // }
+      auto patches = get_patches();
+      int pp = 0;
+      for(auto patch : patches) {
+        // cerr << "pp: " << pp << endl;
+        // cerr << patch << endl;
+        std::vector<int> tags_vals(patch.size(),pp);
+        CHKERR moab.tag_set_data(th2, patch, &*tags_vals.begin());
+        ++pp;
+      }
 
       MoFEMFunctionReturn(0);
     }
@@ -701,6 +704,7 @@ struct EdgeSlidingConstrains: public GenericSliding {
       MoFEMFunctionBegin;
       Tag th0, th1, th2;
       CHKERR createTag(moab, th0, th1, th2);
+      CHKERR numberSurfaces(moab,edges,tris);
       for (auto edge : edges) {
         Range adj_faces;
         CHKERR moab.get_adjacencies(&edge, 1, 2, false, adj_faces);
@@ -734,19 +738,21 @@ struct EdgeSlidingConstrains: public GenericSliding {
         };
         calculate_normals();
 
-        auto get_min_max = [](auto v) {
-          return std::pair<int, int>(
-              std::distance(v.begin(), std::max_element(v.begin(), v.end())),
-              std::distance(v.begin(), std::min_element(v.begin(), v.end())));
+        auto get_patch_number = [&]() {
+          std::vector<int> p = {0, 0};
+          CHKERR moab.tag_get_data(th2,adj_faces,&*p.begin());
+          return p;
         };
-        auto get_extreme = [](auto p) { return std::max(p.first, p.second); };
-        if(get_extreme(get_min_max(v[0])) > get_extreme(get_min_max(v[1]))) {
-          v[0].swap(v[1]);
-        }
 
-        auto get_tensor = []() {
-          return FTensor::Tensor1<double, 3>(); };
-        auto t_cross = get_tensor();
+        auto order_normals = [&, get_patch_number]() {
+          auto p = get_patch_number();
+          if (p[0] < p[1]) {
+            v[0].swap(v[1]);
+          }
+        };
+        order_normals();
+
+        auto t_cross = FTensor::Tensor1<double, 3>();
         auto t_n0 = get_tensor_from_vec(v[0]);
         auto t_n1 = get_tensor_from_vec(v[1]);
 
@@ -756,7 +762,7 @@ struct EdgeSlidingConstrains: public GenericSliding {
         VectorDouble3 &v0 = v[0];
         VectorDouble3 &v1 = v[1];
         CHKERR moab.tag_set_data(th0, &edge, 1, &v0[0]);
-        CHKERR moab.tag_set_data(th1,&edge,1,&v1[0]);
+        CHKERR moab.tag_set_data(th1, &edge, 1, &v1[0]);
       }
       MoFEMFunctionReturn(0);
     }
