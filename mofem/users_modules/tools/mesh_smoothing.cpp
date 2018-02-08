@@ -319,6 +319,10 @@ int main(int argc, char *argv[]) {
           CHKERR edgeConstrain->setOperators(EDGE_CONSTRAINS_TAG, edges,
                                              skin_faces, "LAMBDA_EDGE",
                                              "MESH_NODE_POSITIONS");
+
+          // CHKERR EdgeSlidingConstrains::CalculateEdgeBase::saveEdges(
+              // mField.get_moab(), "out_edges.vtk", edges);
+
         }
         MoFEMFunctionReturn(0);
       }
