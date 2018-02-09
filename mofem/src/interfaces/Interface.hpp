@@ -534,8 +534,8 @@ struct CoreInterface : public UnknownInterface {
   * Otherwise could lead to deadlock.
   *
   * Example \code
-  ierr = mField.add_finite_element("ELASTIC"); CHKERRG(ierr);
-  ierr = mField.add_finite_element("PLASTIC"); CHKERRG(ierr);
+  CHKERR mField.add_finite_element("ELASTIC"); 
+  CHKERR mField.add_finite_element("PLASTIC"); 
   \endcode
   */
   virtual MoFEMErrorCode add_finite_element(const std::string &fe_name,
@@ -1232,13 +1232,13 @@ struct CoreInterface : public UnknownInterface {
   * This allows for tag reduction or tag exchange, f.e.
 
   \code
-  ierr = m_field.resolve_shared_ents(problem_ptr,"SHELL_ELEMENT");
-  CHKERRG(ierr); Tag th; rval =
-  mField.get_moab().tag_get_handle("ADAPT_ORDER",th); CHKERRQ_MOAB(rval);
+  CHKERR m_field.resolve_shared_ents(problem_ptr,"SHELL_ELEMENT");
+  Tag th; 
+  CHKERR mField.get_moab().tag_get_handle("ADAPT_ORDER",th); CHKERRQ_MOAB(rval);
   ParallelComm* pcomm =
   ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
-  // rval = pcomm->reduce_tags(th,MPI_SUM,prisms);
-  rval = pcomm->exchange_tags(th,prisms);
+  // CHKERR pcomm->reduce_tags(th,MPI_SUM,prisms);
+  CHKERR pcomm->exchange_tags(th,prisms);
   \endcode
 
   *
