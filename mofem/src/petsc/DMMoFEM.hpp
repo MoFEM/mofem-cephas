@@ -140,6 +140,10 @@ PetscErrorCode DMMoFEMGetProblemFiniteElementLayout(DM dm,const char fe_name[],P
 /**
   * \brief add element to dm
   * \ingroup dm
+  *
+  * \note add_file is a collective, should be executed on all processors.
+  * Otherwise could lead to deadlock.
+  *
   */
 PetscErrorCode DMMoFEMAddElement(DM dm,const char fe_name[]);
 
