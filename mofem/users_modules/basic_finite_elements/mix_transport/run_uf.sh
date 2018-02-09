@@ -75,3 +75,7 @@ mpirun --allow-run-as-root -np $NBPROCS ./unsaturated_transport \
 -my_max_post_proc_ref_level 0 2>&1 | tee log && \
 rm -f out_*.vtk && \
 ../nonlinear_elasticity/do_vtk.sh out_*h5m
+
+# Will exit with status of last command.
+
+exit $?
