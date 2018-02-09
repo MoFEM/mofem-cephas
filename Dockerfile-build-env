@@ -64,7 +64,7 @@ RUN cd /opt \
 && cd /opt && rm -rf cmake-3.8.2*
 
 # Set petesc version
-ENV PETSC_VERSION 3.7.6
+ENV PETSC_VERSION 3.7.7
 ENV PETSC_ARCH arch-linux2-c-opt
 ENV LD_LIBRARY_PATH $LD_LIBRARY_PATH:/opt/petsc/arch-linux2-c-opt/lib
 ENV MESHKIT_DIR /opt/petsc/arch-linux2-c-opt/

@@ -632,76 +632,153 @@ struct EdgeSlidingConstrains: public GenericSliding {
 
   struct CalculateEdgeBase {
 
-    static MoFEMErrorCode createTag(moab::Interface &moab, Tag &th0, Tag &th1) {
+    static MoFEMErrorCode createTag(moab::Interface &moab, Tag &th0, Tag &th1,
+                                    Tag &th2) {
       MoFEMFunctionBegin;
-      int def_val[] = {0, 0, 0};
+      double def_val[] = {0, 0, 0};
       CHKERR moab.tag_get_handle("EDGE_BASE0", 3, MB_TYPE_DOUBLE, th0,
                                  MB_TAG_CREAT | MB_TAG_SPARSE, def_val);
       CHKERR moab.tag_get_handle("EDGE_BASE1", 3, MB_TYPE_DOUBLE, th1,
                                  MB_TAG_CREAT | MB_TAG_SPARSE, def_val);
+      int def_int_val[] = {-1};
+      CHKERR moab.tag_get_handle("PATCH_NUMBER", 1, MB_TYPE_INTEGER, th2,
+                                 MB_TAG_CREAT | MB_TAG_SPARSE, def_int_val);
+      MoFEMFunctionReturn(0);
+    }
+
+    static MoFEMErrorCode numberSurfaces(moab::Interface &moab, Range edges,
+                                         Range tris) {
+      MoFEMFunctionBegin;
+
+      auto get_edges = [&](const Range &ents) {
+        Range edges;
+        CHKERR moab.get_adjacencies(ents, 1, false, edges,
+                                    moab::Interface::UNION);
+        return edges;
+      };
+
+      auto get_face_adj = [&, get_edges](const Range &faces) {
+        Range adj_faces;
+        CHKERR moab.get_adjacencies(subtract(get_edges(faces), edges), 2, false,
+                                   adj_faces, moab::Interface::UNION);
+        return intersect(adj_faces, tris);
+      };
+
+      auto get_patch = [&, get_face_adj](const EntityHandle face) {
+        Range patch_ents;
+        patch_ents.insert(face);
+        unsigned int nb0;
+        do {
+          nb0 = patch_ents.size();
+          patch_ents.merge(get_face_adj(patch_ents));
+        } while(nb0 != patch_ents.size());
+        return patch_ents;
+      };
+
+      auto get_patches = [&]() {
+        std::vector<Range> patches;
+        while (!tris.empty()) {
+          patches.push_back(get_patch(tris[0]));
+          tris = subtract(tris,patches.back());
+        }
+        return patches;
+      };
+
+      Tag th0, th1, th2;
+      CHKERR createTag(moab, th0, th1, th2);
+
+      auto patches = get_patches();
+      int pp = 0;
+      for(auto patch : patches) {
+        // cerr << "pp: " << pp << endl;
+        // cerr << patch << endl;
+        std::vector<int> tags_vals(patch.size(),pp);
+        CHKERR moab.tag_set_data(th2, patch, &*tags_vals.begin());
+        ++pp;
+      }
+
       MoFEMFunctionReturn(0);
     }
 
     static MoFEMErrorCode setTags(moab::Interface &moab, Range edges, Range tris) {
       MoFEMFunctionBegin;
-      Tag th0, th1;
-      CHKERR createTag(moab, th0, th1);
-      for (Range::iterator eit = edges.begin(); eit != edges.end(); ++eit) {
+      Tag th0, th1, th2;
+      CHKERR createTag(moab, th0, th1, th2);
+      CHKERR numberSurfaces(moab,edges,tris);
+      for (auto edge : edges) {
         Range adj_faces;
-        CHKERR moab.get_adjacencies(&*eit, 1, 2, false, adj_faces);
+        CHKERR moab.get_adjacencies(&edge, 1, 2, false, adj_faces);
         adj_faces = intersect(adj_faces, tris);
         if(adj_faces.size()!=2) {
-          SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY,
-                  "Should be 2 faces adjacent to edge");
+          SETERRQ1(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY,
+                  "Should be 2 faces adjacent to edge but is %d",
+                  adj_faces.size());
         }
         VectorDouble3 v[2] = { VectorDouble3(3), VectorDouble3(3) };
-        int ff = 0;
-        for (Range::iterator fit = adj_faces.begin(); fit != adj_faces.end();
-             ++fit, ++ff) {
-          double &x = (v[ff])[0];
-          double &y = (v[ff])[1];
-          double &z = (v[ff])[2];
-          moab::Util::normal(&moab, *fit, x, y, z);
-          double l = sqrt(x * x + y * y + z * z);
-          x /= l;
-          y /= l;
-          z /= l;
-        }
+        auto get_tensor_from_vec = [](VectorDouble3 &v) {
+          return FTensor::Tensor1<FTensor::PackPtr<double *, 1>, 3>(&v[0], &v[1],
+                                                             &v[2]);
+        };
 
-        VectorDouble3 cross(3);
+        FTensor::Index<'i',3> i;
+        FTensor::Index<'j',3> j;
+        FTensor::Index<'k',3> k;
+
+        auto calculate_normals = [&, get_tensor_from_vec]() {
+          int ff = 0;
+          for (auto face : adj_faces) {
+            double &x = (v[ff])[0];
+            double &y = (v[ff])[1];
+            double &z = (v[ff])[2];
+            moab::Util::normal(&moab, face, x, y, z);
+            auto t_n = get_tensor_from_vec(v[ff]);
+            t_n(i) /= sqrt(t_n(i) * t_n(i));
+            ++ff;
+          }
+        };
+        calculate_normals();
+
+        auto get_patch_number = [&]() {
+          std::vector<int> p = {0, 0};
+          CHKERR moab.tag_get_data(th2,adj_faces,&*p.begin());
+          return p;
+        };
+
+        auto order_normals = [&, get_patch_number]() {
+          auto p = get_patch_number();
+          if (p[0] < p[1]) {
+            v[0].swap(v[1]);
+          }
+        };
+        order_normals();
+
+        auto t_cross = FTensor::Tensor1<double, 3>();
+        auto t_n0 = get_tensor_from_vec(v[0]);
+        auto t_n1 = get_tensor_from_vec(v[1]);
+
+        t_cross(k) = FTensor::cross(t_n0(i), t_n1(j), k);
+        t_n1(k) = FTensor::cross(t_n0(i), t_cross(j), k);
+
         VectorDouble3 &v0 = v[0];
         VectorDouble3 &v1 = v[1];
-        cross[0] = v0[1] * v1[2] - v0[2] * v1[1];
-        cross[1] = v0[2] * v1[0] - v0[0] * v1[2];
-        cross[2] = v0[0] * v1[1] - v0[1] * v1[0];
-        v1[0] = v0[1] * cross[2] - v0[2] * cross[1];
-        v1[1] = v0[2] * cross[0] - v0[0] * cross[2];
-        v1[2] = v0[0] * cross[1] - v0[1] * cross[0];
-
-        const double tol = 1e-12;
-        if ((v1[0] - v0[0]) > tol) {
-          v1.swap(v0);
-        } else if ((v1[1] - v0[1]) > tol) {
-          v1.swap(v0);
-        } else if ((v1[1] - v0[1]) > tol) {
-          v1.swap(v0);
-        }
-
-        CHKERR moab.tag_set_data(th0,&*eit,1,&v0[0]);
-        CHKERR moab.tag_set_data(th1,&*eit,1,&v1[0]);
+        CHKERR moab.tag_set_data(th0, &edge, 1, &v0[0]);
+        CHKERR moab.tag_set_data(th1, &edge, 1, &v1[0]);
       }
       MoFEMFunctionReturn(0);
     }
 
     static MoFEMErrorCode saveEdges(moab::Interface &moab, std::string name,
-                             Range edges) {
+                             Range edges, Range *faces = nullptr) {
       MoFEMFunctionBegin;
       EntityHandle meshset;
-      Tag ths[2];
-      CHKERR createTag(moab, ths[0], ths[1]);
+      Tag ths[3];
+      CHKERR createTag(moab, ths[0], ths[1], ths[2]);
       CHKERR moab.create_meshset(MESHSET_SET, meshset);
       CHKERR moab.add_entities(meshset, edges);
-      CHKERR moab.write_file(name.c_str(), "VTK", "", &meshset, 1, ths, 2);
+      if(faces != nullptr) {
+        CHKERR moab.add_entities(meshset, *faces);
+      }
+      CHKERR moab.write_file(name.c_str(), "VTK", "", &meshset, 1, ths, 3);
       CHKERR moab.delete_entities(&meshset, 1);
       MoFEMFunctionReturn(0);
     }
@@ -792,9 +869,9 @@ struct EdgeSlidingConstrains: public GenericSliding {
       if (type != MBVERTEX)
         MoFEMFunctionReturnHot(0);
 
-      Tag th0, th1;
+      Tag th0, th1, th2;
       CHKERR CalculateEdgeBase::createTag(getEdgeFE()->mField.get_moab(), th0,
-                                          th1);
+                                          th1, th2);
       FTensor::Tensor1<double, 3> t_edge_base0, t_edge_base1;
       EntityHandle fe_ent = getFEEntityHandle();
       CHKERR getEdgeFE()->mField.get_moab().tag_get_data(th0, &fe_ent, 1,
@@ -934,9 +1011,17 @@ struct EdgeSlidingConstrains: public GenericSliding {
                               const std::string lagrange_multipliers_field_name,
                               const std::string material_field_name) {
     MoFEMFunctionBegin;
-
     CHKERR EdgeSlidingConstrains::CalculateEdgeBase::setTags(mField.get_moab(),
                                                              edges, faces);
+    CHKERR setOperators(tag, lagrange_multipliers_field_name,
+                        material_field_name);
+    MoFEMFunctionReturn(0);
+  }
+
+  MoFEMErrorCode setOperators(int tag,
+                              const std::string lagrange_multipliers_field_name,
+                              const std::string material_field_name) {
+    MoFEMFunctionBegin;
 
     boost::shared_ptr<VectorDouble> active_variables_ptr(
         new VectorDouble(4 + 6));
@@ -949,9 +1034,9 @@ struct EdgeSlidingConstrains: public GenericSliding {
         lagrange_multipliers_field_name, active_variables_ptr));
     feRhs.getOpPtrVector().push_back(new OpGetActiveDofsPositions<4>(
         material_field_name, active_variables_ptr));
-    feRhs.getOpPtrVector().push_back(new OpJacobian(
-        tag, lagrange_multipliers_field_name, active_variables_ptr, results_ptr,
-        jacobian_ptr, false));
+    feRhs.getOpPtrVector().push_back(
+        new OpJacobian(tag, lagrange_multipliers_field_name,
+                       active_variables_ptr, results_ptr, jacobian_ptr, false));
     feRhs.getOpPtrVector().push_back(
         new OpAssembleRhs<4, 6>(lagrange_multipliers_field_name, results_ptr));
     feRhs.getOpPtrVector().push_back(
@@ -963,9 +1048,9 @@ struct EdgeSlidingConstrains: public GenericSliding {
         lagrange_multipliers_field_name, active_variables_ptr));
     feLhs.getOpPtrVector().push_back(new OpGetActiveDofsPositions<4>(
         material_field_name, active_variables_ptr));
-    feLhs.getOpPtrVector().push_back(new OpJacobian(
-        tag, lagrange_multipliers_field_name, active_variables_ptr, results_ptr,
-        jacobian_ptr, true));
+    feLhs.getOpPtrVector().push_back(
+        new OpJacobian(tag, lagrange_multipliers_field_name,
+                       active_variables_ptr, results_ptr, jacobian_ptr, true));
     feLhs.getOpPtrVector().push_back(new OpAssembleLhs<4, 6>(
         lagrange_multipliers_field_name, material_field_name, jacobian_ptr));
     feLhs.getOpPtrVector().push_back(new OpAssembleLhs<4, 6>(

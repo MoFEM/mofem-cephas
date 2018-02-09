@@ -248,6 +248,10 @@ struct CoreInterface : public UnknownInterface {
 
   /**
    * \brief Add field
+   *
+   * \note add_file is a collective, should be executed on all processors.
+   * Otherwise could lead to deadlock.
+   *
    * @param  name              name of the filed
    * @param  space             space (L2,H1,Hdiv,Hcurl)
    * @param  base              approximation base, see FieldApproximationBase
@@ -271,6 +275,8 @@ struct CoreInterface : public UnknownInterface {
    * \brief Add entities to field meshset
    * \ingroup mofem_field
    *
+   * \note not collective
+   * 
    * The lower dimension entities are added depending on the space type
    *
    * @param  ents range of entities
@@ -288,6 +294,8 @@ struct CoreInterface : public UnknownInterface {
    * \brief Add entities to field meshset
    * \ingroup mofem_field
    *
+   * \note not collective
+   * 
    * The lower dimension entities are added depending on the space type
    *
    * @param  ents range of entities
@@ -304,6 +312,8 @@ struct CoreInterface : public UnknownInterface {
   /**
    * \brief Add entities to field meshset
    * \ingroup mofem_field
+   *
+   * \not collective
    *
    * The lower dimension entities are added depending on the space type
    *
@@ -323,6 +333,8 @@ struct CoreInterface : public UnknownInterface {
   /**
    * \brief Add entities to field meshset
    * \ingroup mofem_field
+   * 
+   * \note not collective
    *
    * The lower dimension entities are added depending on the space type
    *
@@ -342,6 +354,8 @@ struct CoreInterface : public UnknownInterface {
   /**
    * \brief remove entities from field
    * \ingroup mofem_field
+   * 
+   * \note not collective
    *
    */
   virtual MoFEMErrorCode
@@ -351,6 +365,8 @@ struct CoreInterface : public UnknownInterface {
   /**
    * \brief remove entities from field
    * \ingroup mofem_field
+   * 
+   * \note not collective
    *
    */
   virtual MoFEMErrorCode remove_ents_from_field(const std::string &name,
@@ -361,6 +377,8 @@ struct CoreInterface : public UnknownInterface {
   /**
    * \brief remove entities from field
    * \ingroup mofem_field
+   * 
+   * \note not collective
    *
    */
   virtual MoFEMErrorCode remove_ents_from_field(const std::string &name,
@@ -370,6 +388,8 @@ struct CoreInterface : public UnknownInterface {
   /**
    * \brief remove entities from all fields
    * \ingroup mofem_field
+   * 
+   * \note not collective
    *
    */
   virtual MoFEMErrorCode remove_ents_from_field(const Range &ents,
@@ -378,6 +398,8 @@ struct CoreInterface : public UnknownInterface {
   /**
    * \brief Set order approximation of the entities in the field
    * \ingroup mofem_field
+   * 
+   * \note not collective
    *
    * \param meshset containing set of the entities (use 0 for all the entities
    * in the meshset) \param type selected type of the entities f.e. MBTET,
@@ -393,6 +415,8 @@ struct CoreInterface : public UnknownInterface {
   /**
    * \brief Set order approximation of the entities in the field
    * \ingroup mofem_field
+   * 
+   * \note not collective
    *
    * \param entities
    * \param type selected type of the entities f.e. MBTET, MBTRI, MBEDGE,
@@ -406,6 +430,8 @@ struct CoreInterface : public UnknownInterface {
   /**
    * \brief Set order approximation of the entities in the field
    * \ingroup mofem_field
+   * 
+   * \note not collective
    *
    * \param bit refinement level
    * \param mask bit mask
@@ -504,9 +530,12 @@ struct CoreInterface : public UnknownInterface {
   * \ingroup mofem_fe
   * \param name finite element name
   *
+  * \note add_file is a collective, should be executed on all processors.
+  * Otherwise could lead to deadlock.
+  *
   * Example \code
-  ierr = mField.add_finite_element("ELASTIC"); CHKERRG(ierr);
-  ierr = mField.add_finite_element("PLASTIC"); CHKERRG(ierr);
+  CHKERR mField.add_finite_element("ELASTIC"); 
+  CHKERR mField.add_finite_element("PLASTIC"); 
   \endcode
   */
   virtual MoFEMErrorCode add_finite_element(const std::string &fe_name,
@@ -515,6 +544,9 @@ struct CoreInterface : public UnknownInterface {
   /**
    * \brief modify finite element table, only for advanced user
    * \ingroup mofem_fe
+   * 
+   * \note add_file is a collective, should be executed on all processors.
+   * Otherwise could lead to deadlock.
    *
    * Using that functions means that you like to do something not usual.
    *
@@ -526,6 +558,9 @@ struct CoreInterface : public UnknownInterface {
 
   /** \brief set finite element field data
    * \ingroup mofem_fe
+   * 
+   * \note add_file is a collective, should be executed on all processors.
+   * Otherwise could lead to deadlock.
    *
    * \param name finite element name
    * \param name field name
@@ -538,6 +573,9 @@ struct CoreInterface : public UnknownInterface {
 
   /** \brief unset finite element field data
    * \ingroup mofem_fe
+   * 
+   * \note add_file is a collective, should be executed on all processors.
+   * Otherwise could lead to deadlock.
    *
    * \param name finite element name
    * \param name field name
@@ -550,6 +588,9 @@ struct CoreInterface : public UnknownInterface {
 
   /** \brief set field row which finite element use
    * \ingroup mofem_fe
+   * 
+   * \note add_file is a collective, should be executed on all processors.
+   * Otherwise could lead to deadlock.
    *
    * \param name finite element name
    * \param name field name
@@ -560,6 +601,9 @@ struct CoreInterface : public UnknownInterface {
 
   /** \brief unset field row which finite element use
    * \ingroup mofem_fe
+   * 
+   * \note add_file is a collective, should be executed on all processors.
+   * Otherwise could lead to deadlock.
    *
    * \param name finite element name
    * \param name field name
@@ -569,6 +613,10 @@ struct CoreInterface : public UnknownInterface {
                                       const std::string &name_row) = 0;
 
   /** \brief set field col which finite element use
+   * \ingroup mofem_fe
+   * 
+   * \note add_file is a collective, should be executed on all processors.
+   * Otherwise could lead to deadlock.
    *
    * \param name finite element name
    * \param name field name
@@ -579,6 +627,9 @@ struct CoreInterface : public UnknownInterface {
 
   /** \brief unset field col which finite element use
    * \ingroup mofem_fe
+   * 
+   * \note add_file is a collective, should be executed on all processors.
+   * Otherwise could lead to deadlock.
    *
    * \param name finite element name
    * \param name field name
@@ -590,6 +641,9 @@ struct CoreInterface : public UnknownInterface {
   /**
    * \brief add entities to finite element
    * \ingroup mofem_fe
+   * 
+   * \note not collective
+   * 
    * @param  entities   meshset or range form were entities taken
    * @param  type      type of entity
    * @param  name      name of field
@@ -603,6 +657,9 @@ struct CoreInterface : public UnknownInterface {
   /**
    * \brief add entities to finite element
    * \ingroup mofem_fe
+   * 
+   * \note not collective
+   * 
    * @param  entities  meshset or range form were entities taken
    * @param  dim       dimension
    * @param  name      name of field
@@ -617,6 +674,9 @@ struct CoreInterface : public UnknownInterface {
   /**
    * \brief add entities to finite elements
    * \ingroup mofem_fe
+   * 
+   * \note not collective
+   * 
    * @param  ents range of entities
    * @param  type type of entity (MBVERTEX, MBEDGE, MBTRI, ...)
    * @param  name name of finite element
@@ -629,6 +689,9 @@ struct CoreInterface : public UnknownInterface {
   /**
    * \brief add entities to finite elements
    * \ingroup mofem_fe
+   * 
+   * \note not collective 
+   * 
    * @param  ents range of entities
    * @param  dim dimension of entities
    * @param  name name of finite element
@@ -639,7 +702,10 @@ struct CoreInterface : public UnknownInterface {
                                     const std::string &name) = 0;
 
   /** \brief add TET entities from given refinement level to finite element
-   * database given by name \ingroup mofem_fe
+   * database given by name 
+   * \ingroup mofem_fe
+   * 
+   * \note not collective
    *
    * \param BitRefLevel bit
    * \param BitRefLevel mask
@@ -732,6 +798,8 @@ struct CoreInterface : public UnknownInterface {
 
   /** \brief add MESHSET element to finite element database given by name
    * \ingroup mofem_fe
+   * 
+   * \note not collective
    *
    * \param meshset contains all entities that could be used for finite
    * element \param name Finite Element name
@@ -757,6 +825,10 @@ struct CoreInterface : public UnknownInterface {
 
   /** \brief Add problem
    * \ingroup mofem_problems
+   * 
+   * \note add_file is a collective, should be executed on all processors.
+   * Otherwise could lead to deadlock.
+   * 
    */
   virtual MoFEMErrorCode add_problem(const std::string &name,
                                      enum MoFEMTypes bh = MF_EXCL,
@@ -771,12 +843,19 @@ struct CoreInterface : public UnknownInterface {
 
   /** \brief Delete problem
    * \ingroup mofem_problems
+   * 
+   * \note add_file is a collective, should be executed on all processors.
+   * Otherwise could lead to deadlock.
+   * 
    */
   virtual MoFEMErrorCode delete_problem(const std::string name) = 0;
 
   /** \brief add finite element to problem, this add entities assigned to
    * finite element to a particular problem \ingroup mofem_problems
    *
+   * \note add_file is a collective, should be executed on all processors.
+   * Otherwise could lead to deadlock.
+   * 
    * \param name Problem name
    * \param name Finite Element name
    */
@@ -789,6 +868,9 @@ struct CoreInterface : public UnknownInterface {
    *
    *  Note: If problem is build, it need to be cleaned to make this effective
    *
+   * \note add_file is a collective, should be executed on all processors.
+   * Otherwise could lead to deadlock.
+   *
    * \param name Problem name
    * \param name Finite Element name
    */
@@ -797,25 +879,21 @@ struct CoreInterface : public UnknownInterface {
                                       const std::string &fe_name) = 0;
 
   /** \brief add ref level to problem
-  * \ingroup mofem_problems
-  *
-  * if same finite element is solved using different level of refinements,
-  than the level of refinement has to be specificied to problem in query
-  *
-  * \param name Problem name
-  * \param BitRefLevel bitLevel
-  * Example: \code
-  ierr =
-  mField.modify_problem_add_finite_element("BEAM_BENDING_ON_MESH_REF1","ELASTIC");
-  CHKERRG(ierr); ierr =
-  mField.modify_problem_add_finite_element("BEAM_BENDING_ON_MESH_REF2","ELASTIC");
-  CHKERRG(ierr);
-
-  ierr =
-  mField.modify_problem_ref_level_add_bit("BEAM_BENDING_ON_MESH_REF1",bit_level1);
-  CHKERRG(ierr); ierr =
-  mField.modify_problem_ref_level_add_bit("BEAM_BENDING_ON_MESH_REF2",bit_level2);
-  CHKERRG(ierr);
+   * \ingroup mofem_problems
+   * 
+   * \note add_file is a collective, should be executed on all processors.
+   * Otherwise could lead to deadlock.
+   *
+   * if same finite element is solved using different level of refinements,
+   * than the level of refinement has to be specificied to problem in query
+   *
+   * \param name Problem name
+   * \param BitRefLevel bitLevel
+   * Example: \code
+    CHKERR mField.modify_problem_add_finite_element("BEAM_BENDING_ON_MESH_REF1","ELASTIC");
+    CHKERR mField.modify_problem_add_finite_element("BEAM_BENDING_ON_MESH_REF2","ELASTIC");
+    CHKERR mField.modify_problem_ref_level_add_bit("BEAM_BENDING_ON_MESH_REF1",bit_level1);
+    CHKERR mField.modify_problem_ref_level_add_bit("BEAM_BENDING_ON_MESH_REF2",bit_level2);
   *\endcode
   * Two Problems exist and solved independently, both are elastic, but solved
   using different mesh refinement <br>
@@ -833,39 +911,36 @@ struct CoreInterface : public UnknownInterface {
                                         const BitRefLevel &bit) = 0;
 
   /** \brief set ref level for problem
-  * \ingroup mofem_problems
-  *
-  * if same finite element is solved using different level of refinements,
-  than the level of refinement has to be specificied to problem in query
-  *
-  * \param name Problem name
-  * \param BitRefLevel bitLevel
-  * Example: \code
-  ierr =
-  mField.modify_problem_add_finite_element("BEAM_BENDING_ON_MESH_REF1","ELASTIC");
-  CHKERRG(ierr); ierr =
-  mField.modify_problem_add_finite_element("BEAM_BENDING_ON_MESH_REF2","ELASTIC");
-  CHKERRG(ierr);
+   * \ingroup mofem_problems
+   *
+   * \note add_file is a collective, should be executed on all processors.
+   * Otherwise could lead to deadlock.
+   *
+   * if same finite element is solved using different level of refinements,
+   * than the level of refinement has to be specificied to problem in query
+   *
+   * \param name Problem name
+   * \param BitRefLevel bitLevel
+   * Example: \code
+   CHKERR mField.modify_problem_add_finite_element("BEAM_BENDING_ON_MESH_REF1","ELASTIC");
+   CHKERR mField.modify_problem_add_finite_element("BEAM_BENDING_ON_MESH_REF2","ELASTIC");
 
-  ierr =
-  mField.modify_problem_ref_level_set_bit("BEAM_BENDING_ON_MESH_REF1",bit_level1);
-  CHKERRG(ierr); ierr =
-  mField.modify_problem_ref_level_set_bit("BEAM_BENDING_ON_MESH_REF2",bit_level2);
-  CHKERRG(ierr);
-  *\endcode
-  * Two Problems exist and solved independently, both are elastic, but solved
-  using different mesh refinement <br>
-
-  \bug Problem bit level should be defined by bit and mask for better
-  flexibility
-
-  */
+   CHKERR mField.modify_problem_ref_level_set_bit("BEAM_BENDING_ON_MESH_REF1",bit_level1);
+   CHKERR mField.modify_problem_ref_level_set_bit("BEAM_BENDING_ON_MESH_REF2",bit_level2);
+   * \endcode
+   * Two Problems exist and solved independently, both are elastic, but solved
+   * using different mesh refinement <br>
+   * 
+   */
   virtual MoFEMErrorCode
   modify_problem_ref_level_set_bit(const std::string &name_problem,
                                    const BitRefLevel &bit) = 0;
 
   /** \brief set dof mask ref level for problem
    * \ingroup mofem_problems
+   * 
+   * \note add_file is a collective, should be executed on all processors.
+   * Otherwise could lead to deadlock.
    *
    */
   virtual MoFEMErrorCode
@@ -1157,13 +1232,13 @@ struct CoreInterface : public UnknownInterface {
   * This allows for tag reduction or tag exchange, f.e.
 
   \code
-  ierr = m_field.resolve_shared_ents(problem_ptr,"SHELL_ELEMENT");
-  CHKERRG(ierr); Tag th; rval =
-  mField.get_moab().tag_get_handle("ADAPT_ORDER",th); CHKERRQ_MOAB(rval);
+  CHKERR m_field.resolve_shared_ents(problem_ptr,"SHELL_ELEMENT");
+  Tag th; 
+  CHKERR mField.get_moab().tag_get_handle("ADAPT_ORDER",th); CHKERRQ_MOAB(rval);
   ParallelComm* pcomm =
   ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
-  // rval = pcomm->reduce_tags(th,MPI_SUM,prisms);
-  rval = pcomm->exchange_tags(th,prisms);
+  // CHKERR pcomm->reduce_tags(th,MPI_SUM,prisms);
+  CHKERR pcomm->exchange_tags(th,prisms);
   \endcode
 
   *
