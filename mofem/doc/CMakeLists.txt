@@ -94,7 +94,7 @@ if(DOXYGEN_FOUND)
   )
 
   foreach(LOOP_MODULE ${INSTLLED_DOC_MODULES})
-    message(STATUS "Add module doucmentation ... ${LOOP_MODULE}")
+    message(STATUS "Add module documentation ... ${LOOP_MODULE}")
     include(${LOOP_MODULE})
   endforeach(LOOP_MODULE)
 
