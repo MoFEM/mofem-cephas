@@ -11,7 +11,6 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
-
 if(MED_LIBRARY)
   add_executable(read_med ${CMAKE_CURRENT_SOURCE_DIR}/read_med.cpp)
   target_link_libraries(read_med
@@ -61,3 +60,24 @@ target_link_libraries(mesh_cut
   mofem_third_party
   ${MoFEM_PROJECT_LIBS}
 )
+
+if(ADOL-C_LIBRARY)
+
+  include_directories(
+    ${PROJECT_SOURCE_DIR}/basic_finite_elements/nonlinear_elastic_materials/src
+  )
+
+  add_executable(mesh_smoothing ${CMAKE_CURRENT_SOURCE_DIR}/mesh_smoothing.cpp)
+  target_link_libraries(mesh_smoothing
+    users_modules
+    mofem_finite_elements
+    mofem_interfaces
+    mofem_multi_indices
+    mofem_petsc
+    mofem_approx
+    mofem_cblas
+    mofem_third_party
+    ${MoFEM_PROJECT_LIBS}
+  )
+
+endif(ADOL-C_LIBRARY)

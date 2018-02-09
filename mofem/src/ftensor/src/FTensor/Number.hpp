@@ -4,13 +4,18 @@
    
    Number<0> N; */
 
-template<const int N>
-class Number
+#pragma once
+
+namespace FTensor
 {
-public:
-  Number() {};
-  operator int() const
+  template<const int N>
+  class Number
   {
-    return N;
-  }
-};
+  public:
+    Number() {};
+    operator int() const
+    {
+      return N;
+    }
+  };
+}

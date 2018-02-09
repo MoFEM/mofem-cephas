@@ -1,5 +1,9 @@
 /* Declarations for expressions like Tensor4*Tensor1 -> Tensor3 */
 
+#pragma once
+
+namespace FTensor {
+
 /* A(i,j,k,l)*B(l) -> Tensor3 */
 
 template<class A, class B, class T, class U, int Dim0, int Dim1, int Dim2,
@@ -266,4 +270,6 @@ operator*(
   return
   Tensor3_Expr<TensorExpr,typename promote<T,U>::V,Dim1,Dim2,Dim3,j,k,l>
   (TensorExpr(a,b));
+}
+
 }

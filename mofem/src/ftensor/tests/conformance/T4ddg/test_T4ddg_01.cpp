@@ -6,8 +6,8 @@ using namespace std;
 
 void test_T4ddg_01(const Tensor2_symmetric<double,3> &t2s_2,
                    const Tensor2_symmetric<double,3> &t2s_3,
-                   const Tensor3_dg<double,3,3> &t3dg_2,
-                   const Tensor3_dg<double,3,3> &t3dg_3)
+                   const Dg<double,3,3> &t3dg_2,
+                   const Dg<double,3,3> &t3dg_3)
 {
   Index<'i',3> i;
   Index<'j',3> j;
@@ -20,7 +20,7 @@ void test_T4ddg_01(const Tensor2_symmetric<double,3> &t2s_2,
   Number<1> N1;
   Number<2> N2;
 
-  Tensor4_ddg<double,3,3> t4ddg_1, t4ddg_2, t4ddg_3;
+  Ddg<double,3,3> t4ddg_1, t4ddg_2, t4ddg_3;
 
   t4ddg_1(i,j,l,m)=t3dg_2(i,j,k)*t3dg_3(l,m,k);
   test_for_zero(t4ddg_1(0,0,0,0) - (t3dg_2(0,0,0)*t3dg_3(0,0,0)

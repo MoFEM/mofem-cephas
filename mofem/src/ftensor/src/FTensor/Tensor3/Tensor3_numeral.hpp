@@ -2,64 +2,69 @@
    slots, and an index for the others, yielding a Tensor1_Expr or
    Tensor2_Expr. */
 
-/* First or second slot. */
+#pragma once
 
-template<class A, class T>
-class Tensor3_numeral_0
+namespace FTensor
 {
-  A iterA;
-  const int N;
-public:
-  T operator()(const int N1, const int N2) const
+  /* First or second slot. */
+
+  template<class A, class T>
+  class Tensor3_numeral_0
   {
-    return iterA(N,N1,N2);
-  }
-  Tensor3_numeral_0(const A &a, const int NN): iterA(a), N(NN) {}
-};
+    A iterA;
+    const int N;
+  public:
+    T operator()(const int N1, const int N2) const
+    {
+      return iterA(N,N1,N2);
+    }
+    Tensor3_numeral_0(const A &a, const int NN): iterA(a), N(NN) {}
+  };
 
-/* Third slot. */
+  /* Third slot. */
 
-template<class A, class T>
-class Tensor3_numeral_2
-{
-  A iterA;
-  const int N;
-public:
-  T operator()(const int N1, const int N2) const
+  template<class A, class T>
+  class Tensor3_numeral_2
   {
-    return iterA(N1,N2,N);
-  }
-  Tensor3_numeral_2(const A &a, const int NN): iterA(a), N(NN) {}
-};
+    A iterA;
+    const int N;
+  public:
+    T operator()(const int N1, const int N2) const
+    {
+      return iterA(N1,N2,N);
+    }
+    Tensor3_numeral_2(const A &a, const int NN): iterA(a), N(NN) {}
+  };
 
-/* Second and third slot (or first and third slot). */
+  /* Second and third slot (or first and third slot). */
 
-template<class A, class T>
-class Tensor3_numeral_12
-{
-  A iterA;
-  const int N1,N2;
-public:
-  T operator()(const int N) const
+  template<class A, class T>
+  class Tensor3_numeral_12
   {
-    return iterA(N,N1,N2);
-  }
-  Tensor3_numeral_12(const A &a, const int NN1, const int NN2)
-    :iterA(a), N1(NN1), N2(NN2) {}
-};
+    A iterA;
+    const int N1,N2;
+  public:
+    T operator()(const int N) const
+    {
+      return iterA(N,N1,N2);
+    }
+    Tensor3_numeral_12(const A &a, const int NN1, const int NN2)
+      :iterA(a), N1(NN1), N2(NN2) {}
+  };
 
-/* First and second slot. */
+  /* First and second slot. */
 
-template<class A, class T>
-class Tensor3_numeral_01
-{
-  A iterA;
-  const int N1,N2;
-public:
-  T operator()(const int N) const
+  template<class A, class T>
+  class Tensor3_numeral_01
   {
-    return iterA(N1,N2,N);
-  }
-  Tensor3_numeral_01(const A &a, const int NN1, const int NN2)
-    :iterA(a), N1(NN1), N2(NN2) {}
-};
+    A iterA;
+    const int N1,N2;
+  public:
+    T operator()(const int N) const
+    {
+      return iterA(N1,N2,N);
+    }
+    Tensor3_numeral_01(const A &a, const int NN1, const int NN2)
+      :iterA(a), N1(NN1), N2(NN2) {}
+  };
+}

@@ -5,7 +5,7 @@ using namespace FTensor;
 using namespace std;
 
 void test_T3dg_27(Tensor1<double,3> &t1_1, const Tensor2<double,3,3> &t2_2,
-                  const Tensor3_dg<double,3,3> &t3dg_2)
+                  const Dg<double,3,3> &t3dg_2)
 {
   Index<'i',3> i;
   Index<'j',3> j;
@@ -18,7 +18,7 @@ void test_T3dg_27(Tensor1<double,3> &t1_1, const Tensor2<double,3,3> &t2_2,
   Number<1> N1;
   Number<2> N2;
 
-  /* Tensor3_dg tests */
+  /* Dg tests */
 
   t1_1(i)=t3dg_2(j,k,i)*t2_2(k,j);
   test_for_zero(t1_1(0) - (t3dg_2(0,0,0)*t2_2(0,0)

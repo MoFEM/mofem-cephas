@@ -1,4 +1,4 @@
-/** \file ForcesAndSourcesCore.hpp
+/** \file EdgeElementForcesAndSourcesCore.hpp
 
   \brief Implementation of elements on entities.
 
@@ -46,7 +46,7 @@ struct EdgeElementForcesAndSourcesCore : public ForcesAndSourcesCore {
   DataForcesAndSourcesCore dataNoField, dataNoFieldCol;
   std::string meshPositionsFieldName;
 
-  MatrixDouble tAngent_at_GaussPt;
+  MatrixDouble tangentAtGaussPts;
   OpGetHoTangentOnEdge opGetHoTangentOnEdge;
   OpSetCovariantPiolaTransformOnEdge opCovariantTransform;
 
@@ -54,8 +54,8 @@ struct EdgeElementForcesAndSourcesCore : public ForcesAndSourcesCore {
       : ForcesAndSourcesCore(m_field), dataH1(MBEDGE), derivedDataH1(dataH1),
         dataHcurl(MBEDGE), derivedDataHcurl(dataHcurl), dataNoField(MBEDGE),
         dataNoFieldCol(MBEDGE), meshPositionsFieldName("MESH_NODE_POSITIONS"),
-        opGetHoTangentOnEdge(tAngent_at_GaussPt),
-        opCovariantTransform(dIrection, tAngent_at_GaussPt) {}
+        opGetHoTangentOnEdge(tangentAtGaussPts),
+        opCovariantTransform(dIrection, tangentAtGaussPts) {}
 
   double lEngth;
   
@@ -97,7 +97,7 @@ struct EdgeElementForcesAndSourcesCore : public ForcesAndSourcesCore {
     inline double getMeasure() { return getLength(); }
 
     /**
-     * \brief get edge dIrection
+     * \brief get edge direction
      */
     inline VectorDouble &getDirection() {
       return static_cast<EdgeElementForcesAndSourcesCore *>(ptrFE)->dIrection;
@@ -120,8 +120,10 @@ struct EdgeElementForcesAndSourcesCore : public ForcesAndSourcesCore {
       return static_cast<EdgeElementForcesAndSourcesCore *>(ptrFE)->gaussPts;
     }
 
-    inline FTensor::Tensor0<double *> getFTensor0IntegrationWeight() {
-      return FTensor::Tensor0<double *>(&(getGaussPts()(1, 0)), 1);
+    inline FTensor::Tensor0<FTensor::PackPtr<double *, 1> >
+    getFTensor0IntegrationWeight() {
+      return FTensor::Tensor0<FTensor::PackPtr<double *, 1> >(
+          &(getGaussPts()(1, 0)));
     }
 
     /**
@@ -132,12 +134,21 @@ struct EdgeElementForcesAndSourcesCore : public ForcesAndSourcesCore {
           ->coordsAtGaussPts;
     }
 
+    /** \brief get coordinates at Gauss pts.
+     */
+    inline FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>
+    getTensor1CoordsAtGaussPts() {
+      double *ptr = &*getCoordsAtGaussPts().data().begin();
+      return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(ptr, &ptr[1],
+                                                                &ptr[2]);
+    }
+
     /**
      * \brief get tangent vector to edge curve at integration points
      */
     inline MatrixDouble &getTangetAtGaussPts() {
       return static_cast<EdgeElementForcesAndSourcesCore *>(ptrFE)
-          ->tAngent_at_GaussPt;
+          ->tangentAtGaussPts;
     }
 
     /**
@@ -147,9 +158,9 @@ struct EdgeElementForcesAndSourcesCore : public ForcesAndSourcesCore {
       return static_cast<EdgeElementForcesAndSourcesCore *>(ptrFE);
     }
 
-    inline FTensor::Tensor1<double *, 3> getTensor1Direction() {
-      double *ptr = &*getDirection().data().begin();
-      return FTensor::Tensor1<double *, 3>(ptr, &ptr[1], &ptr[2]);
+    inline FTensor::Tensor1<double, 3> getTensor1Direction() {
+      return FTensor::Tensor1<double, 3>(getDirection()[0], getDirection()[1],
+                                         getDirection()[2]);
     }
 
     /**
@@ -157,8 +168,8 @@ struct EdgeElementForcesAndSourcesCore : public ForcesAndSourcesCore {
 
      \code
      FTensor::Index<'i',3> i;
-     FTensor::Tensor1<double,3> t_center;
-     FTensor::Tensor1<double*,3> t_coords = getTensor1Coords();
+     auto t_center;
+     auto t_coords = getTensor1Coords();
      t_center(i) = 0;
      for(int nn = 0;nn!=2;nn++) {
         t_center(i) += t_coords(i);
@@ -168,14 +179,18 @@ struct EdgeElementForcesAndSourcesCore : public ForcesAndSourcesCore {
     \endcode
 
      */
-    inline FTensor::Tensor1<double *, 3> getTensor1Coords() {
+    inline FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>
+    getTensor1Coords() {
       double *ptr = &*getCoords().data().begin();
-      return FTensor::Tensor1<double *, 3>(ptr, &ptr[1], &ptr[2], 3);
+      return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(ptr, &ptr[1],
+                                                                &ptr[2]);
     }
 
-    inline FTensor::Tensor1<double *, 3> getTensor1TangentAtGaussPts() {
+    inline FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>
+    getTensor1TangentAtGaussPts() {
       double *ptr = &*getTangetAtGaussPts().data().begin();
-      return FTensor::Tensor1<double *, 3>(ptr, &ptr[1], &ptr[2], 3);
+      return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(ptr, &ptr[1],
+                                                                &ptr[2]);
     }
   };
 
@@ -190,10 +205,10 @@ DEPRECATED typedef EdgeElementForcesAndSourcesCore
 
 #endif //__EDGEELEMENTFORCESANDSURCESCORE_HPP__
 
-/*****************************************************************************
+/**
  * \defgroup mofem_forces_and_sources_edge_element Edge Element
- *
- * \brief Implementation of general edge element.
+ * 
+ * \brief Implementation of edge element.
  *
  * \ingroup mofem_forces_and_sources
- ******************************************************************************/
+ */

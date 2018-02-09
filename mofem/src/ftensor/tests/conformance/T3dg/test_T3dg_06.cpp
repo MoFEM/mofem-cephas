@@ -5,7 +5,7 @@ using namespace FTensor;
 using namespace std;
 
 void test_T3dg_06(Tensor2_symmetric<double,3> &t2s_1,
-                  const Tensor3_dg<double,3,3> &t3dg_2)
+                  const Dg<double,3,3> &t3dg_2)
 {
   Index<'i',3> i;
   Index<'j',3> j;
@@ -18,7 +18,7 @@ void test_T3dg_06(Tensor2_symmetric<double,3> &t2s_1,
   Number<1> N1;
   Number<2> N2;
 
-  /* Tensor3_dg tests */
+  /* Dg tests */
 
   /* Now, test with actual numbers. */
 

@@ -394,31 +394,25 @@ MoFEMErrorCode FaceElementForcesAndSourcesCore::calculateHoNormal() {
 }
 
 MoFEMErrorCode FaceElementForcesAndSourcesCore::operator()() {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
 
   if (numeredEntFiniteElementPtr->getEntType() != MBTRI)
     MoFEMFunctionReturnHot(0);
 
   // Calculate normal and tangent vectors for face geometry given by 3 nodes.
-  ierr = calculateAreaAndNormal();
-  CHKERRG(ierr);
-  ierr = getSpaceBaseAndOrderOnElement();
-  CHKERRG(ierr);
+  CHKERR calculateAreaAndNormal();
+  CHKERR getSpaceBaseAndOrderOnElement();
 
-  ierr = setIntegrationPts();
-  CHKERRG(ierr);
+  CHKERR setIntegrationPts();
   if (nbGaussPts == 0)
     MoFEMFunctionReturnHot(0);
 
   dataH1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE).resize(3, 2, false);
-  ierr = ShapeDiffMBTRI(
+  CHKERR ShapeDiffMBTRI(
       &*dataH1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE).data().begin());
-  CHKERRG(ierr);
 
   /// Use the some node base
-
-  ierr = calculateCoordinatesAtGaussPts();
-  CHKERRG(ierr);
+  CHKERR calculateCoordinatesAtGaussPts();
 
   // Share base shape functions between spaces
   dataHdiv.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE) =
@@ -434,22 +428,18 @@ MoFEMErrorCode FaceElementForcesAndSourcesCore::operator()() {
   dataL2.dataOnEntities[MBVERTEX][0].getDiffNSharedPtr(NOBASE) =
       dataH1.dataOnEntities[MBVERTEX][0].getDiffNSharedPtr(NOBASE);
 
-  ierr = calculateBaseFunctionsOnElement();
-  CHKERRG(ierr);
-  ierr = calculateHoNormal();
-  CHKERRG(ierr);
+  CHKERR calculateBaseFunctionsOnElement();
+  CHKERR calculateHoNormal();
 
   // Apply Piola transform to HDiv and HCurl spaces, uses previously calculated
   // faces normal and tangent vectors.
   if (dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
-    ierr = opContravariantTransform.opRhs(dataHdiv);
-    CHKERRG(ierr);
+    CHKERR opContravariantTransform.opRhs(dataHdiv);
   }
   if (dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
     // cerr << dataHcurl.dataOnEntities[MBEDGE][0].getN(AINSWORTH_LEGENDRE_BASE)
     // << endl;
-    ierr = opCovariantTransform.opRhs(dataHcurl);
-    CHKERRG(ierr);
+    CHKERR opCovariantTransform.opRhs(dataHcurl);
   }
 
   const UserDataOperator::OpType types[2] = {UserDataOperator::OPROW,
@@ -468,7 +458,7 @@ MoFEMErrorCode FaceElementForcesAndSourcesCore::operator()() {
 
     oit->setPtrFE(this);
 
-    if (oit->sPace != LASTSPACE) {
+    if (oit->opType == UserDataOperator::OPLAST) {
 
       // Set field
       switch (oit->sPace) {
@@ -499,9 +489,8 @@ MoFEMErrorCode FaceElementForcesAndSourcesCore::operator()() {
       last_eval_field_name[1] = "";
 
       // Run operator
-      ierr = oit->opRhs(*op_data[0], oit->doVertices, oit->doEdges,
+      CHKERR oit->opRhs(*op_data[0], oit->doVertices, oit->doEdges,
                         oit->doQuads, oit->doTris, false, false);
-      CHKERRG(ierr);
 
     } else {
 
@@ -566,53 +555,39 @@ MoFEMErrorCode FaceElementForcesAndSourcesCore::operator()() {
                       "unknown space");
             case H1:
               if (!ss) {
-                ierr = getRowNodesIndices(*op_data[ss], field_name);
-                CHKERRG(ierr);
+                CHKERR getRowNodesIndices(*op_data[ss], field_name);
               } else {
-                ierr = getColNodesIndices(*op_data[ss], field_name);
-                CHKERRG(ierr);
+                CHKERR getColNodesIndices(*op_data[ss], field_name);
               }
-              ierr = getNodesFieldData(*op_data[ss], field_name);
-              CHKERRG(ierr);
+              CHKERR getNodesFieldData(*op_data[ss], field_name);
             case HCURL:
               if (!ss) {
-                ierr = getEdgesRowIndices(*op_data[ss], field_name);
-                CHKERRG(ierr);
+                CHKERR getEdgesRowIndices(*op_data[ss], field_name);
               } else {
-                ierr = getEdgesColIndices(*op_data[ss], field_name);
-                CHKERRG(ierr);
+                CHKERR getEdgesColIndices(*op_data[ss], field_name);
               }
-              ierr = getEdgesDataOrderSpaceAndBase(*op_data[ss], field_name);
-              CHKERRG(ierr);
-              ierr = getEdgesFieldData(*op_data[ss], field_name);
-              CHKERRG(ierr);
+              CHKERR getEdgesDataOrderSpaceAndBase(*op_data[ss], field_name);
+              CHKERR getEdgesFieldData(*op_data[ss], field_name);
             case HDIV:
             case L2:
               if (!ss) {
-                ierr = getTrisRowIndices(*op_data[ss], field_name);
-                CHKERRG(ierr);
+                CHKERR getTrisRowIndices(*op_data[ss], field_name);
               } else {
-                ierr = getTrisColIndices(*op_data[ss], field_name);
-                CHKERRG(ierr);
+                CHKERR getTrisColIndices(*op_data[ss], field_name);
               }
-              ierr = getTrisDataOrderSpaceAndBase(*op_data[ss], field_name);
-              CHKERRG(ierr);
-              ierr = getTrisFieldData(*op_data[ss], field_name);
-              CHKERRG(ierr);
+              CHKERR getTrisDataOrderSpaceAndBase(*op_data[ss], field_name);
+              CHKERR getTrisFieldData(*op_data[ss], field_name);
               break;
             case NOFIELD:
               if (!getNinTheLoop()) {
                 // NOFIELD data are the same for each element, can be retrieved
                 // only once
                 if (!ss) {
-                  ierr = getNoFieldRowIndices(*op_data[ss], field_name);
-                  CHKERRG(ierr);
+                  CHKERR getNoFieldRowIndices(*op_data[ss], field_name);
                 } else {
-                  ierr = getNoFieldColIndices(*op_data[ss], field_name);
-                  CHKERRG(ierr);
+                  CHKERR getNoFieldColIndices(*op_data[ss], field_name);
                 }
-                ierr = getNoFieldFieldData(*op_data[ss], field_name);
-                CHKERRG(ierr);
+                CHKERR getNoFieldFieldData(*op_data[ss], field_name);
               }
               break;
             case LASTSPACE:
@@ -679,7 +654,7 @@ MoFEMErrorCode FaceElementForcesAndSourcesCore::operator()() {
     }
   }
 
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode

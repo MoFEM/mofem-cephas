@@ -156,7 +156,7 @@ MoFEMErrorCode CutMeshInterface::cutAndTrim(
   MoFEMFunctionBegin;
   // cut mesh
   CHKERR findEdgesToCut(tol_cut,QUIET,debug);
-  CHKERR projectZeroDistanceEnts(tol_cut_close);
+  CHKERR projectZeroDistanceEnts(fixed_edges, corner_nodes, tol_cut_close);
   CHKERR cutEdgesInMiddle(bit_level1, debug);
   if (fixed_edges) {
     CHKERR cOre.getInterface<BitRefManager>()->updateRange(*fixed_edges,
@@ -229,8 +229,8 @@ MoFEMErrorCode CutMeshInterface::cutTrimAndMerge(
   CHKERR mergeBadEdges(fraction_level, bit_level2, bit_level1, bit_level3,
                        getNewTrimSurfaces(), fixed_edges, corner_nodes, th,
                        update_meshsets, debug);
-  CHKERR removePathologicalFrontTris(bit_level3,
-                                     const_cast<Range &>(getMergedSurfaces()));
+  // CHKERR removePathologicalFrontTris(bit_level3,
+                                    //  const_cast<Range &>(getMergedSurfaces()));
 
   if(debug) {
     CHKERR cOre.getInterface<BitRefManager>()->writeBitLevelByType(
@@ -418,8 +418,10 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(const double low_tol,
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(const double low_tol,
-                                                     int verb) {
+MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(Range *fixed_edges,
+                                                         Range *corner_nodes,
+                                                         const double low_tol,
+                                                         int verb) {
   CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   MoFEMFunctionBegin;
@@ -528,42 +530,62 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(const double low_tol,
         verticesOnCutEdges[*vit].unitRayDir = dist0 > 0 ? ray / dist0 : ray;
         verticesOnCutEdges[*vit].rayPoint   = s0;
       } else {
-        double ray_length;
-        double ray_point[3], unit_ray_dir[3];
-        VectorAdaptor vec_unit_ray_dir(
-            3, ublas::shallow_array_adaptor<double>(3, unit_ray_dir));
-        VectorAdaptor vec_ray_point(
-            3, ublas::shallow_array_adaptor<double>(3, ray_point));
-        // Vertex is on the skin
-        adj_edges = intersect(adj_edges,tets_skin_edges);
-        if(adj_edges.empty()) {
-          SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY,
-                  "Huston we have a problem, how vertex can be on surface but "
-                  "not have adjacent surface edges to it?");
+        bool on_corner = false;
+        if(corner_nodes) {
+          if(corner_nodes->find(*vit)!=corner_nodes->end()) {
+            on_corner = true;
+          }
         }
-        // Make a loop over all adjacent surface edges, to find direction of the
-        // ray. 
-        for (Range::iterator eit = adj_edges.begin(); eit != adj_edges.end();
-             eit++) {
-          CHKERR getRayForEdge(*eit, vec_ray_point, vec_unit_ray_dir,
-                               ray_length);
-          // FIXME: Pick one edge on the skin and send ray to move vertex. Edge
-          // should be pick one from corner edges, now is arbitrary
-          std::vector<double> distances_out;
-          std::vector<EntityHandle> facets_out;
-          CHKERR treeSurfPtr->ray_intersect_triangles(
-              distances_out, facets_out, rootSetSurf, low_tol, ray_point,
-              unit_ray_dir, &ray_length);
-          if (!distances_out.empty()) {
-            VectorDouble point_out(vec_ray_point +
-                                   distances_out[0] * vec_unit_ray_dir);
-            VectorDouble3 ray                   = point_out - s0;
-            double dist0                        = norm_2(ray);
-            verticesOnCutEdges[*vit].dIst       = dist0;
-            verticesOnCutEdges[*vit].lEngth     = dist0;
-            verticesOnCutEdges[*vit].unitRayDir = dist0 > 0 ? ray / dist0 : ray;
-            verticesOnCutEdges[*vit].rayPoint   = s0;
-            break;
+        if(on_corner) {
+          VectorDouble3 ray(3,0);
+          verticesOnCutEdges[*vit].dIst = 0;
+          verticesOnCutEdges[*vit].lEngth = 0;
+          verticesOnCutEdges[*vit].unitRayDir = ray;
+          verticesOnCutEdges[*vit].rayPoint = s0;
+        } else {
+          double ray_length;
+          double ray_point[3], unit_ray_dir[3];
+          VectorAdaptor vec_unit_ray_dir(
+              3, ublas::shallow_array_adaptor<double>(3, unit_ray_dir));
+          VectorAdaptor vec_ray_point(
+              3, ublas::shallow_array_adaptor<double>(3, ray_point));
+          // Vertex is on the skin
+          adj_edges = intersect(adj_edges, tets_skin_edges);
+          if(fixed_edges) {
+            Range e = intersect(adj_edges,*fixed_edges);
+            if(!e.empty()) adj_edges = e;
+          }
+          if (adj_edges.empty()) {
+            SETERRQ(
+                PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY,
+                "Huston we have a problem, how vertex can be on surface but "
+                "not have adjacent surface edges to it?");
+          }
+          // Make a loop over all adjacent surface edges, to find direction of
+          // the ray.
+          for (Range::iterator eit = adj_edges.begin(); eit != adj_edges.end();
+               eit++) {
+            CHKERR getRayForEdge(*eit, vec_ray_point, vec_unit_ray_dir,
+                                 ray_length);
+            // FIXME: Pick one edge on the skin and send ray to move vertex.
+            // Edge should be pick one from corner edges, now is arbitrary
+            std::vector<double> distances_out;
+            std::vector<EntityHandle> facets_out;
+            CHKERR treeSurfPtr->ray_intersect_triangles(
+                distances_out, facets_out, rootSetSurf, low_tol, ray_point,
+                unit_ray_dir, &ray_length);
+            if (!distances_out.empty()) {
+              VectorDouble point_out(vec_ray_point +
+                                     distances_out[0] * vec_unit_ray_dir);
+              VectorDouble3 ray = point_out - s0;
+              double dist0 = norm_2(ray);
+              verticesOnCutEdges[*vit].dIst = dist0;
+              verticesOnCutEdges[*vit].lEngth = dist0;
+              verticesOnCutEdges[*vit].unitRayDir =
+                  dist0 > 0 ? ray / dist0 : ray;
+              verticesOnCutEdges[*vit].rayPoint = s0;
+              break;
+            }
           }
         }
       }
@@ -1132,17 +1154,15 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
                               Range &edges_to_merge, Range &not_merged_edges,
                               bool add_child = true) const {
       moab::Interface &moab = mField.get_moab();
-      MoFEMFunctionBeginHot;
+      MoFEMFunctionBegin;
       const EntityHandle conn[] = {father, mother};
       Range vert_tets;
-      rval = moab.get_adjacencies(conn, 2, 3, false, vert_tets,
+      CHKERR moab.get_adjacencies(conn, 2, 3, false, vert_tets,
                                   moab::Interface::UNION);
-      CHKERRG(rval);
       vert_tets = intersect(vert_tets, proc_tets);
       Range out_tets;
-      ierr = nodeMergerPtr->mergeNodes(father, mother, out_tets, &vert_tets,
+      CHKERR nodeMergerPtr->mergeNodes(father, mother, out_tets, &vert_tets,
                                        onlyIfImproveQuality, 0, lineSearch, tH);
-      CHKERRG(ierr);
       out_tets.merge(subtract(proc_tets, vert_tets));
       proc_tets.swap(out_tets);
 
@@ -1161,27 +1181,23 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
         Range new_surf_child_ents = intersect(new_surf, child_ents);
         new_surf = subtract(new_surf, new_surf_child_ents);
         Range child_surf_ents;
-        ierr = updateRangeByChilds(parent_child_map, new_surf_child_ents,
+        CHKERR updateRangeByChilds(parent_child_map, new_surf_child_ents,
                                    child_surf_ents);
-        CHKERRG(ierr);
         new_surf.merge(child_surf_ents);
 
         Range edges_to_merge_child_ents = intersect(edges_to_merge, child_ents);
         edges_to_merge = subtract(edges_to_merge, edges_to_merge_child_ents);
         Range merged_child_edge_ents;
-        ierr = updateRangeByChilds(parent_child_map, edges_to_merge_child_ents,
+        CHKERR updateRangeByChilds(parent_child_map, edges_to_merge_child_ents,
                                    merged_child_edge_ents);
-        CHKERRG(ierr);
 
         Range not_merged_edges_child_ents =
             intersect(not_merged_edges, child_ents);
         not_merged_edges =
             subtract(not_merged_edges, not_merged_edges_child_ents);
         Range not_merged_child_edge_ents;
-        ierr =
-            updateRangeByChilds(parent_child_map, not_merged_edges_child_ents,
+        CHKERR updateRangeByChilds(parent_child_map, not_merged_edges_child_ents,
                                 not_merged_child_edge_ents);
-        CHKERRG(ierr);
 
         merged_child_edge_ents =
             subtract(merged_child_edge_ents, not_merged_child_edge_ents);
@@ -1193,19 +1209,14 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
                    (*mField.getInterface<MeshsetsManager>()), cubit_it)) {
             EntityHandle cubit_meshset = cubit_it->meshset;
             Range parent_ents;
-            rval =
-                moab.get_entities_by_handle(cubit_meshset, parent_ents, true);
-            CHKERRG(rval);
+            CHKERR moab.get_entities_by_handle(cubit_meshset, parent_ents, true);
             Range child_ents;
-            ierr =
-                updateRangeByChilds(parent_child_map, parent_ents, child_ents);
-            CHKERRG(ierr);
-            rval = moab.add_entities(cubit_meshset, child_ents);
-            CHKERRG(rval);
+            CHKERR updateRangeByChilds(parent_child_map, parent_ents, child_ents);
+            CHKERR moab.add_entities(cubit_meshset, child_ents);
           }
         }
       }
-      MoFEMFunctionReturnHot(0);
+      MoFEMFunctionReturn(0);
     }
 
   private:
@@ -1403,44 +1414,38 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
                                   Range &edges_to_merge,
                                   Range &not_merged_edges) {
       moab::Interface &moab(mField.get_moab());
-      MoFEMFunctionBeginHot;
+      MoFEMFunctionBegin;
 
       // find skin
       Skinner skin(&moab);
       Range tets_skin;
-      rval = skin.find_skin(0, tets, false, tets_skin);
-      CHKERRG(rval);
+      CHKERR skin.find_skin(0, tets, false, tets_skin);
       Range surface_skin;
-      rval = skin.find_skin(0, surface, false, surface_skin);
-      CHKERRG(rval);
+      CHKERR skin.find_skin(0, surface, false, surface_skin);
 
       // end nodes
       Range tets_skin_edges;
-      rval = moab.get_adjacencies(tets_skin, 1, false, tets_skin_edges,
+      CHKERR moab.get_adjacencies(tets_skin, 1, false, tets_skin_edges,
                                   moab::Interface::UNION);
-      CHKERRG(rval);
       Range surface_front;
       surface_front = subtract(surface_skin, tets_skin_edges);
+      Range surface_front_nodes;
+      CHKERR moab.get_connectivity(surface_front, surface_front_nodes, true);
       Range ends_nodes;
-      rval = skin.find_skin(0, surface_front, false, ends_nodes);
-      CHKERRG(rval);
+      CHKERR skin.find_skin(0, surface_front, false, ends_nodes);
 
       // remove bad merges
 
       // get surface and body skin verts
       Range surface_edges;
-      rval = moab.get_adjacencies(surface, 1, false, surface_edges,
+      CHKERR moab.get_adjacencies(surface, 1, false, surface_edges,
                                   moab::Interface::UNION);
-      CHKERRG(rval);
       // get nodes on the surface
       Range surface_edges_verts;
-      rval = moab.get_connectivity(surface_edges, surface_edges_verts, true);
-      CHKERRG(rval);
+      CHKERR moab.get_connectivity(surface_edges, surface_edges_verts, true);
       // get vertices on the body skin
       Range tets_skin_edges_verts;
-      rval =
-          moab.get_connectivity(tets_skin_edges, tets_skin_edges_verts, true);
-      CHKERRG(rval);
+      CHKERR moab.get_connectivity(tets_skin_edges, tets_skin_edges_verts, true);
 
       Range edges_to_remove;
 
@@ -1449,9 +1454,8 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
         Range ents_nodes_and_edges;
         ents_nodes_and_edges.merge(tets_skin_edges_verts);
         ents_nodes_and_edges.merge(tets_skin_edges);
-        ierr = removeSelfConectingEdges(ents_nodes_and_edges, edges_to_remove,
+        CHKERR removeSelfConectingEdges(ents_nodes_and_edges, edges_to_remove,
                                         0, false);
-        CHKERRG(ierr);
       }
       edges_to_merge = subtract(edges_to_merge, edges_to_remove);
       not_merged_edges.merge(edges_to_remove);
@@ -1463,32 +1467,29 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
         ents_nodes_and_edges.merge(surface_edges);
         ents_nodes_and_edges.merge(tets_skin_edges_verts);
         ents_nodes_and_edges.merge(tets_skin_edges);
-        ierr = removeSelfConectingEdges(ents_nodes_and_edges, edges_to_remove,
+        CHKERR removeSelfConectingEdges(ents_nodes_and_edges, edges_to_remove,
                                         0, false);
-        CHKERRG(ierr);
       }
       edges_to_merge = subtract(edges_to_merge, edges_to_remove);
       not_merged_edges.merge(edges_to_remove);
 
       // remove edges adjacent corner_nodes execpt those on fixed edges
       Range fixed_edges_nodes;
-      rval = moab.get_connectivity(fixed_edges, fixed_edges_nodes, true);
+      CHKERR moab.get_connectivity(fixed_edges, fixed_edges_nodes, true);
       {
         Range ents_nodes_and_edges;
         ents_nodes_and_edges.merge(fixed_edges_nodes);
         ents_nodes_and_edges.merge(ends_nodes);
         ents_nodes_and_edges.merge(corner_nodes);
         ents_nodes_and_edges.merge(fixed_edges);
-        ierr = removeSelfConectingEdges(ents_nodes_and_edges, edges_to_remove,
+        CHKERR removeSelfConectingEdges(ents_nodes_and_edges, edges_to_remove,
                                         0, false);
-        CHKERRG(ierr);
       }
       edges_to_merge = subtract(edges_to_merge, edges_to_remove);
       not_merged_edges.merge(edges_to_remove);
 
       // remove edges self connected to surface
-      ierr = removeSelfConectingEdges(surface_edges, edges_to_remove, 0, false);
-      CHKERRG(ierr);
+      CHKERR removeSelfConectingEdges(surface_edges, edges_to_remove, 0, false);
       edges_to_merge = subtract(edges_to_merge, edges_to_remove);
       not_merged_edges.merge(edges_to_remove);
 
@@ -1497,9 +1498,21 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
         Range ents_nodes_and_edges;
         ents_nodes_and_edges.merge(surface_skin);
         ents_nodes_and_edges.merge(fixed_edges_nodes);
-        ierr = removeSelfConectingEdges(ents_nodes_and_edges, edges_to_remove,
+        CHKERR removeSelfConectingEdges(ents_nodes_and_edges, edges_to_remove,
                                         0, false);
-        CHKERRG(ierr);
+      }
+      edges_to_merge = subtract(edges_to_merge, edges_to_remove);
+      not_merged_edges.merge(edges_to_remove);
+
+      // remove crack front nodes connected to the surface
+       {
+        Range ents_nodes_and_edges;
+        ents_nodes_and_edges.merge(surface_front_nodes);
+        ents_nodes_and_edges.merge(surface_front);
+        ents_nodes_and_edges.merge(tets_skin_edges_verts);
+        ents_nodes_and_edges.merge(tets_skin_edges);
+        CHKERR removeSelfConectingEdges(ents_nodes_and_edges, edges_to_remove,
+                                        0, true);
       }
       edges_to_merge = subtract(edges_to_merge, edges_to_remove);
       not_merged_edges.merge(edges_to_remove);
@@ -1509,14 +1522,13 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
         Range ents_nodes_and_edges;
         ents_nodes_and_edges.merge(surface_skin.subset_by_type(MBEDGE));
         ents_nodes_and_edges.merge(fixed_edges.subset_by_type(MBEDGE));
-        ierr = removeSelfConectingEdges(ents_nodes_and_edges, edges_to_remove,
+        CHKERR removeSelfConectingEdges(ents_nodes_and_edges, edges_to_remove,
                                         tOL, false);
-        CHKERRG(ierr);
       }
       edges_to_merge = subtract(edges_to_merge, edges_to_remove);
       not_merged_edges.merge(edges_to_remove);
 
-      MoFEMFunctionReturnHot(0);
+      MoFEMFunctionReturn(0);
     }
 
   private:
@@ -1721,7 +1733,7 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
 
     if (nb_nodes_merged == nb_nodes_merged_p)
       break;
-    if (min > 0 && min == min_pp)
+    if (min > 1e-2 && min == min_pp)
       break;
     if (min > ave0)
       break;
@@ -1783,7 +1795,7 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
       subtract(all_ents_not_in_database_after, all_ents_not_in_database_before);
   Range meshsets;
   CHKERR m_field.get_moab().get_entities_by_type(0, MBENTITYSET, meshsets,
-                                                 true);
+                                                 false);
   for (Range::iterator mit = meshsets.begin(); mit != meshsets.end(); mit++) {
     CHKERR m_field.get_moab().remove_entities(*mit,
                                               all_ents_not_in_database_after);

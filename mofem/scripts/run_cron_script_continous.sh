@@ -13,7 +13,7 @@ else
   BUILD_DIR=$HOME/tmp/cephas/build
   touch $HOME/tests_cephas.lock
   cd $CTEST_SCRIPTS_FILE_PATH
-  /usr/bin/ctest -VV --http1.0 -S $CTSET_SCRIPT >> $HOME/tests_cephas.log 2>&1
+  /opt/local/bin/ctest -VV --http1.0 -S $CTSET_SCRIPT >> $HOME/tests_cephas.log 2>&1
   if [ -e $HOME/tmp/cephas/source/has_bin_build ]; then
     rm $HOME/tmp/cephas/source/has_bin_build
     cd $BUILD_DIR

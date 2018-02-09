@@ -1,11 +1,11 @@
-FROM ubuntu:precise
+FROM ubuntu
 
 MAINTAINER Lukasz.Kaczmarczyk@glasgow.ac.uk
 
 ADD mofem /mofem
 
 # Set environment
-ENV BUILD_DIR /build_mofem_precise
+ENV BUILD_DIR /build_mofem
 ENV MOFEM_SRC_DIR /mofem/
 ENV MOFEM_BUILD_DIR $BUILD_DIR/lib
 ENV MOFEM_INSTALL_DIR $BUILD_DIR/um
@@ -15,15 +15,14 @@ ENV PETSC_DIR=/opt/petsc
 ENV PETSC_ARCH=arch-linux2-c-opt
 ENV PATH $PATH:$PETSC_DIR/$PETSC_ARCH/bin
 
-ENV BUILD_TYPE=MinSizeRel
-ENV CMAKE /opt/local/bin/cmake
-ENV CTEST /opt/local/bin/ctest
+ENV BUILD_TYPE=Release
 
 RUN apt-get update \
 && apt-get install -y \
 build-essential \
 gcc \
 g++ \
+cmake \
 libopenmpi-dev \
 openmpi-bin \
 openssh-server \
@@ -43,10 +42,11 @@ RUN wget https://www.dropbox.com/s/ll3g2drxvmk9ul9/mofem_env.tar.gz \
 
 RUN mkdir -p $MOFEM_BUILD_DIR \
 && cd $MOFEM_BUILD_DIR \
-&& $CMAKE \
+&& cmake \
 -DCMAKE_BUILD_TYPE=MinSizeRel \
 -DBUILD_SHARED_LIBS=1 \
 -DCMAKE_CXX_FLAGS="-Wall" \
+-DMPI_RUN_FLAGS="--allow-run-as-root" \
 -DPETSC_DIR=$PETSC_DIR \
 -DPETSC_ARCH=$PETSC_ARCH \
 -DMOAB_DIR=$PETSC_DIR/$PETSC_ARCH \
@@ -54,10 +54,13 @@ RUN mkdir -p $MOFEM_BUILD_DIR \
 -DCMAKE_INSTALL_PREFIX=$MOFEM_INSTALL_DIR \
 $MOFEM_SRC_DIR \
 && cd $MOFEM_BUILD_DIR \
-&& $CTEST --output-on-failure -D Experimental \
+&& ctest --output-on-failure -D Experimental \
 && make install \
 && make clean \
 && cd $MOFEM_INSTALL_DIR  \
-&& $CMAKE -DCMAKE_CXX_FLAGS="-Wall" users_modules \
-&& $CTEST --output-on-failure -D Experimental -R basic_ \
+&& cmake \
+-DCMAKE_CXX_FLAGS="-Wall" \
+-DMPI_RUN_FLAGS="--allow-run-as-root" \
+users_modules \
+&& ctest --output-on-failure -D Experimental -R basic_ \
 && make clean

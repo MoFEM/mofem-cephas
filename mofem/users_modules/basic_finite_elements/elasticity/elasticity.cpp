@@ -165,7 +165,8 @@ int main(int argc, char *argv[]) {
     // so all entities have the same bit refinement level)
     BitRefLevel bit_level0;
     bit_level0.set(0);
-    CHKERR m_field.seed_ref_level_3D(0, bit_level0);
+    CHKERR m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(
+        0, 3, bit_level0);
 
     // Declare approximation fields
     CHKERR m_field.add_field("DISPLACEMENT", H1, AINSWORTH_LOBATTO_BASE, 3,
@@ -323,10 +324,8 @@ int main(int argc, char *argv[]) {
   // Add body force element. This is only declaration of element. not its
   // implementation.
   CHKERR m_field.add_finite_element("BODY_FORCE");
-  CHKERR
-      m_field.modify_finite_element_add_field_row("BODY_FORCE", "DISPLACEMENT");
-  CHKERR
-      m_field.modify_finite_element_add_field_col("BODY_FORCE", "DISPLACEMENT");
+  CHKERR m_field.modify_finite_element_add_field_row("BODY_FORCE", "DISPLACEMENT");
+  CHKERR m_field.modify_finite_element_add_field_col("BODY_FORCE", "DISPLACEMENT");
   CHKERR m_field.modify_finite_element_add_field_data("BODY_FORCE",
                                                       "DISPLACEMENT");
   CHKERR m_field.modify_finite_element_add_field_data("BODY_FORCE",

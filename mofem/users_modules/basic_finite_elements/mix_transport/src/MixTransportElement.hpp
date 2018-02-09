@@ -766,7 +766,7 @@ struct MixTransportElement {
           &invK(2,0),&invK(2,1),&invK(2,2)
         );
         // Get base functions
-        FTensor::Tensor1<double*,3> t_n_hdiv_row = row_data.getFTensor1HdivN<3>();
+        auto t_n_hdiv_row = row_data.getFTensor1HdivN<3>();
         FTensor::Tensor1<double,3> t_row;
         int nb_gauss_pts = row_data.getHdivN().size1();
         for(int gg = 0;gg!=nb_gauss_pts;gg++) {
@@ -857,8 +857,8 @@ struct MixTransportElement {
           &invK(2,0),&invK(2,1),&invK(2,2)
         );
         // get base functions
-        FTensor::Tensor1<double*,3> t_n_hdiv = data.getFTensor1HdivN<3>();
-        FTensor::Tensor1<double*,3> t_flux = getTensor1FormData<3>(cTx.fluxesAtGaussPts);
+        auto t_n_hdiv = data.getFTensor1HdivN<3>();
+        auto t_flux = getTensor1FormData<3>(cTx.fluxesAtGaussPts);
         int nb_gauss_pts = data.getHdivN().size1();
         for(int gg = 0;gg<nb_gauss_pts;gg++) {
           double w = getGaussPts()(3,gg)*getVolume();
@@ -1275,7 +1275,7 @@ struct MixTransportElement {
         // set tensor from pointer
         FTensor::Tensor1<const double*,3> t_normal(normal_ptr,&normal_ptr[1],&normal_ptr[2],3);
         // get base functions
-        FTensor::Tensor1<double*,3> t_n_hdiv_row = data.getFTensor1HdivN<3>();
+        auto t_n_hdiv_row = data.getFTensor1HdivN<3>();
 
         double nrm2 = 0;
 

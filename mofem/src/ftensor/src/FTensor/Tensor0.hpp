@@ -4,108 +4,158 @@
    that diffusion and interpolate are included at the end of this
    file, because it needs the full definition of Tensor0. */
 
+#pragma once
+
 #include "Tensor0/dTensor0.hpp"
 #include "Tensor0/ddTensor0.hpp"
 #include "Tensor0/d_boundary_Tensor0.hpp"
 #include "Tensor0/dd_boundary_Tensor0.hpp"
 
-template <class T>
-class Tensor0
-{};
-
-template <class T>
-class Tensor0<T*>
+namespace FTensor
 {
-  mutable int inc;
-  mutable T * restrict data;
-public:
-  Tensor0(T *d,const int i = 1): inc(i),data(d) {}
+  template <class T>
+  class Tensor0
+  {};
 
-  const Tensor0 & operator=(const Tensor0 &a)
-  {
-    *data=*(a.data);
-    return *this;
-  }
+  template <class T, int I> class Tensor0<PackPtr<T *, I> > {
+    mutable T *restrict data;
 
-  template<class U>
-  const Tensor0<T*> & operator=(const U &d)
-  {
-    *data=d;
-    return *this;
-  }
-  template<class U>
-  const Tensor0<T*> & operator+=(const U &d)
-  {
-    *data+=d;
-    return *this;
-  }
-  template<class U>
-  const Tensor0<T*> & operator-=(const U &d)
-  {
-    *data-=d;
-    return *this;
-  }
-  template<class U>
-  const Tensor0<T*> & operator*=(const U &d)
-  {
-    *data*=d;
-    return *this;
-  }
-  template<class U>
-  const Tensor0<T*> & operator/=(const U &d)
-  {
-    *data/=d;
-    return *this;
-  }
+  public:
+    Tensor0(T *d) : data(d) {}
 
-  #ifdef ADOLC_ADOUBLE_H
+    const Tensor0 &operator=(const Tensor0 &a) {
+      *data = *(a.data);
+      return *this;
+    }
 
-  /*
-  Assignments operator for ADOL-C
-  */
-  template<class U>
-  const Tensor0<T*> & operator>>=(U &d)
-  {
-    d >>= *data;
-    return *this;
-  }
+    template <class U> const Tensor0<PackPtr<T *, I> > &operator=(const U &d) {
+      *data = d;
+      return *this;
+    }
+    template <class U> const Tensor0<PackPtr<T *, I> > &operator+=(const U &d) {
+      *data += d;
+      return *this;
+    }
+    template <class U> const Tensor0<PackPtr<T *, I> > &operator-=(const U &d) {
+      *data -= d;
+      return *this;
+    }
+    template <class U> const Tensor0<PackPtr<T *, I> > &operator*=(const U &d) {
+      *data *= d;
+      return *this;
+    }
+    template <class U> const Tensor0<PackPtr<T *, I> > &operator/=(const U &d) {
+      *data /= d;
+      return *this;
+    }
 
-  template<class U>
-  const Tensor0<T*> & operator<<=(const U d)
-  {
-    *data<<=d;
-    return *this;
-  }
+    /* Assignments operator for ADOL-C */
+    template <class U> const Tensor0<PackPtr<T *, I> > &operator>>=(U &d) {
+      d >>= *data;
+      return *this;
+    }
 
-  #endif
+    template <class U> const Tensor0<PackPtr<T *, I> > &operator<<=(const U d) {
+      *data <<= d;
+      return *this;
+    }
 
-  /* Note that the conversion operator& to T * only works on
-     consts, so it doesn't allow you to change the value of *data.
-     You have to use the = operators to change that.  The idea is that
-     operator& is only used for stencils and such.  */
+    /* Note that the conversion operator& to T * only works on
+       consts, so it doesn't allow you to change the value of *data.
+       You have to use the = operators to change that.  The idea is that
+       operator& is only used for stencils and such.  */
 
-  const T * operator&() const
-  {
-    return data;
-  }
-  operator T() const
-  {
-    return *data;
-  }
+    const T *operator&() const { return data; }
+    operator T() const { return *data; }
 
-  /* The ++ operator increments the pointer, not the number that the
-     pointer points to.  This allows iterating over a grid. */
+    /* The ++ operator increments the pointer, not the number that the
+       pointer points to.  This allows iterating over a grid. */
 
-  const Tensor0<T*> & operator++() const
-  {
-    data+=inc;
-    return *this;
-  }
-};
+    const Tensor0<PackPtr<T *, I> > &operator++() const {
+      data += I;
+      return *this;
+    }
+  };
 
-#ifdef ADOLC_ADOUBLE_H
+  template <class T>
+  class Tensor0<T *> {
+    const int inc;
+    mutable T * restrict data;
+  public:
+    Tensor0(T *d,const int i = 1): inc(i), data(d) {}
 
-#endif
+    const Tensor0 & operator=(const Tensor0 &a)
+    {
+      *data=*(a.data);
+      return *this;
+    }
+
+    template<class U>
+    const Tensor0<T*> & operator=(const U &d)
+    {
+      *data=d;
+      return *this;
+    }
+    template<class U>
+    const Tensor0<T*> & operator+=(const U &d)
+    {
+      *data+=d;
+      return *this;
+    }
+    template<class U>
+    const Tensor0<T*> & operator-=(const U &d)
+    {
+      *data-=d;
+      return *this;
+    }
+    template<class U>
+    const Tensor0<T*> & operator*=(const U &d)
+    {
+      *data*=d;
+      return *this;
+    }
+    template<class U>
+    const Tensor0<T*> & operator/=(const U &d)
+    {
+      *data/=d;
+      return *this;
+    }
+
+    /* Assignments operator for ADOL-C */
+    template <class U> const Tensor0<T *> &operator>>=(U &d) {
+      d >>= *data;
+      return *this;
+    }
+
+    template <class U> const Tensor0<T *> &operator<<=(const U d) {
+      *data <<= d;
+      return *this;
+    }
+
+    /* Note that the conversion operator& to T * only works on
+       consts, so it doesn't allow you to change the value of *data.
+       You have to use the = operators to change that.  The idea is that
+       operator& is only used for stencils and such.  */
+
+    const T * operator&() const
+    {
+      return data;
+    }
+    operator T() const
+    {
+      return *data;
+    }
+
+    /* The ++ operator increments the pointer, not the number that the
+       pointer points to.  This allows iterating over a grid. */
+
+    const Tensor0<T*> & operator++() const
+    {
+      data += inc;
+      return *this;
+    }
+  };
+}
 
 #include "Tensor0/d_one_sided_Tensor0.hpp"
 #include "Tensor0/diffusion_Tensor0.hpp"

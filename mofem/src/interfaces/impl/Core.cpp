@@ -17,7 +17,7 @@
 */
 
 extern "C" {
-  void macro_is_depracted_using_deprecated_function() {}
+  void macro_is_deprecated_using_deprecated_function() {}
 }
 
 namespace MoFEM {
@@ -556,7 +556,7 @@ MoFEMErrorCode Core::initialiseDatabaseFromMesh(int verb) {
 
   // Initialize database
   Range meshsets;
-  CHKERR moab.get_entities_by_type(0, MBENTITYSET, meshsets, true);
+  CHKERR moab.get_entities_by_type(0, MBENTITYSET, meshsets, false);
   Range special_meshsets;
   for (Range::iterator mit = meshsets.begin(); mit != meshsets.end(); mit++) {
     BitFieldId field_id;

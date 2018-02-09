@@ -107,7 +107,7 @@ struct UnknownInterface {
    * @param iface reference to a interface pointer
    * @return MoFEMErrorCode
    */
-  template <class IFACE, bool VERIFY /* =false C++11 needed to have this */ >
+  template <class IFACE, bool VERIFY = false>
   inline MoFEMErrorCode getInterface(const MOFEMuuid &uuid,
                                      IFACE *&iface) const {
     MoFEMFunctionBeginHot;
@@ -212,10 +212,8 @@ struct UnknownInterface {
    *
    * @return IFACE*
    */
-  template <
-    class IFACE, 
-    typename boost::enable_if<boost::is_pointer<IFACE>, int>::type /* =0 C++11 needed to have this */  
-  >
+  template <class IFACE,
+            typename boost::enable_if<boost::is_pointer<IFACE>, int>::type = 0>
   inline IFACE getInterface() const {
     typedef typename boost::remove_pointer<IFACE>::type IFaceType;
     IFaceType* iface = NULL;
@@ -248,10 +246,8 @@ struct UnknownInterface {
    *
    * @return IFACE&
    */
-  template <
-    class IFACE, 
-    typename boost::enable_if<boost::is_reference<IFACE>, int>::type /* =0 C++11 needed to have this */  
-  >
+  template <class IFACE, typename boost::enable_if<boost::is_reference<IFACE>,
+                                                   int>::type = 0>
   inline IFACE getInterface() const {
     typedef typename boost::remove_reference<IFACE>::type IFaceType;
     IFaceType* iface = NULL;

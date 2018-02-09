@@ -91,7 +91,7 @@ MoFEMErrorCode EdgeElementForcesAndSourcesCore::calculateEdgeDirection() {
 }
 
 MoFEMErrorCode EdgeElementForcesAndSourcesCore::setIntegrationPts() {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   int order_data = getMaxDataOrder();
   int order_row = getMaxRowOrder();
   int order_col = getMaxColOrder();
@@ -125,8 +125,7 @@ MoFEMErrorCode EdgeElementForcesAndSourcesCore::setIntegrationPts() {
     }
   } else {
     // If rule is negative, set user defined integration points
-    ierr = setGaussPts(order_row, order_col, order_data);
-    CHKERRG(ierr);
+    CHKERR setGaussPts(order_row, order_col, order_data);
     nb_gauss_pts = gaussPts.size2();
     dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nb_gauss_pts, 2,
                                                            false);
@@ -139,18 +138,28 @@ MoFEMErrorCode EdgeElementForcesAndSourcesCore::setIntegrationPts() {
       }
     }
   }
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode
 EdgeElementForcesAndSourcesCore::calculateCoordsAtIntegrationPts() {
   MoFEMFunctionBeginHot;
-  int nb_gauss_pts = gaussPts.size2();
+  const int nb_gauss_pts = gaussPts.size2();
   coordsAtGaussPts.resize(nb_gauss_pts, 3, false);
-  for (int gg = 0; gg != nb_gauss_pts; ++gg) {
-    for (int dd = 0; dd != 3; ++dd) {
-      coordsAtGaussPts(gg, dd) = N_MBEDGE0(gaussPts(0, gg)) * cOords[dd] +
-                                 N_MBEDGE1(gaussPts(0, gg)) * cOords[3 + dd];
+  if (nb_gauss_pts) {
+    FTensor::Tensor0<FTensor::PackPtr<double *, 1> > t_ksi(
+        &*gaussPts.data().begin());
+    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_coords(
+        &coordsAtGaussPts(0, 0), &coordsAtGaussPts(0, 1),
+        &coordsAtGaussPts(0, 2));
+    FTensor::Tensor1<double, 3> t_coords_node0(cOords[0], cOords[1], cOords[2]);
+    FTensor::Tensor1<double, 3> t_coords_node1(cOords[3], cOords[4], cOords[5]);
+    FTensor::Index<'i', 3> i;
+    for (int gg = 0; gg != nb_gauss_pts; ++gg) {
+      t_coords(i) = N_MBEDGE0(t_ksi) * t_coords_node0(i) +
+                    N_MBEDGE1(t_ksi) * t_coords_node1(i);
+      ++t_coords;
+      ++t_ksi;
     }
   }
   MoFEMFunctionReturnHot(0);
@@ -201,7 +210,7 @@ EdgeElementForcesAndSourcesCore::calculateBaseFunctionsOnElement() {
 
 MoFEMErrorCode
 EdgeElementForcesAndSourcesCore::calculateHoCoordsAtIntegrationPts() {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   if (dataPtr->get<FieldName_mi_tag>().find(meshPositionsFieldName) !=
       dataPtr->get<FieldName_mi_tag>().end()) {
     CHKERR getEdgesDataOrderSpaceAndBase(dataH1, meshPositionsFieldName);
@@ -209,9 +218,9 @@ EdgeElementForcesAndSourcesCore::calculateHoCoordsAtIntegrationPts() {
     CHKERR getNodesFieldData(dataH1, meshPositionsFieldName);
     CHKERR opGetHoTangentOnEdge.opRhs(dataH1);
   } else {
-    tAngent_at_GaussPt.resize(0, 3, false);
+    tangentAtGaussPts.resize(0, 3, false);
   }
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode EdgeElementForcesAndSourcesCore::operator()() {
@@ -246,8 +255,7 @@ MoFEMErrorCode EdgeElementForcesAndSourcesCore::operator()() {
   if (dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
     // cerr << dataHcurl.dataOnEntities[MBEDGE][0].getN(AINSWORTH_LEGENDRE_BASE)
     // << endl;
-    ierr = opCovariantTransform.opRhs(dataHcurl);
-    CHKERRG(ierr);
+    CHKERR opCovariantTransform.opRhs(dataHcurl);
   }
 
   const UserDataOperator::OpType types[2] = {UserDataOperator::OPROW,

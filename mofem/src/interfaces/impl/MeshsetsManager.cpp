@@ -54,7 +54,7 @@ MeshsetsManager::query_interface(const MOFEMuuid &uuid,
     moab::Interface &moab = m_field.get_moab();
     MoFEMFunctionBeginHot;
     Range meshsets;
-    rval = moab.get_entities_by_type(0, MBENTITYSET, meshsets, true);
+    rval = moab.get_entities_by_type(0, MBENTITYSET, meshsets, false);
     CHKERRQ_MOAB(rval);
     for (Range::iterator mit = meshsets.begin(); mit != meshsets.end(); mit++) {
       try {

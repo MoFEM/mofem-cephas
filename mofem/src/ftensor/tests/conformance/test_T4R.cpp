@@ -17,7 +17,7 @@ void test_T4R()
   Number<1> N1;
   Number<2> N2;
 
-  Tensor4_Riemann<double,3> t4R_1, t4R_2, t4R_3;
+  Riemann<double,3> t4R_1, t4R_2, t4R_3;
 
   Tensor2_symmetric<double,3> delta_3(3,0,0,3,0,3), delta_5(5,0,0,5,0,5),
     delta_2(2,0,0,2,0,2), delta_7(7,0,0,7,0,7);

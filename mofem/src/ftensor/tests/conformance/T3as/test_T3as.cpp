@@ -4,11 +4,11 @@
 using namespace FTensor;
 using namespace std;
 
-void test_T3as_01(const Tensor3_dg<double,3,3> &t3dg_2,
+void test_T3as_01(const Dg<double,3,3> &t3dg_2,
                   Tensor3_antisymmetric<double,3,3> &t3as_1);
-void test_T3as_02(const Tensor3_dg<double,3,3> &t3dg_2,
+void test_T3as_02(const Dg<double,3,3> &t3dg_2,
                   Tensor3_antisymmetric<double,3,3> &t3as_1);
-void test_T3as_03(const Tensor3_dg<double,3,3> &t3dg_2,
+void test_T3as_03(const Dg<double,3,3> &t3dg_2,
                   Tensor3_antisymmetric<double,3,3> &t3as_1);
 void test_T3as_04(Tensor3_antisymmetric<double,3,3> &t3as_1,
                   const Tensor3_antisymmetric<double,3,3> &t3as_2,
@@ -16,7 +16,7 @@ void test_T3as_04(Tensor3_antisymmetric<double,3,3> &t3as_1,
 void test_T3as_05(Tensor3_antisymmetric<double,3,3> &t3as_1,
                   const Tensor3_antisymmetric<double,3,3> &t3as_2,
                   const Tensor3_antisymmetric<double,3,3> &t3as_3);
-void test_T3as_06(Tensor3_dg<double,3,3> &t3dg_1,
+void test_T3as_06(Dg<double,3,3> &t3dg_1,
                   const Tensor3_antisymmetric<double,3,3> &t3as_2);
 void test_T3as_07(Tensor3_antisymmetric<double,3,3> &t3as_1,
                   const Tensor3_antisymmetric<double,3,3> &t3as_2);
@@ -43,8 +43,8 @@ void test_T3as_14(const Tensor1<double,3> &t1_2,
 
 void test_T3as(const Tensor1<double,3> &t1_2,
 	       const Tensor2<double,3,3> &t2_2,
-	       Tensor3_dg<double,3,3> &t3dg_1,
-	       const Tensor3_dg<double,3,3> &t3dg_2,
+	       Dg<double,3,3> &t3dg_1,
+	       const Dg<double,3,3> &t3dg_2,
 	       Tensor3_antisymmetric<double,3,3> &t3as_1,
 	       const Tensor3_antisymmetric<double,3,3> &t3as_2,
 	       const Tensor3_antisymmetric<double,3,3> &t3as_3)

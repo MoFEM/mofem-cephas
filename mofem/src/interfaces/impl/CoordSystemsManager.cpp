@@ -127,7 +127,7 @@ namespace MoFEM {
     MoFEMFunctionBeginHot;
 
     Range meshsets;
-    rval = moab.get_entities_by_type(0,MBENTITYSET,meshsets,true);  CHKERRQ_MOAB(rval);
+    rval = moab.get_entities_by_type(0,MBENTITYSET,meshsets,false);  CHKERRQ_MOAB(rval);
     Range::iterator mit;
     //loop all meshsehset to find coordinate system
     mit = meshsets.begin();

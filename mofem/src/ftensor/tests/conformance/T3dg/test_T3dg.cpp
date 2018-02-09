@@ -5,120 +5,120 @@ using namespace FTensor;
 using namespace std;
 
 void test_T3dg_01(Tensor1<double,3> &t1_1,
-                  const Tensor3_dg<double,3,3> &t3dg_2);
+                  const Dg<double,3,3> &t3dg_2);
 void test_T3dg_02(Tensor2_symmetric<double,3> &t2s_1,
                   const Tensor2_symmetric<double,3> &t2s_2,
                   const Tensor2_symmetric<double,3> &t2s_3,
-                  Tensor3_dg<double,3,3> &t3dg_1);
+                  Dg<double,3,3> &t3dg_1);
 void test_T3dg_03(Tensor2_symmetric<double,3> &t2s_1,
-                  const Tensor3_dg<double,3,3> &t3dg_2);
+                  const Dg<double,3,3> &t3dg_2);
 void test_T3dg_04(Tensor2<double,3,3> &t2_1,
-                  const Tensor3_dg<double,3,3> &t3dg_2);
+                  const Dg<double,3,3> &t3dg_2);
 void test_T3dg_05(Tensor2<double,3,3> &t2_1,
-                  const Tensor3_dg<double,3,3> &t3dg_2);
+                  const Dg<double,3,3> &t3dg_2);
 void test_T3dg_06(Tensor2_symmetric<double,3> &t2s_1,
-                  const Tensor3_dg<double,3,3> &t3dg_2);
+                  const Dg<double,3,3> &t3dg_2);
 void test_T3dg_07(Tensor2<double,3,3> &t2_1,
-                  const Tensor3_dg<double,3,3> &t3dg_2);
+                  const Dg<double,3,3> &t3dg_2);
 void test_T3dg_08(Tensor2<double,3,3> &t2_1,
-                  const Tensor3_dg<double,3,3> &t3dg_2);
+                  const Dg<double,3,3> &t3dg_2);
 void test_T3dg_09(const Tensor1<double,3> &t1_2,
                   const Tensor2_symmetric<double,3> &t2s_2,
-                  Tensor3_dg<double,3,3> &t3dg_1);
-void test_T3dg_10(Tensor3_dg<double,3,3> &t3dg_1);
-void test_T3dg_11(Tensor3_dg<double,3,3> &t3dg_1,
-                  const Tensor3_dg<double,3,3> &t3dg_2,
-                  const Tensor3_dg<double,3,3> &t3dg_3);
-void test_T3dg_12(Tensor3_dg<double,3,3> &t3dg_1,
-                  const Tensor3_dg<double,3,3> &t3dg_2,
-                  const Tensor3_dg<double,3,3> &t3dg_3);
-void test_T3dg_13(Tensor3_dg<double,3,3> &t3dg_1,
-                  const Tensor3_dg<double,3,3> &t3dg_2,
-                  const Tensor3_dg<double,3,3> &t3dg_3);
-void test_T3dg_14(Tensor3_dg<double,3,3> &t3dg_1,
-                  const Tensor3_dg<double,3,3> &t3dg_2);
+                  Dg<double,3,3> &t3dg_1);
+void test_T3dg_10(Dg<double,3,3> &t3dg_1);
+void test_T3dg_11(Dg<double,3,3> &t3dg_1,
+                  const Dg<double,3,3> &t3dg_2,
+                  const Dg<double,3,3> &t3dg_3);
+void test_T3dg_12(Dg<double,3,3> &t3dg_1,
+                  const Dg<double,3,3> &t3dg_2,
+                  const Dg<double,3,3> &t3dg_3);
+void test_T3dg_13(Dg<double,3,3> &t3dg_1,
+                  const Dg<double,3,3> &t3dg_2,
+                  const Dg<double,3,3> &t3dg_3);
+void test_T3dg_14(Dg<double,3,3> &t3dg_1,
+                  const Dg<double,3,3> &t3dg_2);
 void test_T3dg_15(const Tensor1<double,3> &t1_2,
-                  Tensor3_dg<double,3,3> &t3dg_1,
-                  const Tensor3_dg<double,3,3> &t3dg_2,
-                  const Tensor3_dg<double,3,3> &t3dg_3);
-void test_T3dg_16(Tensor3_dg<double,3,3> &t3dg_1,
-                  const Tensor3_dg<double,3,3> &t3dg_2);
+                  Dg<double,3,3> &t3dg_1,
+                  const Dg<double,3,3> &t3dg_2,
+                  const Dg<double,3,3> &t3dg_3);
+void test_T3dg_16(Dg<double,3,3> &t3dg_1,
+                  const Dg<double,3,3> &t3dg_2);
 void test_T3dg_17(const Tensor1<double,3> &t1_2,
                   Tensor2_symmetric<double,3> &t2s_1,
-                  const Tensor3_dg<double,3,3> &t3dg_2,
-                  const Tensor3_dg<double,3,3> &t3dg_3);
+                  const Dg<double,3,3> &t3dg_2,
+                  const Dg<double,3,3> &t3dg_3);
 void test_T3dg_18(const Tensor1<double,3> &t1_2,
                   Tensor2<double,3,3> &t2_1,
-                  const Tensor3_dg<double,3,3> &t3dg_2,
-                  const Tensor3_dg<double,3,3> &t3dg_3);
+                  const Dg<double,3,3> &t3dg_2,
+                  const Dg<double,3,3> &t3dg_3);
 void test_T3dg_19(const Tensor1<double,3> &t1_2,
                   Tensor2<double,3,3> &t2_1,
-                  const Tensor3_dg<double,3,3> &t3dg_2,
-                  const Tensor3_dg<double,3,3> &t3dg_3);
+                  const Dg<double,3,3> &t3dg_2,
+                  const Dg<double,3,3> &t3dg_3);
 void test_T3dg_20(const Tensor2<double,3,3> &t2_2,
-                  Tensor3_dg<double,3,3> &t3dg_1,
-                  const Tensor3_dg<double,3,3> &t3dg_2,
-                  const Tensor3_dg<double,3,3> &t3dg_3);
+                  Dg<double,3,3> &t3dg_1,
+                  const Dg<double,3,3> &t3dg_2,
+                  const Dg<double,3,3> &t3dg_3);
 void test_T3dg_21(const Tensor2<double,3,3> &t2_2,
-                  Tensor3_dg<double,3,3> &t3dg_1,
-                  const Tensor3_dg<double,3,3> &t3dg_2,
-                  const Tensor3_dg<double,3,3> &t3dg_3);
+                  Dg<double,3,3> &t3dg_1,
+                  const Dg<double,3,3> &t3dg_2,
+                  const Dg<double,3,3> &t3dg_3);
 void test_T3dg_22(Tensor1<double,3> &t1_1, const Tensor2<double,3,3> &t2_2,
-                  const Tensor3_dg<double,3,3> &t3dg_2);
+                  const Dg<double,3,3> &t3dg_2);
 void test_T3dg_23(Tensor1<double,3> &t1_1, const Tensor2<double,3,3> &t2_2,
-                  const Tensor3_dg<double,3,3> &t3dg_2);
+                  const Dg<double,3,3> &t3dg_2);
 void test_T3dg_24(Tensor1<double,3> &t1_1, const Tensor2<double,3,3> &t2_2,
-                  const Tensor3_dg<double,3,3> &t3dg_2);
+                  const Dg<double,3,3> &t3dg_2);
 void test_T3dg_25(Tensor1<double,3> &t1_1, const Tensor2<double,3,3> &t2_2,
-                  const Tensor3_dg<double,3,3> &t3dg_2);
+                  const Dg<double,3,3> &t3dg_2);
 void test_T3dg_26(Tensor1<double,3> &t1_1, const Tensor2<double,3,3> &t2_2,
-                  const Tensor3_dg<double,3,3> &t3dg_2);
+                  const Dg<double,3,3> &t3dg_2);
 void test_T3dg_27(Tensor1<double,3> &t1_1, const Tensor2<double,3,3> &t2_2,
-                  const Tensor3_dg<double,3,3> &t3dg_2);
+                  const Dg<double,3,3> &t3dg_2);
 void test_T3dg_28(const Tensor2_symmetric<double,3> &t2s_2,
-                  Tensor3_dg<double,3,3> &t3dg_1,
-                  const Tensor3_dg<double,3,3> &t3dg_2,
-                  const Tensor3_dg<double,3,3> &t3dg_3);
+                  Dg<double,3,3> &t3dg_1,
+                  const Dg<double,3,3> &t3dg_2,
+                  const Dg<double,3,3> &t3dg_3);
 void test_T3dg_29(const Tensor2_symmetric<double,3> &t2s_2,
-                  Tensor3_dg<double,3,3> &t3dg_1,
-                  const Tensor3_dg<double,3,3> &t3dg_2,
-                  const Tensor3_dg<double,3,3> &t3dg_3);
+                  Dg<double,3,3> &t3dg_1,
+                  const Dg<double,3,3> &t3dg_2,
+                  const Dg<double,3,3> &t3dg_3);
 void test_T3dg_30(Tensor1<double,3> &t1_1,
                   const Tensor2_symmetric<double,3> &t2s_2,
-                  const Tensor3_dg<double,3,3> &t3dg_2);
+                  const Dg<double,3,3> &t3dg_2);
 void test_T3dg_31(Tensor1<double,3> &t1_1,
                   const Tensor2_symmetric<double,3> &t2s_2,
-                  const Tensor3_dg<double,3,3> &t3dg_2);
+                  const Dg<double,3,3> &t3dg_2);
 void test_T3dg_32(Tensor1<double,3> &t1_1,
                   const Tensor2_symmetric<double,3> &t2s_2,
-                  const Tensor3_dg<double,3,3> &t3dg_2);
+                  const Dg<double,3,3> &t3dg_2);
 void test_T3dg_33(Tensor1<double,3> &t1_1,
                   const Tensor2_symmetric<double,3> &t2s_2,
-                  const Tensor3_dg<double,3,3> &t3dg_2);
+                  const Dg<double,3,3> &t3dg_2);
 void test_T3dg_34(Tensor1<double,3> &t1_1,
                   const Tensor2_symmetric<double,3> &t2s_2,
-                  const Tensor3_dg<double,3,3> &t3dg_2);
+                  const Dg<double,3,3> &t3dg_2);
 void test_T3dg_35(Tensor1<double,3> &t1_1,
                   const Tensor2_symmetric<double,3> &t2s_2,
-                  const Tensor3_dg<double,3,3> &t3dg_2);
+                  const Dg<double,3,3> &t3dg_2);
 void test_T3dg_36(Tensor2<double,3,3> &t2_1,
                   const Tensor2_symmetric<double,3> &t2s_2,
-                  Tensor3_dg<double,3,3> &t3dg_1,
-                  const Tensor3_dg<double,3,3> &t3dg_2,
-                  const Tensor3_dg<double,3,3> &t3dg_3);
+                  Dg<double,3,3> &t3dg_1,
+                  const Dg<double,3,3> &t3dg_2,
+                  const Dg<double,3,3> &t3dg_3);
 void test_T3dg_37(const Tensor2<double,3,3> &t2_2,
 		  const Tensor2_symmetric<double,3> &t2s_2,
-		  const Tensor3_dg<double,3,3> &t3dg_2,
-		  const Tensor3_dg<double,3,3> &t3dg_3);
+		  const Dg<double,3,3> &t3dg_2,
+		  const Dg<double,3,3> &t3dg_3);
 
 void test_T3dg(Tensor1<double,3> &t1_1, const Tensor1<double,3> &t1_2,
 	       Tensor2<double,3,3> &t2_1, const Tensor2<double,3,3> &t2_2,
 	       Tensor2_symmetric<double,3> &t2s_1,
 	       const Tensor2_symmetric<double,3> &t2s_2,
 	       const Tensor2_symmetric<double,3> &t2s_3,
-	       Tensor3_dg<double,3,3> &t3dg_1,
-	       const Tensor3_dg<double,3,3> &t3dg_2,
-	       const Tensor3_dg<double,3,3> &t3dg_3)
+	       Dg<double,3,3> &t3dg_1,
+	       const Dg<double,3,3> &t3dg_2,
+	       const Dg<double,3,3> &t3dg_3)
 {
   test_T3dg_01(t1_1,t3dg_2);
   test_T3dg_02(t2s_1,t2s_2,t2s_3,t3dg_1);

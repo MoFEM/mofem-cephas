@@ -188,13 +188,13 @@ MoFEMErrorCode ConvectiveMassElement::OpGetDataAtGaussPts::doWork(
       }
     }
 
-    FTensor::Tensor0<double*> base_function = data.getFTensor0N();
-    FTensor::Tensor1<double*,3> diff_base_functions = data.getFTensor1DiffN<3>();
+    auto base_function = data.getFTensor0N();
+    auto diff_base_functions = data.getFTensor1DiffN<3>();
     FTensor::Index<'i',3> i;
     FTensor::Index<'j',3> j;
 
     for(int gg = 0;gg!=nb_gauss_pts;gg++) {
-      FTensor::Tensor1<double*,3> field_data = data.getFTensor1FieldData<3>();
+      auto field_data = data.getFTensor1FieldData<3>();
       FTensor::Tensor1<double*,3> values(
         &valuesAtGaussPts[gg][0],
         &valuesAtGaussPts[gg][1],
@@ -502,7 +502,7 @@ MoFEMErrorCode ConvectiveMassElement::OpMassJacobian::doWork(
     if(row_data.getIndices().size()==0) MoFEMFunctionReturnHot(0);
     int nb_dofs = row_data.getIndices().size();
 
-    FTensor::Tensor0<double*> base = row_data.getFTensor0N();
+    auto base = row_data.getFTensor0N();
     int nb_base_functions = row_data.getN().size2();
 
     try {
@@ -681,7 +681,7 @@ MoFEMErrorCode ConvectiveMassElement::OpMassJacobian::doWork(
     if(nb_row==0) MoFEMFunctionReturnHot(0);
     if(nb_col==0) MoFEMFunctionReturnHot(0);
 
-    FTensor::Tensor0<double*> base = row_data.getFTensor0N();
+    auto base = row_data.getFTensor0N();
     int nb_base_functions = row_data.getN().size2();
 
     try {
@@ -1202,7 +1202,7 @@ MoFEMErrorCode ConvectiveMassElement::OpEnergy::doWork(
       int nb_dofs = row_data.getIndices().size();
       if(nb_dofs==0) MoFEMFunctionReturnHot(0);
 
-      FTensor::Tensor0<double*> base = row_data.getFTensor0N();
+      auto base = row_data.getFTensor0N();
       int nb_base_functions = row_data.getN().size2();
       FTensor::Index<'i',3> i;
 
@@ -1689,7 +1689,7 @@ MoFEMErrorCode ConvectiveMassElement::OpEnergy::doWork(
         nf.resize(nb_dofs);
         nf.clear();
 
-        FTensor::Tensor0<double*> base = row_data.getFTensor0N();
+        auto base = row_data.getFTensor0N();
         int nb_base_functions = row_data.getN().size2();
         FTensor::Index<'i',3> i;
 

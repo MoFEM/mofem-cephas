@@ -19,6 +19,147 @@
 #ifndef __SURFACE_SLIDING_CONSTRAINS_HPP__
 #define __SURFACE_SLIDING_CONSTRAINS_HPP__
 
+#ifndef WITH_ADOL_C
+#error "MoFEM need to be compiled with ADOL-C"
+#endif
+
+struct GenericSliding {
+
+
+  struct OpGetActiveDofsLambda
+      : public MoFEM::ForcesAndSourcesCore::UserDataOperator {
+    boost::shared_ptr<VectorDouble> activeVariablesPtr;
+    OpGetActiveDofsLambda(const std::string field_name,
+                          boost::shared_ptr<VectorDouble> &active_variables_ptr)
+        : MoFEM::ForcesAndSourcesCore::UserDataOperator(
+              field_name, UserDataOperator::OPCOL),
+          activeVariablesPtr(active_variables_ptr) {}
+    MoFEMErrorCode doWork(int side, EntityType type,
+                          DataForcesAndSourcesCore::EntData &data) {
+      MoFEMFunctionBegin;
+      if (type == MBVERTEX) {
+        for (unsigned int dd = 0; dd != data.getFieldData().size(); ++dd)
+          (*activeVariablesPtr)[dd] = data.getFieldData()[dd];
+      }
+      MoFEMFunctionReturn(0);
+    }
+  };
+
+  template <int SizeLambda>
+  struct OpGetActiveDofsPositions
+      : public MoFEM::ForcesAndSourcesCore::UserDataOperator {
+    boost::shared_ptr<VectorDouble> activeVariablesPtr;
+    OpGetActiveDofsPositions(
+        const std::string field_name,
+        boost::shared_ptr<VectorDouble> &active_variables_ptr)
+        : MoFEM::ForcesAndSourcesCore::UserDataOperator(
+              field_name, UserDataOperator::OPCOL),
+          activeVariablesPtr(active_variables_ptr) {}
+    MoFEMErrorCode doWork(int side, EntityType type,
+                          DataForcesAndSourcesCore::EntData &data) {
+      MoFEMFunctionBegin;
+      if (type == MBVERTEX) {
+        for (unsigned int dd = 0; dd != data.getFieldData().size(); ++dd)
+          (*activeVariablesPtr)[SizeLambda + dd] = data.getFieldData()[dd];
+      }
+      MoFEMFunctionReturn(0);
+    }
+  };
+
+  template <int SizeLambda,int SizePositions>
+  struct OpAssembleRhs : public MoFEM::ForcesAndSourcesCore::UserDataOperator {
+
+    boost::shared_ptr<VectorDouble> resultsPtr;
+
+    OpAssembleRhs(const std::string field_name,
+                  boost::shared_ptr<VectorDouble> &results_ptr)
+        : MoFEM::ForcesAndSourcesCore::UserDataOperator(
+              field_name, UserDataOperator::OPROW),
+          resultsPtr(results_ptr) {}
+
+    MoFEMErrorCode doWork(int side, EntityType type,
+                          DataForcesAndSourcesCore::EntData &data) {
+      MoFEMFunctionBegin;
+      if (type != MBVERTEX)
+        MoFEMFunctionReturnHot(0);
+      VectorInt &indices = data.getIndices();
+      int shift = 0;
+      if (indices.empty()) {
+        MoFEMFunctionReturnHot(0);
+      } else if (indices.size() == SizeLambda) {
+        shift = 0;
+      } else if (indices.size() == SizePositions) {
+        shift = SizeLambda;
+      } else {
+        SETERRQ1(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY,
+                 "Data inconsistency nb of indices %d", indices.size());
+      }
+      CHKERR VecSetOption(getFEMethod()->snes_f, VEC_IGNORE_NEGATIVE_INDICES,
+                          PETSC_TRUE);
+      CHKERR VecSetValues(getFEMethod()->snes_f, indices.size(), &indices[0],
+                          &(*resultsPtr)[shift], ADD_VALUES);
+      MoFEMFunctionReturn(0);
+    }
+  };
+  template <int SizeLambda, int SizePositions>
+  struct OpAssembleLhs : public MoFEM::ForcesAndSourcesCore::UserDataOperator {
+
+    boost::shared_ptr<MatrixDouble> jacobianPtr;
+
+    OpAssembleLhs(const std::string field_name_row,
+                  const std::string field_name_col,
+                  boost::shared_ptr<MatrixDouble> &jacobian_ptr)
+        : MoFEM::ForcesAndSourcesCore::UserDataOperator(
+              field_name_row, field_name_col, UserDataOperator::OPROWCOL),
+          jacobianPtr(jacobian_ptr) {
+      sYmm = false;
+    }
+
+    MoFEMErrorCode doWork(int row_side, int col_side, EntityType row_type,
+                          EntityType col_type,
+                          DataForcesAndSourcesCore::EntData &row_data,
+                          DataForcesAndSourcesCore::EntData &col_data) {
+      MoFEMFunctionBegin;
+      if (row_type != MBVERTEX)
+        MoFEMFunctionReturnHot(0);
+      if (col_type != MBVERTEX)
+        MoFEMFunctionReturnHot(0);
+      VectorInt &row_indices = row_data.getIndices();
+      VectorInt &col_indices = col_data.getIndices();
+      if (row_indices.empty() || col_indices.empty())
+        MoFEMFunctionReturnHot(0);
+      int shift_row = 0;
+      if (row_indices.size() == SizeLambda) {
+        shift_row = 0;
+      } else if (row_indices.size() == SizePositions) {
+        shift_row = SizeLambda;
+      } else {
+        SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY,
+                "Data inconsistency");
+      }
+      int shift_col = 0;
+      if (col_indices.size() == SizeLambda) {
+        shift_col = 0;
+      } else if (col_indices.size() == SizePositions) {
+        shift_col = SizeLambda;
+      } else {
+        SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY,
+                "Data inconsistency");
+      }
+      MatrixDouble jac(row_indices.size(), col_indices.size());
+      for (int rr = 0; rr != row_indices.size(); ++rr) {
+        for (int cc = 0; cc != col_indices.size(); ++cc) {
+          jac(rr, cc) = (*jacobianPtr)(shift_row + rr, shift_col + cc);
+        }
+      }
+      CHKERR MatSetValues(getFEMethod()->snes_B, row_indices.size(),
+                          &row_indices[0], col_indices.size(), &col_indices[0],
+                          &jac(0, 0), ADD_VALUES);
+      MoFEMFunctionReturn(0);
+    }
+  };
+};
+
 /** \brief Shape preserving constrains, i.e. nodes sliding on body surface.
 
   Derivation and implementation of constrains preserving body surface,
@@ -182,7 +323,29 @@
   \f]
 
 */
-struct SurfaceSlidingConstrains {
+struct SurfaceSlidingConstrains: public GenericSliding {
+
+  /** \brief Class implemented by user to detect face orientation
+
+  If mesh generated is with surface mesher, usually you don't have to do
+  nothing, all elements on the surface have consistent orientation. In case of
+  internal faces or if you do something with mesh connectivity which breaks
+  orientation on the face, you have to implement method which will set
+  orientation to face.
+
+  */
+  struct DriverElementOrientation {
+
+    int elementOrientation;
+
+    virtual MoFEMErrorCode
+    getElementOrientation(MoFEM::Interface &m_field,
+                          const FEMethod *fe_method_ptr) {
+      MoFEMFunctionBeginHot;
+      elementOrientation = 1;
+      MoFEMFunctionReturnHot(0);
+    }
+  };
 
   MoFEM::Interface &mField;
 
@@ -197,10 +360,9 @@ struct SurfaceSlidingConstrains {
     int getRule(int order) { return 2 * order; };
 
     MoFEMErrorCode preProcess() {
-      MoFEMFunctionBeginHot;
+      MoFEMFunctionBegin;
 
-      ierr = MoFEM::FaceElementForcesAndSourcesCore::preProcess();
-      CHKERRG(ierr);
+      CHKERR MoFEM::FaceElementForcesAndSourcesCore::preProcess();
 
       if (B != PETSC_NULL) {
         snes_B = B;
@@ -228,7 +390,7 @@ struct SurfaceSlidingConstrains {
       default:
         break;
       }
-      MoFEMFunctionReturnHot(0);
+      MoFEMFunctionReturn(0);
     }
   };
 
@@ -239,27 +401,6 @@ struct SurfaceSlidingConstrains {
   MyTriangleFE &feLhs;
   MyTriangleFE &getLoopFeLhs() { return feLhs; }
 
-  /** \brief Class implemented by user to detect face orientation
-
-   If mesh generated is with surface mesher, usually you don't have to do
-   nothing, all elements on the surface have consistent orientation. In case of
-   inetranl faces or if you do something with mesh connectivity which breaks
-   orientation on the face, you have to implement method which will set
-   orientation to face.
-
-  */
-  struct DriverElementOrientation {
-
-    int elementOrientation;
-
-    virtual MoFEMErrorCode
-    getElementOrientation(MoFEM::Interface &m_field,
-                          const FEMethod *fe_method_ptr) {
-      MoFEMFunctionBeginHot;
-      elementOrientation = 1;
-      MoFEMFunctionReturnHot(0);
-    }
-  };
 
   DriverElementOrientation &crackFrontOrientation;
 
@@ -269,768 +410,685 @@ struct SurfaceSlidingConstrains {
         feLhsPtr(new MyTriangleFE(m_field)), feRhs(*feRhsPtr), feLhs(*feLhsPtr),
         crackFrontOrientation(orientation) {}
 
-  struct AuxFunctions {
 
-    bool useProjectionFromCrackFront;
-    AuxFunctions() : useProjectionFromCrackFront(false) {}
-
-    MatrixDouble N;
-    MatrixDouble Bksi;
-    MatrixDouble Beta;
-
-    VectorDouble pOsition;
-    VectorDouble dXdKsi;
-    VectorDouble dXdEta;
-    MatrixDouble spinKsi;
-    MatrixDouble spinEta;
-    VectorDouble nOrmal;
-    MatrixDouble sPin;
-    double aRea;
-    double lAmbda;
-
-    std::vector<bool> nodesWithoutLambda;
-
-    static MoFEMErrorCode calcSpin(MatrixDouble &spin, VectorDouble &vec) {
-      MoFEMFunctionBeginHot;
-      spin.resize(3, 3, false);
-      spin.clear();
-      spin(0, 1) = -vec[2];
-      spin(0, 2) = +vec[1];
-      spin(1, 0) = +vec[2];
-      spin(1, 2) = -vec[0];
-      spin(2, 0) = -vec[1];
-      spin(2, 1) = +vec[0];
-      MoFEMFunctionReturnHot(0);
-    }
-
-    MoFEMErrorCode matrixN(int gg, DataForcesAndSourcesCore::EntData &data) {
-      MoFEMFunctionBeginHot;
-      try {
-
-        int nb_dofs = data.getN().size2();
-        N.resize(3, 3 * nb_dofs, false);
-        N.clear();
-        for (int ii = 0; ii < nb_dofs; ii++) {
-          for (int jj = 0; jj < 3; jj++) {
-            N(jj, ii * 3 + jj) = data.getN(gg)[ii];
-          }
-        }
-
-      } catch (const std::exception &ex) {
-        std::ostringstream ss;
-        ss << "throw in method: " << ex.what() << std::endl;
-        SETERRQ(PETSC_COMM_SELF, 1, ss.str().c_str());
-      }
-      MoFEMFunctionReturnHot(0);
-    }
-
-    MoFEMErrorCode matrixB(int gg, DataForcesAndSourcesCore::EntData &data) {
-      MoFEMFunctionBeginHot;
-      try {
-        int nb_dofs = data.getN().size2();
-        Bksi.resize(3, 3 * nb_dofs, false);
-        Bksi.clear();
-        for (int ii = 0; ii < nb_dofs; ii++) {
-          for (int jj = 0; jj < 3; jj++) {
-            Bksi(jj, ii * 3 + jj) = data.getDiffN(gg)(ii, 0);
-          }
-        }
-        Beta.resize(3, 3 * nb_dofs);
-        Beta.clear();
-        for (int ii = 0; ii < nb_dofs; ii++) {
-          for (int jj = 0; jj < 3; jj++) {
-            Beta(jj, ii * 3 + jj) = data.getDiffN(gg)(ii, 1);
-          }
-        }
-      } catch (const std::exception &ex) {
-        std::ostringstream ss;
-        ss << "throw in method: " << ex.what() << std::endl;
-        SETERRQ(PETSC_COMM_SELF, 1, ss.str().c_str());
-      }
-      MoFEMFunctionReturnHot(0);
-    }
-
-    MoFEMErrorCode calculateNormal() {
-      MoFEMFunctionBeginHot;
-
-      try {
-        sPin.resize(3, 3, false);
-        ierr = calcSpin(sPin, dXdKsi);
-        CHKERRG(ierr);
-        nOrmal.resize(3, false);
-        noalias(nOrmal) = 0.5 * prod(sPin, dXdEta);
-        aRea = norm_2(nOrmal);
-      } catch (const std::exception &ex) {
-        std::ostringstream ss;
-        ss << "throw in method: " << ex.what() << std::endl;
-        SETERRQ(PETSC_COMM_SELF, 1, ss.str().c_str());
-      }
-      MoFEMFunctionReturnHot(0);
-    }
-  };
-
-  std::vector<AuxFunctions> cUrrent;
-
-  /** \brief Operator calculate material positions and tangent vectors to
-   * element surface
-   */
-  struct OpPositions
+  struct OpJacobian
       : public MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator {
 
-    std::vector<AuxFunctions> &aUx;
+    const int tAg;
+    boost::shared_ptr<VectorDouble> activeVariablesPtr;
+    boost::shared_ptr<VectorDouble> resultsPtr;
+    boost::shared_ptr<MatrixDouble> jacobianPtr;
     DriverElementOrientation &oRientation;
+    bool evaluateJacobian;
 
-    OpPositions(const std::string field_name, std::vector<AuxFunctions> &aux,
-                DriverElementOrientation &orientation)
+    OpJacobian(int tag, const std::string field_name,
+               boost::shared_ptr<VectorDouble> &active_variables_ptr,
+               boost::shared_ptr<VectorDouble> &results_ptr,
+               boost::shared_ptr<MatrixDouble> &jacobian_ptr,
+               DriverElementOrientation &orientation, bool evaluate_jacobian)
         : MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator(
               field_name, UserDataOperator::OPCOL),
-          aUx(aux), oRientation(orientation) {}
+          tAg(tag), activeVariablesPtr(active_variables_ptr),
+          resultsPtr(results_ptr), jacobianPtr(jacobian_ptr),
+          oRientation(orientation), evaluateJacobian(evaluate_jacobian) {}
 
     MoFEMErrorCode doWork(int side, EntityType type,
                           DataForcesAndSourcesCore::EntData &data) {
-      MoFEMFunctionBeginHot;
-
-      try {
-
-        int nb_dofs = data.getFieldData().size();
-        if (nb_dofs == 0) {
-          MoFEMFunctionReturnHot(0);
-        }
-
-        int nb_gauss_pts = data.getN().size1();
-        if (type == MBVERTEX) {
-          aUx.resize(nb_gauss_pts);
-          ierr = oRientation.getElementOrientation(getFaceFE()->mField,
-                                                   getFEMethod());
-          CHKERRG(ierr);
-          for (int gg = 0; gg < nb_gauss_pts; gg++) {
-            aUx[gg].pOsition.resize(3, false);
-            aUx[gg].dXdKsi.resize(3, false);
-            aUx[gg].dXdEta.resize(3, false);
-            aUx[gg].pOsition.clear();
-            aUx[gg].dXdKsi.clear();
-            aUx[gg].dXdEta.clear();
-          }
-        }
-
-        for (int gg = 0; gg < nb_gauss_pts; gg++) {
-          ierr = aUx[gg].matrixN(gg, data);
-          CHKERRG(ierr);
-          ierr = aUx[gg].matrixB(gg, data);
-          CHKERRG(ierr);
-          noalias(aUx[gg].pOsition) += prod(aUx[gg].N, data.getFieldData());
-          noalias(aUx[gg].dXdKsi) += prod(aUx[gg].Bksi, data.getFieldData());
-          noalias(aUx[gg].dXdEta) += prod(aUx[gg].Beta, data.getFieldData());
-        }
-
-      } catch (const std::exception &ex) {
-        std::ostringstream ss;
-        ss << "throw in method: " << ex.what() << std::endl;
-        SETERRQ(PETSC_COMM_SELF, 1, ss.str().c_str());
-      }
-
-      MoFEMFunctionReturnHot(0);
-    }
-  };
-
-  /** \brief Operator calculate Lagrange multiplier values at integration points
-   */
-  struct OpLambda
-      : public MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator {
-
-    std::vector<AuxFunctions> &aUx;
-
-    OpLambda(const std::string field_name, vector<AuxFunctions> &aux)
-        : MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator(
-              field_name, UserDataOperator::OPROW),
-          aUx(aux) {}
-
-    MoFEMErrorCode doWork(int side, EntityType type,
-                          DataForcesAndSourcesCore::EntData &data) {
-      MoFEMFunctionBeginHot;
-      //
-
-      try {
-
-        int nb_gauss_pts = data.getN().size1();
-        if (type == MBVERTEX) {
-          if (aUx.size() != nb_gauss_pts) {
-            SETERRQ2(getFaceFE()->mField.get_comm(), MOFEM_DATA_INCONSISTENCY,
-                     "Size of aUx should be equal to number of integration "
-                     "point but is %d != %d",
-                     aUx.size(), nb_gauss_pts);
-          }
-          for (int gg = 0; gg != nb_gauss_pts; gg++) {
-            aUx[gg].lAmbda = 0;
-          }
-        }
-
-        int nb_dofs = data.getFieldData().size();
-        if (nb_dofs == 0) {
-          MoFEMFunctionReturnHot(0);
-        }
-
-        for (int gg = 0; gg < nb_gauss_pts; gg++) {
-          // cerr << data.getN(gg) << endl;
-          // cerr << data.getFieldData() << endl;
-
-          aUx[gg].lAmbda +=
-              inner_prod(data.getN(gg, nb_dofs), data.getFieldData());
-
-          if (aUx[gg].lAmbda != aUx[gg].lAmbda) {
-            SETERRQ(PETSC_COMM_SELF, MOFEM_INVALID_DATA, "NaN value");
-          }
-        }
-
-        if (type == MBVERTEX) {
-          aUx[0].nodesWithoutLambda.resize(nb_dofs);
-          for (int dd = 0; dd < nb_dofs; dd++) {
-            if (data.getIndices()[dd] == -1) {
-              aUx[0].nodesWithoutLambda[dd] = true;
-            } else {
-              aUx[0].nodesWithoutLambda[dd] = false;
-            }
-          }
-        }
-
-      } catch (const std::exception &ex) {
-        std::ostringstream ss;
-        ss << "throw in method: " << ex.what() << std::endl;
-        SETERRQ(PETSC_COMM_SELF, MOFEM_STD_EXCEPTION_THROW, ss.str().c_str());
-      }
-
-      MoFEMFunctionReturnHot(0);
-    }
-  };
-
-  /** \brief Operator calculate \f$\overline{\lambda}\mathbf{C}^\mathsf{T}\f$
-   */
-  struct OpF : public MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator {
-
-    std::vector<AuxFunctions> &aUx;
-    DriverElementOrientation &oRientation;
-
-    OpF(const std::string field_name, std::vector<AuxFunctions> &aux,
-        DriverElementOrientation &orientation)
-        : MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator(
-              field_name, UserDataOperator::OPROW),
-          aUx(aux), oRientation(orientation) {}
-
-    VectorDouble c;
-    VectorDouble nF;
-    ublas::vector<int> rowIndices;
-
-    MoFEMErrorCode doWork(int row_side, EntityType row_type,
-                          DataForcesAndSourcesCore::EntData &row_data) {
-
-      try {
-
-        unsigned int nb_dofs = row_data.getIndices().size();
-        if (nb_dofs == 0) {
-          MoFEMFunctionReturnHot(0);
-        }
-        // if (nb_dofs != row_data.getIndices().size()) {
-        //   SETERRQ4(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-        //            "FE %s Field %s data inconsistency %d != %d",
-        //            getNumeredEntFiniteElementPtr()->getName().c_str(),
-        //            rowFieldName.c_str(), nb_dofs, row_data.getIndices().size());
-        // }
-        int nb_gauss_pts = row_data.getN().size1();
-
-        if (row_type == MBVERTEX) {
-          for (int gg = 0; gg < nb_gauss_pts; gg++) {
-            aUx[gg].nOrmal.resize(3, false);
-            aUx[gg].nOrmal.clear();
-            aUx[gg].calculateNormal();
-          }
-        }
-
-        int eo = oRientation.elementOrientation;
-
-        c.resize(nb_dofs, false);
-        nF.resize(nb_dofs, false);
-
-        c.clear();
-        nF.clear();
-
-        for (int gg = 0; gg < nb_gauss_pts; gg++) {
-
-          double val = getGaussPts()(2, gg);
-          noalias(c) = prod(aUx[gg].nOrmal, aUx[gg].N);
-          noalias(nF) += val * eo * c * aUx[gg].lAmbda;
-        }
-
-        rowIndices.resize(nb_dofs, false);
-        noalias(rowIndices) = row_data.getIndices();
-
-        if (row_type == MBVERTEX) {
-          int nb_dofs = aUx[0].nodesWithoutLambda.size();
-          for (int dd = 0; dd < nb_dofs; dd++) {
-            if (aUx[0].nodesWithoutLambda[dd]) {
-              for (int jj = 0; jj < 3; jj++) {
-                rowIndices[dd * 3 + jj] = -1;
-              }
-            }
-          }
-        }
-
-        int *indices_ptr = &rowIndices[0];
-
-        ierr = VecSetOption(getFEMethod()->snes_f, VEC_IGNORE_NEGATIVE_INDICES,
-                            PETSC_TRUE);
-        CHKERRG(ierr);
-        ierr = VecSetValues(getFEMethod()->snes_f, nb_dofs, indices_ptr, &nF[0],
-                            ADD_VALUES);
-        CHKERRG(ierr);
-
-      } catch (const std::exception &ex) {
-        std::ostringstream ss;
-        ss << "throw in method: " << ex.what() << std::endl;
-        SETERRQ(PETSC_COMM_SELF, 1, ss.str().c_str());
-      }
-
-      MoFEMFunctionReturnHot(0);
-    }
-  };
-
-  /** \brief Calculate residual \$ \mathbf{g} = \int_\Gamma \mathbf{N}_\lambda
-   * \mathbf{N}\left( \mathbf{X}-\mathbf{X}_0 \right) \$
-   */
-  struct OpG : public MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator {
-
-    std::vector<AuxFunctions> &aUx;
-    DriverElementOrientation &oRientation;
-
-    OpG(const std::string field_name, std::vector<AuxFunctions> &aux,
-        DriverElementOrientation &orientation)
-        : MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator(
-              field_name, UserDataOperator::OPROW),
-          aUx(aux), oRientation(orientation) {}
-
-    VectorDouble g, dElta;
-
-    MoFEMErrorCode doWork(int row_side, EntityType row_type,
-                          DataForcesAndSourcesCore::EntData &row_data) {
-
-      try {
-
-        int nb_dofs = row_data.getFieldData().size();
-        if (nb_dofs == 0) {
-          MoFEMFunctionReturnHot(0);
-        }
-        int nb_gauss_pts = row_data.getN().size1();
-
-        if (row_type == MBVERTEX) {
-          for (int gg = 0; gg < nb_gauss_pts; gg++) {
-            aUx[gg].nOrmal.resize(3, false);
-            aUx[gg].nOrmal.clear();
-            aUx[gg].calculateNormal();
-          }
-        }
-
-        int eo = oRientation.elementOrientation;
-
-        dElta.resize(3);
-        dElta.clear();
-        g.resize(nb_dofs, false);
-        g.clear();
-
-        for (int gg = 0; gg < nb_gauss_pts; gg++) {
-
-          noalias(dElta) = aUx[gg].pOsition;
-          for (int dd = 0; dd < 3; dd++) {
-            dElta[dd] -= getCoordsAtGaussPts()(gg, dd);
-          }
-
-          double val = getGaussPts()(2, gg);
-          double r = inner_prod(aUx[gg].nOrmal, dElta);
-          noalias(g) += val * eo * row_data.getN(gg) * r;
-        }
-
-        int *indices_ptr = &row_data.getIndices()[0];
-
-        ierr = VecSetOption(getFEMethod()->snes_f, VEC_IGNORE_NEGATIVE_INDICES,
-                            PETSC_TRUE);
-        CHKERRG(ierr);
-
-        ierr = VecSetValues(getFEMethod()->snes_f, nb_dofs, indices_ptr, &g[0],
-                            ADD_VALUES);
-        CHKERRG(ierr);
-
-      } catch (const std::exception &ex) {
-        std::ostringstream ss;
-        ss << "throw in method: " << ex.what() << std::endl;
-        SETERRQ(PETSC_COMM_SELF, 1, ss.str().c_str());
-      }
-
-      MoFEMFunctionReturnHot(0);
-    }
-  };
-
-  /** \brief Operator calculating matrix \b C
-   */
-  struct OpC : public MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator {
-
-    std::vector<AuxFunctions> &aUx;
-    DriverElementOrientation &oRientation;
-    bool assembleTranspose;
-
-    OpC(const std::string lambda_field_name,
-        const std::string positions_field_name, std::vector<AuxFunctions> &aux,
-        DriverElementOrientation &orientation, bool assemble_transpose)
-        : MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator(
-              lambda_field_name, positions_field_name,
-              UserDataOperator::OPROWCOL),
-          aUx(aux), oRientation(orientation),
-          assembleTranspose(assemble_transpose) {
-      sYmm = false;
-    }
-
-    VectorDouble c;
-    MatrixDouble C;
-    MatrixDouble transC;
-    ublas::vector<int> transRowIndices;
-
-    MoFEMErrorCode doWork(int row_side, int col_side, EntityType row_type,
-                          EntityType col_type,
-                          DataForcesAndSourcesCore::EntData &row_data,
-                          DataForcesAndSourcesCore::EntData &col_data) {
-      MoFEMFunctionBeginHot;
-
-      if (col_type != MBVERTEX) {
+      MoFEMFunctionBegin;
+      if (type != MBVERTEX)
         MoFEMFunctionReturnHot(0);
+
+      VectorInt &indices = data.getIndices();
+
+      trace_on(tAg);
+
+      ublas::vector<adouble> lambda_dofs(3);
+      for (int dd = 0; dd != 3; ++dd) {
+        lambda_dofs[dd] <<= (*activeVariablesPtr)[dd];
+      }
+      ublas::vector<adouble> position_dofs(9);
+      for (int dd = 0; dd != 9; ++dd) {
+        position_dofs[dd] <<= (*activeVariablesPtr)[3+dd];
       }
 
-      try {
+      FTensor::Index<'i', 3> i;
+      FTensor::Index<'j', 3> j;
+      FTensor::Index<'k', 3> k;
+      FTensor::Number<0> N0;
+      FTensor::Number<1> N1;
+      FTensor::Number<2> N2;
 
-        int nb_row = row_data.getIndices().size();
-        int nb_col = col_data.getIndices().size();
-        if (!nb_row || !nb_col) {
-          MoFEMFunctionReturnHot(0);
+      CHKERR oRientation.getElementOrientation(getFaceFE()->mField,
+                                                     getFEMethod());
+      int eo = oRientation.elementOrientation;
+
+      int nb_gauss_pts = data.getN().size1();
+      int nb_base_functions = data.getN().size2();
+      auto t_base1 = data.getFTensor0N();
+      auto t_base2 = data.getFTensor0N();
+      auto t_diff_base = data.getFTensor1DiffN<2>();
+      FTensor::Tensor1<adouble, 3> t_position;
+      FTensor::Tensor1<adouble, 3> t_position_ksi;
+      FTensor::Tensor1<adouble, 3> t_position_eta;
+      adouble lambda;
+      FTensor::Tensor1<adouble, 3> t_normal;
+      FTensor::Tensor1<adouble, 3> t_delta;
+
+      ublas::vector<adouble> c_vec(3);
+      ublas::vector<adouble> f_vec(9);
+      c_vec.clear();
+      f_vec.clear();
+
+      auto t_coord_ref = getTensor1CoordsAtGaussPts();
+
+      for (int gg = 0; gg != nb_gauss_pts; ++gg) {
+
+        FTensor::Tensor1<adouble *, 3> t_position_dofs(
+            &position_dofs[0], &position_dofs[1], &position_dofs[2], 3);
+        FTensor::Tensor0<adouble *> t_lambda_dof(&lambda_dofs[0]);
+
+        t_position(i) = 0;
+        t_position_ksi(i) = 0;
+        t_position_eta(i) = 0;
+        lambda = 0;
+
+        for (int bb = 0; bb != nb_base_functions; ++bb) {
+          t_position(i) += t_base1 * t_position_dofs(i);
+          t_position_ksi(i) += t_diff_base(N0) * t_position_dofs(i);
+          t_position_eta(i) += t_diff_base(N1) * t_position_dofs(i);
+          lambda += t_base1 * t_lambda_dof;
+          ++t_base1;
+          ++t_position_dofs;
+          ++t_lambda_dof;
+          ++t_diff_base;
         }
 
-        int nb_gauss_pts = row_data.getN().size1();
+        t_delta(i) = t_position(i) - t_coord_ref(i);
+        t_normal(k) = FTensor::cross(t_position_ksi(i), t_position_eta(j), k);
 
-        if (row_type == MBVERTEX) {
-          for (int gg = 0; gg < nb_gauss_pts; gg++) {
-            aUx[gg].nOrmal.resize(3, false);
-            aUx[gg].nOrmal.clear();
-            aUx[gg].calculateNormal();
+        double w = getGaussPts()(2, gg) * 0.5;
+        adouble val;
+        FTensor::Tensor0<adouble *> t_c(&c_vec[0]);
+        FTensor::Tensor1<adouble *, 3> t_f(&f_vec[0], &f_vec[1], &f_vec[2], 3);
+
+        adouble area = sqrt(t_normal(i)*t_normal(i));
+
+        for (int bb = 0; bb != nb_base_functions; ++bb) {
+          if (indices[bb] != -1) {
+            val = w * eo * t_base2;
+            t_c += val * t_normal(i) * t_delta(i);
+            val *= lambda;
+            t_f(i) += val * t_normal(i);
           }
+          ++t_c;
+          ++t_f;
+          ++t_base2;
         }
 
-        for (int gg = 0; gg < nb_gauss_pts; gg++) {
-          ierr = aUx[gg].matrixN(gg, col_data);
-          CHKERRG(ierr);
-        }
-
-        int eo = oRientation.elementOrientation;
-
-        c.resize(nb_col, false);
-        C.resize(nb_row, nb_col, false);
-        C.clear();
-        for (int gg = 0; gg < nb_gauss_pts; gg++) {
-
-          noalias(c) = prod(aUx[gg].nOrmal, aUx[gg].N);
-          double val = getGaussPts()(2, gg);
-          noalias(C) += val * eo * outer_prod(row_data.getN(gg), c);
-        }
-
-        int *row_indices_ptr = &row_data.getIndices()[0];
-        int *col_indices_ptr = &col_data.getIndices()[0];
-
-        for (unsigned int n1 = 0; n1 != C.size1(); n1++) {
-          for (unsigned int n2 = 0; n2 != C.size1(); n2++) {
-            if (C(n1, n2) != C(n1, n2)) {
-              SETERRQ(PETSC_COMM_SELF, MOFEM_INVALID_DATA, "NaN value");
-            }
-          }
-        }
-
-        ierr = MatSetValues(getFEMethod()->snes_B, nb_row, row_indices_ptr,
-                            nb_col, col_indices_ptr, &C(0, 0), ADD_VALUES);
-        CHKERRG(ierr);
-
-        if (assembleTranspose) {
-
-          transC.resize(nb_col, nb_row);
-          noalias(transC) = trans(C);
-
-          transRowIndices.resize(nb_col, false);
-          noalias(transRowIndices) = col_data.getIndices();
-          int *trans_row_indices_ptr = &transRowIndices[0];
-          if (row_type == MBVERTEX) {
-            int nb_dofs = aUx[0].nodesWithoutLambda.size();
-            for (int dd = 0; dd < nb_dofs; dd++) {
-              if (aUx[0].nodesWithoutLambda[dd]) {
-                for (int jj = 0; jj < 3; jj++) {
-                  transRowIndices[dd * 3 + jj] = -1;
-                }
-              }
-            }
-          }
-
-          ierr =
-              MatSetValues(getFEMethod()->snes_B, nb_col, trans_row_indices_ptr,
-                           nb_row, row_indices_ptr, &transC(0, 0), ADD_VALUES);
-          CHKERRG(ierr);
-        }
-
-      } catch (const std::exception &ex) {
-        std::ostringstream ss;
-        ss << "throw in method: " << ex.what() << std::endl;
-        SETERRQ(PETSC_COMM_SELF, 1, ss.str().c_str());
+        ++t_coord_ref;
       }
-      MoFEMFunctionReturnHot(0);
+
+      for (int rr = 0; rr != 3; ++rr) {
+        c_vec[rr] >>= (*resultsPtr)[rr];
+      }
+      for (int rr = 0; rr != 9; ++rr) {
+        f_vec(rr) >>= (*resultsPtr)[3 + rr];
+      }
+
+      trace_off();
+
+      if (evaluateJacobian) {
+        double *jac_ptr[3 + 9];
+        for (int rr = 0; rr != 3 + 9; ++rr) {
+          jac_ptr[rr] = &(*jacobianPtr)(rr, 0);
+        }
+        // play recorder for jacobians
+        int r =
+            ::jacobian(tAg, 3 + 9, 3 + 9, &(*activeVariablesPtr)[0], jac_ptr);
+        if (r < 0) {
+          SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
+                  "ADOL-C function evaluation with error");
+        }
+      }
+
+      MoFEMFunctionReturn(0);
     }
   };
 
-  /** \brief Operator calculating matrix \b B
-   */
-  struct OpB : public MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator {
 
-    std::vector<AuxFunctions> &aUx;
-    DriverElementOrientation &oRientation;
+  
+  MoFEMErrorCode setOperators(int tag,
+                              const std::string lagrange_multipliers_field_name,
+                              const std::string material_field_name) {
+    MoFEMFunctionBegin;
 
-    OpB(const std::string field_name, std::vector<AuxFunctions> &aux,
-        DriverElementOrientation &orientation)
-        : MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator(
-              field_name, field_name, UserDataOperator::OPROWCOL),
-          aUx(aux), oRientation(orientation) {
-      sYmm = false;
-    }
+    boost::shared_ptr<VectorDouble> active_variables_ptr(new VectorDouble(3+9));
+    boost::shared_ptr<VectorDouble> results_ptr(new VectorDouble(3+9));
+    boost::shared_ptr<MatrixDouble> jacobian_ptr(new MatrixDouble(3+9,3+9));
 
-    MatrixDouble spindXdKsi, spindXdEta;
-    MatrixDouble NdNormal;
-    MatrixDouble dNormal;
-
-    MatrixDouble B;
-    ublas::vector<int> rowIndices;
-
-    MoFEMErrorCode doWork(int row_side, int col_side, EntityType row_type,
-                          EntityType col_type,
-                          DataForcesAndSourcesCore::EntData &row_data,
-                          DataForcesAndSourcesCore::EntData &col_data) {
-      MoFEMFunctionBeginHot;
-
-      try {
-
-        int nb_row = row_data.getIndices().size();
-        int nb_col = col_data.getIndices().size();
-        if (!nb_row || !nb_col) {
-          MoFEMFunctionReturnHot(0);
-        }
-
-        int nb_gauss_pts = row_data.getN().size1();
-        int eo = oRientation.elementOrientation;
-
-        for (int gg = 0; gg < nb_gauss_pts; gg++) {
-          ierr = aUx[gg].matrixN(gg, row_data);
-          CHKERRG(ierr);
-          ierr = aUx[gg].matrixB(gg, col_data);
-          CHKERRG(ierr);
-        }
-
-        spindXdKsi.resize(3, 3, false);
-        spindXdEta.resize(3, 3, false);
-        dNormal.resize(3, nb_col, false);
-        NdNormal.resize(nb_row, nb_col, false);
-
-        B.resize(nb_row, nb_col, false);
-        B.clear();
-        for (int gg = 0; gg < nb_gauss_pts; gg++) {
-
-          ierr = AuxFunctions::calcSpin(spindXdKsi, aUx[gg].dXdKsi);
-          CHKERRG(ierr);
-          ierr = AuxFunctions::calcSpin(spindXdEta, aUx[gg].dXdEta);
-          CHKERRG(ierr);
-
-          noalias(dNormal) = eo * (prod(spindXdKsi, aUx[gg].Beta) -
-                                   prod(spindXdEta, aUx[gg].Bksi));
-          noalias(NdNormal) = prod(trans(aUx[gg].N), dNormal);
-
-          double val = getGaussPts()(2, gg);
-          noalias(B) += val * aUx[gg].lAmbda * NdNormal;
-        }
-
-        rowIndices.resize(nb_row, false);
-        noalias(rowIndices) = row_data.getIndices();
-        if (row_type == MBVERTEX) {
-          int nb_dofs = aUx[0].nodesWithoutLambda.size();
-          for (int dd = 0; dd < nb_dofs; dd++) {
-            if (aUx[0].nodesWithoutLambda[dd]) {
-              for (int jj = 0; jj < 3; jj++) {
-                rowIndices[dd * 3 + jj] = -1;
-              }
-            }
-          }
-        }
-
-        int *row_indices_ptr = &rowIndices[0];
-        int *col_indices_ptr = &col_data.getIndices()[0];
-
-        ierr = MatSetValues(getFEMethod()->snes_B, nb_row, row_indices_ptr,
-                            nb_col, col_indices_ptr, &B(0, 0), ADD_VALUES);
-        CHKERRG(ierr);
-
-      } catch (const std::exception &ex) {
-        std::ostringstream ss;
-        ss << "throw in method: " << ex.what() << std::endl;
-        SETERRQ(PETSC_COMM_SELF, 1, ss.str().c_str());
-      }
-
-      MoFEMFunctionReturnHot(0);
-    }
-  };
-
-  /** \brief Operator calculating matrix \b A
-   */
-  struct OpA : public MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator {
-
-    std::vector<AuxFunctions> &aUx;
-    DriverElementOrientation &oRientation;
-
-    OpA(const std::string lagrange_multipliers_field_name,
-        const std::string field_name, std::vector<AuxFunctions> &aux,
-        DriverElementOrientation &orientation)
-        : MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator(
-              lagrange_multipliers_field_name, field_name,
-              UserDataOperator::OPROWCOL),
-          aUx(aux), oRientation(orientation) {
-      sYmm = false;
-    }
-
-    VectorDouble XdNormal;
-    MatrixDouble spindXdKsi, spindXdEta;
-    MatrixDouble dNormal, NXdNormal;
-    VectorDouble dElta;
-
-    MatrixDouble A;
-
-    MoFEMErrorCode doWork(int row_side, int col_side, EntityType row_type,
-                          EntityType col_type,
-                          DataForcesAndSourcesCore::EntData &row_data,
-                          DataForcesAndSourcesCore::EntData &col_data) {
-      MoFEMFunctionBeginHot;
-
-      try {
-
-        int nb_row = row_data.getIndices().size();
-        int nb_col = col_data.getIndices().size();
-        if (!nb_row || !nb_col) {
-          MoFEMFunctionReturnHot(0);
-        }
-
-        int nb_gauss_pts = row_data.getN().size1();
-        int eo = oRientation.elementOrientation;
-
-        for (int gg = 0; gg < nb_gauss_pts; gg++) {
-          ierr = aUx[gg].matrixB(gg, col_data);
-          CHKERRG(ierr);
-        }
-
-        XdNormal.resize(nb_col, false);
-        spindXdKsi.resize(3, 3, false);
-        spindXdEta.resize(3, 3, false);
-        dNormal.resize(3, nb_col, false);
-        NXdNormal.resize(nb_row, nb_col, false);
-        dElta.resize(3);
-
-        A.resize(nb_row, nb_col, false);
-        A.clear();
-        for (int gg = 0; gg < nb_gauss_pts; gg++) {
-
-          noalias(dElta) = aUx[gg].pOsition;
-          for (int dd = 0; dd < 3; dd++) {
-            dElta[dd] -= getCoordsAtGaussPts()(gg, dd);
-          }
-
-          ierr = AuxFunctions::calcSpin(spindXdKsi, aUx[gg].dXdKsi);
-          CHKERRG(ierr);
-          ierr = AuxFunctions::calcSpin(spindXdEta, aUx[gg].dXdEta);
-          CHKERRG(ierr);
-
-          noalias(dNormal) = eo * (prod(spindXdKsi, aUx[gg].Beta) -
-                                   prod(spindXdEta, aUx[gg].Bksi));
-          noalias(XdNormal) = prod(trans(dElta), dNormal);
-          noalias(NXdNormal) = outer_prod(row_data.getN(gg), XdNormal);
-
-          double val = getGaussPts()(2, gg);
-          noalias(A) += val * NXdNormal;
-        }
-
-        int *row_indices_ptr = &row_data.getIndices()[0];
-        int *col_indices_ptr = &col_data.getIndices()[0];
-
-        ierr = MatSetValues(getFEMethod()->snes_B, nb_row, row_indices_ptr,
-                            nb_col, col_indices_ptr, &A(0, 0), ADD_VALUES);
-        CHKERRG(ierr);
-
-      } catch (const std::exception &ex) {
-        std::ostringstream ss;
-        ss << "throw in method: " << ex.what() << std::endl;
-        SETERRQ(PETSC_COMM_SELF, 1, ss.str().c_str());
-      }
-
-      MoFEMFunctionReturnHot(0);
-    }
-  };
-
-  /** \brief Driver function setting operators to calculate \b C matrix only
-   */
-  MoFEMErrorCode
-  setOperatorsCOnly(const std::string lagrange_multipliers_field_name,
-                    const std::string material_field_name) {
-    MoFEMFunctionBeginHot;
-
-    // Adding operators to calculate the left hand side
-    feLhs.getOpPtrVector().push_back(
-        new OpPositions(material_field_name, cUrrent, crackFrontOrientation));
-    feLhs.getOpPtrVector().push_back(
-        new OpLambda(lagrange_multipliers_field_name, cUrrent));
-    feLhs.getOpPtrVector().push_back(new OpC(lagrange_multipliers_field_name,
-                                             material_field_name, cUrrent,
-                                             crackFrontOrientation, false));
-
-    MoFEMFunctionReturnHot(0);
-  }
-
-  /** \brief Driver function setting operators to calculate nonlinear problems
-   * with sliding points on the surface
-   */
-  MoFEMErrorCode setOperatorsWithLinearGeometry(
-      const std::string lagrange_multipliers_field_name,
-      const std::string material_field_name, bool assemble_transpose,
-      bool add_nonlinear_term) {
-    MoFEMFunctionBeginHot;
-
-    // Adding operators to calculate the right hand side
     feRhs.getOpPtrVector().clear();
+    feRhs.getOpPtrVector().push_back(new OpGetActiveDofsLambda(
+        lagrange_multipliers_field_name, active_variables_ptr));
+    feRhs.getOpPtrVector().push_back(new OpGetActiveDofsPositions<3>(
+        material_field_name, active_variables_ptr));
+    feRhs.getOpPtrVector().push_back(new OpJacobian(
+        tag, lagrange_multipliers_field_name, active_variables_ptr, results_ptr,
+        jacobian_ptr, crackFrontOrientation, false));
     feRhs.getOpPtrVector().push_back(
-        new OpPositions(material_field_name, cUrrent, crackFrontOrientation));
+        new OpAssembleRhs<3, 9>(lagrange_multipliers_field_name, results_ptr));
     feRhs.getOpPtrVector().push_back(
-        new OpLambda(lagrange_multipliers_field_name, cUrrent));
-    feRhs.getOpPtrVector().push_back(
-        new OpF(material_field_name, cUrrent, crackFrontOrientation));
-    feRhs.getOpPtrVector().push_back(new OpG(lagrange_multipliers_field_name,
-                                             cUrrent, crackFrontOrientation));
+        new OpAssembleRhs<3, 9>(material_field_name, results_ptr));
 
     // Adding operators to calculate the left hand side
     feLhs.getOpPtrVector().clear();
-    feLhs.getOpPtrVector().push_back(
-        new OpPositions(material_field_name, cUrrent, crackFrontOrientation));
-    feLhs.getOpPtrVector().push_back(
-        new OpLambda(lagrange_multipliers_field_name, cUrrent));
-    feLhs.getOpPtrVector().push_back(
-        new OpC(lagrange_multipliers_field_name, material_field_name, cUrrent,
-                crackFrontOrientation, assemble_transpose));
-    feLhs.getOpPtrVector().push_back(
-        new OpB(material_field_name, cUrrent, crackFrontOrientation));
-    feLhs.getOpPtrVector().push_back(new OpA(lagrange_multipliers_field_name,
-                                             material_field_name, cUrrent,
-                                             crackFrontOrientation));
+    feLhs.getOpPtrVector().push_back(new OpGetActiveDofsLambda(
+        lagrange_multipliers_field_name, active_variables_ptr));
+    feLhs.getOpPtrVector().push_back(new OpGetActiveDofsPositions<3>(
+        material_field_name, active_variables_ptr));
+    feLhs.getOpPtrVector().push_back(new OpJacobian(
+        tag, lagrange_multipliers_field_name, active_variables_ptr, results_ptr,
+        jacobian_ptr, crackFrontOrientation, true));
+    feLhs.getOpPtrVector().push_back(new OpAssembleLhs<3, 9>(
+        lagrange_multipliers_field_name, material_field_name, jacobian_ptr));
+    feLhs.getOpPtrVector().push_back(new OpAssembleLhs<3, 9>(
+        material_field_name, lagrange_multipliers_field_name, jacobian_ptr));
+    feLhs.getOpPtrVector().push_back(new OpAssembleLhs<3, 9>(
+        material_field_name, material_field_name, jacobian_ptr));
 
-    MoFEMFunctionReturnHot(0);
+    MoFEMFunctionReturn(0);
+  }
+
+  MoFEMErrorCode
+  setOperatorsConstrainOnly(int tag,
+                            const std::string lagrange_multipliers_field_name,
+                            const std::string material_field_name) {
+    MoFEMFunctionBegin;
+
+    boost::shared_ptr<VectorDouble> active_variables_ptr(
+        new VectorDouble(3 + 9));
+    boost::shared_ptr<VectorDouble> results_ptr(new VectorDouble(3 + 9));
+    boost::shared_ptr<MatrixDouble> jacobian_ptr(
+        new MatrixDouble(3 + 9, 3 + 9));
+
+    // Adding operators to calculate the left hand side
+    feLhs.getOpPtrVector().clear();
+    feLhs.getOpPtrVector().push_back(new OpGetActiveDofsLambda(
+        lagrange_multipliers_field_name, active_variables_ptr));
+    feLhs.getOpPtrVector().push_back(new OpGetActiveDofsPositions<3>(
+        material_field_name, active_variables_ptr));
+    feLhs.getOpPtrVector().push_back(new OpJacobian(
+        tag, lagrange_multipliers_field_name, active_variables_ptr, results_ptr,
+        jacobian_ptr, crackFrontOrientation, true));
+    feLhs.getOpPtrVector().push_back(
+        new OpAssembleLhs<3,9>(lagrange_multipliers_field_name, material_field_name,
+                          jacobian_ptr));
+
+    MoFEMFunctionReturn(0);
+  }
+
+};
+
+struct EdgeSlidingConstrains: public GenericSliding {
+
+  struct CalculateEdgeBase {
+
+    static MoFEMErrorCode createTag(moab::Interface &moab, Tag &th0, Tag &th1,
+                                    Tag &th2) {
+      MoFEMFunctionBegin;
+      double def_val[] = {0, 0, 0};
+      CHKERR moab.tag_get_handle("EDGE_BASE0", 3, MB_TYPE_DOUBLE, th0,
+                                 MB_TAG_CREAT | MB_TAG_SPARSE, def_val);
+      CHKERR moab.tag_get_handle("EDGE_BASE1", 3, MB_TYPE_DOUBLE, th1,
+                                 MB_TAG_CREAT | MB_TAG_SPARSE, def_val);
+      int def_int_val[] = {-1};
+      CHKERR moab.tag_get_handle("PATCH_NUMBER", 1, MB_TYPE_INTEGER, th2,
+                                 MB_TAG_CREAT | MB_TAG_SPARSE, def_int_val);
+      MoFEMFunctionReturn(0);
+    }
+
+    static MoFEMErrorCode numberSurfaces(moab::Interface &moab, Range edges,
+                                         Range tris) {
+      MoFEMFunctionBegin;
+
+      auto get_edges = [&](const Range &ents) {
+        Range edges;
+        CHKERR moab.get_adjacencies(ents, 1, false, edges,
+                                    moab::Interface::UNION);
+        return edges;
+      };
+
+      auto get_face_adj = [&, get_edges](const Range &faces) {
+        Range adj_faces;
+        CHKERR moab.get_adjacencies(subtract(get_edges(faces), edges), 2, false,
+                                   adj_faces, moab::Interface::UNION);
+        return intersect(adj_faces, tris);
+      };
+
+      auto get_patch = [&, get_face_adj](const EntityHandle face) {
+        Range patch_ents;
+        patch_ents.insert(face);
+        unsigned int nb0;
+        do {
+          nb0 = patch_ents.size();
+          patch_ents.merge(get_face_adj(patch_ents));
+        } while(nb0 != patch_ents.size());
+        return patch_ents;
+      };
+
+      auto get_patches = [&]() {
+        std::vector<Range> patches;
+        while (!tris.empty()) {
+          patches.push_back(get_patch(tris[0]));
+          tris = subtract(tris,patches.back());
+        }
+        return patches;
+      };
+
+      Tag th0, th1, th2;
+      CHKERR createTag(moab, th0, th1, th2);
+
+      auto patches = get_patches();
+      int pp = 0;
+      for(auto patch : patches) {
+        // cerr << "pp: " << pp << endl;
+        // cerr << patch << endl;
+        std::vector<int> tags_vals(patch.size(),pp);
+        CHKERR moab.tag_set_data(th2, patch, &*tags_vals.begin());
+        ++pp;
+      }
+
+      MoFEMFunctionReturn(0);
+    }
+
+    static MoFEMErrorCode setTags(moab::Interface &moab, Range edges, Range tris) {
+      MoFEMFunctionBegin;
+      Tag th0, th1, th2;
+      CHKERR createTag(moab, th0, th1, th2);
+      CHKERR numberSurfaces(moab,edges,tris);
+      for (auto edge : edges) {
+        Range adj_faces;
+        CHKERR moab.get_adjacencies(&edge, 1, 2, false, adj_faces);
+        adj_faces = intersect(adj_faces, tris);
+        if(adj_faces.size()!=2) {
+          SETERRQ1(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY,
+                  "Should be 2 faces adjacent to edge but is %d",
+                  adj_faces.size());
+        }
+        VectorDouble3 v[2] = { VectorDouble3(3), VectorDouble3(3) };
+        auto get_tensor_from_vec = [](VectorDouble3 &v) {
+          return FTensor::Tensor1<FTensor::PackPtr<double *, 1>, 3>(&v[0], &v[1],
+                                                             &v[2]);
+        };
+
+        FTensor::Index<'i',3> i;
+        FTensor::Index<'j',3> j;
+        FTensor::Index<'k',3> k;
+
+        auto calculate_normals = [&, get_tensor_from_vec]() {
+          int ff = 0;
+          for (auto face : adj_faces) {
+            double &x = (v[ff])[0];
+            double &y = (v[ff])[1];
+            double &z = (v[ff])[2];
+            moab::Util::normal(&moab, face, x, y, z);
+            auto t_n = get_tensor_from_vec(v[ff]);
+            t_n(i) /= sqrt(t_n(i) * t_n(i));
+            ++ff;
+          }
+        };
+        calculate_normals();
+
+        auto get_patch_number = [&]() {
+          std::vector<int> p = {0, 0};
+          CHKERR moab.tag_get_data(th2,adj_faces,&*p.begin());
+          return p;
+        };
+
+        auto order_normals = [&, get_patch_number]() {
+          auto p = get_patch_number();
+          if (p[0] < p[1]) {
+            v[0].swap(v[1]);
+          }
+        };
+        order_normals();
+
+        auto t_cross = FTensor::Tensor1<double, 3>();
+        auto t_n0 = get_tensor_from_vec(v[0]);
+        auto t_n1 = get_tensor_from_vec(v[1]);
+
+        t_cross(k) = FTensor::cross(t_n0(i), t_n1(j), k);
+        t_n1(k) = FTensor::cross(t_n0(i), t_cross(j), k);
+
+        VectorDouble3 &v0 = v[0];
+        VectorDouble3 &v1 = v[1];
+        CHKERR moab.tag_set_data(th0, &edge, 1, &v0[0]);
+        CHKERR moab.tag_set_data(th1, &edge, 1, &v1[0]);
+      }
+      MoFEMFunctionReturn(0);
+    }
+
+    static MoFEMErrorCode saveEdges(moab::Interface &moab, std::string name,
+                             Range edges, Range *faces = nullptr) {
+      MoFEMFunctionBegin;
+      EntityHandle meshset;
+      Tag ths[3];
+      CHKERR createTag(moab, ths[0], ths[1], ths[2]);
+      CHKERR moab.create_meshset(MESHSET_SET, meshset);
+      CHKERR moab.add_entities(meshset, edges);
+      if(faces != nullptr) {
+        CHKERR moab.add_entities(meshset, *faces);
+      }
+      CHKERR moab.write_file(name.c_str(), "VTK", "", &meshset, 1, ths, 3);
+      CHKERR moab.delete_entities(&meshset, 1);
+      MoFEMFunctionReturn(0);
+    }
+  };
+
+
+  MoFEM::Interface &mField;
+
+  struct MyEdgeFE : public MoFEM::EdgeElementForcesAndSourcesCore {
+
+    Mat B;
+    Vec F;
+
+    MyEdgeFE(MoFEM::Interface &m_field)
+        : MoFEM::EdgeElementForcesAndSourcesCore(m_field), B(PETSC_NULL),
+          F(PETSC_NULL) {}
+    int getRule(int order) { return 2 * order; };
+
+    MoFEMErrorCode preProcess() {
+      MoFEMFunctionBegin;
+
+      CHKERR MoFEM::EdgeElementForcesAndSourcesCore::preProcess();
+
+      if (B != PETSC_NULL) {
+        snes_B = B;
+      }
+
+      if (F != PETSC_NULL) {
+        snes_f = F;
+      }
+
+      switch (ts_ctx) {
+      case CTX_TSSETIFUNCTION: {
+        if (!F) {
+          snes_ctx = CTX_SNESSETFUNCTION;
+          snes_f = ts_F;
+        }
+        break;
+      }
+      case CTX_TSSETIJACOBIAN: {
+        if (!B) {
+          snes_ctx = CTX_SNESSETJACOBIAN;
+          snes_B = ts_B;
+        }
+        break;
+      }
+      default:
+        break;
+      }
+      MoFEMFunctionReturn(0);
+    }
+  };
+
+  boost::shared_ptr<MyEdgeFE> feRhsPtr, feLhsPtr;
+
+  MyEdgeFE &feRhs;
+  MyEdgeFE &getLoopFeRhs() { return feRhs; }
+  MyEdgeFE &feLhs;
+  MyEdgeFE &getLoopFeLhs() { return feLhs; }
+
+  EdgeSlidingConstrains(MoFEM::Interface &m_field)
+      : mField(m_field), feRhsPtr(new MyEdgeFE(m_field)),
+        feLhsPtr(new MyEdgeFE(m_field)), feRhs(*feRhsPtr), feLhs(*feLhsPtr) {}
+
+  struct OpJacobian
+      : public MoFEM::EdgeElementForcesAndSourcesCore::UserDataOperator {
+
+    const int tAg;
+    boost::shared_ptr<VectorDouble> activeVariablesPtr;
+    boost::shared_ptr<VectorDouble> resultsPtr;
+    boost::shared_ptr<MatrixDouble> jacobianPtr;
+    bool evaluateJacobian;
+
+    OpJacobian(int tag, const std::string field_name,
+               boost::shared_ptr<VectorDouble> &active_variables_ptr,
+               boost::shared_ptr<VectorDouble> &results_ptr,
+               boost::shared_ptr<MatrixDouble> &jacobian_ptr,
+               bool evaluate_jacobian)
+        : MoFEM::EdgeElementForcesAndSourcesCore::UserDataOperator(
+              field_name, UserDataOperator::OPCOL),
+          tAg(tag), activeVariablesPtr(active_variables_ptr),
+          resultsPtr(results_ptr), jacobianPtr(jacobian_ptr),
+          evaluateJacobian(evaluate_jacobian) {}
+
+    MoFEMErrorCode doWork(int side, EntityType type,
+                          DataForcesAndSourcesCore::EntData &data) {
+      MoFEMFunctionBegin;
+      if (type != MBVERTEX)
+        MoFEMFunctionReturnHot(0);
+
+      Tag th0, th1, th2;
+      CHKERR CalculateEdgeBase::createTag(getEdgeFE()->mField.get_moab(), th0,
+                                          th1, th2);
+      FTensor::Tensor1<double, 3> t_edge_base0, t_edge_base1;
+      EntityHandle fe_ent = getFEEntityHandle();
+      CHKERR getEdgeFE()->mField.get_moab().tag_get_data(th0, &fe_ent, 1,
+                                                         &t_edge_base0(0));
+      CHKERR getEdgeFE()->mField.get_moab().tag_get_data(th1, &fe_ent, 1,
+                                                         &t_edge_base1(0));
+
+      VectorInt &indices = data.getIndices();
+
+      trace_on(tAg);
+
+      ublas::vector<adouble> lambda_dofs(4);
+      for (int dd = 0; dd != 4; ++dd) {
+        lambda_dofs[dd] <<= (*activeVariablesPtr)[dd];
+      }
+      ublas::vector<adouble> position_dofs(6);
+      for (int dd = 0; dd != 6; ++dd) {
+        position_dofs[dd] <<= (*activeVariablesPtr)[4 + dd];
+      }
+
+      FTensor::Index<'i', 3> i;
+      FTensor::Index<'j', 2> j;
+      FTensor::Number<0> N0;
+      FTensor::Number<1> N1;
+
+      FTensor::Tensor1<adouble *, 3> t_node0(
+          &position_dofs[0], &position_dofs[1], &position_dofs[2]);
+      FTensor::Tensor1<adouble *, 3> t_node1(
+          &position_dofs[3], &position_dofs[4], &position_dofs[5]);
+
+      FTensor::Tensor1<adouble, 3> t_tangent;
+      t_tangent(i) = t_node1(i) - t_node0(i);
+      t_tangent(i) /= sqrt(t_tangent(i)*t_tangent(i));
+
+      adouble t_dot0, t_dot1;
+      t_dot0 = t_edge_base0(i) * t_tangent(i);
+      t_dot1 = t_edge_base1(i) * t_tangent(i);
+
+      FTensor::Tensor1<adouble,3> t_base0, t_base1;
+      // t_edge_base0.t_tangent - (t_edge_base0.t_tangent)*t_tangent.t_tangent
+      // t_edge_base0 . ( t_tangent - t_tangent*(t_tangent.t_tangent) )
+      t_base0(i) = t_edge_base0(i) - t_dot0 * t_tangent(i);
+      t_base1(i) = t_edge_base1(i) - t_dot1 * t_tangent(i);
+      t_base0(i) /= sqrt(t_base0(i) * t_base0(i));
+      t_base1(i) /= sqrt(t_base1(i) * t_base1(i));
+
+      // cerr << t_edge_base0 << " : " << t_base0 << " : "
+      //      << t_edge_base0(i) * t_base0(i) << endl;
+      // cerr << t_edge_base1 << " : " << t_base1 << " : "
+      //      << t_edge_base1(i) * t_base1(i) << endl;
+      // cerr << endl;
+
+      auto t_base_fun1 = data.getFTensor0N();
+      auto t_base_fun2 = data.getFTensor0N();
+      FTensor::Tensor1<adouble, 3> t_position;
+      FTensor::Tensor1<adouble, 2> t_lambda;
+      FTensor::Tensor1<adouble, 3> t_delta;
+      auto t_coord_ref = getTensor1CoordsAtGaussPts();
+
+      ublas::vector<adouble> c_vec(4);
+      ublas::vector<adouble> f_vec(6);
+      c_vec.clear();
+      f_vec.clear();
+
+      int nb_gauss_pts = data.getN().size1();
+      int nb_base_functions = data.getN().size2();
+      for (int gg = 0; gg != nb_gauss_pts; ++gg) {
+
+        FTensor::Tensor1<adouble *, 3> t_position_dofs(
+            &position_dofs[0], &position_dofs[1], &position_dofs[2], 3);
+        FTensor::Tensor1<adouble *, 2> t_lambda_dof(&lambda_dofs[0],
+                                                    &lambda_dofs[1], 2);
+
+        t_position(i) = 0;
+        t_lambda(j) = 0;
+        for (int bb = 0; bb != nb_base_functions; ++bb) {
+          t_position(i) += t_base_fun1 * t_position_dofs(i);
+          t_lambda(j) += t_base_fun1 * t_lambda_dof(j);
+          ++t_base_fun1;
+          ++t_position_dofs;
+          ++t_lambda_dof;
+        }
+
+        t_delta(i) = t_position(i) - t_coord_ref(i);
+        adouble dot0 = t_base0(i) * t_delta(i);
+        adouble dot1 = t_base1(i) * t_delta(i);
+
+        double w = getGaussPts()(1, gg) * getLength();
+        adouble val, val1, val2;
+        FTensor::Tensor1<adouble *, 2> t_c(&c_vec[0], &c_vec[1], 2);
+        FTensor::Tensor1<adouble *, 3> t_f(&f_vec[0], &f_vec[1], &f_vec[2], 3);
+        for (int bb = 0; bb != nb_base_functions; ++bb) {
+          if (indices[2 * bb] != -1) {
+            val = w * t_base_fun2;
+            t_c(N0) += val * dot0;
+            t_c(N1) += val * dot1;
+            val1 = val * t_lambda(N0);
+            val2 = val * t_lambda(N1);
+            t_f(i) += val1 * t_base0(i) + val2 * t_base1(i);
+          }
+          ++t_c;
+          ++t_f;
+          ++t_base_fun2;
+        }
+
+        ++t_coord_ref;
+      }
+
+      for (int rr = 0; rr != 4; ++rr) {
+        c_vec[rr] >>= (*resultsPtr)[rr];
+      }
+      for (int rr = 0; rr != 6; ++rr) {
+        f_vec(rr) >>= (*resultsPtr)[4 + rr];
+      }
+
+      trace_off();
+
+      if (evaluateJacobian) {
+        double *jac_ptr[4 + 6];
+        for (int rr = 0; rr != 4 + 6; ++rr) {
+          jac_ptr[rr] = &(*jacobianPtr)(rr, 0);
+        }
+        // play recorder for jacobians
+        int r =
+            ::jacobian(tAg, 4 + 6, 4 + 6, &(*activeVariablesPtr)[0], jac_ptr);
+        if (r < 0) {
+          SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
+                  "ADOL-C function evaluation with error");
+        }
+      }
+
+      MoFEMFunctionReturn(0);
+    }
+  };
+
+  MoFEMErrorCode setOperators(int tag, Range edges, Range faces,
+                              const std::string lagrange_multipliers_field_name,
+                              const std::string material_field_name) {
+    MoFEMFunctionBegin;
+    CHKERR EdgeSlidingConstrains::CalculateEdgeBase::setTags(mField.get_moab(),
+                                                             edges, faces);
+    CHKERR setOperators(tag, lagrange_multipliers_field_name,
+                        material_field_name);
+    MoFEMFunctionReturn(0);
+  }
+
+  MoFEMErrorCode setOperators(int tag,
+                              const std::string lagrange_multipliers_field_name,
+                              const std::string material_field_name) {
+    MoFEMFunctionBegin;
+
+    boost::shared_ptr<VectorDouble> active_variables_ptr(
+        new VectorDouble(4 + 6));
+    boost::shared_ptr<VectorDouble> results_ptr(new VectorDouble(6 + 9));
+    boost::shared_ptr<MatrixDouble> jacobian_ptr(
+        new MatrixDouble(4 + 6, 4 + 6));
+
+    feRhs.getOpPtrVector().clear();
+    feRhs.getOpPtrVector().push_back(new OpGetActiveDofsLambda(
+        lagrange_multipliers_field_name, active_variables_ptr));
+    feRhs.getOpPtrVector().push_back(new OpGetActiveDofsPositions<4>(
+        material_field_name, active_variables_ptr));
+    feRhs.getOpPtrVector().push_back(
+        new OpJacobian(tag, lagrange_multipliers_field_name,
+                       active_variables_ptr, results_ptr, jacobian_ptr, false));
+    feRhs.getOpPtrVector().push_back(
+        new OpAssembleRhs<4, 6>(lagrange_multipliers_field_name, results_ptr));
+    feRhs.getOpPtrVector().push_back(
+        new OpAssembleRhs<4, 6>(material_field_name, results_ptr));
+
+    // Adding operators to calculate the left hand side
+    feLhs.getOpPtrVector().clear();
+    feLhs.getOpPtrVector().push_back(new OpGetActiveDofsLambda(
+        lagrange_multipliers_field_name, active_variables_ptr));
+    feLhs.getOpPtrVector().push_back(new OpGetActiveDofsPositions<4>(
+        material_field_name, active_variables_ptr));
+    feLhs.getOpPtrVector().push_back(
+        new OpJacobian(tag, lagrange_multipliers_field_name,
+                       active_variables_ptr, results_ptr, jacobian_ptr, true));
+    feLhs.getOpPtrVector().push_back(new OpAssembleLhs<4, 6>(
+        lagrange_multipliers_field_name, material_field_name, jacobian_ptr));
+    feLhs.getOpPtrVector().push_back(new OpAssembleLhs<4, 6>(
+        material_field_name, lagrange_multipliers_field_name, jacobian_ptr));
+    feLhs.getOpPtrVector().push_back(new OpAssembleLhs<4, 6>(
+        material_field_name, material_field_name, jacobian_ptr));
+
+    MoFEMFunctionReturn(0);
+  }
+
+  MoFEMErrorCode
+  setOperatorsConstrainOnly(int tag, Range edges, Range faces,
+                            const std::string lagrange_multipliers_field_name,
+                            const std::string material_field_name) {
+    MoFEMFunctionBegin;
+
+    CHKERR EdgeSlidingConstrains::CalculateEdgeBase::setTags(mField.get_moab(),
+                                                             edges, faces);
+
+    boost::shared_ptr<VectorDouble> active_variables_ptr(
+        new VectorDouble(4 + 6));
+    boost::shared_ptr<VectorDouble> results_ptr(new VectorDouble(4 + 6));
+    boost::shared_ptr<MatrixDouble> jacobian_ptr(
+        new MatrixDouble(4 + 6, 4 + 6));
+
+    // Adding operators to calculate the left hand side
+    feLhs.getOpPtrVector().clear();
+    feLhs.getOpPtrVector().push_back(new OpGetActiveDofsLambda(
+        lagrange_multipliers_field_name, active_variables_ptr));
+    feLhs.getOpPtrVector().push_back(new OpGetActiveDofsPositions<4>(
+        material_field_name, active_variables_ptr));
+    feLhs.getOpPtrVector().push_back(new OpJacobian(
+        tag, lagrange_multipliers_field_name, active_variables_ptr, results_ptr,
+        jacobian_ptr, true));
+    feLhs.getOpPtrVector().push_back(new OpAssembleLhs<4, 6>(
+        lagrange_multipliers_field_name, material_field_name, jacobian_ptr));
+
+    MoFEMFunctionReturn(0);
   }
 };
 

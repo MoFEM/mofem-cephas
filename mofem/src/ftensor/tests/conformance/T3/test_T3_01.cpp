@@ -9,7 +9,7 @@ void test_T3_01(const Tensor1<double,3> &t1_1, const Tensor1<double,3> &t1_2,
                 const Tensor2<double,3,3> &t2_3,
                 const Tensor2_symmetric<double,3> &t2s_2,
                 const Tensor2_symmetric<double,3> &t2s_3,
-                const Tensor3_dg<double,3,3> &t3dg_2)
+                const Dg<double,3,3> &t3dg_2)
 {
   Index<'i',3> i;
   Index<'j',3> j;

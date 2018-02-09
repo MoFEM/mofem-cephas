@@ -170,16 +170,15 @@ int main(int argc, char *argv[]) {
       DataForcesAndSourcesCore::EntData &data) {
       MoFEMFunctionBeginHot;
 
-      FTensor::Tensor2<double,3,3,row_major> t2;
+      FTensor::Tensor2<double, 3, 3, FTensor::row_major> t2;
       const int nb_gauss_pts = data.getN().size1();
       const int nb_base_functions = data.getN().size2();
 
       FTensor::Index<'I',3> I;
       FTensor::Index<'J',3> J;
 
-
-      FTensor::Tensor0<double*> base_function = data.getFTensor0N();
-      FTensor::Tensor1<double*,3> diff_base = data.getFTensor1DiffN<3>();
+      auto base_function = data.getFTensor0N();
+      auto diff_base = data.getFTensor1DiffN<3>();
       // FTensor::Tensor1<double*,3> field_values = getTensor1FormData<3>(field1ValuesDataPtr);
       // #ifdef WITH_ADOL_C
       // adouble val;
@@ -296,17 +295,17 @@ int main(int argc, char *argv[]) {
       FTensor::Tensor3<double,3,3,3> t3;
 
       for(int br = 0;br!=nb_base_functions_row;br++) {
-        FTensor::Tensor0<double*> base_row = row_data.getFTensor0N(br);
-        FTensor::Tensor1<double*,3> diff_base_row = row_data.getFTensor1DiffN<3>(br);
+        auto base_row = row_data.getFTensor0N(br);
+        auto diff_base_row = row_data.getFTensor1DiffN<3>(br);
 
         for(int bc = 0;bc!=nb_base_functions_col;bc++) {
-          FTensor::Tensor0<double*> base_col = col_data.getFTensor0N(bc);
-          FTensor::Tensor1<double*,3> diff_base_col= row_data.getFTensor1DiffN<3>(bc);
+          auto base_col = col_data.getFTensor0N(bc);
+          auto diff_base_col= row_data.getFTensor1DiffN<3>(bc);
 
-          FTensor::Tensor1<double*,3> field1_values = getTensor1FormData<3>(*field1ValuesDataPtr);
-          FTensor::Tensor0<double*> field2_values = getTensor0FormData(*field2ValuesDataPtr);
-          FTensor::Tensor2<double*,3,3> grad1_values = getTensor2FormData<3,3>(*grad1ValuesDataPtr);
-          FTensor::Tensor1<double*,3> grad2_values = getTensor1FormData<3>(*grad2ValuesDataPtr);
+          auto field1_values = getTensor1FormData<3>(*field1ValuesDataPtr);
+          auto field2_values = getTensor0FormData(*field2ValuesDataPtr);
+          auto grad1_values = getTensor2FormData<3,3>(*grad1ValuesDataPtr);
+          auto grad2_values = getTensor1FormData<3>(*grad2ValuesDataPtr);
 
           for(int gg = 0;gg!=nb_gauss_pts;gg++) {
             // This make no sense (just do some calculations)
@@ -332,18 +331,25 @@ int main(int argc, char *argv[]) {
 
   };
 
-  boost::shared_ptr<MatrixDouble> values1_at_gauss_pts_ptr = boost::shared_ptr<MatrixDouble>(new MatrixDouble() );
-  boost::shared_ptr<VectorDouble> values2_at_gauss_pts_ptr = boost::shared_ptr<VectorDouble>(new VectorDouble() );
-  boost::shared_ptr<MatrixDouble> grad1_at_gauss_pts_ptr = boost::shared_ptr<MatrixDouble>(new MatrixDouble() );
-  boost::shared_ptr<MatrixDouble> grad2_at_gauss_pts_ptr = boost::shared_ptr<MatrixDouble>(new MatrixDouble() );
-
+  boost::shared_ptr<MatrixDouble> values1_at_gauss_pts_ptr =
+      boost::shared_ptr<MatrixDouble>(new MatrixDouble());
+  boost::shared_ptr<VectorDouble> values2_at_gauss_pts_ptr =
+      boost::shared_ptr<VectorDouble>(new VectorDouble());
+  boost::shared_ptr<MatrixDouble> grad1_at_gauss_pts_ptr =
+      boost::shared_ptr<MatrixDouble>(new MatrixDouble());
+  boost::shared_ptr<MatrixDouble> grad2_at_gauss_pts_ptr =
+      boost::shared_ptr<MatrixDouble>(new MatrixDouble());
 
   VolumeElementForcesAndSourcesCore fe1(m_field);
 
-  fe1.getOpPtrVector().push_back(new OpCalculateVectorFieldValues<3>("FIELD1",values1_at_gauss_pts_ptr));
-  fe1.getOpPtrVector().push_back(new OpCalculateScalarFieldValues("FIELD2",values2_at_gauss_pts_ptr));
-  fe1.getOpPtrVector().push_back(new OpCalculateVectorFieldGradient<3,3>("FIELD1",grad1_at_gauss_pts_ptr));
-  fe1.getOpPtrVector().push_back(new OpCalculateScalarFieldGradient<3>("FIELD2",grad2_at_gauss_pts_ptr));
+  fe1.getOpPtrVector().push_back(
+      new OpCalculateVectorFieldValues<3>("FIELD1", values1_at_gauss_pts_ptr));
+  fe1.getOpPtrVector().push_back(
+      new OpCalculateScalarFieldValues("FIELD2", values2_at_gauss_pts_ptr));
+  fe1.getOpPtrVector().push_back(new OpCalculateVectorFieldGradient<3, 3>(
+      "FIELD1", grad1_at_gauss_pts_ptr));
+  fe1.getOpPtrVector().push_back(
+      new OpCalculateScalarFieldGradient<3>("FIELD2", grad2_at_gauss_pts_ptr));
 
   fe1.getOpPtrVector().push_back(
     new MyOp1(

@@ -3,7 +3,12 @@
    that has row-major (not C/C++ standard) ordering like Fortran or
    some graphics libraries (Direct-X?). */
 
-enum Layout {
-  column_major,
-  row_major
-};
+#pragma once
+
+namespace FTensor
+{
+  enum Layout {
+    column_major,
+    row_major
+  };
+}

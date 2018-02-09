@@ -1,5 +1,9 @@
 /* A version for pointers. */
 
+#pragma once
+
+namespace FTensor {
+
 template<
   class T,
   int Dim0,int Dim1,int Dim2,int Dim3,
@@ -112,7 +116,7 @@ inline void T4_increment(
 template <class T, int Tensor_Dim0, int Tensor_Dim1,int Tensor_Dim2,int Tensor_Dim3>
 class Tensor4<T*,Tensor_Dim0,Tensor_Dim1,Tensor_Dim2,Tensor_Dim3>
 {
-  mutable int inc;
+  const int inc;
   mutable T* restrict data[Tensor_Dim0][Tensor_Dim1][Tensor_Dim2][Tensor_Dim3];
 public:
 
@@ -268,3 +272,5 @@ public:
   }
 
 };
+
+}

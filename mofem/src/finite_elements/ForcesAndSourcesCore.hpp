@@ -401,7 +401,7 @@ struct ForcesAndSourcesCore: public FEMethod {
     /**
      * \brief Controls loop over entities on element
      *
-     * OPRWO is used if row vector is assembled
+     * OPROW is used if row vector is assembled
      * OPCOL is usually used if column vector is assembled
      * OPROWCOL is usually used for assemble matrices.
      *

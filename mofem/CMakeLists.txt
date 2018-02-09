@@ -11,7 +11,7 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
-cmake_minimum_required (VERSION 2.8.7)
+cmake_minimum_required (VERSION 3.1.3)
 
 #serch inlude directories before system directories
 set(CMAKE_INCLUDE_DIRECTORIES_BEFORE ON)
@@ -36,6 +36,9 @@ include(cmake/ResolveCompilerPaths.cmake)
 
 project(MoFEM C CXX)
 
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 # If fortrns is set by PETSc or user
 if(CMAKE_Fortran_COMPILER)
   # Optional language
@@ -43,8 +46,8 @@ if(CMAKE_Fortran_COMPILER)
 endif(CMAKE_Fortran_COMPILER)
 
 set(MoFEM_VERSION_MAJOR 0)
-set(MoFEM_VERSION_MINOR 6)
-set(MoFEM_VERSION_BUILD 21)
+set(MoFEM_VERSION_MINOR 7)
+set(MoFEM_VERSION_BUILD 1)
 
 # http://cellperformance.beyond3d.com/articles/2006/05/demystifying-the-restrict-keyword.html
 # The restrict keyword can be considered an extension to the strict aliasing rule.

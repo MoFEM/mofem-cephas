@@ -1,6 +1,9 @@
 /* A helper class that allows simple initialization of the Tensor4,
    but only if it has the correct number of elements. */
 
+#pragma once
+
+namespace FTensor {
 
 template<class T, int Tensor_Dim0, int Tensor_Dim1, int Tensor_Dim2, int Tensor_Dim3>
 class Tensor4_constructor;
@@ -50,3 +53,5 @@ public:
     data[2][2][0][0] = d2200; data[2][2][0][1] = d2201; data[2][2][0][2] = d2202; data[2][2][1][0] = d2210; data[2][2][1][1] = d2211; data[2][2][1][2] = d2212; data[2][2][2][0] = d2220; data[2][2][2][1] = d2221; data[2][2][2][2] = d2222;
   }
 };
+
+}

@@ -1,22 +1,7 @@
-/** \file FTensor.hpp
-* \brief Tensors class implemented by Walter Landry.
-* \ingroup ftensor
-
-*
-* The main repository is available under link <https://bitbucket.org/wlandry/ftensor>.
-* For more details look at reference \cite landry2003implementing.
-* See link <http://www.wlandry.net/Presentations/FTensor.pdf>.
-*
-* Note this implementation is modified for proposes of MoFEM.
-*
-*/
-
-
 /* Include file for the Fast Tensor classes (FTensor).  Everything is
    in namespace FTensor. */
 
-#ifndef FTENSOR_HPP
-#define FTENSOR_HPP
+#pragma once
 
 #include <cmath>
 #include <complex>
@@ -27,21 +12,18 @@
 #endif
 #include "FTensor/Layout.hpp"
 
-/**
- * \brief Tensors class implemented by Walter Landry.
- * \ingroup ftensor
+#ifdef WITH_ADOL_C
+#include <adolc/adolc.h>
+#include <adolc/adtl.h>
+#endif
 
-
- * The main repository is available under link <https://bitbucket.org/wlandry/ftensor>.
- * For more details look at reference \cite landry2003implementing.
- * See link <http://www.wlandry.net/Presentations/FTensor.pdf>.
- *
- * Note this implementation is modified for proposes of MoFEM.
-
- */
-namespace FTensor {
-
+namespace FTensor
+{
   template <class T> class Tensor0;
+
+  template <class T,const int I> class PackPtr {
+
+  };
 
   template <class T, int Dim> class Tensor1;
   template<class A, class T, int Dim, char i> class Tensor1_Expr;
@@ -74,42 +56,56 @@ namespace FTensor {
   template<class A, class T, int N1, int N2> class Tensor3_number_rhs_02;
   template<class A, class T, int N1, int N2> class Tensor3_number_rhs_12;
 
-  template <class T, int Dim01, int Dim2> class Tensor3_dg;
+  template <class T, int Dim01, int Dim2> class Dg;
   template <class A, class T, int Dim01, int Dim2, char i, char j, char k>
-  class Tensor3_dg_Expr;
-  template<class A, class T, int N> class Tensor3_dg_number_rhs_0;
-  template<class A, class T, int N> class Tensor3_dg_number_rhs_2;
-  template<class A, class T, int N1, int N2> class Tensor3_dg_number_rhs_01;
-  template<class A, class T, int N1, int N2> class Tensor3_dg_number_rhs_12;
+  class Dg_Expr;
+  template<class A, class T, int N> class Dg_number_rhs_0;
+  template<class A, class T, int N> class Dg_number_rhs_2;
+  template<class A, class T, int N1, int N2> class Dg_number_rhs_01;
+  template<class A, class T, int N1, int N2> class Dg_number_rhs_12;
 
-  template <class T, int Dim0, int Dim12> class Tensor3_christof;
+  template <class T, int Dim0, int Dim12> class Christof;
   template <class A, class T, int Dim0, int Dim12, char i, char j, char k>
-  class Tensor3_christof_Expr;
+  class Christof_Expr;
 
   template <class T, int Dim0, int Dim12> class Tensor3_antisymmetric;
   template <class A, class T, int Dim0, int Dim12, char i, char j, char k>
   class Tensor3_antisymmetric_Expr;
 
-  template <class T, int Tensor_Dim0, int Tensor_Dim1,
-  int Tensor_Dim2,int Tensor_Dim3> class Tensor4;
+  template<class T,int Dim0,int Dim1,int Dim2,int Dim3> class Tensor4;
   template <class A, class T, int Dim0, int Dim1, int Dim2, int Dim3,
-    char i, char j, char k, char l> class Tensor4_Expr;
+    char i, char j, char k, char l>
+  class Tensor4_Expr;
 
-  template <class T, int Dim> class Tensor4_Riemann;
+  template <class T, int Dim> class Riemann;
   template <class A, class T, int Dim, char i, char j, char k, char l>
-  class Tensor4_Riemann_Expr;
+  class Riemann_Expr;
 
-  template <class T, int Dim01, int Dim23> class Tensor4_ddg;
+  template <class T, int Dim01, int Dim23> class Ddg;
   template <class A, class T, int Dim01, int Dim23,
-    char i, char j, char k, char l> class Tensor4_ddg_Expr;
+    char i, char j, char k, char l> class Ddg_Expr;
   template<class A, class T, int N0, int N1>
-  class Tensor4_ddg_number_rhs_01;
+  class Ddg_number_rhs_01;
   template<class A, class T, int N0>
-  class Tensor4_ddg_number_rhs_0;
+  class Ddg_number_rhs_0;
+
+  template<class T>
+  class Tensor_Levi_Civita;
+}
+#if __cplusplus < 201103L
+#include "FTensor/enable_if.hpp"
+#else
+#include <type_traits>
+#endif
 
 #include "FTensor/Index.hpp"
 #include "FTensor/Number.hpp"
 #include "FTensor/promote.hpp"
+
+#include "FTensor/cross.hpp"
+#include "FTensor/levi_civita.hpp"
+#include "FTensor/LeviCivita.hpp"
+
 #include "FTensor/Tensor0.hpp"
 #include "FTensor/Tensor1.hpp"
 #include "FTensor/Tensor2.hpp"
@@ -117,17 +113,11 @@ namespace FTensor {
 #include "FTensor/Tensor2_antisymmetric.hpp"
 #include "FTensor/Tensor3/Tensor3_contracted.hpp"
 #include "FTensor/Tensor3.hpp"
-#include "FTensor/Tensor3_dg.hpp"
-#include "FTensor/Tensor3_christof.hpp"
+#include "FTensor/Dg.hpp"
+#include "FTensor/Christof.hpp"
 #include "FTensor/Tensor3_antisymmetric.hpp"
+#include "FTensor/Tensor4/Tensor4_contracted.hpp"
 #include "FTensor/Tensor4.hpp"
-#include "FTensor/Tensor4_ddg.hpp"
-#include "FTensor/Tensor4_Riemann.hpp"
-}
+#include "FTensor/Ddg.hpp"
+#include "FTensor/Riemann.hpp"
 
-#endif
-
-/***************************************************************************//**
- * \defgroup ftensor Tensor template library
- * \brief Efficient Template Tensor library
- ******************************************************************************/

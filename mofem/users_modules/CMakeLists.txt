@@ -53,6 +53,8 @@ include(${MoFEM_PROJECT_SOURCE_DIR}/cmake/ExportFile.cmake)
 
 set(CMAKE_C_COMPILER ${MoFEM_CMAKE_C_COMPILER})
 set(CMAKE_CXX_COMPILER ${MoFEM_CMAKE_CXX_COMPILER})
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 include_directories(
   ${MoFEM_PROJECT_INCLUDE_DIRECTORIES}
@@ -146,8 +148,10 @@ if(SLEPC_LIBRARY)
   message(STATUS "WITH SLEPC")
 endif(SLEPC_LIBRARY)
 
+# Add modules
+include(ModulesList.cmake)
+
 # Complle tools
 add_subdirectory(${PROJECT_SOURCE_DIR}/tools)
 
-# Add modules
-include(ModulesList.cmake)
+

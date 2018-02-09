@@ -159,19 +159,20 @@ private:
     // get element area
     double area = getArea()*bEta;
     // get integration weights
-    FTensor::Tensor0<double*> t_w = getFTensor0IntegrationWeight();
+    auto t_w = getFTensor0IntegrationWeight();
     // get base function gradient on rows
-    FTensor::Tensor0<double*> t_row_base = row_data.getFTensor0N();
+    auto t_row_base = row_data.getFTensor0N();
     // loop over integration points
     for(int gg = 0;gg!=nbIntegrationPts;gg++) {
       // take into account Jacobean
       const double alpha = t_w*area;
       // take fist element to local matrix
-      FTensor::Tensor0<double*> a(&*locMat.data().begin());
+      FTensor::Tensor0<FTensor::PackPtr<double *, 1>> a(
+          &*locMat.data().begin());
       // loop over rows base functions
       for(int rr = 0;rr!=nbRows;rr++) {
         // get column base functions gradient at gauss point gg
-        FTensor::Tensor0<double*> t_col_base = col_data.getFTensor0N(gg,0);
+        auto t_col_base = col_data.getFTensor0N(gg,0);
         // loop over columns
         for(int cc = 0;cc!=nbCols;cc++) {
           // calculate element of local matrix

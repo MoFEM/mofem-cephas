@@ -1,7 +1,7 @@
 /** \file Tools.hpp
  * \brief Tools interface
  *
- * Implementatiom of some useful and very often used methods * in MoFEM.
+ * Implementation of some useful and very often used methods * in MoFEM.
  *
  * \ingroup mofem_tools
  */

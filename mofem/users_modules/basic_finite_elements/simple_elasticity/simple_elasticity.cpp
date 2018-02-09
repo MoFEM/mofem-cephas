@@ -302,10 +302,10 @@ struct OpPressure : MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator {
 
     // create a 3d vector to be used as the normal to the face with length equal
     // to the face area
-    FTensor::Tensor1<double *, 3> t_normal = getTensor1Normal();
+    auto t_normal = getTensor1Normal();
 
     // vector of base functions
-    FTensor::Tensor0<double *> t_base = data.getFTensor0N();
+    auto t_base = data.getFTensor0N();
 
     // loop over all gauss points of the face
     for (int gg = 0; gg != nb_gauss_pts; ++gg) {
