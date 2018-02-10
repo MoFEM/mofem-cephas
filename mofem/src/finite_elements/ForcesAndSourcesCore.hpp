@@ -562,6 +562,12 @@ struct ForcesAndSourcesCore: public FEMethod {
      */
     inline int getLoopSize() const { return getFEMethod()->getLoopSize(); }
 
+    /** \brief Get name of the element
+     */
+    inline const std::string &getFEName() const {
+      return getFEMethod()->feName;
+    }
+
   protected:
 
     ForcesAndSourcesCore *ptrFE;
