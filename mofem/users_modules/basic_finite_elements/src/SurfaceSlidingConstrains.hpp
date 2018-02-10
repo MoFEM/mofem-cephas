@@ -91,8 +91,9 @@ struct GenericSliding {
       } else if (indices.size() == SizePositions) {
         shift = SizeLambda;
       } else {
-        SETERRQ1(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY,
-                 "Data inconsistency nb of indices %d", indices.size());
+        SETERRQ2(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY,
+                 "Element %s: Data inconsistency nb of indices %d",
+                 getFEName().c_str(), indices.size());
       }
       CHKERR VecSetOption(getFEMethod()->snes_f, VEC_IGNORE_NEGATIVE_INDICES,
                           PETSC_TRUE);
@@ -1069,6 +1070,16 @@ struct EdgeSlidingConstrains: public GenericSliding {
 
     CHKERR EdgeSlidingConstrains::CalculateEdgeBase::setTags(mField.get_moab(),
                                                              edges, faces);
+    CHKERR setOperatorsConstrainOnly(tag, lagrange_multipliers_field_name,
+                                     material_field_name);
+    MoFEMFunctionReturn(0);
+  }
+
+  MoFEMErrorCode
+  setOperatorsConstrainOnly(int tag,
+                            const std::string lagrange_multipliers_field_name,
+                            const std::string material_field_name) {
+    MoFEMFunctionBegin;
 
     boost::shared_ptr<VectorDouble> active_variables_ptr(
         new VectorDouble(4 + 6));
@@ -1082,9 +1093,9 @@ struct EdgeSlidingConstrains: public GenericSliding {
         lagrange_multipliers_field_name, active_variables_ptr));
     feLhs.getOpPtrVector().push_back(new OpGetActiveDofsPositions<4>(
         material_field_name, active_variables_ptr));
-    feLhs.getOpPtrVector().push_back(new OpJacobian(
-        tag, lagrange_multipliers_field_name, active_variables_ptr, results_ptr,
-        jacobian_ptr, true));
+    feLhs.getOpPtrVector().push_back(
+        new OpJacobian(tag, lagrange_multipliers_field_name,
+                       active_variables_ptr, results_ptr, jacobian_ptr, true));
     feLhs.getOpPtrVector().push_back(new OpAssembleLhs<4, 6>(
         lagrange_multipliers_field_name, material_field_name, jacobian_ptr));
 
