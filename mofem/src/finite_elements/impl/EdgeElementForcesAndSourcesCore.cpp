@@ -78,11 +78,9 @@ namespace MoFEM {
 MoFEMErrorCode EdgeElementForcesAndSourcesCore::calculateEdgeDirection() {
   MoFEMFunctionBegin;
   EntityHandle ent = numeredEntFiniteElementPtr->getEnt();
-  int num_nodes;
-  const EntityHandle *conn;
-  CHKERR mField.get_moab().get_connectivity(ent, conn, num_nodes, true);
-  cOords.resize(num_nodes * 3, false);
-  CHKERR mField.get_moab().get_coords(conn, num_nodes, &*cOords.data().begin());
+  CHKERR mField.get_moab().get_connectivity(ent, cOnn, numNodes, true);
+  cOords.resize(numNodes * 3, false);
+  CHKERR mField.get_moab().get_coords(cOnn, numNodes, &*cOords.data().begin());
   dIrection.resize(3, false);
   cblas_dcopy(3, &cOords[3], 1, &*dIrection.data().begin(), 1);
   cblas_daxpy(3, -1., &cOords[0], 1, &*dIrection.data().begin(), 1);
