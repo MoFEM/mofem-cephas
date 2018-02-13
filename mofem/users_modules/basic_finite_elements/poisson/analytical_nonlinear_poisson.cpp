@@ -216,7 +216,7 @@ int main(int argc, char *argv[]) {
     // point DM takes responsibility for executing elements, calculations of
     // matrices and vectors, and solution of the problem.
     {
-      // Set operators for KSP solver
+      // Set operators for SNES solver
       ierr = DMMoFEMSNESSetJacobian(
         dm,simple_interface->getDomainFEName(),domain_lhs_fe,null,null
       ); CHKERRG(ierr);

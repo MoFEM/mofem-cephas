@@ -516,11 +516,7 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
       for (; miit_ref_ent != hi_miit_ref_ent; ++miit_ref_ent) {
         const EntityHandle ent = miit_ref_ent->get()->getRefEnt();
         ents_in_ref_ent.insert(ent);
-        // CHKERR moab.tag_set_data((*miit)->th_AppOrder, &ent, 1, &order);
-        // NOTE: This will work with newer compiler only, use push_back for
-        // back
-        // compatibility. ents_array->emplace_back(*miit,*miit_ref_ent);
-        ents_array->push_back(FieldEntity(*miit, *miit_ref_ent));
+        ents_array->emplace_back(*miit, *miit_ref_ent);
         if (order >= 0) {
           modify_order(&(ents_array->back()));
         }
@@ -547,9 +543,7 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
       ents_shared_array.reserve(ents_array->size());
       for (std::vector<FieldEntity>::iterator vit = ents_array->begin();
            vit != ents_array->end(); vit++) {
-        // ents_shared_array.emplace_back(ents_array,&*vit);
-        ents_shared_array.push_back(
-            boost::shared_ptr<FieldEntity>(ents_array, &*vit));
+        ents_shared_array.emplace_back(ents_array,&*vit);
       }
       // Add new ents to database
       entsFields.insert(ents_shared_array.begin(), ents_shared_array.end());
@@ -845,7 +839,7 @@ MoFEMErrorCode Core::buildFieldForL2H1HcurlHdiv(
         for (int dd = 0; dd < feit->get()->getOrderNbDofsDiff(oo); ++dd) {
           // Loop rank
           for (int rr = 0; rr < rank; ++rr, ++DD) {
-            dofs_array->push_back(DofEntity(*feit, oo, rr, DD, true));
+            dofs_array->emplace_back(*feit, oo, rr, DD, true);
             dofs_shared_array.push_back(
                 boost::shared_ptr<DofEntity>(dofs_array, &dofs_array->back()));
             ++dof_counter[feit->get()->getEntType()];

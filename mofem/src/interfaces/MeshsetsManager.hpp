@@ -548,7 +548,7 @@ struct MeshsetsManager : public UnknownInterface {
   MoFEMErrorCode getEntitiesByDimension(const int ms_id,
                                         const unsigned int cubit_bc_type,
                                         const int dimension, Range &entities,
-                                        const bool recursive = false);
+                                        const bool recursive = true);
 
   /**
     * \brief get entities related to CUBIT/meshset,
@@ -569,7 +569,7 @@ struct MeshsetsManager : public UnknownInterface {
   MoFEMErrorCode getEntitiesByDimension(const int ms_id,
                                         const unsigned int cubit_bc_type,
                                         Range &entities,
-                                        const bool recursive = false);
+                                        const bool recursive = true);
 
   /**
     * \ingroup mofem_meshset_mng

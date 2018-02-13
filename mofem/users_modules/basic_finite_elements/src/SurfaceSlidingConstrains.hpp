@@ -91,12 +91,12 @@ struct GenericSliding {
       } else if (indices.size() == SizePositions) {
         shift = SizeLambda;
       } else {
-        SETERRQ1(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY,
-                 "Data inconsistency nb of indices %d", indices.size());
+        SETERRQ2(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY,
+                 "Element %s: Data inconsistency nb of indices %d",
+                 getFEName().c_str(), indices.size());
       }
-      CHKERR VecSetOption(getFEMethod()->snes_f, VEC_IGNORE_NEGATIVE_INDICES,
-                          PETSC_TRUE);
-      CHKERR VecSetValues(getFEMethod()->snes_f, indices.size(), &indices[0],
+      CHKERR VecSetOption(getSnesF(), VEC_IGNORE_NEGATIVE_INDICES, PETSC_TRUE);
+      CHKERR VecSetValues(getSnesF(), indices.size(), &indices[0],
                           &(*resultsPtr)[shift], ADD_VALUES);
       MoFEMFunctionReturn(0);
     }
@@ -152,9 +152,9 @@ struct GenericSliding {
           jac(rr, cc) = (*jacobianPtr)(shift_row + rr, shift_col + cc);
         }
       }
-      CHKERR MatSetValues(getFEMethod()->snes_B, row_indices.size(),
-                          &row_indices[0], col_indices.size(), &col_indices[0],
-                          &jac(0, 0), ADD_VALUES);
+      CHKERR MatSetValues(getSnesB(), row_indices.size(), &row_indices[0],
+                          col_indices.size(), &col_indices[0], &jac(0, 0),
+                          ADD_VALUES);
       MoFEMFunctionReturn(0);
     }
   };
@@ -633,16 +633,21 @@ struct EdgeSlidingConstrains: public GenericSliding {
   struct CalculateEdgeBase {
 
     static MoFEMErrorCode createTag(moab::Interface &moab, Tag &th0, Tag &th1,
-                                    Tag &th2) {
+                                    Tag &th2,Tag &th3) {
       MoFEMFunctionBegin;
       double def_val[] = {0, 0, 0};
       CHKERR moab.tag_get_handle("EDGE_BASE0", 3, MB_TYPE_DOUBLE, th0,
                                  MB_TAG_CREAT | MB_TAG_SPARSE, def_val);
       CHKERR moab.tag_get_handle("EDGE_BASE1", 3, MB_TYPE_DOUBLE, th1,
                                  MB_TAG_CREAT | MB_TAG_SPARSE, def_val);
-      int def_int_val[] = {-1};
+      int def_numb_val[] = {-1};
       CHKERR moab.tag_get_handle("PATCH_NUMBER", 1, MB_TYPE_INTEGER, th2,
-                                 MB_TAG_CREAT | MB_TAG_SPARSE, def_int_val);
+                                 MB_TAG_CREAT | MB_TAG_SPARSE, def_numb_val);
+      int def_orientation_val[] = {1};
+      CHKERR moab.tag_get_handle("PATCH_ORIENTATION", 1, MB_TYPE_INTEGER, th3,
+                                 MB_TAG_CREAT | MB_TAG_SPARSE,
+                                 def_orientation_val);
+
       MoFEMFunctionReturn(0);
     }
 
@@ -684,8 +689,8 @@ struct EdgeSlidingConstrains: public GenericSliding {
         return patches;
       };
 
-      Tag th0, th1, th2;
-      CHKERR createTag(moab, th0, th1, th2);
+      Tag th0, th1, th2, th3;
+      CHKERR createTag(moab, th0, th1, th2, th3);
 
       auto patches = get_patches();
       int pp = 0;
@@ -700,11 +705,14 @@ struct EdgeSlidingConstrains: public GenericSliding {
       MoFEMFunctionReturn(0);
     }
 
-    static MoFEMErrorCode setTags(moab::Interface &moab, Range edges, Range tris) {
+    static MoFEMErrorCode setTags(moab::Interface &moab, Range edges,
+                                  Range tris, bool number_pathes = true) {
       MoFEMFunctionBegin;
-      Tag th0, th1, th2;
-      CHKERR createTag(moab, th0, th1, th2);
-      CHKERR numberSurfaces(moab,edges,tris);
+      Tag th0, th1, th2, th3;
+      CHKERR createTag(moab, th0, th1, th2, th3);
+      if (number_pathes) {
+        CHKERR numberSurfaces(moab, edges, tris);
+      }
       for (auto edge : edges) {
         Range adj_faces;
         CHKERR moab.get_adjacencies(&edge, 1, 2, false, adj_faces);
@@ -733,6 +741,11 @@ struct EdgeSlidingConstrains: public GenericSliding {
             moab::Util::normal(&moab, face, x, y, z);
             auto t_n = get_tensor_from_vec(v[ff]);
             t_n(i) /= sqrt(t_n(i) * t_n(i));
+            int orientation;
+            CHKERR moab.tag_get_data(th3, &face, 1, &orientation);
+            if(orientation==-1) {
+              t_n(i) *= -1;
+            }
             ++ff;
           }
         };
@@ -771,8 +784,8 @@ struct EdgeSlidingConstrains: public GenericSliding {
                              Range edges, Range *faces = nullptr) {
       MoFEMFunctionBegin;
       EntityHandle meshset;
-      Tag ths[3];
-      CHKERR createTag(moab, ths[0], ths[1], ths[2]);
+      Tag ths[4];
+      CHKERR createTag(moab, ths[0], ths[1], ths[2], ths[3]);
       CHKERR moab.create_meshset(MESHSET_SET, meshset);
       CHKERR moab.add_entities(meshset, edges);
       if(faces != nullptr) {
@@ -828,8 +841,10 @@ struct EdgeSlidingConstrains: public GenericSliding {
       default:
         break;
       }
+
       MoFEMFunctionReturn(0);
     }
+
   };
 
   boost::shared_ptr<MyEdgeFE> feRhsPtr, feLhsPtr;
@@ -869,9 +884,14 @@ struct EdgeSlidingConstrains: public GenericSliding {
       if (type != MBVERTEX)
         MoFEMFunctionReturnHot(0);
 
-      Tag th0, th1, th2;
+      FTensor::Index<'i', 3> i;
+      FTensor::Index<'j', 2> j;
+      FTensor::Number<0> N0;
+      FTensor::Number<1> N1;
+
+      Tag th0, th1, th2, th3;
       CHKERR CalculateEdgeBase::createTag(getEdgeFE()->mField.get_moab(), th0,
-                                          th1, th2);
+                                          th1, th2, th3);
       FTensor::Tensor1<double, 3> t_edge_base0, t_edge_base1;
       EntityHandle fe_ent = getFEEntityHandle();
       CHKERR getEdgeFE()->mField.get_moab().tag_get_data(th0, &fe_ent, 1,
@@ -892,19 +912,16 @@ struct EdgeSlidingConstrains: public GenericSliding {
         position_dofs[dd] <<= (*activeVariablesPtr)[4 + dd];
       }
 
-      FTensor::Index<'i', 3> i;
-      FTensor::Index<'j', 2> j;
-      FTensor::Number<0> N0;
-      FTensor::Number<1> N1;
-
       FTensor::Tensor1<adouble *, 3> t_node0(
           &position_dofs[0], &position_dofs[1], &position_dofs[2]);
       FTensor::Tensor1<adouble *, 3> t_node1(
           &position_dofs[3], &position_dofs[4], &position_dofs[5]);
 
+
       FTensor::Tensor1<adouble, 3> t_tangent;
       t_tangent(i) = t_node1(i) - t_node0(i);
-      t_tangent(i) /= sqrt(t_tangent(i)*t_tangent(i));
+      adouble l = sqrt(t_tangent(i) * t_tangent(i));
+      t_tangent(i) /= l;
 
       adouble t_dot0, t_dot1;
       t_dot0 = t_edge_base0(i) * t_tangent(i);
@@ -959,7 +976,7 @@ struct EdgeSlidingConstrains: public GenericSliding {
         adouble dot0 = t_base0(i) * t_delta(i);
         adouble dot1 = t_base1(i) * t_delta(i);
 
-        double w = getGaussPts()(1, gg) * getLength();
+        adouble w = getGaussPts()(1, gg) * l;
         adouble val, val1, val2;
         FTensor::Tensor1<adouble *, 2> t_c(&c_vec[0], &c_vec[1], 2);
         FTensor::Tensor1<adouble *, 3> t_f(&f_vec[0], &f_vec[1], &f_vec[2], 3);
@@ -1025,7 +1042,7 @@ struct EdgeSlidingConstrains: public GenericSliding {
 
     boost::shared_ptr<VectorDouble> active_variables_ptr(
         new VectorDouble(4 + 6));
-    boost::shared_ptr<VectorDouble> results_ptr(new VectorDouble(6 + 9));
+    boost::shared_ptr<VectorDouble> results_ptr(new VectorDouble(4 + 6));
     boost::shared_ptr<MatrixDouble> jacobian_ptr(
         new MatrixDouble(4 + 6, 4 + 6));
 
@@ -1069,6 +1086,16 @@ struct EdgeSlidingConstrains: public GenericSliding {
 
     CHKERR EdgeSlidingConstrains::CalculateEdgeBase::setTags(mField.get_moab(),
                                                              edges, faces);
+    CHKERR setOperatorsConstrainOnly(tag, lagrange_multipliers_field_name,
+                                     material_field_name);
+    MoFEMFunctionReturn(0);
+  }
+
+  MoFEMErrorCode
+  setOperatorsConstrainOnly(int tag,
+                            const std::string lagrange_multipliers_field_name,
+                            const std::string material_field_name) {
+    MoFEMFunctionBegin;
 
     boost::shared_ptr<VectorDouble> active_variables_ptr(
         new VectorDouble(4 + 6));
@@ -1082,9 +1109,9 @@ struct EdgeSlidingConstrains: public GenericSliding {
         lagrange_multipliers_field_name, active_variables_ptr));
     feLhs.getOpPtrVector().push_back(new OpGetActiveDofsPositions<4>(
         material_field_name, active_variables_ptr));
-    feLhs.getOpPtrVector().push_back(new OpJacobian(
-        tag, lagrange_multipliers_field_name, active_variables_ptr, results_ptr,
-        jacobian_ptr, true));
+    feLhs.getOpPtrVector().push_back(
+        new OpJacobian(tag, lagrange_multipliers_field_name,
+                       active_variables_ptr, results_ptr, jacobian_ptr, true));
     feLhs.getOpPtrVector().push_back(new OpAssembleLhs<4, 6>(
         lagrange_multipliers_field_name, material_field_name, jacobian_ptr));
 
