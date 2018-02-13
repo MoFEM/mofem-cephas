@@ -58,7 +58,9 @@ struct EdgeElementForcesAndSourcesCore : public ForcesAndSourcesCore {
         opCovariantTransform(dIrection, tangentAtGaussPts) {}
 
   double lEngth;
-  
+
+  int numNodes;
+  const EntityHandle *cOnn;
   VectorDouble dIrection;
   VectorDouble cOords;
   MatrixDouble gaussPts;
@@ -82,6 +84,12 @@ struct EdgeElementForcesAndSourcesCore : public ForcesAndSourcesCore {
                      const std::string &col_field_name, const char type)
         : ForcesAndSourcesCore::UserDataOperator(row_field_name, col_field_name,
                                                  type) {}
+
+    /** \brief get element connectivity
+     */
+    inline const EntityHandle *getConn() {
+      return static_cast<EdgeElementForcesAndSourcesCore *>(ptrFE)->cOnn;
+    }
 
     /**
      * \brief get edge length

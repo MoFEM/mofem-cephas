@@ -562,6 +562,48 @@ struct ForcesAndSourcesCore: public FEMethod {
      */
     inline int getLoopSize() const { return getFEMethod()->getLoopSize(); }
 
+    /** \brief Get name of the element
+     */
+    inline const std::string &getFEName() const {
+      return getFEMethod()->feName;
+    }
+
+    /** \name Accessing SNES */
+
+    /**@{*/
+
+    inline Vec getSnesF() const { return getFEMethod()->snes_f; }
+
+    inline Vec getSnesX() const { return getFEMethod()->snes_x; }
+
+    inline Mat getSnesA() const { return getFEMethod()->snes_A; }
+
+    inline Mat getSnesB() const { return getFEMethod()->snes_B; }
+
+    /**@}*/
+
+    /** \name Accessing TS */
+
+    /**@{*/
+
+    inline Vec getTSu() const { return getFEMethod()->ts_u;  }
+
+    inline Vec getTSu_t() const { return getFEMethod()->ts_u_t; }
+
+    inline Vec getTSf() const { return getFEMethod()->ts_F; }
+
+    inline Mat getTSA() const { return getFEMethod()->ts_A; }
+
+    inline Mat getTSB() const { return getFEMethod()->ts_B; }
+
+    inline int getTSstep() const { return getFEMethod()->ts_step; }
+
+    inline double getTStime() const { return getFEMethod()->ts_t; }
+
+    inline double getTSa() const { return getFEMethod()->ts_a; }
+
+    /**@}*/
+
   protected:
 
     ForcesAndSourcesCore *ptrFE;
