@@ -824,27 +824,26 @@ MoFEMErrorCode BitRefManager::getAdjacencies(
     const int operation_type, const int verb) const {
   MoFEM::Interface &m_field = cOre;
   moab::Interface &moab(m_field.get_moab());
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   if (verb > 0) {
     std::ostringstream ss;
     ss << "from: " << bit << std::endl << "to: " << std::endl;
     PetscPrintf(m_field.get_comm(), ss.str().c_str());
   }
-  rval = moab.get_adjacencies(from_entities, num_entities, to_dimension, false,
+  CHKERR moab.get_adjacencies(from_entities, num_entities, to_dimension, false,
                               adj_entities, operation_type);
-  CHKERRQ_MOAB(rval);
   std::vector<BitRefLevel> bit_levels(adj_entities.size());
-  rval = moab.tag_get_data(cOre.get_th_RefBitLevel(), adj_entities,
+  CHKERR moab.tag_get_data(cOre.get_th_RefBitLevel(), adj_entities,
                            &*bit_levels.begin());
-  CHKERRQ_MOAB(rval);
   std::vector<BitRefLevel>::iterator b_it = bit_levels.begin();
-  Range::iterator eit = adj_entities.begin();
   // std::cerr << "to:\n";
-  for (; eit != adj_entities.end(); b_it++) {
-    if (verb > 0) {
+  for (Range::iterator eit = adj_entities.begin(); eit != adj_entities.end();
+       b_it++) {
+    if (verb > VERBOSE) {
       RefEntity adj_entity(m_field.get_basic_entity_data_ptr(), *eit);
       std::ostringstream ss;
-      ss << "\t" << adj_entity << std::endl;
+      ss << "\t" << adj_entity.getBitRefLevel() << " : " << adj_entity
+         << std::endl;
       PetscPrintf(m_field.get_comm(), ss.str().c_str());
     }
     if (!((*b_it) & bit).any()) {
@@ -856,7 +855,7 @@ MoFEMErrorCode BitRefManager::getAdjacencies(
   if (b_it != bit_levels.end()) {
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Data inconsistency");
   }
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode BitRefManager::updateMeshsetByEntitiesChildren(
