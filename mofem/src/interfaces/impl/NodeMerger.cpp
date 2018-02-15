@@ -290,9 +290,9 @@ MoFEMErrorCode NodeMergerInterface::mergeNodes(
     for (; nn != num_nodes; nn++) {
       if (conn[nn] == father) {
         father_node = true;
-        continue;
+      } else {
+        small_conn[ii++] = conn[nn];
       }
-      small_conn[ii++] = conn[nn];
     }
     if (father_node) {
       if (ii > 1) {
@@ -313,14 +313,14 @@ MoFEMErrorCode NodeMergerInterface::mergeNodes(
   }
 
   // FIXME: This is propably obsolete code, check if can be removed
-  if(tets_ptr) {
-    Range adj;
-    CHKERR m_field.get_moab().get_adjacencies(*tets_ptr, 1, false, adj,
-                                              moab::Interface::UNION);
-    CHKERR m_field.get_moab().get_adjacencies(*tets_ptr, 2, false, adj,
-                                              moab::Interface::UNION);
-    adj_mother_ents = intersect(adj_mother_ents,adj);
-  }
+  // if(tets_ptr) {
+  //   Range adj;
+  //   CHKERR m_field.get_moab().get_adjacencies(*tets_ptr, 1, false, adj,
+  //                                             moab::Interface::UNION);
+  //   CHKERR m_field.get_moab().get_adjacencies(*tets_ptr, 2, false, adj,
+  //                                             moab::Interface::UNION);
+  //   adj_mother_ents = intersect(adj_mother_ents,adj);
+  // }
 
   adj_mother_ents.erase(common_edge[0]);
   for (auto ent : adj_mother_ents) {
@@ -370,10 +370,10 @@ MoFEMErrorCode NodeMergerInterface::mergeNodes(
   Range seed_tets;
   if (tets_ptr != NULL) {
     seed_tets.merge(*tets_ptr);
+    mother_tets.merge(negative_volume_tets);
+    mother_tets.merge(edge_tets);
+    seed_tets = subtract(seed_tets, mother_tets);
   }
-  mother_tets.merge(negative_volume_tets);
-  mother_tets.merge(edge_tets);
-  seed_tets = subtract(seed_tets, mother_tets);
   seed_tets.merge(created_tets);
   out_tets.swap(seed_tets);
 
