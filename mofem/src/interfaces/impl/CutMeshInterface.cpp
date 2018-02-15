@@ -1258,25 +1258,28 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
       VectorAdaptor s0(3, ublas::shallow_array_adaptor<double>(3, &coords[0]));
       VectorAdaptor s1(3, ublas::shallow_array_adaptor<double>(3, &coords[3]));
       VectorDouble3 delta(3);
-      for (Range::const_iterator eit = edges.begin(); eit != edges.end();
-           eit++) {
+      for (auto edge : edges) {
+        CHKERR moab.get_connectivity(edge, conn, num_nodes, true);
         Range adj_tet;
-        CHKERR moab.get_adjacencies(&*eit, 1, 3, false, adj_tet);
+        CHKERR moab.get_adjacencies(conn, num_nodes, 3, false, adj_tet);
         adj_tet = intersect(adj_tet, tets);
-        CHKERR moab.get_connectivity(*eit, conn, num_nodes, true);
         if (tH) {
           CHKERR moab.tag_get_data(tH, conn, num_nodes, coords);
         } else {
           CHKERR moab.get_coords(conn, num_nodes, coords);
         }
         double q = 1;
-        CHKERR mField.getInterface<Tools>()->minTetsQuality(adj_tet, q, tH);
+        auto abs_min = [](double a, double b) {
+          return std::min(fabs(a), fabs(b));
+        };
+        CHKERR mField.getInterface<Tools>()->minTetsQuality(adj_tet, q, tH,
+                                                            abs_min);
         if (q != q)
           q = -1;
         noalias(delta) = (s0 - s1) / maxLength;
         double dot = inner_prod(delta, delta);
-        double val = q * pow(dot,1./8.);
-        length_map.insert(LengthMapData(val, q, *eit));
+        double val = q * pow(dot, 1. / 8.);
+        length_map.insert(LengthMapData(val, q, edge));
       }
       ave = 0;
       for (LengthMapData_multi_index::nth_index<0>::type::iterator mit =
@@ -1318,73 +1321,62 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
                                  SetsMap &sets_map) const {
       moab::Interface &moab(mField.get_moab());
       Skinner skin(&moab);
-      MoFEMFunctionBeginHot;
+      MoFEMFunctionBegin;
 
       sets_map[FIX_CORNERS].merge(corner_nodes);
       Range fixed_verts;
-      rval = moab.get_connectivity(fixed_edges, fixed_verts, true);
-      CHKERRG(rval);
+      CHKERR moab.get_connectivity(fixed_edges, fixed_verts, true);
       sets_map[FIX_EDGES].swap(fixed_verts);
 
       Range tets_skin;
-      rval = skin.find_skin(0, tets, false, tets_skin);
-      CHKERRG(rval);
+      CHKERR skin.find_skin(0, tets, false, tets_skin);
       Range tets_skin_edges;
-      rval = moab.get_adjacencies(tets_skin, 1, false, tets_skin_edges,
+      CHKERR moab.get_adjacencies(tets_skin, 1, false, tets_skin_edges,
                                   moab::Interface::UNION);
-      CHKERRG(rval);
 
       // surface skin
       Range surface_skin;
-      rval = skin.find_skin(0, surface, false, surface_skin);
-      CHKERRG(rval);
+      CHKERR skin.find_skin(0, surface, false, surface_skin);
       Range front_in_the_body;
       front_in_the_body = subtract(surface_skin, tets_skin_edges);
       Range front_ends;
-      rval = skin.find_skin(0, front_in_the_body, false, front_ends);
-      CHKERRG(rval);
+      CHKERR skin.find_skin(0, front_in_the_body, false, front_ends);
       sets_map[FRONT_ENDS].swap(front_ends);
 
       Range surface_skin_verts;
-      rval = moab.get_connectivity(surface_skin, surface_skin_verts, true);
-      CHKERRG(rval);
+      CHKERR moab.get_connectivity(surface_skin, surface_skin_verts, true);
       sets_map[SURFACE_SKIN].swap(surface_skin_verts);
 
       // surface
       Range surface_verts;
-      rval = moab.get_connectivity(surface, surface_verts, true);
-      CHKERRG(rval);
+      CHKERR moab.get_connectivity(surface, surface_verts, true);
       sets_map[SURFACE].swap(surface_verts);
 
       // skin
       Range tets_skin_verts;
-      rval = moab.get_connectivity(tets_skin, tets_skin_verts, true);
-      CHKERRG(rval);
+      CHKERR moab.get_connectivity(tets_skin, tets_skin_verts, true);
       sets_map[SKIN].swap(tets_skin_verts);
 
       Range tets_verts;
-      rval = moab.get_connectivity(tets, tets_verts, true);
-      CHKERRG(rval);
+      CHKERR moab.get_connectivity(tets, tets_verts, true);
       sets_map[FREE].swap(tets_verts);
 
-      MoFEMFunctionReturnHot(0);
+      MoFEMFunctionReturn(0);
     }
 
     MoFEMErrorCode getProcTets(const Range &tets, const Range &edges_to_merge,
                                Range &proc_tets) const {
       moab::Interface &moab(mField.get_moab());
-      MoFEMFunctionBeginHot;
+      MoFEMFunctionBegin;
       Range edges_to_merge_verts;
-      rval = moab.get_connectivity(edges_to_merge, edges_to_merge_verts, true);
-      CHKERRG(rval);
+      CHKERR moab.get_connectivity(edges_to_merge, edges_to_merge_verts, true);
       Range edges_to_merge_verts_tets;
-      rval = moab.get_adjacencies(edges_to_merge_verts, 3, false,
+      CHKERR moab.get_adjacencies(edges_to_merge_verts, 3, false,
                                   edges_to_merge_verts_tets,
                                   moab::Interface::UNION);
-      CHKERRG(rval);
       edges_to_merge_verts_tets = intersect(edges_to_merge_verts_tets, tets);
       proc_tets.swap(edges_to_merge_verts_tets);
-      MoFEMFunctionReturnHot(0);
+      MoFEMFunctionReturn(0);
     }
 
     MoFEMErrorCode edgesToMerge(const Range &surface, const Range &tets,
@@ -1624,7 +1616,7 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
   LengthMapData_multi_index length_map;
   new_surf = surface;
 
-  double ave0, ave, min0, min, min_p, min_pp;
+  double ave0, ave, min0, min = 0, min_p = 0, min_pp;
   for (int pp = 0; pp != nbMaxMergingCycles; pp++) {
 
     int nb_nodes_merged_p = nb_nodes_merged;
@@ -1682,8 +1674,15 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
                                          edges_to_merge, not_merged_edges);
 
       if (m_field.getInterface<NodeMergerInterface>()->getSucessMerge()) {
+        Range adj_mother_tets;
+        CHKERR moab.get_adjacencies(&mother, 1, 3, false, adj_mother_tets);
+        Range adj_mother_tets_nodes;
+        CHKERR moab.get_connectivity(adj_mother_tets, adj_mother_tets_nodes,
+                                     true);
         Range adj_edges;
-        CHKERR moab.get_adjacencies(conn, 2, 1, false, adj_edges,
+        CHKERR moab.get_adjacencies(adj_mother_tets_nodes, 1, false, adj_edges,
+                                    moab::Interface::UNION);
+        CHKERR moab.get_adjacencies(&father, 1, 1, false, adj_edges,
                                     moab::Interface::UNION);
         for (Range::iterator ait = adj_edges.begin(); ait != adj_edges.end();
              ait++) {
