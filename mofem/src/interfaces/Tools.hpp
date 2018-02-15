@@ -69,7 +69,11 @@ namespace MoFEM {
      * @return             error code
      */
     MoFEMErrorCode minTetsQuality(const Range &tets, double &min_quality,
-                                  Tag th = NULL);
+                                  Tag th = NULL,
+                                  boost::function<double(double, double)> f =
+                                      [](double a, double b) -> double {
+                                    return std::min(a, b);
+                                  });
 
     static MoFEMErrorCode checkIfPointIsInTet(const double tet_coords[],
                                               const double global_coord[],
