@@ -51,18 +51,6 @@ struct NodeMergerInterface: public UnknownInterface {
     errorIfNoCommonEdge = b;
   }
 
-  /**
-   * \brief calculated quality of tets adjacent to edge
-   * @param  edge        edge handle
-   * @param  tets_ptr    pointer to range of tets
-   * @param  min_quality returned quality of tets
-   * @param  th          handle to tag with nodes positions
-   * @return             error code
-   */
-  MoFEMErrorCode edgeMinQuality(
-    EntityHandle edge,const Range *tets_ptr,double &min_quality,Tag th = NULL
-  );
-
   /** \brief merge nodes which sharing edge
 
     Father is sties, mother is merged.
@@ -177,20 +165,17 @@ private:
   /**
    * \brief Calualte quality if nodes merged
    * @param  check_tests tets to check
-   * @param  father      fisrt node of the edge
+   * @param  father      first node of the edge
    * @param  mother      second node of the edge
    * @param  coords_move moved father node
    * @param  min_quality calculated quality
    * @return             error code
    */
-  MoFEMErrorCode minQuality(
-    Range &check_tests,
-    EntityHandle father,
-    EntityHandle mother,
-    double *coords_move,
-    double &min_quality,
-    Tag th = NULL
-  );
+  MoFEMErrorCode
+  minQuality(Range &check_tests, EntityHandle father, EntityHandle mother,
+             double *coords_move, double &min_quality, Tag th = NULL,
+             boost::function<double(double, double)> f =
+                 [](double a, double b) -> double { return std::min(a, b); });
 
   /**
    * \brief Use bisection method to find point of edge collapse
@@ -201,14 +186,9 @@ private:
    * @param  coords_move node to move
    * @return             error code
    */
-  MoFEMErrorCode lineSearch(
-    Range &check_tests,
-    EntityHandle father,
-    EntityHandle mother,
-    int line_search,
-    double *coords_move,
-    Tag th = NULL
-  );
+  MoFEMErrorCode lineSearch(Range &check_tests, EntityHandle father,
+                            EntityHandle mother, int line_search,
+                            FTensor::Tensor1<double, 3> &t_move, Tag th = NULL);
 
   ParentChildMap parentChildMap;
 
