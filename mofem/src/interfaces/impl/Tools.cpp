@@ -84,6 +84,48 @@ Tools::minTetsQuality(const Range &tets, double &min_quality, Tag th,
   MoFEMFunctionReturn(0);
 }
 
+MoFEMErrorCode
+Tools::getTetsWithQuality(Range &out_tets, const Range &tets,
+                          Tag th, boost::function<bool(double)> f) {
+  MoFEM::Interface &m_field = cOre;
+  moab::Interface &moab(m_field.get_moab());
+  MoFEMFunctionBegin;
+  Range to_write;
+  const EntityHandle *conn;
+  int num_nodes;
+  double coords[12];
+  for (auto tet : tets) {
+    CHKERR m_field.get_moab().get_connectivity(tet, conn, num_nodes, true);
+    if (th) {
+      CHKERR moab.tag_get_data(th, conn, num_nodes, coords);
+    } else {
+      CHKERR moab.get_coords(conn, num_nodes, coords);
+    }
+    double q = Tools::volumeLengthQuality(coords);
+    if (f(q)) {
+      out_tets.insert(tet);
+    }
+  }
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode
+Tools::writeTetsWithQuality(const char *file_name, const char *file_type,
+                            const char *options, const Range &tets,
+                            Tag th, boost::function<bool(double)> f) {
+  MoFEM::Interface &m_field = cOre;
+  moab::Interface &moab(m_field.get_moab());
+  MoFEMFunctionBegin;
+  Range out_tets;
+  CHKERR getTetsWithQuality(out_tets, tets, th, f);
+  EntityHandle meshset;
+  CHKERR moab.create_meshset(MESHSET_SET, meshset);
+  CHKERR moab.add_entities(meshset, out_tets);
+  CHKERR moab.write_file(file_name, file_type, options, &meshset, 1);
+  CHKERR moab.delete_entities(&meshset, 1);
+  MoFEMFunctionReturn(0);
+}
+
 MoFEMErrorCode Tools::checkIfPointIsInTet(const double tet_coords[],
                                           const double global_coord[],
                                           const double tol,bool &result) {
@@ -149,6 +191,5 @@ MoFEMErrorCode Tools::checkVectorForNotANumber(const Problem *prb_ptr,
   PetscSynchronizedFlush(comm, PETSC_STDOUT);
   MoFEMFunctionReturn(0);
 }
-
 
 }
