@@ -166,6 +166,7 @@ MoFEMErrorCode NodeMergerInterface::mergeNodes(
 
     auto abs_min = [](double a, double b) {
       return std::min(fabs(a), fabs(b));
+
     };
     double min_quality0 = 1;
     CHKERR minQuality(edge_tets, 0, 0, NULL, min_quality0, th, abs_min);
@@ -205,13 +206,40 @@ MoFEMErrorCode NodeMergerInterface::mergeNodes(
 
   auto create_tet = [this, &m_field](const EntityHandle *new_conn,
                                      const EntityHandle parent) {
-    // Create tet with new connectivity
-    EntityHandle tet;
-    CHKERR m_field.get_moab().create_element(MBTET, new_conn, 4, tet);
-    CHKERR m_field.get_moab().tag_set_data(cOre.get_th_RefParentHandle(), &tet,
-                                           1, &parent);
-    parentChildMap.insert(ParentChild(parent, tet));
-    return tet;
+      EntityHandle tet;
+      Range tets;
+      CHKERR m_field.get_moab().get_adjacencies(new_conn, 4, 3, false, tets);
+      bool tet_found = false;
+      for (auto it_tet : tets) {
+        const EntityHandle *tet_conn;
+        int num_nodes;
+        CHKERR m_field.get_moab().get_connectivity(it_tet, tet_conn, num_nodes,
+                                                   true);
+        const EntityHandle *p = std::find(tet_conn, &tet_conn[4], new_conn[0]);
+        if (p != &tet_conn[4]) {
+          int s = std::distance(tet_conn, p);
+          int n = 0;
+          for (; n != 4; ++n) {
+            const int idx[] = {0, 1, 2, 3, 0, 1, 2, 3};
+            if (tet_conn[idx[s + n]] != new_conn[n])
+              break;
+          }
+          if (n == 4 && !tet_found) {
+            tet = it_tet;
+            tet_found = true;
+          } else if(n == 4) {
+            THROW_MESSAGE("More that one tet with the same connectivity");
+          }
+        }
+      }
+      if (!tet_found) {
+        // Create tet with new connectivity
+        CHKERR m_field.get_moab().create_element(MBTET, new_conn, 4, tet);
+        CHKERR m_field.get_moab().tag_set_data(cOre.get_th_RefParentHandle(),
+                                               &tet, 1, &parent);
+        parentChildMap.insert(ParentChild(parent, tet));
+      } 
+      return tet;
   };
 
   auto swap_conn = [](EntityHandle *new_conn) {
@@ -311,16 +339,6 @@ MoFEMErrorCode NodeMergerInterface::mergeNodes(
     CHKERR m_field.get_moab().get_adjacencies(
         mother_tets, dd, false, adj_mother_ents, moab::Interface::UNION);
   }
-
-  // FIXME: This is propably obsolete code, check if can be removed
-  // if(tets_ptr) {
-  //   Range adj;
-  //   CHKERR m_field.get_moab().get_adjacencies(*tets_ptr, 1, false, adj,
-  //                                             moab::Interface::UNION);
-  //   CHKERR m_field.get_moab().get_adjacencies(*tets_ptr, 2, false, adj,
-  //                                             moab::Interface::UNION);
-  //   adj_mother_ents = intersect(adj_mother_ents,adj);
-  // }
 
   adj_mother_ents.erase(common_edge[0]);
   for (auto ent : adj_mother_ents) {
@@ -472,7 +490,9 @@ NodeMergerInterface::lineSearch(Range &check_tests, EntityHandle father,
 
   t_move(i) = t_coords(i);
   double min_quality_i = 1;
-  auto abs_min = [](double a, double b) { return std::min(fabs(a), fabs(b)); };
+  auto abs_min = [](double a, double b) { 
+    return std::min(fabs(a), fabs(b)); 
+   };
   CHKERR minQuality(check_tests, father, mother, &t_move(0), min_quality_i, th,
                     abs_min);
 
