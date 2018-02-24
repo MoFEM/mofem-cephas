@@ -825,7 +825,7 @@ MoFEMErrorCode BitRefManager::getAdjacencies(
   MoFEM::Interface &m_field = cOre;
   moab::Interface &moab(m_field.get_moab());
   MoFEMFunctionBegin;
-  if (verb > 0) {
+  if (verb > QUIET) {
     std::ostringstream ss;
     ss << "from: " << bit << std::endl << "to: " << std::endl;
     PetscPrintf(m_field.get_comm(), ss.str().c_str());
