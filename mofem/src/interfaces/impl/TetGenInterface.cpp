@@ -286,19 +286,15 @@
       std::map<EntityHandle, unsigned long> &moab_tetgen_map,
       std::map<unsigned long, EntityHandle> &tetgen_moab_map, Range *ents,
       bool id_in_tags, bool error_if_created) {
-    MoFEMFunctionBeginHot;
+    MoFEMFunctionBegin;
 
     Interface &m_field = cOre;
 
-    //
-    ErrorCode rval;
-
     Tag th_marker;
     int def_marker = 0;
-    rval = m_field.get_moab().tag_get_handle(
+    CHKERR m_field.get_moab().tag_get_handle(
         "TETGEN_MARKER", 1, MB_TYPE_INTEGER, th_marker,
         MB_TAG_CREAT | MB_TAG_SPARSE, &def_marker);
-    CHKERRQ_MOAB(rval);
 
     int num_nodes = 0;
     // std::vector<int> new_node_markes;
@@ -313,9 +309,8 @@
                    3 * sizeof(double)) == 0) {
           unsigned long iii = MBVERTEX | (ii << MB_TYPE_WIDTH);
           if (tetgen_moab_map.find(iii) != tetgen_moab_map.end()) {
-            rval = m_field.get_moab().tag_set_data(
+            CHKERR m_field.get_moab().tag_set_data(
                 th_marker, &tetgen_moab_map[iii], 1, &out.pointmarkerlist[ii]);
-            CHKERRQ_MOAB(rval);
             continue;
           } else {
             SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
@@ -326,9 +321,8 @@
       if (id_in_tags) {
         if (out.pointparamlist[ii].tag > 0) {
           EntityHandle node;
-          rval = m_field.get_moab().handle_from_id(
+          CHKERR m_field.get_moab().handle_from_id(
               MBVERTEX, in.pointparamlist[ii].tag - 1, node);
-          CHKERRQ_MOAB(rval);
           if (moab_tetgen_map.find(node) != moab_tetgen_map.end()) {
             continue;
           }
@@ -353,14 +347,12 @@
     }
 
     ReadUtilIface *iface;
-    rval = m_field.get_moab().query_interface(iface);
-    CHKERRQ_MOAB(rval);
+    CHKERR m_field.get_moab().query_interface(iface);
 
     if (num_nodes) {
       vector<double *> arrays;
       EntityHandle startv;
-      rval = iface->get_node_coords(3, num_nodes, 0, startv, arrays);
-      CHKERRQ_MOAB(rval);
+      CHKERR iface->get_node_coords(3, num_nodes, 0, startv, arrays);
       Range verts(startv, startv + num_nodes - 1);
       int ii = in.numberofpoints;
       for (Range::iterator vit = verts.begin(); vit != verts.end();
@@ -373,9 +365,8 @@
         if (ents != NULL)
           ents->insert(*vit);
       }
-      rval = m_field.get_moab().tag_set_data(
+      CHKERR m_field.get_moab().tag_set_data(
           th_marker, verts, &out.pointmarkerlist[in.numberofpoints]);
-      CHKERRQ_MOAB(rval);
     }
 
     std::vector<int> tetgen_ii;
@@ -412,52 +403,55 @@
         }
         conn[nn] = tetgen_moab_map.at(MBVERTEX | (nnn << MB_TYPE_WIDTH));
       }
+      auto get_coords = [&m_field](const EntityHandle *conn) {
+        VectorDouble12 coords(12);
+        CHKERR m_field.get_moab().get_coords(conn, 4, &coords[0]);
+        return coords;
+      };
+      auto get_volume = [&m_field](VectorDouble12 &&coords) {
+        return Tools::tetVolume(&coords[0]);
+      };
+      if (get_volume(get_coords(conn)) < 0) {
+        EntityHandle n0 = conn[0];
+        conn[0] = conn[1];
+        conn[1] = n0;
+      }
       Range tets;
-      rval = m_field.get_moab().get_adjacencies(conn, 4, 3, false, tets);
-      CHKERRQ_MOAB(rval);
-      EntityHandle tet;
-      if (tets.empty()) {
+      CHKERR m_field.get_moab().get_adjacencies(conn, 4, 3, false, tets);
+      bool tet_found = false;
+      for (auto tet : tets) {
+        const EntityHandle *tet_conn;
+        int num_nodes;
+        CHKERR m_field.get_moab().get_connectivity(tet, tet_conn, num_nodes,
+                                                   true);
+        const EntityHandle *p = std::find(tet_conn, &tet_conn[4], conn[0]);
+        if (p != &tet_conn[4]) {
+          int s = std::distance(tet_conn, p);
+          int n = 0;
+          for (; n != 4; ++n) {
+            const int idx[] = {0, 1, 2, 3, 0, 1, 2, 3};
+            if (tet_conn[idx[s + n]] != conn[n])
+              break;
+          }
+          if(n == 4 && !tet_found) {
+            moab_tetgen_map[tet] = iii;
+            tetgen_moab_map[iii] = tet;
+            if (ents != NULL)
+              ents->insert(tet);
+            tet_found = true;
+          } else if (n == 4) {
+            SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY,
+                    "More that one tet with the same connectivity");
+          }
+        } else {
+          SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY, "Imposible case");
+        }
+      }
+      if(!tet_found) {
         for (int nn = 0; nn != 4; nn++) {
           conn_seq_tet.push_back(conn[nn]);
         }
         tetgen_ii.push_back(ii);
-        // rval = m_field.get_moab().create_element(MBTET,conn,4,tet);
-        // CHKERRQ_MOAB(rval);
-        // Range tet_nodes;
-        // rval = m_field.get_moab().get_connectivity(&tet,1,tet_nodes,true);
-        // CHKERRQ_MOAB(rval);
-        // if(tet_nodes.size()!=4) {
-        //   SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data
-        //   inconsistency; tet should have 4 nodes");
-        // }
-        // Range edges;
-        // rval = m_field.get_moab().get_adjacencies(&tet,1,1,true,edges);
-        // Range tris;
-        // rval = m_field.get_moab().get_adjacencies(&tet,1,2,true,tris);
-        // ParallelComm* pcomm =
-        // ParallelComm::get_pcomm(&m_field.get_moab(),MYPCOMM_INDEX);
-        // BARRIER_PCOMM_RANK_START(pcomm)
-        // cerr << pcomm->rank() << " : ";
-        // cerr << tet << " : ";
-        // // cerr << tet_nodes << endl;
-        // cerr << conn[0] << " " << conn[1] << " " << conn[2] << " " << conn[3]
-        // << " : ";
-        // cerr << edges[0] << " " << edges[1] << " " << edges[2] << " " <<
-        // edges[3] << " "
-        // << edges[4] << " " << edges[5] << " : ";
-        // cerr << tris[0] << " " << tris[1] << " " << tris[2] << " " << tris[3]
-        // << endl;
-        // BARRIER_PCOMM_RANK_END(pcomm)
-      } else {
-        // if(tets.size()!=1) {
-        //   SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data
-        //   inconsistency; expecting one element");
-        // }
-        tet = *tets.begin();
-        moab_tetgen_map[tet] = iii;
-        tetgen_moab_map[iii] = tet;
-        if (ents != NULL)
-          ents->insert(tet);
       }
     }
 
@@ -466,17 +460,14 @@
       EntityHandle starte; // Connectivity
       EntityHandle *conn;
       int num_el = tetgen_ii.size();
-      rval = iface->get_element_connect(num_el, 4, MBTET, 0, starte, conn);
-      CHKERRQ_MOAB(rval);
+      CHKERR iface->get_element_connect(num_el, 4, MBTET, 0, starte, conn);
       std::copy(conn_seq_tet.begin(), conn_seq_tet.end(), conn);
-      rval = iface->update_adjacencies(starte, num_el, 4, conn);
-      CHKERRQ_MOAB(rval);
+      CHKERR iface->update_adjacencies(starte, num_el, 4, conn);
       new_tets = Range(starte, starte + num_el - 1);
       std::vector<int>::iterator ii_it = tetgen_ii.begin();
       int ii = 0;
       for (Range::iterator tit = new_tets.begin(); tit != new_tets.end();
            tit++, ii_it++, ii++) {
-        // std::sort(&conn_seq_tet[4*ii],&conn_seq_tet[4*ii+4]);
         unsigned long iii = MBTET | ((*ii_it) << MB_TYPE_WIDTH);
         moab_tetgen_map[*tit] = iii;
         tetgen_moab_map[iii] = *tit;
@@ -485,59 +476,21 @@
         ents->merge(new_tets);
     }
 
-    MoFEMFunctionReturnHot(0);
+    MoFEMFunctionReturn(0);
   }
   MoFEMErrorCode TetGenInterface::outData(
       tetgenio &in, tetgenio &out,
       std::map<EntityHandle, unsigned long> &moab_tetgen_map,
       std::map<unsigned long, EntityHandle> &tetgen_moab_map, BitRefLevel bit,
       bool id_in_tags, bool error_if_created) {
-    MoFEMFunctionBeginHot;
-
-    //
+    MoFEMFunctionBegin;
     Interface &m_field = cOre;
-
-    // ParallelComm* pcomm =
-    // ParallelComm::get_pcomm(&m_field.get_moab(),MYPCOMM_INDEX);
-    //
-    // BARRIER_PCOMM_RANK_START(pcomm)
-    // {
-    //   ostringstream ss;
-    //   ss << "t0_" << pcomm->rank() << ".vtk";
-    //   rval = m_field.get_moab().write_file(ss.str().c_str(),"VTK");
-    //   CHKERRQ_MOAB(rval);
-    // }
-    // BARRIER_PCOMM_RANK_END(pcomm)
-
     Range ents;
-    ierr = outData(in, out, moab_tetgen_map, tetgen_moab_map, &ents, id_in_tags,
+    CHKERR outData(in, out, moab_tetgen_map, tetgen_moab_map, &ents, id_in_tags,
                    error_if_created);
-    CHKERRG(ierr);
-
-    // BARRIER_PCOMM_RANK_START(pcomm)
-    // {
-    //   ostringstream ss;
-    //   ss << "t1_" << pcomm->rank() << ".vtk";
-    //   rval = m_field.get_moab().write_file(ss.str().c_str(),"VTK");
-    //   CHKERRQ_MOAB(rval);
-    // }
-    // BARRIER_PCOMM_RANK_END(pcomm)
-
-    // std::cerr << ents.size() << std::endl;
-    ierr = m_field.getInterface<BitRefManager>()->setBitRefLevel(
+    CHKERR m_field.getInterface<BitRefManager>()->setBitRefLevel(
         ents.subset_by_type(MBTET), bit);
-    CHKERRG(ierr);
-
-    // BARRIER_PCOMM_RANK_START(pcomm)
-    // {
-    //   ostringstream ss;
-    //   ss << "t2_" << pcomm->rank() << ".vtk";
-    //   rval = m_field.get_moab().write_file(ss.str().c_str(),"VTK");
-    //   CHKERRQ_MOAB(rval);
-    // }
-    // BARRIER_PCOMM_RANK_END(pcomm)
-
-    MoFEMFunctionReturnHot(0);
+    MoFEMFunctionReturn(0);
   }
   MoFEMErrorCode TetGenInterface::setFaceData(
       std::vector<std::pair<Range, int> > &markers, tetgenio &in,
