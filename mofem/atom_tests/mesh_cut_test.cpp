@@ -160,7 +160,7 @@ int main(int argc, char *argv[]) {
 
     // Cut mesh, trim surface and merge bad edges
     CHKERR cut_mesh->cutTrimAndMerge(2, bit_level1, bit_level2, bit_level3, th,
-                                     1e-4, 3e-1, 1e-1, 1e-4, fixed_edges,
+                                     1e-4, 1e-1, 1e-1, 1e-4, fixed_edges,
                                      corner_nodes, true, true);
 
     if (test) {

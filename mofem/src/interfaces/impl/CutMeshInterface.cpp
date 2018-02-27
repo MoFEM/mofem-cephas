@@ -725,18 +725,20 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(Range *fixed_edges,
 
         // check node is on the fixed edge
         Range adj_edges;
-        CHKERR moab.get_adjacencies(&node, 1, 1, true, adj_edges);
+        CHKERR moab.get_adjacencies(&node, 1, 1, false, adj_edges);
         adj_edges = intersect(adj_edges, tets_skin_edges);
-        bool fixed_edge = false;
         if (fixed_edges) {
-          Range e = intersect(adj_edges, *fixed_edges);
+          Range e; 
           // check if node is on fixed edge
+          e = intersect(adj_edges, *fixed_edges);
           if (!e.empty()) {
-            adj_edges = e;
+            adj_edges.swap(e);
           }
           // check if split edge is fixed edge
           e = intersect(adj_edges, cutEdges);
-          if (e.empty()) {
+          if (!e.empty()) {
+            adj_edges.swap(e);
+          } else {
             zero_disp_node = true;
           }
         }
@@ -752,6 +754,10 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(Range *fixed_edges,
           vertices_on_cut_edges[node].unitRayDir = z;
           vertices_on_cut_edges[node].rayPoint = s0;
         } else {
+          if(adj_edges.empty()) {
+            SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                    "Data inconsistency");
+          }
           for (auto e : adj_edges) {
             if (edgesToCut.find(e) != edgesToCut.end()) {
               auto d = edgesToCut.at(e);
@@ -760,21 +766,28 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(Range *fixed_edges,
               double dist0 = norm_2(ray);
               vertices_on_cut_edges[node].dIst = dist0;
               vertices_on_cut_edges[node].lEngth = dist0;
-              vertices_on_cut_edges[node].unitRayDir = ray;
+              vertices_on_cut_edges[node].unitRayDir =
+                  dist0 > 0 ? ray / dist0 : ray;
               vertices_on_cut_edges[node].rayPoint = s0;
               break;
+            } else {
+              SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                      "Data inconsistency");
             }
           }
         }
       }
     }
 
+    if (vertices_on_cut_edges.size() != num_nodes) {
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Data inconsistency");
+    }
+
     Range adj_tets;
     CHKERR moab.get_adjacencies(conn, num_nodes, 3, false, adj_tets,
                                 moab::Interface::UNION);
     adj_tets = intersect(adj_tets, vOlume);
-    double q = 1;
-    q = get_quality_change(adj_tets, vertices_on_cut_edges);
+    double q = get_quality_change(adj_tets, vertices_on_cut_edges);
 
     if (q > 0.8) {
       verticesOnCutEdges.insert(vertices_on_cut_edges.begin(),
