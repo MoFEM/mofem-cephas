@@ -772,6 +772,11 @@ struct EdgeSlidingConstrains: public GenericSliding {
         t_cross(k) = FTensor::cross(t_n0(i), t_n1(j), k);
         t_n1(k) = FTensor::cross(t_n0(i), t_cross(j), k);
 
+        // if (fabs(t_n1(i) * t_n1(i) - 1.) > 1e-12) {
+          // SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY,
+                  // "Zero vector base");
+        // }
+
         VectorDouble3 &v0 = v[0];
         VectorDouble3 &v1 = v[1];
         CHKERR moab.tag_set_data(th0, &edge, 1, &v0[0]);
@@ -791,7 +796,7 @@ struct EdgeSlidingConstrains: public GenericSliding {
       if(faces != nullptr) {
         CHKERR moab.add_entities(meshset, *faces);
       }
-      CHKERR moab.write_file(name.c_str(), "VTK", "", &meshset, 1, ths, 3);
+      CHKERR moab.write_file(name.c_str(), "VTK", "", &meshset, 1, ths, 4);
       CHKERR moab.delete_entities(&meshset, 1);
       MoFEMFunctionReturn(0);
     }
