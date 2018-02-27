@@ -219,10 +219,10 @@ PetscErrorCode ShapeFaceBaseMBTRI(
 PetscErrorCode ShapeFaceNormalMBTRI(
   double *diffN,const double *coords,double *normal) {
   MoFEMFunctionBeginHot;
-
   ierr = ShapeFaceBaseMBTRI(diffN,coords,normal,NULL,NULL);  CHKERRQ(ierr);
   MoFEMFunctionReturnHot(0);
 }
+
 PetscErrorCode ShapeFaceDiffNormalMBTRI(double *diffN,const double *coords,double *diff_normal) {
   MoFEMFunctionBeginHot;
   // N = Spin(dX/dksi)*dX/deta = -Spin(dX/deta)*dX/dksi
