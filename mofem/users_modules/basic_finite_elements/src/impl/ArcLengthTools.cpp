@@ -59,6 +59,17 @@ ArcLengthCtx::ArcLengthCtx(MoFEM::Interface &m_field,
   ierr = VecDuplicate(F_lambda, &dx);
   CHKERRABORT(PETSC_COMM_WORLD, ierr);
 
+  ierr = VecZeroEntries(F_lambda); 
+  CHKERRABORT(PETSC_COMM_WORLD, ierr);
+  ierr = VecZeroEntries(db); 
+  CHKERRABORT(PETSC_COMM_WORLD, ierr);
+  ierr = VecZeroEntries(xLambda); 
+  CHKERRABORT(PETSC_COMM_WORLD, ierr);
+  ierr = VecZeroEntries(x0); 
+  CHKERRABORT(PETSC_COMM_WORLD, ierr);
+  ierr = VecZeroEntries(dx);
+  CHKERRABORT(PETSC_COMM_WORLD, ierr);
+
   const Problem *problem_ptr;
   ierr = m_field.get_problem(problem_name, &problem_ptr);
   CHKERRABORT(PETSC_COMM_WORLD, ierr);
