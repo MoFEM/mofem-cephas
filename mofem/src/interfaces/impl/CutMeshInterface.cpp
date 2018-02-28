@@ -407,7 +407,9 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(const double low_tol,
           cutEdges.insert(e);
         }
       }
-    } else if(fabs(dist[0]) < tol && fabs(dist[1]) < tol) {
+    }
+
+    if (fabs(dist[0]) < tol && fabs(dist[1]) < tol) {
       aveLength += ray_length;
       maxLength = fmax(maxLength, ray_length);
       CHKERR project_node(conn[0]);
@@ -477,11 +479,13 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(const double low_tol,
     }
   }
 
+  CHKERR moab.get_adjacencies(cutVolumes, 1, false, edges,
+                              moab::Interface::UNION);
   Range add_verts;
   CHKERR moab.get_connectivity(edges, add_verts, true);
+  add_verts = subtract(add_verts, zeroDistanceVerts);
   CHKERR moab.get_connectivity(unite(cutEdges, zeroDistanceEnts),
                                cut_edges_verts, true);
-  add_verts = subtract(add_verts, zeroDistanceVerts);
   add_verts = subtract(add_verts, cut_edges_verts);
 
   for (auto v : add_verts) {
