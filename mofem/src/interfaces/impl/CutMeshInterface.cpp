@@ -986,7 +986,7 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
     double length = norm_2(s1 - s0);
     // Find point on surface closet to surface
 
-    auto get_closets_delta = [this, &moab](VectorAdaptor &s) {
+    auto get_closets_delta = [this, &moab](const VectorAdaptor &s) {
       VectorDouble3 p(3);
       EntityHandle facets_out;
       // find closet point on the surface from first node
@@ -996,13 +996,14 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
       Util::normal(&moab, facets_out, n[0], n[1], n[2]);
       VectorDouble3 w = p - s;
       VectorDouble3 normal = inner_prod(w, n) * n;
-      return w - normal;
+      w -= normal;
+      return w;
     };
 
     // Calculate deltas, i.e. vectors from edges to closet point on surface
-    VectorDouble3 delta0, delta1;
-    delta0 = get_closets_delta(s0);
-    delta1 = get_closets_delta(s1);
+    VectorDouble3 delta0(3), delta1(3);
+    noalias(delta0) = get_closets_delta(s0);
+    noalias(delta1) = get_closets_delta(s1);
 
     // moab.tag_set_data(th,&conn[0],1,&delta0[0]);
     // moab.tag_set_data(th,&conn[1],1,&delta1[0]);
