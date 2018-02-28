@@ -1043,12 +1043,12 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
               treeSurfPtr->closest_to_location(&trimmed_end[0], rootSetSurf,
                                                &point_out[0], facets_out);
               Util::normal(&moab, facets_out, n[0], n[1], n[2]);
-              noalias(normal) = inner_prod(w, n) * n;
               noalias(w) = point_out - trimmed_end;
+              noalias(normal) = inner_prod(w, n) * n;
               double s = inner_prod(ray, w - normal);
               trimmed_end += s * ray;
               // cerr << "s " << ii << " " << s << " " << norm_2(w) << endl;
-              if (s / length < tol)
+              if ((s / length) < tol)
                 break;
             }
             return trimmed_end;
