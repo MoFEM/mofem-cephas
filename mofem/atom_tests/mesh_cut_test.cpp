@@ -82,7 +82,7 @@ int main(int argc, char *argv[]) {
     CHKERR m_field.getInterface<BitRefManager>()->addBitRefLevelByDim(
         0, 3, bit_last);
     CHKERR core.getInterface<BitRefManager>()->writeBitLevelByType(
-        bit_last, BitRefLevel().set(), MBTET, "out_tets_bit_last.vtk",
+        bit_last, BitRefLevel().set(), MBTET, "out_tets_bit_last.tk",
         "VTK", "");
 
     int no_of_ents_not_in_database = -1;
@@ -113,7 +113,8 @@ int main(int argc, char *argv[]) {
     // copy those entities and do other geometrical transformations, like shift
     // scale or streach, rotate.
     if (meshset_manager->checkMeshset(side_set, SIDESET)) {
-      CHKERR cut_mesh->copySurface(surface, NULL, shift);
+      CHKERR cut_mesh->copySurface(surface, NULL, shift, NULL, NULL,
+                                   "surface.vtk");
     } else {
       CHKERR cut_mesh->setSurface(surface);
     }
@@ -144,7 +145,7 @@ int main(int argc, char *argv[]) {
     // Set tag values with coordinates of nodes
     CHKERR cut_mesh->setTagData(th);
 
-    // Get BitRefManager interface
+    // Get BitRefManager interface,,
     BitRefManager *bit_ref_manager;
     CHKERR m_field.getInterface(bit_ref_manager);
 
@@ -159,7 +160,7 @@ int main(int argc, char *argv[]) {
 
     // Cut mesh, trim surface and merge bad edges
     CHKERR cut_mesh->cutTrimAndMerge(2, bit_level1, bit_level2, bit_level3, th,
-                                     1e-4, 1e-2, 1e-3, 1e-3, fixed_edges,
+                                     1e-4, 1e-1, 1e-1, 1e-4, fixed_edges,
                                      corner_nodes, true, true);
 
     if (test) {

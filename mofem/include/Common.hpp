@@ -217,7 +217,9 @@ typedef ublas::vector<int, ublas::bounded_array<int, 9> > VectorInt9;
 typedef ublas::matrix<double, ublas::row_major, ublas::bounded_array<double, 9> >
     MatrixDouble3by3;
 typedef ublas::vector<double, ublas::bounded_array<double, 3> > VectorDouble3;
+typedef ublas::vector<double, ublas::bounded_array<double, 6> > VectorDouble6;
 typedef ublas::vector<double, ublas::bounded_array<double, 9> > VectorDouble9;
+typedef ublas::vector<double, ublas::bounded_array<double, 12> > VectorDouble12;
 
 // shallow adaptor classes
 typedef ublas::vector<double, ublas::shallow_array_adaptor<double> >

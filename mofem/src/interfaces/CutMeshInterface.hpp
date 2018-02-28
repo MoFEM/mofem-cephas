@@ -169,7 +169,8 @@ struct CutMeshInterface : public UnknownInterface {
    * @param  verb verbosity level
    * @return      error code
    */
-  MoFEMErrorCode findEdgesToTrim(Tag th = NULL, const double tol = 1e-4,
+  MoFEMErrorCode findEdgesToTrim(Range *fixed_edges, Range *corner_nodes,
+                                 Tag th = NULL, const double tol = 1e-4,
                                  int verb = 0);
 
   /**
@@ -352,8 +353,8 @@ private:
 
 #endif
 
-  MoFEMErrorCode getRayForEdge(const EntityHandle ent, VectorAdaptor ray_point,
-                               VectorAdaptor unit_ray_dir,
+  MoFEMErrorCode getRayForEdge(const EntityHandle ent, VectorAdaptor &ray_point,
+                               VectorAdaptor &unit_ray_dir,
                                double &ray_length) const;
 
   // /**
