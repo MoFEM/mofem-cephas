@@ -13,132 +13,138 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
-*/
+ */
 
 #include <MoFEM.hpp>
+
 #include <UnknownInterface.hpp>
+
 using namespace MoFEM;
+
 #include <PCMGSetUpViaApproxOrders.hpp>
 
 #undef PETSC_VERSION_RELEASE
 #define PETSC_VERSION_RELEASE 1
 
-#if PETSC_VERSION_GE(3,6,0)
-  #include <petsc/private/petscimpl.h>
+#if PETSC_VERSION_GE(3, 6, 0)
+#include <petsc/private/petscimpl.h>
 #else
-  #include <petsc-private/petscimpl.h>
+#include <petsc-private/petscimpl.h>
 #endif
 
-#if PETSC_VERSION_GE(3,6,0)
-  #include <petsc/private/dmimpl.h> /*I  "petscdm.h"   I*/
-  // #include <petsc/private/vecimpl.h> /*I  "petscdm.h"   I*/
+#if PETSC_VERSION_GE(3, 6, 0)
+#include <petsc/private/dmimpl.h> /*I  "petscdm.h"   I*/
+// #include <petsc/private/vecimpl.h> /*I  "petscdm.h"   I*/
 #else
-  #include <petsc-private/dmimpl.h> /*I  "petscdm.h"   I*/
-  #include <petsc-private/vecimpl.h> /*I  "petscdm.h"   I*/
+#include <petsc-private/dmimpl.h>  /*I  "petscdm.h"   I*/
+#include <petsc-private/vecimpl.h> /*I  "petscdm.h"   I*/
 #endif
 
-PCMGSubMatrixCtx::PCMGSubMatrixCtx(Mat a,IS is):
-  A(a),
-  iS(is) {
-  // Increase reference of petsc object (works like shared_ptr but unique for PETSc)
-  ierr = PetscObjectReference((PetscObject)A); CHKERRABORT(PETSC_COMM_WORLD,ierr);
-  ierr = PetscObjectReference((PetscObject)iS); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+PCMGSubMatrixCtx::PCMGSubMatrixCtx(Mat a, IS is) : A(a), iS(is) {
+  // Increase reference of petsc object (works like shared_ptr but unique for
+  // PETSc)
+  ierr = PetscObjectReference((PetscObject)A);
+  CHKERRABORT(PETSC_COMM_WORLD, ierr);
+  ierr = PetscObjectReference((PetscObject)iS);
+  CHKERRABORT(PETSC_COMM_WORLD, ierr);
 }
 
 PCMGSubMatrixCtx::~PCMGSubMatrixCtx() {
-
-  ierr = MatDestroy(&A); CHKERRABORT(PETSC_COMM_WORLD,ierr);
-  ierr = ISDestroy(&iS); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+  ierr = MatDestroy(&A);
+  CHKERRABORT(PETSC_COMM_WORLD, ierr);
+  ierr = ISDestroy(&iS);
+  CHKERRABORT(PETSC_COMM_WORLD, ierr);
 }
 
-struct PCMGSubMatrixCtx_private: public PCMGSubMatrixCtx {
-  PCMGSubMatrixCtx_private(Mat a,IS is):
-  PCMGSubMatrixCtx(a,is),
-  isInitisalised(false) {
-    PetscLogEventRegister("PCMGSubMatrixCtx_mult",0,&MOFEM_EVENT_mult);
-    PetscLogEventRegister("PCMGSubMatrixCtx_sor",0,&MOFEM_EVENT_sor);
+struct PCMGSubMatrixCtx_private : public PCMGSubMatrixCtx {
+  PCMGSubMatrixCtx_private(Mat a, IS is)
+      : PCMGSubMatrixCtx(a, is), isInitisalised(false) {
+    PetscLogEventRegister("PCMGSubMatrixCtx_mult", 0, &MOFEM_EVENT_mult);
+    PetscLogEventRegister("PCMGSubMatrixCtx_sor", 0, &MOFEM_EVENT_sor);
   }
   ~PCMGSubMatrixCtx_private() {
-    if(isInitisalised) {
-      ierr = VecScatterDestroy(&sCat); CHKERRABORT(PETSC_COMM_WORLD,ierr);
-      ierr = VecDestroy(&X); CHKERRABORT(PETSC_COMM_WORLD,ierr);
-      ierr = VecDestroy(&F); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+    if (isInitisalised) {
+      ierr = VecScatterDestroy(&sCat);
+      CHKERRABORT(PETSC_COMM_WORLD, ierr);
+      ierr = VecDestroy(&X);
+      CHKERRABORT(PETSC_COMM_WORLD, ierr);
+      ierr = VecDestroy(&F);
+      CHKERRABORT(PETSC_COMM_WORLD, ierr);
     }
   }
-  template<InsertMode MODE>
-  friend MoFEMErrorCode sub_mat_mult_generic(Mat a,Vec x,Vec f);
-  friend MoFEMErrorCode sub_mat_sor(
-    Mat mat,Vec b,PetscReal omega,MatSORType flag,PetscReal shift,PetscInt its,PetscInt lits,Vec x
-  );
+  template <InsertMode MODE>
+  friend MoFEMErrorCode sub_mat_mult_generic(Mat a, Vec x, Vec f);
+  friend MoFEMErrorCode sub_mat_sor(Mat mat, Vec b, PetscReal omega,
+                                    MatSORType flag, PetscReal shift,
+                                    PetscInt its, PetscInt lits, Vec x);
+
 public:
   MoFEMErrorCode initData(Vec x) {
-
-    MoFEMFunctionBeginHot;
-    if(!isInitisalised) {
-      ierr = MatCreateVecs(A,&X,&F); CHKERRG(ierr);
-      ierr = VecScatterCreate(X,iS,x,PETSC_NULL,&sCat); CHKERRG(ierr);
+    MoFEMFunctionBegin;
+    if (!isInitisalised) {
+      CHKERR MatCreateVecs(A, &X, &F);
+      CHKERR VecScatterCreate(X, iS, x, PETSC_NULL, &sCat);
+      CHKERR VecZeroEntries(X);
+      CHKERR VecZeroEntries(F);
       isInitisalised = true;
     }
-    MoFEMFunctionReturnHot(0);
+    MoFEMFunctionReturn(0);
   }
   PetscLogEvent MOFEM_EVENT_mult;
   PetscLogEvent MOFEM_EVENT_sor;
   bool isInitisalised;
 };
 
-template<InsertMode MODE>
-MoFEMErrorCode sub_mat_mult_generic(Mat a,Vec x,Vec f) {
+template <InsertMode MODE>
+MoFEMErrorCode sub_mat_mult_generic(Mat a, Vec x, Vec f) {
   void *void_ctx;
-
-  MoFEMFunctionBeginHot;
-  ierr = MatShellGetContext(a,&void_ctx); CHKERRG(ierr);
-  PCMGSubMatrixCtx_private *ctx = (PCMGSubMatrixCtx_private*)void_ctx;
-  if(!ctx->isInitisalised) {
-    ierr = ctx->initData(x); CHKERRG(ierr);
+  MoFEMFunctionBegin;
+  CHKERR MatShellGetContext(a, &void_ctx);
+  PCMGSubMatrixCtx_private *ctx = (PCMGSubMatrixCtx_private *)void_ctx;
+  if (!ctx->isInitisalised) {
+    CHKERR ctx->initData(x);
   }
-  PetscLogEventBegin(ctx->MOFEM_EVENT_mult,0,0,0,0);
-  ierr = VecScatterBegin(ctx->sCat,x,ctx->X,INSERT_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
-  ierr = VecScatterEnd(ctx->sCat,x,ctx->X,INSERT_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
-  ierr = MatMult(ctx->A,ctx->X,ctx->F); CHKERRG(ierr);
-  ierr = VecScatterBegin(ctx->sCat,ctx->F,f,MODE,SCATTER_FORWARD); CHKERRG(ierr);
-  ierr = VecScatterEnd(ctx->sCat,ctx->F,f,MODE,SCATTER_FORWARD); CHKERRG(ierr);
-  PetscLogEventEnd(ctx->MOFEM_EVENT_mult,0,0,0,0);
-  MoFEMFunctionReturnHot(0);
+  PetscLogEventBegin(ctx->MOFEM_EVENT_mult, 0, 0, 0, 0);
+  CHKERR VecScatterBegin(ctx->sCat, x, ctx->X, INSERT_VALUES, SCATTER_REVERSE);
+  CHKERR VecScatterEnd(ctx->sCat, x, ctx->X, INSERT_VALUES, SCATTER_REVERSE);
+  CHKERR MatMult(ctx->A, ctx->X, ctx->F);
+  CHKERR VecScatterBegin(ctx->sCat, ctx->F, f, MODE, SCATTER_FORWARD);
+  CHKERR VecScatterEnd(ctx->sCat, ctx->F, f, MODE, SCATTER_FORWARD);
+  PetscLogEventEnd(ctx->MOFEM_EVENT_mult, 0, 0, 0, 0);
+  MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode sub_mat_mult(Mat a,Vec x,Vec f) {
-  return sub_mat_mult_generic<INSERT_VALUES>(a,x,f);
+MoFEMErrorCode sub_mat_mult(Mat a, Vec x, Vec f) {
+  return sub_mat_mult_generic<INSERT_VALUES>(a, x, f);
 }
 
-MoFEMErrorCode sub_mat_mult_add(Mat a,Vec x,Vec f) {
-  return sub_mat_mult_generic<ADD_VALUES>(a,x,f);
+MoFEMErrorCode sub_mat_mult_add(Mat a, Vec x, Vec f) {
+  return sub_mat_mult_generic<ADD_VALUES>(a, x, f);
 }
 
-MoFEMErrorCode sub_mat_sor(
-  Mat mat,Vec b,PetscReal omega,MatSORType flag,PetscReal shift,PetscInt its,PetscInt lits,Vec x
-) {
+MoFEMErrorCode sub_mat_sor(Mat mat, Vec b, PetscReal omega, MatSORType flag,
+                           PetscReal shift, PetscInt its, PetscInt lits,
+                           Vec x) {
   void *void_ctx;
-
-  MoFEMFunctionBeginHot;
-  ierr = MatShellGetContext(mat,&void_ctx); CHKERRG(ierr);
-  PCMGSubMatrixCtx_private *ctx = (PCMGSubMatrixCtx_private*)void_ctx;
-  if(!ctx->isInitisalised) {
-    ierr = ctx->initData(x); CHKERRG(ierr);
+  MoFEMFunctionBegin;
+  CHKERR MatShellGetContext(mat, &void_ctx);
+  PCMGSubMatrixCtx_private *ctx = (PCMGSubMatrixCtx_private *)void_ctx;
+  if (!ctx->isInitisalised) {
+    CHKERR ctx->initData(x);
   }
-  PetscLogEventBegin(ctx->MOFEM_EVENT_sor,0,0,0,0);
-  ierr = VecScatterBegin(ctx->sCat,b,ctx->X,INSERT_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
-  ierr = VecScatterEnd(ctx->sCat,b,ctx->X,INSERT_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
-  ierr = MatSOR(ctx->A,ctx->X,omega,flag,shift,its,lits,ctx->F); CHKERRG(ierr);
-  ierr = VecScatterBegin(ctx->sCat,ctx->F,x,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
-  ierr = VecScatterEnd(ctx->sCat,ctx->F,x,INSERT_VALUES,SCATTER_FORWARD); CHKERRG(ierr);
-  PetscLogEventEnd(ctx->MOFEM_EVENT_sor,0,0,0,0);
-  MoFEMFunctionReturnHot(0);
+  PetscLogEventBegin(ctx->MOFEM_EVENT_sor, 0, 0, 0, 0);
+  CHKERR VecScatterBegin(ctx->sCat, b, ctx->X, INSERT_VALUES, SCATTER_REVERSE);
+  CHKERR VecScatterEnd(ctx->sCat, b, ctx->X, INSERT_VALUES, SCATTER_REVERSE);
+  CHKERR MatSOR(ctx->A, ctx->X, omega, flag, shift, its, lits, ctx->F);
+  CHKERR VecScatterBegin(ctx->sCat, ctx->F, x, INSERT_VALUES, SCATTER_FORWARD);
+  CHKERR VecScatterEnd(ctx->sCat, ctx->F, x, INSERT_VALUES, SCATTER_FORWARD);
+  PetscLogEventEnd(ctx->MOFEM_EVENT_sor, 0, 0, 0, 0);
+  MoFEMFunctionReturn(0);
 }
 
-DMMGViaApproxOrdersCtx::DMMGViaApproxOrdersCtx():
-  MoFEM::DMCtx(),
-  aO(PETSC_NULL) {
-    // std::cerr << "create dm\n";
+DMMGViaApproxOrdersCtx::DMMGViaApproxOrdersCtx()
+    : MoFEM::DMCtx(), aO(PETSC_NULL) {
+  // std::cerr << "create dm\n";
 }
 DMMGViaApproxOrdersCtx::~DMMGViaApproxOrdersCtx() {
   ierr = destroyCoarseningIS();
@@ -147,15 +153,15 @@ DMMGViaApproxOrdersCtx::~DMMGViaApproxOrdersCtx() {
 
 MoFEMErrorCode DMMGViaApproxOrdersCtx::destroyCoarseningIS() {
   MoFEMFunctionBegin;
-  for(unsigned int ii = 0;ii<coarseningIS.size();ii++) {
-    if (coarseningIS[ii]) 
-      CHKERR ISDestroy(&coarseningIS[ii]); 
+  for (unsigned int ii = 0; ii < coarseningIS.size(); ii++) {
+    if (coarseningIS[ii])
+      CHKERR ISDestroy(&coarseningIS[ii]);
   }
   for (unsigned int ii = 0; ii < kspOperators.size(); ii++) {
     if (kspOperators[ii])
       CHKERR MatDestroy(&kspOperators[ii]);
   }
-  if(aO) {
+  if (aO) {
     CHKERR AODestroy(&aO);
   }
   coarseningIS.clear();
@@ -164,51 +170,57 @@ MoFEMErrorCode DMMGViaApproxOrdersCtx::destroyCoarseningIS() {
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode DMMGViaApproxOrdersCtx::query_interface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface) const {
+MoFEMErrorCode
+DMMGViaApproxOrdersCtx::query_interface(const MOFEMuuid &uuid,
+                                        MoFEM::UnknownInterface **iface) const {
   MoFEMFunctionBeginHot;
   *iface = NULL;
-  if(uuid == IDD_DMMGVIAAPPROXORDERSCTX) {
-    *iface = static_cast<DMMGViaApproxOrdersCtx*>(const_cast<DMMGViaApproxOrdersCtx*>(this));
+  if (uuid == IDD_DMMGVIAAPPROXORDERSCTX) {
+    *iface = static_cast<DMMGViaApproxOrdersCtx *>(
+        const_cast<DMMGViaApproxOrdersCtx *>(this));
     MoFEMFunctionReturnHot(0);
   } else {
-    SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"wrong interference");
+    SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY, "wrong interference");
   }
 
-  ierr = DMCtx::query_interface(uuid,iface); CHKERRG(ierr);
+  ierr = DMCtx::query_interface(uuid, iface);
+  CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
-#define GET_DM_FIELD(DM) \
-  MoFEM::UnknownInterface *iface; \
-  ierr = ((DMCtx*)DM->data)->query_interface(IDD_DMMGVIAAPPROXORDERSCTX,&iface); CHKERRG(ierr); \
-  DMMGViaApproxOrdersCtx *dm_field = static_cast<DMMGViaApproxOrdersCtx*>(iface)
+#define GET_DM_FIELD(DM)                                                       \
+  MoFEM::UnknownInterface *iface;                                              \
+  ierr = ((DMCtx *)DM->data)                                                   \
+             ->query_interface(IDD_DMMGVIAAPPROXORDERSCTX, &iface);            \
+  CHKERRG(ierr);                                                               \
+  DMMGViaApproxOrdersCtx *dm_field =                                           \
+      static_cast<DMMGViaApproxOrdersCtx *>(iface)
 
-
-MoFEMErrorCode DMMGViaApproxOrdersGetCtx(DM dm,DMMGViaApproxOrdersCtx **ctx) {
-  PetscValidHeaderSpecific(dm,DM_CLASSID,1);
+MoFEMErrorCode DMMGViaApproxOrdersGetCtx(DM dm, DMMGViaApproxOrdersCtx **ctx) {
+  PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBeginHot;
   GET_DM_FIELD(dm);
   *ctx = dm_field;
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode DMMGViaApproxOrdersSetAO(DM dm,AO ao) {
-  PetscValidHeaderSpecific(dm,DM_CLASSID,1);
-  MoFEMFunctionBeginHot;
+MoFEMErrorCode DMMGViaApproxOrdersSetAO(DM dm, AO ao) {
+  PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
+  MoFEMFunctionBegin;
   GET_DM_FIELD(dm);
-  if(dm_field->aO) {
-    //std::cerr << dm_field->aO << std::endl;
-    ierr = AODestroy(&dm_field->aO); CHKERRG(ierr);
+  if (dm_field->aO) {
+    // std::cerr << dm_field->aO << std::endl;
+    CHKERR AODestroy(&dm_field->aO);
     // std::cerr << "destroy ao when adding\n";
   }
   dm_field->aO = ao;
-  ierr = PetscObjectReference((PetscObject)ao); CHKERRG(ierr);
+  CHKERR PetscObjectReference((PetscObject)ao);
   // std::cerr << "add ao\n";
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode DMMGViaApproxOrdersGetCoarseningISSize(DM dm,int *size) {
-  PetscValidHeaderSpecific(dm,DM_CLASSID,1);
+MoFEMErrorCode DMMGViaApproxOrdersGetCoarseningISSize(DM dm, int *size) {
+  PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBeginHot;
   GET_DM_FIELD(dm);
   *size = dm_field->coarseningIS.size();
@@ -266,19 +278,19 @@ MoFEMErrorCode DMMGViaApproxOrdersPushBackCoarseningIS(DM dm, IS is, Mat A,
 }
 
 MoFEMErrorCode DMMGViaApproxOrdersPopBackCoarseningIS(DM dm) {
-  PetscValidHeaderSpecific(dm,DM_CLASSID,1);
-  MoFEMFunctionBeginHot;
+  PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
+  MoFEMFunctionBegin;
   GET_DM_FIELD(dm);
-  if(dm_field->coarseningIS.back()) {
-    ierr = ISDestroy(&dm_field->coarseningIS.back()); CHKERRG(ierr);
+  if (dm_field->coarseningIS.back()) {
+    CHKERR ISDestroy(&dm_field->coarseningIS.back());
     dm_field->coarseningIS.pop_back();
   }
-  if(dm_field->kspOperators.back()) {
-    ierr = MatDestroy(&dm_field->kspOperators.back()); CHKERRG(ierr);
+  if (dm_field->kspOperators.back()) {
+    CHKERR MatDestroy(&dm_field->kspOperators.back());
   }
   dm_field->kspOperators.pop_back();
-  PetscInfo(dm,"Pop back IS to DMMGViaApproxOrders\n");
-  MoFEMFunctionReturnHot(0);
+  PetscInfo(dm, "Pop back IS to DMMGViaApproxOrders\n");
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode DMMGViaApproxOrdersClearCoarseningIS(DM dm) {
@@ -290,9 +302,11 @@ MoFEMErrorCode DMMGViaApproxOrdersClearCoarseningIS(DM dm) {
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode DMMGViaApproxOrdersReplaceCoarseningIS(DM dm,IS *is_vec,int nb_elems,Mat A,int verb) {
-  PetscValidHeaderSpecific(dm,DM_CLASSID,1);
-  MoFEMFunctionBeginHot;
+MoFEMErrorCode DMMGViaApproxOrdersReplaceCoarseningIS(DM dm, IS *is_vec,
+                                                      int nb_elems, Mat A,
+                                                      int verb) {
+  PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
+  MoFEMFunctionBegin;
   GET_DM_FIELD(dm);
   int nb_no_changed = 0;
   int nb_replaced = 0;
@@ -301,32 +315,32 @@ MoFEMErrorCode DMMGViaApproxOrdersReplaceCoarseningIS(DM dm,IS *is_vec,int nb_el
   std::vector<IS>::iterator it;
   it = dm_field->coarseningIS.begin();
   int ii = 0;
-  for(;it!=dm_field->coarseningIS.end();it++,ii++) {
-    if(ii<nb_elems) {
-      PetscBool  flg;
-      ierr = ISEqual(*it,is_vec[ii],&flg); CHKERRG(ierr);
-      if(!flg) {
-        ierr = ISDestroy(&*it); CHKERRG(ierr);
-        ierr = MatDestroy(&dm_field->kspOperators[ii]); CHKERRG(ierr);
+  for (; it != dm_field->coarseningIS.end(); it++, ii++) {
+    if (ii < nb_elems) {
+      PetscBool flg;
+      CHKERR ISEqual(*it, is_vec[ii], &flg);
+      if (!flg) {
+        CHKERR ISDestroy(&*it);
+        CHKERR MatDestroy(&dm_field->kspOperators[ii]);
         *it = is_vec[ii];
-        ierr = PetscObjectReference((PetscObject)is_vec[ii]); CHKERRG(ierr);
-        if(ii<nb_elems-1) {
+        CHKERR PetscObjectReference((PetscObject)is_vec[ii]);
+        if (ii < nb_elems - 1) {
           IS is = is_vec[ii];
-          if(dm_field->aO) {
-            ierr = ISDuplicate(is_vec[ii],&is); CHKERRG(ierr);
-            ierr = ISCopy(is_vec[ii],is); CHKERRG(ierr);
-            ierr = AOApplicationToPetscIS(dm_field->aO,is); CHKERRG(ierr);
+          if (dm_field->aO) {
+            CHKERR ISDuplicate(is_vec[ii], &is);
+            CHKERR ISCopy(is_vec[ii], is);
+            CHKERR AOApplicationToPetscIS(dm_field->aO, is);
           }
           Mat subA;
-          ierr = MatGetSubMatrix(A,is,is,MAT_INITIAL_MATRIX,&subA); CHKERRG(ierr);
-          ierr = PetscObjectReference((PetscObject)subA); CHKERRG(ierr);
+          CHKERR MatGetSubMatrix(A, is, is, MAT_INITIAL_MATRIX, &subA);
+          CHKERR PetscObjectReference((PetscObject)subA);
           dm_field->kspOperators[ii] = subA;
-          ierr = MatDestroy(&subA); CHKERRG(ierr);
-          if(dm_field->aO) {
-            ierr = ISDestroy(&is); CHKERRG(ierr);
+          CHKERR MatDestroy(&subA);
+          if (dm_field->aO) {
+            CHKERR ISDestroy(&is);
           }
         } else {
-          ierr = PetscObjectReference((PetscObject)A); CHKERRG(ierr);
+          CHKERR PetscObjectReference((PetscObject)A);
           dm_field->kspOperators[ii] = A;
         }
         nb_replaced++;
@@ -336,35 +350,39 @@ MoFEMErrorCode DMMGViaApproxOrdersReplaceCoarseningIS(DM dm,IS *is_vec,int nb_el
       continue;
     }
   }
-  if(dm_field->coarseningIS.size()<nb_elems) {
-    for(;ii<nb_elems-1;ii++) {
+  if (dm_field->coarseningIS.size() < nb_elems) {
+    for (; ii < nb_elems - 1; ii++) {
       Mat subA;
-      ierr = DMMGViaApproxOrdersPushBackCoarseningIS(dm,is_vec[ii],A,&subA,true,false); CHKERRG(ierr);
-      ierr = MatDestroy(&subA); CHKERRG(ierr);
+      CHKERR DMMGViaApproxOrdersPushBackCoarseningIS(dm, is_vec[ii], A, &subA,
+                                                     true, false);
+      CHKERR MatDestroy(&subA);
       nb_added++;
     }
-    ierr = DMMGViaApproxOrdersPushBackCoarseningIS(dm,is_vec[ii],A,&A,false,false); CHKERRG(ierr);
+    CHKERR DMMGViaApproxOrdersPushBackCoarseningIS(dm, is_vec[ii], A, &A, false,
+                                                   false);
     nb_added++;
   } else {
-    for(;ii<dm_field->coarseningIS.size();ii++) {
-      ierr = DMMGViaApproxOrdersPopBackCoarseningIS(dm); CHKERRG(ierr);
+    for (; ii < dm_field->coarseningIS.size(); ii++) {
+      CHKERR DMMGViaApproxOrdersPopBackCoarseningIS(dm);
       nb_deleted++;
     }
   }
   MPI_Comm comm;
-  ierr = PetscObjectGetComm((PetscObject)dm,&comm); CHKERRG(ierr);
-  if(verb>0) {
-    PetscPrintf(
-      comm,"DMMGViaApproxOrders nb_no_changed = %d, nb_replaced = %d, nb_added = %d, nb_deleted = %d, size = %d\n",
-      nb_no_changed,nb_replaced,nb_added,nb_deleted,dm_field->coarseningIS.size()
-    );
+  CHKERR PetscObjectGetComm((PetscObject)dm, &comm);
+  if (verb > 0) {
+    PetscPrintf(comm,
+                "DMMGViaApproxOrders nb_no_changed = %d, nb_replaced = %d, "
+                "nb_added = %d, nb_deleted = %d, size = %d\n",
+                nb_no_changed, nb_replaced, nb_added, nb_deleted,
+                dm_field->coarseningIS.size());
   }
-  PetscInfo(dm,"Replace IS to DMMGViaApproxOrders\n");
-  MoFEMFunctionReturnHot(0);
+  PetscInfo(dm, "Replace IS to DMMGViaApproxOrders\n");
+  MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode DMMGViaApproxOrdersGetCtx(DM dm,const DMMGViaApproxOrdersCtx **ctx) {
-  PetscValidHeaderSpecific(dm,DM_CLASSID,1);
+MoFEMErrorCode DMMGViaApproxOrdersGetCtx(DM dm,
+                                         const DMMGViaApproxOrdersCtx **ctx) {
+  PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBeginHot;
   GET_DM_FIELD(dm);
   *ctx = dm_field;
@@ -372,9 +390,9 @@ MoFEMErrorCode DMMGViaApproxOrdersGetCtx(DM dm,const DMMGViaApproxOrdersCtx **ct
 }
 
 MoFEMErrorCode DMRegister_MGViaApproxOrders(const char sname[]) {
-  MoFEMFunctionBeginHot;
-  ierr = DMRegister(sname,DMCreate_MGViaApproxOrders); CHKERRG(ierr);
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionBegin;
+  CHKERR DMRegister(sname, DMCreate_MGViaApproxOrders);
+  MoFEMFunctionReturn(0);
 }
 
 // MoFEMErrorCode DMDestroy_MGViaApproxOrders(DM dm) {
@@ -392,89 +410,95 @@ MoFEMErrorCode DMRegister_MGViaApproxOrders(const char sname[]) {
 //   } else {
 //     DMMGViaApproxOrdersCtx *dm_field = (DMMGViaApproxOrdersCtx*)dm->data;
 //
-//     cerr << "Derefrence " << dm_field->problemName << " "  << ((DMCtx*)dm->data)->referenceNumber << endl;
+//     cerr << "Derefrence " << dm_field->problemName << " "  <<
+//     ((DMCtx*)dm->data)->referenceNumber << endl;
 //     (((DMMGViaApproxOrdersCtx*)dm->data)->referenceNumber)--;
 //   }
 //   MoFEMFunctionReturnHot(0);
 // }
 
-static MoFEMErrorCode ksp_set_operators(KSP ksp,Mat A,Mat B,void *ctx) {
+static MoFEMErrorCode ksp_set_operators(KSP ksp, Mat A, Mat B, void *ctx) {
   MoFEMFunctionBeginHot;
   MoFEMFunctionReturnHot(0);
 }
 
 MoFEMErrorCode DMCreate_MGViaApproxOrders(DM dm) {
-  PetscValidHeaderSpecific(dm,DM_CLASSID,1);
-  MoFEMFunctionBeginHot;
-  if(!dm->data) {
+  PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
+  MoFEMFunctionBegin;
+  if (!dm->data) {
     dm->data = new DMMGViaApproxOrdersCtx();
   } else {
-    ((DMCtx*)(dm->data))->referenceNumber++;
+    ((DMCtx *)(dm->data))->referenceNumber++;
   }
   // cerr << "Create " << ((DMCtx*)(dm->data))->referenceNumber << endl;
-  ierr = DMSetOperators_MoFEM(dm); CHKERRG(ierr);
+  CHKERR DMSetOperators_MoFEM(dm);
   dm->ops->creatematrix = DMCreateMatrix_MGViaApproxOrders;
   dm->ops->createglobalvector = DMCreateGlobalVector_MGViaApproxOrders;
   dm->ops->coarsen = DMCoarsen_MGViaApproxOrders;
   // dm->ops->destroy = DMDestroy_MGViaApproxOrders;
   dm->ops->createinterpolation = DMCreateInterpolation_MGViaApproxOrders;
-  ierr = DMKSPSetComputeOperators(dm,ksp_set_operators,NULL); CHKERRG(ierr);
-  PetscInfo1(dm,"Create DMMGViaApproxOrders reference = %d\n",((DMCtx*)(dm->data))->referenceNumber);
-  MoFEMFunctionReturnHot(0);
+  CHKERR DMKSPSetComputeOperators(dm, ksp_set_operators, NULL);
+  PetscInfo1(dm, "Create DMMGViaApproxOrders reference = %d\n",
+             ((DMCtx *)(dm->data))->referenceNumber);
+  MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode DMCreateMatrix_MGViaApproxOrders(DM dm,Mat *M) {
+MoFEMErrorCode DMCreateMatrix_MGViaApproxOrders(DM dm, Mat *M) {
 
-  PetscValidHeaderSpecific(dm,DM_CLASSID,1);
-  MoFEMFunctionBeginHot;
+  PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
+  MoFEMFunctionBegin;
   GET_DM_FIELD(dm);
 
   int leveldown = dm->leveldown;
 
-  if(dm_field->kspOperators.empty()) {
-    ierr = DMCreateMatrix_MoFEM(dm,M); CHKERRG(ierr);
+  if (dm_field->kspOperators.empty()) {
+    CHKERR DMCreateMatrix_MoFEM(dm, M);
   } else {
     MPI_Comm comm;
-    ierr = PetscObjectGetComm((PetscObject)dm,&comm); CHKERRG(ierr);
-    if(dm_field->kspOperators.empty()) {
-      SETERRQ(comm,MOFEM_DATA_INCONSISTENCY,"data inconsistency, operator can not be set");
+    CHKERR PetscObjectGetComm((PetscObject)dm, &comm);
+    if (dm_field->kspOperators.empty()) {
+      SETERRQ(comm, MOFEM_DATA_INCONSISTENCY,
+              "data inconsistency, operator can not be set");
     }
-    if(dm_field->kspOperators.size()<leveldown) {
-      SETERRQ(comm,MOFEM_DATA_INCONSISTENCY,"data inconsistency, no IS for that level");
+    if (dm_field->kspOperators.size() < leveldown) {
+      SETERRQ(comm, MOFEM_DATA_INCONSISTENCY,
+              "data inconsistency, no IS for that level");
     }
-    *M = dm_field->kspOperators[dm_field->kspOperators.size()-1-leveldown];
-    ierr = PetscObjectReference((PetscObject)*M); CHKERRG(ierr);
+    *M = dm_field->kspOperators[dm_field->kspOperators.size() - 1 - leveldown];
+    CHKERR PetscObjectReference((PetscObject)*M);
   }
 
-  PetscInfo1(dm,"Create Matrix DMMGViaApproxOrders leveldown = %d\n",leveldown);
+  PetscInfo1(dm, "Create Matrix DMMGViaApproxOrders leveldown = %d\n",
+             leveldown);
 
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode DMCoarsen_MGViaApproxOrders(DM dm, MPI_Comm comm, DM *dmc) {
-  PetscValidHeaderSpecific(dm,DM_CLASSID,1);
-  MoFEMFunctionBeginHot;
+  PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
+  MoFEMFunctionBegin;
   GET_DM_FIELD(dm);
-  ierr = PetscObjectGetComm((PetscObject)dm,&comm); CHKERRG(ierr);
-  ierr = DMCreate(comm,dmc);CHKERRG(ierr);
+  CHKERR PetscObjectGetComm((PetscObject)dm, &comm);
+  CHKERR DMCreate(comm, dmc);
   (*dmc)->data = dm->data;
   DMType type;
-  ierr = DMGetType(dm,&type); CHKERRG(ierr);
-  ierr = DMSetType(*dmc,type); CHKERRG(ierr);
-  ierr = PetscObjectReference((PetscObject)(*dmc));CHKERRG(ierr);
-  PetscInfo1(dm,"Coarsen DMMGViaApproxOrders leveldown = %d\n",dm->leveldown);
-  MoFEMFunctionReturnHot(0);
+  CHKERR DMGetType(dm, &type);
+  CHKERR DMSetType(*dmc, type);
+  CHKERR PetscObjectReference((PetscObject)(*dmc));
+  PetscInfo1(dm, "Coarsen DMMGViaApproxOrders leveldown = %d\n", dm->leveldown);
+  MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode DMCreateInterpolation_MGViaApproxOrders(DM dm1,DM dm2,Mat *mat,Vec *vec) {
-  PetscValidHeaderSpecific(dm1,DM_CLASSID,1);
-  PetscValidHeaderSpecific(dm2,DM_CLASSID,1);
-  MoFEMFunctionBeginHot;
+MoFEMErrorCode DMCreateInterpolation_MGViaApproxOrders(DM dm1, DM dm2, Mat *mat,
+                                                       Vec *vec) {
+  PetscValidHeaderSpecific(dm1, DM_CLASSID, 1);
+  PetscValidHeaderSpecific(dm2, DM_CLASSID, 1);
+  MoFEMFunctionBegin;
 
   MPI_Comm comm;
-  ierr = PetscObjectGetComm((PetscObject)dm1,&comm); CHKERRG(ierr);
+  CHKERR PetscObjectGetComm((PetscObject)dm1, &comm);
 
-  int m,n,M,N;
+  int m, n, M, N;
 
   DM dm_down = dm1;
   DM dm_up = dm2;
@@ -482,179 +506,168 @@ MoFEMErrorCode DMCreateInterpolation_MGViaApproxOrders(DM dm1,DM dm2,Mat *mat,Ve
   int dm_down_leveldown = dm_down->leveldown;
   int dm_up_leveldown = dm_up->leveldown;
 
-  PetscInfo2(
-    dm1,"Create interpolation DMMGViaApproxOrders dm1_leveldown = %d dm2_leveldown = %d\n",
-    dm_down_leveldown,dm_up_leveldown
-  );
+  PetscInfo2(dm1,
+             "Create interpolation DMMGViaApproxOrders dm1_leveldown = %d "
+             "dm2_leveldown = %d\n",
+             dm_down_leveldown, dm_up_leveldown);
 
-  IS is_down,is_up;
+  IS is_down, is_up;
   {
     // Coarser mesh
     GET_DM_FIELD(dm_down);
-    if(dm_field->coarseningIS.size()<dm_down_leveldown) {
-      SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
+    if (dm_field->coarseningIS.size() < dm_down_leveldown) {
+      SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
     }
-    is_down = dm_field->coarseningIS[dm_field->coarseningIS.size()-1-dm_down_leveldown];
-    ierr = ISGetSize(is_down,&M); CHKERRG(ierr);
-    ierr = ISGetLocalSize(is_down,&m); CHKERRG(ierr);
+    is_down = dm_field->coarseningIS[dm_field->coarseningIS.size() - 1 -
+                                     dm_down_leveldown];
+    CHKERR ISGetSize(is_down, &M);
+    CHKERR ISGetLocalSize(is_down, &m);
   }
   {
     // Finer mesh
     GET_DM_FIELD(dm_up);
-    if(dm_field->coarseningIS.size()<dm_up_leveldown) {
-      SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
+    if (dm_field->coarseningIS.size() < dm_up_leveldown) {
+      SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
     }
-    is_up = dm_field->coarseningIS[dm_field->coarseningIS.size()-1-dm_up_leveldown];
-    ierr = ISGetSize(is_up,&N); CHKERRG(ierr);
-    ierr = ISGetLocalSize(is_up,&n); CHKERRG(ierr);
+    is_up =
+        dm_field
+            ->coarseningIS[dm_field->coarseningIS.size() - 1 - dm_up_leveldown];
+    CHKERR ISGetSize(is_up, &N);
+    CHKERR ISGetLocalSize(is_up, &n);
   }
 
   // is_dow rows
   // is_up columns
 
-  ierr = MatCreate(comm,mat); CHKERRG(ierr);
-  ierr = MatSetSizes(*mat,m,n,M,N); CHKERRG(ierr);
-  ierr = MatSetType(*mat,MATMPIAIJ); CHKERRG(ierr);
-  ierr = MatMPIAIJSetPreallocation(*mat,1,PETSC_NULL,0,PETSC_NULL); CHKERRG(ierr);
+  CHKERR MatCreate(comm, mat);
+  CHKERR MatSetSizes(*mat, m, n, M, N);
+  CHKERR MatSetType(*mat, MATMPIAIJ);
+  CHKERR MatMPIAIJSetPreallocation(*mat, 1, PETSC_NULL, 0, PETSC_NULL);
 
-  //get matrix layout
-  PetscLayout rmap,cmap;
-  ierr = MatGetLayouts(*mat,&rmap,&cmap); CHKERRG(ierr);
-  int rstart,rend,cstart,cend;
-  ierr = PetscLayoutGetRange(rmap,&rstart,&rend); CHKERRG(ierr);
-  ierr = PetscLayoutGetRange(cmap,&cstart,&cend); CHKERRG(ierr);
+  // get matrix layout
+  PetscLayout rmap, cmap;
+  CHKERR MatGetLayouts(*mat, &rmap, &cmap);
+  int rstart, rend, cstart, cend;
+  CHKERR PetscLayoutGetRange(rmap, &rstart, &rend);
+  CHKERR PetscLayoutGetRange(cmap, &cstart, &cend);
 
   // if(verb>0) {
-  //   PetscSynchronizedPrintf(comm,"level %d row start %d row end %d\n",kk,rstart,rend);
-  //   PetscSynchronizedPrintf(comm,"level %d col start %d col end %d\n",kk,cstart,cend);
+  //   PetscSynchronizedPrintf(comm,"level %d row start %d row end
+  //   %d\n",kk,rstart,rend); PetscSynchronizedPrintf(comm,"level %d col start
+  //   %d col end %d\n",kk,cstart,cend);
   // }
 
-  const int *row_indices_ptr,*col_indices_ptr;
-  ierr = ISGetIndices(is_down,&row_indices_ptr); CHKERRG(ierr);
-  ierr = ISGetIndices(is_up,&col_indices_ptr); CHKERRG(ierr);
+  const int *row_indices_ptr, *col_indices_ptr;
+  CHKERR ISGetIndices(is_down, &row_indices_ptr);
+  CHKERR ISGetIndices(is_up, &col_indices_ptr);
 
-  map<int,int> idx_map;
-  for(int ii = 0;ii<m;ii++) {
-    idx_map[row_indices_ptr[ii]] = rstart+ii;
+  map<int, int> idx_map;
+  for (int ii = 0; ii < m; ii++) {
+    idx_map[row_indices_ptr[ii]] = rstart + ii;
   }
 
-  ierr = MatZeroEntries(*mat); CHKERRG(ierr);
+  CHKERR MatZeroEntries(*mat);
   // FIXME: Use MatCreateMPIAIJWithArrays and set array directly
-  for(int jj = 0;jj<n;jj++) {
-    map<int,int>::iterator mit = idx_map.find(col_indices_ptr[jj]);
-    if(mit != idx_map.end()) {
-      ierr = MatSetValue(*mat,mit->second,cstart+jj,1,INSERT_VALUES); CHKERRG(ierr);
+  for (int jj = 0; jj < n; jj++) {
+    map<int, int>::iterator mit = idx_map.find(col_indices_ptr[jj]);
+    if (mit != idx_map.end()) {
+      CHKERR MatSetValue(*mat, mit->second, cstart + jj, 1, INSERT_VALUES);
     }
   }
 
-  ierr = ISRestoreIndices(is_down,&row_indices_ptr); CHKERRG(ierr);
-  ierr = ISRestoreIndices(is_up,&col_indices_ptr); CHKERRG(ierr);
+  CHKERR ISRestoreIndices(is_down, &row_indices_ptr);
+  CHKERR ISRestoreIndices(is_up, &col_indices_ptr);
 
-  ierr = MatAssemblyBegin(*mat,MAT_FINAL_ASSEMBLY); CHKERRG(ierr);
-  ierr = MatAssemblyEnd(*mat,MAT_FINAL_ASSEMBLY); CHKERRG(ierr);
+  CHKERR MatAssemblyBegin(*mat, MAT_FINAL_ASSEMBLY);
+  CHKERR MatAssemblyEnd(*mat, MAT_FINAL_ASSEMBLY);
 
-  if(vec!=NULL) {
+  if (vec != NULL) {
     *vec = PETSC_NULL;
   }
 
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode DMCreateGlobalVector_MGViaApproxOrders(DM dm,Vec *g) {
+MoFEMErrorCode DMCreateGlobalVector_MGViaApproxOrders(DM dm, Vec *g) {
 
-  PetscValidHeaderSpecific(dm,DM_CLASSID,1);
-  MoFEMFunctionBeginHot;
+  PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
+  MoFEMFunctionBegin;
   int leveldown = dm->leveldown;
   GET_DM_FIELD(dm);
-  if(dm_field->kspOperators.empty()) {
-    ierr = DMCreateGlobalVector_MoFEM(dm,g); CHKERRG(ierr);
+  if (dm_field->kspOperators.empty()) {
+    CHKERR DMCreateGlobalVector_MoFEM(dm, g);
   } else {
-    #if PETSC_VERSION_GE(3,5,3)
-    ierr = MatCreateVecs(dm_field->kspOperators[dm_field->kspOperators.size()-1-leveldown],g,NULL); CHKERRG(ierr);
-    #else
-    ierr = MatGetVecs(dm_field->kspOperators[dm_field->kspOperators.size()-1-leveldown],g,NULL); CHKERRG(ierr);
-    #endif
+#if PETSC_VERSION_GE(3, 5, 3)
+    CHKERR MatCreateVecs(
+        dm_field->kspOperators[dm_field->kspOperators.size() - 1 - leveldown],
+        g, NULL);
+#else
+    CHKERR MatGetVecs(
+        dm_field->kspOperators[dm_field->kspOperators.size() - 1 - leveldown],
+        g, NULL);
+#endif
   }
-  PetscInfo1(
-    dm,"Create global vector DMMGViaApproxOrders leveldown = %d\n",dm->leveldown
-  );
-  MoFEMFunctionReturnHot(0);
+  PetscInfo1(dm, "Create global vector DMMGViaApproxOrders leveldown = %d\n",
+             dm->leveldown);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode PCMGSetUpViaApproxOrdersCtx::getOptions() {
   MoFEMFunctionBeginHot;
-  ierr = PetscOptionsBegin(
-    PETSC_COMM_WORLD,"",
-    "MOFEM Multi-Grid (Orders) pre-conditioner","none"
-  ); CHKERRG(ierr);
+  ierr = PetscOptionsBegin(PETSC_COMM_WORLD, "",
+                           "MOFEM Multi-Grid (Orders) pre-conditioner", "none");
+  CHKERRG(ierr);
 
-  ierr = PetscOptionsInt("-mofem_mg_levels",
-    "nb levels of multi-grid solver","",
-    2,&nbLevels,PETSC_NULL
-  ); CHKERRG(ierr);
-
-  ierr = PetscOptionsInt(
-    "-mofem_mg_coarse_order",
-    "approximation order of coarse level","",
-    2,&coarseOrder,PETSC_NULL
-  ); CHKERRG(ierr);
-
-  ierr = PetscOptionsInt(
-    "-mofem_mg_order_at_last_level",
-    "order at last level","",
-    100,&orderAtLastLevel,PETSC_NULL
-  ); CHKERRG(ierr);
-
-
-  ierr = PetscOptionsInt(
-    "-mofem_mg_verbose",
-    "nb levels of multi-grid solver","",
-    0,&verboseLevel,PETSC_NULL
-  ); CHKERRG(ierr);
-
+  CHKERR PetscOptionsInt("-mofem_mg_levels", "nb levels of multi-grid solver",
+                         "", 2, &nbLevels, PETSC_NULL);
+  CHKERR PetscOptionsInt("-mofem_mg_coarse_order",
+                         "approximation order of coarse level", "", 2,
+                         &coarseOrder, PETSC_NULL);
+  CHKERR PetscOptionsInt("-mofem_mg_order_at_last_level", "order at last level",
+                         "", 100, &orderAtLastLevel, PETSC_NULL);
+  CHKERR PetscOptionsInt("-mofem_mg_verbose", "nb levels of multi-grid solver",
+                         "", 0, &verboseLevel, PETSC_NULL);
   PetscBool shell_sub_a = shellSubA ? PETSC_TRUE : PETSC_FALSE;
-  ierr = PetscOptionsBool(
-    "-mofem_mg_shell_a",
-    "use shell matrix as sub matrix","",
-    shell_sub_a,&shell_sub_a,NULL
-  ); CHKERRG(ierr);
+  CHKERR PetscOptionsBool("-mofem_mg_shell_a", "use shell matrix as sub matrix",
+                          "", shell_sub_a, &shell_sub_a, NULL);
   shellSubA = (shellSubA == PETSC_TRUE);
 
-
-  ierr = PetscOptionsEnd(); CHKERRG(ierr);
+  ierr = PetscOptionsEnd();
+  CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode PCMGSetUpViaApproxOrdersCtx::createIsAtLevel(int kk,IS *is) {
+MoFEMErrorCode PCMGSetUpViaApproxOrdersCtx::createIsAtLevel(int kk, IS *is) {
   MoFEM::Interface *m_field_ptr;
   MoFEM::ISManager *is_manager_ptr;
-  MoFEMFunctionBeginHot;
-  //if is last level, take all remaining orders dofs, if any left
-  ierr = DMoFEMGetInterfacePtr(dM,&m_field_ptr); CHKERRG(ierr);
-  ierr = m_field_ptr->getInterface(is_manager_ptr); CHKERRG(ierr);
+  MoFEMFunctionBegin;
+  // if is last level, take all remaining orders dofs, if any left
+  CHKERR DMoFEMGetInterfacePtr(dM, &m_field_ptr);
+  CHKERR m_field_ptr->getInterface(is_manager_ptr);
   const Problem *problem_ptr;
-  ierr = DMMoFEMGetProblemPtr(dM,&problem_ptr); CHKERRG(ierr);
-  int order_at_next_level = kk+coarseOrder;
-  if(kk == nbLevels-1) {
-    int first = problem_ptr->getNumeredDofsRows()->
-    get<PetscLocalIdx_mi_tag>().find(0)->get()->getPetscGlobalDofIdx();
-    ierr = ISCreateStride(
-      PETSC_COMM_WORLD,problem_ptr->getNbLocalDofsRow(),first,1,is
-    ); CHKERRG(ierr);
+  CHKERR DMMoFEMGetProblemPtr(dM, &problem_ptr);
+  int order_at_next_level = kk + coarseOrder;
+  if (kk == nbLevels - 1) {
+    int first = problem_ptr->getNumeredDofsRows()
+                    ->get<PetscLocalIdx_mi_tag>()
+                    .find(0)
+                    ->get()
+                    ->getPetscGlobalDofIdx();
+    CHKERR ISCreateStride(PETSC_COMM_WORLD, problem_ptr->getNbLocalDofsRow(),
+                          first, 1, is);
     MoFEMFunctionReturnHot(0);
     // order_at_next_level = orderAtLastLevel;
   }
   string problem_name = problem_ptr->getName();
-  ierr = is_manager_ptr->isCreateProblemOrder(
-    problem_name,ROW,0,order_at_next_level,is
-  ); CHKERRG(ierr);
-  MoFEMFunctionReturnHot(0);
+  CHKERR is_manager_ptr->isCreateProblemOrder(problem_name, ROW, 0,
+                                              order_at_next_level, is);
+  MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode PCMGSetUpViaApproxOrdersCtx::destroyIsAtLevel(int kk,IS *is) {
-  MoFEMFunctionBeginHot;
-  ierr = ISDestroy(is);
-  MoFEMFunctionReturnHot(0);
+MoFEMErrorCode PCMGSetUpViaApproxOrdersCtx::destroyIsAtLevel(int kk, IS *is) {
+  MoFEMFunctionBegin;
+  CHKERR ISDestroy(is);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode
