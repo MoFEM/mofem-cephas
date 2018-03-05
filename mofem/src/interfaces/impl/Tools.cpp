@@ -192,4 +192,37 @@ MoFEMErrorCode Tools::checkVectorForNotANumber(const Problem *prb_ptr,
   MoFEMFunctionReturn(0);
 }
 
+MoFEMErrorCode Tools::getTriNormal(const double *coords, double *normal) {
+  MoFEMFunctionBegin;
+  double diffN[6];
+  CHKERR ShapeDiffMBTRI(diffN);
+  CHKERR ShapeFaceNormalMBTRI(diffN, coords, normal);
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode Tools::getTriNormal(const EntityHandle tri,
+                                   double *normal) const {
+  MoFEM::Interface &m_field = cOre;
+  moab::Interface &moab(m_field.get_moab());
+  MoFEMFunctionBegin;
+  if (moab.type_from_handle(tri) != MBTRI) {
+    SETERRQ(PETSC_COMM_SELF, MOFEM_INVALID_DATA, "Works only for triangle");
+  }
+  const EntityHandle *conn;
+  int num_nodes;
+  double coords[6];
+  CHKERR moab.get_connectivity(tri, conn, num_nodes, true);
+  CHKERR moab.get_coords(conn, num_nodes, coords);
+  CHKERR getTriNormal(coords,normal);
+  MoFEMFunctionReturn(0);
+}
+
+double Tools::getTriArea(const EntityHandle tri) const {
+  FTensor::Tensor1<double,3> t_normal;
+  ierr = getTriNormal(tri,&t_normal(0));
+  CHKERRABORT(PETSC_COMM_SELF, ierr);
+  FTensor::Index<'i',3> i;
+  return sqrt(t_normal(i)*t_normal(i))*0.5;
+};
+
 }
