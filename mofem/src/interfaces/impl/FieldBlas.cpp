@@ -91,7 +91,7 @@ MoFEMErrorCode FieldBlas::fieldAxpy(const double alpha,
       if (dit ==
           dofs_ptr->get<Composite_Name_Ent_Order_And_CoeffIdx_mi_tag>().end()) {
         if (creat_if_missing) {
-          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+          SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
                   "not yet implemented");
         } else {
           if (error_if_missing) {
