@@ -165,7 +165,7 @@ MoFEMErrorCode CutMeshInterface::cutAndTrim(
   };
 
   // cut mesh
-  CHKERR findEdgesToCut(tol_cut,QUIET,debug);
+  CHKERR findEdgesToCut(fixed_edges, corner_nodes, tol_cut, QUIET, debug);
   CHKERR projectZeroDistanceEnts(fixed_edges, corner_nodes, tol_cut_close);
   CHKERR cutEdgesInMiddle(bit_level1, debug);
   if (fixed_edges) {
@@ -275,8 +275,10 @@ MoFEMErrorCode CutMeshInterface::cutTrimAndMerge(
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode CutMeshInterface::findEdgesToCut(const double low_tol,
-                                                int verb,const bool debug) {
+MoFEMErrorCode CutMeshInterface::findEdgesToCut(Range *fixed_edges,
+                                                Range *corner_nodes,
+                                                const double low_tol, int verb,
+                                                const bool debug) {
   CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   MoFEMFunctionBegin;
@@ -371,6 +373,41 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(const double low_tol,
     MoFEMFunctionReturn(0);
   };
 
+  auto not_project_node = [this, &moab](const EntityHandle v) {
+    MoFEMFunctionBegin;
+    VectorDouble3 s0(3);
+    CHKERR moab.get_coords(&v, 1, &s0[0]);
+    verticesOnCutEdges[v].dIst = 0;
+    verticesOnCutEdges[v].lEngth = 0;
+    verticesOnCutEdges[v].unitRayDir = s0;
+    verticesOnCutEdges[v].rayPoint = s0;
+    MoFEMFunctionReturn(0);
+  };
+
+  auto check_if_is_on_fixed_edge = [this, fixed_edges](const EntityHandle e) {
+    if(fixed_edges) {
+      if(fixed_edges->find(e)!=fixed_edges->end()) {
+        return true;
+      } else {
+        return false;
+      }
+    } else {
+      return false;
+    }
+  };
+
+  auto check_if_is_on_cornet_node = [this, corner_nodes ](const EntityHandle v) {
+    if (corner_nodes) {
+      if (corner_nodes->find(v) != corner_nodes->end()) {
+        return true;
+      } else {
+        return false;
+      }
+    } else {
+      return false;
+    }
+  };
+
   Range vol_edges;
   CHKERR moab.get_adjacencies(vOlume, 1, true, vol_edges,
                               moab::Interface::UNION);
@@ -412,8 +449,13 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(const double low_tol,
     if (fabs(dist[0]) < tol && fabs(dist[1]) < tol) {
       aveLength += ray_length;
       maxLength = fmax(maxLength, ray_length);
-      CHKERR project_node(conn[0]);
-      CHKERR project_node(conn[1]);
+      if (check_if_is_on_fixed_edge(e)) {
+        CHKERR not_project_node(conn[0]);
+        CHKERR not_project_node(conn[1]);
+      } else {
+        CHKERR project_node(conn[0]);
+        CHKERR project_node(conn[1]);
+      }
       zeroDistanceEnts.insert(e);
     } 
   }
@@ -429,7 +471,13 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(const double low_tol,
     CHKERR moab.tag_get_data(th_dist, &v, 1, &dist);
     const double tol = aveLength * low_tol;
     if(fabs(dist) < tol) {
-      CHKERR project_node(v);
+
+      if (check_if_is_on_cornet_node(v)) {
+        CHKERR not_project_node(v);
+      } else {
+        CHKERR project_node(v);
+      }
+
       zeroDistanceVerts.insert(v);
     }
   }
@@ -473,8 +521,13 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(const double low_tol,
       edgesToCut[e].rayPoint = vec_ray_point;
       cutEdges.insert(e);
     } else if (fabs(dist_normal[0]) < tol && fabs(dist_normal[1]) < tol) {
-      CHKERR project_node(conn[0]);
-      CHKERR project_node(conn[1]);
+      if (check_if_is_on_fixed_edge(e)) {
+        CHKERR not_project_node(conn[0]);
+        CHKERR not_project_node(conn[1]);
+      } else {
+        CHKERR project_node(conn[0]);
+        CHKERR project_node(conn[1]);
+      }
       zeroDistanceEnts.insert(e);
     }
   }
@@ -492,7 +545,13 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(const double low_tol,
     double dist_normal = get_normal_dist_from_conn(v);
     const double tol = aveLength * low_tol;
     if (fabs(dist_normal) < tol) {
-      CHKERR project_node(v);
+
+      if (check_if_is_on_cornet_node(v)) {
+        CHKERR not_project_node(v);
+      } else {
+        CHKERR project_node(v);
+      }
+        
       zeroDistanceVerts.insert(v);
     }
   }
