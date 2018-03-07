@@ -82,7 +82,7 @@ int main(int argc, char *argv[]) {
     CHKERR m_field.getInterface<BitRefManager>()->addBitRefLevelByDim(
         0, 3, bit_last);
     CHKERR core.getInterface<BitRefManager>()->writeBitLevelByType(
-        bit_last, BitRefLevel().set(), MBTET, "out_tets_bit_last.tk",
+        bit_last, BitRefLevel().set(), MBTET, "out_tets_bit_last.vtk",
         "VTK", "");
 
     int no_of_ents_not_in_database = -1;

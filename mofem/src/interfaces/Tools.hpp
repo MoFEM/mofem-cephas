@@ -99,6 +99,13 @@ namespace MoFEM {
                                               const double global_coord[],
                                               const double tol, bool &result);
 
+    static MoFEMErrorCode getTriNormal(const double *coords, double *normal);
+
+    MoFEMErrorCode getTriNormal(const EntityHandle tri, double *normal) const;
+
+    double getTriArea(const EntityHandle tri) const;                                   
+
+
     /**@}*/
 
     /** \name Debugging */
