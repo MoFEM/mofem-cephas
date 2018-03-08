@@ -155,15 +155,6 @@ MoFEMErrorCode CutMeshInterface::cutAndTrim(
   CoreInterface &m_field = cOre;
   MoFEMFunctionBegin;
 
-  auto get_min_quality = [&m_field](const BitRefLevel bit, Tag th) {
-    Range tets_level; // test at level
-    CHKERR m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
-        bit, BitRefLevel().set(), MBTET, tets_level);
-    double min_q = 1;
-    CHKERR m_field.getInterface<Tools>()->minTetsQuality(tets_level, min_q, th);
-    return min_q;
-  };
-
   // cut mesh
   CHKERR findEdgesToCut(fixed_edges, corner_nodes, tol_cut, QUIET, debug);
   CHKERR projectZeroDistanceEnts(fixed_edges, corner_nodes, tol_cut_close);
@@ -181,9 +172,17 @@ MoFEMErrorCode CutMeshInterface::cutAndTrim(
   }
   CHKERR moveMidNodesOnCutEdges(th);
 
-  if(debug) {
-    cerr << "Min quality cut " << get_min_quality(bit_level1, th) << endl;
-  }
+  auto get_min_quality = [&m_field](const BitRefLevel bit, Tag th) {
+    Range tets_level; // test at level
+    CHKERR m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
+        bit, BitRefLevel().set(), MBTET, tets_level);
+    double min_q = 1;
+    CHKERR m_field.getInterface<Tools>()->minTetsQuality(tets_level, min_q, th);
+    return min_q;
+  };
+
+  PetscPrintf(PETSC_COMM_WORLD, "Min quality cut %6.4g\n",
+              get_min_quality(bit_level1, th));
 
   if(debug) {
     CHKERR saveCutEdges();
@@ -205,9 +204,8 @@ MoFEMErrorCode CutMeshInterface::cutAndTrim(
   }
   CHKERR moveMidNodesOnTrimmedEdges(th);
 
-  if (debug) {
-    cerr << "Min quality trim " << get_min_quality(bit_level2, th) << endl;
-  }
+  PetscPrintf(PETSC_COMM_WORLD, "Min quality trim %3.2g\n",
+              get_min_quality(bit_level2, th));
 
   if(debug) {
     CHKERR saveTrimEdges();
@@ -263,9 +261,8 @@ MoFEMErrorCode CutMeshInterface::cutTrimAndMerge(
     return min_q;
   };
 
-  if (debug) {
-    cerr << "Min quality merge " << get_min_quality(bit_level3, th) << endl;
-  }
+  PetscPrintf(PETSC_COMM_WORLD, "Min quality node merge %6.4g\n",
+              get_min_quality(bit_level1, th));
 
   CHKERR
       cOre.getInterface<BitRefManager>()->updateRange(fixed_edges, fixed_edges);
