@@ -1012,6 +1012,24 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
   CHKERR moab.get_adjacencies(cutNewSurfaces, 1, false, edges,
                               moab::Interface::UNION);
 
+  Range cut_surface_edges_on_fixed_edges;
+  if (fixed_edges) {
+    cut_surface_edges_on_fixed_edges = intersect(edges, *fixed_edges);
+  }
+  Range cut_surface_edges_on_fixed_edges_verts;
+  CHKERR moab.get_connectivity(cut_surface_edges_on_fixed_edges,
+                               cut_surface_edges_on_fixed_edges_verts, true);
+  Range fixed_edges_verts_on_corners;
+  if (fixed_edges) {
+    CHKERR moab.get_connectivity(*fixed_edges, fixed_edges_verts_on_corners,
+                                 true);
+  }
+  fixed_edges_verts_on_corners = subtract(
+      fixed_edges_verts_on_corners, cut_surface_edges_on_fixed_edges_verts);
+  if (corner_nodes) {
+    fixed_edges_verts_on_corners.merge(*corner_nodes);
+  }
+
   // clear data ranges
   trimEdges.clear();
   edgesToTrim.clear();
@@ -1040,8 +1058,8 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
     VectorAdaptor s1 = get_s_adaptor(3);
     // get edge length
     double length = norm_2(s1 - s0);
-    // Find point on surface closet to surface
 
+    // Find point on surface closet to surface
     auto get_closets_delta = [this, &moab](const VectorAdaptor &s) {
       VectorDouble3 p(3);
       EntityHandle facets_out;
@@ -1196,10 +1214,9 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
       }
 
       bool corner_node = false;
-      if (corner_nodes) {
-        if (corner_nodes->find(v) != corner_nodes->end()) {
-          corner_node = true;
-        }
+      if (fixed_edges_verts_on_corners.find(v) !=
+          fixed_edges_verts_on_corners.end()) {
+        corner_node = true;
       }
 
       if (corner_node) {
