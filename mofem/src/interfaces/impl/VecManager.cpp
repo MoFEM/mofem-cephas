@@ -168,15 +168,17 @@ namespace MoFEM {
     int size;
     CHKERR VecGetLocalSize(V, &size);
     if (size != nb_local_dofs) {
-      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-              "data inconsistency: check ghost vector, problem with nb. of "
-              "local nodes");
+      SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+               "data inconsistency: check ghost vector, problem with nb. of "
+               "local nodes %d != %d",
+               size, nb_local_dofs);
     }
     CHKERR VecGetLocalSize(Vlocal, &size);
     if (size != nb_local_dofs + nb_ghost_dofs) {
-      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-              "data inconsistency: check ghost vector, problem with nb. of "
-              "ghost nodes");
+      SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+               "data inconsistency: check ghost vector, problem with nb. of "
+               "ghost nodes %d != ",
+               size, nb_local_dofs + nb_ghost_dofs);
     }
     NumeredDofEntityByLocalIdx::iterator miit = dofs->lower_bound(0);
     NumeredDofEntityByLocalIdx::iterator hi_miit =
