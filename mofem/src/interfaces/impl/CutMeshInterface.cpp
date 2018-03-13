@@ -598,8 +598,6 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(Range *fixed_edges,
                                                          Range *corner_nodes,
                                                          const double low_tol,
                                                          int verb) {
-
-                  
   CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   MoFEMFunctionBegin;
@@ -849,7 +847,7 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(Range *fixed_edges,
     adj_tets = intersect(adj_tets, vOlume);
     double q = get_quality_change(adj_tets, vertices_on_cut_edges);
 
-    if (q > 0.8) {
+    if (q > 0.5) {
       verticesOnCutEdges.insert(vertices_on_cut_edges.begin(),
                                 vertices_on_cut_edges.end());
       EntityHandle type = moab.type_from_handle(f);
@@ -1947,7 +1945,7 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
       edges_to_merge = subtract(edges_to_merge, edges_to_remove);
       not_merged_edges.merge(edges_to_remove);
 
-      // remove edges connecting crack front and fixed edges, except those short
+      // remove edges connecting crack front and fixed edges, except those
       {
         Range ents_nodes_and_edges;
         ents_nodes_and_edges.merge(surface_skin.subset_by_type(MBEDGE));
@@ -1957,6 +1955,7 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
       }
       edges_to_merge = subtract(edges_to_merge, edges_to_remove);
       not_merged_edges.merge(edges_to_remove);
+
 
       MoFEMFunctionReturn(0);
     }
@@ -1995,6 +1994,7 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
       if(length>0) {
         Range::iterator eit = ents_nodes_edges.begin();
         for (; eit != ents_nodes_edges.end();) {
+
           int num_nodes;
           const EntityHandle *conn;
           rval = moab.get_connectivity(*eit, conn, num_nodes, true);
@@ -2004,12 +2004,19 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
           } else {
             CHKERR moab.get_coords(conn, num_nodes, coords);
           }
-          VectorAdaptor s0(3,
-                           ublas::shallow_array_adaptor<double>(3, &coords[0]));
-          VectorAdaptor s1(3,
-                           ublas::shallow_array_adaptor<double>(3, &coords[3]));
-          const double edge_length = norm_2(s0-s1);
-          if(edge_length<tOL) {
+
+          auto get_edge_length = [coords]() {
+            FTensor::Tensor1<FTensor::PackPtr<const double *, 3>, 3> t_coords(
+                &coords[0], &coords[1], &coords[2]);
+            FTensor::Tensor1<double, 3> t_delta;
+            FTensor::Index<'i', 3> i;
+            t_delta(i) = t_coords(i);
+            ++t_coords;
+            t_delta(i) -= t_coords(i);
+            return sqrt(t_delta(i) * t_delta(i));
+          };
+
+          if (get_edge_length() < tOL) {
             eit = ents_nodes_edges.erase(eit);
           } else {
             eit++;
