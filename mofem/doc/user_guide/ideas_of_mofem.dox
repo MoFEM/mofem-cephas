@@ -15,20 +15,24 @@ lower dimension entities on which the approximation fields are defined.
 Therefore, different approximation spaces (h1, h-curl, h-div, L2) can be
 arbitrarily combined in finite element to create new capability for solving
 complex problems efficiently. Approximation space define adjacency of DOFs on
-entities, number of DOFs on entity is independent on approximation base (at least
-for polynomials). Base on entity is a trace of the base on element, and opposite
-relation works, base on entity is extruded into element.
+entities, number of DOFs on entity is independent on approximation base (at
+least for polynomials). Base on entity is a trace of the base on element, and
+opposite relation works, base on entity is extruded into element. 
 
-Applying this technology, it is effortless to construct transition elements
-between domain with different problem formulation and physics (e.g. from
-two-field mix-formulation to single-field formulation), or elements with
-anisotropic approximation order (e.g. in solid-shells with arbitrary high-order
-on shell surface and arbitrary low-order through thickness). This approach also
-sets the benchmark in terms of how finite element codes are implemented,
-introducing a concept of user-defined data operators acting on fields that are
-associated with entities (vertices, edges, faces, volumes) rather on the finite
-element directly. Such an approach simplifies code writing, testing and
-validation, making the code resilient to bugs.
+
+MoFEM data structures allow easily to enrich approximation fields or modify
+base functions, e.g. to resolve singularity at crack front. Applying this
+technology, it is effortless to construct transition elements between domain
+with different problem formulation and physics (e.g. from two-field
+mix-formulation to single-field formulation), or elements with anisotropic
+approximation order (e.g. in solid-shells with arbitrary high-order on shell
+surface and arbitrary low-order through thickness). 
+
+This approach also sets the benchmark in terms of how finite element codes
+are implemented, introducing a concept of user-defined data operators acting
+on fields that are associated with entities (vertices, edges, faces, volumes)
+rather on the finite element directly. Such an approach simplifies code
+writing, testing and validation, making the code resilient to bugs.
 
 \tableofcontents
 
@@ -120,6 +124,8 @@ element technologies), reusability, which with relatively small code large group
 of problems can be implemented and last but not least enables modularisation and
 testing of each element independently.
 \image html fe_struture_3.png "Example of implementation" width=800px
+
+
 Above example reflects how an engineer would formulate the problem for linear
 thermoelasticity, calculate physical quantities like strain, stress, temperature
 or flux and assemble a system of linear equations to solve it staggered method.
@@ -162,8 +168,7 @@ struct OpGradGrad: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOper
     DataForcesAndSourcesCore::EntData &row_data,
     DataForcesAndSourcesCore::EntData &col_data
   ) {
-    MoFEMErrorCode ierr;
-    MoFEMFunctionBeginHot;
+    MoFEMFunctionBegin;
 
     // get number of dofs on rows
     const int nb_row_dofs = row_data.getIndices().size();
@@ -186,16 +191,16 @@ struct OpGradGrad: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOper
     for(int gg = 0;gg!=nb_gauss_pts;gg++) {
       // get integration weight scaled by volume
       double w = getGaussPts()(3,gg)*getVolume();
-      // get direvatives of base functions on rows
-      FTensor::Tensor1<double*,3> t_base_diff_row = row_data.getFTensor1DiffN<3>();
+      // get derivatives of base functions on rows
+      auto t_base_diff_row = row_data.getFTensor1DiffN<3>();
       // loop rows
       for(int aa = 0;aa!=nb_row_dofs;aa++) {
         // take first element in row "aa"
         FTensor::Tensor0<double*> t_local_mat(
           &entityLocalMatrix(aa,0),1
         );
-        // get direvatives of base functions on columns
-        FTensor::Tensor1<double*,3> t_base_diff_col = col_data.getFTensor1DiffN<3>(gg,0);
+        // get derivatives of base functions on columns
+        auto t_base_diff_col = col_data.getFTensor1DiffN<3>(gg,0);
         // loop column
         for(int bb = 0;bb!=nb_col_dofs;bb++) {
           FTensor::Index<'i',3> i;
@@ -213,25 +218,31 @@ struct OpGradGrad: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOper
 
     }
 
+    auto assemble = [A](
+      auto & row_ind, auto & col_ind, auto & data) {
+      MoFEMFunctionBegin;
+      const int nb_row = row_ind.size();
+      const int nb_col = col_ind.size();
+      CHKERR MatSetValues(
+        A,
+        nb_row,&*row_ind.begin(),
+        nb_col,&*col_ind.begin(),
+        &*data.begin(),ADD_VALUES
+      );
+      MoFEMFunctionReturn(0);
+    }
+
     // assemble global matrix
-    ierr = MatSetValues(
-      blockData.A,
-      nb_row_dofs,&row_data.getIndices()[0],
-      nb_col_dofs,&col_data.getIndices()[0],
-      &entityLocalMatrix(0,0),ADD_VALUES
-    ); CHKERRQ(ierr);
+    CHKERR assemble(
+      row_data.getIndices(), col_data.getIndices(), entityLocalMatrix);
     // and its transpose
     if(row_side != col_side || row_type != col_type) {
       entityLocalMatrix = trans(entityLocalMatrix);
-      ierr = MatSetValues(
-        A,
-        nb_col_dofs,&col_data.getIndices()[0],
-        nb_row_dofs,&row_data.getIndices()[0],
-        &entityLocalMatrix(0,0),ADD_VALUES
-      ); CHKERRQ(ierr);
-    }
+      CHKERR assemble(
+        col_data.getIndices(), row_data.getIndices(), entityLocalMatrix);
+   }
 
-    MoFEMFunctionReturnHot(0);
+    MoFEMFunctionReturn(0);
   }
 
 };
@@ -244,7 +255,7 @@ access them directly. In core library, no single problem or finite element in
 the classical sense is implemented. Core library only provides functionality for
 finite element implementation and application code development. For that reason
 repositories of core library and users modules are in separate independent
-repositories.
+locations.
 \image html data_strutures_2.png "MoFEM code parts" width=800px
 
 In the figure above on first instant, a developer is interested in the
@@ -254,19 +265,19 @@ define fields, which span on some entities and set approximation order. For exam
 MoFEM::Core core(moab);
 MoFEM::Interface& m_field = core;
 // define fields
-ierr = m_field.add_field("DISP",H1,AINSWORTH_LEGENDRE_BASE,3); CHKERRQ(ierr);
-ierr = m_field.add_field("FLUX",HDIV,DEMKOWICZ_JACOBI_BASE,1); CHKERRQ(ierr);
+CHKERR m_field.add_field("DISP",H1,AINSWORTH_LEGENDRE_BASE,3);
+CHKERR m_field.add_field("FLUX",HDIV,DEMKOWICZ_JACOBI_BASE,1);
 // meshset consisting all entities in mesh
 EntityHandle root_set = moab.get_root_set();
 // add entities to field
-ierr = m_field.add_ents_to_field_by_TETs(root_set,"DISP"); CHKERRQ(ierr);
-ierr = m_field.add_ents_to_field_by_TETs(root_set,"FLUX"); CHKERRQ(ierr);
+CHKERR m_field.add_ents_to_field_by_TETs(root_set,"DISP");
+CHKERR m_field.add_ents_to_field_by_TETs(root_set,"FLUX");
 // set app. order (that is boring same order to all)
 int order = 5;
-ierr = m_field.set_field_order(root_set,MBTET,"DISP",order); CHKERRQ(ierr);
-ierr = m_field.set_field_order(root_set,MBTET,"FLUX",order); CHKERRQ(ierr);
+CHKERR m_field.set_field_order(root_set,MBTET,"DISP",order);
+CHKERR m_field.set_field_order(root_set,MBTET,"FLUX",order);
 // build
-ierr = m_field.build_fields(); CHKERRQ(ierr);
+CHKERR m_field.build_fields();
 \endcode
 Similarly, defining finite element set implement integration domain and build
 internal data structures. Note, finite element structure is separated from
