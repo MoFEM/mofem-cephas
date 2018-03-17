@@ -234,6 +234,25 @@ using VectorShallowArrayAdaptor =
 typedef VectorShallowArrayAdaptor<double> VectorAdaptor;
 typedef VectorShallowArrayAdaptor<int> VectorIntAdaptor;
 
+/**
+ * @brief Get Vector adaptor
+ *
+ * \code
+ *
+ * double *a;
+ * CHKERR VecGetArray(v,&a);
+ *
+ * for(int n = 0; n != nodes; ++n) {
+ * 
+ *   auto a = getVectorAdaptor(&a[3*n], 3);
+ *   double dot = inner_prod(a, a);
+ * 
+ * }
+ * 
+ * CHKERR VecRetsoreArray(v,&a);
+ * \endcode
+ *
+ */
 auto getVectorAdaptor = [](auto ptr, const int n) {
   typedef typename std::remove_pointer<decltype(ptr)>::type T;
   return VectorShallowArrayAdaptor<T>(n,
