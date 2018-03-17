@@ -212,22 +212,39 @@ typedef ublas::vector<double, DoubleAllocator> VectorDouble;
 typedef ublas::matrix<double, ublas::row_major, DoubleAllocator> MatrixDouble;
 
 // bounded vector & matrices
-typedef ublas::vector<int, ublas::bounded_array<int, 3> > VectorInt3;
-typedef ublas::vector<int, ublas::bounded_array<int, 9> > VectorInt9;
-typedef ublas::matrix<double, ublas::row_major, ublas::bounded_array<double, 9> >
-    MatrixDouble3by3;
-typedef ublas::vector<double, ublas::bounded_array<double, 3> > VectorDouble3;
-typedef ublas::vector<double, ublas::bounded_array<double, 6> > VectorDouble6;
-typedef ublas::vector<double, ublas::bounded_array<double, 9> > VectorDouble9;
-typedef ublas::vector<double, ublas::bounded_array<double, 12> > VectorDouble12;
+template <typename T, size_t N>
+using VectorBoundedArray = ublas::vector<T, ublas::bounded_array<T, N>>;
+
+typedef VectorBoundedArray<int, 3> VectorInt3;
+typedef VectorBoundedArray<int, 9> VectorInt9;
+typedef VectorBoundedArray<double, 3> VectorDouble3;
+typedef VectorBoundedArray<double, 6> VectorDouble6;
+typedef VectorBoundedArray<double, 9> VectorDouble9;
+typedef VectorBoundedArray<double, 12> VectorDouble12;
+
+template <typename T, size_t N>
+using MatrixBoundedArray =
+    ublas::matrix<T, ublas::row_major, ublas::bounded_array<T, N>>;
+typedef MatrixBoundedArray<double, 9> MatrixDouble3by3;
 
 // shallow adaptor classes
-typedef ublas::vector<double, ublas::shallow_array_adaptor<double> >
-    VectorAdaptor;
-typedef ublas::matrix<double, ublas::row_major,
-                      ublas::shallow_array_adaptor<double> >
-    MatrixAdaptor;
-typedef ublas::vector<int, ublas::shallow_array_adaptor<int> > VectorIntAdaptor;
+template <typename T>
+using VectorShallowArrayAdaptor =
+    ublas::vector<T, ublas::shallow_array_adaptor<T>>;
+typedef VectorShallowArrayAdaptor<double> VectorAdaptor;
+typedef VectorShallowArrayAdaptor<int> VectorIntAdaptor;
+
+auto getVectorAdaptor = [](auto ptr, const int n) {
+  typedef typename std::remove_pointer<decltype(ptr)>::type T;
+  return VectorShallowArrayAdaptor<T>(n,
+                                      ublas::shallow_array_adaptor<T>(n, ptr));
+};
+
+template <typename T>
+using MatrixShallowArrayAdaptor =
+    ublas::matrix<double, ublas::row_major,
+                  ublas::shallow_array_adaptor<double>>;
+typedef MatrixShallowArrayAdaptor<double> MatrixAdaptor;
 
 typedef std::vector<boost::shared_ptr<MatrixDouble> > ShapeFunctionBasesVector;
 
