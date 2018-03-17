@@ -30,7 +30,25 @@ struct Smoother {
 
     SmootherBlockData()
         : sTabilised(false), frontF(PETSC_NULL), tangentFrontF(PETSC_NULL),
-          ownVectors(false) {}
+          ownVectors(false) {
+      ierr = getOptions();
+      CHKERRABORT(PETSC_COMM_SELF, ierr);
+    }
+
+    MoFEMErrorCode getOptions() {
+      MoFEMFunctionBegin;
+      ierr = PetscOptionsBegin(PETSC_COMM_WORLD, "",
+                               "Get stabilisation element options", "none");
+      CHKERRG(ierr);
+      PetscBool smoothing_on = sTabilised ? PETSC_TRUE : PETSC_FALSE;
+      CHKERR PetscOptionsBool("-smoothing_stabilise",
+                              "all nodes controlled by smoothing element", "",
+                              smoothing_on, &smoothing_on, PETSC_NULL);
+      sTabilised = (smoothing_on == PETSC_TRUE) ? true : false;
+      ierr = PetscOptionsEnd();
+      CHKERRG(ierr);
+      MoFEMFunctionReturn(0);
+    }
 
     virtual ~SmootherBlockData() {
       if (ownVectors) {
@@ -55,10 +73,9 @@ struct Smoother {
           smootherData(smoother_data) {}
 
     MoFEMErrorCode preProcess() {
-      MoFEMFunctionBeginHot;
+      MoFEMFunctionBegin;
 
-      ierr = VolumeElementForcesAndSourcesCore::preProcess();
-      CHKERRG(ierr);
+      CHKERR VolumeElementForcesAndSourcesCore::preProcess();
 
       if (A != PETSC_NULL) {
         snes_B = A;
@@ -90,45 +107,36 @@ struct Smoother {
       switch (snes_ctx) {
       case CTX_SNESSETFUNCTION: {
         if (smootherData.frontF) {
-          ierr = VecZeroEntries(smootherData.frontF);
-          CHKERRG(ierr);
-          ierr = VecGhostUpdateBegin(smootherData.frontF, INSERT_VALUES,
+          CHKERR VecZeroEntries(smootherData.frontF);
+          CHKERR VecGhostUpdateBegin(smootherData.frontF, INSERT_VALUES,
                                      SCATTER_FORWARD);
-          CHKERRG(ierr);
-          ierr = VecGhostUpdateEnd(smootherData.frontF, INSERT_VALUES,
+          CHKERR VecGhostUpdateEnd(smootherData.frontF, INSERT_VALUES,
                                    SCATTER_FORWARD);
-          CHKERRG(ierr);
         }
       } break;
       default:
         break;
       }
 
-      MoFEMFunctionReturnHot(0);
+      MoFEMFunctionReturn(0);
     }
 
     MoFEMErrorCode postProcess() {
-      MoFEMFunctionBeginHot;
+      MoFEMFunctionBegin;
 
       switch (snes_ctx) {
       case CTX_SNESSETFUNCTION: {
         if (smootherData.frontF) {
-          ierr = VecAssemblyBegin(smootherData.frontF);
-          CHKERRG(ierr);
-          ierr = VecAssemblyEnd(smootherData.frontF);
-          CHKERRG(ierr);
-          ierr = VecGhostUpdateBegin(smootherData.frontF, ADD_VALUES,
+          CHKERR VecAssemblyBegin(smootherData.frontF);
+          CHKERR VecAssemblyEnd(smootherData.frontF);
+          CHKERR VecGhostUpdateBegin(smootherData.frontF, ADD_VALUES,
                                      SCATTER_REVERSE);
-          CHKERRG(ierr);
-          ierr = VecGhostUpdateEnd(smootherData.frontF, ADD_VALUES,
+          CHKERR VecGhostUpdateEnd(smootherData.frontF, ADD_VALUES,
                                    SCATTER_REVERSE);
-          CHKERRG(ierr);
-          ierr = VecGhostUpdateBegin(smootherData.frontF, INSERT_VALUES,
+          CHKERR VecGhostUpdateBegin(smootherData.frontF, INSERT_VALUES,
                                      SCATTER_FORWARD);
-          CHKERRG(ierr);
-          ierr = VecGhostUpdateEnd(smootherData.frontF, INSERT_VALUES,
+          CHKERR VecGhostUpdateEnd(smootherData.frontF, INSERT_VALUES,
                                    SCATTER_FORWARD);
-          CHKERRG(ierr);
         }
         break;
       default:
@@ -136,9 +144,8 @@ struct Smoother {
       }
       }
 
-      ierr = VolumeElementForcesAndSourcesCore::postProcess();
-      CHKERRG(ierr);
-      MoFEMFunctionReturnHot(0);
+      CHKERR VolumeElementForcesAndSourcesCore::postProcess();
+      MoFEMFunctionReturn(0);
     }
   };
 
@@ -166,29 +173,21 @@ struct Smoother {
               field_name, data, common_data, tag, jacobian, false, false) {}
 
     MoFEMErrorCode calculateStress(const int gg) {
-      MoFEMFunctionBeginHot;
+      MoFEMFunctionBegin;
 
-      try {
+      CHKERR dAta.materialAdoublePtr->calculateP_PiolaKirchhoffI(
+          dAta, getNumeredEntFiniteElementPtr());
+      CHKERRG(ierr);
 
-        ierr = dAta.materialAdoublePtr->calculateP_PiolaKirchhoffI(
-            dAta, getNumeredEntFiniteElementPtr());
-        CHKERRG(ierr);
-
-        commonData.sTress[gg].resize(3, 3, false);
-        for (int dd1 = 0; dd1 < 3; dd1++) {
-          for (int dd2 = 0; dd2 < 3; dd2++) {
-            dAta.materialAdoublePtr->P(dd1, dd2) >>=
-                (commonData.sTress[gg])(dd1, dd2);
-          }
+      commonData.sTress[gg].resize(3, 3, false);
+      for (int dd1 = 0; dd1 < 3; dd1++) {
+        for (int dd2 = 0; dd2 < 3; dd2++) {
+          dAta.materialAdoublePtr->P(dd1, dd2) >>=
+              (commonData.sTress[gg])(dd1, dd2);
         }
-
-      } catch (const std::exception &ex) {
-        std::ostringstream ss;
-        ss << "throw in method: " << ex.what() << std::endl;
-        SETERRQ(PETSC_COMM_SELF, 1, ss.str().c_str());
       }
 
-      MoFEMFunctionReturnHot(0);
+      MoFEMFunctionReturn(0);
     }
   };
 
@@ -208,7 +207,7 @@ struct Smoother {
 
     MoFEMErrorCode aSemble(int row_side, EntityType row_type,
                            DataForcesAndSourcesCore::EntData &row_data) {
-      MoFEMFunctionBeginHot;
+      MoFEMFunctionBegin;
 
       int nb_dofs = row_data.getIndices().size();
 
@@ -232,21 +231,17 @@ struct Smoother {
           }
         }
         if (smootherData.frontF) {
-          ierr = VecSetValues(smootherData.frontF, nb_dofs, &frontIndices[0],
+          CHKERR VecSetValues(smootherData.frontF, nb_dofs, &frontIndices[0],
                               &nf[0], ADD_VALUES);
-          CHKERRG(ierr);
         }
       }
 
-      ierr = VecSetOption(getFEMethod()->snes_f, VEC_IGNORE_NEGATIVE_INDICES,
+      CHKERR VecSetOption(getFEMethod()->snes_f, VEC_IGNORE_NEGATIVE_INDICES,
                           PETSC_TRUE);
-      CHKERRG(ierr);
-
-      ierr = VecSetValues(getFEMethod()->snes_f, nb_dofs, indices_ptr, &nf[0],
+      CHKERR VecSetValues(getFEMethod()->snes_f, nb_dofs, indices_ptr, &nf[0],
                           ADD_VALUES);
-      CHKERRG(ierr);
 
-      MoFEMFunctionReturnHot(0);
+      MoFEMFunctionReturn(0);
     }
   };
 
@@ -275,7 +270,7 @@ struct Smoother {
                            EntityType col_type,
                            DataForcesAndSourcesCore::EntData &row_data,
                            DataForcesAndSourcesCore::EntData &col_data) {
-      MoFEMFunctionBeginHot;
+      MoFEMFunctionBegin;
 
       int nb_row = row_data.getIndices().size();
       int nb_col = col_data.getIndices().size();
@@ -302,17 +297,15 @@ struct Smoother {
         }
       }
 
-      ierr = MatSetValues(getFEMethod()->snes_B, nb_row, row_indices_ptr,
+      CHKERR MatSetValues(getFEMethod()->snes_B, nb_row, row_indices_ptr,
                           nb_col, col_indices_ptr, &k(0, 0), ADD_VALUES);
-      CHKERRG(ierr);
 
       if (smootherData.tangentFrontF) {
 
         // get tangent vector array
         double *f_tangent_front_mesh_array;
-        ierr = VecGetArray(smootherData.tangentFrontF,
+        CHKERR VecGetArray(smootherData.tangentFrontF,
                            &f_tangent_front_mesh_array);
-        CHKERRG(ierr);
         // iterate nodes on tet
         for (int nn = 0; nn < 4; nn++) {
 
@@ -372,12 +365,11 @@ struct Smoother {
             }
           }
         }
-        ierr = VecRestoreArray(smootherData.tangentFrontF,
+        CHKERR VecRestoreArray(smootherData.tangentFrontF,
                                &f_tangent_front_mesh_array);
-        CHKERRG(ierr);
       }
 
-      MoFEMFunctionReturnHot(0);
+      MoFEMFunctionReturn(0);
     }
   };
 };
