@@ -487,7 +487,8 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(Range *fixed_edges,
                               moab::Interface::UNION);
   {
     Range verts;
-    CHKERR moab.get_connectivity(zeroDistanceEnts, verts, true);
+    CHKERR moab.get_connectivity(unite(cutEdges, zeroDistanceEnts), verts,
+                                 true);
     CHKERR moab.get_adjacencies(verts, 3, false, cutVolumes,
                                 moab::Interface::UNION);
   }
