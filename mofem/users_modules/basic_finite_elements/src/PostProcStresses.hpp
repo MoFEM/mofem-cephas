@@ -157,8 +157,8 @@ struct PostProcStress
           replaceNonANumberByMaxValue) {
         // If value is non a number because of singularity repleca it max double
         // value
-        for (int r = 0; r != dAta.materialDoublePtr->P.size1(); r++) {
-          for (int c = 0; c != dAta.materialDoublePtr->P.size2(); c++) {
+        for (unsigned int r = 0; r != dAta.materialDoublePtr->P.size1(); ++r) {
+          for (unsigned int c = 0; c != dAta.materialDoublePtr->P.size2(); ++c) {
             if (std::isnormal(dAta.materialDoublePtr->P(r, c))) {
               maxP(r, c) =
                   copysign(std::max(fabs(dAta.materialDoublePtr->P(r, c)),
@@ -181,7 +181,7 @@ struct PostProcStress
 
     if (replaceNonANumberByMaxValue && max_energy > 0) {
       MatrixDouble3by3 P(3, 3);
-      for (int gg = 0; gg != nb_gauss_pts; gg++) {
+      for (int gg = 0; gg != nb_gauss_pts; ++gg) {
         double val_energy;
         CHKERR postProcMesh.tag_get_data(th_energy, &mapGaussPts[gg], 1,
                                          &val_energy);
@@ -190,8 +190,8 @@ struct PostProcStress
                                            &max_energy);
           CHKERR postProcMesh.tag_get_data(th_piola1, &mapGaussPts[gg], 1,
                                            &P(0, 0));
-          for (int r = 0; r != P.size1(); r++) {
-            for (int c = 0; c != P.size2(); c++) {
+          for (unsigned int r = 0; r != P.size1(); ++r) {
+            for (unsigned int c = 0; c != P.size2(); ++c) {
               if (!std::isnormal(P(r, c)))
                 P(r, c) = maxP(r, c);
             }

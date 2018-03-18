@@ -164,7 +164,7 @@ MoFEMErrorCode PostProcCommonOnRefMesh::OpGetFieldValues::doWork(
       for(int gg = 0;gg!=nb_gauss_pts;gg++) {
         double *ptr = &((double*)tags_ptr[gg])[0];
         int ll = 0;
-        for(;ll!=(vAluesPtr->size()/rank);ll++) {
+        for(;ll!=static_cast<int>(vAluesPtr->size()/rank);ll++) {
           FTensor::Tensor1<double*,3> t_tag_val(ptr,&ptr[1],&ptr[2],3);
           for(int rr = 0;rr!=rank;rr++) {
             const double dof_val = (*vAluesPtr)[ll*rank+rr];
@@ -173,7 +173,7 @@ MoFEMErrorCode PostProcCommonOnRefMesh::OpGetFieldValues::doWork(
           }
           ++t_n_hcurl;
         }
-        for(;ll!=data.getHcurlN().size2()/3;ll++) {
+        for(;ll!=static_cast<int>(data.getHcurlN().size2()/3);ll++) {
           ++t_n_hcurl;
         }
       }
@@ -193,7 +193,7 @@ MoFEMErrorCode PostProcCommonOnRefMesh::OpGetFieldValues::doWork(
       for(int gg = 0;gg!=nb_gauss_pts;gg++) {
         double *ptr = &((double*)tags_ptr[gg])[0];
         int ll = 0;
-        for(;ll!=(vAluesPtr->size()/rank);ll++) {
+        for(;ll!=static_cast<int>(vAluesPtr->size()/rank);ll++) {
           FTensor::Tensor1<double*,3> t_tag_val(ptr,&ptr[1],&ptr[2],3);
           for(int rr = 0;rr!=rank;rr++) {
             const double dof_val = (*vAluesPtr)[ll*rank+rr];
@@ -202,7 +202,7 @@ MoFEMErrorCode PostProcCommonOnRefMesh::OpGetFieldValues::doWork(
           }
           ++t_n_hdiv;
         }
-        for(;ll!=data.getHdivN().size2()/3;ll++) {
+        for(;ll!=static_cast<int>(data.getHdivN().size2()/3);ll++) {
           ++t_n_hdiv;
         }
       }

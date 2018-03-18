@@ -484,13 +484,13 @@ struct MagneticElement {
       entityLocalMatrix.resize(nb_row_dofs, nb_col_dofs, false);
       entityLocalMatrix.clear();
 
-      if (nb_row_dofs != row_data.getFieldData().size()) {
+      if (nb_row_dofs != static_cast<int>(row_data.getFieldData().size())) {
         SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                  "Number of base functions and DOFs on entity is different on "
                  "rows %d!=%d",
                  nb_row_dofs, row_data.getFieldData().size());
       }
-      if (nb_col_dofs != col_data.getFieldData().size()) {
+      if (nb_col_dofs != static_cast<int>(col_data.getFieldData().size())) {
         SETERRQ2(
             PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "Number of base functions and DOFs on entity is different on cols",
@@ -613,13 +613,13 @@ struct MagneticElement {
       entityLocalMatrix.resize(nb_row_dofs, nb_col_dofs, false);
       entityLocalMatrix.clear();
 
-      if (nb_row_dofs != row_data.getFieldData().size()) {
+      if (nb_row_dofs != static_cast<int>(row_data.getFieldData().size())) {
         SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                  "Number of base functions and DOFs on entity is different on "
                  "rows %d!=%d",
                  nb_row_dofs, row_data.getFieldData().size());
       }
-      if (nb_col_dofs != col_data.getFieldData().size()) {
+      if (nb_col_dofs != static_cast<int>(col_data.getFieldData().size())) {
         SETERRQ2(
             PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "Number of base functions and DOFs on entity is different on cols",
@@ -816,7 +816,7 @@ struct MagneticElement {
       MatrixDouble row_curl_mat;
       FTensor::Index<'i', 3> i;
       const int nb_gauss_pts = row_data.getHcurlN().size1();
-      if (nb_gauss_pts != mapGaussPts.size()) {
+      if (nb_gauss_pts != static_cast<int>(mapGaussPts.size())) {
         SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                  "Inconsistency number of dofs %d!=%d", nb_gauss_pts,
                  mapGaussPts.size());
