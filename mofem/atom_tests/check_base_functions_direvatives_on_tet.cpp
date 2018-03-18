@@ -67,7 +67,7 @@ int main(int argc, char *argv[]) {
       SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "base not set");
     }
 
-    FieldApproximationBase base;
+    FieldApproximationBase base = NOBASE;
     if (choice_base_value == AINSWORTH) {
       base = AINSWORTH_LEGENDRE_BASE;
     } else if (choice_base_value == DEMKOWICZ) {

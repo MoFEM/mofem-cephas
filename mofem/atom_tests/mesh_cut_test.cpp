@@ -173,7 +173,7 @@ int main(int argc, char *argv[]) {
           Range ents;
           ierr = mngPtr->getEntitiesByRefLevel(bit, bit, ents); CHKERRG(ierr);
           cout << "bit_level nb ents " << ents.size() << endl;
-          if (expected_size != -1 && expected_size != ents.size()) {
+          if (expected_size != -1 && expected_size != static_cast<int>(ents.size())) {
             SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                      "Wrong bit ref size %d!=%d", expected_size, ents.size());
           }
@@ -262,7 +262,7 @@ int main(int argc, char *argv[]) {
     if(test) {
       Range ents;
       core.getInterface<BitRefManager>()->getAllEntitiesNotInDatabase(ents);
-      if(no_of_ents_not_in_database != ents.size()) {
+      if(no_of_ents_not_in_database != static_cast<int>(ents.size())) {
         cerr << subtract(ents,ents_not_in_database) << endl;
         EntityHandle meshset;
         CHKERR moab.create_meshset(MESHSET_SET, meshset);

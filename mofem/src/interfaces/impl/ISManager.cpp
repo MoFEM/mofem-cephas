@@ -101,7 +101,7 @@ MoFEMErrorCode ISManager::sectionCreate(const std::string &problem_name,
     hi_dit = dofs->end();
     for (; dit != hi_dit;) {
       EntityHandle ent = dit->get()->getEnt();
-      if (dit->get()->getPart() == proc && dit->get()->getEntDofIdx() == 0) {
+      if (static_cast<int>(dit->get()->getPart()) == proc && dit->get()->getEntDofIdx() == 0) {
         while (dit != hi_dit && ent == dit->get()->getEnt()) {
           const int nb_of_dofs_on_ent = dit->get()->getNbDofsOnEnt();
           for (int dd = 0; dd != nb_of_dofs_on_ent; dd++, dit++) {
@@ -132,7 +132,7 @@ MoFEMErrorCode ISManager::sectionCreate(const std::string &problem_name,
     int point = rstart;
     for (; dit != hi_dit;) {
       EntityHandle ent = dit->get()->getEnt();
-      if (dit->get()->getPart() == proc && dit->get()->getEntDofIdx() == 0) {
+      if (static_cast<int>(dit->get()->getPart()) == proc && dit->get()->getEntDofIdx() == 0) {
         // exploit that does are continuously stored on entity
         // that includes fields
         while (dit != hi_dit && ent == dit->get()->getEnt()) {

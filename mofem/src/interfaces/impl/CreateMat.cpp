@@ -499,7 +499,7 @@ MoFEMErrorCode CreateRowComressedADJMatrix::createMatArrays(
   for(;miit_row!=hi_miit_row;miit_row++) {
 
     if(!TAG::IamNotPartitioned) {
-      if((*miit_row)->getPart()!=rAnk) continue;
+      if(static_cast<int>((*miit_row)->getPart())!=rAnk) continue;
     }
     // This is only for cross-check if everything is ok
     nb_loc_row_from_iterators++;

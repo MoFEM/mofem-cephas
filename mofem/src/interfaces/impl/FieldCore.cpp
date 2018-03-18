@@ -862,7 +862,7 @@ MoFEMErrorCode Core::buildFieldForL2H1HcurlHdiv(
     int dofs_field_size0 = dofsField.size();
     dofsField.insert(dofs_shared_array.begin(), dofs_shared_array.end());
     field_it->get()->getDofSequenceContainer()->push_back(dofs_array);
-    if (dofs_array.use_count() != 2 * dofs_shared_array.size() + 1) {
+    if (static_cast<int>(dofs_array.use_count()) != static_cast<int>(2 * dofs_shared_array.size() + 1)) {
       SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                "Wrong use count %d != %d", dofs_array.use_count(),
                2 * dofs_shared_array.size() + 1);

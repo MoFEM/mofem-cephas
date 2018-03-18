@@ -207,7 +207,7 @@ MoFEMErrorCode MoFEM::Hdiv_Ainsworth_FaceBubbleShapeFunctions_ON_FACE(
 
   double psi_l[p + 1], diff_psi_l[3 * (p + 1)];
   double psi_m[p + 1], diff_psi_m[3 * (p + 1)];
-  FTensor::Tensor1<double, 3> t_diff_beta_0ij;
+  FTensor::Tensor1<double, 3> t_diff_beta_0ij(0,0,0);
 
   FTensor::Tensor1<double *, 3> t_psi_f(&phi_f[HDIV0], &phi_f[HDIV1],
                                         &phi_f[HDIV2], 3);
@@ -630,7 +630,7 @@ MoFEM::Hdiv_Demkowicz_Face_MBTET_ON_FACE(int *faces_nodes, int p, double *N,
   FTensor::Index<'j', 3> j;
 
   FTensor::Tensor1<double, 3> t_cross[3];
-  FTensor::Tensor2<double, 3, 3> t_diff_cross;
+  FTensor::Tensor2<double, 3, 3> t_diff_cross(0,0,0, 0,0,0, 0,0,0);
   FTensor::Tensor1<double, 3> t_node_diff_ksi[4];
   FTensor::Tensor1<double, 3> t_node_diff_sum_n0_n1;
 
