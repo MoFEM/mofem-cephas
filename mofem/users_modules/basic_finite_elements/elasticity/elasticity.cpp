@@ -397,7 +397,7 @@ int main(int argc, char *argv[]) {
         CHKERR moab.get_entities_by_handle(it->meshset, block_ents, true);
         Range vertices;
         CHKERR moab.get_connectivity(block_ents, vertices, true);
-        CHKERR m_field.set_field(block_data[it->getMeshsetId()].initTemp,
+        CHKERR m_field.getInterface<FieldBlas>()->setField(block_data[it->getMeshsetId()].initTemp,
                                  MBVERTEX, vertices, "TEMP");
       }
     }

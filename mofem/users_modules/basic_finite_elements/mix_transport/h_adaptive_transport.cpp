@@ -424,7 +424,8 @@ int main(int argc, char *argv[]) {
     // set entities bit level
     BitRefLevel ref_level;
     ref_level.set(0);
-    CHKERR m_field.seed_ref_level_3D(0, ref_level);
+    CHKERR m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(
+        0, 3, ref_level);
 
     // set app. order
     // see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes

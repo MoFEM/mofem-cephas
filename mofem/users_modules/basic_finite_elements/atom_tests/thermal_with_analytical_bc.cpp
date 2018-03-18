@@ -57,10 +57,7 @@ struct AnalyticalFunction {
 
 int main(int argc, char *argv[]) {
 
-  
-  
-
-  PetscInitialize(&argc,&argv,(char *)0,help);
+  MoFEM::Core::Initialize(&argc,&argv,(char *)0,help);
 
   try {
 
@@ -94,7 +91,7 @@ int main(int argc, char *argv[]) {
     bit_level0.set(0);
     EntityHandle meshset_level0;
     rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERRG(rval);
-    ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRG(ierr);
+    ierr = m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(0,3,bit_level0); CHKERRG(ierr);
 
     //Fields
     ierr = m_field.add_field("TEMP",H1,AINSWORTH_LEGENDRE_BASE,1); CHKERRG(ierr);
@@ -290,11 +287,10 @@ int main(int argc, char *argv[]) {
     ierr = KSPDestroy(&solver); CHKERRG(ierr);
 
 
-  } catch (MoFEMException const &e) {
-    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
-  }
+  } 
+  CATCH_ERRORS;
 
-  ierr = PetscFinalize(); CHKERRG(ierr);
+  MoFEM::Core::Finalize();
 
   return 0;
 

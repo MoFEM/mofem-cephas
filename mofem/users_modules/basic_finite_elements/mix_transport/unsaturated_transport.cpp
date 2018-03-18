@@ -137,7 +137,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Set entities bit level
-    ierr = m_field.seed_ref_level_3D(0,BitRefLevel().set(0)); CHKERRG(ierr);
+    ierr = m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(0,3,BitRefLevel().set(0)); CHKERRG(ierr);
 
     UnsaturatedFlowElement uf(m_field);
 
