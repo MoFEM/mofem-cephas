@@ -155,15 +155,6 @@ MoFEMErrorCode CutMeshInterface::cutAndTrim(
   CoreInterface &m_field = cOre;
   MoFEMFunctionBegin;
 
-  auto get_min_quality = [&m_field](const BitRefLevel bit, Tag th) {
-    Range tets_level; // test at level
-    CHKERR m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
-        bit, BitRefLevel().set(), MBTET, tets_level);
-    double min_q = 1;
-    CHKERR m_field.getInterface<Tools>()->minTetsQuality(tets_level, min_q, th);
-    return min_q;
-  };
-
   // cut mesh
   CHKERR findEdgesToCut(fixed_edges, corner_nodes, tol_cut, QUIET, debug);
   CHKERR projectZeroDistanceEnts(fixed_edges, corner_nodes, tol_cut_close);
@@ -181,9 +172,17 @@ MoFEMErrorCode CutMeshInterface::cutAndTrim(
   }
   CHKERR moveMidNodesOnCutEdges(th);
 
-  if(debug) {
-    cerr << "Min quality cut " << get_min_quality(bit_level1, th) << endl;
-  }
+  auto get_min_quality = [&m_field](const BitRefLevel bit, Tag th) {
+    Range tets_level; // test at level
+    CHKERR m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
+        bit, BitRefLevel().set(), MBTET, tets_level);
+    double min_q = 1;
+    CHKERR m_field.getInterface<Tools>()->minTetsQuality(tets_level, min_q, th);
+    return min_q;
+  };
+
+  PetscPrintf(PETSC_COMM_WORLD, "Min quality cut %6.4g\n",
+              get_min_quality(bit_level1, th));
 
   if(debug) {
     CHKERR saveCutEdges();
@@ -205,9 +204,8 @@ MoFEMErrorCode CutMeshInterface::cutAndTrim(
   }
   CHKERR moveMidNodesOnTrimmedEdges(th);
 
-  if (debug) {
-    cerr << "Min quality trim " << get_min_quality(bit_level2, th) << endl;
-  }
+  PetscPrintf(PETSC_COMM_WORLD, "Min quality trim %3.2g\n",
+              get_min_quality(bit_level2, th));
 
   if(debug) {
     CHKERR saveTrimEdges();
@@ -263,9 +261,8 @@ MoFEMErrorCode CutMeshInterface::cutTrimAndMerge(
     return min_q;
   };
 
-  if (debug) {
-    cerr << "Min quality merge " << get_min_quality(bit_level3, th) << endl;
-  }
+  PetscPrintf(PETSC_COMM_WORLD, "Min quality node merge %6.4g\n",
+              get_min_quality(bit_level1, th));
 
   CHKERR
       cOre.getInterface<BitRefManager>()->updateRange(fixed_edges, fixed_edges);
@@ -490,7 +487,8 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(Range *fixed_edges,
                               moab::Interface::UNION);
   {
     Range verts;
-    CHKERR moab.get_connectivity(zeroDistanceEnts, verts, true);
+    CHKERR moab.get_connectivity(unite(cutEdges, zeroDistanceEnts), verts,
+                                 true);
     CHKERR moab.get_adjacencies(verts, 3, false, cutVolumes,
                                 moab::Interface::UNION);
   }
@@ -601,8 +599,6 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(Range *fixed_edges,
                                                          Range *corner_nodes,
                                                          const double low_tol,
                                                          int verb) {
-
-                  
   CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   MoFEMFunctionBegin;
@@ -852,7 +848,7 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(Range *fixed_edges,
     adj_tets = intersect(adj_tets, vOlume);
     double q = get_quality_change(adj_tets, vertices_on_cut_edges);
 
-    if (q > 0.8) {
+    if (q > 0.5) {
       verticesOnCutEdges.insert(vertices_on_cut_edges.begin(),
                                 vertices_on_cut_edges.end());
       EntityHandle type = moab.type_from_handle(f);
@@ -1015,6 +1011,24 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
   CHKERR moab.get_adjacencies(cutNewSurfaces, 1, false, edges,
                               moab::Interface::UNION);
 
+  Range cut_surface_edges_on_fixed_edges;
+  if (fixed_edges) {
+    cut_surface_edges_on_fixed_edges = intersect(edges, *fixed_edges);
+  }
+  Range cut_surface_edges_on_fixed_edges_verts;
+  CHKERR moab.get_connectivity(cut_surface_edges_on_fixed_edges,
+                               cut_surface_edges_on_fixed_edges_verts, true);
+  Range fixed_edges_verts_on_corners;
+  if (fixed_edges) {
+    CHKERR moab.get_connectivity(*fixed_edges, fixed_edges_verts_on_corners,
+                                 true);
+  }
+  fixed_edges_verts_on_corners = subtract(
+      fixed_edges_verts_on_corners, cut_surface_edges_on_fixed_edges_verts);
+  if (corner_nodes) {
+    fixed_edges_verts_on_corners.merge(*corner_nodes);
+  }
+
   // clear data ranges
   trimEdges.clear();
   edgesToTrim.clear();
@@ -1043,8 +1057,8 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
     VectorAdaptor s1 = get_s_adaptor(3);
     // get edge length
     double length = norm_2(s1 - s0);
-    // Find point on surface closet to surface
 
+    // Find point on surface closet to surface
     auto get_closets_delta = [this, &moab](const VectorAdaptor &s) {
       VectorDouble3 p(3);
       EntityHandle facets_out;
@@ -1199,10 +1213,9 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
       }
 
       bool corner_node = false;
-      if (corner_nodes) {
-        if (corner_nodes->find(v) != corner_nodes->end()) {
-          corner_node = true;
-        }
+      if (fixed_edges_verts_on_corners.find(v) !=
+          fixed_edges_verts_on_corners.end()) {
+        corner_node = true;
       }
 
       if (corner_node) {
@@ -1933,7 +1946,7 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
       edges_to_merge = subtract(edges_to_merge, edges_to_remove);
       not_merged_edges.merge(edges_to_remove);
 
-      // remove edges connecting crack front and fixed edges, except those short
+      // remove edges connecting crack front and fixed edges, except those
       {
         Range ents_nodes_and_edges;
         ents_nodes_and_edges.merge(surface_skin.subset_by_type(MBEDGE));
@@ -1943,6 +1956,7 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
       }
       edges_to_merge = subtract(edges_to_merge, edges_to_remove);
       not_merged_edges.merge(edges_to_remove);
+
 
       MoFEMFunctionReturn(0);
     }
@@ -1981,6 +1995,7 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
       if(length>0) {
         Range::iterator eit = ents_nodes_edges.begin();
         for (; eit != ents_nodes_edges.end();) {
+
           int num_nodes;
           const EntityHandle *conn;
           rval = moab.get_connectivity(*eit, conn, num_nodes, true);
@@ -1990,12 +2005,19 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
           } else {
             CHKERR moab.get_coords(conn, num_nodes, coords);
           }
-          VectorAdaptor s0(3,
-                           ublas::shallow_array_adaptor<double>(3, &coords[0]));
-          VectorAdaptor s1(3,
-                           ublas::shallow_array_adaptor<double>(3, &coords[3]));
-          const double edge_length = norm_2(s0-s1);
-          if(edge_length<tOL) {
+
+          auto get_edge_length = [coords]() {
+            FTensor::Tensor1<FTensor::PackPtr<const double *, 3>, 3> t_coords(
+                &coords[0], &coords[1], &coords[2]);
+            FTensor::Tensor1<double, 3> t_delta;
+            FTensor::Index<'i', 3> i;
+            t_delta(i) = t_coords(i);
+            ++t_coords;
+            t_delta(i) -= t_coords(i);
+            return sqrt(t_delta(i) * t_delta(i));
+          };
+
+          if (get_edge_length() < tOL) {
             eit = ents_nodes_edges.erase(eit);
           } else {
             eit++;

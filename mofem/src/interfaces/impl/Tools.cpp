@@ -210,7 +210,7 @@ MoFEMErrorCode Tools::getTriNormal(const EntityHandle tri,
   }
   const EntityHandle *conn;
   int num_nodes;
-  double coords[6];
+  double coords[9];
   CHKERR moab.get_connectivity(tri, conn, num_nodes, true);
   CHKERR moab.get_coords(conn, num_nodes, coords);
   CHKERR getTriNormal(coords,normal);
@@ -223,6 +223,36 @@ double Tools::getTriArea(const EntityHandle tri) const {
   CHKERRABORT(PETSC_COMM_SELF, ierr);
   FTensor::Index<'i',3> i;
   return sqrt(t_normal(i)*t_normal(i))*0.5;
-};
-
 }
+
+double Tools::getEdgeLength(const double *edge_coords) {
+  FTensor::Tensor1<double, 3> t_coords_n0(edge_coords[0], edge_coords[1],
+                                          edge_coords[2]);
+  FTensor::Tensor1<double, 3> t_coords_n1(edge_coords[3], edge_coords[4],
+                                          edge_coords[5]);
+  FTensor::Index<'i', 3> i;
+  t_coords_n0(i) -= t_coords_n1(i);
+  return sqrt(t_coords_n0(i) * t_coords_n0(i));
+}
+
+double Tools::getEdgeLength(const EntityHandle edge) {
+  MoFEM::Interface &m_field = cOre;
+  moab::Interface &moab(m_field.get_moab());
+  auto get_edge_coords = [edge, &moab](double *const coords) {
+    MoFEMFunctionBegin;
+    if (moab.type_from_handle(edge) != MBEDGE) {
+      SETERRQ(PETSC_COMM_SELF, MOFEM_INVALID_DATA, "Works only for edge");
+    }
+    const EntityHandle *conn;
+    int num_nodes;
+    CHKERR moab.get_connectivity(edge, conn, num_nodes, true);
+    CHKERR moab.get_coords(conn, 2, coords);
+    MoFEMFunctionReturn(0);
+  };
+  double coords[6];
+  ierr = get_edge_coords(coords);
+  CHKERRABORT(PETSC_COMM_SELF, ierr);
+  return getEdgeLength(coords);
+}
+
+} // end of MoFEM name space

@@ -228,8 +228,7 @@ struct DataForcesAndSourcesCore {
         size = size < fieldData.size() ? size : fieldData.size();
       }
       double *data = &*fieldData.data().begin();
-      return VectorAdaptor(size,
-                           ublas::shallow_array_adaptor<double>(size, data));
+      return getVectorAdaptor(data, size);
     }
 
     /// \brief get dofs data stature FEDofEntity

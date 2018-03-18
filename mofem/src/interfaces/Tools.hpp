@@ -75,6 +75,15 @@ namespace MoFEM {
                                     return std::min(a, b);
                                   });
 
+    /**
+     * @brief Get the Tets With Quality
+     * 
+     * @param out_tets 
+     * @param tets 
+     * @param th 
+     * @param f 
+     * @return MoFEMErrorCode 
+     */
     MoFEMErrorCode
     getTetsWithQuality(Range &out_tets, const Range &tets, Tag th = NULL,
                        boost::function<bool(double)> f = [](double q) -> bool {
@@ -83,7 +92,17 @@ namespace MoFEM {
                          else
                            return false;
                        });
-
+    /**
+     * @brief Write file with tetrahedral of given quality
+     * 
+     * @param file_name 
+     * @param file_type 
+     * @param options 
+     * @param tets 
+     * @param th 
+     * @param f 
+     * @return MoFEMErrorCode 
+     */
     MoFEMErrorCode writeTetsWithQuality(
         const char *file_name, const char *file_type, const char *options,
         const Range &tets, Tag th = NULL,
@@ -94,17 +113,60 @@ namespace MoFEM {
             return false;
         });
 
-
+    /**
+     * @brief Check of point is in tetrahedral
+     * 
+     * @param tet_coords 
+     * @param global_coord 
+     * @param tol 
+     * @param result 
+     * @return MoFEMErrorCode 
+     */
     static MoFEMErrorCode checkIfPointIsInTet(const double tet_coords[],
                                               const double global_coord[],
                                               const double tol, bool &result);
 
+    /**
+     * @brief Get the Tri Normal objectGet triangle normal
+     * 
+     * @param coords 
+     * @param normal 
+     * @return MoFEMErrorCode 
+     */
     static MoFEMErrorCode getTriNormal(const double *coords, double *normal);
 
+    /**
+     * @brief Get triangle normal
+     * 
+     * @param tri 
+     * @param normal 
+     * @return MoFEMErrorCode 
+     */
     MoFEMErrorCode getTriNormal(const EntityHandle tri, double *normal) const;
 
-    double getTriArea(const EntityHandle tri) const;                                   
+    /**
+     * @brief Get triangle area
+     * 
+     * @param tri 
+     * @return double 
+     */
+    double getTriArea(const EntityHandle tri) const;
 
+    /**
+     * @brief Get edge length
+     * 
+     * @param edge_coords 
+     * @return double 
+     */
+    static double getEdgeLength(const double *edge_coords);
+
+    /**
+     * @brief Get edge length
+     * 
+     * @param edge 
+     * @return double 
+     */
+    double getEdgeLength(const EntityHandle edge);
 
     /**@}*/
 
