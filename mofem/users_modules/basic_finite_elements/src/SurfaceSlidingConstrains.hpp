@@ -147,8 +147,8 @@ struct GenericSliding {
                 "Data inconsistency");
       }
       MatrixDouble jac(row_indices.size(), col_indices.size());
-      for (int rr = 0; rr != row_indices.size(); ++rr) {
-        for (int cc = 0; cc != col_indices.size(); ++cc) {
+      for (unsigned int rr = 0; rr != row_indices.size(); ++rr) {
+        for (unsigned int cc = 0; cc != col_indices.size(); ++cc) {
           jac(rr, cc) = (*jacobianPtr)(shift_row + rr, shift_col + cc);
         }
       }

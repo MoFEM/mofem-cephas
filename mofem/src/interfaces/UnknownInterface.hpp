@@ -111,6 +111,7 @@ struct UnknownInterface {
   inline MoFEMErrorCode getInterface(const MOFEMuuid &uuid,
                                      IFACE *&iface) const {
     MoFEMFunctionBeginHot;
+    iface = NULL;
     if (VERIFY) {
       if (boost::typeindex::type_id<IFACE>()!=getClassIdx(uuid)) {
         SETERRQ(PETSC_COMM_SELF, MOFEM_INVALID_DATA,

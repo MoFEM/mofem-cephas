@@ -385,7 +385,7 @@ enum VERBOSITY_LEVELS { QUIET = 0, VERBOSE, VERY_VERBOSE, NOISY, VERY_NOISY };
  */
 #define BARRIER_MOFEM_RANK_START(MOFEM)                                        \
   {                                                                            \
-    for (unsigned int i = 0; i < (MOFEM)->get_comm_rank(); i++)                \
+    for (int i = 0; i < (MOFEM)->get_comm_rank(); i++)                         \
       MPI_Barrier((MOFEM)->get_comm());                                        \
   };
 
@@ -398,8 +398,7 @@ enum VERBOSITY_LEVELS { QUIET = 0, VERBOSE, VERY_VERBOSE, NOISY, VERY_NOISY };
  */
 #define BARRIER_MOFEM_RANK_END(MOFEM)                                          \
   {                                                                            \
-    for (unsigned int i = (MOFEM)->get_comm_rank();                            \
-         i < (MOFEM)->get_comm_size(); i++)                                    \
+    for (int i = (MOFEM)->get_comm_rank(); i < (MOFEM)->get_comm_size(); i++)  \
       MPI_Barrier((MOFEM)->get_comm());                                        \
   };
 

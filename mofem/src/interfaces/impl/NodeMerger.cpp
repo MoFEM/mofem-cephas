@@ -344,17 +344,17 @@ MoFEMErrorCode NodeMergerInterface::mergeNodes(
   for (auto ent : adj_mother_ents) {
     int num_nodes;
     const EntityHandle *conn = get_conn(ent, &num_nodes);
-    EntityHandle new_conn[num_nodes];
+    // EntityHandle new_conn[num_nodes];
     EntityHandle small_conn[num_nodes];
     int nb_new_node = 0;
     int nn = 0;
     int ii = 0;
     for (; nn != num_nodes; ++nn) {
       if (conn[nn] == mother) {
-        new_conn[nn] = father;
+        // new_conn[nn] = father;
         nb_new_node++;
       } else {
-        new_conn[nn] = conn[nn];
+        // new_conn[nn] = conn[nn];
         small_conn[ii++] = conn[nn];
       }
     }

@@ -260,6 +260,11 @@ struct {
   programmer more clearly. When writing C++, always use the C++ ones over the  C
   style. If you see the C-style cast, please take the opportunity to fix this.
 
+- Use nullptr instead NULL as a default argument in the function. nullptr
+  keyword designates an rvalue constant that serves as a universal null pointer
+  literal, replacing the buggy and weakly-typed literal 0 and the infamous NULL
+  macro. 
+
 - C++ Partial Template Specialization, see <https://stackoverflow.com/a/6142796/8043075>
   for details. \code
   template<typename A, typename B>

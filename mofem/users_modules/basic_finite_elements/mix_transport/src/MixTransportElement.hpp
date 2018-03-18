@@ -1253,7 +1253,7 @@ struct MixTransportElement {
         EntityHandle fe_ent = getNumeredEntFiniteElementPtr()->getEnt();
         int nb_dofs = data.getFieldData().size();
         int nb_gauss_pts = data.getHdivN().size1();
-        if(3*nb_dofs!=data.getHdivN().size2()) {
+        if(3*nb_dofs!=static_cast<int>(data.getHdivN().size2())) {
           SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"wrong number of dofs");
         }
         NN.resize(nb_dofs,nb_dofs);
@@ -1684,12 +1684,12 @@ struct MixTransportElement {
 
           // it is only one face, so it has to be bc natural boundary condition
           if(valMap.size()==1) {
-            if(valMap.begin()->second.size()!=nb_gauss_pts) {
+            if(static_cast<int>(valMap.begin()->second.size())!=nb_gauss_pts) {
               SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"wrong number of integration points");
             }
             for(int gg = 0;gg!=nb_gauss_pts;gg++) {
               double x,y,z;
-              if(getNormalsAtGaussPt().size1() == (unsigned int)nb_gauss_pts) {
+              if(static_cast<int>(getNormalsAtGaussPt().size1()) == nb_gauss_pts) {
                 x = getHoCoordsAtGaussPts()(gg,0);
                 y = getHoCoordsAtGaussPts()(gg,1);
                 z = getHoCoordsAtGaussPts()(gg,2);
@@ -1701,7 +1701,7 @@ struct MixTransportElement {
               double value;
               ierr = cTx.getBcOnValues(fe_ent,gg,x,y,z,value); CHKERRG(ierr);
               double w = getGaussPts()(2,gg);
-              if(getNormalsAtGaussPt().size1() == (unsigned int)nb_gauss_pts) {
+              if(static_cast<int>(getNormalsAtGaussPt().size1()) == nb_gauss_pts) {
                 w *= norm_2(getNormalsAtGaussPt(gg))*0.5;
               } else {
                 w *= getArea();

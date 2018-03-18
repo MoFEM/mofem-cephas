@@ -838,7 +838,7 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(Range *fixed_edges,
       }
     }
 
-    if (vertices_on_cut_edges.size() != num_nodes) {
+    if (static_cast<int>(vertices_on_cut_edges.size()) != num_nodes) {
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Data inconsistency");
     }
 
@@ -2063,8 +2063,8 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
   LengthMapData_multi_index length_map;
   new_surf = surface;
 
-  double ave0, ave, min0, min = 0, min_p = 0, min_pp;
-  for (int pp = 0; pp != nbMaxMergingCycles; pp++) {
+  double ave0 = 0, ave = 0, min = 0, min_p = 0, min_pp;
+  for (int pp = 0; pp != nbMaxMergingCycles; ++pp) {
 
     int nb_nodes_merged_p = nb_nodes_merged;
     length_map.clear();
@@ -2075,7 +2075,6 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
     min = length_map.get<0>().begin()->qUality;
     if(pp == 0) {
       ave0 = ave;
-      min0 = length_map.get<0>().begin()->qUality;
     }
 
     int nn = 0;
@@ -2143,7 +2142,7 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
         collapsed_edges.insert(mit->eDge);
       }
 
-      if (nn > length_map.size() / fraction_level)
+      if (nn > static_cast<int>(length_map.size() / fraction_level))
         break;
       if (mit->qUality > ave)
         break;

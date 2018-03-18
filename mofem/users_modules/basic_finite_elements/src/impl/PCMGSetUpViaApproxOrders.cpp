@@ -350,7 +350,7 @@ MoFEMErrorCode DMMGViaApproxOrdersReplaceCoarseningIS(DM dm, IS *is_vec,
       continue;
     }
   }
-  if (dm_field->coarseningIS.size() < nb_elems) {
+  if (static_cast<int>(dm_field->coarseningIS.size()) < nb_elems) {
     for (; ii < nb_elems - 1; ii++) {
       Mat subA;
       CHKERR DMMGViaApproxOrdersPushBackCoarseningIS(dm, is_vec[ii], A, &subA,
@@ -362,7 +362,7 @@ MoFEMErrorCode DMMGViaApproxOrdersReplaceCoarseningIS(DM dm, IS *is_vec,
                                                    false);
     nb_added++;
   } else {
-    for (; ii < dm_field->coarseningIS.size(); ii++) {
+    for (; ii < static_cast<int>(dm_field->coarseningIS.size()); ii++) {
       CHKERR DMMGViaApproxOrdersPopBackCoarseningIS(dm);
       nb_deleted++;
     }
@@ -460,7 +460,7 @@ MoFEMErrorCode DMCreateMatrix_MGViaApproxOrders(DM dm, Mat *M) {
       SETERRQ(comm, MOFEM_DATA_INCONSISTENCY,
               "data inconsistency, operator can not be set");
     }
-    if (dm_field->kspOperators.size() < leveldown) {
+    if (static_cast<int>(dm_field->kspOperators.size()) < leveldown) {
       SETERRQ(comm, MOFEM_DATA_INCONSISTENCY,
               "data inconsistency, no IS for that level");
     }
@@ -515,7 +515,7 @@ MoFEMErrorCode DMCreateInterpolation_MGViaApproxOrders(DM dm1, DM dm2, Mat *mat,
   {
     // Coarser mesh
     GET_DM_FIELD(dm_down);
-    if (dm_field->coarseningIS.size() < dm_down_leveldown) {
+    if (static_cast<int>(dm_field->coarseningIS.size()) < dm_down_leveldown) {
       SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
     }
     is_down = dm_field->coarseningIS[dm_field->coarseningIS.size() - 1 -
@@ -526,7 +526,7 @@ MoFEMErrorCode DMCreateInterpolation_MGViaApproxOrders(DM dm1, DM dm2, Mat *mat,
   {
     // Finer mesh
     GET_DM_FIELD(dm_up);
-    if (dm_field->coarseningIS.size() < dm_up_leveldown) {
+    if (static_cast<int>(dm_field->coarseningIS.size()) < dm_up_leveldown) {
       SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
     }
     is_up =
