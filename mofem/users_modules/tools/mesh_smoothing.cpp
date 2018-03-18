@@ -416,7 +416,6 @@ int main(int argc, char *argv[]) {
       }
 
       MoFEMErrorCode setCoordsFromField(DM dm) const {
-        double coords[3];
         MoFEMFunctionBegin;
         MoFEM::Interface *m_field_ptr;
         CHKERR DMoFEMGetInterfacePtr(dm, &m_field_ptr);

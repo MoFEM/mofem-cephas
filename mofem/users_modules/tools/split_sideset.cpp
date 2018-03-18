@@ -165,7 +165,7 @@ int main(int argc, char *argv[]) {
     }
 
     if (squash_bit_levels == PETSC_TRUE) {
-      for (int ll = 0; ll != bit_levels.size() - 1; ll++) {
+      for (unsigned int ll = 0; ll != bit_levels.size() - 1; ll++) {
         CHKERR m_field.delete_ents_by_bit_ref(bit_levels[ll], bit_levels[ll],
                                               true);
       }
