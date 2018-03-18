@@ -1077,7 +1077,7 @@ MoFEMErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dx::doWork(
     k.clear();
     jac.resize(9, nb_col, false);
 
-    for (unsigned int gg = 0; gg != nb_gauss_pts; gg++) {
+    for (int gg = 0; gg != nb_gauss_pts; gg++) {
       ierr = getJac(col_data, gg);
       CHKERRG(ierr);
       double val = getVolume() * getGaussPts()(3, gg);

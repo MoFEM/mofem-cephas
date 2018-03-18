@@ -138,7 +138,7 @@ struct SetBitRefLevelTool {
       RefEntity_multiIndex::iterator rit, hi_rit;
       rit = refEntsPtr->lower_bound(pit->first);
       hi_rit = refEntsPtr->upper_bound(pit->second);
-      if(std::distance(rit,hi_rit) != (pit->second-pit->first+1)) {
+      if(static_cast<int>(std::distance(rit,hi_rit)) != static_cast<int>(pit->second-pit->first+1)) {
         SETERRQ2(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY,
                  "data inconsistency %d != %d", std::distance(rit, hi_rit),
                  pit->second - pit->first + 1);

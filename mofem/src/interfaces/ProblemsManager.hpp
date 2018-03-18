@@ -69,18 +69,19 @@ struct ProblemsManager : public UnknownInterface {
    */
   MoFEMErrorCode partitionMesh(const Range &ents, const int dim,
                                const int adj_dim, const int n_parts,
-                               Tag *th_vertex_weights, Tag *th_edge_weights,
-                               Tag *th_part_weights, int verb = 1,
-                               const bool debug = false);
+                               Tag *th_vertex_weights = nullptr,
+                               Tag *th_edge_weights = nullptr,
+                               Tag *th_part_weights = nullptr,
+                               int verb = VERBOSE, const bool debug = false);
 
   /// \deprecated do not use this one
-  DEPRECATED MoFEMErrorCode partitionMesh(const Range &ents, const int dim,
-                                          const int adj_dim, const int n_parts,
-                                          int verb = 1,
-                                          const bool debug = false) {
-    return partitionMesh(ents, dim, adj_dim, n_parts, NULL, NULL, NULL, verb,
-                         debug);
-  }
+  // DEPRECATED MoFEMErrorCode partitionMesh(const Range &ents, const int dim,
+  //                                         const int adj_dim, const int n_parts,
+  //                                         int verb = VERBOSE,
+  //                                         const bool debug = false) {
+  //   return partitionMesh(ents, dim, adj_dim, n_parts, nullptr, nullptr, nullptr,
+  //                        verb, debug);
+  // }
 
   /** \brief build problem data structures
    * \ingroup mofem_problems_manager
@@ -98,7 +99,7 @@ struct ProblemsManager : public UnknownInterface {
    *
    */
   MoFEMErrorCode buildProblem(const std::string &name, const bool square_matrix,
-                              int verb = 1);
+                              int verb = VERBOSE);
 
   /** \brief build problem data structures
    * \ingroup mofem_problems_manager
@@ -116,7 +117,7 @@ struct ProblemsManager : public UnknownInterface {
    *
    */
   MoFEMErrorCode buildProblem(Problem *problem_ptr, const bool square_matrix,
-                              int verb = 1);
+                              int verb = VERBOSE);
 
   /** \brief build problem data structures, assuming that mesh is distributed
    (collective)
@@ -131,7 +132,7 @@ struct ProblemsManager : public UnknownInterface {
    */
   MoFEMErrorCode buildProblemOnDistributedMesh(const std::string &name,
                                                const bool square_matrix,
-                                               int verb = 1);
+                                               int verb = VERBOSE);
 
   /** \brief build problem data structures, assuming that mesh is distributed
    (collective)
@@ -146,7 +147,7 @@ struct ProblemsManager : public UnknownInterface {
    */
   MoFEMErrorCode buildProblemOnDistributedMesh(Problem *problem_ptr,
                                                const bool square_matrix = true,
-                                               int verb = 1);
+                                               int verb = VERBOSE);
 
   /**
    * \brief build sub problem
@@ -160,7 +161,8 @@ struct ProblemsManager : public UnknownInterface {
                                  const std::vector<std::string> &fields_row,
                                  const std::vector<std::string> &fields_col,
                                  const std::string &main_problem,
-                                 const bool square_matrix = true, int verb = 1);
+                                 const bool square_matrix = true,
+                                 int verb = VERBOSE);
 
   /**
    * \brief build composite problem
@@ -196,27 +198,28 @@ struct ProblemsManager : public UnknownInterface {
                                   const std::string &problem_for_rows,
                                   bool copy_rows,
                                   const std::string &problem_for_cols,
-                                  bool copy_cols, int verb = 1);
+                                  bool copy_cols, int verb = VERBOSE);
 
   /** \brief partition problem dofs
    * \ingroup mofem_problems_manager
    *
    * \param name problem name
    */
-  MoFEMErrorCode partitionSimpleProblem(const std::string &name, int verb = 1);
+  MoFEMErrorCode partitionSimpleProblem(const std::string &name,
+                                        int verb = VERBOSE);
 
   /** \brief partition problem dofs (collective)
    * \ingroup mofem_problems_manager
    *
    * \param name problem name
    */
-  MoFEMErrorCode partitionProblem(const std::string &name, int verb = 1);
+  MoFEMErrorCode partitionProblem(const std::string &name, int verb = VERBOSE);
 
   MoFEMErrorCode printPartitionedProblem(const Problem *problem_ptr,
-                                         int verb = 1);
+                                         int verb = VERBOSE);
 
   MoFEMErrorCode debugPartitionedProblem(const Problem *problem_ptr,
-                                         int verb = 1);
+                                         int verb = VERBOSE);
 
   /** \brief partition finite elements
    * \ingroup mofem_problems_manager
@@ -230,7 +233,7 @@ struct ProblemsManager : public UnknownInterface {
   MoFEMErrorCode partitionFiniteElements(const std::string &name,
                                          bool part_from_moab = false,
                                          int low_proc = -1, int hi_proc = -1,
-                                         int verb = 1);
+                                         int verb = VERBOSE);
 
   /** \brief determine ghost nodes
    * \ingroup mofem_problems_manager
@@ -240,7 +243,8 @@ struct ProblemsManager : public UnknownInterface {
    * owned by that partitition.
    *
    */
-  MoFEMErrorCode partitionGhostDofs(const std::string &name, int verb = 1);
+  MoFEMErrorCode partitionGhostDofs(const std::string &name,
+                                    int verb = VERBOSE);
 
   /** \brief determine ghost nodes on distributed meshes
    * \ingroup mofem_problems_manager
@@ -254,7 +258,7 @@ struct ProblemsManager : public UnknownInterface {
    *
    */
   MoFEMErrorCode partitionGhostDofsOnDistributedMesh(const std::string &name,
-                                                     int verb = 1);
+                                                     int verb = VERBOSE);
 
   /**
    * \create meshset problem finite elements

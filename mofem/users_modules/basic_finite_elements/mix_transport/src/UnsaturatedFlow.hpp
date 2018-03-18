@@ -930,7 +930,7 @@ namespace MixTransport {
           if(data.getFieldData().size()==0) MoFEMFunctionReturnHot(0);
           int nb_dofs = data.getFieldData().size();
           int nb_gauss_pts = data.getN().size1();
-          if(nb_dofs!=data.getN().size2()) {
+          if(nb_dofs!=static_cast<int>(data.getN().size2())) {
             SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"wrong number of dofs");
           }
           nN.resize(nb_dofs,nb_dofs,false);

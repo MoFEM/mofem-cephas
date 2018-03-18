@@ -24,7 +24,7 @@
 #define __POSTPROCSTRESSES_HPP__
 
 #ifndef WITH_ADOL_C
-  #error "MoFEM need to be compiled with ADOL-C"
+#error "MoFEM need to be compiled with ADOL-C"
 #endif
 
 struct PostProcStress
@@ -34,7 +34,7 @@ struct PostProcStress
   std::vector<EntityHandle> &mapGaussPts;
 
   NonlinearElasticElement::BlockData &dAta;
-  PostProcVolumeOnRefinedMesh::CommonData &commonData;
+  PostProcCommonOnRefMesh::CommonDataForVolume &commonData;
   bool fieldDisp;
   bool replaceNonANumberByMaxValue;
 
@@ -42,8 +42,8 @@ struct PostProcStress
                  std::vector<EntityHandle> &map_gauss_pts,
                  const std::string field_name,
                  NonlinearElasticElement::BlockData &data,
-                 PostProcVolumeOnRefinedMesh::CommonData &common_data,
-                 bool field_disp                      = false,
+                 PostProcCommonOnRefMesh::CommonDataForVolume &common_data,
+                 bool field_disp = false,
                  bool replace_nonanumber_by_max_value = false)
       : MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator(
             field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
@@ -70,7 +70,7 @@ struct PostProcStress
     CHKERR getNumeredEntFiniteElementPtr()->getRowDofsByPetscGlobalDofIdx(
         data.getIndices()[0], &dof_ptr);
 
-    int id  = dAta.iD;
+    int id = dAta.iD;
 
     Tag th_id;
     int def_block_id = -1;
@@ -78,23 +78,24 @@ struct PostProcStress
                                        MB_TAG_CREAT | MB_TAG_SPARSE,
                                        &def_block_id);
     Range::iterator tit = commonData.tEts.begin();
-    for(;tit!=commonData.tEts.end();tit++) {
-      rval = postProcMesh.tag_set_data(th_id,&*tit,1,&id);  CHKERRG(rval);
+    for (; tit != commonData.tEts.end(); tit++) {
+      rval = postProcMesh.tag_set_data(th_id, &*tit, 1, &id);
+      CHKERRG(rval);
     }
 
-    string tag_name_piola1 = dof_ptr->getName()+"_PIOLA1_STRESS";
-    string tag_name_energy = dof_ptr->getName()+"_ENERGY_DENSITY";
+    string tag_name_piola1 = dof_ptr->getName() + "_PIOLA1_STRESS";
+    string tag_name_energy = dof_ptr->getName() + "_ENERGY_DENSITY";
 
     int tag_length = 9;
     double def_VAL[tag_length];
-    bzero(def_VAL,tag_length*sizeof(double));
-    Tag th_piola1,th_energy;
-    CHKERR postProcMesh.tag_get_handle(
-      tag_name_piola1.c_str(),tag_length,MB_TYPE_DOUBLE,th_piola1,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL
-    ); 
-    CHKERR postProcMesh.tag_get_handle(
-      tag_name_energy.c_str(),1,MB_TYPE_DOUBLE,th_energy,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL
-    ); 
+    bzero(def_VAL, tag_length * sizeof(double));
+    Tag th_piola1, th_energy;
+    CHKERR postProcMesh.tag_get_handle(tag_name_piola1.c_str(), tag_length,
+                                       MB_TYPE_DOUBLE, th_piola1,
+                                       MB_TAG_CREAT | MB_TAG_SPARSE, def_VAL);
+    CHKERR postProcMesh.tag_get_handle(tag_name_energy.c_str(), 1,
+                                       MB_TYPE_DOUBLE, th_energy,
+                                       MB_TAG_CREAT | MB_TAG_SPARSE, def_VAL);
 
     int nb_gauss_pts = data.getN().size1();
     if (mapGaussPts.size() != (unsigned int)nb_gauss_pts) {
@@ -112,7 +113,7 @@ struct PostProcStress
     double detH;
 
     dAta.materialDoublePtr->commonDataPtr = &nonLinearElementCommonData;
-    dAta.materialDoublePtr->opPtr         = this;
+    dAta.materialDoublePtr->opPtr = this;
     CHKERR dAta.materialDoublePtr->getDataOnPostProcessor(commonData.fieldMap,
                                                           commonData.gradMap);
 
@@ -157,8 +158,9 @@ struct PostProcStress
           replaceNonANumberByMaxValue) {
         // If value is non a number because of singularity repleca it max double
         // value
-        for (int r = 0; r != dAta.materialDoublePtr->P.size1(); r++) {
-          for (int c = 0; c != dAta.materialDoublePtr->P.size2(); c++) {
+        for (unsigned int r = 0; r != dAta.materialDoublePtr->P.size1(); ++r) {
+          for (unsigned int c = 0; c != dAta.materialDoublePtr->P.size2();
+               ++c) {
             if (std::isnormal(dAta.materialDoublePtr->P(r, c))) {
               maxP(r, c) =
                   copysign(std::max(fabs(dAta.materialDoublePtr->P(r, c)),
@@ -181,7 +183,7 @@ struct PostProcStress
 
     if (replaceNonANumberByMaxValue && max_energy > 0) {
       MatrixDouble3by3 P(3, 3);
-      for (int gg = 0; gg != nb_gauss_pts; gg++) {
+      for (int gg = 0; gg != nb_gauss_pts; ++gg) {
         double val_energy;
         CHKERR postProcMesh.tag_get_data(th_energy, &mapGaussPts[gg], 1,
                                          &val_energy);
@@ -190,8 +192,8 @@ struct PostProcStress
                                            &max_energy);
           CHKERR postProcMesh.tag_get_data(th_piola1, &mapGaussPts[gg], 1,
                                            &P(0, 0));
-          for (int r = 0; r != P.size1(); r++) {
-            for (int c = 0; c != P.size2(); c++) {
+          for (unsigned int r = 0; r != P.size1(); ++r) {
+            for (unsigned int c = 0; c != P.size2(); ++c) {
               if (!std::isnormal(P(r, c)))
                 P(r, c) = maxP(r, c);
             }

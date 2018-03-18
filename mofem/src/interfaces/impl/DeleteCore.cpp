@@ -90,13 +90,13 @@ MoFEMErrorCode Core::clear_dofs_fields(const Range &ents, int verb) {
     if (dit == dofsField.get<Ent_mi_tag>().end())
       continue;
     hi_dit = dofsField.get<Ent_mi_tag>().upper_bound(second);
-    bool last_hi_dit;
-    if (hi_dit == dofsField.get<Ent_mi_tag>().end()) {
-      last_hi_dit = true;
-    } else {
-      last_hi_dit = false;
-    }
 
+    // bool last_hi_dit;
+    // if (hi_dit == dofsField.get<Ent_mi_tag>().end()) {
+    //   last_hi_dit = true;
+    // } else {
+    //   last_hi_dit = false;
+    // }
     // clear dofs in finite elements
     // FieldEntityEntFiniteElementAdjacencyMap_multiIndex::index<
     //     Ent_mi_tag>::type::iterator ait,
