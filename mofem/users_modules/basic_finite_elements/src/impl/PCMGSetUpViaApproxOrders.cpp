@@ -190,11 +190,11 @@ DMMGViaApproxOrdersCtx::query_interface(const MOFEMuuid &uuid,
 
 #define GET_DM_FIELD(DM)                                                       \
   MoFEM::UnknownInterface *iface;                                              \
-  ierr = ((DMCtx *)DM->data)                                                   \
-             ->query_interface(IDD_DMMGVIAAPPROXORDERSCTX, &iface);            \
-  CHKERRG(ierr);                                                               \
+  CHKERR((DMCtx *)DM->data)                                                    \
+      ->query_interface(IDD_DMMGVIAAPPROXORDERSCTX, &iface);                   \
   DMMGViaApproxOrdersCtx *dm_field =                                           \
-      static_cast<DMMGViaApproxOrdersCtx *>(iface)
+      static_cast<DMMGViaApproxOrdersCtx *>(iface);                            \
+  NOT_USED(dm_field)
 
 MoFEMErrorCode DMMGViaApproxOrdersGetCtx(DM dm, DMMGViaApproxOrdersCtx **ctx) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);

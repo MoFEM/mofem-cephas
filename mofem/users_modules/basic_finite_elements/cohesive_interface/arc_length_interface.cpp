@@ -662,7 +662,7 @@ int main(int argc, char *argv[]) {
     for (_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(
              m_field, SIDESET | PRESSURESET, it)) {
       CHKERR neumann_forces.at(fe_name_str)
-          .addPreassure("DISPLACEMENT", arc_ctx->F_lambda, it->getMeshsetId());
+          .addPressure("DISPLACEMENT", arc_ctx->F_lambda, it->getMeshsetId());
     }
     // add nodal forces
     boost::ptr_map<std::string, NodalForce> nodal_forces;

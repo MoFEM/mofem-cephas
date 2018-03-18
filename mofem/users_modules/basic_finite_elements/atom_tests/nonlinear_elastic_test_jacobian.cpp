@@ -8,9 +8,6 @@ namespace bio = boost::iostreams;
 using bio::tee_device;
 using bio::stream;
 
-
-
-
 static char help[] = "...\n\n";
 
 struct OpCheck: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
@@ -70,7 +67,7 @@ struct OpCheck: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperato
 
 int main(int argc, char *argv[]) {
 
-  PetscInitialize(&argc,&argv,(char *)0,help);
+  MoFEM::Core::Initialize(&argc,&argv,(char *)0,help);
 
   try {
 
@@ -84,8 +81,6 @@ int main(int argc, char *argv[]) {
       "HOOKE",
       "NEOHOOKEAN"
     };
-
-
 
     PetscBool flg_test_mat;
     PetscInt choise_value = HOOKE;
@@ -114,7 +109,7 @@ int main(int argc, char *argv[]) {
     //ref meshset ref level 0
     BitRefLevel bit_level0;
     bit_level0.set(0);
-    ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRG(ierr);
+    ierr = m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(0,3, bit_level0); CHKERRG(ierr);
 
     //Fields
     ierr = m_field.add_field("SPATIAL_POSITION",H1,AINSWORTH_LEGENDRE_BASE,3); CHKERRG(ierr);
@@ -230,11 +225,10 @@ int main(int argc, char *argv[]) {
 
     }
 
-  } catch (MoFEMException const &e) {
-    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
   }
+  CATCH_ERRORS;
 
-  PetscFinalize();
+  MoFEM::Core::Finalize();
 
   return 0;
 }

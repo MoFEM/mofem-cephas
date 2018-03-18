@@ -326,16 +326,19 @@ int main(int argc, char *argv[]) {
     Mat Aij;
     CHKERR m_field.MatCreateMPIAIJWithArrays("ELASTIC_MECHANICS", &Aij);
 
-    ArcLengthCtx *arc_ctx = new ArcLengthCtx(m_field, "ELASTIC_MECHANICS");
+    boost::shared_ptr<ArcLengthCtx> arc_ctx =
+        boost::shared_ptr<ArcLengthCtx>(new ArcLengthCtx(m_field,
+                                                         "ELASTIC_MECHANICS"));
 
     PetscInt M, N;
     CHKERR MatGetSize(Aij, &M, &N);
     PetscInt m, n;
     CHKERR MatGetLocalSize(Aij, &m, &n);
-    ArcLengthMatShell *mat_ctx =
-        new ArcLengthMatShell(Aij, arc_ctx, "ELASTIC_MECHANICS");
+    boost::scoped_ptr<ArcLengthMatShell> mat_ctx(
+            new ArcLengthMatShell(Aij, arc_ctx, "ELASTIC_MECHANICS"));
+
     Mat ShellAij;
-    CHKERR MatCreateShell(PETSC_COMM_WORLD, m, n, M, N, (void *)mat_ctx,
+    CHKERR MatCreateShell(PETSC_COMM_WORLD, m, n, M, N, mat_ctx.get(),
                           &ShellAij);
     CHKERR MatShellSetOperation(ShellAij, MATOP_MULT,
                                 (void (*)(void))ArcLengthMatMultShellOp);
@@ -355,9 +358,7 @@ int main(int argc, char *argv[]) {
     PetscPrintf(PETSC_COMM_WORLD, "Nb. nodes in load path: %u\n",
                 node_set.size());
 
-    SphericalArcLengthControl *arc_method_ptr =
-        new SphericalArcLengthControl(arc_ctx);
-    SphericalArcLengthControl &arc_method = *arc_method_ptr;
+    SphericalArcLengthControl arc_method(arc_ctx);
 
     double scaled_reference_load = 1;
     double *scale_lhs            = &(arc_ctx->getFieldData());
@@ -379,18 +380,22 @@ int main(int argc, char *argv[]) {
              m_field, SIDESET | PRESSURESET, it)) {
       CHKERR fe_neumann.addPressure(it->getMeshsetId());
     }
-    DirichletSpatialPositionsBc my_dirichlet_bc(m_field, "SPATIAL_POSITION",
-                                                Aij, D, F);
+
+    boost::shared_ptr<FEMethod> my_dirichlet_bc =
+        boost::shared_ptr<FEMethod>(new DirichletSpatialPositionsBc(
+            m_field, "SPATIAL_POSITION", Aij, D, F));
     CHKERR m_field.get_problem("ELASTIC_MECHANICS",
-                               &my_dirichlet_bc.problemPtr);
-    CHKERR my_dirichlet_bc.iNitalize();
+                               &(my_dirichlet_bc->problemPtr));
+    CHKERR dynamic_cast<DirichletSpatialPositionsBc *>(my_dirichlet_bc.get())
+        ->iNitalize();
 
     struct AssembleRhsVectors : public FEMethod {
 
-      ArcLengthCtx *arcPtr;
+      boost::shared_ptr<ArcLengthCtx> arcPtr;
       Range &nodeSet;
 
-      AssembleRhsVectors(ArcLengthCtx *arc_ptr, Range &node_set)
+      AssembleRhsVectors(boost::shared_ptr<ArcLengthCtx> &arc_ptr,
+                         Range &node_set)
           : arcPtr(arc_ptr), nodeSet(node_set) {}
 
       MoFEMErrorCode preProcess() {
@@ -455,12 +460,14 @@ int main(int argc, char *argv[]) {
 
     struct AddLambdaVectorToFInternal : public FEMethod {
 
-      ArcLengthCtx *arcPtr;
-      DirichletSpatialPositionsBc *bC;
+      boost::shared_ptr<ArcLengthCtx> arcPtr;
+      boost::shared_ptr<DirichletSpatialPositionsBc> bC;
 
-      AddLambdaVectorToFInternal(ArcLengthCtx *arc_ptr,
-                                 DirichletSpatialPositionsBc *bc)
-          : arcPtr(arc_ptr), bC(bc) {}
+      AddLambdaVectorToFInternal(boost::shared_ptr<ArcLengthCtx> &arc_ptr,
+                                 boost::shared_ptr<FEMethod> &bc)
+          : arcPtr(arc_ptr),
+            bC(boost::shared_ptr<DirichletSpatialPositionsBc>(
+                bc, dynamic_cast<DirichletSpatialPositionsBc *>(bc.get()))) {}
 
       MoFEMErrorCode preProcess() {
         MoFEMFunctionBeginHot;
@@ -506,7 +513,7 @@ int main(int argc, char *argv[]) {
     };
 
     AssembleRhsVectors pre_post_method(arc_ctx, node_set);
-    AddLambdaVectorToFInternal assemble_F_lambda(arc_ctx, &my_dirichlet_bc);
+    AddLambdaVectorToFInternal assemble_F_lambda(arc_ctx, my_dirichlet_bc);
 
     SNES snes;
     CHKERR SNESCreate(PETSC_COMM_WORLD, &snes);
@@ -531,9 +538,10 @@ int main(int argc, char *argv[]) {
     CHKERR SNESGetKSP(snes, &ksp);
     PC pc;
     CHKERR KSPGetPC(ksp, &pc);
-    PCArcLengthCtx *pc_ctx = new PCArcLengthCtx(ShellAij, Aij, arc_ctx);
+    boost::scoped_ptr<PCArcLengthCtx> pc_ctx(
+        new PCArcLengthCtx(ShellAij, Aij, arc_ctx));
     CHKERR PCSetType(pc, PCSHELL);
-    CHKERR PCShellSetContext(pc, pc_ctx);
+    CHKERR PCShellSetContext(pc, pc_ctx.get());
     CHKERR PCShellSetApply(pc, PCApplyArcLength);
     CHKERR PCShellSetSetUp(pc, PCSetupArcLength);
 
@@ -548,7 +556,7 @@ int main(int argc, char *argv[]) {
 
     SnesCtx::FEMethodsSequence &loops_to_do_Rhs =
         snes_ctx.get_loops_to_do_Rhs();
-    snes_ctx.get_preProcess_to_do_Rhs().push_back(&my_dirichlet_bc);
+    snes_ctx.get_preProcess_to_do_Rhs().push_back(my_dirichlet_bc);
     snes_ctx.get_preProcess_to_do_Rhs().push_back(&pre_post_method);
     loops_to_do_Rhs.push_back(
         SnesCtx::PairNameFEMethodPtr("ELASTIC", &elastic.getLoopFeRhs()));
@@ -594,18 +602,18 @@ int main(int argc, char *argv[]) {
     loops_to_do_Rhs.push_back(
         SnesCtx::PairNameFEMethodPtr("ARC_LENGTH", &arc_method));
     snes_ctx.get_postProcess_to_do_Rhs().push_back(&pre_post_method);
-    snes_ctx.get_postProcess_to_do_Rhs().push_back(&my_dirichlet_bc);
+    snes_ctx.get_postProcess_to_do_Rhs().push_back(my_dirichlet_bc);
 
     SnesCtx::FEMethodsSequence &loops_to_do_Mat =
         snes_ctx.get_loops_to_do_Mat();
-    snes_ctx.get_preProcess_to_do_Mat().push_back(&my_dirichlet_bc);
+    snes_ctx.get_preProcess_to_do_Mat().push_back(my_dirichlet_bc);
     loops_to_do_Mat.push_back(
         SnesCtx::PairNameFEMethodPtr("ELASTIC", &elastic.getLoopFeLhs()));
     loops_to_do_Mat.push_back(
         SnesCtx::PairNameFEMethodPtr("NEUMANN_FE", &fe_neumann));
     loops_to_do_Mat.push_back(
         SnesCtx::PairNameFEMethodPtr("ARC_LENGTH", &arc_method));
-    snes_ctx.get_postProcess_to_do_Mat().push_back(&my_dirichlet_bc);
+    snes_ctx.get_postProcess_to_do_Mat().push_back(my_dirichlet_bc);
 
     CHKERR m_field.getInterface<VecManager>()->setLocalGhostVector(
         "ELASTIC_MECHANICS", COL, D, INSERT_VALUES, SCATTER_FORWARD);
@@ -809,10 +817,6 @@ int main(int argc, char *argv[]) {
     CHKERR MatDestroy(&ShellAij);
     CHKERR SNESDestroy(&snes);
 
-    delete mat_ctx;
-    delete pc_ctx;
-    delete arc_ctx;
-    delete arc_method_ptr;
   }
   CATCH_ERRORS;
 

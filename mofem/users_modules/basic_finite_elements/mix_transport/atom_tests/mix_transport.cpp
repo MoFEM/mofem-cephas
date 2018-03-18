@@ -98,10 +98,11 @@ int main(int argc, char *argv[]) {
     //set entities bit level
     BitRefLevel ref_level;
     ref_level.set(0);
-    ierr = m_field.seed_ref_level_3D(0,ref_level); CHKERRG(ierr);
+    ierr = m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(0,3,ref_level); CHKERRG(ierr);
 
-    //set app. order
-    //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
+    // set app. order
+    // see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes
+    // (Mark Ainsworth & Joe Coyle)
     PetscInt order;
     ierr = PetscOptionsGetInt(PETSC_NULL,PETSC_NULL,"-my_order",&order,&flg); CHKERRG(ierr);
     if(flg != PETSC_TRUE) {
