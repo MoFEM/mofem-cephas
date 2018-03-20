@@ -404,12 +404,29 @@ struct SurfaceSlidingConstrains: public GenericSliding {
 
   DriverElementOrientation &crackFrontOrientation;
 
+  double aLpha;
+  MoFEMErrorCode getOptions() {
+    MoFEMFunctionBegin;
+    ierr = PetscOptionsBegin(PETSC_COMM_WORLD, "",
+                             "Get surface sliding constrains element scaling",
+                             "none");
+    CHKERRQ(ierr);
+    CHKERR PetscOptionsScalar("-surface_sliding_alpha", "scaling parameter", "",
+                              aLpha, &aLpha, PETSC_NULL);
+    ierr = PetscOptionsEnd();
+    CHKERRQ(ierr);
+    MoFEMFunctionReturn(0);
+  }
+
   SurfaceSlidingConstrains(MoFEM::Interface &m_field,
                            DriverElementOrientation &orientation)
       : mField(m_field), feRhsPtr(new MyTriangleFE(m_field)),
         feLhsPtr(new MyTriangleFE(m_field)), feRhs(*feRhsPtr), feLhs(*feLhsPtr),
-        crackFrontOrientation(orientation) {}
+        crackFrontOrientation(orientation), aLpha(1) {
 
+    ierr = getOptions();
+    CHKERRABORT(PETSC_COMM_WORLD, ierr);
+  }
 
   struct OpJacobian
       : public MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator {
@@ -421,36 +438,20 @@ struct SurfaceSlidingConstrains: public GenericSliding {
     DriverElementOrientation &oRientation;
     bool evaluateJacobian;
 
-    double aLpha;
-
-    MoFEMErrorCode getOptions() {
-      MoFEMFunctionBegin;
-      ierr = PetscOptionsBegin(PETSC_COMM_WORLD, "",
-                               "Get surface sliding constrains element scaling",
-                               "none");
-      CHKERRQ(ierr);
-      CHKERR PetscOptionsScalar("-surface_sliding_alpha", "scaling parameter",
-                                "", aLpha, &aLpha, PETSC_NULL);
-      ierr = PetscOptionsEnd();
-      CHKERRQ(ierr);
-      MoFEMFunctionReturn(0);
-    }
+    const double &aLpha;
 
     OpJacobian(int tag, const std::string field_name,
                boost::shared_ptr<VectorDouble> &active_variables_ptr,
                boost::shared_ptr<VectorDouble> &results_ptr,
                boost::shared_ptr<MatrixDouble> &jacobian_ptr,
                DriverElementOrientation &orientation, bool evaluate_jacobian,
-               const double alpha)
+               const double &alpha)
         : MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator(
               field_name, UserDataOperator::OPCOL),
           tAg(tag), activeVariablesPtr(active_variables_ptr),
           resultsPtr(results_ptr), jacobianPtr(jacobian_ptr),
           oRientation(orientation), evaluateJacobian(evaluate_jacobian),
-          aLpha(alpha) {
-      ierr = getOptions();
-      CHKERRABORT(PETSC_COMM_WORLD, ierr);
-    }
+          aLpha(alpha) {}
 
     MoFEMErrorCode doWork(int side, EntityType type,
                           DataForcesAndSourcesCore::EntData &data) {
@@ -578,8 +579,12 @@ struct SurfaceSlidingConstrains: public GenericSliding {
   MoFEMErrorCode setOperators(int tag,
                               const std::string lagrange_multipliers_field_name,
                               const std::string material_field_name,
-                              const double alpha = 1) {
+                              const double *alpha = nullptr) {
     MoFEMFunctionBegin;
+
+    if (alpha != nullptr) {
+      aLpha = *alpha;
+    }
 
     boost::shared_ptr<VectorDouble> active_variables_ptr(new VectorDouble(3+9));
     boost::shared_ptr<VectorDouble> results_ptr(new VectorDouble(3+9));
@@ -592,7 +597,7 @@ struct SurfaceSlidingConstrains: public GenericSliding {
         material_field_name, active_variables_ptr));
     feRhs.getOpPtrVector().push_back(new OpJacobian(
         tag, lagrange_multipliers_field_name, active_variables_ptr, results_ptr,
-        jacobian_ptr, crackFrontOrientation, false, alpha));
+        jacobian_ptr, crackFrontOrientation, false, aLpha));
     feRhs.getOpPtrVector().push_back(
         new OpAssembleRhs<3, 9>(lagrange_multipliers_field_name, results_ptr));
     feRhs.getOpPtrVector().push_back(
@@ -606,7 +611,7 @@ struct SurfaceSlidingConstrains: public GenericSliding {
         material_field_name, active_variables_ptr));
     feLhs.getOpPtrVector().push_back(new OpJacobian(
         tag, lagrange_multipliers_field_name, active_variables_ptr, results_ptr,
-        jacobian_ptr, crackFrontOrientation, true, alpha));
+        jacobian_ptr, crackFrontOrientation, true, aLpha));
     feLhs.getOpPtrVector().push_back(new OpAssembleLhs<3, 9>(
         lagrange_multipliers_field_name, material_field_name, jacobian_ptr));
     feLhs.getOpPtrVector().push_back(new OpAssembleLhs<3, 9>(
@@ -637,7 +642,7 @@ struct SurfaceSlidingConstrains: public GenericSliding {
         material_field_name, active_variables_ptr));
     feLhs.getOpPtrVector().push_back(new OpJacobian(
         tag, lagrange_multipliers_field_name, active_variables_ptr, results_ptr,
-        jacobian_ptr, crackFrontOrientation, true, 1));
+        jacobian_ptr, crackFrontOrientation, true, aLpha));
     feLhs.getOpPtrVector().push_back(
         new OpAssembleLhs<3,9>(lagrange_multipliers_field_name, material_field_name,
                           jacobian_ptr));
@@ -878,9 +883,28 @@ struct EdgeSlidingConstrains: public GenericSliding {
   MyEdgeFE &feLhs;
   MyEdgeFE &getLoopFeLhs() { return feLhs; }
 
+  double aLpha;
+
+  MoFEMErrorCode getOptions() {
+    MoFEMFunctionBegin;
+    ierr = PetscOptionsBegin(PETSC_COMM_WORLD, "",
+                             "Get edge sliding constrains element scaling",
+                             "none");
+    CHKERRQ(ierr);
+    CHKERR PetscOptionsScalar("-edge_sliding_alpha", "scaling parameter", "",
+                              aLpha, &aLpha, PETSC_NULL);
+    ierr = PetscOptionsEnd();
+    CHKERRQ(ierr);
+    MoFEMFunctionReturn(0);
+  }
+
   EdgeSlidingConstrains(MoFEM::Interface &m_field)
       : mField(m_field), feRhsPtr(new MyEdgeFE(m_field)),
-        feLhsPtr(new MyEdgeFE(m_field)), feRhs(*feRhsPtr), feLhs(*feLhsPtr) {}
+        feLhsPtr(new MyEdgeFE(m_field)), feRhs(*feRhsPtr), feLhs(*feLhsPtr),
+        aLpha(1) {
+    ierr = getOptions();
+    CHKERRABORT(PETSC_COMM_WORLD, ierr);
+  }
 
   struct OpJacobian
       : public MoFEM::EdgeElementForcesAndSourcesCore::UserDataOperator {
@@ -891,34 +915,18 @@ struct EdgeSlidingConstrains: public GenericSliding {
     boost::shared_ptr<MatrixDouble> jacobianPtr;
     bool evaluateJacobian;
 
-    double aLpha;
-
-    MoFEMErrorCode getOptions() {
-      MoFEMFunctionBegin;
-      ierr = PetscOptionsBegin(PETSC_COMM_WORLD, "",
-                               "Get edge sliding constrains element scaling",
-                               "none");
-      CHKERRQ(ierr);
-      CHKERR PetscOptionsScalar("-edge_sliding_alpha", "scaling parameter",
-                                "", aLpha, &aLpha, PETSC_NULL);
-      ierr = PetscOptionsEnd();
-      CHKERRQ(ierr);
-      MoFEMFunctionReturn(0);
-    }
+    const double &aLpha;
 
     OpJacobian(int tag, const std::string field_name,
                boost::shared_ptr<VectorDouble> &active_variables_ptr,
                boost::shared_ptr<VectorDouble> &results_ptr,
                boost::shared_ptr<MatrixDouble> &jacobian_ptr,
-               bool evaluate_jacobian, const double alpha)
+               bool evaluate_jacobian, const double &alpha)
         : MoFEM::EdgeElementForcesAndSourcesCore::UserDataOperator(
               field_name, UserDataOperator::OPCOL),
           tAg(tag), activeVariablesPtr(active_variables_ptr),
           resultsPtr(results_ptr), jacobianPtr(jacobian_ptr),
-          evaluateJacobian(evaluate_jacobian), aLpha(alpha) {
-      ierr = getOptions();
-      CHKERRABORT(PETSC_COMM_WORLD, ierr);
-    }
+          evaluateJacobian(evaluate_jacobian), aLpha(alpha) {}
 
     MoFEMErrorCode doWork(int side, EntityType type,
                           DataForcesAndSourcesCore::EntData &data) {
@@ -1080,8 +1088,12 @@ struct EdgeSlidingConstrains: public GenericSliding {
   MoFEMErrorCode setOperators(int tag,
                               const std::string lagrange_multipliers_field_name,
                               const std::string material_field_name,
-                              const double alpha = 1) {
+                              const double *alpha = nullptr) {
     MoFEMFunctionBegin;
+
+    if (alpha) {
+      aLpha = *alpha;
+    }
 
     boost::shared_ptr<VectorDouble> active_variables_ptr(
         new VectorDouble(4 + 6));
@@ -1096,7 +1108,7 @@ struct EdgeSlidingConstrains: public GenericSliding {
         material_field_name, active_variables_ptr));
     feRhs.getOpPtrVector().push_back(new OpJacobian(
         tag, lagrange_multipliers_field_name, active_variables_ptr, results_ptr,
-        jacobian_ptr, false, alpha));
+        jacobian_ptr, false, aLpha));
     feRhs.getOpPtrVector().push_back(
         new OpAssembleRhs<4, 6>(lagrange_multipliers_field_name, results_ptr));
     feRhs.getOpPtrVector().push_back(
@@ -1110,7 +1122,7 @@ struct EdgeSlidingConstrains: public GenericSliding {
         material_field_name, active_variables_ptr));
     feLhs.getOpPtrVector().push_back(new OpJacobian(
         tag, lagrange_multipliers_field_name, active_variables_ptr, results_ptr,
-        jacobian_ptr, true, alpha));
+        jacobian_ptr, true, aLpha));
     feLhs.getOpPtrVector().push_back(new OpAssembleLhs<4, 6>(
         lagrange_multipliers_field_name, material_field_name, jacobian_ptr));
     feLhs.getOpPtrVector().push_back(new OpAssembleLhs<4, 6>(
@@ -1154,7 +1166,7 @@ struct EdgeSlidingConstrains: public GenericSliding {
         material_field_name, active_variables_ptr));
     feLhs.getOpPtrVector().push_back(new OpJacobian(
         tag, lagrange_multipliers_field_name, active_variables_ptr, results_ptr,
-        jacobian_ptr, true, 1));
+        jacobian_ptr, true, aLpha));
     feLhs.getOpPtrVector().push_back(new OpAssembleLhs<4, 6>(
         lagrange_multipliers_field_name, material_field_name, jacobian_ptr));
 
