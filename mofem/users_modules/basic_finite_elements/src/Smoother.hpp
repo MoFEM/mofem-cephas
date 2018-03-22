@@ -177,7 +177,6 @@ struct Smoother {
 
       CHKERR dAta.materialAdoublePtr->calculateP_PiolaKirchhoffI(
           dAta, getNumeredEntFiniteElementPtr());
-      CHKERRG(ierr);
 
       commonData.sTress[gg].resize(3, 3, false);
       for (int dd1 = 0; dd1 < 3; dd1++) {
@@ -210,8 +209,8 @@ struct Smoother {
       MoFEMFunctionBegin;
 
       int nb_dofs = row_data.getIndices().size();
-
       int *indices_ptr = &row_data.getIndices()[0];
+
       if (!dAta.forcesOnlyOnEntitiesRow.empty()) {
         iNdices.resize(nb_dofs, false);
         noalias(iNdices) = row_data.getIndices();

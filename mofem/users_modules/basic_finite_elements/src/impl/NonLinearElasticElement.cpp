@@ -38,10 +38,9 @@ int NonlinearElasticElement::MyVolumeFE::getRule(int order) {
 };
 
 MoFEMErrorCode NonlinearElasticElement::MyVolumeFE::preProcess() {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
 
-  ierr = VolumeElementForcesAndSourcesCore::preProcess();
-  CHKERRG(ierr);
+  CHKERR VolumeElementForcesAndSourcesCore::preProcess();
 
   if (A != PETSC_NULL) {
     snes_B = A;
@@ -77,61 +76,46 @@ MoFEMErrorCode NonlinearElasticElement::MyVolumeFE::preProcess() {
   switch (snes_ctx) {
   case CTX_SNESNONE:
     if (rank == 0) {
-      ierr = VecCreateGhost(mField.get_comm(), 1, 1, 1, ghosts, &V);
-      CHKERRG(ierr);
+      CHKERR VecCreateGhost(mField.get_comm(), 1, 1, 1, ghosts, &V);
     } else {
-      ierr = VecCreateGhost(mField.get_comm(), 0, 1, 1, ghosts, &V);
-      CHKERRG(ierr);
+      CHKERR VecCreateGhost(mField.get_comm(), 0, 1, 1, ghosts, &V);
     }
-    ierr = VecZeroEntries(V);
-    CHKERRG(ierr);
-    ierr = VecGhostUpdateBegin(V, INSERT_VALUES, SCATTER_FORWARD);
-    CHKERRG(ierr);
-    ierr = VecGhostUpdateEnd(V, INSERT_VALUES, SCATTER_FORWARD);
-    CHKERRG(ierr);
+    CHKERR VecZeroEntries(V);
+    CHKERR VecGhostUpdateBegin(V, INSERT_VALUES, SCATTER_FORWARD);
+    CHKERR VecGhostUpdateEnd(V, INSERT_VALUES, SCATTER_FORWARD);
     break;
   default:
     break;
   }
 
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode NonlinearElasticElement::MyVolumeFE::postProcess() {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
 
   double *array;
 
   switch (snes_ctx) {
   case CTX_SNESNONE:
-    ierr = VecAssemblyBegin(V);
-    CHKERRG(ierr);
-    ierr = VecAssemblyEnd(V);
-    CHKERRG(ierr);
-    ierr = VecGhostUpdateBegin(V, ADD_VALUES, SCATTER_REVERSE);
-    CHKERRG(ierr);
-    ierr = VecGhostUpdateEnd(V, ADD_VALUES, SCATTER_REVERSE);
-    CHKERRG(ierr);
-    ierr = VecGhostUpdateBegin(V, INSERT_VALUES, SCATTER_FORWARD);
-    CHKERRG(ierr);
-    ierr = VecGhostUpdateEnd(V, INSERT_VALUES, SCATTER_FORWARD);
-    CHKERRG(ierr);
-    ierr = VecGetArray(V, &array);
-    CHKERRG(ierr);
+    CHKERR VecAssemblyBegin(V);
+    CHKERR VecAssemblyEnd(V);
+    CHKERR VecGhostUpdateBegin(V, ADD_VALUES, SCATTER_REVERSE);
+    CHKERR VecGhostUpdateEnd(V, ADD_VALUES, SCATTER_REVERSE);
+    CHKERR VecGhostUpdateBegin(V, INSERT_VALUES, SCATTER_FORWARD);
+    CHKERR VecGhostUpdateEnd(V, INSERT_VALUES, SCATTER_FORWARD);
+    CHKERR VecGetArray(V, &array);
     eNergy = array[0];
-    ierr = VecRestoreArray(V, &array);
-    CHKERRG(ierr);
-    ierr = VecDestroy(&V);
-    CHKERRG(ierr);
+    CHKERR VecRestoreArray(V, &array);
+    CHKERR VecDestroy(&V);
     break;
   default:
     break;
   }
 
-  ierr = VolumeElementForcesAndSourcesCore::postProcess();
-  CHKERRG(ierr);
+  CHKERR VolumeElementForcesAndSourcesCore::postProcess();
 
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 NonlinearElasticElement::NonlinearElasticElement(MoFEM::Interface &m_field,
@@ -808,7 +792,7 @@ NonlinearElasticElement::OpEnergy::OpEnergy(const std::string field_name,
 MoFEMErrorCode NonlinearElasticElement::OpEnergy::doWork(
     int row_side, EntityType row_type,
     DataForcesAndSourcesCore::EntData &row_data) {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
 
   if (row_type != MBVERTEX)
     MoFEMFunctionReturnHot(0);
@@ -817,42 +801,32 @@ MoFEMErrorCode NonlinearElasticElement::OpEnergy::doWork(
     MoFEMFunctionReturnHot(0);
   }
 
-  try {
+  std::vector<MatrixDouble> &F =
+      (commonData.gradAtGaussPts[commonData.spatialPositions]);
 
-    std::vector<MatrixDouble> &F =
-        (commonData.gradAtGaussPts[commonData.spatialPositions]);
-
-    for (unsigned int gg = 0; gg < row_data.getN().size1(); gg++) {
-      double val = getVolume() * getGaussPts()(3, gg);
-      if (getHoGaussPtsDetJac().size() > 0) {
-        val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
-      }
-
-      dAta.materialDoublePtr->F.resize(3, 3, false);
-      noalias(dAta.materialDoublePtr->F) = F[gg];
-      if (fieldDisp) {
-        for (int dd = 0; dd < 3; dd++) {
-          dAta.materialDoublePtr->F(dd, dd) += 1;
-        }
-      }
-
-      int nb_active_variables = 0;
-      ierr =
-          dAta.materialDoublePtr->setUserActiveVariables(nb_active_variables);
-      CHKERRG(ierr);
-      ierr = dAta.materialDoublePtr->calculateElasticEnergy(
-          dAta, getNumeredEntFiniteElementPtr());
-      CHKERRG(ierr);
-      ierr = VecSetValue(*Vptr, 0, val * dAta.materialDoublePtr->eNergy,
-                         ADD_VALUES);
-      CHKERRG(ierr);
+  for (unsigned int gg = 0; gg != row_data.getN().size1(); ++gg) {
+    double val = getVolume() * getGaussPts()(3, gg);
+    if (getHoGaussPtsDetJac().size() > 0) {
+      val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
     }
 
-  } catch (MoFEMException const &e) {
-    SETERRQ(PETSC_COMM_SELF, e.errorCode, e.errorMessage);
+    dAta.materialDoublePtr->F.resize(3, 3, false);
+    noalias(dAta.materialDoublePtr->F) = F[gg];
+    if (fieldDisp) {
+      for (int dd = 0; dd < 3; dd++) {
+        dAta.materialDoublePtr->F(dd, dd) += 1;
+      }
+    }
+
+    int nb_active_variables = 0;
+    CHKERR dAta.materialDoublePtr->setUserActiveVariables(nb_active_variables);
+    CHKERR dAta.materialDoublePtr->calculateElasticEnergy(
+        dAta, getNumeredEntFiniteElementPtr());
+    CHKERR VecSetValue(*Vptr, 0, val * dAta.materialDoublePtr->eNergy,
+                       ADD_VALUES);
   }
 
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 NonlinearElasticElement::OpLhsPiolaKirchhoff_dx::OpLhsPiolaKirchhoff_dx(
