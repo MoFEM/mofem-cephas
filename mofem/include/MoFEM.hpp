@@ -104,6 +104,7 @@
 #include <FlatPrismElementForcesAndSourcesCore.hpp>
 #include <FatPrismElementForcesAndSourcesCore.hpp>
 #include <Projection10NodeCoordsOnField.hpp>
+#include <SaveVertexDofOnTag.hpp>
 
 
 #endif //MOFEM_HPP__
