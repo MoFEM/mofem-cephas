@@ -46,6 +46,10 @@ MoFEMErrorCode preProcess() {
     SETERRQ(mField.get_comm(), MOFEM_DATA_INCONSISTENCY,
             "Null pointer, probably field not found");
   }
+  if (fieldPtr->getSpace() != H1) {
+    SETERRQ(mField.get_comm(), MOFEM_DATA_INCONSISTENCY,
+            "Field must be in H1 space");
+  }
   std::vector<double> def_vals(fieldPtr->getNbOfCoeffs(), 0);
   rval = mField.get_moab().tag_get_handle(tagName.c_str(), tH);
   if (rval != MB_SUCCESS) {
@@ -66,11 +70,8 @@ MoFEMErrorCode operator()() {
   MoFEMFunctionBegin;
   if (dofPtr->getEntType() != MBVERTEX)
     MoFEMFunctionReturnHot(0);
-  // cerr << dofPtr->getFieldData() << endl;
   EntityHandle ent = dofPtr->getEnt();
-  // int dof_rank = dofPtr->getDofCoeffIdx();
   int rank = dofPtr->getNbOfCoeffs();
-  // double tag_val[rank];
   double tag_val[rank];
 
   CHKERR mField.get_moab().tag_get_data(tH, &ent, 1, tag_val);
