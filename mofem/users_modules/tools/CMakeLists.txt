@@ -61,6 +61,18 @@ target_link_libraries(mesh_cut
   ${MoFEM_PROJECT_LIBS}
 )
 
+add_executable(field_to_vertices ${CMAKE_CURRENT_SOURCE_DIR}/field_to_vertices.cpp)
+target_link_libraries(field_to_vertices
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${MoFEM_PROJECT_LIBS}
+)
+
 if(ADOL-C_LIBRARY)
 
   include_directories(
