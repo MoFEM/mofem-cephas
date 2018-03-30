@@ -63,5 +63,8 @@ extern "C" {
 #include <TimeForceScale.hpp>
 #include <VolumeCalculation.hpp>
 #include <AnalyticalDirichlet.hpp>
+#include <SaveVertexDofOnTag.hpp>
+
+using namespace BasicFiniteElements;
 
 #endif // __BASICFINITEELEMENTS_HPP__
