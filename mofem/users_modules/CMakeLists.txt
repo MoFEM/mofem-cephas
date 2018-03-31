@@ -11,16 +11,39 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
-project(MoFEM-UserModules C CXX)
+cmake_minimum_required (VERSION 3.1.3)
 
-cmake_minimum_required(VERSION 2.8.7)
+project(MoFEM-UserModules C CXX)
 
 #serch inlude directories before system directories
 set(CMAKE_INCLUDE_DIRECTORIES_BEFORE ON)
 
-find_package(MoFEM 0.6.1
-  REQUIRED HINTS ${MOFEM_DIR} ../ ../../ $ENV{MOFEM_DIR}
-)
+include(cmake/GetGitRevisionDescription.cmake)
+git_describe(GIT_VERSION "--tags")
+if(GIT_VERSION)
+  string(
+    REGEX 
+    REPLACE "^v([0-9]+)\\..*" "\\1" GIT_MoFEM_VERSION_MAJOR "${GIT_VERSION}"
+  )
+  string(
+    REGEX 
+    REPLACE "^v[0-9]+\\.([0-9]+).*" "\\1" GIT_MoFEM_VERSION_MINOR "${GIT_VERSION}"
+  )
+  string(
+    REGEX 
+    REPLACE "^v[0-9]+\\.[0-9]+\\.([0-9]+).*" "\\1" GIT_MoFEM_VERSION_BUILD "${GIT_VERSION}"
+  )
+  find_package(
+    MoFEM 
+    ${GIT_MoFEM_VERSION_MAJOR}.${GIT_MoFEM_VERSION_MINOR}.${GIT_MoFEM_VERSION_MINOR}
+    REQUIRED HINTS ${MOFEM_DIR} ../ ../../ $ENV{MOFEM_DIR}
+  )  
+else(GIT_VERSION)
+  find_package(
+    MoFEM REQUIRED HINTS ${MOFEM_DIR} ../ ../../ $ENV{MOFEM_DIR}
+  )  
+endif(GIT_VERSION)
+
 message(STATUS "MoFEM version ${MoFEM_VERSION}")
 add_definitions(${MoFEM_DEFINE_RESTRICT})
 

@@ -45,10 +45,6 @@ if(CMAKE_Fortran_COMPILER)
   enable_language(Fortran)
 endif(CMAKE_Fortran_COMPILER)
 
-set(MoFEM_VERSION_MAJOR 0)
-set(MoFEM_VERSION_MINOR 7)
-set(MoFEM_VERSION_BUILD 10)
-
 # http://cellperformance.beyond3d.com/articles/2006/05/demystifying-the-restrict-keyword.html
 # The restrict keyword can be considered an extension to the strict aliasing rule.
 # It allows the programmer to declare that pointers which share the same type (or
@@ -113,9 +109,49 @@ include(cmake/FindMed.cmake)
 #other
 include(cmake/ExportFile.cmake)
 
-#git revision
+#git revision and mofem version
 include(cmake/GetGitRevisionDescription.cmake)
 get_git_head_revision(GIT_REFSPEC GIT_SHA1)
+git_describe(VERSION "--tags")
+if(VERSION)
+  message(STATUS "MoFEM Version " ${VERSION})
+  string(REGEX REPLACE "^v([0-9]+)\\..*" "\\1" MoFEM_VERSION_MAJOR "${VERSION}")
+  string(REGEX REPLACE "^v[0-9]+\\.([0-9]+).*" "\\1" MoFEM_VERSION_MINOR "${VERSION}")
+  string(REGEX REPLACE "^v[0-9]+\\.[0-9]+\\.([0-9]+).*" "\\1" MoFEM_VERSION_BUILD "${VERSION}")
+  execute_process(
+    COMMAND "test" "-w" "Version.cmake"
+    WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
+    RESULT_VARIABLE NOT_WRITABLE_FILE_VERSION
+  )
+  if(NOT NOT_WRITABLE_FILE_VERSION)
+    message(STATUS "Version file set from Git")
+    configure_file(
+      ${PROJECT_SOURCE_DIR}/Version.cmake.in
+      ${PROJECT_SOURCE_DIR}/Version.cmake)
+  else(NOT NOT_WRITABLE_FILE_VERSION) 
+    message(WARNING "No primission to set Version file")
+  endif(NOT NOT_WRITABLE_FILE_VERSION)
+else(VERSION)
+  find_file(
+    MOFEM_VERSION_FILE Version.cmake 
+    PATHS ${PROJECT_SOURCE_DIR}
+    NO_DEFAULT_PATH
+    NO_CMAKE_ENVIRONMENT_PATH
+    NO_CMAKE_PATH
+    NO_SYSTEM_ENVIRONMENT_PATH
+    NO_CMAKE_SYSTEM_PATH
+  )
+  if(MOFEM_VERSION_FILE) 
+    include(${MOFEM_VERSION_FILE})
+  else(MOFEM_VERSION_FILE)
+    message(FATAL_ERROR "MoFEM Version not known")
+  endif(MOFEM_VERSION_FILE)
+endif(VERSION)
+
+configure_file(
+  ${PROJECT_SOURCE_DIR}/MoFEMConfig-version.cmake.in
+  ${PROJECT_BINARY_DIR}/MoFEMConfig-version.cmake
+)
 
 #add coverage
 if(WITHCOVERAGE)
@@ -216,10 +252,6 @@ configure_file(
   ${PROJECT_BINARY_DIR}/MoFEMConfig.cmake
 )
 
-configure_file(
-  ${PROJECT_SOURCE_DIR}/MoFEMConfig-version.cmake.in
-  ${PROJECT_BINARY_DIR}/MoFEMConfig-version.cmake
-)
 install(FILES ${PROJECT_BINARY_DIR}/MoFEMConfig.cmake DESTINATION ${CMAKE_INSTALL_PREFIX})
 install(FILES ${PROJECT_BINARY_DIR}/MoFEMConfig-version.cmake DESTINATION ${CMAKE_INSTALL_PREFIX})
 
