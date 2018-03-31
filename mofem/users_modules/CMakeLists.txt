@@ -11,6 +11,8 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
+cmake_minimum_required (VERSION 3.1.3)
+
 project(MoFEM-UserModules C CXX)
 
 #serch inlude directories before system directories
