@@ -185,7 +185,7 @@ int main(int argc, char *argv[]) {
 
     // Cut mesh, trim surface and merge bad edges
     CHKERR cut_mesh->cutTrimAndMerge(fraction_level, bit_level1, bit_level2,
-                                     bit_level3, th, 1e-2, 1e-1, 1e-1, 1e-2,
+                                     bit_level3, th, 1e-2, 5e-1, 5e-1, 1e-2,
                                      fixed_edges, corner_nodes, true, true);
 
     // Improve mesh with tetgen
