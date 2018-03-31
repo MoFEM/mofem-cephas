@@ -56,6 +56,17 @@ struct Version {
       : majorVersion(v[0]), minorVersion(v[1]), buildVersion(v[2]) {}
   Version(const int minor, const int major, const int build)
       : majorVersion(minor), minorVersion(major), buildVersion(build) {}
+
+  MoFEMErrorCode printVersion(std::string prefix = "",
+                              MPI_Comm comm = PETSC_COMM_WORLD) {
+    MoFEMFunctionBegin;
+    if(!prefix.empty()) {
+      prefix += " ";
+    }
+    CHKERR PetscPrintf(comm, "%s%d.%d.%d\n", prefix.c_str(), majorVersion,
+                       minorVersion, buildVersion);
+    MoFEMFunctionReturn(0);
+  }
 };
 
 /** \brief base class for all interface classes
