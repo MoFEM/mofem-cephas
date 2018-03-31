@@ -13,8 +13,6 @@
 
 project(MoFEM-UserModules C CXX)
 
-cmake_minimum_required(VERSION 2.8.7)
-
 #serch inlude directories before system directories
 set(CMAKE_INCLUDE_DIRECTORIES_BEFORE ON)
 
@@ -40,8 +38,7 @@ if(GIT_VERSION)
   )  
 else(GIT_VERSION)
   find_package(
-    MoFEM 
-    REQUIRED HINTS ${MOFEM_DIR} ../ ../../ $ENV{MOFEM_DIR}
+    MoFEM REQUIRED HINTS ${MOFEM_DIR} ../ ../../ $ENV{MOFEM_DIR}
   )  
 endif(GIT_VERSION)
 

@@ -118,9 +118,19 @@ if(VERSION)
   string(REGEX REPLACE "^v([0-9]+)\\..*" "\\1" MoFEM_VERSION_MAJOR "${VERSION}")
   string(REGEX REPLACE "^v[0-9]+\\.([0-9]+).*" "\\1" MoFEM_VERSION_MINOR "${VERSION}")
   string(REGEX REPLACE "^v[0-9]+\\.[0-9]+\\.([0-9]+).*" "\\1" MoFEM_VERSION_BUILD "${VERSION}")
-  configure_file(
-   ${PROJECT_SOURCE_DIR}/Version.cmake.in
-   ${PROJECT_SOURCE_DIR}/Version.cmake)
+  execute_process(
+    COMMAND "test" "-w" "Version.cmake"
+    WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
+    RESULT_VARIABLE NOT_WRITABLE_FILE_VERSION
+  )
+  if(NOT NOT_WRITABLE_FILE_VERSION)
+    message(STATUS "Version file set from Git")
+    configure_file(
+      ${PROJECT_SOURCE_DIR}/Version.cmake.in
+      ${PROJECT_SOURCE_DIR}/Version.cmake)
+  else(NOT NOT_WRITABLE_FILE_VERSION) 
+    message(WARNING "No primission to set Version file")
+  endif(NOT NOT_WRITABLE_FILE_VERSION)
 else(VERSION)
   find_file(
     MOFEM_VERSION_FILE Version.cmake 
