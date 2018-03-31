@@ -849,7 +849,7 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(Range *fixed_edges,
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Data inconsistency");
     }
     double q = get_quality_change(adj_tets, vertices_on_cut_edges);
-    if (q > 0.9) {
+    if (q > 0.75) {
       verticesOnCutEdges.insert(vertices_on_cut_edges.begin(),
                                 vertices_on_cut_edges.end());
       EntityHandle type = moab.type_from_handle(f);
@@ -1287,7 +1287,7 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
           CHKERR moab.get_adjacencies(&v, 1, 3, false, adj_tets);
           adj_tets = intersect(adj_tets, cutNewVolumes);
           double q = get_quality_change(adj_tets);
-          if (q > 0.9) {
+          if (q > 0.75) {
             VectorDouble3 unit_ray_dir = new_pos - ray_point;
             double dist = norm_2(unit_ray_dir);
             unit_ray_dir /= dist;
