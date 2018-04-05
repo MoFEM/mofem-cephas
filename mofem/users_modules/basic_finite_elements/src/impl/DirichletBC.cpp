@@ -252,10 +252,17 @@ MoFEMErrorCode DirichletSpatialPositionsBc::iNitalize() {
     const DofEntity_multiIndex *dofs_ptr;
     ierr = mField.get_dofs(&dofs_ptr); CHKERRG(ierr);
     VectorDouble scaled_values(3);
-    // Loop over meshsets with Dirichlet boundary condition on displacements
-    if(!sEt_from_block){
+    // sets kinetic boundary conditions by blockset.
+    bool flag_cubit_disp = false;
 
-    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NODESET|DISPLACEMENTSET,it)) {
+    for (_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(
+             mField, NODESET | DISPLACEMENTSET, it)) {
+      flag_cubit_disp = true;
+    }
+
+    // Loop over meshsets with Dirichlet boundary condition on displacements
+    if(flag_cubit_disp){
+     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NODESET|DISPLACEMENTSET,it)) {
       // get data structure for boundary condition
       DisplacementCubitBcData mydata;
       ierr = it->getBcDataStructure(mydata); CHKERRG(ierr);
