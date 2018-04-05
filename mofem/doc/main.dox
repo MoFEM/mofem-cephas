@@ -160,7 +160,7 @@ implementations are tailored for massive parallel calculations.
 
 List of third party libraries and packages used by MoFEM:
 
-- SIGMA Tools <http://press3.mcs.anl.gov/sigma/meshkit-library/>
+- SIGMA Tools <http://press3.mcs.anl.gov/sigma>
 - MOAB <http://www.mcs.anl.gov/~fathom/moab-docs/html/userguide.html>.
 - PETSc <http://www.mcs.anl.gov/petsc/documentation/index.html>
 - BOOST <http://www.boost.org>
