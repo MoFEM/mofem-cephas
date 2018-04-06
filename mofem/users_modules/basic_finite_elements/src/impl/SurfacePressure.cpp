@@ -1,8 +1,6 @@
-/* \fiele SurfacePressure.cpp
+/* \file SurfacePressure.cpp
   \brief Implementation of pressure and forces on triangles surface
-
 */
-
 
 /* This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
