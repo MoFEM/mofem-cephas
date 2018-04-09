@@ -51,9 +51,10 @@ mesa-common-dev \
 libglu1-mesa-dev \
 libxmu-dev \
 libxi-dev \
-libadolc-dev \
 libssl-dev \
 && rm -rf /var/lib/apt/lists/*
+
+#libadolc-dev 
 
 # CMake
 RUN cd /opt \
@@ -64,7 +65,7 @@ RUN cd /opt \
 && cd /opt && rm -rf cmake-3.8.2*
 
 # Set petesc version
-ENV PETSC_VERSION 3.7.7
+ENV PETSC_VERSION 3.8.4
 ENV PETSC_ARCH arch-linux2-c-opt
 ENV LD_LIBRARY_PATH $LD_LIBRARY_PATH:/opt/petsc/arch-linux2-c-opt/lib
 ENV MESHKIT_DIR /opt/petsc/arch-linux2-c-opt/
@@ -90,6 +91,14 @@ RUN cd /opt/petsc \
 --with-shared-libraries=1 \
 && make PETSC_DIR=/opt/petsc PETSC_ARCH=$PETSC_ARCH all \
 && rm -rvf /opt/petsc/$PETSC_ARCH/externalpackages/*
+
+# ADOL-C
+RUN cd /opt \
+&& wget http://www.coin-or.org/download/source/ADOL-C/ADOL-C-2.5.2.tgz \
+&& tar -xzf ADOL-C-2.5.2.tgz \
+&& cd ADOL-C-2.5.2 \
+&& ./configure  --prefix=/opt/petsc/$PETSC_ARCH \
+&& make && make install
 
 ## OpenCascade & CGM
 #RUN cd /opt && git clone --branch master --depth 1 https://bitbucket.org/fathomteam/cgm && \

@@ -408,7 +408,7 @@
         CHKERR m_field.get_moab().get_coords(conn, 4, &coords[0]);
         return coords;
       };
-      auto get_volume = [&m_field](VectorDouble12 &&coords) {
+      auto get_volume = [](VectorDouble12 &&coords) {
         return Tools::tetVolume(&coords[0]);
       };
       if (get_volume(get_coords(conn)) < 0) {
