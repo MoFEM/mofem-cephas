@@ -26,6 +26,7 @@ optimal_mass_transport
 cell_engineering
 contact_mechanics
 contact_mechanics_zahur
+eshelbian_plasticty
 
 _Store
 *.swp
