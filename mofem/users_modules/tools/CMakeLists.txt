@@ -73,6 +73,18 @@ target_link_libraries(field_to_vertices
   ${MoFEM_PROJECT_LIBS}
 )
 
+add_executable(delete_ho_nodes ${CMAKE_CURRENT_SOURCE_DIR}/delete_ho_nodes.cpp)
+target_link_libraries(delete_ho_nodes
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${MoFEM_PROJECT_LIBS}
+)
+
 if(ADOL-C_LIBRARY)
 
   include_directories(
