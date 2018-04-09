@@ -259,14 +259,21 @@ MoFEMErrorCode PCApplyArcLength(PC pc, Vec pc_f, Vec pc_x) {
   CHKERR PCShellGetContext(pc, &void_ctx);
   PCArcLengthCtx *ctx = (PCArcLengthCtx *)void_ctx;
   void *void_MatCtx;
-  MatShellGetContext(ctx->shellAij, &void_MatCtx);
+  MatShellGetContext(ctx->shellAij, &void_MatCtx) ;
   ArcLengthMatShell *mat_ctx = (ArcLengthMatShell *)void_MatCtx;
-  CHKERR KSPSetInitialGuessNonzero(ctx->kSP, PETSC_FALSE);
-  CHKERR KSPSolve(ctx->kSP, pc_f, pc_x);
   PetscBool same;
   PetscObjectTypeCompare((PetscObject)ctx->kSP, KSPPREONLY, &same);
   if (same != PETSC_TRUE) {
     CHKERR KSPSetInitialGuessNonzero(ctx->kSP, PETSC_TRUE);
+  } else {
+    CHKERR KSPSetInitialGuessNonzero(ctx->kSP, PETSC_FALSE);
+  }
+  // CHKERR KSPSetInitialGuessNonzero(ctx->kSP, PETSC_FALSE);
+  CHKERR KSPSolve(ctx->kSP, pc_f, pc_x);
+  if (same != PETSC_TRUE) {
+    CHKERR KSPSetInitialGuessNonzero(ctx->kSP, PETSC_TRUE);
+  } else {
+    CHKERR KSPSetInitialGuessNonzero(ctx->kSP, PETSC_FALSE);
   }
   CHKERR KSPSolve(ctx->kSP, ctx->arcPtrRaw->F_lambda, ctx->arcPtrRaw->xLambda);
   double db_dot_pc_x, db_dot_x_lambda;
