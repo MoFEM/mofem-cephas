@@ -124,7 +124,7 @@ MoFEMErrorCode NodeMergerInterface::mergeNodes(
   mother_tets = subtract(mother_tets, edge_tets);
   father_tets = subtract(father_tets, edge_tets);
 
-  auto get_coords = [this, &m_field](Tag th, const EntityHandle *conn,
+  auto get_coords = [&m_field](Tag th, const EntityHandle *conn,
                                      const int num_nodes) {
     VectorDouble coords(3 * num_nodes);
     if (th == NULL) {

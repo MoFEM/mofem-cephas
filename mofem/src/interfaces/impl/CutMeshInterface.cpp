@@ -382,7 +382,7 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(Range *fixed_edges,
     MoFEMFunctionReturn(0);
   };
 
-  auto check_if_is_on_fixed_edge = [this, fixed_edges](const EntityHandle e) {
+  auto check_if_is_on_fixed_edge = [fixed_edges](const EntityHandle e) {
     if(fixed_edges) {
       if(fixed_edges->find(e)!=fixed_edges->end()) {
         return true;
@@ -394,7 +394,7 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(Range *fixed_edges,
     }
   };
 
-  auto check_if_is_on_cornet_node = [this, corner_nodes ](const EntityHandle v) {
+  auto check_if_is_on_cornet_node = [corner_nodes](const EntityHandle v) {
     if (corner_nodes) {
       if (corner_nodes->find(v) != corner_nodes->end()) {
         return true;
@@ -687,7 +687,7 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(Range *fixed_edges,
           return -1.;
       };
 
-  auto get_conn = [this, &moab](const EntityHandle &e,
+  auto get_conn = [&moab](const EntityHandle &e,
                                 const EntityHandle *&conn, int &num_nodes) {
     MoFEMFunctionBegin;
     EntityType type = moab.type_from_handle(e);
@@ -713,7 +713,7 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(Range *fixed_edges,
     return get_normal_dist(dist_normal);
   };
 
-  auto project_node = [this, &moab, th_dist_normal](
+  auto project_node = [&moab, th_dist_normal](
                           const EntityHandle v,
                           map<EntityHandle, TreeData> &vertices_on_cut_edges) {
     MoFEMFunctionBegin;
