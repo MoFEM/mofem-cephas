@@ -1948,7 +1948,7 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
         ents_nodes_and_edges.merge(tets_skin_edges_verts);
         ents_nodes_and_edges.merge(tets_skin_edges);
         CHKERR removeSelfConectingEdges(ents_nodes_and_edges, edges_to_remove,
-                                        0, true);
+                                        0, false);
       }
       edges_to_merge = subtract(edges_to_merge, edges_to_remove);
       not_merged_edges.merge(edges_to_remove);
