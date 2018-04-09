@@ -249,13 +249,13 @@ MoFEMErrorCode CutMeshInterface::cutTrimAndMerge(
         "cut_trim_merge_ents_not_in_database.vtk", "VTK", "");
   }
 
-  auto get_min_quality = [&m_field](const BitRefLevel bit, Tag th) {
+  auto get_min_quality = [&m_field, debug](const BitRefLevel bit, Tag th) {
     Range tets_level; // test at level
     CHKERR m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
         bit, BitRefLevel().set(), MBTET, tets_level);
     double min_q = 1;
     CHKERR m_field.getInterface<Tools>()->minTetsQuality(tets_level, min_q, th);
-    if (min_q < 0) {
+    if (min_q < 0 && debug) {
       CHKERR m_field.getInterface<Tools>()->writeTetsWithQuality(
           "negative_tets.vtk", "VTK", "", tets_level, th);
     }
