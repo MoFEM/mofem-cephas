@@ -109,43 +109,60 @@ include(cmake/FindMed.cmake)
 #other
 include(cmake/ExportFile.cmake)
 
+#find version file
+find_file(
+  MOFEM_VERSION_FILE Version.cmake 
+  PATHS ${PROJECT_SOURCE_DIR}
+  NO_DEFAULT_PATH
+  NO_CMAKE_ENVIRONMENT_PATH
+  NO_CMAKE_PATH
+  NO_SYSTEM_ENVIRONMENT_PATH
+  NO_CMAKE_SYSTEM_PATH
+)
+if(MOFEM_VERSION_FILE) 
+  include(${MOFEM_VERSION_FILE})
+else(MOFEM_VERSION_FILE)
+  message(FATAL_ERROR "MoFEM Version not known")
+endif(MOFEM_VERSION_FILE)
+
 #git revision and mofem version
+find_package(Git)
 include(cmake/GetGitRevisionDescription.cmake)
 get_git_head_revision(GIT_REFSPEC GIT_SHA1)
 git_describe(VERSION "--tags")
 if(VERSION)
   message(STATUS "MoFEM Version " ${VERSION})
-  string(REGEX REPLACE "^v([0-9]+)\\..*" "\\1" MoFEM_VERSION_MAJOR "${VERSION}")
-  string(REGEX REPLACE "^v[0-9]+\\.([0-9]+).*" "\\1" MoFEM_VERSION_MINOR "${VERSION}")
-  string(REGEX REPLACE "^v[0-9]+\\.[0-9]+\\.([0-9]+).*" "\\1" MoFEM_VERSION_BUILD "${VERSION}")
+  string(REGEX REPLACE "^v([0-9]+)\\..*" "\\1" GIT_VERSION_MAJOR "${VERSION}")
+  string(REGEX REPLACE "^v[0-9]+\\.([0-9]+).*" "\\1" GIT_VERSION_MINOR "${VERSION}")
+  string(REGEX REPLACE "^v[0-9]+\\.[0-9]+\\.([0-9]+).*" "\\1" GIT_VERSION_BUILD "${VERSION}")
+  set(FILE_MoFEM_VERSION ${MoFEM_VERSION_MAJOR}.${MoFEM_VERSION_MINOR}.${MoFEM_VERSION_BUILD})
+  set(GIT_MoFEM_VERSON ${GIT_VERSION_MAJOR}.${GIT_VERSION_MINOR}.${GIT_VERSION_BUILD}) 
+  message(STATUS "File version ${FILE_MoFEM_VERSION}")
+  message(STATUS "Git version ${GIT_MoFEM_VERSON}")
   execute_process(
     COMMAND "test" "-w" "Version.cmake"
     WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
     RESULT_VARIABLE NOT_WRITABLE_FILE_VERSION
   )
   if(NOT NOT_WRITABLE_FILE_VERSION)
-    message(STATUS "Version file set from Git")
-    configure_file(
-      ${PROJECT_SOURCE_DIR}/Version.cmake.in
-      ${PROJECT_SOURCE_DIR}/Version.cmake)
+    if(${FILE_MoFEM_VERSION} VERSION_GREATER ${GIT_VERSION_MAJOR}.${GIT_VERSION_MINOR}.${GIT_VERSION_BUILD})
+      message(STATUS "Git version tag from file")
+      execute_process(
+        COMMAND "${GIT_EXECUTABLE}" "tag" "v${FILE_MoFEM_VERSION}"
+        WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/.."
+      ) 
+    else(${FILE_MoFEM_VERSION} VERSION_GREATER ${GIT_VERSION_MAJOR}.${GIT_VERSION_MINOR}.${GIT_VERSION_BUILD})
+      message(STATUS "Version file set from Git")
+      configure_file(
+        ${PROJECT_SOURCE_DIR}/Version.cmake.in
+        ${PROJECT_SOURCE_DIR}/Version.cmake)
+      set(MoFEM_VERSION_MAJOR ${GIT_VERSION_MAJOR})
+      set(MoFEM_VERSION_MINOR ${GIT_VERSION_MINOR})
+      set(MoFEM_VERSION_BUILD ${GIT_VERSION_BUILD})
+    endif(${FILE_MoFEM_VERSION} VERSION_GREATER ${GIT_VERSION_MAJOR}.${GIT_VERSION_MINOR}.${GIT_VERSION_BUILD})
   else(NOT NOT_WRITABLE_FILE_VERSION) 
     message(WARNING "No primission to set Version file")
   endif(NOT NOT_WRITABLE_FILE_VERSION)
-else(VERSION)
-  find_file(
-    MOFEM_VERSION_FILE Version.cmake 
-    PATHS ${PROJECT_SOURCE_DIR}
-    NO_DEFAULT_PATH
-    NO_CMAKE_ENVIRONMENT_PATH
-    NO_CMAKE_PATH
-    NO_SYSTEM_ENVIRONMENT_PATH
-    NO_CMAKE_SYSTEM_PATH
-  )
-  if(MOFEM_VERSION_FILE) 
-    include(${MOFEM_VERSION_FILE})
-  else(MOFEM_VERSION_FILE)
-    message(FATAL_ERROR "MoFEM Version not known")
-  endif(MOFEM_VERSION_FILE)
 endif(VERSION)
 
 configure_file(
