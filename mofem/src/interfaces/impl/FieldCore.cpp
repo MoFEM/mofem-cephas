@@ -118,7 +118,7 @@ MoFEMErrorCode Core::add_field(const std::string &name, const FieldSpace space,
                                const FieldCoefficientsNumber nb_of_coefficients,
                                const TagType tag_type, const enum MoFEMTypes bh,
                                int verb) {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   if (verb == -1)
     verb = verbose;
   *buildMoFEM = 0;
@@ -131,75 +131,61 @@ MoFEMErrorCode Core::add_field(const std::string &name, const FieldSpace space,
     }
   } else {
     EntityHandle meshset;
-    rval = moab.create_meshset(MESHSET_SET | MESHSET_TRACK_OWNER, meshset);
-    CHKERRQ_MOAB(rval);
+    CHKERR moab.create_meshset(MESHSET_SET | MESHSET_TRACK_OWNER, meshset);
     // id
     BitFieldId id = getFieldShift();
-    rval = moab.tag_set_data(th_FieldId, &meshset, 1, &id);
-    CHKERRQ_MOAB(rval);
+    CHKERR moab.tag_set_data(th_FieldId, &meshset, 1, &id);
     // space
-    rval = moab.tag_set_data(th_FieldSpace, &meshset, 1, &space);
-    CHKERRQ_MOAB(rval);
+    CHKERR moab.tag_set_data(th_FieldSpace, &meshset, 1, &space);
     // base
-    rval = moab.tag_set_data(th_FieldBase, &meshset, 1, &base);
-    CHKERRQ_MOAB(rval);
+    CHKERR moab.tag_set_data(th_FieldBase, &meshset, 1, &base);
     // name
     void const *tag_data[] = {name.c_str()};
     int tag_sizes[1];
     tag_sizes[0] = name.size();
-    rval = moab.tag_set_by_ptr(th_FieldName, &meshset, 1, tag_data, tag_sizes);
-    CHKERRQ_MOAB(rval);
+    CHKERR moab.tag_set_by_ptr(th_FieldName, &meshset, 1, tag_data, tag_sizes);
     // name data prefix
     std::string name_data_prefix("_App_Data");
     void const *tag_prefix_data[] = {name_data_prefix.c_str()};
     int tag_prefix_sizes[1];
     tag_prefix_sizes[0] = name_data_prefix.size();
-    rval = moab.tag_set_by_ptr(th_FieldName_DataNamePrefix, &meshset, 1,
+    CHKERR moab.tag_set_by_ptr(th_FieldName_DataNamePrefix, &meshset, 1,
                                tag_prefix_data, tag_prefix_sizes);
-    CHKERRQ_MOAB(rval);
     Tag th_AppOrder, th_FieldData, th_Rank;
     // data
     std::string Tag_data_name = name_data_prefix + name;
     const int def_len = 0;
-    rval = moab.tag_get_handle(
+    CHKERR moab.tag_get_handle(
         Tag_data_name.c_str(), def_len, MB_TYPE_OPAQUE, th_FieldData,
         MB_TAG_CREAT | MB_TAG_BYTES | MB_TAG_VARLEN | MB_TAG_SPARSE, NULL);
-    CHKERRQ_MOAB(rval);
     // order
     ApproximationOrder def_ApproximationOrder = -1;
     std::string Tag_ApproximationOrder_name = "_App_Order_" + name;
-    rval = moab.tag_get_handle(
+    CHKERR moab.tag_get_handle(
         Tag_ApproximationOrder_name.c_str(), sizeof(ApproximationOrder),
         MB_TYPE_OPAQUE, th_AppOrder, MB_TAG_CREAT | MB_TAG_BYTES | tag_type,
         &def_ApproximationOrder);
-    CHKERRQ_MOAB(rval);
     // rank
     int def_rank = 1;
     std::string Tag_rank_name = "_Field_Rank_" + name;
-    rval = moab.tag_get_handle(
+    CHKERR moab.tag_get_handle(
         Tag_rank_name.c_str(), sizeof(FieldCoefficientsNumber), MB_TYPE_OPAQUE,
         th_Rank, MB_TAG_CREAT | MB_TAG_BYTES | tag_type, &def_rank);
-    CHKERRQ_MOAB(rval);
-    rval = moab.tag_set_data(th_Rank, &meshset, 1, &nb_of_coefficients);
-    CHKERRQ_MOAB(rval);
+    CHKERR moab.tag_set_data(th_Rank, &meshset, 1, &nb_of_coefficients);
     // add meshset
     std::pair<Field_multiIndex::iterator, bool> p;
     try {
       CoordSystemsManager *cs_manger_ptr;
-      ierr = getInterface(cs_manger_ptr);
-      CHKERRG(ierr);
+      CHKERR getInterface(cs_manger_ptr);
       boost::shared_ptr<CoordSys> undefined_cs_ptr;
-      ierr = cs_manger_ptr->getCoordSysPtr("UNDEFINED", undefined_cs_ptr);
-      CHKERRG(ierr);
+      CHKERR cs_manger_ptr->getCoordSysPtr("UNDEFINED", undefined_cs_ptr);
       int sys_name_size[1];
       sys_name_size[0] = undefined_cs_ptr->getName().size();
       void const *sys_name[] = {&*undefined_cs_ptr->getNameRef().begin()};
-      rval = moab.tag_set_by_ptr(cs_manger_ptr->get_th_CoordSysName(), &meshset,
+      CHKERR moab.tag_set_by_ptr(cs_manger_ptr->get_th_CoordSysName(), &meshset,
                                  1, sys_name, sys_name_size);
-      CHKERRQ_MOAB(rval);
       EntityHandle coord_sys_id = undefined_cs_ptr->getMeshset();
-      rval = moab.add_entities(coord_sys_id, &meshset, 1);
-      CHKERRQ_MOAB(rval);
+      CHKERR moab.add_entities(coord_sys_id, &meshset, 1);
       p = fIelds.insert(
           boost::make_shared<Field>(moab, meshset, undefined_cs_ptr));
       if (bh == MF_EXCL) {
@@ -218,7 +204,7 @@ MoFEMErrorCode Core::add_field(const std::string &name, const FieldSpace space,
     }
   }
   // unt
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode Core::addEntsToFieldByDim(const Range &ents, const int dim,
