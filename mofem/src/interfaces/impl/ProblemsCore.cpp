@@ -27,9 +27,11 @@ bool Core::check_problem(const string name) {
   return true;
 }
 
-MoFEMErrorCode Core::add_problem(const BitProblemId id,
-                                 const std::string &name) {
+MoFEMErrorCode Core::addProblem(const BitProblemId id, const std::string &name,
+                                int verb) {
   MoFEMFunctionBegin;
+  if (verb == -1)
+    verb = verbose;
   EntityHandle meshset;
   CHKERR moab.create_meshset(MESHSET_SET | MESHSET_TRACK_OWNER, meshset);
   CHKERR moab.tag_set_data(th_ProblemId, &meshset, 1, &id);
@@ -42,7 +44,7 @@ MoFEMErrorCode Core::add_problem(const BitProblemId id,
       pRoblems.insert(Problem(moab, meshset));
   NOT_USED(p);
   assert(p.second);
-  if (verbose > 0) {
+  if (verb > 0) {
     std::ostringstream ss;
     ss << "add problem: " << name << std::endl;
     PetscPrintf(cOmm, ss.str().c_str());
@@ -52,43 +54,41 @@ MoFEMErrorCode Core::add_problem(const BitProblemId id,
 
 MoFEMErrorCode Core::add_problem(const std::string &name, enum MoFEMTypes bh,
                                  int verb) {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   if (verb == -1)
     verb = verbose;
-  typedef Problem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
-  const ProblemsByName &set     = pRoblems.get<Problem_mi_tag>();
-  ProblemsByName::iterator miit = set.find(name);
-  if (miit == set.end()) {
+  auto miit = pRoblems.get<Problem_mi_tag>().find(name);
+  if (miit == pRoblems.get<Problem_mi_tag>().end()) {
     BitProblemId id = getProblemShift();
-    ierr            = add_problem(id, name);
-    CHKERRG(ierr);
+    CHKERR addProblem(id, name, verb);
   } else if (bh == MF_EXCL) {
     SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_FOUND, "problem is in database %s",
              name.c_str());
   }
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode Core::delete_problem(const std::string name) {
   MoFEMFunctionBegin;
-  typedef Problem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
-  ProblemsByName &mofem_problems_set = pRoblems.get<Problem_mi_tag>();
-  ProblemsByName::iterator p_miit    = mofem_problems_set.find(name);
-  if (p_miit == mofem_problems_set.end()) {
+  auto p_miit = pRoblems.get<Problem_mi_tag>().find(name);
+  if (p_miit == pRoblems.get<Problem_mi_tag>().end()) {
     SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_FOUND, "no such problem like < %s >",
              name.c_str());
   }
-  EntityHandle meshset = p_miit->meshset;
-  mofem_problems_set.erase(p_miit);
+  const EntityHandle meshset = p_miit->meshset;
+  pRoblems.get<Problem_mi_tag>().erase(p_miit);
   CHKERR moab.delete_entities(&meshset, 1);
   MoFEMFunctionReturn(0);
 }
 
 BitProblemId Core::getBitProblemId(const std::string &name) const {
-  typedef Problem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
-  const ProblemsByName &set     = pRoblems.get<Problem_mi_tag>();
-  ProblemsByName::iterator miit = set.find(name);
-  return miit->getId();
+  auto p_miit = pRoblems.get<Problem_mi_tag>().find(name);
+  if (p_miit == pRoblems.get<Problem_mi_tag>().end()) {
+    THROW_MESSAGE(
+      "no such problem like " + name + " >"
+    );
+  }
+  return p_miit->getId();
 }
 
 MoFEMErrorCode Core::list_problem() const {

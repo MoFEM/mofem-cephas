@@ -43,9 +43,12 @@ bool Core::check_finite_element(const std::string &name) const {
 }
 
 MoFEMErrorCode Core::add_finite_element(const std::string &fe_name,
-                                        enum MoFEMTypes bh) {
+                                        enum MoFEMTypes bh,int verb) {
   MoFEMFunctionBegin;
   *buildMoFEM &= 1 << 0;
+  if(verb == -1) {
+    verb = verbose;
+  }
   typedef FiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type
       FiniteElements_by_name;
   FiniteElements_by_name &finite_element_name_set =
@@ -78,7 +81,7 @@ MoFEMErrorCode Core::add_finite_element(const std::string &fe_name,
       boost::shared_ptr<FiniteElement>(new FiniteElement(moab, meshset)));
   if (!p.second)
     SETERRQ(cOmm, MOFEM_OPERATION_UNSUCCESSFUL, "FiniteElement not inserted");
-  if (verbose > 0) {
+  if (verb > 0) {
     std::ostringstream ss;
     ss << "add finite element: " << fe_name << std::endl;
     PetscPrintf(cOmm, ss.str().c_str());
@@ -943,10 +946,10 @@ MoFEMErrorCode Core::build_adjacencies(const Range &ents, int verb) {
       }
     }
   }
-  if (verbose > 1) {
+  if (verb >= VERY_NOISY) {
     list_adjacencies();
   }
-  if (verbose > 0) {
+  if (verb >= VERBOSE) {
     PetscSynchronizedPrintf(cOmm, "Nb. entFEAdjacencies %u\n",
                             entFEAdjacencies.size());
     PetscSynchronizedFlush(cOmm, PETSC_STDOUT);

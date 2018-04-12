@@ -197,7 +197,7 @@ MoFEMErrorCode Core::add_field(const std::string &name, const FieldSpace space,
     } catch (MoFEMException const &e) {
       SETERRQ(PETSC_COMM_SELF, e.errorCode, e.errorMessage);
     }
-    if (verbose > 0) {
+    if (verb > 0) {
       std::ostringstream ss;
       ss << "add: " << **p.first << std::endl;
       PetscPrintf(cOmm, ss.str().c_str());
@@ -864,7 +864,7 @@ MoFEMErrorCode Core::buildFieldForL2H1HcurlHdiv(
 }
 
 MoFEMErrorCode Core::build_fields(int verb) {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   if (verb == -1)
     verb = verbose;
   typedef Field_multiIndex::index<BitFieldId_mi_tag>::type FieldSetById;
@@ -879,16 +879,14 @@ MoFEMErrorCode Core::build_fields(int verb) {
     }
     switch ((*miit)->getSpace()) {
     case NOFIELD:
-      ierr = buildFieldForNoField((*miit)->getId(), dof_counter, verb);
-      CHKERRG(ierr);
+      CHKERR buildFieldForNoField((*miit)->getId(), dof_counter, verb);
       break;
     case L2:
     case H1:
     case HCURL:
     case HDIV:
-      ierr = buildFieldForL2H1HcurlHdiv((*miit)->getId(), dof_counter,
+      CHKERR buildFieldForL2H1HcurlHdiv((*miit)->getId(), dof_counter,
                                         inactive_dof_counter, verb);
-      CHKERRG(ierr);
       break;
     default:
       SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented");
@@ -940,7 +938,7 @@ MoFEMErrorCode Core::build_fields(int verb) {
         nb_added_dofs += it->second;
         nb_inactive_added_dofs += inactive_dof_counter[it->first];
       }
-      if (verbose > 0) {
+      if (verb > 0) {
         PetscSynchronizedPrintf(
             cOmm, "nb added dofs %d (number of inactive dofs %d)\n",
             nb_added_dofs, nb_inactive_added_dofs);
@@ -952,7 +950,7 @@ MoFEMErrorCode Core::build_fields(int verb) {
     PetscSynchronizedPrintf(cOmm, "Nb. dofs %u\n", dofsField.size());
   }
   PetscSynchronizedFlush(cOmm, PETSC_STDOUT);
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
   // return 0;
 }
 MoFEMErrorCode
