@@ -539,7 +539,8 @@ struct CoreInterface : public UnknownInterface {
   \endcode
   */
   virtual MoFEMErrorCode add_finite_element(const std::string &fe_name,
-                                            enum MoFEMTypes bh = MF_EXCL) = 0;
+                                            enum MoFEMTypes bh = MF_EXCL,
+                                            int verb = -1) = 0;
 
   /**
    * \brief modify finite element table, only for advanced user

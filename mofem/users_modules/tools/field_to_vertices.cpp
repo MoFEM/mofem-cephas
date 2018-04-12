@@ -62,8 +62,9 @@ int main(int argc, char *argv[]) {
     }
     BitRefLevel bit_level0;
     bit_level0.set(0);
-    ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
-    ierr = m_field.build_fields();
+    CHKERR m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(
+        0, 3, bit_level0);
+    CHKERR m_field.build_fields();
 
     bool field_flg = false;
     const Field_multiIndex *fields_ptr;
@@ -84,9 +85,8 @@ int main(int argc, char *argv[]) {
     PetscPrintf(PETSC_COMM_WORLD, "\nDone. Saving files... \n");
 
     //TODO: Higher order field mapping
-    CHKERR m_field.getInterface<BitRefManager>()->writeBitLevelByType(bit_level0, BitRefLevel().set(), MBTET,
-                                         "out_mesh.vtk", "VTK",
-                                         "");
+    CHKERR m_field.getInterface<BitRefManager>()->writeBitLevelByType(
+        bit_level0, BitRefLevel().set(), MBTET, "out_mesh.vtk", "VTK", "");
     CHKERR moab.write_file("out.h5m");
   }
   CATCH_ERRORS;

@@ -64,7 +64,6 @@ namespace MoFEM {
 
   MoFEMErrorCode MedInterface::getFileNameFromCommandLine(int verb) {
     Interface &m_field = cOre;
-
     char mesh_file_name[255];
     MoFEMFunctionBeginHot;
     ierr = PetscOptionsBegin(
@@ -75,7 +74,7 @@ namespace MoFEM {
       "med file name","", "mesh.med",mesh_file_name, 255, &flgFile
     ); CHKERRG(ierr);
     ierr = PetscOptionsEnd(); CHKERRG(ierr);
-    if(flgFile) {
+    if(flgFile == PETSC_TRUE) {
       medFileName = std::string(mesh_file_name);
     } else {
       medFileName = std::string("mesh.med");
@@ -83,19 +82,21 @@ namespace MoFEM {
     MoFEMFunctionReturnHot(0);
   }
 
-  MoFEMErrorCode MedInterface::medGetFieldNames(const string &file,int verb) {
+  MoFEMErrorCode MedInterface::medGetFieldNames(const string &file, int verb) {
     Interface &m_field = cOre;
     MoFEMFunctionBeginHot;
     med_idt fid = MEDfileOpen(file.c_str(), MED_ACC_RDONLY);
-    if(fid < 0) {
-      SETERRQ1(m_field.get_comm(),MOFEM_OPERATION_UNSUCCESSFUL,"Unable to open file '%s'",file.c_str());
+    if (fid < 0) {
+      SETERRQ1(m_field.get_comm(), MOFEM_OPERATION_UNSUCCESSFUL,
+               "Unable to open file '%s'", file.c_str());
     }
     med_int num_fields = MEDnField(fid);
-    for(int index = 0; index < num_fields; index++){
+    for (int index = 0; index < num_fields; index++) {
 
       med_int num_comp = MEDfieldnComponent(fid, index + 1);
-      if(num_comp <= 0){
-        SETERRQ(m_field.get_comm(),MOFEM_IMPOSIBLE_CASE,"Could not get number of components for MED field");
+      if (num_comp <= 0) {
+        SETERRQ(m_field.get_comm(), MOFEM_IMPOSIBLE_CASE,
+                "Could not get number of components for MED field");
       }
 
       char name[MED_NAME_SIZE + 1], mesh_name[MED_NAME_SIZE + 1];
@@ -105,110 +106,112 @@ namespace MoFEM {
       med_int num_steps = 0;
       med_type_champ type;
       med_bool local_mesh;
-      if(MEDfieldInfo(
-        fid, index + 1, name, mesh_name, &local_mesh, &type,
-        &comp_name[0], &comp_unit[0], dt_unit, &num_steps
-      ) < 0) {
-        SETERRQ(m_field.get_comm(),MOFEM_OPERATION_UNSUCCESSFUL,"Could not get MED field info");
+      if (MEDfieldInfo(fid, index + 1, name, mesh_name, &local_mesh, &type,
+                       &comp_name[0], &comp_unit[0], dt_unit, &num_steps) < 0) {
+        SETERRQ(m_field.get_comm(), MOFEM_OPERATION_UNSUCCESSFUL,
+                "Could not get MED field info");
       }
 
       std::string field_name = std::string(name);
       fieldNames[field_name] = FieldData();
       fieldNames[field_name].fieldName = field_name;
       fieldNames[field_name].meshName = std::string(mesh_name);
-      fieldNames[field_name].localMesh = (local_mesh==MED_TRUE);
-      for(int ff = 0;ff!=num_comp;ff++) {
-        fieldNames[field_name].componentNames.push_back(std::string(&comp_name[ff*MED_SNAME_SIZE],MED_SNAME_SIZE));
-        fieldNames[field_name].componentUnits.push_back(std::string(&comp_unit[ff*MED_SNAME_SIZE],MED_SNAME_SIZE));
+      fieldNames[field_name].localMesh = (local_mesh == MED_TRUE);
+      for (int ff = 0; ff != num_comp; ff++) {
+        fieldNames[field_name].componentNames.push_back(
+            std::string(&comp_name[ff * MED_SNAME_SIZE], MED_SNAME_SIZE));
+        fieldNames[field_name].componentUnits.push_back(
+            std::string(&comp_unit[ff * MED_SNAME_SIZE], MED_SNAME_SIZE));
       }
       fieldNames[field_name].dtUnit = std::string(&dt_unit[0]);
       fieldNames[field_name].ncSteps = num_steps;
 
-      if(verb>0) {
+      if (verb > 0) {
         std::ostringstream ss;
-        ss <<  fieldNames[name] << std::endl;
-        ierr = PetscPrintf(m_field.get_comm(),ss.str().c_str()); CHKERRG(ierr);
+        ss << fieldNames[name] << std::endl;
+        ierr = PetscPrintf(m_field.get_comm(), ss.str().c_str());
+        CHKERRG(ierr);
       }
-
     }
-    if(MEDfileClose(fid) < 0) {
-      SETERRQ1(m_field.get_comm(),MOFEM_OPERATION_UNSUCCESSFUL,"Unable to close file '%s'",file.c_str());
+    if (MEDfileClose(fid) < 0) {
+      SETERRQ1(m_field.get_comm(), MOFEM_OPERATION_UNSUCCESSFUL,
+               "Unable to close file '%s'", file.c_str());
     }
     MoFEMFunctionReturnHot(0);
   }
 
   MoFEMErrorCode MedInterface::medGetFieldNames(int verb) {
-
-    MoFEMFunctionBeginHot;
+    MoFEMFunctionBegin;
     if(medFileName.empty()) {
-      ierr = getFileNameFromCommandLine(verb); CHKERRG(ierr);
+      CHKERR getFileNameFromCommandLine(verb); CHKERRG(ierr);
     }
-    ierr = medGetFieldNames(medFileName,verb); CHKERRG(ierr);
-    MoFEMFunctionReturnHot(0);
+    CHKERR medGetFieldNames(medFileName,verb); CHKERRG(ierr);
+    MoFEMFunctionReturn(0);
   }
 
-
-  MoFEMErrorCode MedInterface::readMed(const string &file,int verb) {
+  MoFEMErrorCode MedInterface::readMed(const string &file, int verb) {
     Interface &m_field = cOre;
-    MoFEMFunctionBeginHot;
+    MoFEMFunctionBegin;
 
     med_idt fid = MEDfileOpen(file.c_str(), MED_ACC_RDONLY);
-    if(fid < 0) {
-      SETERRQ1(m_field.get_comm(),MOFEM_OPERATION_UNSUCCESSFUL,"Unable to open file '%s'",file.c_str());
+    if (fid < 0) {
+      SETERRQ1(m_field.get_comm(), MOFEM_OPERATION_UNSUCCESSFUL,
+               "Unable to open file '%s'", file.c_str());
     }
 
     med_int v[3], vf[3];
     MEDlibraryNumVersion(&v[0], &v[1], &v[2]);
     MEDfileNumVersionRd(fid, &vf[0], &vf[1], &vf[2]);
 
-    if(verb>0) {
-      PetscPrintf(
-        m_field.get_comm(),
-        "Reading MED file V%d.%d.%d using MED library V%d.%d.%d\n",
-        vf[0], vf[1], vf[2], v[0], v[1], v[2]
-      );
+    if (verb > 0) {
+      PetscPrintf(m_field.get_comm(),
+                  "Reading MED file V%d.%d.%d using MED library V%d.%d.%d\n",
+                  vf[0], vf[1], vf[2], v[0], v[1], v[2]);
     }
-    if(vf[0] < 2 || (vf[0] == 2 && vf[1] < 2)){
-      SETERRQ(m_field.get_comm(),MOFEM_DATA_INCONSISTENCY,"Cannot read MED file older than V2.2");
+    if (vf[0] < 2 || (vf[0] == 2 && vf[1] < 2)) {
+      SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
+              "Cannot read MED file older than V2.2");
     }
 
-    for(int i = 0; i < MEDnMesh(fid); i++){
+    for (int i = 0; i < MEDnMesh(fid); i++) {
       char mesh_name[MED_NAME_SIZE + 1], mesh_desc[MED_COMMENT_SIZE + 1];
-      bzero(mesh_name,MED_NAME_SIZE);
-      bzero(mesh_desc,MED_COMMENT_SIZE);
+      bzero(mesh_name, MED_NAME_SIZE);
+      bzero(mesh_desc, MED_COMMENT_SIZE);
       med_int space_dim;
       med_mesh_type mesh_type;
       med_int mesh_dim, n_step;
-      char dt_unit[ MED_SNAME_SIZE + 1];
+      char dt_unit[MED_SNAME_SIZE + 1];
       char axis_name[3 * MED_SNAME_SIZE + 1], axis_unit[3 * MED_SNAME_SIZE + 1];
       med_sorting_type sorting_type;
       med_axis_type axis_type;
-      if(MEDmeshInfo(
-        fid,i+1,mesh_name,&space_dim,&mesh_dim,&mesh_type,mesh_desc,
-        dt_unit,&sorting_type,&n_step,&axis_type,axis_name,axis_unit
-      ) < 0) {
-        SETERRQ(m_field.get_comm(),MOFEM_OPERATION_UNSUCCESSFUL,"Unable to read mesh information");
+      if (MEDmeshInfo(fid, i + 1, mesh_name, &space_dim, &mesh_dim, &mesh_type,
+                      mesh_desc, dt_unit, &sorting_type, &n_step, &axis_type,
+                      axis_name, axis_unit) < 0) {
+        SETERRQ(m_field.get_comm(), MOFEM_OPERATION_UNSUCCESSFUL,
+                "Unable to read mesh information");
       }
       meshNames.push_back(std::string(mesh_name));
-      if(verb > 0) {
-        PetscPrintf(m_field.get_comm(),"Check mesh %s nsteps %d\n",mesh_name,n_step);
+      if (verb > 0) {
+        PetscPrintf(m_field.get_comm(), "Check mesh %s nsteps %d\n", mesh_name,
+                    n_step);
       }
     }
 
-    std::map<int,Range> family_elem_map;
-    std::map<string,Range> group_elem_map;
+    std::map<int, Range> family_elem_map;
+    std::map<string, Range> group_elem_map;
 
-    for(unsigned int ii = 0;ii!=meshNames.size();ii++) {
-      ierr = readMesh(file,ii,family_elem_map,verb); CHKERRG(ierr);
-      ierr = readFamily(file,ii,family_elem_map,group_elem_map,verb); CHKERRG(ierr);
-      ierr = makeBlockSets(group_elem_map,verb); CHKERRG(ierr);
+    for (unsigned int ii = 0; ii != meshNames.size(); ii++) {
+      CHKERR readMesh(file, ii, family_elem_map, verb);
+      CHKERR readFamily(file, ii, family_elem_map, group_elem_map, verb);
+      CHKERR makeBlockSets(group_elem_map, verb);
     }
 
-    if(MEDfileClose(fid) < 0) {
-      SETERRQ1(m_field.get_comm(),MOFEM_OPERATION_UNSUCCESSFUL,"Unable to close file '%s'",file.c_str());
+    if (MEDfileClose(fid) < 0) {
+      SETERRQ1(m_field.get_comm(), MOFEM_OPERATION_UNSUCCESSFUL,
+               "Unable to close file '%s'", file.c_str());
     }
 
-    MoFEMFunctionReturnHot(0);
+    MoFEMFunctionReturn(0);
   }
 
   static med_geometrie_element moab2med_element_type(const EntityType type) {
@@ -612,13 +615,12 @@ namespace MoFEM {
   }
 
   MoFEMErrorCode MedInterface::readMed(int verb) {
-
-    MoFEMFunctionBeginHot;
-    if(medFileName.empty()) {
-      ierr = getFileNameFromCommandLine(verb); CHKERRG(ierr);
+    MoFEMFunctionBegin;
+    if (medFileName.empty()) {
+      CHKERR getFileNameFromCommandLine(verb);
     }
-    ierr = readMed(medFileName,verb); CHKERRG(ierr);
-    MoFEMFunctionReturnHot(0);
+    CHKERR readMed(medFileName, verb);
+    MoFEMFunctionReturn(0);
   }
 
   MoFEMErrorCode MedInterface::writeMed(const string &file,int verb) {
