@@ -24,61 +24,59 @@ using namespace MoFEM;
 static char help[] = "...\n\n";
 
 int main(int argc, char *argv[]) {
+  MoFEM::Core::Initialize(&argc, &argv, (char *)0, help);
 
-  
-  
+  try {
 
-  PetscInitialize(&argc,&argv,(char *)0,help);
+    moab::Core mb_instance;
+    moab::Interface &moab = mb_instance;
+    ParallelComm *pcomm = ParallelComm::get_pcomm(&moab, MYPCOMM_INDEX);
+    if (pcomm == NULL)
+      pcomm = new ParallelComm(&moab, PETSC_COMM_WORLD);
 
-  moab::Core mb_instance;
-  moab::Interface& moab = mb_instance;
-  ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
-  if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
+    // Create MoFEM database
+    MoFEM::Core core(moab);
+    MoFEM::Interface &m_field = core;
 
-  //Create MoFEM (Joseph) database
-  MoFEM::Core core(moab);
-  MoFEM::Interface& m_field = core;
+    int time_step = 0;
+    CHKERR PetscOptionsBegin(m_field.get_comm(), "", "Read MED tool", "none");
+    CHKERR PetscOptionsInt("-med_time_step", "time step", "", time_step,
+                           &time_step, PETSC_NULL);
+    ierr = PetscOptionsEnd();
+    CHKERRQ(ierr);
 
-  int time_step = 0;
-  ierr = PetscOptionsBegin(
-    m_field.get_comm(),"","Read MED tool","none"
-  ); CHKERRQ(ierr);
-  ierr = PetscOptionsInt(
-    "-med_time_step","time step","",time_step,&time_step,PETSC_NULL
-  ); CHKERRQ(ierr);
-  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+    MedInterface *med_interface_ptr;
+    CHKERR m_field.getInterface(med_interface_ptr);
+    CHKERR med_interface_ptr->readMed();
+    CHKERR med_interface_ptr->medGetFieldNames();
 
-  MedInterface *med_interface_ptr;
-  ierr = m_field.getInterface(med_interface_ptr); CHKERRQ(ierr);
-  ierr = med_interface_ptr->readMed(); CHKERRQ(ierr);
-  ierr = med_interface_ptr->medGetFieldNames(); CHKERRQ(ierr);
+    for (std::map<std::string, MedInterface::FieldData>::iterator fit =
+             med_interface_ptr->fieldNames.begin();
+         fit != med_interface_ptr->fieldNames.end(); fit++) {
+      CHKERR med_interface_ptr->readFields(med_interface_ptr->medFileName,
+                                           fit->first, false, time_step);
+    }
 
 
-  for(
-    std::map<std::string,MedInterface::FieldData>::iterator fit =
-    med_interface_ptr->fieldNames.begin();
-    fit!=med_interface_ptr->fieldNames.end();
-    fit++
-  ) {
-    ierr = med_interface_ptr->readFields(
-      med_interface_ptr->medFileName,fit->first,false,time_step
-    ); CHKERRQ(ierr);
+
+    MeshsetsManager *meshsets_interface_ptr;
+    CHKERR m_field.getInterface(meshsets_interface_ptr);
+    CHKERR meshsets_interface_ptr->setMeshsetFromFile();
+
+    std::cout << "Print all meshsets (old and added from meshsets "
+                 "configurational file\n"
+              << std::endl;
+    for (CubitMeshSet_multiIndex::iterator cit =
+             meshsets_interface_ptr->getBegin();
+         cit != meshsets_interface_ptr->getEnd(); cit++) {
+      std::cout << *cit << endl;
+    }
+
+    CHKERR moab.write_file("out.h5m");
   }
+  CATCH_ERRORS;
 
-  MeshsetsManager *meshsets_interface_ptr;
-  ierr = m_field.getInterface(meshsets_interface_ptr); CHKERRQ(ierr);
-  ierr = meshsets_interface_ptr->setMeshsetFromFile(); CHKERRQ(ierr);
-
-  for(
-    CubitMeshSet_multiIndex::iterator cit = meshsets_interface_ptr->getBegin();
-    cit!=meshsets_interface_ptr->getEnd(); cit++
-  ) {
-    std::cout << *cit << endl;
-  }
-
-  rval = moab.write_file("out.h5m"); CHKERRQ_MOAB(rval);
-
-  ierr = PetscFinalize(); CHKERRQ(ierr);
+  MoFEM::Core::Finalize();
 
   return 0;
 }

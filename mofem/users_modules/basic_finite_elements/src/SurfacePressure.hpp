@@ -1,4 +1,4 @@
-/* \fiele SurfacePressure.hpp
+/* \file SurfacePressure.hpp
   \brief Implementation of pressure and forces on triangles surface
 
 */
