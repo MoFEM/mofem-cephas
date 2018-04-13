@@ -699,64 +699,70 @@ PetscErrorCode DMCreateFieldIS_MoFEM(DM dm, PetscInt *numFields, char ***fieldNa
  */
 PetscErrorCode DMMoFEMGetFieldIS(DM dm,RowColData rc,const char field_name[],IS *is);
 
+/**
+ * @brief Set verbosity level
+ *
+ * @param dm
+ * @param verb see VERBOSITY_LEVELS for list of the levels
+ * @return PetscErrorCode
+ */
+PetscErrorCode DMMoFEMSetVerbosity(DM dm, const int verb);
 
-  static const MOFEMuuid IDD_DMCTX = MOFEMuuid(BitIntefaceId(DMCTX_INTERFACE));
+static const MOFEMuuid IDD_DMCTX = MOFEMuuid(BitIntefaceId(DMCTX_INTERFACE));
 
-  /**
-   * \brief PETSc  Discrete Manager data structure
-   *
-   * This structure should not be accessed or modified by user. Is not available
-   * from outside MoFEM DM manager. However user can inherit dat class and
-   * add data for additional functionality.
-   *
-   * This is part of implementation for PETSc interface, see more details in
-   * <http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/DM/index.html>
-   *
-   * \ingroup dm
-   *
-   */
-  struct DMCtx: public UnknownInterface {
+/**
+ * \brief PETSc  Discrete Manager data structure
+ *
+ * This structure should not be accessed or modified by user. Is not available
+ * from outside MoFEM DM manager. However user can inherit dat class and
+ * add data for additional functionality.
+ *
+ * This is part of implementation for PETSc interface, see more details in
+ * <http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/DM/index.html>
+ *
+ * \ingroup dm
+ *
+ */
+struct DMCtx : public UnknownInterface {
 
-    MoFEMErrorCode query_interface(const MOFEMuuid& uuid,UnknownInterface** iface) const;
+  MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
+                                 UnknownInterface **iface) const;
 
-    Interface *mField_ptr; 		 ///< MoFEM interface
-    PetscBool isProblemBuild;  ///< True if problem is build
-    std::string problemName;	 ///< Problem name
+  Interface *mField_ptr;    ///< MoFEM interface
+  PetscBool isProblemBuild; ///< True if problem is build
+  std::string problemName;  ///< Problem name
 
-    // Options
-    PetscBool isPartitioned;		///< true if read mesh is on parts
-    PetscBool isSquareMatrix;		///< true if rows equals to cols
+  // Options
+  PetscBool isPartitioned;  ///< true if read mesh is on parts
+  PetscBool isSquareMatrix; ///< true if rows equals to cols
 
-    int rAnk,sIze;
+  int rAnk, sIze;
 
-    //pointer to data structures
-    const Problem *problemPtr;	  ///< pinter to problem data structure
+  // pointer to data structures
+  const Problem *problemPtr; ///< pinter to problem data structure
 
-    // sub problem
-    PetscBool isSubDM;
-    std::vector<std::string> rowFields;
-    std::vector<std::string> colFields;
-    const Problem *problemMainOfSubPtr;	  ///< pinter to main problem to sub-problem
+  // sub problem
+  PetscBool isSubDM;
+  std::vector<std::string> rowFields;
+  std::vector<std::string> colFields;
+  const Problem *problemMainOfSubPtr; ///< pinter to main problem to sub-problem
 
-    PetscBool isCompDM;
-    std::vector<std::string> rowCompPrb;
-    std::vector<std::string> colCompPrb;
+  PetscBool isCompDM;
+  std::vector<std::string> rowCompPrb;
+  std::vector<std::string> colCompPrb;
 
-    PetscBool destroyProblem;   ///< If true destroy problem with DM
+  PetscBool destroyProblem; ///< If true destroy problem with DM
 
-    DMCtx();
-    virtual ~DMCtx();
+  DMCtx();
+  virtual ~DMCtx();
 
-    PetscInt verbosity;			    ///< verbosity
-    int referenceNumber;
+  int verbosity; ///< verbosity
+  int referenceNumber;
 
-    boost::shared_ptr<KspCtx>  kspCtx;  ///< data structure KSP
-    boost::shared_ptr<SnesCtx> snesCtx; ///< data structure SNES
-    boost::shared_ptr<TsCtx>	 tsCtx;	  ///< data structure for TS solver
-
-  };
-
-
+  boost::shared_ptr<KspCtx> kspCtx;   ///< data structure KSP
+  boost::shared_ptr<SnesCtx> snesCtx; ///< data structure SNES
+  boost::shared_ptr<TsCtx> tsCtx;     ///< data structure for TS solver
+};
 }
 
 #endif //__DMMMOFEM_H

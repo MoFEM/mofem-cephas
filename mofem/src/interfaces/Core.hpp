@@ -471,7 +471,7 @@ protected:
 
   bool check_finite_element(const std::string &name) const;
   MoFEMErrorCode add_finite_element(const std::string &fe_name,
-                                    enum MoFEMTypes bh = MF_EXCL);
+                                    enum MoFEMTypes bh = MF_EXCL,int verb = -1);
   MoFEMErrorCode
   modify_finite_element_adjacency_table(const std::string &fe_name,
                                         const EntityType type,
@@ -593,7 +593,6 @@ protected:
 
   /**@{*/
 
-  MoFEMErrorCode add_problem(const BitProblemId id, const std::string &name);
   MoFEMErrorCode add_problem(const std::string &name,
                              enum MoFEMTypes bh = MF_EXCL, int verb = -1);
   bool check_problem(const std::string name);
@@ -848,6 +847,17 @@ private:
 
   PetscBool initaliseAndBuildFiniteElements; // If true build finite elements on
                                              // database initialisation
+
+  /**
+   * @brief add problem
+   * 
+   * @param id  problem id
+   * @param name problem name
+   * @param verb verbosity level
+   * @return MoFEMErrorCode 
+   */
+  MoFEMErrorCode addProblem(const BitProblemId id, const std::string &name,
+                            int verb = -1);
 
   /**
    * \brief Get tag handles

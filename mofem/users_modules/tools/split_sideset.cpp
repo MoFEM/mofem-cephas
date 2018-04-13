@@ -24,7 +24,7 @@ using namespace MoFEM;
 static char help[] = "...\n\n";
 
 int main(int argc, char *argv[]) {
-  PetscInitialize(&argc, &argv, (char *)0, help);
+  MoFEM::Core::Initialize(&argc, &argv, (char *)0, help);
 
   try {
 
@@ -190,7 +190,7 @@ int main(int argc, char *argv[]) {
   }
   CATCH_ERRORS;
 
-  CHKERR PetscFinalize();
+  MoFEM::Core::Finalize();
 
   return 0;
 }
