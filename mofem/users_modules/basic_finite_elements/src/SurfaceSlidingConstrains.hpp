@@ -19,9 +19,7 @@
 #ifndef __SURFACE_SLIDING_CONSTRAINS_HPP__
 #define __SURFACE_SLIDING_CONSTRAINS_HPP__
 
-#ifndef WITH_ADOL_C
-#error "MoFEM need to be compiled with ADOL-C"
-#endif
+#ifdef WITH_ADOL_C
 
 struct GenericSliding {
 
@@ -1173,5 +1171,7 @@ struct EdgeSlidingConstrains: public GenericSliding {
     MoFEMFunctionReturn(0);
   }
 };
+
+#endif // WITH_ADOL_C
 
 #endif // __SURFACE_SLIDING_CONSTRAINS_HPP__
