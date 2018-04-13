@@ -244,8 +244,7 @@ struct VolumeElementForcesAndSourcesCore : public ForcesAndSourcesCore {
      * \code
      * VectorDouble div_vec(data.getFieldData().size());
      * for(int gg = 0;gg<nb_gauss_pts;gg++) {
-     *  ierr = getDivergenceOfHDivBaseFunctions(side,type,data,gg,div_vec);
-     * CHKERRG(ierr);
+     *  CHKERR getDivergenceOfHDivBaseFunctions(side,type,data,gg,div_vec);
      *  // do something with vec_div
      * }
      * \endcode
@@ -278,14 +277,16 @@ struct VolumeElementForcesAndSourcesCore : public ForcesAndSourcesCore {
      * \code
      * MatrixDouble curl_mat(data.getFieldData().size(),3);
      * for(int gg = 0;gg<nb_gauss_pts;gg++) {
-     *  ierr = getCurlOfHCurlBaseFunctions(side,type,data,gg,curl_mat);
-     * CHKERRG(ierr);
-     *  // do something with vec_div
+     *  CHKERR getCurlOfHCurlBaseFunctions(side,type,data,gg,curl_mat);
+     *  FTensor::Tensor1<FTensor::PackPtr<double*, 3>, 3> t_curl(
+     *    &curl_mat(0,0), &curl_mat(0,1), &curl_mat(0,2)
+     *  );
+     *  // do something with curl
      * }
      * \endcode
      * where curl_mat is matrix which number of rows is equal to nb. of base
      * functions. Number of columns is 3, since we work in 3d here. Rows
-     * represents curl of vase functions.
+     * represents curl of base functions.
      *
      * @param  side side (local) number of entity on element
      * @param  type type of entity
