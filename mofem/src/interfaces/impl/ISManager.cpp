@@ -271,7 +271,7 @@ MoFEMErrorCode ISManager::isCreateProblemFieldAndRank(
   // create IS
   NumeredDofEntity_multiIndex_petsc_local_dof_view_ordered_non_unique::iterator
       vit,
-       hi_vit;
+      hi_vit;
   vit = dof_loc_idx_view.begin();
   hi_vit = dof_loc_idx_view.end();
   int size = distance(vit, hi_vit);
