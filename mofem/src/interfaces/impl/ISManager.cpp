@@ -219,7 +219,7 @@ MoFEMErrorCode ISManager::isCreateProblemOrder(const std::string &problem,
 
 MoFEMErrorCode ISManager::isCreateProblemFieldAndRank(
     const std::string &problem, RowColData rc, const std::string &field,
-    int min_coeff_idx, int max_coeff_idx, IS *is) const {
+    int min_coeff_idx, int max_coeff_idx, IS *is, Range *ents) const {
   const MoFEM::Interface &m_field = cOre;
   const Problem *problem_ptr;
   MoFEMFunctionBegin;
@@ -260,19 +260,30 @@ MoFEMErrorCode ISManager::isCreateProblemFieldAndRank(
     dof_loc_idx_view.insert(vit, hi_vit);
   }
 
+  auto true_if_dof_on_entity = [ents](auto dof) {
+    if(ents) {
+      return ents->find(dof->get()->getEnt())!=ents->end();
+    } else {
+      return true;
+    }
+  };
+
   // create IS
   NumeredDofEntity_multiIndex_petsc_local_dof_view_ordered_non_unique::iterator
       vit,
-      hi_vit;
+       hi_vit;
   vit = dof_loc_idx_view.begin();
   hi_vit = dof_loc_idx_view.end();
   int size = distance(vit, hi_vit);
   int *id;
   CHKERR PetscMalloc(size * sizeof(int), &id);
-  for (int ii = 0; vit != hi_vit; vit++) {
-    id[ii++] = (*vit)->getPetscGlobalDofIdx();
+  int ii = 0;
+  for (; vit != hi_vit; vit++) {
+    if (*vit) {
+      id[ii++] = (*vit)->getPetscGlobalDofIdx();
+    }
   }
-  CHKERR ISCreateGeneral(PETSC_COMM_WORLD, size, id, PETSC_OWN_POINTER, is);
+  CHKERR ISCreateGeneral(PETSC_COMM_WORLD, ii, id, PETSC_OWN_POINTER, is);
   MoFEMFunctionReturn(0);
 }
 
