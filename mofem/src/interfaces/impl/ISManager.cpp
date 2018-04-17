@@ -260,7 +260,7 @@ MoFEMErrorCode ISManager::isCreateProblemFieldAndRank(
     dof_loc_idx_view.insert(vit, hi_vit);
   }
 
-  auto true_if_dof_on_entity = [ents](auto dof) {
+  auto true_if_dof_on_entity = [ents](auto & dof) {
     if(ents) {
       return ents->find(dof->get()->getEnt())!=ents->end();
     } else {
@@ -279,7 +279,7 @@ MoFEMErrorCode ISManager::isCreateProblemFieldAndRank(
   CHKERR PetscMalloc(size * sizeof(int), &id);
   int ii = 0;
   for (; vit != hi_vit; vit++) {
-    if (*vit) {
+    if (true_if_dof_on_entity(vit)) {
       id[ii++] = (*vit)->getPetscGlobalDofIdx();
     }
   }

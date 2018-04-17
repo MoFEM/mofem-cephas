@@ -88,6 +88,7 @@ namespace MoFEM {
       * \param field name
       * \param min_coeff_idx
       * \param max_coeff_idx
+      * \param ents if not null get dofs only on given entities
       * \retval is out value
 
       */
