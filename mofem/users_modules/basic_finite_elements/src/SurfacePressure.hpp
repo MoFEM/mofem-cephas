@@ -20,9 +20,9 @@
 #ifndef __SURFACE_PERSSURE_HPP__
 #define __SURFACE_PERSSURE_HPP__
 
-/** \brief Finite element and operators to apply force/pressures applied to surfaces
-  * \ingroup mofem_static_boundary_conditions
-  */
+/** \brief Finite element and operators to apply force/pressures applied to
+ * surfaces \ingroup mofem_static_boundary_conditions
+ */
 struct NeummanForcesSurface {
 
   MoFEM::Interface &mField;
@@ -32,8 +32,7 @@ struct NeummanForcesSurface {
    */
   struct MethodForAnalyticalForce {
 
-    virtual ~MethodForAnalyticalForce() {
-    }
+    virtual ~MethodForAnalyticalForce() {}
 
     /**
      * User implemented analytical force
@@ -42,21 +41,15 @@ struct NeummanForcesSurface {
      * @param  force  returned force
      * @return        error code
      */
-    virtual MoFEMErrorCode getForce(
-      const EntityHandle ent,
-      const VectorDouble3 &coords,
-      const VectorDouble3 &normal,
-      VectorDouble3 &force
-    ) {
+    virtual MoFEMErrorCode getForce(const EntityHandle ent,
+                                    const VectorDouble3 &coords,
+                                    const VectorDouble3 &normal,
+                                    VectorDouble3 &force) {
       MoFEMFunctionBeginHot;
-      SETERRQ(
-        PETSC_COMM_SELF,
-        MOFEM_NOT_IMPLEMENTED,
-        "You need to implement this"
-      );
+      SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+              "You need to implement this");
       MoFEMFunctionReturnHot(0);
     }
-
   };
 
   /// \deprecated fixed spelling mistake
@@ -65,41 +58,38 @@ struct NeummanForcesSurface {
   /**
    * Definition of face element used for integration
    */
-  struct MyTriangleFE: public MoFEM::FaceElementForcesAndSourcesCore {
+  struct MyTriangleFE : public MoFEM::FaceElementForcesAndSourcesCore {
     int addToRule;
     MyTriangleFE(MoFEM::Interface &m_field);
-    int getRule(int order) { return 2*order+addToRule; };
+    int getRule(int order) { return 2 * order + addToRule; };
   };
 
   MyTriangleFE fe;
-  MyTriangleFE& getLoopFe() { return fe; }
+  MyTriangleFE &getLoopFe() { return fe; }
 
-  NeummanForcesSurface(
-    MoFEM::Interface &m_field
-  ):
-  mField(m_field),
-  fe(m_field) {}
+  NeummanForcesSurface(MoFEM::Interface &m_field)
+      : mField(m_field), fe(m_field) {}
 
   struct bCForce {
     ForceCubitBcData data;
     Range tRis;
   };
-  std::map<int,bCForce> mapForce;
-
-
+  std::map<int, bCForce> mapForce;
 
   struct bCPressure {
     PressureCubitBcData data;
     Range tRis;
   };
-  DEPRECATED typedef bCPressure bCPreassure; ///< \deprecated Do not use spelling mistake
-  std::map<int,bCPressure> mapPressure;
+  DEPRECATED typedef bCPressure
+      bCPreassure; ///< \deprecated Do not use spelling mistake
+  std::map<int, bCPressure> mapPressure;
 
   boost::ptr_vector<MethodForForceScaling> methodsOp;
   boost::ptr_vector<MethodForAnalyticalForce> analyticalForceOp;
 
   /// Operator for force element
-  struct OpNeumannForce: public MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator {
+  struct OpNeumannForce
+      : public MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator {
 
     Vec F;
     bCForce &dAta;
@@ -107,20 +97,19 @@ struct NeummanForcesSurface {
 
     bool hoGeometry;
 
-    OpNeumannForce(
-      const std::string field_name,Vec _F,bCForce &data,
-      boost::ptr_vector<MethodForForceScaling> &methods_op,
-      bool ho_geometry = false
-    );
+    OpNeumannForce(const std::string field_name, Vec _F, bCForce &data,
+                   boost::ptr_vector<MethodForForceScaling> &methods_op,
+                   bool ho_geometry = false);
 
     VectorDouble Nf; //< Local force vector
 
-    MoFEMErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data);
-
+    MoFEMErrorCode doWork(int side, EntityType type,
+                          DataForcesAndSourcesCore::EntData &data);
   };
 
   /// Operator for force element
-  struct OpNeumannForceAnalytical: public MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator {
+  struct OpNeumannForceAnalytical
+      : public MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator {
 
     Vec F;
     const Range tRis;
@@ -130,61 +119,53 @@ struct NeummanForcesSurface {
     bool hoGeometry;
 
     OpNeumannForceAnalytical(
-      const std::string field_name,
-      Vec f,
-      const Range tris,
-      boost::ptr_vector<MethodForForceScaling> &methods_op,
-      boost::ptr_vector<MethodForAnalyticalForce> &analytical_force_op,
-      bool ho_geometry = false
-    );
+        const std::string field_name, Vec f, const Range tris,
+        boost::ptr_vector<MethodForForceScaling> &methods_op,
+        boost::ptr_vector<MethodForAnalyticalForce> &analytical_force_op,
+        bool ho_geometry = false);
 
     VectorDouble Nf; //< Local force vector
 
-    MoFEMErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data);
-
+    MoFEMErrorCode doWork(int side, EntityType type,
+                          DataForcesAndSourcesCore::EntData &data);
   };
 
-
   /// Operator for pressure element
-  struct OpNeumannPressure:public MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator {
+  struct OpNeumannPressure
+      : public MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator {
 
     Vec F;
     bCPressure &dAta;
     boost::ptr_vector<MethodForForceScaling> &methodsOp;
     bool hoGeometry;
 
-    OpNeumannPressure(
-      const std::string field_name,Vec _F,
-      bCPressure &data,
-      boost::ptr_vector<MethodForForceScaling> &methods_op,
-      bool ho_geometry = false
-    );
+    OpNeumannPressure(const std::string field_name, Vec _F, bCPressure &data,
+                      boost::ptr_vector<MethodForForceScaling> &methods_op,
+                      bool ho_geometry = false);
 
     VectorDouble Nf;
 
-    MoFEMErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data);
-
+    MoFEMErrorCode doWork(int side, EntityType type,
+                          DataForcesAndSourcesCore::EntData &data);
   };
   DEPRECATED typedef OpNeumannPressure OpNeumannPreassure;
   /// Operator for flux element
-  struct OpNeumannFlux:public MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator {
+  struct OpNeumannFlux
+      : public MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator {
 
     Vec F;
     bCPressure &dAta;
     boost::ptr_vector<MethodForForceScaling> &methodsOp;
     bool hoGeometry;
 
-    OpNeumannFlux(
-      const std::string field_name,Vec _F,
-      bCPressure &data,
-      boost::ptr_vector<MethodForForceScaling> &methods_op,
-      bool ho_geometry
-    );
+    OpNeumannFlux(const std::string field_name, Vec _F, bCPressure &data,
+                  boost::ptr_vector<MethodForForceScaling> &methods_op,
+                  bool ho_geometry);
 
     VectorDouble Nf;
 
-    MoFEMErrorCode doWork(int side,EntityType type,DataForcesAndSourcesCore::EntData &data);
-
+    MoFEMErrorCode doWork(int side, EntityType type,
+                          DataForcesAndSourcesCore::EntData &data);
   };
 
   /**
@@ -192,44 +173,48 @@ struct NeummanForcesSurface {
    * @param  field_name  Field name (f.e. TEMPERATURE)
    * @param  F           Right hand side vector
    * @param  ms_id       Set id (SideSet or BlockSet if block_set = true)
-   * @param  ho_geometry Use higher order shape functions to define curved geometry
+   * @param  ho_geometry Use higher order shape functions to define curved
+   * geometry
    * @param  block_set   If tru get data from block set
    * @return             ErrorCode
    */
-  MoFEMErrorCode addForce(const std::string field_name,Vec F,int ms_id,bool ho_geometry = false,bool block_set = false);
+  MoFEMErrorCode addForce(const std::string field_name, Vec F, int ms_id,
+                          bool ho_geometry = false, bool block_set = false);
 
   /**
    * \brief Add operator to calculate pressure on element
    * @param  field_name  Field name (f.e. TEMPERATURE)
    * @param  F           Right hand side vector
    * @param  ms_id       Set id (SideSet or BlockSet if block_set = true)
-   * @param  ho_geometry Use higher order shape functions to define curved geometry
+   * @param  ho_geometry Use higher order shape functions to define curved
+   * geometry
    * @param  block_set   If tru get data from block set
    * @return             ErrorCode
    */
-  MoFEMErrorCode addPressure(
-    const std::string field_name,Vec F,int ms_id,bool ho_geometry = false,bool block_set = false
-  );
+  MoFEMErrorCode addPressure(const std::string field_name, Vec F, int ms_id,
+                             bool ho_geometry = false, bool block_set = false);
 
-  /// \deprecated function is deprecated because spelling mistake, use addPressure instead
-  DEPRECATED MoFEMErrorCode addPreassure(
-    const std::string field_name,Vec F,int ms_id,bool ho_geometry = false,bool block_set = false
-  );
+  /// \deprecated function is deprecated because spelling mistake, use
+  /// addPressure instead
+  DEPRECATED MoFEMErrorCode addPreassure(const std::string field_name, Vec F,
+                                         int ms_id, bool ho_geometry = false,
+                                         bool block_set = false);
 
   /// Add flux element operator (integration on face)
-  MoFEMErrorCode addFlux(const std::string field_name,Vec F,int ms_id,bool ho_geometry = false);
-
+  MoFEMErrorCode addFlux(const std::string field_name, Vec F, int ms_id,
+                         bool ho_geometry = false);
 };
 
-/** \brief Set of high-level function declaring elements and setting operators to apply forces/fluxes
-  * \ingroup mofem_static_boundary_conditions
-  */
+/** \brief Set of high-level function declaring elements and setting operators
+ * to apply forces/fluxes \ingroup mofem_static_boundary_conditions
+ */
 struct MetaNeummanForces {
 
   /**
    * \brief Declare finite element
    *
-   * Search cubit sidesets and blocksets with pressure bc and declare surface elemen
+   * Search cubit sidesets and blocksets with pressure bc and declare surface
+   elemen
 
    * Block set has to have name “PRESSURE”. Can have name “PRESSURE_01” or any
    * other name with prefix. The first attribute  of block set is pressure
@@ -243,98 +228,114 @@ struct MetaNeummanForces {
    * @return                       Error code
    */
   static MoFEMErrorCode addNeumannBCElements(
-    MoFEM::Interface &m_field,
-    const std::string field_name,
-    const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS",
-    Range *intersect_ptr = NULL
-  ) {
-    MoFEMFunctionBeginHot;
+      MoFEM::Interface &m_field, const std::string field_name,
+      const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS",
+      Range *intersect_ptr = NULL) {
+    MoFEMFunctionBegin;
 
-
-    // Define boundary element that operates on rows, columns and data of a given field
-    ierr = m_field.add_finite_element("FORCE_FE",MF_ZERO); CHKERRG(ierr);
-    ierr = m_field.modify_finite_element_add_field_row("FORCE_FE",field_name); CHKERRG(ierr);
-    ierr = m_field.modify_finite_element_add_field_col("FORCE_FE",field_name); CHKERRG(ierr);
-    ierr = m_field.modify_finite_element_add_field_data("FORCE_FE",field_name); CHKERRG(ierr);
-    if(m_field.check_field(mesh_nodals_positions)) {
-      ierr = m_field.modify_finite_element_add_field_data("FORCE_FE",mesh_nodals_positions); CHKERRG(ierr);
+    // Define boundary element that operates on rows, columns and data of a
+    // given field
+    CHKERR m_field.add_finite_element("FORCE_FE", MF_ZERO);
+    CHKERR m_field.modify_finite_element_add_field_row("FORCE_FE", field_name);
+    CHKERR m_field.modify_finite_element_add_field_col("FORCE_FE", field_name);
+    CHKERR m_field.modify_finite_element_add_field_data("FORCE_FE", field_name);
+    if (m_field.check_field(mesh_nodals_positions)) {
+      CHKERR m_field.modify_finite_element_add_field_data(
+          "FORCE_FE", mesh_nodals_positions);
     }
-    // Add entities to that element, here we add all triangles with FORCESET from cubit
-    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,NODESET|FORCESET,it)) {
+    // Add entities to that element, here we add all triangles with FORCESET
+    // from cubit
+    for (_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field, NODESET | FORCESET,
+                                                    it)) {
       Range tris;
-      rval = m_field.get_moab().get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERRG(rval);
-      if(intersect_ptr) {
-        tris = intersect(tris,*intersect_ptr);
+      CHKERR m_field.get_moab().get_entities_by_type(it->meshset, MBTRI, tris,
+                                                     true);
+      if (intersect_ptr) {
+        tris = intersect(tris, *intersect_ptr);
       }
-      ierr = m_field.add_ents_to_finite_element_by_type(tris,MBTRI,"FORCE_FE"); CHKERRG(ierr);
+      CHKERR m_field.add_ents_to_finite_element_by_type(tris, MBTRI,
+                                                        "FORCE_FE");
     }
 
-    ierr = m_field.add_finite_element("PRESSURE_FE",MF_ZERO); CHKERRG(ierr);
-    ierr = m_field.modify_finite_element_add_field_row("PRESSURE_FE",field_name); CHKERRG(ierr);
-    ierr = m_field.modify_finite_element_add_field_col("PRESSURE_FE",field_name); CHKERRG(ierr);
-    ierr = m_field.modify_finite_element_add_field_data("PRESSURE_FE",field_name); CHKERRG(ierr);
-    if(m_field.check_field(mesh_nodals_positions)) {
-      ierr = m_field.modify_finite_element_add_field_data("PRESSURE_FE",mesh_nodals_positions); CHKERRG(ierr);
+    CHKERR m_field.add_finite_element("PRESSURE_FE", MF_ZERO);
+    CHKERR m_field.modify_finite_element_add_field_row("PRESSURE_FE",
+                                                       field_name);
+    CHKERR m_field.modify_finite_element_add_field_col("PRESSURE_FE",
+                                                       field_name);
+    CHKERR m_field.modify_finite_element_add_field_data("PRESSURE_FE",
+                                                        field_name);
+    if (m_field.check_field(mesh_nodals_positions)) {
+      ierr = m_field.modify_finite_element_add_field_data(
+          "PRESSURE_FE", mesh_nodals_positions);
     }
 
-    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,SIDESET|PRESSURESET,it)) {
+    for (_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(
+             m_field, SIDESET | PRESSURESET, it)) {
       Range tris;
-      rval = m_field.get_moab().get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERRG(rval);
-      if(intersect_ptr) {
-        tris = intersect(tris,*intersect_ptr);
+      CHKERR m_field.get_moab().get_entities_by_type(it->meshset, MBTRI, tris,
+                                                     true);
+      if (intersect_ptr) {
+        tris = intersect(tris, *intersect_ptr);
       }
-      ierr = m_field.add_ents_to_finite_element_by_type(tris,MBTRI,"PRESSURE_FE"); CHKERRG(ierr);
+      CHKERR m_field.add_ents_to_finite_element_by_type(tris, MBTRI,
+                                                        "PRESSURE_FE");
     }
 
     // Reading forces from BLOCKSET
 
     const string block_set_force_name("FORCE");
     // search for block named FORCE and add its attributes to FORCE_FE element
-    for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
-      if(it->getName().compare(0,block_set_force_name.length(),block_set_force_name) == 0) {
+    for (_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field, BLOCKSET, it)) {
+      if (it->getName().compare(0, block_set_force_name.length(),
+                                block_set_force_name) == 0) {
         std::vector<double> mydata;
-        ierr = it->getAttributes(mydata); CHKERRG(ierr);
+        CHKERR it->getAttributes(mydata);
         VectorDouble force(mydata.size());
-        for(unsigned int ii = 0;ii<mydata.size();ii++) {
+        for (unsigned int ii = 0; ii < mydata.size(); ii++) {
           force[ii] = mydata[ii];
         }
-        if(force.empty()) {
-          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Force not given");
+        if (force.empty()) {
+          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Force not given");
         }
         Range tris;
-        rval = m_field.get_moab().get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERRG(rval);
-        if(intersect_ptr) {
-          tris = intersect(tris,*intersect_ptr);
+        CHKERR m_field.get_moab().get_entities_by_type(it->meshset, MBTRI, tris,
+                                                       true);
+        if (intersect_ptr) {
+          tris = intersect(tris, *intersect_ptr);
         }
-        ierr = m_field.add_ents_to_finite_element_by_type(tris,MBTRI,"FORCE_FE"); CHKERRG(ierr);
-        //cerr << tris << endl;
+        CHKERR m_field.add_ents_to_finite_element_by_type(tris, MBTRI,
+                                                          "FORCE_FE");
       }
     }
-    // search for block named PRESSURE and add its attributes to PRESSURE_FE element
+    // search for block named PRESSURE and add its attributes to PRESSURE_FE
+    // element
     const string block_set_pressure_name("PRESSURE");
-    for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
-      if(it->getName().compare(0,block_set_pressure_name.length(),block_set_pressure_name) == 0) {
+    for (_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field, BLOCKSET, it)) {
+      if (it->getName().compare(0, block_set_pressure_name.length(),
+                                block_set_pressure_name) == 0) {
         std::vector<double> mydata;
-        ierr = it->getAttributes(mydata); CHKERRG(ierr);
+        CHKERR it->getAttributes(mydata);
         VectorDouble pressure(mydata.size());
-        for(unsigned int ii = 0;ii<mydata.size();ii++) {
+        for (unsigned int ii = 0; ii < mydata.size(); ii++) {
           pressure[ii] = mydata[ii];
         }
-        if(pressure.empty()) {
-          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Pressure not given");
+        if (pressure.empty()) {
+          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                  "Pressure not given");
         }
         Range tris;
-        rval = m_field.get_moab().get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERRG(rval);
-        if(intersect_ptr) {
-          tris = intersect(tris,*intersect_ptr);
+        CHKERR m_field.get_moab().get_entities_by_type(it->meshset, MBTRI, tris,
+                                                       true);
+        if (intersect_ptr) {
+          tris = intersect(tris, *intersect_ptr);
         }
         // cerr << tris << endl;
-        ierr = m_field.add_ents_to_finite_element_by_type(tris,MBTRI,"PRESSURE_FE"); CHKERRG(ierr);
+        CHKERR m_field.add_ents_to_finite_element_by_type(tris, MBTRI,
+                                                          "PRESSURE_FE");
       }
     }
 
-
-    MoFEMFunctionReturnHot(0);
+    MoFEMFunctionReturn(0);
   }
 
   /**
@@ -349,134 +350,100 @@ struct MetaNeummanForces {
    *
    */
   static MoFEMErrorCode setMomentumFluxOperators(
-    MoFEM::Interface &m_field,
-    boost::ptr_map<std::string,NeummanForcesSurface> &neumann_forces,
-    Vec F,const std::string field_name,const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS"
-  ) {
-    MoFEMFunctionBeginHot;
+      MoFEM::Interface &m_field,
+      boost::ptr_map<std::string, NeummanForcesSurface> &neumann_forces, Vec F,
+      const std::string field_name,
+      const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS") {
+    MoFEMFunctionBegin;
 
     string fe_name;
     fe_name = "FORCE_FE";
-    neumann_forces.insert(fe_name,new NeummanForcesSurface(m_field));
+    neumann_forces.insert(fe_name, new NeummanForcesSurface(m_field));
     bool ho_geometry = m_field.check_field(mesh_nodals_positions);
-    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,NODESET|FORCESET,it)) {
-      ierr = neumann_forces.at(fe_name).addForce(field_name,F,it->getMeshsetId(),ho_geometry,false);  CHKERRG(ierr);
-      /*ForceCubitBcData data;
-      ierr = it->getBcDataStructure(data); CHKERRG(ierr);
-      my_split << *it << std::endl;
-      my_split << data << std::endl;*/
+    for (_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field, NODESET | FORCESET,
+                                                    it)) {
+      CHKERR neumann_forces.at(fe_name).addForce(
+          field_name, F, it->getMeshsetId(), ho_geometry, false);
     }
     // Reading forces from BLOCKSET
     const string block_set_force_name("FORCE");
-    for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
-      if(it->getName().compare(0,block_set_force_name.length(),block_set_force_name) == 0) {
-        ierr =  neumann_forces.at(fe_name).addForce(field_name,F,it->getMeshsetId(),ho_geometry,true); CHKERRG(ierr);
+    for (_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field, BLOCKSET, it)) {
+      if (it->getName().compare(0, block_set_force_name.length(),
+                                block_set_force_name) == 0) {
+        CHKERR neumann_forces.at(fe_name).addForce(
+            field_name, F, it->getMeshsetId(), ho_geometry, true);
       }
     }
 
     fe_name = "PRESSURE_FE";
-    neumann_forces.insert(fe_name,new NeummanForcesSurface(m_field));
-    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,SIDESET|PRESSURESET,it)) {
-      ierr =  neumann_forces.at(fe_name).addPressure(field_name,F,it->getMeshsetId(),ho_geometry,false); CHKERRG(ierr);
-      /*PressureCubitBcData data;
-      ierr = it->getBcDataStructure(data); CHKERRG(ierr);
-      my_split << *it << std::endl;
-      my_split << data << std::endl;*/
+    neumann_forces.insert(fe_name, new NeummanForcesSurface(m_field));
+    for (_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(
+             m_field, SIDESET | PRESSURESET, it)) {
+      CHKERR neumann_forces.at(fe_name).addPressure(
+          field_name, F, it->getMeshsetId(), ho_geometry, false);
     }
-      // Reading pressures from BLOCKSET
+    // Reading pressures from BLOCKSET
     const string block_set_pressure_name("PRESSURE");
-    for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
-      if(it->getName().compare(0,block_set_pressure_name.length(),block_set_pressure_name) == 0) {
-        ierr =  neumann_forces.at(fe_name).addPressure(field_name,F,it->getMeshsetId(),ho_geometry,true); CHKERRG(ierr);
+    for (_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field, BLOCKSET, it)) {
+      if (it->getName().compare(0, block_set_pressure_name.length(),
+                                block_set_pressure_name) == 0) {
+        CHKERR neumann_forces.at(fe_name).addPressure(
+            field_name, F, it->getMeshsetId(), ho_geometry, true);
       }
     }
 
-    MoFEMFunctionReturnHot(0);
+    MoFEMFunctionReturn(0);
   }
 
-  // /** \deprecated Use setMomentumFluxOperators() instead
-  // */
-  // DEPRECATED static MoFEMErrorCode setNeumannFiniteElementOperators(
-  //   MoFEM::Interface &m_field,
-  //   boost::ptr_map<std::string,NeummanForcesSurface> &neumann_forces,
-  //   Vec F,const std::string field_name,const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS"
-  // ) {
-  //
-  //   MoFEMFunctionBeginHot;
-  //   ierr = setMomentumFluxOperators(
-  //     m_field,neumann_forces,F,field_name,mesh_nodals_positions
-  //   );  CHKERRG(ierr);
-  //   MoFEMFunctionReturnHot(0);
-  // }
-
   static MoFEMErrorCode addNeumannFluxBCElements(
-    MoFEM::Interface &m_field,
-    const std::string field_name,
-    const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS") {
-    MoFEMFunctionBeginHot;
+      MoFEM::Interface &m_field, const std::string field_name,
+      const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS") {
+    MoFEMFunctionBegin;
 
-
-
-    ierr = m_field.add_finite_element("FLUX_FE",MF_ZERO); CHKERRG(ierr);
-    ierr = m_field.modify_finite_element_add_field_row("FLUX_FE",field_name); CHKERRG(ierr);
-    ierr = m_field.modify_finite_element_add_field_col("FLUX_FE",field_name); CHKERRG(ierr);
-    ierr = m_field.modify_finite_element_add_field_data("FLUX_FE",field_name); CHKERRG(ierr);
-    if(m_field.check_field(mesh_nodals_positions)) {
-      ierr = m_field.modify_finite_element_add_field_data("FLUX_FE",mesh_nodals_positions); CHKERRG(ierr);
+    CHKERR m_field.add_finite_element("FLUX_FE", MF_ZERO);
+    CHKERR m_field.modify_finite_element_add_field_row("FLUX_FE", field_name);
+    CHKERR m_field.modify_finite_element_add_field_col("FLUX_FE", field_name);
+    CHKERR m_field.modify_finite_element_add_field_data("FLUX_FE", field_name);
+    if (m_field.check_field(mesh_nodals_positions)) {
+      ierr = m_field.modify_finite_element_add_field_data(
+          "FLUX_FE", mesh_nodals_positions);
     }
 
-    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,SIDESET|PRESSURESET,it)) {
+    for (_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(
+             m_field, SIDESET | PRESSURESET, it)) {
       Range tris;
-      rval = m_field.get_moab().get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERRG(rval);
-      ierr = m_field.add_ents_to_finite_element_by_type(tris,MBTRI,"FLUX_FE"); CHKERRG(ierr);
+      CHKERR m_field.get_moab().get_entities_by_type(it->meshset, MBTRI, tris,
+                                                     true);
+      CHKERR m_field.add_ents_to_finite_element_by_type(tris, MBTRI, "FLUX_FE");
     }
 
-    MoFEMFunctionReturnHot(0);
+    MoFEMFunctionReturn(0);
   }
 
   static MoFEMErrorCode setMassFluxOperators(
-    MoFEM::Interface &m_field,
-    boost::ptr_map<std::string,NeummanForcesSurface> &neumann_forces,
-    Vec F,const std::string field_name,const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS"
-  ) {
-    MoFEMFunctionBeginHot;
+      MoFEM::Interface &m_field,
+      boost::ptr_map<std::string, NeummanForcesSurface> &neumann_forces, Vec F,
+      const std::string field_name,
+      const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS") {
+    MoFEMFunctionBegin;
 
     string fe_name;
     fe_name = "FLUX_FE";
-    neumann_forces.insert(fe_name,new NeummanForcesSurface(m_field));
-    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,SIDESET|PRESSURESET,it)) {
+    neumann_forces.insert(fe_name, new NeummanForcesSurface(m_field));
+    for (_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(
+             m_field, SIDESET | PRESSURESET, it)) {
       bool ho_geometry = m_field.check_field(mesh_nodals_positions);
-      ierr = neumann_forces.at(fe_name).addFlux(field_name,F,it->getMeshsetId(),ho_geometry); CHKERRG(ierr);
-      /*PressureCubitBcData data;
-      ierr = it->getBcDataStructure(data); CHKERRG(ierr);
-      my_split << *it << std::endl;
-      my_split << data << std::endl;*/
-    }
-    MoFEMFunctionReturnHot(0);
+      CHKERR neumann_forces.at(fe_name).addFlux(
+          field_name, F, it->getMeshsetId(), ho_geometry);
+   }
+    MoFEMFunctionReturn(0);
   }
-
-  // /** \deprecated Use setMassFluxOperators() instead
-  // */
-  // DEPRECATED static MoFEMErrorCode setNeumannFluxFiniteElementOperators(
-  //   MoFEM::Interface &m_field,
-  //   boost::ptr_map<std::string,NeummanForcesSurface> &neumann_forces,
-  //   Vec F,const std::string field_name,const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS"
-  // ) {
-  //
-  //   MoFEMFunctionBeginHot;
-  //   ierr = setMassFluxOperators(
-  //     m_field,neumann_forces,F,field_name,mesh_nodals_positions
-  //   ); CHKERRG(ierr);
-  //   MoFEMFunctionReturnHot(0);
-  // }
-
 
 };
 
 #endif //__SURFACE_PERSSURE_HPP__
 
-
-/***************************************************************************//**
+/***************************************************************************/ /**
  * \defgroup mofem_static_boundary_conditions Pressure and force boundary conditions
  * \ingroup user_modules
  ******************************************************************************/
