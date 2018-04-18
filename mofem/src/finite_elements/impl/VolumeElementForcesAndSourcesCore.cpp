@@ -97,7 +97,7 @@ VolumeElementForcesAndSourcesCore::VolumeElementForcesAndSourcesCore(
               &invJac(2, 2)) {}
 
 MoFEMErrorCode VolumeElementForcesAndSourcesCore::setIntegrationPts() {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   int order_data = getMaxDataOrder();
   int order_row = getMaxRowOrder();
   int order_col = getMaxColOrder();
@@ -134,31 +134,28 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCore::setIntegrationPts() {
       nbGaussPts = 0;
     }
   } else {
-    ierr = setGaussPts(order_row, order_col, order_data);
-    CHKERRG(ierr);
+    CHKERR setGaussPts(order_row, order_col, order_data);
     nbGaussPts = gaussPts.size2();
     dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nbGaussPts, 4,
                                                            false);
     if (nbGaussPts > 0) {
-      ierr = ShapeMBTET(
+      CHKERR ShapeMBTET(
           &*dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin(),
           &gaussPts(0, 0), &gaussPts(1, 0), &gaussPts(2, 0), nbGaussPts);
-      CHKERRG(ierr);
     }
   }
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode VolumeElementForcesAndSourcesCore::calculateVolumeAndJacobian() {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   EntityHandle ent = numeredEntFiniteElementPtr->getEnt();
-  rval = mField.get_moab().get_connectivity(ent, conn, num_nodes, true);
+  CHKERR mField.get_moab().get_connectivity(ent, conn, num_nodes, true);
   CHKERRQ_MOAB(rval);
-  rval = mField.get_moab().get_coords(conn, num_nodes, &*coords.data().begin());
+  CHKERR mField.get_moab().get_coords(conn, num_nodes, &*coords.data().begin());
   CHKERRQ_MOAB(rval);
   double diff_n[12];
-  ierr = ShapeDiffMBTET(diff_n);
-  CHKERRG(ierr);
+  CHKERR ShapeDiffMBTET(diff_n);
   FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_diff_n(
       &diff_n[0], &diff_n[1], &diff_n[2]);
   FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_coords(
@@ -171,18 +168,15 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCore::calculateVolumeAndJacobian() {
     ++t_coords;
     ++t_diff_n;
   }
-  ierr = determinantTensor3by3(tJac, vOlume);
-  CHKERRG(ierr);
-  ierr = invertTensor3by3(tJac, vOlume, tInvJac);
-  CHKERRG(ierr);
+  CHKERR determinantTensor3by3(tJac, vOlume);
+  CHKERR invertTensor3by3(tJac, vOlume, tInvJac);
   vOlume *= G_TET_W1[0] / 6.;
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode
 VolumeElementForcesAndSourcesCore::calculateCoordinatesAtGaussPts() {
-  MoFEMFunctionBeginHot;
-  try {
+  MoFEMFunctionBegin;
     // Get coords at Gauss points
     FTensor::Index<'i', 3> i;
     double *shape_functions_ptr =
@@ -204,14 +198,8 @@ VolumeElementForcesAndSourcesCore::calculateCoordinatesAtGaussPts() {
       ++t_coords_at_gauss_ptr;
     }
 
-  } catch (std::exception &ex) {
-    std::ostringstream ss;
-    ss << "thorw in method: " << ex.what() << " at line " << __LINE__
-       << " in file " << __FILE__;
-    SETERRQ(mField.get_comm(), MOFEM_STD_EXCEPTION_THROW, ss.str().c_str());
+  MoFEMFunctionReturn(0);
   }
-  MoFEMFunctionReturnHot(0);
-}
 
 MoFEMErrorCode
 VolumeElementForcesAndSourcesCore::getSpaceBaseAndOrderOnElement() {
@@ -332,37 +320,24 @@ VolumeElementForcesAndSourcesCore::calculateBaseFunctionsOnElement() {
 }
 
 MoFEMErrorCode VolumeElementForcesAndSourcesCore::transformBaseFunctions() {
-  MoFEMFunctionBeginHot;
-  try {
-    ierr = opSetInvJacH1.opRhs(dataH1);
-    CHKERRG(ierr);
+  MoFEMFunctionBegin;
+  CHKERR opSetInvJacH1.opRhs(dataH1);
     if (dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
-      ierr = opCovariantPiolaTransform.opRhs(dataHcurl);
-      CHKERRG(ierr);
-      ierr = opSetInvJacHdivAndHcurl.opRhs(dataHcurl);
-      CHKERRG(ierr);
+    CHKERR opCovariantPiolaTransform.opRhs(dataHcurl);
+    CHKERR opSetInvJacHdivAndHcurl.opRhs(dataHcurl);
     }
     if (dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
-      ierr = opContravariantPiolaTransform.opRhs(dataHdiv);
-      CHKERRG(ierr);
-      ierr = opSetInvJacHdivAndHcurl.opRhs(dataHdiv);
-      CHKERRG(ierr);
+    CHKERR opContravariantPiolaTransform.opRhs(dataHdiv);
+    CHKERR opSetInvJacHdivAndHcurl.opRhs(dataHdiv);
     }
     if (dataH1.spacesOnEntities[MBTET].test(L2)) {
-      ierr = opSetInvJacH1.opRhs(dataL2);
-      CHKERRG(ierr);
+    CHKERR opSetInvJacH1.opRhs(dataL2);
     }
-  } catch (std::exception &ex) {
-    std::ostringstream ss;
-    ss << "thorw in method: " << ex.what() << " at line " << __LINE__
-       << " in file " << __FILE__;
-    SETERRQ(mField.get_comm(), MOFEM_STD_EXCEPTION_THROW, ss.str().c_str());
+  MoFEMFunctionReturn(0);
   }
-  MoFEMFunctionReturnHot(0);
-}
 
 MoFEMErrorCode VolumeElementForcesAndSourcesCore::calculateHoJacobian() {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   if (dataPtr->get<FieldName_mi_tag>().find(meshPositionsFieldName) !=
       dataPtr->get<FieldName_mi_tag>().end()) {
     const Field *field_struture =
@@ -372,28 +347,19 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCore::calculateHoJacobian() {
       SETERRQ(mField.get_comm(), MOFEM_NOT_FOUND,
               "no MESH_NODE_POSITIONS in element data");
     }
-    ierr = getEdgesDataOrderSpaceAndBase(dataH1, meshPositionsFieldName);
-    CHKERRG(ierr);
-    ierr = getTrisDataOrderSpaceAndBase(dataH1, meshPositionsFieldName);
-    CHKERRG(ierr);
-    ierr = getTetDataOrderSpaceAndBase(dataH1, meshPositionsFieldName);
-    CHKERRG(ierr);
-    ierr = getNodesFieldData(dataH1, meshPositionsFieldName);
-    CHKERRG(ierr);
+    CHKERR getEdgesDataOrderSpaceAndBase(dataH1, meshPositionsFieldName);
+    CHKERR getTrisDataOrderSpaceAndBase(dataH1, meshPositionsFieldName);
+    CHKERR getTetDataOrderSpaceAndBase(dataH1, meshPositionsFieldName);
+    CHKERR getNodesFieldData(dataH1, meshPositionsFieldName);
     if (dataH1.dataOnEntities[MBVERTEX][0].getFieldData().size() != 12) {
       SETERRQ(mField.get_comm(), MOFEM_NOT_FOUND,
               "no MESH_NODE_POSITIONS in element data or field has wrong "
               "number of coefficients");
     }
-    ierr = getEdgesFieldData(dataH1, meshPositionsFieldName);
-    CHKERRG(ierr);
-    ierr = getTrisFieldData(dataH1, meshPositionsFieldName);
-    CHKERRG(ierr);
-    ierr = getTetsFieldData(dataH1, meshPositionsFieldName);
-    CHKERRG(ierr);
-    try {
-      ierr = opHOatGaussPoints.opRhs(dataH1);
-      CHKERRG(ierr);
+    CHKERR getEdgesFieldData(dataH1, meshPositionsFieldName);
+    CHKERR getTrisFieldData(dataH1, meshPositionsFieldName);
+    CHKERR getTetsFieldData(dataH1, meshPositionsFieldName);
+    CHKERR opHOatGaussPoints.opRhs(dataH1);
       hoGaussPtsInvJac.resize(hoGaussPtsJac.size1(), hoGaussPtsJac.size2(),
                               false);
       // Express Jacobian as tensor
@@ -411,65 +377,44 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCore::calculateHoJacobian() {
       FTensor::Tensor0<double *> det(&hoGaussPtsDetJac[0]);
       // Calculate inverse and determinant
       for (unsigned int gg = 0; gg != nbGaussPts; gg++) {
-        ierr = determinantTensor3by3(jac, det);
-        CHKERRG(ierr);
+      CHKERR determinantTensor3by3(jac, det);
         // if(det<0) {
         //   SETERRQ(mField.get_comm(),MOFEM_DATA_INCONSISTENCY,"Negative
         //   volume");
         // }
-        ierr = invertTensor3by3(jac, det, inv_jac);
-        CHKERRG(ierr);
+      CHKERR invertTensor3by3(jac, det, inv_jac);
         ++jac;
         ++inv_jac;
         ++det;
       }
-    } catch (std::exception &ex) {
-      std::ostringstream ss;
-      ss << "problem with indices in method: " << ex.what() << " at line "
-         << __LINE__ << " in file " << __FILE__;
-      SETERRQ(mField.get_comm(), MOFEM_STD_EXCEPTION_THROW, ss.str().c_str());
-    }
   } else {
     hoCoordsAtGaussPts.resize(0, 0, false);
     hoGaussPtsInvJac.resize(0, 0, false);
     hoGaussPtsDetJac.resize(0, false);
   }
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode VolumeElementForcesAndSourcesCore::transformHoBaseFunctions() {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
 
   if (hoCoordsAtGaussPts.size1() > 0) {
-    try {
       // Transform derivatives of base functions and apply Piola transformation
       // if needed.
-      ierr = opSetHoInvJacH1.opRhs(dataH1);
-      CHKERRG(ierr);
+    CHKERR opSetHoInvJacH1.opRhs(dataH1);
       if (dataH1.spacesOnEntities[MBTET].test(L2)) {
-        ierr = opSetHoInvJacH1.opRhs(dataL2);
-        CHKERRG(ierr);
+      CHKERR opSetHoInvJacH1.opRhs(dataL2);
       }
       if (dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
-        ierr = opHoContravariantTransform.opRhs(dataHdiv);
-        CHKERRG(ierr);
-        ierr = opSetHoInvJacHdivAndHcurl.opRhs(dataHdiv);
-        CHKERRG(ierr);
+      CHKERR opHoContravariantTransform.opRhs(dataHdiv);
+      CHKERR opSetHoInvJacHdivAndHcurl.opRhs(dataHdiv);
       }
       if (dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
-        ierr = opHoCovariantTransform.opRhs(dataHcurl);
-        CHKERRG(ierr);
-        ierr = opSetHoInvJacHdivAndHcurl.opRhs(dataHcurl);
-        CHKERRG(ierr);
-      }
-    } catch (std::exception &ex) {
-      std::ostringstream ss;
-      ss << "problem with indices in method: " << ex.what() << " at line "
-         << __LINE__ << " in file " << __FILE__;
-      SETERRQ(mField.get_comm(), MOFEM_STD_EXCEPTION_THROW, ss.str().c_str());
+      CHKERR opHoCovariantTransform.opRhs(dataHcurl);
+      CHKERR opSetHoInvJacHdivAndHcurl.opRhs(dataHcurl);
     }
   }
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode VolumeElementForcesAndSourcesCore::operator()() {
@@ -759,110 +704,88 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCore::UserDataOperator::
     getDivergenceOfHDivBaseFunctions(int side, EntityType type,
                                      DataForcesAndSourcesCore::EntData &data,
                                      int gg, VectorDouble &div) {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
 
-  try {
+  int nb_dofs = data.getFieldData().size();
+  if (nb_dofs == 0)
+    MoFEMFunctionReturnHot(0);
 
-    int nb_dofs = data.getFieldData().size();
-    if (nb_dofs == 0)
-      MoFEMFunctionReturnHot(0);
-
-    if (data.getSpace() != HDIV && data.getSpace() != HCURL) {
-      SETERRQ1(getVolumeFE()->mField.get_comm(), MOFEM_DATA_INCONSISTENCY,
-               "This function should be used for HDIV used but is used with %s",
-               FieldSpaceNames[data.getSpace()]);
-    }
-
-    if ((unsigned int)nb_dofs != data.getDiffHdivN().size2() / 9) {
-      std::cerr << "side " << side << " type " << type << std::endl;
-      SETERRQ3(getVolumeFE()->mField.get_comm(), MOFEM_DATA_INCONSISTENCY,
-               "Data inositency, wrong number of dofs  = %s "
-               "%d != %d/9",
-               FieldSpaceNames[data.getSpace()], nb_dofs,
-               data.getDiffHdivN().size2());
-    }
-
-    div.resize(nb_dofs, false);
-
-    FTensor::Tensor0<double *> t_div(&*div.data().begin());
-    const double *grad_ptr = &data.getDiffHdivN()(gg, 0);
-    FTensor::Tensor1<FTensor::PackPtr<const double *, 9>, 3> t_grad_base(
-        grad_ptr, &grad_ptr[HDIV1_1], &grad_ptr[HDIV2_2]);
-    FTensor::Index<'i', 3> i;
-    for (int dd = 0; dd < nb_dofs; dd++) {
-      t_div = t_grad_base(0) + t_grad_base(1) + t_grad_base(2);
-      ++t_div;
-      ++t_grad_base;
-    }
-
-  } catch (std::exception &ex) {
-    std::ostringstream ss;
-    ss << "thorw in method: " << ex.what() << " at line " << __LINE__
-       << " in file " << __FILE__;
-    SETERRQ(getVolumeFE()->mField.get_comm(), 1, ss.str().c_str());
+  if (data.getSpace() != HDIV && data.getSpace() != HCURL) {
+    SETERRQ1(getVolumeFE()->mField.get_comm(), MOFEM_DATA_INCONSISTENCY,
+             "This function should be used for HDIV used but is used with %s",
+             FieldSpaceNames[data.getSpace()]);
   }
 
-  MoFEMFunctionReturnHot(0);
+  if ((unsigned int)nb_dofs != data.getDiffHdivN().size2() / 9) {
+    SETERRQ3(getVolumeFE()->mField.get_comm(), MOFEM_DATA_INCONSISTENCY,
+             "Data inositency, wrong number of dofs  = %s "
+             "%d != %d/9",
+             FieldSpaceNames[data.getSpace()], nb_dofs,
+             data.getDiffHdivN().size2());
+  }
+
+  div.resize(nb_dofs, false);
+
+  FTensor::Tensor0<double *> t_div(&*div.data().begin());
+  const double *grad_ptr = &data.getDiffHdivN()(gg, 0);
+  FTensor::Tensor1<FTensor::PackPtr<const double *, 9>, 3> t_grad_base(
+      grad_ptr, &grad_ptr[HDIV1_1], &grad_ptr[HDIV2_2]);
+  for (int dd = 0; dd < nb_dofs; dd++) {
+    t_div = t_grad_base(0) + t_grad_base(1) + t_grad_base(2);
+    ++t_div;
+    ++t_grad_base;
+  }
+
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode VolumeElementForcesAndSourcesCore::UserDataOperator::
     getCurlOfHCurlBaseFunctions(int side, EntityType type,
                                 DataForcesAndSourcesCore::EntData &data, int gg,
                                 MatrixDouble &curl) {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
 
-  try {
+  int nb_dofs = data.getFieldData().size();
+  if (nb_dofs == 0)
+    MoFEMFunctionReturnHot(0);
 
-    int nb_dofs = data.getFieldData().size();
-    if (nb_dofs == 0)
-      MoFEMFunctionReturnHot(0);
-
-    if (data.getSpace() != HDIV && data.getSpace() != HCURL) {
-      SETERRQ1(getVolumeFE()->mField.get_comm(), MOFEM_DATA_INCONSISTENCY,
-               "This function should be used for primarily for HCURL"
-               " but will work with HDIV used but is used with %s",
-               FieldSpaceNames[data.getSpace()]);
-    }
-
-    if ((unsigned int)nb_dofs != data.getDiffHcurlN().size2() / 9) {
-      std::cerr << "side " << side << " type " << type << std::endl;
-      SETERRQ3(getVolumeFE()->mField.get_comm(), MOFEM_DATA_INCONSISTENCY,
-               "Data insistency, wrong number of dofs  = %s "
-               "%d != %d/9",
-               FieldSpaceNames[data.getSpace()], nb_dofs,
-               data.getDiffHcurlN().size2());
-    }
-
-    curl.resize(nb_dofs, 3, false);
-    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_curl(
-        &curl(0, 0), &curl(0, 1), &curl(0, 2));
-    const double *grad_ptr = &data.getDiffHcurlN()(gg, 0);
-
-    FTensor::Tensor2<FTensor::PackPtr<const double *, 9>, 3, 3> t_grad_base(
-        grad_ptr, &grad_ptr[HCURL0_1], &grad_ptr[HCURL0_2], &grad_ptr[HCURL1_0],
-        &grad_ptr[HCURL1_1], &grad_ptr[HCURL1_2], &grad_ptr[HCURL2_0],
-        &grad_ptr[HCURL2_1], &grad_ptr[HCURL2_2]);
-    FTensor::Index<'i', 3> i;
-    for (int dd = 0; dd != nb_dofs; ++dd) {
-      t_curl(0) = t_grad_base(2, 1) - t_grad_base(1, 2);
-      t_curl(1) = t_grad_base(0, 2) - t_grad_base(2, 0);
-      t_curl(2) = t_grad_base(1, 0) - t_grad_base(0, 1);
-      ++t_curl;
-      ++t_grad_base;
-    }
-
-  } catch (std::exception &ex) {
-    std::ostringstream ss;
-    ss << "thorw in method: " << ex.what() << " at line " << __LINE__
-       << " in file " << __FILE__;
-    SETERRQ(getVolumeFE()->mField.get_comm(), 1, ss.str().c_str());
+  if (data.getSpace() != HDIV && data.getSpace() != HCURL) {
+    SETERRQ1(getVolumeFE()->mField.get_comm(), MOFEM_DATA_INCONSISTENCY,
+             "This function should be used for primarily for HCURL"
+             " but will work with HDIV used but is used with %s",
+             FieldSpaceNames[data.getSpace()]);
   }
 
-  MoFEMFunctionReturnHot(0);
+  if ((unsigned int)nb_dofs != data.getDiffHcurlN().size2() / 9) {
+    SETERRQ3(getVolumeFE()->mField.get_comm(), MOFEM_DATA_INCONSISTENCY,
+             "Data insistency, wrong number of dofs  = %s "
+             "%d != %d/9",
+             FieldSpaceNames[data.getSpace()], nb_dofs,
+             data.getDiffHcurlN().size2());
+  }
+
+  curl.resize(nb_dofs, 3, false);
+  FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_curl(
+      &curl(0, 0), &curl(0, 1), &curl(0, 2));
+  const double *grad_ptr = &data.getDiffHcurlN()(gg, 0);
+
+  FTensor::Tensor2<FTensor::PackPtr<const double *, 9>, 3, 3> t_grad_base(
+      grad_ptr, &grad_ptr[HCURL0_1], &grad_ptr[HCURL0_2], &grad_ptr[HCURL1_0],
+      &grad_ptr[HCURL1_1], &grad_ptr[HCURL1_2], &grad_ptr[HCURL2_0],
+      &grad_ptr[HCURL2_1], &grad_ptr[HCURL2_2]);
+  for (int dd = 0; dd != nb_dofs; ++dd) {
+    t_curl(0) = t_grad_base(2, 1) - t_grad_base(1, 2);
+    t_curl(1) = t_grad_base(0, 2) - t_grad_base(2, 0);
+    t_curl(2) = t_grad_base(1, 0) - t_grad_base(0, 1);
+    ++t_curl;
+    ++t_grad_base;
+  }
+
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode VolumeElementForcesAndSourcesCoreOnSide::setGaussPts(int order) {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   if (faceFEPtr == NULL) {
     SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY,
             "Pointer to face element is not set");
@@ -912,7 +835,7 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCoreOnSide::setGaussPts(int order) {
         face_shape_funtions(gg, 2) * tet_coords[3 * faceConnMap[2] + 2];
     gaussPts(3, gg) = faceFEPtr->gaussPts(2, gg);
   }
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 VectorDouble &
