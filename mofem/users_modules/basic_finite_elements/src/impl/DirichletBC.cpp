@@ -247,7 +247,7 @@ MoFEMErrorCode DirichletDisplacementBc::postProcess() {
 }
 
 MoFEMErrorCode DirichletSpatialPositionsBc::iNitalize() {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
 
   struct dataFromBc {
     VectorDouble scaled_values;
@@ -257,7 +257,7 @@ MoFEMErrorCode DirichletSpatialPositionsBc::iNitalize() {
 
     MoFEMErrorCode getBcData(DisplacementCubitBcData &mydata,
                              const MoFEM::CubitMeshSets *it) {
-      MoFEMFunctionBeginHot;
+      MoFEMFunctionBegin;
       // get data structure for boundary condition
       CHKERR it->getBcDataStructure(mydata);
       this->scaled_values[0] = mydata.data.value1;
@@ -267,12 +267,12 @@ MoFEMErrorCode DirichletSpatialPositionsBc::iNitalize() {
       this->bc_flags[1] = mydata.data.flag2;
       this->bc_flags[2] = mydata.data.flag3;
 
-      MoFEMFunctionReturnHot(0);
+      MoFEMFunctionReturn(0);
     }
 
     MoFEMErrorCode getBcData(std::vector<double> &mydata,
                              const MoFEM::CubitMeshSets *it) {
-      MoFEMFunctionBeginHot;
+      MoFEMFunctionBegin;
       CHKERR it->getAttributes(mydata);
       if (mydata.size() != 6) {
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
@@ -284,12 +284,12 @@ MoFEMErrorCode DirichletSpatialPositionsBc::iNitalize() {
         this->bc_flags[ii] = mydata[ii + 3];
       }
 
-      MoFEMFunctionReturnHot(0);
+      MoFEMFunctionReturn(0);
     }
 
     MoFEMErrorCode getEntitiesFromBc(MoFEM::Interface &mField,
                                      const MoFEM::CubitMeshSets *it) {
-      MoFEMFunctionBeginHot;
+      MoFEMFunctionBegin;
       for (int dim = 0; dim < 3; dim++) {
         CHKERR it->getMeshsetIdEntitiesByDimension(mField.get_moab(), dim,
                                                    bc_ents[dim], true);
@@ -305,7 +305,7 @@ MoFEMErrorCode DirichletSpatialPositionsBc::iNitalize() {
           bc_ents[dim].insert(nodes.begin(), nodes.end());
         }
       }
-      MoFEMFunctionReturnHot(0);
+      MoFEMFunctionReturn(0);
     }
   };
 
@@ -420,7 +420,7 @@ MoFEMErrorCode DirichletSpatialPositionsBc::iNitalize() {
       dofsValues[ii] = mit->second;
     }
   }
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode DirichletTemperatureBc::iNitalize() {
