@@ -730,135 +730,152 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(Range *fixed_edges,
     MoFEMFunctionReturn(0);
   };
 
-  multimap<double, EntityHandle> ents_to_check;
-  for (auto f : unite(cut_edges_faces, cut_edge_verts)) {
-    int num_nodes;
-    const EntityHandle *conn;
-    CHKERR get_conn(f, conn, num_nodes);
-    VectorDouble3 dist(3);
-    for (int n = 0; n != num_nodes; ++n) {
-      dist[n] = get_normal_dist_from_conn(conn[n]);
+  for (int d = 2; d >= 0; --d) {
+    
+    Range ents;
+    if (d > 0)
+      ents = cut_edges_faces.subset_by_dimension(d);
+    else
+      ents = cut_edge_verts;
+
+    // make list of entities
+    multimap<double, EntityHandle> ents_to_check;
+    for (auto f : ents) {
+      int num_nodes;
+      const EntityHandle *conn;
+      CHKERR get_conn(f, conn, num_nodes);
+      VectorDouble3 dist(3);
+      for (int n = 0; n != num_nodes; ++n) {
+        dist[n] = get_normal_dist_from_conn(conn[n]);
+      }
+      double max_dist = 0;
+      for (int n = 0; n != num_nodes; ++n) {
+        max_dist = std::max(max_dist, fabs(dist[n]));
+      }
+      if (max_dist < low_tol * aveLength) {
+        ents_to_check.insert(std::pair<double, EntityHandle>(max_dist, f));
+      }
     }
-    double max_dist = 0;
-    for (int n = 0; n != num_nodes; ++n) {
-      max_dist = std::max(max_dist,fabs(dist[n]));
-    }
-    if (max_dist < low_tol * aveLength) {
-      ents_to_check.insert(std::pair<double, EntityHandle>(max_dist, f));
-    }
-  }
 
-  double ray_point[3], unit_ray_dir[3];
-  VectorAdaptor vec_unit_ray_dir(
-      3, ublas::shallow_array_adaptor<double>(3, unit_ray_dir));
-  VectorAdaptor vec_ray_point(
-      3, ublas::shallow_array_adaptor<double>(3, ray_point));
+    double ray_point[3], unit_ray_dir[3];
+    VectorAdaptor vec_unit_ray_dir(
+        3, ublas::shallow_array_adaptor<double>(3, unit_ray_dir));
+    VectorAdaptor vec_ray_point(
+        3, ublas::shallow_array_adaptor<double>(3, ray_point));
 
-  for (auto m : ents_to_check) {
+    for (auto m : ents_to_check) {
 
-    EntityHandle f = m.second;
+      EntityHandle f = m.second;
 
-    int num_nodes;
-    const EntityHandle *conn;
-    CHKERR get_conn(f, conn, num_nodes);
-    VectorDouble9 coords(9);
-    CHKERR moab.get_coords(conn, num_nodes, &coords[0]);
+      int num_nodes;
+      const EntityHandle *conn;
+      CHKERR get_conn(f, conn, num_nodes);
+      VectorDouble9 coords(9);
+      CHKERR moab.get_coords(conn, num_nodes, &coords[0]);
 
-    Range adj_tets;
-    CHKERR moab.get_adjacencies(conn, num_nodes, 3, false, adj_tets,
-                                moab::Interface::UNION);
-    adj_tets = intersect(adj_tets, vOlume);
+      Range adj_tets;
+      CHKERR moab.get_adjacencies(conn, num_nodes, 3, false, adj_tets,
+                                  moab::Interface::UNION);
+      adj_tets = intersect(adj_tets, vOlume);
 
-    map<EntityHandle, TreeData> vertices_on_cut_edges;
-    for (int n = 0; n != num_nodes; ++n) {
+      map<EntityHandle, TreeData> vertices_on_cut_edges;
+      for (int n = 0; n != num_nodes; ++n) {
+        const EntityHandle node = conn[n];
+        CHKERR project_node(node, vertices_on_cut_edges);
+      }
+      if (static_cast<int>(vertices_on_cut_edges.size()) != num_nodes) {
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "Data inconsistency");
+      }
 
-      const EntityHandle node = conn[n];
-      CHKERR project_node(node, vertices_on_cut_edges);
+      double q = get_quality_change(adj_tets, vertices_on_cut_edges);
+      if (q > 0.65) {
+        bool check_q_again = false;
+        for (auto &m : vertices_on_cut_edges) {
+          EntityHandle node = m.first;
+          if (tets_skin_verts.find(node) != tets_skin_verts.end()) {
 
-      if (tets_skin_verts.find(node) != tets_skin_verts.end()) {
+            check_q_again = true;
 
-        double q = get_quality_change(adj_tets, vertices_on_cut_edges);
-        if (q > 1e-3) {
-
-          // check if node is at the corner
-          bool zero_disp_node = false;
-          if (corner_nodes) {
-            if (corner_nodes->find(node) != corner_nodes->end()) {
-              zero_disp_node = true;
+            // check if node is at the corner
+            bool zero_disp_node = false;
+            if (corner_nodes) {
+              if (corner_nodes->find(node) != corner_nodes->end()) {
+                zero_disp_node = true;
+              }
             }
-          }
 
-          // check node is on the fixed edge
-          Range adj_edges;
-          CHKERR moab.get_adjacencies(&node, 1, 1, false, adj_edges);
-          adj_edges = intersect(adj_edges, tets_skin_edges);
-          if (fixed_edges) {
-            Range e;
-            // check if node is on fixed edge
-            e = intersect(adj_edges, *fixed_edges);
-            if (!e.empty()) {
-              adj_edges.swap(e);
-            }
-            // check if split edge is fixed edge
-            e = intersect(adj_edges, cutEdges);
-            if (!e.empty()) {
-              adj_edges.swap(e);
-            } else {
-              zero_disp_node = true;
-            }
-          }
-
-          VectorDouble3 s0(3);
-          CHKERR moab.get_coords(&node, 1, &s0[0]);
-
-          if (zero_disp_node) {
-            VectorDouble3 z(3);
-            z.clear();
-            vertices_on_cut_edges[node].dIst = 0;
-            vertices_on_cut_edges[node].lEngth = 0;
-            vertices_on_cut_edges[node].unitRayDir = z;
-            vertices_on_cut_edges[node].rayPoint = s0;
-          } else {
-            if (adj_edges.empty()) {
-              SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                      "Data inconsistency");
-            }
-            for (auto e : adj_edges) {
-              if (edgesToCut.find(e) != edgesToCut.end()) {
-                auto d = edgesToCut.at(e);
-                VectorDouble3 new_pos = d.rayPoint + d.dIst * d.unitRayDir;
-                VectorDouble3 ray = new_pos - s0;
-                double dist0 = norm_2(ray);
-                vertices_on_cut_edges[node].dIst = dist0;
-                vertices_on_cut_edges[node].lEngth = dist0;
-                vertices_on_cut_edges[node].unitRayDir =
-                    dist0 > 0 ? ray / dist0 : ray;
-                vertices_on_cut_edges[node].rayPoint = s0;
-                break;
+            // check node is on the fixed edge
+            Range adj_edges;
+            CHKERR moab.get_adjacencies(&node, 1, 1, false, adj_edges);
+            adj_edges = intersect(adj_edges, tets_skin_edges);
+            if (fixed_edges) {
+              Range e;
+              // check if node is on fixed edge
+              e = intersect(adj_edges, *fixed_edges);
+              if (!e.empty()) {
+                adj_edges.swap(e);
+              }
+              // check if split edge is fixed edge
+              e = intersect(adj_edges, cutEdges);
+              if (!e.empty()) {
+                adj_edges.swap(e);
               } else {
+                zero_disp_node = true;
+              }
+            }
+
+            VectorDouble3 s0(3);
+            CHKERR moab.get_coords(&node, 1, &s0[0]);
+
+            if (zero_disp_node) {
+              VectorDouble3 z(3);
+              z.clear();
+              m.second.dIst = 0;
+              m.second.lEngth = 0;
+              m.second.unitRayDir = z;
+              m.second.rayPoint = s0;
+            } else {
+              if (adj_edges.empty()) {
                 SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                         "Data inconsistency");
               }
+              for (auto e : adj_edges) {
+                if (edgesToCut.find(e) != edgesToCut.end()) {
+                  auto d = edgesToCut.at(e);
+                  VectorDouble3 new_pos = d.rayPoint + d.dIst * d.unitRayDir;
+                  VectorDouble3 ray = new_pos - s0;
+                  double dist0 = norm_2(ray);
+                  m.second.dIst = dist0;
+                  m.second.lEngth = dist0;
+                  m.second.unitRayDir = dist0 > 0 ? ray / dist0 : ray;
+                  m.second.rayPoint = s0;
+                  break;
+                } else {
+                  SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                          "Data inconsistency");
+                }
+              }
             }
+          }
+        }
+
+        if (check_q_again) {
+          q = get_quality_change(adj_tets, vertices_on_cut_edges);
+        }
+        if (q > 0.65) {
+          verticesOnCutEdges.insert(vertices_on_cut_edges.begin(),
+                                    vertices_on_cut_edges.end());
+          EntityHandle type = moab.type_from_handle(f);
+          if (type == MBVERTEX) {
+            zeroDistanceVerts.insert(f);
+          } else {
+            zeroDistanceEnts.insert(f);
           }
         }
       }
     }
 
-    if (static_cast<int>(vertices_on_cut_edges.size()) != num_nodes) {
-      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Data inconsistency");
-    }
-    double q = get_quality_change(adj_tets, vertices_on_cut_edges);
-    if (q > 0.75) {
-      verticesOnCutEdges.insert(vertices_on_cut_edges.begin(),
-                                vertices_on_cut_edges.end());
-      EntityHandle type = moab.type_from_handle(f);
-      if (type == MBVERTEX) {
-        zeroDistanceVerts.insert(f);
-      } else {
-        zeroDistanceEnts.insert(f);
-      }
-    } 
   }
 
   for (auto f : unite(zeroDistanceEnts, zeroDistanceVerts)) {
@@ -1287,7 +1304,7 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
           CHKERR moab.get_adjacencies(&v, 1, 3, false, adj_tets);
           adj_tets = intersect(adj_tets, cutNewVolumes);
           double q = get_quality_change(adj_tets);
-          if (q > 0.75) {
+          if (q > 0.5) {
             VectorDouble3 unit_ray_dir = new_pos - ray_point;
             double dist = norm_2(unit_ray_dir);
             unit_ray_dir /= dist;
