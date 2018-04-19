@@ -77,6 +77,9 @@ git checkout tags/v$PETSC_VERSION
 --download-ptscotch=1 --download-hdf5=1 --download-netcdf=1 \
 --with-shared-libraries=1 && \
 make PETSC_DIR=$PWD PETSC_ARCH=arch-linux2-c-opt all
+
+# Add path to petsc binaries, you can add that line to .bashrc
+export PATH=$MOFEM_INSTALL_DIR/petsc/$PETSC_ARCH/bin:$PATH
 ~~~~~~
 
 Note: PETSc is compiled with debugging switch off for efficiency. If you
