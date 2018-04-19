@@ -25,7 +25,7 @@ if(WITH_ADOL-C)
   ExternalProject_Add(
     adolc
     PREFIX ${PROJECT_BINARY_DIR}/external/
-    URL http://bitbucket.org/likask/mofem-joseph/downloads/ADOL-C-2.6.2.tgz
+    URL http://bitbucket.org/likask/mofem-joseph/downloads/ADOL-C-2.5.2.tgz
     CONFIGURE_COMMAND ${PROJECT_BINARY_DIR}/external/src/adolc/configure CC=${CMAKE_C_COMPILER} CXX=${CMAKE_CXX_COMPILER} --disable-shared --prefix=${PROJECT_BINARY_DIR}/external
   )
   find_library(COLPACK_LIBLARY NAMES Colpack PATHS /usr/local/lib)

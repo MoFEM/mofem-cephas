@@ -789,7 +789,7 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(Range *fixed_edges,
       }
 
       double q = get_quality_change(adj_tets, vertices_on_cut_edges);
-      if (q > 0.65) {
+      if (q > 0.75) {
         bool check_q_again = false;
         for (auto &m : vertices_on_cut_edges) {
           EntityHandle node = m.first;
@@ -863,7 +863,7 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(Range *fixed_edges,
         if (check_q_again) {
           q = get_quality_change(adj_tets, vertices_on_cut_edges);
         }
-        if (q > 0.65) {
+        if (q > 0.75) {
           verticesOnCutEdges.insert(vertices_on_cut_edges.begin(),
                                     vertices_on_cut_edges.end());
           EntityHandle type = moab.type_from_handle(f);
@@ -1304,7 +1304,7 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
           CHKERR moab.get_adjacencies(&v, 1, 3, false, adj_tets);
           adj_tets = intersect(adj_tets, cutNewVolumes);
           double q = get_quality_change(adj_tets);
-          if (q > 0.5) {
+          if (q > 0.75) {
             VectorDouble3 unit_ray_dir = new_pos - ray_point;
             double dist = norm_2(unit_ray_dir);
             unit_ray_dir /= dist;

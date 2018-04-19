@@ -56,6 +56,9 @@ git checkout tags/v$PETSC_VERSION
 --download-scalapack=1 --download-blacs=1 --download-moab=1 --download-hdf5=1 \
 --download-netcdf=1 --download-mumps=1 --download-openmpi=1 && \
 make PETSC_DIR=$PWD PETSC_ARCH=arch-darwin-c-opt all
+
+# Add path to petsc binaries, you can add that line to .bashrc
+export PATH=$MOFEM_INSTALL_DIR/petsc/$PETSC_ARCH/bin:$PATH
 ~~~~~~
 
 Note: PETSc is compiled with debugging switch off for efficiency. If you
@@ -82,7 +85,7 @@ cmake -DCMAKE_BUILD_TYPE=Release \
  -DCMAKE_CXX_FLAGS="-Wall -Wno-bind-to-temporary-copy -Wno-overloaded-virtual" \
  -DPETSC_DIR=$MOFEM_INSTALL_DIR/petsc/ -DPETSC_ARCH=arch-darwin-c-opt \
  -DMOAB_DIR=$MOFEM_INSTALL_DIR/petsc/arch-darwin-c-opt/  \
- -WITH_ADOL-C=1 -WITH_TETGEN=1 -WITH_MED=1 \
+ -DWITH_ADOL-C=1 -DWITH_TETGEN=1 -DWITH_MED=1 \
  -DCMAKE_INSTALL_PREFIX=$MOFEM_INSTALL_DIR/users_modules \
  $MOFEM_INSTALL_DIR/mofem-cephas/mofem
 

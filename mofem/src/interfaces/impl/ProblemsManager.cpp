@@ -2529,7 +2529,7 @@ MoFEMErrorCode ProblemsManager::partitionFiniteElements(const std::string &name,
   MoFEM::Interface &m_field = cOre;
   const Problem_multiIndex *problems_ptr;
   const EntFiniteElement_multiIndex *fe_ent_ptr;
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
 
   if (!(cOre.getBuildMoFEM() & Core::BUILD_FIELD))
     SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY, "fields not build");
@@ -2556,8 +2556,7 @@ MoFEMErrorCode ProblemsManager::partitionFiniteElements(const std::string &name,
   // Find pointer to problem of given name
   typedef Problem_multiIndex::index<Problem_mi_tag>::type ProblemByName;
   // Get pointer to problem data struture
-  ierr = m_field.get_problems(&problems_ptr);
-  CHKERRG(ierr);
+  CHKERR m_field.get_problems(&problems_ptr);
   ProblemByName &problems =
       const_cast<ProblemByName &>(problems_ptr->get<Problem_mi_tag>());
   ProblemByName::iterator p_miit = problems.find(name);
@@ -2582,8 +2581,7 @@ MoFEMErrorCode ProblemsManager::partitionFiniteElements(const std::string &name,
 
   // Loop over all elements in database and if right element is there add it
   // to problem finite element multi-index
-  ierr = m_field.get_ents_finite_elements(&fe_ent_ptr);
-  CHKERRG(ierr);
+  CHKERR m_field.get_ents_finite_elements(&fe_ent_ptr);
   EntFiniteElement_multiIndex::iterator efit = fe_ent_ptr->begin();
   EntFiniteElement_multiIndex::iterator hi_efit = fe_ent_ptr->end();
   for (; efit != hi_efit; efit++) {
@@ -2675,16 +2673,13 @@ MoFEMErrorCode ProblemsManager::partitionFiniteElements(const std::string &name,
         if (ss == 0) {
           if (part_from_moab) {
             // get row_view
-            ierr =
-                (*efit)->getRowDofView(*(p_miit->numeredDofsRows),
+            CHKERR (*efit)->getRowDofView(*(p_miit->numeredDofsRows),
                                        *dofs_view[ss], moab::Interface::UNION);
-            CHKERRG(ierr);
           }
         } else {
           // get cols_views
-          ierr = (*efit)->getColDofView(*(p_miit->numeredDofsCols),
+          CHKERR (*efit)->getColDofView(*(p_miit->numeredDofsCols),
                                         *dofs_view[ss], moab::Interface::UNION);
-          CHKERRG(ierr);
         }
 
         NumeredDofEntity_multiIndex_uid_view_ordered::iterator vit, hi_vit;
@@ -2731,7 +2726,7 @@ MoFEMErrorCode ProblemsManager::partitionFiniteElements(const std::string &name,
       if (!p.second) {
         SETERRQ(m_field.get_comm(), MOFEM_NOT_FOUND, "element is there");
       }
-      if (verb > 1) {
+      if (verb >= VERY_VERBOSE) {
         std::ostringstream ss;
         ss << *p_miit << std::endl;
         ss << *p.first << std::endl;
@@ -2749,7 +2744,7 @@ MoFEMErrorCode ProblemsManager::partitionFiniteElements(const std::string &name,
       }
     }
   }
-  if (verb > 0) {
+  if (verb >= VERBOSE) {
     typedef NumeredEntFiniteElement_multiIndex::index<Part_mi_tag>::type
         NumeredEntFiniteElementPart;
     NumeredEntFiniteElementPart::iterator miit, hi_miit;
@@ -2767,7 +2762,7 @@ MoFEMErrorCode ProblemsManager::partitionFiniteElements(const std::string &name,
   }
 
   cOre.getBuildMoFEM() |= Core::PARTITION_FE;
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode ProblemsManager::partitionGhostDofs(const std::string &name,
