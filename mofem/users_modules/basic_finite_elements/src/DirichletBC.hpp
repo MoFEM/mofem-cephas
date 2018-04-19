@@ -79,23 +79,29 @@ struct DirichletSpatialPositionsBc: public DirichletDisplacementBc {
     MoFEM::Interface& m_field,
     const std::string &field_name,
     Mat aij,Vec x,Vec f,
-    const std::string material_positions = "MESH_NODE_POSITIONS"
+    const std::string material_positions = "MESH_NODE_POSITIONS",
+    const std::string blockset_name = "DISPLACEMENT"
+
   ):
   DirichletDisplacementBc(m_field,field_name,aij,x,f),
-  materialPositions(material_positions) {
+  materialPositions(material_positions),
+  blocksetName(blockset_name) {
   }
 
   DirichletSpatialPositionsBc(
     MoFEM::Interface& m_field,
     const std::string &field_name,
-    const std::string material_positions = "MESH_NODE_POSITIONS"
+    const std::string material_positions = "MESH_NODE_POSITIONS",
+    const std::string blockset_name = "DISPLACEMENT"
   ):
   DirichletDisplacementBc(m_field,field_name),
-  materialPositions(material_positions) {
+  materialPositions(material_positions),
+  blocksetName(blockset_name) {
   }
 
   std::string materialPositions;        ///< name of the field with reference material positions
   std::vector<std::string> fixFields;   ///<
+  const std::string blocksetName;
 
   VectorDouble cOords;
   MoFEMErrorCode iNitalize();
