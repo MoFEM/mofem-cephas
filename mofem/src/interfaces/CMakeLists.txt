@@ -32,6 +32,7 @@ if(PRECOMPILED_HEADRES)
     PROPERTIES
     COMPILE_FLAGS "-include ${PROJECT_BINARY_DIR}/include/precompiled/Includes.hpp"
   )
+  add_dependencies(Includes.hpp.pch_copy install_prerequisites)
 endif(PRECOMPILED_HEADRES)
 add_library(
   mofem_interfaces

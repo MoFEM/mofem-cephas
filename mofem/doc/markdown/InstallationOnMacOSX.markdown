@@ -58,7 +58,7 @@ git checkout tags/v$PETSC_VERSION
 make PETSC_DIR=$PWD PETSC_ARCH=arch-darwin-c-opt all
 
 # Add path to petsc binaries, you can add that line to .bashrc
-export PATH=$MOFEM_INSTALL_DIR/petsc/$PETSC_ARCH/bin:$PATH
+export PATH=$MOFEM_INSTALL_DIR/petsc/arch-darwin-c-opt/bin:$PATH
 ~~~~~~
 
 Note: PETSc is compiled with debugging switch off for efficiency. If you
