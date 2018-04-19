@@ -980,8 +980,9 @@ PetscErrorCode DMSetUp_MoFEM(DM dm) {
     CHKERR prb_mng_ptr->partitionGhostDofsOnDistributedMesh(
         dm_field->problemName, dm_field->verbosity);
   } else {
-    CHKERR prb_mng_ptr->partitionFiniteElements(dm_field->problemName,
-                                                dm_field->verbosity);
+    // partition finite elemnets
+    CHKERR prb_mng_ptr->partitionFiniteElements(dm_field->problemName, false,
+                                                -1, -1, dm_field->verbosity);
     // Get ghost DOFs
     CHKERR prb_mng_ptr->partitionGhostDofs(dm_field->problemName,
                                            dm_field->verbosity);
@@ -1017,8 +1018,9 @@ PetscErrorCode DMSubDMSetUp_MoFEM(DM subdm) {
     CHKERR prb_mng_ptr->partitionGhostDofsOnDistributedMesh(
         subdm_field->problemName, subdm_field->verbosity);
   } else {
-    CHKERR prb_mng_ptr->partitionFiniteElements(subdm_field->problemName,
-                                                subdm_field->verbosity);
+    // partition finite elements
+    CHKERR prb_mng_ptr->partitionFiniteElements(subdm_field->problemName, false,
+                                                -1, -1, subdm_field->verbosity);
     // set ghost nodes
     CHKERR prb_mng_ptr->partitionGhostDofs(subdm_field->problemName,
                                            subdm_field->verbosity);
