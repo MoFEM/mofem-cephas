@@ -64,6 +64,7 @@ if(PRECOMPILED_HEADRES)
     COMPILE_FLAGS "-x c++-header"
   )
   add_library(Includes.hpp.pch OBJECT Includes.hpp)
+  add_dependencies(Includes.hpp.pch install_prerequisites)
   add_custom_target(
     Includes.hpp.pch_copy
     ${CMAKE_COMMAND} -E copy_if_different
