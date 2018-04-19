@@ -20,7 +20,7 @@ cd $MOFEM_BUILD_DIR
 # Configure mofem core lib
 /opt/local/bin/cmake \
   -DCMAKE_BUILD_TYPE=Release \
-  -DCMAKE_CXX_FLAGS="-Wall" \
+  -DCMAKE_CXX_FLAGS="-Wall -Wno-sign-compare" \
   -DMPI_RUN_FLAGS="--allow-run-as-root" \
   -DPETSC_DIR=$PETSC_DIR \
   -DPETSC_ARCH=$PETSC_ARCH \

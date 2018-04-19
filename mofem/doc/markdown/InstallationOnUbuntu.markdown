@@ -101,7 +101,9 @@ mkdir $MOFEM_INSTALL_DIR/lib
 cd $MOFEM_INSTALL_DIR/lib
 
 # Configuring and compiling code:
-cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS="-Wall"  -DCMAKE_CXX_FLAGS="-Wall" \
+cmake -DCMAKE_BUILD_TYPE=Release \
+ -DCMAKE_C_FLAGS="-Wall" \
+ -DCMAKE_CXX_FLAGS="-Wall -Wno-sign-compare" \
  -DPETSC_DIR=$MOFEM_INSTALL_DIR/petsc/ -DPETSC_ARCH=arch-linux2-c-opt \
  -DMOAB_DIR=$MOFEM_INSTALL_DIR/petsc/arch-linux2-c-opt/ \
  -DWITH_ADOL-C=1 -DWITH_TETGEN=1 -DWITH_MED=1 \

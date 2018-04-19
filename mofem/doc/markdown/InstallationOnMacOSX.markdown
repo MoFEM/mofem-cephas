@@ -82,7 +82,7 @@ cd $MOFEM_INSTALL_DIR/lib
 # Configuring and compiling code:
 cmake -DCMAKE_BUILD_TYPE=Release \
  -DCMAKE_C_FLAGS="-Wall" \
- -DCMAKE_CXX_FLAGS="-Wall -Wno-bind-to-temporary-copy -Wno-overloaded-virtual" \
+ -DCMAKE_CXX_FLAGS="-Wall -Wno-bind-to-temporary-copy -Wno-overloaded-virtual -Wno-sign-compare" \
  -DPETSC_DIR=$MOFEM_INSTALL_DIR/petsc/ -DPETSC_ARCH=arch-darwin-c-opt \
  -DMOAB_DIR=$MOFEM_INSTALL_DIR/petsc/arch-darwin-c-opt/  \
  -DWITH_ADOL-C=1 -DWITH_TETGEN=1 -DWITH_MED=1 \
