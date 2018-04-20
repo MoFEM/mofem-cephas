@@ -79,7 +79,7 @@ git checkout tags/v$PETSC_VERSION
 make PETSC_DIR=$PWD PETSC_ARCH=arch-linux2-c-opt all
 
 # Add path to petsc binaries, you can add that line to .bashrc
-export PATH=$MOFEM_INSTALL_DIR/petsc/$PETSC_ARCH/bin:$PATH
+export PATH=$MOFEM_INSTALL_DIR/petsc/arch-linux2-c-opt/bin:$PATH
 ~~~~~~
 
 Note: PETSc is compiled with debugging switch off for efficiency. If you
@@ -101,7 +101,9 @@ mkdir $MOFEM_INSTALL_DIR/lib
 cd $MOFEM_INSTALL_DIR/lib
 
 # Configuring and compiling code:
-cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS="-Wall"  -DCMAKE_CXX_FLAGS="-Wall" \
+cmake -DCMAKE_BUILD_TYPE=Release \
+ -DCMAKE_C_FLAGS="-Wall" \
+ -DCMAKE_CXX_FLAGS="-Wall -Wno-sign-compare" \
  -DPETSC_DIR=$MOFEM_INSTALL_DIR/petsc/ -DPETSC_ARCH=arch-linux2-c-opt \
  -DMOAB_DIR=$MOFEM_INSTALL_DIR/petsc/arch-linux2-c-opt/ \
  -DWITH_ADOL-C=1 -DWITH_TETGEN=1 -DWITH_MED=1 \
@@ -130,7 +132,7 @@ List of some additional users modules is available on the main page.
 
 ~~~~~~
 # Configuration:
-cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS="-Wall" -DCMAKE_CXX_FLAGS="-Wall"  users_modules
+cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS="-Wall" -DCMAKE_CXX_FLAGS="-Wall -Wno-sign-compare"  users_modules
 
 # Build:
 make -j4

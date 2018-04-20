@@ -38,6 +38,8 @@ add_executable(
   ${CMAKE_CURRENT_BINARY_DIR}/All.cpp
 )
 add_dependencies(ftensor_conformance_test all_cpp_generate_for_ftensor)
+add_dependencies(ftensor_conformance_test install_prerequisites)
+
 add_test(
   ftensor_conformance_test ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/ftensor_conformance_test
 )

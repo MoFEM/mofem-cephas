@@ -58,7 +58,7 @@ git checkout tags/v$PETSC_VERSION
 make PETSC_DIR=$PWD PETSC_ARCH=arch-darwin-c-opt all
 
 # Add path to petsc binaries, you can add that line to .bashrc
-export PATH=$MOFEM_INSTALL_DIR/petsc/$PETSC_ARCH/bin:$PATH
+export PATH=$MOFEM_INSTALL_DIR/petsc/arch-darwin-c-opt/bin:$PATH
 ~~~~~~
 
 Note: PETSc is compiled with debugging switch off for efficiency. If you
@@ -82,7 +82,7 @@ cd $MOFEM_INSTALL_DIR/lib
 # Configuring and compiling code:
 cmake -DCMAKE_BUILD_TYPE=Release \
  -DCMAKE_C_FLAGS="-Wall" \
- -DCMAKE_CXX_FLAGS="-Wall -Wno-bind-to-temporary-copy -Wno-overloaded-virtual" \
+ -DCMAKE_CXX_FLAGS="-Wall -Wno-bind-to-temporary-copy -Wno-overloaded-virtual -Wno-sign-compare" \
  -DPETSC_DIR=$MOFEM_INSTALL_DIR/petsc/ -DPETSC_ARCH=arch-darwin-c-opt \
  -DMOAB_DIR=$MOFEM_INSTALL_DIR/petsc/arch-darwin-c-opt/  \
  -DWITH_ADOL-C=1 -DWITH_TETGEN=1 -DWITH_MED=1 \
@@ -113,7 +113,7 @@ List of some additional users modules is available on the main page.
 # Configuration:
 cmake -DCMAKE_BUILD_TYPE=Release \
 -DCMAKE_C_FLAGS="-Wall"  \
--DCMAKE_CXX_FLAGS="-Wall -Wno-bind-to-temporary-copy -Wno-overloaded-virtual" \
+-DCMAKE_CXX_FLAGS="-Wall -Wno-bind-to-temporary-copy -Wno-overloaded-virtual -Wno-sign-compare" \
 -DCMAKE_EXE_LINKER_FLAGS="-L$MOFEM_INSTALL_DIR/local/lib" users_modules
 
 # Build:
