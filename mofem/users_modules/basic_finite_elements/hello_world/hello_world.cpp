@@ -139,18 +139,19 @@ struct OpVolumeSide
 
 int main(int argc, char *argv[]) {
 
-  type_name[MBVERTEX] = "Vertex";
-  type_name[MBEDGE] = "Edge";
-  type_name[MBTRI] = "Triangle";
-  type_name[MBTET] = "Tetrahedra";
-
   // initialize petsc
   MoFEM::Core::Initialize(&argc, &argv, (char *)0, help);
-  // Register DM Manager
-  DMType dm_name = "DMMOFEM";
-  CHKERR DMRegister_MoFEM(dm_name);
 
   try {
+
+    type_name[MBVERTEX] = "Vertex";
+    type_name[MBEDGE] = "Edge";
+    type_name[MBTRI] = "Triangle";
+    type_name[MBTET] = "Tetrahedra";
+
+    // Register DM Manager
+    DMType dm_name = "DMMOFEM";
+    CHKERR DMRegister_MoFEM(dm_name);
 
     // Create MoAB database
     moab::Core moab_core;
@@ -181,7 +182,7 @@ int main(int argc, char *argv[]) {
     CHKERR simple_interface->setFieldOrder("S", 3);
     // setup problem
     CHKERR simple_interface->setUp();
-    // Create elements
+    // create elements instances
     boost::shared_ptr<ForcesAndSourcesCore> domain_fe(
         new VolumeElementForcesAndSourcesCore(m_field));
     boost::shared_ptr<ForcesAndSourcesCore> boundary_fe(
@@ -190,30 +191,32 @@ int main(int argc, char *argv[]) {
         new FaceElementForcesAndSourcesCore(m_field));
     boost::shared_ptr<VolumeElementForcesAndSourcesCoreOnSide> side_fe(
         new VolumeElementForcesAndSourcesCoreOnSide(m_field));
-    // create distributed vector to accumulate values from processors.
-    // set operator to the volume element
+    // set operator to the volume element instance
     domain_fe->getOpPtrVector().push_back(new OpRow("U"));
     domain_fe->getOpPtrVector().push_back(new OpRowCol("U", "U", true));
     domain_fe->getOpPtrVector().push_back(new OpVolume("U"));
-    // set operator to the face element
+    // set operator to the face element instance
     boundary_fe->getOpPtrVector().push_back(new OpRow("L"));
     boundary_fe->getOpPtrVector().push_back(new OpRowCol("U", "L", false));
     boundary_fe->getOpPtrVector().push_back(new OpFace("L"));
-    // set operator to the face element on skeleton
+    // set operator to the face element on skeleton instance
     skeleton_fe->getOpPtrVector().push_back(new OpRow("S"));
     skeleton_fe->getOpPtrVector().push_back(new OpFaceSide("S", side_fe));
-    // set operator to the volume on side of the Skeleton face
+    // set operator to the volume on side of the skeleton face
     side_fe->getOpPtrVector().push_back(new OpVolumeSide("U"));
     DM dm;
     // get dm
     CHKERR simple_interface->getDM(&dm);
-    // iterate domain elements
+    // iterate domain elements and execute element instance with operator on
+    // mesh entities
     CHKERR DMoFEMLoopFiniteElements(dm, simple_interface->getDomainFEName(),
                                     domain_fe);
-    // iterate boundary elements
+    // iterate boundary elements and execute element instance with operator on
+    // mesh entities
     CHKERR DMoFEMLoopFiniteElements(dm, simple_interface->getBoundaryFEName(),
                                     boundary_fe);
-    // iterate skeleton element
+    // iterate skeleton elements and execute element instance with operator on
+    // mesh entities
     CHKERR DMoFEMLoopFiniteElements(dm, simple_interface->getSkeletonFEName(),
                                     skeleton_fe);
     // destroy dm
