@@ -210,6 +210,7 @@ endif(CBLAS_INCLUDE_DIR)
 
 include_directories(
   ${PROJECT_INCLUDE_DIRECTORIES}
+  ${PETSC_DIR}/include
   ${PETSC_DIR}/${PETSC_ARCH}/include
   ${PETSCVAR_DIR}/include
   ${BOOST_INCLUDE_DIR}
