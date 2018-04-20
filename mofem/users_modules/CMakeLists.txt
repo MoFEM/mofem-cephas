@@ -81,6 +81,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 include_directories(
   ${MoFEM_PROJECT_INCLUDE_DIRECTORIES}
+  ${MoFEM_PETSC_DIR}/include
+  ${MoFEM_PETSC_DIR}/${PETSC_ARCH}/include
   ${MoFEM_PETSC_DIR}/${MoFEM_PETSC_ARCH}/include
   ${MoFEM_PETSCVAR_DIR}/include
 )

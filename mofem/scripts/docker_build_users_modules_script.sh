@@ -20,7 +20,7 @@ then
 /opt/local/bin/cmake \
 -DCMAKE_BUILD_TYPE=Release \
 -DBUILD_SHARED_LIBS=yes \
--DCMAKE_CXX_FLAGS="-Wall" \
+-DCMAKE_CXX_FLAGS="-Wall -Wno-sign-compare" \
 -DMPI_RUN_FLAGS="--allow-run-as-root" \
 -DWITH_METAIO=1 \
 users_modules;
@@ -28,7 +28,7 @@ else
 /opt/local/bin/cmake \
 -DCMAKE_BUILD_TYPE=Release \
 -DBUILD_SHARED_LIBS=yes \
--DCMAKE_CXX_FLAGS="-Wall" \
+-DCMAKE_CXX_FLAGS="-Wall -Wno-sign-compare" \
 -DMPI_RUN_FLAGS="--allow-run-as-root" \
 users_modules
 fi
