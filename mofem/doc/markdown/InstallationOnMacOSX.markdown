@@ -113,7 +113,7 @@ List of some additional users modules is available on the main page.
 # Configuration:
 cmake -DCMAKE_BUILD_TYPE=Release \
 -DCMAKE_C_FLAGS="-Wall"  \
--DCMAKE_CXX_FLAGS="-Wall -Wno-bind-to-temporary-copy -Wno-overloaded-virtual" \
+-DCMAKE_CXX_FLAGS="-Wall -Wno-bind-to-temporary-copy -Wno-overloaded-virtual -Wno-sign-compare" \
 -DCMAKE_EXE_LINKER_FLAGS="-L$MOFEM_INSTALL_DIR/local/lib" users_modules
 
 # Build:

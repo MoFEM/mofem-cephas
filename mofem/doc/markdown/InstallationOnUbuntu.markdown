@@ -132,7 +132,7 @@ List of some additional users modules is available on the main page.
 
 ~~~~~~
 # Configuration:
-cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS="-Wall" -DCMAKE_CXX_FLAGS="-Wall"  users_modules
+cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS="-Wall" -DCMAKE_CXX_FLAGS="-Wall -Wno-sign-compare"  users_modules
 
 # Build:
 make -j4
