@@ -20,156 +20,143 @@
 
 namespace FTensor
 {
-  template<class A, class T, int Dim0, int Dim1, char i, char j>
+  template <class A, class T, int Dim0, int Dim1, char i, char j>
   class Tensor2_Expr
   {
     A iter;
+
   public:
-    Tensor2_Expr(A &a): iter(a) {}
-    T operator()(const int N1, const int N2) const
-    {
-      return iter(N1,N2);
-    }
+    Tensor2_Expr(A &a) : iter(a) {}
+    T operator()(const int N1, const int N2) const { return iter(N1, N2); }
   };
 
-  template<class A, class T, int Tensor_Dim0, int Tensor_Dim1,
-           int Dim0, int Dim1, char i, char j, Layout layout>
-  class Tensor2_Expr<Tensor2<A,Tensor_Dim0,Tensor_Dim1,layout>,T,Dim0,Dim1,i,j>
+  template <class A, class T, int Tensor_Dim0, int Tensor_Dim1, int Dim0,
+            int Dim1, char i, char j, Layout layout>
+  class Tensor2_Expr<Tensor2<A, Tensor_Dim0, Tensor_Dim1, layout>, T, Dim0,
+                     Dim1, i, j>
   {
-    Tensor2<A,Tensor_Dim0,Tensor_Dim1,layout> &iter;
+    Tensor2<A, Tensor_Dim0, Tensor_Dim1, layout> &iter;
+
   public:
-    Tensor2_Expr(Tensor2<A,Tensor_Dim0,Tensor_Dim1,layout> &a): iter(a) {}
-    T & operator()(const int N1, const int N2)
-    {
-      return iter(N1,N2);
-    }
-    T operator()(const int N1, const int N2) const
-    {
-      return iter(N1,N2);
-    }
+    Tensor2_Expr(Tensor2<A, Tensor_Dim0, Tensor_Dim1, layout> &a) : iter(a) {}
+    T &operator()(const int N1, const int N2) { return iter(N1, N2); }
+    T operator()(const int N1, const int N2) const { return iter(N1, N2); }
 
     /* Various assignment operators.  I have to explicitly declare the
        second operator= because otherwise the compiler will generate its
        own and not use the template code. */
 
-    template<class B, class U>
-    Tensor2_Expr<Tensor2<A,Tensor_Dim0,Tensor_Dim1,layout>,
-                 T,Dim0,Dim1,i,j> &
-    operator=(const Tensor2_Expr<B,U,Dim0,Dim1,i,j> &result);
+    template <class B, class U>
+    Tensor2_Expr<Tensor2<A, Tensor_Dim0, Tensor_Dim1, layout>, T, Dim0, Dim1,
+                 i, j> &
+    operator=(const Tensor2_Expr<B, U, Dim0, Dim1, i, j> &result);
 
-    Tensor2_Expr<Tensor2<A,Tensor_Dim0,Tensor_Dim1,layout>,
-                 T,Dim0,Dim1,i,j> &
-    operator=(const Tensor2_Expr<Tensor2<A,Tensor_Dim0,Tensor_Dim1,layout>,
-              T,Dim0,Dim1,i,j> &result);
-  
-    template<class B, class U>
-    Tensor2_Expr<Tensor2<A,Tensor_Dim0,Tensor_Dim1,layout>,
-                 T,Dim0,Dim1,i,j> &
-    operator+=(const Tensor2_Expr<B,U,Dim0,Dim1,i,j> &result);
+    Tensor2_Expr<Tensor2<A, Tensor_Dim0, Tensor_Dim1, layout>, T, Dim0, Dim1,
+                 i, j> &
+    operator=(const Tensor2_Expr<Tensor2<A, Tensor_Dim0, Tensor_Dim1, layout>,
+                                 T, Dim0, Dim1, i, j> &result);
 
-    template<class B, class U>
-    Tensor2_Expr<Tensor2<A,Tensor_Dim0,Tensor_Dim1,layout>,
-                 T,Dim0,Dim1,i,j> &
-    operator-=(const Tensor2_Expr<B,U,Dim0,Dim1,i,j> &result);
+    template <class B, class U>
+    Tensor2_Expr<Tensor2<A, Tensor_Dim0, Tensor_Dim1, layout>, T, Dim0, Dim1,
+                 i, j> &
+    operator+=(const Tensor2_Expr<B, U, Dim0, Dim1, i, j> &result);
+
+    template <class B, class U>
+    Tensor2_Expr<Tensor2<A, Tensor_Dim0, Tensor_Dim1, layout>, T, Dim0, Dim1,
+                 i, j> &
+    operator-=(const Tensor2_Expr<B, U, Dim0, Dim1, i, j> &result);
 
     /* This is for when the indices are switched (i,j) -> (j,i). */
 
-    template<class B, class U>
-    Tensor2_Expr<Tensor2<A,Tensor_Dim0,Tensor_Dim1,layout>,
-                 T,Dim0,Dim1,i,j> &
-    operator=(const Tensor2_Expr<B,U,Dim0,Dim1,j,i> &result);
+    template <class B, class U>
+    Tensor2_Expr<Tensor2<A, Tensor_Dim0, Tensor_Dim1, layout>, T, Dim0, Dim1,
+                 i, j> &
+    operator=(const Tensor2_Expr<B, U, Dim0, Dim1, j, i> &result);
 
-    template<class B, class U>
-    Tensor2_Expr<Tensor2<A,Tensor_Dim0,Tensor_Dim1,layout>,
-                 T,Dim0,Dim1,i,j> &
-    operator+=(const Tensor2_Expr<B,U,Dim0,Dim1,j,i> &result);
+    template <class B, class U>
+    Tensor2_Expr<Tensor2<A, Tensor_Dim0, Tensor_Dim1, layout>, T, Dim0, Dim1,
+                 i, j> &
+    operator+=(const Tensor2_Expr<B, U, Dim0, Dim1, j, i> &result);
 
-    template<class B, class U>
-    Tensor2_Expr<Tensor2<A,Tensor_Dim0,Tensor_Dim1,layout>,
-                 T,Dim0,Dim1,i,j> &
-    operator-=(const Tensor2_Expr<B,U,Dim0,Dim1,j,i> &result);
+    template <class B, class U>
+    Tensor2_Expr<Tensor2<A, Tensor_Dim0, Tensor_Dim1, layout>, T, Dim0, Dim1,
+                 i, j> &
+    operator-=(const Tensor2_Expr<B, U, Dim0, Dim1, j, i> &result);
 
     /* This is for int's, double's, etc. */
 
     template <class B>
-    Tensor2_Expr<Tensor2<A,Tensor_Dim0,Tensor_Dim1,layout>,
-                 T,Dim0,Dim1,i,j> &
+    Tensor2_Expr<Tensor2<A, Tensor_Dim0, Tensor_Dim1, layout>, T, Dim0, Dim1,
+                 i, j> &
     operator=(const B &d);
 
     template <class B>
-    Tensor2_Expr<Tensor2<A,Tensor_Dim0,Tensor_Dim1,layout>,
-                 T,Dim0,Dim1,i,j> &
+    Tensor2_Expr<Tensor2<A, Tensor_Dim0, Tensor_Dim1, layout>, T, Dim0, Dim1,
+                 i, j> &
     operator+=(const B &d);
 
     template <class B>
-    Tensor2_Expr<Tensor2<A,Tensor_Dim0,Tensor_Dim1,layout>,
-                 T,Dim0,Dim1,i,j> &
+    Tensor2_Expr<Tensor2<A, Tensor_Dim0, Tensor_Dim1, layout>, T, Dim0, Dim1,
+                 i, j> &
     operator-=(const B &d);
 
     template <class B>
-    Tensor2_Expr<Tensor2<A,Tensor_Dim0,Tensor_Dim1,layout>,
-                 T,Dim0,Dim1,i,j> &
+    Tensor2_Expr<Tensor2<A, Tensor_Dim0, Tensor_Dim1, layout>, T, Dim0, Dim1,
+                 i, j> &
     operator*=(const B &d);
 
     template <class B>
-    Tensor2_Expr<Tensor2<A,Tensor_Dim0,Tensor_Dim1,layout>,
-                 T,Dim0,Dim1,i,j> &
+    Tensor2_Expr<Tensor2<A, Tensor_Dim0, Tensor_Dim1, layout>, T, Dim0, Dim1,
+                 i, j> &
     operator/=(const B &d);
 
     /** Assignments operators for ADOL-C */
 
     template <class B, class U>
-    Tensor2_Expr<Tensor2<A, Tensor_Dim0, Tensor_Dim1, layout>, T, Dim0, Dim1, i,
-                 j> &
+    Tensor2_Expr<Tensor2<A, Tensor_Dim0, Tensor_Dim1, layout>, T, Dim0, Dim1,
+                 i, j> &
     operator<<=(const Tensor2_Expr<B, U, Dim0, Dim1, i, j> &result);
 
     template <class B, class U>
-    Tensor2_Expr<Tensor2<A, Tensor_Dim0, Tensor_Dim1, layout>, T, Dim0, Dim1, i,
-                 j> &
+    Tensor2_Expr<Tensor2<A, Tensor_Dim0, Tensor_Dim1, layout>, T, Dim0, Dim1,
+                 i, j> &
     operator>>=(const Tensor2_Expr<B, U, Dim0, Dim1, i, j> &result);
 
-    Tensor2_Expr<Tensor2<A, Tensor_Dim0, Tensor_Dim1, layout>, T, Dim0, Dim1, i,
-                 j> &
+    Tensor2_Expr<Tensor2<A, Tensor_Dim0, Tensor_Dim1, layout>, T, Dim0, Dim1,
+                 i, j> &
     operator<<=(const Tensor2_Expr<Tensor2<A, Tensor_Dim0, Tensor_Dim1, layout>,
                                    T, Dim0, Dim1, i, j> &result);
 
-    Tensor2_Expr<Tensor2<A, Tensor_Dim0, Tensor_Dim1, layout>, T, Dim0, Dim1, i,
-                 j> &
+    Tensor2_Expr<Tensor2<A, Tensor_Dim0, Tensor_Dim1, layout>, T, Dim0, Dim1,
+                 i, j> &
     operator>>=(const Tensor2_Expr<Tensor2<A, Tensor_Dim0, Tensor_Dim1, layout>,
-                                 T, Dim0, Dim1, i, j> &result);
-
+                                   T, Dim0, Dim1, i, j> &result);
   };
 
   /* Specialized for Dg_number_rhs_0 (Dg with the
      first or second index explicitly given). */
 
-  template<class A, class T, int Dim0, int Dim1, char i, char j, int N>
-  class Tensor2_Expr<Dg_number_rhs_0<A,T,N>,T,Dim0,Dim1,i,j>
+  template <class A, class T, int Dim0, int Dim1, char i, char j, int N>
+  class Tensor2_Expr<Dg_number_rhs_0<A, T, N>, T, Dim0, Dim1, i, j>
   {
     A &iter;
+
   public:
-    Tensor2_Expr(A &a): iter(a) {}
-    T & operator()(const int N1, const int N2)
-    {
-      return iter(N,N1,N2);
-    }
-    T operator()(const int N1, const int N2) const
-    {
-      return iter(N,N1,N2);
-    }
+    Tensor2_Expr(A &a) : iter(a) {}
+    T &operator()(const int N1, const int N2) { return iter(N, N1, N2); }
+    T operator()(const int N1, const int N2) const { return iter(N, N1, N2); }
 
     /* Various assignment operators.  I have to explicitly declare the
        second operator= because otherwise the compiler will generate its
        own and not use the template code. */
 
-    template<class B, class U>
-    Tensor2_Expr<Dg_number_rhs_0<A,T,N>,T,Dim0,Dim1,i,j> &
-    operator=(const Tensor2_Expr<B,U,Dim0,Dim1,i,j> &result);
+    template <class B, class U>
+    Tensor2_Expr<Dg_number_rhs_0<A, T, N>, T, Dim0, Dim1, i, j> &
+    operator=(const Tensor2_Expr<B, U, Dim0, Dim1, i, j> &result);
 
-    Tensor2_Expr<Dg_number_rhs_0<A,T,N>,T,Dim0,Dim1,i,j> &
-    operator=(const Tensor2_Expr<Dg_number_rhs_0
-              <A,T,N>,T,Dim0,Dim1,i,j> &result);
-
+    Tensor2_Expr<Dg_number_rhs_0<A, T, N>, T, Dim0, Dim1, i, j> &
+    operator=(const Tensor2_Expr<Dg_number_rhs_0<A, T, N>, T, Dim0, Dim1, i, j>
+                &result);
   };
 }
 

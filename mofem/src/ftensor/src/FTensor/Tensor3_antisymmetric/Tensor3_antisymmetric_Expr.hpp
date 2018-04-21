@@ -14,53 +14,58 @@
 
 namespace FTensor
 {
-  template<class A, class T, int Dim0, int Dim12, char i, char j, char k>
+  template <class A, class T, int Dim0, int Dim12, char i, char j, char k>
   class Tensor3_antisymmetric_Expr
   {
     A iter;
+
   public:
-    Tensor3_antisymmetric_Expr(A &a): iter(a) {}
+    Tensor3_antisymmetric_Expr(A &a) : iter(a) {}
     T operator()(const int N1, const int N2, const int N3) const
     {
-      return iter(N1,N2,N3);
+      return iter(N1, N2, N3);
     }
   };
 
-  template<class A, class T, int Dim0, int Dim12, char i, char j, char k>
-  class Tensor3_antisymmetric_Expr<Tensor3_antisymmetric<A,Dim0,Dim12>,
-                                   T,Dim0,Dim12,i,j,k>
+  template <class A, class T, int Dim0, int Dim12, char i, char j, char k>
+  class Tensor3_antisymmetric_Expr<Tensor3_antisymmetric<A, Dim0, Dim12>, T,
+                                   Dim0, Dim12, i, j, k>
   {
-    Tensor3_antisymmetric<A,Dim0,Dim12> &iter;
+    Tensor3_antisymmetric<A, Dim0, Dim12> &iter;
+
   public:
-    Tensor3_antisymmetric_Expr(Tensor3_antisymmetric<A,Dim0,Dim12> &a)
-      : iter(a) {}
+    Tensor3_antisymmetric_Expr(Tensor3_antisymmetric<A, Dim0, Dim12> &a)
+        : iter(a)
+    {}
     T operator()(const int N1, const int N2, const int N3) const
     {
-      return iter(N1,N2,N3);
+      return iter(N1, N2, N3);
     }
 
     /* Various assignment operators.  I have to explicitly declare the
        second operator= because otherwise the compiler will generate its
        own and not use the template code. */
 
-    template<class B, class U>
-    const Tensor3_antisymmetric_Expr<Tensor3_antisymmetric<A,Dim0,Dim12>,
-                                     T,Dim0,Dim12,i,j,k> &
-    operator=(const Tensor3_antisymmetric_Expr<B,U,Dim0,Dim12,i,j,k> &result);
+    template <class B, class U>
+    const Tensor3_antisymmetric_Expr<Tensor3_antisymmetric<A, Dim0, Dim12>, T,
+                                     Dim0, Dim12, i, j, k> &
+    operator=(
+      const Tensor3_antisymmetric_Expr<B, U, Dim0, Dim12, i, j, k> &result);
 
-    const Tensor3_antisymmetric_Expr<Tensor3_antisymmetric<A,Dim0,Dim12>,
-                                     T,Dim0,Dim12,i,j,k> &
-    operator=(const Tensor3_antisymmetric_Expr<Tensor3_antisymmetric
-              <A,Dim0,Dim12>,T,Dim0,Dim12,i,j,k> &result);
+    const Tensor3_antisymmetric_Expr<Tensor3_antisymmetric<A, Dim0, Dim12>, T,
+                                     Dim0, Dim12, i, j, k> &
+    operator=(
+      const Tensor3_antisymmetric_Expr<Tensor3_antisymmetric<A, Dim0, Dim12>,
+                                       T, Dim0, Dim12, i, j, k> &result);
 
     /* This is for when the indices are switched (i,j,k) -> (i,k,j). */
 
-    template<class B, class U>
-    const Tensor3_antisymmetric_Expr<Tensor3_antisymmetric<A,Dim0,Dim12>,
-                                     T,Dim0,Dim12,i,j,k> &
-    operator=(const Tensor3_antisymmetric_Expr<B,U,Dim0,Dim12,i,k,j> &result);
+    template <class B, class U>
+    const Tensor3_antisymmetric_Expr<Tensor3_antisymmetric<A, Dim0, Dim12>, T,
+                                     Dim0, Dim12, i, j, k> &
+    operator=(
+      const Tensor3_antisymmetric_Expr<B, U, Dim0, Dim12, i, k, j> &result);
   };
 }
 
 #include "Tensor3_antisymmetric_Expr_equals.hpp"
-

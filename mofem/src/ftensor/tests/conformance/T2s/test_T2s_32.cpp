@@ -4,15 +4,16 @@
 using namespace FTensor;
 using namespace std;
 
-void test_T2s_32(Tensor2<double,3,3> &t2_1, const Tensor2<double,3,3> &t2_2,
-                 const Tensor2_symmetric<double,3> &t2s_2)
+void test_T2s_32(Tensor2<double, 3, 3> &t2_1,
+                 const Tensor2<double, 3, 3> &t2_2,
+                 const Tensor2_symmetric<double, 3> &t2s_2)
 {
-  Index<'i',3> i;
-  Index<'j',3> j;
-  Index<'k',3> k;
-  Index<'l',3> l;
-  Index<'m',3> m;
-  Index<'n',3> n;
+  Index<'i', 3> i;
+  Index<'j', 3> j;
+  Index<'k', 3> k;
+  Index<'l', 3> l;
+  Index<'m', 3> m;
+  Index<'n', 3> n;
 
   Number<0> N0;
   Number<1> N1;
@@ -20,24 +21,42 @@ void test_T2s_32(Tensor2<double,3,3> &t2_1, const Tensor2<double,3,3> &t2_2,
 
   /* Tensor2_symmetric tests */
 
-  t2_1(i,j)=t2s_2(i,j)-t2_2(i,j);
-  test_for_zero(t2_1(0,0)-(t2s_2(0,0)-t2_2(0,0)),"T2s(i,j)-T2(i,j)(0,0)");
-  test_for_zero(t2_1(0,1)-(t2s_2(0,1)-t2_2(0,1)),"T2s(i,j)-T2(i,j)(0,1)");
-  test_for_zero(t2_1(0,2)-(t2s_2(0,2)-t2_2(0,2)),"T2s(i,j)-T2(i,j)(0,2)");
-  test_for_zero(t2_1(1,0)-(t2s_2(1,0)-t2_2(1,0)),"T2s(i,j)-T2(i,j)(1,0)");
-  test_for_zero(t2_1(1,1)-(t2s_2(1,1)-t2_2(1,1)),"T2s(i,j)-T2(i,j)(1,1)");
-  test_for_zero(t2_1(1,2)-(t2s_2(1,2)-t2_2(1,2)),"T2s(i,j)-T2(i,j)(1,2)");
-  test_for_zero(t2_1(2,0)-(t2s_2(2,0)-t2_2(2,0)),"T2s(i,j)-T2(i,j)(2,0)");
-  test_for_zero(t2_1(2,1)-(t2s_2(2,1)-t2_2(2,1)),"T2s(i,j)-T2(i,j)(2,1)");
-  test_for_zero(t2_1(2,2)-(t2s_2(2,2)-t2_2(2,2)),"T2s(i,j)-T2(i,j)(2,2)");
-  t2_1(i,j)=t2_2(i,j)-t2s_2(i,j);
-  test_for_zero(t2_1(0,0)-(-t2s_2(0,0)+t2_2(0,0)),"T2(i,j)-T2s(i,j)(0,0)");
-  test_for_zero(t2_1(0,1)-(-t2s_2(0,1)+t2_2(0,1)),"T2(i,j)-T2s(i,j)(0,1)");
-  test_for_zero(t2_1(0,2)-(-t2s_2(0,2)+t2_2(0,2)),"T2(i,j)-T2s(i,j)(0,2)");
-  test_for_zero(t2_1(1,0)-(-t2s_2(1,0)+t2_2(1,0)),"T2(i,j)-T2s(i,j)(1,0)");
-  test_for_zero(t2_1(1,1)-(-t2s_2(1,1)+t2_2(1,1)),"T2(i,j)-T2s(i,j)(1,1)");
-  test_for_zero(t2_1(1,2)-(-t2s_2(1,2)+t2_2(1,2)),"T2(i,j)-T2s(i,j)(1,2)");
-  test_for_zero(t2_1(2,0)-(-t2s_2(2,0)+t2_2(2,0)),"T2(i,j)-T2s(i,j)(2,0)");
-  test_for_zero(t2_1(2,1)-(-t2s_2(2,1)+t2_2(2,1)),"T2(i,j)-T2s(i,j)(2,1)");
-  test_for_zero(t2_1(2,2)-(-t2s_2(2,2)+t2_2(2,2)),"T2(i,j)-T2s(i,j)(2,2)");
+  t2_1(i, j) = t2s_2(i, j) - t2_2(i, j);
+  test_for_zero(t2_1(0, 0) - (t2s_2(0, 0) - t2_2(0, 0)),
+                "T2s(i,j)-T2(i,j)(0,0)");
+  test_for_zero(t2_1(0, 1) - (t2s_2(0, 1) - t2_2(0, 1)),
+                "T2s(i,j)-T2(i,j)(0,1)");
+  test_for_zero(t2_1(0, 2) - (t2s_2(0, 2) - t2_2(0, 2)),
+                "T2s(i,j)-T2(i,j)(0,2)");
+  test_for_zero(t2_1(1, 0) - (t2s_2(1, 0) - t2_2(1, 0)),
+                "T2s(i,j)-T2(i,j)(1,0)");
+  test_for_zero(t2_1(1, 1) - (t2s_2(1, 1) - t2_2(1, 1)),
+                "T2s(i,j)-T2(i,j)(1,1)");
+  test_for_zero(t2_1(1, 2) - (t2s_2(1, 2) - t2_2(1, 2)),
+                "T2s(i,j)-T2(i,j)(1,2)");
+  test_for_zero(t2_1(2, 0) - (t2s_2(2, 0) - t2_2(2, 0)),
+                "T2s(i,j)-T2(i,j)(2,0)");
+  test_for_zero(t2_1(2, 1) - (t2s_2(2, 1) - t2_2(2, 1)),
+                "T2s(i,j)-T2(i,j)(2,1)");
+  test_for_zero(t2_1(2, 2) - (t2s_2(2, 2) - t2_2(2, 2)),
+                "T2s(i,j)-T2(i,j)(2,2)");
+  t2_1(i, j) = t2_2(i, j) - t2s_2(i, j);
+  test_for_zero(t2_1(0, 0) - (-t2s_2(0, 0) + t2_2(0, 0)),
+                "T2(i,j)-T2s(i,j)(0,0)");
+  test_for_zero(t2_1(0, 1) - (-t2s_2(0, 1) + t2_2(0, 1)),
+                "T2(i,j)-T2s(i,j)(0,1)");
+  test_for_zero(t2_1(0, 2) - (-t2s_2(0, 2) + t2_2(0, 2)),
+                "T2(i,j)-T2s(i,j)(0,2)");
+  test_for_zero(t2_1(1, 0) - (-t2s_2(1, 0) + t2_2(1, 0)),
+                "T2(i,j)-T2s(i,j)(1,0)");
+  test_for_zero(t2_1(1, 1) - (-t2s_2(1, 1) + t2_2(1, 1)),
+                "T2(i,j)-T2s(i,j)(1,1)");
+  test_for_zero(t2_1(1, 2) - (-t2s_2(1, 2) + t2_2(1, 2)),
+                "T2(i,j)-T2s(i,j)(1,2)");
+  test_for_zero(t2_1(2, 0) - (-t2s_2(2, 0) + t2_2(2, 0)),
+                "T2(i,j)-T2s(i,j)(2,0)");
+  test_for_zero(t2_1(2, 1) - (-t2s_2(2, 1) + t2_2(2, 1)),
+                "T2(i,j)-T2s(i,j)(2,1)");
+  test_for_zero(t2_1(2, 2) - (-t2s_2(2, 2) + t2_2(2, 2)),
+                "T2(i,j)-T2s(i,j)(2,2)");
 }

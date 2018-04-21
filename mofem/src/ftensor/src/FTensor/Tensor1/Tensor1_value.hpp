@@ -5,30 +5,24 @@
 
 namespace FTensor
 {
-  template <class T, int Tensor_Dim>
-  class Tensor1
+  template <class T, int Tensor_Dim> class Tensor1
   {
     T data[Tensor_Dim];
+
   public:
     /* Initializations for varying numbers of elements, with each one
        defined for a particular Tensor_Dim.  To initialize a different
        dimension, just add the appropriate constructor and call to
        the Tensor1_constructor constructor. */
-    Tensor1(T d0)
-    {
-      Tensor1_constructor<T,Tensor_Dim>(data,d0);
-    }
-    Tensor1(T d0, T d1)
-    {
-      Tensor1_constructor<T,Tensor_Dim>(data,d0,d1);
-    }
+    Tensor1(T d0) { Tensor1_constructor<T, Tensor_Dim>(data, d0); }
+    Tensor1(T d0, T d1) { Tensor1_constructor<T, Tensor_Dim>(data, d0, d1); }
     Tensor1(T d0, T d1, T d2)
     {
-      Tensor1_constructor<T,Tensor_Dim>(data,d0,d1,d2);
+      Tensor1_constructor<T, Tensor_Dim>(data, d0, d1, d2);
     }
     Tensor1(T d0, T d1, T d2, T d3)
     {
-      Tensor1_constructor<T,Tensor_Dim>(data,d0,d1,d2,d3);
+      Tensor1_constructor<T, Tensor_Dim>(data, d0, d1, d2, d3);
     }
 
     Tensor1() {}
@@ -36,14 +30,14 @@ namespace FTensor
     /* There are two operator(int)'s, one for non-consts that lets you
        change the value, and one for consts that doesn't. */
 
-    T & operator()(const int N)
+    T &operator()(const int N)
     {
 #ifdef FTENSOR_DEBUG
-      if(N>=Tensor_Dim || N<0)
+      if(N >= Tensor_Dim || N < 0)
         {
           std::stringstream s;
-          s << "Bad index in Tensor1<T," << Tensor_Dim
-            << ">.operator(" << N << ")" << std::endl;
+          s << "Bad index in Tensor1<T," << Tensor_Dim << ">.operator(" << N
+            << ")" << std::endl;
           throw std::runtime_error(s.str());
         }
 #endif
@@ -52,11 +46,11 @@ namespace FTensor
     T operator()(const int N) const
     {
 #ifdef FTENSOR_DEBUG
-      if(N>=Tensor_Dim || N<0)
+      if(N >= Tensor_Dim || N < 0)
         {
           std::stringstream s;
-          s << "Bad index in Tensor1<T," << Tensor_Dim
-            << ">.operator(" << N << ") const" << std::endl;
+          s << "Bad index in Tensor1<T," << Tensor_Dim << ">.operator(" << N
+            << ") const" << std::endl;
           throw std::runtime_error(s.str());
         }
 #endif
@@ -68,73 +62,74 @@ namespace FTensor
        parts. They are not entirely safe, since you can accidently use a
        higher dimension than what is really allowed (like Dim=5). */
 
-    template<char i, int Dim>
-    typename std::enable_if<(Tensor_Dim >= Dim),
-            Tensor1_Expr<Tensor1<T,Tensor_Dim>,T,Dim,i> >::type
-    operator()(const Index<i,Dim> &)
+    template <char i, int Dim>
+    typename std::enable_if<
+      (Tensor_Dim >= Dim), Tensor1_Expr<Tensor1<T, Tensor_Dim>, T, Dim, i>>::type
+    operator()(const Index<i, Dim> &)
     {
-      return Tensor1_Expr<Tensor1<T,Tensor_Dim>,T,Dim,i>(*this);
+      return Tensor1_Expr<Tensor1<T, Tensor_Dim>, T, Dim, i>(*this);
     }
 
-    template<char i, int Dim>
-    typename std::enable_if<(Tensor_Dim >= Dim),
-            Tensor1_Expr<const Tensor1<T,Tensor_Dim>,T,Dim,i> >::type
-    operator()(const Index<i,Dim> &) const
+    template <char i, int Dim>
+    typename std::enable_if<
+      (Tensor_Dim >= Dim),
+      Tensor1_Expr<const Tensor1<T, Tensor_Dim>, T, Dim, i>>::type
+    operator()(const Index<i, Dim> &) const
     {
-      return Tensor1_Expr<const Tensor1<T,Tensor_Dim>,T,Dim,i>(*this);
+      return Tensor1_Expr<const Tensor1<T, Tensor_Dim>, T, Dim, i>(*this);
     }
 
     /* Convenience functions */
 
     Tensor1<T, Tensor_Dim> normalize()
     {
-      const Index<'a',Tensor_Dim> a;
+      const Index<'a', Tensor_Dim> a;
       (*this)(a) /= l2();
       return *this;
     }
-  
-    T l2() const
-    {
-      return sqrt(l2_squared(Number<Tensor_Dim>()));
-    }
 
-    template <int Current_Dim>
-    T l2_squared(const Number<Current_Dim> &) const
+    T l2() const { return sqrt(l2_squared(Number<Tensor_Dim>())); }
+
+    template <int Current_Dim> T l2_squared(const Number<Current_Dim> &) const
     {
-      return data[Current_Dim-1]*data[Current_Dim-1]
-        + l2_squared(Number<Current_Dim-1>());
+      return data[Current_Dim - 1] * data[Current_Dim - 1]
+             + l2_squared(Number<Current_Dim - 1>());
     }
-    T l2_squared(const Number<1> &) const
-    {
-      return data[0]*data[0];
-    }
+    T l2_squared(const Number<1> &) const { return data[0] * data[0]; }
   };
 }
 /// JSON compatible output
 
 template <class T, int Tensor_Dim>
-std::ostream & operator<<(std::ostream &os,
-                          const FTensor::Tensor1<T,Tensor_Dim> &t)
+std::ostream &
+operator<<(std::ostream &os, const FTensor::Tensor1<T, Tensor_Dim> &t)
 {
   os << '[';
-  for(int i=0; i+1<Tensor_Dim; ++i)
-    { os << t(i) << ','; }
-  if(Tensor_Dim>0)
-    { os << t(Tensor_Dim-1); }
+  for(int i = 0; i + 1 < Tensor_Dim; ++i)
+    {
+      os << t(i) << ',';
+    }
+  if(Tensor_Dim > 0)
+    {
+      os << t(Tensor_Dim - 1);
+    }
   os << ']';
   return os;
 }
 
 template <class T, int Tensor_Dim>
-std::istream & operator>>(std::istream &is,
-                          FTensor::Tensor1<T,Tensor_Dim> &t)
+std::istream &operator>>(std::istream &is, FTensor::Tensor1<T, Tensor_Dim> &t)
 {
   char c;
   is >> c;
-  for(int i=0; i+1<Tensor_Dim; ++i)
-    { is >> t(i) >> c; }
-  if(Tensor_Dim>0)
-    { is >> t(Tensor_Dim-1); }
+  for(int i = 0; i + 1 < Tensor_Dim; ++i)
+    {
+      is >> t(i) >> c;
+    }
+  if(Tensor_Dim > 0)
+    {
+      is >> t(Tensor_Dim - 1);
+    }
   is >> c;
   return is;
 }

@@ -8,69 +8,74 @@ namespace FTensor
   /* These operator()'s are the first part in constructing template
      expressions. */
 
-  template<class T, int Tensor_Dim01, int Tensor_Dim2>
-  template<char i, char j, char k, int Dim01, int Dim2>
-  inline Dg_Expr<Dg<T,Tensor_Dim01,Tensor_Dim2>,
-                         T,Dim01,Dim2,i,j,k>
-  Dg<T,Tensor_Dim01,Tensor_Dim2>::operator()
-    (const Index<i,Dim01> index1, const Index<j,Dim01> index2,
-     const Index<k,Dim2> index3)
+  template <class T, int Tensor_Dim01, int Tensor_Dim2>
+  template <char i, char j, char k, int Dim01, int Dim2>
+  inline Dg_Expr<Dg<T, Tensor_Dim01, Tensor_Dim2>, T, Dim01, Dim2, i, j, k>
+  Dg<T, Tensor_Dim01, Tensor_Dim2>::
+  operator()(const Index<i, Dim01> index1, const Index<j, Dim01> index2,
+             const Index<k, Dim2> index3)
   {
-    return Dg_Expr<Dg<T,Tensor_Dim01,Tensor_Dim2>,
-                           T,Dim01,Dim2,i,j,k>(*this);
+    return Dg_Expr<Dg<T, Tensor_Dim01, Tensor_Dim2>, T, Dim01, Dim2, i, j, k>(
+      *this);
   }
 
-  template<class T, int Tensor_Dim01, int Tensor_Dim2>
-  template<char i, char j, char k, int Dim01, int Dim2>
-  inline Dg_Expr<const Dg<T,Tensor_Dim01,Tensor_Dim2>,
-                         T,Dim01,Dim2,i,j,k>
-  Dg<T,Tensor_Dim01,Tensor_Dim2>::operator()
-    (const Index<i,Dim01> index1, const Index<j,Dim01> index2,
-     const Index<k,Dim2> index3) const
+  template <class T, int Tensor_Dim01, int Tensor_Dim2>
+  template <char i, char j, char k, int Dim01, int Dim2>
+  inline Dg_Expr<const Dg<T, Tensor_Dim01, Tensor_Dim2>, T, Dim01, Dim2, i, j,
+                 k>
+  Dg<T, Tensor_Dim01, Tensor_Dim2>::
+  operator()(const Index<i, Dim01> index1, const Index<j, Dim01> index2,
+             const Index<k, Dim2> index3) const
   {
-    return Dg_Expr<const Dg<T,Tensor_Dim01,Tensor_Dim2>,
-                           T,Dim01,Dim2,i,j,k> (*this);
+    return Dg_Expr<const Dg<T, Tensor_Dim01, Tensor_Dim2>, T, Dim01, Dim2, i,
+                   j, k>(*this);
   }
 
   /* These operators are for internal contractions. */
 
-  template<class T, int Tensor_Dim01, int Tensor_Dim2>
-  template<char i, char j, int Dim, int Dim12>
-  inline Tensor1_Expr<const Tensor3_contracted_12
-                      <Dg<T,Tensor_Dim01,Tensor_Dim2>,T,Dim12,i>,T,Dim,i>
-  Dg<T,Tensor_Dim01,Tensor_Dim2>::operator()
-    (const Index<i,Dim> index1, const Index<j,Dim12> index2,
-     const Index<j,Dim12> index3) const
+  template <class T, int Tensor_Dim01, int Tensor_Dim2>
+  template <char i, char j, int Dim, int Dim12>
+  inline Tensor1_Expr<
+    const Tensor3_contracted_12<Dg<T, Tensor_Dim01, Tensor_Dim2>, T, Dim12, i>,
+    T, Dim, i>
+  Dg<T, Tensor_Dim01, Tensor_Dim2>::
+  operator()(const Index<i, Dim> index1, const Index<j, Dim12> index2,
+             const Index<j, Dim12> index3) const
   {
-    typedef const Tensor3_contracted_12<Dg<T,Tensor_Dim01,Tensor_Dim2>,
-                                        T,Dim12,i> TensorExpr;
-    return Tensor1_Expr<TensorExpr,T,Dim,i>(TensorExpr(*this));
+    typedef const Tensor3_contracted_12<Dg<T, Tensor_Dim01, Tensor_Dim2>, T,
+                                        Dim12, i>
+      TensorExpr;
+    return Tensor1_Expr<TensorExpr, T, Dim, i>(TensorExpr(*this));
   }
 
-  template<class T, int Tensor_Dim01, int Tensor_Dim2>
-  template<char i, char j, int Dim, int Dim02>
-  inline Tensor1_Expr<const Tensor3_contracted_02
-                      <Dg<T,Tensor_Dim01,Tensor_Dim2>,T,Dim02,i>,T,Dim,i>
-  Dg<T,Tensor_Dim01,Tensor_Dim2>::operator()
-    (const Index<j,Dim02> index1, const Index<i,Dim> index2,
-     const Index<j,Dim02> index3) const
+  template <class T, int Tensor_Dim01, int Tensor_Dim2>
+  template <char i, char j, int Dim, int Dim02>
+  inline Tensor1_Expr<
+    const Tensor3_contracted_02<Dg<T, Tensor_Dim01, Tensor_Dim2>, T, Dim02, i>,
+    T, Dim, i>
+  Dg<T, Tensor_Dim01, Tensor_Dim2>::
+  operator()(const Index<j, Dim02> index1, const Index<i, Dim> index2,
+             const Index<j, Dim02> index3) const
   {
-    typedef const Tensor3_contracted_02<Dg<T,Tensor_Dim01,Tensor_Dim2>,
-                                        T,Dim02,i> TensorExpr;
-    return Tensor1_Expr<TensorExpr,T,Dim,i>(TensorExpr(*this));
+    typedef const Tensor3_contracted_02<Dg<T, Tensor_Dim01, Tensor_Dim2>, T,
+                                        Dim02, i>
+      TensorExpr;
+    return Tensor1_Expr<TensorExpr, T, Dim, i>(TensorExpr(*this));
   }
 
-  template<class T, int Tensor_Dim01, int Tensor_Dim2>
-  template<char i, char j, int Dim, int Dim01>
-  inline Tensor1_Expr<const Tensor3_contracted_01
-                      <Dg<T,Tensor_Dim01,Tensor_Dim2>,T,Dim01,i>,T,Dim,i>
-  Dg<T,Tensor_Dim01,Tensor_Dim2>::operator()
-    (const Index<j,Dim01> index1, const Index<j,Dim01> index2,
-     const Index<i,Dim> index3) const
+  template <class T, int Tensor_Dim01, int Tensor_Dim2>
+  template <char i, char j, int Dim, int Dim01>
+  inline Tensor1_Expr<
+    const Tensor3_contracted_01<Dg<T, Tensor_Dim01, Tensor_Dim2>, T, Dim01, i>,
+    T, Dim, i>
+  Dg<T, Tensor_Dim01, Tensor_Dim2>::
+  operator()(const Index<j, Dim01> index1, const Index<j, Dim01> index2,
+             const Index<i, Dim> index3) const
   {
-    typedef const Tensor3_contracted_01<Dg<T,Tensor_Dim01,Tensor_Dim2>,
-                                        T,Dim01,i> TensorExpr;
-    return Tensor1_Expr<TensorExpr,T,Dim,i>(TensorExpr(*this));
+    typedef const Tensor3_contracted_01<Dg<T, Tensor_Dim01, Tensor_Dim2>, T,
+                                        Dim01, i>
+      TensorExpr;
+    return Tensor1_Expr<TensorExpr, T, Dim, i>(TensorExpr(*this));
   }
 
   /* This is for expressions where a number is used for one slot, and
@@ -81,80 +86,86 @@ namespace FTensor
 
   /* First slot. */
 
-  template<class T, int Tensor_Dim01, int Tensor_Dim2>
-  template<char i, char j, int N, int Dim0, int Dim1>
-  Tensor2_Expr<Dg_number_rhs_0<Dg<T,Tensor_Dim01,Tensor_Dim2>,T,N>,
-               T,Dim0,Dim1,i,j>
-  Dg<T,Tensor_Dim01,Tensor_Dim2>::operator()(const Number<N> n1,
-                                                     const Index<i,Dim0> index1,
-                                                     const Index<j,Dim1> index2)
+  template <class T, int Tensor_Dim01, int Tensor_Dim2>
+  template <char i, char j, int N, int Dim0, int Dim1>
+  Tensor2_Expr<Dg_number_rhs_0<Dg<T, Tensor_Dim01, Tensor_Dim2>, T, N>, T,
+               Dim0, Dim1, i, j>
+  Dg<T, Tensor_Dim01, Tensor_Dim2>::
+  operator()(const Number<N> n1, const Index<i, Dim0> index1,
+             const Index<j, Dim1> index2)
   {
-    typedef Dg_number_rhs_0<Dg<T,Tensor_Dim01,Tensor_Dim2>,T,N> TensorExpr;
-    return Tensor2_Expr<TensorExpr,T,Dim0,Dim1,i,j>(*this);
+    typedef Dg_number_rhs_0<Dg<T, Tensor_Dim01, Tensor_Dim2>, T, N> TensorExpr;
+    return Tensor2_Expr<TensorExpr, T, Dim0, Dim1, i, j>(*this);
   }
 
-  template<class T, int Tensor_Dim01, int Tensor_Dim2>
-  template<char i, char j, int N, int Dim0, int Dim1>
-  const Tensor2_Expr<const Dg_number_0<const Dg<T,Tensor_Dim01,Tensor_Dim2>,T,N>,
-                     T,Dim0,Dim1,i,j>
-  Dg<T,Tensor_Dim01,Tensor_Dim2>::operator()(const Number<N> n1,
-                                                     const Index<i,Dim0> index1,
-                                                     const Index<j,Dim1> index2) const
+  template <class T, int Tensor_Dim01, int Tensor_Dim2>
+  template <char i, char j, int N, int Dim0, int Dim1>
+  const Tensor2_Expr<
+    const Dg_number_0<const Dg<T, Tensor_Dim01, Tensor_Dim2>, T, N>, T, Dim0,
+    Dim1, i, j>
+  Dg<T, Tensor_Dim01, Tensor_Dim2>::
+  operator()(const Number<N> n1, const Index<i, Dim0> index1,
+             const Index<j, Dim1> index2) const
   {
-    typedef const Dg_number_0<const Dg<T,Tensor_Dim01,Tensor_Dim2>,T,N> TensorExpr;
-    return Tensor2_Expr<TensorExpr,T,Dim0,Dim1,i,j>(TensorExpr(*this));
+    typedef const Dg_number_0<const Dg<T, Tensor_Dim01, Tensor_Dim2>, T, N>
+      TensorExpr;
+    return Tensor2_Expr<TensorExpr, T, Dim0, Dim1, i, j>(TensorExpr(*this));
   }
 
   /* Second slot. */
 
-  template<class T, int Tensor_Dim01, int Tensor_Dim2>
-  template<char i, char j, int N, int Dim0, int Dim1>
-  Tensor2_Expr<Dg_number_rhs_0<Dg<T,Tensor_Dim01,Tensor_Dim2>,T,N>,
-               T,Dim0,Dim1,i,j>
-  Dg<T,Tensor_Dim01,Tensor_Dim2>::operator()(const Index<i,Dim0> index1,
-                                                     const Number<N> n1,
-                                                     const Index<j,Dim1> index2)
+  template <class T, int Tensor_Dim01, int Tensor_Dim2>
+  template <char i, char j, int N, int Dim0, int Dim1>
+  Tensor2_Expr<Dg_number_rhs_0<Dg<T, Tensor_Dim01, Tensor_Dim2>, T, N>, T,
+               Dim0, Dim1, i, j>
+  Dg<T, Tensor_Dim01, Tensor_Dim2>::
+  operator()(const Index<i, Dim0> index1, const Number<N> n1,
+             const Index<j, Dim1> index2)
   {
-    typedef Dg_number_rhs_0<Dg<T,Tensor_Dim01,Tensor_Dim2>,T,N> TensorExpr;
-    return Tensor2_Expr<TensorExpr,T,Dim0,Dim1,i,j>(*this);
+    typedef Dg_number_rhs_0<Dg<T, Tensor_Dim01, Tensor_Dim2>, T, N> TensorExpr;
+    return Tensor2_Expr<TensorExpr, T, Dim0, Dim1, i, j>(*this);
   }
 
-  template<class T, int Tensor_Dim01, int Tensor_Dim2>
-  template<char i, char j, int N, int Dim0, int Dim1>
-  const Tensor2_Expr<const Dg_number_0<const Dg<T,Tensor_Dim01,Tensor_Dim2>,T,N>,
-                     T,Dim0,Dim1,i,j>
-  Dg<T,Tensor_Dim01,Tensor_Dim2>::operator()(const Index<i,Dim0> index1,
-                                                     const Number<N> n1,
-                                                     const Index<j,Dim1> index2) const
+  template <class T, int Tensor_Dim01, int Tensor_Dim2>
+  template <char i, char j, int N, int Dim0, int Dim1>
+  const Tensor2_Expr<
+    const Dg_number_0<const Dg<T, Tensor_Dim01, Tensor_Dim2>, T, N>, T, Dim0,
+    Dim1, i, j>
+  Dg<T, Tensor_Dim01, Tensor_Dim2>::
+  operator()(const Index<i, Dim0> index1, const Number<N> n1,
+             const Index<j, Dim1> index2) const
   {
-    typedef const Dg_number_0<const Dg<T,Tensor_Dim01,Tensor_Dim2>,T,N> TensorExpr;
-    return Tensor2_Expr<TensorExpr,T,Dim0,Dim1,i,j>(TensorExpr(*this));
+    typedef const Dg_number_0<const Dg<T, Tensor_Dim01, Tensor_Dim2>, T, N>
+      TensorExpr;
+    return Tensor2_Expr<TensorExpr, T, Dim0, Dim1, i, j>(TensorExpr(*this));
   }
 
   /* Third slot. */
 
-  template<class T, int Tensor_Dim01, int Tensor_Dim2>
-  template<char i, char j, int N, int Dim>
-  inline Tensor2_symmetric_Expr<Dg_number_rhs_2<Dg<T,Tensor_Dim01,Tensor_Dim2>,T,N>,
-                                T,Dim,i,j>
-  Dg<T,Tensor_Dim01,Tensor_Dim2>::operator()(const Index<i,Dim> index1,
-                                                     const Index<j,Dim> index2,
-                                                     const Number<N> n1)
+  template <class T, int Tensor_Dim01, int Tensor_Dim2>
+  template <char i, char j, int N, int Dim>
+  inline Tensor2_symmetric_Expr<
+    Dg_number_rhs_2<Dg<T, Tensor_Dim01, Tensor_Dim2>, T, N>, T, Dim, i, j>
+  Dg<T, Tensor_Dim01, Tensor_Dim2>::
+  operator()(const Index<i, Dim> index1, const Index<j, Dim> index2,
+             const Number<N> n1)
   {
-    typedef Dg_number_rhs_2<Dg<T,Tensor_Dim01,Tensor_Dim2>,T,N> TensorExpr;
-    return Tensor2_symmetric_Expr<TensorExpr,T,Dim,i,j>(*this);
+    typedef Dg_number_rhs_2<Dg<T, Tensor_Dim01, Tensor_Dim2>, T, N> TensorExpr;
+    return Tensor2_symmetric_Expr<TensorExpr, T, Dim, i, j>(*this);
   }
 
-  template<class T, int Tensor_Dim01, int Tensor_Dim2>
-  template<char i, char j, int N, int Dim>
-  const Tensor2_symmetric_Expr<const Dg_number_2
-                               <const Dg<T,Tensor_Dim01,Tensor_Dim2>,T,N>,T,Dim,i,j>
-  Dg<T,Tensor_Dim01,Tensor_Dim2>::operator()(const Index<i,Dim> index1,
-                                                     const Index<j,Dim> index2,
-                                                     const Number<N> n1) const
+  template <class T, int Tensor_Dim01, int Tensor_Dim2>
+  template <char i, char j, int N, int Dim>
+  const Tensor2_symmetric_Expr<
+    const Dg_number_2<const Dg<T, Tensor_Dim01, Tensor_Dim2>, T, N>, T, Dim, i,
+    j>
+  Dg<T, Tensor_Dim01, Tensor_Dim2>::
+  operator()(const Index<i, Dim> index1, const Index<j, Dim> index2,
+             const Number<N> n1) const
   {
-    typedef const Dg_number_2<const Dg<T,Tensor_Dim01,Tensor_Dim2>,T,N> TensorExpr;
-    return Tensor2_symmetric_Expr<TensorExpr,T,Dim,i,j>(TensorExpr(*this));
+    typedef const Dg_number_2<const Dg<T, Tensor_Dim01, Tensor_Dim2>, T, N>
+      TensorExpr;
+    return Tensor2_symmetric_Expr<TensorExpr, T, Dim, i, j>(TensorExpr(*this));
   }
 
   /* This is for expressions where a number is used for two slots, and
@@ -164,80 +175,94 @@ namespace FTensor
 
   /* Index in first slot. */
 
-  template<class T, int Tensor_Dim01, int Tensor_Dim2>
-  template<char i, int N1, int N2, int Dim>
-  Tensor1_Expr<Dg_number_rhs_12<Dg<T,Tensor_Dim01,Tensor_Dim2>,T,N1,N2>,T,Dim,i>
-  Dg<T,Tensor_Dim01,Tensor_Dim2>::operator()(const Index<i,Dim> index,
-                                                     const Number<N1> n1,
-                                                     const Number<N2> n2)
+  template <class T, int Tensor_Dim01, int Tensor_Dim2>
+  template <char i, int N1, int N2, int Dim>
+  Tensor1_Expr<Dg_number_rhs_12<Dg<T, Tensor_Dim01, Tensor_Dim2>, T, N1, N2>,
+               T, Dim, i>
+  Dg<T, Tensor_Dim01, Tensor_Dim2>::
+  operator()(const Index<i, Dim> index, const Number<N1> n1,
+             const Number<N2> n2)
   {
-    typedef Dg_number_rhs_12<Dg<T,Tensor_Dim01,Tensor_Dim2>,T,N1,N2> TensorExpr;
-    return Tensor1_Expr<TensorExpr,T,Dim,i>(*this);
+    typedef Dg_number_rhs_12<Dg<T, Tensor_Dim01, Tensor_Dim2>, T, N1, N2>
+      TensorExpr;
+    return Tensor1_Expr<TensorExpr, T, Dim, i>(*this);
   }
 
-  template<class T, int Tensor_Dim01, int Tensor_Dim2>
-  template<char i, int N1, int N2, int Dim>
-  const Tensor1_Expr<const Dg_number_12<const Dg<T,Tensor_Dim01,Tensor_Dim2>,
-                                                T,N1,N2>,T,Dim,i>
-  Dg<T,Tensor_Dim01,Tensor_Dim2>::operator()(const Index<i,Dim> index,
-                                                     const Number<N1> n1,
-                                                     const Number<N2> n2) const
+  template <class T, int Tensor_Dim01, int Tensor_Dim2>
+  template <char i, int N1, int N2, int Dim>
+  const Tensor1_Expr<
+    const Dg_number_12<const Dg<T, Tensor_Dim01, Tensor_Dim2>, T, N1, N2>, T,
+    Dim, i>
+  Dg<T, Tensor_Dim01, Tensor_Dim2>::
+  operator()(const Index<i, Dim> index, const Number<N1> n1,
+             const Number<N2> n2) const
   {
-    typedef const Dg_number_12<const Dg<T,Tensor_Dim01,Tensor_Dim2>,T,N1,N2>
+    typedef const Dg_number_12<const Dg<T, Tensor_Dim01, Tensor_Dim2>, T, N1,
+                               N2>
       TensorExpr;
-    return Tensor1_Expr<TensorExpr,T,Dim,i>(TensorExpr(*this));
+    return Tensor1_Expr<TensorExpr, T, Dim, i>(TensorExpr(*this));
   }
 
   /* Index in second slot.  I use the same structures as for the Index
      in the first slot since the tensor is symmetric on the first two
      indices. */
 
-  template<class T, int Tensor_Dim01, int Tensor_Dim2>
-  template<char i, int N1, int N2, int Dim>
-  Tensor1_Expr<Dg_number_rhs_12<Dg<T,Tensor_Dim01,Tensor_Dim2>,T,N1,N2>,T,Dim,i>
-  Dg<T,Tensor_Dim01,Tensor_Dim2>::operator()(const Number<N1> n1,
-                                                     const Index<i,Dim> index,
-                                                     const Number<N2> n2)
+  template <class T, int Tensor_Dim01, int Tensor_Dim2>
+  template <char i, int N1, int N2, int Dim>
+  Tensor1_Expr<Dg_number_rhs_12<Dg<T, Tensor_Dim01, Tensor_Dim2>, T, N1, N2>,
+               T, Dim, i>
+  Dg<T, Tensor_Dim01, Tensor_Dim2>::
+  operator()(const Number<N1> n1, const Index<i, Dim> index,
+             const Number<N2> n2)
   {
-    typedef Dg_number_rhs_12<Dg<T,Tensor_Dim01,Tensor_Dim2>,T,N1,N2> TensorExpr;
-    return Tensor1_Expr<TensorExpr,T,Dim,i>(*this);
+    typedef Dg_number_rhs_12<Dg<T, Tensor_Dim01, Tensor_Dim2>, T, N1, N2>
+      TensorExpr;
+    return Tensor1_Expr<TensorExpr, T, Dim, i>(*this);
   }
 
-  template<class T, int Tensor_Dim01, int Tensor_Dim2>
-  template<char i, int N1, int N2, int Dim>
-  const Tensor1_Expr<const Dg_number_12<const Dg<T,Tensor_Dim01,Tensor_Dim2>,
-                                                T,N1,N2>,T,Dim,i>
-  Dg<T,Tensor_Dim01,Tensor_Dim2>::operator()(const Number<N1> n1,
-                                                     const Index<i,Dim> index,
-                                                     const Number<N2> n2) const
+  template <class T, int Tensor_Dim01, int Tensor_Dim2>
+  template <char i, int N1, int N2, int Dim>
+  const Tensor1_Expr<
+    const Dg_number_12<const Dg<T, Tensor_Dim01, Tensor_Dim2>, T, N1, N2>, T,
+    Dim, i>
+  Dg<T, Tensor_Dim01, Tensor_Dim2>::
+  operator()(const Number<N1> n1, const Index<i, Dim> index,
+             const Number<N2> n2) const
   {
-    typedef const Dg_number_12<const Dg<T,Tensor_Dim01,Tensor_Dim2>,T,N1,N2>
+    typedef const Dg_number_12<const Dg<T, Tensor_Dim01, Tensor_Dim2>, T, N1,
+                               N2>
       TensorExpr;
-    return Tensor1_Expr<TensorExpr,T,Dim,i>(TensorExpr(*this));
+    return Tensor1_Expr<TensorExpr, T, Dim, i>(TensorExpr(*this));
   }
 
   /* Index in third slot. */
 
-  template<class T, int Tensor_Dim01, int Tensor_Dim2>
-  template<char i, int N1, int N2, int Dim>
-  Tensor1_Expr<Dg_number_rhs_01<Dg<T,Tensor_Dim01,Tensor_Dim2>,T,N1,N2>,T,Dim,i>
-  Dg<T,Tensor_Dim01,Tensor_Dim2>::operator()(const Number<N1> n1, const Number<N2> n2,
-                                                     const Index<i,Dim> index)
+  template <class T, int Tensor_Dim01, int Tensor_Dim2>
+  template <char i, int N1, int N2, int Dim>
+  Tensor1_Expr<Dg_number_rhs_01<Dg<T, Tensor_Dim01, Tensor_Dim2>, T, N1, N2>,
+               T, Dim, i>
+  Dg<T, Tensor_Dim01, Tensor_Dim2>::
+  operator()(const Number<N1> n1, const Number<N2> n2,
+             const Index<i, Dim> index)
   {
-    typedef Dg_number_rhs_01<Dg<T,Tensor_Dim01,Tensor_Dim2>,T,N1,N2> TensorExpr;
-    return Tensor1_Expr<TensorExpr,T,Dim,i>(*this);
+    typedef Dg_number_rhs_01<Dg<T, Tensor_Dim01, Tensor_Dim2>, T, N1, N2>
+      TensorExpr;
+    return Tensor1_Expr<TensorExpr, T, Dim, i>(*this);
   }
 
-  template<class T, int Tensor_Dim01, int Tensor_Dim2>
-  template<char i, int N1, int N2, int Dim>
-  const Tensor1_Expr<const Dg_number_01<const Dg<T,Tensor_Dim01,Tensor_Dim2>,
-                                                T,N1,N2>,T,Dim,i>
-  Dg<T,Tensor_Dim01,Tensor_Dim2>::operator()(const Number<N1> n1, const Number<N2> n2,
-                                                     const Index<i,Dim> index) const
+  template <class T, int Tensor_Dim01, int Tensor_Dim2>
+  template <char i, int N1, int N2, int Dim>
+  const Tensor1_Expr<
+    const Dg_number_01<const Dg<T, Tensor_Dim01, Tensor_Dim2>, T, N1, N2>, T,
+    Dim, i>
+  Dg<T, Tensor_Dim01, Tensor_Dim2>::
+  operator()(const Number<N1> n1, const Number<N2> n2,
+             const Index<i, Dim> index) const
   {
-    typedef const Dg_number_01<const Dg<T,Tensor_Dim01,Tensor_Dim2>,T,N1,N2>
+    typedef const Dg_number_01<const Dg<T, Tensor_Dim01, Tensor_Dim2>, T, N1,
+                               N2>
       TensorExpr;
-    return Tensor1_Expr<TensorExpr,T,Dim,i>(TensorExpr(*this));
+    return Tensor1_Expr<TensorExpr, T, Dim, i>(TensorExpr(*this));
   }
 
   /* Specializations for using actual numbers instead of Number<>.
@@ -247,42 +272,50 @@ namespace FTensor
 
   /* First slot. */
 
-  template<class T, int Tensor_Dim01, int Tensor_Dim2>
-  template<char i, char j, int Dim0, int Dim1>
-  const Tensor2_Expr<const Dg_numeral_0<const Dg<T,Tensor_Dim01,Tensor_Dim2>,T>,
-                     T,Dim0,Dim1,i,j>
-  Dg<T,Tensor_Dim01,Tensor_Dim2>::operator()(const int N, const Index<i,Dim0> index1,
-                                                     const Index<j,Dim1> index2) const
+  template <class T, int Tensor_Dim01, int Tensor_Dim2>
+  template <char i, char j, int Dim0, int Dim1>
+  const Tensor2_Expr<
+    const Dg_numeral_0<const Dg<T, Tensor_Dim01, Tensor_Dim2>, T>, T, Dim0,
+    Dim1, i, j>
+  Dg<T, Tensor_Dim01, Tensor_Dim2>::
+  operator()(const int N, const Index<i, Dim0> index1,
+             const Index<j, Dim1> index2) const
   {
-    typedef const Dg_numeral_0<const Dg<T,Tensor_Dim01,Tensor_Dim2>,T> TensorExpr;
-    return Tensor2_Expr<TensorExpr,T,Dim0,Dim1,i,j>(TensorExpr(*this,N));
+    typedef const Dg_numeral_0<const Dg<T, Tensor_Dim01, Tensor_Dim2>, T>
+      TensorExpr;
+    return Tensor2_Expr<TensorExpr, T, Dim0, Dim1, i, j>(TensorExpr(*this, N));
   }
 
   /* Second slot. */
 
-  template<class T, int Tensor_Dim01, int Tensor_Dim2>
-  template<char i, char j, int Dim0, int Dim1>
-  const Tensor2_Expr<const Dg_numeral_0<const Dg<T,Tensor_Dim01,Tensor_Dim2>,T>,
-                     T,Dim0,Dim1,i,j>
-  Dg<T,Tensor_Dim01,Tensor_Dim2>::operator()(const Index<i,Dim0> index1, const int N,
-                                                     const Index<j,Dim1> index2) const
+  template <class T, int Tensor_Dim01, int Tensor_Dim2>
+  template <char i, char j, int Dim0, int Dim1>
+  const Tensor2_Expr<
+    const Dg_numeral_0<const Dg<T, Tensor_Dim01, Tensor_Dim2>, T>, T, Dim0,
+    Dim1, i, j>
+  Dg<T, Tensor_Dim01, Tensor_Dim2>::
+  operator()(const Index<i, Dim0> index1, const int N,
+             const Index<j, Dim1> index2) const
   {
-    typedef const Dg_numeral_0<const Dg<T,Tensor_Dim01,Tensor_Dim2>,T> TensorExpr;
-    return Tensor2_Expr<TensorExpr,T,Dim0,Dim1,i,j>(TensorExpr(*this,N));
+    typedef const Dg_numeral_0<const Dg<T, Tensor_Dim01, Tensor_Dim2>, T>
+      TensorExpr;
+    return Tensor2_Expr<TensorExpr, T, Dim0, Dim1, i, j>(TensorExpr(*this, N));
   }
 
   /* Third slot. */
 
-  template<class T, int Tensor_Dim01, int Tensor_Dim2>
-  template<char i, char j, int Dim>
-  const Tensor2_symmetric_Expr<const Dg_numeral_2
-                               <const Dg<T,Tensor_Dim01,Tensor_Dim2>,T>,T,Dim,i,j>
-  Dg<T,Tensor_Dim01,Tensor_Dim2>::operator()(const Index<i,Dim> index1,
-                                                     const Index<j,Dim> index2,
-                                                     const int N) const
+  template <class T, int Tensor_Dim01, int Tensor_Dim2>
+  template <char i, char j, int Dim>
+  const Tensor2_symmetric_Expr<
+    const Dg_numeral_2<const Dg<T, Tensor_Dim01, Tensor_Dim2>, T>, T, Dim, i, j>
+  Dg<T, Tensor_Dim01, Tensor_Dim2>::
+  operator()(const Index<i, Dim> index1, const Index<j, Dim> index2,
+             const int N) const
   {
-    typedef const Dg_numeral_2<const Dg<T,Tensor_Dim01,Tensor_Dim2>,T> TensorExpr;
-    return Tensor2_symmetric_Expr<TensorExpr,T,Dim,i,j>(TensorExpr(*this,N));
+    typedef const Dg_numeral_2<const Dg<T, Tensor_Dim01, Tensor_Dim2>, T>
+      TensorExpr;
+    return Tensor2_symmetric_Expr<TensorExpr, T, Dim, i, j>(
+      TensorExpr(*this, N));
   }
 
   /* This is for expressions where an actual number is used for two
@@ -291,45 +324,45 @@ namespace FTensor
 
   /* Index in first slot. */
 
-  template<class T, int Tensor_Dim01, int Tensor_Dim2>
-  template<char i, int Dim>
-  const Tensor1_Expr<const Dg_numeral_12<const Dg<T,Tensor_Dim01,Tensor_Dim2>,
-                                                 T>,T,Dim,i>
-  Dg<T,Tensor_Dim01,Tensor_Dim2>::operator()(const Index<i,Dim> index, const int N1,
-                                                     const int N2) const
+  template <class T, int Tensor_Dim01, int Tensor_Dim2>
+  template <char i, int Dim>
+  const Tensor1_Expr<
+    const Dg_numeral_12<const Dg<T, Tensor_Dim01, Tensor_Dim2>, T>, T, Dim, i>
+  Dg<T, Tensor_Dim01, Tensor_Dim2>::
+  operator()(const Index<i, Dim> index, const int N1, const int N2) const
   {
-    typedef const Dg_numeral_12<const Dg<T,Tensor_Dim01,Tensor_Dim2>,T>
+    typedef const Dg_numeral_12<const Dg<T, Tensor_Dim01, Tensor_Dim2>, T>
       TensorExpr;
-    return Tensor1_Expr<TensorExpr,T,Dim,i>(TensorExpr(*this,N1,N2));
+    return Tensor1_Expr<TensorExpr, T, Dim, i>(TensorExpr(*this, N1, N2));
   }
 
   /* Index in second slot.  I use the same structures as for the Index
      in the first slot since the tensor is symmetric on the first two
      indices. */
 
-  template<class T, int Tensor_Dim01, int Tensor_Dim2>
-  template<char i, int Dim>
-  const Tensor1_Expr<const Dg_numeral_12<const Dg<T,Tensor_Dim01,Tensor_Dim2>,
-                                                 T>,T,Dim,i>
-  Dg<T,Tensor_Dim01,Tensor_Dim2>::operator()(const int N1, const Index<i,Dim> index,
-                                                     const int N2) const
+  template <class T, int Tensor_Dim01, int Tensor_Dim2>
+  template <char i, int Dim>
+  const Tensor1_Expr<
+    const Dg_numeral_12<const Dg<T, Tensor_Dim01, Tensor_Dim2>, T>, T, Dim, i>
+  Dg<T, Tensor_Dim01, Tensor_Dim2>::
+  operator()(const int N1, const Index<i, Dim> index, const int N2) const
   {
-    typedef const Dg_numeral_12<const Dg<T,Tensor_Dim01,Tensor_Dim2>,T>
+    typedef const Dg_numeral_12<const Dg<T, Tensor_Dim01, Tensor_Dim2>, T>
       TensorExpr;
-    return Tensor1_Expr<TensorExpr,T,Dim,i>(TensorExpr(*this,N1,N2));
+    return Tensor1_Expr<TensorExpr, T, Dim, i>(TensorExpr(*this, N1, N2));
   }
 
   /* Index in third slot. */
 
-  template<class T, int Tensor_Dim01, int Tensor_Dim2>
-  template<char i, int Dim>
-  const Tensor1_Expr<const Dg_numeral_01<const Dg<T,Tensor_Dim01,Tensor_Dim2>,
-                                                 T>,T,Dim,i>
-  Dg<T,Tensor_Dim01,Tensor_Dim2>::operator()(const int N1, const int N2,
-                                                     const Index<i,Dim> index) const
+  template <class T, int Tensor_Dim01, int Tensor_Dim2>
+  template <char i, int Dim>
+  const Tensor1_Expr<
+    const Dg_numeral_01<const Dg<T, Tensor_Dim01, Tensor_Dim2>, T>, T, Dim, i>
+  Dg<T, Tensor_Dim01, Tensor_Dim2>::
+  operator()(const int N1, const int N2, const Index<i, Dim> index) const
   {
-    typedef const Dg_numeral_01<const Dg<T,Tensor_Dim01,Tensor_Dim2>,T>
+    typedef const Dg_numeral_01<const Dg<T, Tensor_Dim01, Tensor_Dim2>, T>
       TensorExpr;
-    return Tensor1_Expr<TensorExpr,T,Dim,i>(TensorExpr(*this,N1,N2));
+    return Tensor1_Expr<TensorExpr, T, Dim, i>(TensorExpr(*this, N1, N2));
   }
 }

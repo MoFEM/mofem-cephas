@@ -20,10 +20,9 @@
 
 namespace FTensor
 {
-  template<char i, int Dim>
-  class Index
+  template <char i, int Dim> class Index
   {
   public:
-    Index() {};
+    Index(){};
   };
 }

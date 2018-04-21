@@ -6,5 +6,4 @@
 #include "Tensor2_antisymmetric/Tensor2_antisymmetric_value.hpp"
 // TODO implement Tensor2_antisymmetric_pointer.hpp
 
-
 #include "Tensor2_antisymmetric/Tensor2_antisymmetric_Expr.hpp"

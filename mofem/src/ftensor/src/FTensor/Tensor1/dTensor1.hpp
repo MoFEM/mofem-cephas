@@ -22,7 +22,8 @@
 //  template<class T, int Dim, char i, char j>
 //  inline const Tensor2_Expr<const dTensor1<T,Dim,i,j>,
 //    typename promote<T,double>::V,Dim,3,i,j>
-//  d(const Tensor1<T*,Dim> &a, const Index<i,Dim> index1, const Index<j,3> index2,
+//  d(const Tensor1<T*,Dim> &a, const Index<i,Dim> index1, const Index<j,3>
+//  index2,
 //    const int &di, const int &dj, const int &dk,
 //    const double &dx, const double &dy, const double &dz)
 //  {
@@ -31,38 +32,37 @@
 //      (TensorExpr(a,di,dj,dk,dx,dy,dz));
 //  }
 
-
 #pragma once
 
 namespace FTensor
 {
-  template<class T, int Dim0, int Dim1, char i, char j>
-  class dTensor1
+  template <class T, int Dim0, int Dim1, char i, char j> class dTensor1
   {
-    const Tensor1<T*,Dim0> &a;
-    const Tensor1<int,Dim1> &d_ijk;
-    const Tensor1<double,Dim1> &d_xyz;
+    const Tensor1<T *, Dim0> &a;
+    const Tensor1<int, Dim1> &d_ijk;
+    const Tensor1<double, Dim1> &d_xyz;
+
   public:
-    typename promote<T,double>::V operator()(const int N1, const int N2) const
+    typename promote<T, double>::V operator()(const int N1, const int N2) const
     {
-      return (*(a.ptr(N1)+d_ijk(N2))-*(a.ptr(N1)-d_ijk(N2)))*d_xyz(N2)*0.5;
+      return (*(a.ptr(N1) + d_ijk(N2)) - *(a.ptr(N1) - d_ijk(N2))) * d_xyz(N2)
+             * 0.5;
     }
-    dTensor1(const Tensor1<T*,Dim0> &A,
-             const Tensor1<int,Dim1> &D_ijk,
-             const Tensor1<double,Dim1> &D_xyz)
-      : a(A), d_ijk(D_ijk), d_xyz(D_xyz) {}
+    dTensor1(const Tensor1<T *, Dim0> &A, const Tensor1<int, Dim1> &D_ijk,
+             const Tensor1<double, Dim1> &D_xyz)
+        : a(A), d_ijk(D_ijk), d_xyz(D_xyz)
+    {}
   };
 
-  template<class T, int Dim0, int Dim1, char i, char j>
-  inline const Tensor2_Expr<const dTensor1<T,Dim0,Dim1,i,j>,
-                            typename promote<T,double>::V,Dim0,Dim1,i,j>
-  d(const Tensor1<T*,Dim0> &a, const Index<i,Dim0> index1,
-    const Index<j,Dim1> index2,
-    const Tensor1<int,Dim1> &d_ijk,
-    const Tensor1<double,Dim1> &d_xyz)
+  template <class T, int Dim0, int Dim1, char i, char j>
+  inline const Tensor2_Expr<const dTensor1<T, Dim0, Dim1, i, j>,
+                            typename promote<T, double>::V, Dim0, Dim1, i, j>
+  d(const Tensor1<T *, Dim0> &a, const Index<i, Dim0> index1,
+    const Index<j, Dim1> index2, const Tensor1<int, Dim1> &d_ijk,
+    const Tensor1<double, Dim1> &d_xyz)
   {
-    typedef const dTensor1<T,Dim0,Dim1,i,j> TensorExpr;
-    return Tensor2_Expr<TensorExpr,typename promote<T,double>::V,Dim0,Dim1,i,j>
-      (TensorExpr(a,d_ijk,d_xyz));
+    typedef const dTensor1<T, Dim0, Dim1, i, j> TensorExpr;
+    return Tensor2_Expr<TensorExpr, typename promote<T, double>::V, Dim0, Dim1,
+                        i, j>(TensorExpr(a, d_ijk, d_xyz));
   }
 }
