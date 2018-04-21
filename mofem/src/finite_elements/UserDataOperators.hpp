@@ -258,7 +258,7 @@ MoFEMErrorCode OpCalculateVectorFieldValues_General<Tensor_Dim,double,ublas::row
     // FTensor::Tensor1<double*,Tensor_Dim> field_data(
     //   ptr,&ptr[1],&ptr[2],3
     // );
-    FTensor::Tensor1<double*,Tensor_Dim> field_data = data.getFTensor1FieldData<Tensor_Dim>();
+    auto field_data = data.getFTensor1FieldData<Tensor_Dim>();
     int bb = 0;
     for(;bb!=size;bb++) {
       values_at_gauss_pts(I) = field_data(I)*base_function;

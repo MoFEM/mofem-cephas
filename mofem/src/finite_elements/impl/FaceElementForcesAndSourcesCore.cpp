@@ -812,13 +812,12 @@ OpSetInvJacHcurlFace::doWork(int side, EntityType type,
 
       // cerr << data.getDiffHcurlN(base) << endl;
 
-      FTensor::Tensor2<double *, 3, 2> t_diff_n =
-          data.getFTensor2DiffHcurlN<3, 2>(base);
+      auto t_diff_n = data.getFTensor2DiffHcurlN<3, 2>(base);
       double *t_inv_diff_n_ptr = &*diffHcurlInvJac.data().begin();
-      FTensor::Tensor2<double *, 3, 2> t_inv_diff_n(
+      FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2> t_inv_diff_n(
           t_inv_diff_n_ptr, &t_inv_diff_n_ptr[HCURL0_1],
           &t_inv_diff_n_ptr[HCURL1_0], &t_inv_diff_n_ptr[HCURL1_1],
-          &t_inv_diff_n_ptr[HCURL2_0], &t_inv_diff_n_ptr[HCURL2_1], 6);
+          &t_inv_diff_n_ptr[HCURL2_0], &t_inv_diff_n_ptr[HCURL2_1]);
 
       for (unsigned int gg = 0; gg != nb_gauss_pts; gg++) {
         for (unsigned int bb = 0; bb != nb_base_functions; bb++) {

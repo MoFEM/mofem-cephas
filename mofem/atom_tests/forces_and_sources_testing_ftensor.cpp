@@ -170,7 +170,7 @@ int main(int argc, char *argv[]) {
       DataForcesAndSourcesCore::EntData &data) {
       MoFEMFunctionBeginHot;
 
-      FTensor::Tensor2<double, 3, 3, FTensor::row_major> t2;
+      FTensor::Tensor2<double, 3, 3> t2;
       const int nb_gauss_pts = data.getN().size1();
       const int nb_base_functions = data.getN().size2();
 

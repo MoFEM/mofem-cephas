@@ -35,7 +35,7 @@ struct ApproxFunctions {
     FTensor::Tensor1<double,3>(
       pow(x,5)+pow(y,5) + pow(x,3)*pow(y,2),
       pow(x,5)+pow(y,5) + pow(x,2)*pow(y,3),
-      0
+      0.
     );
   }
   static FTensor::Tensor2<double,3,2> diffFun(const double x,const double y) {
@@ -43,7 +43,7 @@ struct ApproxFunctions {
     FTensor::Tensor2<double,3,2>(
       5*pow(x,4)+3*pow(x,2)*pow(y,2), 5*pow(y,4)+2*pow(x,3)*pow(y,1),
       5*pow(x,4)+2*pow(x,1)*pow(y,3), 5*pow(y,4)+3*pow(x,2)*pow(y,2),
-      0,0
+      0., 0.
     );
   }
 };
