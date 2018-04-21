@@ -1,12 +1,12 @@
 #include "../../../src/FTensor.hpp"
-#include "../test_ostream.hpp"
 #include "../test_for_zero.hpp"
+#include "../test_ostream.hpp"
 
 using namespace FTensor;
 using namespace std;
 void test_T3_iostream()
 {
-  test_ostream(Tensor3<double, 2, 2, 2>(3, 4, 7, 8, 11, 12, 13, 14),
+  test_ostream(Tensor3<double, 2, 2, 2>(3., 4., 7., 8., 11., 12., 13., 14.),
                "[[[3,4],[7,8]],[[11,12],[13,14]]]", "operator<<(T3<3,3,2>)");
 
   Tensor3<double, 2, 2, 2> t3_1;

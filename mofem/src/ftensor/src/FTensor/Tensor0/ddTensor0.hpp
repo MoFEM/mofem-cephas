@@ -28,13 +28,13 @@ namespace FTensor
   };
 
   template <class T, int Dim, char i, char j>
-  inline const Tensor2_symmetric_Expr<
-    const ddTensor0<T, Dim, i, j>, typename promote<T, double>::V, Dim, i, j>
+  const Tensor2_symmetric_Expr<const ddTensor0<T, Dim, i, j>,
+                               typename promote<T, double>::V, Dim, i, j>
   dd(const Tensor0<T *> &a, const Index<i, Dim> index1,
      const Index<j, Dim> index2, const Tensor1<int, Dim> &d_ijk,
      const Tensor1<double, Dim> &d_xyz)
   {
-    typedef const ddTensor0<T, Dim, i, j> Tensor_Expr;
+    using Tensor_Expr = ddTensor0<T, Dim, i, j>;
     return Tensor2_symmetric_Expr<Tensor_Expr, typename promote<T, double>::V,
                                   Dim, i, j>(Tensor_Expr(a, d_ijk, d_xyz));
   }

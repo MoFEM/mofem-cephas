@@ -3,11 +3,11 @@
 
 #pragma once
 
-#include "Riemann_times_Tensor2_symmetric.hpp"
-#include "Riemann_plus_Riemann.hpp"
 #include "Riemann_minus_Riemann.hpp"
-#include "Riemann_times_Tensor1.hpp"
+#include "Riemann_plus_Riemann.hpp"
 #include "Riemann_times_Ddg.hpp"
+#include "Riemann_times_Tensor1.hpp"
+#include "Riemann_times_Tensor2_symmetric.hpp"
 
 namespace FTensor
 {
@@ -17,7 +17,7 @@ namespace FTensor
     A iter;
 
   public:
-    Riemann_Expr(A &a) : iter(a) {}
+    Riemann_Expr(const A &a) : iter(a) {}
     T operator()(const int N1, const int N2, const int N3, const int N4) const
     {
       return iter(N1, N2, N3, N4);

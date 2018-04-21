@@ -3,7 +3,7 @@ using namespace FTensor;
 
 inline void func1(Tensor1<double, 3> &y, Tensor1<double, 3> &a1)
 {
-  const Index<'i', 3> i;
+  Index<'i', 3> i;
 
   y(i) += a1(i);
   a1(i) *= 0.1;
@@ -13,7 +13,7 @@ inline void func1(Tensor1<double, 3> &y, Tensor1<double, 3> &a1)
 inline void
 func2(Tensor1<double, 3> &y, Tensor1<double, 3> &a1, Tensor1<double, 3> &a2)
 {
-  const Index<'i', 3> i;
+  Index<'i', 3> i;
 
   y(i) += a1(i) + 2 * a2(i);
   a1(i) *= 0.1;
@@ -24,8 +24,8 @@ func2(Tensor1<double, 3> &y, Tensor1<double, 3> &a1, Tensor1<double, 3> &a2)
 inline void func3(Tensor1<double, 3> &y, Tensor1<double, 3> &a1,
                   Tensor1<double, 3> &a2, Tensor1<double, 3> &a3)
 {
-  const Index<'i', 3> i;
-  const Index<'j', 3> j;
+  Index<'i', 3> i;
+  Index<'j', 3> j;
 
   y(i) += a1(i) + 2 * a2(i) + 3 * (a1(j) * a2(j)) * a3(i);
   a1(i) *= 0.1;
@@ -38,9 +38,9 @@ inline void
 func4(Tensor1<double, 3> &y, Tensor1<double, 3> &a1, Tensor1<double, 3> &a2,
       Tensor1<double, 3> &a3, Tensor1<double, 3> &a4)
 {
-  const Index<'i', 3> i;
-  const Index<'j', 3> j;
-  const Index<'k', 3> k;
+  Index<'i', 3> i;
+  Index<'j', 3> j;
+  Index<'k', 3> k;
 
   y(i) += a1(i) + 2 * a2(i) + 3 * (a1(j) * a2(j)) * a3(i)
           + 4 * (a1(j) * a3(j)) * (a2(k) * a2(k)) * a4(i);
@@ -55,9 +55,9 @@ inline void
 func5(Tensor1<double, 3> &y, Tensor1<double, 3> &a1, Tensor1<double, 3> &a2,
       Tensor1<double, 3> &a3, Tensor1<double, 3> &a4, Tensor1<double, 3> &a5)
 {
-  const Index<'i', 3> i;
-  const Index<'j', 3> j;
-  const Index<'k', 3> k;
+  Index<'i', 3> i;
+  Index<'j', 3> j;
+  Index<'k', 3> k;
 
   y(i) += a1(i) + 2 * a2(i) + 3 * (a1(j) * a2(j)) * a3(i)
           + 4 * (a1(j) * a3(j)) * (a2(k) * a2(k)) * a4(i)
@@ -75,10 +75,10 @@ func6(Tensor1<double, 3> &y, Tensor1<double, 3> &a1, Tensor1<double, 3> &a2,
       Tensor1<double, 3> &a3, Tensor1<double, 3> &a4, Tensor1<double, 3> &a5,
       Tensor1<double, 3> &a6)
 {
-  const Index<'i', 3> i;
-  const Index<'j', 3> j;
-  const Index<'k', 3> k;
-  const Index<'l', 3> l;
+  Index<'i', 3> i;
+  Index<'j', 3> j;
+  Index<'k', 3> k;
+  Index<'l', 3> l;
 
   y(i) += a1(i) + 2 * a2(i) + 3 * (a1(j) * a2(j)) * a3(i)
           + 4 * (a1(j) * a3(j)) * (a2(k) * a2(k)) * a4(i)
@@ -98,10 +98,10 @@ func7(Tensor1<double, 3> &y, Tensor1<double, 3> &a1, Tensor1<double, 3> &a2,
       Tensor1<double, 3> &a3, Tensor1<double, 3> &a4, Tensor1<double, 3> &a5,
       Tensor1<double, 3> &a6, Tensor1<double, 3> &a7)
 {
-  const Index<'i', 3> i;
-  const Index<'j', 3> j;
-  const Index<'k', 3> k;
-  const Index<'l', 3> l;
+  Index<'i', 3> i;
+  Index<'j', 3> j;
+  Index<'k', 3> k;
+  Index<'l', 3> l;
 
   y(i) += a1(i) + 2 * a2(i) + 3 * (a1(j) * a2(j)) * a3(i)
           + 4 * (a1(j) * a3(j)) * (a2(k) * a2(k)) * a4(i)
@@ -123,11 +123,11 @@ func8(Tensor1<double, 3> &y, Tensor1<double, 3> &a1, Tensor1<double, 3> &a2,
       Tensor1<double, 3> &a3, Tensor1<double, 3> &a4, Tensor1<double, 3> &a5,
       Tensor1<double, 3> &a6, Tensor1<double, 3> &a7, Tensor1<double, 3> &a8)
 {
-  const Index<'i', 3> i;
-  const Index<'j', 3> j;
-  const Index<'k', 3> k;
-  const Index<'l', 3> l;
-  const Index<'m', 3> m;
+  Index<'i', 3> i;
+  Index<'j', 3> j;
+  Index<'k', 3> k;
+  Index<'l', 3> l;
+  Index<'m', 3> m;
 
   y(i) += a1(i) + 2 * a2(i) + 3 * (a1(j) * a2(j)) * a3(i)
           + 4 * (a1(j) * a3(j)) * (a2(k) * a2(k)) * a4(i)
@@ -153,11 +153,11 @@ func9(Tensor1<double, 3> &y, Tensor1<double, 3> &a1, Tensor1<double, 3> &a2,
       Tensor1<double, 3> &a6, Tensor1<double, 3> &a7, Tensor1<double, 3> &a8,
       Tensor1<double, 3> &a9)
 {
-  const Index<'i', 3> i;
-  const Index<'j', 3> j;
-  const Index<'k', 3> k;
-  const Index<'l', 3> l;
-  const Index<'m', 3> m;
+  Index<'i', 3> i;
+  Index<'j', 3> j;
+  Index<'k', 3> k;
+  Index<'l', 3> l;
+  Index<'m', 3> m;
 
   y(i) += a1(i) + 2 * a2(i) + 3 * (a1(j) * a2(j)) * a3(i)
           + 4 * (a1(j) * a3(j)) * (a2(k) * a2(k)) * a4(i)

@@ -37,14 +37,13 @@ namespace FTensor
   };
 
   template <class T, int Dim, char i, char j>
-  inline const Tensor2_symmetric_Expr<
-    const diffusion_Tensor2_symmetric<T, Dim, i, j>,
-    typename promote<T, double>::V, Dim, i, j>
+  const Tensor2_symmetric_Expr<const diffusion_Tensor2_symmetric<T, Dim, i, j>,
+                               typename promote<T, double>::V, Dim, i, j>
   diffusion(const Tensor2_symmetric<T *, Dim> &a, const Index<i, Dim> index1,
             const Index<j, Dim> index2, const int &di, const int &dj,
             const int &dk, const double &dx)
   {
-    typedef const diffusion_Tensor2_symmetric<T, Dim, i, j> Tensor_Expr;
+    using Tensor_Expr = diffusion_Tensor2_symmetric<T, Dim, i, j>;
     return Tensor2_symmetric_Expr<Tensor_Expr, typename promote<T, double>::V,
                                   Dim, i, j>(Tensor_Expr(a, di, dj, dk, dx));
   }

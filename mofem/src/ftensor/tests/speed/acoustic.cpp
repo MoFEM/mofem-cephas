@@ -1,10 +1,10 @@
-#include <iostream>
 #include <cmath>
 #include <cstdlib>
+#include <iostream>
 #include <vector>
 using namespace std;
 
-#include "FTensor.hpp"
+#include "../../FTensor.hpp"
 
 void initial(double P1[], double P2[], double P3[], double c[], const int N)
 {

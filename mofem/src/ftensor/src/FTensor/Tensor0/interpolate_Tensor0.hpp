@@ -9,7 +9,7 @@
 namespace FTensor
 {
   template <class T>
-  inline const typename promote<T, double>::V
+  typename promote<T, double>::V
   interpolate(const Tensor0<T *> &a, const int &di, const int &dj,
               const int &dk, const int &i0, const int &j0, const int &k0,
               const double distance[3], const double conjugate[3])

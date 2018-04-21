@@ -36,12 +36,12 @@ namespace FTensor
   };
 
   template <class T, int Dim, char i>
-  inline const Tensor1_Expr<const diffusion_Tensor1<T, Dim, i>,
-                            typename promote<T, double>::V, Dim, i>
+  const Tensor1_Expr<const diffusion_Tensor1<T, Dim, i>,
+                     typename promote<T, double>::V, Dim, i>
   diffusion(const Tensor1<T *, Dim> &a, const Index<i, Dim> index1,
             const int &di, const int &dj, const int &dk, const double &dx)
   {
-    typedef const diffusion_Tensor1<T, Dim, i> Tensor_Expr;
+    using Tensor_Expr = diffusion_Tensor1<T, Dim, i>;
     return Tensor1_Expr<Tensor_Expr, typename promote<T, double>::V, Dim, i>(
       Tensor_Expr(a, di, dj, dk, dx));
   }

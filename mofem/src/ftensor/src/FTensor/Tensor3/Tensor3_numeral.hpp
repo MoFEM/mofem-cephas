@@ -11,7 +11,7 @@ namespace FTensor
   template <class A, class T> class Tensor3_numeral_0
   {
     A iterA;
-    const int N;
+    int N;
 
   public:
     T operator()(const int N1, const int N2) const { return iterA(N, N1, N2); }
@@ -23,7 +23,7 @@ namespace FTensor
   template <class A, class T> class Tensor3_numeral_2
   {
     A iterA;
-    const int N;
+    int N;
 
   public:
     T operator()(const int N1, const int N2) const { return iterA(N1, N2, N); }
@@ -35,7 +35,7 @@ namespace FTensor
   template <class A, class T> class Tensor3_numeral_12
   {
     A iterA;
-    const int N1, N2;
+    int N1, N2;
 
   public:
     T operator()(const int N) const { return iterA(N, N1, N2); }
@@ -49,7 +49,7 @@ namespace FTensor
   template <class A, class T> class Tensor3_numeral_01
   {
     A iterA;
-    const int N1, N2;
+    int N1, N2;
 
   public:
     T operator()(const int N) const { return iterA(N1, N2, N); }

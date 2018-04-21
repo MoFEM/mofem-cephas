@@ -94,7 +94,7 @@ namespace FTensor
   };
 
   template <class T, int Dim01, int Dim23, char i, char j, char k, char l>
-  inline const Ddg_Expr<
+  const Ddg_Expr<
     const dd_boundary_Tensor2_symmetric<T, Dim01, Dim23, i, j, k, l>,
     typename promote<T, double>::V, Dim01, Dim23, i, j, k, l>
   dd_boundary(const Tensor2_symmetric<T *, Dim01> &a,
@@ -104,8 +104,8 @@ namespace FTensor
               const Tensor1<double, Dim23> &d_xyz,
               const Tensor2<bool, Dim23, 2> &boundary)
   {
-    typedef const dd_boundary_Tensor2_symmetric<T, Dim01, Dim23, i, j, k, l>
-      Tensor_Expr;
+    using Tensor_Expr
+      = dd_boundary_Tensor2_symmetric<T, Dim01, Dim23, i, j, k, l>;
     return Ddg_Expr<Tensor_Expr, typename promote<T, double>::V, Dim01, Dim23,
                     i, j, k, l>(Tensor_Expr(a, d_ijk, d_xyz, boundary));
   }

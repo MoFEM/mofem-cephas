@@ -22,11 +22,11 @@ namespace FTensor
   };
 
   template <class A, class B, class T, int Dim0, int Dim1, char i, char j>
-  inline const Tensor2_Expr<const transform_Tensor2<A, B, T, Dim0, Dim1, i, j>,
-                            T, Dim0, Dim1, i, j>
+  Tensor2_Expr<transform_Tensor2<A, B, T, Dim0, Dim1, i, j>, T, Dim0, Dim1, i,
+               j>
   transform(const Tensor2_Expr<A, T, Dim0, Dim1, i, j> &a, B function)
   {
-    typedef const transform_Tensor2<A, B, T, Dim0, Dim1, i, j> TensorExpr;
+    using TensorExpr = transform_Tensor2<A, B, T, Dim0, Dim1, i, j>;
     return Tensor2_Expr<TensorExpr, T, Dim0, Dim1, i, j>(
       TensorExpr(a, function));
   }

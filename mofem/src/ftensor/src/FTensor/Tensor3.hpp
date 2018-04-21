@@ -8,3 +8,5 @@
 #include "Tensor3/Tensor3_value.hpp"
 
 #include "Tensor3/Tensor3_Expr.hpp"
+
+#include "Tensor3/Tensor3_contracted.hpp"

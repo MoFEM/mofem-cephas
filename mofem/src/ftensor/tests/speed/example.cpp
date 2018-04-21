@@ -1,6 +1,6 @@
 #include <iostream>
 using namespace std;
-#include "FTensor.hpp"
+#include "../../FTensor.hpp"
 using namespace FTensor;
 
 int main()

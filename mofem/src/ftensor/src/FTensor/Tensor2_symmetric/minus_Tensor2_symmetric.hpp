@@ -8,7 +8,7 @@ namespace FTensor
   class minus_Tensor2_symmetric
   {
   public:
-    const Tensor2_symmetric_Expr<A, T, Dim, i, j> iterA;
+    Tensor2_symmetric_Expr<A, T, Dim, i, j> iterA;
 
   public:
     T operator()(const int N1, const int N2) const { return -iterA(N1, N2); }
@@ -18,11 +18,10 @@ namespace FTensor
   };
 
   template <class A, class T, int Dim, char i, char j>
-  inline const Tensor2_symmetric_Expr<
-    const minus_Tensor2_symmetric<A, T, Dim, i, j>, T, Dim, i, j>
+  Tensor2_symmetric_Expr<minus_Tensor2_symmetric<A, T, Dim, i, j>, T, Dim, i, j>
   operator-(const Tensor2_symmetric_Expr<A, T, Dim, i, j> &a)
   {
-    typedef const minus_Tensor2_symmetric<A, T, Dim, i, j> TensorExpr;
+    using TensorExpr = minus_Tensor2_symmetric<A, T, Dim, i, j>;
     return Tensor2_symmetric_Expr<TensorExpr, T, Dim, i, j>(TensorExpr(a));
   }
 }

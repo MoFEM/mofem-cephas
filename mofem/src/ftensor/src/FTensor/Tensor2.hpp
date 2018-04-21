@@ -4,7 +4,7 @@
 #include "Tensor2/Tensor2_numeral.hpp"
 
 #include "Tensor2/Tensor2_constructor.hpp"
-#include "Tensor2/Tensor2_value.hpp"
 #include "Tensor2/Tensor2_pointer.hpp"
+#include "Tensor2/Tensor2_value.hpp"
 
 #include "Tensor2/Tensor2_Expr.hpp"

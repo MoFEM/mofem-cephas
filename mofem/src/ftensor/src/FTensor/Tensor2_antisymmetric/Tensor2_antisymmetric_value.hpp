@@ -11,26 +11,14 @@ namespace FTensor
     T data[(Tensor_Dim * (Tensor_Dim - 1)) / 2];
 
   public:
+    template <class... U> Tensor2_antisymmetric(U... d) : data{d...}
+    {
+      static_assert(sizeof...(d) == sizeof(data) / sizeof(T),
+                    "Incorrect number of Arguments. Constructor should "
+                    "initialize the entire Tensor");
+    }
+
     Tensor2_antisymmetric() {}
-
-    /* Tensor_Dim=2 */
-    Tensor2_antisymmetric(T d01)
-    {
-      Tensor2_antisymmetric_constructor<T, Tensor_Dim>(data, d01);
-    }
-
-    /* Tensor_Dim=3 */
-    Tensor2_antisymmetric(T d01, T d02, T d12)
-    {
-      Tensor2_antisymmetric_constructor<T, Tensor_Dim>(data, d01, d02, d12);
-    }
-
-    /* Tensor_Dim=4 */
-    Tensor2_antisymmetric(T d01, T d02, T d03, T d12, T d13, T d23)
-    {
-      Tensor2_antisymmetric_constructor<T, Tensor_Dim>(data, d01, d02, d03,
-                                                       d12, d13, d23);
-    }
 
     /* There are two ways of accessing the values inside,
        unsafe(int,int) and operator(int,int).  unsafe(int,int) will give
@@ -49,7 +37,7 @@ namespace FTensor
           std::stringstream s;
           s << "Bad index in Tensor2_antisymmetric<T," << Tensor_Dim
             << ">.operator(" << N1 << "," << N2 << ")" << std::endl;
-          throw std::runtime_error(s.str());
+          throw std::out_of_range(s.str());
         }
 #endif
       return data[(N2 - 1) + (N1 * (2 * (Tensor_Dim - 1) - N1 - 1)) / 2];
@@ -63,7 +51,7 @@ namespace FTensor
           std::stringstream s;
           s << "Bad index in Tensor2_antisymmetric<T," << Tensor_Dim
             << ">.operator(" << N1 << "," << N2 << ") const" << std::endl;
-          throw std::runtime_error(s.str());
+          throw std::out_of_range(s.str());
         }
 #endif
       return N1 == N2
@@ -144,8 +132,8 @@ namespace FTensor
         Dim, i>>::type
     operator()(const Index<i, Dim> index1, const Number<N>)
     {
-      typedef Tensor2_number_rhs_1<Tensor2_antisymmetric<T, Tensor_Dim>, T, N>
-        TensorExpr;
+      using TensorExpr
+        = Tensor2_number_rhs_1<Tensor2_antisymmetric<T, Tensor_Dim>, T, N>;
       return Tensor1_Expr<TensorExpr, T, Dim, i>(*this);
     }
 
@@ -157,9 +145,8 @@ namespace FTensor
                    T, Dim, i>>::type
     operator()(const Index<i, Dim> index1, const Number<N>) const
     {
-      typedef const Tensor2_number_1<
-        const Tensor2_antisymmetric<T, Tensor_Dim>, T, N>
-        TensorExpr;
+      using TensorExpr
+        = Tensor2_number_1<const Tensor2_antisymmetric<T, Tensor_Dim>, T, N>;
       return Tensor1_Expr<TensorExpr, T, Dim, i>(TensorExpr(*this));
     }
 
@@ -171,8 +158,8 @@ namespace FTensor
         Dim, i>>::type
     operator()(const Number<N>, const Index<i, Dim> index1)
     {
-      typedef Tensor2_number_rhs_0<Tensor2_antisymmetric<T, Tensor_Dim>, T, N>
-        TensorExpr;
+      using TensorExpr
+        = Tensor2_number_rhs_0<Tensor2_antisymmetric<T, Tensor_Dim>, T, N>;
       return Tensor1_Expr<TensorExpr, T, Dim, i>(*this);
     }
 
@@ -184,9 +171,8 @@ namespace FTensor
                    T, Dim, i>>::type
     operator()(const Number<N> &n1, const Index<i, Dim> index1) const
     {
-      typedef const Tensor2_number_0<
-        const Tensor2_antisymmetric<T, Tensor_Dim>, T, N>
-        TensorExpr;
+      using TensorExpr
+        = Tensor2_number_0<const Tensor2_antisymmetric<T, Tensor_Dim>, T, N>;
       return Tensor1_Expr<TensorExpr, T, Dim, i>(TensorExpr(*this));
     }
 
@@ -200,9 +186,8 @@ namespace FTensor
         T, Dim, i>>::type
     operator()(const Index<i, Dim> index1, const int N) const
     {
-      typedef const Tensor2_numeral_1<
-        const Tensor2_antisymmetric<T, Tensor_Dim>, T>
-        TensorExpr;
+      using TensorExpr
+        = Tensor2_numeral_1<const Tensor2_antisymmetric<T, Tensor_Dim>, T>;
       return Tensor1_Expr<TensorExpr, T, Dim, i>(TensorExpr(*this, N));
     }
 
@@ -214,9 +199,8 @@ namespace FTensor
         T, Dim, i>>::type
     operator()(const int N, const Index<i, Dim> index1) const
     {
-      typedef const Tensor2_numeral_0<
-        const Tensor2_antisymmetric<T, Tensor_Dim>, T>
-        TensorExpr;
+      using TensorExpr
+        = Tensor2_numeral_0<const Tensor2_antisymmetric<T, Tensor_Dim>, T>;
       return Tensor1_Expr<TensorExpr, T, Dim, i>(TensorExpr(*this, N));
     }
 

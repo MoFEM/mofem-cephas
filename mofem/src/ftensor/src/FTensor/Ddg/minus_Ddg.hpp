@@ -9,7 +9,7 @@ namespace FTensor
   class minus_Ddg
   {
   public:
-    const Ddg_Expr<A, T, Dim01, Dim23, i, j, k, l> iterA;
+    Ddg_Expr<A, T, Dim01, Dim23, i, j, k, l> iterA;
 
   public:
     T operator()(const int N1, const int N2, const int N3, const int N4) const
@@ -21,11 +21,11 @@ namespace FTensor
 
   template <class A, class T, int Dim01, int Dim23, char i, char j, char k,
             char l>
-  inline const Ddg_Expr<const minus_Ddg<A, T, Dim01, Dim23, i, j, k, l>, T,
-                        Dim01, Dim23, i, j, k, l>
+  Ddg_Expr<minus_Ddg<A, T, Dim01, Dim23, i, j, k, l>, T, Dim01, Dim23, i, j, k,
+           l>
   operator-(const Ddg_Expr<A, T, Dim01, Dim23, i, j, k, l> &a)
   {
-    typedef const minus_Ddg<A, T, Dim01, Dim23, i, j, k, l> TensorExpr;
+    using TensorExpr = minus_Ddg<A, T, Dim01, Dim23, i, j, k, l>;
     return Ddg_Expr<TensorExpr, T, Dim01, Dim23, i, j, k, l>(TensorExpr(a));
   }
 }

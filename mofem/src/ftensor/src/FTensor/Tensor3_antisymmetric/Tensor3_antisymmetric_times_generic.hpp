@@ -11,8 +11,8 @@ namespace FTensor
             char k>
   class Tensor3_antisymmetric_times_generic
   {
-    const Tensor3_antisymmetric_Expr<A, T, Dim0, Dim12, i, j, k> iterA;
-    const U d;
+    Tensor3_antisymmetric_Expr<A, T, Dim0, Dim12, i, j, k> iterA;
+    U d;
 
   public:
     typename promote<T, U>::V
@@ -30,15 +30,14 @@ namespace FTensor
 
   template <class A, class T, class U, int Dim0, int Dim12, char i, char j,
             char k>
-  inline const Tensor3_antisymmetric_Expr<
-    const Tensor3_antisymmetric_times_generic<A, T, U, Dim0, Dim12, i, j, k>,
+  Tensor3_antisymmetric_Expr<
+    Tensor3_antisymmetric_times_generic<A, T, U, Dim0, Dim12, i, j, k>,
     typename promote<T, U>::V, Dim0, Dim12, i, j, k>
   operator*(const Tensor3_antisymmetric_Expr<A, T, Dim0, Dim12, i, j, k> &a,
             const U &d0)
   {
-    typedef const Tensor3_antisymmetric_times_generic<A, T, U, Dim0, Dim12, i,
-                                                      j, k>
-      TensorExpr;
+    using TensorExpr
+      = Tensor3_antisymmetric_times_generic<A, T, U, Dim0, Dim12, i, j, k>;
     return Tensor3_antisymmetric_Expr<TensorExpr, typename promote<T, U>::V,
                                       Dim0, Dim12, i, j, k>(TensorExpr(a, d0));
   }
@@ -47,15 +46,14 @@ namespace FTensor
 
   template <class A, class T, class U, int Dim0, int Dim12, char i, char j,
             char k>
-  inline const Tensor3_antisymmetric_Expr<
-    const Tensor3_antisymmetric_times_generic<A, T, U, Dim0, Dim12, i, j, k>,
+  Tensor3_antisymmetric_Expr<
+    Tensor3_antisymmetric_times_generic<A, T, U, Dim0, Dim12, i, j, k>,
     typename promote<T, U>::V, Dim0, Dim12, i, j, k>
   operator*(const U &d0,
             const Tensor3_antisymmetric_Expr<A, T, Dim0, Dim12, i, j, k> &a)
   {
-    typedef const Tensor3_antisymmetric_times_generic<A, T, U, Dim0, Dim12, i,
-                                                      j, k>
-      TensorExpr;
+    using TensorExpr
+      = Tensor3_antisymmetric_times_generic<A, T, U, Dim0, Dim12, i, j, k>;
     return Tensor3_antisymmetric_Expr<TensorExpr, typename promote<T, U>::V,
                                       Dim0, Dim12, i, j, k>(TensorExpr(a, d0));
   }

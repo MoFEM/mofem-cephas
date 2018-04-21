@@ -1,14 +1,14 @@
 #include "../../../src/FTensor.hpp"
-#include "../test_ostream.hpp"
 #include "../test_for_zero.hpp"
+#include "../test_ostream.hpp"
 
 using namespace FTensor;
 using namespace std;
 void test_T2s_iostream()
 {
-  test_ostream(Tensor2_symmetric<double, 3>(3, 7, 11, 13, 17, 23),
+  test_ostream(Tensor2_symmetric<double, 3>(3., 7., 11., 13., 17., 23.),
                "[[3,7,11],[13,17],[23]]", "operator<<(T2s<3>)");
-  test_ostream(Tensor2_symmetric<double, 1>(13), "[[13]]",
+  test_ostream(Tensor2_symmetric<double, 1>(13.), "[[13]]",
                "operator<<(T2s<1>)");
 
   Tensor2_symmetric<double, 3> t2s_1;

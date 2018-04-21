@@ -11,8 +11,8 @@ namespace FTensor
             char k, char l>
   class Riemann_times_Tensor1_0
   {
-    const Riemann_Expr<A, T, Dim, i, j, k, l> iterA;
-    const Tensor1_Expr<B, U, Dim, i> iterB;
+    Riemann_Expr<A, T, Dim, i, j, k, l> iterA;
+    Tensor1_Expr<B, U, Dim, i> iterB;
 
   public:
     Riemann_times_Tensor1_0(const Riemann_Expr<A, T, Dim, i, j, k, l> &a,
@@ -29,14 +29,13 @@ namespace FTensor
 
   template <class A, class B, class T, class U, int Dim, char i, char j,
             char k, char l>
-  inline const Tensor3_antisymmetric_Expr<
-    const Riemann_times_Tensor1_0<A, B, T, U, Dim, i, j, k, l>,
+  Tensor3_antisymmetric_Expr<
+    Riemann_times_Tensor1_0<A, B, T, U, Dim, i, j, k, l>,
     typename promote<T, U>::V, Dim, Dim, j, k, l>
   operator*(const Riemann_Expr<A, T, Dim, i, j, k, l> &a,
             const Tensor1_Expr<B, U, Dim, i> &b)
   {
-    typedef const Riemann_times_Tensor1_0<A, B, T, U, Dim, i, j, k, l>
-      TensorExpr;
+    using TensorExpr = Riemann_times_Tensor1_0<A, B, T, U, Dim, i, j, k, l>;
     return Tensor3_antisymmetric_Expr<TensorExpr, typename promote<T, U>::V,
                                       Dim, Dim, j, k, l>(TensorExpr(a, b));
   }
@@ -45,14 +44,13 @@ namespace FTensor
 
   template <class A, class B, class T, class U, int Dim, char i, char j,
             char k, char l>
-  inline const Tensor3_antisymmetric_Expr<
-    const Riemann_times_Tensor1_0<A, B, T, U, Dim, i, j, k, l>,
+  Tensor3_antisymmetric_Expr<
+    Riemann_times_Tensor1_0<A, B, T, U, Dim, i, j, k, l>,
     typename promote<T, U>::V, Dim, Dim, j, k, l>
   operator*(const Tensor1_Expr<B, U, Dim, i> &b,
             const Riemann_Expr<A, T, Dim, i, j, k, l> &a)
   {
-    typedef const Riemann_times_Tensor1_0<A, B, T, U, Dim, i, j, k, l>
-      TensorExpr;
+    using TensorExpr = Riemann_times_Tensor1_0<A, B, T, U, Dim, i, j, k, l>;
     return Tensor3_antisymmetric_Expr<TensorExpr, typename promote<T, U>::V,
                                       Dim, Dim, j, k, l>(TensorExpr(a, b));
   }
@@ -63,8 +61,8 @@ namespace FTensor
             char k, char l>
   class Riemann_times_Tensor1_1
   {
-    const Riemann_Expr<A, T, Dim, i, j, k, l> iterA;
-    const Tensor1_Expr<B, U, Dim, j> iterB;
+    Riemann_Expr<A, T, Dim, i, j, k, l> iterA;
+    Tensor1_Expr<B, U, Dim, j> iterB;
 
   public:
     Riemann_times_Tensor1_1(const Riemann_Expr<A, T, Dim, i, j, k, l> &a,
@@ -81,14 +79,13 @@ namespace FTensor
 
   template <class A, class B, class T, class U, int Dim, char i, char j,
             char k, char l>
-  inline const Tensor3_antisymmetric_Expr<
-    const Riemann_times_Tensor1_1<A, B, T, U, Dim, i, j, k, l>,
+  Tensor3_antisymmetric_Expr<
+    Riemann_times_Tensor1_1<A, B, T, U, Dim, i, j, k, l>,
     typename promote<T, U>::V, Dim, Dim, i, k, l>
   operator*(const Riemann_Expr<A, T, Dim, i, j, k, l> &a,
             const Tensor1_Expr<B, U, Dim, j> &b)
   {
-    typedef const Riemann_times_Tensor1_1<A, B, T, U, Dim, i, j, k, l>
-      TensorExpr;
+    using TensorExpr = Riemann_times_Tensor1_1<A, B, T, U, Dim, i, j, k, l>;
     return Tensor3_antisymmetric_Expr<TensorExpr, typename promote<T, U>::V,
                                       Dim, Dim, i, k, l>(TensorExpr(a, b));
   }
@@ -97,14 +94,13 @@ namespace FTensor
 
   template <class A, class B, class T, class U, int Dim, char i, char j,
             char k, char l>
-  inline const Tensor3_antisymmetric_Expr<
-    const Riemann_times_Tensor1_1<A, B, T, U, Dim, i, j, k, l>,
+  Tensor3_antisymmetric_Expr<
+    Riemann_times_Tensor1_1<A, B, T, U, Dim, i, j, k, l>,
     typename promote<T, U>::V, Dim, Dim, i, k, l>
   operator*(const Tensor1_Expr<B, U, Dim, j> &b,
             const Riemann_Expr<A, T, Dim, i, j, k, l> &a)
   {
-    typedef const Riemann_times_Tensor1_1<A, B, T, U, Dim, i, j, k, l>
-      TensorExpr;
+    using TensorExpr = Riemann_times_Tensor1_1<A, B, T, U, Dim, i, j, k, l>;
     return Tensor3_antisymmetric_Expr<TensorExpr, typename promote<T, U>::V,
                                       Dim, Dim, i, k, l>(TensorExpr(a, b));
   }
@@ -115,8 +111,8 @@ namespace FTensor
             char k, char l>
   class Riemann_times_Tensor1_2
   {
-    const Riemann_Expr<A, T, Dim, i, j, k, l> iterA;
-    const Tensor1_Expr<B, U, Dim, k> iterB;
+    Riemann_Expr<A, T, Dim, i, j, k, l> iterA;
+    Tensor1_Expr<B, U, Dim, k> iterB;
 
   public:
     Riemann_times_Tensor1_2(const Riemann_Expr<A, T, Dim, i, j, k, l> &a,
@@ -133,14 +129,13 @@ namespace FTensor
 
   template <class A, class B, class T, class U, int Dim, char i, char j,
             char k, char l>
-  inline const Tensor3_antisymmetric_Expr<
-    const Riemann_times_Tensor1_2<A, B, T, U, Dim, i, j, k, l>,
+  Tensor3_antisymmetric_Expr<
+    Riemann_times_Tensor1_2<A, B, T, U, Dim, i, j, k, l>,
     typename promote<T, U>::V, Dim, Dim, i, j, l>
   operator*(const Riemann_Expr<A, T, Dim, i, j, k, l> &a,
             const Tensor1_Expr<B, U, Dim, k> &b)
   {
-    typedef const Riemann_times_Tensor1_2<A, B, T, U, Dim, i, j, k, l>
-      TensorExpr;
+    using TensorExpr = Riemann_times_Tensor1_2<A, B, T, U, Dim, i, j, k, l>;
     return Tensor3_antisymmetric_Expr<TensorExpr, typename promote<T, U>::V,
                                       Dim, Dim, i, j, l>(TensorExpr(a, b));
   }
@@ -149,14 +144,13 @@ namespace FTensor
 
   template <class A, class B, class T, class U, int Dim, char i, char j,
             char k, char l>
-  inline const Tensor3_antisymmetric_Expr<
-    const Riemann_times_Tensor1_2<A, B, T, U, Dim, i, j, k, l>,
+  Tensor3_antisymmetric_Expr<
+    Riemann_times_Tensor1_2<A, B, T, U, Dim, i, j, k, l>,
     typename promote<T, U>::V, Dim, Dim, i, j, l>
   operator*(const Tensor1_Expr<B, U, Dim, k> &b,
             const Riemann_Expr<A, T, Dim, i, j, k, l> &a)
   {
-    typedef const Riemann_times_Tensor1_2<A, B, T, U, Dim, i, j, k, l>
-      TensorExpr;
+    using TensorExpr = Riemann_times_Tensor1_2<A, B, T, U, Dim, i, j, k, l>;
     return Tensor3_antisymmetric_Expr<TensorExpr, typename promote<T, U>::V,
                                       Dim, Dim, i, j, l>(TensorExpr(a, b));
   }
@@ -167,8 +161,8 @@ namespace FTensor
             char k, char l>
   class Riemann_times_Tensor1_3
   {
-    const Riemann_Expr<A, T, Dim, i, j, k, l> iterA;
-    const Tensor1_Expr<B, U, Dim, l> iterB;
+    Riemann_Expr<A, T, Dim, i, j, k, l> iterA;
+    Tensor1_Expr<B, U, Dim, l> iterB;
 
   public:
     Riemann_times_Tensor1_3(const Riemann_Expr<A, T, Dim, i, j, k, l> &a,
@@ -185,14 +179,13 @@ namespace FTensor
 
   template <class A, class B, class T, class U, int Dim, char i, char j,
             char k, char l>
-  inline const Tensor3_antisymmetric_Expr<
-    const Riemann_times_Tensor1_3<A, B, T, U, Dim, i, j, k, l>,
+  Tensor3_antisymmetric_Expr<
+    Riemann_times_Tensor1_3<A, B, T, U, Dim, i, j, k, l>,
     typename promote<T, U>::V, Dim, Dim, i, j, k>
   operator*(const Riemann_Expr<A, T, Dim, i, j, k, l> &a,
             const Tensor1_Expr<B, U, Dim, l> &b)
   {
-    typedef const Riemann_times_Tensor1_3<A, B, T, U, Dim, i, j, k, l>
-      TensorExpr;
+    using TensorExpr = Riemann_times_Tensor1_3<A, B, T, U, Dim, i, j, k, l>;
     return Tensor3_antisymmetric_Expr<TensorExpr, typename promote<T, U>::V,
                                       Dim, Dim, i, j, k>(TensorExpr(a, b));
   }
@@ -201,14 +194,13 @@ namespace FTensor
 
   template <class A, class B, class T, class U, int Dim, char i, char j,
             char k, char l>
-  inline const Tensor3_antisymmetric_Expr<
-    const Riemann_times_Tensor1_3<A, B, T, U, Dim, i, j, k, l>,
+  Tensor3_antisymmetric_Expr<
+    Riemann_times_Tensor1_3<A, B, T, U, Dim, i, j, k, l>,
     typename promote<T, U>::V, Dim, Dim, i, j, k>
   operator*(const Tensor1_Expr<B, U, Dim, l> &b,
             const Riemann_Expr<A, T, Dim, i, j, k, l> &a)
   {
-    typedef const Riemann_times_Tensor1_3<A, B, T, U, Dim, i, j, k, l>
-      TensorExpr;
+    using TensorExpr = Riemann_times_Tensor1_3<A, B, T, U, Dim, i, j, k, l>;
     return Tensor3_antisymmetric_Expr<TensorExpr, typename promote<T, U>::V,
                                       Dim, Dim, i, j, k>(TensorExpr(a, b));
   }

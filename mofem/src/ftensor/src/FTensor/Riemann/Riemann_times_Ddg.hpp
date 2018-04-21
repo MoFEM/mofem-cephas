@@ -10,7 +10,7 @@ namespace FTensor
 
   template <class A, class B, class T, class U, int Dim, char i, char j,
             char k, char l>
-  inline const typename promote<T, U>::V
+  typename promote<T, U>::V
   operator*(const Riemann_Expr<A, T, Dim, i, j, k, l> &a,
             const Ddg_Expr<B, U, Dim, Dim, i, j, k, l> &b)
   {
@@ -36,7 +36,7 @@ namespace FTensor
 
   template <class A, class B, class T, class U, int Dim, char i, char j,
             char k, char l>
-  inline const typename promote<T, U>::V
+  typename promote<T, U>::V
   operator*(const Ddg_Expr<B, U, Dim, Dim, i, j, k, l> &b,
             const Riemann_Expr<A, T, Dim, i, j, k, l> &a)
 
@@ -48,7 +48,7 @@ namespace FTensor
 
   template <class A, class B, class T, class U, int Dim, char i, char j,
             char k, char l>
-  inline const typename promote<T, U>::V
+  typename promote<T, U>::V
   operator*(const Riemann_Expr<A, T, Dim, i, j, k, l> &a,
             const Ddg_Expr<B, U, Dim, Dim, i, k, j, l> &b)
   {
@@ -74,7 +74,7 @@ namespace FTensor
 
   template <class A, class B, class T, class U, int Dim, char i, char j,
             char k, char l>
-  inline const typename promote<T, U>::V
+  typename promote<T, U>::V
   operator*(const Ddg_Expr<B, U, Dim, Dim, i, j, k, l> &b,
             const Riemann_Expr<A, T, Dim, i, k, j, l> &a)
 

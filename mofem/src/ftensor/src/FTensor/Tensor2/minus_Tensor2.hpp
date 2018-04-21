@@ -16,11 +16,10 @@ namespace FTensor
   };
 
   template <class A, class T, int Dim0, int Dim1, char i, char j>
-  inline const Tensor2_Expr<const minus_Tensor2<A, T, Dim0, Dim1, i, j>, T,
-                            Dim0, Dim1, i, j>
+  Tensor2_Expr<minus_Tensor2<A, T, Dim0, Dim1, i, j>, T, Dim0, Dim1, i, j>
   operator-(const Tensor2_Expr<A, T, Dim0, Dim1, i, j> &a)
   {
-    typedef const minus_Tensor2<A, T, Dim0, Dim1, i, j> TensorExpr;
+    using TensorExpr = minus_Tensor2<A, T, Dim0, Dim1, i, j>;
     return Tensor2_Expr<TensorExpr, T, Dim0, Dim1, i, j>(TensorExpr(a));
   }
 }

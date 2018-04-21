@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include "../Dg.hpp"
+
 namespace FTensor
 {
   template <class T, int Tensor_Dim0, int Tensor_Dim12> class Christof
@@ -9,38 +11,14 @@ namespace FTensor
     T data[Tensor_Dim0][(Tensor_Dim12 * (Tensor_Dim12 + 1)) / 2];
 
   public:
+    template <class... U> Christof(U... d) : data{d...}
+    {
+      static_assert(sizeof...(d) == sizeof(data) / sizeof(T),
+                    "Incorrect number of Arguments. Constructor should "
+                    "initialize the entire Tensor");
+    }
+
     Christof() {}
-
-    /* Tensor_Dim0=Tensor_Dim12=2 */
-    Christof(T d000, T d100, T d001, T d101, T d011, T d111)
-    {
-      Christof_constructor<T, Tensor_Dim0, Tensor_Dim12>(
-        data, d000, d100, d001, d101, d011, d111);
-    }
-
-    /* Tensor_Dim0=Tensor_Dim12=3 */
-    Christof(T d000, T d100, T d200, T d001, T d101, T d201, T d002, T d102,
-             T d202, T d011, T d111, T d211, T d012, T d112, T d212, T d022,
-             T d122, T d222)
-    {
-      Christof_constructor<T, Tensor_Dim0, Tensor_Dim12>(
-        data, d000, d100, d200, d001, d101, d201, d002, d102, d202, d011, d111,
-        d211, d012, d112, d212, d022, d122, d222);
-    }
-
-    /* Tensor_Dim0=Tensor_Dim12=4 */
-    Christof(T d000, T d100, T d200, T d300, T d001, T d101, T d201, T d301,
-             T d002, T d102, T d202, T d302, T d003, T d103, T d203, T d303,
-             T d011, T d111, T d211, T d311, T d012, T d112, T d212, T d312,
-             T d013, T d113, T d213, T d313, T d022, T d122, T d222, T d322,
-             T d023, T d123, T d223, T d323, T d033, T d133, T d233, T d333)
-    {
-      Christof_constructor<T, Tensor_Dim0, Tensor_Dim12>(
-        data, d000, d100, d200, d300, d001, d101, d201, d301, d002, d102, d202,
-        d302, d003, d103, d203, d303, d011, d111, d211, d311, d012, d112, d212,
-        d312, d013, d113, d213, d313, d022, d122, d222, d322, d023, d123, d223,
-        d323, d033, d133, d233, d333);
-    }
 
     /* There are two operator(int,int,int)'s, one for non-consts that lets you
        change the value, and one for consts that doesn't. */
@@ -55,7 +33,7 @@ namespace FTensor
           s << "Bad index in Christof<T," << Tensor_Dim0 << "," << Tensor_Dim12
             << ">.operator(" << N1 << "," << N2 << "," << N3 << ")"
             << std::endl;
-          throw std::runtime_error(s.str());
+          throw std::out_of_range(s.str());
         }
 #endif
       return N2 > N3 ? data[N1][N2 + (N3 * (2 * Tensor_Dim12 - N3 - 1)) / 2]
@@ -72,7 +50,7 @@ namespace FTensor
           s << "Bad index in Christof<T," << Tensor_Dim0 << "," << Tensor_Dim12
             << ">.operator(" << N1 << "," << N2 << "," << N3 << ") const"
             << std::endl;
-          throw std::runtime_error(s.str());
+          throw std::out_of_range(s.str());
         }
 #endif
       return N2 > N3 ? data[N1][N2 + (N3 * (2 * Tensor_Dim12 - N3 - 1)) / 2]
@@ -121,24 +99,21 @@ namespace FTensor
         Dim, i>>::type
     operator()(const Index<i, Dim>, const Number<N1>, const Number<N2>)
     {
-      typedef Dg_number_rhs_12<Christof<T, Tensor_Dim0, Tensor_Dim12>, T, N1,
-                               N2>
-        TensorExpr;
+      using TensorExpr
+        = Dg_number_rhs_12<Christof<T, Tensor_Dim0, Tensor_Dim12>, T, N1, N2>;
       return Tensor1_Expr<TensorExpr, T, Dim, i>(*this);
     }
 
     template <char i, int N1, int N2, int Dim>
     typename std::enable_if<
       (Tensor_Dim0 >= Dim && Tensor_Dim12 > N1 && Tensor_Dim12 > N2),
-      const Tensor1_Expr<
-        const Dg_number_12<const Christof<T, Tensor_Dim0, Tensor_Dim12>, T, N1,
-                           N2>,
-        T, Dim, i>>::type
+      Tensor1_Expr<
+        Dg_number_12<Christof<T, Tensor_Dim0, Tensor_Dim12>, T, N1, N2>, T,
+        Dim, i>>::type
     operator()(const Index<i, Dim>, const Number<N1>, const Number<N2>) const
     {
-      typedef const Dg_number_12<const Christof<T, Tensor_Dim0, Tensor_Dim12>,
-                                 T, N1, N2>
-        TensorExpr;
+      using TensorExpr
+        = Dg_number_12<const Christof<T, Tensor_Dim0, Tensor_Dim12>, T, N1, N2>;
       return Tensor1_Expr<TensorExpr, T, Dim, i>(TensorExpr(*this));
     }
     // TODO index on second and third position
@@ -150,69 +125,67 @@ namespace FTensor
     /* const versions */
 
     template <char i, char j, int Dim0, int Dim12>
-    inline typename std::enable_if<
+    typename std::enable_if<
       (Tensor_Dim0 >= Dim0 && Tensor_Dim12 >= Dim12),
-      Tensor1_Expr<const Tensor3_contracted_12<
-                     const Christof<T, Tensor_Dim0, Tensor_Dim12>, T, Dim12>,
-                   T, Dim0, i>>::type
+      Tensor1_Expr<
+        Tensor3_contracted_12<Christof<T, Tensor_Dim0, Tensor_Dim12>, T, Dim12>,
+        T, Dim0, i>>::type
     operator()(const Index<i, Dim0>, const Index<j, Dim12>,
                const Index<j, Dim12>) const
     {
-      typedef const Tensor3_contracted_12<
-        const Christof<T, Tensor_Dim0, Tensor_Dim12>, T, Dim12>
-        TensorExpr;
+      using TensorExpr
+        = Tensor3_contracted_12<Christof<T, Tensor_Dim0, Tensor_Dim12>, T,
+                                Dim12>;
       return Tensor1_Expr<TensorExpr, T, Dim0, i>(TensorExpr(*this));
     }
 
     template <char i, char j, int Dim>
-    inline typename std::enable_if<
+    typename std::enable_if<
       (Tensor_Dim0 >= Dim && Tensor_Dim12 >= Dim),
-      Tensor1_Expr<const Tensor3_contracted_02<
-                     const Christof<T, Tensor_Dim0, Tensor_Dim12>, T, Dim>,
-                   T, Dim, i>>::type
+      Tensor1_Expr<
+        Tensor3_contracted_02<Christof<T, Tensor_Dim0, Tensor_Dim12>, T, Dim>,
+        T, Dim, i>>::type
     operator()(const Index<j, Dim>, const Index<i, Dim>,
                const Index<j, Dim>) const
     {
-      typedef const Tensor3_contracted_02<
-        const Christof<T, Tensor_Dim0, Tensor_Dim12>, T, Dim>
-        TensorExpr;
+      using TensorExpr
+        = Tensor3_contracted_02<Christof<T, Tensor_Dim0, Tensor_Dim12>, T, Dim>;
       return Tensor1_Expr<TensorExpr, T, Dim, i>(TensorExpr(*this));
     }
-    // TODO allow diferent dimensions here ^^^^ with the one below
+    // TODO allow different dimensions here ^^^^ with the one below
     //    template<char i, char j, int Dim02, int Dim1>
-    //    inline Tensor1_Expr<const Tensor3_contracted_02
+    //    Tensor1_Expr<const Tensor3_contracted_02
     //    <const Christof<T,Tensor_Dim0,Tensor_Dim12>,T,Dim02>,T,Dim1,i>
     //    operator()(const Index<j,Dim02> index1, const Index<i,Dim1> index2,
     //  	     const Index<j,Dim02> index3) const
     //    {
-    //      typedef const Tensor3_contracted_02
+    //      typedef Tensor3_contracted_02
     //        <const Christof<T,Tensor_Dim0,Tensor_Dim12>,T,Dim02>
     //        TensorExpr;
     //      return Tensor1_Expr<TensorExpr,T,Dim1,i>(TensorExpr(*this));
     //    }
 
     template <char i, char j, int Dim>
-    inline typename std::enable_if<
+    typename std::enable_if<
       (Tensor_Dim0 >= Dim && Tensor_Dim12 >= Dim),
-      Tensor1_Expr<const Tensor3_contracted_01<
-                     const Christof<T, Tensor_Dim0, Tensor_Dim12>, T, Dim>,
-                   T, Dim, i>>::type
+      Tensor1_Expr<
+        Tensor3_contracted_01<Christof<T, Tensor_Dim0, Tensor_Dim12>, T, Dim>,
+        T, Dim, i>>::type
     operator()(const Index<j, Dim>, const Index<j, Dim>,
                const Index<i, Dim>) const
     {
-      typedef const Tensor3_contracted_01<
-        const Christof<T, Tensor_Dim0, Tensor_Dim12>, T, Dim>
-        TensorExpr;
+      using TensorExpr
+        = Tensor3_contracted_01<Christof<T, Tensor_Dim0, Tensor_Dim12>, T, Dim>;
       return Tensor1_Expr<TensorExpr, T, Dim, i>(TensorExpr(*this));
     }
-    // TODO allow diferent dimensions here ^^^^ with the one below
+    // TODO allow different dimensions here ^^^^ with the one below
     //    template<char i, char j, int Dim01, int Dim2>
-    //    inline Tensor1_Expr<const Tensor3_contracted_01
+    //    Tensor1_Expr<const Tensor3_contracted_01
     //    <const Christof<T,Tensor_Dim0,Tensor_Dim12>,T,Dim01>,T,Dim2,i>
     //    operator()(const Index<j,Dim01> index1, const Index<j,Dim01> index2,
     //  	     const Index<i,Dim2> index3) const
     //    {
-    //      typedef const Tensor3_contracted_01
+    //      typedef Tensor3_contracted_01
     //        <const Christof<T,Tensor_Dim0,Tensor_Dim12>,T,Dim01>
     //        TensorExpr;
     //      return Tensor1_Expr<TensorExpr,T,Dim2,i>(TensorExpr(*this));
@@ -222,67 +195,65 @@ namespace FTensor
        pick the more general indexing operator. */
 
     template <char i, char j, int Dim0, int Dim12>
-    inline typename std::enable_if<
+    typename std::enable_if<
       (Tensor_Dim0 >= Dim0 && Tensor_Dim12 >= Dim12),
-      Tensor1_Expr<const Tensor3_contracted_12<
-                     const Christof<T, Tensor_Dim0, Tensor_Dim12>, T, Dim12>,
-                   T, Dim0, i>>::type
+      Tensor1_Expr<
+        Tensor3_contracted_12<Christof<T, Tensor_Dim0, Tensor_Dim12>, T, Dim12>,
+        T, Dim0, i>>::type
     operator()(const Index<i, Dim0>, const Index<j, Dim12>,
                const Index<j, Dim12>)
     {
-      typedef const Tensor3_contracted_12<
-        const Christof<T, Tensor_Dim0, Tensor_Dim12>, T, Dim12>
-        TensorExpr;
+      using TensorExpr
+        = Tensor3_contracted_12<Christof<T, Tensor_Dim0, Tensor_Dim12>, T,
+                                Dim12>;
       return Tensor1_Expr<TensorExpr, T, Dim0, i>(TensorExpr(*this));
     }
 
     template <char i, char j, int Dim>
-    inline typename std::enable_if<
+    typename std::enable_if<
       (Tensor_Dim0 >= Dim && Tensor_Dim12 >= Dim),
-      Tensor1_Expr<const Tensor3_contracted_02<
-                     const Christof<T, Tensor_Dim0, Tensor_Dim12>, T, Dim>,
-                   T, Dim, i>>::type
+      Tensor1_Expr<
+        Tensor3_contracted_02<Christof<T, Tensor_Dim0, Tensor_Dim12>, T, Dim>,
+        T, Dim, i>>::type
     operator()(const Index<j, Dim>, const Index<i, Dim>, const Index<j, Dim>)
     {
-      typedef const Tensor3_contracted_02<
-        const Christof<T, Tensor_Dim0, Tensor_Dim12>, T, Dim>
-        TensorExpr;
+      using TensorExpr
+        = Tensor3_contracted_02<Christof<T, Tensor_Dim0, Tensor_Dim12>, T, Dim>;
       return Tensor1_Expr<TensorExpr, T, Dim, i>(TensorExpr(*this));
     }
-    // TODO allow diferent dimensions here ^^^^ with the one below
+    // TODO allow different dimensions here ^^^^ with the one below
     //    template<char i, char j, int Dim02, int Dim1>
-    //    inline Tensor1_Expr<const Tensor3_contracted_02
+    //    Tensor1_Expr<const Tensor3_contracted_02
     //    <const Christof<T,Tensor_Dim0,Tensor_Dim12>,T,Dim02>,T,Dim1,i>
     //    operator()(const Index<j,Dim02> index1, const Index<i,Dim1> index2,
     //  	     const Index<j,Dim02> index3)
     //    {
-    //      typedef const Tensor3_contracted_02
+    //      typedef Tensor3_contracted_02
     //        <const Christof<T,Tensor_Dim0,Tensor_Dim12>,T,Dim02>
     //        TensorExpr;
     //      return Tensor1_Expr<TensorExpr,T,Dim1,i>(TensorExpr(*this));
     //    }
 
     template <char i, char j, int Dim>
-    inline typename std::enable_if<
+    typename std::enable_if<
       (Tensor_Dim0 >= Dim && Tensor_Dim12 >= Dim),
-      Tensor1_Expr<const Tensor3_contracted_01<
-                     const Christof<T, Tensor_Dim0, Tensor_Dim12>, T, Dim>,
-                   T, Dim, i>>::type
+      Tensor1_Expr<
+        Tensor3_contracted_01<Christof<T, Tensor_Dim0, Tensor_Dim12>, T, Dim>,
+        T, Dim, i>>::type
     operator()(const Index<j, Dim>, const Index<j, Dim>, const Index<i, Dim>)
     {
-      typedef const Tensor3_contracted_01<
-        const Christof<T, Tensor_Dim0, Tensor_Dim12>, T, Dim>
-        TensorExpr;
+      using TensorExpr
+        = Tensor3_contracted_01<Christof<T, Tensor_Dim0, Tensor_Dim12>, T, Dim>;
       return Tensor1_Expr<TensorExpr, T, Dim, i>(TensorExpr(*this));
     }
 
     //    template<char i, char j, int Dim01, int Dim2>
-    //    inline Tensor1_Expr<const Tensor3_contracted_01
+    //    Tensor1_Expr<const Tensor3_contracted_01
     //    <const Christof<T,Tensor_Dim0,Tensor_Dim12>,T,Dim01>,T,Dim2,i>
     //    operator()(const Index<j,Dim01> index1, const Index<j,Dim01> index2,
     //  	     const Index<i,Dim2> index3)
     //    {
-    //      typedef const Tensor3_contracted_01
+    //      typedef Tensor3_contracted_01
     //        <const Christof<T,Tensor_Dim0,Tensor_Dim12>,T,Dim01>
     //        TensorExpr;
     //      return Tensor1_Expr<TensorExpr,T,Dim2,i>(TensorExpr(*this));
@@ -295,15 +266,13 @@ namespace FTensor
     typename std::enable_if<
       (Tensor_Dim0 > N && Tensor_Dim12 >= Dim12),
       Tensor2_symmetric_Expr<
-        const Christof_number_0<const Christof<T, Tensor_Dim0, Tensor_Dim12>,
-                                T, N>,
-        T, Dim12, i, j>>::type
+        Christof_number_0<Christof<T, Tensor_Dim0, Tensor_Dim12>, T, N>, T,
+        Dim12, i, j>>::type
     operator()(const Number<N>, const Index<i, Dim12>,
                const Index<j, Dim12>) const
     {
-      typedef const Christof_number_0<
-        const Christof<T, Tensor_Dim0, Tensor_Dim12>, T, N>
-        TensorExpr;
+      using TensorExpr
+        = Christof_number_0<Christof<T, Tensor_Dim0, Tensor_Dim12>, T, N>;
       return Tensor2_symmetric_Expr<TensorExpr, T, Dim12, i, j>(
         TensorExpr(*this));
     }
@@ -314,14 +283,13 @@ namespace FTensor
     template <char i, char j, int Dim12>
     typename std::enable_if<
       (Tensor_Dim12 >= Dim12),
-      Tensor2_symmetric_Expr<const Christof_numeral_0<
-                               const Christof<T, Tensor_Dim0, Tensor_Dim12>, T>,
-                             T, Dim12, i, j>>::type
+      Tensor2_symmetric_Expr<
+        Christof_numeral_0<Christof<T, Tensor_Dim0, Tensor_Dim12>, T>, T,
+        Dim12, i, j>>::type
     operator()(const int N, const Index<i, Dim12>, const Index<j, Dim12>) const
     {
-      typedef const Christof_numeral_0<
-        const Christof<T, Tensor_Dim0, Tensor_Dim12>, T>
-        TensorExpr;
+      using TensorExpr
+        = Christof_numeral_0<Christof<T, Tensor_Dim0, Tensor_Dim12>, T>;
       return Tensor2_symmetric_Expr<TensorExpr, T, Dim12, i, j>(
         TensorExpr(*this, N));
     }
@@ -333,14 +301,12 @@ namespace FTensor
     template <char i, char j, int Dim0, int Dim2>
     typename std::enable_if<
       (Tensor_Dim0 >= Dim0 && Tensor_Dim12 >= Dim2),
-      Tensor2_Expr<const Christof_numeral_1<
-                     const Christof<T, Tensor_Dim0, Tensor_Dim12>, T>,
+      Tensor2_Expr<Christof_numeral_1<Christof<T, Tensor_Dim0, Tensor_Dim12>, T>,
                    T, Dim0, Dim2, i, j>>::type
     operator()(const Index<i, Dim0>, const int N, const Index<j, Dim2>) const
     {
-      typedef const Christof_numeral_1<
-        const Christof<T, Tensor_Dim0, Tensor_Dim12>, T>
-        TensorExpr;
+      using TensorExpr
+        = Christof_numeral_1<Christof<T, Tensor_Dim0, Tensor_Dim12>, T>;
       return Tensor2_Expr<TensorExpr, T, Dim0, Dim2, i, j>(
         TensorExpr(*this, N));
     }
@@ -348,14 +314,12 @@ namespace FTensor
     template <char i, char j, int Dim0, int Dim2>
     typename std::enable_if<
       (Tensor_Dim0 >= Dim0 && Tensor_Dim12 >= Dim2),
-      Tensor2_Expr<const Christof_numeral_1<
-                     const Christof<T, Tensor_Dim0, Tensor_Dim12>, T>,
+      Tensor2_Expr<Christof_numeral_1<Christof<T, Tensor_Dim0, Tensor_Dim12>, T>,
                    T, Dim0, Dim2, i, j>>::type
     operator()(const Index<i, Dim0>, const Index<j, Dim2>, const int N) const
     {
-      typedef const Christof_numeral_1<
-        const Christof<T, Tensor_Dim0, Tensor_Dim12>, T>
-        TensorExpr;
+      using TensorExpr
+        = Christof_numeral_1<Christof<T, Tensor_Dim0, Tensor_Dim12>, T>;
       return Tensor2_Expr<TensorExpr, T, Dim0, Dim2, i, j>(
         TensorExpr(*this, N));
     }

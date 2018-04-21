@@ -11,7 +11,7 @@ namespace FTensor
     A iter;
 
   public:
-    Tensor2_antisymmetric_Expr(A &a) : iter(a) {}
+    Tensor2_antisymmetric_Expr(const A &a) : iter(a) {}
     T operator()(const int N1, const int N2) const { return iter(N1, N2); }
   };
 
@@ -43,50 +43,50 @@ namespace FTensor
     // Tensor2_antisymmetric_Expr<Tensor2_antisymmetric<A,Tensor_Dim>,T,Dim,i,j>
     // &result);
 
-    // template<class B, class U> inline
+    // template<class B, class U>
     // const
     // Tensor2_antisymmetric_Expr<Tensor2_antisymmetric<A,Tensor_Dim>,T,Dim,i,j>
     // & operator+=(const Tensor2_antisymmetric_Expr<B,U,Dim,i,j> &result);
 
-    // template<class B, class U> inline
+    // template<class B, class U>
     // const
     // Tensor2_antisymmetric_Expr<Tensor2_antisymmetric<A,Tensor_Dim>,T,Dim,i,j>
     // & operator-=(const Tensor2_antisymmetric_Expr<B,U,Dim,i,j> &result);
 
-    // template<class B, class U> inline
+    // template<class B, class U>
     // const
     // Tensor2_antisymmetric_Expr<Tensor2_antisymmetric<A,Tensor_Dim>,T,Dim,i,j>
     // & operator&=(const Tensor2_antisymmetric_Expr<B,U,Dim,i,j> &result);
 
     // /* This is for when the indices are switched (i,j) -> (j,i). */
 
-    // template<class B, class U> inline
+    // template<class B, class U>
     // const
     // Tensor2_antisymmetric_Expr<Tensor2_antisymmetric<A,Tensor_Dim>,T,Dim,i,j>
     // & operator=(const Tensor2_antisymmetric_Expr<B,U,Dim,j,i> &result);
 
-    // template<class B, class U> inline
+    // template<class B, class U>
     // const
     // Tensor2_antisymmetric_Expr<Tensor2_antisymmetric<A,Tensor_Dim>,T,Dim,i,j>
     // & operator+=(const Tensor2_antisymmetric_Expr<B,U,Dim,j,i> &result);
 
-    // template<class B, class U> inline
+    // template<class B, class U>
     // const
     // Tensor2_antisymmetric_Expr<Tensor2_antisymmetric<A,Tensor_Dim>,T,Dim,i,j>
     // & operator-=(const Tensor2_antisymmetric_Expr<B,U,Dim,j,i> &result);
 
     // /* Operations with just generics. */
 
-    // template<class U> inline
+    // template<class U>
     // const
     // Tensor2_antisymmetric_Expr<Tensor2_antisymmetric<A,Tensor_Dim>,T,Dim,i,j>
-    // & operator=(const U &d); template<class U> inline const
+    // & operator=(const U &d); template<class U>  const
     // Tensor2_antisymmetric_Expr<Tensor2_antisymmetric<A,Tensor_Dim>,T,Dim,i,j>
-    // & operator+=(const U &d); template<class U> inline const
+    // & operator+=(const U &d); template<class U>  const
     // Tensor2_antisymmetric_Expr<Tensor2_antisymmetric<A,Tensor_Dim>,T,Dim,i,j>
-    // & operator-=(const U &d); template<class U> inline const
+    // & operator-=(const U &d); template<class U>  const
     // Tensor2_antisymmetric_Expr<Tensor2_antisymmetric<A,Tensor_Dim>,T,Dim,i,j>
-    // & operator*=(const U &d); template<class U> inline const
+    // & operator*=(const U &d); template<class U>  const
     // Tensor2_antisymmetric_Expr<Tensor2_antisymmetric<A,Tensor_Dim>,T,Dim,i,j>
     // & operator/=(const U &d);
   };

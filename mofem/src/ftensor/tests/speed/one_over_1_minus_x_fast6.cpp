@@ -1,5 +1,5 @@
-#include <iostream>
 #include "one_over_1_minus_x_fast.hpp"
+#include <iostream>
 
 int main()
 {

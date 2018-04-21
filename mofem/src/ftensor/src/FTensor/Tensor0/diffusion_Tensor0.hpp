@@ -6,7 +6,7 @@
 namespace FTensor
 {
   template <class T>
-  inline const typename promote<T, double>::V
+  typename promote<T, double>::V
   diffusion(const Tensor0<T *> &a, const int &di, const int &dj, const int &dk,
             const double &dx)
   {

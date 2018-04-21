@@ -9,8 +9,8 @@ namespace FTensor
             char k, char l>
   class Riemann_plus_Riemann
   {
-    const Riemann_Expr<A, T, Dim, i, j, k, l> iterA;
-    const Riemann_Expr<B, U, Dim, i, j, k, l> iterB;
+    Riemann_Expr<A, T, Dim, i, j, k, l> iterA;
+    Riemann_Expr<B, U, Dim, i, j, k, l> iterB;
 
   public:
     typename promote<T, U>::V
@@ -27,13 +27,12 @@ namespace FTensor
 
   template <class A, class B, class T, class U, int Dim, char i, char j,
             char k, char l>
-  inline const Riemann_Expr<
-    const Riemann_plus_Riemann<A, B, T, U, Dim, i, j, k, l>,
-    typename promote<T, U>::V, Dim, i, j, k, l>
+  Riemann_Expr<Riemann_plus_Riemann<A, B, T, U, Dim, i, j, k, l>,
+               typename promote<T, U>::V, Dim, i, j, k, l>
   operator+(const Riemann_Expr<A, T, Dim, i, j, k, l> &a,
             const Riemann_Expr<B, U, Dim, i, j, k, l> &b)
   {
-    typedef const Riemann_plus_Riemann<A, B, T, U, Dim, i, j, k, l> TensorExpr;
+    using TensorExpr = Riemann_plus_Riemann<A, B, T, U, Dim, i, j, k, l>;
     return Riemann_Expr<TensorExpr, typename promote<T, U>::V, Dim, i, j, k, l>(
       TensorExpr(a, b));
   }

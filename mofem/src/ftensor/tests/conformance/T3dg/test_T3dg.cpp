@@ -1,6 +1,6 @@
-#include <iostream>
 #include "../../../src/FTensor.hpp"
 #include "../test_for_zero.hpp"
+#include <iostream>
 using namespace FTensor;
 using namespace std;
 

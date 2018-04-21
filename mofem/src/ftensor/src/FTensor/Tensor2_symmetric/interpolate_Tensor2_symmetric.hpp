@@ -50,15 +50,14 @@ namespace FTensor
   };
 
   template <class T, int Dim, char i, char j>
-  inline const Tensor2_symmetric_Expr<
-    const interpolate_Tensor2_symmetric<T, Dim, i, j>,
-    typename promote<T, double>::V, Dim, i, j>
+  const Tensor2_symmetric_Expr<const interpolate_Tensor2_symmetric<T, Dim, i, j>,
+                               typename promote<T, double>::V, Dim, i, j>
   interpolate(const Tensor2_symmetric<T *, Dim> &a, const Index<i, Dim> index1,
               const Index<j, Dim> index2, const int &di, const int &dj,
               const int &dk, const int &i0, const int &j0, const int &k0,
               const double distance[3], const double conjugate[3])
   {
-    typedef const interpolate_Tensor2_symmetric<T, Dim, i, j> Tensor_Expr;
+    using Tensor_Expr = interpolate_Tensor2_symmetric<T, Dim, i, j>;
     return Tensor2_symmetric_Expr<Tensor_Expr, typename promote<T, double>::V,
                                   Dim, i, j>(
       Tensor_Expr(a, di, dj, dk, i0, j0, k0, distance, conjugate));

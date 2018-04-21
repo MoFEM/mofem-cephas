@@ -24,13 +24,11 @@ namespace FTensor
   };
 
   template <class A, class T, class U, int Dim, char i, char j>
-  inline const Tensor2_symmetric_Expr<
-    const Tensor2_symmetric_minus_generic<A, T, U, Dim, i, j>,
-    typename promote<T, U>::V, Dim, i, j>
+  Tensor2_symmetric_Expr<Tensor2_symmetric_minus_generic<A, T, U, Dim, i, j>,
+                         typename promote<T, U>::V, Dim, i, j>
   operator-(const Tensor2_symmetric_Expr<A, T, Dim, i, j> &a, const U &d0)
   {
-    typedef const Tensor2_symmetric_minus_generic<A, T, U, Dim, i, j>
-      TensorExpr;
+    using TensorExpr = Tensor2_symmetric_minus_generic<A, T, U, Dim, i, j>;
     return Tensor2_symmetric_Expr<TensorExpr, typename promote<T, U>::V, Dim,
                                   i, j>(TensorExpr(a, d0));
   }

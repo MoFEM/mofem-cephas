@@ -11,8 +11,8 @@ namespace FTensor
             char j, char k, char l, char m, char n>
   class Ddg_carat_Ddg_13
   {
-    const Ddg_Expr<A, T, Dim, Dim, i, j, k, l> iterA;
-    const Ddg_Expr<B, U, Dim, Dim23, j, l, m, n> iterB;
+    Ddg_Expr<A, T, Dim, Dim, i, j, k, l> iterA;
+    Ddg_Expr<B, U, Dim, Dim23, j, l, m, n> iterB;
 
     template <int Current_Dim0, int Current_Dim1>
     typename promote<T, U>::V
@@ -54,14 +54,13 @@ namespace FTensor
 
   template <class A, class B, class T, class U, int Dim, int Dim23, char i,
             char j, char k, char l, char m, char n>
-  inline const Ddg_Expr<
-    const Ddg_carat_Ddg_13<A, B, T, U, Dim, Dim23, i, j, k, l, m, n>,
-    typename promote<T, U>::V, Dim, Dim23, i, k, m, n>
+  Ddg_Expr<Ddg_carat_Ddg_13<A, B, T, U, Dim, Dim23, i, j, k, l, m, n>,
+           typename promote<T, U>::V, Dim, Dim23, i, k, m, n>
   operator^(const Ddg_Expr<A, T, Dim, Dim, i, j, k, l> &a,
             const Ddg_Expr<B, U, Dim, Dim23, j, l, m, n> &b)
   {
-    typedef const Ddg_carat_Ddg_13<A, B, T, U, Dim, Dim23, i, j, k, l, m, n>
-      TensorExpr;
+    using TensorExpr
+      = Ddg_carat_Ddg_13<A, B, T, U, Dim, Dim23, i, j, k, l, m, n>;
     return Ddg_Expr<TensorExpr, typename promote<T, U>::V, Dim, Dim23, i, k, m,
                     n>(TensorExpr(a, b));
   }

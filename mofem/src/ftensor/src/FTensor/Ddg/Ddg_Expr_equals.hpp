@@ -9,7 +9,7 @@ namespace FTensor
   template <class A, class B, class U, int Current_Dim0, int Current_Dim1,
             int Current_Dim2, int Current_Dim3, int Dim01, int Dim23, char i,
             char j, char k, char l>
-  inline void
+  void
   T4ddg_equals_T4ddg(A &iter,
                      const Ddg_Expr<B, U, Dim01, Dim23, i, j, k, l> &result,
                      const Number<Current_Dim0> &,
@@ -29,7 +29,7 @@ namespace FTensor
   template <class A, class B, class U, int Current_Dim1, int Current_Dim2,
             int Current_Dim3, int Dim01, int Dim23, char i, char j, char k,
             char l>
-  inline void
+  void
   T4ddg_equals_T4ddg(A &iter,
                      const Ddg_Expr<B, U, Dim01, Dim23, i, j, k, l> &result,
                      const Number<1> &, const Number<Current_Dim1> &,
@@ -45,7 +45,7 @@ namespace FTensor
 
   template <class A, class B, class U, int Current_Dim2, int Current_Dim3,
             int Dim01, int Dim23, char i, char j, char k, char l>
-  inline void
+  void
   T4ddg_equals_T4ddg(A &iter,
                      const Ddg_Expr<B, U, Dim01, Dim23, i, j, k, l> &result,
                      const Number<1> &, const Number<1> &,
@@ -60,7 +60,7 @@ namespace FTensor
 
   template <class A, class B, class U, int Current_Dim3, int Dim01, int Dim23,
             char i, char j, char k, char l>
-  inline void
+  void
   T4ddg_equals_T4ddg(A &iter,
                      const Ddg_Expr<B, U, Dim01, Dim23, i, j, k, l> &result,
                      const Number<1> &, const Number<1> &, const Number<1> &,
@@ -73,7 +73,7 @@ namespace FTensor
 
   template <class A, class B, class U, int Dim01, int Dim23, char i, char j,
             char k, char l>
-  inline void
+  void
   T4ddg_equals_T4ddg(A &iter,
                      const Ddg_Expr<B, U, Dim01, Dim23, i, j, k, l> &result,
                      const Number<1> &, const Number<1> &, const Number<1> &,
@@ -85,8 +85,7 @@ namespace FTensor
   template <class A, class T, int Tensor_Dim01, int Tensor_Dim23, int Dim01,
             int Dim23, char i, char j, char k, char l>
   template <class B, class U>
-  inline const Ddg_Expr<Ddg<A, Tensor_Dim01, Tensor_Dim23>, T, Dim01, Dim23, i,
-                        j, k, l> &
+  Ddg_Expr<Ddg<A, Tensor_Dim01, Tensor_Dim23>, T, Dim01, Dim23, i, j, k, l> &
   Ddg_Expr<Ddg<A, Tensor_Dim01, Tensor_Dim23>, T, Dim01, Dim23, i, j, k, l>::
   operator=(const Ddg_Expr<B, U, Dim01, Dim23, i, j, k, l> &result)
   {
@@ -97,8 +96,7 @@ namespace FTensor
 
   template <class A, class T, int Tensor_Dim01, int Tensor_Dim23, int Dim01,
             int Dim23, char i, char j, char k, char l>
-  inline const Ddg_Expr<Ddg<A, Tensor_Dim01, Tensor_Dim23>, T, Dim01, Dim23, i,
-                        j, k, l> &
+  Ddg_Expr<Ddg<A, Tensor_Dim01, Tensor_Dim23>, T, Dim01, Dim23, i, j, k, l> &
   Ddg_Expr<Ddg<A, Tensor_Dim01, Tensor_Dim23>, T, Dim01, Dim23, i, j, k, l>::
   operator=(const Ddg_Expr<Ddg<A, Tensor_Dim01, Tensor_Dim23>, T, Dim01, Dim23,
                            i, j, k, l> &result)

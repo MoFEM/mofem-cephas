@@ -29,7 +29,7 @@ namespace FTensor
   };
 
   template <class T, int Dim, char i, char j, int axis>
-  inline const Tensor2_symmetric_Expr<
+  const Tensor2_symmetric_Expr<
     const d_one_sided_Tensor2_symmetric<T, Dim, i, j, axis>,
     typename promote<T, double>::V, Dim, i, j>
   d_one_sided(const Tensor2_symmetric<T *, Dim> &a, const Number<axis> n1,
@@ -37,7 +37,7 @@ namespace FTensor
               const int &di, const int &dj, const int &dk, const double &dx,
               const double &dy, const double &dz)
   {
-    typedef const d_one_sided_Tensor2_symmetric<T, Dim, i, j, axis> TensorExpr;
+    using TensorExpr = d_one_sided_Tensor2_symmetric<T, Dim, i, j, axis>;
     return Tensor2_symmetric_Expr<TensorExpr, typename promote<T, double>::V,
                                   Dim, i, j>(
       TensorExpr(a, di, dj, dk, dx, dy, dz));

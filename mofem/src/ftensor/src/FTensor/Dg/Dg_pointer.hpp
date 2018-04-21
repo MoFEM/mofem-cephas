@@ -11,50 +11,15 @@ namespace FTensor
       data[(Tensor_Dim01 * (Tensor_Dim01 + 1)) / 2][Tensor_Dim2];
 
   public:
+
+    template <class... U> Dg(U *... d) : data{d...}
+    {
+      static_assert(sizeof...(d) == sizeof(data) / sizeof(T),
+                    "Incorrect number of Arguments. Constructor should "
+                    "initialize the entire Tensor");
+    }
+
     Dg() {}
-
-    /* Tensor_Dim01=2, Tensor_Dim2=2 */
-    Dg(T *d000, T *d001, T *d010, T *d011, T *d110, T *d111)
-    {
-      Dg_constructor<T * restrict, Tensor_Dim01, Tensor_Dim2>(
-        data, d000, d001, d010, d011, d110, d111);
-    }
-
-    /* Tensor_Dim01=3, Tensor_Dim2=3 */
-    Dg(T *d000, T *d001, T *d002, T *d010, T *d011, T *d012, T *d020, T *d021,
-       T *d022, T *d110, T *d111, T *d112, T *d120, T *d121, T *d122, T *d220,
-       T *d221, T *d222)
-    {
-      Dg_constructor<T * restrict, Tensor_Dim01, Tensor_Dim2>(
-        data, d000, d001, d002, d010, d011, d012, d020, d021, d022, d110, d111,
-        d112, d120, d121, d122, d220, d221, d222);
-    }
-
-    /* Tensor_Dim01=4, Tensor_Dim2=4 */
-    Dg(T *d000, T *d001, T *d002, T *d003, T *d010, T *d011, T *d012, T *d013,
-       T *d020, T *d021, T *d022, T *d023, T *d030, T *d031, T *d032, T *d033,
-       T *d110, T *d111, T *d112, T *d113, T *d120, T *d121, T *d122, T *d123,
-       T *d130, T *d131, T *d132, T *d133, T *d220, T *d221, T *d222, T *d223,
-       T *d230, T *d231, T *d232, T *d233, T *d330, T *d331, T *d332, T *d333)
-    {
-      Dg_constructor<T * restrict, Tensor_Dim01, Tensor_Dim2>(
-        data, d000, d001, d002, d003, d010, d011, d012, d013, d020, d021, d022,
-        d023, d030, d031, d032, d033, d110, d111, d112, d113, d120, d121, d122,
-        d123, d130, d131, d132, d133, d220, d221, d222, d223, d230, d231, d232,
-        d233, d330, d331, d332, d333);
-    }
-
-    /* Tensor_Dim01=4, Tensor_Dim2=3 */
-    Dg(T *d000, T *d001, T *d002, T *d010, T *d011, T *d012, T *d020, T *d021,
-       T *d022, T *d030, T *d031, T *d032, T *d110, T *d111, T *d112, T *d120,
-       T *d121, T *d122, T *d130, T *d131, T *d132, T *d220, T *d221, T *d222,
-       T *d230, T *d231, T *d232, T *d330, T *d331, T *d332)
-    {
-      Dg_constructor<T * restrict, Tensor_Dim01, Tensor_Dim2>(
-        data, d000, d001, d002, d010, d011, d012, d020, d021, d022, d030, d031,
-        d032, d110, d111, d112, d120, d121, d122, d130, d131, d132, d220, d221,
-        d222, d230, d231, d232, d330, d331, d332);
-    }
 
     /* There are two operator(int,int,int)'s, one for non-consts that lets you
        change the value, and one for consts that doesn't. */
@@ -69,7 +34,7 @@ namespace FTensor
           s << "Bad index in Dg<T*," << Tensor_Dim01 << "," << Tensor_Dim2
             << ">.operator(" << N1 << "," << N2 << "," << N3 << ")"
             << std::endl;
-          throw std::runtime_error(s.str());
+          throw std::out_of_range(s.str());
         }
 #endif
       return N1 > N2 ? *data[N1 + (N2 * (2 * Tensor_Dim01 - N2 - 1)) / 2][N3]
@@ -86,7 +51,7 @@ namespace FTensor
           s << "Bad index in Dg<T*," << Tensor_Dim01 << "," << Tensor_Dim2
             << ">.operator(" << N1 << "," << N2 << "," << N3 << ") const"
             << std::endl;
-          throw std::runtime_error(s.str());
+          throw std::out_of_range(s.str());
         }
 #endif
       return N1 > N2 ? *data[N1 + (N2 * (2 * Tensor_Dim01 - N2 - 1)) / 2][N3]
@@ -102,7 +67,7 @@ namespace FTensor
           std::stringstream s;
           s << "Bad index in Dg<T," << Tensor_Dim01 << "," << Tensor_Dim2
             << ">.ptr(" << N1 << "," << N2 << "," << N3 << ")" << std::endl;
-          throw std::runtime_error(s.str());
+          throw std::out_of_range(s.str());
         }
 #endif
       return N1 > N2 ? data[N1 + (N2 * (2 * Tensor_Dim01 - N2 - 1)) / 2][N3]
@@ -136,63 +101,60 @@ namespace FTensor
        and j have different dimensions. */
 
     template <char i, char j, int Dim>
-    inline Tensor1_Expr<
+    Tensor1_Expr<
       const Tensor3_contracted_12<Dg<T *, Tensor_Dim01, Tensor_Dim2>, T, Dim>,
       T, Dim, i>
     operator()(const Index<i, Dim> index1, const Index<j, Dim> index2,
                const Index<j, Dim> index3) const
     {
-      typedef const Tensor3_contracted_12<Dg<T *, Tensor_Dim01, Tensor_Dim2>,
-                                          T, Dim>
-        TensorExpr;
+      using TensorExpr
+        = Tensor3_contracted_12<Dg<T *, Tensor_Dim01, Tensor_Dim2>, T, Dim>;
       return Tensor1_Expr<TensorExpr, T, Dim, i>(TensorExpr(*this));
     }
 
     template <char i, char j, int Dim>
-    inline Tensor1_Expr<
+    Tensor1_Expr<
       const Tensor3_contracted_02<Dg<T *, Tensor_Dim01, Tensor_Dim2>, T, Dim>,
       T, Dim, i>
     operator()(const Index<j, Dim> index1, const Index<i, Dim> index2,
                const Index<j, Dim> index3) const
     {
-      typedef const Tensor3_contracted_02<Dg<T *, Tensor_Dim01, Tensor_Dim2>,
-                                          T, Dim>
-        TensorExpr;
+      using TensorExpr
+        = Tensor3_contracted_02<Dg<T *, Tensor_Dim01, Tensor_Dim2>, T, Dim>;
       return Tensor1_Expr<TensorExpr, T, Dim, i>(TensorExpr(*this));
     }
 
     //    template<char i, char j, int Dim0, int Dim12>
-    //    inline Tensor1_Expr<const Tensor3_contracted_12<Dg
+    //    Tensor1_Expr<const Tensor3_contracted_12<Dg
     //    <T*,Tensor_Dim01,Tensor_Dim2>,T,Dim12>,T,Dim0,i>
     //    operator()(const Index<i,Dim0> index1, const Index<j,Dim12> index2,
     //  	     const Index<j,Dim12> index3) const
     //    {
-    //      typedef const Tensor3_contracted_12<Dg<T*,Tensor_Dim01,Tensor_Dim2>,
+    //      typedef Tensor3_contracted_12<Dg<T*,Tensor_Dim01,Tensor_Dim2>,
     //        T,Dim12> TensorExpr;
     //      return Tensor1_Expr<TensorExpr,T,Dim0,i>(TensorExpr(*this));
     //    }
 
     //    template<char i, char j, int Dim02, int Dim1>
-    //    inline Tensor1_Expr<const Tensor3_contracted_02<Dg
+    //    Tensor1_Expr<const Tensor3_contracted_02<Dg
     //    <T*,Tensor_Dim01,Tensor_Dim2>,T,Dim02>,T,Dim1,i>
     //    operator()(const Index<j,Dim02> index1, const Index<i,Dim1> index2,
     //  	     const Index<j,Dim02> index3) const
     //    {
-    //      typedef const Tensor3_contracted_02<Dg<T*,Tensor_Dim01,Tensor_Dim2>,
+    //      typedef Tensor3_contracted_02<Dg<T*,Tensor_Dim01,Tensor_Dim2>,
     //        T,Dim02> TensorExpr;
     //      return Tensor1_Expr<TensorExpr,T,Dim1,i>(TensorExpr(*this));
     //    }
 
     template <char i, char j, int Dim01, int Dim2>
-    inline Tensor1_Expr<
+    Tensor1_Expr<
       const Tensor3_contracted_01<Dg<T *, Tensor_Dim01, Tensor_Dim2>, T, Dim01>,
       T, Dim2, i>
     operator()(const Index<j, Dim01> index1, const Index<j, Dim01> index2,
                const Index<i, Dim2> index3) const
     {
-      typedef const Tensor3_contracted_01<Dg<T *, Tensor_Dim01, Tensor_Dim2>,
-                                          T, Dim01>
-        TensorExpr;
+      using TensorExpr
+        = Tensor3_contracted_01<Dg<T *, Tensor_Dim01, Tensor_Dim2>, T, Dim01>;
       return Tensor1_Expr<TensorExpr, T, Dim2, i>(TensorExpr(*this));
     }
 
@@ -210,8 +172,8 @@ namespace FTensor
     operator()(const Number<N> n1, const Index<i, Dim1> index1,
                const Index<j, Dim2> index2)
     {
-      typedef Dg_number_rhs_0<Dg<T *, Tensor_Dim01, Tensor_Dim2>, T, N>
-        TensorExpr;
+      using TensorExpr
+        = Dg_number_rhs_0<Dg<T *, Tensor_Dim01, Tensor_Dim2>, T, N>;
       return Tensor2_Expr<TensorExpr, T, Dim1, Dim2, i, j>(*this);
     }
 
@@ -222,8 +184,8 @@ namespace FTensor
     operator()(const Number<N> n1, const Index<i, Dim1> index1,
                const Index<j, Dim2> index2) const
     {
-      typedef const Dg_number_0<const Dg<T *, Tensor_Dim01, Tensor_Dim2>, T, N>
-        TensorExpr;
+      using TensorExpr
+        = Dg_number_0<const Dg<T *, Tensor_Dim01, Tensor_Dim2>, T, N>;
       return Tensor2_Expr<TensorExpr, T, Dim1, Dim2, i, j>(TensorExpr(*this));
     }
 
@@ -235,8 +197,8 @@ namespace FTensor
     operator()(const Index<i, Dim0> index1, const Number<N> n1,
                const Index<j, Dim2> index2)
     {
-      typedef Dg_number_rhs_0<Dg<T *, Tensor_Dim01, Tensor_Dim2>, T, N>
-        TensorExpr;
+      using TensorExpr
+        = Dg_number_rhs_0<Dg<T *, Tensor_Dim01, Tensor_Dim2>, T, N>;
       return Tensor2_Expr<TensorExpr, T, Dim0, Dim2, i, j>(*this);
     }
 
@@ -247,8 +209,8 @@ namespace FTensor
     operator()(const Index<i, Dim0> index1, const Number<N> n1,
                const Index<j, Dim2> index2) const
     {
-      typedef const Dg_number_0<const Dg<T *, Tensor_Dim01, Tensor_Dim2>, T, N>
-        TensorExpr;
+      using TensorExpr
+        = Dg_number_0<const Dg<T *, Tensor_Dim01, Tensor_Dim2>, T, N>;
       return Tensor2_Expr<TensorExpr, T, Dim0, Dim2, i, j>(TensorExpr(*this));
     }
 
@@ -260,8 +222,8 @@ namespace FTensor
     operator()(const Index<i, Dim> index1, const Index<j, Dim> index2,
                const Number<N> n1)
     {
-      typedef Dg_number_rhs_2<Dg<T *, Tensor_Dim01, Tensor_Dim2>, T, N>
-        TensorExpr;
+      using TensorExpr
+        = Dg_number_rhs_2<Dg<T *, Tensor_Dim01, Tensor_Dim2>, T, N>;
       return Tensor2_symmetric_Expr<TensorExpr, T, Dim, i, j>(*this);
     }
 
@@ -272,8 +234,8 @@ namespace FTensor
     operator()(const Index<i, Dim> index1, const Index<j, Dim> index2,
                const Number<N> n1) const
     {
-      typedef const Dg_number_2<const Dg<T *, Tensor_Dim01, Tensor_Dim2>, T, N>
-        TensorExpr;
+      using TensorExpr
+        = Dg_number_2<const Dg<T *, Tensor_Dim01, Tensor_Dim2>, T, N>;
       return Tensor2_symmetric_Expr<TensorExpr, T, Dim, i, j>(
         TensorExpr(*this));
     }
@@ -291,8 +253,8 @@ namespace FTensor
     operator()(const Index<i, Dim> index, const Number<N1> n1,
                const Number<N2> n2)
     {
-      typedef Dg_number_rhs_12<Dg<T *, Tensor_Dim01, Tensor_Dim2>, T, N1, N2>
-        TensorExpr;
+      using TensorExpr
+        = Dg_number_rhs_12<Dg<T *, Tensor_Dim01, Tensor_Dim2>, T, N1, N2>;
       return Tensor1_Expr<TensorExpr, T, Dim, i>(*this);
     }
 
@@ -303,9 +265,8 @@ namespace FTensor
     operator()(const Index<i, Dim> index, const Number<N1> n1,
                const Number<N2> n2) const
     {
-      typedef const Dg_number_12<const Dg<T *, Tensor_Dim01, Tensor_Dim2>, T,
-                                 N1, N2>
-        TensorExpr;
+      using TensorExpr
+        = Dg_number_12<const Dg<T *, Tensor_Dim01, Tensor_Dim2>, T, N1, N2>;
       return Tensor1_Expr<TensorExpr, T, Dim, i>(TensorExpr(*this));
     }
 
@@ -319,8 +280,8 @@ namespace FTensor
     operator()(const Number<N1> n1, const Index<i, Dim> index,
                const Number<N2> n2)
     {
-      typedef Dg_number_rhs_12<Dg<T *, Tensor_Dim01, Tensor_Dim2>, T, N1, N2>
-        TensorExpr;
+      using TensorExpr
+        = Dg_number_rhs_12<Dg<T *, Tensor_Dim01, Tensor_Dim2>, T, N1, N2>;
       return Tensor1_Expr<TensorExpr, T, Dim, i>(*this);
     }
 
@@ -331,9 +292,8 @@ namespace FTensor
     operator()(const Number<N1> n1, const Index<i, Dim> index,
                const Number<N2> n2) const
     {
-      typedef const Dg_number_12<const Dg<T *, Tensor_Dim01, Tensor_Dim2>, T,
-                                 N1, N2>
-        TensorExpr;
+      using TensorExpr
+        = Dg_number_12<const Dg<T *, Tensor_Dim01, Tensor_Dim2>, T, N1, N2>;
       return Tensor1_Expr<TensorExpr, T, Dim, i>(TensorExpr(*this));
     }
 
@@ -345,8 +305,8 @@ namespace FTensor
     operator()(const Number<N1> n1, const Number<N2> n2,
                const Index<i, Dim> index)
     {
-      typedef Dg_number_rhs_01<Dg<T *, Tensor_Dim01, Tensor_Dim2>, T, N1, N2>
-        TensorExpr;
+      using TensorExpr
+        = Dg_number_rhs_01<Dg<T *, Tensor_Dim01, Tensor_Dim2>, T, N1, N2>;
       return Tensor1_Expr<TensorExpr, T, Dim, i>(*this);
     }
 
@@ -357,9 +317,8 @@ namespace FTensor
     operator()(const Number<N1> n1, const Number<N2> n2,
                const Index<i, Dim> index) const
     {
-      typedef const Dg_number_01<const Dg<T *, Tensor_Dim01, Tensor_Dim2>, T,
-                                 N1, N2>
-        TensorExpr;
+      using TensorExpr
+        = Dg_number_01<const Dg<T *, Tensor_Dim01, Tensor_Dim2>, T, N1, N2>;
       return Tensor1_Expr<TensorExpr, T, Dim, i>(TensorExpr(*this));
     }
 
@@ -377,8 +336,8 @@ namespace FTensor
     operator()(const int N, const Index<i, Dim1> index1,
                const Index<j, Dim2> index2) const
     {
-      typedef const Dg_numeral_0<const Dg<T *, Tensor_Dim01, Tensor_Dim2>, T>
-        TensorExpr;
+      using TensorExpr
+        = Dg_numeral_0<const Dg<T *, Tensor_Dim01, Tensor_Dim2>, T>;
       return Tensor2_Expr<TensorExpr, T, Dim1, Dim2, i, j>(
         TensorExpr(*this, N));
     }
@@ -392,8 +351,8 @@ namespace FTensor
     operator()(const Index<i, Dim0> index1, const int N,
                const Index<j, Dim2> index2) const
     {
-      typedef const Dg_numeral_0<const Dg<T *, Tensor_Dim01, Tensor_Dim2>, T>
-        TensorExpr;
+      using TensorExpr
+        = Dg_numeral_0<const Dg<T *, Tensor_Dim01, Tensor_Dim2>, T>;
       return Tensor2_Expr<TensorExpr, T, Dim0, Dim2, i, j>(
         TensorExpr(*this, N));
     }
@@ -407,8 +366,8 @@ namespace FTensor
     operator()(const Index<i, Dim> index1, const Index<j, Dim> index2,
                const int N) const
     {
-      typedef const Dg_numeral_2<const Dg<T *, Tensor_Dim01, Tensor_Dim2>, T>
-        TensorExpr;
+      using TensorExpr
+        = Dg_numeral_2<const Dg<T *, Tensor_Dim01, Tensor_Dim2>, T>;
       return Tensor2_symmetric_Expr<TensorExpr, T, Dim, i, j>(
         TensorExpr(*this, N));
     }
@@ -424,8 +383,8 @@ namespace FTensor
       i>
     operator()(const Index<i, Dim> index, const int N1, const int N2) const
     {
-      typedef const Dg_numeral_12<const Dg<T *, Tensor_Dim01, Tensor_Dim2>, T>
-        TensorExpr;
+      using TensorExpr
+        = Dg_numeral_12<const Dg<T *, Tensor_Dim01, Tensor_Dim2>, T>;
       return Tensor1_Expr<TensorExpr, T, Dim, i>(TensorExpr(*this, N1, N2));
     }
 
@@ -439,8 +398,8 @@ namespace FTensor
       i>
     operator()(const int N1, const Index<i, Dim> index, const int N2) const
     {
-      typedef const Dg_numeral_12<const Dg<T *, Tensor_Dim01, Tensor_Dim2>, T>
-        TensorExpr;
+      using TensorExpr
+        = Dg_numeral_12<const Dg<T *, Tensor_Dim01, Tensor_Dim2>, T>;
       return Tensor1_Expr<TensorExpr, T, Dim, i>(TensorExpr(*this, N1, N2));
     }
 
@@ -452,8 +411,8 @@ namespace FTensor
       i>
     operator()(const int N1, const int N2, const Index<i, Dim> index) const
     {
-      typedef const Dg_numeral_01<const Dg<T *, Tensor_Dim01, Tensor_Dim2>, T>
-        TensorExpr;
+      using TensorExpr
+        = Dg_numeral_01<const Dg<T *, Tensor_Dim01, Tensor_Dim2>, T>;
       return Tensor1_Expr<TensorExpr, T, Dim, i>(TensorExpr(*this, N1, N2));
     }
 

@@ -38,13 +38,13 @@ namespace FTensor
      symmetric on the last two indices to the first two indices. */
 
   template <class T, int Dim0, int Dim12, char i, char j, char k>
-  inline const Dg_Expr<const ddTensor1<T, Dim0, Dim12, i, j, k>,
-                       typename promote<T, double>::V, Dim0, Dim12, i, j, k>
+  const Dg_Expr<const ddTensor1<T, Dim0, Dim12, i, j, k>,
+                typename promote<T, double>::V, Dim0, Dim12, i, j, k>
   dd(const Tensor1<T *, Dim0> &a, const Index<k, Dim0> index0,
      const Index<i, Dim12> index1, const Index<j, Dim12> index2,
      const Tensor1<int, Dim12> &d_ijk, const Tensor1<double, Dim12> &d_xyz)
   {
-    typedef const ddTensor1<T, Dim0, Dim12, i, j, k> TensorExpr;
+    using TensorExpr = ddTensor1<T, Dim0, Dim12, i, j, k>;
     return Dg_Expr<TensorExpr, typename promote<T, double>::V, Dim0, Dim12, i,
                    j, k>(TensorExpr(a, d_ijk, d_xyz));
   }

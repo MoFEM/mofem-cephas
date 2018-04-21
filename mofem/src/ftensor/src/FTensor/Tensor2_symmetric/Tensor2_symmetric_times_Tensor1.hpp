@@ -11,8 +11,8 @@ namespace FTensor
   template <class A, class B, class T, class U, int Dim, char i, char j>
   class Tensor2_symmetric_times_Tensor1_1
   {
-    const Tensor2_symmetric_Expr<A, T, Dim, i, j> iterA;
-    const Tensor1_Expr<B, U, Dim, j> iterB;
+    Tensor2_symmetric_Expr<A, T, Dim, i, j> iterA;
+    Tensor1_Expr<B, U, Dim, j> iterB;
 
     template <int Current_Dim>
     typename promote<T, U>::V
@@ -39,14 +39,13 @@ namespace FTensor
   };
 
   template <class A, class B, class T, class U, int Dim, char i, char j>
-  inline const Tensor1_Expr<
-    const Tensor2_symmetric_times_Tensor1_1<A, B, T, U, Dim, i, j>,
-    typename promote<T, U>::V, Dim, i>
+  Tensor1_Expr<Tensor2_symmetric_times_Tensor1_1<A, B, T, U, Dim, i, j>,
+               typename promote<T, U>::V, Dim, i>
   operator*(const Tensor2_symmetric_Expr<A, T, Dim, i, j> &a,
             const Tensor1_Expr<B, U, Dim, j> &b)
   {
-    typedef const Tensor2_symmetric_times_Tensor1_1<A, B, T, U, Dim, i, j>
-      TensorExpr;
+    using TensorExpr
+      = Tensor2_symmetric_times_Tensor1_1<A, B, T, U, Dim, i, j>;
     return Tensor1_Expr<TensorExpr, typename promote<T, U>::V, Dim, i>(
       TensorExpr(a, b));
   }
@@ -56,8 +55,8 @@ namespace FTensor
   template <class A, class B, class T, class U, int Dim, char i, char j>
   class Tensor2_symmetric_times_Tensor1_0
   {
-    const Tensor2_symmetric_Expr<A, T, Dim, j, i> iterA;
-    const Tensor1_Expr<B, U, Dim, j> iterB;
+    Tensor2_symmetric_Expr<A, T, Dim, j, i> iterA;
+    Tensor1_Expr<B, U, Dim, j> iterB;
 
     template <int Current_Dim>
     typename promote<T, U>::V
@@ -84,14 +83,13 @@ namespace FTensor
   };
 
   template <class A, class B, class T, class U, int Dim, char i, char j>
-  inline const Tensor1_Expr<
-    const Tensor2_symmetric_times_Tensor1_0<A, B, T, U, Dim, i, j>,
-    typename promote<T, U>::V, Dim, i>
+  Tensor1_Expr<Tensor2_symmetric_times_Tensor1_0<A, B, T, U, Dim, i, j>,
+               typename promote<T, U>::V, Dim, i>
   operator*(const Tensor2_symmetric_Expr<A, T, Dim, j, i> &a,
             const Tensor1_Expr<B, U, Dim, j> &b)
   {
-    typedef const Tensor2_symmetric_times_Tensor1_0<A, B, T, U, Dim, i, j>
-      TensorExpr;
+    using TensorExpr
+      = Tensor2_symmetric_times_Tensor1_0<A, B, T, U, Dim, i, j>;
     return Tensor1_Expr<TensorExpr, typename promote<T, U>::V, Dim, i>(
       TensorExpr(a, b));
   }
@@ -99,14 +97,13 @@ namespace FTensor
   /* B(j)*A(i,j) -> Tensor1 */
 
   template <class A, class B, class T, class U, int Dim, char i, char j>
-  inline const Tensor1_Expr<
-    const Tensor2_symmetric_times_Tensor1_1<A, B, T, U, Dim, i, j>,
-    typename promote<T, U>::V, Dim, i>
+  Tensor1_Expr<Tensor2_symmetric_times_Tensor1_1<A, B, T, U, Dim, i, j>,
+               typename promote<T, U>::V, Dim, i>
   operator*(const Tensor1_Expr<B, U, Dim, j> &b,
             const Tensor2_symmetric_Expr<A, T, Dim, i, j> &a)
   {
-    typedef const Tensor2_symmetric_times_Tensor1_1<A, B, T, U, Dim, i, j>
-      TensorExpr;
+    using TensorExpr
+      = Tensor2_symmetric_times_Tensor1_1<A, B, T, U, Dim, i, j>;
     return Tensor1_Expr<TensorExpr, typename promote<T, U>::V, Dim, i>(
       TensorExpr(a, b));
   }
@@ -114,14 +111,13 @@ namespace FTensor
   /* B(j)*A(j,i) -> Tensor1 */
 
   template <class A, class B, class T, class U, int Dim, char i, char j>
-  inline const Tensor1_Expr<
-    const Tensor2_symmetric_times_Tensor1_0<A, B, T, U, Dim, i, j>,
-    typename promote<T, U>::V, Dim, i>
+  Tensor1_Expr<Tensor2_symmetric_times_Tensor1_0<A, B, T, U, Dim, i, j>,
+               typename promote<T, U>::V, Dim, i>
   operator*(const Tensor1_Expr<B, U, Dim, j> &b,
             const Tensor2_symmetric_Expr<A, T, Dim, j, i> &a)
   {
-    typedef const Tensor2_symmetric_times_Tensor1_0<A, B, T, U, Dim, i, j>
-      TensorExpr;
+    using TensorExpr
+      = Tensor2_symmetric_times_Tensor1_0<A, B, T, U, Dim, i, j>;
     return Tensor1_Expr<TensorExpr, typename promote<T, U>::V, Dim, i>(
       TensorExpr(a, b));
   }
@@ -132,8 +128,8 @@ namespace FTensor
             char j, char k>
   class Tensor2_symmetric_times_Tensor1
   {
-    const Tensor2_symmetric_Expr<A, T, Dim, i, j> iterA;
-    const Tensor1_Expr<B, U, Dim2, k> iterB;
+    Tensor2_symmetric_Expr<A, T, Dim, i, j> iterA;
+    Tensor1_Expr<B, U, Dim2, k> iterB;
 
   public:
     Tensor2_symmetric_times_Tensor1(
@@ -150,15 +146,13 @@ namespace FTensor
 
   template <class A, class B, class T, class U, int Dim, int Dim2, char i,
             char j, char k>
-  inline const Dg_Expr<
-    const Tensor2_symmetric_times_Tensor1<A, B, T, U, Dim, Dim2, i, j, k>,
-    typename promote<T, U>::V, Dim, Dim2, i, j, k>
+  Dg_Expr<Tensor2_symmetric_times_Tensor1<A, B, T, U, Dim, Dim2, i, j, k>,
+          typename promote<T, U>::V, Dim, Dim2, i, j, k>
   operator*(const Tensor2_symmetric_Expr<A, T, Dim, i, j> &a,
             const Tensor1_Expr<B, U, Dim2, k> &b)
   {
-    typedef const Tensor2_symmetric_times_Tensor1<A, B, T, U, Dim, Dim2, i, j,
-                                                  k>
-      TensorExpr;
+    using TensorExpr
+      = Tensor2_symmetric_times_Tensor1<A, B, T, U, Dim, Dim2, i, j, k>;
     return Dg_Expr<TensorExpr, typename promote<T, U>::V, Dim, Dim2, i, j, k>(
       TensorExpr(a, b));
   }
@@ -167,15 +161,13 @@ namespace FTensor
 
   template <class A, class B, class T, class U, int Dim, int Dim2, char i,
             char j, char k>
-  inline const Dg_Expr<
-    const Tensor2_symmetric_times_Tensor1<A, B, T, U, Dim, Dim2, i, j, k>,
-    typename promote<T, U>::V, Dim, Dim2, i, j, k>
+  Dg_Expr<Tensor2_symmetric_times_Tensor1<A, B, T, U, Dim, Dim2, i, j, k>,
+          typename promote<T, U>::V, Dim, Dim2, i, j, k>
   operator*(const Tensor1_Expr<B, U, Dim2, k> &b,
             const Tensor2_symmetric_Expr<A, T, Dim, i, j> &a)
   {
-    typedef const Tensor2_symmetric_times_Tensor1<A, B, T, U, Dim, Dim2, i, j,
-                                                  k>
-      TensorExpr;
+    using TensorExpr
+      = Tensor2_symmetric_times_Tensor1<A, B, T, U, Dim, Dim2, i, j, k>;
     return Dg_Expr<TensorExpr, typename promote<T, U>::V, Dim, Dim2, i, j, k>(
       TensorExpr(a, b));
   }

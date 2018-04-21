@@ -4,23 +4,23 @@
 
 #pragma once
 
-#include "Tensor1_plus_Tensor1.hpp"
-#include "Tensor1_minus_Tensor1.hpp"
-#include "Tensor1_times_Tensor1.hpp"
-#include "Tensor1_or_Tensor1.hpp"
-#include "Tensor1_carat_Tensor1.hpp"
 #include "Tensor1_and_Tensor1.hpp"
-#include "Tensor1_plus_generic.hpp"
-#include "Tensor1_minus_generic.hpp"
-#include "Tensor1_times_generic.hpp"
+#include "Tensor1_carat_Tensor1.hpp"
 #include "Tensor1_divide_generic.hpp"
-#include "generic_minus_Tensor1.hpp"
-#include "minus_Tensor1.hpp"
+#include "Tensor1_minus_Tensor1.hpp"
+#include "Tensor1_minus_generic.hpp"
+#include "Tensor1_or_Tensor1.hpp"
+#include "Tensor1_plus_Tensor1.hpp"
+#include "Tensor1_plus_generic.hpp"
+#include "Tensor1_times_Tensor1.hpp"
+#include "Tensor1_times_generic.hpp"
 #include "dTensor1.hpp"
-#include "ddTensor1.hpp"
 #include "d_one_sided_Tensor1.hpp"
+#include "ddTensor1.hpp"
 #include "diffusion_Tensor1.hpp"
+#include "generic_minus_Tensor1.hpp"
 #include "interpolate_Tensor1.hpp"
+#include "minus_Tensor1.hpp"
 
 namespace FTensor
 {
@@ -29,7 +29,7 @@ namespace FTensor
     A iter;
 
   public:
-    Tensor1_Expr(A &a) : iter(a) {}
+    Tensor1_Expr(const A &a) : iter(a) {}
     T operator()(const int N) const { return iter(N); }
   };
 
@@ -49,18 +49,18 @@ namespace FTensor
        own and not use the template code. */
 
     template <class B, class U>
-    inline const Tensor1_Expr<Tensor1<A, Tensor_Dim>, T, Dim, i> &
+    const Tensor1_Expr<Tensor1<A, Tensor_Dim>, T, Dim, i> &
     operator=(const Tensor1_Expr<B, U, Dim, i> &result);
 
     const Tensor1_Expr<Tensor1<A, Tensor_Dim>, T, Dim, i> &
     operator=(const Tensor1_Expr<Tensor1<A, Tensor_Dim>, T, Dim, i> &result);
 
     template <class B, class U>
-    inline const Tensor1_Expr<Tensor1<A, Tensor_Dim>, T, Dim, i> &
+    const Tensor1_Expr<Tensor1<A, Tensor_Dim>, T, Dim, i> &
     operator+=(const Tensor1_Expr<B, U, Dim, i> &result);
 
     template <class B, class U>
-    inline const Tensor1_Expr<Tensor1<A, Tensor_Dim>, T, Dim, i> &
+    const Tensor1_Expr<Tensor1<A, Tensor_Dim>, T, Dim, i> &
     operator-=(const Tensor1_Expr<B, U, Dim, i> &result);
 
     /* General template assignment operators intended mostly for
@@ -69,20 +69,21 @@ namespace FTensor
        etc.)  */
 
     template <class B>
-    inline const Tensor1_Expr<Tensor1<A, Tensor_Dim>, T, Dim, i> &
+    const Tensor1_Expr<Tensor1<A, Tensor_Dim>, T, Dim, i> &
     operator=(const B &d);
     template <class B>
-    inline const Tensor1_Expr<Tensor1<A, Tensor_Dim>, T, Dim, i> &
+    const Tensor1_Expr<Tensor1<A, Tensor_Dim>, T, Dim, i> &
     operator+=(const B &d);
     template <class B>
-    inline const Tensor1_Expr<Tensor1<A, Tensor_Dim>, T, Dim, i> &
+    const Tensor1_Expr<Tensor1<A, Tensor_Dim>, T, Dim, i> &
     operator-=(const B &d);
     template <class B>
-    inline const Tensor1_Expr<Tensor1<A, Tensor_Dim>, T, Dim, i> &
+    const Tensor1_Expr<Tensor1<A, Tensor_Dim>, T, Dim, i> &
     operator*=(const B &d);
     template <class B>
-    inline const Tensor1_Expr<Tensor1<A, Tensor_Dim>, T, Dim, i> &
+    const Tensor1_Expr<Tensor1<A, Tensor_Dim>, T, Dim, i> &
     operator/=(const B &d);
+
 
     /** Assignments operators for ADOL-C
      */
@@ -149,23 +150,23 @@ namespace FTensor
       const Tensor1_Expr<Tensor2_number_rhs_0<A, T, N>, T, Dim1, i> &result);
 
     template <class B>
-    inline const Tensor1_Expr<Tensor2_number_rhs_0<A, T, N>, T, Dim1, i> &
+    const Tensor1_Expr<Tensor2_number_rhs_0<A, T, N>, T, Dim1, i> &
     operator=(const B &result);
 
     template <class B>
-    inline const Tensor1_Expr<Tensor2_number_rhs_0<A, T, N>, T, Dim1, i> &
+    const Tensor1_Expr<Tensor2_number_rhs_0<A, T, N>, T, Dim1, i> &
     operator+=(const B &result);
 
     template <class B>
-    inline const Tensor1_Expr<Tensor2_number_rhs_0<A, T, N>, T, Dim1, i> &
+    const Tensor1_Expr<Tensor2_number_rhs_0<A, T, N>, T, Dim1, i> &
     operator-=(const B &result);
 
     template <class B>
-    inline const Tensor1_Expr<Tensor2_number_rhs_0<A, T, N>, T, Dim1, i> &
+    const Tensor1_Expr<Tensor2_number_rhs_0<A, T, N>, T, Dim1, i> &
     operator*=(const B &result);
 
     template <class B>
-    inline const Tensor1_Expr<Tensor2_number_rhs_0<A, T, N>, T, Dim1, i> &
+    const Tensor1_Expr<Tensor2_number_rhs_0<A, T, N>, T, Dim1, i> &
     operator/=(const B &result);
   };
 
@@ -208,23 +209,23 @@ namespace FTensor
       const Tensor1_Expr<Tensor2_number_rhs_1<A, T, N>, T, Dim1, i> &result);
 
     template <class B>
-    inline const Tensor1_Expr<Tensor2_number_rhs_1<A, T, N>, T, Dim1, i> &
+    const Tensor1_Expr<Tensor2_number_rhs_1<A, T, N>, T, Dim1, i> &
     operator=(const B &result);
 
     template <class B>
-    inline const Tensor1_Expr<Tensor2_number_rhs_1<A, T, N>, T, Dim1, i> &
+    const Tensor1_Expr<Tensor2_number_rhs_1<A, T, N>, T, Dim1, i> &
     operator+=(const B &result);
 
     template <class B>
-    inline const Tensor1_Expr<Tensor2_number_rhs_1<A, T, N>, T, Dim1, i> &
+    const Tensor1_Expr<Tensor2_number_rhs_1<A, T, N>, T, Dim1, i> &
     operator-=(const B &result);
 
     template <class B>
-    inline const Tensor1_Expr<Tensor2_number_rhs_1<A, T, N>, T, Dim1, i> &
+    const Tensor1_Expr<Tensor2_number_rhs_1<A, T, N>, T, Dim1, i> &
     operator*=(const B &result);
 
     template <class B>
-    inline const Tensor1_Expr<Tensor2_number_rhs_1<A, T, N>, T, Dim1, i> &
+    const Tensor1_Expr<Tensor2_number_rhs_1<A, T, N>, T, Dim1, i> &
     operator/=(const B &result);
   };
 

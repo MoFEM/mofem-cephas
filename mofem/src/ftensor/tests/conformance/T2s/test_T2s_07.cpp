@@ -1,17 +1,12 @@
-#include <iostream>
 #include "../../../src/FTensor.hpp"
 #include "../test_for_zero.hpp"
+#include <iostream>
 using namespace FTensor;
 using namespace std;
 
 void test_T2s_07(Tensor1<double, 3> &t1_1, Tensor2_symmetric<double, 3> &t2s_1)
 {
   Index<'i', 3> i;
-  Index<'j', 3> j;
-  Index<'k', 3> k;
-  Index<'l', 3> l;
-  Index<'m', 3> m;
-  Index<'n', 3> n;
 
   Number<0> N0;
   Number<1> N1;

@@ -6,8 +6,8 @@
 
 #pragma once
 
-#include "Tensor3_antisymmetric_plus_Tensor3_antisymmetric.hpp"
 #include "Tensor3_antisymmetric_or_Tensor3_antisymmetric.hpp"
+#include "Tensor3_antisymmetric_plus_Tensor3_antisymmetric.hpp"
 #include "Tensor3_antisymmetric_times_Tensor3.hpp"
 //  #include "Tensor3_antisymmetric_mod_Tensor1.hpp"
 #include "Tensor3_antisymmetric_times_generic.hpp"
@@ -20,7 +20,7 @@ namespace FTensor
     A iter;
 
   public:
-    Tensor3_antisymmetric_Expr(A &a) : iter(a) {}
+    Tensor3_antisymmetric_Expr(const A &a) : iter(a) {}
     T operator()(const int N1, const int N2, const int N3) const
     {
       return iter(N1, N2, N3);
@@ -47,13 +47,13 @@ namespace FTensor
        own and not use the template code. */
 
     template <class B, class U>
-    const Tensor3_antisymmetric_Expr<Tensor3_antisymmetric<A, Dim0, Dim12>, T,
-                                     Dim0, Dim12, i, j, k> &
+    Tensor3_antisymmetric_Expr<Tensor3_antisymmetric<A, Dim0, Dim12>, T, Dim0,
+                               Dim12, i, j, k> &
     operator=(
       const Tensor3_antisymmetric_Expr<B, U, Dim0, Dim12, i, j, k> &result);
 
-    const Tensor3_antisymmetric_Expr<Tensor3_antisymmetric<A, Dim0, Dim12>, T,
-                                     Dim0, Dim12, i, j, k> &
+    Tensor3_antisymmetric_Expr<Tensor3_antisymmetric<A, Dim0, Dim12>, T, Dim0,
+                               Dim12, i, j, k> &
     operator=(
       const Tensor3_antisymmetric_Expr<Tensor3_antisymmetric<A, Dim0, Dim12>,
                                        T, Dim0, Dim12, i, j, k> &result);
@@ -61,8 +61,8 @@ namespace FTensor
     /* This is for when the indices are switched (i,j,k) -> (i,k,j). */
 
     template <class B, class U>
-    const Tensor3_antisymmetric_Expr<Tensor3_antisymmetric<A, Dim0, Dim12>, T,
-                                     Dim0, Dim12, i, j, k> &
+    Tensor3_antisymmetric_Expr<Tensor3_antisymmetric<A, Dim0, Dim12>, T, Dim0,
+                               Dim12, i, j, k> &
     operator=(
       const Tensor3_antisymmetric_Expr<B, U, Dim0, Dim12, i, k, j> &result);
   };

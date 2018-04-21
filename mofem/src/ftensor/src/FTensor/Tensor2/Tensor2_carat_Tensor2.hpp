@@ -5,15 +5,21 @@
    between these.  Thus, A(i,j)^B(j,k) has 10 appended to the name
    because I count from 0. */
 
-/* A(i,j)^B(j,k) */
-
 #pragma once
 
 namespace FTensor
 {
+  /* Base Template */
+  template <class A, class B, class T, class U, int Dim0_0, int Dim1_0,
+            int Dim0_1, int Dim1_1, char i0, char j0, char i1, char j1>
+  class Tensor2_carat_Tensor2
+  {};
+
+  /* A(i,j)^B(j,k) */
+
   template <class A, class B, class T, class U, int Dim, int Dim1, char i,
             char j, char k>
-  class Tensor2_carat_Tensor2_10
+  class Tensor2_carat_Tensor2<A, B, T, U, Dim, Dim1, Dim1, Dim, i, j, j, k>
   {
     const Tensor2_Expr<A, T, Dim, Dim1, i, j> iterA;
     const Tensor2_Expr<B, U, Dim1, Dim, j, k> iterB;
@@ -32,8 +38,8 @@ namespace FTensor
     }
 
   public:
-    Tensor2_carat_Tensor2_10(const Tensor2_Expr<A, T, Dim, Dim1, i, j> &a,
-                             const Tensor2_Expr<B, U, Dim1, Dim, j, k> &b)
+    Tensor2_carat_Tensor2(const Tensor2_Expr<A, T, Dim, Dim1, i, j> &a,
+                          const Tensor2_Expr<B, U, Dim1, Dim, j, k> &b)
         : iterA(a), iterB(b)
     {}
     typename promote<T, U>::V operator()(const int N1, const int N2) const
@@ -42,25 +48,11 @@ namespace FTensor
     }
   };
 
-  template <class A, class B, class T, class U, int Dim, int Dim1, char i,
-            char j, char k>
-  inline const Tensor2_symmetric_Expr<
-    const Tensor2_carat_Tensor2_10<A, B, T, U, Dim, Dim1, i, j, k>,
-    typename promote<T, U>::V, Dim, i, k>
-  operator^(const Tensor2_Expr<A, T, Dim, Dim1, i, j> &a,
-            const Tensor2_Expr<B, U, Dim1, Dim, j, k> &b)
-  {
-    typedef const Tensor2_carat_Tensor2_10<A, B, T, U, Dim, Dim1, i, j, k>
-      TensorExpr;
-    return Tensor2_symmetric_Expr<TensorExpr, typename promote<T, U>::V, Dim,
-                                  i, k>(TensorExpr(a, b));
-  }
-
   /* A(i,j)^B(k,j) */
 
   template <class A, class B, class T, class U, int Dim, int Dim1, char i,
             char j, char k>
-  class Tensor2_carat_Tensor2_11
+  class Tensor2_carat_Tensor2<A, B, T, U, Dim, Dim1, Dim, Dim1, i, j, k, j>
   {
     const Tensor2_Expr<A, T, Dim, Dim1, i, j> iterA;
     const Tensor2_Expr<B, U, Dim, Dim1, k, j> iterB;
@@ -79,8 +71,8 @@ namespace FTensor
     }
 
   public:
-    Tensor2_carat_Tensor2_11(const Tensor2_Expr<A, T, Dim, Dim1, i, j> &a,
-                             const Tensor2_Expr<B, U, Dim, Dim1, k, j> &b)
+    Tensor2_carat_Tensor2(const Tensor2_Expr<A, T, Dim, Dim1, i, j> &a,
+                          const Tensor2_Expr<B, U, Dim, Dim1, k, j> &b)
         : iterA(a), iterB(b)
     {}
     typename promote<T, U>::V operator()(const int N1, const int N2) const
@@ -89,25 +81,11 @@ namespace FTensor
     }
   };
 
-  template <class A, class B, class T, class U, int Dim, int Dim1, char i,
-            char j, char k>
-  inline const Tensor2_symmetric_Expr<
-    const Tensor2_carat_Tensor2_11<A, B, T, U, Dim, Dim1, i, j, k>,
-    typename promote<T, U>::V, Dim, i, k>
-  operator^(const Tensor2_Expr<A, T, Dim, Dim1, i, j> &a,
-            const Tensor2_Expr<B, U, Dim, Dim1, k, j> &b)
-  {
-    typedef const Tensor2_carat_Tensor2_11<A, B, T, U, Dim, Dim1, i, j, k>
-      TensorExpr;
-    return Tensor2_symmetric_Expr<TensorExpr, typename promote<T, U>::V, Dim,
-                                  i, k>(TensorExpr(a, b));
-  }
-
   /* A(j,i)^B(j,k) */
 
   template <class A, class B, class T, class U, int Dim, int Dim1, char i,
             char j, char k>
-  class Tensor2_carat_Tensor2_00
+  class Tensor2_carat_Tensor2<A, B, T, U, Dim1, Dim, Dim1, Dim, j, i, j, k>
   {
     const Tensor2_Expr<A, T, Dim1, Dim, j, i> iterA;
     const Tensor2_Expr<B, U, Dim1, Dim, j, k> iterB;
@@ -126,8 +104,8 @@ namespace FTensor
     }
 
   public:
-    Tensor2_carat_Tensor2_00(const Tensor2_Expr<A, T, Dim1, Dim, j, i> &a,
-                             const Tensor2_Expr<B, U, Dim1, Dim, j, k> &b)
+    Tensor2_carat_Tensor2(const Tensor2_Expr<A, T, Dim1, Dim, j, i> &a,
+                          const Tensor2_Expr<B, U, Dim1, Dim, j, k> &b)
         : iterA(a), iterB(b)
     {}
     typename promote<T, U>::V operator()(const int N1, const int N2) const
@@ -136,25 +114,11 @@ namespace FTensor
     }
   };
 
-  template <class A, class B, class T, class U, int Dim, int Dim1, char i,
-            char j, char k>
-  inline const Tensor2_symmetric_Expr<
-    const Tensor2_carat_Tensor2_00<A, B, T, U, Dim, Dim1, i, j, k>,
-    typename promote<T, U>::V, Dim, i, k>
-  operator^(const Tensor2_Expr<A, T, Dim1, Dim, j, i> &a,
-            const Tensor2_Expr<B, U, Dim1, Dim, j, k> &b)
-  {
-    typedef const Tensor2_carat_Tensor2_00<A, B, T, U, Dim, Dim1, i, j, k>
-      TensorExpr;
-    return Tensor2_symmetric_Expr<TensorExpr, typename promote<T, U>::V, Dim,
-                                  i, k>(TensorExpr(a, b));
-  }
-
   /* A(j,i)^B(k,j) */
 
   template <class A, class B, class T, class U, int Dim, int Dim1, char i,
             char j, char k>
-  class Tensor2_carat_Tensor2_01
+  class Tensor2_carat_Tensor2<A, B, T, U, Dim1, Dim, Dim, Dim1, j, i, k, j>
   {
     const Tensor2_Expr<A, T, Dim1, Dim, j, i> iterA;
     const Tensor2_Expr<B, U, Dim, Dim1, k, j> iterB;
@@ -173,8 +137,8 @@ namespace FTensor
     }
 
   public:
-    Tensor2_carat_Tensor2_01(const Tensor2_Expr<A, T, Dim1, Dim, j, i> &a,
-                             const Tensor2_Expr<B, U, Dim, Dim1, k, j> &b)
+    Tensor2_carat_Tensor2(const Tensor2_Expr<A, T, Dim1, Dim, j, i> &a,
+                          const Tensor2_Expr<B, U, Dim, Dim1, k, j> &b)
         : iterA(a), iterB(b)
     {}
     typename promote<T, U>::V operator()(const int N1, const int N2) const
@@ -183,18 +147,24 @@ namespace FTensor
     }
   };
 
-  template <class A, class B, class T, class U, int Dim, int Dim1, char i,
-            char j, char k>
-  inline const Tensor2_symmetric_Expr<
-    const Tensor2_carat_Tensor2_01<A, B, T, U, Dim, Dim1, i, j, k>,
-    typename promote<T, U>::V, Dim, i, k>
-  operator^(const Tensor2_Expr<A, T, Dim1, Dim, j, i> &a,
-            const Tensor2_Expr<B, U, Dim, Dim1, k, j> &b)
+  template <class A, class B, class T, class U, int Dim0_0, int Dim1_0,
+            int Dim0_1, int Dim1_1, char i0, char j0, char i1, char j1>
+  auto operator^(const Tensor2_Expr<A, T, Dim0_0, Dim1_0, i0, j0> &a,
+                 const Tensor2_Expr<B, U, Dim0_1, Dim1_1, i1, j1> &b)
   {
-    typedef const Tensor2_carat_Tensor2_01<A, B, T, U, Dim, Dim1, i, j, k>
-      TensorExpr;
+    using TensorExpr = Tensor2_carat_Tensor2<A, B, T, U, Dim0_0, Dim1_0,
+                                             Dim0_1, Dim1_1, i0, j0, i1, j1>;
+    static_assert(
+      !std::is_empty<TensorExpr>::value,
+      "Indexes or Dimensions are not compatible with the ^ operator");
+
+    // Definition of Helper constexpr variables
+    constexpr int Dim = (i0 == i1 || i0 == j1) ? Dim1_0 : Dim0_0;
+    constexpr char i = (i0 == i1 || i0 == j1) ? j0 : i0,
+                   j = (i1 == i0 || i1 == j0) ? j1 : i1;
+
     return Tensor2_symmetric_Expr<TensorExpr, typename promote<T, U>::V, Dim,
-                                  i, k>(TensorExpr(a, b));
+                                  i, j>(TensorExpr(a, b));
   }
 
   /* I don't think that this product actually gives a Ddg. */
@@ -221,13 +191,13 @@ namespace FTensor
 
   //  template<class A, class B, class T, class U, int Dim01, int Dim23,
   //    char i, char j, char k, char l>
-  //  inline const Ddg_Expr<const
+  //  const Ddg_Expr<const
   //  Tensor2_carat_Tensor2_0213<A,B,T,U,Dim01,Dim23,i,j,k,l>,typename
   //  promote<T,U>::V,Dim01,Dim23,i,k,j,l> operator^(const
   //  Tensor2_Expr<A,T,Dim01,Dim23,i,j> &a, 	  const
   //  Tensor2_Expr<B,U,Dim01,Dim23,k,l> &b)
   //  {
-  //    typedef const Tensor2_carat_Tensor2_0213<A,B,T,U,Dim01,Dim23,i,j,k,l>
+  //    typedef Tensor2_carat_Tensor2_0213<A,B,T,U,Dim01,Dim23,i,j,k,l>
   //      TensorExpr;
   //    return Ddg_Expr<TensorExpr,typename promote<T,U>::V,Dim01,Dim23,i,k,j,l>
   //      (TensorExpr(a,b));

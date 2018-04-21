@@ -26,14 +26,14 @@ namespace FTensor
   };
 
   template <class T, int Dim, char i, int axis>
-  inline const Tensor1_Expr<const d_one_sided_Tensor1<T, Dim, i, axis>,
-                            typename promote<T, double>::V, Dim, i>
+  const Tensor1_Expr<const d_one_sided_Tensor1<T, Dim, i, axis>,
+                     typename promote<T, double>::V, Dim, i>
   d_one_sided(const Tensor1<T *, Dim> &a, const Number<axis> n1,
               const Index<i, Dim> index1, const int &di, const int &dj,
               const int &dk, const double &dx, const double &dy,
               const double &dz)
   {
-    typedef const d_one_sided_Tensor1<T, Dim, i, axis> TensorExpr;
+    using TensorExpr = d_one_sided_Tensor1<T, Dim, i, axis>;
     return Tensor1_Expr<TensorExpr, typename promote<T, double>::V, Dim, i>(
       TensorExpr(a, di, dj, dk, dx, dy, dz));
   }

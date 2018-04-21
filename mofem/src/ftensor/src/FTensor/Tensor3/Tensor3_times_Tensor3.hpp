@@ -10,7 +10,7 @@ namespace FTensor
   template <class A, class B, class T, class U, int Dim0, int Dim1, int Dim2,
             char i, char j, char k, int Current_Dim0, int Current_Dim1,
             int Current_Dim2>
-  inline const typename promote<T, U>::V
+  typename promote<T, U>::V
   T3_times_T3_012(const Tensor3_Expr<A, T, Dim0, Dim1, Dim2, i, j, k> &a,
                   const Tensor3_Expr<B, U, Dim0, Dim1, Dim2, i, j, k> &b,
                   const Number<Current_Dim0> &, const Number<Current_Dim1> &,
@@ -25,7 +25,7 @@ namespace FTensor
 
   template <class A, class B, class T, class U, int Dim0, int Dim1, int Dim2,
             char i, char j, char k, int Current_Dim0, int Current_Dim2>
-  inline const typename promote<T, U>::V
+  typename promote<T, U>::V
   T3_times_T3_012(const Tensor3_Expr<A, T, Dim0, Dim1, Dim2, i, j, k> &a,
                   const Tensor3_Expr<B, U, Dim0, Dim1, Dim2, i, j, k> &b,
                   const Number<Current_Dim0> &, const Number<1> &,
@@ -39,7 +39,7 @@ namespace FTensor
 
   template <class A, class B, class T, class U, int Dim0, int Dim1, int Dim2,
             char i, char j, char k, int Current_Dim0>
-  inline const typename promote<T, U>::V
+  typename promote<T, U>::V
   T3_times_T3_012(const Tensor3_Expr<A, T, Dim0, Dim1, Dim2, i, j, k> &a,
                   const Tensor3_Expr<B, U, Dim0, Dim1, Dim2, i, j, k> &b,
                   const Number<Current_Dim0> &, const Number<1> &,
@@ -52,7 +52,7 @@ namespace FTensor
 
   template <class A, class B, class T, class U, int Dim0, int Dim1, int Dim2,
             char i, char j, char k>
-  inline const typename promote<T, U>::V
+  typename promote<T, U>::V
   T3_times_T3_012(const Tensor3_Expr<A, T, Dim0, Dim1, Dim2, i, j, k> &a,
                   const Tensor3_Expr<B, U, Dim0, Dim1, Dim2, i, j, k> &b,
                   const Number<1> &, const Number<1> &, const Number<1> &)
@@ -62,7 +62,7 @@ namespace FTensor
 
   template <class A, class B, class T, class U, int Dim0, int Dim1, int Dim2,
             char i, char j, char k>
-  inline const typename promote<T, U>::V
+  typename promote<T, U>::V
   operator*(const Tensor3_Expr<A, T, Dim0, Dim1, Dim2, i, j, k> &a,
             const Tensor3_Expr<B, U, Dim0, Dim1, Dim2, i, j, k> &b)
   {
@@ -75,7 +75,7 @@ namespace FTensor
   template <class A, class B, class T, class U, int Dim0, int Dim1, int Dim2,
             char i, char j, char k, int Current_Dim0, int Current_Dim1,
             int Current_Dim2>
-  inline const typename promote<T, U>::V
+  typename promote<T, U>::V
   T3_times_T3_201(const Tensor3_Expr<A, T, Dim0, Dim1, Dim2, i, j, k> &a,
                   const Tensor3_Expr<B, U, Dim2, Dim0, Dim1, k, i, j> &b,
                   const Number<Current_Dim0> &, const Number<Current_Dim1> &,
@@ -90,7 +90,7 @@ namespace FTensor
 
   template <class A, class B, class T, class U, int Dim0, int Dim1, int Dim2,
             char i, char j, char k, int Current_Dim0, int Current_Dim2>
-  inline const typename promote<T, U>::V
+  typename promote<T, U>::V
   T3_times_T3_201(const Tensor3_Expr<A, T, Dim0, Dim1, Dim2, i, j, k> &a,
                   const Tensor3_Expr<B, U, Dim2, Dim0, Dim1, k, i, j> &b,
                   const Number<Current_Dim0> &, const Number<1> &,
@@ -104,7 +104,7 @@ namespace FTensor
 
   template <class A, class B, class T, class U, int Dim0, int Dim1, int Dim2,
             char i, char j, char k, int Current_Dim0>
-  inline const typename promote<T, U>::V
+  typename promote<T, U>::V
   T3_times_T3_201(const Tensor3_Expr<A, T, Dim0, Dim1, Dim2, i, j, k> &a,
                   const Tensor3_Expr<B, U, Dim2, Dim0, Dim1, k, i, j> &b,
                   const Number<Current_Dim0> &, const Number<1> &,
@@ -117,7 +117,7 @@ namespace FTensor
 
   template <class A, class B, class T, class U, int Dim0, int Dim1, int Dim2,
             char i, char j, char k>
-  inline const typename promote<T, U>::V
+  typename promote<T, U>::V
   T3_times_T3_201(const Tensor3_Expr<A, T, Dim0, Dim1, Dim2, i, j, k> &a,
                   const Tensor3_Expr<B, U, Dim2, Dim0, Dim1, k, i, j> &b,
                   const Number<1> &, const Number<1> &, const Number<1> &)
@@ -127,7 +127,7 @@ namespace FTensor
 
   template <class A, class B, class T, class U, int Dim0, int Dim1, int Dim2,
             char i, char j, char k>
-  inline const typename promote<T, U>::V
+  typename promote<T, U>::V
   operator*(const Tensor3_Expr<A, T, Dim0, Dim1, Dim2, i, j, k> &a,
             const Tensor3_Expr<B, U, Dim2, Dim0, Dim1, k, i, j> &b)
   {
@@ -140,7 +140,7 @@ namespace FTensor
   template <class A, class B, class T, class U, int Dim0, int Dim1, int Dim2,
             char i, char j, char k, int Current_Dim0, int Current_Dim1,
             int Current_Dim2>
-  inline const typename promote<T, U>::V
+  typename promote<T, U>::V
   T3_times_T3_120(const Tensor3_Expr<A, T, Dim0, Dim1, Dim2, i, j, k> &a,
                   const Tensor3_Expr<B, U, Dim1, Dim2, Dim0, j, k, i> &b,
                   const Number<Current_Dim0> &, const Number<Current_Dim1> &,
@@ -155,7 +155,7 @@ namespace FTensor
 
   template <class A, class B, class T, class U, int Dim0, int Dim1, int Dim2,
             char i, char j, char k, int Current_Dim0, int Current_Dim2>
-  inline const typename promote<T, U>::V
+  typename promote<T, U>::V
   T3_times_T3_120(const Tensor3_Expr<A, T, Dim0, Dim1, Dim2, i, j, k> &a,
                   const Tensor3_Expr<B, U, Dim1, Dim2, Dim0, j, k, i> &b,
                   const Number<Current_Dim0> &, const Number<1> &,
@@ -169,7 +169,7 @@ namespace FTensor
 
   template <class A, class B, class T, class U, int Dim0, int Dim1, int Dim2,
             char i, char j, char k, int Current_Dim0>
-  inline const typename promote<T, U>::V
+  typename promote<T, U>::V
   T3_times_T3_120(const Tensor3_Expr<A, T, Dim0, Dim1, Dim2, i, j, k> &a,
                   const Tensor3_Expr<B, U, Dim1, Dim2, Dim0, j, k, i> &b,
                   const Number<Current_Dim0> &, const Number<1> &,
@@ -182,7 +182,7 @@ namespace FTensor
 
   template <class A, class B, class T, class U, int Dim0, int Dim1, int Dim2,
             char i, char j, char k>
-  inline const typename promote<T, U>::V
+  typename promote<T, U>::V
   T3_times_T3_120(const Tensor3_Expr<A, T, Dim0, Dim1, Dim2, i, j, k> &a,
                   const Tensor3_Expr<B, U, Dim1, Dim2, Dim0, j, k, i> &b,
                   const Number<1> &, const Number<1> &, const Number<1> &)
@@ -192,7 +192,7 @@ namespace FTensor
 
   template <class A, class B, class T, class U, int Dim0, int Dim1, int Dim2,
             char i, char j, char k>
-  inline const typename promote<T, U>::V
+  typename promote<T, U>::V
   operator*(const Tensor3_Expr<A, T, Dim0, Dim1, Dim2, i, j, k> &a,
             const Tensor3_Expr<B, U, Dim1, Dim2, Dim0, j, k, i> &b)
   {
@@ -205,7 +205,7 @@ namespace FTensor
   template <class A, class B, class T, class U, int Dim0, int Dim1, int Dim2,
             char i, char j, char k, int Current_Dim0, int Current_Dim1,
             int Current_Dim2>
-  inline const typename promote<T, U>::V
+  typename promote<T, U>::V
   T3_times_T3_102(const Tensor3_Expr<A, T, Dim0, Dim1, Dim2, i, j, k> &a,
                   const Tensor3_Expr<B, U, Dim1, Dim0, Dim2, j, i, k> &b,
                   const Number<Current_Dim0> &, const Number<Current_Dim1> &,
@@ -220,7 +220,7 @@ namespace FTensor
 
   template <class A, class B, class T, class U, int Dim0, int Dim1, int Dim2,
             char i, char j, char k, int Current_Dim0, int Current_Dim2>
-  inline const typename promote<T, U>::V
+  typename promote<T, U>::V
   T3_times_T3_102(const Tensor3_Expr<A, T, Dim0, Dim1, Dim2, i, j, k> &a,
                   const Tensor3_Expr<B, U, Dim1, Dim0, Dim2, j, i, k> &b,
                   const Number<Current_Dim0> &, const Number<1> &,
@@ -234,7 +234,7 @@ namespace FTensor
 
   template <class A, class B, class T, class U, int Dim0, int Dim1, int Dim2,
             char i, char j, char k, int Current_Dim0>
-  inline const typename promote<T, U>::V
+  typename promote<T, U>::V
   T3_times_T3_102(const Tensor3_Expr<A, T, Dim0, Dim1, Dim2, i, j, k> &a,
                   const Tensor3_Expr<B, U, Dim1, Dim0, Dim2, j, i, k> &b,
                   const Number<Current_Dim0> &, const Number<1> &,
@@ -247,7 +247,7 @@ namespace FTensor
 
   template <class A, class B, class T, class U, int Dim0, int Dim1, int Dim2,
             char i, char j, char k>
-  inline const typename promote<T, U>::V
+  typename promote<T, U>::V
   T3_times_T3_102(const Tensor3_Expr<A, T, Dim0, Dim1, Dim2, i, j, k> &a,
                   const Tensor3_Expr<B, U, Dim1, Dim0, Dim2, j, i, k> &b,
                   const Number<1> &, const Number<1> &, const Number<1> &)
@@ -257,7 +257,7 @@ namespace FTensor
 
   template <class A, class B, class T, class U, int Dim0, int Dim1, int Dim2,
             char i, char j, char k>
-  inline const typename promote<T, U>::V
+  typename promote<T, U>::V
   operator*(const Tensor3_Expr<A, T, Dim0, Dim1, Dim2, i, j, k> &a,
             const Tensor3_Expr<B, U, Dim1, Dim0, Dim2, j, i, k> &b)
   {
@@ -270,7 +270,7 @@ namespace FTensor
   template <class A, class B, class T, class U, int Dim0, int Dim1, int Dim2,
             char i, char j, char k, int Current_Dim0, int Current_Dim1,
             int Current_Dim2>
-  inline const typename promote<T, U>::V
+  typename promote<T, U>::V
   T3_times_T3_210(const Tensor3_Expr<A, T, Dim0, Dim1, Dim2, i, j, k> &a,
                   const Tensor3_Expr<B, U, Dim2, Dim1, Dim0, k, j, i> &b,
                   const Number<Current_Dim0> &, const Number<Current_Dim1> &,
@@ -285,7 +285,7 @@ namespace FTensor
 
   template <class A, class B, class T, class U, int Dim0, int Dim1, int Dim2,
             char i, char j, char k, int Current_Dim0, int Current_Dim2>
-  inline const typename promote<T, U>::V
+  typename promote<T, U>::V
   T3_times_T3_210(const Tensor3_Expr<A, T, Dim0, Dim1, Dim2, i, j, k> &a,
                   const Tensor3_Expr<B, U, Dim2, Dim1, Dim0, k, j, i> &b,
                   const Number<Current_Dim0> &, const Number<1> &,
@@ -299,7 +299,7 @@ namespace FTensor
 
   template <class A, class B, class T, class U, int Dim0, int Dim1, int Dim2,
             char i, char j, char k, int Current_Dim0>
-  inline const typename promote<T, U>::V
+  typename promote<T, U>::V
   T3_times_T3_210(const Tensor3_Expr<A, T, Dim0, Dim1, Dim2, i, j, k> &a,
                   const Tensor3_Expr<B, U, Dim2, Dim1, Dim0, k, j, i> &b,
                   const Number<Current_Dim0> &, const Number<1> &,
@@ -312,7 +312,7 @@ namespace FTensor
 
   template <class A, class B, class T, class U, int Dim0, int Dim1, int Dim2,
             char i, char j, char k>
-  inline const typename promote<T, U>::V
+  typename promote<T, U>::V
   T3_times_T3_210(const Tensor3_Expr<A, T, Dim0, Dim1, Dim2, i, j, k> &a,
                   const Tensor3_Expr<B, U, Dim2, Dim1, Dim0, k, j, i> &b,
                   const Number<1> &, const Number<1> &, const Number<1> &)
@@ -322,7 +322,7 @@ namespace FTensor
 
   template <class A, class B, class T, class U, int Dim0, int Dim1, int Dim2,
             char i, char j, char k>
-  inline const typename promote<T, U>::V
+  typename promote<T, U>::V
   operator*(const Tensor3_Expr<A, T, Dim0, Dim1, Dim2, i, j, k> &a,
             const Tensor3_Expr<B, U, Dim2, Dim1, Dim0, k, j, i> &b)
   {
@@ -335,7 +335,7 @@ namespace FTensor
   template <class A, class B, class T, class U, int Dim0, int Dim1, int Dim2,
             char i, char j, char k, int Current_Dim0, int Current_Dim1,
             int Current_Dim2>
-  inline const typename promote<T, U>::V
+  typename promote<T, U>::V
   T3_times_T3_021(const Tensor3_Expr<A, T, Dim0, Dim1, Dim2, i, j, k> &a,
                   const Tensor3_Expr<B, U, Dim0, Dim2, Dim1, i, k, j> &b,
                   const Number<Current_Dim0> &, const Number<Current_Dim1> &,
@@ -350,7 +350,7 @@ namespace FTensor
 
   template <class A, class B, class T, class U, int Dim0, int Dim1, int Dim2,
             char i, char j, char k, int Current_Dim0, int Current_Dim2>
-  inline const typename promote<T, U>::V
+  typename promote<T, U>::V
   T3_times_T3_021(const Tensor3_Expr<A, T, Dim0, Dim1, Dim2, i, j, k> &a,
                   const Tensor3_Expr<B, U, Dim0, Dim2, Dim1, i, k, j> &b,
                   const Number<Current_Dim0> &, const Number<1> &,
@@ -364,7 +364,7 @@ namespace FTensor
 
   template <class A, class B, class T, class U, int Dim0, int Dim1, int Dim2,
             char i, char j, char k, int Current_Dim0>
-  inline const typename promote<T, U>::V
+  typename promote<T, U>::V
   T3_times_T3_021(const Tensor3_Expr<A, T, Dim0, Dim1, Dim2, i, j, k> &a,
                   const Tensor3_Expr<B, U, Dim0, Dim2, Dim1, i, k, j> &b,
                   const Number<Current_Dim0> &, const Number<1> &,
@@ -377,7 +377,7 @@ namespace FTensor
 
   template <class A, class B, class T, class U, int Dim0, int Dim1, int Dim2,
             char i, char j, char k>
-  inline const typename promote<T, U>::V
+  typename promote<T, U>::V
   T3_times_T3_021(const Tensor3_Expr<A, T, Dim0, Dim1, Dim2, i, j, k> &a,
                   const Tensor3_Expr<B, U, Dim0, Dim2, Dim1, i, k, j> &b,
                   const Number<1> &, const Number<1> &, const Number<1> &)
@@ -387,7 +387,7 @@ namespace FTensor
 
   template <class A, class B, class T, class U, int Dim0, int Dim1, int Dim2,
             char i, char j, char k>
-  inline const typename promote<T, U>::V
+  typename promote<T, U>::V
   operator*(const Tensor3_Expr<A, T, Dim0, Dim1, Dim2, i, j, k> &a,
             const Tensor3_Expr<B, U, Dim0, Dim2, Dim1, i, k, j> &b)
   {
@@ -401,8 +401,8 @@ namespace FTensor
             int Dim4, int Dim5, char i, char j, char k, char l, char m>
   class Tensor3_times_Tensor3_21
   {
-    const Tensor3_Expr<A, T, Dim0, Dim1, Dim23, i, j, k> iterA;
-    const Tensor3_Expr<B, U, Dim23, Dim4, Dim5, k, l, m> iterB;
+    Tensor3_Expr<A, T, Dim0, Dim1, Dim23, i, j, k> iterA;
+    Tensor3_Expr<B, U, Dim23, Dim4, Dim5, k, l, m> iterB;
 
     template <int CurrentDim>
     typename promote<T, U>::V
@@ -433,16 +433,14 @@ namespace FTensor
 
   template <class A, class B, class T, class U, int Dim0, int Dim1, int Dim23,
             int Dim4, int Dim5, char i, char j, char k, char l, char m>
-  inline const Tensor4_Expr<
-    const Tensor3_times_Tensor3_21<A, B, T, U, Dim0, Dim1, Dim23, Dim4, Dim5,
-                                   i, j, k, l, m>,
-    typename promote<T, U>::V, Dim0, Dim1, Dim4, Dim5, i, j, l, m>
+  Tensor4_Expr<Tensor3_times_Tensor3_21<A, B, T, U, Dim0, Dim1, Dim23, Dim4,
+                                        Dim5, i, j, k, l, m>,
+               typename promote<T, U>::V, Dim0, Dim1, Dim4, Dim5, i, j, l, m>
   operator*(const Tensor3_Expr<A, T, Dim0, Dim1, Dim23, i, j, k> &a,
             const Tensor3_Expr<B, U, Dim23, Dim4, Dim5, k, l, m> &b)
   {
-    typedef const Tensor3_times_Tensor3_21<A, B, T, U, Dim0, Dim1, Dim23, Dim4,
-                                           Dim5, i, j, k, l, m>
-      TensorExpr;
+    using TensorExpr = Tensor3_times_Tensor3_21<A, B, T, U, Dim0, Dim1, Dim23,
+                                                Dim4, Dim5, i, j, k, l, m>;
     return Tensor4_Expr<TensorExpr, typename promote<T, U>::V, Dim0, Dim1,
                         Dim4, Dim5, i, j, l, m>(TensorExpr(a, b));
   };

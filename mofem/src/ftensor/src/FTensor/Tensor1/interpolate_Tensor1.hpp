@@ -44,14 +44,14 @@ namespace FTensor
   };
 
   template <class T, int Dim, char i>
-  inline const Tensor1_Expr<const interpolate_Tensor1<T, Dim, i>,
-                            typename promote<T, double>::V, Dim, i>
+  const Tensor1_Expr<const interpolate_Tensor1<T, Dim, i>,
+                     typename promote<T, double>::V, Dim, i>
   interpolate(const Tensor1<T *, Dim> &a, const Index<i, Dim> index1,
               const int &di, const int &dj, const int &dk, const int &i0,
               const int &j0, const int &k0, const double distance[3],
               const double conjugate[3])
   {
-    typedef const interpolate_Tensor1<T, Dim, i> Tensor_Expr;
+    using Tensor_Expr = interpolate_Tensor1<T, Dim, i>;
     return Tensor1_Expr<Tensor_Expr, typename promote<T, double>::V, Dim, i>(
       Tensor_Expr(a, di, dj, dk, i0, j0, k0, distance, conjugate));
   }

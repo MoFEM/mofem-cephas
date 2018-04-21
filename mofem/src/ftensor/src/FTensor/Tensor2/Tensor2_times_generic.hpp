@@ -23,23 +23,21 @@ namespace FTensor
   };
 
   template <class A, class T, class U, int Dim0, int Dim1, char i, char j>
-  inline const Tensor2_Expr<
-    const Tensor2_times_generic<A, T, U, Dim0, Dim1, i, j>,
-    typename promote<T, U>::V, Dim0, Dim1, i, j>
+  Tensor2_Expr<Tensor2_times_generic<A, T, U, Dim0, Dim1, i, j>,
+               typename promote<T, U>::V, Dim0, Dim1, i, j>
   operator*(const Tensor2_Expr<A, T, Dim0, Dim1, i, j> &a, const U &d0)
   {
-    typedef const Tensor2_times_generic<A, T, U, Dim0, Dim1, i, j> TensorExpr;
+    using TensorExpr = Tensor2_times_generic<A, T, U, Dim0, Dim1, i, j>;
     return Tensor2_Expr<TensorExpr, typename promote<T, U>::V, Dim0, Dim1, i,
                         j>(TensorExpr(a, d0));
   }
 
   template <class A, class T, class U, int Dim0, int Dim1, char i, char j>
-  inline const Tensor2_Expr<
-    const Tensor2_times_generic<A, T, U, Dim0, Dim1, i, j>,
-    typename promote<T, U>::V, Dim0, Dim1, i, j>
+  Tensor2_Expr<Tensor2_times_generic<A, T, U, Dim0, Dim1, i, j>,
+               typename promote<T, U>::V, Dim0, Dim1, i, j>
   operator*(const U &d0, const Tensor2_Expr<A, T, Dim0, Dim1, i, j> &a)
   {
-    typedef const Tensor2_times_generic<A, T, U, Dim0, Dim1, i, j> TensorExpr;
+    using TensorExpr = Tensor2_times_generic<A, T, U, Dim0, Dim1, i, j>;
     return Tensor2_Expr<TensorExpr, typename promote<T, U>::V, Dim0, Dim1, i,
                         j>(TensorExpr(a, d0));
   }

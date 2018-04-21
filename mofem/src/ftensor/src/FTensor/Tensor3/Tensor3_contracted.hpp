@@ -9,7 +9,7 @@ namespace FTensor
 
   template <class A, class T, int Dim> class Tensor3_contracted_12
   {
-    const A iterA;
+    A iterA;
 
     template <int Current_Dim>
     T eval(const int N, const Number<Current_Dim> &) const
@@ -28,7 +28,7 @@ namespace FTensor
 
   template <class A, class T, int Dim> class Tensor3_contracted_02
   {
-    const A iterA;
+    A iterA;
 
     template <int Current_Dim>
     T eval(const int N, const Number<Current_Dim> &) const
@@ -47,7 +47,7 @@ namespace FTensor
 
   template <class A, class T, int Dim> class Tensor3_contracted_01
   {
-    const A iterA;
+    A iterA;
 
     template <int Current_Dim>
     T eval(const int N, const Number<Current_Dim> &) const

@@ -15,34 +15,14 @@ namespace FTensor
     T data[(Tensor_Dim * (Tensor_Dim + 1)) / 2];
 
   public:
+    template <class... U> Tensor2_symmetric(U... d) : data{d...}
+    {
+      static_assert(sizeof...(d) == sizeof(data) / sizeof(T),
+                    "Incorrect number of Arguments. Constructor should "
+                    "initialize the entire Tensor");
+    }
+
     Tensor2_symmetric() {}
-
-    /* Tensor_Dim=1 */
-    Tensor2_symmetric(T d00)
-    {
-      Tensor2_symmetric_constructor<T, Tensor_Dim>(data, d00);
-    }
-
-    /* Tensor_Dim=2 */
-    Tensor2_symmetric(T d00, T d01, T d11)
-    {
-      Tensor2_symmetric_constructor<T, Tensor_Dim>(data, d00, d01, d11);
-    }
-
-    /* Tensor_Dim=3 */
-    Tensor2_symmetric(T d00, T d01, T d02, T d11, T d12, T d22)
-    {
-      Tensor2_symmetric_constructor<T, Tensor_Dim>(data, d00, d01, d02, d11,
-                                                   d12, d22);
-    }
-
-    /* Tensor_Dim=4 */
-    Tensor2_symmetric(T d00, T d01, T d02, T d03, T d11, T d12, T d13, T d22,
-                      T d23, T d33)
-    {
-      Tensor2_symmetric_constructor<T, Tensor_Dim>(
-        data, d00, d01, d02, d03, d11, d12, d13, d22, d23, d33);
-    }
 
     /* There are two operator(int,int)'s, one for non-consts that lets you
        change the value, and one for consts that doesn't. */
@@ -55,7 +35,7 @@ namespace FTensor
           std::stringstream s;
           s << "Bad index in Tensor2_symmetric<T," << Tensor_Dim
             << ">.operator(" << N1 << "," << N2 << ")" << std::endl;
-          throw std::runtime_error(s.str());
+          throw std::out_of_range(s.str());
         }
 #endif
       return N1 > N2 ? data[N1 + (N2 * (2 * Tensor_Dim - N2 - 1)) / 2]
@@ -70,7 +50,7 @@ namespace FTensor
           std::stringstream s;
           s << "Bad index in Tensor2_symmetric<T," << Tensor_Dim
             << ">.operator(" << N1 << "," << N2 << ") const" << std::endl;
-          throw std::runtime_error(s.str());
+          throw std::out_of_range(s.str());
         }
 #endif
       return N1 > N2 ? data[N1 + (N2 * (2 * Tensor_Dim - N2 - 1)) / 2]
@@ -79,7 +59,7 @@ namespace FTensor
 
     /* These operator()'s are the first part in constructing template
        expressions.  They can be used to slice off lower dimensional
-       parts. They are not entirely safe, since you can accidently use a
+       parts. They are not entirely safe, since you can accidentaly use a
        higher dimension than what is really allowed (like Dim=5). */
 
     /* This returns a Tensor2_Expr, since the indices are not really
@@ -143,22 +123,20 @@ namespace FTensor
                    T, Dim, i>>::type
     operator()(const Index<i, Dim>, const Number<N> &)
     {
-      typedef Tensor2_number_rhs_1<Tensor2_symmetric<T, Tensor_Dim>, T, N>
-        TensorExpr;
+      using TensorExpr
+        = Tensor2_number_rhs_1<Tensor2_symmetric<T, Tensor_Dim>, T, N>;
       return Tensor1_Expr<TensorExpr, T, Dim, i>(*this);
     }
 
     template <char i, int N, int Dim>
     typename std::enable_if<
       (Tensor_Dim >= Dim && Tensor_Dim > N),
-      Tensor1_Expr<
-        const Tensor2_number_1<const Tensor2_symmetric<T, Tensor_Dim>, T, N>,
-        T, Dim, i>>::type
+      Tensor1_Expr<Tensor2_number_1<const Tensor2_symmetric<T, Tensor_Dim>, T, N>,
+                   T, Dim, i>>::type
     operator()(const Index<i, Dim>, const Number<N> &) const
     {
-      typedef const Tensor2_number_1<const Tensor2_symmetric<T, Tensor_Dim>, T,
-                                     N>
-        TensorExpr;
+      using TensorExpr
+        = Tensor2_number_1<const Tensor2_symmetric<T, Tensor_Dim>, T, N>;
       return Tensor1_Expr<TensorExpr, T, Dim, i>(TensorExpr(*this));
     }
 
@@ -169,22 +147,20 @@ namespace FTensor
                    T, Dim, i>>::type
     operator()(const Number<N> &, const Index<i, Dim>)
     {
-      typedef Tensor2_number_rhs_0<Tensor2_symmetric<T, Tensor_Dim>, T, N>
-        TensorExpr;
+      using TensorExpr
+        = Tensor2_number_rhs_0<Tensor2_symmetric<T, Tensor_Dim>, T, N>;
       return Tensor1_Expr<TensorExpr, T, Dim, i>(*this);
     }
 
     template <char i, int N, int Dim>
     typename std::enable_if<
       (Tensor_Dim > N && Tensor_Dim >= Dim),
-      Tensor1_Expr<
-        const Tensor2_number_0<const Tensor2_symmetric<T, Tensor_Dim>, T, N>,
-        T, Dim, i>>::type
+      Tensor1_Expr<Tensor2_number_0<const Tensor2_symmetric<T, Tensor_Dim>, T, N>,
+                   T, Dim, i>>::type
     operator()(const Number<N> &, const Index<i, Dim>) const
     {
-      typedef const Tensor2_number_0<const Tensor2_symmetric<T, Tensor_Dim>, T,
-                                     N>
-        TensorExpr;
+      using TensorExpr
+        = Tensor2_number_0<const Tensor2_symmetric<T, Tensor_Dim>, T, N>;
       return Tensor1_Expr<TensorExpr, T, Dim, i>(TensorExpr(*this));
     }
 
@@ -193,26 +169,24 @@ namespace FTensor
     template <char i, int Dim>
     typename std::enable_if<
       (Tensor_Dim >= Dim),
-      Tensor1_Expr<
-        const Tensor2_numeral_1<const Tensor2_symmetric<T, Tensor_Dim>, T>, T,
-        Dim, i>>::type
+      Tensor1_Expr<Tensor2_numeral_1<const Tensor2_symmetric<T, Tensor_Dim>, T>,
+                   T, Dim, i>>::type
     operator()(const Index<i, Dim>, const int N) const
     {
-      typedef const Tensor2_numeral_1<const Tensor2_symmetric<T, Tensor_Dim>, T>
-        TensorExpr;
+      using TensorExpr
+        = Tensor2_numeral_1<const Tensor2_symmetric<T, Tensor_Dim>, T>;
       return Tensor1_Expr<TensorExpr, T, Dim, i>(TensorExpr(*this, N));
     }
 
     template <char i, int Dim>
     typename std::enable_if<
       (Tensor_Dim >= Dim),
-      Tensor1_Expr<
-        const Tensor2_numeral_0<const Tensor2_symmetric<T, Tensor_Dim>, T>, T,
-        Dim, i>>::type
+      Tensor1_Expr<Tensor2_numeral_0<const Tensor2_symmetric<T, Tensor_Dim>, T>,
+                   T, Dim, i>>::type
     operator()(const int N, const Index<i, Dim>) const
     {
-      typedef const Tensor2_numeral_0<const Tensor2_symmetric<T, Tensor_Dim>, T>
-        TensorExpr;
+      using TensorExpr
+        = Tensor2_numeral_0<const Tensor2_symmetric<T, Tensor_Dim>, T>;
       return Tensor1_Expr<TensorExpr, T, Dim, i>(TensorExpr(*this, N));
     }
 
@@ -246,7 +220,7 @@ namespace FTensor
   };
 }
 
-/// JSON compatible output.  It only outputs unique elments, so a 3x3
+/// JSON compatible output.  It only outputs unique elements, so a 3x3
 /// symmetric matrix only outputs 6 elements.
 
 namespace FTensor

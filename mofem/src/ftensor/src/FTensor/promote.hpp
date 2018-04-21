@@ -14,14 +14,13 @@ namespace FTensor
   template <class T1, class T2> class promote
   {
   public:
-    typedef T1 V;
+    using V = T1;
   };
 
-#define DECLARE_PROMOTE(A, B, C)                                              \
-  template <> class promote<A, B>                                             \
-  {                                                                           \
-  public:                                                                     \
-    typedef C V;                                                              \
+#define DECLARE_PROMOTE(A, B, C)                                               \
+  template <> class promote<A, B> {                                            \
+  public:                                                                      \
+    using V = C;                                                               \
   }
 
   DECLARE_PROMOTE(int, double, double);
@@ -31,7 +30,7 @@ namespace FTensor
   DECLARE_PROMOTE(double, std::complex<double>, std::complex<double>);
   DECLARE_PROMOTE(std::complex<double>, double, std::complex<double>);
 
-#ifdef WITH_ADOL_C
+#ifdef WITH_ADOL_C 
   DECLARE_PROMOTE(adouble, double, adouble);
   DECLARE_PROMOTE(double, adouble, adouble);
   DECLARE_PROMOTE(adouble, int, adouble);
@@ -43,4 +42,4 @@ namespace FTensor
 #endif // WITH_ADOL_C
 
 #undef DECLARE_PROMOTE
-}
+  } // namespace FTensor

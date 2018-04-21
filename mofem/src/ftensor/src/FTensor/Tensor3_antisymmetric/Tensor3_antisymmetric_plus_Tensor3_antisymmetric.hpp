@@ -11,8 +11,8 @@ namespace FTensor
             char j, char k>
   class Tensor3_antisymmetric_plus_Tensor3_antisymmetric
   {
-    const Tensor3_antisymmetric_Expr<A, T, Dim0, Dim12, i, j, k> iterA;
-    const Tensor3_antisymmetric_Expr<B, U, Dim0, Dim12, i, j, k> iterB;
+    Tensor3_antisymmetric_Expr<A, T, Dim0, Dim12, i, j, k> iterA;
+    Tensor3_antisymmetric_Expr<B, U, Dim0, Dim12, i, j, k> iterB;
 
   public:
     typename promote<T, U>::V
@@ -30,16 +30,15 @@ namespace FTensor
 
   template <class A, class B, class T, class U, int Dim0, int Dim12, char i,
             char j, char k>
-  inline const Tensor3_antisymmetric_Expr<
-    const Tensor3_antisymmetric_plus_Tensor3_antisymmetric<A, B, T, U, Dim0,
-                                                           Dim12, i, j, k>,
-    typename promote<T, U>::V, Dim0, Dim12, i, j, k>
+  Tensor3_antisymmetric_Expr<Tensor3_antisymmetric_plus_Tensor3_antisymmetric<
+                               A, B, T, U, Dim0, Dim12, i, j, k>,
+                             typename promote<T, U>::V, Dim0, Dim12, i, j, k>
   operator+(const Tensor3_antisymmetric_Expr<A, T, Dim0, Dim12, i, j, k> &a,
             const Tensor3_antisymmetric_Expr<B, U, Dim0, Dim12, i, j, k> &b)
   {
-    typedef const Tensor3_antisymmetric_plus_Tensor3_antisymmetric<
-      A, B, T, U, Dim0, Dim12, i, j, k>
-      TensorExpr;
+    using TensorExpr
+      = Tensor3_antisymmetric_plus_Tensor3_antisymmetric<A, B, T, U, Dim0,
+                                                         Dim12, i, j, k>;
     return Tensor3_antisymmetric_Expr<TensorExpr, typename promote<T, U>::V,
                                       Dim0, Dim12, i, j, k>(TensorExpr(a, b));
   }
@@ -50,8 +49,8 @@ namespace FTensor
             char j, char k>
   class Tensor3_antisymmetric_plus_Tensor3_antisymmetric_12
   {
-    const Tensor3_antisymmetric_Expr<A, T, Dim0, Dim12, i, j, k> iterA;
-    const Tensor3_antisymmetric_Expr<B, U, Dim0, Dim12, i, k, j> iterB;
+    Tensor3_antisymmetric_Expr<A, T, Dim0, Dim12, i, j, k> iterA;
+    Tensor3_antisymmetric_Expr<B, U, Dim0, Dim12, i, k, j> iterB;
 
   public:
     typename promote<T, U>::V
@@ -69,16 +68,16 @@ namespace FTensor
 
   template <class A, class B, class T, class U, int Dim0, int Dim12, char i,
             char j, char k>
-  inline const Tensor3_antisymmetric_Expr<
-    const Tensor3_antisymmetric_plus_Tensor3_antisymmetric_12<A, B, T, U, Dim0,
-                                                              Dim12, i, j, k>,
+  Tensor3_antisymmetric_Expr<
+    Tensor3_antisymmetric_plus_Tensor3_antisymmetric_12<A, B, T, U, Dim0,
+                                                        Dim12, i, j, k>,
     typename promote<T, U>::V, Dim0, Dim12, i, j, k>
   operator+(const Tensor3_antisymmetric_Expr<A, T, Dim0, Dim12, i, j, k> &a,
             const Tensor3_antisymmetric_Expr<B, U, Dim0, Dim12, i, k, j> &b)
   {
-    typedef const Tensor3_antisymmetric_plus_Tensor3_antisymmetric_12<
-      A, B, T, U, Dim0, Dim12, i, j, k>
-      TensorExpr;
+    using TensorExpr
+      = Tensor3_antisymmetric_plus_Tensor3_antisymmetric_12<A, B, T, U, Dim0,
+                                                            Dim12, i, j, k>;
     return Tensor3_antisymmetric_Expr<TensorExpr, typename promote<T, U>::V,
                                       Dim0, Dim12, i, j, k>(TensorExpr(a, b));
   }

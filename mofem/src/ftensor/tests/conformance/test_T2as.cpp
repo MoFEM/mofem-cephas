@@ -1,14 +1,14 @@
 #include "../../src/FTensor.hpp"
-#include "test_ostream.hpp"
 #include "test_for_zero.hpp"
+#include "test_ostream.hpp"
 
 using namespace FTensor;
 using namespace std;
 void test_T2as()
 {
-  test_ostream(Tensor2_antisymmetric<double, 3>(3, 7, 11), "[[3,7],[11]]",
+  test_ostream(Tensor2_antisymmetric<double, 3>(3., 7., 11.), "[[3,7],[11]]",
                "operator<<(T2as<3>)");
-  test_ostream(Tensor2_antisymmetric<double, 2>(13), "[[13]]",
+  test_ostream(Tensor2_antisymmetric<double, 2>(13.), "[[13]]",
                "operator<<(T2as<1>)");
 
   Tensor2_antisymmetric<double, 3> t2as_1;

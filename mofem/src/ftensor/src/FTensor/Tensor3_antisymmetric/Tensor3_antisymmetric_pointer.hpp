@@ -11,31 +11,14 @@ namespace FTensor
       data[Tensor_Dim0][(Tensor_Dim12 * (Tensor_Dim12 - 1)) / 2];
 
   public:
+    template <class... U> Tensor3_antisymmetric(U *... d) : data{d...}
+    {
+      static_assert(sizeof...(d) == sizeof(data) / sizeof(T),
+                    "Incorrect number of Arguments. Constructor should "
+                    "initialize the entire Tensor");
+    }
+
     Tensor3_antisymmetric() {}
-
-    /* Tensor_Dim0=2, Tensor_Dim12=2 */
-    Tensor3_antisymmetric(T *d001, T *d101)
-    {
-      Tensor3_antisymmetric_constructor<T * restrict, 2, 2>(data, d001, d101);
-    }
-
-    /* Tensor_Dim0=3, Tensor_Dim12=3 */
-    Tensor3_antisymmetric(T *d001, T *d002, T *d012, T *d101, T *d102, T *d112,
-                          T *d201, T *d202, T *d212)
-    {
-      Tensor3_antisymmetric_constructor<T * restrict, 3, 3>(
-        data, d001, d002, d012, d101, d102, d112, d201, d202, d212);
-    }
-
-    /* Tensor_Dim0=4, Tensor_Dim12=4 */
-    Tensor3_antisymmetric(T *d001, T *d002, T *d003, T *d012, T *d013, T *d023,
-                          T *d101, T *d102, T *d103, T *d112, T *d113, T *d123,
-                          T *d201, T *d202, T *d203, T *d212, T *d213, T *d223)
-    {
-      Tensor3_antisymmetric_constructor<T * restrict, 4, 4>(
-        data, d001, d002, d003, d012, d013, d023, d101, d102, d103, d112, d113,
-        d123, d201, d202, d203, d212, d213, d223);
-    }
 
     /* There are two ways of accessing the values inside,
        unsafe(int,int,int) and operator(int,int,int).
@@ -57,7 +40,7 @@ namespace FTensor
           s << "Bad index in Tensor3_antisymmetric<T*," << Tensor_Dim0 << ","
             << Tensor_Dim12 << ">.unsafe(" << N1 << "," << N2 << "," << N3
             << ")" << std::endl;
-          throw std::runtime_error(s.str());
+          throw std::out_of_range(s.str());
         }
 #endif
       return *data[N1][N3 - 1 + (N2 * (2 * (Tensor_Dim12 - 1) - N2 - 1)) / 2];
@@ -73,7 +56,7 @@ namespace FTensor
           s << "Bad index in Tensor3_antisymmetric<T*," << Tensor_Dim0 << ","
             << Tensor_Dim12 << ">.operator(" << N1 << "," << N2 << "," << N3
             << ") const" << std::endl;
-          throw std::runtime_error(s.str());
+          throw std::out_of_range(s.str());
         }
 #endif
       return N2 < N3
@@ -95,7 +78,7 @@ namespace FTensor
           s << "Bad index in Tensor3_antisymmetric<T*," << Tensor_Dim0 << ","
             << Tensor_Dim12 << ">.ptr(" << N1 << "," << N2 << "," << N3 << ")"
             << std::endl;
-          throw std::runtime_error(s.str());
+          throw std::out_of_range(s.str());
         }
 #endif
       return N2 < N3

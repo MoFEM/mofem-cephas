@@ -9,7 +9,7 @@ namespace FTensor
   template <class A, class B, class T, class U, int Dim, char i, char j,
             char k, char l, int Current_Dim0, int Current_Dim1,
             int Current_Dim2, int Current_Dim3>
-  inline const typename promote<T, U>::V
+  typename promote<T, U>::V
   T4ddg_times_T4ddg_0213(const Ddg_Expr<A, T, Dim, Dim, i, j, k, l> &a,
                          const Ddg_Expr<B, U, Dim, Dim, i, k, j, l> &b,
                          const Number<Current_Dim0> &,
@@ -28,7 +28,7 @@ namespace FTensor
 
   template <class A, class B, class T, class U, int Dim, char i, char j, char k,
             char l, int Current_Dim1, int Current_Dim2, int Current_Dim3>
-  inline const typename promote<T, U>::V
+  typename promote<T, U>::V
   T4ddg_times_T4ddg_0213(const Ddg_Expr<A, T, Dim, Dim, i, j, k, l> &a,
                          const Ddg_Expr<B, U, Dim, Dim, i, k, j, l> &b,
                          const Number<1> &, const Number<Current_Dim1> &,
@@ -44,7 +44,7 @@ namespace FTensor
 
   template <class A, class B, class T, class U, int Dim, char i, char j,
             char k, char l, int Current_Dim2, int Current_Dim3>
-  inline const typename promote<T, U>::V
+  typename promote<T, U>::V
   T4ddg_times_T4ddg_0213(const Ddg_Expr<A, T, Dim, Dim, i, j, k, l> &a,
                          const Ddg_Expr<B, U, Dim, Dim, i, k, j, l> &b,
                          const Number<1> &, const Number<1> &,
@@ -60,7 +60,7 @@ namespace FTensor
 
   template <class A, class B, class T, class U, int Dim, char i, char j,
             char k, char l, int Current_Dim3>
-  inline const typename promote<T, U>::V
+  typename promote<T, U>::V
   T4ddg_times_T4ddg_0213(const Ddg_Expr<A, T, Dim, Dim, i, j, k, l> &a,
                          const Ddg_Expr<B, U, Dim, Dim, i, k, j, l> &b,
                          const Number<1> &, const Number<1> &,
@@ -73,7 +73,7 @@ namespace FTensor
 
   template <class A, class B, class T, class U, int Dim, char i, char j,
             char k, char l>
-  inline const typename promote<T, U>::V
+  typename promote<T, U>::V
   T4ddg_times_T4ddg_0213(const Ddg_Expr<A, T, Dim, Dim, i, j, k, l> &a,
                          const Ddg_Expr<B, U, Dim, Dim, i, k, j, l> &b,
                          const Number<1> &, const Number<1> &,
@@ -84,7 +84,7 @@ namespace FTensor
 
   template <class A, class B, class T, class U, int Dim, char i, char j,
             char k, char l>
-  inline const typename promote<T, U>::V
+  typename promote<T, U>::V
   operator*(const Ddg_Expr<A, T, Dim, Dim, i, j, k, l> &a,
             const Ddg_Expr<B, U, Dim, Dim, i, k, j, l> &b)
   {

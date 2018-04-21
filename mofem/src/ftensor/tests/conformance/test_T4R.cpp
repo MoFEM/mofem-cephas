@@ -1,6 +1,6 @@
-#include <iostream>
 #include "../../src/FTensor.hpp"
 #include "test_for_zero.hpp"
+#include <iostream>
 using namespace FTensor;
 using namespace std;
 
@@ -10,8 +10,6 @@ void test_T4R()
   Index<'j', 3> j;
   Index<'k', 3> k;
   Index<'l', 3> l;
-  Index<'m', 3> m;
-  Index<'n', 3> n;
 
   Number<0> N0;
   Number<1> N1;
@@ -19,9 +17,9 @@ void test_T4R()
 
   Riemann<double, 3> t4R_1, t4R_2, t4R_3;
 
-  Tensor2_symmetric<double, 3> delta_3(3, 0, 0, 3, 0, 3),
-    delta_5(5, 0, 0, 5, 0, 5), delta_2(2, 0, 0, 2, 0, 2),
-    delta_7(7, 0, 0, 7, 0, 7);
+  Tensor2_symmetric<double, 3> delta_3(3., 0., 0., 3., 0., 3.),
+    delta_5(5., 0., 0., 5., 0., 5.), delta_2(2., 0., 0., 2., 0., 2.),
+    delta_7(7., 0., 0., 7., 0., 7.);
 
   t4R_1(i, j, k, l)
     = (delta_3(i, k) * delta_5(j, l) && delta_3(i, l) * delta_5(k, j));

@@ -19,10 +19,12 @@
 
 #include <cmath>
 #include <complex>
+#include <type_traits>
+
 #ifdef FTENSOR_DEBUG
 #include <iostream>
-#include <stdexcept>
 #include <sstream>
+#include <stdexcept>
 #endif
 #include "FTensor/Layout.hpp"
 
@@ -54,7 +56,7 @@ namespace FTensor
   template <class T, int Dim> class Tensor1;
   template <class A, class T, int Dim, char i> class Tensor1_Expr;
 
-  template <class T, int Dim1, int Dim2, Layout layout = column_major>
+  template <class T, int Dim1, int Dim2>
   class Tensor2;
   template <class A, class T, int Dim1, int Dim2, char i, char j>
   class Tensor2_Expr;
@@ -114,34 +116,28 @@ namespace FTensor
 
   template <class T> class Tensor_Levi_Civita;
 }
-#if __cplusplus < 201103L
-#include "FTensor/enable_if.hpp"
-#else
-#include <type_traits>
-#endif
 
 #include "FTensor/Index.hpp"
 #include "FTensor/Number.hpp"
 #include "FTensor/promote.hpp"
 
+#include "FTensor/Levi_Civita.hpp"
 #include "FTensor/cross.hpp"
-#include "FTensor/levi_civita.hpp"
-#include "FTensor/LeviCivita.hpp"
 
+#include "FTensor/Christof.hpp"
+#include "FTensor/Ddg.hpp"
+#include "FTensor/Dg.hpp"
+#include "FTensor/Riemann.hpp"
 #include "FTensor/Tensor0.hpp"
 #include "FTensor/Tensor1.hpp"
 #include "FTensor/Tensor2.hpp"
-#include "FTensor/Tensor2_symmetric.hpp"
 #include "FTensor/Tensor2_antisymmetric.hpp"
-#include "FTensor/Tensor3/Tensor3_contracted.hpp"
+#include "FTensor/Tensor2_symmetric.hpp"
 #include "FTensor/Tensor3.hpp"
-#include "FTensor/Dg.hpp"
-#include "FTensor/Christof.hpp"
+#include "FTensor/Tensor3/Tensor3_contracted.hpp"
 #include "FTensor/Tensor3_antisymmetric.hpp"
-#include "FTensor/Tensor4/Tensor4_contracted.hpp"
 #include "FTensor/Tensor4.hpp"
-#include "FTensor/Ddg.hpp"
-#include "FTensor/Riemann.hpp"
+#include "FTensor/Tensor4/Tensor4_contracted.hpp"
 
 /***************************************************************************/ /**
 * \defgroup ftensor Tensor template library

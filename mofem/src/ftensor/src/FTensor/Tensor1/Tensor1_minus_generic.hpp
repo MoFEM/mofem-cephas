@@ -12,8 +12,8 @@ namespace FTensor
   template <class A, class T, class U, int Dim, char i>
   class Tensor1_minus_generic
   {
-    const Tensor1_Expr<A, T, Dim, i> iterA;
-    const U d;
+    Tensor1_Expr<A, T, Dim, i> iterA;
+    U d;
 
   public:
     typename promote<T, U>::V operator()(const int N) const
@@ -27,11 +27,11 @@ namespace FTensor
   };
 
   template <class A, class T, class U, int Dim, char i>
-  inline const Tensor1_Expr<const Tensor1_minus_generic<A, T, U, Dim, i>,
-                            typename promote<T, U>::V, Dim, i>
+  Tensor1_Expr<Tensor1_minus_generic<A, T, U, Dim, i>,
+               typename promote<T, U>::V, Dim, i>
   operator-(const Tensor1_Expr<A, T, Dim, i> &a, const U &d0)
   {
-    typedef const Tensor1_minus_generic<A, T, U, Dim, i> TensorExpr;
+    using TensorExpr = Tensor1_minus_generic<A, T, U, Dim, i>;
     return Tensor1_Expr<TensorExpr, typename promote<T, U>::V, Dim, i>(
       TensorExpr(a, d0));
   }

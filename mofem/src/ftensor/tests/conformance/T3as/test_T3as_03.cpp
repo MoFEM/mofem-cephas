@@ -1,6 +1,6 @@
-#include <iostream>
 #include "../../../src/FTensor.hpp"
 #include "../test_for_zero.hpp"
+#include <iostream>
 using namespace FTensor;
 using namespace std;
 
@@ -10,9 +10,6 @@ void test_T3as_03(const Dg<double, 3, 3> &t3dg_2,
   Index<'i', 3> i;
   Index<'j', 3> j;
   Index<'k', 3> k;
-  Index<'l', 3> l;
-  Index<'m', 3> m;
-  Index<'n', 3> n;
 
   Number<0> N0;
   Number<1> N1;

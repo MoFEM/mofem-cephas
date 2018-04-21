@@ -9,8 +9,8 @@ namespace FTensor
   template <class A, class B, class T, class U, int Dim, char i, char j, char k>
   class Tensor3_antisymmetric_or_Tensor3_antisymmetric
   {
-    const Tensor3_antisymmetric_Expr<A, T, Dim, Dim, i, j, k> iterA;
-    const Tensor3_antisymmetric_Expr<B, U, Dim, Dim, k, j, i> iterB;
+    Tensor3_antisymmetric_Expr<A, T, Dim, Dim, i, j, k> iterA;
+    Tensor3_antisymmetric_Expr<B, U, Dim, Dim, k, j, i> iterB;
 
   public:
     typename promote<T, U>::V
@@ -27,15 +27,15 @@ namespace FTensor
   };
 
   template <class A, class B, class T, class U, int Dim, char i, char j, char k>
-  inline const Dg_Expr<const Tensor3_antisymmetric_or_Tensor3_antisymmetric<
-                         A, B, T, U, Dim, i, j, k>,
-                       typename promote<T, U>::V, Dim, Dim, i, k, j>
+  Dg_Expr<
+    Tensor3_antisymmetric_or_Tensor3_antisymmetric<A, B, T, U, Dim, i, j, k>,
+    typename promote<T, U>::V, Dim, Dim, i, k, j>
   operator||(const Tensor3_antisymmetric_Expr<A, T, Dim, Dim, i, j, k> &a,
              const Tensor3_antisymmetric_Expr<B, U, Dim, Dim, k, j, i> &b)
   {
-    typedef const Tensor3_antisymmetric_or_Tensor3_antisymmetric<A, B, T, U,
-                                                                 Dim, i, j, k>
-      TensorExpr;
+    using TensorExpr
+      = Tensor3_antisymmetric_or_Tensor3_antisymmetric<A, B, T, U, Dim, i, j,
+                                                       k>;
     return Dg_Expr<TensorExpr, typename promote<T, U>::V, Dim, Dim, i, k, j>(
       TensorExpr(a, b));
   }

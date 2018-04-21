@@ -1,63 +1,30 @@
-#include <iostream>
 #include "../../../src/FTensor.hpp"
 #include "../test_for_zero.hpp"
+#include <iostream>
 using namespace FTensor;
 using namespace std;
 
-void test_T2_27(const Tensor2<double, 3, 3> &t2_2,
-                const Tensor2<double, 3, 3> &t2_3)
+void test_T2_27(const Tensor2<double, 4, 3> &t2_4,
+                const Tensor2<double, 3, 4> &t2_5)
 {
-  Index<'i', 3> i;
+  Index<'i', 4> i;
   Index<'j', 3> j;
   Index<'k', 3> k;
-  Index<'l', 3> l;
-  Index<'m', 3> m;
-  Index<'n', 3> n;
 
-  Number<0> N0;
-  Number<1> N1;
-  Number<2> N2;
+  Tensor2<double, 3, 4> t2_a;
+  t2_a(j, i) = t2_4(i, j);
 
-  /* Tensor2 tests */
-
-  /* Tensor2*Tensor2 */
   Tensor2<double, 3, 3> t2;
+  t2(j, k) = t2_a(j, i) * t2_5(k, i);
 
-  t2(i, k) = t2_2(i, j) * t2_3(k, j);
-  test_for_zero(t2(0, 0)
-                  - (t2_2(0, 0) * t2_3(0, 0) + t2_2(0, 1) * t2_3(0, 1)
-                     + t2_2(0, 2) * t2_3(0, 2)),
-                "T2(i,j)*T2(k,j)(0,0)");
-  test_for_zero(t2(0, 1)
-                  - (t2_2(0, 0) * t2_3(1, 0) + t2_2(0, 1) * t2_3(1, 1)
-                     + t2_2(0, 2) * t2_3(1, 2)),
-                "T2(i,j)*T2(k,j)(0,1)");
-  test_for_zero(t2(0, 2)
-                  - (t2_2(0, 0) * t2_3(2, 0) + t2_2(0, 1) * t2_3(2, 1)
-                     + t2_2(0, 2) * t2_3(2, 2)),
-                "T2(i,j)*T2(k,j)(0,2)");
-  test_for_zero(t2(1, 0)
-                  - (t2_2(1, 0) * t2_3(0, 0) + t2_2(1, 1) * t2_3(0, 1)
-                     + t2_2(1, 2) * t2_3(0, 2)),
-                "T2(i,j)*T2(k,j)(1,0)");
-  test_for_zero(t2(1, 1)
-                  - (t2_2(1, 0) * t2_3(1, 0) + t2_2(1, 1) * t2_3(1, 1)
-                     + t2_2(1, 2) * t2_3(1, 2)),
-                "T2(i,j)*T2(k,j)(1,1)");
-  test_for_zero(t2(1, 2)
-                  - (t2_2(1, 0) * t2_3(2, 0) + t2_2(1, 1) * t2_3(2, 1)
-                     + t2_2(1, 2) * t2_3(2, 2)),
-                "T2(i,j)*T2(k,j)(1,2)");
-  test_for_zero(t2(2, 0)
-                  - (t2_2(2, 0) * t2_3(0, 0) + t2_2(2, 1) * t2_3(0, 1)
-                     + t2_2(2, 2) * t2_3(0, 2)),
-                "T2(i,j)*T2(k,j)(2,0)");
-  test_for_zero(t2(2, 1)
-                  - (t2_2(2, 0) * t2_3(1, 0) + t2_2(2, 1) * t2_3(1, 1)
-                     + t2_2(2, 2) * t2_3(1, 2)),
-                "T2(i,j)*T2(k,j)(2,1)");
-  test_for_zero(t2(2, 2)
-                  - (t2_2(2, 0) * t2_3(2, 0) + t2_2(2, 1) * t2_3(2, 1)
-                     + t2_2(2, 2) * t2_3(2, 2)),
-                "T2(i,j)*T2(k,j)(2,2)");
+  for(int jj = 0; jj < 3; ++jj)
+    for(int kk = 0; kk < 3; ++kk)
+      {
+        test_for_zero(
+          t2(jj, kk)
+            - (t2_a(jj, 0) * t2_5(kk, 0) + t2_a(jj, 1) * t2_5(kk, 1)
+               + t2_a(jj, 2) * t2_5(kk, 2) + t2_a(jj, 3) * t2_5(kk, 3)),
+          "T2(i,j)*T2(k,j)(" + std::to_string(jj) + "," + std::to_string(kk)
+            + ")");
+      }
 }

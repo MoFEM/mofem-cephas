@@ -1,12 +1,11 @@
 #include <iostream>
 #include <sstream>
 
-#ifndef __TES_OSTREAM_HPP__
-#define __TES_OSTREAM_HPP__
+#pragma once
 
 template <class T>
-static void test_ostream(const T &t, const std::string &expected,
-                         const std::string &test_name)
+void test_ostream(const T &t, const std::string &expected,
+                  const std::string &test_name)
 {
   std::stringstream ss;
   ss << t;
@@ -20,5 +19,3 @@ static void test_ostream(const T &t, const std::string &expected,
                 << "!=" << expected << "\n";
     }
 }
-
-#endif //__TES_OSTREAM_HPP__

@@ -12,8 +12,8 @@ namespace FTensor
             char k, char l>
   class Riemann_times_Tensor2_symmetric_0
   {
-    const Riemann_Expr<A, T, Dim, i, j, k, l> iterA;
-    const Tensor2_symmetric_Expr<B, U, Dim, i, k> iterB;
+    Riemann_Expr<A, T, Dim, i, j, k, l> iterA;
+    Tensor2_symmetric_Expr<B, U, Dim, i, k> iterB;
 
   public:
     Riemann_times_Tensor2_symmetric_0(
@@ -37,14 +37,14 @@ namespace FTensor
 
   template <class A, class B, class T, class U, int Dim, char i, char j,
             char k, char l>
-  inline const Tensor2_symmetric_Expr<
-    const Riemann_times_Tensor2_symmetric_0<A, B, T, U, Dim, i, j, k, l>,
+  Tensor2_symmetric_Expr<
+    Riemann_times_Tensor2_symmetric_0<A, B, T, U, Dim, i, j, k, l>,
     typename promote<T, U>::V, Dim, j, l>
   operator*(const Riemann_Expr<A, T, Dim, i, j, k, l> &a,
             const Tensor2_symmetric_Expr<B, U, Dim, i, k> &b)
   {
-    typedef const Riemann_times_Tensor2_symmetric_0<A, B, T, U, Dim, i, j, k, l>
-      TensorExpr;
+    using TensorExpr
+      = Riemann_times_Tensor2_symmetric_0<A, B, T, U, Dim, i, j, k, l>;
     return Tensor2_symmetric_Expr<TensorExpr, typename promote<T, U>::V, Dim,
                                   j, l>(TensorExpr(a, b));
   }
@@ -53,14 +53,14 @@ namespace FTensor
 
   template <class A, class B, class T, class U, int Dim, char i, char j,
             char k, char l>
-  inline const Tensor2_symmetric_Expr<
-    const Riemann_times_Tensor2_symmetric_0<A, B, T, U, Dim, i, j, k, l>,
+  Tensor2_symmetric_Expr<
+    Riemann_times_Tensor2_symmetric_0<A, B, T, U, Dim, i, j, k, l>,
     typename promote<T, U>::V, Dim, j, l>
   operator*(const Tensor2_symmetric_Expr<B, U, Dim, i, k> &b,
             const Riemann_Expr<A, T, Dim, i, j, k, l> &a)
   {
-    typedef const Riemann_times_Tensor2_symmetric_0<A, B, T, U, Dim, i, j, k, l>
-      TensorExpr;
+    using TensorExpr
+      = Riemann_times_Tensor2_symmetric_0<A, B, T, U, Dim, i, j, k, l>;
     return Tensor2_symmetric_Expr<TensorExpr, typename promote<T, U>::V, Dim,
                                   j, l>(TensorExpr(a, b));
   }

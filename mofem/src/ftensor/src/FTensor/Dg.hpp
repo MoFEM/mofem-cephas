@@ -4,8 +4,7 @@
 #include "Dg/Dg_number.hpp"
 #include "Dg/Dg_numeral.hpp"
 
-#include "Dg/Dg_constructor.hpp"
-#include "Dg/Dg_value.hpp"
 #include "Dg/Dg_pointer.hpp"
+#include "Dg/Dg_value.hpp"
 
 #include "Dg/Dg_Expr.hpp"

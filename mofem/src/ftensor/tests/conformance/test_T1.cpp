@@ -1,26 +1,22 @@
-#include <iostream>
 #include "../../src/FTensor.hpp"
 #include "test_for_zero.hpp"
 #include "test_ostream.hpp"
+#include <iostream>
 using namespace FTensor;
 using namespace std;
 
 void test_T1(Tensor1<double, 3> &t1_1, const Tensor1<double, 3> &t1_2)
 {
   Index<'i', 3> i;
-  Index<'j', 3> j;
-  Index<'k', 3> k;
-  Index<'l', 3> l;
-  Index<'m', 3> m;
-  Index<'n', 3> n;
 
   Number<0> N0;
   Number<1> N1;
   Number<2> N2;
 
   /* Tensor1 test cases. */
-  test_ostream(Tensor1<double, 3>(3, 7, 11), "[3,7,11]", "operator<<(T1<3>)");
-  test_ostream(Tensor1<double, 1>(13), "[13]", "operator<<(T1<1>)");
+  test_ostream(Tensor1<double, 3>(3., 7., 11.), "[3,7,11]",
+               "operator<<(T1<3>)");
+  test_ostream(Tensor1<double, 1>(13.), "[13]", "operator<<(T1<1>)");
 
   std::stringstream ss("[3,7,11]");
   ss >> t1_1;
@@ -102,6 +98,6 @@ void test_T1(Tensor1<double, 3> &t1_1, const Tensor1<double, 3> &t1_2)
   t1_3(i) = t1_1(i);
   t1_3.normalize();
   test_for_zero(t1_3(0) - t1_1(0) / t1_1.l2(), "T1.normalize()(0)");
-  test_for_zero(t1_3(1) - t1_1(1) / t1_1.l2(), "T1.normalize()(0)");
-  test_for_zero(t1_3(2) - t1_1(2) / t1_1.l2(), "T1.normalize()(0)");
+  test_for_zero(t1_3(1) - t1_1(1) / t1_1.l2(), "T1.normalize()(1)");
+  test_for_zero(t1_3(2) - t1_1(2) / t1_1.l2(), "T1.normalize()(2)");
 }

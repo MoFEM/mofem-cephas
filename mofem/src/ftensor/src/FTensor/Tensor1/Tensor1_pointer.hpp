@@ -5,7 +5,7 @@
 
 namespace FTensor
 {
-  template <class T, int Tensor_Dim, int I>
+  template <class T, int Tensor_Dim, int I> 
   class Tensor1<PackPtr<T *, I>, Tensor_Dim>
   {
     /* Note that the T *'s are mutable, so the pointer can change,
@@ -14,22 +14,15 @@ namespace FTensor
     mutable T *restrict data[Tensor_Dim];
 
   public:
-    /* Initializations for varying numbers of elements, with each one
-       defined for a particular Tensor_Dim.  To initialize a different
-       dimension, just add the appropriate constructor and call to
-       the Tensor1_constructor constructor. */
-    Tensor1(T *d0, T *d1)
+    /* Initializations for varying numbers of elements. */
+    template <class... U> Tensor1(U *... d) : data{d...}
     {
-      Tensor1_constructor<T * restrict, Tensor_Dim>(data, d0, d1);
+      static_assert(sizeof...(d) == sizeof(data) / sizeof(T),
+                    "Incorrect number of Arguments. Constructor should "
+                    "initialize the entire Tensor");
     }
-    Tensor1(T *d0, T *d1, T *d2)
-    {
-      Tensor1_constructor<T * restrict, Tensor_Dim>(data, d0, d1, d2);
-    }
-    Tensor1(T *d0, T *d1, T *d2, T *d3)
-    {
-      Tensor1_constructor<T * restrict, Tensor_Dim>(data, d0, d1, d2, d3);
-    }
+
+    Tensor1() {}
 
     /* There are two operator(int)'s, one for non-consts that lets you
        change the value, and one for consts that doesn't. */
@@ -42,7 +35,7 @@ namespace FTensor
           std::stringstream s;
           s << "Bad index in Tensor1<T*," << Tensor_Dim << ">.operator(" << N
             << ")" << std::endl;
-          throw std::runtime_error(s.str());
+          throw std::out_of_range(s.str());
         }
 #endif
       return *data[N];
@@ -55,7 +48,7 @@ namespace FTensor
           std::stringstream s;
           s << "Bad index in Tensor1<T*," << Tensor_Dim << ">.operator(" << N
             << ") const" << std::endl;
-          throw std::runtime_error(s.str());
+          throw std::out_of_range(s.str());
         }
 #endif
       return *data[N];
@@ -68,7 +61,7 @@ namespace FTensor
           std::stringstream s;
           s << "Bad index in Tensor1<T*," << Tensor_Dim << ">.ptr(" << N << ")"
             << std::endl;
-          throw std::runtime_error(s.str());
+          throw std::out_of_range(s.str());
         }
 #endif
       return data[N];
@@ -76,23 +69,21 @@ namespace FTensor
 
     /* These operator()'s are the first part in constructing template
        expressions.  They can be used to slice off lower dimensional
-       parts. They are not entirely safe, since you can accidently use a
+       parts. They are not entirely safe, since you can accidentaly use a
        higher dimension than what is really allowed (like Dim=5). */
 
     template <char i, int Dim>
     Tensor1_Expr<Tensor1<PackPtr<T *, I>, Tensor_Dim>, T, Dim, i>
     operator()(const Index<i, Dim> &index)
     {
-      return Tensor1_Expr<Tensor1<PackPtr<T *, I>, Tensor_Dim>, T, Dim, i>(
-        *this);
+      return Tensor1_Expr<Tensor1<PackPtr<T *, I>, Tensor_Dim>, T, Dim, i>(*this);
     }
 
     template <char i, int Dim>
     Tensor1_Expr<const Tensor1<PackPtr<T *, I>, Tensor_Dim>, T, Dim, i>
     operator()(const Index<i, Dim> &index) const
     {
-      return Tensor1_Expr<const Tensor1<PackPtr<T *, I>, Tensor_Dim>, T, Dim,
-                          i>(*this);
+      return Tensor1_Expr<const Tensor1<PackPtr<T *, I>, Tensor_Dim>, T, Dim, i>(*this);
     }
 
     /* The ++ operator increments the pointer, not the number that the
@@ -108,7 +99,7 @@ namespace FTensor
 
   template <class T, int Tensor_Dim> class Tensor1<T *, Tensor_Dim>
   {
-    const int inc;
+     const int inc;
 
     /* Note that the T *'s are mutable, so the pointer can change,
        allowing iterating over a array. */
@@ -132,7 +123,7 @@ namespace FTensor
     {
       Tensor1_constructor<T * restrict, Tensor_Dim>(data, d0, d1, d2, d3);
     }
-    Tensor1(const int i = 1) : inc(i) {}
+    Tensor1(const int i = 1) : inc(i) {} 
 
     /* There are two operator(int)'s, one for non-consts that lets you
        change the value, and one for consts that doesn't. */
@@ -145,7 +136,7 @@ namespace FTensor
           std::stringstream s;
           s << "Bad index in Tensor1<T*," << Tensor_Dim << ">.operator(" << N
             << ")" << std::endl;
-          throw std::runtime_error(s.str());
+          throw std::out_of_range(s.str());
         }
 #endif
       return *data[N];
@@ -158,7 +149,7 @@ namespace FTensor
           std::stringstream s;
           s << "Bad index in Tensor1<T*," << Tensor_Dim << ">.operator(" << N
             << ") const" << std::endl;
-          throw std::runtime_error(s.str());
+          throw std::out_of_range(s.str());
         }
 #endif
       return *data[N];
@@ -171,7 +162,7 @@ namespace FTensor
           std::stringstream s;
           s << "Bad index in Tensor1<T*," << Tensor_Dim << ">.ptr(" << N << ")"
             << std::endl;
-          throw std::runtime_error(s.str());
+          throw std::out_of_range(s.str());
         }
 #endif
       return data[N];
@@ -179,7 +170,7 @@ namespace FTensor
 
     /* These operator()'s are the first part in constructing template
        expressions.  They can be used to slice off lower dimensional
-       parts. They are not entirely safe, since you can accidently use a
+       parts. They are not entirely safe, since you can accidentaly use a
        higher dimension than what is really allowed (like Dim=5). */
 
     template <char i, int Dim>

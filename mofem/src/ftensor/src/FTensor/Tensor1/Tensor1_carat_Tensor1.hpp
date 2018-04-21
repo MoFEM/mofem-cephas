@@ -7,8 +7,8 @@ namespace FTensor
   template <class A, class B, class T, class U, int Dim, char i, char j>
   class Tensor1_carat_Tensor1
   {
-    const Tensor1_Expr<A, T, Dim, i> iterA;
-    const Tensor1_Expr<B, U, Dim, j> iterB;
+    Tensor1_Expr<A, T, Dim, i> iterA;
+    Tensor1_Expr<B, U, Dim, j> iterB;
 
   public:
     typename promote<T, U>::V operator()(const int N1, const int N2) const
@@ -23,13 +23,12 @@ namespace FTensor
   };
 
   template <class A, class B, class T, class U, int Dim, char i, char j>
-  inline const Tensor2_symmetric_Expr<
-    const Tensor1_carat_Tensor1<A, B, T, U, Dim, i, j>,
-    typename promote<T, U>::V, Dim, i, j>
+  Tensor2_symmetric_Expr<Tensor1_carat_Tensor1<A, B, T, U, Dim, i, j>,
+                         typename promote<T, U>::V, Dim, i, j>
   operator^(const Tensor1_Expr<A, T, Dim, i> &a,
             const Tensor1_Expr<B, U, Dim, j> &b)
   {
-    typedef const Tensor1_carat_Tensor1<A, B, T, U, Dim, i, j> TensorExpr;
+    using TensorExpr = Tensor1_carat_Tensor1<A, B, T, U, Dim, i, j>;
     return Tensor2_symmetric_Expr<TensorExpr, typename promote<T, U>::V, Dim,
                                   i, j>(TensorExpr(a, b));
   }

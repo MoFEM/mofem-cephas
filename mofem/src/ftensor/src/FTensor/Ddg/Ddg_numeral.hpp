@@ -11,7 +11,7 @@ namespace FTensor
   template <class A, class T> class Ddg_numeral_01
   {
     A iterA;
-    const int N1, N2;
+    int N1, N2;
 
   public:
     T operator()(const int N3, const int N4) const
@@ -28,7 +28,7 @@ namespace FTensor
   template <class A, class T> class Ddg_numeral_23
   {
     A iterA;
-    const int N3, N4;
+    int N3, N4;
 
   public:
     T operator()(const int N1, const int N2) const
@@ -45,7 +45,7 @@ namespace FTensor
   template <class A, class T> class Ddg_numeral_02
   {
     A iterA;
-    const int N1, N3;
+    int N1, N3;
 
   public:
     T operator()(const int N2, const int N4) const
@@ -66,7 +66,7 @@ namespace FTensor
   template <class A, class T> class Ddg_numeral_0
   {
     A iterA;
-    const int N1;
+    int N1;
 
   public:
     T operator()(const int N2, const int N3, const int N4) const
@@ -81,7 +81,7 @@ namespace FTensor
   template <class A, class T> class Ddg_numeral_123
   {
     A iterA;
-    const int N1, N2, N3;
+    int N1, N2, N3;
 
   public:
     T operator()(const int N0) const { return iterA(N0, N1, N2, N3); }

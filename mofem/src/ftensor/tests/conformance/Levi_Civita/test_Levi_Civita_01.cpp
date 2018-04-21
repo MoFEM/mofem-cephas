@@ -1,10 +1,10 @@
+#include "../../../src/FTensor.hpp"
+#include "../test_for_zero.hpp"
 #include <iostream>
-#include "../../src/FTensor.hpp"
-#include "test_for_zero.hpp"
 using namespace FTensor;
 using namespace std;
 
-void test_Levi_Civita()
+void test_Levi_Civita_01()
 {
   Index<'i', 2> i;
   Index<'j', 2> j;
@@ -88,6 +88,14 @@ void test_Levi_Civita()
                 "levi_civita(n,o,p,q)(0,0,2,2)");
   test_for_zero(levi_civita(n, o, p, q)(0, 0, 2, 3),
                 "levi_civita(n,o,p,q)(0,0,2,3)");
+  test_for_zero(levi_civita(n, o, p, q)(0, 0, 3, 0),
+                "levi_civita(n,o,p,q)(0,0,3,0)");
+  test_for_zero(levi_civita(n, o, p, q)(0, 0, 3, 1),
+                "levi_civita(n,o,p,q)(0,0,3,1)");
+  test_for_zero(levi_civita(n, o, p, q)(0, 0, 3, 2),
+                "levi_civita(n,o,p,q)(0,0,3,2)");
+  test_for_zero(levi_civita(n, o, p, q)(0, 0, 3, 3),
+                "levi_civita(n,o,p,q)(0,0,3,3)");
   test_for_zero(levi_civita(n, o, p, q)(0, 1, 0, 0),
                 "levi_civita(n,o,p,q)(0,1,0,0)");
   test_for_zero(levi_civita(n, o, p, q)(0, 1, 0, 1),
@@ -112,6 +120,14 @@ void test_Levi_Civita()
                 "levi_civita(n,o,p,q)(0,1,2,2)");
   test_for_zero(levi_civita(n, o, p, q)(0, 1, 2, 3) - 1,
                 "levi_civita(n,o,p,q)(0,1,2,3)");
+  test_for_zero(levi_civita(n, o, p, q)(0, 1, 3, 0),
+                "levi_civita(n,o,p,q)(0,1,3,0)");
+  test_for_zero(levi_civita(n, o, p, q)(0, 1, 3, 1),
+                "levi_civita(n,o,p,q)(0,1,3,1)");
+  test_for_zero(levi_civita(n, o, p, q)(0, 1, 3, 2) + 1,
+                "levi_civita(n,o,p,q)(0,1,3,2)");
+  test_for_zero(levi_civita(n, o, p, q)(0, 1, 3, 3),
+                "levi_civita(n,o,p,q)(0,1,3,3)");
   test_for_zero(levi_civita(n, o, p, q)(0, 2, 0, 0),
                 "levi_civita(n,o,p,q)(0,2,0,0)");
   test_for_zero(levi_civita(n, o, p, q)(0, 2, 0, 1),
@@ -201,6 +217,14 @@ void test_Levi_Civita()
                 "levi_civita(n,o,p,q)(1,0,2,2)");
   test_for_zero(levi_civita(n, o, p, q)(1, 0, 2, 3) + 1,
                 "levi_civita(n,o,p,q)(1,0,2,3)");
+  test_for_zero(levi_civita(n, o, p, q)(1, 0, 3, 0),
+                "levi_civita(n,o,p,q)(1,0,3,0)");
+  test_for_zero(levi_civita(n, o, p, q)(1, 0, 3, 1),
+                "levi_civita(n,o,p,q)(1,0,3,1)");
+  test_for_zero(levi_civita(n, o, p, q)(1, 0, 3, 2) - 1,
+                "levi_civita(n,o,p,q)(1,0,3,2)");
+  test_for_zero(levi_civita(n, o, p, q)(1, 0, 3, 3),
+                "levi_civita(n,o,p,q)(1,0,3,3)");
   test_for_zero(levi_civita(n, o, p, q)(1, 1, 0, 0),
                 "levi_civita(n,o,p,q)(1,1,0,0)");
   test_for_zero(levi_civita(n, o, p, q)(1, 1, 0, 1),
@@ -225,6 +249,14 @@ void test_Levi_Civita()
                 "levi_civita(n,o,p,q)(1,1,2,2)");
   test_for_zero(levi_civita(n, o, p, q)(1, 1, 2, 3),
                 "levi_civita(n,o,p,q)(1,1,2,3)");
+  test_for_zero(levi_civita(n, o, p, q)(1, 1, 3, 0),
+                "levi_civita(n,o,p,q)(1,1,3,0)");
+  test_for_zero(levi_civita(n, o, p, q)(1, 1, 3, 1),
+                "levi_civita(n,o,p,q)(1,1,3,1)");
+  test_for_zero(levi_civita(n, o, p, q)(1, 1, 3, 2),
+                "levi_civita(n,o,p,q)(1,1,3,2)");
+  test_for_zero(levi_civita(n, o, p, q)(1, 1, 3, 3),
+                "levi_civita(n,o,p,q)(1,1,3,3)");
   test_for_zero(levi_civita(n, o, p, q)(1, 2, 0, 0),
                 "levi_civita(n,o,p,q)(1,2,0,0)");
   test_for_zero(levi_civita(n, o, p, q)(1, 2, 0, 1),
@@ -314,6 +346,14 @@ void test_Levi_Civita()
                 "levi_civita(n,o,p,q)(2,0,2,2)");
   test_for_zero(levi_civita(n, o, p, q)(2, 0, 2, 3),
                 "levi_civita(n,o,p,q)(2,0,2,3)");
+  test_for_zero(levi_civita(n, o, p, q)(2, 0, 3, 0),
+                "levi_civita(n,o,p,q)(2,0,3,0)");
+  test_for_zero(levi_civita(n, o, p, q)(2, 0, 3, 1) + 1,
+                "levi_civita(n,o,p,q)(2,0,3,1)");
+  test_for_zero(levi_civita(n, o, p, q)(2, 0, 3, 2),
+                "levi_civita(n,o,p,q)(2,0,3,2)");
+  test_for_zero(levi_civita(n, o, p, q)(2, 0, 3, 3),
+                "levi_civita(n,o,p,q)(2,0,3,3)");
   test_for_zero(levi_civita(n, o, p, q)(2, 1, 0, 0),
                 "levi_civita(n,o,p,q)(2,1,0,0)");
   test_for_zero(levi_civita(n, o, p, q)(2, 1, 0, 1),
@@ -338,6 +378,14 @@ void test_Levi_Civita()
                 "levi_civita(n,o,p,q)(2,1,2,2)");
   test_for_zero(levi_civita(n, o, p, q)(2, 1, 2, 3),
                 "levi_civita(n,o,p,q)(2,1,2,3)");
+  test_for_zero(levi_civita(n, o, p, q)(2, 1, 3, 0) - 1,
+                "levi_civita(n,o,p,q)(2,1,3,0)");
+  test_for_zero(levi_civita(n, o, p, q)(2, 1, 3, 1),
+                "levi_civita(n,o,p,q)(2,1,3,1)");
+  test_for_zero(levi_civita(n, o, p, q)(2, 1, 3, 2),
+                "levi_civita(n,o,p,q)(2,1,3,2)");
+  test_for_zero(levi_civita(n, o, p, q)(2, 1, 3, 3),
+                "levi_civita(n,o,p,q)(2,1,3,3)");
   test_for_zero(levi_civita(n, o, p, q)(2, 2, 0, 0),
                 "levi_civita(n,o,p,q)(2,2,0,0)");
   test_for_zero(levi_civita(n, o, p, q)(2, 2, 0, 1),
@@ -427,6 +475,14 @@ void test_Levi_Civita()
                 "levi_civita(n,o,p,q)(3,0,2,2)");
   test_for_zero(levi_civita(n, o, p, q)(3, 0, 2, 3),
                 "levi_civita(n,o,p,q)(3,0,2,3)");
+  test_for_zero(levi_civita(n, o, p, q)(3, 0, 3, 0),
+                "levi_civita(n,o,p,q)(3,0,3,0)");
+  test_for_zero(levi_civita(n, o, p, q)(3, 0, 3, 1),
+                "levi_civita(n,o,p,q)(3,0,3,1)");
+  test_for_zero(levi_civita(n, o, p, q)(3, 0, 3, 2),
+                "levi_civita(n,o,p,q)(3,0,3,2)");
+  test_for_zero(levi_civita(n, o, p, q)(3, 0, 3, 3),
+                "levi_civita(n,o,p,q)(3,0,3,3)");
   test_for_zero(levi_civita(n, o, p, q)(3, 1, 0, 0),
                 "levi_civita(n,o,p,q)(3,1,0,0)");
   test_for_zero(levi_civita(n, o, p, q)(3, 1, 0, 1),
@@ -451,6 +507,14 @@ void test_Levi_Civita()
                 "levi_civita(n,o,p,q)(3,1,2,2)");
   test_for_zero(levi_civita(n, o, p, q)(3, 1, 2, 3),
                 "levi_civita(n,o,p,q)(3,1,2,3)");
+  test_for_zero(levi_civita(n, o, p, q)(3, 1, 3, 0),
+                "levi_civita(n,o,p,q)(3,1,3,0)");
+  test_for_zero(levi_civita(n, o, p, q)(3, 1, 3, 1),
+                "levi_civita(n,o,p,q)(3,1,3,1)");
+  test_for_zero(levi_civita(n, o, p, q)(3, 1, 3, 2),
+                "levi_civita(n,o,p,q)(3,1,3,2)");
+  test_for_zero(levi_civita(n, o, p, q)(3, 1, 3, 3),
+                "levi_civita(n,o,p,q)(3,1,3,3)");
   test_for_zero(levi_civita(n, o, p, q)(3, 2, 0, 0),
                 "levi_civita(n,o,p,q)(3,2,0,0)");
   test_for_zero(levi_civita(n, o, p, q)(3, 2, 0, 1) + 1,

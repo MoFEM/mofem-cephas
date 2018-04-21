@@ -11,8 +11,8 @@ namespace FTensor
             char k, char l>
   class Ddg_or_Ddg
   {
-    const Ddg_Expr<A, T, Dim, Dim, i, j, k, l> iterA;
-    const Ddg_Expr<B, U, Dim, Dim, i, l, k, j> iterB;
+    Ddg_Expr<A, T, Dim, Dim, i, j, k, l> iterA;
+    Ddg_Expr<B, U, Dim, Dim, i, l, k, j> iterB;
 
   public:
     typename promote<T, U>::V
@@ -28,12 +28,12 @@ namespace FTensor
 
   template <class A, class B, class T, class U, int Dim, char i, char j,
             char k, char l>
-  inline const Ddg_Expr<const Ddg_or_Ddg<A, B, T, U, Dim, i, j, k, l>,
-                        typename promote<T, U>::V, Dim, Dim, i, k, j, l>
+  Ddg_Expr<Ddg_or_Ddg<A, B, T, U, Dim, i, j, k, l>, typename promote<T, U>::V,
+           Dim, Dim, i, k, j, l>
   operator||(const Ddg_Expr<A, T, Dim, Dim, i, j, k, l> &a,
              const Ddg_Expr<B, U, Dim, Dim, i, l, k, j> &b)
   {
-    typedef const Ddg_or_Ddg<A, B, T, U, Dim, i, j, k, l> TensorExpr;
+    using TensorExpr = Ddg_or_Ddg<A, B, T, U, Dim, i, j, k, l>;
     return Ddg_Expr<TensorExpr, typename promote<T, U>::V, Dim, Dim, i, k, j,
                     l>(TensorExpr(a, b));
   }

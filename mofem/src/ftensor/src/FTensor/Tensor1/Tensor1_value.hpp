@@ -10,22 +10,15 @@ namespace FTensor
     T data[Tensor_Dim];
 
   public:
-    /* Initializations for varying numbers of elements, with each one
-       defined for a particular Tensor_Dim.  To initialize a different
-       dimension, just add the appropriate constructor and call to
-       the Tensor1_constructor constructor. */
-    Tensor1(T d0) { Tensor1_constructor<T, Tensor_Dim>(data, d0); }
-    Tensor1(T d0, T d1) { Tensor1_constructor<T, Tensor_Dim>(data, d0, d1); }
-    Tensor1(T d0, T d1, T d2)
+    /* Initializations for varying numbers of elements. */
+    template <class... U> constexpr Tensor1(U... d) : data{d...}
     {
-      Tensor1_constructor<T, Tensor_Dim>(data, d0, d1, d2);
-    }
-    Tensor1(T d0, T d1, T d2, T d3)
-    {
-      Tensor1_constructor<T, Tensor_Dim>(data, d0, d1, d2, d3);
-    }
+      static_assert(sizeof...(d) == sizeof(data) / sizeof(T),
+                    "Incorrect number of Arguments. Constructor should "
+                    "initialize the entire Tensor");
+    };
 
-    Tensor1() {}
+    constexpr Tensor1() {}
 
     /* There are two operator(int)'s, one for non-consts that lets you
        change the value, and one for consts that doesn't. */
@@ -38,7 +31,7 @@ namespace FTensor
           std::stringstream s;
           s << "Bad index in Tensor1<T," << Tensor_Dim << ">.operator(" << N
             << ")" << std::endl;
-          throw std::runtime_error(s.str());
+          throw std::out_of_range(s.str());
         }
 #endif
       return data[N];
@@ -51,7 +44,7 @@ namespace FTensor
           std::stringstream s;
           s << "Bad index in Tensor1<T," << Tensor_Dim << ">.operator(" << N
             << ") const" << std::endl;
-          throw std::runtime_error(s.str());
+          throw std::out_of_range(s.str());
         }
 #endif
       return data[N];
@@ -59,7 +52,7 @@ namespace FTensor
 
     /* These operator()'s are the first part in constructing template
        expressions.  They can be used to slice off lower dimensional
-       parts. They are not entirely safe, since you can accidently use a
+       parts. They are not entirely safe, since you can accidentaly use a
        higher dimension than what is really allowed (like Dim=5). */
 
     template <char i, int Dim>

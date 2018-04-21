@@ -10,7 +10,7 @@ namespace FTensor
 
   template <class A, class B, class U, int Dim0, int Dim12, char i, char j,
             char k, int Current_Dim0, int Current_Dim1, int Current_Dim2>
-  inline void T3as_equals_T3as(
+  void T3as_equals_T3as(
     A &iter,
     const Tensor3_antisymmetric_Expr<B, U, Dim0, Dim12, i, j, k> &result,
     const Number<Current_Dim0> &, const Number<Current_Dim1> &,
@@ -24,7 +24,7 @@ namespace FTensor
 
   template <class A, class B, class U, int Dim0, int Dim12, char i, char j,
             char k, int Current_Dim0, int Current_Dim2>
-  inline void T3as_equals_T3as(
+  void T3as_equals_T3as(
     A &iter,
     const Tensor3_antisymmetric_Expr<B, U, Dim0, Dim12, i, j, k> &result,
     const Number<Current_Dim0> &, const Number<1> &,
@@ -38,7 +38,7 @@ namespace FTensor
 
   template <class A, class B, class U, int Dim0, int Dim12, char i, char j,
             char k, int Current_Dim0>
-  inline void T3as_equals_T3as(
+  void T3as_equals_T3as(
     A &iter,
     const Tensor3_antisymmetric_Expr<B, U, Dim0, Dim12, i, j, k> &result,
     const Number<Current_Dim0> &, const Number<1> &, const Number<2> &)
@@ -50,7 +50,7 @@ namespace FTensor
 
   template <class A, class B, class U, int Dim0, int Dim12, char i, char j,
             char k>
-  inline void T3as_equals_T3as(
+  void T3as_equals_T3as(
     A &iter,
     const Tensor3_antisymmetric_Expr<B, U, Dim0, Dim12, i, j, k> &result,
     const Number<1> &, const Number<1> &, const Number<2> &)
@@ -60,8 +60,8 @@ namespace FTensor
 
   template <class A, class T, int Dim0, int Dim12, char i, char j, char k>
   template <class B, class U>
-  inline const Tensor3_antisymmetric_Expr<
-    Tensor3_antisymmetric<A, Dim0, Dim12>, T, Dim0, Dim12, i, j, k> &
+  Tensor3_antisymmetric_Expr<Tensor3_antisymmetric<A, Dim0, Dim12>, T, Dim0,
+                             Dim12, i, j, k> &
   Tensor3_antisymmetric_Expr<Tensor3_antisymmetric<A, Dim0, Dim12>, T, Dim0,
                              Dim12, i, j, k>::
   operator=(
@@ -75,8 +75,8 @@ namespace FTensor
   /* T3as=T3as_Expr(T3as) */
 
   template <class A, class T, int Dim0, int Dim12, char i, char j, char k>
-  inline const Tensor3_antisymmetric_Expr<
-    Tensor3_antisymmetric<A, Dim0, Dim12>, T, Dim0, Dim12, i, j, k> &
+  Tensor3_antisymmetric_Expr<Tensor3_antisymmetric<A, Dim0, Dim12>, T, Dim0,
+                             Dim12, i, j, k> &
   Tensor3_antisymmetric_Expr<Tensor3_antisymmetric<A, Dim0, Dim12>, T, Dim0,
                              Dim12, i, j, k>::
   operator=(
@@ -90,7 +90,7 @@ namespace FTensor
 
   template <class A, class B, class U, int Dim0, int Dim12, char i, char j,
             char k, int Current_Dim0, int Current_Dim1, int Current_Dim2>
-  inline void T3as_switched_equals_T3as(
+  void T3as_switched_equals_T3as(
     A &iter,
     const Tensor3_antisymmetric_Expr<B, U, Dim0, Dim12, i, k, j> &result,
     const Number<Current_Dim0> &, const Number<Current_Dim1> &,
@@ -105,7 +105,7 @@ namespace FTensor
 
   template <class A, class B, class U, int Dim0, int Dim12, char i, char j,
             char k, int Current_Dim0, int Current_Dim2>
-  inline void T3as_switched_equals_T3as(
+  void T3as_switched_equals_T3as(
     A &iter,
     const Tensor3_antisymmetric_Expr<B, U, Dim0, Dim12, i, k, j> &result,
     const Number<Current_Dim0> &, const Number<1> &,
@@ -120,7 +120,7 @@ namespace FTensor
 
   template <class A, class B, class U, int Dim0, int Dim12, char i, char j,
             char k, int Current_Dim0>
-  inline void T3as_switched_equals_T3as(
+  void T3as_switched_equals_T3as(
     A &iter,
     const Tensor3_antisymmetric_Expr<B, U, Dim0, Dim12, i, k, j> &result,
     const Number<Current_Dim0> &, const Number<1> &, const Number<2> &)
@@ -132,7 +132,7 @@ namespace FTensor
 
   template <class A, class B, class U, int Dim0, int Dim12, char i, char j,
             char k>
-  inline void T3as_switched_equals_T3as(
+  void T3as_switched_equals_T3as(
     A &iter,
     const Tensor3_antisymmetric_Expr<B, U, Dim0, Dim12, i, k, j> &result,
     const Number<1> &, const Number<1> &, const Number<2> &)
@@ -142,8 +142,8 @@ namespace FTensor
 
   template <class A, class T, int Dim0, int Dim12, char i, char j, char k>
   template <class B, class U>
-  inline const Tensor3_antisymmetric_Expr<
-    Tensor3_antisymmetric<A, Dim0, Dim12>, T, Dim0, Dim12, i, j, k> &
+  Tensor3_antisymmetric_Expr<Tensor3_antisymmetric<A, Dim0, Dim12>, T, Dim0,
+                             Dim12, i, j, k> &
   Tensor3_antisymmetric_Expr<Tensor3_antisymmetric<A, Dim0, Dim12>, T, Dim0,
                              Dim12, i, j, k>::
   operator=(

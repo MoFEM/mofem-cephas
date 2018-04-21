@@ -10,7 +10,7 @@ namespace FTensor
 {
   template <class A, class B, class U, int Dim, char i, char j,
             int Current_Dim0, int Current_Dim1>
-  inline void
+  void
   T2s_equals_T2s(A &iter,
                  const Tensor2_symmetric_Expr<B, U, Dim, i, j> &result,
                  const Number<Current_Dim0> &, const Number<Current_Dim1> &)
@@ -23,10 +23,9 @@ namespace FTensor
 
   template <class A, class B, class U, int Dim, char i, char j,
             int Current_Dim1>
-  inline void
-  T2s_equals_T2s(A &iter,
-                 const Tensor2_symmetric_Expr<B, U, Dim, i, j> &result,
-                 const Number<1> &, const Number<Current_Dim1> &)
+  void T2s_equals_T2s(A &iter,
+                      const Tensor2_symmetric_Expr<B, U, Dim, i, j> &result,
+                      const Number<1> &, const Number<Current_Dim1> &)
   {
     iter(0, Current_Dim1 - 1) = result(0, Current_Dim1 - 1);
     T2s_equals_T2s(iter, result, Number<Current_Dim1 - 1>(),
@@ -34,18 +33,16 @@ namespace FTensor
   }
 
   template <class A, class B, class U, int Dim, char i, char j>
-  inline void
-  T2s_equals_T2s(A &iter,
-                 const Tensor2_symmetric_Expr<B, U, Dim, i, j> &result,
-                 const Number<1> &, const Number<1> &)
+  void T2s_equals_T2s(A &iter,
+                      const Tensor2_symmetric_Expr<B, U, Dim, i, j> &result,
+                      const Number<1> &, const Number<1> &)
   {
     iter(0, 0) = result(0, 0);
   }
 
   template <class A, class T, int Tensor_Dim, int Dim, char i, char j>
   template <class B, class U>
-  inline const Tensor2_symmetric_Expr<Tensor2_symmetric<A, Tensor_Dim>, T, Dim,
-                                      i, j> &
+  const Tensor2_symmetric_Expr<Tensor2_symmetric<A, Tensor_Dim>, T, Dim, i, j> &
   Tensor2_symmetric_Expr<Tensor2_symmetric<A, Tensor_Dim>, T, Dim, i, j>::
   operator=(const Tensor2_symmetric_Expr<B, U, Dim, i, j> &result)
   {
@@ -56,15 +53,13 @@ namespace FTensor
   /* T2s=T2s_Expr(T2s) */
 
   template <class A, class T, int Tensor_Dim, int Dim, char i, char j>
-  inline const Tensor2_symmetric_Expr<Tensor2_symmetric<A, Tensor_Dim>, T, Dim,
-                                      i, j> &
+  const Tensor2_symmetric_Expr<Tensor2_symmetric<A, Tensor_Dim>, T, Dim, i, j> &
   Tensor2_symmetric_Expr<Tensor2_symmetric<A, Tensor_Dim>, T, Dim, i, j>::
   operator=(const Tensor2_symmetric_Expr<Tensor2_symmetric<A, Tensor_Dim>, T,
                                          Dim, i, j> &result)
   {
     return operator=<Tensor2_symmetric<A, Tensor_Dim>, T>(result);
   }
-
   /* ADOL-C T2s<<=T2s left */
 
   template <class A, class B, class U, int Dim, char i, char j,
@@ -125,7 +120,7 @@ namespace FTensor
 
   template <class A, class B, class U, int Dim, char i, char j,
             int Current_Dim0, int Current_Dim1>
-  inline void
+  void
   T2s_plus_equals_T2s(A &iter,
                       const Tensor2_symmetric_Expr<B, U, Dim, i, j> &result,
                       const Number<Current_Dim0> &,
@@ -139,7 +134,7 @@ namespace FTensor
 
   template <class A, class B, class U, int Dim, char i, char j,
             int Current_Dim1>
-  inline void
+  void
   T2s_plus_equals_T2s(A &iter,
                       const Tensor2_symmetric_Expr<B, U, Dim, i, j> &result,
                       const Number<1> &, const Number<Current_Dim1> &)
@@ -150,7 +145,7 @@ namespace FTensor
   }
 
   template <class A, class B, class U, int Dim, char i, char j>
-  inline void
+  void
   T2s_plus_equals_T2s(A &iter,
                       const Tensor2_symmetric_Expr<B, U, Dim, i, j> &result,
                       const Number<1> &, const Number<1> &)
@@ -160,8 +155,7 @@ namespace FTensor
 
   template <class A, class T, int Tensor_Dim, int Dim, char i, char j>
   template <class B, class U>
-  inline const Tensor2_symmetric_Expr<Tensor2_symmetric<A, Tensor_Dim>, T, Dim,
-                                      i, j> &
+  const Tensor2_symmetric_Expr<Tensor2_symmetric<A, Tensor_Dim>, T, Dim, i, j> &
   Tensor2_symmetric_Expr<Tensor2_symmetric<A, Tensor_Dim>, T, Dim, i, j>::
   operator+=(const Tensor2_symmetric_Expr<B, U, Dim, i, j> &result)
   {
@@ -173,7 +167,7 @@ namespace FTensor
 
   template <class A, class B, class U, int Dim, char i, char j,
             int Current_Dim0, int Current_Dim1>
-  inline void
+  void
   T2s_minus_equals_T2s(A &iter,
                        const Tensor2_symmetric_Expr<B, U, Dim, i, j> &result,
                        const Number<Current_Dim0> &,
@@ -187,7 +181,7 @@ namespace FTensor
 
   template <class A, class B, class U, int Dim, char i, char j,
             int Current_Dim1>
-  inline void
+  void
   T2s_minus_equals_T2s(A &iter,
                        const Tensor2_symmetric_Expr<B, U, Dim, i, j> &result,
                        const Number<1> &, const Number<Current_Dim1> &)
@@ -198,7 +192,7 @@ namespace FTensor
   }
 
   template <class A, class B, class U, int Dim, char i, char j>
-  inline void
+  void
   T2s_minus_equals_T2s(A &iter,
                        const Tensor2_symmetric_Expr<B, U, Dim, i, j> &result,
                        const Number<1> &, const Number<1> &)
@@ -208,8 +202,7 @@ namespace FTensor
 
   template <class A, class T, int Tensor_Dim, int Dim, char i, char j>
   template <class B, class U>
-  inline const Tensor2_symmetric_Expr<Tensor2_symmetric<A, Tensor_Dim>, T, Dim,
-                                      i, j> &
+  const Tensor2_symmetric_Expr<Tensor2_symmetric<A, Tensor_Dim>, T, Dim, i, j> &
   Tensor2_symmetric_Expr<Tensor2_symmetric<A, Tensor_Dim>, T, Dim, i, j>::
   operator-=(const Tensor2_symmetric_Expr<B, U, Dim, i, j> &result)
   {
@@ -221,7 +214,7 @@ namespace FTensor
 
   template <class A, class B, class U, int Dim, char i, char j,
             int Current_Dim0, int Current_Dim1>
-  inline void
+  void
   T2s_and_equals_T2s(A &iter,
                      const Tensor2_symmetric_Expr<B, U, Dim, i, j> &result,
                      const Number<Current_Dim0> &,
@@ -235,7 +228,7 @@ namespace FTensor
 
   template <class A, class B, class U, int Dim, char i, char j,
             int Current_Dim1>
-  inline void
+  void
   T2s_and_equals_T2s(A &iter,
                      const Tensor2_symmetric_Expr<B, U, Dim, i, j> &result,
                      const Number<1> &, const Number<Current_Dim1> &)
@@ -246,7 +239,7 @@ namespace FTensor
   }
 
   template <class A, class B, class U, int Dim, char i, char j>
-  inline void
+  void
   T2s_and_equals_T2s(A &iter,
                      const Tensor2_symmetric_Expr<B, U, Dim, i, j> &result,
                      const Number<1> &, const Number<1> &)
@@ -256,8 +249,7 @@ namespace FTensor
 
   template <class A, class T, int Tensor_Dim, int Dim, char i, char j>
   template <class B, class U>
-  inline const Tensor2_symmetric_Expr<Tensor2_symmetric<A, Tensor_Dim>, T, Dim,
-                                      i, j> &
+  const Tensor2_symmetric_Expr<Tensor2_symmetric<A, Tensor_Dim>, T, Dim, i, j> &
   Tensor2_symmetric_Expr<Tensor2_symmetric<A, Tensor_Dim>, T, Dim, i, j>::
   operator&=(const Tensor2_symmetric_Expr<B, U, Dim, i, j> &result)
   {
@@ -269,8 +261,7 @@ namespace FTensor
 
   template <class A, class T, int Tensor_Dim, int Dim, char i, char j>
   template <class B, class U>
-  inline const Tensor2_symmetric_Expr<Tensor2_symmetric<A, Tensor_Dim>, T, Dim,
-                                      i, j> &
+  const Tensor2_symmetric_Expr<Tensor2_symmetric<A, Tensor_Dim>, T, Dim, i, j> &
   Tensor2_symmetric_Expr<Tensor2_symmetric<A, Tensor_Dim>, T, Dim, i, j>::
   operator=(const Tensor2_symmetric_Expr<B, U, Dim, j, i> &result)
   {
@@ -280,8 +271,7 @@ namespace FTensor
 
   template <class A, class T, int Tensor_Dim, int Dim, char i, char j>
   template <class B, class U>
-  inline const Tensor2_symmetric_Expr<Tensor2_symmetric<A, Tensor_Dim>, T, Dim,
-                                      i, j> &
+  const Tensor2_symmetric_Expr<Tensor2_symmetric<A, Tensor_Dim>, T, Dim, i, j> &
   Tensor2_symmetric_Expr<Tensor2_symmetric<A, Tensor_Dim>, T, Dim, i, j>::
   operator+=(const Tensor2_symmetric_Expr<B, U, Dim, j, i> &result)
   {
@@ -291,8 +281,7 @@ namespace FTensor
 
   template <class A, class T, int Tensor_Dim, int Dim, char i, char j>
   template <class B, class U>
-  inline const Tensor2_symmetric_Expr<Tensor2_symmetric<A, Tensor_Dim>, T, Dim,
-                                      i, j> &
+  const Tensor2_symmetric_Expr<Tensor2_symmetric<A, Tensor_Dim>, T, Dim, i, j> &
   Tensor2_symmetric_Expr<Tensor2_symmetric<A, Tensor_Dim>, T, Dim, i, j>::
   operator-=(const Tensor2_symmetric_Expr<B, U, Dim, j, i> &result)
   {
@@ -305,9 +294,8 @@ namespace FTensor
   /* T2s=U */
 
   template <class A, class U, int Current_Dim0, int Current_Dim1>
-  inline void
-  T2s_equals_generic(A &iter, const U &u, const Number<Current_Dim0> &,
-                     const Number<Current_Dim1> &)
+  void T2s_equals_generic(A &iter, const U &u, const Number<Current_Dim0> &,
+                          const Number<Current_Dim1> &)
   {
     iter(Current_Dim0 - 1, Current_Dim1 - 1) = u;
     T2s_equals_generic(iter, u, Number<Current_Dim0 - 1>(),
@@ -315,8 +303,8 @@ namespace FTensor
   }
 
   template <class A, class U, int Current_Dim1>
-  inline void T2s_equals_generic(A &iter, const U &u, const Number<1> &,
-                                 const Number<Current_Dim1> &)
+  void T2s_equals_generic(A &iter, const U &u, const Number<1> &,
+                          const Number<Current_Dim1> &)
   {
     iter(0, Current_Dim1 - 1) = u;
     T2s_equals_generic(iter, u, Number<Current_Dim1 - 1>(),
@@ -324,7 +312,7 @@ namespace FTensor
   }
 
   template <class A, class U>
-  inline void
+  void
   T2s_equals_generic(A &iter, const U &u, const Number<1> &, const Number<1> &)
   {
     iter(0, 0) = u;
@@ -332,8 +320,7 @@ namespace FTensor
 
   template <class A, class T, int Tensor_Dim, int Dim, char i, char j>
   template <class U>
-  inline const Tensor2_symmetric_Expr<Tensor2_symmetric<A, Tensor_Dim>, T, Dim,
-                                      i, j> &
+  const Tensor2_symmetric_Expr<Tensor2_symmetric<A, Tensor_Dim>, T, Dim, i, j> &
   Tensor2_symmetric_Expr<Tensor2_symmetric<A, Tensor_Dim>, T, Dim, i, j>::
   operator=(const U &u)
   {
@@ -344,7 +331,7 @@ namespace FTensor
   /* T2s+=U */
 
   template <class A, class U, int Current_Dim0, int Current_Dim1>
-  inline void
+  void
   T2s_plus_equals_generic(A &iter, const U &u, const Number<Current_Dim0> &,
                           const Number<Current_Dim1> &)
   {
@@ -354,8 +341,8 @@ namespace FTensor
   }
 
   template <class A, class U, int Current_Dim1>
-  inline void T2s_plus_equals_generic(A &iter, const U &u, const Number<1> &,
-                                      const Number<Current_Dim1> &)
+  void T2s_plus_equals_generic(A &iter, const U &u, const Number<1> &,
+                               const Number<Current_Dim1> &)
   {
     iter(0, Current_Dim1 - 1) += u;
     T2s_plus_equals_generic(iter, u, Number<Current_Dim1 - 1>(),
@@ -363,16 +350,15 @@ namespace FTensor
   }
 
   template <class A, class U>
-  inline void T2s_plus_equals_generic(A &iter, const U &u, const Number<1> &,
-                                      const Number<1> &)
+  void T2s_plus_equals_generic(A &iter, const U &u, const Number<1> &,
+                               const Number<1> &)
   {
     iter(0, 0) += u;
   }
 
   template <class A, class T, int Tensor_Dim, int Dim, char i, char j>
   template <class U>
-  inline const Tensor2_symmetric_Expr<Tensor2_symmetric<A, Tensor_Dim>, T, Dim,
-                                      i, j> &
+  const Tensor2_symmetric_Expr<Tensor2_symmetric<A, Tensor_Dim>, T, Dim, i, j> &
   Tensor2_symmetric_Expr<Tensor2_symmetric<A, Tensor_Dim>, T, Dim, i, j>::
   operator+=(const U &u)
   {
@@ -383,7 +369,7 @@ namespace FTensor
   /* T2s-=U */
 
   template <class A, class U, int Current_Dim0, int Current_Dim1>
-  inline void
+  void
   T2s_minus_equals_generic(A &iter, const U &u, const Number<Current_Dim0> &,
                            const Number<Current_Dim1> &)
   {
@@ -393,8 +379,8 @@ namespace FTensor
   }
 
   template <class A, class U, int Current_Dim1>
-  inline void T2s_minus_equals_generic(A &iter, const U &u, const Number<1> &,
-                                       const Number<Current_Dim1> &)
+  void T2s_minus_equals_generic(A &iter, const U &u, const Number<1> &,
+                                const Number<Current_Dim1> &)
   {
     iter(0, Current_Dim1 - 1) -= u;
     T2s_minus_equals_generic(iter, u, Number<Current_Dim1 - 1>(),
@@ -402,16 +388,15 @@ namespace FTensor
   }
 
   template <class A, class U>
-  inline void T2s_minus_equals_generic(A &iter, const U &u, const Number<1> &,
-                                       const Number<1> &)
+  void T2s_minus_equals_generic(A &iter, const U &u, const Number<1> &,
+                                const Number<1> &)
   {
     iter(0, 0) -= u;
   }
 
   template <class A, class T, int Tensor_Dim, int Dim, char i, char j>
   template <class U>
-  inline const Tensor2_symmetric_Expr<Tensor2_symmetric<A, Tensor_Dim>, T, Dim,
-                                      i, j> &
+  const Tensor2_symmetric_Expr<Tensor2_symmetric<A, Tensor_Dim>, T, Dim, i, j> &
   Tensor2_symmetric_Expr<Tensor2_symmetric<A, Tensor_Dim>, T, Dim, i, j>::
   operator-=(const U &u)
   {
@@ -422,7 +407,7 @@ namespace FTensor
   /* T2s*=U */
 
   template <class A, class U, int Current_Dim0, int Current_Dim1>
-  inline void
+  void
   T2s_times_equals_generic(A &iter, const U &u, const Number<Current_Dim0> &,
                            const Number<Current_Dim1> &)
   {
@@ -432,8 +417,8 @@ namespace FTensor
   }
 
   template <class A, class U, int Current_Dim1>
-  inline void T2s_times_equals_generic(A &iter, const U &u, const Number<1> &,
-                                       const Number<Current_Dim1> &)
+  void T2s_times_equals_generic(A &iter, const U &u, const Number<1> &,
+                                const Number<Current_Dim1> &)
   {
     iter(0, Current_Dim1 - 1) *= u;
     T2s_times_equals_generic(iter, u, Number<Current_Dim1 - 1>(),
@@ -441,16 +426,15 @@ namespace FTensor
   }
 
   template <class A, class U>
-  inline void T2s_times_equals_generic(A &iter, const U &u, const Number<1> &,
-                                       const Number<1> &)
+  void T2s_times_equals_generic(A &iter, const U &u, const Number<1> &,
+                                const Number<1> &)
   {
     iter(0, 0) *= u;
   }
 
   template <class A, class T, int Tensor_Dim, int Dim, char i, char j>
   template <class U>
-  inline const Tensor2_symmetric_Expr<Tensor2_symmetric<A, Tensor_Dim>, T, Dim,
-                                      i, j> &
+  const Tensor2_symmetric_Expr<Tensor2_symmetric<A, Tensor_Dim>, T, Dim, i, j> &
   Tensor2_symmetric_Expr<Tensor2_symmetric<A, Tensor_Dim>, T, Dim, i, j>::
   operator*=(const U &u)
   {
@@ -461,7 +445,7 @@ namespace FTensor
   /* T2s/=U */
 
   template <class A, class U, int Current_Dim0, int Current_Dim1>
-  inline void
+  void
   T2s_divide_equals_generic(A &iter, const U &u, const Number<Current_Dim0> &,
                             const Number<Current_Dim1> &)
   {
@@ -471,8 +455,8 @@ namespace FTensor
   }
 
   template <class A, class U, int Current_Dim1>
-  inline void T2s_divide_equals_generic(A &iter, const U &u, const Number<1> &,
-                                        const Number<Current_Dim1> &)
+  void T2s_divide_equals_generic(A &iter, const U &u, const Number<1> &,
+                                 const Number<Current_Dim1> &)
   {
     iter(0, Current_Dim1 - 1) /= u;
     T2s_divide_equals_generic(iter, u, Number<Current_Dim1 - 1>(),
@@ -480,16 +464,15 @@ namespace FTensor
   }
 
   template <class A, class U>
-  inline void T2s_divide_equals_generic(A &iter, const U &u, const Number<1> &,
-                                        const Number<1> &)
+  void T2s_divide_equals_generic(A &iter, const U &u, const Number<1> &,
+                                 const Number<1> &)
   {
     iter(0, 0) /= u;
   }
 
   template <class A, class T, int Tensor_Dim, int Dim, char i, char j>
   template <class U>
-  inline const Tensor2_symmetric_Expr<Tensor2_symmetric<A, Tensor_Dim>, T, Dim,
-                                      i, j> &
+  const Tensor2_symmetric_Expr<Tensor2_symmetric<A, Tensor_Dim>, T, Dim, i, j> &
   Tensor2_symmetric_Expr<Tensor2_symmetric<A, Tensor_Dim>, T, Dim, i, j>::
   operator/=(const U &u)
   {
@@ -503,7 +486,7 @@ namespace FTensor
 
   template <class A, class B, class U, int Dim01, char i, char j, int N,
             int Current_Dim0, int Current_Dim1>
-  inline void
+  void
   T3dgrhs2_equals_T2s(A &iter,
                       const Tensor2_symmetric_Expr<B, U, Dim01, i, j> &result,
                       const Number<Current_Dim0> &,
@@ -517,7 +500,7 @@ namespace FTensor
 
   template <class A, class B, class U, int Dim01, char i, char j, int N,
             int Current_Dim1>
-  inline void
+  void
   T3dgrhs2_equals_T2s(A &iter,
                       const Tensor2_symmetric_Expr<B, U, Dim01, i, j> &result,
                       const Number<1> &, const Number<Current_Dim1> &,
@@ -529,7 +512,7 @@ namespace FTensor
   }
 
   template <class A, class B, class U, int Dim01, char i, char j, int N>
-  inline void
+  void
   T3dgrhs2_equals_T2s(A &iter,
                       const Tensor2_symmetric_Expr<B, U, Dim01, i, j> &result,
                       const Number<1> &, const Number<1> &, const Number<N> &)
@@ -539,7 +522,7 @@ namespace FTensor
 
   template <class A, class T, int Dim, char i, char j, int N>
   template <class B, class U>
-  inline const Tensor2_symmetric_Expr<Dg_number_rhs_2<A, T, N>, T, Dim, i, j> &
+  const Tensor2_symmetric_Expr<Dg_number_rhs_2<A, T, N>, T, Dim, i, j> &
   Tensor2_symmetric_Expr<Dg_number_rhs_2<A, T, N>, T, Dim, i, j>::
   operator=(const Tensor2_symmetric_Expr<B, U, Dim, i, j> &result)
   {
@@ -549,7 +532,7 @@ namespace FTensor
   }
 
   template <class A, class T, int Dim, char i, char j, int N>
-  inline const Tensor2_symmetric_Expr<Dg_number_rhs_2<A, T, N>, T, Dim, i, j> &
+  const Tensor2_symmetric_Expr<Dg_number_rhs_2<A, T, N>, T, Dim, i, j> &
   Tensor2_symmetric_Expr<Dg_number_rhs_2<A, T, N>, T, Dim, i, j>::
   operator=(const Tensor2_symmetric_Expr<Dg_number_rhs_2<A, T, N>, T, Dim, i,
                                          j> &result)
@@ -563,7 +546,7 @@ namespace FTensor
 
   template <class A, class B, class U, int Dim01, char i, char j, int N0,
             int N1, int Current_Dim0, int Current_Dim1>
-  inline void T4ddgrhs01_equals_T2s(
+  void T4ddgrhs01_equals_T2s(
     A &iter, const Tensor2_symmetric_Expr<B, U, Dim01, i, j> &result,
     const Number<Current_Dim0> &, const Number<Current_Dim1> &,
     const Number<N0> &, const Number<N1> &)
@@ -576,7 +559,7 @@ namespace FTensor
 
   template <class A, class B, class U, int Dim01, char i, char j, int N0,
             int N1, int Current_Dim1>
-  inline void T4ddgrhs01_equals_T2s(
+  void T4ddgrhs01_equals_T2s(
     A &iter, const Tensor2_symmetric_Expr<B, U, Dim01, i, j> &result,
     const Number<1> &, const Number<Current_Dim1> &, const Number<N0> &,
     const Number<N1> &)
@@ -589,7 +572,7 @@ namespace FTensor
 
   template <class A, class B, class U, int Dim01, char i, char j, int N0,
             int N1>
-  inline void T4ddgrhs01_equals_T2s(
+  void T4ddgrhs01_equals_T2s(
     A &iter, const Tensor2_symmetric_Expr<B, U, Dim01, i, j> &result,
     const Number<1> &, const Number<1> &, const Number<N0> &,
     const Number<N1> &)
@@ -599,8 +582,7 @@ namespace FTensor
 
   template <class A, class T, int Dim, char i, char j, int N0, int N1>
   template <class B, class U>
-  inline const Tensor2_symmetric_Expr<Ddg_number_rhs_01<A, T, N0, N1>, T, Dim,
-                                      i, j> &
+  const Tensor2_symmetric_Expr<Ddg_number_rhs_01<A, T, N0, N1>, T, Dim, i, j> &
   Tensor2_symmetric_Expr<Ddg_number_rhs_01<A, T, N0, N1>, T, Dim, i, j>::
   operator=(const Tensor2_symmetric_Expr<B, U, Dim, i, j> &result)
   {
@@ -610,8 +592,7 @@ namespace FTensor
   }
 
   template <class A, class T, int Dim, char i, char j, int N0, int N1>
-  inline const Tensor2_symmetric_Expr<Ddg_number_rhs_01<A, T, N0, N1>, T, Dim,
-                                      i, j> &
+  const Tensor2_symmetric_Expr<Ddg_number_rhs_01<A, T, N0, N1>, T, Dim, i, j> &
   Tensor2_symmetric_Expr<Ddg_number_rhs_01<A, T, N0, N1>, T, Dim, i, j>::
   operator=(const Tensor2_symmetric_Expr<Ddg_number_rhs_01<A, T, N0, N1>, T,
                                          Dim, i, j> &result)

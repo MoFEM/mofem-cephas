@@ -22,12 +22,12 @@ namespace FTensor
   };
 
   template <class T, int Dim, char i>
-  inline const Tensor1_Expr<const dTensor0<T, Dim, i>,
-                            typename promote<T, double>::V, Dim, i>
+  const Tensor1_Expr<const dTensor0<T, Dim, i>, typename promote<T, double>::V,
+                     Dim, i>
   d(const Tensor0<T *> &a, const Index<i, Dim> index,
     const Tensor1<int, Dim> &d_ijk, const Tensor1<double, Dim> &d_xyz)
   {
-    typedef const dTensor0<T, Dim, i> Tensor_Expr;
+    using Tensor_Expr = dTensor0<T, Dim, i>;
     return Tensor1_Expr<Tensor_Expr, typename promote<T, double>::V, Dim, i>(
       Tensor_Expr(a, d_ijk, d_xyz));
   }

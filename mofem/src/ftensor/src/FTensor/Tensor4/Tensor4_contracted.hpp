@@ -5,29 +5,105 @@
 
 namespace FTensor
 {
-  template <class A, class T, int Dim> class Tensor4_contracted_02
+  template <class A, class T, int Dim> class Tensor4_contracted_23
   {
-    const A iterA;
-
-    template <int Current_Dim>
-    T eval(const Number<Current_Dim> &, const int N0,
-           const Number<Current_Dim> &, const int N1) const
-    {
-      return iterA(Current_Dim - 1, N0, Current_Dim - 1, N1)
-             + eval(Number<Current_Dim - 1>(), N0, Number<Current_Dim - 1>(),
-                    N1);
-    }
-    T eval(const Number<1> &, const int N0, const Number<1> &,
-           const int N1) const
-    {
-      return iterA(0, N0, 0, N1);
-    }
+    A iterA;
 
   public:
     T operator()(const int N0, const int N1) const
     {
-      return eval(Number<Dim>(), N0, Number<Dim>(), N1);
+      T result(0);
+      for(int ii = 0; ii < Dim; ++ii)
+        {
+          result += iterA(N0, N1, ii, ii);
+        }
+      return result;
+    }
+    Tensor4_contracted_23(const A &a) : iterA(a) {}
+  };
+
+  template <class A, class T, int Dim> class Tensor4_contracted_13
+  {
+    A iterA;
+
+  public:
+    T operator()(const int N0, const int N1) const
+    {
+      T result(0);
+      for(int ii = 0; ii < Dim; ++ii)
+        {
+          result += iterA(N0, ii, N1, ii);
+        }
+      return result;
+    }
+    Tensor4_contracted_13(const A &a) : iterA(a) {}
+  };
+
+  template <class A, class T, int Dim> class Tensor4_contracted_12
+  {
+    A iterA;
+
+  public:
+    T operator()(const int N0, const int N1) const
+    {
+      T result(0);
+      for(int ii = 0; ii < Dim; ++ii)
+        {
+          result += iterA(N0, ii, ii, N1);
+        }
+      return result;
+    }
+    Tensor4_contracted_12(const A &a) : iterA(a) {}
+  };
+
+  template <class A, class T, int Dim> class Tensor4_contracted_03
+  {
+    A iterA;
+
+  public:
+    T operator()(const int N0, const int N1) const
+    {
+      T result(0);
+      for(int ii = 0; ii < Dim; ++ii)
+        {
+          result += iterA(ii, N0, N1, ii);
+        }
+      return result;
+    }
+    Tensor4_contracted_03(const A &a) : iterA(a) {}
+  };
+
+  template <class A, class T, int Dim> class Tensor4_contracted_02
+  {
+    A iterA;
+
+  public:
+    T operator()(const int N0, const int N1) const
+    {
+      T result(0);
+      for(int ii = 0; ii < Dim; ++ii)
+        {
+          result += iterA(ii, N0, ii, N1);
+        }
+      return result;
     }
     Tensor4_contracted_02(const A &a) : iterA(a) {}
+  };
+
+  template <class A, class T, int Dim> class Tensor4_contracted_01
+  {
+    A iterA;
+
+  public:
+    T operator()(const int N0, const int N1) const
+    {
+      T result(0);
+      for(int ii = 0; ii < Dim; ++ii)
+        {
+          result += iterA(ii, ii, N0, N1);
+        }
+      return result;
+    }
+    Tensor4_contracted_01(const A &a) : iterA(a) {}
   };
 }

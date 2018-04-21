@@ -1,13 +1,15 @@
 /* A general version, not for pointers. */
 
+#pragma once
+
+#include "Tensor4_contracted.hpp"
+
 #include <ostream>
 
 #ifdef FTENSOR_DEBUG
 #include <sstream>
 #include <stdexcept>
 #endif
-
-#pragma once
 
 namespace FTensor
 {
@@ -18,103 +20,14 @@ namespace FTensor
     T data[Tensor_Dim0][Tensor_Dim1][Tensor_Dim2][Tensor_Dim3];
 
   public:
-    /* Initialization operators
-     * TODO revisit this operators*/
-    Tensor4(T d0000, T d0001, T d0002, T d0010, T d0011, T d0012, T d0020,
-            T d0021, T d0022, T d0100, T d0101, T d0102, T d0110, T d0111,
-            T d0112, T d0120, T d0121, T d0122, T d0200, T d0201, T d0202,
-            T d0210, T d0211, T d0212, T d0220, T d0221, T d0222, T d1000,
-            T d1001, T d1002, T d1010, T d1011, T d1012, T d1020, T d1021,
-            T d1022, T d1100, T d1101, T d1102, T d1110, T d1111, T d1112,
-            T d1120, T d1121, T d1122, T d1200, T d1201, T d1202, T d1210,
-            T d1211, T d1212, T d1220, T d1221, T d1222, T d2000, T d2001,
-            T d2002, T d2010, T d2011, T d2012, T d2020, T d2021, T d2022,
-            T d2100, T d2101, T d2102, T d2110, T d2111, T d2112, T d2120,
-            T d2121, T d2122, T d2200, T d2201, T d2202, T d2210, T d2211,
-            T d2212, T d2220, T d2221, T d2222)
+    /* Initialization operators */
+    template <class... U> Tensor4(U... d) : data{d...}
     {
-      data[0][0][0][0] = d0000;
-      data[0][0][0][1] = d0001;
-      data[0][0][0][2] = d0002;
-      data[0][0][1][0] = d0010;
-      data[0][0][1][1] = d0011;
-      data[0][0][1][2] = d0012;
-      data[0][0][2][0] = d0020;
-      data[0][0][2][1] = d0021;
-      data[0][0][2][2] = d0022;
-      data[0][1][0][0] = d0100;
-      data[0][1][0][1] = d0101;
-      data[0][1][0][2] = d0102;
-      data[0][1][1][0] = d0110;
-      data[0][1][1][1] = d0111;
-      data[0][1][1][2] = d0112;
-      data[0][1][2][0] = d0120;
-      data[0][1][2][1] = d0121;
-      data[0][1][2][2] = d0122;
-      data[0][2][0][0] = d0200;
-      data[0][2][0][1] = d0201;
-      data[0][2][0][2] = d0202;
-      data[0][2][1][0] = d0210;
-      data[0][2][1][1] = d0211;
-      data[0][2][1][2] = d0212;
-      data[0][2][2][0] = d0220;
-      data[0][2][2][1] = d0221;
-      data[0][2][2][2] = d0222;
-      data[1][0][0][0] = d1000;
-      data[1][0][0][1] = d1001;
-      data[1][0][0][2] = d1002;
-      data[1][0][1][0] = d1010;
-      data[1][0][1][1] = d1011;
-      data[1][0][1][2] = d1012;
-      data[1][0][2][0] = d1020;
-      data[1][0][2][1] = d1021;
-      data[1][0][2][2] = d1022;
-      data[1][1][0][0] = d1100;
-      data[1][1][0][1] = d1101;
-      data[1][1][0][2] = d1102;
-      data[1][1][1][0] = d1110;
-      data[1][1][1][1] = d1111;
-      data[1][1][1][2] = d1112;
-      data[1][1][2][0] = d1120;
-      data[1][1][2][1] = d1121;
-      data[1][1][2][2] = d1122;
-      data[1][2][0][0] = d1200;
-      data[1][2][0][1] = d1201;
-      data[1][2][0][2] = d1202;
-      data[1][2][1][0] = d1210;
-      data[1][2][1][1] = d1211;
-      data[1][2][1][2] = d1212;
-      data[1][2][2][0] = d1220;
-      data[1][2][2][1] = d1221;
-      data[1][2][2][2] = d1222;
-      data[2][0][0][0] = d2000;
-      data[2][0][0][1] = d2001;
-      data[2][0][0][2] = d2002;
-      data[2][0][1][0] = d2010;
-      data[2][0][1][1] = d2011;
-      data[2][0][1][2] = d2012;
-      data[2][0][2][0] = d2020;
-      data[2][0][2][1] = d2021;
-      data[2][0][2][2] = d2022;
-      data[2][1][0][0] = d2100;
-      data[2][1][0][1] = d2101;
-      data[2][1][0][2] = d2102;
-      data[2][1][1][0] = d2110;
-      data[2][1][1][1] = d2111;
-      data[2][1][1][2] = d2112;
-      data[2][1][2][0] = d2120;
-      data[2][1][2][1] = d2121;
-      data[2][1][2][2] = d2122;
-      data[2][2][0][0] = d2200;
-      data[2][2][0][1] = d2201;
-      data[2][2][0][2] = d2202;
-      data[2][2][1][0] = d2210;
-      data[2][2][1][1] = d2211;
-      data[2][2][1][2] = d2212;
-      data[2][2][2][0] = d2220;
-      data[2][2][2][1] = d2221;
-      data[2][2][2][2] = d2222;
+      static_assert(sizeof...(d) == sizeof(data) / sizeof(T),
+                    "Incorrect number of Arguments. Constructor should "
+                    "initialize the entire Tensor");
     }
+
     Tensor4() {}
     /* There are two operator(int,int,int,int)'s, one for non-consts
        that lets you change the value, and one for consts that
@@ -129,7 +42,7 @@ namespace FTensor
           s << "Bad index in Tensor4<T," << Tensor_Dim0 << "," << Tensor_Dim1
             << "," << Tensor_Dim2 << "," << Tensor_Dim3 << ">.operator(" << N1
             << "," << N2 << "," << N3 << "," << N4 << ") const" << std::endl;
-          throw std::runtime_error(s.str());
+          throw std::out_of_range(s.str());
         }
 #endif
       return data[N1][N2][N3][N4];
@@ -145,7 +58,7 @@ namespace FTensor
           s << "Bad index in Tensor4<T," << Tensor_Dim0 << "," << Tensor_Dim1
             << "," << Tensor_Dim2 << "," << Tensor_Dim3 << ">.operator(" << N1
             << "," << N2 << "," << N3 << "," << N4 << ")" << std::endl;
-          throw std::runtime_error(s.str());
+          throw std::out_of_range(s.str());
         }
 #endif
       return data[N1][N2][N3][N4];
@@ -189,23 +102,94 @@ namespace FTensor
     /* These operators are for internal contractions, resulting in a Tensor2.
      * For example something like A(k,i,k,j) */
 
-    template <char i, char j, char k, int Dim02, int Dim1, int Dim3>
-    inline typename std::enable_if<
-      (Tensor_Dim0 >= Dim02 && Tensor_Dim1 >= Dim1 && Tensor_Dim2 >= Dim02
-       && Tensor_Dim3 >= Dim3),
-      Tensor2_Expr<
-        const Tensor4_contracted_02<
-          Tensor4<T, Tensor_Dim0, Tensor_Dim1, Tensor_Dim2, Tensor_Dim3>, T,
-          Dim02>,
-        T, Dim1, Dim3, i, j>>::type
-    operator()(const Index<k, Dim02>, const Index<i, Dim1>,
-               const Index<k, Dim02>, const Index<j, Dim3>) const
+    // (i,j,k,k)
+    template <char i, char j, char k, int Dim0, int Dim1, int Dim23>
+    auto operator()(const Index<i, Dim0>, const Index<j, Dim1>,
+                    const Index<k, Dim23>, const Index<k, Dim23>) const
     {
-      typedef const Tensor4_contracted_02<
+      static_assert(Tensor_Dim0 >= Dim0 && Tensor_Dim1 >= Dim1
+                      && Tensor_Dim2 >= Dim23 && Tensor_Dim3 >= Dim23,
+                    "Incompatible indices");
+
+      using TensorExpr = Tensor4_contracted_23<
         Tensor4<T, Tensor_Dim0, Tensor_Dim1, Tensor_Dim2, Tensor_Dim3>, T,
-        Dim02>
-        TensorExpr;
-      return Tensor2_Expr<TensorExpr, T, Dim1, Dim3, i, j>(TensorExpr(*this));
+        Dim23>;
+      return Tensor2_Expr<TensorExpr, T, Dim0, Dim1, i, j>(TensorExpr(*this));
+    };
+
+    // (i,j,k,j)
+    template <char i, char j, char k, int Dim0, int Dim13, int Dim2>
+    auto operator()(const Index<i, Dim0>, const Index<j, Dim13>,
+                    const Index<k, Dim2>, const Index<j, Dim13>) const
+    {
+      static_assert(Tensor_Dim0 >= Dim0 && Tensor_Dim1 >= Dim13
+                      && Tensor_Dim2 >= Dim2 && Tensor_Dim3 >= Dim13,
+                    "Incompatible indices");
+
+      using TensorExpr = Tensor4_contracted_13<
+        Tensor4<T, Tensor_Dim0, Tensor_Dim1, Tensor_Dim2, Tensor_Dim3>, T,
+        Dim13>;
+      return Tensor2_Expr<TensorExpr, T, Dim0, Dim2, i, k>(TensorExpr(*this));
+    };
+
+    // (i,j,j,l)
+    template <char i, char j, char l, int Dim0, int Dim12, int Dim3>
+    auto operator()(const Index<i, Dim0>, const Index<j, Dim12>,
+                    const Index<j, Dim12>, const Index<l, Dim3>) const
+    {
+      static_assert(Tensor_Dim0 >= Dim0 && Tensor_Dim1 >= Dim12
+                      && Tensor_Dim2 >= Dim12 && Tensor_Dim3 >= Dim3,
+                    "Incompatible indices");
+
+      using TensorExpr = Tensor4_contracted_12<
+        Tensor4<T, Tensor_Dim0, Tensor_Dim1, Tensor_Dim2, Tensor_Dim3>, T,
+        Dim12>;
+      return Tensor2_Expr<TensorExpr, T, Dim0, Dim3, i, l>(TensorExpr(*this));
+    };
+
+    // (i,j,k,i)
+    template <char i, char j, char k, int Dim03, int Dim1, int Dim2>
+    auto operator()(const Index<i, Dim03>, const Index<j, Dim1>,
+                    const Index<k, Dim2>, const Index<i, Dim03>) const
+    {
+      static_assert(Tensor_Dim0 >= Dim03 && Tensor_Dim1 >= Dim1
+                      && Tensor_Dim2 >= Dim2 && Tensor_Dim3 >= Dim03,
+                    "Incompatible indices");
+
+      using TensorExpr = Tensor4_contracted_03<
+        Tensor4<T, Tensor_Dim0, Tensor_Dim1, Tensor_Dim2, Tensor_Dim3>, T,
+        Dim03>;
+      return Tensor2_Expr<TensorExpr, T, Dim1, Dim2, j, k>(TensorExpr(*this));
+    };
+
+    // (i,j,i,l)
+    template <char i, char j, char l, int Dim02, int Dim1, int Dim3>
+    auto operator()(const Index<i, Dim02>, const Index<j, Dim1>,
+                    const Index<i, Dim02>, const Index<l, Dim3>) const
+    {
+      static_assert(Tensor_Dim0 >= Dim02 && Tensor_Dim1 >= Dim1
+                      && Tensor_Dim2 >= Dim02 && Tensor_Dim3 >= Dim3,
+                    "Incompatible indices");
+
+      using TensorExpr = Tensor4_contracted_02<
+        Tensor4<T, Tensor_Dim0, Tensor_Dim1, Tensor_Dim2, Tensor_Dim3>, T,
+        Dim02>;
+      return Tensor2_Expr<TensorExpr, T, Dim1, Dim3, j, l>(TensorExpr(*this));
+    };
+
+    // (i,i,k,l)
+    template <char i, char k, char l, int Dim01, int Dim2, int Dim3>
+    auto operator()(const Index<i, Dim01>, const Index<i, Dim01>,
+                    const Index<k, Dim2>, const Index<l, Dim3>) const
+    {
+      static_assert(Tensor_Dim0 >= Dim01 && Tensor_Dim1 >= Dim01
+                      && Tensor_Dim2 >= Dim2 && Tensor_Dim3 >= Dim3,
+                    "Incompatible indices");
+
+      using TensorExpr = Tensor4_contracted_01<
+        Tensor4<T, Tensor_Dim0, Tensor_Dim1, Tensor_Dim2, Tensor_Dim3>, T,
+        Dim01>;
+      return Tensor2_Expr<TensorExpr, T, Dim2, Dim3, k, l>(TensorExpr(*this));
     };
 
     /* This is for expressions where a number is used for one slot, and

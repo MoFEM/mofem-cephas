@@ -10,8 +10,8 @@ namespace FTensor
             char k, char l>
   class Ddg_mod_Ddg
   {
-    const Ddg_Expr<A, T, Dim, Dim, i, j, k, l> iterA;
-    const Ddg_Expr<B, U, Dim, Dim, i, l, k, j> iterB;
+    Ddg_Expr<A, T, Dim, Dim, i, j, k, l> iterA;
+    Ddg_Expr<B, U, Dim, Dim, i, l, k, j> iterB;
 
   public:
     typename promote<T, U>::V
@@ -28,12 +28,12 @@ namespace FTensor
 
   template <class A, class B, class T, class U, int Dim, char i, char j,
             char k, char l>
-  inline const Riemann_Expr<const Ddg_mod_Ddg<A, B, T, U, Dim, i, j, k, l>,
-                            typename promote<T, U>::V, Dim, i, j, k, l>
+  Riemann_Expr<Ddg_mod_Ddg<A, B, T, U, Dim, i, j, k, l>,
+               typename promote<T, U>::V, Dim, i, j, k, l>
   operator%(const Ddg_Expr<A, T, Dim, Dim, i, j, k, l> &a,
             const Ddg_Expr<B, U, Dim, Dim, i, l, k, j> &b)
   {
-    typedef const Ddg_mod_Ddg<A, B, T, U, Dim, i, j, k, l> TensorExpr;
+    using TensorExpr = Ddg_mod_Ddg<A, B, T, U, Dim, i, j, k, l>;
     return Riemann_Expr<TensorExpr, typename promote<T, U>::V, Dim, i, j, k, l>(
       TensorExpr(a, b));
   }

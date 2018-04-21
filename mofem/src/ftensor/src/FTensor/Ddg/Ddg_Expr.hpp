@@ -3,19 +3,19 @@
 
 #pragma once
 
-#include "Ddg_times_Tensor2_symmetric.hpp"
-#include "Ddg_carat_Tensor2_symmetric.hpp"
-#include "Ddg_and_Tensor2_symmetric.hpp"
-#include "Ddg_mod_Tensor2_symmetric.hpp"
-#include "Ddg_times_Tensor2.hpp"
-#include "Ddg_times_Tensor1.hpp"
-#include "Ddg_times_generic.hpp"
-#include "Ddg_times_Ddg.hpp"
-#include "Ddg_plus_Ddg.hpp"
-#include "Ddg_minus_Ddg.hpp"
-#include "Ddg_or_Ddg.hpp"
 #include "Ddg_and_Ddg.hpp"
+#include "Ddg_and_Tensor2_symmetric.hpp"
 #include "Ddg_carat_Ddg.hpp"
+#include "Ddg_carat_Tensor2_symmetric.hpp"
+#include "Ddg_minus_Ddg.hpp"
+#include "Ddg_mod_Tensor2_symmetric.hpp"
+#include "Ddg_or_Ddg.hpp"
+#include "Ddg_plus_Ddg.hpp"
+#include "Ddg_times_Ddg.hpp"
+#include "Ddg_times_Tensor1.hpp"
+#include "Ddg_times_Tensor2.hpp"
+#include "Ddg_times_Tensor2_symmetric.hpp"
+#include "Ddg_times_generic.hpp"
 #include "minus_Ddg.hpp"
 //  #include "Ddg_mod_Ddg.hpp"
 
@@ -28,7 +28,7 @@ namespace FTensor
     A iter;
 
   public:
-    Ddg_Expr(A &a) : iter(a) {}
+    Ddg_Expr(const A &a) : iter(a) {}
     T operator()(const int N1, const int N2, const int N3, const int N4) const
     {
       return iter(N1, N2, N3, N4);
@@ -54,12 +54,10 @@ namespace FTensor
        own and not use the template code. */
 
     template <class B, class U>
-    const Ddg_Expr<Ddg<A, Tensor_Dim01, Tensor_Dim23>, T, Dim01, Dim23, i, j,
-                   k, l> &
+    Ddg_Expr<Ddg<A, Tensor_Dim01, Tensor_Dim23>, T, Dim01, Dim23, i, j, k, l> &
     operator=(const Ddg_Expr<B, U, Dim01, Dim23, i, j, k, l> &result);
 
-    const Ddg_Expr<Ddg<A, Tensor_Dim01, Tensor_Dim23>, T, Dim01, Dim23, i, j,
-                   k, l> &
+    Ddg_Expr<Ddg<A, Tensor_Dim01, Tensor_Dim23>, T, Dim01, Dim23, i, j, k, l> &
     operator=(const Ddg_Expr<Ddg<A, Tensor_Dim01, Tensor_Dim23>, T, Dim01,
                              Dim23, i, j, k, l> &result);
   };

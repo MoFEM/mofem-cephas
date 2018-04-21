@@ -21,8 +21,8 @@ int main(int argc, char *argv[])
   FTensor::Index<'I', 2> I;
   FTensor::Index<'J', 2> J;
 
-  FTensor::Tensor1<double, 2> t1(1, 1);
-  FTensor::Tensor2<double, 2, 2> t2(1, 0, 0, 1);
+  FTensor::Tensor1<double, 2> t1(1., 1.);
+  FTensor::Tensor2<double, 2, 2> t2(1., 0., 0., 1.);
 
   FTensor::Tensor1<adtl::adouble, 2> a_t1;
   FTensor::Tensor2<adtl::adouble, 2, 2> a_t2;

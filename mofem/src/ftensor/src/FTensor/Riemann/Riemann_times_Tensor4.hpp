@@ -9,8 +9,8 @@ namespace FTensor
   /* A(i,j,k,l)*B(i,j,k,l) */
 
   template <class A, class B, char i, char j, char k, char l>
-  inline double operator*(const Riemann_Expr<A, i, j, k, l> &a,
-                          const Tensor4_Expr<B, i, j, k, l> &b)
+  double operator*(const Riemann_Expr<A, i, j, k, l> &a,
+                   const Tensor4_Expr<B, i, j, k, l> &b)
   {
     return a(1, 0, 0, 1) * b(1, 0, 0, 1) + a(2, 0, 0, 1) * b(2, 0, 0, 1)
            + a(0, 1, 0, 1) * b(0, 1, 0, 1) + a(2, 1, 0, 1) * b(2, 1, 0, 1)
@@ -88,8 +88,8 @@ namespace FTensor
   }
 
   template <class A, class B, char i, char j, char k, char l>
-  inline double operator*(const Tensor4_Expr<B, i, j, k, l> &b,
-                          const Riemann_Expr<A, i, j, k, l> &a)
+  double operator*(const Tensor4_Expr<B, i, j, k, l> &b,
+                   const Riemann_Expr<A, i, j, k, l> &a)
 
   {
     return operator*(a, b);
