@@ -121,12 +121,12 @@ namespace FTensor
 
     template <char i, int Dim, int N>
     Tensor1_Expr<Tensor2_number_rhs_1<
-                   Tensor2<T *, Tensor_Dim0, Tensor_Dim1, layout>, T, N>,
+                   Tensor2<PackPtr<T *, Tensor_Dim0*Tensor_Dim1>, Tensor_Dim0, Tensor_Dim1, layout>, T, N>,
                  T, Dim, i>
     operator()(const Index<i, Dim>, const Number<N>)
     {
       typedef Tensor2_number_rhs_1<
-        Tensor2<T *, Tensor_Dim0, Tensor_Dim1, layout>, T, N>
+        Tensor2<PackPtr<T *, Tensor_Dim0*Tensor_Dim1>, Tensor_Dim0, Tensor_Dim1, layout>, T, N>
         TensorExpr;
       return Tensor1_Expr<TensorExpr, T, Dim, i>(*this);
     }
