@@ -42,6 +42,7 @@ namespace FTensor
     Tensor2_Expr(Tensor2<A, Tensor_Dim0, Tensor_Dim1> &a) : iter(a) {}
     T &operator()(const int N1, const int N2) { return iter(N1, N2); }
     T operator()(const int N1, const int N2) const { return iter(N1, N2); }
+    T* ptr(const int N1, const int N2) const { return iter.ptr(N1, N2); }
 
     /* Various assignment operators.  I have to explicitly declare the
        second operator= because otherwise the compiler will generate its
@@ -164,7 +165,7 @@ namespace FTensor
       for(int ii = 0; ii < Dim0; ++ii)
         for(int jj = 0; jj < Dim1; ++jj)
           {
-            iter(ii, jj) >>= permute(*this, rhs, ii, jj);
+            iter(ii, jj) >>= permute_ref(*this, rhs, ii, jj);
           }
       return *this;
     }

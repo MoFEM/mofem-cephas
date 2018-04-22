@@ -42,4 +42,4 @@ namespace FTensor
 #endif // WITH_ADOL_C
 
 #undef DECLARE_PROMOTE
-  } // namespace FTensor
+} // namespace FTensor

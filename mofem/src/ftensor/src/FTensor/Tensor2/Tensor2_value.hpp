@@ -28,6 +28,20 @@ namespace FTensor
 
     Tensor2() {}
 
+    /* Get ptr */
+
+    T *ptr(const int N1, const int N2) const {
+#ifdef FTENSOR_DEBUG
+      if (N1 >= Tensor_Dim0 || N1 < 0 || N2 >= Tensor_Dim1 || N2 < 0) {
+        std::stringstream s;
+        s << "Bad index in Tensor2<T*," << Tensor_Dim0 << "," << Tensor_Dim1
+          << ">.ptr(" << N1 << "," << N2 << ")" << std::endl;
+        throw std::out_of_range(s.str());
+      }
+#endif
+      return &data[N1][N2];
+    }
+
     /* There are two operator(int,int)'s, one for non-consts that lets you
        change the value, and one for consts that doesn't. */
 
