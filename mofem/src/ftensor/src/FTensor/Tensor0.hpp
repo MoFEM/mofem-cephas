@@ -62,7 +62,7 @@ namespace FTensor
       return *this;
     }
 
-    template <class U> const Tensor0<PackPtr<T *, I>> &operator<<=(const U d)
+    template <class U> const Tensor0<PackPtr<T *, I>> &operator<<=(const U &d)
     {
       *data <<= d;
       return *this;
