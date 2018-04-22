@@ -1116,7 +1116,9 @@ struct DataForcesAndSourcesCore {
      * pts
      */
     template <int Tensor_Dim0, int Tensor_Dim1>
-    inline FTensor::Tensor2<double *, Tensor_Dim0, Tensor_Dim1>
+    inline FTensor::Tensor2<
+        FTensor::PackPtr<double *, Tensor_Dim0 * Tensor_Dim1>, Tensor_Dim0,
+        Tensor_Dim1>
     getFTensor2DiffHcurlN(const int gg, const int bb) {
       return getFTensor2DiffHcurlN<Tensor_Dim0, Tensor_Dim1>(bAse, gg, bb);
     }
