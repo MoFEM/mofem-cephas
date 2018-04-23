@@ -95,38 +95,38 @@ Vector of \e IS (Index Set) is used to store global indices of block matrices.
 
 - We create sub DM form DM
 \code
-ierr = DMCreate(PETSC_COMM_WORLD,&dm_sub_KK);CHKERRG(ierr);
-ierr = DMSetType(dm_sub_KK,"DMMOFEM");CHKERRG(ierr);
-ierr = DMMoFEMCreateSubDM(dm_sub_KK,dm,"SUB_KK"); CHKERRG(ierr);
+CHKERR DMCreate(PETSC_COMM_WORLD,&dm_sub_KK);
+CHKERR DMSetType(dm_sub_KK,"DMMOFEM");
+CHKERR DMMoFEMCreateSubDM(dm_sub_KK,dm,"SUB_KK"); 
 \endcode
 
 - Configure and set-up DM
 \code
-ierr = DMMoFEMSetSquareProblem(dm_sub_KK,PETSC_TRUE); CHKERRG(ierr);
-ierr = DMMoFEMAddSubFieldRow(dm_sub_KK,"U"); CHKERRG(ierr);
-ierr = DMMoFEMAddSubFieldCol(dm_sub_KK,"U"); CHKERRG(ierr);
-ierr = DMMoFEMAddElement(dm_sub_KK,simple_interface->getDomainFEName().c_str()); CHKERRG(ierr);
-ierr = DMMoFEMAddElement(dm_sub_KK,simple_interface->getBoundaryFEName().c_str()); CHKERRG(ierr);
-ierr = DMSetUp(dm_sub_KK); CHKERRG(ierr);
+CHKERR DMMoFEMSetSquareProblem(dm_sub_KK,PETSC_TRUE); 
+CHKERR DMMoFEMAddSubFieldRow(dm_sub_KK,"U"); 
+CHKERR DMMoFEMAddSubFieldCol(dm_sub_KK,"U"); 
+CHKERR DMMoFEMAddElement(dm_sub_KK,simple_interface->getDomainFEName().c_str()); 
+CHKERR DMMoFEMAddElement(dm_sub_KK,simple_interface->getBoundaryFEName().c_str()); 
+CHKERR DMSetUp(dm_sub_KK); 
 \endcode
 
 - Get global indices of DM for sub DM for the upper diagonal block
 \code
-ierr = DMMoFEMGetSubRowIS(dm_sub_KK,&nested_is[0]); CHKERRG(ierr);
+CHKERR DMMoFEMGetSubRowIS(dm_sub_KK,&nested_is[0]); 
 \endcode
 
 - Create matrix and assemble matrix \f$\mathbf{K}\f$ and penalty matrix
 \f$\mathbf{S}\f$ by iteration over domain finite elements entities and
 boundary finite elements entities
 \code
-ierr = DMCreateMatrix(dm_sub_KK,&nested_matrices(0,0)); CHKERRG(ierr);
+CHKERR DMCreateMatrix(dm_sub_KK,&nested_matrices(0,0)); 
 domain_lhs_fe->ksp_B = nested_matrices(0,0);
-ierr = DMoFEMLoopFiniteElements(dm_sub_KK,simple_interface->getDomainFEName(),domain_lhs_fe); CHKERRG(ierr);
+CHKERR DMoFEMLoopFiniteElements(dm_sub_KK,simple_interface->getDomainFEName(),domain_lhs_fe); 
 boundary_penalty_lhs_fe->ksp_B = nested_matrices(0,0);
-ierr = DMoFEMLoopFiniteElements(dm_sub_KK,simple_interface->getBoundaryFEName(),boundary_penalty_lhs_fe); CHKERRG(ierr);
-ierr = MatAssemblyBegin(nested_matrices(0,0),MAT_FINAL_ASSEMBLY); CHKERRG(ierr);
-ierr = MatAssemblyEnd(nested_matrices(0,0),MAT_FINAL_ASSEMBLY); CHKERRG(ierr);
-ierr = DMDestroy(&dm_sub_KK); CHKERRG(ierr);
+CHKERR DMoFEMLoopFiniteElements(dm_sub_KK,simple_interface->getBoundaryFEName(),boundary_penalty_lhs_fe); 
+CHKERR MatAssemblyBegin(nested_matrices(0,0),MAT_FINAL_ASSEMBLY); 
+CHKERR MatAssemblyEnd(nested_matrices(0,0),MAT_FINAL_ASSEMBLY); 
+CHKERR DMDestroy(&dm_sub_KK); 
 \endcode
 
 \subsection poisson_tut3_off_diagonal Assembly of C matrix
@@ -135,22 +135,22 @@ Assembly of off-diagonal blocks is similar to diagonal term, note that
 of diagonal block is not square matrix and integration is only over finite
 elements entities on the boundary
 \code
-ierr = DMCreate(PETSC_COMM_WORLD,&dm_sub_LU);CHKERRG(ierr);
-ierr = DMSetType(dm_sub_LU,"DMMOFEM");CHKERRG(ierr);
-ierr = DMMoFEMCreateSubDM(dm_sub_LU,dm,"SUB_LU"); CHKERRG(ierr);
-ierr = DMMoFEMSetSquareProblem(dm_sub_LU,PETSC_FALSE); CHKERRG(ierr);
-ierr = DMMoFEMAddSubFieldRow(dm_sub_LU,"L"); CHKERRG(ierr);
-ierr = DMMoFEMAddSubFieldCol(dm_sub_LU,"U"); CHKERRG(ierr);
-ierr = DMMoFEMAddElement(dm_sub_LU,simple_interface->getBoundaryFEName().c_str()); CHKERRG(ierr);
-ierr = DMSetUp(dm_sub_LU); CHKERRG(ierr);
-ierr = DMMoFEMGetSubRowIS(dm_sub_LU,&nested_is[1]); CHKERRG(ierr);
-ierr = DMCreateMatrix(dm_sub_LU,&nested_matrices(1,0)); CHKERRG(ierr);
+CHKERR DMCreate(PETSC_COMM_WORLD,&dm_sub_LU);
+CHKERR DMSetType(dm_sub_LU,"DMMOFEM");
+CHKERR DMMoFEMCreateSubDM(dm_sub_LU,dm,"SUB_LU"); 
+CHKERR DMMoFEMSetSquareProblem(dm_sub_LU,PETSC_FALSE); 
+CHKERR DMMoFEMAddSubFieldRow(dm_sub_LU,"L"); 
+CHKERR DMMoFEMAddSubFieldCol(dm_sub_LU,"U"); 
+CHKERR DMMoFEMAddElement(dm_sub_LU,simple_interface->getBoundaryFEName().c_str()); 
+CHKERR DMSetUp(dm_sub_LU); 
+CHKERR DMMoFEMGetSubRowIS(dm_sub_LU,&nested_is[1]); 
+CHKERR DMCreateMatrix(dm_sub_LU,&nested_matrices(1,0)); 
 boundary_lhs_fe->ksp_B = nested_matrices(1,0);
-ierr = DMoFEMLoopFiniteElements(dm_sub_LU,simple_interface->getBoundaryFEName(),boundary_lhs_fe); CHKERRG(ierr);
-ierr = MatAssemblyBegin(nested_matrices(1,0),MAT_FINAL_ASSEMBLY); CHKERRG(ierr);
-ierr = MatAssemblyEnd(nested_matrices(1,0),MAT_FINAL_ASSEMBLY); CHKERRG(ierr);
-ierr = MatTranspose(nested_matrices(1,0),MAT_INITIAL_MATRIX,&nested_matrices(0,1)); CHKERRG(ierr);
-ierr = DMDestroy(&dm_sub_LU); CHKERRG(ierr);
+CHKERR DMoFEMLoopFiniteElements(dm_sub_LU,simple_interface->getBoundaryFEName(),boundary_lhs_fe); 
+CHKERR MatAssemblyBegin(nested_matrices(1,0),MAT_FINAL_ASSEMBLY); 
+CHKERR MatAssemblyEnd(nested_matrices(1,0),MAT_FINAL_ASSEMBLY); 
+CHKERR MatTranspose(nested_matrices(1,0),MAT_INITIAL_MATRIX,&nested_matrices(0,1)); 
+CHKERR DMDestroy(&dm_sub_LU); 
 \endcode
 
 \subsection poisson_tut3_vector Assembly of the right hand side vector
@@ -159,11 +159,11 @@ Now we assemble global the right hand side vector, in the usual way using global
 DM
 \code
 domain_rhs_fe->ksp_f = F;
-ierr = DMoFEMLoopFiniteElements(dm,simple_interface->getDomainFEName(),domain_rhs_fe); CHKERRG(ierr);
+CHKERR DMoFEMLoopFiniteElements(dm,simple_interface->getDomainFEName(),domain_rhs_fe); 
 boundary_rhs_fe->ksp_f = F;
-ierr = DMoFEMLoopFiniteElements(dm,simple_interface->getBoundaryFEName(),boundary_rhs_fe); CHKERRG(ierr);
-ierr = VecAssemblyBegin(F); CHKERRG(ierr);
-ierr = VecAssemblyEnd(F); CHKERRG(ierr);
+CHKERR DMoFEMLoopFiniteElements(dm,simple_interface->getBoundaryFEName(),boundary_rhs_fe); 
+CHKERR VecAssemblyBegin(F); 
+CHKERR VecAssemblyEnd(F); 
 \endcode
 
 \subsection poisson_tut3_nested_matrix Creation of global nested matrix
@@ -171,10 +171,10 @@ ierr = VecAssemblyEnd(F); CHKERRG(ierr);
 For details how to create nested matrix see PETSc manual
 (<http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/Mat/MatCreateNest.html>)
 \code
-ierr = MatCreateNest(
+CHKERR MatCreateNest(
   PETSC_COMM_WORLD,
   2,&nested_is[0],2,&nested_is[0],&nested_matrices(0,0),&A
-); CHKERRG(ierr);
+); 
 \endcode
 
 \subsection poisson_tut3_solver Solving problem
@@ -183,22 +183,22 @@ ierr = MatCreateNest(
 \code
 // Create solver and link it to DM
 KSP solver;
-ierr = KSPCreate(PETSC_COMM_WORLD,&solver); CHKERRG(ierr);
-ierr = KSPSetFromOptions(solver); CHKERRG(ierr);
+CHKERR KSPCreate(PETSC_COMM_WORLD,&solver); 
+CHKERR KSPSetFromOptions(solver); 
 // Set operators
-ierr = KSPSetOperators(solver,A,A); CHKERRG(ierr);
+CHKERR KSPSetOperators(solver,A,A); 
 \endcode
 
 - Get access to solver pre-conditioner and set-up PCFIELDSPLIT
 (see <http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/PC/PCFIELDSPLIT.html>)
 \code
 PC pc;
-ierr = KSPGetPC(solver,&pc); CHKERRG(ierr);
+CHKERR KSPGetPC(solver,&pc); 
 PetscBool is_pcfs = PETSC_FALSE;
 PetscObjectTypeCompare((PetscObject)pc,PCFIELDSPLIT,&is_pcfs);
 if(is_pcfs) {
-  ierr = PCFieldSplitSetIS(pc,NULL,nested_is[0]); CHKERRG(ierr);
-  ierr = PCFieldSplitSetIS(pc,NULL,nested_is[1]); CHKERRG(ierr);
+  CHKERR PCFieldSplitSetIS(pc,NULL,nested_is[0]); 
+  CHKERR PCFieldSplitSetIS(pc,NULL,nested_is[1]); 
 } else {
   SETERRQ(
     PETSC_COMM_WORLD,
@@ -214,11 +214,11 @@ we setting elements of the field to PCFIELDSPLIT pre-conditioner.
 - Finally set-up solver and solve system of equations
 \code
 // Set-up solver, is type of solver and pre-conditioners
-ierr = KSPSetUp(solver); CHKERRG(ierr);
+CHKERR KSPSetUp(solver); 
 // At solution process, KSP solver uses DM creates matrices, Calculates
 // values of the left hand side and the right hand side vector. then
 // solves the system of equations. Results are stored in the vector D.
-ierr = KSPSolve(solver,F,D); CHKERRG(ierr);
+CHKERR KSPSolve(solver,F,D); 
 \endcode
 
 \section poisson_tut3_running_program Running the program
