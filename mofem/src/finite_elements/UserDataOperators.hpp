@@ -62,11 +62,11 @@ struct OpCalculateScalarFieldValues_General
 template <class T, class A>
 MoFEMErrorCode OpCalculateScalarFieldValues_General<T, A>::doWork(
     int side, EntityType type, DataForcesAndSourcesCore::EntData &data) {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Not implemented for T = %s",
            typeid(T).name() // boost::core::demangle(typeid(T).name()).c_str()
   );
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 /**
@@ -91,7 +91,7 @@ struct OpCalculateScalarFieldValues
    */
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data) {
-    MoFEMFunctionBeginHot;
+    MoFEMFunctionBegin;
     const int nb_dofs = data.getFieldData().size();
     // cerr <<  data.getFieldData() << endl;
 
@@ -128,7 +128,7 @@ struct OpCalculateScalarFieldValues
         ++base_function;
       ++values_at_gauss_pts;
     }
-    MoFEMFunctionReturnHot(0);
+    MoFEMFunctionReturn(0);
   }
 };
 
@@ -207,7 +207,7 @@ MoFEMErrorCode OpCalculateVectorFieldValues_General<
     Tensor_Dim, double, ublas::row_major,
     DoubleAllocator>::doWork(int side, EntityType type,
                              DataForcesAndSourcesCore::EntData &data) {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   const int nb_dofs = data.getFieldData().size();
   if (!dataPtr) {
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
@@ -251,7 +251,7 @@ MoFEMErrorCode OpCalculateVectorFieldValues_General<
       ++base_function;
     ++values_at_gauss_pts;
   }
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 /** \brief Get values at integration pts for tensor filed rank 1, i.e. vector
@@ -390,7 +390,7 @@ MoFEMErrorCode OpCalculateScalarFieldGradient_General<
     Tensor_Dim, double, ublas::row_major,
     DoubleAllocator>::doWork(int side, EntityType type,
                              DataForcesAndSourcesCore::EntData &data) {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   const int nb_dofs = data.getFieldData().size();
   if (!this->dataPtr) {
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
@@ -427,7 +427,7 @@ MoFEMErrorCode OpCalculateScalarFieldGradient_General<
       ++diff_base_function;
     ++gradients_at_gauss_pts;
   }
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 /** \brief Get field gradients at integration pts for scalar filed rank 0, i.e.
@@ -497,7 +497,7 @@ MoFEMErrorCode OpCalculateVectorFieldGradient_General<
     Tensor_Dim0, Tensor_Dim1, double, ublas::row_major,
     DoubleAllocator>::doWork(int side, EntityType type,
                              DataForcesAndSourcesCore::EntData &data) {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   const int nb_dofs = data.getFieldData().size();
   if (!nb_dofs && type == this->zeroType) {
     this->dataPtr->resize(Tensor_Dim0 * Tensor_Dim1, 0, false);
@@ -536,7 +536,7 @@ MoFEMErrorCode OpCalculateVectorFieldGradient_General<
       ++diff_base_function;
     ++gradients_at_gauss_pts;
   }
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 /** \brief Get field gradients at integration pts for scalar filed rank 0, i.e.
@@ -633,7 +633,7 @@ MoFEMErrorCode OpCalculateHdivVectorField_General<
     Tensor_Dim, double, ublas::row_major,
     DoubleAllocator>::doWork(int side, EntityType type,
                              DataForcesAndSourcesCore::EntData &data) {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   const int nb_dofs = data.getFieldData().size();
   if (!nb_dofs)
     MoFEMFunctionReturnHot(0);
@@ -661,7 +661,7 @@ MoFEMErrorCode OpCalculateHdivVectorField_General<
     }
     ++t_data;
   }
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 /** \brief Get vector field for H-div approximation
