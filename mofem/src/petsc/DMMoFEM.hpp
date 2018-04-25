@@ -16,7 +16,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-
 #ifndef __DMMMOFEM_H
 #define __DMMMOFEM_H
 
@@ -25,28 +24,25 @@
 namespace MoFEM {
 
 /**
-  * \brief Register MoFEM problem
-  * \ingroup dm
-  */
+ * \brief Register MoFEM problem
+ * \ingroup dm
+ */
 PetscErrorCode DMRegister_MoFEM(const char sname[]);
 
 /**
-  * \brief Must be called by user to set MoFEM data structures
-  * \ingroup dm
-  */
+ * \brief Must be called by user to set MoFEM data structures
+ * \ingroup dm
+ */
 PetscErrorCode DMMoFEMCreateMoFEM(
-  DM dm,
-  MoFEM::Interface *m_field_ptr,
-  const char problem_name[],
-  const MoFEM::BitRefLevel bit_level,
-  const MoFEM::BitRefLevel bit_mask = MoFEM::BitRefLevel().set()
-);
+    DM dm, MoFEM::Interface *m_field_ptr, const char problem_name[],
+    const MoFEM::BitRefLevel bit_level,
+    const MoFEM::BitRefLevel bit_mask = MoFEM::BitRefLevel().set());
 
 /**
-  * \brief Must be called by user to set Sub DM MoFEM data structures
-  * \ingroup dm
-  */
-PetscErrorCode DMMoFEMCreateSubDM(DM subdm,DM dm,const char problem_name[]);
+ * \brief Must be called by user to set Sub DM MoFEM data structures
+ * \ingroup dm
+ */
+PetscErrorCode DMMoFEMCreateSubDM(DM subdm, DM dm, const char problem_name[]);
 
 /**
  * \brief Get pointer to MoFEM::Interface
@@ -55,13 +51,13 @@ PetscErrorCode DMMoFEMCreateSubDM(DM subdm,DM dm,const char problem_name[]);
  * @return             Error code
  * \ingroup dm
  */
-PetscErrorCode DMoFEMGetInterfacePtr(DM dm,MoFEM::Interface **m_field_ptr);
+PetscErrorCode DMoFEMGetInterfacePtr(DM dm, MoFEM::Interface **m_field_ptr);
 
 /**
-  * \brief Get pointer to problem data structure
-  * \ingroup dm
-  */
-PetscErrorCode DMMoFEMGetProblemPtr(DM dm,const MoFEM::Problem **problem_ptr);
+ * \brief Get pointer to problem data structure
+ * \ingroup dm
+ */
+PetscErrorCode DMMoFEMGetProblemPtr(DM dm, const MoFEM::Problem **problem_ptr);
 
 /**
  * If this is set to PETSC_TRUE problem is deleted with DM
@@ -69,7 +65,7 @@ PetscErrorCode DMMoFEMGetProblemPtr(DM dm,const MoFEM::Problem **problem_ptr);
  * @param  destroy        if PETSC_TRUE problem is destroyed
  * @return                error code
  */
-PetscErrorCode DMMoFEMSetDestroyProblem(DM dm,PetscBool destroy_problem);
+PetscErrorCode DMMoFEMSetDestroyProblem(DM dm, PetscBool destroy_problem);
 
 /**
  * Get if problem will be destroyed with DM
@@ -77,7 +73,7 @@ PetscErrorCode DMMoFEMSetDestroyProblem(DM dm,PetscBool destroy_problem);
  * @param  destroy        return if PETSC_TRUE problem is destroyed
  * @return                error code
  */
-PetscErrorCode DMMoFEMGetDestroyProblem(DM dm,PetscBool *destroy_problem);
+PetscErrorCode DMMoFEMGetDestroyProblem(DM dm, PetscBool *destroy_problem);
 
 /**
   * \brief set squared problem
@@ -87,7 +83,7 @@ PetscErrorCode DMMoFEMGetDestroyProblem(DM dm,PetscBool *destroy_problem);
   columns. This reduces interprocessor communication.
 
   */
-PetscErrorCode DMMoFEMSetSquareProblem(DM dm,PetscBool square_problem);
+PetscErrorCode DMMoFEMSetSquareProblem(DM dm, PetscBool square_problem);
 
 /**
   * \brief get squared problem
@@ -97,7 +93,7 @@ PetscErrorCode DMMoFEMSetSquareProblem(DM dm,PetscBool square_problem);
   columns. This reduces interprocessor communication.
 
   */
-PetscErrorCode DMMoFEMGetSquareProblem(DM dm,PetscBool *square_problem);
+PetscErrorCode DMMoFEMGetSquareProblem(DM dm, PetscBool *square_problem);
 
 /**
  * \brief Resolve shared entities
@@ -112,14 +108,15 @@ PetscErrorCode DMMoFEMGetSquareProblem(DM dm,PetscBool *square_problem);
  ierr = DMMoFEMGetSquareProblem(dm,"SHELL_ELEMENT"); CHKERRG(ierr);
  Tag th;
  rval = mField.get_moab().tag_get_handle("ADAPT_ORDER",th); CHKERRQ_MOAB(rval);
- ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
+ ParallelComm* pcomm =
+ ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
  // rval = pcomm->reduce_tags(th,MPI_SUM,prisms);
  rval = pcomm->exchange_tags(th,prisms);
  \endcode
 
  * \ingroup dm
  */
-PetscErrorCode DMMoFEMResolveSharedEntities(DM dm,const char fe_name[]);
+PetscErrorCode DMMoFEMResolveSharedEntities(DM dm, const char fe_name[]);
 
 /**
  * \brief Get finite elements layout in the problem
@@ -130,28 +127,30 @@ PetscErrorCode DMMoFEMResolveSharedEntities(DM dm,const char fe_name[]);
  *
  * @param  dm     discrete manager for this problem
  * @param  fe_name finite element name
- * @param  layout pointer to layout, for created layout user takes responsibility for destroying it.
+ * @param  layout pointer to layout, for created layout user takes
+ * responsibility for destroying it.
  * @return        error code
  *
  * \ingroup dm
  */
-PetscErrorCode DMMoFEMGetProblemFiniteElementLayout(DM dm,const char fe_name[],PetscLayout *layout);
+PetscErrorCode DMMoFEMGetProblemFiniteElementLayout(DM dm, const char fe_name[],
+                                                    PetscLayout *layout);
 
 /**
-  * \brief add element to dm
-  * \ingroup dm
-  *
-  * \note add_file is a collective, should be executed on all processors.
-  * Otherwise could lead to deadlock.
-  *
-  */
-PetscErrorCode DMMoFEMAddElement(DM dm,const char fe_name[]);
+ * \brief add element to dm
+ * \ingroup dm
+ *
+ * \note add_file is a collective, should be executed on all processors.
+ * Otherwise could lead to deadlock.
+ *
+ */
+PetscErrorCode DMMoFEMAddElement(DM dm, const char fe_name[]);
 
 /**
-  * \brief unset element from dm
-  * \ingroup dm
-  */
-PetscErrorCode DMMoFEMUnSetElement(DM dm,const char fe_name[]);
+ * \brief unset element from dm
+ * \ingroup dm
+ */
+PetscErrorCode DMMoFEMUnSetElement(DM dm, const char fe_name[]);
 
 /**
   * \brief set local (or ghosted) vector values on mesh for partition only
@@ -159,14 +158,16 @@ PetscErrorCode DMMoFEMUnSetElement(DM dm,const char fe_name[]);
 
   * \param l vector
   * \param mode see petsc manual for VecSetValue (ADD_VALUES or INSERT_VALUES)
-  * \param scatter_mode see petsc manual for ScatterMode (The available modes are: SCATTER_FORWARD or SCATTER_REVERSE)
+  * \param scatter_mode see petsc manual for ScatterMode (The available modes
+  are: SCATTER_FORWARD or SCATTER_REVERSE)
   *
   * SCATTER_REVERSE set data to field entities from V vector.
   *
   * SCATTER_FORWARD set vector V from data field entities
 
   */
-PetscErrorCode DMoFEMMeshToLocalVector(DM dm,Vec l,InsertMode mode,ScatterMode scatter_mode);
+PetscErrorCode DMoFEMMeshToLocalVector(DM dm, Vec l, InsertMode mode,
+                                       ScatterMode scatter_mode);
 
 /**
   * \brief set ghosted vector values on all existing mesh entities
@@ -174,26 +175,28 @@ PetscErrorCode DMoFEMMeshToLocalVector(DM dm,Vec l,InsertMode mode,ScatterMode s
 
   * \param g vector
   * \param mode see petsc manual for VecSetValue (ADD_VALUES or INSERT_VALUES)
-  * \param scatter_mode see petsc manual for ScatterMode (The available modes are: SCATTER_FORWARD or SCATTER_REVERSE)
+  * \param scatter_mode see petsc manual for ScatterMode (The available modes
+  are: SCATTER_FORWARD or SCATTER_REVERSE)
   *
   * SCATTER_REVERSE set data to field entities from V vector.
   *
   * SCATTER_FORWARD set vector V from data field entities
 
   */
-PetscErrorCode DMoFEMMeshToGlobalVector(DM dm,Vec g,InsertMode mode,ScatterMode scatter_mode);
+PetscErrorCode DMoFEMMeshToGlobalVector(DM dm, Vec g, InsertMode mode,
+                                        ScatterMode scatter_mode);
 
 /**
-  * \brief execute finite element method for each element in dm (problem)
-  * \ingroup dm
-  */
-PetscErrorCode DMoFEMPreProcessFiniteElements(DM dm,MoFEM::FEMethod *method);
+ * \brief execute finite element method for each element in dm (problem)
+ * \ingroup dm
+ */
+PetscErrorCode DMoFEMPreProcessFiniteElements(DM dm, MoFEM::FEMethod *method);
 
 /**
-  * \brief execute finite element method for each element in dm (problem)
-  * \ingroup dm
-  */
-PetscErrorCode DMoFEMPostProcessFiniteElements(DM dm,MoFEM::FEMethod *method);
+ * \brief execute finite element method for each element in dm (problem)
+ * \ingroup dm
+ */
+PetscErrorCode DMoFEMPostProcessFiniteElements(DM dm, MoFEM::FEMethod *method);
 
 /**
  * \brief Executes FEMethod for finite elements in DM
@@ -205,9 +208,9 @@ PetscErrorCode DMoFEMPostProcessFiniteElements(DM dm,MoFEM::FEMethod *method);
  * @return          Error code
  * \ingroup dm
  */
-PetscErrorCode DMoFEMLoopFiniteElementsUpAndLowRank(
-  DM dm,const char fe_name[],MoFEM::FEMethod *method,int low_rank,int up_rank
-);
+PetscErrorCode DMoFEMLoopFiniteElementsUpAndLowRank(DM dm, const char fe_name[],
+                                                    MoFEM::FEMethod *method,
+                                                    int low_rank, int up_rank);
 
 /**
  * \brief Executes FEMethod for finite elements in DM
@@ -219,9 +222,10 @@ PetscErrorCode DMoFEMLoopFiniteElementsUpAndLowRank(
  * @return          Error code
  * \ingroup dm
  */
-PetscErrorCode DMoFEMLoopFiniteElementsUpAndLowRank(
-  DM dm,const std::string& fe_name,boost::shared_ptr<MoFEM::FEMethod> method,int low_rank,int up_rank
-);
+PetscErrorCode
+DMoFEMLoopFiniteElementsUpAndLowRank(DM dm, const std::string &fe_name,
+                                     boost::shared_ptr<MoFEM::FEMethod> method,
+                                     int low_rank, int up_rank);
 
 /**
  * \brief Executes FEMethod for finite elements in DM
@@ -231,7 +235,8 @@ PetscErrorCode DMoFEMLoopFiniteElementsUpAndLowRank(
  * @return         Error code
  * \ingroup dm
  */
-PetscErrorCode DMoFEMLoopFiniteElements(DM dm,const char fe_name[],MoFEM::FEMethod *method);
+PetscErrorCode DMoFEMLoopFiniteElements(DM dm, const char fe_name[],
+                                        MoFEM::FEMethod *method);
 
 /**
  * \brief Executes FEMethod for finite elements in DM
@@ -241,13 +246,16 @@ PetscErrorCode DMoFEMLoopFiniteElements(DM dm,const char fe_name[],MoFEM::FEMeth
  * @return         Error code
  * \ingroup dm
  */
-PetscErrorCode DMoFEMLoopFiniteElements(DM dm,const std::string& fe_name,boost::shared_ptr<MoFEM::FEMethod> method);
+PetscErrorCode
+DMoFEMLoopFiniteElements(DM dm, const std::string &fe_name,
+                         boost::shared_ptr<MoFEM::FEMethod> method);
 
 /**
-  * \brief execute method for dofs on field in problem
-  * \ingroup dm
-  */
-PetscErrorCode DMoFEMLoopDofs(DM dm,const char field_name[],MoFEM::EntMethod *method);
+ * \brief execute method for dofs on field in problem
+ * \ingroup dm
+ */
+PetscErrorCode DMoFEMLoopDofs(DM dm, const char field_name[],
+                              MoFEM::EntMethod *method);
 
 // /**
 //  * \brief Set compute operator for KSP solver via sub-matrix and IS
@@ -260,192 +268,190 @@ PetscErrorCode DMoFEMLoopDofs(DM dm,const char field_name[],MoFEM::EntMethod *me
 // PetscErrorCode DMMoFEMKSPSetComputeOperatorsViaSubMatrixbByIs(DM dm);
 
 /**
-  * \brief set KSP right hand side evaluation function
-  * \ingroup dm
-  */
-PetscErrorCode DMMoFEMKSPSetComputeRHS(
-  DM dm,const char fe_name[],
-  MoFEM::FEMethod *method,MoFEM::FEMethod *pre_only,MoFEM::FEMethod *post_only
-);
+ * \brief set KSP right hand side evaluation function
+ * \ingroup dm
+ */
+PetscErrorCode DMMoFEMKSPSetComputeRHS(DM dm, const char fe_name[],
+                                       MoFEM::FEMethod *method,
+                                       MoFEM::FEMethod *pre_only,
+                                       MoFEM::FEMethod *post_only);
 
 /**
-  * \brief set KSP right hand side evaluation function
-  * \ingroup dm
-  */
-PetscErrorCode DMMoFEMKSPSetComputeRHS(
-  DM dm,
-  const std::string& fe_name,
-  boost::shared_ptr<MoFEM::FEMethod> method,
-  boost::shared_ptr<MoFEM::FEMethod> pre_only,
-  boost::shared_ptr<MoFEM::FEMethod> post_only
-);
+ * \brief set KSP right hand side evaluation function
+ * \ingroup dm
+ */
+PetscErrorCode
+DMMoFEMKSPSetComputeRHS(DM dm, const std::string &fe_name,
+                        boost::shared_ptr<MoFEM::FEMethod> method,
+                        boost::shared_ptr<MoFEM::FEMethod> pre_only,
+                        boost::shared_ptr<MoFEM::FEMethod> post_only);
 
 /**
  * \brief Set KSP operators and push mofem finite element methods
  *
  * @param  dm        DM
  * @param  fe_name   finite element name
- * @param  method    method on the element (executed for each element in the problem which given name)
+ * @param  method    method on the element (executed for each element in the
+ * problem which given name)
  * @param  pre_only  method for pre-process before element method
  * @param  post_only method for post-process after element method
  * @return           error code
  *
  * \ingroup dm
  */
-PetscErrorCode DMMoFEMKSPSetComputeOperators(
-  DM dm,const char fe_name[],
-  MoFEM::FEMethod *method,MoFEM::FEMethod *pre_only,MoFEM::FEMethod *post_only
-);
+PetscErrorCode DMMoFEMKSPSetComputeOperators(DM dm, const char fe_name[],
+                                             MoFEM::FEMethod *method,
+                                             MoFEM::FEMethod *pre_only,
+                                             MoFEM::FEMethod *post_only);
 
 /**
  * \brief Set KSP operators and push mofem finite element methods
  *
  * @param  dm        DM
  * @param  fe_name   finite element name
- * @param  method    method on the element (executed for each element in the problem which given name)
+ * @param  method    method on the element (executed for each element in the
+ * problem which given name)
  * @param  pre_only  method for pre-process before element method
  * @param  post_only method for post-process after element method
  * @return           error code
  *
  * \ingroup dm
  */
-PetscErrorCode DMMoFEMKSPSetComputeOperators(
-  DM dm,
-  const std::string& fe_name,
-  boost::shared_ptr<MoFEM::FEMethod> method,
-  boost::shared_ptr<MoFEM::FEMethod> pre_only,
-  boost::shared_ptr<MoFEM::FEMethod> post_only
-);
+PetscErrorCode
+DMMoFEMKSPSetComputeOperators(DM dm, const std::string &fe_name,
+                              boost::shared_ptr<MoFEM::FEMethod> method,
+                              boost::shared_ptr<MoFEM::FEMethod> pre_only,
+                              boost::shared_ptr<MoFEM::FEMethod> post_only);
 
 /**
-  * \brief set SNES residual evaluation function
-  * \ingroup dm
-  */
-PetscErrorCode DMMoFEMSNESSetFunction(
-  DM dm,const char fe_name[],
-  MoFEM::FEMethod *method,MoFEM::FEMethod *pre_only,MoFEM::FEMethod *post_only
-);
-
-/**
-  * \brief set SNES residual evaluation function
-  * \ingroup dm
-  */
-PetscErrorCode DMMoFEMSNESSetFunction(
-  DM dm,const std::string& fe_name,
-  boost::shared_ptr<MoFEM::FEMethod> method,
-  boost::shared_ptr<MoFEM::FEMethod> pre_only,
-  boost::shared_ptr<MoFEM::FEMethod> post_only
-);
-
-/**
-  * \brief set SNES Jacobian evaluation function
-  * \ingroup dm
-  */
-PetscErrorCode DMMoFEMSNESSetJacobian(
-  DM dm,const char fe_name[],
-  MoFEM::FEMethod *method,MoFEM::FEMethod *pre_only,MoFEM::FEMethod *post_only
-);
-
-/**
-  * \brief set SNES Jacobian evaluation function
-  * \ingroup dm
-  */
-PetscErrorCode DMMoFEMSNESSetJacobian(
-  DM dm,const std::string& fe_name,
-  boost::shared_ptr<MoFEM::FEMethod> method,
-  boost::shared_ptr<MoFEM::FEMethod> pre_only,
-  boost::shared_ptr<MoFEM::FEMethod> post_only
-);
-
-
-/**
-  * \brief set TS implicit function evaluation function
-  * \ingroup dm
-  */
-PetscErrorCode DMMoFEMTSSetIFunction(
-  DM dm,const char fe_name[],
-  MoFEM::FEMethod *method,MoFEM::FEMethod *pre_only,MoFEM::FEMethod *post_only
-);
-
-/**
-  * \brief set TS implicit function evaluation function
-  * \ingroup dm
-  */
-PetscErrorCode DMMoFEMTSSetIFunction(
-  DM dm,const std::string& fe_name,
-  boost::shared_ptr<MoFEM::FEMethod> method,
-  boost::shared_ptr<MoFEM::FEMethod> pre_only,
-  boost::shared_ptr<MoFEM::FEMethod> post_only
-);
-
-/**
-  * \brief set TS Jacobian evaluation function
-  * \ingroup dm
-  */
-PetscErrorCode DMMoFEMTSSetIJacobian(
-  DM dm,const std::string& fe_name,
-  boost::shared_ptr<MoFEM::FEMethod> method,
-  boost::shared_ptr<MoFEM::FEMethod> pre_only,
-  boost::shared_ptr<MoFEM::FEMethod> post_only
-);
-
-/**
-  * \brief set TS Jacobian evaluation function
-  * \ingroup dm
-  */
-PetscErrorCode DMMoFEMTSSetIJacobian(
-  DM dm,const char fe_name[],
-  MoFEM::FEMethod *method,MoFEM::FEMethod *pre_only,MoFEM::FEMethod *post_only
-);
-
-/**
-  * \brief get MoFEM::KspCtx data structure
-  * \ingroup dm
-  */
-PetscErrorCode DMMoFEMGetKspCtx(DM dm,MoFEM::KspCtx **ksp_ctx);
-
-/**
-  * \brief get MoFEM::KspCtx data structure
-  * \ingroup dm
-  */
-PetscErrorCode DMMoFEMGetKspCtx(DM dm,const boost::shared_ptr<MoFEM::KspCtx>& ksp_ctx);
-
-/**
-  * \brief set MoFEM::KspCtx data structure
-  * \ingroup dm
+ * \brief set SNES residual evaluation function
+ * \ingroup dm
  */
-PetscErrorCode DMMoFEMSetKspCtx(DM dm,boost::shared_ptr<MoFEM::KspCtx>& ksp_ctx);
+PetscErrorCode DMMoFEMSNESSetFunction(DM dm, const char fe_name[],
+                                      MoFEM::FEMethod *method,
+                                      MoFEM::FEMethod *pre_only,
+                                      MoFEM::FEMethod *post_only);
 
 /**
-  * \brief get MoFEM::SnesCtx data structure
-  * \ingroup dm
-  */
-PetscErrorCode DMMoFEMGetSnesCtx(DM dm,MoFEM::SnesCtx **snes_ctx);
+ * \brief set SNES residual evaluation function
+ * \ingroup dm
+ */
+PetscErrorCode
+DMMoFEMSNESSetFunction(DM dm, const std::string &fe_name,
+                       boost::shared_ptr<MoFEM::FEMethod> method,
+                       boost::shared_ptr<MoFEM::FEMethod> pre_only,
+                       boost::shared_ptr<MoFEM::FEMethod> post_only);
+
+/**
+ * \brief set SNES Jacobian evaluation function
+ * \ingroup dm
+ */
+PetscErrorCode DMMoFEMSNESSetJacobian(DM dm, const char fe_name[],
+                                      MoFEM::FEMethod *method,
+                                      MoFEM::FEMethod *pre_only,
+                                      MoFEM::FEMethod *post_only);
+
+/**
+ * \brief set SNES Jacobian evaluation function
+ * \ingroup dm
+ */
+PetscErrorCode
+DMMoFEMSNESSetJacobian(DM dm, const std::string &fe_name,
+                       boost::shared_ptr<MoFEM::FEMethod> method,
+                       boost::shared_ptr<MoFEM::FEMethod> pre_only,
+                       boost::shared_ptr<MoFEM::FEMethod> post_only);
+
+/**
+ * \brief set TS implicit function evaluation function
+ * \ingroup dm
+ */
+PetscErrorCode DMMoFEMTSSetIFunction(DM dm, const char fe_name[],
+                                     MoFEM::FEMethod *method,
+                                     MoFEM::FEMethod *pre_only,
+                                     MoFEM::FEMethod *post_only);
+
+/**
+ * \brief set TS implicit function evaluation function
+ * \ingroup dm
+ */
+PetscErrorCode
+DMMoFEMTSSetIFunction(DM dm, const std::string &fe_name,
+                      boost::shared_ptr<MoFEM::FEMethod> method,
+                      boost::shared_ptr<MoFEM::FEMethod> pre_only,
+                      boost::shared_ptr<MoFEM::FEMethod> post_only);
+
+/**
+ * \brief set TS Jacobian evaluation function
+ * \ingroup dm
+ */
+PetscErrorCode
+DMMoFEMTSSetIJacobian(DM dm, const std::string &fe_name,
+                      boost::shared_ptr<MoFEM::FEMethod> method,
+                      boost::shared_ptr<MoFEM::FEMethod> pre_only,
+                      boost::shared_ptr<MoFEM::FEMethod> post_only);
+
+/**
+ * \brief set TS Jacobian evaluation function
+ * \ingroup dm
+ */
+PetscErrorCode DMMoFEMTSSetIJacobian(DM dm, const char fe_name[],
+                                     MoFEM::FEMethod *method,
+                                     MoFEM::FEMethod *pre_only,
+                                     MoFEM::FEMethod *post_only);
+
+/**
+ * \brief get MoFEM::KspCtx data structure
+ * \ingroup dm
+ */
+PetscErrorCode DMMoFEMGetKspCtx(DM dm, MoFEM::KspCtx **ksp_ctx);
+
+/**
+ * \brief get MoFEM::KspCtx data structure
+ * \ingroup dm
+ */
+PetscErrorCode
+DMMoFEMGetKspCtx(DM dm, const boost::shared_ptr<MoFEM::KspCtx> &ksp_ctx);
+
+/**
+ * \brief set MoFEM::KspCtx data structure
+ * \ingroup dm
+ */
+PetscErrorCode DMMoFEMSetKspCtx(DM dm,
+                                boost::shared_ptr<MoFEM::KspCtx> &ksp_ctx);
 
 /**
  * \brief get MoFEM::SnesCtx data structure
  * \ingroup dm
  */
-PetscErrorCode DMMoFEMGetSnesCtx(DM dm,const boost::shared_ptr<MoFEM::SnesCtx>& snes_ctx);
+PetscErrorCode DMMoFEMGetSnesCtx(DM dm, MoFEM::SnesCtx **snes_ctx);
+
+/**
+ * \brief get MoFEM::SnesCtx data structure
+ * \ingroup dm
+ */
+PetscErrorCode
+DMMoFEMGetSnesCtx(DM dm, const boost::shared_ptr<MoFEM::SnesCtx> &snes_ctx);
 
 /**
   * \brief Set MoFEM::SnesCtx data structure
   * \ingroup dm
 
   */
-PetscErrorCode DMMoFEMSetSnesCtx(DM dm,boost::shared_ptr<MoFEM::SnesCtx>& snes_ctx);
+PetscErrorCode DMMoFEMSetSnesCtx(DM dm,
+                                 boost::shared_ptr<MoFEM::SnesCtx> &snes_ctx);
 
 /**
-  * \brief get MoFEM::TsCtx data structure
-  * \ingroup dm
-  */
-PetscErrorCode DMMoFEMGetTsCtx(DM dm,MoFEM::TsCtx **ts_ctx);
+ * \brief get MoFEM::TsCtx data structure
+ * \ingroup dm
+ */
+PetscErrorCode DMMoFEMGetTsCtx(DM dm, MoFEM::TsCtx **ts_ctx);
 
 /**
-  * \brief get MoFEM::TsCtx data structure
-  * \ingroup dm
-  */
-PetscErrorCode DMMoFEMGetTsCtx(DM dm,const boost::shared_ptr<MoFEM::TsCtx>& ts_ctx);
+ * \brief get MoFEM::TsCtx data structure
+ * \ingroup dm
+ */
+PetscErrorCode DMMoFEMGetTsCtx(DM dm,
+                               const boost::shared_ptr<MoFEM::TsCtx> &ts_ctx);
 
 /**
   * \brief Set MoFEM::TsCtx data structure
@@ -455,17 +461,17 @@ PetscErrorCode DMMoFEMGetTsCtx(DM dm,const boost::shared_ptr<MoFEM::TsCtx>& ts_c
   when is destroyed.
 
   */
-PetscErrorCode DMMoFEMSetTsCtx(DM dm,boost::shared_ptr<MoFEM::TsCtx>& ts_ctx);
+PetscErrorCode DMMoFEMSetTsCtx(DM dm, boost::shared_ptr<MoFEM::TsCtx> &ts_ctx);
 
 /** sets if read mesh is partitioned
-  * \ingroup dm
-  */
-PetscErrorCode DMMoFEMSetIsPartitioned(DM dm,PetscBool is_partitioned);
+ * \ingroup dm
+ */
+PetscErrorCode DMMoFEMSetIsPartitioned(DM dm, PetscBool is_partitioned);
 
 /** get if read mesh is partitioned
-  * \ingroup dm
-  */
-PetscErrorCode DMMoFEMGetIsPartitioned(DM dm,PetscBool *is_partitioned);
+ * \ingroup dm
+ */
+PetscErrorCode DMMoFEMGetIsPartitioned(DM dm, PetscBool *is_partitioned);
 
 /**
  * \brief Set operators for MoFEM dm
@@ -476,15 +482,15 @@ PetscErrorCode DMMoFEMGetIsPartitioned(DM dm,PetscBool *is_partitioned);
 PetscErrorCode DMSetOperators_MoFEM(DM dm);
 
 /**
-  * \brief Create dm data structure with MoFEM data structure
-  * \ingroup dm
-  */
+ * \brief Create dm data structure with MoFEM data structure
+ * \ingroup dm
+ */
 PetscErrorCode DMCreate_MoFEM(DM dm);
 
 /**
-  * \brief Destroys dm with MoFEM data structure
-  * \ingroup dm
-  */
+ * \brief Destroys dm with MoFEM data structure
+ * \ingroup dm
+ */
 PetscErrorCode DMDestroy_MoFEM(DM dm);
 
 /**
@@ -494,7 +500,7 @@ PetscErrorCode DMDestroy_MoFEM(DM dm);
  * sets the routine to create a global vector
  * associated with the shell DM
  */
-PetscErrorCode DMCreateGlobalVector_MoFEM(DM dm,Vec *g);
+PetscErrorCode DMCreateGlobalVector_MoFEM(DM dm, Vec *g);
 
 /**
  * \brief DMShellSetCreateLocalVector
@@ -503,51 +509,52 @@ PetscErrorCode DMCreateGlobalVector_MoFEM(DM dm,Vec *g);
  * sets the routine to create a local vector
  * associated with the shell DM
  */
-PetscErrorCode DMCreateLocalVector_MoFEM(DM dm,Vec *l);
+PetscErrorCode DMCreateLocalVector_MoFEM(DM dm, Vec *l);
 
 /**
-  * DMShellSetCreateMatrix
-  * \ingroup dm
-  *
-  * sets the routine to create a matrix associated with the shell DM
-  */
-PetscErrorCode DMCreateMatrix_MoFEM(DM dm,Mat *M);
+ * DMShellSetCreateMatrix
+ * \ingroup dm
+ *
+ * sets the routine to create a matrix associated with the shell DM
+ */
+PetscErrorCode DMCreateMatrix_MoFEM(DM dm, Mat *M);
 
 /**
-  * Set options for MoFEM DM
-  * \ingroup dm
-  */
-#if PETSC_VERSION_GE(3,7,0)
-  PetscErrorCode DMSetFromOptions_MoFEM(PetscOptionItems *PetscOptionsObject,DM dm);
-#elif PETSC_VERSION_GE(3,5,3)
-  PetscErrorCode DMSetFromOptions_MoFEM(PetscOptions *PetscOptionsObject,DM dm);
+ * Set options for MoFEM DM
+ * \ingroup dm
+ */
+#if PETSC_VERSION_GE(3, 7, 0)
+PetscErrorCode DMSetFromOptions_MoFEM(PetscOptionItems *PetscOptionsObject,
+                                      DM dm);
+#elif PETSC_VERSION_GE(3, 5, 3)
+PetscErrorCode DMSetFromOptions_MoFEM(PetscOptions *PetscOptionsObject, DM dm);
 #else
-  PetscErrorCode DMSetFromOptions_MoFEM(DM dm);
+PetscErrorCode DMSetFromOptions_MoFEM(DM dm);
 #endif
 
 /**
-  * sets up the MoFEM structures inside a DM object
-  * \ingroup dm
-  */
+ * sets up the MoFEM structures inside a DM object
+ * \ingroup dm
+ */
 PetscErrorCode DMSetUp_MoFEM(DM dm);
 
 /**
-  * Sets up the MoFEM structures inside a DM object for sub dm
-  * \ingroup dm
+ * Sets up the MoFEM structures inside a DM object for sub dm
+ * \ingroup dm
  */
 PetscErrorCode DMSubDMSetUp_MoFEM(DM subdm);
 
 /**
-  * Add field to sub dm problem on rows
-  * \ingroup dm
+ * Add field to sub dm problem on rows
+ * \ingroup dm
  */
-PetscErrorCode DMMoFEMAddSubFieldRow(DM dm,const char field_name[]);
+PetscErrorCode DMMoFEMAddSubFieldRow(DM dm, const char field_name[]);
 
 /**
-  * Add field to sub dm problem on columns
-  * \ingroup dm
+ * Add field to sub dm problem on columns
+ * \ingroup dm
  */
-PetscErrorCode DMMoFEMAddSubFieldCol(DM dm,const char field_name[]);
+PetscErrorCode DMMoFEMAddSubFieldCol(DM dm, const char field_name[]);
 
 /**
  * Return true if this DM is sub problem
@@ -556,7 +563,7 @@ PetscErrorCode DMMoFEMAddSubFieldCol(DM dm,const char field_name[]);
  * @param  is_subproblem true if subproblem
  * @return               error code
  */
-PetscErrorCode DMMoFEMGetIsSubDM(DM dm,PetscBool *is_sub_dm);
+PetscErrorCode DMMoFEMGetIsSubDM(DM dm, PetscBool *is_sub_dm);
 
 /**
  * \brief get sub problem is
@@ -567,7 +574,7 @@ PetscErrorCode DMMoFEMGetIsSubDM(DM dm,PetscBool *is_sub_dm);
  * Returns IS with global indices of the DM used to create SubDM
  *
  */
-PetscErrorCode DMMoFEMGetSubRowIS(DM dm,IS *is);
+PetscErrorCode DMMoFEMGetSubRowIS(DM dm, IS *is);
 
 /**
  * \brief get sub problem is
@@ -578,7 +585,7 @@ PetscErrorCode DMMoFEMGetSubRowIS(DM dm,IS *is);
  * Returns IS with global indices of the DM used to create SubDM
  *
  */
-PetscErrorCode DMMoFEMGetSubColIS(DM dm,IS *is);
+PetscErrorCode DMMoFEMGetSubColIS(DM dm, IS *is);
 
 /**
  * \brief Add problem to composite DM on row
@@ -590,7 +597,7 @@ PetscErrorCode DMMoFEMGetSubColIS(DM dm,IS *is);
  * @param  prb_name add problem name
  * @return          error code
  */
-PetscErrorCode DMMoFEMAddRowCompositeProblem(DM dm,const char prb_name[]);
+PetscErrorCode DMMoFEMAddRowCompositeProblem(DM dm, const char prb_name[]);
 
 /**
  * \brief Add problem to composite DM on col
@@ -602,7 +609,7 @@ PetscErrorCode DMMoFEMAddRowCompositeProblem(DM dm,const char prb_name[]);
  * @param  prb_name add problem name
  * @return          error code
  */
-PetscErrorCode DMMoFEMAddColCompositeProblem(DM dm,const char prb_name[]);
+PetscErrorCode DMMoFEMAddColCompositeProblem(DM dm, const char prb_name[]);
 
 /**
  * \brief Get if this DM is composite DM
@@ -612,53 +619,53 @@ PetscErrorCode DMMoFEMAddColCompositeProblem(DM dm,const char prb_name[]);
  * @param  is_comp_dm return true if composite problem here
  * @return            error code
  */
-PetscErrorCode DMMoFEMGetIsCompDM(DM dm,PetscBool *is_comp_dm);
+PetscErrorCode DMMoFEMGetIsCompDM(DM dm, PetscBool *is_comp_dm);
 
 /**
-  * destroy the MoFEM structure
-  * \ingroup dm
-  */
+ * destroy the MoFEM structure
+ * \ingroup dm
+ */
 PetscErrorCode DMDestroy_MoFEM(DM dm);
 
 /**
-  * DMShellSetGlobalToLocal
-  * \ingroup dm
-  *
-  * the routine that begins the global to local scatter
-  */
-PetscErrorCode DMGlobalToLocalBegin_MoFEM(DM dm,Vec,InsertMode,Vec);
+ * DMShellSetGlobalToLocal
+ * \ingroup dm
+ *
+ * the routine that begins the global to local scatter
+ */
+PetscErrorCode DMGlobalToLocalBegin_MoFEM(DM dm, Vec, InsertMode, Vec);
 
 /**
-  * DMShellSetGlobalToLocal
-  * \ingroup dm
-  *
-  * the routine that begins the global to local scatter
-  */
-PetscErrorCode DMGlobalToLocalEnd_MoFEM(DM dm,Vec,InsertMode,Vec);
+ * DMShellSetGlobalToLocal
+ * \ingroup dm
+ *
+ * the routine that begins the global to local scatter
+ */
+PetscErrorCode DMGlobalToLocalEnd_MoFEM(DM dm, Vec, InsertMode, Vec);
 
 /**
-  * DMShellSetLocalToGlobal
-  * \ingroup dm
-  *
-  * the routine that begins the local to global scatter
-  */
-PetscErrorCode DMLocalToGlobalBegin_MoFEM(DM,Vec,InsertMode,Vec);
+ * DMShellSetLocalToGlobal
+ * \ingroup dm
+ *
+ * the routine that begins the local to global scatter
+ */
+PetscErrorCode DMLocalToGlobalBegin_MoFEM(DM, Vec, InsertMode, Vec);
 
 /**
-  * DMShellSetLocalToGlobal
-  * \ingroup dm
-  *
-  * the routine that ends the local to global scatter
-  */
-PetscErrorCode DMLocalToGlobalBegin_MoFEM(DM,Vec,InsertMode,Vec);
+ * DMShellSetLocalToGlobal
+ * \ingroup dm
+ *
+ * the routine that ends the local to global scatter
+ */
+PetscErrorCode DMLocalToGlobalBegin_MoFEM(DM, Vec, InsertMode, Vec);
 
 /**
-  * DMShellSetLocalToGlobal
-  * \ingroup dm
-  *
-  * the routine that ends the local to global scatter
-  */
-PetscErrorCode DMLocalToGlobalEnd_MoFEM(DM,Vec,InsertMode,Vec);
+ * DMShellSetLocalToGlobal
+ * \ingroup dm
+ *
+ * the routine that ends the local to global scatter
+ */
+PetscErrorCode DMLocalToGlobalEnd_MoFEM(DM, Vec, InsertMode, Vec);
 
 /**
  * Creates a set of IS objects with the global indices of dofs for each field
@@ -667,11 +674,13 @@ PetscErrorCode DMLocalToGlobalEnd_MoFEM(DM,Vec,InsertMode,Vec);
  * Output:
  * @param  numFields  The number of fields (or NULL if not requested)
  * @param  fieldNames The name for each field (or NULL if not requested)
- * @param  fields     The global indices for each field (or NULL if not requested)
+ * @param  fields     The global indices for each field (or NULL if not
+ requested)
  *
  * @return            error code
 
- * \note The user is responsible for freeing all requested arrays. In particular,
+ * \note The user is responsible for freeing all requested arrays. In
+ particular,
  * every entry of names should be freed with PetscFree(), every entry of fields
  * should be destroyed with ISDestroy(), and both arrays should be freed with
  * PetscFree().
@@ -679,7 +688,8 @@ PetscErrorCode DMLocalToGlobalEnd_MoFEM(DM,Vec,InsertMode,Vec);
   \ingroup dm
 
  */
-PetscErrorCode DMCreateFieldIS_MoFEM(DM dm, PetscInt *numFields, char ***fieldNames, IS **fields);
+PetscErrorCode DMCreateFieldIS_MoFEM(DM dm, PetscInt *numFields,
+                                     char ***fieldNames, IS **fields);
 
 /**
  * \brief get field is in the problem
@@ -697,7 +707,8 @@ PetscErrorCode DMCreateFieldIS_MoFEM(DM dm, PetscInt *numFields, char ***fieldNa
  *
   \ingroup dm
  */
-PetscErrorCode DMMoFEMGetFieldIS(DM dm,RowColData rc,const char field_name[],IS *is);
+PetscErrorCode DMMoFEMGetFieldIS(DM dm, RowColData rc, const char field_name[],
+                                 IS *is);
 
 /**
  * @brief Set verbosity level
@@ -763,11 +774,11 @@ struct DMCtx : public UnknownInterface {
   boost::shared_ptr<SnesCtx> snesCtx; ///< data structure SNES
   boost::shared_ptr<TsCtx> tsCtx;     ///< data structure for TS solver
 };
-}
+} // namespace MoFEM
 
 #endif //__DMMMOFEM_H
 
-/***************************************************************************//**
+/***************************************************************************/ /**
  * \defgroup dm Distributed mesh manager
  * \brief Implementation of PETSc DM, managing interactions between mesh data structures and vectors and matrices
  *
