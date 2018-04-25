@@ -46,6 +46,43 @@ struct FieldBlas : public UnknownInterface {
    */
   ~FieldBlas();
 
+  typedef boost::function<MoFEMErrorCode(double &, const double)>
+      TwoFieldFunction;
+
+  /** \brief filed lambda
+   * \ingroup mofem_field_algebra
+   * \todo should be moved to independent interface, i.e. FieldAlgebra
+   *
+   * Do calculation on two fields and save result to field fy
+   * 
+   * \code
+   struct Axpy {
+    const double aLpha;
+    Axpy(const double alpha) : aLpha(alpha) {}
+    inline MoFEMErrorCode operator(double &fy, double fx) {
+      MoFEMFunctionBeginHot;
+      fy += Alpha * fx;
+      MoFEMFunctionReturnHot(0);
+    }
+   };
+   CHKERR m_fiel.getInterface<FieldBlas>()->fieldLambda(Axpy(aLpha),
+   field_name_x, field_name_y);
+   * \endcode
+   *
+   * \param function f(double &x, double)
+   * \param field_name_x name of field_x
+   * \param field_name_y name of field_y
+   * \param error_if_missing throw error if entity/dof exist in field_x but not
+   * on field_y \param create_if_missing creat dof in field_y from field_x if it
+   * is not database
+   *
+   */
+  MoFEMErrorCode fieldLambda(TwoFieldFunction lambda,
+                             const std::string &field_name_x,
+                             const std::string &field_name_y,
+                             bool error_if_missing = false,
+                             bool creat_if_missing = false);
+
   /** \brief axpy fields
    * \ingroup mofem_field_algebra
    * \todo should be moved to independent interface, i.e. FieldAlgebra
@@ -61,6 +98,25 @@ struct FieldBlas : public UnknownInterface {
    *
    */
   MoFEMErrorCode fieldAxpy(const double alpha, const std::string &field_name_x,
+                           const std::string &field_name_y,
+                           bool error_if_missing = false,
+                           bool creat_if_missing = false);
+
+  /** \brief copy and scale fields
+   * \ingroup mofem_field_algebra
+   * \todo should be moved to independent interface, i.e. FieldAlgebra
+   *
+   * field_y = alpha*field_x
+   *
+   * \param alpha
+   * \param field_name_x name of field_x
+   * \param field_name_y name of field_y
+   * \param error_if_missing throw error if entity/dof exist in field_x but not
+   * on field_y \param create_if_missing creat dof in field_y from fiedl_x if it
+   * is not database
+   *
+   */
+  MoFEMErrorCode fieldCopy(const double alpha, const std::string &field_name_x,
                            const std::string &field_name_y,
                            bool error_if_missing = false,
                            bool creat_if_missing = false);
