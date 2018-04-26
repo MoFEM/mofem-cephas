@@ -70,7 +70,8 @@ enum LoopInterfaces {
   TS_METHOD    = 1 << 3 | 1 << 6,
   BASIC_METHOD = 1 << 3 | 1 << 4 | 1 << 5 | 1 << 6,
   FE_METHOD    = 1 << 3 | 1 << 4 | 1 << 5 | 1 << 6 | 1 << 7,
-  ENT_METHOD   = 1 << 3 | 1 << 4 | 1 << 5 | 1 << 6 | 1 << 8
+  ENTITY_METHOD = 1 << 3 | 1 << 4 | 1 << 5 | 1 << 6 | 1 << 9,
+  DOF_METHOD   = 1 << 3 | 1 << 4 | 1 << 5 | 1 << 6 | 1 << 9,
 };
 
 /**
@@ -304,7 +305,14 @@ enum HCurlDiffFormatting {
 /**
  * \brief Verbosity levels
  */
-enum VERBOSITY_LEVELS { QUIET = 0, VERBOSE, VERY_VERBOSE, NOISY, VERY_NOISY };
+enum VERBOSITY_LEVELS {
+  DEFAULT_VERBOSITY = -1,
+  QUIET = 0,
+  VERBOSE,
+  VERY_VERBOSE,
+  NOISY,
+  VERY_NOISY
+};
 
 #define BITREFEDGES_SIZE 6    ///< number of edges on tetrahedral
 #define BITREFLEVEL_SIZE 128  ///< max number of refinements
