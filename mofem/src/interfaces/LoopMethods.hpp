@@ -331,7 +331,7 @@ struct FEMethod : public BasicMethod {
  * \ingroup mofem_loops
  */
 #define _IT_GET_FEROW_DOFS_FOR_LOOP_(FE, IT)                                   \
-  FENumeredDofEntity_multiIndex::iterator IT = FE->rowPtr->begin();            \
+  auto IT = FE->rowPtr->begin();                                               \
   IT != FE->rowPtr->end();                                                     \
   IT++
 
@@ -339,7 +339,7 @@ struct FEMethod : public BasicMethod {
  * \ingroup mofem_loops
  */
 #define _IT_GET_FECOL_DOFS_FOR_LOOP_(FE, IT)                                   \
-  FENumeredDofEntity_multiIndex::iterator IT = FE->colPtr->begin();            \
+  auto IT = FE->colPtr->begin();                                               \
   IT != FE->colPtr->end();                                                     \
   IT++
 
@@ -347,7 +347,7 @@ struct FEMethod : public BasicMethod {
  * \ingroup mofem_loops
  */
 #define _IT_GET_FEDATA_DOFS_FOR_LOOP_(FE, IT)                                  \
-  FEDofEntity_multiIndex::iterator IT = FE->dataPtr->begin();                  \
+  auto IT = FE->dataPtr->begin();                                              \
   IT != FE->dataPtr->end();                                                    \
   IT++
 
@@ -424,9 +424,8 @@ struct FEMethod : public BasicMethod {
  * type \ingroup mofem_loops
  */
 #define _IT_GET_FEROW_BY_TYPE_DOFS_FOR_LOOP_(FE, NAME, TYPE, IT)               \
-  FENumeredDofEntityByNameAndType::iterator IT =                               \
-      FE->get_begin<FENumeredDofEntityByNameAndType>(                          \
-          FE->rowPtr->get<Composite_Name_And_Type_mi_tag>(), NAME, TYPE);      \
+  auto IT = FE->get_begin<FENumeredDofEntityByNameAndType>(                    \
+      FE->rowPtr->get<Composite_Name_And_Type_mi_tag>(), NAME, TYPE);          \
   IT != FE->get_end<FENumeredDofEntityByNameAndType>(                          \
             FE->rowPtr->get<Composite_Name_And_Type_mi_tag>(), NAME, TYPE);    \
   IT++
@@ -435,9 +434,8 @@ struct FEMethod : public BasicMethod {
  * entity type \ingroup mofem_loops
  */
 #define _IT_GET_FECOL_BY_TYPE_DOFS_FOR_LOOP_(FE, NAME, TYPE, IT)               \
-  FENumeredDofEntityByNameAndType::iterator IT =                               \
-      FE->get_begin<FENumeredDofEntityByNameAndType>(                          \
-          FE->colPtr->get<Composite_Name_And_Type_mi_tag>(), NAME, TYPE);      \
+  auto IT = FE->get_begin<FENumeredDofEntityByNameAndType>(                    \
+      FE->colPtr->get<Composite_Name_And_Type_mi_tag>(), NAME, TYPE);          \
   IT != FE->get_end<FENumeredDofEntityByNameAndType>(                          \
             FE->colPtr->get<Composite_Name_And_Type_mi_tag>(), NAME, TYPE);    \
   IT++
@@ -446,9 +444,8 @@ struct FEMethod : public BasicMethod {
  * entity type \ingroup mofem_loops
  */
 #define _IT_GET_FEDATA_BY_TYPE_DOFS_FOR_LOOP_(FE, NAME, TYPE, IT)              \
-  FEDofEntityByNameAndType::iterator IT =                                      \
-      FE->get_begin<FEDofEntityByNameAndType>(                                 \
-          FE->dataPtr->get<Composite_Name_And_Type_mi_tag>(), NAME, TYPE);     \
+  auto IT = FE->get_begin<FEDofEntityByNameAndType>(                           \
+      FE->dataPtr->get<Composite_Name_And_Type_mi_tag>(), NAME, TYPE);         \
   IT != FE->get_end<FEDofEntityByNameAndType>(                                 \
             FE->dataPtr->get<Composite_Name_And_Type_mi_tag>(), NAME, TYPE);   \
   IT++
@@ -468,9 +465,8 @@ struct FEMethod : public BasicMethod {
  * \ingroup mofem_loops
  */
 #define _IT_GET_FEROW_BY_NAME_DOFS_FOR_LOOP_(FE, NAME, IT)                     \
-  FENumeredDofEntityByFieldName::iterator IT =                                 \
-      FE->get_begin<FENumeredDofEntityByFieldName>(                            \
-          FE->rowPtr->get<FieldName_mi_tag>(), NAME);                          \
+  auto IT = FE->get_begin<FENumeredDofEntityByFieldName>(                      \
+      FE->rowPtr->get<FieldName_mi_tag>(), NAME);                              \
   IT != FE->get_end<FENumeredDofEntityByFieldName>(                            \
             FE->rowPtr->get<FieldName_mi_tag>(), NAME);                        \
   IT++
@@ -479,9 +475,8 @@ struct FEMethod : public BasicMethod {
  * \ingroup mofem_loops
  */
 #define _IT_GET_FECOL_BY_NAME_DOFS_FOR_LOOP_(FE, NAME, IT)                     \
-  FENumeredDofEntityByFieldName::iterator IT =                                 \
-      FE->get_begin<FENumeredDofEntityByFieldName>(                            \
-          FE->colPtr->get<FieldName_mi_tag>(), NAME);                          \
+  auto IT = FE->get_begin<FENumeredDofEntityByFieldName>(                      \
+      FE->colPtr->get<FieldName_mi_tag>(), NAME);                              \
   IT != FE->get_end<FENumeredDofEntityByFieldName>(                            \
             FE->colPtr->get<FieldName_mi_tag>(), NAME);                        \
   IT++
@@ -490,7 +485,7 @@ struct FEMethod : public BasicMethod {
  * \ingroup mofem_loops
  */
 #define _IT_GET_FEDATA_BY_NAME_DOFS_FOR_LOOP_(FE, NAME, IT)                    \
-  FEDofEntityByFieldName::iterator IT = FE->get_begin<FEDofEntityByFieldName>( \
+  auto IT = FE->get_begin<FEDofEntityByFieldName>(                             \
       FE->dataPtr->get<FieldName_mi_tag>(), NAME);                             \
   IT != FE->get_end<FEDofEntityByFieldName>(                                   \
             FE->dataPtr->get<FieldName_mi_tag>(), NAME);                       \
@@ -511,9 +506,8 @@ struct FEMethod : public BasicMethod {
  * entity (handle from moab) \ingroup mofem_loops
  */
 #define _IT_GET_FEROW_DOFS_BY_ENT_FOR_LOOP_(FE, ENT, IT)                       \
-  FENumeredDofEntityByEnt::iterator IT =                                       \
-      FE->get_begin<FENumeredDofEntityByEnt>(FE->rowPtr->get<Ent_mi_tag>(),    \
-                                             ENT);                             \
+  auto IT = FE->get_begin<FENumeredDofEntityByEnt>(                            \
+      FE->rowPtr->get<Ent_mi_tag>(), ENT);                                     \
   IT != FE->get_end<FENumeredDofEntityByEnt>(FE->rowPtr->get<Ent_mi_tag>(),    \
                                              ENT);                             \
   IT++
@@ -522,9 +516,8 @@ struct FEMethod : public BasicMethod {
  * element entity (handle from moab) \ingroup mofem_loops
  */
 #define _IT_GET_FECOL_DOFS_BY_ENT_FOR_LOOP_(FE, ENT, IT)                       \
-  FENumeredDofEntityByEnt::iterator IT =                                       \
-      FE->get_begin<FENumeredDofEntityByEnt>(FE->colPtr->get<Ent_mi_tag>(),    \
-                                             ENT);                             \
+  auto IT = FE->get_begin<FENumeredDofEntityByEnt>(                            \
+      FE->colPtr->get<Ent_mi_tag>(), ENT);                                     \
   IT != FE->get_end<FENumeredDofEntityByEnt>(FE->colPtr->get<Ent_mi_tag>(),    \
                                              ENT);                             \
   IT++
@@ -533,9 +526,8 @@ struct FEMethod : public BasicMethod {
  * element entity (handle from moab) \ingroup mofem_loops
  */
 #define _IT_GET_FEDATA_DOFS_BY_ENT_FOR_LOOP_(FE, ENT, IT)                      \
-  FEDofEntity_multiIndex::index<Ent_mi_tag>::type::iterator IT =               \
-      FE->get_begin<FEDofEntity_multiIndex::index<Ent_mi_tag>::type>(          \
-          FE->dataPtr->get<Ent_mi_tag>(), ENT);                                \
+  auto IT = FE->get_begin<FEDofEntity_multiIndex::index<Ent_mi_tag>::type>(    \
+      FE->dataPtr->get<Ent_mi_tag>(), ENT);                                    \
   IT != FE->get_end<FEDofEntity_multiIndex::index<Ent_mi_tag>::type>(          \
             FE->dataPtr->get<Ent_mi_tag>(), ENT);                              \
   IT++
@@ -557,9 +549,8 @@ struct FEMethod : public BasicMethod {
  * element entity (handle from moab) \ingroup mofem_loops
  */
 #define _IT_GET_FEROW_DOFS_BY_NAME_AND_ENT_FOR_LOOP_(FE, NAME, ENT, IT)        \
-  FENumeredDofEntityByNameAndEnt::iterator IT =                                \
-      FE->get_begin<FENumeredDofEntityByNameAndEnt>(                           \
-          FE->rowPtr->get<Composite_Name_And_Ent_mi_tag>(), NAME, ENT);        \
+  auto IT = FE->get_begin<FENumeredDofEntityByNameAndEnt>(                     \
+      FE->rowPtr->get<Composite_Name_And_Ent_mi_tag>(), NAME, ENT);            \
   IT != FE->get_end<FENumeredDofEntityByNameAndEnt>(                           \
             FE->rowPtr->get<Composite_Name_And_Ent_mi_tag>(), NAME, ENT);      \
   IT++
@@ -568,9 +559,8 @@ struct FEMethod : public BasicMethod {
  * given element entity (handle from moab) \ingroup mofem_loops
  */
 #define _IT_GET_FECOL_DOFS_BY_NAME_AND_ENT_FOR_LOOP_(FE, NAME, ENT, IT)        \
-  FENumeredDofEntityByNameAndEnt::iterator IT =                                \
-      FE->get_begin<FENumeredDofEntityByNameAndEnt>(                           \
-          FE->colPtr->get<Composite_Name_And_Ent_mi_tag>(), NAME, ENT);        \
+  auto IT = FE->get_begin<FENumeredDofEntityByNameAndEnt>(                     \
+      FE->colPtr->get<Composite_Name_And_Ent_mi_tag>(), NAME, ENT);            \
   IT != FE->get_end<FENumeredDofEntityByNameAndEnt>(                           \
             FE->colPtr->get<Composite_Name_And_Ent_mi_tag>(), NAME, ENT);      \
   IT++
@@ -579,9 +569,8 @@ struct FEMethod : public BasicMethod {
  * element entity (handle from moab) \ingroup mofem_loops
  */
 #define _IT_GET_FEDATA_DOFS_BY_NAME_AND_ENT_FOR_LOOP_(FE, NAME, ENT, IT)       \
-  FEDofEntityByNameAndEnt::iterator IT =                                       \
-      FE->get_begin<FEDofEntityByNameAndEnt>(                                  \
-          FE->dataPtr->get<Composite_Name_And_Ent_mi_tag>(), NAME, ENT);       \
+  auto IT = FE->get_begin<FEDofEntityByNameAndEnt>(                            \
+      FE->dataPtr->get<Composite_Name_And_Ent_mi_tag>(), NAME, ENT);           \
   IT != FE->get_end<FEDofEntityByNameAndEnt>(                                  \
             FE->dataPtr->get<Composite_Name_And_Ent_mi_tag>(), NAME, ENT);     \
   IT++

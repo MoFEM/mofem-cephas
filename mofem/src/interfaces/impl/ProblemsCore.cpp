@@ -575,14 +575,12 @@ MoFEMErrorCode Core::loop_dofs(const std::string &field_name, DofMethod &method,
   if (verb == -1)
     verb = verbose;
   SET_BASIC_METHOD(method, NULL);
-  DofEntityByFieldName::iterator miit, hi_miit;
-  miit    = dofsField.get<FieldName_mi_tag>().lower_bound(field_name);
-  hi_miit = dofsField.get<FieldName_mi_tag>().upper_bound(field_name);
+  auto miit = dofsField.get<FieldName_mi_tag>().lower_bound(field_name);
+  auto hi_miit = dofsField.get<FieldName_mi_tag>().upper_bound(field_name);
   if (miit != hi_miit) {
     method.fieldPtr = miit->get()->getFieldPtr();
   } else {
-    Field_multiIndex::index<FieldName_mi_tag>::type::iterator field_it =
-        fIelds.get<FieldName_mi_tag>().find(field_name);
+    auto field_it = fIelds.get<FieldName_mi_tag>().find(field_name);
     if (field_it != fIelds.get<FieldName_mi_tag>().end()) {
       method.fieldPtr = *field_it;
     }
