@@ -529,7 +529,7 @@ DMoFEMLoopFiniteElements(DM dm, const std::string &fe_name,
 }
 
 PetscErrorCode DMoFEMLoopDofs(DM dm, const char field_name[],
-                              MoFEM::EntMethod *method) {
+                              MoFEM::DofMethod *method) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBeginHot;
   DMCtx *dm_field = static_cast<DMCtx *>(dm->data);

@@ -170,7 +170,7 @@ FEMethod::FEMethod():
 BasicMethod() {
 }
 
-//EntMethod
-EntMethod::EntMethod(): BasicMethod() {}
+//DofMethod
+DofMethod::DofMethod(): BasicMethod() {}
 
 }

@@ -495,7 +495,7 @@ MoFEMErrorCode Core::loop_finite_elements(const std::string &problem_name,
 
 MoFEMErrorCode Core::loop_dofs(const Problem *problem_ptr,
                                const std::string &field_name, RowColData rc,
-                               EntMethod &method, int lower_rank,
+                               DofMethod &method, int lower_rank,
                                int upper_rank, int verb) {
   MoFEMFunctionBegin;
   SET_BASIC_METHOD(method, &*problem_ptr);
@@ -538,7 +538,7 @@ MoFEMErrorCode Core::loop_dofs(const Problem *problem_ptr,
 MoFEMErrorCode Core::loop_dofs(
     const std::string &problem_name, const std::string &field_name,
     RowColData rc,     // ROW or COL
-    EntMethod &method, // Finite element instance processed on each DOF
+    DofMethod &method, // Finite element instance processed on each DOF
     int lower_rank,    // Only DOFs on processor higher or equal to this are
                        // processed
     int upper_rank,    // Only DOFs lowest or higher to this are processed
@@ -561,7 +561,7 @@ MoFEMErrorCode Core::loop_dofs(
 
 MoFEMErrorCode Core::loop_dofs(const std::string &problem_name,
                                const std::string &field_name, RowColData rc,
-                               EntMethod &method, int verb) {
+                               DofMethod &method, int verb) {
   MoFEMFunctionBegin;
   if (verb == -1)
     verb = verbose;
@@ -569,7 +569,7 @@ MoFEMErrorCode Core::loop_dofs(const std::string &problem_name,
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode Core::loop_dofs(const std::string &field_name, EntMethod &method,
+MoFEMErrorCode Core::loop_dofs(const std::string &field_name, DofMethod &method,
                                int verb) {
   MoFEMFunctionBegin;
   if (verb == -1)
@@ -597,4 +597,34 @@ MoFEMErrorCode Core::loop_dofs(const std::string &field_name, EntMethod &method,
   CHKERR method.postProcess();
   MoFEMFunctionReturn(0);
 }
+
+MoFEMErrorCode Core::loop_entities(const std::string &field_name,
+                                   EntityMethod &method, int verb) {
+  MoFEMFunctionBegin;
+  if (verb == -1)
+    verb = verbose;
+  SET_BASIC_METHOD(method, NULL);
+  auto miit = entsFields.get<FieldName_mi_tag>().lower_bound(field_name);
+  auto hi_miit = entsFields.get<FieldName_mi_tag>().upper_bound(field_name);
+  if (miit != hi_miit) {
+    method.fieldPtr = miit->get()->getFieldPtr();
+  } else {
+    auto field_it = fIelds.get<FieldName_mi_tag>().find(field_name);
+    if (field_it != fIelds.get<FieldName_mi_tag>().end()) {
+      method.fieldPtr = *field_it;
+    }
+  }
+  method.loopSize = distance(miit, hi_miit);
+  CHKERR method.preProcess();
+  for (int nn = 0; miit != hi_miit; miit++, nn++) {
+    method.nInTheLoop = nn;
+    method.dofPtr     = *miit;
+    CHKERR method();
+  }
+  CHKERR method.postProcess();
+  MoFEMFunctionReturn(0);
+}
+
+
+
 }

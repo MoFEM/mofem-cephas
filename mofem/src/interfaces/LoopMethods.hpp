@@ -29,8 +29,10 @@ static const MOFEMuuid IDD_MOFEMTsMethod = MOFEMuuid(BitIntefaceId(TS_METHOD));
 static const MOFEMuuid IDD_MOFEMBasicMethod =
     MOFEMuuid(BitIntefaceId(BASIC_METHOD));
 static const MOFEMuuid IDD_MOFEMFEMethod = MOFEMuuid(BitIntefaceId(FE_METHOD));
-static const MOFEMuuid IDD_MOFEMEntMethod =
-    MOFEMuuid(BitIntefaceId(ENT_METHOD));
+static const MOFEMuuid IDD_MOFEMEntityMethod =
+    MOFEMuuid(BitIntefaceId(ENTITY_METHOD));
+static const MOFEMuuid IDD_MOFEMDofMethod =
+    MOFEMuuid(BitIntefaceId(DOF_METHOD));
 
 /**
  * \brief data structure for ksp (linear solver) context
@@ -139,18 +141,6 @@ struct SnesMethod : virtual public UnknownInterface {
   Vec snes_x, snes_f;
   Mat snes_A, snes_B;
 
-  /// \deprecated use setSnes
-  DEPRECATED MoFEMErrorCode set_snes(SNES snes) { return setSnes(snes); }
-
-  /// \deprecated use setSnesCtx
-  DEPRECATED MoFEMErrorCode set_snes_ctx(const SNESContext &ctx) {
-    return setSnesCtx(ctx);
-  }
-
-  /// \deprecated use copySnes
-  DEPRECATED MoFEMErrorCode copy_snes(const SnesMethod &snes) {
-    return copySnes(snes);
-  };
 };
 
 /**
@@ -204,16 +194,6 @@ struct TSMethod : virtual public UnknownInterface {
   PetscInt ts_step;
   PetscReal ts_a, ts_t;
 
-  /// \deprecated use setTsCtx
-  DEPRECATED MoFEMErrorCode set_ts_ctx(const TSContext &ctx) {
-    return setTsCtx(ctx);
-  }
-
-  /// \deprecated use copyTs
-  DEPRECATED MoFEMErrorCode copy_ts(const TSMethod &ts) { return copyTs(ts); }
-
-  /// \deprecated use setTs
-  DEPRECATED MoFEMErrorCode set_ts(TS _ts) { return setTs(_ts); }
 };
 
 /**
@@ -614,27 +594,57 @@ struct FEMethod : public BasicMethod {
  * It allows to exchange data between MoFEM and user functions. It stores
  * information about multi-indices.
  */
-struct EntMethod : public BasicMethod {
+struct EntityMethod : public BasicMethod {
+
+  MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
+                                 UnknownInterface **iface) const {
+    MoFEMFunctionBegin;
+    if (uuid == IDD_MOFEMDofMethod) {
+      *iface = const_cast<EntityMethod *>(this);
+      MoFEMFunctionReturnHot(0);
+    }
+    CHKERR query_interface(uuid, iface);
+    MoFEMFunctionReturn(0);
+  }
+
+  EntityMethod();
+
+  boost::shared_ptr<Field> fieldPtr;
+  boost::shared_ptr<FieldEntity> dofPtr;
+
+};
+
+
+/**
+ * \brief Data structure to exchange data between mofem and User Loop Methods on
+ * entities. \ingroup mofem_loops
+ *
+ * It allows to exchange data between MoFEM and user functions. It stores
+ * information about multi-indices.
+ */
+struct DofMethod : public BasicMethod {
 
   MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
                                  UnknownInterface **iface) const {
     MoFEMFunctionBeginHot;
-    if (uuid == IDD_MOFEMEntMethod) {
-      *iface = const_cast<EntMethod *>(this);
+    if (uuid == IDD_MOFEMDofMethod) {
+      *iface = const_cast<DofMethod *>(this);
       MoFEMFunctionReturnHot(0);
     }
 
-    ierr = query_interface(uuid, iface);
-    CHKERRG(ierr);
+    CHKERR query_interface(uuid, iface);
     MoFEMFunctionReturnHot(0);
   }
 
-  EntMethod();
+  DofMethod();
 
   boost::shared_ptr<Field> fieldPtr;
   boost::shared_ptr<DofEntity> dofPtr;
   boost::shared_ptr<NumeredDofEntity> dofNumeredPtr;
 };
+
+/// \deprecated name changed use DofMethod insead EntMethod
+DEPRECATED typedef DofMethod EntMethod;
 
 } // namespace MoFEM
 

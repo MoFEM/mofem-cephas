@@ -255,7 +255,7 @@ DMoFEMLoopFiniteElements(DM dm, const std::string &fe_name,
  * \ingroup dm
  */
 PetscErrorCode DMoFEMLoopDofs(DM dm, const char field_name[],
-                              MoFEM::EntMethod *method);
+                              MoFEM::DofMethod *method);
 
 // /**
 //  * \brief Set compute operator for KSP solver via sub-matrix and IS
