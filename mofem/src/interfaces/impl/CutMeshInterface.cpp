@@ -440,7 +440,7 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(Range *fixed_edges,
   Range vol_edges;
   CHKERR moab.get_adjacencies(vOlume, 1, true, vol_edges,
                               moab::Interface::UNION);
-                              
+
   aveLength = 0;
   maxLength = 0;
   int nb_ave_length = 0;
