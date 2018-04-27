@@ -599,7 +599,7 @@ struct EntityMethod : public BasicMethod {
   EntityMethod();
 
   boost::shared_ptr<Field> fieldPtr;
-  boost::shared_ptr<FieldEntity> dofPtr;
+  boost::shared_ptr<FieldEntity> entPtr;
 
 };
 

@@ -616,13 +616,10 @@ MoFEMErrorCode Core::loop_entities(const std::string &field_name,
   CHKERR method.preProcess();
   for (int nn = 0; miit != hi_miit; miit++, nn++) {
     method.nInTheLoop = nn;
-    method.dofPtr     = *miit;
+    method.entPtr = *miit;
     CHKERR method();
   }
   CHKERR method.postProcess();
   MoFEMFunctionReturn(0);
 }
-
-
-
 }
