@@ -5,35 +5,27 @@
 
 namespace FTensor
 {
-  template<class A, class T, int N>
-  class Tensor2_number_1
+  template <class A, class T, int N> class Tensor2_number_1
   {
     A iterA;
+
   public:
-    T operator()(const int N1) const
-    {
-      return iterA(N1,N);
-    }
-    Tensor2_number_1(A &a): iterA(a) {}
+    T operator()(const int N1) const { return iterA(N1, N); }
+    Tensor2_number_1(const A &a) : iterA(a) {}
   };
 
-  template<class A, class T, int N>
-  class Tensor2_number_0
+  template <class A, class T, int N> class Tensor2_number_0
   {
     A iterA;
+
   public:
-    T operator()(const int N1) const
-    {
-      return iterA(N,N1);
-    }
-    Tensor2_number_0(A &a): iterA(a) {}
+    T operator()(const int N1) const { return iterA(N, N1); }
+    Tensor2_number_0(const A &a) : iterA(a) {}
   };
 
-  template<class A, class T, int N>
-  class Tensor2_number_rhs_0
+  template <class A, class T, int N> class Tensor2_number_rhs_0
   {};
 
-  template<class A, class T, int N>
-  class Tensor2_number_rhs_1
+  template <class A, class T, int N> class Tensor2_number_rhs_1
   {};
 }

@@ -1,7 +1,7 @@
 /** \file SaveVertexDofOnTag.hpp
 
 Save field DOFS on vertices/tags
-This is another example how to use MoFEM::EntMethod when some operator for each
+This is another example how to use MoFEM::DofMethod when some operator for each
 node need to be applied.
 
 */
@@ -27,7 +27,7 @@ namespace BasicFiniteElements {
 
 /** \brief Save field DOFS on vertices/tags
  */
-struct SaveVertexDofOnTag : public MoFEM::EntMethod {
+struct SaveVertexDofOnTag : public MoFEM::DofMethod {
 
   MoFEM::Interface &mField;
   std::string tagName;

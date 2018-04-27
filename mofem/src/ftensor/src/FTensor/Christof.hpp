@@ -4,6 +4,5 @@
 #include "Christof/Christof_number.hpp"
 #include "Christof/Christof_numeral.hpp"
 
-#include "Christof/Christof_constructor.hpp"
-#include "Christof/Christof_value.hpp"
 #include "Christof/Christof_pointer.hpp"
+#include "Christof/Christof_value.hpp"

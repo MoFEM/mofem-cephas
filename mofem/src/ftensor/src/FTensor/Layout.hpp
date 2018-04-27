@@ -7,7 +7,8 @@
 
 namespace FTensor
 {
-  enum Layout {
+  enum Layout
+  {
     column_major,
     row_major
   };

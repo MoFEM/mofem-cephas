@@ -7,88 +7,84 @@
 
 namespace FTensor
 {
-  template<class A, class B, class T, class U, int Dim0, int Dim1, char i,char j>
-  class Tensor2_and_Tensor1_0
+  // Base Template
+  template <class A, class B, class T, class U, int Dim0_0, int Dim1_0,
+            int Dim0_1, char i0, char j0, char i1>
+  class Tensor2_and_Tensor1
+  {};
+
+  /* A(i,j) & B(i) -> Tensor2 */
+
+  template <class A, class B, class T, class U, int Dim0, int Dim1, char i,
+            char j>
+  class Tensor2_and_Tensor1<A, B, T, U, Dim0, Dim1, Dim0, i, j, i>
   {
-    const Tensor2_Expr<A,T,Dim0,Dim1,i,j> iterA;
-    const Tensor1_Expr<B,U,Dim0,i> iterB;
+    const Tensor2_Expr<A, T, Dim0, Dim1, i, j> iterA;
+    const Tensor1_Expr<B, U, Dim0, i> iterB;
+
   public:
-    typename promote<T,U>::V operator()(const int N1, const int N2) const
+    typename promote<T, U>::V operator()(const int N1, const int N2) const
     {
-      return iterA(N1,N2)*iterB(N1);
+      return iterA(N1, N2) * iterB(N1);
     }
 
-    Tensor2_and_Tensor1_0(const Tensor2_Expr<A,T,Dim0,Dim1,i,j> &a,
-                          const Tensor1_Expr<B,U,Dim0,i> &b):
-      iterA(a), iterB(b) {}
+    Tensor2_and_Tensor1(const Tensor2_Expr<A, T, Dim0, Dim1, i, j> &a,
+                        const Tensor1_Expr<B, U, Dim0, i> &b)
+        : iterA(a), iterB(b)
+    {}
   };
-
-  template<class A, class B, class T, class U, int Dim0, int Dim1, char i,char j>
-  inline const Tensor2_Expr<const Tensor2_and_Tensor1_0<A,B,T,U,Dim0,Dim1,i,j>,
-                            typename promote<T,U>::V,Dim0,Dim1,i,j>
-  operator&(const Tensor2_Expr<A,T,Dim0,Dim1,i,j> &a,
-            const Tensor1_Expr<B,U,Dim0,i> &b)
-  {
-    typedef const Tensor2_and_Tensor1_0<A,B,T,U,Dim0,Dim1,i,j> TensorExpr;
-    return Tensor2_Expr<TensorExpr,typename promote<T,U>::V,Dim0,Dim1,i,j>
-      (TensorExpr(a,b));
-  }
-
-  /* B(i) & A(i,j) -> Tensor2 */
-
-  template<class A, class B, class T, class U, int Dim0, int Dim1, char i,char j>
-  inline const Tensor2_Expr<const Tensor2_and_Tensor1_0
-                            <A,B,T,U,Dim0,Dim1,i,j>,typename promote<T,U>::V,Dim0,Dim1,i,j>
-  operator&(const Tensor1_Expr<B,U,Dim0,i> &b,
-            const Tensor2_Expr<A,T,Dim0,Dim1,i,j> &a)
-  {
-    typedef const Tensor2_and_Tensor1_0<A,B,T,U,Dim0,Dim1,i,j> TensorExpr;
-    return Tensor2_Expr<TensorExpr,typename promote<T,U>::V,Dim0,Dim1,i,j>
-      (TensorExpr(a,b));
-  }
 
   /* A(i,j) & B(j) -> Tensor2 */
 
-  template<class A, class B, class T, class U, int Dim0, int Dim1,
-           char i, char j>
-  class Tensor2_and_Tensor1_1
+  template <class A, class B, class T, class U, int Dim0, int Dim1, char i,
+            char j>
+  class Tensor2_and_Tensor1<A, B, T, U, Dim0, Dim1, Dim1, i, j, j>
   {
-    const Tensor2_Expr<A,T,Dim0,Dim1,i,j> iterA;
-    const Tensor1_Expr<B,U,Dim1,j> iterB;
+    const Tensor2_Expr<A, T, Dim0, Dim1, i, j> iterA;
+    const Tensor1_Expr<B, U, Dim1, j> iterB;
+
   public:
-    typename promote<T,U>::V operator()(const int N1, const int N2) const
+    typename promote<T, U>::V operator()(const int N1, const int N2) const
     {
-      return iterA(N1,N2)*iterB(N2);
+      return iterA(N1, N2) * iterB(N2);
     }
 
-    Tensor2_and_Tensor1_1(const Tensor2_Expr<A,T,Dim0,Dim1,i,j> &a,
-                          const Tensor1_Expr<B,U,Dim1,j> &b):
-      iterA(a), iterB(b) {}
+    Tensor2_and_Tensor1(const Tensor2_Expr<A, T, Dim0, Dim1, i, j> &a,
+                        const Tensor1_Expr<B, U, Dim1, j> &b)
+        : iterA(a), iterB(b)
+    {}
   };
 
-  template<class A, class B, class T, class U, int Dim0, int Dim1,
-           char i, char j>
-  inline const Tensor2_Expr<const Tensor2_and_Tensor1_1
-                            <A,B,T,U,Dim0,Dim1,i,j>,typename promote<T,U>::V,Dim0,Dim1,i,j>
-  operator&(const Tensor2_Expr<A,T,Dim0,Dim1,i,j> &a,
-            const Tensor1_Expr<B,U,Dim1,j> &b)
+  /* A(i,j) & B(i/j) -> Tensor2 */
+
+  template <class A, class B, class T, class U, int Dim0_0, int Dim1_0,
+            int Dim0_1, char i0, char j0, char i1>
+  auto operator&(const Tensor2_Expr<A, T, Dim0_0, Dim1_0, i0, j0> &a,
+                 const Tensor1_Expr<B, U, Dim0_1, i1> &b)
   {
-    typedef const Tensor2_and_Tensor1_1<A,B,T,U,Dim0,Dim1,i,j> TensorExpr;
-    return Tensor2_Expr<TensorExpr,typename promote<T,U>::V,Dim0,Dim1,i,j>
-      (TensorExpr(a,b));
+    using TensorExpr
+      = Tensor2_and_Tensor1<A, B, T, U, Dim0_0, Dim1_0, Dim0_1, i0, j0, i1>;
+    static_assert(
+      !std::is_empty<TensorExpr>::value,
+      "Indexes or Dimensions are not compatible with the & operator");
+    return Tensor2_Expr<TensorExpr, typename promote<T, U>::V, Dim0_0, Dim1_0,
+                        i0, j0>(TensorExpr(a, b));
   }
 
-  /* B(j) & A(i,j) -> Tensor2 */
+  /* B(i/j) & A(i,j) -> Tensor2 */
 
-  template<class A, class B, class T, class U, int Dim0, int Dim1,
-           char i, char j>
-  inline const Tensor2_Expr<const Tensor2_and_Tensor1_1<A,B,T,U,Dim0,Dim1,i,j>,
-                            typename promote<T,U>::V,Dim0,Dim1,i,j>
-  operator&(const Tensor1_Expr<B,U,Dim1,j> &b,
-            const Tensor2_Expr<A,T,Dim0,Dim1,i,j> &a)
+  // TODO=> We are not respecting operation order, in the really odd case
+  // someone uses this operation with non
+  // TODO=>  commutable T or U. Any ideas on how should we handel this.
+
+  template <class A, class B, class T, class U, int Dim0_0, int Dim1_0,
+            int Dim0_1, char i0, char j0, char i1>
+  auto operator&(const Tensor1_Expr<B, U, Dim0_1, i1> &b,
+                 const Tensor2_Expr<A, T, Dim0_0, Dim1_0, i0, j0> &a)
   {
-    typedef const Tensor2_and_Tensor1_1<A,B,T,U,Dim0,Dim1,i,j> TensorExpr;
-    return Tensor2_Expr<TensorExpr,typename promote<T,U>::V,Dim0,Dim1,i,j>
-      (TensorExpr(a,b));
+    using TensorExpr
+      = Tensor2_and_Tensor1<A, B, T, U, Dim0_0, Dim1_0, Dim0_1, i0, j0, i1>;
+    return Tensor2_Expr<TensorExpr, typename promote<T, U>::V, Dim0_0, Dim1_0,
+                        i0, j0>(TensorExpr(a, b));
   }
 }

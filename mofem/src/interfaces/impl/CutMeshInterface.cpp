@@ -273,6 +273,37 @@ MoFEMErrorCode CutMeshInterface::cutTrimAndMerge(
   MoFEMFunctionReturn(0);
 }
 
+static double get_ave_edge_length(const EntityHandle ent,
+                                  const Range &vol_edges,
+                                  moab::Interface &moab) {
+  Range adj_edges;
+  if (moab.type_from_handle(ent) == MBVERTEX) {
+    CHKERR moab.get_adjacencies(&ent, 1, 1, false, adj_edges);
+  } else {
+    Range nodes;
+    CHKERR moab.get_connectivity(&ent, 1, nodes);
+    CHKERR moab.get_adjacencies(&ent, 1, 1, false, adj_edges,
+                                moab::Interface::UNION);
+  }
+  adj_edges = intersect(adj_edges, vol_edges);
+  double ave_l = 0;
+  for (auto e : adj_edges) {
+    int num_nodes;
+    const EntityHandle *conn;
+    CHKERR moab.get_connectivity(e, conn, num_nodes, true);
+    VectorDouble6 coords(6);
+    CHKERR moab.get_coords(conn, num_nodes, &coords[0]);
+    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_n0(
+        &coords[0], &coords[1], &coords[2]);
+    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_n1(
+        &coords[3], &coords[4], &coords[5]);
+    FTensor::Index<'i', 3> i;
+    t_n0(i) -= t_n1(i);
+    ave_l += sqrt(t_n0(i) * t_n0(i));
+  }
+  return ave_l / adj_edges.size();
+};
+
 MoFEMErrorCode CutMeshInterface::findEdgesToCut(Range *fixed_edges,
                                                 Range *corner_nodes,
                                                 const double low_tol, int verb,
@@ -467,7 +498,7 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(Range *fixed_edges,
   for (auto v : vol_vertices) {
     double dist;
     CHKERR moab.tag_get_data(th_dist, &v, 1, &dist);
-    const double tol = aveLength * low_tol;
+    const double tol = get_ave_edge_length(v, vol_edges, moab) * low_tol;
     if(fabs(dist) < tol) {
 
       if (check_if_is_on_cornet_node(v)) {
@@ -506,7 +537,7 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(Range *fixed_edges,
     int num_nodes;
     const EntityHandle *conn;
     CHKERR moab.get_connectivity(e, conn, num_nodes, true);
-    const double tol = aveLength * low_tol;
+    const double tol = get_ave_edge_length(e, vol_edges, moab) * low_tol;
     double dist_normal[2];
     dist_normal[0] = get_normal_dist_from_conn(conn[0]);
     dist_normal[1] = get_normal_dist_from_conn(conn[1]);
@@ -542,7 +573,7 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(Range *fixed_edges,
 
   for (auto v : add_verts) {
     double dist_normal = get_normal_dist_from_conn(v);
-    const double tol = aveLength * low_tol;
+    const double tol = get_ave_edge_length(v, vol_edges, moab) * low_tol;
     if (fabs(dist_normal) < tol) {
 
       if (check_if_is_on_cornet_node(v)) {
@@ -752,7 +783,7 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(Range *fixed_edges,
       for (int n = 0; n != num_nodes; ++n) {
         max_dist = std::max(max_dist, fabs(dist[n]));
       }
-      if (max_dist < low_tol * aveLength) {
+      if (max_dist < low_tol * get_ave_edge_length(f, vol_edges, moab)) {
         ents_to_check.insert(std::pair<double, EntityHandle>(max_dist, f));
       }
     }

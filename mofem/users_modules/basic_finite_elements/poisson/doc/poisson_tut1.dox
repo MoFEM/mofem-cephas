@@ -258,7 +258,7 @@ In the following section, we initialize PETSc and construct MoAB and MoFEM datab
 Starting with PETSc and MoAB
 \code
 // Initialize PETSc
-PetscInitialize(&argc,&argv,(char *)0,help);
+MoFEM::Core::Initialize(&argc,&argv,(char *)0,help);
 // Create MoAB database
 moab::Core moab_core;                   // create database
 moab::Interface& moab = moab_core;      // create interface to database
@@ -267,12 +267,12 @@ and read data from a command line argument
 \code
 int order = 3;  // default approximation order
 PetscBool flg_test = PETSC_FALSE; // true check if error is numerical error
-ierr = PetscOptionsBegin(PETSC_COMM_WORLD,"", "Poisson's problem options","none"); CHKERRG(ierr);
+CHKERR PetscOptionsBegin(PETSC_COMM_WORLD,"", "Poisson's problem options","none"); 
 // Set approximation order
-ierr = PetscOptionsInt("-order","approximation order","",order,&order,PETSC_NULL); CHKERRG(ierr);
+CHKERR PetscOptionsInt("-order","approximation order","",order,&order,PETSC_NULL); 
 // Set testing (used by CTest)
-ierr = PetscOptionsBool("-test","if true is ctest","",flg_test,&flg_test,PETSC_NULL); CHKERRG(ierr);
-ierr = PetscOptionsEnd(); CHKERRG(ierr);
+CHKERR PetscOptionsBool("-test","if true is ctest","",flg_test,&flg_test,PETSC_NULL); 
+CHKERR PetscOptionsEnd(); 
 \endcode
 In this test, for simplicity we apply for approximation order uniformly.
 However, MoFEM in principle is designed to manage heterogeneous approximation
@@ -286,7 +286,7 @@ MoFEM::Interface& m_field = mofem_core;            // create interface to databa
 \endcode
 Also, we need to register in PETSc implementation of MoFEM Discrete Manager
 \code
-ierr = DMRegister_MoFEM("DMMOFEM"); CHKERRG(ierr); // register MoFEM DM in PETSc
+CHKERR DMRegister_MoFEM("DMMOFEM");  // register MoFEM DM in PETSc
 \endcode
 
 \subsection poisson_tut1_code_disection_ss3 Creating Finite element instances
@@ -313,17 +313,17 @@ operators to them. We do not cover details here, this is realised by three funct
 which we will use in the following tutorials
 \code
 // Add problem specific operators the generic finite elements to calculate matrices and vectors.
-ierr = PoissonExample::CreateFiniteElements(m_field).createFEToAssembleMatrixAndVector(
+CHKERR PoissonExample::CreateFiniteElements(m_field).createFEToAssembleMatrixAndVector(
   ExactFunction(),ExactLaplacianFunction(),
   domain_lhs_fe,boundary_lhs_fe,domain_rhs_fe,boundary_rhs_fe
-); CHKERRG(ierr);
+); 
 // Add problem specific operators the generic finite elements to calculate error on elements and global error
 // in H1 norm
-ierr = PoissonExample::CreateFiniteElements(m_field).createFEToEvaluateError(
+CHKERR PoissonExample::CreateFiniteElements(m_field).createFEToEvaluateError(
   ExactFunction(),ExactFunctionGrad(),global_error,domain_error
-); CHKERRG(ierr);
+); 
 // Post-process results
-ierr = PoissonExample::CreateFiniteElements(m_field).creatFEToPostProcessResults(post_proc_volume); CHKERRG(ierr);
+CHKERR PoissonExample::CreateFiniteElements(m_field).creatFEToPostProcessResults(post_proc_volume); 
 \endcode
 Note that those implementations are problem independent, we could use them in
 different problems context. To make that more visible, we create those elements
@@ -353,30 +353,30 @@ Basic of user data operators are explained here \ref general_data_structure.
 and deletion of the interface is managed internally and is returned as a pointer
 \code
 Simple *simple_interface;
-ierr = m_field.getInterface(simple_interface); CHKERRG(ierr);
+CHKERR m_field.getInterface(simple_interface); 
 \endcode
 
 - Now we load mesh file and get additional options related to simple interface
 \code
-ierr = simple_interface->getOptions(); CHKERRG(ierr);
-ierr = simple_interface->loadFile(); CHKERRG(ierr);
+CHKERR simple_interface->getOptions(); 
+CHKERR simple_interface->loadFile(); 
 \endcode
 
 - Next, we adding fields and set approximation order to each of them
 \code
-ierr = simple_interface->addDomainField("U",H1,AINSWORTH_LEGENDRE_BASE,1); CHKERRG(ierr);
-ierr = simple_interface->addBoundaryField("L",H1,AINSWORTH_LEGENDRE_BASE,1); CHKERRG(ierr);
-ierr = simple_interface->addDataField("ERROR",L2,AINSWORTH_LEGENDRE_BASE,1); CHKERRG(ierr);
-ierr = simple_interface->setFieldOrder("U",order); CHKERRG(ierr); // to approximate function
-ierr = simple_interface->setFieldOrder("L",order); CHKERRG(ierr); // to Lagrange multiplaiers
-ierr = simple_interface->setFieldOrder("ERROR",0); CHKERRG(ierr); // approximation order for error
+CHKERR simple_interface->addDomainField("U",H1,AINSWORTH_LEGENDRE_BASE,1); 
+CHKERR simple_interface->addBoundaryField("L",H1,AINSWORTH_LEGENDRE_BASE,1); 
+CHKERR simple_interface->addDataField("ERROR",L2,AINSWORTH_LEGENDRE_BASE,1); 
+CHKERR simple_interface->setFieldOrder("U",order);  // to approximate function
+CHKERR simple_interface->setFieldOrder("L",order);  // to Lagrange multiplaiers
+CHKERR simple_interface->setFieldOrder("ERROR",0);  // approximation order for error
 \endcode
 Note that field of "U" and Lagrange multipliers "L" is in space H1, error field
 is in L2 space to store error on each element.
 
 - Finally, problem is build, by triggering set-up procedure
 \code
-ierr = simple_interface->setUp(); CHKERRG(ierr);
+CHKERR simple_interface->setUp(); 
 \endcode
 
 \subsection poisson_tut1_code_disection_ss5 Solution of the problem
@@ -385,7 +385,7 @@ Before we start running PETSc solver we need to get access to DM manager, it can
 be simply done by
 \code
 DM dm;
-ierr = simple_interface->getDM(&dm); CHKERRG(ierr);
+CHKERR simple_interface->getDM(&dm); 
 \endcode
 Note that user takes responsibility for deleting DM object.
 
@@ -394,19 +394,19 @@ their operators to DM manager, appropriately to calculate matrix and the
 right-hand side
 \code
 // Set operators for KSP solver
-ierr = DMMoFEMKSPSetComputeOperators(
+CHKERR DMMoFEMKSPSetComputeOperators(
   dm,simple_interface->getDomainFEName(),domain_lhs_fe,null,null
-); CHKERRG(ierr);
-ierr = DMMoFEMKSPSetComputeOperators(
+); 
+CHKERR DMMoFEMKSPSetComputeOperators(
   dm,simple_interface->getBoundaryFEName(),boundary_lhs_fe,null,null
-); CHKERRG(ierr);
+); 
 // Set calculation of the right hand side vetor for KSP solver
-ierr = DMMoFEMKSPSetComputeRHS(
+CHKERR DMMoFEMKSPSetComputeRHS(
   dm,simple_interface->getDomainFEName(),domain_rhs_fe,null,null
-); CHKERRG(ierr);
-ierr = DMMoFEMKSPSetComputeRHS(
+); 
+CHKERR DMMoFEMKSPSetComputeRHS(
   dm,simple_interface->getBoundaryFEName(),boundary_rhs_fe,null,null
-); CHKERRG(ierr);
+); 
 \endcode
 
 At that point we can solve problem, applying exclusively functions from native
@@ -414,21 +414,21 @@ PETSc interface
 \code
 // Create the right hand side vector and vector of unknowns
 Vec F,D;
-ierr = DMCreateGlobalVector(dm,&F); CHKERRG(ierr);
+CHKERR DMCreateGlobalVector(dm,&F); 
 // Create unknown vector by creating duplicate copy of F vector. only
 // structure is duplicated no values.
-ierr = VecDuplicate(F,&D); CHKERRG(ierr);
+CHKERR VecDuplicate(F,&D); 
 // Create solver and link it to DM
 KSP solver;
-ierr = KSPCreate(PETSC_COMM_WORLD,&solver); CHKERRG(ierr);
-ierr = KSPSetFromOptions(solver); CHKERRG(ierr);
-ierr = KSPSetDM(solver,dm); CHKERRG(ierr);
+CHKERR KSPCreate(PETSC_COMM_WORLD,&solver); 
+CHKERR KSPSetFromOptions(solver); 
+CHKERR KSPSetDM(solver,dm); 
 // Set-up solver, is type of solver and pre-conditioners
-ierr = KSPSetUp(solver); CHKERRG(ierr);
+CHKERR KSPSetUp(solver); 
 // At solution process, KSP solver using DM creates matrices, Calculate
 // values of the left hand side and the right hand side vector. then
 // solves system of equations. Results are stored in vector D.
-ierr = KSPSolve(solver,F,D); CHKERRG(ierr);
+CHKERR KSPSolve(solver,F,D); 
 \endcode
 In above code, KSP solver takes control. The KSP solver is using DM creates matrix and
 calls DM functions to iterate over finite elements and assembles matrix and
@@ -439,7 +439,7 @@ elements instance executes user data operators.
 
 Once we have the solution, DOFs values in solution vector are scattered on the mesh
 \code
-ierr = DMoFEMMeshToGlobalVector(dm,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
+CHKERR DMoFEMMeshToGlobalVector(dm,D,INSERT_VALUES,SCATTER_REVERSE); 
 \endcode
 
 It is evident here the role of MoFEM, having topology (mesh) in MoAB database,
@@ -451,11 +451,11 @@ eccosystem (see \ref general_data_structure).
 
 Finally, we can evaluate error and verify correctness of the solution
 \code
-ierr = DMoFEMLoopFiniteElements(dm,simple_interface->getDomainFEName(),domain_error); CHKERRG(ierr);
-ierr = PoissonExample::AuxFunctions(m_field).assembleGhostVector(global_error); CHKERRG(ierr);
-ierr = PoissonExample::AuxFunctions(m_field).printError(global_error); CHKERRG(ierr);
+CHKERR DMoFEMLoopFiniteElements(dm,simple_interface->getDomainFEName(),domain_error); 
+CHKERR PoissonExample::AuxFunctions(m_field).assembleGhostVector(global_error); 
+CHKERR PoissonExample::AuxFunctions(m_field).printError(global_error); 
 if(flg_test == PETSC_TRUE) {
-  ierr = PoissonExample::AuxFunctions(m_field).testError(global_error); CHKERRG(ierr);
+  CHKERR PoissonExample::AuxFunctions(m_field).testError(global_error); 
 }
 \endcode
 Note that function \ref DMoFEMLoopFiniteElements  takes finite element instance
@@ -472,9 +472,9 @@ elements edges have to be shown in post-processing accurately. To resolve this
 issue, a set of user data operators has been created to manage those problems,
 see PostProcCommonOnRefMesh for details. Here, we directly run the code
 \code
-ierr = DMoFEMLoopFiniteElements(dm,simple_interface->getDomainFEName(),post_proc_volume); CHKERRG(ierr);
+CHKERR DMoFEMLoopFiniteElements(dm,simple_interface->getDomainFEName(),post_proc_volume); 
 // Write results
-ierr = boost::static_pointer_cast<PostProcVolumeOnRefinedMesh>(post_proc_volume)->writeFile("out_vol.h5m"); CHKERRG(ierr);
+CHKERR boost::static_pointer_cast<PostProcVolumeOnRefinedMesh>(post_proc_volume)->writeFile("out_vol.h5m"); 
 \endcode
 
 \section poisson_tut1_running_program Running the program

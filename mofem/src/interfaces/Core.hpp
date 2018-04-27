@@ -15,7 +15,7 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
-*/
+ */
 
 #ifndef __CORE_HPP__
 #define __CORE_HPP__
@@ -187,7 +187,8 @@ struct Core : public Interface {
    * @param  verb  verbosity level
    * @return       error code
    */
-  MoFEMErrorCode addPrismToDatabase(const EntityHandle prism, int verb = -1);
+  MoFEMErrorCode addPrismToDatabase(const EntityHandle prism,
+                                    int verb = DEFAULT_VERBOSITY);
 
   /**@}*/
 
@@ -284,8 +285,8 @@ protected:
 
   /**@{*/
 
-  MoFEMErrorCode clear_database(int verb = -1);
-  MoFEMErrorCode rebuild_database(int verb = -1);
+  MoFEMErrorCode clear_database(int verb = DEFAULT_VERBOSITY);
+  MoFEMErrorCode rebuild_database(int verb = DEFAULT_VERBOSITY);
 
   /**@}*/
 
@@ -308,36 +309,40 @@ protected:
 
   /**@{*/
 
-  MoFEMErrorCode remove_parents_by_ents(const Range &ents, int verb = -1);
+  MoFEMErrorCode remove_parents_by_ents(const Range &ents,
+                                        int verb = DEFAULT_VERBOSITY);
 
   MoFEMErrorCode remove_parents_by_by_bit_ref(const BitRefLevel &bit,
                                               const BitRefLevel &mask,
-                                              int verb = -1);
+                                              int verb = DEFAULT_VERBOSITY);
 
-  MoFEMErrorCode remove_parents_by_parents(const Range &ents, int verb = -1);
+  MoFEMErrorCode remove_parents_by_parents(const Range &ents,
+                                           int verb = DEFAULT_VERBOSITY);
 
-  MoFEMErrorCode remove_ents(const Range &ents, int verb = -1);
+  MoFEMErrorCode remove_ents(const Range &ents, int verb = DEFAULT_VERBOSITY);
 
   MoFEMErrorCode remove_ents_by_bit_ref(const BitRefLevel &bit,
-                                        const BitRefLevel &mask, int verb = -1);
+                                        const BitRefLevel &mask,
+                                        int verb = DEFAULT_VERBOSITY);
   MoFEMErrorCode delete_ents_by_bit_ref(const BitRefLevel &bit,
                                         const BitRefLevel &mask,
                                         const bool remove_parent = false,
-                                        int verb = -1);
+                                        int verb = DEFAULT_VERBOSITY);
   /**@}*/
-  
+
   /** \name Synchronize entities (Following functions in future will be
    * deprecated) */
 
   /**@{*/
 
-  MoFEMErrorCode synchronise_entities(Range &ent, int verb = -1);
-  MoFEMErrorCode synchronise_field_entities(const BitFieldId id, int verb = -1);
+  MoFEMErrorCode synchronise_entities(Range &ent, int verb = DEFAULT_VERBOSITY);
+  MoFEMErrorCode synchronise_field_entities(const BitFieldId id,
+                                            int verb = DEFAULT_VERBOSITY);
   MoFEMErrorCode synchronise_field_entities(const std::string &name,
-                                            int verb = -1);
+                                            int verb = DEFAULT_VERBOSITY);
 
-   /**@}*/
-                                          
+  /**@}*/
+
   /** \name Fields */
 
   /**@{*/
@@ -369,82 +374,100 @@ protected:
                            const FieldApproximationBase base,
                            const FieldCoefficientsNumber nb_coefficients,
                            const TagType tag_type = MB_TAG_SPARSE,
-                           const enum MoFEMTypes bh = MF_EXCL, int verb = -1);
+                           const enum MoFEMTypes bh = MF_EXCL,
+                           int verb = DEFAULT_VERBOSITY);
   MoFEMErrorCode addEntsToFieldByDim(const Range &ents, const int dim,
-                                     const std::string &name, int verb = -1);
+                                     const std::string &name,
+                                     int verb = DEFAULT_VERBOSITY);
   MoFEMErrorCode add_ents_to_field_by_dim(const Range &ents, const int dim,
                                           const std::string &name,
-                                          int verb = -1);
+                                          int verb = DEFAULT_VERBOSITY);
   MoFEMErrorCode add_ents_to_field_by_type(const Range &ents,
                                            const EntityType type,
                                            const std::string &name,
-                                           int verb = -1);
+                                           int verb = DEFAULT_VERBOSITY);
   MoFEMErrorCode add_ents_to_field_by_dim(const EntityHandle meshset,
                                           const int dim,
                                           const std::string &name,
                                           const bool recursive = true,
-                                          int verb = -1);
+                                          int verb = DEFAULT_VERBOSITY);
   MoFEMErrorCode add_ents_to_field_by_type(const EntityHandle meshset,
                                            const EntityType type,
                                            const std::string &name,
                                            const bool recursive = true,
-                                           int verb = -1);
+                                           int verb = DEFAULT_VERBOSITY);
 
   /// \name Set approximation order
 
   MoFEMErrorCode set_field_order(const Range &ents, const BitFieldId id,
-                                 const ApproximationOrder order, int verb = -1);
+                                 const ApproximationOrder order,
+                                 int verb = DEFAULT_VERBOSITY);
   MoFEMErrorCode set_field_order(const EntityHandle meshset,
                                  const EntityType type, const BitFieldId id,
-                                 const ApproximationOrder order, int verb = -1);
+                                 const ApproximationOrder order,
+                                 int verb = DEFAULT_VERBOSITY);
   MoFEMErrorCode set_field_order(const Range &ents, const std::string &name,
-                                 const ApproximationOrder order, int verb = -1);
+                                 const ApproximationOrder order,
+                                 int verb = DEFAULT_VERBOSITY);
   MoFEMErrorCode set_field_order(const EntityHandle meshset,
                                  const EntityType type, const std::string &name,
-                                 const ApproximationOrder order, int verb = -1);
+                                 const ApproximationOrder order,
+                                 int verb = DEFAULT_VERBOSITY);
   MoFEMErrorCode set_field_order_by_entity_type_and_bit_ref(
       const BitRefLevel &bit, const BitRefLevel &mask, const EntityType type,
-      const BitFieldId id, const ApproximationOrder order, int verb = -1);
+      const BitFieldId id, const ApproximationOrder order,
+      int verb = DEFAULT_VERBOSITY);
   MoFEMErrorCode set_field_order_by_entity_type_and_bit_ref(
       const BitRefLevel &bit, const BitRefLevel &mask, const EntityType type,
-      const std::string &name, const ApproximationOrder order, int verb = -1);
+      const std::string &name, const ApproximationOrder order,
+      int verb = DEFAULT_VERBOSITY);
 
   /// \name Build fields
 
   MoFEMErrorCode buildFieldForNoField(const BitFieldId id,
                                       std::map<EntityType, int> &dof_counter,
-                                      int verb = -1);
-  MoFEMErrorCode buildFieldForL2H1HcurlHdiv(
-      const BitFieldId id, std::map<EntityType, int> &dof_counter,
-      std::map<EntityType, int> &inactive_dof_counter, int verb = -1);
-  MoFEMErrorCode build_fields(int verb = -1);
+                                      int verb = DEFAULT_VERBOSITY);
+  MoFEMErrorCode
+  buildFieldForL2H1HcurlHdiv(const BitFieldId id,
+                             std::map<EntityType, int> &dof_counter,
+                             std::map<EntityType, int> &inactive_dof_counter,
+                             int verb = DEFAULT_VERBOSITY);
+  MoFEMErrorCode build_fields(int verb = DEFAULT_VERBOSITY);
 
   /// \name Clear DOFs
-  MoFEMErrorCode clear_inactive_dofs(int verb = -1);
+  MoFEMErrorCode clear_inactive_dofs(int verb = DEFAULT_VERBOSITY);
   MoFEMErrorCode clear_dofs_fields_by_bit_ref(const BitRefLevel &bit,
-                                   const BitRefLevel &mask, int verb = -1);
-  MoFEMErrorCode clear_dofs_fields(const Range &ents, int verb = -1);
+                                              const BitRefLevel &mask,
+                                              int verb = DEFAULT_VERBOSITY);
+  MoFEMErrorCode clear_dofs_fields(const Range &ents,
+                                   int verb = DEFAULT_VERBOSITY);
   MoFEMErrorCode clear_dofs_fields(const std::string &name, const Range &ents,
-                                   int verb = -1);
+                                   int verb = DEFAULT_VERBOSITY);
 
   /// \name Clear ENTs
   MoFEMErrorCode clear_ents_fields_by_bit_ref(const BitRefLevel &bit,
-                                   const BitRefLevel &mask, int verb = -1);
-  MoFEMErrorCode clear_ents_fields(const Range &ents, int verb = -1);
+                                              const BitRefLevel &mask,
+                                              int verb = DEFAULT_VERBOSITY);
+  MoFEMErrorCode clear_ents_fields(const Range &ents,
+                                   int verb = DEFAULT_VERBOSITY);
   MoFEMErrorCode clear_ents_fields(const std::string &name, const Range &ents,
-                                   int verb = -1);
+                                   int verb = DEFAULT_VERBOSITY);
 
   /// \name Remove field entities
 
-  MoFEMErrorCode remove_ents_from_field_by_bit_ref(const BitRefLevel &bit,
-                                                   const BitRefLevel &mask,
-                                                   int verb = -1);
+  MoFEMErrorCode
+  remove_ents_from_field_by_bit_ref(const BitRefLevel &bit,
+                                    const BitRefLevel &mask,
+                                    int verb = DEFAULT_VERBOSITY);
   MoFEMErrorCode remove_ents_from_field(const std::string &name,
                                         const EntityHandle meshset,
-                                        const EntityType type, int verb = -1);
+                                        const EntityType type,
+                                        int verb = DEFAULT_VERBOSITY);
   MoFEMErrorCode remove_ents_from_field(const std::string &name,
-                                        const Range &ents, int verb = -1);
-  MoFEMErrorCode remove_ents_from_field(const Range &ents, int verb = -1);
+                                        const Range &ents,
+                                        int verb = DEFAULT_VERBOSITY);
+  MoFEMErrorCode remove_ents_from_field(const Range &ents,
+                                        int verb = DEFAULT_VERBOSITY);
 
   /// \name Other auxiliary functions for fields
 
@@ -471,7 +494,8 @@ protected:
 
   bool check_finite_element(const std::string &name) const;
   MoFEMErrorCode add_finite_element(const std::string &fe_name,
-                                    enum MoFEMTypes bh = MF_EXCL,int verb = -1);
+                                    enum MoFEMTypes bh = MF_EXCL,
+                                    int verb = DEFAULT_VERBOSITY);
   MoFEMErrorCode
   modify_finite_element_adjacency_table(const std::string &fe_name,
                                         const EntityType type,
@@ -507,11 +531,9 @@ protected:
   MoFEMErrorCode add_ents_to_finite_element_by_dim(const Range &ents,
                                                    const int dim,
                                                    const std::string &name);
-  MoFEMErrorCode add_ents_to_finite_element_by_bit_ref(const BitRefLevel &bit,
-                                                       const BitRefLevel &mask,
-                                                       const std::string &name,
-                                                       EntityType type,
-                                                       int verb = -1);
+  MoFEMErrorCode add_ents_to_finite_element_by_bit_ref(
+      const BitRefLevel &bit, const BitRefLevel &mask, const std::string &name,
+      EntityType type, int verb = DEFAULT_VERBOSITY);
   MoFEMErrorCode
   add_ents_to_finite_element_by_MESHSET(const EntityHandle meshset,
                                         const std::string &name,
@@ -542,23 +564,26 @@ protected:
       const bool recursive = false);
   DEPRECATED MoFEMErrorCode add_ents_to_finite_element_EntType_by_bit_ref(
       const BitRefLevel &bit, const std::string &name, EntityType type,
-      int verb = -1);
+      int verb = DEFAULT_VERBOSITY);
   DEPRECATED MoFEMErrorCode add_ents_to_finite_element_EntType_by_bit_ref(
       const BitRefLevel &bit, const BitRefLevel &mask, const std::string &name,
-      EntityType type, int verb = -1);
+      EntityType type, int verb = DEFAULT_VERBOSITY);
 
-  MoFEMErrorCode remove_ents_from_finite_element_by_bit_ref(
-      const BitRefLevel &bit, const BitRefLevel &mask, int verb = -1);
-  MoFEMErrorCode remove_ents_from_finite_element(const std::string& name,
+  MoFEMErrorCode
+  remove_ents_from_finite_element_by_bit_ref(const BitRefLevel &bit,
+                                             const BitRefLevel &mask,
+                                             int verb = DEFAULT_VERBOSITY);
+  MoFEMErrorCode remove_ents_from_finite_element(const std::string &name,
                                                  const EntityHandle meshset,
                                                  const EntityType type,
-                                                 int verb = -1);
-  MoFEMErrorCode remove_ents_from_finite_element(const std::string& name,
+                                                 int verb = DEFAULT_VERBOSITY);
+  MoFEMErrorCode remove_ents_from_finite_element(const std::string &name,
                                                  const Range &ents,
-                                                 int verb = -1);
+                                                 int verb = DEFAULT_VERBOSITY);
   MoFEMErrorCode remove_ents_from_finite_element(const Range &ents,
-                                                 int verb = -1);
-  MoFEMErrorCode delete_finite_element(const std::string name, int verb = -1);
+                                                 int verb = DEFAULT_VERBOSITY);
+  MoFEMErrorCode delete_finite_element(const std::string name,
+                                       int verb = DEFAULT_VERBOSITY);
 
   // \name Other auxiliary functions for finite element
 
@@ -594,7 +619,8 @@ protected:
   /**@{*/
 
   MoFEMErrorCode add_problem(const std::string &name,
-                             enum MoFEMTypes bh = MF_EXCL, int verb = -1);
+                             enum MoFEMTypes bh = MF_EXCL,
+                             int verb = DEFAULT_VERBOSITY);
   bool check_problem(const std::string name);
   MoFEMErrorCode delete_problem(const std::string name);
   MoFEMErrorCode
@@ -617,26 +643,32 @@ protected:
                                         const BitRefLevel &bit);
   BitProblemId getBitProblemId(const std::string &name) const;
   MoFEMErrorCode list_problem() const;
-  MoFEMErrorCode clear_problem(const std::string &name, int verb = -1);
-  MoFEMErrorCode clear_problems(int verb = -1);
-  MoFEMErrorCode build_finite_elements(int verb = -1);
-  MoFEMErrorCode build_finite_elements(const BitRefLevel &bit, int verb = -1);
+  MoFEMErrorCode clear_problem(const std::string &name,
+                               int verb = DEFAULT_VERBOSITY);
+  MoFEMErrorCode clear_problems(int verb = DEFAULT_VERBOSITY);
+  MoFEMErrorCode build_finite_elements(int verb = DEFAULT_VERBOSITY);
+  MoFEMErrorCode build_finite_elements(const BitRefLevel &bit,
+                                       int verb = DEFAULT_VERBOSITY);
   MoFEMErrorCode build_finite_elements(const string fe_name,
                                        const Range *ents_ptr = NULL,
-                                       int verb = -1);
+                                       int verb = DEFAULT_VERBOSITY);
   MoFEMErrorCode buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
                                      const Range *ents_ptr = NULL,
-                                     int verb = -1);
+                                     int verb = DEFAULT_VERBOSITY);
   MoFEMErrorCode clear_finite_elements_by_bit_ref(const BitRefLevel &bit,
                                                   const BitRefLevel &mask,
-                                                  int verb = -1);
-  MoFEMErrorCode clear_finite_elements(const Range &ents, int verb = -1);
+                                                  int verb = DEFAULT_VERBOSITY);
+  MoFEMErrorCode clear_finite_elements(const Range &ents,
+                                       int verb = DEFAULT_VERBOSITY);
   MoFEMErrorCode clear_finite_elements(const std::string &name,
-                                       const Range &ents, int verb = -1);
+                                       const Range &ents,
+                                       int verb = DEFAULT_VERBOSITY);
   MoFEMErrorCode resolve_shared_ents(const Problem *problem_ptr,
-                                     const std::string &fe_name, int verb = -1);
+                                     const std::string &fe_name,
+                                     int verb = DEFAULT_VERBOSITY);
   MoFEMErrorCode resolve_shared_ents(const std::string &name,
-                                     const std::string &fe_name, int verb = -1);
+                                     const std::string &fe_name,
+                                     int verb = DEFAULT_VERBOSITY);
   MoFEMErrorCode
   get_problem_finite_elements_entities(const std::string &name,
                                        const std::string &fe_name,
@@ -644,8 +676,9 @@ protected:
 
   // \name Problem building (deprecated)
 
-  DEPRECATED MoFEMErrorCode build_problem_on_distributed_mesh(int verb = -1);
-  DEPRECATED MoFEMErrorCode build_problems(int verb = -1);
+  DEPRECATED MoFEMErrorCode
+  build_problem_on_distributed_mesh(int verb = DEFAULT_VERBOSITY);
+  DEPRECATED MoFEMErrorCode build_problems(int verb = DEFAULT_VERBOSITY);
   MoFEMErrorCode partition_check_matrix_fill_in(const std::string &problem_name,
                                                 int row, int col, int verb);
 
@@ -655,24 +688,31 @@ protected:
 
   /**@{*/
 
-  MoFEMErrorCode build_adjacencies(const Range &ents, int verb = -1);
-  MoFEMErrorCode build_adjacencies(const BitRefLevel &bit, int verb = -1);
+  MoFEMErrorCode build_adjacencies(const Range &ents,
+                                   int verb = DEFAULT_VERBOSITY);
   MoFEMErrorCode build_adjacencies(const BitRefLevel &bit,
-                                   const BitRefLevel &mask, int verb = -1);
+                                   int verb = DEFAULT_VERBOSITY);
+  MoFEMErrorCode build_adjacencies(const BitRefLevel &bit,
+                                   const BitRefLevel &mask,
+                                   int verb = DEFAULT_VERBOSITY);
   MoFEMErrorCode clear_adjacencies_entities(const BitRefLevel &bit,
                                             const BitRefLevel &mask,
-                                            int verb = -1);
-  MoFEMErrorCode clear_adjacencies_entities(const Range &ents, int verb = -1);
+                                            int verb = DEFAULT_VERBOSITY);
+  MoFEMErrorCode clear_adjacencies_entities(const Range &ents,
+                                            int verb = DEFAULT_VERBOSITY);
   MoFEMErrorCode clear_adjacencies_entities(const std::string &name,
-                                            const Range &ents, int verb = -1);
-  MoFEMErrorCode clear_adjacencies_finite_elements(const BitRefLevel &bit,
-                                                   const BitRefLevel &mask,
-                                                   int verb = -1);
-  MoFEMErrorCode clear_adjacencies_finite_elements(const Range &ents,
-                                                   int verb = -1);
-  MoFEMErrorCode clear_adjacencies_finite_elements(const std::string &name,
-                                                   const Range &ents,
-                                                   int verb = -1);
+                                            const Range &ents,
+                                            int verb = DEFAULT_VERBOSITY);
+  MoFEMErrorCode
+  clear_adjacencies_finite_elements(const BitRefLevel &bit,
+                                    const BitRefLevel &mask,
+                                    int verb = DEFAULT_VERBOSITY);
+  MoFEMErrorCode
+  clear_adjacencies_finite_elements(const Range &ents,
+                                    int verb = DEFAULT_VERBOSITY);
+  MoFEMErrorCode
+  clear_adjacencies_finite_elements(const std::string &name, const Range &ents,
+                                    int verb = DEFAULT_VERBOSITY);
   MoFEMErrorCode list_adjacencies() const;
 
   /**@}*/
@@ -682,12 +722,14 @@ protected:
   /**@{*/
 
   MoFEMErrorCode MatCreateMPIAIJWithArrays(const std::string &name, Mat *Aij,
-                                           int verb = -1);
+                                           int verb = DEFAULT_VERBOSITY);
   MoFEMErrorCode MatCreateMPIAdj_with_Idx_mi_tag(const std::string &name,
-                                                 Mat *Adj, int verb = -1);
+                                                 Mat *Adj,
+                                                 int verb = DEFAULT_VERBOSITY);
   MoFEMErrorCode MatCreateSeqAIJWithArrays(const std::string &name, Mat *Aij,
                                            PetscInt **i, PetscInt **j,
-                                           PetscScalar **v, int verb = -1);
+                                           PetscScalar **v,
+                                           int verb = DEFAULT_VERBOSITY);
 
   /**@}*/
 
@@ -697,43 +739,49 @@ protected:
 
   MoFEMErrorCode problem_basic_method_preProcess(const Problem *problem_ptr,
                                                  BasicMethod &method,
-                                                 int verb = -1);
+                                                 int verb = DEFAULT_VERBOSITY);
   MoFEMErrorCode
   problem_basic_method_preProcess(const std::string &problem_name,
-                                  BasicMethod &method, int verb = -1);
+                                  BasicMethod &method,
+                                  int verb = DEFAULT_VERBOSITY);
   MoFEMErrorCode problem_basic_method_postProcess(const Problem *problem_ptr,
                                                   BasicMethod &method,
-                                                  int verb = -1);
+                                                  int verb = DEFAULT_VERBOSITY);
   MoFEMErrorCode
   problem_basic_method_postProcess(const std::string &problem_name,
-                                   BasicMethod &method, int verb = -1);
+                                   BasicMethod &method,
+                                   int verb = DEFAULT_VERBOSITY);
   MoFEMErrorCode loop_finite_elements(const Problem *problem_ptr,
                                       const std::string &fe_name,
                                       FEMethod &method, int lower_rank,
                                       int upper_rank, MoFEMTypes bh = MF_EXIST,
-                                      int verb = -1);
+                                      int verb = DEFAULT_VERBOSITY);
   MoFEMErrorCode loop_finite_elements(const std::string &problem_name,
                                       const std::string &fe_name,
                                       FEMethod &method, int lower_rank,
                                       int upper_rank, MoFEMTypes bh = MF_EXIST,
-                                      int verb = -1);
+                                      int verb = DEFAULT_VERBOSITY);
   MoFEMErrorCode loop_finite_elements(const std::string &problem_name,
                                       const std::string &fe_name,
                                       FEMethod &method,
-                                      MoFEMTypes bh = MF_EXIST, int verb = -1);
+                                      MoFEMTypes bh = MF_EXIST,
+                                      int verb = DEFAULT_VERBOSITY);
   MoFEMErrorCode loop_dofs(const Problem *problem_ptr,
                            const std::string &field_name, RowColData rc,
-                           EntMethod &method, int lower_rank, int upper_rank,
-                           int verb = -1);
+                           DofMethod &method, int lower_rank, int upper_rank,
+                           int verb = DEFAULT_VERBOSITY);
   MoFEMErrorCode loop_dofs(const std::string &problem_name,
                            const std::string &field_name, RowColData rc,
-                           EntMethod &method, int lower_rank, int upper_rank,
-                           int verb = -1);
+                           DofMethod &method, int lower_rank, int upper_rank,
+                           int verb = DEFAULT_VERBOSITY);
   MoFEMErrorCode loop_dofs(const std::string &problem_name,
                            const std::string &field_name, RowColData rc,
-                           EntMethod &method, int verb = -1);
-  MoFEMErrorCode loop_dofs(const std::string &field_name, EntMethod &method,
-                           int verb = -1);
+                           DofMethod &method, int verb = DEFAULT_VERBOSITY);
+  MoFEMErrorCode loop_dofs(const std::string &field_name, DofMethod &method,
+                           int verb = DEFAULT_VERBOSITY);
+  MoFEMErrorCode loop_entities(const std::string &field_name,
+                               EntityMethod &method,
+                               int verb = DEFAULT_VERBOSITY);
 
   /**@}*/
 
@@ -850,21 +898,21 @@ private:
 
   /**
    * @brief add problem
-   * 
+   *
    * @param id  problem id
    * @param name problem name
    * @param verb verbosity level
-   * @return MoFEMErrorCode 
+   * @return MoFEMErrorCode
    */
   MoFEMErrorCode addProblem(const BitProblemId id, const std::string &name,
-                            int verb = -1);
+                            int verb = DEFAULT_VERBOSITY);
 
   /**
    * \brief Get tag handles
    * @param  verb verbosity level
    * @return      error code
    */
-  MoFEMErrorCode getTags(int verb = -1);
+  MoFEMErrorCode getTags(int verb = DEFAULT_VERBOSITY);
 
   /**
    * \brief Cleaning database
@@ -898,14 +946,14 @@ private:
   /**
    * \brief Initialize database getting information on mesh
    */
-  MoFEMErrorCode initialiseDatabaseFromMesh(int verb = -1);
+  MoFEMErrorCode initialiseDatabaseFromMesh(int verb = DEFAULT_VERBOSITY);
 
   /**
    * @brief Get core options from command line
-   * 
-   * @return MoFEMErrorCode 
+   *
+   * @return MoFEMErrorCode
    */
-  MoFEMErrorCode getOptions(int verb = -1);
+  MoFEMErrorCode getOptions(int verb = DEFAULT_VERBOSITY);
 
   template <class IFACE> MoFEMErrorCode regSubInterface(const MOFEMuuid &uid);
 };

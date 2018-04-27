@@ -70,7 +70,7 @@ getTensor0FormData<double, DoubleAllocator>(
  * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template <int Tensor_Dim, class T, class L, class A>
-FTensor::Tensor1<T *, Tensor_Dim>
+FTensor::Tensor1<FTensor::PackPtr<T *, 1>, Tensor_Dim>
 getTensor1FormData(ublas::matrix<T, L, A> &data) {
   std::stringstream s;
   s << "Not implemented for T = "
@@ -85,18 +85,19 @@ getTensor1FormData(ublas::matrix<T, L, A> &data) {
  * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template <int Tensor_Dim>
-FTensor::Tensor1<double *, Tensor_Dim> getTensor1FormData(MatrixDouble &data) {
+FTensor::Tensor1<FTensor::PackPtr<double *, 1>, Tensor_Dim>
+getTensor1FormData(MatrixDouble &data) {
   return getTensor1FormData<Tensor_Dim, double, ublas::row_major,
                             DoubleAllocator>(data);
 }
 
 template <>
-FTensor::Tensor1<double *, 3>
+FTensor::Tensor1<FTensor::PackPtr<double *, 1>, 3>
 getTensor1FormData<3, double, ublas::row_major, DoubleAllocator>(
     MatrixDouble &data);
 
 template <>
-FTensor::Tensor1<double *, 2>
+FTensor::Tensor1<FTensor::PackPtr<double *, 1>, 2>
 getTensor1FormData<2, double, ublas::row_major, DoubleAllocator>(
     MatrixDouble &data);
 
@@ -237,7 +238,8 @@ struct DataForcesAndSourcesCore {
     inline VectorDouble &getFieldData() { return fieldData; }
 
     template <int Tensor_Dim>
-    FTensor::Tensor1<double *, Tensor_Dim> getFTensor1FieldData() {
+    FTensor::Tensor1<FTensor::PackPtr<double *, Tensor_Dim>, Tensor_Dim>
+    getFTensor1FieldData() {
       std::stringstream s;
       s << "Not implemented for this dimension dim = " << Tensor_Dim;
       THROW_MESSAGE(s.str());
@@ -1031,21 +1033,25 @@ struct DataForcesAndSourcesCore {
     /** \brief Get derivatives of base functions for Hdiv space
      */
     template <int Tensor_Dim0, int Tensor_Dim1>
-    FTensor::Tensor2<double *, Tensor_Dim0, Tensor_Dim1>
+    FTensor::Tensor2<FTensor::PackPtr<double *, Tensor_Dim0 * Tensor_Dim1>,
+                     Tensor_Dim0, Tensor_Dim1>
     getFTensor2DiffHdivN(FieldApproximationBase base);
 
     /** \brief Get derivatives of base functions for Hdiv space at integration
      * pts
      */
     template <int Tensor_Dim0, int Tensor_Dim1>
-    FTensor::Tensor2<double *, Tensor_Dim0, Tensor_Dim1>
+    FTensor::Tensor2<FTensor::PackPtr<double *, Tensor_Dim0 * Tensor_Dim1>,
+                     Tensor_Dim0, Tensor_Dim1>
     getFTensor2DiffHdivN(FieldApproximationBase base, const int gg,
                          const int bb);
 
     /** \brief Get derivatives of base functions for Hdiv space
      */
     template <int Tensor_Dim0, int Tensor_Dim1>
-    inline FTensor::Tensor2<double *, Tensor_Dim0, Tensor_Dim1>
+    inline FTensor::Tensor2<
+        FTensor::PackPtr<double *, Tensor_Dim0 * Tensor_Dim1>, Tensor_Dim0,
+        Tensor_Dim1>
     getFTensor2DiffHdivN() {
       return getFTensor2DiffHdivN<Tensor_Dim0, Tensor_Dim1>(bAse);
     }
@@ -1054,7 +1060,9 @@ struct DataForcesAndSourcesCore {
      * pts
      */
     template <int Tensor_Dim0, int Tensor_Dim1>
-    inline FTensor::Tensor2<double *, Tensor_Dim0, Tensor_Dim1>
+    inline FTensor::Tensor2<
+        FTensor::PackPtr<double *, Tensor_Dim0 * Tensor_Dim1>, Tensor_Dim0,
+        Tensor_Dim1>
     getFTensor2DiffHdivN(const int gg, const int bb) {
       return getFTensor2DiffHdivN<Tensor_Dim0, Tensor_Dim1>(bAse, gg, bb);
     }
@@ -1075,7 +1083,9 @@ struct DataForcesAndSourcesCore {
     /** \brief Get derivatives of base functions for Hcurl space
      */
     template <int Tensor_Dim0, int Tensor_Dim1>
-    inline FTensor::Tensor2<double *, Tensor_Dim0, Tensor_Dim1>
+    inline FTensor::Tensor2<
+        FTensor::PackPtr<double *, Tensor_Dim0 * Tensor_Dim1>, Tensor_Dim0,
+        Tensor_Dim1>
     getFTensor2DiffHcurlN(FieldApproximationBase base) {
       return getFTensor2DiffHdivN<Tensor_Dim0, Tensor_Dim1>(base);
     }
@@ -1083,7 +1093,9 @@ struct DataForcesAndSourcesCore {
     /** \brief Get derivatives of base functions for Hcurl space
      */
     template <int Tensor_Dim0, int Tensor_Dim1>
-    inline FTensor::Tensor2<double *, Tensor_Dim0, Tensor_Dim1>
+    inline FTensor::Tensor2<
+        FTensor::PackPtr<double *, Tensor_Dim0 * Tensor_Dim1>, Tensor_Dim0,
+        Tensor_Dim1>
     getFTensor2DiffHcurlN() {
       return getFTensor2DiffHcurlN<Tensor_Dim0, Tensor_Dim1>(bAse);
     }
@@ -1092,7 +1104,9 @@ struct DataForcesAndSourcesCore {
      * pts
      */
     template <int Tensor_Dim0, int Tensor_Dim1>
-    inline FTensor::Tensor2<double *, Tensor_Dim0, Tensor_Dim1>
+    inline FTensor::Tensor2<
+        FTensor::PackPtr<double *, Tensor_Dim0 * Tensor_Dim1>, Tensor_Dim0,
+        Tensor_Dim1>
     getFTensor2DiffHcurlN(FieldApproximationBase base, const int gg,
                           const int bb) {
       return getFTensor2DiffHdivN<Tensor_Dim0, Tensor_Dim1>(base, gg, bb);
@@ -1102,7 +1116,9 @@ struct DataForcesAndSourcesCore {
      * pts
      */
     template <int Tensor_Dim0, int Tensor_Dim1>
-    inline FTensor::Tensor2<double *, Tensor_Dim0, Tensor_Dim1>
+    inline FTensor::Tensor2<
+        FTensor::PackPtr<double *, Tensor_Dim0 * Tensor_Dim1>, Tensor_Dim0,
+        Tensor_Dim1>
     getFTensor2DiffHcurlN(const int gg, const int bb) {
       return getFTensor2DiffHcurlN<Tensor_Dim0, Tensor_Dim1>(bAse, gg, bb);
     }
@@ -1271,11 +1287,11 @@ protected:
 /**@{*/
 
 template <>
-FTensor::Tensor1<double *, 3>
+FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>
 DataForcesAndSourcesCore::EntData::getFTensor1FieldData<3>();
 
 template <>
-FTensor::Tensor1<double *, 2>
+FTensor::Tensor1<FTensor::PackPtr<double *, 2>, 2>
 DataForcesAndSourcesCore::EntData::getFTensor1FieldData<2>();
 
 template <>
@@ -1319,7 +1335,7 @@ FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>
 DataForcesAndSourcesCore::EntData::getFTensor1HdivN<3>(
     FieldApproximationBase base);
 template <>
-FTensor::Tensor2<double *, 3, 3>
+FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3>
 DataForcesAndSourcesCore::EntData::getFTensor2DiffHdivN<3, 3>(
     FieldApproximationBase base);
 template <>
@@ -1327,7 +1343,7 @@ FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>
 DataForcesAndSourcesCore::EntData::getFTensor1HdivN<3>(
     FieldApproximationBase base, const int gg, const int bb);
 template <>
-FTensor::Tensor2<double *, 3, 3>
+FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3>
 DataForcesAndSourcesCore::EntData::getFTensor2DiffHdivN<3, 3>(
     FieldApproximationBase base, const int gg, const int bb);
 
@@ -1338,11 +1354,11 @@ DataForcesAndSourcesCore::EntData::getFTensor2DiffHdivN<3, 3>(
 /**@{*/
 
 template <>
-FTensor::Tensor2<double *, 3, 2>
+FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2>
 DataForcesAndSourcesCore::EntData::getFTensor2DiffHdivN<3, 2>(
     FieldApproximationBase base);
 template <>
-FTensor::Tensor2<double *, 3, 2>
+FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2>
 DataForcesAndSourcesCore::EntData::getFTensor2DiffHdivN<3, 2>(
     FieldApproximationBase base, const int gg, const int bb);
 
