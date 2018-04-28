@@ -189,8 +189,7 @@ MoFEMErrorCode NonlinearElasticElement::OpGetDataAtGaussPts::doWork(
     } else if (rank == 3) {
 
       for (int gg = 0; gg != nb_gauss_pts; gg++) {
-        FTensor::Tensor1<double *, 3> field_data =
-            data.getFTensor1FieldData<3>();
+        auto field_data = data.getFTensor1FieldData<3>();
         FTensor::Tensor1<double *, 3> values(&valuesAtGaussPts[gg][0],
                                              &valuesAtGaussPts[gg][1],
                                              &valuesAtGaussPts[gg][2]);
@@ -722,7 +721,7 @@ MoFEMErrorCode NonlinearElasticElement::OpRhsPiolaKirchhoff::aSemble(
 MoFEMErrorCode NonlinearElasticElement::OpRhsPiolaKirchhoff::doWork(
     int row_side, EntityType row_type,
     DataForcesAndSourcesCore::EntData &row_data) {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
 
   if (dAta.tEts.find(getNumeredEntFiniteElementPtr()->getEnt()) ==
       dAta.tEts.end()) {
@@ -738,47 +737,40 @@ MoFEMErrorCode NonlinearElasticElement::OpRhsPiolaKirchhoff::doWork(
   const int nb_base_functions = row_data.getN().size2();
   const int nb_gauss_pts = row_data.getN().size1();
 
-  try {
+  nf.resize(nb_dofs, false);
+  nf.clear();
 
-    nf.resize(nb_dofs, false);
-    nf.clear();
+  FTensor::Tensor1<double *, 3> diff_base_functions =
+      row_data.getFTensor1DiffN<3>();
+  FTensor::Index<'i', 3> i;
+  FTensor::Index<'j', 3> j;
 
-    FTensor::Tensor1<double *, 3> diff_base_functions =
-        row_data.getFTensor1DiffN<3>();
-    FTensor::Index<'i', 3> i;
-    FTensor::Index<'j', 3> j;
-
-    for (int gg = 0; gg != nb_gauss_pts; gg++) {
-      double val = getVolume() * getGaussPts()(3, gg);
-      if ((!aLe) && getHoGaussPtsDetJac().size() > 0) {
-        val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
-      }
-      const MatrixDouble &stress = commonData.sTress[gg];
-      FTensor::Tensor2<const double *, 3, 3> t3(
-          &stress(0, 0), &stress(0, 1), &stress(0, 2), &stress(1, 0),
-          &stress(1, 1), &stress(1, 2), &stress(2, 0), &stress(2, 1),
-          &stress(2, 2));
-      FTensor::Tensor1<double *, 3> rhs(&nf[0], &nf[1], &nf[2], 3);
-      int bb = 0;
-      for (; bb != nb_dofs / 3; bb++) {
-        rhs(i) += val * t3(i, j) * diff_base_functions(j);
-        ++rhs;
-        ++diff_base_functions;
-      }
-      for (; bb != nb_base_functions; bb++) {
-        ++diff_base_functions;
-      }
+  for (int gg = 0; gg != nb_gauss_pts; gg++) {
+    double val = getVolume() * getGaussPts()(3, gg);
+    if ((!aLe) && getHoGaussPtsDetJac().size() > 0) {
+      val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
     }
-
-    // std::cerr << "nf : " << nf << std::endl;
-    ierr = aSemble(row_side, row_type, row_data);
-    CHKERRG(ierr);
-
-  } catch (MoFEMException const &e) {
-    SETERRQ(PETSC_COMM_SELF, e.errorCode, e.errorMessage);
+    MatrixDouble3by3 &stress = commonData.sTress[gg];
+    FTensor::Tensor2<double *, 3, 3> t3(
+        &stress(0, 0), &stress(0, 1), &stress(0, 2), &stress(1, 0),
+        &stress(1, 1), &stress(1, 2), &stress(2, 0), &stress(2, 1),
+        &stress(2, 2));
+    FTensor::Tensor1<double *, 3> rhs(&nf[0], &nf[1], &nf[2], 3);
+    int bb = 0;
+    for (; bb != nb_dofs / 3; bb++) {
+      rhs(i) += val * t3(i, j) * diff_base_functions(j);
+      ++rhs;
+      ++diff_base_functions;
+    }
+    for (; bb != nb_base_functions; bb++) {
+      ++diff_base_functions;
+    }
   }
 
-  MoFEMFunctionReturnHot(0);
+  // std::cerr << "nf : " << nf << std::endl;
+  CHKERR aSemble(row_side, row_type, row_data);
+
+  MoFEMFunctionReturn(0);
 }
 
 NonlinearElasticElement::OpEnergy::OpEnergy(const std::string field_name,

@@ -3,7 +3,7 @@
    be the same for it to be symmetric. */
 
 #include "Tensor2_symmetric/Tensor2_symmetric_constructor.hpp"
-#include "Tensor2_symmetric/Tensor2_symmetric_value.hpp"
 #include "Tensor2_symmetric/Tensor2_symmetric_pointer.hpp"
+#include "Tensor2_symmetric/Tensor2_symmetric_value.hpp"
 
 #include "Tensor2_symmetric/Tensor2_symmetric_Expr.hpp"

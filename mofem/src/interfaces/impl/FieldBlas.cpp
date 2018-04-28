@@ -35,11 +35,11 @@ FieldBlas::FieldBlas(const MoFEM::Core &core)
     : cOre(const_cast<MoFEM::Core &>(core)), dEbug(false) {}
 FieldBlas::~FieldBlas() {}
 
-MoFEMErrorCode FieldBlas::fieldAxpy(const double alpha,
-                                    const std::string &field_name_x,
-                                    const std::string &field_name_y,
-                                    bool error_if_missing,
-                                    bool creat_if_missing) {
+MoFEMErrorCode FieldBlas::fieldLambda(FieldBlas::TwoFieldFunction lambda,
+                                      const std::string &field_name_x,
+                                      const std::string &field_name_y,
+                                      bool error_if_missing,
+                                      bool creat_if_missing) {
   const MoFEM::Interface &m_field = cOre;
   const Field_multiIndex *fields_ptr;
   const FieldEntity_multiIndex *field_ents;
@@ -105,9 +105,49 @@ MoFEMErrorCode FieldBlas::fieldAxpy(const double alpha,
           }
         }
       }
-      (*dit)->getFieldData() += alpha * data;
+      CHKERR lambda((*dit)->getFieldData(),data);
     }
   }
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode FieldBlas::fieldAxpy(const double alpha,
+                                    const std::string &field_name_x,
+                                    const std::string &field_name_y,
+                                    bool error_if_missing,
+                                    bool creat_if_missing) {
+  MoFEMFunctionBegin;
+  struct Axpy {
+    const double alpha;
+    Axpy(const double alpha) : alpha(alpha) {}
+    inline MoFEMErrorCode operator()(double &fy, const double fx) {
+      MoFEMFunctionBeginHot;
+      fy += alpha * fx;
+      MoFEMFunctionReturnHot(0);
+    }
+  };
+  CHKERR fieldLambda(Axpy(alpha), field_name_x, field_name_y, error_if_missing,
+                     creat_if_missing);
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode FieldBlas::fieldCopy(const double alpha,
+                                    const std::string &field_name_x,
+                                    const std::string &field_name_y,
+                                    bool error_if_missing,
+                                    bool creat_if_missing) {
+  MoFEMFunctionBegin;
+  struct Copy {
+    const double alpha;
+    Copy(const double alpha) : alpha(alpha) {}
+    inline MoFEMErrorCode operator()(double &fy, const double fx) {
+      MoFEMFunctionBeginHot;
+      fy = alpha * fx;
+      MoFEMFunctionReturnHot(0);
+    }
+  };
+  CHKERR fieldLambda(Copy(alpha), field_name_x, field_name_y, error_if_missing,
+                     creat_if_missing);
   MoFEMFunctionReturn(0);
 }
 

@@ -5,7 +5,7 @@ FIXME: Move code to cpp file.
 Project displacements/coordinates from 10 node tetrahedra on hierarchical
 approximation base.
 
-This is example how to use MoFEM::EntMethod when some operator for each node need
+This is example how to use MoFEM::DofMethod when some operator for each node need
 to be applied.
 
 */
@@ -34,7 +34,7 @@ namespace MoFEM {
 
 /** \brief Projection of edge entities with one mid-node on hierarchical basis
 */
-struct Projection10NodeCoordsOnField: public EntMethod {
+struct Projection10NodeCoordsOnField: public DofMethod {
 
   Interface& mField;
   std::string fieldName;

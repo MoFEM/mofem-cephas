@@ -167,83 +167,107 @@ struct ElasticMaterials {
 
     */
   virtual MoFEMErrorCode readConfigFile() {
-    MoFEMFunctionBeginHot;
+    MoFEMFunctionBegin;
 
-    try {
-
-      po::options_description config_file_options;
-      for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
-
-        std::ostringstream str_order;
-        str_order << "block_" << it->getMeshsetId() << ".displacemet_order";
-        config_file_options.add_options()
-        (str_order.str().c_str(),po::value<int>(&blockData[it->getMeshsetId()].oRder)->default_value(-1));
-
-        std::ostringstream str_material;
-        str_material << "block_" << it->getMeshsetId() << ".material";
-        config_file_options.add_options()
-        (str_material.str().c_str(),po::value<std::string>(&blockData[it->getMeshsetId()].mAterial)->default_value(defMaterial));
-
-        std::ostringstream str_ym;
-        str_ym << "block_" << it->getMeshsetId() << ".young_modulus";
-        config_file_options.add_options()
-        (str_ym.str().c_str(),po::value<double>(&blockData[it->getMeshsetId()].yOung)->default_value(-1));
-
-        std::ostringstream str_pr;
-        str_pr << "block_" << it->getMeshsetId() << ".poisson_ratio";
-        config_file_options.add_options()
-        (str_pr.str().c_str(),po::value<double>(&blockData[it->getMeshsetId()].pOisson)->default_value(-2));
-
-        std::ostringstream str_density;
-        str_density << "block_" << it->getMeshsetId() << ".density";
-        config_file_options.add_options()
-        (str_density.str().c_str(),po::value<double>(&blockData[it->getMeshsetId()].dEnsity)->default_value(-1));
-
-        std::ostringstream str_dashG;
-        str_dashG << "block_" << it->getMeshsetId() << ".dashG";
-        config_file_options.add_options()
-        (str_dashG.str().c_str(),po::value<double>(&blockData[it->getMeshsetId()].dashG)->default_value(-1));
-
-        std::ostringstream str_dashPoisson;
-        str_dashPoisson << "block_" << it->getMeshsetId() << ".dashPoisson";
-        config_file_options.add_options()
-        (str_dashPoisson.str().c_str(),po::value<double>(&blockData[it->getMeshsetId()].dashPoisson)->default_value(-2));
-
-        std::ostringstream str_ax;
-        str_ax << "block_" << it->getMeshsetId() << ".a_x";
-        config_file_options.add_options()
-        (str_ax.str().c_str(),po::value<double>(&blockData[it->getMeshsetId()].aX)->default_value(0));
-
-        std::ostringstream str_ay;
-        str_ay << "block_" << it->getMeshsetId() << ".a_y";
-        config_file_options.add_options()
-        (str_ay.str().c_str(),po::value<double>(&blockData[it->getMeshsetId()].aY)->default_value(0));
-
-        std::ostringstream str_az;
-        str_az << "block_" << it->getMeshsetId() << ".a_z";
-        config_file_options.add_options()
-        (str_az.str().c_str(),po::value<double>(&blockData[it->getMeshsetId()].aZ)->default_value(0));
+    ifstream file(configFile.c_str());
+    if (isConfigFileSet) {
+      if (!file.good()) {
+        SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_FOUND, "file < %s > not found",
+                 configFile.c_str());
       }
-      ifstream file(configFile.c_str());
-      if(isConfigFileSet) {
-        if(!file.good()) {
-          SETERRQ1(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"file < %s > not found",configFile.c_str());
-        }
+    } else {
+      if (!file.good()) {
+        MoFEMFunctionReturnHot(0);
       }
-      po::parsed_options parsed = parse_config_file(file,config_file_options,true);
-      store(parsed,vM);
-      po::notify(vM);
-      std::vector<std::string> additional_parameters;
-      additional_parameters = collect_unrecognized(parsed.options,po::include_positional);
-      for(std::vector<std::string>::iterator vit = additional_parameters.begin();
-      vit!=additional_parameters.end();vit++) {
-        ierr = PetscPrintf(PETSC_COMM_WORLD,"** WARNING Unrecognized option %s\n",vit->c_str()); CHKERRG(ierr);
-      }
-    } catch (std::exception& ex) {
-      SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,"error parsing material elastic configuration file");
     }
-    MoFEMFunctionReturnHot(0);
 
+    po::options_description config_file_options;
+    for (_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField, BLOCKSET, it)) {
+
+      std::ostringstream str_order;
+      str_order << "block_" << it->getMeshsetId() << ".displacemet_order";
+      config_file_options.add_options()(
+          str_order.str().c_str(),
+          po::value<int>(&blockData[it->getMeshsetId()].oRder)
+              ->default_value(-1));
+
+      std::ostringstream str_material;
+      str_material << "block_" << it->getMeshsetId() << ".material";
+      config_file_options.add_options()(
+          str_material.str().c_str(),
+          po::value<std::string>(&blockData[it->getMeshsetId()].mAterial)
+              ->default_value(defMaterial));
+
+      std::ostringstream str_ym;
+      str_ym << "block_" << it->getMeshsetId() << ".young_modulus";
+      config_file_options.add_options()(
+          str_ym.str().c_str(),
+          po::value<double>(&blockData[it->getMeshsetId()].yOung)
+              ->default_value(-1));
+
+      std::ostringstream str_pr;
+      str_pr << "block_" << it->getMeshsetId() << ".poisson_ratio";
+      config_file_options.add_options()(
+          str_pr.str().c_str(),
+          po::value<double>(&blockData[it->getMeshsetId()].pOisson)
+              ->default_value(-2));
+
+      std::ostringstream str_density;
+      str_density << "block_" << it->getMeshsetId() << ".density";
+      config_file_options.add_options()(
+          str_density.str().c_str(),
+          po::value<double>(&blockData[it->getMeshsetId()].dEnsity)
+              ->default_value(-1));
+
+      std::ostringstream str_dashG;
+      str_dashG << "block_" << it->getMeshsetId() << ".dashG";
+      config_file_options.add_options()(
+          str_dashG.str().c_str(),
+          po::value<double>(&blockData[it->getMeshsetId()].dashG)
+              ->default_value(-1));
+
+      std::ostringstream str_dashPoisson;
+      str_dashPoisson << "block_" << it->getMeshsetId() << ".dashPoisson";
+      config_file_options.add_options()(
+          str_dashPoisson.str().c_str(),
+          po::value<double>(&blockData[it->getMeshsetId()].dashPoisson)
+              ->default_value(-2));
+
+      std::ostringstream str_ax;
+      str_ax << "block_" << it->getMeshsetId() << ".a_x";
+      config_file_options.add_options()(
+          str_ax.str().c_str(),
+          po::value<double>(&blockData[it->getMeshsetId()].aX)
+              ->default_value(0));
+
+      std::ostringstream str_ay;
+      str_ay << "block_" << it->getMeshsetId() << ".a_y";
+      config_file_options.add_options()(
+          str_ay.str().c_str(),
+          po::value<double>(&blockData[it->getMeshsetId()].aY)
+              ->default_value(0));
+
+      std::ostringstream str_az;
+      str_az << "block_" << it->getMeshsetId() << ".a_z";
+      config_file_options.add_options()(
+          str_az.str().c_str(),
+          po::value<double>(&blockData[it->getMeshsetId()].aZ)
+              ->default_value(0));
+    }
+    po::parsed_options parsed =
+        parse_config_file(file, config_file_options, true);
+    store(parsed, vM);
+    po::notify(vM);
+    std::vector<std::string> additional_parameters;
+    additional_parameters =
+        collect_unrecognized(parsed.options, po::include_positional);
+    for (std::vector<std::string>::iterator vit = additional_parameters.begin();
+         vit != additional_parameters.end(); vit++) {
+      CHKERR PetscPrintf(PETSC_COMM_WORLD,
+                         "** WARNING Unrecognized option %s\n", vit->c_str());
+    }
+
+    MoFEMFunctionReturn(0);
   }
 
   MoFEMErrorCode setBlocksOrder() {

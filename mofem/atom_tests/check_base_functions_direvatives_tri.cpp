@@ -249,10 +249,10 @@ int main(int argc, char *argv[]) {
           // cerr << data.getN() << endl;
           // cerr << data.getDiffN() << endl;
 
-          FTensor::Tensor2<double *, 3, 2> diff_base(
+          FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2> diff_base(
               &data.getDiffN()(4, HCURL0_0), &data.getDiffN()(4, HCURL0_1),
               &data.getDiffN()(4, HCURL1_0), &data.getDiffN()(4, HCURL1_1),
-              &data.getDiffN()(4, HCURL2_0), &data.getDiffN()(4, HCURL2_1), 6);
+              &data.getDiffN()(4, HCURL2_0), &data.getDiffN()(4, HCURL2_1));
 
           FTensor::Index<'i', 3> i;
           FTensor::Number<0> N0;

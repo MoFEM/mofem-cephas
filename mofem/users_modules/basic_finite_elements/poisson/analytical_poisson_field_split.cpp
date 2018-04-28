@@ -10,21 +10,23 @@
  */
 
 /* This file is part of MoFEM.
-* MoFEM is free software: you can redistribute it and/or modify it under
-* the terms of the GNU Lesser General Public License as published by the
-* Free Software Foundation, either version 3 of the License, or (at your
-* option) any later version.
-*
-* MoFEM is distributed in the hope that it will be useful, but WITHOUT
-* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
-* License for more details.
-*
-* You should have received a copy of the GNU Lesser General Public
-* License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
+ * MoFEM is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU Lesser General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or (at your
+ * option) any later version.
+ *
+ * MoFEM is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
+ * License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 #include <BasicFiniteElements.hpp>
+
 #include <PoissonOperators.hpp>
+
 #include <AuxPoissonFunctions.hpp>
 
 static char help[] = "...\n\n";
@@ -43,8 +45,8 @@ static const bool debug = false;
  *
  */
 struct ExactFunction {
-  double operator()(const double x,const double y,const double z) const {
-    return 1+x*x+y*y+z*z*z;
+  double operator()(const double x, const double y, const double z) const {
+    return 1 + x * x + y * y + z * z * z;
   }
 };
 
@@ -52,11 +54,12 @@ struct ExactFunction {
  * \brief Exact gradient
  */
 struct ExactFunctionGrad {
-  FTensor::Tensor1<double,3> operator()(const double x,const double y,const double z) const {
-    FTensor::Tensor1<double,3> grad;
-    grad(0) = 2*x;
-    grad(1) = 2*y;
-    grad(2) = 3*z*z;
+  FTensor::Tensor1<double, 3> operator()(const double x, const double y,
+                                         const double z) const {
+    FTensor::Tensor1<double, 3> grad;
+    grad(0) = 2 * x;
+    grad(1) = 2 * y;
+    grad(2) = 3 * z * z;
     return grad;
   }
 };
@@ -74,17 +77,17 @@ struct ExactFunctionGrad {
  *
  */
 struct ExactLaplacianFunction {
-  double operator()(const double x,const double y,const double z) const {
-    return 4+6*z;
+  double operator()(const double x, const double y, const double z) const {
+    return 4 + 6 * z;
   }
 };
 
-struct OpS: public FaceElementForcesAndSourcesCore::UserDataOperator {
+struct OpS : public FaceElementForcesAndSourcesCore::UserDataOperator {
 
-  OpS(const bool beta = 1):
-  FaceElementForcesAndSourcesCore::UserDataOperator("U","U",OPROWCOL,true),
-  bEta(beta) {
-  }
+  OpS(const bool beta = 1)
+      : FaceElementForcesAndSourcesCore::UserDataOperator("U", "U", OPROWCOL,
+                                                          true),
+        bEta(beta) {}
 
   /**
    * \brief Do calculations for give operator
@@ -96,50 +99,47 @@ struct OpS: public FaceElementForcesAndSourcesCore::UserDataOperator {
    * @param  col_data data for column
    * @return          error code
    */
-  MoFEMErrorCode doWork(
-    int row_side,int col_side,
-    EntityType row_type,EntityType col_type,
-    DataForcesAndSourcesCore::EntData &row_data,DataForcesAndSourcesCore::EntData &col_data
-  ) {
-    MoFEMFunctionBeginHot;
+  MoFEMErrorCode doWork(int row_side, int col_side, EntityType row_type,
+                        EntityType col_type,
+                        DataForcesAndSourcesCore::EntData &row_data,
+                        DataForcesAndSourcesCore::EntData &col_data) {
+    MoFEMFunctionBegin;
     // get number of dofs on row
     nbRows = row_data.getIndices().size();
     // if no dofs on row, exit that work, nothing to do here
-    if(!nbRows) MoFEMFunctionReturnHot(0);
+    if (!nbRows)
+      MoFEMFunctionReturnHot(0);
     // get number of dofs on column
     nbCols = col_data.getIndices().size();
     // if no dofs on Columbia, exit nothing to do here
-    if(!nbCols) MoFEMFunctionReturnHot(0);
+    if (!nbCols)
+      MoFEMFunctionReturnHot(0);
     // get number of integration points
     nbIntegrationPts = getGaussPts().size2();
     // check if entity block is on matrix diagonal
-    if(
-      row_side==col_side&&
-      row_type==col_type
-    ) {
+    if (row_side == col_side && row_type == col_type) {
       isDiag = true; // yes, it is
     } else {
       isDiag = false;
     }
     // integrate local matrix for entity block
-    ierr = iNtegrate(row_data,col_data); CHKERRG(ierr);
+    CHKERR iNtegrate(row_data, col_data);
     // assemble local matrix
-    ierr = aSsemble(row_data,col_data); CHKERRG(ierr);
-    MoFEMFunctionReturnHot(0);
+    CHKERR aSsemble(row_data, col_data);
+    MoFEMFunctionReturn(0);
   }
 
 private:
-
   const double bEta;
 
-    ///< error code
+  ///< error code
 
   int nbRows;           ///< number of dofs on rows
   int nbCols;           ///< number if dof on column
   int nbIntegrationPts; ///< number of integration points
   bool isDiag;          ///< true if this block is on diagonal
 
-  FTensor::Index<'i',3> i;  ///< summit Index
+  FTensor::Index<'i', 3> i; ///< summit Index
   MatrixDouble locMat;      ///< local entity block matrix
 
   /**
@@ -148,43 +148,43 @@ private:
    * @param  col_data column data (consist base functions on column entity)
    * @return          error code
    */
-  inline MoFEMErrorCode iNtegrate(
-    DataForcesAndSourcesCore::EntData &row_data,DataForcesAndSourcesCore::EntData &col_data
-  ) {
-    MoFEMFunctionBeginHot;
+  inline MoFEMErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &row_data,
+                                  DataForcesAndSourcesCore::EntData &col_data) {
+    MoFEMFunctionBegin;
     // set size of local entity bock
-    locMat.resize(nbRows,nbCols,false);
+    locMat.resize(nbRows, nbCols, false);
     // clear matrix
     locMat.clear();
     // get element area
-    double area = getArea()*bEta;
+    double area = getArea() * bEta;
     // get integration weights
     auto t_w = getFTensor0IntegrationWeight();
     // get base function gradient on rows
     auto t_row_base = row_data.getFTensor0N();
     // loop over integration points
-    for(int gg = 0;gg!=nbIntegrationPts;gg++) {
+    for (int gg = 0; gg != nbIntegrationPts; gg++) {
       // take into account Jacobean
-      const double alpha = t_w*area;
+      const double alpha = t_w * area;
       // take fist element to local matrix
       FTensor::Tensor0<FTensor::PackPtr<double *, 1>> a(
           &*locMat.data().begin());
       // loop over rows base functions
-      for(int rr = 0;rr!=nbRows;rr++) {
+      for (int rr = 0; rr != nbRows; rr++) {
         // get column base functions gradient at gauss point gg
-        auto t_col_base = col_data.getFTensor0N(gg,0);
+        auto t_col_base = col_data.getFTensor0N(gg, 0);
         // loop over columns
-        for(int cc = 0;cc!=nbCols;cc++) {
+        for (int cc = 0; cc != nbCols; cc++) {
           // calculate element of local matrix
-          a += alpha*t_row_base*t_col_base;
+          a += alpha * t_row_base * t_col_base;
           ++t_col_base; // move to another gradient of base function on column
-          ++a;  // move to another element of local matrix in column
+          ++a;          // move to another element of local matrix in column
         }
-        ++t_row_base; // move to another element of gradient of base function on row
+        ++t_row_base; // move to another element of gradient of base function on
+                      // row
       }
       ++t_w; // move to another integration weight
     }
-    MoFEMFunctionReturnHot(0);
+    MoFEMFunctionReturn(0);
   }
 
   /**
@@ -193,321 +193,347 @@ private:
    * @param  col_data column data (consist base functions on column entity)
    * @return          error code
    */
-  inline MoFEMErrorCode aSsemble(
-    DataForcesAndSourcesCore::EntData &row_data,DataForcesAndSourcesCore::EntData &col_data
-  ) {
-    MoFEMFunctionBeginHot;
+  inline MoFEMErrorCode aSsemble(DataForcesAndSourcesCore::EntData &row_data,
+                                 DataForcesAndSourcesCore::EntData &col_data) {
+    MoFEMFunctionBegin;
     // get pointer to first global index on row
-    const int* row_indices = &*row_data.getIndices().data().begin();
+    const int *row_indices = &*row_data.getIndices().data().begin();
     // get pointer to first global index on column
-    const int* col_indices = &*col_data.getIndices().data().begin();
-    Mat B = getFEMethod()->ksp_B!=PETSC_NULL? getFEMethod()->ksp_B : getFEMethod()->snes_B;
+    const int *col_indices = &*col_data.getIndices().data().begin();
+    Mat B = getFEMethod()->ksp_B != PETSC_NULL ? getFEMethod()->ksp_B
+                                               : getFEMethod()->snes_B;
     // assemble local matrix
-    ierr = MatSetValues(
-      B, nbRows,row_indices,nbCols,col_indices,&*locMat.data().begin(),ADD_VALUES
-    ); CHKERRG(ierr);
-    if(!isDiag) {
+    CHKERR MatSetValues(B, nbRows, row_indices, nbCols, col_indices,
+                        &*locMat.data().begin(), ADD_VALUES);
+    if (!isDiag) {
       // if not diagonal term and since global matrix is symmetric assemble
       // transpose term.
       locMat = trans(locMat);
-      ierr = MatSetValues(
-        B, nbCols,col_indices,nbRows,row_indices,&*locMat.data().begin(),ADD_VALUES
-      ); CHKERRG(ierr);
+      CHKERR MatSetValues(B, nbCols, col_indices, nbRows, row_indices,
+                          &*locMat.data().begin(), ADD_VALUES);
     }
-    MoFEMFunctionReturnHot(0);
+    MoFEMFunctionReturn(0);
   }
-
 };
 
 int main(int argc, char *argv[]) {
 
-  // 
-  
-
   // Initialize PETSc
-  PetscInitialize(&argc,&argv,(char *)0,help);
+  MoFEM::Core::Initialize(&argc, &argv, (char *)0, help);
   // Create MoAB database
-  moab::Core moab_core;                   // create database
-  moab::Interface& moab = moab_core;      // create interface to database
-
-  // Get command line options
-  int order = 3;  // default approximation order
-  PetscBool flg_test = PETSC_FALSE; // true check if error is numerical error
-  ierr = PetscOptionsBegin(PETSC_COMM_WORLD,"", "Poisson's problem options","none"); CHKERRG(ierr);
-  // Set approximation order
-  ierr = PetscOptionsInt("-order","approximation order","",order,&order,PETSC_NULL); CHKERRG(ierr);
-  // Set testing (used by CTest)
-  ierr = PetscOptionsBool("-test","if true is ctest","",flg_test,&flg_test,PETSC_NULL); CHKERRG(ierr);
-  ierr = PetscOptionsEnd(); CHKERRG(ierr);
+  moab::Core moab_core;              // create database
+  moab::Interface &moab = moab_core; // create interface to database
 
   try {
 
+    // Get command line options
+    int order = 3;                    // default approximation order
+    PetscBool flg_test = PETSC_FALSE; // true check if error is numerical error
+    CHKERR PetscOptionsBegin(PETSC_COMM_WORLD, "", "Poisson's problem options",
+                             "none");
+    // Set approximation order
+    CHKERR PetscOptionsInt("-order", "approximation order", "", order, &order,
+                           PETSC_NULL);
+    // Set testing (used by CTest)
+    CHKERR PetscOptionsBool("-test", "if true is ctest", "", flg_test,
+                            &flg_test, PETSC_NULL);
+    ierr = PetscOptionsEnd();
+    CHKERRG(ierr);
+
     // Create MoFEM database and link it to MoAB
-    MoFEM::Core mofem_core(moab);                      // create database
-    MoFEM::Interface& m_field = mofem_core;            // create interface to database
+    MoFEM::Core mofem_core(moab);           // create database
+    MoFEM::Interface &m_field = mofem_core; // create interface to database
     // Register DM Manager
-    ierr = DMRegister_MoFEM("DMMOFEM"); CHKERRG(ierr); // register MoFEM DM in PETSc
+    CHKERR DMRegister_MoFEM("DMMOFEM"); // register MoFEM DM in PETSc
 
     // Create vector to store approximation global error
     Vec global_error;
-    ierr = PoissonExample::AuxFunctions(m_field).createGhostVec(&global_error); CHKERRG(ierr);
+    CHKERR PoissonExample::AuxFunctions(m_field).createGhostVec(&global_error);
 
-    // First we crate elements, implementation of elements is problem independent,
-    // we do not know yet what fields are present in the problem, or
-    // even we do not decided yet what approximation base or spaces we
-    // are going to use. Implementation of element is free from
-    // those constrains and can be used in different context.
+    // First we crate elements, implementation of elements is problem
+    // independent, we do not know yet what fields are present in the problem,
+    // or even we do not decided yet what approximation base or spaces we are
+    // going to use. Implementation of element is free from those constrains and
+    // can be used in different context.
 
     // Elements used by KSP & DM to assemble system of equations
-    boost::shared_ptr<ForcesAndSourcesCore> domain_lhs_fe;     ///< Volume element for the matrix
-    boost::shared_ptr<ForcesAndSourcesCore> boundary_lhs_fe;   ///< Boundary element for the matrix
-    boost::shared_ptr<ForcesAndSourcesCore> domain_rhs_fe;     ///< Volume element to assemble vector
-    boost::shared_ptr<ForcesAndSourcesCore> boundary_rhs_fe;   ///< Volume element to assemble vector
-    boost::shared_ptr<ForcesAndSourcesCore> domain_error;      ///< Volume element evaluate error
-    boost::shared_ptr<ForcesAndSourcesCore> post_proc_volume;  ///< Volume element to Post-process results
-    boost::shared_ptr<ForcesAndSourcesCore> null;              ///< Null element do nothing
+    boost::shared_ptr<ForcesAndSourcesCore>
+        domain_lhs_fe; ///< Volume element for the matrix
+    boost::shared_ptr<ForcesAndSourcesCore>
+        boundary_lhs_fe; ///< Boundary element for the matrix
+    boost::shared_ptr<ForcesAndSourcesCore>
+        domain_rhs_fe; ///< Volume element to assemble vector
+    boost::shared_ptr<ForcesAndSourcesCore>
+        boundary_rhs_fe; ///< Volume element to assemble vector
+    boost::shared_ptr<ForcesAndSourcesCore>
+        domain_error; ///< Volume element evaluate error
+    boost::shared_ptr<ForcesAndSourcesCore>
+        post_proc_volume; ///< Volume element to Post-process results
+    boost::shared_ptr<ForcesAndSourcesCore> null; ///< Null element do nothing
     boost::shared_ptr<ForcesAndSourcesCore> boundary_penalty_lhs_fe;
     {
-      // Add problem specific operators the generic finite elements to calculate matrices and vectors.
-      ierr = PoissonExample::CreateFiniteElements(m_field).createFEToAssembleMatrixAndVector(
-        ExactFunction(),ExactLaplacianFunction(),
-        domain_lhs_fe,boundary_lhs_fe,domain_rhs_fe,boundary_rhs_fe,false
-      ); CHKERRG(ierr);
-      // Add problem specific operators the generic finite elements to calculate error on elements and global error
-      // in H1 norm
-      ierr = PoissonExample::CreateFiniteElements(m_field).createFEToEvaluateError(
-        ExactFunction(),ExactFunctionGrad(),global_error,domain_error
-      ); CHKERRG(ierr);
+      // Add problem specific operators the generic finite elements to calculate
+      // matrices and vectors.
+      CHKERR PoissonExample::CreateFiniteElements(m_field)
+          .createFEToAssembleMatrixAndVector(
+              ExactFunction(), ExactLaplacianFunction(), domain_lhs_fe,
+              boundary_lhs_fe, domain_rhs_fe, boundary_rhs_fe, false);
+      // Add problem specific operators the generic finite elements to calculate
+      // error on elements and global error in H1 norm
+      CHKERR PoissonExample::CreateFiniteElements(m_field)
+          .createFEToEvaluateError(ExactFunction(), ExactFunctionGrad(),
+                                   global_error, domain_error);
       // Post-process results
-      ierr = PoissonExample::CreateFiniteElements(m_field).creatFEToPostProcessResults(post_proc_volume); CHKERRG(ierr);
+      CHKERR PoissonExample::CreateFiniteElements(m_field)
+          .creatFEToPostProcessResults(post_proc_volume);
 
       const double beta = 1;
-      boundary_penalty_lhs_fe = boost::shared_ptr<ForcesAndSourcesCore>(new FaceElementForcesAndSourcesCore(m_field));
+      boundary_penalty_lhs_fe = boost::shared_ptr<ForcesAndSourcesCore>(
+          new FaceElementForcesAndSourcesCore(m_field));
       boundary_penalty_lhs_fe->getRuleHook = PoissonExample::FaceRule();
       boundary_penalty_lhs_fe->getOpPtrVector().push_back(new OpS(beta));
-      boundary_rhs_fe->getOpPtrVector().push_back(new PoissonExample::Op_g(ExactFunction(),"U",beta));
-
+      boundary_rhs_fe->getOpPtrVector().push_back(
+          new PoissonExample::Op_g(ExactFunction(), "U", beta));
     }
 
     // Get simple interface is simplified version enabling quick and
     // easy construction of problem.
     Simple *simple_interface;
     // Query interface and get pointer to Simple interface
-    ierr = m_field.getInterface(simple_interface); CHKERRG(ierr);
+    CHKERR m_field.getInterface(simple_interface);
 
     // Build problem with simple interface
     {
 
       // Get options for simple interface from command line
-      ierr = simple_interface->getOptions(); CHKERRG(ierr);
+      CHKERR simple_interface->getOptions();
       // Load mesh file to database
-      ierr = simple_interface->loadFile(); CHKERRG(ierr);
+      CHKERR simple_interface->loadFile();
 
-      // Add field on domain and boundary. Field is declared by space and base and rank. space
-      // can be H1. Hcurl, Hdiv and L2, base can be AINSWORTH_LEGENDRE_BASE, DEMKOWICZ_JACOBI_BASE and more,
-      // where rank is number of coefficients for dof.
+      // Add field on domain and boundary. Field is declared by space and base
+      // and rank. space can be H1. Hcurl, Hdiv and L2, base can be
+      // AINSWORTH_LEGENDRE_BASE, DEMKOWICZ_JACOBI_BASE and more, where rank is
+      // number of coefficients for dof.
       //
       // Simple interface assumes that there are four types of field; 1) defined
-      // on body domain, 2) fields defined on body boundary, 3) skeleton field defined
-      // on finite element skeleton. Finally data field is defined on body domain. Data field
-      // is not solved but used for post-process or to keep material parameters, etc. Here
-      // we using it to calculate approximation error on elements.
+      // on body domain, 2) fields defined on body boundary, 3) skeleton field
+      // defined on finite element skeleton. Finally data field is defined on
+      // body domain. Data field is not solved but used for post-process or to
+      // keep material parameters, etc. Here we using it to calculate
+      // approximation error on elements.
 
-      // Add domain filed "U" in space H1 and Legendre base, Ainsworth recipe is used
-      // to construct base functions.
-      ierr = simple_interface->addDomainField("U",H1,AINSWORTH_LEGENDRE_BASE,1); CHKERRG(ierr);
+      // Add domain filed "U" in space H1 and Legendre base, Ainsworth recipe is
+      // used to construct base functions.
+      CHKERR simple_interface->addDomainField("U", H1, AINSWORTH_LEGENDRE_BASE,
+                                              1);
       // Add Lagrange multiplier field on body boundary
-      ierr = simple_interface->addBoundaryField("L",H1,AINSWORTH_LEGENDRE_BASE,1); CHKERRG(ierr);
-      // Add error (data) field, we need only L2 norm. Later order is set to 0, so this
-      // is piecewise discontinuous constant approx., i.e. 1 DOF for element. You can use
-      // more DOFs and collate moments of error to drive anisotropic h/p-adaptivity, however
-      // this is beyond this example.
-      ierr = simple_interface->addDataField("ERROR",L2,AINSWORTH_LEGENDRE_BASE,1); CHKERRG(ierr);
+      CHKERR simple_interface->addBoundaryField("L", H1,
+                                                AINSWORTH_LEGENDRE_BASE, 1);
+      // Add error (data) field, we need only L2 norm. Later order is set to 0,
+      // so this is piecewise discontinuous constant approx., i.e. 1 DOF for
+      // element. You can use more DOFs and collate moments of error to drive
+      // anisotropic h/p-adaptivity, however this is beyond this example.
+      CHKERR simple_interface->addDataField("ERROR", L2,
+                                            AINSWORTH_LEGENDRE_BASE, 1);
 
       // Set fields order domain and boundary fields.
-      ierr = simple_interface->setFieldOrder("U",order); CHKERRG(ierr); // to approximate function
-      ierr = simple_interface->setFieldOrder("L",order); CHKERRG(ierr); // to Lagrange multipliers
-      ierr = simple_interface->setFieldOrder("ERROR",0); CHKERRG(ierr); // approximation order for error
+      CHKERR simple_interface->setFieldOrder("U",
+                                             order); // to approximate function
+      CHKERR simple_interface->setFieldOrder("L",
+                                             order); // to Lagrange multipliers
+      CHKERR simple_interface->setFieldOrder(
+          "ERROR", 0); // approximation order for error
 
-      // Setup problem. At that point database is constructed, i.e. fields, finite elements and
-      // problem data structures with local and global indexing.
-      ierr = simple_interface->setUp(); CHKERRG(ierr);
-
+      // Setup problem. At that point database is constructed, i.e. fields,
+      // finite elements and problem data structures with local and global
+      // indexing.
+      CHKERR simple_interface->setUp();
     }
 
     // Get access to PETSC-MoFEM DM manager.
-    // or more derails see <http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/DM/index.html>
-    // Form that point internal MoFEM data structures are linked with PETSc interface. If
-    // DM functions contains string MoFEM is is MoFEM specific DM interface function,
-    // otherwise DM function part of standard PETSc interface.
+    // or more derails see
+    // <http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/DM/index.html>
+    // Form that point internal MoFEM data structures are linked with PETSc
+    // interface. If DM functions contains string MoFEM is is MoFEM specific DM
+    // interface function, otherwise DM function part of standard PETSc
+    // interface.
 
     DM dm;
     // Get dm
-    ierr = simple_interface->getDM(&dm); CHKERRG(ierr);
+    CHKERR simple_interface->getDM(&dm);
 
     // Solve problem, only PETEc interface here.
     {
 
       // Create the right hand side vector and vector of unknowns
-      Vec F,D;
-      ierr = DMCreateGlobalVector(dm,&F); CHKERRG(ierr);
+      Vec F, D;
+      CHKERR DMCreateGlobalVector(dm, &F);
       // Create unknown vector by creating duplicate copy of F vector. only
       // structure is duplicated no values.
-      ierr = VecDuplicate(F,&D); CHKERRG(ierr);
+      CHKERR VecDuplicate(F, &D);
 
-      DM dm_sub_KK,dm_sub_LU;
-      ublas::matrix<Mat> nested_matrices(2,2);
+      DM dm_sub_KK, dm_sub_LU;
+      ublas::matrix<Mat> nested_matrices(2, 2);
       ublas::vector<IS> nested_is(2);
 
-      ierr = DMCreate(PETSC_COMM_WORLD,&dm_sub_KK);CHKERRG(ierr);
-      ierr = DMSetType(dm_sub_KK,"DMMOFEM");CHKERRG(ierr);
-      ierr = DMMoFEMCreateSubDM(dm_sub_KK,dm,"SUB_KK"); CHKERRG(ierr);
-      ierr = DMSetFromOptions(dm_sub_KK); CHKERRG(ierr);
-      ierr = DMMoFEMSetSquareProblem(dm_sub_KK,PETSC_TRUE); CHKERRG(ierr);
-      ierr = DMMoFEMAddSubFieldRow(dm_sub_KK,"U"); CHKERRG(ierr);
-      ierr = DMMoFEMAddSubFieldCol(dm_sub_KK,"U"); CHKERRG(ierr);
-      ierr = DMMoFEMAddElement(dm_sub_KK,simple_interface->getDomainFEName().c_str()); CHKERRG(ierr);
-      ierr = DMMoFEMAddElement(dm_sub_KK,simple_interface->getBoundaryFEName().c_str()); CHKERRG(ierr);
-      ierr = DMSetUp(dm_sub_KK); CHKERRG(ierr);
-      ierr = DMMoFEMGetSubRowIS(dm_sub_KK,&nested_is[0]); CHKERRG(ierr);
-      ierr = DMCreateMatrix(dm_sub_KK,&nested_matrices(0,0)); CHKERRG(ierr);
-      domain_lhs_fe->ksp_B = nested_matrices(0,0);
-      ierr = DMoFEMLoopFiniteElements(dm_sub_KK,simple_interface->getDomainFEName(),domain_lhs_fe); CHKERRG(ierr);
-      boundary_penalty_lhs_fe->ksp_B = nested_matrices(0,0);
-      ierr = DMoFEMLoopFiniteElements(dm_sub_KK,simple_interface->getBoundaryFEName(),boundary_penalty_lhs_fe); CHKERRG(ierr);
-      ierr = MatAssemblyBegin(nested_matrices(0,0),MAT_FINAL_ASSEMBLY); CHKERRG(ierr);
-      ierr = MatAssemblyEnd(nested_matrices(0,0),MAT_FINAL_ASSEMBLY); CHKERRG(ierr);
-      ierr = DMDestroy(&dm_sub_KK); CHKERRG(ierr);
+      CHKERR DMCreate(PETSC_COMM_WORLD, &dm_sub_KK);
+      CHKERR DMSetType(dm_sub_KK, "DMMOFEM");
+      CHKERR DMMoFEMCreateSubDM(dm_sub_KK, dm, "SUB_KK");
+      CHKERR DMSetFromOptions(dm_sub_KK);
+      CHKERR DMMoFEMSetSquareProblem(dm_sub_KK, PETSC_TRUE);
+      CHKERR DMMoFEMAddSubFieldRow(dm_sub_KK, "U");
+      CHKERR DMMoFEMAddSubFieldCol(dm_sub_KK, "U");
+      CHKERR DMMoFEMAddElement(dm_sub_KK,
+                               simple_interface->getDomainFEName().c_str());
+      CHKERR DMMoFEMAddElement(dm_sub_KK,
+                               simple_interface->getBoundaryFEName().c_str());
+      CHKERR DMSetUp(dm_sub_KK);
+      CHKERR DMMoFEMGetSubRowIS(dm_sub_KK, &nested_is[0]);
+      CHKERR DMCreateMatrix(dm_sub_KK, &nested_matrices(0, 0));
+      domain_lhs_fe->ksp_B = nested_matrices(0, 0);
+      CHKERR DMoFEMLoopFiniteElements(
+          dm_sub_KK, simple_interface->getDomainFEName(), domain_lhs_fe);
+      boundary_penalty_lhs_fe->ksp_B = nested_matrices(0, 0);
+      CHKERR DMoFEMLoopFiniteElements(dm_sub_KK,
+                                      simple_interface->getBoundaryFEName(),
+                                      boundary_penalty_lhs_fe);
+      CHKERR MatAssemblyBegin(nested_matrices(0, 0), MAT_FINAL_ASSEMBLY);
+      CHKERR MatAssemblyEnd(nested_matrices(0, 0), MAT_FINAL_ASSEMBLY);
+      CHKERR DMDestroy(&dm_sub_KK);
       //
-      ierr = DMCreate(PETSC_COMM_WORLD,&dm_sub_LU);CHKERRG(ierr);
-      ierr = DMSetType(dm_sub_LU,"DMMOFEM");CHKERRG(ierr);
-      ierr = DMMoFEMCreateSubDM(dm_sub_LU,dm,"SUB_LU"); CHKERRG(ierr);
-      ierr = DMSetFromOptions(dm_sub_LU); CHKERRG(ierr);
-      ierr = DMMoFEMSetSquareProblem(dm_sub_LU,PETSC_FALSE); CHKERRG(ierr);
-      ierr = DMMoFEMAddSubFieldRow(dm_sub_LU,"L"); CHKERRG(ierr);
-      ierr = DMMoFEMAddSubFieldCol(dm_sub_LU,"U"); CHKERRG(ierr);
-      ierr = DMMoFEMAddElement(dm_sub_LU,simple_interface->getBoundaryFEName().c_str()); CHKERRG(ierr);
-      ierr = DMSetUp(dm_sub_LU); CHKERRG(ierr);
-      ierr = DMMoFEMGetSubRowIS(dm_sub_LU,&nested_is[1]); CHKERRG(ierr);
-      ierr = DMCreateMatrix(dm_sub_LU,&nested_matrices(1,0)); CHKERRG(ierr);
-      boundary_lhs_fe->ksp_B = nested_matrices(1,0);
-      ierr = DMoFEMLoopFiniteElements(dm_sub_LU,simple_interface->getBoundaryFEName(),boundary_lhs_fe); CHKERRG(ierr);
-      ierr = MatAssemblyBegin(nested_matrices(1,0),MAT_FINAL_ASSEMBLY); CHKERRG(ierr);
-      ierr = MatAssemblyEnd(nested_matrices(1,0),MAT_FINAL_ASSEMBLY); CHKERRG(ierr);
-      // ierr = MatCreateTranspose(nested_matrices(1,0),&nested_matrices(0,1)); CHKERRG(ierr);
-      ierr = MatTranspose(nested_matrices(1,0),MAT_INITIAL_MATRIX,&nested_matrices(0,1)); CHKERRG(ierr);
-      ierr = DMDestroy(&dm_sub_LU); CHKERRG(ierr);
+      CHKERR DMCreate(PETSC_COMM_WORLD, &dm_sub_LU);
+      CHKERR DMSetType(dm_sub_LU, "DMMOFEM");
+      CHKERR DMMoFEMCreateSubDM(dm_sub_LU, dm, "SUB_LU");
+      CHKERR DMSetFromOptions(dm_sub_LU);
+      CHKERR DMMoFEMSetSquareProblem(dm_sub_LU, PETSC_FALSE);
+      CHKERR DMMoFEMAddSubFieldRow(dm_sub_LU, "L");
+      CHKERR DMMoFEMAddSubFieldCol(dm_sub_LU, "U");
+      CHKERR DMMoFEMAddElement(dm_sub_LU,
+                               simple_interface->getBoundaryFEName().c_str());
+      CHKERR DMSetUp(dm_sub_LU);
+      CHKERR DMMoFEMGetSubRowIS(dm_sub_LU, &nested_is[1]);
+      CHKERR DMCreateMatrix(dm_sub_LU, &nested_matrices(1, 0));
+      boundary_lhs_fe->ksp_B = nested_matrices(1, 0);
+      CHKERR DMoFEMLoopFiniteElements(
+          dm_sub_LU, simple_interface->getBoundaryFEName(), boundary_lhs_fe);
+      CHKERR MatAssemblyBegin(nested_matrices(1, 0), MAT_FINAL_ASSEMBLY);
+      CHKERR MatAssemblyEnd(nested_matrices(1, 0), MAT_FINAL_ASSEMBLY);
+      // CHKERR MatCreateTranspose(nested_matrices(1,0),&nested_matrices(0,1));
+      CHKERR MatTranspose(nested_matrices(1, 0), MAT_INITIAL_MATRIX,
+                          &nested_matrices(0, 1));
+      CHKERR DMDestroy(&dm_sub_LU);
 
       domain_rhs_fe->ksp_f = F;
-      ierr = DMoFEMLoopFiniteElements(dm,simple_interface->getDomainFEName(),domain_rhs_fe); CHKERRG(ierr);
+      CHKERR DMoFEMLoopFiniteElements(dm, simple_interface->getDomainFEName(),
+                                      domain_rhs_fe);
       boundary_rhs_fe->ksp_f = F;
-      ierr = DMoFEMLoopFiniteElements(dm,simple_interface->getBoundaryFEName(),boundary_rhs_fe); CHKERRG(ierr);
-      ierr = VecAssemblyBegin(F); CHKERRG(ierr);
-      ierr = VecAssemblyEnd(F); CHKERRG(ierr);
+      CHKERR DMoFEMLoopFiniteElements(dm, simple_interface->getBoundaryFEName(),
+                                      boundary_rhs_fe);
+      CHKERR VecAssemblyBegin(F);
+      CHKERR VecAssemblyEnd(F);
 
       Mat A;
-      nested_matrices(1,1) = PETSC_NULL;
+      nested_matrices(1, 1) = PETSC_NULL;
 
-      if(debug) {
+      if (debug) {
         MatType type;
-        MatGetType(nested_matrices(0,0),&type);
+        MatGetType(nested_matrices(0, 0), &type);
         cerr << "K " << type << endl;
-        MatGetType(nested_matrices(1,0),&type);
+        MatGetType(nested_matrices(1, 0), &type);
         cerr << "C " << type << endl;
-        MatGetType(nested_matrices(0,1),&type);
+        MatGetType(nested_matrices(0, 1), &type);
         cerr << "CT " << type << endl;
         std::string wait;
         cerr << "UU" << endl;
-        MatView(nested_matrices(0,0),PETSC_VIEWER_DRAW_WORLD);
+        MatView(nested_matrices(0, 0), PETSC_VIEWER_DRAW_WORLD);
         std::cin >> wait;
         cerr << "LU" << endl;
-        MatView(nested_matrices(1,0),PETSC_VIEWER_DRAW_WORLD);
+        MatView(nested_matrices(1, 0), PETSC_VIEWER_DRAW_WORLD);
         std::cin >> wait;
         cerr << "UL" << endl;
-        MatView(nested_matrices(0,1),PETSC_VIEWER_DRAW_WORLD);
+        MatView(nested_matrices(0, 1), PETSC_VIEWER_DRAW_WORLD);
         std::cin >> wait;
       }
 
-      ierr = MatCreateNest(
-        PETSC_COMM_WORLD,
-        2,&nested_is[0],2,&nested_is[0],&nested_matrices(0,0),&A
-      ); CHKERRG(ierr);
+      CHKERR MatCreateNest(PETSC_COMM_WORLD, 2, &nested_is[0], 2, &nested_is[0],
+                           &nested_matrices(0, 0), &A);
 
       // Create solver and link it to DM
       KSP solver;
-      ierr = KSPCreate(PETSC_COMM_WORLD,&solver); CHKERRG(ierr);
-      ierr = KSPSetFromOptions(solver); CHKERRG(ierr);
+      CHKERR KSPCreate(PETSC_COMM_WORLD, &solver);
+      CHKERR KSPSetFromOptions(solver);
       // Set operators
-      ierr = KSPSetOperators(solver,A,A); CHKERRG(ierr);
+      CHKERR KSPSetOperators(solver, A, A);
       PC pc;
-      ierr = KSPGetPC(solver,&pc); CHKERRG(ierr);
+      CHKERR KSPGetPC(solver, &pc);
       PetscBool is_pcfs = PETSC_FALSE;
-      PetscObjectTypeCompare((PetscObject)pc,PCFIELDSPLIT,&is_pcfs);
-      if(is_pcfs) {
-        ierr = PCFieldSplitSetIS(pc,NULL,nested_is[0]); CHKERRG(ierr);
-        ierr = PCFieldSplitSetIS(pc,NULL,nested_is[1]); CHKERRG(ierr);
+      PetscObjectTypeCompare((PetscObject)pc, PCFIELDSPLIT, &is_pcfs);
+      if (is_pcfs) {
+        CHKERR PCFieldSplitSetIS(pc, NULL, nested_is[0]);
+        CHKERR PCFieldSplitSetIS(pc, NULL, nested_is[1]);
       } else {
-        SETERRQ(
-          PETSC_COMM_WORLD,
-          MOFEM_DATA_INCONSISTENCY,
-          "Only works with pre-conditioner PCFIELDSPLIT"
-        );
+        SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY,
+                "Only works with pre-conditioner PCFIELDSPLIT");
       }
       // Set-up solver, is type of solver and pre-conditioners
-      ierr = KSPSetUp(solver); CHKERRG(ierr);
+      CHKERR KSPSetUp(solver);
       // At solution process, KSP solver using DM creates matrices, Calculate
       // values of the left hand side and the right hand side vector. then
       // solves system of equations. Results are stored in vector D.
-      ierr = KSPSolve(solver,F,D); CHKERRG(ierr);
+      CHKERR KSPSolve(solver, F, D);
 
-      // Scatter solution on the mesh. Stores unknown vector on field on the mesh.
-      ierr = DMoFEMMeshToGlobalVector(dm,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
+      // Scatter solution on the mesh. Stores unknown vector on field on the
+      // mesh.
+      CHKERR DMoFEMMeshToGlobalVector(dm, D, INSERT_VALUES, SCATTER_REVERSE);
 
       // Clean data. Solver and vector are not needed any more.
-      ierr = KSPDestroy(&solver); CHKERRG(ierr);
-      for(int i = 0;i!=2;i++) {
-        ierr = ISDestroy(&nested_is[i]); CHKERRG(ierr);
-        for(int j = 0;j!=2;j++) {
-          ierr = MatDestroy(&nested_matrices(i,j)); CHKERRG(ierr);
+      CHKERR KSPDestroy(&solver);
+      for (int i = 0; i != 2; i++) {
+        CHKERR ISDestroy(&nested_is[i]);
+        for (int j = 0; j != 2; j++) {
+          CHKERR MatDestroy(&nested_matrices(i, j));
         }
       }
-      ierr = MatDestroy(&A); CHKERRG(ierr);
-      ierr = VecDestroy(&D); CHKERRG(ierr);
-      ierr = VecDestroy(&F); CHKERRG(ierr);
+      CHKERR MatDestroy(&A);
+      CHKERR VecDestroy(&D);
+      CHKERR VecDestroy(&F);
     }
 
     // Calculate error
     {
-      // Loop over all elements in mesh, and run users operators on each element.
-      ierr = DMoFEMLoopFiniteElements(dm,simple_interface->getDomainFEName(),domain_error); CHKERRG(ierr);
-      ierr = PoissonExample::AuxFunctions(m_field).assembleGhostVector(global_error); CHKERRG(ierr);
-      ierr = PoissonExample::AuxFunctions(m_field).printError(global_error); CHKERRG(ierr);
-      if(flg_test == PETSC_TRUE) {
-        ierr = PoissonExample::AuxFunctions(m_field).testError(global_error); CHKERRG(ierr);
+      // Loop over all elements in mesh, and run users operators on each
+      // element.
+      CHKERR DMoFEMLoopFiniteElements(dm, simple_interface->getDomainFEName(),
+                                      domain_error);
+      CHKERR PoissonExample::AuxFunctions(m_field).assembleGhostVector(
+          global_error);
+      CHKERR PoissonExample::AuxFunctions(m_field).printError(global_error);
+      if (flg_test == PETSC_TRUE) {
+        CHKERR PoissonExample::AuxFunctions(m_field).testError(global_error);
       }
     }
 
     {
-      // Loop over all elements in the mesh and for each execute post_proc_volume
-      // element and operators on it.
-      ierr = DMoFEMLoopFiniteElements(dm,simple_interface->getDomainFEName(),post_proc_volume); CHKERRG(ierr);
+      // Loop over all elements in the mesh and for each execute
+      // post_proc_volume element and operators on it.
+      CHKERR DMoFEMLoopFiniteElements(dm, simple_interface->getDomainFEName(),
+                                      post_proc_volume);
       // Write results
-      ierr = boost::static_pointer_cast<PostProcVolumeOnRefinedMesh>(post_proc_volume)->writeFile("out_vol.h5m"); CHKERRG(ierr);
+      CHKERR boost::static_pointer_cast<PostProcVolumeOnRefinedMesh>(
+          post_proc_volume)
+          ->writeFile("out_vol.h5m");
     }
 
     // Destroy DM, no longer needed.
-    ierr = DMDestroy(&dm); CHKERRG(ierr);
+    CHKERR DMDestroy(&dm);
 
     // Destroy ghost vector
-    ierr = VecDestroy(&global_error); CHKERRG(ierr);
-
-  } catch (MoFEMException const &e) {
-    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
+    CHKERR VecDestroy(&global_error);
   }
+  CATCH_ERRORS;
 
   // finish work cleaning memory, getting statistics, etc.
-  ierr = PetscFinalize(); CHKERRG(ierr);
+  MoFEM::Core::Finalize();
 
   return 0;
-
 }

@@ -1,8 +1,8 @@
 There are two kinds of tests in these directories.  The tests in
 conformance exercise almost all of the possible operations (it doesn't
-fully exercise the Tensor4_Riemann class, but that class has other
-problems, such as not being dimension-independent).  The tests in
-speed compare how fast the FTensor's are compared to ordinary arrays.
+fully exercise the Riemann class, but that class has other problems,
+such as not being dimension-independent).  The tests in speed compare
+how fast the FTensor's are compared to ordinary arrays.
 
 You may have to edit the Makefile's in each of the directories to set
 the compiler (CXX) and its flags (CXXFLAGS).  You can set optimization
