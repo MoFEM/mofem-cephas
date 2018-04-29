@@ -198,6 +198,7 @@ VectorAdaptor FieldEntity::getEntFieldData() const {
   double *ptr = static_cast<double *>(MoFEM::get_tag_ptr(
       static_cast<moab::Core *>(&sFieldPtr->moab)->sequence_manager(),
       sFieldPtr->th_FieldData, sPtr->ent, &tag_size));
+  tag_size /= sizeof(FieldData);
   return VectorAdaptor(size,
                        ublas::shallow_array_adaptor<FieldData>(tag_size, ptr));
 }
