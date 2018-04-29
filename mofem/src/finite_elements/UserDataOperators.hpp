@@ -42,7 +42,10 @@ struct OpCalculateScalarFieldValues_General
       EntityType zero_type = MBVERTEX)
       : ForcesAndSourcesCore::UserDataOperator(
             field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
-        dataPtr(data_ptr), zeroType(zero_type) {}
+        dataPtr(data_ptr), zeroType(zero_type) {
+          if(!dataPtr)
+            THROW_MESSAGE("Pointer is not set");
+        }
 
   /**
    * \brief calculate values of scalar field at integration points
@@ -80,7 +83,10 @@ struct OpCalculateScalarFieldValues
                                boost::shared_ptr<VectorDouble> &data_ptr,
                                EntityType zero_type = MBVERTEX)
       : OpCalculateScalarFieldValues_General<double, DoubleAllocator>(
-            field_name, data_ptr, zero_type) {}
+            field_name, data_ptr, zero_type) {
+    if (!dataPtr)
+      THROW_MESSAGE("Pointer is not set");
+  }
 
   /**
    * \brief calculate values of scalar field at integration points
@@ -93,13 +99,6 @@ struct OpCalculateScalarFieldValues
                         DataForcesAndSourcesCore::EntData &data) {
     MoFEMFunctionBegin;
     const int nb_dofs = data.getFieldData().size();
-    // cerr <<  data.getFieldData() << endl;
-
-    if (!dataPtr) {
-      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-              "Data pointer not allocated");
-    }
-
     if (!nb_dofs && type == this->zeroType) {
       dataPtr->resize(0, false);
     }
@@ -150,7 +149,10 @@ struct OpCalculateVectorFieldValues_General
       EntityType zero_type = MBVERTEX)
       : ForcesAndSourcesCore::UserDataOperator(
             field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
-        dataPtr(data_ptr), zeroType(zero_type) {}
+        dataPtr(data_ptr), zeroType(zero_type) {
+    if (!dataPtr)
+      THROW_MESSAGE("Pointer is not set");
+  }
 
   /**
    * \brief calculate values of vector field at integration points
@@ -192,7 +194,10 @@ struct OpCalculateVectorFieldValues_General<Tensor_Dim, double,
       EntityType zero_type = MBVERTEX)
       : ForcesAndSourcesCore::UserDataOperator(
             field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
-        dataPtr(data_ptr), zeroType(zero_type) {}
+        dataPtr(data_ptr), zeroType(zero_type) {
+    if (!dataPtr)
+      THROW_MESSAGE("Pointer is not set");
+  }
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data);
@@ -209,10 +214,6 @@ MoFEMErrorCode OpCalculateVectorFieldValues_General<
                              DataForcesAndSourcesCore::EntData &data) {
   MoFEMFunctionBegin;
   const int nb_dofs = data.getFieldData().size();
-  if (!dataPtr) {
-    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-            "Data pointer not allocated");
-  }
   if (!nb_dofs && type == this->zeroType) {
     dataPtr->resize(Tensor_Dim, 0, false);
     MoFEMFunctionReturnHot(0);
@@ -286,7 +287,10 @@ struct OpCalculateTensor2FieldValues_General
       EntityType zero_type = MBVERTEX)
       : ForcesAndSourcesCore::UserDataOperator(
             field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
-        dataPtr(data_ptr), zeroType(zero_type) {}
+        dataPtr(data_ptr), zeroType(zero_type) {
+    if (!dataPtr)
+      THROW_MESSAGE("Pointer is not set");
+  }
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data);
@@ -320,7 +324,10 @@ struct OpCalculateTensor2FieldValues_General<Tensor_Dim0, Tensor_Dim1, double,
       EntityType zero_type = MBVERTEX)
       : ForcesAndSourcesCore::UserDataOperator(
             field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
-        dataPtr(data_ptr), zeroType(zero_type) {}
+        dataPtr(data_ptr), zeroType(zero_type) {
+    if (!dataPtr)
+      THROW_MESSAGE("Pointer is not set");
+  }
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data);
@@ -443,7 +450,8 @@ struct OpCalculateScalarFieldGradient
                                  EntityType zero_type = MBVERTEX)
       : OpCalculateScalarFieldGradient_General<
             Tensor_Dim, double, ublas::row_major, DoubleAllocator>(
-            field_name, data_ptr, zero_type) {}
+            field_name, data_ptr, zero_type) {
+  }
 };
 
 /**
@@ -573,7 +581,10 @@ struct OpCalculateHdivVectorField_General
       EntityType zero_type = MBTRI, int zero_side = 0)
       : ForcesAndSourcesCore::UserDataOperator(
             field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
-        dataPtr(data_ptr), zeroType(zero_type), zero_side(0) {}
+        dataPtr(data_ptr), zeroType(zero_type), zero_side(0) {
+    if (!dataPtr)
+      THROW_MESSAGE("Pointer is not set");
+  }
 
   /**
    * \brief calculate values of vector field at integration points
@@ -615,7 +626,10 @@ struct OpCalculateHdivVectorField_General<Tensor_Dim, double, ublas::row_major,
                                      int zero_side = 0)
       : ForcesAndSourcesCore::UserDataOperator(
             field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
-        dataPtr(data_ptr), zeroType(zero_type), zero_side(0) {}
+        dataPtr(data_ptr), zeroType(zero_type), zero_side(0) {
+    if (!dataPtr)
+      THROW_MESSAGE("Pointer is not set");
+  }
 
   /**
    * \brief Calculate values of vector field at integration points
@@ -644,10 +658,8 @@ MoFEMErrorCode OpCalculateHdivVectorField_General<
     dataPtr->clear();
   }
   FTensor::Index<'i', 3> i;
-  FTensor::Tensor1<double *, Tensor_Dim> t_n_hdiv =
-      data.getFTensor1HdivN<Tensor_Dim>();
-  FTensor::Tensor1<double *, Tensor_Dim> t_data =
-      getTensor1FormData<3>(*dataPtr);
+  auto t_n_hdiv = data.getFTensor1HdivN<Tensor_Dim>();
+  auto t_data = getTensor1FormData<3>(*dataPtr);
   for (int gg = 0; gg != nb_integration_points; gg++) {
     auto t_dof = data.getFTensor0FieldData();
     int bb = 0;
