@@ -14,12 +14,12 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
-*/
+ */
 
 namespace MoFEM {
 
-//KSP
-MoFEMErrorCode KspMethod::setKspCtx(const KSPContext& ctx) {
+// KSP
+MoFEMErrorCode KspMethod::setKspCtx(const KSPContext &ctx) {
   MoFEMFunctionBeginHot;
   ksp_ctx = ctx;
   MoFEMFunctionReturnHot(0);
@@ -39,8 +39,8 @@ MoFEMErrorCode KspMethod::copyKsp(const KspMethod &ksp) {
   MoFEMFunctionReturnHot(0);
 }
 
-//SNES
-MoFEMErrorCode SnesMethod::setSnesCtx(const SNESContext& ctx) {
+// SNES
+MoFEMErrorCode SnesMethod::setSnesCtx(const SNESContext &ctx) {
   MoFEMFunctionBeginHot;
   snes_ctx = ctx;
   MoFEMFunctionReturnHot(0);
@@ -50,7 +50,7 @@ MoFEMErrorCode SnesMethod::setSnes(SNES _snes) {
   snes = _snes;
   MoFEMFunctionReturnHot(0);
 }
-MoFEMErrorCode SnesMethod::copySnes(const SnesMethod& snes) {
+MoFEMErrorCode SnesMethod::copySnes(const SnesMethod &snes) {
   MoFEMFunctionBeginHot;
   this->snes_ctx = snes.snes_ctx;
   this->snes = snes.snes;
@@ -61,8 +61,8 @@ MoFEMErrorCode SnesMethod::copySnes(const SnesMethod& snes) {
   MoFEMFunctionReturnHot(0);
 }
 
-//TS
-MoFEMErrorCode TSMethod::setTsCtx(const TSContext& ctx) {
+// TS
+MoFEMErrorCode TSMethod::setTsCtx(const TSContext &ctx) {
   MoFEMFunctionBeginHot;
   ts_ctx = ctx;
   MoFEMFunctionReturnHot(0);
@@ -87,26 +87,14 @@ MoFEMErrorCode TSMethod::copyTs(const TSMethod &ts) {
   MoFEMFunctionReturnHot(0);
 }
 
-//BasicMethod
-BasicMethod::BasicMethod():
-KspMethod(),
-SnesMethod(),
-TSMethod(),
-nInTheLoop(0),
-loopSize(0),
-refinedEntitiesPtr(NULL),
-refinedFiniteElementsPtr(NULL),
-problemPtr(NULL),
-fieldsPtr(NULL),
-entitiesPtr(NULL),
-dofsPtr(NULL),
-finiteElementsPtr(NULL),
-finiteElementsEntitiesPtr(NULL),
-adjacenciesPtr(NULL),
-preProcessHook(NULL),
-postProcessHook(NULL),
-operatorHook(NULL) {
-}
+// BasicMethod
+BasicMethod::BasicMethod()
+    : KspMethod(), SnesMethod(), TSMethod(), nInTheLoop(0), loopSize(0),
+      refinedEntitiesPtr(NULL), refinedFiniteElementsPtr(NULL),
+      problemPtr(NULL), fieldsPtr(NULL), entitiesPtr(NULL), dofsPtr(NULL),
+      finiteElementsPtr(NULL), finiteElementsEntitiesPtr(NULL),
+      adjacenciesPtr(NULL), preProcessHook(NULL), postProcessHook(NULL),
+      operatorHook(NULL) {}
 
 MoFEMErrorCode BasicMethod::copyBasicMethod(const BasicMethod &basic) {
   MoFEMFunctionBeginHot;
@@ -130,47 +118,45 @@ MoFEMErrorCode BasicMethod::copyBasicMethod(const BasicMethod &basic) {
 
 MoFEMErrorCode BasicMethod::preProcess() {
   MoFEMFunctionBeginHot;
-  if(preProcessHook) {
-    ierr = preProcessHook(); CHKERRG(ierr);
+  if (preProcessHook) {
+    ierr = preProcessHook();
+    CHKERRG(ierr);
   } else {
-    SETERRQ(
-      PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,
-      "should be implemented by user in derived class (preProcess)"
-    );
+    SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
+            "should be implemented by user in derived class (preProcess)");
   }
   MoFEMFunctionReturnHot(0);
 }
 MoFEMErrorCode BasicMethod::postProcess() {
   MoFEMFunctionBeginHot;
-  if(postProcessHook) {
-    ierr = postProcessHook(); CHKERRG(ierr);
+  if (postProcessHook) {
+    ierr = postProcessHook();
+    CHKERRG(ierr);
   } else {
-    SETERRQ(
-      PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,
-      "should be implemented by user in derived class (postProcess)"
-    );
+    SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
+            "should be implemented by user in derived class (postProcess)");
   }
   MoFEMFunctionReturnHot(0);
 }
 MoFEMErrorCode BasicMethod::operator()() {
   MoFEMFunctionBeginHot;
-  if(operatorHook) {
-    ierr = operatorHook(); CHKERRG(ierr);
+  if (operatorHook) {
+    ierr = operatorHook();
+    CHKERRG(ierr);
   } else {
-    SETERRQ(
-      PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,
-      "should be implemented by user in derived class (operator)"
-    );
+    SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
+            "should be implemented by user in derived class (operator)");
   }
   MoFEMFunctionReturnHot(0);
 }
 
-//FEMethod
-FEMethod::FEMethod():
-BasicMethod() {
-}
+// FEMethod
+FEMethod::FEMethod() : BasicMethod() {}
 
-//DofMethod
-DofMethod::DofMethod(): BasicMethod() {}
+// Entity method
+EntityMethod::EntityMethod() : BasicMethod() {}
 
-}
+// DofMethod
+DofMethod::DofMethod() : BasicMethod() {}
+
+} // namespace MoFEM
