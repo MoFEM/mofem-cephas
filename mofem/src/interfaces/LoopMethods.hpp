@@ -588,7 +588,7 @@ struct EntityMethod : public BasicMethod {
   MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
                                  UnknownInterface **iface) const {
     MoFEMFunctionBegin;
-    if (uuid == IDD_MOFEMDofMethod) {
+    if (uuid == IDD_MOFEMEntityMethod) {
       *iface = const_cast<EntityMethod *>(this);
       MoFEMFunctionReturnHot(0);
     }
