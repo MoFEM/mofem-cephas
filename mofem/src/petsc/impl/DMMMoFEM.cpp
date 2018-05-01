@@ -540,9 +540,9 @@ PetscErrorCode DMoFEMLoopDofs(DM dm, const char field_name[],
   MoFEMFunctionReturnHot(0);
 }
 
-template <class S, class T>
-static PetscErrorCode DMMoFEMKSPSetComputeRHS(DM dm, S fe_name, T method,
-                                              T pre_only, T post_only) {
+template <class S, class T0, class T1, class T2 >
+static PetscErrorCode DMMoFEMKSPSetComputeRHS(DM dm, S fe_name, T0 method,
+                                              T1 pre_only, T2 post_only) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBegin;
   DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
@@ -562,25 +562,28 @@ static PetscErrorCode DMMoFEMKSPSetComputeRHS(DM dm, S fe_name, T method,
 
 PetscErrorCode DMMoFEMKSPSetComputeRHS(DM dm, const char fe_name[],
                                        MoFEM::FEMethod *method,
-                                       MoFEM::FEMethod *pre_only,
-                                       MoFEM::FEMethod *post_only) {
-  return DMMoFEMKSPSetComputeRHS<const char *, MoFEM::FEMethod *>(
+                                       MoFEM::BasicMethod *pre_only,
+                                       MoFEM::BasicMethod *post_only) {
+  return DMMoFEMKSPSetComputeRHS<const char *, MoFEM::FEMethod *,
+                                 MoFEM::BasicMethod *, MoFEM::BasicMethod *>(
       dm, fe_name, method, pre_only, post_only);
 }
 
 PetscErrorCode
 DMMoFEMKSPSetComputeRHS(DM dm, const std::string &fe_name,
                         boost::shared_ptr<MoFEM::FEMethod> method,
-                        boost::shared_ptr<MoFEM::FEMethod> pre_only,
-                        boost::shared_ptr<MoFEM::FEMethod> post_only) {
+                        boost::shared_ptr<MoFEM::BasicMethod> pre_only,
+                        boost::shared_ptr<MoFEM::BasicMethod> post_only) {
   return DMMoFEMKSPSetComputeRHS<const std::string &,
-                                 boost::shared_ptr<MoFEM::FEMethod> >(
+                                 boost::shared_ptr<MoFEM::FEMethod>,
+                                 boost::shared_ptr<MoFEM::BasicMethod>,
+                                 boost::shared_ptr<MoFEM::BasicMethod>>(
       dm, fe_name, method, pre_only, post_only);
 }
 
-template <class S, class T>
-static PetscErrorCode DMMoFEMKSPSetComputeOperators(DM dm, S fe_name, T method,
-                                                    T pre_only, T post_only) {
+template <class S, class T0, class T1, class T2>
+static PetscErrorCode DMMoFEMKSPSetComputeOperators(DM dm, S fe_name, T0 method,
+                                                    T1 pre_only, T2 post_only) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBegin;
   DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
@@ -600,25 +603,27 @@ static PetscErrorCode DMMoFEMKSPSetComputeOperators(DM dm, S fe_name, T method,
 
 PetscErrorCode DMMoFEMKSPSetComputeOperators(DM dm, const char fe_name[],
                                              MoFEM::FEMethod *method,
-                                             MoFEM::FEMethod *pre_only,
-                                             MoFEM::FEMethod *post_only) {
-  return DMMoFEMKSPSetComputeOperators<const char *, MoFEM::FEMethod *>(
+                                             MoFEM::BasicMethod *pre_only,
+                                             MoFEM::BasicMethod *post_only) {
+  return DMMoFEMKSPSetComputeOperators<const char *, MoFEM::FEMethod *,
+                                       MoFEM::BasicMethod *,
+                                       MoFEM::BasicMethod *>(
       dm, fe_name, method, pre_only, post_only);
 }
 
 PetscErrorCode
 DMMoFEMKSPSetComputeOperators(DM dm, const std::string &fe_name,
                               boost::shared_ptr<MoFEM::FEMethod> method,
-                              boost::shared_ptr<MoFEM::FEMethod> pre_only,
-                              boost::shared_ptr<MoFEM::FEMethod> post_only) {
+                              boost::shared_ptr<MoFEM::BasicMethod> pre_only,
+                              boost::shared_ptr<MoFEM::BasicMethod> post_only) {
   return DMMoFEMKSPSetComputeOperators<const std::string &,
                                        boost::shared_ptr<MoFEM::FEMethod> >(
       dm, fe_name, method, pre_only, post_only);
 }
 
-template <class S, class T>
-static PetscErrorCode DMMoFEMSNESSetFunction(DM dm, S fe_name, T method,
-                                             T pre_only, T post_only) {
+template <class S, class T0, class T1, class T2>
+static PetscErrorCode DMMoFEMSNESSetFunction(DM dm, S fe_name, T0 method,
+                                             T1 pre_only, T2 post_only) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBegin;
   DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
@@ -638,25 +643,28 @@ static PetscErrorCode DMMoFEMSNESSetFunction(DM dm, S fe_name, T method,
 
 PetscErrorCode DMMoFEMSNESSetFunction(DM dm, const char fe_name[],
                                       MoFEM::FEMethod *method,
-                                      MoFEM::FEMethod *pre_only,
-                                      MoFEM::FEMethod *post_only) {
-  return DMMoFEMSNESSetFunction<const char *, MoFEM::FEMethod *>(
+                                      MoFEM::BasicMethod *pre_only,
+                                      MoFEM::BasicMethod *post_only) {
+  return DMMoFEMSNESSetFunction<const char *, MoFEM::FEMethod *,
+                                MoFEM::BasicMethod *, MoFEM::BasicMethod *>(
       dm, fe_name, method, pre_only, post_only);
 }
 
 PetscErrorCode
 DMMoFEMSNESSetFunction(DM dm, const std::string &fe_name,
                        boost::shared_ptr<MoFEM::FEMethod> method,
-                       boost::shared_ptr<MoFEM::FEMethod> pre_only,
-                       boost::shared_ptr<MoFEM::FEMethod> post_only) {
+                       boost::shared_ptr<MoFEM::BasicMethod> pre_only,
+                       boost::shared_ptr<MoFEM::BasicMethod> post_only) {
   return DMMoFEMSNESSetFunction<const std::string &,
-                                boost::shared_ptr<MoFEM::FEMethod> >(
+                                boost::shared_ptr<MoFEM::FEMethod>,
+                                boost::shared_ptr<MoFEM::BasicMethod>,
+                                boost::shared_ptr<MoFEM::BasicMethod>>(
       dm, fe_name, method, pre_only, post_only);
 }
 
-template <class S, class T>
-static PetscErrorCode DMMoFEMSNESSetJacobian(DM dm, S fe_name, T method,
-                                             T pre_only, T post_only) {
+template <class S, class T0, class T1, class T2>
+static PetscErrorCode DMMoFEMSNESSetJacobian(DM dm, S fe_name, T0 method,
+                                             T1 pre_only, T2 post_only) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBegin;
   DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
@@ -676,25 +684,28 @@ static PetscErrorCode DMMoFEMSNESSetJacobian(DM dm, S fe_name, T method,
 
 PetscErrorCode DMMoFEMSNESSetJacobian(DM dm, const char fe_name[],
                                       MoFEM::FEMethod *method,
-                                      MoFEM::FEMethod *pre_only,
-                                      MoFEM::FEMethod *post_only) {
-  return DMMoFEMSNESSetJacobian<const char *, MoFEM::FEMethod *>(
+                                      MoFEM::BasicMethod *pre_only,
+                                      MoFEM::BasicMethod *post_only) {
+  return DMMoFEMSNESSetJacobian<const char *, MoFEM::FEMethod *,
+                                MoFEM::BasicMethod *, MoFEM::BasicMethod *>(
       dm, fe_name, method, pre_only, post_only);
 }
 
 PetscErrorCode
 DMMoFEMSNESSetJacobian(DM dm, const std::string &fe_name,
                        boost::shared_ptr<MoFEM::FEMethod> method,
-                       boost::shared_ptr<MoFEM::FEMethod> pre_only,
-                       boost::shared_ptr<MoFEM::FEMethod> post_only) {
+                       boost::shared_ptr<MoFEM::BasicMethod> pre_only,
+                       boost::shared_ptr<MoFEM::BasicMethod> post_only) {
   return DMMoFEMSNESSetJacobian<const std::string &,
-                                boost::shared_ptr<MoFEM::FEMethod> >(
+                                boost::shared_ptr<MoFEM::FEMethod>,
+                                boost::shared_ptr<MoFEM::BasicMethod>,
+                                boost::shared_ptr<MoFEM::BasicMethod>>(
       dm, fe_name, method, pre_only, post_only);
 }
 
-template <class S, class T>
-static PetscErrorCode DMMoFEMTSSetIFunction(DM dm, S fe_name, T method,
-                                            T pre_only, T post_only) {
+template <class S, class T0, class T1, class T2>
+static PetscErrorCode DMMoFEMTSSetIFunction(DM dm, S fe_name, T0 method,
+                                            T1 pre_only, T2 post_only) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBegin;
   DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
@@ -714,9 +725,10 @@ static PetscErrorCode DMMoFEMTSSetIFunction(DM dm, S fe_name, T method,
 
 PetscErrorCode DMMoFEMTSSetIFunction(DM dm, const char fe_name[],
                                      MoFEM::FEMethod *method,
-                                     MoFEM::FEMethod *pre_only,
-                                     MoFEM::FEMethod *post_only) {
-  return DMMoFEMTSSetIFunction<const char *, MoFEM::FEMethod *>(
+                                     MoFEM::BasicMethod *pre_only,
+                                     MoFEM::BasicMethod *post_only) {
+  return DMMoFEMTSSetIFunction<const char *, MoFEM::FEMethod *,
+                               MoFEM::BasicMethod *, MoFEM::BasicMethod *>(
       dm, fe_name, method, pre_only, post_only);
   MoFEMFunctionReturnHot(0);
 }
@@ -724,17 +736,19 @@ PetscErrorCode DMMoFEMTSSetIFunction(DM dm, const char fe_name[],
 PetscErrorCode
 DMMoFEMTSSetIFunction(DM dm, const std::string &fe_name,
                       boost::shared_ptr<MoFEM::FEMethod> method,
-                      boost::shared_ptr<MoFEM::FEMethod> pre_only,
-                      boost::shared_ptr<MoFEM::FEMethod> post_only) {
+                      boost::shared_ptr<MoFEM::BasicMethod> pre_only,
+                      boost::shared_ptr<MoFEM::BasicMethod> post_only) {
   return DMMoFEMTSSetIFunction<const std::string,
-                               boost::shared_ptr<MoFEM::FEMethod> >(
+                               boost::shared_ptr<MoFEM::FEMethod>,
+                               boost::shared_ptr<MoFEM::BasicMethod>,
+                               boost::shared_ptr<MoFEM::BasicMethod>>(
       dm, fe_name, method, pre_only, post_only);
   MoFEMFunctionReturnHot(0);
 }
 
-template <class S, class T>
-static PetscErrorCode DMMoFEMTSSetIJacobian(DM dm, S fe_name, T method,
-                                            T pre_only, T post_only) {
+template <class S, class T0, class T1, class T2>
+static PetscErrorCode DMMoFEMTSSetIJacobian(DM dm, S fe_name, T0 method,
+                                            T1 pre_only, T2 post_only) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBegin;
   DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
@@ -754,19 +768,22 @@ static PetscErrorCode DMMoFEMTSSetIJacobian(DM dm, S fe_name, T method,
 
 PetscErrorCode DMMoFEMTSSetIJacobian(DM dm, const char fe_name[],
                                      MoFEM::FEMethod *method,
-                                     MoFEM::FEMethod *pre_only,
-                                     MoFEM::FEMethod *post_only) {
-  return DMMoFEMTSSetIJacobian<const char *, FEMethod *>(dm, fe_name, method,
-                                                         pre_only, post_only);
+                                     MoFEM::BasicMethod *pre_only,
+                                     MoFEM::BasicMethod *post_only) {
+  return DMMoFEMTSSetIJacobian<const char *, FEMethod *, MoFEM::BasicMethod *,
+                               MoFEM::BasicMethod *>(dm, fe_name, method,
+                                                     pre_only, post_only);
 }
 
 PetscErrorCode
 DMMoFEMTSSetIJacobian(DM dm, const std::string &fe_name,
                       boost::shared_ptr<MoFEM::FEMethod> method,
-                      boost::shared_ptr<MoFEM::FEMethod> pre_only,
-                      boost::shared_ptr<MoFEM::FEMethod> post_only) {
+                      boost::shared_ptr<MoFEM::BasicMethod> pre_only,
+                      boost::shared_ptr<MoFEM::BasicMethod> post_only) {
   return DMMoFEMTSSetIJacobian<const std::string &,
-                               boost::shared_ptr<MoFEM::FEMethod> >(
+                               boost::shared_ptr<MoFEM::FEMethod>,
+                               boost::shared_ptr<MoFEM::BasicMethod>,
+                               boost::shared_ptr<MoFEM::BasicMethod>>(
       dm, fe_name, method, pre_only, post_only);
 }
 
