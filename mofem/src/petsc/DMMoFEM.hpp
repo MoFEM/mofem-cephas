@@ -273,8 +273,8 @@ PetscErrorCode DMoFEMLoopDofs(DM dm, const char field_name[],
  */
 PetscErrorCode DMMoFEMKSPSetComputeRHS(DM dm, const char fe_name[],
                                        MoFEM::FEMethod *method,
-                                       MoFEM::FEMethod *pre_only,
-                                       MoFEM::FEMethod *post_only);
+                                       MoFEM::BasicMethod *pre_only,
+                                       MoFEM::BasicMethod *post_only);
 
 /**
  * \brief set KSP right hand side evaluation function
@@ -283,8 +283,8 @@ PetscErrorCode DMMoFEMKSPSetComputeRHS(DM dm, const char fe_name[],
 PetscErrorCode
 DMMoFEMKSPSetComputeRHS(DM dm, const std::string &fe_name,
                         boost::shared_ptr<MoFEM::FEMethod> method,
-                        boost::shared_ptr<MoFEM::FEMethod> pre_only,
-                        boost::shared_ptr<MoFEM::FEMethod> post_only);
+                        boost::shared_ptr<MoFEM::BasicMethod> pre_only,
+                        boost::shared_ptr<MoFEM::BasicMethod> post_only);
 
 /**
  * \brief Set KSP operators and push mofem finite element methods
@@ -301,8 +301,8 @@ DMMoFEMKSPSetComputeRHS(DM dm, const std::string &fe_name,
  */
 PetscErrorCode DMMoFEMKSPSetComputeOperators(DM dm, const char fe_name[],
                                              MoFEM::FEMethod *method,
-                                             MoFEM::FEMethod *pre_only,
-                                             MoFEM::FEMethod *post_only);
+                                             MoFEM::BasicMethod *pre_only,
+                                             MoFEM::BasicMethod *post_only);
 
 /**
  * \brief Set KSP operators and push mofem finite element methods
@@ -320,8 +320,8 @@ PetscErrorCode DMMoFEMKSPSetComputeOperators(DM dm, const char fe_name[],
 PetscErrorCode
 DMMoFEMKSPSetComputeOperators(DM dm, const std::string &fe_name,
                               boost::shared_ptr<MoFEM::FEMethod> method,
-                              boost::shared_ptr<MoFEM::FEMethod> pre_only,
-                              boost::shared_ptr<MoFEM::FEMethod> post_only);
+                              boost::shared_ptr<MoFEM::BasicMethod> pre_only,
+                              boost::shared_ptr<MoFEM::BasicMethod> post_only);
 
 /**
  * \brief set SNES residual evaluation function
@@ -329,8 +329,8 @@ DMMoFEMKSPSetComputeOperators(DM dm, const std::string &fe_name,
  */
 PetscErrorCode DMMoFEMSNESSetFunction(DM dm, const char fe_name[],
                                       MoFEM::FEMethod *method,
-                                      MoFEM::FEMethod *pre_only,
-                                      MoFEM::FEMethod *post_only);
+                                      MoFEM::BasicMethod *pre_only,
+                                      MoFEM::BasicMethod *post_only);
 
 /**
  * \brief set SNES residual evaluation function
@@ -339,8 +339,8 @@ PetscErrorCode DMMoFEMSNESSetFunction(DM dm, const char fe_name[],
 PetscErrorCode
 DMMoFEMSNESSetFunction(DM dm, const std::string &fe_name,
                        boost::shared_ptr<MoFEM::FEMethod> method,
-                       boost::shared_ptr<MoFEM::FEMethod> pre_only,
-                       boost::shared_ptr<MoFEM::FEMethod> post_only);
+                       boost::shared_ptr<MoFEM::BasicMethod> pre_only,
+                       boost::shared_ptr<MoFEM::BasicMethod> post_only);
 
 /**
  * \brief set SNES Jacobian evaluation function
@@ -348,8 +348,8 @@ DMMoFEMSNESSetFunction(DM dm, const std::string &fe_name,
  */
 PetscErrorCode DMMoFEMSNESSetJacobian(DM dm, const char fe_name[],
                                       MoFEM::FEMethod *method,
-                                      MoFEM::FEMethod *pre_only,
-                                      MoFEM::FEMethod *post_only);
+                                      MoFEM::BasicMethod *pre_only,
+                                      MoFEM::BasicMethod *post_only);
 
 /**
  * \brief set SNES Jacobian evaluation function
@@ -358,8 +358,8 @@ PetscErrorCode DMMoFEMSNESSetJacobian(DM dm, const char fe_name[],
 PetscErrorCode
 DMMoFEMSNESSetJacobian(DM dm, const std::string &fe_name,
                        boost::shared_ptr<MoFEM::FEMethod> method,
-                       boost::shared_ptr<MoFEM::FEMethod> pre_only,
-                       boost::shared_ptr<MoFEM::FEMethod> post_only);
+                       boost::shared_ptr<MoFEM::BasicMethod> pre_only,
+                       boost::shared_ptr<MoFEM::BasicMethod> post_only);
 
 /**
  * \brief set TS implicit function evaluation function
@@ -367,8 +367,8 @@ DMMoFEMSNESSetJacobian(DM dm, const std::string &fe_name,
  */
 PetscErrorCode DMMoFEMTSSetIFunction(DM dm, const char fe_name[],
                                      MoFEM::FEMethod *method,
-                                     MoFEM::FEMethod *pre_only,
-                                     MoFEM::FEMethod *post_only);
+                                     MoFEM::BasicMethod *pre_only,
+                                     MoFEM::BasicMethod *post_only);
 
 /**
  * \brief set TS implicit function evaluation function
@@ -377,8 +377,8 @@ PetscErrorCode DMMoFEMTSSetIFunction(DM dm, const char fe_name[],
 PetscErrorCode
 DMMoFEMTSSetIFunction(DM dm, const std::string &fe_name,
                       boost::shared_ptr<MoFEM::FEMethod> method,
-                      boost::shared_ptr<MoFEM::FEMethod> pre_only,
-                      boost::shared_ptr<MoFEM::FEMethod> post_only);
+                      boost::shared_ptr<MoFEM::BasicMethod> pre_only,
+                      boost::shared_ptr<MoFEM::BasicMethod> post_only);
 
 /**
  * \brief set TS Jacobian evaluation function
@@ -387,8 +387,8 @@ DMMoFEMTSSetIFunction(DM dm, const std::string &fe_name,
 PetscErrorCode
 DMMoFEMTSSetIJacobian(DM dm, const std::string &fe_name,
                       boost::shared_ptr<MoFEM::FEMethod> method,
-                      boost::shared_ptr<MoFEM::FEMethod> pre_only,
-                      boost::shared_ptr<MoFEM::FEMethod> post_only);
+                      boost::shared_ptr<MoFEM::BasicMethod> pre_only,
+                      boost::shared_ptr<MoFEM::BasicMethod> post_only);
 
 /**
  * \brief set TS Jacobian evaluation function
@@ -396,8 +396,8 @@ DMMoFEMTSSetIJacobian(DM dm, const std::string &fe_name,
  */
 PetscErrorCode DMMoFEMTSSetIJacobian(DM dm, const char fe_name[],
                                      MoFEM::FEMethod *method,
-                                     MoFEM::FEMethod *pre_only,
-                                     MoFEM::FEMethod *post_only);
+                                     MoFEM::BasicMethod *pre_only,
+                                     MoFEM::BasicMethod *post_only);
 
 /**
  * \brief get MoFEM::KspCtx data structure
