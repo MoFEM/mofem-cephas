@@ -579,6 +579,8 @@ struct FEMethod : public BasicMethod {
 /**
  * \brief Data structure to exchange data between mofem and User Loop Methods on
  * entities. \ingroup mofem_loops
+ * 
+ * \todo Add implementation to loop over entities in the problem
  *
  * It allows to exchange data between MoFEM and user functions. It stores
  * information about multi-indices.
