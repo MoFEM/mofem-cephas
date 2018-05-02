@@ -1416,6 +1416,13 @@ struct DerivedDataForcesAndSourcesCore : public DataForcesAndSourcesCore {
   DerivedDataForcesAndSourcesCore(DataForcesAndSourcesCore &data);
 };
 
+/// \deprecated Use DataForcesAndSourcesCore
+DEPRECATED typedef DataForcesAndSourcesCore DataForcesAndSurcesCore;
+
+/// \deprecated use DerivedDataForcesAndSourcesCore
+DEPRECATED typedef DerivedDataForcesAndSourcesCore
+    DerivedDataForcesAndSurcesCore;
+
 } // namespace MoFEM
 
 #endif //__DATASTRUCTURES_HPP
