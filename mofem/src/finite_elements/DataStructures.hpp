@@ -119,6 +119,8 @@ getTensor2FormData(ublas::matrix<T, L, A> &data) {
 
 /**
  * Template specialization for getTensor2FormData
+ * \ingroup mofem_forces_and_sources_user_data_operators
+ *
  */
 template <>
 FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 3, 3>
@@ -143,7 +145,7 @@ getTensor2FormData(MatrixDouble &data) {
 }
 
 /** \brief data structure for finite element entity
- * \ingroup mofem_forces_and_sources
+ * \ingroup mofem_forces_and_sources_user_data_operators
  *
  * It keeps that about indices of degrees of freedom, dofs data, base functions
  * functions, entity side number, type of entities, approximation order, etc.
@@ -151,8 +153,8 @@ getTensor2FormData(MatrixDouble &data) {
  */
 struct DataForcesAndSourcesCore {
 
-  /** \brief Data on single entity (This is passed as argument to
-   * DataOperator::doWork) \ingroup mofem_forces_and_sources_user_data_operators
+  /** \brief Data on single entity (This is passed as argument to DataOperator::doWork) 
+   * \ingroup mofem_forces_and_sources_user_data_operators
    * \nosubgrouping
    */
   struct EntData {
@@ -1365,7 +1367,7 @@ DataForcesAndSourcesCore::EntData::getFTensor2DiffHdivN<3, 2>(
 /**@}*/
 
 /** \brief this class derive data form other data structure
- * \ingroup mofem_forces_and_sources
+ * \ingroup mofem_forces_and_sources_user_data_operators
  *
  *
  * It behaves like normal data structure it is used to share base functions with
@@ -1377,6 +1379,14 @@ DataForcesAndSourcesCore::EntData::getFTensor2DiffHdivN<3, 2>(
  */
 struct DerivedDataForcesAndSourcesCore : public DataForcesAndSourcesCore {
 
+  /** \brief Derived ata on single entity (This is passed as argument to DataOperator::doWork) 
+   * \ingroup mofem_forces_and_sources_user_data_operators
+   * \nosubgrouping
+   *
+   * DerivedEntData share part information with EntData except infomation about
+   * base functions.
+   *
+   */
   struct DerivedEntData : public DataForcesAndSourcesCore::EntData {
 
     DataForcesAndSourcesCore::EntData &entData;
@@ -1418,9 +1428,12 @@ DEPRECATED typedef DerivedDataForcesAndSourcesCore
 #endif //__DATASTRUCTURES_HPP
 
 /**
- * \defgroup mofem_forces_and_sources Forces and sources
+ * \defgroup mofem_forces_and_sources_user_data_operators User data operator
+ * data structures \ingroup
  *
- * \brief Manages complexities related to assembly of vector and matrices at
- * single finite element level.
- *
+ * \brief Users data structures and operator
+ * 
+ * Data structures passed by argument to MoFEM::DataOperator::doWork and generic
+ * user operators operating on those structures.
+ * 
  */
