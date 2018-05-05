@@ -64,7 +64,7 @@ namespace MoFEM {
 
 template <>
 FTensor::Tensor0<FTensor::PackPtr<double *, 1> >
-getTensor0FormData<double, DoubleAllocator>(
+getFTensor0FromVec<double, DoubleAllocator>(
     ublas::vector<double, DoubleAllocator> &data) {
   return FTensor::Tensor0<FTensor::PackPtr<double *, 1> >(
       &*data.data().begin());
@@ -72,7 +72,7 @@ getTensor0FormData<double, DoubleAllocator>(
 
 template <>
 FTensor::Tensor1<FTensor::PackPtr<double *, 1>, 3>
-getTensor1FormData<3, double, ublas::row_major, DoubleAllocator>(
+getFTensor1FromMat<3, double, ublas::row_major, DoubleAllocator>(
     MatrixDouble &data) {
   if (data.size1() != 3) {
     THROW_MESSAGE("Wrong size of data matrix");
@@ -83,7 +83,7 @@ getTensor1FormData<3, double, ublas::row_major, DoubleAllocator>(
 
 template <>
 FTensor::Tensor1<FTensor::PackPtr<double *, 1>, 2>
-getTensor1FormData<2, double, ublas::row_major, DoubleAllocator>(
+getFTensor1FromMat<2, double, ublas::row_major, DoubleAllocator>(
     MatrixDouble &data) {
   if (data.size1() != 2) {
     THROW_MESSAGE("Wrong size of data matrix");
@@ -94,7 +94,7 @@ getTensor1FormData<2, double, ublas::row_major, DoubleAllocator>(
 
 template <>
 FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 3, 3>
-getTensor2FormData<3, 3, double, ublas::row_major, DoubleAllocator>(
+getFTensor2FromMat<3, 3, double, ublas::row_major, DoubleAllocator>(
     MatrixDouble &data) {
   if (data.size1() != 9) {
     THROW_MESSAGE("Wrong size of data matrix");
@@ -106,7 +106,7 @@ getTensor2FormData<3, 3, double, ublas::row_major, DoubleAllocator>(
 
 template <>
 FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 3, 2>
-getTensor2FormData<3, 2, double, ublas::row_major, DoubleAllocator>(
+getFTensor2FromMat<3, 2, double, ublas::row_major, DoubleAllocator>(
     MatrixDouble &data) {
   if (data.size1() != 6) {
     THROW_MESSAGE("Wrong size of data matrix");
