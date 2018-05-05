@@ -53,10 +53,7 @@ for(int gg = 0;gg!=nb_gauss_pts;gg++) {
 template <class T, class A>
 FTensor::Tensor0<FTensor::PackPtr<double *, 1> >
 getFTensor0FromVec(ublas::vector<T, A> &data) {
-  std::stringstream s;
-  s << "Not implemented for T = "
-    << typeid(T).name(); 
-  THROW_MESSAGE(s.str());
+  static_assert(1, "not implemented");
 }
 
 /**
@@ -80,11 +77,7 @@ getFTensor0FromVec<double, DoubleAllocator>(
 template <int Tensor_Dim, class T, class L, class A>
 FTensor::Tensor1<FTensor::PackPtr<T *, 1>, Tensor_Dim>
 getFTensor1FromMat(ublas::matrix<T, L, A> &data) {
-  std::stringstream s;
-  s << "Not implemented for T = "
-    << typeid(T).name(); 
-  s << " and dim = " << Tensor_Dim;
-  THROW_MESSAGE(s.str());
+  static_assert(1, "not implemented");
 }
 
 /**
@@ -124,12 +117,7 @@ getTensor1FormData(MatrixDouble &data) {
 template <int Tensor_Dim0, int Tensor_Dim1, class T, class L, class A>
 FTensor::Tensor2<FTensor::PackPtr<T *, 1>, Tensor_Dim0, Tensor_Dim1>
 getFTensor2FromMat(ublas::matrix<T, L, A> &data) {
-  std::stringstream s;
-  s << "Not implemented for T = "
-    << typeid(T).name(); 
-  s << " and dim0 = " << Tensor_Dim0;
-  s << " dim1 = " << Tensor_Dim1;
-  THROW_MESSAGE(s.str());
+  static_assert(1, "not implemented");
 }
 
 /**
