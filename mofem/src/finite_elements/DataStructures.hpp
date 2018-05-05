@@ -42,7 +42,7 @@ Example how to use it.
 VectorDouble vec;
 vec.resize(nb_gauss_pts,false);
 vec.clear();
-auto t0 = getTensor0FormData(data);
+auto t0 = getFTensor0FromData(data);
 for(int gg = 0;gg!=nb_gauss_pts;gg++) {
 
   ++t0;
@@ -52,17 +52,25 @@ for(int gg = 0;gg!=nb_gauss_pts;gg++) {
 */
 template <class T, class A>
 FTensor::Tensor0<FTensor::PackPtr<double *, 1> >
-getTensor0FormData(ublas::vector<T, A> &data) {
+getFTensor0FromVec(ublas::vector<T, A> &data) {
   std::stringstream s;
   s << "Not implemented for T = "
-    << typeid(T).name(); // boost::core::demangle(typeid(T).name());
+    << typeid(T).name(); 
   THROW_MESSAGE(s.str());
-  // return FTensor::Tensor0<T*>();
+}
+
+/**
+ * @deprecated Name change to getFTensor0FromVec
+ */
+template <class T, class A>
+DEPRECATED FTensor::Tensor0<FTensor::PackPtr<double *, 1>>
+getTensor0FormData(ublas::vector<T, A> &data) {
+  return getFTensor0FromVec(data);
 }
 
 template <>
 FTensor::Tensor0<FTensor::PackPtr<double *, 1> >
-getTensor0FormData<double, DoubleAllocator>(
+getFTensor0FromVec<double, DoubleAllocator>(
     ublas::vector<double, DoubleAllocator> &data);
 
 /**
@@ -71,13 +79,12 @@ getTensor0FormData<double, DoubleAllocator>(
  */
 template <int Tensor_Dim, class T, class L, class A>
 FTensor::Tensor1<FTensor::PackPtr<T *, 1>, Tensor_Dim>
-getTensor1FormData(ublas::matrix<T, L, A> &data) {
+getFTensor1FromMat(ublas::matrix<T, L, A> &data) {
   std::stringstream s;
   s << "Not implemented for T = "
-    << typeid(T).name(); // boost::core::demangle(typeid(T).name());
+    << typeid(T).name(); 
   s << " and dim = " << Tensor_Dim;
   THROW_MESSAGE(s.str());
-  // return FTensor::Tensor1<T*,Tensor_Dim>();
 }
 
 /**
@@ -86,20 +93,29 @@ getTensor1FormData(ublas::matrix<T, L, A> &data) {
  */
 template <int Tensor_Dim>
 FTensor::Tensor1<FTensor::PackPtr<double *, 1>, Tensor_Dim>
-getTensor1FormData(MatrixDouble &data) {
-  return getTensor1FormData<Tensor_Dim, double, ublas::row_major,
+getFTensor1FromMat(MatrixDouble &data) {
+  return getFTensor1FromMat<Tensor_Dim, double, ublas::row_major,
                             DoubleAllocator>(data);
 }
 
 template <>
 FTensor::Tensor1<FTensor::PackPtr<double *, 1>, 3>
-getTensor1FormData<3, double, ublas::row_major, DoubleAllocator>(
+getFTensor1FromMat<3, double, ublas::row_major, DoubleAllocator>(
     MatrixDouble &data);
 
 template <>
 FTensor::Tensor1<FTensor::PackPtr<double *, 1>, 2>
-getTensor1FormData<2, double, ublas::row_major, DoubleAllocator>(
+getFTensor1FromMat<2, double, ublas::row_major, DoubleAllocator>(
     MatrixDouble &data);
+
+/**
+ * @deprecated Name change to getFTensor1FromMat
+ */
+template <int Tensor_Dim>
+DEPRECATED FTensor::Tensor1<FTensor::PackPtr<double *, 1>, Tensor_Dim>
+getTensor1FormData(MatrixDouble &data) {
+  return getFTensor1FromMat<Tensor_Dim>(data);
+}
 
 /**
  * \brief Get tensor rank 2 (matrix) form data matrix
@@ -107,31 +123,30 @@ getTensor1FormData<2, double, ublas::row_major, DoubleAllocator>(
  */
 template <int Tensor_Dim0, int Tensor_Dim1, class T, class L, class A>
 FTensor::Tensor2<FTensor::PackPtr<T *, 1>, Tensor_Dim0, Tensor_Dim1>
-getTensor2FormData(ublas::matrix<T, L, A> &data) {
+getFTensor2FromMat(ublas::matrix<T, L, A> &data) {
   std::stringstream s;
   s << "Not implemented for T = "
-    << typeid(T).name(); // boost::core::demangle(typeid(T).name());
+    << typeid(T).name(); 
   s << " and dim0 = " << Tensor_Dim0;
   s << " dim1 = " << Tensor_Dim1;
   THROW_MESSAGE(s.str());
-  // return FTensor::Tensor1<T*,Tensor_Dim>();
 }
 
 /**
- * Template specialization for getTensor2FormData
+ * Template specialization for getFTensor2FromMat
  * \ingroup mofem_forces_and_sources_user_data_operators
  *
  */
 template <>
 FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 3, 3>
-getTensor2FormData(MatrixDouble &data);
+getFTensor2FromMat(MatrixDouble &data);
 
 /**
- * Template specialization for getTensor2FormData
+ * Template specialization for getFTensor2FromMat
  */
 template <>
 FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 3, 2>
-getTensor2FormData(MatrixDouble &data);
+getFTensor2FromMat(MatrixDouble &data);
 
 /**
  * \brief Get tensor rank 2 (matrix) form data matrix (specialization)
@@ -139,9 +154,18 @@ getTensor2FormData(MatrixDouble &data);
  */
 template <int Tensor_Dim0, int Tensor_Dim1>
 FTensor::Tensor2<FTensor::PackPtr<double *, 1>, Tensor_Dim0, Tensor_Dim1>
-getTensor2FormData(MatrixDouble &data) {
-  return getTensor2FormData<Tensor_Dim0, Tensor_Dim1, double, ublas::row_major,
+getFTensor2FromMat(MatrixDouble &data) {
+  return getFTensor2FromMat<Tensor_Dim0, Tensor_Dim1, double, ublas::row_major,
                             DoubleAllocator>(data);
+}
+
+/**
+ * @deprecated Name change to getFTensor1FromMat
+ */
+template <int Tensor_Dim0, int Tensor_Dim1>
+DEPRECATED FTensor::Tensor2<FTensor::PackPtr<double *, 1>, Tensor_Dim0, Tensor_Dim1>
+getTensor2FormData(MatrixDouble &data) {
+  return getFTensor2FromMat<Tensor_Dim0, Tensor_Dim1>(data);
 }
 
 /** \brief data structure for finite element entity
