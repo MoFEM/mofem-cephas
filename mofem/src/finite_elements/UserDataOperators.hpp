@@ -113,7 +113,7 @@ struct OpCalculateScalarFieldValues
       vec.clear();
     }
     auto base_function = data.getFTensor0N();
-    auto values_at_gauss_pts = getTensor0FormData(vec);
+    auto values_at_gauss_pts = getFTensor0FromVec(vec);
     for (int gg = 0; gg < nb_gauss_pts; gg++) {
       auto field_data = data.getFTensor0FieldData();
       int bb = 0;
@@ -229,7 +229,7 @@ MoFEMErrorCode OpCalculateVectorFieldValues_General<
     mat.clear();
   }
   auto base_function = data.getFTensor0N();
-  auto values_at_gauss_pts = getTensor1FormData<Tensor_Dim>(mat);
+  auto values_at_gauss_pts = getFTensor1FromMat<Tensor_Dim>(mat);
   FTensor::Index<'I', Tensor_Dim> I;
   const int size = nb_dofs / Tensor_Dim;
   if (nb_dofs % Tensor_Dim) {
@@ -419,7 +419,7 @@ MoFEMErrorCode OpCalculateScalarFieldGradient_General<
     mat.clear();
   }
   auto diff_base_function = data.getFTensor1DiffN<Tensor_Dim>();
-  auto gradients_at_gauss_pts = getTensor1FormData<Tensor_Dim>(mat);
+  auto gradients_at_gauss_pts = getFTensor1FromMat<Tensor_Dim>(mat);
   FTensor::Index<'I', Tensor_Dim> I;
   for (int gg = 0; gg < nb_gauss_pts; gg++) {
     auto field_data = data.getFTensor0FieldData();
@@ -524,7 +524,7 @@ MoFEMErrorCode OpCalculateVectorFieldGradient_General<
   }
   auto diff_base_function = data.getFTensor1DiffN<Tensor_Dim1>();
   auto gradients_at_gauss_pts =
-      getTensor2FormData<Tensor_Dim0, Tensor_Dim1>(mat);
+      getFTensor2FromMat<Tensor_Dim0, Tensor_Dim1>(mat);
   FTensor::Index<'I', Tensor_Dim0> I;
   FTensor::Index<'J', Tensor_Dim1> J;
   int size = nb_dofs / Tensor_Dim0;
@@ -659,7 +659,7 @@ MoFEMErrorCode OpCalculateHdivVectorField_General<
   }
   FTensor::Index<'i', 3> i;
   auto t_n_hdiv = data.getFTensor1HdivN<Tensor_Dim>();
-  auto t_data = getTensor1FormData<3>(*dataPtr);
+  auto t_data = getFTensor1FromMat<3>(*dataPtr);
   for (int gg = 0; gg != nb_integration_points; gg++) {
     auto t_dof = data.getFTensor0FieldData();
     int bb = 0;

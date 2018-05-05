@@ -375,9 +375,9 @@ namespace MixTransport {
         // Get base function
         auto t_n_hdiv = data.getFTensor1HdivN<3>();
         // Get pressure
-        auto t_h = getTensor0FormData(cTx.valuesAtGaussPts);
+        auto t_h = getFTensor0FromVec(cTx.valuesAtGaussPts);
         // Get flux
-        auto t_flux = getTensor1FormData<3>(cTx.fluxesAtGaussPts);
+        auto t_flux = getFTensor1FromMat<3>(cTx.fluxesAtGaussPts);
         // Coords at integration points
         auto t_coords = getTensor1CoordsAtGaussPts();
         // Get integration weight
@@ -451,11 +451,11 @@ namespace MixTransport {
         // Get material block
         boost::shared_ptr<GenericMaterial>& block_data = cTx.dMatMap.at(block_id);
         // Get pressure
-        auto t_h = getTensor0FormData(cTx.valuesAtGaussPts);
+        auto t_h = getFTensor0FromVec(cTx.valuesAtGaussPts);
         // Get pressure rate
-        auto t_h_t = getTensor0FormData(*cTx.headRateAtGaussPts);
+        auto t_h_t = getFTensor0FromVec(*cTx.headRateAtGaussPts);
         // Flux divergence
-        auto t_div_flux = getTensor0FormData(cTx.divergenceAtGaussPts);
+        auto t_div_flux = getFTensor0FromVec(cTx.divergenceAtGaussPts);
         // Get integration weight
         auto t_w = getFTensor0IntegrationWeight();
         // Coords at integration points
@@ -540,7 +540,7 @@ namespace MixTransport {
           // Get material block
           boost::shared_ptr<GenericMaterial>& block_data = cTx.dMatMap.at(block_id);
           // Get pressure
-          auto t_h = getTensor0FormData(cTx.valuesAtGaussPts);
+          auto t_h = getFTensor0FromVec(cTx.valuesAtGaussPts);
           // Coords at integration points
           auto t_coords = getTensor1CoordsAtGaussPts();
           // Get base functions
@@ -649,11 +649,11 @@ namespace MixTransport {
           // Get material block
           boost::shared_ptr<GenericMaterial>& block_data = cTx.dMatMap.at(block_id);
           // Get pressure
-          auto t_h = getTensor0FormData(cTx.valuesAtGaussPts);
+          auto t_h = getFTensor0FromVec(cTx.valuesAtGaussPts);
           // // Get pressure
-          // auto t_flux_residual = getTensor0FormData(*cTx.resAtGaussPts);
+          // auto t_flux_residual = getFTensor0FromVec(*cTx.resAtGaussPts);
           // Get pressure rate
-          auto t_h_t = getTensor0FormData(*cTx.headRateAtGaussPts);
+          auto t_h_t = getFTensor0FromVec(*cTx.headRateAtGaussPts);
           // Get integration weight
           auto t_w = getFTensor0IntegrationWeight();
           // Coords at integration points
@@ -854,9 +854,9 @@ namespace MixTransport {
           // Get material block
           boost::shared_ptr<GenericMaterial>& block_data = cTx.dMatMap.at(block_id);
           // Get pressure
-          auto t_h = getTensor0FormData(cTx.valuesAtGaussPts);
+          auto t_h = getFTensor0FromVec(cTx.valuesAtGaussPts);
           // Get flux
-          auto t_flux = getTensor1FormData<3>(cTx.fluxesAtGaussPts);
+          auto t_flux = getFTensor1FromMat<3>(cTx.fluxesAtGaussPts);
           // Coords at integration points
           auto t_coords = getTensor1CoordsAtGaussPts();
           // Get integration weight
@@ -1120,7 +1120,7 @@ namespace MixTransport {
 
 
         // Get pressure at integration points
-        auto t_h = getTensor0FormData(cTx.valuesAtGaussPts);
+        auto t_h = getFTensor0FromVec(cTx.valuesAtGaussPts);
         // Coords at integration points
         auto t_coords = getTensor1CoordsAtGaussPts();
 
