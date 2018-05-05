@@ -42,7 +42,7 @@ Example how to use it.
 VectorDouble vec;
 vec.resize(nb_gauss_pts,false);
 vec.clear();
-auto t0 = getTensor0FormData(data);
+auto t0 = getFTensor0FromData(data);
 for(int gg = 0;gg!=nb_gauss_pts;gg++) {
 
   ++t0;
@@ -52,17 +52,22 @@ for(int gg = 0;gg!=nb_gauss_pts;gg++) {
 */
 template <class T, class A>
 FTensor::Tensor0<FTensor::PackPtr<double *, 1> >
+getFTensor0FromVec(ublas::vector<T, A> &data) {
+  static_assert(1, "not implemented");
+}
+
+/**
+ * @deprecated Name change to getFTensor0FromVec
+ */
+template <class T, class A>
+DEPRECATED FTensor::Tensor0<FTensor::PackPtr<double *, 1>>
 getTensor0FormData(ublas::vector<T, A> &data) {
-  std::stringstream s;
-  s << "Not implemented for T = "
-    << typeid(T).name(); // boost::core::demangle(typeid(T).name());
-  THROW_MESSAGE(s.str());
-  // return FTensor::Tensor0<T*>();
+  return getFTensor0FromVec(data);
 }
 
 template <>
 FTensor::Tensor0<FTensor::PackPtr<double *, 1> >
-getTensor0FormData<double, DoubleAllocator>(
+getFTensor0FromVec<double, DoubleAllocator>(
     ublas::vector<double, DoubleAllocator> &data);
 
 /**
@@ -71,13 +76,8 @@ getTensor0FormData<double, DoubleAllocator>(
  */
 template <int Tensor_Dim, class T, class L, class A>
 FTensor::Tensor1<FTensor::PackPtr<T *, 1>, Tensor_Dim>
-getTensor1FormData(ublas::matrix<T, L, A> &data) {
-  std::stringstream s;
-  s << "Not implemented for T = "
-    << typeid(T).name(); // boost::core::demangle(typeid(T).name());
-  s << " and dim = " << Tensor_Dim;
-  THROW_MESSAGE(s.str());
-  // return FTensor::Tensor1<T*,Tensor_Dim>();
+getFTensor1FromMat(ublas::matrix<T, L, A> &data) {
+  static_assert(1, "not implemented");
 }
 
 /**
@@ -86,20 +86,29 @@ getTensor1FormData(ublas::matrix<T, L, A> &data) {
  */
 template <int Tensor_Dim>
 FTensor::Tensor1<FTensor::PackPtr<double *, 1>, Tensor_Dim>
-getTensor1FormData(MatrixDouble &data) {
-  return getTensor1FormData<Tensor_Dim, double, ublas::row_major,
+getFTensor1FromMat(MatrixDouble &data) {
+  return getFTensor1FromMat<Tensor_Dim, double, ublas::row_major,
                             DoubleAllocator>(data);
 }
 
 template <>
 FTensor::Tensor1<FTensor::PackPtr<double *, 1>, 3>
-getTensor1FormData<3, double, ublas::row_major, DoubleAllocator>(
+getFTensor1FromMat<3, double, ublas::row_major, DoubleAllocator>(
     MatrixDouble &data);
 
 template <>
 FTensor::Tensor1<FTensor::PackPtr<double *, 1>, 2>
-getTensor1FormData<2, double, ublas::row_major, DoubleAllocator>(
+getFTensor1FromMat<2, double, ublas::row_major, DoubleAllocator>(
     MatrixDouble &data);
+
+/**
+ * @deprecated Name change to getFTensor1FromMat
+ */
+template <int Tensor_Dim>
+DEPRECATED FTensor::Tensor1<FTensor::PackPtr<double *, 1>, Tensor_Dim>
+getTensor1FormData(MatrixDouble &data) {
+  return getFTensor1FromMat<Tensor_Dim>(data);
+}
 
 /**
  * \brief Get tensor rank 2 (matrix) form data matrix
@@ -107,29 +116,25 @@ getTensor1FormData<2, double, ublas::row_major, DoubleAllocator>(
  */
 template <int Tensor_Dim0, int Tensor_Dim1, class T, class L, class A>
 FTensor::Tensor2<FTensor::PackPtr<T *, 1>, Tensor_Dim0, Tensor_Dim1>
-getTensor2FormData(ublas::matrix<T, L, A> &data) {
-  std::stringstream s;
-  s << "Not implemented for T = "
-    << typeid(T).name(); // boost::core::demangle(typeid(T).name());
-  s << " and dim0 = " << Tensor_Dim0;
-  s << " dim1 = " << Tensor_Dim1;
-  THROW_MESSAGE(s.str());
-  // return FTensor::Tensor1<T*,Tensor_Dim>();
+getFTensor2FromMat(ublas::matrix<T, L, A> &data) {
+  static_assert(1, "not implemented");
 }
 
 /**
- * Template specialization for getTensor2FormData
+ * Template specialization for getFTensor2FromMat
+ * \ingroup mofem_forces_and_sources_user_data_operators
+ *
  */
 template <>
 FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 3, 3>
-getTensor2FormData(MatrixDouble &data);
+getFTensor2FromMat(MatrixDouble &data);
 
 /**
- * Template specialization for getTensor2FormData
+ * Template specialization for getFTensor2FromMat
  */
 template <>
 FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 3, 2>
-getTensor2FormData(MatrixDouble &data);
+getFTensor2FromMat(MatrixDouble &data);
 
 /**
  * \brief Get tensor rank 2 (matrix) form data matrix (specialization)
@@ -137,13 +142,22 @@ getTensor2FormData(MatrixDouble &data);
  */
 template <int Tensor_Dim0, int Tensor_Dim1>
 FTensor::Tensor2<FTensor::PackPtr<double *, 1>, Tensor_Dim0, Tensor_Dim1>
-getTensor2FormData(MatrixDouble &data) {
-  return getTensor2FormData<Tensor_Dim0, Tensor_Dim1, double, ublas::row_major,
+getFTensor2FromMat(MatrixDouble &data) {
+  return getFTensor2FromMat<Tensor_Dim0, Tensor_Dim1, double, ublas::row_major,
                             DoubleAllocator>(data);
 }
 
+/**
+ * @deprecated Name change to getFTensor1FromMat
+ */
+template <int Tensor_Dim0, int Tensor_Dim1>
+DEPRECATED FTensor::Tensor2<FTensor::PackPtr<double *, 1>, Tensor_Dim0, Tensor_Dim1>
+getTensor2FormData(MatrixDouble &data) {
+  return getFTensor2FromMat<Tensor_Dim0, Tensor_Dim1>(data);
+}
+
 /** \brief data structure for finite element entity
- * \ingroup mofem_forces_and_sources
+ * \ingroup mofem_forces_and_sources_user_data_operators
  *
  * It keeps that about indices of degrees of freedom, dofs data, base functions
  * functions, entity side number, type of entities, approximation order, etc.
@@ -151,8 +165,8 @@ getTensor2FormData(MatrixDouble &data) {
  */
 struct DataForcesAndSourcesCore {
 
-  /** \brief Data on single entity (This is passed as argument to
-   * DataOperator::doWork) \ingroup mofem_forces_and_sources_user_data_operators
+  /** \brief Data on single entity (This is passed as argument to DataOperator::doWork) 
+   * \ingroup mofem_forces_and_sources_user_data_operators
    * \nosubgrouping
    */
   struct EntData {
@@ -1365,7 +1379,7 @@ DataForcesAndSourcesCore::EntData::getFTensor2DiffHdivN<3, 2>(
 /**@}*/
 
 /** \brief this class derive data form other data structure
- * \ingroup mofem_forces_and_sources
+ * \ingroup mofem_forces_and_sources_user_data_operators
  *
  *
  * It behaves like normal data structure it is used to share base functions with
@@ -1377,6 +1391,14 @@ DataForcesAndSourcesCore::EntData::getFTensor2DiffHdivN<3, 2>(
  */
 struct DerivedDataForcesAndSourcesCore : public DataForcesAndSourcesCore {
 
+  /** \brief Derived ata on single entity (This is passed as argument to DataOperator::doWork) 
+   * \ingroup mofem_forces_and_sources_user_data_operators
+   * \nosubgrouping
+   *
+   * DerivedEntData share part information with EntData except infomation about
+   * base functions.
+   *
+   */
   struct DerivedEntData : public DataForcesAndSourcesCore::EntData {
 
     DataForcesAndSourcesCore::EntData &entData;
@@ -1418,9 +1440,12 @@ DEPRECATED typedef DerivedDataForcesAndSourcesCore
 #endif //__DATASTRUCTURES_HPP
 
 /**
- * \defgroup mofem_forces_and_sources Forces and sources
+ * \defgroup mofem_forces_and_sources_user_data_operators User data operator
+ * data structures \ingroup
  *
- * \brief Manages complexities related to assembly of vector and matrices at
- * single finite element level.
- *
+ * \brief Users data structures and operator
+ * 
+ * Data structures passed by argument to MoFEM::DataOperator::doWork and generic
+ * user operators operating on those structures.
+ * 
  */

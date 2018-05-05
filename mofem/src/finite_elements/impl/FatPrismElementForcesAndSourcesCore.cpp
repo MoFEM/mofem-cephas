@@ -697,7 +697,7 @@ MoFEMErrorCode OpCalculateInvJacForFatPrism::doWork(
       auto t_diff_n = data.getFTensor1DiffN<3>(NOBASE);
       invJac.resize(9,nb_gauss_pts,false);
       invJac.clear();
-      auto t_inv_jac = getTensor2FormData<3,3>(invJac);
+      auto t_inv_jac = getFTensor2FromMat<3,3>(invJac);
 
       FTensor::Index<'i',3> i;
       FTensor::Index<'j',3> j;
@@ -766,7 +766,7 @@ OpSetInvJacH1ForFatPrism::doWork(int side, EntityType type,
 
     FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_inv_diff_n(
         &diffNinvJac(0, 0), &diffNinvJac(0, 1), &diffNinvJac(0, 2));
-    auto t_inv_jac = getTensor2FormData<3, 3>(invJac);
+    auto t_inv_jac = getFTensor2FromMat<3, 3>(invJac);
 
     const int nb_dofs = data.getN(base).size2();
     for (int gg = 0; gg != nb_gauss_pts; gg++) {

@@ -650,7 +650,11 @@ DEPRECATED typedef ForcesAndSourcesCore ForcesAndSurcesCore;
 
 #endif //__FORCES_AND_SOURCES_CORE__HPP__
 
-/***************************************************************************//**
- * \defgroup mofem_forces_and_sources Forces and sources
- * \ingroup mofem
- ******************************************************************************/
+/***************************************************************************/ /**
+  * \defgroup mofem_forces_and_sources Forces and sources
+  * \ingroup mofem
+  *
+  * \brief Manages complexities related to assembly of vector and matrices at
+  * single finite element level.
+  *
+  ******************************************************************************/

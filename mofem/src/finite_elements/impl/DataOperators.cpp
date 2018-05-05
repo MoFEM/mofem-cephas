@@ -489,12 +489,12 @@ MoFEMErrorCode invertTensor3by3<3,double,ublas::row_major,DoubleAllocator>(
 ) {
   
   MoFEMFunctionBeginHot;
-  auto A = getTensor2FormData<3,3>(jac_data);
+  auto A = getFTensor2FromMat<3,3>(jac_data);
   int nb_gauss_pts = jac_data.size2();
   det_data.resize(nb_gauss_pts,false);
   inv_jac_data.resize(3,nb_gauss_pts,false);
-  auto det = getTensor0FormData(det_data);
-  auto I = getTensor2FormData<3,3>(inv_jac_data);
+  auto det = getFTensor0FromVec(det_data);
+  auto I = getFTensor2FromMat<3,3>(inv_jac_data);
   for(int gg = 0;gg!=nb_gauss_pts;gg++) {
     ierr = determinantTensor3by3(A,det); CHKERRG(ierr);
     ierr = invertTensor3by3(A,det,I); CHKERRG(ierr);

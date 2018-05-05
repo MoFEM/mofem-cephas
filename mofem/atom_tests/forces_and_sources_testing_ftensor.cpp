@@ -179,7 +179,7 @@ int main(int argc, char *argv[]) {
 
       auto base_function = data.getFTensor0N();
       auto diff_base = data.getFTensor1DiffN<3>();
-      // FTensor::Tensor1<double*,3> field_values = getTensor1FormData<3>(field1ValuesDataPtr);
+      // FTensor::Tensor1<double*,3> field_values = getFTensor1FromMat<3>(field1ValuesDataPtr);
       // #ifdef WITH_ADOL_C
       // adouble val;
       // FTensor::Tensor0<adouble*> adouble_t0(&val);
@@ -302,10 +302,10 @@ int main(int argc, char *argv[]) {
           auto base_col = col_data.getFTensor0N(bc);
           auto diff_base_col= row_data.getFTensor1DiffN<3>(bc);
 
-          auto field1_values = getTensor1FormData<3>(*field1ValuesDataPtr);
-          auto field2_values = getTensor0FormData(*field2ValuesDataPtr);
-          auto grad1_values = getTensor2FormData<3,3>(*grad1ValuesDataPtr);
-          auto grad2_values = getTensor1FormData<3>(*grad2ValuesDataPtr);
+          auto field1_values = getFTensor1FromMat<3>(*field1ValuesDataPtr);
+          auto field2_values = getFTensor0FromVec(*field2ValuesDataPtr);
+          auto grad1_values = getFTensor2FromMat<3,3>(*grad1ValuesDataPtr);
+          auto grad2_values = getFTensor1FromMat<3>(*grad2ValuesDataPtr);
 
           for(int gg = 0;gg!=nb_gauss_pts;gg++) {
             // This make no sense (just do some calculations)
