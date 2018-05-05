@@ -858,7 +858,7 @@ struct MixTransportElement {
         );
         // get base functions
         auto t_n_hdiv = data.getFTensor1HdivN<3>();
-        auto t_flux = getTensor1FormData<3>(cTx.fluxesAtGaussPts);
+        auto t_flux = getFTensor1FromMat<3>(cTx.fluxesAtGaussPts);
         int nb_gauss_pts = data.getHdivN().size1();
         for(int gg = 0;gg<nb_gauss_pts;gg++) {
           double w = getGaussPts()(3,gg)*getVolume();

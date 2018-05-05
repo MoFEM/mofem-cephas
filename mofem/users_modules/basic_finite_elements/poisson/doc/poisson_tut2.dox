@@ -698,9 +698,9 @@ MoFEMErrorCode PoissonExample::OpError::iNtegrate(DataForcesAndSourcesCore::EntD
   // get integration weight
   FTensor::Tensor0<double*> t_w = getFTensor0IntegrationWeight();
   // get solution at integration point
-  FTensor::Tensor0<double*> t_u = getTensor0FormData(*fieldVals);
+  FTensor::Tensor0<double*> t_u = getFTensor0FromVec(*fieldVals);
   // get solution at integration point
-  FTensor::Tensor1<double*,3> t_grad = getTensor1FormData<3>(*gradVals);
+  FTensor::Tensor1<double*,3> t_grad = getFTensor1FromMat<3>(*gradVals);
   // get coordinates at integration point
   ftensor::Tensor1<double*,3> t_coords = getTensor1CoordsAtGaussPts();
   // keep exact gradient and error or gradient
@@ -731,8 +731,8 @@ Note how we get approximate values at integration points. First, we get tensors
 of rank 0 and rank 1, for field values and gradients, respectively
 \code
 FTensor::Tensor0<double*> t_w = getFTensor0IntegrationWeight();
-FTensor::Tensor0<double*> t_u = getTensor0FormData(*fieldVals);
-FTensor::Tensor1<double*,3> t_grad = getTensor1FormData<3>(*gradVals);
+FTensor::Tensor0<double*> t_u = getFTensor0FromVec(*fieldVals);
+FTensor::Tensor1<double*,3> t_grad = getFTensor1FromMat<3>(*gradVals);
 ftensor::Tensor1<double*,3> t_coords = getTensor1CoordsAtGaussPts();
 \endcode
 and then iterate over integration points
@@ -746,8 +746,8 @@ for(int gg = 0;gg!=nbIntegrationPts;gg++) {
 }
 \endcode
 using ++t_u and ++t_grad to move to tensor to next integration point. In similar
-way coordinates of integration points are iterated. Functions MoFEM::getTensor0FormData
-and MoFEM::getTensor1FormData take vector or matrix as an argument and express
+way coordinates of integration points are iterated. Functions MoFEM::getFTensor0FromVec
+and MoFEM::getFTensor1FromMat take vector or matrix as an argument and express
 it using tensor data structure. Function
 MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator::getFTensor0IntegrationWeight
 and MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator::getTensor1CoordsAtGaussPts are

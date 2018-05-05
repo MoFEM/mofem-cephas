@@ -554,9 +554,9 @@ private:
     // get integration weight
     auto t_w = getFTensor0IntegrationWeight();
     // get solution at integration point
-    auto t_u = getTensor0FormData(*fieldVals);
+    auto t_u = getFTensor0FromVec(*fieldVals);
     // get solution at integration point
-    auto t_grad = getTensor1FormData<3>(*gradVals);
+    auto t_grad = getFTensor1FromMat<3>(*gradVals);
     // get coordinates at integration point
     auto t_coords = getTensor1CoordsAtGaussPts();
     // keep exact gradient and error or gradient
@@ -623,9 +623,9 @@ protected:
     // get integration weights
     auto t_w = getFTensor0IntegrationWeight();
     // get solution at integration point
-    auto t_u = getTensor0FormData(*fieldVals);
+    auto t_u = getFTensor0FromVec(*fieldVals);
     // get solution at integration point
-    auto t_grad = getTensor1FormData<3>(*gradVals);
+    auto t_grad = getFTensor1FromMat<3>(*gradVals);
     // get base function gradient on rows
     auto t_row_grad = row_data.getFTensor1DiffN<3>();
     // loop over integration points
@@ -695,9 +695,9 @@ protected:
     // get integration weights
     auto t_w = getFTensor0IntegrationWeight();
     // get solution at integration point
-    auto t_u = getTensor0FormData(*fieldVals);
+    auto t_u = getFTensor0FromVec(*fieldVals);
     // get solution at integration point
-    auto t_grad = getTensor1FormData<3>(*gradVals);
+    auto t_grad = getFTensor1FromMat<3>(*gradVals);
     // get base functions on entity
     auto t_v = data.getFTensor0N();
     // get base function gradient on rows
@@ -760,7 +760,7 @@ protected:
     // get base function
     auto t_l = data.getFTensor0N();
     // get solution at integration point
-    auto t_u = getTensor0FormData(*fieldVals);
+    auto t_u = getFTensor0FromVec(*fieldVals);
     // get coordinates at integration point
     auto t_coords = getTensor1CoordsAtGaussPts();
     // make loop over integration points
@@ -809,7 +809,7 @@ protected:
     // get base function
     auto t_u = data.getFTensor0N();
     // get solution at integration point
-    auto t_lambda = getTensor0FormData(*lambdaVals);
+    auto t_lambda = getFTensor0FromVec(*lambdaVals);
     // make loop over integration points
     for (int gg = 0; gg != nbIntegrationPts; gg++) {
       // evaluate function on boundary and scale it by area and integration
