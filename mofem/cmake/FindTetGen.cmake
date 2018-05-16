@@ -18,6 +18,8 @@ if(WITH_TETGEN)
     tetgen
     PREFIX ${PROJECT_BINARY_DIR}/external/
     URL https://bitbucket.org/likask/mofem-joseph/downloads/tetgen1.5.0.tgz
+    CONFIGURE_COMMAND cmake ${PROJECT_BINARY_DIR}/external/src/tetgen
+    BUILD_COMMAND make
     INSTALL_COMMAND ""
   )
   execute_process(COMMAND ${CMAKE_COMMAND} -E touch ${PROJECT_BINARY_DIR}/external/lib/libtet.a)
