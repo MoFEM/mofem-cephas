@@ -309,10 +309,9 @@ struct MagneticElement {
    */
   MoFEMErrorCode destroyProblem() {
 
-    MoFEMFunctionBeginHot;
-    ierr = DMDestroy(&blockData.dM);
-    CHKERRG(ierr);
-    MoFEMFunctionReturnHot(0);
+    MoFEMFunctionBegin;
+    CHKERR DMDestroy(&blockData.dM);
+    MoFEMFunctionReturn(0);
   }
 
   /**  \brief solve problem
@@ -374,7 +373,6 @@ struct MagneticElement {
 
     KSP solver;
     CHKERR KSPCreate(PETSC_COMM_WORLD, &solver);
-    // CHKERR KSPSetDM(solver,blockData.dM); CHKERRG(ierr);
     CHKERR KSPSetOperators(solver, blockData.A, blockData.A);
     CHKERR KSPSetFromOptions(solver);
     CHKERR KSPSetUp(solver);
@@ -467,8 +465,7 @@ struct MagneticElement {
                           EntityType col_type,
                           DataForcesAndSourcesCore::EntData &row_data,
                           DataForcesAndSourcesCore::EntData &col_data) {
-
-      MoFEMFunctionBeginHot;
+      MoFEMFunctionBegin;
 
       if (row_type == MBVERTEX)
         MoFEMFunctionReturnHot(0);
@@ -512,12 +509,10 @@ struct MagneticElement {
         double w = getGaussPts()(3, gg) * getVolume();
         // if ho geometry is given
         w *= getHoGaussPtsDetJac()(gg);
-        ierr = getCurlOfHCurlBaseFunctions(row_side, row_type, row_data, gg,
+        CHKERR getCurlOfHCurlBaseFunctions(row_side, row_type, row_data, gg,
                                            row_curl_mat);
-        CHKERRG(ierr);
-        ierr = getCurlOfHCurlBaseFunctions(col_side, col_type, col_data, gg,
+        CHKERR getCurlOfHCurlBaseFunctions(col_side, col_type, col_data, gg,
                                            col_curl_mat);
-        CHKERRG(ierr);
 
         // cerr << row_curl_mat << endl;
         // cerr << col_curl_mat << endl;
@@ -542,20 +537,18 @@ struct MagneticElement {
       // cerr << entityLocalMatrix << endl;
       // cerr << endl;
 
-      ierr = MatSetValues(blockData.A, nb_row_dofs, &row_data.getIndices()[0],
+      CHKERR MatSetValues(blockData.A, nb_row_dofs, &row_data.getIndices()[0],
                           nb_col_dofs, &col_data.getIndices()[0],
                           &entityLocalMatrix(0, 0), ADD_VALUES);
-      CHKERRG(ierr);
 
       if (row_side != col_side || row_type != col_type) {
         entityLocalMatrix = trans(entityLocalMatrix);
-        ierr = MatSetValues(blockData.A, nb_col_dofs, &col_data.getIndices()[0],
+        CHKERR MatSetValues(blockData.A, nb_col_dofs, &col_data.getIndices()[0],
                             nb_row_dofs, &row_data.getIndices()[0],
                             &entityLocalMatrix(0, 0), ADD_VALUES);
-        CHKERRG(ierr);
       }
 
-      MoFEMFunctionReturnHot(0);
+      MoFEMFunctionReturn(0);
     }
   };
 
@@ -596,8 +589,7 @@ struct MagneticElement {
                           EntityType col_type,
                           DataForcesAndSourcesCore::EntData &row_data,
                           DataForcesAndSourcesCore::EntData &col_data) {
-
-      MoFEMFunctionBeginHot;
+      MoFEMFunctionBegin;
 
       if (row_type == MBVERTEX)
         MoFEMFunctionReturnHot(0);
@@ -669,20 +661,18 @@ struct MagneticElement {
       // cerr << entityLocalMatrix << endl;
       // cerr << endl;
 
-      ierr = MatSetValues(blockData.A, nb_row_dofs, &row_data.getIndices()[0],
+      CHKERR MatSetValues(blockData.A, nb_row_dofs, &row_data.getIndices()[0],
                           nb_col_dofs, &col_data.getIndices()[0],
                           &entityLocalMatrix(0, 0), ADD_VALUES);
-      CHKERRG(ierr);
 
       if (row_side != col_side || row_type != col_type) {
         entityLocalMatrix = trans(entityLocalMatrix);
-        ierr = MatSetValues(blockData.A, nb_col_dofs, &col_data.getIndices()[0],
+        CHKERR MatSetValues(blockData.A, nb_col_dofs, &col_data.getIndices()[0],
                             nb_row_dofs, &row_data.getIndices()[0],
                             &entityLocalMatrix(0, 0), ADD_VALUES);
-        CHKERRG(ierr);
       }
 
-      MoFEMFunctionReturnHot(0);
+      MoFEMFunctionReturn(0);
     }
   };
 
@@ -690,7 +680,7 @@ struct MagneticElement {
     * \ingroup maxwell_element
 
     \f[
-    \mathbf{A} = \int_{\partial\Omega} \ \mathbf{u}  \cdot \mathbf{j}_i
+    \mathbf{F} = \int_{\partial\Omega} \ \mathbf{u}  \cdot \mathbf{j}_i
     \textrm{d}{\partial\Omega} \f] where \f$\mathbf{j}_i\f$ is current density
     function.
 
@@ -721,8 +711,7 @@ struct MagneticElement {
      */
     MoFEMErrorCode doWork(int row_side, EntityType row_type,
                           DataForcesAndSourcesCore::EntData &row_data) {
-
-      MoFEMFunctionBeginHot;
+      MoFEMFunctionBegin;
 
       if (row_type == MBVERTEX)
         MoFEMFunctionReturnHot(0);
@@ -770,11 +759,10 @@ struct MagneticElement {
         }
       }
 
-      ierr = VecSetValues(blockData.F, row_data.getIndices().size(),
+      CHKERR VecSetValues(blockData.F, row_data.getIndices().size(),
                           &row_data.getIndices()[0], &naturalBC[0], ADD_VALUES);
-      CHKERRG(ierr);
 
-      MoFEMFunctionReturnHot(0);
+      MoFEMFunctionReturn(0);
     }
   };
 
@@ -798,17 +786,16 @@ struct MagneticElement {
 
     MoFEMErrorCode doWork(int row_side, EntityType row_type,
                           DataForcesAndSourcesCore::EntData &row_data) {
-      MoFEMFunctionBeginHot;
+      MoFEMFunctionBegin;
 
       if (row_type == MBVERTEX)
         MoFEMFunctionReturnHot(0);
 
       Tag th;
       double def_val[] = {0, 0, 0};
-      rval = postProcMesh.tag_get_handle("MAGNETIC_INDUCTION_FIELD", 3,
+      CHKERR postProcMesh.tag_get_handle("MAGNETIC_INDUCTION_FIELD", 3,
                                          MB_TYPE_DOUBLE, th,
                                          MB_TAG_CREAT | MB_TAG_SPARSE, def_val);
-      CHKERRG(rval);
       const int nb_row_dofs = row_data.getHcurlN().size2() / 3;
       if (nb_row_dofs == 0)
         MoFEMFunctionReturnHot(0);
@@ -822,16 +809,14 @@ struct MagneticElement {
                  mapGaussPts.size());
       }
 
-      rval = postProcMesh.tag_get_by_ptr(th, &mapGaussPts[0],
+      CHKERR postProcMesh.tag_get_by_ptr(th, &mapGaussPts[0],
                                          mapGaussPts.size(), tags_ptr);
-      CHKERRG(rval);
 
       for (int gg = 0; gg != nb_gauss_pts; gg++) {
 
         // get curl of base functions
-        ierr = getCurlOfHCurlBaseFunctions(row_side, row_type, row_data, gg,
+        CHKERR getCurlOfHCurlBaseFunctions(row_side, row_type, row_data, gg,
                                            row_curl_mat);
-        CHKERRG(ierr);
         FTensor::Tensor1<double *, 3> t_base_curl(&row_curl_mat(0, HCURL0),
                                                   &row_curl_mat(0, HCURL1),
                                                   &row_curl_mat(0, HCURL2), 3);
@@ -847,7 +832,7 @@ struct MagneticElement {
           ++t_base_curl;
         }
       }
-      MoFEMFunctionReturnHot(0);
+      MoFEMFunctionReturn(0);
     }
   };
 };
