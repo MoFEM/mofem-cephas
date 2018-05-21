@@ -242,21 +242,23 @@ MoFEMErrorCode BitRefManager::setBitRefLevel(const Range &ents,
       } else {
         dim_ents = ents.subset_by_dimension(d);
       }
-      for (int dd = 0; dd < d; ++dd) {
-        Range adj_ents;
-        CHKERR m_field.get_moab().get_adjacencies(dim_ents, dd, true, adj_ents,
-                                                  moab::Interface::UNION);
-        for (Range::pair_iterator pit = adj_ents.pair_begin();
-             pit != adj_ents.pair_end(); ++pit) {
-          Range seed_ents_range;
-          // get first and last element of range
-          EntityHandle f = pit->first;
-          EntityHandle s = pit->second;
-          CHKERR SetBitRefLevelTool(m_field, bit, ref_ents_ptr, ref_fe_ptr)
-              .findEntsToAdd(f, s, seed_ents_range);
-          if (!seed_ents_range.empty()) {
+      if (!dim_ents.empty()) {
+        for (int dd = 0; dd < d; ++dd) {
+          Range adj_ents;
+          CHKERR m_field.get_moab().get_adjacencies(
+              dim_ents, dd, true, adj_ents, moab::Interface::UNION);
+          for (Range::pair_iterator pit = adj_ents.pair_begin();
+               pit != adj_ents.pair_end(); ++pit) {
+            Range seed_ents_range;
+            // get first and last element of range
+            EntityHandle f = pit->first;
+            EntityHandle s = pit->second;
             CHKERR SetBitRefLevelTool(m_field, bit, ref_ents_ptr, ref_fe_ptr)
-                .addEntsToDatabase(seed_ents_range);
+                .findEntsToAdd(f, s, seed_ents_range);
+            if (!seed_ents_range.empty()) {
+              CHKERR SetBitRefLevelTool(m_field, bit, ref_ents_ptr, ref_fe_ptr)
+                  .addEntsToDatabase(seed_ents_range);
+            }
           }
         }
       }
