@@ -39,7 +39,7 @@ project(MoFEM C CXX)
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# If fortrns is set by PETSc or user
+# If fortran is set by PETSc or user
 if(CMAKE_Fortran_COMPILER)
   # Optional language
   enable_language(Fortran)
