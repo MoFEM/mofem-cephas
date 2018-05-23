@@ -31,7 +31,8 @@
  *
  *  \cite ivanyshyn2013computation
  *  <www.hpfem.jku.at/publications/szthesis.pdf>
- *
+ *  <https://pdfs.semanticscholar.org/0574/e5763d9b64bff16f908e9621f23af3b3dc86.pdf>
+ * 
  * Election file and all other problem related file are here \ref
  * maxwell_element.
  *
