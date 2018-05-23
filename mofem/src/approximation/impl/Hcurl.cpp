@@ -921,7 +921,7 @@ MoFEMErrorCode MoFEM::Hcurl_Ainsworth_VolumeInteriorFunctions_MBTET(
 
   MoFEMFunctionBeginHot;
 
-  if (NBVOLUMETET_AINSOWRTH_TET_HCURL(p) == 0)
+  if (NBVOLUMETET_AINSWORTH_TET_HCURL(p) == 0)
     MoFEMFunctionReturnHot(0);
 
   FTensor::Index<'i', 3> i;
@@ -1046,7 +1046,7 @@ MoFEMErrorCode MoFEM::Hcurl_Ainsworth_VolumeInteriorFunctions_MBTET(
       }
     }
 
-    const int nb_base_fun_on_face = NBVOLUMETET_AINSOWRTH_TET_HCURL(p);
+    const int nb_base_fun_on_face = NBVOLUMETET_AINSWORTH_TET_HCURL(p);
     if (cc != nb_base_fun_on_face) {
       SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                "Wrong number of base functions %d != %d", cc,
@@ -1433,10 +1433,10 @@ MoFEMErrorCode MoFEM::Hcurl_Ainsworth_VolumeFunctions_MBTET(
       base_polynomials);
   CHKERRG(ierr);
 
-  VectorDouble base_interior_functions(3 * NBVOLUMETET_AINSOWRTH_TET_HCURL(p) *
+  VectorDouble base_interior_functions(3 * NBVOLUMETET_AINSWORTH_TET_HCURL(p) *
                                        nb_integration_pts);
   VectorDouble diff_base_interior_functions(
-      9 * NBVOLUMETET_AINSOWRTH_TET_HCURL(p) * nb_integration_pts);
+      9 * NBVOLUMETET_AINSWORTH_TET_HCURL(p) * nb_integration_pts);
   // base_interior_functions.clear();
   // diff_base_interior_functions.clear();
   double *phi_v_v = &*base_interior_functions.data().begin();
@@ -1461,7 +1461,7 @@ MoFEMErrorCode MoFEM::Hcurl_Ainsworth_VolumeFunctions_MBTET(
       &diff_phi_v[4], &diff_phi_v[7], &diff_phi_v[2], &diff_phi_v[5],
       &diff_phi_v[8], 9);
 
-  if (NBVOLUMETET_AINSOWRTH_TET_HCURL(p) > 0) {
+  if (NBVOLUMETET_AINSWORTH_TET_HCURL(p) > 0) {
     FTensor::Tensor1<double *, 3> t_volume_interior(&phi_v_v[0], &phi_v_v[1],
                                                     &phi_v_v[2], 3);
     FTensor::Tensor2<double *, 3, 3> t_diff_volume_interior(
@@ -1481,8 +1481,8 @@ MoFEMErrorCode MoFEM::Hcurl_Ainsworth_VolumeFunctions_MBTET(
           ++t_diff_phi_v;
           ++t_diff_face_interior;
         }
-        for (int ll = NBVOLUMETET_AINSOWRTH_TET_HCURL(oo - 1);
-             ll != NBVOLUMETET_AINSOWRTH_TET_HCURL(oo); ll++) {
+        for (int ll = NBVOLUMETET_AINSWORTH_TET_HCURL(oo - 1);
+             ll != NBVOLUMETET_AINSWORTH_TET_HCURL(oo); ll++) {
           t_phi_v(i) = t_volume_interior(i);
           ++t_phi_v;
           ++t_volume_interior;
@@ -1882,11 +1882,11 @@ MoFEMErrorCode VTK_Ainsworth_Hcurl_MBTET(const string file_name) {
   //   }
   // }
 
-  // cout << "NBVOLUMETET_AINSOWRTH_TET_HCURL " <<
-  // NBVOLUMETET_AINSOWRTH_TET_HCURL(order) << endl; VectorDouble
-  // base_interior_functions(3*NBVOLUMETET_AINSOWRTH_TET_HCURL(order)*nb_gauss_pts);
+  // cout << "NBVOLUMETET_AINSWORTH_TET_HCURL " <<
+  // NBVOLUMETET_AINSWORTH_TET_HCURL(order) << endl; VectorDouble
+  // base_interior_functions(3*NBVOLUMETET_AINSWORTH_TET_HCURL(order)*nb_gauss_pts);
   // VectorDouble
-  // diff_base_interior_functions(9*NBVOLUMETET_AINSOWRTH_TET_HCURL(order)*nb_gauss_pts);
+  // diff_base_interior_functions(9*NBVOLUMETET_AINSWORTH_TET_HCURL(order)*nb_gauss_pts);
   // double *phi_v = &base_interior_functions[0];
   // double *diff_phi_v = &diff_base_interior_functions[0];
   // ierr = Hcurl_Ainsworth_VolumeInteriorFunctions_MBTET(
@@ -1898,7 +1898,7 @@ MoFEMErrorCode VTK_Ainsworth_Hcurl_MBTET(const string file_name) {
   //   nb_gauss_pts,
   //   Legendre_polynomials
   // ); CHKERRG(ierr);
-  // for(int ll = 0;ll!=NBVOLUMETET_AINSOWRTH_TET_HCURL(order);ll++) {
+  // for(int ll = 0;ll!=NBVOLUMETET_AINSWORTH_TET_HCURL(order);ll++) {
   //
   //   std::ostringstream ss;
   //   ss << "curl_interior_" << ll;
@@ -1917,10 +1917,10 @@ MoFEMErrorCode VTK_Ainsworth_Hcurl_MBTET(const string file_name) {
   //   int gg = 0;
   //   for(Range::iterator nit =
   //   elem_nodes.begin();nit!=elem_nodes.end();nit++,gg++) {
-  //     int idx = 3*NBVOLUMETET_AINSOWRTH_TET_HCURL(order)*gg+ll*3;
+  //     int idx = 3*NBVOLUMETET_AINSWORTH_TET_HCURL(order)*gg+ll*3;
   //     rval = moab_ref.tag_set_data(th,&*nit,1,&(phi_v[idx]));
   //     CHKERRG(rval); int sh =
-  //     gg*9*NBVOLUMETET_AINSOWRTH_TET_HCURL(order)+ll*9; double grad[9] = {
+  //     gg*9*NBVOLUMETET_AINSWORTH_TET_HCURL(order)+ll*9; double grad[9] = {
   //       diff_phi_v[sh+0],diff_phi_v[sh+3],diff_phi_v[sh+6],
   //       diff_phi_v[sh+1],diff_phi_v[sh+4],diff_phi_v[sh+7],
   //       diff_phi_v[sh+2],diff_phi_v[sh+5],diff_phi_v[sh+8]
@@ -1969,7 +1969,7 @@ MoFEMErrorCode VTK_Ainsworth_Hcurl_MBTET(const string file_name) {
   //   }
   // }
   //
-  // cout << "NBVOLUMETET_AINSOWRTH_TET_HCURL(order) " <<
+  // cout << "NBVOLUMETET_AINSWORTH_TET_HCURL(order) " <<
   // NBVOLUMETET_AINSWORTH_HCURL(order) << endl; VectorDouble
   // base_volume_functions(3*NBVOLUMETET_AINSWORTH_HCURL(order)*nb_gauss_pts);
   // VectorDouble

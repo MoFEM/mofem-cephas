@@ -39,7 +39,7 @@ project(MoFEM C CXX)
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# If fortrns is set by PETSc or user
+# If fortran is set by PETSc or user
 if(CMAKE_Fortran_COMPILER)
   # Optional language
   enable_language(Fortran)
@@ -237,18 +237,24 @@ endif(PETSCVAR_PARMETIS_INCLUDE)
 resolve_libraries(PROJECT_LIBS "
   ${SLEPC_LIBRARY}
   ${TAO_LIBRARY}
-  ${MED_LIBRARY}
   -L${PETSC_DIR}/${PETSC_ARCH}/lib
   ${PETSCVAR_PETSC_WITH_EXTERNAL_LIB}
   ${MESHKIT_LIBS_LINK}
   ${MOAB_LIBS_LINK}
-  ${TETGEN_LIBRARY}
   ${MPI_F90_LIB}
   ${MPI_F77_LIB}
-  ${ADOL-C_LIBRARY}
   ${BOOST_PROGRAM_OPTIONS_LIB}
   ${BLAS_LINKER_FLAGS}
   ${CBLAS_LIBIBRARY}"
+)
+
+# Set project libs compiled with the MoFEM as external libs
+set(
+  PROJECT_LIBS
+  ${TETGEN_LIBRARY}
+  ${MED_LIBRARY}
+  ${ADOL-C_LIBRARY}
+  ${PROJECT_LIBS}
 )
 
 message(STATUS ${PROJECT_LIBS})

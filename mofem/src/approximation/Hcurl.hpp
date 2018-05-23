@@ -222,7 +222,7 @@ MoFEMErrorCode Hcurl_Ainsworth_FaceInteriorFunctions_MBTET(
 
 On volume have (P-3)*(P-2)*(P-1)/2.
 
-See NBVOLUMETET_AINSOWRTH_TET_HCURL
+See NBVOLUMETET_AINSWORTH_TET_HCURL
 
 * @param  p                approximation order
 * @param  N                nodal shape functions

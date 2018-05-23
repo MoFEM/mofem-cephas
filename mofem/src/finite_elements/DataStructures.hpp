@@ -165,9 +165,11 @@ getTensor2FormData(MatrixDouble &data) {
  */
 struct DataForcesAndSourcesCore {
 
-  /** \brief Data on single entity (This is passed as argument to DataOperator::doWork) 
-   * \ingroup mofem_forces_and_sources_user_data_operators
+  /** \brief Data on single entity (This is passed as argument to
+   * DataOperator::doWork) \ingroup mofem_forces_and_sources_user_data_operators
    * \nosubgrouping
+   *
+   * \todo Hdiv and Hcurl functions should be accessed through common interface.
    */
   struct EntData {
 

@@ -1,5 +1,5 @@
 /** \file BCData.hpp
- * \brief Data strucures with Cubit native blocks/meshets with boundary conditions
+ * \brief Data structure with Cubit native blocks/meshet with boundary conditions
  *
  */
 

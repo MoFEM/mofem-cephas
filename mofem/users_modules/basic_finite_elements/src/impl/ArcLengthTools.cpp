@@ -560,7 +560,7 @@ MoFEMErrorCode SimpleArcLengthControl::calculateDxAndDlambda(Vec x) {
 }
 
 // ***************************
-// Spherical arc-length contri
+// Spherical arc-length control
 
 SphericalArcLengthControl::SphericalArcLengthControl(ArcLengthCtx *arc_ptr_raw)
     : FEMethod(), arcPtrRaw(arc_ptr_raw) {}

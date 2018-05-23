@@ -94,7 +94,6 @@ int main(int argc, char *argv[]) {
   }
   CATCH_ERRORS;
 
-  MoFEM::Core::Finalize(); CHKERRG(ierr);
-
+  MoFEM::Core::Finalize();
   return 0;
 }
