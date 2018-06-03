@@ -262,7 +262,7 @@ protected:
 
   /**@{*/
 
-  moab::Interface &moab; ///< moab database
+  std::reference_wrapper<moab::Interface> moab; ///< moab database
   inline moab::Interface &get_moab() { return moab; }
   inline const moab::Interface &get_moab() const { return moab; }
 

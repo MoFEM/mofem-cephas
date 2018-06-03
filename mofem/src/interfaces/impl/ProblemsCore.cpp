@@ -33,12 +33,12 @@ MoFEMErrorCode Core::addProblem(const BitProblemId id, const std::string &name,
   if (verb == -1)
     verb = verbose;
   EntityHandle meshset;
-  CHKERR moab.create_meshset(MESHSET_SET | MESHSET_TRACK_OWNER, meshset);
-  CHKERR moab.tag_set_data(th_ProblemId, &meshset, 1, &id);
+  CHKERR get_moab().create_meshset(MESHSET_SET | MESHSET_TRACK_OWNER, meshset);
+  CHKERR get_moab().tag_set_data(th_ProblemId, &meshset, 1, &id);
   void const *tag_data[] = {name.c_str()};
   int tag_sizes[1];
   tag_sizes[0] = name.size();
-  CHKERR moab.tag_set_by_ptr(th_ProblemName, &meshset, 1, tag_data, tag_sizes);
+  CHKERR get_moab().tag_set_by_ptr(th_ProblemName, &meshset, 1, tag_data, tag_sizes);
   // create entry
   std::pair<Problem_multiIndex::iterator, bool> p =
       pRoblems.insert(Problem(moab, meshset));
@@ -77,7 +77,7 @@ MoFEMErrorCode Core::delete_problem(const std::string name) {
   }
   const EntityHandle meshset = p_miit->meshset;
   pRoblems.get<Problem_mi_tag>().erase(p_miit);
-  CHKERR moab.delete_entities(&meshset, 1);
+  CHKERR get_moab().delete_entities(&meshset, 1);
   MoFEMFunctionReturn(0);
 }
 
