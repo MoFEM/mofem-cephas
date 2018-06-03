@@ -2879,7 +2879,7 @@ ProblemsManager::partitionGhostDofsOnDistributedMesh(const std::string &name,
   // get reference to number of ghost dofs
   // get number of local dofs
   DofIdx *nb_ghost_dofs[2] = {&(p_miit->nbGhostDofsRow),
-                              &(p_miit->nbGhostDofsRow)};
+                              &(p_miit->nbGhostDofsCol)};
   DofIdx nb_local_dofs[2] = {p_miit->nbLocDofsRow, p_miit->nbLocDofsCol};
   for (int ss = 0; ss != 2;++ss) {
     (*nb_ghost_dofs[ss]) = 0;
@@ -2917,8 +2917,8 @@ ProblemsManager::partitionGhostDofsOnDistributedMesh(const std::string &name,
       // intare over dofs which have negative local index
       for (auto gdit = ghost_idx_view.begin(); gdit != ghost_idx_view.end();
            ++gdit) {
-        if (gdit->get()->getPStatus() == 0)
-          continue;
+        // if (gdit->get()->getPStatus() == 0)
+          // continue;
         boost::weak_ptr<NumeredDofEntity_multiIndex> numered_dofs_ptr;
         if (ss == 0) {
           numered_dofs_ptr = p_miit->numeredDofsRows;
@@ -2946,14 +2946,14 @@ ProblemsManager::partitionGhostDofsOnDistributedMesh(const std::string &name,
 
   if (verb > QUIET) {
     std::ostringstream ss;
-    ss << "partition_ghost_col_dofs: rank = " << m_field.get_comm_rank()
-       << " FEs col ghost dofs " << *p_miit << " Nb. col ghost dof "
-       << p_miit->getNbGhostDofsCol() << " Nb. local dof "
-       << p_miit->getNbLocalDofsCol() << std::endl;
     ss << "partition_ghost_row_dofs: rank = " << m_field.get_comm_rank()
        << " FEs row ghost dofs " << *p_miit << " Nb. row ghost dof "
        << p_miit->getNbGhostDofsRow() << " Nb. local dof "
        << p_miit->getNbLocalDofsRow() << std::endl;
+    ss << "partition_ghost_col_dofs: rank = " << m_field.get_comm_rank()
+       << " FEs col ghost dofs " << *p_miit << " Nb. col ghost dof "
+       << p_miit->getNbGhostDofsCol() << " Nb. local dof "
+       << p_miit->getNbLocalDofsCol() << std::endl;
     if (verb > VERBOSE) {
       NumeredDofEntity_multiIndex::iterator miit_dd_col =
           p_miit->numeredDofsCols->begin();
