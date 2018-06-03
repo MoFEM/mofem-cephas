@@ -220,11 +220,11 @@ BitProblemId Core::getProblemShift() {
 }
 
 MoFEMErrorCode Core::clearMap() {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   // Cleaning databases in interfaces
-  ierr = getInterface<SeriesRecorder>()->clearMap(); CHKERRG(ierr);
-  ierr = getInterface<MeshsetsManager>()->clearMap(); CHKERRG(ierr);
-  ierr = getInterface<CoordSystemsManager>()->clearMap(); CHKERRG(ierr);
+  CHKERR getInterface<SeriesRecorder>()->clearMap();
+  CHKERR getInterface<MeshsetsManager>()->clearMap();
+  CHKERR getInterface<CoordSystemsManager>()->clearMap();
   // Cleaning databases
   refinedEntities.clear();
   refinedFiniteElements.clear();
@@ -235,7 +235,7 @@ MoFEMErrorCode Core::clearMap() {
   entsFiniteElements.clear();
   entFEAdjacencies.clear();
   pRoblems.clear();
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode Core::addPrismToDatabase(const EntityHandle prism, int verb) {
