@@ -66,13 +66,13 @@ MoFEMErrorCode Core::Finalize() {
   return PetscFinalize();
 }
 
-template<class IFACE>
-MoFEMErrorCode Core::regSubInterface(const MOFEMuuid& uid) {
-  MoFEMFunctionBeginHot;
-  ierr = registerInterface<IFACE>(uid); CHKERRG(ierr);
+template <class IFACE>
+MoFEMErrorCode Core::regSubInterface(const MOFEMuuid &uid) {
+  MoFEMFunctionBegin;
+  CHKERR registerInterface<IFACE>(uid, false);
   unsigned long int id = uid.uUId.to_ulong();
-  iFaces.insert(id,new IFACE(*this));
-  MoFEMFunctionReturnHot(0);
+  iFaces.insert(id, new IFACE(*this));
+  MoFEMFunctionReturn(0);
 }
 
 Core::Core(moab::Interface &moab, MPI_Comm comm, const int verbose,
@@ -89,74 +89,39 @@ Core::Core(moab::Interface &moab, MPI_Comm comm, const int verbose,
 
   // Register interfaces for this implementation
   ierr = registerInterface<UnknownInterface>(IDD_MOFEMUnknown);
-  CHKERRABORT(PETSC_COMM_SELF, ierr);
+  CHKERRABORT(comm, ierr);
   ierr = registerInterface<CoreInterface>(IDD_MOFEMCoreInterface);
-  CHKERRABORT(PETSC_COMM_SELF, ierr);
+  CHKERRABORT(comm, ierr);
   ierr = registerInterface<DeprecatedCoreInterface>(
       IDD_MOFEMDeprecatedCoreInterface);
+  CHKERRABORT(comm, ierr);
+
+  // Register sub-interfaces
+  ierr = registerSubInterfaces();
   CHKERRABORT(PETSC_COMM_SELF, ierr);
-  // Register sub interfaces
-  ierr = regSubInterface<Simple>(IDD_MOFEMSimple);
-  CHKERRABORT(PETSC_COMM_SELF, ierr);
-  ierr = regSubInterface<ProblemsManager>(IDD_MOFEMProblemsManager);
-  CHKERRABORT(PETSC_COMM_SELF, ierr);
-  ierr = regSubInterface<ISManager>(IDD_MOFEMISManager);
-  CHKERRABORT(PETSC_COMM_SELF, ierr);
-  ierr = regSubInterface<VecManager>(IDD_MOFEMVEC);
-  CHKERRABORT(PETSC_COMM_SELF, ierr);
-  ierr = regSubInterface<FieldBlas>(IDD_MOFEMFieldBlas);
-  CHKERRABORT(PETSC_COMM_SELF, ierr);
-  ierr = regSubInterface<BitRefManager>(IDD_MOFEMBitRefManager);
-  CHKERRABORT(PETSC_COMM_SELF, ierr);
-  ierr = regSubInterface<Tools>(IDD_MOFEMTools);
-  CHKERRABORT(PETSC_COMM_SELF, ierr);
-  ierr = regSubInterface<MeshsetsManager>(IDD_MOFEMMeshsetsManager);
-  CHKERRABORT(PETSC_COMM_SELF, ierr);
-  ierr = regSubInterface<CoordSystemsManager>(IDD_MOFEMCoordsSystemsManager);
-  CHKERRABORT(PETSC_COMM_SELF, ierr);
-  ierr = regSubInterface<NodeMergerInterface>(IDD_MOFEMNodeMerger);
-  CHKERRABORT(PETSC_COMM_SELF, ierr);
-  ierr = regSubInterface<BitLevelCoupler>(IDD_MOFEMBitLevelCoupler);
-  CHKERRABORT(PETSC_COMM_SELF, ierr);
-  ierr =
-      regSubInterface<PrismsFromSurfaceInterface>(IDD_MOFEMPrismsFromSurface);
-  CHKERRABORT(PETSC_COMM_SELF, ierr);
-  ierr = regSubInterface<MeshRefinement>(IDD_MOFEMMeshRefine);
-  CHKERRABORT(PETSC_COMM_SELF, ierr);
-  ierr = regSubInterface<PrismInterface>(IDD_MOFEMPrismInterface);
-  CHKERRABORT(PETSC_COMM_SELF, ierr);
-  ierr = regSubInterface<CutMeshInterface>(IDD_MOFEMCutMesh);
-  CHKERRABORT(PETSC_COMM_SELF, ierr);
-  ierr = regSubInterface<SeriesRecorder>(IDD_MOFEMSeriesRecorder);
-  CHKERRABORT(PETSC_COMM_SELF, ierr);
-#ifdef WITH_TETGEN
-  ierr = regSubInterface<TetGenInterface>(IDD_MOFEMTetGegInterface);
-  CHKERRABORT(PETSC_COMM_SELF, ierr);
-#endif
-#ifdef WITH_MED
-  ierr = regSubInterface<MedInterface>(IDD_MOFEMMedInterface);
-  CHKERRABORT(PETSC_COMM_SELF, ierr);
-#endif
 
   // Register MOFEM events in PETSc
-  PetscLogEventRegister("FE_preProcess",0,&MOFEM_EVENT_preProcess);
-  PetscLogEventRegister("FE_operator",0,&MOFEM_EVENT_operator);
-  PetscLogEventRegister("FE_postProcess",0,&MOFEM_EVENT_postProcess);
-  PetscLogEventRegister("MoFEMCreateMat",0,&MOFEM_EVENT_createMat);
+  PetscLogEventRegister("FE_preProcess", 0, &MOFEM_EVENT_preProcess);
+  PetscLogEventRegister("FE_operator", 0, &MOFEM_EVENT_operator);
+  PetscLogEventRegister("FE_postProcess", 0, &MOFEM_EVENT_postProcess);
+  PetscLogEventRegister("MoFEMCreateMat", 0, &MOFEM_EVENT_createMat);
 
   // Duplicate PETSc communicator
-  ierr = PetscCommDuplicate(comm,&cOmm,NULL); CHKERRABORT(comm,ierr);
-  MPI_Comm_size(cOmm,&sIze);
-  MPI_Comm_rank(cOmm,&rAnk);
+  ierr = PetscCommDuplicate(comm, &cOmm, NULL);
+  CHKERRABORT(comm, ierr);
+  MPI_Comm_size(cOmm, &sIze);
+  MPI_Comm_rank(cOmm, &rAnk);
   // CHeck if moab has set communicator if not set communicator interbally
-  ParallelComm* pComm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
-  if(pComm == NULL) {
-    pComm =  new ParallelComm(&moab,comm);
+  ParallelComm *pComm = ParallelComm::get_pcomm(&moab, MYPCOMM_INDEX);
+  if (pComm == NULL) {
+    pComm = new ParallelComm(&moab, cOmm);
   }
 
   // Initialize database
-  ierr = getTags(); CHKERRABORT(cOmm,ierr);
-  ierr = clearMap(); CHKERRABORT(cOmm,ierr);
+  ierr = getTags();
+  CHKERRABORT(cOmm, ierr);
+  ierr = clearMap();
+  CHKERRABORT(cOmm, ierr);
 
   basicEntityDataPtr = boost::make_shared<BasicEntityData>(moab);
   if (distributed_mesh)
@@ -164,8 +129,10 @@ Core::Core(moab::Interface &moab, MPI_Comm comm, const int verbose,
   else
     basicEntityDataPtr->unSetDistributedMesh();
 
-  ierr = getOptions(verbose); CHKERRABORT(cOmm,ierr);
-  ierr = initialiseDatabaseFromMesh(verbose); CHKERRABORT(cOmm,ierr);
+  ierr = getOptions(verbose);
+  CHKERRABORT(cOmm, ierr);
+  ierr = initialiseDatabaseFromMesh(verbose);
+  CHKERRABORT(cOmm, ierr);
 
   // Print version
   if (verbose > QUIET) {
@@ -196,6 +163,39 @@ Core::~Core() {
   }
 }
 
+MoFEMErrorCode Core::registerSubInterfaces() {
+  MoFEMFunctionBegin;
+
+  iFaces.clear();
+
+  // Register sub interfaces
+  CHKERR regSubInterface<Simple>(IDD_MOFEMSimple);
+  CHKERR regSubInterface<ProblemsManager>(IDD_MOFEMProblemsManager);
+  CHKERR regSubInterface<ISManager>(IDD_MOFEMISManager);
+  CHKERR regSubInterface<VecManager>(IDD_MOFEMVEC);
+  CHKERR regSubInterface<FieldBlas>(IDD_MOFEMFieldBlas);
+  CHKERR regSubInterface<BitRefManager>(IDD_MOFEMBitRefManager);
+  CHKERR regSubInterface<Tools>(IDD_MOFEMTools);
+  CHKERR regSubInterface<MeshsetsManager>(IDD_MOFEMMeshsetsManager);
+  CHKERR regSubInterface<CoordSystemsManager>(IDD_MOFEMCoordsSystemsManager);
+  CHKERR regSubInterface<NodeMergerInterface>(IDD_MOFEMNodeMerger);
+  CHKERR regSubInterface<BitLevelCoupler>(IDD_MOFEMBitLevelCoupler);
+  CHKERR regSubInterface<PrismsFromSurfaceInterface>(
+      IDD_MOFEMPrismsFromSurface);
+  CHKERR regSubInterface<MeshRefinement>(IDD_MOFEMMeshRefine);
+  CHKERR regSubInterface<PrismInterface>(IDD_MOFEMPrismInterface);
+  CHKERR regSubInterface<CutMeshInterface>(IDD_MOFEMCutMesh);
+  CHKERR regSubInterface<SeriesRecorder>(IDD_MOFEMSeriesRecorder);
+#ifdef WITH_TETGEN
+  CHKERR regSubInterface<TetGenInterface>(IDD_MOFEMTetGegInterface);
+#endif
+#ifdef WITH_MED
+  CHKERR regSubInterface<MedInterface>(IDD_MOFEMMedInterface);
+#endif
+
+  MoFEMFunctionReturn(0);
+};
+
 BitFieldId Core::getFieldShift() {
   if(*fShift >= BITFIELDID_SIZE) {
     char msg[] = "number of fields exceeded";
@@ -225,6 +225,7 @@ MoFEMErrorCode Core::clearMap() {
   CHKERR getInterface<SeriesRecorder>()->clearMap();
   CHKERR getInterface<MeshsetsManager>()->clearMap();
   CHKERR getInterface<CoordSystemsManager>()->clearMap();
+   getInterface<CutMeshInterface>()->getTreeSurfPtr().reset();
   // Cleaning databases
   refinedEntities.clear();
   refinedFiniteElements.clear();
@@ -516,6 +517,43 @@ MoFEMErrorCode Core::rebuild_database(int verb) {
   CHKERR initialiseDatabaseFromMesh(verb);
   MoFEMFunctionReturn(0);
 }
+
+MoFEMErrorCode Core::set_moab_interface(moab::Interface &new_moab, int verb,
+                                        const bool distributed_mesh) {
+  MoFEMFunctionBegin;
+    if (verb == -1)
+    verb = verbose;
+
+  // clear moab database
+  CHKERR clearMap();
+
+  // set new reference
+  moab = std::ref(new_moab);
+
+  // register interfaces 
+  CHKERR registerSubInterfaces();
+
+  // check if moab has set communicator if not set communicator internally
+  ParallelComm* pComm = ParallelComm::get_pcomm(&new_moab,MYPCOMM_INDEX);
+  if(pComm == NULL) {
+    pComm = new ParallelComm(&new_moab, cOmm);
+  }
+
+  // create MoFEM tags
+  CHKERR getTags();
+
+  // Create basic entity data struture
+  basicEntityDataPtr = boost::make_shared<BasicEntityData>(moab);
+  if (distributed_mesh)
+    basicEntityDataPtr->setDistributedMesh();
+  else
+    basicEntityDataPtr->unSetDistributedMesh();
+
+  // Initalise database
+  CHKERR initialiseDatabaseFromMesh(verb); 
+
+  MoFEMFunctionReturn(0);
+};
 
 MoFEMErrorCode Core::getOptions(int verb) {
   MoFEMFunctionBegin;

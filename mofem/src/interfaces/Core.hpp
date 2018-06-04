@@ -266,6 +266,10 @@ protected:
   inline moab::Interface &get_moab() { return moab; }
   inline const moab::Interface &get_moab() const { return moab; }
 
+  MoFEMErrorCode set_moab_interface(moab::Interface &new_moab,
+                                    int verb = VERBOSE,
+                                    const bool distributed_mesh = true);
+
   /**@}*/
 
   /** \name Check database consistency */
@@ -432,7 +436,14 @@ protected:
                              std::map<EntityType, int> &dof_counter,
                              std::map<EntityType, int> &inactive_dof_counter,
                              int verb = DEFAULT_VERBOSITY);
+
+  MoFEMErrorCode buildField(const boost::shared_ptr<Field> &field,
+                            int verb = DEFAULT_VERBOSITY);
+
   MoFEMErrorCode build_fields(int verb = DEFAULT_VERBOSITY);
+
+  MoFEMErrorCode build_field(const std::string field_name,
+                             int verb = DEFAULT_VERBOSITY);
 
   /// \name Clear DOFs
   MoFEMErrorCode clear_inactive_dofs(int verb = DEFAULT_VERBOSITY);
@@ -918,6 +929,13 @@ private:
    * \brief Cleaning database
    */
   MoFEMErrorCode clearMap();
+
+  /**
+   * @brief Register insterfaces
+   * 
+   * @return MoFEMErrorCode 
+   */
+  MoFEMErrorCode registerSubInterfaces();
 
   /**
    * \brief Return unique field Id.
