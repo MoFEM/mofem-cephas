@@ -269,7 +269,7 @@ MoFEMErrorCode Core::addPrismToDatabase(const EntityHandle prism, int verb) {
 }
 
 MoFEMErrorCode Core::getTags(int verb) {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
 
   const EntityHandle root_meshset = get_moab().get_root_set();
   if (root_meshset) {
@@ -280,8 +280,7 @@ MoFEMErrorCode Core::getTags(int verb) {
   // Set version
   {
     Version version;
-    ierr = getFileVersion(moab, version);
-    CHKERRG(ierr);
+    CHKERR getFileVersion(moab, version);
   }
 
   // Global Variables
@@ -292,19 +291,19 @@ MoFEMErrorCode Core::getTags(int verb) {
                                MB_TAG_CREAT | MB_TAG_MESH, &def_shift);
     if (rval == MB_ALREADY_ALLOCATED)
       rval = MB_SUCCESS;
-    CHKERRG(rval);
+    else
+      CHKERRG(rval);
     const void *tag_data[1];
-    rval = get_moab().tag_get_by_ptr(th_FieldShift, &root_meshset, 1, tag_data);
-    CHKERRG(rval);
+    CHKERR get_moab().tag_get_by_ptr(th_FieldShift, &root_meshset, 1, tag_data);
     fShift = (int *)tag_data[0];
     // FE
     rval = get_moab().tag_get_handle("_FEShift", 1, MB_TYPE_INTEGER, th_FEShift,
                                MB_TAG_CREAT | MB_TAG_MESH, &def_shift);
     if (rval == MB_ALREADY_ALLOCATED)
       rval = MB_SUCCESS;
-    CHKERRG(rval);
-    rval = get_moab().tag_get_by_ptr(th_FEShift, &root_meshset, 1, tag_data);
-    CHKERRG(rval);
+    else
+      CHKERRG(rval);
+    CHKERR get_moab().tag_get_by_ptr(th_FEShift, &root_meshset, 1, tag_data);
     feShift = (int *)tag_data[0];
     // Problem
     rval = get_moab().tag_get_handle("_ProblemShift", 1, MB_TYPE_INTEGER,
@@ -312,192 +311,160 @@ MoFEMErrorCode Core::getTags(int verb) {
                                &def_shift);
     if (rval == MB_ALREADY_ALLOCATED)
       rval = MB_SUCCESS;
-    CHKERRG(rval);
-    rval = get_moab().tag_get_by_ptr(th_ProblemShift, &root_meshset, 1, tag_data);
-    CHKERRG(rval);
+    else
+      CHKERRG(rval);
+    CHKERR get_moab().tag_get_by_ptr(th_ProblemShift, &root_meshset, 1,
+                                      tag_data);
     pShift = (int *)tag_data[0];
     // Safety nets
     int def_bool = 0;
-    rval = get_moab().tag_get_handle("_MoFEMBuild", 1, MB_TYPE_INTEGER, th_MoFEMBuild,
-                               MB_TAG_CREAT | MB_TAG_MESH, &def_bool);
+    rval = get_moab().tag_get_handle("_MoFEMBuild", 1, MB_TYPE_INTEGER,
+                                     th_MoFEMBuild, MB_TAG_CREAT | MB_TAG_MESH,
+                                     &def_bool);
     if (rval == MB_ALREADY_ALLOCATED)
       rval = MB_SUCCESS;
-    rval = get_moab().tag_get_by_ptr(th_MoFEMBuild, &root_meshset, 1,
-                               (const void **)&buildMoFEM);
-    CHKERRG(rval);
+    else
+      CHKERRG(rval);
+    CHKERR get_moab().tag_get_by_ptr(th_MoFEMBuild, &root_meshset, 1,
+                                     (const void **)&buildMoFEM);
   }
 
   // Tags saved in vtk-files
   {
     const int def_part = -1;
-    rval = get_moab().tag_get_handle("PARTITION", 1, MB_TYPE_INTEGER, th_Part,
-                               MB_TAG_CREAT | MB_TAG_SPARSE, &def_part);
-    CHKERRG(rval);
+    CHKERR get_moab().tag_get_handle("PARTITION", 1, MB_TYPE_INTEGER, th_Part,
+                                     MB_TAG_CREAT | MB_TAG_SPARSE, &def_part);
     int def_elem_type = MBMAXTYPE;
-    rval = get_moab().tag_get_handle("ElemType", 1, MB_TYPE_INTEGER, th_ElemType,
-                               MB_TAG_CREAT | MB_TAG_SPARSE, &def_elem_type);
-    CHKERRG(rval);
+    CHKERR get_moab().tag_get_handle("ElemType", 1, MB_TYPE_INTEGER,
+                                     th_ElemType, MB_TAG_CREAT | MB_TAG_SPARSE,
+                                     &def_elem_type);
   }
 
   // Tags Ref
   {
     EntityHandle def_handle = 0;
-
-    rval = get_moab().tag_get_handle("_RefParentHandle", 1, MB_TYPE_HANDLE,
+    CHKERR get_moab().tag_get_handle("_RefParentHandle", 1, MB_TYPE_HANDLE,
                                th_RefParentHandle, MB_TAG_CREAT | MB_TAG_SPARSE,
                                &def_handle);
-    CHKERRG(rval);
     BitRefLevel def_bit_level = 0;
-    rval = get_moab().tag_get_handle(
+    CHKERR get_moab().tag_get_handle(
         "_RefBitLevel", sizeof(BitRefLevel), MB_TYPE_OPAQUE, th_RefBitLevel,
         MB_TAG_CREAT | MB_TAG_BYTES | MB_TAG_SPARSE, &def_bit_level);
-    CHKERRG(rval);
     BitRefLevel def_bit_level_mask = BitRefLevel().set();
-    rval = get_moab().tag_get_handle("_RefBitLevelMask", sizeof(BitRefLevel),
+    CHKERR get_moab().tag_get_handle("_RefBitLevelMask", sizeof(BitRefLevel),
                                MB_TYPE_OPAQUE, th_RefBitLevel_Mask,
                                MB_TAG_CREAT | MB_TAG_BYTES | MB_TAG_SPARSE,
                                &def_bit_level_mask);
-    CHKERRG(rval);
     BitRefEdges def_bit_edge = 0;
-    rval = get_moab().tag_get_handle(
+    CHKERR get_moab().tag_get_handle(
         "_RefBitEdge", sizeof(BitRefEdges), MB_TYPE_OPAQUE, th_RefBitEdge,
         MB_TAG_CREAT | MB_TAG_SPARSE | MB_TAG_BYTES, &def_bit_edge);
-    CHKERRG(rval);
     const int def_type[] = {0, 0};
-    rval = get_moab().tag_get_handle("_RefType", 2, MB_TYPE_INTEGER, th_RefType,
+    CHKERR get_moab().tag_get_handle("_RefType", 2, MB_TYPE_INTEGER, th_RefType,
                                MB_TAG_CREAT | MB_TAG_SPARSE, def_type);
-    CHKERRG(rval);
   }
 
   // Tags Field
   {
     const unsigned long int def_id = 0;
-
-    rval = get_moab().tag_get_handle(
+    CHKERR get_moab().tag_get_handle(
         "_FieldId", sizeof(BitFieldId), MB_TYPE_OPAQUE, th_FieldId,
         MB_TAG_CREAT | MB_TAG_BYTES | MB_TAG_SPARSE, &def_id);
-    CHKERRG(rval);
     FieldSpace def_space = LASTSPACE;
-    rval                 = get_moab().tag_get_handle(
+    CHKERR get_moab().tag_get_handle(
         "_FieldSpace", sizeof(FieldSpace), MB_TYPE_OPAQUE, th_FieldSpace,
         MB_TAG_CREAT | MB_TAG_BYTES | MB_TAG_SPARSE, &def_space);
-    CHKERRG(rval);
     FieldApproximationBase def_base = LASTBASE;
-    rval                            = get_moab().tag_get_handle(
+    CHKERR get_moab().tag_get_handle(
         "_FieldBase", sizeof(FieldApproximationBase), MB_TYPE_OPAQUE,
         th_FieldBase, MB_TAG_CREAT | MB_TAG_BYTES | MB_TAG_SPARSE, &def_base);
-    CHKERRG(rval);
     const int def_val_len = 0;
-    rval = get_moab().tag_get_handle(
+    CHKERR get_moab().tag_get_handle(
         "_FieldName", def_val_len, MB_TYPE_OPAQUE, th_FieldName,
         MB_TAG_CREAT | MB_TAG_BYTES | MB_TAG_VARLEN | MB_TAG_SPARSE, NULL);
-    CHKERRG(rval);
-    rval = get_moab().tag_get_handle(
+    CHKERR get_moab().tag_get_handle(
         "_FieldName_DataNamePrefix", def_val_len, MB_TYPE_OPAQUE,
         th_FieldName_DataNamePrefix,
         MB_TAG_CREAT | MB_TAG_BYTES | MB_TAG_VARLEN | MB_TAG_SPARSE, NULL);
-    CHKERRG(rval);
   }
 
   // Tags FE
   {
     const unsigned long int def_id = 0;
-    const int def_val_len          = 0;
-
-    rval = get_moab().tag_get_handle(
+    const int def_val_len = 0;
+    CHKERR get_moab().tag_get_handle(
         "_FEId", sizeof(BitFEId), MB_TYPE_OPAQUE, th_FEId,
         MB_TAG_CREAT | MB_TAG_BYTES | MB_TAG_SPARSE, &def_id);
-    CHKERRG(rval);
-    rval = get_moab().tag_get_handle(
+    CHKERR get_moab().tag_get_handle(
         "_FEName", def_val_len, MB_TYPE_OPAQUE, th_FEName,
         MB_TAG_CREAT | MB_TAG_BYTES | MB_TAG_VARLEN | MB_TAG_SPARSE, NULL);
-    CHKERRG(rval);
-    rval = get_moab().tag_get_handle(
+    CHKERR get_moab().tag_get_handle(
         "_FEIdCol", sizeof(BitFieldId), MB_TYPE_OPAQUE, th_FEIdCol,
         MB_TAG_CREAT | MB_TAG_BYTES | MB_TAG_SPARSE, &def_id);
-    CHKERRG(rval);
-    rval = get_moab().tag_get_handle(
+    CHKERR get_moab().tag_get_handle(
         "_FEIdRow", sizeof(BitFieldId), MB_TYPE_OPAQUE, th_FEIdRow,
         MB_TAG_CREAT | MB_TAG_BYTES | MB_TAG_SPARSE, &def_id);
-    CHKERRG(rval);
-    rval = get_moab().tag_get_handle(
+    CHKERR get_moab().tag_get_handle(
         "_FEIdData", sizeof(BitFieldId), MB_TYPE_OPAQUE, th_FEIdData,
         MB_TAG_CREAT | MB_TAG_BYTES | MB_TAG_SPARSE, &def_id);
-    CHKERRG(rval);
   }
 
   // Tags Problem
   {
     const unsigned long int def_id = 0;
-    const int def_val_len          = 0;
-
-    rval = get_moab().tag_get_handle(
+    const int def_val_len = 0;
+    CHKERR get_moab().tag_get_handle(
         "_ProblemId", sizeof(BitProblemId), MB_TYPE_OPAQUE, th_ProblemId,
         MB_TAG_CREAT | MB_TAG_BYTES | MB_TAG_SPARSE, &def_id);
-    CHKERRG(rval);
-    rval = get_moab().tag_get_handle(
+    CHKERR get_moab().tag_get_handle(
         "_ProblemFEId", sizeof(BitFEId), MB_TYPE_OPAQUE, th_ProblemFEId,
         MB_TAG_CREAT | MB_TAG_BYTES | MB_TAG_SPARSE, &def_id);
-    CHKERRG(rval);
-    rval = get_moab().tag_get_handle(
+    CHKERR get_moab().tag_get_handle(
         "_ProblemName", def_val_len, MB_TYPE_OPAQUE, th_ProblemName,
         MB_TAG_CREAT | MB_TAG_BYTES | MB_TAG_VARLEN | MB_TAG_SPARSE, NULL);
-    CHKERRG(rval);
     DofIdx def_nbdofs = 0;
-    rval = get_moab().tag_get_handle("_ProblemNbDofsRow", sizeof(DofIdx),
-                               MB_TYPE_OPAQUE, th_ProblemNbDofsRow,
-                               MB_TAG_CREAT | MB_TAG_BYTES | MB_TAG_SPARSE,
-                               &def_nbdofs);
-    CHKERRG(rval);
-    rval = get_moab().tag_get_handle("_ProblemNbDofsCol", sizeof(DofIdx),
-                               MB_TYPE_OPAQUE, th_ProblemNbDofsCol,
-                               MB_TAG_CREAT | MB_TAG_BYTES | MB_TAG_SPARSE,
-                               &def_nbdofs);
-    CHKERRG(rval);
-    rval = get_moab().tag_get_handle("_ProblemLocalNbDofsRow", sizeof(DofIdx),
-                               MB_TYPE_OPAQUE, th_ProblemLocalNbDofRow,
-                               MB_TAG_CREAT | MB_TAG_BYTES | MB_TAG_SPARSE,
-                               &def_nbdofs);
-    CHKERRG(rval);
-    rval = get_moab().tag_get_handle("_ProblemGhostNbDofsRow", sizeof(DofIdx),
-                               MB_TYPE_OPAQUE, th_ProblemGhostNbDofRow,
-                               MB_TAG_CREAT | MB_TAG_BYTES | MB_TAG_SPARSE,
-                               &def_nbdofs);
-    CHKERRG(rval);
-    rval = get_moab().tag_get_handle("_ProblemLocalNbDofsCol", sizeof(DofIdx),
-                               MB_TYPE_OPAQUE, th_ProblemLocalNbDofCol,
-                               MB_TAG_CREAT | MB_TAG_BYTES | MB_TAG_SPARSE,
-                               &def_nbdofs);
-    CHKERRG(rval);
-    rval = get_moab().tag_get_handle("_ProblemGhostNbDofsCol", sizeof(DofIdx),
-                               MB_TYPE_OPAQUE, th_ProblemGhostNbDofCol,
-                               MB_TAG_CREAT | MB_TAG_BYTES | MB_TAG_SPARSE,
-                               &def_nbdofs);
-    CHKERRG(rval);
+    CHKERR get_moab().tag_get_handle(
+        "_ProblemNbDofsRow", sizeof(DofIdx), MB_TYPE_OPAQUE,
+        th_ProblemNbDofsRow, MB_TAG_CREAT | MB_TAG_BYTES | MB_TAG_SPARSE,
+        &def_nbdofs);
+    CHKERR get_moab().tag_get_handle(
+        "_ProblemNbDofsCol", sizeof(DofIdx), MB_TYPE_OPAQUE,
+        th_ProblemNbDofsCol, MB_TAG_CREAT | MB_TAG_BYTES | MB_TAG_SPARSE,
+        &def_nbdofs);
+    CHKERR get_moab().tag_get_handle(
+        "_ProblemLocalNbDofsRow", sizeof(DofIdx), MB_TYPE_OPAQUE,
+        th_ProblemLocalNbDofRow, MB_TAG_CREAT | MB_TAG_BYTES | MB_TAG_SPARSE,
+        &def_nbdofs);
+    CHKERR get_moab().tag_get_handle(
+        "_ProblemGhostNbDofsRow", sizeof(DofIdx), MB_TYPE_OPAQUE,
+        th_ProblemGhostNbDofRow, MB_TAG_CREAT | MB_TAG_BYTES | MB_TAG_SPARSE,
+        &def_nbdofs);
+    CHKERR get_moab().tag_get_handle(
+        "_ProblemLocalNbDofsCol", sizeof(DofIdx), MB_TYPE_OPAQUE,
+        th_ProblemLocalNbDofCol, MB_TAG_CREAT | MB_TAG_BYTES | MB_TAG_SPARSE,
+        &def_nbdofs);
+    CHKERR get_moab().tag_get_handle(
+        "_ProblemGhostNbDofsCol", sizeof(DofIdx), MB_TYPE_OPAQUE,
+        th_ProblemGhostNbDofCol, MB_TAG_CREAT | MB_TAG_BYTES | MB_TAG_SPARSE,
+        &def_nbdofs);
   }
 
   // Meshsets with boundary conditions and material sets
   MeshsetsManager *meshsets_manager_ptr;
-  ierr = getInterface(meshsets_manager_ptr);
-  CHKERRG(ierr);
-  ierr = meshsets_manager_ptr->getTags(verb);
-  CHKERRG(ierr);
+  CHKERR getInterface(meshsets_manager_ptr);
+  CHKERR meshsets_manager_ptr->getTags(verb);
 
   // Series recorder
   SeriesRecorder *series_recorder_ptr;
-  ierr = getInterface(series_recorder_ptr);
-  CHKERRG(ierr);
-  ierr = series_recorder_ptr->getTags(verb);
-  CHKERRG(ierr);
+  CHKERR getInterface(series_recorder_ptr);
+  CHKERR series_recorder_ptr->getTags(verb);
 
   // Coordinate systems
   CoordSystemsManager *cs_manger_ptr;
-  ierr = getInterface(cs_manger_ptr);
-  CHKERRG(ierr);
-  ierr = cs_manger_ptr->getTags(verb);
-  CHKERRG(ierr);
+  CHKERR getInterface(cs_manger_ptr);
+  CHKERR cs_manger_ptr->getTags(verb);
 
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode Core::clear_database(int verb) {
