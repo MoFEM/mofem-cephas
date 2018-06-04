@@ -20,6 +20,8 @@ if(WITH_MED)
     PREFIX ${PROJECT_BINARY_DIR}/external/
     URL http://files.salome-platform.org/Salome/other/med-3.2.0.tar.gz
     CONFIGURE_COMMAND ${PROJECT_BINARY_DIR}/external/src/med/configure CPPFLAGS=${MOAB_CPPFLAGS} LDFLAGS=${MOAB_LDFLAGS} CC=${CMAKE_C_COMPILER} CFLAGS=${MOAB_CFLAGS} CXX=${CMAKE_CXX_COMPILER} CXXFLAGS=${MOAB_CXXFLAGS} --disable-shared --disable-python --disable-fortran --prefix=${PROJECT_BINARY_DIR}/external
+    BUILD_COMMAND make
+    INSTALL_COMMAND make install
   )
   add_dependencies(install_prerequisites med)
 endif(WITH_MED)
