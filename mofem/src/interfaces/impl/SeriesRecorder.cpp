@@ -55,8 +55,6 @@ MoFEMErrorCode SeriesRecorder::clearMap() {
 }
 
 MoFEMErrorCode SeriesRecorder::initialiseDatabaseFromMesh(int verb) {
-
-
   Interface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   MoFEMFunctionBeginHot;
