@@ -313,6 +313,8 @@ struct CutMeshInterface : public UnknownInterface {
     return treeSurfPtr;
   }
 
+  MoFEMErrorCode clearMap();
+
 private:
   Range sUrface;
   Range vOlume;
