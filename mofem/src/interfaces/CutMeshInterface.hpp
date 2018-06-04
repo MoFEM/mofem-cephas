@@ -308,7 +308,10 @@ struct CutMeshInterface : public UnknownInterface {
   MoFEMErrorCode saveCutEdges();
 
   MoFEMErrorCode saveTrimEdges();
-  
+
+  inline boost::shared_ptr<OrientedBoxTreeTool>& getTreeSurfPtr() {
+    return treeSurfPtr;
+  }
 
 private:
   Range sUrface;
