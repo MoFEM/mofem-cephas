@@ -530,9 +530,6 @@ MoFEMErrorCode Core::set_moab_interface(moab::Interface &new_moab, int verb,
   // set new reference
   moab = std::ref(new_moab);
 
-  // // register interfaces 
-  // CHKERR registerSubInterfaces();
-
   // check if moab has set communicator if not set communicator internally
   ParallelComm* pComm = ParallelComm::get_pcomm(&new_moab,MYPCOMM_INDEX);
   if(pComm == NULL) {
