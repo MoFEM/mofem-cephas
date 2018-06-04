@@ -14,10 +14,10 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
-*/
+ */
 
 extern "C" {
-  void macro_is_deprecated_using_deprecated_function() {}
+void macro_is_deprecated_using_deprecated_function() {}
 }
 
 namespace MoFEM {
@@ -59,7 +59,7 @@ MoFEMErrorCode Core::Initialize(int *argc, char ***args, const char file[],
 }
 
 MoFEMErrorCode Core::Finalize() {
-   CHKERRQ(ierr);
+  CHKERRQ(ierr);
   ierr = PetscPopErrorHandler();
   CHKERRG(ierr);
   isGloballyInitialised = false;
@@ -159,7 +159,8 @@ Core::~Core() {
   }
   // Destroy communicator
   if (!is_finalized) {
-    ierr = PetscCommDestroy(&cOmm); CHKERRABORT(cOmm,ierr);
+    ierr = PetscCommDestroy(&cOmm);
+    CHKERRABORT(cOmm, ierr);
   }
 }
 
@@ -197,26 +198,25 @@ MoFEMErrorCode Core::registerSubInterfaces() {
 };
 
 BitFieldId Core::getFieldShift() {
-  if(*fShift >= BITFIELDID_SIZE) {
+  if (*fShift >= BITFIELDID_SIZE) {
     char msg[] = "number of fields exceeded";
-    PetscTraceBackErrorHandler(
-      cOmm,
-      __LINE__,PETSC_FUNCTION_NAME,__FILE__,
-      MOFEM_DATA_INCONSISTENCY,PETSC_ERROR_INITIAL,msg,PETSC_NULL);
-    PetscMPIAbortErrorHandler(cOmm,
-      __LINE__,PETSC_FUNCTION_NAME,__FILE__,
-      MOFEM_DATA_INCONSISTENCY,PETSC_ERROR_INITIAL,msg,PETSC_NULL);
+    PetscTraceBackErrorHandler(cOmm, __LINE__, PETSC_FUNCTION_NAME, __FILE__,
+                               MOFEM_DATA_INCONSISTENCY, PETSC_ERROR_INITIAL,
+                               msg, PETSC_NULL);
+    PetscMPIAbortErrorHandler(cOmm, __LINE__, PETSC_FUNCTION_NAME, __FILE__,
+                              MOFEM_DATA_INCONSISTENCY, PETSC_ERROR_INITIAL,
+                              msg, PETSC_NULL);
   }
-  return BitFieldId().set(((*fShift)++)-1);
+  return BitFieldId().set(((*fShift)++) - 1);
 }
 BitFEId Core::getFEShift() {
-  assert((unsigned int)*feShift<BitFEId().set().to_ulong());
-  return BitFEId(1<<(((*feShift)++)-1));
+  assert((unsigned int)*feShift < BitFEId().set().to_ulong());
+  return BitFEId(1 << (((*feShift)++) - 1));
 }
 
 BitProblemId Core::getProblemShift() {
-  assert((unsigned int)*pShift<BitProblemId().set().to_ulong());
-  return BitProblemId(1<<(((*pShift)++)-1));
+  assert((unsigned int)*pShift < BitProblemId().set().to_ulong());
+  return BitProblemId(1 << (((*pShift)++) - 1));
 }
 
 MoFEMErrorCode Core::clearMap() {
@@ -287,8 +287,9 @@ MoFEMErrorCode Core::getTags(int verb) {
   {
     // Fields
     int def_shift = 1;
-    rval = get_moab().tag_get_handle("_FieldShift", 1, MB_TYPE_INTEGER, th_FieldShift,
-                               MB_TAG_CREAT | MB_TAG_MESH, &def_shift);
+    rval = get_moab().tag_get_handle("_FieldShift", 1, MB_TYPE_INTEGER,
+                                     th_FieldShift, MB_TAG_CREAT | MB_TAG_MESH,
+                                     &def_shift);
     if (rval == MB_ALREADY_ALLOCATED)
       rval = MB_SUCCESS;
     else
@@ -298,7 +299,7 @@ MoFEMErrorCode Core::getTags(int verb) {
     fShift = (int *)tag_data[0];
     // FE
     rval = get_moab().tag_get_handle("_FEShift", 1, MB_TYPE_INTEGER, th_FEShift,
-                               MB_TAG_CREAT | MB_TAG_MESH, &def_shift);
+                                     MB_TAG_CREAT | MB_TAG_MESH, &def_shift);
     if (rval == MB_ALREADY_ALLOCATED)
       rval = MB_SUCCESS;
     else
@@ -307,14 +308,14 @@ MoFEMErrorCode Core::getTags(int verb) {
     feShift = (int *)tag_data[0];
     // Problem
     rval = get_moab().tag_get_handle("_ProblemShift", 1, MB_TYPE_INTEGER,
-                               th_ProblemShift, MB_TAG_CREAT | MB_TAG_MESH,
-                               &def_shift);
+                                     th_ProblemShift,
+                                     MB_TAG_CREAT | MB_TAG_MESH, &def_shift);
     if (rval == MB_ALREADY_ALLOCATED)
       rval = MB_SUCCESS;
     else
       CHKERRG(rval);
     CHKERR get_moab().tag_get_by_ptr(th_ProblemShift, &root_meshset, 1,
-                                      tag_data);
+                                     tag_data);
     pShift = (int *)tag_data[0];
     // Safety nets
     int def_bool = 0;
@@ -344,24 +345,24 @@ MoFEMErrorCode Core::getTags(int verb) {
   {
     EntityHandle def_handle = 0;
     CHKERR get_moab().tag_get_handle("_RefParentHandle", 1, MB_TYPE_HANDLE,
-                               th_RefParentHandle, MB_TAG_CREAT | MB_TAG_SPARSE,
-                               &def_handle);
+                                     th_RefParentHandle,
+                                     MB_TAG_CREAT | MB_TAG_SPARSE, &def_handle);
     BitRefLevel def_bit_level = 0;
     CHKERR get_moab().tag_get_handle(
         "_RefBitLevel", sizeof(BitRefLevel), MB_TYPE_OPAQUE, th_RefBitLevel,
         MB_TAG_CREAT | MB_TAG_BYTES | MB_TAG_SPARSE, &def_bit_level);
     BitRefLevel def_bit_level_mask = BitRefLevel().set();
-    CHKERR get_moab().tag_get_handle("_RefBitLevelMask", sizeof(BitRefLevel),
-                               MB_TYPE_OPAQUE, th_RefBitLevel_Mask,
-                               MB_TAG_CREAT | MB_TAG_BYTES | MB_TAG_SPARSE,
-                               &def_bit_level_mask);
+    CHKERR get_moab().tag_get_handle(
+        "_RefBitLevelMask", sizeof(BitRefLevel), MB_TYPE_OPAQUE,
+        th_RefBitLevel_Mask, MB_TAG_CREAT | MB_TAG_BYTES | MB_TAG_SPARSE,
+        &def_bit_level_mask);
     BitRefEdges def_bit_edge = 0;
     CHKERR get_moab().tag_get_handle(
         "_RefBitEdge", sizeof(BitRefEdges), MB_TYPE_OPAQUE, th_RefBitEdge,
         MB_TAG_CREAT | MB_TAG_SPARSE | MB_TAG_BYTES, &def_bit_edge);
     const int def_type[] = {0, 0};
     CHKERR get_moab().tag_get_handle("_RefType", 2, MB_TYPE_INTEGER, th_RefType,
-                               MB_TAG_CREAT | MB_TAG_SPARSE, def_type);
+                                     MB_TAG_CREAT | MB_TAG_SPARSE, def_type);
   }
 
   // Tags Field
@@ -488,7 +489,7 @@ MoFEMErrorCode Core::rebuild_database(int verb) {
 MoFEMErrorCode Core::set_moab_interface(moab::Interface &new_moab, int verb,
                                         const bool distributed_mesh) {
   MoFEMFunctionBegin;
-    if (verb == -1)
+  if (verb == -1)
     verb = verbose;
 
   // clear moab database
@@ -498,8 +499,8 @@ MoFEMErrorCode Core::set_moab_interface(moab::Interface &new_moab, int verb,
   moab = std::ref(new_moab);
 
   // check if moab has set communicator if not set communicator internally
-  ParallelComm* pComm = ParallelComm::get_pcomm(&new_moab,MYPCOMM_INDEX);
-  if(pComm == NULL) {
+  ParallelComm *pComm = ParallelComm::get_pcomm(&new_moab, MYPCOMM_INDEX);
+  if (pComm == NULL) {
     pComm = new ParallelComm(&new_moab, cOmm);
   }
 
@@ -514,7 +515,7 @@ MoFEMErrorCode Core::set_moab_interface(moab::Interface &new_moab, int verb,
     basicEntityDataPtr->unSetDistributedMesh();
 
   // Initalise database
-  CHKERR initialiseDatabaseFromMesh(verb); 
+  CHKERR initialiseDatabaseFromMesh(verb);
 
   MoFEMFunctionReturn(0);
 };
@@ -571,8 +572,9 @@ MoFEMErrorCode Core::initialiseDatabaseFromMesh(int verb) {
       const char *cs_name;
       int cs_name_size;
       boost::shared_ptr<CoordSys> cs_ptr;
-      rval = get_moab().tag_get_by_ptr(cs_manger_ptr->get_th_CoordSysName(), &*mit, 1,
-                                 (const void **)&cs_name, &cs_name_size);
+      rval =
+          get_moab().tag_get_by_ptr(cs_manger_ptr->get_th_CoordSysName(), &*mit,
+                                    1, (const void **)&cs_name, &cs_name_size);
       if (rval == MB_SUCCESS && cs_name_size) {
         CHKERR cs_manger_ptr->getCoordSysPtr(std::string(cs_name, cs_name_size),
                                              cs_ptr);
@@ -630,7 +632,7 @@ MoFEMErrorCode Core::initialiseDatabaseFromMesh(int verb) {
   // Add entities to database
   Range bit_ref_ents;
   CHKERR get_moab().get_entities_by_handle(0, bit_ref_ents, false);
-  bit_ref_ents = subtract(bit_ref_ents,special_meshsets);
+  bit_ref_ents = subtract(bit_ref_ents, special_meshsets);
   CHKERR getInterface<BitRefManager>()->filterEntitiesByRefLevel(
       BitRefLevel().set(), BitRefLevel().set(), bit_ref_ents);
   CHKERR getInterface<BitRefManager>()->setEntitiesBitRefLevel(bit_ref_ents);
@@ -640,10 +642,10 @@ MoFEMErrorCode Core::initialiseDatabaseFromMesh(int verb) {
   // Build field entities
   for (Field_multiIndex::iterator fit = fIelds.begin(); fit != fIelds.end();
        ++fit) {
-      Range ents_of_id_meshset;
-      CHKERR get_moab().get_entities_by_handle(fit->get()->getMeshset(),
-                                         ents_of_id_meshset, false);
-      CHKERR set_field_order(ents_of_id_meshset, fit->get()->getId(), -1);
+    Range ents_of_id_meshset;
+    CHKERR get_moab().get_entities_by_handle(fit->get()->getMeshset(),
+                                             ents_of_id_meshset, false);
+    CHKERR set_field_order(ents_of_id_meshset, fit->get()->getId(), -1);
   }
 
   if (initaliseAndBuildField || initaliseAndBuildFiniteElements) {
