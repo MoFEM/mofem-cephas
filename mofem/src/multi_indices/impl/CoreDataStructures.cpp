@@ -144,7 +144,7 @@ Field::Field(const Interface &moab, const EntityHandle meshset,
       break;
     case NOFIELD:
       for (EntityType t = MBVERTEX; t < MBMAXTYPE; t++) {
-        // Concept of approximation order make no sense is there is no field
+        // Concept of approximation order make no sense if there is no field
         forder_table[t] = fNBENTITYSET_NOFIELD;
       }
       break;

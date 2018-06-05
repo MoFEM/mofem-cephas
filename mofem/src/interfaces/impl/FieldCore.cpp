@@ -76,7 +76,7 @@ MoFEMErrorCode Core::get_field_entities_by_dimension(const std::string name,
   MoFEMFunctionBeginHot;
   try {
     EntityHandle meshset = get_field_meshset(name);
-    rval = moab.get_entities_by_dimension(meshset, dim, ents, true);
+    rval = get_moab().get_entities_by_dimension(meshset, dim, ents, true);
     CHKERRQ_MOAB(rval);
   } catch (MoFEMException const &e) {
     SETERRQ(PETSC_COMM_SELF, e.errorCode, e.errorMessage);
@@ -91,7 +91,7 @@ MoFEMErrorCode Core::get_field_entities_by_type(const std::string name,
   MoFEMFunctionBeginHot;
   try {
     EntityHandle meshset = get_field_meshset(name);
-    rval = moab.get_entities_by_type(meshset, type, ents, true);
+    rval = get_moab().get_entities_by_type(meshset, type, ents, true);
     CHKERRQ_MOAB(rval);
   } catch (MoFEMException const &e) {
     SETERRQ(PETSC_COMM_SELF, e.errorCode, e.errorMessage);
@@ -105,7 +105,7 @@ MoFEMErrorCode Core::get_field_entities_by_handle(const std::string name,
   MoFEMFunctionBeginHot;
   try {
     EntityHandle meshset = get_field_meshset(name);
-    rval = moab.get_entities_by_handle(meshset, ents, true);
+    rval = get_moab().get_entities_by_handle(meshset, ents, true);
     CHKERRQ_MOAB(rval);
   } catch (MoFEMException const &e) {
     SETERRQ(PETSC_COMM_SELF, e.errorCode, e.errorMessage);
@@ -131,47 +131,47 @@ MoFEMErrorCode Core::add_field(const std::string &name, const FieldSpace space,
     }
   } else {
     EntityHandle meshset;
-    CHKERR moab.create_meshset(MESHSET_SET | MESHSET_TRACK_OWNER, meshset);
+    CHKERR get_moab().create_meshset(MESHSET_SET | MESHSET_TRACK_OWNER, meshset);
     // id
     BitFieldId id = getFieldShift();
-    CHKERR moab.tag_set_data(th_FieldId, &meshset, 1, &id);
+    CHKERR get_moab().tag_set_data(th_FieldId, &meshset, 1, &id);
     // space
-    CHKERR moab.tag_set_data(th_FieldSpace, &meshset, 1, &space);
+    CHKERR get_moab().tag_set_data(th_FieldSpace, &meshset, 1, &space);
     // base
-    CHKERR moab.tag_set_data(th_FieldBase, &meshset, 1, &base);
+    CHKERR get_moab().tag_set_data(th_FieldBase, &meshset, 1, &base);
     // name
     void const *tag_data[] = {name.c_str()};
     int tag_sizes[1];
     tag_sizes[0] = name.size();
-    CHKERR moab.tag_set_by_ptr(th_FieldName, &meshset, 1, tag_data, tag_sizes);
+    CHKERR get_moab().tag_set_by_ptr(th_FieldName, &meshset, 1, tag_data, tag_sizes);
     // name data prefix
     std::string name_data_prefix("_App_Data");
     void const *tag_prefix_data[] = {name_data_prefix.c_str()};
     int tag_prefix_sizes[1];
     tag_prefix_sizes[0] = name_data_prefix.size();
-    CHKERR moab.tag_set_by_ptr(th_FieldName_DataNamePrefix, &meshset, 1,
+    CHKERR get_moab().tag_set_by_ptr(th_FieldName_DataNamePrefix, &meshset, 1,
                                tag_prefix_data, tag_prefix_sizes);
     Tag th_AppOrder, th_FieldData, th_Rank;
     // data
     std::string Tag_data_name = name_data_prefix + name;
     const int def_len = 0;
-    CHKERR moab.tag_get_handle(
+    CHKERR get_moab().tag_get_handle(
         Tag_data_name.c_str(), def_len, MB_TYPE_OPAQUE, th_FieldData,
         MB_TAG_CREAT | MB_TAG_BYTES | MB_TAG_VARLEN | MB_TAG_SPARSE, NULL);
     // order
     ApproximationOrder def_ApproximationOrder = -1;
     std::string Tag_ApproximationOrder_name = "_App_Order_" + name;
-    CHKERR moab.tag_get_handle(
+    CHKERR get_moab().tag_get_handle(
         Tag_ApproximationOrder_name.c_str(), sizeof(ApproximationOrder),
         MB_TYPE_OPAQUE, th_AppOrder, MB_TAG_CREAT | MB_TAG_BYTES | tag_type,
         &def_ApproximationOrder);
     // rank
     int def_rank = 1;
     std::string Tag_rank_name = "_Field_Rank_" + name;
-    CHKERR moab.tag_get_handle(
+    CHKERR get_moab().tag_get_handle(
         Tag_rank_name.c_str(), sizeof(FieldCoefficientsNumber), MB_TYPE_OPAQUE,
         th_Rank, MB_TAG_CREAT | MB_TAG_BYTES | tag_type, &def_rank);
-    CHKERR moab.tag_set_data(th_Rank, &meshset, 1, &nb_of_coefficients);
+    CHKERR get_moab().tag_set_data(th_Rank, &meshset, 1, &nb_of_coefficients);
     // add meshset
     std::pair<Field_multiIndex::iterator, bool> p;
     try {
@@ -182,10 +182,10 @@ MoFEMErrorCode Core::add_field(const std::string &name, const FieldSpace space,
       int sys_name_size[1];
       sys_name_size[0] = undefined_cs_ptr->getName().size();
       void const *sys_name[] = {&*undefined_cs_ptr->getNameRef().begin()};
-      CHKERR moab.tag_set_by_ptr(cs_manger_ptr->get_th_CoordSysName(), &meshset,
+      CHKERR get_moab().tag_set_by_ptr(cs_manger_ptr->get_th_CoordSysName(), &meshset,
                                  1, sys_name, sys_name_size);
       EntityHandle coord_sys_id = undefined_cs_ptr->getMeshset();
-      CHKERR moab.add_entities(coord_sys_id, &meshset, 1);
+      CHKERR get_moab().add_entities(coord_sys_id, &meshset, 1);
       p = fIelds.insert(
           boost::make_shared<Field>(moab, meshset, undefined_cs_ptr));
       if (bh == MF_EXCL) {
@@ -217,11 +217,11 @@ MoFEMErrorCode Core::addEntsToFieldByDim(const Range &ents, const int dim,
   MoFEMFunctionBegin;
   idm = get_field_meshset(name);
   FieldSpace space;
-  CHKERR moab.tag_get_data(th_FieldSpace, &idm, 1, &space);
+  CHKERR get_moab().tag_get_data(th_FieldSpace, &idm, 1, &space);
   std::vector<int> nb_ents_on_dim(3, 0);
   switch (space) {
   case L2:
-    CHKERR moab.add_entities(idm, ents);
+    CHKERR get_moab().add_entities(idm, ents);
     if (verb >= VERY_VERBOSE) {
       std::ostringstream ss;
       ss << "add entities to field " << name;
@@ -231,40 +231,40 @@ MoFEMErrorCode Core::addEntsToFieldByDim(const Range &ents, const int dim,
     }
     break;
   case H1:
-    CHKERR moab.add_entities(idm, ents);
+    CHKERR get_moab().add_entities(idm, ents);
     for (int dd = 0; dd != dim; ++dd) {
       Range adj_ents;
-      CHKERR moab.get_adjacencies(ents, dd, false, adj_ents,
+      CHKERR get_moab().get_adjacencies(ents, dd, false, adj_ents,
                                   moab::Interface::UNION);
       if (dd == 0) {
         Range topo_nodes;
-        CHKERR moab.get_connectivity(ents, topo_nodes, true);
+        CHKERR get_moab().get_connectivity(ents, topo_nodes, true);
         Range mid_nodes;
-        CHKERR moab.get_connectivity(ents, mid_nodes, false);
+        CHKERR get_moab().get_connectivity(ents, mid_nodes, false);
         mid_nodes = subtract(mid_nodes, topo_nodes);
         adj_ents = subtract(adj_ents, mid_nodes);
       }
-      CHKERR moab.add_entities(idm, adj_ents);
+      CHKERR get_moab().add_entities(idm, adj_ents);
       nb_ents_on_dim[dd] = adj_ents.size();
     }
     break;
   case HCURL:
-    CHKERR moab.add_entities(idm, ents);
+    CHKERR get_moab().add_entities(idm, ents);
     for (int dd = 1; dd != dim; ++dd) {
       Range adj_ents;
-      CHKERR moab.get_adjacencies(ents, dd, false, adj_ents,
+      CHKERR get_moab().get_adjacencies(ents, dd, false, adj_ents,
                                   moab::Interface::UNION);
-      CHKERR moab.add_entities(idm, adj_ents);
+      CHKERR get_moab().add_entities(idm, adj_ents);
       nb_ents_on_dim[dd] = adj_ents.size();
     }
     break;
   case HDIV:
-    CHKERR moab.add_entities(idm, ents);
+    CHKERR get_moab().add_entities(idm, ents);
     if (dim > 2) {
       Range adj_ents;
-      CHKERR moab.get_adjacencies(ents, 2, false, adj_ents,
+      CHKERR get_moab().get_adjacencies(ents, 2, false, adj_ents,
                                   moab::Interface::UNION);
-      CHKERR moab.add_entities(idm, adj_ents);
+      CHKERR get_moab().add_entities(idm, adj_ents);
       nb_ents_on_dim[2] = adj_ents.size();
     }
     break;
@@ -301,7 +301,7 @@ MoFEMErrorCode Core::add_ents_to_field_by_type(const Range &ents,
   MoFEMFunctionBeginHot;
   Range ents_type = ents.subset_by_type(type);
   if (!ents_type.empty()) {
-    const int dim = moab.dimension_from_handle(ents_type[0]);
+    const int dim = get_moab().dimension_from_handle(ents_type[0]);
     ierr = addEntsToFieldByDim(ents_type, dim, name, verb);
     CHKERRG(ierr);
   }
@@ -314,7 +314,7 @@ MoFEMErrorCode Core::add_ents_to_field_by_dim(const EntityHandle meshset,
                                               const bool recursive, int verb) {
   MoFEMFunctionBeginHot;
   Range ents;
-  rval = moab.get_entities_by_dimension(meshset, dim, ents, recursive);
+  rval = get_moab().get_entities_by_dimension(meshset, dim, ents, recursive);
   CHKERRQ_MOAB(rval);
   ierr = addEntsToFieldByDim(ents, dim, name, verb);
   CHKERRG(ierr);
@@ -327,10 +327,10 @@ MoFEMErrorCode Core::add_ents_to_field_by_type(const EntityHandle meshset,
                                                const bool recursive, int verb) {
   MoFEMFunctionBeginHot;
   Range ents;
-  rval = moab.get_entities_by_type(meshset, type, ents, recursive);
+  rval = get_moab().get_entities_by_type(meshset, type, ents, recursive);
   CHKERRQ_MOAB(rval);
   if (!ents.empty()) {
-    const int dim = moab.dimension_from_handle(ents[0]);
+    const int dim = get_moab().dimension_from_handle(ents[0]);
     ierr = addEntsToFieldByDim(ents, dim, name, verb);
     CHKERRG(ierr);
   }
@@ -359,7 +359,7 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
 
   // intersection with field meshset
   Range ents_of_id_meshset;
-  CHKERR moab.get_entities_by_handle(idm, ents_of_id_meshset, false);
+  CHKERR get_moab().get_entities_by_handle(idm, ents_of_id_meshset, false);
   Range field_ents = intersect(ents, ents_of_id_meshset);
   if (verb > VERBOSE) {
     PetscSynchronizedPrintf(
@@ -397,7 +397,7 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
     // Sanity check
     switch ((*miit)->getSpace()) {
     case H1:
-      if (moab.type_from_handle(first) == MBVERTEX) {
+      if (get_moab().type_from_handle(first) == MBVERTEX) {
         if (order >= 0 && order != 1) {
           SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                   "approximation order for H1 space and vertex different than "
@@ -406,17 +406,17 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
       }
       break;
     case HCURL:
-      if (moab.type_from_handle(first) == MBVERTEX) {
+      if (get_moab().type_from_handle(first) == MBVERTEX) {
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                 "HDIV space on vertices makes no sense");
       }
       break;
     case HDIV:
-      if (moab.type_from_handle(first) == MBVERTEX) {
+      if (get_moab().type_from_handle(first) == MBVERTEX) {
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                 "HDIV space on vertices makes no sense");
       }
-      if (moab.type_from_handle(first) == MBEDGE) {
+      if (get_moab().type_from_handle(first) == MBEDGE) {
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                 "HDIV space on edges makes no sense");
       }
@@ -565,7 +565,7 @@ MoFEMErrorCode Core::set_field_order(const EntityHandle meshset,
     verb = verbose;
   *buildMoFEM = 0;
   Range ents;
-  rval = moab.get_entities_by_type(meshset, type, ents);
+  rval = get_moab().get_entities_by_type(meshset, type, ents);
   CHKERRQ_MOAB(rval);
   if (verb > 1) {
     PetscSynchronizedPrintf(cOmm, "nb. of ents for order change %d\n",
@@ -668,7 +668,7 @@ Core::buildFieldForNoField(const BitFieldId id,
   // ents in the field meshset
   Range ents_of_id_meshset;
   rval =
-      moab.get_entities_by_handle((*miit)->meshSet, ents_of_id_meshset, false);
+      get_moab().get_entities_by_handle((*miit)->meshSet, ents_of_id_meshset, false);
   CHKERRQ_MOAB(rval);
   if (verb > 5) {
     PetscSynchronizedPrintf(cOmm, "ents in field %s meshset %d\n",
@@ -767,7 +767,7 @@ MoFEMErrorCode Core::buildFieldForL2H1HcurlHdiv(
 
   // Ents in the field meshset
   Range ents_of_id_meshset;
-  CHKERR moab.get_entities_by_handle((*field_it)->meshSet, ents_of_id_meshset,
+  CHKERR get_moab().get_entities_by_handle((*field_it)->meshSet, ents_of_id_meshset,
                                      false);
   if (verb > VERY_NOISY) {
     PetscSynchronizedPrintf(PETSC_COMM_SELF, "Ents in field %s meshset %d\n",
@@ -863,6 +863,99 @@ MoFEMErrorCode Core::buildFieldForL2H1HcurlHdiv(
   MoFEMFunctionReturn(0);
 }
 
+MoFEMErrorCode Core::buildField(const boost::shared_ptr<Field> &field,
+                                int verb) {
+  MoFEMFunctionBegin;
+  if (verb == -1)
+    verb = verbose;
+  if (verb > QUIET) {
+    PetscSynchronizedPrintf(cOmm, "Build Field %s (rank %d)\n",
+                            field->getName().c_str(), rAnk);
+  }
+  std::map<EntityType, int> dof_counter;
+  std::map<EntityType, int> inactive_dof_counter;
+
+  switch (field->getSpace()) {
+  case NOFIELD:
+    CHKERR buildFieldForNoField(field->getId(), dof_counter, verb);
+    break;
+  case L2:
+  case H1:
+  case HCURL:
+  case HDIV:
+    CHKERR buildFieldForL2H1HcurlHdiv(field->getId(), dof_counter,
+                                      inactive_dof_counter, verb);
+    break;
+  default:
+    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented");
+  }
+
+  if (verb > QUIET) {
+    int nb_added_dofs = 0;
+    int nb_inactive_added_dofs = 0;
+    for (std::map<EntityType, int>::iterator it = dof_counter.begin();
+         it != dof_counter.end(); it++) {
+      switch (it->first) {
+      case MBVERTEX:
+        PetscSynchronizedPrintf(cOmm,
+                                "nb added dofs (vertices) %d (inactive %d)\n",
+                                it->second, inactive_dof_counter[it->first]);
+        break;
+      case MBEDGE:
+        PetscSynchronizedPrintf(cOmm,
+                                "nb added dofs (edges) %d (inactive %d)\n",
+                                it->second, inactive_dof_counter[it->first]);
+        break;
+      case MBTRI:
+        PetscSynchronizedPrintf(cOmm,
+                                "nb added dofs (triangles) %d (inactive %d)\n",
+                                it->second, inactive_dof_counter[it->first]);
+        break;
+      case MBQUAD:
+        PetscSynchronizedPrintf(cOmm,
+                                "nb added dofs (quads) %d (inactive %d)\n",
+                                it->second, inactive_dof_counter[it->first]);
+        break;
+      case MBTET:
+        PetscSynchronizedPrintf(cOmm, "nb added dofs (tets) %d (inactive %d)\n",
+                                it->second, inactive_dof_counter[it->first]);
+        break;
+      case MBPRISM:
+        PetscSynchronizedPrintf(cOmm,
+                                "nb added dofs (prisms) %d (inactive %d)\n",
+                                it->second, inactive_dof_counter[it->first]);
+        break;
+      case MBENTITYSET:
+        PetscSynchronizedPrintf(cOmm,
+                                "nb added dofs (meshsets) %d (inactive %d)\n",
+                                it->second, inactive_dof_counter[it->first]);
+        break;
+      default:
+        SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented");
+      }
+      nb_added_dofs += it->second;
+      nb_inactive_added_dofs += inactive_dof_counter[it->first];
+    }
+    if (verb > QUIET) {
+      PetscSynchronizedPrintf(cOmm,
+                              "nb added dofs %d (number of inactive dofs %d)\n",
+                              nb_added_dofs, nb_inactive_added_dofs);
+    }
+  }
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode Core::build_field(const std::string field_name, int verb) {
+  MoFEMFunctionBegin;
+  auto miit = fIelds.get<FieldName_mi_tag>().find(field_name);
+  if(miit == fIelds.get<FieldName_mi_tag>().end()) {
+    SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_FOUND, "Field < %s > not found",
+            field_name.c_str());
+  }
+  CHKERR buildField((*miit), verb);
+  PetscSynchronizedFlush(cOmm, PETSC_STDOUT);
+  MoFEMFunctionReturn(0);
+}
 MoFEMErrorCode Core::build_fields(int verb) {
   MoFEMFunctionBegin;
   if (verb == -1)
@@ -871,82 +964,10 @@ MoFEMErrorCode Core::build_fields(int verb) {
   FieldSetById &set_id = fIelds.get<BitFieldId_mi_tag>();
   FieldSetById::iterator miit = set_id.begin();
   for (; miit != set_id.end(); miit++) {
-    std::map<EntityType, int> dof_counter;
-    std::map<EntityType, int> inactive_dof_counter;
-    if (verb > 0) {
-      PetscSynchronizedPrintf(cOmm, "Build Field %s (rank %d)\n",
-                              (*miit)->getName().c_str(), rAnk);
-    }
-    switch ((*miit)->getSpace()) {
-    case NOFIELD:
-      CHKERR buildFieldForNoField((*miit)->getId(), dof_counter, verb);
-      break;
-    case L2:
-    case H1:
-    case HCURL:
-    case HDIV:
-      CHKERR buildFieldForL2H1HcurlHdiv((*miit)->getId(), dof_counter,
-                                        inactive_dof_counter, verb);
-      break;
-    default:
-      SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented");
-    }
-    if (verb > 0) {
-      int nb_added_dofs = 0;
-      int nb_inactive_added_dofs = 0;
-      for (std::map<EntityType, int>::iterator it = dof_counter.begin();
-           it != dof_counter.end(); it++) {
-        switch (it->first) {
-        case MBVERTEX:
-          PetscSynchronizedPrintf(cOmm,
-                                  "nb added dofs (vertices) %d (inactive %d)\n",
-                                  it->second, inactive_dof_counter[it->first]);
-          break;
-        case MBEDGE:
-          PetscSynchronizedPrintf(cOmm,
-                                  "nb added dofs (edges) %d (inactive %d)\n",
-                                  it->second, inactive_dof_counter[it->first]);
-          break;
-        case MBTRI:
-          PetscSynchronizedPrintf(
-              cOmm, "nb added dofs (triangles) %d (inactive %d)\n", it->second,
-              inactive_dof_counter[it->first]);
-          break;
-        case MBQUAD:
-          PetscSynchronizedPrintf(cOmm,
-                                  "nb added dofs (quads) %d (inactive %d)\n",
-                                  it->second, inactive_dof_counter[it->first]);
-          break;
-        case MBTET:
-          PetscSynchronizedPrintf(cOmm,
-                                  "nb added dofs (tets) %d (inactive %d)\n",
-                                  it->second, inactive_dof_counter[it->first]);
-          break;
-        case MBPRISM:
-          PetscSynchronizedPrintf(cOmm,
-                                  "nb added dofs (prisms) %d (inactive %d)\n",
-                                  it->second, inactive_dof_counter[it->first]);
-          break;
-        case MBENTITYSET:
-          PetscSynchronizedPrintf(cOmm,
-                                  "nb added dofs (meshsets) %d (inactive %d)\n",
-                                  it->second, inactive_dof_counter[it->first]);
-          break;
-        default:
-          SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented");
-        }
-        nb_added_dofs += it->second;
-        nb_inactive_added_dofs += inactive_dof_counter[it->first];
-      }
-      if (verb > 0) {
-        PetscSynchronizedPrintf(
-            cOmm, "nb added dofs %d (number of inactive dofs %d)\n",
-            nb_added_dofs, nb_inactive_added_dofs);
-      }
-    }
+    CHKERR buildField((*miit), verb);
   }
   *buildMoFEM = 1 << 0;
-  if (verb > 0) {
+  if (verb > QUIET) {
     PetscSynchronizedPrintf(cOmm, "Nb. dofs %u\n", dofsField.size());
   }
   PetscSynchronizedFlush(cOmm, PETSC_STDOUT);
@@ -1017,10 +1038,10 @@ Core::get_problem_finite_elements_entities(const std::string &problem_name,
              fe_name);
        miit++) {
     EntityHandle ent = (*miit)->getEnt();
-    rval = moab.add_entities(meshset, &ent, 1);
+    rval = get_moab().add_entities(meshset, &ent, 1);
     CHKERRQ_MOAB(rval);
     int part = (*miit)->getPart();
-    rval = moab.tag_set_data(th_Part, &ent, 1, &part);
+    rval = get_moab().tag_set_data(th_Part, &ent, 1, &part);
     CHKERRQ_MOAB(rval);
   }
   MoFEMFunctionReturnHot(0);
@@ -1079,7 +1100,7 @@ Core::check_number_of_ents_in_ents_field(const std::string &name) const {
 
   int num_entities;
 
-  rval = moab.get_number_entities_by_handle(meshset, num_entities);
+  rval = get_moab().get_number_entities_by_handle(meshset, num_entities);
   CHKERRQ_MOAB(rval);
   if (entsFields.get<FieldName_mi_tag>().count((*it)->getName()) >
       (unsigned int)num_entities) {
@@ -1101,7 +1122,7 @@ MoFEMErrorCode Core::check_number_of_ents_in_ents_field() const {
     EntityHandle meshset = (*it)->getMeshset();
 
     int num_entities;
-    rval = moab.get_number_entities_by_handle(meshset, num_entities);
+    rval = get_moab().get_number_entities_by_handle(meshset, num_entities);
     CHKERRQ_MOAB(rval);
     if (entsFields.get<FieldName_mi_tag>().count((*it)->getName()) >
         (unsigned int)num_entities) {

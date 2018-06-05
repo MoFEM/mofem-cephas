@@ -15,7 +15,7 @@ cmake_minimum_required (VERSION 3.1.3)
 
 project(MoFEM-UserModules C CXX)
 
-#serch inlude directories before system directories
+#search include directories before system directories
 set(CMAKE_INCLUDE_DIRECTORIES_BEFORE ON)
 
 include(cmake/GetGitRevisionDescription.cmake)

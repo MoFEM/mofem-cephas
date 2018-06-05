@@ -126,17 +126,18 @@ MoFEMErrorCode EdgeForce::OpEdgeForce::doWork(int side,EntityType type,DataForce
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode EdgeForce::addForce(const std::string field_name,Vec F,int ms_id,bool use_snes_f) {
-  
-  
+MoFEMErrorCode EdgeForce::addForce(const std::string field_name, Vec F,
+                                   int ms_id, bool use_snes_f) {
   const CubitMeshSets *cubit_meshset_ptr;
   MeshsetsManager *mmanager_ptr;
-  MoFEMFunctionBeginHot;
-  ierr = mField.getInterface(mmanager_ptr); CHKERRG(ierr);
-  ierr = mmanager_ptr->getCubitMeshsetPtr(ms_id,NODESET,&cubit_meshset_ptr); CHKERRG(ierr);
-  ierr = cubit_meshset_ptr->getBcDataStructure(mapForce[ms_id].data); CHKERRG(ierr);
-  rval = mField.get_moab().get_entities_by_type(cubit_meshset_ptr->meshset,MBEDGE,mapForce[ms_id].eDges,true); CHKERRG(rval);
+  MoFEMFunctionBegin;
+  CHKERR mField.getInterface(mmanager_ptr);
+  CHKERR mmanager_ptr->getCubitMeshsetPtr(ms_id, NODESET, &cubit_meshset_ptr);
+  CHKERR cubit_meshset_ptr->getBcDataStructure(mapForce[ms_id].data);
+  CHKERR mField.get_moab().get_entities_by_type(
+      cubit_meshset_ptr->meshset, MBEDGE, mapForce[ms_id].eDges, true);
   // Add operator for element, set data and entities operating on the data
-  fe.getOpPtrVector().push_back(new OpEdgeForce(field_name,F,mapForce[ms_id],methodsOp,use_snes_f));
-  MoFEMFunctionReturnHot(0);
+  fe.getOpPtrVector().push_back(
+      new OpEdgeForce(field_name, F, mapForce[ms_id], methodsOp, use_snes_f));
+  MoFEMFunctionReturn(0);
 }

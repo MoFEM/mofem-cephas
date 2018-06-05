@@ -27,6 +27,8 @@ if(WITH_ADOL-C)
     PREFIX ${PROJECT_BINARY_DIR}/external/
     URL http://bitbucket.org/likask/mofem-joseph/downloads/ADOL-C-2.5.2.tgz
     CONFIGURE_COMMAND ${PROJECT_BINARY_DIR}/external/src/adolc/configure CC=${CMAKE_C_COMPILER} CXX=${CMAKE_CXX_COMPILER} --disable-shared --prefix=${PROJECT_BINARY_DIR}/external
+    BUILD_COMMAND make
+    INSTALL_COMMAND make install
   )
   find_library(COLPACK_LIBLARY NAMES Colpack PATHS /usr/local/lib)
   execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}/external/lib64)

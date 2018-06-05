@@ -8,7 +8,13 @@ if(SLEPC_DIR)
   set(SLEPC_DIR $ENV{SLEPC_DIR})
 endif(SLEPC_DIR)
 
-find_library(SLEPC_LIBRARY NAMES slepc PATHS "${SLEPC_DIR}/${PETSC_ARCH}/lib")
+find_library(
+  SLEPC_LIBRARY 
+  NAMES slepc 
+  PATHS 
+  "${SLEPC_DIR}/${PETSC_ARCH}/lib" 
+  NO_DEFAULT_PATH
+)
 message(STATUS ${SLEPC_LIBRARY})
 
 if(SLEPC_LIBRARY) 

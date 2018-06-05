@@ -556,42 +556,37 @@ MoFEMErrorCode
 DefaultElementAdjacency::defaultEdge(Interface &moab, const Field &field_ptr,
                                      const EntFiniteElement &fe_ptr,
                                      Range &adjacency) {
-  MoFEMFunctionBeginHot;
-  ErrorCode rval;
+  MoFEMFunctionBegin;
   EntityHandle fe_ent = fe_ptr.getEnt();
   // Range nodes;
   switch (field_ptr.getSpace()) {
   case H1:
-    rval = moab.get_connectivity(&fe_ent, 1, adjacency, true);
-    CHKERRQ_MOAB(rval);
+    CHKERR moab.get_connectivity(&fe_ent, 1, adjacency, true);
   // //moab.get_connectivity(&fe_ent,1,nodes,true);
   // //use get adjacencies, this will allow take in account adjacencies set user
-  // rval =
-  // moab.get_adjacencies(&fe_ent,1,0,false,nodes,moab::Interface::UNION);
-  // CHKERRQ_MOAB(rval);
+  // CHKERR moab.get_adjacencies(&fe_ent,1,0,false,nodes,moab::Interface::UNION);
   // {
   //   Range topo_nodes;
-  //   rval = moab.get_connectivity(&fe_ent,1,topo_nodes,true);
-  //   CHKERRQ_MOAB(rval); Range mid_nodes; rval =
-  //   moab.get_connectivity(&fe_ent,1,mid_nodes,false); CHKERRQ_MOAB(rval);
+  //   CHKERR moab.get_connectivity(&fe_ent,1,topo_nodes,true);
+  //   Range mid_nodes; 
+  //   CHKERR moab.get_connectivity(&fe_ent,1,mid_nodes,false);
   //   mid_nodes = subtract(mid_nodes,topo_nodes);
   //   nodes = subtract(nodes,mid_nodes);
   // }
   // adjacency.insert(nodes.begin(),nodes.end());
   // adjacency.insert(fe_ent);
   // break;
+  case L2:
   case HCURL:
     adjacency.insert(fe_ent);
     break;
   case NOFIELD: {
     Range ents;
-    rval = moab.get_entities_by_handle(field_ptr.getMeshset(), ents, false);
-    CHKERRQ_MOAB(rval);
+    CHKERR moab.get_entities_by_handle(field_ptr.getMeshset(), ents, false);
     adjacency.merge(ents);
-    for (Range::iterator eit = ents.begin(); eit != ents.end(); eit++) {
+    for (auto e : ents) {
       const_cast<SideNumber_multiIndex &>(fe_ptr.getSideNumberTable())
-          .insert(
-              boost::shared_ptr<SideNumber>(new SideNumber(*eit, -1, 0, 0)));
+          .insert(boost::shared_ptr<SideNumber>(new SideNumber(e, -1, 0, 0)));
     }
   } break;
   default:
@@ -599,11 +594,11 @@ DefaultElementAdjacency::defaultEdge(Interface &moab, const Field &field_ptr,
             "this field is not implemented for EDGE finite element");
   }
   // build side table
-  for (Range::iterator eit = adjacency.begin(); eit != adjacency.end(); eit++) {
-    fe_ptr.getSideNumberPtr(*eit);
-  }
-  MoFEMFunctionReturnHot(0);
+  for (auto e : adjacency) 
+    fe_ptr.getSideNumberPtr(e);
+  MoFEMFunctionReturn(0);
 }
+
 MoFEMErrorCode
 DefaultElementAdjacency::defaultTri(Interface &moab, const Field &field_ptr,
                                     const EntFiniteElement &fe_ptr,
