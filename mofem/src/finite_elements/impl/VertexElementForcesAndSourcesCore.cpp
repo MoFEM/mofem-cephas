@@ -68,161 +68,156 @@ extern "C" {
 namespace MoFEM {
 
 MoFEMErrorCode VertexElementForcesAndSourcesCore::operator()() {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
 
-  if(numeredEntFiniteElementPtr->getEntType() != MBVERTEX) MoFEMFunctionReturnHot(0);
+  if (numeredEntFiniteElementPtr->getEntType() != MBVERTEX)
+    MoFEMFunctionReturnHot(0);
 
   EntityHandle ent = numeredEntFiniteElementPtr->getEnt();
-  coords.resize(3,false);
-  rval = mField.get_moab().get_coords(&ent,1,&*coords.data().begin()); CHKERRQ_MOAB(rval);
+  coords.resize(3, false);
+  CHKERR mField.get_moab().get_coords(&ent, 1, &*coords.data().begin());
 
-  const UserDataOperator::OpType types[2] = {
-    UserDataOperator::OPROW, UserDataOperator::OPCOL
-  };
+  const UserDataOperator::OpType types[2] = {UserDataOperator::OPROW,
+                                             UserDataOperator::OPCOL};
   std::vector<std::string> last_eval_field_name(2);
   DataForcesAndSourcesCore *op_data[2];
   FieldSpace space[2];
 
-  boost::ptr_vector<UserDataOperator>::iterator oit,hi_oit;
+  boost::ptr_vector<UserDataOperator>::iterator oit, hi_oit;
   oit = opPtrVector.begin();
   hi_oit = opPtrVector.end();
 
-  for(;oit!=hi_oit;oit++) {
+  for (; oit != hi_oit; oit++) {
 
     oit->setPtrFE(this);
 
-    for(int ss = 0;ss!=2;ss++) {
+    for (int ss = 0; ss != 2; ss++) {
 
       std::string field_name = !ss ? oit->rowFieldName : oit->colFieldName;
       BitFieldId data_id = mField.get_field_structure(field_name)->getId();
-      if((oit->getNumeredEntFiniteElementPtr()->getBitFieldIdData()&data_id).none()) {
-        SETERRQ2(
-          PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"no data field < %s > on finite element < %s >",
-          field_name.c_str(),feName.c_str()
-        );
+      if ((oit->getNumeredEntFiniteElementPtr()->getBitFieldIdData() & data_id)
+              .none()) {
+        SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                 "no data field < %s > on finite element < %s >",
+                 field_name.c_str(), feName.c_str());
       }
 
-      if(oit->getOpType()&types[ss] || oit->getOpType()&UserDataOperator::OPROWCOL) {
+      if (oit->getOpType() & types[ss] ||
+          oit->getOpType() & UserDataOperator::OPROWCOL) {
 
         space[ss] = mField.get_field_structure(field_name)->getSpace();
 
-        switch(space[ss]) {
-          case NOSPACE:
-          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown space");
-          case H1:
+        switch (space[ss]) {
+        case NOSPACE:
+          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "unknown space");
+        case H1:
           op_data[ss] = !ss ? &data : &derivedData;
           break;
-          case HCURL:
-          SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not make sense for vertex");
+        case HCURL:
+          SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+                  "not make sense for vertex");
           break;
-          case HDIV:
-          SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not make sanes on edge");
+        case HDIV:
+          SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+                  "not make sanes on edge");
           break;
-          case L2:
-          SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not make sanes on edge");
+        case L2:
+          SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+                  "not make sanes on edge");
           break;
-          case NOFIELD:
+        case NOFIELD:
           op_data[ss] = !ss ? &dataNoField : &dataNoFieldCol;
           break;
-          case LASTSPACE:
-          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown space");
+        case LASTSPACE:
+          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "unknown space");
           break;
         }
 
-        if(last_eval_field_name[ss]!=field_name) {
+        if (last_eval_field_name[ss] != field_name) {
 
-          switch(space[ss]) {
-            case NOSPACE:
-            SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown space");
-            case H1:
-            if(!ss) {
-              ierr = getRowNodesIndices(*op_data[ss],field_name); CHKERRG(ierr);
+          switch (space[ss]) {
+          case NOSPACE:
+            SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "unknown space");
+          case H1:
+            if (!ss) {
+              CHKERR getRowNodesIndices(*op_data[ss], field_name);
             } else {
-              ierr = getColNodesIndices(*op_data[ss],field_name); CHKERRG(ierr);
+              CHKERR getColNodesIndices(*op_data[ss], field_name);
             }
-            ierr = getNodesFieldData(*op_data[ss],field_name); CHKERRG(ierr);
+            CHKERR getNodesFieldData(*op_data[ss], field_name);
             break;
-            case HCURL:
-            SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not make sanes on edge");
+          case HCURL:
+            SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+                    "not make sanes on edge");
             break;
-            case HDIV:
-            SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not make sanes on edge");
+          case HDIV:
+            SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+                    "not make sanes on edge");
             break;
-            case L2:
-            SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not make sanes on edge");
+          case L2:
+            SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+                    "not make sanes on edge");
             break;
-            case NOFIELD:
-            if(!getNinTheLoop()) {
-              // NOFIELD data are the same for each element, can be retreived only once
-              if(!ss) {
-                ierr = getNoFieldRowIndices(*op_data[ss],field_name); CHKERRG(ierr);
+          case NOFIELD:
+            if (!getNinTheLoop()) {
+              // NOFIELD data are the same for each element, can be retreived
+              // only once
+              if (!ss) {
+                CHKERR getNoFieldRowIndices(*op_data[ss], field_name);
               } else {
-                ierr = getNoFieldColIndices(*op_data[ss],field_name); CHKERRG(ierr);
+                CHKERR getNoFieldColIndices(*op_data[ss], field_name);
               }
-              ierr = getNoFieldFieldData(*op_data[ss],field_name); CHKERRG(ierr);
+              CHKERR getNoFieldFieldData(*op_data[ss], field_name);
             }
             break;
-            case LASTSPACE:
-            SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown space");
+          case LASTSPACE:
+            SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "unknown space");
             break;
           }
-          last_eval_field_name[ss]=field_name;
-
+          last_eval_field_name[ss] = field_name;
         }
       }
     }
 
-    if(oit->getOpType()&UserDataOperator::OPROW) {
+    if (oit->getOpType() & UserDataOperator::OPROW) {
       try {
-        ierr = oit->opRhs(
-          *op_data[0],
-          oit->doVertices,
-          false,
-          false,
-          false,
-          false,
-          false
-        ); CHKERRG(ierr);
-      } catch (std::exception& ex) {
+        ierr = oit->opRhs(*op_data[0], oit->doVertices, false, false, false,
+                          false, false);
+      } catch (std::exception &ex) {
         std::ostringstream ss;
-        ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
-        SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
+        ss << "thorw in method: " << ex.what() << " at line " << __LINE__
+           << " in file " << __FILE__;
+        SETERRQ(PETSC_COMM_SELF, MOFEM_STD_EXCEPTION_THROW, ss.str().c_str());
       }
     }
 
-
-    if(oit->getOpType()&UserDataOperator::OPCOL) {
+    if (oit->getOpType() & UserDataOperator::OPCOL) {
       try {
-        ierr = oit->opRhs(
-          *op_data[1],
-          oit->doVertices,
-          false,
-          false,
-          false,
-          false,
-          false
-        ); CHKERRG(ierr);
-      } catch (std::exception& ex) {
+        ierr = oit->opRhs(*op_data[1], oit->doVertices, false, false, false,
+                          false, false);
+        CHKERRG(ierr);
+      } catch (std::exception &ex) {
         std::ostringstream ss;
-        ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
-        SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
+        ss << "thorw in method: " << ex.what() << " at line " << __LINE__
+           << " in file " << __FILE__;
+        SETERRQ(PETSC_COMM_SELF, MOFEM_STD_EXCEPTION_THROW, ss.str().c_str());
       }
     }
 
-
-    if(oit->getOpType()&UserDataOperator::OPROWCOL) {
+    if (oit->getOpType() & UserDataOperator::OPROWCOL) {
       try {
-        ierr = oit->opLhs(*op_data[0],*op_data[1],oit->sYmm); CHKERRG(ierr);
-      } catch (std::exception& ex) {
+        ierr = oit->opLhs(*op_data[0], *op_data[1], oit->sYmm);
+        CHKERRG(ierr);
+      } catch (std::exception &ex) {
         std::ostringstream ss;
-        ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
-        SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
+        ss << "thorw in method: " << ex.what() << " at line " << __LINE__
+           << " in file " << __FILE__;
+        SETERRQ(PETSC_COMM_SELF, MOFEM_STD_EXCEPTION_THROW, ss.str().c_str());
       }
     }
-
   }
 
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
-}
+} // namespace MoFEM
