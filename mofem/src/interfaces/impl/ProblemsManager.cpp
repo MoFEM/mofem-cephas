@@ -2606,6 +2606,9 @@ MoFEMErrorCode ProblemsManager::partitionFiniteElements(const std::string &name,
       if (part_from_moab) {
         // if partition is taken from moab partition
         int proc = (*efit)->getPartProc();
+        if(proc == -1 && (*efit)->getEntType() == MBVERTEX) {
+          proc = (*efit)->getOwnerProc();
+        }
         NumeredEntFiniteElement_change_part(proc).operator()(numered_fe);
       } else {
         // count partition of the dofs in row, the larges dofs with given
