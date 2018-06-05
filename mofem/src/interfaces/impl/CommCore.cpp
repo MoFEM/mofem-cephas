@@ -204,9 +204,9 @@ MoFEMErrorCode Core::synchronise_field_entities(const BitFieldId id, int verb) {
   EntityHandle idm;
   idm = get_field_meshset(id);
   Range ents;
-  CHKERR moab.get_entities_by_handle(idm, ents, false);
+  CHKERR get_moab().get_entities_by_handle(idm, ents, false);
   CHKERR synchronise_entities(ents, verb);
-  CHKERR moab.add_entities(idm, ents);
+  CHKERR get_moab().add_entities(idm, ents);
   MoFEMFunctionReturn(0);
 }
 
@@ -225,13 +225,13 @@ MoFEMErrorCode Core::synchronise_field_entities(const BitFieldId id, int verb) {
   MoFEMErrorCode Core::resolve_shared_ents(const Problem *problem_ptr,const std::string &fe_name,int verb) {
     MoFEMFunctionBeginHot;
     ParallelComm *pcomm =
-        ParallelComm::get_pcomm(&moab, basicEntityDataPtr->pcommID);
+        ParallelComm::get_pcomm(&get_moab(), basicEntityDataPtr->pcommID);
     std::vector<int> shprocs(MAX_SHARING_PROCS,0);
     std::vector<EntityHandle> shhandles(MAX_SHARING_PROCS,0);
     Range ents;
     Tag th_gid;
     const int zero =  0;
-    rval = moab.tag_get_handle(
+    rval = get_moab().tag_get_handle(
       GLOBAL_ID_TAG_NAME,1,MB_TYPE_INTEGER,th_gid,MB_TAG_DENSE|MB_TAG_CREAT,&zero
     ); CHKERRQ_MOAB(rval);
     PetscLayout layout;
@@ -243,9 +243,9 @@ MoFEMErrorCode Core::synchronise_field_entities(const BitFieldId id, int verb) {
       EntityHandle ent = (*fe_it)->getEnt();
       ents.insert(ent);
       unsigned int part = (*fe_it)->getPart();
-      rval = moab.tag_set_data(pcomm->part_tag(),&ent,1,&part); CHKERRQ_MOAB(rval);
+      rval = get_moab().tag_set_data(pcomm->part_tag(),&ent,1,&part); CHKERRQ_MOAB(rval);
       if(part == pcomm->rank()) {
-        rval = moab.tag_set_data(th_gid,&ent,1,&gid); CHKERRQ_MOAB(rval);
+        rval = get_moab().tag_set_data(th_gid,&ent,1,&gid); CHKERRQ_MOAB(rval);
         gid++;
       }
       shprocs.clear();
@@ -272,14 +272,14 @@ MoFEMErrorCode Core::synchronise_field_entities(const BitFieldId id, int verb) {
           shprocs[rrr] = -1;
         }
         if(pstatus&PSTATUS_SHARED) {
-          rval = moab.tag_set_data(pcomm->sharedp_tag(),&ent,1,&shprocs[0]); CHKERRQ_MOAB(rval);
-          rval = moab.tag_set_data(pcomm->sharedh_tag(),&ent,1,&shhandles[0]); CHKERRQ_MOAB(rval);
+          rval = get_moab().tag_set_data(pcomm->sharedp_tag(),&ent,1,&shprocs[0]); CHKERRQ_MOAB(rval);
+          rval = get_moab().tag_set_data(pcomm->sharedh_tag(),&ent,1,&shhandles[0]); CHKERRQ_MOAB(rval);
         }
         if(PSTATUS_MULTISHARED) {
-          rval = moab.tag_set_data(pcomm->sharedps_tag(),&ent,1,&shprocs[0]); CHKERRQ_MOAB(rval);
-          rval = moab.tag_set_data(pcomm->sharedhs_tag(),&ent,1,&shhandles[0]); CHKERRQ_MOAB(rval);
+          rval = get_moab().tag_set_data(pcomm->sharedps_tag(),&ent,1,&shprocs[0]); CHKERRQ_MOAB(rval);
+          rval = get_moab().tag_set_data(pcomm->sharedhs_tag(),&ent,1,&shhandles[0]); CHKERRQ_MOAB(rval);
         }
-        rval = moab.tag_set_data(pcomm->pstatus_tag(),&ent,1,&pstatus); CHKERRQ_MOAB(rval);
+        rval = get_moab().tag_set_data(pcomm->pstatus_tag(),&ent,1,&pstatus); CHKERRQ_MOAB(rval);
       }
     }
     rval = pcomm->exchange_tags(th_gid,ents); CHKERRQ_MOAB(rval);

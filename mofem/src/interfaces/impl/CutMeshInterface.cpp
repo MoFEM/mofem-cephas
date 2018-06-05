@@ -37,6 +37,12 @@ CutMeshInterface::CutMeshInterface(const Core &core)
   nbMaxTrimSearchIterations = 20;
 }
 
+MoFEMErrorCode CutMeshInterface::clearMap() {
+  MoFEMFunctionBegin;
+  treeSurfPtr.reset();
+  MoFEMFunctionReturn(0);
+}
+
 MoFEMErrorCode CutMeshInterface::setSurface(const Range &surface) {
   MoFEMFunctionBeginHot;
   sUrface = surface;

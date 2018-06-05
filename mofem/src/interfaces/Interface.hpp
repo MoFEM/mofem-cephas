@@ -55,6 +55,18 @@ struct CoreInterface : public UnknownInterface {
    */
   virtual const moab::Interface &get_moab() const = 0;
 
+  /**
+   * @brief Set the moab interface object
+   * 
+   * @param new_moab 
+   * @param verb 
+   * @param distributed_mesh 
+   * @return MoFEMErrorCode 
+   */
+  virtual MoFEMErrorCode
+  set_moab_interface(moab::Interface &new_moab, int verb = VERBOSE,
+                     const bool distributed_mesh = true) = 0;
+
   /** \brief get MeshsetsManager pointer
    */
   virtual MeshsetsManager *get_meshsets_manager_ptr() = 0;
@@ -455,6 +467,21 @@ struct CoreInterface : public UnknownInterface {
    * \ingroup mofem_field
    */
   virtual MoFEMErrorCode list_fields() const = 0;
+
+  /** build fields
+   * \ingroup mofem_field
+   */
+  virtual MoFEMErrorCode build_fields(int verb = DEFAULT_VERBOSITY) = 0;
+
+  /**
+   * @brief build field by name
+   * 
+   * @param field_name 
+   * @param verb 
+   * m@return MoFEMErrorCode 
+   */
+  virtual MoFEMErrorCode build_field(const std::string field_name,
+                                     int verb = DEFAULT_VERBOSITY) = 0;
 
   /** \brief get field meshset
   *
@@ -971,10 +998,11 @@ struct CoreInterface : public UnknownInterface {
    */
   virtual MoFEMErrorCode list_problem() const = 0;
 
-  /** build fields
-   * \ingroup mofem_field
-   */
-  virtual MoFEMErrorCode build_fields(int verb = DEFAULT_VERBOSITY) = 0;
+  /**@}*/
+
+  /** \name Clear dofs and entities */
+
+  /**@{*/
 
   /** list dofs
    * \ingroup mofem_field
@@ -982,11 +1010,6 @@ struct CoreInterface : public UnknownInterface {
   virtual MoFEMErrorCode
   list_dofs_by_field_name(const std::string &name) const = 0;
 
-  /**@}*/
-
-  /** \name Clear dofs and entities */
-
-  /**@{*/
 
   /** Clear inactive dofs
    * \ingroup mofem_field

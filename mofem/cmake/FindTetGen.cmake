@@ -17,7 +17,7 @@ if(WITH_TETGEN)
   ExternalProject_Add(
     tetgen
     PREFIX ${PROJECT_BINARY_DIR}/external/
-    URL https://bitbucket.org/likask/mofem-joseph/downloads/tetgen1.5.0.tgz
+    URL https://bitbucket.org/likask/mofem-joseph/downloads/tetgen-1.5.0.tgz
     CONFIGURE_COMMAND cmake ${PROJECT_BINARY_DIR}/external/src/tetgen
     BUILD_COMMAND make
     INSTALL_COMMAND ""

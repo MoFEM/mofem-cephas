@@ -64,17 +64,17 @@ MoFEMErrorCode Core::add_finite_element(const std::string &fe_name,
       MoFEMFunctionReturnHot(0);
   }
   EntityHandle meshset;
-  CHKERR moab.create_meshset(MESHSET_SET | MESHSET_TRACK_OWNER, meshset);
+  CHKERR get_moab().create_meshset(MESHSET_SET | MESHSET_TRACK_OWNER, meshset);
 
   // id
   BitFEId id = getFEShift();
-  CHKERR moab.tag_set_data(th_FEId, &meshset, 1, &id);
+  CHKERR get_moab().tag_set_data(th_FEId, &meshset, 1, &id);
 
   // id name
   void const *tag_data[] = {fe_name.c_str()};
   int tag_sizes[1];
   tag_sizes[0] = fe_name.size();
-  CHKERR moab.tag_set_by_ptr(th_FEName, &meshset, 1, tag_data, tag_sizes);
+  CHKERR get_moab().tag_set_by_ptr(th_FEName, &meshset, 1, tag_data, tag_sizes);
 
   // add FiniteElement
   std::pair<FiniteElement_multiIndex::iterator, bool> p = finiteElements.insert(
@@ -300,7 +300,7 @@ Core::get_finite_element_entities_by_dimension(const std::string name, int dim,
   MoFEMFunctionBegin;
 
   EntityHandle meshset = get_finite_element_meshset(name);
-  CHKERR moab.get_entities_by_dimension(meshset, dim, ents, true);
+  CHKERR get_moab().get_entities_by_dimension(meshset, dim, ents, true);
   MoFEMFunctionReturn(0);
 }
 
@@ -311,7 +311,7 @@ MoFEMErrorCode Core::get_finite_element_entities_by_type(const std::string name,
   MoFEMFunctionBegin;
 
   EntityHandle meshset = get_finite_element_meshset(name);
-  CHKERR moab.get_entities_by_type(meshset, type, ents, true);
+  CHKERR get_moab().get_entities_by_type(meshset, type, ents, true);
 
   MoFEMFunctionReturn(0);
 }
@@ -323,7 +323,7 @@ Core::get_finite_element_entities_by_handle(const std::string name,
   MoFEMFunctionBegin;
 
   EntityHandle meshset = get_finite_element_meshset(name);
-  CHKERR moab.get_entities_by_handle(meshset, ents, true);
+  CHKERR get_moab().get_entities_by_handle(meshset, ents, true);
 
   MoFEMFunctionReturn(0);
 }
@@ -353,9 +353,9 @@ MoFEMErrorCode Core::add_ents_to_finite_element_by_type(
 
   idm = get_finite_element_meshset(getBitFEId(name));
   Range ents;
-  CHKERR moab.get_entities_by_type(meshset, type, ents, recursive);
+  CHKERR get_moab().get_entities_by_type(meshset, type, ents, recursive);
   CHKERR getInterface<BitRefManager>()->setElementsBitRefLevel(ents);
-  CHKERR moab.add_entities(idm, ents);
+  CHKERR get_moab().add_entities(idm, ents);
 
   MoFEMFunctionReturn(0);
 }
@@ -369,9 +369,9 @@ Core::add_ents_to_finite_element_by_dim(const EntityHandle meshset,
   MoFEMFunctionBegin;
   idm = get_finite_element_meshset(getBitFEId(name));
   Range ents;
-  CHKERR moab.get_entities_by_dimension(meshset, dim, ents, recursive);
+  CHKERR get_moab().get_entities_by_dimension(meshset, dim, ents, recursive);
   CHKERR getInterface<BitRefManager>()->setElementsBitRefLevel(ents);
-  CHKERR moab.add_entities(idm, ents);
+  CHKERR get_moab().add_entities(idm, ents);
   MoFEMFunctionReturn(0);
 }
 
@@ -383,7 +383,7 @@ MoFEMErrorCode Core::add_ents_to_finite_element_by_type(
   idm = get_finite_element_meshset(getBitFEId(name));
   CHKERR getInterface<BitRefManager>()->setElementsBitRefLevel(
       ents.subset_by_type(type));
-  CHKERR moab.add_entities(idm, ents.subset_by_type(type));
+  CHKERR get_moab().add_entities(idm, ents.subset_by_type(type));
   MoFEMFunctionReturn(0);
 } // namespace MoFEM
 
@@ -396,7 +396,7 @@ Core::add_ents_to_finite_element_by_dim(const Range &ents, const int dim,
   idm = get_finite_element_meshset(getBitFEId(name));
   CHKERR getInterface<BitRefManager>()->setElementsBitRefLevel(
       ents.subset_by_dimension(dim));
-  CHKERR moab.add_entities(idm, ents.subset_by_dimension(dim));
+  CHKERR get_moab().add_entities(idm, ents.subset_by_dimension(dim));
   MoFEMFunctionReturn(0);
 }
 
@@ -507,7 +507,7 @@ MoFEMErrorCode Core::add_ents_to_finite_element_by_bit_ref(
       continue;
     if ((bit2 & bit).any()) {
       EntityHandle ent = miit->get()->getRefEnt();
-      CHKERR moab.add_entities(idm, &ent, 1);
+      CHKERR get_moab().add_entities(idm, &ent, 1);
       nb_add_FEs++;
     }
   }
@@ -528,11 +528,11 @@ MoFEMErrorCode Core::add_ents_to_finite_element_by_MESHSET(
   const BitFEId id = getBitFEId(name);
   const EntityHandle idm = get_finite_element_meshset(id);
   if (recursive == false) {
-    CHKERR moab.add_entities(idm, &meshset, 1);
+    CHKERR get_moab().add_entities(idm, &meshset, 1);
   } else {
     Range meshsets;
-    CHKERR moab.get_entities_by_type(meshset, MBENTITYSET, meshsets, false);
-    CHKERR moab.add_entities(idm, meshsets);
+    CHKERR get_moab().get_entities_by_type(meshset, MBENTITYSET, meshsets, false);
+    CHKERR get_moab().add_entities(idm, meshsets);
   }
   MoFEMFunctionReturn(0);
 }
@@ -558,7 +558,7 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
   EntityHandle meshset = get_finite_element_meshset(fe.get()->getId());
   // get entities from finite element meshset // if meshset
   Range fe_ents;
-  CHKERR moab.get_entities_by_handle(meshset, fe_ents, false);
+  CHKERR get_moab().get_entities_by_handle(meshset, fe_ents, false);
 
   if (ents_ptr)
     fe_ents = intersect(fe_ents, *ents_ptr);
@@ -590,7 +590,7 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
     if (ref_fe_miit == refinedFiniteElements.get<Ent_mi_tag>().end()) {
       std::ostringstream ss;
       ss << "refinedFiniteElements not in database ent = " << first;
-      ss << " type " << moab.type_from_handle(first);
+      ss << " type " << get_moab().type_from_handle(first);
       ss << " " << *fe;
       SETERRQ(cOmm, MOFEM_DATA_INCONSISTENCY, ss.str().c_str());
     }
@@ -1001,7 +1001,7 @@ MoFEMErrorCode Core::check_number_of_ents_in_ents_finite_element(
   EntityHandle meshset = (*it)->getMeshset();
 
   int num_entities;
-  CHKERR moab.get_number_entities_by_handle(meshset, num_entities);
+  CHKERR get_moab().get_number_entities_by_handle(meshset, num_entities);
 
   if (entsFiniteElements.get<FiniteElement_name_mi_tag>().count(
           (*it)->getName().c_str()) != (unsigned int)num_entities) {
@@ -1021,7 +1021,7 @@ MoFEMErrorCode Core::check_number_of_ents_in_ents_finite_element() const {
     EntityHandle meshset = (*it)->getMeshset();
 
     int num_entities;
-    CHKERR moab.get_number_entities_by_handle(meshset, num_entities);
+    CHKERR get_moab().get_number_entities_by_handle(meshset, num_entities);
 
     if (entsFiniteElements.get<FiniteElement_name_mi_tag>().count(
             (*it)->getName().c_str()) != (unsigned int)num_entities) {

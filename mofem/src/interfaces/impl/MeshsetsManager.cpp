@@ -52,35 +52,29 @@ MeshsetsManager::query_interface(const MOFEMuuid &uuid,
   MoFEMErrorCode MeshsetsManager::initialiseDatabaseFromMesh(int verb) {
     Interface &m_field = cOre;
     moab::Interface &moab = m_field.get_moab();
-    MoFEMFunctionBeginHot;
+    MoFEMFunctionBegin;
     Range meshsets;
-    rval = moab.get_entities_by_type(0, MBENTITYSET, meshsets, false);
-    CHKERRQ_MOAB(rval);
+    CHKERR moab.get_entities_by_type(0, MBENTITYSET, meshsets, false);
     for (Range::iterator mit = meshsets.begin(); mit != meshsets.end(); mit++) {
-      try {
-        // check if meshset is cubit meshset
-        CubitMeshSets base_meshset(moab, *mit);
-        if ((base_meshset.cubitBcType &
-             CubitBCType(NODESET | SIDESET | BLOCKSET))
-                .any()) {
-          std::pair<CubitMeshSet_multiIndex::iterator, bool> p =
-              cubitMeshsets.insert(base_meshset);
-          if (!p.second) {
-            SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                    "meshset not inserted");
-          }
-          if (verb > 0) {
-            std::ostringstream ss;
-            ss << "read cubit " << base_meshset << std::endl;
-            // PetscSynchronizedPrintf(comm,ss.str().c_str());
-            PetscPrintf(m_field.get_comm(), ss.str().c_str());
-          }
+      // check if meshset is cubit meshset
+      CubitMeshSets base_meshset(moab, *mit);
+      if ((base_meshset.cubitBcType & CubitBCType(NODESET | SIDESET | BLOCKSET))
+              .any()) {
+        std::pair<CubitMeshSet_multiIndex::iterator, bool> p =
+            cubitMeshsets.insert(base_meshset);
+        if (!p.second) {
+          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                  "meshset not inserted");
         }
-      } catch (MoFEMException const &e) {
-        SETERRQ(PETSC_COMM_SELF, e.errorCode, e.errorMessage);
+        if (verb > QUIET) {
+          std::ostringstream ss;
+          ss << "read cubit " << base_meshset << std::endl;
+          // PetscSynchronizedPrintf(comm,ss.str().c_str());
+          PetscPrintf(m_field.get_comm(), ss.str().c_str());
+        }
       }
     }
-    MoFEMFunctionReturnHot(0);
+    MoFEMFunctionReturn(0);
   }
 
   MoFEMErrorCode MeshsetsManager::getTags(int verb) {
