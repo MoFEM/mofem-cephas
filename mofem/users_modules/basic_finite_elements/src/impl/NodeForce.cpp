@@ -51,7 +51,7 @@ NodalForce::OpNodalForce::doWork(int side, EntityType type,
   int rank = dof_ptr->getNbOfCoeffs();
 
   if (data.getIndices().size() != (unsigned int)rank) {
-    SETERRQ(PETSC_COMM_SELF, 1, "data inconsistency");
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
   }
 
   Nf.resize(3);
@@ -68,6 +68,7 @@ NodalForce::OpNodalForce::doWork(int side, EntityType type,
   }
 
   CHKERR MethodForForceScaling::applyScale(getFEMethod(), methodsOp, Nf);
+
   Vec myF = F;
   if (useSnesF || F == PETSC_NULL) {
     switch (getFEMethod()->ts_ctx) {
