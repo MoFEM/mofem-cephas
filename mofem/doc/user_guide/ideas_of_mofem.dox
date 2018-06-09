@@ -185,7 +185,7 @@ struct OpGradGrad: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOper
     entityLocalMatrix.clear();
 
     // get number of integration points
-    const int nb_gauss_pts = row_data.getHcurlN().size1();
+    const int nb_gauss_pts = row_data.getN().size1();
 
     // integrate
     for(int gg = 0;gg!=nb_gauss_pts;gg++) {
@@ -193,12 +193,10 @@ struct OpGradGrad: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOper
       double w = getGaussPts()(3,gg)*getVolume();
       // get derivatives of base functions on rows
       auto t_base_diff_row = row_data.getFTensor1DiffN<3>();
+      // take first element in row "aa"
+      FTensor::Tensor0<double*> t_local_mat(&entityLocalMatrix(0,0),1);
       // loop rows
       for(int aa = 0;aa!=nb_row_dofs;aa++) {
-        // take first element in row "aa"
-        FTensor::Tensor0<double*> t_local_mat(
-          &entityLocalMatrix(aa,0),1
-        );
         // get derivatives of base functions on columns
         auto t_base_diff_col = col_data.getFTensor1DiffN<3>(gg,0);
         // loop column
@@ -210,11 +208,6 @@ struct OpGradGrad: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOper
         }
         ++t_base_diff_row;
       }
-
-      // for diagonal blocks,
-      // if row_side == col_side && row_type == col_type we can exploit
-      // symmetry of matrix entityLocalMatrix, for simplicity we do
-      // not do it here.
 
     }
 
@@ -240,7 +233,7 @@ struct OpGradGrad: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOper
       entityLocalMatrix = trans(entityLocalMatrix);
       CHKERR assemble(
         col_data.getIndices(), row_data.getIndices(), entityLocalMatrix);
-   }
+    }
 
     MoFEMFunctionReturn(0);
   }
