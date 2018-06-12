@@ -146,7 +146,7 @@ struct OpGradGrad: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOper
 
   Mat A;
   OpGradGrad(Mat a):
-  MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator("U","U",UserDataOperator::OPROWCOL,true).
+  MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator("U","U",UserDataOperator::OPROWCOL,true),
   A(a) {
   }
 
