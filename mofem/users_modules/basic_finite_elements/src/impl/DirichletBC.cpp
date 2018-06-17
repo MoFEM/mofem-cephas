@@ -122,7 +122,7 @@ MoFEMErrorCode DirichletDisplacementBc::iNitalize() {
 }
 
 MoFEMErrorCode DirichletDisplacementBc::preProcess() {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
 
   switch (ts_ctx) {
   case CTX_TSSETIFUNCTION: {
@@ -140,26 +140,22 @@ MoFEMErrorCode DirichletDisplacementBc::preProcess() {
     break;
   }
 
-  ierr = iNitalize();
-  CHKERRG(ierr);
+  CHKERR iNitalize();
 
   if (snes_ctx == CTX_SNESNONE && ts_ctx == CTX_TSNONE) {
     if (dofsIndices.size() > 0) {
-      ierr = VecSetValues(snes_x, dofsIndices.size(), &dofsIndices[0],
+      CHKERR VecSetValues(snes_x, dofsIndices.size(), &dofsIndices[0],
                           &dofsValues[0], INSERT_VALUES);
-      CHKERRG(ierr);
     }
-    ierr = VecAssemblyBegin(snes_x);
-    CHKERRG(ierr);
-    ierr = VecAssemblyEnd(snes_x);
-    CHKERRG(ierr);
+    CHKERR VecAssemblyBegin(snes_x);
+    CHKERR VecAssemblyEnd(snes_x);
   }
 
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode DirichletDisplacementBc::postProcess() {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
 
   switch (ts_ctx) {
   case CTX_TSSETIFUNCTION: {
@@ -179,30 +175,21 @@ MoFEMErrorCode DirichletDisplacementBc::postProcess() {
 
   if (snes_ctx == CTX_SNESNONE && ts_ctx == CTX_TSNONE) {
     if (snes_B) {
-      ierr = MatAssemblyBegin(snes_B, MAT_FINAL_ASSEMBLY);
-      CHKERRG(ierr);
-      ierr = MatAssemblyEnd(snes_B, MAT_FINAL_ASSEMBLY);
-      CHKERRG(ierr);
-      ierr =
-          MatZeroRowsColumns(snes_B, dofsIndices.size(),
+      CHKERR MatAssemblyBegin(snes_B, MAT_FINAL_ASSEMBLY);
+      CHKERR MatAssemblyEnd(snes_B, MAT_FINAL_ASSEMBLY);
+      CHKERR MatZeroRowsColumns(snes_B, dofsIndices.size(),
                              dofsIndices.empty() ? PETSC_NULL : &dofsIndices[0],
                              dIag, PETSC_NULL, PETSC_NULL);
-      CHKERRG(ierr);
     }
     if (snes_f) {
-      ierr = VecAssemblyBegin(snes_f);
-      CHKERRG(ierr);
-      ierr = VecAssemblyEnd(snes_f);
-      CHKERRG(ierr);
+      CHKERR VecAssemblyBegin(snes_f);
+      CHKERR VecAssemblyEnd(snes_f);
       for (std::vector<int>::iterator vit = dofsIndices.begin();
            vit != dofsIndices.end(); vit++) {
-        ierr = VecSetValue(snes_f, *vit, 0, INSERT_VALUES);
-        CHKERRG(ierr);
+        CHKERR VecSetValue(snes_f, *vit, 0, INSERT_VALUES);
       }
-      ierr = VecAssemblyBegin(snes_f);
-      CHKERRG(ierr);
-      ierr = VecAssemblyEnd(snes_f);
-      CHKERRG(ierr);
+      CHKERR VecAssemblyBegin(snes_f);
+      CHKERR VecAssemblyEnd(snes_f);
     }
   }
 
@@ -212,16 +199,13 @@ MoFEMErrorCode DirichletDisplacementBc::postProcess() {
   case CTX_SNESSETFUNCTION: {
     if (!dofsIndices.empty()) {
       dofsXValues.resize(dofsIndices.size());
-      ierr = VecGetValues(
+      CHKERR VecGetValues(
           snes_x, dofsIndices.size(),
           dofsIndices.empty() ? PETSC_NULL : &*dofsIndices.begin(),
           dofsXValues.empty() ? PETSC_NULL : &*dofsXValues.begin());
-      CHKERRG(ierr);
     }
-    ierr = VecAssemblyBegin(snes_f);
-    CHKERRG(ierr);
-    ierr = VecAssemblyEnd(snes_f);
-    CHKERRG(ierr);
+    CHKERR VecAssemblyBegin(snes_f);
+    CHKERR VecAssemblyEnd(snes_f);
     if (!dofsIndices.empty()) {
       int ii = 0;
       for (std::vector<int>::iterator vit = dofsIndices.begin();
@@ -234,34 +218,27 @@ MoFEMErrorCode DirichletDisplacementBc::postProcess() {
           dofsXValues[ii] = val;
         }
       }
-      ierr =
-          VecSetValues(snes_f, dofsIndices.size(),
+      CHKERR VecSetValues(snes_f, dofsIndices.size(),
                        dofsIndices.empty() ? PETSC_NULL : &*dofsIndices.begin(),
                        dofsXValues.empty() ? PETSC_NULL : &*dofsXValues.begin(),
                        INSERT_VALUES);
-      CHKERRG(ierr);
     }
-    ierr = VecAssemblyBegin(snes_f);
-    CHKERRG(ierr);
-    ierr = VecAssemblyEnd(snes_f);
-    CHKERRG(ierr);
+    CHKERR VecAssemblyBegin(snes_f);
+    CHKERR VecAssemblyEnd(snes_f);
   } break;
   case CTX_SNESSETJACOBIAN: {
-    ierr = MatAssemblyBegin(snes_B, MAT_FINAL_ASSEMBLY);
-    CHKERRG(ierr);
-    ierr = MatAssemblyEnd(snes_B, MAT_FINAL_ASSEMBLY);
-    CHKERRG(ierr);
-    ierr = MatZeroRowsColumns(snes_B, dofsIndices.size(),
+    CHKERR MatAssemblyBegin(snes_B, MAT_FINAL_ASSEMBLY);
+    CHKERR MatAssemblyEnd(snes_B, MAT_FINAL_ASSEMBLY);
+    CHKERR MatZeroRowsColumns(snes_B, dofsIndices.size(),
                               dofsIndices.empty() ? PETSC_NULL
                                                   : &*dofsIndices.begin(),
                               dIag, PETSC_NULL, PETSC_NULL);
-    CHKERRG(ierr);
   } break;
   default:
     SETERRQ(PETSC_COMM_SELF, 1, "unknown snes stage");
   }
 
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode DirichletSpatialPositionsBc::iNitalize() {
