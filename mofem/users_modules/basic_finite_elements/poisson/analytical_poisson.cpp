@@ -82,7 +82,7 @@ struct ExactLaplacianFunction {
 int main(int argc, char *argv[]) {
 
   // Initialize PETSc
-  PetscInitialize(&argc,&argv,(char *)0,help);
+  MoFEM::Core::Initialize(&argc,&argv,(char *)0,help);
 
   try {
 
@@ -284,7 +284,7 @@ int main(int argc, char *argv[]) {
   CATCH_ERRORS;
 
   // finish work cleaning memory, getting statistics, etc.
-  ierr = PetscFinalize(); CHKERRG(ierr);
+  MoFEM::Core::Finalize(); 
 
   return 0;
 
