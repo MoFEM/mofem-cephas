@@ -13,7 +13,8 @@ MoFEM is a finite element analysis code tailored for the solution of
 multi-physics problems with arbitrary levels of approximation, different levels
 of mesh refinement and optimised for high-performance computing. It is designed
 to be able to manage complexities related to a heterogeneous order of
-approximations for L2,H1,H-div and H-curl spaces, see \cite NME:NME847.
+approximations for L2,H1,H-div and H-curl spaces, see \cite NME:NME847 
+and \cite fuentes2015orientation.
 
 MoFEM manages complexity related to finite element approximation and bookkeeping
 related do degrees of freedom and finite elements. It is part of bigger
