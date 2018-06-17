@@ -16,7 +16,6 @@
 
 using namespace MoFEM;
 #include <MethodForForceScaling.hpp>
-
 #include <DirichletBC.hpp>
 
 using namespace boost::numeric;
@@ -74,8 +73,7 @@ MoFEMErrorCode DirichletDisplacementBc::iNitalize() {
         }
         if (dim > 0) {
           Range _nodes;
-          rval = mField.get_moab().get_connectivity(ents, _nodes, true);
-          CHKERRG(rval);
+          CHKERR mField.get_moab().get_connectivity(ents, _nodes, true);
           ents.insert(_nodes.begin(), _nodes.end());
         }
         for (Range::iterator eit = ents.begin(); eit != ents.end(); eit++) {
@@ -444,35 +442,30 @@ MoFEMErrorCode DirichletSpatialPositionsBc::iNitalize() {
 }
 
 MoFEMErrorCode DirichletTemperatureBc::iNitalize() {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   if (mapZeroRows.empty() || !methodsOp.empty()) {
     ParallelComm *pcomm =
         ParallelComm::get_pcomm(&mField.get_moab(), MYPCOMM_INDEX);
     for (_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(
              mField, NODESET | TEMPERATURESET, it)) {
       TemperatureCubitBcData mydata;
-      ierr = it->getBcDataStructure(mydata);
-      CHKERRG(ierr);
+      CHKERR it->getBcDataStructure(mydata);
       VectorDouble scaled_values(1);
       scaled_values[0] = mydata.data.value1;
-      ierr = MethodForForceScaling::applyScale(this, methodsOp, scaled_values);
-      CHKERRG(ierr);
+      CHKERR MethodForForceScaling::applyScale(this, methodsOp, scaled_values);
       for (int dim = 0; dim < 3; dim++) {
         Range ents;
-        ierr = it->getMeshsetIdEntitiesByDimension(mField.get_moab(), dim, ents,
+        CHKERR it->getMeshsetIdEntitiesByDimension(mField.get_moab(), dim, ents,
                                                    true);
-        CHKERRG(ierr);
         if (dim > 1) {
           Range _edges;
-          ierr = mField.get_moab().get_adjacencies(ents, 1, false, _edges,
+          CHKERR mField.get_moab().get_adjacencies(ents, 1, false, _edges,
                                                    moab::Interface::UNION);
-          CHKERRG(ierr);
           ents.insert(_edges.begin(), _edges.end());
         }
         if (dim > 0) {
           Range _nodes;
-          rval = mField.get_moab().get_connectivity(ents, _nodes, true);
-          CHKERRG(rval);
+          CHKERR mField.get_moab().get_connectivity(ents, _nodes, true);
           ents.insert(_nodes.begin(), _nodes.end());
         }
         for (Range::iterator eit = ents.begin(); eit != ents.end(); eit++) {
@@ -497,11 +490,11 @@ MoFEMErrorCode DirichletTemperatureBc::iNitalize() {
       dofsValues[ii] = mit->second;
     }
   }
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode DirichletFixFieldAtEntitiesBc::iNitalize() {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   if (mapZeroRows.empty()) {
     for (std::vector<std::string>::iterator fit = fieldNames.begin();
          fit != fieldNames.end(); fit++) {
@@ -522,11 +515,11 @@ MoFEMErrorCode DirichletFixFieldAtEntitiesBc::iNitalize() {
       dofsValues[ii] = mit->second;
     }
   }
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode DirichletFixFieldAtEntitiesBc::preProcess() {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
 
   switch (ts_ctx) {
   case CTX_TSSETIFUNCTION: {
@@ -544,40 +537,31 @@ MoFEMErrorCode DirichletFixFieldAtEntitiesBc::preProcess() {
     break;
   }
 
-  ierr = iNitalize();
-  CHKERRG(ierr);
-  MoFEMFunctionReturnHot(0);
+  CHKERR iNitalize();
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode DirichletFixFieldAtEntitiesBc::postProcess() {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   if (snes_ctx == CTX_SNESNONE && ts_ctx == CTX_TSNONE) {
     if (snes_B) {
-      ierr = MatAssemblyBegin(snes_B, MAT_FINAL_ASSEMBLY);
-      CHKERRG(ierr);
-      ierr = MatAssemblyEnd(snes_B, MAT_FINAL_ASSEMBLY);
-      CHKERRG(ierr);
-      ierr =
-          MatZeroRowsColumns(snes_B, dofsIndices.size(),
-                             dofsIndices.empty() ? PETSC_NULL : &dofsIndices[0],
-                             dIag, PETSC_NULL, PETSC_NULL);
-      CHKERRG(ierr);
+      CHKERR MatAssemblyBegin(snes_B, MAT_FINAL_ASSEMBLY);
+      CHKERR MatAssemblyEnd(snes_B, MAT_FINAL_ASSEMBLY);
+      CHKERR MatZeroRowsColumns(snes_B, dofsIndices.size(),
+                                dofsIndices.empty() ? PETSC_NULL
+                                                    : &dofsIndices[0],
+                                dIag, PETSC_NULL, PETSC_NULL);
     }
     if (snes_f) {
-      ierr = VecAssemblyBegin(snes_f);
-      CHKERRG(ierr);
-      ierr = VecAssemblyEnd(snes_f);
-      CHKERRG(ierr);
+      CHKERR VecAssemblyBegin(snes_f);
+      CHKERR VecAssemblyEnd(snes_f);
       int ii = 0;
       for (std::vector<int>::iterator vit = dofsIndices.begin();
            vit != dofsIndices.end(); vit++, ii++) {
-        ierr = VecSetValue(snes_f, *vit, dofsValues[ii], INSERT_VALUES);
-        CHKERRG(ierr);
+        CHKERR VecSetValue(snes_f, *vit, dofsValues[ii], INSERT_VALUES);
       }
-      ierr = VecAssemblyBegin(snes_f);
-      CHKERRG(ierr);
-      ierr = VecAssemblyEnd(snes_f);
-      CHKERRG(ierr);
+      CHKERR VecAssemblyBegin(snes_f);
+      CHKERR VecAssemblyEnd(snes_f);
     }
   }
 
@@ -585,72 +569,59 @@ MoFEMErrorCode DirichletFixFieldAtEntitiesBc::postProcess() {
   case CTX_SNESNONE: {
   } break;
   case CTX_SNESSETFUNCTION: {
-    ierr = VecAssemblyBegin(snes_f);
-    CHKERRG(ierr);
-    ierr = VecAssemblyEnd(snes_f);
-    CHKERRG(ierr);
+    CHKERR VecAssemblyBegin(snes_f);
+    CHKERR VecAssemblyEnd(snes_f);
     int ii = 0;
     for (std::vector<int>::iterator vit = dofsIndices.begin();
          vit != dofsIndices.end(); vit++, ii++) {
-      ierr = VecSetValue(snes_f, *vit, dofsValues[ii], INSERT_VALUES);
-      CHKERRG(ierr);
+      CHKERR VecSetValue(snes_f, *vit, dofsValues[ii], INSERT_VALUES);
     }
-    ierr = VecAssemblyBegin(snes_f);
-    CHKERRG(ierr);
-    ierr = VecAssemblyEnd(snes_f);
-    CHKERRG(ierr);
+    CHKERR VecAssemblyBegin(snes_f);
+    CHKERR VecAssemblyEnd(snes_f);
   } break;
   case CTX_SNESSETJACOBIAN: {
-    ierr = MatAssemblyBegin(snes_B, MAT_FINAL_ASSEMBLY);
-    CHKERRG(ierr);
-    ierr = MatAssemblyEnd(snes_B, MAT_FINAL_ASSEMBLY);
-    CHKERRG(ierr);
-    ierr = MatZeroRowsColumns(snes_B, dofsIndices.size(),
+    CHKERR MatAssemblyBegin(snes_B, MAT_FINAL_ASSEMBLY);
+    CHKERR MatAssemblyEnd(snes_B, MAT_FINAL_ASSEMBLY);
+    CHKERR MatZeroRowsColumns(snes_B, dofsIndices.size(),
                               dofsIndices.empty() ? PETSC_NULL
                                                   : &*dofsIndices.begin(),
                               dIag, PETSC_NULL, PETSC_NULL);
-    CHKERRG(ierr);
   } break;
   default:
     SETERRQ(PETSC_COMM_SELF, 1, "unknown snes stage");
   }
 
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode DirichletSetFieldFromBlock::iNitalize() {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   if (mapZeroRows.empty() || !methodsOp.empty()) {
     ParallelComm *pcomm =
         ParallelComm::get_pcomm(&mField.get_moab(), MYPCOMM_INDEX);
     for (_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField, BLOCKSET, it)) {
       if (it->getName().compare(0, blocksetName.length(), blocksetName) == 0) {
         std::vector<double> mydata;
-        ierr = it->getAttributes(mydata);
-        CHKERRG(ierr);
+        CHKERR it->getAttributes(mydata);
         VectorDouble scaled_values(mydata.size());
         for (unsigned int ii = 0; ii < mydata.size(); ii++) {
           scaled_values[ii] = mydata[ii];
         }
-        ierr =
-            MethodForForceScaling::applyScale(this, methodsOp, scaled_values);
-        CHKERRG(ierr);
+        CHKERR MethodForForceScaling::applyScale(this, methodsOp,
+                                                 scaled_values);
         for (int dim = 0; dim < 3; dim++) {
           Range ents;
-          ierr = it->getMeshsetIdEntitiesByDimension(mField.get_moab(), dim,
+          CHKERR it->getMeshsetIdEntitiesByDimension(mField.get_moab(), dim,
                                                      ents, true);
-          CHKERRG(ierr);
           if (dim > 1) {
             Range edges;
-            ierr = mField.get_moab().get_adjacencies(ents, 1, false, edges,
+            CHKERR mField.get_moab().get_adjacencies(ents, 1, false, edges,
                                                      moab::Interface::UNION);
-            CHKERRG(ierr);
             ents.insert(edges.begin(), edges.end());
           }
           if (dim > 0) {
             Range nodes;
-            rval = mField.get_moab().get_connectivity(ents, nodes, true);
-            CHKERRG(rval);
+            CHKERR mField.get_moab().get_connectivity(ents, nodes, true);
             ents.insert(nodes.begin(), nodes.end());
           }
           for (Range::iterator eit = ents.begin(); eit != ents.end(); eit++) {
@@ -692,43 +663,38 @@ MoFEMErrorCode DirichletSetFieldFromBlock::iNitalize() {
       dofsValues[ii] = mit->second;
     }
   }
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode DirichletSetFieldFromBlockWithFlags::iNitalize() {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   if (mapZeroRows.empty() || !methodsOp.empty()) {
     ParallelComm *pcomm =
         ParallelComm::get_pcomm(&mField.get_moab(), MYPCOMM_INDEX);
     for (_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField, BLOCKSET, it)) {
       if (it->getName().compare(0, blocksetName.length(), blocksetName) == 0) {
         std::vector<double> mydata;
-        ierr = it->getAttributes(mydata);
-        CHKERRG(ierr);
+        CHKERR it->getAttributes(mydata);
         VectorDouble scaled_values(mydata.size());
         for (unsigned int ii = 0; ii < mydata.size(); ii++) {
           scaled_values[ii] = mydata[ii];
         }
 
-        ierr =
-            MethodForForceScaling::applyScale(this, methodsOp, scaled_values);
-        CHKERRG(ierr);
+        CHKERR MethodForForceScaling::applyScale(this, methodsOp,
+                                                 scaled_values);
         for (int dim = 0; dim < 3; dim++) {
           Range ents;
-          ierr = it->getMeshsetIdEntitiesByDimension(mField.get_moab(), dim,
+          CHKERR it->getMeshsetIdEntitiesByDimension(mField.get_moab(), dim,
                                                      ents, true);
-          CHKERRG(ierr);
           if (dim > 1) {
             Range edges;
-            ierr = mField.get_moab().get_adjacencies(ents, 1, false, edges,
+            CHKERR mField.get_moab().get_adjacencies(ents, 1, false, edges,
                                                      moab::Interface::UNION);
-            CHKERRG(ierr);
             ents.insert(edges.begin(), edges.end());
           }
           if (dim > 0) {
             Range nodes;
-            rval = mField.get_moab().get_connectivity(ents, nodes, true);
-            CHKERRG(rval);
+            CHKERR mField.get_moab().get_connectivity(ents, nodes, true);
             ents.insert(nodes.begin(), nodes.end());
           }
           for (Range::iterator eit = ents.begin(); eit != ents.end(); eit++) {
@@ -770,5 +736,5 @@ MoFEMErrorCode DirichletSetFieldFromBlockWithFlags::iNitalize() {
       dofsValues[ii] = mit->second;
     }
   }
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
