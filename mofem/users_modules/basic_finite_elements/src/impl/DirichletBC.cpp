@@ -178,8 +178,9 @@ MoFEMErrorCode DirichletDisplacementBc::postProcess() {
       CHKERR MatAssemblyBegin(snes_B, MAT_FINAL_ASSEMBLY);
       CHKERR MatAssemblyEnd(snes_B, MAT_FINAL_ASSEMBLY);
       CHKERR MatZeroRowsColumns(snes_B, dofsIndices.size(),
-                             dofsIndices.empty() ? PETSC_NULL : &dofsIndices[0],
-                             dIag, PETSC_NULL, PETSC_NULL);
+                                dofsIndices.empty() ? PETSC_NULL
+                                                    : &dofsIndices[0],
+                                dIag, PETSC_NULL, PETSC_NULL);
     }
     if (snes_f) {
       CHKERR VecAssemblyBegin(snes_f);
@@ -218,10 +219,11 @@ MoFEMErrorCode DirichletDisplacementBc::postProcess() {
           dofsXValues[ii] = val;
         }
       }
-      CHKERR VecSetValues(snes_f, dofsIndices.size(),
-                       dofsIndices.empty() ? PETSC_NULL : &*dofsIndices.begin(),
-                       dofsXValues.empty() ? PETSC_NULL : &*dofsXValues.begin(),
-                       INSERT_VALUES);
+      CHKERR VecSetValues(
+          snes_f, dofsIndices.size(),
+          dofsIndices.empty() ? PETSC_NULL : &*dofsIndices.begin(),
+          dofsXValues.empty() ? PETSC_NULL : &*dofsXValues.begin(),
+          INSERT_VALUES);
     }
     CHKERR VecAssemblyBegin(snes_f);
     CHKERR VecAssemblyEnd(snes_f);
