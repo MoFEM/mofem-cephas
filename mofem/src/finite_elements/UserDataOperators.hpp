@@ -114,16 +114,16 @@ struct OpCalculateScalarFieldValues
     }
     auto base_function = data.getFTensor0N();
     auto values_at_gauss_pts = getFTensor0FromVec(vec);
-    for (int gg = 0; gg < nb_gauss_pts; gg++) {
+    for (int gg = 0; gg != nb_gauss_pts; ++gg) {
       auto field_data = data.getFTensor0FieldData();
       int bb = 0;
-      for (; bb < nb_dofs; bb++) {
+      for (; bb != nb_dofs; ++bb) {
         values_at_gauss_pts += field_data * base_function;
         ++field_data;
         ++base_function;
       }
       // It is possible to have more base functions than dofs
-      for (; bb != nb_base_functions; bb++)
+      for (; bb != nb_base_functions; ++bb)
         ++base_function;
       ++values_at_gauss_pts;
     }
@@ -235,16 +235,16 @@ MoFEMErrorCode OpCalculateVectorFieldValues_General<
   if (nb_dofs % Tensor_Dim) {
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Data inconsistency");
   }
-  for (int gg = 0; gg != nb_gauss_pts; gg++) {
+  for (int gg = 0; gg != nb_gauss_pts; ++gg) {
     auto field_data = data.getFTensor1FieldData<Tensor_Dim>();
     int bb = 0;
-    for (; bb != size; bb++) {
+    for (; bb != size; ++bb) {
       values_at_gauss_pts(I) += field_data(I) * base_function;
       ++field_data;
       ++base_function;
     }
     // Number of dofs can be smaller than number of Tensor_Dim x base functions
-    for (; bb != nb_base_functions; bb++)
+    for (; bb != nb_base_functions; ++bb)
       ++base_function;
     ++values_at_gauss_pts;
   }
@@ -417,16 +417,16 @@ MoFEMErrorCode OpCalculateScalarFieldGradient_General<
   auto diff_base_function = data.getFTensor1DiffN<Tensor_Dim>();
   auto gradients_at_gauss_pts = getFTensor1FromMat<Tensor_Dim>(mat);
   FTensor::Index<'I', Tensor_Dim> I;
-  for (int gg = 0; gg < nb_gauss_pts; gg++) {
+  for (int gg = 0; gg < nb_gauss_pts; ++gg) {
     auto field_data = data.getFTensor0FieldData();
     int bb = 0;
-    for (; bb < nb_dofs; bb++) {
+    for (; bb < nb_dofs; ++bb) {
       gradients_at_gauss_pts(I) += field_data * diff_base_function(I);
       ++field_data;
       ++diff_base_function;
     }
     // Number of dofs can be smaller than number of base functions
-    for (; bb != nb_base_functions; bb++)
+    for (; bb != nb_base_functions; ++bb)
       ++diff_base_function;
     ++gradients_at_gauss_pts;
   }
@@ -527,16 +527,16 @@ MoFEMErrorCode OpCalculateVectorFieldGradient_General<
   if (nb_dofs % Tensor_Dim0) {
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Data inconsistency");
   }
-  for (int gg = 0; gg < nb_gauss_pts; gg++) {
+  for (int gg = 0; gg < nb_gauss_pts; ++gg) {
     auto field_data = data.getFTensor1FieldData<Tensor_Dim0>();
     int bb = 0;
-    for (; bb < size; bb++) {
+    for (; bb < size; ++bb) {
       gradients_at_gauss_pts(I, J) += field_data(I) * diff_base_function(J);
       ++field_data;
       ++diff_base_function;
     }
     // Number of dofs can be smaller than number of Tensor_Dim0 x base functions
-    for (; bb != nb_base_functions; bb++)
+    for (; bb != nb_base_functions; ++bb)
       ++diff_base_function;
     ++gradients_at_gauss_pts;
   }
@@ -656,15 +656,15 @@ MoFEMErrorCode OpCalculateHdivVectorField_General<
   FTensor::Index<'i', 3> i;
   auto t_n_hdiv = data.getFTensor1HdivN<Tensor_Dim>();
   auto t_data = getFTensor1FromMat<3>(*dataPtr);
-  for (int gg = 0; gg != nb_integration_points; gg++) {
+  for (int gg = 0; gg != nb_integration_points; ++gg) {
     auto t_dof = data.getFTensor0FieldData();
     int bb = 0;
-    for (; bb != nb_dofs; bb++) {
+    for (; bb != nb_dofs; ++bb) {
       t_data(i) += t_n_hdiv(i) * t_dof;
       ++t_n_hdiv;
       ++t_dof;
     }
-    for (; bb < nb_base_functions; bb++) {
+    for (; bb < nb_base_functions; ++bb) {
       ++t_n_hdiv;
     }
     ++t_data;
