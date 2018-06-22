@@ -16,7 +16,8 @@
  - each mesh block can have different material parameters and approximation order
 
 See example how code can be used \cite jordi:2017,
- \image html SquelaDamExampleByJordi.png "Example what you can do with this code. Analysis of the arch dam of Susqueda, located in Catalonia (Spain)" width=800px
+ \image html SquelaDamExampleByJordi.png "Example what you can do with this code. 
+ Analysis of the arch dam of Susqueda, located in Catalonia (Spain)" width=800px
 
  This is an example of application code; it does not show how elements are
 implemented. Example presents how to:
