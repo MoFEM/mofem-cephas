@@ -1341,40 +1341,29 @@ ForcesAndSourcesCore::getFaceTriNodes(DataForcesAndSourcesCore &data) const {
 
 MoFEMErrorCode ForcesAndSourcesCore::getSpacesAndBaseOnEntities(
     DataForcesAndSourcesCore &data) const {
-  //
   MoFEMFunctionBeginHot;
-  try {
-    if (nInTheLoop == 0) {
-      data.sPace.reset();
-      data.bAse.reset();
-      for (EntityType t = MBVERTEX; t != MBMAXTYPE; t++) {
-        data.spacesOnEntities[t].reset();
-        data.basesOnEntities[t].reset();
-      }
+  if (nInTheLoop == 0) {
+    data.sPace.reset();
+    data.bAse.reset();
+    for (EntityType t = MBVERTEX; t != MBMAXTYPE; ++t) {
+      data.spacesOnEntities[t].reset();
+      data.basesOnEntities[t].reset();
     }
-    for (_IT_GET_FEDATA_DOFS_FOR_LOOP_(this, dof)) {
-      if (dof->get()->getEntDofIdx() != 0)
-        continue;
-      // std::cerr << *dof << std::endl;
-      // std::cerr << dof->getSpace() << " " << data.sPace.size() << std::endl;
-      // std::cerr << dof->getApproxBase() << " " << data.bAse.size() <<
-      // std::endl;
-      const FieldSpace space = dof->get()->getSpace();
-      const FieldApproximationBase approx = dof->get()->getApproxBase();
-      data.sPace.set(space);
-      data.bAse.set(approx);
-      const EntityType type = dof->get()->getEntType();
-      data.spacesOnEntities[type].set(space);
-      data.basesOnEntities[type].set(approx);
-      // std::cerr << "approx base " <<
-      // ApproximationBaseNames[dof->getApproxBase()] << " " <<
-      // data.basesOnEntities[dof->getEntType()] << std::endl;
+    for (int s = 0; s != LASTSPACE; ++s) {
+      data.basesOnSpaces[s].reset();
     }
-  } catch (std::exception &ex) {
-    std::ostringstream ss;
-    ss << "thorw in method: " << ex.what() << " at line " << __LINE__
-       << " in file " << __FILE__;
-    SETERRQ(PETSC_COMM_SELF, MOFEM_STD_EXCEPTION_THROW, ss.str().c_str());
+  }
+  for (_IT_GET_FEDATA_DOFS_FOR_LOOP_(this, dof)) {
+    if (dof->get()->getEntDofIdx() != 0)
+      continue;
+    const EntityType type = dof->get()->getEntType();
+    const FieldSpace space = dof->get()->getSpace();
+    const FieldApproximationBase approx = dof->get()->getApproxBase();
+    data.sPace.set(space);
+    data.bAse.set(approx);
+    data.spacesOnEntities[type].set(space);
+    data.basesOnEntities[type].set(approx);
+    data.basesOnSpaces[space].set(approx);
   }
   MoFEMFunctionReturnHot(0);
 }
