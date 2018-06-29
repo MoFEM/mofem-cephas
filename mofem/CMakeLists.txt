@@ -19,9 +19,6 @@ set(CMAKE_INCLUDE_DIRECTORIES_BEFORE ON)
 #petsc and moab configuration are used to confiugre mofem
 include(cmake/FindPETSC.cmake)
 include(cmake/FindMOAB.cmake)
-
-# message(${PETSCVAR_CXX})
-
 set(CMAKE_C_COMPILER ${PETSCVAR_CC} )
 string(REGEX MATCH  "^.*mpicxx" PETSCVAR_CXX_ "${PETSCVAR_CXX}")
 set(CMAKE_CXX_COMPILER ${PETSCVAR_CXX_})
@@ -45,6 +42,33 @@ if(CMAKE_Fortran_COMPILER)
   enable_language(Fortran)
 endif(CMAKE_Fortran_COMPILER)
 
+if(WITH_SPACK)
+  # enable @rpath in the install name for any shared library being built
+  # note: it is planned that a future version of CMake will enable this by default
+  set(CMAKE_MACOSX_RPATH 1)
+
+  # Always use full RPATH
+  # http://www.cmake.org/Wiki/CMake_RPATH_handling
+  # http://www.kitware.com/blog/home/post/510
+
+  # use, i.e. don't skip the full RPATH for the build tree
+  set(CMAKE_SKIP_BUILD_RPATH  FALSE)
+
+  # when building, don't use the install RPATH already
+  # (but later on when installing)
+  set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
+
+  # add the automatically determined parts of the RPATH
+  # which point to directories outside the build tree to the install RPATH
+  set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+
+  # the RPATH to be used when installing, but only if it's not a system directory
+  list(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES "${CMAKE_INSTALL_PREFIX}/lib" isSystemDir)
+  if("${isSystemDir}" STREQUAL "-1")
+     set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+  endif("${isSystemDir}" STREQUAL "-1")
+endif(WITH_SPACK)
+
 # http://cellperformance.beyond3d.com/articles/2006/05/demystifying-the-restrict-keyword.html
 # The restrict keyword can be considered an extension to the strict aliasing rule.
 # It allows the programmer to declare that pointers which share the same type (or
@@ -54,7 +78,6 @@ endif(CMAKE_Fortran_COMPILER)
 # restricted pointer) are the only loads and stores to the same address during the
 # lifetime of the pointer. In other words, the pointer is not aliased by any
 # pointers other than its own copies.
-
 # Restrict is a "no data hazards will be generated" contract between the
 # programmer and the compiler. The compiler relies on this information to make
 # optimizations. If the data is, in fact, aliased, the results are undefined and a
@@ -249,8 +272,7 @@ resolve_libraries(PROJECT_LIBS "
 )
 
 # Set project libs compiled with the MoFEM as external libs
-set(
-  PROJECT_LIBS
+set(PROJECT_LIBS
   ${TETGEN_LIBRARY}
   ${MED_LIBRARY}
   ${ADOL-C_LIBRARY}
