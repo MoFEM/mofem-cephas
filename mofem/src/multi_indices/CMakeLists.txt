@@ -22,8 +22,8 @@ endif(PRECOMPILED_HEADRES)
 add_library(mofem_multi_indices
   impl/All.cpp
 )
+add_dependencies(mofem_multi_indices install_prerequisites)
 if(PRECOMPILED_HEADRES)
   add_dependencies(mofem_multi_indices Includes.hpp.pch_copy)
 endif(PRECOMPILED_HEADRES)
-
 install(TARGETS mofem_multi_indices DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
