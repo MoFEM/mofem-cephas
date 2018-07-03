@@ -162,7 +162,7 @@ if(ADOL-C_DIR)
 endif(ADOL-C_DIR)
 
 if(MED_DIR)
-  include(cmake/FindMED.cmake)
+  include(cmake/FindMed.cmake)
 endif(MED_DIR)
 
 set(OPTIONAL_PROJECT_LIBS
