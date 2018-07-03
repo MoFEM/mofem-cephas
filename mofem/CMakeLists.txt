@@ -19,8 +19,8 @@ set(CMAKE_INCLUDE_DIRECTORIES_BEFORE ON)
 #petsc and moab configuration are used to confiugre mofem
 include(cmake/FindPETSC.cmake)
 include(cmake/FindMOAB.cmake)
-set(CMAKE_C_COMPILER ${PETSCVAR_CC} )
-string(REGEX MATCH  "^.*mpicxx" PETSCVAR_CXX_ "${PETSCVAR_CXX}")
+set(CMAKE_C_COMPILER ${PETSCVAR_CC})
+string(REGEX MATCH  "^.*mpic.?.?" PETSCVAR_CXX_ "${PETSCVAR_CXX}")
 set(CMAKE_CXX_COMPILER ${PETSCVAR_CXX_})
 if(PETSCVAR_FC)
   set(CMAKE_Fortran_COMPILER ${PETSCVAR_FC})
@@ -188,11 +188,6 @@ if(VERSION)
   endif(NOT NOT_WRITABLE_FILE_VERSION)
 endif(VERSION)
 
-configure_file(
-  ${PROJECT_SOURCE_DIR}/MoFEMConfig-version.cmake.in
-  ${PROJECT_BINARY_DIR}/MoFEMConfig-version.cmake
-)
-
 #add coverage
 if(WITHCOVERAGE)
   set(GCC_COVERAGE_COMPILE_FLAGS "-Wall -fprofile-arcs -ftest-coverage")
@@ -204,7 +199,7 @@ endif(WITHCOVERAGE)
 add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --verbose)
 
 resolve_includes(PROJECT_INCLUDE_DIRECTORIES
-  "${PETSCVAR_PACKAGES_INCLUDES} ${MOAB_INCLUDES0} ${MOAB_INCLUDES1}"
+  "${PETSCVAR_PACKAGES_INCLUDES} ${MOAB_INCLUDES0} ${MOAB_INCLUDES1} ${MOAB_CPPFLAGS}"
 )
 
 find_package(BLAS)
@@ -245,19 +240,15 @@ if(TAO_LIBRARY)
 endif(TAO_LIBRARY)
 
 if(PETSCVAR_PARMETIS_INCLUDE)
+  resolve_includes(PARMETIS_INCLUDE_DIRECTORIES
+    "${PETSCVAR_PARMETIS_INCLUDE}"
+  )
+  include_directories(${PARMETIS_INCLUDE_DIRECTORIES})
   add_definitions(-DPARMETIS)
 endif(PETSCVAR_PARMETIS_INCLUDE)
 
-#CGAL tools
-#find_package(CGAL HINTS ${CGAL_DIR}/lib/CGAL)
-#if(CGAL_CONFIG_LOADED)
-#  include_directories(${CGAL_INCLUDE_DIRS})
-#  link_directories(${CGAL_LIBRARIES_DIR})
-#  add_definitions( -DWITH_CGAL )
-#  message(STATUS ${CGAL_Core_LIBRARY})
-#endif(CGAL_CONFIG_LOADED)
-
-resolve_libraries(PROJECT_LIBS "
+# System project liblairoes
+resolve_libraries(SYSTEM_PROJECT_LIBS "
   ${SLEPC_LIBRARY}
   ${TAO_LIBRARY}
   -L${PETSC_DIR}/${PETSC_ARCH}/lib
@@ -270,20 +261,14 @@ resolve_libraries(PROJECT_LIBS "
   ${BLAS_LINKER_FLAGS}
   ${CBLAS_LIBIBRARY}"
 )
-
 # Set project libs compiled with the MoFEM as external libs
-set(PROJECT_LIBS
+set(OPTIONAL_PROJECT_LIBS
   ${TETGEN_LIBRARY}
   ${MED_LIBRARY}
   ${ADOL-C_LIBRARY}
-  ${PROJECT_LIBS}
 )
-
+set(PROJECT_LIBS ${OPTIONAL_PROJECT_LIBS} ${SYSTEM_PROJECT_LIBS})
 message(STATUS ${PROJECT_LIBS})
-file(COPY
-  ${PROJECT_SOURCE_DIR}/INSTALL
-  DESTINATION ${PROJECT_BINARY_DIR}
-)
 
 # Add executable library form subdirectory
 enable_testing()
@@ -291,15 +276,6 @@ include(CTest)
 
 # Precompiled headers
 include(cmake/PrecompiledHeaders.cmake)
-
-# Sdd generation of examplaes
-configure_file(
-  ${PROJECT_SOURCE_DIR}/MoFEMConfig.cmake.in
-  ${PROJECT_BINARY_DIR}/MoFEMConfig.cmake
-)
-
-install(FILES ${PROJECT_BINARY_DIR}/MoFEMConfig.cmake DESTINATION ${CMAKE_INSTALL_PREFIX})
-install(FILES ${PROJECT_BINARY_DIR}/MoFEMConfig-version.cmake DESTINATION ${CMAKE_INSTALL_PREFIX})
 
 add_subdirectory(${PROJECT_SOURCE_DIR}/include)
 include_directories(${PROJECT_BINARY_DIR}/include)
@@ -311,3 +287,45 @@ add_subdirectory(${PROJECT_SOURCE_DIR}/src)
 add_subdirectory(${PROJECT_SOURCE_DIR}/atom_tests)
 add_subdirectory(${PROJECT_SOURCE_DIR}/users_modules.in)
 add_subdirectory(${PROJECT_SOURCE_DIR}/doc)
+
+# Install project files
+
+# Generate config files
+configure_file(
+  ${PROJECT_SOURCE_DIR}/MoFEMConfig-version.cmake.in
+  ${PROJECT_BINARY_DIR}/MoFEMConfig-version.cmake
+)
+configure_file(
+  ${PROJECT_SOURCE_DIR}/MoFEMConfig.cmake.in
+  ${PROJECT_BINARY_DIR}/MoFEMConfig.cmake
+)
+install(
+  FILES ${PROJECT_BINARY_DIR}/MoFEMConfig.cmake 
+  DESTINATION ${CMAKE_INSTALL_PREFIX}
+ )
+install(
+  FILES ${PROJECT_BINARY_DIR}/MoFEMConfig-version.cmake 
+  DESTINATION ${CMAKE_INSTALL_PREFIX}
+)
+
+# Install cmake files
+install(
+  DIRECTORY 
+  ${PROJECT_SOURCE_DIR}/cmake/
+  DESTINATION 
+  ${CMAKE_INSTALL_PREFIX}/cmake/
+  FILES_MATCHING 
+  PATTERN "*.cmake"
+  PATTERN "*.cmake.in"
+)
+
+# Install external directory
+if(STAND_ALLONE_USERS_MODULES)
+  install(
+    DIRECTORY 
+    ${PROJECT_BINARY_DIR}/external
+    DESTINATION 
+    ${CMAKE_INSTALL_PREFIX}
+  )
+endif(STAND_ALLONE_USERS_MODULES)
+
