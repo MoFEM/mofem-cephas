@@ -17,7 +17,10 @@
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
 if(STAND_ALLONE_USERS_MODULES) 
-  install(DIRECTORY ${PROJECT_SOURCE_DIR}/users_modules DESTINATION ${CMAKE_INSTALL_PREFIX})
+  install(
+    DIRECTORY 
+    ${PROJECT_SOURCE_DIR}/users_modules 
+    DESTINATION ${CMAKE_INSTALL_PREFIX})
 else(STAND_ALLONE_USERS_MODULES) 
   if(CMAKE_HOST_UNIX)
     install(CODE
