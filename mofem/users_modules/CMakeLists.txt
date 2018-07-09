@@ -124,9 +124,6 @@ if(MoFEM_CBLAS_INCLUDE_DIR)
 endif(MoFEM_CBLAS_INCLUDE_DIR)
 
 link_directories(${MoFEM_INSTALL_DIR}/lib)
-link_directories(${MoFEM_INSTALL_DIR}/external/lib)
-link_directories(${MoFEM_INSTALL_DIR}/external/lib64)
-link_directories(${PROJECT_BINARY_DIR})
 
 #add executable library form subdirectory
 enable_testing()
