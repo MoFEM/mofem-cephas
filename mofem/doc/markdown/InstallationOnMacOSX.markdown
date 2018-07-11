@@ -1,4 +1,4 @@
-## Installation on OS X ## {#install_macosx}
+## Installation on OS X (Advanced)## {#install_macosx}
 
 If you have any problems, feedback or would like to suggest corrections,
 please email [mofem-group@googlegroups.com](https://groups.google.com/forum/#!forum/mofem-group).

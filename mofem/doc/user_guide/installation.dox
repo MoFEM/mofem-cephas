@@ -1,9 +1,28 @@
 /*! \page installation Installation
 
-Installation of MoFEM on Mac OS X/Linux/Windows  within docker see details here 
-\ref install_docker. Installation in docker is faster where pre-build environment is 
-downloaded directly form <https://hub.docker.com/r/likask/ubuntu_mofem/>.
+We recommend installation with Spack or Docker. Both methods are system
+independent, what minimises the likelihood that something goes wrong on your
+computer.
 
+Docker <https://www.docker.com> is a Linux (Ubuntu) system virtualisation,
+and MoFEM is run in docker container (virtual system) hosted by your native
+OS. The advantage of this approach is that the system environment is
+controlled and potential installation or other errors easy to reproduce. The
+disadvantage of this approach demand from the user understanding how Docker
+container works, relatively slow reading and writing and limited portability
+for HPC computing.
+
+Spack <https://spack.io> from the other hand allows for easy installation on
+the base system and does not have disadvantages of docker solution. Since
+using spack you compile and run software on your native OS some errors could
+be specific to your configuration and harder to reproduce.
+
+Mac OS X and Ubuntu installation are on bare metal OS, and to do it well you
+have to know the location of some libraries installed on your system. We do
+not recommend to follow that installation instruction unless you have
+experience of installing libraries from source.
+
+- \subpage install_spack
 - \subpage install_docker
 - \subpage install_ubuntu
 - \subpage install_macosx
