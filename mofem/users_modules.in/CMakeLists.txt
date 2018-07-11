@@ -16,14 +16,24 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
-if(CMAKE_HOST_UNIX)
-  install(CODE
-    "
-    EXECUTE_PROCESS(
-      COMMAND ln -sf ${PROJECT_SOURCE_DIR}/users_modules ${CMAKE_INSTALL_PREFIX}/
+if(STAND_ALLONE_USERS_MODULES) 
+  install(
+    DIRECTORY 
+    ${PROJECT_SOURCE_DIR}/users_modules 
+    DESTINATION ${CMAKE_INSTALL_PREFIX})
+else(STAND_ALLONE_USERS_MODULES) 
+  if(CMAKE_HOST_UNIX)
+    install(CODE
+      "
+      EXECUTE_PROCESS(
+        COMMAND ln -sf ${PROJECT_SOURCE_DIR}/users_modules ${CMAKE_INSTALL_PREFIX}/
+      )
+      "
     )
-    "
-  )
-else(CMAKE_HOST_UNIX)
-  install(DIRECTORY ${PROJECT_SOURCE_DIR}/users_modules DESTINATION ${CMAKE_INSTALL_PREFIX})
-endif(CMAKE_HOST_UNIX)
+  else(CMAKE_HOST_UNIX)
+    install(
+      DIRECTORY ${PROJECT_SOURCE_DIR}/users_modules 
+      DESTINATION ${CMAKE_INSTALL_PREFIX}
+     )
+  endif(CMAKE_HOST_UNIX)
+endif(STAND_ALLONE_USERS_MODULES)

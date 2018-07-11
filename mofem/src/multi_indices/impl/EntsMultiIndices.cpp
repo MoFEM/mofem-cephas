@@ -32,30 +32,20 @@
 #include <TagMultiIndices.hpp>
 
 #define IS_BUILDING_MB
-#include <DenseTag.hpp>
-#include <SparseTag.hpp>
 #include <moab/Error.hpp>
 
 namespace MoFEM {
 
 static moab::Error error;
 
-inline void *get_tag_ptr(SequenceManager *sequence_manager, Tag th,
-                         EntityHandle ent, int *tag_size) {
+inline void *get_tag_ptr(moab::Interface &moab, Tag th, EntityHandle ent,
+                         int *tag_size) {
   ApproximationOrder *ret_val;
-  if (th->get_storage_type() == MB_TAG_SPARSE) {
-    rval = static_cast<SparseTag *>(th)->get_data(
-        sequence_manager, &error, &ent, 1, (const void **)&ret_val, tag_size);
-    if(rval != MB_SUCCESS) {
-      *tag_size = 0;
-      return NULL;
-    } else {
-      return ret_val;
-    }
+  rval = moab.tag_get_by_ptr(th, &ent, 1, (const void **)&ret_val, tag_size);
+  if (rval != MB_SUCCESS) {
+    *tag_size = 0;
+    return NULL;
   } else {
-    rval = static_cast<DenseTag *>(th)->get_data(
-        sequence_manager, &error, &ent, 1, (const void **)&ret_val, tag_size);
-    MOAB_THROW(rval);
     return ret_val;
   }
 }
@@ -101,8 +91,7 @@ unsigned char BasicEntity::getPStatus() const {
   ParallelComm *pcomm =
       ParallelComm::get_pcomm(&basicDataPtr->moab, basicDataPtr->pcommID);
   return *((unsigned char *)MoFEM::get_tag_ptr(
-      static_cast<moab::Core *>(&basicDataPtr->moab)->sequence_manager(),
-      pcomm->pstatus_tag(), ent, NULL));
+      basicDataPtr->moab, pcomm->pstatus_tag(), ent, NULL));
 }
 
 // ref moab ent
@@ -113,14 +102,12 @@ RefEntity::RefEntity(const boost::shared_ptr<BasicEntityData> &basic_data_ptr,
 
 EntityHandle *RefEntity::getParentEntPtr() const {
   return static_cast<EntityHandle *>(get_tag_ptr(
-      static_cast<moab::Core *>(&basicDataPtr->moab)->sequence_manager(),
-      basicDataPtr->th_RefParentHandle, ent, NULL));
+      basicDataPtr->moab, basicDataPtr->th_RefParentHandle, ent, NULL));
 }
 
 BitRefLevel *RefEntity::getBitRefLevelPtr() const {
-  return static_cast<BitRefLevel *>(get_tag_ptr(
-      static_cast<moab::Core *>(&basicDataPtr->moab)->sequence_manager(),
-      basicDataPtr->th_RefBitLevel, ent, NULL));
+  return static_cast<BitRefLevel *>(
+      get_tag_ptr(basicDataPtr->moab, basicDataPtr->th_RefBitLevel, ent, NULL));
 }
 
 MoFEMErrorCode getParentEnt(Interface &moab, Range ents,
@@ -183,21 +170,18 @@ FieldEntity::FieldEntity(const boost::shared_ptr<Field> &field_ptr,
 
 ApproximationOrder *FieldEntity::getMaxOrderPtr() {
   return static_cast<ApproximationOrder *>(MoFEM::get_tag_ptr(
-      static_cast<moab::Core *>(&sFieldPtr->moab)->sequence_manager(),
-      sFieldPtr->th_AppOrder, sPtr->ent, NULL));
+      sFieldPtr->moab, sFieldPtr->th_AppOrder, sPtr->ent, NULL));
 }
 ApproximationOrder FieldEntity::getMaxOrder() const {
   return *static_cast<ApproximationOrder *>(MoFEM::get_tag_ptr(
-      static_cast<moab::Core *>(&sFieldPtr->moab)->sequence_manager(),
-      sFieldPtr->th_AppOrder, sPtr->ent, NULL));
+      sFieldPtr->moab, sFieldPtr->th_AppOrder, sPtr->ent, NULL));
 }
 
 VectorAdaptor FieldEntity::getEntFieldData() const {
   int size = getNbDofsOnEnt();
   int tag_size;
   double *ptr = static_cast<double *>(MoFEM::get_tag_ptr(
-      static_cast<moab::Core *>(&sFieldPtr->moab)->sequence_manager(),
-      sFieldPtr->th_FieldData, sPtr->ent, &tag_size));
+      sFieldPtr->moab, sFieldPtr->th_FieldData, sPtr->ent, &tag_size));
   tag_size /= sizeof(FieldData);
   return VectorAdaptor(size,
                        ublas::shallow_array_adaptor<FieldData>(tag_size, ptr));

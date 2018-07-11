@@ -33,6 +33,7 @@ add_library(
   c_impl/h1.c
   c_impl/l2.c
 )
+add_dependencies(mofem_approx install_prerequisites)
 if(PRECOMPILED_HEADRES)
   add_dependencies(mofem_approx Includes.hpp.pch_copy)
 endif(PRECOMPILED_HEADRES)

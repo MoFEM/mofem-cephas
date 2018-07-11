@@ -12,10 +12,8 @@
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
 #include subdirectory
-
 include_directories(${PROJECT_SOURCE_DIR}/third_party)
 include_directories(${PROJECT_SOURCE_DIR}/third_party/cblas)
-include_directories(${PROJECT_SOURCE_DIR}/src/ftensor/src)
 include_directories(${PROJECT_SOURCE_DIR}/third_party/phg-quadrule)
 
 add_library(mofem_third_party
@@ -31,3 +29,12 @@ add_library(mofem_third_party
 add_subdirectory(${PROJECT_SOURCE_DIR}/third_party/cblas)
 
 install(TARGETS mofem_third_party DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
+
+if(STAND_ALLONE_USERS_MODULES)
+  install(
+    DIRECTORY 
+    ${CMAKE_SOURCE_DIR}/third_party
+    DESTINATION 
+    ${CMAKE_INSTALL_PREFIX}/
+  )
+endif(STAND_ALLONE_USERS_MODULES)

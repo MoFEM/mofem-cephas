@@ -1266,6 +1266,7 @@ struct DataForcesAndSourcesCore {
   std::bitset<LASTSPACE>
       spacesOnEntities[MBMAXTYPE];                  ///< spaces on entity types
   std::bitset<LASTBASE> basesOnEntities[MBMAXTYPE]; ///< bases on entity types
+  std::bitset<LASTBASE> basesOnSpaces[LASTSPACE];   ///< base on spaces
   boost::ptr_vector<EntData> dataOnEntities[MBMAXTYPE]; ///< data on nodes, base
                                                         ///< function, dofs
                                                         ///< values, etc.
