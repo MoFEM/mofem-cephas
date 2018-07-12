@@ -134,6 +134,8 @@ Create mofem_install folder in the home directory and clone MoFEMrespository
 mkdir $HOME/mofem_install
 cd $HOME/mofem_install
 git clone -b develop https://bitbucket.org/likask/mofem-cephas.git mofem-cephas
+cd $HOME/mofem_install/mofem-cephas
+git submodule update --init mofem/users_modules
 ~~~~~
 
 Create *build* directory for core liblary
