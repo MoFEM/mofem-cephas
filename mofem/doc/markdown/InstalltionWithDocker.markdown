@@ -22,6 +22,8 @@ to clone repository
 ~~~~~~
 cd $HOME
 git clone https://bitbucket.org/likask/mofem-cephas.git
+cd mofem-cephas
+git submodule update --init mofem/users_modules
 ~~~~~~
 
 ##Build docker image
