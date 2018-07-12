@@ -22,6 +22,7 @@ endif(PRECOMPILED_HEADRES)
 add_library(mofem_petsc
   impl/All.cpp
 )
+add_dependencies(mofem_petsc install_prerequisites)
 if(PRECOMPILED_HEADRES)
   add_dependencies(mofem_petsc Includes.hpp.pch_copy)
 endif(PRECOMPILED_HEADRES)

@@ -1,4 +1,4 @@
-##Installation on Ubuntu## {#install_ubuntu}
+##Installation on Ubuntu (Advanced)## {#install_ubuntu}
 
 ###1. Install packages
 

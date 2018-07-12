@@ -42,5 +42,4 @@ if(PRECOMPILED_HEADRES)
   add_dependencies(mofem_interfaces Includes.hpp.pch_copy)
 endif(PRECOMPILED_HEADRES)
 
-
 install(TARGETS mofem_interfaces DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)

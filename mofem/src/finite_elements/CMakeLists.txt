@@ -26,6 +26,7 @@ add_library(
   mofem_finite_elements
   impl/All.cpp
 )
+add_dependencies(mofem_finite_elements install_prerequisites)
 if(PRECOMPILED_HEADRES)
   add_dependencies(mofem_finite_elements Includes.hpp.pch_copy)
 endif(PRECOMPILED_HEADRES)

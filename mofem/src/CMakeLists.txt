@@ -38,3 +38,18 @@ add_subdirectory("${PROJECT_SOURCE_DIR}/src/petsc")
 include_directories("${PROJECT_SOURCE_DIR}/src/finite_elements")
 link_directories("${PROJECT_BINARY_DIR}/src/finite_elements")
 add_subdirectory("${PROJECT_SOURCE_DIR}/src/finite_elements")
+
+if(STAND_ALLONE_USERS_MODULES)
+  install(
+    DIRECTORY 
+    ${CMAKE_SOURCE_DIR}/src/
+    DESTINATION 
+    ${CMAKE_INSTALL_PREFIX}/include
+    FILES_MATCHING 
+    PATTERN "*.hpp"
+    PATTERN "*.h"
+    PATTERN "impl" EXCLUDE
+    PATTERN "c_impl" EXCLUDE
+    PATTERN "ftensor" EXCLUDE 
+  )
+endif(STAND_ALLONE_USERS_MODULES)

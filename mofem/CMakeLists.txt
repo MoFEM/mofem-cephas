@@ -19,11 +19,8 @@ set(CMAKE_INCLUDE_DIRECTORIES_BEFORE ON)
 #petsc and moab configuration are used to confiugre mofem
 include(cmake/FindPETSC.cmake)
 include(cmake/FindMOAB.cmake)
-
-# message(${PETSCVAR_CXX})
-
-set(CMAKE_C_COMPILER ${PETSCVAR_CC} )
-string(REGEX MATCH  "^.*mpicxx" PETSCVAR_CXX_ "${PETSCVAR_CXX}")
+set(CMAKE_C_COMPILER ${PETSCVAR_CC})
+string(REGEX MATCH  "^.*mpic.?.?" PETSCVAR_CXX_ "${PETSCVAR_CXX}")
 set(CMAKE_CXX_COMPILER ${PETSCVAR_CXX_})
 if(PETSCVAR_FC)
   set(CMAKE_Fortran_COMPILER ${PETSCVAR_FC})
@@ -45,6 +42,33 @@ if(CMAKE_Fortran_COMPILER)
   enable_language(Fortran)
 endif(CMAKE_Fortran_COMPILER)
 
+if(WITH_SPACK)
+  # enable @rpath in the install name for any shared library being built
+  # note: it is planned that a future version of CMake will enable this by default
+  set(CMAKE_MACOSX_RPATH 1)
+
+  # Always use full RPATH
+  # http://www.cmake.org/Wiki/CMake_RPATH_handling
+  # http://www.kitware.com/blog/home/post/510
+
+  # use, i.e. don't skip the full RPATH for the build tree
+  set(CMAKE_SKIP_BUILD_RPATH  FALSE)
+
+  # when building, don't use the install RPATH already
+  # (but later on when installing)
+  set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
+
+  # add the automatically determined parts of the RPATH
+  # which point to directories outside the build tree to the install RPATH
+  set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+
+  # the RPATH to be used when installing, but only if it's not a system directory
+  list(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES "${CMAKE_INSTALL_PREFIX}/lib" isSystemDir)
+  if("${isSystemDir}" STREQUAL "-1")
+     set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+  endif("${isSystemDir}" STREQUAL "-1")
+endif(WITH_SPACK)
+
 # http://cellperformance.beyond3d.com/articles/2006/05/demystifying-the-restrict-keyword.html
 # The restrict keyword can be considered an extension to the strict aliasing rule.
 # It allows the programmer to declare that pointers which share the same type (or
@@ -54,7 +78,6 @@ endif(CMAKE_Fortran_COMPILER)
 # restricted pointer) are the only loads and stores to the same address during the
 # lifetime of the pointer. In other words, the pointer is not aliased by any
 # pointers other than its own copies.
-
 # Restrict is a "no data hazards will be generated" contract between the
 # programmer and the compiler. The compiler relies on this information to make
 # optimizations. If the data is, in fact, aliased, the results are undefined and a
@@ -165,11 +188,6 @@ if(VERSION)
   endif(NOT NOT_WRITABLE_FILE_VERSION)
 endif(VERSION)
 
-configure_file(
-  ${PROJECT_SOURCE_DIR}/MoFEMConfig-version.cmake.in
-  ${PROJECT_BINARY_DIR}/MoFEMConfig-version.cmake
-)
-
 #add coverage
 if(WITHCOVERAGE)
   set(GCC_COVERAGE_COMPILE_FLAGS "-Wall -fprofile-arcs -ftest-coverage")
@@ -181,7 +199,7 @@ endif(WITHCOVERAGE)
 add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --verbose)
 
 resolve_includes(PROJECT_INCLUDE_DIRECTORIES
-  "${PETSCVAR_PACKAGES_INCLUDES} ${MOAB_INCLUDES0} ${MOAB_INCLUDES1}"
+  "${PETSCVAR_PACKAGES_INCLUDES} ${MOAB_INCLUDES0} ${MOAB_INCLUDES1} ${MOAB_CPPFLAGS}"
 )
 
 find_package(BLAS)
@@ -222,19 +240,15 @@ if(TAO_LIBRARY)
 endif(TAO_LIBRARY)
 
 if(PETSCVAR_PARMETIS_INCLUDE)
+  resolve_includes(PARMETIS_INCLUDE_DIRECTORIES
+    "${PETSCVAR_PARMETIS_INCLUDE}"
+  )
+  include_directories(${PARMETIS_INCLUDE_DIRECTORIES})
   add_definitions(-DPARMETIS)
 endif(PETSCVAR_PARMETIS_INCLUDE)
 
-#CGAL tools
-#find_package(CGAL HINTS ${CGAL_DIR}/lib/CGAL)
-#if(CGAL_CONFIG_LOADED)
-#  include_directories(${CGAL_INCLUDE_DIRS})
-#  link_directories(${CGAL_LIBRARIES_DIR})
-#  add_definitions( -DWITH_CGAL )
-#  message(STATUS ${CGAL_Core_LIBRARY})
-#endif(CGAL_CONFIG_LOADED)
-
-resolve_libraries(PROJECT_LIBS "
+# System project liblairoes
+resolve_libraries(SYSTEM_PROJECT_LIBS "
   ${SLEPC_LIBRARY}
   ${TAO_LIBRARY}
   -L${PETSC_DIR}/${PETSC_ARCH}/lib
@@ -247,21 +261,14 @@ resolve_libraries(PROJECT_LIBS "
   ${BLAS_LINKER_FLAGS}
   ${CBLAS_LIBIBRARY}"
 )
-
 # Set project libs compiled with the MoFEM as external libs
-set(
-  PROJECT_LIBS
+set(OPTIONAL_PROJECT_LIBS
   ${TETGEN_LIBRARY}
   ${MED_LIBRARY}
   ${ADOL-C_LIBRARY}
-  ${PROJECT_LIBS}
 )
-
+set(PROJECT_LIBS ${OPTIONAL_PROJECT_LIBS} ${SYSTEM_PROJECT_LIBS})
 message(STATUS ${PROJECT_LIBS})
-file(COPY
-  ${PROJECT_SOURCE_DIR}/INSTALL
-  DESTINATION ${PROJECT_BINARY_DIR}
-)
 
 # Add executable library form subdirectory
 enable_testing()
@@ -269,15 +276,6 @@ include(CTest)
 
 # Precompiled headers
 include(cmake/PrecompiledHeaders.cmake)
-
-# Sdd generation of examplaes
-configure_file(
-  ${PROJECT_SOURCE_DIR}/MoFEMConfig.cmake.in
-  ${PROJECT_BINARY_DIR}/MoFEMConfig.cmake
-)
-
-install(FILES ${PROJECT_BINARY_DIR}/MoFEMConfig.cmake DESTINATION ${CMAKE_INSTALL_PREFIX})
-install(FILES ${PROJECT_BINARY_DIR}/MoFEMConfig-version.cmake DESTINATION ${CMAKE_INSTALL_PREFIX})
 
 add_subdirectory(${PROJECT_SOURCE_DIR}/include)
 include_directories(${PROJECT_BINARY_DIR}/include)
@@ -289,3 +287,45 @@ add_subdirectory(${PROJECT_SOURCE_DIR}/src)
 add_subdirectory(${PROJECT_SOURCE_DIR}/atom_tests)
 add_subdirectory(${PROJECT_SOURCE_DIR}/users_modules.in)
 add_subdirectory(${PROJECT_SOURCE_DIR}/doc)
+
+# Install project files
+
+# Generate config files
+configure_file(
+  ${PROJECT_SOURCE_DIR}/MoFEMConfig-version.cmake.in
+  ${PROJECT_BINARY_DIR}/MoFEMConfig-version.cmake
+)
+configure_file(
+  ${PROJECT_SOURCE_DIR}/MoFEMConfig.cmake.in
+  ${PROJECT_BINARY_DIR}/MoFEMConfig.cmake
+)
+install(
+  FILES ${PROJECT_BINARY_DIR}/MoFEMConfig.cmake 
+  DESTINATION ${CMAKE_INSTALL_PREFIX}
+ )
+install(
+  FILES ${PROJECT_BINARY_DIR}/MoFEMConfig-version.cmake 
+  DESTINATION ${CMAKE_INSTALL_PREFIX}
+)
+
+# Install cmake files
+install(
+  DIRECTORY 
+  ${PROJECT_SOURCE_DIR}/cmake/
+  DESTINATION 
+  ${CMAKE_INSTALL_PREFIX}/cmake/
+  FILES_MATCHING 
+  PATTERN "*.cmake"
+  PATTERN "*.cmake.in"
+)
+
+# Install external directory
+if(STAND_ALLONE_USERS_MODULES)
+  install(
+    DIRECTORY 
+    ${PROJECT_BINARY_DIR}/external
+    DESTINATION 
+    ${CMAKE_INSTALL_PREFIX}
+  )
+endif(STAND_ALLONE_USERS_MODULES)
+

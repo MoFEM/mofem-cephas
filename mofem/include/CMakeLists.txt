@@ -103,3 +103,15 @@ if(PRECOMPILED_HEADRES)
   add_dependencies(MoFEM.hpp.pch_copy MoFEM.hpp.pch)
 
 endif(PRECOMPILED_HEADRES)
+
+if(STAND_ALLONE_USERS_MODULES)
+  install(
+    DIRECTORY 
+    ${CMAKE_SOURCE_DIR}/include/
+    DESTINATION 
+    ${CMAKE_INSTALL_PREFIX}/include
+    FILES_MATCHING 
+    PATTERN "*.hpp"
+    PATTERN "*.h"
+  )
+endif(STAND_ALLONE_USERS_MODULES)

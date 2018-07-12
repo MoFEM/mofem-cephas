@@ -54,7 +54,7 @@ TriPolynomialBase::~TriPolynomialBase() {}
 MoFEMErrorCode
 TriPolynomialBase::query_interface(const MOFEMuuid &uuid,
                                    MoFEM::UnknownInterface **iface) const {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   *iface = NULL;
   if (uuid == IDD_TET_BASE_FUNCTION) {
     *iface = const_cast<TriPolynomialBase *>(this);
@@ -62,17 +62,18 @@ TriPolynomialBase::query_interface(const MOFEMuuid &uuid,
   } else {
     SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY, "wrong interference");
   }
-  ierr = BaseFunction::query_interface(uuid, iface);
-  CHKERRG(ierr);
-  MoFEMFunctionReturnHot(0);
+  CHKERR BaseFunction::query_interface(uuid, iface);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode TriPolynomialBase::getValueH1(MatrixDouble &pts) {
-
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
 
   DataForcesAndSourcesCore &data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
+  if (cTx->basePolynomialsType0 == NULL)
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            "Polynomial type not set");
   PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s, double *L,
                                      double *diffL, const int dim) =
       cTx->basePolynomialsType0;
@@ -102,12 +103,11 @@ MoFEMErrorCode TriPolynomialBase::getValueH1(MatrixDouble &pts) {
       diffH1edgeN[ee] =
           &*data.dataOnEntities[MBEDGE][ee].getDiffN(base).data().begin();
     }
-    ierr = H1_EdgeShapeFunctions_MBTRI(
+    CHKERR H1_EdgeShapeFunctions_MBTRI(
         sense, order,
         &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
         &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
         H1edgeN, diffH1edgeN, nb_gauss_pts, base_polynomials);
-    CHKERRG(ierr);
   }
 
   if (data.spacesOnEntities[MBTRI].test(H1)) {
@@ -121,25 +121,26 @@ MoFEMErrorCode TriPolynomialBase::getValueH1(MatrixDouble &pts) {
     data.dataOnEntities[MBTRI][0].getDiffN(base).resize(nb_gauss_pts,
                                                         2 * nb_dofs, false);
     const int face_nodes[] = {0, 1, 2};
-    ierr = H1_FaceShapeFunctions_MBTRI(
+    CHKERR H1_FaceShapeFunctions_MBTRI(
         face_nodes, data.dataOnEntities[MBTRI][0].getDataOrder(),
         &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
         &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
         &*data.dataOnEntities[MBTRI][0].getN(base).data().begin(),
         &*data.dataOnEntities[MBTRI][0].getDiffN(base).data().begin(),
         nb_gauss_pts, base_polynomials);
-    CHKERRG(ierr);
   }
 
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode TriPolynomialBase::getValueL2(MatrixDouble &pts) {
-
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
 
   DataForcesAndSourcesCore &data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
+  if (cTx->basePolynomialsType0 == NULL)
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            "Polynomial type not set");
   PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s, double *L,
                                      double *diffL, const int dim) =
       cTx->basePolynomialsType0;
@@ -153,24 +154,25 @@ MoFEMErrorCode TriPolynomialBase::getValueL2(MatrixDouble &pts) {
       nb_gauss_pts,
       2 * NBFACETRI_L2(data.dataOnEntities[MBTRI][0].getDataOrder()), false);
 
-  ierr = L2_ShapeFunctions_MBTRI(
+  CHKERR L2_ShapeFunctions_MBTRI(
       data.dataOnEntities[MBTRI][0].getDataOrder(),
       &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
       &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
       &*data.dataOnEntities[MBTRI][0].getN(base).data().begin(),
       &*data.dataOnEntities[MBTRI][0].getDiffN(base).data().begin(),
       nb_gauss_pts, base_polynomials);
-  CHKERRG(ierr);
 
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode TriPolynomialBase::getValueHdivAinsworthBase(MatrixDouble &pts) {
-
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
 
   DataForcesAndSourcesCore &data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
+  if (cTx->basePolynomialsType0 == NULL)
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            "Polynomial type not set");
   PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s, double *L,
                                      double *diffL, const int dim) =
       cTx->basePolynomialsType0;
@@ -194,16 +196,14 @@ MoFEMErrorCode TriPolynomialBase::getValueHdivAinsworthBase(MatrixDouble &pts) {
   PHI_f = &*(N_face_bubble[0].data().begin());
 
   int face_nodes[3] = {0, 1, 2};
-  ierr = Hdiv_Ainsworth_EdgeFaceShapeFunctions_MBTET_ON_FACE(
+  CHKERR Hdiv_Ainsworth_EdgeFaceShapeFunctions_MBTET_ON_FACE(
       face_nodes, face_order,
       &data.dataOnEntities[MBVERTEX][0].getN(base)(0, 0), NULL, PHI_f_e, NULL,
       nb_gauss_pts, 3, base_polynomials);
-  CHKERRG(ierr);
-  ierr = Hdiv_Ainsworth_FaceBubbleShapeFunctions_ON_FACE(
+  CHKERR Hdiv_Ainsworth_FaceBubbleShapeFunctions_ON_FACE(
       face_nodes, face_order,
       &data.dataOnEntities[MBVERTEX][0].getN(base)(0, 0), NULL, PHI_f, NULL,
       nb_gauss_pts, 3, base_polynomials);
-  CHKERRG(ierr);
 
   // set shape functions into data structure
   if (data.dataOnEntities[MBTRI].size() != 1) {
@@ -231,19 +231,17 @@ MoFEMErrorCode TriPolynomialBase::getValueHdivAinsworthBase(MatrixDouble &pts) {
     }
   }
 
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode TriPolynomialBase::getValueHdivDemkowiczBase(MatrixDouble &pts) {
-
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
 
   DataForcesAndSourcesCore &data = cTx->dAta;
   // set shape functions into data structure
   if (data.dataOnEntities[MBTRI].size() != 1) {
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
   }
-
   const FieldApproximationBase base = cTx->bAse;
   if (base != DEMKOWICZ_JACOBI_BASE) {
     SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
@@ -259,18 +257,17 @@ MoFEMErrorCode TriPolynomialBase::getValueHdivDemkowiczBase(MatrixDouble &pts) {
   if (NBFACETRI_DEMKOWICZ_HDIV(order) == 0)
     MoFEMFunctionReturnHot(0);
   int face_nodes[3] = {0, 1, 2};
-  ierr = Hdiv_Demkowicz_Face_MBTET_ON_FACE(
+  CHKERR Hdiv_Demkowicz_Face_MBTET_ON_FACE(
       face_nodes, order,
       &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
       &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(), phi_f,
       NULL, nb_gauss_pts, 3);
-  CHKERRG(ierr);
 
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode TriPolynomialBase::getValueHdiv(MatrixDouble &pts) {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
 
   switch (cTx->bAse) {
   case AINSWORTH_LEGENDRE_BASE:
@@ -282,15 +279,18 @@ MoFEMErrorCode TriPolynomialBase::getValueHdiv(MatrixDouble &pts) {
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Not implemented");
   }
 
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode
 TriPolynomialBase::getValueHcurlAinsworthBase(MatrixDouble &pts) {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
 
   DataForcesAndSourcesCore &data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
+  if (data.dataOnEntities[MBTRI].size() != 1) {
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
+  }
   PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s, double *L,
                                      double *diffL, const int dim) =
       cTx->basePolynomialsType0;
@@ -323,12 +323,11 @@ TriPolynomialBase::getValueHcurlAinsworthBase(MatrixDouble &pts) {
       diff_hcurl_edge_n[ee] =
           &*data.dataOnEntities[MBEDGE][ee].getDiffN(base).data().begin();
     }
-    ierr = Hcurl_Ainsworth_EdgeBaseFunctions_MBTET_ON_FACE(
+    CHKERR Hcurl_Ainsworth_EdgeBaseFunctions_MBTET_ON_FACE(
         sense, order,
         &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
         &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
         hcurl_edge_n, diff_hcurl_edge_n, nb_gauss_pts, base_polynomials);
-    CHKERRG(ierr);
     // cerr << data.dataOnEntities[MBVERTEX][0].getDiffN(base) << endl;
     // cerr << data.dataOnEntities[MBEDGE][0].getDiffN(base) << endl;
     // cerr << data.dataOnEntities[MBVERTEX][0].getN(base) << endl;
@@ -358,21 +357,20 @@ TriPolynomialBase::getValueHcurlAinsworthBase(MatrixDouble &pts) {
                                                         3 * 2 * nb_dofs, false);
     // cerr << data.dataOnEntities[MBVERTEX][0].getDiffN(base) << endl;
     int face_nodes[] = {0, 1, 2};
-    ierr = Hcurl_Ainsworth_FaceFunctions_MBTET_ON_FACE(
+    CHKERR Hcurl_Ainsworth_FaceFunctions_MBTET_ON_FACE(
         face_nodes, order,
         &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
         &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
         &*data.dataOnEntities[MBTRI][0].getN(base).data().begin(),
         &*data.dataOnEntities[MBTRI][0].getDiffN(base).data().begin(),
         nb_gauss_pts, base_polynomials);
-    CHKERRG(ierr);
     // cerr << data.dataOnEntities[MBTRI][0].getN(base) << endl;
   } else {
     data.dataOnEntities[MBTRI][0].getN(base).resize(nb_gauss_pts, 0, false);
     data.dataOnEntities[MBTRI][0].getDiffN(base).resize(nb_gauss_pts, 0, false);
   }
 
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode
@@ -489,12 +487,10 @@ MoFEMErrorCode TriPolynomialBase::getValueHcurl(MatrixDouble &pts) {
 MoFEMErrorCode
 TriPolynomialBase::getValue(MatrixDouble &pts,
                             boost::shared_ptr<BaseFunctionCtx> ctx_ptr) {
-
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
 
   MoFEM::UnknownInterface *iface;
-  ierr = ctx_ptr->query_interface(IDD_TRI_BASE_FUNCTION, &iface);
-  CHKERRG(ierr);
+  CHKERR ctx_ptr->query_interface(IDD_TRI_BASE_FUNCTION, &iface);
   cTx = reinterpret_cast<EntPolynomialBaseCtx *>(iface);
 
   int nb_gauss_pts = pts.size2();
@@ -512,14 +508,12 @@ TriPolynomialBase::getValue(MatrixDouble &pts,
   DataForcesAndSourcesCore &data = cTx->dAta;
   if (cTx->copyNodeBase == LASTBASE) {
     data.dataOnEntities[MBVERTEX][0].getN(base).resize(nb_gauss_pts, 3, false);
-    ierr =
-        ShapeMBTRI(&*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
-                   &pts(0, 0), &pts(1, 0), nb_gauss_pts);
-    CHKERRG(ierr);
+    CHKERR ShapeMBTRI(
+        &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
+        &pts(0, 0), &pts(1, 0), nb_gauss_pts);
     data.dataOnEntities[MBVERTEX][0].getDiffN(base).resize(3, 2, false);
-    ierr = ShapeDiffMBTRI(
+    CHKERR ShapeDiffMBTRI(
         &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin());
-    CHKERRG(ierr);
   } else {
     data.dataOnEntities[MBVERTEX][0].getNSharedPtr(base) =
         data.dataOnEntities[MBVERTEX][0].getNSharedPtr(cTx->copyNodeBase);
@@ -540,9 +534,8 @@ TriPolynomialBase::getValue(MatrixDouble &pts,
     // this in expense of efficiency makes implementation
     // consistent between vertices and other types of entities
     data.dataOnEntities[MBVERTEX][0].getDiffN(base).resize(3, 2, false);
-    ierr = ShapeDiffMBTRI(
+    CHKERR ShapeDiffMBTRI(
         &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin());
-    CHKERRG(ierr);
     MatrixDouble diffN(nb_gauss_pts, 6);
     for (int gg = 0; gg < nb_gauss_pts; gg++) {
       for (int nn = 0; nn < 3; nn++) {
@@ -556,24 +549,20 @@ TriPolynomialBase::getValue(MatrixDouble &pts,
         diffN.size1(), diffN.size2(), false);
     data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().swap(diffN.data());
   }
-    ierr = getValueH1(pts);
-    CHKERRG(ierr);
+    CHKERR getValueH1(pts);
     break;
   case HDIV:
-    ierr = getValueHdiv(pts);
-    CHKERRG(ierr);
+    CHKERR getValueHdiv(pts);
     break;
   case HCURL:
-    ierr = getValueHcurl(pts);
-    CHKERRG(ierr);
+    CHKERR getValueHcurl(pts);
     break;
   case L2:
-    ierr = getValueL2(pts);
-    CHKERRG(ierr);
+    CHKERR getValueL2(pts);
     break;
   default:
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Not yet implemented");
   }
 
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }

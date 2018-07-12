@@ -20,12 +20,10 @@ using namespace MoFEM;
 
 using namespace boost::numeric;
 
-DirichletDisplacementBc::DirichletDisplacementBc(
-  MoFEM::Interface& m_field,const std::string &field_name,Mat Aij,Vec X,Vec F
-):
-mField(m_field),
-fieldName(field_name),
-dIag(1) {
+DirichletDisplacementBc::DirichletDisplacementBc(MoFEM::Interface &m_field,
+                                                 const std::string &field_name,
+                                                 Mat Aij, Vec X, Vec F)
+    : mField(m_field), fieldName(field_name), dIag(1) {
   snes_B = Aij;
   snes_x = X;
   snes_f = F;
@@ -34,12 +32,9 @@ dIag(1) {
   ts_F = F;
 };
 
-DirichletDisplacementBc::DirichletDisplacementBc(
-  MoFEM::Interface& m_field,const std::string &field_name
-):
-mField(m_field),
-fieldName(field_name),
-dIag(1) {
+DirichletDisplacementBc::DirichletDisplacementBc(MoFEM::Interface &m_field,
+                                                 const std::string &field_name)
+    : mField(m_field), fieldName(field_name), dIag(1) {
   snes_B = PETSC_NULL;
   snes_x = PETSC_NULL;
   snes_f = PETSC_NULL;
@@ -50,52 +45,62 @@ dIag(1) {
 
 MoFEMErrorCode DirichletDisplacementBc::iNitalize() {
   MoFEMFunctionBeginHot;
-  if(mapZeroRows.empty() || !methodsOp.empty()) {
-    ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
-    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NODESET|DISPLACEMENTSET,it)) {
+  if (mapZeroRows.empty() || !methodsOp.empty()) {
+    ParallelComm *pcomm =
+        ParallelComm::get_pcomm(&mField.get_moab(), MYPCOMM_INDEX);
+    for (_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(
+             mField, NODESET | DISPLACEMENTSET, it)) {
       DisplacementCubitBcData mydata;
-      ierr = it->getBcDataStructure(mydata); CHKERRG(ierr);
+      ierr = it->getBcDataStructure(mydata);
+      CHKERRG(ierr);
       VectorDouble scaled_values(3);
       scaled_values[0] = mydata.data.value1;
       scaled_values[1] = mydata.data.value2;
       scaled_values[2] = mydata.data.value3;
-      ierr = MethodForForceScaling::applyScale(this,methodsOp,scaled_values); CHKERRG(ierr);
-      for(int dim = 0;dim<3;dim++) {
+      ierr = MethodForForceScaling::applyScale(this, methodsOp, scaled_values);
+      CHKERRG(ierr);
+      for (int dim = 0; dim < 3; dim++) {
         Range ents;
-        ierr = it->getMeshsetIdEntitiesByDimension(mField.get_moab(),dim,ents,true); CHKERRG(ierr);
-        if(dim>1) {
+        ierr = it->getMeshsetIdEntitiesByDimension(mField.get_moab(), dim, ents,
+                                                   true);
+        CHKERRG(ierr);
+        if (dim > 1) {
           Range _edges;
-          ierr = mField.get_moab().get_adjacencies(ents,1,false,_edges,moab::Interface::UNION); CHKERRG(ierr);
-          ents.insert(_edges.begin(),_edges.end());
+          ierr = mField.get_moab().get_adjacencies(ents, 1, false, _edges,
+                                                   moab::Interface::UNION);
+          CHKERRG(ierr);
+          ents.insert(_edges.begin(), _edges.end());
         }
-        if(dim>0) {
+        if (dim > 0) {
           Range _nodes;
-          rval = mField.get_moab().get_connectivity(ents,_nodes,true); CHKERRG(rval);
-          ents.insert(_nodes.begin(),_nodes.end());
+          CHKERR mField.get_moab().get_connectivity(ents, _nodes, true);
+          ents.insert(_nodes.begin(), _nodes.end());
         }
-        for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {
-          for(_IT_NUMEREDDOF_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problemPtr,fieldName,*eit,pcomm->rank(),dof_ptr)) {
-            const boost::shared_ptr<NumeredDofEntity>& dof = *dof_ptr;
+        for (Range::iterator eit = ents.begin(); eit != ents.end(); eit++) {
+          for (_IT_NUMEREDDOF_ROW_BY_NAME_ENT_PART_FOR_LOOP_(
+                   problemPtr, fieldName, *eit, pcomm->rank(), dof_ptr)) {
+            const boost::shared_ptr<NumeredDofEntity> &dof = *dof_ptr;
             std::bitset<8> pstatus(dof->getPStatus());
-            if(pstatus.test(0)) continue; //only local
-            if(dof->getEntType() == MBVERTEX) {
-              if(dof->getDofCoeffIdx() == 0 && mydata.data.flag1) {
+            if (pstatus.test(0))
+              continue; // only local
+            if (dof->getEntType() == MBVERTEX) {
+              if (dof->getDofCoeffIdx() == 0 && mydata.data.flag1) {
                 mapZeroRows[dof->getPetscGlobalDofIdx()] = scaled_values[0];
               }
-              if(dof->getDofCoeffIdx() == 1 && mydata.data.flag2) {
+              if (dof->getDofCoeffIdx() == 1 && mydata.data.flag2) {
                 mapZeroRows[dof->getPetscGlobalDofIdx()] = scaled_values[1];
               }
-              if(dof->getDofCoeffIdx() == 2 && mydata.data.flag3) {
+              if (dof->getDofCoeffIdx() == 2 && mydata.data.flag3) {
                 mapZeroRows[dof->getPetscGlobalDofIdx()] = scaled_values[2];
               }
             } else {
-              if(dof->getDofCoeffIdx() == 0 && mydata.data.flag1) {
+              if (dof->getDofCoeffIdx() == 0 && mydata.data.flag1) {
                 mapZeroRows[dof->getPetscGlobalDofIdx()] = 0;
               }
-              if(dof->getDofCoeffIdx() == 1 && mydata.data.flag2) {
+              if (dof->getDofCoeffIdx() == 1 && mydata.data.flag2) {
                 mapZeroRows[dof->getPetscGlobalDofIdx()] = 0;
               }
-              if(dof->getDofCoeffIdx() == 2 && mydata.data.flag3) {
+              if (dof->getDofCoeffIdx() == 2 && mydata.data.flag3) {
                 mapZeroRows[dof->getPetscGlobalDofIdx()] = 0;
               }
             }
@@ -106,144 +111,136 @@ MoFEMErrorCode DirichletDisplacementBc::iNitalize() {
     dofsIndices.resize(mapZeroRows.size());
     dofsValues.resize(mapZeroRows.size());
     int ii = 0;
-    std::map<DofIdx,FieldData>::iterator mit = mapZeroRows.begin();
-    for(;mit!=mapZeroRows.end();mit++,ii++) {
+    std::map<DofIdx, FieldData>::iterator mit = mapZeroRows.begin();
+    for (; mit != mapZeroRows.end(); mit++, ii++) {
       dofsIndices[ii] = mit->first;
       dofsValues[ii] = mit->second;
-      //std::cerr << dofsIndices[ii] << " " << dofsValues[ii] << std::endl;
+      // std::cerr << dofsIndices[ii] << " " << dofsValues[ii] << std::endl;
     }
   }
   MoFEMFunctionReturnHot(0);
 }
 
 MoFEMErrorCode DirichletDisplacementBc::preProcess() {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
 
   switch (ts_ctx) {
-    case CTX_TSSETIFUNCTION: {
-      snes_ctx = CTX_SNESSETFUNCTION;
-      snes_x = ts_u;
-      snes_f = ts_F;
-      break;
-    }
-    case CTX_TSSETIJACOBIAN: {
-      snes_ctx = CTX_SNESSETJACOBIAN;
-      snes_B = ts_B;
-      break;
-    }
-    default:
+  case CTX_TSSETIFUNCTION: {
+    snes_ctx = CTX_SNESSETFUNCTION;
+    snes_x = ts_u;
+    snes_f = ts_F;
+    break;
+  }
+  case CTX_TSSETIJACOBIAN: {
+    snes_ctx = CTX_SNESSETJACOBIAN;
+    snes_B = ts_B;
+    break;
+  }
+  default:
     break;
   }
 
-  ierr = iNitalize(); CHKERRG(ierr);
+  CHKERR iNitalize();
 
-  if(snes_ctx == CTX_SNESNONE && ts_ctx == CTX_TSNONE) {
-    if(dofsIndices.size()>0) {
-      ierr = VecSetValues(
-        snes_x,dofsIndices.size(),&dofsIndices[0],&dofsValues[0],INSERT_VALUES
-      ); CHKERRG(ierr);
+  if (snes_ctx == CTX_SNESNONE && ts_ctx == CTX_TSNONE) {
+    if (dofsIndices.size() > 0) {
+      CHKERR VecSetValues(snes_x, dofsIndices.size(), &dofsIndices[0],
+                          &dofsValues[0], INSERT_VALUES);
     }
-    ierr = VecAssemblyBegin(snes_x); CHKERRG(ierr);
-    ierr = VecAssemblyEnd(snes_x); CHKERRG(ierr);
+    CHKERR VecAssemblyBegin(snes_x);
+    CHKERR VecAssemblyEnd(snes_x);
   }
 
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode DirichletDisplacementBc::postProcess() {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
 
   switch (ts_ctx) {
-    case CTX_TSSETIFUNCTION: {
-      snes_ctx = CTX_SNESSETFUNCTION;
-      snes_x = ts_u;
-      snes_f = ts_F;
-      break;
-    }
-    case CTX_TSSETIJACOBIAN: {
-      snes_ctx = CTX_SNESSETJACOBIAN;
-      snes_B = ts_B;
-      break;
-    }
-    default:
+  case CTX_TSSETIFUNCTION: {
+    snes_ctx = CTX_SNESSETFUNCTION;
+    snes_x = ts_u;
+    snes_f = ts_F;
+    break;
+  }
+  case CTX_TSSETIJACOBIAN: {
+    snes_ctx = CTX_SNESSETJACOBIAN;
+    snes_B = ts_B;
+    break;
+  }
+  default:
     break;
   }
 
-  if(snes_ctx == CTX_SNESNONE && ts_ctx == CTX_TSNONE) {
-    if(snes_B) {
-      ierr = MatAssemblyBegin(snes_B,MAT_FINAL_ASSEMBLY); CHKERRG(ierr);
-      ierr = MatAssemblyEnd(snes_B,MAT_FINAL_ASSEMBLY); CHKERRG(ierr);
-      ierr = MatZeroRowsColumns(
-        snes_B,
-        dofsIndices.size(),
-        dofsIndices.empty()?PETSC_NULL:&dofsIndices[0],
-        dIag,PETSC_NULL,PETSC_NULL
-      ); CHKERRG(ierr);
+  if (snes_ctx == CTX_SNESNONE && ts_ctx == CTX_TSNONE) {
+    if (snes_B) {
+      CHKERR MatAssemblyBegin(snes_B, MAT_FINAL_ASSEMBLY);
+      CHKERR MatAssemblyEnd(snes_B, MAT_FINAL_ASSEMBLY);
+      CHKERR MatZeroRowsColumns(snes_B, dofsIndices.size(),
+                                dofsIndices.empty() ? PETSC_NULL
+                                                    : &dofsIndices[0],
+                                dIag, PETSC_NULL, PETSC_NULL);
     }
-    if(snes_f) {
-      ierr = VecAssemblyBegin(snes_f); CHKERRG(ierr);
-      ierr = VecAssemblyEnd(snes_f); CHKERRG(ierr);
-      for(std::vector<int>::iterator vit = dofsIndices.begin();vit!=dofsIndices.end();vit++) {
-        ierr = VecSetValue(snes_f,*vit,0,INSERT_VALUES); CHKERRG(ierr);
+    if (snes_f) {
+      CHKERR VecAssemblyBegin(snes_f);
+      CHKERR VecAssemblyEnd(snes_f);
+      for (std::vector<int>::iterator vit = dofsIndices.begin();
+           vit != dofsIndices.end(); vit++) {
+        CHKERR VecSetValue(snes_f, *vit, 0, INSERT_VALUES);
       }
-      ierr = VecAssemblyBegin(snes_f); CHKERRG(ierr);
-      ierr = VecAssemblyEnd(snes_f); CHKERRG(ierr);
+      CHKERR VecAssemblyBegin(snes_f);
+      CHKERR VecAssemblyEnd(snes_f);
     }
   }
 
-  switch(snes_ctx) {
-    case CTX_SNESNONE:
+  switch (snes_ctx) {
+  case CTX_SNESNONE:
     break;
-    case CTX_SNESSETFUNCTION: {
-      if(!dofsIndices.empty()) {
-        dofsXValues.resize(dofsIndices.size());
-        ierr = VecGetValues(
-          snes_x,dofsIndices.size(),
-          dofsIndices.empty()?PETSC_NULL:&*dofsIndices.begin(),
-          dofsXValues.empty()?PETSC_NULL:&*dofsXValues.begin()
-        ); CHKERRG(ierr);
-      }
-      ierr = VecAssemblyBegin(snes_f); CHKERRG(ierr);
-      ierr = VecAssemblyEnd(snes_f); CHKERRG(ierr);
-      if(!dofsIndices.empty()) {
-        int ii = 0;
-        for(std::vector<int>::iterator vit = dofsIndices.begin();vit!=dofsIndices.end();vit++,ii++) {
-          double val = 0;
-          if(!dofsXValues.empty()) {
-            val += dofsXValues[ii];
-            val += -mapZeroRows[*vit]; // in snes it is on the left hand side, that way -1
-            dofsXValues[ii] = val;
-          }
+  case CTX_SNESSETFUNCTION: {
+    if (!dofsIndices.empty()) {
+      dofsXValues.resize(dofsIndices.size());
+      CHKERR VecGetValues(
+          snes_x, dofsIndices.size(),
+          dofsIndices.empty() ? PETSC_NULL : &*dofsIndices.begin(),
+          dofsXValues.empty() ? PETSC_NULL : &*dofsXValues.begin());
+    }
+    CHKERR VecAssemblyBegin(snes_f);
+    CHKERR VecAssemblyEnd(snes_f);
+    if (!dofsIndices.empty()) {
+      int ii = 0;
+      for (std::vector<int>::iterator vit = dofsIndices.begin();
+           vit != dofsIndices.end(); vit++, ii++) {
+        double val = 0;
+        if (!dofsXValues.empty()) {
+          val += dofsXValues[ii];
+          val += -mapZeroRows[*vit]; // in snes it is on the left hand side,
+                                     // that way -1
+          dofsXValues[ii] = val;
         }
-        ierr = VecSetValues(
-          snes_f,dofsIndices.size(),
-          dofsIndices.empty()?PETSC_NULL:&*dofsIndices.begin(),
-          dofsXValues.empty()?PETSC_NULL:&*dofsXValues.begin(),
-          INSERT_VALUES
-        ); CHKERRG(ierr);
       }
-      ierr = VecAssemblyBegin(snes_f); CHKERRG(ierr);
-      ierr = VecAssemblyEnd(snes_f); CHKERRG(ierr);
+      CHKERR VecSetValues(
+          snes_f, dofsIndices.size(),
+          dofsIndices.empty() ? PETSC_NULL : &*dofsIndices.begin(),
+          dofsXValues.empty() ? PETSC_NULL : &*dofsXValues.begin(),
+          INSERT_VALUES);
     }
-    break;
-    case CTX_SNESSETJACOBIAN: {
-      ierr = MatAssemblyBegin(snes_B,MAT_FINAL_ASSEMBLY); CHKERRG(ierr);
-      ierr = MatAssemblyEnd(snes_B,MAT_FINAL_ASSEMBLY); CHKERRG(ierr);
-      ierr = MatZeroRowsColumns(
-        snes_B,
-        dofsIndices.size(),
-        dofsIndices.empty()?PETSC_NULL:&*dofsIndices.begin(),
-        dIag,
-        PETSC_NULL,
-        PETSC_NULL
-      ); CHKERRG(ierr);
-    }
-    break;
-    default:
-    SETERRQ(PETSC_COMM_SELF,1,"unknown snes stage");
+    CHKERR VecAssemblyBegin(snes_f);
+    CHKERR VecAssemblyEnd(snes_f);
+  } break;
+  case CTX_SNESSETJACOBIAN: {
+    CHKERR MatAssemblyBegin(snes_B, MAT_FINAL_ASSEMBLY);
+    CHKERR MatAssemblyEnd(snes_B, MAT_FINAL_ASSEMBLY);
+    CHKERR MatZeroRowsColumns(snes_B, dofsIndices.size(),
+                              dofsIndices.empty() ? PETSC_NULL
+                                                  : &*dofsIndices.begin(),
+                              dIag, PETSC_NULL, PETSC_NULL);
+  } break;
+  default:
+    SETERRQ(PETSC_COMM_SELF, 1, "unknown snes stage");
   }
 
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode DirichletSpatialPositionsBc::iNitalize() {
@@ -424,32 +421,37 @@ MoFEMErrorCode DirichletSpatialPositionsBc::iNitalize() {
 }
 
 MoFEMErrorCode DirichletTemperatureBc::iNitalize() {
-  MoFEMFunctionBeginHot;
-  if(mapZeroRows.empty() || !methodsOp.empty()) {
-    ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
-    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NODESET|TEMPERATURESET,it)) {
+  MoFEMFunctionBegin;
+  if (mapZeroRows.empty() || !methodsOp.empty()) {
+    ParallelComm *pcomm =
+        ParallelComm::get_pcomm(&mField.get_moab(), MYPCOMM_INDEX);
+    for (_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(
+             mField, NODESET | TEMPERATURESET, it)) {
       TemperatureCubitBcData mydata;
-      ierr = it->getBcDataStructure(mydata); CHKERRG(ierr);
+      CHKERR it->getBcDataStructure(mydata);
       VectorDouble scaled_values(1);
       scaled_values[0] = mydata.data.value1;
-      ierr = MethodForForceScaling::applyScale(this,methodsOp,scaled_values); CHKERRG(ierr);
-      for(int dim = 0;dim<3;dim++) {
+      CHKERR MethodForForceScaling::applyScale(this, methodsOp, scaled_values);
+      for (int dim = 0; dim < 3; dim++) {
         Range ents;
-        ierr = it->getMeshsetIdEntitiesByDimension(mField.get_moab(),dim,ents,true); CHKERRG(ierr);
-        if(dim>1) {
+        CHKERR it->getMeshsetIdEntitiesByDimension(mField.get_moab(), dim, ents,
+                                                   true);
+        if (dim > 1) {
           Range _edges;
-          ierr = mField.get_moab().get_adjacencies(ents,1,false,_edges,moab::Interface::UNION); CHKERRG(ierr);
-          ents.insert(_edges.begin(),_edges.end());
+          CHKERR mField.get_moab().get_adjacencies(ents, 1, false, _edges,
+                                                   moab::Interface::UNION);
+          ents.insert(_edges.begin(), _edges.end());
         }
-        if(dim>0) {
+        if (dim > 0) {
           Range _nodes;
-          rval = mField.get_moab().get_connectivity(ents,_nodes,true); CHKERRG(rval);
-          ents.insert(_nodes.begin(),_nodes.end());
+          CHKERR mField.get_moab().get_connectivity(ents, _nodes, true);
+          ents.insert(_nodes.begin(), _nodes.end());
         }
-        for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {
-          for(_IT_NUMEREDDOF_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problemPtr,fieldName,*eit,pcomm->rank(),dof_ptr)) {
+        for (Range::iterator eit = ents.begin(); eit != ents.end(); eit++) {
+          for (_IT_NUMEREDDOF_ROW_BY_NAME_ENT_PART_FOR_LOOP_(
+                   problemPtr, fieldName, *eit, pcomm->rank(), dof_ptr)) {
             NumeredDofEntity *dof = dof_ptr->get();
-            if(dof->getEntType() == MBVERTEX) {
+            if (dof->getEntType() == MBVERTEX) {
               mapZeroRows[dof->getPetscGlobalDofIdx()] = scaled_values[0];
             } else {
               mapZeroRows[dof->getPetscGlobalDofIdx()] = 0;
@@ -461,21 +463,23 @@ MoFEMErrorCode DirichletTemperatureBc::iNitalize() {
     dofsIndices.resize(mapZeroRows.size());
     dofsValues.resize(mapZeroRows.size());
     int ii = 0;
-    std::map<DofIdx,FieldData>::iterator mit = mapZeroRows.begin();
-    for(;mit!=mapZeroRows.end();mit++,ii++) {
+    std::map<DofIdx, FieldData>::iterator mit = mapZeroRows.begin();
+    for (; mit != mapZeroRows.end(); mit++, ii++) {
       dofsIndices[ii] = mit->first;
       dofsValues[ii] = mit->second;
     }
   }
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode DirichletFixFieldAtEntitiesBc::iNitalize() {
-  MoFEMFunctionBeginHot;
-  if(mapZeroRows.empty()) {
-    for(std::vector<std::string>::iterator fit = fieldNames.begin();fit!=fieldNames.end();fit++) {
-      for(Range::iterator eit = eNts.begin();eit!=eNts.end();eit++) {
-        for(_IT_NUMEREDDOF_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problemPtr,*fit,*eit,mField.get_comm_rank(),dof_ptr)) {
+  MoFEMFunctionBegin;
+  if (mapZeroRows.empty()) {
+    for (std::vector<std::string>::iterator fit = fieldNames.begin();
+         fit != fieldNames.end(); fit++) {
+      for (Range::iterator eit = eNts.begin(); eit != eNts.end(); eit++) {
+        for (_IT_NUMEREDDOF_ROW_BY_NAME_ENT_PART_FOR_LOOP_(
+                 problemPtr, *fit, *eit, mField.get_comm_rank(), dof_ptr)) {
           NumeredDofEntity *dof = dof_ptr->get();
           mapZeroRows[dof->getPetscGlobalDofIdx()] = 0;
         }
@@ -484,142 +488,143 @@ MoFEMErrorCode DirichletFixFieldAtEntitiesBc::iNitalize() {
     dofsIndices.resize(mapZeroRows.size());
     dofsValues.resize(mapZeroRows.size());
     int ii = 0;
-    std::map<DofIdx,FieldData>::iterator mit = mapZeroRows.begin();
-    for(;mit!=mapZeroRows.end();mit++,ii++) {
+    std::map<DofIdx, FieldData>::iterator mit = mapZeroRows.begin();
+    for (; mit != mapZeroRows.end(); mit++, ii++) {
       dofsIndices[ii] = mit->first;
       dofsValues[ii] = mit->second;
     }
   }
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode DirichletFixFieldAtEntitiesBc::preProcess() {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
 
   switch (ts_ctx) {
-    case CTX_TSSETIFUNCTION: {
-      snes_ctx = CTX_SNESSETFUNCTION;
-      snes_x = ts_u;
-      snes_f = ts_F;
-      break;
-    }
-    case CTX_TSSETIJACOBIAN: {
-      snes_ctx = CTX_SNESSETJACOBIAN;
-      snes_B = ts_B;
-      break;
-    }
-    default:
+  case CTX_TSSETIFUNCTION: {
+    snes_ctx = CTX_SNESSETFUNCTION;
+    snes_x = ts_u;
+    snes_f = ts_F;
+    break;
+  }
+  case CTX_TSSETIJACOBIAN: {
+    snes_ctx = CTX_SNESSETJACOBIAN;
+    snes_B = ts_B;
+    break;
+  }
+  default:
     break;
   }
 
-  ierr = iNitalize(); CHKERRG(ierr);
-  MoFEMFunctionReturnHot(0);
+  CHKERR iNitalize();
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode DirichletFixFieldAtEntitiesBc::postProcess() {
-  MoFEMFunctionBeginHot;
-  if(snes_ctx == CTX_SNESNONE && ts_ctx == CTX_TSNONE) {
-    if(snes_B) {
-      ierr = MatAssemblyBegin(snes_B,MAT_FINAL_ASSEMBLY); CHKERRG(ierr);
-      ierr = MatAssemblyEnd(snes_B,MAT_FINAL_ASSEMBLY); CHKERRG(ierr);
-      ierr = MatZeroRowsColumns(
-        snes_B,dofsIndices.size(),dofsIndices.empty()?PETSC_NULL:&dofsIndices[0],dIag,PETSC_NULL,PETSC_NULL
-      ); CHKERRG(ierr);
+  MoFEMFunctionBegin;
+  if (snes_ctx == CTX_SNESNONE && ts_ctx == CTX_TSNONE) {
+    if (snes_B) {
+      CHKERR MatAssemblyBegin(snes_B, MAT_FINAL_ASSEMBLY);
+      CHKERR MatAssemblyEnd(snes_B, MAT_FINAL_ASSEMBLY);
+      CHKERR MatZeroRowsColumns(snes_B, dofsIndices.size(),
+                                dofsIndices.empty() ? PETSC_NULL
+                                                    : &dofsIndices[0],
+                                dIag, PETSC_NULL, PETSC_NULL);
     }
-    if(snes_f) {
-      ierr = VecAssemblyBegin(snes_f); CHKERRG(ierr);
-      ierr = VecAssemblyEnd(snes_f); CHKERRG(ierr);
+    if (snes_f) {
+      CHKERR VecAssemblyBegin(snes_f);
+      CHKERR VecAssemblyEnd(snes_f);
       int ii = 0;
-      for(std::vector<int>::iterator vit = dofsIndices.begin();vit!=dofsIndices.end();vit++,ii++) {
-        ierr = VecSetValue(snes_f,*vit,dofsValues[ii],INSERT_VALUES); CHKERRG(ierr);
+      for (std::vector<int>::iterator vit = dofsIndices.begin();
+           vit != dofsIndices.end(); vit++, ii++) {
+        CHKERR VecSetValue(snes_f, *vit, dofsValues[ii], INSERT_VALUES);
       }
-      ierr = VecAssemblyBegin(snes_f); CHKERRG(ierr);
-      ierr = VecAssemblyEnd(snes_f); CHKERRG(ierr);
+      CHKERR VecAssemblyBegin(snes_f);
+      CHKERR VecAssemblyEnd(snes_f);
     }
   }
 
-  switch(snes_ctx) {
-    case CTX_SNESNONE: {}
-    break;
-    case CTX_SNESSETFUNCTION: {
-      ierr = VecAssemblyBegin(snes_f); CHKERRG(ierr);
-      ierr = VecAssemblyEnd(snes_f); CHKERRG(ierr);
-      int ii = 0;
-      for(std::vector<int>::iterator vit = dofsIndices.begin();vit!=dofsIndices.end();vit++,ii++) {
-        ierr = VecSetValue(snes_f,*vit,dofsValues[ii],INSERT_VALUES); CHKERRG(ierr);
-      }
-      ierr = VecAssemblyBegin(snes_f); CHKERRG(ierr);
-      ierr = VecAssemblyEnd(snes_f); CHKERRG(ierr);
+  switch (snes_ctx) {
+  case CTX_SNESNONE: {
+  } break;
+  case CTX_SNESSETFUNCTION: {
+    CHKERR VecAssemblyBegin(snes_f);
+    CHKERR VecAssemblyEnd(snes_f);
+    int ii = 0;
+    for (std::vector<int>::iterator vit = dofsIndices.begin();
+         vit != dofsIndices.end(); vit++, ii++) {
+      CHKERR VecSetValue(snes_f, *vit, dofsValues[ii], INSERT_VALUES);
     }
-    break;
-    case CTX_SNESSETJACOBIAN: {
-      ierr = MatAssemblyBegin(snes_B,MAT_FINAL_ASSEMBLY); CHKERRG(ierr);
-      ierr = MatAssemblyEnd(snes_B,MAT_FINAL_ASSEMBLY); CHKERRG(ierr);
-      ierr = MatZeroRowsColumns(
-        snes_B,
-        dofsIndices.size(),
-        dofsIndices.empty()?PETSC_NULL:&*dofsIndices.begin(),
-        dIag,
-        PETSC_NULL,
-        PETSC_NULL
-      ); CHKERRG(ierr);
-    }
-    break;
-    default:
-    SETERRQ(PETSC_COMM_SELF,1,"unknown snes stage");
+    CHKERR VecAssemblyBegin(snes_f);
+    CHKERR VecAssemblyEnd(snes_f);
+  } break;
+  case CTX_SNESSETJACOBIAN: {
+    CHKERR MatAssemblyBegin(snes_B, MAT_FINAL_ASSEMBLY);
+    CHKERR MatAssemblyEnd(snes_B, MAT_FINAL_ASSEMBLY);
+    CHKERR MatZeroRowsColumns(snes_B, dofsIndices.size(),
+                              dofsIndices.empty() ? PETSC_NULL
+                                                  : &*dofsIndices.begin(),
+                              dIag, PETSC_NULL, PETSC_NULL);
+  } break;
+  default:
+    SETERRQ(PETSC_COMM_SELF, 1, "unknown snes stage");
   }
 
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
-
 
 MoFEMErrorCode DirichletSetFieldFromBlock::iNitalize() {
-  MoFEMFunctionBeginHot;
-  if(mapZeroRows.empty() || !methodsOp.empty()) {
-    ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
-    for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
-      if(it->getName().compare(0,blocksetName.length(),blocksetName) == 0) {
+  MoFEMFunctionBegin;
+  if (mapZeroRows.empty() || !methodsOp.empty()) {
+    ParallelComm *pcomm =
+        ParallelComm::get_pcomm(&mField.get_moab(), MYPCOMM_INDEX);
+    for (_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField, BLOCKSET, it)) {
+      if (it->getName().compare(0, blocksetName.length(), blocksetName) == 0) {
         std::vector<double> mydata;
-        ierr = it->getAttributes(mydata); CHKERRG(ierr);
+        CHKERR it->getAttributes(mydata);
         VectorDouble scaled_values(mydata.size());
-        for(unsigned int ii = 0;ii<mydata.size();ii++) {
+        for (unsigned int ii = 0; ii < mydata.size(); ii++) {
           scaled_values[ii] = mydata[ii];
         }
-        ierr = MethodForForceScaling::applyScale(this,methodsOp,scaled_values); CHKERRG(ierr);
-        for(int dim = 0;dim<3;dim++) {
+        CHKERR MethodForForceScaling::applyScale(this, methodsOp,
+                                                 scaled_values);
+        for (int dim = 0; dim < 3; dim++) {
           Range ents;
-          ierr = it->getMeshsetIdEntitiesByDimension(mField.get_moab(),dim,ents,true); CHKERRG(ierr);
-          if(dim>1) {
+          CHKERR it->getMeshsetIdEntitiesByDimension(mField.get_moab(), dim,
+                                                     ents, true);
+          if (dim > 1) {
             Range edges;
-            ierr = mField.get_moab().get_adjacencies(ents,1,false,edges,moab::Interface::UNION); CHKERRG(ierr);
-            ents.insert(edges.begin(),edges.end());
+            CHKERR mField.get_moab().get_adjacencies(ents, 1, false, edges,
+                                                     moab::Interface::UNION);
+            ents.insert(edges.begin(), edges.end());
           }
-          if(dim>0) {
+          if (dim > 0) {
             Range nodes;
-            rval = mField.get_moab().get_connectivity(ents,nodes,true); CHKERRG(rval);
-            ents.insert(nodes.begin(),nodes.end());
+            CHKERR mField.get_moab().get_connectivity(ents, nodes, true);
+            ents.insert(nodes.begin(), nodes.end());
           }
-          for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {
-            for(_IT_NUMEREDDOF_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problemPtr,fieldName,*eit,pcomm->rank(),dof_ptr)) {
+          for (Range::iterator eit = ents.begin(); eit != ents.end(); eit++) {
+            for (_IT_NUMEREDDOF_ROW_BY_NAME_ENT_PART_FOR_LOOP_(
+                     problemPtr, fieldName, *eit, pcomm->rank(), dof_ptr)) {
               NumeredDofEntity *dof = dof_ptr->get();
-              if(dof->getEntType() == MBVERTEX) {
-                if(dof->getDofCoeffIdx() == 0) {
+              if (dof->getEntType() == MBVERTEX) {
+                if (dof->getDofCoeffIdx() == 0) {
                   mapZeroRows[dof->getPetscGlobalDofIdx()] = scaled_values[0];
                 }
-                if(dof->getDofCoeffIdx() == 1) {
+                if (dof->getDofCoeffIdx() == 1) {
                   mapZeroRows[dof->getPetscGlobalDofIdx()] = scaled_values[1];
                 }
-                if(dof->getDofCoeffIdx() == 2) {
+                if (dof->getDofCoeffIdx() == 2) {
                   mapZeroRows[dof->getPetscGlobalDofIdx()] = scaled_values[2];
                 }
               } else {
-                if(dof->getDofCoeffIdx() == 0) {
+                if (dof->getDofCoeffIdx() == 0) {
                   mapZeroRows[dof->getPetscGlobalDofIdx()] = 0;
                 }
-                if(dof->getDofCoeffIdx() == 1) {
+                if (dof->getDofCoeffIdx() == 1) {
                   mapZeroRows[dof->getPetscGlobalDofIdx()] = 0;
                 }
-                if(dof->getDofCoeffIdx() == 2) {
+                if (dof->getDofCoeffIdx() == 2) {
                   mapZeroRows[dof->getPetscGlobalDofIdx()] = 0;
                 }
               }
@@ -631,64 +636,68 @@ MoFEMErrorCode DirichletSetFieldFromBlock::iNitalize() {
     dofsIndices.resize(mapZeroRows.size());
     dofsValues.resize(mapZeroRows.size());
     int ii = 0;
-    std::map<DofIdx,FieldData>::iterator mit = mapZeroRows.begin();
-    for(;mit!=mapZeroRows.end();mit++,ii++) {
+    std::map<DofIdx, FieldData>::iterator mit = mapZeroRows.begin();
+    for (; mit != mapZeroRows.end(); mit++, ii++) {
       dofsIndices[ii] = mit->first;
       dofsValues[ii] = mit->second;
     }
   }
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
-
 MoFEMErrorCode DirichletSetFieldFromBlockWithFlags::iNitalize() {
-  MoFEMFunctionBeginHot;
-  if(mapZeroRows.empty() || !methodsOp.empty()) {
-    ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
-    for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
-      if(it->getName().compare(0,blocksetName.length(),blocksetName) == 0) {
+  MoFEMFunctionBegin;
+  if (mapZeroRows.empty() || !methodsOp.empty()) {
+    ParallelComm *pcomm =
+        ParallelComm::get_pcomm(&mField.get_moab(), MYPCOMM_INDEX);
+    for (_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField, BLOCKSET, it)) {
+      if (it->getName().compare(0, blocksetName.length(), blocksetName) == 0) {
         std::vector<double> mydata;
-        ierr = it->getAttributes(mydata); CHKERRG(ierr);
+        CHKERR it->getAttributes(mydata);
         VectorDouble scaled_values(mydata.size());
-        for(unsigned int ii = 0;ii<mydata.size();ii++) {
+        for (unsigned int ii = 0; ii < mydata.size(); ii++) {
           scaled_values[ii] = mydata[ii];
         }
 
-        ierr = MethodForForceScaling::applyScale(this,methodsOp,scaled_values); CHKERRG(ierr);
-        for(int dim = 0;dim<3;dim++) {
+        CHKERR MethodForForceScaling::applyScale(this, methodsOp,
+                                                 scaled_values);
+        for (int dim = 0; dim < 3; dim++) {
           Range ents;
-          ierr = it->getMeshsetIdEntitiesByDimension(mField.get_moab(),dim,ents,true); CHKERRG(ierr);
-          if(dim>1) {
+          CHKERR it->getMeshsetIdEntitiesByDimension(mField.get_moab(), dim,
+                                                     ents, true);
+          if (dim > 1) {
             Range edges;
-            ierr = mField.get_moab().get_adjacencies(ents,1,false,edges,moab::Interface::UNION); CHKERRG(ierr);
-            ents.insert(edges.begin(),edges.end());
+            CHKERR mField.get_moab().get_adjacencies(ents, 1, false, edges,
+                                                     moab::Interface::UNION);
+            ents.insert(edges.begin(), edges.end());
           }
-          if(dim>0) {
+          if (dim > 0) {
             Range nodes;
-            rval = mField.get_moab().get_connectivity(ents,nodes,true); CHKERRG(rval);
-            ents.insert(nodes.begin(),nodes.end());
+            CHKERR mField.get_moab().get_connectivity(ents, nodes, true);
+            ents.insert(nodes.begin(), nodes.end());
           }
-          for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {
-            for(_IT_NUMEREDDOF_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problemPtr,fieldName,*eit,pcomm->rank(),dof_ptr)) {
+          for (Range::iterator eit = ents.begin(); eit != ents.end(); eit++) {
+            for (_IT_NUMEREDDOF_ROW_BY_NAME_ENT_PART_FOR_LOOP_(
+                     problemPtr, fieldName, *eit, pcomm->rank(), dof_ptr)) {
               NumeredDofEntity *dof = dof_ptr->get();
-              if(dof->getEntType() == MBVERTEX) {
-                if(dof->getDofCoeffIdx() == 0 && mydata[3]) {
+              if (dof->getEntType() == MBVERTEX) {
+                if (dof->getDofCoeffIdx() == 0 && mydata[3]) {
                   mapZeroRows[dof->getPetscGlobalDofIdx()] = scaled_values[0];
                 }
-                if(dof->getDofCoeffIdx() == 1 && mydata[4]) {
+                if (dof->getDofCoeffIdx() == 1 && mydata[4]) {
                   mapZeroRows[dof->getPetscGlobalDofIdx()] = scaled_values[1];
                 }
-                if(dof->getDofCoeffIdx() == 2 && mydata[5] ) {
+                if (dof->getDofCoeffIdx() == 2 && mydata[5]) {
                   mapZeroRows[dof->getPetscGlobalDofIdx()] = scaled_values[2];
                 }
               } else {
-                if(dof->getDofCoeffIdx() == 0 && mydata[3]) {
+                if (dof->getDofCoeffIdx() == 0 && mydata[3]) {
                   mapZeroRows[dof->getPetscGlobalDofIdx()] = 0;
                 }
-                if(dof->getDofCoeffIdx() == 1 && mydata[4] ) {
+                if (dof->getDofCoeffIdx() == 1 && mydata[4]) {
                   mapZeroRows[dof->getPetscGlobalDofIdx()] = 0;
                 }
-                if(dof->getDofCoeffIdx() == 2 && mydata[5]) {
+                if (dof->getDofCoeffIdx() == 2 && mydata[5]) {
                   mapZeroRows[dof->getPetscGlobalDofIdx()] = 0;
                 }
               }
@@ -700,11 +709,11 @@ MoFEMErrorCode DirichletSetFieldFromBlockWithFlags::iNitalize() {
     dofsIndices.resize(mapZeroRows.size());
     dofsValues.resize(mapZeroRows.size());
     int ii = 0;
-    std::map<DofIdx,FieldData>::iterator mit = mapZeroRows.begin();
-    for(;mit!=mapZeroRows.end();mit++,ii++) {
+    std::map<DofIdx, FieldData>::iterator mit = mapZeroRows.begin();
+    for (; mit != mapZeroRows.end(); mit++, ii++) {
       dofsIndices[ii] = mit->first;
       dofsValues[ii] = mit->second;
     }
   }
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }

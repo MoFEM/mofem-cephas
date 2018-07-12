@@ -264,14 +264,16 @@ VolumeElementForcesAndSourcesCore::calculateBaseFunctionsOnElement(
     case AINSWORTH_LEGENDRE_BASE:
     case AINSWORTH_LOBATTO_BASE:
       if (dataH1.spacesOnEntities[MBTET].test(L2) &&
-          dataH1.basesOnEntities[MBTET].test(b)) {
+          dataH1.basesOnEntities[MBTET].test(b) &&
+            dataH1.basesOnSpaces[L2].test(b)) {
         CHKERR TetPolynomialBase().getValue(
             gaussPts,
             boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
                 dataL2, L2, ApproximationBaseArray[b], NOBASE)));
       }
       if (dataH1.spacesOnEntities[MBVERTEX].test(H1) &&
-          dataH1.basesOnEntities[MBVERTEX].test(b)) {
+          dataH1.basesOnEntities[MBVERTEX].test(b) &&
+            dataH1.basesOnSpaces[H1].test(b)) {
         CHKERR TetPolynomialBase().getValue(
             gaussPts,
             boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
@@ -279,14 +281,16 @@ VolumeElementForcesAndSourcesCore::calculateBaseFunctionsOnElement(
       }
     case DEMKOWICZ_JACOBI_BASE:
       if (dataH1.spacesOnEntities[MBEDGE].test(HCURL) &&
-          dataH1.basesOnEntities[MBEDGE].test(b)) {
+          dataH1.basesOnEntities[MBEDGE].test(b) &&
+            dataH1.basesOnSpaces[HCURL].test(b)) {
         CHKERR TetPolynomialBase().getValue(
             gaussPts,
             boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
                 dataHcurl, HCURL, ApproximationBaseArray[b], NOBASE)));
       }
       if (dataH1.spacesOnEntities[MBTRI].test(HDIV) &&
-          dataH1.basesOnEntities[MBTRI].test(b)) {
+          dataH1.basesOnEntities[MBTRI].test(b) &&
+            dataH1.basesOnSpaces[HDIV].test(b)) {
         CHKERR TetPolynomialBase().getValue(
             gaussPts,
             boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(

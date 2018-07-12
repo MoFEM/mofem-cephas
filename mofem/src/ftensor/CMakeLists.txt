@@ -75,3 +75,19 @@ if(ADOL-C_LIBRARY)
   )
 
 endif(ADOL-C_LIBRARY)
+
+# Install header files
+if(STAND_ALLONE_USERS_MODULES)
+  install(
+    FILES 
+    ${PROJECT_SOURCE_DIR}/src/ftensor/src/FTensor.hpp 
+    DESTINATION 
+    ${CMAKE_INSTALL_PREFIX}/include/ftensor
+  )
+  install(
+    DIRECTORY 
+    ${PROJECT_SOURCE_DIR}/src/ftensor/src/FTensor
+    DESTINATION 
+    ${CMAKE_INSTALL_PREFIX}/include/ftensor
+  )
+endif(STAND_ALLONE_USERS_MODULES)
