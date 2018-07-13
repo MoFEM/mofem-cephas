@@ -5,7 +5,7 @@ if(NOT MED_DIR)
 endif(NOT MED_DIR)
 
 if(MED_DIR)
-  find_library(MED_LIBRARY NAMES med PATHS ${MED_DIR}/lib)
+  find_library(MED_LIBRARY NAMES med medC PATHS ${MED_DIR}/lib)
   find_path(MED_HEADER NAMES med.h PATHS ${MED_DIR}/include)
   message(STATUS ${MED_LIBRARY})
   message(STATUS ${MED_HEADER})
