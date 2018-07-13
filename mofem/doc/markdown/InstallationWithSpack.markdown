@@ -8,7 +8,7 @@ installation of scientific packages as easy as possible.
 ## Quick installation snippet
 
 ~~~~~~
-git clone -single-branch -b develop https://github.com/likask/spack.git
+git clone --single-branch -b develop https://github.com/likask/spack.git
 . spack/share/spack/setup-env.sh
 spack install mofem-users-modules
 spack view --verbose symlink  um_view mofem-cephas
@@ -23,7 +23,7 @@ have to be patient.
 
 Clone Spack from GitHub and you’re ready to go:
 ~~~~~~
-git clone -single-branch -b develop https://github.com/likask/spack.git
+git clone --single-branch -b develop https://github.com/likask/spack.git
 . spack/share/spack/setup-env.sh
 ~~~~~~
 Note that we used forked Spack repository on GitHub. Forked Spack repository
