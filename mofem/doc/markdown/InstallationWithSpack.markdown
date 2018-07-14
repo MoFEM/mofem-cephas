@@ -12,6 +12,7 @@ git clone --single-branch -b develop https://github.com/likask/spack.git
 . spack/share/spack/setup-env.sh
 spack install mofem-users-modules
 spack view --verbose symlink  um_view mofem-cephas
+spack activate -v um_view mofem-users-modules
 export PATH=$HOME/um_view/bin:$PATH
 ~~~~~~
 
@@ -27,10 +28,8 @@ git clone --single-branch -b develop https://github.com/likask/spack.git
 . spack/share/spack/setup-env.sh
 ~~~~~~
 Note that we used forked Spack repository on GitHub. Forked Spack repository
-is under control of MoFEM developers. Moreover is cloned develop branch,
-where we put most up to date changes in the core library and users modules.
-Over time we will make pull-requests to official Spack repository and make
-MoFEM installation with main Spack repository.
+is under control of MoFEM developers, where we put most up to date changes in
+the core library and users modules. 
 
 ## Installation MoFEM
 
@@ -48,25 +47,30 @@ into it. For a start read
 
 ### Quick MoFEM installation
 
-##### Installation
+##### Installation basic users modules
+
 Basic installation of users modules is as short us
 ~~~~~~
 spack install mofem-users-modules
+spack view --verbose symlink  um_view mofem-cephas
+spack activate -v um_view mofem-users-modules
 ~~~~~~
 Spack will install all dependencies including core MoFEM library, PETSc and
 MoAB, i.e. MoFEM software ecosystem. Once basic users modules are installed
 you can start to work. For example, you can link your home directory to your
 installation.
 
-##### Users modules
+##### Users other modules
 
 You can but not have to add some users modules for example fracture module
  ~~~~~~
 spack install mofem-fracture-module
+spack activate -v um_view mofem-fracture-module
  ~~~~~~
 or minimal surface equation tutorial module
 ~~~~~~
 spack install mofem-minimal-surface-equation
+spack activate -v um_view mofem-minimal-surface-equation
 ~~~~~~
 
 You can list all modules in spack 
@@ -78,18 +82,34 @@ Not all modules are yet added to spack; if your module is not yet there, you
 can install it by hand, that is by cloning appropriate users module
 repository and complaining code after spack package view is created.
 
-Each spack package can be installed with variants and with a specific
-version, to see information about the package
+##### Versions of users modules
+
+If you have before installed and activated the module, before you activate
+the different version of it, it needs to be deactivated
+~~~~~~
+spack deactivate -v um_view mofem-fracture-module
+~~~~~~
+Alternatively, you can work with several user modules views, each with has
+been activated using modules with different version, for example
+~~~~~~
+spack view --verbose symlink  um_view_develop mofem-cephas@develop
+spack activate -v um_view_develop mofem-fracture-module@develop
+~~~~~~
+
+Note that, each spack package can be installed with variants and with a
+specific version, to see information about the package
 ~~~~~~
 spack info mofem-fracture-module
 ~~~~~~
 and if you like to install mofem-fracture-module for version  v0.9.38, you do
 ~~~~~~
-spack info mofem-fracture-module@0.9.38
+spack install mofem-fracture-module@0.9.40
+spack activate -v um_view mofem-fracture-module@0.9.40
 ~~~~~~
 or from a development branch
 ~~~~~~
-spack info mofem-fracture-module@develop
+spack install mofem-fracture-module@develop
+spack activate -v um_view mofem-fracture-module@develop
 ~~~~~~
 
 ##### Package view
@@ -97,11 +117,12 @@ spack info mofem-fracture-module@develop
 A filesystem view is a single directory tree that is the union of the
 directory hierarchies of a number of installed packages; it is similar to the
 directory hierarchy that might exist under */usr/local*. The files of the
-view’s installed MoFEM packages are brought into the view by symbolic or hard
+view’s installed MoFEM packages are broughtinto the view by symbolic or hard
 links, referencing the original Spack installation.
 ~~~~~~
 cd $HOME
 spack view --verbose symlink  um_view mofem-cephas
+spack activate -v um_view mofem-users-modules
 ~~~~~~
 
 Note that mofem package view has a directory hierarchy including *bin*,
@@ -116,15 +137,15 @@ To check if all is working you can run tests and submit results to CDash
 ~~~~~~
 cd $HOME/um_view
 make 
-./bin/ctest -D Experimental
+ctest -D Experimental
 ~~~~~~
 
 Now you can start to work, use code from users modules, or develop your own
 user module code, for example run elastic analys of L-shape beam
 ~~~~~~
-cd $HOME/um_view/basic_finite_elements/elasticity
-../../bin/mpirun -np 2 ./elasticity -my_file LShape.h5m -ksp_type gmres -pc_type lu -pc_factor_mat_solver_package mumps -ksp_monitor -my_order 2
-../../bin/mbconvert out.h5m out.vtk
+cd $HOME/um_view/build_basic/basic_finite_elements/elasticity
+mpirun -np 2 ./elasticity -my_file LShape.h5m -ksp_type gmres -pc_type lu -pc_factor_mat_solver_package mumps -ksp_monitor -my_order 2
+mbconvert out.h5m out.vtk
 ~~~~~~
 and finally open VTK file in [ParaView](https://www.paraview.org). You can
 install ParaView using Spack or use install binary for your native OS.
@@ -136,11 +157,14 @@ mofem libraries, i.e. do the fine installation
 
 ~~~~~~
 cd $HOME
-spack install --verbose --test root mofem-cephas@0.8.1+slepc
-spack install mofem-users-modules ^mofem-cephas@0.8.1+slepc
-spack install mofem-minimal-surface-equation@develop ^mofem-cephas@0.8.1+slepc
-spack install mofem-fracture-module@0.9.38 ^mofem-cephas@0.8.1+slepc
-spack view --verbose symlink  um_view_0.8.1 mofem-users-modules^mofem-cephas@0.8.1+slepc
+spack install --verbose --test root mofem-cephas@0.8.3+slepc
+spack install mofem-users-modules ^mofem-cephas@0.8.3+slepc
+spack install mofem-minimal-surface-equation@develop ^mofem-cephas@0.8.3+slepc
+spack install mofem-fracture-module@0.9.40 ^mofem-cephas@0.8.3+slepc
+spack view --verbose symlink  um_view_0.8.3 mofem-users-modules^mofem-cephas@0.8.1+slepc
+spack activate -v um_view mofem-users-modules ^mofem-cephas@0.8.3+slepc
+spack activate -v um_view mofem-minimal-surface-equation@develop ^mofem-cephas@0.8.3+slepc
+spack activate -v um_view mofem-fracture-module@0.9.40 ^mofem-cephas@0.8.3+slepc
 ~~~~~~
 
 With the above snippet, we install a specific version of core mofem library,
@@ -155,9 +179,9 @@ Also, note that we install MoFEM core library, displaying verbose build
 output while installing and running tests verifying the correctness of
 installation.
 
-To uninstall mofem-cephas@0.8.1 with all dependents libraries, you run spack command
+To uninstall mofem-cephas@0.8.3 with all dependents libraries, you run spack command
 ~~~~~
-spack uninstall --dependents  mofem-cephas@0.8.1+slepc
+spack uninstall --dependents  mofem-cephas@0.8.3+slepc
 ~~~~~
 
 ### Core lib developer installation
