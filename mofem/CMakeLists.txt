@@ -274,6 +274,10 @@ message(STATUS ${PROJECT_LIBS})
 enable_testing()
 include(CTest)
 
+# options
+option(STAND_ALLONE_USERS_MODULES "If if ON copy files, othrewise make link" OFF)
+
+
 # Precompiled headers
 include(cmake/PrecompiledHeaders.cmake)
 

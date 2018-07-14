@@ -1,4 +1,4 @@
-##Installation with Docker## {#install_docker}
+##Installation with Docker (Linux, Mac OS X and some versions of Windows)## {#install_docker}
 
 Docker is an open platform that allows for the distribution and deployment of
 applications across different systems. In the context of MoFEM it allows for
@@ -22,6 +22,8 @@ to clone repository
 ~~~~~~
 cd $HOME
 git clone https://bitbucket.org/likask/mofem-cephas.git
+cd mofem-cephas
+git submodule update --init mofem/users_modules
 ~~~~~~
 
 ##Build docker image

@@ -5,6 +5,7 @@ pipelines:
     - step:
         script:
           - echo PWD $PWD
+          - git submodule update --init mofem/users_modules
           - export PETSC_DIR=/opt/petsc
           - export PETSC_ARCH=arch-linux2-c-opt
           - export MOFEM_SRC_DIR=$PWD

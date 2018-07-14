@@ -74,6 +74,8 @@ cd $MOFEM_INSTALL_DIR
 
 # Cloning MoFEM sourcecode:
 git clone https://bitbucket.org/likask/mofem-cephas.git mofem-cephas
+cd $MOFEM_INSTALL_DIR/mofem-cephas
+git submodule update --init mofem/users_modules
 
 # Make a build directory
 mkdir $MOFEM_INSTALL_DIR/lib

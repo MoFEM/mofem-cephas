@@ -12,7 +12,7 @@ if(NOT EXISTS "${CTEST_SOURCE_DIRECTORY}")
   set(INIT_REPOSITORY "YES")
   set(
     CTEST_CHECKOUT_COMMAND
-    "${CTEST_GIT_COMMAND} clone --branch ${CTEST_BRANCH} https://bitbucket.org/likask/mofem-cephas.git ${GID_SOURCE_REPO}"
+    "${CTEST_GIT_COMMAND} clone --branch ${CTEST_BRANCH} --recurse-submodules https://bitbucket.org/likask/mofem-cephas.git ${GID_SOURCE_REPO}"
   )
 else(EXISTS "${CTEST_SOURCE_DIRECTORY}")
   set(CTEST_CHECKOUT_COMMAND "${CTEST_GIT_COMMAND} submodule update")
