@@ -10,7 +10,7 @@ installation of scientific packages as easy as possible.
 Befor you start see Spack [getting started](https://spack.readthedocs.io/en/v0.10.0/getting_started.html), to see all
 prerequisites.
 ~~~~~~
-git clone --single-branch -b develop https://github.com/likask/spack.git
+git clone --single-branch -b mofem https://github.com/likask/spack.git
 . spack/share/spack/setup-env.sh
 . ${SPACK_ROOT}/share/spack/setup-env.sh
 spack install mofem-users-modules
@@ -28,7 +28,7 @@ have to be patient.
 Check if you have all [prerequisites](https://spack.readthedocs.io/en/v0.10.0/getting_started.html) and you are ready 
 to start. Clone Spack from GitHub and you’re ready to go:
 ~~~~~~
-git clone --single-branch -b develop https://github.com/likask/spack.git
+git clone --single-branch -b mofem https://github.com/likask/spack.git
 . spack/share/spack/setup-env.sh
 . ${SPACK_ROOT}/share/spack/setup-env.sh
 ~~~~~~
