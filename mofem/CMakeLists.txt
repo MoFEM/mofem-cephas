@@ -42,32 +42,8 @@ if(CMAKE_Fortran_COMPILER)
   enable_language(Fortran)
 endif(CMAKE_Fortran_COMPILER)
 
-if(WITH_SPACK)
-  # enable @rpath in the install name for any shared library being built
-  # note: it is planned that a future version of CMake will enable this by default
-  set(CMAKE_MACOSX_RPATH 1)
-
-  # Always use full RPATH
-  # http://www.cmake.org/Wiki/CMake_RPATH_handling
-  # http://www.kitware.com/blog/home/post/510
-
-  # use, i.e. don't skip the full RPATH for the build tree
-  set(CMAKE_SKIP_BUILD_RPATH  FALSE)
-
-  # when building, don't use the install RPATH already
-  # (but later on when installing)
-  set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
-
-  # add the automatically determined parts of the RPATH
-  # which point to directories outside the build tree to the install RPATH
-  set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
-
-  # the RPATH to be used when installing, but only if it's not a system directory
-  list(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES "${CMAKE_INSTALL_PREFIX}/lib" isSystemDir)
-  if("${isSystemDir}" STREQUAL "-1")
-     set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
-  endif("${isSystemDir}" STREQUAL "-1")
-endif(WITH_SPACK)
+# Add options unique to compiliation with Spack
+include(cmake/WithSpack.cmake)
 
 # http://cellperformance.beyond3d.com/articles/2006/05/demystifying-the-restrict-keyword.html
 # The restrict keyword can be considered an extension to the strict aliasing rule.
@@ -134,7 +110,7 @@ include(cmake/ExportFile.cmake)
 
 #find version file
 find_file(
-  MOFEM_VERSION_FILE Version.cmake 
+  MOFEM_VERSION_FILE Version.cmake
   PATHS ${PROJECT_SOURCE_DIR}
   NO_DEFAULT_PATH
   NO_CMAKE_ENVIRONMENT_PATH
@@ -142,7 +118,7 @@ find_file(
   NO_SYSTEM_ENVIRONMENT_PATH
   NO_CMAKE_SYSTEM_PATH
 )
-if(MOFEM_VERSION_FILE) 
+if(MOFEM_VERSION_FILE)
   include(${MOFEM_VERSION_FILE})
 else(MOFEM_VERSION_FILE)
   message(FATAL_ERROR "MoFEM Version not known")
@@ -159,7 +135,7 @@ if(VERSION)
   string(REGEX REPLACE "^v[0-9]+\\.([0-9]+).*" "\\1" GIT_VERSION_MINOR "${VERSION}")
   string(REGEX REPLACE "^v[0-9]+\\.[0-9]+\\.([0-9]+).*" "\\1" GIT_VERSION_BUILD "${VERSION}")
   set(FILE_MoFEM_VERSION ${MoFEM_VERSION_MAJOR}.${MoFEM_VERSION_MINOR}.${MoFEM_VERSION_BUILD})
-  set(GIT_MoFEM_VERSON ${GIT_VERSION_MAJOR}.${GIT_VERSION_MINOR}.${GIT_VERSION_BUILD}) 
+  set(GIT_MoFEM_VERSON ${GIT_VERSION_MAJOR}.${GIT_VERSION_MINOR}.${GIT_VERSION_BUILD})
   message(STATUS "File version ${FILE_MoFEM_VERSION}")
   message(STATUS "Git version ${GIT_MoFEM_VERSON}")
   execute_process(
@@ -173,7 +149,7 @@ if(VERSION)
       execute_process(
         COMMAND "${GIT_EXECUTABLE}" "tag" "v${FILE_MoFEM_VERSION}"
         WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/.."
-      ) 
+      )
     else(${FILE_MoFEM_VERSION} VERSION_GREATER ${GIT_VERSION_MAJOR}.${GIT_VERSION_MINOR}.${GIT_VERSION_BUILD})
       message(STATUS "Version file set from Git")
       configure_file(
@@ -183,12 +159,13 @@ if(VERSION)
       set(MoFEM_VERSION_MINOR ${GIT_VERSION_MINOR})
       set(MoFEM_VERSION_BUILD ${GIT_VERSION_BUILD})
     endif(${FILE_MoFEM_VERSION} VERSION_GREATER ${GIT_VERSION_MAJOR}.${GIT_VERSION_MINOR}.${GIT_VERSION_BUILD})
-  else(NOT NOT_WRITABLE_FILE_VERSION) 
+  else(NOT NOT_WRITABLE_FILE_VERSION)
     message(WARNING "No primission to set Version file")
   endif(NOT NOT_WRITABLE_FILE_VERSION)
 endif(VERSION)
 
 #add coverage
+option(WITHCOVERAGE "Add gcc coverage compile tags" OFF)
 if(WITHCOVERAGE)
   set(GCC_COVERAGE_COMPILE_FLAGS "-Wall -fprofile-arcs -ftest-coverage")
   add_definitions(${GCC_COVERAGE_COMPILE_FLAGS})
@@ -271,12 +248,14 @@ set(PROJECT_LIBS ${OPTIONAL_PROJECT_LIBS} ${SYSTEM_PROJECT_LIBS})
 message(STATUS ${PROJECT_LIBS})
 
 # Add executable library form subdirectory
-enable_testing()
-include(CTest)
+option(MOFEM_BUILD_TETS "If is ON enbale testing" ON)
+if(MOFEM_BUILD_TETS)
+  enable_testing()
+  include(CTest)
+endif(MOFEM_BUILD_TETS)
 
 # options
 option(STAND_ALLONE_USERS_MODULES "If if ON copy files, othrewise make link" OFF)
-
 
 # Precompiled headers
 include(cmake/PrecompiledHeaders.cmake)
@@ -288,11 +267,12 @@ include_directories(${PROJECT_SOURCE_DIR}/include)
 add_subdirectory(${PROJECT_SOURCE_DIR}/scripts)
 add_subdirectory(${PROJECT_SOURCE_DIR}/third_party)
 add_subdirectory(${PROJECT_SOURCE_DIR}/src)
-add_subdirectory(${PROJECT_SOURCE_DIR}/atom_tests)
 add_subdirectory(${PROJECT_SOURCE_DIR}/users_modules.in)
 add_subdirectory(${PROJECT_SOURCE_DIR}/doc)
+if(MOFEM_BUILD_TETS)
+  add_subdirectory(${PROJECT_SOURCE_DIR}/atom_tests)
+endif(MOFEM_BUILD_TETS)
 
-# Install project files
 
 # Generate config files
 configure_file(
@@ -303,22 +283,24 @@ configure_file(
   ${PROJECT_SOURCE_DIR}/MoFEMConfig.cmake.in
   ${PROJECT_BINARY_DIR}/MoFEMConfig.cmake
 )
+
+# Install project files
 install(
-  FILES ${PROJECT_BINARY_DIR}/MoFEMConfig.cmake 
+  FILES ${PROJECT_BINARY_DIR}/MoFEMConfig.cmake
   DESTINATION ${CMAKE_INSTALL_PREFIX}
  )
 install(
-  FILES ${PROJECT_BINARY_DIR}/MoFEMConfig-version.cmake 
+  FILES ${PROJECT_BINARY_DIR}/MoFEMConfig-version.cmake
   DESTINATION ${CMAKE_INSTALL_PREFIX}
 )
 
 # Install cmake files
 install(
-  DIRECTORY 
+  DIRECTORY
   ${PROJECT_SOURCE_DIR}/cmake/
-  DESTINATION 
-  ${CMAKE_INSTALL_PREFIX}/cmake/
-  FILES_MATCHING 
+  DESTINATION
+  ${CMAKE_INSTALL_PREFIX}/lib/cmake/mofem
+  FILES_MATCHING
   PATTERN "*.cmake"
   PATTERN "*.cmake.in"
 )
@@ -326,9 +308,9 @@ install(
 # Install external directory
 if(STAND_ALLONE_USERS_MODULES)
   install(
-    DIRECTORY 
+    DIRECTORY
     ${PROJECT_BINARY_DIR}/external
-    DESTINATION 
+    DESTINATION
     ${CMAKE_INSTALL_PREFIX}
   )
 endif(STAND_ALLONE_USERS_MODULES)
