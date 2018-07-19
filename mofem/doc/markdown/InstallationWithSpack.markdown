@@ -63,29 +63,44 @@ spack activate -v um_view mofem-users-modules
 Spack will install all dependencies including core MoFEM library, PETSc and
 MoAB, i.e. MoFEM software ecosystem. 
 
+Note that mofem package view has a directory hierarchy including *bin*,
+*etc*, *lib* and other system directories. At the time you work with a
+particular view (you can have more than one with different MoFEM versions)
+you can add view *bin* directory to the shell search path
+~~~~~~
+export PATH=$HOME/um_view/bin
+~~~~~~
+
+Now you can start to work, use code from users modules, or develop your own
+user module code, for example run elastic analys of L-shape beam
+~~~~~~
+cd $HOME/um_view/elasticity
+mpirun -np 2 ./elasticity \
+-my_file LShape.h5m \
+-my_order 2 \
+-ksp_type gmres \
+-pc_type lu -pc_factor_mat_solver_package mumps \
+-ksp_monitor
+mbconvert out.h5m out.vtk
+~~~~~~
+and finally open VTK file in [ParaView](https://www.paraview.org). You can
+install ParaView using Spack or use install binary for your native OS.
+
+
 ##### Adding more users modules
 
 You can but not have to add some users modules for example fracture module
 ~~~~~~
-spack install mofem-users-module+mofem-fracture-module
+spack install mofem-fracture-module
 cd $HOME
 spack view --verbose symlink um_view_foo mofem-cephas
-spack activate -v um_view_foo mofem-users-module+mofem-fracture-module
+spack activate -v um_view_foo mofem-fracture-module
  ~~~~~~
 or minimal surface equation tutorial module
 ~~~~~~
-spack deactivate -v um_view_foo mofem-users-module+mofem-fracture-module
-spack install mofem-users-module+mofem-minimal-surface-equation
-spack activate -v um_view_foo mofem-users-module+mofem-minimal-surface-equation
+spack install mofem-minimal-surface-equation
+spack activate -v um_view_foo mofem-minimal-surface-equation
 ~~~~~~
-You can as well install install multiple users modules, for example
-~~~~~~
-spack install mofem-users-module+mofem-minimal-surface-equation+mofem-fracture-module
-cd $HOME
-spack view --verbose symlink um_view_combined mofem-cephas
-spack activate -v um_view_combined mofem-users-module+mofem-minimal-surface-equationmofem-fracture-module
-~~~~~~
-You can have only one activated * mofem-users-module* in view if you like to create a different one with a specific set of users modules, you need to deactivate the old one. Alternatively, you can create another view and in it activate desired user modules.
 
 You can list all MoFEM packages in Spack 
 ~~~~~~
@@ -113,30 +128,6 @@ spack view --verbose symlink um_view mofem-cephas
 spack activate -v um_view mofem-users-modules
 ~~~~~~
 
-Note that mofem package view has a directory hierarchy including *bin*,
-*etc*, *lib* and other system directories. At the time you work with a
-particular view (you can have more than one with different MoFEM versions)
-you can add view *bin* directory to the shell search path
-~~~~~~
-export PATH=$HOME/um_view/bin
-~~~~~~
-
-To check if all is working you can run tests and submit results to CDash
-~~~~~~
-cd $HOME/um_view
-make 
-ctest -D Experimental
-~~~~~~
-
-Now you can start to work, use code from users modules, or develop your own
-user module code, for example run elastic analys of L-shape beam
-~~~~~~
-cd $HOME/um_view/build/basic_finite_elements/elasticity
-mpirun -np 2 ./elasticity -my_file LShape.h5m -ksp_type gmres -pc_type lu -pc_factor_mat_solver_package mumps -ksp_monitor -my_order 2
-mbconvert out.h5m out.vtk
-~~~~~~
-and finally open VTK file in [ParaView](https://www.paraview.org). You can
-install ParaView using Spack or use install binary for your native OS.
 
 ### Core lib developer installation
 
@@ -169,7 +160,7 @@ cmake command.
 
 Note variant *copy_user_modules=False* is set so users modules are not copied
 to install directory by indicating that symbolic is created. That is useful
-when you do changes both in the core library and basic users modules.
+when you do changes both in the core library and basic users modules. 
 
 We load cmake tools
 ~~~~~
@@ -189,19 +180,15 @@ make install
 Once that is done a view to users modules is created
 ~~~~~
 cd $HOME/mofem_install
-spack view --verbose symlink  um_view mofem-cephas@develop build_type=Debug copy_user_modules=False
+spack view --verbose symlink um_view mofem-cephas@develop build_type=Debug copy_user_modules=False
 ~~~~~
 
-Before we compile users modules you fix the link to users modules source
-code, which in this case is a soft link to a directory in core lib repository
-~~~~~
-cd $HOME/mofem_install/um_view
-rmdir users_modules
-ln -s ../mofem-cephas/mofem/users_modules
-~~~~~
 One can that is done you can compile users modules and run tests
 ~~~~~
-./bin/cmake -DCMAKE_BUILD_TYPE=Debug -DSTAND_ALLONE_USERS_MODULES=0 users_modules
+cd um_view
+mkdir build
+cd build
+cmake -DCMAKE_BUILD_TYPE=Debug $HOME/mofem_install/mofem-cephas/mofem/users_modules
 make -j4
 ctest -D Experimental
 ~~~~~
@@ -224,6 +211,4 @@ To create your package for the user module, you have to
 - copy existing mofem user module package 
 - create package class following naming convention
 - modify file changing names and locations appropriately for your user module
-- edit *mofem-users-modules* to add variant for created extension 
-
 
