@@ -94,9 +94,7 @@ development and other version for larger calculations.
 cd $MOFEM_INSTALL_DIR
 
 # Cloning MoFEM source code:
-git clone https://bitbucket.org/likask/mofem-cephas.git mofem-cephas
-cd $MOFEM_INSTALL_DIR/mofem-cephas
-git submodule update --init mofem/users_modules
+git clone --recurse-submodules https://bitbucket.org/likask/mofem-cephas.git mofem-cephas
 
 # Make a build directory
 mkdir $MOFEM_INSTALL_DIR/lib
