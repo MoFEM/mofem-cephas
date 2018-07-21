@@ -223,7 +223,8 @@ spack activate -v um_view mofem-users-modules
 If needs you can add more users modules or compile them by yourself.
 Installation can take some time since everything is installed from scratch.
 You can consider to run it in *screen* terminal, and go for a coffee. Now you
-can create a symlink to install directory including dependent libraries.
+can create a symlink to install directory including dependent libraries, using
+commands below
 ~~~~
 spack view symlink um_view mofem-cephas
 spack activate -v um_view mofem-users-modules
