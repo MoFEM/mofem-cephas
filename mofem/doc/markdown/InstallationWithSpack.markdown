@@ -1,11 +1,14 @@
-## Installation with Spack (Recommended for Linux & Mac OS X)## {#install_spack}
+Installation with Spack (Recommended for HPC, Linux & Mac OS X) {#install_spack}
+==========================================================
 
 All that you need to know about [Spack](https://spack.io) and more you find
 here [https://spack.io](https://spack.io). For short Spack is a package
 manager for supercomputers, Linux, and Mac OS X. It is designed to make
 installation of scientific packages as easy as possible.
 
-## Quick installation snippet
+[TOC]
+
+# Quick installation snippet {#spack_quick}
 
 Befor you start see Spack [getting started](https://spack.readthedocs.io/en/v0.10.0/getting_started.html), to see all
 prerequisites.
@@ -26,12 +29,13 @@ Installation can take some time, with MoFEM all dependent libraries are
 installed like PETSc, MoAB, Mumps, SuperLU, Parmetis and many others. You
 have to be patient.
 
-MoFEM is extendable by users modules, called in spack extensions. Available in spack extension can be seen by calling
+MoFEM is extendable by users modules, called in spack extensions. Available
+in spack extension can be seen by calling
 ~~~~~~
 spack extensions mofem-cephas
 ~~~~~~
 
-## Installation Spack 
+# Installation Spack {#spack_spack}
 
 Check if you have all [prerequisites](https://spack.readthedocs.io/en/v0.10.0/getting_started.html) and you are ready 
 to start. Clone Spack from GitHub and you’re ready to go:
@@ -49,7 +53,7 @@ You can install all other prerequisites needed by spack by calling command
 spack bootstrap
 ~~~~~~
 
-## Installation MoFEM 
+# Installation of MoFEM {#spack_mofem}
 
 You can install MoFEM in two different ways;
 - if you are going to develop or use users modules, i.e. use or write an application using MoFEM library. 
@@ -63,7 +67,7 @@ into it. For a start read
 - [Basic usage](http://spack.readthedocs.io/en/latest/basic_usage.html)
 - [Filesystem Views](http://spack.readthedocs.io/en/latest/workflows.html#filesystem-views)
 
-##### Installation basic users modules
+## Installation of basic users modules {#spack_basic}
 
 Basic installation of users modules is as short us
 ~~~~~~
@@ -97,8 +101,7 @@ mbconvert out.h5m out.vtk
 and finally open VTK file in [ParaView](https://www.paraview.org). You can
 install ParaView using Spack or use install binary for your native OS.
 
-
-##### Adding more users modules
+## Adding more users modules {#spack_add_more}
 
 You can but not have to add some users modules for example fracture module
 ~~~~~~
@@ -126,7 +129,7 @@ Not all modules are yet added to spack; if your module is not yet there, you
 can install it by hand, that is by cloning appropriate users module
 repository and complaining code after spack package view is created.
 
-##### Package view
+## Package view {#spack_view}
 
 A filesystem view is a single directory tree that is the union of the
 directory hierarchies of a number of installed packages; it is similar to the
@@ -139,11 +142,149 @@ spack view --verbose symlink um_view mofem-cephas
 spack activate -v um_view mofem-users-modules
 ~~~~~~
 
-## For developers
+## Package install and running tests {#spack_running_tests}
+
+You can install package and run tests, for example
+~~~~~~
+spack install --test=root -j 4 mofem-cephas
+spack install --test=root -j 4 mofem-users-modules
+spack install --test=root -j 4 mofem-fracture-module
+~~~~~~
+
+## Setting build type and compiler flags
+
+During spack installation, you can set build type, as follows
+~~~~~~
+spack install mofem-cephas build_type="Debug"
+~~~~~~
+or compiler flaks, as follows
+~~~~~~
+spack install mofem-cephas cppflags="-march=native -O3"
+~~~~~~
+
+# Installation on specific servers {#spack_servers}
+
+## Server *Buckethead* {#spack_buckedhead}
+
+### Installation {#spack_buckedhead_installation}
+
+Buckethead is a Linux cluster running Centos7. Install Spack and load cluster
+modules
+~~~~~
+module load gcc/6.4.0
+module load gridengine
+git clone --single-branch -b mofem https://github.com/likask/spack.git
+. spack/share/spack/setup-env.sh
+~~~~~
+
+We need to set up compilers since the location of standard gcc@6.4.0 libraries is in an unusual place when loaded by the module. In order to do that you have to edit file *.spack/linux/compilers.yaml* in your home directory
+~~~~~
+     1    compilers:
+     2    - compiler:
+     3        environment: {}
+     4        extra_rpaths: []
+     5        flags: {}
+     6        modules: []
+     7        operating_system: centos7
+     8        paths:
+     9          cc: /usr/bin/gcc
+    10          cxx: /usr/bin/g++
+    11          f77: null
+    12          fc: null
+    13        spec: gcc@4.8.5
+    14        target: x86_64
+    15    - compiler:
+    16        environment: {}
+    17        extra_rpaths: []
+    18        flags: {}
+    19        modules: []
+    20        operating_system: centos7
+    21        paths:
+    22          cc: /software/compilers/gcc/6.4.0/bin/gcc
+    23          cxx: /software/compilers/gcc/6.4.0/bin/g++
+    24          f77: /software/compilers/gcc/6.4.0/bin/gfortran
+    25          fc: /software/compilers/gcc/6.4.0/bin/gfortran
+    26        spec: gcc@6.4.0
+    27        target: x86_64
+~~~~~
+and substitute line 17 by 
+~~~~~
+    17    extra_rpaths:
+          - /software/compilers/gcc/6.4.0/lib64
+~~~~~
+
+At that point, we can follow the standard installation procedure, as follows
+~~~~~
+spack bootstrap
+spack install mofem-users-modules
+spack view --verbose symlink um_view mofem-cephas
+spack activate -v um_view mofem-users-modules
+~~~~~
+If needs you can add more users modules or compile them by yourself.
+Installation can take some time since everything is installed from scratch.
+You can consider to run it in *screen* terminal, and go for a coffee. Now you
+can create a symlink to install directory including dependent libraries, using
+commands below
+~~~~
+spack view symlink um_view mofem-cephas
+spack activate -v um_view mofem-users-modules
+~~~~
+
+### Job file {#spack_buckedhead_job}
+
+Create a script file with content as below and name it, for example, *job_spack*
+~~~~~
+#! /bin/bash
+
+# The job's name
+#$ -N MoFEM
+
+# The queue in which to run the job 
+#$ -q gcec.q
+
+# File to which standard error should be directed
+#$ -e ./stderr
+
+# File to which standard output should be directed
+#$ -o ./stdout
+
+# E-mail address to which status updates should be sent
+# N.B.: in an array job, a separate e-mail will be sent for each task!
+#$ -M lukasz.kaczmarczyk@glasgow.ac.uk
+
+# Events on which to send a status update
+#$ -m beas
+
+# Request for 1.0 GB of memory per task (needed on Miffy and Dusty)
+#$ -l mem_tokens=1.0G
+
+#$ -pe mpi 2 # where N is the number of processors required
+
+# List of commands which do the actual work
+echo "$NSLOTS received"
+cat $PE_HOSTFILE
+
+# List of commands which do the actual work
+cd $HOME/um_view/elasticity
+$HOME/um_view/bin/mpirun -np $NSLOTS \
+./elasticity \
+-my_file LShape.h5m \
+-ksp_type gmres -pc_type lu \
+-pc_factor_mat_solver_package mumps \
+-ksp_monitor \
+-my_order 2 2>&1 | tee log
+~~~~~
+and run it as follows
+~~~~~
+qsub job_spack
+~~~~~
+Results of the analysis are located in $HOME/um_view/elasticity. 
+
+# For developers {#spack_developers}
 
 You can develop code in MoFEM on different levels, work with development of user module, i.e. solving a particular problem using finite elements. Or contribute to necessary modules which are used for the majority of MoFEM users, or finally be a core MoFEM developer. Depending on what you are going to do you have several options to choose how to set up the environment for development with spack. Below we list some of them.
 
-### Making code in view
+## Making code in view {#spack_make_in_view}
 
 This is an option for one who likes to play with the code, make changes and modifications and check how they work.  You can work with the code provided in modules or have add own directory which your module.
 ~~~~
@@ -164,7 +305,7 @@ You can provide another directory which is pointing to your module which you (se
 -DEXTERNAL_MODULE_SOURCE_DIRS=../ext_users_modules\;$PATH_TO_MY_SECRET_MODULE
 ~~~~
 
-### Module developer
+## Module developer {#spack_module_developer}
 
 To develop module, you need install mofem-users-modules, clone from
 repository which you like to work with, set up configuration and make the
@@ -191,7 +332,7 @@ appropriate paths. You run it to set configuration paths to other libraries.
 For general notes on workflows how to build packages with Spack look
 [here](https://spack.readthedocs.io/en/latest/workflows.html?highlight=spconfig.py#build-with-spack).
 
-### Users module developer
+## Users module developer {#spack_users_modules_developer}
 
 To develop users modules procedure is similar to one shown above, one needs
 to install mofem-cephas, clone source code, run configuration and finally
@@ -207,7 +348,7 @@ spack view --verbose symlink um_view mofem-cephas@0.8.7
 make -j4
 ~~~~
 
-### Core lib developer installation
+## Core lib developer {#spack_core_lib_developer}
 
 If you are going to develop MoFEM core library, it means that you are core
 developer; you can install mofem directly from the source.
@@ -269,7 +410,7 @@ cmake -DMOFEM_DIR=$HOME/mofem_install/um_view/ $HOME/mofem_install/mofem-cephas/
 make -j4
 ~~~~~
 
-## Adding MoFEM extension to Spack, i.e. user module
+# Adding MoFEM extension to Spack {#spack_adding_package}
 
 Look at [Spack creation tutorial](https://spack.readthedocs.io/en/latest/tutorial_packaging.html#packaging-tutorial)
 and [Spack Package Build Systems](https://spack.readthedocs.io/en/latest/tutorial_buildsystems.html). 
@@ -288,7 +429,7 @@ To create your package for the user module, you have to
 - create package class following naming convention
 - modify file changing names and locations appropriately for your user module
 
-## Mirrors
+# Mirrors {#spack_mirrors}
 
 Some sites may not have access to the internet for fetching packages. These sites will need a local repository of tarballs from which they can get their files. Spack has support for this with mirrors. Look to Spack documentation to learn more about mirrors, see [here](https://spack.readthedocs.io/en/latest/mirrors.html?highlight=mirror).
 
@@ -305,3 +446,8 @@ On a secure server, you add mirror directory to Spack, for example
 spack mirror add local_filesystem file://$HOME/spack-mirror-2018-07-21
 ~~~~~
 and with that at hand kick-start installation process described above.
+
+# Contact {#spack_contact}
+
+Any problems with this installation, please contact us by [mofem-group@googlegroups.com](https://groups.google.com/forum/#!forum/mofem-group)
+or on Slack [MoFEM Slack](https://mofem.slack.com/).
