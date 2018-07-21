@@ -40,3 +40,5 @@ contributors_list_modules
 Dockerfile-build-um-obsolete
 doxygen_warnlogfile
 .vscode
+
+spack-build*

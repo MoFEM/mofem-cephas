@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
+option(NOT_PRECOMPILED_HEADRES "Do not use procompiled headers" OFF)
 if(NOT NOT_PRECOMPILED_HEADRES)
   if(${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}.${CMAKE_PATCH_VERSION} VERSION_GREATER 3.0.0)
     if("${CMAKE_CXX_COMPILER_ID}" MATCHES ".*[Cc]lang" OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU")
