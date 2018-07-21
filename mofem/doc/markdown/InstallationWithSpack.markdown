@@ -1,11 +1,14 @@
-## Installation with Spack (Recommended for Linux & Mac OS X)## {#install_spack}
+Installation with Spack (Recommended for Linux & Mac OS X) {#install_spack}
+==========================================================
 
 All that you need to know about [Spack](https://spack.io) and more you find
 here [https://spack.io](https://spack.io). For short Spack is a package
 manager for supercomputers, Linux, and Mac OS X. It is designed to make
 installation of scientific packages as easy as possible.
 
-## Quick installation snippet
+[TOC]
+
+# Quick installation snippet {#spack_quick}
 
 Befor you start see Spack [getting started](https://spack.readthedocs.io/en/v0.10.0/getting_started.html), to see all
 prerequisites.
@@ -31,7 +34,7 @@ MoFEM is extendable by users modules, called in spack extensions. Available in s
 spack extensions mofem-cephas
 ~~~~~~
 
-## Installation Spack 
+# Installation Spack {#spack_spack}
 
 Check if you have all [prerequisites](https://spack.readthedocs.io/en/v0.10.0/getting_started.html) and you are ready 
 to start. Clone Spack from GitHub and you’re ready to go:
@@ -49,7 +52,7 @@ You can install all other prerequisites needed by spack by calling command
 spack bootstrap
 ~~~~~~
 
-## Installation MoFEM 
+# Installation of MoFEM {#spack_mofem}
 
 You can install MoFEM in two different ways;
 - if you are going to develop or use users modules, i.e. use or write an application using MoFEM library. 
@@ -63,7 +66,7 @@ into it. For a start read
 - [Basic usage](http://spack.readthedocs.io/en/latest/basic_usage.html)
 - [Filesystem Views](http://spack.readthedocs.io/en/latest/workflows.html#filesystem-views)
 
-##### Installation basic users modules
+## Installation of basic users modules {#spack_basic}
 
 Basic installation of users modules is as short us
 ~~~~~~
@@ -98,7 +101,7 @@ and finally open VTK file in [ParaView](https://www.paraview.org). You can
 install ParaView using Spack or use install binary for your native OS.
 
 
-##### Adding more users modules
+## Adding more users modules {#spack_add_more}
 
 You can but not have to add some users modules for example fracture module
 ~~~~~~
@@ -126,7 +129,7 @@ Not all modules are yet added to spack; if your module is not yet there, you
 can install it by hand, that is by cloning appropriate users module
 repository and complaining code after spack package view is created.
 
-##### Package view
+## Package view {#spack_view}
 
 A filesystem view is a single directory tree that is the union of the
 directory hierarchies of a number of installed packages; it is similar to the
@@ -139,11 +142,11 @@ spack view --verbose symlink um_view mofem-cephas
 spack activate -v um_view mofem-users-modules
 ~~~~~~
 
-## For developers
+# For developers {#spack_developers}
 
 You can develop code in MoFEM on different levels, work with development of user module, i.e. solving a particular problem using finite elements. Or contribute to necessary modules which are used for the majority of MoFEM users, or finally be a core MoFEM developer. Depending on what you are going to do you have several options to choose how to set up the environment for development with spack. Below we list some of them.
 
-### Making code in view
+## Making code in view {#spack_make_in_view}
 
 This is an option for one who likes to play with the code, make changes and modifications and check how they work.  You can work with the code provided in modules or have add own directory which your module.
 ~~~~
@@ -164,7 +167,7 @@ You can provide another directory which is pointing to your module which you (se
 -DEXTERNAL_MODULE_SOURCE_DIRS=../ext_users_modules\;$PATH_TO_MY_SECRET_MODULE
 ~~~~
 
-### Module developer
+## Module developer {#spack_module_developer}
 
 To develop module, you need install mofem-users-modules, clone from
 repository which you like to work with, set up configuration and make the
@@ -191,7 +194,7 @@ appropriate paths. You run it to set configuration paths to other libraries.
 For general notes on workflows how to build packages with Spack look
 [here](https://spack.readthedocs.io/en/latest/workflows.html?highlight=spconfig.py#build-with-spack).
 
-### Users module developer
+## Users module developer {#spack_users_modules_developer}
 
 To develop users modules procedure is similar to one shown above, one needs
 to install mofem-cephas, clone source code, run configuration and finally
@@ -207,7 +210,7 @@ spack view --verbose symlink um_view mofem-cephas@0.8.7
 make -j4
 ~~~~
 
-### Core lib developer installation
+## Core lib developer {#spack_core_lib_developer}
 
 If you are going to develop MoFEM core library, it means that you are core
 developer; you can install mofem directly from the source.
@@ -269,7 +272,7 @@ cmake -DMOFEM_DIR=$HOME/mofem_install/um_view/ $HOME/mofem_install/mofem-cephas/
 make -j4
 ~~~~~
 
-## Adding MoFEM extension to Spack, i.e. user module
+# Adding MoFEM extension to Spack {#spack_adding_package}
 
 Look at [Spack creation tutorial](https://spack.readthedocs.io/en/latest/tutorial_packaging.html#packaging-tutorial)
 and [Spack Package Build Systems](https://spack.readthedocs.io/en/latest/tutorial_buildsystems.html). 
@@ -288,7 +291,7 @@ To create your package for the user module, you have to
 - create package class following naming convention
 - modify file changing names and locations appropriately for your user module
 
-## Mirrors
+# Mirrors {#spack_mirrors}
 
 Some sites may not have access to the internet for fetching packages. These sites will need a local repository of tarballs from which they can get their files. Spack has support for this with mirrors. Look to Spack documentation to learn more about mirrors, see [here](https://spack.readthedocs.io/en/latest/mirrors.html?highlight=mirror).
 
@@ -305,3 +308,8 @@ On a secure server, you add mirror directory to Spack, for example
 spack mirror add local_filesystem file://$HOME/spack-mirror-2018-07-21
 ~~~~~
 and with that at hand kick-start installation process described above.
+
+# Contact {#spack_contact}
+
+Any problems with this installation, please contact us by [mofem-group@googlegroups.com](https://groups.google.com/forum/#!forum/mofem-group)
+or on Slack [MoFEM Slack](https://mofem.slack.com/).
