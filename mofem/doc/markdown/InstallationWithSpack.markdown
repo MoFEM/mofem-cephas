@@ -1,4 +1,4 @@
-Installation with Spack (Recommended for Linux & Mac OS X) {#install_spack}
+Installation with Spack (Recommended for HPC, Linux & Mac OS X) {#install_spack}
 ==========================================================
 
 All that you need to know about [Spack](https://spack.io) and more you find
@@ -29,7 +29,8 @@ Installation can take some time, with MoFEM all dependent libraries are
 installed like PETSc, MoAB, Mumps, SuperLU, Parmetis and many others. You
 have to be patient.
 
-MoFEM is extendable by users modules, called in spack extensions. Available in spack extension can be seen by calling
+MoFEM is extendable by users modules, called in spack extensions. Available
+in spack extension can be seen by calling
 ~~~~~~
 spack extensions mofem-cephas
 ~~~~~~
@@ -100,7 +101,6 @@ mbconvert out.h5m out.vtk
 and finally open VTK file in [ParaView](https://www.paraview.org). You can
 install ParaView using Spack or use install binary for your native OS.
 
-
 ## Adding more users modules {#spack_add_more}
 
 You can but not have to add some users modules for example fracture module
@@ -141,6 +141,143 @@ cd $HOME
 spack view --verbose symlink um_view mofem-cephas
 spack activate -v um_view mofem-users-modules
 ~~~~~~
+
+## Package install and running tests {#spack_running_tests}
+
+You can install package and run tests, for example
+~~~~~~
+spack install --test=root -j 4 mofem-cephas
+spack install --test=root -j 4 mofem-users-modules
+spack install --test=root -j 4 mofem-fracture-module
+~~~~~~
+
+## Setting build type and compiler flags
+
+During spack installation, you can set build type, as follows
+~~~~~~
+spack install mofem-cephas build_type="Debug"
+~~~~~~
+or compiler flaks, as follows
+~~~~~~
+spack install mofem-cephas cppflags="-march=native -O3"
+~~~~~~
+
+# Installation on specific servers {#spack_servers}
+
+## Server *Buckethead* {#spack_buckedhead}
+
+### Installation {#spack_buckedhead_installation}
+
+Buckethead is a Linux cluster running Centos7. Install Spack and load cluster
+modules
+~~~~~
+module load gcc/6.4.0
+module load gridengine
+git clone --single-branch -b mofem https://github.com/likask/spack.git
+. spack/share/spack/setup-env.sh
+~~~~~
+
+We need to set up compilers since the location of standard gcc@6.4.0 libraries is in an unusual place when loaded by the module. In order to do that you have to edit file *.spack/linux/compilers.yaml* in your home directory
+~~~~~
+     1    compilers:
+     2    - compiler:
+     3        environment: {}
+     4        extra_rpaths: []
+     5        flags: {}
+     6        modules: []
+     7        operating_system: centos7
+     8        paths:
+     9          cc: /usr/bin/gcc
+    10          cxx: /usr/bin/g++
+    11          f77: null
+    12          fc: null
+    13        spec: gcc@4.8.5
+    14        target: x86_64
+    15    - compiler:
+    16        environment: {}
+    17        extra_rpaths: []
+    18        flags: {}
+    19        modules: []
+    20        operating_system: centos7
+    21        paths:
+    22          cc: /software/compilers/gcc/6.4.0/bin/gcc
+    23          cxx: /software/compilers/gcc/6.4.0/bin/g++
+    24          f77: /software/compilers/gcc/6.4.0/bin/gfortran
+    25          fc: /software/compilers/gcc/6.4.0/bin/gfortran
+    26        spec: gcc@6.4.0
+    27        target: x86_64
+~~~~~
+and substitute line 17 by 
+~~~~~
+    17    extra_rpaths:
+          - /software/compilers/gcc/6.4.0/lib64
+~~~~~
+
+At that point, we can follow the standard installation procedure, as follows
+~~~~~
+spack bootstrap
+spack install mofem-users-modules
+spack view --verbose symlink um_view mofem-cephas
+spack activate -v um_view mofem-users-modules
+~~~~~
+If needs you can add more users modules or compile them by yourself.
+Installation can take some time since everything is installed from scratch.
+You can consider to run it in *screen* terminal, and go for a coffee. Now you
+can create a symlink to install directory including dependent libraries.
+~~~~
+spack view symlink um_view mofem-cephas
+spack activate -v um_view mofem-users-modules
+~~~~
+
+### Job file {#spack_buckedhead_job}
+
+Create a script file with content as below and name it, for example, *job_spack*
+~~~~~
+#! /bin/bash
+
+# The job's name
+#$ -N MoFEM
+
+# The queue in which to run the job 
+#$ -q gcec.q
+
+# File to which standard error should be directed
+#$ -e ./stderr
+
+# File to which standard output should be directed
+#$ -o ./stdout
+
+# E-mail address to which status updates should be sent
+# N.B.: in an array job, a separate e-mail will be sent for each task!
+#$ -M lukasz.kaczmarczyk@glasgow.ac.uk
+
+# Events on which to send a status update
+#$ -m beas
+
+# Request for 1.0 GB of memory per task (needed on Miffy and Dusty)
+#$ -l mem_tokens=1.0G
+
+#$ -pe mpi 2 # where N is the number of processors required
+
+# List of commands which do the actual work
+echo "$NSLOTS received"
+cat $PE_HOSTFILE
+
+# List of commands which do the actual work
+cd $HOME/um_view/elasticity
+$HOME/um_view/bin/mpirun -np $NSLOTS \
+./elasticity \
+-my_file LShape.h5m \
+-ksp_type gmres -pc_type lu \
+-pc_factor_mat_solver_package mumps \
+-ksp_monitor \
+-my_order 2 2>&1 | tee log
+~~~~~
+and run it as follows
+~~~~~
+qsub job_spack
+~~~~~
+Results of the analysis are located in $HOME/um_view/elasticity. 
 
 # For developers {#spack_developers}
 
