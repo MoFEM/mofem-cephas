@@ -23,8 +23,7 @@ add_library(mofem_third_party
   gm_rule.c
   tetcircumcenter.c
   tricircumcenter.c
-  phg-quadrule/quad.c
-)
+  phg-quadrule/quad.c)
 
 add_subdirectory(${PROJECT_SOURCE_DIR}/third_party/cblas)
 
@@ -35,6 +34,5 @@ if(STAND_ALLONE_USERS_MODULES)
     DIRECTORY 
     ${CMAKE_SOURCE_DIR}/third_party
     DESTINATION 
-    ${CMAKE_INSTALL_PREFIX}/
-  )
+    ${CMAKE_INSTALL_PREFIX})
 endif(STAND_ALLONE_USERS_MODULES)

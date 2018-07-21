@@ -33,6 +33,10 @@ include(cmake/ResolveCompilerPaths.cmake)
 
 project(MoFEM C CXX)
 
+# options
+option(STAND_ALLONE_USERS_MODULES 
+  "If if ON copy files, othrewise make link" OFF)
+
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -80,13 +84,11 @@ execute_process(
   COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}/external/include
   COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}/external/lib
   COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}/external/lib64
-  COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}/external/bin
-)
+  COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}/external/bin)
 add_custom_target(
   install_prerequisites
   # COMMAND ${CMAKE_COMMAND} -E touch_nocreate ${PROJECT_BINARY_DIR}/CMakeCache.txt
-  COMMENT "Install prerequisites compiled with MoFEM"
-)
+  COMMENT "Install prerequisites compiled with MoFEM")
 
 # Find boost
 include(cmake/FindBoost.cmake)
@@ -116,8 +118,7 @@ find_file(
   NO_CMAKE_ENVIRONMENT_PATH
   NO_CMAKE_PATH
   NO_SYSTEM_ENVIRONMENT_PATH
-  NO_CMAKE_SYSTEM_PATH
-)
+  NO_CMAKE_SYSTEM_PATH)
 if(MOFEM_VERSION_FILE)
   include(${MOFEM_VERSION_FILE})
 else(MOFEM_VERSION_FILE)
@@ -141,15 +142,13 @@ if(VERSION)
   execute_process(
     COMMAND "test" "-w" "Version.cmake"
     WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
-    RESULT_VARIABLE NOT_WRITABLE_FILE_VERSION
-  )
+    RESULT_VARIABLE NOT_WRITABLE_FILE_VERSION)
   if(NOT NOT_WRITABLE_FILE_VERSION)
     if(${FILE_MoFEM_VERSION} VERSION_GREATER ${GIT_VERSION_MAJOR}.${GIT_VERSION_MINOR}.${GIT_VERSION_BUILD})
       message(STATUS "Git version tag from file")
       execute_process(
         COMMAND "${GIT_EXECUTABLE}" "tag" "v${FILE_MoFEM_VERSION}"
-        WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/.."
-      )
+        WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/..")
     else(${FILE_MoFEM_VERSION} VERSION_GREATER ${GIT_VERSION_MAJOR}.${GIT_VERSION_MINOR}.${GIT_VERSION_BUILD})
       message(STATUS "Version file set from Git")
       configure_file(
@@ -176,8 +175,7 @@ endif(WITHCOVERAGE)
 add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --verbose)
 
 resolve_includes(PROJECT_INCLUDE_DIRECTORIES
-  "${PETSCVAR_PACKAGES_INCLUDES} ${MOAB_INCLUDES0} ${MOAB_INCLUDES1} ${MOAB_CPPFLAGS}"
-)
+  "${PETSCVAR_PACKAGES_INCLUDES} ${MOAB_INCLUDES0} ${MOAB_INCLUDES1} ${MOAB_CPPFLAGS}")
 
 find_package(BLAS)
 if(BLAS_FOUND)
@@ -190,13 +188,11 @@ message(STATUS "BLAS found: " ${BLAS_LIBRARIES})
 
 find_library(
   CBLAS_LIBIBRARY NAMES cblas
-  ${PETSC_DIR}/${PETSC_ARCH}/lib
-)
+  ${PETSC_DIR}/${PETSC_ARCH}/lib)
 message(STATUS "CBLAS found: " ${CBLAS_LIBIBRARY})
 
 find_path(
-  CBLAS_INCLUDE_DIR cblas.h HINTS ${PETSC_DIR}/${PETSC_ARCH}/include
-)
+  CBLAS_INCLUDE_DIR cblas.h HINTS ${PETSC_DIR}/${PETSC_ARCH}/include)
 message(STATUS "CBLAS include found: " ${CBLAS_INCLUDE_DIR})
 if(CBLAS_INCLUDE_DIR)
   include_directories(${CBLAS_INCLUDE_DIR})
@@ -208,8 +204,7 @@ include_directories(
   ${PETSC_DIR}/include
   ${PETSC_DIR}/${PETSC_ARCH}/include
   ${PETSCVAR_DIR}/include
-  ${BOOST_INCLUDE_DIR}
-)
+  ${BOOST_INCLUDE_DIR})
 
 if(TAO_LIBRARY)
   include_directories(${TAO_DIR}/include)
@@ -218,8 +213,7 @@ endif(TAO_LIBRARY)
 
 if(PETSCVAR_PARMETIS_INCLUDE)
   resolve_includes(PARMETIS_INCLUDE_DIRECTORIES
-    "${PETSCVAR_PARMETIS_INCLUDE}"
-  )
+    "${PETSCVAR_PARMETIS_INCLUDE}")
   include_directories(${PARMETIS_INCLUDE_DIRECTORIES})
   add_definitions(-DPARMETIS)
 endif(PETSCVAR_PARMETIS_INCLUDE)
@@ -236,8 +230,7 @@ resolve_libraries(SYSTEM_PROJECT_LIBS "
   ${MPI_F77_LIB}
   ${BOOST_PROGRAM_OPTIONS_LIB}
   ${BLAS_LINKER_FLAGS}
-  ${CBLAS_LIBIBRARY}"
-)
+  ${CBLAS_LIBIBRARY}")
 # Set project libs compiled with the MoFEM as external libs
 set(OPTIONAL_PROJECT_LIBS
   ${TETGEN_LIBRARY}
@@ -253,9 +246,6 @@ if(MOFEM_BUILD_TETS)
   enable_testing()
   include(CTest)
 endif(MOFEM_BUILD_TETS)
-
-# options
-option(STAND_ALLONE_USERS_MODULES "If if ON copy files, othrewise make link" OFF)
 
 # Precompiled headers
 include(cmake/PrecompiledHeaders.cmake)
@@ -273,26 +263,21 @@ if(MOFEM_BUILD_TETS)
   add_subdirectory(${PROJECT_SOURCE_DIR}/atom_tests)
 endif(MOFEM_BUILD_TETS)
 
-
 # Generate config files
 configure_file(
   ${PROJECT_SOURCE_DIR}/MoFEMConfig-version.cmake.in
-  ${PROJECT_BINARY_DIR}/MoFEMConfig-version.cmake
-)
+  ${PROJECT_BINARY_DIR}/MoFEMConfig-version.cmake)
 configure_file(
   ${PROJECT_SOURCE_DIR}/MoFEMConfig.cmake.in
-  ${PROJECT_BINARY_DIR}/MoFEMConfig.cmake
-)
+  ${PROJECT_BINARY_DIR}/MoFEMConfig.cmake)
 
 # Install project files
 install(
   FILES ${PROJECT_BINARY_DIR}/MoFEMConfig.cmake
-  DESTINATION ${CMAKE_INSTALL_PREFIX}
- )
+  DESTINATION ${CMAKE_INSTALL_PREFIX})
 install(
   FILES ${PROJECT_BINARY_DIR}/MoFEMConfig-version.cmake
-  DESTINATION ${CMAKE_INSTALL_PREFIX}
-)
+  DESTINATION ${CMAKE_INSTALL_PREFIX})
 
 # Install cmake files
 install(
@@ -302,16 +287,11 @@ install(
   ${CMAKE_INSTALL_PREFIX}/lib/cmake/mofem
   FILES_MATCHING
   PATTERN "*.cmake"
-  PATTERN "*.cmake.in"
-)
+  PATTERN "*.cmake.in")
 
 # Install external directory
-if(STAND_ALLONE_USERS_MODULES)
-  install(
-    DIRECTORY
-    ${PROJECT_BINARY_DIR}/external
-    DESTINATION
-    ${CMAKE_INSTALL_PREFIX}
-  )
-endif(STAND_ALLONE_USERS_MODULES)
-
+install(
+  DIRECTORY
+  ${PROJECT_BINARY_DIR}/external
+  DESTINATION
+  ${CMAKE_INSTALL_PREFIX})
