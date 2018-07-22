@@ -13,12 +13,14 @@
 
 cmake_minimum_required (VERSION 3.1.3)
 
-#serch inlude directories before system directories
+# Serch inlude directories before system directories
 set(CMAKE_INCLUDE_DIRECTORIES_BEFORE ON)
 
-#petsc and moab configuration are used to confiugre mofem
+# Petsc and moab configuration are used to confiugre mofem
 include(cmake/FindPETSC.cmake)
 include(cmake/FindMOAB.cmake)
+
+# Test compilers like it is set by PETSc
 set(CMAKE_C_COMPILER ${PETSCVAR_CC})
 string(REGEX MATCH  "^.*mpic.?.?" PETSCVAR_CXX_ "${PETSCVAR_CXX}")
 set(CMAKE_CXX_COMPILER ${PETSCVAR_CXX_})
@@ -26,16 +28,18 @@ if(PETSCVAR_FC)
   set(CMAKE_Fortran_COMPILER ${PETSCVAR_FC})
 endif(PETSCVAR_FC)
 
-#get mpipath bin directory
+# Get mpirun path bin directory
 string(REGEX REPLACE "mpicc" "" "MPI_BIN_PATH" ${CMAKE_C_COMPILER})
 find_program(MPI_RUN mpirun HINTS ${MPI_BIN_PATH} /usr/bin PATH ${MPI_BIN_PATH})
 include(cmake/ResolveCompilerPaths.cmake)
 
 project(MoFEM C CXX)
 
-# options
+# Options
 option(STAND_ALLONE_USERS_MODULES 
   "If if ON copy files, othrewise make link" OFF)
+option(WITHCOVERAGE "Add gcc coverage compile tags" OFF)
+option(MOFEM_BUILD_TETS "If is ON enbale testing" ON)
 
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -77,8 +81,8 @@ else(SYMM_RESTRICT)
 endif(SYMM_RESTRICT)
 add_definitions(${DEFINE_RESTRICT})
 
-# Installing extermal packages
-# It is used to install prerequisites, adol-c can be installed like that
+# Installing extermal packages It is used to install prerequisites, ADOL-C,
+# TetGen, MED can be installed like that
 include(ExternalProject)
 execute_process(
   COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}/external/include
@@ -93,24 +97,24 @@ add_custom_target(
 # Find boost
 include(cmake/FindBoost.cmake)
 
-#SIGMA tools
+# SIGMA tools
 include(cmake/FindCGM.cmake)
 include(cmake/FindMESHKIT.cmake)
 
-#PETSC tools
+# PETSC tools
 include(cmake/FindTAO.cmake)
 include(cmake/FindSLEPC.cmake)
 
-#Other tools
+# Other tools
 include(cmake/FindADOL-C.cmake)
 include(cmake/FindTetGen.cmake)
 include(cmake/FindTriangle.cmake)
 include(cmake/FindMed.cmake)
 
-#other
+# Other
 include(cmake/ExportFile.cmake)
 
-#find version file
+# Find version file
 find_file(
   MOFEM_VERSION_FILE Version.cmake
   PATHS ${PROJECT_SOURCE_DIR}
@@ -125,7 +129,7 @@ else(MOFEM_VERSION_FILE)
   message(FATAL_ERROR "MoFEM Version not known")
 endif(MOFEM_VERSION_FILE)
 
-#git revision and mofem version
+# Git revision and mofem version
 find_package(Git)
 include(cmake/GetGitRevisionDescription.cmake)
 get_git_head_revision(GIT_REFSPEC GIT_SHA1)
@@ -163,20 +167,17 @@ if(VERSION)
   endif(NOT NOT_WRITABLE_FILE_VERSION)
 endif(VERSION)
 
-#add coverage
-option(WITHCOVERAGE "Add gcc coverage compile tags" OFF)
+# Add coverage
 if(WITHCOVERAGE)
   set(GCC_COVERAGE_COMPILE_FLAGS "-Wall -fprofile-arcs -ftest-coverage")
   add_definitions(${GCC_COVERAGE_COMPILE_FLAGS})
   set(CMAKE_EXE_LINKER_FLAGS "${GCC_COVERAGE_COMPILE_FLAGS}")
 endif(WITHCOVERAGE)
 
-#add check for verbose testing
-add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --verbose)
+resolve_includes(PROJECT_INCLUDE_DIRECTORIES "${PETSCVAR_PACKAGES_INCLUDES}
+ ${MOAB_INCLUDES0} ${MOAB_INCLUDES1} ${MOAB_CPPFLAGS}")
 
-resolve_includes(PROJECT_INCLUDE_DIRECTORIES
-  "${PETSCVAR_PACKAGES_INCLUDES} ${MOAB_INCLUDES0} ${MOAB_INCLUDES1} ${MOAB_CPPFLAGS}")
-
+# Finding Blas and CBlas 
 find_package(BLAS)
 if(BLAS_FOUND)
   if(APPLE)
@@ -185,19 +186,19 @@ if(BLAS_FOUND)
   add_definitions(-DBLAS_FOUND)
 endif(BLAS_FOUND)
 message(STATUS "BLAS found: " ${BLAS_LIBRARIES})
-
+# Check CBlas
 find_library(
   CBLAS_LIBIBRARY NAMES cblas
-  ${PETSC_DIR}/${PETSC_ARCH}/lib)
+  HINTS ${CBLAS_DIR}/lib ${PETSC_DIR}/${PETSC_ARCH}/lib)
 message(STATUS "CBLAS found: " ${CBLAS_LIBIBRARY})
-
 find_path(
-  CBLAS_INCLUDE_DIR cblas.h HINTS ${PETSC_DIR}/${PETSC_ARCH}/include)
+  CBLAS_INCLUDE_DIR cblas.h 
+  HINTS ${CBLAS_DIR}/include ${PETSC_DIR}/${PETSC_ARCH}/include)
 message(STATUS "CBLAS include found: " ${CBLAS_INCLUDE_DIR})
-if(CBLAS_INCLUDE_DIR)
+if(CBLAS_INCLUDE_DIR AND CBLAS_LIBIBRARY)
   include_directories(${CBLAS_INCLUDE_DIR})
   add_definitions(-DCBLAS_FOUND)
-endif(CBLAS_INCLUDE_DIR)
+endif(CBLAS_INCLUDE_DIR AND CBLAS_LIBIBRARY)
 
 include_directories(
   ${PROJECT_INCLUDE_DIRECTORIES}
@@ -241,11 +242,12 @@ set(PROJECT_LIBS ${OPTIONAL_PROJECT_LIBS} ${SYSTEM_PROJECT_LIBS})
 message(STATUS ${PROJECT_LIBS})
 
 # Add executable library form subdirectory
-option(MOFEM_BUILD_TETS "If is ON enbale testing" ON)
 if(MOFEM_BUILD_TETS)
   enable_testing()
   include(CTest)
 endif(MOFEM_BUILD_TETS)
+# Add check for verbose testing
+add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --verbose)
 
 # Precompiled headers
 include(cmake/PrecompiledHeaders.cmake)
