@@ -16,20 +16,6 @@ find_package(Doxygen)
 
 if(DOXYGEN_FOUND)
 
-  if(GIT_FOUND)
-
-    # Get list of contributors
-    add_custom_target(doc_get_contributors
-      COMMAND echo "MoFEM lib contributors" > ${PROJECT_SOURCE_DIR}/doc/contributors_list
-      COMMAND echo >> ${PROJECT_SOURCE_DIR}/doc/contributors_list
-      COMMAND ${GIT_EXECUTABLE} shortlog -s -e -n | grep -v daedalos9@yahoo.co.uk | sed "s/\@/ at /g" >> ${PROJECT_SOURCE_DIR}/doc/contributors_list
-      COMMAND touch ${PROJECT_SOURCE_DIR}/users_modules/doc/contributors_list_modules
-      WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-      COMMENT "Get MoFEM contributors list" VERBATIM
-    )
-
-  endif(GIT_FOUND)
-
   # running doxygen
   configure_file(
     ${PROJECT_SOURCE_DIR}/Doxyfile.in
@@ -85,13 +71,24 @@ if(DOXYGEN_FOUND)
   )
   add_dependencies(doc doxygen_google_site_verification)
 
-
   # users modules docs
   file(
     GLOB_RECURSE INSTLLED_DOC_MODULES
     FOLLOW_SYMLINKS
     ${PROJECT_SOURCE_DIR}/users_modules/*AddDocumentation.cmake
   )
+  if(EXTERNAL_MODULE_SOURCE_DIRS)
+    foreach(LOOP_DIR ${EXTERNAL_MODULE_SOURCE_DIRS})
+      message(STATUS "Search module directory: " ${LOOP_DIR})
+      file(
+        GLOB_RECURSE EXTERNAL_INSTLLED_DOC_MODULES
+        FOLLOW_SYMLINKS
+        ${LOOP_DIR}/*AddDocumentation.cmake
+      )    
+      message(STATUS "Found: " ${EXTERNAL_INSTLLED_DOC_MODULES})
+      set(INSTLLED_DOC_MODULES ${INSTLLED_DOC_MODULES} ${EXTERNAL_INSTLLED_DOC_MODULES})
+    endforeach(LOOP_DIR)
+  endif(EXTERNAL_MODULE_SOURCE_DIRS)
 
   foreach(LOOP_MODULE ${INSTLLED_DOC_MODULES})
     message(STATUS "Add module documentation ... ${LOOP_MODULE}")

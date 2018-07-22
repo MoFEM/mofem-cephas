@@ -1,6 +1,9 @@
-##Installation on Ubuntu (Advanced)## {#install_ubuntu}
+Installation on Ubuntu (Advanced) {#install_ubuntu}
+======================
 
-###1. Install packages
+[TOC]
+
+# Install packages {#ubuntu_prerequisites}
 
 Following lines install minimum number of packages need to work with MoFEM:
 ~~~~~~
@@ -48,7 +51,7 @@ libxi-dev \
 libssl-dev
 ~~~~~~
 
-###1. Open a terminal
+# Open a terminal {#ubuntu_terminal}
 
 Create mofem install director:
 ~~~~~~
@@ -56,7 +59,7 @@ export MOFEM_INSTALL_DIR=$HOME/mofem_installation
 mkdir $MOFEM_INSTALL_DIR
 ~~~~~~
 
-###2. Install PETSc and other libraries
+# Install PETSc and other libraries {#ubuntu_petsc}
 
 ~~~~~~
 # Change to your $MOFEM_INSTALL_DIR
@@ -87,14 +90,14 @@ develop code is recommended that you compile PETSc with debugging flag on in
 addition. You can have two versions of MoFEM compiled, for debugging and
 development and other version for larger calculations.
 
-###3. Clone source code and install core MoFEM library
+# Clone source code and install core MoFEM library {#ubuntu_mofem}
 
 ~~~~~~
 # Change to your $MOFEM_INSTALL_DIR
 cd $MOFEM_INSTALL_DIR
 
 # Cloning MoFEM source code:
-git clone https://bitbucket.org/likask/mofem-cephas.git mofem-cephas
+git clone --recurse-submodules https://bitbucket.org/likask/mofem-cephas.git mofem-cephas
 
 # Make a build directory
 mkdir $MOFEM_INSTALL_DIR/lib
@@ -117,7 +120,7 @@ make -j4 install
 ctest -D Experimental
 ~~~~~~
 
-###4. Configuration, compilation and testing user modules
+# Configuration, compilation and testing user modules {#ubuntu_um}
 
 Before you start this version, change directory to install directory
 ~~~~~~

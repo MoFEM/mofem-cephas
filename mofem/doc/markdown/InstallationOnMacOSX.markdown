@@ -1,4 +1,5 @@
-## Installation on OS X (Advanced)## {#install_macosx}
+Installation on OS X (Advanced) {#install_macosx}
+===============================
 
 If you have any problems, feedback or would like to suggest corrections,
 please email [mofem-group@googlegroups.com](https://groups.google.com/forum/#!forum/mofem-group).
@@ -8,7 +9,9 @@ and XQuartz
 [http://xquartz.macosforge.org/landing/](http://xquartz.macosforge.org/landing/).
 Had to run XCode standalone to say OK to license agreement.
 
-###1. Open a terminal
+[TOC]
+
+# Open a terminal {#macosx_terminal}
 
 Create mofem install directory:
 ~~~~~~
@@ -16,7 +19,7 @@ export MOFEM_INSTALL_DIR=$HOME/mofem_installation
 mkdir $MOFEM_INSTALL_DIR
 ~~~~~~
 
-###2. Install libraries using homebrew
+# Install libraries using homebrew {#macosx_homebrew}
 
 ~~~~~~
 ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
@@ -37,7 +40,7 @@ Set the default fortran compiler
 ln -s /usr/local/bin/gfortran-4.9 /usr/local/bin/gfortran
 ~~~~~~
 
-###3. Install PETSc and other libraries
+# Install PETSc and other libraries {#macosx_petsc}
 
 ~~~~~~
 # Change to your $MOFEM_INSTALL_DIR
@@ -66,14 +69,14 @@ develop code is recommended that you compile PETSc with debugging flag on in
 addition. You can have two versions of MoFEM compiled, for debugging and
 development and other version for larger calculations.
 
-###4. Clone source code and install MoFEM library
+# Clone source code and install MoFEM library {#macosx_mofem}
 
 ~~~~~~
 # Change to your $MOFEM_INSTALL_DIR
 cd $MOFEM_INSTALL_DIR
 
 # Cloning MoFEM sourcecode:
-git clone https://bitbucket.org/likask/mofem-cephas.git mofem-cephas
+git clone --recurse-submodules https://bitbucket.org/likask/mofem-cephas.git mofem-cephas
 
 # Make a build directory
 mkdir $MOFEM_INSTALL_DIR/lib
@@ -96,7 +99,7 @@ make -j4 install
 ctest -D Experimental
 ~~~~~~
 
-###5. Configuration, compilation and testing user modules
+# Configuration, compilation and testing user modules {#macosx_um}
 
 Before you start this version, change directory to install directory
 ~~~~~~
@@ -120,7 +123,7 @@ cmake -DCMAKE_BUILD_TYPE=Release \
 make -j4
 ~~~~~~
 
-###6. Testing
+# Testing {#macosx_testing}
 
 ~~~~~~
 ctest -D Experimental

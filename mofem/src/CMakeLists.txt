@@ -50,6 +50,5 @@ if(STAND_ALLONE_USERS_MODULES)
     PATTERN "*.h"
     PATTERN "impl" EXCLUDE
     PATTERN "c_impl" EXCLUDE
-    PATTERN "ftensor" EXCLUDE 
-  )
+    PATTERN "ftensor" EXCLUDE)
 endif(STAND_ALLONE_USERS_MODULES)

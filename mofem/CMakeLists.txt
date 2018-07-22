@@ -13,12 +13,14 @@
 
 cmake_minimum_required (VERSION 3.1.3)
 
-#serch inlude directories before system directories
+# Serch inlude directories before system directories
 set(CMAKE_INCLUDE_DIRECTORIES_BEFORE ON)
 
-#petsc and moab configuration are used to confiugre mofem
+# Petsc and moab configuration are used to confiugre mofem
 include(cmake/FindPETSC.cmake)
 include(cmake/FindMOAB.cmake)
+
+# Test compilers like it is set by PETSc
 set(CMAKE_C_COMPILER ${PETSCVAR_CC})
 string(REGEX MATCH  "^.*mpic.?.?" PETSCVAR_CXX_ "${PETSCVAR_CXX}")
 set(CMAKE_CXX_COMPILER ${PETSCVAR_CXX_})
@@ -26,12 +28,18 @@ if(PETSCVAR_FC)
   set(CMAKE_Fortran_COMPILER ${PETSCVAR_FC})
 endif(PETSCVAR_FC)
 
-#get mpipath bin directory
+# Get mpirun path bin directory
 string(REGEX REPLACE "mpicc" "" "MPI_BIN_PATH" ${CMAKE_C_COMPILER})
 find_program(MPI_RUN mpirun HINTS ${MPI_BIN_PATH} /usr/bin PATH ${MPI_BIN_PATH})
 include(cmake/ResolveCompilerPaths.cmake)
 
 project(MoFEM C CXX)
+
+# Options
+option(STAND_ALLONE_USERS_MODULES 
+  "If if ON copy files, othrewise make link" OFF)
+option(WITHCOVERAGE "Add gcc coverage compile tags" OFF)
+option(MOFEM_BUILD_TETS "If is ON enbale testing" ON)
 
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -42,32 +50,8 @@ if(CMAKE_Fortran_COMPILER)
   enable_language(Fortran)
 endif(CMAKE_Fortran_COMPILER)
 
-if(WITH_SPACK)
-  # enable @rpath in the install name for any shared library being built
-  # note: it is planned that a future version of CMake will enable this by default
-  set(CMAKE_MACOSX_RPATH 1)
-
-  # Always use full RPATH
-  # http://www.cmake.org/Wiki/CMake_RPATH_handling
-  # http://www.kitware.com/blog/home/post/510
-
-  # use, i.e. don't skip the full RPATH for the build tree
-  set(CMAKE_SKIP_BUILD_RPATH  FALSE)
-
-  # when building, don't use the install RPATH already
-  # (but later on when installing)
-  set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
-
-  # add the automatically determined parts of the RPATH
-  # which point to directories outside the build tree to the install RPATH
-  set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
-
-  # the RPATH to be used when installing, but only if it's not a system directory
-  list(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES "${CMAKE_INSTALL_PREFIX}/lib" isSystemDir)
-  if("${isSystemDir}" STREQUAL "-1")
-     set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
-  endif("${isSystemDir}" STREQUAL "-1")
-endif(WITH_SPACK)
+# Add options unique to compiliation with Spack
+include(cmake/WithSpack.cmake)
 
 # http://cellperformance.beyond3d.com/articles/2006/05/demystifying-the-restrict-keyword.html
 # The restrict keyword can be considered an extension to the strict aliasing rule.
@@ -97,58 +81,55 @@ else(SYMM_RESTRICT)
 endif(SYMM_RESTRICT)
 add_definitions(${DEFINE_RESTRICT})
 
-# Installing extermal packages
-# It is used to install prerequisites, adol-c can be installed like that
+# Installing extermal packages It is used to install prerequisites, ADOL-C,
+# TetGen, MED can be installed like that
 include(ExternalProject)
 execute_process(
   COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}/external/include
   COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}/external/lib
   COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}/external/lib64
-  COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}/external/bin
-)
+  COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}/external/bin)
 add_custom_target(
   install_prerequisites
   # COMMAND ${CMAKE_COMMAND} -E touch_nocreate ${PROJECT_BINARY_DIR}/CMakeCache.txt
-  COMMENT "Install prerequisites compiled with MoFEM"
-)
+  COMMENT "Install prerequisites compiled with MoFEM")
 
 # Find boost
 include(cmake/FindBoost.cmake)
 
-#SIGMA tools
+# SIGMA tools
 include(cmake/FindCGM.cmake)
 include(cmake/FindMESHKIT.cmake)
 
-#PETSC tools
+# PETSC tools
 include(cmake/FindTAO.cmake)
 include(cmake/FindSLEPC.cmake)
 
-#Other tools
+# Other tools
 include(cmake/FindADOL-C.cmake)
 include(cmake/FindTetGen.cmake)
 include(cmake/FindTriangle.cmake)
 include(cmake/FindMed.cmake)
 
-#other
+# Other
 include(cmake/ExportFile.cmake)
 
-#find version file
+# Find version file
 find_file(
-  MOFEM_VERSION_FILE Version.cmake 
+  MOFEM_VERSION_FILE Version.cmake
   PATHS ${PROJECT_SOURCE_DIR}
   NO_DEFAULT_PATH
   NO_CMAKE_ENVIRONMENT_PATH
   NO_CMAKE_PATH
   NO_SYSTEM_ENVIRONMENT_PATH
-  NO_CMAKE_SYSTEM_PATH
-)
-if(MOFEM_VERSION_FILE) 
+  NO_CMAKE_SYSTEM_PATH)
+if(MOFEM_VERSION_FILE)
   include(${MOFEM_VERSION_FILE})
 else(MOFEM_VERSION_FILE)
   message(FATAL_ERROR "MoFEM Version not known")
 endif(MOFEM_VERSION_FILE)
 
-#git revision and mofem version
+# Git revision and mofem version
 find_package(Git)
 include(cmake/GetGitRevisionDescription.cmake)
 get_git_head_revision(GIT_REFSPEC GIT_SHA1)
@@ -159,21 +140,19 @@ if(VERSION)
   string(REGEX REPLACE "^v[0-9]+\\.([0-9]+).*" "\\1" GIT_VERSION_MINOR "${VERSION}")
   string(REGEX REPLACE "^v[0-9]+\\.[0-9]+\\.([0-9]+).*" "\\1" GIT_VERSION_BUILD "${VERSION}")
   set(FILE_MoFEM_VERSION ${MoFEM_VERSION_MAJOR}.${MoFEM_VERSION_MINOR}.${MoFEM_VERSION_BUILD})
-  set(GIT_MoFEM_VERSON ${GIT_VERSION_MAJOR}.${GIT_VERSION_MINOR}.${GIT_VERSION_BUILD}) 
+  set(GIT_MoFEM_VERSON ${GIT_VERSION_MAJOR}.${GIT_VERSION_MINOR}.${GIT_VERSION_BUILD})
   message(STATUS "File version ${FILE_MoFEM_VERSION}")
   message(STATUS "Git version ${GIT_MoFEM_VERSON}")
   execute_process(
     COMMAND "test" "-w" "Version.cmake"
     WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
-    RESULT_VARIABLE NOT_WRITABLE_FILE_VERSION
-  )
+    RESULT_VARIABLE NOT_WRITABLE_FILE_VERSION)
   if(NOT NOT_WRITABLE_FILE_VERSION)
     if(${FILE_MoFEM_VERSION} VERSION_GREATER ${GIT_VERSION_MAJOR}.${GIT_VERSION_MINOR}.${GIT_VERSION_BUILD})
       message(STATUS "Git version tag from file")
       execute_process(
         COMMAND "${GIT_EXECUTABLE}" "tag" "v${FILE_MoFEM_VERSION}"
-        WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/.."
-      ) 
+        WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/..")
     else(${FILE_MoFEM_VERSION} VERSION_GREATER ${GIT_VERSION_MAJOR}.${GIT_VERSION_MINOR}.${GIT_VERSION_BUILD})
       message(STATUS "Version file set from Git")
       configure_file(
@@ -183,25 +162,22 @@ if(VERSION)
       set(MoFEM_VERSION_MINOR ${GIT_VERSION_MINOR})
       set(MoFEM_VERSION_BUILD ${GIT_VERSION_BUILD})
     endif(${FILE_MoFEM_VERSION} VERSION_GREATER ${GIT_VERSION_MAJOR}.${GIT_VERSION_MINOR}.${GIT_VERSION_BUILD})
-  else(NOT NOT_WRITABLE_FILE_VERSION) 
+  else(NOT NOT_WRITABLE_FILE_VERSION)
     message(WARNING "No primission to set Version file")
   endif(NOT NOT_WRITABLE_FILE_VERSION)
 endif(VERSION)
 
-#add coverage
+# Add coverage
 if(WITHCOVERAGE)
   set(GCC_COVERAGE_COMPILE_FLAGS "-Wall -fprofile-arcs -ftest-coverage")
   add_definitions(${GCC_COVERAGE_COMPILE_FLAGS})
   set(CMAKE_EXE_LINKER_FLAGS "${GCC_COVERAGE_COMPILE_FLAGS}")
 endif(WITHCOVERAGE)
 
-#add check for verbose testing
-add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --verbose)
+resolve_includes(PROJECT_INCLUDE_DIRECTORIES "${PETSCVAR_PACKAGES_INCLUDES}
+ ${MOAB_INCLUDES0} ${MOAB_INCLUDES1} ${MOAB_CPPFLAGS}")
 
-resolve_includes(PROJECT_INCLUDE_DIRECTORIES
-  "${PETSCVAR_PACKAGES_INCLUDES} ${MOAB_INCLUDES0} ${MOAB_INCLUDES1} ${MOAB_CPPFLAGS}"
-)
-
+# Finding Blas and CBlas 
 find_package(BLAS)
 if(BLAS_FOUND)
   if(APPLE)
@@ -210,29 +186,26 @@ if(BLAS_FOUND)
   add_definitions(-DBLAS_FOUND)
 endif(BLAS_FOUND)
 message(STATUS "BLAS found: " ${BLAS_LIBRARIES})
-
+# Check CBlas
 find_library(
   CBLAS_LIBIBRARY NAMES cblas
-  ${PETSC_DIR}/${PETSC_ARCH}/lib
-)
+  HINTS ${CBLAS_DIR}/lib ${PETSC_DIR}/${PETSC_ARCH}/lib)
 message(STATUS "CBLAS found: " ${CBLAS_LIBIBRARY})
-
 find_path(
-  CBLAS_INCLUDE_DIR cblas.h HINTS ${PETSC_DIR}/${PETSC_ARCH}/include
-)
+  CBLAS_INCLUDE_DIR cblas.h 
+  HINTS ${CBLAS_DIR}/include ${PETSC_DIR}/${PETSC_ARCH}/include)
 message(STATUS "CBLAS include found: " ${CBLAS_INCLUDE_DIR})
-if(CBLAS_INCLUDE_DIR)
+if(CBLAS_INCLUDE_DIR AND CBLAS_LIBIBRARY)
   include_directories(${CBLAS_INCLUDE_DIR})
   add_definitions(-DCBLAS_FOUND)
-endif(CBLAS_INCLUDE_DIR)
+endif(CBLAS_INCLUDE_DIR AND CBLAS_LIBIBRARY)
 
 include_directories(
   ${PROJECT_INCLUDE_DIRECTORIES}
   ${PETSC_DIR}/include
   ${PETSC_DIR}/${PETSC_ARCH}/include
   ${PETSCVAR_DIR}/include
-  ${BOOST_INCLUDE_DIR}
-)
+  ${BOOST_INCLUDE_DIR})
 
 if(TAO_LIBRARY)
   include_directories(${TAO_DIR}/include)
@@ -241,8 +214,7 @@ endif(TAO_LIBRARY)
 
 if(PETSCVAR_PARMETIS_INCLUDE)
   resolve_includes(PARMETIS_INCLUDE_DIRECTORIES
-    "${PETSCVAR_PARMETIS_INCLUDE}"
-  )
+    "${PETSCVAR_PARMETIS_INCLUDE}")
   include_directories(${PARMETIS_INCLUDE_DIRECTORIES})
   add_definitions(-DPARMETIS)
 endif(PETSCVAR_PARMETIS_INCLUDE)
@@ -259,8 +231,7 @@ resolve_libraries(SYSTEM_PROJECT_LIBS "
   ${MPI_F77_LIB}
   ${BOOST_PROGRAM_OPTIONS_LIB}
   ${BLAS_LINKER_FLAGS}
-  ${CBLAS_LIBIBRARY}"
-)
+  ${CBLAS_LIBIBRARY}")
 # Set project libs compiled with the MoFEM as external libs
 set(OPTIONAL_PROJECT_LIBS
   ${TETGEN_LIBRARY}
@@ -271,8 +242,12 @@ set(PROJECT_LIBS ${OPTIONAL_PROJECT_LIBS} ${SYSTEM_PROJECT_LIBS})
 message(STATUS ${PROJECT_LIBS})
 
 # Add executable library form subdirectory
-enable_testing()
-include(CTest)
+if(MOFEM_BUILD_TETS)
+  enable_testing()
+  include(CTest)
+endif(MOFEM_BUILD_TETS)
+# Add check for verbose testing
+add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --verbose)
 
 # Precompiled headers
 include(cmake/PrecompiledHeaders.cmake)
@@ -284,48 +259,41 @@ include_directories(${PROJECT_SOURCE_DIR}/include)
 add_subdirectory(${PROJECT_SOURCE_DIR}/scripts)
 add_subdirectory(${PROJECT_SOURCE_DIR}/third_party)
 add_subdirectory(${PROJECT_SOURCE_DIR}/src)
-add_subdirectory(${PROJECT_SOURCE_DIR}/atom_tests)
 add_subdirectory(${PROJECT_SOURCE_DIR}/users_modules.in)
 add_subdirectory(${PROJECT_SOURCE_DIR}/doc)
-
-# Install project files
+if(MOFEM_BUILD_TETS)
+  add_subdirectory(${PROJECT_SOURCE_DIR}/atom_tests)
+endif(MOFEM_BUILD_TETS)
 
 # Generate config files
 configure_file(
   ${PROJECT_SOURCE_DIR}/MoFEMConfig-version.cmake.in
-  ${PROJECT_BINARY_DIR}/MoFEMConfig-version.cmake
-)
+  ${PROJECT_BINARY_DIR}/MoFEMConfig-version.cmake)
 configure_file(
   ${PROJECT_SOURCE_DIR}/MoFEMConfig.cmake.in
-  ${PROJECT_BINARY_DIR}/MoFEMConfig.cmake
-)
+  ${PROJECT_BINARY_DIR}/MoFEMConfig.cmake)
+
+# Install project files
 install(
-  FILES ${PROJECT_BINARY_DIR}/MoFEMConfig.cmake 
-  DESTINATION ${CMAKE_INSTALL_PREFIX}
- )
+  FILES ${PROJECT_BINARY_DIR}/MoFEMConfig.cmake
+  DESTINATION ${CMAKE_INSTALL_PREFIX})
 install(
-  FILES ${PROJECT_BINARY_DIR}/MoFEMConfig-version.cmake 
-  DESTINATION ${CMAKE_INSTALL_PREFIX}
-)
+  FILES ${PROJECT_BINARY_DIR}/MoFEMConfig-version.cmake
+  DESTINATION ${CMAKE_INSTALL_PREFIX})
 
 # Install cmake files
 install(
-  DIRECTORY 
+  DIRECTORY
   ${PROJECT_SOURCE_DIR}/cmake/
-  DESTINATION 
-  ${CMAKE_INSTALL_PREFIX}/cmake/
-  FILES_MATCHING 
+  DESTINATION
+  ${CMAKE_INSTALL_PREFIX}/lib/cmake/mofem
+  FILES_MATCHING
   PATTERN "*.cmake"
-  PATTERN "*.cmake.in"
-)
+  PATTERN "*.cmake.in")
 
 # Install external directory
-if(STAND_ALLONE_USERS_MODULES)
-  install(
-    DIRECTORY 
-    ${PROJECT_BINARY_DIR}/external
-    DESTINATION 
-    ${CMAKE_INSTALL_PREFIX}
-  )
-endif(STAND_ALLONE_USERS_MODULES)
-
+install(
+  DIRECTORY
+  ${PROJECT_BINARY_DIR}/external
+  DESTINATION
+  ${CMAKE_INSTALL_PREFIX})

@@ -1,4 +1,5 @@
-##Installation with Docker## {#install_docker}
+Installation with Docker (Linux, Mac OS X and some versions of Windows) {#install_docker}
+=======================================================================
 
 Docker is an open platform that allows for the distribution and deployment of
 applications across different systems. In the context of MoFEM it allows for
@@ -12,19 +13,21 @@ In Mac OS X a lightweight Linux distribution is virtualized to run the Docker
 containers in.
 Entire installation procedure is also presented on [Youtube](https://www.youtube.com/watch?v=6opfKER7JHA) video.
 
-##Download and Install Docker##
+[TOC]
+
+# Download and Install Docker {#docker_install}
 
 First install docker as per the instructions here: [https://docs.docker.com/installation/#installation](https://docs.docker.com/installation/#installation)
 
-##Clone mofem repository
+# Clone mofem repository {#docker_clone}
 To build MoFEM the source code need to be downloaded. The best method to do it is
 to clone repository
 ~~~~~~
 cd $HOME
-git clone https://bitbucket.org/likask/mofem-cephas.git
+git clone --recurse-submodules https://bitbucket.org/likask/mofem-cephas.git
 ~~~~~~
 
-##Build docker image
+# Build docker image {#docker_image}
 
 Next step of installation is to configure and compile MoFEM. First command creates
 *mofem build image*. Second command creates *mofem build container* which
@@ -41,7 +44,7 @@ code in docker, how to do it is explained in below. However if you like to fully
 features available by running MoFEM in docker and utilize its full potential pleas look into
 documentation in [Docker User Guide](https://docs.docker.com/engine/userguide/)
 
-##Running docker container
+# Running docker container {#docker_run_container}
 
 Installation is at that point done, now you can run docker container and
 run some code.
@@ -81,7 +84,7 @@ VTK output file save results to HOME directory of your host system.
 Note that working with docker you can work with several versions of MoFEM at once,
 keep old versions locally or upload them int [Docker Hub](https://hub.docker.com/r/likask/ubuntu_mofem/).
 
-##What you will need on host system
+# What you will need on host system {#docker_prerequisites}
 
 - Post processor to visualise results. We using [ParaView](http://www.paraview.org)
 however you can find good alternatives like [VisIt](https://wci.llnl.gov/simulation/computer-codes/visit/).
@@ -93,7 +96,7 @@ text editor. We recommend [Atom](https://atom.io).
 we recommend to install [HomeBrew](http://brew.sh), which install missing packages into
 MacOS X system.
 
-##Contact
+# Contact {#docker_contact}
 
 Any problems with this installation, please contact us by [mofem-group@googlegroups.com](https://groups.google.com/forum/#!forum/mofem-group)
 or on Slack [MoFEM Slack](https://mofem.slack.com/).
