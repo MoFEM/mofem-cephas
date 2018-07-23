@@ -428,9 +428,26 @@ To create your package for the user module, you have to
 - create package class following naming convention
 - modify file changing names and locations appropriately for your user module
 
+# Basic settings in config.yaml
+
+Spack’s basic configuration options are set in config.yaml. You can see the
+default settings by *$HOME/.spack/config.yaml*, for example, you can set the
+default number of jobs to use when running `make` in parallel. If set to 4,
+for example, `spack install` will run `make -j4`. This can be done by adding
+line 
+~~~~~ 
+build_jobs: 4 
+~~~~~ 
+For more details see
+[here](https://spack.readthedocs.io/en/latest/config_yaml.html?highlight=-jobs#)
+
 # Mirrors {#spack_mirrors}
 
-Some sites may not have access to the internet for fetching packages. These sites will need a local repository of tarballs from which they can get their files. Spack has support for this with mirrors. Look to Spack documentation to learn more about mirrors, see [here](https://spack.readthedocs.io/en/latest/mirrors.html?highlight=mirror).
+Some sites may not have access to the internet for fetching packages. These
+sites will need a local repository of tarballs from which they can get their
+files. Spack has support for this with mirrors. Look to Spack documentation
+to learn more about mirrors, see
+[here](https://spack.readthedocs.io/en/latest/mirrors.html?highlight=mirror).
 
 You need to create mirror first
 ~~~~~
