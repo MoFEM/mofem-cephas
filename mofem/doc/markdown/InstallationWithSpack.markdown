@@ -164,7 +164,7 @@ spack install mofem-cephas cppflags="-march=native -O3"
 
 # Installation on specific servers {#spack_servers}
 
-## Server *Buckethead* {#spack_buckedhead}
+## Server Buckethead {#spack_buckedhead}
 
 ### Installation {#spack_buckedhead_installation}
 
@@ -419,7 +419,6 @@ located in *$HOME/spack/var/spack/repos/builtin/packages/mofem-fracture-module*
  and *$HOME/spack/var/spack/repos/builtin/packages/mofem-minimal-surface-equation*.
 You can open package file
 ~~~~~
-spack edit mofem-users-modules
 spack edit mofem-minimal-surface-equation
 ~~~~~
 
