@@ -250,7 +250,7 @@ Create a script file with content as below and name it, for example, *job_spack*
 
 # E-mail address to which status updates should be sent
 # N.B.: in an array job, a separate e-mail will be sent for each task!
-#$ -M lukasz.kaczmarczyk@glasgow.ac.uk
+#$ -M your.email@uni.ac.uk
 
 # Events on which to send a status update
 #$ -m beas
