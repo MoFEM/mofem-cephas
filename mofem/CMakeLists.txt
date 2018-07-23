@@ -212,6 +212,15 @@ if(TAO_LIBRARY)
   add_definitions(-DTAO)
 endif(TAO_LIBRARY)
 
+# Check Metis install with PETSc
+if(PETSCVAR_METIS_INCLUDE)
+  resolve_includes(METIS_INCLUDE_DIRECTORIES
+    "${PETSCVAR_METIS_INCLUDE}")
+  include_directories(${METIS_INCLUDE_DIRECTORIES})
+  add_definitions(-DMETIS)
+endif(PETSCVAR_METIS_INCLUDE)
+
+# Check ParMeris install with PETSc
 if(PETSCVAR_PARMETIS_INCLUDE)
   resolve_includes(PARMETIS_INCLUDE_DIRECTORIES
     "${PETSCVAR_PARMETIS_INCLUDE}")
