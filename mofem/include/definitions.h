@@ -147,9 +147,6 @@ enum FieldApproximationBase {
   LASTBASE
 };
 
-// Fix spelling bug (do do not use this)
-#define AINSWORTH_LOBBATO_BASE AINSWORTH_LOBATTO_BASE
-
 const static char *const ApproximationBaseNames[] = {
     "NOBASE",
     "AINSWORTH_LEGENDRE_BASE",
