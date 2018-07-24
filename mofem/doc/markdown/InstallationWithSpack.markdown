@@ -10,26 +10,21 @@ installation of scientific packages as easy as possible.
 
 # Quick installation snippet {#spack_quick}
 
-Befor you start see Spack [getting
-started](https://spack.readthedocs.io/en/v0.10.0/getting_started.html), to
-see all prerequisites. You need to have installed
-[git](https://www.atlassian.com/git/tutorials/what-is-git) and
-[curl](https://en.wikipedia.org/wiki/CURL). For example on Ubuntu or Debian
-like system you can install both running from command line
-~~~~~
-sudo apt-get install git curl
-~~~~~
 
 If you have [git](https://www.atlassian.com/git/tutorials/what-is-git) and
-[curl](https://en.wikipedia.org/wiki/CURL) and
-[curl](https://en.wikipedia.org/wiki/CURL) you can proceed to Spack
-installation
+[curl](https://en.wikipedia.org/wiki/CURL) and compilers you can proceed to
+Spack installation. If you already develop some code, most likely you have
+all that you need. If not look to for install
+[prerequisites](@ref spack_prerequisites).
+
+You can start by downloading Spack and installing essential, as follows
 ~~~~~~
 git clone --single-branch -b mofem https://github.com/likask/spack.git
 . spack/share/spack/setup-env.sh
 . ${SPACK_ROOT}/share/spack/setup-env.sh
 spack bootstrap
 ~~~~~~
+
 Having spack installed you can install a basic version of MoFEM
 ~~~~~~
 spack install mofem-users-modules
@@ -46,6 +41,73 @@ in spack extension can be seen by calling
 ~~~~~~
 spack extensions mofem-cephas
 ~~~~~~
+
+# Prerequisites {#spack_prerequisites}
+
+Before you start see Spack [getting
+started](https://spack.readthedocs.io/en/v0.10.0/getting_started.html), to
+see all prerequisites. You need to have installed
+[git](https://www.atlassian.com/git/tutorials/what-is-git) and
+[curl](https://en.wikipedia.org/wiki/CURL). You will need as well C++
+compilers, f.e. *gcc* or *clang*, and Fortran compiler, f.e. *gfrortran*. If
+you are developing any code on your computer, you probably have probably most
+of the software (if not all) installed.
+
+For example on Ubuntu or Debian
+like system you can install both running from command line
+~~~~~
+apt-get update \
+&& apt-get install -y --no-install-recommends \
+autoconf \
+build-essential \
+ca-certificates \
+coreutils \
+curl \
+environment-modules \
+git \
+python \
+unzip \
+vim \ 
+gfortran
+~~~~~
+
+If you work on OS X, and if have not done it already, install
+build-essentials and [Homebrew](https://brew.sh) and then
+~~~~~
+xcode-select --install
+sudo xcodebuild -license accept
+/usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+brew install curl git 
+~~~~~
+For Mac OS X you can as well follow instrucion on Spack documentation, called
+[Mixed
+Toolchains](http://spack.readthedocs.io/en/latest/getting_started.html#mixed-toolchains)
+
+Check if you have Fortran compiler, f.e. *gfortran* if not you can install
+with homebrew or Ubuntu/Debian packages. 
+~~~~~
+apt-get install -y gfortran
+~~~~~
+or
+~~~~~
+brew install gfortran
+~~~~~
+respectively for Ubuntu and Mac OS X.
+
+Alternatively, If your system does not provide any Fortran compiler or you
+want to have the most recent gcc. Just before kick-starting MoFEM
+installation command with Spack, do as follows
+~~~~~
+spack install gcc
+spack load gcc
+spack compiler find
+spack install mofem-users-modules
+~~~~~
+
+Installing *gcc* with Spack is more resistant to future problems. For
+example, updating codes on hombrew old *gfortran* could be updated, causing
+problems with linking of installed packages. Adding *gcc* compiler with Spack
+resistant to those type of problems.
 
 # Installation Spack {#spack_spack}
 
