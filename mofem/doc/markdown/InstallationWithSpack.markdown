@@ -10,8 +10,20 @@ installation of scientific packages as easy as possible.
 
 # Quick installation snippet {#spack_quick}
 
-Befor you start see Spack [getting started](https://spack.readthedocs.io/en/v0.10.0/getting_started.html), to see all
-prerequisites.
+Befor you start see Spack [getting
+started](https://spack.readthedocs.io/en/v0.10.0/getting_started.html), to
+see all prerequisites. You need to have installed
+[git](https://www.atlassian.com/git/tutorials/what-is-git) and
+[curl](https://en.wikipedia.org/wiki/CURL). For example on Ubuntu or Debian
+like system you can install both running from command line
+~~~~~
+sudo apt-get install git curl
+~~~~~
+
+If you have [git](https://www.atlassian.com/git/tutorials/what-is-git) and
+[curl](https://en.wikipedia.org/wiki/CURL) and
+[curl](https://en.wikipedia.org/wiki/CURL) you can proceed to Spack
+installation
 ~~~~~~
 git clone --single-branch -b mofem https://github.com/likask/spack.git
 . spack/share/spack/setup-env.sh
@@ -359,56 +371,51 @@ mkdir $HOME/mofem_install
 cd $HOME/mofem_install
 git clone -b develop --recurse-submodules https://bitbucket.org/likask/mofem-cephas.git mofem-cephas
 ~~~~~
-
-Create *build* directory for core liblary
+and kick-start installation of the core library
 ~~~~~
-mkdir $HOME/mofem_install/lib
-cd $HOME/mofem_install/lib
+cd $HOME/mofem_install
+mkdir lib
+cd lib/
+spack setup mofem-cephas@develop copy_user_modules=False
+./spconfig.py $HOME/mofem_install/mofem-cephas/mofem/
+make -j4
+ctest -D Experimental
+make install
 ~~~~~
-
-Configure installation using Spack,
+Next, install users modules
 ~~~~~
-spack setup mofem-cephas@develop build_type=Debug copy_user_modules=False
-~~~~~
-The result will be a file spconfig.py in the top-level
-*$HOME/mofem_install/lib* directory. It is a short script that calls CMake
-with the dependencies and options determined by Spack — similar to what
-happens in spack install but now written out in script form. From a
-developer’s point of view, you can think of spconfig.py as a stand-in for the
-CMake command.
-
-Note variant *copy_user_modules=False* is set so users modules are not copied
-to install directory by indicating that symbolic is created. That is useful
-when you do changes both in the core library and basic users modules. 
-
-We load CMake tools
-~~~~~
-spack load cmake
-~~~~~
-and run config file
-~~~~~
-./spconfig.py ../mofem-cephas/mofem/
-~~~~~
-next make code and run test
-~~~~~
-make -j4 
+cd $HOME/mofem_install
+mkdir um
+cd um/
+spack view --verbose symlink um_view mofem-cephas@develop
+mkdir build 
+cd build/
+spack setup mofem-users-modules@1.0 copy_user_modules=False mofem-cephas@develop
+./spconfig.py -DMOFEM_DIR=../um_view $HOME/mofem_install/mofem-cephas/mofem/users_modules
+make -j4
+ctest -D Experimental
 make install
 ~~~~~
 
-Once that is done a view to users modules is created
+You can add extended users modules to
+*$HOME/mofem_install/mofem-cephas/mofem/users_modules*. To make the included
+in build process you can re-do steps
 ~~~~~
-cd $HOME/mofem_install
-spack view --verbose symlink um_view mofem-cephas@develop build_type=Debug copy_user_modules=False
+./spconfig.py -DMOFEM_DIR=../um_view $HOME/mofem_install/mofem-cephas/mofem/users_modules
+make -j4
+ctest -D Experimental
+make install
 ~~~~~
 
-One can that is done you can compile users modules and run tests
+Alternatively, you can add your users modules to independent folder and run
+snipped below
 ~~~~~
-cd um_view
-mkdir build
-cd build
-cmake -DMOFEM_DIR=$HOME/mofem_install/um_view/ $HOME/mofem_install/mofem-cephas/mofem/users_modules
+./spconfig.py -DEXTERNAL_MODULE_SOURCE_DIRS=$PATH_TO_MY_SECRET_MODULE -DMOFEM_DIR=../um_view $HOME/mofem_install/mofem-cephas/mofem/users_modules
 make -j4
+ctest -D Experimental
+make install
 ~~~~~
+
 
 # Adding MoFEM extension to Spack {#spack_adding_package}
 
