@@ -14,64 +14,64 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
-*/
+ */
 
 #ifndef __DEFINITONS_H__
 #define __DEFINITONS_H__
 
-//taken from http://stackoverflow.com/questions/295120/c-mark-as-deprecated
+// taken from http://stackoverflow.com/questions/295120/c-mark-as-deprecated
 #ifdef __GNUC__
-  #define DEPRECATED __attribute__((deprecated))
+#define DEPRECATED __attribute__((deprecated))
 #elif defined(_MSC_VER)
-  #define DEPRECATED __declspec(deprecated)
+#define DEPRECATED __declspec(deprecated)
 #else
-  #pragma message("WARNING: You need to implement DEPRECATED for this compiler")
-  #define DEPRECATED
+#pragma message("WARNING: You need to implement DEPRECATED for this compiler")
+#define DEPRECATED
 #endif
 
 /** \brief Interfaces IDs
-  *
-  * To manage different complexities related to field, finite elements mesh
-  * refinements, etc. a appropriate interfaces related to each complexities are
-  * created. Interfaces by itself could vary by functionality or the same function
-  * can me managed with two interfaces with waring level of abstraction.
-  *
-  */
+ *
+ * To manage different complexities related to field, finite elements mesh
+ * refinements, etc. a appropriate interfaces related to each complexities are
+ * created. Interfaces by itself could vary by functionality or the same
+ * function can me managed with two interfaces with waring level of abstraction.
+ *
+ */
 enum Interfaces {
-  UNKNOWNINTERFACE          = 1 << 0,
+  UNKNOWNINTERFACE = 1 << 0,
   // Field Interface
-  CORE_INTERFACE            = 1 << 0 | 1 << 1,
+  CORE_INTERFACE = 1 << 0 | 1 << 1,
   DEPRECATED_CORE_INTERFACE = 1 << 0 | 1 << 2,
   PROBLEMSMANAGER_INTERFACE = 1 << 0 | 1 << 3,
-  SIMPLE_INTERFACE          = 1 << 0 | 1 << 4,
-  MESH_REFINE               = 1 << 1 | 1 << 2,
-  PRISM_INTEFACE            = 1 << 1 | 1 << 3,
-  SERIES_RECORDER           = 1 << 1 | 1 << 4,
-  ISMANAGER_INTERFACE       = 1 << 1 | 1 << 5,
-  VECMANAGER_INTERFACE      = 1 << 1 | 1 << 6,
-  FIELDBLAS_INTERFACE       = 1 << 1 | 1 << 7,
-  BITREFMANAGER_INTERFACE   = 1 << 1 | 1 << 8,
-  TOOLS                     = 1 << 1 | 1 << 10,
+  SIMPLE_INTERFACE = 1 << 0 | 1 << 4,
+  MESH_REFINE = 1 << 1 | 1 << 2,
+  PRISM_INTEFACE = 1 << 1 | 1 << 3,
+  SERIES_RECORDER = 1 << 1 | 1 << 4,
+  ISMANAGER_INTERFACE = 1 << 1 | 1 << 5,
+  VECMANAGER_INTERFACE = 1 << 1 | 1 << 6,
+  FIELDBLAS_INTERFACE = 1 << 1 | 1 << 7,
+  BITREFMANAGER_INTERFACE = 1 << 1 | 1 << 8,
+  TOOLS = 1 << 1 | 1 << 10,
   // Independent Interfaces
-  TETGEN_INTERFACE              = 1 << 2 | 1 << 3,
-  MED_INTERFACE                 = 1 << 2 | 1 << 4,
-  NODEMERGER_INTERFACE          = 1 << 2 | 1 << 5,
-  BITLEVELCOUPLER_INTERFACE     = 1 << 2 | 1 << 6,
-  PRISMSFROMSURFACE_INTERFACE   = 1 << 2 | 1 << 7,
-  MESHSETSMANAGER_INTERFACE     = 1 << 2 | 1 << 8,
+  TETGEN_INTERFACE = 1 << 2 | 1 << 3,
+  MED_INTERFACE = 1 << 2 | 1 << 4,
+  NODEMERGER_INTERFACE = 1 << 2 | 1 << 5,
+  BITLEVELCOUPLER_INTERFACE = 1 << 2 | 1 << 6,
+  PRISMSFROMSURFACE_INTERFACE = 1 << 2 | 1 << 7,
+  MESHSETSMANAGER_INTERFACE = 1 << 2 | 1 << 8,
   COORDSSYSTEMMANAGER_INTERFACE = 1 << 2 | 1 << 9,
-  CUTMESH_INTERFACE             = 1 << 2 | 1 << 10
+  CUTMESH_INTERFACE = 1 << 2 | 1 << 10
 };
 
 enum LoopInterfaces {
   // Loop Methods
-  KSP_METHOD   = 1 << 3 | 1 << 4,
-  SNES_METHOD  = 1 << 3 | 1 << 5,
-  TS_METHOD    = 1 << 3 | 1 << 6,
+  KSP_METHOD = 1 << 3 | 1 << 4,
+  SNES_METHOD = 1 << 3 | 1 << 5,
+  TS_METHOD = 1 << 3 | 1 << 6,
   BASIC_METHOD = 1 << 3 | 1 << 4 | 1 << 5 | 1 << 6,
-  FE_METHOD    = 1 << 3 | 1 << 4 | 1 << 5 | 1 << 6 | 1 << 7,
+  FE_METHOD = 1 << 3 | 1 << 4 | 1 << 5 | 1 << 6 | 1 << 7,
   ENTITY_METHOD = 1 << 3 | 1 << 4 | 1 << 5 | 1 << 6 | 1 << 9,
-  DOF_METHOD   = 1 << 3 | 1 << 4 | 1 << 5 | 1 << 6 | 1 << 9,
+  DOF_METHOD = 1 << 3 | 1 << 4 | 1 << 5 | 1 << 6 | 1 << 9,
 };
 
 /**
@@ -79,48 +79,48 @@ enum LoopInterfaces {
  */
 enum DMInterfaces {
   UNKNOWN_DM_INTERFACE = 1 << 4 | 1 << 5,
-  DMCTX_INTERFACE      = 1 << 4 | 1 << 6
+  DMCTX_INTERFACE = 1 << 4 | 1 << 6
 };
 
 /**
  * \brief Interfaces uses to manage base functions
  */
 enum BaseIntefaces {
-  UNKNOWN_BASE_FUNCTION_INTERFACE   = 1 << 5 | 1 << 6,
-  LEGENDRE_BASE_FUNCTION_INTERFACE  = 1 << 5 | 1 << 7,
-  LOBATTO_BASE_FUNCTION_INTERFACE   = 1 << 5 | 1 << 8,
-  KERNEL_BASE_FUNCTION_INTERFACE    = 1 << 5 | 1 << 9,
-  JACOBI_BASE_FUNCTION_INTERFACE    = 1 << 5 | 1 << 10,
+  UNKNOWN_BASE_FUNCTION_INTERFACE = 1 << 5 | 1 << 6,
+  LEGENDRE_BASE_FUNCTION_INTERFACE = 1 << 5 | 1 << 7,
+  LOBATTO_BASE_FUNCTION_INTERFACE = 1 << 5 | 1 << 8,
+  KERNEL_BASE_FUNCTION_INTERFACE = 1 << 5 | 1 << 9,
+  JACOBI_BASE_FUNCTION_INTERFACE = 1 << 5 | 1 << 10,
   INTEGRATED_JACOBI_BASE_FUNCTION_INTERFACE = 1 << 5 | 1 << 11,
-  ENT_BASE_FUNCTION_INTERFACE       = 1 << 5 | 1 << 6 | 1 << 7,
-  TET_BASE_FUNCTION_INTERFACE       = 1 << 5 | 1 << 6 | 1 << 8,
-  TRI_BASE_FUNCTION_INTERFACE       = 1 << 5 | 1 << 6 | 1 << 9,
-  EDGE_BASE_FUNCTION_INTERFACE      = 1 << 5 | 1 << 6 | 1 << 10,
-  FATPRISM_BASE_FUNCTION_INTERFACE  = 1 << 5 | 1 << 6 | 1 << 11,
+  ENT_BASE_FUNCTION_INTERFACE = 1 << 5 | 1 << 6 | 1 << 7,
+  TET_BASE_FUNCTION_INTERFACE = 1 << 5 | 1 << 6 | 1 << 8,
+  TRI_BASE_FUNCTION_INTERFACE = 1 << 5 | 1 << 6 | 1 << 9,
+  EDGE_BASE_FUNCTION_INTERFACE = 1 << 5 | 1 << 6 | 1 << 10,
+  FATPRISM_BASE_FUNCTION_INTERFACE = 1 << 5 | 1 << 6 | 1 << 11,
   FLATPRISM_BASE_FUNCTION_INTERFACE = 1 << 5 | 1 << 6 | 1 << 12
 };
 
 /** \brief Error handling
-  *
-  * This is complementary to PETSC error codes. The numerical values for
-  * these are defined in include/petscerror.h. The names are defined in err.c
-  *
-  * MoAB error messages are defined in moab/Types.hpp
-  *
-  */
+ *
+ * This is complementary to PETSC error codes. The numerical values for
+ * these are defined in include/petscerror.h. The names are defined in err.c
+ *
+ * MoAB error messages are defined in moab/Types.hpp
+ *
+ */
 enum MoFEMErrorCodes {
-  MOFEM_SUCESS                 = 0,
-  MOFEM_DATA_INCONSISTENCY     = 100,
-  MOFEM_NOT_IMPLEMENTED        = 101,
-  MOFEM_NOT_FOUND              = 102,
+  MOFEM_SUCESS = 0,
+  MOFEM_DATA_INCONSISTENCY = 100,
+  MOFEM_NOT_IMPLEMENTED = 101,
+  MOFEM_NOT_FOUND = 102,
   MOFEM_OPERATION_UNSUCCESSFUL = 103,
-  MOFEM_IMPOSIBLE_CASE         = 104,
-  MOFEM_INVALID_DATA           = 105,
-  MOFEM_NOT_INSTALLED          = 106,
-  MOFEM_MOFEMEXCEPTION_THROW   = 107,
-  MOFEM_STD_EXCEPTION_THROW    = 108,
-  MOFEM_ATOM_TEST_INVALID      = 109,
-  MOFEM_MOAB_ERROR             = 110
+  MOFEM_IMPOSIBLE_CASE = 104,
+  MOFEM_INVALID_DATA = 105,
+  MOFEM_NOT_INSTALLED = 106,
+  MOFEM_MOFEMEXCEPTION_THROW = 107,
+  MOFEM_STD_EXCEPTION_THROW = 108,
+  MOFEM_ATOM_TEST_INVALID = 109,
+  MOFEM_MOAB_ERROR = 110
 };
 
 const static char *const MoFEMErrorCodesNames[] = {
@@ -139,11 +139,16 @@ const static char *const MoFEMErrorCodesNames[] = {
 /// \brief approximation base
 enum FieldApproximationBase {
   NOBASE = 0,
-  AINSWORTH_LEGENDRE_BASE = 1,   ///< Ainsworth Cole (Legendre) approx. base \cite NME:NME847
-  AINSWORTH_LOBATTO_BASE,        ///< Like AINSWORTH_LEGENDRE_BASE but with Lobatto base instead Legendre \cite beriot2015efficient
-  AINSWORTH_BERNSTEIN_BEZIER_BASE,   ///< Not yet implemented, in implementation we will follow \cite ainsworth2011bernstein
-  DEMKOWICZ_JACOBI_BASE,             ///< Construction of base is by Demkowicz \cite fuentes2015orientation
-  USER_BASE,               ///< user implemented approximation base
+  AINSWORTH_LEGENDRE_BASE =
+      1, ///< Ainsworth Cole (Legendre) approx. base \cite NME:NME847
+  AINSWORTH_LOBATTO_BASE, ///< Like AINSWORTH_LEGENDRE_BASE but with Lobatto
+                          ///< base instead Legendre \cite beriot2015efficient
+  AINSWORTH_BERNSTEIN_BEZIER_BASE, ///< Not yet implemented, in implementation
+                                   ///< we will follow \cite
+                                   ///< ainsworth2011bernstein
+  DEMKOWICZ_JACOBI_BASE, ///< Construction of base is by Demkowicz \cite
+                         ///< fuentes2015orientation
+  USER_BASE,             ///< user implemented approximation base
   LASTBASE
 };
 
@@ -178,66 +183,58 @@ enum FieldSpace {
   LASTSPACE    ///< FieldSpace in [ 0, LASTSPACE )
 };
 
-const static char * const FieldSpaceNames[] = {
-  "NOSPACE",
-  "NOFIELD",
-  "H1",
-  "HCURL",
-  "HDIV",
-  "L2",
-  "LASTSPACE"
-};
+const static char *const FieldSpaceNames[] = {
+    "NOSPACE", "NOFIELD", "H1", "HCURL", "HDIV", "L2", "LASTSPACE"};
 
-/// \brief Those types control how functions respond on arguments, f.e. error handling
+/// \brief Those types control how functions respond on arguments, f.e. error
+/// handling
 enum MoFEMTypes { MF_ZERO = 0, MF_EXCL = 1 << 0, MF_EXIST = 1 << 1 };
 
 /// \brief RowColData
-enum RowColData {
-  ROW = 0,COL,DATA,LASTROWCOLDATA
-};
+enum RowColData { ROW = 0, COL, DATA, LASTROWCOLDATA };
 
 /**
- *  Controls adjency multi_index container (e.g. BYROW is adjacenciecy by field on on rows), see
- *  \ref MoFEM::FieldEntityEntFiniteElementAdjacencyMap
+ *  Controls adjency multi_index container (e.g. BYROW is adjacenciecy by field
+ * on on rows), see \ref MoFEM::FieldEntityEntFiniteElementAdjacencyMap
  *
  */
 enum ByWhat {
-  BYROW     = 1 << 0,
-  BYCOL     = 1 << 1,
-  BYDATA    = 1 << 2,
+  BYROW = 1 << 0,
+  BYCOL = 1 << 1,
+  BYDATA = 1 << 2,
   BYROWDATA = 1 << 0 | 1 << 2,
   BYCOLDATA = 1 << 1 | 1 << 2,
-  BYROWCOL  = 1 << 0 | 1 << 1,
-  BYALL     = 1 << 0 | 1 << 1 | 1 << 2
+  BYROWCOL = 1 << 0 | 1 << 1,
+  BYALL = 1 << 0 | 1 << 1 | 1 << 2
 };
 
 /**
-  * \brief Types of sets and boundary conditions
-  *
-  */
+ * \brief Types of sets and boundary conditions
+ *
+ */
 enum CubitBC {
-  UNKNOWNSET      = 0,
-  NODESET         = 1 << 0,
-  SIDESET         = 1 << 1,
-  BLOCKSET        = 1 << 2,
-  MATERIALSET     = 1 << 3,
+  UNKNOWNSET = 0,
+  NODESET = 1 << 0,
+  SIDESET = 1 << 1,
+  BLOCKSET = 1 << 2,
+  MATERIALSET = 1 << 3,
   DISPLACEMENTSET = 1 << 4,
-  FORCESET        = 1 << 5,
-  PRESSURESET     = 1 << 6,
-  VELOCITYSET     = 1 << 7,
+  FORCESET = 1 << 5,
+  PRESSURESET = 1 << 6,
+  VELOCITYSET = 1 << 7,
   ACCELERATIONSET = 1 << 8,
-  TEMPERATURESET  = 1 << 9,
-  HEATFLUXSET     = 1 << 10,
-  INTERFACESET    = 1 << 11,
-  UNKNOWNNAME     = 1 << 12,
-  MAT_ELASTICSET  = 1 << 13, ///< block name is "MAT_ELASTIC"
-  MAT_INTERFSET   = 1 << 14,
-  MAT_THERMALSET  = 1 << 15, ///< block name is "MAT_THERMAL"
-  BODYFORCESSET   = 1 << 16, ///< block name is "BODY_FORCES"
+  TEMPERATURESET = 1 << 9,
+  HEATFLUXSET = 1 << 10,
+  INTERFACESET = 1 << 11,
+  UNKNOWNNAME = 1 << 12,
+  MAT_ELASTICSET = 1 << 13, ///< block name is "MAT_ELASTIC"
+  MAT_INTERFSET = 1 << 14,
+  MAT_THERMALSET = 1 << 15,  ///< block name is "MAT_THERMAL"
+  BODYFORCESSET = 1 << 16,   ///< block name is "BODY_FORCES"
   MAT_MOISTURESET = 1 << 17, ///< block name is "MAT_MOISTURE"
-  DIRICHLET_BC    = 1 << 18,
-  NEUMANN_BC      = 1 << 19,
-  LASTSET_BC      = 1 << 20
+  DIRICHLET_BC = 1 << 18,
+  NEUMANN_BC = 1 << 19,
+  LASTSET_BC = 1 << 20
 };
 
 // OFF_DEPRECATED static const unsigned int UNKNOWNCUBITNAME = UNKNOWNNAME;
@@ -311,29 +308,31 @@ enum VERBOSITY_LEVELS {
   VERY_NOISY
 };
 
-#define BITREFEDGES_SIZE 6    ///< number of edges on tetrahedral
-#define BITREFLEVEL_SIZE 128  ///< max number of refinements
-#define BITFIELDID_SIZE 32    ///< max number of fields
-#define BITFEID_SIZE 32       ///< max number of finite elements
-#define BITPROBLEMID_SIZE 32  ///< max number of problems
+#define BITREFEDGES_SIZE 6   ///< number of edges on tetrahedral
+#define BITREFLEVEL_SIZE 128 ///< max number of refinements
+#define BITFIELDID_SIZE 32   ///< max number of fields
+#define BITFEID_SIZE 32      ///< max number of finite elements
+#define BITPROBLEMID_SIZE 32 ///< max number of problems
 #define BITINTERFACEUID_SIZE 32
 
-#define MYPCOMM_INDEX 0       ///< default communicator number PCOMM
+#define MYPCOMM_INDEX 0 ///< default communicator number PCOMM
 
-//This Is form MOAB
+// This Is form MOAB
 #define MB_TYPE_WIDTH 4
 #define MB_ID_WIDTH (8 * sizeof(EntityHandle) - MB_TYPE_WIDTH)
 #define MB_TYPE_MASK ((EntityHandle)0xF << MB_ID_WIDTH)
 //             2^MB_TYPE_WIDTH-1 ------^
 
 #define MB_START_ID ((EntityID)1) ///< All entity id's currently start at 1
-#define MB_END_ID ((EntityID)MB_ID_MASK) ///< Last id is the complement of the MASK
+#define MB_END_ID                                                              \
+  ((EntityID)MB_ID_MASK) ///< Last id is the complement of the MASK
 #define MB_ID_MASK (~MB_TYPE_MASK)
 
-#define MAX_DOFS_ON_ENTITY 512                ///< Maximal number of DOFs on entity
-#define DOF_UID_MASK_ON_ENTITY (MAX_DOFS_ON_ENTITY-1)   ///< Mask for DOF number on entity form UId
+#define MAX_DOFS_ON_ENTITY 512 ///< Maximal number of DOFs on entity
+#define DOF_UID_MASK_ON_ENTITY                                                 \
+  (MAX_DOFS_ON_ENTITY - 1) ///< Mask for DOF number on entity form UId
 
-#define NOT_USED(x) ( (void)(x) )
+#define NOT_USED(x) ((void)(x))
 
 /** \brief set barrier start
  * Run code in sequence, starting from process 0, and ends on last process.
@@ -352,7 +351,7 @@ enum VERBOSITY_LEVELS {
  */
 #define BARRIER_RANK_START(PCMB)                                               \
   {                                                                            \
-    macro_is_deprecated_using_deprecated_function();                            \
+    macro_is_deprecated_using_deprecated_function();                           \
     for (unsigned int i = 0; i < PCMB->proc_config().proc_rank(); i++)         \
       MPI_Barrier(PCMB->proc_config().proc_comm());                            \
   };
@@ -375,7 +374,7 @@ enum VERBOSITY_LEVELS {
  */
 #define BARRIER_RANK_END(PCMB)                                                 \
   {                                                                            \
-    macro_is_deprecated_using_deprecated_function();                            \
+    macro_is_deprecated_using_deprecated_function();                           \
     for (unsigned int i = PCMB->proc_config().proc_rank();                     \
          i < PCMB->proc_config().proc_size(); i++)                             \
       MPI_Barrier(PCMB->proc_config().proc_comm());                            \
@@ -422,8 +421,8 @@ DEPRECATED void macro_is_deprecated_using_deprecated_function();
 #endif
 
 /**
- * \brief First executable line of each MoFEM function, used for error handling. Final
-      line of MoFEM functions should be MoFEMFunctionReturn(0);
+ * \brief First executable line of each MoFEM function, used for error handling.
+ Final line of MoFEM functions should be MoFEMFunctionReturn(0);
 
    \node Not collective
 
@@ -484,23 +483,24 @@ DEPRECATED void macro_is_deprecated_using_deprecated_function();
   }
 
 /**
-  * \brief Last executable line of each PETSc function used for error handling. Replaces return()
-  * @param  a error code
-  *
-  * \note MoFEMFunctionReturn has to be used with MoFEMFunctionBegin and can be
-  * used only at the end of the function. If is need to return function in
-  * earlier use MoFEMFunctionReturnHot
-  *
-  */
+ * \brief Last executable line of each PETSc function used for error handling.
+ * Replaces return()
+ * @param  a error code
+ *
+ * \note MoFEMFunctionReturn has to be used with MoFEMFunctionBegin and can be
+ * used only at the end of the function. If is need to return function in
+ * earlier use MoFEMFunctionReturnHot
+ *
+ */
 #define MoFEMFunctionReturn(a)                                                 \
   }                                                                            \
   CATCH_ERRORS                                                                 \
   PetscFunctionReturn(a)
 
 /**
-  * \brief First executable line of each MoFEM function, used for error handling. Final
-  line of MoFEM functions should be MoFEMFunctionReturn(0);
-  Use of this function allows for lighter profiling by default.
+  * \brief First executable line of each MoFEM function, used for error
+  handling. Final line of MoFEM functions should be MoFEMFunctionReturn(0); Use
+  of this function allows for lighter profiling by default.
 
   \node Not collective
 
@@ -519,11 +519,11 @@ DEPRECATED void macro_is_deprecated_using_deprecated_function();
 #define MoFEMFunctionBeginHot PetscFunctionBeginHot
 
 /**
- * \brief Last executable line of each PETSc function used for error handling. Replaces return()
+ * \brief Last executable line of each PETSc function used for error handling.
+ * Replaces return()
  * @param  a error code
  */
-#define MoFEMFunctionReturnHot(a) \
-  PetscFunctionReturn(a)
+#define MoFEMFunctionReturnHot(a) PetscFunctionReturn(a)
 
 #define CHKERRQ_PETSC(n) CHKERRQ(n)
 /**
@@ -561,10 +561,10 @@ DEPRECATED void macro_is_deprecated_using_deprecated_function();
  */
 #define CHKERRG(n)                                                             \
   if ((boost::is_same<BOOST_TYPEOF((n)),                                       \
-                      MoFEMErrorCodeGeneric<PetscErrorCode> >::value)) {       \
+                      MoFEMErrorCodeGeneric<PetscErrorCode>>::value)) {        \
     CHKERRQ_PETSC((n));                                                        \
   } else if (boost::is_same<BOOST_TYPEOF((n)),                                 \
-                            MoFEMErrorCodeGeneric<moab::ErrorCode> >::value) { \
+                            MoFEMErrorCodeGeneric<moab::ErrorCode>>::value) {  \
     CHKERRQ_MOAB((n));                                                         \
   }
 
@@ -605,7 +605,7 @@ DEPRECATED void macro_is_deprecated_using_deprecated_function();
  * CATCH_ERRORS;
  *
  * return MoFEM::Core::Finalize();
- * 
+ *
  * }
  *
  * \endcode
