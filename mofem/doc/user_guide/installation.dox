@@ -1,10 +1,10 @@
 /*! \page installation Installation
 
-We recommend installation with Spack or Docker. Both methods are a system
-independent, what minimises the likelihood that something goes wrong on your
-computer.
+We recommend installation preferably with Spack or Docker. Both installation
+methods are a system independent, what minimises the likelihood that
+something goes wrong on your computer.
 
-Docker <https://www.docker.com> is a Linux (Ubuntu) system virtualisation,
+Docker <https://www.docker.com> is a Linux (e.g. Ubuntu) system virtualisation,
 and MoFEM is run in docker container (virtual system) hosted by your native
 OS. The advantage of this approach is that the operating system environment
 is contained on a virtual machine hosted on your computer. For that
@@ -14,19 +14,18 @@ relatively slow reading and writing and limited portability for HPC
 computing.
 
 Spack <https://spack.io> from the other hand allows for easy installation on
-the base system and does not have disadvantages of docker solution. Since
-using Spack you compile and run software on your native OS some errors could
-be specific to your configuration and harder to reproduce.
+the base system and does not have disadvantages of docker solution. Spack is
+not the container is a packaging system for HPC, Linux and OS X. <b>Spack is
+the recommended installation method for MoFEM.</b>
 
-Mac OS X and Ubuntu installation are on bare metal OS, and to do it well you
-have to know the location of some libraries installed on your system. We do
-not recommend to follow that installation instruction unless you have
-experience of installing libraries from source.
-
+Mac OS X and Ubuntu installation methods are on bare metal OS, and to do
+it well you have to know the location of some libraries installed on your
+system. We do not recommend to follow that installation instruction unless
+you have experience of installing libraries from source.
 
 - \subpage install_spack
 - \subpage install_docker
-- \subpage install_ubuntu
-- \subpage install_macosx
+- \subpage install_ubuntu - recommened installation method with Spack
+- \subpage install_macosx - recommened installation method with Spack
 
 */

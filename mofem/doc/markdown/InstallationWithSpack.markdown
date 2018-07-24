@@ -6,6 +6,10 @@ here [https://spack.io](https://spack.io). For short Spack is a package
 manager for supercomputers, Linux, and Mac OS X. It is designed to make
 installation of scientific packages as easy as possible.
 
+If you have any problems, feedback or would like to suggest corrections,
+please email
+[mofem-group@googlegroups.com](https://groups.google.com/forum/#!forum/mofem-group)..
+
 [TOC]
 
 # Quick installation snippet {#spack_quick}
