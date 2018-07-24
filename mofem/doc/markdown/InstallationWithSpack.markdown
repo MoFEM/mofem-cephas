@@ -410,7 +410,10 @@ make install
 Alternatively, you can add your users modules to independent folder and run
 snipped below
 ~~~~~
-./spconfig.py -DEXTERNAL_MODULE_SOURCE_DIRS=$PATH_TO_MY_SECRET_MODULE -DMOFEM_DIR=../um_view $HOME/mofem_install/mofem-cephas/mofem/users_modules
+./spconfig.py \
+-DEXTERNAL_MODULE_SOURCE_DIRS=$PATH_TO_MY_SECRET_MODULE \
+-DMOFEM_DIR=../um_view \
+$HOME/mofem_install/mofem-cephas/mofem/users_modules
 make -j4
 ctest -D Experimental
 make install
