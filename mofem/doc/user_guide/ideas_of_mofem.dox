@@ -13,12 +13,11 @@ Rivart-Thomas) being used, such that finite element is constructed by a set of
 lower dimension entities on which the approximation fields are defined.
 
 Therefore, different approximation spaces (h1, h-curl, h-div, L2) can be
-arbitrarily combined in finite element to create new capability for solving
+arbitrarily mix in finite element to create new capability for solving
 complex problems efficiently. Approximation space define adjacency of DOFs on
 entities, number of DOFs on entity is independent on approximation base (at
 least for polynomials). Base on entity is a trace of the base on element, and
-opposite relation works, base on entity is extruded into element. 
-
+opposite relation works, base on entity is extruded into element.
 
 MoFEM data structures allow easily to enrich approximation fields or modify
 base functions, e.g. to resolve singularity at crack front. Applying this
@@ -65,19 +64,20 @@ internal data storage. PETSc is designed to be fast, whereas MoAB aims to be
 memory efficient.
 \image html data_strutures_1.png "MoFEM code parts" width=800px
 
-Code development is a compromise of different goals. First primary deign
-objective of MoFEM is to develop flexible & extendable code easy to test and bug
-search. Very often we spend more time to implement finite element than time
-needed to run analysis itself, flexibility & extensibility allow for rapid
-development of finite elements for non-standard and complex problems. Utilising
-PETSc and MoAB scalability is second important design objective. Nowadays we can
-have easy access to the computing clusters through could computing or
-local/regional supercomputers. Third, core library can not compromise runtime
-efficiency and use computer memory with care.
+Code development no different from engineering is a compromise of different
+goals. The first primary design objective of MoFEM is to develop flexible &
+extendable code easy to test and bug search. Very often we spend more time to
+implement finite element than the time needed to run analysis itself,
+flexibility & extensibility allow for rapid development of finite elements
+for non-standard and complex problems. Utilising PETSc and MoAB scalability
+is the second important design objective. Nowadays we can have easy access to
+the computing clusters through could computing or local/regional
+supercomputers. Third, core library can not compromise runtime efficiency and
+use of computer memory with care.
 
 \subsection finite_element_tut Finite element implementation and UserDataOperator
 
-The finite element entity is composed of sub entities, like nodes, edges, faces
+The finite element entity is composed of subentities, like nodes, edges, faces
 (triangle, quad, etc.) and volumes (tetrahedron, hex, prism, etc.)  The element
 is implemented by evaluating base functions, indices, data on each entity in the
 domain of the element. The developer does not directly implement finite element
@@ -90,30 +90,33 @@ space is independent of the type of element, it happens before we select the
 domain of integration and finite elements on it. Concepts like the periodic
 table of finite elements, or zoo of finite elements are obsolete.
 
-We use the concept of a finite element as a domain on which integration rule is
-constructed and base functions evaluated. The finite element has an auxiliary
-set of data, for example, a measure of the domain, i.e. volume, area or length.
-Some elements carry information about normal, direction depending on the
-dimension of the finite element domain. The base finite element interface can be
-seen here \ref MoFEM::ForcesAndSourcesCore. Note that most of the derived
-classes, alter finite element behaviour in minimally, usually by altering rule
-of integration, appropriately to order and type of differential operators on the
-element. The structure and finite element interaction with user data operators
-are shown in the figure below
+We use the concept of a finite element as a domain on which integration rule
+is constructed and base functions evaluated. The finite element has an
+auxiliary set of data, for example, a measure of the domain, i.e. volume,
+area or length. Some elements carry information about normal, direction
+depending on the dimension of the finite element domain. The base finite
+element interface can be seen here \ref MoFEM::ForcesAndSourcesCore. Note
+that most of the derived classes do not alter finite element core behaviour,
+add only type-specific functionality, f.e. appropriate rule of integration
+for given shape and dimension of element entity. Except for special cases,
+differential operators could be implemented unrespectfully on the type of
+finite element entity. The structure and finite element interaction with user
+data operators are shown in the figure below
 \image html fe_struture_1.png "Finite element and is structure" width=800px
 
-The fundamental role in finite element implementation plays \ref MoFEM::ForcesAndSourcesCore::UserDataOperator. The generality
-of this technology
-range of applications 0d-2d or 3d, with Nitsche's method or with H-div or H-curl
-spaces. The UserDataOperator are operated in three typical ways, first (\a OPROW/
-\a OPCOL) usually used to evaluate the right-hand side vectors, second (\a
-OPROWCOL) to evaluate the left-hand side matrices, and third, often use to
-modify base functions of given space.  First two are intrinsically linked to
-operations on particular fields, the last one is abstract and should not be used
-to assemble vectors and matrices. Type of operator is set by overloading
-function \c doWrok. Operators are run in sequence as are added to finite element
-and executed for each entity on that element. If for given field number of DOFs
-or base functions on given entity is zero, such entity is not evaluated.
+The fundamental role in finite element implementation plays \ref
+MoFEM::ForcesAndSourcesCore::UserDataOperator. The generality of this
+technology range of applications 0d-2d or 3d, with Nitsche's method or with
+H-div or H-curl spaces. The UserDataOperator are operated in three typical
+ways, first (\a OPROW/ \a OPCOL) usually used to evaluate the right-hand side
+vectors, second (\a OPROWCOL) to evaluate the left-hand side matrices, and
+third, often use to modify base functions of given space. First two are
+intrinsically linked to operations on particular fields, the last one is
+abstract and should not be used to assemble vectors and matrices. Type of
+operator is set by overloading function \c doWrok. Operators are run in
+sequence as are added to finite element and executed for each entity on that
+element. If for given field number of DOFs or base functions on given entity
+is zero, such entity is not evaluated.
 \image html fe_struture_2.png "Types of UserDataOperator" width=800px
 
 Note that data and algorithm operating on data is localised, and grouped by
@@ -124,7 +127,6 @@ element technologies), reusability, which with relatively small code large group
 of problems can be implemented and last but not least enables modularisation and
 testing of each element independently.
 \image html fe_struture_3.png "Example of implementation" width=800px
-
 
 Above example reflects how an engineer would formulate the problem for linear
 thermoelasticity, calculate physical quantities like strain, stress, temperature
