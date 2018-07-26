@@ -161,7 +161,7 @@ Note that MoFEM package view has a directory hierarchy including *bin*,
 particular view (you can have more than one with different MoFEM versions)
 you can add view *bin* directory to the shell search path
 ~~~~~~
-export PATH=$HOME/um_view/bin
+export PATH=$HOME/um_view/bin:$PATH
 ~~~~~~
 
 Now you can start to work, use code from users modules, or develop your own
@@ -538,6 +538,21 @@ On a secure server, you add mirror directory to Spack, for example
 spack mirror add local_filesystem file://$HOME/spack-mirror-2018-07-21
 ~~~~~
 and with that at hand kick-start installation process described above.
+
+# Known issues {#spack_issues}
+
+## Mac OS X and DYLD_LIBRARY_PATH {#spack_dyld_library_path}
+
+On your Mac OS X you could have already installed some libraries, like HDF5.
+Some packages installed with Spack can use those libraries if a path to them
+is set in DYLD_LIBRARY_PATH. DYLD_LIBRARY_PATH is a path to dynamics
+libraries.
+
+Before you run the installation set, unset DYLD_LIBRARY_PATH, as follows
+~~~~~
+export DYLD_LIBRARY_PATH=
+spack install mofem-users-modules
+~~~~~
 
 # Contact {#spack_contact}
 
