@@ -247,7 +247,9 @@ spack install mofem-cephas cppflags="-march=native -O3"
 On RDB server we are running Ubuntu 12.04.5 LTS, which is very old and does
 not have compilers which can compile the C++14 code required by MoFEM and
 some dependent packages. Difficulties with the compiler are not only one. The
-curl version on Ubuntu 12.04.5 LTS is compiled with old OpenSSL protocol and
+[curl](https://en.wikipedia.org/wiki/CURL) version on Ubuntu 12.04.5 LTS is
+compiled with old
+[SSL](https://en.wikipedia.org/wiki/Transport_Layer_Security) protocol and
 fetching files from some servers does work. In order to solve those problems,
 we will use a local mirror, which previously downloaded packages and install
 a new version of GCC.
