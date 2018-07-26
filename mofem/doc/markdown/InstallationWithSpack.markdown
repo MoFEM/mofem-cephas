@@ -242,6 +242,53 @@ spack install mofem-cephas cppflags="-march=native -O3"
 
 # Installation on specific servers {#spack_servers}
 
+## RDB development server {#spack_rdb}
+
+On RDB server we are running Ubuntu 12.04.5 LTS, which is very old and does
+not have compilers which can compile the C++14 code required by MoFEM and
+some dependent packages. Difficulties with the compiler are not only one. The
+curl version on Ubuntu 12.04.5 LTS is compiled with old OpenSSL protocol and
+fetching files from some servers does work. In order to solve those problems,
+we will use a local mirror, which previously downloaded packages and install
+a new version of GCC.
+
+First step is to get Spack
+~~~~~
+git clone -b mofem https://github.com/likask/spack.git
+. spack/share/spack/setup-env.sh
+~~~~~
+Next, we add local mirror to Spack,
+~~~~~
+spack mirror add local_filesystem file://opt/spack-mirror-2018-07-26 
+~~~~~
+and compile all prerequisites
+~~~~~
+spack bootstrap
+. ${SPACK_ROOT}/share/spack/setup-env.sh
+~~~~~
+
+Now we install GCC package, load and add compiler, install newest version of
+curl, if we need fetch something from external source, and finally build
+MoFEM with all dependencies
+~~~~~
+spack install -j 8 gcc
+spack module load gcc
+spack compiler find
+spack install -j 8 curl
+spack module load curl
+spack install -j 8 mofem-users-modules%gcc@8.1.0
+~~~~~
+All this take some time, so you can run this on
+[screen](https://www.youtube.com/watch?v=3txYaF_IVZQ) terminal. You can
+easily go for a walk to Kelvingrove Park and come back.
+
+Now you can create a symlink to install directory including dependent
+libraries, using commands below
+~~~~
+spack view symlink um_view mofem-cephas
+spack activate -v um_view mofem-users-modules
+~~~~
+
 ## Server Buckethead {#spack_buckedhead}
 
 ### Installation {#spack_buckedhead_installation}
@@ -300,9 +347,12 @@ spack activate -v um_view mofem-users-modules
 ~~~~~
 If needs you can add more users modules or compile them by yourself.
 Installation can take some time since everything is installed from scratch.
-You can consider to run it in *screen* terminal, and go for a coffee. Now you
-can create a symlink to install directory including dependent libraries, using
-commands below
+You can consider to run it in
+[screen](https://www.youtube.com/watch?v=3txYaF_IVZQ) terminal, and go for a
+coffee. 
+
+Now you can create a symlink to install directory including dependent
+libraries, using commands below
 ~~~~
 spack view symlink um_view mofem-cephas
 spack activate -v um_view mofem-users-modules
