@@ -473,7 +473,7 @@ mkdir $HOME/um_developer
 cd $HOME/um_developer/
 git clone -b develop https://likask@bitbucket.org/mofem/users-modules-cephas.git 
 spack setup mofem-users-modules@develop
-spack view --verbose symlink um_view mofem-cephas@0.8.7
+spack view --verbose symlink um_view mofem-cephas
 ./spconfig.py -DMOFEM_DIR=$HOME/um_view users-modules-cephas/ 
 make -j4
 ~~~~
