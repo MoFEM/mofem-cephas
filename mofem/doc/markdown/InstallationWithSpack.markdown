@@ -274,10 +274,10 @@ curl, if we need fetch something from external source, and finally build
 MoFEM with all dependencies
 ~~~~~
 spack install -j 8 gcc
-spack module load gcc
+spack load gcc
 spack compiler find
 spack install -j 8 curl
-spack module load curl
+spack load curl
 spack install -j 8 mofem-users-modules%gcc@8.1.0
 ~~~~~
 All this take some time, so you can run this on
