@@ -134,24 +134,25 @@ ctest -D Experimental
 Before you start this version, change directory to install directory
 ~~~~~~
 cd $MOFEM_INSTALL_DIR/users_modules
-~~~~~~
-Some elements still using some obsolete implementation which is gradually
-removed. At this stage you need to install "obsolete" for older user modules:
-~~~~~~
-git clone https://bitbucket.org/likask/mofem_um_obsolete users_modules/obsolete
-~~~~~~
-List of some additional users modules is available on the main page.
-
-~~~~~~
 # Configuration:
 cmake -DCMAKE_BUILD_TYPE=Release users_modules
-
 # Build:
 make -j4
+~~~~~~
 
-# Testing:
+# Testing {#ubuntu_testing}
+
+~~~~~~
 ctest -D Experimental
 ~~~~~~
 
-Note that results of the test are publish on MoFEM CDashTesting web page. If
-you do not like publish results pleas remove option ``-D Experimental``
+Note that results of the tests are publish on MoFEM CDashTesting web page. If you 
+do not wish to publish results remove option ``-D Experimental``
+
+# Adding users modules {#ubuntu_um_add}
+
+MoFEM is extendable and you can upload additional users modules, see some of the [here](@ref mod_gallery). You can upload them to the independent directory and provide a path by setting 
+~~~~~
+-DEXTERNAL_MODULE_SOURCE_DIRS=$PATH_TO_MY_DIR
+~~~~~
+or upload them to *$MOFEM_INSTALL_DIR/users_modules/users_modules*. You have to re-run cmake, build and test code.
