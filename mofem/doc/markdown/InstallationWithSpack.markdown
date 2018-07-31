@@ -497,7 +497,7 @@ cd lib/
 spack setup mofem-cephas@develop copy_user_modules=False
 ./spconfig.py $HOME/mofem_install/mofem-cephas/mofem/
 make -j4
-ctest -D Experimental
+ctest
 make install
 ~~~~~
 Next, install users modules
@@ -508,10 +508,10 @@ cd um/
 spack view --verbose symlink um_view mofem-cephas@develop
 mkdir build 
 cd build/
-spack setup mofem-users-modules@1.0 copy_user_modules=False mofem-cephas@develop
+spack setup mofem-users-modules@1.0 copy_user_modules=False ^mofem-cephas@develop
 ./spconfig.py -DMOFEM_DIR=../um_view $HOME/mofem_install/mofem-cephas/mofem/users_modules
 make -j4
-ctest -D Experimental
+ctest
 make install
 ~~~~~
 
@@ -521,7 +521,7 @@ in build process you can re-do steps
 ~~~~~
 ./spconfig.py -DMOFEM_DIR=../um_view $HOME/mofem_install/mofem-cephas/mofem/users_modules
 make -j4
-ctest -D Experimental
+ctest
 make install
 ~~~~~
 
@@ -533,7 +533,7 @@ snipped below
 -DMOFEM_DIR=../um_view \
 $HOME/mofem_install/mofem-cephas/mofem/users_modules
 make -j4
-ctest -D Experimental
+ctest
 make install
 ~~~~~
 
