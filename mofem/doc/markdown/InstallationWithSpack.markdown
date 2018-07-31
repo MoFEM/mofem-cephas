@@ -394,6 +394,9 @@ Create a script file with content as below and name it, for example, *job_spack*
 echo "$NSLOTS received"
 cat $PE_HOSTFILE
 
+# Load compiler
+module load gcc/6.4.0
+
 # List of commands which do the actual work
 cd $HOME/um_view/elasticity
 $HOME/um_view/bin/mpirun -np $NSLOTS \
