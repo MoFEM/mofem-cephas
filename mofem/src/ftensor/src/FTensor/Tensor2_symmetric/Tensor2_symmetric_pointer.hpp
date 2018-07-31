@@ -10,8 +10,15 @@ namespace FTensor
     mutable T *restrict data[(Tensor_Dim * (Tensor_Dim + 1)) / 2];
 
   public:
-    template <class... U> Tensor2_symmetric(U *... d) : data{d...}
-    {
+    template <class... U>
+    explicit Tensor2_symmetric(U *... d) : data{d...}, inc(1) {
+      static_assert(sizeof...(d) == sizeof(data) / sizeof(T),
+                    "Incorrect number of Arguments. Constructor should "
+                    "initialize the entire Tensor");
+    }
+
+    template <class... U>
+    explicit Tensor2_symmetric(const int i, U *... d) : data{d...}, inc(i) {
       static_assert(sizeof...(d) == sizeof(data) / sizeof(T),
                     "Incorrect number of Arguments. Constructor should "
                     "initialize the entire Tensor");
