@@ -25,8 +25,8 @@ You can start by downloading Spack and installing essential, as follows
 ~~~~~~
 git clone --single-branch -b mofem https://github.com/likask/spack.git
 . spack/share/spack/setup-env.sh
-. ${SPACK_ROOT}/share/spack/setup-env.sh
 spack bootstrap
+. ${SPACK_ROOT}/share/spack/setup-env.sh
 ~~~~~~
 
 Having spack installed you can install a basic version of MoFEM
@@ -120,7 +120,6 @@ to start. Clone Spack from GitHub and you’re ready to go:
 ~~~~~~
 git clone --single-branch -b mofem https://github.com/likask/spack.git
 . spack/share/spack/setup-env.sh
-. ${SPACK_ROOT}/share/spack/setup-env.sh
 ~~~~~~
 Note that we used forked Spack repository on GitHub. Forked Spack repository
 is under control of MoFEM developers, where we put most up to date changes in
@@ -129,6 +128,7 @@ the core library and users modules.
 You can install all other prerequisites needed by spack by calling command
 ~~~~~~
 spack bootstrap
+. ${SPACK_ROOT}/share/spack/setup-env.sh
 ~~~~~~
 
 # Installation of MoFEM {#spack_mofem}
