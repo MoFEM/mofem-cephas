@@ -145,7 +145,7 @@ enum FieldApproximationBase {
                           ///< base instead Legendre \cite beriot2015efficient
   AINSWORTH_BERNSTEIN_BEZIER_BASE, ///< Not yet implemented, in implementation
                                    ///< we will follow \cite
-                                   ///< ainsworth2011bernstein
+                                   ///< ainsworth2011bernstein and \cite ainsworth2018bernstein
   DEMKOWICZ_JACOBI_BASE, ///< Construction of base is by Demkowicz \cite
                          ///< fuentes2015orientation
   USER_BASE,             ///< user implemented approximation base
