@@ -112,7 +112,7 @@ For large meshes, partitioning can be in parallel, for example
 mpirun -np 2 $USER_MODULES/tools/mofem_part -my_file $USER_MODULES/basic_finite_elements/nonlinear_elasticity/examples/cylinder.cub -my_nparts 16
 \endcode
 
-\section running_multi_grid How to multi-grid solver via approximation orders?
+\section running_multi_grid How to run multi-grid solver via approximation orders?
 
 Code is run using direct solver, i.e. \em MUMPS on coarse level. Note that
 loaded mesh is portioned and each processor only reads part of the mesh, i.e.
@@ -136,55 +136,6 @@ mpirun -np 4 ./elasticity \
 - In line \code
 -mg_coarse_ksp_type preonly -mg_coarse_pc_type lu -mg_coarse_pc_factor_mat_solver_package mumps
 \endcode a direct solver for coarse mesh is set.
-
-
-\section update_on_memory_stick How to update MoFEM on Live USB Stick?
-
-MoFEM update on Live USB stick:
-\code
-mofem_update.sh
-mofem_build.sh
-\endcode
-
-Following command run test verifying updated code:
-\code
-mofem_fast_check.sh
-\endcode
-
-If you run MoFEM update at University of Glasgow behind proxy server, set proxy
-servers as follows:
-\code
-export http_proxy=http://wwwcache.gla.ac.uk:8080
-export https_proxy=http://wwwcache.gla.ac.uk:8080
-\endcode
-
-\section ctest How to run ctest?
-
-You can run tests and report results to MoFEM CDash web page. Form mofem user
-modules build directory executing  run script
-\code
-./bin/mofem_fast_check.sh
-\endcode
-Results of test can be seen on <http://cdash.eng.gla.ac.uk/cdash/>.
-
-Note that test tests for MoFEM library and \em User \em Modules are run independently
-and can be seen as a two different projects.
-
-If you run test behind proxy server you can have to set \em http_proxy and \em
-http_proxy environmental variables. For example if you run mofem at Glasgow
-University, please do:
-\code
-export http_proxy=http://wwwcache.gla.ac.uk:8080
-export https_proxy=http://wwwcache.gla.ac.uk:8080
-\endcode
-
-You can as well run ctest directly by simply executing command line:
-\code
-ctest -V -D Experimental
-\endcode
-where option -V sets verbose version and all test output is printed on screen
-and -D Experimental tels ctest to submit results to Experimental build on CDash
-MoFEM server.
 
 \section how_to_make_2nd_order_geometry How to make 2nd order geometry in cubit and transfer it to MoFEM?
 

@@ -3,12 +3,12 @@
 
 \section why_write_documentation Why write documentation?
 
-Code documentation is essential for its future. MoFEM will live only if others
-know how to use it. It is believed that not necessary the best code will survive but that
-one with the best documentation. Because all of that always document what you are doing in
-MoFEM.
+Code documentation is essential for its future. MoFEM will live only if
+others know how to use it. It is believed that not necessarily the best code
+will survive but that one with the best documentation. Because all of that
+always document what you are doing in MoFEM.
 
-- Good documentation allows revising your own code
+- Good documentation helps to revise your code
 
 - Help others to understand what you are doing
 
@@ -31,11 +31,11 @@ MoFEM.
 - Try to use examples which others can follow
 
 - First, you need to ask yourself who you’re writing for. At first, you
-generally just need to appeal to two audiences: Developers or Users.
+generally need to appeal to two audiences: Developers or Users.
 
 - In the first paragraph indicate to who you write this documentation what is proposed if it
 
-- Try to indicate level of difficulty.
+- Try to indicate a level of difficulty.
 
 - User references to another part of documentation if applicable
 
@@ -60,9 +60,9 @@ $MOFEM_DIR/htm/index.html
 Follow Doxygen <http://www.stack.nl/~dimitri/doxygen/index.html> to
 write your documentation files. Another option is Markdown which is
 supported by Doxygen <http://www.stack.nl/~dimitri/doxygen/manual/markdown.html>. Before you
-start you can look how existing documentation is written and follow that example.
+start, you can look how existing documentation is written and follow that example.
 
-- Useful list of command in Doxygen <http://www.stack.nl/~dimitri/doxygen/manual/commands.html>
+- A useful list of command in Doxygen <http://www.stack.nl/~dimitri/doxygen/manual/commands.html>
 
 - If you write general documentation about MoFEM, you locate your files in \em /doc/user_guide.
 
@@ -70,6 +70,7 @@ start you can look how existing documentation is written and follow that example
 
 - If documentation is about some \em user \em module, then place documentation
   files in user module directory, f.e. \em users_modules/nonlinear_elasticity/doc
+
 
 \section documentation_linked_figures Figures
 

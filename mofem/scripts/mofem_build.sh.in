@@ -6,7 +6,7 @@ MOFEM_INSTALL_PREFIX=@CMAKE_INSTALL_PREFIX@
 
 DATE=`date "+DATE-%Y-%m-%d_TIME_%H_%M_%S"`
 
-NBCORES=`cat /proc/cpuinfo | grep processor | wc -l`
+NBCORES=`getconf _NPROCESSORS_ONLN`
 NBMAX=12
 if (($NBCORES > $NBMAX)); then
   NB=$NBMAX
