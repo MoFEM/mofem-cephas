@@ -1,10 +1,19 @@
 Installation on OS X (Advanced) {#install_macosx}
 ===============================
 
+This type of installation is not advised, some dependent libraries like MoAB
+or PETSc have very complex dependencies and success of installation depends
+on the state of your OS, i.e. versions of compilers, installed packages and
+location of libraries. Installation could be time-consuming. In order to
+avoid unnecessary effort, we recommend that you will follow installation with
+[Spack](@ref install_spack).
+
 If you have any problems, feedback or would like to suggest corrections,
-please email [mofem-group@googlegroups.com](https://groups.google.com/forum/#!forum/mofem-group).
-Before you start you need to install
-XCode [https://developer.apple.com/xcode/downloads/](https://developer.apple.com/xcode/downloads/)
+please email
+[mofem-group@googlegroups.com](https://groups.google.com/forum/#!forum/mofem-group).
+
+Before you start you need to install XCode
+[https://developer.apple.com/xcode/downloads/](https://developer.apple.com/xcode/downloads/)
 and XQuartz
 [http://xquartz.macosforge.org/landing/](http://xquartz.macosforge.org/landing/).
 Had to run XCode standalone to say OK to license agreement.
@@ -84,8 +93,6 @@ cd $MOFEM_INSTALL_DIR/lib
 
 # Configuring and compiling code:
 cmake -DCMAKE_BUILD_TYPE=Release \
- -DCMAKE_C_FLAGS="-Wall" \
- -DCMAKE_CXX_FLAGS="-Wall -Wno-bind-to-temporary-copy -Wno-overloaded-virtual -Wno-sign-compare" \
  -DPETSC_DIR=$MOFEM_INSTALL_DIR/petsc/ -DPETSC_ARCH=arch-darwin-c-opt \
  -DMOAB_DIR=$MOFEM_INSTALL_DIR/petsc/arch-darwin-c-opt/  \
  -DWITH_ADOL-C=1 -DWITH_TETGEN=1 -DWITH_MED=1 \
@@ -104,21 +111,9 @@ ctest -D Experimental
 Before you start this version, change directory to install directory
 ~~~~~~
 cd $MOFEM_INSTALL_DIR/users_modules
-~~~~~~
-Some elements still using some obsolete implementation which is gradually
-removed. At this stage you need to install "obsolete" for user modules:
-~~~~~~
-git clone https://bitbucket.org/likask/mofem_um_obsolete users_modules/obsolete
-~~~~~~
-List of some additional users modules is available on the main page.
-
-~~~~~~
 # Configuration:
 cmake -DCMAKE_BUILD_TYPE=Release \
--DCMAKE_C_FLAGS="-Wall"  \
--DCMAKE_CXX_FLAGS="-Wall -Wno-bind-to-temporary-copy -Wno-overloaded-virtual -Wno-sign-compare" \
 -DCMAKE_EXE_LINKER_FLAGS="-L$MOFEM_INSTALL_DIR/local/lib" users_modules
-
 # Build:
 make -j4
 ~~~~~~
@@ -131,3 +126,11 @@ ctest -D Experimental
 
 Note that results of the tests are publish on MoFEM CDashTesting web page. If you 
 do not wish to publish results remove option ``-D Experimental``
+
+# Adding users modules {#macosx_um_add}
+
+MoFEM is extendable and you can upload additional users modules, see some of the [here](@ref mod_gallery). You can upload them to the independent directory and provide a path by setting 
+~~~~~
+-DEXTERNAL_MODULE_SOURCE_DIRS=$PATH_TO_MY_DIR
+~~~~~
+or upload them to *$MOFEM_INSTALL_DIR/users_modules/users_modules*. You have to re-run cmake, build and test code.

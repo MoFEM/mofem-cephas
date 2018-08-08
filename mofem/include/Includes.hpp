@@ -121,6 +121,7 @@
 #include <moab/Skinner.hpp>
 #include <moab/AdaptiveKDTree.hpp>
 #include <moab/OrientedBoxTreeTool.hpp>
+#include <moab/BVHTree.hpp>
 #include <moab/MeshTopoUtil.hpp>
 #include <moab/ReadUtilIface.hpp>
 #include <moab/GeomUtil.hpp>
