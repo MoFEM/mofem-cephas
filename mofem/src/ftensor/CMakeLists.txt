@@ -13,7 +13,7 @@
 
 include_directories("${PROJECT_SOURCE_DIR}/src/ftensor/src")
 
-if(MOFEM_BUILD_TETS)
+if(MOFEM_BUILD_TESTS)
   file(GLOB_RECURSE FTENSOR_CONFORMANCE_TEST_FILES
     ${PROJECT_SOURCE_DIR}/src/ftensor/tests/conformance/test_*.cpp
   )
@@ -43,10 +43,10 @@ if(MOFEM_BUILD_TETS)
     ${CMAKE_CURRENT_BINARY_DIR}/ftensor_conformance_test
   )
   add_subdirectory(${PROJECT_SOURCE_DIR}/src/ftensor/tests/speed)
-endif(MOFEM_BUILD_TETS)
+endif(MOFEM_BUILD_TESTS)
 
 if(ADOL-C_LIBRARY)
-  if(MOFEM_BUILD_TETS)
+  if(MOFEM_BUILD_TESTS)
     find_path(TAPLESS_ADOL-C adtl.h HINTS ${ADOL-C_DIR}/include/adolc)
     # message(STATUS ${TAPLESS_ADOL-C})
     # Older versions of ADOL-C have don't have tapeless functionality
@@ -72,7 +72,7 @@ if(ADOL-C_LIBRARY)
       ftensor_adloc_test ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
       ${CMAKE_CURRENT_BINARY_DIR}/ftensor_and_adolc_test
     )
-  endif(MOFEM_BUILD_TETS)
+  endif(MOFEM_BUILD_TESTS)
 endif(ADOL-C_LIBRARY)
 
 # Install header files
