@@ -113,4 +113,23 @@ if(STAND_ALLONE_USERS_MODULES)
     FILES_MATCHING 
     PATTERN "*.hpp"
     PATTERN "*.h")
+else(STAND_ALLONE_USERS_MODULES)
+  install(DIRECTORY DESTINATION ${CMAKE_INSTALL_PREFIX}/include)
+  file(
+    GLOB HEADER_FILES
+    RELATIVE ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/include/*.h*)
+  foreach(HF ${HEADER_FILES})
+    install(CODE
+      "
+      EXECUTE_PROCESS(
+      COMMAND 
+      ln -sf 
+      ${CMAKE_SOURCE_DIR}/include/${HF} 
+      ${CMAKE_INSTALL_PREFIX}/include/${HF}
+      )
+      MESSAGE(\"-- Linking ${CMAKE_INSTALL_PREFIX}/include/${HF}\")
+      "
+    )
+  endforeach(HF)
 endif(STAND_ALLONE_USERS_MODULES)
