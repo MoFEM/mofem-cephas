@@ -50,5 +50,5 @@ else(CBLAS_LIB)
 endif(CBLAS_LIB AND BLAS_FOUND)
 # target_compile_options(mofem_cblas PUBLIC "-Wno-macro-redefined")
 
-install(FILES cblas.h DESTINATION ${CMAKE_INSTALL_PREFIX}/include)
+#install(FILES cblas.h DESTINATION ${CMAKE_INSTALL_PREFIX}/include)
 install(TARGETS mofem_cblas DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
