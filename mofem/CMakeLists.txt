@@ -39,7 +39,7 @@ project(MoFEM C CXX)
 option(STAND_ALLONE_USERS_MODULES 
   "If if ON copy files, othrewise make link" OFF)
 option(WITHCOVERAGE "Add gcc coverage compile tags" OFF)
-option(MOFEM_BUILD_TETS "If is ON enbale testing" ON)
+option(MOFEM_BUILD_TESTS "If is ON enbale testing" ON)
 
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -251,10 +251,10 @@ set(PROJECT_LIBS ${OPTIONAL_PROJECT_LIBS} ${SYSTEM_PROJECT_LIBS})
 message(STATUS ${PROJECT_LIBS})
 
 # Add executable library form subdirectory
-if(MOFEM_BUILD_TETS)
+if(MOFEM_BUILD_TESTS)
   enable_testing()
   include(CTest)
-endif(MOFEM_BUILD_TETS)
+endif(MOFEM_BUILD_TESTS)
 # Add check for verbose testing
 add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --verbose)
 
@@ -270,9 +270,9 @@ add_subdirectory(${PROJECT_SOURCE_DIR}/third_party)
 add_subdirectory(${PROJECT_SOURCE_DIR}/src)
 add_subdirectory(${PROJECT_SOURCE_DIR}/users_modules.in)
 add_subdirectory(${PROJECT_SOURCE_DIR}/doc)
-if(MOFEM_BUILD_TETS)
+if(MOFEM_BUILD_TESTS)
   add_subdirectory(${PROJECT_SOURCE_DIR}/atom_tests)
-endif(MOFEM_BUILD_TETS)
+endif(MOFEM_BUILD_TESTS)
 
 # Generate config files
 configure_file(

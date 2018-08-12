@@ -51,4 +51,32 @@ if(STAND_ALLONE_USERS_MODULES)
     PATTERN "impl" EXCLUDE
     PATTERN "c_impl" EXCLUDE
     PATTERN "ftensor" EXCLUDE)
+  else(STAND_ALLONE_USERS_MODULES) 
+    file(
+     GLOB DIRS
+     RELATIVE ${CMAKE_SOURCE_DIR}/src
+     ${CMAKE_SOURCE_DIR}/src/*
+     ${CMAKE_SOURCE_DIR}/src/*/c)
+    foreach(DIR ${DIRS})
+      if(IS_DIRECTORY ${CMAKE_SOURCE_DIR}/src/${DIR})
+        install(DIRECTORY DESTINATION ${CMAKE_INSTALL_PREFIX}/include/${DIR})
+        file(
+          GLOB HEADER_FILES
+          RELATIVE ${CMAKE_SOURCE_DIR}/src/${DIR}
+          ${CMAKE_SOURCE_DIR}/src/${DIR}/*.h*)
+        foreach(HF ${HEADER_FILES})
+          install(CODE
+            "
+            EXECUTE_PROCESS(
+            COMMAND 
+            ln -sf 
+            ${CMAKE_SOURCE_DIR}/src/${DIR}/${HF} 
+            ${CMAKE_INSTALL_PREFIX}/include/${DIR}/${HF}
+            )
+            MESSAGE(\"-- Linking ${CMAKE_INSTALL_PREFIX}/include/${DIR}/${HF}\")
+            "
+          )
+        endforeach(HF)
+      endif(IS_DIRECTORY ${CMAKE_SOURCE_DIR}/src/${DIR})
+    endforeach(DIR)
 endif(STAND_ALLONE_USERS_MODULES)

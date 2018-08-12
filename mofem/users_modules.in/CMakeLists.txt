@@ -28,6 +28,7 @@ else(STAND_ALLONE_USERS_MODULES)
       EXECUTE_PROCESS(
         COMMAND ln -sf ${PROJECT_SOURCE_DIR}/users_modules ${CMAKE_INSTALL_PREFIX}/
       )
+      MESSAGE(\"-- Linking ${PROJECT_SOURCE_DIR}/users_modules\")
       "
     )
   else(CMAKE_HOST_UNIX)

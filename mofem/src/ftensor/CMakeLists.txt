@@ -13,7 +13,7 @@
 
 include_directories("${PROJECT_SOURCE_DIR}/src/ftensor/src")
 
-if(MOFEM_BUILD_TETS)
+if(MOFEM_BUILD_TESTS)
   file(GLOB_RECURSE FTENSOR_CONFORMANCE_TEST_FILES
     ${PROJECT_SOURCE_DIR}/src/ftensor/tests/conformance/test_*.cpp
   )
@@ -43,10 +43,10 @@ if(MOFEM_BUILD_TETS)
     ${CMAKE_CURRENT_BINARY_DIR}/ftensor_conformance_test
   )
   add_subdirectory(${PROJECT_SOURCE_DIR}/src/ftensor/tests/speed)
-endif(MOFEM_BUILD_TETS)
+endif(MOFEM_BUILD_TESTS)
 
 if(ADOL-C_LIBRARY)
-  if(MOFEM_BUILD_TETS)
+  if(MOFEM_BUILD_TESTS)
     find_path(TAPLESS_ADOL-C adtl.h HINTS ${ADOL-C_DIR}/include/adolc)
     # message(STATUS ${TAPLESS_ADOL-C})
     # Older versions of ADOL-C have don't have tapeless functionality
@@ -72,7 +72,7 @@ if(ADOL-C_LIBRARY)
       ftensor_adloc_test ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
       ${CMAKE_CURRENT_BINARY_DIR}/ftensor_and_adolc_test
     )
-  endif(MOFEM_BUILD_TETS)
+  endif(MOFEM_BUILD_TESTS)
 endif(ADOL-C_LIBRARY)
 
 # Install header files
@@ -87,6 +87,46 @@ if(STAND_ALLONE_USERS_MODULES)
     DIRECTORY
     ${PROJECT_SOURCE_DIR}/src/ftensor/src/FTensor
     DESTINATION
-    ${CMAKE_INSTALL_PREFIX}/include/ftensor
+    ${CMAKE_INSTALL_PREFIX}/include/ftensor/FTensor
   )
+else(STAND_ALLONE_USERS_MODULES)
+  install(DIRECTORY DESTINATION ${CMAKE_INSTALL_PREFIX}/include/ftensor)
+  install(DIRECTORY DESTINATION ${CMAKE_INSTALL_PREFIX}/include/ftensor/FTensor)
+  install(CODE
+    "
+    EXECUTE_PROCESS(
+    COMMAND 
+    ln -sf 
+    ${PROJECT_SOURCE_DIR}/src/ftensor/src/FTensor.hpp 
+    ${CMAKE_INSTALL_PREFIX}/include/ftensor/FTensor.hpp
+    )
+    MESSAGE(\"-- Linking ${CMAKE_INSTALL_PREFIX}/include/ftensor/FTensor.hpp\")
+    ")
+  file(
+    GLOB DIRS
+    RELATIVE ${PROJECT_SOURCE_DIR}/src/ftensor/src/FTensor
+    ${PROJECT_SOURCE_DIR}/src/ftensor/src/FTensor/*)
+  foreach(DIR ${DIRS})
+    if(IS_DIRECTORY ${PROJECT_SOURCE_DIR}/src/ftensor/src/FTensor/${DIR})
+      install(DIRECTORY 
+        DESTINATION ${CMAKE_INSTALL_PREFIX}/include/ftensor/FTensor/${DIR})
+      file(
+        GLOB HEADER_FILES
+        RELATIVE ${PROJECT_SOURCE_DIR}/src/ftensor/src/FTensor/${DIR}
+        ${PROJECT_SOURCE_DIR}/src/ftensor/src/FTensor/${DIR}/*.h*)
+      foreach(HF ${HEADER_FILES})
+        install(CODE
+          "
+          EXECUTE_PROCESS(
+          COMMAND 
+          ln -sf 
+          ${PROJECT_SOURCE_DIR}/src/ftensor/src/FTensor/${DIR}/${HF} 
+          ${CMAKE_INSTALL_PREFIX}/include/ftensor/FTensor/${DIR}/${HF}
+          )
+          MESSAGE(\"-- Linking ${CMAKE_INSTALL_PREFIX}/include/ftensor/FTensor/${DIR}/${HF}\")
+          "
+        )
+      endforeach(HF)
+    endif(IS_DIRECTORY ${PROJECT_SOURCE_DIR}/src/ftensor/src/FTensor/${DIR})
+  endforeach(DIR)
 endif(STAND_ALLONE_USERS_MODULES)

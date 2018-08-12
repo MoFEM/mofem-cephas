@@ -475,7 +475,7 @@ spack install mofem-cephas
 mkdir $HOME/um_developer
 cd $HOME/um_developer/
 git clone -b develop https://likask@bitbucket.org/mofem/users-modules-cephas.git 
-spack setup mofem-users-modules@develop
+spack setup mofem-users-modules@1.0
 spack view --verbose symlink um_view mofem-cephas
 ./spconfig.py -DMOFEM_DIR=$HOME/um_view users-modules-cephas/ 
 make -j4
@@ -607,6 +607,28 @@ Before you run the installation set, unset DYLD_LIBRARY_PATH, as follows
 ~~~~~
 export DYLD_LIBRARY_PATH=
 spack install mofem-users-modules
+~~~~~
+
+# FAQ {#spack_faq}
+
+## How to get packages installed today?
+
+Run command
+~~~~~
+spack find -p -L --start-date `date +%F`
+~~~~~
+and you will get 
+~~~~~
+-- darwin-elcapitan-x86_64 / clang@7.3.0-apple ------------------
+ugi2gm7    mofem-cephas@develop     /spack/opt/spack/darwin-elcapitan-x86_64/clang-7.3.0-apple/mofem-cephas-develop-ugi2gm7lydyjwmiwneefhxq7ahvpnuzc
+gu4uheh    mofem-users-modules@1.0  /spack/opt/spack/darwin-elcapitan-x86_64/clang-7.3.0-apple/mofem-users-modules-1.0-gu4uhehai3edtqow7kivuxgpw5lmvbxz
+~~~~~
+
+## How to check when and were packages were installed?
+
+Run command
+~~~~~
+ls -lhd `spack find -lp  | grep mofem | awk '{print $3}'`
 ~~~~~
 
 # Contact {#spack_contact}

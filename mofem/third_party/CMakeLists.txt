@@ -29,10 +29,10 @@ add_subdirectory(${PROJECT_SOURCE_DIR}/third_party/cblas)
 
 install(TARGETS mofem_third_party DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
 
-if(STAND_ALLONE_USERS_MODULES)
-  install(
-    DIRECTORY 
-    ${CMAKE_SOURCE_DIR}/third_party
-    DESTINATION 
-    ${CMAKE_INSTALL_PREFIX})
-endif(STAND_ALLONE_USERS_MODULES)
+# FIXME: Install directory, and other stuff, like kiss lib,
+# that should not be there.  It is for back compatibility.
+install(
+  DIRECTORY
+  ${CMAKE_SOURCE_DIR}/third_party
+  DESTINATION
+  ${CMAKE_INSTALL_PREFIX})
