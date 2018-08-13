@@ -32,7 +32,7 @@ spack bootstrap
 Having spack installed you can install a basic version of MoFEM
 ~~~~~~
 spack install mofem-users-modules
-spack view --verbose symlink um_view mofem-cephas
+spack view --verbose symlink -i um_view mofem-cephas
 spack activate -v um_view mofem-users-modules
 export PATH=$HOME/um_view/bin:$PATH
 ~~~~~~
@@ -150,7 +150,7 @@ into it. For a start read
 Basic installation of users modules is as short us
 ~~~~~~
 spack install mofem-users-modules
-spack view --verbose symlink  um_view mofem-cephas
+spack view --verbose symlink -i um_view mofem-cephas
 spack activate -v um_view mofem-users-modules
 ~~~~~~
 Spack will install all dependencies including core MoFEM library, PETSc and
@@ -185,7 +185,7 @@ You can but not have to add some users modules for example fracture module
 ~~~~~~
 spack install mofem-fracture-module
 cd $HOME
-spack view --verbose symlink um_view_foo mofem-cephas
+spack view --verbose symlink -i um_view_foo mofem-cephas
 spack activate -v um_view_foo mofem-fracture-module
  ~~~~~~
 or minimal surface equation tutorial module
@@ -216,7 +216,7 @@ view’s installed MoFEM packages are brought in to the view by symbolic or hard
 links, referencing the original Spack installation.
 ~~~~~~
 cd $HOME
-spack view --verbose symlink um_view mofem-cephas
+spack view --verbose symlink -i um_view mofem-cephas
 spack activate -v um_view mofem-users-modules
 ~~~~~~
 
@@ -287,7 +287,7 @@ easily go for a walk to Kelvingrove Park and come back.
 Now you can create a symlink to install directory including dependent
 libraries, using commands below
 ~~~~
-spack view symlink um_view mofem-cephas
+spack view symlink -i um_view mofem-cephas
 spack activate -v um_view mofem-users-modules
 ~~~~
 
@@ -295,8 +295,10 @@ spack activate -v um_view mofem-users-modules
 
 ### Installation {#spack_buckedhead_installation}
 
-Buckethead is a Linux cluster running Centos7. Install Spack and load cluster
-modules
+Buckethead is a Linux cluster running Centos7. More information about
+Buckethead you will find 
+[here](http://malmsteen.eng.gla.ac.uk/wiki/hpc-wiki/index.php/Resources#Buckethead). 
+Install Spack and load cluster modules
 ~~~~~
 module load gcc/6.4.0
 module load gridengine
@@ -344,7 +346,7 @@ At that point, we can follow the standard installation procedure, as follows
 ~~~~~
 spack bootstrap
 spack install mofem-users-modules
-spack view --verbose symlink um_view mofem-cephas
+spack view --verbose symlink -i um_view mofem-cephas
 spack activate -v um_view mofem-users-modules
 ~~~~~
 If needs you can add more users modules or compile them by yourself.
@@ -356,7 +358,7 @@ coffee.
 Now you can create a symlink to install directory including dependent
 libraries, using commands below
 ~~~~
-spack view symlink um_view mofem-cephas
+spack view symlink -i um_view mofem-cephas
 spack activate -v um_view mofem-users-modules
 ~~~~
 
@@ -423,7 +425,7 @@ This is an option for one who likes to play with the code, make changes and modi
 ~~~~
 spack install mofem-users-modules
 cd $HOME
-spack view --verbose symlink um_view mofem-cephas
+spack view --verbose symlink -i um_view mofem-cephas
 cd um_view
 mkdir build
 cmake \
@@ -446,7 +448,7 @@ code.
 ~~~~
 spack install mofem-users-modules
 cd $HOME
-spack view --verbose symlink um_view mofem-cephas
+spack view --verbose symlink -i um_view mofem-cephas
 mkdir $HOME/mod_developer
 cd mod_developer/
 git clone -b develop https://bitbucket.org/likask/mofem_um_minimal_surface_equation minimal_surface_equation
@@ -475,8 +477,8 @@ spack install mofem-cephas
 mkdir $HOME/um_developer
 cd $HOME/um_developer/
 git clone -b develop https://likask@bitbucket.org/mofem/users-modules-cephas.git 
-spack setup mofem-users-modules@1.0
-spack view --verbose symlink um_view mofem-cephas
+spack setup mofem-users-modules@develop
+spack view --verbose symlink -i um_view mofem-cephas
 ./spconfig.py -DMOFEM_DIR=$HOME/um_view users-modules-cephas/ 
 make -j4
 ~~~~
@@ -508,10 +510,10 @@ Next, install users modules
 cd $HOME/mofem_install
 mkdir um
 cd um/
-spack view --verbose symlink um_view mofem-cephas@develop
+spack view --verbose symlink -i um_view mofem-cephas@develop
 mkdir build 
 cd build/
-spack setup mofem-users-modules@1.0 copy_user_modules=False ^mofem-cephas@develop
+spack setup mofem-users-modules@develop copy_user_modules=False ^mofem-cephas@develop
 ./spconfig.py -DMOFEM_DIR=../um_view $HOME/mofem_install/mofem-cephas/mofem/users_modules
 make -j4
 ctest
@@ -621,7 +623,7 @@ and you will get
 ~~~~~
 -- darwin-elcapitan-x86_64 / clang@7.3.0-apple ------------------
 ugi2gm7    mofem-cephas@develop     /spack/opt/spack/darwin-elcapitan-x86_64/clang-7.3.0-apple/mofem-cephas-develop-ugi2gm7lydyjwmiwneefhxq7ahvpnuzc
-gu4uheh    mofem-users-modules@1.0  /spack/opt/spack/darwin-elcapitan-x86_64/clang-7.3.0-apple/mofem-users-modules-1.0-gu4uhehai3edtqow7kivuxgpw5lmvbxz
+gu4uheh    mofem-users-modules@develop  /spack/opt/spack/darwin-elcapitan-x86_64/clang-7.3.0-apple/mofem-users-modules-develop-gu4uhehai3edtqow7kivuxgpw5lmvbxz
 ~~~~~
 
 ## How to check when and were packages were installed?
