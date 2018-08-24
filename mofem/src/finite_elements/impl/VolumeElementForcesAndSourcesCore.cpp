@@ -848,7 +848,7 @@ VolumeElementForcesAndSourcesCoreOnSide::UserDataOperator::getNormal() {
 }
 
 MatrixDouble &VolumeElementForcesAndSourcesCoreOnSide::UserDataOperator::
-    getNormalsAtGaussPt() {
+    getNormalsAtGaussPts() {
   return getFaceFEPtr()->normalsAtGaussPts;
 }
 
@@ -862,9 +862,9 @@ MatrixDouble &VolumeElementForcesAndSourcesCoreOnSide::UserDataOperator::
  * \param gg gauss point number
  */
 ublas::matrix_row<MatrixDouble>
-VolumeElementForcesAndSourcesCoreOnSide::UserDataOperator::getNormalsAtGaussPt(
+VolumeElementForcesAndSourcesCoreOnSide::UserDataOperator::getNormalsAtGaussPts(
     const int gg) {
-  return ublas::matrix_row<MatrixDouble>(getNormalsAtGaussPt(), gg);
+  return ublas::matrix_row<MatrixDouble>(getNormalsAtGaussPts(), gg);
 }
 
 } // namespace MoFEM

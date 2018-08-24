@@ -514,13 +514,23 @@ struct VolumeElementForcesAndSourcesCoreOnSide
     of geometry is available.
 
      */
-    MatrixDouble &getNormalsAtGaussPt();
+    MatrixDouble &getNormalsAtGaussPts();
+
+    /// \deprecated use getNormalsAtGaussPts
+    DEPRECATED inline MatrixDouble &getNormalsAtGaussPt() {
+      return getNormalsAtGaussPts();
+    }
 
     /** \brief if higher order geometry return normals at Gauss pts.
      *
      * \param gg gauss point number
      */
-    ublas::matrix_row<MatrixDouble> getNormalsAtGaussPt(const int gg);
+    ublas::matrix_row<MatrixDouble> getNormalsAtGaussPts(const int gg);
+
+    /// \deprecated use getNormalsAtGaussPts
+    DEPRECATED inline auto getNormalsAtGaussPt(const int gg) {
+      return getNormalsAtGaussPts(gg);
+    }
 
     /** \brief get normal at integration points
 
@@ -528,7 +538,7 @@ struct VolumeElementForcesAndSourcesCoreOnSide
       \code
       double nrm2;
       FTensor::Index<'i',3> i;
-      auto t_normal = getTensor1NormalsAtGaussPt();
+      auto t_normal = getTensor1NormalsAtGaussPts();
       for(int gg = gg!=data.getN().size1();gg++) {
         nrm2 = sqrt(t_normal(i)*t_normal(i));
         ++t_normal;
@@ -536,15 +546,15 @@ struct VolumeElementForcesAndSourcesCoreOnSide
       \endcode
 
     */
-    inline auto getFTensor1NormalsAtGaussPt() {
-      double *ptr = &*getNormalsAtGaussPt().data().begin();
+    inline auto getFTensor1NormalsAtGaussPts() {
+      double *ptr = &*getNormalsAtGaussPts().data().begin();
       return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(ptr, &ptr[1],
                                                                 &ptr[2]);
     }
 
-    /// \deprecated use getFTensor1NormalsAtGaussPt
+    /// \deprecated use getFTensor1NormalsAtGaussPts
     DEPRECATED inline auto getTensor1NormalsAtGaussPt() {
-      return getFTensor1NormalsAtGaussPt();
+      return getFTensor1NormalsAtGaussPts();
     }
 
     /** \brief get face coordinates at Gauss pts.
