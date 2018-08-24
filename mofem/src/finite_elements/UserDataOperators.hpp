@@ -740,7 +740,7 @@ struct OpCalculateHdivVectorField
 template <int Tensor_Dim0, int Tensor_Dim1>
 struct OpCalculateHdivTensorField
     : public ForcesAndSourcesCore::UserDataOperator {
-      
+
   boost::shared_ptr<MatrixDouble> dataPtr;
   EntityHandle zeroType;
   int zero_side;
@@ -781,6 +781,57 @@ struct OpCalculateHdivTensorField
       }
       for (; bb != nb_base_functions; ++bb)
         ++t_n_hdiv;
+      ++t_data;
+    }
+    MoFEMFunctionReturn(0);
+  }
+};
+
+template <int Tensor_Dim0, int Tensor_Dim1>
+struct OpCalculateHdivTensorDivergence
+    : public ForcesAndSourcesCore::UserDataOperator {
+
+  boost::shared_ptr<MatrixDouble> dataPtr;
+  EntityHandle zeroType;
+  int zero_side;
+
+  OpCalculateHdivTensorDivergence(const std::string &field_name,
+                             boost::shared_ptr<MatrixDouble> &data_ptr,
+                             EntityType zero_type = MBTRI, int zero_side = 0)
+      : ForcesAndSourcesCore::UserDataOperator(
+            field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
+        dataPtr(data_ptr), zeroType(zero_type), zero_side(0) {
+    if (!dataPtr)
+      THROW_MESSAGE("Pointer is not set");
+  }
+
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        DataForcesAndSourcesCore::EntData &data) {
+    MoFEMFunctionBegin;
+    const int nb_dofs = data.getFieldData().size();
+    if (!nb_dofs)
+      MoFEMFunctionReturnHot(0);
+    const int nb_base_functions = data.getHdivN().size2() / Tensor_Dim1;
+    const int nb_integration_points = data.getHdivN().size1();
+    if (type == zeroType && side == 0) {
+      dataPtr->resize(Tensor_Dim0, nb_integration_points, false);
+      dataPtr->clear();
+    }
+    FTensor::Index<'i', Tensor_Dim0> i;
+    FTensor::Index<'j', Tensor_Dim1> j;
+    auto t_n_diff_hdiv = data.getFTensor2DiffHdivN<Tensor_Dim1>();
+    auto t_data = getFTensor1FromMat<Tensor_Dim0>(*dataPtr);
+    for (int gg = 0; gg != nb_integration_points; ++gg) {
+      auto t_dof = data.getFTensor1FieldData<Tensor_Dim0>();
+      int bb = 0;
+      for (; bb != nb_dofs / Tensor_Dim0; ++bb) {
+        double div = t_n_diff_hdiv(j, j);
+        t_data(i) += t_dof(i) * div;
+        ++t_n_diff_hdiv;
+        ++t_dof;
+      }
+      for (; bb != nb_base_functions; ++bb)
+        ++t_n_diff_hdiv;
       ++t_data;
     }
     MoFEMFunctionReturn(0);
