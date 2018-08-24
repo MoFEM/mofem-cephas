@@ -75,9 +75,9 @@ struct OpFace : public FaceElementForcesAndSourcesCore::UserDataOperator {
     if (type != MBVERTEX)
       MoFEMFunctionReturnHot(0);
     const int nb_int_pts = getGaussPts().size2();
-    auto t_normal = getTensor1NormalsAtGaussPt();
+    auto t_normal = getFTensor1NormalsAtGaussPts();
     auto t_w = getFTensor0IntegrationWeight();
-    auto t_coords = getTensor1HoCoordsAtGaussPts();
+    auto t_coords = getFTensor1HoCoordsAtGaussPts();
     FTensor::Index<'i', 3> i;
     double vol = 0;
     for (int gg = 0; gg != nb_int_pts; gg++) {

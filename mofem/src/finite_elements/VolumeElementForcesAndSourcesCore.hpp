@@ -538,7 +538,7 @@ struct VolumeElementForcesAndSourcesCoreOnSide
       \code
       double nrm2;
       FTensor::Index<'i',3> i;
-      auto t_normal = getTensor1NormalsAtGaussPts();
+      auto t_normal = getFTensor1NormalsAtGaussPts();
       for(int gg = gg!=data.getN().size1();gg++) {
         nrm2 = sqrt(t_normal(i)*t_normal(i));
         ++t_normal;

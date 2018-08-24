@@ -135,7 +135,7 @@ struct FaceElementForcesAndSourcesCore : public ForcesAndSourcesCore {
       return FTensor::Tensor1<double *, 3>(ptr, &ptr[1], &ptr[2]);
     }
     
-    /// \deprecated use getTensor1Normal()
+    /// \deprecated use getFTensor1Normal()
     DEPRECATED inline auto getTensor1Normal() { return getFTensor1Normal(); }
 
     /** \brief get tangentOne as tensor
