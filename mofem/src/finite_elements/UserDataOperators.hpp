@@ -335,9 +335,57 @@ MoFEMErrorCode OpCalculateTensor2FieldValues_General<
     DoubleAllocator>::doWork(int side, EntityType type,
                              DataForcesAndSourcesCore::EntData &data) {
   MoFEMFunctionBeginHot;
-  SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Not implemented yet");
+  const int nb_dofs = data.getFieldData().size();
+  const int nb_gauss_pts = data.getN().size1();
+  if (!nb_dofs && type == this->zeroType) {
+    dataPtr->resize(Tensor_Dim0 * Tensor_Dim1, 0, false);
+    MoFEMFunctionReturnHot(0);
+  }
+  if (!nb_dofs) {
+    MoFEMFunctionReturnHot(0);
+  }
+  const int nb_base_functions = data.getN().size2();
+  MatrixDouble &mat = *dataPtr;
+  if (type == zeroType) {
+    mat.resize(Tensor_Dim0 * Tensor_Dim1, nb_gauss_pts, false);
+    mat.clear();
+  }
+  auto base_function = data.getFTensor0N();
+  auto values_at_gauss_pts = getFTensor2FromMat<Tensor_Dim0, Tensor_Dim1>(mat);
+  FTensor::Index<'i', Tensor_Dim0> i;
+  FTensor::Index<'j', Tensor_Dim1> j;
+  const int size = nb_dofs / (Tensor_Dim0 * Tensor_Dim1);
+  for (int gg = 0; gg != nb_gauss_pts; ++gg) {
+    auto field_data = data.getFTensor2FieldData<Tensor_Dim0, Tensor_Dim1>();
+    int bb = 0;
+    for (; bb != size; ++bb) {
+      values_at_gauss_pts(i, j) += field_data(i, j) * base_function;
+      ++field_data;
+      ++base_function;
+    }
+    for (; bb != nb_base_functions; ++bb)
+      ++base_function;
+    ++values_at_gauss_pts;
+  }
   MoFEMFunctionReturnHot(0);
 }
+
+/** \brief Get values at integration pts for tensor filed rank 2, i.e. matrix
+ * field \ingroup mofem_forces_and_sources_user_data_operators
+ */
+template <int Tensor_Dim0, int Tensor_Dim1>
+struct OpCalculateTensor2FieldValues
+    : public OpCalculateTensor2FieldValues_General<
+          Tensor_Dim0, Tensor_Dim1, double, ublas::row_major, DoubleAllocator> {
+
+  OpCalculateTensor2FieldValues(
+      const std::string &field_name, boost::shared_ptr<MatrixDouble> &data_ptr,
+      EntityType zero_type = MBVERTEX)
+      : OpCalculateTensor2FieldValues_General<Tensor_Dim0, Tensor_Dim1, double,
+                                              ublas::row_major,
+                                              DoubleAllocator>(
+            field_name, data_ptr, zero_type) {}
+};
 
 // GET GRADIENTS AT GAUSS POINTS
 
@@ -650,12 +698,12 @@ MoFEMErrorCode OpCalculateHdivVectorField_General<
   const int nb_base_functions = data.getHdivN().size2() / Tensor_Dim;
   const int nb_integration_points = data.getHdivN().size1();
   if (type == zeroType && side == 0) {
-    dataPtr->resize(nb_integration_points, Tensor_Dim, false);
+    dataPtr->resize(Tensor_Dim, nb_integration_points,  false);
     dataPtr->clear();
   }
-  FTensor::Index<'i', 3> i;
+  FTensor::Index<'i', Tensor_Dim> i;
   auto t_n_hdiv = data.getFTensor1HdivN<Tensor_Dim>();
-  auto t_data = getFTensor1FromMat<3>(*dataPtr);
+  auto t_data = getFTensor1FromMat<Tensor_Dim>(*dataPtr);
   for (int gg = 0; gg != nb_integration_points; ++gg) {
     auto t_dof = data.getFTensor0FieldData();
     int bb = 0;
@@ -664,9 +712,8 @@ MoFEMErrorCode OpCalculateHdivVectorField_General<
       ++t_n_hdiv;
       ++t_dof;
     }
-    for (; bb < nb_base_functions; ++bb) {
+    for (; bb != nb_base_functions; ++bb) 
       ++t_n_hdiv;
-    }
     ++t_data;
   }
   MoFEMFunctionReturn(0);
@@ -688,6 +735,56 @@ struct OpCalculateHdivVectorField
       : OpCalculateHdivVectorField_General<Tensor_Dim, double, ublas::row_major,
                                            DoubleAllocator>(
             field_name, data_ptr, zero_type, zero_side) {}
+};
+
+template <int Tensor_Dim0, int Tensor_Dim1>
+struct OpCalculateHdivTensorField
+    : public ForcesAndSourcesCore::UserDataOperator {
+      
+  boost::shared_ptr<MatrixDouble> dataPtr;
+  EntityHandle zeroType;
+  int zero_side;
+
+  OpCalculateHdivTensorField(const std::string &field_name,
+                             boost::shared_ptr<MatrixDouble> &data_ptr,
+                             EntityType zero_type = MBTRI, int zero_side = 0)
+      : ForcesAndSourcesCore::UserDataOperator(
+            field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
+        dataPtr(data_ptr), zeroType(zero_type), zero_side(0) {
+    if (!dataPtr)
+      THROW_MESSAGE("Pointer is not set");
+  }
+
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        DataForcesAndSourcesCore::EntData &data) {
+    MoFEMFunctionBegin;
+    const int nb_dofs = data.getFieldData().size();
+    if (!nb_dofs)
+      MoFEMFunctionReturnHot(0);
+    const int nb_base_functions = data.getHdivN().size2() / Tensor_Dim1;
+    const int nb_integration_points = data.getHdivN().size1();
+    if (type == zeroType && side == 0) {
+      dataPtr->resize(Tensor_Dim0 * Tensor_Dim1, nb_integration_points, false);
+      dataPtr->clear();
+    }
+    FTensor::Index<'i', Tensor_Dim0> i;
+    FTensor::Index<'j', Tensor_Dim1> j;
+    auto t_n_hdiv = data.getFTensor1HdivN<Tensor_Dim1>();
+    auto t_data = getFTensor2FromMat<Tensor_Dim0, Tensor_Dim1>(*dataPtr);
+    for (int gg = 0; gg != nb_integration_points; ++gg) {
+      auto t_dof = data.getFTensor1FieldData<Tensor_Dim0>();
+      int bb = 0;
+      for (; bb != nb_dofs / Tensor_Dim0; ++bb) {
+        t_data(i, j) += t_dof(i) * t_n_hdiv(j);
+        ++t_n_hdiv;
+        ++t_dof;
+      }
+      for (; bb != nb_base_functions; ++bb)
+        ++t_n_hdiv;
+      ++t_data;
+    }
+    MoFEMFunctionReturn(0);
+  }
 };
 
 } // namespace MoFEM

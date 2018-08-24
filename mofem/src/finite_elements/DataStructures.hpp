@@ -253,6 +253,17 @@ struct DataForcesAndSourcesCore {
 
     inline VectorDouble &getFieldData() { return fieldData; }
 
+    /**
+     * @brief Return FTensor of rank 1, i.e. vector from filed data coeffinects
+     *
+     * \code
+     * auto t_vec = data.getFTensor1FieldData<3>();
+     * \endcode
+     *
+     * @tparam Tensor_Dim size of vector
+     * @return FTensor::Tensor1<FTensor::PackPtr<double *, Tensor_Dim>,
+     * Tensor_Dim>
+     */
     template <int Tensor_Dim>
     FTensor::Tensor1<FTensor::PackPtr<double *, Tensor_Dim>, Tensor_Dim>
     getFTensor1FieldData() {
@@ -261,6 +272,32 @@ struct DataForcesAndSourcesCore {
       THROW_MESSAGE(s.str());
     }
 
+    /**
+     * @brief  Return FTensor rank 2, i.e. matrix from filed data coeffinects
+     *
+     * \code
+     * auto t_mat = data.getFTensor2FieldData<3,3>();
+     * \endcode
+     *
+     * @tparam Tensor_Dim0
+     * @tparam Tensor_Dim1
+     * @return FTensor::Tensor2<FTensor::PackPtr<double *, Tensor_Dim0 * Tensor_Dim1>, Tensor_Dim0, Tensor_Dim1>
+     */
+    template <int Tensor_Dim0, int Tensor_Dim1>
+    FTensor::Tensor2<FTensor::PackPtr<double *, Tensor_Dim0 * Tensor_Dim1>,
+                     Tensor_Dim0, Tensor_Dim1>
+    getFTensor2FieldData() {
+      std::stringstream s;
+      s << "Not implemented for this dimension dim0 = " << Tensor_Dim0;
+      s << " and dim1 " << Tensor_Dim1;
+      THROW_MESSAGE(s.str());
+    }
+
+    /**
+     * @brief Resturn scalar files as a FTensor of rank 0
+     *
+     * @return FTensor::Tensor0<FTensor::PackPtr<double *,1> >
+     */
     FTensor::Tensor0<FTensor::PackPtr<double *,1> > getFTensor0FieldData();
 
     inline VectorDofs &getFieldDofs() { return dOfs; }
@@ -1310,6 +1347,10 @@ DataForcesAndSourcesCore::EntData::getFTensor1FieldData<3>();
 template <>
 FTensor::Tensor1<FTensor::PackPtr<double *, 2>, 2>
 DataForcesAndSourcesCore::EntData::getFTensor1FieldData<2>();
+
+template <>
+FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3>
+DataForcesAndSourcesCore::EntData::getFTensor2FieldData<3, 3>();
 
 template <>
 FTensor::Tensor1<double *, 3>

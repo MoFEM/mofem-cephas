@@ -274,7 +274,7 @@ FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>
 DataForcesAndSourcesCore::EntData::getFTensor1FieldData<3>() {
   if (dOfs[0]->getNbOfCoeffs() != 3) {
     std::stringstream s;
-    s << "Wrong number of coefficents is " << dOfs[0]->getNbOfCoeffs();
+    s << "Wrong number of coefficients is " << dOfs[0]->getNbOfCoeffs();
     s << " but you ask for tensor rank 1 dimension 3";
     THROW_MESSAGE(s.str());
   }
@@ -288,7 +288,7 @@ FTensor::Tensor1<FTensor::PackPtr<double *, 2>, 2>
 DataForcesAndSourcesCore::EntData::getFTensor1FieldData<2>() {
   if (dOfs[0]->getNbOfCoeffs() != 2) {
     std::stringstream s;
-    s << "Wrong number of coefficents is " << dOfs[0]->getNbOfCoeffs();
+    s << "Wrong number of coefficients is " << dOfs[0]->getNbOfCoeffs();
     s << " but you ask for tensor rank 1 dimension 3";
     THROW_MESSAGE(s.str());
   }
@@ -296,11 +296,27 @@ DataForcesAndSourcesCore::EntData::getFTensor1FieldData<2>() {
   return FTensor::Tensor1<FTensor::PackPtr<double *, 2>, 2>(ptr, &ptr[1]);
 }
 
+template <>
+FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3>
+DataForcesAndSourcesCore::EntData::getFTensor2FieldData<3, 3>() {
+  if (dOfs[0]->getNbOfCoeffs() != 9) {
+    std::stringstream s;
+    s << "Wrong number of coefficients is " << dOfs[0]->getNbOfCoeffs();
+    s << " but you ask for tensor rank 2 dimensions 3 by 3 so 9 coefficients "
+         "is expected";
+    THROW_MESSAGE(s.str());
+  }
+  double *ptr = &*fieldData.data().begin();
+  return FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3>(
+      ptr, &ptr[1], &ptr[2], &ptr[3], &ptr[4], &ptr[5], &ptr[6], &ptr[7],
+      &ptr[8]);
+}
+
 FTensor::Tensor0<FTensor::PackPtr<double *,1> >
 DataForcesAndSourcesCore::EntData::getFTensor0FieldData() {
   if (dOfs[0]->getNbOfCoeffs() != 1) {
     std::stringstream s;
-    s << "Wrong number of coefficents is " << dOfs[0]->getNbOfCoeffs();
+    s << "Wrong number of coefficients is " << dOfs[0]->getNbOfCoeffs();
     s << " but expected scalar field, tensor of rank 0";
     THROW_MESSAGE(s.str());
   }
