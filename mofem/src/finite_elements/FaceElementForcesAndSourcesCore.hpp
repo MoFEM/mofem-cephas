@@ -60,9 +60,9 @@ struct FaceElementForcesAndSourcesCore : public ForcesAndSourcesCore {
   std::string meshPositionsFieldName; ///< Name of the field with geometry
 
   MatrixDouble hoCoordsAtGaussPts;
-  MatrixDouble normalsAtGaussPt;
-  MatrixDouble tangentOneAtGaussPt;
-  MatrixDouble tangentTwoAtGaussPt;
+  MatrixDouble normalsAtGaussPts;
+  MatrixDouble tangentOneAtGaussPts;
+  MatrixDouble tangentTwoAtGaussPts;
   OpGetCoordsAndNormalsOnFace opHOCoordsAndNormals;
   OpSetContravariantPiolaTransformOnTriangle opContravariantTransform;
   OpSetCovariantPiolaTransformOnTriangle opCovariantTransform;
@@ -73,12 +73,12 @@ struct FaceElementForcesAndSourcesCore : public ForcesAndSourcesCore {
         derivedDataHcurl(dataHcurl), dataL2(MBTRI), derivedDataL2(dataL2),
         dataNoField(MBTRI), dataNoFieldCol(MBTRI),
         meshPositionsFieldName("MESH_NODE_POSITIONS"),
-        opHOCoordsAndNormals(hoCoordsAtGaussPts, normalsAtGaussPt,
-                             tangentOneAtGaussPt, tangentTwoAtGaussPt),
-        opContravariantTransform(nOrmal, normalsAtGaussPt),
-        opCovariantTransform(nOrmal, normalsAtGaussPt, tangentOne,
-                             tangentOneAtGaussPt, tangentTwo,
-                             tangentTwoAtGaussPt) {}
+        opHOCoordsAndNormals(hoCoordsAtGaussPts, normalsAtGaussPts,
+                             tangentOneAtGaussPts, tangentTwoAtGaussPts),
+        opContravariantTransform(nOrmal, normalsAtGaussPts),
+        opCovariantTransform(nOrmal, normalsAtGaussPts, tangentOne,
+                             tangentOneAtGaussPts, tangentTwo,
+                             tangentTwoAtGaussPts) {}
 
   /** \brief default operator for TRI element
    * \ingroup mofem_forces_and_sources_tri_element
@@ -296,7 +296,7 @@ struct FaceElementForcesAndSourcesCore : public ForcesAndSourcesCore {
      */
     inline MatrixDouble &getNormalsAtGaussPt() {
       return static_cast<FaceElementForcesAndSourcesCore *>(ptrFE)
-          ->normalsAtGaussPt;
+          ->normalsAtGaussPts;
     }
 
     /** \brief if higher order geometry return normals at Gauss pts.
@@ -306,7 +306,7 @@ struct FaceElementForcesAndSourcesCore : public ForcesAndSourcesCore {
     inline ublas::matrix_row<MatrixDouble> getNormalsAtGaussPt(const int gg) {
       return ublas::matrix_row<MatrixDouble>(
           static_cast<FaceElementForcesAndSourcesCore *>(ptrFE)
-              ->normalsAtGaussPt,
+              ->normalsAtGaussPts,
           gg);
     }
 
@@ -319,7 +319,7 @@ struct FaceElementForcesAndSourcesCore : public ForcesAndSourcesCore {
      */
     inline MatrixDouble &getTangent1AtGaussPt() {
       return static_cast<FaceElementForcesAndSourcesCore *>(ptrFE)
-          ->tangentOneAtGaussPt;
+          ->tangentOneAtGaussPts;
     }
 
     /** \brief if higher order geometry return tangent vector to triangle at
@@ -331,7 +331,7 @@ struct FaceElementForcesAndSourcesCore : public ForcesAndSourcesCore {
      */
     inline MatrixDouble &getTangent2AtGaussPt() {
       return static_cast<FaceElementForcesAndSourcesCore *>(ptrFE)
-          ->tangentTwoAtGaussPt;
+          ->tangentTwoAtGaussPts;
     }
 
     /** \brief get normal at integration points

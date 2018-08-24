@@ -390,9 +390,9 @@ MoFEMErrorCode FaceElementForcesAndSourcesCore::calculateHoNormal() {
     }
   } else {
     hoCoordsAtGaussPts.resize(0, 0, false);
-    normalsAtGaussPt.resize(0, 0, false);
-    tangentOneAtGaussPt.resize(0, 0, false);
-    tangentTwoAtGaussPt.resize(0, 0, false);
+    normalsAtGaussPts.resize(0, 0, false);
+    tangentOneAtGaussPts.resize(0, 0, false);
+    tangentTwoAtGaussPts.resize(0, 0, false);
   }
   MoFEMFunctionReturnHot(0);
 }

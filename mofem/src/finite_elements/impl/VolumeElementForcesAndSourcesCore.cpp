@@ -849,7 +849,7 @@ VolumeElementForcesAndSourcesCoreOnSide::UserDataOperator::getNormal() {
 
 MatrixDouble &VolumeElementForcesAndSourcesCoreOnSide::UserDataOperator::
     getNormalsAtGaussPt() {
-  return getFaceFEPtr()->normalsAtGaussPt;
+  return getFaceFEPtr()->normalsAtGaussPts;
 }
 
 MatrixDouble &VolumeElementForcesAndSourcesCoreOnSide::UserDataOperator::
