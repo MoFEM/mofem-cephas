@@ -738,6 +738,61 @@ struct OpCalculateHdivVectorField
 };
 
 /**
+ * @brief Calculate divergence of vector field
+ * 
+ * @tparam Tensor_Dim dimension of space
+ */
+template <int Tensor_Dim>
+struct OpCalculateHdivVectorDivergence
+    : public ForcesAndSourcesCore::UserDataOperator {
+
+  boost::shared_ptr<VectorDouble> dataPtr;
+  EntityHandle zeroType;
+  int zero_side;
+
+  OpCalculateHdivVectorDivergence(const std::string &field_name,
+                             boost::shared_ptr<VectorDouble> &data_ptr,
+                             EntityType zero_type = MBTRI, int zero_side = 0)
+      : ForcesAndSourcesCore::UserDataOperator(
+            field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
+        dataPtr(data_ptr), zeroType(zero_type), zero_side(0) {
+    if (!dataPtr)
+      THROW_MESSAGE("Pointer is not set");
+  }
+
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        DataForcesAndSourcesCore::EntData &data) {
+    MoFEMFunctionBegin;
+    const int nb_dofs = data.getFieldData().size();
+    if (!nb_dofs)
+      MoFEMFunctionReturnHot(0);
+    const int nb_base_functions = data.getHdivN().size2() / Tensor_Dim;
+    const int nb_integration_points = data.getHdivN().size1();
+    if (type == zeroType && side == 0) {
+      dataPtr->resize(nb_integration_points, false);
+      dataPtr->clear();
+    }
+    FTensor::Index<'i', Tensor_Dim> i;
+    auto t_n_diff_hdiv = data.getFTensor2DiffHdivN<Tensor_Dim>();
+    auto t_data = getFTensor0FromVec(*dataPtr);
+    for (int gg = 0; gg != nb_integration_points; ++gg) {
+      auto t_dof = data.getFTensor0FieldData();
+      int bb = 0;
+      for (; bb != nb_dofs; ++bb) {
+        double div = t_n_diff_hdiv(i, i);
+        t_data += t_dof * div;
+        ++t_n_diff_hdiv;
+        ++t_dof;
+      }
+      for (; bb != nb_base_functions; ++bb)
+        ++t_n_diff_hdiv;
+      ++t_data;
+    }
+    MoFEMFunctionReturn(0);
+  }
+};
+
+/**
  * @brief Calculate tenor field 
  * \ingroup mofem_forces_and_sources_user_data_operators
  * 
