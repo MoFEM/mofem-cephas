@@ -737,6 +737,13 @@ struct OpCalculateHdivVectorField
             field_name, data_ptr, zero_type, zero_side) {}
 };
 
+/**
+ * @brief Calculate tenor field 
+ * \ingroup mofem_forces_and_sources_user_data_operators
+ * 
+ * @tparam Tensor_Dim0 rank of the filed
+ * @tparam Tensor_Dim1 dimension of space
+ */
 template <int Tensor_Dim0, int Tensor_Dim1>
 struct OpCalculateHdivTensorField
     : public ForcesAndSourcesCore::UserDataOperator {
@@ -787,6 +794,13 @@ struct OpCalculateHdivTensorField
   }
 };
 
+/**
+ * @brief Calculate divergence of tonsorial field
+ * \ingroup mofem_forces_and_sources_user_data_operators
+ * 
+ * @tparam Tensor_Dim0 rank of the field
+ * @tparam Tensor_Dim1 dimension of space
+ */
 template <int Tensor_Dim0, int Tensor_Dim1>
 struct OpCalculateHdivTensorDivergence
     : public ForcesAndSourcesCore::UserDataOperator {
