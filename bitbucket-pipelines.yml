@@ -3,6 +3,8 @@ image: likask/ubuntu_mofem:latest
 pipelines:
   default:
     - step:
+        caches:
+          - docker
         script:
           - echo PWD $PWD
           - git submodule update --init mofem/users_modules
