@@ -773,7 +773,7 @@ struct OpCalculateHdivVectorDivergence
       dataPtr->clear();
     }
     FTensor::Index<'i', Tensor_Dim> i;
-    auto t_n_diff_hdiv = data.getFTensor2DiffHdivN<Tensor_Dim>();
+    auto t_n_diff_hdiv = data.getFTensor2DiffHdivN<Tensor_Dim, Tensor_Dim>();
     auto t_data = getFTensor0FromVec(*dataPtr);
     for (int gg = 0; gg != nb_integration_points; ++gg) {
       auto t_dof = data.getFTensor0FieldData();
@@ -888,7 +888,7 @@ struct OpCalculateHdivTensorDivergence
     }
     FTensor::Index<'i', Tensor_Dim0> i;
     FTensor::Index<'j', Tensor_Dim1> j;
-    auto t_n_diff_hdiv = data.getFTensor2DiffHdivN<Tensor_Dim1>();
+    auto t_n_diff_hdiv = data.getFTensor2DiffHdivN<Tensor_Dim1, Tensor_Dim1>();
     auto t_data = getFTensor1FromMat<Tensor_Dim0>(*dataPtr);
     for (int gg = 0; gg != nb_integration_points; ++gg) {
       auto t_dof = data.getFTensor1FieldData<Tensor_Dim0>();
