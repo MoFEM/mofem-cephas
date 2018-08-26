@@ -18,7 +18,7 @@ namespace MoFEM {
   \note Only function class members are allowed in this class. NO VARIABLES.
 
   \todo It is obsolete implementation, code should be moved to interface similar
-  to problem mambager
+  to problem manager.
 
   \todo While matrix is created is assumed that all entities on element are
   adjacent to each other, in some cases, this is created denser matrices than it
