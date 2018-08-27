@@ -648,7 +648,14 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCore::operator()() {
       if (oit->getOpType() & UserDataOperator::OPROW) {
         try {
           ierr = oit->opRhs(*op_data[0], false);
-          CHKERRG(ierr);
+          if (PetscUnlikely(ierr)) {
+            std::ostringstream ss;
+            ss << "(Calling user data operator "
+               << boost::typeindex::type_id_runtime(*oit).pretty_name() << ") "
+               << PETSC_FUNCTION_NAME;
+            return PetscError(PETSC_COMM_SELF, __LINE__, ss.str().c_str(),
+                              __FILE__, ierr, PETSC_ERROR_REPEAT, " ");
+          }
         } catch (std::exception &ex) {
           std::ostringstream ss;
           ss << "Operator "
@@ -666,7 +673,14 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCore::operator()() {
       if (oit->getOpType() & UserDataOperator::OPCOL) {
         try {
           ierr = oit->opRhs(*op_data[1], false);
-          CHKERRG(ierr);
+          if (PetscUnlikely(ierr)) {
+            std::ostringstream ss;
+            ss << "(Calling user data operator "
+               << boost::typeindex::type_id_runtime(*oit).pretty_name() << ") "
+               << PETSC_FUNCTION_NAME;
+            return PetscError(PETSC_COMM_SELF, __LINE__, ss.str().c_str(),
+                              __FILE__, ierr, PETSC_ERROR_REPEAT, " ");
+          }
         } catch (std::exception &ex) {
           std::ostringstream ss;
           ss << "Operator "
@@ -684,7 +698,14 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCore::operator()() {
       if (oit->getOpType() & UserDataOperator::OPROWCOL) {
         try {
           ierr = oit->opLhs(*op_data[0], *op_data[1], oit->sYmm);
-          CHKERRG(ierr);
+          if (PetscUnlikely(ierr)) {
+            std::ostringstream ss;
+            ss << "(Calling user data operator "
+               << boost::typeindex::type_id_runtime(*oit).pretty_name() << ") "
+               << PETSC_FUNCTION_NAME;
+            return PetscError(PETSC_COMM_SELF, __LINE__, ss.str().c_str(),
+                              __FILE__, ierr, PETSC_ERROR_REPEAT, " ");
+          }
         } catch (std::exception &ex) {
           std::ostringstream ss;
           ss << "Operator "
