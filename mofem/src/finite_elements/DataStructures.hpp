@@ -167,6 +167,19 @@ getFTensor2SymmetricFromMat(ublas::matrix<T, L, A> &data) {
 }
 
 /**
+ * @brief Get symmetric tensor rank 2 form matrix of for dimension 3
+ * 
+ * Specialisation for symmetric tensor 2
+ * 
+ * @tparam  
+ * @param data 
+ * @return FTensor::Tensor2_symmetric<FTensor::PackPtr<double *, 1>, 3> 
+ */
+template <>
+FTensor::Tensor2_symmetric<FTensor::PackPtr<double *, 1>, 3>
+getFTensor2SymmetricFromMat(MatrixDouble &data);
+
+/**
  * @brief Get symmetric tensor rank 2 form matrix
  * 
  * Specialisation for symmetric tensor 2
@@ -181,19 +194,6 @@ getFTensor2SymmetricFromMat(MatrixDouble &data) {
   return getFTensor2SymmetricFromMat<Tensor_Dim, double, ublas::row_major,
                             DoubleAllocator>(data);
 }
-
-/**
- * @brief Get symmetric tensor rank 2 form matrix of for dimension 3
- * 
- * Specialisation for symmetric tensor 2
- * 
- * @tparam  
- * @param data 
- * @return FTensor::Tensor2_symmetric<FTensor::PackPtr<double *, 1>, 3> 
- */
-template <>
-FTensor::Tensor2_symmetric<FTensor::PackPtr<double *, 1>, 3>
-getFTensor2SymmetricFromMat(MatrixDouble &data);
 
 /** \brief data structure for finite element entity
  * \ingroup mofem_forces_and_sources_user_data_operators
