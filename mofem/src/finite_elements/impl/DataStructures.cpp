@@ -1,5 +1,4 @@
 /** \file DataStructures.cpp
-
 \brief Implementation for Data Structures in Forces and Sources
 
 */
@@ -112,6 +111,18 @@ getFTensor2FromMat<3, 2, double, ublas::row_major, DoubleAllocator>(
     THROW_MESSAGE("Wrong size of data matrix");
   }
   return FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 3, 2>(
+      &data(0, 0), &data(1, 0), &data(2, 0), &data(3, 0), &data(4, 0),
+      &data(5, 0));
+}
+
+template <>
+FTensor::Tensor2_symmetric<FTensor::PackPtr<double *, 1>, 3>
+getFTensor2SymmetricFromMat<3, double, ublas::row_major, DoubleAllocator>(
+    MatrixDouble &data) {
+  if (data.size1() != 6) {
+    THROW_MESSAGE("Wrong size of data matrix");
+  }
+  return FTensor::Tensor2_symmetric<FTensor::PackPtr<double *, 1>, 3>(
       &data(0, 0), &data(1, 0), &data(2, 0), &data(3, 0), &data(4, 0),
       &data(5, 0));
 }
@@ -310,6 +321,22 @@ DataForcesAndSourcesCore::EntData::getFTensor2FieldData<3, 3>() {
   return FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3>(
       ptr, &ptr[1], &ptr[2], &ptr[3], &ptr[4], &ptr[5], &ptr[6], &ptr[7],
       &ptr[8]);
+}
+
+template <>
+FTensor::Tensor2_symmetric<FTensor::PackPtr<double *, 6>, 3>
+DataForcesAndSourcesCore::EntData::getFTensor2SymmetricFieldData<3>() {
+  if (dOfs[0]->getNbOfCoeffs() != 6) {
+    std::stringstream s;
+    s << "Wrong number of coefficients is " << dOfs[0]->getNbOfCoeffs();
+    s << " but you ask for symmetric tensor rank 2 dimensions 3 by 3 so 6 "
+         "coefficients "
+         "is expected";
+    THROW_MESSAGE(s.str());
+  }
+  double *ptr = &*fieldData.data().begin();
+  return FTensor::Tensor2_symmetric<FTensor::PackPtr<double *, 6>, 3>(
+      ptr, &ptr[1], &ptr[2], &ptr[3], &ptr[4], &ptr[5]);
 }
 
 FTensor::Tensor0<FTensor::PackPtr<double *,1> >

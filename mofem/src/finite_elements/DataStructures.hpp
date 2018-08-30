@@ -156,6 +156,45 @@ getTensor2FormData(MatrixDouble &data) {
   return getFTensor2FromMat<Tensor_Dim0, Tensor_Dim1>(data);
 }
 
+/**
+ * \brief Get symmetric tensor rank 2 (matrix) form data matrix
+ * \ingroup mofem_forces_and_sources_user_data_operators
+ */
+template <int Tensor_Dim, class T, class L, class A>
+FTensor::Tensor2_symmetric<FTensor::PackPtr<T *, 1>, Tensor_Dim>
+getFTensor2SymmetricFromMat(ublas::matrix<T, L, A> &data) {
+  static_assert(1, "not implemented");
+}
+
+/**
+ * @brief Get symmetric tensor rank 2 form matrix
+ * 
+ * Specialisation for symmetric tensor 2
+ * 
+ * @tparam Tensor_Dim 
+ * @param data 
+ * @return FTensor::Tensor2_symmetric<FTensor::PackPtr<double *, 1>, Tensor_Dim> 
+ */
+template <int Tensor_Dim>
+FTensor::Tensor2_symmetric<FTensor::PackPtr<double *, 1>, Tensor_Dim>
+getFTensor2SymmetricFromMat(MatrixDouble &data) {
+  return getFTensor2SymmetricFromMat<Tensor_Dim, double, ublas::row_major,
+                            DoubleAllocator>(data);
+}
+
+/**
+ * @brief Get symmetric tensor rank 2 form matrix of for dimension 3
+ * 
+ * Specialisation for symmetric tensor 2
+ * 
+ * @tparam  
+ * @param data 
+ * @return FTensor::Tensor2_symmetric<FTensor::PackPtr<double *, 1>, 3> 
+ */
+template <>
+FTensor::Tensor2_symmetric<FTensor::PackPtr<double *, 1>, 3>
+getFTensor2SymmetricFromMat(MatrixDouble &data);
+
 /** \brief data structure for finite element entity
  * \ingroup mofem_forces_and_sources_user_data_operators
  *
@@ -290,6 +329,26 @@ struct DataForcesAndSourcesCore {
       std::stringstream s;
       s << "Not implemented for this dimension dim0 = " << Tensor_Dim0;
       s << " and dim1 " << Tensor_Dim1;
+      THROW_MESSAGE(s.str());
+    }
+
+    /**
+     * @brief  Return symmetric FTensor rank 2, i.e. matrix from filed data coeffinects
+     *
+     * \code
+     * auto t_mat = data.getFTensor2SymmetricFieldData<3>();
+     * \endcode
+     *
+     * @tparam Tensor_Dim dimension of the tensor
+     * @return FTensor::Tensor2_symmetric<FTensor::PackPtr<double *, (Tensor_Dim * (Tensor_Dim + 1)) / 2>, Tensor_Dim>
+     */
+    template <int Tensor_Dim>
+    FTensor::Tensor2_symmetric<
+        FTensor::PackPtr<double *, (Tensor_Dim * (Tensor_Dim + 1)) / 2>,
+        Tensor_Dim>
+    getFTensor2SymmetricFieldData() {
+      std::stringstream s;
+      s << "Not implemented for this dimension dim = " << Tensor_Dim;
       THROW_MESSAGE(s.str());
     }
 
@@ -1351,6 +1410,10 @@ DataForcesAndSourcesCore::EntData::getFTensor1FieldData<2>();
 template <>
 FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3>
 DataForcesAndSourcesCore::EntData::getFTensor2FieldData<3, 3>();
+
+template <>
+FTensor::Tensor2_symmetric<FTensor::PackPtr<double *, 6>, 3>
+DataForcesAndSourcesCore::EntData::getFTensor2SymmetricFieldData<3>();
 
 template <>
 FTensor::Tensor1<double *, 3>
