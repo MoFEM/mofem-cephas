@@ -68,4 +68,36 @@ namespace FTensor
     return Dg_Expr<TensorExpr, typename promote<T, U>::V, Dim, Dim, j, k, i>(
       TensorExpr(a, b));
   }
+
+  /* A(i,j,k)+B(j,i,k) -> Dg(i,j,k) */
+
+  template <class A, class B, class T, class U, int Dim, char i, char j, char k>
+  class Dg_or_Dg_01
+  {
+    Dg_Expr<A, T, Dim, Dim, i, j, k> iterA;
+    Dg_Expr<B, U, Dim, Dim, j, i, k> iterB;
+
+  public:
+    typename promote<T, U>::V
+    operator()(const int N1, const int N2, const int N3) const
+    {
+      return iterA(N1, N2, N3) + iterB(N2, N1, N3);
+    }
+
+    Dg_or_Dg_01(const Dg_Expr<A, T, Dim, Dim, i, j, k> &a,
+                const Dg_Expr<B, U, Dim, Dim, j, i, k> &b)
+        : iterA(a), iterB(b)
+    {}
+  };
+
+  template <class A, class B, class T, class U, int Dim, char i, char j, char k>
+  Dg_Expr<Dg_or_Dg_01<A, B, T, U, Dim, i, j, k>, typename promote<T, U>::V, Dim,
+          Dim, j, i, k>
+  operator||(const Dg_Expr<A, T, Dim, Dim, i, j, k> &a,
+             const Dg_Expr<B, U, Dim, Dim, j, i, k> &b) {
+    using TensorExpr = Dg_or_Dg_01<A, B, T, U, Dim, i, j, k>;
+    return Dg_Expr<TensorExpr, typename promote<T, U>::V, Dim, Dim, j, i, k>(
+        TensorExpr(a, b));
+  }
+
 }
