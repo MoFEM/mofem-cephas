@@ -435,6 +435,8 @@ namespace FTensor
   class Dg<PackPtr<T *, I>, Tensor_Dim01, Tensor_Dim2>
       : public Dg<T *, Tensor_Dim01, Tensor_Dim2> {
 
+  public:
+
     template <class... U>
     Dg(U *... d) : Dg<T *, Tensor_Dim01, Tensor_Dim2>(d...) {}
 
