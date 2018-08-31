@@ -259,8 +259,9 @@ namespace FTensor
     /* The ++ operator increments the pointer, not the number that the
        pointer points to.  This allows iterating over a grid. */
 
-    const Tensor2_symmetric<PackPtr<double, I>, Tensor_Dim> &
-    operator++() const {
+    const Tensor2_symmetric<PackPtr<T, I>, Tensor_Dim> &
+    operator++() const
+    {
       for(int i = 0; i < (Tensor_Dim * (Tensor_Dim + 1)) / 2; ++i)
         Tensor2_symmetric<T *, Tensor_Dim>::data[i] += I;
       return *this;
