@@ -130,6 +130,9 @@ namespace FTensor
         }
     }
 
+    /* Initializations for varying numbers of elements. */
+    template <class... U> Tensor4(U *... d) : data{d...}, inc(1) {}
+
     /* There are two operator(int,int)'s, one for non-consts that lets you
        change the value, and one for consts that doesn't. */
 
@@ -213,6 +216,44 @@ namespace FTensor
     const Tensor4<T *, Tensor_Dim0, Tensor_Dim1, Tensor_Dim2, Tensor_Dim3> &
     operator++() const
     {
+      T4_increment(*this, Number<Tensor_Dim0>(), Number<Tensor_Dim1>(),
+                   Number<Tensor_Dim2>(), Number<Tensor_Dim3>());
+      return *this;
+    }
+  };
+
+  template <class T, int Tensor_Dim0, int Tensor_Dim1, int Tensor_Dim2,
+            int Tensor_Dim3, int I>
+  class Tensor4<PackPtr<T *, I>, Tensor_Dim0, Tensor_Dim1, Tensor_Dim2,
+                Tensor_Dim3> : public Tensor4<T *, Tensor_Dim0, Tensor_Dim1,
+                                              Tensor_Dim2, Tensor_Dim3> {
+
+  public:
+    Tensor4(T *d, const int shift)
+        : Tensor4<T *, Tensor_Dim0, Tensor_Dim1, Tensor_Dim2, Tensor_Dim3>(
+              d, shift) {}
+
+    template <class... U>
+    Tensor4(U *... d)
+        : Tensor4<T *, Tensor_Dim0, Tensor_Dim1, Tensor_Dim2, Tensor_Dim3>(
+              d...) {}
+
+    /* The ++ operator increments the pointer, not the number that the
+       pointer points to.  This allows iterating over a grid. */
+
+    template <int Current_Dim0, int Current_Dim1, int Current_Dim2,
+              int Current_Dim3>
+    inline void increment(const Number<Current_Dim0> &,
+                          const Number<Current_Dim1> &,
+                          const Number<Current_Dim2> &,
+                          const Number<Current_Dim3> &) const {
+      Tensor4<T *, Tensor_Dim0, Tensor_Dim1, Tensor_Dim2,
+              Tensor_Dim3>::data[Current_Dim0 - 1][Current_Dim1 - 1]
+                                [Current_Dim2 - 1][Current_Dim3 - 1] += I;
+    }
+
+    const Tensor4<T *, Tensor_Dim0, Tensor_Dim1, Tensor_Dim2, Tensor_Dim3> &
+    operator++() const {
       T4_increment(*this, Number<Tensor_Dim0>(), Number<Tensor_Dim1>(),
                    Number<Tensor_Dim2>(), Number<Tensor_Dim3>());
       return *this;
