@@ -206,41 +206,5 @@ namespace FTensor
       return operator=<Dg_number_rhs_0<A, T, N>, T>(result);
     }
 
-    /* ADOL-C */
-
-    template <class B, class U, int Dim1_0, int Dim1_1, char i_1, char j_1>
-    auto &operator<<=(const Tensor2_Expr<B, U, Dim1_0, Dim1_1, i_1, j_1> &rhs)
-    {
-      for(int ii = 0; ii < Dim0; ++ii)
-        for(int jj = 0; jj < Dim1; ++jj)
-          {
-            iter(ii, jj) <<= permute(*this, rhs, ii, jj);
-          }
-      return *this;
-    }
-
-    auto &operator<<=(
-      const Tensor2_Expr<Dg_number_rhs_0<A, T, N>, T, Dim0, Dim1, i, j> &result)
-    {
-      return operator<<=<Dg_number_rhs_0<A, T, N>, T>(result);
-    }
-
-    template <class B, class U, int Dim1_0, int Dim1_1, char i_1, char j_1>
-    auto &operator>>=(const Tensor2_Expr<B, U, Dim1_0, Dim1_1, i_1, j_1> &rhs)
-    {
-      for(int ii = 0; ii < Dim0; ++ii)
-        for(int jj = 0; jj < Dim1; ++jj)
-          {
-            iter(ii, jj) >>= permute(*this, rhs, ii, jj);
-          }
-      return *this;
-    }
-
-    auto &operator>>=(
-      const Tensor2_Expr<Dg_number_rhs_0<A, T, N>, T, Dim0, Dim1, i, j> &result)
-    {
-      return operator<<=<Dg_number_rhs_0<A, T, N>, T>(result);
-    }
-    
   };
 }
