@@ -151,7 +151,7 @@ namespace FTensor
         const Tensor3_Expr<B, U, Dim1_0, Dim1_1, Dim1_2, i_1, j_1, k_1> &rhs) {
       for (int ii = 0; ii < Dim0; ++ii)
         for (int jj = 0; jj < Dim1; ++jj)
-          for (int kk = 0; kk < Dim1; ++kk) {
+          for (int kk = 0; kk < Dim2; ++kk) {
             iter(ii, jj, N, kk) = permute(*this, rhs, ii, jj, kk);
           }
       return *this;
@@ -191,7 +191,7 @@ namespace FTensor
         const Tensor3_Expr<B, U, Dim1_0, Dim1_1, Dim1_2, i_1, j_1, k_1> &rhs) {
       for (int ii = 0; ii < Dim0; ++ii)
         for (int jj = 0; jj < Dim1; ++jj)
-          for (int kk = 0; kk < Dim1; ++kk) {
+          for (int kk = 0; kk < Dim2; ++kk) {
             iter(ii, jj, kk, N) = permute(*this, rhs, ii, jj, kk);
           }
       return *this;
