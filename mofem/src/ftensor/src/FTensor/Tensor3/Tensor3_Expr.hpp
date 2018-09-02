@@ -15,6 +15,8 @@
 #include "Tensor3_times_Tensor3.hpp"
 #include "Tensor3_times_generic.hpp"
 
+#include "../Tensor4/Tensor4_number.hpp"
+
 namespace FTensor
 {
   template <class A, class T, int Dim0, int Dim1, int Dim2, char i, char j,
@@ -121,4 +123,85 @@ namespace FTensor
       return *this;
     }
   };
+
+  /* Specialized for Tensor4_number_rhs_2  */
+
+  template <class A, class T, int Dim0, int Dim1, int Dim2, char i, char j,
+            char k, int N>
+  class Tensor3_Expr<Tensor4_number_rhs_2<A, T, N>, T, Dim0, Dim1, Dim2, i, j,
+                     k> {
+    A &iter;
+
+  public:
+    Tensor3_Expr(A &a) : iter(a) {}
+    T &operator()(const int N0, const int N1, const int N2) {
+      return iter(N0, N1, N2, N);
+    }
+    T operator()(const int N0, const int N1, const int N2) const {
+      return iter(N0, N1, N2, N);
+    }
+
+    /* Various assignment operators.  I have to explicitly declare the
+       second operator= because otherwise the compiler will generate its
+       own and not use the template code. */
+
+    template <class B, class U, int Dim1_0, int Dim1_1, int Dim1_2, char i_1,
+              char j_1, char k_1>
+    auto &operator=(
+        const Tensor3_Expr<B, U, Dim1_0, Dim1_1, Dim1_2, i_1, j_1, k_1> &rhs) {
+      for (int ii = 0; ii < Dim0; ++ii)
+        for (int jj = 0; jj < Dim1; ++jj)
+          for (int kk = 0; kk < Dim1; ++kk) {
+            iter(ii, jj, N, kk) = permute(*this, rhs, ii, jj, kk);
+          }
+      return *this;
+    }
+
+    auto &operator=(const Tensor3_Expr<Tensor4_number_rhs_2<A, T, N>, T, Dim0,
+                                       Dim1, Dim2, i, j, k> &result) {
+      return operator=<Tensor4_number_rhs_2<A, T, N>, T>(result);
+    }
+
+  };
+
+  /* Specialized for Tensor4_number_rhs_3  */
+
+  template <class A, class T, int Dim0, int Dim1, int Dim2, char i, char j,
+            char k, int N>
+  class Tensor3_Expr<Tensor4_number_rhs_3<A, T, N>, T, Dim0, Dim1, Dim2, i, j,
+                     k> {
+    A &iter;
+
+  public:
+    Tensor3_Expr(A &a) : iter(a) {}
+    T &operator()(const int N0, const int N1, const int N2) {
+      return iter(N0, N1, N2, N);
+    }
+    T operator()(const int N0, const int N1, const int N2) const {
+      return iter(N0, N1, N2, N);
+    }
+
+    /* Various assignment operators.  I have to explicitly declare the
+       second operator= because otherwise the compiler will generate its
+       own and not use the template code. */
+
+    template <class B, class U, int Dim1_0, int Dim1_1, int Dim1_2, char i_1,
+              char j_1, char k_1>
+    auto &operator=(
+        const Tensor3_Expr<B, U, Dim1_0, Dim1_1, Dim1_2, i_1, j_1, k_1> &rhs) {
+      for (int ii = 0; ii < Dim0; ++ii)
+        for (int jj = 0; jj < Dim1; ++jj)
+          for (int kk = 0; kk < Dim1; ++kk) {
+            iter(ii, jj, kk, N) = permute(*this, rhs, ii, jj, kk);
+          }
+      return *this;
+    }
+
+    auto &operator=(const Tensor3_Expr<Tensor4_number_rhs_3<A, T, N>, T, Dim0,
+                                       Dim1, Dim2, i, j, k> &result) {
+      return operator=<Tensor4_number_rhs_3<A, T, N>, T>(result);
+    }
+
+  };
+
 }

@@ -4,6 +4,7 @@
 
 #include "Tensor4_minus_Tensor4.hpp"
 #include "Tensor4_plus_Tensor4.hpp"
+#include "Tensor4_or_Tensor4.hpp"
 #include "Tensor4_times_Tensor2_single.hpp"
 #include "Tensor4_times_Tensor2_double.hpp"
 #include "Tensor4_times_Tensor2_symmetric.hpp"
