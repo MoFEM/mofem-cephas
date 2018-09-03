@@ -69,4 +69,29 @@ void test_T3_004(const Tensor3<double, 3, 3, 3> &t3_1) {
                             to_string(ll) + "," + to_string(kk) + ")");
         }
  }
+
+ // Tensor 3 times tensor 3 yield tensor 2 A(i,j,k)*B(j,i,l)
+ {
+   Tensor1<double, 3> t_1;
+   Tensor2<double, 3, 3> t_2;
+   for (int ii = 0; ii != 3; ++ii)
+     for (int jj = 0; jj != 3; ++jj) {
+       t_2(ii, jj) = ii + 10. * jj;
+     }
+   Tensor3<double, 3, 3, 3> t_3_1, t_3_2;
+   Index<'i', 3> i;
+   Index<'j', 3> j;
+   Index<'k', 3> k;
+   Index<'l', 3> l;
+   t_3_1(i, j, k) = t_2(i, j) * t_1(k);
+   t_3_2(i, j, k) = t_1(i) * t_2(j, k);
+   Tensor2<double, 3, 3> t_2_1;
+   t_2_1(k, l) = t_3_1(i, j, k) * t_3_2(j, i, l) -
+                 (t_2(i, j) * t_2(j, i)) * t_1(l) * t_1(k);
+   for (int ii = 0; ii != 3; ++ii)
+     for (int jj = 0; jj != 3; ++jj) {
+       test_for_zero(t_2_1(ii, jj), "A(i,j,k)*B(j,i,l)(" + to_string(ii) + "," +
+                                        to_string(jj) + ")");
+     }
+ }
 }
