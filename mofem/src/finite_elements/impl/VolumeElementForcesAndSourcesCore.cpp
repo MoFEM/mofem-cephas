@@ -151,9 +151,7 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCore::calculateVolumeAndJacobian() {
   MoFEMFunctionBegin;
   EntityHandle ent = numeredEntFiniteElementPtr->getEnt();
   CHKERR mField.get_moab().get_connectivity(ent, conn, num_nodes, true);
-  CHKERRQ_MOAB(rval);
   CHKERR mField.get_moab().get_coords(conn, num_nodes, &*coords.data().begin());
-  CHKERRQ_MOAB(rval);
   double diff_n[12];
   CHKERR ShapeDiffMBTET(diff_n);
   FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_diff_n(
