@@ -1407,9 +1407,9 @@ MoFEMErrorCode OpSetContravariantPiolaTransformOnTriangle::doWork(
       int dd = 0;
       for (; dd < nb_dofs; dd++) {
         double val = data.getHdivN(base)(gg, 3 * dd);
-        if (normalsAtGaussPt.size1() == (unsigned int)nb_gauss_pts) {
-          double l = cblas_dnrm2(3, &normalsAtGaussPt(gg, 0), 1);
-          cblas_dcopy(3, &normalsAtGaussPt(gg, 0), 1,
+        if (normalsAtGaussPts.size1() == (unsigned int)nb_gauss_pts) {
+          double l = cblas_dnrm2(3, &normalsAtGaussPts(gg, 0), 1);
+          cblas_dcopy(3, &normalsAtGaussPts(gg, 0), 1,
                       &data.getHdivN(base)(gg, 3 * dd), 1);
           cblas_dscal(3, val / pow(l, 2), &data.getHdivN(base)(gg, 3 * dd), 1);
         } else {
@@ -1482,14 +1482,14 @@ MoFEMErrorCode OpSetCovariantPiolaTransformOnTriangle::doWork(
               &diff_piola_n(0, HCURL2_0), &diff_piola_n(0, HCURL2_1));
 
       int cc = 0;
-      if (normalsAtGaussPt.size1() == (unsigned int)nb_gauss_pts) {
+      if (normalsAtGaussPts.size1() == (unsigned int)nb_gauss_pts) {
         // HO geometry is set, so jacobian is different at each gauss point
         FTensor::Tensor2<const double *, 3, 3> t_m_at_pts(
             &tangent0AtGaussPt(0, 0), &tangent1AtGaussPt(0, 0),
-            &normalsAtGaussPt(0, 0), &tangent0AtGaussPt(0, 1),
-            &tangent1AtGaussPt(0, 1), &normalsAtGaussPt(0, 1),
+            &normalsAtGaussPts(0, 0), &tangent0AtGaussPt(0, 1),
+            &tangent1AtGaussPt(0, 1), &normalsAtGaussPts(0, 1),
             &tangent0AtGaussPt(0, 2), &tangent1AtGaussPt(0, 2),
-            &normalsAtGaussPt(0, 2), 3);
+            &normalsAtGaussPts(0, 2), 3);
         for (int gg = 0; gg < nb_gauss_pts; ++gg) {
           ierr = determinantTensor3by3(t_m_at_pts, det);
           CHKERRG(ierr);

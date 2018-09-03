@@ -431,28 +431,28 @@ int main(int argc, char *argv[]) {
                                                 (const void **)&tn_ptr);
         
 
-        *tn_ptr = getTangent1AtGaussPt()(0, 0) * t_ptr[0] +
-                  getTangent1AtGaussPt()(0, 1) * t_ptr[1] +
-                  getTangent1AtGaussPt()(0, 2) * t_ptr[2] +
-                  getTangent2AtGaussPt()(0, 0) * t_ptr[0] +
-                  getTangent2AtGaussPt()(0, 1) * t_ptr[1] +
-                  getTangent2AtGaussPt()(0, 2) * t_ptr[2];
+        *tn_ptr = getTangent1AtGaussPts()(0, 0) * t_ptr[0] +
+                  getTangent1AtGaussPts()(0, 1) * t_ptr[1] +
+                  getTangent1AtGaussPts()(0, 2) * t_ptr[2] +
+                  getTangent2AtGaussPts()(0, 0) * t_ptr[0] +
+                  getTangent2AtGaussPts()(0, 1) * t_ptr[1] +
+                  getTangent2AtGaussPts()(0, 2) * t_ptr[2];
 
         int nb_dofs = data.getHcurlN().size2() / 3;
         int dd = 0;
         for (; dd < nb_dofs; dd++) {
           double val = data.getFieldData()[dd];
-          *tn_ptr += -getTangent1AtGaussPt()(0, 0) *
+          *tn_ptr += -getTangent1AtGaussPts()(0, 0) *
                          data.getHcurlN()(0, 3 * dd + 0) * val -
-                     getTangent1AtGaussPt()(0, 1) *
+                     getTangent1AtGaussPts()(0, 1) *
                          data.getHcurlN()(0, 3 * dd + 1) * val -
-                     getTangent1AtGaussPt()(0, 2) *
+                     getTangent1AtGaussPts()(0, 2) *
                          data.getHcurlN()(0, 3 * dd + 2) * val -
-                     getTangent2AtGaussPt()(0, 0) *
+                     getTangent2AtGaussPts()(0, 0) *
                          data.getHcurlN()(0, 3 * dd + 0) * val -
-                     getTangent2AtGaussPt()(0, 1) *
+                     getTangent2AtGaussPts()(0, 1) *
                          data.getHcurlN()(0, 3 * dd + 1) * val -
-                     getTangent2AtGaussPt()(0, 2) *
+                     getTangent2AtGaussPts()(0, 2) *
                          data.getHcurlN()(0, 3 * dd + 2) * val;
         }
 
@@ -500,12 +500,12 @@ int main(int argc, char *argv[]) {
                                                 (const void **)&tn_ptr);
         
 
-        *tn_ptr = getTangent1AtGaussPt()(0, 0) * t_ptr[0] +
-                  getTangent1AtGaussPt()(0, 1) * t_ptr[1] +
-                  getTangent1AtGaussPt()(0, 2) * t_ptr[2] +
-                  getTangent2AtGaussPt()(0, 0) * t_ptr[0] +
-                  getTangent2AtGaussPt()(0, 1) * t_ptr[1] +
-                  getTangent2AtGaussPt()(0, 2) * t_ptr[2];
+        *tn_ptr = getTangent1AtGaussPts()(0, 0) * t_ptr[0] +
+                  getTangent1AtGaussPts()(0, 1) * t_ptr[1] +
+                  getTangent1AtGaussPts()(0, 2) * t_ptr[2] +
+                  getTangent2AtGaussPts()(0, 0) * t_ptr[0] +
+                  getTangent2AtGaussPts()(0, 1) * t_ptr[1] +
+                  getTangent2AtGaussPts()(0, 2) * t_ptr[2];
 
         const double eps = 1e-8;
         if (fabs(*tn_ptr) > eps) {

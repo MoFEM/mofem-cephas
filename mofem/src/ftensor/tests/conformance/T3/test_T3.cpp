@@ -16,6 +16,9 @@ void test_T3_02(const Tensor1<double, 3> &t1_1, const Tensor1<double, 3> &t1_2,
                 const Tensor2<double, 3, 3> &t2_3);
 
 void test_T3_03(const Tensor3<double, 3, 3, 3> &t3_1);
+
+void test_T3_004(const Tensor3<double, 3, 3, 3> &t3_1);
+
 void test_T3_iostream();
 
 void test_T3(const Tensor1<double, 3> &t1_1, const Tensor1<double, 3> &t1_2,
@@ -29,5 +32,6 @@ void test_T3(const Tensor1<double, 3> &t1_1, const Tensor1<double, 3> &t1_2,
   test_T3_01(t1_1, t1_2, t2_2, t2_3, t2s_2, t2s_3, t3dg_2);
   test_T3_02(t1_1, t1_2, t2_2, t2_3);
   test_T3_03(t3_1);
+  test_T3_004(t3_1);
   test_T3_iostream();
 }

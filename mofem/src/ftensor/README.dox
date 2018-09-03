@@ -301,10 +301,6 @@ of dimensions. For example first two indices has dimension 2 and last two 4.
 
 \todo Some operators for symmetric tensor 3 on last two indices are not implemented.
 
-\todo Tensor4 that has symmetry on minor fist two and last two and major symmetry between fist and last two.
-
-\todo Tensor4 that has major symmetric only on first two and last two.
-
 \todo More documentation and examples. Documentation of functions and very limited at this point
 
 
