@@ -222,7 +222,7 @@ namespace FTensor
       TensorExpr(a, b));
   }
 
-    /* A(i,j,k)*B(j,l)->Tensor3 */
+  /* A(i,j,k)*B(j,l)->Tensor3 */
 
   template <class A, class B, class T, class U, int Dim0, int Dim, int Dim2,
             char i, char j, char k, char l>
@@ -250,7 +250,7 @@ namespace FTensor
     {}
     typename promote<T, U>::V operator()(const int N1, const int N2,
                                          const int N3) const {
-      return eval(N1, N2, N3, Number<Dim>());
+      return eval(N1, N3, N2, Number<Dim>());
     }
   };
 
@@ -274,8 +274,8 @@ namespace FTensor
   Tensor3_Expr<Tensor3_times_Tensor2_symmetric_1<A, B, T, U, Dim0, Dim, Dim2, i,
                                                  j, k, l>,
                typename promote<T, U>::V, Dim0, Dim, Dim2, i, l, k>
-  operator*(const Tensor2_symmetric_Expr<B, U, Dim, j, k> &b,
-            const Tensor3_Expr<A, T, Dim0, Dim, Dim, i, j, k> &a) {
+  operator*(const Tensor2_symmetric_Expr<B, U, Dim, j, l> &b,
+            const Tensor3_Expr<A, T, Dim0, Dim, Dim2, i, j, k> &a) {
     using TensorExpr = Tensor3_times_Tensor2_symmetric_1<A, B, T, U, Dim0, Dim,
                                                          Dim2, i, j, k, l>;
     return Tensor3_Expr<TensorExpr, typename promote<T, U>::V, Dim0, Dim, Dim2,
