@@ -213,9 +213,7 @@ namespace FTensor
         += inc;
     }
 
-    const Tensor4<T *, Tensor_Dim0, Tensor_Dim1, Tensor_Dim2, Tensor_Dim3> &
-    operator++() const
-    {
+    const Tensor4 &operator++() const {
       T4_increment(*this, Number<Tensor_Dim0>(), Number<Tensor_Dim1>(),
                    Number<Tensor_Dim2>(), Number<Tensor_Dim3>());
       return *this;
@@ -252,9 +250,7 @@ namespace FTensor
                                 [Current_Dim2 - 1][Current_Dim3 - 1] += I;
     }
 
-    const Tensor4<PackPtr<T *, I>, Tensor_Dim0, Tensor_Dim1, Tensor_Dim2,
-                  Tensor_Dim3> &
-    operator++() const {
+    const Tensor4 &operator++() const {
       T4_increment(*this, Number<Tensor_Dim0>(), Number<Tensor_Dim1>(),
                    Number<Tensor_Dim2>(), Number<Tensor_Dim3>());
       return *this;

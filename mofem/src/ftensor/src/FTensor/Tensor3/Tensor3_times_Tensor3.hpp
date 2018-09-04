@@ -417,7 +417,7 @@ namespace FTensor
                                    const Number<CurrentDim0> &,
                                    const Number<1> &) const {
       return iterA(CurrentDim0 - 1, 0, N1) * iterB(0, CurrentDim0 - 1, N2) +
-             eval(N1, N2, Number<CurrentDim0 - 1>(), Number<1>());
+             eval(N1, N2, Number<CurrentDim0 - 1>(), Number<Dim13>());
     }
     typename promote<T, U>::V eval(const int N1, const int N2,
                                    const Number<1> &, const Number<1> &) const {

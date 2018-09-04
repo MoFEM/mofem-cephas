@@ -184,9 +184,7 @@ namespace FTensor
       data[Current_Dim0 - 1][Current_Dim1 - 1][Current_Dim2 - 1] += inc;
     }
 
-    const Tensor3<T *, Tensor_Dim0, Tensor_Dim1, Tensor_Dim2> &
-    operator++() const
-    {
+    const Tensor3 &operator++() const {
       T3_increment(*this, Number<Tensor_Dim0>(), Number<Tensor_Dim1>(),
                    Number<Tensor_Dim2>());
       return *this;
@@ -257,8 +255,7 @@ namespace FTensor
                                 [Current_Dim2 - 1] += I;
     }
 
-    const Tensor3<PackPtr<T *, I>, Tensor_Dim0, Tensor_Dim1, Tensor_Dim2> &
-    operator++() const {
+    const Tensor3 &operator++() const {
       T3_increment(*this, Number<Tensor_Dim0>(), Number<Tensor_Dim1>(),
                    Number<Tensor_Dim2>());
       return *this;

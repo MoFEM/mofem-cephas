@@ -151,9 +151,7 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCore::calculateVolumeAndJacobian() {
   MoFEMFunctionBegin;
   EntityHandle ent = numeredEntFiniteElementPtr->getEnt();
   CHKERR mField.get_moab().get_connectivity(ent, conn, num_nodes, true);
-  CHKERRQ_MOAB(rval);
   CHKERR mField.get_moab().get_coords(conn, num_nodes, &*coords.data().begin());
-  CHKERRQ_MOAB(rval);
   double diff_n[12];
   CHKERR ShapeDiffMBTET(diff_n);
   FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_diff_n(
@@ -177,29 +175,29 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCore::calculateVolumeAndJacobian() {
 MoFEMErrorCode
 VolumeElementForcesAndSourcesCore::calculateCoordinatesAtGaussPts() {
   MoFEMFunctionBegin;
-    // Get coords at Gauss points
-    FTensor::Index<'i', 3> i;
-    double *shape_functions_ptr =
-        &*dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin();
-    coordsAtGaussPts.resize(nbGaussPts, 3, false);
-    coordsAtGaussPts.clear();
-    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_coords_at_gauss_ptr(
-        &coordsAtGaussPts(0, 0), &coordsAtGaussPts(0, 1),
-        &coordsAtGaussPts(0, 2));
-    FTensor::Tensor0<double *> t_shape_functions(shape_functions_ptr);
-    for (unsigned int gg = 0; gg < nbGaussPts; gg++) {
-      FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_coords(
-          &coords[0], &coords[1], &coords[2]);
-      for (int bb = 0; bb < 4; bb++) {
-        t_coords_at_gauss_ptr(i) += t_coords(i) * t_shape_functions;
-        ++t_coords;
-        ++t_shape_functions;
-      };
-      ++t_coords_at_gauss_ptr;
-    }
-
-  MoFEMFunctionReturn(0);
+  // Get coords at Gauss points
+  FTensor::Index<'i', 3> i;
+  double *shape_functions_ptr =
+      &*dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin();
+  coordsAtGaussPts.resize(nbGaussPts, 3, false);
+  coordsAtGaussPts.clear();
+  FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_coords_at_gauss_ptr(
+      &coordsAtGaussPts(0, 0), &coordsAtGaussPts(0, 1),
+      &coordsAtGaussPts(0, 2));
+  FTensor::Tensor0<FTensor::PackPtr<double *, 1>> t_shape_functions(
+      shape_functions_ptr);
+  for (unsigned int gg = 0; gg < nbGaussPts; gg++) {
+    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_coords(
+        &coords[0], &coords[1], &coords[2]);
+    for (int bb = 0; bb < 4; bb++) {
+      t_coords_at_gauss_ptr(i) += t_coords(i) * t_shape_functions;
+      ++t_coords;
+      ++t_shape_functions;
+    };
+    ++t_coords_at_gauss_ptr;
   }
+  MoFEMFunctionReturn(0);
+}
 
 MoFEMErrorCode
 VolumeElementForcesAndSourcesCore::getSpaceBaseAndOrderOnElement() {
