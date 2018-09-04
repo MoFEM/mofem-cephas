@@ -1,14 +1,13 @@
 Installation with Spack (Recommended for HPC, Linux & Mac OS X) {#install_spack}
 ==========================================================
 
-All that you need to know about [Spack](https://spack.io) and more you find
-here [https://spack.io](https://spack.io). For short Spack is a package
-manager for supercomputers, Linux, and Mac OS X. It is designed to make
-installation of scientific packages as easy as possible.
+Spack is "A flexible package manager that supports multiple versions, configurations, platforms, and compilers." - [https://spack.io](https://spack.io)
 
-If you have any problems, feedback or would like to suggest corrections,
+A community of Spack users and developers contribute to developing package configurations for a range of platforms, including MacOS and Linux. This creates a consistant build setup for a range of scientific packages.
+
+MoFEM can be deployed and developed using Spack, and is the recommended way of installing. If you have any problems, feedback or would like to suggest correction,
 please email
-[mofem-group@googlegroups.com](https://groups.google.com/forum/#!forum/mofem-group)..
+[mofem-group@googlegroups.com](https://groups.google.com/forum/#!forum/mofem-group).
 
 [TOC]
 
