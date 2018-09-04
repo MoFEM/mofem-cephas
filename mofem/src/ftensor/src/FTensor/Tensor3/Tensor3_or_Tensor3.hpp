@@ -59,6 +59,30 @@ namespace FTensor
     {}
   };
 
+  /* A(i,j,k)+B(j,i,k)->Dg */
+
+  template <class A, class B, class T, class U, int Dim02, int Dim1, char i,
+            char j, char k>
+  class Tensor3_or_Tensor3<A, B, T, U, Dim02, Dim1, Dim02, Dim02, Dim1, Dim02,
+                           i, j, k, j, i, k>
+  {
+    Tensor3_Expr<A, T, Dim02, Dim1, Dim02, i, j, k> iterA;
+    Tensor3_Expr<B, U, Dim02, Dim1, Dim02, j, i, k> iterB;
+
+  public:
+    typename promote<T, U>::V
+    operator()(const int N1, const int N2, const int N3) const
+    {
+      return iterA(N1, N2, N3) + iterB(N2, N1, N3);
+    }
+
+    Tensor3_or_Tensor3(
+      const Tensor3_Expr<A, T, Dim02, Dim1, Dim02, i, j, k> &a,
+      const Tensor3_Expr<B, U, Dim02, Dim1, Dim02, j, i, k> &b)
+        : iterA(a), iterB(b)
+    {}
+  };
+  
   template <class A, class B, class T, class U, int Dim0_0, int Dim1_0,
             int Dim2_0, int Dim0_1, int Dim1_1, int Dim2_1, char i0, char j0,
             char k0, char i1, char j1, char k1>
@@ -66,17 +90,19 @@ namespace FTensor
   operator||(const Tensor3_Expr<A, T, Dim0_0, Dim1_0, Dim2_0, i0, j0, k0> &a,
              const Tensor3_Expr<B, U, Dim0_1, Dim1_1, Dim2_1, i1, j1, k1> &b)
   {
-    using TensorExpr
-      = Tensor3_or_Tensor3<A, B, T, U, Dim0_0, Dim1_0, Dim2_0, Dim0_1, Dim1_1,
+    using TensorExpr =
+        Tensor3_or_Tensor3<A, B, T, U, Dim0_0, Dim1_0, Dim2_0, Dim0_1, Dim1_1,
                            Dim2_1, i0, j0, k0, i1, j1, k1>;
     static_assert(
-      !std::is_empty<TensorExpr>::value,
-      "Indexes or Dimensions are not compatible with the || operator");
+        !std::is_empty<TensorExpr>::value,
+        "Indexes or Dimensions are not compatible with the || operator");
 
     // Definition of Helper constexpr variables
-    constexpr char i = (i0 == i1) ? j0 : i0, j = (i0 == i1) ? i0 : j0;
+    constexpr char i = (k0 == i1 || k0 == j1) ? ((i0 == i1) ? j0 : i0) : i0;
+    constexpr char j = (k0 == i1 || k0 == j1) ? k0 : j0;
+    constexpr char k = (k0 == i1 || k0 == j1) ? ((i0 == i1) ? i0 : j0) : k0;
 
     return Dg_Expr<TensorExpr, typename promote<T, U>::V, Dim0_0, Dim1_0, i,
-                   k0, j>(TensorExpr(a, b));
+                   j, k>(TensorExpr(a, b));
   }
 }

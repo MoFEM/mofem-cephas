@@ -328,15 +328,15 @@ int main(int argc, char *argv[]) {
       double *tn_ptr;
       rval = m_field.get_moab().tag_get_by_ptr(tH2,&face,1,(const void **)&tn_ptr); CHKERRG(rval);
 
-      *tn_ptr = getNormalsAtGaussPt()(0,0)*t_ptr[0]+getNormalsAtGaussPt()(0,1)*t_ptr[1]+getNormalsAtGaussPt()(0,2)*t_ptr[2];
+      *tn_ptr = getNormalsAtGaussPts()(0,0)*t_ptr[0]+getNormalsAtGaussPts()(0,1)*t_ptr[1]+getNormalsAtGaussPts()(0,2)*t_ptr[2];
 
       int nb_dofs = data.getHdivN().size2()/3;
       int dd = 0;
       for(;dd<nb_dofs;dd++) {
         *tn_ptr +=
-        -getNormalsAtGaussPt()(0,0)*data.getHdivN()(0,3*dd+0)*data.getFieldData()[dd]
-        -getNormalsAtGaussPt()(0,1)*data.getHdivN()(0,3*dd+1)*data.getFieldData()[dd]
-        -getNormalsAtGaussPt()(0,2)*data.getHdivN()(0,3*dd+2)*data.getFieldData()[dd];
+        -getNormalsAtGaussPts()(0,0)*data.getHdivN()(0,3*dd+0)*data.getFieldData()[dd]
+        -getNormalsAtGaussPts()(0,1)*data.getHdivN()(0,3*dd+1)*data.getFieldData()[dd]
+        -getNormalsAtGaussPts()(0,2)*data.getHdivN()(0,3*dd+2)*data.getFieldData()[dd];
       }
 
       const double eps = 1e-8;
@@ -386,7 +386,7 @@ int main(int argc, char *argv[]) {
       double *tn_ptr;
       rval = m_field.get_moab().tag_get_by_ptr(tH2,&face,1,(const void **)&tn_ptr); CHKERRG(rval);
 
-      *tn_ptr = getNormalsAtGaussPt()(0,0)*t_ptr[0]+getNormalsAtGaussPt()(0,1)*t_ptr[1]+getNormalsAtGaussPt()(0,2)*t_ptr[2];
+      *tn_ptr = getNormalsAtGaussPts()(0,0)*t_ptr[0]+getNormalsAtGaussPts()(0,1)*t_ptr[1]+getNormalsAtGaussPts()(0,2)*t_ptr[2];
 
       const double eps = 1e-8;
       if(fabs(*tn_ptr)>eps) {

@@ -1,5 +1,4 @@
 /** \file FaceElementForcesAndSourcesCore.hpp
-
   \brief Implementation of face element.
 
   Those element are inherited by user to implement specific implementation of
@@ -60,9 +59,9 @@ struct FaceElementForcesAndSourcesCore : public ForcesAndSourcesCore {
   std::string meshPositionsFieldName; ///< Name of the field with geometry
 
   MatrixDouble hoCoordsAtGaussPts;
-  MatrixDouble normalsAtGaussPt;
-  MatrixDouble tangentOneAtGaussPt;
-  MatrixDouble tangentTwoAtGaussPt;
+  MatrixDouble normalsAtGaussPts;
+  MatrixDouble tangentOneAtGaussPts;
+  MatrixDouble tangentTwoAtGaussPts;
   OpGetCoordsAndNormalsOnFace opHOCoordsAndNormals;
   OpSetContravariantPiolaTransformOnTriangle opContravariantTransform;
   OpSetCovariantPiolaTransformOnTriangle opCovariantTransform;
@@ -73,12 +72,12 @@ struct FaceElementForcesAndSourcesCore : public ForcesAndSourcesCore {
         derivedDataHcurl(dataHcurl), dataL2(MBTRI), derivedDataL2(dataL2),
         dataNoField(MBTRI), dataNoFieldCol(MBTRI),
         meshPositionsFieldName("MESH_NODE_POSITIONS"),
-        opHOCoordsAndNormals(hoCoordsAtGaussPts, normalsAtGaussPt,
-                             tangentOneAtGaussPt, tangentTwoAtGaussPt),
-        opContravariantTransform(nOrmal, normalsAtGaussPt),
-        opCovariantTransform(nOrmal, normalsAtGaussPt, tangentOne,
-                             tangentOneAtGaussPt, tangentTwo,
-                             tangentTwoAtGaussPt) {}
+        opHOCoordsAndNormals(hoCoordsAtGaussPts, normalsAtGaussPts,
+                             tangentOneAtGaussPts, tangentTwoAtGaussPts),
+        opContravariantTransform(nOrmal, normalsAtGaussPts),
+        opCovariantTransform(nOrmal, normalsAtGaussPts, tangentOne,
+                             tangentOneAtGaussPts, tangentTwo,
+                             tangentTwoAtGaussPts) {}
 
   /** \brief default operator for TRI element
    * \ingroup mofem_forces_and_sources_tri_element
@@ -131,23 +130,36 @@ struct FaceElementForcesAndSourcesCore : public ForcesAndSourcesCore {
 
     /** \brief get normal as tensor
      */
-    inline FTensor::Tensor1<double *, 3> getTensor1Normal() {
+    inline auto getFTensor1Normal() {
       double *ptr = &*getNormal().data().begin();
       return FTensor::Tensor1<double *, 3>(ptr, &ptr[1], &ptr[2]);
     }
+    
+    /// \deprecated use getFTensor1Normal()
+    DEPRECATED inline auto getTensor1Normal() { return getFTensor1Normal(); }
 
     /** \brief get tangentOne as tensor
      */
-    inline FTensor::Tensor1<double *, 3> getTensor1Tangent1() {
+    inline auto getFTensor1Tangent1() {
       double *ptr = &*getTangent1().data().begin();
       return FTensor::Tensor1<double *, 3>(ptr, &ptr[1], &ptr[2]);
     }
 
+    /// \deprecated use getFTensor1Tangent1
+    DEPRECATED inline auto getTensor1Tangent1() {
+      return getFTensor1Tangent1();
+    }
+
     /** \brief get tangentTwo as tensor
      */
-    inline FTensor::Tensor1<double *, 3> getTensor2Tangent1() {
+    inline auto getFTensor2Tangent1() {
       double *ptr = &*getTangent2().data().begin();
       return FTensor::Tensor1<double *, 3>(ptr, &ptr[1], &ptr[2]);
+    }
+
+    /// \deprecated use getFTensor2Tangent1
+    DEPRECATED inline auto getTensor2Tangent1() {
+      return getFTensor2Tangent1();
     }
 
     /** \brief get element number of nodes
@@ -174,7 +186,7 @@ struct FaceElementForcesAndSourcesCore : public ForcesAndSourcesCore {
      \code
      FTensor::Index<'i',3> i;
      FTensor::Tensor1<double,3> t_center;
-     FTensor::Tensor1<double*,3> t_coords = getTensor1Coords();
+     auto t_coords = getFTensor1Coords();
      t_center(i) = 0;
      for(int nn = 0;nn!=3;nn++) {
         t_center(i) += t_coords(i);
@@ -184,10 +196,15 @@ struct FaceElementForcesAndSourcesCore : public ForcesAndSourcesCore {
     \endcode
 
      */
-    inline FTensor::Tensor1<double *, 3> getTensor1Coords() {
+    inline auto getFTensor1Coords() {
       double *ptr = &*getCoords().data().begin();
-      return FTensor::Tensor1<double *, 3>(ptr, &ptr[1], &ptr[2], 3);
+      return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(ptr, &ptr[1],
+                                                                &ptr[2]);
     }
+
+    /// \deprecated use getFTensor1Coords
+    DEPRECATED inline auto getTensor1Coords() {
+      return getFTensor1Coords(); }
 
     /** \brief get matrix of integration (Gauss) points on Face Element
      *  where columns 0,1 are x,y coordinates respectively and column 2 is a
@@ -198,8 +215,22 @@ struct FaceElementForcesAndSourcesCore : public ForcesAndSourcesCore {
       return static_cast<FaceElementForcesAndSourcesCore *>(ptrFE)->gaussPts;
     }
 
-    inline FTensor::Tensor0<double *> getFTensor0IntegrationWeight() {
-      return FTensor::Tensor0<double *>(&(getGaussPts()(2, 0)), 1);
+    /**
+     * @brief Get integration weights
+     *
+     * \code
+     * auto t_w = getFTensor0IntegrationWeight();
+     * for(int gg = 0; gg!=getGaussPts.size2(); ++gg) {
+     *  // integrate something
+     *  ++t_w;
+     * }
+     * \endcode
+     *
+     * @return FTensor::Tensor0<FTensor::PackPtr<double *, 1>>
+     */
+    inline auto getFTensor0IntegrationWeight() {
+      return FTensor::Tensor0<FTensor::PackPtr<double *, 1>>(
+          &(getGaussPts()(2, 0)));
     }
 
     /** \brief Gauss points and weight, matrix (nb. of points x 3)
@@ -215,9 +246,15 @@ struct FaceElementForcesAndSourcesCore : public ForcesAndSourcesCore {
 
     /** \brief get coordinates at Gauss pts.
      */
-    inline FTensor::Tensor1<double *, 3> getTensor1CoordsAtGaussPts() {
+    inline auto getFTensor1CoordsAtGaussPts() {
       double *ptr = &*getCoordsAtGaussPts().data().begin();
-      return FTensor::Tensor1<double *, 3>(ptr, &ptr[1], &ptr[2], 3);
+      return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(ptr, &ptr[1],
+                                                                &ptr[2]);
+    }
+
+    /// \deprecated use getFTensor1CoordsAtGaussPts
+    DEPRECATED inline auto getTensor1CoordsAtGaussPts() {
+      return getFTensor1CoordsAtGaussPts();
     }
 
     /** \brief coordinate at Gauss points (if hierarchical approximation of
@@ -235,13 +272,19 @@ struct FaceElementForcesAndSourcesCore : public ForcesAndSourcesCore {
     /** \brief get coordinates at Gauss pts (takes in account ho approx. of
      * geometry)
      */
-    inline FTensor::Tensor1<double *, 3> getTensor1HoCoordsAtGaussPts() {
+    inline auto getFTensor1HoCoordsAtGaussPts() {
       if (getHoCoordsAtGaussPts().size1() == 0 &&
           getHoCoordsAtGaussPts().size2() != 3) {
-        return getTensor1Coords();
+        return getFTensor1Coords();
       }
       double *ptr = &*getHoCoordsAtGaussPts().data().begin();
-      return FTensor::Tensor1<double *, 3>(ptr, &ptr[1], &ptr[2], 3);
+      return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(ptr, &ptr[1],
+                                                                &ptr[2]);
+    }
+
+    /// \deprecated use getTensor1HoCoordsAtGaussPts
+    DEPRECATED inline auto getTensor1HoCoordsAtGaussPts() {
+      return getFTensor1HoCoordsAtGaussPts();
     }
 
     /** \brief if higher order geometry return normals at Gauss pts.
@@ -250,32 +293,30 @@ struct FaceElementForcesAndSourcesCore : public ForcesAndSourcesCore {
     of geometry is available.
 
      */
-    inline MatrixDouble &getNormalsAtGaussPt() {
+    inline MatrixDouble &getNormalsAtGaussPts() {
       return static_cast<FaceElementForcesAndSourcesCore *>(ptrFE)
-          ->normalsAtGaussPt;
+          ->normalsAtGaussPts;
+    }
+
+    /// \deprecated use getNormalsAtGaussPts
+    DEPRECATED inline MatrixDouble &getNormalsAtGaussPt() {
+      return getNormalsAtGaussPts();
     }
 
     /** \brief if higher order geometry return normals at Gauss pts.
      *
      * \param gg gauss point number
      */
-    inline ublas::matrix_row<MatrixDouble> getNormalsAtGaussPt(const int gg) {
+    inline ublas::matrix_row<MatrixDouble> getNormalsAtGaussPts(const int gg) {
       return ublas::matrix_row<MatrixDouble>(
           static_cast<FaceElementForcesAndSourcesCore *>(ptrFE)
-              ->normalsAtGaussPt,
+              ->normalsAtGaussPts,
           gg);
     }
 
-    /** \brief if higher order geometry return tangent vector to triangle at
-    Gauss pts.
-
-    Note: returned matrix has size 0 in rows and columns if no HO approximation
-    of geometry is avaliable.
-
-     */
-    inline MatrixDouble &getTangent1AtGaussPt() {
-      return static_cast<FaceElementForcesAndSourcesCore *>(ptrFE)
-          ->tangentOneAtGaussPt;
+    /// \deprecated use getNormalsAtGaussPts
+    DEPRECATED inline auto getNormalsAtGaussPt(const int gg) {
+      return getNormalsAtGaussPts(gg);
     }
 
     /** \brief if higher order geometry return tangent vector to triangle at
@@ -285,9 +326,31 @@ struct FaceElementForcesAndSourcesCore : public ForcesAndSourcesCore {
     of geometry is avaliable.
 
      */
-    inline MatrixDouble &getTangent2AtGaussPt() {
+    inline MatrixDouble &getTangent1AtGaussPts() {
       return static_cast<FaceElementForcesAndSourcesCore *>(ptrFE)
-          ->tangentTwoAtGaussPt;
+          ->tangentOneAtGaussPts;
+    }
+
+    /// \deprecated use getTangent1AtGaussPts
+    DEPRECATED inline MatrixDouble &getTangent1AtGaussPt() {
+      return getTangent1AtGaussPts();
+    }
+
+    /** \brief if higher order geometry return tangent vector to triangle at
+    Gauss pts.
+
+    Note: returned matrix has size 0 in rows and columns if no HO approximation
+    of geometry is avaliable.
+
+     */
+    inline MatrixDouble &getTangent2AtGaussPts() {
+      return static_cast<FaceElementForcesAndSourcesCore *>(ptrFE)
+          ->tangentTwoAtGaussPts;
+    }
+
+    /// \deprecated use getTangent2AtGaussPts
+    DEPRECATED inline MatrixDouble &getTangent2AtGaussPt() {
+      return getTangent2AtGaussPts();
     }
 
     /** \brief get normal at integration points
@@ -296,7 +359,7 @@ struct FaceElementForcesAndSourcesCore : public ForcesAndSourcesCore {
       \code
       double nrm2;
       FTensor::Index<'i',3> i;
-      FTensor::Tensor1<double*,3> t_normal = getTensor1NormalsAtGaussPt();
+      FTensor::Tensor1<double*,3> t_normal = getFTensor1NormalsAtGaussPts();
       for(int gg = gg!=data.getN().size1();gg++) {
         nrm2 = sqrt(t_normal(i)*t_normal(i));
         ++t_normal;
@@ -304,25 +367,43 @@ struct FaceElementForcesAndSourcesCore : public ForcesAndSourcesCore {
       \endcode
 
     */
-    inline FTensor::Tensor1<double *, 3> getTensor1NormalsAtGaussPt() {
-      double *ptr = &*getNormalsAtGaussPt().data().begin();
-      return FTensor::Tensor1<double *, 3>(ptr, &ptr[1], &ptr[2], 3);
+    inline auto getFTensor1NormalsAtGaussPts() {
+      double *ptr = &*getNormalsAtGaussPts().data().begin();
+      return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(ptr, &ptr[1],
+                                                                &ptr[2]);
+    }
+
+    /// \deprecated use getFTensor1NormalsAtGaussPt
+    DEPRECATED inline auto getTensor1NormalsAtGaussPt() {
+      return getFTensor1NormalsAtGaussPts();
     }
 
     /** \brief get tangent 1 at integration points
 
     */
-    inline FTensor::Tensor1<double *, 3> getTensor1Tangent1AtGaussPt() {
-      double *ptr = &*getTangent1AtGaussPt().data().begin();
-      return FTensor::Tensor1<double *, 3>(ptr, &ptr[1], &ptr[2], 3);
+    inline auto getFTensor1Tangent1AtGaussPts() {
+      double *ptr = &*getTangent1AtGaussPts().data().begin();
+      return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(ptr, &ptr[1],
+                                                                &ptr[2]);
+    }
+
+    /// \deprecated use getFTensor1Tangent1AtGaussPt
+    DEPRECATED inline auto getTensor1Tangent1AtGaussPt() {
+      return getFTensor1Tangent1AtGaussPts();
     }
 
     /** \brief get tangent 2 at integration points
 
     */
-    inline FTensor::Tensor1<double *, 3> getTensor1Tangent2AtGaussPt() {
-      double *ptr = &*getTangent2AtGaussPt().data().begin();
-      return FTensor::Tensor1<double *, 3>(ptr, &ptr[1], &ptr[2], 3);
+    inline auto getFTensor1Tangent2AtGaussPts() {
+      double *ptr = &*getTangent2AtGaussPts().data().begin();
+      return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(ptr, &ptr[1],
+                                                                &ptr[2]);
+    }
+
+    /// \deprecated use getFTensor1Tangent2AtGaussPt
+    DEPRECATED inline auto getTensor1Tangent2AtGaussPt() {
+      return getFTensor1Tangent2AtGaussPts();
     }
 
     /** \deprecated use getFaceFE instead

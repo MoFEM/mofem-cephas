@@ -63,6 +63,14 @@ namespace FTensor
     operator=(const Dg_Expr<Dg<A, Tensor_Dim01, Tensor_Dim2>, T, Dim01, Dim2,
                             i, j, k> &result);
 
+    template <class B, class U>
+    Dg_Expr<Dg<A, Tensor_Dim01, Tensor_Dim2>, T, Dim01, Dim2, i, j, k> &
+    operator+=(const Dg_Expr<B, U, Dim01, Dim2, i, j, k> &result);
+
+    Dg_Expr<Dg<A, Tensor_Dim01, Tensor_Dim2>, T, Dim01, Dim2, i, j, k> &
+    operator+=(const Dg_Expr<Dg<A, Tensor_Dim01, Tensor_Dim2>, T, Dim01, Dim2,
+                            i, j, k> &result);                        
+
     template <class U>
     Dg_Expr<Dg<A, Tensor_Dim01, Tensor_Dim2>, T, Dim01, Dim2, i, j, k> &
     operator=(const U &d);

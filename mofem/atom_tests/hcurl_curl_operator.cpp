@@ -272,10 +272,10 @@ int main(int argc, char *argv[]) {
         for (int gg = 0; gg < nb_gauss_pts; gg++) {
           for (int dd = 0; dd < nb_dofs; dd++) {
             double w = getGaussPts()(2, gg);
-            if (getNormalsAtGaussPt().size1() == (unsigned int)nb_gauss_pts) {
-              n0 = getNormalsAtGaussPt(gg)[0] * 0.5;
-              n1 = getNormalsAtGaussPt(gg)[1] * 0.5;
-              n2 = getNormalsAtGaussPt(gg)[2] * 0.5;
+            if (getNormalsAtGaussPts().size1() == (unsigned int)nb_gauss_pts) {
+              n0 = getNormalsAtGaussPts(gg)[0] * 0.5;
+              n1 = getNormalsAtGaussPts(gg)[1] * 0.5;
+              n2 = getNormalsAtGaussPts(gg)[2] * 0.5;
             }
             double v = data.getFieldData()[dd];
             cUrl(0) += (n1 * t_curl_base(2) - n2 * t_curl_base(1)) * w * v;
