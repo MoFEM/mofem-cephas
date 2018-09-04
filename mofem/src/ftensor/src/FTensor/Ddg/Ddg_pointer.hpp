@@ -311,8 +311,7 @@ namespace FTensor
     /* The ++ operator increments the pointer, not the number that the
        pointer points to.  This allows iterating over a grid. */
 
-    const Ddg<T *, Tensor_Dim01, Tensor_Dim23> &operator++() const
-    {
+    const Ddg &operator++() const {
       for(int i = 0; i < (Tensor_Dim01 * (Tensor_Dim01 + 1)) / 2; ++i)
         for(int j = 0; j < (Tensor_Dim01 * (Tensor_Dim01 + 1)) / 2; ++j)
           data[i][j] += inc;
@@ -332,8 +331,7 @@ namespace FTensor
     /* The ++ operator increments the pointer, not the number that the
        pointer points to.  This allows iterating over a grid. */
 
-    const Ddg<PackPtr<T *, I>, Tensor_Dim01, Tensor_Dim23> &
-    operator++() const {
+    const Ddg &operator++() const {
       for (int i = 0; i < (Tensor_Dim01 * (Tensor_Dim01 + 1)) / 2; ++i)
         for (int j = 0; j < (Tensor_Dim01 * (Tensor_Dim01 + 1)) / 2; ++j)
           Ddg<T *, Tensor_Dim01, Tensor_Dim23>::data[i][j] += I;
