@@ -143,13 +143,13 @@ void test_T4_007(const Tensor4<double, 1, 2, 3, 4> &t4,
     Index<'j', 3> j;
     Index<'k', 2> k;
     Index<'l', 2> l;
-    Ddg<double, 3, 3> t_ddg;
+    Ddg<double, 3, 2> t_ddg;
     Tensor4<double, 3, 3, 2, 2> t_4;
     for (int ii = 0; ii != 3; ++ii)
       for (int jj = 0; jj != 3; ++jj)
         for (int kk = 0; kk != 2; ++kk)
           for (int ll = 0; ll != 2; ++ll) {
-            t_4(ii, jj, kk, ll) = ii + 10. * jj + 100 * kk + 1000 * ll;
+            t_4(ii, jj, kk, ll) = 1 + ii + 10. * jj + 100 * kk + 1000 * ll;
           }
     t_ddg(i, j, k, l) = t_4(i, j, k, l) || t_4(j, i, l, k);
     for (int ii = 0; ii != 3; ++ii)
@@ -171,18 +171,18 @@ void test_T4_007(const Tensor4<double, 1, 2, 3, 4> &t4,
     Tensor2<double, 3, 4> t_2_2;
     for (int ii = 0; ii != 1; ++ii)
       for (int jj = 0; jj != 2; ++jj) {
-        t_2_1(ii, jj) = ii + 10. * jj;
+        t_2_1(ii, jj) = 1 + ii + 10. * jj;
       }
-    for (int kk = 0; kk != 2; ++kk)
-      for (int ll = 0; ll != 2; ++ll) {
-        t_2_2(kk, ll) = 100 * kk + 1000 * ll;
+    for (int kk = 0; kk != 3; ++kk)
+      for (int ll = 0; ll != 4; ++ll) {
+        t_2_2(kk, ll) = 1 + 100 * kk + 1000 * ll;
       }
     t_4(i, j, k, l) = t_2_1(i, j) * t_2_2(k, l);
     Tensor3<double, 3, 4, 3> t_3_1;
-    for (int kk = 0; kk != 2; ++kk)
-      for (int ll = 0; ll != 2; ++ll)
+    for (int kk = 0; kk != 3; ++kk)
+      for (int ll = 0; ll != 4; ++ll)
         for (int mm = 0; mm != 3; ++mm) {
-          t_3_1(kk, ll, mm) = 100 * kk + 1000 * ll + 10000 * mm;
+          t_3_1(kk, ll, mm) = 1 + 100 * kk + 1000 * ll + 10000 * mm;
         }
     Tensor3<double, 1, 2, 3> t_3_2;
     Index<'m', 3> m;

@@ -79,4 +79,6 @@ int main()
   test_T4R();
   test_T4(t4_1, t2_4, t2_5, t3_2);
   test_Levi_Civita();
+
+  return 0;
 }

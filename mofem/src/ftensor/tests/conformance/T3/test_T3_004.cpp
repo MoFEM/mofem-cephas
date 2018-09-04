@@ -37,12 +37,12 @@ void test_T3_004(const Tensor3<double, 3, 3, 3> &t3_1) {
     for (int ii = 0; ii != 1; ++ii)
       for (int jj = 0; jj != 3; ++jj) {
         for (int kk = 0; kk != 2; ++kk) {
-          t_3_1(ii, jj, kk) = ii + 10. * jj + 100. * kk;
+          t_3_1(ii, jj, kk) = 1 + ii + 10. * jj + 100. * kk;
         }
       }
     for (int jj = 0; jj != 3; ++jj)
       for (int ll = 0; ll != 3; ++ll) {
-        t_2_1(jj, ll) = jj + 10. * ll;
+        t_2_1(jj, ll) = 1 + jj + 10. * ll;
       }
     Index<'i', 1> i;
     Index<'j', 3> j;
@@ -74,24 +74,27 @@ void test_T3_004(const Tensor3<double, 3, 3, 3> &t3_1) {
  {
    Tensor1<double, 3> t_1;
    Tensor2<double, 3, 3> t_2;
-   for (int ii = 0; ii != 3; ++ii)
+   for (int ii = 0; ii != 3; ++ii) {
+     t_1(ii) = 1 + ii;
      for (int jj = 0; jj != 3; ++jj) {
-       t_2(ii, jj) = ii + 10. * jj;
+       t_2(ii, jj) = 1 + ii + 10. * jj;
      }
-   Tensor3<double, 3, 3, 3> t_3_1, t_3_2;
+   }
+   Tensor3<double, 3, 3, 3> t_3_1; 
    Index<'i', 3> i;
    Index<'j', 3> j;
    Index<'k', 3> k;
    Index<'l', 3> l;
    t_3_1(i, j, k) = t_2(i, j) * t_1(k);
-   t_3_2(i, j, k) = t_1(i) * t_2(j, k);
    Tensor2<double, 3, 3> t_2_1;
-   t_2_1(k, l) = t_3_1(i, j, k) * t_3_2(j, i, l) -
-                 (t_2(i, j) * t_2(j, i)) * t_1(l) * t_1(k);
+   t_2_1(k, l) = t_3_1(i, j, k) * t_3_1(j, i, l);
+   Tensor2<double, 3, 3> t_2_2;
+   t_2_2(k, l) = (t_2(i, j) * t_2(j, i)) * (t_1(k) * t_1(l));
    for (int ii = 0; ii != 3; ++ii)
      for (int jj = 0; jj != 3; ++jj) {
-       test_for_zero(t_2_1(ii, jj), "A(i,j,k)*B(j,i,l)(" + to_string(ii) + "," +
-                                        to_string(jj) + ")");
+       test_for_zero(t_2_1(ii, jj) - t_2_2(ii, jj), "T3(i,j,k)*T3(j,i,l)(" +
+                                                        to_string(ii) + "," +
+                                                        to_string(jj) + ")");
      }
  }
 }
