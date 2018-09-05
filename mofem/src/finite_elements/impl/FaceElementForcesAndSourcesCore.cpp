@@ -390,9 +390,9 @@ MoFEMErrorCode FaceElementForcesAndSourcesCore::calculateHoNormal() {
     }
   } else {
     hoCoordsAtGaussPts.resize(0, 0, false);
-    normalsAtGaussPt.resize(0, 0, false);
-    tangentOneAtGaussPt.resize(0, 0, false);
-    tangentTwoAtGaussPt.resize(0, 0, false);
+    normalsAtGaussPts.resize(0, 0, false);
+    tangentOneAtGaussPts.resize(0, 0, false);
+    tangentTwoAtGaussPts.resize(0, 0, false);
   }
   MoFEMFunctionReturnHot(0);
 }
@@ -607,7 +607,14 @@ MoFEMErrorCode FaceElementForcesAndSourcesCore::operator()() {
         try {
           ierr = oit->opRhs(*op_data[0], oit->doVertices, oit->doEdges,
                             oit->doQuads, oit->doTris, false, false);
-          CHKERRG(ierr);
+          if (PetscUnlikely(ierr)) {
+            std::ostringstream ss;
+            ss << "(Calling user data operator "
+               << boost::typeindex::type_id_runtime(*oit).pretty_name() << ") "
+               << PETSC_FUNCTION_NAME;
+            return PetscError(PETSC_COMM_SELF, __LINE__, ss.str().c_str(),
+                              __FILE__, ierr, PETSC_ERROR_REPEAT, " ");
+          }
         } catch (std::exception &ex) {
           std::ostringstream ss;
           ss << "Operator "
@@ -625,7 +632,14 @@ MoFEMErrorCode FaceElementForcesAndSourcesCore::operator()() {
         try {
           ierr = oit->opRhs(*op_data[1], oit->doVertices, oit->doEdges,
                             oit->doQuads, oit->doTris, false, false);
-          CHKERRG(ierr);
+          if (PetscUnlikely(ierr)) {
+            std::ostringstream ss;
+            ss << "(Calling user data operator "
+               << boost::typeindex::type_id_runtime(*oit).pretty_name() << ") "
+               << PETSC_FUNCTION_NAME;
+            return PetscError(PETSC_COMM_SELF, __LINE__, ss.str().c_str(),
+                              __FILE__, ierr, PETSC_ERROR_REPEAT, " ");
+          }
         } catch (std::exception &ex) {
           std::ostringstream ss;
           ss << "Operator "
@@ -642,7 +656,14 @@ MoFEMErrorCode FaceElementForcesAndSourcesCore::operator()() {
       if (oit->getOpType() & UserDataOperator::OPROWCOL) {
         try {
           ierr = oit->opLhs(*op_data[0], *op_data[1], oit->sYmm);
-          CHKERRG(ierr);
+          if (PetscUnlikely(ierr)) {
+            std::ostringstream ss;
+            ss << "(Calling user data operator "
+               << boost::typeindex::type_id_runtime(*oit).pretty_name() << ") "
+               << PETSC_FUNCTION_NAME;
+            return PetscError(PETSC_COMM_SELF, __LINE__, ss.str().c_str(),
+                              __FILE__, ierr, PETSC_ERROR_REPEAT, " ");
+          }
         } catch (std::exception &ex) {
           std::ostringstream ss;
           ss << "Operator "

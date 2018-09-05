@@ -186,9 +186,9 @@ int main(int argc, char *argv[]) {
       my_split << std::setprecision(3) << getArea() << std::endl;
       my_split << std::setprecision(3) << getNormal() << std::endl;
       my_split << std::setprecision(3) << getHoCoordsAtGaussPts() << std::endl;
-      my_split << std::setprecision(3) << getNormalsAtGaussPt() << std::endl;
-      my_split << std::setprecision(3) << getTangent1AtGaussPt() << std::endl;
-      my_split << std::setprecision(3) << getTangent2AtGaussPt() << std::endl;
+      my_split << std::setprecision(3) << getNormalsAtGaussPts() << std::endl;
+      my_split << std::setprecision(3) << getTangent1AtGaussPts() << std::endl;
+      my_split << std::setprecision(3) << getTangent2AtGaussPts() << std::endl;
       my_split << std::endl;
       MoFEMFunctionReturnHot(0);
     }

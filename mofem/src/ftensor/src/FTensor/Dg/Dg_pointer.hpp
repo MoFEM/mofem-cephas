@@ -7,6 +7,9 @@ namespace FTensor
   template <class T, int Tensor_Dim01, int Tensor_Dim2>
   class Dg<T *, Tensor_Dim01, Tensor_Dim2>
   {
+
+  protected:
+
     mutable T *restrict
       data[(Tensor_Dim01 * (Tensor_Dim01 + 1)) / 2][Tensor_Dim2];
 
@@ -427,4 +430,25 @@ namespace FTensor
       return *this;
     }
   };
-}
+
+  template <class T, int Tensor_Dim01, int Tensor_Dim2, int I>
+  class Dg<PackPtr<T *, I>, Tensor_Dim01, Tensor_Dim2>
+      : public Dg<T *, Tensor_Dim01, Tensor_Dim2> {
+
+  public:
+    template <class... U>
+    Dg(U *... d) : Dg<T *, Tensor_Dim01, Tensor_Dim2>(d...) {}
+
+    Dg() : Dg<T *, Tensor_Dim01, Tensor_Dim2>() {}
+
+    /* The ++ operator increments the pointer, not the number that the
+   pointer points to.  This allows iterating over a grid. */
+
+    const Dg &operator++() const {
+      for (int i = 0; i < (Tensor_Dim01 * (Tensor_Dim01 + 1)) / 2; ++i)
+        for (int j = 0; j < Tensor_Dim2; ++j)
+          Dg<T *, Tensor_Dim01, Tensor_Dim2>::data[i][j] += I;
+      return *this;
+    }
+  };
+  } // namespace FTensor

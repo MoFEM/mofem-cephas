@@ -694,14 +694,14 @@ struct OpGetCoordsAndNormalsOnPrism: public DataOperator {
 struct OpSetContravariantPiolaTransformOnTriangle: public DataOperator {
 
   const VectorDouble &nOrmal;
-  const MatrixDouble &normalsAtGaussPt;
+  const MatrixDouble &normalsAtGaussPts;
 
   OpSetContravariantPiolaTransformOnTriangle(
     const VectorDouble &normal,
     const MatrixDouble &normals_at_pts
   ):
   nOrmal(normal),
-  normalsAtGaussPt(normals_at_pts) {}
+  normalsAtGaussPts(normals_at_pts) {}
 
   MoFEMErrorCode doWork(
     int side,
@@ -717,7 +717,7 @@ struct OpSetContravariantPiolaTransformOnTriangle: public DataOperator {
 struct OpSetCovariantPiolaTransformOnTriangle: public DataOperator {
 
   const VectorDouble &nOrmal;
-  const MatrixDouble &normalsAtGaussPt;
+  const MatrixDouble &normalsAtGaussPts;
   const VectorDouble &tAngent0;
   const MatrixDouble &tangent0AtGaussPt;
   const VectorDouble &tAngent1;
@@ -732,7 +732,7 @@ struct OpSetCovariantPiolaTransformOnTriangle: public DataOperator {
     const MatrixDouble &tangent1_at_pts
   ):
   nOrmal(normal),
-  normalsAtGaussPt(normals_at_pts),
+  normalsAtGaussPts(normals_at_pts),
   tAngent0(tangent0),
   tangent0AtGaussPt(tangent0_at_pts),
   tAngent1(tangent1),

@@ -144,11 +144,15 @@ struct EdgeElementForcesAndSourcesCore : public ForcesAndSourcesCore {
 
     /** \brief get coordinates at Gauss pts.
      */
-    inline FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>
-    getTensor1CoordsAtGaussPts() {
+    inline auto getFTensor1CoordsAtGaussPts() {
       double *ptr = &*getCoordsAtGaussPts().data().begin();
       return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(ptr, &ptr[1],
                                                                 &ptr[2]);
+    }
+
+    /// \deprecate use getFTensor1CoordsAtGaussPts
+    DEPRECATED inline auto getTensor1CoordsAtGaussPts() {
+      return getFTensor1CoordsAtGaussPts();
     }
 
     /**

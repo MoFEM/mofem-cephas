@@ -198,7 +198,74 @@ namespace FTensor
        They create a Tensor3_Expr directly, which provides the
        appropriate indexing operators.  The const versions do create a
        Tensor3_number_[0123]. */
-    // TODO
+
+    /* Third slot. */
+
+    template <char i, char j, char k, int N, int Dim0, int Dim1, int Dim3>
+    typename std::enable_if<
+        (Tensor_Dim0 >= Dim0 && Tensor_Dim1 >= Dim1 && Tensor_Dim2 > N &&
+         Tensor_Dim3 >= Dim3),
+        Tensor3_Expr<Tensor4_number_rhs_2<Tensor4<T, Tensor_Dim0, Tensor_Dim1,
+                                                  Tensor_Dim2, Tensor_Dim3>,
+                                          T, N>,
+                     T, Dim0, Dim1, Dim3, i, j, k>>::type
+    operator()(const Index<i, Dim0>, const Index<j, Dim1>, const Number<N>,
+               const Index<k, Dim3>) {
+      using TensorExpr = Tensor4_number_rhs_2<
+          Tensor4<T, Tensor_Dim0, Tensor_Dim1, Tensor_Dim2, Tensor_Dim3>, T, N>;
+      return Tensor3_Expr<TensorExpr, T, Dim0, Dim1, Dim3, i, j, k>(*this);
+    }
+
+    template <char i, char j, char k, int N, int Dim0, int Dim1, int Dim3>
+    typename std::enable_if<
+        (Tensor_Dim0 >= Dim0 && Tensor_Dim1 >= Dim1 && Tensor_Dim2 > N &&
+         Tensor_Dim3 >= Dim3),
+        Tensor3_Expr<Tensor4_number_2<const Tensor4<T, Tensor_Dim0, Tensor_Dim1,
+                                                    Tensor_Dim2, Tensor_Dim3>,
+                                      T, N>,
+                     T, Dim0, Dim1, Dim3, i, j, k>>::type
+    operator()(const Index<i, Dim0>, const Index<j, Dim1>, const Number<N>,
+               const Index<k, Dim3>) const {
+      using TensorExpr = Tensor4_number_2<
+          const Tensor4<T, Tensor_Dim0, Tensor_Dim1, Tensor_Dim2, Tensor_Dim3>,
+          T, N>;
+      return Tensor3_Expr<TensorExpr, T, Dim0, Dim1, Dim3, i, j, k>(
+          TensorExpr(*this));
+    }
+
+    /* Forth slot. */
+
+    template <char i, char j, char k, int N, int Dim0, int Dim1, int Dim2>
+    typename std::enable_if<
+        (Tensor_Dim0 >= Dim0 && Tensor_Dim1 >= Dim1 && Tensor_Dim2 >= Dim2 &&
+         Tensor_Dim3 > N),
+        Tensor3_Expr<Tensor4_number_rhs_3<Tensor4<T, Tensor_Dim0, Tensor_Dim1,
+                                                  Tensor_Dim2, Tensor_Dim3>,
+                                          T, N>,
+                     T, Dim0, Dim1, Dim2, i, j, k>>::type
+    operator()(const Index<i, Dim0>, const Index<j, Dim1>, const Index<k, Dim2>,
+               const Number<N>) {
+      using TensorExpr = Tensor4_number_rhs_3<
+          Tensor4<T, Tensor_Dim0, Tensor_Dim1, Tensor_Dim2, Tensor_Dim3>, T, N>;
+      return Tensor3_Expr<TensorExpr, T, Dim0, Dim1, Dim2, i, j, k>(*this);
+    }
+
+    template <char i, char j, char k, int N, int Dim0, int Dim1, int Dim2>
+    typename std::enable_if<
+        (Tensor_Dim0 >= Dim0 && Tensor_Dim1 >= Dim1 && Tensor_Dim2 >= Dim2 &&
+         Tensor_Dim3 > N),
+        Tensor3_Expr<Tensor4_number_3<const Tensor4<T, Tensor_Dim0, Tensor_Dim1,
+                                                    Tensor_Dim2, Tensor_Dim3>,
+                                      T, N>,
+                     T, Dim0, Dim1, Dim2, i, j, k>>::type
+    operator()(const Index<i, Dim0>, const Index<j, Dim1>, const Index<k, Dim2>,
+               const Number<N>) const {
+      using TensorExpr = Tensor4_number_3<
+          const Tensor4<T, Tensor_Dim0, Tensor_Dim1, Tensor_Dim2, Tensor_Dim3>,
+          T, N>;
+      return Tensor3_Expr<TensorExpr, T, Dim0, Dim1, Dim2, i, j, k>(
+          TensorExpr(*this));
+    }
   };
 }
 
