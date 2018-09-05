@@ -301,11 +301,11 @@ MoFEMErrorCode CreateRowComressedADJMatrix::createMatArrays(
     }
     miit_row = dofs_row_by_idx.lower_bound(rstart);
     hi_miit_row = dofs_row_by_idx.lower_bound(rend);
-    if (distance(miit_row, hi_miit_row) != rend - rstart) {
+    if (std::distance(miit_row, hi_miit_row) != rend - rstart) {
       SETERRQ4(cOmm, PETSC_ERR_ARG_SIZ,
-               "data inconsistency, distance(miit_row,hi_miit_row) != rend - "
+               "data inconsistency, std::distance(miit_row,hi_miit_row) != rend - "
                "rstart (%d != %d - %d = %d) ",
-               distance(miit_row, hi_miit_row), rend, rstart, rend - rstart);
+               std::distance(miit_row, hi_miit_row), rend, rstart, rend - rstart);
     }
 
   } else {
@@ -355,7 +355,7 @@ MoFEMErrorCode CreateRowComressedADJMatrix::createMatArrays(
             sort(dofs_col_view.begin(), dofs_col_view.end());
             std::vector<int>::iterator new_end =
                 unique(dofs_col_view.begin(), dofs_col_view.end());
-            int new_size = distance(dofs_col_view.begin(), new_end);
+            int new_size = std::distance(dofs_col_view.begin(), new_end);
             dofs_col_view.resize(new_size);
           }
           // Add that row. Patterns is that first index is row index, second is
@@ -553,7 +553,7 @@ MoFEMErrorCode CreateRowComressedADJMatrix::createMatArrays(
       sort(dofs_vec.begin(), dofs_vec.end());
       std::vector<int>::iterator new_end =
           unique(dofs_vec.begin(), dofs_vec.end());
-      int new_size = distance(dofs_vec.begin(), new_end);
+      int new_size = std::distance(dofs_vec.begin(), new_end);
       dofs_vec.resize(new_size);
       if (verb >= NOISY) {
         std::stringstream ss;
@@ -831,7 +831,7 @@ Core::partition_check_matrix_fill_in(const std::string &problem_name,
                        .upper_bound(boost::make_tuple(
                            (*cit)->getName(), (*cit)->getEntType(),
                            (*cit)->sideNumberPtr->side_number));
-          int nb_dofs_on_ent = distance(dit, hi_dit);
+          int nb_dofs_on_ent = std::distance(dit, hi_dit);
 
           int max_order = (*cit)->getMaxOrder();
           if ((*cit)->getNbOfCoeffs() * (*cit)->getOrderNbDofs(max_order) !=
@@ -927,7 +927,7 @@ Core::partition_check_matrix_fill_in(const std::string &problem_name,
                        .upper_bound(boost::make_tuple(
                            (*rit)->getName(), (*rit)->getEntType(),
                            (*rit)->sideNumberPtr->side_number));
-          int nb_dofs_on_ent = distance(dit, hi_dit);
+          int nb_dofs_on_ent = std::distance(dit, hi_dit);
 
           int max_order = (*rit)->getMaxOrder();
           if ((*rit)->getNbOfCoeffs() * (*rit)->getOrderNbDofs(max_order) !=

@@ -503,7 +503,7 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
         ref_ele_by_parent_and_ref_edges.upper_bound(
             boost::make_tuple(*tit, parent_edges_bit.to_ulong()));
     // check if tet with this refinement shame already exits
-    if (distance(it_by_ref_edges, hi_it_by_ref_edges) ==
+    if (std::distance(it_by_ref_edges, hi_it_by_ref_edges) ==
         (unsigned int)nb_new_tets) {
       for (int tt = 0; it_by_ref_edges != hi_it_by_ref_edges;
            it_by_ref_edges++, tt++) {

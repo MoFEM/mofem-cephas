@@ -226,7 +226,7 @@ MeshsetsManager::query_interface(const MOFEMuuid &uuid,
         cubitMeshsets.get<CubitMeshSets_name>().lower_bound(name);
     CubitMeshSet_multiIndex::index<CubitMeshSets_name>::type::iterator hi_miit =
         cubitMeshsets.get<CubitMeshSets_name>().upper_bound(name);
-    if (distance(miit, hi_miit) == 0) {
+    if (std::distance(miit, hi_miit) == 0) {
       return false;
     }
     if (number_of_meshsets_ptr) {
