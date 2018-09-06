@@ -71,7 +71,6 @@ TetPolynomialBase::~TetPolynomialBase() {}
 TetPolynomialBase::TetPolynomialBase() {}
 
 MoFEMErrorCode TetPolynomialBase::getValueH1(MatrixDouble &pts) {
-
   MoFEMFunctionBeginHot;
 
   DataForcesAndSourcesCore &data = cTx->dAta;
@@ -190,7 +189,6 @@ MoFEMErrorCode TetPolynomialBase::getValueH1(MatrixDouble &pts) {
 }
 
 MoFEMErrorCode TetPolynomialBase::getValueL2(MatrixDouble &pts) {
-
   MoFEMFunctionBeginHot;
 
   DataForcesAndSourcesCore &data = cTx->dAta;
@@ -221,7 +219,6 @@ MoFEMErrorCode TetPolynomialBase::getValueL2(MatrixDouble &pts) {
 }
 
 MoFEMErrorCode TetPolynomialBase::getValueHdivAinsworthBase(MatrixDouble &pts) {
-
   MoFEMFunctionBeginHot;
 
   DataForcesAndSourcesCore &data = cTx->dAta;
@@ -567,7 +564,6 @@ MoFEMErrorCode TetPolynomialBase::getValueHdivAinsworthBase(MatrixDouble &pts) {
 }
 
 MoFEMErrorCode TetPolynomialBase::getValueHdivDemkowiczBase(MatrixDouble &pts) {
-
   MoFEMFunctionBeginHot;
 
   DataForcesAndSourcesCore &data = cTx->dAta;
@@ -946,12 +942,10 @@ MoFEMErrorCode TetPolynomialBase::getValueHcurl(MatrixDouble &pts) {
 MoFEMErrorCode
 TetPolynomialBase::getValue(MatrixDouble &pts,
                             boost::shared_ptr<BaseFunctionCtx> ctx_ptr) {
-
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
 
   MoFEM::UnknownInterface *iface;
-  ierr = ctx_ptr->query_interface(IDD_TET_BASE_FUNCTION, &iface);
-  CHKERRG(ierr);
+  CHKERR ctx_ptr->query_interface(IDD_TET_BASE_FUNCTION, &iface);
   cTx = reinterpret_cast<EntPolynomialBaseCtx *>(iface);
 
   int nb_gauss_pts = pts.size2();
@@ -969,10 +963,9 @@ TetPolynomialBase::getValue(MatrixDouble &pts,
   DataForcesAndSourcesCore &data = cTx->dAta;
   if (cTx->copyNodeBase == LASTBASE) {
     data.dataOnEntities[MBVERTEX][0].getN(base).resize(nb_gauss_pts, 4, false);
-    ierr =
-        ShapeMBTET(&*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
-                   &pts(0, 0), &pts(1, 0), &pts(2, 0), nb_gauss_pts);
-    CHKERRG(ierr);
+    CHKERR ShapeMBTET(
+        &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
+        &pts(0, 0), &pts(1, 0), &pts(2, 0), nb_gauss_pts);
   } else {
     data.dataOnEntities[MBVERTEX][0].getNSharedPtr(base) =
         data.dataOnEntities[MBVERTEX][0].getNSharedPtr(cTx->copyNodeBase);
@@ -985,9 +978,8 @@ TetPolynomialBase::getValue(MatrixDouble &pts,
              ApproximationBaseNames[base]);
   }
   data.dataOnEntities[MBVERTEX][0].getDiffN(base).resize(4, 3, false);
-  ierr = ShapeDiffMBTET(
+  CHKERR ShapeDiffMBTET(
       &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin());
-  CHKERRG(ierr);
   // if(cTx->sPace==H1) {
   //   MatrixDouble diffN(nb_gauss_pts,12);
   //   for(int gg = 0;gg<nb_gauss_pts;gg++) {
@@ -1004,24 +996,20 @@ TetPolynomialBase::getValue(MatrixDouble &pts,
 
   switch (cTx->sPace) {
   case H1:
-    return getValueH1(pts);
-    CHKERRG(ierr);
+    CHKERR getValueH1(pts);
     break;
   case HDIV:
-    ierr = getValueHdiv(pts);
-    CHKERRG(ierr);
+    CHKERR getValueHdiv(pts);
     break;
   case HCURL:
-    ierr = getValueHcurl(pts);
-    CHKERRG(ierr);
+    CHKERR getValueHcurl(pts);
     break;
   case L2:
-    ierr = getValueL2(pts);
-    CHKERRG(ierr);
+    CHKERR getValueL2(pts);
     break;
   default:
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Unknown space");
   }
 
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
