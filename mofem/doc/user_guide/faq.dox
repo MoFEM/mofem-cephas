@@ -274,7 +274,7 @@ brew install qcachegrind --with-graphviz
 
 If you have packages installed, follow instruction from <http://kcachegrind.sourceforge.net/html/Documentation.html>
 
-\section debugging_in_docker How to make debugging in docekr?
+\section debugging_in_docker How to make debugging in docker?
 
 You can use gdb inside docker, remembering to set cmake with debugging
 build type, for example
@@ -287,5 +287,27 @@ docker, you need to run docker container in \em privileged mode, for example
 \code
 docker run --privileged -it --name work --hostname mofem -v $HOME:/mnt/home -v mofem_build:/my_build likask/mofem_build:v0.2 /bin/bash
 \endcode
+
+\section users_modules_changes_affects_mainRepo Why do users_modules changes
+affect mofem-cephas/mofem git repository?
+
+When making changes in a users_modules, a git submodule, the main git repo
+will register a version change. For example:
+\code
+cd mofem-cephas/mofem
+git diff
+
+diff --git a/mofem/users_modules b/mofem/users_modules
+index d18f43f88..42bcece0e 160000
+--- a/mofem/users_modules
++++ b/mofem/users_modules
+@@ -1 +1 @@
+-Subproject commit d18f43f884bfbfbce50f0f70155d911a2d361164
++Subproject commit 42bcece0e7e6577b83bb2a5c64d2709a2bc15b47
+\endcode
+
+The commit ID of the submodule is used to track which version to pull when
+pulling the main repo. Updating to the latest commit will then pull the your
+latest changes.
 
 */
