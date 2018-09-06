@@ -13,53 +13,14 @@ Note: Spack compiles packages from source, pre-compiled binaries are not availab
 
 [TOC]
 
-# Quick installation snippet {#spack_quick}
-
-
-If you have [git](https://www.atlassian.com/git/tutorials/what-is-git) and
-[curl](https://en.wikipedia.org/wiki/CURL) and compilers you can proceed to
-Spack installation. If you already develop some code, most likely you have
-all that you need. If not look to for install
-[prerequisites](@ref spack_prerequisites).
-
-You can start by downloading Spack and installing essential, as follows
-~~~~~~
-git clone --single-branch -b mofem https://github.com/likask/spack.git
-. spack/share/spack/setup-env.sh
-spack bootstrap
-. ${SPACK_ROOT}/share/spack/setup-env.sh
-~~~~~~
-
-Having spack installed you can install a basic version of MoFEM
-~~~~~~
-spack install mofem-users-modules
-spack view --verbose symlink -i um_view mofem-cephas
-spack activate -v um_view mofem-users-modules
-export PATH=$HOME/um_view/bin:$PATH
-~~~~~~
-Installation can take some time, with MoFEM all dependent libraries are
-installed like PETSc, MoAB, Mumps, SuperLU, Parmetis and many others. You
-have to be patient.
-
-MoFEM is extendable by users modules, called in spack extensions. Available
-in spack extension can be seen by calling
-~~~~~~
-spack extensions mofem-cephas
-~~~~~~
-
 # Prerequisites {#spack_prerequisites}
 
-Before you start see Spack [getting
-started](https://spack.readthedocs.io/en/v0.10.0/getting_started.html), to
-see all prerequisites. You need to have installed
-[git](https://www.atlassian.com/git/tutorials/what-is-git) and
-[curl](https://en.wikipedia.org/wiki/CURL). You will need as well C++
-compilers, f.e. *gcc* or *clang*, and Fortran compiler, f.e. *gfrortran*. If
-you are developing any code on your computer, you probably have probably most
-of the software (if not all) installed.
+The insallation of MoFEM requires [git](https://www.atlassian.com/git/tutorials/what-is-git),
+[curl](https://en.wikipedia.org/wiki/CURL) and C++ and Fortran compilers (GCC and/or clang). They must also be available in your PATH.
 
-For example on Ubuntu or Debian
-like system you can install both running from command line
+##Ubuntu/Debian
+
+Install the following packages:
 ~~~~~
 apt-get update \
 && apt-get install -y --no-install-recommends \
@@ -76,61 +37,91 @@ vim \
 gfortran
 ~~~~~
 
-If you work on OS X, and if have not done it already, install
-build-essentials and [Homebrew](https://brew.sh) and then
+##macOS
+
+If not already done so, install Xcode and command-line tools:
+
 ~~~~~
 xcode-select --install
 sudo xcodebuild -license accept
+~~~~~
+
+Install [homebrew](https://brew.sh) package manager:
+~~~~~
 /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
-brew install curl git 
-~~~~~
-For Mac OS X you can as well follow instrucion on Spack documentation, called
-[Mixed
-Toolchains](http://spack.readthedocs.io/en/latest/getting_started.html#mixed-toolchains)
-
-Check if you have Fortran compiler, f.e. *gfortran* if not you can install
-with homebrew or Ubuntu/Debian packages. 
-~~~~~
-apt-get install -y gfortran
-~~~~~
-or
-~~~~~
-brew install gfortran
-~~~~~
-respectively for Ubuntu and Mac OS X.
-
-Alternatively, If your system does not provide any Fortran compiler or you
-want to have the most recent gcc. Just before kick-starting MoFEM
-installation command with Spack, do as follows
-~~~~~
-spack install gcc
-spack load gcc
-spack compiler find
-spack install mofem-users-modules
 ~~~~~
 
-Installing *gcc* with Spack is more resistant to future problems. For
-example, updating codes on hombrew old *gfortran* could be updated, causing
-problems with linking of installed packages. Adding *gcc* compiler with Spack
-resistant to those type of problems.
+Install packages through hombrew:
+~~~~~
+brew install curl git gfortran
+~~~~~
 
-# Installation Spack {#spack_spack}
+Check PATH of Fortran compiler:
+~~~~~
+which gfortran
+~~~~~
 
-Check if you have all [prerequisites](https://spack.readthedocs.io/en/v0.10.0/getting_started.html) and you are ready 
-to start. Clone Spack from GitHub and you’re ready to go:
+If not there, then add to PATH.
+
+Note: recent releases of macOS stopped shipping a Fortran compiler and so require [Mixed
+Toolchains](http://spack.readthedocs.io/en/latest/getting_started.html#mixed-toolchains). The installing of gfortran through homebrew is one way of solving this.
+
+#Spack setup {#spack_setup}
+
+Retrieve Spack's configuration for MoFEM:
 ~~~~~~
 git clone --single-branch -b mofem https://github.com/likask/spack.git
+~~~~~~
+
+Initialise Spack's environment variables:
+~~~~~~
 . spack/share/spack/setup-env.sh
 ~~~~~~
-Note that we used forked Spack repository on GitHub. Forked Spack repository
-is under control of MoFEM developers, where we put most up to date changes in
-the core library and users modules. 
 
-You can install all other prerequisites needed by spack by calling command
+Spack's environment variables will be lost at the close of a terminal session. Consider adding to `.bashrc`
+
+Install packages required by Spack:
 ~~~~~~
 spack bootstrap
-. ${SPACK_ROOT}/share/spack/setup-env.sh
 ~~~~~~
+
+#User only
+
+This will install MoFEM with all of its required dependencies from source using Spack. This will take considerable time > 1 hour. Those seeking to develop MoFEM see developer's instructions
+
+##Install Basic MoFEM {#spack_user}
+
+Install basic MoFEM with required dependences. This will take considerable time:
+~~~~~~
+spack install mofem-users-modules
+~~~~~~
+
+MoFEM is extendable by adding user modules. More modules are available as extensions in Spack. This will show available extensions:
+~~~~~~
+spack extensions mofem-cephas
+~~~~~~
+
+The extensions can be installed using `spack install <extension>`.
+
+Create a 'um_view' directory to conveniently access the installed users-modules. This should be created in an appropriate directory:
+~~~~~~
+spack view --verbose symlink -i um_view mofem-cephas
+spack activate -v um_view mofem-users-modules
+~~~~~~
+
+This creates a package view that has a directory hierarchy including bin, etc, lib and other system directories. Different 'views' can be created depending on the version you wish to access.
+
+A filesystem view is a single directory tree that is the union of the
+directory hierarchies of a number of installed packages; it is similar to the
+directory hierarchy that might exist under */usr/local*. The files of the
+view’s installed MoFEM packages are brought in to the view by symbolic or hard
+links, referencing the original Spack installation.
+
+Add the new 'view' *bin* directory to your PATH.
+~~~~~~
+export PATH=$PWD/um_view/bin:$PATH
+~~~~~~
+
 
 # Installation of MoFEM {#spack_mofem}
 
@@ -620,12 +611,23 @@ Run command
 ~~~~~
 spack find -p -L --start-date `date +%F`
 ~~~~~
-and you will get 
+and you will get ,d~~~~~
+-- darwin- C++ and Fortranelcapitan-x86_64and/ / clang@7.3.0-apple ------------------
+ugi2gm7    mofem-cephas@develop     /spack/opt/spack/dardi C++ and Fortrann-elcapitan-x86_and/64/clang-7.3.0-apple/mofem-cephas-develop-ugi2gm7lydyjwmiwneefhxq7ahvpnuzc
+gu4uheh    mofem-users-modules@develop  /spack/opt/spack/dardi C++ and Fortrann-elcapitan-x86_and/64/clang-7.3.0-apple/mofem-users-modules-develop-gu4uhehai3edtqow7kivuxgpw5lmvbxz
 ~~~~~
--- darwin-elcapitan-x86_64 / clang@7.3.0-apple ------------------
-ugi2gm7    mofem-cephas@develop     /spack/opt/spack/darwin-elcapitan-x86_64/clang-7.3.0-apple/mofem-cephas-develop-ugi2gm7lydyjwmiwneefhxq7ahvpnuzc
-gu4uheh    mofem-users-modules@develop  /spack/opt/spack/darwin-elcapitan-x86_64/clang-7.3.0-apple/mofem-users-modules-develop-gu4uhehai3edtqow7kivuxgpw5lmvbxz
+
+##Ubuntu/Debian
+
+Install the following packages:
+
+Run command
 ~~~~~
+spack find -p -L --start-date `date +%F`
+~~~~~
+and you will get ,d~~~~~
+-- darwin- C++ and Fortranelcapitan-x86_64and/ / clang@7.3.0-apple ------------------
+ugi2gm7    mofem-cephas@develop     /spack/opt/spack/
 
 ## How to check when and were packages were installed?
 
