@@ -288,9 +288,11 @@ docker, you need to run docker container in \em privileged mode, for example
 docker run --privileged -it --name work --hostname mofem -v $HOME:/mnt/home -v mofem_build:/my_build likask/mofem_build:v0.2 /bin/bash
 \endcode
 
-\section users_modules_changes_affects_mainRepo Why do users_modules changes affect mofem-cephas/mofem git repository?
+\section users_modules_changes_affects_mainRepo Why do users_modules changes
+affect mofem-cephas/mofem git repository?
 
-When making changes in a users_modules, a git submodule, the main git repo will register a version change. For example:
+When making changes in a users_modules, a git submodule, the main git repo
+will register a version change. For example:
 \code
 cd mofem-cephas/mofem
 git diff
@@ -304,6 +306,8 @@ index d18f43f88..42bcece0e 160000
 +Subproject commit 42bcece0e7e6577b83bb2a5c64d2709a2bc15b47
 \endcode
 
-The commit ID of the submodule is used to track which version to pull when pulling the main repo. Updating to the latest commit will then pull the your latest changes.
+The commit ID of the submodule is used to track which version to pull when
+pulling the main repo. Updating to the latest commit will then pull the your
+latest changes.
 
 */
