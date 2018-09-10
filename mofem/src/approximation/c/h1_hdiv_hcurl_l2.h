@@ -37,8 +37,10 @@ extern "C" {
 /// Number of dofs on face for H1 space
 #define NBFACETRI_H1(P) (((P) > 1) ? ((P - 2) * (P - 1) / 2) : 0)
 #define NBFACEQUAD_H1(P) (((P) > 2) ? ((P - 3) * (P - 2) / 2) : 0)
+#define NBFACE_DEMCZKOWICZ_QUAD_H1(P) (((P) > 2) ? ((P - 3) * (P - 2) / 2) : 0)
 /// Number of dofs on volume for H1 space
 #define NBVOLUMETET_H1(P) (((P) > 2) ? ((P - 3) * (P - 2) * (P - 1) / 6) : 0)
+#define NBVOLUMEHEX_DEMKOWICZ_H1(P) (((P) > 2) ? ((P - 3) * (P - 2) * (P - 1) / 6) : 0)
 #define NBVOLUMEPRISM_H1(P) (((P) > 4) ? ((P - 5) * (P - 4) * (P - 3) / 6) : 0)
 
 // H curl

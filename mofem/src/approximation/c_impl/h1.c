@@ -497,6 +497,51 @@ PetscErrorCode H1_VolumeShapeFunctions_MBTET(
   }
   MoFEMFunctionReturnHot(0);
 }
+PetscErrorCode H1_VolumeShapeFunctions_MBHEX(
+    const int p, const double *edgeN, const double *diff_edgeN, const double *faceN, const double *diff_faceN, double *volumeN, double *diff_volumeN,
+    const int GDIM) {
+  MoFEMFunctionBeginHot;
+
+  int P = NBVOLUMEHEX_DEMKOWICZ_H1(p);
+  if (P == 0)
+    MoFEMFunctionReturnHot(0);
+  double diff_ksiL0[3], diff_ksiL1[3], diff_ksiL2[3];
+  int dd = 0;
+  // for (; dd < 3; dd++) {
+  //   diff_ksiL0[dd] = (diffN[1 * 3 + dd] - diffN[0 * 3 + dd]);
+  //   diff_ksiL1[dd] = (diffN[2 * 3 + dd] - diffN[0 * 3 + dd]);
+  //   diff_ksiL2[dd] = (diffN[3 * 3 + dd] - diffN[0 * 3 + dd]);
+  // }
+  int ii = 0;
+  for (; ii < GDIM; ii++) {
+
+    double *pp = &volumeN[0];
+    double *diff_pp = &diff_volumeN[0];
+
+    const int size_edges = sizeof(edgeN[0])/sizeof(double);
+    const int size_faces = sizeof(faceN[0])/sizeof(double);
+    // const int size_diff_edges = sizeof(diff_edgeN[0])/sizeof(double);
+    // const int size_diff_faces = sizeof(diff_faceN[0])/sizeof(double);
+    // int jj = 0;
+    for (int ee = 0; ee != size_edges; ++ee) {
+      for (int ff = 0; ff != size_faces; ++ff) {
+        //volumeN[ee*size_faces + ff] = edgeN[ee] * faceN[ff];
+        *pp = edgeN[ee] * faceN[ff];
+        ++pp;
+
+    for (; dd < 3; dd++){
+
+      *diff_pp += diff_edgeN[ee * 3 + dd] * faceN[ff] +
+                  edgeN[ee] * diff_faceN[ff * 3 + dd];
+      ++diff_pp;
+      }     
+}
+       }
+    // if (jj != P)
+    //   SETERRQ1(PETSC_COMM_SELF, 1, "wrong order %d", jj);
+  }
+  MoFEMFunctionReturnHot(0);
+}
 PetscErrorCode H1_EdgeShapeDiffMBTETinvJ(int *base_p, int *p,
                                          double *edge_diffN[], double *invJac,
                                          double *edge_diffNinvJac[], int GDIM) {
