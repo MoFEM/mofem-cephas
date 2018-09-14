@@ -29,15 +29,15 @@
 
 namespace MoFEM {
 
-/** \brief user adjacency function table
- * \ingroup dof_multi_indices
- */
-typedef int (*FieldOrderTable[MBMAXTYPE])(const int order);
-
 /** \brief user adjacency function
  * \ingroup fe_multi_indices
  */
-typedef int (*FieldOrderFunct)(const int order);
+typedef boost::function<int(const int order)> FieldOrderFunct;
+
+/** \brief user adjacency function table
+ * \ingroup dof_multi_indices
+ */
+typedef FieldOrderFunct FieldOrderTable[MBMAXTYPE];
 
 struct FieldEntity;
 struct DofEntity;
