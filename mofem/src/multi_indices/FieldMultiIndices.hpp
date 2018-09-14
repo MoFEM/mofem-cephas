@@ -94,6 +94,13 @@ struct Field {
   FieldOrderTable forder_table; ///< nb. DOFs table for entities
 
   /**
+   * @brief Get the Field Order Table 
+   * 
+   * @return FieldOrderTable& 
+   */
+  inline FieldOrderTable &getFieldOrderTable() { return forder_table; }
+
+  /**
    * Field Id is bit set. Each field has only one bit on, bit_number stores
    * number of set bit
    */
