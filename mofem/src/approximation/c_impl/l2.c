@@ -26,7 +26,7 @@
 
 static PetscErrorCode ierr;
 
-PetscErrorCode L2_ShapeFunctions_MBTRI(
+PetscErrorCode L2_Ainsworth_ShapeFunctions_MBTRI(
     int p, double *N, double *diffN, double *L2N, double *diff_L2N, int GDIM,
     PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s,
                                        double *L, double *diffL,
@@ -81,7 +81,7 @@ PetscErrorCode L2_ShapeFunctions_MBTRI(
   }
   MoFEMFunctionReturnHot(0);
 }
-PetscErrorCode L2_ShapeFunctions_MBTET(
+PetscErrorCode L2_Ainsworth_ShapeFunctions_MBTET(
     int p, double *N, double *diffN, double *L2N, double *diff_L2N, int GDIM,
     PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s,
                                        double *L, double *diffL,

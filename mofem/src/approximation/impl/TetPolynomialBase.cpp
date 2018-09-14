@@ -206,7 +206,7 @@ MoFEMErrorCode TetPolynomialBase::getValueL2(MatrixDouble &pts) {
       nb_gauss_pts,
       3 * NBVOLUMETET_L2(data.dataOnEntities[MBTET][0].getDataOrder()), false);
 
-  ierr = L2_ShapeFunctions_MBTET(
+  ierr = L2_Ainsworth_ShapeFunctions_MBTET(
       data.dataOnEntities[MBTET][0].getDataOrder(),
       &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
       &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
