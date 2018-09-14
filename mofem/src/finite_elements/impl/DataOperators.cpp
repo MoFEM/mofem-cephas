@@ -1208,9 +1208,6 @@ OpGetCoordsAndNormalsOnFace::doWork(int side, EntityType type,
   FTensor::Number<0> N0;
   FTensor::Number<1> N1;
 
-  // std::cerr << type << " " << side << " " <<
-  // ApproximationBaseNames[data.getBase()] << std::endl;
-
   switch (type) {
   case MBVERTEX: {
     cOords_at_GaussPt.clear();
@@ -1310,7 +1307,7 @@ MoFEMErrorCode OpGetCoordsAndNormalsOnFace::calculateNormals() {
     ++t_t1;
     ++t_t2;
   }
-  
+
   MoFEMFunctionReturnHot(0);
 }
 
