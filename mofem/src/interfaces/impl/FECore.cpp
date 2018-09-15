@@ -498,7 +498,7 @@ MoFEMErrorCode Core::add_ents_to_finite_element_by_bit_ref(
       ref_MoFEMFiniteElement.upper_bound(type);
   if (verb > 1) {
     PetscSynchronizedPrintf(cOmm, "nb. ref elements in database %d\n",
-                            distance(miit, hi_miit));
+                            std::distance(miit, hi_miit));
   }
   int nb_add_FEs = 0;
   for (; miit != hi_miit; miit++) {
@@ -802,7 +802,7 @@ MoFEMErrorCode Core::build_finite_elements(int verb) {
           finite_elements_by_id.lower_bound((*fe_id_it)->getId());
       FiniteElementById::iterator hi_miit =
           finite_elements_by_id.upper_bound((*fe_id_it)->getId());
-      int count = distance(miit, hi_miit);
+      int count = std::distance(miit, hi_miit);
       std::ostringstream ss;
       ss << *(*fe_id_it) << " Nb. FEs " << count << std::endl;
       PetscSynchronizedPrintf(cOmm, ss.str().c_str());
@@ -846,7 +846,7 @@ MoFEMErrorCode Core::build_finite_elements(const string fe_name,
         finite_elements_by_id.lower_bound((*fe_miit)->getId());
     FiniteElementById::iterator hi_miit =
         finite_elements_by_id.upper_bound((*fe_miit)->getId());
-    int count = distance(miit, hi_miit);
+    int count = std::distance(miit, hi_miit);
     std::ostringstream ss;
     ss << *(*fe_miit) << " Nb. FEs " << count << std::endl;
     PetscSynchronizedPrintf(cOmm, ss.str().c_str());

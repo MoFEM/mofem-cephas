@@ -1194,24 +1194,40 @@ OpGetCoordsAndNormalsOnFace::doWork(int side, EntityType type,
 
   int nb_gauss_pts = data.getN().size1();
   cOords_at_GaussPt.resize(nb_gauss_pts, 3, false);
-  nOrmals_at_GaussPt.resize(nb_gauss_pts, 3, false);
   tAngent1_at_GaussPt.resize(nb_gauss_pts, 3, false);
   tAngent2_at_GaussPt.resize(nb_gauss_pts, 3, false);
 
-  // std::cerr << type << " " << side << " " <<
-  // ApproximationBaseNames[data.getBase()] << std::endl;
+  auto get_ftensor1 = [](MatrixDouble &m) {
+    return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(
+        &m(0, 0), &m(0, 1), &m(0, 2));
+  };
+  auto t_coords = get_ftensor1(cOords_at_GaussPt);
+  auto t_t1 = get_ftensor1(tAngent1_at_GaussPt);
+  auto t_t2 = get_ftensor1(tAngent2_at_GaussPt);
+  FTensor::Index<'i', 3> i;
+  FTensor::Number<0> N0;
+  FTensor::Number<1> N1;
 
   switch (type) {
   case MBVERTEX: {
-    for (int gg = 0; gg < nb_gauss_pts; ++gg) {
-      for (int nn = 0; nn < 3; nn++) {
-        cOords_at_GaussPt(gg, nn) =
-            cblas_ddot(3, &data.getN(gg)[0], 1, &data.getFieldData()[nn], 3);
-        tAngent1_at_GaussPt(gg, nn) = cblas_ddot(3, &data.getDiffN()(0, 0), 2,
-                                                 &data.getFieldData()[nn], 3);
-        tAngent2_at_GaussPt(gg, nn) = cblas_ddot(3, &data.getDiffN()(0, 1), 2,
-                                                 &data.getFieldData()[nn], 3);
+    cOords_at_GaussPt.clear();
+    tAngent1_at_GaussPt.clear();
+    tAngent2_at_GaussPt.clear();
+    auto t_base = data.getFTensor0N();
+    for (int gg = 0; gg != nb_gauss_pts; ++gg) {
+      auto t_data = data.getFTensor1FieldData<3>();
+      auto t_diff_base = data.getFTensor1DiffN<2>();
+      for (int nn = 0; nn != 3; nn++) {
+        t_coords(i) += t_base * t_data(i);
+        t_t1(i) += t_data(i) * t_diff_base(N0);
+        t_t2(i) += t_data(i) * t_diff_base(N1);
+        ++t_data;
+        ++t_base;
+        ++t_diff_base;
       }
+      ++t_coords;
+      ++t_t1;
+      ++t_t2;
     }
   } break;
   case MBEDGE:
@@ -1238,17 +1254,27 @@ OpGetCoordsAndNormalsOnFace::doWork(int side, EntityType type,
           MoFEMFunctionReturnHot(0);
       }
     }
-    for (int gg = 0; gg < nb_gauss_pts; ++gg) {
-      for (int dd = 0; dd < 3; dd++) {
-        cOords_at_GaussPt(gg, dd) += cblas_ddot(nb_dofs / 3, &data.getN(gg)[0],
-                                                1, &data.getFieldData()[dd], 3);
-        tAngent1_at_GaussPt(gg, dd) +=
-            cblas_ddot(nb_dofs / 3, &data.getDiffN()(gg, 0), 2,
-                       &data.getFieldData()[dd], 3);
-        tAngent2_at_GaussPt(gg, dd) +=
-            cblas_ddot(nb_dofs / 3, &data.getDiffN()(gg, 1), 2,
-                       &data.getFieldData()[dd], 3);
+    const int nb_base_functions = data.getN().size2();
+    auto t_base = data.getFTensor0N();
+    auto t_diff_base = data.getFTensor1DiffN<2>();
+    for (int gg = 0; gg != nb_gauss_pts; ++gg) {
+      auto t_data = data.getFTensor1FieldData<3>();
+      int bb = 0;
+      for (; bb != nb_dofs / 3; ++bb) {
+        t_coords(i) += t_base * t_data(i);
+        t_t1(i) += t_data(i) * t_diff_base(N0);
+        t_t2(i) += t_data(i) * t_diff_base(N1);
+        ++t_data;
+        ++t_base;
+        ++t_diff_base;
       }
+      for (; bb != nb_base_functions;++bb) {
+        ++t_base;
+        ++t_diff_base;
+      }
+      ++t_coords;
+      ++t_t1;
+      ++t_t2;
     }
   } break;
   default:
@@ -1261,15 +1287,25 @@ OpGetCoordsAndNormalsOnFace::doWork(int side, EntityType type,
 MoFEMErrorCode OpGetCoordsAndNormalsOnFace::calculateNormals() {
   MoFEMFunctionBeginHot;
 
-  sPin.resize(3, 3);
-  sPin.clear();
   nOrmals_at_GaussPt.resize(tAngent1_at_GaussPt.size1(), 3, false);
-  for (unsigned int gg = 0; gg < tAngent1_at_GaussPt.size1(); ++gg) {
-    ierr = Spin(&*sPin.data().begin(), &tAngent1_at_GaussPt(gg, 0));
-    CHKERRG(ierr);
-    cblas_dgemv(CblasRowMajor, CblasNoTrans, 3, 3, 1., &*sPin.data().begin(), 3,
-                &tAngent2_at_GaussPt(gg, 0), 1, 0., &nOrmals_at_GaussPt(gg, 0),
-                1);
+
+  auto get_ftensor1 = [](MatrixDouble &m) {
+    return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(
+        &m(0, 0), &m(0, 1), &m(0, 2));
+  };
+  auto t_normal = get_ftensor1(nOrmals_at_GaussPt);
+  auto t_t1 = get_ftensor1(tAngent1_at_GaussPt);
+  auto t_t2 = get_ftensor1(tAngent2_at_GaussPt);
+  
+  FTensor::Index<'i', 3> i;
+  FTensor::Index<'j', 3> j;
+  FTensor::Index<'k', 3> k;
+
+  for (unsigned int gg = 0; gg != tAngent1_at_GaussPt.size1(); ++gg) {
+    t_normal(j) = FTensor::levi_civita(i, j, k) * t_t1(k) * t_t2(i);
+    ++t_normal;
+    ++t_t1;
+    ++t_t2;
   }
 
   MoFEMFunctionReturnHot(0);

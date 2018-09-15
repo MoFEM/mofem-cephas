@@ -154,6 +154,79 @@ namespace FTensor
                                   i, j>(TensorExpr(a, b));
   }
 
+  /* This operatores will yield tensor 2 */
+
+  /* A(i,j,k,l)*B(j,l) */
+
+  template <class A, class B, class T, class U, int Dim01, int Dim23, char i,
+            char j, char k, char l>
+  class Ddg_times_Tensor2_13
+  {
+    Ddg_Expr<A, T, Dim01, Dim23, i, j, k, l> iterA;
+    Tensor2_Expr<B, U, Dim01, Dim23, j, l> iterB;
+
+    template <int Current_Dim0, int Current_Dim1>
+    typename promote<T, U>::V
+    eval(const int N1, const int N2, const Number<Current_Dim0> &,
+         const Number<Current_Dim1> &) const
+    {
+      return iterA(N1, Current_Dim0 - 1, N2, Current_Dim1 - 1) *
+                 iterB(Current_Dim0 - 1, Current_Dim1 - 1) +
+             eval(N1, N2, Number<Current_Dim0 - 1>(), Number<Current_Dim1>());
+    }
+    template <int Current_Dim1>
+    typename promote<T, U>::V
+    eval(const int N1, const int N2, const Number<1> &,
+         const Number<Current_Dim1> &) const
+    {
+      return iterA(N1, 0, N2, Current_Dim1 - 1) * iterB(0, Current_Dim1 - 1) +
+             eval(N1, N2, Number<Dim01>(), Number<Current_Dim1 - 1>());
+    }
+    typename promote<T, U>::V eval(const int N1, const int N2,
+                                   const Number<1> &, const Number<1> &) const
+    {
+      return iterA(N1, 0, N2, 0) * iterB(0, 0);
+    }
+
+  public:
+    Ddg_times_Tensor2_13(const Ddg_Expr<A, T, Dim01, Dim23, i, j, k, l> &a,
+                         const Tensor2_Expr<B, U, Dim01, Dim23, j, l> &b)
+        : iterA(a), iterB(b)
+    {}
+    typename promote<T, U>::V operator()(const int N1, const int N2) const
+    {
+      return eval(N1, N2, Number<Dim01>(), Number<Dim23>());
+    }
+  };
+
+  template <class A, class B, class T, class U, int Dim01, int Dim23, char i,
+            char j, char k, char l>
+  Tensor2_Expr<
+    Ddg_times_Tensor2_13<A, B, T, U, Dim01, Dim23, i, j, k, l>,
+    typename promote<T, U>::V, Dim01, Dim23, i, k>
+  operator*(const Ddg_Expr<A, T, Dim01, Dim23, i, j, k, l> &a,
+            const Tensor2_Expr<B, U, Dim01, Dim23, j, l> &b)
+  {
+    using TensorExpr
+      = Ddg_times_Tensor2_13<A, B, T, U, Dim01, Dim23, i, j, k, l>;
+    return Tensor2_Expr<TensorExpr, typename promote<T, U>::V, Dim01, Dim23, i,
+                        k>(TensorExpr(a, b));
+  }
+
+  /* B(j,l)*A(i,j,k,l) */
+
+  template <class A, class B, class T, class U, int Dim01, int Dim23, char i,
+            char j, char k, char l>
+  Tensor2_Expr<Ddg_times_Tensor2_13<A, B, T, U, Dim01, Dim23, i, j, k, l>,
+               typename promote<T, U>::V, Dim01, Dim23, i, k>
+  operator*(const Tensor2_Expr<B, U, Dim01, Dim23, j, l> &b,
+            const Ddg_Expr<A, T, Dim01, Dim23, i, j, k, l> &a) {
+    using TensorExpr
+      = Ddg_times_Tensor2_13<A, B, T, U, Dim01, Dim23, i, j, k, l>;
+    return Tensor2_Expr<TensorExpr, typename promote<T, U>::V, Dim01, Dim23, i,
+                        k>(TensorExpr(a, b));
+  }
+
   /* This file has all of the declarations for expressions like
      Ddg*Tensor2 and Tensor2*Ddg, yielding a
      Tensor4. */

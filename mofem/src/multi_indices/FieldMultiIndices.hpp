@@ -29,15 +29,15 @@
 
 namespace MoFEM {
 
-/** \brief user adjacency function table
- * \ingroup dof_multi_indices
- */
-typedef int (*FieldOrderTable[MBMAXTYPE])(const int order);
-
 /** \brief user adjacency function
  * \ingroup fe_multi_indices
  */
-typedef int (*FieldOrderFunct)(const int order);
+typedef boost::function<int(const int order)> FieldOrderFunct;
+
+/** \brief user adjacency function table
+ * \ingroup dof_multi_indices
+ */
+typedef FieldOrderFunct FieldOrderTable[MBMAXTYPE];
 
 struct FieldEntity;
 struct DofEntity;
@@ -92,6 +92,13 @@ struct Field {
   int tag_name_prefix_size;     ///< number of bits necessary to keep field name
                                 ///< prefix
   FieldOrderTable forder_table; ///< nb. DOFs table for entities
+
+  /**
+   * @brief Get the Field Order Table 
+   * 
+   * @return FieldOrderTable& 
+   */
+  inline FieldOrderTable &getFieldOrderTable() { return forder_table; }
 
   /**
    * Field Id is bit set. Each field has only one bit on, bit_number stores
