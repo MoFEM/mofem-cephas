@@ -1,5 +1,5 @@
 /** \file TriPolynomialBase.cpp
-\brief Implementation of Ainsworth-Cole H1 base on triangle
+\brief Implementation of bases on triangle
 
 */
 
