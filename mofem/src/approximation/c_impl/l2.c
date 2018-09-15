@@ -43,7 +43,7 @@ PetscErrorCode L2_Ainsworth_ShapeFunctions_MBTRI(
     diff_ksiL20[dd] = (diffN[2 * 2 + dd] - diffN[0 * 2 + dd]);
   }
   int ii = 0;
-  for (; ii < GDIM; ii++) {
+  for (; ii != GDIM; ++ii) {
     int node_shift = ii * 3;
     double ksiL01 = N[node_shift + 1] - N[node_shift + 0];
     double ksiL20 = N[node_shift + 2] - N[node_shift + 0];
@@ -99,7 +99,7 @@ PetscErrorCode L2_Ainsworth_ShapeFunctions_MBTET(
     diff_ksiL2[dd] = (diffN[3 * 3 + dd] - diffN[0 * 3 + dd]);
   }
   int ii = 0;
-  for (; ii < GDIM; ii++) {
+  for (; ii != GDIM; ++ii) {
     int node_shift = ii * 4;
     double ksiL0 = N[node_shift + 1] - N[node_shift + 0];
     double ksiL1 = N[node_shift + 2] - N[node_shift + 0];
@@ -150,7 +150,7 @@ PetscErrorCode L2_VolumeShapeDiffMBTETinvJ(int base_p, int p,
                                            int GDIM) {
   MoFEMFunctionBeginHot;
   int ii, gg;
-  for (ii = 0; ii < NBVOLUMETET_L2(p); ii++) {
+  for (ii = 0; ii != NBVOLUMETET_L2(p); ++ii) {
     for (gg = 0; gg < GDIM; gg++) {
       int shift1 = NBVOLUMETET_L2(base_p) * gg;
       int shift2 = NBVOLUMETET_L2(p) * gg;
