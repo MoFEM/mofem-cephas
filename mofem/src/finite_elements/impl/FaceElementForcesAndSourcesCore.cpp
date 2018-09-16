@@ -134,16 +134,37 @@ MoFEMErrorCode FaceElementForcesAndSourcesCore::calculateAreaAndNormal() {
   CHKERR mField.get_moab().get_coords(conn, num_nodes, &*coords.data().begin());
   double diff_n[6];
   CHKERR ShapeDiffMBTRI(diff_n);
+
   nOrmal.resize(3, false);
-  CHKERR ShapeFaceNormalMBTRI(diff_n, &*coords.data().begin(),
-                              &*nOrmal.data().begin());
-  aRea = cblas_dnrm2(3, &*nOrmal.data().begin(), 1) * 0.5;
   tangentOne.resize(3, false);
   tangentTwo.resize(3, false);
-  for (int dd = 0; dd != 3; dd++) {
-    tangentOne[dd] = cblas_ddot(3, &diff_n[0], 2, &coords[dd], 3);
-    tangentTwo[dd] = cblas_ddot(3, &diff_n[1], 2, &coords[dd], 3);
+  FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_coords(
+      &coords[0], &coords[1], &coords[2]);
+  FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_normal(
+      &nOrmal[0], &nOrmal[1], &nOrmal[2]);
+  FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_t1(
+      &tangentOne[0], &tangentOne[1], &tangentOne[2]);
+  FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_t2(
+      &tangentTwo[0], &tangentTwo[1], &tangentTwo[2]);
+  FTensor::Tensor1<FTensor::PackPtr<double *, 2>, 2> t_diff(&diff_n[0],
+                                                            &diff_n[1]);
+
+  FTensor::Index<'i', 3> i;
+  FTensor::Index<'j', 3> j;
+  FTensor::Index<'k', 3> k;
+  FTensor::Number<0> N0;
+  FTensor::Number<1> N1;
+  t_t1(i) = 0;
+  t_t2(i) = 0;
+  for (int nn = 0; nn != 3; ++nn) {
+    t_t1(i) += t_coords(i) * t_diff(N0);
+    t_t2(i) += t_coords(i) * t_diff(N1);
+    ++t_coords;
+    ++t_diff;
   }
+  t_normal(j) = FTensor::levi_civita(i, j, k) * t_t1(k) * t_t2(i);
+  aRea = sqrt(t_normal(i) * t_normal(i)) / 2.;
+
   MoFEMFunctionReturn(0);
 }
 
