@@ -161,3 +161,21 @@ PetscErrorCode L2_VolumeShapeDiffMBTETinvJ(int base_p, int p,
   }
   MoFEMFunctionReturnHot(0);
 }
+
+PetscErrorCode L2_ShapeFunctions_MBTRI(
+    int p, double *N, double *diffN, double *L2N, double *diff_L2N, int GDIM,
+    PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s,
+                                       double *L, double *diffL,
+                                       const int dim)) {
+  return L2_Ainsworth_ShapeFunctions_MBTRI(p, N, diffN, L2N, diff_L2N, GDIM,
+                                           base_polynomials);
+}
+
+PetscErrorCode L2_ShapeFunctions_MBTET(
+    int p, double *N, double *diffN, double *L2N, double *diff_L2N, int GDIM,
+    PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s,
+                                       double *L, double *diffL,
+                                       const int dim)){
+  return L2_ShapeFunctions_MBTET(p, N, diffN, L2N, diff_L2N, GDIM,
+                                 base_polynomials);
+};
