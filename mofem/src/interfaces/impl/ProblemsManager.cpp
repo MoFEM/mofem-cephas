@@ -1381,7 +1381,7 @@ MoFEMErrorCode ProblemsManager::buildSubProblem(
       auto hi_dit =
           out_problem_dofs[ss]->get<PetscLocalIdx_mi_tag>().upper_bound(
               out_problem_dofs[ss]->size());
-      const int nb = distance(dit, hi_dit);
+      const int nb = std::distance(dit, hi_dit);
       // get main problem global indices
       std::vector<int> main_indices(nb);
       for (auto it = main_indices.begin(); dit != hi_dit; dit++, it++) {
@@ -1430,7 +1430,7 @@ MoFEMErrorCode ProblemsManager::buildSubProblem(
             out_problem_dofs[ss]->get<PetscLocalIdx_mi_tag>().lower_bound(-1);
         NumeredDofEntityByLocalIdx::iterator hi_dit =
             out_problem_dofs[ss]->get<PetscLocalIdx_mi_tag>().upper_bound(-1);
-        const int nb = distance(dit, hi_dit);
+        const int nb = std::distance(dit, hi_dit);
         std::vector<int> main_indices_non_local(nb);
         for (auto it = main_indices_non_local.begin(); dit != hi_dit;
              dit++, it++) {
@@ -1900,12 +1900,12 @@ MoFEMErrorCode ProblemsManager::partitionSimpleProblem(const std::string &name,
        part++) {
     miit_row = dofs_row_by_idx.lower_bound(ranges_row[part]);
     hi_miit_row = dofs_row_by_idx.lower_bound(ranges_row[part + 1]);
-    if (distance(miit_row, hi_miit_row) !=
+    if (std::distance(miit_row, hi_miit_row) !=
         ranges_row[part + 1] - ranges_row[part]) {
       SETERRQ4(PETSC_COMM_SELF, PETSC_ERR_ARG_SIZ,
-               "data inconsistency, distance(miit_row,hi_miit_row) != rend - "
+               "data inconsistency, std::distance(miit_row,hi_miit_row) != rend - "
                "rstart (%d != %d - %d = %d) ",
-               distance(miit_row, hi_miit_row), ranges_row[part + 1],
+               std::distance(miit_row, hi_miit_row), ranges_row[part + 1],
                ranges_row[part], ranges_row[part + 1] - ranges_row[part]);
     }
     // loop rows
@@ -1926,12 +1926,12 @@ MoFEMErrorCode ProblemsManager::partitionSimpleProblem(const std::string &name,
     if (!square_matrix) {
       miit_col = dofs_col_by_idx.lower_bound(ranges_col[part]);
       hi_miit_col = dofs_col_by_idx.lower_bound(ranges_col[part + 1]);
-      if (distance(miit_col, hi_miit_col) !=
+      if (std::distance(miit_col, hi_miit_col) !=
           ranges_col[part + 1] - ranges_col[part]) {
         SETERRQ4(PETSC_COMM_SELF, PETSC_ERR_ARG_SIZ,
-                 "data inconsistency, distance(miit_col,hi_miit_col) != rend - "
+                 "data inconsistency, std::distance(miit_col,hi_miit_col) != rend - "
                  "rstart (%d != %d - %d = %d) ",
-                 distance(miit_col, hi_miit_col), ranges_col[part + 1],
+                 std::distance(miit_col, hi_miit_col), ranges_col[part + 1],
                  ranges_col[part], ranges_col[part + 1] - ranges_col[part]);
       }
       // loop cols
@@ -2623,7 +2623,7 @@ MoFEMErrorCode ProblemsManager::partitionFiniteElements(const std::string &name,
         }
         std::vector<int>::iterator pos =
             max_element(parts.begin(), parts.end());
-        unsigned int max_part = distance(parts.begin(), pos);
+        unsigned int max_part = std::distance(parts.begin(), pos);
         NumeredEntFiniteElement_change_part(max_part).operator()(numered_fe);
       }
     }
@@ -2723,7 +2723,7 @@ MoFEMErrorCode ProblemsManager::partitionFiniteElements(const std::string &name,
         m_field.get_comm_rank());
     hi_miit = problem_finite_elements.get<Part_mi_tag>().upper_bound(
         m_field.get_comm_rank());
-    int count = distance(miit, hi_miit);
+    int count = std::distance(miit, hi_miit);
     std::ostringstream ss;
     ss << *p_miit;
     ss << " Nb. elems " << count << " on proc " << m_field.get_comm_rank()

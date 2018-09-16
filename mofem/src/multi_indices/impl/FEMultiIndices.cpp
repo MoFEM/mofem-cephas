@@ -274,7 +274,7 @@ RefElement_PRISM::getSideNumberPtr(const EntityHandle ent) const {
       //       ))
       //     ) {
       //       side_number = 3+ee;
-      //       offset = distance(conn,find(conn,&conn[6],conn_ent[0]));
+      //       offset = std::distance(conn,find(conn,&conn[6],conn_ent[0]));
       //       sense = 1;
       //       if(( conn_ent[0] == edges[ee][1] )&&( conn_ent[1] == edges[ee][0]
       //       ))  sense = -1; miit =

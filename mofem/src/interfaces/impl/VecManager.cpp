@@ -85,7 +85,7 @@ MoFEMErrorCode VecManager::vecCreateGhost(const std::string &name,
   // get ghost dofs
   auto miit = dofs->lower_bound(nb_local_dofs);
   auto hi_miit = dofs->upper_bound(nb_local_dofs + nb_ghost_dofs);
-  int count = distance(miit, hi_miit);
+  int count = std::distance(miit, hi_miit);
   if (count != nb_ghost_dofs) {
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
   }

@@ -92,6 +92,8 @@ void test_T3dg_37(const Tensor2<double, 3, 3> &t2_2,
                   const Tensor2_symmetric<double, 3> &t2s_2,
                   const Dg<double, 3, 3> &t3dg_2,
                   const Dg<double, 3, 3> &t3dg_3);
+void test_T3dg_038(const Dg<double, 3, 3> &t3dg_2,
+                   const Dg<double, 3, 3> &t3dg_3);
 
 void test_T3dg(Tensor1<double, 3> &t1_1, const Tensor1<double, 3> &t1_2,
                Tensor2<double, 3, 3> &t2_1, const Tensor2<double, 3, 3> &t2_2,
@@ -138,4 +140,5 @@ void test_T3dg(Tensor1<double, 3> &t1_1, const Tensor1<double, 3> &t1_2,
   test_T3dg_35(t1_1, t2s_2, t3dg_2);
   test_T3dg_36(t2_1, t2s_2, t3dg_1, t3dg_2, t3dg_3);
   test_T3dg_37(t2_2, t2s_2, t3dg_2, t3dg_3);
+  test_T3dg_038(t3dg_2, t3dg_3);
 }
