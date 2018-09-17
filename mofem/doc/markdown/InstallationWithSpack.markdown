@@ -407,38 +407,34 @@ We need to set up compilers since the location of standard gcc@6.4.0 libraries
 is in an unusual place when loaded by the module. In order to do that you have
 to edit file *.spack/linux/compilers.yaml* in your home directory
 ~~~~~
-     1    compilers:
-     2    - compiler:
-     3        environment: {}
-     4        extra_rpaths: []
-     5        flags: {}
-     6        modules: []
-     7        operating_system: centos7
-     8        paths:
-     9          cc: /usr/bin/gcc
-    10          cxx: /usr/bin/g++
-    11          f77: null
-    12          fc: null
-    13        spec: gcc@4.8.5
-    14        target: x86_64
-    15    - compiler:
-    16        environment: {}
-    17        extra_rpaths: []
-    18        flags: {}
-    19        modules: []
-    20        operating_system: centos7
-    21        paths:
-    22          cc: /software/compilers/gcc/6.4.0/bin/gcc
-    23          cxx: /software/compilers/gcc/6.4.0/bin/g++
-    24          f77: /software/compilers/gcc/6.4.0/bin/gfortran
-    25          fc: /software/compilers/gcc/6.4.0/bin/gfortran
-    26        spec: gcc@6.4.0
-    27        target: x86_64
-~~~~~
-and substitute line 17 by 
-~~~~~
-    17    extra_rpaths:
-          - /software/compilers/gcc/6.4.0/lib64
+     1	compilers:
+     2	- compiler:
+     3	    environment: {}
+     4	    extra_rpaths: []
+     5	    flags: {}
+     6	    modules: []
+     7	    operating_system: centos7
+     8	    paths:
+     9	      cc: /usr/bin/gcc
+    10	      cxx: /usr/bin/g++
+    11	      f77: null
+    12	      fc: null
+    13	    spec: gcc@4.8.5
+    14	    target: x86_64
+    15	- compiler:
+    16	    environment: {}
+    17	    extra_rpaths:
+    18	    - /software/compilers/gcc/6.4.0/lib64
+    19	    flags: {}
+    20	    modules: []
+    21	    operating_system: centos7
+    22	    paths:
+    23	      cc: /software/compilers/gcc/6.4.0/bin/gcc
+    24	      cxx: /software/compilers/gcc/6.4.0/bin/g++
+    25	      f77: /software/compilers/gcc/6.4.0/bin/gfortran
+    26	      fc: /software/compilers/gcc/6.4.0/bin/gfortran
+    27	    spec: gcc@6.4.0
+    28	    target: x86_64
 ~~~~~
 
 At that point, we can follow the standard installation procedure, as follows

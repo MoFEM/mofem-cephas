@@ -207,7 +207,7 @@ MoFEMErrorCode ISManager::isCreateProblemOrder(const std::string &problem,
       hi_vit;
   vit = dof_idx_view.begin();
   hi_vit = dof_idx_view.end();
-  int size = distance(vit, hi_vit);
+  int size = std::distance(vit, hi_vit);
   int *id;
   CHKERR PetscMalloc(size * sizeof(int), &id);
   for (int ii = 0; vit != hi_vit; ++vit, ++ii) {
@@ -274,7 +274,7 @@ MoFEMErrorCode ISManager::isCreateProblemFieldAndRank(
       hi_vit;
   vit = dof_loc_idx_view.begin();
   hi_vit = dof_loc_idx_view.end();
-  int size = distance(vit, hi_vit);
+  int size = std::distance(vit, hi_vit);
   int *id;
   CHKERR PetscMalloc(size * sizeof(int), &id);
   int ii = 0;

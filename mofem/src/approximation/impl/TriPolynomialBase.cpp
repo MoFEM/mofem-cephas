@@ -1,5 +1,5 @@
 /** \file TriPolynomialBase.cpp
-\brief Implementation of Ainsworth-Cole H1 base on triangle
+\brief Implementation of bases on triangle
 
 */
 
@@ -154,7 +154,7 @@ MoFEMErrorCode TriPolynomialBase::getValueL2(MatrixDouble &pts) {
       nb_gauss_pts,
       2 * NBFACETRI_L2(data.dataOnEntities[MBTRI][0].getDataOrder()), false);
 
-  CHKERR L2_ShapeFunctions_MBTRI(
+  CHKERR L2_Ainsworth_ShapeFunctions_MBTRI(
       data.dataOnEntities[MBTRI][0].getDataOrder(),
       &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
       &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),

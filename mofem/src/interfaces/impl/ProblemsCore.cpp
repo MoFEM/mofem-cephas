@@ -448,7 +448,7 @@ MoFEMErrorCode Core::loop_finite_elements(
     }
   }
 
-  method.loopSize = distance(miit, hi_miit);
+  method.loopSize = std::distance(miit, hi_miit);
   for (int nn = 0; miit != hi_miit; miit++, nn++) {
 
     // back_miit--;
@@ -585,7 +585,7 @@ MoFEMErrorCode Core::loop_dofs(const std::string &field_name, DofMethod &method,
       method.fieldPtr = *field_it;
     }
   }
-  method.loopSize = distance(miit, hi_miit);
+  method.loopSize = std::distance(miit, hi_miit);
   CHKERR method.preProcess();
   for (int nn = 0; miit != hi_miit; miit++, nn++) {
     method.nInTheLoop = nn;
@@ -612,7 +612,7 @@ MoFEMErrorCode Core::loop_entities(const std::string &field_name,
       method.fieldPtr = *field_it;
     }
   }
-  method.loopSize = distance(miit, hi_miit);
+  method.loopSize = std::distance(miit, hi_miit);
   CHKERR method.preProcess();
   for (int nn = 0; miit != hi_miit; miit++, nn++) {
     method.nInTheLoop = nn;

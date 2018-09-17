@@ -16,8 +16,12 @@ to use base functions. Need to be changed.
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
  */
 
-#ifndef __H1_H__
-#define __H1_H__
+#ifndef __H1_HDIV_HCURL_L2_H__
+#define __H1_HDIV_HCURL_L2_H__
+
+#ifndef DEPRECATED
+  #define DEPRECATED
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -25,20 +29,49 @@ extern "C" {
 
 // L2
 
-/// Number of dofs for L2 space
+// Number of dofs for L2 space
+
+/**
+ * @brief Number of base functions on tetrahedron for L2 space
+ */
 #define NBVOLUMETET_L2(P) ((P + 1) * (P + 2) * (P + 3) / 6)
+
+/**
+ * @brief Number of base functions on triangle for L2 space
+ */
 #define NBFACETRI_L2(P) ((P + 1) * (P + 2) / 2)
+
+/**
+ * @brief Number of base functions on edge fro L2 space
+ * 
+ */
 #define NBEDGE_L2(P) (P + 1)
 
 // H1
 
-/// Number of dofs on edge for H1 space
+/**
+ * @brief Numer of base function on edge for H1 space
+ */
 #define NBEDGE_H1(P) (((P) > 0) ? (P - 1) : 0)
-/// Number of dofs on face for H1 space
+
+/**
+ * @brief Number of base function on triangle for H1 space
+ */
 #define NBFACETRI_H1(P) (((P) > 1) ? ((P - 2) * (P - 1) / 2) : 0)
+
+/**
+ * @brief Number of base functions on quad for H1 space
+ */
 #define NBFACEQUAD_H1(P) (((P) > 2) ? ((P - 3) * (P - 2) / 2) : 0)
-/// Number of dofs on volume for H1 space
+
+/**
+ * @brief Number of base functions on tetrahedron fro H1 space
+ */
 #define NBVOLUMETET_H1(P) (((P) > 2) ? ((P - 3) * (P - 2) * (P - 1) / 6) : 0)
+
+/**
+ * @brief Number of base functions on prism for H1 space
+ */
 #define NBVOLUMEPRISM_H1(P) (((P) > 4) ? ((P - 5) * (P - 4) * (P - 3) / 6) : 0)
 
 // H curl
@@ -75,16 +108,58 @@ extern "C" {
 #define NBVOLUMETET_DEMKOWICZ_HDIV(P)                                          \
   (((P) > 1) ? (P) * (P - 1) * (P + 1) / 2 : 0)
 
-PetscErrorCode L2_ShapeFunctions_MBTRI(
+/**
+ * @brief Get base functions on triangle for L2 space
+ * 
+ * @param p polynomial order
+ * @param N barycentric coordinates (shape functions) at integration points 
+ * @param diffN direvatives of barycentric coordinates, i.e. direvatives of shape functions 
+ * @param L2N values of L2 base at integration points
+ * @param diff_L2N dirvatives of base functions at integration points
+ * @param GDIM number of integration points
+ * @param base_polynomials polynomial base used to construct L2 base on element 
+ * @return PetscErrorCode 
+ */
+PetscErrorCode L2_Ainsworth_ShapeFunctions_MBTRI(
     int p, double *N, double *diffN, double *L2N, double *diff_L2N, int GDIM,
     PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s,
                                        double *L, double *diffL,
                                        const int dim));
-PetscErrorCode L2_ShapeFunctions_MBTET(
+/**
+ * @brief Get base functions on tetrahedron for L2 space
+ * 
+ * @param p polynomial order
+ * @param N barycentric coordinates (shape functions) at integration points 
+ * @param diffN direvatives of barycentric coordinates, i.e. direvatives of shape functions 
+ * @param L2N values of L2 base at integration points
+ * @param diff_L2N dirvatives of base functions at integration points
+ * @param GDIM number of integration points
+ * @param base_polynomials polynomial base used to construct L2 base on element 
+ * @return PetscErrorCode 
+ */
+PetscErrorCode L2_Ainsworth_ShapeFunctions_MBTET(
     int p, double *N, double *diffN, double *L2N, double *diff_L2N, int GDIM,
     PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s,
                                        double *L, double *diffL,
                                        const int dim));
+
+/**
+ * \deprecated Use L2_Ainsworth_ShapeFunctions_MBTRI 
+ */
+DEPRECATED PetscErrorCode L2_ShapeFunctions_MBTRI(
+    int p, double *N, double *diffN, double *L2N, double *diff_L2N, int GDIM,
+    PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s,
+                                       double *L, double *diffL,
+                                       const int dim));
+/**
+ * \deprecated Use L2_Ainsworth_ShapeFunctions_MBTET
+ */
+DEPRECATED PetscErrorCode L2_ShapeFunctions_MBTET(
+    int p, double *N, double *diffN, double *L2N, double *diff_L2N, int GDIM,
+    PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s,
+                                       double *L, double *diffL,
+                                       const int dim));
+
 PetscErrorCode L2_VolumeShapeDiffMBTETinvJ(int base_p, int p,
                                            double *volume_diffN, double *invJac,
                                            double *volume_diffNinvJac,
@@ -164,4 +239,4 @@ PetscErrorCode H1_VolumeShapeFunctions_MBPRISM(
 }
 #endif
 
-#endif
+#endif // __H1_HDIV_HCURL_L2_H__
