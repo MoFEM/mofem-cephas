@@ -79,15 +79,13 @@ namespace MoFEM {
 MoFEMErrorCode
 FaceElementForcesAndSourcesCore::UserDataOperator::loopSideVolumes(
     const string &fe_name, VolumeElementForcesAndSourcesCoreOnSide &method) {
-
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
 
   const EntityHandle ent = getNumeredEntFiniteElementPtr()->getEnt();
   const Problem *problem_ptr = getFEMethod()->problemPtr;
   Range adjacent_volumes;
-  ierr = getFaceFE()->mField.getInterface<BitRefManager>()->getAdjacenciesAny(
+  CHKERR getFaceFE()->mField.getInterface<BitRefManager>()->getAdjacenciesAny(
       ent, 3, adjacent_volumes);
-  CHKERRG(ierr);
   typedef NumeredEntFiniteElement_multiIndex::index<
       Composite_Name_And_Ent_mi_tag>::type FEByComposite;
   FEByComposite &numered_fe = (const_cast<NumeredEntFiniteElement_multiIndex &>(
@@ -96,26 +94,13 @@ FaceElementForcesAndSourcesCore::UserDataOperator::loopSideVolumes(
 
   method.feName = fe_name;
 
-  ierr = method.setFaceFEPtr(getFaceFE());
-  CHKERRG(ierr);
-  ierr = method.copyBasicMethod(*getFEMethod());
-  CHKERRG(ierr);
-  ierr = method.copyKsp(*getFEMethod());
-  CHKERRG(ierr);
-  ierr = method.copySnes(*getFEMethod());
-  CHKERRG(ierr);
-  ierr = method.copyTs(*getFEMethod());
-  CHKERRG(ierr);
+  CHKERR method.setFaceFEPtr(getFaceFE());
+  CHKERR method.copyBasicMethod(*getFEMethod());
+  CHKERR method.copyKsp(*getFEMethod());
+  CHKERR method.copySnes(*getFEMethod());
+  CHKERR method.copyTs(*getFEMethod());
 
-  try {
-    ierr = method.preProcess();
-    CHKERRG(ierr);
-  } catch (const std::exception &ex) {
-    std::ostringstream ss;
-    ss << "throw in method: " << ex.what() << " at line " << __LINE__
-       << " in file " << __FILE__ << std::endl;
-    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, ss.str().c_str());
-  }
+  CHKERR method.preProcess();
 
   int nn = 0;
   method.loopSize = adjacent_volumes.size();
@@ -132,47 +117,26 @@ FaceElementForcesAndSourcesCore::UserDataOperator::loopSideVolumes(
       method.dataPtr = (*miit)->sPtr->data_dofs;
       method.rowPtr = (*miit)->rows_dofs;
       method.colPtr = (*miit)->cols_dofs;
-
-      try {
-        ierr = method();
-        CHKERRG(ierr);
-      } catch (const std::exception &ex) {
-        std::ostringstream ss;
-        ss << "throw in method: " << ex.what() << " at line " << __LINE__
-           << " in file " << __FILE__ << std::endl;
-        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, ss.str().c_str());
-      }
+      CHKERR method();
     }
   }
 
-  try {
-    ierr = method.postProcess();
-    CHKERRG(ierr);
-  } catch (const std::exception &ex) {
-    std::ostringstream ss;
-    ss << "throw in method: " << ex.what() << " at line " << __LINE__
-       << " in file " << __FILE__ << std::endl;
-    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, ss.str().c_str());
-  }
+  CHKERR method.postProcess();
 
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode FaceElementForcesAndSourcesCore::calculateAreaAndNormal() {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   EntityHandle ent = numeredEntFiniteElementPtr->getEnt();
-  rval = mField.get_moab().get_connectivity(ent, conn, num_nodes, true);
-  CHKERRQ_MOAB(rval);
+  CHKERR mField.get_moab().get_connectivity(ent, conn, num_nodes, true);
   coords.resize(num_nodes * 3, false);
-  rval = mField.get_moab().get_coords(conn, num_nodes, &*coords.data().begin());
-  CHKERRQ_MOAB(rval);
+  CHKERR mField.get_moab().get_coords(conn, num_nodes, &*coords.data().begin());
   double diff_n[6];
-  ierr = ShapeDiffMBTRI(diff_n);
-  CHKERRG(ierr);
+  CHKERR ShapeDiffMBTRI(diff_n);
   nOrmal.resize(3, false);
-  ierr = ShapeFaceNormalMBTRI(diff_n, &*coords.data().begin(),
+  CHKERR ShapeFaceNormalMBTRI(diff_n, &*coords.data().begin(),
                               &*nOrmal.data().begin());
-  CHKERRG(ierr);
   aRea = cblas_dnrm2(3, &*nOrmal.data().begin(), 1) * 0.5;
   tangentOne.resize(3, false);
   tangentTwo.resize(3, false);
@@ -180,11 +144,11 @@ MoFEMErrorCode FaceElementForcesAndSourcesCore::calculateAreaAndNormal() {
     tangentOne[dd] = cblas_ddot(3, &diff_n[0], 2, &coords[dd], 3);
     tangentTwo[dd] = cblas_ddot(3, &diff_n[1], 2, &coords[dd], 3);
   }
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode FaceElementForcesAndSourcesCore::setIntegrationPts() {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   // Set integration points
   int order_data = getMaxDataOrder();
   int order_row = getMaxRowOrder();
@@ -219,19 +183,17 @@ MoFEMErrorCode FaceElementForcesAndSourcesCore::setIntegrationPts() {
     }
   } else {
     // If rule is negative, set user defined integration points
-    ierr = setGaussPts(order_row, order_col, order_data);
-    CHKERRG(ierr);
+    CHKERR setGaussPts(order_row, order_col, order_data);
     nbGaussPts = gaussPts.size2();
     dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nbGaussPts, 3,
                                                            false);
     if (nbGaussPts) {
-      ierr = ShapeMBTRI(
+      CHKERR ShapeMBTRI(
           &*dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin(),
           &gaussPts(0, 0), &gaussPts(1, 0), nbGaussPts);
-      CHKERRG(ierr);
     }
   }
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode
@@ -352,11 +314,12 @@ FaceElementForcesAndSourcesCore::calculateBaseFunctionsOnElement() {
 }
 
 MoFEMErrorCode FaceElementForcesAndSourcesCore::calculateHoNormal() {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   // Check if field for high-order geometry is set and if it is set calculate
   // higher-order normals and face tangent vectors.
   if (dataPtr->get<FieldName_mi_tag>().find(meshPositionsFieldName) !=
       dataPtr->get<FieldName_mi_tag>().end()) {
+
     const Field *field_struture =
         mField.get_field_structure(meshPositionsFieldName);
     BitFieldId id = field_struture->getId();
@@ -367,34 +330,21 @@ MoFEMErrorCode FaceElementForcesAndSourcesCore::calculateHoNormal() {
     }
 
     // Calculate normal for high-order geometry
-    ierr = getEdgesDataOrderSpaceAndBase(dataH1, meshPositionsFieldName);
-    CHKERRG(ierr);
-    ierr = getTrisDataOrderSpaceAndBase(dataH1, meshPositionsFieldName);
-    CHKERRG(ierr);
-    ierr = getNodesFieldData(dataH1, meshPositionsFieldName);
-    CHKERRG(ierr);
-    ierr = getEdgesFieldData(dataH1, meshPositionsFieldName);
-    CHKERRG(ierr);
-    ierr = getTrisFieldData(dataH1, meshPositionsFieldName);
-    CHKERRG(ierr);
-    try {
-      ierr = opHOCoordsAndNormals.opRhs(dataH1);
-      CHKERRG(ierr);
-      ierr = opHOCoordsAndNormals.calculateNormals();
-      CHKERRG(ierr);
-    } catch (std::exception &ex) {
-      std::ostringstream ss;
-      ss << "thorw in method: " << ex.what() << " at line " << __LINE__
-         << " in file " << __FILE__;
-      SETERRQ(PETSC_COMM_SELF, 1, ss.str().c_str());
-    }
+    CHKERR getEdgesDataOrderSpaceAndBase(dataH1, meshPositionsFieldName);
+    CHKERR getTrisDataOrderSpaceAndBase(dataH1, meshPositionsFieldName);
+    CHKERR getNodesFieldData(dataH1, meshPositionsFieldName);
+    CHKERR getEdgesFieldData(dataH1, meshPositionsFieldName);
+    CHKERR getTrisFieldData(dataH1, meshPositionsFieldName);
+    CHKERR opHOCoordsAndNormals.opRhs(dataH1);
+    CHKERR opHOCoordsAndNormals.calculateNormals();
+
   } else {
     hoCoordsAtGaussPts.resize(0, 0, false);
     normalsAtGaussPts.resize(0, 0, false);
     tangentOneAtGaussPts.resize(0, 0, false);
     tangentTwoAtGaussPts.resize(0, 0, false);
   }
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode FaceElementForcesAndSourcesCore::operator()() {

@@ -669,7 +669,7 @@ PetscErrorCode H1_VolumeShapeFunctions_MBHEX(
     const int GDIM) {
   MoFEMFunctionBeginHot;
 
-  int P = NBVOLUMEHEX_DEMKOWICZ_H1(p);
+  int P = NBVOLUMETET_H1(p);
   if (P == 0)
     MoFEMFunctionReturnHot(0);
   double diff_ksiL0[3], diff_ksiL1[3], diff_ksiL2[3];
