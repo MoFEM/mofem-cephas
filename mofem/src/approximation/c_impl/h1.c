@@ -497,6 +497,173 @@ PetscErrorCode H1_VolumeShapeFunctions_MBTET(
   }
   MoFEMFunctionReturnHot(0);
 }
+PetscErrorCode H1_EdgeShapeFunctions_MBQUAD(
+    int *sense, int *p, double *N, double *diffN, double *edgeN[3],
+    double *diff_edgeN[3], int GDIM,
+    PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s,
+                                       double *L, double *diffL,
+                                       const int dim)) {
+  MoFEMFunctionBeginHot;
+
+  double *edgeN01 = NULL, *edgeN12 = NULL, *edgeN23 = NULL, *edgeN30 = NULL;
+  if (edgeN != NULL) {
+    edgeN01 = edgeN[0];
+    edgeN12 = edgeN[1];
+    edgeN23 = edgeN[2];
+    edgeN30 = edgeN[3];
+  }
+  double *diff_edgeN01 = NULL, *diff_edgeN12 = NULL, *diff_edgeN23 = NULL,
+         *diff_edgeN30 = NULL;
+  if (diff_edgeN != NULL) {
+    diff_edgeN01 = diff_edgeN[0];
+    diff_edgeN12 = diff_edgeN[1];
+    diff_edgeN23 = diff_edgeN[2];
+    diff_edgeN30 = diff_edgeN[3];
+  }
+  int P[4];
+  for (int ee = 0; ee < 4; ee++) {
+    P[ee] = NBEDGE_H1(p[ee]);
+  }
+  double diff_ksi01[2], diff_ksi12[2], diff_ksi23[2], diff_ksi30[2];
+  if (diff_edgeN != NULL) {
+    for (int dd = 0; dd < 2; dd++) {
+      diff_ksi01[dd] = (diffN[1 * 2 + dd] - diffN[0 * 2 + dd]) * sense[0];
+      diff_ksi12[dd] = (diffN[2 * 2 + dd] - diffN[1 * 2 + dd]) * sense[1];
+      diff_ksi23[dd] = (diffN[3 * 2 + dd] - diffN[2 * 2 + dd]) * sense[2];
+      diff_ksi30[dd] = (diffN[0 * 2 + dd] - diffN[3 * 2 + dd]) * sense[3];
+    }
+  }
+  int ii = 0;
+  for (; ii < GDIM; ii++) {
+    int node_shift = ii * 3;
+    double ksi01 = (N[node_shift + 1] - N[node_shift + 0]) * sense[0];
+    double ksi12 = (N[node_shift + 2] - N[node_shift + 1]) * sense[1];
+    double ksi23 = (N[node_shift + 3] - N[node_shift + 2]) * sense[2];
+    double ksi30 = (N[node_shift + 0] - N[node_shift + 3]) * sense[3];
+    double L01[p[0] + 1], L12[p[1] + 1], L23[p[2] + 1], L30[p[3] + 1];
+    double diffL01[2 * (p[0] + 1)], diffL12[2 * (p[1] + 1)],
+        diffL23[2 * (p[2] + 1)], diffL30[2 * (p[3] + 1)];
+    ierr = base_polynomials(p[0], ksi01, diff_ksi01, L01, diffL01, 2);
+    CHKERRQ(ierr);
+    ierr = base_polynomials(p[1], ksi12, diff_ksi12, L12, diffL12, 2);
+    CHKERRQ(ierr);
+    ierr = base_polynomials(p[2], ksi23, diff_ksi23, L23, diffL23, 2);
+    CHKERRQ(ierr);
+    ierr = base_polynomials(p[3], ksi30, diff_ksi30, L30, diffL30, 2);
+    CHKERRQ(ierr);
+
+    int shift;
+    if (edgeN != NULL) {
+      // edge01
+      shift = ii * (P[0]);
+      cblas_dcopy(P[0], L01, 1, &edgeN01[shift], 1);
+      cblas_dscal(P[0], N[node_shift + 0] * N[node_shift + 1], &edgeN01[shift],
+                  1);
+      // edge12
+      shift = ii * (P[1]);
+      cblas_dcopy(P[1], L12, 1, &edgeN12[shift], 1);
+      cblas_dscal(P[1], N[node_shift + 1] * N[node_shift + 2], &edgeN12[shift],
+                  1);
+      // edge23
+      shift = ii * (P[2]);
+      cblas_dcopy(P[2], L23, 1, &edgeN23[shift], 1);
+      cblas_dscal(P[2], N[node_shift + 0] * N[node_shift + 2], &edgeN23[shift],
+                  1);
+      // edge30
+      shift = ii * (P[2]);
+      cblas_dcopy(P[2], L30, 1, &edgeN30[shift], 1);
+      cblas_dscal(P[2], N[node_shift + 0] * N[node_shift + 2], &edgeN30[shift],
+                  1);
+    }
+    if (diff_edgeN != NULL) {
+      if (P[0] > 0) {
+        // edge01
+        shift = ii * (P[0]);
+        bzero(&diff_edgeN01[2 * shift], sizeof(double) * 2 * (P[0]));
+        // diffX
+        cblas_daxpy(P[0], N[node_shift + 0] * N[node_shift + 1],
+                    &diffL01[0 * (p[0] + 1)], 1, &diff_edgeN01[2 * shift + 0],
+                    2);
+        cblas_daxpy(P[0],
+                    diffN[2 * 0 + 0] * N[node_shift + 1] +
+                        N[node_shift + 0] * diffN[2 * 1 + 0],
+                    L01, 1, &diff_edgeN01[2 * shift + 0], 2);
+        // diff  Y
+        cblas_daxpy(P[0], N[node_shift + 0] * N[node_shift + 1],
+                    &diffL01[1 * (p[0] + 1)], 1, &diff_edgeN01[2 * shift + 1],
+                    2);
+        cblas_daxpy(P[0],
+                    diffN[2 * 0 + 1] * N[node_shift + 1] +
+                        N[node_shift + 0] * diffN[2 * 1 + 1],
+                    L01, 1, &diff_edgeN01[2 * shift + 1], 2);
+      }
+      if (P[1] > 0) {
+        // edge12
+        shift = ii * (P[1]);
+        bzero(&diff_edgeN12[2 * shift], sizeof(double) * 2 * (P[1]));
+        // diffX
+        cblas_daxpy(P[1], N[node_shift + 1] * N[node_shift + 2],
+                    &diffL12[0 * (p[1] + 1)], 1, &diff_edgeN12[2 * shift + 0],
+                    2);
+        cblas_daxpy(P[1],
+                    diffN[2 * 1 + 0] * N[node_shift + 2] +
+                        N[node_shift + 1] * diffN[2 * 2 + 0],
+                    L12, 1, &diff_edgeN12[2 * shift + 0], 2);
+        // diffY
+        cblas_daxpy(P[1], N[node_shift + 1] * N[node_shift + 2],
+                    &diffL12[1 * (p[1] + 1)], 1, &diff_edgeN12[2 * shift + 1],
+                    2);
+        cblas_daxpy(P[1],
+                    diffN[2 * 1 + 1] * N[node_shift + 2] +
+                        N[node_shift + 1] * diffN[2 * 2 + 1],
+                    L12, 1, &diff_edgeN12[2 * shift + 1], 2);
+      }
+      if (P[2] > 0) {
+        // edge23
+        shift = ii * (P[2]);
+        bzero(&diff_edgeN23[2 * shift], sizeof(double) * 2 * (P[2]));
+        // diffX
+        cblas_daxpy(P[2], N[node_shift + 0] * N[node_shift + 2],
+                    &diffL23[0 * (p[2] + 1)], 1, &diff_edgeN23[2 * shift + 0],
+                    2);
+        cblas_daxpy(P[2],
+                    diffN[2 * 0 + 0] * N[node_shift + 2] +
+                        N[node_shift + 0] * diffN[2 * 2 + 0],
+                    L23, 1, &diff_edgeN23[2 * shift + 0], 2);
+        // diffY
+        cblas_daxpy(P[2], N[node_shift + 0] * N[node_shift + 2],
+                    &diffL23[1 * (p[2] + 1)], 1, &diff_edgeN23[2 * shift + 1],
+                    2);
+        cblas_daxpy(P[2],
+                    diffN[2 * 0 + 1] * N[node_shift + 2] +
+                        N[node_shift + 0] * diffN[2 * 2 + 1],
+                    L23, 1, &diff_edgeN23[2 * shift + 1], 2);
+      }
+      if (P[3] > 0) {
+        // edge30
+        shift = ii * (P[3]);
+        bzero(&diff_edgeN30[2 * shift], sizeof(double) * 2 * (P[3]));
+        // diffX
+        cblas_daxpy(P[3], N[node_shift + 0] * N[node_shift + 2],
+                    &diffL30[0 * (p[3] + 1)], 1, &diff_edgeN30[2 * shift + 0],
+                    2);
+        cblas_daxpy(P[3],
+                    diffN[2 * 0 + 0] * N[node_shift + 2] +
+                        N[node_shift + 0] * diffN[2 * 2 + 0],
+                    L30, 1, &diff_edgeN30[2 * shift + 0], 2);
+        // diffY
+        cblas_daxpy(P[3], N[node_shift + 0] * N[node_shift + 2],
+                    &diffL30[1 * (p[3] + 1)], 1, &diff_edgeN30[2 * shift + 1],
+                    2);
+        cblas_daxpy(P[3],
+                    diffN[2 * 0 + 1] * N[node_shift + 2] +
+                        N[node_shift + 0] * diffN[2 * 2 + 1],
+                    L30, 1, &diff_edgeN30[2 * shift + 1], 2);
+      }
+    }
+  }
+  MoFEMFunctionReturnHot(0);
+}
 PetscErrorCode H1_VolumeShapeFunctions_MBHEX(
     const int p, const double *edgeN, const double *diff_edgeN, const double *faceN, const double *diff_faceN, double *volumeN, double *diff_volumeN,
     const int GDIM) {
@@ -506,34 +673,37 @@ PetscErrorCode H1_VolumeShapeFunctions_MBHEX(
   if (P == 0)
     MoFEMFunctionReturnHot(0);
   double diff_ksiL0[3], diff_ksiL1[3], diff_ksiL2[3];
-  int dd = 0;
+  
   // for (; dd < 3; dd++) {
   //   diff_ksiL0[dd] = (diffN[1 * 3 + dd] - diffN[0 * 3 + dd]);
   //   diff_ksiL1[dd] = (diffN[2 * 3 + dd] - diffN[0 * 3 + dd]);
   //   diff_ksiL2[dd] = (diffN[3 * 3 + dd] - diffN[0 * 3 + dd]);
   // }
-  int ii = 0;
-  for (; ii < GDIM; ii++) {
 
-    double *pp = &volumeN[0];
-    double *diff_pp = &diff_volumeN[0];
+  const int size_edges = sizeof(edgeN[0]) / ( sizeof(double)*GDIM );
+  const int size_faces = sizeof(faceN[0]) / ( sizeof(double)*GDIM );
 
-    const int size_edges = sizeof(edgeN[0])/sizeof(double);
-    const int size_faces = sizeof(faceN[0])/sizeof(double);
+  double *pp = &volumeN[0];
+  double *diff_pp = &diff_volumeN[0];
+
+  for (int ii = 0; ii < GDIM; ii++) {
+
     // const int size_diff_edges = sizeof(diff_edgeN[0])/sizeof(double);
     // const int size_diff_faces = sizeof(diff_faceN[0])/sizeof(double);
     // int jj = 0;
     for (int ee = 0; ee != size_edges; ++ee) {
       for (int ff = 0; ff != size_faces; ++ff) {
         //volumeN[ee*size_faces + ff] = edgeN[ee] * faceN[ff];
-        *pp = edgeN[ee] * faceN[ff];
+        *pp = edgeN[ee + size_edges * ii] * faceN[ff + size_faces * ii];
         ++pp;
 
-    for (; dd < 3; dd++){
+        for (int dd = 0; dd < 3; dd++) {
 
-      *diff_pp += diff_edgeN[ee * 3 + dd] * faceN[ff] +
-                  edgeN[ee] * diff_faceN[ff * 3 + dd];
-      ++diff_pp;
+          *diff_pp += diff_edgeN[ee * 3 + dd + size_edges * ii] *
+                          faceN[ff + size_faces * ii] +
+                      edgeN[ee + dd + size_edges * ii] *
+                          diff_faceN[ff * 3 + dd + size_faces * ii];
+          ++diff_pp;
       }     
 }
        }
