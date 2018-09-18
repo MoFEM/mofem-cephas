@@ -672,13 +672,7 @@ PetscErrorCode H1_VolumeShapeFunctions_MBHEX(
   int P = NBVOLUMETET_H1(p);
   if (P == 0)
     MoFEMFunctionReturnHot(0);
-  double diff_ksiL0[3], diff_ksiL1[3], diff_ksiL2[3];
-  
-  // for (; dd < 3; dd++) {
-  //   diff_ksiL0[dd] = (diffN[1 * 3 + dd] - diffN[0 * 3 + dd]);
-  //   diff_ksiL1[dd] = (diffN[2 * 3 + dd] - diffN[0 * 3 + dd]);
-  //   diff_ksiL2[dd] = (diffN[3 * 3 + dd] - diffN[0 * 3 + dd]);
-  // }
+  double diff_ksiL0[3], diff_ksiL1[3], diff_ksiL2[3];  
 
   const int size_edges = sizeof(edgeN[0]) / ( sizeof(double)*GDIM );
   const int size_faces = sizeof(faceN[0]) / ( sizeof(double)*GDIM );
@@ -688,8 +682,6 @@ PetscErrorCode H1_VolumeShapeFunctions_MBHEX(
 
   for (int ii = 0; ii < GDIM; ii++) {
 
-    // const int size_diff_edges = sizeof(diff_edgeN[0])/sizeof(double);
-    // const int size_diff_faces = sizeof(diff_faceN[0])/sizeof(double);
     // int jj = 0;
     for (int ee = 0; ee != size_edges; ++ee) {
       for (int ff = 0; ff != size_faces; ++ff) {
