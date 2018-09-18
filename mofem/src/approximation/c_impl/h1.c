@@ -664,6 +664,78 @@ PetscErrorCode H1_EdgeShapeFunctions_MBQUAD(
   }
   MoFEMFunctionReturnHot(0);
 }
+PetscErrorCode H1_EdgeShapeFunctions_MBHEX(
+    int *sense, int *p, double *N, double *diffN, double *edgeN[],
+    double *diff_edgeN[], int GDIM,
+    PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s,
+                                       double *L, double *diffL,
+                                       const int dim)) {
+  MoFEMFunctionBeginHot;
+
+  int P[12];
+  int ee = 0;
+  for (; ee < 12; ee++)
+    P[ee] = NBEDGE_H1(p[ee]);
+  int edges_nodes[2 * 12] = {0, 1, 1, 2, 2, 3, 3, 0, 0, 4, 1, 5, 2, 6, 3, 7, 4, 5, 5, 6, 6, 7, 7, 4};
+  double diff_ksi01[3], diff_ksi12[3], diff_ksi23[3], diff_ksi30[3];
+  double diff_ksi04[3], diff_ksi15[3], diff_ksi26[3], diff_ksi37[3];
+  double diff_ksi45[3], diff_ksi56[3], diff_ksi67[3], diff_ksi74[3];
+  double *edges_diff_ksi[12] = {diff_ksi01, diff_ksi12, diff_ksi23, diff_ksi30,
+                                diff_ksi04, diff_ksi15, diff_ksi26, diff_ksi37,
+                               diff_ksi45, diff_ksi56, diff_ksi67, diff_ksi74};
+  for (ee = 0; ee < 12; ee++) {
+    for (int dd = 0; dd < 3; dd++) {
+      edges_diff_ksi[ee][dd] = (diffN[edges_nodes[2 * ee + 1] * 3 + dd] -
+                                diffN[edges_nodes[2 * ee + 0] * 3 + dd]) *
+                               sense[ee];
+    }
+  }
+  int ii = 0;
+  for (; ii < GDIM; ii++) {
+    int node_shift = ii * 8;
+    double edges_ksi[12];
+    for (ee = 0; ee < 12; ee++) {
+      edges_ksi[ee] = (N[node_shift + edges_nodes[2 * ee + 1]] -
+                       N[node_shift + edges_nodes[2 * ee + 0]]) *
+                      sense[ee];
+    }
+    for (ee = 0; ee < 12; ee++) {
+      if (P[ee] == 0)
+        continue;
+      double L[p[ee] + 1], diffL[3 * (p[ee] + 1)];
+      ierr = base_polynomials(p[ee], edges_ksi[ee], edges_diff_ksi[ee], L,
+                              diffL, 3);
+      CHKERRQ(ierr);
+      double v = N[node_shift + edges_nodes[2 * ee + 0]] *
+                 N[node_shift + edges_nodes[2 * ee + 1]];
+      if (edgeN != NULL)
+        if (edgeN[ee] != NULL) {
+          int shift = ii * P[ee];
+          cblas_dcopy(P[ee], L, 1, &edgeN[ee][shift], 1);
+          cblas_dscal(P[ee],
+                      N[node_shift + edges_nodes[2 * ee + 0]] *
+                          N[node_shift + edges_nodes[2 * ee + 1]],
+                      &edgeN[ee][shift], 1);
+        }
+      if (diff_edgeN != NULL)
+        if (diff_edgeN[ee] != NULL) {
+          int shift = ii * P[ee];
+          bzero(&diff_edgeN[ee][3 * shift], sizeof(double) * 3 * P[ee]);
+          for (int dd = 0; dd < 3; dd++) {
+            cblas_daxpy(P[ee], v, &diffL[dd * (p[ee] + 1)], 1,
+                        &diff_edgeN[ee][3 * shift + dd], 3);
+            cblas_daxpy(P[ee],
+                        diffN[3 * edges_nodes[2 * ee + 0] + dd] *
+                                N[node_shift + edges_nodes[2 * ee + 1]] +
+                            N[node_shift + edges_nodes[2 * ee + 0]] *
+                                diffN[3 * edges_nodes[2 * ee + 1] + dd],
+                        L, 1, &diff_edgeN[ee][3 * shift + dd], 3);
+          }
+        }
+    }
+  }
+  MoFEMFunctionReturnHot(0);
+}
 PetscErrorCode H1_VolumeShapeFunctions_MBHEX(
     const int p, const double *edgeN, const double *diff_edgeN, const double *faceN, const double *diff_faceN, double *volumeN, double *diff_volumeN,
     const int GDIM) {
