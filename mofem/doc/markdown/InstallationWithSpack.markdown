@@ -50,14 +50,21 @@ gfortran
 
 ## macOS
 
-If not already done so, install Xcode and command-line tools:
+Xcode contains required compilers for macOS. The last known working version of
+Xcode is 9.4.1 with clang 9.1.0; there may be issues with future/different
+versions.
 
+To install the latest Xcode for your release of macOS, follow the commands
+below, or see Apple's Xcode
+[download page](https://developer.apple.com/download/) (Apple login
+required) for older versions.
 ~~~~~
 xcode-select --install
 sudo xcodebuild -license accept
 ~~~~~
 
-Install [homebrew](https://brew.sh) package manager:
+Additonal packages are required - install [homebrew](https://brew.sh) package
+manager:
 ~~~~~
 /usr/bin/ruby -e "$(curl -fsSL
 https://raw.githubusercontent.com/Homebrew/install/master/install)"
