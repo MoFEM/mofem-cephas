@@ -108,6 +108,16 @@ extern "C" {
 #define NBVOLUMETET_DEMKOWICZ_HDIV(P)                                          \
   (((P) > 1) ? (P) * (P - 1) * (P + 1) / 2 : 0)
 
+// Bubbles for H div space
+
+/**
+ * @brief Bubble function for CGG H div space
+ * 
+ * See CGG_BubbleBase_MBTET
+ * 
+ */
+#define NBVOLUMETET_CCG_BUBBLE(P) (3 * NBVOLUMETET_L2(P))
+
 /**
  * @brief Get base functions on triangle for L2 space
  * 
@@ -253,6 +263,8 @@ PetscErrorCode H1_VolumeShapeFunctions_MBPRISM(
                                        const int dim));
 
 // Hdiv and Hcurl are implemented and declared in other files
+
+
 
 #ifdef __cplusplus
 }
