@@ -49,9 +49,12 @@
 #include <PrismInterface.hpp>
 #include <SeriesRecorder.hpp>
 
+#include <BaseFunction.hpp>
 #include <DataOperators.hpp>
 #include <DataStructures.hpp>
+#include <EntPolynomialBaseCtx.hpp>
 #include <FTensor.hpp>
+
 #include <ForcesAndSourcesCore.hpp>
 
 #ifdef __cplusplus
@@ -65,6 +68,11 @@ extern "C" {
 #endif
 
 namespace MoFEM {
+
+ForcesAndSourcesCore::ForcesAndSourcesCore(Interface &m_field)
+    : mField(m_field), getRuleHook(0) {}
+
+ForcesAndSourcesCore::~ForcesAndSourcesCore() {}
 
 MoFEMErrorCode ForcesAndSourcesCore::getNumberOfNodes(int &num_nodes) const {
   MoFEMFunctionBeginHot;
@@ -331,7 +339,8 @@ MoFEMErrorCode ForcesAndSourcesCore::getDataOrderSpaceAndBase(
 
 MoFEMErrorCode ForcesAndSourcesCore::getEdgesDataOrderSpaceAndBase(
     DataForcesAndSourcesCore &data, const std::string &field_name) const {
-  return getDataOrderSpaceAndBase(field_name, MBEDGE, data.dataOnEntities[MBEDGE]);
+  return getDataOrderSpaceAndBase(field_name, MBEDGE,
+                                  data.dataOnEntities[MBEDGE]);
 }
 
 MoFEMErrorCode ForcesAndSourcesCore::getTrisDataOrderSpaceAndBase(
@@ -368,7 +377,7 @@ MoFEMErrorCode ForcesAndSourcesCore::getNodesIndices(
       boost::make_tuple(field_name, MBVERTEX));
   auto hi_dit = dofs.get<Composite_Name_And_Type_mi_tag>().upper_bound(
       boost::make_tuple(field_name, MBVERTEX));
- 
+
   int num_nodes;
   CHKERR getNumberOfNodes(num_nodes);
   int max_nb_dofs = 0;
@@ -652,9 +661,7 @@ ForcesAndSourcesCore::getNoFieldIndices(const std::string &field_name,
 
 MoFEMErrorCode ForcesAndSourcesCore::getNoFieldRowIndices(
     DataForcesAndSourcesCore &data, const std::string &field_name) const {
-
   MoFEMFunctionBegin;
-  // EntityType fe_type = numeredEntFiniteElementPtr->getEntType();
   if (data.dataOnEntities[MBENTITYSET].size() == 0) {
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
   }
@@ -698,8 +705,9 @@ MoFEMErrorCode ForcesAndSourcesCore::getProblemNodesIndices(
       continue;
 
     const EntityHandle ent = siit->get()->ent;
-    auto dit = dofs.get<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>().lower_bound(
-        boost::make_tuple(field_name, ent, 0));
+    auto dit =
+        dofs.get<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>().lower_bound(
+            boost::make_tuple(field_name, ent, 0));
     auto hi_dit =
         dofs.get<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>().upper_bound(
             boost::make_tuple(field_name, ent, 10000)); /// very large number
@@ -873,8 +881,9 @@ MoFEMErrorCode ForcesAndSourcesCore::getTypeFieldData(
     ent_field_dofs.resize(0, false);
     MoFEMFunctionReturnHot(0);
   }
-  auto hi_dit = dofs.get<Composite_Name_Type_And_Side_Number_mi_tag>().upper_bound(
-      boost::make_tuple(field_name, type, side_number));
+  auto hi_dit =
+      dofs.get<Composite_Name_Type_And_Side_Number_mi_tag>().upper_bound(
+          boost::make_tuple(field_name, type, side_number));
   if (dit != hi_dit) {
     ent_field_data.resize((*dit)->getNbDofsOnEnt(), false);
     ent_field_dofs.resize((*dit)->getNbDofsOnEnt(), false);
@@ -1061,53 +1070,53 @@ ForcesAndSourcesCore::getFaceTriNodes(DataForcesAndSourcesCore &data) const {
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "Should be 4 triangles on tet, side_table not initialized");
   }
-  const int cannonical_face_sense_p1[4][3] = {
+  const int canonical_face_sense_p1[4][3] = {
       {0, 1, 3},
       {1, 2, 3},
       {0, 3, 2} /**/,
-      {0, 2, 1} /**/}; //secon index is offset (positive sense)
-  const int cannonical_face_sense_m1[4][3] = {
+      {0, 2, 1} /**/}; // second index is offset (positive sense)
+  const int canonical_face_sense_m1[4][3] = {
       {0, 3, 1},
       {1, 3, 2},
       {0, 2, 3},
-      {0, 1, 2}}; //second index is offset (negative sense
+      {0, 1, 2}}; // second index is offset (negative sense
   for (; siit != hi_siit; siit++) {
     const boost::shared_ptr<SideNumber> side = *siit;
     int face_conn[3] = {-1, -1, -1};
     if (side->offset == 0) {
       face_conn[0] = side->sense == 1
-                         ? cannonical_face_sense_p1[(int)side->side_number][0]
-                         : cannonical_face_sense_m1[(int)side->side_number][0];
+                         ? canonical_face_sense_p1[(int)side->side_number][0]
+                         : canonical_face_sense_m1[(int)side->side_number][0];
       face_conn[1] = side->sense == 1
-                         ? cannonical_face_sense_p1[(int)side->side_number][1]
-                         : cannonical_face_sense_m1[(int)side->side_number][1];
+                         ? canonical_face_sense_p1[(int)side->side_number][1]
+                         : canonical_face_sense_m1[(int)side->side_number][1];
       face_conn[2] = side->sense == 1
-                         ? cannonical_face_sense_p1[(int)side->side_number][2]
-                         : cannonical_face_sense_m1[(int)side->side_number][2];
+                         ? canonical_face_sense_p1[(int)side->side_number][2]
+                         : canonical_face_sense_m1[(int)side->side_number][2];
     }
     if (side->offset == 1) {
       face_conn[0] =
           side->sense == 1
-              ? cannonical_face_sense_p1[(int)side->side_number][1]
-              : cannonical_face_sense_m1[(int)side->side_number][2] /**/;
+              ? canonical_face_sense_p1[(int)side->side_number][1]
+              : canonical_face_sense_m1[(int)side->side_number][2] /**/;
       face_conn[1] = side->sense == 1
-                         ? cannonical_face_sense_p1[(int)side->side_number][2]
-                         : cannonical_face_sense_m1[(int)side->side_number][0];
+                         ? canonical_face_sense_p1[(int)side->side_number][2]
+                         : canonical_face_sense_m1[(int)side->side_number][0];
       face_conn[2] = side->sense == 1
-                         ? cannonical_face_sense_p1[(int)side->side_number][0]
-                         : cannonical_face_sense_m1[(int)side->side_number][1];
+                         ? canonical_face_sense_p1[(int)side->side_number][0]
+                         : canonical_face_sense_m1[(int)side->side_number][1];
     }
     if (side->offset == 2) {
       face_conn[0] =
           side->sense == 1
-              ? cannonical_face_sense_p1[(int)side->side_number][2]
-              : cannonical_face_sense_m1[(int)side->side_number][1] /**/;
+              ? canonical_face_sense_p1[(int)side->side_number][2]
+              : canonical_face_sense_m1[(int)side->side_number][1] /**/;
       face_conn[1] = side->sense == 1
-                         ? cannonical_face_sense_p1[(int)side->side_number][0]
-                         : cannonical_face_sense_m1[(int)side->side_number][2];
+                         ? canonical_face_sense_p1[(int)side->side_number][0]
+                         : canonical_face_sense_m1[(int)side->side_number][2];
       face_conn[2] = side->sense == 1
-                         ? cannonical_face_sense_p1[(int)side->side_number][1]
-                         : cannonical_face_sense_m1[(int)side->side_number][0];
+                         ? canonical_face_sense_p1[(int)side->side_number][1]
+                         : canonical_face_sense_m1[(int)side->side_number][0];
     }
     for (int nn = 0; nn < 3; nn++)
       data.facesNodes(side->side_number, nn) = face_conn[nn];
@@ -1169,6 +1178,347 @@ MoFEMErrorCode ForcesAndSourcesCore::getSpacesAndBaseOnEntities(
     data.basesOnSpaces[space].set(approx);
   }
   MoFEMFunctionReturnHot(0);
+}
+
+MoFEMErrorCode ForcesAndSourcesCore::calculateBaseFunctionsOnElement() {
+  MoFEMFunctionBegin;
+  /// Use the some node base. Node base is usually used for construction other
+  /// bases.
+  EntityType type = numeredEntFiniteElementPtr->getEntType();
+  for (int space = HCURL; space != LASTSPACE; ++space)
+    if (dataOnElement[type][space]) {
+      dataOnElement[type][space]->dataOnEntities[MBVERTEX][0].getNSharedPtr(
+          NOBASE) =
+          dataOnElement[type][H1]->dataOnEntities[MBVERTEX][0].getNSharedPtr(
+              NOBASE);
+    }
+  for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
+    if (dataOnElement[type][H1]->bAse.test(b)) {
+      switch (ApproximationBaseArray[b]) {
+      case NOBASE:
+        break;
+      case AINSWORTH_LEGENDRE_BASE:
+      case AINSWORTH_LOBATTO_BASE:
+      case DEMKOWICZ_JACOBI_BASE:
+        for (int space = H1; space != LASTSPACE; ++space) {
+          if (dataOnElement[type][H1]->sPace.test(space) &&
+              dataOnElement[type][H1]->bAse.test(b) &&
+              dataOnElement[type][H1]->basesOnSpaces[space].test(b)) {
+            CHKERR getElementPolynomialBase()->getValue(
+                gaussPts,
+                boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
+                    *dataOnElement[type][space], static_cast<FieldSpace>(space),
+                    ApproximationBaseArray[b], NOBASE)));
+          }
+        }
+        break;
+      case USER_BASE:
+        for (int space = H1; space != LASTSPACE; ++space)
+          if (dataOnElement[type][H1]->sPace.test(space) &&
+              dataOnElement[type][H1]->bAse.test(b) &&
+              dataOnElement[type][H1]->basesOnSpaces[space].test(b)) {
+            CHKERR getUserPolynomialBase()->getValue(
+                gaussPts,
+                boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
+                    *dataOnElement[type][space], static_cast<FieldSpace>(space),
+                    ApproximationBaseArray[b], NOBASE)));
+          }
+        break;
+      default:
+        SETERRQ1(mField.get_comm(), MOFEM_DATA_INCONSISTENCY,
+                 "Base <%s> not yet implemented",
+                 ApproximationBaseNames[ApproximationBaseArray[b]]);
+      }
+    }
+  }
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode ForcesAndSourcesCore::createDataOnElement() {
+  MoFEMFunctionBegin;
+
+  if (!dataOnElement[MBENTITYSET][NOFIELD]) {
+    dataOnElement[MBENTITYSET][NOFIELD] =
+        boost::shared_ptr<DataForcesAndSourcesCore>(
+            new DataForcesAndSourcesCore(MBENTITYSET));
+    derivedDataOnElement[MBENTITYSET][NOFIELD] =
+        boost::shared_ptr<DataForcesAndSourcesCore>(
+            new DataForcesAndSourcesCore(MBENTITYSET));
+    for (int t = MBVERTEX; t != MBENTITYSET; ++t) {
+      dataOnElement[t][NOFIELD] = dataOnElement[MBENTITYSET][NOFIELD];
+      derivedDataOnElement[t][NOFIELD] =
+          derivedDataOnElement[MBENTITYSET][NOFIELD];
+    }
+  }
+
+  EntityType type = numeredEntFiniteElementPtr->getEntType();
+  // Data on elements for proper spaces
+  for (int space = H1; space != LASTSPACE; ++space)
+    if (!dataOnElement[type][space]) {
+      dataOnElement[type][space] = boost::shared_ptr<DataForcesAndSourcesCore>(
+          new DataForcesAndSourcesCore(type));
+      derivedDataOnElement[type][space] =
+          boost::shared_ptr<DataForcesAndSourcesCore>(
+              dataOnElement[type][space],
+              new DerivedDataForcesAndSourcesCore(*dataOnElement[type][space]));
+    } else
+      MoFEMFunctionReturnHot(0);
+
+  MoFEMFunctionReturn(0);
+}
+
+#define FUNCTION_NAME_WITH_OP_NAME(OP)                                         \
+  std::ostringstream ss;                                                       \
+  ss << "(Calling user data operator "                                         \
+     << boost::typeindex::type_id_runtime(OP).pretty_name() << ") "
+
+#define CATCH_OP_ERRORS(OP)                                                    \
+  catch (MoFEMExceptionInitial const &ex) {                                    \
+    FUNCTION_NAME_WITH_OP_NAME(OP) << PETSC_FUNCTION_NAME;                     \
+    return PetscError(PETSC_COMM_SELF, ex.lINE, ss.str().c_str(), __FILE__,    \
+                      ex.errorCode, PETSC_ERROR_INITIAL, ex.what());           \
+  }                                                                            \
+  catch (MoFEMExceptionRepeat const &ex) {                                     \
+    FUNCTION_NAME_WITH_OP_NAME(OP) << PETSC_FUNCTION_NAME;                     \
+    return PetscError(PETSC_COMM_SELF, ex.lINE, ss.str().c_str(), __FILE__,    \
+                      ex.errorCode, PETSC_ERROR_REPEAT, " ");                  \
+  }                                                                            \
+  catch (MoFEMException const &ex) {                                           \
+    FUNCTION_NAME_WITH_OP_NAME(OP) << ex.errorMessage;                         \
+    SETERRQ(PETSC_COMM_SELF, ex.errorCode, ss.str().c_str());                  \
+  }                                                                            \
+  catch (std::exception const &ex) {                                           \
+    std::string message("Error: " + std::string(ex.what()) + " at " +          \
+                        boost::lexical_cast<std::string>(__LINE__) + " : " +   \
+                        std::string(__FILE__) + " in " +                       \
+                        std::string(PETSC_FUNCTION_NAME));                     \
+    FUNCTION_NAME_WITH_OP_NAME(OP) << message;                                 \
+    SETERRQ(PETSC_COMM_SELF, MOFEM_STD_EXCEPTION_THROW, ss.str().c_str());     \
+  }
+
+MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
+  MoFEMFunctionBegin;
+
+  const EntityType type = numeredEntFiniteElementPtr->getEntType();
+  const int dim = mField.get_moab().dimension_from_handle(
+      numeredEntFiniteElementPtr->getEnt());
+  const UserDataOperator::OpType types[2] = {UserDataOperator::OPROW,
+                                             UserDataOperator::OPCOL};
+  std::vector<std::string> last_eval_field_name(2);
+  DataForcesAndSourcesCore *op_data[2];
+  FieldSpace space[2];
+
+  boost::ptr_vector<UserDataOperator>::iterator oit, hi_oit;
+  oit = opPtrVector.begin();
+  hi_oit = opPtrVector.end();
+
+  for (; oit != hi_oit; oit++) {
+
+    oit->setPtrFE(this);
+
+    if (oit->opType == UserDataOperator::OPLAST) {
+
+      // Set field
+      switch (oit->sPace) {
+      case NOSPACE:
+        SETERRQ(mField.get_comm(), MOFEM_DATA_INCONSISTENCY, "unknown space");
+      case H1:
+      case HCURL:
+      case HDIV:
+      case L2:
+      case NOFIELD:
+        op_data[0] = dataOnElement[type][oit->sPace].get();
+        break;
+      case LASTSPACE:
+        SETERRQ(mField.get_comm(), MOFEM_DATA_INCONSISTENCY, "unknown space");
+        break;
+      }
+
+      // Reseat all data which all field dependent
+      op_data[0]->resetFieldDependentData();
+      last_eval_field_name[0] = "";
+      last_eval_field_name[1] = "";
+
+      // Run operator
+
+      try {
+        CHKERR oit->opRhs(*op_data[0], oit->doVertices, oit->doEdges,
+                          oit->doQuads, oit->doTris, oit->doTets, false);
+      }
+      CATCH_OP_ERRORS(*oit);
+
+    } else {
+
+      for (int ss = 0; ss != 2; ss++) {
+
+        std::string field_name = !ss ? oit->rowFieldName : oit->colFieldName;
+        const Field *field_struture = mField.get_field_structure(field_name);
+        BitFieldId data_id = field_struture->getId();
+
+        if ((oit->getNumeredEntFiniteElementPtr()->getBitFieldIdData() &
+             data_id)
+                .none()) {
+          SETERRQ2(mField.get_comm(), MOFEM_DATA_INCONSISTENCY,
+                   "no data field < %s > on finite element < %s >",
+                   field_name.c_str(), feName.c_str());
+        }
+
+        if (oit->getOpType() & types[ss] ||
+            oit->getOpType() & UserDataOperator::OPROWCOL) {
+
+          space[ss] = field_struture->getSpace();
+          switch (space[ss]) {
+          case NOSPACE:
+            SETERRQ(mField.get_comm(), MOFEM_DATA_INCONSISTENCY,
+                    "unknown space");
+            break;
+          case H1:
+          case HCURL:
+          case HDIV:
+          case L2:
+          case NOFIELD:
+            op_data[ss] = !ss ? dataOnElement[type][space[ss]].get()
+                              : derivedDataOnElement[type][space[ss]].get();
+            break;
+          case LASTSPACE:
+            SETERRQ(mField.get_comm(), MOFEM_DATA_INCONSISTENCY,
+                    "unknown space");
+            break;
+          }
+
+          if (last_eval_field_name[ss] != field_name) {
+
+            switch (space[ss]) {
+            case NOSPACE:
+              SETERRQ(mField.get_comm(), MOFEM_DATA_INCONSISTENCY,
+                      "unknown space");
+              break;
+            case H1:
+              if (!ss) {
+                CHKERR getRowNodesIndices(*op_data[ss], field_name);
+              } else {
+                CHKERR getColNodesIndices(*op_data[ss], field_name);
+              }
+              CHKERR getNodesFieldData(*op_data[ss], field_name);
+              if (dim == 0)
+                break;
+            case HCURL:
+              if (!ss) {
+                CHKERR getEdgesRowIndices(*op_data[ss], field_name);
+              } else {
+                CHKERR getEdgesColIndices(*op_data[ss], field_name);
+              }
+              CHKERR getEdgesDataOrderSpaceAndBase(*op_data[ss], field_name);
+              CHKERR getEdgesFieldData(*op_data[ss], field_name);
+              if (dim == 1)
+                break;
+            case HDIV:
+              if (!ss) {
+                CHKERR getTrisRowIndices(*op_data[ss], field_name);
+              } else {
+                CHKERR getTrisColIndices(*op_data[ss], field_name);
+              }
+              CHKERR getTrisDataOrderSpaceAndBase(*op_data[ss], field_name);
+              CHKERR getTrisFieldData(*op_data[ss], field_name);
+              if (dim == 2)
+                break;
+            case L2:
+              switch (type) {
+              case MBPRISM:
+                if (!ss) {
+                  CHKERR getPrismRowIndices(*op_data[ss], field_name);
+                } else {
+                  CHKERR getPrismColIndices(*op_data[ss], field_name);
+                }
+                CHKERR getPrismDataOrderSpaceAndBase(*op_data[ss], field_name);
+                CHKERR getPrismFieldData(*op_data[ss], field_name);
+                break;
+              case MBTET:
+                if (!ss) {
+                  CHKERR getTetsRowIndices(*op_data[ss], field_name);
+                } else {
+                  CHKERR getTetsColIndices(*op_data[ss], field_name);
+                }
+                CHKERR getTetDataOrderSpaceAndBase(*op_data[ss], field_name);
+                CHKERR getTetsFieldData(*op_data[ss], field_name);
+                break;
+              case MBTRI:
+                if (!ss) {
+                  CHKERR getTrisRowIndices(*op_data[ss], field_name);
+                } else {
+                  CHKERR getTrisColIndices(*op_data[ss], field_name);
+                }
+                CHKERR getTrisDataOrderSpaceAndBase(*op_data[ss], field_name);
+                CHKERR getTrisFieldData(*op_data[ss], field_name);
+                break;
+              case MBEDGE:
+                if (!ss) {
+                  CHKERR getEdgesRowIndices(*op_data[ss], field_name);
+                } else {
+                  CHKERR getEdgesColIndices(*op_data[ss], field_name);
+                }
+                CHKERR getEdgesDataOrderSpaceAndBase(*op_data[ss], field_name);
+                CHKERR getEdgesFieldData(*op_data[ss], field_name);
+                break;
+              case MBVERTEX:
+                if (!ss) {
+                  CHKERR getRowNodesIndices(*op_data[ss], field_name);
+                } else {
+                  CHKERR getColNodesIndices(*op_data[ss], field_name);
+                }
+                CHKERR getNodesFieldData(*op_data[ss], field_name);
+                break;
+              default:
+                SETERRQ(mField.get_comm(), MOFEM_DATA_INCONSISTENCY,
+                        "not implemented");
+                break;
+              }
+              break;
+            case NOFIELD:
+              if (!getNinTheLoop()) {
+                // NOFIELD data are the same for each element, can be
+                // retrieved only once
+                if (!ss) {
+                  CHKERR getNoFieldRowIndices(*op_data[ss], field_name);
+                } else {
+                  CHKERR getNoFieldColIndices(*op_data[ss], field_name);
+                }
+                CHKERR getNoFieldFieldData(*op_data[ss], field_name);
+              }
+              break;
+            case LASTSPACE:
+              SETERRQ(mField.get_comm(), MOFEM_DATA_INCONSISTENCY,
+                      "unknown space");
+              break;
+            }
+            last_eval_field_name[ss] = field_name;
+          }
+        }
+      }
+
+      if (oit->getOpType() & UserDataOperator::OPROW) {
+        try {
+          CHKERR oit->opRhs(*op_data[0], false);
+        }
+        CATCH_OP_ERRORS(*oit);
+      }
+
+      if (oit->getOpType() & UserDataOperator::OPCOL) {
+        try {
+          CHKERR oit->opRhs(*op_data[1], false);
+        }
+        CATCH_OP_ERRORS(*oit);
+      }
+
+      if (oit->getOpType() & UserDataOperator::OPROWCOL) {
+        try {
+          CHKERR oit->opLhs(*op_data[0], *op_data[1], oit->sYmm);
+        }
+        CATCH_OP_ERRORS(*oit);
+      }
+    }
+  }
+  MoFEMFunctionReturn(0);
 }
 
 // **** Data Operator ****

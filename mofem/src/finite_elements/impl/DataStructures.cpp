@@ -149,6 +149,8 @@ void cOnstructor(DataForcesAndSourcesCore *data, EntityType type, T) {
   data->dataOnEntities[MBENTITYSET].push_back(new T());
 
   switch (type) {
+  case MBENTITYSET:
+    break;
   case MBTET:
     data->dataOnEntities[MBVERTEX].push_back(new T());
     for (int ee = 0; ee < 6; ee++) {

@@ -75,11 +75,22 @@ extern "C" {
 
 namespace MoFEM {
 
+FatPrismElementForcesAndSourcesCore::FatPrismElementForcesAndSourcesCore(
+    Interface &m_field)
+    : VolumeElementForcesAndSourcesCore(m_field, MBPRISM),
+      dataH1TrianglesOnly(MBPRISM), dataH1TroughThickness(MBPRISM),
+      opHOCoordsAndNormals(hoCoordsAtGaussPtsF3, nOrmals_at_GaussPtF3,
+                           tAngent1_at_GaussPtF3, tAngent2_at_GaussPtF3,
+                           hoCoordsAtGaussPtsF4, nOrmals_at_GaussPtF4,
+                           tAngent1_at_GaussPtF4, tAngent2_at_GaussPtF4) {}
+
 MoFEMErrorCode FatPrismElementForcesAndSourcesCore::operator()() {
   MoFEMFunctionBegin;
 
   if (numeredEntFiniteElementPtr->getEntType() != MBPRISM)
     MoFEMFunctionReturnHot(0);
+  CHKERR createDataOnElement();
+  DataForcesAndSourcesCore &data_h1 = *dataOnElement[MBPRISM][H1];
 
   EntityHandle ent = numeredEntFiniteElementPtr->getEnt();
   int num_nodes;
@@ -98,18 +109,18 @@ MoFEMErrorCode FatPrismElementForcesAndSourcesCore::operator()() {
     aRea[1] = cblas_dnrm2(3, &normal[3], 1) * 0.5;
   }
 
-  CHKERR getSpacesAndBaseOnEntities(dataH1);
   CHKERR getSpacesAndBaseOnEntities(dataH1TrianglesOnly);
   CHKERR getSpacesAndBaseOnEntities(dataH1TroughThickness);
+
   // H1
-  if ((dataH1.spacesOnEntities[MBEDGE]).test(H1)) {
-    CHKERR getEdgesSense(dataH1);
-    CHKERR getTrisSense(dataH1);
-    CHKERR getQuadSense(dataH1);
-    CHKERR getEdgesDataOrder(dataH1, H1);
-    CHKERR getTrisDataOrder(dataH1, H1);
-    CHKERR getQuadDataOrder(dataH1, H1);
-    CHKERR getPrismDataOrder(dataH1, H1);
+  if ((data_h1.spacesOnEntities[MBEDGE]).test(H1)) {
+    CHKERR getEdgesSense(data_h1);
+    CHKERR getTrisSense(data_h1);
+    CHKERR getQuadSense(data_h1);
+    CHKERR getEdgesDataOrder(data_h1, H1);
+    CHKERR getTrisDataOrder(data_h1, H1);
+    CHKERR getQuadDataOrder(data_h1, H1);
+    CHKERR getPrismDataOrder(data_h1, H1);
     // Triangles only
     CHKERR getEdgesSense(dataH1TrianglesOnly);
     CHKERR getTrisSense(dataH1TrianglesOnly);
@@ -120,15 +131,15 @@ MoFEMErrorCode FatPrismElementForcesAndSourcesCore::operator()() {
     CHKERR getEdgesDataOrder(dataH1TroughThickness, H1);
   }
   // Hdiv
-  if ((dataH1.spacesOnEntities[MBTRI]).test(HDIV)) {
+  if ((data_h1.spacesOnEntities[MBTRI]).test(HDIV)) {
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented yet");
   }
   // Hcurl
-  if ((dataH1.spacesOnEntities[MBEDGE]).test(HCURL)) {
+  if ((data_h1.spacesOnEntities[MBEDGE]).test(HCURL)) {
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented yet");
   }
   // L2
-  if ((dataH1.spacesOnEntities[MBPRISM]).test(L2)) {
+  if ((data_h1.spacesOnEntities[MBPRISM]).test(L2)) {
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented yet");
   }
 
@@ -302,9 +313,9 @@ MoFEMErrorCode FatPrismElementForcesAndSourcesCore::operator()() {
     // Calculate "nobase" base functions on prism, this is cartesian product
     // of base functions on triangles with base functions through thickness
     // FIXME: This could be effectively implemented with tensors
-    dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nb_gauss_pts, 6,
+    data_h1.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nb_gauss_pts, 6,
                                                            false);
-    dataH1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE).resize(nb_gauss_pts, 18,
+    data_h1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE).resize(nb_gauss_pts, 18,
                                                                false);
     for (int dd = 0; dd != 6; dd++) {
       int gg = 0;
@@ -328,13 +339,13 @@ MoFEMErrorCode FatPrismElementForcesAndSourcesCore::operator()() {
             dzeta = diffN_MBEDGE1;
             edge_shape = N_MBEDGE1(zeta);
           }
-          dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE)(gg, dd) =
+          data_h1.dataOnEntities[MBVERTEX][0].getN(NOBASE)(gg, dd) =
               tri_n * edge_shape;
-          dataH1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE)(gg, 3 * dd + 0) =
+          data_h1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE)(gg, 3 * dd + 0) =
               dksi_tri_n * edge_shape;
-          dataH1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE)(gg, 3 * dd + 1) =
+          data_h1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE)(gg, 3 * dd + 1) =
               deta_tri_n * edge_shape;
-          dataH1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE)(gg, 3 * dd + 2) =
+          data_h1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE)(gg, 3 * dd + 2) =
               tri_n * dzeta;
         }
       }
@@ -345,7 +356,7 @@ MoFEMErrorCode FatPrismElementForcesAndSourcesCore::operator()() {
     for (int gg = 0; gg < nb_gauss_pts; gg++) {
       for (int dd = 0; dd < 3; dd++) {
         coordsAtGaussPts(gg, dd) = cblas_ddot(
-            6, &dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE)(gg, 0), 1,
+            6, &data_h1.dataOnEntities[MBVERTEX][0].getN(NOBASE)(gg, 0), 1,
             &coords[dd], 3);
       }
     }
@@ -353,28 +364,28 @@ MoFEMErrorCode FatPrismElementForcesAndSourcesCore::operator()() {
 
   // Calculate base functions on prism
   for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
-    if (dataH1.bAse.test(b)) {
+    if (data_h1.bAse.test(b)) {
       switch (ApproximationBaseArray[b]) {
       case AINSWORTH_LEGENDRE_BASE:
       case AINSWORTH_LOBATTO_BASE:
-        if (dataH1.spacesOnEntities[MBVERTEX].test(H1)) {
+        if (data_h1.spacesOnEntities[MBVERTEX].test(H1)) {
           CHKERR FatPrismPolynomialBase().getValue(
               gaussPts,
               boost::shared_ptr<BaseFunctionCtx>(new FatPrismPolynomialBaseCtx(
-                  dataH1, dataH1TrianglesOnly, dataH1TroughThickness,
+                  data_h1, dataH1TrianglesOnly, dataH1TroughThickness,
                   gaussPtsTrianglesOnly, gaussPtsThroughThickness,
                   mField.get_moab(), numeredEntFiniteElementPtr.get(), H1,
                   ApproximationBaseArray[b], NOBASE)));
         }
-        if (dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
+        if (data_h1.spacesOnEntities[MBTRI].test(HDIV)) {
           SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                   "Not yet implemented");
         }
-        if (dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
+        if (data_h1.spacesOnEntities[MBEDGE].test(HCURL)) {
           SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                   "Not yet implemented");
         }
-        if (dataH1.spacesOnEntities[MBTET].test(L2)) {
+        if (data_h1.spacesOnEntities[MBTET].test(L2)) {
           SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                   "Not yet implemented");
         }
@@ -418,215 +429,8 @@ MoFEMErrorCode FatPrismElementForcesAndSourcesCore::operator()() {
     tAngent2_at_GaussPtF4.resize(0, 0, false);
   }
 
-  const UserDataOperator::OpType types[2] = {UserDataOperator::OPROW,
-                                             UserDataOperator::OPCOL};
-  std::vector<std::string> last_eval_field_name(2);
-  DataForcesAndSourcesCore *op_data[2];
-  FieldSpace space[2];
-  FieldApproximationBase base[2];
-
-  boost::ptr_vector<UserDataOperator>::iterator oit, hi_oit;
-  oit = opPtrVector.begin();
-  hi_oit = opPtrVector.end();
-
-  // Run element operators
-  for (; oit != hi_oit; oit++) {
-
-    oit->setPtrFE(this);
-
-    if (oit->sPace != LASTSPACE) {
-
-      // Set field
-      switch (oit->sPace) {
-      case NOSPACE:
-        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "unknown space");
-      case H1:
-        op_data[0] = &dataH1;
-        break;
-      case HCURL:
-        op_data[0] = &dataHcurl;
-        break;
-      case HDIV:
-        op_data[0] = &dataHdiv;
-        break;
-      case L2:
-        op_data[0] = &dataL2;
-        break;
-      case NOFIELD:
-        op_data[0] = &dataNoField;
-        break;
-      case LASTSPACE:
-        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "unknown space");
-      }
-
-      // Reseat all data which all field dependent
-      op_data[0]->resetFieldDependentData();
-
-      // Run operator
-      CHKERR oit->opRhs(*op_data[0], oit->doVertices, oit->doEdges,
-                        oit->doQuads, oit->doTris, false, false);
-
-    } else {
-
-      for (int ss = 0; ss != 2; ss++) {
-
-        std::string field_name = !ss ? oit->rowFieldName : oit->colFieldName;
-        const Field *field_struture = mField.get_field_structure(field_name);
-        BitFieldId data_id = field_struture->getId();
-
-        if ((oit->getNumeredEntFiniteElementPtr()->getBitFieldIdData() &
-             data_id)
-                .none()) {
-          SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                   "no data field < %s > on finite element < %s >",
-                   field_name.c_str(), feName.c_str());
-        }
-
-        if (oit->getOpType() & types[ss] ||
-            oit->getOpType() & UserDataOperator::OPROWCOL) {
-
-          space[ss] = field_struture->getSpace();
-          switch (space[ss]) {
-          case NOSPACE:
-            SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "unknown space");
-          case H1:
-            op_data[ss] = !ss ? &dataH1 : &derivedDataH1;
-            break;
-          case HCURL:
-            SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
-                    "not implemented yet");
-            break;
-          case HDIV:
-            SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
-                    "not implemented yet");
-            break;
-          case L2:
-            SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
-                    "not implemented yet");
-            break;
-          case NOFIELD:
-            op_data[ss] = !ss ? &dataNoField : &dataNoFieldCol;
-            break;
-          case LASTSPACE:
-            SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "unknown space");
-            break;
-          }
-
-          base[ss] = field_struture->getApproxBase();
-          switch (base[ss]) {
-          case AINSWORTH_LEGENDRE_BASE:
-          case AINSWORTH_LOBATTO_BASE:
-            break;
-          default:
-            SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                    "unknown or not implemented base");
-            break;
-          }
-
-          if (last_eval_field_name[ss] != field_name) {
-
-            switch (space[ss]) {
-            case NOSPACE:
-              SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                      "unknown space");
-            case H1:
-              if (!ss) {
-                CHKERR getRowNodesIndices(*op_data[ss], field_name);
-              } else {
-                CHKERR getColNodesIndices(*op_data[ss], field_name);
-              }
-              CHKERR getNodesFieldData(*op_data[ss], field_name);
-            case HCURL:
-              if (!ss) {
-                CHKERR getEdgesRowIndices(*op_data[ss], field_name);
-              } else {
-                CHKERR getEdgesColIndices(*op_data[ss], field_name);
-              }
-              CHKERR getEdgesDataOrderSpaceAndBase(*op_data[ss], field_name);
-              CHKERR getEdgesFieldData(*op_data[ss], field_name);
-            case HDIV:
-              if (!ss) {
-                CHKERR getTrisRowIndices(*op_data[ss], field_name);
-              } else {
-                CHKERR getTrisColIndices(*op_data[ss], field_name);
-              }
-              CHKERR getTrisDataOrderSpaceAndBase(*op_data[ss], field_name);
-              CHKERR getTrisFieldData(*op_data[ss], field_name);
-              if (!ss) {
-                CHKERR getQuadRowIndices(*op_data[ss], field_name);
-              } else {
-                CHKERR getQuadColIndices(*op_data[ss], field_name);
-              }
-              CHKERR getQuadDataOrderSpaceAndBase(*op_data[ss], field_name);
-              CHKERR getQuadFieldData(*op_data[ss], field_name);
-            case L2:
-              if (!ss) {
-                CHKERR getPrismRowIndices(*op_data[ss], field_name);
-              } else {
-                CHKERR getPrismColIndices(*op_data[ss], field_name);
-              }
-              CHKERR getPrismDataOrderSpaceAndBase(*op_data[ss], field_name);
-              CHKERR getPrismFieldData(*op_data[ss], field_name);
-              break;
-            case NOFIELD:
-              if (!getNinTheLoop()) {
-                // NOFIELD data are the same for each element, can be retrieved
-                // only once
-                if (!ss) {
-                  CHKERR getNoFieldRowIndices(*op_data[ss], field_name);
-                } else {
-                  CHKERR getNoFieldColIndices(*op_data[ss], field_name);
-                }
-                CHKERR getNoFieldFieldData(*op_data[ss], field_name);
-              }
-              break;
-            case LASTSPACE:
-              SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                      "unknown space");
-              break;
-            }
-            last_eval_field_name[ss] = field_name;
-          }
-        }
-      }
-
-      if (oit->getOpType() & UserDataOperator::OPROW) {
-        try {
-          CHKERR oit->opRhs(*op_data[0], oit->doVertices, oit->doEdges,
-                            oit->doQuads, oit->doTris, false, oit->doPrisms);
-        } catch (std::exception &ex) {
-          std::ostringstream ss;
-          ss << "thorw in method: " << ex.what() << " at line " << __LINE__
-             << " in file " << __FILE__;
-          ss << " operator on row field name " << oit->rowFieldName;
-          SETERRQ(PETSC_COMM_SELF, MOFEM_STD_EXCEPTION_THROW, ss.str().c_str());
-        }
-      }
-
-      if (oit->getOpType() & UserDataOperator::OPCOL) {
-        try {
-          CHKERR oit->opRhs(*op_data[1], oit->doVertices, oit->doEdges,
-                            oit->doQuads, oit->doTris, false, oit->doPrisms);
-        } catch (std::exception &ex) {
-          std::ostringstream ss;
-          ss << "thorw in method: " << ex.what() << " at line " << __LINE__
-             << " in file " << __FILE__;
-          SETERRQ(PETSC_COMM_SELF, MOFEM_STD_EXCEPTION_THROW, ss.str().c_str());
-        }
-      }
-
-      if (oit->getOpType() & UserDataOperator::OPROWCOL) {
-        try {
-          CHKERR oit->opLhs(*op_data[0], *op_data[1], oit->sYmm);
-        } catch (std::exception &ex) {
-          std::ostringstream ss;
-          ss << "thorw in method: " << ex.what() << " at line " << __LINE__
-             << " in file " << __FILE__;
-          SETERRQ(PETSC_COMM_SELF, MOFEM_STD_EXCEPTION_THROW, ss.str().c_str());
-        }
-      }
-    }
-  }
+  // Iterate over operators
+  CHKERR loopOverOperators();
 
   MoFEMFunctionReturn(0);
 }
@@ -723,4 +527,5 @@ OpSetInvJacH1ForFatPrism::doWork(int side, EntityType type,
 
   MoFEMFunctionReturn(0);
 }
+
 } // namespace MoFEM

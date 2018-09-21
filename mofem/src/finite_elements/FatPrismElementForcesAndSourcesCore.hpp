@@ -63,13 +63,7 @@ struct FatPrismElementForcesAndSourcesCore
   MatrixDouble tAngent2_at_GaussPtF4;
   OpGetCoordsAndNormalsOnPrism opHOCoordsAndNormals;
 
-  FatPrismElementForcesAndSourcesCore(Interface &m_field)
-      : VolumeElementForcesAndSourcesCore(m_field, MBPRISM),
-        dataH1TrianglesOnly(MBPRISM), dataH1TroughThickness(MBPRISM),
-        opHOCoordsAndNormals(hoCoordsAtGaussPtsF3, nOrmals_at_GaussPtF3,
-                             tAngent1_at_GaussPtF3, tAngent2_at_GaussPtF3,
-                             hoCoordsAtGaussPtsF4, nOrmals_at_GaussPtF4,
-                             tAngent1_at_GaussPtF4, tAngent2_at_GaussPtF4) {}
+  FatPrismElementForcesAndSourcesCore(Interface &m_field);
 
   virtual int getRuleTrianglesOnly(int order) { return 2 * order; };
   virtual int getRuleThroughThickness(int order) { return 2 * order; };

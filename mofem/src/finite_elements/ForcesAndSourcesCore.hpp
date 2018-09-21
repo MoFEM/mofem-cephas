@@ -34,8 +34,9 @@ namespace MoFEM {
 struct ForcesAndSourcesCore : public FEMethod {
 
   Interface &mField;
-  ForcesAndSourcesCore(Interface &m_field) : mField(m_field), getRuleHook(0) {}
-  virtual ~ForcesAndSourcesCore() {}
+
+  ForcesAndSourcesCore(Interface &m_field);
+  virtual ~ForcesAndSourcesCore();
 
   MoFEMErrorCode getNumberOfNodes(int &num_nodes) const;
 
@@ -623,9 +624,53 @@ struct ForcesAndSourcesCore : public FEMethod {
 
     /**@}*/
 
+    /**@{*/
+
+    /** \name Base funtions and integration points */
+
+    /** \brief matrix of integration (Gauss) points for Volume Element
+     *
+     * For triangle: columns 0,1 are x,y coordinates respectively and column
+     * 2 is a weight value for example getGaussPts()(1,13) returns y coordinate
+     * of 13th Gauss point on particular volume element
+     * 
+     * For tetrahedron: columns 0,1,2 are x,y,z coordinates respectively and column 3 is a
+     * weight value for example getGaussPts()(1,13) returns y coordinate of 13th
+     * Gauss point on particular volume element
+     *
+     */
+    inline MatrixDouble &getGaussPts() {
+      return static_cast<ForcesAndSourcesCore *>(ptrFE)->gaussPts;
+    }
+
+    /**
+     * @brief Get integration weights
+     *
+     * \code
+     * auto t_w = getFTensor0IntegrationWeight();
+     * for(int gg = 0; gg!=getGaussPts.size2(); ++gg) {
+     *  // integrate something
+     *  ++t_w;
+     * }
+     * \endcode
+     *
+     * @return FTensor::Tensor0<FTensor::PackPtr<double *, 1>>
+     */
+    inline auto getFTensor0IntegrationWeight() {
+      return FTensor::Tensor0<FTensor::PackPtr<double *, 1>>(
+          &(getGaussPts()(getGaussPts().size1() - 1, 0)));
+    }
+
+    /**@}*/
+
   protected:
     ForcesAndSourcesCore *ptrFE;
   };
+
+  boost::shared_ptr<DataForcesAndSourcesCore> dataOnElement[MBMAXTYPE]
+                                                            [LASTSPACE];
+  boost::shared_ptr<DataForcesAndSourcesCore> derivedDataOnElement[MBMAXTYPE]
+                                                                  [LASTSPACE];
 
   boost::ptr_vector<UserDataOperator> opPtrVector;
 
@@ -635,6 +680,50 @@ struct ForcesAndSourcesCore : public FEMethod {
 
    */
   boost::ptr_vector<UserDataOperator> &getOpPtrVector() { return opPtrVector; }
+
+  /**
+   * @brief Pointer to entity polynomial base
+   * 
+   */
+  boost::shared_ptr<BaseFunction> elementPolynomialBasePtr;
+
+  /**
+   * @brief Get the Entity Polynomial Base object
+   * 
+   * @return boost::shared_ptr<BaseFunction>&& 
+   */
+  auto &getElementPolynomialBase() { return elementPolynomialBasePtr; }
+
+  /**
+   * @brief Pointer to user polynomail base
+   */
+  boost::shared_ptr<BaseFunction> userPolynomialBasePtr;
+
+  /**
+   * @brief Get the User Polynomial Base object
+   * 
+   * @return boost::shared_ptr<BaseFunction>&
+   */
+  auto &getUserPolynomialBase() { return userPolynomialBasePtr; }
+
+  /**
+   * @brief Matrix of integration points
+   *
+   * Columns is equal to number of integration points, numver of rows depends on
+   * dimension of finite element entity, for example for tetrahedron rows are
+   * x,y,z,weight. Last row is integration weight.
+   */
+  MatrixDouble gaussPts;
+
+  /**
+   * \brief Calculate base functions
+   * @return Error code
+   */
+  virtual MoFEMErrorCode calculateBaseFunctionsOnElement();
+
+  virtual MoFEMErrorCode createDataOnElement();
+
+  virtual MoFEMErrorCode loopOverOperators();
 
   virtual MoFEMErrorCode preProcess() {
     MoFEMFunctionBeginHot;
