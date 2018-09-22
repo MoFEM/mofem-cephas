@@ -265,8 +265,6 @@ using MatrixShallowArrayAdaptor =
                   ublas::shallow_array_adaptor<double>>;
 typedef MatrixShallowArrayAdaptor<double> MatrixAdaptor;
 
-typedef std::vector<boost::shared_ptr<MatrixDouble> > ShapeFunctionBasesVector;
-
 template <class X> inline std::string toString(X x) {
   std::ostringstream buffer;
   buffer << x;
