@@ -1237,16 +1237,17 @@ MoFEMErrorCode ForcesAndSourcesCore::calculateBaseFunctionsOnElement() {
 MoFEMErrorCode ForcesAndSourcesCore::createDataOnElement() {
   MoFEMFunctionBegin;
 
+  const EntityType type = numeredEntFiniteElementPtr->getEntType();
+
   if (!dataOnElement[NOFIELD]) {
     dataOnElement[NOFIELD] =
         boost::shared_ptr<DataForcesAndSourcesCore>(
             new DataForcesAndSourcesCore(MBENTITYSET));
     derivedDataOnElement[NOFIELD] = boost::shared_ptr<DataForcesAndSourcesCore>(
         new DataForcesAndSourcesCore(MBENTITYSET));
-  } else
+  } else if (type == lastEvaluatedElementEntityType)
     MoFEMFunctionReturnHot(0);
 
-  const EntityType type = numeredEntFiniteElementPtr->getEntType();
   // Data on elements for proper spaces
   for (int space = H1; space != LASTSPACE; ++space) {
     dataOnElement[space] = boost::shared_ptr<DataForcesAndSourcesCore>(

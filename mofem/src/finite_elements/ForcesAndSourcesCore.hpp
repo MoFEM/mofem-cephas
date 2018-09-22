@@ -670,18 +670,25 @@ struct ForcesAndSourcesCore : public FEMethod {
   /**
    * @brief Entity data on element entity rows fields
    * 
+   * 
+   * FIXME: that should be moved to private class data and acessed only by
+   * member function
    */
   boost::shared_ptr<DataForcesAndSourcesCore> dataOnElement[LASTSPACE];
 
   /**
    * @brief Entity data on element entity columns fields
    *
+   * FIXME: that should be moved to private class data and acessed only by
+   * member function
    */
   boost::shared_ptr<DataForcesAndSourcesCore> derivedDataOnElement[LASTSPACE];
 
   /**
    * @brief Vector of finite element users data operators
    * 
+   * FIXME: that should be moved to private class data and acessed only by
+   * member function
    */
   boost::ptr_vector<UserDataOperator> opPtrVector;
 
@@ -693,22 +700,11 @@ struct ForcesAndSourcesCore : public FEMethod {
   boost::ptr_vector<UserDataOperator> &getOpPtrVector() { return opPtrVector; }
 
   /**
-   * @brief Pointer to entity polynomial base
-   * 
-   */
-  boost::shared_ptr<BaseFunction> elementPolynomialBasePtr;
-
-  /**
    * @brief Get the Entity Polynomial Base object
    * 
    * @return boost::shared_ptr<BaseFunction>&& 
    */
   auto &getElementPolynomialBase() { return elementPolynomialBasePtr; }
-
-  /**
-   * @brief Pointer to user polynomail base
-   */
-  boost::shared_ptr<BaseFunction> userPolynomialBasePtr;
 
   /**
    * @brief Get the User Polynomial Base object
@@ -723,18 +719,11 @@ struct ForcesAndSourcesCore : public FEMethod {
    * Columns is equal to number of integration points, numver of rows depends on
    * dimension of finite element entity, for example for tetrahedron rows are
    * x,y,z,weight. Last row is integration weight.
+   * 
+   * FIXME: that should be moved to private class data and acessed only by
+   * member function
    */
   MatrixDouble gaussPts;
-
-  /**
-   * \brief Calculate base functions
-   * @return Error code
-   */
-  virtual MoFEMErrorCode calculateBaseFunctionsOnElement();
-
-  virtual MoFEMErrorCode createDataOnElement();
-
-  virtual MoFEMErrorCode loopOverOperators();
 
   virtual MoFEMErrorCode preProcess() {
     MoFEMFunctionBeginHot;
@@ -760,6 +749,45 @@ struct ForcesAndSourcesCore : public FEMethod {
     }
     MoFEMFunctionReturnHot(0);
   }
+
+protected:
+  /**
+   * \brief Calculate base functions
+   * @return Error code
+   */
+  MoFEMErrorCode calculateBaseFunctionsOnElement();
+
+  /**
+   * @brief Create a entity data on element object
+   * 
+   * @return MoFEMErrorCode 
+   */
+  MoFEMErrorCode createDataOnElement();
+
+  /**
+   * @brief Iterate user data operators
+   * 
+   * @return MoFEMErrorCode 
+   */
+  MoFEMErrorCode loopOverOperators();
+
+private:
+  /**
+   * @brief Last evaluated type of element entity
+   *
+   */
+  EntityType lastEvaluatedElementEntityType;
+
+  /**
+   * @brief Pointer to entity polynomial base
+   *
+   */
+  boost::shared_ptr<BaseFunction> elementPolynomialBasePtr;
+
+  /**
+   * @brief Pointer to user polynomail base
+   */
+  boost::shared_ptr<BaseFunction> userPolynomialBasePtr;
 };
 
 /// \deprecated Used ForcesAndSourcesCore instead
