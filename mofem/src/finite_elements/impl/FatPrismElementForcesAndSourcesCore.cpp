@@ -90,7 +90,7 @@ MoFEMErrorCode FatPrismElementForcesAndSourcesCore::operator()() {
   if (numeredEntFiniteElementPtr->getEntType() != MBPRISM)
     MoFEMFunctionReturnHot(0);
   CHKERR createDataOnElement();
-  DataForcesAndSourcesCore &data_h1 = *dataOnElement[MBPRISM][H1];
+  DataForcesAndSourcesCore &data_h1 = *dataOnElement[H1];
 
   EntityHandle ent = numeredEntFiniteElementPtr->getEnt();
   int num_nodes;

@@ -1184,16 +1184,16 @@ MoFEMErrorCode ForcesAndSourcesCore::calculateBaseFunctionsOnElement() {
   MoFEMFunctionBegin;
   /// Use the some node base. Node base is usually used for construction other
   /// bases.
-  EntityType type = numeredEntFiniteElementPtr->getEntType();
-  for (int space = HCURL; space != LASTSPACE; ++space)
-    if (dataOnElement[type][space]) {
-      dataOnElement[type][space]->dataOnEntities[MBVERTEX][0].getNSharedPtr(
-          NOBASE) =
-          dataOnElement[type][H1]->dataOnEntities[MBVERTEX][0].getNSharedPtr(
-              NOBASE);
-    }
+
+  for (int space = HCURL; space != LASTSPACE; ++space) {
+    dataOnElement[space]->dataOnEntities[MBVERTEX][0].getNSharedPtr(
+        NOBASE) =
+        dataOnElement[H1]->dataOnEntities[MBVERTEX][0].getNSharedPtr(
+            NOBASE);
+  }
+
   for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
-    if (dataOnElement[type][H1]->bAse.test(b)) {
+    if (dataOnElement[H1]->bAse.test(b)) {
       switch (ApproximationBaseArray[b]) {
       case NOBASE:
         break;
@@ -1201,26 +1201,26 @@ MoFEMErrorCode ForcesAndSourcesCore::calculateBaseFunctionsOnElement() {
       case AINSWORTH_LOBATTO_BASE:
       case DEMKOWICZ_JACOBI_BASE:
         for (int space = H1; space != LASTSPACE; ++space) {
-          if (dataOnElement[type][H1]->sPace.test(space) &&
-              dataOnElement[type][H1]->bAse.test(b) &&
-              dataOnElement[type][H1]->basesOnSpaces[space].test(b)) {
+          if (dataOnElement[H1]->sPace.test(space) &&
+              dataOnElement[H1]->bAse.test(b) &&
+              dataOnElement[H1]->basesOnSpaces[space].test(b)) {
             CHKERR getElementPolynomialBase()->getValue(
                 gaussPts,
                 boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
-                    *dataOnElement[type][space], static_cast<FieldSpace>(space),
+                    *dataOnElement[space], static_cast<FieldSpace>(space),
                     ApproximationBaseArray[b], NOBASE)));
           }
         }
         break;
       case USER_BASE:
         for (int space = H1; space != LASTSPACE; ++space)
-          if (dataOnElement[type][H1]->sPace.test(space) &&
-              dataOnElement[type][H1]->bAse.test(b) &&
-              dataOnElement[type][H1]->basesOnSpaces[space].test(b)) {
+          if (dataOnElement[H1]->sPace.test(space) &&
+              dataOnElement[H1]->bAse.test(b) &&
+              dataOnElement[H1]->basesOnSpaces[space].test(b)) {
             CHKERR getUserPolynomialBase()->getValue(
                 gaussPts,
                 boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
-                    *dataOnElement[type][space], static_cast<FieldSpace>(space),
+                    *dataOnElement[space], static_cast<FieldSpace>(space),
                     ApproximationBaseArray[b], NOBASE)));
           }
         break;
@@ -1237,32 +1237,24 @@ MoFEMErrorCode ForcesAndSourcesCore::calculateBaseFunctionsOnElement() {
 MoFEMErrorCode ForcesAndSourcesCore::createDataOnElement() {
   MoFEMFunctionBegin;
 
-  if (!dataOnElement[MBENTITYSET][NOFIELD]) {
-    dataOnElement[MBENTITYSET][NOFIELD] =
+  if (!dataOnElement[NOFIELD]) {
+    dataOnElement[NOFIELD] =
         boost::shared_ptr<DataForcesAndSourcesCore>(
             new DataForcesAndSourcesCore(MBENTITYSET));
-    derivedDataOnElement[MBENTITYSET][NOFIELD] =
-        boost::shared_ptr<DataForcesAndSourcesCore>(
-            new DataForcesAndSourcesCore(MBENTITYSET));
-    for (int t = MBVERTEX; t != MBENTITYSET; ++t) {
-      dataOnElement[t][NOFIELD] = dataOnElement[MBENTITYSET][NOFIELD];
-      derivedDataOnElement[t][NOFIELD] =
-          derivedDataOnElement[MBENTITYSET][NOFIELD];
-    }
-  }
+    derivedDataOnElement[NOFIELD] = boost::shared_ptr<DataForcesAndSourcesCore>(
+        new DataForcesAndSourcesCore(MBENTITYSET));
+  } else
+    MoFEMFunctionReturnHot(0);
 
-  EntityType type = numeredEntFiniteElementPtr->getEntType();
+  const EntityType type = numeredEntFiniteElementPtr->getEntType();
   // Data on elements for proper spaces
-  for (int space = H1; space != LASTSPACE; ++space)
-    if (!dataOnElement[type][space]) {
-      dataOnElement[type][space] = boost::shared_ptr<DataForcesAndSourcesCore>(
-          new DataForcesAndSourcesCore(type));
-      derivedDataOnElement[type][space] =
-          boost::shared_ptr<DataForcesAndSourcesCore>(
-              dataOnElement[type][space],
-              new DerivedDataForcesAndSourcesCore(dataOnElement[type][space]));
-    } else
-      MoFEMFunctionReturnHot(0);
+  for (int space = H1; space != LASTSPACE; ++space) {
+    dataOnElement[space] = boost::shared_ptr<DataForcesAndSourcesCore>(
+        new DataForcesAndSourcesCore(type));
+    derivedDataOnElement[space] = boost::shared_ptr<DataForcesAndSourcesCore>(
+        dataOnElement[space],
+        new DerivedDataForcesAndSourcesCore(dataOnElement[space]));
+  }
 
   MoFEMFunctionReturn(0);
 }
@@ -1327,7 +1319,7 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
       case HDIV:
       case L2:
       case NOFIELD:
-        op_data[0] = dataOnElement[type][oit->sPace].get();
+        op_data[0] = dataOnElement[oit->sPace].get();
         break;
       case LASTSPACE:
         SETERRQ(mField.get_comm(), MOFEM_DATA_INCONSISTENCY, "unknown space");
@@ -1377,8 +1369,8 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
           case HDIV:
           case L2:
           case NOFIELD:
-            op_data[ss] = !ss ? dataOnElement[type][space[ss]].get()
-                              : derivedDataOnElement[type][space[ss]].get();
+            op_data[ss] = !ss ? dataOnElement[space[ss]].get()
+                              : derivedDataOnElement[space[ss]].get();
             break;
           case LASTSPACE:
             SETERRQ(mField.get_comm(), MOFEM_DATA_INCONSISTENCY,

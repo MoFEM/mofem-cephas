@@ -104,7 +104,7 @@ MoFEMErrorCode EdgeElementForcesAndSourcesCore::setIntegrationPts() {
   int order_row = getMaxRowOrder();
   int order_col = getMaxColOrder();
   int rule = getRule(order_row, order_col, order_data);
-  DataForcesAndSourcesCore &data_h1 = *dataOnElement[MBEDGE][H1];
+  DataForcesAndSourcesCore &data_h1 = *dataOnElement[H1];
   int nb_gauss_pts;
   if (rule >= 0) {
     if (rule < QUAD_1D_TABLE_SIZE) {
@@ -177,7 +177,7 @@ EdgeElementForcesAndSourcesCore::calculateCoordsAtIntegrationPts() {
 MoFEMErrorCode
 EdgeElementForcesAndSourcesCore::calculateHoCoordsAtIntegrationPts() {
   MoFEMFunctionBegin;
-  DataForcesAndSourcesCore &data_h1 = *dataOnElement[MBEDGE][H1];
+  DataForcesAndSourcesCore &data_h1 = *dataOnElement[H1];
   if (dataPtr->get<FieldName_mi_tag>().find(meshPositionsFieldName) !=
       dataPtr->get<FieldName_mi_tag>().end()) {
     CHKERR getEdgesDataOrderSpaceAndBase(data_h1, meshPositionsFieldName);
@@ -197,8 +197,8 @@ MoFEMErrorCode EdgeElementForcesAndSourcesCore::operator()() {
     MoFEMFunctionReturnHot(0);
  
   CHKERR createDataOnElement();
-  DataForcesAndSourcesCore &data_h1 = *dataOnElement[MBEDGE][H1];
-  DataForcesAndSourcesCore &data_curl = *dataOnElement[MBEDGE][HCURL];
+  DataForcesAndSourcesCore &data_h1 = *dataOnElement[H1];
+  DataForcesAndSourcesCore &data_curl = *dataOnElement[HCURL];
 
   CHKERR calculateEdgeDirection();
   CHKERR getSpacesAndBaseOnEntities(data_h1);

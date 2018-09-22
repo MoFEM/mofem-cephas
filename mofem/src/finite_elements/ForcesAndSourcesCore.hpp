@@ -671,15 +671,13 @@ struct ForcesAndSourcesCore : public FEMethod {
    * @brief Entity data on element entity rows fields
    * 
    */
-  boost::shared_ptr<DataForcesAndSourcesCore> dataOnElement[MBMAXTYPE]
-                                                            [LASTSPACE];
+  boost::shared_ptr<DataForcesAndSourcesCore> dataOnElement[LASTSPACE];
 
   /**
    * @brief Entity data on element entity columns fields
    *
    */
-  boost::shared_ptr<DataForcesAndSourcesCore> derivedDataOnElement[MBMAXTYPE]
-                                                                  [LASTSPACE];
+  boost::shared_ptr<DataForcesAndSourcesCore> derivedDataOnElement[LASTSPACE];
 
   /**
    * @brief Vector of finite element users data operators

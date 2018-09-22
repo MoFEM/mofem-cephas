@@ -91,10 +91,10 @@ MoFEMErrorCode FlatPrismElementForcesAndSourcesCore::operator()() {
     MoFEMFunctionReturnHot(0);
   CHKERR createDataOnElement();
 
-  DataForcesAndSourcesCore &data_h1 = *dataOnElement[MBPRISM][H1];
-  DataForcesAndSourcesCore &data_div = *dataOnElement[MBPRISM][HDIV];
-  DataForcesAndSourcesCore &data_curl = *dataOnElement[MBPRISM][HCURL];
-  DataForcesAndSourcesCore &data_l2 = *dataOnElement[MBPRISM][HCURL];
+  DataForcesAndSourcesCore &data_h1 = *dataOnElement[H1];
+  DataForcesAndSourcesCore &data_div = *dataOnElement[HDIV];
+  DataForcesAndSourcesCore &data_curl = *dataOnElement[HCURL];
+  DataForcesAndSourcesCore &data_l2 = *dataOnElement[HCURL];
 
   EntityHandle ent = numeredEntFiniteElementPtr->getEnt();
   int num_nodes;
@@ -207,9 +207,9 @@ MoFEMErrorCode FlatPrismElementForcesAndSourcesCore::operator()() {
   }
 
   for (int space = HCURL; space != LASTSPACE; ++space)
-    if (dataOnElement[MBPRISM][space]) {
+    if (dataOnElement[space]) {
       data_h1.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE) =
-          dataOnElement[MBPRISM][H1]->dataOnEntities[MBVERTEX][0].getNSharedPtr(
+          dataOnElement[H1]->dataOnEntities[MBVERTEX][0].getNSharedPtr(
               NOBASE);
     }
 

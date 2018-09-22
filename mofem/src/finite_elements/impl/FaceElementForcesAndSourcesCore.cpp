@@ -189,7 +189,7 @@ MoFEMErrorCode FaceElementForcesAndSourcesCore::setIntegrationPts() {
   int order_row = getMaxRowOrder();
   int order_col = getMaxColOrder();
   int rule = getRule(order_row, order_col, order_data);
-  DataForcesAndSourcesCore &data_h1 = *dataOnElement[MBTRI][H1];
+  DataForcesAndSourcesCore &data_h1 = *dataOnElement[H1];
   if (rule >= 0) {
     if (rule < QUAD_2D_TABLE_SIZE) {
       if (QUAD_2D_TABLE[rule]->dim != 2) {
@@ -237,10 +237,10 @@ FaceElementForcesAndSourcesCore::getSpaceBaseAndOrderOnElement() {
   MoFEMFunctionBegin;
   // Get spaces order/base and sense of entities.
   
-  DataForcesAndSourcesCore &data_h1 = *dataOnElement[MBTRI][H1];
-  DataForcesAndSourcesCore &data_curl = *dataOnElement[MBTRI][HCURL];
-  DataForcesAndSourcesCore &data_div = *dataOnElement[MBTRI][HDIV];
-  DataForcesAndSourcesCore &data_l2 = *dataOnElement[MBTRI][L2]; 
+  DataForcesAndSourcesCore &data_h1 = *dataOnElement[H1];
+  DataForcesAndSourcesCore &data_curl = *dataOnElement[HCURL];
+  DataForcesAndSourcesCore &data_div = *dataOnElement[HDIV];
+  DataForcesAndSourcesCore &data_l2 = *dataOnElement[L2]; 
 
   CHKERR getSpacesAndBaseOnEntities(data_h1);
 
@@ -286,7 +286,7 @@ FaceElementForcesAndSourcesCore::getSpaceBaseAndOrderOnElement() {
 MoFEMErrorCode
 FaceElementForcesAndSourcesCore::calculateCoordinatesAtGaussPts() {
   MoFEMFunctionBeginHot;
-  DataForcesAndSourcesCore &data_h1 = *dataOnElement[MBTRI][H1];
+  DataForcesAndSourcesCore &data_h1 = *dataOnElement[H1];
 
   double *shape_functions =
       &*data_h1.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin();
@@ -318,7 +318,7 @@ MoFEMErrorCode FaceElementForcesAndSourcesCore::calculateHoNormal() {
     }
 
     // Calculate normal for high-order geometry
-    DataForcesAndSourcesCore &data_h1 = *dataOnElement[MBTRI][H1];
+    DataForcesAndSourcesCore &data_h1 = *dataOnElement[H1];
 
     CHKERR getEdgesDataOrderSpaceAndBase(data_h1, meshPositionsFieldName);
     CHKERR getTrisDataOrderSpaceAndBase(data_h1, meshPositionsFieldName);
@@ -352,9 +352,9 @@ MoFEMErrorCode FaceElementForcesAndSourcesCore::operator()() {
   if (nbGaussPts == 0)
     MoFEMFunctionReturnHot(0);
 
-  DataForcesAndSourcesCore &data_h1 = *dataOnElement[MBTRI][H1];
-  DataForcesAndSourcesCore &data_curl = *dataOnElement[MBTRI][HCURL];
-  DataForcesAndSourcesCore &data_div = *dataOnElement[MBTRI][HDIV];
+  DataForcesAndSourcesCore &data_h1 = *dataOnElement[H1];
+  DataForcesAndSourcesCore &data_curl = *dataOnElement[HCURL];
+  DataForcesAndSourcesCore &data_div = *dataOnElement[HDIV];
 
   data_h1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE).resize(3, 2, false);
   CHKERR ShapeDiffMBTRI(

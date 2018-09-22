@@ -102,7 +102,7 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCore::setIntegrationPts() {
   int order_row = getMaxRowOrder();
   int order_col = getMaxColOrder();
   int rule = getRule(order_row, order_col, order_data);
-  DataForcesAndSourcesCore &data_h1 = *dataOnElement[MBTET][H1];
+  DataForcesAndSourcesCore &data_h1 = *dataOnElement[H1];
   // rule << std::endl;
   if (rule >= 0) {
     if (rule < QUAD_3D_TABLE_SIZE) {
@@ -177,7 +177,7 @@ VolumeElementForcesAndSourcesCore::calculateCoordinatesAtGaussPts() {
   MoFEMFunctionBegin;
   // Get coords at Gauss points
   FTensor::Index<'i', 3> i;
-  DataForcesAndSourcesCore &data_h1 = *dataOnElement[MBTET][H1];
+  DataForcesAndSourcesCore &data_h1 = *dataOnElement[H1];
   double *shape_functions_ptr =
       &*data_h1.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin();
   coordsAtGaussPts.resize(nbGaussPts, 3, false);
@@ -203,10 +203,10 @@ VolumeElementForcesAndSourcesCore::calculateCoordinatesAtGaussPts() {
 MoFEMErrorCode
 VolumeElementForcesAndSourcesCore::getSpaceBaseAndOrderOnElement() {
   MoFEMFunctionBegin;
-  DataForcesAndSourcesCore &data_h1 = *dataOnElement[MBTET][H1];
-  DataForcesAndSourcesCore &data_curl = *dataOnElement[MBTET][HCURL];
-  DataForcesAndSourcesCore &data_div = *dataOnElement[MBTET][HDIV];
-  DataForcesAndSourcesCore &data_l2 = *dataOnElement[MBTET][L2]; 
+  DataForcesAndSourcesCore &data_h1 = *dataOnElement[H1];
+  DataForcesAndSourcesCore &data_curl = *dataOnElement[HCURL];
+  DataForcesAndSourcesCore &data_div = *dataOnElement[HDIV];
+  DataForcesAndSourcesCore &data_l2 = *dataOnElement[L2]; 
   CHKERR getSpacesAndBaseOnEntities(data_h1);
   CHKERR getFaceTriNodes(data_h1);
   // H1
@@ -258,10 +258,10 @@ VolumeElementForcesAndSourcesCore::getSpaceBaseAndOrderOnElement() {
 
 MoFEMErrorCode VolumeElementForcesAndSourcesCore::transformBaseFunctions() {
   MoFEMFunctionBegin;
-  DataForcesAndSourcesCore &data_h1 = *dataOnElement[MBTET][H1];
-  DataForcesAndSourcesCore &data_curl = *dataOnElement[MBTET][HCURL];
-  DataForcesAndSourcesCore &data_div = *dataOnElement[MBTET][HDIV];
-  DataForcesAndSourcesCore &data_l2 = *dataOnElement[MBTET][L2];
+  DataForcesAndSourcesCore &data_h1 = *dataOnElement[H1];
+  DataForcesAndSourcesCore &data_curl = *dataOnElement[HCURL];
+  DataForcesAndSourcesCore &data_div = *dataOnElement[HDIV];
+  DataForcesAndSourcesCore &data_l2 = *dataOnElement[L2];
   CHKERR opSetInvJacH1.opRhs(data_h1);
   if (data_h1.spacesOnEntities[MBEDGE].test(HCURL)) {
     CHKERR opCovariantPiolaTransform.opRhs(data_curl);
@@ -288,7 +288,7 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCore::calculateHoJacobian() {
       SETERRQ(mField.get_comm(), MOFEM_NOT_FOUND,
               "no MESH_NODE_POSITIONS in element data");
     }
-    DataForcesAndSourcesCore &data_h1 = *dataOnElement[MBTET][H1];
+    DataForcesAndSourcesCore &data_h1 = *dataOnElement[H1];
     CHKERR getEdgesDataOrderSpaceAndBase(data_h1, meshPositionsFieldName);
     CHKERR getTrisDataOrderSpaceAndBase(data_h1, meshPositionsFieldName);
     CHKERR getTetDataOrderSpaceAndBase(data_h1, meshPositionsFieldName);
@@ -342,10 +342,10 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCore::transformHoBaseFunctions() {
   if (hoCoordsAtGaussPts.size1() > 0) {
     // Transform derivatives of base functions and apply Piola transformation
     // if needed.
-    DataForcesAndSourcesCore &data_h1 = *dataOnElement[MBTET][H1];  
-    DataForcesAndSourcesCore &data_curl = *dataOnElement[MBTET][HCURL];
-    DataForcesAndSourcesCore &data_div = *dataOnElement[MBTET][HDIV];
-    DataForcesAndSourcesCore &data_l2 = *dataOnElement[MBTET][L2];
+    DataForcesAndSourcesCore &data_h1 = *dataOnElement[H1];  
+    DataForcesAndSourcesCore &data_curl = *dataOnElement[HCURL];
+    DataForcesAndSourcesCore &data_div = *dataOnElement[HDIV];
+    DataForcesAndSourcesCore &data_l2 = *dataOnElement[L2];
     CHKERR opSetHoInvJacH1.opRhs(data_h1);
     if (data_h1.spacesOnEntities[MBTET].test(L2)) {
       CHKERR opSetHoInvJacH1.opRhs(data_l2);
@@ -378,7 +378,7 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCore::operator()() {
   CHKERR calculateBaseFunctionsOnElement();
   CHKERR transformBaseFunctions();
 
-  DataForcesAndSourcesCore &data_h1 = *dataOnElement[MBTET][H1];
+  DataForcesAndSourcesCore &data_h1 = *dataOnElement[H1];
 
   try {
     MatrixDouble new_diff_n;
@@ -538,8 +538,7 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCoreOnSide::setGaussPts(int order) {
   const int nb_gauss_pts = faceFEPtr->gaussPts.size2();
   gaussPts.resize(4, nb_gauss_pts, false);
   gaussPts.clear();
-  DataForcesAndSourcesCore &data_h1_on_face =
-      *faceFEPtr->dataOnElement[MBTRI][H1];
+  DataForcesAndSourcesCore &data_h1_on_face = *faceFEPtr->dataOnElement[H1];
   const MatrixDouble &face_shape_funtions =
       data_h1_on_face.dataOnEntities[MBVERTEX][0].getN(NOBASE);
   const double tet_coords[] = {0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1};
