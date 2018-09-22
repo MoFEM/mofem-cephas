@@ -217,7 +217,6 @@ struct DataForcesAndSourcesCore {
     /**@{*/
 
     EntData();
-    virtual ~EntData();
 
     /**@}*/
 
@@ -1376,8 +1375,6 @@ struct DataForcesAndSourcesCore {
   inline MoFEMErrorCode resetFieldDependentData() {
     MoFEMFunctionBeginHot;
     for (EntityType t = MBVERTEX; t != MBMAXTYPE; t++) {
-      boost::ptr_vector<EntData>::iterator ent_data_it =
-          dataOnEntities[t].begin();
       for (auto &e : dataOnEntities[t]) {
         ierr = e.resetFieldDependentData();
         CHKERRG(ierr);
@@ -1387,7 +1384,6 @@ struct DataForcesAndSourcesCore {
   }
 
   DataForcesAndSourcesCore(const EntityType type);
-  virtual ~DataForcesAndSourcesCore() {}
 
   friend std::ostream &operator<<(std::ostream &os,
                                   const DataForcesAndSourcesCore &e);

@@ -135,8 +135,6 @@ DataForcesAndSourcesCore::EntData::EntData()
   }
 }
 
-DataForcesAndSourcesCore::EntData::~EntData() {}
-
 static void constructor_data(DataForcesAndSourcesCore *data,
                              const EntityType type) {
 
