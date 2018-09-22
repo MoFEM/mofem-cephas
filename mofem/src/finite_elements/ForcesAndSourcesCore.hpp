@@ -758,7 +758,13 @@ struct ForcesAndSourcesCore : public FEMethod {
     MoFEMFunctionReturnHot(0);
   }
 
-protected:
+  /**
+   * \brief Calculate base functions
+   * @return Error code
+   */
+  MoFEMErrorCode
+  calculateBaseFunctionsOnElement(const FieldApproximationBase b);
+
   /**
    * \brief Calculate base functions
    * @return Error code

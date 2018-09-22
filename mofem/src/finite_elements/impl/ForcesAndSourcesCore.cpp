@@ -1218,56 +1218,62 @@ MoFEMErrorCode ForcesAndSourcesCore::getSpacesAndBaseOnEntities(
   MoFEMFunctionReturnHot(0);
 }
 
+MoFEMErrorCode ForcesAndSourcesCore::calculateBaseFunctionsOnElement(
+    const FieldApproximationBase b) {
+  MoFEMFunctionBegin;
+  if (dataOnElement[H1]->bAse.test(b)) {
+    switch (ApproximationBaseArray[b]) {
+    case NOBASE:
+      break;
+    case AINSWORTH_LEGENDRE_BASE:
+    case AINSWORTH_LOBATTO_BASE:
+    case DEMKOWICZ_JACOBI_BASE:
+      for (int space = H1; space != LASTSPACE; ++space) {
+        if (dataOnElement[H1]->sPace.test(space) &&
+            dataOnElement[H1]->bAse.test(b) &&
+            dataOnElement[H1]->basesOnSpaces[space].test(b)) {
+          CHKERR getElementPolynomialBase()->getValue(
+              gaussPts,
+              boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
+                  *dataOnElement[space], static_cast<FieldSpace>(space),
+                  ApproximationBaseArray[b], NOBASE)));
+        }
+      }
+      break;
+    case USER_BASE:
+      for (int space = H1; space != LASTSPACE; ++space)
+        if (dataOnElement[H1]->sPace.test(space) &&
+            dataOnElement[H1]->bAse.test(b) &&
+            dataOnElement[H1]->basesOnSpaces[space].test(b)) {
+          CHKERR getUserPolynomialBase()->getValue(
+              gaussPts,
+              boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
+                  *dataOnElement[space], static_cast<FieldSpace>(space),
+                  ApproximationBaseArray[b], NOBASE)));
+        }
+      break;
+    default:
+      SETERRQ1(mField.get_comm(), MOFEM_DATA_INCONSISTENCY,
+               "Base <%s> not yet implemented",
+               ApproximationBaseNames[ApproximationBaseArray[b]]);
+    }
+  }
+  MoFEMFunctionReturn(0);
+}
+
 MoFEMErrorCode ForcesAndSourcesCore::calculateBaseFunctionsOnElement() {
   MoFEMFunctionBegin;
   /// Use the some node base. Node base is usually used for construction other
   /// bases.
-
   for (int space = HCURL; space != LASTSPACE; ++space) {
     dataOnElement[space]->dataOnEntities[MBVERTEX][0].getNSharedPtr(
         NOBASE) =
         dataOnElement[H1]->dataOnEntities[MBVERTEX][0].getNSharedPtr(
             NOBASE);
   }
-
   for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
-    if (dataOnElement[H1]->bAse.test(b)) {
-      switch (ApproximationBaseArray[b]) {
-      case NOBASE:
-        break;
-      case AINSWORTH_LEGENDRE_BASE:
-      case AINSWORTH_LOBATTO_BASE:
-      case DEMKOWICZ_JACOBI_BASE:
-        for (int space = H1; space != LASTSPACE; ++space) {
-          if (dataOnElement[H1]->sPace.test(space) &&
-              dataOnElement[H1]->bAse.test(b) &&
-              dataOnElement[H1]->basesOnSpaces[space].test(b)) {
-            CHKERR getElementPolynomialBase()->getValue(
-                gaussPts,
-                boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
-                    *dataOnElement[space], static_cast<FieldSpace>(space),
-                    ApproximationBaseArray[b], NOBASE)));
-          }
-        }
-        break;
-      case USER_BASE:
-        for (int space = H1; space != LASTSPACE; ++space)
-          if (dataOnElement[H1]->sPace.test(space) &&
-              dataOnElement[H1]->bAse.test(b) &&
-              dataOnElement[H1]->basesOnSpaces[space].test(b)) {
-            CHKERR getUserPolynomialBase()->getValue(
-                gaussPts,
-                boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
-                    *dataOnElement[space], static_cast<FieldSpace>(space),
-                    ApproximationBaseArray[b], NOBASE)));
-          }
-        break;
-      default:
-        SETERRQ1(mField.get_comm(), MOFEM_DATA_INCONSISTENCY,
-                 "Base <%s> not yet implemented",
-                 ApproximationBaseNames[ApproximationBaseArray[b]]);
-      }
-    }
+    CHKERR calculateBaseFunctionsOnElement(
+        static_cast<FieldApproximationBase>(b));
   }
   MoFEMFunctionReturn(0);
 }
