@@ -667,11 +667,24 @@ struct ForcesAndSourcesCore : public FEMethod {
     ForcesAndSourcesCore *ptrFE;
   };
 
+  /**
+   * @brief Entity data on element entity rows fields
+   * 
+   */
   boost::shared_ptr<DataForcesAndSourcesCore> dataOnElement[MBMAXTYPE]
                                                             [LASTSPACE];
+
+  /**
+   * @brief Entity data on element entity columns fields
+   *
+   */
   boost::shared_ptr<DataForcesAndSourcesCore> derivedDataOnElement[MBMAXTYPE]
                                                                   [LASTSPACE];
 
+  /**
+   * @brief Vector of finite element users data operators
+   * 
+   */
   boost::ptr_vector<UserDataOperator> opPtrVector;
 
   /** \brief Use to push back operator for row operator
