@@ -1260,7 +1260,7 @@ MoFEMErrorCode ForcesAndSourcesCore::createDataOnElement() {
       derivedDataOnElement[type][space] =
           boost::shared_ptr<DataForcesAndSourcesCore>(
               dataOnElement[type][space],
-              new DerivedDataForcesAndSourcesCore(*dataOnElement[type][space]));
+              new DerivedDataForcesAndSourcesCore(dataOnElement[type][space]));
     } else
       MoFEMFunctionReturnHot(0);
 

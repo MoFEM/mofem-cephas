@@ -129,105 +129,97 @@ getFTensor2SymmetricFromMat<3, double, ublas::row_major, DoubleAllocator>(
 
 DataForcesAndSourcesCore::EntData::EntData()
     : sEnse(0), oRder(0), bAse(NOBASE) {
-  N.resize(LASTBASE);
-  diffN.resize(LASTBASE);
-  for (ShapeFunctionBasesVector::iterator nit = N.begin(); nit != N.end();
-       nit++) {
-    nit->reset(new MatrixDouble());
-  }
-  for (ShapeFunctionBasesVector::iterator nit = diffN.begin();
-       nit != diffN.end(); nit++) {
-    nit->reset(new MatrixDouble());
+  for (int b = 0; b != LASTBASE;++b) {
+    N[b].reset(new MatrixDouble());
+    diffN[b].reset(new MatrixDouble());
   }
 }
 
 DataForcesAndSourcesCore::EntData::~EntData() {}
 
-template <class T>
-void cOnstructor(DataForcesAndSourcesCore *data, EntityType type, T) {
+static void constructor_data(DataForcesAndSourcesCore *data,
+                             const EntityType type) {
 
-  data->dataOnEntities[MBENTITYSET].push_back(new T());
+  using EntData = DataForcesAndSourcesCore::EntData;
+
+  data->dataOnEntities[MBENTITYSET].push_back(new EntData());
 
   switch (type) {
   case MBENTITYSET:
     break;
-  case MBTET:
-    data->dataOnEntities[MBVERTEX].push_back(new T());
+  case MBTET: 
+    data->dataOnEntities[MBVERTEX].push_back(new EntData());
     for (int ee = 0; ee < 6; ee++) {
-      data->dataOnEntities[MBEDGE].push_back(new T());
+      data->dataOnEntities[MBEDGE].push_back(new EntData());
     }
     for (int ff = 0; ff < 4; ff++) {
-      data->dataOnEntities[MBTRI].push_back(new T());
+      data->dataOnEntities[MBTRI].push_back(new EntData());
     }
-    data->dataOnEntities[MBTET].push_back(new T());
-    break;
+    data->dataOnEntities[MBTET].push_back(new EntData());
+  break;
   case MBTRI:
-    data->dataOnEntities[MBVERTEX].push_back(new T());
+    data->dataOnEntities[MBVERTEX].push_back(new EntData());
     for (int ee = 0; ee < 3; ee++) {
-      data->dataOnEntities[MBEDGE].push_back(new T());
+      data->dataOnEntities[MBEDGE].push_back(new EntData());
     }
-    data->dataOnEntities[MBTRI].push_back(new T());
-    break;
+    data->dataOnEntities[MBTRI].push_back(new EntData());
+  break;
   case MBEDGE:
-    data->dataOnEntities[MBVERTEX].push_back(new T());
-    data->dataOnEntities[MBEDGE].push_back(new T());
+    data->dataOnEntities[MBVERTEX].push_back(new EntData());
+    data->dataOnEntities[MBEDGE].push_back(new EntData());
     break;
   case MBVERTEX:
-    data->dataOnEntities[MBVERTEX].push_back(new T());
+    data->dataOnEntities[MBVERTEX].push_back(new EntData());
     break;
   case MBPRISM:
-    data->dataOnEntities[MBVERTEX].push_back(new T());
+    data->dataOnEntities[MBVERTEX].push_back(new EntData());
     for (int ee = 0; ee < 9; ee++) {
-      data->dataOnEntities[MBEDGE].push_back(new T());
+      data->dataOnEntities[MBEDGE].push_back(new EntData());
+    }
+    for (int qq = 0; qq < 5; qq++) {
+      data->dataOnEntities[MBQUAD].push_back(new EntData());
     }
     for (int ff = 0; ff < 5; ff++) {
-      data->dataOnEntities[MBQUAD].push_back(new T());
+      data->dataOnEntities[MBTRI].push_back(new EntData());
     }
-    for (int ff = 0; ff < 5; ff++) {
-      data->dataOnEntities[MBTRI].push_back(new T());
-    }
-    data->dataOnEntities[MBPRISM].push_back(new T());
-    break;
+    data->dataOnEntities[MBPRISM].push_back(new EntData());
+  break;
   default:
     throw MoFEMException(MOFEM_NOT_IMPLEMENTED);
   }
 }
 
 DataForcesAndSourcesCore::DataForcesAndSourcesCore(EntityType type) {
-  cOnstructor(this, type, EntData());
+  constructor_data(this, type);
+}
+
+MoFEMErrorCode DataForcesAndSourcesCore::setEntityType(const EntityType type) {
+  MoFEMFunctionBegin;
+  constructor_data(this, type);
+  MoFEMFunctionReturn(0);
+}
+
+static void constructor_derived_data(
+    DerivedDataForcesAndSourcesCore *derived_data,
+    boost::shared_ptr<DataForcesAndSourcesCore> &data_ptr) {
+
+  using EntData = DataForcesAndSourcesCore::EntData;
+  using DerivedEntData = DerivedDataForcesAndSourcesCore::DerivedEntData;
+
+  for (int tt = MBVERTEX; tt != MBMAXTYPE; ++tt) {
+    auto &ent_data = data_ptr->dataOnEntities[tt];
+    auto &derived_ent_data = derived_data->dataOnEntities[tt];
+    for (auto &e : ent_data) {
+      boost::shared_ptr<EntData> ent_data_ptr(data_ptr, &e);
+      derived_ent_data.push_back(new DerivedEntData(ent_data_ptr));
+    }
+  }
 }
 
 DerivedDataForcesAndSourcesCore::DerivedDataForcesAndSourcesCore(
-    DataForcesAndSourcesCore &data)
+    boost::shared_ptr<DataForcesAndSourcesCore> &data_ptr)
     : DataForcesAndSourcesCore() {
-
-  boost::ptr_vector<EntData>::iterator iit;
-
-  boost::ptr_vector<EntData>::iterator it;
-  for (it = data.dataOnEntities[MBVERTEX].begin();
-       it != data.dataOnEntities[MBVERTEX].end(); it++) {
-    dataOnEntities[MBVERTEX].push_back(new DerivedEntData(*it));
-  }
-  for (it = data.dataOnEntities[MBEDGE].begin();
-       it != data.dataOnEntities[MBEDGE].end(); it++) {
-    dataOnEntities[MBEDGE].push_back(new DerivedEntData(*it));
-  }
-  for (it = data.dataOnEntities[MBTRI].begin();
-       it != data.dataOnEntities[MBTRI].end(); it++) {
-    dataOnEntities[MBTRI].push_back(new DerivedEntData(*it));
-  }
-  for (it = data.dataOnEntities[MBQUAD].begin();
-       it != data.dataOnEntities[MBQUAD].end(); it++) {
-    dataOnEntities[MBQUAD].push_back(new DerivedEntData(*it));
-  }
-  for (it = data.dataOnEntities[MBTET].begin();
-       it != data.dataOnEntities[MBTET].end(); it++) {
-    dataOnEntities[MBTET].push_back(new DerivedEntData(*it));
-  }
-  for (it = data.dataOnEntities[MBPRISM].begin();
-       it != data.dataOnEntities[MBPRISM].end(); it++) {
-    dataOnEntities[MBPRISM].push_back(new DerivedEntData(*it));
-  }
+  constructor_derived_data(this, data_ptr);
 }
 
 std::ostream &operator<<(std::ostream &os,
