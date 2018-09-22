@@ -104,7 +104,7 @@ MoFEMErrorCode EdgeElementForcesAndSourcesCore::setIntegrationPts() {
   int order_row = getMaxRowOrder();
   int order_col = getMaxColOrder();
   int rule = getRule(order_row, order_col, order_data);
-  DataForcesAndSourcesCore &data_h1 = *dataOnElement[H1];
+  
   int nb_gauss_pts;
   if (rule >= 0) {
     if (rule < QUAD_1D_TABLE_SIZE) {
@@ -121,10 +121,10 @@ MoFEMErrorCode EdgeElementForcesAndSourcesCore::setIntegrationPts() {
                   &gaussPts(0, 0), 1);
       cblas_dcopy(nb_gauss_pts, QUAD_1D_TABLE[rule]->weights, 1,
                   &gaussPts(1, 0), 1);
-      data_h1.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nb_gauss_pts, 2,
+      dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nb_gauss_pts, 2,
                                                              false);
       double *shape_ptr =
-          &*data_h1.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin();
+          &*dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin();
       cblas_dcopy(2 * nb_gauss_pts, QUAD_1D_TABLE[rule]->points, 1, shape_ptr,
                   1);
     } else {
@@ -136,13 +136,13 @@ MoFEMErrorCode EdgeElementForcesAndSourcesCore::setIntegrationPts() {
     // If rule is negative, set user defined integration points
     CHKERR setGaussPts(order_row, order_col, order_data);
     nb_gauss_pts = gaussPts.size2();
-    data_h1.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nb_gauss_pts, 2,
+    dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nb_gauss_pts, 2,
                                                            false);
     if (nb_gauss_pts) {
       for (int gg = 0; gg != nb_gauss_pts; gg++) {
-        data_h1.dataOnEntities[MBVERTEX][0].getN(NOBASE)(gg, 0) =
+        dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE)(gg, 0) =
             N_MBEDGE0(gaussPts(0, gg));
-        data_h1.dataOnEntities[MBVERTEX][0].getN(NOBASE)(gg, 1) =
+        dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE)(gg, 1) =
             N_MBEDGE1(gaussPts(0, gg));
       }
     }
@@ -177,13 +177,13 @@ EdgeElementForcesAndSourcesCore::calculateCoordsAtIntegrationPts() {
 MoFEMErrorCode
 EdgeElementForcesAndSourcesCore::calculateHoCoordsAtIntegrationPts() {
   MoFEMFunctionBegin;
-  DataForcesAndSourcesCore &data_h1 = *dataOnElement[H1];
+  
   if (dataPtr->get<FieldName_mi_tag>().find(meshPositionsFieldName) !=
       dataPtr->get<FieldName_mi_tag>().end()) {
-    CHKERR getEdgesDataOrderSpaceAndBase(data_h1, meshPositionsFieldName);
-    CHKERR getEdgesFieldData(data_h1, meshPositionsFieldName);
-    CHKERR getNodesFieldData(data_h1, meshPositionsFieldName);
-    CHKERR opGetHoTangentOnEdge.opRhs(data_h1);
+    CHKERR getEdgesDataOrderSpaceAndBase(dataH1, meshPositionsFieldName);
+    CHKERR getEdgesFieldData(dataH1, meshPositionsFieldName);
+    CHKERR getNodesFieldData(dataH1, meshPositionsFieldName);
+    CHKERR opGetHoTangentOnEdge.opRhs(dataH1);
   } else {
     tangentAtGaussPts.resize(0, 3, false);
   }
@@ -197,17 +197,17 @@ MoFEMErrorCode EdgeElementForcesAndSourcesCore::operator()() {
     MoFEMFunctionReturnHot(0);
  
   CHKERR createDataOnElement();
-  DataForcesAndSourcesCore &data_h1 = *dataOnElement[H1];
+  
   DataForcesAndSourcesCore &data_curl = *dataOnElement[HCURL];
 
   CHKERR calculateEdgeDirection();
-  CHKERR getSpacesAndBaseOnEntities(data_h1);
-  CHKERR getEdgesDataOrder(data_h1, H1);
-  data_h1.dataOnEntities[MBEDGE][0].getSense() =
+  CHKERR getSpacesAndBaseOnEntities(dataH1);
+  CHKERR getEdgesDataOrder(dataH1, H1);
+  dataH1.dataOnEntities[MBEDGE][0].getSense() =
       1; // set sense to 1, this is this entity
 
   // Hcurl
-  if (data_h1.spacesOnEntities[MBEDGE].test(HCURL)) {
+  if (dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
     CHKERR getEdgesDataOrder(data_curl, HCURL);
     data_curl.dataOnEntities[MBEDGE][0].getSense() =
         1; // set sense to 1, this is this entity
@@ -220,7 +220,7 @@ MoFEMErrorCode EdgeElementForcesAndSourcesCore::operator()() {
   CHKERR calculateBaseFunctionsOnElement();
   CHKERR calculateHoCoordsAtIntegrationPts();
 
-  if (data_h1.spacesOnEntities[MBEDGE].test(HCURL)) {
+  if (dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
     CHKERR opCovariantTransform.opRhs(data_curl);
   }
 

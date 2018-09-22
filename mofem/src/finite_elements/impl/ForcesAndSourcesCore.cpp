@@ -70,24 +70,45 @@ extern "C" {
 namespace MoFEM {
 
 ForcesAndSourcesCore::ForcesAndSourcesCore(Interface &m_field)
-    : mField(m_field), getRuleHook(0) {
+    :
 
-  const EntityType type = MBENTITYSET;
-  dataOnElement[NOFIELD] = boost::shared_ptr<DataForcesAndSourcesCore>(
-      new DataForcesAndSourcesCore(MBENTITYSET));
-  derivedDataOnElement[NOFIELD] = boost::shared_ptr<DataForcesAndSourcesCore>(
-      new DataForcesAndSourcesCore(MBENTITYSET));
+      mField(m_field),
+      dataOnElement{
 
-  // Data on elements for proper spaces
-  for (int space = H1; space != LASTSPACE; ++space) {
-    dataOnElement[space] = boost::shared_ptr<DataForcesAndSourcesCore>(
-        new DataForcesAndSourcesCore(type));
-    derivedDataOnElement[space] = boost::shared_ptr<DataForcesAndSourcesCore>(
-        dataOnElement[space],
-        new DerivedDataForcesAndSourcesCore(dataOnElement[space]));
-  }
+          nullptr,
+          boost::shared_ptr<DataForcesAndSourcesCore>(
+              new DataForcesAndSourcesCore(MBENTITYSET)),
+          boost::shared_ptr<DataForcesAndSourcesCore>(
+              new DataForcesAndSourcesCore(MBENTITYSET)),
+          boost::shared_ptr<DataForcesAndSourcesCore>(
+              new DataForcesAndSourcesCore(MBENTITYSET)),
+          boost::shared_ptr<DataForcesAndSourcesCore>(
+              new DataForcesAndSourcesCore(MBENTITYSET)),
+          boost::shared_ptr<DataForcesAndSourcesCore>(
+              new DataForcesAndSourcesCore(MBENTITYSET))
 
-}
+      },
+      derivedDataOnElement{
+
+          nullptr,
+          boost::shared_ptr<DataForcesAndSourcesCore>(
+              new DerivedDataForcesAndSourcesCore(dataOnElement[NOFIELD])),
+          boost::shared_ptr<DataForcesAndSourcesCore>(
+              new DerivedDataForcesAndSourcesCore(dataOnElement[H1])),
+          boost::shared_ptr<DataForcesAndSourcesCore>(
+              new DerivedDataForcesAndSourcesCore(dataOnElement[HCURL])),
+          boost::shared_ptr<DataForcesAndSourcesCore>(
+              new DerivedDataForcesAndSourcesCore(dataOnElement[HDIV])),
+          boost::shared_ptr<DataForcesAndSourcesCore>(
+              new DerivedDataForcesAndSourcesCore(dataOnElement[L2]))
+
+      },
+      dataNoField(*dataOnElement[NOFIELD].get()),
+      dataH1(*dataOnElement[H1].get()),
+      dataHcurl(*dataOnElement[HCURL].get()),
+      dataHdiv(*dataOnElement[HDIV].get()),
+      dataL2(*dataOnElement[L2].get()),
+      getRuleHook(0) {}
 
 ForcesAndSourcesCore::~ForcesAndSourcesCore() {}
 

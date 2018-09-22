@@ -35,6 +35,30 @@ struct ForcesAndSourcesCore : public FEMethod {
 
   Interface &mField;
 
+  /**
+   * @brief Entity data on element entity rows fields
+   *
+   *
+   * FIXME: that should be moved to private class data and acessed only by
+   * member function
+   */
+  const boost::shared_ptr<DataForcesAndSourcesCore> dataOnElement[LASTSPACE];
+
+  /**
+   * @brief Entity data on element entity columns fields
+   *
+   * FIXME: that should be moved to private class data and acessed only by
+   * member function
+   */
+  const boost::shared_ptr<DataForcesAndSourcesCore>
+      derivedDataOnElement[LASTSPACE];
+
+  DataForcesAndSourcesCore &dataNoField;
+  DataForcesAndSourcesCore &dataH1;
+  DataForcesAndSourcesCore &dataHcurl;
+  DataForcesAndSourcesCore &dataHdiv;
+  DataForcesAndSourcesCore &dataL2;
+
   ForcesAndSourcesCore(Interface &m_field);
   virtual ~ForcesAndSourcesCore();
 
@@ -667,22 +691,6 @@ struct ForcesAndSourcesCore : public FEMethod {
     ForcesAndSourcesCore *ptrFE;
   };
 
-  /**
-   * @brief Entity data on element entity rows fields
-   * 
-   * 
-   * FIXME: that should be moved to private class data and acessed only by
-   * member function
-   */
-  boost::shared_ptr<DataForcesAndSourcesCore> dataOnElement[LASTSPACE];
-
-  /**
-   * @brief Entity data on element entity columns fields
-   *
-   * FIXME: that should be moved to private class data and acessed only by
-   * member function
-   */
-  boost::shared_ptr<DataForcesAndSourcesCore> derivedDataOnElement[LASTSPACE];
 
   /**
    * @brief Vector of finite element users data operators

@@ -1415,9 +1415,9 @@ struct DerivedDataForcesAndSourcesCore : public DataForcesAndSourcesCore {
    */
   struct DerivedEntData : public DataForcesAndSourcesCore::EntData {
 
-    boost::shared_ptr<DataForcesAndSourcesCore::EntData> entDataPtr;
-    DerivedEntData(
-        boost::shared_ptr<DataForcesAndSourcesCore::EntData> &ent_data_ptr)
+    const boost::shared_ptr<DataForcesAndSourcesCore::EntData> entDataPtr;
+    DerivedEntData(const boost::shared_ptr<DataForcesAndSourcesCore::EntData>
+                       &ent_data_ptr)
         : entDataPtr(ent_data_ptr) {}
 
     int getSense() const { return entDataPtr->getSense(); }
@@ -1442,11 +1442,11 @@ struct DerivedDataForcesAndSourcesCore : public DataForcesAndSourcesCore {
   };
 
   DerivedDataForcesAndSourcesCore(
-      boost::shared_ptr<DataForcesAndSourcesCore> &data_ptr);
+      const boost::shared_ptr<DataForcesAndSourcesCore> &data_ptr);
   MoFEMErrorCode setElementType(const EntityType type);
 
 private:
-  boost::shared_ptr<DataForcesAndSourcesCore> dataPtr;
+  const boost::shared_ptr<DataForcesAndSourcesCore> dataPtr;
 };
 
 /** \name Specializations for H1/L2 */

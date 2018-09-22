@@ -189,7 +189,7 @@ MoFEMErrorCode FaceElementForcesAndSourcesCore::setIntegrationPts() {
   int order_row = getMaxRowOrder();
   int order_col = getMaxColOrder();
   int rule = getRule(order_row, order_col, order_data);
-  DataForcesAndSourcesCore &data_h1 = *dataOnElement[H1];
+  
   if (rule >= 0) {
     if (rule < QUAD_2D_TABLE_SIZE) {
       if (QUAD_2D_TABLE[rule]->dim != 2) {
@@ -207,10 +207,10 @@ MoFEMErrorCode FaceElementForcesAndSourcesCore::setIntegrationPts() {
                   &gaussPts(1, 0), 1);
       cblas_dcopy(nbGaussPts, QUAD_2D_TABLE[rule]->weights, 1, &gaussPts(2, 0),
                   1);
-      data_h1.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nbGaussPts, 3,
+      dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nbGaussPts, 3,
                                                              false);
       double *shape_ptr =
-          &*data_h1.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin();
+          &*dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin();
       cblas_dcopy(3 * nbGaussPts, QUAD_2D_TABLE[rule]->points, 1, shape_ptr, 1);
     } else {
       SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
@@ -221,11 +221,11 @@ MoFEMErrorCode FaceElementForcesAndSourcesCore::setIntegrationPts() {
     // If rule is negative, set user defined integration points
     CHKERR setGaussPts(order_row, order_col, order_data);
     nbGaussPts = gaussPts.size2();
-    data_h1.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nbGaussPts, 3,
+    dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nbGaussPts, 3,
                                                            false);
     if (nbGaussPts) {
       CHKERR ShapeMBTRI(
-          &*data_h1.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin(),
+          &*dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin(),
           &gaussPts(0, 0), &gaussPts(1, 0), nbGaussPts);
     }
   }
@@ -237,44 +237,44 @@ FaceElementForcesAndSourcesCore::getSpaceBaseAndOrderOnElement() {
   MoFEMFunctionBegin;
   // Get spaces order/base and sense of entities.
   
-  DataForcesAndSourcesCore &data_h1 = *dataOnElement[H1];
+  
   DataForcesAndSourcesCore &data_curl = *dataOnElement[HCURL];
   DataForcesAndSourcesCore &data_div = *dataOnElement[HDIV];
   DataForcesAndSourcesCore &data_l2 = *dataOnElement[L2]; 
 
-  CHKERR getSpacesAndBaseOnEntities(data_h1);
+  CHKERR getSpacesAndBaseOnEntities(dataH1);
 
   // H1
-  if (data_h1.spacesOnEntities[MBEDGE].test(H1)) {
-    CHKERR getEdgesSense(data_h1);
-    CHKERR getEdgesDataOrder(data_h1, H1);
+  if (dataH1.spacesOnEntities[MBEDGE].test(H1)) {
+    CHKERR getEdgesSense(dataH1);
+    CHKERR getEdgesDataOrder(dataH1, H1);
   }
-  if (data_h1.spacesOnEntities[MBTRI].test(H1)) {
-    CHKERR getTrisSense(data_h1);
-    CHKERR getTrisDataOrder(data_h1, H1);
+  if (dataH1.spacesOnEntities[MBTRI].test(H1)) {
+    CHKERR getTrisSense(dataH1);
+    CHKERR getTrisDataOrder(dataH1, H1);
   }
 
   // Hcurl
-  if (data_h1.spacesOnEntities[MBEDGE].test(HCURL)) {
+  if (dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
     CHKERR getEdgesSense(data_curl);
     CHKERR getEdgesDataOrder(data_curl, HCURL);
     data_curl.spacesOnEntities[MBEDGE].set(HCURL);
   }
-  if (data_h1.spacesOnEntities[MBTRI].test(HCURL)) {
+  if (dataH1.spacesOnEntities[MBTRI].test(HCURL)) {
     CHKERR getTrisSense(data_curl);
     CHKERR getTrisDataOrder(data_curl, HCURL);
     data_curl.spacesOnEntities[MBTRI].set(HCURL);
   }
 
   // Hdiv
-  if (data_h1.spacesOnEntities[MBTRI].test(HDIV)) {
+  if (dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
     CHKERR getTrisSense(data_div);
     CHKERR getTrisDataOrder(data_div, HDIV);
     data_div.spacesOnEntities[MBTRI].set(HDIV);
   }
 
   // L2
-  if (data_h1.spacesOnEntities[MBTRI].test(L2)) {
+  if (dataH1.spacesOnEntities[MBTRI].test(L2)) {
     CHKERR getTrisSense(data_l2);
     CHKERR getTrisDataOrder(data_l2, L2);
     data_l2.spacesOnEntities[MBTRI].set(L2);
@@ -286,10 +286,10 @@ FaceElementForcesAndSourcesCore::getSpaceBaseAndOrderOnElement() {
 MoFEMErrorCode
 FaceElementForcesAndSourcesCore::calculateCoordinatesAtGaussPts() {
   MoFEMFunctionBeginHot;
-  DataForcesAndSourcesCore &data_h1 = *dataOnElement[H1];
+  
 
   double *shape_functions =
-      &*data_h1.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin();
+      &*dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin();
   coordsAtGaussPts.resize(nbGaussPts, 3, false);
   for (int gg = 0; gg != nbGaussPts; ++gg) {
     for (int dd = 0; dd != 3; ++dd) {
@@ -318,14 +318,14 @@ MoFEMErrorCode FaceElementForcesAndSourcesCore::calculateHoNormal() {
     }
 
     // Calculate normal for high-order geometry
-    DataForcesAndSourcesCore &data_h1 = *dataOnElement[H1];
+    
 
-    CHKERR getEdgesDataOrderSpaceAndBase(data_h1, meshPositionsFieldName);
-    CHKERR getTrisDataOrderSpaceAndBase(data_h1, meshPositionsFieldName);
-    CHKERR getNodesFieldData(data_h1, meshPositionsFieldName);
-    CHKERR getEdgesFieldData(data_h1, meshPositionsFieldName);
-    CHKERR getTrisFieldData(data_h1, meshPositionsFieldName);
-    CHKERR opHOCoordsAndNormals.opRhs(data_h1);
+    CHKERR getEdgesDataOrderSpaceAndBase(dataH1, meshPositionsFieldName);
+    CHKERR getTrisDataOrderSpaceAndBase(dataH1, meshPositionsFieldName);
+    CHKERR getNodesFieldData(dataH1, meshPositionsFieldName);
+    CHKERR getEdgesFieldData(dataH1, meshPositionsFieldName);
+    CHKERR getTrisFieldData(dataH1, meshPositionsFieldName);
+    CHKERR opHOCoordsAndNormals.opRhs(dataH1);
     CHKERR opHOCoordsAndNormals.calculateNormals();
 
   } else {
@@ -352,13 +352,13 @@ MoFEMErrorCode FaceElementForcesAndSourcesCore::operator()() {
   if (nbGaussPts == 0)
     MoFEMFunctionReturnHot(0);
 
-  DataForcesAndSourcesCore &data_h1 = *dataOnElement[H1];
+  
   DataForcesAndSourcesCore &data_curl = *dataOnElement[HCURL];
   DataForcesAndSourcesCore &data_div = *dataOnElement[HDIV];
 
-  data_h1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE).resize(3, 2, false);
+  dataH1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE).resize(3, 2, false);
   CHKERR ShapeDiffMBTRI(
-      &*data_h1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE).data().begin());
+      &*dataH1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE).data().begin());
 
   /// Use the some node base
   CHKERR calculateCoordinatesAtGaussPts();
@@ -367,10 +367,10 @@ MoFEMErrorCode FaceElementForcesAndSourcesCore::operator()() {
 
   // Apply Piola transform to HDiv and HCurl spaces, uses previously calculated
   // faces normal and tangent vectors.
-  if (data_h1.spacesOnEntities[MBTRI].test(HDIV)) {
+  if (dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
     CHKERR opContravariantTransform.opRhs(data_div);
   }
-  if (data_h1.spacesOnEntities[MBEDGE].test(HCURL)) {
+  if (dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
     CHKERR opCovariantTransform.opRhs(data_curl);
   }
 

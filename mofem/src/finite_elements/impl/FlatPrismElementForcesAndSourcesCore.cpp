@@ -91,7 +91,7 @@ MoFEMErrorCode FlatPrismElementForcesAndSourcesCore::operator()() {
     MoFEMFunctionReturnHot(0);
   CHKERR createDataOnElement();
 
-  DataForcesAndSourcesCore &data_h1 = *dataOnElement[H1];
+  
   DataForcesAndSourcesCore &data_div = *dataOnElement[HDIV];
   DataForcesAndSourcesCore &data_curl = *dataOnElement[HCURL];
   DataForcesAndSourcesCore &data_l2 = *dataOnElement[HCURL];
@@ -114,18 +114,18 @@ MoFEMErrorCode FlatPrismElementForcesAndSourcesCore::operator()() {
     aRea[1] = cblas_dnrm2(3, &normal[3], 1) * 0.5;
   }
 
-  CHKERR getSpacesAndBaseOnEntities(data_h1);
+  CHKERR getSpacesAndBaseOnEntities(dataH1);
 
   // H1
-  if ((data_h1.spacesOnEntities[MBVERTEX]).test(H1)) {
-    CHKERR getEdgesSense(data_h1);
-    CHKERR getEdgesDataOrder(data_h1, H1);
-    CHKERR getTrisSense(data_h1);
-    CHKERR getTrisDataOrder(data_h1, H1);
+  if ((dataH1.spacesOnEntities[MBVERTEX]).test(H1)) {
+    CHKERR getEdgesSense(dataH1);
+    CHKERR getEdgesDataOrder(dataH1, H1);
+    CHKERR getTrisSense(dataH1);
+    CHKERR getTrisDataOrder(dataH1, H1);
   }
 
   // H1
-  if ((data_h1.spacesOnEntities[MBEDGE]).test(HCURL)) {
+  if ((dataH1.spacesOnEntities[MBEDGE]).test(HCURL)) {
     CHKERR getEdgesSense(data_curl);
     CHKERR getEdgesDataOrder(data_curl, HCURL);
     CHKERR getTrisSense(data_curl);
@@ -133,13 +133,13 @@ MoFEMErrorCode FlatPrismElementForcesAndSourcesCore::operator()() {
   }
 
   // Hdiv
-  if ((data_h1.spacesOnEntities[MBTRI]).test(HDIV)) {
+  if ((dataH1.spacesOnEntities[MBTRI]).test(HDIV)) {
     CHKERR getTrisSense(data_div);
     CHKERR getTrisDataOrder(data_div, HDIV);
   }
 
   // L2
-  if ((data_h1.spacesOnEntities[MBTRI]).test(L2)) {
+  if ((dataH1.spacesOnEntities[MBTRI]).test(L2)) {
     CHKERR getTrisSense(data_l2);
     CHKERR getTrisDataOrder(data_l2, L2);
   }
@@ -167,10 +167,10 @@ MoFEMErrorCode FlatPrismElementForcesAndSourcesCore::operator()() {
                   &gaussPts(1, 0), 1);
       cblas_dcopy(nb_gauss_pts, QUAD_2D_TABLE[rule]->weights, 1,
                   &gaussPts(2, 0), 1);
-      data_h1.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nb_gauss_pts, 3,
+      dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nb_gauss_pts, 3,
                                                               false);
       double *shape_ptr =
-          &*data_h1.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin();
+          &*dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin();
       cblas_dcopy(3 * nb_gauss_pts, QUAD_2D_TABLE[rule]->points, 1, shape_ptr,
                   1);
     } else {
@@ -181,11 +181,11 @@ MoFEMErrorCode FlatPrismElementForcesAndSourcesCore::operator()() {
   } else {
     CHKERR setGaussPts(order_row, order_col, order_data);
     nb_gauss_pts = gaussPts.size2();
-    data_h1.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nb_gauss_pts, 3,
+    dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nb_gauss_pts, 3,
                                                             false);
     if (nb_gauss_pts) {
       CHKERR ShapeMBTRI(
-          &*data_h1.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin(),
+          &*dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin(),
           &gaussPts(0, 0), &gaussPts(1, 0), nb_gauss_pts);
     }
   }
@@ -197,10 +197,10 @@ MoFEMErrorCode FlatPrismElementForcesAndSourcesCore::operator()() {
     for (int gg = 0; gg < nb_gauss_pts; gg++) {
       for (int dd = 0; dd < 3; dd++) {
         coordsAtGaussPts(gg, dd) = cblas_ddot(
-            3, &data_h1.dataOnEntities[MBVERTEX][0].getN(NOBASE)(gg, 0), 1,
+            3, &dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE)(gg, 0), 1,
             &coords[dd], 3);
         coordsAtGaussPts(gg, 3 + dd) = cblas_ddot(
-            3, &data_h1.dataOnEntities[MBVERTEX][0].getN(NOBASE)(gg, 0), 1,
+            3, &dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE)(gg, 0), 1,
             &coords[9 + dd], 3);
       }
     }
@@ -208,32 +208,32 @@ MoFEMErrorCode FlatPrismElementForcesAndSourcesCore::operator()() {
 
   for (int space = HCURL; space != LASTSPACE; ++space)
     if (dataOnElement[space]) {
-      data_h1.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE) =
+      dataH1.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE) =
           dataOnElement[H1]->dataOnEntities[MBVERTEX][0].getNSharedPtr(
               NOBASE);
     }
 
   for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
-    if (data_h1.bAse.test(b)) {
+    if (dataH1.bAse.test(b)) {
       switch (ApproximationBaseArray[b]) {
       case AINSWORTH_LEGENDRE_BASE:
       case AINSWORTH_LOBATTO_BASE:
-        if (data_h1.spacesOnEntities[MBVERTEX].test(H1)) {
+        if (dataH1.spacesOnEntities[MBVERTEX].test(H1)) {
           CHKERR getElementPolynomialBase()->getValue(
               gaussPts,
               boost::shared_ptr<BaseFunctionCtx>(new FlatPrismPolynomialBaseCtx(
-                  data_h1, mField.get_moab(), numeredEntFiniteElementPtr.get(),
+                  dataH1, mField.get_moab(), numeredEntFiniteElementPtr.get(),
                   H1, ApproximationBaseArray[b], NOBASE)));
         }
-        if (data_h1.spacesOnEntities[MBTRI].test(HDIV)) {
+        if (dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
           SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                   "Not yet implemented");
         }
-        if (data_h1.spacesOnEntities[MBEDGE].test(HCURL)) {
+        if (dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
           SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                   "Not yet implemented");
         }
-        if (data_h1.spacesOnEntities[MBTET].test(L2)) {
+        if (dataH1.spacesOnEntities[MBTET].test(L2)) {
           SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                   "Not yet implemented");
         }
@@ -255,12 +255,12 @@ MoFEMErrorCode FlatPrismElementForcesAndSourcesCore::operator()() {
     nOrmals_at_GaussPtF4.resize(nb_gauss_pts, 3, false);
     tAngent1_at_GaussPtF4.resize(nb_gauss_pts, 3, false);
     tAngent2_at_GaussPtF4.resize(nb_gauss_pts, 3, false);
-    CHKERR getEdgesDataOrderSpaceAndBase(data_h1, meshPositionsFieldName);
-    CHKERR getTrisDataOrderSpaceAndBase(data_h1, meshPositionsFieldName);
-    CHKERR getNodesFieldData(data_h1, meshPositionsFieldName);
-    CHKERR getEdgesFieldData(data_h1, meshPositionsFieldName);
-    CHKERR getTrisFieldData(data_h1, meshPositionsFieldName);
-    CHKERR opHOCoordsAndNormals.opRhs(data_h1);
+    CHKERR getEdgesDataOrderSpaceAndBase(dataH1, meshPositionsFieldName);
+    CHKERR getTrisDataOrderSpaceAndBase(dataH1, meshPositionsFieldName);
+    CHKERR getNodesFieldData(dataH1, meshPositionsFieldName);
+    CHKERR getEdgesFieldData(dataH1, meshPositionsFieldName);
+    CHKERR getTrisFieldData(dataH1, meshPositionsFieldName);
+    CHKERR opHOCoordsAndNormals.opRhs(dataH1);
     CHKERR opHOCoordsAndNormals.calculateNormals();
   } else {
     hoCoordsAtGaussPtsF3.resize(0, 0, false);
@@ -273,7 +273,7 @@ MoFEMErrorCode FlatPrismElementForcesAndSourcesCore::operator()() {
     tAngent2_at_GaussPtF4.resize(0, 0, false);
   }
 
-  if (data_h1.spacesOnEntities[MBTRI].test(HDIV)) {
+  if (dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented yet");
   }
 

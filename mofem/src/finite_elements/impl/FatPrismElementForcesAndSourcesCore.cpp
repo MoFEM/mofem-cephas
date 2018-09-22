@@ -90,7 +90,7 @@ MoFEMErrorCode FatPrismElementForcesAndSourcesCore::operator()() {
   if (numeredEntFiniteElementPtr->getEntType() != MBPRISM)
     MoFEMFunctionReturnHot(0);
   CHKERR createDataOnElement();
-  DataForcesAndSourcesCore &data_h1 = *dataOnElement[H1];
+  
 
   EntityHandle ent = numeredEntFiniteElementPtr->getEnt();
   int num_nodes;
@@ -113,14 +113,14 @@ MoFEMErrorCode FatPrismElementForcesAndSourcesCore::operator()() {
   CHKERR getSpacesAndBaseOnEntities(dataH1TroughThickness);
 
   // H1
-  if ((data_h1.spacesOnEntities[MBEDGE]).test(H1)) {
-    CHKERR getEdgesSense(data_h1);
-    CHKERR getTrisSense(data_h1);
-    CHKERR getQuadSense(data_h1);
-    CHKERR getEdgesDataOrder(data_h1, H1);
-    CHKERR getTrisDataOrder(data_h1, H1);
-    CHKERR getQuadDataOrder(data_h1, H1);
-    CHKERR getPrismDataOrder(data_h1, H1);
+  if ((dataH1.spacesOnEntities[MBEDGE]).test(H1)) {
+    CHKERR getEdgesSense(dataH1);
+    CHKERR getTrisSense(dataH1);
+    CHKERR getQuadSense(dataH1);
+    CHKERR getEdgesDataOrder(dataH1, H1);
+    CHKERR getTrisDataOrder(dataH1, H1);
+    CHKERR getQuadDataOrder(dataH1, H1);
+    CHKERR getPrismDataOrder(dataH1, H1);
     // Triangles only
     CHKERR getEdgesSense(dataH1TrianglesOnly);
     CHKERR getTrisSense(dataH1TrianglesOnly);
@@ -131,15 +131,15 @@ MoFEMErrorCode FatPrismElementForcesAndSourcesCore::operator()() {
     CHKERR getEdgesDataOrder(dataH1TroughThickness, H1);
   }
   // Hdiv
-  if ((data_h1.spacesOnEntities[MBTRI]).test(HDIV)) {
+  if ((dataH1.spacesOnEntities[MBTRI]).test(HDIV)) {
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented yet");
   }
   // Hcurl
-  if ((data_h1.spacesOnEntities[MBEDGE]).test(HCURL)) {
+  if ((dataH1.spacesOnEntities[MBEDGE]).test(HCURL)) {
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented yet");
   }
   // L2
-  if ((data_h1.spacesOnEntities[MBPRISM]).test(L2)) {
+  if ((dataH1.spacesOnEntities[MBPRISM]).test(L2)) {
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented yet");
   }
 
@@ -313,9 +313,9 @@ MoFEMErrorCode FatPrismElementForcesAndSourcesCore::operator()() {
     // Calculate "nobase" base functions on prism, this is cartesian product
     // of base functions on triangles with base functions through thickness
     // FIXME: This could be effectively implemented with tensors
-    data_h1.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nb_gauss_pts, 6,
+    dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nb_gauss_pts, 6,
                                                            false);
-    data_h1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE).resize(nb_gauss_pts, 18,
+    dataH1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE).resize(nb_gauss_pts, 18,
                                                                false);
     for (int dd = 0; dd != 6; dd++) {
       int gg = 0;
@@ -339,13 +339,13 @@ MoFEMErrorCode FatPrismElementForcesAndSourcesCore::operator()() {
             dzeta = diffN_MBEDGE1;
             edge_shape = N_MBEDGE1(zeta);
           }
-          data_h1.dataOnEntities[MBVERTEX][0].getN(NOBASE)(gg, dd) =
+          dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE)(gg, dd) =
               tri_n * edge_shape;
-          data_h1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE)(gg, 3 * dd + 0) =
+          dataH1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE)(gg, 3 * dd + 0) =
               dksi_tri_n * edge_shape;
-          data_h1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE)(gg, 3 * dd + 1) =
+          dataH1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE)(gg, 3 * dd + 1) =
               deta_tri_n * edge_shape;
-          data_h1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE)(gg, 3 * dd + 2) =
+          dataH1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE)(gg, 3 * dd + 2) =
               tri_n * dzeta;
         }
       }
@@ -356,7 +356,7 @@ MoFEMErrorCode FatPrismElementForcesAndSourcesCore::operator()() {
     for (int gg = 0; gg < nb_gauss_pts; gg++) {
       for (int dd = 0; dd < 3; dd++) {
         coordsAtGaussPts(gg, dd) = cblas_ddot(
-            6, &data_h1.dataOnEntities[MBVERTEX][0].getN(NOBASE)(gg, 0), 1,
+            6, &dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE)(gg, 0), 1,
             &coords[dd], 3);
       }
     }
@@ -364,28 +364,28 @@ MoFEMErrorCode FatPrismElementForcesAndSourcesCore::operator()() {
 
   // Calculate base functions on prism
   for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
-    if (data_h1.bAse.test(b)) {
+    if (dataH1.bAse.test(b)) {
       switch (ApproximationBaseArray[b]) {
       case AINSWORTH_LEGENDRE_BASE:
       case AINSWORTH_LOBATTO_BASE:
-        if (data_h1.spacesOnEntities[MBVERTEX].test(H1)) {
+        if (dataH1.spacesOnEntities[MBVERTEX].test(H1)) {
           CHKERR FatPrismPolynomialBase().getValue(
               gaussPts,
               boost::shared_ptr<BaseFunctionCtx>(new FatPrismPolynomialBaseCtx(
-                  data_h1, dataH1TrianglesOnly, dataH1TroughThickness,
+                  dataH1, dataH1TrianglesOnly, dataH1TroughThickness,
                   gaussPtsTrianglesOnly, gaussPtsThroughThickness,
                   mField.get_moab(), numeredEntFiniteElementPtr.get(), H1,
                   ApproximationBaseArray[b], NOBASE)));
         }
-        if (data_h1.spacesOnEntities[MBTRI].test(HDIV)) {
+        if (dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
           SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                   "Not yet implemented");
         }
-        if (data_h1.spacesOnEntities[MBEDGE].test(HCURL)) {
+        if (dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
           SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                   "Not yet implemented");
         }
-        if (data_h1.spacesOnEntities[MBTET].test(L2)) {
+        if (dataH1.spacesOnEntities[MBTET].test(L2)) {
           SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                   "Not yet implemented");
         }

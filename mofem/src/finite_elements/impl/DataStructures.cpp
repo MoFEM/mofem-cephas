@@ -201,7 +201,7 @@ MoFEMErrorCode DataForcesAndSourcesCore::setElementType(const EntityType type) {
 
 static void constructor_derived_data(
     DerivedDataForcesAndSourcesCore *derived_data,
-    boost::shared_ptr<DataForcesAndSourcesCore> &data_ptr) {
+    const boost::shared_ptr<DataForcesAndSourcesCore> &data_ptr) {
 
   using EntData = DataForcesAndSourcesCore::EntData;
   using DerivedEntData = DerivedDataForcesAndSourcesCore::DerivedEntData;
@@ -217,7 +217,7 @@ static void constructor_derived_data(
 }
 
 DerivedDataForcesAndSourcesCore::DerivedDataForcesAndSourcesCore(
-    boost::shared_ptr<DataForcesAndSourcesCore> &data_ptr)
+    const boost::shared_ptr<DataForcesAndSourcesCore> &data_ptr)
     : DataForcesAndSourcesCore(), dataPtr(data_ptr) {
   constructor_derived_data(this, dataPtr);
 }
