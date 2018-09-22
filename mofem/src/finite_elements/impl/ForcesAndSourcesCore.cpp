@@ -70,7 +70,24 @@ extern "C" {
 namespace MoFEM {
 
 ForcesAndSourcesCore::ForcesAndSourcesCore(Interface &m_field)
-    : mField(m_field), getRuleHook(0) {}
+    : mField(m_field), getRuleHook(0) {
+
+  const EntityType type = MBENTITYSET;
+  dataOnElement[NOFIELD] = boost::shared_ptr<DataForcesAndSourcesCore>(
+      new DataForcesAndSourcesCore(MBENTITYSET));
+  derivedDataOnElement[NOFIELD] = boost::shared_ptr<DataForcesAndSourcesCore>(
+      new DataForcesAndSourcesCore(MBENTITYSET));
+
+  // Data on elements for proper spaces
+  for (int space = H1; space != LASTSPACE; ++space) {
+    dataOnElement[space] = boost::shared_ptr<DataForcesAndSourcesCore>(
+        new DataForcesAndSourcesCore(type));
+    derivedDataOnElement[space] = boost::shared_ptr<DataForcesAndSourcesCore>(
+        dataOnElement[space],
+        new DerivedDataForcesAndSourcesCore(dataOnElement[space]));
+  }
+
+}
 
 ForcesAndSourcesCore::~ForcesAndSourcesCore() {}
 
@@ -1238,24 +1255,16 @@ MoFEMErrorCode ForcesAndSourcesCore::createDataOnElement() {
   MoFEMFunctionBegin;
 
   const EntityType type = numeredEntFiniteElementPtr->getEntType();
-
-  if (!dataOnElement[NOFIELD]) {
-    dataOnElement[NOFIELD] =
-        boost::shared_ptr<DataForcesAndSourcesCore>(
-            new DataForcesAndSourcesCore(MBENTITYSET));
-    derivedDataOnElement[NOFIELD] = boost::shared_ptr<DataForcesAndSourcesCore>(
-        new DataForcesAndSourcesCore(MBENTITYSET));
-  } else if (type == lastEvaluatedElementEntityType)
+  if (type == lastEvaluatedElementEntityType)
     MoFEMFunctionReturnHot(0);
 
   // Data on elements for proper spaces
   for (int space = H1; space != LASTSPACE; ++space) {
-    dataOnElement[space] = boost::shared_ptr<DataForcesAndSourcesCore>(
-        new DataForcesAndSourcesCore(type));
-    derivedDataOnElement[space] = boost::shared_ptr<DataForcesAndSourcesCore>(
-        dataOnElement[space],
-        new DerivedDataForcesAndSourcesCore(dataOnElement[space]));
+    dataOnElement[space]->setElementType(type);
+    derivedDataOnElement[space]->setElementType(type);
   }
+
+  lastEvaluatedElementEntityType = type;
 
   MoFEMFunctionReturn(0);
 }

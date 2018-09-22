@@ -1384,11 +1384,10 @@ struct DataForcesAndSourcesCore {
   }
 
   DataForcesAndSourcesCore(const EntityType type);
+  virtual MoFEMErrorCode setElementType(const EntityType type);
 
   friend std::ostream &operator<<(std::ostream &os,
                                   const DataForcesAndSourcesCore &e);
-  MoFEMErrorCode setEntityType(const EntityType type);
-
 protected:
   DataForcesAndSourcesCore() {}
 };
@@ -1444,6 +1443,10 @@ struct DerivedDataForcesAndSourcesCore : public DataForcesAndSourcesCore {
 
   DerivedDataForcesAndSourcesCore(
       boost::shared_ptr<DataForcesAndSourcesCore> &data_ptr);
+  MoFEMErrorCode setElementType(const EntityType type);
+
+private:
+  boost::shared_ptr<DataForcesAndSourcesCore> dataPtr;
 };
 
 /** \name Specializations for H1/L2 */

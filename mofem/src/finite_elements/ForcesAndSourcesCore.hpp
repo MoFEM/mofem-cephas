@@ -633,10 +633,10 @@ struct ForcesAndSourcesCore : public FEMethod {
      * For triangle: columns 0,1 are x,y coordinates respectively and column
      * 2 is a weight value for example getGaussPts()(1,13) returns y coordinate
      * of 13th Gauss point on particular volume element
-     * 
-     * For tetrahedron: columns 0,1,2 are x,y,z coordinates respectively and column 3 is a
-     * weight value for example getGaussPts()(1,13) returns y coordinate of 13th
-     * Gauss point on particular volume element
+     *
+     * For tetrahedron: columns 0,1,2 are x,y,z coordinates respectively and
+     * column 3 is a weight value for example getGaussPts()(1,13) returns y
+     * coordinate of 13th Gauss point on particular volume element
      *
      */
     inline MatrixDouble &getGaussPts() {

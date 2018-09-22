@@ -191,8 +191,10 @@ DataForcesAndSourcesCore::DataForcesAndSourcesCore(EntityType type) {
   constructor_data(this, type);
 }
 
-MoFEMErrorCode DataForcesAndSourcesCore::setEntityType(const EntityType type) {
+MoFEMErrorCode DataForcesAndSourcesCore::setElementType(const EntityType type) {
   MoFEMFunctionBegin;
+  for (EntityType tt = MBVERTEX; tt != MBMAXTYPE; ++tt)
+    dataOnEntities[tt].clear();
   constructor_data(this, type);
   MoFEMFunctionReturn(0);
 }
@@ -216,8 +218,17 @@ static void constructor_derived_data(
 
 DerivedDataForcesAndSourcesCore::DerivedDataForcesAndSourcesCore(
     boost::shared_ptr<DataForcesAndSourcesCore> &data_ptr)
-    : DataForcesAndSourcesCore() {
-  constructor_derived_data(this, data_ptr);
+    : DataForcesAndSourcesCore(), dataPtr(data_ptr) {
+  constructor_derived_data(this, dataPtr);
+}
+
+MoFEMErrorCode
+DerivedDataForcesAndSourcesCore::setElementType(const EntityType type) {
+  MoFEMFunctionBegin;
+  for (EntityType tt = MBVERTEX; tt != MBMAXTYPE; ++tt)
+    dataOnEntities[tt].clear();
+  constructor_derived_data(this, dataPtr);
+  MoFEMFunctionReturn(0);
 }
 
 std::ostream &operator<<(std::ostream &os,
