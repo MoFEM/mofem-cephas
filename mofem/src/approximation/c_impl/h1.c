@@ -498,8 +498,8 @@ PetscErrorCode H1_VolumeShapeFunctions_MBTET(
   MoFEMFunctionReturnHot(0);
 }
 PetscErrorCode H1_EdgeShapeFunctions_MBQUAD(
-    int *sense, int *p, double *N, double *diffN, double *edgeN[3],
-    double *diff_edgeN[3], int GDIM,
+    const int *sense, const int *p, const double *N, const double *diffN, double *edgeN[3],
+    double *diff_edgeN[3], const int GDIM,
     PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s,
                                        double *L, double *diffL,
                                        const int dim)) {
@@ -567,12 +567,12 @@ PetscErrorCode H1_EdgeShapeFunctions_MBQUAD(
       // edge23
       shift = ii * (P[2]);
       cblas_dcopy(P[2], L23, 1, &edgeN23[shift], 1);
-      cblas_dscal(P[2], N[node_shift + 0] * N[node_shift + 2], &edgeN23[shift],
+      cblas_dscal(P[2], N[node_shift + 2] * N[node_shift + 3], &edgeN23[shift],
                   1);
       // edge30
-      shift = ii * (P[2]);
+      shift = ii * (P[3]);
       cblas_dcopy(P[2], L30, 1, &edgeN30[shift], 1);
-      cblas_dscal(P[2], N[node_shift + 0] * N[node_shift + 2], &edgeN30[shift],
+      cblas_dscal(P[2], N[node_shift + 0] * N[node_shift + 3], &edgeN30[shift],
                   1);
     }
     if (diff_edgeN != NULL) {
@@ -623,20 +623,20 @@ PetscErrorCode H1_EdgeShapeFunctions_MBQUAD(
         shift = ii * (P[2]);
         bzero(&diff_edgeN23[2 * shift], sizeof(double) * 2 * (P[2]));
         // diffX
-        cblas_daxpy(P[2], N[node_shift + 0] * N[node_shift + 2],
+        cblas_daxpy(P[2], N[node_shift + 2] * N[node_shift + 3],
                     &diffL23[0 * (p[2] + 1)], 1, &diff_edgeN23[2 * shift + 0],
                     2);
         cblas_daxpy(P[2],
-                    diffN[2 * 0 + 0] * N[node_shift + 2] +
-                        N[node_shift + 0] * diffN[2 * 2 + 0],
+                    diffN[2 * 2 + 0] * N[node_shift + 2] +
+                        N[node_shift + 2] * diffN[2 * 2 + 0],
                     L23, 1, &diff_edgeN23[2 * shift + 0], 2);
         // diffY
-        cblas_daxpy(P[2], N[node_shift + 0] * N[node_shift + 2],
+        cblas_daxpy(P[2], N[node_shift + 2] * N[node_shift + 3],
                     &diffL23[1 * (p[2] + 1)], 1, &diff_edgeN23[2 * shift + 1],
                     2);
         cblas_daxpy(P[2],
-                    diffN[2 * 0 + 1] * N[node_shift + 2] +
-                        N[node_shift + 0] * diffN[2 * 2 + 1],
+                    diffN[2 * 2 + 1] * N[node_shift + 2] +
+                        N[node_shift + 2] * diffN[2 * 2 + 1],
                     L23, 1, &diff_edgeN23[2 * shift + 1], 2);
       }
       if (P[3] > 0) {
@@ -644,7 +644,7 @@ PetscErrorCode H1_EdgeShapeFunctions_MBQUAD(
         shift = ii * (P[3]);
         bzero(&diff_edgeN30[2 * shift], sizeof(double) * 2 * (P[3]));
         // diffX
-        cblas_daxpy(P[3], N[node_shift + 0] * N[node_shift + 2],
+        cblas_daxpy(P[3], N[node_shift + 0] * N[node_shift + 3],
                     &diffL30[0 * (p[3] + 1)], 1, &diff_edgeN30[2 * shift + 0],
                     2);
         cblas_daxpy(P[3],
@@ -652,7 +652,7 @@ PetscErrorCode H1_EdgeShapeFunctions_MBQUAD(
                         N[node_shift + 0] * diffN[2 * 2 + 0],
                     L30, 1, &diff_edgeN30[2 * shift + 0], 2);
         // diffY
-        cblas_daxpy(P[3], N[node_shift + 0] * N[node_shift + 2],
+        cblas_daxpy(P[3], N[node_shift + 0] * N[node_shift + 3],
                     &diffL30[1 * (p[3] + 1)], 1, &diff_edgeN30[2 * shift + 1],
                     2);
         cblas_daxpy(P[3],
@@ -664,9 +664,94 @@ PetscErrorCode H1_EdgeShapeFunctions_MBQUAD(
   }
   MoFEMFunctionReturnHot(0);
 }
+
+PetscErrorCode H1_FaceShapeFunctions_MBQUAD(
+    const int *face_nodes, const int p, const double *N, const double *diffN, double *faceN,
+    double *diff_faceN, const int GDIM,
+    PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s,
+                                       double *L, double *diffL,
+                                       const int dim)) {
+  MoFEMFunctionBeginHot;
+
+  int P = NBFACETRI_H1(p);
+  if (P == 0)
+    MoFEMFunctionReturnHot(0);
+  double diff_ksiL0[2], diff_ksiL1[2];
+  double *diff_ksi_faces[] = {diff_ksiL0, diff_ksiL1};
+  int dd = 0;
+  if (diff_faceN != NULL) {
+    for (; dd < 2; dd++) {
+      diff_ksi_faces[0][dd] =
+          diffN[face_nodes[1] * 2 + dd] - diffN[face_nodes[0] * 2 + dd];
+      diff_ksi_faces[1][dd] =
+          diffN[face_nodes[2] * 2 + dd] - diffN[face_nodes[0] * 2 + dd];
+    }
+  }
+  int ii = 0;
+  for (; ii < GDIM; ii++) {
+    int node_shift = ii * 3;
+    double ksi_faces[2];
+    ksi_faces[0] =
+        N[node_shift + face_nodes[1]] - N[node_shift + face_nodes[0]];
+    ksi_faces[1] =
+        N[node_shift + face_nodes[2]] - N[node_shift + face_nodes[0]];
+    double L0[p + 1], L1[p + 1];
+    double diffL0[2 * (p + 1)], diffL1[2 * (p + 1)];
+    ierr = base_polynomials(p, ksi_faces[0], diff_ksi_faces[0], L0, diffL0, 2);
+    CHKERRQ(ierr);
+    ierr = base_polynomials(p, ksi_faces[1], diff_ksi_faces[1], L1, diffL1, 2);
+    CHKERRQ(ierr);
+    double v = N[node_shift + face_nodes[0]] * N[node_shift + face_nodes[1]] *
+               N[node_shift + face_nodes[2]];
+    double v2[2] = {0, 0};
+    if (diff_faceN != NULL) {
+      double n1n2 =
+          N[node_shift + face_nodes[1]] * N[node_shift + face_nodes[2]];
+      double n0n2 =
+          N[node_shift + face_nodes[0]] * N[node_shift + face_nodes[2]];
+      double n0n1 =
+          N[node_shift + face_nodes[0]] * N[node_shift + face_nodes[1]];
+      dd = 0;
+      for (; dd < 2; dd++) {
+        v2[dd] = diffN[face_nodes[0] * 2 + dd] * n1n2 +
+                 diffN[face_nodes[1] * 2 + dd] * n0n2 +
+                 diffN[face_nodes[2] * 2 + dd] * n0n1;
+      }
+    }
+    int shift = ii * P;
+    int jj = 0;
+    int oo = 0;
+    for (; oo <= (p - 3); oo++) {
+      int pp0 = 0;
+      for (; pp0 <= oo; pp0++) {
+        int pp1 = oo - pp0;
+        if (pp1 >= 0) {
+          if (faceN != NULL) {
+            faceN[shift + jj] = v * L0[pp0] * L1[pp1];
+          }
+          if (diff_faceN != NULL) {
+            dd = 0;
+            for (; dd < 2; dd++) {
+              double *val = &diff_faceN[2 * shift + 2 * jj + dd];
+              *val = (L0[pp0] * diffL1[dd * (p + 1) + pp1] +
+                      diffL0[dd * (p + 1) + pp0] * L1[pp1]) *
+                     v;
+              *val += L0[pp0] * L1[pp1] * v2[dd];
+            }
+          }
+          jj++;
+        }
+      }
+    }
+    if (jj != P)
+      SETERRQ2(PETSC_COMM_SELF, 1, "wrong order %d != %d", jj, P);
+  }
+  MoFEMFunctionReturnHot(0);
+}
+
 PetscErrorCode H1_EdgeShapeFunctions_MBHEX(
-    int *sense, int *p, double *N, double *diffN, double *edgeN[],
-    double *diff_edgeN[], int GDIM,
+    const int *sense, const int *p, const double *N, const double *diffN, double *edgeN[],
+    double *diff_edgeN[], const int GDIM,
     PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s,
                                        double *L, double *diffL,
                                        const int dim)) {
