@@ -116,7 +116,7 @@ extern "C" {
  * See CGG_BubbleBase_MBTET
  * 
  */
-#define NBVOLUMETET_CCG_BUBBLE(P) (3 * NBVOLUMETET_L2(P))
+#define NBVOLUMETET_CCG_BUBBLE(P) (((P) > 1) ? 3 * NBVOLUMETET_L2(P-2) : 0)
 
 /**
  * @brief Get base functions on triangle for L2 space

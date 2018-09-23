@@ -231,7 +231,7 @@ MoFEMErrorCode VTK_cgg_bubble_base_MBTET(const string file_name) {
                                            &l2_phi(0,0), &l2_diff_phi(0, 0),
                                            nb_gauss_pts, Legendre_polynomials);
 
-  MatrixDouble phi(nb_gauss_pts, 3 * NBVOLUMETET_CCG_BUBBLE(p));
+  MatrixDouble phi(nb_gauss_pts, 3 * NBVOLUMETET_CCG_BUBBLE(p+2));
   Tensor1<PackPtr<double *, 3>, 3> t_phi(&phi(0,0), &phi(0,1), &phi(0,2));
   CHKERR CGG_BubbleBase_MBTET(
       p+2, &shape_fun(0, 0), diff_shape_fun, &l2_phi(0,0), &l2_diff_phi(0, 0),
@@ -275,7 +275,7 @@ MoFEMErrorCode VTK_cgg_bubble_base_MBTET(const string file_name) {
 
   }
 
-  for (int ll = 0; ll != NBVOLUMETET_CCG_BUBBLE(p); ++ll) {
+  for (int ll = 0; ll != NBVOLUMETET_CCG_BUBBLE(p+2); ++ll) {
 
     double def_val[] = {0, 0, 0};
     std::string tag_name = "B_" + boost::lexical_cast<std::string>(ll);
