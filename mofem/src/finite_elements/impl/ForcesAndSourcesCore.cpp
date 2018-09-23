@@ -1224,6 +1224,10 @@ MoFEMErrorCode ForcesAndSourcesCore::calculateBaseFunctionsOnElement(
     case AINSWORTH_LEGENDRE_BASE:
     case AINSWORTH_LOBATTO_BASE:
     case DEMKOWICZ_JACOBI_BASE:
+      if (!getElementPolynomialBase()) {
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "Functions genrating approximation base not defined");
+      }
       for (int space = H1; space != LASTSPACE; ++space) {
         if (dataOnElement[H1]->sPace.test(space) &&
             dataOnElement[H1]->bAse.test(b) &&
@@ -1237,6 +1241,10 @@ MoFEMErrorCode ForcesAndSourcesCore::calculateBaseFunctionsOnElement(
       }
       break;
     case USER_BASE:
+      if(!getUserPolynomialBase()) {
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "Functions genrating user approximation base not defined");
+      }
       for (int space = H1; space != LASTSPACE; ++space)
         if (dataOnElement[H1]->sPace.test(space) &&
             dataOnElement[H1]->bAse.test(b) &&
