@@ -60,6 +60,7 @@ struct ForcesAndSourcesCore : public FEMethod {
   DataForcesAndSourcesCore &dataL2;
 
   ForcesAndSourcesCore(Interface &m_field);
+  virtual ~ForcesAndSourcesCore() {}
 
   MoFEMErrorCode getNumberOfNodes(int &num_nodes) const;
 
