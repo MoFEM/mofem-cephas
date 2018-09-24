@@ -914,7 +914,7 @@ PetscErrorCode H1_VolumeShapeDiffMBTETinvJ(int base_p, int p,
   }
   MoFEMFunctionReturnHot(0);
 }
-PetscErrorCode H1_EdgeGradientOfDeformation_hierachical(int p, double *diffN,
+PetscErrorCode H1_EdgeGradientOfDeformation_hierarchical(int p, double *diffN,
                                                         double *dofs,
                                                         double *F) {
   MoFEMFunctionBeginHot;
@@ -925,7 +925,7 @@ PetscErrorCode H1_EdgeGradientOfDeformation_hierachical(int p, double *diffN,
           cblas_ddot(NBEDGE_H1(p), &diffN[col], 3, &dofs[row], 3);
   MoFEMFunctionReturnHot(0);
 }
-PetscErrorCode H1_FaceGradientOfDeformation_hierachical(int p, double *diffN,
+PetscErrorCode H1_FaceGradientOfDeformation_hierarchical(int p, double *diffN,
                                                         double *dofs,
                                                         double *F) {
   MoFEMFunctionBeginHot;
@@ -936,7 +936,7 @@ PetscErrorCode H1_FaceGradientOfDeformation_hierachical(int p, double *diffN,
           cblas_ddot(NBFACETRI_H1(p), &diffN[col], 3, &dofs[row], 3);
   MoFEMFunctionReturnHot(0);
 }
-PetscErrorCode H1_VolumeGradientOfDeformation_hierachical(int p, double *diffN,
+PetscErrorCode H1_VolumeGradientOfDeformation_hierarchical(int p, double *diffN,
                                                           double *dofs,
                                                           double *F) {
   MoFEMFunctionBeginHot;
@@ -1138,4 +1138,20 @@ PetscErrorCode H1_VolumeShapeFunctions_MBPRISM(
       SETERRQ1(PETSC_COMM_SELF, 1, "wrong order %d", jj);
   }
   MoFEMFunctionReturnHot(0);
+}
+
+PetscErrorCode H1_EdgeGradientOfDeformation_hierachical(int p, double *diffN,
+                                                        double *dofs,
+                                                        double *F) {
+  return H1_EdgeGradientOfDeformation_hierarchical(p, diffN, dofs, F);
+}
+PetscErrorCode H1_FaceGradientOfDeformation_hierachical(int p, double *diffN,
+                                                        double *dofs,
+                                                        double *F) {
+  return H1_FaceGradientOfDeformation_hierarchical(p, diffN, dofs, F);
+}
+PetscErrorCode H1_VolumeGradientOfDeformation_hierachical(int p, double *diffN,
+                                                          double *dofs,
+                                                          double *F) {
+  return H1_VolumeGradientOfDeformation_hierarchical(p, diffN, dofs, F);
 }

@@ -39,23 +39,13 @@ namespace MoFEM {
  */
 struct EdgeElementForcesAndSourcesCore : public ForcesAndSourcesCore {
 
-  DataForcesAndSourcesCore dataH1;
-  DerivedDataForcesAndSourcesCore derivedDataH1;
-  DataForcesAndSourcesCore dataHcurl;
-  DerivedDataForcesAndSourcesCore derivedDataHcurl;
-  DataForcesAndSourcesCore dataNoField, dataNoFieldCol;
   std::string meshPositionsFieldName;
 
   MatrixDouble tangentAtGaussPts;
   OpGetHoTangentOnEdge opGetHoTangentOnEdge;
   OpSetCovariantPiolaTransformOnEdge opCovariantTransform;
 
-  EdgeElementForcesAndSourcesCore(Interface &m_field)
-      : ForcesAndSourcesCore(m_field), dataH1(MBEDGE), derivedDataH1(dataH1),
-        dataHcurl(MBEDGE), derivedDataHcurl(dataHcurl), dataNoField(MBEDGE),
-        dataNoFieldCol(MBEDGE), meshPositionsFieldName("MESH_NODE_POSITIONS"),
-        opGetHoTangentOnEdge(tangentAtGaussPts),
-        opCovariantTransform(dIrection, tangentAtGaussPts) {}
+  EdgeElementForcesAndSourcesCore(Interface &m_field);
 
   double lEngth;
 
@@ -63,13 +53,11 @@ struct EdgeElementForcesAndSourcesCore : public ForcesAndSourcesCore {
   const EntityHandle *cOnn;
   VectorDouble dIrection;
   VectorDouble cOords;
-  MatrixDouble gaussPts;
   MatrixDouble coordsAtGaussPts;
 
   MoFEMErrorCode calculateEdgeDirection();
   MoFEMErrorCode setIntegrationPts();
   MoFEMErrorCode calculateCoordsAtIntegrationPts();
-  MoFEMErrorCode calculateBaseFunctionsOnElement();
   MoFEMErrorCode calculateHoCoordsAtIntegrationPts();
 
   /** \brief default operator for EDGE element
@@ -116,22 +104,6 @@ struct EdgeElementForcesAndSourcesCore : public ForcesAndSourcesCore {
      */
     inline VectorDouble &getCoords() {
       return static_cast<EdgeElementForcesAndSourcesCore *>(ptrFE)->cOords;
-    }
-
-    /**
-     * \brief get matrix of integration (Gauss) points on the edge
-     *  where column 0 is a coordinate X and column 1 is a value of weight
-     * for example getGaussPts()(0,13) returns 0 coordinate of 13th Gauss point
-     * on particular edge element
-     */
-    inline MatrixDouble &getGaussPts() {
-      return static_cast<EdgeElementForcesAndSourcesCore *>(ptrFE)->gaussPts;
-    }
-
-    inline FTensor::Tensor0<FTensor::PackPtr<double *, 1> >
-    getFTensor0IntegrationWeight() {
-      return FTensor::Tensor0<FTensor::PackPtr<double *, 1> >(
-          &(getGaussPts()(1, 0)));
     }
 
     /**
@@ -219,7 +191,7 @@ DEPRECATED typedef EdgeElementForcesAndSourcesCore
 
 /**
  * \defgroup mofem_forces_and_sources_edge_element Edge Element
- * 
+ *
  * \brief Implementation of edge element.
  *
  * \ingroup mofem_forces_and_sources
