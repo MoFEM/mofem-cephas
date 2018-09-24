@@ -338,6 +338,88 @@ PetscErrorCode ShapeMBTET_inverse(
   MoFEMFunctionReturnHot(0);
 }
 
+PetscErrorCode ShapeMBHEX(double *N,const double *G_X,const double *G_Y,const double *G_Z,int DIM) {
+  MoFEMFunctionBeginHot;
+  int ii = 0;
+  for(; ii<DIM; ii++) {
+    double x = G_X[ii],y = G_Y[ii],z = G_Z[ii];
+    N[8*ii+0] = N_MBHEX0(x,y,z);
+    N[8*ii+1] = N_MBHEX1(x,y,z);
+    N[8*ii+2] = N_MBHEX2(x,y,z);
+    N[8*ii+3] = N_MBHEX3(x,y,z);
+    N[8*ii+4] = N_MBHEX4(x,y,z);
+    N[8*ii+5] = N_MBHEX5(x,y,z);
+    N[8*ii+6] = N_MBHEX6(x,y,z);
+    N[8*ii+7] = N_MBHEX7(x,y,z);
+  }
+  MoFEMFunctionReturnHot(0);
+}
+PetscErrorCode ShapeDiffMBHEX(double *diffN, const double *G_X,
+                              const double *G_Y, const double *G_Z, int DIM) {
+  MoFEMFunctionBeginHot;
+  int ii = 0;
+  for (; ii < DIM; ii++) {
+    double x = G_X[ii], y = G_Y[ii], z = G_Z[ii];
+    diffN[8 * ii + 0] = diffN_MBHEX0x(x, y, z);
+    diffN[8 * ii + 1] = diffN_MBHEX0y(x, y, z);
+    diffN[8 * ii + 2] = diffN_MBHEX0z(x, y, z);
+    diffN[8 * ii + 3] = diffN_MBHEX1x(x, y, z);
+    diffN[8 * ii + 4] = diffN_MBHEX1y(x, y, z);
+    diffN[8 * ii + 5] = diffN_MBHEX1z(x, y, z);
+    diffN[8 * ii + 6] = diffN_MBHEX2x(x, y, z);
+    diffN[8 * ii + 7] = diffN_MBHEX2y(x, y, z);
+    diffN[8 * ii + 8] = diffN_MBHEX2z(x, y, z);
+    diffN[8 * ii + 9] = diffN_MBHEX3x(x, y, z);
+    diffN[8 * ii + 10] = diffN_MBHEX3y(x, y, z);
+    diffN[8 * ii + 11] = diffN_MBHEX3z(x, y, z);
+    diffN[8 * ii + 12] = diffN_MBHEX4x(x, y, z);
+    diffN[8 * ii + 13] = diffN_MBHEX4y(x, y, z);
+    diffN[8 * ii + 14] = diffN_MBHEX4z(x, y, z);
+    diffN[8 * ii + 15] = diffN_MBHEX5x(x, y, z);
+    diffN[8 * ii + 16] = diffN_MBHEX5y(x, y, z);
+    diffN[8 * ii + 17] = diffN_MBHEX5z(x, y, z);
+    diffN[8 * ii + 18] = diffN_MBHEX6x(x, y, z);
+    diffN[8 * ii + 19] = diffN_MBHEX6y(x, y, z);
+    diffN[8 * ii + 20] = diffN_MBHEX6z(x, y, z);
+    diffN[8 * ii + 21] = diffN_MBHEX7x(x, y, z);
+    diffN[8 * ii + 22] = diffN_MBHEX7y(x, y, z);
+    diffN[8 * ii + 23] = diffN_MBHEX7z(x, y, z);
+  }
+  MoFEMFunctionReturnHot(0);
+}
+
+PetscErrorCode ShapeMBHEX_inverse(
+  double *N,double *diffN,const double *elem_coords,const double *glob_coords,double *loc_coords
+) {
+  MoFEMFunctionBeginHot;
+  double A[3*3];
+  int IPIV[3];
+  //COL MAJOR
+  //X
+  A[0+3*0] = cblas_ddot(4,&diffN[0*3+0],3,&elem_coords[0*3+0],3);
+  A[0+3*1] = cblas_ddot(4,&diffN[0*3+1],3,&elem_coords[0*3+0],3);
+  A[0+3*2] = cblas_ddot(4,&diffN[0*3+2],3,&elem_coords[0*3+0],3);
+  loc_coords[0] = glob_coords[0] - cblas_ddot(4,&N[0],1,&elem_coords[0*3+0],3);
+  //printf("A\n[ %3.2f %3.2f %3.2f ] %3.2f \n",A[0*3],A[1*3],A[2*3],R[0]);
+  //Y
+  A[1+3*0] = cblas_ddot(4,&diffN[0*3+0],3,&elem_coords[0*3+1],3);
+  A[1+3*1] = cblas_ddot(4,&diffN[0*3+1],3,&elem_coords[0*3+1],3);
+  A[1+3*2] = cblas_ddot(4,&diffN[0*3+2],3,&elem_coords[0*3+1],3);
+  loc_coords[1] = glob_coords[1] - cblas_ddot(4,&N[0],1,&elem_coords[0*3+1],3);
+  //printf("[ %3.2f %3.2f %3.2f ] %3.2f \n",A[1+3*0],A[1+3*1],A[1+3*2],R[1]);
+  //Z
+  A[2+3*0] = cblas_ddot(4,&diffN[0*3+0],3,&elem_coords[0*3+2],3);
+  A[2+3*1] = cblas_ddot(4,&diffN[0*3+1],3,&elem_coords[0*3+2],3);
+  A[2+3*2] = cblas_ddot(4,&diffN[0*3+2],3,&elem_coords[0*3+2],3);
+  loc_coords[2] = glob_coords[2] - cblas_ddot(4,&N[0],1,&elem_coords[0*3+2],3);
+  //printf("[ %3.2f %3.2f %3.2f ] %3.2f \n",A[2+3*0],A[2+3*1],A[2+3*2],R[1]);
+  int info = lapack_dgesv(3,1,&A[0],3,(__CLPK_integer*)IPIV,loc_coords,3);
+  if(info != 0) SETERRQ1(PETSC_COMM_SELF,1,"info == %d",info);
+  MoFEMFunctionReturnHot(0);
+}
+
+
+
 PetscErrorCode ShapeMBTRI_inverse(
   double *N,double *diffN,const double *elem_coords,const double *glob_coords,double *loc_coords
 ) {

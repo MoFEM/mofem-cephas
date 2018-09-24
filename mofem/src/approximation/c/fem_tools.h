@@ -50,6 +50,43 @@ extern "C" {
 #define diffN_MBTET3y ( 0. )		///< derivative of tetrahedral shape function
 #define diffN_MBTET3z ( 1. )		///< derivative of tetrahedral shape function
 
+//MBHEX
+
+#define N_MBHEX0(x, y, z) ( (1.-x)*(1.-y)*(1.-z) ) 	///< tetrahedral shape function
+#define N_MBHEX1(x, y, z) ( x*(1.-y)*(1.-z) ) 	
+#define N_MBHEX2(x, y, z) ( x*y*(1.-z) ) 	
+#define N_MBHEX3(x, y, z) ( (1.-x)*y*(1.-z) ) 	
+#define N_MBHEX4(x, y, z) ( (1.-x)*(1.-y)*z ) 	
+#define N_MBHEX5(x, y, z) ( x*(1.-y)*z ) 	
+#define N_MBHEX6(x, y, z) ( x*y*z ) 	
+#define N_MBHEX7(x, y, z) ( (1.-x)*y*z )
+
+
+#define diffN_MBHEX0x(x, y, z)  (-(1 - y) * (1 - z))
+#define diffN_MBHEX0y(x, y, z)  ((1 - y) * (1 - z))
+#define diffN_MBHEX0z(x, y, z)  (y * (1 - z))
+#define diffN_MBHEX1x(x, y, z)  (-y * (1 - z))
+#define diffN_MBHEX1y(x, y, z)  (-(1 - y) * z)
+#define diffN_MBHEX1z(x, y, z)  ((1 - y) * z)
+#define diffN_MBHEX2x(x, y, z)  (y * z)
+#define diffN_MBHEX2y(x, y, z)  (-y * z)
+#define diffN_MBHEX2z(x, y, z)  (-(1 - x) * (1 - z))
+#define diffN_MBHEX3x(x, y, z)  (-x * (1 - z))
+#define diffN_MBHEX3y(x, y, z)  (x * (1 - z))
+#define diffN_MBHEX3z(x, y, z)  ((1 - x) * (1 - z))
+#define diffN_MBHEX4x(x, y, z)  (-(1 - x) * z)
+#define diffN_MBHEX4y(x, y, z)  (-x * z)
+#define diffN_MBHEX4z(x, y, z)  (x * z)
+#define diffN_MBHEX5x(x, y, z)  ((1 - x) * z)
+#define diffN_MBHEX5y(x, y, z)  (-(1 - x) * (1 - y))
+#define diffN_MBHEX5z(x, y, z)  (-x * (1 - y))
+#define diffN_MBHEX6x(x, y, z)  (-x * y)
+#define diffN_MBHEX6y(x, y, z)  (-(1 - x) * y)
+#define diffN_MBHEX6z(x, y, z)  ((1 - x) * (1 - y))
+#define diffN_MBHEX7x(x, y, z)  (x * (1 - y))
+#define diffN_MBHEX7y(x, y, z)  (x * y)
+#define diffN_MBHEX7z(x, y, z)  ((1 - x) * y)
+
 //MBTRI
 #define N_MBTRI0(x, y) ( 1.-x-y )	///< triangle shape function
 #define N_MBTRI1(x, y) ( x )		///< triangle shape function
