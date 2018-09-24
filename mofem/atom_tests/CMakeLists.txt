@@ -457,6 +457,27 @@ add_test(
   -my_file elasticity_atom_test_01X_pressure.h5m
 )
 
+my_add_executable(forces_and_sources_testing_users_base forces_and_sources_testing_users_base.cpp)
+target_link_libraries(forces_and_sources_testing_users_base
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS}
+)
+add_test(
+  forces_and_sources_testing_users_base
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_testing_users_base
+  -my_file elasticity_atom_test_01X_pressure.h5m
+)
+add_test(forces_and_sources_testing_users_base_compare ${CMAKE_COMMAND} -E compare_files
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_testing_users_base.txt
+  ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_testing_users_base.txt
+)
+
 my_add_executable(forces_and_sources_getting_higher_order_skin_normals_atom forces_and_sources_getting_higher_order_skin_normals_atom_tets.cpp)
 target_link_libraries(forces_and_sources_getting_higher_order_skin_normals_atom
   mofem_finite_elements

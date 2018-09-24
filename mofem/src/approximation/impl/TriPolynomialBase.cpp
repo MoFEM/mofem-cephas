@@ -328,10 +328,6 @@ TriPolynomialBase::getValueHcurlAinsworthBase(MatrixDouble &pts) {
         &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
         &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
         hcurl_edge_n, diff_hcurl_edge_n, nb_gauss_pts, base_polynomials);
-    // cerr << data.dataOnEntities[MBVERTEX][0].getDiffN(base) << endl;
-    // cerr << data.dataOnEntities[MBEDGE][0].getDiffN(base) << endl;
-    // cerr << data.dataOnEntities[MBVERTEX][0].getN(base) << endl;
-    // cerr << data.dataOnEntities[MBEDGE][0].getN(base) << endl;
   } else {
     for (int ee = 0; ee < 3; ee++) {
       data.dataOnEntities[MBEDGE][ee].getN(base).resize(nb_gauss_pts, 0, false);
@@ -528,8 +524,7 @@ TriPolynomialBase::getValue(MatrixDouble &pts,
              ApproximationBaseNames[base]);
   }
 
-  switch (cTx->sPace) {
-  case H1: {
+  if(1) {
     // In linear geometry derivatives are constant,
     // this in expense of efficiency makes implementation
     // consistent between vertices and other types of entities
@@ -537,9 +532,9 @@ TriPolynomialBase::getValue(MatrixDouble &pts,
     CHKERR ShapeDiffMBTRI(
         &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin());
     MatrixDouble diffN(nb_gauss_pts, 6);
-    for (int gg = 0; gg < nb_gauss_pts; gg++) {
-      for (int nn = 0; nn < 3; nn++) {
-        for (int dd = 0; dd < 2; dd++) {
+    for (int gg = 0; gg != nb_gauss_pts; ++gg) {
+      for (int nn = 0; nn != 3; ++nn) {
+        for (int dd = 0; dd != 2; ++dd) {
           diffN(gg, nn * 2 + dd) =
               data.dataOnEntities[MBVERTEX][0].getDiffN(base)(nn, dd);
         }
@@ -549,6 +544,9 @@ TriPolynomialBase::getValue(MatrixDouble &pts,
         diffN.size1(), diffN.size2(), false);
     data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().swap(diffN.data());
   }
+
+  switch (cTx->sPace) {
+  case H1:
     CHKERR getValueH1(pts);
     break;
   case HDIV:

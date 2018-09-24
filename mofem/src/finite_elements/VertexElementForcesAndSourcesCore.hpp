@@ -8,19 +8,18 @@
 */
 
 /* This file is part of MoFEM.
-* MoFEM is free software: you can redistribute it and/or modify it under
-* the terms of the GNU Lesser General Public License as published by the
-* Free Software Foundation, either version 3 of the License, or (at your
-* option) any later version.
-*
-* MoFEM is distributed in the hope that it will be useful, but WITHOUT
-* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
-* License for more details.
-*
-* You should have received a copy of the GNU Lesser General Public
-* License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
-
+ * MoFEM is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU Lesser General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or (at your
+ * option) any later version.
+ *
+ * MoFEM is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
+ * License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 #ifndef __VERTEXELEMENTFORCESANDSOURCESCORE_HPP__
 #define __VERTEXELEMENTFORCESANDSOURCESCORE_HPP__
@@ -38,57 +37,47 @@ namespace MoFEM {
  rowColOpPtrVector.
 
  */
-struct VertexElementForcesAndSourcesCore: public ForcesAndSourcesCore {
+struct VertexElementForcesAndSourcesCore : public ForcesAndSourcesCore {
 
-  DataForcesAndSourcesCore data;
-  DerivedDataForcesAndSourcesCore derivedData;
-  DataForcesAndSourcesCore dataNoField,dataNoFieldCol;
   std::string meshPositionsFieldName;
 
-  VertexElementForcesAndSourcesCore(Interface &m_field):
-    ForcesAndSourcesCore(m_field),
-    data(MBVERTEX),
-    derivedData(data),
-    dataNoField(MBVERTEX),
-    dataNoFieldCol(MBVERTEX)
-  {};
-
+  VertexElementForcesAndSourcesCore(Interface &m_field)
+      : ForcesAndSourcesCore(m_field){};
 
   VectorDouble coords;
 
   /** \brief default operator for VERTEX element
     \ingroup mofem_forces_and_sources_vertex_element
     */
-  struct UserDataOperator: public ForcesAndSourcesCore::UserDataOperator {
+  struct UserDataOperator : public ForcesAndSourcesCore::UserDataOperator {
 
-    UserDataOperator(
-      const std::string &field_name,const char type):
-      ForcesAndSourcesCore::UserDataOperator(field_name,type) {}
+    UserDataOperator(const std::string &field_name, const char type)
+        : ForcesAndSourcesCore::UserDataOperator(field_name, type) {}
 
-    UserDataOperator(
-      const std::string &row_field_name,const std::string &col_field_name,const char type):
-      ForcesAndSourcesCore::UserDataOperator(row_field_name,col_field_name,type) {}
+    UserDataOperator(const std::string &row_field_name,
+                     const std::string &col_field_name, const char type)
+        : ForcesAndSourcesCore::UserDataOperator(row_field_name, col_field_name,
+                                                 type) {}
 
-    inline VectorDouble& getCoords() {
-      return static_cast<VertexElementForcesAndSourcesCore*>(ptrFE)->coords;
+    inline VectorDouble &getCoords() {
+      return static_cast<VertexElementForcesAndSourcesCore *>(ptrFE)->coords;
     }
-
   };
 
   MoFEMErrorCode operator()();
-
 };
 
 /// \deprecated Use VertexElementForcesAndSourcesCore
-DEPRECATED typedef VertexElementForcesAndSourcesCore VertexElementForcesAndSurcesCore;
+DEPRECATED typedef VertexElementForcesAndSourcesCore
+    VertexElementForcesAndSurcesCore;
 
-}
+} // namespace MoFEM
 
 #endif //__VERTEXELEMENTFORCESANDSOURCESCORE_HPP__
 
-/***************************************************************************//**
- * \defgroup mofem_forces_and_sources_vertex_element Vertex Element
- * \brief Finite element and operators for vertex entity
- *
- * \ingroup mofem_forces_and_sources
- ******************************************************************************/
+/***************************************************************************/ /**
+* \defgroup mofem_forces_and_sources_vertex_element Vertex Element
+* \brief Finite element and operators for vertex entity
+*
+* \ingroup mofem_forces_and_sources
+******************************************************************************/

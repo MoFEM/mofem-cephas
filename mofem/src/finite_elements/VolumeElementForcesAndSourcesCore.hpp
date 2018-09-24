@@ -41,17 +41,6 @@ struct VolumeElementForcesAndSourcesCore : public ForcesAndSourcesCore {
   MatrixDouble3by3 jAc;
   MatrixDouble3by3 invJac;
 
-  DataForcesAndSourcesCore dataH1;
-  DerivedDataForcesAndSourcesCore derivedDataH1;
-  DataForcesAndSourcesCore dataL2;
-  DerivedDataForcesAndSourcesCore derivedDataL2;
-  DataForcesAndSourcesCore dataHdiv;
-  DerivedDataForcesAndSourcesCore derivedDataHdiv;
-  DataForcesAndSourcesCore dataHcurl;
-  DerivedDataForcesAndSourcesCore derivedDataHcurl;
-  DataForcesAndSourcesCore dataNoField;
-  DataForcesAndSourcesCore dataNoFieldCol;
-
   OpSetInvJacH1 opSetInvJacH1;
   OpSetContravariantPiolaTransform opContravariantPiolaTransform;
   OpSetCovariantPiolaTransform opCovariantPiolaTransform;
@@ -81,7 +70,6 @@ struct VolumeElementForcesAndSourcesCore : public ForcesAndSourcesCore {
   FTensor::Tensor2<double *, 3, 3> tJac;
   FTensor::Tensor2<double *, 3, 3> tInvJac;
 
-  MatrixDouble gaussPts;
   MatrixDouble coordsAtGaussPts;
 
   /** \brief default operator for TET element
@@ -143,33 +131,6 @@ struct VolumeElementForcesAndSourcesCore : public ForcesAndSourcesCore {
      */
     inline VectorDouble &getCoords() {
       return static_cast<VolumeElementForcesAndSourcesCore *>(ptrFE)->coords;
-    }
-
-    /** \brief matrix of integration (Gauss) points for Volume Element
-     *  where columns 0,1,2 are x,y,z coordinates respectively and column 3 is a
-     * weight value for example getGaussPts()(1,13) returns y coordinate of 13th
-     * Gauss point on particular volume element
-     */
-    inline MatrixDouble &getGaussPts() {
-      return static_cast<VolumeElementForcesAndSourcesCore *>(ptrFE)->gaussPts;
-    }
-
-    /**
-     * @brief Get integration weights
-     *
-     * \code
-     * auto t_w = getFTensor0IntegrationWeight();
-     * for(int gg = 0; gg!=getGaussPts.size2(); ++gg) {
-     *  // integrate something
-     *  ++t_w;
-     * }
-     * \endcode
-     *
-     * @return FTensor::Tensor0<FTensor::PackPtr<double *, 1>>
-     */
-    inline auto getFTensor0IntegrationWeight() {
-      return FTensor::Tensor0<FTensor::PackPtr<double *, 1>>(
-          &(getGaussPts()(3, 0)));
     }
 
     /** \brief Gauss points and weight, matrix (nb. of points x 3)
@@ -363,18 +324,6 @@ struct VolumeElementForcesAndSourcesCore : public ForcesAndSourcesCore {
    * @return Error code
    */
   virtual MoFEMErrorCode getSpaceBaseAndOrderOnElement();
-
-  /**
-   * \brief Calculate base functions
-   * @return Error code
-   */
-  virtual MoFEMErrorCode calculateBaseFunctionsOnElement(const int b);
-
-  /**
-   * \brief Calculate base functions
-   * @return Error code
-   */
-  virtual MoFEMErrorCode calculateBaseFunctionsOnElement();
 
   /**
    * \brief Transform base functions based on geometric element Jacobian.
