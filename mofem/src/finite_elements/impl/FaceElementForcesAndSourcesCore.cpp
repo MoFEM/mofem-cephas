@@ -246,37 +246,37 @@ FaceElementForcesAndSourcesCore::getSpaceBaseAndOrderOnElement() {
 
   // H1
   if (dataH1.spacesOnEntities[MBEDGE].test(H1)) {
-    CHKERR getEdgesSense(dataH1);
-    CHKERR getEdgesDataOrder(dataH1, H1);
+    CHKERR getEntitySense<MBEDGE>(dataH1);
+    CHKERR getEntityDataOrder<MBEDGE>(dataH1, H1);
   }
   if (dataH1.spacesOnEntities[MBTRI].test(H1)) {
-    CHKERR getTrisSense(dataH1);
-    CHKERR getTrisDataOrder(dataH1, H1);
+    CHKERR getEntitySense<MBTRI>(dataH1);
+    CHKERR getEntityDataOrder<MBTRI>(dataH1, H1);
   }
 
   // Hcurl
   if (dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
-    CHKERR getEdgesSense(data_curl);
-    CHKERR getEdgesDataOrder(data_curl, HCURL);
+    CHKERR getEntitySense<MBEDGE>(data_curl);
+    CHKERR getEntityDataOrder<MBEDGE>(data_curl, HCURL);
     data_curl.spacesOnEntities[MBEDGE].set(HCURL);
   }
   if (dataH1.spacesOnEntities[MBTRI].test(HCURL)) {
-    CHKERR getTrisSense(data_curl);
-    CHKERR getTrisDataOrder(data_curl, HCURL);
+    CHKERR getEntitySense<MBTRI>(data_curl);
+    CHKERR getEntityDataOrder<MBTRI>(data_curl, HCURL);
     data_curl.spacesOnEntities[MBTRI].set(HCURL);
   }
 
   // Hdiv
   if (dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
-    CHKERR getTrisSense(data_div);
-    CHKERR getTrisDataOrder(data_div, HDIV);
+    CHKERR getEntitySense<MBTRI>(data_div);
+    CHKERR getEntityDataOrder<MBTRI>(data_div, HDIV);
     data_div.spacesOnEntities[MBTRI].set(HDIV);
   }
 
   // L2
   if (dataH1.spacesOnEntities[MBTRI].test(L2)) {
-    CHKERR getTrisSense(data_l2);
-    CHKERR getTrisDataOrder(data_l2, L2);
+    CHKERR getEntitySense<MBTRI>(data_l2);
+    CHKERR getEntityDataOrder<MBTRI>(data_l2, L2);
     data_l2.spacesOnEntities[MBTRI].set(L2);
   }
 

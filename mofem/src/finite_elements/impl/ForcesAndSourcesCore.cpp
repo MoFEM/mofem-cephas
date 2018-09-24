@@ -167,21 +167,6 @@ MoFEMErrorCode ForcesAndSourcesCore::getSense(
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode
-ForcesAndSourcesCore::getEdgesSense(DataForcesAndSourcesCore &data) const {
-  return getSense(MBEDGE, data.dataOnEntities[MBEDGE]);
-}
-
-MoFEMErrorCode
-ForcesAndSourcesCore::getTrisSense(DataForcesAndSourcesCore &data) const {
-  return getSense(MBTRI, data.dataOnEntities[MBTRI]);
-}
-
-MoFEMErrorCode
-ForcesAndSourcesCore::getQuadSense(DataForcesAndSourcesCore &data) const {
-  return getSense(MBQUAD, data.dataOnEntities[MBQUAD]);
-}
-
 // ** Order **
 
 template <typename DOFMULTIINDEX>
@@ -214,87 +199,49 @@ int ForcesAndSourcesCore::getMaxColOrder() const {
 MoFEMErrorCode ForcesAndSourcesCore::getDataOrder(
     const EntityType type, const FieldSpace space,
     boost::ptr_vector<DataForcesAndSourcesCore::EntData> &data) const {
-  MoFEMFunctionBeginHot;
-  try {
-    SideNumber_multiIndex &side_table = const_cast<SideNumber_multiIndex &>(
-        numeredEntFiniteElementPtr->getSideNumberTable());
-    if (data.size() < side_table.get<2>().count(type)) {
-      // prims has 9 edges, some of edges for "flat" prism are not active
-      SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-               "data inconsistency %d < %d", data.size(),
-               side_table.get<2>().count(type));
+  MoFEMFunctionBegin;
+  SideNumber_multiIndex &side_table = const_cast<SideNumber_multiIndex &>(
+      numeredEntFiniteElementPtr->getSideNumberTable());
+  if (data.size() < side_table.get<2>().count(type)) {
+    // prims has 9 edges, some of edges for "flat" prism are not active
+    SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+             "data inconsistency %d < %d", data.size(),
+             side_table.get<2>().count(type));
+  }
+  for (unsigned int side = 0; side < data.size(); side++) {
+    data[side].getDataOrder() = 0;
+  }
+  FEDofEntity_multiIndex::index<Composite_EntType_and_Space_mi_tag>::type
+      &data_dofs = const_cast<FEDofEntity_multiIndex::index<
+          Composite_EntType_and_Space_mi_tag>::type &>(
+          numeredEntFiniteElementPtr->getDataDofs()
+              .get<Composite_EntType_and_Space_mi_tag>());
+  FEDofEntity_multiIndex::index<
+      Composite_EntType_and_Space_mi_tag>::type::iterator dit,
+      hi_dit;
+  dit = data_dofs.lower_bound(boost::make_tuple(type, space));
+  hi_dit = data_dofs.upper_bound(boost::make_tuple(type, space));
+  for (; dit != hi_dit; dit++) {
+    ApproximationOrder ent_order = (*dit)->getMaxOrder();
+    int side_number = (*dit)->sideNumberPtr->side_number;
+    if (side_number < 0) {
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
     }
-    for (unsigned int side = 0; side < data.size(); side++) {
-      data[side].getDataOrder() = 0;
-    }
-    FEDofEntity_multiIndex::index<Composite_EntType_and_Space_mi_tag>::type
-        &data_dofs = const_cast<FEDofEntity_multiIndex::index<
-            Composite_EntType_and_Space_mi_tag>::type &>(
-            numeredEntFiniteElementPtr->getDataDofs()
-                .get<Composite_EntType_and_Space_mi_tag>());
-    FEDofEntity_multiIndex::index<
-        Composite_EntType_and_Space_mi_tag>::type::iterator dit,
-        hi_dit;
-    dit = data_dofs.lower_bound(boost::make_tuple(type, space));
-    hi_dit = data_dofs.upper_bound(boost::make_tuple(type, space));
-    for (; dit != hi_dit; dit++) {
-      ApproximationOrder ent_order = (*dit)->getMaxOrder();
-      int side_number = (*dit)->sideNumberPtr->side_number;
-      if (side_number < 0) {
+    data[side_number].getDataOrder() =
+        data[side_number].getDataOrder() > ent_order
+            ? data[side_number].getDataOrder()
+            : ent_order;
+    if ((*dit)->sideNumberPtr->brother_side_number != -1) {
+      if (data.size() <
+          (unsigned int)(*dit)->sideNumberPtr->brother_side_number) {
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                 "data inconsistency");
       }
-      data[side_number].getDataOrder() =
-          data[side_number].getDataOrder() > ent_order
-              ? data[side_number].getDataOrder()
-              : ent_order;
-      if ((*dit)->sideNumberPtr->brother_side_number != -1) {
-        if (data.size() <
-            (unsigned int)(*dit)->sideNumberPtr->brother_side_number) {
-          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                  "data inconsistency");
-        }
-        data[(*dit)->sideNumberPtr->brother_side_number].getDataOrder() =
-            data[side_number].getDataOrder();
-      }
+      data[(*dit)->sideNumberPtr->brother_side_number].getDataOrder() =
+          data[side_number].getDataOrder();
     }
-  } catch (std::exception &ex) {
-    std::ostringstream ss;
-    ss << "thorw in method: " << ex.what() << " at line " << __LINE__
-       << " in file " << __FILE__;
-    SETERRQ(PETSC_COMM_SELF, MOFEM_STD_EXCEPTION_THROW, ss.str().c_str());
   }
-  MoFEMFunctionReturnHot(0);
-}
-
-MoFEMErrorCode
-ForcesAndSourcesCore::getEdgesDataOrder(DataForcesAndSourcesCore &data,
-                                        const FieldSpace space) const {
-  return getDataOrder(MBEDGE, space, data.dataOnEntities[MBEDGE]);
-}
-
-MoFEMErrorCode
-ForcesAndSourcesCore::getTrisDataOrder(DataForcesAndSourcesCore &data,
-                                       const FieldSpace space) const {
-  return getDataOrder(MBTRI, space, data.dataOnEntities[MBTRI]);
-}
-
-MoFEMErrorCode
-ForcesAndSourcesCore::getQuadDataOrder(DataForcesAndSourcesCore &data,
-                                       const FieldSpace space) const {
-  return getDataOrder(MBQUAD, space, data.dataOnEntities[MBQUAD]);
-}
-
-MoFEMErrorCode
-ForcesAndSourcesCore::getTetDataOrder(DataForcesAndSourcesCore &data,
-                                      const FieldSpace space) const {
-  return getDataOrder(MBTET, space, data.dataOnEntities[MBTET]);
-}
-
-MoFEMErrorCode
-ForcesAndSourcesCore::getPrismDataOrder(DataForcesAndSourcesCore &data,
-                                        const FieldSpace space) const {
-  return getDataOrder(MBPRISM, space, data.dataOnEntities[MBPRISM]);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode ForcesAndSourcesCore::getDataOrderSpaceAndBase(

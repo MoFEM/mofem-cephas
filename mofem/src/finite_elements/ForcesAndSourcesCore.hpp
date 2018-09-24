@@ -102,31 +102,23 @@ struct ForcesAndSourcesCore : public FEMethod {
       const std::string &field_name, const EntityType type,
       boost::ptr_vector<DataForcesAndSourcesCore::EntData> &data) const;
 
-  /**
-   * get  edge sense )orientation) in respect finite element entity
-   * @param  data structure where results are stored
-   * @return      error code
-   */
-  MoFEMErrorCode getEdgesSense(DataForcesAndSourcesCore &data) const;
+  template <EntityType type>
+  MoFEMErrorCode getEntitySense(DataForcesAndSourcesCore &data) const {
+    return getSense(type, data.dataOnEntities[type]);
+  }
 
-  /**
-   * get triangle sense (orientation)
-   * @param  data structure where results are stored
-   * @return      error code
-   */
-  MoFEMErrorCode getTrisSense(DataForcesAndSourcesCore &data) const;
-  MoFEMErrorCode getQuadSense(DataForcesAndSourcesCore &data) const;
+  template <EntityType type>
+  MoFEMErrorCode getEntityDataOrder(DataForcesAndSourcesCore &data,
+                                    const FieldSpace space) const {
+    return getDataOrder(type, space, data.dataOnEntities[type]);
+  }
 
-  MoFEMErrorCode getEdgesDataOrder(DataForcesAndSourcesCore &data,
-                                   const FieldSpace space) const;
-  MoFEMErrorCode getTrisDataOrder(DataForcesAndSourcesCore &data,
-                                  const FieldSpace space) const;
-  MoFEMErrorCode getQuadDataOrder(DataForcesAndSourcesCore &data,
-                                  const FieldSpace space) const;
-  MoFEMErrorCode getTetDataOrder(DataForcesAndSourcesCore &data,
-                                 const FieldSpace space) const;
-  MoFEMErrorCode getPrismDataOrder(DataForcesAndSourcesCore &data,
-                                   const FieldSpace space) const;
+  template <EntityType type>
+  MoFEMErrorCode getEntityDataOrderSpaceAndBase(
+    DataForcesAndSourcesCore &data, const std::string &field_name) const {
+    return getDataOrderSpaceAndBase(field_name, type,
+                                    data.dataOnEntities[type]);
+  }
 
   MoFEMErrorCode
   getEdgesDataOrderSpaceAndBase(DataForcesAndSourcesCore &data,

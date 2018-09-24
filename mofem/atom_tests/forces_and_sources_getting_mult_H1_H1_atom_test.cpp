@@ -239,17 +239,17 @@ int main(int argc, char *argv[]) {
       ierr = getSpacesAndBaseOnEntities(data_row); CHKERRG(ierr);
       ierr = getSpacesAndBaseOnEntities(data_col); CHKERRG(ierr);
 
-      ierr = getEdgesSense(data_row); CHKERRG(ierr);
-      ierr = getTrisSense(data_row); CHKERRG(ierr);
-      ierr = getEdgesSense(data_col); CHKERRG(ierr);
-      ierr = getTrisSense(data_col); CHKERRG(ierr);
+      ierr = getEntitySense<MBEDGE>(data_row); CHKERRG(ierr);
+      ierr = getEntitySense<MBTRI>(data_row); CHKERRG(ierr);
+      ierr = getEntitySense<MBEDGE>(data_col); CHKERRG(ierr);
+      ierr = getEntitySense<MBTRI>(data_col); CHKERRG(ierr);
 
-      ierr = getEdgesDataOrder(data_row,H1); CHKERRG(ierr);
-      ierr = getEdgesDataOrder(data_col,H1); CHKERRG(ierr);
-      ierr = getTrisDataOrder(data_row,H1); CHKERRG(ierr);
-      ierr = getTrisDataOrder(data_col,H1); CHKERRG(ierr);
-      ierr = getTetDataOrder(data_row,H1); CHKERRG(ierr);
-      ierr = getTetDataOrder(data_col,H1); CHKERRG(ierr);
+      ierr = getEntityDataOrder<MBEDGE>(data_row,H1); CHKERRG(ierr);
+      ierr = getEntityDataOrder<MBEDGE>(data_col,H1); CHKERRG(ierr);
+      ierr = getEntityDataOrder<MBTRI>(data_row,H1); CHKERRG(ierr);
+      ierr = getEntityDataOrder<MBTRI>(data_col,H1); CHKERRG(ierr);
+      ierr = getEntityDataOrder<MBTET>(data_row,H1); CHKERRG(ierr);
+      ierr = getEntityDataOrder<MBTET>(data_col,H1); CHKERRG(ierr);
       data_row.dataOnEntities[MBVERTEX][0].getBase() = AINSWORTH_LEGENDRE_BASE;
       ierr = getEdgesDataOrderSpaceAndBase(data_row,"FIELD1"); CHKERRG(ierr);
       ierr = getTrisDataOrderSpaceAndBase(data_row,"FIELD1"); CHKERRG(ierr);

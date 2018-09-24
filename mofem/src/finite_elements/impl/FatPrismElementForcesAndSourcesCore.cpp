@@ -114,21 +114,21 @@ MoFEMErrorCode FatPrismElementForcesAndSourcesCore::operator()() {
 
   // H1
   if ((dataH1.spacesOnEntities[MBEDGE]).test(H1)) {
-    CHKERR getEdgesSense(dataH1);
-    CHKERR getTrisSense(dataH1);
-    CHKERR getQuadSense(dataH1);
-    CHKERR getEdgesDataOrder(dataH1, H1);
-    CHKERR getTrisDataOrder(dataH1, H1);
-    CHKERR getQuadDataOrder(dataH1, H1);
-    CHKERR getPrismDataOrder(dataH1, H1);
+    CHKERR getEntitySense<MBEDGE>(dataH1);
+    CHKERR getEntitySense<MBTRI>(dataH1);
+    CHKERR getEntitySense<MBQUAD>(dataH1);
+    CHKERR getEntityDataOrder<MBEDGE>(dataH1, H1);
+    CHKERR getEntityDataOrder<MBTRI>(dataH1, H1);
+    CHKERR getEntityDataOrder<MBQUAD>(dataH1, H1);
+    CHKERR getEntityDataOrder<MBPRISM>(dataH1, H1);
     // Triangles only
-    CHKERR getEdgesSense(dataH1TrianglesOnly);
-    CHKERR getTrisSense(dataH1TrianglesOnly);
-    CHKERR getEdgesDataOrder(dataH1TrianglesOnly, H1);
-    CHKERR getTrisDataOrder(dataH1TrianglesOnly, H1);
+    CHKERR getEntitySense<MBEDGE>(dataH1TrianglesOnly);
+    CHKERR getEntitySense<MBTRI>(dataH1TrianglesOnly);
+    CHKERR getEntityDataOrder<MBEDGE>(dataH1TrianglesOnly, H1);
+    CHKERR getEntityDataOrder<MBTRI>(dataH1TrianglesOnly, H1);
     // Through thickness
-    CHKERR getEdgesSense(dataH1TroughThickness);
-    CHKERR getEdgesDataOrder(dataH1TroughThickness, H1);
+    CHKERR getEntitySense<MBEDGE>(dataH1TroughThickness);
+    CHKERR getEntityDataOrder<MBEDGE>(dataH1TroughThickness, H1);
   }
   // Hdiv
   if ((dataH1.spacesOnEntities[MBTRI]).test(HDIV)) {

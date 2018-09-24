@@ -202,11 +202,11 @@ int main(int argc, char *argv[]) {
 
       ierr = getSpacesAndBaseOnEntities(data); CHKERRG(ierr);
 
-      ierr = getEdgesSense(data); CHKERRG(ierr);
-      ierr = getTrisSense(data); CHKERRG(ierr);
-      ierr = getEdgesDataOrder(data,H1); CHKERRG(ierr);
-      ierr = getTrisDataOrder(data,H1); CHKERRG(ierr);
-      ierr = getTetDataOrder(data,H1); CHKERRG(ierr);
+      ierr = getEntitySense<MBEDGE>(data); CHKERRG(ierr);
+      ierr = getEntitySense<MBTRI>(data); CHKERRG(ierr);
+      ierr = getEntityDataOrder<MBEDGE>(data,H1); CHKERRG(ierr);
+      ierr = getEntityDataOrder<MBTRI>(data,H1); CHKERRG(ierr);
+      ierr = getEntityDataOrder<MBTET>(data,H1); CHKERRG(ierr);
       ierr = getFaceTriNodes(data); CHKERRG(ierr);
 
       ierr = getEdgesDataOrderSpaceAndBase(data,"FIELD1"); CHKERRG(ierr);

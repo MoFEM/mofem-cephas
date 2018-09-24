@@ -170,11 +170,11 @@ int main(int argc, char *argv[]) {
 
         CHKERR getSpacesAndBaseOnEntities(data);
 
-        CHKERR getEdgesSense(data);
-        CHKERR getTrisSense(data);
-        CHKERR getEdgesDataOrder(data, H1);
-        CHKERR getTrisDataOrder(data, H1);
-        CHKERR getTetDataOrder(data, H1);
+        CHKERR getEntitySense<MBEDGE>(data);
+        CHKERR getEntitySense<MBTRI>(data);
+        CHKERR getEntityDataOrder<MBEDGE>(data, H1);
+        CHKERR getEntityDataOrder<MBTRI>(data, H1);
+        CHKERR getEntityDataOrder<MBTET>(data, H1);
         CHKERR getFaceTriNodes(data);
 
         MatrixDouble gauss_pts(4, 4);
