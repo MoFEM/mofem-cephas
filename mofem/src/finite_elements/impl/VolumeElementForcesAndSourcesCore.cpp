@@ -204,9 +204,6 @@ MoFEMErrorCode
 VolumeElementForcesAndSourcesCore::getSpaceBaseAndOrderOnElement() {
   MoFEMFunctionBegin;
   
-  DataForcesAndSourcesCore &data_curl = *dataOnElement[HCURL];
-  DataForcesAndSourcesCore &data_div = *dataOnElement[HDIV];
-  DataForcesAndSourcesCore &data_l2 = *dataOnElement[L2]; 
   CHKERR getSpacesAndBaseOnEntities(dataH1);
   CHKERR getFaceTriNodes(dataH1);
   // H1
@@ -223,35 +220,35 @@ VolumeElementForcesAndSourcesCore::getSpaceBaseAndOrderOnElement() {
   }
   // Hcurl
   if ((dataH1.spacesOnEntities[MBEDGE]).test(HCURL)) {
-    CHKERR getEntitySense<MBEDGE>(data_curl);
-    CHKERR getEntityDataOrder<MBEDGE>(data_curl, HCURL);
-    data_curl.spacesOnEntities[MBEDGE].set(HCURL);
+    CHKERR getEntitySense<MBEDGE>(dataHcurl);
+    CHKERR getEntityDataOrder<MBEDGE>(dataHcurl, HCURL);
+    dataHcurl.spacesOnEntities[MBEDGE].set(HCURL);
   }
   if ((dataH1.spacesOnEntities[MBTRI]).test(HCURL)) {
-    CHKERR getEntitySense<MBTRI>(data_curl);
-    CHKERR getFaceTriNodes(data_curl);
-    CHKERR getEntityDataOrder<MBTRI>(data_curl, HCURL);
-    data_curl.spacesOnEntities[MBTRI].set(HCURL);
+    CHKERR getEntitySense<MBTRI>(dataHcurl);
+    CHKERR getFaceTriNodes(dataHcurl);
+    CHKERR getEntityDataOrder<MBTRI>(dataHcurl, HCURL);
+    dataHcurl.spacesOnEntities[MBTRI].set(HCURL);
   }
   if ((dataH1.spacesOnEntities[MBTET]).test(HCURL)) {
-    CHKERR getEntityDataOrder<MBTET>(data_curl, HCURL);
-    data_curl.spacesOnEntities[MBTET].set(HCURL);
+    CHKERR getEntityDataOrder<MBTET>(dataHcurl, HCURL);
+    dataHcurl.spacesOnEntities[MBTET].set(HCURL);
   }
   // Hdiv
   if ((dataH1.spacesOnEntities[MBTRI]).test(HDIV)) {
-    CHKERR getEntitySense<MBTRI>(data_div);
-    CHKERR getFaceTriNodes(data_div);
-    CHKERR getEntityDataOrder<MBTRI>(data_div, HDIV);
-    data_div.spacesOnEntities[MBTRI].set(HDIV);
+    CHKERR getEntitySense<MBTRI>(dataHdiv);
+    CHKERR getFaceTriNodes(dataHdiv);
+    CHKERR getEntityDataOrder<MBTRI>(dataHdiv, HDIV);
+    dataHdiv.spacesOnEntities[MBTRI].set(HDIV);
   }
   if ((dataH1.spacesOnEntities[MBTET]).test(HDIV)) {
-    CHKERR getEntityDataOrder<MBTET>(data_div, HDIV);
-    data_div.spacesOnEntities[MBTET].set(HDIV);
+    CHKERR getEntityDataOrder<MBTET>(dataHdiv, HDIV);
+    dataHdiv.spacesOnEntities[MBTET].set(HDIV);
   }
   // L2
   if ((dataH1.spacesOnEntities[MBTET]).test(L2)) {
-    CHKERR getEntityDataOrder<MBTET>(data_l2, L2);
-    data_l2.spacesOnEntities[MBTET].set(L2);
+    CHKERR getEntityDataOrder<MBTET>(dataL2, L2);
+    dataL2.spacesOnEntities[MBTET].set(L2);
   }
   MoFEMFunctionReturn(0);
 }
@@ -259,20 +256,17 @@ VolumeElementForcesAndSourcesCore::getSpaceBaseAndOrderOnElement() {
 MoFEMErrorCode VolumeElementForcesAndSourcesCore::transformBaseFunctions() {
   MoFEMFunctionBegin;
   
-  DataForcesAndSourcesCore &data_curl = *dataOnElement[HCURL];
-  DataForcesAndSourcesCore &data_div = *dataOnElement[HDIV];
-  DataForcesAndSourcesCore &data_l2 = *dataOnElement[L2];
   CHKERR opSetInvJacH1.opRhs(dataH1);
   if (dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
-    CHKERR opCovariantPiolaTransform.opRhs(data_curl);
-    CHKERR opSetInvJacHdivAndHcurl.opRhs(data_curl);
+    CHKERR opCovariantPiolaTransform.opRhs(dataHcurl);
+    CHKERR opSetInvJacHdivAndHcurl.opRhs(dataHcurl);
   }
   if (dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
-    CHKERR opContravariantPiolaTransform.opRhs(data_div);
-    CHKERR opSetInvJacHdivAndHcurl.opRhs(data_div);
+    CHKERR opContravariantPiolaTransform.opRhs(dataHdiv);
+    CHKERR opSetInvJacHdivAndHcurl.opRhs(dataHdiv);
   }
   if (dataH1.spacesOnEntities[MBTET].test(L2)) {
-    CHKERR opSetInvJacH1.opRhs(data_l2);
+    CHKERR opSetInvJacH1.opRhs(dataL2);
   }
   MoFEMFunctionReturn(0);
 }
@@ -343,20 +337,17 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCore::transformHoBaseFunctions() {
     // Transform derivatives of base functions and apply Piola transformation
     // if needed.
       
-    DataForcesAndSourcesCore &data_curl = *dataOnElement[HCURL];
-    DataForcesAndSourcesCore &data_div = *dataOnElement[HDIV];
-    DataForcesAndSourcesCore &data_l2 = *dataOnElement[L2];
     CHKERR opSetHoInvJacH1.opRhs(dataH1);
     if (dataH1.spacesOnEntities[MBTET].test(L2)) {
-      CHKERR opSetHoInvJacH1.opRhs(data_l2);
+      CHKERR opSetHoInvJacH1.opRhs(dataL2);
     }
     if (dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
-      CHKERR opHoContravariantTransform.opRhs(data_div);
-      CHKERR opSetHoInvJacHdivAndHcurl.opRhs(data_div);
+      CHKERR opHoContravariantTransform.opRhs(dataHdiv);
+      CHKERR opSetHoInvJacHdivAndHcurl.opRhs(dataHdiv);
     }
     if (dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
-      CHKERR opHoCovariantTransform.opRhs(data_curl);
-      CHKERR opSetHoInvJacHdivAndHcurl.opRhs(data_curl);
+      CHKERR opHoCovariantTransform.opRhs(dataHcurl);
+      CHKERR opSetHoInvJacHdivAndHcurl.opRhs(dataHcurl);
     }
   }
   MoFEMFunctionReturn(0);
