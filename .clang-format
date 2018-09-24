@@ -6,4 +6,5 @@ AlignTrailingComments: true
 AlignOperands:   true
 AllowAllParametersOfDeclarationOnNextLine: true
 
+SortIncludes: false
 ...

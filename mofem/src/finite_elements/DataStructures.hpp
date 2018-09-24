@@ -217,7 +217,6 @@ struct DataForcesAndSourcesCore {
     /**@{*/
 
     EntData();
-    virtual ~EntData();
 
     /**@}*/
 
@@ -1344,16 +1343,17 @@ struct DataForcesAndSourcesCore {
     bool semaphore;
 
   protected:
-    int sEnse;                      ///< Entity sense (orientation)
-    ApproximationOrder oRder;       ///< Entity order
-    FieldSpace sPace;               ///< Entity space
-    FieldApproximationBase bAse;    ///< Field approximation base
-    VectorInt iNdices;              ///< Global indices on entity
-    VectorInt localIndices;         ///< Local indices on entity
-    VectorDofs dOfs;                ///< DoFs on entity
-    VectorDouble fieldData;         ///< Field data on entity
-    ShapeFunctionBasesVector N;     ///< Base functions
-    ShapeFunctionBasesVector diffN; ///< Derivatives of base functions
+    int sEnse;                                   ///< Entity sense (orientation)
+    ApproximationOrder oRder;                    ///< Entity order
+    FieldSpace sPace;                            ///< Entity space
+    FieldApproximationBase bAse;                 ///< Field approximation base
+    VectorInt iNdices;                           ///< Global indices on entity
+    VectorInt localIndices;                      ///< Local indices on entity
+    VectorDofs dOfs;                             ///< DoFs on entity
+    VectorDouble fieldData;                      ///< Field data on entity
+    boost::shared_ptr<MatrixDouble> N[LASTBASE]; ///< Base functions
+    boost::shared_ptr<MatrixDouble>
+        diffN[LASTBASE]; ///< Derivatives of base functions
   };
 
   std::bitset<LASTSPACE> sPace;  ///< spaces on element
@@ -1363,6 +1363,7 @@ struct DataForcesAndSourcesCore {
       spacesOnEntities[MBMAXTYPE];                  ///< spaces on entity types
   std::bitset<LASTBASE> basesOnEntities[MBMAXTYPE]; ///< bases on entity types
   std::bitset<LASTBASE> basesOnSpaces[LASTSPACE];   ///< base on spaces
+  
   boost::ptr_vector<EntData> dataOnEntities[MBMAXTYPE]; ///< data on nodes, base
                                                         ///< function, dofs
                                                         ///< values, etc.
@@ -1372,27 +1373,80 @@ struct DataForcesAndSourcesCore {
    * @return error code
    */
   inline MoFEMErrorCode resetFieldDependentData() {
-
     MoFEMFunctionBeginHot;
     for (EntityType t = MBVERTEX; t != MBMAXTYPE; t++) {
-      boost::ptr_vector<EntData>::iterator ent_data_it =
-          dataOnEntities[t].begin();
-      for (; ent_data_it != dataOnEntities[t].end(); ent_data_it++) {
-        ierr = ent_data_it->resetFieldDependentData();
+      for (auto &e : dataOnEntities[t]) {
+        ierr = e.resetFieldDependentData();
         CHKERRG(ierr);
       }
     }
     MoFEMFunctionReturnHot(0);
   }
 
-  DataForcesAndSourcesCore(EntityType type);
-  virtual ~DataForcesAndSourcesCore() {}
+  DataForcesAndSourcesCore(const EntityType type);
+  virtual MoFEMErrorCode setElementType(const EntityType type);
 
   friend std::ostream &operator<<(std::ostream &os,
                                   const DataForcesAndSourcesCore &e);
-
 protected:
   DataForcesAndSourcesCore() {}
+};
+
+/** \brief this class derive data form other data structure
+ * \ingroup mofem_forces_and_sources_user_data_operators
+ *
+ *
+ * It behaves like normal data structure it is used to share base functions with
+ * other data structures. Dofs values, approx. order and
+ * indices are not shared.
+ *
+ * Shape functions, senses are shared with other data structure.
+ *
+ */
+struct DerivedDataForcesAndSourcesCore : public DataForcesAndSourcesCore {
+
+  /** \brief Derived ata on single entity (This is passed as argument to
+   * DataOperator::doWork) \ingroup mofem_forces_and_sources_user_data_operators
+   * \nosubgrouping
+   *
+   * DerivedEntData share part information with EntData except infomation about
+   * base functions.
+   *
+   */
+  struct DerivedEntData : public DataForcesAndSourcesCore::EntData {
+
+    const boost::shared_ptr<DataForcesAndSourcesCore::EntData> entDataPtr;
+    DerivedEntData(const boost::shared_ptr<DataForcesAndSourcesCore::EntData>
+                       &ent_data_ptr)
+        : entDataPtr(ent_data_ptr) {}
+
+    int getSense() const { return entDataPtr->getSense(); }
+
+    boost::shared_ptr<MatrixDouble> &
+    getNSharedPtr(const FieldApproximationBase base) {
+      return entDataPtr->getNSharedPtr(base);
+    }
+    boost::shared_ptr<MatrixDouble> &
+    getDiffNSharedPtr(const FieldApproximationBase base) {
+      return entDataPtr->getDiffNSharedPtr(base);
+    }
+    const boost::shared_ptr<MatrixDouble> &
+    getNSharedPtr(const FieldApproximationBase base) const {
+      return entDataPtr->getNSharedPtr(base);
+    }
+    const boost::shared_ptr<MatrixDouble> &
+    getDiffNSharedPtr(const FieldApproximationBase base) const {
+      return entDataPtr->getDiffNSharedPtr(base);
+    }
+
+  };
+
+  DerivedDataForcesAndSourcesCore(
+      const boost::shared_ptr<DataForcesAndSourcesCore> &data_ptr);
+  MoFEMErrorCode setElementType(const EntityType type);
+
+private:
+  const boost::shared_ptr<DataForcesAndSourcesCore> dataPtr;
 };
 
 /** \name Specializations for H1/L2 */
@@ -1484,56 +1538,6 @@ DataForcesAndSourcesCore::EntData::getFTensor2DiffHdivN<3, 2>(
     FieldApproximationBase base, const int gg, const int bb);
 
 /**@}*/
-
-/** \brief this class derive data form other data structure
- * \ingroup mofem_forces_and_sources_user_data_operators
- *
- *
- * It behaves like normal data structure it is used to share base functions with
- * other data structures. Dofs values, approx. order and
- * indices are not shared.
- *
- * Shape functions, senses are shared with other data structure.
- *
- */
-struct DerivedDataForcesAndSourcesCore : public DataForcesAndSourcesCore {
-
-  /** \brief Derived ata on single entity (This is passed as argument to DataOperator::doWork) 
-   * \ingroup mofem_forces_and_sources_user_data_operators
-   * \nosubgrouping
-   *
-   * DerivedEntData share part information with EntData except infomation about
-   * base functions.
-   *
-   */
-  struct DerivedEntData : public DataForcesAndSourcesCore::EntData {
-
-    DataForcesAndSourcesCore::EntData &entData;
-    DerivedEntData(DataForcesAndSourcesCore::EntData &ent_data)
-        : entData(ent_data) {}
-
-    int getSense() const { return entData.getSense(); }
-
-    boost::shared_ptr<MatrixDouble> &
-    getNSharedPtr(const FieldApproximationBase base) {
-      return entData.getNSharedPtr(base);
-    }
-    boost::shared_ptr<MatrixDouble> &
-    getDiffNSharedPtr(const FieldApproximationBase base) {
-      return entData.getDiffNSharedPtr(base);
-    }
-    const boost::shared_ptr<MatrixDouble> &
-    getNSharedPtr(const FieldApproximationBase base) const {
-      return entData.getNSharedPtr(base);
-    }
-    const boost::shared_ptr<MatrixDouble> &
-    getDiffNSharedPtr(const FieldApproximationBase base) const {
-      return entData.getDiffNSharedPtr(base);
-    }
-  };
-
-  DerivedDataForcesAndSourcesCore(DataForcesAndSourcesCore &data);
-};
 
 /// \deprecated Use DataForcesAndSourcesCore
 DEPRECATED typedef DataForcesAndSourcesCore DataForcesAndSurcesCore;

@@ -79,9 +79,6 @@ namespace MoFEM {
 VolumeElementForcesAndSourcesCore::VolumeElementForcesAndSourcesCore(
     Interface &m_field, const EntityType type)
     : ForcesAndSourcesCore(m_field), coords(12), jAc(3, 3), invJac(3, 3),
-      dataH1(type), derivedDataH1(dataH1), dataL2(type), derivedDataL2(dataL2),
-      dataHdiv(type), derivedDataHdiv(dataHdiv), dataHcurl(type),
-      derivedDataHcurl(dataHcurl), dataNoField(type), dataNoFieldCol(type),
       opSetInvJacH1(invJac), opContravariantPiolaTransform(vOlume, jAc),
       opCovariantPiolaTransform(invJac), opSetInvJacHdivAndHcurl(invJac),
       meshPositionsFieldName("MESH_NODE_POSITIONS"),
@@ -94,7 +91,10 @@ VolumeElementForcesAndSourcesCore::VolumeElementForcesAndSourcesCore(
            &jAc(1, 2), &jAc(2, 0), &jAc(2, 1), &jAc(2, 2)),
       tInvJac(&invJac(0, 0), &invJac(0, 1), &invJac(0, 2), &invJac(1, 0),
               &invJac(1, 1), &invJac(1, 2), &invJac(2, 0), &invJac(2, 1),
-              &invJac(2, 2)) {}
+              &invJac(2, 2)) {
+  getElementPolynomialBase() =
+      boost::shared_ptr<BaseFunction>(new TetPolynomialBase());
+}
 
 MoFEMErrorCode VolumeElementForcesAndSourcesCore::setIntegrationPts() {
   MoFEMFunctionBegin;
@@ -102,7 +102,7 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCore::setIntegrationPts() {
   int order_row = getMaxRowOrder();
   int order_col = getMaxColOrder();
   int rule = getRule(order_row, order_col, order_data);
-  // std::cerr << order_data << " " << order_row << " " << order_col << " " <<
+  
   // rule << std::endl;
   if (rule >= 0) {
     if (rule < QUAD_3D_TABLE_SIZE) {
@@ -124,7 +124,7 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCore::setIntegrationPts() {
       cblas_dcopy(nbGaussPts, QUAD_3D_TABLE[rule]->weights, 1, &gaussPts(3, 0),
                   1);
       dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nbGaussPts, 4,
-                                                             false);
+                                                              false);
       double *shape_ptr =
           &*dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin();
       cblas_dcopy(4 * nbGaussPts, QUAD_3D_TABLE[rule]->points, 1, shape_ptr, 1);
@@ -137,7 +137,7 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCore::setIntegrationPts() {
     CHKERR setGaussPts(order_row, order_col, order_data);
     nbGaussPts = gaussPts.size2();
     dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nbGaussPts, 4,
-                                                           false);
+                                                            false);
     if (nbGaussPts > 0) {
       CHKERR ShapeMBTET(
           &*dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin(),
@@ -177,6 +177,7 @@ VolumeElementForcesAndSourcesCore::calculateCoordinatesAtGaussPts() {
   MoFEMFunctionBegin;
   // Get coords at Gauss points
   FTensor::Index<'i', 3> i;
+  
   double *shape_functions_ptr =
       &*dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin();
   coordsAtGaussPts.resize(nbGaussPts, 3, false);
@@ -202,6 +203,10 @@ VolumeElementForcesAndSourcesCore::calculateCoordinatesAtGaussPts() {
 MoFEMErrorCode
 VolumeElementForcesAndSourcesCore::getSpaceBaseAndOrderOnElement() {
   MoFEMFunctionBegin;
+  
+  DataForcesAndSourcesCore &data_curl = *dataOnElement[HCURL];
+  DataForcesAndSourcesCore &data_div = *dataOnElement[HDIV];
+  DataForcesAndSourcesCore &data_l2 = *dataOnElement[L2]; 
   CHKERR getSpacesAndBaseOnEntities(dataH1);
   CHKERR getFaceTriNodes(dataH1);
   // H1
@@ -218,125 +223,59 @@ VolumeElementForcesAndSourcesCore::getSpaceBaseAndOrderOnElement() {
   }
   // Hcurl
   if ((dataH1.spacesOnEntities[MBEDGE]).test(HCURL)) {
-    CHKERR getEdgesSense(dataHcurl);
-    CHKERR getEdgesDataOrder(dataHcurl, HCURL);
-    dataHcurl.spacesOnEntities[MBEDGE].set(HCURL);
+    CHKERR getEdgesSense(data_curl);
+    CHKERR getEdgesDataOrder(data_curl, HCURL);
+    data_curl.spacesOnEntities[MBEDGE].set(HCURL);
   }
   if ((dataH1.spacesOnEntities[MBTRI]).test(HCURL)) {
-    CHKERR getTrisSense(dataHcurl);
-    CHKERR getFaceTriNodes(dataHcurl);
-    CHKERR getTrisDataOrder(dataHcurl, HCURL);
-    dataHcurl.spacesOnEntities[MBTRI].set(HCURL);
+    CHKERR getTrisSense(data_curl);
+    CHKERR getFaceTriNodes(data_curl);
+    CHKERR getTrisDataOrder(data_curl, HCURL);
+    data_curl.spacesOnEntities[MBTRI].set(HCURL);
   }
   if ((dataH1.spacesOnEntities[MBTET]).test(HCURL)) {
-    CHKERR getTetDataOrder(dataHcurl, HCURL);
-    dataHcurl.spacesOnEntities[MBTET].set(HCURL);
+    CHKERR getTetDataOrder(data_curl, HCURL);
+    data_curl.spacesOnEntities[MBTET].set(HCURL);
   }
   // Hdiv
   if ((dataH1.spacesOnEntities[MBTRI]).test(HDIV)) {
-    CHKERR getTrisSense(dataHdiv);
-    CHKERR getFaceTriNodes(dataHdiv);
-    CHKERR getTrisDataOrder(dataHdiv, HDIV);
-    dataHdiv.spacesOnEntities[MBTRI].set(HDIV);
+    CHKERR getTrisSense(data_div);
+    CHKERR getFaceTriNodes(data_div);
+    CHKERR getTrisDataOrder(data_div, HDIV);
+    data_div.spacesOnEntities[MBTRI].set(HDIV);
   }
   if ((dataH1.spacesOnEntities[MBTET]).test(HDIV)) {
-    CHKERR getTetDataOrder(dataHdiv, HDIV);
-    dataHdiv.spacesOnEntities[MBTET].set(HDIV);
+    CHKERR getTetDataOrder(data_div, HDIV);
+    data_div.spacesOnEntities[MBTET].set(HDIV);
   }
   // L2
   if ((dataH1.spacesOnEntities[MBTET]).test(L2)) {
-    CHKERR getTetDataOrder(dataL2, L2);
-    dataL2.spacesOnEntities[MBTET].set(L2);
-  }
-  MoFEMFunctionReturn(0);
-}
-
-MoFEMErrorCode
-VolumeElementForcesAndSourcesCore::calculateBaseFunctionsOnElement(
-    const int b) {
-  MoFEMFunctionBegin;
-  if (dataH1.bAse.test(b)) {
-    switch (ApproximationBaseArray[b]) {
-    case NOBASE:
-      break;
-    case AINSWORTH_LEGENDRE_BASE:
-    case AINSWORTH_LOBATTO_BASE:
-      if (dataH1.spacesOnEntities[MBTET].test(L2) &&
-          dataH1.basesOnEntities[MBTET].test(b) &&
-            dataH1.basesOnSpaces[L2].test(b)) {
-        CHKERR TetPolynomialBase().getValue(
-            gaussPts,
-            boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
-                dataL2, L2, ApproximationBaseArray[b], NOBASE)));
-      }
-      if (dataH1.spacesOnEntities[MBVERTEX].test(H1) &&
-          dataH1.basesOnEntities[MBVERTEX].test(b) &&
-            dataH1.basesOnSpaces[H1].test(b)) {
-        CHKERR TetPolynomialBase().getValue(
-            gaussPts,
-            boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
-                dataH1, H1, ApproximationBaseArray[b], NOBASE)));
-      }
-    case DEMKOWICZ_JACOBI_BASE:
-      if (dataH1.spacesOnEntities[MBEDGE].test(HCURL) &&
-          dataH1.basesOnEntities[MBEDGE].test(b) &&
-            dataH1.basesOnSpaces[HCURL].test(b)) {
-        CHKERR TetPolynomialBase().getValue(
-            gaussPts,
-            boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
-                dataHcurl, HCURL, ApproximationBaseArray[b], NOBASE)));
-      }
-      if (dataH1.spacesOnEntities[MBTRI].test(HDIV) &&
-          dataH1.basesOnEntities[MBTRI].test(b) &&
-            dataH1.basesOnSpaces[HDIV].test(b)) {
-        CHKERR TetPolynomialBase().getValue(
-            gaussPts,
-            boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
-                dataHdiv, HDIV, ApproximationBaseArray[b], NOBASE)));
-      }
-      break;
-    default:
-      SETERRQ1(mField.get_comm(), MOFEM_DATA_INCONSISTENCY,
-               "Base <%s> not yet implemented",
-               ApproximationBaseNames[ApproximationBaseArray[b]]);
-    }
-  }
-  MoFEMFunctionReturn(0);
-}
-
-MoFEMErrorCode
-VolumeElementForcesAndSourcesCore::calculateBaseFunctionsOnElement() {
-  MoFEMFunctionBegin;
-  /// Use the some node base
-  dataHdiv.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE) =
-      dataH1.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE);
-  dataHcurl.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE) =
-      dataH1.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE);
-  dataL2.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE) =
-      dataH1.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE);
-  std::vector<FieldApproximationBase> shape_functions_for_bases;
-  for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
-    CHKERR calculateBaseFunctionsOnElement(b);
+    CHKERR getTetDataOrder(data_l2, L2);
+    data_l2.spacesOnEntities[MBTET].set(L2);
   }
   MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode VolumeElementForcesAndSourcesCore::transformBaseFunctions() {
   MoFEMFunctionBegin;
+  
+  DataForcesAndSourcesCore &data_curl = *dataOnElement[HCURL];
+  DataForcesAndSourcesCore &data_div = *dataOnElement[HDIV];
+  DataForcesAndSourcesCore &data_l2 = *dataOnElement[L2];
   CHKERR opSetInvJacH1.opRhs(dataH1);
-    if (dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
-    CHKERR opCovariantPiolaTransform.opRhs(dataHcurl);
-    CHKERR opSetInvJacHdivAndHcurl.opRhs(dataHcurl);
-    }
-    if (dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
-    CHKERR opContravariantPiolaTransform.opRhs(dataHdiv);
-    CHKERR opSetInvJacHdivAndHcurl.opRhs(dataHdiv);
-    }
-    if (dataH1.spacesOnEntities[MBTET].test(L2)) {
-    CHKERR opSetInvJacH1.opRhs(dataL2);
-    }
-  MoFEMFunctionReturn(0);
+  if (dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
+    CHKERR opCovariantPiolaTransform.opRhs(data_curl);
+    CHKERR opSetInvJacHdivAndHcurl.opRhs(data_curl);
   }
+  if (dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
+    CHKERR opContravariantPiolaTransform.opRhs(data_div);
+    CHKERR opSetInvJacHdivAndHcurl.opRhs(data_div);
+  }
+  if (dataH1.spacesOnEntities[MBTET].test(L2)) {
+    CHKERR opSetInvJacH1.opRhs(data_l2);
+  }
+  MoFEMFunctionReturn(0);
+}
 
 MoFEMErrorCode VolumeElementForcesAndSourcesCore::calculateHoJacobian() {
   MoFEMFunctionBegin;
@@ -349,6 +288,7 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCore::calculateHoJacobian() {
       SETERRQ(mField.get_comm(), MOFEM_NOT_FOUND,
               "no MESH_NODE_POSITIONS in element data");
     }
+    
     CHKERR getEdgesDataOrderSpaceAndBase(dataH1, meshPositionsFieldName);
     CHKERR getTrisDataOrderSpaceAndBase(dataH1, meshPositionsFieldName);
     CHKERR getTetDataOrderSpaceAndBase(dataH1, meshPositionsFieldName);
@@ -399,21 +339,24 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCore::calculateHoJacobian() {
 
 MoFEMErrorCode VolumeElementForcesAndSourcesCore::transformHoBaseFunctions() {
   MoFEMFunctionBegin;
-
   if (hoCoordsAtGaussPts.size1() > 0) {
-      // Transform derivatives of base functions and apply Piola transformation
-      // if needed.
+    // Transform derivatives of base functions and apply Piola transformation
+    // if needed.
+      
+    DataForcesAndSourcesCore &data_curl = *dataOnElement[HCURL];
+    DataForcesAndSourcesCore &data_div = *dataOnElement[HDIV];
+    DataForcesAndSourcesCore &data_l2 = *dataOnElement[L2];
     CHKERR opSetHoInvJacH1.opRhs(dataH1);
-      if (dataH1.spacesOnEntities[MBTET].test(L2)) {
-      CHKERR opSetHoInvJacH1.opRhs(dataL2);
-      }
-      if (dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
-      CHKERR opHoContravariantTransform.opRhs(dataHdiv);
-      CHKERR opSetHoInvJacHdivAndHcurl.opRhs(dataHdiv);
-      }
-      if (dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
-      CHKERR opHoCovariantTransform.opRhs(dataHcurl);
-      CHKERR opSetHoInvJacHdivAndHcurl.opRhs(dataHcurl);
+    if (dataH1.spacesOnEntities[MBTET].test(L2)) {
+      CHKERR opSetHoInvJacH1.opRhs(data_l2);
+    }
+    if (dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
+      CHKERR opHoContravariantTransform.opRhs(data_div);
+      CHKERR opSetHoInvJacHdivAndHcurl.opRhs(data_div);
+    }
+    if (dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
+      CHKERR opHoCovariantTransform.opRhs(data_curl);
+      CHKERR opSetHoInvJacHdivAndHcurl.opRhs(data_curl);
     }
   }
   MoFEMFunctionReturn(0);
@@ -424,6 +367,7 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCore::operator()() {
 
   if (numeredEntFiniteElementPtr->getEntType() != MBTET)
     MoFEMFunctionReturnHot(0);
+  CHKERR createDataOnElement();
 
   CHKERR calculateVolumeAndJacobian();
   CHKERR getSpaceBaseAndOrderOnElement();
@@ -433,6 +377,8 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCore::operator()() {
   CHKERR calculateCoordinatesAtGaussPts();
   CHKERR calculateBaseFunctionsOnElement();
   CHKERR transformBaseFunctions();
+
+  
 
   try {
     MatrixDouble new_diff_n;
@@ -463,262 +409,14 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCore::operator()() {
         data.getDiffN(base).data().swap(new_diff_n.data());
       }
     }
-  } catch (std::exception &ex) {
-    std::ostringstream ss;
-    ss << "thorw in method: " << ex.what() << " at line " << __LINE__
-       << " in file " << __FILE__;
-    SETERRQ(mField.get_comm(), MOFEM_STD_EXCEPTION_THROW, ss.str().c_str());
   }
+  CATCH_ERRORS;
 
   CHKERR calculateHoJacobian();
   CHKERR transformHoBaseFunctions();
 
-  const UserDataOperator::OpType types[2] = {UserDataOperator::OPROW,
-                                             UserDataOperator::OPCOL};
-  std::vector<std::string> last_eval_field_name(2);
-  DataForcesAndSourcesCore *op_data[2];
-  FieldSpace space[2];
-  FieldApproximationBase base[2];
-
-  boost::ptr_vector<UserDataOperator>::iterator oit, hi_oit;
-  oit = opPtrVector.begin();
-  hi_oit = opPtrVector.end();
-
-  for (; oit != hi_oit; oit++) {
-
-    oit->setPtrFE(this);
-
-    if (oit->opType == UserDataOperator::OPLAST) {
-
-      // Set field
-      switch (oit->sPace) {
-      case NOSPACE:
-        SETERRQ(mField.get_comm(), MOFEM_DATA_INCONSISTENCY, "unknown space");
-      case H1 :
-        op_data[0] = &dataH1;
-        break;
-      case HCURL:
-        op_data[0] = &dataHcurl;
-        break;
-      case HDIV:
-        op_data[0] = &dataHdiv;
-        break;
-      case L2:
-        op_data[0] = &dataL2;
-        break;
-      case NOFIELD:
-        op_data[0] = &dataNoField;
-        break;
-      case LASTSPACE:
-        SETERRQ(mField.get_comm(), MOFEM_DATA_INCONSISTENCY, "unknown space");
-        break;
-      }
-
-      // Reseat all data which all field dependent
-      op_data[0]->resetFieldDependentData();
-      last_eval_field_name[0] = "";
-      last_eval_field_name[1] = "";
-
-      // Run operator
-      CHKERR oit->opRhs(*op_data[0], oit->doVertices, oit->doEdges,
-                        oit->doQuads, oit->doTris, oit->doTets, false);
-
-    } else {
-
-      for (int ss = 0; ss != 2; ss++) {
-
-        std::string field_name = !ss ? oit->rowFieldName : oit->colFieldName;
-        const Field *field_struture = mField.get_field_structure(field_name);
-        BitFieldId data_id = field_struture->getId();
-
-        if ((oit->getNumeredEntFiniteElementPtr()->getBitFieldIdData() &
-             data_id)
-                .none()) {
-          SETERRQ2(mField.get_comm(), MOFEM_DATA_INCONSISTENCY,
-                   "no data field < %s > on finite element < %s >",
-                   field_name.c_str(), feName.c_str());
-        }
-
-        if (oit->getOpType() & types[ss] ||
-            oit->getOpType() & UserDataOperator::OPROWCOL) {
-
-          space[ss] = field_struture->getSpace();
-          switch (space[ss]) {
-          case NOSPACE:
-            SETERRQ(mField.get_comm(), MOFEM_DATA_INCONSISTENCY,
-                    "unknown space");
-            break;
-          case H1:
-            op_data[ss] = !ss ? &dataH1 : &derivedDataH1;
-            break;
-          case HCURL:
-            op_data[ss] = !ss ? &dataHcurl : &derivedDataHcurl;
-            break;
-          case HDIV:
-            op_data[ss] = !ss ? &dataHdiv : &derivedDataHdiv;
-            break;
-          case L2:
-            op_data[ss] = !ss ? &dataL2 : &derivedDataL2;
-            break;
-          case NOFIELD:
-            op_data[ss] = !ss ? &dataNoField : &dataNoFieldCol;
-            break;
-          case LASTSPACE:
-            SETERRQ(mField.get_comm(), MOFEM_DATA_INCONSISTENCY,
-                    "unknown space");
-            break;
-          }
-
-          base[ss] = field_struture->getApproxBase();
-          switch (base[ss]) {
-          case NOBASE:
-          case AINSWORTH_LEGENDRE_BASE:
-          case AINSWORTH_LOBATTO_BASE:
-          case DEMKOWICZ_JACOBI_BASE:
-            break;
-          default:
-            SETERRQ(mField.get_comm(), MOFEM_DATA_INCONSISTENCY,
-                    "unknown or not implemented base");
-            break;
-          }
-
-          if (last_eval_field_name[ss] != field_name) {
-
-            switch (space[ss]) {
-            case NOSPACE:
-              SETERRQ(mField.get_comm(), MOFEM_DATA_INCONSISTENCY,
-                      "unknown space");
-              break;
-            case H1:
-              if (!ss) {
-                CHKERR getRowNodesIndices(*op_data[ss], field_name);
-              } else {
-                CHKERR getColNodesIndices(*op_data[ss], field_name);
-              }
-              CHKERR getNodesFieldData(*op_data[ss], field_name);
-            case HCURL:
-              if (!ss) {
-                CHKERR getEdgesRowIndices(*op_data[ss], field_name);
-              } else {
-                CHKERR getEdgesColIndices(*op_data[ss], field_name);
-              }
-              CHKERR getEdgesDataOrderSpaceAndBase(*op_data[ss], field_name);
-              CHKERR getEdgesFieldData(*op_data[ss], field_name);
-            case HDIV:
-              if (!ss) {
-                CHKERR getTrisRowIndices(*op_data[ss], field_name);
-              } else {
-                CHKERR getTrisColIndices(*op_data[ss], field_name);
-              }
-              CHKERR getTrisDataOrderSpaceAndBase(*op_data[ss], field_name);
-              CHKERR getTrisFieldData(*op_data[ss], field_name);
-            case L2:
-              if (!ss) {
-                CHKERR getTetsRowIndices(*op_data[ss], field_name);
-              } else {
-                CHKERR getTetsColIndices(*op_data[ss], field_name);
-              }
-              CHKERR getTetDataOrderSpaceAndBase(*op_data[ss], field_name);
-              CHKERR getTetsFieldData(*op_data[ss], field_name);
-              break;
-            case NOFIELD:
-              if (!getNinTheLoop()) {
-                // NOFIELD data are the same for each element, can be
-                // retrieved only once
-                if (!ss) {
-                  CHKERR getNoFieldRowIndices(*op_data[ss], field_name);
-                } else {
-                  CHKERR getNoFieldColIndices(*op_data[ss], field_name);
-                }
-                CHKERR getNoFieldFieldData(*op_data[ss], field_name);
-              }
-              break;
-            case LASTSPACE:
-              SETERRQ(mField.get_comm(), MOFEM_DATA_INCONSISTENCY,
-                      "unknown space");
-              break;
-            }
-            last_eval_field_name[ss] = field_name;
-          }
-        }
-      }
-
-      if (oit->getOpType() & UserDataOperator::OPROW) {
-        try {
-          ierr = oit->opRhs(*op_data[0], false);
-          if (PetscUnlikely(ierr)) {
-            std::ostringstream ss;
-            ss << "(Calling user data operator "
-               << boost::typeindex::type_id_runtime(*oit).pretty_name() << ") "
-               << PETSC_FUNCTION_NAME;
-            return PetscError(PETSC_COMM_SELF, __LINE__, ss.str().c_str(),
-                              __FILE__, ierr, PETSC_ERROR_REPEAT, " ");
-          }
-        } catch (std::exception &ex) {
-          std::ostringstream ss;
-          ss << "Operator "
-             << boost::typeindex::type_id_runtime(*oit).pretty_name()
-             << " operator number "
-             << std::distance<boost::ptr_vector<UserDataOperator>::iterator>(
-                    opPtrVector.begin(), oit)
-             << " thorw in method: " << ex.what() << " at line " << __LINE__
-             << " in file " << __FILE__;
-          SETERRQ(mField.get_comm(), MOFEM_STD_EXCEPTION_THROW,
-                  ss.str().c_str());
-        }
-      }
-
-      if (oit->getOpType() & UserDataOperator::OPCOL) {
-        try {
-          ierr = oit->opRhs(*op_data[1], false);
-          if (PetscUnlikely(ierr)) {
-            std::ostringstream ss;
-            ss << "(Calling user data operator "
-               << boost::typeindex::type_id_runtime(*oit).pretty_name() << ") "
-               << PETSC_FUNCTION_NAME;
-            return PetscError(PETSC_COMM_SELF, __LINE__, ss.str().c_str(),
-                              __FILE__, ierr, PETSC_ERROR_REPEAT, " ");
-          }
-        } catch (std::exception &ex) {
-          std::ostringstream ss;
-          ss << "Operator "
-             << boost::typeindex::type_id_runtime(*oit).pretty_name()
-             << " operator number "
-             << std::distance<boost::ptr_vector<UserDataOperator>::iterator>(
-                    opPtrVector.begin(), oit)
-             << " thorw in method: " << ex.what() << " at line " << __LINE__
-             << " in file " << __FILE__;
-          SETERRQ(mField.get_comm(), MOFEM_STD_EXCEPTION_THROW,
-                  ss.str().c_str());
-        }
-      }
-
-      if (oit->getOpType() & UserDataOperator::OPROWCOL) {
-        try {
-          ierr = oit->opLhs(*op_data[0], *op_data[1], oit->sYmm);
-          if (PetscUnlikely(ierr)) {
-            std::ostringstream ss;
-            ss << "(Calling user data operator "
-               << boost::typeindex::type_id_runtime(*oit).pretty_name() << ") "
-               << PETSC_FUNCTION_NAME;
-            return PetscError(PETSC_COMM_SELF, __LINE__, ss.str().c_str(),
-                              __FILE__, ierr, PETSC_ERROR_REPEAT, " ");
-          }
-        } catch (std::exception &ex) {
-          std::ostringstream ss;
-          ss << "Operator "
-             << boost::typeindex::type_id_runtime(*oit).pretty_name()
-             << " operator number "
-             << std::distance<boost::ptr_vector<UserDataOperator>::iterator>(
-                    opPtrVector.begin(), oit)
-             << " thorw in method: " << ex.what() << " at line " << __LINE__
-             << " in file " << __FILE__;
-          SETERRQ(mField.get_comm(), MOFEM_STD_EXCEPTION_THROW,
-                  ss.str().c_str());
-        }
-      }
-    }
-  }
+  // Iterate over operators
+  CHKERR loopOverOperators();
 
   MoFEMFunctionReturn(0);
 }
@@ -840,8 +538,9 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCoreOnSide::setGaussPts(int order) {
   const int nb_gauss_pts = faceFEPtr->gaussPts.size2();
   gaussPts.resize(4, nb_gauss_pts, false);
   gaussPts.clear();
+  DataForcesAndSourcesCore &dataH1_on_face = *faceFEPtr->dataOnElement[H1];
   const MatrixDouble &face_shape_funtions =
-      faceFEPtr->dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE);
+      dataH1_on_face.dataOnEntities[MBVERTEX][0].getN(NOBASE);
   const double tet_coords[] = {0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1};
   for (int gg = 0; gg != nb_gauss_pts; gg++) {
     gaussPts(0, gg) =

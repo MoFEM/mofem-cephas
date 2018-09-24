@@ -944,6 +944,7 @@ TetPolynomialBase::getValue(MatrixDouble &pts,
   data.dataOnEntities[MBVERTEX][0].getDiffN(base).resize(4, 3, false);
   CHKERR ShapeDiffMBTET(
       &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin());
+
   switch (cTx->sPace) {
   case H1:
     CHKERR getValueH1(pts);
