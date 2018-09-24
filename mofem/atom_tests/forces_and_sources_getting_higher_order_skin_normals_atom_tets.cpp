@@ -167,7 +167,7 @@ int main(int argc, char *argv[]) {
       }
 
       MoFEMErrorCode operator()() {
-        MoFEMFunctionBeginHot;
+        MoFEMFunctionBegin;
 
         CHKERR getSpacesAndBaseOnEntities(data);
 
@@ -177,8 +177,8 @@ int main(int argc, char *argv[]) {
         CHKERR getEntityDataOrderSpaceAndBase<MBEDGE>(data, "FIELD1");
         CHKERR getEntityDataOrderSpaceAndBase<MBTRI>(data, "FIELD1");
         CHKERR getRowNodesIndices(data, "FIELD1");
-        CHKERR getEdgesRowIndices(data, "FIELD1");
-        CHKERR getTrisRowIndices(data, "FIELD1");
+        CHKERR getEntityRowIndices<MBEDGE>(data, "FIELD1");
+        CHKERR getEntityRowIndices<MBTRI>(data, "FIELD1");
         CHKERR getNodesFieldData(data, "FIELD1");
         CHKERR getEdgesFieldData(data, "FIELD1");
         CHKERR getTrisFieldData(data, "FIELD1");
@@ -206,15 +206,8 @@ int main(int argc, char *argv[]) {
         tAngent1_at_GaussPt.resize(4, 3);
         tAngent2_at_GaussPt.resize(4, 3);
 
-        try {
-          CHKERR op.opRhs(data);
-          CHKERR op.calculateNormals();
-        } catch (std::exception &ex) {
-          std::ostringstream ss;
-          ss << "thorw in method: " << ex.what() << " at line " << __LINE__
-             << " in file " << __FILE__ << std::endl;
-          SETERRQ(PETSC_COMM_SELF, 1, ss.str().c_str());
-        }
+        CHKERR op.opRhs(data);
+        CHKERR op.calculateNormals();
 
         my_split.precision(3);
         my_split << "coords: " << hoCoords_at_GaussPt << std::endl;
@@ -222,7 +215,7 @@ int main(int argc, char *argv[]) {
         my_split << "tangent1: " << tAngent1_at_GaussPt << std::endl;
         my_split << "tangent2: " << tAngent2_at_GaussPt << std::endl;
 
-        MoFEMFunctionReturnHot(0);
+        MoFEMFunctionReturn(0);
       }
 
       MoFEMErrorCode postProcess() {

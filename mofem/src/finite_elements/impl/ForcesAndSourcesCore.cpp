@@ -485,117 +485,6 @@ MoFEMErrorCode ForcesAndSourcesCore::getTypeIndices(
 }
 
 MoFEMErrorCode
-ForcesAndSourcesCore::getEdgesRowIndices(DataForcesAndSourcesCore &data,
-                                         const std::string &field_name) const {
-
-  return getTypeIndices(field_name,
-                        const_cast<FENumeredDofEntity_multiIndex &>(
-                            numeredEntFiniteElementPtr->getRowsDofs()),
-                        MBEDGE, data.dataOnEntities[MBEDGE]);
-}
-
-MoFEMErrorCode
-ForcesAndSourcesCore::getEdgesColIndices(DataForcesAndSourcesCore &data,
-                                         const std::string &field_name) const {
-
-  return getTypeIndices(field_name,
-                        const_cast<FENumeredDofEntity_multiIndex &>(
-                            numeredEntFiniteElementPtr->getColsDofs()),
-                        MBEDGE, data.dataOnEntities[MBEDGE]);
-}
-
-MoFEMErrorCode
-ForcesAndSourcesCore::getTrisRowIndices(DataForcesAndSourcesCore &data,
-                                        const std::string &field_name) const {
-  return getTypeIndices(field_name,
-                        const_cast<FENumeredDofEntity_multiIndex &>(
-                            numeredEntFiniteElementPtr->getRowsDofs()),
-                        MBTRI, data.dataOnEntities[MBTRI]);
-}
-
-MoFEMErrorCode
-ForcesAndSourcesCore::getTrisColIndices(DataForcesAndSourcesCore &data,
-                                        const std::string &field_name) const {
-
-  return getTypeIndices(field_name,
-                        const_cast<FENumeredDofEntity_multiIndex &>(
-                            numeredEntFiniteElementPtr->getColsDofs()),
-                        MBTRI, data.dataOnEntities[MBTRI]);
-}
-
-MoFEMErrorCode
-ForcesAndSourcesCore::getTetsRowIndices(DataForcesAndSourcesCore &data,
-                                        const std::string &field_name) const {
-
-  MoFEMFunctionBegin;
-  if (data.dataOnEntities[MBTET].size() == 0) {
-    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
-  }
-  CHKERR getTypeIndices(field_name,
-                        const_cast<FENumeredDofEntity_multiIndex &>(
-                            numeredEntFiniteElementPtr->getRowsDofs()),
-                        MBTET, 0, data.dataOnEntities[MBTET][0].getIndices(),
-                        data.dataOnEntities[MBTET][0].getLocalIndices());
-  MoFEMFunctionReturn(0);
-}
-
-MoFEMErrorCode
-ForcesAndSourcesCore::getTetsColIndices(DataForcesAndSourcesCore &data,
-                                        const std::string &field_name) const {
-
-  MoFEMFunctionBegin;
-  if (data.dataOnEntities[MBTET].size() == 0) {
-    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
-  }
-  CHKERR getTypeIndices(field_name,
-                        const_cast<FENumeredDofEntity_multiIndex &>(
-                            numeredEntFiniteElementPtr->getColsDofs()),
-                        MBTET, 0, data.dataOnEntities[MBTET][0].getIndices(),
-                        data.dataOnEntities[MBTET][0].getLocalIndices());
-  MoFEMFunctionReturn(0);
-}
-
-MoFEMErrorCode
-ForcesAndSourcesCore::getQuadRowIndices(DataForcesAndSourcesCore &data,
-                                        const std::string &field_name) const {
-
-  return getTypeIndices(field_name,
-                        const_cast<FENumeredDofEntity_multiIndex &>(
-                            numeredEntFiniteElementPtr->getRowsDofs()),
-                        MBQUAD, data.dataOnEntities[MBQUAD]);
-}
-
-MoFEMErrorCode
-ForcesAndSourcesCore::getQuadColIndices(DataForcesAndSourcesCore &data,
-                                        const std::string &field_name) const {
-
-  return getTypeIndices(field_name,
-                        const_cast<FENumeredDofEntity_multiIndex &>(
-                            numeredEntFiniteElementPtr->getColsDofs()),
-                        MBQUAD, data.dataOnEntities[MBQUAD]);
-}
-
-MoFEMErrorCode
-ForcesAndSourcesCore::getPrismRowIndices(DataForcesAndSourcesCore &data,
-                                         const std::string &field_name) const {
-
-  return getTypeIndices(field_name,
-                        const_cast<FENumeredDofEntity_multiIndex &>(
-                            numeredEntFiniteElementPtr->getRowsDofs()),
-                        MBPRISM, data.dataOnEntities[MBPRISM]);
-}
-
-MoFEMErrorCode
-ForcesAndSourcesCore::getPrismColIndices(DataForcesAndSourcesCore &data,
-                                         const std::string &field_name) const {
-
-  return getTypeIndices(field_name,
-                        const_cast<FENumeredDofEntity_multiIndex &>(
-                            numeredEntFiniteElementPtr->getColsDofs()),
-                        MBPRISM, data.dataOnEntities[MBPRISM]);
-}
-
-MoFEMErrorCode
 ForcesAndSourcesCore::getNoFieldIndices(const std::string &field_name,
                                         FENumeredDofEntity_multiIndex &dofs,
                                         VectorInt &indices) const {
@@ -1158,7 +1047,7 @@ MoFEMErrorCode ForcesAndSourcesCore::calculateBaseFunctionsOnElement(
       }
       break;
     case USER_BASE:
-      if(!getUserPolynomialBase()) {
+      if (!getUserPolynomialBase()) {
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                 "Functions genrating user approximation base not defined");
       }
@@ -1187,10 +1076,8 @@ MoFEMErrorCode ForcesAndSourcesCore::calculateBaseFunctionsOnElement() {
   /// Use the some node base. Node base is usually used for construction other
   /// bases.
   for (int space = HCURL; space != LASTSPACE; ++space) {
-    dataOnElement[space]->dataOnEntities[MBVERTEX][0].getNSharedPtr(
-        NOBASE) =
-        dataOnElement[H1]->dataOnEntities[MBVERTEX][0].getNSharedPtr(
-            NOBASE);
+    dataOnElement[space]->dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE) =
+        dataOnElement[H1]->dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE);
   }
   for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
     CHKERR calculateBaseFunctionsOnElement(
@@ -1354,21 +1241,23 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
                 break;
             case HCURL:
               if (!ss) {
-                CHKERR getEdgesRowIndices(*op_data[ss], field_name);
+                CHKERR getEntityRowIndices<MBEDGE>(*op_data[ss], field_name);
               } else {
-                CHKERR getEdgesColIndices(*op_data[ss], field_name);
+                CHKERR getEntityColIndices<MBEDGE>(*op_data[ss], field_name);
               }
-              CHKERR getEntityDataOrderSpaceAndBase<MBEDGE>(*op_data[ss], field_name);
+              CHKERR getEntityDataOrderSpaceAndBase<MBEDGE>(*op_data[ss],
+                                                            field_name);
               CHKERR getEdgesFieldData(*op_data[ss], field_name);
               if (dim == 1)
                 break;
             case HDIV:
               if (!ss) {
-                CHKERR getTrisRowIndices(*op_data[ss], field_name);
+                CHKERR getEntityRowIndices<MBTRI>(*op_data[ss], field_name);
               } else {
-                CHKERR getTrisColIndices(*op_data[ss], field_name);
+                CHKERR getEntityColIndices<MBTRI>(*op_data[ss], field_name);
               }
-              CHKERR getEntityDataOrderSpaceAndBase<MBTRI>(*op_data[ss], field_name);
+              CHKERR getEntityDataOrderSpaceAndBase<MBTRI>(*op_data[ss],
+                                                           field_name);
               CHKERR getTrisFieldData(*op_data[ss], field_name);
               if (dim == 2)
                 break;
@@ -1376,38 +1265,42 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
               switch (type) {
               case MBPRISM:
                 if (!ss) {
-                  CHKERR getPrismRowIndices(*op_data[ss], field_name);
+                  CHKERR getEntityRowIndices<MBPRISM>(*op_data[ss], field_name);
                 } else {
-                  CHKERR getPrismColIndices(*op_data[ss], field_name);
+                  CHKERR getEntityColIndices<MBPRISM>(*op_data[ss], field_name);
                 }
-                CHKERR getEntityDataOrderSpaceAndBase<MBPRISM>(*op_data[ss], field_name);
+                CHKERR getEntityDataOrderSpaceAndBase<MBPRISM>(*op_data[ss],
+                                                               field_name);
                 CHKERR getPrismFieldData(*op_data[ss], field_name);
                 break;
               case MBTET:
                 if (!ss) {
-                  CHKERR getTetsRowIndices(*op_data[ss], field_name);
+                  CHKERR getEntityRowIndices<MBTET>(*op_data[ss], field_name);
                 } else {
-                  CHKERR getTetsColIndices(*op_data[ss], field_name);
+                  CHKERR getEntityColIndices<MBTET>(*op_data[ss], field_name);
                 }
-                CHKERR getEntityDataOrderSpaceAndBase<MBTET>(*op_data[ss], field_name);
+                CHKERR getEntityDataOrderSpaceAndBase<MBTET>(*op_data[ss],
+                                                             field_name);
                 CHKERR getTetsFieldData(*op_data[ss], field_name);
                 break;
               case MBTRI:
                 if (!ss) {
-                  CHKERR getTrisRowIndices(*op_data[ss], field_name);
+                  CHKERR getEntityRowIndices<MBTRI>(*op_data[ss], field_name);
                 } else {
-                  CHKERR getTrisColIndices(*op_data[ss], field_name);
+                  CHKERR getEntityColIndices<MBTRI>(*op_data[ss], field_name);
                 }
-                CHKERR getEntityDataOrderSpaceAndBase<MBTRI>(*op_data[ss], field_name);
+                CHKERR getEntityDataOrderSpaceAndBase<MBTRI>(*op_data[ss],
+                                                             field_name);
                 CHKERR getTrisFieldData(*op_data[ss], field_name);
                 break;
               case MBEDGE:
                 if (!ss) {
-                  CHKERR getEdgesRowIndices(*op_data[ss], field_name);
+                  CHKERR getEntityRowIndices<MBEDGE>(*op_data[ss], field_name);
                 } else {
-                  CHKERR getEdgesColIndices(*op_data[ss], field_name);
+                  CHKERR getEntityColIndices<MBEDGE>(*op_data[ss], field_name);
                 }
-                CHKERR getEntityDataOrderSpaceAndBase<MBEDGE>(*op_data[ss], field_name);
+                CHKERR getEntityDataOrderSpaceAndBase<MBEDGE>(*op_data[ss],
+                                                              field_name);
                 CHKERR getEdgesFieldData(*op_data[ss], field_name);
                 break;
               case MBVERTEX:

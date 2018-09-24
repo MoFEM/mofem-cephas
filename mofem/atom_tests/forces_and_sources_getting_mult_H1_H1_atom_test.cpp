@@ -3,7 +3,6 @@
 
 */
 
-
 /* This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
@@ -21,8 +20,8 @@
 #include <MoFEM.hpp>
 
 namespace bio = boost::iostreams;
-using bio::tee_device;
 using bio::stream;
+using bio::tee_device;
 
 using namespace MoFEM;
 
@@ -30,295 +29,277 @@ static char help[] = "...\n\n";
 
 int main(int argc, char *argv[]) {
 
-  
-  
-
-  MoFEM::Core::Initialize(&argc,&argv,(char *)0,help);
+  MoFEM::Core::Initialize(&argc, &argv, (char *)0, help);
 
   try {
 
-  moab::Core mb_instance;
-  moab::Interface& moab = mb_instance;
-  int rank;
-  MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
+    moab::Core mb_instance;
+    moab::Interface &moab = mb_instance;
+    int rank;
+    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
 
-  PetscBool flg = PETSC_TRUE;
-  char mesh_file_name[255];
-  #if PETSC_VERSION_GE(3,6,4)
-  ierr = PetscOptionsGetString(PETSC_NULL,"","-my_file",mesh_file_name,255,&flg); CHKERRG(ierr);
-  #else
-  ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRG(ierr);
-  #endif
-  if(flg != PETSC_TRUE) {
-    SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
-  }
+    PetscBool flg = PETSC_TRUE;
+    char mesh_file_name[255];
+#if PETSC_VERSION_GE(3, 6, 4)
+    CHKERR PetscOptionsGetString(PETSC_NULL, "", "-my_file", mesh_file_name,
+                                 255, &flg);
+#else
+    CHKERR PetscOptionsGetString(PETSC_NULL, PETSC_NULL, "-my_file",
+                                 mesh_file_name, 255, &flg);
+#endif
+    if (flg != PETSC_TRUE) {
+      SETERRQ(PETSC_COMM_SELF, 1, "*** ERROR -my_file (MESH FILE NEEDED)");
+    }
 
-  //Create MoFEM (Joseph) database
-  MoFEM::Core core(moab);
-  MoFEM::Interface& m_field = core;
+    // Create MoFEM database
+    MoFEM::Core core(moab);
+    MoFEM::Interface &m_field = core;
 
-  ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
-  if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
+    ParallelComm *pcomm = ParallelComm::get_pcomm(&moab, MYPCOMM_INDEX);
+    if (pcomm == NULL)
+      pcomm = new ParallelComm(&moab, PETSC_COMM_WORLD);
 
-  const char *option;
-  option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
-  BARRIER_PCOMM_RANK_START(pcomm)
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERRG(rval);
-  BARRIER_PCOMM_RANK_END(pcomm)
+    const char *option;
+    option = ""; //"PARALLEL=BCAST;";//;DEBUG_IO";
+    BARRIER_PCOMM_RANK_START(pcomm)
+    CHKERR moab.load_file(mesh_file_name, 0, option);
+    CHKERRG(rval);
+    BARRIER_PCOMM_RANK_END(pcomm)
 
-  //set entitities bit level
-  BitRefLevel bit_level0;
-  bit_level0.set(0);
-  EntityHandle meshset_level0;
-  rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERRG(rval);
-  ierr = m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(0,3,bit_level0); CHKERRG(ierr);
+    // set entitities bit level
+    BitRefLevel bit_level0;
+    bit_level0.set(0);
+    EntityHandle meshset_level0;
+    CHKERR moab.create_meshset(MESHSET_SET, meshset_level0);
+    CHKERRG(rval);
+    CHKERR m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(
+        0, 3, bit_level0);
 
-  //Fields
-  ierr = m_field.add_field("FIELD1",H1,AINSWORTH_LEGENDRE_BASE,1); CHKERRG(ierr);
-  ierr = m_field.add_field("FIELD2",H1,AINSWORTH_LEGENDRE_BASE,3); CHKERRG(ierr);
+    // Fields
+    CHKERR m_field.add_field("FIELD1", H1, AINSWORTH_LEGENDRE_BASE, 1);
+    CHKERR m_field.add_field("FIELD2", H1, AINSWORTH_LEGENDRE_BASE, 3);
 
-  //FE
-  ierr = m_field.add_finite_element("TEST_FE"); CHKERRG(ierr);
+    // FE
+    CHKERR m_field.add_finite_element("TEST_FE");
 
-  //Define rows/cols and element data
-  ierr = m_field.modify_finite_element_add_field_row("TEST_FE","FIELD1"); CHKERRG(ierr);
-  ierr = m_field.modify_finite_element_add_field_col("TEST_FE","FIELD2"); CHKERRG(ierr);
-  ierr = m_field.modify_finite_element_add_field_data("TEST_FE","FIELD1"); CHKERRG(ierr);
-  ierr = m_field.modify_finite_element_add_field_data("TEST_FE","FIELD2"); CHKERRG(ierr);
+    // Define rows/cols and element data
+    CHKERR m_field.modify_finite_element_add_field_row("TEST_FE", "FIELD1");
+    CHKERR m_field.modify_finite_element_add_field_col("TEST_FE", "FIELD2");
+    CHKERR m_field.modify_finite_element_add_field_data("TEST_FE", "FIELD1");
+    CHKERR m_field.modify_finite_element_add_field_data("TEST_FE", "FIELD2");
 
-  //Problem
-  ierr = m_field.add_problem("TEST_PROBLEM"); CHKERRG(ierr);
+    // Problem
+    CHKERR m_field.add_problem("TEST_PROBLEM");
 
-  //set finite elements for problem
-  ierr = m_field.modify_problem_add_finite_element("TEST_PROBLEM","TEST_FE"); CHKERRG(ierr);
-  //set refinement level for problem
-  ierr = m_field.modify_problem_ref_level_add_bit("TEST_PROBLEM",bit_level0); CHKERRG(ierr);
+    // set finite elements for problem
+    CHKERR m_field.modify_problem_add_finite_element("TEST_PROBLEM", "TEST_FE");
+    // set refinement level for problem
+    CHKERR m_field.modify_problem_ref_level_add_bit("TEST_PROBLEM", bit_level0);
 
+    // meshset consisting all entities in mesh
+    EntityHandle root_set = moab.get_root_set();
+    // add entities to field
+    CHKERR m_field.add_ents_to_field_by_type(root_set, MBTET, "FIELD1");
+    CHKERR m_field.add_ents_to_field_by_type(root_set, MBTET, "FIELD2");
+    // add entities to finite element
+    CHKERR m_field.add_ents_to_finite_element_by_type(root_set, MBTET,
+                                                      "TEST_FE");
 
-  //meshset consisting all entities in mesh
-  EntityHandle root_set = moab.get_root_set();
-  //add entities to field
-  ierr = m_field.add_ents_to_field_by_type(root_set,MBTET,"FIELD1"); CHKERRG(ierr);
-  ierr = m_field.add_ents_to_field_by_type(root_set,MBTET,"FIELD2"); CHKERRG(ierr);
-  //add entities to finite element
-  ierr = m_field.add_ents_to_finite_element_by_type(root_set,MBTET,"TEST_FE"); CHKERRG(ierr);
+    // set app. order
+    // see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes
+    // (Mark Ainsworth & Joe Coyle)
+    int order = 5;
+    CHKERR m_field.set_field_order(root_set, MBTET, "FIELD1", order);
+    CHKERR m_field.set_field_order(root_set, MBTRI, "FIELD1", order);
+    CHKERR m_field.set_field_order(root_set, MBEDGE, "FIELD1", order);
+    CHKERR m_field.set_field_order(root_set, MBVERTEX, "FIELD1", 1);
+    CHKERR m_field.set_field_order(root_set, MBTET, "FIELD2", order);
+    CHKERR m_field.set_field_order(root_set, MBTRI, "FIELD2", order);
+    CHKERR m_field.set_field_order(root_set, MBEDGE, "FIELD2", order);
+    CHKERR m_field.set_field_order(root_set, MBVERTEX, "FIELD2", 1);
 
+    /****/
+    // build database
+    // build field
+    CHKERR m_field.build_fields();
+    // build finite elemnts
+    CHKERR m_field.build_finite_elements();
+    // build adjacencies
+    CHKERR m_field.build_adjacencies(bit_level0);
+    // build problem
+    //
+    ProblemsManager *prb_mng_ptr;
+    CHKERR m_field.getInterface(prb_mng_ptr);
+    // const Problem_multiIndex *problems_ptr;
+    CHKERR prb_mng_ptr->buildProblem("TEST_PROBLEM", true);
 
-  //set app. order
-  //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
-  int order = 5;
-  ierr = m_field.set_field_order(root_set,MBTET,"FIELD1",order); CHKERRG(ierr);
-  ierr = m_field.set_field_order(root_set,MBTRI,"FIELD1",order); CHKERRG(ierr);
-  ierr = m_field.set_field_order(root_set,MBEDGE,"FIELD1",order); CHKERRG(ierr);
-  ierr = m_field.set_field_order(root_set,MBVERTEX,"FIELD1",1); CHKERRG(ierr);
-  ierr = m_field.set_field_order(root_set,MBTET,"FIELD2",order); CHKERRG(ierr);
-  ierr = m_field.set_field_order(root_set,MBTRI,"FIELD2",order); CHKERRG(ierr);
-  ierr = m_field.set_field_order(root_set,MBEDGE,"FIELD2",order); CHKERRG(ierr);
-  ierr = m_field.set_field_order(root_set,MBVERTEX,"FIELD2",1); CHKERRG(ierr);
+    /****/
+    // mesh partitioning
+    // partition
+    CHKERR prb_mng_ptr->partitionSimpleProblem("TEST_PROBLEM");
+    CHKERR prb_mng_ptr->partitionFiniteElements("TEST_PROBLEM");
+    // what are ghost nodes, see Petsc Manual
+    CHKERR prb_mng_ptr->partitionGhostDofs("TEST_PROBLEM");
 
-  /****/
-  //build database
-  //build field
-  ierr = m_field.build_fields(); CHKERRG(ierr);
-  //build finite elemnts
-  ierr = m_field.build_finite_elements(); CHKERRG(ierr);
-  //build adjacencies
-  ierr = m_field.build_adjacencies(bit_level0); CHKERRG(ierr);
-  //build problem
-  //
-  ProblemsManager *prb_mng_ptr;
-  ierr = m_field.getInterface(prb_mng_ptr); CHKERRG(ierr);
-  //const Problem_multiIndex *problems_ptr;
-  ierr = prb_mng_ptr->buildProblem("TEST_PROBLEM",true); CHKERRG(ierr);
+    struct ForcesAndSourcesCore_TestFE : public ForcesAndSourcesCore {
 
-  /****/
-  //mesh partitioning
-  //partition
-  ierr = prb_mng_ptr->partitionSimpleProblem("TEST_PROBLEM"); CHKERRG(ierr);
-  ierr = prb_mng_ptr->partitionFiniteElements("TEST_PROBLEM"); CHKERRG(ierr);
-  //what are ghost nodes, see Petsc Manual
-  ierr = prb_mng_ptr->partitionGhostDofs("TEST_PROBLEM"); CHKERRG(ierr);
+      typedef tee_device<std::ostream, std::ofstream> TeeDevice;
+      typedef stream<TeeDevice> TeeStream;
 
-  struct ForcesAndSourcesCore_TestFE: public ForcesAndSourcesCore {
+      struct my_mult_H1_H1 : public DataOperator {
 
-    
-    
+        std::ofstream ofs;
+        TeeDevice my_tee;
+        TeeStream my_split;
 
-    typedef tee_device<std::ostream, std::ofstream> TeeDevice;
-    typedef stream<TeeDevice> TeeStream;
+        my_mult_H1_H1()
+            : ofs("forces_and_sources_getting_mult_H1_H1_atom_test.txt"),
+              my_tee(std::cout, ofs), my_split(my_tee){};
 
-    struct my_mult_H1_H1: public DataOperator {
+        ~my_mult_H1_H1() { my_split.close(); }
 
-      std::ofstream ofs;
-      TeeDevice my_tee;
-      TeeStream my_split;
+        ublas::matrix<FieldData> NN;
 
-      my_mult_H1_H1():
-      ofs("forces_and_sources_getting_mult_H1_H1_atom_test.txt"),
-      my_tee(std::cout, ofs),my_split(my_tee
-      ) {};
-
-      ~my_mult_H1_H1() {
-        my_split.close();
-      }
-
-      ublas::matrix<FieldData> NN;
-
-      MoFEMErrorCode doWork(
-        int row_side,int col_side,
-        EntityType row_type,EntityType col_type,
-        DataForcesAndSourcesCore::EntData &row_data,
-        DataForcesAndSourcesCore::EntData &col_data
-      ) {
-          MoFEMFunctionBeginHot;
+        MoFEMErrorCode doWork(int row_side, int col_side, EntityType row_type,
+                              EntityType col_type,
+                              DataForcesAndSourcesCore::EntData &row_data,
+                              DataForcesAndSourcesCore::EntData &col_data) {
+          MoFEMFunctionBegin;
 
           row_data.getBase() = AINSWORTH_LEGENDRE_BASE;
           col_data.getBase() = AINSWORTH_LEGENDRE_BASE;
           int nb_row_dofs = row_data.getN().size2();
           int nb_col_dofs = col_data.getN().size2();
 
-          my_split << row_side << " " << col_side << " " << row_type << " " << col_type << std::endl;
-          my_split << "nb_row_dofs " << nb_row_dofs << " nb_col_dofs " << nb_col_dofs << std::endl;
-          NN.resize(nb_row_dofs,nb_col_dofs);
-
+          my_split << row_side << " " << col_side << " " << row_type << " "
+                   << col_type << std::endl;
+          my_split << "nb_row_dofs " << nb_row_dofs << " nb_col_dofs "
+                   << nb_col_dofs << std::endl;
+          NN.resize(nb_row_dofs, nb_col_dofs);
 
           my_split.precision(2);
           my_split << row_data.getN() << std::endl;
           my_split << col_data.getN() << std::endl;
 
-          for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
+          for (unsigned int gg = 0; gg < row_data.getN().size1(); gg++) {
 
-            bzero(&*NN.data().begin(),nb_row_dofs*nb_col_dofs*sizeof(FieldData));
+            bzero(&*NN.data().begin(),
+                  nb_row_dofs * nb_col_dofs * sizeof(FieldData));
 
-            cblas_dger(CblasRowMajor,
-              nb_row_dofs,nb_col_dofs,
-              1,&row_data.getN()(gg,0),1,&col_data.getN()(gg,0),1,
-              &*NN.data().begin(),nb_col_dofs);
+            cblas_dger(CblasRowMajor, nb_row_dofs, nb_col_dofs, 1,
+                       &row_data.getN()(gg, 0), 1, &col_data.getN()(gg, 0), 1,
+                       &*NN.data().begin(), nb_col_dofs);
 
-              my_split << "gg " << gg << " : ";
-              my_split.precision(2);
-              //my_split << NN << std::endl;
-              my_split << NN - outer_prod(row_data.getN(gg),col_data.getN(gg)) << std::endl;
-              if(row_type != MBVERTEX) {
-                my_split << row_data.getDiffN(gg) << std::endl;
-              }
-
-              if(row_type == MBVERTEX) {
-                my_split << row_data.getDiffN() << std::endl;
-              } else {
-                typedef ublas::array_adaptor<FieldData> storage_t;
-                storage_t st(nb_row_dofs*3,&row_data.getDiffN()(gg,0));
-                ublas::matrix<FieldData,ublas::row_major,storage_t> digNatGaussPt(nb_row_dofs,3,st);
-                my_split << std::endl << digNatGaussPt << std::endl;
-              }
-
+            my_split << "gg " << gg << " : ";
+            my_split.precision(2);
+            // my_split << NN << std::endl;
+            my_split << NN - outer_prod(row_data.getN(gg), col_data.getN(gg))
+                     << std::endl;
+            if (row_type != MBVERTEX) {
+              my_split << row_data.getDiffN(gg) << std::endl;
             }
 
-            my_split << std::endl;
-
-            MoFEMFunctionReturnHot(0);
+            if (row_type == MBVERTEX) {
+              my_split << row_data.getDiffN() << std::endl;
+            } else {
+              typedef ublas::array_adaptor<FieldData> storage_t;
+              storage_t st(nb_row_dofs * 3, &row_data.getDiffN()(gg, 0));
+              ublas::matrix<FieldData, ublas::row_major, storage_t>
+                  digNatGaussPt(nb_row_dofs, 3, st);
+              my_split << std::endl << digNatGaussPt << std::endl;
+            }
           }
 
-        };
+          my_split << std::endl;
 
-    my_mult_H1_H1 op;
+          MoFEMFunctionReturn(0);
+        }
+      };
 
-    ForcesAndSourcesCore_TestFE(MoFEM::Interface &_m_field):
-      ForcesAndSourcesCore(_m_field),data_row(MBTET),data_col(MBTET) {};
+      my_mult_H1_H1 op;
 
-    MoFEMErrorCode preProcess() {
-      MoFEMFunctionBeginHot;
-      MoFEMFunctionReturnHot(0);
-    }
+      ForcesAndSourcesCore_TestFE(MoFEM::Interface &_m_field)
+          : ForcesAndSourcesCore(_m_field), data_row(MBTET), data_col(MBTET){};
 
-    DataForcesAndSourcesCore data_row,data_col;
-
-    MoFEMErrorCode operator()() {
-      MoFEMFunctionBeginHot;
-
-      ierr = getSpacesAndBaseOnEntities(data_row); CHKERRG(ierr);
-      ierr = getSpacesAndBaseOnEntities(data_col); CHKERRG(ierr);
-
-      ierr = getEntitySense<MBEDGE>(data_row); CHKERRG(ierr);
-      ierr = getEntitySense<MBTRI>(data_row); CHKERRG(ierr);
-      ierr = getEntitySense<MBEDGE>(data_col); CHKERRG(ierr);
-      ierr = getEntitySense<MBTRI>(data_col); CHKERRG(ierr);
-
-      ierr = getEntityDataOrder<MBEDGE>(data_row,H1); CHKERRG(ierr);
-      ierr = getEntityDataOrder<MBEDGE>(data_col,H1); CHKERRG(ierr);
-      ierr = getEntityDataOrder<MBTRI>(data_row,H1); CHKERRG(ierr);
-      ierr = getEntityDataOrder<MBTRI>(data_col,H1); CHKERRG(ierr);
-      ierr = getEntityDataOrder<MBTET>(data_row,H1); CHKERRG(ierr);
-      ierr = getEntityDataOrder<MBTET>(data_col,H1); CHKERRG(ierr);
-      data_row.dataOnEntities[MBVERTEX][0].getBase() = AINSWORTH_LEGENDRE_BASE;
-      ierr = getEntityDataOrderSpaceAndBase<MBEDGE>(data_row,"FIELD1"); CHKERRG(ierr);
-      ierr = getEntityDataOrderSpaceAndBase<MBTRI>(data_row,"FIELD1"); CHKERRG(ierr);
-      ierr = getEntityDataOrderSpaceAndBase<MBTET>(data_row,"FIELD1"); CHKERRG(ierr);
-      data_col.dataOnEntities[MBVERTEX][0].getBase() = AINSWORTH_LEGENDRE_BASE;
-      ierr = getEntityDataOrderSpaceAndBase<MBEDGE>(data_col,"FIELD2"); CHKERRG(ierr);
-      ierr = getEntityDataOrderSpaceAndBase<MBTRI>(data_col,"FIELD2"); CHKERRG(ierr);
-      ierr = getEntityDataOrderSpaceAndBase<MBTET>(data_col,"FIELD2"); CHKERRG(ierr);
-      ierr = getRowNodesIndices(data_row,"FIELD1"); CHKERRG(ierr);
-      ierr = getColNodesIndices(data_row,"FIELD2"); CHKERRG(ierr);
-      ierr = getEdgesRowIndices(data_row,"FIELD1"); CHKERRG(ierr);
-      ierr = getEdgesColIndices(data_col,"FIELD2"); CHKERRG(ierr);
-      ierr = getTrisRowIndices(data_row,"FIELD1"); CHKERRG(ierr);
-      ierr = getTrisColIndices(data_col,"FIELD2"); CHKERRG(ierr);
-      ierr = getTetsRowIndices(data_row,"FIELD1"); CHKERRG(ierr);
-      ierr = getTetsColIndices(data_col,"FIELD2"); CHKERRG(ierr);
-      ierr = getFaceTriNodes(data_row); CHKERRG(ierr);
-      ierr = getFaceTriNodes(data_col); CHKERRG(ierr);
-
-      MatrixDouble gauss_pts(4,4);
-      for(int gg = 0;gg<4;gg++) {
-        gauss_pts(0,gg) = G_TET_X4[gg];
-        gauss_pts(1,gg) = G_TET_Y4[gg];
-        gauss_pts(2,gg) = G_TET_Z4[gg];
-        gauss_pts(3,gg) = G_TET_W4[gg];
-      }
-      ierr = TetPolynomialBase().getValue(
-        gauss_pts,
-        boost::shared_ptr<BaseFunctionCtx>(
-          new EntPolynomialBaseCtx(data_row,H1,AINSWORTH_LEGENDRE_BASE)
-        )
-      ); CHKERRG(ierr);
-      ierr = TetPolynomialBase().getValue(
-        gauss_pts,
-        boost::shared_ptr<BaseFunctionCtx>(
-          new EntPolynomialBaseCtx(data_col,H1,AINSWORTH_LEGENDRE_BASE)
-        )
-      ); CHKERRG(ierr);
-
-      try {
-        ierr = op.opLhs(data_row,data_col,true); CHKERRG(ierr);
-      } catch (std::exception& ex) {
-        std::ostringstream ss;
-        ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << std::endl;
-        SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+      MoFEMErrorCode preProcess() {
+        MoFEMFunctionBeginHot;
+        MoFEMFunctionReturnHot(0);
       }
 
-      MoFEMFunctionReturnHot(0);
-    }
+      DataForcesAndSourcesCore data_row, data_col;
 
-    MoFEMErrorCode postProcess() {
-      MoFEMFunctionBeginHot;
+      MoFEMErrorCode operator()() {
+        MoFEMFunctionBeginHot;
 
-      MoFEMFunctionReturnHot(0);
-    }
+        CHKERR getSpacesAndBaseOnEntities(data_row);
+        CHKERR getSpacesAndBaseOnEntities(data_col);
 
+        CHKERR getEntitySense<MBEDGE>(data_row);
+        CHKERR getEntitySense<MBTRI>(data_row);
+        CHKERR getEntitySense<MBEDGE>(data_col);
+        CHKERR getEntitySense<MBTRI>(data_col);
 
-  };
+        CHKERR getEntityDataOrder<MBEDGE>(data_row, H1);
+        CHKERR getEntityDataOrder<MBEDGE>(data_col, H1);
+        CHKERR getEntityDataOrder<MBTRI>(data_row, H1);
+        CHKERR getEntityDataOrder<MBTRI>(data_col, H1);
+        CHKERR getEntityDataOrder<MBTET>(data_row, H1);
+        CHKERR getEntityDataOrder<MBTET>(data_col, H1);
+        data_row.dataOnEntities[MBVERTEX][0].getBase() =
+            AINSWORTH_LEGENDRE_BASE;
+        CHKERR getEntityDataOrderSpaceAndBase<MBEDGE>(data_row, "FIELD1");
+        CHKERR getEntityDataOrderSpaceAndBase<MBTRI>(data_row, "FIELD1");
+        CHKERR getEntityDataOrderSpaceAndBase<MBTET>(data_row, "FIELD1");
+        data_col.dataOnEntities[MBVERTEX][0].getBase() =
+            AINSWORTH_LEGENDRE_BASE;
+        CHKERR getEntityDataOrderSpaceAndBase<MBEDGE>(data_col, "FIELD2");
+        CHKERR getEntityDataOrderSpaceAndBase<MBTRI>(data_col, "FIELD2");
+        CHKERR getEntityDataOrderSpaceAndBase<MBTET>(data_col, "FIELD2");
+        CHKERR getRowNodesIndices(data_row, "FIELD1");
+        CHKERR getColNodesIndices(data_row, "FIELD2");
+        CHKERR getEntityRowIndices<MBEDGE>(data_row, "FIELD1");
+        CHKERR getEntityColIndices<MBEDGE>(data_col, "FIELD2");
+        CHKERR getEntityRowIndices<MBTRI>(data_row, "FIELD1");
+        CHKERR getEntityColIndices<MBTRI>(data_col, "FIELD2");
+        CHKERR getEntityRowIndices<MBTET>(data_row, "FIELD1");
+        CHKERR getEntityColIndices<MBTET>(data_col, "FIELD2");
+        CHKERR getFaceTriNodes(data_row);
+        CHKERR getFaceTriNodes(data_col);
 
-  ForcesAndSourcesCore_TestFE fe1(m_field);
-  ierr = m_field.loop_finite_elements("TEST_PROBLEM","TEST_FE",fe1);  CHKERRG(ierr);
+        MatrixDouble gauss_pts(4, 4);
+        for (int gg = 0; gg < 4; gg++) {
+          gauss_pts(0, gg) = G_TET_X4[gg];
+          gauss_pts(1, gg) = G_TET_Y4[gg];
+          gauss_pts(2, gg) = G_TET_Z4[gg];
+          gauss_pts(3, gg) = G_TET_W4[gg];
+        }
+        CHKERR TetPolynomialBase().getValue(
+            gauss_pts,
+            boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
+                data_row, H1, AINSWORTH_LEGENDRE_BASE)));
+        CHKERR TetPolynomialBase().getValue(
+            gauss_pts,
+            boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
+                data_col, H1, AINSWORTH_LEGENDRE_BASE)));
 
+        CHKERR op.opLhs(data_row, data_col, true);
 
-  } catch (MoFEMException const &e) {
-    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
+        MoFEMFunctionReturnHot(0);
+      }
+
+      MoFEMErrorCode postProcess() {
+        MoFEMFunctionBeginHot;
+
+        MoFEMFunctionReturnHot(0);
+      }
+    };
+
+    ForcesAndSourcesCore_TestFE fe1(m_field);
+    CHKERR m_field.loop_finite_elements("TEST_PROBLEM", "TEST_FE", fe1);
   }
+  CATCH_ERRORS;
 
-  ierr = MoFEM::Core::Finalize(); CHKERRG(ierr);
+  CHKERR MoFEM::Core::Finalize();
 
   return 0;
-
 }

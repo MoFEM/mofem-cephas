@@ -149,45 +149,23 @@ struct ForcesAndSourcesCore : public FEMethod {
   MoFEMErrorCode getColNodesIndices(DataForcesAndSourcesCore &data,
                                     const std::string &field_name) const;
 
-  /// \brief get Edges row indices from FENumeredDofEntity_multiIndex
-  MoFEMErrorCode getEdgesRowIndices(DataForcesAndSourcesCore &data,
-                                    const std::string &field_name) const;
+  template <EntityType type>
+  MoFEMErrorCode getEntityRowIndices(DataForcesAndSourcesCore &data,
+                                    const std::string &field_name) const {
+    return getTypeIndices(field_name,
+                          const_cast<FENumeredDofEntity_multiIndex &>(
+                              numeredEntFiniteElementPtr->getRowsDofs()),
+                          type, data.dataOnEntities[type]);
+  }
 
-  /// \brief get Edges col indices from FENumeredDofEntity_multiIndex
-  MoFEMErrorCode getEdgesColIndices(DataForcesAndSourcesCore &data,
-                                    const std::string &field_name) const;
-
-  /// \brief get Tris row indices from FENumeredDofEntity_multiIndex
-  MoFEMErrorCode getTrisRowIndices(DataForcesAndSourcesCore &data,
-                                   const std::string &field_name) const;
-
-  /// \brief get Tris col indices from FENumeredDofEntity_multiIndex
-  MoFEMErrorCode getTrisColIndices(DataForcesAndSourcesCore &data,
-                                   const std::string &field_name) const;
-
-  /// \brief get Tets row indices from FENumeredDofEntity_multiIndex
-  MoFEMErrorCode getTetsRowIndices(DataForcesAndSourcesCore &data,
-                                   const std::string &field_name) const;
-
-  /// \brief get Tets col indices from FENumeredDofEntity_multiIndex
-  MoFEMErrorCode getTetsColIndices(DataForcesAndSourcesCore &data,
-                                   const std::string &field_name) const;
-
-  /// \brief get Quad row indices from FENumeredDofEntity_multiIndex
-  MoFEMErrorCode getQuadRowIndices(DataForcesAndSourcesCore &data,
-                                   const std::string &field_name) const;
-
-  /// \brief get Quad col indices from FENumeredDofEntity_multiIndex
-  MoFEMErrorCode getQuadColIndices(DataForcesAndSourcesCore &data,
-                                   const std::string &field_name) const;
-
-  /// \brief get Prism row indices from FENumeredDofEntity_multiIndex
-  MoFEMErrorCode getPrismRowIndices(DataForcesAndSourcesCore &data,
-                                    const std::string &field_name) const;
-
-  /// \brief get Prism col indices from FENumeredDofEntity_multiIndex
-  MoFEMErrorCode getPrismColIndices(DataForcesAndSourcesCore &data,
-                                    const std::string &field_name) const;
+  template <EntityType type>
+  MoFEMErrorCode getEntityColIndices(DataForcesAndSourcesCore &data,
+                                     const std::string &field_name) const {
+    return getTypeIndices(field_name,
+                          const_cast<FENumeredDofEntity_multiIndex &>(
+                              numeredEntFiniteElementPtr->getColsDofs()),
+                          type, data.dataOnEntities[type]);
+  }
 
   /// \brief get NoField indices
   MoFEMErrorCode getNoFieldIndices(const std::string &field_name,

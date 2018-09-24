@@ -193,9 +193,9 @@ int main(int argc, char *argv[]) {
         CHKERR getEntityDataOrderSpaceAndBase<MBTRI>(data, "FIELD1");
         CHKERR getEntityDataOrderSpaceAndBase<MBTET>(data, "FIELD1");
         CHKERR getRowNodesIndices(data, "FIELD1");
-        CHKERR getEdgesRowIndices(data, "FIELD1");
-        CHKERR getTrisRowIndices(data, "FIELD1");
-        CHKERR getTetsRowIndices(data, "FIELD1");
+        CHKERR getEntityRowIndices<MBEDGE>(data, "FIELD1");
+        CHKERR getEntityRowIndices<MBTRI>(data, "FIELD1");
+        CHKERR getEntityRowIndices<MBTET>(data, "FIELD1");
         CHKERR getNodesFieldData(data, "FIELD1");
         data.dataOnEntities[MBVERTEX][0].getFieldData().resize(0);
 
@@ -208,9 +208,9 @@ int main(int argc, char *argv[]) {
         CHKERR getEntityDataOrderSpaceAndBase<MBTRI>(derived_data, "FIELD2");
         CHKERR getEntityDataOrderSpaceAndBase<MBTET>(derived_data, "FIELD2");
         CHKERR getColNodesIndices(derived_data, "FIELD2");
-        CHKERR getEdgesColIndices(derived_data, "FIELD2");
-        CHKERR getTrisColIndices(derived_data, "FIELD2");
-        CHKERR getTetsColIndices(derived_data, "FIELD2");
+        CHKERR getEntityColIndices<MBEDGE>(derived_data, "FIELD2");
+        CHKERR getEntityColIndices<MBTRI>(derived_data, "FIELD2");
+        CHKERR getEntityColIndices<MBTET>(derived_data, "FIELD2");
         CHKERR getNodesFieldData(derived_data, "FIELD2");
         derived_data.dataOnEntities[MBVERTEX][0].getFieldData().resize(0);
 
