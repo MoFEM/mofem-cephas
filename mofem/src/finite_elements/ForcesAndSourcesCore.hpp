@@ -120,22 +120,6 @@ struct ForcesAndSourcesCore : public FEMethod {
                                     data.dataOnEntities[type]);
   }
 
-  MoFEMErrorCode
-  getEdgesDataOrderSpaceAndBase(DataForcesAndSourcesCore &data,
-                                const std::string &field_name) const;
-  MoFEMErrorCode
-  getTrisDataOrderSpaceAndBase(DataForcesAndSourcesCore &data,
-                               const std::string &field_name) const;
-  MoFEMErrorCode
-  getQuadDataOrderSpaceAndBase(DataForcesAndSourcesCore &data,
-                               const std::string &field_name) const;
-  MoFEMErrorCode
-  getTetDataOrderSpaceAndBase(DataForcesAndSourcesCore &data,
-                              const std::string &field_name) const;
-  MoFEMErrorCode
-  getPrismDataOrderSpaceAndBase(DataForcesAndSourcesCore &data,
-                                const std::string &field_name) const;
-
   // ** Indices **
 
   /// \brief get node indices

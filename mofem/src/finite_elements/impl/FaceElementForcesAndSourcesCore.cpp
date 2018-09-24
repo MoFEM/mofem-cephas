@@ -320,8 +320,8 @@ MoFEMErrorCode FaceElementForcesAndSourcesCore::calculateHoNormal() {
     // Calculate normal for high-order geometry
     
 
-    CHKERR getEdgesDataOrderSpaceAndBase(dataH1, meshPositionsFieldName);
-    CHKERR getTrisDataOrderSpaceAndBase(dataH1, meshPositionsFieldName);
+    CHKERR getEntityDataOrderSpaceAndBase<MBEDGE>(dataH1, meshPositionsFieldName);
+    CHKERR getEntityDataOrderSpaceAndBase<MBTRI>(dataH1, meshPositionsFieldName);
     CHKERR getNodesFieldData(dataH1, meshPositionsFieldName);
     CHKERR getEdgesFieldData(dataH1, meshPositionsFieldName);
     CHKERR getTrisFieldData(dataH1, meshPositionsFieldName);

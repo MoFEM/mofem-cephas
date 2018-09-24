@@ -189,9 +189,9 @@ int main(int argc, char *argv[]) {
             boost::shared_ptr<BaseFunctionCtx>(
                 new EntPolynomialBaseCtx(data, H1, AINSWORTH_LEGENDRE_BASE)));
 
-        CHKERR getEdgesDataOrderSpaceAndBase(data, "FIELD1");
-        CHKERR getTrisDataOrderSpaceAndBase(data, "FIELD1");
-        CHKERR getTetDataOrderSpaceAndBase(data, "FIELD1");
+        CHKERR getEntityDataOrderSpaceAndBase<MBEDGE>(data, "FIELD1");
+        CHKERR getEntityDataOrderSpaceAndBase<MBTRI>(data, "FIELD1");
+        CHKERR getEntityDataOrderSpaceAndBase<MBTET>(data, "FIELD1");
         CHKERR getRowNodesIndices(data, "FIELD1");
         CHKERR getEdgesRowIndices(data, "FIELD1");
         CHKERR getTrisRowIndices(data, "FIELD1");
@@ -204,9 +204,9 @@ int main(int argc, char *argv[]) {
 
         derived_data.dataOnEntities[MBVERTEX][0].getBase() =
             AINSWORTH_LEGENDRE_BASE;
-        CHKERR getEdgesDataOrderSpaceAndBase(derived_data, "FIELD2");
-        CHKERR getTrisDataOrderSpaceAndBase(derived_data, "FIELD2");
-        CHKERR getTetDataOrderSpaceAndBase(derived_data, "FIELD2");
+        CHKERR getEntityDataOrderSpaceAndBase<MBEDGE>(derived_data, "FIELD2");
+        CHKERR getEntityDataOrderSpaceAndBase<MBTRI>(derived_data, "FIELD2");
+        CHKERR getEntityDataOrderSpaceAndBase<MBTET>(derived_data, "FIELD2");
         CHKERR getColNodesIndices(derived_data, "FIELD2");
         CHKERR getEdgesColIndices(derived_data, "FIELD2");
         CHKERR getTrisColIndices(derived_data, "FIELD2");

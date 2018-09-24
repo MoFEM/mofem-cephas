@@ -180,7 +180,7 @@ EdgeElementForcesAndSourcesCore::calculateHoCoordsAtIntegrationPts() {
   
   if (dataPtr->get<FieldName_mi_tag>().find(meshPositionsFieldName) !=
       dataPtr->get<FieldName_mi_tag>().end()) {
-    CHKERR getEdgesDataOrderSpaceAndBase(dataH1, meshPositionsFieldName);
+    CHKERR getEntityDataOrderSpaceAndBase<MBEDGE>(dataH1, meshPositionsFieldName);
     CHKERR getEdgesFieldData(dataH1, meshPositionsFieldName);
     CHKERR getNodesFieldData(dataH1, meshPositionsFieldName);
     CHKERR opGetHoTangentOnEdge.opRhs(dataH1);

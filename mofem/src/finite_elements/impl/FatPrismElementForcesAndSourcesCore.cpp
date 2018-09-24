@@ -409,9 +409,9 @@ MoFEMErrorCode FatPrismElementForcesAndSourcesCore::operator()() {
     nOrmals_at_GaussPtF4.resize(nb_gauss_pts_on_faces, 3, false);
     tAngent1_at_GaussPtF4.resize(nb_gauss_pts_on_faces, 3, false);
     tAngent2_at_GaussPtF4.resize(nb_gauss_pts_on_faces, 3, false);
-    CHKERR getEdgesDataOrderSpaceAndBase(dataH1TrianglesOnly,
+    CHKERR getEntityDataOrderSpaceAndBase<MBEDGE>(dataH1TrianglesOnly,
                                          meshPositionsFieldName);
-    CHKERR getTrisDataOrderSpaceAndBase(dataH1TrianglesOnly,
+    CHKERR getEntityDataOrderSpaceAndBase<MBTRI>(dataH1TrianglesOnly,
                                         meshPositionsFieldName);
     CHKERR getNodesFieldData(dataH1TrianglesOnly, meshPositionsFieldName);
     CHKERR getEdgesFieldData(dataH1TrianglesOnly, meshPositionsFieldName);

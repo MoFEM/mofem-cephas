@@ -289,9 +289,9 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCore::calculateHoJacobian() {
               "no MESH_NODE_POSITIONS in element data");
     }
     
-    CHKERR getEdgesDataOrderSpaceAndBase(dataH1, meshPositionsFieldName);
-    CHKERR getTrisDataOrderSpaceAndBase(dataH1, meshPositionsFieldName);
-    CHKERR getTetDataOrderSpaceAndBase(dataH1, meshPositionsFieldName);
+    CHKERR getEntityDataOrderSpaceAndBase<MBEDGE>(dataH1, meshPositionsFieldName);
+    CHKERR getEntityDataOrderSpaceAndBase<MBTRI>(dataH1, meshPositionsFieldName);
+    CHKERR getEntityDataOrderSpaceAndBase<MBTET>(dataH1, meshPositionsFieldName);
     CHKERR getNodesFieldData(dataH1, meshPositionsFieldName);
     if (dataH1.dataOnEntities[MBVERTEX][0].getFieldData().size() != 12) {
       SETERRQ(mField.get_comm(), MOFEM_NOT_FOUND,

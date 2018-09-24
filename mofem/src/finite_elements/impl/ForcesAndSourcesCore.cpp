@@ -318,36 +318,6 @@ MoFEMErrorCode ForcesAndSourcesCore::getDataOrderSpaceAndBase(
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode ForcesAndSourcesCore::getEdgesDataOrderSpaceAndBase(
-    DataForcesAndSourcesCore &data, const std::string &field_name) const {
-  return getDataOrderSpaceAndBase(field_name, MBEDGE,
-                                  data.dataOnEntities[MBEDGE]);
-}
-
-MoFEMErrorCode ForcesAndSourcesCore::getTrisDataOrderSpaceAndBase(
-    DataForcesAndSourcesCore &data, const std::string &field_name) const {
-  return getDataOrderSpaceAndBase(field_name, MBTRI,
-                                  data.dataOnEntities[MBTRI]);
-}
-
-MoFEMErrorCode ForcesAndSourcesCore::getQuadDataOrderSpaceAndBase(
-    DataForcesAndSourcesCore &data, const std::string &field_name) const {
-  return getDataOrderSpaceAndBase(field_name, MBQUAD,
-                                  data.dataOnEntities[MBQUAD]);
-}
-
-MoFEMErrorCode ForcesAndSourcesCore::getTetDataOrderSpaceAndBase(
-    DataForcesAndSourcesCore &data, const std::string &field_name) const {
-  return getDataOrderSpaceAndBase(field_name, MBTET,
-                                  data.dataOnEntities[MBTET]);
-}
-
-MoFEMErrorCode ForcesAndSourcesCore::getPrismDataOrderSpaceAndBase(
-    DataForcesAndSourcesCore &data, const std::string &field_name) const {
-  return getDataOrderSpaceAndBase(field_name, MBPRISM,
-                                  data.dataOnEntities[MBPRISM]);
-}
-
 // ** Indices **
 
 MoFEMErrorCode ForcesAndSourcesCore::getNodesIndices(
@@ -1388,7 +1358,7 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
               } else {
                 CHKERR getEdgesColIndices(*op_data[ss], field_name);
               }
-              CHKERR getEdgesDataOrderSpaceAndBase(*op_data[ss], field_name);
+              CHKERR getEntityDataOrderSpaceAndBase<MBEDGE>(*op_data[ss], field_name);
               CHKERR getEdgesFieldData(*op_data[ss], field_name);
               if (dim == 1)
                 break;
@@ -1398,7 +1368,7 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
               } else {
                 CHKERR getTrisColIndices(*op_data[ss], field_name);
               }
-              CHKERR getTrisDataOrderSpaceAndBase(*op_data[ss], field_name);
+              CHKERR getEntityDataOrderSpaceAndBase<MBTRI>(*op_data[ss], field_name);
               CHKERR getTrisFieldData(*op_data[ss], field_name);
               if (dim == 2)
                 break;
@@ -1410,7 +1380,7 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
                 } else {
                   CHKERR getPrismColIndices(*op_data[ss], field_name);
                 }
-                CHKERR getPrismDataOrderSpaceAndBase(*op_data[ss], field_name);
+                CHKERR getEntityDataOrderSpaceAndBase<MBPRISM>(*op_data[ss], field_name);
                 CHKERR getPrismFieldData(*op_data[ss], field_name);
                 break;
               case MBTET:
@@ -1419,7 +1389,7 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
                 } else {
                   CHKERR getTetsColIndices(*op_data[ss], field_name);
                 }
-                CHKERR getTetDataOrderSpaceAndBase(*op_data[ss], field_name);
+                CHKERR getEntityDataOrderSpaceAndBase<MBTET>(*op_data[ss], field_name);
                 CHKERR getTetsFieldData(*op_data[ss], field_name);
                 break;
               case MBTRI:
@@ -1428,7 +1398,7 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
                 } else {
                   CHKERR getTrisColIndices(*op_data[ss], field_name);
                 }
-                CHKERR getTrisDataOrderSpaceAndBase(*op_data[ss], field_name);
+                CHKERR getEntityDataOrderSpaceAndBase<MBTRI>(*op_data[ss], field_name);
                 CHKERR getTrisFieldData(*op_data[ss], field_name);
                 break;
               case MBEDGE:
@@ -1437,7 +1407,7 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
                 } else {
                   CHKERR getEdgesColIndices(*op_data[ss], field_name);
                 }
-                CHKERR getEdgesDataOrderSpaceAndBase(*op_data[ss], field_name);
+                CHKERR getEntityDataOrderSpaceAndBase<MBEDGE>(*op_data[ss], field_name);
                 CHKERR getEdgesFieldData(*op_data[ss], field_name);
                 break;
               case MBVERTEX:

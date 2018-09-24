@@ -209,9 +209,9 @@ int main(int argc, char *argv[]) {
       ierr = getEntityDataOrder<MBTET>(data,H1); CHKERRG(ierr);
       ierr = getFaceTriNodes(data); CHKERRG(ierr);
 
-      ierr = getEdgesDataOrderSpaceAndBase(data,"FIELD1"); CHKERRG(ierr);
-      ierr = getTrisDataOrderSpaceAndBase(data,"FIELD1"); CHKERRG(ierr);
-      ierr = getTetDataOrderSpaceAndBase(data,"FIELD1"); CHKERRG(ierr);
+      ierr = getEntityDataOrderSpaceAndBase<MBEDGE>(data,"FIELD1"); CHKERRG(ierr);
+      ierr = getEntityDataOrderSpaceAndBase<MBTRI>(data,"FIELD1"); CHKERRG(ierr);
+      ierr = getEntityDataOrderSpaceAndBase<MBTET>(data,"FIELD1"); CHKERRG(ierr);
 
       ierr = getRowNodesIndices(data,"FIELD1"); CHKERRG(ierr);
       ierr = getEdgesRowIndices(data,"FIELD1"); CHKERRG(ierr);

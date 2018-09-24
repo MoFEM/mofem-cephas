@@ -174,8 +174,8 @@ int main(int argc, char *argv[]) {
         CHKERR getEntitySense<MBEDGE>(data);
         CHKERR getEntityDataOrder<MBEDGE>(data, H1);
         CHKERR getEntityDataOrder<MBTRI>(data, H1);
-        CHKERR getEdgesDataOrderSpaceAndBase(data, "FIELD1");
-        CHKERR getTrisDataOrderSpaceAndBase(data, "FIELD1");
+        CHKERR getEntityDataOrderSpaceAndBase<MBEDGE>(data, "FIELD1");
+        CHKERR getEntityDataOrderSpaceAndBase<MBTRI>(data, "FIELD1");
         CHKERR getRowNodesIndices(data, "FIELD1");
         CHKERR getEdgesRowIndices(data, "FIELD1");
         CHKERR getTrisRowIndices(data, "FIELD1");
