@@ -836,65 +836,6 @@ MoFEMErrorCode ForcesAndSourcesCore::getNoFieldFieldData(
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode
-ForcesAndSourcesCore::getEdgesFieldData(DataForcesAndSourcesCore &data,
-                                        const std::string &field_name) const {
-  return getTypeFieldData(field_name,
-                          const_cast<FEDofEntity_multiIndex &>(
-                              numeredEntFiniteElementPtr->getDataDofs()),
-                          MBEDGE, data.dataOnEntities[MBEDGE]);
-}
-
-MoFEMErrorCode
-ForcesAndSourcesCore::getTrisFieldData(DataForcesAndSourcesCore &data,
-                                       const std::string &field_name) const {
-  return getTypeFieldData(field_name,
-                          const_cast<FEDofEntity_multiIndex &>(
-                              numeredEntFiniteElementPtr->getDataDofs()),
-                          MBTRI, data.dataOnEntities[MBTRI]);
-}
-
-MoFEMErrorCode
-ForcesAndSourcesCore::getQuadFieldData(DataForcesAndSourcesCore &data,
-                                       const std::string &field_name) const {
-  return getTypeFieldData(field_name,
-                          const_cast<FEDofEntity_multiIndex &>(
-                              numeredEntFiniteElementPtr->getDataDofs()),
-                          MBQUAD, data.dataOnEntities[MBQUAD]);
-}
-
-MoFEMErrorCode
-ForcesAndSourcesCore::getTetsFieldData(DataForcesAndSourcesCore &data,
-                                       const std::string &field_name) const {
-  MoFEMFunctionBegin;
-  if (data.dataOnEntities[MBTET].size() == 0) {
-    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
-  }
-  CHKERR getTypeFieldData(field_name,
-                          const_cast<FEDofEntity_multiIndex &>(
-                              numeredEntFiniteElementPtr->getDataDofs()),
-                          MBTET, 0,
-                          data.dataOnEntities[MBTET][0].getFieldData(),
-                          data.dataOnEntities[MBTET][0].getFieldDofs());
-  MoFEMFunctionReturn(0);
-}
-
-MoFEMErrorCode
-ForcesAndSourcesCore::getPrismFieldData(DataForcesAndSourcesCore &data,
-                                        const std::string &field_name) const {
-  MoFEMFunctionBegin;
-  if (data.dataOnEntities[MBPRISM].size() == 0) {
-    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
-  }
-  CHKERR getTypeFieldData(field_name,
-                          const_cast<FEDofEntity_multiIndex &>(
-                              numeredEntFiniteElementPtr->getDataDofs()),
-                          MBPRISM, 0,
-                          data.dataOnEntities[MBPRISM][0].getFieldData(),
-                          data.dataOnEntities[MBPRISM][0].getFieldDofs());
-  MoFEMFunctionReturn(0);
-}
-
 // ** Face **
 
 MoFEMErrorCode
@@ -1247,7 +1188,7 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
               }
               CHKERR getEntityDataOrderSpaceAndBase<MBEDGE>(*op_data[ss],
                                                             field_name);
-              CHKERR getEdgesFieldData(*op_data[ss], field_name);
+              CHKERR getEntityFieldData<MBEDGE>(*op_data[ss], field_name);
               if (dim == 1)
                 break;
             case HDIV:
@@ -1258,7 +1199,7 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
               }
               CHKERR getEntityDataOrderSpaceAndBase<MBTRI>(*op_data[ss],
                                                            field_name);
-              CHKERR getTrisFieldData(*op_data[ss], field_name);
+              CHKERR getEntityFieldData<MBTRI>(*op_data[ss], field_name);
               if (dim == 2)
                 break;
             case L2:
@@ -1271,7 +1212,7 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
                 }
                 CHKERR getEntityDataOrderSpaceAndBase<MBPRISM>(*op_data[ss],
                                                                field_name);
-                CHKERR getPrismFieldData(*op_data[ss], field_name);
+                CHKERR getEntityFieldData<MBPRISM>(*op_data[ss], field_name);
                 break;
               case MBTET:
                 if (!ss) {
@@ -1281,7 +1222,7 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
                 }
                 CHKERR getEntityDataOrderSpaceAndBase<MBTET>(*op_data[ss],
                                                              field_name);
-                CHKERR getTetsFieldData(*op_data[ss], field_name);
+                CHKERR getEntityFieldData<MBTET>(*op_data[ss], field_name);
                 break;
               case MBTRI:
                 if (!ss) {
@@ -1291,7 +1232,7 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
                 }
                 CHKERR getEntityDataOrderSpaceAndBase<MBTRI>(*op_data[ss],
                                                              field_name);
-                CHKERR getTrisFieldData(*op_data[ss], field_name);
+                CHKERR getEntityFieldData<MBTRI>(*op_data[ss], field_name);
                 break;
               case MBEDGE:
                 if (!ss) {
@@ -1301,7 +1242,7 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
                 }
                 CHKERR getEntityDataOrderSpaceAndBase<MBEDGE>(*op_data[ss],
                                                               field_name);
-                CHKERR getEdgesFieldData(*op_data[ss], field_name);
+                CHKERR getEntityFieldData<MBEDGE>(*op_data[ss], field_name);
                 break;
               case MBVERTEX:
                 if (!ss) {

@@ -298,9 +298,9 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCore::calculateHoJacobian() {
               "no MESH_NODE_POSITIONS in element data or field has wrong "
               "number of coefficients");
     }
-    CHKERR getEdgesFieldData(dataH1, meshPositionsFieldName);
-    CHKERR getTrisFieldData(dataH1, meshPositionsFieldName);
-    CHKERR getTetsFieldData(dataH1, meshPositionsFieldName);
+    CHKERR getEntityFieldData<MBEDGE>(dataH1, meshPositionsFieldName);
+    CHKERR getEntityFieldData<MBTRI>(dataH1, meshPositionsFieldName);
+    CHKERR getEntityFieldData<MBTET>(dataH1, meshPositionsFieldName);
     CHKERR opHOatGaussPoints.opRhs(dataH1);
       hoGaussPtsInvJac.resize(hoGaussPtsJac.size1(), hoGaussPtsJac.size2(),
                               false);

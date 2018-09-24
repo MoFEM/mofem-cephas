@@ -207,9 +207,9 @@ int main(int argc, char *argv[]) {
         CHKERR getEntityRowIndices<MBTET>(data, "FIELD1");
 
         CHKERR getNodesFieldData(data, "FIELD1");
-        CHKERR getEdgesFieldData(data, "FIELD1");
-        CHKERR getTrisFieldData(data, "FIELD1");
-        CHKERR getTetsFieldData(data, "FIELD1");
+        CHKERR getEntityFieldData<MBEDGE>(data, "FIELD1");
+        CHKERR getEntityFieldData<MBTRI>(data, "FIELD1");
+        CHKERR getEntityFieldData<MBTET>(data, "FIELD1");
 
         MatrixDouble gauss_pts(4, 4);
         for (int gg = 0; gg < 4; gg++) {

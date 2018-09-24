@@ -414,8 +414,8 @@ MoFEMErrorCode FatPrismElementForcesAndSourcesCore::operator()() {
     CHKERR getEntityDataOrderSpaceAndBase<MBTRI>(dataH1TrianglesOnly,
                                         meshPositionsFieldName);
     CHKERR getNodesFieldData(dataH1TrianglesOnly, meshPositionsFieldName);
-    CHKERR getEdgesFieldData(dataH1TrianglesOnly, meshPositionsFieldName);
-    CHKERR getTrisFieldData(dataH1TrianglesOnly, meshPositionsFieldName);
+    CHKERR getEntityFieldData<MBEDGE>(dataH1TrianglesOnly, meshPositionsFieldName);
+    CHKERR getEntityFieldData<MBTRI>(dataH1TrianglesOnly, meshPositionsFieldName);
     CHKERR opHOCoordsAndNormals.opRhs(dataH1TrianglesOnly);
     CHKERR opHOCoordsAndNormals.calculateNormals();
   } else {

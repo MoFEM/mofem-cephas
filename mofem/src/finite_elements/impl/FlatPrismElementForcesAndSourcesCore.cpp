@@ -258,8 +258,8 @@ MoFEMErrorCode FlatPrismElementForcesAndSourcesCore::operator()() {
     CHKERR getEntityDataOrderSpaceAndBase<MBEDGE>(dataH1, meshPositionsFieldName);
     CHKERR getEntityDataOrderSpaceAndBase<MBTRI>(dataH1, meshPositionsFieldName);
     CHKERR getNodesFieldData(dataH1, meshPositionsFieldName);
-    CHKERR getEdgesFieldData(dataH1, meshPositionsFieldName);
-    CHKERR getTrisFieldData(dataH1, meshPositionsFieldName);
+    CHKERR getEntityFieldData<MBEDGE>(dataH1, meshPositionsFieldName);
+    CHKERR getEntityFieldData<MBTRI>(dataH1, meshPositionsFieldName);
     CHKERR opHOCoordsAndNormals.opRhs(dataH1);
     CHKERR opHOCoordsAndNormals.calculateNormals();
   } else {

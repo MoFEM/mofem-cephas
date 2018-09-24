@@ -180,8 +180,8 @@ int main(int argc, char *argv[]) {
         CHKERR getEntityRowIndices<MBEDGE>(data, "FIELD1");
         CHKERR getEntityRowIndices<MBTRI>(data, "FIELD1");
         CHKERR getNodesFieldData(data, "FIELD1");
-        CHKERR getEdgesFieldData(data, "FIELD1");
-        CHKERR getTrisFieldData(data, "FIELD1");
+        CHKERR getEntityFieldData<MBEDGE>(data, "FIELD1");
+        CHKERR getEntityFieldData<MBTRI>(data, "FIELD1");
 
         data.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(4, 3, false);
         CHKERR ShapeMBTRI(

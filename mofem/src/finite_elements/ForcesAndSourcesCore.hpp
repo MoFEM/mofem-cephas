@@ -235,16 +235,14 @@ struct ForcesAndSourcesCore : public FEMethod {
   MoFEMErrorCode getNodesFieldData(DataForcesAndSourcesCore &data,
                                    const std::string &field_name) const;
 
-  MoFEMErrorCode getEdgesFieldData(DataForcesAndSourcesCore &data,
-                                   const std::string &field_name) const;
-  MoFEMErrorCode getTrisFieldData(DataForcesAndSourcesCore &data,
-                                  const std::string &field_name) const;
-  MoFEMErrorCode getQuadFieldData(DataForcesAndSourcesCore &data,
-                                  const std::string &field_name) const;
-  MoFEMErrorCode getTetsFieldData(DataForcesAndSourcesCore &data,
-                                  const std::string &field_name) const;
-  MoFEMErrorCode getPrismFieldData(DataForcesAndSourcesCore &data,
-                                   const std::string &field_name) const;
+  template <EntityType type>
+  MoFEMErrorCode getEntityFieldData(DataForcesAndSourcesCore &data,
+                                    const std::string &field_name) const {
+    return getTypeFieldData(field_name,
+                            const_cast<FEDofEntity_multiIndex &>(
+                                numeredEntFiniteElementPtr->getDataDofs()),
+                            type, data.dataOnEntities[type]);
+  }
 
   /// \brief Get nodes on triangles
   MoFEMErrorCode getFaceTriNodes(DataForcesAndSourcesCore &data) const;
