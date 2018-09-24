@@ -217,6 +217,7 @@ struct DataForcesAndSourcesCore {
     /**@{*/
 
     EntData();
+    virtual ~EntData() {}
 
     /**@}*/
 
@@ -1384,6 +1385,8 @@ struct DataForcesAndSourcesCore {
   }
 
   DataForcesAndSourcesCore(const EntityType type);
+  virtual ~DataForcesAndSourcesCore() {}
+
   virtual MoFEMErrorCode setElementType(const EntityType type);
 
   friend std::ostream &operator<<(std::ostream &os,
