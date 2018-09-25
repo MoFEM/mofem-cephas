@@ -885,6 +885,23 @@ protected:
   /**@}*/
 
 private:
+
+  struct WrapMPIComm {
+    WrapMPIComm(MPI_Comm &comm, MPI_Comm &duplicated_comm)
+        : comm(comm), duplicatedComm(duplicated_comm) {
+      ierr = PetscCommDuplicate(comm, &duplicated_comm, NULL);
+      CHKERRABORT(comm, ierr);
+    }
+    ~WrapMPIComm() {
+      ierr = PetscCommDestroy(&duplicatedComm);
+      CHKERRABORT(comm, ierr);
+    }
+  private:
+    MPI_Comm &comm;
+    MPI_Comm &duplicatedComm;
+  };
+  boost::shared_ptr<WrapMPIComm> wrapMPIComm;
+
   int verbose; ///< Verbosity level
 
   int *fShift;  ///< Ptr to tag handle storing last set bit in field ID
