@@ -66,8 +66,7 @@ sudo xcodebuild -license accept
 Additonal packages are required - install [homebrew](https://brew.sh) package
 manager:
 ~~~~~
-/usr/bin/ruby -e "$(curl -fsSL
-https://raw.githubusercontent.com/Homebrew/install/master/install)"
+/usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
 ~~~~~
 
 Install packages through hombrew:
