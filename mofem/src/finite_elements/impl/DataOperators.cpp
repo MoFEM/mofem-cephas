@@ -825,39 +825,49 @@ MoFEMErrorCode OpSetContravariantPiolaTransform::doWork(
 
     const double c = 1. / 6.;
     const unsigned int nb_gauss_pts = data.getHdivN(base).size1();
-    piolaN.resize(nb_gauss_pts, data.getHdivN(base).size2(), false);
-    piolaDiffN.resize(nb_gauss_pts, data.getDiffHdivN(base).size2(), false);
-
-    auto t_n = data.getFTensor1HdivN<3>(base);
-    double *t_transformed_n_ptr = &*piolaN.data().begin();
-    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_transformed_n(
-        t_transformed_n_ptr, // HDIV0
-        &t_transformed_n_ptr[HDIV1], &t_transformed_n_ptr[HDIV2]);
-    auto t_diff_n = data.getFTensor2DiffHdivN<3, 3>(base);
-    double *t_transformed_diff_n_ptr = &*piolaDiffN.data().begin();
-    FTensor::Tensor2<double *, 3, 3> t_transformed_diff_n(
-        t_transformed_diff_n_ptr, &t_transformed_diff_n_ptr[HDIV0_1],
-        &t_transformed_diff_n_ptr[HDIV0_2], &t_transformed_diff_n_ptr[HDIV1_0],
-        &t_transformed_diff_n_ptr[HDIV1_1], &t_transformed_diff_n_ptr[HDIV1_2],
-        &t_transformed_diff_n_ptr[HDIV2_0], &t_transformed_diff_n_ptr[HDIV2_1],
-        &t_transformed_diff_n_ptr[HDIV2_2], 9);
 
     double const a = c / vOlume;
-    for (unsigned int gg = 0; gg != nb_gauss_pts; ++gg) {
-      for (unsigned int bb = 0; bb != nb_base_functions; ++bb) {
-        t_transformed_n(i) = a * tJac(i, k) * t_n(k);
-        t_transformed_diff_n(i, k) = a * tJac(i, j) * t_diff_n(j, k);
-        ++t_n;
-        ++t_transformed_n;
-        ++t_diff_n;
-        ++t_transformed_diff_n;
-      }
-    }
-    data.getHdivN(base).data().swap(piolaN.data());
-    data.getDiffHdivN(base).data().swap(piolaDiffN.data());
-  }
 
-  // data.getBase() = base;
+    piolaN.resize(nb_gauss_pts, data.getHdivN(base).size2(), false);
+    if (data.getHdivN(base).size2() > 0) {
+      auto t_n = data.getFTensor1HdivN<3>(base);
+      double *t_transformed_n_ptr = &*piolaN.data().begin();
+      FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_transformed_n(
+          t_transformed_n_ptr, // HDIV0
+          &t_transformed_n_ptr[HDIV1], &t_transformed_n_ptr[HDIV2]);
+      for (unsigned int gg = 0; gg != nb_gauss_pts; ++gg) {
+        for (unsigned int bb = 0; bb != nb_base_functions; ++bb) {
+          t_transformed_n(i) = a * tJac(i, k) * t_n(k);
+          ++t_n;
+          ++t_transformed_n;
+        }
+      }
+      data.getHdivN(base).data().swap(piolaN.data());
+    }
+
+    piolaDiffN.resize(nb_gauss_pts, data.getDiffHdivN(base).size2(), false);
+    if (data.getDiffHdivN(base).size2() > 0) {
+      auto t_diff_n = data.getFTensor2DiffHdivN<3, 3>(base);
+      double *t_transformed_diff_n_ptr = &*piolaDiffN.data().begin();
+      FTensor::Tensor2<double *, 3, 3> t_transformed_diff_n(
+          t_transformed_diff_n_ptr, &t_transformed_diff_n_ptr[HDIV0_1],
+          &t_transformed_diff_n_ptr[HDIV0_2],
+          &t_transformed_diff_n_ptr[HDIV1_0],
+          &t_transformed_diff_n_ptr[HDIV1_1],
+          &t_transformed_diff_n_ptr[HDIV1_2],
+          &t_transformed_diff_n_ptr[HDIV2_0],
+          &t_transformed_diff_n_ptr[HDIV2_1],
+          &t_transformed_diff_n_ptr[HDIV2_2], 9);
+      for (unsigned int gg = 0; gg != nb_gauss_pts; ++gg) {
+        for (unsigned int bb = 0; bb != nb_base_functions; ++bb) {
+          t_transformed_diff_n(i, k) = a * tJac(i, j) * t_diff_n(j, k);
+          ++t_diff_n;
+          ++t_transformed_diff_n;
+        }
+      }
+      data.getDiffHdivN(base).data().swap(piolaDiffN.data());
+    }
+  }
 
   MoFEMFunctionReturn(0);
 }
