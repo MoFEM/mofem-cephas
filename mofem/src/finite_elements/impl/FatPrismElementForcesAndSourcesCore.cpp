@@ -90,7 +90,6 @@ MoFEMErrorCode FatPrismElementForcesAndSourcesCore::operator()() {
   if (numeredEntFiniteElementPtr->getEntType() != MBPRISM)
     MoFEMFunctionReturnHot(0);
   CHKERR createDataOnElement();
-  
 
   EntityHandle ent = numeredEntFiniteElementPtr->getEnt();
   int num_nodes;
@@ -109,6 +108,7 @@ MoFEMErrorCode FatPrismElementForcesAndSourcesCore::operator()() {
     aRea[1] = cblas_dnrm2(3, &normal[3], 1) * 0.5;
   }
 
+  CHKERR getSpacesAndBaseOnEntities(dataH1);
   CHKERR getSpacesAndBaseOnEntities(dataH1TrianglesOnly);
   CHKERR getSpacesAndBaseOnEntities(dataH1TroughThickness);
 

@@ -1194,12 +1194,17 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
             case HDIV:
               if (!ss) {
                 CHKERR getEntityRowIndices<MBTRI>(*op_data[ss], field_name);
+                CHKERR getEntityRowIndices<MBQUAD>(*op_data[ss], field_name);
               } else {
                 CHKERR getEntityColIndices<MBTRI>(*op_data[ss], field_name);
+                CHKERR getEntityColIndices<MBQUAD>(*op_data[ss], field_name);
               }
               CHKERR getEntityDataOrderSpaceAndBase<MBTRI>(*op_data[ss],
                                                            field_name);
               CHKERR getEntityFieldData<MBTRI>(*op_data[ss], field_name);
+              CHKERR getEntityDataOrderSpaceAndBase<MBQUAD>(*op_data[ss],
+                                                           field_name);
+              CHKERR getEntityFieldData<MBQUAD>(*op_data[ss], field_name);
               if (dim == 2)
                 break;
             case L2:
