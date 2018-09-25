@@ -990,20 +990,6 @@ OpSetHoInvJacH1::doWork(int side, EntityType type,
       SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented");
     }
 
-    // unsigned int gg = 0;
-    // for(;gg<nb_gauss_pts;++gg) {
-    //   double *inv_h = &invHoJac(gg,0);
-    //   for(unsigned dd = 0;dd<nb_base_functions;dd++) {
-    //     double *diff_n;
-    //     if(type == MBVERTEX) {
-    //       diff_n = &data.getDiffN(base)(dd,0);
-    //     } else {
-    //       diff_n = &data.getDiffN(base)(gg,3*dd);
-    //     }
-    //     double *diff_n_inv_jac = &diffNinvJac(gg,3*dd);
-    //     cblas_dgemv(CblasRowMajor,CblasTrans,3,3,1.,inv_h,3,diff_n,1,0.,diff_n_inv_jac,1);
-    //   }
-    // }
     if (type == MBVERTEX) {
       data.getDiffN(base).resize(diffNinvJac.size1(), diffNinvJac.size2(),
                                  false);
@@ -1058,19 +1044,6 @@ OpSetHoInvJacHdivAndHcurl::doWork(int side, EntityType type,
       }
       ++t_inv_jac;
     }
-
-    // unsigned int gg = 0;
-    // for(;gg<nb_gauss_pts;++gg) {
-    //   double *inv_h = &invHoJac(gg,0);
-    //   for(unsigned dd = 0;dd<nb_base_functions;dd++) {
-    //     const double *diff_hdiv = &(data.getDiffHdivN(base,gg)(dd,0));
-    //     double *diff_hdiv_inv_jac = &diffHdivInvJac(gg,9*dd);
-    //     int kk = 0;
-    //     for(;kk<3;kk++) {
-    //       cblas_dgemv(CblasRowMajor,CblasTrans,3,3,1.,inv_h,3,&diff_hdiv[kk],3,0.,&diff_hdiv_inv_jac[kk],3);
-    //     }
-    //   }
-    // }
 
     data.getDiffHdivN(base).data().swap(diffHdivInvJac.data());
   }
