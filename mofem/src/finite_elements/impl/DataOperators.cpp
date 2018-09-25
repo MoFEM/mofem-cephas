@@ -692,7 +692,7 @@ MoFEMErrorCode OpSetInvJacH1::doWork(int side, EntityType type,
                                      DataForcesAndSourcesCore::EntData &data) {
   MoFEMFunctionBeginHot;
 
-  for (int b = AINSWORTH_LEGENDRE_BASE; b != USER_BASE; b++) {
+  for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
 
     FieldApproximationBase base = ApproximationBaseArray[b];
     const unsigned int nb_base_functions = data.getN(base).size2();
@@ -774,7 +774,7 @@ OpSetInvJacHdivAndHcurl::doWork(int side, EntityType type,
             "functions");
   }
 
-  for (int b = AINSWORTH_LEGENDRE_BASE; b != USER_BASE; b++) {
+  for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
 
     FieldApproximationBase base = ApproximationBaseArray[b];
 
@@ -815,7 +815,7 @@ MoFEMErrorCode OpSetContravariantPiolaTransform::doWork(
   if (type != MBTRI && type != MBTET)
     MoFEMFunctionReturnHot(0);
 
-  for (int b = AINSWORTH_LEGENDRE_BASE; b != USER_BASE; b++) {
+  for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
 
     FieldApproximationBase base = ApproximationBaseArray[b];
 
@@ -870,7 +870,7 @@ OpSetCovariantPiolaTransform::doWork(int side, EntityType type,
   if (type != MBEDGE && type != MBTRI && type != MBTET)
     MoFEMFunctionReturnHot(0);
 
-  for (int b = AINSWORTH_LEGENDRE_BASE; b != USER_BASE; b++) {
+  for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
 
     FieldApproximationBase base = ApproximationBaseArray[b];
 
@@ -923,7 +923,7 @@ OpSetHoInvJacH1::doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data) {
   MoFEMFunctionBegin;
 
-  for (int b = AINSWORTH_LEGENDRE_BASE; b != USER_BASE; b++) {
+  for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
 
     FieldApproximationBase base = ApproximationBaseArray[b];
     if (data.getDiffN(base).size2() == 0)
@@ -1013,7 +1013,7 @@ OpSetHoInvJacHdivAndHcurl::doWork(int side, EntityType type,
     MoFEMFunctionReturnHot(0);
   // if(data.getSpace() == HDIV && type == MBEDGE) MoFEMFunctionReturnHot(0);
 
-  for (int b = AINSWORTH_LEGENDRE_BASE; b != USER_BASE; b++) {
+  for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
 
     FieldApproximationBase base = ApproximationBaseArray[b];
 
@@ -1075,7 +1075,7 @@ MoFEMErrorCode OpSetHoContravariantPiolaTransform::doWork(
   if (type != MBTRI && type != MBTET)
     MoFEMFunctionReturnHot(0);
 
-  for (int b = AINSWORTH_LEGENDRE_BASE; b != USER_BASE; b++) {
+  for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
 
     FieldApproximationBase base = ApproximationBaseArray[b];
 
@@ -1132,7 +1132,7 @@ MoFEMErrorCode OpSetHoCovariantPiolaTransform::doWork(
   if (type != MBEDGE && type != MBTRI && type != MBTET)
     MoFEMFunctionReturnHot(0);
 
-  for (int b = AINSWORTH_LEGENDRE_BASE; b != USER_BASE; b++) {
+  for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
 
     FieldApproximationBase base = ApproximationBaseArray[b];
 
@@ -1430,7 +1430,7 @@ MoFEMErrorCode OpSetContravariantPiolaTransformOnTriangle::doWork(
 
   // FieldApproximationBase base = data.getBase();
 
-  for (int b = AINSWORTH_LEGENDRE_BASE; b != USER_BASE; b++) {
+  for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
 
     FieldApproximationBase base = ApproximationBaseArray[b];
     // data.getBase() = ApproximationBaseArray[b];
@@ -1484,7 +1484,7 @@ MoFEMErrorCode OpSetCovariantPiolaTransformOnTriangle::doWork(
   ierr = invertTensor3by3(t_m, det, t_inv_m);
   CHKERRG(ierr);
 
-  for (int b = AINSWORTH_LEGENDRE_BASE; b != USER_BASE; b++) {
+  for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
 
     FieldApproximationBase base = ApproximationBaseArray[b];
 
@@ -1641,7 +1641,7 @@ MoFEMErrorCode OpSetCovariantPiolaTransformOnEdge::doWork(
     }
   }
 
-  for (int b = AINSWORTH_LEGENDRE_BASE; b != USER_BASE; b++) {
+  for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
 
     FieldApproximationBase base = ApproximationBaseArray[b];
     int nb_gauss_pts = data.getHcurlN(base).size1();
