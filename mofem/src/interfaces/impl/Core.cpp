@@ -156,11 +156,6 @@ Core::~Core() {
   if (isGloballyInitialised && is_finalized) {
     isGloballyInitialised = false;
   }
-  // // Destroy communicator
-  // if (!is_finalized) {
-  //   ierr = PetscCommDestroy(&cOmm);
-  //   CHKERRABORT(cOmm, ierr);
-  // }
 }
 
 MoFEMErrorCode Core::registerSubInterfaces() {
