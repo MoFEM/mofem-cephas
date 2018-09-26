@@ -1415,37 +1415,38 @@ MoFEMErrorCode OpSetContravariantPiolaTransformOnTriangle::doWork(
 
     FieldApproximationBase base = ApproximationBaseArray[b];
 
-    FTensor::Index<'i', 3> i;
-    auto t_normal =
-        FTensor::Tensor1<double, 3>(nOrmal[0], nOrmal[1], nOrmal[2]);
-    const double l02 = t_normal(i) * t_normal(i);
     int nb_gauss_pts = data.getHdivN(base).size1();
-    int nb_base_functions = data.getHdivN(base).size2() / 3;
-    auto t_n = data.getFTensor1HdivN<3>(base);
-    if(normalsAtGaussPts.size1() == (unsigned int)nb_gauss_pts) {
-      auto t_ho_normal =
-          FTensor::Tensor1<FTensor::PackPtr<const double *, 3>, 3>(
-              &normalsAtGaussPts(0, 0), &normalsAtGaussPts(0, 1),
-              &normalsAtGaussPts(0, 2));
-      for (int gg = 0; gg != nb_gauss_pts; ++gg) {
-        for (int bb = 0; bb != nb_base_functions; ++bb) {
-          const double v = t_n(0);
-          const double l2 = t_ho_normal(i) * t_ho_normal(i);
-          t_n(i) = (v / l2) * t_ho_normal(i);
-          ++t_n;
+    if (nb_gauss_pts) {
+      FTensor::Index<'i', 3> i;
+      auto t_normal =
+          FTensor::Tensor1<double, 3>(nOrmal[0], nOrmal[1], nOrmal[2]);
+      const double l02 = t_normal(i) * t_normal(i);
+      int nb_base_functions = data.getHdivN(base).size2() / 3;
+      auto t_n = data.getFTensor1HdivN<3>(base);
+      if (normalsAtGaussPts.size1() == (unsigned int)nb_gauss_pts) {
+        auto t_ho_normal =
+            FTensor::Tensor1<FTensor::PackPtr<const double *, 3>, 3>(
+                &normalsAtGaussPts(0, 0), &normalsAtGaussPts(0, 1),
+                &normalsAtGaussPts(0, 2));
+        for (int gg = 0; gg != nb_gauss_pts; ++gg) {
+          for (int bb = 0; bb != nb_base_functions; ++bb) {
+            const double v = t_n(0);
+            const double l2 = t_ho_normal(i) * t_ho_normal(i);
+            t_n(i) = (v / l2) * t_ho_normal(i);
+            ++t_n;
+          }
+          ++t_ho_normal;
         }
-        ++t_ho_normal;
-      }
-    } else {
-      for (int gg = 0; gg != nb_gauss_pts; ++gg) {
-        for (int bb = 0; bb != nb_base_functions; ++bb) {
-          const double v = t_n(0);
-          t_n(i) = (v / l02) * t_normal(i);
-          ++t_n;
+      } else {
+        for (int gg = 0; gg != nb_gauss_pts; ++gg) {
+          for (int bb = 0; bb != nb_base_functions; ++bb) {
+            const double v = t_n(0);
+            t_n(i) = (v / l02) * t_normal(i);
+            ++t_n;
+          }
         }
       }
     }
-
   }
 
   MoFEMFunctionReturnHot(0);
