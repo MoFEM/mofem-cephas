@@ -33,11 +33,24 @@ using namespace MoFEM;
 
 static char help[] = "...\n\n";
 
+/**
+ * @brief Class used to calculate base functions at integration points
+ * 
+ */
 struct CGGUserPolynomialBase : public BaseFunction {
 
   CGGUserPolynomialBase() {}
   ~CGGUserPolynomialBase() {}
 
+  /** 
+   * @brief Return interface to this class when one ask for for tetrahedron,
+   * otherisw return interface class for generic class.
+   * 
+   * @param uuid Unique id
+   * @param iface interface class
+   * @return MoFEMErrorCode
+   */
+   
   MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
                                  MoFEM::UnknownInterface **iface) const {
     MoFEMFunctionBegin;
@@ -52,6 +65,13 @@ struct CGGUserPolynomialBase : public BaseFunction {
     MoFEMFunctionReturn(0);
   }
 
+  /**
+   * @brief Calculate base functions at intergeneration points
+   * 
+   * @param pts 
+   * @param ctx_ptr 
+   * @return MoFEMErrorCode 
+   */
   MoFEMErrorCode getValue(MatrixDouble &pts,
                           boost::shared_ptr<BaseFunctionCtx> ctx_ptr) {
     MoFEMFunctionBeginHot;
@@ -139,15 +159,17 @@ private:
 
 int main(int argc, char *argv[]) {
 
+  // Initialise MoFEM, MPI and petsc 
   MoFEM::Core::Initialize(&argc, &argv, (char *)0, help);
 
   try {
 
+    // create moab 
     moab::Core mb_instance;
+    // get interface to moab databse
     moab::Interface &moab = mb_instance;
-    int rank;
-    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
 
+    // get file
     PetscBool flg = PETSC_TRUE;
     char mesh_file_name[255];
 #if PETSC_VERSION_GE(3, 6, 4)
@@ -162,31 +184,36 @@ int main(int argc, char *argv[]) {
               "*** ERROR -my_file (MESH FILE NEEDED)");
     }
 
-    // Create MoFEM database
+    // create MoFEM database
     MoFEM::Core core(moab);
+    // get interface to moab database
     MoFEM::Interface &m_field = core;
 
-    ParallelComm *pcomm = ParallelComm::get_pcomm(&moab, MYPCOMM_INDEX);
-    if (pcomm == NULL)
-      pcomm = new ParallelComm(&moab, PETSC_COMM_WORLD);
-
+    // load mesh file
     const char *option;
     option = "";
     CHKERR moab.load_file(mesh_file_name, 0, option);
 
+    // set bit refinement level
     CHKERR m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(
         0, 3, BitRefLevel().set(0));
 
-    // Fields
+    // Create fields, field "FIELD_CGG" has user base, it means that recipe how
+    // to construct approximation is provided by user. Is set that user provided
+    // base is in h-div space.
     CHKERR m_field.add_field("FILED_CGG", HDIV, USER_BASE, 1);
     CHKERR m_field.add_field("FILED_RT", HDIV, DEMKOWICZ_JACOBI_BASE, 1);
 
-    // Modify field
-    auto field_ptr = m_field.get_field_structure("FILED_CGG");
+    // get access to "FIELD_CGG" data structure
+    auto field_ptr = m_field.get_field_structure("FILED_CGG");\
+    // get table associating number of dofs to entities depending on 
+    // approximation order set on those entities.
     auto field_order_table =
         const_cast<Field *>(field_ptr)->getFieldOrderTable();
 
+    // function set zero number of dofs 
     auto get_cgg_bubble_order_zero = [](int p) { return 0; };
+    // function set non-zero number of dofs on tetrahedrons
     auto get_cgg_bubble_order_tet = [](int p) {
       return NBVOLUMETET_CCG_BUBBLE(p);
     };
@@ -195,10 +222,10 @@ int main(int argc, char *argv[]) {
     field_order_table[MBTRI] = get_cgg_bubble_order_zero;
     field_order_table[MBTET] = get_cgg_bubble_order_tet;
 
-    // FE
+    // add finite element
     CHKERR m_field.add_finite_element("FE");
 
-    // Define rows/cols and element data
+    // define rows/cols and element data
     CHKERR m_field.modify_finite_element_add_field_row("FE", "FILED_CGG");
     CHKERR m_field.modify_finite_element_add_field_col("FE", "FILED_CGG");
     CHKERR m_field.modify_finite_element_add_field_data("FE", "FILED_CGG");
@@ -206,12 +233,11 @@ int main(int argc, char *argv[]) {
     CHKERR m_field.modify_finite_element_add_field_col("FE", "FILED_RT");
     CHKERR m_field.modify_finite_element_add_field_data("FE", "FILED_RT");
 
-    // Problem
+    // add problem
     CHKERR m_field.add_problem("PROBLEM");
 
     // set finite elements for problem
-    CHKERR m_field.modify_problem_add_finite_element("PROBLEM",
-                                                     "FE");
+    CHKERR m_field.modify_problem_add_finite_element("PROBLEM", "FE");
     // set refinement level for problem
     CHKERR m_field.modify_problem_ref_level_add_bit("PROBLEM",
                                                     BitRefLevel().set(0));
@@ -260,6 +286,11 @@ int main(int argc, char *argv[]) {
     TeeDevice my_tee(std::cout, ofs);
     TeeStream my_split(my_tee);
 
+    /**
+     * Simple user data operator which main purpose is to print values
+     * of base functions at intergation points.
+     * 
+     */
     struct MyOp1 : public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
       TeeStream &my_split;
@@ -306,10 +337,13 @@ int main(int argc, char *argv[]) {
       }
     };
 
+    // create finite element instance
     VolumeElementForcesAndSourcesCore fe1(m_field);
+    // set class needed to cinstruct user approximation base
     fe1.getUserPolynomialBase() =
         boost::shared_ptr<BaseFunction>(new CGGUserPolynomialBase());
 
+    // push user data oprators
     fe1.getOpPtrVector().push_back(
         new MyOp1("FILED_CGG", "FILED_CGG", my_split,
                   ForcesAndSourcesCore::UserDataOperator::OPROW));
@@ -317,6 +351,8 @@ int main(int argc, char *argv[]) {
         new MyOp1("FILED_CGG", "FILED_RT", my_split,
                   ForcesAndSourcesCore::UserDataOperator::OPROWCOL));
 
+    // iterate over finite elements, and execute user data operators on each 
+    // of them
     CHKERR m_field.loop_finite_elements("PROBLEM", "FE", fe1);
   }
   CATCH_ERRORS;
