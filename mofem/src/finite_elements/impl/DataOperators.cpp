@@ -692,7 +692,7 @@ MoFEMErrorCode OpSetInvJacH1::doWork(int side, EntityType type,
                                      DataForcesAndSourcesCore::EntData &data) {
   MoFEMFunctionBeginHot;
 
-  for (int b = AINSWORTH_LEGENDRE_BASE; b != USER_BASE; b++) {
+  for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
 
     FieldApproximationBase base = ApproximationBaseArray[b];
     const unsigned int nb_base_functions = data.getN(base).size2();
@@ -774,7 +774,7 @@ OpSetInvJacHdivAndHcurl::doWork(int side, EntityType type,
             "functions");
   }
 
-  for (int b = AINSWORTH_LEGENDRE_BASE; b != USER_BASE; b++) {
+  for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
 
     FieldApproximationBase base = ApproximationBaseArray[b];
 
@@ -815,7 +815,7 @@ MoFEMErrorCode OpSetContravariantPiolaTransform::doWork(
   if (type != MBTRI && type != MBTET)
     MoFEMFunctionReturnHot(0);
 
-  for (int b = AINSWORTH_LEGENDRE_BASE; b != USER_BASE; b++) {
+  for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
 
     FieldApproximationBase base = ApproximationBaseArray[b];
 
@@ -825,39 +825,49 @@ MoFEMErrorCode OpSetContravariantPiolaTransform::doWork(
 
     const double c = 1. / 6.;
     const unsigned int nb_gauss_pts = data.getHdivN(base).size1();
-    piolaN.resize(nb_gauss_pts, data.getHdivN(base).size2(), false);
-    piolaDiffN.resize(nb_gauss_pts, data.getDiffHdivN(base).size2(), false);
-
-    auto t_n = data.getFTensor1HdivN<3>(base);
-    double *t_transformed_n_ptr = &*piolaN.data().begin();
-    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_transformed_n(
-        t_transformed_n_ptr, // HDIV0
-        &t_transformed_n_ptr[HDIV1], &t_transformed_n_ptr[HDIV2]);
-    auto t_diff_n = data.getFTensor2DiffHdivN<3, 3>(base);
-    double *t_transformed_diff_n_ptr = &*piolaDiffN.data().begin();
-    FTensor::Tensor2<double *, 3, 3> t_transformed_diff_n(
-        t_transformed_diff_n_ptr, &t_transformed_diff_n_ptr[HDIV0_1],
-        &t_transformed_diff_n_ptr[HDIV0_2], &t_transformed_diff_n_ptr[HDIV1_0],
-        &t_transformed_diff_n_ptr[HDIV1_1], &t_transformed_diff_n_ptr[HDIV1_2],
-        &t_transformed_diff_n_ptr[HDIV2_0], &t_transformed_diff_n_ptr[HDIV2_1],
-        &t_transformed_diff_n_ptr[HDIV2_2], 9);
 
     double const a = c / vOlume;
-    for (unsigned int gg = 0; gg != nb_gauss_pts; ++gg) {
-      for (unsigned int bb = 0; bb != nb_base_functions; ++bb) {
-        t_transformed_n(i) = a * tJac(i, k) * t_n(k);
-        t_transformed_diff_n(i, k) = a * tJac(i, j) * t_diff_n(j, k);
-        ++t_n;
-        ++t_transformed_n;
-        ++t_diff_n;
-        ++t_transformed_diff_n;
-      }
-    }
-    data.getHdivN(base).data().swap(piolaN.data());
-    data.getDiffHdivN(base).data().swap(piolaDiffN.data());
-  }
 
-  // data.getBase() = base;
+    piolaN.resize(nb_gauss_pts, data.getHdivN(base).size2(), false);
+    if (data.getHdivN(base).size2() > 0) {
+      auto t_n = data.getFTensor1HdivN<3>(base);
+      double *t_transformed_n_ptr = &*piolaN.data().begin();
+      FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_transformed_n(
+          t_transformed_n_ptr, // HDIV0
+          &t_transformed_n_ptr[HDIV1], &t_transformed_n_ptr[HDIV2]);
+      for (unsigned int gg = 0; gg != nb_gauss_pts; ++gg) {
+        for (unsigned int bb = 0; bb != nb_base_functions; ++bb) {
+          t_transformed_n(i) = a * tJac(i, k) * t_n(k);
+          ++t_n;
+          ++t_transformed_n;
+        }
+      }
+      data.getHdivN(base).data().swap(piolaN.data());
+    }
+
+    piolaDiffN.resize(nb_gauss_pts, data.getDiffHdivN(base).size2(), false);
+    if (data.getDiffHdivN(base).size2() > 0) {
+      auto t_diff_n = data.getFTensor2DiffHdivN<3, 3>(base);
+      double *t_transformed_diff_n_ptr = &*piolaDiffN.data().begin();
+      FTensor::Tensor2<double *, 3, 3> t_transformed_diff_n(
+          t_transformed_diff_n_ptr, &t_transformed_diff_n_ptr[HDIV0_1],
+          &t_transformed_diff_n_ptr[HDIV0_2],
+          &t_transformed_diff_n_ptr[HDIV1_0],
+          &t_transformed_diff_n_ptr[HDIV1_1],
+          &t_transformed_diff_n_ptr[HDIV1_2],
+          &t_transformed_diff_n_ptr[HDIV2_0],
+          &t_transformed_diff_n_ptr[HDIV2_1],
+          &t_transformed_diff_n_ptr[HDIV2_2], 9);
+      for (unsigned int gg = 0; gg != nb_gauss_pts; ++gg) {
+        for (unsigned int bb = 0; bb != nb_base_functions; ++bb) {
+          t_transformed_diff_n(i, k) = a * tJac(i, j) * t_diff_n(j, k);
+          ++t_diff_n;
+          ++t_transformed_diff_n;
+        }
+      }
+      data.getDiffHdivN(base).data().swap(piolaDiffN.data());
+    }
+  }
 
   MoFEMFunctionReturn(0);
 }
@@ -870,7 +880,7 @@ OpSetCovariantPiolaTransform::doWork(int side, EntityType type,
   if (type != MBEDGE && type != MBTRI && type != MBTET)
     MoFEMFunctionReturnHot(0);
 
-  for (int b = AINSWORTH_LEGENDRE_BASE; b != USER_BASE; b++) {
+  for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
 
     FieldApproximationBase base = ApproximationBaseArray[b];
 
@@ -923,7 +933,7 @@ OpSetHoInvJacH1::doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data) {
   MoFEMFunctionBegin;
 
-  for (int b = AINSWORTH_LEGENDRE_BASE; b != USER_BASE; b++) {
+  for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
 
     FieldApproximationBase base = ApproximationBaseArray[b];
     if (data.getDiffN(base).size2() == 0)
@@ -980,20 +990,6 @@ OpSetHoInvJacH1::doWork(int side, EntityType type,
       SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented");
     }
 
-    // unsigned int gg = 0;
-    // for(;gg<nb_gauss_pts;++gg) {
-    //   double *inv_h = &invHoJac(gg,0);
-    //   for(unsigned dd = 0;dd<nb_base_functions;dd++) {
-    //     double *diff_n;
-    //     if(type == MBVERTEX) {
-    //       diff_n = &data.getDiffN(base)(dd,0);
-    //     } else {
-    //       diff_n = &data.getDiffN(base)(gg,3*dd);
-    //     }
-    //     double *diff_n_inv_jac = &diffNinvJac(gg,3*dd);
-    //     cblas_dgemv(CblasRowMajor,CblasTrans,3,3,1.,inv_h,3,diff_n,1,0.,diff_n_inv_jac,1);
-    //   }
-    // }
     if (type == MBVERTEX) {
       data.getDiffN(base).resize(diffNinvJac.size1(), diffNinvJac.size2(),
                                  false);
@@ -1013,7 +1009,7 @@ OpSetHoInvJacHdivAndHcurl::doWork(int side, EntityType type,
     MoFEMFunctionReturnHot(0);
   // if(data.getSpace() == HDIV && type == MBEDGE) MoFEMFunctionReturnHot(0);
 
-  for (int b = AINSWORTH_LEGENDRE_BASE; b != USER_BASE; b++) {
+  for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
 
     FieldApproximationBase base = ApproximationBaseArray[b];
 
@@ -1049,19 +1045,6 @@ OpSetHoInvJacHdivAndHcurl::doWork(int side, EntityType type,
       ++t_inv_jac;
     }
 
-    // unsigned int gg = 0;
-    // for(;gg<nb_gauss_pts;++gg) {
-    //   double *inv_h = &invHoJac(gg,0);
-    //   for(unsigned dd = 0;dd<nb_base_functions;dd++) {
-    //     const double *diff_hdiv = &(data.getDiffHdivN(base,gg)(dd,0));
-    //     double *diff_hdiv_inv_jac = &diffHdivInvJac(gg,9*dd);
-    //     int kk = 0;
-    //     for(;kk<3;kk++) {
-    //       cblas_dgemv(CblasRowMajor,CblasTrans,3,3,1.,inv_h,3,&diff_hdiv[kk],3,0.,&diff_hdiv_inv_jac[kk],3);
-    //     }
-    //   }
-    // }
-
     data.getDiffHdivN(base).data().swap(diffHdivInvJac.data());
   }
 
@@ -1075,7 +1058,7 @@ MoFEMErrorCode OpSetHoContravariantPiolaTransform::doWork(
   if (type != MBTRI && type != MBTET)
     MoFEMFunctionReturnHot(0);
 
-  for (int b = AINSWORTH_LEGENDRE_BASE; b != USER_BASE; b++) {
+  for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
 
     FieldApproximationBase base = ApproximationBaseArray[b];
 
@@ -1132,7 +1115,7 @@ MoFEMErrorCode OpSetHoCovariantPiolaTransform::doWork(
   if (type != MBEDGE && type != MBTRI && type != MBTET)
     MoFEMFunctionReturnHot(0);
 
-  for (int b = AINSWORTH_LEGENDRE_BASE; b != USER_BASE; b++) {
+  for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
 
     FieldApproximationBase base = ApproximationBaseArray[b];
 
@@ -1428,35 +1411,42 @@ MoFEMErrorCode OpSetContravariantPiolaTransformOnTriangle::doWork(
   if (type != MBTRI)
     MoFEMFunctionReturnHot(0);
 
-  // FieldApproximationBase base = data.getBase();
-
-  for (int b = AINSWORTH_LEGENDRE_BASE; b != USER_BASE; b++) {
+  for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
 
     FieldApproximationBase base = ApproximationBaseArray[b];
-    // data.getBase() = ApproximationBaseArray[b];
 
-    double l0 = cblas_dnrm2(3, &nOrmal[0], 1);
+    FTensor::Index<'i', 3> i;
+    auto t_normal =
+        FTensor::Tensor1<double, 3>(nOrmal[0], nOrmal[1], nOrmal[2]);
+    const double l02 = t_normal(i) * t_normal(i);
     int nb_gauss_pts = data.getHdivN(base).size1();
-    int nb_dofs = data.getHdivN(base).size2() / 3;
-    int gg = 0;
-    for (; gg < nb_gauss_pts; ++gg) {
-      int dd = 0;
-      for (; dd < nb_dofs; dd++) {
-        double val = data.getHdivN(base)(gg, 3 * dd);
-        if (normalsAtGaussPts.size1() == (unsigned int)nb_gauss_pts) {
-          double l = cblas_dnrm2(3, &normalsAtGaussPts(gg, 0), 1);
-          cblas_dcopy(3, &normalsAtGaussPts(gg, 0), 1,
-                      &data.getHdivN(base)(gg, 3 * dd), 1);
-          cblas_dscal(3, val / pow(l, 2), &data.getHdivN(base)(gg, 3 * dd), 1);
-        } else {
-          cblas_dcopy(3, &nOrmal[0], 1, &data.getHdivN(base)(gg, 3 * dd), 1);
-          cblas_dscal(3, val / pow(l0, 2), &data.getHdivN(base)(gg, 3 * dd), 1);
+    int nb_base_functions = data.getHdivN(base).size2() / 3;
+    auto t_n = data.getFTensor1HdivN<3>(base);
+    if(normalsAtGaussPts.size1() == (unsigned int)nb_gauss_pts) {
+      auto t_ho_normal =
+          FTensor::Tensor1<FTensor::PackPtr<const double *, 3>, 3>(
+              &normalsAtGaussPts(0, 0), &normalsAtGaussPts(0, 1),
+              &normalsAtGaussPts(0, 2));
+      for (int gg = 0; gg != nb_gauss_pts; ++gg) {
+        for (int bb = 0; bb != nb_base_functions; ++bb) {
+          const double v = t_n(0);
+          const double l2 = t_ho_normal(i) * t_ho_normal(i);
+          t_n(i) = (v / l2) * t_ho_normal(i);
+          ++t_n;
+        }
+        ++t_ho_normal;
+      }
+    } else {
+      for (int gg = 0; gg != nb_gauss_pts; ++gg) {
+        for (int bb = 0; bb != nb_base_functions; ++bb) {
+          const double v = t_n(0);
+          t_n(i) = (v / l02) * t_normal(i);
+          ++t_n;
         }
       }
     }
-  }
 
-  // data.getBase() = base;
+  }
 
   MoFEMFunctionReturnHot(0);
 }
@@ -1484,7 +1474,7 @@ MoFEMErrorCode OpSetCovariantPiolaTransformOnTriangle::doWork(
   ierr = invertTensor3by3(t_m, det, t_inv_m);
   CHKERRG(ierr);
 
-  for (int b = AINSWORTH_LEGENDRE_BASE; b != USER_BASE; b++) {
+  for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
 
     FieldApproximationBase base = ApproximationBaseArray[b];
 
@@ -1641,7 +1631,7 @@ MoFEMErrorCode OpSetCovariantPiolaTransformOnEdge::doWork(
     }
   }
 
-  for (int b = AINSWORTH_LEGENDRE_BASE; b != USER_BASE; b++) {
+  for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
 
     FieldApproximationBase base = ApproximationBaseArray[b];
     int nb_gauss_pts = data.getHcurlN(base).size1();
