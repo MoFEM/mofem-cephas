@@ -895,9 +895,9 @@ OpSetCovariantPiolaTransform::doWork(int side, EntityType type,
     auto t_n = data.getFTensor1HcurlN<3>(base);
     double *t_transformed_n_ptr = &*piolaN.data().begin();
     FTensor::Tensor1<double *, 3> t_transformed_n(
-        t_transformed_n_ptr, // HDIV0
+        t_transformed_n_ptr, // HCRUL0
         &t_transformed_n_ptr[HCURL1], &t_transformed_n_ptr[HCURL2], 3);
-    auto t_diff_n = data.getFTensor2DiffHdivN<3, 3>(base);
+    auto t_diff_n = data.getFTensor2DiffHcurlN<3, 3>(base);
     double *t_transformed_diff_n_ptr = &*piolaDiffN.data().begin();
     FTensor::Tensor2<double *, 3, 3> t_transformed_diff_n(
         t_transformed_diff_n_ptr, &t_transformed_diff_n_ptr[HCURL0_1],
@@ -1127,7 +1127,7 @@ MoFEMErrorCode OpSetHoCovariantPiolaTransform::doWork(
     auto t_n = data.getFTensor1HcurlN<3>(base);
     double *t_transformed_n_ptr = &*piolaN.data().begin();
     FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_transformed_n(
-        t_transformed_n_ptr, // HDIV0
+        t_transformed_n_ptr, // HCURL0
         &t_transformed_n_ptr[HCURL1], &t_transformed_n_ptr[HCURL2]);
     auto t_diff_n = data.getFTensor2DiffHcurlN<3, 3>(base);
     double *t_transformed_diff_n_ptr = &*piolaDiffN.data().begin();
