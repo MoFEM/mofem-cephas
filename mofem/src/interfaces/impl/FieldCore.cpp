@@ -131,7 +131,8 @@ MoFEMErrorCode Core::add_field(const std::string &name, const FieldSpace space,
     }
   } else {
     EntityHandle meshset;
-    CHKERR get_moab().create_meshset(MESHSET_SET | MESHSET_TRACK_OWNER, meshset);
+    CHKERR get_moab().create_meshset(MESHSET_SET | MESHSET_TRACK_OWNER,
+                                     meshset);
     // id
     BitFieldId id = getFieldShift();
     CHKERR get_moab().tag_set_data(th_FieldId, &meshset, 1, &id);
@@ -143,14 +144,15 @@ MoFEMErrorCode Core::add_field(const std::string &name, const FieldSpace space,
     void const *tag_data[] = {name.c_str()};
     int tag_sizes[1];
     tag_sizes[0] = name.size();
-    CHKERR get_moab().tag_set_by_ptr(th_FieldName, &meshset, 1, tag_data, tag_sizes);
+    CHKERR get_moab().tag_set_by_ptr(th_FieldName, &meshset, 1, tag_data,
+                                     tag_sizes);
     // name data prefix
     std::string name_data_prefix("_App_Data");
     void const *tag_prefix_data[] = {name_data_prefix.c_str()};
     int tag_prefix_sizes[1];
     tag_prefix_sizes[0] = name_data_prefix.size();
     CHKERR get_moab().tag_set_by_ptr(th_FieldName_DataNamePrefix, &meshset, 1,
-                               tag_prefix_data, tag_prefix_sizes);
+                                     tag_prefix_data, tag_prefix_sizes);
     Tag th_AppOrder, th_FieldData, th_Rank;
     // data
     std::string Tag_data_name = name_data_prefix + name;
@@ -182,8 +184,8 @@ MoFEMErrorCode Core::add_field(const std::string &name, const FieldSpace space,
       int sys_name_size[1];
       sys_name_size[0] = undefined_cs_ptr->getName().size();
       void const *sys_name[] = {&*undefined_cs_ptr->getNameRef().begin()};
-      CHKERR get_moab().tag_set_by_ptr(cs_manger_ptr->get_th_CoordSysName(), &meshset,
-                                 1, sys_name, sys_name_size);
+      CHKERR get_moab().tag_set_by_ptr(cs_manger_ptr->get_th_CoordSysName(),
+                                       &meshset, 1, sys_name, sys_name_size);
       EntityHandle coord_sys_id = undefined_cs_ptr->getMeshset();
       CHKERR get_moab().add_entities(coord_sys_id, &meshset, 1);
       p = fIelds.insert(
@@ -235,7 +237,7 @@ MoFEMErrorCode Core::addEntsToFieldByDim(const Range &ents, const int dim,
     for (int dd = 0; dd != dim; ++dd) {
       Range adj_ents;
       CHKERR get_moab().get_adjacencies(ents, dd, false, adj_ents,
-                                  moab::Interface::UNION);
+                                        moab::Interface::UNION);
       if (dd == 0) {
         Range topo_nodes;
         CHKERR get_moab().get_connectivity(ents, topo_nodes, true);
@@ -253,7 +255,7 @@ MoFEMErrorCode Core::addEntsToFieldByDim(const Range &ents, const int dim,
     for (int dd = 1; dd != dim; ++dd) {
       Range adj_ents;
       CHKERR get_moab().get_adjacencies(ents, dd, false, adj_ents,
-                                  moab::Interface::UNION);
+                                        moab::Interface::UNION);
       CHKERR get_moab().add_entities(idm, adj_ents);
       nb_ents_on_dim[dd] = adj_ents.size();
     }
@@ -263,7 +265,7 @@ MoFEMErrorCode Core::addEntsToFieldByDim(const Range &ents, const int dim,
     if (dim > 2) {
       Range adj_ents;
       CHKERR get_moab().get_adjacencies(ents, 2, false, adj_ents,
-                                  moab::Interface::UNION);
+                                        moab::Interface::UNION);
       CHKERR get_moab().add_entities(idm, adj_ents);
       nb_ents_on_dim[2] = adj_ents.size();
     }
@@ -475,15 +477,15 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
       }
     }
 
-    Range new_ents = subtract(Range(first,second),ents_in_database);
+    Range new_ents = subtract(Range(first, second), ents_in_database);
     for (Range::const_pair_iterator pit = new_ents.const_pair_begin();
          pit != new_ents.const_pair_end(); ++pit) {
       EntityHandle first = pit->first;
       EntityHandle second = pit->second;
 
       // reserve memory for field  dofs
-      boost::shared_ptr<std::vector<FieldEntity> > ents_array =
-          boost::make_shared<std::vector<FieldEntity> >(
+      boost::shared_ptr<std::vector<FieldEntity>> ents_array =
+          boost::make_shared<std::vector<FieldEntity>>(
               std::vector<FieldEntity>());
 
       // Add sequence to field data structure. Note that entities are allocated
@@ -491,7 +493,7 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
       // Vector is destroyed at the point last entity inside that vector is
       // destroyed.
       miit->get()->getEntSequenceContainer()->push_back(ents_array);
-      ents_array->reserve(second-first+1);
+      ents_array->reserve(second - first + 1);
 
       // Entity is not in database and order is changed or reset
       RefEntity_multiIndex::index<Ent_mi_tag>::type::iterator miit_ref_ent,
@@ -525,16 +527,15 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
       }
 
       // Add entities to database
-      std::vector<boost::shared_ptr<FieldEntity> > ents_shared_array;
+      std::vector<boost::shared_ptr<FieldEntity>> ents_shared_array;
       ents_shared_array.reserve(ents_array->size());
       for (std::vector<FieldEntity>::iterator vit = ents_array->begin();
            vit != ents_array->end(); vit++) {
-        ents_shared_array.emplace_back(ents_array,&*vit);
+        ents_shared_array.emplace_back(ents_array, &*vit);
       }
       // Add new ents to database
       entsFields.insert(ents_shared_array.begin(), ents_shared_array.end());
     }
-
   }
 
   if (verb >= VERY_VERBOSE) {
@@ -667,8 +668,8 @@ Core::buildFieldForNoField(const BitFieldId id,
 
   // ents in the field meshset
   Range ents_of_id_meshset;
-  rval =
-      get_moab().get_entities_by_handle((*miit)->meshSet, ents_of_id_meshset, false);
+  rval = get_moab().get_entities_by_handle((*miit)->meshSet, ents_of_id_meshset,
+                                           false);
   CHKERRQ_MOAB(rval);
   if (verb > 5) {
     PetscSynchronizedPrintf(cOmm, "ents in field %s meshset %d\n",
@@ -767,8 +768,8 @@ MoFEMErrorCode Core::buildFieldForL2H1HcurlHdiv(
 
   // Ents in the field meshset
   Range ents_of_id_meshset;
-  CHKERR get_moab().get_entities_by_handle((*field_it)->meshSet, ents_of_id_meshset,
-                                     false);
+  CHKERR get_moab().get_entities_by_handle((*field_it)->meshSet,
+                                           ents_of_id_meshset, false);
   if (verb > VERY_NOISY) {
     PetscSynchronizedPrintf(PETSC_COMM_SELF, "Ents in field %s meshset %d\n",
                             (*field_it)->getName().c_str(),
@@ -800,13 +801,13 @@ MoFEMErrorCode Core::buildFieldForL2H1HcurlHdiv(
         boost::make_tuple(field_name, first));
     hi_dit = dofsField.get<Composite_Name_And_Ent_mi_tag>().upper_bound(
         boost::make_tuple(field_name, second));
-    dofsField.get<Composite_Name_And_Ent_mi_tag>().erase(dit,hi_dit);
+    dofsField.get<Composite_Name_And_Ent_mi_tag>().erase(dit, hi_dit);
 
     // Add vertices DOFs by bulk
-    boost::shared_ptr<std::vector<DofEntity> > dofs_array =
-        boost::make_shared<std::vector<DofEntity> >(std::vector<DofEntity>());
+    boost::shared_ptr<std::vector<DofEntity>> dofs_array =
+        boost::make_shared<std::vector<DofEntity>>(std::vector<DofEntity>());
     // Add Sequence of DOFs to sequence container as weak_ptr
-    std::vector<boost::shared_ptr<DofEntity> > dofs_shared_array;
+    std::vector<boost::shared_ptr<DofEntity>> dofs_shared_array;
     int nb_dofs_on_ents = 0;
     for (FieldEntByNameAndEnt::iterator tmp_feit = feit; tmp_feit != hi_feit;
          ++tmp_feit) {
@@ -848,7 +849,8 @@ MoFEMErrorCode Core::buildFieldForL2H1HcurlHdiv(
     int dofs_field_size0 = dofsField.size();
     dofsField.insert(dofs_shared_array.begin(), dofs_shared_array.end());
     field_it->get()->getDofSequenceContainer()->push_back(dofs_array);
-    if (static_cast<int>(dofs_array.use_count()) != static_cast<int>(2 * dofs_shared_array.size() + 1)) {
+    if (static_cast<int>(dofs_array.use_count()) !=
+        static_cast<int>(2 * dofs_shared_array.size() + 1)) {
       SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                "Wrong use count %d != %d", dofs_array.use_count(),
                2 * dofs_shared_array.size() + 1);
@@ -858,7 +860,6 @@ MoFEMErrorCode Core::buildFieldForL2H1HcurlHdiv(
                "Wrong number of inserted DOFs %d != %d",
                dofs_shared_array.size(), dofsField.size() - dofs_field_size0);
     }
-
   }
   MoFEMFunctionReturn(0);
 }
@@ -948,9 +949,9 @@ MoFEMErrorCode Core::buildField(const boost::shared_ptr<Field> &field,
 MoFEMErrorCode Core::build_field(const std::string field_name, int verb) {
   MoFEMFunctionBegin;
   auto miit = fIelds.get<FieldName_mi_tag>().find(field_name);
-  if(miit == fIelds.get<FieldName_mi_tag>().end()) {
+  if (miit == fIelds.get<FieldName_mi_tag>().end()) {
     SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_FOUND, "Field < %s > not found",
-            field_name.c_str());
+             field_name.c_str());
   }
   CHKERR buildField((*miit), verb);
   PetscSynchronizedFlush(cOmm, PETSC_STDOUT);
