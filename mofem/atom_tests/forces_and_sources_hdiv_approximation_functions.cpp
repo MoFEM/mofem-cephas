@@ -158,18 +158,18 @@ int main(int argc, char *argv[]) {
         mySplit.precision(5);
 
         const double eps = 1e-6;
-        for (unsigned int dd = 0; dd < data.getHdivN().data().size(); dd++) {
-          if (fabs(data.getHdivN().data()[dd]) < eps)
-            data.getHdivN().data()[dd] = 0;
+        for (unsigned int dd = 0; dd < data.getVectorN().data().size(); dd++) {
+          if (fabs(data.getVectorN().data()[dd]) < eps)
+            data.getVectorN().data()[dd] = 0;
         }
-        for (unsigned int dd = 0; dd < data.getDiffHdivN().data().size();
+        for (unsigned int dd = 0; dd < data.getVectorDiffN().data().size();
              dd++) {
-          if (fabs(data.getDiffHdivN().data()[dd]) < eps)
-            data.getDiffHdivN().data()[dd] = 0;
+          if (fabs(data.getVectorDiffN().data()[dd]) < eps)
+            data.getVectorDiffN().data()[dd] = 0;
         }
 
-        mySplit << std::fixed << data.getHdivN() << std::endl;
-        mySplit << std::fixed << data.getDiffHdivN() << std::endl;
+        mySplit << std::fixed << data.getVectorN() << std::endl;
+        mySplit << std::fixed << data.getVectorDiffN() << std::endl;
 
         MoFEMFunctionReturnHot(0);
       }
@@ -203,18 +203,18 @@ int main(int argc, char *argv[]) {
         mySplit.precision(5);
 
         const double eps = 1e-6;
-        for (unsigned int dd = 0; dd < data.getHdivN().data().size(); dd++) {
-          if (fabs(data.getHdivN().data()[dd]) < eps)
-            data.getHdivN().data()[dd] = 0;
+        for (unsigned int dd = 0; dd < data.getVectorN().data().size(); dd++) {
+          if (fabs(data.getVectorN().data()[dd]) < eps)
+            data.getVectorN().data()[dd] = 0;
         }
-        for (unsigned int dd = 0; dd < data.getDiffHdivN().data().size();
+        for (unsigned int dd = 0; dd < data.getVectorDiffN().data().size();
              dd++) {
-          if (fabs(data.getDiffHdivN().data()[dd]) < eps)
-            data.getDiffHdivN().data()[dd] = 0;
+          if (fabs(data.getVectorDiffN().data()[dd]) < eps)
+            data.getVectorDiffN().data()[dd] = 0;
         }
 
-        mySplit << std::fixed << data.getHdivN() << std::endl;
-        // mySplit << std::fixed << data.getDiffHdivN() << std::endl;
+        mySplit << std::fixed << data.getVectorN() << std::endl;
+        // mySplit << std::fixed << data.getVectorDiffN() << std::endl;
 
         MoFEMFunctionReturnHot(0);
       }

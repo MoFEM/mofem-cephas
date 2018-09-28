@@ -520,20 +520,20 @@ OpSetInvJacHcurlFace::doWork(int side, EntityType type,
 
     FieldApproximationBase base = ApproximationBaseArray[b];
 
-    const unsigned int nb_base_functions = data.getDiffHcurlN(base).size2() / 6;
+    const unsigned int nb_base_functions = data.getVectorDiffN(base).size2() / 6;
     if (!nb_base_functions)
       continue;
-    const unsigned int nb_gauss_pts = data.getDiffHcurlN(base).size1();
+    const unsigned int nb_gauss_pts = data.getVectorDiffN(base).size1();
 
-    diffHcurlInvJac.resize(nb_gauss_pts, data.getDiffHcurlN(base).size2(),
+    diffHcurlInvJac.resize(nb_gauss_pts, data.getVectorDiffN(base).size2(),
                            false);
 
-    auto t_diff_n = data.getFTensor2DiffHcurlN<3, 2>(base);
+    auto t_diff_n = data.getFTensor2DiffN<3, 2>(base);
     double *t_inv_diff_n_ptr = &*diffHcurlInvJac.data().begin();
     FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2> t_inv_diff_n(
-        t_inv_diff_n_ptr, &t_inv_diff_n_ptr[HCURL0_1],
-        &t_inv_diff_n_ptr[HCURL1_0], &t_inv_diff_n_ptr[HCURL1_1],
-        &t_inv_diff_n_ptr[HCURL2_0], &t_inv_diff_n_ptr[HCURL2_1]);
+        t_inv_diff_n_ptr, &t_inv_diff_n_ptr[HVEC0_1],
+        &t_inv_diff_n_ptr[HVEC1_0], &t_inv_diff_n_ptr[HVEC1_1],
+        &t_inv_diff_n_ptr[HVEC2_0], &t_inv_diff_n_ptr[HVEC2_1]);
 
     for (unsigned int gg = 0; gg != nb_gauss_pts; gg++) {
       for (unsigned int bb = 0; bb != nb_base_functions; bb++) {
@@ -543,7 +543,7 @@ OpSetInvJacHcurlFace::doWork(int side, EntityType type,
       }
     }
 
-    data.getDiffHcurlN(base).data().swap(diffHcurlInvJac.data());
+    data.getVectorDiffN(base).data().swap(diffHcurlInvJac.data());
   }
 
   MoFEMFunctionReturn(0);

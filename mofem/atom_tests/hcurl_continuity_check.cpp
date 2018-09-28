@@ -294,13 +294,13 @@ int main(int argc, char *argv[]) {
                           ->get()
                           ->sense;
 
-          // cerr << data.getHcurlN() << endl;
+          // cerr << data.getVectorN() << endl;
 
           VectorDouble t(3, 0);
-          int nb_dofs = data.getHcurlN().size2() / 3;
+          int nb_dofs = data.getVectorN().size2() / 3;
           for (int dd = 0; dd < nb_dofs; dd++) {
             for (int ddd = 0; ddd < 3; ddd++) {
-              t(ddd) += data.getHcurlN(side)(dd, ddd) * data.getFieldData()[dd];
+              t(ddd) += data.getVectorN(side)(dd, ddd) * data.getFieldData()[dd];
             }
           }
 
@@ -328,11 +328,11 @@ int main(int argc, char *argv[]) {
           const int nb_adj_tets = adj_tets.size();
 
           VectorDouble t(3, 0);
-          int nb_dofs = data.getHcurlN().size2() / 3;
+          int nb_dofs = data.getVectorN().size2() / 3;
           for (int dd = 0; dd < nb_dofs; dd++) {
             for (int ddd = 0; ddd < 3; ddd++) {
               t(ddd) +=
-                  data.getHcurlN(4 + side)(dd, ddd) * data.getFieldData()[dd];
+                  data.getVectorN(4 + side)(dd, ddd) * data.getFieldData()[dd];
             }
           }
 
@@ -438,22 +438,22 @@ int main(int argc, char *argv[]) {
                   getTangent2AtGaussPts()(0, 1) * t_ptr[1] +
                   getTangent2AtGaussPts()(0, 2) * t_ptr[2];
 
-        int nb_dofs = data.getHcurlN().size2() / 3;
+        int nb_dofs = data.getVectorN().size2() / 3;
         int dd = 0;
         for (; dd < nb_dofs; dd++) {
           double val = data.getFieldData()[dd];
           *tn_ptr += -getTangent1AtGaussPts()(0, 0) *
-                         data.getHcurlN()(0, 3 * dd + 0) * val -
+                         data.getVectorN()(0, 3 * dd + 0) * val -
                      getTangent1AtGaussPts()(0, 1) *
-                         data.getHcurlN()(0, 3 * dd + 1) * val -
+                         data.getVectorN()(0, 3 * dd + 1) * val -
                      getTangent1AtGaussPts()(0, 2) *
-                         data.getHcurlN()(0, 3 * dd + 2) * val -
+                         data.getVectorN()(0, 3 * dd + 2) * val -
                      getTangent2AtGaussPts()(0, 0) *
-                         data.getHcurlN()(0, 3 * dd + 0) * val -
+                         data.getVectorN()(0, 3 * dd + 0) * val -
                      getTangent2AtGaussPts()(0, 1) *
-                         data.getHcurlN()(0, 3 * dd + 1) * val -
+                         data.getVectorN()(0, 3 * dd + 1) * val -
                      getTangent2AtGaussPts()(0, 2) *
-                         data.getHcurlN()(0, 3 * dd + 2) * val;
+                         data.getVectorN()(0, 3 * dd + 2) * val;
         }
 
         const double eps = 1e-8;
@@ -575,7 +575,7 @@ int main(int argc, char *argv[]) {
                   getTangetAtGaussPts()(0, 2) * t_ptr[2];
 
         double tn = 0;
-        unsigned int nb_dofs = data.getHcurlN().size2() / 3;
+        unsigned int nb_dofs = data.getVectorN().size2() / 3;
         if(nb_dofs != data.getFieldData().size()) {
           SETERRQ2(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY,
                    "Number of dofs on edge and number of base functions not "
@@ -585,11 +585,11 @@ int main(int argc, char *argv[]) {
 
         for (unsigned int dd = 0; dd != nb_dofs; ++dd) {
           double val = data.getFieldData()[dd];
-          tn += getTangetAtGaussPts()(0, 0) * data.getHcurlN()(0, 3 * dd + 0) *
+          tn += getTangetAtGaussPts()(0, 0) * data.getVectorN()(0, 3 * dd + 0) *
                     val +
-                getTangetAtGaussPts()(0, 1) * data.getHcurlN()(0, 3 * dd + 1) *
+                getTangetAtGaussPts()(0, 1) * data.getVectorN()(0, 3 * dd + 1) *
                     val +
-                getTangetAtGaussPts()(0, 2) * data.getHcurlN()(0, 3 * dd + 2) *
+                getTangetAtGaussPts()(0, 2) * data.getVectorN()(0, 3 * dd + 2) *
                     val;
         }
 

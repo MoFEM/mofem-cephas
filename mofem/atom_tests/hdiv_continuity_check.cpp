@@ -234,16 +234,16 @@ int main(int argc, char *argv[]) {
         EntityHandle face = side_table.get<1>().find(boost::make_tuple(type,side))->get()->ent;
         int sense = side_table.get<1>().find(boost::make_tuple(type,side))->get()->sense;
 
-        // cerr << data.getHcurlN() << endl;
+        // cerr << data.getVectorN() << endl;
 
 
         VectorDouble t(3,0);
         int dd = 0;
-        int nb_dofs = data.getHdivN().size2()/3;
+        int nb_dofs = data.getVectorN().size2()/3;
         for(;dd<nb_dofs;dd++) {
           int ddd = 0;
           for(;ddd<3;ddd++) {
-            t(ddd) += data.getHdivN(side)(dd,ddd)*data.getFieldData()[dd];
+            t(ddd) += data.getVectorN(side)(dd,ddd)*data.getFieldData()[dd];
           }
         }
 
@@ -330,13 +330,13 @@ int main(int argc, char *argv[]) {
 
       *tn_ptr = getNormalsAtGaussPts()(0,0)*t_ptr[0]+getNormalsAtGaussPts()(0,1)*t_ptr[1]+getNormalsAtGaussPts()(0,2)*t_ptr[2];
 
-      int nb_dofs = data.getHdivN().size2()/3;
+      int nb_dofs = data.getVectorN().size2()/3;
       int dd = 0;
       for(;dd<nb_dofs;dd++) {
         *tn_ptr +=
-        -getNormalsAtGaussPts()(0,0)*data.getHdivN()(0,3*dd+0)*data.getFieldData()[dd]
-        -getNormalsAtGaussPts()(0,1)*data.getHdivN()(0,3*dd+1)*data.getFieldData()[dd]
-        -getNormalsAtGaussPts()(0,2)*data.getHdivN()(0,3*dd+2)*data.getFieldData()[dd];
+        -getNormalsAtGaussPts()(0,0)*data.getVectorN()(0,3*dd+0)*data.getFieldData()[dd]
+        -getNormalsAtGaussPts()(0,1)*data.getVectorN()(0,3*dd+1)*data.getFieldData()[dd]
+        -getNormalsAtGaussPts()(0,2)*data.getVectorN()(0,3*dd+2)*data.getFieldData()[dd];
       }
 
       const double eps = 1e-8;

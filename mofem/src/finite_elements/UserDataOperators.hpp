@@ -753,14 +753,14 @@ MoFEMErrorCode OpCalculateHdivVectorField_General<
   const int nb_dofs = data.getFieldData().size();
   if (!nb_dofs)
     MoFEMFunctionReturnHot(0);
-  const int nb_base_functions = data.getHdivN().size2() / Tensor_Dim;
-  const int nb_integration_points = data.getHdivN().size1();
+  const int nb_base_functions = data.getVectorN().size2() / Tensor_Dim;
+  const int nb_integration_points = data.getVectorN().size1();
   if (type == zeroType && side == zeroSide) {
     dataPtr->resize(Tensor_Dim, nb_integration_points,  false);
     dataPtr->clear();
   }
   FTensor::Index<'i', Tensor_Dim> i;
-  auto t_n_hdiv = data.getFTensor1HdivN<Tensor_Dim>();
+  auto t_n_hdiv = data.getFTensor1N<Tensor_Dim>();
   auto t_data = getFTensor1FromMat<Tensor_Dim>(*dataPtr);
   for (int gg = 0; gg != nb_integration_points; ++gg) {
     auto t_dof = data.getFTensor0FieldData();
@@ -826,14 +826,14 @@ struct OpCalculateHdivVectorDivergence
     const int nb_dofs = data.getFieldData().size();
     if (!nb_dofs)
       MoFEMFunctionReturnHot(0);
-    const int nb_base_functions = data.getHdivN().size2() / Tensor_Dim;
-    const int nb_integration_points = data.getHdivN().size1();
+    const int nb_base_functions = data.getVectorN().size2() / Tensor_Dim;
+    const int nb_integration_points = data.getVectorN().size1();
     if (type == zeroType && side == zeroSide) {
       dataPtr->resize(nb_integration_points, false);
       dataPtr->clear();
     }
     FTensor::Index<'i', Tensor_Dim> i;
-    auto t_n_diff_hdiv = data.getFTensor2DiffHdivN<Tensor_Dim, Tensor_Dim>();
+    auto t_n_diff_hdiv = data.getFTensor2DiffN<Tensor_Dim, Tensor_Dim>();
     auto t_data = getFTensor0FromVec(*dataPtr);
     for (int gg = 0; gg != nb_integration_points; ++gg) {
       auto t_dof = data.getFTensor0FieldData();
@@ -884,15 +884,15 @@ struct OpCalculateHdivTensorField
     const int nb_dofs = data.getFieldData().size();
     if (!nb_dofs)
       MoFEMFunctionReturnHot(0);
-    const int nb_base_functions = data.getHdivN().size2() / Tensor_Dim1;
-    const int nb_integration_points = data.getHdivN().size1();
+    const int nb_base_functions = data.getVectorN().size2() / Tensor_Dim1;
+    const int nb_integration_points = data.getVectorN().size1();
     if (type == zeroType && side == zeroSide) {
       dataPtr->resize(Tensor_Dim0 * Tensor_Dim1, nb_integration_points, false);
       dataPtr->clear();
     }
     FTensor::Index<'i', Tensor_Dim0> i;
     FTensor::Index<'j', Tensor_Dim1> j;
-    auto t_n_hdiv = data.getFTensor1HdivN<Tensor_Dim1>();
+    auto t_n_hdiv = data.getFTensor1N<Tensor_Dim1>();
     auto t_data = getFTensor2FromMat<Tensor_Dim0, Tensor_Dim1>(*dataPtr);
     for (int gg = 0; gg != nb_integration_points; ++gg) {
       auto t_dof = data.getFTensor1FieldData<Tensor_Dim0>();
@@ -942,15 +942,15 @@ struct OpCalculateHdivTensorDivergence
     const int nb_dofs = data.getFieldData().size();
     if (!nb_dofs)
       MoFEMFunctionReturnHot(0);
-    const int nb_base_functions = data.getHdivN().size2() / Tensor_Dim1;
-    const int nb_integration_points = data.getHdivN().size1();
+    const int nb_base_functions = data.getVectorN().size2() / Tensor_Dim1;
+    const int nb_integration_points = data.getVectorN().size1();
     if (type == zeroType && side == 0) {
       dataPtr->resize(Tensor_Dim0, nb_integration_points, false);
       dataPtr->clear();
     }
     FTensor::Index<'i', Tensor_Dim0> i;
     FTensor::Index<'j', Tensor_Dim1> j;
-    auto t_n_diff_hdiv = data.getFTensor2DiffHdivN<Tensor_Dim1, Tensor_Dim1>();
+    auto t_n_diff_hdiv = data.getFTensor2DiffN<Tensor_Dim1, Tensor_Dim1>();
     auto t_data = getFTensor1FromMat<Tensor_Dim0>(*dataPtr);
     for (int gg = 0; gg != nb_integration_points; ++gg) {
       auto t_dof = data.getFTensor1FieldData<Tensor_Dim0>();

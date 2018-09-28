@@ -633,30 +633,31 @@ struct DataForcesAndSourcesCore {
 
     /**@}*/
 
-    /** \name Get base functions for Hdiv */
+    /** \name Get base functions for vectorial approximation basese, i.e.
+     * Hdiv/Hcurl */
 
     /**@{*/
 
     inline const MatrixDouble &
-    getHdivN(const FieldApproximationBase base) const {
+    getVectorN(const FieldApproximationBase base) const {
       return getN(base);
     };
     inline const MatrixDouble &
-    getDiffHdivN(const FieldApproximationBase base) const {
+    getVectorDiffN(const FieldApproximationBase base) const {
       return getDiffN(base);
     };
-    inline MatrixDouble &getHdivN(const FieldApproximationBase base) {
+    inline MatrixDouble &getVectorN(const FieldApproximationBase base) {
       return getN(base);
     };
-    inline MatrixDouble &getDiffHdivN(const FieldApproximationBase base) {
+    inline MatrixDouble &getVectorDiffN(const FieldApproximationBase base) {
       return getDiffN(base);
     };
 
     /** \brief get base functions for Hdiv space
      */
-    inline const MatrixDouble &getHdivN() const { return getN(bAse); };
+    inline const MatrixDouble &getVectorN() const { return getN(bAse); };
 
-    /** \brief get derivatives of base functions for Hdiv space
+    /** \brief get derivatives of base functions for Hdiv/Hcurl space
      *
      * Note: In rows ale integration pts, columns are formatted that that
      * components of vectors and then derivatives, for example row for given
@@ -667,16 +668,16 @@ struct DataForcesAndSourcesCore {
      * \frac{\partial t_2}{\partial \xi_1}\f$
      *
      */
-    inline const MatrixDouble &getDiffHdivN() const { return getDiffN(bAse); };
+    inline const MatrixDouble &getVectorDiffN() const { return getDiffN(bAse); };
 
-    /** \brief get base functions for Hdiv space
+    /** \brief get base functions for Hdiv/Hcurl space
      */
-    inline MatrixDouble &getHdivN() { return getN(bAse); };
+    inline MatrixDouble &getVectorN() { return getN(bAse); };
 
     /** \brief Get derivatives of base functions for Hdiv space
      *
      */
-    inline MatrixDouble &getDiffHdivN() { return getDiffN(bAse); };
+    inline MatrixDouble &getVectorDiffN() { return getDiffN(bAse); };
 
     /** \brief get Hdiv of base functions at Gauss pts
      *
@@ -684,11 +685,11 @@ struct DataForcesAndSourcesCore {
      * \param gg nb. of Gauss point
      *
      */
-    inline const MatrixAdaptor getHdivN(const FieldApproximationBase base,
+    inline const MatrixAdaptor getVectorN(const FieldApproximationBase base,
                                         const int gg) {
       const int dim = 3;
-      int nb_base_functions = getHdivN(base).size2() / dim;
-      double *data = &getHdivN(base)(gg, 0);
+      int nb_base_functions = getVectorN(base).size2() / dim;
+      double *data = &getVectorN(base)(gg, 0);
       return MatrixAdaptor(
           nb_base_functions, dim,
           ublas::shallow_array_adaptor<double>(dim * nb_base_functions, data));
@@ -700,8 +701,8 @@ struct DataForcesAndSourcesCore {
      * \param number of of base functions
      *
      */
-    inline const MatrixAdaptor getHdivN(const int gg) {
-      return getHdivN(bAse, gg);
+    inline const MatrixAdaptor getVectorN(const int gg) {
+      return getVectorN(bAse, gg);
     }
 
     /** \brief get DiffHdiv of base functions at Gauss pts
@@ -711,10 +712,10 @@ struct DataForcesAndSourcesCore {
      * \param number of of base functions
      *
      */
-    inline const MatrixAdaptor getDiffHdivN(FieldApproximationBase base,
+    inline const MatrixAdaptor getVectorDiffN(FieldApproximationBase base,
                                             const int gg) {
-      int nb_base_functions = getDiffHdivN(base).size2() / 9;
-      double *data = &getDiffHdivN(base)(gg, 0);
+      int nb_base_functions = getVectorDiffN(base).size2() / 9;
+      double *data = &getVectorDiffN(base)(gg, 0);
       return MatrixAdaptor(
           nb_base_functions, 9,
           ublas::shallow_array_adaptor<double>(9 * nb_base_functions, data));
@@ -726,8 +727,8 @@ struct DataForcesAndSourcesCore {
      * \param number of of base functions
      *
      */
-    inline const MatrixAdaptor getDiffHdivN(const int gg) {
-      return getDiffHdivN(bAse, gg);
+    inline const MatrixAdaptor getVectorDiffN(const int gg) {
+      return getVectorDiffN(bAse, gg);
     }
 
     /** \brief get DiffHdiv of base functions at Gauss pts
@@ -737,9 +738,9 @@ struct DataForcesAndSourcesCore {
      * \param number of of base functions
      *
      */
-    inline const MatrixAdaptor getDiffHdivN(const FieldApproximationBase base,
+    inline const MatrixAdaptor getVectorDiffN(const FieldApproximationBase base,
                                             const int dof, const int gg) {
-      double *data = &getDiffHdivN(base)(gg, 9 * dof);
+      double *data = &getVectorDiffN(base)(gg, 9 * dof);
       return MatrixAdaptor(3, 3, ublas::shallow_array_adaptor<double>(9, data));
     }
 
@@ -749,108 +750,8 @@ struct DataForcesAndSourcesCore {
      * \param number of of base functions
      *
      */
-    inline const MatrixAdaptor getDiffHdivN(const int dof, const int gg) {
-      return getDiffHdivN(bAse, dof, gg);
-    }
-
-    /**@}*/
-
-    /** \name Get base functions for Hcurl */
-
-    /**@{*/
-
-    inline const MatrixDouble &
-    getHcurlN(const FieldApproximationBase base) const {
-      return getN(base);
-    };
-    inline const MatrixDouble &
-    getDiffHcurlN(const FieldApproximationBase base) const {
-      return getDiffN(base);
-    };
-    inline MatrixDouble &getHcurlN(const FieldApproximationBase base) {
-      return getN(base);
-    };
-    inline MatrixDouble &getDiffHcurlN(const FieldApproximationBase base) {
-      return getDiffN(base);
-    };
-
-    /** \brief get base functions for Hcurl space
-     */
-    inline const MatrixDouble &getHcurlN() const { return getN(bAse); };
-
-    /** \brief get derivatives of base functions for Hcurl space
-     *
-     * Note: In rows ale integration pts, columns are formatted that that
-     * components of vectors and then derivatives, for example row for given
-     * integration points is formatted in array
-     * \f[
-     * t_{0,0}, t_{1,0}, t_{1,0}, t_{0,1}, t_{1,1}, t_{1,1}, t_{0,2}, t_{1,2},
-     * t_{1,2} \f] where comma express derivative, i.e. \f$t_{2,1} =
-     * \frac{\partial t_2}{\partial \xi_1}\f$
-     *
-     */
-    inline const MatrixDouble &getDiffHcurlN() const { return getDiffN(bAse); };
-
-    /** \brief get base functions for Hdiv space
-     */
-    inline MatrixDouble &getHcurlN() { return getN(bAse); };
-
-    /** \brief Get derivatives of base functions for Hdiv space
-     *
-     */
-    inline MatrixDouble &getDiffHcurlN() { return getDiffN(bAse); };
-
-    /** \brief get Hcurl of base functions at Gauss pts
-     *
-     * \param base Approximation base
-     * \param gg nb. of Gauss point
-     * \param number of of base functions
-     *
-     */
-    inline const MatrixAdaptor getHcurlN(const FieldApproximationBase base,
-                                         const int gg) {
-      const int dim = 3;
-      int nb_base_functions = getHcurlN(base).size2() / dim;
-      double *data = &getHcurlN(base)(gg, 0);
-      return MatrixAdaptor(
-          nb_base_functions, dim,
-          ublas::shallow_array_adaptor<double>(dim * nb_base_functions, data));
-    }
-
-    /** \brief get Hcurl of base functions at Gauss pts
-     *
-     * \param gg nb. of Gauss point
-     * \param number of of base functions
-     *
-     */
-    inline const MatrixAdaptor getHcurlN(const int gg) {
-      return getHcurlN(bAse, gg);
-    }
-
-    /** \brief get DiffHdiv of base functions at Gauss pts
-     *
-     * \param base Approximation base
-     * \param gg nb. of Gauss point
-     * \param number of of base functions
-     *
-     */
-    inline const MatrixAdaptor getDiffHcurlN(FieldApproximationBase base,
-                                             const int gg) {
-      int nb_base_functions = getDiffHcurlN(base).size2() / 9;
-      double *data = &getDiffHcurlN(base)(gg, 0);
-      return MatrixAdaptor(
-          nb_base_functions, 9,
-          ublas::shallow_array_adaptor<double>(9 * nb_base_functions, data));
-    }
-
-    /** \brief get DiffHdiv of base functions at Gauss pts
-     *
-     * \param gg nb. of Gauss point
-     * \param number of of base functions
-     *
-     */
-    inline const MatrixAdaptor getDiffHcurlN(const int gg) {
-      return getDiffHcurlN(bAse, gg);
+    inline const MatrixAdaptor getVectorDiffN(const int dof, const int gg) {
+      return getVectorDiffN(bAse, dof, gg);
     }
 
     /**@}*/
@@ -1091,7 +992,7 @@ struct DataForcesAndSourcesCore {
 
     /** \brief Get base functions for Hdiv space
 
-    \note You probably like to use getFTensor1HdivN(), in typical use base is
+    \note You probably like to use getFTensor1N(), in typical use base is
     set automatically based on base set to field.
 
     * @param  base Approximation base
@@ -1100,14 +1001,14 @@ struct DataForcesAndSourcesCore {
     \code
     FTensor::Index<'i',3> i;
     int nb_dofs = data.getFieldData().size();
-    auto t_n_hdiv = data.getFTensor1HdivN<3>();
+    auto t_n_hdiv = data.getFTensor1N<3>();
     for(int gg = 0;gg!=nb_gauss_pts;gg++) {
       int ll = 0;
       for(;ll!=nb_dofs;ll++) {
         double dot_product = t_n_hdiv(i)*t_n_hdiv(i);
         ++t_n_hdiv;
       }
-      for(;ll!=data.getHdivN().size2()/3;ll++) {
+      for(;ll!=data.getVectorN().size2()/3;ll++) {
         ++t_n_hdiv;
       }
     }
@@ -1116,7 +1017,7 @@ struct DataForcesAndSourcesCore {
     */
     template <int Tensor_Dim>
     FTensor::Tensor1<FTensor::PackPtr<double *, 3>, Tensor_Dim>
-    getFTensor1HdivN(FieldApproximationBase base);
+    getFTensor1N(FieldApproximationBase base);
 
     /** \brief Get base functions for Hdiv space
 
@@ -1124,22 +1025,22 @@ struct DataForcesAndSourcesCore {
     \code
     FTensor::Index<'i',3> i;
     int nb_dofs = data.getFieldData().size();
-    auto t_n_hdiv = data.getFTensor1HdivN<3>();
+    auto t_n_hdiv = data.getFTensor1N<3>();
     for(int gg = 0;gg!=nb_gauss_pts;gg++) {
       int ll = 0;
       for(;ll!=nb_dofs;ll++) {
         double dot_product = t_n_hdiv(i)*t_n_hdiv(i);
         ++t_n_hdiv;
       }
-      for(;ll!=data.getHdivN().size2()/3;ll++) {
+      for(;ll!=data.getVectorN().size2()/3;ll++) {
         ++t_n_hdiv;
       }
     }
     \endcode
 
     */
-    template <int Tensor_Dim> auto getFTensor1HdivN() {
-      return getFTensor1HdivN<Tensor_Dim>(bAse);
+    template <int Tensor_Dim> auto getFTensor1N() {
+      return getFTensor1N<Tensor_Dim>(bAse);
     }
 
     /** \brief Get derivatives of base functions for Hdiv space
@@ -1147,7 +1048,7 @@ struct DataForcesAndSourcesCore {
     template <int Tensor_Dim0, int Tensor_Dim1>
     FTensor::Tensor2<FTensor::PackPtr<double *, Tensor_Dim0 * Tensor_Dim1>,
                      Tensor_Dim0, Tensor_Dim1>
-    getFTensor2DiffHdivN(FieldApproximationBase base);
+    getFTensor2DiffN(FieldApproximationBase base);
 
     /** \brief Get derivatives of base functions for Hdiv space at integration
      * pts
@@ -1155,7 +1056,7 @@ struct DataForcesAndSourcesCore {
     template <int Tensor_Dim0, int Tensor_Dim1>
     FTensor::Tensor2<FTensor::PackPtr<double *, Tensor_Dim0 * Tensor_Dim1>,
                      Tensor_Dim0, Tensor_Dim1>
-    getFTensor2DiffHdivN(FieldApproximationBase base, const int gg,
+    getFTensor2DiffN(FieldApproximationBase base, const int gg,
                          const int bb);
 
     /** \brief Get derivatives of base functions for Hdiv space
@@ -1164,8 +1065,8 @@ struct DataForcesAndSourcesCore {
     inline FTensor::Tensor2<
         FTensor::PackPtr<double *, Tensor_Dim0 * Tensor_Dim1>, Tensor_Dim0,
         Tensor_Dim1>
-    getFTensor2DiffHdivN() {
-      return getFTensor2DiffHdivN<Tensor_Dim0, Tensor_Dim1>(bAse);
+    getFTensor2DiffN() {
+      return getFTensor2DiffN<Tensor_Dim0, Tensor_Dim1>(bAse);
     }
 
     /** \brief Get derivatives of base functions for Hdiv space at integration
@@ -1175,64 +1076,8 @@ struct DataForcesAndSourcesCore {
     inline FTensor::Tensor2<
         FTensor::PackPtr<double *, Tensor_Dim0 * Tensor_Dim1>, Tensor_Dim0,
         Tensor_Dim1>
-    getFTensor2DiffHdivN(const int gg, const int bb) {
-      return getFTensor2DiffHdivN<Tensor_Dim0, Tensor_Dim1>(bAse, gg, bb);
-    }
-
-    /** \brief Get base functions for Hcurl space
-     */
-    template <int Tensor_Dim>
-    inline auto getFTensor1HcurlN(FieldApproximationBase base) {
-      return getFTensor1HdivN<Tensor_Dim>(base);
-    }
-
-    /** \brief Get base functions for Hcurl space
-     */
-    template <int Tensor_Dim> inline auto getFTensor1HcurlN() {
-      return getFTensor1HcurlN<Tensor_Dim>(bAse);
-    }
-
-    /** \brief Get derivatives of base functions for Hcurl space
-     */
-    template <int Tensor_Dim0, int Tensor_Dim1>
-    inline FTensor::Tensor2<
-        FTensor::PackPtr<double *, Tensor_Dim0 * Tensor_Dim1>, Tensor_Dim0,
-        Tensor_Dim1>
-    getFTensor2DiffHcurlN(FieldApproximationBase base) {
-      return getFTensor2DiffHdivN<Tensor_Dim0, Tensor_Dim1>(base);
-    }
-
-    /** \brief Get derivatives of base functions for Hcurl space
-     */
-    template <int Tensor_Dim0, int Tensor_Dim1>
-    inline FTensor::Tensor2<
-        FTensor::PackPtr<double *, Tensor_Dim0 * Tensor_Dim1>, Tensor_Dim0,
-        Tensor_Dim1>
-    getFTensor2DiffHcurlN() {
-      return getFTensor2DiffHcurlN<Tensor_Dim0, Tensor_Dim1>(bAse);
-    }
-
-    /** \brief Get derivatives of base functions for Hdiv space at integration
-     * pts
-     */
-    template <int Tensor_Dim0, int Tensor_Dim1>
-    inline FTensor::Tensor2<
-        FTensor::PackPtr<double *, Tensor_Dim0 * Tensor_Dim1>, Tensor_Dim0,
-        Tensor_Dim1>
-    getFTensor2DiffHcurlN(FieldApproximationBase base, const int gg,
-                          const int bb) {
-      return getFTensor2DiffHdivN<Tensor_Dim0, Tensor_Dim1>(base, gg, bb);
-    }
-
-    /** \brief Get derivatives of base functions for Hcurl space at integration
-     * pts
-     */
-    template <int Tensor_Dim0, int Tensor_Dim1>
-    inline FTensor::Tensor2<
-        FTensor::PackPtr<double *, Tensor_Dim0 * Tensor_Dim1>, Tensor_Dim0,
-        Tensor_Dim1>
-    getFTensor2DiffHcurlN(const int gg, const int bb) {
-      return getFTensor2DiffHcurlN<Tensor_Dim0, Tensor_Dim1>(bAse, gg, bb);
+    getFTensor2DiffN(const int gg, const int bb) {
+      return getFTensor2DiffN<Tensor_Dim0, Tensor_Dim1>(bAse, gg, bb);
     }
 
     /**
@@ -1241,7 +1086,7 @@ struct DataForcesAndSourcesCore {
      \code
      FTensor::Index<'i',3> i;
      for(int gg = 0;gg!=nb_gauss_pts;gg++) {
-      auto t_base = data.getFTensor1HdivN(base,gg,bb);
+      auto t_base = data.getFTensor1N(base,gg,bb);
       for(int bb = 0;bb!=nb_base_functions;bb++) {
         auto dot = t_base(i)*t_base(i);
       }
@@ -1251,7 +1096,7 @@ struct DataForcesAndSourcesCore {
      */
     template <int Tensor_Dim>
     FTensor::Tensor1<FTensor::PackPtr<double *, 3>, Tensor_Dim>
-    getFTensor1HdivN(FieldApproximationBase base, const int gg, const int bb);
+    getFTensor1N(FieldApproximationBase base, const int gg, const int bb);
 
     /**
      * \brief Get Hdiv base functions at integration point
@@ -1259,7 +1104,7 @@ struct DataForcesAndSourcesCore {
      \code
      FTensor::Index<'i',3> i;
      for(int gg = 0;gg!=nb_gauss_pts;gg++) {
-      auto t_base = data.getFTensor1HdivN(gg,0);
+      auto t_base = data.getFTensor1N(gg,0);
       for(int bb = 0;bb!=nb_base_functions;bb++) {
         double dot = t_base(i)*t_base(i);
       }
@@ -1268,47 +1113,8 @@ struct DataForcesAndSourcesCore {
 
      */
     template <int Tensor_Dim>
-    inline auto getFTensor1HdivN(const int gg, const int bb) {
-      return getFTensor1HdivN<Tensor_Dim>(bAse, gg, bb);
-    }
-
-    /**
-     * \brief Get Hcurl base functions at integration point
-
-     \code
-     FTensor::Index<'i',3> i;
-     for(int gg = 0;gg!=nb_gauss_pts;gg++) {
-      auto t_base = data.getFTensor1HdivN(base,gg,0);
-      for(int bb = 0;bb!=nb_base_functions;bb++) {
-        double dot = t_base(i)*t_base(i);
-      }
-     }
-     \endcode
-
-     */
-    template <int Tensor_Dim>
-    inline auto getFTensor1HcurlN(FieldApproximationBase base, const int gg,
-                                  const int bb) {
-      return getFTensor1HdivN<Tensor_Dim>(base, gg, bb);
-    }
-
-    /**
-     * \brief Get Hcurl base functions at integration point
-
-     \code
-     FTensor::Index<'i',3> i;
-     for(int gg = 0;gg!=nb_gauss_pts;gg++) {
-      auto t_base = data.getFTensor1HcurlN(gg);
-      for(int bb = 0;bb!=nb_base_functions;bb++) {
-        double dot = t_base(i)*t_base(i);
-      }
-     }
-     \endcode
-
-     */
-    template <int Tensor_Dim>
-    inline auto getFTensor1HcurlN(const int gg, const int bb) {
-      return getFTensor1HcurlN<Tensor_Dim>(bAse, gg, bb);
+    inline auto getFTensor1N(const int gg, const int bb) {
+      return getFTensor1N<Tensor_Dim>(bAse, gg, bb);
     }
 
     /**@}*/
@@ -1504,40 +1310,17 @@ DataForcesAndSourcesCore::EntData::getFTensor1DiffN<2>(const int bb);
 
 /**@}*/
 
-/** \name Specializations for HDiv/HCurl */
-
-/**@{*/
-
-template <>
-FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>
-DataForcesAndSourcesCore::EntData::getFTensor1HdivN<3>(
-    FieldApproximationBase base);
-template <>
-FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3>
-DataForcesAndSourcesCore::EntData::getFTensor2DiffHdivN<3, 3>(
-    FieldApproximationBase base);
-template <>
-FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>
-DataForcesAndSourcesCore::EntData::getFTensor1HdivN<3>(
-    FieldApproximationBase base, const int gg, const int bb);
-template <>
-FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3>
-DataForcesAndSourcesCore::EntData::getFTensor2DiffHdivN<3, 3>(
-    FieldApproximationBase base, const int gg, const int bb);
-
-/**@}*/
-
 /** \name Specializations for HDiv/HCurl in 2d */
 
 /**@{*/
 
 template <>
 FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2>
-DataForcesAndSourcesCore::EntData::getFTensor2DiffHdivN<3, 2>(
+DataForcesAndSourcesCore::EntData::getFTensor2DiffN<3, 2>(
     FieldApproximationBase base);
 template <>
 FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2>
-DataForcesAndSourcesCore::EntData::getFTensor2DiffHdivN<3, 2>(
+DataForcesAndSourcesCore::EntData::getFTensor2DiffN<3, 2>(
     FieldApproximationBase base, const int gg, const int bb);
 
 /**@}*/

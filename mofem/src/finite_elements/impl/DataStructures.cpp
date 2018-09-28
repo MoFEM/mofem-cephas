@@ -528,7 +528,7 @@ DataForcesAndSourcesCore::EntData::getFTensor1DiffN<2>(const int gg,
 
 template <int Tensor_Dim>
 FTensor::Tensor1<FTensor::PackPtr<double *, 3>, Tensor_Dim>
-DataForcesAndSourcesCore::EntData::getFTensor1HdivN(
+DataForcesAndSourcesCore::EntData::getFTensor1N(
     FieldApproximationBase base) {
   std::stringstream s;
   s << "Template for tensor dimension " << Tensor_Dim << " not implemented";
@@ -538,7 +538,7 @@ DataForcesAndSourcesCore::EntData::getFTensor1HdivN(
 
 template <int Tensor_Dim>
 FTensor::Tensor1<FTensor::PackPtr<double *, 3>, Tensor_Dim>
-DataForcesAndSourcesCore::EntData::getFTensor1HdivN(FieldApproximationBase base,
+DataForcesAndSourcesCore::EntData::getFTensor1N(FieldApproximationBase base,
                                                     const int gg,
                                                     const int bb) {
   std::stringstream s;
@@ -550,7 +550,7 @@ DataForcesAndSourcesCore::EntData::getFTensor1HdivN(FieldApproximationBase base,
 template <int Tensor_Dim0, int Tensor_Dim1>
 FTensor::Tensor2<FTensor::PackPtr<double *, Tensor_Dim0 * Tensor_Dim1>,
                  Tensor_Dim0, Tensor_Dim1>
-DataForcesAndSourcesCore::EntData::getFTensor2DiffHdivN(
+DataForcesAndSourcesCore::EntData::getFTensor2DiffN(
     FieldApproximationBase base) {
   std::stringstream s;
   s << "Template for tensor dimension " << Tensor_Dim0 << "x" << Tensor_Dim1
@@ -562,7 +562,7 @@ DataForcesAndSourcesCore::EntData::getFTensor2DiffHdivN(
 template <int Tensor_Dim0, int Tensor_Dim1>
 FTensor::Tensor2<FTensor::PackPtr<double *, Tensor_Dim0 * Tensor_Dim1>,
                  Tensor_Dim0, Tensor_Dim1>
-DataForcesAndSourcesCore::EntData::getFTensor2DiffHdivN(
+DataForcesAndSourcesCore::EntData::getFTensor2DiffN(
     FieldApproximationBase base, const int gg, const int bb) {
   std::stringstream s;
   s << "Template for tensor dimension " << Tensor_Dim0 << "x" << Tensor_Dim1
@@ -573,65 +573,65 @@ DataForcesAndSourcesCore::EntData::getFTensor2DiffHdivN(
 
 template <>
 FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>
-DataForcesAndSourcesCore::EntData::getFTensor1HdivN<3>(
+DataForcesAndSourcesCore::EntData::getFTensor1N<3>(
     FieldApproximationBase base) {
-  double *t_n_ptr = &*getHdivN(base).data().begin();
-  return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(t_n_ptr, // HDIV0
-                                                            &t_n_ptr[HDIV1],
-                                                            &t_n_ptr[HDIV2]);
+  double *t_n_ptr = &*getVectorN(base).data().begin();
+  return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(t_n_ptr, // HVEC0
+                                                            &t_n_ptr[HVEC1],
+                                                            &t_n_ptr[HVEC2]);
 }
 
 template <>
 FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>
-DataForcesAndSourcesCore::EntData::getFTensor1HdivN<3>(
+DataForcesAndSourcesCore::EntData::getFTensor1N<3>(
     FieldApproximationBase base, const int gg, const int bb) {
-  double *t_n_ptr = &getHdivN(base)(gg, 3 * bb);
-  return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(t_n_ptr, // HDIV0
-                                                            &t_n_ptr[HDIV1],
-                                                            &t_n_ptr[HDIV2]);
+  double *t_n_ptr = &getVectorN(base)(gg, 3 * bb);
+  return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(t_n_ptr, // HVEC0
+                                                            &t_n_ptr[HVEC1],
+                                                            &t_n_ptr[HVEC2]);
 }
 
 template <>
 FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3>
-DataForcesAndSourcesCore::EntData::getFTensor2DiffHdivN<3, 3>(
+DataForcesAndSourcesCore::EntData::getFTensor2DiffN<3, 3>(
     FieldApproximationBase base) {
-  double *t_diff_n_ptr = &*getDiffHdivN(base).data().begin();
+  double *t_diff_n_ptr = &*getVectorDiffN(base).data().begin();
   return FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3>(
-      t_diff_n_ptr, &t_diff_n_ptr[HDIV0_1], &t_diff_n_ptr[HDIV0_2],
-      &t_diff_n_ptr[HDIV1_0], &t_diff_n_ptr[HDIV1_1], &t_diff_n_ptr[HDIV1_2],
-      &t_diff_n_ptr[HDIV2_0], &t_diff_n_ptr[HDIV2_1], &t_diff_n_ptr[HDIV2_2]);
+      t_diff_n_ptr, &t_diff_n_ptr[HVEC0_1], &t_diff_n_ptr[HVEC0_2],
+      &t_diff_n_ptr[HVEC1_0], &t_diff_n_ptr[HVEC1_1], &t_diff_n_ptr[HVEC1_2],
+      &t_diff_n_ptr[HVEC2_0], &t_diff_n_ptr[HVEC2_1], &t_diff_n_ptr[HVEC2_2]);
 }
 
 template <>
 FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3>
-DataForcesAndSourcesCore::EntData::getFTensor2DiffHdivN<3, 3>(
+DataForcesAndSourcesCore::EntData::getFTensor2DiffN<3, 3>(
     FieldApproximationBase base, const int gg, const int bb) {
-  double *t_diff_n_ptr = &getDiffHdivN(base)(gg, 9 * bb);
+  double *t_diff_n_ptr = &getVectorDiffN(base)(gg, 9 * bb);
   return FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3>(
-      t_diff_n_ptr, &t_diff_n_ptr[HDIV0_1], &t_diff_n_ptr[HDIV0_2],
-      &t_diff_n_ptr[HDIV1_0], &t_diff_n_ptr[HDIV1_1], &t_diff_n_ptr[HDIV1_2],
-      &t_diff_n_ptr[HDIV2_0], &t_diff_n_ptr[HDIV2_1], &t_diff_n_ptr[HDIV2_2]);
+      t_diff_n_ptr, &t_diff_n_ptr[HVEC0_1], &t_diff_n_ptr[HVEC0_2],
+      &t_diff_n_ptr[HVEC1_0], &t_diff_n_ptr[HVEC1_1], &t_diff_n_ptr[HVEC1_2],
+      &t_diff_n_ptr[HVEC2_0], &t_diff_n_ptr[HVEC2_1], &t_diff_n_ptr[HVEC2_2]);
 }
 
 template <>
 FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2>
-DataForcesAndSourcesCore::EntData::getFTensor2DiffHdivN<3, 2>(
+DataForcesAndSourcesCore::EntData::getFTensor2DiffN<3, 2>(
     FieldApproximationBase base) {
-  double *t_diff_n_ptr = &*getDiffHdivN(base).data().begin();
+  double *t_diff_n_ptr = &*getVectorDiffN(base).data().begin();
   return FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2>(
-      t_diff_n_ptr, &t_diff_n_ptr[HCURL0_1], &t_diff_n_ptr[HCURL1_0],
-      &t_diff_n_ptr[HCURL1_1], &t_diff_n_ptr[HCURL2_0],
-      &t_diff_n_ptr[HCURL2_1]);
+      t_diff_n_ptr, &t_diff_n_ptr[HVEC0_1], &t_diff_n_ptr[HVEC1_0],
+      &t_diff_n_ptr[HVEC1_1], &t_diff_n_ptr[HVEC2_0],
+      &t_diff_n_ptr[HVEC2_1]);
 }
 
 template <>
 FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2>
-DataForcesAndSourcesCore::EntData::getFTensor2DiffHdivN<3, 2>(
+DataForcesAndSourcesCore::EntData::getFTensor2DiffN<3, 2>(
     FieldApproximationBase base, const int gg, const int bb) {
-  double *t_diff_n_ptr = &getDiffHdivN(base)(gg, 6 * bb);
+  double *t_diff_n_ptr = &getVectorDiffN(base)(gg, 6 * bb);
   return FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2>(
-      t_diff_n_ptr, &t_diff_n_ptr[HCURL0_1], &t_diff_n_ptr[HCURL1_0],
-      &t_diff_n_ptr[HCURL1_1], &t_diff_n_ptr[HCURL2_0], &t_diff_n_ptr[HCURL2_1]);
+      t_diff_n_ptr, &t_diff_n_ptr[HVEC0_1], &t_diff_n_ptr[HVEC1_0],
+      &t_diff_n_ptr[HVEC1_1], &t_diff_n_ptr[HVEC2_0], &t_diff_n_ptr[HVEC2_1]);
 }
 
 /**@}*/
