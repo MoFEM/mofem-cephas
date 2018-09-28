@@ -147,17 +147,17 @@ static void constructor_data(DataForcesAndSourcesCore *data,
     break;
   case MBTET: 
     data->dataOnEntities[MBVERTEX].push_back(new EntData());
-    for (int ee = 0; ee < 6; ee++) {
+    for (int ee = 0; ee != 6; ++ee) {
       data->dataOnEntities[MBEDGE].push_back(new EntData());
     }
-    for (int ff = 0; ff < 4; ff++) {
+    for (int ff = 0; ff != 4; ++ff) {
       data->dataOnEntities[MBTRI].push_back(new EntData());
     }
     data->dataOnEntities[MBTET].push_back(new EntData());
   break;
   case MBTRI:
     data->dataOnEntities[MBVERTEX].push_back(new EntData());
-    for (int ee = 0; ee < 3; ee++) {
+    for (int ee = 0; ee != 3; ++ee) {
       data->dataOnEntities[MBEDGE].push_back(new EntData());
     }
     data->dataOnEntities[MBTRI].push_back(new EntData());
@@ -171,13 +171,13 @@ static void constructor_data(DataForcesAndSourcesCore *data,
     break;
   case MBPRISM:
     data->dataOnEntities[MBVERTEX].push_back(new EntData());
-    for (int ee = 0; ee < 9; ee++) {
+    for (int ee = 0; ee != 9; ++ee) {
       data->dataOnEntities[MBEDGE].push_back(new EntData());
     }
-    for (int qq = 0; qq < 5; qq++) {
+    for (int qq = 0; qq != 5; ++qq) {
       data->dataOnEntities[MBQUAD].push_back(new EntData());
     }
-    for (int ff = 0; ff < 5; ff++) {
+    for (int ff = 0; ff != 5; ++ff) {
       data->dataOnEntities[MBTRI].push_back(new EntData());
     }
     data->dataOnEntities[MBPRISM].push_back(new EntData());
