@@ -965,7 +965,7 @@ MoFEMErrorCode ForcesAndSourcesCore::calculateBaseFunctionsOnElement(
     const FieldApproximationBase b) {
   MoFEMFunctionBegin;
   if (dataOnElement[H1]->bAse.test(b)) {
-    switch (ApproximationBaseArray[b]) {
+    switch (static_cast<FieldApproximationBase>(b)) {
     case NOBASE:
       break;
     case AINSWORTH_LEGENDRE_BASE:
@@ -983,7 +983,7 @@ MoFEMErrorCode ForcesAndSourcesCore::calculateBaseFunctionsOnElement(
               gaussPts,
               boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
                   *dataOnElement[space], static_cast<FieldSpace>(space),
-                  ApproximationBaseArray[b], NOBASE)));
+                  static_cast<FieldApproximationBase>(b), NOBASE)));
         }
       }
       break;
@@ -1000,13 +1000,13 @@ MoFEMErrorCode ForcesAndSourcesCore::calculateBaseFunctionsOnElement(
               gaussPts,
               boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
                   *dataOnElement[space], static_cast<FieldSpace>(space),
-                  ApproximationBaseArray[b], NOBASE)));
+                  static_cast<FieldApproximationBase>(b), NOBASE)));
         }
       break;
     default:
       SETERRQ1(mField.get_comm(), MOFEM_DATA_INCONSISTENCY,
                "Base <%s> not yet implemented",
-               ApproximationBaseNames[ApproximationBaseArray[b]]);
+               ApproximationBaseNames[static_cast<FieldApproximationBase>(b)]);
     }
   }
   MoFEMFunctionReturn(0);

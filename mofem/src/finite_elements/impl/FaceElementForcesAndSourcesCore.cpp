@@ -440,7 +440,7 @@ OpSetInvJacH1ForFace::doWork(int side, EntityType type,
 
   for (int b = AINSWORTH_LEGENDRE_BASE; b != USER_BASE; b++) {
 
-    FieldApproximationBase base = ApproximationBaseArray[b];
+    FieldApproximationBase base = static_cast<FieldApproximationBase>(b);
 
     unsigned int nb_dofs = data.getN(base).size2();
     if (nb_dofs == 0)
@@ -513,7 +513,7 @@ OpSetInvJacHcurlFace::doWork(int side, EntityType type,
 
   for (int b = AINSWORTH_LEGENDRE_BASE; b != USER_BASE; b++) {
 
-    FieldApproximationBase base = ApproximationBaseArray[b];
+    FieldApproximationBase base = static_cast<FieldApproximationBase>(b);
 
     const unsigned int nb_base_functions = data.getVectorDiffN(base).size2() / 6;
     if (!nb_base_functions)

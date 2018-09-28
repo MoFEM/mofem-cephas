@@ -365,7 +365,7 @@ MoFEMErrorCode FatPrismElementForcesAndSourcesCore::operator()() {
   // Calculate base functions on prism
   for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
     if (dataH1.bAse.test(b)) {
-      switch (ApproximationBaseArray[b]) {
+      switch (static_cast<FieldApproximationBase>(b)) {
       case AINSWORTH_LEGENDRE_BASE:
       case AINSWORTH_LOBATTO_BASE:
         if (dataH1.spacesOnEntities[MBVERTEX].test(H1)) {
@@ -375,7 +375,7 @@ MoFEMErrorCode FatPrismElementForcesAndSourcesCore::operator()() {
                   dataH1, dataH1TrianglesOnly, dataH1TroughThickness,
                   gaussPtsTrianglesOnly, gaussPtsThroughThickness,
                   mField.get_moab(), numeredEntFiniteElementPtr.get(), H1,
-                  ApproximationBaseArray[b], NOBASE)));
+                  static_cast<FieldApproximationBase>(b), NOBASE)));
         }
         if (dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
           SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
@@ -496,7 +496,7 @@ OpSetInvJacH1ForFatPrism::doWork(int side, EntityType type,
 
   for (int b = AINSWORTH_LEGENDRE_BASE; b != USER_BASE; b++) {
 
-    FieldApproximationBase base = ApproximationBaseArray[b];
+    FieldApproximationBase base = static_cast<FieldApproximationBase>(b);
     if (data.getN(base).size2() == 0)
       continue;
 

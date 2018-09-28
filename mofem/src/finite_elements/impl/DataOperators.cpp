@@ -776,7 +776,7 @@ OpSetInvJacHdivAndHcurl::doWork(int side, EntityType type,
 
   for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
 
-    FieldApproximationBase base = ApproximationBaseArray[b];
+    FieldApproximationBase base = static_cast<FieldApproximationBase>(b);
 
     const unsigned int nb_gauss_pts = data.getVectorDiffN(base).size1();
     const unsigned int nb_base_functions = data.getVectorDiffN(base).size2() / 9;
@@ -817,7 +817,7 @@ MoFEMErrorCode OpSetContravariantPiolaTransform::doWork(
 
   for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
 
-    FieldApproximationBase base = ApproximationBaseArray[b];
+    FieldApproximationBase base = static_cast<FieldApproximationBase>(b);
 
     const unsigned int nb_base_functions = data.getVectorN(base).size2() / 3;
     if (!nb_base_functions)
@@ -882,7 +882,7 @@ OpSetCovariantPiolaTransform::doWork(int side, EntityType type,
 
   for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
 
-    FieldApproximationBase base = ApproximationBaseArray[b];
+    FieldApproximationBase base = static_cast<FieldApproximationBase>(b);
 
     const unsigned int nb_base_functions = data.getVectorN(base).size2() / 3;
     if (!nb_base_functions)
@@ -935,7 +935,7 @@ OpSetHoInvJacH1::doWork(int side, EntityType type,
 
   for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
 
-    FieldApproximationBase base = ApproximationBaseArray[b];
+    FieldApproximationBase base = static_cast<FieldApproximationBase>(b);
     if (data.getDiffN(base).size2() == 0)
       continue;
 
@@ -1007,11 +1007,10 @@ OpSetHoInvJacHdivAndHcurl::doWork(int side, EntityType type,
 
   if (type != MBEDGE && type != MBTRI && type != MBTET)
     MoFEMFunctionReturnHot(0);
-  // if(data.getSpace() == HDIV && type == MBEDGE) MoFEMFunctionReturnHot(0);
 
   for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
 
-    FieldApproximationBase base = ApproximationBaseArray[b];
+    FieldApproximationBase base = static_cast<FieldApproximationBase>(b);
 
     diffHdivInvJac.resize(data.getVectorDiffN(base).size1(),
                           data.getVectorDiffN(base).size2(), false);
@@ -1060,7 +1059,7 @@ MoFEMErrorCode OpSetHoContravariantPiolaTransform::doWork(
 
   for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
 
-    FieldApproximationBase base = ApproximationBaseArray[b];
+    FieldApproximationBase base = static_cast<FieldApproximationBase>(b);
 
     unsigned int nb_gauss_pts = data.getVectorN(base).size1();
     unsigned int nb_base_functions = data.getVectorN(base).size2() / 3;
@@ -1117,7 +1116,7 @@ MoFEMErrorCode OpSetHoCovariantPiolaTransform::doWork(
 
   for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
 
-    FieldApproximationBase base = ApproximationBaseArray[b];
+    FieldApproximationBase base = static_cast<FieldApproximationBase>(b);
 
     unsigned int nb_gauss_pts = data.getVectorN(base).size1();
     unsigned int nb_base_functions = data.getVectorN(base).size2() / 3;
@@ -1413,7 +1412,7 @@ MoFEMErrorCode OpSetContravariantPiolaTransformOnTriangle::doWork(
 
   for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
 
-    FieldApproximationBase base = ApproximationBaseArray[b];
+    FieldApproximationBase base = static_cast<FieldApproximationBase>(b);
 
     int nb_gauss_pts = data.getVectorN(base).size1();
     if (nb_gauss_pts) {
@@ -1477,7 +1476,7 @@ MoFEMErrorCode OpSetCovariantPiolaTransformOnTriangle::doWork(
 
   for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
 
-    FieldApproximationBase base = ApproximationBaseArray[b];
+    FieldApproximationBase base = static_cast<FieldApproximationBase>(b);
 
     int nb_dofs = data.getVectorN(base).size2() / 3;
     int nb_gauss_pts = data.getVectorN(base).size1();
@@ -1489,7 +1488,7 @@ MoFEMErrorCode OpSetCovariantPiolaTransformOnTriangle::doWork(
 
     if (nb_dofs > 0 && nb_gauss_pts > 0) {
 
-      FieldApproximationBase base = ApproximationBaseArray[b];
+      FieldApproximationBase base = static_cast<FieldApproximationBase>(b);
       FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_h_curl(
           &data.getVectorN(base)(0, HVEC0), &data.getVectorN(base)(0, HVEC1),
           &data.getVectorN(base)(0, HVEC2));
@@ -1634,7 +1633,7 @@ MoFEMErrorCode OpSetCovariantPiolaTransformOnEdge::doWork(
 
   for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
 
-    FieldApproximationBase base = ApproximationBaseArray[b];
+    FieldApproximationBase base = static_cast<FieldApproximationBase>(b);
     int nb_gauss_pts = data.getVectorN(base).size1();
     int nb_dofs = data.getVectorN(base).size2() / 3;
     if (nb_gauss_pts > 0 && nb_dofs > 0) {

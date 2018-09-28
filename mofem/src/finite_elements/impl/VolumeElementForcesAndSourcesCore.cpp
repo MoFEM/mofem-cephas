@@ -376,7 +376,7 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCore::operator()() {
     MatrixDouble new_diff_n;
     for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
       FTensor::Index<'i', 3> i;
-      FieldApproximationBase base = ApproximationBaseArray[b];
+      FieldApproximationBase base = static_cast<FieldApproximationBase>(b);
       DataForcesAndSourcesCore::EntData &data =
           dataH1.dataOnEntities[MBVERTEX][0];
       if ((data.getDiffN(base).size1() == 4) &&

@@ -161,17 +161,6 @@ const static char *const ApproximationBaseNames[] = {
     "USER_BASE",
     "LASTBASE"};
 
-#ifdef __cplusplus
-const static FieldApproximationBase ApproximationBaseArray[] = {
-    NOBASE,
-    AINSWORTH_LEGENDRE_BASE,
-    AINSWORTH_LOBATTO_BASE,
-    AINSWORTH_BERNSTEIN_BEZIER_BASE,
-    DEMKOWICZ_JACOBI_BASE,
-    USER_BASE,
-    LASTBASE};
-#endif // __cplusplus
-
 /// \brief approximation spaces
 enum FieldSpace {
   NOSPACE = 0,
