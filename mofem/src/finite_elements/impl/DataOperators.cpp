@@ -694,7 +694,7 @@ MoFEMErrorCode OpSetInvJacH1::doWork(int side, EntityType type,
 
   for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
 
-    FieldApproximationBase base = ApproximationBaseArray[b];
+    FieldApproximationBase base = static_cast<FieldApproximationBase>(b);
     const unsigned int nb_base_functions = data.getN(base).size2();
     if (!nb_base_functions)
       continue;

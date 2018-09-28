@@ -88,8 +88,9 @@ MoFEMErrorCode EntPolynomialBaseCtx::setBase() {
     case L2:
       basePolynomialsType0 = Legendre_polynomials;
       break;
-    case LASTSPACE:
-      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Makes no sense");
+    default:
+      SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+               "Not implemented for this space", FieldSpaceNames[sPace]);
     }
     break;
   case AINSWORTH_LOBATTO_BASE:
@@ -103,8 +104,9 @@ MoFEMErrorCode EntPolynomialBaseCtx::setBase() {
     case L2:
       basePolynomialsType0 = LobattoKernel_polynomials;
       break;
-    case LASTSPACE:
-      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Makes no sense");
+    default:
+      SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+               "Not implemented for this space", FieldSpaceNames[sPace]);
     }
     break;
   case DEMKOWICZ_JACOBI_BASE:
@@ -118,8 +120,10 @@ MoFEMErrorCode EntPolynomialBaseCtx::setBase() {
     case L2:
       basePolynomialsType1 = Jacobi_polynomials;
       break;
-    case LASTSPACE:
-      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Makes no sense");
+    default:
+      SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+               "Not implemented for this space",
+               FieldSpaceNames[sPace]);
     }
     break;
   case USER_BASE:
