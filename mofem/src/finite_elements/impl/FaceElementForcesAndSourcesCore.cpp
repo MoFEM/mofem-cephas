@@ -237,11 +237,6 @@ FaceElementForcesAndSourcesCore::getSpaceBaseAndOrderOnElement() {
   MoFEMFunctionBegin;
   // Get spaces order/base and sense of entities.
   
-  
-  DataForcesAndSourcesCore &data_curl = *dataOnElement[HCURL];
-  DataForcesAndSourcesCore &data_div = *dataOnElement[HDIV];
-  DataForcesAndSourcesCore &data_l2 = *dataOnElement[L2]; 
-
   CHKERR getSpacesAndBaseOnEntities(dataH1);
 
   // H1
@@ -256,28 +251,28 @@ FaceElementForcesAndSourcesCore::getSpaceBaseAndOrderOnElement() {
 
   // Hcurl
   if (dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
-    CHKERR getEntitySense<MBEDGE>(data_curl);
-    CHKERR getEntityDataOrder<MBEDGE>(data_curl, HCURL);
-    data_curl.spacesOnEntities[MBEDGE].set(HCURL);
+    CHKERR getEntitySense<MBEDGE>(dataHcurl);
+    CHKERR getEntityDataOrder<MBEDGE>(dataHcurl, HCURL);
+    dataHcurl.spacesOnEntities[MBEDGE].set(HCURL);
   }
   if (dataH1.spacesOnEntities[MBTRI].test(HCURL)) {
-    CHKERR getEntitySense<MBTRI>(data_curl);
-    CHKERR getEntityDataOrder<MBTRI>(data_curl, HCURL);
-    data_curl.spacesOnEntities[MBTRI].set(HCURL);
+    CHKERR getEntitySense<MBTRI>(dataHcurl);
+    CHKERR getEntityDataOrder<MBTRI>(dataHcurl, HCURL);
+    dataHcurl.spacesOnEntities[MBTRI].set(HCURL);
   }
 
   // Hdiv
   if (dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
-    CHKERR getEntitySense<MBTRI>(data_div);
-    CHKERR getEntityDataOrder<MBTRI>(data_div, HDIV);
-    data_div.spacesOnEntities[MBTRI].set(HDIV);
+    CHKERR getEntitySense<MBTRI>(dataHdiv);
+    CHKERR getEntityDataOrder<MBTRI>(dataHdiv, HDIV);
+    dataHdiv.spacesOnEntities[MBTRI].set(HDIV);
   }
 
   // L2
   if (dataH1.spacesOnEntities[MBTRI].test(L2)) {
-    CHKERR getEntitySense<MBTRI>(data_l2);
-    CHKERR getEntityDataOrder<MBTRI>(data_l2, L2);
-    data_l2.spacesOnEntities[MBTRI].set(L2);
+    CHKERR getEntitySense<MBTRI>(dataL2);
+    CHKERR getEntityDataOrder<MBTRI>(dataL2, L2);
+    dataL2.spacesOnEntities[MBTRI].set(L2);
   }
 
   MoFEMFunctionReturn(0);
