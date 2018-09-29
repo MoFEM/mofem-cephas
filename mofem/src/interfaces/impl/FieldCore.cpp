@@ -114,6 +114,7 @@ MoFEMErrorCode Core::add_field(const std::string &name, const FieldSpace space,
     CHKERR get_moab().tag_set_data(th_FieldSpace, &meshset, 1, &space);
     // base
     CHKERR get_moab().tag_set_data(th_FieldBase, &meshset, 1, &base);
+
     // name
     void const *tag_data[] = {name.c_str()};
     int tag_sizes[1];
@@ -121,33 +122,34 @@ MoFEMErrorCode Core::add_field(const std::string &name, const FieldSpace space,
     CHKERR get_moab().tag_set_by_ptr(th_FieldName, &meshset, 1, tag_data,
                                      tag_sizes);
     // name data prefix
-    std::string name_data_prefix("_App_Data");
+    const std::string name_data_prefix("_App_Data");
     void const *tag_prefix_data[] = {name_data_prefix.c_str()};
     int tag_prefix_sizes[1];
     tag_prefix_sizes[0] = name_data_prefix.size();
     CHKERR get_moab().tag_set_by_ptr(th_FieldName_DataNamePrefix, &meshset, 1,
                                      tag_prefix_data, tag_prefix_sizes);
-    Tag th_AppOrder, th_FieldData, th_Rank;
+    Tag th_app_order, th_field_data, th_rank;
     // data
-    std::string Tag_data_name = name_data_prefix + name;
+    std::string tag_data_name = name_data_prefix + name;
     const int def_len = 0;
     CHKERR get_moab().tag_get_handle(
-        Tag_data_name.c_str(), def_len, MB_TYPE_OPAQUE, th_FieldData,
+        tag_data_name.c_str(), def_len, MB_TYPE_OPAQUE, th_field_data,
         MB_TAG_CREAT | MB_TAG_BYTES | MB_TAG_VARLEN | MB_TAG_SPARSE, NULL);
     // order
     ApproximationOrder def_ApproximationOrder = -1;
-    std::string Tag_ApproximationOrder_name = "_App_Order_" + name;
+    const std::string Tag_ApproximationOrder_name = "_App_Order_" + name;
     CHKERR get_moab().tag_get_handle(
         Tag_ApproximationOrder_name.c_str(), sizeof(ApproximationOrder),
-        MB_TYPE_OPAQUE, th_AppOrder, MB_TAG_CREAT | MB_TAG_BYTES | tag_type,
+        MB_TYPE_OPAQUE, th_app_order, MB_TAG_CREAT | MB_TAG_BYTES | tag_type,
         &def_ApproximationOrder);
     // rank
     int def_rank = 1;
-    std::string Tag_rank_name = "_Field_Rank_" + name;
+    const std::string tag_rank_name = "_Field_Rank_" + name;
     CHKERR get_moab().tag_get_handle(
-        Tag_rank_name.c_str(), sizeof(FieldCoefficientsNumber), MB_TYPE_OPAQUE,
-        th_Rank, MB_TAG_CREAT | MB_TAG_BYTES | tag_type, &def_rank);
-    CHKERR get_moab().tag_set_data(th_Rank, &meshset, 1, &nb_of_coefficients);
+        tag_rank_name.c_str(), sizeof(FieldCoefficientsNumber), MB_TYPE_OPAQUE,
+        th_rank, MB_TAG_CREAT | MB_TAG_BYTES | tag_type, &def_rank);
+    CHKERR get_moab().tag_set_data(th_rank, &meshset, 1, &nb_of_coefficients);
+
     // add meshset
     std::pair<Field_multiIndex::iterator, bool> p;
     CoordSystemsManager *cs_manger_ptr;
@@ -175,7 +177,7 @@ MoFEMErrorCode Core::add_field(const std::string &name, const FieldSpace space,
       PetscPrintf(cOmm, ss.str().c_str());
     }
   }
-  // unt
+
   MoFEMFunctionReturn(0);
 }
 
