@@ -979,7 +979,7 @@ struct DataForcesAndSourcesCore {
     FTensor::Tensor1<double *, Tensor_Dim> getFTensor1DiffN(const int gg,
                                                             const int bb);
 
-    /** \brief Get base functions for Hdiv space
+    /** \brief Get base functions for Hdiv/Hcurl spaces
 
     \note You probably like to use getFTensor1N(), in typical use base is
     set automatically based on base set to field.
@@ -1005,7 +1005,7 @@ struct DataForcesAndSourcesCore {
 
     */
     template <int Tensor_Dim>
-    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, Tensor_Dim>
+    FTensor::Tensor1<FTensor::PackPtr<double *, Tensor_Dim>, Tensor_Dim>
     getFTensor1N(FieldApproximationBase base);
 
     /** \brief Get base functions for Hdiv space
@@ -1084,7 +1084,7 @@ struct DataForcesAndSourcesCore {
 
      */
     template <int Tensor_Dim>
-    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, Tensor_Dim>
+    FTensor::Tensor1<FTensor::PackPtr<double *, Tensor_Dim>, Tensor_Dim>
     getFTensor1N(FieldApproximationBase base, const int gg, const int bb);
 
     /**
@@ -1104,6 +1104,120 @@ struct DataForcesAndSourcesCore {
     template <int Tensor_Dim>
     inline auto getFTensor1N(const int gg, const int bb) {
       return getFTensor1N<Tensor_Dim>(bAse, gg, bb);
+    }
+
+    /** \brief Get base functions for Hdiv/Hcurl spaces
+
+    \note You probably like to use getFTensor1N(), in typical use base is
+    set automatically based on base set to field.
+
+    * @param  base Approximation base
+
+    Example:
+    \code
+    FTensor::Index<'i',3> i;
+    FTensor::Index<'i',3> j;
+    int nb_dofs = data.getFieldData().size();
+    auto t_n_hdiv = data.getFTensor2N<3,3>();
+    for(int gg = 0;gg!=nb_gauss_pts;gg++) {
+      int ll = 0;
+      for(;ll!=nb_dofs;ll++) {
+        double dot_product = t_n_hdiv(i,j)*t_n_hdiv(i,j);
+        ++t_n_hdiv;
+      }
+      for(;ll!=data.getVectorN().size2()/3;ll++) {
+        ++t_n_hdiv;
+      }
+    }
+    \endcode
+
+    */
+    template <int Tensor_Dim0, int Tensor_Dim1>
+    FTensor::Tensor2<FTensor::PackPtr<double *, Tensor_Dim0 * Tensor_Dim1>,
+                     Tensor_Dim0, Tensor_Dim1>
+    getFTensor2N(FieldApproximationBase base);
+
+    /** \brief Get base functions for Hdiv space
+
+    Example:
+    \code
+    FTensor::Index<'i',3> i;
+    FTensor::Index<'j',3> j;
+
+    int nb_dofs = data.getFieldData().size();
+    auto t_n_hdiv = data.getFTensor2N<3,3>();
+    for(int gg = 0;gg!=nb_gauss_pts;gg++) {
+      int ll = 0;
+      for(;ll!=nb_dofs;ll++) {
+        double dot_product = t_n_hdiv(i,j)*t_n_hdiv(i,j);
+        ++t_n_hdiv;
+      }
+      for(;ll!=data.getVectorN().size2()/3;ll++) {
+        ++t_n_hdiv;
+      }
+    }
+    \endcode
+
+    */
+    template <int Tensor_Dim0, int Tensor_Dim1> auto getFTensor2N() {
+      return getFTensor2N<Tensor_Dim0, Tensor_Dim1>(bAse);
+    }
+
+    /** \brief Get base functions for tensor Hdiv/Hcurl spaces
+
+    \note You probably like to use getFTensor2N(), in typical use base is
+    set automatically based on base set to field.
+
+    @param  base Approximation base
+
+    Example:
+    \code
+    FTensor::Index<'i',3> i;
+    FTensor::Index<'j',3> i;
+    int nb_dofs = data.getFieldData().size();
+    for(int gg = 0;gg!=nb_gauss_pts;gg++) {
+      auto t_n_hdiv = data.getFTensor2N<3>(base,gg,bb);
+      int ll = 0;
+      for(;ll!=nb_dofs;ll++) {
+        double dot_product = t_n_hdiv(i,j)*t_n_hdiv(i,j);
+        ++t_n_hdiv;
+      }
+      for(;ll!=data.getVectorN().size2()/3;ll++) {
+        ++t_n_hdiv;
+      }
+    }
+    \endcode
+
+    */
+    template <int Tensor_Dim0, int Tensor_Dim1>
+    FTensor::Tensor2<FTensor::PackPtr<double *, Tensor_Dim0 * Tensor_Dim1>,
+                     Tensor_Dim0, Tensor_Dim1>
+    getFTensor2N(FieldApproximationBase base, const int gg, const int bb);
+
+    /** \brief Get base functions for Hdiv space
+
+    Example:
+    \code
+    FTensor::Index<'i',3> i;
+    FTensor::Index<'j',3> j;
+    int nb_dofs = data.getFieldData().size();
+    for(int gg = 0;gg!=nb_gauss_pts;++gg) {
+      int ll = 0;
+      auto t_n_hdiv = data.getFTensor2N<3,3>(gg,0);
+      for(;ll!=nb_dofs;ll++) {
+        double dot_product = t_n_hdiv(i)*t_n_hdiv(i);
+        ++t_n_hdiv;
+      }
+      for(;ll!=data.getVectorN().size2()/3;ll++) {
+        ++t_n_hdiv;
+      }
+    }
+    \endcode
+
+    */
+    template <int Tensor_Dim0, int Tensor_Dim1>
+    auto getFTensor2N(const int gg, const int bb) {
+      return getFTensor2N<Tensor_Dim0, Tensor_Dim1>(bAse, gg, bb);
     }
 
     /**@}*/

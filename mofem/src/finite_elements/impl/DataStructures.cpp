@@ -527,24 +527,24 @@ DataForcesAndSourcesCore::EntData::getFTensor1DiffN<2>(const int gg,
 /**@{*/
 
 template <int Tensor_Dim>
-FTensor::Tensor1<FTensor::PackPtr<double *, 3>, Tensor_Dim>
+FTensor::Tensor1<FTensor::PackPtr<double *, Tensor_Dim>, Tensor_Dim>
 DataForcesAndSourcesCore::EntData::getFTensor1N(
     FieldApproximationBase base) {
   std::stringstream s;
   s << "Template for tensor dimension " << Tensor_Dim << " not implemented";
   THROW_MESSAGE(s.str());
-  return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, Tensor_Dim>();
+  return FTensor::Tensor1<FTensor::PackPtr<double *, Tensor_Dim>, Tensor_Dim>();
 }
 
 template <int Tensor_Dim>
-FTensor::Tensor1<FTensor::PackPtr<double *, 3>, Tensor_Dim>
+FTensor::Tensor1<FTensor::PackPtr<double *, Tensor_Dim>, Tensor_Dim>
 DataForcesAndSourcesCore::EntData::getFTensor1N(FieldApproximationBase base,
                                                     const int gg,
                                                     const int bb) {
   std::stringstream s;
   s << "Template for tensor dimension " << Tensor_Dim << " not implemented";
   THROW_MESSAGE(s.str());
-  return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, Tensor_Dim>();
+  return FTensor::Tensor1<FTensor::PackPtr<double *, Tensor_Dim>, Tensor_Dim>();
 }
 
 template <int Tensor_Dim0, int Tensor_Dim1>
@@ -632,6 +632,63 @@ DataForcesAndSourcesCore::EntData::getFTensor2DiffN<3, 2>(
   return FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2>(
       t_diff_n_ptr, &t_diff_n_ptr[HVEC0_1], &t_diff_n_ptr[HVEC1_0],
       &t_diff_n_ptr[HVEC1_1], &t_diff_n_ptr[HVEC2_0], &t_diff_n_ptr[HVEC2_1]);
+}
+
+template <int Tensor_Dim0, int Tensor_Dim1>
+FTensor::Tensor2<FTensor::PackPtr<double *, Tensor_Dim0 * Tensor_Dim1>,
+                 Tensor_Dim0, Tensor_Dim1>
+DataForcesAndSourcesCore::EntData::getFTensor2N(FieldApproximationBase base) {
+  std::stringstream s;
+  s << "Template for tensor dimension " << Tensor_Dim0 << ", " << Tensor_Dim1
+    << " not implemented";
+  THROW_MESSAGE(s.str());
+  return FTensor::Tensor2<FTensor::PackPtr<double *, Tensor_Dim0 * Tensor_Dim1>,
+                          Tensor_Dim0, Tensor_Dim1>();
+}
+
+template <>
+FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3>
+DataForcesAndSourcesCore::EntData::getFTensor2N<3, 3>(
+    FieldApproximationBase base) {
+  double *t_n_ptr = &*(getN(base).data().begin());
+  return FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3>(
+
+      &t_n_ptr[HVEC0], &t_n_ptr[HVEC1], &t_n_ptr[HVEC2],
+
+      &t_n_ptr[3 + HVEC0], &t_n_ptr[3 + HVEC1], &t_n_ptr[3 + HVEC2],
+
+      &t_n_ptr[6 + HVEC0], &t_n_ptr[6 + HVEC1], &t_n_ptr[6 + HVEC2]
+
+  );
+}
+
+template <int Tensor_Dim0, int Tensor_Dim1>
+FTensor::Tensor2<FTensor::PackPtr<double *, Tensor_Dim0 * Tensor_Dim1>,
+                 Tensor_Dim0, Tensor_Dim1>
+DataForcesAndSourcesCore::EntData::getFTensor2N(FieldApproximationBase base,
+                                                const int gg, const int bb) {
+  std::stringstream s;
+  s << "Template for tensor dimension " << Tensor_Dim0 << ", " << Tensor_Dim1
+    << " not implemented";
+  THROW_MESSAGE(s.str());
+  return FTensor::Tensor2<FTensor::PackPtr<double *, Tensor_Dim0 * Tensor_Dim1>,
+                          Tensor_Dim0, Tensor_Dim1>();
+}
+
+template <>
+FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3>
+DataForcesAndSourcesCore::EntData::getFTensor2N<3, 3>(
+    FieldApproximationBase base, const int gg, const int bb) {
+  double *t_n_ptr = &getN(base)(gg, 9 * bb);
+  return FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3>(
+
+      &t_n_ptr[HVEC0], &t_n_ptr[HVEC1], &t_n_ptr[HVEC2],
+
+      &t_n_ptr[3 + HVEC0], &t_n_ptr[3 + HVEC1], &t_n_ptr[3 + HVEC2],
+
+      &t_n_ptr[6 + HVEC0], &t_n_ptr[6 + HVEC1], &t_n_ptr[6 + HVEC2]
+
+  );
 }
 
 /**@}*/
