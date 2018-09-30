@@ -515,12 +515,12 @@ OpSetInvJacHcurlFace::doWork(int side, EntityType type,
 
     FieldApproximationBase base = static_cast<FieldApproximationBase>(b);
 
-    const unsigned int nb_base_functions = data.getVectorDiffN(base).size2() / 6;
+    const unsigned int nb_base_functions = data.getDiffN(base).size2() / 6;
     if (!nb_base_functions)
       continue;
-    const unsigned int nb_gauss_pts = data.getVectorDiffN(base).size1();
+    const unsigned int nb_gauss_pts = data.getDiffN(base).size1();
 
-    diffHcurlInvJac.resize(nb_gauss_pts, data.getVectorDiffN(base).size2(),
+    diffHcurlInvJac.resize(nb_gauss_pts, data.getDiffN(base).size2(),
                            false);
 
     auto t_diff_n = data.getFTensor2DiffN<3, 2>(base);
@@ -538,7 +538,7 @@ OpSetInvJacHcurlFace::doWork(int side, EntityType type,
       }
     }
 
-    data.getVectorDiffN(base).data().swap(diffHcurlInvJac.data());
+    data.getDiffN(base).data().swap(diffHcurlInvJac.data());
   }
 
   MoFEMFunctionReturn(0);

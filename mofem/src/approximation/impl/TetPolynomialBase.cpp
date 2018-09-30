@@ -337,19 +337,19 @@ MoFEMErrorCode TetPolynomialBase::getValueHdivAinsworthBase(MatrixDouble &pts) {
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
   }
   for (int ff = 0; ff != 4; ff++) {
-    data.dataOnEntities[MBTRI][ff].getVectorN(base).resize(
+    data.dataOnEntities[MBTRI][ff].getN(base).resize(
         nb_gauss_pts, 3 * NBFACETRI_AINSWORTH_HDIV(faces_order[ff]), false);
-    data.dataOnEntities[MBTRI][ff].getVectorDiffN(base).resize(
+    data.dataOnEntities[MBTRI][ff].getDiffN(base).resize(
         nb_gauss_pts, 9 * NBFACETRI_AINSWORTH_HDIV(faces_order[ff]), false);
     if (NBFACETRI_AINSWORTH_HDIV(faces_order[ff]) == 0)
       continue;
     // face
     double *base_ptr =
-        &*data.dataOnEntities[MBTRI][ff].getVectorN(base).data().begin();
+        &*data.dataOnEntities[MBTRI][ff].getN(base).data().begin();
     FTensor::Tensor1<double *, 3> t_base(base_ptr, &base_ptr[HVEC1],
                                          &base_ptr[HVEC2], 3);
     double *diff_base_ptr =
-        &*data.dataOnEntities[MBTRI][ff].getVectorDiffN(base).data().begin();
+        &*data.dataOnEntities[MBTRI][ff].getDiffN(base).data().begin();
     FTensor::Tensor2<double *, 3, 3> t_diff_base(
         &diff_base_ptr[HVEC0_0], &diff_base_ptr[HVEC0_1],
         &diff_base_ptr[HVEC0_2], &diff_base_ptr[HVEC1_0],
@@ -441,17 +441,17 @@ MoFEMErrorCode TetPolynomialBase::getValueHdivAinsworthBase(MatrixDouble &pts) {
   }
 
   // volume
-  data.dataOnEntities[MBTET][0].getVectorN(base).resize(
+  data.dataOnEntities[MBTET][0].getN(base).resize(
       nb_gauss_pts, 3 * NBVOLUMETET_AINSWORTH_HDIV(volume_order), false);
-  data.dataOnEntities[MBTET][0].getVectorDiffN(base).resize(
+  data.dataOnEntities[MBTET][0].getDiffN(base).resize(
       nb_gauss_pts, 9 * NBVOLUMETET_AINSWORTH_HDIV(volume_order), false);
   if (NBVOLUMETET_AINSWORTH_HDIV(volume_order) > 0) {
     double *base_ptr =
-        &*data.dataOnEntities[MBTET][0].getVectorN(base).data().begin();
+        &*data.dataOnEntities[MBTET][0].getN(base).data().begin();
     FTensor::Tensor1<double *, 3> t_base(base_ptr, &base_ptr[HVEC1],
                                          &base_ptr[HVEC2], 3);
     double *diff_base_ptr =
-        &*data.dataOnEntities[MBTET][0].getVectorDiffN(base).data().begin();
+        &*data.dataOnEntities[MBTET][0].getDiffN(base).data().begin();
     FTensor::Tensor2<double *, 3, 3> t_diff_base(
         &diff_base_ptr[HVEC0_0], &diff_base_ptr[HVEC0_1],
         &diff_base_ptr[HVEC0_2], &diff_base_ptr[HVEC1_0],
@@ -573,14 +573,14 @@ MoFEMErrorCode TetPolynomialBase::getValueHdivDemkowiczBase(MatrixDouble &pts) {
   for (int ff = 0; ff != 4; ff++) {
     int face_order = data.dataOnEntities[MBTRI][ff].getDataOrder();
     int order = volume_order > face_order ? volume_order : face_order;
-    data.dataOnEntities[MBTRI][ff].getVectorN(base).resize(
+    data.dataOnEntities[MBTRI][ff].getN(base).resize(
         nb_gauss_pts, 3 * NBFACETRI_DEMKOWICZ_HDIV(order), false);
-    data.dataOnEntities[MBTRI][ff].getVectorDiffN(base).resize(
+    data.dataOnEntities[MBTRI][ff].getDiffN(base).resize(
         nb_gauss_pts, 9 * NBFACETRI_DEMKOWICZ_HDIV(order), false);
     p_f[ff] = order;
-    phi_f[ff] = &*data.dataOnEntities[MBTRI][ff].getVectorN(base).data().begin();
+    phi_f[ff] = &*data.dataOnEntities[MBTRI][ff].getN(base).data().begin();
     diff_phi_f[ff] =
-        &*data.dataOnEntities[MBTRI][ff].getVectorDiffN(base).data().begin();
+        &*data.dataOnEntities[MBTRI][ff].getDiffN(base).data().begin();
     if (NBFACETRI_DEMKOWICZ_HDIV(order) == 0)
       continue;
     CHKERR Hdiv_Demkowicz_Face_MBTET_ON_FACE(
@@ -592,14 +592,14 @@ MoFEMErrorCode TetPolynomialBase::getValueHdivDemkowiczBase(MatrixDouble &pts) {
 
   // Calculate base functions in tet interior
   if (NBVOLUMETET_DEMKOWICZ_HDIV(volume_order) > 0) {
-    data.dataOnEntities[MBTET][0].getVectorN(base).resize(
+    data.dataOnEntities[MBTET][0].getN(base).resize(
         nb_gauss_pts, 3 * NBVOLUMETET_DEMKOWICZ_HDIV(volume_order), false);
-    data.dataOnEntities[MBTET][0].getVectorDiffN(base).resize(
+    data.dataOnEntities[MBTET][0].getDiffN(base).resize(
         nb_gauss_pts, 9 * NBVOLUMETET_DEMKOWICZ_HDIV(volume_order), false);
     double *phi_v =
-        &*data.dataOnEntities[MBTET][0].getVectorN(base).data().begin();
+        &*data.dataOnEntities[MBTET][0].getN(base).data().begin();
     double *diff_phi_v =
-        &*data.dataOnEntities[MBTET][0].getVectorDiffN(base).data().begin();
+        &*data.dataOnEntities[MBTET][0].getDiffN(base).data().begin();
     CHKERR Hdiv_Demkowicz_Interior_MBTET(
         volume_order, &data.dataOnEntities[MBVERTEX][0].getN(base)(0, 0),
         &data.dataOnEntities[MBVERTEX][0].getDiffN(base)(0, 0), p_f, phi_f,
@@ -609,9 +609,9 @@ MoFEMErrorCode TetPolynomialBase::getValueHdivDemkowiczBase(MatrixDouble &pts) {
   // Set size of face base correctly
   for (int ff = 0; ff != 4; ff++) {
     int face_order = data.dataOnEntities[MBTRI][ff].getDataOrder();
-    data.dataOnEntities[MBTRI][ff].getVectorN(base).resize(
+    data.dataOnEntities[MBTRI][ff].getN(base).resize(
         nb_gauss_pts, 3 * NBFACETRI_DEMKOWICZ_HDIV(face_order), true);
-    data.dataOnEntities[MBTRI][ff].getVectorDiffN(base).resize(
+    data.dataOnEntities[MBTRI][ff].getDiffN(base).resize(
         nb_gauss_pts, 9 * NBFACETRI_DEMKOWICZ_HDIV(face_order), true);
   }
 

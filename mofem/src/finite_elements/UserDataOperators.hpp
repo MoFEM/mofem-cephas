@@ -753,8 +753,8 @@ MoFEMErrorCode OpCalculateHdivVectorField_General<
   const int nb_dofs = data.getFieldData().size();
   if (!nb_dofs)
     MoFEMFunctionReturnHot(0);
-  const int nb_base_functions = data.getVectorN().size2() / Tensor_Dim;
-  const int nb_integration_points = data.getVectorN().size1();
+  const int nb_base_functions = data.getN().size2() / Tensor_Dim;
+  const int nb_integration_points = data.getN().size1();
   if (type == zeroType && side == zeroSide) {
     dataPtr->resize(Tensor_Dim, nb_integration_points,  false);
     dataPtr->clear();
@@ -826,8 +826,8 @@ struct OpCalculateHdivVectorDivergence
     const int nb_dofs = data.getFieldData().size();
     if (!nb_dofs)
       MoFEMFunctionReturnHot(0);
-    const int nb_base_functions = data.getVectorN().size2() / Tensor_Dim;
-    const int nb_integration_points = data.getVectorN().size1();
+    const int nb_base_functions = data.getN().size2() / Tensor_Dim;
+    const int nb_integration_points = data.getN().size1();
     if (type == zeroType && side == zeroSide) {
       dataPtr->resize(nb_integration_points, false);
       dataPtr->clear();
@@ -884,8 +884,8 @@ struct OpCalculateHdivTensorField
     const int nb_dofs = data.getFieldData().size();
     if (!nb_dofs)
       MoFEMFunctionReturnHot(0);
-    const int nb_base_functions = data.getVectorN().size2() / Tensor_Dim1;
-    const int nb_integration_points = data.getVectorN().size1();
+    const int nb_base_functions = data.getN().size2() / Tensor_Dim1;
+    const int nb_integration_points = data.getN().size1();
     if (type == zeroType && side == zeroSide) {
       dataPtr->resize(Tensor_Dim0 * Tensor_Dim1, nb_integration_points, false);
       dataPtr->clear();
@@ -942,8 +942,8 @@ struct OpCalculateHdivTensorDivergence
     const int nb_dofs = data.getFieldData().size();
     if (!nb_dofs)
       MoFEMFunctionReturnHot(0);
-    const int nb_base_functions = data.getVectorN().size2() / Tensor_Dim1;
-    const int nb_integration_points = data.getVectorN().size1();
+    const int nb_base_functions = data.getN().size2() / Tensor_Dim1;
+    const int nb_integration_points = data.getN().size1();
     if (type == zeroType && side == 0) {
       dataPtr->resize(Tensor_Dim0, nb_integration_points, false);
       dataPtr->clear();

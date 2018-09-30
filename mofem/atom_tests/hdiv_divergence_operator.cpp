@@ -192,7 +192,7 @@ int main(int argc, char *argv[]) {
 
       //cout << "type " << type << " side " << side << std::endl;
 
-      int nb_gauss_pts = data.getVectorDiffN().size1();
+      int nb_gauss_pts = data.getDiffN().size1();
       int nb_dofs = data.getFieldData().size();
 
       VectorDouble div_vec;
@@ -210,11 +210,8 @@ int main(int argc, char *argv[]) {
           }
           dIv += div_vec[dd]*w;
         }
-        //cout << std::fixed << data.getVectorDiffN(gg) << std::endl;
       }
 
-      //cout << std::fixed << data.getVectorDiffN() << std::endl;
-      //cout << std::endl;
 
 
       MoFEMFunctionReturnHot(0);
@@ -254,7 +251,7 @@ int main(int argc, char *argv[]) {
 
       if(type != MBTRI) MoFEMFunctionReturnHot(0);
 
-      int nb_gauss_pts = data.getVectorN().size1();
+      int nb_gauss_pts = data.getN().size1();
       int nb_dofs = data.getFieldData().size();
 
       int gg = 0;
@@ -271,11 +268,10 @@ int main(int argc, char *argv[]) {
             area = getArea();
           }
           n /= norm_2(n);
-          dIv +=
-          ( n[0]*data.getVectorN(gg)(dd,0) +
-          n[1]*data.getVectorN(gg)(dd,1) +
-          n[2]*data.getVectorN(gg)(dd,2) )
-          *getGaussPts()(2,gg)*area;
+          dIv += (n[0] * data.getVectorN<3>(gg)(dd, 0) +
+                  n[1] * data.getVectorN<3>(gg)(dd, 1) +
+                  n[2] * data.getVectorN<3>(gg)(dd, 2)) *
+                 getGaussPts()(2, gg) * area;
         }
         //cout << getNormal() << std::endl;
       }

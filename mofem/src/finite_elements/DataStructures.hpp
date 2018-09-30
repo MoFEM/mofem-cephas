@@ -419,7 +419,13 @@ struct DataForcesAndSourcesCore {
 
     /** \brief get base functions
      * this return matrix (nb. of rows is equal to nb. of Gauss pts, nb. of
-     * columns is equal to number of base functions on this entity
+     * columns is equal to number of base functions on this entity.
+     *
+     * Note that for vectorial base, like Hdiv or Hcurl, in columns are
+     * vectorial base functions. For tonsorial would be tonsorial base
+     * functions. Interpretation depends on type of base, scalar, vectorial or
+     * tonsorial and dimension fo problem.
+     *
      */
     virtual const MatrixDouble &getN(const FieldApproximationBase base) const {
       return *(getNSharedPtr(base));
@@ -433,6 +439,7 @@ struct DataForcesAndSourcesCore {
      * base functions. Columns are structured as follows, [ dN1/dx, dN1/dy,
      * dN1/dz, dN2/dx, dN2/dy, dN2/dz, ... ]
      *
+     * Scalar base functions:
      * Note that base functions are calculated in file H1.c
      * Above description not apply for derivatives of nodal functions, since
      * derivative of nodal functions in case of simplexes, EDGES, TRIANGLES and
@@ -441,6 +448,15 @@ struct DataForcesAndSourcesCore {
      * dimension, for EDGES is one, for TRIS is 2 and TETS is 3.
      *
      * Note that for node element this function make no sense.
+     *
+     * Tonsorial base functions:
+     * Note: In rows ale integration pts, columns are formatted that that
+     * components of vectors and then derivatives, for example row for given
+     * integration points is formatted in array
+     * \f[
+     * t_{0,0}, t_{1,0}, t_{1,0}, t_{0,1}, t_{1,1}, t_{1,1}, t_{0,2}, t_{1,2},
+     * t_{1,2} \f] where comma express derivative, i.e. \f$t_{2,1} =
+     * \frac{\partial t_2}{\partial \xi_1}\f$
      *
      */
     virtual const MatrixDouble &
@@ -638,61 +654,24 @@ struct DataForcesAndSourcesCore {
 
     /**@{*/
 
-    inline const MatrixDouble &
-    getVectorN(const FieldApproximationBase base) const {
-      return getN(base);
-    };
-    inline const MatrixDouble &
-    getVectorDiffN(const FieldApproximationBase base) const {
-      return getDiffN(base);
-    };
-    inline MatrixDouble &getVectorN(const FieldApproximationBase base) {
-      return getN(base);
-    };
-    inline MatrixDouble &getVectorDiffN(const FieldApproximationBase base) {
-      return getDiffN(base);
-    };
-
-    /** \brief get base functions for Hdiv space
-     */
-    inline const MatrixDouble &getVectorN() const { return getN(bAse); };
-
-    /** \brief get derivatives of base functions for Hdiv/Hcurl space
-     *
-     * Note: In rows ale integration pts, columns are formatted that that
-     * components of vectors and then derivatives, for example row for given
-     * integration points is formatted in array
-     * \f[
-     * t_{0,0}, t_{1,0}, t_{1,0}, t_{0,1}, t_{1,1}, t_{1,1}, t_{0,2}, t_{1,2},
-     * t_{1,2} \f] where comma express derivative, i.e. \f$t_{2,1} =
-     * \frac{\partial t_2}{\partial \xi_1}\f$
-     *
-     */
-    inline const MatrixDouble &getVectorDiffN() const { return getDiffN(bAse); };
-
-    /** \brief get base functions for Hdiv/Hcurl space
-     */
-    inline MatrixDouble &getVectorN() { return getN(bAse); };
-
-    /** \brief Get derivatives of base functions for Hdiv space
-     *
-     */
-    inline MatrixDouble &getVectorDiffN() { return getDiffN(bAse); };
-
     /** \brief get Hdiv of base functions at Gauss pts
      *
      * \param base Approximation base
      * \param gg nb. of Gauss point
      *
      */
+    template <int DIM>
     inline const MatrixAdaptor getVectorN(const FieldApproximationBase base,
-                                        const int gg) {
-      const int dim = 3;
-      int nb_base_functions = getVectorN(base).size2() / dim;
-      double *data = &getVectorN(base)(gg, 0);
+                                          const int gg) {
+      if (PetscUnlikely(getN(base).size2() % DIM)) {
+        THROW_MESSAGE("Wrong dimension");
+      }
+
+      const int nb_base_functions = getN(base).size2() / DIM;
+      double *data = &getN(base)(gg, 0);
       return MatrixAdaptor(
-          nb_base_functions, dim,
-          ublas::shallow_array_adaptor<double>(dim * nb_base_functions, data));
+          nb_base_functions, DIM,
+          ublas::shallow_array_adaptor<double>(DIM * nb_base_functions, data));
     }
 
     /** \brief get Hdiv of base functions at Gauss pts
@@ -701,8 +680,9 @@ struct DataForcesAndSourcesCore {
      * \param number of of base functions
      *
      */
+    template<int DIM>
     inline const MatrixAdaptor getVectorN(const int gg) {
-      return getVectorN(bAse, gg);
+      return getVectorN<DIM>(bAse, gg);
     }
 
     /** \brief get DiffHdiv of base functions at Gauss pts
@@ -712,13 +692,18 @@ struct DataForcesAndSourcesCore {
      * \param number of of base functions
      *
      */
+    template <int DIM0, int DIM1>
     inline const MatrixAdaptor getVectorDiffN(FieldApproximationBase base,
                                             const int gg) {
-      int nb_base_functions = getVectorDiffN(base).size2() / 9;
-      double *data = &getVectorDiffN(base)(gg, 0);
-      return MatrixAdaptor(
-          nb_base_functions, 9,
-          ublas::shallow_array_adaptor<double>(9 * nb_base_functions, data));
+      if (PetscUnlikely(getDiffN(base).size2() % (DIM0*DIM1))) {
+        THROW_MESSAGE("Wrong dimension");
+      }
+
+      const int nb_base_functions = getN(base).size2() / (DIM0 * DIM1);
+      double *data = &getN(base)(gg, 0);
+      return MatrixAdaptor(nb_base_functions, DIM0 * DIM1,
+                           ublas::shallow_array_adaptor<double>(
+                               DIM0 * DIM1 * nb_base_functions, data));
     }
 
     /** \brief get DiffHdiv of base functions at Gauss pts
@@ -727,8 +712,9 @@ struct DataForcesAndSourcesCore {
      * \param number of of base functions
      *
      */
+    template <int DIM0, int DIM1>
     inline const MatrixAdaptor getVectorDiffN(const int gg) {
-      return getVectorDiffN(bAse, gg);
+      return getVectorDiffN<DIM0,DIM1>(bAse, gg);
     }
 
     /** \brief get DiffHdiv of base functions at Gauss pts
@@ -738,10 +724,12 @@ struct DataForcesAndSourcesCore {
      * \param number of of base functions
      *
      */
+    template <int DIM0, int DIM1>
     inline const MatrixAdaptor getVectorDiffN(const FieldApproximationBase base,
-                                            const int dof, const int gg) {
-      double *data = &getVectorDiffN(base)(gg, 9 * dof);
-      return MatrixAdaptor(3, 3, ublas::shallow_array_adaptor<double>(9, data));
+                                              const int dof, const int gg) {
+      double *data = &getDiffN(base)(gg, DIM0 * DIM1 * dof);
+      return MatrixAdaptor(
+          DIM0, DIM1, ublas::shallow_array_adaptor<double>(DIM0 * DIM1, data));
     }
 
     /** \brief get DiffHdiv of base functions at Gauss pts
@@ -750,8 +738,9 @@ struct DataForcesAndSourcesCore {
      * \param number of of base functions
      *
      */
+    template <int DIM0, int DIM1>
     inline const MatrixAdaptor getVectorDiffN(const int dof, const int gg) {
-      return getVectorDiffN(bAse, dof, gg);
+      return getVectorDiffN<DIM0,DIM1>(bAse, dof, gg);
     }
 
     /**@}*/

@@ -575,7 +575,7 @@ template <>
 FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>
 DataForcesAndSourcesCore::EntData::getFTensor1N<3>(
     FieldApproximationBase base) {
-  double *t_n_ptr = &*getVectorN(base).data().begin();
+  double *t_n_ptr = &*getN(base).data().begin();
   return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(t_n_ptr, // HVEC0
                                                             &t_n_ptr[HVEC1],
                                                             &t_n_ptr[HVEC2]);
@@ -585,7 +585,7 @@ template <>
 FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>
 DataForcesAndSourcesCore::EntData::getFTensor1N<3>(
     FieldApproximationBase base, const int gg, const int bb) {
-  double *t_n_ptr = &getVectorN(base)(gg, 3 * bb);
+  double *t_n_ptr = &getN(base)(gg, 3 * bb);
   return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(t_n_ptr, // HVEC0
                                                             &t_n_ptr[HVEC1],
                                                             &t_n_ptr[HVEC2]);
@@ -595,7 +595,7 @@ template <>
 FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3>
 DataForcesAndSourcesCore::EntData::getFTensor2DiffN<3, 3>(
     FieldApproximationBase base) {
-  double *t_diff_n_ptr = &*getVectorDiffN(base).data().begin();
+  double *t_diff_n_ptr = &*getDiffN(base).data().begin();
   return FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3>(
       t_diff_n_ptr, &t_diff_n_ptr[HVEC0_1], &t_diff_n_ptr[HVEC0_2],
       &t_diff_n_ptr[HVEC1_0], &t_diff_n_ptr[HVEC1_1], &t_diff_n_ptr[HVEC1_2],
@@ -606,7 +606,7 @@ template <>
 FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3>
 DataForcesAndSourcesCore::EntData::getFTensor2DiffN<3, 3>(
     FieldApproximationBase base, const int gg, const int bb) {
-  double *t_diff_n_ptr = &getVectorDiffN(base)(gg, 9 * bb);
+  double *t_diff_n_ptr = &getDiffN(base)(gg, 9 * bb);
   return FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3>(
       t_diff_n_ptr, &t_diff_n_ptr[HVEC0_1], &t_diff_n_ptr[HVEC0_2],
       &t_diff_n_ptr[HVEC1_0], &t_diff_n_ptr[HVEC1_1], &t_diff_n_ptr[HVEC1_2],
@@ -617,7 +617,7 @@ template <>
 FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2>
 DataForcesAndSourcesCore::EntData::getFTensor2DiffN<3, 2>(
     FieldApproximationBase base) {
-  double *t_diff_n_ptr = &*getVectorDiffN(base).data().begin();
+  double *t_diff_n_ptr = &*getDiffN(base).data().begin();
   return FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2>(
       t_diff_n_ptr, &t_diff_n_ptr[HVEC0_1], &t_diff_n_ptr[HVEC1_0],
       &t_diff_n_ptr[HVEC1_1], &t_diff_n_ptr[HVEC2_0],
@@ -628,7 +628,7 @@ template <>
 FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2>
 DataForcesAndSourcesCore::EntData::getFTensor2DiffN<3, 2>(
     FieldApproximationBase base, const int gg, const int bb) {
-  double *t_diff_n_ptr = &getVectorDiffN(base)(gg, 6 * bb);
+  double *t_diff_n_ptr = &getDiffN(base)(gg, 6 * bb);
   return FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2>(
       t_diff_n_ptr, &t_diff_n_ptr[HVEC0_1], &t_diff_n_ptr[HVEC1_0],
       &t_diff_n_ptr[HVEC1_1], &t_diff_n_ptr[HVEC2_0], &t_diff_n_ptr[HVEC2_1]);

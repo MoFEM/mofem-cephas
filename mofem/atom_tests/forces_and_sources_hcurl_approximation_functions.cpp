@@ -170,15 +170,15 @@ int main(int argc, char *argv[]) {
       mySplit.precision(5);
 
       const double eps = 1e-6;
-      for(unsigned int dd = 0;dd<data.getVectorN().data().size();dd++) {
-        if(fabs(data.getVectorN().data()[dd])<eps) data.getVectorN().data()[dd] = 0;
+      for(unsigned int dd = 0;dd<data.getN().data().size();dd++) {
+        if(fabs(data.getN().data()[dd])<eps) data.getN().data()[dd] = 0;
       }
-      for(unsigned int dd = 0;dd<data.getVectorDiffN().data().size();dd++) {
-        if(fabs(data.getVectorDiffN().data()[dd])<eps) data.getVectorDiffN().data()[dd] = 0;
+      for(unsigned int dd = 0;dd<data.getDiffN().data().size();dd++) {
+        if(fabs(data.getDiffN().data()[dd])<eps) data.getDiffN().data()[dd] = 0;
       }
 
-      mySplit << std::fixed << data.getVectorN() << std::endl;
-      mySplit << std::fixed << data.getVectorDiffN() << std::endl;
+      mySplit << std::fixed << data.getN() << std::endl;
+      mySplit << std::fixed << data.getDiffN() << std::endl;
 
       MoFEMFunctionReturnHot(0);
     }
@@ -213,12 +213,12 @@ int main(int argc, char *argv[]) {
       mySplit.precision(5);
 
       const double eps = 1e-6;
-      for(unsigned int dd = 0;dd<data.getVectorN().data().size();dd++) {
-        if(fabs(data.getVectorN().data()[dd])<eps) data.getVectorN().data()[dd] = 0;
+      for(unsigned int dd = 0;dd<data.getN().data().size();dd++) {
+        if(fabs(data.getN().data()[dd])<eps) data.getN().data()[dd] = 0;
       }
 
-      mySplit << std::fixed << data.getVectorN() << std::endl;
-      mySplit << std::fixed << data.getVectorDiffN() << std::endl;
+      mySplit << std::fixed << data.getN() << std::endl;
+      mySplit << std::fixed << data.getDiffN() << std::endl;
 
       MoFEMFunctionReturnHot(0);
     }
@@ -254,11 +254,11 @@ int main(int argc, char *argv[]) {
       mySplit.precision(5);
 
       const double eps = 1e-6;
-      for(unsigned int dd = 0;dd<data.getVectorN().data().size();dd++) {
-        if(fabs(data.getVectorN().data()[dd])<eps) data.getVectorN().data()[dd] = 0;
+      for(unsigned int dd = 0;dd<data.getN().data().size();dd++) {
+        if(fabs(data.getN().data()[dd])<eps) data.getN().data()[dd] = 0;
       }
 
-      mySplit << std::fixed << data.getVectorN() << std::endl;
+      mySplit << std::fixed << data.getN() << std::endl;
 
       MoFEMFunctionReturnHot(0);
     }

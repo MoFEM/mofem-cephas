@@ -429,18 +429,18 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCore::UserDataOperator::
              FieldSpaceNames[data.getSpace()]);
   }
 
-  if ((unsigned int)nb_dofs != data.getVectorDiffN().size2() / 9) {
+  if ((unsigned int)nb_dofs != data.getDiffN().size2() / 9) {
     SETERRQ3(getVolumeFE()->mField.get_comm(), MOFEM_DATA_INCONSISTENCY,
              "Data inositency, wrong number of dofs  = %s "
              "%d != %d/9",
              FieldSpaceNames[data.getSpace()], nb_dofs,
-             data.getVectorDiffN().size2());
+             data.getDiffN().size2());
   }
 
   div.resize(nb_dofs, false);
 
   FTensor::Tensor0<double *> t_div(&*div.data().begin());
-  const double *grad_ptr = &data.getVectorDiffN()(gg, 0);
+  const double *grad_ptr = &data.getDiffN()(gg, 0);
   FTensor::Tensor1<FTensor::PackPtr<const double *, 9>, 3> t_grad_base(
       grad_ptr, &grad_ptr[HVEC1_1], &grad_ptr[HVEC2_2]);
   for (int dd = 0; dd < nb_dofs; dd++) {
@@ -469,18 +469,18 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCore::UserDataOperator::
              FieldSpaceNames[data.getSpace()]);
   }
 
-  if ((unsigned int)nb_dofs != data.getVectorDiffN().size2() / 9) {
+  if ((unsigned int)nb_dofs != data.getDiffN().size2() / 9) {
     SETERRQ3(getVolumeFE()->mField.get_comm(), MOFEM_DATA_INCONSISTENCY,
              "Data insistency, wrong number of dofs  = %s "
              "%d != %d/9",
              FieldSpaceNames[data.getSpace()], nb_dofs,
-             data.getVectorDiffN().size2());
+             data.getDiffN().size2());
   }
 
   curl.resize(nb_dofs, 3, false);
   FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_curl(
       &curl(0, 0), &curl(0, 1), &curl(0, 2));
-  const double *grad_ptr = &data.getVectorDiffN()(gg, 0);
+  const double *grad_ptr = &data.getDiffN()(gg, 0);
 
   FTensor::Tensor2<FTensor::PackPtr<const double *, 9>, 3, 3> t_grad_base(
       grad_ptr, &grad_ptr[HVEC0_1], &grad_ptr[HVEC0_2], &grad_ptr[HVEC1_0],
