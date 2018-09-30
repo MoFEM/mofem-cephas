@@ -485,7 +485,6 @@ protected:
   MoFEMErrorCode list_dofs_by_field_name(const std::string &name) const;
   MoFEMErrorCode list_fields() const;
   BitFieldId getBitFieldId(const std::string &name) const;
-  std::string getBitFieldIdName(const BitFieldId id) const;
   EntityHandle get_field_meshset(const BitFieldId id) const;
   EntityHandle get_field_meshset(const std::string &name) const;
   MoFEMErrorCode get_field_entities_by_dimension(const std::string name,

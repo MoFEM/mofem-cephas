@@ -215,7 +215,7 @@ MoFEMErrorCode FlatPrismElementForcesAndSourcesCore::operator()() {
 
   for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
     if (dataH1.bAse.test(b)) {
-      switch (ApproximationBaseArray[b]) {
+      switch (static_cast<FieldApproximationBase>(b)) {
       case AINSWORTH_LEGENDRE_BASE:
       case AINSWORTH_LOBATTO_BASE:
         if (dataH1.spacesOnEntities[MBVERTEX].test(H1)) {
@@ -223,7 +223,7 @@ MoFEMErrorCode FlatPrismElementForcesAndSourcesCore::operator()() {
               gaussPts,
               boost::shared_ptr<BaseFunctionCtx>(new FlatPrismPolynomialBaseCtx(
                   dataH1, mField.get_moab(), numeredEntFiniteElementPtr.get(),
-                  H1, ApproximationBaseArray[b], NOBASE)));
+                  H1, static_cast<FieldApproximationBase>(b), NOBASE)));
         }
         if (dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
           SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
@@ -329,7 +329,7 @@ OpSetInvJacH1ForFlatPrism::doWork(int side, EntityType type,
 
   for (int b = AINSWORTH_LEGENDRE_BASE; b != USER_BASE; b++) {
 
-    FieldApproximationBase base = ApproximationBaseArray[b];
+    FieldApproximationBase base = static_cast<FieldApproximationBase>(b);
 
     unsigned int nb_dofs = data.getN(base).size2();
     if (nb_dofs == 0)

@@ -308,7 +308,7 @@ int main(int argc, char *argv[]) {
   MoFEM::Core::Initialize(&argc, &argv, (char *)0, help);
 
   try {
-    CHKERR VTK_cgg_bubble_base_MBTET("out_curl_vtk_cgg_bubble_base_on_tet.vtk");
+    CHKERR VTK_cgg_bubble_base_MBTET("out_vtk_cgg_bubble_base_on_tet.vtk");
   }
   CATCH_ERRORS;
 

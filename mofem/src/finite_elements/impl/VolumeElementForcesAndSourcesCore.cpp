@@ -376,7 +376,7 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCore::operator()() {
     MatrixDouble new_diff_n;
     for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
       FTensor::Index<'i', 3> i;
-      FieldApproximationBase base = ApproximationBaseArray[b];
+      FieldApproximationBase base = static_cast<FieldApproximationBase>(b);
       DataForcesAndSourcesCore::EntData &data =
           dataH1.dataOnEntities[MBVERTEX][0];
       if ((data.getDiffN(base).size1() == 4) &&
@@ -429,20 +429,20 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCore::UserDataOperator::
              FieldSpaceNames[data.getSpace()]);
   }
 
-  if ((unsigned int)nb_dofs != data.getDiffHdivN().size2() / 9) {
+  if ((unsigned int)nb_dofs != data.getDiffN().size2() / 9) {
     SETERRQ3(getVolumeFE()->mField.get_comm(), MOFEM_DATA_INCONSISTENCY,
              "Data inositency, wrong number of dofs  = %s "
              "%d != %d/9",
              FieldSpaceNames[data.getSpace()], nb_dofs,
-             data.getDiffHdivN().size2());
+             data.getDiffN().size2());
   }
 
   div.resize(nb_dofs, false);
 
   FTensor::Tensor0<double *> t_div(&*div.data().begin());
-  const double *grad_ptr = &data.getDiffHdivN()(gg, 0);
+  const double *grad_ptr = &data.getDiffN()(gg, 0);
   FTensor::Tensor1<FTensor::PackPtr<const double *, 9>, 3> t_grad_base(
-      grad_ptr, &grad_ptr[HDIV1_1], &grad_ptr[HDIV2_2]);
+      grad_ptr, &grad_ptr[HVEC1_1], &grad_ptr[HVEC2_2]);
   for (int dd = 0; dd < nb_dofs; dd++) {
     t_div = t_grad_base(0) + t_grad_base(1) + t_grad_base(2);
     ++t_div;
@@ -469,23 +469,23 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCore::UserDataOperator::
              FieldSpaceNames[data.getSpace()]);
   }
 
-  if ((unsigned int)nb_dofs != data.getDiffHcurlN().size2() / 9) {
+  if ((unsigned int)nb_dofs != data.getDiffN().size2() / 9) {
     SETERRQ3(getVolumeFE()->mField.get_comm(), MOFEM_DATA_INCONSISTENCY,
              "Data insistency, wrong number of dofs  = %s "
              "%d != %d/9",
              FieldSpaceNames[data.getSpace()], nb_dofs,
-             data.getDiffHcurlN().size2());
+             data.getDiffN().size2());
   }
 
   curl.resize(nb_dofs, 3, false);
   FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_curl(
       &curl(0, 0), &curl(0, 1), &curl(0, 2));
-  const double *grad_ptr = &data.getDiffHcurlN()(gg, 0);
+  const double *grad_ptr = &data.getDiffN()(gg, 0);
 
   FTensor::Tensor2<FTensor::PackPtr<const double *, 9>, 3, 3> t_grad_base(
-      grad_ptr, &grad_ptr[HCURL0_1], &grad_ptr[HCURL0_2], &grad_ptr[HCURL1_0],
-      &grad_ptr[HCURL1_1], &grad_ptr[HCURL1_2], &grad_ptr[HCURL2_0],
-      &grad_ptr[HCURL2_1], &grad_ptr[HCURL2_2]);
+      grad_ptr, &grad_ptr[HVEC0_1], &grad_ptr[HVEC0_2], &grad_ptr[HVEC1_0],
+      &grad_ptr[HVEC1_1], &grad_ptr[HVEC1_2], &grad_ptr[HVEC2_0],
+      &grad_ptr[HVEC2_1], &grad_ptr[HVEC2_2]);
   for (int dd = 0; dd != nb_dofs; ++dd) {
     t_curl(0) = t_grad_base(2, 1) - t_grad_base(1, 2);
     t_curl(1) = t_grad_base(0, 2) - t_grad_base(2, 0);

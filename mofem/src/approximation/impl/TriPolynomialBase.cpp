@@ -209,7 +209,7 @@ MoFEMErrorCode TriPolynomialBase::getValueHdivAinsworthBase(MatrixDouble &pts) {
   if (data.dataOnEntities[MBTRI].size() != 1) {
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
   }
-  data.dataOnEntities[MBTRI][0].getHdivN(base).resize(
+  data.dataOnEntities[MBTRI][0].getN(base).resize(
       nb_gauss_pts, 3 * NBFACETRI_AINSWORTH_HDIV(face_order), false);
   int col = 0;
   for (int oo = 0; oo < face_order; oo++) {
@@ -217,7 +217,7 @@ MoFEMErrorCode TriPolynomialBase::getValueHdivAinsworthBase(MatrixDouble &pts) {
       for (int dd = 3 * NBFACETRI_AINSWORTH_EDGE_HDIV(oo);
            dd < 3 * NBFACETRI_AINSWORTH_EDGE_HDIV(oo + 1); dd++, col++) {
         for (int gg = 0; gg < nb_gauss_pts; gg++) {
-          data.dataOnEntities[MBTRI][0].getHdivN(base)(gg, col) =
+          data.dataOnEntities[MBTRI][0].getN(base)(gg, col) =
               N_face_edge(0, ee)(gg, dd);
         }
       }
@@ -225,7 +225,7 @@ MoFEMErrorCode TriPolynomialBase::getValueHdivAinsworthBase(MatrixDouble &pts) {
     for (int dd = 3 * NBFACETRI_AINSWORTH_FACE_HDIV(oo);
          dd < 3 * NBFACETRI_AINSWORTH_FACE_HDIV(oo + 1); dd++, col++) {
       for (int gg = 0; gg < nb_gauss_pts; gg++) {
-        data.dataOnEntities[MBTRI][0].getHdivN(base)(gg, col) =
+        data.dataOnEntities[MBTRI][0].getN(base)(gg, col) =
             N_face_bubble[0](gg, dd);
       }
     }
@@ -251,9 +251,9 @@ MoFEMErrorCode TriPolynomialBase::getValueHdivDemkowiczBase(MatrixDouble &pts) {
   }
   int order = data.dataOnEntities[MBTRI][0].getDataOrder();
   int nb_gauss_pts = pts.size2();
-  data.dataOnEntities[MBTRI][0].getHdivN(base).resize(
+  data.dataOnEntities[MBTRI][0].getN(base).resize(
       nb_gauss_pts, 3 * NBFACETRI_DEMKOWICZ_HDIV(order), false);
-  double *phi_f = &*data.dataOnEntities[MBTRI][0].getHdivN(base).data().begin();
+  double *phi_f = &*data.dataOnEntities[MBTRI][0].getN(base).data().begin();
   if (NBFACETRI_DEMKOWICZ_HDIV(order) == 0)
     MoFEMFunctionReturnHot(0);
   int face_nodes[3] = {0, 1, 2};

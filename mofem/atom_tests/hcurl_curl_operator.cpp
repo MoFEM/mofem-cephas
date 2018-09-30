@@ -202,7 +202,7 @@ int main(int argc, char *argv[]) {
         if (data.getFieldData().size() == 0)
           MoFEMFunctionReturnHot(0);
 
-        const unsigned int nb_gauss_pts = data.getDiffHcurlN().size1();
+        const unsigned int nb_gauss_pts = data.getDiffN().size1();
         const unsigned int nb_dofs = data.getFieldData().size();
 
         MatrixDouble curl_mat;
@@ -258,9 +258,9 @@ int main(int argc, char *argv[]) {
         int nb_dofs = data.getFieldData().size();
         if (nb_dofs == 0)
           MoFEMFunctionReturnHot(0);
-        int nb_gauss_pts = data.getHcurlN().size1();
+        int nb_gauss_pts = data.getN().size1();
 
-        auto t_curl_base = data.getFTensor1HcurlN<3>();
+        auto t_curl_base = data.getFTensor1N<3>();
         // double area = getArea();
         double n0 = getNormal()[0] * 0.5;
         double n1 = getNormal()[1] * 0.5;
