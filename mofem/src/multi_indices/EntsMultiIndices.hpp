@@ -584,7 +584,7 @@ struct FieldEntity : public interface_Field<Field>,
    * @return       Number of DOFs
    */
   inline int getOrderNbDofs(int order) const {
-    return (this->sFieldPtr->forder_table[getEntType()])(order);
+    return (this->sFieldPtr->forderTable[getEntType()])(order);
   }
 
   /**

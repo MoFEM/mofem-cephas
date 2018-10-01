@@ -233,26 +233,26 @@ int main(int argc, char *argv[]) {
 
         if (data.getFieldDofs()[0]->getSpace() == HCURL) {
 
-          FTensor::Tensor1<double *, 3> base_ksi_m(&data.getN()(0, HCURL0),
-                                                   &data.getN()(0, HCURL1),
-                                                   &data.getN()(0, HCURL2), 3);
-          FTensor::Tensor1<double *, 3> base_ksi_p(&data.getN()(1, HCURL0),
-                                                   &data.getN()(1, HCURL1),
-                                                   &data.getN()(1, HCURL2), 3);
-          FTensor::Tensor1<double *, 3> base_eta_m(&data.getN()(2, HCURL0),
-                                                   &data.getN()(2, HCURL1),
-                                                   &data.getN()(2, HCURL2), 3);
-          FTensor::Tensor1<double *, 3> base_eta_p(&data.getN()(3, HCURL0),
-                                                   &data.getN()(3, HCURL1),
-                                                   &data.getN()(3, HCURL2), 3);
+          FTensor::Tensor1<double *, 3> base_ksi_m(&data.getN()(0, HVEC0),
+                                                   &data.getN()(0, HVEC1),
+                                                   &data.getN()(0, HVEC2), 3);
+          FTensor::Tensor1<double *, 3> base_ksi_p(&data.getN()(1, HVEC0),
+                                                   &data.getN()(1, HVEC1),
+                                                   &data.getN()(1, HVEC2), 3);
+          FTensor::Tensor1<double *, 3> base_eta_m(&data.getN()(2, HVEC0),
+                                                   &data.getN()(2, HVEC1),
+                                                   &data.getN()(2, HVEC2), 3);
+          FTensor::Tensor1<double *, 3> base_eta_p(&data.getN()(3, HVEC0),
+                                                   &data.getN()(3, HVEC1),
+                                                   &data.getN()(3, HVEC2), 3);
 
           // cerr << data.getN() << endl;
           // cerr << data.getDiffN() << endl;
 
           FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2> diff_base(
-              &data.getDiffN()(4, HCURL0_0), &data.getDiffN()(4, HCURL0_1),
-              &data.getDiffN()(4, HCURL1_0), &data.getDiffN()(4, HCURL1_1),
-              &data.getDiffN()(4, HCURL2_0), &data.getDiffN()(4, HCURL2_1));
+              &data.getDiffN()(4, HVEC0_0), &data.getDiffN()(4, HVEC0_1),
+              &data.getDiffN()(4, HVEC1_0), &data.getDiffN()(4, HVEC1_1),
+              &data.getDiffN()(4, HVEC2_0), &data.getDiffN()(4, HVEC2_1));
 
           FTensor::Index<'i', 3> i;
           FTensor::Number<0> N0;

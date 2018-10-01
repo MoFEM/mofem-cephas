@@ -66,10 +66,10 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-  #include <cblas.h>
-  #include <lapack_wrap.h>
-  // #include <gm_rule.h>
-  #include <quad.h>
+#include <cblas.h>
+#include <lapack_wrap.h>
+// #include <gm_rule.h>
+#include <quad.h>
 #ifdef __cplusplus
 }
 #endif
@@ -102,7 +102,7 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCore::setIntegrationPts() {
   int order_row = getMaxRowOrder();
   int order_col = getMaxColOrder();
   int rule = getRule(order_row, order_col, order_data);
-  
+
   // rule << std::endl;
   if (rule >= 0) {
     if (rule < QUAD_3D_TABLE_SIZE) {
@@ -124,7 +124,7 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCore::setIntegrationPts() {
       cblas_dcopy(nbGaussPts, QUAD_3D_TABLE[rule]->weights, 1, &gaussPts(3, 0),
                   1);
       dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nbGaussPts, 4,
-                                                              false);
+                                                             false);
       double *shape_ptr =
           &*dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin();
       cblas_dcopy(4 * nbGaussPts, QUAD_3D_TABLE[rule]->points, 1, shape_ptr, 1);
@@ -137,7 +137,7 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCore::setIntegrationPts() {
     CHKERR setGaussPts(order_row, order_col, order_data);
     nbGaussPts = gaussPts.size2();
     dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nbGaussPts, 4,
-                                                            false);
+                                                           false);
     if (nbGaussPts > 0) {
       CHKERR ShapeMBTET(
           &*dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin(),
@@ -177,7 +177,7 @@ VolumeElementForcesAndSourcesCore::calculateCoordinatesAtGaussPts() {
   MoFEMFunctionBegin;
   // Get coords at Gauss points
   FTensor::Index<'i', 3> i;
-  
+
   double *shape_functions_ptr =
       &*dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin();
   coordsAtGaussPts.resize(nbGaussPts, 3, false);
@@ -203,7 +203,7 @@ VolumeElementForcesAndSourcesCore::calculateCoordinatesAtGaussPts() {
 MoFEMErrorCode
 VolumeElementForcesAndSourcesCore::getSpaceBaseAndOrderOnElement() {
   MoFEMFunctionBegin;
-  
+
   CHKERR getSpacesAndBaseOnEntities(dataH1);
   CHKERR getFaceTriNodes(dataH1);
   // H1
@@ -255,7 +255,7 @@ VolumeElementForcesAndSourcesCore::getSpaceBaseAndOrderOnElement() {
 
 MoFEMErrorCode VolumeElementForcesAndSourcesCore::transformBaseFunctions() {
   MoFEMFunctionBegin;
-  
+
   CHKERR opSetInvJacH1.opRhs(dataH1);
   if (dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
     CHKERR opCovariantPiolaTransform.opRhs(dataHcurl);
@@ -282,10 +282,13 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCore::calculateHoJacobian() {
       SETERRQ(mField.get_comm(), MOFEM_NOT_FOUND,
               "no MESH_NODE_POSITIONS in element data");
     }
-    
-    CHKERR getEntityDataOrderSpaceAndBase<MBEDGE>(dataH1, meshPositionsFieldName);
-    CHKERR getEntityDataOrderSpaceAndBase<MBTRI>(dataH1, meshPositionsFieldName);
-    CHKERR getEntityDataOrderSpaceAndBase<MBTET>(dataH1, meshPositionsFieldName);
+
+    CHKERR getEntityDataOrderSpaceAndBase<MBEDGE>(dataH1,
+                                                  meshPositionsFieldName);
+    CHKERR getEntityDataOrderSpaceAndBase<MBTRI>(dataH1,
+                                                 meshPositionsFieldName);
+    CHKERR getEntityDataOrderSpaceAndBase<MBTET>(dataH1,
+                                                 meshPositionsFieldName);
     CHKERR getNodesFieldData(dataH1, meshPositionsFieldName);
     if (dataH1.dataOnEntities[MBVERTEX][0].getFieldData().size() != 12) {
       SETERRQ(mField.get_comm(), MOFEM_NOT_FOUND,
@@ -296,33 +299,33 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCore::calculateHoJacobian() {
     CHKERR getEntityFieldData<MBTRI>(dataH1, meshPositionsFieldName);
     CHKERR getEntityFieldData<MBTET>(dataH1, meshPositionsFieldName);
     CHKERR opHOatGaussPoints.opRhs(dataH1);
-      hoGaussPtsInvJac.resize(hoGaussPtsJac.size1(), hoGaussPtsJac.size2(),
-                              false);
-      // Express Jacobian as tensor
-      FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3> jac(
-          &hoGaussPtsJac(0, 0), &hoGaussPtsJac(0, 1), &hoGaussPtsJac(0, 2),
-          &hoGaussPtsJac(0, 3), &hoGaussPtsJac(0, 4), &hoGaussPtsJac(0, 5),
-          &hoGaussPtsJac(0, 6), &hoGaussPtsJac(0, 7), &hoGaussPtsJac(0, 8));
-      FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3> inv_jac(
-          &hoGaussPtsInvJac(0, 0), &hoGaussPtsInvJac(0, 1),
-          &hoGaussPtsInvJac(0, 2), &hoGaussPtsInvJac(0, 3),
-          &hoGaussPtsInvJac(0, 4), &hoGaussPtsInvJac(0, 5),
-          &hoGaussPtsInvJac(0, 6), &hoGaussPtsInvJac(0, 7),
-          &hoGaussPtsInvJac(0, 8));
-      hoGaussPtsDetJac.resize(nbGaussPts, false);
-      FTensor::Tensor0<double *> det(&hoGaussPtsDetJac[0]);
-      // Calculate inverse and determinant
-      for (unsigned int gg = 0; gg != nbGaussPts; gg++) {
+    hoGaussPtsInvJac.resize(hoGaussPtsJac.size1(), hoGaussPtsJac.size2(),
+                            false);
+    // Express Jacobian as tensor
+    FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3> jac(
+        &hoGaussPtsJac(0, 0), &hoGaussPtsJac(0, 1), &hoGaussPtsJac(0, 2),
+        &hoGaussPtsJac(0, 3), &hoGaussPtsJac(0, 4), &hoGaussPtsJac(0, 5),
+        &hoGaussPtsJac(0, 6), &hoGaussPtsJac(0, 7), &hoGaussPtsJac(0, 8));
+    FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3> inv_jac(
+        &hoGaussPtsInvJac(0, 0), &hoGaussPtsInvJac(0, 1),
+        &hoGaussPtsInvJac(0, 2), &hoGaussPtsInvJac(0, 3),
+        &hoGaussPtsInvJac(0, 4), &hoGaussPtsInvJac(0, 5),
+        &hoGaussPtsInvJac(0, 6), &hoGaussPtsInvJac(0, 7),
+        &hoGaussPtsInvJac(0, 8));
+    hoGaussPtsDetJac.resize(nbGaussPts, false);
+    FTensor::Tensor0<double *> det(&hoGaussPtsDetJac[0]);
+    // Calculate inverse and determinant
+    for (unsigned int gg = 0; gg != nbGaussPts; gg++) {
       CHKERR determinantTensor3by3(jac, det);
-        // if(det<0) {
-        //   SETERRQ(mField.get_comm(),MOFEM_DATA_INCONSISTENCY,"Negative
-        //   volume");
-        // }
+      // if(det<0) {
+      //   SETERRQ(mField.get_comm(),MOFEM_DATA_INCONSISTENCY,"Negative
+      //   volume");
+      // }
       CHKERR invertTensor3by3(jac, det, inv_jac);
-        ++jac;
-        ++inv_jac;
-        ++det;
-      }
+      ++jac;
+      ++inv_jac;
+      ++det;
+    }
   } else {
     hoCoordsAtGaussPts.resize(0, 0, false);
     hoGaussPtsInvJac.resize(0, 0, false);
@@ -336,7 +339,7 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCore::transformHoBaseFunctions() {
   if (hoCoordsAtGaussPts.size1() > 0) {
     // Transform derivatives of base functions and apply Piola transformation
     // if needed.
-      
+
     CHKERR opSetHoInvJacH1.opRhs(dataH1);
     if (dataH1.spacesOnEntities[MBTET].test(L2)) {
       CHKERR opSetHoInvJacH1.opRhs(dataL2);
@@ -369,13 +372,11 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCore::operator()() {
   CHKERR calculateBaseFunctionsOnElement();
   CHKERR transformBaseFunctions();
 
-  
-
   try {
     MatrixDouble new_diff_n;
     for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
       FTensor::Index<'i', 3> i;
-      FieldApproximationBase base = ApproximationBaseArray[b];
+      FieldApproximationBase base = static_cast<FieldApproximationBase>(b);
       DataForcesAndSourcesCore::EntData &data =
           dataH1.dataOnEntities[MBVERTEX][0];
       if ((data.getDiffN(base).size1() == 4) &&
@@ -428,20 +429,20 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCore::UserDataOperator::
              FieldSpaceNames[data.getSpace()]);
   }
 
-  if ((unsigned int)nb_dofs != data.getDiffHdivN().size2() / 9) {
+  if ((unsigned int)nb_dofs != data.getDiffN().size2() / 9) {
     SETERRQ3(getVolumeFE()->mField.get_comm(), MOFEM_DATA_INCONSISTENCY,
              "Data inositency, wrong number of dofs  = %s "
              "%d != %d/9",
              FieldSpaceNames[data.getSpace()], nb_dofs,
-             data.getDiffHdivN().size2());
+             data.getDiffN().size2());
   }
 
   div.resize(nb_dofs, false);
 
   FTensor::Tensor0<double *> t_div(&*div.data().begin());
-  const double *grad_ptr = &data.getDiffHdivN()(gg, 0);
+  const double *grad_ptr = &data.getDiffN()(gg, 0);
   FTensor::Tensor1<FTensor::PackPtr<const double *, 9>, 3> t_grad_base(
-      grad_ptr, &grad_ptr[HDIV1_1], &grad_ptr[HDIV2_2]);
+      grad_ptr, &grad_ptr[HVEC1_1], &grad_ptr[HVEC2_2]);
   for (int dd = 0; dd < nb_dofs; dd++) {
     t_div = t_grad_base(0) + t_grad_base(1) + t_grad_base(2);
     ++t_div;
@@ -468,23 +469,23 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCore::UserDataOperator::
              FieldSpaceNames[data.getSpace()]);
   }
 
-  if ((unsigned int)nb_dofs != data.getDiffHcurlN().size2() / 9) {
+  if ((unsigned int)nb_dofs != data.getDiffN().size2() / 9) {
     SETERRQ3(getVolumeFE()->mField.get_comm(), MOFEM_DATA_INCONSISTENCY,
              "Data insistency, wrong number of dofs  = %s "
              "%d != %d/9",
              FieldSpaceNames[data.getSpace()], nb_dofs,
-             data.getDiffHcurlN().size2());
+             data.getDiffN().size2());
   }
 
   curl.resize(nb_dofs, 3, false);
   FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_curl(
       &curl(0, 0), &curl(0, 1), &curl(0, 2));
-  const double *grad_ptr = &data.getDiffHcurlN()(gg, 0);
+  const double *grad_ptr = &data.getDiffN()(gg, 0);
 
   FTensor::Tensor2<FTensor::PackPtr<const double *, 9>, 3, 3> t_grad_base(
-      grad_ptr, &grad_ptr[HCURL0_1], &grad_ptr[HCURL0_2], &grad_ptr[HCURL1_0],
-      &grad_ptr[HCURL1_1], &grad_ptr[HCURL1_2], &grad_ptr[HCURL2_0],
-      &grad_ptr[HCURL2_1], &grad_ptr[HCURL2_2]);
+      grad_ptr, &grad_ptr[HVEC0_1], &grad_ptr[HVEC0_2], &grad_ptr[HVEC1_0],
+      &grad_ptr[HVEC1_1], &grad_ptr[HVEC1_2], &grad_ptr[HVEC2_0],
+      &grad_ptr[HVEC2_1], &grad_ptr[HVEC2_2]);
   for (int dd = 0; dd != nb_dofs; ++dd) {
     t_curl(0) = t_grad_base(2, 1) - t_grad_base(1, 2);
     t_curl(1) = t_grad_base(0, 2) - t_grad_base(2, 0);

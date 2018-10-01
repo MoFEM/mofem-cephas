@@ -106,9 +106,8 @@ Core::Core(moab::Interface &moab, MPI_Comm comm, const int verbose,
   PetscLogEventRegister("FE_postProcess", 0, &MOFEM_EVENT_postProcess);
   PetscLogEventRegister("MoFEMCreateMat", 0, &MOFEM_EVENT_createMat);
 
-  // Duplicate PETSc communicator
-  ierr = PetscCommDuplicate(comm, &cOmm, NULL);
-  CHKERRABORT(comm, ierr);
+  // Create duplicate communicator
+  wrapMPIComm = boost::make_shared<WrapMPIComm>(comm,cOmm);
   MPI_Comm_size(cOmm, &sIze);
   MPI_Comm_rank(cOmm, &rAnk);
   // CHeck if moab has set communicator if not set communicator interbally
@@ -156,11 +155,6 @@ Core::~Core() {
   // This is deprecated ONE should use MoFEM::Core::Initialize
   if (isGloballyInitialised && is_finalized) {
     isGloballyInitialised = false;
-  }
-  // Destroy communicator
-  if (!is_finalized) {
-    ierr = PetscCommDestroy(&cOmm);
-    CHKERRABORT(cOmm, ierr);
   }
 }
 

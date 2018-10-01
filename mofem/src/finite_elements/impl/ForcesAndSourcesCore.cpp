@@ -77,15 +77,15 @@ ForcesAndSourcesCore::ForcesAndSourcesCore(Interface &m_field)
 
           nullptr,
           boost::shared_ptr<DataForcesAndSourcesCore>(
-              new DataForcesAndSourcesCore(MBENTITYSET)),
+              new DataForcesAndSourcesCore(MBENTITYSET)), // NOFIELD
           boost::shared_ptr<DataForcesAndSourcesCore>(
-              new DataForcesAndSourcesCore(MBENTITYSET)),
+              new DataForcesAndSourcesCore(MBENTITYSET)), // H1
           boost::shared_ptr<DataForcesAndSourcesCore>(
-              new DataForcesAndSourcesCore(MBENTITYSET)),
+              new DataForcesAndSourcesCore(MBENTITYSET)), // HCURL
           boost::shared_ptr<DataForcesAndSourcesCore>(
-              new DataForcesAndSourcesCore(MBENTITYSET)),
+              new DataForcesAndSourcesCore(MBENTITYSET)), // HDIV
           boost::shared_ptr<DataForcesAndSourcesCore>(
-              new DataForcesAndSourcesCore(MBENTITYSET))
+              new DataForcesAndSourcesCore(MBENTITYSET)) // L2
 
       },
       derivedDataOnElement{
@@ -965,7 +965,7 @@ MoFEMErrorCode ForcesAndSourcesCore::calculateBaseFunctionsOnElement(
     const FieldApproximationBase b) {
   MoFEMFunctionBegin;
   if (dataOnElement[H1]->bAse.test(b)) {
-    switch (ApproximationBaseArray[b]) {
+    switch (static_cast<FieldApproximationBase>(b)) {
     case NOBASE:
       break;
     case AINSWORTH_LEGENDRE_BASE:
@@ -983,7 +983,7 @@ MoFEMErrorCode ForcesAndSourcesCore::calculateBaseFunctionsOnElement(
               gaussPts,
               boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
                   *dataOnElement[space], static_cast<FieldSpace>(space),
-                  ApproximationBaseArray[b], NOBASE)));
+                  static_cast<FieldApproximationBase>(b), NOBASE)));
         }
       }
       break;
@@ -1000,13 +1000,13 @@ MoFEMErrorCode ForcesAndSourcesCore::calculateBaseFunctionsOnElement(
               gaussPts,
               boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
                   *dataOnElement[space], static_cast<FieldSpace>(space),
-                  ApproximationBaseArray[b], NOBASE)));
+                  static_cast<FieldApproximationBase>(b), NOBASE)));
         }
       break;
     default:
       SETERRQ1(mField.get_comm(), MOFEM_DATA_INCONSISTENCY,
                "Base <%s> not yet implemented",
-               ApproximationBaseNames[ApproximationBaseArray[b]]);
+               ApproximationBaseNames[static_cast<FieldApproximationBase>(b)]);
     }
   }
   MoFEMFunctionReturn(0);
@@ -1100,16 +1100,16 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
       switch (oit->sPace) {
       case NOSPACE:
         SETERRQ(mField.get_comm(), MOFEM_DATA_INCONSISTENCY, "unknown space");
+      case NOFIELD:
       case H1:
       case HCURL:
       case HDIV:
       case L2:
-      case NOFIELD:
         op_data[0] = dataOnElement[oit->sPace].get();
         break;
-      case LASTSPACE:
-        SETERRQ(mField.get_comm(), MOFEM_DATA_INCONSISTENCY, "unknown space");
-        break;
+      default:
+        SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+                 "Not implemented for this space", oit->sPace);
       }
 
       // Reseat all data which all field dependent
@@ -1118,7 +1118,6 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
       last_eval_field_name[1] = "";
 
       // Run operator
-
       try {
         CHKERR oit->opRhs(*op_data[0], oit->doVertices, oit->doEdges,
                           oit->doQuads, oit->doTris, oit->doTets, false);
@@ -1150,18 +1149,17 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
             SETERRQ(mField.get_comm(), MOFEM_DATA_INCONSISTENCY,
                     "unknown space");
             break;
+          case NOFIELD:
           case H1:
           case HCURL:
           case HDIV:
           case L2:
-          case NOFIELD:
             op_data[ss] = !ss ? dataOnElement[space[ss]].get()
                               : derivedDataOnElement[space[ss]].get();
             break;
-          case LASTSPACE:
-            SETERRQ(mField.get_comm(), MOFEM_DATA_INCONSISTENCY,
-                    "unknown space");
-            break;
+          default:
+            SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+                     "Not implemented for this space", space[ss]);
           }
 
           if (last_eval_field_name[ss] != field_name) {
@@ -1275,10 +1273,9 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
                 CHKERR getNoFieldFieldData(*op_data[ss], field_name);
               }
               break;
-            case LASTSPACE:
-              SETERRQ(mField.get_comm(), MOFEM_DATA_INCONSISTENCY,
-                      "unknown space");
-              break;
+            default:
+              SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+                       "Not implemented for this space", space[ss]);
             }
             last_eval_field_name[ss] = field_name;
           }

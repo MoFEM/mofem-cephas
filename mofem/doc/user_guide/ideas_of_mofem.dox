@@ -54,7 +54,7 @@ related complexities, sparse algebra and complications related to approximation,
 integration or dense tensor algebra at integration point level. Each element by
 itself is a stand alone complicated problem. MoFEM ecosystem is composed of
 three parts, MoAB managing complexities related to topology, PETSc
-managing complexities related to sparse algebra and solvers and finally MoAB
+managing complexities related to sparse algebra and solvers and finally MoFEM 
 core library managing complexities directly related to finite element method.
 Each part has its own design objectives, and appropriate programming tools from
 a spectrum of solutions can be selected \cite knepley2012programming. MoFEM make
