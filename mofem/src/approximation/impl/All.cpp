@@ -12,3 +12,5 @@
 #include "impl/Hdiv.cpp"
 #include "impl/Hcurl.cpp"
 #include "impl/CGGTonsorialBubbleBase.cpp"
+#include "impl/HexPolynomialBase.cpp"
+#include "impl/H1vtk.cpp"

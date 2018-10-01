@@ -265,6 +265,23 @@ PetscErrorCode H1_VolumeShapeFunctions_MBPRISM(
 // Hdiv and Hcurl are implemented and declared in other files
 
 
+/**
+ * Demkowicz for HEX H1_VolumeGradientOfDeformation_hierarchical
+ */
+
+PetscErrorCode H1_EdgeShapeFunctions_MBHEX(
+    const int *sense, const int *p, const double *N, const double *diffN,
+    double *edgeN[], double *diff_edgeN[], const int GDIM,
+    PetscErrorCode (*base_polynomials)(int p, double alpha, double x, double t,
+                                       double *diff_x, double *diff_t,
+                                       double *L, double *diffL,
+                                       const int dim));
+
+PetscErrorCode
+H1_VolumeShapeFunctions_MBHEX(const int p, const double *edgeN,
+                              const double *diff_edgeN, const double *faceN,
+                              const double *diff_faceN, double *volumeN,
+                              double *diff_volumeN, const int GDIM);
 
 #ifdef __cplusplus
 }

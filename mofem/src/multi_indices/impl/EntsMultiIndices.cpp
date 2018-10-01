@@ -72,6 +72,7 @@ BasicEntity::BasicEntity(
   case MBTRI:
   case MBQUAD:
   case MBTET:
+  case MBHEX:
   case MBPRISM:
   case MBENTITYSET:
     break;

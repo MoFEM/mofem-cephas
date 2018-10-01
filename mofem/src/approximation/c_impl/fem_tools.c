@@ -396,22 +396,22 @@ PetscErrorCode ShapeMBHEX_inverse(
   int IPIV[3];
   //COL MAJOR
   //X
-  A[0+3*0] = cblas_ddot(4,&diffN[0*3+0],3,&elem_coords[0*3+0],3);
-  A[0+3*1] = cblas_ddot(4,&diffN[0*3+1],3,&elem_coords[0*3+0],3);
-  A[0+3*2] = cblas_ddot(4,&diffN[0*3+2],3,&elem_coords[0*3+0],3);
-  loc_coords[0] = glob_coords[0] - cblas_ddot(4,&N[0],1,&elem_coords[0*3+0],3);
+  A[0+3*0] = cblas_ddot(8,&diffN[0*3+0],3,&elem_coords[0*3+0],3);
+  A[0+3*1] = cblas_ddot(8,&diffN[0*3+1],3,&elem_coords[0*3+0],3);
+  A[0+3*2] = cblas_ddot(8,&diffN[0*3+2],3,&elem_coords[0*3+0],3);
+  loc_coords[0] = glob_coords[0] - cblas_ddot(8,&N[0],1,&elem_coords[0*3+0],3);
   //printf("A\n[ %3.2f %3.2f %3.2f ] %3.2f \n",A[0*3],A[1*3],A[2*3],R[0]);
   //Y
-  A[1+3*0] = cblas_ddot(4,&diffN[0*3+0],3,&elem_coords[0*3+1],3);
-  A[1+3*1] = cblas_ddot(4,&diffN[0*3+1],3,&elem_coords[0*3+1],3);
-  A[1+3*2] = cblas_ddot(4,&diffN[0*3+2],3,&elem_coords[0*3+1],3);
-  loc_coords[1] = glob_coords[1] - cblas_ddot(4,&N[0],1,&elem_coords[0*3+1],3);
+  A[1+3*0] = cblas_ddot(8,&diffN[0*3+0],3,&elem_coords[0*3+1],3);
+  A[1+3*1] = cblas_ddot(8,&diffN[0*3+1],3,&elem_coords[0*3+1],3);
+  A[1+3*2] = cblas_ddot(8,&diffN[0*3+2],3,&elem_coords[0*3+1],3);
+  loc_coords[1] = glob_coords[1] - cblas_ddot(8,&N[0],1,&elem_coords[0*3+1],3);
   //printf("[ %3.2f %3.2f %3.2f ] %3.2f \n",A[1+3*0],A[1+3*1],A[1+3*2],R[1]);
   //Z
-  A[2+3*0] = cblas_ddot(4,&diffN[0*3+0],3,&elem_coords[0*3+2],3);
-  A[2+3*1] = cblas_ddot(4,&diffN[0*3+1],3,&elem_coords[0*3+2],3);
-  A[2+3*2] = cblas_ddot(4,&diffN[0*3+2],3,&elem_coords[0*3+2],3);
-  loc_coords[2] = glob_coords[2] - cblas_ddot(4,&N[0],1,&elem_coords[0*3+2],3);
+  A[2+3*0] = cblas_ddot(8,&diffN[0*3+0],3,&elem_coords[0*3+2],3);
+  A[2+3*1] = cblas_ddot(8,&diffN[0*3+1],3,&elem_coords[0*3+2],3);
+  A[2+3*2] = cblas_ddot(8,&diffN[0*3+2],3,&elem_coords[0*3+2],3);
+  loc_coords[2] = glob_coords[2] - cblas_ddot(8,&N[0],1,&elem_coords[0*3+2],3);
   //printf("[ %3.2f %3.2f %3.2f ] %3.2f \n",A[2+3*0],A[2+3*1],A[2+3*2],R[1]);
   int info = lapack_dgesv(3,1,&A[0],3,(__CLPK_integer*)IPIV,loc_coords,3);
   if(info != 0) SETERRQ1(PETSC_COMM_SELF,1,"info == %d",info);

@@ -264,6 +264,20 @@ PetscErrorCode ShapeMBTETQ_inverse(
   double *N,double *diffN,const double *elem_coords,const double *glob_coords,double *loc_coords,const double eps
 );
 
+
+//HEX
+
+PetscErrorCode ShapeMBHEX(double *N, const double *G_X, const double *G_Y,
+                          const double *G_Z, int DIM);
+
+PetscErrorCode ShapeDiffMBHEX(double *diffN, const double *G_X,
+                              const double *G_Y, const double *G_Z, int DIM);
+
+PetscErrorCode ShapeMBHEX_inverse(double *N, double *diffN,
+                                  const double *elem_coords,
+                                  const double *glob_coords,
+                                  double *loc_coords);
+
 //complex part
 void ShapeDiffMBTETinvJ_complex(double *diffN,__CLPK_doublecomplex *invJac,__CLPK_doublecomplex *diffNinvJac,const enum CBLAS_TRANSPOSE Trans);
 PetscErrorCode ShapeFaceNormalMBTRI_complex(double *diffN,__CLPK_doublecomplex *xcoords,__CLPK_doublecomplex *xnormal);

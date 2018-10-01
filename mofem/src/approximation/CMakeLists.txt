@@ -96,3 +96,33 @@ target_link_libraries(vtk_cgg_bubble_base_on_tet
   mofem_third_party
   ${PROJECT_LIBS}
 )
+
+if(PRECOMPILED_HEADRES)
+  set_source_files_properties(
+    impl/H1vtk.cpp
+    PROPERTIES
+    COMPILE_FLAGS "-DGENERATE_VTK_WITH_H1_BASE -include ${PROJECT_BINARY_DIR}/include/precompiled/Includes.hpp"
+  )
+else(PRECOMPILED_HEADRES)
+  set_source_files_properties(
+    impl/H1vtk.cpp
+  PROPERTIES
+  COMPILE_FLAGS "-DGENERATE_VTK_WITH_H1_BASE"
+  )
+endif(PRECOMPILED_HEADRES)
+add_executable(out_h1_vtk_demkowicz_base_on_hex impl/H1vtk.cpp)
+if(PRECOMPILED_HEADRES)
+  add_dependencies(out_h1_vtk_demkowicz_base_on_hex Includes.hpp.pch_copy)
+endif(PRECOMPILED_HEADRES)
+target_link_libraries(out_h1_vtk_demkowicz_base_on_hex
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS}
+)
+
+
