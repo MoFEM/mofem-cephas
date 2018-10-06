@@ -111,14 +111,6 @@ extern "C" {
 // Bubbles for H div space
 
 /**
- * @brief Bubble function for CGG H div space
- * 
- * See CGG_BubbleBase_MBTET
- * 
- */
-#define NBVOLUMETET_CCG_BUBBLE(P) (((P) > 1) ? (3 * NBVOLUMETET_L2(P-2)) : 0)
-
-/**
  * @brief Get base functions on triangle for L2 space
  * 
  * @param p polynomial order
