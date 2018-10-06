@@ -147,4 +147,20 @@ namespace FTensor
 
   /*  B(m, k, j) * A(i, j, k, l) */
 
+  template <class A, class B, class T, class U, int Dim0, int Dim1, int Dim2,
+            int Dim3, int Dim4, char i, char j, char k, char l, char m>
+  inline Tensor3_Expr<
+      const Tensor4_times_Tensor3_12_21<A, B, T, U, Dim0, Dim1, Dim2, Dim3,
+                                        Dim4, i, j, k, l, m>,
+      typename promote<T, U>::V, Dim0, Dim3, Dim4, i, l, m>
+  operator*(
+    const Tensor3_Expr<B, U, Dim4, Dim2, Dim1, m, k, j> &b,
+    const Tensor4_Expr<A, T, Dim0, Dim1, Dim2, Dim3, i, j, k, l> &a) {
+    typedef const Tensor4_times_Tensor3_12_21<A, B, T, U, Dim0, Dim1, Dim2,
+                                              Dim3, Dim4, i, j, k, l, m>
+        TensorExpr;
+    return Tensor3_Expr<TensorExpr, typename promote<T, U>::V, Dim0, Dim3, Dim4,
+                        i, l, m>(TensorExpr(a, b));
+  }
+
  } // namespace FTensor
