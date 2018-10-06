@@ -454,8 +454,8 @@ namespace FTensor
   template <class A, class B, class T, class U, int Dim15, int Dim24, int Dim0,
             int Dim3, char i, char j, char k, char l>
   class Tensor3_times_Tensor3_23_32 {
-    Tensor3_Expr<A, T, Dim0, Dim15, Dim24, j, k, l> iterA;
-    Tensor3_Expr<B, U, Dim3, Dim24, Dim15, i, l, k> iterB;
+    Tensor3_Expr<A, T, Dim0, Dim15, Dim24, i, k, l> iterA;
+    Tensor3_Expr<B, U, Dim3, Dim24, Dim15, j, l, k> iterB;
 
     template <int CurrentDim0, int CurrentDim1>
     typename promote<T, U>::V eval(const int N1, const int N2,
@@ -479,8 +479,8 @@ namespace FTensor
 
   public:
     Tensor3_times_Tensor3_23_32(
-      const Tensor3_Expr<A, T, Dim0, Dim15, Dim24, j, k, l> &a,
-      const Tensor3_Expr<B, U, Dim3, Dim24, Dim15, i, l, k> &b)
+      const Tensor3_Expr<A, T, Dim0, Dim15, Dim24, i, k, l> &a,
+      const Tensor3_Expr<B, U, Dim3, Dim24, Dim15, j, l, k> &b)
         : iterA(a), iterB(b)
     {}
     typename promote<T, U>::V operator()(const int &N1, const int &N2) const
@@ -494,8 +494,8 @@ namespace FTensor
   Tensor2_Expr<Tensor3_times_Tensor3_23_32<A, B, T, U, Dim15, Dim24, Dim0, Dim3,
                                            i, j, k, l>,
                typename promote<T, U>::V, Dim0, Dim3, i, j>
-  operator*(const Tensor3_Expr<A, T, Dim0, Dim15, Dim24, j, k, l> &a,
-            const Tensor3_Expr<B, U, Dim3, Dim24, Dim15, i, l, k> &b) {
+  operator*(const Tensor3_Expr<A, T, Dim0, Dim15, Dim24, i, k, l> &a,
+            const Tensor3_Expr<B, U, Dim3, Dim24, Dim15, j, l, k> &b) {
     using TensorExpr = Tensor3_times_Tensor3_23_32<A, B, T, U, Dim15, Dim24,
                                                    Dim0, Dim3, i, j, k, l>;
     return Tensor2_Expr<TensorExpr, typename promote<T, U>::V, Dim0, Dim3, i,
