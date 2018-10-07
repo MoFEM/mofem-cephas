@@ -956,7 +956,7 @@ struct OpCalculateHTensorTensorField
     for (int gg = 0; gg != nb_integration_points; ++gg) {
       auto t_dof = data.getFTensor0FieldData();
       int bb = 0;
-      for (; bb != nb_dofs / (Tensor_Dim0 * Tensor_Dim1); ++bb) {
+      for (; bb != nb_dofs; ++bb) {
         t_data(i, j) += t_dof * t_n_hten(i, j);
         ++t_n_hten;
         ++t_dof;
