@@ -911,6 +911,65 @@ struct OpCalculateHVecTensorField
 };
 
 /**
+ * @brief Calculate tenor field using vectorial base, i.e. Hdiv/Hcurl
+ * \ingroup mofem_forces_and_sources_user_data_operators
+ * 
+ * @tparam Tensor_Dim0 rank of the filed
+ * @tparam Tensor_Dim1 dimension of space
+ */
+template <int Tensor_Dim0, int Tensor_Dim1>
+struct OpCalculateHTensorTensorField
+    : public ForcesAndSourcesCore::UserDataOperator {
+
+  boost::shared_ptr<MatrixDouble> dataPtr;
+  const EntityHandle zeroType;
+  const int zeroSide;
+
+  OpCalculateHTensorTensorField(const std::string &field_name,
+                             boost::shared_ptr<MatrixDouble> &data_ptr,
+                             const EntityType zero_type = MBTRI,
+                             const int zero_side = 0)
+      : ForcesAndSourcesCore::UserDataOperator(
+            field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
+        dataPtr(data_ptr), zeroType(zero_type), zeroSide(zero_side) {
+    if (!dataPtr)
+      THROW_MESSAGE("Pointer is not set");
+  }
+
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        DataForcesAndSourcesCore::EntData &data) {
+    MoFEMFunctionBegin;
+    const int nb_dofs = data.getFieldData().size();
+    if (!nb_dofs)
+      MoFEMFunctionReturnHot(0);
+    const int nb_base_functions =
+        data.getN().size2() / (Tensor_Dim0 * Tensor_Dim1);
+    const int nb_integration_points = data.getN().size1();
+    if (type == zeroType && side == zeroSide) {
+      dataPtr->resize(Tensor_Dim0 * Tensor_Dim1, nb_integration_points, false);
+      dataPtr->clear();
+    }
+    FTensor::Index<'i', Tensor_Dim0> i;
+    FTensor::Index<'j', Tensor_Dim1> j;
+    auto t_n_hten = data.getFTensor2N<Tensor_Dim0, Tensor_Dim1>();
+    auto t_data = getFTensor2FromMat<Tensor_Dim0, Tensor_Dim1>(*dataPtr);
+    for (int gg = 0; gg != nb_integration_points; ++gg) {
+      auto t_dof = data.getFTensor0FieldData();
+      int bb = 0;
+      for (; bb != nb_dofs / (Tensor_Dim0 * Tensor_Dim1); ++bb) {
+        t_data(i, j) += t_dof * t_n_hten(i, j);
+        ++t_n_hten;
+        ++t_dof;
+      }
+      for (; bb != nb_base_functions; ++bb)
+        ++t_n_hten;
+      ++t_data;
+    }
+    MoFEMFunctionReturn(0);
+  }
+};
+
+/**
  * @brief Calculate divergence of tonsorial field using vectorial base
  * \ingroup mofem_forces_and_sources_user_data_operators
  * 
