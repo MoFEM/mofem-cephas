@@ -853,21 +853,21 @@ struct OpCalculateHdivVectorDivergence
 };
 
 /**
- * @brief Calculate tenor field 
+ * @brief Calculate tenor field using vectorial base, i.e. Hdiv/Hcurl
  * \ingroup mofem_forces_and_sources_user_data_operators
  * 
  * @tparam Tensor_Dim0 rank of the filed
  * @tparam Tensor_Dim1 dimension of space
  */
 template <int Tensor_Dim0, int Tensor_Dim1>
-struct OpCalculateHdivTensorField
+struct OpCalculateHVecTensorField
     : public ForcesAndSourcesCore::UserDataOperator {
 
   boost::shared_ptr<MatrixDouble> dataPtr;
   const EntityHandle zeroType;
   const int zeroSide;
 
-  OpCalculateHdivTensorField(const std::string &field_name,
+  OpCalculateHVecTensorField(const std::string &field_name,
                              boost::shared_ptr<MatrixDouble> &data_ptr,
                              const EntityType zero_type = MBTRI,
                              const int zero_side = 0)
@@ -892,18 +892,18 @@ struct OpCalculateHdivTensorField
     }
     FTensor::Index<'i', Tensor_Dim0> i;
     FTensor::Index<'j', Tensor_Dim1> j;
-    auto t_n_hdiv = data.getFTensor1N<Tensor_Dim1>();
+    auto t_n_hvec = data.getFTensor1N<Tensor_Dim1>();
     auto t_data = getFTensor2FromMat<Tensor_Dim0, Tensor_Dim1>(*dataPtr);
     for (int gg = 0; gg != nb_integration_points; ++gg) {
       auto t_dof = data.getFTensor1FieldData<Tensor_Dim0>();
       int bb = 0;
       for (; bb != nb_dofs / Tensor_Dim0; ++bb) {
-        t_data(i, j) += t_dof(i) * t_n_hdiv(j);
-        ++t_n_hdiv;
+        t_data(i, j) += t_dof(i) * t_n_hvec(j);
+        ++t_n_hvec;
         ++t_dof;
       }
       for (; bb != nb_base_functions; ++bb)
-        ++t_n_hdiv;
+        ++t_n_hvec;
       ++t_data;
     }
     MoFEMFunctionReturn(0);
@@ -911,21 +911,21 @@ struct OpCalculateHdivTensorField
 };
 
 /**
- * @brief Calculate divergence of tonsorial field
+ * @brief Calculate divergence of tonsorial field using vectorial base
  * \ingroup mofem_forces_and_sources_user_data_operators
  * 
  * @tparam Tensor_Dim0 rank of the field
  * @tparam Tensor_Dim1 dimension of space
  */
 template <int Tensor_Dim0, int Tensor_Dim1>
-struct OpCalculateHdivTensorDivergence
+struct OpCalculateHVecTensorDivergence
     : public ForcesAndSourcesCore::UserDataOperator {
 
   boost::shared_ptr<MatrixDouble> dataPtr;
   const EntityHandle zeroType;
   const int zeroSide;
 
-  OpCalculateHdivTensorDivergence(const std::string &field_name,
+  OpCalculateHVecTensorDivergence(const std::string &field_name,
                                   boost::shared_ptr<MatrixDouble> &data_ptr,
                                   const EntityType zero_type = MBTRI,
                                   const int zero_side = 0)
@@ -950,19 +950,19 @@ struct OpCalculateHdivTensorDivergence
     }
     FTensor::Index<'i', Tensor_Dim0> i;
     FTensor::Index<'j', Tensor_Dim1> j;
-    auto t_n_diff_hdiv = data.getFTensor2DiffN<Tensor_Dim1, Tensor_Dim1>();
+    auto t_n_diff_hvec = data.getFTensor2DiffN<Tensor_Dim1, Tensor_Dim1>();
     auto t_data = getFTensor1FromMat<Tensor_Dim0>(*dataPtr);
     for (int gg = 0; gg != nb_integration_points; ++gg) {
       auto t_dof = data.getFTensor1FieldData<Tensor_Dim0>();
       int bb = 0;
       for (; bb != nb_dofs / Tensor_Dim0; ++bb) {
-        double div = t_n_diff_hdiv(j, j);
+        double div = t_n_diff_hvec(j, j);
         t_data(i) += t_dof(i) * div;
-        ++t_n_diff_hdiv;
+        ++t_n_diff_hvec;
         ++t_dof;
       }
       for (; bb != nb_base_functions; ++bb)
-        ++t_n_diff_hdiv;
+        ++t_n_diff_hvec;
       ++t_data;
     }
     MoFEMFunctionReturn(0);
