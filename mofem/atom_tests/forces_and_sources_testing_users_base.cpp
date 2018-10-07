@@ -1,10 +1,15 @@
 /** \file forces_and_sources_testing_users_base.cpp
  * \example forces_and_sources_testing_users_base.cpp
  *
- *  Primarily this is used for testing if the code can handle user base. It is
- *  also, an example of how to build and use user approximation base.
- *  This test calculates CGG base bubble functions and printing them on the
- *  screen. The output of this test is compared with the blessed file.
+ * Primarily this is used for testing if the code can handle user base. It is
+ * also, an example of how to build and use user approximation base. This is a
+ * test, so we used RT base by Demkowicz recipe.
+ *
+ * Note that triple defines approximation element; element entity type,
+ * approximation space and approximation base. Entity type determines the
+ * integration method; approximation space determines the adjacency of the
+ * matrix and approximation base determines together with space the regularity
+ * of approximation.
  *
 */
 
@@ -37,10 +42,10 @@ static char help[] = "...\n\n";
  * @brief Class used to calculate base functions at integration points
  * 
  */
-struct CGGUserPolynomialBase : public BaseFunction {
+struct SomeUserPolynomialBase : public BaseFunction {
 
-  CGGUserPolynomialBase() {}
-  ~CGGUserPolynomialBase() {}
+  SomeUserPolynomialBase() {}
+  ~SomeUserPolynomialBase() {}
 
   /** 
    * @brief Return interface to this class when one ask for for tetrahedron,
@@ -56,7 +61,7 @@ struct CGGUserPolynomialBase : public BaseFunction {
     MoFEMFunctionBegin;
     *iface = NULL;
     if (uuid == IDD_TET_BASE_FUNCTION) {
-      *iface = const_cast<CGGUserPolynomialBase *>(this);
+      *iface = const_cast<SomeUserPolynomialBase *>(this);
       MoFEMFunctionReturnHot(0);
     } else {
       SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY, "wrong interference");
@@ -370,7 +375,7 @@ int main(int argc, char *argv[]) {
     VolumeElementForcesAndSourcesCore fe1(m_field);
     // set class needed to cinstruct user approximation base
     fe1.getUserPolynomialBase() =
-        boost::shared_ptr<BaseFunction>(new CGGUserPolynomialBase());
+        boost::shared_ptr<BaseFunction>(new SomeUserPolynomialBase());
 
     // push user data oprators
     fe1.getOpPtrVector().push_back(
