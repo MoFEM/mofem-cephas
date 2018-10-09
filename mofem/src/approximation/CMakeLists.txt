@@ -68,31 +68,3 @@ target_link_libraries(vtk_curl_base_on_tet
   mofem_third_party
   ${PROJECT_LIBS}
 )
-
-if(PRECOMPILED_HEADRES)
-  set_source_files_properties(
-    impl/CGGTonsorialBubbleBase.cpp
-    PROPERTIES
-    COMPILE_FLAGS "-DGENERATE_VTK_CGG_BUBBLE_BASE -include ${PROJECT_BINARY_DIR}/include/precompiled/Includes.hpp"
-  )
-else(PRECOMPILED_HEADRES)
-  set_source_files_properties(
-    impl/CGGTonsorialBubbleBase.cpp
-    PROPERTIES
-    COMPILE_FLAGS "-DGENERATE_VTK_CGG_BUBBLE_BASE"
-  )
-endif(PRECOMPILED_HEADRES)
-add_executable(vtk_cgg_bubble_base_on_tet impl/CGGTonsorialBubbleBase.cpp)
-if(PRECOMPILED_HEADRES)
-  add_dependencies(vtk_cgg_bubble_base_on_tet Includes.hpp.pch_copy)
-endif(PRECOMPILED_HEADRES)
-target_link_libraries(vtk_cgg_bubble_base_on_tet
-  mofem_finite_elements
-  mofem_interfaces
-  mofem_multi_indices
-  mofem_petsc
-  mofem_approx
-  mofem_cblas
-  mofem_third_party
-  ${PROJECT_LIBS}
-)

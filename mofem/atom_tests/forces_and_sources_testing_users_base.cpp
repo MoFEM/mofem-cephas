@@ -1,10 +1,15 @@
 /** \file forces_and_sources_testing_users_base.cpp
  * \example forces_and_sources_testing_users_base.cpp
  *
- *  Primarily this is used for testing if the code can handle user base. It is
- *  also, an example of how to build and use user approximation base.
- *  This test calculates CGG base bubble functions and printing them on the
- *  screen. The output of this test is compared with the blessed file.
+ * Primarily this is used for testing if the code can handle user base. It is
+ * also, an example of how to build and use user approximation base. This is a
+ * test, so we used RT base by Demkowicz recipe.
+ *
+ * Note that triple defines approximation element; element entity type,
+ * approximation space and approximation base. Entity type determines the
+ * integration method; approximation space determines the adjacency of the
+ * matrix and approximation base determines together with space the regularity
+ * of approximation.
  *
 */
 
@@ -23,7 +28,7 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 #include <MoFEM.hpp>
-#include <CGGTonsorialBubbleBase.hpp>
+#include <Hdiv.hpp>
 
 namespace bio = boost::iostreams;
 using bio::stream;
@@ -37,10 +42,10 @@ static char help[] = "...\n\n";
  * @brief Class used to calculate base functions at integration points
  * 
  */
-struct CGGUserPolynomialBase : public BaseFunction {
+struct SomeUserPolynomialBase : public BaseFunction {
 
-  CGGUserPolynomialBase() {}
-  ~CGGUserPolynomialBase() {}
+  SomeUserPolynomialBase() {}
+  ~SomeUserPolynomialBase() {}
 
   /** 
    * @brief Return interface to this class when one ask for for tetrahedron,
@@ -56,7 +61,7 @@ struct CGGUserPolynomialBase : public BaseFunction {
     MoFEMFunctionBegin;
     *iface = NULL;
     if (uuid == IDD_TET_BASE_FUNCTION) {
-      *iface = const_cast<CGGUserPolynomialBase *>(this);
+      *iface = const_cast<SomeUserPolynomialBase *>(this);
       MoFEMFunctionReturnHot(0);
     } else {
       SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY, "wrong interference");
@@ -106,8 +111,6 @@ private:
   EntPolynomialBaseCtx *cTx;
 
   MatrixDouble shapeFun;
-  MatrixDouble l2Phi;
-  MatrixDouble l2DiffPhi;
 
   MoFEMErrorCode getValueHdivForCGGBubble(MatrixDouble &pts) {
     MoFEMFunctionBegin;
@@ -118,18 +121,12 @@ private:
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
               "Wrong base, should be USER_BASE");
     }
-    // get access to data structures on element
+
+    // This is example, simply use Demkowicz HDiv base to generate base
+    // functions
+    
     DataForcesAndSourcesCore &data = cTx->dAta;
-    // Get approximation order on element. Note that bubble functions are only
-    // on tetrahedron.
-    const int order = data.dataOnEntities[MBTET][0].getDataOrder();
-    /// number of integration points
-    const int nb_gauss_pts = pts.size2();
-    // number of base functions
-    const int nb_base_functions = 3 * NBVOLUMETET_CCG_BUBBLE(order);
-    // get base functions and set size 
-    MatrixDouble &phi = data.dataOnEntities[MBTET][0].getN(USER_BASE);
-    phi.resize(nb_gauss_pts, nb_base_functions, false);
+    int nb_gauss_pts = pts.size2();
 
     // calculate shape functions, i.e. barycentric coordinates
     shapeFun.resize(nb_gauss_pts, 4, false);
@@ -139,19 +136,53 @@ private:
     double diff_shape_fun[12];
     CHKERR ShapeDiffMBTET(diff_shape_fun);
 
-    // calculate L2 base used to generate bubble HDiv base by CGG recipe
-    l2Phi.resize(nb_gauss_pts, NBVOLUMETET_L2(order-2),false);
-    l2DiffPhi.resize(nb_gauss_pts, 3 * NBVOLUMETET_L2(order - 2), false);
-    CHKERR L2_Ainsworth_ShapeFunctions_MBTET(
-        order-2, &shapeFun(0, 0), diff_shape_fun, &l2Phi(0, 0), &l2DiffPhi(0, 0),
-        nb_gauss_pts, Legendre_polynomials);
+    int volume_order = data.dataOnEntities[MBTET][0].getDataOrder();
 
-    // finally calculate base functions
-    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_phi(
-        &phi(0, 0), &phi(0, 1), &phi(0, 2));
-    CHKERR CGG_BubbleBase_MBTET(order, &shapeFun(0, 0), diff_shape_fun,
-                                &l2Phi(0, 0), &l2DiffPhi(0, 0), t_phi,
-                                nb_gauss_pts);
+    int p_f[4];
+    double *phi_f[4];
+    double *diff_phi_f[4];
+
+    // Calculate base function on tet faces
+    for (int ff = 0; ff != 4; ff++) {
+      int face_order = data.dataOnEntities[MBTRI][ff].getDataOrder();
+      int order = volume_order > face_order ? volume_order : face_order;
+      data.dataOnEntities[MBTRI][ff].getN(base).resize(
+          nb_gauss_pts, 3 * NBFACETRI_DEMKOWICZ_HDIV(order), false);
+      data.dataOnEntities[MBTRI][ff].getDiffN(base).resize(
+          nb_gauss_pts, 9 * NBFACETRI_DEMKOWICZ_HDIV(order), false);
+      p_f[ff] = order;
+      phi_f[ff] = &*data.dataOnEntities[MBTRI][ff].getN(base).data().begin();
+      diff_phi_f[ff] =
+          &*data.dataOnEntities[MBTRI][ff].getDiffN(base).data().begin();
+      if (NBFACETRI_DEMKOWICZ_HDIV(order) == 0)
+        continue;
+      CHKERR Hdiv_Demkowicz_Face_MBTET_ON_FACE(
+          &data.facesNodes(ff, 0), order, &*shapeFun.data().begin(),
+          diff_shape_fun, phi_f[ff], diff_phi_f[ff], nb_gauss_pts, 4);
+    }
+
+    // Calculate base functions in tet interior
+    if (NBVOLUMETET_DEMKOWICZ_HDIV(volume_order) > 0) {
+      data.dataOnEntities[MBTET][0].getN(base).resize(
+          nb_gauss_pts, 3 * NBVOLUMETET_DEMKOWICZ_HDIV(volume_order), false);
+      data.dataOnEntities[MBTET][0].getDiffN(base).resize(
+          nb_gauss_pts, 9 * NBVOLUMETET_DEMKOWICZ_HDIV(volume_order), false);
+      double *phi_v = &*data.dataOnEntities[MBTET][0].getN(base).data().begin();
+      double *diff_phi_v =
+          &*data.dataOnEntities[MBTET][0].getDiffN(base).data().begin();
+      CHKERR Hdiv_Demkowicz_Interior_MBTET(
+          volume_order, &*shapeFun.data().begin(), diff_shape_fun, p_f, phi_f,
+          diff_phi_f, phi_v, diff_phi_v, nb_gauss_pts);
+    }
+
+    // Set size of face base correctly
+    for (int ff = 0; ff != 4; ff++) {
+      int face_order = data.dataOnEntities[MBTRI][ff].getDataOrder();
+      data.dataOnEntities[MBTRI][ff].getN(base).resize(
+          nb_gauss_pts, 3 * NBFACETRI_DEMKOWICZ_HDIV(face_order), true);
+      data.dataOnEntities[MBTRI][ff].getDiffN(base).resize(
+          nb_gauss_pts, 9 * NBFACETRI_DEMKOWICZ_HDIV(face_order), true);
+    }
 
     MoFEMFunctionReturn(0);
   }
@@ -214,12 +245,15 @@ int main(int argc, char *argv[]) {
     // function set zero number of dofs 
     auto get_cgg_bubble_order_zero = [](int p) { return 0; };
     // function set non-zero number of dofs on tetrahedrons
+    auto get_cgg_bubble_order_face = [](int p) {
+      return NBFACETRI_DEMKOWICZ_HDIV(p);
+    };
     auto get_cgg_bubble_order_tet = [](int p) {
-      return NBVOLUMETET_CCG_BUBBLE(p);
+      return NBVOLUMETET_DEMKOWICZ_HDIV(p);
     };
     field_order_table[MBVERTEX] = get_cgg_bubble_order_zero;
     field_order_table[MBEDGE] = get_cgg_bubble_order_zero;
-    field_order_table[MBTRI] = get_cgg_bubble_order_zero;
+    field_order_table[MBTRI] = get_cgg_bubble_order_face;
     field_order_table[MBTET] = get_cgg_bubble_order_tet;
 
     // add finite element
@@ -341,7 +375,7 @@ int main(int argc, char *argv[]) {
     VolumeElementForcesAndSourcesCore fe1(m_field);
     // set class needed to cinstruct user approximation base
     fe1.getUserPolynomialBase() =
-        boost::shared_ptr<BaseFunction>(new CGGUserPolynomialBase());
+        boost::shared_ptr<BaseFunction>(new SomeUserPolynomialBase());
 
     // push user data oprators
     fe1.getOpPtrVector().push_back(

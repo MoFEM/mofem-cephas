@@ -766,14 +766,6 @@ OpSetInvJacHdivAndHcurl::doWork(int side, EntityType type,
   if (type != MBEDGE && type != MBTRI && type != MBTET)
     MoFEMFunctionReturnHot(0);
 
-  if ((int)HVEC0_1 != (int)HVEC0_1 || (int)HVEC0_2 != (int)HVEC0_2 ||
-      (int)HVEC1_0 != (int)HVEC1_0 || (int)HVEC1_2 != (int)HVEC1_2 ||
-      (int)HVEC2_0 != (int)HVEC2_0 || (int)HVEC2_1 != (int)HVEC2_1) {
-    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-            "Data inconsistency between Hcurl and Hdiv structure of base "
-            "functions");
-  }
-
   for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
 
     FieldApproximationBase base = static_cast<FieldApproximationBase>(b);
@@ -787,12 +779,15 @@ OpSetInvJacHdivAndHcurl::doWork(int side, EntityType type,
 
     auto t_diff_n = data.getFTensor2DiffN<3, 3>(base);
     double *t_inv_diff_n_ptr = &*diffHdivInvJac.data().begin();
-    FTensor::Tensor2<double *, 3, 3> t_inv_diff_n(
+    FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3> t_inv_diff_n(
         t_inv_diff_n_ptr, &t_inv_diff_n_ptr[HVEC0_1],
-        &t_inv_diff_n_ptr[HVEC0_2], &t_inv_diff_n_ptr[HVEC1_0],
-        &t_inv_diff_n_ptr[HVEC1_1], &t_inv_diff_n_ptr[HVEC1_2],
+        &t_inv_diff_n_ptr[HVEC0_2],
+
+        &t_inv_diff_n_ptr[HVEC1_0], &t_inv_diff_n_ptr[HVEC1_1],
+        &t_inv_diff_n_ptr[HVEC1_2],
+
         &t_inv_diff_n_ptr[HVEC2_0], &t_inv_diff_n_ptr[HVEC2_1],
-        &t_inv_diff_n_ptr[HVEC2_2], 9);
+        &t_inv_diff_n_ptr[HVEC2_2]);
 
     for (unsigned int gg = 0; gg != nb_gauss_pts; ++gg) {
       for (unsigned int bb = 0; bb != nb_base_functions; ++bb) {
@@ -849,7 +844,7 @@ MoFEMErrorCode OpSetContravariantPiolaTransform::doWork(
     if (data.getDiffN(base).size2() > 0) {
       auto t_diff_n = data.getFTensor2DiffN<3, 3>(base);
       double *t_transformed_diff_n_ptr = &*piolaDiffN.data().begin();
-      FTensor::Tensor2<double *, 3, 3> t_transformed_diff_n(
+      FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3> t_transformed_diff_n(
           t_transformed_diff_n_ptr, &t_transformed_diff_n_ptr[HVEC0_1],
           &t_transformed_diff_n_ptr[HVEC0_2],
           &t_transformed_diff_n_ptr[HVEC1_0],
@@ -857,7 +852,7 @@ MoFEMErrorCode OpSetContravariantPiolaTransform::doWork(
           &t_transformed_diff_n_ptr[HVEC1_2],
           &t_transformed_diff_n_ptr[HVEC2_0],
           &t_transformed_diff_n_ptr[HVEC2_1],
-          &t_transformed_diff_n_ptr[HVEC2_2], 9);
+          &t_transformed_diff_n_ptr[HVEC2_2]);
       for (unsigned int gg = 0; gg != nb_gauss_pts; ++gg) {
         for (unsigned int bb = 0; bb != nb_base_functions; ++bb) {
           t_transformed_diff_n(i, k) = a * tJac(i, j) * t_diff_n(j, k);
@@ -894,17 +889,17 @@ OpSetCovariantPiolaTransform::doWork(int side, EntityType type,
 
     auto t_n = data.getFTensor1N<3>(base);
     double *t_transformed_n_ptr = &*piolaN.data().begin();
-    FTensor::Tensor1<double *, 3> t_transformed_n(
-        t_transformed_n_ptr, // HCRUL0
-        &t_transformed_n_ptr[HVEC1], &t_transformed_n_ptr[HVEC2], 3);
+    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_transformed_n(
+        t_transformed_n_ptr, &t_transformed_n_ptr[HVEC1],
+        &t_transformed_n_ptr[HVEC2]);
     auto t_diff_n = data.getFTensor2DiffN<3, 3>(base);
     double *t_transformed_diff_n_ptr = &*piolaDiffN.data().begin();
-    FTensor::Tensor2<double *, 3, 3> t_transformed_diff_n(
+    FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3> t_transformed_diff_n(
         t_transformed_diff_n_ptr, &t_transformed_diff_n_ptr[HVEC0_1],
         &t_transformed_diff_n_ptr[HVEC0_2], &t_transformed_diff_n_ptr[HVEC1_0],
         &t_transformed_diff_n_ptr[HVEC1_1], &t_transformed_diff_n_ptr[HVEC1_2],
         &t_transformed_diff_n_ptr[HVEC2_0], &t_transformed_diff_n_ptr[HVEC2_1],
-        &t_transformed_diff_n_ptr[HVEC2_2], 9);
+        &t_transformed_diff_n_ptr[HVEC2_2]);
 
     for (unsigned int gg = 0; gg != nb_gauss_pts; ++gg) {
       for (unsigned int bb = 0; bb != nb_base_functions; ++bb) {
@@ -1019,18 +1014,17 @@ OpSetHoInvJacHdivAndHcurl::doWork(int side, EntityType type,
 
     auto t_diff_n = data.getFTensor2DiffN<3, 3>(base);
     double *t_inv_diff_n_ptr = &*diffHdivInvJac.data().begin();
-    FTensor::Tensor2<double *, 3, 3> t_inv_diff_n(
+    FTensor::Tensor2<FTensor::PackPtr<double *,9>, 3, 3> t_inv_diff_n(
         t_inv_diff_n_ptr, &t_inv_diff_n_ptr[HVEC0_1],
         &t_inv_diff_n_ptr[HVEC0_2], &t_inv_diff_n_ptr[HVEC1_0],
         &t_inv_diff_n_ptr[HVEC1_1], &t_inv_diff_n_ptr[HVEC1_2],
         &t_inv_diff_n_ptr[HVEC2_0], &t_inv_diff_n_ptr[HVEC2_1],
-        &t_inv_diff_n_ptr[HVEC2_2], 9);
+        &t_inv_diff_n_ptr[HVEC2_2]);
     double *t_inv_jac_ptr = &*invHoJac.data().begin();
-    // cerr << invHoJac << endl;
-    FTensor::Tensor2<double *, 3, 3> t_inv_jac(
+    FTensor::Tensor2<FTensor::PackPtr<double *,9>, 3, 3> t_inv_jac(
         t_inv_jac_ptr, &t_inv_jac_ptr[1], &t_inv_jac_ptr[2], &t_inv_jac_ptr[3],
         &t_inv_jac_ptr[4], &t_inv_jac_ptr[5], &t_inv_jac_ptr[6],
-        &t_inv_jac_ptr[7], &t_inv_jac_ptr[8], 9);
+        &t_inv_jac_ptr[7], &t_inv_jac_ptr[8]);
 
     for (unsigned int gg = 0; gg != nb_gauss_pts; ++gg) {
       for (unsigned int bb = 0; bb != nb_base_functions; ++bb) {
@@ -1070,18 +1064,18 @@ MoFEMErrorCode OpSetHoContravariantPiolaTransform::doWork(
         &t_transformed_n_ptr[HVEC1], &t_transformed_n_ptr[HVEC2]);
     auto t_diff_n = data.getFTensor2DiffN<3, 3>(base);
     double *t_transformed_diff_n_ptr = &*piolaDiffN.data().begin();
-    FTensor::Tensor2<double *, 3, 3> t_transformed_diff_n(
+    FTensor::Tensor2<FTensor::PackPtr<double *,9>, 3, 3> t_transformed_diff_n(
         t_transformed_diff_n_ptr, &t_transformed_diff_n_ptr[HVEC0_1],
         &t_transformed_diff_n_ptr[HVEC0_2], &t_transformed_diff_n_ptr[HVEC1_0],
         &t_transformed_diff_n_ptr[HVEC1_1], &t_transformed_diff_n_ptr[HVEC1_2],
         &t_transformed_diff_n_ptr[HVEC2_0], &t_transformed_diff_n_ptr[HVEC2_1],
-        &t_transformed_diff_n_ptr[HVEC2_2], 9);
+        &t_transformed_diff_n_ptr[HVEC2_2]);
 
     FTensor::Tensor0<double *> t_det(&*detHoJac.data().begin());
     double *t_jac_ptr = &*hoJac.data().begin();
-    FTensor::Tensor2<double *, 3, 3> t_jac(
+    FTensor::Tensor2<FTensor::PackPtr<double *,9>, 3, 3> t_jac(
         t_jac_ptr, &t_jac_ptr[1], &t_jac_ptr[2], &t_jac_ptr[3], &t_jac_ptr[4],
-        &t_jac_ptr[5], &t_jac_ptr[6], &t_jac_ptr[7], &t_jac_ptr[8], 9);
+        &t_jac_ptr[5], &t_jac_ptr[6], &t_jac_ptr[7], &t_jac_ptr[8]);
 
     for (unsigned int gg = 0; gg != nb_gauss_pts; ++gg) {
       for (unsigned int bb = 0; bb != nb_base_functions; ++bb) {
@@ -1127,12 +1121,12 @@ MoFEMErrorCode OpSetHoCovariantPiolaTransform::doWork(
         &t_transformed_n_ptr[HVEC1], &t_transformed_n_ptr[HVEC2]);
     auto t_diff_n = data.getFTensor2DiffN<3, 3>(base);
     double *t_transformed_diff_n_ptr = &*piolaDiffN.data().begin();
-    FTensor::Tensor2<double *, 3, 3> t_transformed_diff_n(
+    FTensor::Tensor2<FTensor::PackPtr<double *,9>, 3, 3> t_transformed_diff_n(
         t_transformed_diff_n_ptr, &t_transformed_diff_n_ptr[HVEC0_1],
         &t_transformed_diff_n_ptr[HVEC0_2], &t_transformed_diff_n_ptr[HVEC1_0],
         &t_transformed_diff_n_ptr[HVEC1_1], &t_transformed_diff_n_ptr[HVEC1_2],
         &t_transformed_diff_n_ptr[HVEC2_0], &t_transformed_diff_n_ptr[HVEC2_1],
-        &t_transformed_diff_n_ptr[HVEC2_2], 9);
+        &t_transformed_diff_n_ptr[HVEC2_2]);
 
     double *t_inv_jac_ptr = &*hoInvJac.data().begin();
     FTensor::Tensor2<double *, 3, 3> t_inv_jac(

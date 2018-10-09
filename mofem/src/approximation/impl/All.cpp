@@ -11,4 +11,3 @@
 #include "impl/FatPrismPolynomialBase.cpp"
 #include "impl/Hdiv.cpp"
 #include "impl/Hcurl.cpp"
-#include "impl/CGGTonsorialBubbleBase.cpp"
