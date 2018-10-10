@@ -732,6 +732,24 @@ struct MeshsetsManager : public UnknownInterface {
   MoFEMErrorCode setMeshsetFromFile();
 
   /**
+    * \brief save meshset entities on the moab mesh
+    * \ingroup mofem_meshset_mng
+    * 
+    * \param meshset meshset to save
+    * \param name optional name for the file
+    */
+  MoFEMErrorCode saveMeshsetToFile(const EntityHandle &meshset, const std::string name = "out_meshset.vtk");
+
+  /**
+    * \brief save entities from range on the moab mesh
+    * \ingroup mofem_meshset_mng
+    * 
+    * \param entities range of entities to save on a the mesh
+    * \param name optional name for the file
+    */
+  MoFEMErrorCode saveMeshsetToFile(const Range &entities, const std::string name = "out_meshset.vtk");
+
+  /**
    * \brief Get config file options, use with care
    * @return error code
    */

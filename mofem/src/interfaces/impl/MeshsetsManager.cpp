@@ -980,6 +980,30 @@ MeshsetsManager::query_interface(const MOFEMuuid &uuid,
     MoFEMFunctionReturnHot(0);
   }
 
+  MoFEMErrorCode MeshsetsManager::saveMeshsetToFile(const EntityHandle &meshset,
+                                                    const std::string name) {
+    MoFEMFunctionBegin;
+    MoFEM::Interface &m_field = cOre;
+    CHKERR m_field.get_moab().write_file(name.c_str(), "VTK", "", &meshset, 1);
+
+    MoFEMFunctionReturn(0);
+  }
+
+  MoFEMErrorCode MeshsetsManager::saveMeshsetToFile(const Range &entities,
+                                                    const std::string name) {
+
+    MoFEMFunctionBegin;
+    MoFEM::Interface &m_field = cOre;
+
+    EntityHandle meshset;
+    CHKERR m_field.get_moab().create_meshset(MESHSET_SET, meshset);
+    CHKERR m_field.get_moab().add_entities(meshset, entities);
+    CHKERR m_field.get_moab().write_file(name.c_str(), "VTK", "", &meshset, 1);
+    CHKERR m_field.get_moab().delete_entities(&meshset, 1);
+
+    MoFEMFunctionReturn(0);
+  }
+
   MoFEMErrorCode
   MeshsetsManager::updateAllMeshsetsByEntitiesChildren(const BitRefLevel &bit) {
     MoFEMFunctionBegin;
