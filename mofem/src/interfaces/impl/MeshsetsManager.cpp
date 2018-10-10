@@ -980,26 +980,38 @@ MeshsetsManager::query_interface(const MOFEMuuid &uuid,
     MoFEMFunctionReturnHot(0);
   }
 
-  MoFEMErrorCode MeshsetsManager::saveMeshsetToFile(const EntityHandle &meshset,
-                                                    const std::string name) {
+  MoFEMErrorCode
+  MeshsetsManager::saveMeshsetToFile(const int ms_id,
+                                     const unsigned int cubit_bc_type,
+                                     const std::string file_name) {
+
     MoFEMFunctionBegin;
     MoFEM::Interface &m_field = cOre;
-    CHKERR m_field.get_moab().write_file(name.c_str(), "VTK", "", &meshset, 1);
+    const CubitMeshSets *cubit_meshset_ptr;
+    CHKERR getCubitMeshsetPtr(ms_id, cubit_bc_type, &cubit_meshset_ptr);
+    EntityHandle meshset = cubit_meshset_ptr->getMeshset();
+    CHKERR m_field.get_moab().write_file(file_name.c_str(), "VTK", "", &meshset,
+                                         1);
 
     MoFEMFunctionReturn(0);
   }
 
-  MoFEMErrorCode MeshsetsManager::saveMeshsetToFile(const Range &entities,
-                                                    const std::string name) {
+  MoFEMErrorCode MeshsetsManager::saveMeshsetToFile(
+      const int ms_id, const unsigned int cubit_bc_type, const int dim,
+      const std::string file_name, const bool recursive) {
 
     MoFEMFunctionBegin;
     MoFEM::Interface &m_field = cOre;
+    moab::Interface &moab = m_field.get_moab();
+    Range entities;
+    CHKERR getEntitiesByDimension(ms_id, cubit_bc_type, dim, entities,
+                                  recursive);
 
     EntityHandle meshset;
-    CHKERR m_field.get_moab().create_meshset(MESHSET_SET, meshset);
-    CHKERR m_field.get_moab().add_entities(meshset, entities);
-    CHKERR m_field.get_moab().write_file(name.c_str(), "VTK", "", &meshset, 1);
-    CHKERR m_field.get_moab().delete_entities(&meshset, 1);
+    CHKERR moab.create_meshset(MESHSET_SET, meshset);
+    CHKERR moab.add_entities(meshset, entities);
+    CHKERR moab.write_file(file_name.c_str(), "VTK", "", &meshset, 1);
+    CHKERR moab.delete_entities(&meshset, 1);
 
     MoFEMFunctionReturn(0);
   }

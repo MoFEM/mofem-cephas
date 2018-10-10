@@ -731,23 +731,27 @@ struct MeshsetsManager : public UnknownInterface {
    */
   MoFEMErrorCode setMeshsetFromFile();
 
-  /**
-    * \brief save meshset entities on the moab mesh
-    * \ingroup mofem_meshset_mng
-    * 
-    * \param meshset meshset to save
-    * \param name optional name for the file
-    */
-  MoFEMErrorCode saveMeshsetToFile(const EntityHandle &meshset, const std::string name = "out_meshset.vtk");
 
   /**
-    * \brief save entities from range on the moab mesh
-    * \ingroup mofem_meshset_mng
-    * 
-    * \param entities range of entities to save on a the mesh
-    * \param name optional name for the file
-    */
-  MoFEMErrorCode saveMeshsetToFile(const Range &entities, const std::string name = "out_meshset.vtk");
+   * @brief save cubit meshset entities on the moab mesh
+   * 
+   * @param ms_id id of the cubit meshset (NODESET  SIDESET  BLOCKSET)
+   * @param cubit_bc_type type of a cubit mesheset
+   * @param file_name optional name for the file
+   * @return MoFEMErrorCode 
+   */
+  MoFEMErrorCode saveMeshsetToFile(const int ms_id,const unsigned int cubit_bc_type, const std::string file_name = "out_meshset.vtk");
+
+  /**
+   * @brief save cubit meshset entities on the moab mesh
+   * 
+   * @param ms_id id of the cubit meshset
+   * @param cubit_bc_type type of a cubit mesheset (NODESET  SIDESET  BLOCKSET)
+   * @param dim dimension of the entities
+   * @param file_name optional name for the file
+   * @return MoFEMErrorCode 
+   */
+  MoFEMErrorCode saveMeshsetToFile(const int ms_id,const unsigned int cubit_bc_type, const int dim, const std::string file_name = "out_meshset.vtk", const bool recursive = false);
 
   /**
    * \brief Get config file options, use with care
