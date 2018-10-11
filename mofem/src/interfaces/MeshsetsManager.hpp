@@ -731,27 +731,38 @@ struct MeshsetsManager : public UnknownInterface {
    */
   MoFEMErrorCode setMeshsetFromFile();
 
-
   /**
    * @brief save cubit meshset entities on the moab mesh
-   * 
+   *
    * @param ms_id id of the cubit meshset (NODESET  SIDESET  BLOCKSET)
    * @param cubit_bc_type type of a cubit mesheset
    * @param file_name optional name for the file
-   * @return MoFEMErrorCode 
+   * @param file_type optional file type for moab (VTK MOAB)
+   * @param options optional parameters for moab writer (PARALLEL=WRITE_PART)
+   * @return MoFEMErrorCode
    */
-  MoFEMErrorCode saveMeshsetToFile(const int ms_id,const unsigned int cubit_bc_type, const std::string file_name = "out_meshset.vtk");
+  MoFEMErrorCode
+  saveMeshsetToFile(const int ms_id, const unsigned int cubit_bc_type,
+                    const std::string file_name = "out_meshset.vtk",
+                    const std::string file_type = "VTK",
+                    const std::string options = "");
 
   /**
    * @brief save cubit meshset entities on the moab mesh
-   * 
+   *
    * @param ms_id id of the cubit meshset
    * @param cubit_bc_type type of a cubit mesheset (NODESET  SIDESET  BLOCKSET)
    * @param dim dimension of the entities
    * @param file_name optional name for the file
-   * @return MoFEMErrorCode 
+   * @param file_type optional file type for moab (VTK MOAB)
+   * @param options optional parameters for moab writer (PARALLEL=WRITE_PART)
+   * @return MoFEMErrorCode
    */
-  MoFEMErrorCode saveMeshsetToFile(const int ms_id,const unsigned int cubit_bc_type, const int dim, const std::string file_name = "out_meshset.vtk", const bool recursive = false);
+  MoFEMErrorCode saveMeshsetToFile(
+      const int ms_id, const unsigned int cubit_bc_type, const int dim,
+      const std::string file_name = "out_meshset.vtk",
+      const bool recursive = false, const std::string file_type = "VTK",
+      const std::string options = "");
 
   /**
    * \brief Get config file options, use with care
