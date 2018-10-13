@@ -9,7 +9,7 @@
       <tab type="user" title="Developer tutorials" url="@ref tutorials" intro=""/>
       <tab type="examples" title="Developer examples" intro=""/>
       <tab type="user" title="Documentation of users modules" url="@ref mod_gallery" intro=""/>
-      <tab type="user" title="Frequently asked questions" url="@ref faqs" intro=""/>
+      <tab type="user" title="FAQ" url="@ref faqs" intro=""/>
       <tab type="usergroup" title="Coding guidelines">
         <tab type="user" title="Coding pratice" url="@ref coding_practice" intro=""/>
         <tab type="user" title="Guidelines to report bugs" url="@ref guidelines_bug_reporting" intro=""/>

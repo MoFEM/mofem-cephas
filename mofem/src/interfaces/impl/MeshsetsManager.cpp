@@ -980,6 +980,42 @@ MeshsetsManager::query_interface(const MOFEMuuid &uuid,
     MoFEMFunctionReturnHot(0);
   }
 
+  MoFEMErrorCode MeshsetsManager::saveMeshsetToFile(
+      const int ms_id, const unsigned int cubit_bc_type,
+      const std::string file_name, const std::string file_type,
+      const std::string options) {
+
+    MoFEMFunctionBegin;
+    MoFEM::Interface &m_field = cOre;
+    const CubitMeshSets *cubit_meshset_ptr;
+    CHKERR getCubitMeshsetPtr(ms_id, cubit_bc_type, &cubit_meshset_ptr);
+    EntityHandle meshset = cubit_meshset_ptr->getMeshset();
+    CHKERR m_field.get_moab().write_file(file_name.c_str(), file_type.c_str(),
+                                         options.c_str(), &meshset, 1, nullptr,
+                                         0);
+    MoFEMFunctionReturn(0);
+  }
+
+  MoFEMErrorCode MeshsetsManager::saveMeshsetToFile(
+      const int ms_id, const unsigned int cubit_bc_type, const int dim,
+      const std::string file_name, const bool recursive,
+      const std::string file_type, const std::string options) {
+
+    MoFEMFunctionBegin;
+    MoFEM::Interface &m_field = cOre;
+    moab::Interface &moab = m_field.get_moab();
+    Range entities;
+    CHKERR getEntitiesByDimension(ms_id, cubit_bc_type, dim, entities,
+                                  recursive);
+    EntityHandle meshset;
+    CHKERR moab.create_meshset(MESHSET_SET, meshset);
+    CHKERR moab.add_entities(meshset, entities);
+    CHKERR moab.write_file(file_name.c_str(), file_type.c_str(),
+                           options.c_str(), &meshset, 1, nullptr, 0);
+    CHKERR moab.delete_entities(&meshset, 1);
+    MoFEMFunctionReturn(0);
+  }
+
   MoFEMErrorCode
   MeshsetsManager::updateAllMeshsetsByEntitiesChildren(const BitRefLevel &bit) {
     MoFEMFunctionBegin;

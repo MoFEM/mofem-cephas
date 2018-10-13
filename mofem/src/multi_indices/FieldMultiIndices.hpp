@@ -63,12 +63,12 @@ struct DofEntity;
  */
 struct Field {
 
-  typedef multi_index_container<boost::weak_ptr<std::vector<FieldEntity> >,
-                                indexed_by<sequenced<> > >
+  typedef multi_index_container<boost::weak_ptr<std::vector<FieldEntity>>,
+                                indexed_by<sequenced<>>>
       SequenceEntContainer;
 
-  typedef multi_index_container<boost::weak_ptr<std::vector<DofEntity> >,
-                                indexed_by<sequenced<> > >
+  typedef multi_index_container<boost::weak_ptr<std::vector<DofEntity>>,
+                                indexed_by<sequenced<>>>
       SequenceDofContainer;
 
   moab::Interface &moab;
@@ -80,31 +80,32 @@ struct Field {
   Tag th_FieldData; ///< Tag storing field values on entity in the field
   Tag th_AppOrder;  ///< Tag storing approximation order on entity
 
-  BitFieldId *tagId;                     ///< tag keeps field id
-  FieldSpace *tag_space_data;            ///< tag keeps field space
-  FieldApproximationBase *tag_base_data; ///< tag keeps field spacea
+  BitFieldId *tagId;                   ///< tag keeps field id
+  FieldSpace *tagSpaceData;            ///< tag keeps field space
+  FieldApproximationBase *tagBaseData; ///< tag keeps field base
+
   /// tag keeps field rank (dimension, f.e. Temperature field has rank 1,
   /// displacements field in 3d has rank 3)
-  FieldCoefficientsNumber *tag_nb_coeff_data;
+  FieldCoefficientsNumber *tagNbCoeffData;
   const void *tagName; ///< tag keeps name of the field
   int tagNameSize;     ///< number of bits necessary to keep field name
-  const void *tag_name_prefix_data; ///< tag keeps name prefix of the field
-  int tag_name_prefix_size;     ///< number of bits necessary to keep field name
-                                ///< prefix
-  FieldOrderTable forder_table; ///< nb. DOFs table for entities
+  const void *tagNamePrefixData; ///< tag keeps name prefix of the field
+  int tagNamePrefixSize;       ///< number of bits necessary to keep field name
+                               ///< prefix
+  FieldOrderTable forderTable; ///< nb. DOFs table for entities
 
   /**
-   * @brief Get the Field Order Table 
-   * 
-   * @return FieldOrderTable& 
+   * @brief Get the Field Order Table
+   *
+   * @return FieldOrderTable&
    */
-  inline FieldOrderTable &getFieldOrderTable() { return forder_table; }
+  inline FieldOrderTable &getFieldOrderTable() { return forderTable; }
 
   /**
-   * Field Id is bit set. Each field has only one bit on, bit_number stores
+   * Field Id is bit set. Each field has only one bit on, bitNumber stores
    * number of set bit
    */
-  unsigned int bit_number;
+  unsigned int bitNumber;
 
   /**
    * \brief constructor for moab field
@@ -229,13 +230,13 @@ struct Field {
    * \brief   Get field approximation space
    * @return  approximation space
    */
-  inline FieldSpace getSpace() const { return *tag_space_data; }
+  inline FieldSpace getSpace() const { return *tagSpaceData; }
 
   /**
    * \brief   Get approximation base
    * @return  Approximation base
    */
-  inline FieldApproximationBase getApproxBase() const { return *tag_base_data; }
+  inline FieldApproximationBase getApproxBase() const { return *tagBaseData; }
 
   /** \brief Get number of field coefficients
     *
@@ -252,7 +253,7 @@ struct Field {
 
   */
   inline FieldCoefficientsNumber getNbOfCoeffs() const {
-    return *tag_nb_coeff_data;
+    return *tagNbCoeffData;
   };
 
   /**
@@ -260,7 +261,7 @@ struct Field {
    * Each field has uid, get getBitNumber get number of bit set for given field.
    * Field ID has only one bit set for each field.
    */
-  inline unsigned int getBitNumber() const { return bit_number; }
+  inline unsigned int getBitNumber() const { return bitNumber; }
 
   /**
    * \brief Calculate number of set bit in Field ID.
@@ -342,7 +343,7 @@ private:
   mutable boost::shared_ptr<SequenceEntContainer> sequenceEntContainer;
   mutable boost::shared_ptr<SequenceDofContainer> sequenceDofContainer;
 
-  mutable std::map<EntityType, std::vector<int> > dofOrderMap;
+  mutable std::map<EntityType, std::vector<int>> dofOrderMap;
 };
 
 /**
@@ -472,15 +473,14 @@ typedef multi_index_container<
     indexed_by<
         hashed_unique<tag<BitFieldId_mi_tag>,
                       const_mem_fun<Field, const BitFieldId &, &Field::getId>,
-                      HashBit<BitFieldId>, EqBit<BitFieldId> >,
+                      HashBit<BitFieldId>, EqBit<BitFieldId>>,
         ordered_unique<tag<Meshset_mi_tag>,
-                       member<Field, EntityHandle, &Field::meshSet> >,
+                       member<Field, EntityHandle, &Field::meshSet>>,
         ordered_unique<
             tag<FieldName_mi_tag>,
-            const_mem_fun<Field, boost::string_ref, &Field::getNameRef> >,
-        ordered_non_unique<
-            tag<BitFieldId_space_mi_tag>,
-            const_mem_fun<Field, FieldSpace, &Field::getSpace> > > >
+            const_mem_fun<Field, boost::string_ref, &Field::getNameRef>>,
+        ordered_non_unique<tag<BitFieldId_space_mi_tag>,
+                           const_mem_fun<Field, FieldSpace, &Field::getSpace>>>>
     Field_multiIndex;
 
 typedef multi_index_container<
@@ -488,7 +488,7 @@ typedef multi_index_container<
     indexed_by<
         ordered_unique<tag<BitFieldId_mi_tag>,
                        const_mem_fun<Field, const BitFieldId &, &Field::getId>,
-                       LtBit<BitFieldId> > > >
+                       LtBit<BitFieldId>>>>
     Field_multiIndex_view;
 
 /** \brief Set field coordinate system

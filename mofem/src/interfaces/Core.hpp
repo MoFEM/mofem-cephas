@@ -485,7 +485,6 @@ protected:
   MoFEMErrorCode list_dofs_by_field_name(const std::string &name) const;
   MoFEMErrorCode list_fields() const;
   BitFieldId getBitFieldId(const std::string &name) const;
-  std::string getBitFieldIdName(const BitFieldId id) const;
   EntityHandle get_field_meshset(const BitFieldId id) const;
   EntityHandle get_field_meshset(const std::string &name) const;
   MoFEMErrorCode get_field_entities_by_dimension(const std::string name,
@@ -885,6 +884,23 @@ protected:
   /**@}*/
 
 private:
+
+  struct WrapMPIComm {
+    WrapMPIComm(MPI_Comm &comm, MPI_Comm &duplicated_comm)
+        : comm(comm), duplicatedComm(duplicated_comm) {
+      ierr = PetscCommDuplicate(comm, &duplicated_comm, NULL);
+      CHKERRABORT(comm, ierr);
+    }
+    ~WrapMPIComm() {
+      ierr = PetscCommDestroy(&duplicatedComm);
+      CHKERRABORT(comm, ierr);
+    }
+  private:
+    MPI_Comm &comm;
+    MPI_Comm &duplicatedComm;
+  };
+  boost::shared_ptr<WrapMPIComm> wrapMPIComm;
+
   int verbose; ///< Verbosity level
 
   int *fShift;  ///< Ptr to tag handle storing last set bit in field ID

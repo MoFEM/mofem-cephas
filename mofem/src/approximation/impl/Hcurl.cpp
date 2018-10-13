@@ -275,17 +275,17 @@ MoFEMErrorCode MoFEM::Hcurl_Ainsworth_EdgeBaseFunctions_MBTET_ON_FACE(
                                     3)};
   FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2> t_diff_edge_n[3] = {
       FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2>(
-          &diff_edge_n[0][HCURL0_0], &diff_edge_n[0][HCURL0_1],
-          &diff_edge_n[0][HCURL1_0], &diff_edge_n[0][HCURL1_1],
-          &diff_edge_n[0][HCURL2_0], &diff_edge_n[0][HCURL2_1]),
+          &diff_edge_n[0][HVEC0_0], &diff_edge_n[0][HVEC0_1],
+          &diff_edge_n[0][HVEC1_0], &diff_edge_n[0][HVEC1_1],
+          &diff_edge_n[0][HVEC2_0], &diff_edge_n[0][HVEC2_1]),
       FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2>(
-          &diff_edge_n[1][HCURL0_0], &diff_edge_n[1][HCURL0_1],
-          &diff_edge_n[1][HCURL1_0], &diff_edge_n[1][HCURL1_1],
-          &diff_edge_n[1][HCURL2_0], &diff_edge_n[1][HCURL2_1]),
+          &diff_edge_n[1][HVEC0_0], &diff_edge_n[1][HVEC0_1],
+          &diff_edge_n[1][HVEC1_0], &diff_edge_n[1][HVEC1_1],
+          &diff_edge_n[1][HVEC2_0], &diff_edge_n[1][HVEC2_1]),
       FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2>(
-          &diff_edge_n[2][HCURL0_0], &diff_edge_n[2][HCURL0_1],
-          &diff_edge_n[2][HCURL1_0], &diff_edge_n[2][HCURL1_1],
-          &diff_edge_n[2][HCURL2_0], &diff_edge_n[2][HCURL2_1])};
+          &diff_edge_n[2][HVEC0_0], &diff_edge_n[2][HVEC0_1],
+          &diff_edge_n[2][HVEC1_0], &diff_edge_n[2][HVEC1_1],
+          &diff_edge_n[2][HVEC2_0], &diff_edge_n[2][HVEC2_1])};
 
   FTensor::Tensor1<double, 3> t_psi_e_0, t_psi_e_1;
   FTensor::Tensor2<double, 3, 2> t_diff_psi_e_0, t_diff_psi_e_1;
@@ -485,26 +485,26 @@ MoFEMErrorCode MoFEM::Hcurl_Ainsworth_EdgeBasedFaceFunctions_MBTET_ON_FACE(
   double diff_psi_l[2 * p + 2];
 
   FTensor::Tensor1<double *, 3> t_face_edge_base[3] = {
-      FTensor::Tensor1<double *, 3>(&phi_f_e[0][HCURL0], &phi_f_e[0][HCURL1],
-                                    &phi_f_e[0][HCURL2], 3),
-      FTensor::Tensor1<double *, 3>(&phi_f_e[1][HCURL0], &phi_f_e[1][HCURL1],
-                                    &phi_f_e[1][HCURL2], 3),
-      FTensor::Tensor1<double *, 3>(&phi_f_e[2][HCURL0], &phi_f_e[2][HCURL1],
-                                    &phi_f_e[2][HCURL2], 3),
+      FTensor::Tensor1<double *, 3>(&phi_f_e[0][HVEC0], &phi_f_e[0][HVEC1],
+                                    &phi_f_e[0][HVEC2], 3),
+      FTensor::Tensor1<double *, 3>(&phi_f_e[1][HVEC0], &phi_f_e[1][HVEC1],
+                                    &phi_f_e[1][HVEC2], 3),
+      FTensor::Tensor1<double *, 3>(&phi_f_e[2][HVEC0], &phi_f_e[2][HVEC1],
+                                    &phi_f_e[2][HVEC2], 3),
   };
   FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2> t_diff_face_edge_base[3] = {
       FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2>(
-          &diff_phi_f_e[0][HCURL0_0], &diff_phi_f_e[0][HCURL0_1],
-          &diff_phi_f_e[0][HCURL1_0], &diff_phi_f_e[0][HCURL1_1],
-          &diff_phi_f_e[0][HCURL2_0], &diff_phi_f_e[0][HCURL2_1]),
+          &diff_phi_f_e[0][HVEC0_0], &diff_phi_f_e[0][HVEC0_1],
+          &diff_phi_f_e[0][HVEC1_0], &diff_phi_f_e[0][HVEC1_1],
+          &diff_phi_f_e[0][HVEC2_0], &diff_phi_f_e[0][HVEC2_1]),
       FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2>(
-          &diff_phi_f_e[1][HCURL0_0], &diff_phi_f_e[1][HCURL0_1],
-          &diff_phi_f_e[1][HCURL1_0], &diff_phi_f_e[1][HCURL1_1],
-          &diff_phi_f_e[1][HCURL2_0], &diff_phi_f_e[1][HCURL2_1]),
+          &diff_phi_f_e[1][HVEC0_0], &diff_phi_f_e[1][HVEC0_1],
+          &diff_phi_f_e[1][HVEC1_0], &diff_phi_f_e[1][HVEC1_1],
+          &diff_phi_f_e[1][HVEC2_0], &diff_phi_f_e[1][HVEC2_1]),
       FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2>(
-          &diff_phi_f_e[2][HCURL0_0], &diff_phi_f_e[2][HCURL0_1],
-          &diff_phi_f_e[2][HCURL1_0], &diff_phi_f_e[2][HCURL1_1],
-          &diff_phi_f_e[2][HCURL2_0], &diff_phi_f_e[2][HCURL2_1])};
+          &diff_phi_f_e[2][HVEC0_0], &diff_phi_f_e[2][HVEC0_1],
+          &diff_phi_f_e[2][HVEC1_0], &diff_phi_f_e[2][HVEC1_1],
+          &diff_phi_f_e[2][HVEC2_0], &diff_phi_f_e[2][HVEC2_1])};
 
   for (int ee = 0; ee != 3; ee++) {
 
@@ -703,8 +703,8 @@ MoFEMErrorCode MoFEM::Hcurl_Ainsworth_BubbleFaceFunctions_MBTET_ON_FACE(
   double diff_psi_l_0i[2 * p + 2], diff_psi_l_0j[2 * p + 2];
   FTensor::Tensor1<double *, 3> t_phi_f(&phi_f[0], &phi_f[1], &phi_f[2], 3);
   FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2> t_diff_phi_f(
-      &diff_phi_f[HCURL0_0], &diff_phi_f[HCURL0_1], &diff_phi_f[HCURL1_0],
-      &diff_phi_f[HCURL1_1], &diff_phi_f[HCURL2_0], &diff_phi_f[HCURL2_1]);
+      &diff_phi_f[HVEC0_0], &diff_phi_f[HVEC0_1], &diff_phi_f[HVEC1_0],
+      &diff_phi_f[HVEC1_1], &diff_phi_f[HVEC2_0], &diff_phi_f[HVEC2_1]);
 
   double diff_ksi_0i[] = {t_node_diff_ksi(node1, 0) - t_node_diff_ksi(node0, 0),
                           t_node_diff_ksi(node1, 1) -
@@ -1303,38 +1303,38 @@ MoFEMErrorCode MoFEM::Hcurl_Ainsworth_FaceFunctions_MBTET_ON_FACE(
   FTensor::Index<'j', 2> j;
 
   FTensor::Tensor1<double *, 3> t_face_edge_base[] = {
-      FTensor::Tensor1<double *, 3>(&phi_f_e[0][HCURL0], &phi_f_e[0][HCURL1],
-                                    &phi_f_e[0][HCURL2], 3),
-      FTensor::Tensor1<double *, 3>(&phi_f_e[1][HCURL0], &phi_f_e[1][HCURL1],
-                                    &phi_f_e[1][HCURL2], 3),
-      FTensor::Tensor1<double *, 3>(&phi_f_e[2][HCURL0], &phi_f_e[2][HCURL1],
-                                    &phi_f_e[2][HCURL2], 3)};
+      FTensor::Tensor1<double *, 3>(&phi_f_e[0][HVEC0], &phi_f_e[0][HVEC1],
+                                    &phi_f_e[0][HVEC2], 3),
+      FTensor::Tensor1<double *, 3>(&phi_f_e[1][HVEC0], &phi_f_e[1][HVEC1],
+                                    &phi_f_e[1][HVEC2], 3),
+      FTensor::Tensor1<double *, 3>(&phi_f_e[2][HVEC0], &phi_f_e[2][HVEC1],
+                                    &phi_f_e[2][HVEC2], 3)};
   FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2> t_diff_face_edge_base[] = {
       FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2>(
-          &diff_phi_f_e[0][HCURL0_0], &diff_phi_f_e[0][HCURL0_1],
-          &diff_phi_f_e[0][HCURL1_0], &diff_phi_f_e[0][HCURL1_1],
-          &diff_phi_f_e[0][HCURL2_0], &diff_phi_f_e[0][HCURL2_1]),
+          &diff_phi_f_e[0][HVEC0_0], &diff_phi_f_e[0][HVEC0_1],
+          &diff_phi_f_e[0][HVEC1_0], &diff_phi_f_e[0][HVEC1_1],
+          &diff_phi_f_e[0][HVEC2_0], &diff_phi_f_e[0][HVEC2_1]),
       FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2>(
-          &diff_phi_f_e[1][HCURL0_0], &diff_phi_f_e[1][HCURL0_1],
-          &diff_phi_f_e[1][HCURL1_0], &diff_phi_f_e[1][HCURL1_1],
-          &diff_phi_f_e[1][HCURL2_0], &diff_phi_f_e[1][HCURL2_1]),
+          &diff_phi_f_e[1][HVEC0_0], &diff_phi_f_e[1][HVEC0_1],
+          &diff_phi_f_e[1][HVEC1_0], &diff_phi_f_e[1][HVEC1_1],
+          &diff_phi_f_e[1][HVEC2_0], &diff_phi_f_e[1][HVEC2_1]),
       FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2>(
-          &diff_phi_f_e[2][HCURL0_0], &diff_phi_f_e[2][HCURL0_1],
-          &diff_phi_f_e[2][HCURL1_0], &diff_phi_f_e[2][HCURL1_1],
-          &diff_phi_f_e[2][HCURL2_0], &diff_phi_f_e[2][HCURL2_1])};
+          &diff_phi_f_e[2][HVEC0_0], &diff_phi_f_e[2][HVEC0_1],
+          &diff_phi_f_e[2][HVEC1_0], &diff_phi_f_e[2][HVEC1_1],
+          &diff_phi_f_e[2][HVEC2_0], &diff_phi_f_e[2][HVEC2_1])};
 
   FTensor::Tensor1<double *, 3> t_face_base(&phi_f[0], &phi_f[1], &phi_f[2], 3);
   FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2> t_diff_face_base(
-      &diff_phi_f[HCURL0_0], &diff_phi_f[HCURL0_1], &diff_phi_f[HCURL1_0],
-      &diff_phi_f[HCURL1_1], &diff_phi_f[HCURL2_0], &diff_phi_f[HCURL2_1]);
+      &diff_phi_f[HVEC0_0], &diff_phi_f[HVEC0_1], &diff_phi_f[HVEC1_0],
+      &diff_phi_f[HVEC1_1], &diff_phi_f[HVEC2_0], &diff_phi_f[HVEC2_1]);
 
   if (NBFACETRI_AINSWORTH_FACE_HCURL(p) > 0) {
     FTensor::Tensor1<double *, 3> t_face_face_base(
-        &phi_f_f[HCURL0], &phi_f_f[HCURL1], &phi_f_f[HCURL2], 3);
+        &phi_f_f[HVEC0], &phi_f_f[HVEC1], &phi_f_f[HVEC2], 3);
     FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2> t_diff_face_face_base(
-        &diff_phi_f_f[HCURL0_0], &diff_phi_f_f[HCURL0_1],
-        &diff_phi_f_f[HCURL1_0], &diff_phi_f_f[HCURL1_1],
-        &diff_phi_f_f[HCURL2_0], &diff_phi_f_f[HCURL2_1]);
+        &diff_phi_f_f[HVEC0_0], &diff_phi_f_f[HVEC0_1],
+        &diff_phi_f_f[HVEC1_0], &diff_phi_f_f[HVEC1_1],
+        &diff_phi_f_f[HVEC2_0], &diff_phi_f_f[HVEC2_1]);
     for (int ii = 0; ii != nb_integration_pts; ii++) {
       int cc = 0;
       for (int oo = 0; oo <= p; oo++) {
@@ -2215,15 +2215,15 @@ MoFEMErrorCode MoFEM::Hcurl_Demkowicz_EdgeBaseFunctions_MBTET(
 
   for (int ee = 0; ee != 6; ++ee) {
 
-    FTensor::Tensor1<double *, 3> t_phi(&phi[ee][HCURL0], &phi[ee][HCURL1],
-                                        &phi[ee][HCURL2], 3);
+    FTensor::Tensor1<double *, 3> t_phi(&phi[ee][HVEC0], &phi[ee][HVEC1],
+                                        &phi[ee][HVEC2], 3);
 
     FTensor::Tensor2<double *, 3, 3> t_diff_phi(
-        &diff_phi[ee][HCURL0_0], &diff_phi[ee][HCURL0_1],
-        &diff_phi[ee][HCURL0_2], &diff_phi[ee][HCURL1_0],
-        &diff_phi[ee][HCURL1_1], &diff_phi[ee][HCURL1_2],
-        &diff_phi[ee][HCURL2_0], &diff_phi[ee][HCURL2_1],
-        &diff_phi[ee][HCURL2_2], 9);
+        &diff_phi[ee][HVEC0_0], &diff_phi[ee][HVEC0_1],
+        &diff_phi[ee][HVEC0_2], &diff_phi[ee][HVEC1_0],
+        &diff_phi[ee][HVEC1_1], &diff_phi[ee][HVEC1_2],
+        &diff_phi[ee][HVEC2_0], &diff_phi[ee][HVEC2_1],
+        &diff_phi[ee][HVEC2_2], 9);
 
     int n0_idx = e_nodes[ee][0];
     int n1_idx = e_nodes[ee][1];
@@ -2258,13 +2258,13 @@ MoFEMErrorCode MoFEM::Hcurl_Demkowicz_EdgeBaseFunctions_MBTRI(
 
   for (int ee = 0; ee != 3; ++ee) {
 
-    FTensor::Tensor1<double *, 3> t_phi(&phi[ee][HCURL0], &phi[ee][HCURL1],
-                                        &phi[ee][HCURL2], 3);
+    FTensor::Tensor1<double *, 3> t_phi(&phi[ee][HVEC0], &phi[ee][HVEC1],
+                                        &phi[ee][HVEC2], 3);
 
     FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2> t_diff_phi(
-        &diff_phi[ee][HCURL0_0], &diff_phi[ee][HCURL0_1],
-        &diff_phi[ee][HCURL1_0], &diff_phi[ee][HCURL1_1],
-        &diff_phi[ee][HCURL2_0], &diff_phi[ee][HCURL2_1]);
+        &diff_phi[ee][HVEC0_0], &diff_phi[ee][HVEC0_1],
+        &diff_phi[ee][HVEC1_0], &diff_phi[ee][HVEC1_1],
+        &diff_phi[ee][HVEC2_0], &diff_phi[ee][HVEC2_1]);
 
     int n0_idx = e_nodes[ee][0];
     int n1_idx = e_nodes[ee][1];
@@ -2293,8 +2293,8 @@ MoFEMErrorCode MoFEM::Hcurl_Demkowicz_EdgeBaseFunctions_MBEDGE(
 
   HcurlEdgeBase h_curl_base_on_edge;
 
-  FTensor::Tensor1<double *, 3> t_phi(&phi[HCURL0], &phi[HCURL1],
-                                      &phi[HCURL2], 3);
+  FTensor::Tensor1<double *, 3> t_phi(&phi[HVEC0], &phi[HVEC1],
+                                      &phi[HVEC2], 3);
 
   if (diff_phi != NULL) {
     SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY,
@@ -2340,13 +2340,13 @@ struct HcurlFaceBase {
     double *f0_phi_ii = &*f0PhiII.data().begin();
     double *diff_f0_phi_ii = &*diffF0PhiII.data().begin();
     FTensor::Tensor1<double *, 3> t_f0_phi_ii(
-        &f0_phi_ii[HCURL0], &f0_phi_ii[HCURL1], &f0_phi_ii[HCURL2], 3);
+        &f0_phi_ii[HVEC0], &f0_phi_ii[HVEC1], &f0_phi_ii[HVEC2], 3);
     FTensor::Tensor2<double *, 3, 3> t_diff_f0_phi_ii(
-        &diff_f0_phi_ii[HCURL0_0], &diff_f0_phi_ii[HCURL0_1],
-        &diff_f0_phi_ii[HCURL0_2], &diff_f0_phi_ii[HCURL1_0],
-        &diff_f0_phi_ii[HCURL1_1], &diff_f0_phi_ii[HCURL1_2],
-        &diff_f0_phi_ii[HCURL2_0], &diff_f0_phi_ii[HCURL2_1],
-        &diff_f0_phi_ii[HCURL2_2], 9);
+        &diff_f0_phi_ii[HVEC0_0], &diff_f0_phi_ii[HVEC0_1],
+        &diff_f0_phi_ii[HVEC0_2], &diff_f0_phi_ii[HVEC1_0],
+        &diff_f0_phi_ii[HVEC1_1], &diff_f0_phi_ii[HVEC1_2],
+        &diff_f0_phi_ii[HVEC2_0], &diff_f0_phi_ii[HVEC2_1],
+        &diff_f0_phi_ii[HVEC2_2], 9);
     CHKERR hCurlBaseOnEdge(4, p-1, nb_integration_pts, n0f0_idx, n1f0_idx, n,
                            t_grad_n, t_f0_phi_ii, t_diff_f0_phi_ii);
 
@@ -2374,18 +2374,18 @@ struct HcurlFaceBase {
       for (int oo = 2; oo <= p; ++oo) {
 
         FTensor::Tensor1<double *, 3> t_f0_phi_ii(
-            &f0_phi_ii[phi_shift + HCURL0], &f0_phi_ii[phi_shift + HCURL1],
-            &f0_phi_ii[phi_shift + HCURL2], 3);
+            &f0_phi_ii[phi_shift + HVEC0], &f0_phi_ii[phi_shift + HVEC1],
+            &f0_phi_ii[phi_shift + HVEC2], 3);
         FTensor::Tensor2<double *, 3, 3> t_diff_f0_phi_ii(
-            &diff_f0_phi_ii[diff_phi_shift + HCURL0_0],
-            &diff_f0_phi_ii[diff_phi_shift + HCURL0_1],
-            &diff_f0_phi_ii[diff_phi_shift + HCURL0_2],
-            &diff_f0_phi_ii[diff_phi_shift + HCURL1_0],
-            &diff_f0_phi_ii[diff_phi_shift + HCURL1_1],
-            &diff_f0_phi_ii[diff_phi_shift + HCURL1_2],
-            &diff_f0_phi_ii[diff_phi_shift + HCURL2_0],
-            &diff_f0_phi_ii[diff_phi_shift + HCURL2_1],
-            &diff_f0_phi_ii[diff_phi_shift + HCURL2_2], 9);
+            &diff_f0_phi_ii[diff_phi_shift + HVEC0_0],
+            &diff_f0_phi_ii[diff_phi_shift + HVEC0_1],
+            &diff_f0_phi_ii[diff_phi_shift + HVEC0_2],
+            &diff_f0_phi_ii[diff_phi_shift + HVEC1_0],
+            &diff_f0_phi_ii[diff_phi_shift + HVEC1_1],
+            &diff_f0_phi_ii[diff_phi_shift + HVEC1_2],
+            &diff_f0_phi_ii[diff_phi_shift + HVEC2_0],
+            &diff_f0_phi_ii[diff_phi_shift + HVEC2_1],
+            &diff_f0_phi_ii[diff_phi_shift + HVEC2_2], 9);
 
         for (int ii = 0; ii <= oo - 2; ii++) {
 
@@ -2433,13 +2433,13 @@ struct HcurlFaceBase {
     double *f0_phi_ii = &*f0PhiII.data().begin();
     double *diff_f0_phi_ii = &*diffF0PhiII.data().begin();
     FTensor::Tensor1<double *, 3> t_f0_phi_ii(
-        &f0_phi_ii[HCURL0], &f0_phi_ii[HCURL1], &f0_phi_ii[HCURL2], 3);
+        &f0_phi_ii[HVEC0], &f0_phi_ii[HVEC1], &f0_phi_ii[HVEC2], 3);
     FTensor::Tensor2<double *, 3, 3> t_diff_f0_phi_ii(
-        &diff_f0_phi_ii[HCURL0_0], &diff_f0_phi_ii[HCURL0_1],
-        &diff_f0_phi_ii[HCURL0_2], &diff_f0_phi_ii[HCURL1_0],
-        &diff_f0_phi_ii[HCURL1_1], &diff_f0_phi_ii[HCURL1_2],
-        &diff_f0_phi_ii[HCURL2_0], &diff_f0_phi_ii[HCURL2_1],
-        &diff_f0_phi_ii[HCURL2_2], 9);
+        &diff_f0_phi_ii[HVEC0_0], &diff_f0_phi_ii[HVEC0_1],
+        &diff_f0_phi_ii[HVEC0_2], &diff_f0_phi_ii[HVEC1_0],
+        &diff_f0_phi_ii[HVEC1_1], &diff_f0_phi_ii[HVEC1_2],
+        &diff_f0_phi_ii[HVEC2_0], &diff_f0_phi_ii[HVEC2_1],
+        &diff_f0_phi_ii[HVEC2_2], 9);
     CHKERR hCurlBaseOnEdge(4, p-1, nb_integration_pts, n0f0_idx, n1f0_idx, n,
                            t_grad_n, t_f0_phi_ii, t_diff_f0_phi_ii);
 
@@ -2447,13 +2447,13 @@ struct HcurlFaceBase {
     double *f1_phi_ii = &*f1PhiII.data().begin();
     double *diff_f1_phi_ii = &*diffF1PhiII.data().begin();
     FTensor::Tensor1<double *, 3> t_f1_phi_ii(
-        &f1_phi_ii[HCURL0], &f1_phi_ii[HCURL1], &f1_phi_ii[HCURL2], 3);
+        &f1_phi_ii[HVEC0], &f1_phi_ii[HVEC1], &f1_phi_ii[HVEC2], 3);
     FTensor::Tensor2<double *, 3, 3> t_diff_f1_phi_ii(
-        &diff_f1_phi_ii[HCURL0_0], &diff_f1_phi_ii[HCURL0_1],
-        &diff_f1_phi_ii[HCURL0_2], &diff_f1_phi_ii[HCURL1_0],
-        &diff_f1_phi_ii[HCURL1_1], &diff_f1_phi_ii[HCURL1_2],
-        &diff_f1_phi_ii[HCURL2_0], &diff_f1_phi_ii[HCURL2_1],
-        &diff_f1_phi_ii[HCURL2_2], 9);
+        &diff_f1_phi_ii[HVEC0_0], &diff_f1_phi_ii[HVEC0_1],
+        &diff_f1_phi_ii[HVEC0_2], &diff_f1_phi_ii[HVEC1_0],
+        &diff_f1_phi_ii[HVEC1_1], &diff_f1_phi_ii[HVEC1_2],
+        &diff_f1_phi_ii[HVEC2_0], &diff_f1_phi_ii[HVEC2_1],
+        &diff_f1_phi_ii[HVEC2_2], 9);
     CHKERR hCurlBaseOnEdge(4, p-1, nb_integration_pts, n0f1_idx, n1f1_idx, n,
                            t_grad_n, t_f1_phi_ii, t_diff_f1_phi_ii);
 
@@ -2495,33 +2495,33 @@ struct HcurlFaceBase {
       for (int oo = 2; oo <= p; ++oo) {
 
         FTensor::Tensor1<double *, 3> t_f0_phi_ii(
-            &f0_phi_ii[phi_shift + HCURL0], &f0_phi_ii[phi_shift + HCURL1],
-            &f0_phi_ii[phi_shift + HCURL2], 3);
+            &f0_phi_ii[phi_shift + HVEC0], &f0_phi_ii[phi_shift + HVEC1],
+            &f0_phi_ii[phi_shift + HVEC2], 3);
         FTensor::Tensor2<double *, 3, 3> t_diff_f0_phi_ii(
-            &diff_f0_phi_ii[diff_phi_shift + HCURL0_0],
-            &diff_f0_phi_ii[diff_phi_shift + HCURL0_1],
-            &diff_f0_phi_ii[diff_phi_shift + HCURL0_2],
-            &diff_f0_phi_ii[diff_phi_shift + HCURL1_0],
-            &diff_f0_phi_ii[diff_phi_shift + HCURL1_1],
-            &diff_f0_phi_ii[diff_phi_shift + HCURL1_2],
-            &diff_f0_phi_ii[diff_phi_shift + HCURL2_0],
-            &diff_f0_phi_ii[diff_phi_shift + HCURL2_1],
-            &diff_f0_phi_ii[diff_phi_shift + HCURL2_2], 9);
+            &diff_f0_phi_ii[diff_phi_shift + HVEC0_0],
+            &diff_f0_phi_ii[diff_phi_shift + HVEC0_1],
+            &diff_f0_phi_ii[diff_phi_shift + HVEC0_2],
+            &diff_f0_phi_ii[diff_phi_shift + HVEC1_0],
+            &diff_f0_phi_ii[diff_phi_shift + HVEC1_1],
+            &diff_f0_phi_ii[diff_phi_shift + HVEC1_2],
+            &diff_f0_phi_ii[diff_phi_shift + HVEC2_0],
+            &diff_f0_phi_ii[diff_phi_shift + HVEC2_1],
+            &diff_f0_phi_ii[diff_phi_shift + HVEC2_2], 9);
 
         FTensor::Tensor1<double *, 3> t_f1_phi_ii(
-            &f1_phi_ii[phi_shift + HCURL0],
-            &f1_phi_ii[phi_shift + HCURL1],
-            &f1_phi_ii[phi_shift + HCURL2], 3);
+            &f1_phi_ii[phi_shift + HVEC0],
+            &f1_phi_ii[phi_shift + HVEC1],
+            &f1_phi_ii[phi_shift + HVEC2], 3);
         FTensor::Tensor2<double *, 3, 3> t_diff_f1_phi_ii(
-            &diff_f1_phi_ii[diff_phi_shift + HCURL0_0],
-            &diff_f1_phi_ii[diff_phi_shift + HCURL0_1],
-            &diff_f1_phi_ii[diff_phi_shift + HCURL0_2],
-            &diff_f1_phi_ii[diff_phi_shift + HCURL1_0],
-            &diff_f1_phi_ii[diff_phi_shift + HCURL1_1],
-            &diff_f1_phi_ii[diff_phi_shift + HCURL1_2],
-            &diff_f1_phi_ii[diff_phi_shift + HCURL2_0],
-            &diff_f1_phi_ii[diff_phi_shift + HCURL2_1],
-            &diff_f1_phi_ii[diff_phi_shift + HCURL2_2], 9);
+            &diff_f1_phi_ii[diff_phi_shift + HVEC0_0],
+            &diff_f1_phi_ii[diff_phi_shift + HVEC0_1],
+            &diff_f1_phi_ii[diff_phi_shift + HVEC0_2],
+            &diff_f1_phi_ii[diff_phi_shift + HVEC1_0],
+            &diff_f1_phi_ii[diff_phi_shift + HVEC1_1],
+            &diff_f1_phi_ii[diff_phi_shift + HVEC1_2],
+            &diff_f1_phi_ii[diff_phi_shift + HVEC2_0],
+            &diff_f1_phi_ii[diff_phi_shift + HVEC2_1],
+            &diff_f1_phi_ii[diff_phi_shift + HVEC2_2], 9);
 
         for (int ii = 0; ii <= oo - 2; ii++) {
 
@@ -2592,11 +2592,11 @@ struct HcurlFaceBase {
     double *f0_phi_ii = &*f0PhiII.data().begin();
     double *diff_f0_phi_ii = &*diffF0PhiII.data().begin();
     FTensor::Tensor1<double *, 3> t_f0_phi_ii(
-        &f0_phi_ii[HCURL0], &f0_phi_ii[HCURL1], &f0_phi_ii[HCURL2], 3);
+        &f0_phi_ii[HVEC0], &f0_phi_ii[HVEC1], &f0_phi_ii[HVEC2], 3);
     FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2> t_diff_f0_phi_ii(
-        &diff_f0_phi_ii[HCURL0_0], &diff_f0_phi_ii[HCURL0_1],
-        &diff_f0_phi_ii[HCURL1_0], &diff_f0_phi_ii[HCURL1_1],
-        &diff_f0_phi_ii[HCURL2_0], &diff_f0_phi_ii[HCURL2_1]);
+        &diff_f0_phi_ii[HVEC0_0], &diff_f0_phi_ii[HVEC0_1],
+        &diff_f0_phi_ii[HVEC1_0], &diff_f0_phi_ii[HVEC1_1],
+        &diff_f0_phi_ii[HVEC2_0], &diff_f0_phi_ii[HVEC2_1]);
     CHKERR hCurlBaseOnEdge(3, p - 1, nb_integration_pts, n0f0_idx, n1f0_idx, n,
                            t_grad_n, t_f0_phi_ii, t_diff_f0_phi_ii);
 
@@ -2604,11 +2604,11 @@ struct HcurlFaceBase {
     double *f1_phi_ii = &*f1PhiII.data().begin();
     double *diff_f1_phi_ii = &*diffF1PhiII.data().begin();
     FTensor::Tensor1<double *, 3> t_f1_phi_ii(
-        &f1_phi_ii[HCURL0], &f1_phi_ii[HCURL1], &f1_phi_ii[HCURL2], 3);
+        &f1_phi_ii[HVEC0], &f1_phi_ii[HVEC1], &f1_phi_ii[HVEC2], 3);
     FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2> t_diff_f1_phi_ii(
-        &diff_f1_phi_ii[HCURL0_0], &diff_f1_phi_ii[HCURL0_1],
-        &diff_f1_phi_ii[HCURL1_0], &diff_f1_phi_ii[HCURL1_1],
-        &diff_f1_phi_ii[HCURL2_0], &diff_f1_phi_ii[HCURL2_1]);
+        &diff_f1_phi_ii[HVEC0_0], &diff_f1_phi_ii[HVEC0_1],
+        &diff_f1_phi_ii[HVEC1_0], &diff_f1_phi_ii[HVEC1_1],
+        &diff_f1_phi_ii[HVEC2_0], &diff_f1_phi_ii[HVEC2_1]);
     CHKERR hCurlBaseOnEdge(3, p - 1, nb_integration_pts, n0f1_idx, n1f1_idx, n,
                            t_grad_n, t_f1_phi_ii, t_diff_f1_phi_ii);
 
@@ -2652,26 +2652,26 @@ struct HcurlFaceBase {
       for (int oo = 2; oo <= p; ++oo) {
 
         FTensor::Tensor1<double *, 3> t_f0_phi_ii(
-            &f0_phi_ii[phi_shift + HCURL0], &f0_phi_ii[phi_shift + HCURL1],
-            &f0_phi_ii[phi_shift + HCURL2], 3);
+            &f0_phi_ii[phi_shift + HVEC0], &f0_phi_ii[phi_shift + HVEC1],
+            &f0_phi_ii[phi_shift + HVEC2], 3);
         FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2> t_diff_f0_phi_ii(
-            &diff_f0_phi_ii[diff_phi_shift + HCURL0_0],
-            &diff_f0_phi_ii[diff_phi_shift + HCURL0_1],
-            &diff_f0_phi_ii[diff_phi_shift + HCURL1_0],
-            &diff_f0_phi_ii[diff_phi_shift + HCURL1_1],
-            &diff_f0_phi_ii[diff_phi_shift + HCURL2_0],
-            &diff_f0_phi_ii[diff_phi_shift + HCURL2_1]);
+            &diff_f0_phi_ii[diff_phi_shift + HVEC0_0],
+            &diff_f0_phi_ii[diff_phi_shift + HVEC0_1],
+            &diff_f0_phi_ii[diff_phi_shift + HVEC1_0],
+            &diff_f0_phi_ii[diff_phi_shift + HVEC1_1],
+            &diff_f0_phi_ii[diff_phi_shift + HVEC2_0],
+            &diff_f0_phi_ii[diff_phi_shift + HVEC2_1]);
 
         FTensor::Tensor1<double *, 3> t_f1_phi_ii(
-            &f1_phi_ii[phi_shift + HCURL0], &f1_phi_ii[phi_shift + HCURL1],
-            &f1_phi_ii[phi_shift + HCURL2], 3);
+            &f1_phi_ii[phi_shift + HVEC0], &f1_phi_ii[phi_shift + HVEC1],
+            &f1_phi_ii[phi_shift + HVEC2], 3);
         FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2> t_diff_f1_phi_ii(
-            &diff_f1_phi_ii[diff_phi_shift + HCURL0_0],
-            &diff_f1_phi_ii[diff_phi_shift + HCURL0_1],
-            &diff_f1_phi_ii[diff_phi_shift + HCURL1_0],
-            &diff_f1_phi_ii[diff_phi_shift + HCURL1_1],
-            &diff_f1_phi_ii[diff_phi_shift + HCURL2_0],
-            &diff_f1_phi_ii[diff_phi_shift + HCURL2_1]);
+            &diff_f1_phi_ii[diff_phi_shift + HVEC0_0],
+            &diff_f1_phi_ii[diff_phi_shift + HVEC0_1],
+            &diff_f1_phi_ii[diff_phi_shift + HVEC1_0],
+            &diff_f1_phi_ii[diff_phi_shift + HVEC1_1],
+            &diff_f1_phi_ii[diff_phi_shift + HVEC2_0],
+            &diff_f1_phi_ii[diff_phi_shift + HVEC2_1]);
 
         for (int ii = 0; ii <= oo - 2; ii++) {
 
@@ -2740,15 +2740,15 @@ MoFEM::Hcurl_Demkowicz_FaceBaseFunctions_MBTET(int *faces_nodes, int *p,
     if (p[ff] < 2)
       continue;
 
-    FTensor::Tensor1<double *, 3> t_phi(&phi[ff][HCURL0], &phi[ff][HCURL1],
-                                        &phi[ff][HCURL2], 3);
+    FTensor::Tensor1<double *, 3> t_phi(&phi[ff][HVEC0], &phi[ff][HVEC1],
+                                        &phi[ff][HVEC2], 3);
 
     FTensor::Tensor2<double *, 3, 3> t_diff_phi(
-        &diff_phi[ff][HCURL0_0], &diff_phi[ff][HCURL0_1],
-        &diff_phi[ff][HCURL0_2], &diff_phi[ff][HCURL1_0],
-        &diff_phi[ff][HCURL1_1], &diff_phi[ff][HCURL1_2],
-        &diff_phi[ff][HCURL2_0], &diff_phi[ff][HCURL2_1],
-        &diff_phi[ff][HCURL2_2], 9);
+        &diff_phi[ff][HVEC0_0], &diff_phi[ff][HVEC0_1],
+        &diff_phi[ff][HVEC0_2], &diff_phi[ff][HVEC1_0],
+        &diff_phi[ff][HVEC1_1], &diff_phi[ff][HVEC1_2],
+        &diff_phi[ff][HVEC2_0], &diff_phi[ff][HVEC2_1],
+        &diff_phi[ff][HVEC2_2], 9);
 
     // f0, f1 - family I and family II
     const int n0f0_idx = faces_nodes[3 * ff + 0];
@@ -2786,12 +2786,12 @@ MoFEM::Hcurl_Demkowicz_FaceBaseFunctions_MBTRI(int *faces_nodes, int p,
   if (p < 2)
     MoFEMFunctionReturnHot(0);
 
-  FTensor::Tensor1<double *, 3> t_phi(&phi[HCURL0], &phi[HCURL1],
-                                      &phi[HCURL2], 3);
+  FTensor::Tensor1<double *, 3> t_phi(&phi[HVEC0], &phi[HVEC1],
+                                      &phi[HVEC2], 3);
 
   FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2> t_diff_phi(
-      &diff_phi[HCURL0_0], &diff_phi[HCURL0_1], &diff_phi[HCURL1_0],
-      &diff_phi[HCURL1_1], &diff_phi[HCURL2_0], &diff_phi[HCURL2_1]);
+      &diff_phi[HVEC0_0], &diff_phi[HVEC0_1], &diff_phi[HVEC1_0],
+      &diff_phi[HVEC1_1], &diff_phi[HVEC2_0], &diff_phi[HVEC2_1]);
 
   // f0, f1 - family I and family II
   const int n0f0_idx = faces_nodes[0];
@@ -2822,13 +2822,13 @@ MoFEMErrorCode MoFEM::Hcurl_Demkowicz_VolumeBaseFunctions_MBTET(
   if (p < 3)
     MoFEMFunctionReturnHot(0);
 
-  FTensor::Tensor1<double *, 3> t_phi(&phi[HCURL0], &phi[HCURL1], &phi[HCURL2],
+  FTensor::Tensor1<double *, 3> t_phi(&phi[HVEC0], &phi[HVEC1], &phi[HVEC2],
                                       3);
 
   FTensor::Tensor2<double *, 3, 3> t_diff_phi(
-      &diff_phi[HCURL0_0], &diff_phi[HCURL0_1], &diff_phi[HCURL0_2],
-      &diff_phi[HCURL1_0], &diff_phi[HCURL1_1], &diff_phi[HCURL1_2],
-      &diff_phi[HCURL2_0], &diff_phi[HCURL2_1], &diff_phi[HCURL2_2], 9);
+      &diff_phi[HVEC0_0], &diff_phi[HVEC0_1], &diff_phi[HVEC0_2],
+      &diff_phi[HVEC1_0], &diff_phi[HVEC1_1], &diff_phi[HVEC1_2],
+      &diff_phi[HVEC2_0], &diff_phi[HVEC2_1], &diff_phi[HVEC2_2], 9);
 
   FTensor::Tensor1<double, 3> t_grad_n[4];
   for (int nn = 0; nn != 4; ++nn) {
@@ -2849,14 +2849,14 @@ MoFEMErrorCode MoFEM::Hcurl_Demkowicz_VolumeBaseFunctions_MBTET(
     double *diff_phi_ij_ptr = &diff_phi_ij(ff,0);
 
     FTensor::Tensor1<double *, 3> t_phi_ij(
-        &phi_ij_ptr[HCURL0], &phi_ij_ptr[HCURL1], &phi_ij_ptr[HCURL2], 3);
+        &phi_ij_ptr[HVEC0], &phi_ij_ptr[HVEC1], &phi_ij_ptr[HVEC2], 3);
 
     FTensor::Tensor2<double *, 3, 3> t_diff_phi_ij(
-        &diff_phi_ij_ptr[HCURL0_0], &diff_phi_ij_ptr[HCURL0_1],
-        &diff_phi_ij_ptr[HCURL0_2], &diff_phi_ij_ptr[HCURL1_0],
-        &diff_phi_ij_ptr[HCURL1_1], &diff_phi_ij_ptr[HCURL1_2],
-        &diff_phi_ij_ptr[HCURL2_0], &diff_phi_ij_ptr[HCURL2_1],
-        &diff_phi_ij_ptr[HCURL2_2], 9);
+        &diff_phi_ij_ptr[HVEC0_0], &diff_phi_ij_ptr[HVEC0_1],
+        &diff_phi_ij_ptr[HVEC0_2], &diff_phi_ij_ptr[HVEC1_0],
+        &diff_phi_ij_ptr[HVEC1_1], &diff_phi_ij_ptr[HVEC1_2],
+        &diff_phi_ij_ptr[HVEC2_0], &diff_phi_ij_ptr[HVEC2_1],
+        &diff_phi_ij_ptr[HVEC2_2], 9);
 
     const int n0_idx = family[ff][0];
     const int n1_idx = family[ff][1];
@@ -2892,46 +2892,46 @@ MoFEMErrorCode MoFEM::Hcurl_Demkowicz_VolumeBaseFunctions_MBTET(
       int diff_phi_shift = 9 * nb_face_functions * gg;
 
       FTensor::Tensor1<double *, 3> t_phi_face_f0(
-          &phi_ij(0, phi_shift + HCURL0), &phi_ij(0, phi_shift + HCURL1),
-          &phi_ij(0, phi_shift + HCURL2), 3);
+          &phi_ij(0, phi_shift + HVEC0), &phi_ij(0, phi_shift + HVEC1),
+          &phi_ij(0, phi_shift + HVEC2), 3);
       FTensor::Tensor2<double *, 3, 3> t_diff_phi_face_f0(
-          &diff_phi_ij(0, diff_phi_shift + HCURL0_0),
-          &diff_phi_ij(0, diff_phi_shift + HCURL0_1),
-          &diff_phi_ij(0, diff_phi_shift + HCURL0_2),
-          &diff_phi_ij(0, diff_phi_shift + HCURL1_0),
-          &diff_phi_ij(0, diff_phi_shift + HCURL1_1),
-          &diff_phi_ij(0, diff_phi_shift + HCURL1_2),
-          &diff_phi_ij(0, diff_phi_shift + HCURL2_0),
-          &diff_phi_ij(0, diff_phi_shift + HCURL2_1),
-          &diff_phi_ij(0, diff_phi_shift + HCURL2_2), 9);
+          &diff_phi_ij(0, diff_phi_shift + HVEC0_0),
+          &diff_phi_ij(0, diff_phi_shift + HVEC0_1),
+          &diff_phi_ij(0, diff_phi_shift + HVEC0_2),
+          &diff_phi_ij(0, diff_phi_shift + HVEC1_0),
+          &diff_phi_ij(0, diff_phi_shift + HVEC1_1),
+          &diff_phi_ij(0, diff_phi_shift + HVEC1_2),
+          &diff_phi_ij(0, diff_phi_shift + HVEC2_0),
+          &diff_phi_ij(0, diff_phi_shift + HVEC2_1),
+          &diff_phi_ij(0, diff_phi_shift + HVEC2_2), 9);
 
       FTensor::Tensor1<double *, 3> t_phi_face_f1(
-          &phi_ij(1, phi_shift + HCURL0), &phi_ij(1, phi_shift + HCURL1),
-          &phi_ij(1, phi_shift + HCURL2), 3);
+          &phi_ij(1, phi_shift + HVEC0), &phi_ij(1, phi_shift + HVEC1),
+          &phi_ij(1, phi_shift + HVEC2), 3);
       FTensor::Tensor2<double *, 3, 3> t_diff_phi_face_f1(
-          &diff_phi_ij(1, diff_phi_shift + HCURL0_0),
-          &diff_phi_ij(1, diff_phi_shift + HCURL0_1),
-          &diff_phi_ij(1, diff_phi_shift + HCURL0_2),
-          &diff_phi_ij(1, diff_phi_shift + HCURL1_0),
-          &diff_phi_ij(1, diff_phi_shift + HCURL1_1),
-          &diff_phi_ij(1, diff_phi_shift + HCURL1_2),
-          &diff_phi_ij(1, diff_phi_shift + HCURL2_0),
-          &diff_phi_ij(1, diff_phi_shift + HCURL2_1),
-          &diff_phi_ij(1, diff_phi_shift + HCURL2_2), 9);
+          &diff_phi_ij(1, diff_phi_shift + HVEC0_0),
+          &diff_phi_ij(1, diff_phi_shift + HVEC0_1),
+          &diff_phi_ij(1, diff_phi_shift + HVEC0_2),
+          &diff_phi_ij(1, diff_phi_shift + HVEC1_0),
+          &diff_phi_ij(1, diff_phi_shift + HVEC1_1),
+          &diff_phi_ij(1, diff_phi_shift + HVEC1_2),
+          &diff_phi_ij(1, diff_phi_shift + HVEC2_0),
+          &diff_phi_ij(1, diff_phi_shift + HVEC2_1),
+          &diff_phi_ij(1, diff_phi_shift + HVEC2_2), 9);
 
       FTensor::Tensor1<double *, 3> t_phi_face_f2(
-          &phi_ij(2, phi_shift + HCURL0), &phi_ij(2, phi_shift + HCURL1),
-          &phi_ij(2, phi_shift + HCURL2), 3);
+          &phi_ij(2, phi_shift + HVEC0), &phi_ij(2, phi_shift + HVEC1),
+          &phi_ij(2, phi_shift + HVEC2), 3);
       FTensor::Tensor2<double *, 3, 3> t_diff_phi_face_f2(
-          &diff_phi_ij(2, diff_phi_shift + HCURL0_0),
-          &diff_phi_ij(2, diff_phi_shift + HCURL0_1),
-          &diff_phi_ij(2, diff_phi_shift + HCURL0_2),
-          &diff_phi_ij(2, diff_phi_shift + HCURL1_0),
-          &diff_phi_ij(2, diff_phi_shift + HCURL1_1),
-          &diff_phi_ij(2, diff_phi_shift + HCURL1_2),
-          &diff_phi_ij(2, diff_phi_shift + HCURL2_0),
-          &diff_phi_ij(2, diff_phi_shift + HCURL2_1),
-          &diff_phi_ij(2, diff_phi_shift + HCURL2_2), 9);
+          &diff_phi_ij(2, diff_phi_shift + HVEC0_0),
+          &diff_phi_ij(2, diff_phi_shift + HVEC0_1),
+          &diff_phi_ij(2, diff_phi_shift + HVEC0_2),
+          &diff_phi_ij(2, diff_phi_shift + HVEC1_0),
+          &diff_phi_ij(2, diff_phi_shift + HVEC1_1),
+          &diff_phi_ij(2, diff_phi_shift + HVEC1_2),
+          &diff_phi_ij(2, diff_phi_shift + HVEC2_0),
+          &diff_phi_ij(2, diff_phi_shift + HVEC2_1),
+          &diff_phi_ij(2, diff_phi_shift + HVEC2_2), 9);
 
       int ij = 0;
       for (int oo_ij = 2; oo_ij != oo; ++oo_ij) {

@@ -48,32 +48,28 @@ const bool PetscLocalIdx_mi_tag::IamNotPartitioned = false;
 Field::Field(const Interface &moab, const EntityHandle meshset,
              const boost::shared_ptr<CoordSys> coord_sys_ptr)
     : moab(const_cast<Interface &>(moab)), meshSet(meshset),
-      coordSysPtr(coord_sys_ptr), tagId(NULL), tag_space_data(NULL),
-      tag_nb_coeff_data(NULL), tagName(NULL), tagNameSize(0),
+      coordSysPtr(coord_sys_ptr), tagId(NULL), tagSpaceData(NULL),
+      tagNbCoeffData(NULL), tagName(NULL), tagNameSize(0),
       sequenceEntContainer(boost::make_shared<SequenceEntContainer>()),
       sequenceDofContainer(boost::make_shared<SequenceDofContainer>()) {
-  // Change those tags only by modifiers
-  ErrorCode rval;
+
+  auto get_tag_data_ptr = [&moab, meshset](const auto name, auto &tag_data) {
+    MoFEMFunctionBegin;
+    Tag th;
+    CHKERR moab.tag_get_handle(name, th);
+    CHKERR moab.tag_get_by_ptr(th, &meshset, 1, (const void **)&tag_data);
+    MoFEMFunctionReturn(0);
+  };
   // id
-  Tag th_field_id;
-  rval = moab.tag_get_handle("_FieldId", th_field_id);
-  MOAB_THROW(rval);
-  rval = moab.tag_get_by_ptr(th_field_id, &meshSet, 1, (const void **)&tagId);
-  MOAB_THROW(rval);
+  ierr = get_tag_data_ptr("_FieldId", tagId);
+  CHKERRABORT(PETSC_COMM_SELF, ierr);
   // space
-  Tag th_field_space;
-  rval = moab.tag_get_handle("_FieldSpace", th_field_space);
-  MOAB_THROW(rval);
-  rval = moab.tag_get_by_ptr(th_field_space, &meshSet, 1,
-                             (const void **)&tag_space_data);
-  MOAB_THROW(rval);
+  ierr = get_tag_data_ptr("_FieldSpace", tagSpaceData);
+  CHKERRABORT(PETSC_COMM_SELF, ierr);
   // approx. base
-  Tag th_field_base;
-  rval = moab.tag_get_handle("_FieldBase", th_field_base);
-  MOAB_THROW(rval);
-  rval = moab.tag_get_by_ptr(th_field_base, &meshSet, 1,
-                             (const void **)&tag_base_data);
-  MOAB_THROW(rval);
+  ierr = get_tag_data_ptr("_FieldBase", tagBaseData);
+  CHKERRABORT(PETSC_COMM_SELF, ierr);
+
   // name
   Tag th_field_name;
   rval = moab.tag_get_handle("_FieldName", th_field_name);
@@ -87,11 +83,10 @@ Field::Field(const Interface &moab, const EntityHandle meshset,
                              th_field_name_data_name_prefix);
   MOAB_THROW(rval);
   rval = moab.tag_get_by_ptr(th_field_name_data_name_prefix, &meshSet, 1,
-                             (const void **)&tag_name_prefix_data,
-                             &tag_name_prefix_size);
+                             (const void **)&tagNamePrefixData,
+                             &tagNamePrefixSize);
   MOAB_THROW(rval);
-  std::string name_data_prefix((char *)tag_name_prefix_data,
-                               tag_name_prefix_size);
+  std::string name_data_prefix((char *)tagNamePrefixData, tagNamePrefixSize);
   // data
   std::string tag_data_name = name_data_prefix + getName();
   rval = moab.tag_get_handle(tag_data_name.c_str(), th_FieldData);
@@ -105,47 +100,48 @@ Field::Field(const Interface &moab, const EntityHandle meshset,
   std::string Tag_rank_name = "_Field_Rank_" + getName();
   rval = moab.tag_get_handle(Tag_rank_name.c_str(), th_rank);
   MOAB_THROW(rval);
-  rval = moab.tag_get_by_ptr(th_rank, &meshSet, 1,
-                             (const void **)&tag_nb_coeff_data);
+  rval =
+      moab.tag_get_by_ptr(th_rank, &meshSet, 1, (const void **)&tagNbCoeffData);
   MOAB_THROW(rval);
-  bit_number = getBitNumberCalculate();
-  for (int tt = 0; tt < MBMAXTYPE; tt++) {
-    forder_table[tt] = NULL;
+  
+  bitNumber = getBitNumberCalculate();
+  for (int tt = 0; tt != MBMAXTYPE; ++tt) {
+    forderTable[tt] = NULL;
   }
-  switch (*tag_base_data) {
+  switch (*tagBaseData) {
   case AINSWORTH_LEGENDRE_BASE:
   case AINSWORTH_LOBATTO_BASE:
-    switch (*tag_space_data) {
+    switch (*tagSpaceData) {
     case H1:
-      forder_table[MBVERTEX] = fNBVERTEX_H1;
-      forder_table[MBEDGE] = fNBEDGE_H1;
-      forder_table[MBTRI] = fNBFACETRI_H1;
-      forder_table[MBQUAD] = fNBFACEQUAD_H1;
-      forder_table[MBTET] = fNBVOLUMETET_H1;
-      forder_table[MBPRISM] = fNBVOLUMEPRISM_H1;
+      forderTable[MBVERTEX] = fNBVERTEX_H1;
+      forderTable[MBEDGE] = fNBEDGE_H1;
+      forderTable[MBTRI] = fNBFACETRI_H1;
+      forderTable[MBQUAD] = fNBFACEQUAD_H1;
+      forderTable[MBTET] = fNBVOLUMETET_H1;
+      forderTable[MBPRISM] = fNBVOLUMEPRISM_H1;
       break;
     case HCURL:
-      forder_table[MBVERTEX] = fNBVERTEX_HCURL;
-      forder_table[MBEDGE] = fNBEDGE_AINSWORTH_HCURL;
-      forder_table[MBTRI] = fNBFACETRI_AINSWORTH_HCURL;
-      forder_table[MBTET] = fNBVOLUMETET_AINSWORTH_HCURL;
+      forderTable[MBVERTEX] = fNBVERTEX_HCURL;
+      forderTable[MBEDGE] = fNBEDGE_AINSWORTH_HCURL;
+      forderTable[MBTRI] = fNBFACETRI_AINSWORTH_HCURL;
+      forderTable[MBTET] = fNBVOLUMETET_AINSWORTH_HCURL;
       break;
     case HDIV:
-      forder_table[MBVERTEX] = fNBVERTEX_HDIV;
-      forder_table[MBEDGE] = fNBEDGE_HDIV;
-      forder_table[MBTRI] = fNBFACETRI_AINSWORTH_HDIV;
-      forder_table[MBTET] = fNBVOLUMETET_AINSWORTH_HDIV;
+      forderTable[MBVERTEX] = fNBVERTEX_HDIV;
+      forderTable[MBEDGE] = fNBEDGE_HDIV;
+      forderTable[MBTRI] = fNBFACETRI_AINSWORTH_HDIV;
+      forderTable[MBTET] = fNBVOLUMETET_AINSWORTH_HDIV;
       break;
     case L2:
-      forder_table[MBVERTEX] = fNBVERTEX_L2;
-      forder_table[MBEDGE] = fNBEDGE_L2;
-      forder_table[MBTRI] = fNBFACETRI_L2;
-      forder_table[MBTET] = fNBVOLUMETET_L2;
+      forderTable[MBVERTEX] = fNBVERTEX_L2;
+      forderTable[MBEDGE] = fNBEDGE_L2;
+      forderTable[MBTRI] = fNBFACETRI_L2;
+      forderTable[MBTET] = fNBVOLUMETET_L2;
       break;
     case NOFIELD:
       for (EntityType t = MBVERTEX; t < MBMAXTYPE; t++) {
         // Concept of approximation order make no sense if there is no field
-        forder_table[t] = fNBENTITYSET_NOFIELD;
+        forderTable[t] = fNBENTITYSET_NOFIELD;
       }
       break;
     default:
@@ -153,18 +149,18 @@ Field::Field(const Interface &moab, const EntityHandle meshset,
     }
     break;
   case DEMKOWICZ_JACOBI_BASE:
-    switch (*tag_space_data) {
+    switch (*tagSpaceData) {
     case HCURL:
-      forder_table[MBVERTEX] = fNBVERTEX_HCURL;
-      forder_table[MBEDGE] = fNBEDGE_DEMKOWICZ_HCURL;
-      forder_table[MBTRI] = fNBFACETRI_DEMKOWICZ_HCURL;
-      forder_table[MBTET] = fNBVOLUMETET_DEMKOWICZ_HCURL;
+      forderTable[MBVERTEX] = fNBVERTEX_HCURL;
+      forderTable[MBEDGE] = fNBEDGE_DEMKOWICZ_HCURL;
+      forderTable[MBTRI] = fNBFACETRI_DEMKOWICZ_HCURL;
+      forderTable[MBTET] = fNBVOLUMETET_DEMKOWICZ_HCURL;
       break;
     case HDIV:
-      forder_table[MBVERTEX] = fNBVERTEX_HDIV;
-      forder_table[MBEDGE] = fNBEDGE_HDIV;
-      forder_table[MBTRI] = fNBFACETRI_DEMKOWICZ_HDIV;
-      forder_table[MBTET] = fNBVOLUMETET_DEMKOWICZ_HDIV;
+      forderTable[MBVERTEX] = fNBVERTEX_HDIV;
+      forderTable[MBEDGE] = fNBEDGE_HDIV;
+      forderTable[MBTRI] = fNBFACETRI_DEMKOWICZ_HDIV;
+      forderTable[MBTET] = fNBVOLUMETET_DEMKOWICZ_HDIV;
       break;
     default:
       THROW_MESSAGE("unknown approximation space or not yet implemented");
@@ -175,22 +171,18 @@ Field::Field(const Interface &moab, const EntityHandle meshset,
     break;
   case USER_BASE:
     for (int ee = 0; ee < MBMAXTYPE; ee++) {
-      forder_table[ee] = fNBENTITY_GENERIC;
+      forderTable[ee] = fNBENTITY_GENERIC;
     }
     break;
   default:
-    if (*tag_space_data != NOFIELD) {
+    if (*tagSpaceData != NOFIELD) {
       THROW_MESSAGE("unknown approximation base");
     } else {
       for (EntityType t = MBVERTEX; t < MBMAXTYPE; t++) {
-        forder_table[t] = fNBENTITYSET_NOFIELD;
+        forderTable[t] = fNBENTITYSET_NOFIELD;
       }
     }
   }
-  // // Set DOFs orders on entities
-  // for(EntityType ee = MBVERTEX;ee!=MBMAXTYPE;ee++) {
-  //   getDofOrderMap(ee).resize(MAX_DOFS_ON_ENTITY,-1);
-  // }
 }
 
 std::ostream &operator<<(std::ostream &os, const Field &e) {
