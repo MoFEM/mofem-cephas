@@ -431,10 +431,9 @@ MeshsetsManager::query_interface(const MOFEMuuid &uuid,
     MoFEMFunctionReturnHot(0);
   }
 
-  MoFEMErrorCode
-  MeshsetsManager::getCubitMeshsetPtr(const int ms_id,
-                                      const CubitBCType cubit_bc_type,
-                                      const CubitMeshSets **cubit_meshset_ptr) {
+  MoFEMErrorCode MeshsetsManager::getCubitMeshsetPtr(
+      const int ms_id, const CubitBCType cubit_bc_type,
+      const CubitMeshSets **cubit_meshset_ptr) const {
     Interface &m_field = cOre;
     MoFEMFunctionBeginHot;
     CubitMeshSet_multiIndex::index<
@@ -452,9 +451,8 @@ MeshsetsManager::query_interface(const MOFEMuuid &uuid,
     MoFEMFunctionReturnHot(0);
   }
 
-  MoFEMErrorCode
-  MeshsetsManager::getCubitMeshsetPtr(const string name,
-                                      const CubitMeshSets **cubit_meshset_ptr) {
+  MoFEMErrorCode MeshsetsManager::getCubitMeshsetPtr(
+      const string name, const CubitMeshSets **cubit_meshset_ptr) const {
     Interface &m_field = cOre;
     MoFEMFunctionBeginHot;
     CubitMeshSet_multiIndex::index<CubitMeshSets_name>::type::iterator miit =
@@ -475,7 +473,7 @@ MeshsetsManager::query_interface(const MOFEMuuid &uuid,
 
   MoFEMErrorCode MeshsetsManager::getEntitiesByDimension(
       const int msId, const unsigned int cubit_bc_type, const int dimension,
-      Range &entities, const bool recursive) {
+      Range &entities, const bool recursive) const {
 
     Interface &m_field = cOre;
     moab::Interface &moab = m_field.get_moab();
@@ -499,7 +497,7 @@ MeshsetsManager::query_interface(const MOFEMuuid &uuid,
 
   MoFEMErrorCode MeshsetsManager::getEntitiesByDimension(
       const int ms_id, const unsigned int cubit_bc_type, Range &entities,
-      const bool recursive) {
+      const bool recursive) const {
     Interface &m_field = cOre;
     moab::Interface &moab = m_field.get_moab();
     MoFEMFunctionBeginHot;
@@ -521,7 +519,7 @@ MeshsetsManager::query_interface(const MOFEMuuid &uuid,
 
   MoFEMErrorCode MeshsetsManager::getMeshset(const int ms_id,
                                              const unsigned int cubit_bc_type,
-                                             EntityHandle &meshset) {
+                                             EntityHandle &meshset) const {
     Interface &m_field = cOre;
     MoFEMFunctionBeginHot;
     CubitMeshSet_multiIndex::index<
@@ -541,7 +539,7 @@ MeshsetsManager::query_interface(const MOFEMuuid &uuid,
 
   MoFEMErrorCode
   MeshsetsManager::getMeshsetsByType(const unsigned int cubit_bc_type,
-                                     Range &meshsets) {
+                                     Range &meshsets) const {
     MoFEMFunctionBeginHot;
     CubitMeshsetByType::iterator miit =
         cubitMeshsets.get<CubitMeshSets_mi_tag>().lower_bound(cubit_bc_type);
@@ -983,7 +981,7 @@ MeshsetsManager::query_interface(const MOFEMuuid &uuid,
   MoFEMErrorCode MeshsetsManager::saveMeshsetToFile(
       const int ms_id, const unsigned int cubit_bc_type,
       const std::string file_name, const std::string file_type,
-      const std::string options) {
+      const std::string options) const {
 
     MoFEMFunctionBegin;
     MoFEM::Interface &m_field = cOre;
@@ -999,7 +997,7 @@ MeshsetsManager::query_interface(const MOFEMuuid &uuid,
   MoFEMErrorCode MeshsetsManager::saveMeshsetToFile(
       const int ms_id, const unsigned int cubit_bc_type, const int dim,
       const std::string file_name, const bool recursive,
-      const std::string file_type, const std::string options) {
+      const std::string file_type, const std::string options) const {
 
     MoFEMFunctionBegin;
     MoFEM::Interface &m_field = cOre;
