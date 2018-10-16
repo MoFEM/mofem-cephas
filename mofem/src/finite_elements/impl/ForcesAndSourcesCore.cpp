@@ -1048,7 +1048,8 @@ MoFEMErrorCode ForcesAndSourcesCore::createDataOnElement() {
 #define FUNCTION_NAME_WITH_OP_NAME(OP)                                         \
   std::ostringstream ss;                                                       \
   ss << "(Calling user data operator "                                         \
-     << boost::typeindex::type_id_runtime(OP).pretty_name() << ") "
+     << boost::typeindex::type_id_runtime(OP).pretty_name() << " rowField "    \
+     << (OP).rowFieldName << " colField " << (OP).colFieldName << ") "
 
 #define CATCH_OP_ERRORS(OP)                                                    \
   catch (MoFEMExceptionInitial const &ex) {                                    \
