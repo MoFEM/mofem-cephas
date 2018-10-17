@@ -196,4 +196,38 @@ void test_T4_007(const Tensor4<double, 1, 2, 3, 4> &t4,
                             to_string(jj) + "," + to_string(mm) + ")");
         }
   }
+
+  //  Tensor4 times tensor 3 yields tensor 3
+  {
+    Tensor4<double, 1, 2, 3, 4> t_4;
+    Tensor2<double, 1, 4> t_2_1;
+    Tensor2<double, 2, 3> t_2_2;
+    for (int ii = 0; ii != 1; ++ii)
+      for (int ll = 0; ll != 4; ++ll) {
+        t_2_1(ii, ll) = 1 + ii + 10. * ll;
+      }
+    for (int jj = 0; jj != 2; ++jj)
+      for (int kk = 0; kk != 3; ++kk) {
+        t_2_2(jj, kk) = 1 + 100 * jj + 1000 * kk;
+      }
+    t_4(i, j, k, l) = t_2_1(i, l) * t_2_2(j, k);
+    Tensor3<double, 3, 3, 2> t_3_1;
+    for (int mm = 0; mm != 3; ++mm)
+      for (int kk = 0; kk != 3; ++kk)
+        for (int jj = 0; jj != 2; ++jj) {
+          t_3_1(mm, kk, jj) = 1 + 100 * mm + 1000 * kk + 10000 * jj;
+        }
+    Tensor3<double, 1, 4, 3> t_3_2;
+    Index<'m', 3> m;
+    t_3_2(i, l, m) = t_4(i, j, k, l) * t_3_1(m, k, j) -
+                     t_2_1(i, l) * (t_3_1(m, k, j) * t_2_2(j, k));
+    for (int ii = 0; ii != 1; ++ii)
+      for (int ll = 0; ll != 4; ++ll)
+        for (int mm = 0; mm != 3; ++mm) {
+          test_for_zero(t_3_2(ii, ll, mm),
+                        "T4(i,j,k,l)*T3(m,k,j)(" + to_string(ii) + "," +
+                            to_string(ll) + "," + to_string(mm) + ")");
+        }
+  }
+
 }

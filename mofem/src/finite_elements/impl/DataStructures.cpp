@@ -129,103 +129,106 @@ getFTensor2SymmetricFromMat<3, double, ublas::row_major, DoubleAllocator>(
 
 DataForcesAndSourcesCore::EntData::EntData()
     : sEnse(0), oRder(0), bAse(NOBASE) {
-  N.resize(LASTBASE);
-  diffN.resize(LASTBASE);
-  for (ShapeFunctionBasesVector::iterator nit = N.begin(); nit != N.end();
-       nit++) {
-    nit->reset(new MatrixDouble());
-  }
-  for (ShapeFunctionBasesVector::iterator nit = diffN.begin();
-       nit != diffN.end(); nit++) {
-    nit->reset(new MatrixDouble());
+  for (int b = 0; b != LASTBASE;++b) {
+    N[b].reset(new MatrixDouble());
+    diffN[b].reset(new MatrixDouble());
   }
 }
 
-DataForcesAndSourcesCore::EntData::~EntData() {}
+static void constructor_data(DataForcesAndSourcesCore *data,
+                             const EntityType type) {
 
-template <class T>
-void cOnstructor(DataForcesAndSourcesCore *data, EntityType type, T) {
+  using EntData = DataForcesAndSourcesCore::EntData;
 
-  data->dataOnEntities[MBENTITYSET].push_back(new T());
+  data->dataOnEntities[MBENTITYSET].push_back(new EntData());
 
   switch (type) {
-  case MBTET:
-    data->dataOnEntities[MBVERTEX].push_back(new T());
-    for (int ee = 0; ee < 6; ee++) {
-      data->dataOnEntities[MBEDGE].push_back(new T());
-    }
-    for (int ff = 0; ff < 4; ff++) {
-      data->dataOnEntities[MBTRI].push_back(new T());
-    }
-    data->dataOnEntities[MBTET].push_back(new T());
+  case MBENTITYSET:
     break;
+  case MBTET: 
+    data->dataOnEntities[MBVERTEX].push_back(new EntData());
+    for (int ee = 0; ee != 6; ++ee) {
+      data->dataOnEntities[MBEDGE].push_back(new EntData());
+    }
+    for (int ff = 0; ff != 4; ++ff) {
+      data->dataOnEntities[MBTRI].push_back(new EntData());
+    }
+    data->dataOnEntities[MBTET].push_back(new EntData());
+  break;
   case MBTRI:
-    data->dataOnEntities[MBVERTEX].push_back(new T());
-    for (int ee = 0; ee < 3; ee++) {
-      data->dataOnEntities[MBEDGE].push_back(new T());
+    data->dataOnEntities[MBVERTEX].push_back(new EntData());
+    for (int ee = 0; ee != 3; ++ee) {
+      data->dataOnEntities[MBEDGE].push_back(new EntData());
     }
-    data->dataOnEntities[MBTRI].push_back(new T());
-    break;
+    data->dataOnEntities[MBTRI].push_back(new EntData());
+  break;
   case MBEDGE:
-    data->dataOnEntities[MBVERTEX].push_back(new T());
-    data->dataOnEntities[MBEDGE].push_back(new T());
+    data->dataOnEntities[MBVERTEX].push_back(new EntData());
+    data->dataOnEntities[MBEDGE].push_back(new EntData());
     break;
   case MBVERTEX:
-    data->dataOnEntities[MBVERTEX].push_back(new T());
+    data->dataOnEntities[MBVERTEX].push_back(new EntData());
     break;
   case MBPRISM:
-    data->dataOnEntities[MBVERTEX].push_back(new T());
-    for (int ee = 0; ee < 9; ee++) {
-      data->dataOnEntities[MBEDGE].push_back(new T());
+    data->dataOnEntities[MBVERTEX].push_back(new EntData());
+    for (int ee = 0; ee != 9; ++ee) {
+      data->dataOnEntities[MBEDGE].push_back(new EntData());
     }
-    for (int ff = 0; ff < 5; ff++) {
-      data->dataOnEntities[MBQUAD].push_back(new T());
+    for (int qq = 0; qq != 5; ++qq) {
+      data->dataOnEntities[MBQUAD].push_back(new EntData());
     }
-    for (int ff = 0; ff < 5; ff++) {
-      data->dataOnEntities[MBTRI].push_back(new T());
+    for (int ff = 0; ff != 5; ++ff) {
+      data->dataOnEntities[MBTRI].push_back(new EntData());
     }
-    data->dataOnEntities[MBPRISM].push_back(new T());
-    break;
+    data->dataOnEntities[MBPRISM].push_back(new EntData());
+  break;
   default:
     throw MoFEMException(MOFEM_NOT_IMPLEMENTED);
   }
 }
 
 DataForcesAndSourcesCore::DataForcesAndSourcesCore(EntityType type) {
-  cOnstructor(this, type, EntData());
+  constructor_data(this, type);
+}
+
+MoFEMErrorCode DataForcesAndSourcesCore::setElementType(const EntityType type) {
+  MoFEMFunctionBegin;
+  for (EntityType tt = MBVERTEX; tt != MBMAXTYPE; ++tt)
+    dataOnEntities[tt].clear();
+  constructor_data(this, type);
+  MoFEMFunctionReturn(0);
+}
+
+static void constructor_derived_data(
+    DerivedDataForcesAndSourcesCore *derived_data,
+    const boost::shared_ptr<DataForcesAndSourcesCore> &data_ptr) {
+
+  using EntData = DataForcesAndSourcesCore::EntData;
+  using DerivedEntData = DerivedDataForcesAndSourcesCore::DerivedEntData;
+
+  for (int tt = MBVERTEX; tt != MBMAXTYPE; ++tt) {
+    auto &ent_data = data_ptr->dataOnEntities[tt];
+    auto &derived_ent_data = derived_data->dataOnEntities[tt];
+    for (auto &e : ent_data) {
+      boost::shared_ptr<EntData> ent_data_ptr(data_ptr, &e);
+      derived_ent_data.push_back(new DerivedEntData(ent_data_ptr));
+    }
+  }
 }
 
 DerivedDataForcesAndSourcesCore::DerivedDataForcesAndSourcesCore(
-    DataForcesAndSourcesCore &data)
-    : DataForcesAndSourcesCore() {
+    const boost::shared_ptr<DataForcesAndSourcesCore> &data_ptr)
+    : DataForcesAndSourcesCore(), dataPtr(data_ptr) {
+  constructor_derived_data(this, dataPtr);
+}
 
-  boost::ptr_vector<EntData>::iterator iit;
-
-  boost::ptr_vector<EntData>::iterator it;
-  for (it = data.dataOnEntities[MBVERTEX].begin();
-       it != data.dataOnEntities[MBVERTEX].end(); it++) {
-    dataOnEntities[MBVERTEX].push_back(new DerivedEntData(*it));
-  }
-  for (it = data.dataOnEntities[MBEDGE].begin();
-       it != data.dataOnEntities[MBEDGE].end(); it++) {
-    dataOnEntities[MBEDGE].push_back(new DerivedEntData(*it));
-  }
-  for (it = data.dataOnEntities[MBTRI].begin();
-       it != data.dataOnEntities[MBTRI].end(); it++) {
-    dataOnEntities[MBTRI].push_back(new DerivedEntData(*it));
-  }
-  for (it = data.dataOnEntities[MBQUAD].begin();
-       it != data.dataOnEntities[MBQUAD].end(); it++) {
-    dataOnEntities[MBQUAD].push_back(new DerivedEntData(*it));
-  }
-  for (it = data.dataOnEntities[MBTET].begin();
-       it != data.dataOnEntities[MBTET].end(); it++) {
-    dataOnEntities[MBTET].push_back(new DerivedEntData(*it));
-  }
-  for (it = data.dataOnEntities[MBPRISM].begin();
-       it != data.dataOnEntities[MBPRISM].end(); it++) {
-    dataOnEntities[MBPRISM].push_back(new DerivedEntData(*it));
-  }
+MoFEMErrorCode
+DerivedDataForcesAndSourcesCore::setElementType(const EntityType type) {
+  MoFEMFunctionBegin;
+  for (EntityType tt = MBVERTEX; tt != MBMAXTYPE; ++tt)
+    dataOnEntities[tt].clear();
+  constructor_derived_data(this, dataPtr);
+  MoFEMFunctionReturn(0);
 }
 
 std::ostream &operator<<(std::ostream &os,
@@ -524,30 +527,30 @@ DataForcesAndSourcesCore::EntData::getFTensor1DiffN<2>(const int gg,
 /**@{*/
 
 template <int Tensor_Dim>
-FTensor::Tensor1<FTensor::PackPtr<double *, 3>, Tensor_Dim>
-DataForcesAndSourcesCore::EntData::getFTensor1HdivN(
+FTensor::Tensor1<FTensor::PackPtr<double *, Tensor_Dim>, Tensor_Dim>
+DataForcesAndSourcesCore::EntData::getFTensor1N(
     FieldApproximationBase base) {
   std::stringstream s;
   s << "Template for tensor dimension " << Tensor_Dim << " not implemented";
   THROW_MESSAGE(s.str());
-  return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, Tensor_Dim>();
+  return FTensor::Tensor1<FTensor::PackPtr<double *, Tensor_Dim>, Tensor_Dim>();
 }
 
 template <int Tensor_Dim>
-FTensor::Tensor1<FTensor::PackPtr<double *, 3>, Tensor_Dim>
-DataForcesAndSourcesCore::EntData::getFTensor1HdivN(FieldApproximationBase base,
+FTensor::Tensor1<FTensor::PackPtr<double *, Tensor_Dim>, Tensor_Dim>
+DataForcesAndSourcesCore::EntData::getFTensor1N(FieldApproximationBase base,
                                                     const int gg,
                                                     const int bb) {
   std::stringstream s;
   s << "Template for tensor dimension " << Tensor_Dim << " not implemented";
   THROW_MESSAGE(s.str());
-  return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, Tensor_Dim>();
+  return FTensor::Tensor1<FTensor::PackPtr<double *, Tensor_Dim>, Tensor_Dim>();
 }
 
 template <int Tensor_Dim0, int Tensor_Dim1>
 FTensor::Tensor2<FTensor::PackPtr<double *, Tensor_Dim0 * Tensor_Dim1>,
                  Tensor_Dim0, Tensor_Dim1>
-DataForcesAndSourcesCore::EntData::getFTensor2DiffHdivN(
+DataForcesAndSourcesCore::EntData::getFTensor2DiffN(
     FieldApproximationBase base) {
   std::stringstream s;
   s << "Template for tensor dimension " << Tensor_Dim0 << "x" << Tensor_Dim1
@@ -559,7 +562,7 @@ DataForcesAndSourcesCore::EntData::getFTensor2DiffHdivN(
 template <int Tensor_Dim0, int Tensor_Dim1>
 FTensor::Tensor2<FTensor::PackPtr<double *, Tensor_Dim0 * Tensor_Dim1>,
                  Tensor_Dim0, Tensor_Dim1>
-DataForcesAndSourcesCore::EntData::getFTensor2DiffHdivN(
+DataForcesAndSourcesCore::EntData::getFTensor2DiffN(
     FieldApproximationBase base, const int gg, const int bb) {
   std::stringstream s;
   s << "Template for tensor dimension " << Tensor_Dim0 << "x" << Tensor_Dim1
@@ -570,65 +573,122 @@ DataForcesAndSourcesCore::EntData::getFTensor2DiffHdivN(
 
 template <>
 FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>
-DataForcesAndSourcesCore::EntData::getFTensor1HdivN<3>(
+DataForcesAndSourcesCore::EntData::getFTensor1N<3>(
     FieldApproximationBase base) {
-  double *t_n_ptr = &*getHdivN(base).data().begin();
-  return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(t_n_ptr, // HDIV0
-                                                            &t_n_ptr[HDIV1],
-                                                            &t_n_ptr[HDIV2]);
+  double *t_n_ptr = &*getN(base).data().begin();
+  return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(t_n_ptr, // HVEC0
+                                                            &t_n_ptr[HVEC1],
+                                                            &t_n_ptr[HVEC2]);
 }
 
 template <>
 FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>
-DataForcesAndSourcesCore::EntData::getFTensor1HdivN<3>(
+DataForcesAndSourcesCore::EntData::getFTensor1N<3>(
     FieldApproximationBase base, const int gg, const int bb) {
-  double *t_n_ptr = &getHdivN(base)(gg, 3 * bb);
-  return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(t_n_ptr, // HDIV0
-                                                            &t_n_ptr[HDIV1],
-                                                            &t_n_ptr[HDIV2]);
+  double *t_n_ptr = &getN(base)(gg, 3 * bb);
+  return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(t_n_ptr, // HVEC0
+                                                            &t_n_ptr[HVEC1],
+                                                            &t_n_ptr[HVEC2]);
 }
 
 template <>
 FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3>
-DataForcesAndSourcesCore::EntData::getFTensor2DiffHdivN<3, 3>(
+DataForcesAndSourcesCore::EntData::getFTensor2DiffN<3, 3>(
     FieldApproximationBase base) {
-  double *t_diff_n_ptr = &*getDiffHdivN(base).data().begin();
+  double *t_diff_n_ptr = &*getDiffN(base).data().begin();
   return FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3>(
-      t_diff_n_ptr, &t_diff_n_ptr[HDIV0_1], &t_diff_n_ptr[HDIV0_2],
-      &t_diff_n_ptr[HDIV1_0], &t_diff_n_ptr[HDIV1_1], &t_diff_n_ptr[HDIV1_2],
-      &t_diff_n_ptr[HDIV2_0], &t_diff_n_ptr[HDIV2_1], &t_diff_n_ptr[HDIV2_2]);
+      t_diff_n_ptr, &t_diff_n_ptr[HVEC0_1], &t_diff_n_ptr[HVEC0_2],
+      &t_diff_n_ptr[HVEC1_0], &t_diff_n_ptr[HVEC1_1], &t_diff_n_ptr[HVEC1_2],
+      &t_diff_n_ptr[HVEC2_0], &t_diff_n_ptr[HVEC2_1], &t_diff_n_ptr[HVEC2_2]);
 }
 
 template <>
 FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3>
-DataForcesAndSourcesCore::EntData::getFTensor2DiffHdivN<3, 3>(
+DataForcesAndSourcesCore::EntData::getFTensor2DiffN<3, 3>(
     FieldApproximationBase base, const int gg, const int bb) {
-  double *t_diff_n_ptr = &getDiffHdivN(base)(gg, 9 * bb);
+  double *t_diff_n_ptr = &getDiffN(base)(gg, 9 * bb);
   return FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3>(
-      t_diff_n_ptr, &t_diff_n_ptr[HDIV0_1], &t_diff_n_ptr[HDIV0_2],
-      &t_diff_n_ptr[HDIV1_0], &t_diff_n_ptr[HDIV1_1], &t_diff_n_ptr[HDIV1_2],
-      &t_diff_n_ptr[HDIV2_0], &t_diff_n_ptr[HDIV2_1], &t_diff_n_ptr[HDIV2_2]);
+      t_diff_n_ptr, &t_diff_n_ptr[HVEC0_1], &t_diff_n_ptr[HVEC0_2],
+      &t_diff_n_ptr[HVEC1_0], &t_diff_n_ptr[HVEC1_1], &t_diff_n_ptr[HVEC1_2],
+      &t_diff_n_ptr[HVEC2_0], &t_diff_n_ptr[HVEC2_1], &t_diff_n_ptr[HVEC2_2]);
 }
 
 template <>
 FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2>
-DataForcesAndSourcesCore::EntData::getFTensor2DiffHdivN<3, 2>(
+DataForcesAndSourcesCore::EntData::getFTensor2DiffN<3, 2>(
     FieldApproximationBase base) {
-  double *t_diff_n_ptr = &*getDiffHdivN(base).data().begin();
+  double *t_diff_n_ptr = &*getDiffN(base).data().begin();
   return FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2>(
-      t_diff_n_ptr, &t_diff_n_ptr[HCURL0_1], &t_diff_n_ptr[HCURL1_0],
-      &t_diff_n_ptr[HCURL1_1], &t_diff_n_ptr[HCURL2_0],
-      &t_diff_n_ptr[HCURL2_1]);
+      t_diff_n_ptr, &t_diff_n_ptr[HVEC0_1], &t_diff_n_ptr[HVEC1_0],
+      &t_diff_n_ptr[HVEC1_1], &t_diff_n_ptr[HVEC2_0],
+      &t_diff_n_ptr[HVEC2_1]);
 }
 
 template <>
 FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2>
-DataForcesAndSourcesCore::EntData::getFTensor2DiffHdivN<3, 2>(
+DataForcesAndSourcesCore::EntData::getFTensor2DiffN<3, 2>(
     FieldApproximationBase base, const int gg, const int bb) {
-  double *t_diff_n_ptr = &getDiffHdivN(base)(gg, 6 * bb);
+  double *t_diff_n_ptr = &getDiffN(base)(gg, 6 * bb);
   return FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2>(
-      t_diff_n_ptr, &t_diff_n_ptr[HCURL0_1], &t_diff_n_ptr[HCURL1_0],
-      &t_diff_n_ptr[HCURL1_1], &t_diff_n_ptr[HCURL2_0], &t_diff_n_ptr[HCURL2_1]);
+      t_diff_n_ptr, &t_diff_n_ptr[HVEC0_1], &t_diff_n_ptr[HVEC1_0],
+      &t_diff_n_ptr[HVEC1_1], &t_diff_n_ptr[HVEC2_0], &t_diff_n_ptr[HVEC2_1]);
+}
+
+template <int Tensor_Dim0, int Tensor_Dim1>
+FTensor::Tensor2<FTensor::PackPtr<double *, Tensor_Dim0 * Tensor_Dim1>,
+                 Tensor_Dim0, Tensor_Dim1>
+DataForcesAndSourcesCore::EntData::getFTensor2N(FieldApproximationBase base) {
+  std::stringstream s;
+  s << "Template for tensor dimension " << Tensor_Dim0 << ", " << Tensor_Dim1
+    << " not implemented";
+  THROW_MESSAGE(s.str());
+  return FTensor::Tensor2<FTensor::PackPtr<double *, Tensor_Dim0 * Tensor_Dim1>,
+                          Tensor_Dim0, Tensor_Dim1>();
+}
+
+template <>
+FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3>
+DataForcesAndSourcesCore::EntData::getFTensor2N<3, 3>(
+    FieldApproximationBase base) {
+  double *t_n_ptr = &*(getN(base).data().begin());
+  return FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3>(
+
+      &t_n_ptr[HVEC0], &t_n_ptr[HVEC1], &t_n_ptr[HVEC2],
+
+      &t_n_ptr[3 + HVEC0], &t_n_ptr[3 + HVEC1], &t_n_ptr[3 + HVEC2],
+
+      &t_n_ptr[6 + HVEC0], &t_n_ptr[6 + HVEC1], &t_n_ptr[6 + HVEC2]
+
+  );
+}
+
+template <int Tensor_Dim0, int Tensor_Dim1>
+FTensor::Tensor2<FTensor::PackPtr<double *, Tensor_Dim0 * Tensor_Dim1>,
+                 Tensor_Dim0, Tensor_Dim1>
+DataForcesAndSourcesCore::EntData::getFTensor2N(FieldApproximationBase base,
+                                                const int gg, const int bb) {
+  std::stringstream s;
+  s << "Template for tensor dimension " << Tensor_Dim0 << ", " << Tensor_Dim1
+    << " not implemented";
+  THROW_MESSAGE(s.str());
+  return FTensor::Tensor2<FTensor::PackPtr<double *, Tensor_Dim0 * Tensor_Dim1>,
+                          Tensor_Dim0, Tensor_Dim1>();
+}
+
+template <>
+FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3>
+DataForcesAndSourcesCore::EntData::getFTensor2N<3, 3>(
+    FieldApproximationBase base, const int gg, const int bb) {
+  double *t_n_ptr = &getN(base)(gg, 9 * bb);
+  return FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3>(
+
+      &t_n_ptr[HVEC0], &t_n_ptr[HVEC1], &t_n_ptr[HVEC2],
+
+      &t_n_ptr[3 + HVEC0], &t_n_ptr[3 + HVEC1], &t_n_ptr[3 + HVEC2],
+
+      &t_n_ptr[6 + HVEC0], &t_n_ptr[6 + HVEC1], &t_n_ptr[6 + HVEC2]
+
+  );
 }
 
 /**@}*/

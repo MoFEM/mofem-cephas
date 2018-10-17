@@ -291,7 +291,10 @@ namespace MoFEM {
       }
       case NOFIELD:
       case LASTSPACE:
-      {};
+        break;
+      default:
+        SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+                 "Not implemented for this space", (*field_it)->getSpace());
     }
     bool success = const_cast<Field_multiIndex*>(fields_ptr)->modify(
       fields_ptr->project<0>(field_it),FieldChangeCoordinateSystem(*cs_it)

@@ -161,17 +161,6 @@ const static char *const ApproximationBaseNames[] = {
     "USER_BASE",
     "LASTBASE"};
 
-#ifdef __cplusplus
-const static FieldApproximationBase ApproximationBaseArray[] = {
-    NOBASE,
-    AINSWORTH_LEGENDRE_BASE,
-    AINSWORTH_LOBATTO_BASE,
-    AINSWORTH_BERNSTEIN_BEZIER_BASE,
-    DEMKOWICZ_JACOBI_BASE,
-    USER_BASE,
-    LASTBASE};
-#endif // __cplusplus
-
 /// \brief approximation spaces
 enum FieldSpace {
   NOSPACE = 0,
@@ -252,48 +241,23 @@ const static char *const CubitBCNames[] = {
     "NEUMANN_BC",     "LASTSET_BC"};
 
 /**
- * \brief Format of rows in gradients of H1 base functions
+ * \brief Format in rows of vectorial base functions
  */
-enum H1DiffFormating { H1_0 = 0, H1_1, H1_2 };
+enum HVecFormatting { HVEC0 = 0, HVEC1, HVEC2 };
 
 /**
- * \brief Format in rows of Hdiv base functions
+ * \brief Format in rows of vectorial base gradients of base functions
  */
-enum HDivFormatting { HDIV0 = 0, HDIV1, HDIV2 };
-
-/**
- * \brief Format in rows of Hdiv gradients of base functions
- */
-enum HDivDiffFormatting {
-  HDIV0_0 = 0,
-  HDIV1_0,
-  HDIV2_0,
-  HDIV0_1,
-  HDIV1_1,
-  HDIV2_1,
-  HDIV0_2,
-  HDIV1_2,
-  HDIV2_2
-};
-
-/**
- * \brief Format in rows of Hcurl base functions
- */
-enum HCurlFormatting { HCURL0 = 0, HCURL1, HCURL2 };
-
-/**
- * \brief Format in rows of Hcurl gradients of base functions
- */
-enum HCurlDiffFormatting {
-  HCURL0_0 = 0,
-  HCURL1_0,
-  HCURL2_0,
-  HCURL0_1,
-  HCURL1_1,
-  HCURL2_1,
-  HCURL0_2,
-  HCURL1_2,
-  HCURL2_2
+enum HVecDiffFormatting {
+  HVEC0_0 = 0,
+  HVEC1_0,
+  HVEC2_0,
+  HVEC0_1,
+  HVEC1_1,
+  HVEC2_1,
+  HVEC0_2,
+  HVEC1_2,
+  HVEC2_2
 };
 
 /**

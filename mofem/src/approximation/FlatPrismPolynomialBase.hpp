@@ -30,9 +30,10 @@ namespace MoFEM {
   * \ingroup mofem_base_functions
   * FIXME: Need moab and mofem finite element structure to work (that not perfect)
   */
-  struct FlatPrismPolynomialBaseCtx: public EntPolynomialBaseCtx {
+  struct FlatPrismPolynomialBaseCtx : public EntPolynomialBaseCtx {
 
-    MoFEMErrorCode query_interface(const MOFEMuuid& uuid,UnknownInterface** iface) const;
+    MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
+                                   UnknownInterface **iface) const;
 
     moab::Interface &mOab;
     const NumeredEntFiniteElement *fePtr;

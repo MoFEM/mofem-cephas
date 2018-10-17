@@ -66,8 +66,7 @@ sudo xcodebuild -license accept
 Additonal packages are required - install [homebrew](https://brew.sh) package
 manager:
 ~~~~~
-/usr/bin/ruby -e "$(curl -fsSL
-https://raw.githubusercontent.com/Homebrew/install/master/install)"
+/usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
 ~~~~~
 
 Install packages through hombrew:
@@ -145,7 +144,7 @@ spack activate -v um_view mofem-users-modules
 This filesystem view is a single directory tree that is the union of the
 directory hierarchies of a number of installed packages; it is similar to the
 directory hierarchy that might exist under */usr/local*. The files of the
-viewâ€™s installed MoFEM packages are brought into the view by symbolic or hard
+view’s installed MoFEM packages are brought into the view by symbolic or hard
 links, referencing the original Spack installation. Different 'views' can be
 created depending on the MoFEM version you wish to access.
 Add the new 'view' *bin* directory to your PATH. e.g.:
@@ -608,13 +607,14 @@ To create your package for the user module, you have to
 
 ## Basic settings in config.yaml {#spack_config}
 
-Spackâ€™s basic configuration options are set in config.yaml. You can see the
+Spack’s basic configuration options are set in config.yaml. You can see the
 default settings by *$HOME/.spack/config.yaml*, for example, you can set the
 default number of jobs to use when running `make` in parallel. If set to 4,
-for example, `spack install` will run `make -j4`. This can be done by adding
-line 
+for example, `spack install` will run `make -j4`. This can be done by adding line to *config.yaml*. 
+Example file should look like this:
 ~~~~~ 
-build_jobs: 4 
+config:	
+	build_jobs: 4 
 ~~~~~ 
 For more details see
 [here](https://spack.readthedocs.io/en/latest/config_yaml.html?highlight=-jobs#)

@@ -98,11 +98,11 @@ MoFEMErrorCode MoFEM::Hdiv_Ainsworth_EdgeFaceShapeFunctions_MBTET_ON_FACE(
     if (diff_phi_f_e) {
       t_diff_phi_f_e_ptr = boost::shared_ptr<FTensor::Tensor2<double *, 3, 3> >(
           new FTensor::Tensor2<double *, 3, 3>(
-              &diff_phi_f_e[ee][HDIV0_0], &diff_phi_f_e[ee][HDIV0_1],
-              &diff_phi_f_e[ee][HDIV0_2], &diff_phi_f_e[ee][HDIV1_0],
-              &diff_phi_f_e[ee][HDIV1_1], &diff_phi_f_e[ee][HDIV1_2],
-              &diff_phi_f_e[ee][HDIV2_0], &diff_phi_f_e[ee][HDIV2_1],
-              &diff_phi_f_e[ee][HDIV2_2], 9));
+              &diff_phi_f_e[ee][HVEC0_0], &diff_phi_f_e[ee][HVEC0_1],
+              &diff_phi_f_e[ee][HVEC0_2], &diff_phi_f_e[ee][HVEC1_0],
+              &diff_phi_f_e[ee][HVEC1_1], &diff_phi_f_e[ee][HVEC1_2],
+              &diff_phi_f_e[ee][HVEC2_0], &diff_phi_f_e[ee][HVEC2_1],
+              &diff_phi_f_e[ee][HVEC2_2], 9));
     }
     for (int ii = 0; ii != gdim; ii++) {
       const int node_shift = ii * nb;
@@ -209,16 +209,16 @@ MoFEMErrorCode MoFEM::Hdiv_Ainsworth_FaceBubbleShapeFunctions_ON_FACE(
   double psi_m[p + 1], diff_psi_m[3 * (p + 1)];
   FTensor::Tensor1<double, 3> t_diff_beta_0ij(0.,0.,0.);
 
-  FTensor::Tensor1<double *, 3> t_psi_f(&phi_f[HDIV0], &phi_f[HDIV1],
-                                        &phi_f[HDIV2], 3);
+  FTensor::Tensor1<double *, 3> t_psi_f(&phi_f[HVEC0], &phi_f[HVEC1],
+                                        &phi_f[HVEC2], 3);
 
   boost::shared_ptr<FTensor::Tensor2<double *, 3, 3> > t_diff_phi_f_ptr;
   if (diff_phi_f) {
     t_diff_phi_f_ptr = boost::shared_ptr<FTensor::Tensor2<double *, 3, 3> >(
         new FTensor::Tensor2<double *, 3, 3>(
-            &diff_phi_f[HDIV0_0], &diff_phi_f[HDIV0_1], &diff_phi_f[HDIV0_2],
-            &diff_phi_f[HDIV1_0], &diff_phi_f[HDIV1_1], &diff_phi_f[HDIV1_2],
-            &diff_phi_f[HDIV2_0], &diff_phi_f[HDIV2_1], &diff_phi_f[HDIV2_2],
+            &diff_phi_f[HVEC0_0], &diff_phi_f[HVEC0_1], &diff_phi_f[HVEC0_2],
+            &diff_phi_f[HVEC1_0], &diff_phi_f[HVEC1_1], &diff_phi_f[HVEC1_2],
+            &diff_phi_f[HVEC2_0], &diff_phi_f[HVEC2_1], &diff_phi_f[HVEC2_2],
             9));
   }
 
@@ -327,11 +327,11 @@ MoFEMErrorCode MoFEM::Hdiv_Ainsworth_EdgeBasedVolumeShapeFunctions_MBTET(
     FTensor::Tensor1<double *, 3> t_psi_v_e(&phi_v_e[ee][0], &phi_v_e[ee][1],
                                             &phi_v_e[ee][2], 3);
     FTensor::Tensor2<double *, 3, 3> t_diff_phi_v_e(
-        &diff_phi_v_e[ee][HDIV0_0], &diff_phi_v_e[ee][HDIV0_1],
-        &diff_phi_v_e[ee][HDIV0_2], &diff_phi_v_e[ee][HDIV1_0],
-        &diff_phi_v_e[ee][HDIV1_1], &diff_phi_v_e[ee][HDIV1_2],
-        &diff_phi_v_e[ee][HDIV2_0], &diff_phi_v_e[ee][HDIV2_1],
-        &diff_phi_v_e[ee][HDIV2_2], 9);
+        &diff_phi_v_e[ee][HVEC0_0], &diff_phi_v_e[ee][HVEC0_1],
+        &diff_phi_v_e[ee][HVEC0_2], &diff_phi_v_e[ee][HVEC1_0],
+        &diff_phi_v_e[ee][HVEC1_1], &diff_phi_v_e[ee][HVEC1_2],
+        &diff_phi_v_e[ee][HVEC2_0], &diff_phi_v_e[ee][HVEC2_1],
+        &diff_phi_v_e[ee][HVEC2_2], 9);
     for (int ii = 0; ii != gdim; ii++) {
       const int node_shift = ii * 4;
       const double ni = N[node_shift + edges_nodes[ee][1]];
@@ -416,13 +416,13 @@ MoFEMErrorCode MoFEM::Hdiv_Ainsworth_FaceBasedVolumeShapeFunctions_MBTET(
     const int vi = faces_nodes[ff][1];
     const int vj = faces_nodes[ff][2];
     FTensor::Tensor1<double *, 3> t_phi_v_f(
-        &phi_v_f[ff][HDIV0], &phi_v_f[ff][HDIV1], &phi_v_f[ff][HDIV2], 3);
+        &phi_v_f[ff][HVEC0], &phi_v_f[ff][HVEC1], &phi_v_f[ff][HVEC2], 3);
     FTensor::Tensor2<double *, 3, 3> t_diff_phi_v_f(
-        &diff_phi_v_f[ff][HDIV0_0], &diff_phi_v_f[ff][HDIV0_1],
-        &diff_phi_v_f[ff][HDIV0_2], &diff_phi_v_f[ff][HDIV1_0],
-        &diff_phi_v_f[ff][HDIV1_1], &diff_phi_v_f[ff][HDIV1_2],
-        &diff_phi_v_f[ff][HDIV2_0], &diff_phi_v_f[ff][HDIV2_1],
-        &diff_phi_v_f[ff][HDIV2_2], 9);
+        &diff_phi_v_f[ff][HVEC0_0], &diff_phi_v_f[ff][HVEC0_1],
+        &diff_phi_v_f[ff][HVEC0_2], &diff_phi_v_f[ff][HVEC1_0],
+        &diff_phi_v_f[ff][HVEC1_1], &diff_phi_v_f[ff][HVEC1_2],
+        &diff_phi_v_f[ff][HVEC2_0], &diff_phi_v_f[ff][HVEC2_1],
+        &diff_phi_v_f[ff][HVEC2_2], 9);
     for (int ii = 0; ii < gdim; ii++) {
       const int node_shift = 4 * ii;
       const double n0 = N[node_shift + v0];
@@ -523,11 +523,11 @@ MoFEMErrorCode MoFEM::Hdiv_Ainsworth_VolumeBubbleShapeFunctions_MBTET(
   double psi_n[p + 1];
   double diff_psi_n[3 * (p + 1)];
 
-  FTensor::Tensor1<double *, 3> t_phi_v(phi_v, &phi_v[HDIV1], &phi_v[HDIV2], 3);
+  FTensor::Tensor1<double *, 3> t_phi_v(phi_v, &phi_v[HVEC1], &phi_v[HVEC2], 3);
   FTensor::Tensor2<double *, 3, 3> t_diff_phi_v(
-      diff_phi_v, &diff_phi_v[HDIV0_1], &diff_phi_v[HDIV0_2],
-      &diff_phi_v[HDIV1_0], &diff_phi_v[HDIV1_1], &diff_phi_v[HDIV1_2],
-      &diff_phi_v[HDIV2_0], &diff_phi_v[HDIV2_1], &diff_phi_v[HDIV2_2], 9);
+      diff_phi_v, &diff_phi_v[HVEC0_1], &diff_phi_v[HVEC0_2],
+      &diff_phi_v[HVEC1_0], &diff_phi_v[HVEC1_1], &diff_phi_v[HVEC1_2],
+      &diff_phi_v[HVEC2_0], &diff_phi_v[HVEC2_1], &diff_phi_v[HVEC2_2], 9);
 
   FTensor::Tensor1<double, 3> t_diff_beta_v;
   for (int ii = 0; ii < gdim; ii++) {
@@ -680,15 +680,15 @@ MoFEM::Hdiv_Demkowicz_Face_MBTET_ON_FACE(int *faces_nodes, int p, double *N,
     }
   }
 
-  FTensor::Tensor1<double *, 3> t_phi(&phi_f[HDIV0], &phi_f[HDIV1],
-                                      &phi_f[HDIV2], 3);
+  FTensor::Tensor1<double *, 3> t_phi(&phi_f[HVEC0], &phi_f[HVEC1],
+                                      &phi_f[HVEC2], 3);
   boost::shared_ptr<FTensor::Tensor2<double *, 3, 3> > t_diff_phi_ptr;
   if (diff_phi_f) {
     t_diff_phi_ptr = boost::shared_ptr<FTensor::Tensor2<double *, 3, 3> >(
         new FTensor::Tensor2<double *, 3, 3>(
-            &diff_phi_f[HDIV0_0], &diff_phi_f[HDIV0_1], &diff_phi_f[HDIV0_2],
-            &diff_phi_f[HDIV1_0], &diff_phi_f[HDIV1_1], &diff_phi_f[HDIV1_2],
-            &diff_phi_f[HDIV2_0], &diff_phi_f[HDIV2_1], &diff_phi_f[HDIV2_2],
+            &diff_phi_f[HVEC0_0], &diff_phi_f[HVEC0_1], &diff_phi_f[HVEC0_2],
+            &diff_phi_f[HVEC1_0], &diff_phi_f[HVEC1_1], &diff_phi_f[HVEC1_2],
+            &diff_phi_f[HVEC2_0], &diff_phi_f[HVEC2_1], &diff_phi_f[HVEC2_2],
             9));
   }
 
@@ -790,12 +790,12 @@ MoFEMErrorCode MoFEM::Hdiv_Demkowicz_Interior_MBTET(
   }
 
 
-  FTensor::Tensor1<double *, 3> t_phi_v(&phi_v[HDIV0], &phi_v[HDIV1],
-                                        &phi_v[HDIV2], 3);
+  FTensor::Tensor1<double *, 3> t_phi_v(&phi_v[HVEC0], &phi_v[HVEC1],
+                                        &phi_v[HVEC2], 3);
   FTensor::Tensor2<double *, 3, 3> t_diff_phi_v(
-      &diff_phi_v[HDIV0_0], &diff_phi_v[HDIV0_1], &diff_phi_v[HDIV0_2],
-      &diff_phi_v[HDIV1_0], &diff_phi_v[HDIV1_1], &diff_phi_v[HDIV1_2],
-      &diff_phi_v[HDIV2_0], &diff_phi_v[HDIV2_1], &diff_phi_v[HDIV2_2], 9);
+      &diff_phi_v[HVEC0_0], &diff_phi_v[HVEC0_1], &diff_phi_v[HVEC0_2],
+      &diff_phi_v[HVEC1_0], &diff_phi_v[HVEC1_1], &diff_phi_v[HVEC1_2],
+      &diff_phi_v[HVEC2_0], &diff_phi_v[HVEC2_1], &diff_phi_v[HVEC2_2], 9);
 
   MatrixDouble fk(3, p + 1), diff_fk(3, 3 * p + 3);
 
@@ -825,48 +825,48 @@ MoFEMErrorCode MoFEM::Hdiv_Demkowicz_Interior_MBTET(
           int sp[] = {ii * 3 * nb_dofs + 3 * s, ii * 3 * nb_dofs + 3 * s,
                       ii * 3 * nb_dofs + 3 * s};
           FTensor::Tensor1<double *, 3> t_phi_f[] = {
-              FTensor::Tensor1<double *, 3>(&phi_f[znf[0]][sp[0] + HDIV0],
-                                            &phi_f[znf[0]][sp[0] + HDIV1],
-                                            &phi_f[znf[0]][sp[0] + HDIV2], 3),
-              FTensor::Tensor1<double *, 3>(&phi_f[znf[1]][sp[1] + HDIV0],
-                                            &phi_f[znf[1]][sp[1] + HDIV1],
-                                            &phi_f[znf[1]][sp[1] + HDIV2], 3),
-              FTensor::Tensor1<double *, 3>(&phi_f[znf[2]][sp[2] + HDIV0],
-                                            &phi_f[znf[2]][sp[2] + HDIV1],
-                                            &phi_f[znf[2]][sp[2] + HDIV2], 3)};
+              FTensor::Tensor1<double *, 3>(&phi_f[znf[0]][sp[0] + HVEC0],
+                                            &phi_f[znf[0]][sp[0] + HVEC1],
+                                            &phi_f[znf[0]][sp[0] + HVEC2], 3),
+              FTensor::Tensor1<double *, 3>(&phi_f[znf[1]][sp[1] + HVEC0],
+                                            &phi_f[znf[1]][sp[1] + HVEC1],
+                                            &phi_f[znf[1]][sp[1] + HVEC2], 3),
+              FTensor::Tensor1<double *, 3>(&phi_f[znf[2]][sp[2] + HVEC0],
+                                            &phi_f[znf[2]][sp[2] + HVEC1],
+                                            &phi_f[znf[2]][sp[2] + HVEC2], 3)};
           int sdp[] = {ii * 9 * nb_dofs + 9 * s, ii * 9 * nb_dofs + 9 * s,
                        ii * 9 * nb_dofs + 9 * s};
           FTensor::Tensor2<double *, 3, 3> t_diff_phi_f[] = {
               FTensor::Tensor2<double *, 3, 3>(
-                  &diff_phi_f[znf[0]][sdp[0] + HDIV0_0],
-                  &diff_phi_f[znf[0]][sdp[0] + HDIV0_1],
-                  &diff_phi_f[znf[0]][sdp[0] + HDIV0_2],
-                  &diff_phi_f[znf[0]][sdp[0] + HDIV1_0],
-                  &diff_phi_f[znf[0]][sdp[0] + HDIV1_1],
-                  &diff_phi_f[znf[0]][sdp[0] + HDIV1_2],
-                  &diff_phi_f[znf[0]][sdp[0] + HDIV2_0],
-                  &diff_phi_f[znf[0]][sdp[0] + HDIV2_1],
-                  &diff_phi_f[znf[0]][sdp[0] + HDIV2_2], 9),
+                  &diff_phi_f[znf[0]][sdp[0] + HVEC0_0],
+                  &diff_phi_f[znf[0]][sdp[0] + HVEC0_1],
+                  &diff_phi_f[znf[0]][sdp[0] + HVEC0_2],
+                  &diff_phi_f[znf[0]][sdp[0] + HVEC1_0],
+                  &diff_phi_f[znf[0]][sdp[0] + HVEC1_1],
+                  &diff_phi_f[znf[0]][sdp[0] + HVEC1_2],
+                  &diff_phi_f[znf[0]][sdp[0] + HVEC2_0],
+                  &diff_phi_f[znf[0]][sdp[0] + HVEC2_1],
+                  &diff_phi_f[znf[0]][sdp[0] + HVEC2_2], 9),
               FTensor::Tensor2<double *, 3, 3>(
-                  &diff_phi_f[znf[1]][sdp[1] + HDIV0_0],
-                  &diff_phi_f[znf[1]][sdp[1] + HDIV0_1],
-                  &diff_phi_f[znf[1]][sdp[1] + HDIV0_2],
-                  &diff_phi_f[znf[1]][sdp[1] + HDIV1_0],
-                  &diff_phi_f[znf[1]][sdp[1] + HDIV1_1],
-                  &diff_phi_f[znf[1]][sdp[1] + HDIV1_2],
-                  &diff_phi_f[znf[1]][sdp[1] + HDIV2_0],
-                  &diff_phi_f[znf[1]][sdp[1] + HDIV2_1],
-                  &diff_phi_f[znf[1]][sdp[1] + HDIV2_2], 9),
+                  &diff_phi_f[znf[1]][sdp[1] + HVEC0_0],
+                  &diff_phi_f[znf[1]][sdp[1] + HVEC0_1],
+                  &diff_phi_f[znf[1]][sdp[1] + HVEC0_2],
+                  &diff_phi_f[znf[1]][sdp[1] + HVEC1_0],
+                  &diff_phi_f[znf[1]][sdp[1] + HVEC1_1],
+                  &diff_phi_f[znf[1]][sdp[1] + HVEC1_2],
+                  &diff_phi_f[znf[1]][sdp[1] + HVEC2_0],
+                  &diff_phi_f[znf[1]][sdp[1] + HVEC2_1],
+                  &diff_phi_f[znf[1]][sdp[1] + HVEC2_2], 9),
               FTensor::Tensor2<double *, 3, 3>(
-                  &diff_phi_f[znf[2]][sdp[2] + HDIV0_0],
-                  &diff_phi_f[znf[2]][sdp[2] + HDIV0_1],
-                  &diff_phi_f[znf[2]][sdp[2] + HDIV0_2],
-                  &diff_phi_f[znf[2]][sdp[2] + HDIV1_0],
-                  &diff_phi_f[znf[2]][sdp[2] + HDIV1_1],
-                  &diff_phi_f[znf[2]][sdp[2] + HDIV1_2],
-                  &diff_phi_f[znf[2]][sdp[2] + HDIV2_0],
-                  &diff_phi_f[znf[2]][sdp[2] + HDIV2_1],
-                  &diff_phi_f[znf[2]][sdp[2] + HDIV2_2], 9)};
+                  &diff_phi_f[znf[2]][sdp[2] + HVEC0_0],
+                  &diff_phi_f[znf[2]][sdp[2] + HVEC0_1],
+                  &diff_phi_f[znf[2]][sdp[2] + HVEC0_2],
+                  &diff_phi_f[znf[2]][sdp[2] + HVEC1_0],
+                  &diff_phi_f[znf[2]][sdp[2] + HVEC1_1],
+                  &diff_phi_f[znf[2]][sdp[2] + HVEC1_2],
+                  &diff_phi_f[znf[2]][sdp[2] + HVEC2_0],
+                  &diff_phi_f[znf[2]][sdp[2] + HVEC2_1],
+                  &diff_phi_f[znf[2]][sdp[2] + HVEC2_2], 9)};
           for (int ij = s; ij != NBFACETRI_DEMKOWICZ_HDIV(OO); ij++) {
             for (int ff = 0; ff != 3; ff++) {
               FTensor::Tensor1<double, 3> t_diff_fk(diff_fk(ff, 0 * p + k - 1),

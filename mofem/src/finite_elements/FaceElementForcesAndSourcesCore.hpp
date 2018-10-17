@@ -43,18 +43,7 @@ struct FaceElementForcesAndSourcesCore : public ForcesAndSourcesCore {
   const EntityHandle *conn;
   VectorDouble nOrmal, tangentOne, tangentTwo;
   VectorDouble coords;
-  MatrixDouble gaussPts;
   MatrixDouble coordsAtGaussPts;
-
-  DataForcesAndSourcesCore dataH1;
-  DerivedDataForcesAndSourcesCore derivedDataH1;
-  DataForcesAndSourcesCore dataHdiv;
-  DerivedDataForcesAndSourcesCore derivedDataHdiv;
-  DataForcesAndSourcesCore dataHcurl;
-  DerivedDataForcesAndSourcesCore derivedDataHcurl;
-  DataForcesAndSourcesCore dataL2;
-  DerivedDataForcesAndSourcesCore derivedDataL2;
-  DataForcesAndSourcesCore dataNoField, dataNoFieldCol;
 
   std::string meshPositionsFieldName; ///< Name of the field with geometry
 
@@ -66,18 +55,7 @@ struct FaceElementForcesAndSourcesCore : public ForcesAndSourcesCore {
   OpSetContravariantPiolaTransformOnTriangle opContravariantTransform;
   OpSetCovariantPiolaTransformOnTriangle opCovariantTransform;
 
-  FaceElementForcesAndSourcesCore(Interface &m_field)
-      : ForcesAndSourcesCore(m_field), dataH1(MBTRI), derivedDataH1(dataH1),
-        dataHdiv(MBTRI), derivedDataHdiv(dataHdiv), dataHcurl(MBTRI),
-        derivedDataHcurl(dataHcurl), dataL2(MBTRI), derivedDataL2(dataL2),
-        dataNoField(MBTRI), dataNoFieldCol(MBTRI),
-        meshPositionsFieldName("MESH_NODE_POSITIONS"),
-        opHOCoordsAndNormals(hoCoordsAtGaussPts, normalsAtGaussPts,
-                             tangentOneAtGaussPts, tangentTwoAtGaussPts),
-        opContravariantTransform(nOrmal, normalsAtGaussPts),
-        opCovariantTransform(nOrmal, normalsAtGaussPts, tangentOne,
-                             tangentOneAtGaussPts, tangentTwo,
-                             tangentTwoAtGaussPts) {}
+  FaceElementForcesAndSourcesCore(Interface &m_field);
 
   /** \brief default operator for TRI element
    * \ingroup mofem_forces_and_sources_tri_element
@@ -206,32 +184,6 @@ struct FaceElementForcesAndSourcesCore : public ForcesAndSourcesCore {
     DEPRECATED inline auto getTensor1Coords() {
       return getFTensor1Coords(); }
 
-    /** \brief get matrix of integration (Gauss) points on Face Element
-     *  where columns 0,1 are x,y coordinates respectively and column 2 is a
-     * value of weight for example getGaussPts()(1,13) returns y coordinate of
-     * 13th Gauss point on particular face element
-     */
-    inline MatrixDouble &getGaussPts() {
-      return static_cast<FaceElementForcesAndSourcesCore *>(ptrFE)->gaussPts;
-    }
-
-    /**
-     * @brief Get integration weights
-     *
-     * \code
-     * auto t_w = getFTensor0IntegrationWeight();
-     * for(int gg = 0; gg!=getGaussPts.size2(); ++gg) {
-     *  // integrate something
-     *  ++t_w;
-     * }
-     * \endcode
-     *
-     * @return FTensor::Tensor0<FTensor::PackPtr<double *, 1>>
-     */
-    inline auto getFTensor0IntegrationWeight() {
-      return FTensor::Tensor0<FTensor::PackPtr<double *, 1>>(
-          &(getGaussPts()(2, 0)));
-    }
 
     /** \brief Gauss points and weight, matrix (nb. of points x 3)
 
@@ -359,7 +311,7 @@ struct FaceElementForcesAndSourcesCore : public ForcesAndSourcesCore {
       \code
       double nrm2;
       FTensor::Index<'i',3> i;
-      FTensor::Tensor1<double*,3> t_normal = getFTensor1NormalsAtGaussPts();
+      auto t_normal = getFTensor1NormalsAtGaussPts();
       for(int gg = gg!=data.getN().size1();gg++) {
         nrm2 = sqrt(t_normal(i)*t_normal(i));
         ++t_normal;
@@ -474,12 +426,6 @@ struct FaceElementForcesAndSourcesCore : public ForcesAndSourcesCore {
   virtual MoFEMErrorCode calculateCoordinatesAtGaussPts();
 
   /**
-   * \brief Calculate base functions
-   * @return Error code
-   */
-  virtual MoFEMErrorCode calculateBaseFunctionsOnElement();
-
-  /**
    * \brief Calculate normal on curved elements
    *
    *  Geometry is given by other field.
@@ -530,13 +476,6 @@ derivatives
 struct OpSetInvJacH1ForFace
     : public FaceElementForcesAndSourcesCore::UserDataOperator {
   MatrixDouble &invJac;
-
-  // /**
-  //  * \deprecated Field name do not needed to construct class, change v0.5.17.
-  //  */
-  // DEPRECATED OpSetInvJacH1ForFace(const std::string &field_name,MatrixDouble
-  // &inv_jac): FaceElementForcesAndSourcesCore::UserDataOperator(H1),
-  // invJac(inv_jac) {}
 
   OpSetInvJacH1ForFace(MatrixDouble &inv_jac)
       : FaceElementForcesAndSourcesCore::UserDataOperator(H1), invJac(inv_jac) {

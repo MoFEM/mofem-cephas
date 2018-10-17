@@ -1387,7 +1387,7 @@ MoFEMErrorCode ProblemsManager::buildSubProblem(
       for (auto it = main_indices.begin(); dit != hi_dit; dit++, it++) {
         *it = dit->get()->getPetscGlobalDofIdx();
       }
-      // crate is with global dofs
+      // create is with global dofs
       IS is;
       CHKERR ISCreateGeneral(m_field.get_comm(), nb, &*main_indices.begin(),
                              PETSC_USE_POINTER, &is);

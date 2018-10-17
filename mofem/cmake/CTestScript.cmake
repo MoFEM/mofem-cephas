@@ -76,6 +76,7 @@ set(CTEST_CUSTOM_MEMCHECK_IGNORE
   forces_and_sources_testing_vertex_element_test_compare
   forces_and_sources_testing_flat_prism_element_test_compare
   record_series_atom_test_compare
+  forces_and_sources_testing_users_base_compare
   forces_and_sources_hdiv_approximation_functions_atom_compare
   forces_and_sources_hcurl_approximation_functions_atom_compare
   dm_mofem_atom_compare

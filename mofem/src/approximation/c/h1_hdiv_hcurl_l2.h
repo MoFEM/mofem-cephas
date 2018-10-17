@@ -108,6 +108,8 @@ extern "C" {
 #define NBVOLUMETET_DEMKOWICZ_HDIV(P)                                          \
   (((P) > 1) ? (P) * (P - 1) * (P + 1) / 2 : 0)
 
+// Bubbles for H div space
+
 /**
  * @brief Get base functions on triangle for L2 space
  * 
@@ -211,15 +213,34 @@ PetscErrorCode H1_VolumeShapeDiffMBTETinvJ(int base_p, int p,
                                            double *volume_diffN, double *invJac,
                                            double *volume_diffNinvJac,
                                            int GDIM);
-PetscErrorCode H1_EdgeGradientOfDeformation_hierachical(int p, double *diffN,
+
+PetscErrorCode H1_EdgeGradientOfDeformation_hierarchical(int p, double *diffN,
                                                         double *dofs,
                                                         double *F);
-PetscErrorCode H1_FaceGradientOfDeformation_hierachical(int p, double *diffN,
+PetscErrorCode H1_FaceGradientOfDeformation_hierarchical(int p, double *diffN,
                                                         double *dofs,
                                                         double *F);
-PetscErrorCode H1_VolumeGradientOfDeformation_hierachical(int p, double *diffN,
-                                                          double *dofs,
-                                                          double *F);
+PetscErrorCode H1_VolumeGradientOfDeformation_hierarchical(int p, double *diffN,
+                                                      double *dofs, double *F);
+
+/**
+ * \deprecated use H1_EdgeGradientOfDeformation_hierarchical
+ */
+DEPRECATED PetscErrorCode H1_EdgeGradientOfDeformation_hierachical(
+    int p, double *diffN, double *dofs, double *F);
+
+/**
+ * \deprecated use H1_FaceGradientOfDeformation_hierarchical
+ */
+DEPRECATED PetscErrorCode H1_FaceGradientOfDeformation_hierachical(
+    int p, double *diffN, double *dofs, double *F);
+
+/**
+ * \deprecated use H1_VolumeGradientOfDeformation_hierarchical
+ */
+DEPRECATED PetscErrorCode H1_VolumeGradientOfDeformation_hierachical(
+    int p, double *diffN, double *dofs, double *F);
+
 PetscErrorCode H1_QuadShapeFunctions_MBPRISM(
     int *faces_nodes, int *p, double *N, double *diffN, double *faceN[],
     double *diff_faceN[], int GDIM,
@@ -234,6 +255,8 @@ PetscErrorCode H1_VolumeShapeFunctions_MBPRISM(
                                        const int dim));
 
 // Hdiv and Hcurl are implemented and declared in other files
+
+
 
 #ifdef __cplusplus
 }

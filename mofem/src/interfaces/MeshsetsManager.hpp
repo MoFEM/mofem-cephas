@@ -511,17 +511,18 @@ struct MeshsetsManager : public UnknownInterface {
     * \ingroup mofem_meshset_mng
 
     */
-  MoFEMErrorCode getCubitMeshsetPtr(const int ms_id,
-                                    const CubitBCType cubit_bc_type,
-                                    const CubitMeshSets **cubit_meshset_ptr);
+  MoFEMErrorCode
+  getCubitMeshsetPtr(const int ms_id, const CubitBCType cubit_bc_type,
+                     const CubitMeshSets **cubit_meshset_ptr) const;
 
   /**
     * \brief get cubit meshset
     * \ingroup mofem_meshset_mng
 
     */
-  MoFEMErrorCode getCubitMeshsetPtr(const string name,
-                                    const CubitMeshSets **cubit_meshset_ptr);
+  MoFEMErrorCode
+  getCubitMeshsetPtr(const string name,
+                     const CubitMeshSets **cubit_meshset_ptr) const;
 
   /**
     * \brief get entities from CUBIT/meshset of a particular entity dimension
@@ -548,7 +549,7 @@ struct MeshsetsManager : public UnknownInterface {
   MoFEMErrorCode getEntitiesByDimension(const int ms_id,
                                         const unsigned int cubit_bc_type,
                                         const int dimension, Range &entities,
-                                        const bool recursive = true);
+                                        const bool recursive = true) const;
 
   /**
     * \brief get entities related to CUBIT/meshset,
@@ -569,7 +570,7 @@ struct MeshsetsManager : public UnknownInterface {
   MoFEMErrorCode getEntitiesByDimension(const int ms_id,
                                         const unsigned int cubit_bc_type,
                                         Range &entities,
-                                        const bool recursive = true);
+                                        const bool recursive = true) const;
 
   /**
     * \ingroup mofem_meshset_mng
@@ -580,7 +581,7 @@ struct MeshsetsManager : public UnknownInterface {
     * \param meshset where to store the retrieved entities
     */
   MoFEMErrorCode getMeshset(const int ms_id, const unsigned int cubit_bc_type,
-                            EntityHandle &meshset);
+                            EntityHandle &meshset) const;
 
   /**
     * \ingroup mofem_meshset_mng
@@ -590,7 +591,7 @@ struct MeshsetsManager : public UnknownInterface {
     * \param meshsets is range of meshsets
     */
   MoFEMErrorCode getMeshsetsByType(const unsigned int cubit_bc_type,
-                                   Range &meshsets);
+                                   Range &meshsets) const;
 
   /**
    * \brief add blocksets reading config file
@@ -730,6 +731,39 @@ struct MeshsetsManager : public UnknownInterface {
 
    */
   MoFEMErrorCode setMeshsetFromFile();
+
+  /**
+   * @brief save cubit meshset entities on the moab mesh
+   *
+   * @param ms_id id of the cubit meshset (NODESET  SIDESET  BLOCKSET)
+   * @param cubit_bc_type type of a cubit mesheset
+   * @param file_name optional name for the file
+   * @param file_type optional file type for moab (VTK MOAB)
+   * @param options optional parameters for moab writer (PARALLEL=WRITE_PART)
+   * @return MoFEMErrorCode
+   */
+  MoFEMErrorCode
+  saveMeshsetToFile(const int ms_id, const unsigned int cubit_bc_type,
+                    const std::string file_name = "out_meshset.vtk",
+                    const std::string file_type = "VTK",
+                    const std::string options = "") const;
+
+  /**
+   * @brief save cubit meshset entities on the moab mesh
+   *
+   * @param ms_id id of the cubit meshset
+   * @param cubit_bc_type type of a cubit mesheset (NODESET  SIDESET  BLOCKSET)
+   * @param dim dimension of the entities
+   * @param file_name optional name for the file
+   * @param file_type optional file type for moab (VTK MOAB)
+   * @param options optional parameters for moab writer (PARALLEL=WRITE_PART)
+   * @return MoFEMErrorCode
+   */
+  MoFEMErrorCode saveMeshsetToFile(
+      const int ms_id, const unsigned int cubit_bc_type, const int dim,
+      const std::string file_name = "out_meshset.vtk",
+      const bool recursive = false, const std::string file_type = "VTK",
+      const std::string options = "") const;
 
   /**
    * \brief Get config file options, use with care
