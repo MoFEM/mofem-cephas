@@ -1,0 +1,40 @@
+FROM       likask/mofem_spack_depenencies:latest
+MAINTAINER Lukasz.Kaczmarczyk@glasgow.ac.uk
+
+ADD mofem /mofem
+
+ENV MOFEM_SRC_DIR=/mofem
+ENV MOFEM_ROOT_DIR=/mofem_build
+ENV MOFEM_INSTALL_DIR=/mofem_build/um
+ENV MOFEM_BUILD_DIR=/mofem_build/lib
+
+RUN       mkdir -p /spack_views \
+          && cd /spack_views \
+	  && spack view symlink -i cmake cmake
+
+# install mofem core library
+RUN       mkdir -p $MOFEM_BUILD_DIR \
+          && cd $MOFEM_BUILD_DIR \
+          && spack setup mofem-cephas@develop \
+          && ./spconfig.py \
+            -DMOFEM_BUILD_TESTS=YES \
+            -DMPI_RUN_FLAGS="--allow-run-as-root" \
+            $MOFEM_SRC_DIR \
+          && make -j$(nproc) install \
+          && /spack_views/cmake/bin/ctest -D Experimental 
+
+# create installation view
+RUN       mkdir -p $MOFEM_INSTALL_DIR \
+          && cd $MOFEM_INSTALL_DIR \ 
+          && spack view symlink -i um_view mofem-cephas@develop
+
+# install users modules
+RUN       mkdir -p $MOFEM_INSTALL_DIR/build \
+          && cd $MOFEM_INSTALL_DIR/build \
+          && spack setup mofem-users-modules@develop \
+          && ./spconfig.py \
+            -MOFEM_UM_BUILD_TESTS=YES \
+            -DMPI_RUN_FLAGS="--allow-run-as-root" \
+            $MOFEM_SRC_DIR/users_modules \
+          && make -j$(nproc) install \
+          && /spack_views/cmake/bin/ctest -D Experimental
