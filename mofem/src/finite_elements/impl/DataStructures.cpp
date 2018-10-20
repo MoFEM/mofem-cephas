@@ -96,7 +96,8 @@ FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 3, 3>
 getFTensor2FromMat<3, 3, double, ublas::row_major, DoubleAllocator>(
     MatrixDouble &data) {
   if (data.size1() != 9) {
-    THROW_MESSAGE("Wrong size of data matrix");
+    THROW_MESSAGE("Wrong size of data matrix; numer of rows is " +
+                  boost::lexical_cast<std::string>(data.size1()));
   }
   return FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 3, 3>(
       &data(0, 0), &data(1, 0), &data(2, 0), &data(3, 0), &data(4, 0),
