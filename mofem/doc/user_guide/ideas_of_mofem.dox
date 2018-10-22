@@ -120,8 +120,8 @@ element. If for given field number of DOFs or base functions on given entity
 is zero, such entity is not evaluated.
 \image html fe_struture_2.png "Types of UserDataOperator" width=800px
 
-Note that data and algorithm operating on data are localised and grouped by
-an element and by an entity. Elements and entities share data structure avoiding
+Note that the data and the algorithm operating on that data are localised and grouped by
+both element and entity. Elements and entities share data structure avoiding
 unnecessary memory allocation and deallocation. However, the motivation for this
 development is code elasticity (resilience to change and openness for new finite
 element technologies), reusability, which with relatively small code, large group
