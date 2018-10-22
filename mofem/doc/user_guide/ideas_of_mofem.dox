@@ -246,7 +246,7 @@ struct OpGradGrad: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOper
 
 \subsection mofem_data_flow Core library and application code
 
-Typically, internal data structures are hidden from the user and are no need to
+Typically, internal data structures are hidden from the user and there is no need to
 access them directly. In core library, no single problem or finite element in
 the classical sense is implemented. Core library only provides functionality for
 finite element implementation and application code development. For that reason,
