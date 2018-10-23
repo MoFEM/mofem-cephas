@@ -152,6 +152,11 @@ struct VolumeElementForcesAndSourcesCore : public ForcesAndSourcesCore {
           ->hoCoordsAtGaussPts;
     }
 
+    inline MatrixDouble &getHoGaussPtsJac() {
+      return static_cast<VolumeElementForcesAndSourcesCore *>(ptrFE)
+          ->hoGaussPtsJac;
+    }
+
     inline MatrixDouble &getHoGaussPtsInvJac() {
       return static_cast<VolumeElementForcesAndSourcesCore *>(ptrFE)
           ->hoGaussPtsInvJac;
@@ -185,11 +190,6 @@ struct VolumeElementForcesAndSourcesCore : public ForcesAndSourcesCore {
           &getCoordsAtGaussPts()(0, 2));
     }
 
-    /// \deprecated use getFTensor1CoordsAtGaussPts
-    DEPRECATED inline auto getTensor1CoordsAtGaussPts() {
-      return getFTensor1CoordsAtGaussPts();
-    }
-
     /**
      * \brief Get coordinates at integration points taking geometry from field
      *
@@ -204,14 +204,23 @@ struct VolumeElementForcesAndSourcesCore : public ForcesAndSourcesCore {
      *
      */
     inline auto getFTensor1HoCoordsAtGaussPts() {
-      return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(
-          &getHoCoordsAtGaussPts()(0, 0), &getHoCoordsAtGaussPts()(0, 1),
-          &getHoCoordsAtGaussPts()(0, 2));
+      double *ptr = &*getHoCoordsAtGaussPts().data().begin();
+      return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(ptr, ptr + 1,
+                                                                ptr + 2);
     }
 
-    /// \deprecated use getFTensor1HoCoordsAtGaussPts
-    DEPRECATED inline auto getTensor1HoCoordsAtGaussPts() {
-      return getFTensor1HoCoordsAtGaussPts();
+    inline auto getFTensor2HoGaussPtsJac() {
+      double *ptr = &*getHoGaussPtsJac().data().begin();
+      FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3> jac(
+          ptr, ptr + 1, ptr + 2, ptr + 3, ptr + 4, ptr + 5, ptr + 6, ptr + 7,
+          ptr + 8);
+    }
+
+    inline auto getFTensor2HoGaussPtsInvJac() {
+      double *ptr = &*getHoGaussPtsInvJac().data().begin();
+      FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3> jac(
+          ptr, ptr + 1, ptr + 2, ptr + 3, ptr + 4, ptr + 5, ptr + 6, ptr + 7,
+          ptr + 8);
     }
 
     /** \brief return pointer to Generic Volume Finite Element object
@@ -285,6 +294,17 @@ struct VolumeElementForcesAndSourcesCore : public ForcesAndSourcesCore {
     getCurlOfHCurlBaseFunctions(int side, EntityType type,
                                 DataForcesAndSourcesCore::EntData &data, int gg,
                                 MatrixDouble &curl);
+
+    /// \deprecated use getFTensor1CoordsAtGaussPts
+    DEPRECATED inline auto getTensor1CoordsAtGaussPts() {
+      return getFTensor1CoordsAtGaussPts();
+    }
+
+    /// \deprecated use getFTensor1HoCoordsAtGaussPts
+    DEPRECATED inline auto getTensor1HoCoordsAtGaussPts() {
+      return getFTensor1HoCoordsAtGaussPts();
+    }
+
   };
 
   unsigned int nbGaussPts; ///< Number of integration points
@@ -454,9 +474,6 @@ struct VolumeElementForcesAndSourcesCoreOnSide
       return FTensor::Tensor1<double *, 3>(ptr, &ptr[1], &ptr[2]);
     }
 
-    /// \deprecated use getFTensor1Normal
-    DEPRECATED inline auto getTensor1Normal() { return getFTensor1Normal(); }
-
     /** \brief if higher order geometry return normals at Gauss pts.
 
     Note: returned matrix has size 0 in rows and columns if no HO approximation
@@ -464,11 +481,6 @@ struct VolumeElementForcesAndSourcesCoreOnSide
 
      */
     MatrixDouble &getNormalsAtGaussPts();
-
-    /// \deprecated use getNormalsAtGaussPts
-    DEPRECATED inline MatrixDouble &getNormalsAtGaussPt() {
-      return getNormalsAtGaussPts();
-    }
 
     /** \brief if higher order geometry return normals at Gauss pts.
      *
@@ -515,6 +527,7 @@ struct VolumeElementForcesAndSourcesCoreOnSide
      */
     MatrixDouble &getFaceCoordsAtGaussPts();
   };
+
 };
 
 /// \deprecated Use VolumeElementForcesAndSourcesCore
