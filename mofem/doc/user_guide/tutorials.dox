@@ -31,8 +31,8 @@ Introduction to fundamental MoFEM functionalities and capabilities by solving a 
 \section poisson_problem The Poisson equation
 
 The Poisson equation is solved using MoFEM::Simple interface. The generic
-procedure is applied to one of the simples PDEs. In order to make problem
-iterating, boundary conditions are enforced by Lagrange multipliers
+procedure is applied to one of the simples PDEs. In order to make the problem instructional, 
+essential boundary conditions are enforced by Lagrange multipliers.
 
 - \subpage poisson_tut1
 
