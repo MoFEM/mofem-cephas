@@ -48,7 +48,7 @@ void test_T4ddg_006(const Tensor2_symmetric<double, 3> &t2s_2,
   }
 
   {
-    Ddg<double, 3, 3> t4ddg_3_1, t4ddg_3_2;
+    Ddg<double, 3, 3> t4ddg_3_1;
     t4ddg_3_1(i, j, k, l) = t2s_2(i, j) * t2s_3(k, l);
 
     Tensor2<double, 3, 3> t2;
