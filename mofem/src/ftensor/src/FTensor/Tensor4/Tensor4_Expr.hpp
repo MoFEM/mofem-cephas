@@ -112,5 +112,14 @@ namespace FTensor
               }
       return *this;
     }
+
+    template <class U> auto &operator=(const U &d) {
+      for (int ii = 0; ii != Dim0; ++ii)
+        for (int jj = ii; jj != Dim1; ++jj)
+          for (int kk = 0; kk != Dim2; ++kk)
+            for (int ll = kk; ll != Dim3; ++ll)
+              iter(ii, jj, kk, ll) = d;
+      return *this;
+    }
   };
 }
