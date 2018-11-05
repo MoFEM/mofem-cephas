@@ -24,7 +24,7 @@ void test_T4ddg_007(const Tensor2_symmetric<double, 3> &t2s_2,
     t3dg_3_1(i, j, l) = t4ddg_3_1(i, j, k, l) * t1_1(k);
     t3dg_3_2(i, j, l) = t2s_2(i, j) * (t2s_3(k, l) * t1_1(k));
 
-    for (int ii = 0; ii != 3;++ii)
+    for (int ii = 0; ii != 3; ++ii)
       for (int jj = 0; jj != 3; ++jj)
         for (int ll = 0; ll != 3; ++ll) {
           test_for_zero(t3dg_3_1(ii, jj, ll) - t3dg_3_2(ii, jj, ll),
@@ -46,18 +46,12 @@ void test_T4ddg_007(const Tensor2_symmetric<double, 3> &t2s_2,
           }
         }
 
-    for (int jj = 0; jj != 3;++jj)
+    for (int jj = 0; jj != 3; ++jj)
       for (int kk = 0; kk != 3; ++kk)
         for (int ll = 0; ll != 3; ++ll) {
-          cerr << t3ch_3_1(jj, kk, ll) << " " << t3ch_3_2(jj, kk, ll) << endl;
-          cerr << t3ch_3_1(jj, ll, kk) << " " << t3ch_3_2(jj, ll, kk) << endl;
-          cerr << " -- " << endl;
-          cerr << t3ch_3_1(ll, jj, kk) << " " << t3ch_3_2(ll, jj, kk) << endl;
-          cerr << t3ch_3_1(kk, ll, jj) << " " << t3ch_3_2(kk, ll, jj) << endl;
           test_for_zero(t3ch_3_1(jj, kk, ll) - t3ch_3_2(jj, kk, ll),
                         "t4ddg_3_1(i, j, k, l) * t1_1(i)(" + to_string(jj) +
                             "," + to_string(kk) + "," + to_string(ll) + ")");
         }
   }
-
 }
