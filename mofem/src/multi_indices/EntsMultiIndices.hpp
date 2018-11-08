@@ -689,6 +689,13 @@ struct FieldEntity : public interface_Field<Field>,
     return getFieldPtr()->getDofOrderMap(getEntType());
   }
 
+private:
+
+  // Cache variables
+  static UId *getEntFieldDataLastUid;
+  static double *getEntFieldDataLastPtr;
+  static int getEntFieldDataLastSize;
+  static int getEntFieldDataLastTagSize;
 };
 
 // /// \deprecated use FieldEntity
