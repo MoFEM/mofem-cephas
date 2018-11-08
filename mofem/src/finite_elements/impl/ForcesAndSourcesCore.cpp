@@ -641,54 +641,58 @@ MoFEMErrorCode ForcesAndSourcesCore::getNodesFieldData(
     VectorDouble &nodes_data, VectorDofs &nodes_dofs, FieldSpace &space,
     FieldApproximationBase &base) const {
   MoFEMFunctionBegin;
-  auto dit = dofs.get<Composite_Name_And_Type_mi_tag>().lower_bound(
-      boost::make_tuple(field_name, MBVERTEX));
-  auto hi_dit = dofs.get<Composite_Name_And_Type_mi_tag>().upper_bound(
-      boost::make_tuple(field_name, MBVERTEX));
+  auto tuple = boost::make_tuple(field_name, MBVERTEX);
+  auto &dofs_by_name_and_type = dofs.get<Composite_Name_And_Type_mi_tag>();
+  auto dit = dofs_by_name_and_type.lower_bound(tuple);
+  if(dit == dofs_by_name_and_type.end()) {
+    nodes_data.resize(0, false);
+    nodes_dofs.resize(0, false); 
+    MoFEMFunctionReturnHot(0);
+  }
+
+  auto &first_dof = **dit;
+  space = first_dof.getSpace();
+  base = first_dof.getApproxBase();
+
+  auto hi_dit = dofs.get<Composite_Name_And_Type_mi_tag>().upper_bound(tuple);
+  const int nb_dofs = std::distance(dit, hi_dit);
 
   int num_nodes;
   CHKERR getNumberOfNodes(num_nodes);
-  int max_nb_dofs = 0;
-  if (dit != hi_dit) {
-    max_nb_dofs = (*dit)->getNbOfCoeffs() * num_nodes;
-  }
+  const int max_nb_dofs = first_dof.getNbOfCoeffs() * num_nodes;
 
-  if (std::distance(dit, hi_dit) != max_nb_dofs) {
+  if (nb_dofs != max_nb_dofs) {
     nodes_data.resize(max_nb_dofs, false);
     nodes_data.clear();
     nodes_dofs.resize(max_nb_dofs, false);
   } else {
-    int size = std::distance(dit, hi_dit);
-    nodes_data.resize(size, false);
-    nodes_dofs.resize(size, false);
-  }
-
-  if (dit != hi_dit) {
-    space = (*dit)->getSpace();
-    base = (*dit)->getApproxBase();
+    nodes_data.resize(nb_dofs, false);
+    nodes_dofs.resize(nb_dofs, false);
   }
 
   for (; dit != hi_dit; dit++) {
-    FieldData val = (*dit)->getFieldData();
-    int side_number = (*dit)->sideNumberPtr->side_number;
-    if (side_number == -1) {
-      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
+    const auto &dof = **dit;
+    const auto &sn = *dof.sideNumberPtr;
+    const auto val = dof.getFieldData();
+    const int side_number = sn.side_number;
+    if (PetscUnlikely(side_number == -1)) {
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Side number not set");
     }
-    int pos = side_number * (*dit)->getNbOfCoeffs() + (*dit)->getDofCoeffIdx();
+    const int pos = side_number * dof.getNbOfCoeffs() + dof.getDofCoeffIdx();
     nodes_data[pos] = val;
     nodes_dofs[pos] = *dit;
-    int brother_side_number = (*dit)->sideNumberPtr->brother_side_number;
-    if (brother_side_number != -1) {
+    const int brother_side_number = sn.brother_side_number;
+    if (PetscUnlikely(brother_side_number != -1)) {
       if (nodes_data.size() <
-          (unsigned int)(brother_side_number * (*dit)->getNbOfCoeffs() +
-                         (*dit)->getNbOfCoeffs())) {
-        nodes_data.resize(brother_side_number * (*dit)->getNbOfCoeffs() +
-                          (*dit)->getNbOfCoeffs());
-        nodes_dofs.resize(brother_side_number * (*dit)->getNbOfCoeffs() +
-                          (*dit)->getNbOfCoeffs());
+          (unsigned int)(brother_side_number * dof.getNbOfCoeffs() +
+                         dof.getNbOfCoeffs())) {
+        nodes_data.resize(brother_side_number * dof.getNbOfCoeffs() +
+                          dof.getNbOfCoeffs());
+        nodes_dofs.resize(brother_side_number * dof.getNbOfCoeffs() +
+                          dof.getNbOfCoeffs());
       }
-      int brother_pos = brother_side_number * (*dit)->getNbOfCoeffs() +
-                        (*dit)->getDofCoeffIdx();
+      int brother_pos =
+          brother_side_number * dof.getNbOfCoeffs() + dof.getDofCoeffIdx();
       nodes_data[brother_pos] = val;
       nodes_dofs[brother_pos] = *dit;
     }
