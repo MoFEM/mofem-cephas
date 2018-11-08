@@ -716,30 +716,24 @@ MoFEMErrorCode ForcesAndSourcesCore::getTypeFieldData(
     const boost::string_ref field_name, FEDofEntity_multiIndex &dofs,
     EntityType type, int side_number, VectorDouble &ent_field_data,
     VectorDofs &ent_field_dofs) const {
-  //
   MoFEMFunctionBeginHot;
-  auto dit = dofs.get<Composite_Name_Type_And_Side_Number_mi_tag>().lower_bound(
-      boost::make_tuple(field_name, type, side_number));
-  if (dit == dofs.get<Composite_Name_Type_And_Side_Number_mi_tag>().end()) {
+  auto &dofs_on_side = dofs.get<Composite_Name_Type_And_Side_Number_mi_tag>();
+  auto tuple = boost::make_tuple(field_name, type, side_number);
+  auto dit = dofs_on_side.lower_bound(tuple);
+  if (dit == dofs_on_side.end()) {
     ent_field_data.resize(0, false);
     ent_field_dofs.resize(0, false);
     MoFEMFunctionReturnHot(0);
   }
-  auto hi_dit =
-      dofs.get<Composite_Name_Type_And_Side_Number_mi_tag>().upper_bound(
-          boost::make_tuple(field_name, type, side_number));
-  if (dit != hi_dit) {
-    ent_field_data.resize((*dit)->getNbDofsOnEnt(), false);
-    ent_field_dofs.resize((*dit)->getNbDofsOnEnt(), false);
-    for (; dit != hi_dit; dit++) {
-      const FieldData val = (*dit)->getFieldData();
-      const int idx = (*dit)->getEntDofIdx();
-      ent_field_data[idx] = val;
-      ent_field_dofs[idx] = *dit;
-    }
-  } else {
-    ent_field_data.resize(0, false);
-    ent_field_dofs.resize(0, false);
+  auto hi_dit = dofs_on_side.upper_bound(tuple);
+  auto &first_dof = **dit;
+  ent_field_data.resize(first_dof.getNbDofsOnEnt(), false);
+  ent_field_dofs.resize(first_dof.getNbDofsOnEnt(), false);
+  int idx = first_dof.getEntDofIdx();
+  for (; dit != hi_dit; dit++, ++idx) {
+    auto &dof_ptr = *dit;
+    ent_field_data[idx] = dof_ptr->getFieldData();
+    ent_field_dofs[idx] = dof_ptr;
   }
   MoFEMFunctionReturnHot(0);
 }
