@@ -729,9 +729,9 @@ MoFEMErrorCode ForcesAndSourcesCore::getTypeFieldData(
   auto &first_dof = **dit;
   ent_field_data.resize(first_dof.getNbDofsOnEnt(), false);
   ent_field_dofs.resize(first_dof.getNbDofsOnEnt(), false);
-  int idx = first_dof.getEntDofIdx();
-  for (; dit != hi_dit; dit++, ++idx) {
+  for (; dit != hi_dit; dit++) {
     auto &dof_ptr = *dit;
+    const int idx = dof_ptr->getEntDofIdx();
     ent_field_data[idx] = dof_ptr->getFieldData();
     ent_field_dofs[idx] = dof_ptr;
   }
