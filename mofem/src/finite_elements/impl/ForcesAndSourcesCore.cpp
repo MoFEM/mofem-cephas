@@ -737,53 +737,54 @@ MoFEMErrorCode ForcesAndSourcesCore::getTypeFieldData(
   MoFEMFunctionBegin;
   auto &side_table = const_cast<SideNumber_multiIndex &>(
       numeredEntFiniteElementPtr->getSideNumberTable());
-  // if(data.size() < side_table.get<2>().count(type)) {
-  //   SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
-  // }
   auto siit = side_table.get<2>().lower_bound(type);
   auto hi_siit = side_table.get<2>().upper_bound(type);
   auto tuple = boost::make_tuple(field_name, type);
-  auto dit = dofs.get<Composite_Name_And_Type_mi_tag>().lower_bound(tuple);
-  if (dit == dofs.get<Composite_Name_And_Type_mi_tag>().end()) {
+  auto &dofs_by_type = dofs.get<Composite_Name_And_Type_mi_tag>();
+  auto dit = dofs_by_type.lower_bound(tuple);
+  if (dit == dofs_by_type.end()) {
     for (auto siiit = siit; siiit != hi_siit; siiit++) {
       const int side_number = siiit->get()->side_number;
-      data[side_number].getFieldData().resize(0, false);
-      data[side_number].getFieldDofs().resize(0, false);
+      auto &dat = data[side_number];
+      dat.getFieldData().resize(0, false);
+      dat.getFieldDofs().resize(0, false);
     }
     MoFEMFunctionReturnHot(0);
   }
-  for (auto siiit = siit; siiit != hi_siit; siiit++) {
-    const int side_number = siiit->get()->side_number;
-    data[side_number].semaphore = false;
-  }
+  for (auto siiit = siit; siiit != hi_siit; siiit++)
+    data[siiit->get()->side_number].semaphore = false;
   auto hi_dit = dofs.get<Composite_Name_And_Type_mi_tag>().upper_bound(tuple);
   for (; dit != hi_dit; dit++) {
     const int side = dit->get()->sideNumberPtr->side_number;
+    auto &dat = data[side];
     const int nb_dofs_on_ent = (*dit)->getNbDofsOnEnt();
-    auto &ent_field_data = data[side].getFieldData();
-    auto &ent_field_dofs = data[side].getFieldDofs();
-    if (!data[side].semaphore) {
-      data[side].semaphore = true;
+    auto &ent_field_data = dat.getFieldData();
+    auto &ent_field_dofs = dat.getFieldDofs();
+    if (!dat.semaphore) {
+      dat.semaphore = true;
       ent_field_data.resize(nb_dofs_on_ent, false);
       ent_field_dofs.resize(nb_dofs_on_ent, false);
     }
-    if (!nb_dofs_on_ent) {
+    if (!nb_dofs_on_ent)
       continue;
-    }
-    const int idx = dit->get()->getEntDofIdx();
-    ent_field_data[idx] = dit->get()->getFieldData();
+    auto &dof = **dit;
+    const int idx = dof.getEntDofIdx();
+    ent_field_data[idx] = dof.getFieldData();
     ent_field_dofs[idx] = *dit;
   }
   for (; siit != hi_siit; siit++) {
-    const int side_number = siit->get()->side_number;
-    if (!data[side_number].semaphore) {
-      data[side_number].getFieldData().resize(0, false);
-      data[side_number].getFieldDofs().resize(0, false);
+    auto &sd = **siit;
+    const int side_number = sd.side_number;
+    auto &dat = data[side_number];
+    if (!dat.semaphore) {
+      dat.getFieldData().resize(0, false);
+      dat.getFieldDofs().resize(0, false);
     }
-    if (siit->get()->brother_side_number != -1) {
-      if (data.size() < (unsigned int)siit->get()->brother_side_number) {
+    if (sd.brother_side_number != -1) {
+      if (PetscUnlikely(data.size() <
+                        (unsigned int)siit->get()->brother_side_number)) {
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                "data inconsistency");
+                "size of data not big enough to brother side");
       }
       CHKERR getTypeFieldData(
           field_name, dofs, type, side_number,
