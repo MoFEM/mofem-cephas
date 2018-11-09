@@ -632,32 +632,6 @@ ForcesAndSourcesCore::getNodesFieldData(DataForcesAndSourcesCore &data,
                            data.dataOnEntities[MBVERTEX][0].getBase());
 }
 
-MoFEMErrorCode ForcesAndSourcesCore::getTypeFieldData(
-    const boost::string_ref field_name, FEDofEntity_multiIndex &dofs,
-    EntityType type, int side_number, VectorDouble &ent_field_data,
-    VectorDofs &ent_field_dofs) const {
-  MoFEMFunctionBeginHot;
-  auto &dofs_on_side = dofs.get<Composite_Name_Type_And_Side_Number_mi_tag>();
-  auto tuple = boost::make_tuple(field_name, type, side_number);
-  auto dit = dofs_on_side.lower_bound(tuple);
-  if (dit == dofs_on_side.end()) {
-    ent_field_data.resize(0, false);
-    ent_field_dofs.resize(0, false);
-    MoFEMFunctionReturnHot(0);
-  }
-  auto hi_dit = dofs_on_side.upper_bound(tuple);
-  auto &first_dof = **dit;
-  ent_field_data.resize(first_dof.getNbDofsOnEnt(), false);
-  ent_field_dofs.resize(first_dof.getNbDofsOnEnt(), false);
-  for (; dit != hi_dit; dit++) {
-    auto &dof_ptr = *dit;
-    const int idx = dof_ptr->getEntDofIdx();
-    ent_field_data[idx] = dof_ptr->getFieldData();
-    ent_field_dofs[idx] = dof_ptr;
-  }
-  MoFEMFunctionReturnHot(0);
-}
-
 MoFEMErrorCode ForcesAndSourcesCore::getEntityData(
     DataForcesAndSourcesCore &data, const std::string &field_name,
     const EntityType type_lo, const EntityType type_hi) const {

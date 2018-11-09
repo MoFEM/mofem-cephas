@@ -188,22 +188,6 @@ struct ForcesAndSourcesCore : public FEMethod {
                                    VectorDofs &nodes_dofs, FieldSpace &space,
                                    FieldApproximationBase &base) const;
 
-  /**
-   * \brief Get field data on entities
-   * @param  field_name     Field name
-   * @param  dofs           Dofs (element) multi index
-   * @param  type           Entity type
-   * @param  side_number    Side number (Local number of entity on element in
-   * canonical order)
-   * @param  ent_field_data Vector of DOFs values on entities
-   * @param  ent_field_dofs Vector of pointers to DOFs data structure
-   * @return                Error code
-   */
-  MoFEMErrorCode getTypeFieldData(const boost::string_ref field_name,
-                                  FEDofEntity_multiIndex &dofs, EntityType type,
-                                  int side_number, VectorDouble &ent_field_data,
-                                  VectorDofs &ent_field_dofs) const;
-
   MoFEMErrorCode getNoFieldFieldData(const boost::string_ref field_name,
                                      FEDofEntity_multiIndex &dofs,
                                      VectorDouble &ent_field_data,
