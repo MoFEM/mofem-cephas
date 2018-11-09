@@ -115,8 +115,9 @@ struct ForcesAndSourcesCore : public FEMethod {
   }
 
   template <EntityType type>
-  MoFEMErrorCode getEntityDataOrderSpaceAndBase(
-    DataForcesAndSourcesCore &data, const std::string &field_name) const {
+  MoFEMErrorCode
+  getEntityDataOrderSpaceAndBase(DataForcesAndSourcesCore &data,
+                                 const std::string &field_name) const {
     return getDataOrderSpaceAndBase(field_name, type,
                                     data.dataOnEntities[type]);
   }
@@ -152,7 +153,7 @@ struct ForcesAndSourcesCore : public FEMethod {
 
   template <EntityType type>
   MoFEMErrorCode getEntityRowIndices(DataForcesAndSourcesCore &data,
-                                    const std::string &field_name) const {
+                                     const std::string &field_name) const {
     return getTypeIndices(field_name,
                           const_cast<FENumeredDofEntity_multiIndex &>(
                               numeredEntFiniteElementPtr->getRowsDofs()),
@@ -643,10 +644,9 @@ struct ForcesAndSourcesCore : public FEMethod {
     ForcesAndSourcesCore *ptrFE;
   };
 
-
   /**
    * @brief Vector of finite element users data operators
-   * 
+   *
    * FIXME: that should be moved to private class data and acessed only by
    * member function
    */
@@ -661,14 +661,14 @@ struct ForcesAndSourcesCore : public FEMethod {
 
   /**
    * @brief Get the Entity Polynomial Base object
-   * 
-   * @return boost::shared_ptr<BaseFunction>&& 
+   *
+   * @return boost::shared_ptr<BaseFunction>&&
    */
   auto &getElementPolynomialBase() { return elementPolynomialBasePtr; }
 
   /**
    * @brief Get the User Polynomial Base object
-   * 
+   *
    * @return boost::shared_ptr<BaseFunction>&
    */
   auto &getUserPolynomialBase() { return userPolynomialBasePtr; }
@@ -679,7 +679,7 @@ struct ForcesAndSourcesCore : public FEMethod {
    * Columns is equal to number of integration points, numver of rows depends on
    * dimension of finite element entity, for example for tetrahedron rows are
    * x,y,z,weight. Last row is integration weight.
-   * 
+   *
    * FIXME: that should be moved to private class data and acessed only by
    * member function
    */
@@ -725,15 +725,15 @@ struct ForcesAndSourcesCore : public FEMethod {
 
   /**
    * @brief Create a entity data on element object
-   * 
-   * @return MoFEMErrorCode 
+   *
+   * @return MoFEMErrorCode
    */
   MoFEMErrorCode createDataOnElement();
 
   /**
    * @brief Iterate user data operators
-   * 
-   * @return MoFEMErrorCode 
+   *
+   * @return MoFEMErrorCode
    */
   MoFEMErrorCode loopOverOperators();
 
