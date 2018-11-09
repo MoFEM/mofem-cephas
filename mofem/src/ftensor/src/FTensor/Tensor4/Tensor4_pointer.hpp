@@ -67,6 +67,8 @@ template <class T, int Tensor_Dim0, int Tensor_Dim1, int Tensor_Dim2,
 class Tensor4<T *, Tensor_Dim0, Tensor_Dim1, Tensor_Dim2, Tensor_Dim3>
 {
   const int inc;
+
+protected:  
   mutable T *restrict
       data[Tensor_Dim0][Tensor_Dim1][Tensor_Dim2][Tensor_Dim3];
 
@@ -216,6 +218,38 @@ public:
     T4_increment(*this, Number<Tensor_Dim0>(), Number<Tensor_Dim1>(),
                  Number<Tensor_Dim2>(), Number<Tensor_Dim3>());
     return *this;
+  }
+
+  T *ptr(const int N1, const int N2, const int N3, const int N4) const
+  {
+#ifdef FTENSOR_DEBUG
+    if (N1 >= Tensor_Dim0 || N1 < 0 || N2 >= Tensor_Dim1 || N2 < 0 ||
+        N3 >= Tensor_Dim2 || N3 < 0 || N4 >= Tensor_Dim3 || N4 < 0)
+    {
+      std::stringstream s;
+      s << "Bad index in Tensor4<T*," << Tensor_Dim0 << "," << Tensor_Dim1
+        << "," << Tensor_Dim2 << "," << Tensor_Dim3 << ">.ptr(" << N1 << ","
+        << N2 << "," << N3 << "," << N4 << ")" << std::endl;
+      throw std::out_of_range(s.str());
+    }
+#endif
+    return data[N1][N2][N3][N4];
+  }
+
+  T *restrict &ptr(const int N1, const int N2, const int N3, const int N4)
+  {
+#ifdef FTENSOR_DEBUG
+    if (N1 >= Tensor_Dim0 || N1 < 0 || N2 >= Tensor_Dim1 || N2 < 0 ||
+        N3 >= Tensor_Dim2 || N3 < 0 || N4 >= Tensor_Dim3 || N4 < 0)
+    {
+      std::stringstream s;
+      s << "Bad index in Tensor4<T*," << Tensor_Dim0 << "," << Tensor_Dim1
+        << "," << Tensor_Dim2 << "," << Tensor_Dim3 << ">.ptr(" << N1 << ","
+        << N2 << "," << N3 << "," << N4 << ")" << std::endl;
+      throw std::out_of_range(s.str());
+    }
+#endif
+    return data[N1][N2][N3][N4];
   }
 };
 
