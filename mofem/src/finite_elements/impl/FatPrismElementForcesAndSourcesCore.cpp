@@ -409,13 +409,9 @@ MoFEMErrorCode FatPrismElementForcesAndSourcesCore::operator()() {
     nOrmals_at_GaussPtF4.resize(nb_gauss_pts_on_faces, 3, false);
     tAngent1_at_GaussPtF4.resize(nb_gauss_pts_on_faces, 3, false);
     tAngent2_at_GaussPtF4.resize(nb_gauss_pts_on_faces, 3, false);
-    CHKERR getEntityDataOrderSpaceAndBase<MBEDGE>(dataH1TrianglesOnly,
-                                         meshPositionsFieldName);
-    CHKERR getEntityDataOrderSpaceAndBase<MBTRI>(dataH1TrianglesOnly,
-                                        meshPositionsFieldName);
     CHKERR getNodesFieldData(dataH1TrianglesOnly, meshPositionsFieldName);
-    CHKERR getEntityFieldData<MBEDGE>(dataH1TrianglesOnly, meshPositionsFieldName);
-    CHKERR getEntityFieldData<MBTRI>(dataH1TrianglesOnly, meshPositionsFieldName);
+    CHKERR getEntityData(dataH1TrianglesOnly, meshPositionsFieldName, MBEDGE);
+    CHKERR getEntityData(dataH1TrianglesOnly, meshPositionsFieldName, MBEDGE);
     CHKERR opHOCoordsAndNormals.opRhs(dataH1TrianglesOnly);
     CHKERR opHOCoordsAndNormals.calculateNormals();
   } else {

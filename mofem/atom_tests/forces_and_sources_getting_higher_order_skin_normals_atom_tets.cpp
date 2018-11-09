@@ -174,14 +174,12 @@ int main(int argc, char *argv[]) {
         CHKERR getEntitySense<MBEDGE>(data);
         CHKERR getEntityDataOrder<MBEDGE>(data, H1);
         CHKERR getEntityDataOrder<MBTRI>(data, H1);
-        CHKERR getEntityDataOrderSpaceAndBase<MBEDGE>(data, "FIELD1");
-        CHKERR getEntityDataOrderSpaceAndBase<MBTRI>(data, "FIELD1");
         CHKERR getRowNodesIndices(data, "FIELD1");
         CHKERR getEntityRowIndices<MBEDGE>(data, "FIELD1");
         CHKERR getEntityRowIndices<MBTRI>(data, "FIELD1");
         CHKERR getNodesFieldData(data, "FIELD1");
-        CHKERR getEntityFieldData<MBEDGE>(data, "FIELD1");
-        CHKERR getEntityFieldData<MBTRI>(data, "FIELD1");
+        CHKERR getEntityData(data, "FIELD1", MBEDGE);
+        CHKERR getEntityData(data, "FIELD1", MBEDGE);
 
         data.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(4, 3, false);
         CHKERR ShapeMBTRI(

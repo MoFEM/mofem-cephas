@@ -283,21 +283,15 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCore::calculateHoJacobian() {
               "no MESH_NODE_POSITIONS in element data");
     }
 
-    CHKERR getEntityDataOrderSpaceAndBase<MBEDGE>(dataH1,
-                                                  meshPositionsFieldName);
-    CHKERR getEntityDataOrderSpaceAndBase<MBTRI>(dataH1,
-                                                 meshPositionsFieldName);
-    CHKERR getEntityDataOrderSpaceAndBase<MBTET>(dataH1,
-                                                 meshPositionsFieldName);
     CHKERR getNodesFieldData(dataH1, meshPositionsFieldName);
     if (dataH1.dataOnEntities[MBVERTEX][0].getFieldData().size() != 12) {
       SETERRQ(mField.get_comm(), MOFEM_NOT_FOUND,
               "no MESH_NODE_POSITIONS in element data or field has wrong "
               "number of coefficients");
     }
-    CHKERR getEntityFieldData<MBEDGE>(dataH1, meshPositionsFieldName);
-    CHKERR getEntityFieldData<MBTRI>(dataH1, meshPositionsFieldName);
-    CHKERR getEntityFieldData<MBTET>(dataH1, meshPositionsFieldName);
+    CHKERR getEntityData(dataH1, meshPositionsFieldName, MBEDGE);
+    CHKERR getEntityData(dataH1, meshPositionsFieldName, MBEDGE);
+    CHKERR getEntityData(dataH1, meshPositionsFieldName, MBEDGE);
     CHKERR opHOatGaussPoints.opRhs(dataH1);
     hoGaussPtsInvJac.resize(hoGaussPtsJac.size1(), hoGaussPtsJac.size2(),
                             false);

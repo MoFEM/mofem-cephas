@@ -98,10 +98,6 @@ struct ForcesAndSourcesCore : public FEMethod {
       const EntityType type, const FieldSpace space,
       boost::ptr_vector<DataForcesAndSourcesCore::EntData> &data) const;
 
-  /// \brief get maximal approximation order on entity
-  MoFEMErrorCode getDataOrderSpaceAndBase(
-      const std::string &field_name, const EntityType type,
-      boost::ptr_vector<DataForcesAndSourcesCore::EntData> &data) const;
 
   template <EntityType type>
   MoFEMErrorCode getEntitySense(DataForcesAndSourcesCore &data) const {
@@ -112,14 +108,6 @@ struct ForcesAndSourcesCore : public FEMethod {
   MoFEMErrorCode getEntityDataOrder(DataForcesAndSourcesCore &data,
                                     const FieldSpace space) const {
     return getDataOrder(type, space, data.dataOnEntities[type]);
-  }
-
-  template <EntityType type>
-  MoFEMErrorCode
-  getEntityDataOrderSpaceAndBase(DataForcesAndSourcesCore &data,
-                                 const std::string &field_name) const {
-    return getDataOrderSpaceAndBase(field_name, type,
-                                    data.dataOnEntities[type]);
   }
 
   // ** Indices **
@@ -216,11 +204,6 @@ struct ForcesAndSourcesCore : public FEMethod {
                                   int side_number, VectorDouble &ent_field_data,
                                   VectorDofs &ent_field_dofs) const;
 
-  MoFEMErrorCode getTypeFieldData(
-      const boost::string_ref field_name, FEDofEntity_multiIndex &dofs,
-      EntityType type,
-      boost::ptr_vector<DataForcesAndSourcesCore::EntData> &data) const;
-
   MoFEMErrorCode getNoFieldFieldData(const boost::string_ref field_name,
                                      FEDofEntity_multiIndex &dofs,
                                      VectorDouble &ent_field_data,
@@ -237,14 +220,10 @@ struct ForcesAndSourcesCore : public FEMethod {
   MoFEMErrorCode getNodesFieldData(DataForcesAndSourcesCore &data,
                                    const std::string &field_name) const;
 
-  template <EntityType type>
-  MoFEMErrorCode getEntityFieldData(DataForcesAndSourcesCore &data,
-                                    const std::string &field_name) const {
-    return getTypeFieldData(field_name,
-                            const_cast<FEDofEntity_multiIndex &>(
-                                numeredEntFiniteElementPtr->getDataDofs()),
-                            type, data.dataOnEntities[type]);
-  }
+  MoFEMErrorCode getEntityData(DataForcesAndSourcesCore &data,
+                               const std::string &field_name,
+                               const EntityType type_lo = MBVERTEX,
+                               const EntityType type_hi = MBPOLYHEDRON) const;
 
   /// \brief Get nodes on triangles
   MoFEMErrorCode getFaceTriNodes(DataForcesAndSourcesCore &data) const;

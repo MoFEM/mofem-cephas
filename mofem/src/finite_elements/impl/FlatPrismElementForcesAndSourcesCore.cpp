@@ -255,11 +255,9 @@ MoFEMErrorCode FlatPrismElementForcesAndSourcesCore::operator()() {
     nOrmals_at_GaussPtF4.resize(nb_gauss_pts, 3, false);
     tAngent1_at_GaussPtF4.resize(nb_gauss_pts, 3, false);
     tAngent2_at_GaussPtF4.resize(nb_gauss_pts, 3, false);
-    CHKERR getEntityDataOrderSpaceAndBase<MBEDGE>(dataH1, meshPositionsFieldName);
-    CHKERR getEntityDataOrderSpaceAndBase<MBTRI>(dataH1, meshPositionsFieldName);
     CHKERR getNodesFieldData(dataH1, meshPositionsFieldName);
-    CHKERR getEntityFieldData<MBEDGE>(dataH1, meshPositionsFieldName);
-    CHKERR getEntityFieldData<MBTRI>(dataH1, meshPositionsFieldName);
+    CHKERR getEntityData(dataH1, meshPositionsFieldName, MBEDGE);
+    CHKERR getEntityData(dataH1, meshPositionsFieldName, MBEDGE);
     CHKERR opHOCoordsAndNormals.opRhs(dataH1);
     CHKERR opHOCoordsAndNormals.calculateNormals();
   } else {

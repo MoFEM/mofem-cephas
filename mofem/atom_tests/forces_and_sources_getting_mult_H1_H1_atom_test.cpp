@@ -247,16 +247,12 @@ int main(int argc, char *argv[]) {
         CHKERR getEntityDataOrder<MBTET>(data_col, H1);
         data_row.dataOnEntities[MBVERTEX][0].getBase() =
             AINSWORTH_LEGENDRE_BASE;
-        CHKERR getEntityDataOrderSpaceAndBase<MBEDGE>(data_row, "FIELD1");
-        CHKERR getEntityDataOrderSpaceAndBase<MBTRI>(data_row, "FIELD1");
-        CHKERR getEntityDataOrderSpaceAndBase<MBTET>(data_row, "FIELD1");
+        CHKERR getEntityData(data_row, "FIELD1", MBEDGE);
         data_col.dataOnEntities[MBVERTEX][0].getBase() =
             AINSWORTH_LEGENDRE_BASE;
-        CHKERR getEntityDataOrderSpaceAndBase<MBEDGE>(data_col, "FIELD2");
-        CHKERR getEntityDataOrderSpaceAndBase<MBTRI>(data_col, "FIELD2");
-        CHKERR getEntityDataOrderSpaceAndBase<MBTET>(data_col, "FIELD2");
+        CHKERR getEntityData(data_col, "FIELD2", MBEDGE);    
         CHKERR getRowNodesIndices(data_row, "FIELD1");
-        CHKERR getColNodesIndices(data_row, "FIELD2");
+        CHKERR getColNodesIndices(data_col, "FIELD2");
         CHKERR getEntityRowIndices<MBEDGE>(data_row, "FIELD1");
         CHKERR getEntityColIndices<MBEDGE>(data_col, "FIELD2");
         CHKERR getEntityRowIndices<MBTRI>(data_row, "FIELD1");
