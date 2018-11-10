@@ -533,6 +533,17 @@ typedef FEDofEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type
 typedef FEDofEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type
     FEDofEntityByNameAndType;
 
+/** \brief multi-index view on DofEntity by uid
+  \ingroup dof_multi_indices
+*/
+typedef multi_index_container<
+    boost::shared_ptr<FEDofEntity>,
+    indexed_by<ordered_unique<
+        tag<Unique_mi_tag>,
+        const_mem_fun<FEDofEntity::interface_type_DofEntity, const UId,
+                      &FEDofEntity::getGlobalUniqueId>>>>
+    FEDofEntity_multiIndex_uid_view;
+
 /**
  * @relates multi_index_container
  * \brief MultiIndex container keeps FENumeredDofEntity

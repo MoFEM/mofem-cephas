@@ -209,45 +209,45 @@ VolumeElementForcesAndSourcesCore::getSpaceBaseAndOrderOnElement() {
   // H1
   if ((dataH1.spacesOnEntities[MBEDGE]).test(H1)) {
     CHKERR getEntitySense<MBEDGE>(dataH1);
-    CHKERR getEntityDataOrder<MBEDGE>(dataH1, H1);
+    CHKERR getEntityFieldDataOrder<MBEDGE>(dataH1, H1);
   }
   if ((dataH1.spacesOnEntities[MBTRI]).test(H1)) {
     CHKERR getEntitySense<MBTRI>(dataH1);
-    CHKERR getEntityDataOrder<MBTRI>(dataH1, H1);
+    CHKERR getEntityFieldDataOrder<MBTRI>(dataH1, H1);
   }
   if ((dataH1.spacesOnEntities[MBTET]).test(H1)) {
-    CHKERR getEntityDataOrder<MBTET>(dataH1, H1);
+    CHKERR getEntityFieldDataOrder<MBTET>(dataH1, H1);
   }
   // Hcurl
   if ((dataH1.spacesOnEntities[MBEDGE]).test(HCURL)) {
     CHKERR getEntitySense<MBEDGE>(dataHcurl);
-    CHKERR getEntityDataOrder<MBEDGE>(dataHcurl, HCURL);
+    CHKERR getEntityFieldDataOrder<MBEDGE>(dataHcurl, HCURL);
     dataHcurl.spacesOnEntities[MBEDGE].set(HCURL);
   }
   if ((dataH1.spacesOnEntities[MBTRI]).test(HCURL)) {
     CHKERR getEntitySense<MBTRI>(dataHcurl);
     CHKERR getFaceTriNodes(dataHcurl);
-    CHKERR getEntityDataOrder<MBTRI>(dataHcurl, HCURL);
+    CHKERR getEntityFieldDataOrder<MBTRI>(dataHcurl, HCURL);
     dataHcurl.spacesOnEntities[MBTRI].set(HCURL);
   }
   if ((dataH1.spacesOnEntities[MBTET]).test(HCURL)) {
-    CHKERR getEntityDataOrder<MBTET>(dataHcurl, HCURL);
+    CHKERR getEntityFieldDataOrder<MBTET>(dataHcurl, HCURL);
     dataHcurl.spacesOnEntities[MBTET].set(HCURL);
   }
   // Hdiv
   if ((dataH1.spacesOnEntities[MBTRI]).test(HDIV)) {
     CHKERR getEntitySense<MBTRI>(dataHdiv);
     CHKERR getFaceTriNodes(dataHdiv);
-    CHKERR getEntityDataOrder<MBTRI>(dataHdiv, HDIV);
+    CHKERR getEntityFieldDataOrder<MBTRI>(dataHdiv, HDIV);
     dataHdiv.spacesOnEntities[MBTRI].set(HDIV);
   }
   if ((dataH1.spacesOnEntities[MBTET]).test(HDIV)) {
-    CHKERR getEntityDataOrder<MBTET>(dataHdiv, HDIV);
+    CHKERR getEntityFieldDataOrder<MBTET>(dataHdiv, HDIV);
     dataHdiv.spacesOnEntities[MBTET].set(HDIV);
   }
   // L2
   if ((dataH1.spacesOnEntities[MBTET]).test(L2)) {
-    CHKERR getEntityDataOrder<MBTET>(dataL2, L2);
+    CHKERR getEntityFieldDataOrder<MBTET>(dataL2, L2);
     dataL2.spacesOnEntities[MBTET].set(L2);
   }
   MoFEMFunctionReturn(0);
@@ -289,9 +289,9 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCore::calculateHoJacobian() {
               "no MESH_NODE_POSITIONS in element data or field has wrong "
               "number of coefficients");
     }
-    CHKERR getEntityData(dataH1, meshPositionsFieldName, MBEDGE);
-    CHKERR getEntityData(dataH1, meshPositionsFieldName, MBEDGE);
-    CHKERR getEntityData(dataH1, meshPositionsFieldName, MBEDGE);
+    CHKERR getEntityFieldData(dataH1, meshPositionsFieldName, MBEDGE);
+    CHKERR getEntityFieldData(dataH1, meshPositionsFieldName, MBEDGE);
+    CHKERR getEntityFieldData(dataH1, meshPositionsFieldName, MBEDGE);
     CHKERR opHOatGaussPoints.opRhs(dataH1);
     hoGaussPtsInvJac.resize(hoGaussPtsJac.size1(), hoGaussPtsJac.size2(),
                             false);

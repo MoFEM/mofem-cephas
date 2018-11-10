@@ -172,9 +172,9 @@ int main(int argc, char *argv[]) {
 
         CHKERR getEntitySense<MBEDGE>(data);
         CHKERR getEntitySense<MBTRI>(data);
-        CHKERR getEntityDataOrder<MBEDGE>(data, H1);
-        CHKERR getEntityDataOrder<MBTRI>(data, H1);
-        CHKERR getEntityDataOrder<MBTET>(data, H1);
+        CHKERR getEntityFieldDataOrder<MBEDGE>(data, H1);
+        CHKERR getEntityFieldDataOrder<MBTRI>(data, H1);
+        CHKERR getEntityFieldDataOrder<MBTET>(data, H1);
         CHKERR getFaceTriNodes(data);
 
         MatrixDouble gauss_pts(4, 4);
@@ -189,7 +189,7 @@ int main(int argc, char *argv[]) {
             boost::shared_ptr<BaseFunctionCtx>(
                 new EntPolynomialBaseCtx(data, H1, AINSWORTH_LEGENDRE_BASE)));
 
-        CHKERR getEntityData(data, "FIELD1", MBEDGE);
+        CHKERR getEntityFieldData(data, "FIELD1", MBEDGE);
         CHKERR getRowNodesIndices(data, "FIELD1");
         CHKERR getEntityRowIndices<MBEDGE>(data, "FIELD1");
         CHKERR getEntityRowIndices<MBTRI>(data, "FIELD1");
@@ -202,7 +202,7 @@ int main(int argc, char *argv[]) {
 
         derived_data.dataOnEntities[MBVERTEX][0].getBase() =
             AINSWORTH_LEGENDRE_BASE;
-        CHKERR getEntityData(derived_data, "FIELD2", MBEDGE);
+        CHKERR getEntityFieldData(derived_data, "FIELD2", MBEDGE);
         CHKERR getColNodesIndices(derived_data, "FIELD2");
         CHKERR getEntityColIndices<MBEDGE>(derived_data, "FIELD2");
         CHKERR getEntityColIndices<MBTRI>(derived_data, "FIELD2");

@@ -117,18 +117,18 @@ MoFEMErrorCode FatPrismElementForcesAndSourcesCore::operator()() {
     CHKERR getEntitySense<MBEDGE>(dataH1);
     CHKERR getEntitySense<MBTRI>(dataH1);
     CHKERR getEntitySense<MBQUAD>(dataH1);
-    CHKERR getEntityDataOrder<MBEDGE>(dataH1, H1);
-    CHKERR getEntityDataOrder<MBTRI>(dataH1, H1);
-    CHKERR getEntityDataOrder<MBQUAD>(dataH1, H1);
-    CHKERR getEntityDataOrder<MBPRISM>(dataH1, H1);
+    CHKERR getEntityFieldDataOrder<MBEDGE>(dataH1, H1);
+    CHKERR getEntityFieldDataOrder<MBTRI>(dataH1, H1);
+    CHKERR getEntityFieldDataOrder<MBQUAD>(dataH1, H1);
+    CHKERR getEntityFieldDataOrder<MBPRISM>(dataH1, H1);
     // Triangles only
     CHKERR getEntitySense<MBEDGE>(dataH1TrianglesOnly);
     CHKERR getEntitySense<MBTRI>(dataH1TrianglesOnly);
-    CHKERR getEntityDataOrder<MBEDGE>(dataH1TrianglesOnly, H1);
-    CHKERR getEntityDataOrder<MBTRI>(dataH1TrianglesOnly, H1);
+    CHKERR getEntityFieldDataOrder<MBEDGE>(dataH1TrianglesOnly, H1);
+    CHKERR getEntityFieldDataOrder<MBTRI>(dataH1TrianglesOnly, H1);
     // Through thickness
     CHKERR getEntitySense<MBEDGE>(dataH1TroughThickness);
-    CHKERR getEntityDataOrder<MBEDGE>(dataH1TroughThickness, H1);
+    CHKERR getEntityFieldDataOrder<MBEDGE>(dataH1TroughThickness, H1);
   }
   // Hdiv
   if ((dataH1.spacesOnEntities[MBTRI]).test(HDIV)) {
@@ -410,8 +410,8 @@ MoFEMErrorCode FatPrismElementForcesAndSourcesCore::operator()() {
     tAngent1_at_GaussPtF4.resize(nb_gauss_pts_on_faces, 3, false);
     tAngent2_at_GaussPtF4.resize(nb_gauss_pts_on_faces, 3, false);
     CHKERR getNodesFieldData(dataH1TrianglesOnly, meshPositionsFieldName);
-    CHKERR getEntityData(dataH1TrianglesOnly, meshPositionsFieldName, MBEDGE);
-    CHKERR getEntityData(dataH1TrianglesOnly, meshPositionsFieldName, MBEDGE);
+    CHKERR getEntityFieldData(dataH1TrianglesOnly, meshPositionsFieldName, MBEDGE);
+    CHKERR getEntityFieldData(dataH1TrianglesOnly, meshPositionsFieldName, MBEDGE);
     CHKERR opHOCoordsAndNormals.opRhs(dataH1TrianglesOnly);
     CHKERR opHOCoordsAndNormals.calculateNormals();
   } else {

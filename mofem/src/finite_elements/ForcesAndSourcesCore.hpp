@@ -105,7 +105,7 @@ struct ForcesAndSourcesCore : public FEMethod {
   }
 
   template <EntityType type>
-  MoFEMErrorCode getEntityDataOrder(DataForcesAndSourcesCore &data,
+  MoFEMErrorCode getEntityFieldDataOrder(DataForcesAndSourcesCore &data,
                                     const FieldSpace space) const {
     return getDataOrder(type, space, data.dataOnEntities[type]);
   }
@@ -204,7 +204,7 @@ struct ForcesAndSourcesCore : public FEMethod {
   MoFEMErrorCode getNodesFieldData(DataForcesAndSourcesCore &data,
                                    const std::string &field_name) const;
 
-  MoFEMErrorCode getEntityData(DataForcesAndSourcesCore &data,
+  MoFEMErrorCode getEntityFieldData(DataForcesAndSourcesCore &data,
                                const std::string &field_name,
                                const EntityType type_lo = MBVERTEX,
                                const EntityType type_hi = MBPOLYHEDRON) const;

@@ -181,7 +181,7 @@ EdgeElementForcesAndSourcesCore::calculateHoCoordsAtIntegrationPts() {
   if (dataPtr->get<FieldName_mi_tag>().find(meshPositionsFieldName) !=
       dataPtr->get<FieldName_mi_tag>().end()) {
     CHKERR getNodesFieldData(dataH1, meshPositionsFieldName);
-    CHKERR getEntityData(dataH1, meshPositionsFieldName, MBEDGE);
+    CHKERR getEntityFieldData(dataH1, meshPositionsFieldName, MBEDGE);
     CHKERR opGetHoTangentOnEdge.opRhs(dataH1);
   } else {
     tangentAtGaussPts.resize(0, 3, false);
@@ -201,13 +201,13 @@ MoFEMErrorCode EdgeElementForcesAndSourcesCore::operator()() {
 
   CHKERR calculateEdgeDirection();
   CHKERR getSpacesAndBaseOnEntities(dataH1);
-  CHKERR getEntityDataOrder<MBEDGE>(dataH1, H1);
+  CHKERR getEntityFieldDataOrder<MBEDGE>(dataH1, H1);
   dataH1.dataOnEntities[MBEDGE][0].getSense() =
       1; // set sense to 1, this is this entity
 
   // Hcurl
   if (dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
-    CHKERR getEntityDataOrder<MBEDGE>(data_curl, HCURL);
+    CHKERR getEntityFieldDataOrder<MBEDGE>(data_curl, HCURL);
     data_curl.dataOnEntities[MBEDGE][0].getSense() =
         1; // set sense to 1, this is this entity
     data_curl.spacesOnEntities[MBEDGE].set(HCURL);
