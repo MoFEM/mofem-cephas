@@ -634,13 +634,17 @@ struct FieldEntity : public interface_Field<Field>,
     assert(bit_number < 32);
     assert(owner_proc < 1024);
     if (true_if_distributed_mesh) {
-      return static_cast<UId>(bit_number) |
+      return (static_cast<UId>(bit_number) |
              static_cast<UId>(moab_owner_handle) << 5 |
-             static_cast<UId>(owner_proc) << 5 + 8 * sizeof(EntityHandle);
+              static_cast<UId>(owner_proc) << 5 + 8 * sizeof(EntityHandle))
+             << 9;
     } else {
-      return static_cast<UId>(bit_number) | static_cast<UId>(moab_owner_handle)
-                                                << 5;
+      return (static_cast<UId>(bit_number) | static_cast<UId>(moab_owner_handle)
+                                                 << 5)
+             << 9;
     }
+    }
+
   }
 
   static inline UId getGlobalUniqueIdCalculate_Low_Proc(const int owner_proc) {

@@ -33,6 +33,12 @@ struct DofEntity : public interface_FieldEntity<FieldEntity> {
   typedef interface_FieldEntity<FieldEntity> interface_type_FieldEntity;
   typedef interface_RefEntity<FieldEntity> interface_type_RefEntity;
 
+  static inline UId getGlobalUniqueIdCalculate(const DofIdx dof,
+                                               const UId &ent_uid) {
+    // if(dof>=512) THROW_MESSAGE("_dof>=512");
+    return static_cast<UId>(dof) | ent_uid;
+  }
+
   /**
    * \brief Calculate UId for DOF
    *
@@ -47,8 +53,7 @@ struct DofEntity : public interface_FieldEntity<FieldEntity> {
   static inline UId
   getGlobalUniqueIdCalculate(const DofIdx dof,
                              const boost::shared_ptr<FieldEntity> &ent_ptr) {
-    // if(dof>=512) THROW_MESSAGE("_dof>=512");
-    return static_cast<UId>(dof) | (ent_ptr->getGlobalUniqueId() << 9);
+    return getGlobalUniqueIdCalculate(dof, ent_ptr->getGlobalUniqueId());
   }
 
   static inline UId getGlobalUniqueIdCalculate_Low_Proc(const int owner_proc) {
