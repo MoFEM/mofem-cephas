@@ -482,18 +482,6 @@ typedef multi_index_container<
             const_mem_fun<FEDofEntity::interface_type_RefEntity, EntityType,
                           &FEDofEntity::getEntType> >,
         ordered_non_unique<
-            tag<Composite_Name_Type_And_Side_Number_mi_tag>,
-            composite_key<
-                FEDofEntity,
-                const_mem_fun<FEDofEntity::interface_type_Field,
-                              boost::string_ref, &FEDofEntity::getNameRef>,
-                const_mem_fun<FEDofEntity::interface_type_RefEntity, EntityType,
-                              &FEDofEntity::getEntType>,
-                KeyFromKey<member<SideNumber, char, &SideNumber::side_number>,
-                           member<FEDofEntity::BaseFEDofEntity,
-                                  boost::shared_ptr<SideNumber>,
-                                  &FEDofEntity::sideNumberPtr> > > >,
-        ordered_non_unique<
             tag<Composite_Name_And_Type_mi_tag>,
             composite_key<
                 FEDofEntity,
