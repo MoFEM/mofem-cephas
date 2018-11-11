@@ -499,7 +499,7 @@ MoFEMErrorCode ProblemsManager::buildProblem(Problem *problem_ptr,
       if (!(*miit)->getActive()) {
         continue;
       }
-      dofs_array->push_back(NumeredDofEntity(*miit));
+      dofs_array->emplace_back(*miit);
       dofs_array->back().dofIdx = (problem_ptr->nbDofsRow)++;
     }
     auto hint = problem_ptr->numeredDofsRows->end();
@@ -539,7 +539,7 @@ MoFEMErrorCode ProblemsManager::buildProblem(Problem *problem_ptr,
       if (!(*miit)->getActive()) {
         continue;
       }
-      dofs_array->push_back(NumeredDofEntity(*miit));
+      dofs_array->emplace_back(*miit);
       dofs_array->back().dofIdx = problem_ptr->nbDofsCol++;
     }
     auto hint = problem_ptr->numeredDofsCols->end();
@@ -894,7 +894,7 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
       if (!(miit->get()->getActive()))
         continue;
 
-      dofs_array->push_back(NumeredDofEntity(*miit));
+      dofs_array->emplace_back(*miit);
 
       int owner_proc = dofs_array->back().getOwnerProc();
       if (owner_proc < 0) {
@@ -930,13 +930,13 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
             if (ss == 0) {
               ids_data_packed_rows[dofs_array->back()
                                        .getSharingProcsPtr()[proc]]
-                  .push_back(IdxDataType(dofs_array->back().getGlobalUniqueId(),
-                                         glob_idx));
+                  .emplace_back(dofs_array->back().getGlobalUniqueId(),
+                                glob_idx);
             } else {
               ids_data_packed_cols[dofs_array->back()
                                        .getSharingProcsPtr()[proc]]
-                  .push_back(IdxDataType(dofs_array->back().getGlobalUniqueId(),
-                                         glob_idx));
+                  .emplace_back(dofs_array->back().getGlobalUniqueId(),
+                                glob_idx);
             }
             if (!(pstatus & PSTATUS_MULTISHARED)) {
               break;
@@ -1613,7 +1613,6 @@ MoFEMErrorCode ProblemsManager::buildCompsedProblem(
       }
       if (square_matrix) {
         (*add_prb_ptr[1]).push_back((*add_prb_ptr[0])[pp]);
-        // cerr << "Push square " << ss << " " << pp << endl;
         (*add_prb_is[1]).push_back(is);
         ierr = PetscObjectReference((PetscObject)is);
         CHKERRG(ierr);

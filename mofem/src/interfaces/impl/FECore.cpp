@@ -738,7 +738,7 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
 
           // There are data dofs on this element
           side_number_ptr = fe_it->lock().get()->getSideNumberPtr(dof_ent);
-          data_dofs_array_vec->push_back(FEDofEntity(side_number_ptr, *dit));
+          data_dofs_array_vec->emplace_back(side_number_ptr, *dit);
           if (data_dofs_array_vec->size() ==
               (unsigned int)data_dofs_size[fe_ent]) {
             // That means that FEDofEntity vector is full, and can be added to
