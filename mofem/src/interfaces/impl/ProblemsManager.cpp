@@ -2566,9 +2566,6 @@ MoFEMErrorCode ProblemsManager::partitionFiniteElements(const std::string &name,
       }
     }
 
-    // used to keep shared_ptr before inserting them to multi-index
-    std::vector<boost::shared_ptr<FENumeredDofEntity> > dofs_shared_array;
-
     // set dofs on rows and columns (if are different)
     if ((numered_fe->getPart() >= (unsigned int)low_proc) &&
         (numered_fe->getPart() <= (unsigned int)hi_proc)) {
@@ -2610,21 +2607,18 @@ MoFEMErrorCode ProblemsManager::partitionFiniteElements(const std::string &name,
           numered_fe->getColDofsSequence() = dofs_array;
         }
         dofs_array->reserve(std::distance(vit, hi_vit));
-        // reserve memory for shared pointers now
-        dofs_shared_array.clear();
-        dofs_shared_array.reserve(std::distance(vit, hi_vit));
 
         // create elements objects
         for (; vit != hi_vit; vit++) {
           boost::shared_ptr<SideNumber> side_number_ptr;
           side_number_ptr = (*efit)->getSideNumberPtr((*vit)->getEnt());
-          dofs_array->push_back(FENumeredDofEntity(side_number_ptr, *vit));
-          dofs_shared_array.push_back(boost::shared_ptr<FENumeredDofEntity>(
-              dofs_array, &dofs_array->back()));
+          dofs_array->emplace_back(side_number_ptr, *vit);
         }
 
         // finally add DoFS to multi-indices
-        fe_dofs[ss]->insert(dofs_shared_array.begin(), dofs_shared_array.end());
+        auto hint = fe_dofs[ss]->end();
+        for(auto &v : *dofs_array)
+          hint = fe_dofs[ss]->emplace_hint(hint, dofs_array, &v);
       }
     }
     if (!numered_fe->sPtr->row_dof_view->empty() &&
