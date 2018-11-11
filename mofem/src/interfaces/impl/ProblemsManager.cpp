@@ -1578,7 +1578,6 @@ MoFEMErrorCode ProblemsManager::buildCompsedProblem(
       }
       int is_nb = 0;
       for (; dit != hi_dit; dit++) {
-        // cerr << **dit << endl;
         BitRefLevel prb_bit = out_problem_it->getBitRefLevel();
         BitRefLevel prb_mask = out_problem_it->getMaskBitRefLevel();
         BitRefLevel dof_bit = dit->get()->getBitRefLevel();
@@ -1590,11 +1589,8 @@ MoFEMErrorCode ProblemsManager::buildCompsedProblem(
         const int loc_idx =
             (part == rank) ? (shift_loc + dit->get()->getPetscLocalDofIdx())
                            : -1;
-        // if(m_field.get_comm_rank()==1) {
-        //   cerr << dit->get()->getPart() << " " << loc_idx << endl;
-        // }
-        dofs_array[ss]->push_back(NumeredDofEntity(
-            dit->get()->getDofEntityPtr(), glob_idx, glob_idx, loc_idx, part));
+        dofs_array[ss]->emplace_back(dit->get()->getDofEntityPtr(), glob_idx,
+                                     glob_idx, loc_idx, part);
         if (part == rank) {
           dofs_out_idx_ptr[is_nb++] = glob_idx;
         }
@@ -1607,7 +1603,6 @@ MoFEMErrorCode ProblemsManager::buildCompsedProblem(
       ierr = ISCreateGeneral(m_field.get_comm(), is_nb, dofs_out_idx_ptr,
                              PETSC_OWN_POINTER, &is);
       CHKERRG(ierr);
-      // cerr << "Push " << ss << " " << pp << endl;
       (*add_prb_is[ss]).push_back(is);
       if (ss == 0) {
         shift_glob += (*add_prb_ptr[ss])[pp]->getNbDofsRow();
@@ -1631,27 +1626,15 @@ MoFEMErrorCode ProblemsManager::buildCompsedProblem(
   }
 
   // Insert DOFs to problem multi-index
-  std::vector<boost::shared_ptr<NumeredDofEntity> > dofs_shared_array;
   for (int ss = 0; ss != ((square_matrix) ? 1 : 2); ss++) {
-    dofs_shared_array.clear();
-    dofs_shared_array.reserve(dofs_array[ss]->size());
-    for (std::vector<NumeredDofEntity>::iterator dit = dofs_array[ss]->begin();
-         dit != dofs_array[ss]->end(); dit++) {
-      dofs_shared_array.push_back(
-          boost::shared_ptr<NumeredDofEntity>(dofs_array[ss], &*dit));
-    }
-    if (ss == 0) {
-      out_problem_it->numeredDofsRows->insert(dofs_shared_array.begin(),
-                                              dofs_shared_array.end());
-    } else {
-      out_problem_it->numeredDofsCols->insert(dofs_shared_array.begin(),
-                                              dofs_shared_array.end());
-    }
+    auto hint = (ss == 0) ? out_problem_it->numeredDofsRows->end()
+                          : out_problem_it->numeredDofsCols->end();
+    for (auto &v : *dofs_array[ss])
+      hint = (ss == 0) ? out_problem_it->numeredDofsRows->emplace_hint(
+                             hint, dofs_array[ss], &v)
+                       : out_problem_it->numeredDofsCols->emplace_hint(
+                             hint, dofs_array[ss], &v);
   }
-
-  // PetscSynchronizedPrintf(m_field.get_comm(),"nb local dofs
-  // %d\n",*nb_local_dofs[0]);
-  // PetscSynchronizedFlush(m_field.get_comm(),PETSC_STDOUT);
 
   // Compress DOFs
   *nb_dofs[0] = 0;
@@ -1660,8 +1643,6 @@ MoFEMErrorCode ProblemsManager::buildCompsedProblem(
   *nb_local_dofs[1] = 0;
   for (int ss = 0; ss != ((square_matrix) ? 1 : 2); ss++) {
 
-    // if(ss == 0 && renumerate_row) continue;
-    // if(ss == 1 && renumerate_col) continue;
     boost::shared_ptr<NumeredDofEntity_multiIndex> dofs_ptr;
     if (ss == 0) {
       dofs_ptr = out_problem_it->numeredDofsRows;
