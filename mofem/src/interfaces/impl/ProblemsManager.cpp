@@ -955,30 +955,6 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
     local_nbdof_ptr[1] = local_nbdof_ptr[0];
   }
 
-  // // If columns and rows have the same dofs indexing should be the same on
-  // both of them
-  // {
-  //   NumeredDofEntity_multiIndex::iterator dit_row =
-  //   numered_dofs_ptr[0]->begin(); NumeredDofEntity_multiIndex::iterator
-  //   hi_dit_row = numered_dofs_ptr[0]->end();
-  //   NumeredDofEntity_multiIndex::iterator dit_col =
-  //   numered_dofs_ptr[1]->begin(); NumeredDofEntity_multiIndex::iterator
-  //   hi_dit_col = numered_dofs_ptr[1]->end();
-  //   for(;dit_row!=hi_dit_row;dit_row++,dit_col++) {
-  //     if(dit_row->get()->getPetscGlobalDofIdx()!=dit_col->get()->getPetscGlobalDofIdx())
-  //     {
-  //       cerr << **dit_row << endl;
-  //       cerr << **dit_col << endl;
-  //     }
-  //     if(dit_row->get()->getGlobalUniqueId()!=dit_col->get()->getGlobalUniqueId())
-  //     {
-  //       cerr << "C " << **dit_row << endl;
-  //       cerr << "R " << **dit_col << endl;
-  //     }
-  //
-  //   }
-  // }
-
   int nsends_rows = 0, nsends_cols = 0;
   // Non zero lengths[i] represent a message to i of length lengths[i].
   std::vector<int> lengths_rows(m_field.get_comm_size()),
