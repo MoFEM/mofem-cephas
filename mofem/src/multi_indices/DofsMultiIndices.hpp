@@ -444,24 +444,6 @@ typedef multi_index_container<
                    const_mem_fun<DofEntity, char, &DofEntity::getActive> > > >
     DofEntity_multiIndex_active_view;
 
-/** \brief multi-index view on DofEntity order
-  \ingroup dof_multi_indices
-*/
-typedef multi_index_container<
-    boost::shared_ptr<DofEntity>,
-    indexed_by<ordered_non_unique<const_mem_fun<DofEntity, ApproximationOrder,
-                                                &DofEntity::getDofOrder> > > >
-    DofEntity_multiIndex_order_view;
-
-/** \brief multi-index view on DofEntity type
-  \ingroup dof_multi_indices
-*/
-typedef multi_index_container<boost::shared_ptr<DofEntity>,
-                              indexed_by<ordered_non_unique<const_mem_fun<
-                                  DofEntity::interface_type_RefEntity,
-                                  EntityType, &DofEntity::getEntType> > > >
-    DofEntity_multiIndex_ent_type_view;
-
 /**
  * @relates multi_index_container
  * \brief MultiIndex container keeps FEDofEntity
@@ -532,17 +514,6 @@ typedef FEDofEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type
  */
 typedef FEDofEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type
     FEDofEntityByNameAndType;
-
-/** \brief multi-index view on FEDofEntity by uid
-  \ingroup dof_multi_indices
-*/
-typedef multi_index_container<
-    boost::shared_ptr<FEDofEntity>,
-    indexed_by<ordered_unique<
-        tag<Unique_mi_tag>,
-        const_mem_fun<FEDofEntity::interface_type_DofEntity, const UId,
-                      &FEDofEntity::getGlobalUniqueId>>>>
-    FEDofEntity_multiIndex_uid_view;
 
 /**
  * @relates multi_index_container
@@ -636,17 +607,6 @@ typedef FENumeredDofEntity_multiIndex::index<Unique_mi_tag>::type
  */
 typedef FENumeredDofEntity_multiIndex::index<Ent_mi_tag>::type
     FENumeredDofEntityByEnt;
-
-/** \brief multi-index view on FENumeredDofEntity by uid
-  \ingroup dof_multi_indices
-*/
-typedef multi_index_container<
-    boost::shared_ptr<FENumeredDofEntity>,
-    indexed_by<ordered_unique<
-        tag<Unique_mi_tag>,
-        const_mem_fun<FENumeredDofEntity::interface_type_DofEntity, const UId,
-                      &FENumeredDofEntity::getGlobalUniqueId>>>>
-    FENumeredDofEntity_multiIndex_uid_view;
 
 /**
  * @relates multi_index_container
@@ -879,12 +839,6 @@ template <class T> struct Dof_shared_ptr_change {
   Dof_shared_ptr_change(boost::shared_ptr<T> &dof_ptr) : dofPtr(dof_ptr){};
   inline void operator()(boost::shared_ptr<T> &dof) { dof = dofPtr; }
 };
-
-typedef multi_index_container<
-    boost::shared_ptr<NumeredDofEntity>,
-    indexed_by<ordered_unique<member<NumeredDofEntity, const DofIdx,
-                                     &NumeredDofEntity::petscGloablDofIdx> > > >
-    NumeredDofEntity_multiIndex_global_index_view;
 
 } // namespace MoFEM
 #endif // __DOFSMULTIINDICES_HPP__
