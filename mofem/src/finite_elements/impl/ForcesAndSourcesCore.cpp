@@ -1060,8 +1060,6 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
                 CHKERR getNodesFieldData(*op_data[ss], field_name);
                 break;
               default:
-                SETERRQ(mField.get_comm(), MOFEM_DATA_INCONSISTENCY,
-                        "not implemented");
                 break;
               }
               break;
