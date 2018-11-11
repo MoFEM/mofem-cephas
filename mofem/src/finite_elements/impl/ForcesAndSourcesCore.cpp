@@ -222,24 +222,26 @@ MoFEMErrorCode ForcesAndSourcesCore::getDataOrder(
     auto hi_dit = data_dofs.upper_bound(tuple);
     for (; dit != hi_dit; dit++) {
       auto &dof = **dit;
-      ApproximationOrder ent_order = dof.getMaxOrder();
-      int side_number = dof.sideNumberPtr->side_number;
-      if (PetscUnlikely(side_number < 0)) {
-        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                "side number can not be negative");
-      }
-      auto &dat = data[side_number];
-      dat.getDataOrder() =
-          dat.getDataOrder() > ent_order ? dat.getDataOrder() : ent_order;
-      if (dof.sideNumberPtr->brother_side_number != -1) {
-        if (PetscUnlikely(
-                data.size() <
-                (unsigned int)(*dit)->sideNumberPtr->brother_side_number)) {
+      if (dof.getEntDofIdx() == 0) {
+        ApproximationOrder ent_order = dof.getMaxOrder();
+        int side_number = dof.sideNumberPtr->side_number;
+        if (PetscUnlikely(side_number < 0)) {
           SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                  "data size not big enough to keep brother data");
+                  "side number can not be negative");
         }
-        data[dof.sideNumberPtr->brother_side_number].getDataOrder() =
-            dat.getDataOrder();
+        auto &dat = data[side_number];
+        dat.getDataOrder() =
+            dat.getDataOrder() > ent_order ? dat.getDataOrder() : ent_order;
+        if (dof.sideNumberPtr->brother_side_number != -1) {
+          if (PetscUnlikely(
+                  data.size() <
+                  (unsigned int)(*dit)->sideNumberPtr->brother_side_number)) {
+            SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                    "data size not big enough to keep brother data");
+          }
+          data[dof.sideNumberPtr->brother_side_number].getDataOrder() =
+              dat.getDataOrder();
+        }
       }
     }
   }
