@@ -860,9 +860,6 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
       m_field.get_comm_size()),
       ids_data_packed_cols(m_field.get_comm_size());
 
-  // used to keep shared_ptr
-  std::vector<boost::shared_ptr<NumeredDofEntity> > dofs_shared_array;
-
   // Loop over dofs on this processor and prepare those dofs to send on another
   // proc
   for (int ss = 0; ss != loop_size; ++ss) {
@@ -883,8 +880,6 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
       ++nb_dofs_to_add;
     }
     dofs_array->reserve(nb_dofs_to_add);
-    dofs_shared_array.clear();
-    dofs_shared_array.reserve(nb_dofs_to_add);
     if (ss == 0) {
       problem_ptr->getRowDofsSequence()->push_back(dofs_array);
     } else {
@@ -900,8 +895,6 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
         continue;
 
       dofs_array->push_back(NumeredDofEntity(*miit));
-      dofs_shared_array.push_back(
-          boost::shared_ptr<NumeredDofEntity>(dofs_array, &dofs_array->back()));
 
       int owner_proc = dofs_array->back().getOwnerProc();
       if (owner_proc < 0) {
@@ -953,8 +946,10 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
       }
     }
 
-    numered_dofs_ptr[ss]->insert(dofs_shared_array.begin(),
-                                 dofs_shared_array.end());
+    auto hint = numered_dofs_ptr[ss]->end();
+    for (auto &v : *dofs_array)
+      hint = numered_dofs_ptr[ss]->emplace_hint(hint, dofs_array, &v);
+
   }
   if (square_matrix) {
     local_nbdof_ptr[1] = local_nbdof_ptr[0];
