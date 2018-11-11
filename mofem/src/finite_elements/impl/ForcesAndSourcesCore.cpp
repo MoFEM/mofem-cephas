@@ -355,8 +355,14 @@ MoFEMErrorCode ForcesAndSourcesCore::getEntityIndices(
       const int brother_side = dof.sideNumberPtr->brother_side_number;
       auto &ent_field_indices = dat.getIndices();
       auto &ent_field_local_indices = dat.getLocalIndices();
-      ent_field_indices.resize(nb_dofs_on_ent, false);
-      ent_field_local_indices.resize(nb_dofs_on_ent, false);
+      if (ent_field_indices.empty()) {
+        ent_field_indices.resize(nb_dofs_on_ent, false);
+        ent_field_local_indices.resize(nb_dofs_on_ent, false);
+        std::fill(ent_field_indices.data().begin(),
+                  ent_field_indices.data().end(), -1);
+        std::fill(ent_field_local_indices.data().begin(),
+                  ent_field_local_indices.data().end(), -1);
+      }
       const int idx = dof.getEntDofIdx();
       ent_field_indices[idx] = dof.getPetscGlobalDofIdx();
       ent_field_local_indices[idx] = dof.getPetscLocalDofIdx();
