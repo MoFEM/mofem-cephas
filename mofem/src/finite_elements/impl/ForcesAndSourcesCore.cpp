@@ -952,8 +952,6 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
   const UserDataOperator::OpType types[2] = {UserDataOperator::OPROW,
                                              UserDataOperator::OPCOL};
   std::vector<std::string> last_eval_field_name(2);
-  DataForcesAndSourcesCore *op_data[2];
-  FieldSpace space[2];
 
   boost::ptr_vector<UserDataOperator>::iterator oit, hi_oit;
   oit = opPtrVector.begin();
@@ -974,7 +972,6 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
       case HCURL:
       case HDIV:
       case L2:
-        op_data[0] = dataOnElement[oit->sPace].get();
         break;
       default:
         SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
@@ -982,24 +979,29 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
       }
 
       // Reseat all data which all field dependent
-      op_data[0]->resetFieldDependentData();
+      dataOnElement[oit->sPace]->resetFieldDependentData();
       last_eval_field_name[0] = "";
-      last_eval_field_name[1] = "";
 
       // Run operator
       try {
-        CHKERR oit->opRhs(*op_data[0], oit->doVertices, oit->doEdges,
-                          oit->doQuads, oit->doTris, oit->doTets, false);
+        CHKERR oit->opRhs(*dataOnElement[oit->sPace], oit->doVertices,
+                          oit->doEdges, oit->doQuads, oit->doTris, oit->doTets,
+                          false);
       }
       CATCH_OP_ERRORS(*oit);
 
     } else {
 
+      boost::shared_ptr<DataForcesAndSourcesCore> op_data[2];
+
       for (int ss = 0; ss != 2; ss++) {
 
-        std::string field_name = !ss ? oit->rowFieldName : oit->colFieldName;
+        const std::string field_name =
+            !ss ? oit->rowFieldName : oit->colFieldName;
         const Field *field_struture = mField.get_field_structure(field_name);
-        BitFieldId data_id = field_struture->getId();
+        const BitFieldId data_id = field_struture->getId();
+        const FieldSpace space = field_struture->getSpace();
+        op_data[ss] = !ss ? dataOnElement[space] : derivedDataOnElement[space];
 
         if ((oit->getNumeredEntFiniteElementPtr()->getBitFieldIdData() &
              data_id)
@@ -1012,8 +1014,7 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
         if (oit->getOpType() & types[ss] ||
             oit->getOpType() & UserDataOperator::OPROWCOL) {
 
-          space[ss] = field_struture->getSpace();
-          switch (space[ss]) {
+          switch (space) {
           case NOSPACE:
             SETERRQ(mField.get_comm(), MOFEM_DATA_INCONSISTENCY,
                     "unknown space");
@@ -1023,12 +1024,10 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
           case HCURL:
           case HDIV:
           case L2:
-            op_data[ss] = !ss ? dataOnElement[space[ss]].get()
-                              : derivedDataOnElement[space[ss]].get();
             break;
           default:
             SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
-                     "Not implemented for this space", space[ss]);
+                     "Not implemented for this space", space);
           }
 
           if (last_eval_field_name[ss] != field_name) {
@@ -1039,7 +1038,7 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
             else
               CHKERR getEntityColIndices(*op_data[ss], field_name, MBEDGE);
 
-            switch (space[ss]) {
+            switch (space) {
             case NOSPACE:
               SETERRQ(mField.get_comm(), MOFEM_DATA_INCONSISTENCY,
                       "unknown space");
@@ -1077,10 +1076,12 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
               break;
             default:
               SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
-                       "Not implemented for this space", space[ss]);
+                       "Not implemented for this space", space);
             }
             last_eval_field_name[ss] = field_name;
+
           }
+
         }
       }
 
