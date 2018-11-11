@@ -290,8 +290,6 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCore::calculateHoJacobian() {
               "number of coefficients");
     }
     CHKERR getEntityFieldData(dataH1, meshPositionsFieldName, MBEDGE);
-    CHKERR getEntityFieldData(dataH1, meshPositionsFieldName, MBEDGE);
-    CHKERR getEntityFieldData(dataH1, meshPositionsFieldName, MBEDGE);
     CHKERR opHOatGaussPoints.opRhs(dataH1);
     hoGaussPtsInvJac.resize(hoGaussPtsJac.size1(), hoGaussPtsJac.size2(),
                             false);
