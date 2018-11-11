@@ -476,24 +476,19 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
            eit != ents_not_in_database.end(); ++eit) {
         RefEntity ref_ent(basicEntityDataPtr, *eit);
         // FIXME: need some consistent policy in that case
-        if (ref_ent.getBitRefLevel().none()) {
-          continue; // not on any mesh and not in database
+        if (ref_ent.getBitRefLevel().any()) {
+          std::cerr << ref_ent << std::endl;
+          SETERRQ(
+              PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "Try to add entities which are not seeded or added to database");
         }
-        std::cerr << ref_ent << std::endl;
-        SETERRQ(
-            PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-            "Try to add entities which are not seeded or added to database");
       }
 
       // Add entities to database
-      std::vector<boost::shared_ptr<FieldEntity>> ents_shared_array;
-      ents_shared_array.reserve(ents_array->size());
-      for (std::vector<FieldEntity>::iterator vit = ents_array->begin();
-           vit != ents_array->end(); vit++) {
-        ents_shared_array.emplace_back(ents_array, &*vit);
+      auto hint = entsFields.end();
+      for (auto &v : *ents_array) {
+        hint = entsFields.emplace_hint(hint, ents_array, &v);
       }
-      // Add new ents to database
-      entsFields.insert(ents_shared_array.begin(), ents_shared_array.end());
     }
   }
 
@@ -1010,7 +1005,7 @@ Core::check_number_of_ents_in_ents_field(const std::string &name) const {
 }
 MoFEMErrorCode Core::check_number_of_ents_in_ents_field() const {
   MoFEMFunctionBegin;
-  for (auto& it : fIelds.get<FieldName_mi_tag>()) {
+  for (auto &it : fIelds.get<FieldName_mi_tag>()) {
     if (it->getSpace() == NOFIELD)
       continue; // FIXME: should be treated properly, not test is just
                 // skipped for this NOFIELD space
