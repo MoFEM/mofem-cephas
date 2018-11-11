@@ -489,25 +489,23 @@ MoFEMErrorCode ProblemsManager::buildProblem(Problem *problem_ptr,
       ++count_dofs;
     }
 
-    boost::shared_ptr<std::vector<NumeredDofEntity> > dofs_array =
-        boost::shared_ptr<std::vector<NumeredDofEntity> >(
+    boost::shared_ptr<std::vector<NumeredDofEntity>> dofs_array =
+        boost::shared_ptr<std::vector<NumeredDofEntity>>(
             new std::vector<NumeredDofEntity>());
     problem_ptr->getRowDofsSequence()->push_back(dofs_array);
     dofs_array->reserve(count_dofs);
-    std::vector<boost::shared_ptr<NumeredDofEntity> > dofs_shared_array;
-    dofs_shared_array.reserve(count_dofs);
     miit = dofs_rows.get<0>().begin();
     for (; miit != hi_miit; miit++) {
       if (!(*miit)->getActive()) {
         continue;
       }
       dofs_array->push_back(NumeredDofEntity(*miit));
-      dofs_shared_array.push_back(
-          boost::shared_ptr<NumeredDofEntity>(dofs_array, &dofs_array->back()));
       dofs_array->back().dofIdx = (problem_ptr->nbDofsRow)++;
     }
-    problem_ptr->numeredDofsRows->insert(dofs_shared_array.begin(),
-                                         dofs_shared_array.end());
+    auto hint = problem_ptr->numeredDofsRows->end();
+    for (auto &v : *dofs_array) {
+      hint = problem_ptr->numeredDofsRows->emplace_hint(hint, dofs_array, &v);
+    }
   }
 
   // Add col dofs to problem
@@ -536,20 +534,18 @@ MoFEMErrorCode ProblemsManager::buildProblem(Problem *problem_ptr,
             new std::vector<NumeredDofEntity>());
     problem_ptr->getColDofsSequence()->push_back(dofs_array);
     dofs_array->reserve(count_dofs);
-    std::vector<boost::shared_ptr<NumeredDofEntity> > dofs_shared_array;
-    dofs_shared_array.reserve(count_dofs);
     miit = dofs_cols.get<0>().begin();
     for (; miit != hi_miit; miit++) {
       if (!(*miit)->getActive()) {
         continue;
       }
       dofs_array->push_back(NumeredDofEntity(*miit));
-      dofs_shared_array.push_back(
-          boost::shared_ptr<NumeredDofEntity>(dofs_array, &dofs_array->back()));
       dofs_array->back().dofIdx = problem_ptr->nbDofsCol++;
     }
-    problem_ptr->numeredDofsCols->insert(dofs_shared_array.begin(),
-                                         dofs_shared_array.end());
+    auto hint = problem_ptr->numeredDofsCols->end();
+    for (auto &v : *dofs_array) {
+      hint = problem_ptr->numeredDofsCols->emplace_hint(hint, dofs_array, &v);
+    }
   } else {
     problem_ptr->numeredDofsCols = problem_ptr->numeredDofsRows;
     problem_ptr->nbLocDofsCol = problem_ptr->nbLocDofsRow;
