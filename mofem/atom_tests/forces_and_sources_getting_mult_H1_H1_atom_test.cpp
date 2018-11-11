@@ -253,12 +253,8 @@ int main(int argc, char *argv[]) {
         CHKERR getEntityFieldData(data_col, "FIELD2", MBEDGE);    
         CHKERR getRowNodesIndices(data_row, "FIELD1");
         CHKERR getColNodesIndices(data_col, "FIELD2");
-        CHKERR getEntityRowIndices<MBEDGE>(data_row, "FIELD1");
-        CHKERR getEntityColIndices<MBEDGE>(data_col, "FIELD2");
-        CHKERR getEntityRowIndices<MBTRI>(data_row, "FIELD1");
-        CHKERR getEntityColIndices<MBTRI>(data_col, "FIELD2");
-        CHKERR getEntityRowIndices<MBTET>(data_row, "FIELD1");
-        CHKERR getEntityColIndices<MBTET>(data_col, "FIELD2");
+        CHKERR getEntityRowIndices(data_row, "FIELD1", MBEDGE);
+        CHKERR getEntityColIndices(data_col, "FIELD2", MBEDGE);
         CHKERR getFaceTriNodes(data_row);
         CHKERR getFaceTriNodes(data_col);
 

@@ -198,13 +198,9 @@ int main(int argc, char *argv[]) {
         CHKERR getFaceTriNodes(data);
 
         CHKERR getRowNodesIndices(data, "FIELD1");
-        CHKERR getEntityRowIndices<MBEDGE>(data, "FIELD1");
-        CHKERR getEntityRowIndices<MBTRI>(data, "FIELD1");
-        CHKERR getEntityRowIndices<MBTET>(data, "FIELD1");
+        CHKERR getEntityRowIndices(data, "FIELD1", MBEDGE);
 
         CHKERR getNodesFieldData(data, "FIELD1");
-        CHKERR getEntityFieldData(data, "FIELD1", MBEDGE);
-        CHKERR getEntityFieldData(data, "FIELD1", MBEDGE);
         CHKERR getEntityFieldData(data, "FIELD1", MBEDGE);
 
         MatrixDouble gauss_pts(4, 4);

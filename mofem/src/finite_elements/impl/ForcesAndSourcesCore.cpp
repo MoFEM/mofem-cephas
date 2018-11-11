@@ -325,90 +325,51 @@ ForcesAndSourcesCore::getColNodesIndices(DataForcesAndSourcesCore &data,
                          data.dataOnEntities[MBVERTEX][0].getLocalIndices());
 }
 
-MoFEMErrorCode ForcesAndSourcesCore::getTypeIndices(
-    const boost::string_ref field_name, FENumeredDofEntity_multiIndex &dofs,
-    EntityType type, int side_number, VectorInt &indices,
-    VectorInt &local_indices) const {
-  MoFEMFunctionBeginHot;
-  auto &dofs_by_side = dofs.get<Composite_Name_Type_And_Side_Number_mi_tag>();
-  auto tuple = boost::make_tuple(field_name, type, side_number);
-  auto dit = dofs_by_side.lower_bound(tuple);
-  if (dit == dofs_by_side.end()) {
-    indices.resize(0);
-    local_indices.resize(0);
-    MoFEMFunctionReturnHot(0);
-  } else {
-    auto hi_dit = dofs_by_side.upper_bound(tuple);
-    auto &first_dof = **dit;
-    indices.resize(first_dof.getNbDofsOnEnt(), false);
-    local_indices.resize(first_dof.getNbDofsOnEnt(), false);
-    for (; dit != hi_dit; dit++) {
-      auto &dof = **dit;
-      const int idx = dof.getPetscGlobalDofIdx();
-      const int elem_idx = dof.getEntDofIdx();
-      indices[elem_idx] = idx;
-      const int local_idx = dof.getPetscLocalDofIdx();
-      local_indices[elem_idx] = local_idx;
-    }
-  }
-  MoFEMFunctionReturnHot(0);
-}
-
-MoFEMErrorCode ForcesAndSourcesCore::getTypeIndices(
-    const boost::string_ref field_name, FENumeredDofEntity_multiIndex &dofs,
-    EntityType type,
-    boost::ptr_vector<DataForcesAndSourcesCore::EntData> &data) const {
+MoFEMErrorCode ForcesAndSourcesCore::getEntityIndices(
+    DataForcesAndSourcesCore &data, const std::string &field_name,
+    FENumeredDofEntity_multiIndex &dofs, const EntityType type_lo,
+    const EntityType type_hi) const {
   MoFEMFunctionBegin;
-  SideNumber_multiIndex &side_table = const_cast<SideNumber_multiIndex &>(
-      numeredEntFiniteElementPtr->getSideNumberTable());
-  auto siit = side_table.get<2>().lower_bound(type);
-  auto hi_siit = side_table.get<2>().upper_bound(type);
-  const auto tuple = boost::make_tuple(field_name, type);
-  auto dit = dofs.get<Composite_Name_And_Type_mi_tag>().lower_bound(tuple);
-  if (dit == dofs.get<Composite_Name_And_Type_mi_tag>().end()) {
-    for (SideNumber_multiIndex::nth_index<2>::type::iterator siiit = siit;
-         siiit != hi_siit; siiit++) {
-      auto &dat = data[siiit->get()->side_number];
+
+  for (EntityType t = type_lo; t != type_hi; ++t) {
+    for (auto &dat : data.dataOnEntities[t]) {
       dat.getIndices().resize(0, false);
       dat.getLocalIndices().resize(0, false);
     }
+  }
+
+  auto &dofs_by_type = dofs.get<Composite_Name_And_Type_mi_tag>();
+  auto dit = dofs_by_type.lower_bound(boost::make_tuple(field_name, type_lo));
+  if (dit == dofs_by_type.end())
     MoFEMFunctionReturnHot(0);
-  }
-  for (auto siiit = siit; siiit != hi_siit; siiit++) {
-    const int side_number = siiit->get()->side_number;
-    data[side_number].semaphore = false;
-  }
-  auto hi_dit = dofs.get<Composite_Name_And_Type_mi_tag>().upper_bound(tuple);
-  for (; dit != hi_dit; dit++) {
-    const int side = dit->get()->sideNumberPtr->side_number;
-    const int nb_dofs_on_ent = dit->get()->getNbDofsOnEnt();
-    VectorInt &indices = data[side].getIndices();
-    VectorInt &local_indices = data[side].getLocalIndices();
-    if (!data[side].semaphore) {
-      data[side].semaphore = true;
-      indices.resize(nb_dofs_on_ent, false);
-      local_indices.resize(nb_dofs_on_ent, false);
-    }
-    if (!nb_dofs_on_ent) {
-      continue;
-    }
-    const int idx = dit->get()->getEntDofIdx();
-    indices[idx] = dit->get()->getPetscGlobalDofIdx();
-    local_indices[idx] = dit->get()->getPetscLocalDofIdx();
-  }
-  for (; siit != hi_siit; siit++) {
-    const int side_number = siit->get()->side_number;
-    if (!data[side_number].semaphore) {
-      data[side_number].getIndices().resize(0, false);
-      data[side_number].getLocalIndices().resize(0, false);
-    }
-    if (siit->get()->brother_side_number != -1) {
-      CHKERR getTypeIndices(
-          field_name, dofs, type, side_number,
-          data[siit->get()->brother_side_number].getIndices(),
-          data[siit->get()->brother_side_number].getLocalIndices());
+  auto hi_dit =
+      dofs_by_type.lower_bound(boost::make_tuple(field_name, type_hi));
+  for (; dit != hi_dit; ++dit) {
+    auto &dof = **dit;
+    const EntityType type = dof.getEntType();
+    const int side = dof.sideNumberPtr->side_number;
+    auto &dat = data.dataOnEntities[type][side];
+
+    const int nb_dofs_on_ent = dof.getNbDofsOnEnt();
+    if (nb_dofs_on_ent) {
+      const int brother_side = dof.sideNumberPtr->brother_side_number;
+      auto &ent_field_indices = dat.getIndices();
+      auto &ent_field_local_indices = dat.getLocalIndices();
+      ent_field_indices.resize(nb_dofs_on_ent, false);
+      ent_field_local_indices.resize(nb_dofs_on_ent, false);
+      const int idx = dof.getEntDofIdx();
+      ent_field_indices[idx] = dof.getPetscGlobalDofIdx();
+      ent_field_local_indices[idx] = dof.getPetscLocalDofIdx();
+      if (brother_side != -1) {
+        auto &dat_brother = data.dataOnEntities[type][brother_side];
+        dat_brother.getIndices().resize(nb_dofs_on_ent, false);
+        dat_brother.getLocalIndices().resize(nb_dofs_on_ent, false); 
+        dat_brother.getIndices()[idx] = dat.getIndices()[idx];
+        dat_brother.getLocalIndices()[idx] = dat.getLocalIndices()[idx];
+      }
     }
   }
+
   MoFEMFunctionReturn(0);
 }
 
@@ -652,53 +613,53 @@ MoFEMErrorCode ForcesAndSourcesCore::getEntityFieldData(
   auto &dofs = const_cast<FEDofEntity_multiIndex &>(
       numeredEntFiniteElementPtr->getDataDofs());
   auto &dofs_by_type = dofs.get<Composite_Name_And_Type_mi_tag>();
-  auto diit = dofs_by_type.lower_bound(boost::make_tuple(field_name, type_lo));
-  if (diit == dofs_by_type.end())
+  auto dit = dofs_by_type.lower_bound(boost::make_tuple(field_name, type_lo));
+  if (dit == dofs_by_type.end())
     MoFEMFunctionReturnHot(0);
-  auto hi_diit =
+  auto hi_dit =
       dofs_by_type.lower_bound(boost::make_tuple(field_name, type_hi));
-  FEDofEntity_multiIndex_uid_view dof_uid_view;
-  dof_uid_view.insert(diit, hi_diit);
-  auto dit = dof_uid_view.begin();
-  auto hi_dit  = dof_uid_view.end();
   for (; dit != hi_dit;) {
-    auto &dof = **dit;
-    const EntityType type = dof.getEntType();
-    const int side = dof.sideNumberPtr->side_number;
-    auto &dat = data.dataOnEntities[type][side];
-    const int nb_dofs_on_ent = dof.getNbDofsOnEnt();
 
+    auto &dof = **dit;
+    const int nb_dofs_on_ent = dof.getNbDofsOnEnt();
     if (nb_dofs_on_ent) {
 
-      dat.getBase() = dof.getApproxBase();
-      dat.getSpace() = dof.getSpace();
-      const int ent_order = dof.getMaxOrder();
-      dat.getDataOrder() =
-          dat.getDataOrder() > ent_order ? dat.getDataOrder() : ent_order;
-      const int brother_side = dof.sideNumberPtr->brother_side_number;
+      const EntityType type = dof.getEntType();
+      const int side = dof.sideNumberPtr->side_number;
+      auto &dat = data.dataOnEntities[type][side];
+
+      auto &ent_field_dofs = dat.getFieldDofs();
+      ent_field_dofs.resize(nb_dofs_on_ent, false);
+      ent_field_dofs[dof.getEntDofIdx()] = *dit;
 
       auto &ent_field_data = dat.getFieldData();
-      auto &ent_field_dofs = dat.getFieldDofs();
+
       if (ent_field_data.empty()) {
+
+        dat.getBase() = dof.getApproxBase();
+        dat.getSpace() = dof.getSpace();
+        const int ent_order = dof.getMaxOrder();
+        dat.getDataOrder() =
+            dat.getDataOrder() > ent_order ? dat.getDataOrder() : ent_order;
+
+        const int brother_side = dof.sideNumberPtr->brother_side_number;
+
         ent_field_data.resize(nb_dofs_on_ent, false);
-        ent_field_dofs.resize(nb_dofs_on_ent, false);
-      }
-      const auto dof_ent_field_data = dof.getEntFieldData();
-      for (int ii = 0; ii != nb_dofs_on_ent; ++ii) {
-        ent_field_data[ii] = dof_ent_field_data[ii];
-        ent_field_dofs[ii] = *dit;
-        ++dit;
-      }
+        const auto dof_ent_field_data = dof.getEntFieldData();
+        for (int ii = 0; ii != nb_dofs_on_ent; ++ii) {
+          ent_field_data[ii] = dof_ent_field_data[ii];
+          ++dit;
+        }
 
-      if (brother_side != -1) {
-        auto &dat_brother = data.dataOnEntities[type][brother_side];
-        dat_brother.getFieldData() = dat.getFieldData();
-        dat_brother.getFieldDofs() = dat.getFieldDofs();
-        dat_brother.getBase() = dat.getBase();
-        dat_brother.getSpace() = dat.getSpace();
-        dat_brother.getDataOrder() = dat.getDataOrder();
+        if (brother_side != -1) {
+          auto &dat_brother = data.dataOnEntities[type][brother_side];
+          dat_brother.getFieldData() = dat.getFieldData();
+          dat_brother.getFieldDofs() = dat.getFieldDofs();
+          dat_brother.getBase() = dat.getBase();
+          dat_brother.getSpace() = dat.getSpace();
+          dat_brother.getDataOrder() = dat.getDataOrder();
+        }
       }
-
     }
   }
 
@@ -1067,6 +1028,10 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
           if (last_eval_field_name[ss] != field_name) {
 
             CHKERR getEntityFieldData(*op_data[ss], field_name, MBEDGE);
+            if (!ss)
+              CHKERR getEntityRowIndices(*op_data[ss], field_name, MBEDGE);
+            else
+              CHKERR getEntityColIndices(*op_data[ss], field_name, MBEDGE);
 
             switch (space[ss]) {
             case NOSPACE:
@@ -1074,68 +1039,18 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
                       "unknown space");
               break;
             case H1:
-              if (!ss) {
+              if (!ss)
                 CHKERR getRowNodesIndices(*op_data[ss], field_name);
-              } else {
+              else
                 CHKERR getColNodesIndices(*op_data[ss], field_name);
-              }
               CHKERR getNodesFieldData(*op_data[ss], field_name);
-              if (dim == 0)
-                break;
+              break;
             case HCURL:
-              if (!ss) {
-                CHKERR getEntityRowIndices<MBEDGE>(*op_data[ss], field_name);
-              } else {
-                CHKERR getEntityColIndices<MBEDGE>(*op_data[ss], field_name);
-              }
-              if (dim == 1)
-                break;
             case HDIV:
-              if (!ss) {
-                CHKERR getEntityRowIndices<MBTRI>(*op_data[ss], field_name);
-                CHKERR getEntityRowIndices<MBQUAD>(*op_data[ss], field_name);
-              } else {
-                CHKERR getEntityColIndices<MBTRI>(*op_data[ss], field_name);
-                CHKERR getEntityColIndices<MBQUAD>(*op_data[ss], field_name);
-              }
-              if (dim == 2)
-                break;
+              break;
             case L2:
               switch (type) {
-              case MBPRISM:
-                if (!ss) {
-                  CHKERR getEntityRowIndices<MBPRISM>(*op_data[ss], field_name);
-                } else {
-                  CHKERR getEntityColIndices<MBPRISM>(*op_data[ss], field_name);
-                }
-                break;
-              case MBTET:
-                if (!ss) {
-                  CHKERR getEntityRowIndices<MBTET>(*op_data[ss], field_name);
-                } else {
-                  CHKERR getEntityColIndices<MBTET>(*op_data[ss], field_name);
-                }
-                break;
-              case MBTRI:
-                if (!ss) {
-                  CHKERR getEntityRowIndices<MBTRI>(*op_data[ss], field_name);
-                } else {
-                  CHKERR getEntityColIndices<MBTRI>(*op_data[ss], field_name);
-                }
-                break;
-              case MBEDGE:
-                if (!ss) {
-                  CHKERR getEntityRowIndices<MBEDGE>(*op_data[ss], field_name);
-                } else {
-                  CHKERR getEntityColIndices<MBEDGE>(*op_data[ss], field_name);
-                }
-                break;
               case MBVERTEX:
-                if (!ss) {
-                  CHKERR getRowNodesIndices(*op_data[ss], field_name);
-                } else {
-                  CHKERR getColNodesIndices(*op_data[ss], field_name);
-                }
                 CHKERR getNodesFieldData(*op_data[ss], field_name);
                 break;
               default:
