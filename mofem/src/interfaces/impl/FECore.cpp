@@ -661,9 +661,7 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
               boost::make_tuple(field_name, second));
           for (; meit != hi_meit; ++meit) {
             const UId *uid_ptr = &(meit->get()->getGlobalUniqueId());
-            EntUIdAndVecOfWeakFEPtrs_multi_index::nth_index<1>::type::iterator
-                e_uid_vec_fe_it;
-            e_uid_vec_fe_it = ent_uid_and_fe_vec.get<1>().find(uid_ptr);
+            auto e_uid_vec_fe_it = ent_uid_and_fe_vec.get<1>().find(uid_ptr);
             if (e_uid_vec_fe_it == ent_uid_and_fe_vec.get<1>().end()) {
               ent_uid_and_fe_vec.insert(ent_uid_and_fe_vec.end(),
                                     std::pair<const UId *, VecOfWeakFEPtrs>(
@@ -695,9 +693,6 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
     }
   }
 
-  // Vector of (aliased) shared pointers
-  std::vector<boost::shared_ptr<FEDofEntity>> data_dofs_shared_array;
-
   typedef DofEntity_multiIndex::index<Unique_Ent_mi_tag>::type DofsByEntUId;
   DofsByEntUId &dofs_by_ent_uid = dofsField.get<Unique_Ent_mi_tag>();
 
@@ -710,12 +705,6 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
     dit = dofs_by_ent_uid.lower_bound(*mit->first);
     hi_dit = dofs_by_ent_uid.upper_bound(*mit->first);
     for (; dit != hi_dit; dit++) {
-      // cerr << mit->first << endl;
-      // cerr << **dit << endl;
-      // if(PetscUnlikely(!(*dit))) {
-      //   SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-      //           "Null pointer to DOF");
-      // }
       const BitFieldId field_id = dit->get()->getId();
       const EntityHandle dof_ent = dit->get()->getEnt();
       std::vector<boost::weak_ptr<EntFiniteElement>>::const_iterator fe_it,
@@ -756,17 +745,13 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
             // multi-index
 
             // Create shared pointers vector
-            data_dofs_shared_array.clear();
-            data_dofs_shared_array.reserve(data_dofs_size[fe_ent]);
+            auto hint = fe_it->lock().get()->data_dofs->end();
             for (std::vector<FEDofEntity>::iterator vit =
                      data_dofs_array_vec->begin();
                  vit != data_dofs_array_vec->end(); vit++) {
-              // Create aliased shared pointer
-              data_dofs_shared_array.push_back(
-                  boost::shared_ptr<FEDofEntity>(data_dofs_array_vec, &(*vit)));
+              hint = fe_it->lock().get()->data_dofs->emplace_hint(
+                  hint, data_dofs_array_vec, &(*vit));
             }
-            fe_it->lock().get()->data_dofs->insert(
-                data_dofs_shared_array.begin(), data_dofs_shared_array.end());
             fe_it->lock().get()->getDofsSequence() = data_dofs_array_vec;
           }
         }
