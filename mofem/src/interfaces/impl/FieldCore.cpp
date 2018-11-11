@@ -712,7 +712,6 @@ MoFEMErrorCode Core::buildFieldForL2H1HcurlHdiv(
     boost::shared_ptr<std::vector<DofEntity>> dofs_array =
         boost::make_shared<std::vector<DofEntity>>(std::vector<DofEntity>());
     // Add Sequence of DOFs to sequence container as weak_ptr
-    std::vector<boost::shared_ptr<DofEntity>> dofs_shared_array;
     int nb_dofs_on_ents = 0;
     for (auto tmp_feit = feit; tmp_feit != hi_feit; ++tmp_feit) {
       nb_dofs_on_ents += rank * tmp_feit->get()->getOrderNbDofs(
@@ -720,7 +719,6 @@ MoFEMErrorCode Core::buildFieldForL2H1HcurlHdiv(
     }
     // Add Sequence of DOFs to sequence container as weak_ptr
     dofs_array->reserve(nb_dofs_on_ents);
-    dofs_shared_array.reserve(dofs_array->size());
     for (; feit != hi_feit; ++feit) {
       // Create dofs instances and shared pointers
       int DD = 0;
@@ -731,8 +729,6 @@ MoFEMErrorCode Core::buildFieldForL2H1HcurlHdiv(
           // Loop rank
           for (int rr = 0; rr < rank; ++rr, ++DD) {
             dofs_array->emplace_back(*feit, oo, rr, DD, true);
-            dofs_shared_array.push_back(
-                boost::shared_ptr<DofEntity>(dofs_array, &dofs_array->back()));
             ++dof_counter[feit->get()->getEntType()];
           }
         }
@@ -751,18 +747,21 @@ MoFEMErrorCode Core::buildFieldForL2H1HcurlHdiv(
     }
     // Insert into Multi-Index container
     int dofs_field_size0 = dofsField.size();
-    dofsField.insert(dofs_shared_array.begin(), dofs_shared_array.end());
+    auto hint = dofsField.end();
+    for (auto &v : *dofs_array) {
+      hint = dofsField.emplace_hint(hint, dofs_array, &v);
+    }
     field_it->get()->getDofSequenceContainer()->push_back(dofs_array);
-    if (static_cast<int>(dofs_array.use_count()) !=
-        static_cast<int>(2 * dofs_shared_array.size() + 1)) {
+    if (PetscUnlikely(static_cast<int>(dofs_array.use_count()) !=
+                      static_cast<int>(dofs_array->size() + 1))) {
       SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                "Wrong use count %d != %d", dofs_array.use_count(),
-               2 * dofs_shared_array.size() + 1);
+               dofs_array->size() + 1);
     }
-    if (dofs_field_size0 + dofs_shared_array.size() != dofsField.size()) {
+    if (dofs_field_size0 + dofs_array->size() != dofsField.size()) {
       SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-               "Wrong number of inserted DOFs %d != %d",
-               dofs_shared_array.size(), dofsField.size() - dofs_field_size0);
+               "Wrong number of inserted DOFs %d != %d", dofs_array->size(),
+               dofsField.size() - dofs_field_size0);
     }
   }
   MoFEMFunctionReturn(0);
