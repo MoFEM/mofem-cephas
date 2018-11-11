@@ -1265,9 +1265,6 @@ MoFEMErrorCode ProblemsManager::buildSubProblem(
   out_problem_it->subProblemData =
       boost::make_shared<Problem::SubProblemData>();
 
-  // use to keep shared_ptr
-  std::vector<boost::shared_ptr<NumeredDofEntity> > dofs_shared_array;
-
   // Loop over rows and columns
   for (int ss = 0; ss != (square_matrix ? 1 : 2); ++ss) {
 
@@ -1303,23 +1300,16 @@ MoFEMErrorCode ProblemsManager::buildSubProblem(
       dofs_array->reserve(std::distance(dit, hi_dit));
 
       // create elements objects
-      for (; dit != hi_dit; dit++) {
-        dofs_array->push_back(NumeredDofEntity(
+      for (; dit != hi_dit; dit++)
+        dofs_array->emplace_back(
             dit->get()->getDofEntityPtr(), dit->get()->getPetscGlobalDofIdx(),
             dit->get()->getPetscGlobalDofIdx(),
-            dit->get()->getPetscLocalDofIdx(), dit->get()->getPart()));
-      }
+            dit->get()->getPetscLocalDofIdx(), dit->get()->getPart());
 
-      // reserve memory for shared pointers now
-      dofs_shared_array.clear();
-      dofs_shared_array.reserve(dofs_array->size());
-      for (auto vit = dofs_array->begin(); vit != dofs_array->end(); vit++) {
-        dofs_shared_array.push_back(
-            boost::shared_ptr<NumeredDofEntity>(dofs_array, &*vit));
-      }
       // fill multi-index
-      out_problem_dofs[ss]->insert(dofs_shared_array.begin(),
-                                   dofs_shared_array.end());
+      auto hint = out_problem_dofs[ss]->end();
+      for (auto &v : *dofs_array)
+        hint = out_problem_dofs[ss]->emplace_hint(hint, dofs_array, &v);
     }
     // Set local indexes
     {
