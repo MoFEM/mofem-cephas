@@ -621,7 +621,7 @@ MeshsetsManager::query_interface(const MOFEMuuid &uuid,
           configFileOptionsPtr->add_options()
           ((prefix+".young").c_str(),po::value<double>(&block_lists[it->getMeshsetId()].matElastic.data.Young)->default_value(-1),"Young modulus")
           ((prefix+".poisson").c_str(),po::value<double>(&block_lists[it->getMeshsetId()].matElastic.data.Poisson)->default_value(-2),"Poisson ratio")
-          ((prefix+"thermalexpansion").c_str(),po::value<double>(&block_lists[it->getMeshsetId()].matElastic.data.ThermalExpansion)->default_value(-1),"Thermal expansion");
+          ((prefix+".thermalexpansion").c_str(),po::value<double>(&block_lists[it->getMeshsetId()].matElastic.data.ThermalExpansion)->default_value(-1),"Thermal expansion");
           // TODO Add users parameters
         }
         // Mat theraml
