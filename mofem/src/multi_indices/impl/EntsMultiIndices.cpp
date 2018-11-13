@@ -177,14 +177,29 @@ ApproximationOrder FieldEntity::getMaxOrder() const {
       sFieldPtr->moab, sFieldPtr->th_AppOrder, sPtr->ent, NULL));
 }
 
+UId *FieldEntity::getEntFieldDataLastUid = NULL;
+double *FieldEntity::getEntFieldDataLastPtr = NULL;
+int FieldEntity::getEntFieldDataLastSize = 0;
+int FieldEntity::getEntFieldDataLastTagSize = 0;
+
 VectorAdaptor FieldEntity::getEntFieldData() const {
-  int size = getNbDofsOnEnt();
-  int tag_size;
-  double *ptr = static_cast<double *>(MoFEM::get_tag_ptr(
-      sFieldPtr->moab, sFieldPtr->th_FieldData, sPtr->ent, &tag_size));
-  tag_size /= sizeof(FieldData);
-  return VectorAdaptor(size,
-                       ublas::shallow_array_adaptor<FieldData>(tag_size, ptr));
+  if (getEntFieldDataLastUid != &globalUid) {
+    getEntFieldDataLastUid = const_cast<UId *>(&globalUid);
+    getEntFieldDataLastSize = getNbDofsOnEnt();
+    getEntFieldDataLastPtr = static_cast<double *>(
+        MoFEM::get_tag_ptr(sFieldPtr->moab, sFieldPtr->th_FieldData, sPtr->ent,
+                           &getEntFieldDataLastTagSize));
+    getEntFieldDataLastTagSize /= sizeof(double);
+    return VectorAdaptor(
+        getEntFieldDataLastSize,
+        ublas::shallow_array_adaptor<double>(getEntFieldDataLastTagSize,
+                                             getEntFieldDataLastPtr));
+  } else {
+    return VectorAdaptor(
+        getEntFieldDataLastSize,
+        ublas::shallow_array_adaptor<double>(getEntFieldDataLastTagSize,
+                                             getEntFieldDataLastPtr));
+  }
 }
 
 FieldEntity::~FieldEntity() {}

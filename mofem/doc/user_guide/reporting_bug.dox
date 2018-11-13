@@ -34,7 +34,6 @@ Error Trace:
 [0]PETSC ERROR: MoFEM version 0.2.1
 [0]PETSC ERROR: MoFEM git commit id b92aa7ece87bd423f082a11d120fd3b65c11c8f9
 [0]PETSC ERROR: See http://mofem.eng.gla.ac.uk/mofem/html/guidelines_bug_reporting.html for bug reporting.
-[0]PETSC ERROR: See http://mofem.eng.gla.ac.uk/mofem/html/faq_and_bugs.html for trouble shooting.
 [0]PETSC ERROR: --------------------- Error Message --------------------------------------------------------------
 [0]PETSC ERROR: Error code  7 at /mnt/home/MyBuild/mofem-cephas/mofem/users_modules/elasticity/elasticity.cpp:112
 [0]PETSC ERROR: See http://www.mcs.anl.gov/petsc/documentation/faq.html for trouble shooting.
