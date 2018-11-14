@@ -14,7 +14,7 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
-*/
+ */
 
 #ifndef __MESHSETSMANAGER_HPP__
 #define __MESHSETSMANAGER_HPP__
@@ -83,9 +83,8 @@ for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,NODESET|DISPLACEMENTSET,it) {
   CubitMeshsetByMask::iterator IT =                                            \
       MESHSET_MANAGER.get_meshsets_manager_ptr()->getBySetTypeBegin(           \
           CUBITBCTYPE);                                                        \
-  IT !=                                                                        \
-      MESHSET_MANAGER.get_meshsets_manager_ptr()->getBySetTypeEnd(             \
-          CUBITBCTYPE);                                                        \
+  IT != MESHSET_MANAGER.get_meshsets_manager_ptr()->getBySetTypeEnd(           \
+            CUBITBCTYPE);                                                      \
   IT++
 
 /**
@@ -467,8 +466,8 @@ struct MeshsetsManager : public UnknownInterface {
    * @return               error code
    */
   MoFEMErrorCode setAtributes(const CubitBCType cubit_bc_type, const int ms_id,
-                               const std::vector<double> &attributes,
-                               const std::string name = "");
+                              const std::vector<double> &attributes,
+                              const std::string name = "");
 
   /**
    * \brief set (material) data structure to cubit meshset
@@ -479,9 +478,9 @@ struct MeshsetsManager : public UnknownInterface {
    * @return               error code
    */
   MoFEMErrorCode setAtributesByDataStructure(const CubitBCType cubit_bc_type,
-                                              const int ms_id,
-                                              const GenericAttributeData &data,
-                                              const std::string name = "");
+                                             const int ms_id,
+                                             const GenericAttributeData &data,
+                                             const std::string name = "");
 
   /**
    * \brief set boundary data structure to meshset
@@ -573,23 +572,23 @@ struct MeshsetsManager : public UnknownInterface {
                                         const bool recursive = true) const;
 
   /**
-    * \ingroup mofem_meshset_mng
-    * \brief get meshset from CUBIT Id and CUBIT type
-    *
-    * \param ms_id id of the BLOCKSET/SIDESET/BLOCKSET: from CUBIT
-    * \param  see CubitBC (NODESET, SIDESET or BLOCKSET and more)
-    * \param meshset where to store the retrieved entities
-    */
+   * \ingroup mofem_meshset_mng
+   * \brief get meshset from CUBIT Id and CUBIT type
+   *
+   * \param ms_id id of the BLOCKSET/SIDESET/BLOCKSET: from CUBIT
+   * \param  see CubitBC (NODESET, SIDESET or BLOCKSET and more)
+   * \param meshset where to store the retrieved entities
+   */
   MoFEMErrorCode getMeshset(const int ms_id, const unsigned int cubit_bc_type,
                             EntityHandle &meshset) const;
 
   /**
-    * \ingroup mofem_meshset_mng
-    * \brief get all CUBIT meshsets by CUBIT type
-    *
-    * \param  see CubitBC (NODESET, SIDESET or BLOCKSET and more).
-    * \param meshsets is range of meshsets
-    */
+   * \ingroup mofem_meshset_mng
+   * \brief get all CUBIT meshsets by CUBIT type
+   *
+   * \param  see CubitBC (NODESET, SIDESET or BLOCKSET and more).
+   * \param meshsets is range of meshsets
+   */
   MoFEMErrorCode getMeshsetsByType(const unsigned int cubit_bc_type,
                                    Range &meshsets) const;
 
@@ -774,7 +773,7 @@ struct MeshsetsManager : public UnknownInterface {
     return configFileOptionsPtr;
   }
 
-  MoFEMErrorCode updateAllMeshsetsByEntitiesChildren(const BitRefLevel& bit);
+  MoFEMErrorCode updateAllMeshsetsByEntitiesChildren(const BitRefLevel &bit);
 
 protected:
   Tag nsTag;
@@ -788,14 +787,14 @@ protected:
   CubitMeshSet_multiIndex cubitMeshsets; ///< cubit meshsets
   boost::shared_ptr<boost::program_options::options_description>
       configFileOptionsPtr; ///< config file options
-  };
-}
+};
+} // namespace MoFEM
 
 #endif //__MESHSETSMANAGER_HPP__
 
-/***************************************************************************//**
- * \defgroup mofem_meshset_mng MeshsetsManager
- * \brief Interface for meshsets with entities with data and boundary conditions
- *
- * \ingroup mofem
- ******************************************************************************/
+/***************************************************************************/ /**
+* \defgroup mofem_meshset_mng MeshsetsManager
+* \brief Interface for meshsets with entities with data and boundary conditions
+*
+* \ingroup mofem
+******************************************************************************/
