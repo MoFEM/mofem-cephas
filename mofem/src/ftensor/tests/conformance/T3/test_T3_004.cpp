@@ -70,6 +70,50 @@ void test_T3_004(const Tensor3<double, 3, 3, 3> &t3_1) {
         }
  }
 
+   // Tensor 3 times symmetric tensor 2 yields tensor 3
+ {
+   Tensor3<double, 3, 3, 3> t_3_1;
+   Tensor2<double, 3, 3> t_2_1;
+   Tensor2_symmetric<double, 3> t_2s_1;
+   Tensor2<double, 3, 3> t_2_2;
+   Tensor3<double, 3, 3, 3> t_3_2;
+   for (int ii = 0; ii != 3; ++ii)
+     for (int jj = 0; jj != 3; ++jj) {
+       for (int kk = 0; kk != 3; ++kk) {
+         t_3_1(ii, jj, kk) = 1 + ii + 10. * jj + 100. * kk;
+       }
+     }
+   for (int jj = 0; jj != 3; ++jj)
+     for (int ll = 0; ll != 3; ++ll) {
+       t_2_1(jj, ll) = 1 + jj + 10. * ll;
+     }
+   Index<'i', 3> i;
+   Index<'j', 3> j;
+   Index<'k', 3> k;
+   Index<'l', 3> l;
+   t_2s_1(i, j) = t_2_1(i, j) || t_2_1(j, i);
+   t_2_2(i, j) = t_2_1(i, j) + t_2_1(j, i);
+   t_3_2(l, j, k) =
+       t_3_1(i, j, k) * t_2s_1(i, l) - t_2s_1(i, l) * t_3_1(i, j, k);
+   for (int ll = 0; ll != 3; ++ll)
+     for (int jj = 0; jj != 3; ++jj)
+       for (int kk = 0; kk != 3; ++kk) {
+         test_for_zero(t_3_2(ll, jj, kk),
+                       "T3(i,j,k)||T2s(i,l)(" + to_string(ll) + "," +
+                           to_string(jj) + "," + to_string(kk) + ")");
+       }
+   t_3_2(l, j, k) =
+       t_3_1(i, j, k) * t_2s_1(i, l) - t_3_1(i, j, k) * t_2_2(i, l);
+
+   for (int ll = 0; ll != 3; ++ll)
+     for (int jj = 0; jj != 3; ++jj)
+       for (int kk = 0; kk != 3; ++kk) {
+         test_for_zero(t_3_2(ll, jj, kk),
+                       "T3(i,j,k)||T2s(i,l)(" + to_string(ll) + "," +
+                           to_string(jj) + "," + to_string(kk) + ")");
+       }
+ }
+
  // Tensor 3 times tensor 3 yield tensor 2 A(i,j,k)*B(j,i,l)
  {
    Tensor1<double, 3> t_1;

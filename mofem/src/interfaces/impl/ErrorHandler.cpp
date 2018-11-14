@@ -100,9 +100,9 @@ static PetscErrorCode mofem_error_handler(MPI_Comm comm, int line,
       mofem_error_printf("See "
                          "http://mofem.eng.gla.ac.uk/mofem/html/"
                          "guidelines_bug_reporting.html for bug reporting.\n");
-      mofem_error_printf("See "
-                         "http://mofem.eng.gla.ac.uk/mofem/html/"
-                         "faq_and_bugs.html for trouble shooting.\n");
+      mofem_error_printf(
+          "Write to https://groups.google.com/forum/#!forum/mofem-group to "
+          "seek help.\n");
       error_printf_normal();
     }
 

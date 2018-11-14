@@ -476,24 +476,19 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
            eit != ents_not_in_database.end(); ++eit) {
         RefEntity ref_ent(basicEntityDataPtr, *eit);
         // FIXME: need some consistent policy in that case
-        if (ref_ent.getBitRefLevel().none()) {
-          continue; // not on any mesh and not in database
+        if (ref_ent.getBitRefLevel().any()) {
+          std::cerr << ref_ent << std::endl;
+          SETERRQ(
+              PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "Try to add entities which are not seeded or added to database");
         }
-        std::cerr << ref_ent << std::endl;
-        SETERRQ(
-            PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-            "Try to add entities which are not seeded or added to database");
       }
 
       // Add entities to database
-      std::vector<boost::shared_ptr<FieldEntity>> ents_shared_array;
-      ents_shared_array.reserve(ents_array->size());
-      for (std::vector<FieldEntity>::iterator vit = ents_array->begin();
-           vit != ents_array->end(); vit++) {
-        ents_shared_array.emplace_back(ents_array, &*vit);
+      auto hint = entsFields.end();
+      for (auto &v : *ents_array) {
+        hint = entsFields.emplace_hint(hint, ents_array, &v);
       }
-      // Add new ents to database
-      entsFields.insert(ents_shared_array.begin(), ents_shared_array.end());
     }
   }
 
@@ -717,7 +712,6 @@ MoFEMErrorCode Core::buildFieldForL2H1HcurlHdiv(
     boost::shared_ptr<std::vector<DofEntity>> dofs_array =
         boost::make_shared<std::vector<DofEntity>>(std::vector<DofEntity>());
     // Add Sequence of DOFs to sequence container as weak_ptr
-    std::vector<boost::shared_ptr<DofEntity>> dofs_shared_array;
     int nb_dofs_on_ents = 0;
     for (auto tmp_feit = feit; tmp_feit != hi_feit; ++tmp_feit) {
       nb_dofs_on_ents += rank * tmp_feit->get()->getOrderNbDofs(
@@ -725,7 +719,6 @@ MoFEMErrorCode Core::buildFieldForL2H1HcurlHdiv(
     }
     // Add Sequence of DOFs to sequence container as weak_ptr
     dofs_array->reserve(nb_dofs_on_ents);
-    dofs_shared_array.reserve(dofs_array->size());
     for (; feit != hi_feit; ++feit) {
       // Create dofs instances and shared pointers
       int DD = 0;
@@ -736,8 +729,6 @@ MoFEMErrorCode Core::buildFieldForL2H1HcurlHdiv(
           // Loop rank
           for (int rr = 0; rr < rank; ++rr, ++DD) {
             dofs_array->emplace_back(*feit, oo, rr, DD, true);
-            dofs_shared_array.push_back(
-                boost::shared_ptr<DofEntity>(dofs_array, &dofs_array->back()));
             ++dof_counter[feit->get()->getEntType()];
           }
         }
@@ -756,18 +747,21 @@ MoFEMErrorCode Core::buildFieldForL2H1HcurlHdiv(
     }
     // Insert into Multi-Index container
     int dofs_field_size0 = dofsField.size();
-    dofsField.insert(dofs_shared_array.begin(), dofs_shared_array.end());
+    auto hint = dofsField.end();
+    for (auto &v : *dofs_array) {
+      hint = dofsField.emplace_hint(hint, dofs_array, &v);
+    }
     field_it->get()->getDofSequenceContainer()->push_back(dofs_array);
-    if (static_cast<int>(dofs_array.use_count()) !=
-        static_cast<int>(2 * dofs_shared_array.size() + 1)) {
+    if (PetscUnlikely(static_cast<int>(dofs_array.use_count()) !=
+                      static_cast<int>(dofs_array->size() + 1))) {
       SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                "Wrong use count %d != %d", dofs_array.use_count(),
-               2 * dofs_shared_array.size() + 1);
+               dofs_array->size() + 1);
     }
-    if (dofs_field_size0 + dofs_shared_array.size() != dofsField.size()) {
+    if (dofs_field_size0 + dofs_array->size() != dofsField.size()) {
       SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-               "Wrong number of inserted DOFs %d != %d",
-               dofs_shared_array.size(), dofsField.size() - dofs_field_size0);
+               "Wrong number of inserted DOFs %d != %d", dofs_array->size(),
+               dofsField.size() - dofs_field_size0);
     }
   }
   MoFEMFunctionReturn(0);
@@ -1010,7 +1004,7 @@ Core::check_number_of_ents_in_ents_field(const std::string &name) const {
 }
 MoFEMErrorCode Core::check_number_of_ents_in_ents_field() const {
   MoFEMFunctionBegin;
-  for (auto& it : fIelds.get<FieldName_mi_tag>()) {
+  for (auto &it : fIelds.get<FieldName_mi_tag>()) {
     if (it->getSpace() == NOFIELD)
       continue; // FIXME: should be treated properly, not test is just
                 // skipped for this NOFIELD space

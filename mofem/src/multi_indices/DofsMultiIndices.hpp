@@ -33,6 +33,12 @@ struct DofEntity : public interface_FieldEntity<FieldEntity> {
   typedef interface_FieldEntity<FieldEntity> interface_type_FieldEntity;
   typedef interface_RefEntity<FieldEntity> interface_type_RefEntity;
 
+  static inline UId getGlobalUniqueIdCalculate(const DofIdx dof,
+                                               const UId &ent_uid) {
+    // if(dof>=512) THROW_MESSAGE("_dof>=512");
+    return static_cast<UId>(dof) | ent_uid;
+  }
+
   /**
    * \brief Calculate UId for DOF
    *
@@ -47,8 +53,7 @@ struct DofEntity : public interface_FieldEntity<FieldEntity> {
   static inline UId
   getGlobalUniqueIdCalculate(const DofIdx dof,
                              const boost::shared_ptr<FieldEntity> &ent_ptr) {
-    // if(dof>=512) THROW_MESSAGE("_dof>=512");
-    return static_cast<UId>(dof) | (ent_ptr->getGlobalUniqueId() << 9);
+    return getGlobalUniqueIdCalculate(dof, ent_ptr->getGlobalUniqueId());
   }
 
   static inline UId getGlobalUniqueIdCalculate_Low_Proc(const int owner_proc) {
@@ -439,24 +444,6 @@ typedef multi_index_container<
                    const_mem_fun<DofEntity, char, &DofEntity::getActive> > > >
     DofEntity_multiIndex_active_view;
 
-/** \brief multi-index view on DofEntity order
-  \ingroup dof_multi_indices
-*/
-typedef multi_index_container<
-    boost::shared_ptr<DofEntity>,
-    indexed_by<ordered_non_unique<const_mem_fun<DofEntity, ApproximationOrder,
-                                                &DofEntity::getDofOrder> > > >
-    DofEntity_multiIndex_order_view;
-
-/** \brief multi-index view on DofEntity type
-  \ingroup dof_multi_indices
-*/
-typedef multi_index_container<boost::shared_ptr<DofEntity>,
-                              indexed_by<ordered_non_unique<const_mem_fun<
-                                  DofEntity::interface_type_RefEntity,
-                                  EntityType, &DofEntity::getEntType> > > >
-    DofEntity_multiIndex_ent_type_view;
-
 /**
  * @relates multi_index_container
  * \brief MultiIndex container keeps FEDofEntity
@@ -482,18 +469,6 @@ typedef multi_index_container<
             const_mem_fun<FEDofEntity::interface_type_RefEntity, EntityType,
                           &FEDofEntity::getEntType> >,
         ordered_non_unique<
-            tag<Composite_Name_Type_And_Side_Number_mi_tag>,
-            composite_key<
-                FEDofEntity,
-                const_mem_fun<FEDofEntity::interface_type_Field,
-                              boost::string_ref, &FEDofEntity::getNameRef>,
-                const_mem_fun<FEDofEntity::interface_type_RefEntity, EntityType,
-                              &FEDofEntity::getEntType>,
-                KeyFromKey<member<SideNumber, char, &SideNumber::side_number>,
-                           member<FEDofEntity::BaseFEDofEntity,
-                                  boost::shared_ptr<SideNumber>,
-                                  &FEDofEntity::sideNumberPtr> > > >,
-        ordered_non_unique<
             tag<Composite_Name_And_Type_mi_tag>,
             composite_key<
                 FEDofEntity,
@@ -509,6 +484,20 @@ typedef multi_index_container<
                               boost::string_ref, &FEDofEntity::getNameRef>,
                 const_mem_fun<FEDofEntity::interface_type_DofEntity,
                               EntityHandle, &FEDofEntity::getEnt> > >,
+        // This is only useed by obsolete modules, should be removed with 
+        // brother of cephs, i.e. Pawel.                              
+        ordered_non_unique<
+            tag<Composite_Name_Type_And_Side_Number_mi_tag>,
+            composite_key<
+                FEDofEntity,
+                const_mem_fun<FEDofEntity::interface_type_Field,
+                              boost::string_ref, &FEDofEntity::getNameRef>,
+                const_mem_fun<FEDofEntity::interface_type_RefEntity, EntityType,
+                              &FEDofEntity::getEntType>,
+                KeyFromKey<member<SideNumber, char, &SideNumber::side_number>,
+                           member<FEDofEntity::BaseFEDofEntity,
+                                  boost::shared_ptr<SideNumber>,
+                                  &FEDofEntity::sideNumberPtr> > > >,
         ordered_non_unique<
             tag<Composite_EntType_and_Space_mi_tag>,
             composite_key<
@@ -864,12 +853,6 @@ template <class T> struct Dof_shared_ptr_change {
   Dof_shared_ptr_change(boost::shared_ptr<T> &dof_ptr) : dofPtr(dof_ptr){};
   inline void operator()(boost::shared_ptr<T> &dof) { dof = dofPtr; }
 };
-
-typedef multi_index_container<
-    boost::shared_ptr<NumeredDofEntity>,
-    indexed_by<ordered_unique<member<NumeredDofEntity, const DofIdx,
-                                     &NumeredDofEntity::petscGloablDofIdx> > > >
-    NumeredDofEntity_multiIndex_global_index_view;
 
 } // namespace MoFEM
 #endif // __DOFSMULTIINDICES_HPP__

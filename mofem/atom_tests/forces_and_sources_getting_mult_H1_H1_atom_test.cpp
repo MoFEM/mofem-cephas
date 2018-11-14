@@ -239,30 +239,22 @@ int main(int argc, char *argv[]) {
         CHKERR getEntitySense<MBEDGE>(data_col);
         CHKERR getEntitySense<MBTRI>(data_col);
 
-        CHKERR getEntityDataOrder<MBEDGE>(data_row, H1);
-        CHKERR getEntityDataOrder<MBEDGE>(data_col, H1);
-        CHKERR getEntityDataOrder<MBTRI>(data_row, H1);
-        CHKERR getEntityDataOrder<MBTRI>(data_col, H1);
-        CHKERR getEntityDataOrder<MBTET>(data_row, H1);
-        CHKERR getEntityDataOrder<MBTET>(data_col, H1);
+        CHKERR getEntityFieldDataOrder<MBEDGE>(data_row, H1);
+        CHKERR getEntityFieldDataOrder<MBEDGE>(data_col, H1);
+        CHKERR getEntityFieldDataOrder<MBTRI>(data_row, H1);
+        CHKERR getEntityFieldDataOrder<MBTRI>(data_col, H1);
+        CHKERR getEntityFieldDataOrder<MBTET>(data_row, H1);
+        CHKERR getEntityFieldDataOrder<MBTET>(data_col, H1);
         data_row.dataOnEntities[MBVERTEX][0].getBase() =
             AINSWORTH_LEGENDRE_BASE;
-        CHKERR getEntityDataOrderSpaceAndBase<MBEDGE>(data_row, "FIELD1");
-        CHKERR getEntityDataOrderSpaceAndBase<MBTRI>(data_row, "FIELD1");
-        CHKERR getEntityDataOrderSpaceAndBase<MBTET>(data_row, "FIELD1");
+        CHKERR getEntityFieldData(data_row, "FIELD1", MBEDGE);
         data_col.dataOnEntities[MBVERTEX][0].getBase() =
             AINSWORTH_LEGENDRE_BASE;
-        CHKERR getEntityDataOrderSpaceAndBase<MBEDGE>(data_col, "FIELD2");
-        CHKERR getEntityDataOrderSpaceAndBase<MBTRI>(data_col, "FIELD2");
-        CHKERR getEntityDataOrderSpaceAndBase<MBTET>(data_col, "FIELD2");
+        CHKERR getEntityFieldData(data_col, "FIELD2", MBEDGE);    
         CHKERR getRowNodesIndices(data_row, "FIELD1");
-        CHKERR getColNodesIndices(data_row, "FIELD2");
-        CHKERR getEntityRowIndices<MBEDGE>(data_row, "FIELD1");
-        CHKERR getEntityColIndices<MBEDGE>(data_col, "FIELD2");
-        CHKERR getEntityRowIndices<MBTRI>(data_row, "FIELD1");
-        CHKERR getEntityColIndices<MBTRI>(data_col, "FIELD2");
-        CHKERR getEntityRowIndices<MBTET>(data_row, "FIELD1");
-        CHKERR getEntityColIndices<MBTET>(data_col, "FIELD2");
+        CHKERR getColNodesIndices(data_col, "FIELD2");
+        CHKERR getEntityRowIndices(data_row, "FIELD1", MBEDGE);
+        CHKERR getEntityColIndices(data_col, "FIELD2", MBEDGE);
         CHKERR getFaceTriNodes(data_row);
         CHKERR getFaceTriNodes(data_col);
 
