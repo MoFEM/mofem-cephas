@@ -264,7 +264,8 @@ MoFEMErrorCode ForcesAndSourcesCore::getNodesIndices(
     int num_nodes;
     CHKERR getNumberOfNodes(num_nodes);
     int max_nb_dofs = 0;
-    max_nb_dofs = (*dit)->getNbOfCoeffs() * num_nodes;
+    const int nb_dofs_on_vert = (*dit)->getNbOfCoeffs();
+    max_nb_dofs = nb_dofs_on_vert * num_nodes;
     nodes_indices.resize(max_nb_dofs, false);
     local_nodes_indices.resize(max_nb_dofs, false);
     if (std::distance(dit, hi_dit) != max_nb_dofs) {
@@ -277,15 +278,14 @@ MoFEMErrorCode ForcesAndSourcesCore::getNodesIndices(
       const int idx = dof.getPetscGlobalDofIdx();
       const int local_idx = dof.getPetscLocalDofIdx();
       const int side_number = dof.sideNumberPtr->side_number;
-      const int nb_dofs_on_vert = dof.getNbOfCoeffs();
       const int pos = side_number * nb_dofs_on_vert + dof.getDofCoeffIdx();
       nodes_indices[pos] = idx;
       local_nodes_indices[pos] = local_idx;
       const int brother_side_number =
           (*dit)->sideNumberPtr->brother_side_number;
       if (brother_side_number != -1) {
-        const int elem_idx = brother_side_number * (*dit)->getNbOfCoeffs() +
-                             (*dit)->getDofCoeffIdx();
+        const int elem_idx =
+            brother_side_number * nb_dofs_on_vert + (*dit)->getDofCoeffIdx();
         nodes_indices[elem_idx] = idx;
         local_nodes_indices[elem_idx] = local_idx;
       }
