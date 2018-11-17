@@ -259,47 +259,41 @@ MoFEMErrorCode ForcesAndSourcesCore::getNodesIndices(
   auto dit = dofs_by_type.lower_bound(tuple);
   auto hi_dit = dofs_by_type.upper_bound(tuple);
 
-  int num_nodes;
-  CHKERR getNumberOfNodes(num_nodes);
-  int max_nb_dofs = 0;
   if (dit != hi_dit) {
-    max_nb_dofs = (*dit)->getNbOfCoeffs() * num_nodes;
-  }
 
-  const int nb_dofs = std::distance(dit, hi_dit);
-  if (nb_dofs != max_nb_dofs) {
+    int num_nodes;
+    CHKERR getNumberOfNodes(num_nodes);
+    int max_nb_dofs = 0;
+    const int nb_dofs_on_vert = (*dit)->getNbOfCoeffs();
+    max_nb_dofs = nb_dofs_on_vert * num_nodes;
     nodes_indices.resize(max_nb_dofs, false);
     local_nodes_indices.resize(max_nb_dofs, false);
-    for (int dd = 0; dd < max_nb_dofs; dd++) {
-      nodes_indices[dd] = -1;
-      local_nodes_indices[dd] = -1;
+    if (std::distance(dit, hi_dit) != max_nb_dofs) {
+      std::fill(nodes_indices.begin(), nodes_indices.end(), -1);
+      std::fill(local_nodes_indices.begin(), local_nodes_indices.end(), -1);
     }
-  } else {
-    nodes_indices.resize(nb_dofs, false);
-    local_nodes_indices.resize(nb_dofs, false);
-  }
 
-  for (; dit != hi_dit; dit++) {
-    auto &dof = **dit;
-    const int idx = dof.getPetscGlobalDofIdx();
-    const int local_idx = dof.getPetscLocalDofIdx();
-    const int side_number = dof.sideNumberPtr->side_number;
-    const int pos = side_number * dof.getNbOfCoeffs() + dof.getDofCoeffIdx();
-    nodes_indices[pos] = idx;
-    local_nodes_indices[pos] = local_idx;
-    const int brother_side_number = (*dit)->sideNumberPtr->brother_side_number;
-    if (brother_side_number != -1) {
-      if (nodes_indices.size() <
-          (unsigned int)(brother_side_number * (*dit)->getNbOfCoeffs() +
-                         (*dit)->getNbOfCoeffs())) {
-        nodes_indices.resize(brother_side_number * (*dit)->getNbOfCoeffs() +
-                             (*dit)->getNbOfCoeffs());
+    for (; dit != hi_dit; dit++) {
+      auto &dof = **dit;
+      const int idx = dof.getPetscGlobalDofIdx();
+      const int local_idx = dof.getPetscLocalDofIdx();
+      const int side_number = dof.sideNumberPtr->side_number;
+      const int pos = side_number * nb_dofs_on_vert + dof.getDofCoeffIdx();
+      nodes_indices[pos] = idx;
+      local_nodes_indices[pos] = local_idx;
+      const int brother_side_number =
+          (*dit)->sideNumberPtr->brother_side_number;
+      if (brother_side_number != -1) {
+        const int elem_idx =
+            brother_side_number * nb_dofs_on_vert + (*dit)->getDofCoeffIdx();
+        nodes_indices[elem_idx] = idx;
+        local_nodes_indices[elem_idx] = local_idx;
       }
-      const int elem_idx = brother_side_number * (*dit)->getNbOfCoeffs() +
-                           (*dit)->getDofCoeffIdx();
-      nodes_indices[elem_idx] = idx;
-      local_nodes_indices[elem_idx] = local_idx;
     }
+
+  } else {
+    nodes_indices.resize(0, false);
+    local_nodes_indices.resize(0, false);
   }
 
   MoFEMFunctionReturn(0);
@@ -536,56 +530,66 @@ MoFEMErrorCode ForcesAndSourcesCore::getNodesFieldData(
     VectorDouble &nodes_data, VectorDofs &nodes_dofs, FieldSpace &space,
     FieldApproximationBase &base) const {
   MoFEMFunctionBegin;
-  auto tuple = boost::make_tuple(field_name, MBVERTEX);
   auto &dofs_by_name_and_type = dofs.get<Composite_Name_And_Type_mi_tag>();
+  auto tuple = boost::make_tuple(field_name, MBVERTEX);
   auto dit = dofs_by_name_and_type.lower_bound(tuple);
+  if(dit == dofs_by_name_and_type.end())
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            "No nodal dofs on element");
   auto hi_dit = dofs.get<Composite_Name_And_Type_mi_tag>().upper_bound(tuple);
 
-  auto &first_dof = **dit;
-  space = first_dof.getSpace();
-  base = first_dof.getApproxBase();
-
-  const int nb_dofs = std::distance(dit, hi_dit);
-  int num_nodes;
-  CHKERR getNumberOfNodes(num_nodes);
-  const int max_nb_dofs = first_dof.getNbOfCoeffs() * num_nodes;
-
-  if (nb_dofs != max_nb_dofs) {
+  if (dit != hi_dit) {
+    auto &first_dof = **dit;
+    space = first_dof.getSpace();
+    base = first_dof.getApproxBase();
+    int num_nodes;
+    CHKERR getNumberOfNodes(num_nodes);
+    const int nb_dof_idx = first_dof.getNbOfCoeffs();
+    const int max_nb_dofs = nb_dof_idx * num_nodes;
     nodes_data.resize(max_nb_dofs, false);
-    nodes_data.clear();
     nodes_dofs.resize(max_nb_dofs, false);
+    nodes_data.clear();
+
+    std::vector<boost::weak_ptr<FEDofEntity>> brother_dofs_vec;
+    for (; dit != hi_dit;) {
+      const auto &dof_ptr = *dit;
+      const auto &dof = *dof_ptr;
+      const auto &sn = *dof.sideNumberPtr;
+      const int side_number = sn.side_number;
+      const int brother_side_number = sn.brother_side_number;
+      if(brother_side_number != -1)
+        brother_dofs_vec.emplace_back(dof_ptr);
+
+      int pos = side_number * nb_dof_idx;
+      auto ent_filed_data_vec = dof.getEntFieldData();
+      for (int ii = 0; ii != nb_dof_idx; ++ii) {
+        nodes_data[pos] = ent_filed_data_vec[ii];
+        nodes_dofs[pos] = *dit;
+        ++pos;
+        ++dit;
+      }
+    }
+
+    for(auto &dof_ptr : brother_dofs_vec) {
+      const auto &dof = *dof_ptr.lock();
+      const auto &sn = *dof.sideNumberPtr;
+      const int side_number = sn.side_number;
+      const int brother_side_number = sn.brother_side_number;
+      int pos = side_number * nb_dof_idx;
+      int brother_pos = brother_side_number * nb_dof_idx;
+      for (int ii = 0; ii != nb_dof_idx; ++ii) {
+        nodes_data[brother_pos] = nodes_data[pos];
+        nodes_dofs[brother_pos] = nodes_dofs[pos];        
+        ++pos;
+        ++brother_pos;
+      }
+    }
+
   } else {
-    nodes_data.resize(nb_dofs, false);
-    nodes_dofs.resize(nb_dofs, false);
+    nodes_data.resize(0, false);
+    nodes_dofs.resize(0, false);
   }
 
-  for (; dit != hi_dit; dit++) {
-    const auto &dof_ptr = *dit;
-    const auto &dof = *dof_ptr;
-    const auto &sn = *dof.sideNumberPtr;
-    const int side_number = sn.side_number;
-    if (PetscUnlikely(side_number == -1)) {
-      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Side number not set");
-    }
-    const int pos = side_number * dof.getNbOfCoeffs() + dof.getDofCoeffIdx();
-    nodes_data[pos] = dof.getFieldData();
-    nodes_dofs[pos] = dof_ptr;
-    const int brother_side_number = sn.brother_side_number;
-    if (brother_side_number != -1) {
-      if (nodes_data.size() <
-          (unsigned int)(brother_side_number * dof.getNbOfCoeffs() +
-                         dof.getNbOfCoeffs())) {
-        nodes_data.resize(brother_side_number * dof.getNbOfCoeffs() +
-                          dof.getNbOfCoeffs());
-        nodes_dofs.resize(brother_side_number * dof.getNbOfCoeffs() +
-                          dof.getNbOfCoeffs());
-      }
-      int brother_pos =
-          brother_side_number * dof.getNbOfCoeffs() + dof.getDofCoeffIdx();
-      nodes_data[brother_pos] = nodes_data[pos];
-      nodes_dofs[brother_pos] = dof_ptr;
-    }
-  }
   MoFEMFunctionReturn(0);
 }
 
@@ -624,6 +628,7 @@ MoFEMErrorCode ForcesAndSourcesCore::getEntityFieldData(
     MoFEMFunctionReturnHot(0);
   auto hi_dit =
       dofs_by_type.lower_bound(boost::make_tuple(field_name, type_hi));
+  std::vector<boost::weak_ptr<FEDofEntity>> brother_dofs_vec;
   for (; dit != hi_dit;) {
 
     auto &dof = **dit;
@@ -635,10 +640,10 @@ MoFEMErrorCode ForcesAndSourcesCore::getEntityFieldData(
       auto &dat = data.dataOnEntities[type][side];
 
       auto &ent_field_dofs = dat.getFieldDofs();
-      ent_field_dofs.resize(nb_dofs_on_ent, false);
-      ent_field_dofs[dof.getEntDofIdx()] = *dit;
-
       auto &ent_field_data = dat.getFieldData();
+      const int brother_side = dof.sideNumberPtr->brother_side_number;
+      if (brother_side != -1) 
+        brother_dofs_vec.emplace_back(*dit);
 
       if (ent_field_data.empty()) {
 
@@ -647,26 +652,29 @@ MoFEMErrorCode ForcesAndSourcesCore::getEntityFieldData(
         const int ent_order = dof.getMaxOrder();
         dat.getDataOrder() =
             dat.getDataOrder() > ent_order ? dat.getDataOrder() : ent_order;
-
-        const int brother_side = dof.sideNumberPtr->brother_side_number;
-
-        ent_field_data.resize(nb_dofs_on_ent, false);
         const auto dof_ent_field_data = dof.getEntFieldData();
+        ent_field_data.resize(nb_dofs_on_ent, false);
+        noalias(ent_field_data) = dof.getEntFieldData();
+        ent_field_dofs.resize(nb_dofs_on_ent, false);
         for (int ii = 0; ii != nb_dofs_on_ent; ++ii) {
-          ent_field_data[ii] = dof_ent_field_data[ii];
+          ent_field_dofs[ii] = *dit;
           ++dit;
-        }
-
-        if (brother_side != -1) {
-          auto &dat_brother = data.dataOnEntities[type][brother_side];
-          dat_brother.getFieldData() = dat.getFieldData();
-          dat_brother.getFieldDofs() = dat.getFieldDofs();
-          dat_brother.getBase() = dat.getBase();
-          dat_brother.getSpace() = dat.getSpace();
-          dat_brother.getDataOrder() = dat.getDataOrder();
         }
       }
     }
+  }
+
+  for(auto &dof_ptr : brother_dofs_vec) {
+    const EntityType type = dof_ptr.lock()->getEntType();
+    const int side = dof_ptr.lock()->sideNumberPtr->side_number;
+    const int brother_side = dof_ptr.lock()->sideNumberPtr->brother_side_number;
+    auto &dat = data.dataOnEntities[type][side];
+    auto &dat_brother = data.dataOnEntities[type][brother_side];
+    dat_brother.getBase() = dat.getBase();
+    dat_brother.getSpace() = dat.getSpace();
+    dat_brother.getDataOrder() = dat.getDataOrder();
+    dat_brother.getFieldData() = dat.getFieldData();
+    dat_brother.getFieldDofs() = dat.getFieldDofs();
   }
 
   MoFEMFunctionReturn(0);
@@ -947,8 +955,6 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
   MoFEMFunctionBegin;
 
   const EntityType type = numeredEntFiniteElementPtr->getEntType();
-  const int dim = mField.get_moab().dimension_from_handle(
-      numeredEntFiniteElementPtr->getEnt());
   const UserDataOperator::OpType types[2] = {UserDataOperator::OPROW,
                                              UserDataOperator::OPCOL};
   std::vector<std::string> last_eval_field_name(2);
