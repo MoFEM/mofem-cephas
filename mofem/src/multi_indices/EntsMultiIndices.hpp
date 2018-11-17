@@ -631,16 +631,18 @@ struct FieldEntity : public interface_Field<Field>,
   getGlobalUniqueIdCalculate(const int owner_proc, const char bit_number,
                              const EntityHandle moab_owner_handle,
                              const bool true_if_distributed_mesh) {
-    assert(bit_number < 32);
-    assert(owner_proc < 1024);
-    if (true_if_distributed_mesh) {
-      return static_cast<UId>(bit_number) |
-             static_cast<UId>(moab_owner_handle) << 5 |
-             static_cast<UId>(owner_proc) << 5 + 8 * sizeof(EntityHandle);
-    } else {
-      return static_cast<UId>(bit_number) | static_cast<UId>(moab_owner_handle)
-                                                << 5;
-    }
+    // assert(bit_number < 32);
+    // assert(owner_proc < 1024);
+    constexpr int ent_shift = 8 * sizeof(EntityHandle);
+    if (true_if_distributed_mesh)
+      return (static_cast<UId>(moab_owner_handle) |
+              static_cast<UId>(bit_number) << ent_shift |
+              static_cast<UId>(owner_proc) << 5 + ent_shift)
+             << 9;
+    else
+      return (static_cast<UId>(moab_owner_handle) | static_cast<UId>(bit_number)
+                                                        << ent_shift)
+             << 9;
   }
 
   static inline UId getGlobalUniqueIdCalculate_Low_Proc(const int owner_proc) {
@@ -689,6 +691,13 @@ struct FieldEntity : public interface_Field<Field>,
     return getFieldPtr()->getDofOrderMap(getEntType());
   }
 
+private:
+
+  // Cache variables
+  static UId *getEntFieldDataLastUid;
+  static double *getEntFieldDataLastPtr;
+  static int getEntFieldDataLastSize;
+  static int getEntFieldDataLastTagSize;
 };
 
 // /// \deprecated use FieldEntity

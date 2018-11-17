@@ -192,24 +192,16 @@ int main(int argc, char *argv[]) {
 
         CHKERR getEntitySense<MBEDGE>(data);
         CHKERR getEntitySense<MBTRI>(data);
-        CHKERR getEntityDataOrder<MBEDGE>(data, H1);
-        CHKERR getEntityDataOrder<MBTRI>(data, H1);
-        CHKERR getEntityDataOrder<MBTET>(data, H1);
+        CHKERR getEntityFieldDataOrder<MBEDGE>(data, H1);
+        CHKERR getEntityFieldDataOrder<MBTRI>(data, H1);
+        CHKERR getEntityFieldDataOrder<MBTET>(data, H1);
         CHKERR getFaceTriNodes(data);
 
-        CHKERR getEntityDataOrderSpaceAndBase<MBEDGE>(data, "FIELD1");
-        CHKERR getEntityDataOrderSpaceAndBase<MBTRI>(data, "FIELD1");
-        CHKERR getEntityDataOrderSpaceAndBase<MBTET>(data, "FIELD1");
-
         CHKERR getRowNodesIndices(data, "FIELD1");
-        CHKERR getEntityRowIndices<MBEDGE>(data, "FIELD1");
-        CHKERR getEntityRowIndices<MBTRI>(data, "FIELD1");
-        CHKERR getEntityRowIndices<MBTET>(data, "FIELD1");
+        CHKERR getEntityRowIndices(data, "FIELD1", MBEDGE);
 
         CHKERR getNodesFieldData(data, "FIELD1");
-        CHKERR getEntityFieldData<MBEDGE>(data, "FIELD1");
-        CHKERR getEntityFieldData<MBTRI>(data, "FIELD1");
-        CHKERR getEntityFieldData<MBTET>(data, "FIELD1");
+        CHKERR getEntityFieldData(data, "FIELD1", MBEDGE);
 
         MatrixDouble gauss_pts(4, 4);
         for (int gg = 0; gg < 4; gg++) {

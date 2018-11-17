@@ -151,7 +151,6 @@ int main(int argc, char *argv[]) {
       DM dm;
       // get dm
       CHKERR simple_interface->getDM(&dm);
-      CHKERRG(ierr);
       // create elements
       boost::shared_ptr<ForcesAndSourcesCore> domain_fe =
           boost::shared_ptr<ForcesAndSourcesCore>(

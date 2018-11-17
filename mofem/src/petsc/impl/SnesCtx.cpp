@@ -110,13 +110,13 @@ PetscErrorCode SnesRhs(SNES snes, Vec x, Vec f, void *ctx) {
   }
   bit = snes_ctx->postProcess_Rhs.begin();
   for (; bit != snes_ctx->postProcess_Rhs.end(); bit++) {
-    CHKERR (*bit)->setSnes(snes);
+    CHKERR(*bit)->setSnes(snes);
     (*bit)->snes_x = x;
     (*bit)->snes_f = f;
-    CHKERR (*bit)->setSnesCtx(SnesMethod::CTX_SNESSETFUNCTION);
+    CHKERR(*bit)->setSnesCtx(SnesMethod::CTX_SNESSETFUNCTION);
     CHKERR snes_ctx->mField.problem_basic_method_postProcess(
         snes_ctx->problemName, *(*(bit)));
-    CHKERR (*bit)->setSnesCtx(SnesMethod::CTX_SNESNONE);
+    CHKERR(*bit)->setSnesCtx(SnesMethod::CTX_SNESNONE);
   }
   CHKERR VecGhostUpdateBegin(f, ADD_VALUES, SCATTER_REVERSE);
   CHKERR VecGhostUpdateEnd(f, ADD_VALUES, SCATTER_REVERSE);
@@ -140,14 +140,14 @@ PetscErrorCode SnesMat(SNES snes, Vec x, Mat A, Mat B, void *ctx) {
   SnesCtx::BasicMethodsSequence::iterator bit =
       snes_ctx->preProcess_Mat.begin();
   for (; bit != snes_ctx->preProcess_Mat.end(); bit++) {
-    CHKERR (*bit)->setSnes(snes);
+    CHKERR(*bit)->setSnes(snes);
     (*bit)->snes_x = x;
     (*bit)->snes_A = A;
     (*bit)->snes_B = B;
-    CHKERR (*bit)->setSnesCtx(SnesMethod::CTX_SNESSETJACOBIAN);
+    CHKERR(*bit)->setSnesCtx(SnesMethod::CTX_SNESSETJACOBIAN);
     CHKERR snes_ctx->mField.problem_basic_method_preProcess(
         snes_ctx->problemName, *(*(bit)));
-    CHKERR (*bit)->setSnesCtx(SnesMethod::CTX_SNESNONE);
+    CHKERR(*bit)->setSnesCtx(SnesMethod::CTX_SNESNONE);
   }
   SnesCtx::FEMethodsSequence::iterator lit = snes_ctx->loops_to_do_Mat.begin();
   for (; lit != snes_ctx->loops_to_do_Mat.end(); lit++) {
@@ -164,14 +164,14 @@ PetscErrorCode SnesMat(SNES snes, Vec x, Mat A, Mat B, void *ctx) {
   }
   bit = snes_ctx->postProcess_Mat.begin();
   for (; bit != snes_ctx->postProcess_Mat.end(); bit++) {
-    CHKERR (*bit)->setSnes(snes);
+    CHKERR(*bit)->setSnes(snes);
     (*bit)->snes_x = x;
     (*bit)->snes_A = A;
     (*bit)->snes_B = B;
-    CHKERR (*bit)->setSnesCtx(SnesMethod::CTX_SNESSETJACOBIAN);
+    CHKERR(*bit)->setSnesCtx(SnesMethod::CTX_SNESSETJACOBIAN);
     CHKERR snes_ctx->mField.problem_basic_method_postProcess(
         snes_ctx->problemName, *(*(bit)));
-    CHKERR (*bit)->setSnesCtx(SnesMethod::CTX_SNESNONE);
+    CHKERR(*bit)->setSnesCtx(SnesMethod::CTX_SNESNONE);
   }
   CHKERR MatAssemblyBegin(B, snes_ctx->typeOfAssembly);
   CHKERR MatAssemblyEnd(B, snes_ctx->typeOfAssembly);

@@ -1246,12 +1246,6 @@ struct DataForcesAndSourcesCore {
 
     /**@}*/
 
-    /**
-     * \brief is internally used (true) if no indices on entity
-     * \note this is ugly fix, some better idea is needed here
-     */
-    bool semaphore;
-
   protected:
     int sEnse;                                   ///< Entity sense (orientation)
     ApproximationOrder oRder;                    ///< Entity order

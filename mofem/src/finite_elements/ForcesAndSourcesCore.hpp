@@ -98,10 +98,6 @@ struct ForcesAndSourcesCore : public FEMethod {
       const EntityType type, const FieldSpace space,
       boost::ptr_vector<DataForcesAndSourcesCore::EntData> &data) const;
 
-  /// \brief get maximal approximation order on entity
-  MoFEMErrorCode getDataOrderSpaceAndBase(
-      const std::string &field_name, const EntityType type,
-      boost::ptr_vector<DataForcesAndSourcesCore::EntData> &data) const;
 
   template <EntityType type>
   MoFEMErrorCode getEntitySense(DataForcesAndSourcesCore &data) const {
@@ -109,16 +105,9 @@ struct ForcesAndSourcesCore : public FEMethod {
   }
 
   template <EntityType type>
-  MoFEMErrorCode getEntityDataOrder(DataForcesAndSourcesCore &data,
+  MoFEMErrorCode getEntityFieldDataOrder(DataForcesAndSourcesCore &data,
                                     const FieldSpace space) const {
     return getDataOrder(type, space, data.dataOnEntities[type]);
-  }
-
-  template <EntityType type>
-  MoFEMErrorCode getEntityDataOrderSpaceAndBase(
-    DataForcesAndSourcesCore &data, const std::string &field_name) const {
-    return getDataOrderSpaceAndBase(field_name, type,
-                                    data.dataOnEntities[type]);
   }
 
   // ** Indices **
@@ -129,19 +118,6 @@ struct ForcesAndSourcesCore : public FEMethod {
                                  VectorInt &nodes_indices,
                                  VectorInt &local_nodes_indices) const;
 
-  /// \brief get indices by type (generic function)
-  MoFEMErrorCode getTypeIndices(const boost::string_ref field_name,
-                                FENumeredDofEntity_multiIndex &dofs,
-                                EntityType type, int side_number,
-                                VectorInt &indices,
-                                VectorInt &local_indices) const;
-
-  /// \brief get indices by type (generic function)
-  MoFEMErrorCode getTypeIndices(
-      const boost::string_ref field_name, FENumeredDofEntity_multiIndex &dofs,
-      EntityType type,
-      boost::ptr_vector<DataForcesAndSourcesCore::EntData> &data) const;
-
   /// \brief get row node indices from FENumeredDofEntity_multiIndex
   MoFEMErrorCode getRowNodesIndices(DataForcesAndSourcesCore &data,
                                     const std::string &field_name) const;
@@ -150,22 +126,31 @@ struct ForcesAndSourcesCore : public FEMethod {
   MoFEMErrorCode getColNodesIndices(DataForcesAndSourcesCore &data,
                                     const std::string &field_name) const;
 
-  template <EntityType type>
-  MoFEMErrorCode getEntityRowIndices(DataForcesAndSourcesCore &data,
-                                    const std::string &field_name) const {
-    return getTypeIndices(field_name,
-                          const_cast<FENumeredDofEntity_multiIndex &>(
-                              numeredEntFiniteElementPtr->getRowsDofs()),
-                          type, data.dataOnEntities[type]);
+  MoFEMErrorCode getEntityIndices(
+      DataForcesAndSourcesCore &data, const std::string &field_name,
+      FENumeredDofEntity_multiIndex &dofs, const EntityType type_lo = MBVERTEX,
+      const EntityType type_hi = MBPOLYHEDRON) const;
+
+  inline MoFEMErrorCode
+  getEntityRowIndices(DataForcesAndSourcesCore &data,
+                      const std::string &field_name,
+                      const EntityType type_lo = MBVERTEX,
+                      const EntityType type_hi = MBPOLYHEDRON) const {
+    return getEntityIndices(data, field_name,
+                            const_cast<FENumeredDofEntity_multiIndex &>(
+                                numeredEntFiniteElementPtr->getRowsDofs()),
+                            type_lo, type_hi);
   }
 
-  template <EntityType type>
-  MoFEMErrorCode getEntityColIndices(DataForcesAndSourcesCore &data,
-                                     const std::string &field_name) const {
-    return getTypeIndices(field_name,
-                          const_cast<FENumeredDofEntity_multiIndex &>(
-                              numeredEntFiniteElementPtr->getColsDofs()),
-                          type, data.dataOnEntities[type]);
+  inline MoFEMErrorCode
+  getEntityColIndices(DataForcesAndSourcesCore &data,
+                      const std::string &field_name,
+                      const EntityType type_lo = MBVERTEX,
+                      const EntityType type_hi = MBPOLYHEDRON) const {
+    return getEntityIndices(data, field_name,
+                            const_cast<FENumeredDofEntity_multiIndex &>(
+                                numeredEntFiniteElementPtr->getColsDofs()),
+                            type_lo, type_hi);
   }
 
   /// \brief get NoField indices
@@ -199,27 +184,6 @@ struct ForcesAndSourcesCore : public FEMethod {
                                    VectorDofs &nodes_dofs, FieldSpace &space,
                                    FieldApproximationBase &base) const;
 
-  /**
-   * \brief Get field data on entities
-   * @param  field_name     Field name
-   * @param  dofs           Dofs (element) multi index
-   * @param  type           Entity type
-   * @param  side_number    Side number (Local number of entity on element in
-   * canonical order)
-   * @param  ent_field_data Vector of DOFs values on entities
-   * @param  ent_field_dofs Vector of pointers to DOFs data structure
-   * @return                Error code
-   */
-  MoFEMErrorCode getTypeFieldData(const boost::string_ref field_name,
-                                  FEDofEntity_multiIndex &dofs, EntityType type,
-                                  int side_number, VectorDouble &ent_field_data,
-                                  VectorDofs &ent_field_dofs) const;
-
-  MoFEMErrorCode getTypeFieldData(
-      const boost::string_ref field_name, FEDofEntity_multiIndex &dofs,
-      EntityType type,
-      boost::ptr_vector<DataForcesAndSourcesCore::EntData> &data) const;
-
   MoFEMErrorCode getNoFieldFieldData(const boost::string_ref field_name,
                                      FEDofEntity_multiIndex &dofs,
                                      VectorDouble &ent_field_data,
@@ -236,14 +200,10 @@ struct ForcesAndSourcesCore : public FEMethod {
   MoFEMErrorCode getNodesFieldData(DataForcesAndSourcesCore &data,
                                    const std::string &field_name) const;
 
-  template <EntityType type>
   MoFEMErrorCode getEntityFieldData(DataForcesAndSourcesCore &data,
-                                    const std::string &field_name) const {
-    return getTypeFieldData(field_name,
-                            const_cast<FEDofEntity_multiIndex &>(
-                                numeredEntFiniteElementPtr->getDataDofs()),
-                            type, data.dataOnEntities[type]);
-  }
+                               const std::string &field_name,
+                               const EntityType type_lo = MBVERTEX,
+                               const EntityType type_hi = MBPOLYHEDRON) const;
 
   /// \brief Get nodes on triangles
   MoFEMErrorCode getFaceTriNodes(DataForcesAndSourcesCore &data) const;
@@ -643,10 +603,9 @@ struct ForcesAndSourcesCore : public FEMethod {
     ForcesAndSourcesCore *ptrFE;
   };
 
-
   /**
    * @brief Vector of finite element users data operators
-   * 
+   *
    * FIXME: that should be moved to private class data and acessed only by
    * member function
    */
@@ -661,14 +620,14 @@ struct ForcesAndSourcesCore : public FEMethod {
 
   /**
    * @brief Get the Entity Polynomial Base object
-   * 
-   * @return boost::shared_ptr<BaseFunction>&& 
+   *
+   * @return boost::shared_ptr<BaseFunction>&&
    */
   auto &getElementPolynomialBase() { return elementPolynomialBasePtr; }
 
   /**
    * @brief Get the User Polynomial Base object
-   * 
+   *
    * @return boost::shared_ptr<BaseFunction>&
    */
   auto &getUserPolynomialBase() { return userPolynomialBasePtr; }
@@ -679,7 +638,7 @@ struct ForcesAndSourcesCore : public FEMethod {
    * Columns is equal to number of integration points, numver of rows depends on
    * dimension of finite element entity, for example for tetrahedron rows are
    * x,y,z,weight. Last row is integration weight.
-   * 
+   *
    * FIXME: that should be moved to private class data and acessed only by
    * member function
    */
@@ -725,15 +684,15 @@ struct ForcesAndSourcesCore : public FEMethod {
 
   /**
    * @brief Create a entity data on element object
-   * 
-   * @return MoFEMErrorCode 
+   *
+   * @return MoFEMErrorCode
    */
   MoFEMErrorCode createDataOnElement();
 
   /**
    * @brief Iterate user data operators
-   * 
-   * @return MoFEMErrorCode 
+   *
+   * @return MoFEMErrorCode
    */
   MoFEMErrorCode loopOverOperators();
 

@@ -109,7 +109,7 @@ enum BaseIntefaces {
  *
  */
 enum MoFEMErrorCodes {
-  MOFEM_SUCESS = 0,
+  MOFEM_SUCCESS = 0,
   MOFEM_DATA_INCONSISTENCY = 100,
   MOFEM_NOT_IMPLEMENTED = 101,
   MOFEM_NOT_FOUND = 102,
@@ -124,7 +124,7 @@ enum MoFEMErrorCodes {
 };
 
 const static char *const MoFEMErrorCodesNames[] = {
-    "MOFEM_SUCESS",
+    "MOFEM_SUCCESS",
     "MOFEM_DATA_INCONSISTENCY",
     "MOFEM_NOT_IMPLEMENTED",
     "MOFEM_NOT_FOUND",

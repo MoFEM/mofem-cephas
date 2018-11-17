@@ -93,10 +93,12 @@ PetscErrorCode L2_Ainsworth_ShapeFunctions_MBTET(
     MoFEMFunctionReturnHot(0);
   double diff_ksiL0[3], diff_ksiL1[3], diff_ksiL2[3];
   int dd = 0;
-  for (; dd < 3; dd++) {
-    diff_ksiL0[dd] = (diffN[1 * 3 + dd] - diffN[0 * 3 + dd]);
-    diff_ksiL1[dd] = (diffN[2 * 3 + dd] - diffN[0 * 3 + dd]);
-    diff_ksiL2[dd] = (diffN[3 * 3 + dd] - diffN[0 * 3 + dd]);
+  if (diffN != NULL) {
+    for (; dd < 3; dd++) {
+      diff_ksiL0[dd] = (diffN[1 * 3 + dd] - diffN[0 * 3 + dd]);
+      diff_ksiL1[dd] = (diffN[2 * 3 + dd] - diffN[0 * 3 + dd]);
+      diff_ksiL2[dd] = (diffN[3 * 3 + dd] - diffN[0 * 3 + dd]);
+    }
   }
   int ii = 0;
   for (; ii != GDIM; ++ii) {
@@ -106,12 +108,21 @@ PetscErrorCode L2_Ainsworth_ShapeFunctions_MBTET(
     double ksiL2 = N[node_shift + 3] - N[node_shift + 0];
     double L0[p + 1], L1[p + 1], L2[p + 1];
     double diffL0[3 * (p + 1)], diffL1[3 * (p + 1)], diffL2[3 * (p + 1)];
-    ierr = base_polynomials(p, ksiL0, diff_ksiL0, L0, diffL0, 3);
-    CHKERRQ(ierr);
-    ierr = base_polynomials(p, ksiL1, diff_ksiL1, L1, diffL1, 3);
-    CHKERRQ(ierr);
-    ierr = base_polynomials(p, ksiL2, diff_ksiL2, L2, diffL2, 3);
-    CHKERRQ(ierr);
+    if (diffN != NULL) {
+      ierr = base_polynomials(p, ksiL0, diff_ksiL0, L0, diffL0, 3);
+      CHKERRQ(ierr);
+      ierr = base_polynomials(p, ksiL1, diff_ksiL1, L1, diffL1, 3);
+      CHKERRQ(ierr);
+      ierr = base_polynomials(p, ksiL2, diff_ksiL2, L2, diffL2, 3);
+      CHKERRQ(ierr);
+    } else {
+      ierr = base_polynomials(p, ksiL0, NULL, L0, NULL, 3);
+      CHKERRQ(ierr);
+      ierr = base_polynomials(p, ksiL1, NULL, L1, NULL, 3);
+      CHKERRQ(ierr);
+      ierr = base_polynomials(p, ksiL2, NULL, L2, NULL, 3);
+      CHKERRQ(ierr);
+    }
     int shift = ii * P;
     int jj = 0;
     int oo = 0;

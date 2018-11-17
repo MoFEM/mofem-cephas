@@ -5,13 +5,6 @@ general problem on particular examples.
 
 \tableofcontents
 
-\section hello_world Hello world
-
-Introduces user to basic ideas of user operator and MoFEM::Simple interface and
-implementation of finite element with users data operators.
-
-- \subpage hello_world_tut1
-
 
 \section hierarchical_approximation Hierarchical approximation
 
@@ -19,6 +12,15 @@ Introduces the reader to the basic concepts of finite element approach using
 Hierarchical basis functions.
 
 - \subpage hierarchical_approximation_1
+
+
+\section hello_world Hello world
+
+Introduces user to basic ideas of user operator and MoFEM::Simple interface and
+implementation of finite element with users data operators.
+
+- \subpage hello_world_tut1
+
 
 \section simple_elasticity Simple elastic problem
 
@@ -29,12 +31,12 @@ Introduction to fundamental MoFEM functionalities and capabilities by solving a 
 \section poisson_problem The Poisson equation
 
 The Poisson equation is solved using MoFEM::Simple interface. The generic
-procedure is applied to one of the simples PDEs. In order to make problem
-iterating boundary conditions are enforced by Lagrange multipliers
+procedure is applied to one of the simples PDEs. In order to make the problem instructional, 
+essential boundary conditions are enforced by Lagrange multipliers.
 
 - \subpage poisson_tut1
 
-Tutorial focusses attention on implementation of finite element users operators,
+Tutorial focusses attention on implementation of finite element user operators,
 setting integration rule and using \ref ftensor.
 
 - \subpage poisson_tut2
@@ -59,8 +61,8 @@ PETSc
 
 \section mix_adpativity_tut Mix formulation and h-adaptivity
 
-In example is shown how to solve transport problem using mix element with an
-independent approximation for fluxes and function values.  Also, is shown how to
+This example shows how to solve transport problem using mix element with an
+independent approximation for fluxes and function values.  Also, it shows how to
 integrate over mesh skeleton to evaluate error and how to use a posterior error
 estimator to drive mesh adaptivity (h-adaptivity).
 
