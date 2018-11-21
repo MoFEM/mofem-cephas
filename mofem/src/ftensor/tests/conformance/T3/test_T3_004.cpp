@@ -160,15 +160,16 @@ void test_T3_004(const Tensor3<double, 3, 3, 3> &t3_1) {
    t_3_1(i, j, k) = t_1(i) * t_2(j, k);
    Tensor2<double, 3, 3> t_2_1;
    t_2_1(i, j) = t_3_1(j, k, l) * t_3_1(i, l, k);
-    Tensor2<double, 3, 3> t_2_2;
-    t_2_2(i, j) = (t_2(k, l) * t_2(l, k)) * (t_1(i) * t_1(j));
-    for (int ii = 0; ii != 3; ++ii)
-      for (int jj = 0; jj != 3; ++jj) {
-        test_for_zero(t_2_1(ii, jj) - t_2_2(ii, jj), "T3(j,k,l)*T3(i,l,k)(" +
-                                                         to_string(ii) + ","
-                                                         + to_string(jj) +
-                                                         ")");
-      }
+   Tensor2<double, 3, 3> t_2_2;
+   t_2_2(i, j) = (t_2(k, l) * t_2(l, k)) * (t_1(i) * t_1(j));
+   for (int ii = 0; ii != 3; ++ii)
+     for (int jj = 0; jj != 3; ++jj) {
+       test_for_zero(t_2_1(ii, jj) - t_2_2(ii, jj), "T3(j,k,l)*T3(i,l,k)(" +
+                                                        to_string(ii) + "," +
+                                                        to_string(jj) + ")");
+     }
+ }
+
  }
 
 
