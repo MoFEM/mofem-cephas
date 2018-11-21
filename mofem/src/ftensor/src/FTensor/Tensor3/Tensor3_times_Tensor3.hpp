@@ -395,7 +395,7 @@ namespace FTensor
                            Number<Dim2>());
   }
 
-  /* A(i,j,k)*B(j,i,l) -> Tensor 2 */
+  /* A(i,j,k)*B(j,i,l) -> Tensor2 */
 
   template <class A, class B, class T, class U, int Dim04, int Dim13, int Dim2,
             int Dim5, char i, char j, char k, char l>
@@ -449,7 +449,7 @@ namespace FTensor
                         l>(TensorExpr(a, b));
   };
 
-    /* A(j,l,k)*B(i,k,l) -> Tensor 2 */
+    /* A(j,l,k)*B(i,k,l) -> Tensor2 */
 
   template <class A, class B, class T, class U, int Dim15, int Dim24, int Dim0,
             int Dim3, char i, char j, char k, char l>
@@ -502,7 +502,7 @@ namespace FTensor
                         j>(TensorExpr(a, b));
   };
 
-  /* A(i,j,k)*B(k,l,m) -> Tensor 4 */
+  /* A(i,j,k)*B(k,l,m) -> Tensor4 */
 
   template <class A, class B, class T, class U, int Dim0, int Dim1, int Dim23,
             int Dim4, int Dim5, char i, char j, char k, char l, char m>
