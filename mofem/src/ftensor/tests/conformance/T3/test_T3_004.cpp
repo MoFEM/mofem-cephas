@@ -11,7 +11,7 @@ void test_T3_004(const Tensor3<double, 3, 3, 3> &t3_1) {
   Index<'k', 3> k;
 
   {
-    // Symmetrization of first two indices yields dg
+    // Symmetrize of first two indices yields dg
     Dg<double, 3, 3> t_dg;
     t_dg(i, j, k) = t3_1(i, j, k) || t3_1(j, i, k);
     FTensor::Tensor3<double, 3, 3, 3> t_sym_3;
