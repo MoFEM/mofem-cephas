@@ -502,6 +502,59 @@ namespace FTensor
                         j>(TensorExpr(a, b));
   };
 
+  /* A(m,i,j)*B(n,i,j) -> Tensor2 */
+
+  template <class A, class B, class T, class U, int Dim14, int Dim25, int Dim0,
+            int Dim3, char i, char j, char k, char l>
+  class Tensor3_times_Tensor3_23_23 {
+    Tensor3_Expr<A, T, Dim0, Dim14, Dim25, k, i, j> iterA;
+    Tensor3_Expr<B, U, Dim3, Dim14, Dim25, l, i, j> iterB;
+
+    template <int CurrentDim0, int CurrentDim1>
+    typename promote<T, U>::V eval(const int N1, const int N2,
+                                   const Number<CurrentDim0> &,
+                                   const Number<CurrentDim1> &) const {
+      return iterA(N1, CurrentDim0 - 1, CurrentDim1 - 1) *
+                 iterB(N2, CurrentDim0 - 1, CurrentDim1 - 1) +
+             eval(N1, N2, Number<CurrentDim0>(), Number<CurrentDim1 - 1>());
+    }
+    template <int CurrentDim0>
+    typename promote<T, U>::V eval(const int N1, const int N2,
+                                   const Number<CurrentDim0> &,
+                                   const Number<1> &) const {
+      return iterA(N1, CurrentDim0 - 1, 0) * iterB(N2, CurrentDim0 - 1, 0) +
+             eval(N1, N2, Number<CurrentDim0 - 1>(), Number<Dim25>());
+    }
+    typename promote<T, U>::V eval(const int N1, const int N2,
+                                   const Number<1> &, const Number<1> &) const {
+      return iterA(N1, 0, 0) * iterB(N2, 0, 0);
+    }
+
+  public:
+    Tensor3_times_Tensor3_23_23(
+      const Tensor3_Expr<A, T, Dim0, Dim14, Dim25, k, i, j> &a,
+      const Tensor3_Expr<B, U, Dim3, Dim14, Dim25, l, i, j> &b)
+        : iterA(a), iterB(b)
+    {}
+    typename promote<T, U>::V operator()(const int &N1, const int &N2) const
+    {
+      return eval(N1, N2, Number<Dim14>(), Number<Dim25>());
+    }
+  };
+
+  template <class A, class B, class T, class U, int Dim14, int Dim25, int Dim0,
+            int Dim3, char i, char j, char k, char l>
+  Tensor2_Expr<Tensor3_times_Tensor3_23_23<A, B, T, U, Dim14, Dim25, Dim0, Dim3,
+                                           i, j, k, l>,
+               typename promote<T, U>::V, Dim0, Dim3, k, l>
+  operator*(const Tensor3_Expr<A, T, Dim0, Dim14, Dim25, k, i, j> &a,
+            const Tensor3_Expr<B, U, Dim3, Dim14, Dim25, l, i, j> &b) {
+    using TensorExpr = Tensor3_times_Tensor3_23_23<A, B, T, U, Dim14, Dim25,
+                                                   Dim0, Dim3, i, j, k, l>;
+    return Tensor2_Expr<TensorExpr, typename promote<T, U>::V, Dim0, Dim3, k,
+                        l>(TensorExpr(a, b));
+  };
+
   /* A(i,j,k)*B(k,l,m) -> Tensor4 */
 
   template <class A, class B, class T, class U, int Dim0, int Dim1, int Dim23,
