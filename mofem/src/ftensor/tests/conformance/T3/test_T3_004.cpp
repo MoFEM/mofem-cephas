@@ -142,7 +142,7 @@ void test_T3_004(const Tensor3<double, 3, 3, 3> &t3_1) {
      }
  }
 
-  // Tensor 3 times tensor 3 yield tensor 2 A(j,l,k)*B(i,k,l)
+ // Tensor 3 times tensor 3 yield tensor 2 A(j,l,k)*B(i,k,l)
  {
    Tensor1<double, 3> t_1;
    Tensor2<double, 3, 3> t_2;
