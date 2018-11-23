@@ -11,7 +11,7 @@ void test_T3_004(const Tensor3<double, 3, 3, 3> &t3_1) {
   Index<'k', 3> k;
 
   {
-    // Symmetrization of first two indices yields dg
+    // Symmetrize of first two indices yields dg
     Dg<double, 3, 3> t_dg;
     t_dg(i, j, k) = t3_1(i, j, k) || t3_1(j, i, k);
     FTensor::Tensor3<double, 3, 3, 3> t_sym_3;
@@ -142,7 +142,7 @@ void test_T3_004(const Tensor3<double, 3, 3, 3> &t3_1) {
      }
  }
 
-  // Tensor 3 times tensor 3 yield tensor 2 A(j,l,k)*B(i,k,l)
+ // Tensor 3 times tensor 3 yield tensor 2 A(j,l,k)*B(i,k,l)
  {
    Tensor1<double, 3> t_1;
    Tensor2<double, 3, 3> t_2;
@@ -160,15 +160,42 @@ void test_T3_004(const Tensor3<double, 3, 3, 3> &t3_1) {
    t_3_1(i, j, k) = t_1(i) * t_2(j, k);
    Tensor2<double, 3, 3> t_2_1;
    t_2_1(i, j) = t_3_1(j, k, l) * t_3_1(i, l, k);
-    Tensor2<double, 3, 3> t_2_2;
-    t_2_2(i, j) = (t_2(k, l) * t_2(l, k)) * (t_1(i) * t_1(j));
-    for (int ii = 0; ii != 3; ++ii)
-      for (int jj = 0; jj != 3; ++jj) {
-        test_for_zero(t_2_1(ii, jj) - t_2_2(ii, jj), "T3(j,k,l)*T3(i,l,k)(" +
-                                                         to_string(ii) + ","
-                                                         + to_string(jj) +
-                                                         ")");
-      }
+   Tensor2<double, 3, 3> t_2_2;
+   t_2_2(i, j) = (t_2(k, l) * t_2(l, k)) * (t_1(i) * t_1(j));
+   for (int ii = 0; ii != 3; ++ii)
+     for (int jj = 0; jj != 3; ++jj) {
+       test_for_zero(t_2_1(ii, jj) - t_2_2(ii, jj), "T3(j,k,l)*T3(i,l,k)(" +
+                                                        to_string(ii) + "," +
+                                                        to_string(jj) + ")");
+     }
+ }
+
+ // Tensor 3 times tensor 3 yield tensor 2 A(k,i,j)*B(l,i,j)
+ {
+   Tensor1<double, 3> t_1;
+   Tensor2<double, 3, 3> t_2;
+   for (int ii = 0; ii != 3; ++ii) {
+     t_1(ii) = 1 + ii;
+     for (int jj = 0; jj != 3; ++jj) {
+       t_2(ii, jj) = 1 + ii + 10. * jj;
+     }
+   }
+   Tensor3<double, 3, 3, 3> t_3_1; 
+   Index<'i', 3> i;
+   Index<'j', 3> j;
+   Index<'k', 3> k;
+   Index<'l', 3> l;
+   t_3_1(i, j, k) = t_1(i) * t_2(j, k);
+   Tensor2<double, 3, 3> t_2_1;
+   t_2_1(k, l) = t_3_1(k, i, j) * t_3_1(l, i, j);
+   Tensor2<double, 3, 3> t_2_2;
+   t_2_2(k, l) = (t_2(i, j) * t_2(i, j)) * (t_1(k) * t_1(l));
+   for (int kk = 0; kk != 3; ++kk)
+     for (int ll = 0; ll != 3; ++ll) {
+       test_for_zero(t_2_1(kk, ll) - t_2_2(kk, ll), "T3(k,i,j)*T3(l,i,j)(" +
+                                                        to_string(kk) + "," +
+                                                        to_string(ll) + ")");
+     }
  }
 
 
