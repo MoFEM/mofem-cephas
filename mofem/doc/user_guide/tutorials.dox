@@ -73,5 +73,9 @@ mix formulation applied to unsaturated water transport in heterogeneous soil.
 
 - \subpage mix_us_flow
 
+Tutorial for mixed formulation of imcompressible elasticity problem
+
+- \subpage elasticity_mixed_formulation
+
 
 */
