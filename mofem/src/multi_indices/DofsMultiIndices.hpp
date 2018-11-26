@@ -57,14 +57,11 @@ struct DofEntity : public interface_FieldEntity<FieldEntity> {
   }
 
   static inline UId getGlobalUniqueIdCalculate_Low_Proc(const int owner_proc) {
-    return static_cast<UId>(owner_proc) << 9 + 5 + 8 * sizeof(EntityHandle);
+    return FieldEntity::getGlobalUniqueIdCalculate_Low_Proc(owner_proc);
   }
 
   static inline UId getGlobalUniqueIdCalculate_Hi_Proc(const int owner_proc) {
-    return static_cast<UId>(MBMAXTYPE) << 9 |
-           static_cast<UId>(BITFIELDID_SIZE - 1)
-               << 9 + 8 * sizeof(EntityHandle) |
-           static_cast<UId>(owner_proc) << 9 + 5 + 8 * sizeof(EntityHandle);
+    return FieldEntity::getGlobalUniqueIdCalculate_Hi_Proc(owner_proc);
   }
 
   static inline ShortId
