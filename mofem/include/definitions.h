@@ -293,10 +293,11 @@ enum VERBOSITY_LEVELS {
 #define MB_ID_MASK (~MB_TYPE_MASK)
 
 #define MAX_DOFS_ON_ENTITY 512 ///< Maximal number of DOFs on entity
-#define DOF_UID_MASK_ON_ENTITY                                                 \
+#define DOF_UID_MASK                                                           \
   (MAX_DOFS_ON_ENTITY - 1) ///< Mask for DOF number on entity form UId
+#define ENTITY_UID_MASK (~DOF_UID_MASK)
 
-#define NOT_USED(x) ((void)(x))
+#define NOT_USED(x)((void)(x))
 
 /** \brief set barrier start
  * Run code in sequence, starting from process 0, and ends on last process.
