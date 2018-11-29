@@ -205,7 +205,7 @@ MoFEMErrorCode CutMeshInterface::cutAndTrim(
   }
 
   // trim mesh
-  CHKERR findEdgesToTrim(fixed_edges, corner_nodes, th, tol_trim);
+  CHKERR findEdgesToTrim(fixed_edges, corner_nodes, th, tol_trim, debug);
   CHKERR trimEdgesInTheMiddle(bit_level2, th, tol_trim_close, debug);
   if (fixed_edges) {
     CHKERR cOre.getInterface<BitRefManager>()->updateRange(*fixed_edges,
@@ -1051,12 +1051,13 @@ MoFEMErrorCode CutMeshInterface::moveMidNodesOnTrimmedEdges(Tag th) {
 
 MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
                                                  Range *corner_nodes, Tag th,
-                                                 const double tol, int verb) {
+                                                 const double tol,
+                                                 const bool debug) {
   CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   MoFEMFunctionBegin;
 
-  // takes edges on body skin
+  // takes body skin
   Skinner skin(&moab);
   Range tets_skin;
   CHKERR skin.find_skin(0, cutNewVolumes, false, tets_skin);
@@ -1079,6 +1080,7 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
   Range cut_surface_edges_on_fixed_edges_verts;
   CHKERR moab.get_connectivity(cut_surface_edges_on_fixed_edges,
                                cut_surface_edges_on_fixed_edges_verts, true);
+
   Range fixed_edges_verts_on_corners;
   if (fixed_edges) {
     CHKERR moab.get_connectivity(*fixed_edges, fixed_edges_verts_on_corners,
@@ -1089,6 +1091,16 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
   if (corner_nodes) {
     fixed_edges_verts_on_corners.merge(*corner_nodes);
   }
+
+  auto get_point_coords = [&th, &moab](EntityHandle v) {
+    VectorDouble3 point(3);
+    if (th) {
+      CHKERR moab.tag_get_data(th, &v, 1, &point[0]);
+    } else {
+      CHKERR moab.get_coords(&v, 1, &point[0]);
+    }
+    return point;
+  };
 
   // clear data ranges
   trimEdges.clear();
@@ -1139,8 +1151,6 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
     noalias(delta0) = get_closets_delta(s0);
     noalias(delta1) = get_closets_delta(s1);
 
-    // moab.tag_set_data(th,&conn[0],1,&delta0[0]);
-    // moab.tag_set_data(th,&conn[1],1,&delta1[0]);
     // Calculate distances
     double dist0 = norm_2(delta0);
     double dist1 = norm_2(delta1);
@@ -1181,7 +1191,6 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
               noalias(normal) = inner_prod(w, n) * n;
               double s = inner_prod(ray, w - normal);
               trimmed_end += s * ray;
-              // cerr << "s " << ii << " " << s << " " << norm_2(w) << endl;
               if ((s / length) < tol)
                 break;
             }
@@ -1223,18 +1232,8 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
     }
   }
 
-  // EntityHandle meshset;
-  // CHKERR moab.create_meshset(MESHSET_SET, meshset);
-  // Tag th_aaa;
-  // double def_val[] = {0,0,0};
-  // CHKERR moab.tag_get_handle("AAAA", 3, MB_TYPE_DOUBLE, th_aaa,
-  //                            MB_TAG_CREAT | MB_TAG_SPARSE, def_val);
-  // Range all_nodes;
-  // CHKERR moab.get_entities_by_type(0,MBVERTEX,all_nodes);
-  // std::vector<double> aaa(all_nodes.size()*3);
-  // CHKERR moab.tag_get_data(th,all_nodes,&aaa[0]);
-  // CHKERR moab.tag_set_data(th_aaa,all_nodes,&aaa[0]);
-
+  // Iterate over all vertives close to surface foront and check if those can be
+  // moved
   for (auto m : verts_map) {
 
     if (m.first < tol) {
@@ -1244,13 +1243,7 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
         continue;
       }
 
-      VectorDouble3 ray_point(3);
-      if (th) {
-        CHKERR moab.tag_get_data(th, &v, 1, &ray_point[0]);
-      } else {
-        CHKERR moab.get_coords(&v, 1, &ray_point[0]);
-      }
-
+      VectorDouble3 ray_point = get_point_coords(v);
       Range adj_edges;
       CHKERR moab.get_adjacencies(&v, 1, 1, false, adj_edges);
       adj_edges = intersect(adj_edges, edges);
@@ -1273,17 +1266,13 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
         continue;
       }
 
-      bool corner_node = false;
       if (fixed_edges_verts_on_corners.find(v) !=
           fixed_edges_verts_on_corners.end()) {
-        corner_node = true;
-      }
-
-      if (corner_node) {
 
         if (edgesToTrim.find(e) != edgesToTrim.end()) {
           auto &m = edgesToTrim.at(e);
           verticesOnTrimEdges[v] = m;
+          verticesOnTrimEdges[v].rayPoint = get_point_coords(v);
           verticesOnTrimEdges[v].dIst = 0;
           trimNewVertices.insert(v);
         }
@@ -1293,6 +1282,7 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
         VectorDouble3 new_pos(3);
         new_pos.clear();
         if (edgesToTrim.find(e) != edgesToTrim.end()) {
+
           auto &r = edgesToTrim.at(e);
           noalias(new_pos) = r.rayPoint + r.dIst * r.unitRayDir;
           VectorDouble3 unit_ray_dir = ray_point - new_pos;
@@ -1315,7 +1305,6 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
               } else {
                 CHKERR moab.get_coords(conn, num_nodes, &coords[0]);
               }
-              // cerr << coords << endl;
               for (int n = 0; n != 4; ++n) {
                 auto n_coords = getVectorAdaptor(&coords[3 * n], 3);
                 if (conn[n] == v) {
@@ -1346,16 +1335,11 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
             verticesOnTrimEdges[v].unitRayDir = unit_ray_dir;
             verticesOnTrimEdges[v].rayPoint = ray_point;
             trimNewVertices.insert(v);
-            // CHKERR moab.add_entities(meshset, &v, 1);
-            // CHKERR moab.add_entities(meshset, &e, 1);
-            // CHKERR moab.tag_set_data(th_aaa, &v, 1, &new_pos[0]);
           }
         }
       }
     }
   }
-
-  // CHKERR moab.write_file("aaaa.vtk", "VTK", "", &meshset, 1);
 
   for (auto m : verticesOnTrimEdges) {
     EntityHandle v = m.first;
@@ -1366,6 +1350,11 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
       edgesToTrim.erase(e);
       trimEdges.erase(e);
     }
+  }
+
+  if (debug) {
+    CHKERR SaveData(moab)("fixed_edges_verts_on_corners.vtk",
+                          fixed_edges_verts_on_corners);
   }
 
   MoFEMFunctionReturn(0);
