@@ -243,7 +243,7 @@ MoFEMErrorCode MedInterface::readMesh(const string &file, const int index,
                                       int verb) {
 
   Interface &m_field = cOre;
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
 
   med_idt fid = MEDfileOpen(file.c_str(), MED_ACC_RDONLY);
   if (fid < 0) {
@@ -493,7 +493,7 @@ MoFEMErrorCode MedInterface::readMesh(const string &file, const int index,
              "Unable to close file '%s'", file.c_str());
   }
 
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode
