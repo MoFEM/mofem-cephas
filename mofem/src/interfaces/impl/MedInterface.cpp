@@ -570,8 +570,17 @@ MedInterface::readFamily(const string &file, const int index,
       std::string name =
           std::string(&group_names[MED_LNAME_SIZE * g], MED_LNAME_SIZE - 1);
       name.resize(NAME_TAG_SIZE - 1);
-      group_elem_map[name].merge(family_elem_map.at(family_num));
-      // cerr << string(&group_names[MED_LNAME_SIZE*g]) << endl;
+      if(family_elem_map.find(family_num)==family_elem_map.end()) {
+        PetscPrintf(
+            PETSC_COMM_SELF,
+            "Warring: \n Family %d not read, likely type of element is not "
+            "added "
+            "to moab database. Currently only triangle, quad tetrahedral and "
+            "hexahedral elements are read to moab database\n");
+      } else {
+        group_elem_map[name].merge(family_elem_map.at(family_num));
+        // cerr << string(&group_names[MED_LNAME_SIZE*g]) << endl;
+      }
     }
   }
 
