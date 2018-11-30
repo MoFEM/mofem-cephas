@@ -128,8 +128,7 @@ MoFEMErrorCode MedInterface::medGetFieldNames(const string &file, int verb) {
     if (verb > 0) {
       std::ostringstream ss;
       ss << fieldNames[name] << std::endl;
-      ierr = PetscPrintf(m_field.get_comm(), ss.str().c_str());
-      CHKERRG(ierr);
+      CHKERR PetscPrintf(m_field.get_comm(), ss.str().c_str());
     }
   }
   if (MEDfileClose(fid) < 0) {
@@ -143,10 +142,8 @@ MoFEMErrorCode MedInterface::medGetFieldNames(int verb) {
   MoFEMFunctionBegin;
   if (medFileName.empty()) {
     CHKERR getFileNameFromCommandLine(verb);
-    CHKERRG(ierr);
   }
   CHKERR medGetFieldNames(medFileName, verb);
-  CHKERRG(ierr);
   MoFEMFunctionReturn(0);
 }
 
@@ -303,16 +300,14 @@ MoFEMErrorCode MedInterface::readMesh(const string &file, const int index,
   EntityHandle mesh_meshset;
   {
     MeshsetsManager *meshsets_manager_ptr;
-    ierr = m_field.getInterface(meshsets_manager_ptr);
-    CHKERRG(ierr);
+    CHKERR m_field.getInterface(meshsets_manager_ptr);
     int max_id = 0;
     for (_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field, BLOCKSET, cit)) {
       max_id = (max_id < cit->getMeshsetId()) ? cit->getMeshsetId() : max_id;
     }
     max_id++;
-    ierr = meshsets_manager_ptr->addMeshset(BLOCKSET, max_id,
+    CHKERR meshsets_manager_ptr->addMeshset(BLOCKSET, max_id,
                                             std::string(mesh_name));
-    CHKERRG(ierr);
     CubitMeshSet_multiIndex::index<
         Composite_Cubit_msId_And_MeshSetType_mi_tag>::type::iterator cit;
     cit =
@@ -351,10 +346,8 @@ MoFEMErrorCode MedInterface::readMesh(const string &file, const int index,
   ReadUtilIface *iface;
   vector<double *> arrays_coord;
   EntityHandle startv;
-  rval = m_field.get_moab().query_interface(iface);
-  CHKERRQ_MOAB(rval);
-  rval = iface->get_node_coords(3, num_nodes, 0, startv, arrays_coord);
-  CHKERRQ_MOAB(rval);
+  CHKERR m_field.get_moab().query_interface(iface);
+  CHKERR iface->get_node_coords(3, num_nodes, 0, startv, arrays_coord);
   Range verts(startv, startv + num_nodes - 1);
   std::copy(&coord_med[0 * num_nodes], &coord_med[1 * num_nodes],
             arrays_coord[0]);
@@ -362,8 +355,7 @@ MoFEMErrorCode MedInterface::readMesh(const string &file, const int index,
             arrays_coord[1]);
   std::copy(&coord_med[2 * num_nodes], &coord_med[3 * num_nodes],
             arrays_coord[2]);
-  ierr = m_field.get_moab().add_entities(mesh_meshset, verts);
-  CHKERRG(ierr);
+  CHKERR m_field.get_moab().add_entities(mesh_meshset, verts);
   family_elem_map.clear();
 
   // get family for vertices
@@ -428,9 +420,8 @@ MoFEMErrorCode MedInterface::readMesh(const string &file, const int index,
 
     EntityHandle *conn_moab;
     EntityHandle starte;
-    rval = iface->get_element_connect(num_ele, num_nod_per_ele, ent_type, 0,
+    CHKERR iface->get_element_connect(num_ele, num_nod_per_ele, ent_type, 0,
                                       starte, conn_moab);
-    CHKERRQ_MOAB(rval);
     switch (ent_type) {
     // FIXME: Some connectivity could not work, need to run and test
     case MBTET: {
@@ -460,13 +451,11 @@ MoFEMErrorCode MedInterface::readMesh(const string &file, const int index,
       }
     }
     }
-    rval =
-        iface->update_adjacencies(starte, num_ele, num_nod_per_ele, conn_moab);
-    CHKERRQ_MOAB(rval);
+    CHKERR iface->update_adjacencies(starte, num_ele, num_nod_per_ele,
+                                     conn_moab);
 
     Range ents(starte, starte + num_ele - 1);
-    ierr = m_field.get_moab().add_entities(mesh_meshset, ents);
-    CHKERRG(ierr);
+    CHKERR m_field.get_moab().add_entities(mesh_meshset, ents);
 
     // get family for cells
     {
@@ -599,10 +588,9 @@ MedInterface::makeBlockSets(const std::map<string, Range> &group_elem_map,
                             int verb) {
 
   Interface &m_field = cOre;
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   MeshsetsManager *meshsets_manager_ptr;
-  ierr = m_field.getInterface(meshsets_manager_ptr);
-  CHKERRG(ierr);
+  CHKERR m_field.getInterface(meshsets_manager_ptr);
 
   int max_id = 0;
   for (_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field, BLOCKSET, cit)) {
@@ -614,8 +602,7 @@ MedInterface::makeBlockSets(const std::map<string, Range> &group_elem_map,
   for (std::map<string, Range>::const_iterator git = group_elem_map.begin();
        git != group_elem_map.end(); git++) {
     // cerr << "AAA\n";
-    ierr = meshsets_manager_ptr->addMeshset(BLOCKSET, max_id, git->first);
-    CHKERRG(ierr);
+    CHKERR meshsets_manager_ptr->addMeshset(BLOCKSET, max_id, git->first);
     CubitMeshSet_multiIndex::index<
         Composite_Cubit_msId_And_MeshSetType_mi_tag>::type::iterator cit;
     cit =
@@ -624,8 +611,7 @@ MedInterface::makeBlockSets(const std::map<string, Range> &group_elem_map,
             .find(boost::make_tuple(max_id, CubitBCType(BLOCKSET).to_ulong()));
     EntityHandle meshsets = cit->getMeshset();
     if (!git->second.empty()) {
-      rval = m_field.get_moab().add_entities(meshsets, git->second);
-      CHKERRQ_MOAB(rval);
+      CHKERR m_field.get_moab().add_entities(meshsets, git->second);
     }
     max_id++;
     // cerr << git->second << endl;
@@ -641,7 +627,7 @@ MedInterface::makeBlockSets(const std::map<string, Range> &group_elem_map,
   }
   // }
 
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode MedInterface::readMed(int verb) {
@@ -694,11 +680,9 @@ MoFEMErrorCode MedInterface::readFields(const std::string &file_name,
 
   // Get meshset
   MeshsetsManager *meshsets_manager_ptr;
-  ierr = m_field.getInterface(meshsets_manager_ptr);
-  CHKERRG(ierr);
+  CHKERR m_field.getInterface(meshsets_manager_ptr);
   const CubitMeshSets *cubit_meshset_ptr;
-  ierr = meshsets_manager_ptr->getCubitMeshsetPtr(meshName, &cubit_meshset_ptr);
-  CHKERRG(ierr);
+  CHKERR meshsets_manager_ptr->getCubitMeshsetPtr(meshName, &cubit_meshset_ptr);
   EntityHandle meshset = cubit_meshset_ptr->getMeshset();
 
   int num_comp_msh = (num_comp <= 1)
@@ -711,10 +695,9 @@ MoFEMErrorCode MedInterface::readFields(const std::string &file_name,
   std::string tag_name = "MED_" + field_name;
   {
     std::vector<double> def_val(num_comp_msh, 0);
-    rval = m_field.get_moab().tag_get_handle(
+    CHKERR m_field.get_moab().tag_get_handle(
         tag_name.c_str(), num_comp_msh, MB_TYPE_DOUBLE, th,
         MB_TAG_CREAT | MB_TAG_SPARSE, &def_val[0]);
-    CHKERRQ_MOAB(rval);
   }
 
   // Warning! The ordering of the elements in the last two lists is
@@ -835,9 +818,8 @@ MoFEMErrorCode MedInterface::readFields(const std::string &file_name,
         }
         if (ngauss == 1) {
           Range ents;
-          rval = m_field.get_moab().get_entities_by_type(meshset, ent_type,
+          CHKERR m_field.get_moab().get_entities_by_type(meshset, ent_type,
                                                          ents, true);
-          CHKERRQ_MOAB(rval);
           double e_vals[num_comp_msh];
           bzero(e_vals, sizeof(double) * num_comp_msh);
           std::vector<double>::iterator vit = val.begin();
@@ -845,14 +827,12 @@ MoFEMErrorCode MedInterface::readFields(const std::string &file_name,
             for (int ii = 0; ii != num_comp; ii++, vit++) {
               e_vals[ii] = *vit;
             }
-            rval = m_field.get_moab().tag_set_data(th, &*eit, 1, e_vals);
-            CHKERRQ_MOAB(rval);
+            CHKERR m_field.get_moab().tag_set_data(th, &*eit, 1, e_vals);
           }
         } else {
           Range ents;
-          rval = m_field.get_moab().get_entities_by_type(meshset, ent_type,
+          CHKERR m_field.get_moab().get_entities_by_type(meshset, ent_type,
                                                          ents, true);
-          CHKERRQ_MOAB(rval);
           if (ents.size() * ngauss * num_comp != val.size()) {
             SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
                     "data inconsistency");
@@ -867,8 +847,7 @@ MoFEMErrorCode MedInterface::readFields(const std::string &file_name,
                 e_vals[ii] += *vit / ngauss;
               }
             }
-            rval = m_field.get_moab().tag_set_data(th, &*eit, 1, e_vals);
-            CHKERRQ_MOAB(rval);
+            CHKERR m_field.get_moab().tag_set_data(th, &*eit, 1, e_vals);
           }
         }
         // SETERRQ1(
