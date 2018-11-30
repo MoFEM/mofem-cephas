@@ -567,7 +567,8 @@ MedInterface::readFamily(const string &file, const int index,
             "Warring: \n Family %d not read, likely type of element is not "
             "added "
             "to moab database. Currently only triangle, quad, tetrahedral and "
-            "hexahedral elements are read to moab database\n");
+            "hexahedral elements are read to moab database\n",
+            family_num);
       } else {
         group_elem_map[name].merge(family_elem_map.at(family_num));
         // cerr << string(&group_names[MED_LNAME_SIZE*g]) << endl;
@@ -860,8 +861,8 @@ MoFEMErrorCode MedInterface::readFields(const std::string &file_name,
       case MED_NODE:
       case MED_NODE_ELEMENT:
       default:
-        SETERRQ(m_field.get_comm(), MOFEM_NOT_IMPLEMENTED,
-                "Not yet implemented");
+        PetscPrintf(PETSC_COMM_SELF,
+                    "Warning: \n Entity type %d not implemented\n", ent);
       }
     }
   }
