@@ -768,14 +768,18 @@ DefaultElementAdjacency::defaultPrism(Interface &moab, const Field &field_ptr,
       boost::shared_ptr<SideNumber> side_ptr =
           fe_ptr.getRefElement()->getSideNumberPtr(edge);
       if (side_ptr->side_number != ee) {
-        SETERRQ1(PETSC_COMM_SELF, 1, "data insistency for edge %d", ee);
+        SETERRQ2(PETSC_COMM_SELF, 1,
+                 "data inconsistency for edge %d while in FE datastructure is numbered %d",
+                 ee, side_ptr->side_number);
       }
       rval = moab.side_element(prism, 1, 6 + ee, edge);
       CHKERRQ_MOAB(rval);
       side_ptr = fe_ptr.getRefElement()->getSideNumberPtr(edge);
       if (side_ptr->side_number != ee + 6) {
         if (side_ptr->side_number != ee) {
-          SETERRQ1(PETSC_COMM_SELF, 1, "data insistency for edge %d", ee);
+          SETERRQ2(PETSC_COMM_SELF, 1,
+                   "data inconsistency for edge %d while in FE datastructure is numbered %d",
+                   ee, side_ptr->side_number);
         } else {
           side_ptr->brother_side_number = ee + 6;
         }
@@ -802,16 +806,19 @@ DefaultElementAdjacency::defaultPrism(Interface &moab, const Field &field_ptr,
       boost::shared_ptr<SideNumber> side_ptr =
           fe_ptr.getRefElement()->getSideNumberPtr(node);
       if (side_ptr->side_number != nn) {
-        SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                 "data insistency for node %d", nn);
+        SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                 "data inconsistency for node %d while in FE datastructure is numbered %d",
+                 nn, side_ptr->side_number);
       }
       rval = moab.side_element(prism, 0, nn + 3, node);
       CHKERRQ_MOAB(rval);
       side_ptr = fe_ptr.getRefElement()->getSideNumberPtr(node);
       if (side_ptr->side_number != nn + 3) {
         if (side_ptr->side_number != nn) {
-          SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                   "data insistency for node %d", nn);
+          SETERRQ2(
+              PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "data inconsistency for node %d while in FE datastructure is numbered %d",
+              nn, side_ptr->side_number);
         } else {
           side_ptr->brother_side_number = nn + 3;
         }
