@@ -84,7 +84,7 @@ namespace MoFEM {
 
   MoFEMErrorCode MedInterface::medGetFieldNames(const string &file, int verb) {
     Interface &m_field = cOre;
-    MoFEMFunctionBeginHot;
+    MoFEMFunctionBegin;
     med_idt fid = MEDfileOpen(file.c_str(), MED_ACC_RDONLY);
     if (fid < 0) {
       SETERRQ1(m_field.get_comm(), MOFEM_OPERATION_UNSUCCESSFUL,
@@ -137,7 +137,7 @@ namespace MoFEM {
       SETERRQ1(m_field.get_comm(), MOFEM_OPERATION_UNSUCCESSFUL,
                "Unable to close file '%s'", file.c_str());
     }
-    MoFEMFunctionReturnHot(0);
+    MoFEMFunctionReturn(0);
   }
 
   MoFEMErrorCode MedInterface::medGetFieldNames(int verb) {
@@ -493,7 +493,7 @@ namespace MoFEM {
   ) {
     //
     Interface &m_field = cOre;
-    MoFEMFunctionBeginHot;
+    MoFEMFunctionBegin;
 
     med_idt fid = MEDfileOpen(file.c_str(),MED_ACC_RDONLY);
     if(fid < 0) {
@@ -570,7 +570,7 @@ namespace MoFEM {
       SETERRQ1(m_field.get_comm(),MOFEM_OPERATION_UNSUCCESSFUL,"Unable to close file '%s'",file.c_str());
     }
 
-    MoFEMFunctionReturnHot(0);
+    MoFEMFunctionReturn(0);
   }
 
   MoFEMErrorCode MedInterface::makeBlockSets(
