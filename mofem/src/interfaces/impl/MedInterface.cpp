@@ -391,6 +391,8 @@ MoFEMErrorCode MedInterface::readMesh(const string &file, const int index,
 
     switch (ent_type) {
     // case MBVERTEX:
+    case MBTRI:
+    case MBQUAD:
     case MBTET:
     case MBHEX:
       break;
