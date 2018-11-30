@@ -370,6 +370,15 @@ namespace MoFEM {
     // read elements (loop over all possible MSH element types)
     for(EntityType ent_type = MBVERTEX; ent_type < MBMAXTYPE; ent_type++){
 
+      switch (ent_type) {
+      // case MBVERTEX:
+      case MBTET:
+      case MBHEX:
+        break;
+      default:
+        continue;
+      };
+
       med_geometrie_element type = moab2med_element_type(ent_type);
       if(type == MED_NONE) continue;
 
@@ -395,8 +404,8 @@ namespace MoFEM {
         );
       }
 
-      // cerr << "type " << ent_type << " ";
-      // cerr << "num_ele " << num_ele << " " << num_nod_per_ele << endl;;
+      cerr << "type " << ent_type << " ";
+      cerr << "num_ele " << num_ele << " " << num_nod_per_ele << endl;;
 
       EntityHandle* conn_moab;
       EntityHandle starte;
