@@ -566,7 +566,7 @@ MedInterface::readFamily(const string &file, const int index,
             PETSC_COMM_SELF,
             "Warring: \n Family %d not read, likely type of element is not "
             "added "
-            "to moab database. Currently only triangle, quad tetrahedral and "
+            "to moab database. Currently only triangle, quad, tetrahedral and "
             "hexahedral elements are read to moab database\n");
       } else {
         group_elem_map[name].merge(family_elem_map.at(family_num));
