@@ -381,17 +381,6 @@ MoFEMErrorCode MedInterface::readMesh(const string &file, const int index,
   // read elements (loop over all possible MSH element types)
   for (EntityType ent_type = MBVERTEX; ent_type < MBMAXTYPE; ent_type++) {
 
-    switch (ent_type) {
-    // case MBVERTEX:
-    case MBTRI:
-    case MBQUAD:
-    case MBTET:
-    case MBHEX:
-      break;
-    default:
-      continue;
-    };
-
     med_geometrie_element type = moab2med_element_type(ent_type);
     if (type == MED_NONE)
       continue;
@@ -418,43 +407,56 @@ MoFEMErrorCode MedInterface::readMesh(const string &file, const int index,
     // cerr << "type " << ent_type << " ";
     // cerr << "num_ele " << num_ele << " " << num_nod_per_ele << endl;;
 
-    EntityHandle *conn_moab;
-    EntityHandle starte;
-    CHKERR iface->get_element_connect(num_ele, num_nod_per_ele, ent_type, 0,
-                                      starte, conn_moab);
-    switch (ent_type) {
-    // FIXME: Some connectivity could not work, need to run and test
-    case MBTET: {
-      int ii = 0;
-      for (int ee = 0; ee != num_ele; ee++) {
-        EntityHandle n[4];
-        for (int nn = 0; nn != num_nod_per_ele; nn++) {
-          // conn_moab[ii] = verts[conn_med[ii]-1];
-          n[nn] = verts[conn_med[ii + nn] - 1];
-        }
-        EntityHandle n0 = n[0];
-        n[0] = n[1];
-        n[1] = n0;
-        for (int nn = 0; nn != num_nod_per_ele; nn++, ii++) {
-          conn_moab[ii] = n[nn];
-        }
-      }
-    } break;
-    default: {
-      int ii = 0;
-      for (int ee = 0; ee != num_ele; ee++) {
-        for (int nn = 0; nn != num_nod_per_ele; nn++, ii++) {
-          // cerr << conn_med[ii] << " ";
-          conn_moab[ii] = verts[conn_med[ii] - 1];
-        }
-        // cerr << endl;
-      }
-    }
-    }
-    CHKERR iface->update_adjacencies(starte, num_ele, num_nod_per_ele,
-                                     conn_moab);
+    Range ents;
 
-    Range ents(starte, starte + num_ele - 1);
+    if (ent_type != MBVERTEX) {
+      EntityHandle *conn_moab;
+      EntityHandle starte;
+      CHKERR iface->get_element_connect(num_ele, num_nod_per_ele, ent_type, 0,
+                                        starte, conn_moab);
+      switch (ent_type) {
+      // FIXME: Some connectivity could not work, need to run and test
+      case MBTET: {
+        int ii = 0;
+        for (int ee = 0; ee != num_ele; ee++) {
+          EntityHandle n[4];
+          for (int nn = 0; nn != num_nod_per_ele; nn++) {
+            // conn_moab[ii] = verts[conn_med[ii]-1];
+            n[nn] = verts[conn_med[ii + nn] - 1];
+          }
+          EntityHandle n0 = n[0];
+          n[0] = n[1];
+          n[1] = n0;
+          for (int nn = 0; nn != num_nod_per_ele; nn++, ii++) {
+            conn_moab[ii] = n[nn];
+          }
+        }
+      } break;
+      default: {
+        int ii = 0;
+        for (int ee = 0; ee != num_ele; ee++) {
+          for (int nn = 0; nn != num_nod_per_ele; nn++, ii++) {
+            // cerr << conn_med[ii] << " ";
+            conn_moab[ii] = verts[conn_med[ii] - 1];
+          }
+          // cerr << endl;
+        }
+      }
+      }
+      CHKERR iface->update_adjacencies(starte, num_ele, num_nod_per_ele,
+                                       conn_moab);
+      ents = Range(starte, starte + num_ele - 1);
+    } else {
+      // This is special case when in med vertices are defined as elements
+      int ii = 0;
+      std::vector<EntityHandle> conn_moab(num_ele * num_nod_per_ele);
+      for (int ee = 0; ee != num_ele; ++ee)
+        for (int nn = 0; nn != num_nod_per_ele; ++nn, ++ii)
+          conn_moab[ii] = verts[conn_med[ii] - 1];
+      ents.insert_list(conn_moab.begin(), conn_moab.end());
+    }
+
+    // Add elements to family meshset
     CHKERR m_field.get_moab().add_entities(mesh_meshset, ents);
 
     // get family for cells
@@ -561,7 +563,7 @@ MedInterface::readFamily(const string &file, const int index,
       std::string name =
           std::string(&group_names[MED_LNAME_SIZE * g], MED_LNAME_SIZE - 1);
       name.resize(NAME_TAG_SIZE - 1);
-      if(family_elem_map.find(family_num)==family_elem_map.end()) {
+      if (family_elem_map.find(family_num) == family_elem_map.end()) {
         PetscPrintf(
             PETSC_COMM_SELF,
             "Warring: \n Family %d not read, likely type of element is not "
