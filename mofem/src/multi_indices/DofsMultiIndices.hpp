@@ -35,7 +35,7 @@ struct DofEntity : public interface_FieldEntity<FieldEntity> {
 
   static inline UId getGlobalUniqueIdCalculate(const DofIdx dof,
                                                const UId &ent_uid) {
-    // if(dof>=512) THROW_MESSAGE("_dof>=512");
+    // if(dof>=MAX_DOFS_ON_ENTITY) THROW_MESSAGE("dof >= MAX_DOFS_ON_ENTITY");
     return static_cast<UId>(dof) | ent_uid;
   }
 
@@ -57,14 +57,14 @@ struct DofEntity : public interface_FieldEntity<FieldEntity> {
   }
 
   static inline UId getGlobalUniqueIdCalculate_Low_Proc(const int owner_proc) {
-    return static_cast<UId>(owner_proc) << 9 + 5 + 8 * sizeof(EntityHandle);
+    return getGlobalUniqueIdCalculate(
+        0, FieldEntity::getGlobalUniqueIdCalculate_Low_Proc(owner_proc));
   }
 
   static inline UId getGlobalUniqueIdCalculate_Hi_Proc(const int owner_proc) {
-    return static_cast<UId>(MBMAXTYPE) << 9 |
-           static_cast<UId>(BITFIELDID_SIZE - 1)
-               << 9 + 8 * sizeof(EntityHandle) |
-           static_cast<UId>(owner_proc) << 9 + 5 + 8 * sizeof(EntityHandle);
+    return getGlobalUniqueIdCalculate(
+        MAX_DOFS_ON_ENTITY - 1,
+        FieldEntity::getGlobalUniqueIdCalculate_Hi_Proc(owner_proc));
   }
 
   static inline ShortId
@@ -88,7 +88,7 @@ struct DofEntity : public interface_FieldEntity<FieldEntity> {
   inline DofIdx getEntDofIdx() const {
     DofIdx dof;
     memcpy(&dof, &globalUId, 2);
-    return DOF_UID_MASK_ON_ENTITY & dof;
+    return DOF_UID_MASK & dof;
   }
 
   /// @return get field data on dof

@@ -646,13 +646,12 @@ struct FieldEntity : public interface_Field<Field>,
   }
 
   static inline UId getGlobalUniqueIdCalculate_Low_Proc(const int owner_proc) {
-    return (UId)owner_proc << 5 + 8 * sizeof(EntityHandle);
+    return getGlobalUniqueIdCalculate(owner_proc, 0, 0, true);
   }
 
   static inline UId getGlobalUniqueIdCalculate_Hi_Proc(const int owner_proc) {
-    return (UId)MBMAXTYPE |
-           (UId)(BITFIELDID_SIZE - 1) << 8 * sizeof(EntityHandle) |
-           (UId)owner_proc << 5 + 8 * sizeof(EntityHandle);
+    return getGlobalUniqueIdCalculate(owner_proc, BITFIELDID_SIZE - 1,
+                                      MBMAXTYPE, true);
   }
 
   /**

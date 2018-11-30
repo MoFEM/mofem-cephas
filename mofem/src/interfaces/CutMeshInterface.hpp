@@ -173,7 +173,7 @@ struct CutMeshInterface : public UnknownInterface {
    */
   MoFEMErrorCode findEdgesToTrim(Range *fixed_edges, Range *corner_nodes,
                                  Tag th = NULL, const double tol = 1e-4,
-                                 int verb = 0);
+                                 const bool debug = false);
 
   /**
    * \brief trim edges
