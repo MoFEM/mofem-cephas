@@ -404,8 +404,8 @@ namespace MoFEM {
         );
       }
 
-      cerr << "type " << ent_type << " ";
-      cerr << "num_ele " << num_ele << " " << num_nod_per_ele << endl;;
+      // cerr << "type " << ent_type << " ";
+      // cerr << "num_ele " << num_ele << " " << num_nod_per_ele << endl;;
 
       EntityHandle* conn_moab;
       EntityHandle starte;
