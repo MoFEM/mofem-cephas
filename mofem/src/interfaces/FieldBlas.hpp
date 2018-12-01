@@ -78,8 +78,8 @@ struct FieldBlas : public UnknownInterface {
    *
    */
   MoFEMErrorCode fieldLambda(TwoFieldFunction lambda,
-                             const std::string &field_name_x,
-                             const std::string &field_name_y,
+                             const std::string field_name_x,
+                             const std::string field_name_y,
                              bool error_if_missing = false,
                              bool creat_if_missing = false);
 
@@ -97,8 +97,8 @@ struct FieldBlas : public UnknownInterface {
    * is not database
    *
    */
-  MoFEMErrorCode fieldAxpy(const double alpha, const std::string &field_name_x,
-                           const std::string &field_name_y,
+  MoFEMErrorCode fieldAxpy(const double alpha, const std::string field_name_x,
+                           const std::string field_name_y,
                            bool error_if_missing = false,
                            bool creat_if_missing = false);
 
@@ -116,8 +116,8 @@ struct FieldBlas : public UnknownInterface {
    * is not database
    *
    */
-  MoFEMErrorCode fieldCopy(const double alpha, const std::string &field_name_x,
-                           const std::string &field_name_y,
+  MoFEMErrorCode fieldCopy(const double alpha, const std::string field_name_x,
+                           const std::string field_name_y,
                            bool error_if_missing = false,
                            bool creat_if_missing = false);
 
@@ -130,7 +130,7 @@ struct FieldBlas : public UnknownInterface {
    *
    */
   MoFEMErrorCode setField(const double val, const EntityType type,
-                          const std::string &field_name);
+                          const std::string field_name);
 
   /** \brief set field
    * \ingroup mofem_field_algebra
@@ -144,7 +144,7 @@ struct FieldBlas : public UnknownInterface {
    *
    */
   MoFEMErrorCode setField(const double val, const EntityType type,
-                          const Range &ents, const std::string &field_name);
+                          const Range &ents, const std::string field_name);
 
   /** \brief set field
    * \ingroup mofem_field_algebra
@@ -158,7 +158,7 @@ struct FieldBlas : public UnknownInterface {
    * \param field_name
    *
    */
-  MoFEMErrorCode fieldScale(const double alpha, const std::string &field_name);
+  MoFEMErrorCode fieldScale(const double alpha, const std::string field_name);
 };
 
 } // namespace MoFEM
