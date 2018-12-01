@@ -205,6 +205,17 @@ MoFEMErrorCode FieldBlas::setField(const double val, const EntityType type,
   MoFEMFunctionReturnHot(0);
 }
 
+MoFEMErrorCode FieldBlas::setField(const double val,
+                                   const std::string field_name) {
+  const MoFEM::Interface &m_field = cOre;
+  const DofEntity_multiIndex *dofs_ptr;
+  MoFEMFunctionBegin;
+  CHKERR m_field.get_dofs(&dofs_ptr);
+  for (auto &dof : *dofs_ptr)
+    dof->getFieldData() = val;
+  MoFEMFunctionReturn(0);
+}
+
 MoFEMErrorCode FieldBlas::fieldScale(const double alpha,
                                      const std::string field_name) {
   const MoFEM::Interface &m_field = cOre;

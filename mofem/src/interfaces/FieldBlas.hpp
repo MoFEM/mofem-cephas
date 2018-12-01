@@ -153,6 +153,18 @@ struct FieldBlas : public UnknownInterface {
    * field_y = val
    *
    * \param val
+   * \param field_name
+   *
+   */
+  MoFEMErrorCode setField(const double val, const std::string field_name);
+
+  /** \brief set field
+   * \ingroup mofem_field_algebra
+   * \todo should be moved to independent interface, i.e. FieldAlgebra
+   *
+   * field_y = val
+   *
+   * \param val
    * \param entity type
    * \param on enties
    * \param field_name
