@@ -87,13 +87,13 @@ keep old versions locally or upload them int [Docker Hub](https://hub.docker.com
 # Adding additional user modules
 Additional user modules can be added according to the user/developer requirements. If the user/developer wants to add additional user module, e.g. "homogenisation". The steps are as follows:
 
-Clone the homogenisation repository in the user_modules directory of your source code using:
+Clone the homogenisation repository in the user_modules directory of your source code on the host using:
 ~~~~~~
 cd $HOME/mofem-cephas/mofem/users_modules/
 git clone https://bitbucket.org/likask/mofem_um_homogenisation.git homogenisation
 ~~~~~~
 
-The homogenisation user modules make use of small_strain_plasticity and obsolete user modules and therefore these should also be added to the user_modules directory using:
+The homogenisation user modules make use of "small_strain_plasticity" and "obsolete" user modules and therefore these should also be added to the user_modules directory using:
 
 ~~~~~~
 git clone https://bitbucket.org/likask/mofem_um_small_strain_plasticity.git small_strain_plasticity
@@ -103,7 +103,7 @@ git clone https://bitbucket.org/likask/mofem_um_obsolete.git obsolete
 These additional users modules need to be configured and compile before use. Use the following set of commands in the mofem_build/um/ directory on the docker:
 
 ~~~~~~
-cd mofem_build/um/
+cd ../mofem_build/um/
 
 # Configuration:
 cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXE_LINKER_FLAGS="-L$MOFEM_INSTALL_DIR/local/lib" users_modules
