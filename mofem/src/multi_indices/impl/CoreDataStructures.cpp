@@ -91,6 +91,9 @@ Field::Field(const Interface &moab, const EntityHandle meshset,
   std::string tag_data_name = name_data_prefix + getName();
   rval = moab.tag_get_handle(tag_data_name.c_str(), th_FieldData);
   MOAB_THROW(rval);
+  std::string tag_data_name_verts = name_data_prefix + getName() + "V";
+  rval = moab.tag_get_handle(tag_data_name_verts.c_str(), th_FieldDataVerts);
+  MOAB_THROW(rval);
   // order
   std::string tag_approximation_order_name = "_App_Order_" + getName();
   rval = moab.tag_get_handle(tag_approximation_order_name.c_str(), th_AppOrder);

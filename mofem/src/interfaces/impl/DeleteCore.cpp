@@ -271,23 +271,6 @@ MoFEMErrorCode Core::clear_ents_fields(const Range &ents, int verb) {
     hi_dit = entsFields.get<Ent_mi_tag>().upper_bound(second);
     entsFields.get<Ent_mi_tag>().erase(dit, hi_dit);
   }
-  // TODO: FIXME: Tag are not deleteted, some additional set of interface functions
-  // need to be implemented for example tag_field_delete(...)
-  // for (Field_multiIndex::iterator fit = fIelds.begin(); fit != fIelds.end();
-  //     fit++) {
-  //   rval = get_moab().tag_delete_data(fit->get()->th_AppOrder, ents);
-  //   if (rval != MB_SUCCESS && rval != MB_TAG_NOT_FOUND) {
-  //     CHKERRG(rval);
-  //   } else {
-  //     rval = MB_SUCCESS;
-  //   }
-  //   rval = get_moab().tag_delete_data(fit->get()->th_FieldData, ents);
-  //   if (rval != MB_SUCCESS && rval != MB_TAG_NOT_FOUND) {
-  //     CHKERRG(rval);
-  //   } else {
-  //     rval = MB_SUCCESS;
-  //   }
-  // }
   MoFEMFunctionReturn(0);
 }
 
@@ -311,21 +294,6 @@ MoFEMErrorCode Core::clear_ents_fields(const std::string &name,
         boost::make_tuple(name, second));
     entsFields.get<Composite_Name_And_Ent_mi_tag>().erase(dit, hi_dit);
   }
-  // TODO: FIXME: Tag are not deleteted, some additional set of interface functions
-  // need to be implemented for example tag_field_delete(...)
-  // const Field *field_ptr = get_field_structure(name);
-  // rval = get_moab().tag_delete_data(field_ptr->th_AppOrder, ents);
-  // if (rval != MB_SUCCESS && rval != MB_TAG_NOT_FOUND) {
-  //   CHKERRG(rval);
-  // } else {
-  //   rval = MB_SUCCESS;
-  // }
-  // rval = get_moab().tag_delete_data(field_ptr->th_FieldData, ents);
-  // if (rval != MB_SUCCESS && rval != MB_TAG_NOT_FOUND) {
-  //   CHKERRG(rval);
-  // } else {
-  //   rval = MB_SUCCESS;
-  // }
   MoFEMFunctionReturn(0);
 }
 
