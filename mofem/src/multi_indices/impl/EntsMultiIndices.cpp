@@ -188,9 +188,9 @@ VectorAdaptor FieldEntity::getEntFieldData() const {
     switch (getEntType()) {
     case MBVERTEX:
       getEntFieldDataLastSize = getNbOfCoeffs();
-      getEntFieldDataLastPtr = static_cast<double *>(
-          MoFEM::get_tag_ptr(sFieldPtr->moab, sFieldPtr->th_FieldDataVerts,
-                             sPtr->ent, &getEntFieldDataLastTagSize));
+      getEntFieldDataLastTagSize = getEntFieldDataLastSize;
+      getEntFieldDataLastPtr = static_cast<double *>(MoFEM::get_tag_ptr(
+          sFieldPtr->moab, sFieldPtr->th_FieldDataVerts, sPtr->ent, NULL));
       break;
     default:
       getEntFieldDataLastSize = getNbDofsOnEnt();
@@ -199,17 +199,10 @@ VectorAdaptor FieldEntity::getEntFieldData() const {
                              sPtr->ent, &getEntFieldDataLastTagSize));
       getEntFieldDataLastTagSize /= sizeof(double);
     }
-    return VectorAdaptor(
-        getEntFieldDataLastSize,
-        ublas::shallow_array_adaptor<double>(getEntFieldDataLastTagSize,
-                                             getEntFieldDataLastPtr));
-
-  } else {
-    return VectorAdaptor(
-        getEntFieldDataLastSize,
-        ublas::shallow_array_adaptor<double>(getEntFieldDataLastTagSize,
-                                             getEntFieldDataLastPtr));
   }
+  return VectorAdaptor(getEntFieldDataLastSize,
+                       ublas::shallow_array_adaptor<double>(
+                           getEntFieldDataLastTagSize, getEntFieldDataLastPtr));
 }
 
 FieldEntity::~FieldEntity() {}
@@ -236,20 +229,28 @@ void FieldEntity_change_order::operator()(FieldEntity *e) {
 
   switch (e->getEntType()) {
   case MBVERTEX: {
-    // Get pointer and size of field values tag
-    rval = moab.tag_get_by_ptr(e->sFieldPtr->th_FieldDataVerts, &ent, 1,
-                               (const void **)&tag_field_data,
-                               &tag_field_data_size);
-
-    if (nb_dofs) {
-      if (nb_dofs != tag_field_data_size) {
-        data.resize(nb_dofs, 0);
-        rval = moab.tag_set_data(e->sFieldPtr->th_FieldDataVerts, &ent, 1,
-                                 &*data.begin());
+    if (e->sFieldPtr->th_FieldDataVertsType == MB_TAG_SPARSE) {
+      // Get pointer and size of field values tag
+      rval = moab.tag_get_by_ptr(e->sFieldPtr->th_FieldDataVerts, &ent, 1,
+                                 (const void **)&tag_field_data,
+                                 &tag_field_data_size);
+      if (nb_dofs) {
+        if (nb_dofs != tag_field_data_size) {
+          
+          rval = moab.tag_set_data(e->sFieldPtr->th_FieldDataVerts, &ent, 1,
+                                   &*data.begin());
+          MOAB_THROW(rval);
+        }
+      } else if (rval == MB_SUCCESS) {
+        rval = moab.tag_delete_data(e->sFieldPtr->th_FieldDataVerts, &ent, 1);
         MOAB_THROW(rval);
       }
-    } else if (rval == MB_SUCCESS) {
-      rval = moab.tag_delete_data(e->sFieldPtr->th_FieldDataVerts, &ent, 1);
+    } else {
+      rval = moab.tag_get_by_ptr(e->sFieldPtr->th_FieldDataVerts, &ent, 1,
+                                 (const void **)&tag_field_data);
+      MOAB_THROW(rval);
+      rval = moab.tag_set_data(e->sFieldPtr->th_FieldDataVerts, &ent, 1,
+                               tag_field_data);
       MOAB_THROW(rval);
     }
    } break;

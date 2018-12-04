@@ -77,6 +77,7 @@ struct Field {
   boost::shared_ptr<CoordSys>
       coordSysPtr; ///< Pointer to field coordinate system data structure
 
+  TagType th_FieldDataVertsType; // Tag type for storing data on vertices
   Tag th_FieldDataVerts; ///< Tag storing field values on vertices in the field
   Tag th_FieldData;      ///< Tag storing field values on entity in the field
   Tag th_AppOrder;       ///< Tag storing approximation order on entity
