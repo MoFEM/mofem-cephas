@@ -190,20 +190,19 @@ inline MoFEMErrorCode determinantTensor3by3(
 
  * \ingroup mofem_forces_and_sources
  */
-template<class T1,class T2,class T3>
-inline MoFEMErrorCode invertTensor3by3(
-  T1 &t,T2 &det,T3 &inv_t
-) {
+template <class T1, class T2, class T3>
+inline MoFEMErrorCode invertTensor3by3(T1 &t, T2 &det, T3 &inv_t) {
   MoFEMFunctionBeginHot;
-  inv_t(0,0) = (t(1,1)*t(2,2)-t(1,2)*t(2,1))/det;
-  inv_t(0,1) = (t(0,2)*t(2,1)-t(0,1)*t(2,2))/det;
-  inv_t(0,2) = (t(0,1)*t(1,2)-t(0,2)*t(1,1))/det;
-  inv_t(1,0) = (t(1,2)*t(2,0)-t(1,0)*t(2,2))/det;
-  inv_t(1,1) = (t(0,0)*t(2,2)-t(0,2)*t(2,0))/det;
-  inv_t(1,2) = (t(0,2)*t(1,0)-t(0,0)*t(1,2))/det;
-  inv_t(2,0) = (t(1,0)*t(2,1)-t(1,1)*t(2,0))/det;
-  inv_t(2,1) = (t(0,1)*t(2,0)-t(0,0)*t(2,1))/det;
-  inv_t(2,2) = (t(0,0)*t(1,1)-t(0,1)*t(1,0))/det;
+  const auto inv_det = 1. / det;
+  inv_t(0, 0) = (t(1, 1) * t(2, 2) - t(1, 2) * t(2, 1)) * inv_det;
+  inv_t(0, 1) = (t(0, 2) * t(2, 1) - t(0, 1) * t(2, 2)) * inv_det;
+  inv_t(0, 2) = (t(0, 1) * t(1, 2) - t(0, 2) * t(1, 1)) * inv_det;
+  inv_t(1, 0) = (t(1, 2) * t(2, 0) - t(1, 0) * t(2, 2)) * inv_det;
+  inv_t(1, 1) = (t(0, 0) * t(2, 2) - t(0, 2) * t(2, 0)) * inv_det;
+  inv_t(1, 2) = (t(0, 2) * t(1, 0) - t(0, 0) * t(1, 2)) * inv_det;
+  inv_t(2, 0) = (t(1, 0) * t(2, 1) - t(1, 1) * t(2, 0)) * inv_det;
+  inv_t(2, 1) = (t(0, 1) * t(2, 0) - t(0, 0) * t(2, 1)) * inv_det;
+  inv_t(2, 2) = (t(0, 0) * t(1, 1) - t(0, 1) * t(1, 0)) * inv_det;
   MoFEMFunctionReturnHot(0);
 }
 
@@ -212,21 +211,20 @@ inline MoFEMErrorCode invertTensor3by3(
 
  * \ingroup mofem_forces_and_sources
  */
-template<>
-inline MoFEMErrorCode invertTensor3by3<
-FTensor::Tensor2_symmetric<double,3>,double,FTensor::Tensor2_symmetric<double,3>
->(
-  FTensor::Tensor2_symmetric<double,3> &t,
-  double &det,
-  FTensor::Tensor2_symmetric<double,3> &inv_t
-) {
+template <>
+inline MoFEMErrorCode
+invertTensor3by3<FTensor::Tensor2_symmetric<double, 3>, double,
+                 FTensor::Tensor2_symmetric<double, 3>>(
+    FTensor::Tensor2_symmetric<double, 3> &t, double &det,
+    FTensor::Tensor2_symmetric<double, 3> &inv_t) {
   MoFEMFunctionBeginHot;
-  inv_t(0,0) = (t(1,1)*t(2,2)-t(1,2)*t(2,1))/det;
-  inv_t(0,1) = (t(0,2)*t(2,1)-t(0,1)*t(2,2))/det;
-  inv_t(0,2) = (t(0,1)*t(1,2)-t(0,2)*t(1,1))/det;
-  inv_t(1,1) = (t(0,0)*t(2,2)-t(0,2)*t(2,0))/det;
-  inv_t(1,2) = (t(0,2)*t(1,0)-t(0,0)*t(1,2))/det;
-  inv_t(2,2) = (t(0,0)*t(1,1)-t(0,1)*t(1,0))/det;
+  const auto inv_det = 1. / det;
+  inv_t(0, 0) = (t(1, 1) * t(2, 2) - t(1, 2) * t(2, 1)) * inv_det;
+  inv_t(0, 1) = (t(0, 2) * t(2, 1) - t(0, 1) * t(2, 2)) * inv_det;
+  inv_t(0, 2) = (t(0, 1) * t(1, 2) - t(0, 2) * t(1, 1)) * inv_det;
+  inv_t(1, 1) = (t(0, 0) * t(2, 2) - t(0, 2) * t(2, 0)) * inv_det;
+  inv_t(1, 2) = (t(0, 2) * t(1, 0) - t(0, 0) * t(1, 2)) * inv_det;
+  inv_t(2, 2) = (t(0, 0) * t(1, 1) - t(0, 1) * t(1, 0)) * inv_det;
   MoFEMFunctionReturnHot(0);
 }
 
@@ -235,21 +233,20 @@ FTensor::Tensor2_symmetric<double,3>,double,FTensor::Tensor2_symmetric<double,3>
 
  * \ingroup mofem_forces_and_sources
  */
-template<>
-inline MoFEMErrorCode invertTensor3by3<
-FTensor::Tensor2_symmetric<double,3>,double,FTensor::Tensor2_symmetric<double*,3>
->(
-  FTensor::Tensor2_symmetric<double,3> &t,
-  double &det,
-  FTensor::Tensor2_symmetric<double*,3> &inv_t
-) {
+template <>
+inline MoFEMErrorCode
+invertTensor3by3<FTensor::Tensor2_symmetric<double, 3>, double,
+                 FTensor::Tensor2_symmetric<double *, 3>>(
+    FTensor::Tensor2_symmetric<double, 3> &t, double &det,
+    FTensor::Tensor2_symmetric<double *, 3> &inv_t) {
   MoFEMFunctionBeginHot;
-  inv_t(0,0) = (t(1,1)*t(2,2)-t(1,2)*t(2,1))/det;
-  inv_t(0,1) = (t(0,2)*t(2,1)-t(0,1)*t(2,2))/det;
-  inv_t(0,2) = (t(0,1)*t(1,2)-t(0,2)*t(1,1))/det;
-  inv_t(1,1) = (t(0,0)*t(2,2)-t(0,2)*t(2,0))/det;
-  inv_t(1,2) = (t(0,2)*t(1,0)-t(0,0)*t(1,2))/det;
-  inv_t(2,2) = (t(0,0)*t(1,1)-t(0,1)*t(1,0))/det;
+  const auto inv_det = 1. / det;
+  inv_t(0, 0) = (t(1, 1) * t(2, 2) - t(1, 2) * t(2, 1)) * inv_det;
+  inv_t(0, 1) = (t(0, 2) * t(2, 1) - t(0, 1) * t(2, 2)) * inv_det;
+  inv_t(0, 2) = (t(0, 1) * t(1, 2) - t(0, 2) * t(1, 1)) * inv_det;
+  inv_t(1, 1) = (t(0, 0) * t(2, 2) - t(0, 2) * t(2, 0)) * inv_det;
+  inv_t(1, 2) = (t(0, 2) * t(1, 0) - t(0, 0) * t(1, 2)) * inv_det;
+  inv_t(2, 2) = (t(0, 0) * t(1, 1) - t(0, 1) * t(1, 0)) * inv_det;
   MoFEMFunctionReturnHot(0);
 }
 
