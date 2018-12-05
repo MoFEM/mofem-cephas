@@ -93,8 +93,10 @@ int main(int argc, char *argv[]) {
     // Define problem
 
     // Fields
-    CHKERR m_field.add_field("FIELD_A", H1, AINSWORTH_LEGENDRE_BASE, 3);
-    CHKERR m_field.add_field("FIELD_B", H1, AINSWORTH_LEGENDRE_BASE, 3);
+    CHKERR m_field.add_field("FIELD_A", H1, AINSWORTH_LEGENDRE_BASE, 3,
+                             MB_TAG_DENSE);
+    CHKERR m_field.add_field("FIELD_B", H1, AINSWORTH_LEGENDRE_BASE, 3,
+                             MB_TAG_DENSE);
 
     CHKERR m_field.add_ents_to_field_by_type(0, MBTET, "FIELD_A");
     CHKERR m_field.add_ents_to_field_by_type(0, MBTET, "FIELD_B");

@@ -279,35 +279,39 @@ MoFEMErrorCode Core::getTags(int verb) {
 
   // Global Variables
   {
+
+    auto check_tag_allocated = [](auto &rval) {
+      MoFEMFunctionBeginHot;
+      if (rval == MB_ALREADY_ALLOCATED)
+        rval = MB_SUCCESS;
+      else
+        CHKERRG(rval);
+      MoFEMFunctionReturnHot(0);
+    };
+
     // Fields
     int def_shift = 1;
     rval = get_moab().tag_get_handle("_FieldShift", 1, MB_TYPE_INTEGER,
                                      th_FieldShift, MB_TAG_CREAT | MB_TAG_MESH,
                                      &def_shift);
-    if (rval == MB_ALREADY_ALLOCATED)
-      rval = MB_SUCCESS;
-    else
-      CHKERRG(rval);
+    CHKERR check_tag_allocated(rval);
+
     const void *tag_data[1];
     CHKERR get_moab().tag_get_by_ptr(th_FieldShift, &root_meshset, 1, tag_data);
     fShift = (int *)tag_data[0];
     // FE
     rval = get_moab().tag_get_handle("_FEShift", 1, MB_TYPE_INTEGER, th_FEShift,
                                      MB_TAG_CREAT | MB_TAG_MESH, &def_shift);
-    if (rval == MB_ALREADY_ALLOCATED)
-      rval = MB_SUCCESS;
-    else
-      CHKERRG(rval);
+    CHKERR check_tag_allocated(rval);
+
     CHKERR get_moab().tag_get_by_ptr(th_FEShift, &root_meshset, 1, tag_data);
     feShift = (int *)tag_data[0];
     // Problem
     rval = get_moab().tag_get_handle("_ProblemShift", 1, MB_TYPE_INTEGER,
                                      th_ProblemShift,
                                      MB_TAG_CREAT | MB_TAG_MESH, &def_shift);
-    if (rval == MB_ALREADY_ALLOCATED)
-      rval = MB_SUCCESS;
-    else
-      CHKERRG(rval);
+    CHKERR check_tag_allocated(rval);
+
     CHKERR get_moab().tag_get_by_ptr(th_ProblemShift, &root_meshset, 1,
                                      tag_data);
     pShift = (int *)tag_data[0];
@@ -316,10 +320,8 @@ MoFEMErrorCode Core::getTags(int verb) {
     rval = get_moab().tag_get_handle("_MoFEMBuild", 1, MB_TYPE_INTEGER,
                                      th_MoFEMBuild, MB_TAG_CREAT | MB_TAG_MESH,
                                      &def_bool);
-    if (rval == MB_ALREADY_ALLOCATED)
-      rval = MB_SUCCESS;
-    else
-      CHKERRG(rval);
+    CHKERR check_tag_allocated(rval);
+    
     CHKERR get_moab().tag_get_by_ptr(th_MoFEMBuild, &root_meshset, 1,
                                      (const void **)&buildMoFEM);
   }

@@ -806,7 +806,7 @@ MoFEMErrorCode MedInterface::readFields(const std::string &file_name,
 
       switch (ent) {
       case MED_CELL: {
-        EntityType ent_type;
+        EntityType ent_type = MBMAXTYPE;
         switch (ele) {
         case MED_TETRA4:
         case MED_TETRA10:
@@ -816,41 +816,43 @@ MoFEMErrorCode MedInterface::readFields(const std::string &file_name,
           ent_type = MBHEX;
           break;
         default:
-          SETERRQ1(m_field.get_comm(), MOFEM_NOT_IMPLEMENTED,
-                   "Not yet implemented for this cell %d", ele);
+          PetscPrintf(PETSC_COMM_SELF,
+                      "Warring:\n Not yet implemented for this cell %d\n", ele);
         }
-        if (ngauss == 1) {
-          Range ents;
-          CHKERR m_field.get_moab().get_entities_by_type(meshset, ent_type,
-                                                         ents, true);
-          double e_vals[num_comp_msh];
-          bzero(e_vals, sizeof(double) * num_comp_msh);
-          std::vector<double>::iterator vit = val.begin();
-          for (Range::iterator eit = ents.begin(); eit != ents.end(); eit++) {
-            for (int ii = 0; ii != num_comp; ii++, vit++) {
-              e_vals[ii] = *vit;
-            }
-            CHKERR m_field.get_moab().tag_set_data(th, &*eit, 1, e_vals);
-          }
-        } else {
-          Range ents;
-          CHKERR m_field.get_moab().get_entities_by_type(meshset, ent_type,
-                                                         ents, true);
-          if (ents.size() * ngauss * num_comp != val.size()) {
-            SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
-                    "data inconsistency");
-          }
-          // FIXME simply average gauss values, far from perfect need fix
-          double e_vals[num_comp_msh];
-          std::vector<double>::iterator vit = val.begin();
-          for (Range::iterator eit = ents.begin(); eit != ents.end(); eit++) {
+        if (ent_type != MBMAXTYPE) {
+          if (ngauss == 1) {
+            Range ents;
+            CHKERR m_field.get_moab().get_entities_by_type(meshset, ent_type,
+                                                           ents, true);
+            double e_vals[num_comp_msh];
             bzero(e_vals, sizeof(double) * num_comp_msh);
-            for (int gg = 0; gg != ngauss; gg++) {
+            std::vector<double>::iterator vit = val.begin();
+            for (Range::iterator eit = ents.begin(); eit != ents.end(); eit++) {
               for (int ii = 0; ii != num_comp; ii++, vit++) {
-                e_vals[ii] += *vit / ngauss;
+                e_vals[ii] = *vit;
               }
+              CHKERR m_field.get_moab().tag_set_data(th, &*eit, 1, e_vals);
             }
-            CHKERR m_field.get_moab().tag_set_data(th, &*eit, 1, e_vals);
+          } else {
+            Range ents;
+            CHKERR m_field.get_moab().get_entities_by_type(meshset, ent_type,
+                                                           ents, true);
+            if (ents.size() * ngauss * num_comp != val.size()) {
+              SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
+                      "data inconsistency");
+            }
+            // FIXME simply average gauss values, far from perfect need fix
+            double e_vals[num_comp_msh];
+            std::vector<double>::iterator vit = val.begin();
+            for (Range::iterator eit = ents.begin(); eit != ents.end(); eit++) {
+              bzero(e_vals, sizeof(double) * num_comp_msh);
+              for (int gg = 0; gg != ngauss; gg++) {
+                for (int ii = 0; ii != num_comp; ii++, vit++) {
+                  e_vals[ii] += *vit / ngauss;
+                }
+              }
+              CHKERR m_field.get_moab().tag_set_data(th, &*eit, 1, e_vals);
+            }
           }
         }
         // SETERRQ1(

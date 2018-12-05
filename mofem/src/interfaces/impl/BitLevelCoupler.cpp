@@ -504,7 +504,7 @@ MoFEMErrorCode BitLevelCoupler::copyFieldDataFromParentToChildren(
     const std::vector<EntityHandle> &children, const bool verify) {
   Interface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
 
   if (parents.size() != children.size()) {
     SETERRQ2(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
@@ -536,7 +536,7 @@ MoFEMErrorCode BitLevelCoupler::copyFieldDataFromParentToChildren(
           SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
                   "inconsistent type");
         }
-        // create mofem entity opjects
+        // create mofem entity objects
         boost::shared_ptr<FieldEntity> mofem_ent_parent(new FieldEntity(
             *fit, boost::shared_ptr<RefEntity>(new RefEntity(
                       m_field.get_basic_entity_data_ptr(), *pit))));
@@ -552,7 +552,7 @@ MoFEMErrorCode BitLevelCoupler::copyFieldDataFromParentToChildren(
                 mofem_ent_parent->getEntFieldData()[dd];
           }
         } else {
-          // approximation odresr is different
+          // approximation orders is different
           FieldEntity_multiIndex::iterator fcit =
               field_ents->find(mofem_ent_child->getGlobalUniqueId());
           if (fcit == field_ents->end()) {
@@ -579,20 +579,37 @@ MoFEMErrorCode BitLevelCoupler::copyFieldDataFromParentToChildren(
         }
       }
     } else {
-      // Get pointer and size of field values tag
-      rval = moab.tag_get_by_ptr(fit->get()->th_FieldData, &*parents.begin(),
-                                 parents.size(), (const void **)&data.front(),
-                                 &data_size.front());
-      CHKERRQ_MOAB(rval);
-      // Set data
-      rval = moab.tag_set_by_ptr(fit->get()->th_FieldData, &*children.begin(),
-                                 children.size(), (void *const *)&data.front(),
-                                 &data_size.front());
-      CHKERRQ_MOAB(rval);
+
+      auto copy_tag_data = [this, &moab, &data, &data_size](auto th, auto &p,
+                                                            auto &c) {
+        MoFEMFunctionBegin;
+        // Get pointer and size of field values tag
+        CHKERR moab.tag_get_by_ptr(th, p, (const void **)&data.front(),
+                                   &data_size.front());
+        // Set data
+        CHKERR moab.tag_set_by_ptr(th, c, (void *const *)&data.front(),
+                                   &data_size.front());
+        MoFEMFunctionReturn(0);
+      };
+
+      Range p, c;
+      p.insert_list(parents.begin(), parents.end());
+      c.insert_list(children.begin(), children.end());
+
+      Range parents_verts = p.subset_by_type(MBTET);
+      Range children_verts = c.subset_by_type(MBTET);
+      Range parents_without_verts = subtract(p, parents_verts);
+      Range children_without_verts = subtract(c, children_verts);
+
+      CHKERR copy_tag_data(fit->get()->th_FieldDataVerts, parents_verts,
+                           children_verts);
+      CHKERR copy_tag_data(fit->get()->th_FieldData, parents_verts,
+                           children_verts);
+
     }
   }
 
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode BitLevelCoupler::copyFieldDataFromParentToChildren(
