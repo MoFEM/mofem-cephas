@@ -207,7 +207,30 @@ inline MoFEMErrorCode invertTensor3by3(T1 &t, T2 &det, T3 &inv_t) {
 }
 
 /**
- * \brief Specialization for symmetric tensor
+ * \brief Calculate matrix inverse, specialization for adouble tensor
+
+ * \ingroup mofem_forces_and_sources
+ */
+template <>
+inline MoFEMErrorCode invertTensor3by3<FTensor::Tensor2<adouble, 3, 3>, adouble,
+                                       FTensor::Tensor2<adouble, 3, 3>>(
+    FTensor::Tensor2<adouble, 3, 3> &t, adouble &det,
+    FTensor::Tensor2<adouble, 3, 3> &inv_t) {
+  MoFEMFunctionBeginHot;
+  inv_t(0, 0) = (t(1, 1) * t(2, 2) - t(1, 2) * t(2, 1)) / det;
+  inv_t(0, 1) = (t(0, 2) * t(2, 1) - t(0, 1) * t(2, 2)) / det;
+  inv_t(0, 2) = (t(0, 1) * t(1, 2) - t(0, 2) * t(1, 1)) / det;
+  inv_t(1, 0) = (t(1, 2) * t(2, 0) - t(1, 0) * t(2, 2)) / det;
+  inv_t(1, 1) = (t(0, 0) * t(2, 2) - t(0, 2) * t(2, 0)) / det;
+  inv_t(1, 2) = (t(0, 2) * t(1, 0) - t(0, 0) * t(1, 2)) / det;
+  inv_t(2, 0) = (t(1, 0) * t(2, 1) - t(1, 1) * t(2, 0)) / det;
+  inv_t(2, 1) = (t(0, 1) * t(2, 0) - t(0, 0) * t(2, 1)) / det;
+  inv_t(2, 2) = (t(0, 0) * t(1, 1) - t(0, 1) * t(1, 0)) / det;
+  MoFEMFunctionReturnHot(0);
+}
+
+/**
+ * \brief Calculate matrix inverse, specialization for symmetric tensor
 
  * \ingroup mofem_forces_and_sources
  */
@@ -229,7 +252,29 @@ invertTensor3by3<FTensor::Tensor2_symmetric<double, 3>, double,
 }
 
 /**
- * \brief Specialization for symmetric (pointer) tensor
+ * \brief Calculate matrix inverse, specialization for adouble symmetric tensor
+
+ * \ingroup mofem_forces_and_sources
+ */
+template <>
+inline MoFEMErrorCode
+invertTensor3by3<FTensor::Tensor2_symmetric<adouble, 3>, adouble,
+                 FTensor::Tensor2_symmetric<adouble, 3>>(
+    FTensor::Tensor2_symmetric<adouble, 3> &t, adouble &det,
+    FTensor::Tensor2_symmetric<adouble, 3> &inv_t) {
+  MoFEMFunctionBeginHot;
+  inv_t(0, 0) = (t(1, 1) * t(2, 2) - t(1, 2) * t(2, 1)) / det;
+  inv_t(0, 1) = (t(0, 2) * t(2, 1) - t(0, 1) * t(2, 2)) / det;
+  inv_t(0, 2) = (t(0, 1) * t(1, 2) - t(0, 2) * t(1, 1)) / det;
+  inv_t(1, 1) = (t(0, 0) * t(2, 2) - t(0, 2) * t(2, 0)) / det;
+  inv_t(1, 2) = (t(0, 2) * t(1, 0) - t(0, 0) * t(1, 2)) / det;
+  inv_t(2, 2) = (t(0, 0) * t(1, 1) - t(0, 1) * t(1, 0)) / det;
+  MoFEMFunctionReturnHot(0);
+}
+
+/**
+ * \brief Calculate matrix inverse, specialization for symmetric (pointer)
+ tensor
 
  * \ingroup mofem_forces_and_sources
  */
