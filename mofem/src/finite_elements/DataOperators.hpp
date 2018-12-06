@@ -206,6 +206,8 @@ inline MoFEMErrorCode invertTensor3by3(T1 &t, T2 &det, T3 &inv_t) {
   MoFEMFunctionReturnHot(0);
 }
 
+#ifdef WITH_ADOL_C
+
 /**
  * \brief Calculate matrix inverse, specialization for adouble tensor
 
@@ -229,6 +231,8 @@ inline MoFEMErrorCode invertTensor3by3<FTensor::Tensor2<adouble, 3, 3>, adouble,
   MoFEMFunctionReturnHot(0);
 }
 
+#endif
+
 /**
  * \brief Calculate matrix inverse, specialization for symmetric tensor
 
@@ -251,6 +255,8 @@ invertTensor3by3<FTensor::Tensor2_symmetric<double, 3>, double,
   MoFEMFunctionReturnHot(0);
 }
 
+#ifdef WITH_ADOL_C
+
 /**
  * \brief Calculate matrix inverse, specialization for adouble symmetric tensor
 
@@ -271,6 +277,8 @@ invertTensor3by3<FTensor::Tensor2_symmetric<adouble, 3>, adouble,
   inv_t(2, 2) = (t(0, 0) * t(1, 1) - t(0, 1) * t(1, 0)) / det;
   MoFEMFunctionReturnHot(0);
 }
+
+#endif
 
 /**
  * \brief Calculate matrix inverse, specialization for symmetric (pointer)
