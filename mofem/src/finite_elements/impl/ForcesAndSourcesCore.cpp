@@ -972,7 +972,7 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
       // Set field
       switch (oit->sPace) {
       case NOSPACE:
-        SETERRQ(mField.get_comm(), MOFEM_DATA_INCONSISTENCY, "unknown space");
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Unknown space");
       case NOFIELD:
       case H1:
       case HCURL:
@@ -1012,7 +1012,7 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
         if ((oit->getNumeredEntFiniteElementPtr()->getBitFieldIdData() &
              data_id)
                 .none()) {
-          SETERRQ2(mField.get_comm(), MOFEM_DATA_INCONSISTENCY,
+          SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                    "no data field < %s > on finite element < %s >",
                    field_name.c_str(), feName.c_str());
         }
@@ -1022,7 +1022,7 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
 
           switch (space) {
           case NOSPACE:
-            SETERRQ(mField.get_comm(), MOFEM_DATA_INCONSISTENCY,
+            SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                     "unknown space");
             break;
           case NOFIELD:
@@ -1046,7 +1046,7 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
 
             switch (space) {
             case NOSPACE:
-              SETERRQ(mField.get_comm(), MOFEM_DATA_INCONSISTENCY,
+              SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                       "unknown space");
               break;
             case H1:
