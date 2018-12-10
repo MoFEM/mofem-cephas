@@ -439,14 +439,14 @@ DEPRECATED void macro_is_deprecated_using_deprecated_function();
   catch (MoFEMException const &ex) {                                           \
     SETERRQ(PETSC_COMM_SELF, ex.errorCode, ex.errorMessage);                   \
   }                                                                            \
-  catch (std::exception const &ex) {                                           \
+  catch (std::out_of_range & ex) {                                             \
     std::string message("Error: " + std::string(ex.what()) + " at " +          \
                         boost::lexical_cast<std::string>(__LINE__) + " : " +   \
                         std::string(__FILE__) + " in " +                       \
                         std::string(PETSC_FUNCTION_NAME));                     \
     SETERRQ(PETSC_COMM_SELF, MOFEM_STD_EXCEPTION_THROW, message.c_str());      \
   }                                                                            \
-  catch (std::out_of_range & ex) {                                             \
+  catch (std::exception const &ex) {                                           \
     std::string message("Error: " + std::string(ex.what()) + " at " +          \
                         boost::lexical_cast<std::string>(__LINE__) + " : " +   \
                         std::string(__FILE__) + " in " +                       \
