@@ -65,9 +65,23 @@ PetscErrorCode f_TSSetIFunction(TS ts, PetscReal t, Vec u, Vec u_t, Vec F,
   CHKERR VecGhostUpdateEnd(u_t, INSERT_VALUES, SCATTER_FORWARD);
   CHKERR ts_ctx->mField.getInterface<VecManager>()->setLocalGhostVector(
       ts_ctx->problemName, COL, u, INSERT_VALUES, SCATTER_REVERSE);
-  CHKERR VecZeroEntries(F);
-  CHKERR VecGhostUpdateBegin(F, INSERT_VALUES, SCATTER_FORWARD);
-  CHKERR VecGhostUpdateEnd(F, INSERT_VALUES, SCATTER_FORWARD);
+
+  auto zero_ghost_vec = [](Vec g) {
+    MoFEMFunctionBegin;
+    Vec l;
+    CHKERR VecGhostGetLocalForm(g, &l);
+    double *a;
+    CHKERR VecGetArray(l, &a);
+    int s;
+    CHKERR VecGetLocalSize(l, &s);
+    for (int i = 0; i != s;++i)
+      a[i] = 0;
+    CHKERR VecRestoreArray(l, &a);
+    CHKERR VecGhostRestoreLocalForm(g, &l);
+    MoFEMFunctionReturn(0);
+  };
+  CHKERR zero_ghost_vec(F);
+
   int step;
   CHKERR TSGetTimeStepNumber(ts, &step);
   // preprocess
