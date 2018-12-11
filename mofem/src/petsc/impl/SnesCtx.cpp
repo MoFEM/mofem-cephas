@@ -72,9 +72,23 @@ PetscErrorCode SnesRhs(SNES snes, Vec x, Vec f, void *ctx) {
   }
   CHKERR snes_ctx->mField.getInterface<VecManager>()->setLocalGhostVector(
       snes_ctx->problemName, COL, x, INSERT_VALUES, SCATTER_REVERSE);
-  CHKERR VecZeroEntries(f);
-  CHKERR VecGhostUpdateBegin(f, INSERT_VALUES, SCATTER_FORWARD);
-  CHKERR VecGhostUpdateEnd(f, INSERT_VALUES, SCATTER_FORWARD);
+
+  auto zero_ghost_vec = [](Vec g) {
+    MoFEMFunctionBegin;
+    Vec l;
+    CHKERR VecGhostGetLocalForm(g, &l);
+    double *a;
+    CHKERR VecGetArray(l, &a);
+    int s;
+    CHKERR VecGetLocalSize(l, &s);
+    for (int i = 0; i != s;++i)
+      a[i] = 0;
+    CHKERR VecRestoreArray(l, &a);
+    CHKERR VecGhostRestoreLocalForm(g, &l);
+    MoFEMFunctionReturn(0);
+  };
+  CHKERR zero_ghost_vec(f);
+
   SnesCtx::BasicMethodsSequence::iterator bit =
       snes_ctx->preProcess_Rhs.begin();
   for (; bit != snes_ctx->preProcess_Rhs.end(); bit++) {
