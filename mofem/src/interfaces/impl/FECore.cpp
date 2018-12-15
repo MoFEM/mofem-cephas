@@ -685,43 +685,40 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
   // Loop over hash map, which has all entities on given elemnts
   boost::shared_ptr<SideNumber> side_number_ptr;
   for (auto &mit : ent_uid_and_fe_vec) {
-    DofsByEntUId::iterator dit, hi_dit;
-    dit = dofs_by_ent_uid.lower_bound(*mit.first);
-    hi_dit = dofs_by_ent_uid.upper_bound(*mit.first);
-    for (; dit != hi_dit; dit++) {
+    auto range_dit = dofs_by_ent_uid.equal_range(*mit.first);
+    for (auto &dit = range_dit.first; dit != range_dit.second; ++dit) {
       const BitFieldId field_id = dit->get()->getId();
       const EntityHandle dof_ent = dit->get()->getEnt();
-      std::vector<boost::weak_ptr<EntFiniteElement>>::const_iterator fe_it,
-          hi_fe_it;
-      fe_it = mit.second.begin();
-      hi_fe_it = mit.second.end();
-      for (; fe_it != hi_fe_it; fe_it++) {
+
+      for (auto fe_it : mit.second) {
+
+        auto fe_raw_ptr = fe_it.lock().get();
 
         // if rows and columns of finite element are the same, then
         // we exploit that case
-        if ((field_id & fe_it->lock().get()->getBitFieldIdRow()).any()) {
-          fe_it->lock().get()->row_dof_view->insert(
-              fe_it->lock().get()->row_dof_view->end(), *dit);
+        if ((field_id & fe_raw_ptr->getBitFieldIdRow()).any()) {
+          fe_raw_ptr->row_dof_view->insert(
+              fe_raw_ptr->row_dof_view->end(), *dit);
         }
-        if (fe_it->lock().get()->col_dof_view !=
-            fe_it->lock().get()->row_dof_view) {
-          if ((field_id & fe_it->lock().get()->getBitFieldIdCol()).any()) {
-            fe_it->lock().get()->col_dof_view->insert(
-                fe_it->lock().get()->col_dof_view->end(), *dit);
+        if (fe_raw_ptr->col_dof_view !=
+            fe_raw_ptr->row_dof_view) {
+          if ((field_id & fe_raw_ptr->getBitFieldIdCol()).any()) {
+            fe_raw_ptr->col_dof_view->insert(
+                fe_raw_ptr->col_dof_view->end(), *dit);
           }
         }
 
         // Add FEDofEntity, first create dofs, one by one, note that memory
         // is already reserved. Then create shared pointers and finally add
         // th_FEName to element multi-index
-        const EntityHandle fe_ent = fe_it->lock().get()->getEnt();
+        const EntityHandle fe_ent = fe_raw_ptr->getEnt();
         boost::shared_ptr<std::vector<FEDofEntity>> &data_dofs_array_vec =
             data_dofs_array[fe_ent];
         if (data_dofs_size[fe_ent] != 0 &&
-            (field_id & fe_it->lock().get()->getBitFieldIdData()).any()) {
+            (field_id & fe_raw_ptr->getBitFieldIdData()).any()) {
 
           // There are data dofs on this element
-          side_number_ptr = fe_it->lock().get()->getSideNumberPtr(dof_ent);
+          side_number_ptr = fe_raw_ptr->getSideNumberPtr(dof_ent);
           data_dofs_array_vec->emplace_back(side_number_ptr, *dit);
           if (data_dofs_array_vec->size() ==
               (unsigned int)data_dofs_size[fe_ent]) {
@@ -729,14 +726,14 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
             // multi-index
 
             // Create shared pointers vector
-            auto hint = fe_it->lock().get()->data_dofs->end();
+            auto hint = fe_raw_ptr->data_dofs->end();
             for (std::vector<FEDofEntity>::iterator vit =
                      data_dofs_array_vec->begin();
                  vit != data_dofs_array_vec->end(); vit++) {
-              hint = fe_it->lock().get()->data_dofs->emplace_hint(
+              hint = fe_raw_ptr->data_dofs->emplace_hint(
                   hint, data_dofs_array_vec, &(*vit));
             }
-            fe_it->lock().get()->getDofsSequence() = data_dofs_array_vec;
+            fe_raw_ptr->getDofsSequence() = data_dofs_array_vec;
           }
         }
       }
