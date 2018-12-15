@@ -671,13 +671,9 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
   // Reserve memory
   std::map<EntityHandle, boost::shared_ptr<std::vector<FEDofEntity>>>
       data_dofs_array;
-  for (std::map<EntityHandle, int>::iterator mit = data_dofs_size.begin();
-       mit != data_dofs_size.end(); mit++) {
-    if (mit->second > 0) {
-      data_dofs_array[mit->first] =
-          boost::make_shared<std::vector<FEDofEntity>>();
-      data_dofs_array[mit->first]->reserve(mit->second);
-    }
+  for (auto &mit : data_dofs_size) {
+    data_dofs_array[mit.first] = boost::make_shared<std::vector<FEDofEntity>>();
+    data_dofs_array[mit.first]->reserve(mit.second);
   }
 
   typedef DofEntity_multiIndex::index<Unique_Ent_mi_tag>::type DofsByEntUId;
