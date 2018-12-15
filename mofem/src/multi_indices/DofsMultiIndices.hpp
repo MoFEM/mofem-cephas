@@ -484,8 +484,8 @@ typedef multi_index_container<
                               boost::string_ref, &FEDofEntity::getNameRef>,
                 const_mem_fun<FEDofEntity::interface_type_DofEntity,
                               EntityHandle, &FEDofEntity::getEnt> > >,
-        // This is only useed by obsolete modules, should be removed with 
-        // brother of cephs, i.e. Pawel.                              
+        // This is only used by obsolete modules, should be removed with 
+        // brother of Cephas, i.e. Pawel.                              
         ordered_non_unique<
             tag<Composite_Name_Type_And_Side_Number_mi_tag>,
             composite_key<
