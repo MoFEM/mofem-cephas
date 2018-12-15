@@ -420,7 +420,6 @@ MoFEMErrorCode ProblemsManager::buildProblem(Problem *problem_ptr,
                                              int verb) {
   MoFEM::Interface &m_field = cOre;
   const EntFiniteElement_multiIndex *fe_ent_ptr;
-  const DofEntity_multiIndex *dofs_field_ptr;
   MoFEMFunctionBeginHot;
   PetscLogEventBegin(MOFEM_EVENT_ProblemsManager, 0, 0, 0, 0);
 
@@ -434,8 +433,6 @@ MoFEMErrorCode ProblemsManager::buildProblem(Problem *problem_ptr,
   ierr = m_field.clear_problem(problem_ptr->getName());
   CHKERRG(ierr);
   ierr = m_field.get_ents_finite_elements(&fe_ent_ptr);
-  CHKERRG(ierr);
-  ierr = m_field.get_dofs(&dofs_field_ptr);
   CHKERRG(ierr);
 
   // zero finite elements
@@ -458,10 +455,10 @@ MoFEMErrorCode ProblemsManager::buildProblem(Problem *problem_ptr,
         if ((fe_bit & prb_bit) != prb_bit)
           continue;
         // get dof uids for rows and columns
-        ierr = (*miit)->getRowDofView(*dofs_field_ptr, dofs_rows);
+        ierr = (*miit)->getRowDofView(dofs_rows);
         CHKERRG(ierr);
         if (!square_matrix) {
-          ierr = (*miit)->getColDofView(*dofs_field_ptr, dofs_cols);
+          ierr = (*miit)->getColDofView(dofs_cols);
           CHKERRG(ierr);
         }
       }
@@ -684,9 +681,9 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
           continue;
 
         // get dof uids for rows and columns
-        CHKERR (*fe_miit)->getRowDofView(*dofs_field_ptr, dofs_rows);
+        CHKERR (*fe_miit)->getRowDofView(dofs_rows);
         if (!square_matrix) {
-          CHKERR (*fe_miit)->getColDofView(*dofs_field_ptr, dofs_cols);
+          CHKERR (*fe_miit)->getColDofView(dofs_cols);
         }
       }
     }

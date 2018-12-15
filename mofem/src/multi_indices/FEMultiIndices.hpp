@@ -535,18 +535,15 @@ struct EntFiniteElement : public interface_FiniteElement<FiniteElement>,
   friend std::ostream &operator<<(std::ostream &os, const EntFiniteElement &e);
 
   MoFEMErrorCode
-  getRowDofView(const DofEntity_multiIndex &dofs,
-                DofEntity_multiIndex_active_view &dofs_view,
+  getRowDofView(DofEntity_multiIndex_active_view &dofs_view,
                 const int operation_type = moab::Interface::UNION) const;
 
   MoFEMErrorCode
-  getColDofView(const DofEntity_multiIndex &dofs,
-                DofEntity_multiIndex_active_view &dofs_view,
+  getColDofView(DofEntity_multiIndex_active_view &dofs_view,
                 const int operation_type = moab::Interface::UNION) const;
 
   MoFEMErrorCode
-  getDataDofView(const DofEntity_multiIndex &dofs,
-                 DofEntity_multiIndex_active_view &dofs_view,
+  getDataDofView(DofEntity_multiIndex_active_view &dofs_view,
                  const int operation_type = moab::Interface::UNION) const;
 
   MoFEMErrorCode
