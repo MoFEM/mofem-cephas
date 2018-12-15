@@ -1075,15 +1075,11 @@ static MoFEMErrorCode
 get_fe_dof_view(const FE_DOFS &fe_dofs_view, const MOFEM_DOFS &mofem_dofs,
                 MOFEM_DOFS_VIEW &mofem_dofs_view, const int operation_type) {
   MoFEMFunctionBeginHot;
-  typename boost::multi_index::index<MOFEM_DOFS, Unique_mi_tag>::type::iterator
-      mofem_it,
-      mofem_it_end;
-  typename FE_DOFS::iterator it, it_end;
   if (operation_type == moab::Interface::UNION) {
-    mofem_it = mofem_dofs.template get<Unique_mi_tag>().begin();
-    mofem_it_end = mofem_dofs.template get<Unique_mi_tag>().end();
-    it = fe_dofs_view.begin();
-    it_end = fe_dofs_view.end();
+    auto mofem_it = mofem_dofs.template get<Unique_mi_tag>().begin();
+    auto mofem_it_end = mofem_dofs.template get<Unique_mi_tag>().end();
+    auto it = fe_dofs_view.begin();
+    auto it_end = fe_dofs_view.end();
     for (; it != it_end; it++) {
       const UId &globalUid = (*it)->getGlobalUniqueId();
       if (mofem_it != mofem_it_end) {
