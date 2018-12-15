@@ -646,20 +646,18 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
         const std::string field_name = miit->get()->getName();
         const bool add_to_data =
             (field_id & p.first->get()->getBitFieldIdData()).any();
-        FieldEntity_multiIndex::index<
-            Composite_Name_And_Ent_mi_tag>::type::iterator meit,
-            hi_meit;
         for (Range::pair_iterator p_eit = adj_ents.pair_begin();
              p_eit != adj_ents.pair_end(); ++p_eit) {
           const EntityHandle first = p_eit->first;
           const EntityHandle second = p_eit->second;
-          meit = entsFields.get<Composite_Name_And_Ent_mi_tag>().lower_bound(
-              boost::make_tuple(field_name, first));
-          if (meit == entsFields.get<Composite_Name_And_Ent_mi_tag>().end()) {
+          auto meit =
+              entsFields.get<Composite_Name_And_Ent_mi_tag>().lower_bound(
+                  boost::make_tuple(field_name, first));
+          if (meit == entsFields.get<Composite_Name_And_Ent_mi_tag>().end())
             continue;
-          }
-          hi_meit = entsFields.get<Composite_Name_And_Ent_mi_tag>().upper_bound(
-              boost::make_tuple(field_name, second));
+          auto hi_meit =
+              entsFields.get<Composite_Name_And_Ent_mi_tag>().upper_bound(
+                  boost::make_tuple(field_name, second));
           for (; meit != hi_meit; ++meit) {
             const UId *uid_ptr = &(meit->get()->getGlobalUniqueId());
             auto e_uid_vec_fe_it = ent_uid_and_fe_vec.get<1>().find(uid_ptr);
