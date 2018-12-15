@@ -436,17 +436,10 @@ typedef multi_index_container<
         >>
     DofEntity_multiIndex_uid_view;
 
-/** \brief multi-index random access view on DofEntity by uid
+/** \brief vector view on DofEntity by uid
   \ingroup dof_multi_indices
 */
-typedef multi_index_container<
-    boost::weak_ptr<DofEntity>,
-    indexed_by<
-
-        random_access<>
-
-        >>
-    DofEntity_multiIndex_ranodm_access_view;
+typedef std::vector<boost::weak_ptr<DofEntity>> DofEntity_vector_view;
 
 /** \brief multi-index view on DofEntity activity
   \ingroup dof_multi_indices

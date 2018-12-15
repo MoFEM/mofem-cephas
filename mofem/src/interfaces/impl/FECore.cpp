@@ -604,7 +604,7 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
         fe_raw_ptr->col_dof_view = fe_raw_ptr->row_dof_view;
       } else if (fe_raw_ptr->col_dof_view == fe_raw_ptr->row_dof_view) {
         fe_raw_ptr->col_dof_view =
-            boost::make_shared<DofEntity_multiIndex_ranodm_access_view>();
+            boost::make_shared<DofEntity_vector_view>();
       }
 
       fe_raw_ptr->row_dof_view->clear();

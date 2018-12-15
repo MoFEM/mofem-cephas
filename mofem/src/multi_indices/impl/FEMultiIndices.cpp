@@ -1020,11 +1020,11 @@ EntFiniteElement::EntFiniteElement(
     : interface_FiniteElement<FiniteElement>(fe_ptr),
       interface_RefElement<RefElement>(ref_finite_element),
       row_dof_view(
-          boost::shared_ptr<DofEntity_multiIndex_ranodm_access_view>(
-              new DofEntity_multiIndex_ranodm_access_view)),
+          boost::shared_ptr<DofEntity_vector_view>(
+              new DofEntity_vector_view)),
       col_dof_view(
-          boost::shared_ptr<DofEntity_multiIndex_ranodm_access_view>(
-              new DofEntity_multiIndex_ranodm_access_view)),
+          boost::shared_ptr<DofEntity_vector_view>(
+              new DofEntity_vector_view)),
       data_dofs(boost::shared_ptr<FEDofEntity_multiIndex>(
           new FEDofEntity_multiIndex)) {
   // get finite element entity
