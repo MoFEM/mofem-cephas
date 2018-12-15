@@ -591,22 +591,23 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
     hi_ref_fe_miit =
         refinedFiniteElements.get<Ent_mi_tag>().upper_bound(second);
 
+    EntFiniteElement_multiIndex::iterator hint_p = entsFiniteElements.end();
+
     for (; ref_fe_miit != hi_ref_fe_miit; ref_fe_miit++) {
 
-      std::pair<EntFiniteElement_multiIndex::iterator, bool> p =
-          entsFiniteElements.insert(
-              boost::make_shared<EntFiniteElement>(*ref_fe_miit, fe));
+      hint_p = entsFiniteElements.emplace_hint(
+          hint_p, boost::make_shared<EntFiniteElement>(*ref_fe_miit, fe));
 
       if (fe_fields[ROW] == fe_fields[COL]) {
-        p.first->get()->col_dof_view = p.first->get()->row_dof_view;
-      } else if (p.first->get()->col_dof_view == p.first->get()->row_dof_view) {
-        p.first->get()->col_dof_view =
+        hint_p->get()->col_dof_view = hint_p->get()->row_dof_view;
+      } else if (hint_p->get()->col_dof_view == hint_p->get()->row_dof_view) {
+        hint_p->get()->col_dof_view =
             boost::make_shared<DofEntity_multiIndex_uid_view>();
       }
 
-      p.first->get()->row_dof_view->clear();
-      p.first->get()->col_dof_view->clear();
-      p.first->get()->data_dofs->clear();
+      hint_p->get()->row_dof_view->clear();
+      hint_p->get()->col_dof_view->clear();
+      hint_p->get()->data_dofs->clear();
 
       for (unsigned int ii = 0; ii < BitFieldId().size(); ii++) {
 
@@ -632,13 +633,13 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
 
         // Resolve entities on element, those entities are used to build tag
         // with dof uids on finite element tag
-        CHKERR p.first->get()->getElementAdjacency(*miit, adj_ents);
+        CHKERR hint_p->get()->getElementAdjacency(*miit, adj_ents);
 
         // Loop over adjacencies of element and find field entities on those
         // adjacencies, that create hash map map_uid_fe which is used later
         const std::string field_name = miit->get()->getName();
         const bool add_to_data =
-            (field_id & p.first->get()->getBitFieldIdData()).any();
+            (field_id & hint_p->get()->getBitFieldIdData()).any();
 
         for (Range::pair_iterator p_eit = adj_ents.pair_begin();
              p_eit != adj_ents.pair_end(); ++p_eit) {
@@ -656,9 +657,9 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
           for (; meit != hi_meit; ++meit) {
             const UId *uid_ptr = &(meit->get()->getGlobalUniqueId());
             auto &fe_vec = ent_uid_and_fe_vec[uid_ptr];
-            fe_vec.emplace_back(*p.first);
+            fe_vec.emplace_back(*hint_p);
             if (add_to_data) {
-              data_dofs_size[p.first->get()->getEnt()] +=
+              data_dofs_size[hint_p->get()->getEnt()] +=
                   meit->get()->getNbDofsOnEnt();
             }
           }
