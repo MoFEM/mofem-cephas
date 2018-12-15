@@ -598,16 +598,18 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
       hint_p = entsFiniteElements.emplace_hint(
           hint_p, boost::make_shared<EntFiniteElement>(*ref_fe_miit, fe));
 
+      auto fe_raw_ptr = hint_p->get();
+
       if (fe_fields[ROW] == fe_fields[COL]) {
-        hint_p->get()->col_dof_view = hint_p->get()->row_dof_view;
-      } else if (hint_p->get()->col_dof_view == hint_p->get()->row_dof_view) {
-        hint_p->get()->col_dof_view =
+        fe_raw_ptr->col_dof_view = fe_raw_ptr->row_dof_view;
+      } else if (fe_raw_ptr->col_dof_view == fe_raw_ptr->row_dof_view) {
+        fe_raw_ptr->col_dof_view =
             boost::make_shared<DofEntity_multiIndex_uid_ranodm_access_view>();
       }
 
-      hint_p->get()->row_dof_view->clear();
-      hint_p->get()->col_dof_view->clear();
-      hint_p->get()->data_dofs->clear();
+      fe_raw_ptr->row_dof_view->clear();
+      fe_raw_ptr->col_dof_view->clear();
+      fe_raw_ptr->data_dofs->clear();
 
       for (unsigned int ii = 0; ii < BitFieldId().size(); ii++) {
 
@@ -633,13 +635,13 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
 
         // Resolve entities on element, those entities are used to build tag
         // with dof uids on finite element tag
-        CHKERR hint_p->get()->getElementAdjacency(*miit, adj_ents);
+        CHKERR fe_raw_ptr->getElementAdjacency(*miit, adj_ents);
 
         // Loop over adjacencies of element and find field entities on those
         // adjacencies, that create hash map map_uid_fe which is used later
         const std::string field_name = miit->get()->getName();
         const bool add_to_data =
-            (field_id & hint_p->get()->getBitFieldIdData()).any();
+            (field_id & fe_raw_ptr->getBitFieldIdData()).any();
 
         for (Range::pair_iterator p_eit = adj_ents.pair_begin();
              p_eit != adj_ents.pair_end(); ++p_eit) {
@@ -653,13 +655,13 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
           auto hi_meit =
               entsFields.get<Composite_Name_And_Ent_mi_tag>().upper_bound(
                   boost::make_tuple(field_name, second));
-          // create list of finite elements with this dof UId        
+          // create list of finite elements with this dof UId
           for (; meit != hi_meit; ++meit) {
             const UId *uid_ptr = &(meit->get()->getGlobalUniqueId());
             auto &fe_vec = ent_uid_and_fe_vec[uid_ptr];
             fe_vec.emplace_back(*hint_p);
             if (add_to_data) {
-              data_dofs_size[hint_p->get()->getEnt()] +=
+              data_dofs_size[fe_raw_ptr->getEnt()] +=
                   meit->get()->getNbDofsOnEnt();
             }
           }
