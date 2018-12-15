@@ -566,15 +566,8 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
 
   // map entity uid to pointers
   typedef std::vector<boost::weak_ptr<EntFiniteElement>> VecOfWeakFEPtrs;
-  typedef std::pair<const UId *, VecOfWeakFEPtrs> EntUIdAndVecOfWeakFEPtrs;
-  typedef multi_index_container<
-      EntUIdAndVecOfWeakFEPtrs,
-      indexed_by<sequenced<>,
-                 hashed_non_unique<member<EntUIdAndVecOfWeakFEPtrs, const UId *,
-                                          &EntUIdAndVecOfWeakFEPtrs::first>>>>
-      EntUIdAndVecOfWeakFEPtrs_multi_index;
-  EntUIdAndVecOfWeakFEPtrs_multi_index ent_uid_and_fe_vec;
-
+  typedef std::map<const UId *, VecOfWeakFEPtrs> MapEntUIdAndVecOfWeakFEPtrs;
+  MapEntUIdAndVecOfWeakFEPtrs ent_uid_and_fe_vec;
   std::map<EntityHandle, int> data_dofs_size;
 
   // loop meshset Ents and add finite elements
@@ -646,6 +639,7 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
         const std::string field_name = miit->get()->getName();
         const bool add_to_data =
             (field_id & p.first->get()->getBitFieldIdData()).any();
+
         for (Range::pair_iterator p_eit = adj_ents.pair_begin();
              p_eit != adj_ents.pair_end(); ++p_eit) {
           const EntityHandle first = p_eit->first;
@@ -658,19 +652,11 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
           auto hi_meit =
               entsFields.get<Composite_Name_And_Ent_mi_tag>().upper_bound(
                   boost::make_tuple(field_name, second));
+          // create list of finite elements with this dof UId        
           for (; meit != hi_meit; ++meit) {
             const UId *uid_ptr = &(meit->get()->getGlobalUniqueId());
-            auto e_uid_vec_fe_it = ent_uid_and_fe_vec.get<1>().find(uid_ptr);
-            if (e_uid_vec_fe_it == ent_uid_and_fe_vec.get<1>().end()) {
-              ent_uid_and_fe_vec.insert(
-                  ent_uid_and_fe_vec.end(),
-                  std::pair<const UId *, VecOfWeakFEPtrs>(
-                      uid_ptr, VecOfWeakFEPtrs(1, *p.first)));
-            } else {
-              const VecOfWeakFEPtrs &vec_fe_ptrs = e_uid_vec_fe_it->second;
-              const_cast<VecOfWeakFEPtrs &>(vec_fe_ptrs).push_back(*p.first);
-            }
-
+            auto &fe_vec = ent_uid_and_fe_vec[uid_ptr];
+            fe_vec.emplace_back(*p.first);
             if (add_to_data) {
               data_dofs_size[p.first->get()->getEnt()] +=
                   meit->get()->getNbDofsOnEnt();
@@ -698,19 +684,17 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
 
   // Loop over hash map, which has all entities on given elemnts
   boost::shared_ptr<SideNumber> side_number_ptr;
-  for (EntUIdAndVecOfWeakFEPtrs_multi_index::iterator mit =
-           ent_uid_and_fe_vec.begin();
-       mit != ent_uid_and_fe_vec.end(); mit++) {
+  for (auto &mit : ent_uid_and_fe_vec) {
     DofsByEntUId::iterator dit, hi_dit;
-    dit = dofs_by_ent_uid.lower_bound(*mit->first);
-    hi_dit = dofs_by_ent_uid.upper_bound(*mit->first);
+    dit = dofs_by_ent_uid.lower_bound(*mit.first);
+    hi_dit = dofs_by_ent_uid.upper_bound(*mit.first);
     for (; dit != hi_dit; dit++) {
       const BitFieldId field_id = dit->get()->getId();
       const EntityHandle dof_ent = dit->get()->getEnt();
       std::vector<boost::weak_ptr<EntFiniteElement>>::const_iterator fe_it,
           hi_fe_it;
-      fe_it = mit->second.begin();
-      hi_fe_it = mit->second.end();
+      fe_it = mit.second.begin();
+      hi_fe_it = mit.second.end();
       for (; fe_it != hi_fe_it; fe_it++) {
 
         // if rows and columns of finite element are the same, then
