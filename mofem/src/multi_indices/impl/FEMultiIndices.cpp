@@ -1070,24 +1070,33 @@ std::ostream &operator<<(std::ostream &os, const EntFiniteElement &e) {
   return os;
 }
 
+template<typename IT> 
+inline UId extractUId(IT &it) {
+  return it->getGlobalUniqueId();
+}
+
+template <>
+inline UId
+extractUId<boost::weak_ptr<DofEntity>>(boost::weak_ptr<DofEntity> &it) {
+  return it.lock()->getGlobalUniqueId();
+}
+
 template <typename FE_DOFS, typename MOFEM_DOFS, typename MOFEM_DOFS_VIEW>
-static MoFEMErrorCode
+inline MoFEMErrorCode
 get_fe_dof_view(const FE_DOFS &fe_dofs_view, const MOFEM_DOFS &mofem_dofs,
                 MOFEM_DOFS_VIEW &mofem_dofs_view, const int operation_type) {
   MoFEMFunctionBeginHot;
   if (operation_type == moab::Interface::UNION) {
     auto mofem_it = mofem_dofs.template get<Unique_mi_tag>().begin();
     auto mofem_it_end = mofem_dofs.template get<Unique_mi_tag>().end();
-    auto it = fe_dofs_view.begin();
-    auto it_end = fe_dofs_view.end();
-    for (; it != it_end; it++) {
-      const UId &globalUid = (*it)->getGlobalUniqueId();
+    for (auto &it : fe_dofs_view) {
+      const UId &uid = extractUId(it);
       if (mofem_it != mofem_it_end) {
-        if ((*mofem_it)->getGlobalUniqueId() != globalUid) {
-          mofem_it = mofem_dofs.template get<Unique_mi_tag>().find(globalUid);
+        if ((*mofem_it)->getGlobalUniqueId() != uid) {
+          mofem_it = mofem_dofs.template get<Unique_mi_tag>().find(uid);
         } // else lucky guess
       } else {
-        mofem_it = mofem_dofs.template get<Unique_mi_tag>().find(globalUid);
+        mofem_it = mofem_dofs.template get<Unique_mi_tag>().find(uid);
       }
       if (mofem_it != mofem_it_end) {
         mofem_dofs_view.insert(mofem_dofs_view.end(), *mofem_it);
