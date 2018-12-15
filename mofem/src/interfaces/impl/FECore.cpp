@@ -542,7 +542,7 @@ MoFEMErrorCode
 Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
                           const Range *ents_ptr, int verb) {
   MoFEMFunctionBegin;
-  if (verb == -1)
+  if (verb == DEFAULT_VERBOSITY)
     verb = verbose;
 
   typedef RefElement_multiIndex::index<Ent_mi_tag>::type RefFiniteElementByEnt;
