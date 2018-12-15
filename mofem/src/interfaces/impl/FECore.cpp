@@ -593,7 +593,7 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
       ss << "refinedFiniteElements not in database ent = " << first;
       ss << " type " << get_moab().type_from_handle(first);
       ss << " " << *fe;
-      SETERRQ(cOmm, MOFEM_DATA_INCONSISTENCY, ss.str().c_str());
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, ss.str().c_str());
     }
     hi_ref_fe_miit =
         refinedFiniteElements.get<Ent_mi_tag>().upper_bound(second);
@@ -630,7 +630,8 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
         const BitFieldId field_id = BitFieldId().set(ii);
         FieldById::iterator miit = fields_by_id.find(field_id);
         if (miit == fields_by_id.end()) {
-          SETERRQ(cOmm, MOFEM_DATA_INCONSISTENCY, "Data inconsistency");
+          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                  "Data inconsistency");
         }
 
         // Entities adjacent to entities
