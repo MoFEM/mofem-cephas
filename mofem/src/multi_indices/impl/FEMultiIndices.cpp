@@ -1166,18 +1166,16 @@ MoFEMErrorCode EntFiniteElement::getColDofView(
 MoFEMErrorCode
 EntFiniteElement::getElementAdjacency(const boost::shared_ptr<Field> field_ptr,
                                       Range &adjacency) {
-
   moab::Interface &moab = getRefEntityPtr()->basicDataPtr->moab;
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   const EntFiniteElement *this_fe_ptr = this;
   if (get_MoFEMFiniteElementPtr()->elementAdjacencyTable[getEntType()] ==
       NULL) {
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented");
   }
-  ierr = (get_MoFEMFiniteElementPtr()->elementAdjacencyTable[getEntType()])(
+  CHKERR get_MoFEMFiniteElementPtr()->elementAdjacencyTable[getEntType()](
       moab, *field_ptr, *this_fe_ptr, adjacency);
-  CHKERRG(ierr);
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode NumeredEntFiniteElement::getRowDofsByPetscGlobalDofIdx(
