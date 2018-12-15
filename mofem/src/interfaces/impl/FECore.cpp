@@ -568,7 +568,7 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
   typedef std::vector<boost::weak_ptr<EntFiniteElement>> VecOfWeakFEPtrs;
   typedef std::map<const UId *, VecOfWeakFEPtrs> MapEntUIdAndVecOfWeakFEPtrs;
   MapEntUIdAndVecOfWeakFEPtrs ent_uid_and_fe_vec;
-  std::map<EntityHandle, int> data_dofs_size;
+  std::map<EntityHandle, int> data_dofs_size, row_dofs_size, col_dofs_size;
 
   // loop meshset Ents and add finite elements
   for (Range::const_pair_iterator peit = fe_ents.const_pair_begin();
@@ -642,6 +642,10 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
         const std::string field_name = miit->get()->getName();
         const bool add_to_data =
             (field_id & fe_raw_ptr->getBitFieldIdData()).any();
+        const bool add_to_row =
+            (field_id & fe_raw_ptr->getBitFieldIdRow()).any();
+        const bool add_to_col =
+            (field_id & fe_raw_ptr->getBitFieldIdCol()).any();
 
         for (Range::pair_iterator p_eit = adj_ents.pair_begin();
              p_eit != adj_ents.pair_end(); ++p_eit) {
@@ -660,10 +664,15 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
             const UId *uid_ptr = &(meit->get()->getGlobalUniqueId());
             auto &fe_vec = ent_uid_and_fe_vec[uid_ptr];
             fe_vec.emplace_back(*hint_p);
-            if (add_to_data) {
+            if (add_to_data)
               data_dofs_size[fe_raw_ptr->getEnt()] +=
                   meit->get()->getNbDofsOnEnt();
-            }
+            if (add_to_row)
+              row_dofs_size[fe_raw_ptr->getEnt()] +=
+                  meit->get()->getNbDofsOnEnt();
+            if (add_to_col)
+              col_dofs_size[fe_raw_ptr->getEnt()] +=
+                  meit->get()->getNbDofsOnEnt();
           }
         }
       }
@@ -696,15 +705,17 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
         // if rows and columns of finite element are the same, then
         // we exploit that case
         if ((field_id & fe_raw_ptr->getBitFieldIdRow()).any()) {
-          fe_raw_ptr->row_dof_view->insert(
-              fe_raw_ptr->row_dof_view->end(), *dit);
+          if (fe_raw_ptr->row_dof_view->empty())
+            fe_raw_ptr->row_dof_view->reserve(
+                row_dofs_size.at(fe_raw_ptr->getEnt()));
+          fe_raw_ptr->row_dof_view->push_back(*dit);
         }
-        if (fe_raw_ptr->col_dof_view !=
-            fe_raw_ptr->row_dof_view) {
-          if ((field_id & fe_raw_ptr->getBitFieldIdCol()).any()) {
-            fe_raw_ptr->col_dof_view->insert(
-                fe_raw_ptr->col_dof_view->end(), *dit);
-          }
+        if (fe_raw_ptr->col_dof_view != fe_raw_ptr->row_dof_view &&
+            (field_id & fe_raw_ptr->getBitFieldIdCol()).any()) {
+          if (fe_raw_ptr->col_dof_view->empty())
+            fe_raw_ptr->col_dof_view->reserve(
+                col_dofs_size.at(fe_raw_ptr->getEnt()));
+          fe_raw_ptr->col_dof_view->push_back(*dit);
         }
 
         // Add FEDofEntity, first create dofs, one by one, note that memory
