@@ -1019,10 +1019,12 @@ EntFiniteElement::EntFiniteElement(
     const boost::shared_ptr<FiniteElement> fe_ptr)
     : interface_FiniteElement<FiniteElement>(fe_ptr),
       interface_RefElement<RefElement>(ref_finite_element),
-      row_dof_view(boost::shared_ptr<DofEntity_multiIndex_uid_view>(
-          new DofEntity_multiIndex_uid_view)),
-      col_dof_view(boost::shared_ptr<DofEntity_multiIndex_uid_view>(
-          new DofEntity_multiIndex_uid_view)),
+      row_dof_view(
+          boost::shared_ptr<DofEntity_multiIndex_uid_ranodm_access_view>(
+              new DofEntity_multiIndex_uid_ranodm_access_view)),
+      col_dof_view(
+          boost::shared_ptr<DofEntity_multiIndex_uid_ranodm_access_view>(
+              new DofEntity_multiIndex_uid_ranodm_access_view)),
       data_dofs(boost::shared_ptr<FEDofEntity_multiIndex>(
           new FEDofEntity_multiIndex)) {
   // get finite element entity
@@ -1038,14 +1040,12 @@ std::ostream &operator<<(std::ostream &os, const EntFiniteElement &e) {
   os << *e.sFePtr << std::endl;
   os << *e.sPtr << std::endl;
   os << "row dof_uids ";
-  DofEntity_multiIndex_uid_view::iterator rit;
-  rit = e.row_dof_view->begin();
+  auto rit = e.row_dof_view->begin();
   for (; rit != e.row_dof_view->end(); rit++) {
     os << (*rit)->getGlobalUniqueId() << " ";
   }
   os << "col dof_uids ";
-  DofEntity_multiIndex_uid_view::iterator cit;
-  cit = e.col_dof_view->begin();
+  auto cit = e.col_dof_view->begin();
   for (; cit != e.col_dof_view->end(); cit++) {
     os << (*cit)->getGlobalUniqueId() << " ";
   }
@@ -1108,95 +1108,59 @@ MoFEMErrorCode
 EntFiniteElement::getRowDofView(const DofEntity_multiIndex &dofs,
                                 DofEntity_multiIndex_active_view &dofs_view,
                                 const int operation_type) const {
-  MoFEMFunctionBeginHot;
-
-  ierr = get_fe_dof_view(*row_dof_view, dofs, dofs_view, operation_type);
-  CHKERRG(ierr);
-  MoFEMFunctionReturnHot(0);
+  return get_fe_dof_view(*row_dof_view, dofs, dofs_view, operation_type);
 }
 MoFEMErrorCode
 EntFiniteElement::getColDofView(const DofEntity_multiIndex &dofs,
                                 DofEntity_multiIndex_active_view &dofs_view,
                                 const int operation_type) const {
-  MoFEMFunctionBeginHot;
-
-  ierr = get_fe_dof_view(*col_dof_view, dofs, dofs_view, operation_type);
-  CHKERRG(ierr);
-  MoFEMFunctionReturnHot(0);
+  return get_fe_dof_view(*col_dof_view, dofs, dofs_view, operation_type);
 }
 MoFEMErrorCode
 EntFiniteElement::getDataDofView(const DofEntity_multiIndex &dofs,
                                  DofEntity_multiIndex_active_view &dofs_view,
                                  const int operation_type) const {
-  MoFEMFunctionBeginHot;
-
-  ierr = get_fe_dof_view(*data_dofs, dofs, dofs_view, operation_type);
-  CHKERRG(ierr);
-  MoFEMFunctionReturnHot(0);
+  return get_fe_dof_view(*data_dofs, dofs, dofs_view, operation_type);
 }
 
 MoFEMErrorCode
 EntFiniteElement::getRowDofView(const DofEntity_multiIndex &dofs,
                                 DofEntity_multiIndex_uid_view &dofs_view,
                                 const int operation_type) const {
-  MoFEMFunctionBeginHot;
-
-  ierr = get_fe_dof_view(*row_dof_view, dofs, dofs_view, operation_type);
-  CHKERRG(ierr);
-  MoFEMFunctionReturnHot(0);
+  return get_fe_dof_view(*row_dof_view, dofs, dofs_view, operation_type);
 }
 MoFEMErrorCode
 EntFiniteElement::getColDofView(const DofEntity_multiIndex &dofs,
                                 DofEntity_multiIndex_uid_view &dofs_view,
                                 const int operation_type) const {
-  MoFEMFunctionBeginHot;
-
-  ierr = get_fe_dof_view(*col_dof_view, dofs, dofs_view, operation_type);
-  CHKERRG(ierr);
-  MoFEMFunctionReturnHot(0);
+  return get_fe_dof_view(*col_dof_view, dofs, dofs_view, operation_type);
 }
 
 MoFEMErrorCode EntFiniteElement::getRowDofView(
     const NumeredDofEntity_multiIndex &dofs,
     NumeredDofEntity_multiIndex_uid_view_ordered &dofs_view,
     const int operation_type) const {
-  MoFEMFunctionBeginHot;
-
-  ierr = get_fe_dof_view(*row_dof_view, dofs, dofs_view, operation_type);
-  CHKERRG(ierr);
-  MoFEMFunctionReturnHot(0);
+  return get_fe_dof_view(*row_dof_view, dofs, dofs_view, operation_type);
 }
 
 MoFEMErrorCode EntFiniteElement::getColDofView(
     const NumeredDofEntity_multiIndex &dofs,
     NumeredDofEntity_multiIndex_uid_view_ordered &dofs_view,
     const int operation_type) const {
-  MoFEMFunctionBeginHot;
-
-  ierr = get_fe_dof_view(*col_dof_view, dofs, dofs_view, operation_type);
-  CHKERRG(ierr);
-  MoFEMFunctionReturnHot(0);
+  return get_fe_dof_view(*col_dof_view, dofs, dofs_view, operation_type);
 }
 MoFEMErrorCode EntFiniteElement::getRowDofView(
     const NumeredDofEntity_multiIndex &dofs,
     NumeredDofEntity_multiIndex_idx_view_hashed &dofs_view,
     const int operation_type) const {
-  MoFEMFunctionBeginHot;
-
-  ierr = get_fe_dof_view(*row_dof_view, dofs, dofs_view, operation_type);
-  CHKERRG(ierr);
-  MoFEMFunctionReturnHot(0);
+  return get_fe_dof_view(*row_dof_view, dofs, dofs_view, operation_type);
 }
 
 MoFEMErrorCode EntFiniteElement::getColDofView(
     const NumeredDofEntity_multiIndex &dofs,
     NumeredDofEntity_multiIndex_idx_view_hashed &dofs_view,
     const int operation_type) const {
-  MoFEMFunctionBeginHot;
-
-  ierr = get_fe_dof_view(*col_dof_view, dofs, dofs_view, operation_type);
-  CHKERRG(ierr);
-  MoFEMFunctionReturnHot(0);
+  return get_fe_dof_view(*col_dof_view, dofs, dofs_view, operation_type);
 }
 
 MoFEMErrorCode

@@ -429,9 +429,29 @@ typedef DofEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type
 */
 typedef multi_index_container<
     boost::shared_ptr<DofEntity>,
-    indexed_by<ordered_unique<
-        const_mem_fun<DofEntity, UId, &DofEntity::getGlobalUniqueId> > > >
+    indexed_by<
+
+        ordered_unique<
+            const_mem_fun<DofEntity, UId, &DofEntity::getGlobalUniqueId>>
+
+        >>
     DofEntity_multiIndex_uid_view;
+
+/** \brief multi-index random access view on DofEntity by uid
+  \ingroup dof_multi_indices
+*/
+typedef multi_index_container<
+    boost::shared_ptr<DofEntity>,
+    indexed_by<
+
+        random_access<>,
+
+        ordered_unique<
+            const_mem_fun<DofEntity, UId, &DofEntity::getGlobalUniqueId>>
+
+        >>
+    DofEntity_multiIndex_uid_ranodm_access_view;
+
 
 /** \brief multi-index view on DofEntity activity
   \ingroup dof_multi_indices

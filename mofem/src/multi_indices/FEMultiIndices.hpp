@@ -463,8 +463,8 @@ struct EntFiniteElement : public interface_FiniteElement<FiniteElement>,
   typedef interface_RefEntity<RefElement> interface_type_RefEntity;
   typedef interface_RefElement<RefElement> interface_type_RefElement;
   typedef interface_FiniteElement<FiniteElement> interface_type_FiniteElement;
-  boost::shared_ptr<DofEntity_multiIndex_uid_view> row_dof_view;
-  boost::shared_ptr<DofEntity_multiIndex_uid_view> col_dof_view;
+  boost::shared_ptr<DofEntity_multiIndex_uid_ranodm_access_view> row_dof_view;
+  boost::shared_ptr<DofEntity_multiIndex_uid_ranodm_access_view> col_dof_view;
   boost::shared_ptr<FEDofEntity_multiIndex> data_dofs;
   UId globalUid;
 

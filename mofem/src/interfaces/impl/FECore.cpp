@@ -602,7 +602,7 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
         hint_p->get()->col_dof_view = hint_p->get()->row_dof_view;
       } else if (hint_p->get()->col_dof_view == hint_p->get()->row_dof_view) {
         hint_p->get()->col_dof_view =
-            boost::make_shared<DofEntity_multiIndex_uid_view>();
+            boost::make_shared<DofEntity_multiIndex_uid_ranodm_access_view>();
       }
 
       hint_p->get()->row_dof_view->clear();
@@ -848,8 +848,7 @@ MoFEMErrorCode Core::build_adjacencies(const Range &ents, int verb) {
         by |= BYDATA;
       FieldEntityEntFiniteElementAdjacencyMap_change_ByWhat modify_row(by);
       UId ent_uid = UId(0);
-      for (DofEntity_multiIndex_uid_view::iterator rvit =
-               (*fit)->row_dof_view->begin();
+      for (auto rvit = (*fit)->row_dof_view->begin();
            rvit != (*fit)->row_dof_view->end(); ++rvit) {
         if (ent_uid == (*rvit)->getFieldEntityPtr()->getGlobalUniqueId())
           continue;
@@ -870,8 +869,7 @@ MoFEMErrorCode Core::build_adjacencies(const Range &ents, int verb) {
           by |= BYDATA;
         FieldEntityEntFiniteElementAdjacencyMap_change_ByWhat modify_col(by);
         ent_uid = UId(0);
-        for (DofEntity_multiIndex_uid_view::iterator cvit =
-                 (*fit)->col_dof_view->begin();
+        for (auto cvit = (*fit)->col_dof_view->begin();
              cvit != (*fit)->col_dof_view->end(); cvit++) {
           if (ent_uid == (*cvit)->getFieldEntityPtr()->getGlobalUniqueId())
             continue;
