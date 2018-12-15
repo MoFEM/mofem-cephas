@@ -663,9 +663,10 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
             const UId *uid_ptr = &(meit->get()->getGlobalUniqueId());
             auto e_uid_vec_fe_it = ent_uid_and_fe_vec.get<1>().find(uid_ptr);
             if (e_uid_vec_fe_it == ent_uid_and_fe_vec.get<1>().end()) {
-              ent_uid_and_fe_vec.insert(ent_uid_and_fe_vec.end(),
-                                    std::pair<const UId *, VecOfWeakFEPtrs>(
-                                        uid_ptr, VecOfWeakFEPtrs(1, *p.first)));
+              ent_uid_and_fe_vec.insert(
+                  ent_uid_and_fe_vec.end(),
+                  std::pair<const UId *, VecOfWeakFEPtrs>(
+                      uid_ptr, VecOfWeakFEPtrs(1, *p.first)));
             } else {
               const VecOfWeakFEPtrs &vec_fe_ptrs = e_uid_vec_fe_it->second;
               const_cast<VecOfWeakFEPtrs &>(vec_fe_ptrs).push_back(*p.first);
