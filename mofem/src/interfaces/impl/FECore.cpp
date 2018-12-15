@@ -863,17 +863,17 @@ MoFEMErrorCode Core::build_adjacencies(const Range &ents, int verb) {
       UId ent_uid = UId(0);
       for (auto rvit = (*fit)->row_dof_view->begin();
            rvit != (*fit)->row_dof_view->end(); ++rvit) {
-        if (ent_uid == (*rvit)->getFieldEntityPtr()->getGlobalUniqueId())
+        if (ent_uid == (*rvit).lock()->getFieldEntityPtr()->getGlobalUniqueId())
           continue;
-        ent_uid = (*rvit)->getFieldEntityPtr()->getGlobalUniqueId();
+        ent_uid = (*rvit).lock()->getFieldEntityPtr()->getGlobalUniqueId();
         std::pair<FieldEntityEntFiniteElementAdjacencyMap_multiIndex::iterator,
                   bool>
             p;
         p = entFEAdjacencies.insert(FieldEntityEntFiniteElementAdjacencyMap(
-            (*rvit)->getFieldEntityPtr(), *fit));
+            (*rvit).lock()->getFieldEntityPtr(), *fit));
         bool success = entFEAdjacencies.modify(p.first, modify_row);
         if (!success)
-          SETERRQ(cOmm, MOFEM_OPERATION_UNSUCCESSFUL,
+          SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
                   "modification unsuccessful");
       }
       if ((*fit)->getBitFieldIdRow() != (*fit)->getBitFieldIdCol()) {
@@ -884,18 +884,19 @@ MoFEMErrorCode Core::build_adjacencies(const Range &ents, int verb) {
         ent_uid = UId(0);
         for (auto cvit = (*fit)->col_dof_view->begin();
              cvit != (*fit)->col_dof_view->end(); cvit++) {
-          if (ent_uid == (*cvit)->getFieldEntityPtr()->getGlobalUniqueId())
+          if (ent_uid ==
+              (*cvit).lock()->getFieldEntityPtr()->getGlobalUniqueId())
             continue;
-          ent_uid = (*cvit)->getFieldEntityPtr()->getGlobalUniqueId();
+          ent_uid = (*cvit).lock()->getFieldEntityPtr()->getGlobalUniqueId();
           std::pair<
               FieldEntityEntFiniteElementAdjacencyMap_multiIndex::iterator,
               bool>
               p;
           p = entFEAdjacencies.insert(FieldEntityEntFiniteElementAdjacencyMap(
-              (*cvit)->getFieldEntityPtr(), *fit));
+              (*cvit).lock()->getFieldEntityPtr(), *fit));
           bool success = entFEAdjacencies.modify(p.first, modify_col);
           if (!success)
-            SETERRQ(cOmm, MOFEM_OPERATION_UNSUCCESSFUL,
+            SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
                     "modification unsuccessful");
         }
       }
@@ -917,7 +918,7 @@ MoFEMErrorCode Core::build_adjacencies(const Range &ents, int verb) {
               (*dvit)->getFieldEntityPtr(), *fit));
           bool success = entFEAdjacencies.modify(p.first, modify_data);
           if (!success)
-            SETERRQ(cOmm, MOFEM_OPERATION_UNSUCCESSFUL,
+            SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
                     "modification unsuccessful");
         }
       }

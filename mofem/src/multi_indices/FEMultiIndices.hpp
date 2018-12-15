@@ -466,7 +466,7 @@ struct EntFiniteElement : public interface_FiniteElement<FiniteElement>,
   boost::shared_ptr<DofEntity_multiIndex_ranodm_access_view> row_dof_view;
   boost::shared_ptr<DofEntity_multiIndex_ranodm_access_view> col_dof_view;
   boost::shared_ptr<FEDofEntity_multiIndex> data_dofs;
-  UId globalUid;
+  UId globalUId;
 
   EntFiniteElement(const boost::shared_ptr<RefElement> ref_finite_element,
                    const boost::shared_ptr<FiniteElement> fe_ptr);
@@ -475,7 +475,7 @@ struct EntFiniteElement : public interface_FiniteElement<FiniteElement>,
    * \brief Get unique UId for finite element entity
    * @return UId
    */
-  inline const UId &getGlobalUniqueId() const { return globalUid; }
+  inline const UId &getGlobalUniqueId() const { return globalUId; }
 
   /**
    * \brief Generate UId for finite element entity
@@ -849,7 +849,7 @@ typedef multi_index_container<
     indexed_by<
         ordered_unique<
             tag<Unique_mi_tag>,
-            member<EntFiniteElement, UId, &EntFiniteElement::globalUid> >,
+            member<EntFiniteElement, UId, &EntFiniteElement::globalUId> >,
         ordered_non_unique<tag<Ent_mi_tag>,
                            const_mem_fun<EntFiniteElement, EntityHandle,
                                          &EntFiniteElement::getEnt> >,

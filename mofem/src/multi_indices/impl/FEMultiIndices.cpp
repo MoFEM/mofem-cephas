@@ -1028,7 +1028,7 @@ EntFiniteElement::EntFiniteElement(
       data_dofs(boost::shared_ptr<FEDofEntity_multiIndex>(
           new FEDofEntity_multiIndex)) {
   // get finite element entity
-  globalUid = getGlobalUniqueIdCalculate();
+  globalUId = getGlobalUniqueIdCalculate();
   // add ents to meshset
   // EntityHandle meshset = getMeshset();
   // EntityHandle ent = getEnt();
@@ -1042,12 +1042,12 @@ std::ostream &operator<<(std::ostream &os, const EntFiniteElement &e) {
   os << "row dof_uids ";
   auto rit = e.row_dof_view->begin();
   for (; rit != e.row_dof_view->end(); rit++) {
-    os << (*rit)->getGlobalUniqueId() << " ";
+    os << (*rit).lock()->getGlobalUniqueId() << " ";
   }
   os << "col dof_uids ";
   auto cit = e.col_dof_view->begin();
   for (; cit != e.col_dof_view->end(); cit++) {
-    os << (*cit)->getGlobalUniqueId() << " ";
+    os << (*cit).lock()->getGlobalUniqueId() << " ";
   }
   os << "data dof_uids ";
   FEDofEntity_multiIndex::iterator dit;
@@ -1070,14 +1070,13 @@ std::ostream &operator<<(std::ostream &os, const EntFiniteElement &e) {
   return os;
 }
 
-template<typename IT> 
-inline UId extractUId(IT &it) {
+template <typename IT> inline const UId &extractUId(IT &it) {
   return it->getGlobalUniqueId();
 }
 
 template <>
-inline UId
-extractUId<boost::weak_ptr<DofEntity>>(boost::weak_ptr<DofEntity> &it) {
+inline const UId &extractUId<const boost::weak_ptr<DofEntity>>(
+    const boost::weak_ptr<DofEntity> &it) {
   return it.lock()->getGlobalUniqueId();
 }
 

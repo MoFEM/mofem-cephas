@@ -552,7 +552,7 @@ struct FieldEntity : public interface_Field<Field>,
 
   typedef interface_Field<Field> interface_type_Field;
   typedef interface_RefEntity<RefEntity> interface_type_RefEntity;
-  UId globalUid; ///< Global unique id for this entity
+  UId globalUId; ///< Global unique id for this entity
   // const ApproximationOrder *tag_FieldOrder;
   FieldEntity(const boost::shared_ptr<Field> &field_ptr,
               const boost::shared_ptr<RefEntity> &ref_ent_ptr);
@@ -612,7 +612,7 @@ struct FieldEntity : public interface_Field<Field>,
    * \brief Get global unique id
    * @return Global UId
    */
-  const UId &getGlobalUniqueId() const { return globalUid; }
+  const UId &getGlobalUniqueId() const { return globalUId; }
 
   /**
    * \brief Calculate UId for field entity
@@ -806,7 +806,7 @@ typedef multi_index_container<
     boost::shared_ptr<FieldEntity>,
     indexed_by<
         ordered_unique<tag<Unique_mi_tag>,
-                       member<FieldEntity, UId, &FieldEntity::globalUid> >,
+                       member<FieldEntity, UId, &FieldEntity::globalUId> >,
         ordered_non_unique<
             tag<FieldName_mi_tag>,
             const_mem_fun<FieldEntity::interface_type_Field, boost::string_ref,
