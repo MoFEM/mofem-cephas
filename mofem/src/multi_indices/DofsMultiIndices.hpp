@@ -450,8 +450,7 @@ typedef multi_index_container<
             const_mem_fun<DofEntity, UId, &DofEntity::getGlobalUniqueId>>
 
         >>
-    DofEntity_multiIndex_uid_ranodm_access_view;
-
+    DofEntity_multiIndex_ranodm_access_view;
 
 /** \brief multi-index view on DofEntity activity
   \ingroup dof_multi_indices
