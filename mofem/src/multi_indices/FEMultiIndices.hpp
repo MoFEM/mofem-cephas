@@ -547,13 +547,11 @@ struct EntFiniteElement : public interface_FiniteElement<FiniteElement>,
                  const int operation_type = moab::Interface::UNION) const;
 
   MoFEMErrorCode
-  getRowDofView(const DofEntity_multiIndex &dofs,
-                DofEntity_multiIndex_uid_view &dofs_view,
+  getRowDofView(DofEntity_multiIndex_uid_view &dofs_view,
                 const int operation_type = moab::Interface::UNION) const;
 
   MoFEMErrorCode
-  getColDofView(const DofEntity_multiIndex &dofs,
-                DofEntity_multiIndex_uid_view &dofs_view,
+  getColDofView(DofEntity_multiIndex_uid_view &dofs_view,
                 const int operation_type = moab::Interface::UNION) const;
 
   MoFEMErrorCode

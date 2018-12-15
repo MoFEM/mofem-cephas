@@ -1153,16 +1153,33 @@ EntFiniteElement::getDataDofView(DofEntity_multiIndex_active_view &dofs_view,
 }
 
 MoFEMErrorCode
-EntFiniteElement::getRowDofView(const DofEntity_multiIndex &dofs,
-                                DofEntity_multiIndex_uid_view &dofs_view,
+EntFiniteElement::getRowDofView(DofEntity_multiIndex_uid_view &dofs_view,
                                 const int operation_type) const {
-  return get_fe_dof_view(*row_dof_view, dofs, dofs_view, operation_type);
+  MoFEMFunctionBegin;
+  if (operation_type == moab::Interface::UNION) {
+    auto hint = dofs_view.end();
+    for (auto dit : *row_dof_view)
+      if (!dit.expired())
+        hint = dofs_view.emplace_hint(hint, dit);
+  } else {
+    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented");
+  }
+  MoFEMFunctionReturn(0);
 }
+
 MoFEMErrorCode
-EntFiniteElement::getColDofView(const DofEntity_multiIndex &dofs,
-                                DofEntity_multiIndex_uid_view &dofs_view,
+EntFiniteElement::getColDofView(DofEntity_multiIndex_uid_view &dofs_view,
                                 const int operation_type) const {
-  return get_fe_dof_view(*col_dof_view, dofs, dofs_view, operation_type);
+  MoFEMFunctionBegin;
+  if (operation_type == moab::Interface::UNION) {
+    auto hint = dofs_view.end();
+    for (auto dit : *col_dof_view)
+      if (!dit.expired())
+        hint = dofs_view.emplace_hint(hint, dit);
+  } else {
+    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented");
+  }
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode EntFiniteElement::getRowDofView(
