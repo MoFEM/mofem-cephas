@@ -238,27 +238,6 @@ typedef boost::function<MoFEMErrorCode(Interface &moab, const Field &field_ptr,
                                        Range &adjacency)>
     ElementAdjacencyFunct;
 
-// /** \brief user adjacency function table
-//   * \ingroup fe_multi_indices
-//   */
-// typedef ElementAdjacencyFunct[MBMAXTYPE] ElementAdjacencyTable;
-
-// /** \brief user adjacency function table
-//   * \ingroup fe_multi_indices
-//   */
-// typedef MoFEMErrorCode (*ElementAdjacencyTable[MBMAXTYPE])(
-//   Interface &moab,const Field &field_ptr,const EntFiniteElement &fe_ptr,Range
-//   &adjacency
-// );
-//
-// /** \brief user adjacency function
-//   * \ingroup fe_multi_indices
-//   */
-// typedef MoFEMErrorCode (*ElementAdjacencyFunct)(
-//   Interface &moab,const Field &field_ptr,const EntFiniteElement &fe_ptr,Range
-//   &adjacency
-// );
-
 /**
  * \brief Finite element definition
  * \ingroup fe_multi_indices
