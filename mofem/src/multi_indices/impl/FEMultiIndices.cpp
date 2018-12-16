@@ -1024,11 +1024,6 @@ EntFiniteElement::EntFiniteElement(
       data_dofs(new FEDofEntity_multiIndex()) {
   // get finite element entity
   globalUId = getGlobalUniqueIdCalculate();
-  // add ents to meshset
-  // EntityHandle meshset = getMeshset();
-  // EntityHandle ent = getEnt();
-  // ierr = moab.add_entities(meshset,&ent,1);
-  // CHKERRABORT(PETSC_COMM_WORLD,ierr);
 }
 
 std::ostream &operator<<(std::ostream &os, const EntFiniteElement &e) {
