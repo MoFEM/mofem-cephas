@@ -1015,18 +1015,13 @@ operator()(boost::shared_ptr<FiniteElement> &fe) {
 
 // FiniteElement data
 EntFiniteElement::EntFiniteElement(
-    const boost::shared_ptr<RefElement> ref_finite_element,
-    const boost::shared_ptr<FiniteElement> fe_ptr)
+    const boost::shared_ptr<RefElement> &ref_finite_element,
+    const boost::shared_ptr<FiniteElement> &fe_ptr)
     : interface_FiniteElement<FiniteElement>(fe_ptr),
       interface_RefElement<RefElement>(ref_finite_element),
-      row_dof_view(
-          boost::shared_ptr<DofEntity_vector_view>(
-              new DofEntity_vector_view)),
-      col_dof_view(
-          boost::shared_ptr<DofEntity_vector_view>(
-              new DofEntity_vector_view)),
-      data_dofs(boost::shared_ptr<FEDofEntity_multiIndex>(
-          new FEDofEntity_multiIndex)) {
+      row_dof_view(new DofEntity_vector_view()),
+      col_dof_view(new DofEntity_vector_view()),
+      data_dofs(new FEDofEntity_multiIndex()) {
   // get finite element entity
   globalUId = getGlobalUniqueIdCalculate();
   // add ents to meshset

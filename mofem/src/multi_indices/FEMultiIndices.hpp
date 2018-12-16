@@ -447,8 +447,8 @@ struct EntFiniteElement : public interface_FiniteElement<FiniteElement>,
   boost::shared_ptr<FEDofEntity_multiIndex> data_dofs;
   UId globalUId;
 
-  EntFiniteElement(const boost::shared_ptr<RefElement> ref_finite_element,
-                   const boost::shared_ptr<FiniteElement> fe_ptr);
+  EntFiniteElement(const boost::shared_ptr<RefElement> &ref_finite_element,
+                   const boost::shared_ptr<FiniteElement> &fe_ptr);
 
   /**
    * \brief Get unique UId for finite element entity
