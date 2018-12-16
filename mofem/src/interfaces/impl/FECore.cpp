@@ -567,11 +567,11 @@ template <int I> struct BuildFiniteElements {
     for (auto fe_it : fe_vec) {
       if (auto fe_ptr = fe_it.lock()) {
         if (I == ROW)
-          sort(fe_ptr->row_dof_view->begin(), fe_ptr->row_dof_view->end(),
-               uid_comp);
+          std::sort(fe_ptr->row_dof_view->begin(), fe_ptr->row_dof_view->end(),
+                    uid_comp);
         else
-          sort(fe_ptr->row_dof_view->begin(), fe_ptr->row_dof_view->end(),
-               uid_comp);
+          std::sort(fe_ptr->row_dof_view->begin(), fe_ptr->row_dof_view->end(),
+                    uid_comp);
       }
     }
   }
