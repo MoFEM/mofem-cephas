@@ -702,6 +702,10 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
 
         auto fe_raw_ptr = fe_it.lock().get();
 
+        auto uid_comp = [](auto a, auto b) {
+          return a.lock()->getGlobalUniqueId() < b.lock()->getGlobalUniqueId();
+        };
+
         // if rows and columns of finite element are the same, then
         // we exploit that case
         if ((field_id & fe_raw_ptr->getBitFieldIdRow()).any()) {
@@ -709,6 +713,10 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
             fe_raw_ptr->row_dof_view->reserve(
                 row_dofs_size.at(fe_raw_ptr->getEnt()));
           fe_raw_ptr->row_dof_view->emplace_back(*dit);
+          if (fe_raw_ptr->row_dof_view->size() ==
+              row_dofs_size.at(fe_raw_ptr->getEnt()))
+            sort(fe_raw_ptr->row_dof_view->begin(),
+                 fe_raw_ptr->row_dof_view->end(), uid_comp);
         }
         if (fe_raw_ptr->col_dof_view != fe_raw_ptr->row_dof_view &&
             (field_id & fe_raw_ptr->getBitFieldIdCol()).any()) {
@@ -716,6 +724,10 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
             fe_raw_ptr->col_dof_view->reserve(
                 col_dofs_size.at(fe_raw_ptr->getEnt()));
           fe_raw_ptr->col_dof_view->emplace_back(*dit);
+          if (fe_raw_ptr->col_dof_view->size() ==
+              row_dofs_size.at(fe_raw_ptr->getEnt()))
+            sort(fe_raw_ptr->col_dof_view->begin(),
+                 fe_raw_ptr->col_dof_view->end(), uid_comp);
         }
 
         // Add FEDofEntity, first create dofs, one by one, note that memory
