@@ -211,7 +211,7 @@ Core::modify_finite_element_off_field_data(const std::string &fe_name,
 MoFEMErrorCode
 Core::modify_finite_element_off_field_row(const std::string &fe_name,
                                           const std::string &name_row) {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   *buildMoFEM &= 1 << 0;
   typedef FiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type
       FiniteElements_by_name;
@@ -222,16 +222,12 @@ Core::modify_finite_element_off_field_row(const std::string &fe_name,
   if (it_fe == finite_element_name_set.end())
     SETERRQ1(cOmm, MOFEM_NOT_FOUND, "this < %s > is not there",
              fe_name.c_str());
-  try {
     bool success = finite_element_name_set.modify(
         it_fe, FiniteElement_row_change_bit_off(getBitFieldId(name_row)));
     if (!success)
       SETERRQ(cOmm, MOFEM_OPERATION_UNSUCCESSFUL, "modification unsuccessful");
-  } catch (MoFEMException const &e) {
-    SETERRQ(cOmm, e.errorCode, e.errorMessage);
+  MoFEMFunctionReturn(0);
   }
-  MoFEMFunctionReturnHot(0);
-}
 
 MoFEMErrorCode
 Core::modify_finite_element_off_field_col(const std::string &fe_name,
