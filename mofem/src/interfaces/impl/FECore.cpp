@@ -538,6 +538,52 @@ MoFEMErrorCode Core::add_ents_to_finite_element_by_MESHSET(
   MoFEMFunctionReturn(0);
 }
 
+template <int I>
+struct AddToFE {
+
+  template <typename T1, typename T2, typename T3>
+  static inline void addToView(T1 &range_dit, T2 &fe_vec, T3 &dofs_size) {
+
+    static_assert(I == ROW || I == COL, "t should be set to ROW or COL");
+
+    auto uid_comp = [](auto a, auto b) {
+      return a.lock()->getGlobalUniqueId() < b.lock()->getGlobalUniqueId();
+    };
+
+    // Reserve size
+    for (auto dit = range_dit.first; dit != range_dit.second; ++dit)
+      for (auto fe_it : fe_vec) {
+        auto fe_raw_ptr = fe_it.lock().get();
+        if (I == ROW)
+          fe_raw_ptr->row_dof_view->reserve(dofs_size.at(fe_raw_ptr->getEnt()));
+        else
+          fe_raw_ptr->col_dof_view->reserve(dofs_size.at(fe_raw_ptr->getEnt()));
+      }
+
+    // Add DOFs
+    for (auto dit = range_dit.first; dit != range_dit.second; ++dit)
+      for (auto fe_it : fe_vec) {
+        auto fe_raw_ptr = fe_it.lock().get();
+        if (I == ROW)
+          fe_raw_ptr->row_dof_view->emplace_back(*dit);
+        else
+          fe_raw_ptr->col_dof_view->emplace_back(*dit);
+      }
+
+    // Sort
+    for (auto dit = range_dit.first; dit != range_dit.second; ++dit)
+      for (auto fe_it : fe_vec) {
+        auto fe_raw_ptr = fe_it.lock().get();
+        if (I == ROW)
+          sort(fe_raw_ptr->row_dof_view->begin(),
+               fe_raw_ptr->row_dof_view->end(), uid_comp);
+        else
+          sort(fe_raw_ptr->row_dof_view->begin(),
+               fe_raw_ptr->row_dof_view->end(), uid_comp);
+      }
+  }
+};
+
 MoFEMErrorCode
 Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
                           const Range *ents_ptr, int verb) {
@@ -640,12 +686,9 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
         // Loop over adjacencies of element and find field entities on those
         // adjacencies, that create hash map map_uid_fe which is used later
         const std::string field_name = miit->get()->getName();
-        const bool add_to_data =
-            (field_id & fe_raw_ptr->getBitFieldIdData()).any();
-        const bool add_to_row =
-            (field_id & fe_raw_ptr->getBitFieldIdRow()).any();
-        const bool add_to_col =
-            (field_id & fe_raw_ptr->getBitFieldIdCol()).any();
+        const bool add_to_data = (field_id & fe_fields[DATA]).any();
+        const bool add_to_row = (field_id & fe_fields[ROW]).any();
+        const bool add_to_col = (field_id & fe_fields[COL]).any();
 
         for (Range::pair_iterator p_eit = adj_ents.pair_begin();
              p_eit != adj_ents.pair_end(); ++p_eit) {
@@ -693,69 +736,54 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
   // Loop over hash map, which has all entities on given elemnts
   boost::shared_ptr<SideNumber> side_number_ptr;
   for (auto &mit : ent_uid_and_fe_vec) {
+
     auto range_dit = dofs_by_ent_uid.equal_range(*mit.first);
-    for (auto &dit = range_dit.first; dit != range_dit.second; ++dit) {
-      const BitFieldId field_id = dit->get()->getId();
-      const EntityHandle dof_ent = dit->get()->getEnt();
 
-      for (auto fe_it : mit.second) {
+    if (range_dit.first != range_dit.second) {
 
-        auto fe_raw_ptr = fe_it.lock().get();
+      const BitFieldId field_id = range_dit.first->get()->getId();
 
-        auto uid_comp = [](auto a, auto b) {
-          return a.lock()->getGlobalUniqueId() < b.lock()->getGlobalUniqueId();
-        };
+      if ((field_id & fe_fields[ROW]).any())
+        AddToFE<ROW>::addToView(range_dit, mit.second, row_dofs_size);
 
-        // if rows and columns of finite element are the same, then
-        // we exploit that case
-        if ((field_id & fe_raw_ptr->getBitFieldIdRow()).any()) {
-          if (fe_raw_ptr->row_dof_view->empty())
-            fe_raw_ptr->row_dof_view->reserve(
-                row_dofs_size.at(fe_raw_ptr->getEnt()));
-          fe_raw_ptr->row_dof_view->emplace_back(*dit);
-          if (fe_raw_ptr->row_dof_view->size() ==
-              row_dofs_size.at(fe_raw_ptr->getEnt()))
-            sort(fe_raw_ptr->row_dof_view->begin(),
-                 fe_raw_ptr->row_dof_view->end(), uid_comp);
-        }
-        if (fe_raw_ptr->col_dof_view != fe_raw_ptr->row_dof_view &&
-            (field_id & fe_raw_ptr->getBitFieldIdCol()).any()) {
-          if (fe_raw_ptr->col_dof_view->empty())
-            fe_raw_ptr->col_dof_view->reserve(
-                col_dofs_size.at(fe_raw_ptr->getEnt()));
-          fe_raw_ptr->col_dof_view->emplace_back(*dit);
-          if (fe_raw_ptr->col_dof_view->size() ==
-              row_dofs_size.at(fe_raw_ptr->getEnt()))
-            sort(fe_raw_ptr->col_dof_view->begin(),
-                 fe_raw_ptr->col_dof_view->end(), uid_comp);
-        }
+      if (fe_fields[ROW] != fe_fields[COL] && (field_id & fe_fields[COL]).any())
+        AddToFE<COL>::addToView(range_dit, mit.second, col_dofs_size);
 
-        // Add FEDofEntity, first create dofs, one by one, note that memory
-        // is already reserved. Then create shared pointers and finally add
-        // th_FEName to element multi-index
-        const EntityHandle fe_ent = fe_raw_ptr->getEnt();
-        boost::shared_ptr<std::vector<FEDofEntity>> &data_dofs_array_vec =
-            data_dofs_array[fe_ent];
-        if (data_dofs_size[fe_ent] != 0 &&
-            (field_id & fe_raw_ptr->getBitFieldIdData()).any()) {
+      for (auto dit = range_dit.first; dit != range_dit.second; ++dit) {
+        const BitFieldId field_id = dit->get()->getId();
+        const EntityHandle dof_ent = dit->get()->getEnt();
 
-          // There are data dofs on this element
-          side_number_ptr = fe_raw_ptr->getSideNumberPtr(dof_ent);
-          data_dofs_array_vec->emplace_back(side_number_ptr, *dit);
-          if (data_dofs_array_vec->size() ==
-              (unsigned int)data_dofs_size[fe_ent]) {
-            // That means that FEDofEntity vector is full, and can be added to
-            // multi-index
+        for (auto fe_it : mit.second) {
 
-            // Create shared pointers vector
-            auto hint = fe_raw_ptr->data_dofs->end();
-            for (std::vector<FEDofEntity>::iterator vit =
-                     data_dofs_array_vec->begin();
-                 vit != data_dofs_array_vec->end(); vit++) {
-              hint = fe_raw_ptr->data_dofs->emplace_hint(
-                  hint, data_dofs_array_vec, &(*vit));
+          auto fe_raw_ptr = fe_it.lock().get();
+
+          // Add FEDofEntity, first create dofs, one by one, note that memory
+          // is already reserved. Then create shared pointers and finally add
+          // th_FEName to element multi-index
+          const EntityHandle fe_ent = fe_raw_ptr->getEnt();
+          boost::shared_ptr<std::vector<FEDofEntity>> &data_dofs_array_vec =
+              data_dofs_array[fe_ent];
+          if (data_dofs_size[fe_ent] != 0 &&
+              (field_id & fe_raw_ptr->getBitFieldIdData()).any()) {
+
+            // There are data dofs on this element
+            side_number_ptr = fe_raw_ptr->getSideNumberPtr(dof_ent);
+            data_dofs_array_vec->emplace_back(side_number_ptr, *dit);
+            if (data_dofs_array_vec->size() ==
+                (unsigned int)data_dofs_size[fe_ent]) {
+              // That means that FEDofEntity vector is full, and can be added to
+              // multi-index
+
+              // Create shared pointers vector
+              auto hint = fe_raw_ptr->data_dofs->end();
+              for (std::vector<FEDofEntity>::iterator vit =
+                       data_dofs_array_vec->begin();
+                   vit != data_dofs_array_vec->end(); vit++) {
+                hint = fe_raw_ptr->data_dofs->emplace_hint(
+                    hint, data_dofs_array_vec, &(*vit));
+              }
+              fe_raw_ptr->getDofsSequence() = data_dofs_array_vec;
             }
-            fe_raw_ptr->getDofsSequence() = data_dofs_array_vec;
           }
         }
       }
