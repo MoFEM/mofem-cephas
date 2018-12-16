@@ -222,12 +222,12 @@ Core::modify_finite_element_off_field_row(const std::string &fe_name,
   if (it_fe == finite_element_name_set.end())
     SETERRQ1(cOmm, MOFEM_NOT_FOUND, "this < %s > is not there",
              fe_name.c_str());
-    bool success = finite_element_name_set.modify(
-        it_fe, FiniteElement_row_change_bit_off(getBitFieldId(name_row)));
-    if (!success)
-      SETERRQ(cOmm, MOFEM_OPERATION_UNSUCCESSFUL, "modification unsuccessful");
+  bool success = finite_element_name_set.modify(
+      it_fe, FiniteElement_row_change_bit_off(getBitFieldId(name_row)));
+  if (!success)
+    SETERRQ(cOmm, MOFEM_OPERATION_UNSUCCESSFUL, "modification unsuccessful");
   MoFEMFunctionReturn(0);
-  }
+}
 
 MoFEMErrorCode
 Core::modify_finite_element_off_field_col(const std::string &fe_name,
@@ -534,27 +534,16 @@ MoFEMErrorCode Core::add_ents_to_finite_element_by_MESHSET(
   MoFEMFunctionReturn(0);
 }
 
-template <int I>
-struct BuildFiniteElements {
+template <int I> struct BuildFiniteElements {
 
-  template <typename T1, typename T2, typename T3>
-  static inline void addToView(T1 &range_dit, T2 &fe_vec, T3 &dofs_size) {
+  template <typename T1, typename T2>
+  static inline void addToView(T1 &range_dit, T2 &fe_vec) {
 
     static_assert(I == ROW || I == COL, "t should be set to ROW or COL");
 
-    auto uid_comp = [](auto a, auto b) {
+    auto uid_comp = [](const auto &a, const auto &b) {
       return a.lock()->getGlobalUniqueId() < b.lock()->getGlobalUniqueId();
     };
-
-    // Reserve size
-    for (auto dit = range_dit.first; dit != range_dit.second; ++dit)
-      for (auto fe_it : fe_vec) {
-        auto fe_raw_ptr = fe_it.lock().get();
-        if (I == ROW)
-          fe_raw_ptr->row_dof_view->reserve(dofs_size.at(fe_raw_ptr->getEnt()));
-        else
-          fe_raw_ptr->col_dof_view->reserve(dofs_size.at(fe_raw_ptr->getEnt()));
-      }
 
     // Add DOFs
     for (auto dit = range_dit.first; dit != range_dit.second; ++dit)
@@ -567,25 +556,23 @@ struct BuildFiniteElements {
       }
 
     // Sort
-    for (auto dit = range_dit.first; dit != range_dit.second; ++dit)
-      for (auto fe_it : fe_vec) {
-        auto fe_raw_ptr = fe_it.lock().get();
-        if (I == ROW)
-          sort(fe_raw_ptr->row_dof_view->begin(),
-               fe_raw_ptr->row_dof_view->end(), uid_comp);
-        else
-          sort(fe_raw_ptr->row_dof_view->begin(),
-               fe_raw_ptr->row_dof_view->end(), uid_comp);
-      }
+    for (auto fe_it : fe_vec) {
+      auto fe_raw_ptr = fe_it.lock().get();
+      if (I == ROW)
+        sort(fe_raw_ptr->row_dof_view->begin(), fe_raw_ptr->row_dof_view->end(),
+             uid_comp);
+      else
+        sort(fe_raw_ptr->row_dof_view->begin(), fe_raw_ptr->row_dof_view->end(),
+             uid_comp);
+    }
   }
 
-  template <typename T1, typename T2, typename T3>
-  static inline void addToData(T1 &range_dit, T2 &fe_vec, T3 &dofs_size) {
+  template <typename T1, typename T2>
+  static inline void addToData(T1 &range_dit, T2 &fe_vec) {
     static_assert(I == DATA, "t should be set to DATA");
 
     for (auto dit = range_dit.first; dit != range_dit.second; ++dit) {
       const EntityHandle dof_ent = dit->get()->getEnt();
-
       // Fill array
       for (auto fe_it : fe_vec) {
         auto fe_raw_ptr = fe_it.lock().get();
@@ -598,19 +585,18 @@ struct BuildFiniteElements {
         fe_raw_ptr->getDofsSequence().lock()->emplace_back(side_number_ptr,
                                                            *dit);
       }
+    }
 
-      // Add to data in FE
-      for (auto fe_it : fe_vec) {
-        auto fe_raw_ptr = fe_it.lock().get();
-        const EntityHandle fe_ent = fe_raw_ptr->getEnt();
-        auto data_dofs_array_vec = fe_raw_ptr->getDofsSequence().lock();
-        // Create shared pointers vector
-        auto hint = fe_raw_ptr->data_dofs->end();
-        for (auto &vit : *data_dofs_array_vec)
-          hint = fe_raw_ptr->data_dofs->emplace_hint(hint, data_dofs_array_vec,
-                                                     &vit);
-      }
-
+    // Add to data in FE
+    for (auto fe_it : fe_vec) {
+      auto fe_raw_ptr = fe_it.lock().get();
+      const EntityHandle fe_ent = fe_raw_ptr->getEnt();
+      auto data_dofs_array_vec = fe_raw_ptr->getDofsSequence().lock();
+      // Create shared pointers vector
+      auto hint = fe_raw_ptr->data_dofs->end();
+      for (auto &vit : *data_dofs_array_vec)
+        hint = fe_raw_ptr->data_dofs->emplace_hint(hint, data_dofs_array_vec,
+                                                   &vit);
     }
   }
 };
@@ -634,6 +620,7 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
 
   // get finite element meshset
   EntityHandle meshset = get_finite_element_meshset(fe.get()->getId());
+
   // get entities from finite element meshset // if meshset
   Range fe_ents;
   CHKERR get_moab().get_entities_by_handle(meshset, fe_ents, false);
@@ -645,11 +632,10 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
   typedef std::vector<boost::weak_ptr<EntFiniteElement>> VecOfWeakFEPtrs;
   typedef std::map<const UId *, VecOfWeakFEPtrs> MapEntUIdAndVecOfWeakFEPtrs;
   MapEntUIdAndVecOfWeakFEPtrs ent_uid_and_fe_vec;
-  std::map<EntityHandle, int> data_dofs_size, row_dofs_size, col_dofs_size;
   std::map<EntityHandle, boost::shared_ptr<std::vector<FEDofEntity>>>
       data_dofs_array;
 
-  // loop meshset Ents and add finite elements
+  // loop meshset finite element ents and add finite elements
   for (Range::const_pair_iterator peit = fe_ents.const_pair_begin();
        peit != fe_ents.const_pair_end(); peit++) {
 
@@ -679,18 +665,11 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
 
       auto fe_raw_ptr = hint_p->get();
 
-      if (fe_fields[ROW] == fe_fields[COL]) {
-        fe_raw_ptr->col_dof_view = fe_raw_ptr->row_dof_view;
-      } else if (fe_raw_ptr->col_dof_view == fe_raw_ptr->row_dof_view) {
-        fe_raw_ptr->col_dof_view =
-            boost::make_shared<DofEntity_vector_view>();
-      }
+      int nb_dofs_on_data = 0;
+      int nb_dofs_on_row = 0;
+      int nb_dofs_on_col = 0;
 
-      fe_raw_ptr->row_dof_view->clear();
-      fe_raw_ptr->col_dof_view->clear();
-      fe_raw_ptr->data_dofs->clear();
-
-      for (unsigned int ii = 0; ii < BitFieldId().size(); ii++) {
+      for (unsigned int ii = 0; ii != BitFieldId().size(); ++ii) {
 
         // Common field id for ROW, COL and DATA
         BitFieldId id_common = 0;
@@ -709,12 +688,6 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
                   "Data inconsistency");
         }
 
-        // Entities adjacent to entities
-        Range adj_ents;
-
-        // Resolve entities on element, those entities are used to build tag
-        // with dof uids on finite element tag
-        CHKERR fe_raw_ptr->getElementAdjacency(*miit, adj_ents);
 
         // Loop over adjacencies of element and find field entities on those
         // adjacencies, that create hash map map_uid_fe which is used later
@@ -723,41 +696,76 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
         const bool add_to_row = (field_id & fe_fields[ROW]).any();
         const bool add_to_col = (field_id & fe_fields[COL]).any();
 
+        // Entities adjacent to entities
+        Range adj_ents;
+
+        // Resolve entities on element, those entities are used to build tag
+        // with dof uids on finite element tag
+        CHKERR fe_raw_ptr->getElementAdjacency(*miit, adj_ents);
+
         for (Range::pair_iterator p_eit = adj_ents.pair_begin();
              p_eit != adj_ents.pair_end(); ++p_eit) {
+
           const EntityHandle first = p_eit->first;
+          auto &field_ents_by_name_and_ent =
+              entsFields.get<Composite_Name_And_Ent_mi_tag>();
+          auto meit = field_ents_by_name_and_ent.lower_bound(
+              boost::make_tuple(field_name, first));
+
           const EntityHandle second = p_eit->second;
-          auto meit =
-              entsFields.get<Composite_Name_And_Ent_mi_tag>().lower_bound(
-                  boost::make_tuple(field_name, first));
-          if (meit == entsFields.get<Composite_Name_And_Ent_mi_tag>().end())
-            continue;
-          auto hi_meit =
-              entsFields.get<Composite_Name_And_Ent_mi_tag>().upper_bound(
+          if (meit != field_ents_by_name_and_ent.end()) {
+
+            decltype(meit) hi_meit;
+
+            // If range is not sparse, that will remove need for costly search
+            // for end of the pair
+            if (meit->get()->getEnt() == second) {
+              hi_meit = meit;
+              ++hi_meit;
+            } else
+              hi_meit = field_ents_by_name_and_ent.upper_bound(
                   boost::make_tuple(field_name, second));
-          // create list of finite elements with this dof UId
-          for (; meit != hi_meit; ++meit) {
-            const UId *uid_ptr = &(meit->get()->getGlobalUniqueId());
-            auto &fe_vec = ent_uid_and_fe_vec[uid_ptr];
-            fe_vec.emplace_back(*hint_p);
-            if (add_to_data)
-              data_dofs_size[fe_raw_ptr->getEnt()] +=
-                  meit->get()->getNbDofsOnEnt();
-            if (add_to_row)
-              row_dofs_size[fe_raw_ptr->getEnt()] +=
-                  meit->get()->getNbDofsOnEnt();
-            if (add_to_col)
-              col_dofs_size[fe_raw_ptr->getEnt()] +=
-                  meit->get()->getNbDofsOnEnt();
+
+            // create list of finite elements with this dof UId
+            for (; meit != hi_meit; ++meit) {
+              const UId *uid_ptr = &(meit->get()->getGlobalUniqueId());
+              auto &fe_vec = ent_uid_and_fe_vec[uid_ptr];
+              fe_vec.emplace_back(*hint_p);
+              if (add_to_data)
+                nb_dofs_on_data += meit->get()->getNbDofsOnEnt();
+              if (add_to_row)
+                nb_dofs_on_row += meit->get()->getNbDofsOnEnt();
+              if (add_to_col)
+                nb_dofs_on_col += meit->get()->getNbDofsOnEnt();
+            }
           }
         }
       }
 
+      // Clear finite element data structures
+      fe_raw_ptr->row_dof_view->clear();
+      fe_raw_ptr->col_dof_view->clear();
+      fe_raw_ptr->data_dofs->clear();
+
       // Reserve memory for data
       auto data_dofs_array_vec = boost::make_shared<std::vector<FEDofEntity>>();
-      data_dofs_array_vec->reserve(data_dofs_size[fe_raw_ptr->getEnt()]);
       data_dofs_array[fe_raw_ptr->getEnt()] = data_dofs_array_vec;
+      data_dofs_array_vec->reserve(nb_dofs_on_data);
+
+      // Reserve row and col views
+      fe_raw_ptr->row_dof_view->reserve(nb_dofs_on_row);
+      if (fe_fields[ROW] == fe_fields[COL]) {
+        fe_raw_ptr->col_dof_view = fe_raw_ptr->row_dof_view;
+      } else if (fe_raw_ptr->col_dof_view == fe_raw_ptr->row_dof_view) {
+        fe_raw_ptr->col_dof_view =
+            boost::make_shared<DofEntity_vector_view>();
+        fe_raw_ptr->col_dof_view->reserve(nb_dofs_on_col);
+      } else {
+        fe_raw_ptr->col_dof_view->reserve(nb_dofs_on_col);
+      }
+
       fe_raw_ptr->getDofsSequence() = data_dofs_array_vec;
+
 
     }
   }
@@ -776,16 +784,13 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
       const BitFieldId field_id = range_dit.first->get()->getId();
 
       if ((field_id & fe_fields[ROW]).any())
-        BuildFiniteElements<ROW>::addToView(range_dit, mit.second,
-                                            row_dofs_size);
+        BuildFiniteElements<ROW>::addToView(range_dit, mit.second);
 
       if (fe_fields[ROW] != fe_fields[COL] && (field_id & fe_fields[COL]).any())
-        BuildFiniteElements<COL>::addToView(range_dit, mit.second,
-                                            col_dofs_size);
+        BuildFiniteElements<COL>::addToView(range_dit, mit.second);
 
       if ((field_id & fe_fields[DATA]).any())
-        BuildFiniteElements<DATA>::addToData(range_dit, mit.second,
-                                             data_dofs_size);
+        BuildFiniteElements<DATA>::addToData(range_dit, mit.second);
         
     }
   }
