@@ -541,10 +541,6 @@ template <int I> struct BuildFiniteElements {
 
     static_assert(I == ROW || I == COL, "t should be set to ROW or COL");
 
-    auto uid_comp = [](const auto &a, const auto &b) {
-      return a.lock()->getGlobalUniqueId() < b.lock()->getGlobalUniqueId();
-    };
-
     // Add DOFs
     for (auto dit = range_dit.first; dit != range_dit.second; ++dit)
       for (auto fe_it : fe_vec) {
@@ -555,6 +551,17 @@ template <int I> struct BuildFiniteElements {
             fe_ptr->col_dof_view->emplace_back(*dit);
         }
       }
+  }
+
+  template <typename T>
+  static inline void sortView(T &fe_vec) {
+
+    static_assert(I == ROW || I == COL, "t should be set to ROW or COL");
+
+    auto uid_comp = [](const auto &a, const auto &b) {
+      return a.lock()->getGlobalUniqueId() < b.lock()->getGlobalUniqueId();
+    };
+
 
     // Sort
     for (auto fe_it : fe_vec) {
@@ -639,6 +646,8 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
   MapEntUIdAndVecOfWeakFEPtrs ent_uid_and_fe_vec;
   std::map<EntityHandle, boost::shared_ptr<std::vector<FEDofEntity>>>
       data_dofs_array;
+  VecOfWeakFEPtrs processed_fes;
+  processed_fes.reserve(fe_ents.size());
 
   // loop meshset finite element ents and add finite elements
   for (Range::const_pair_iterator peit = fe_ents.const_pair_begin();
@@ -667,6 +676,7 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
 
       hint_p = entsFiniteElements.emplace_hint(
           hint_p, boost::make_shared<EntFiniteElement>(*ref_fe_miit, fe));
+      processed_fes.emplace_back(*hint_p);
 
       auto fe_raw_ptr = hint_p->get();
 
@@ -800,6 +810,10 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
         
     }
   }
+
+  BuildFiniteElements<ROW>::sortView(processed_fes);
+  if (fe_fields[ROW] != fe_fields[COL])
+    BuildFiniteElements<COL>::sortView(processed_fes);
 
   MoFEMFunctionReturn(0);
 }
