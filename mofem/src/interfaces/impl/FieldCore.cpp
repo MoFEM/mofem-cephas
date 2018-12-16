@@ -751,12 +751,13 @@ MoFEMErrorCode Core::buildFieldForL2H1HcurlHdiv(
                  DD, feit->get()->getNbDofsOnEnt(), ss.str().c_str());
       }
     }
+
     // Insert into Multi-Index container
     int dofs_field_size0 = dofsField.size();
     auto hint = dofsField.end();
-    for (auto &v : *dofs_array) {
+    for (auto &v : *dofs_array) 
       hint = dofsField.emplace_hint(hint, dofs_array, &v);
-    }
+    
     field_it->get()->getDofSequenceContainer()->push_back(dofs_array);
     if (PetscUnlikely(static_cast<int>(dofs_array.use_count()) !=
                       static_cast<int>(dofs_array->size() + 1))) {
