@@ -708,14 +708,14 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
           if (fe_raw_ptr->row_dof_view->empty())
             fe_raw_ptr->row_dof_view->reserve(
                 row_dofs_size.at(fe_raw_ptr->getEnt()));
-          fe_raw_ptr->row_dof_view->push_back(*dit);
+          fe_raw_ptr->row_dof_view->emplace_back(*dit);
         }
         if (fe_raw_ptr->col_dof_view != fe_raw_ptr->row_dof_view &&
             (field_id & fe_raw_ptr->getBitFieldIdCol()).any()) {
           if (fe_raw_ptr->col_dof_view->empty())
             fe_raw_ptr->col_dof_view->reserve(
                 col_dofs_size.at(fe_raw_ptr->getEnt()));
-          fe_raw_ptr->col_dof_view->push_back(*dit);
+          fe_raw_ptr->col_dof_view->emplace_back(*dit);
         }
 
         // Add FEDofEntity, first create dofs, one by one, note that memory
