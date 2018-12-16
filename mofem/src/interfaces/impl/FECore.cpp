@@ -731,12 +731,13 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
               const UId *uid_ptr = &(meit->get()->getGlobalUniqueId());
               auto &fe_vec = ent_uid_and_fe_vec[uid_ptr];
               fe_vec.emplace_back(*hint_p);
+              const int nb_dofs_on_ent = meit->get()->getNbDofsOnEnt();
               if (add_to_data)
-                nb_dofs_on_data += meit->get()->getNbDofsOnEnt();
+                nb_dofs_on_data += nb_dofs_on_ent;
               if (add_to_row)
-                nb_dofs_on_row += meit->get()->getNbDofsOnEnt();
+                nb_dofs_on_row += nb_dofs_on_ent;
               if (add_to_col)
-                nb_dofs_on_col += meit->get()->getNbDofsOnEnt();
+                nb_dofs_on_col += nb_dofs_on_ent;
             }
           }
         }
