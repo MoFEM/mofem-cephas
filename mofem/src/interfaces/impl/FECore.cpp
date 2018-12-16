@@ -548,22 +548,24 @@ template <int I> struct BuildFiniteElements {
     // Add DOFs
     for (auto dit = range_dit.first; dit != range_dit.second; ++dit)
       for (auto fe_it : fe_vec) {
-        auto fe_raw_ptr = fe_it.lock().get();
-        if (I == ROW)
-          fe_raw_ptr->row_dof_view->emplace_back(*dit);
-        else
-          fe_raw_ptr->col_dof_view->emplace_back(*dit);
+        if (auto fe_ptr = fe_it.lock()) {
+          if (I == ROW)
+            fe_ptr->row_dof_view->emplace_back(*dit);
+          else
+            fe_ptr->col_dof_view->emplace_back(*dit);
+        }
       }
 
     // Sort
     for (auto fe_it : fe_vec) {
-      auto fe_raw_ptr = fe_it.lock().get();
-      if (I == ROW)
-        sort(fe_raw_ptr->row_dof_view->begin(), fe_raw_ptr->row_dof_view->end(),
-             uid_comp);
-      else
-        sort(fe_raw_ptr->row_dof_view->begin(), fe_raw_ptr->row_dof_view->end(),
-             uid_comp);
+      if (auto fe_ptr = fe_it.lock()) {
+        if (I == ROW)
+          sort(fe_ptr->row_dof_view->begin(), fe_ptr->row_dof_view->end(),
+               uid_comp);
+        else
+          sort(fe_ptr->row_dof_view->begin(), fe_ptr->row_dof_view->end(),
+               uid_comp);
+      }
     }
   }
 
@@ -575,28 +577,31 @@ template <int I> struct BuildFiniteElements {
       const EntityHandle dof_ent = dit->get()->getEnt();
       // Fill array
       for (auto fe_it : fe_vec) {
-        auto fe_raw_ptr = fe_it.lock().get();
-        // Add FEDofEntity, first create dofs, one by one, note that memory
-        // is already reserved. Then create shared pointers and finally add
-        // th_FEName to element multi-index
-        const EntityHandle fe_ent = fe_raw_ptr->getEnt();
-        // There are data dofs on this element
-        auto &side_number_ptr = fe_raw_ptr->getSideNumberPtr(dof_ent);
-        fe_raw_ptr->getDofsSequence().lock()->emplace_back(side_number_ptr,
-                                                           *dit);
+        if (auto fe_ptr = fe_it.lock()) {
+          // Add FEDofEntity, first create dofs, one by one, note that memory
+          // is already reserved. Then create shared pointers and finally add
+          // th_FEName to element multi-index
+          const EntityHandle fe_ent = fe_ptr->getEnt();
+          // There are data dofs on this element
+          auto &side_number_ptr = fe_ptr->getSideNumberPtr(dof_ent);
+          fe_ptr->getDofsSequence().lock()->emplace_back(side_number_ptr, *dit);
+        }
       }
     }
 
     // Add to data in FE
     for (auto fe_it : fe_vec) {
-      auto fe_raw_ptr = fe_it.lock().get();
-      const EntityHandle fe_ent = fe_raw_ptr->getEnt();
-      auto data_dofs_array_vec = fe_raw_ptr->getDofsSequence().lock();
-      // Create shared pointers vector
-      auto hint = fe_raw_ptr->data_dofs->end();
-      for (auto &vit : *data_dofs_array_vec)
-        hint = fe_raw_ptr->data_dofs->emplace_hint(hint, data_dofs_array_vec,
-                                                   &vit);
+      if (auto fe_ptr = fe_it.lock()) {
+        const EntityHandle fe_ent = fe_ptr->getEnt();
+        // It is a but unsafe, since if one mess up something in
+        // buildFiniteElements, weak_ptr will not give pointer
+        auto data_dofs_array_vec = fe_ptr->getDofsSequence().lock();
+        // Create shared pointers vector
+        auto hint = fe_ptr->data_dofs->end();
+        for (auto &vit : *data_dofs_array_vec)
+          hint =
+              fe_ptr->data_dofs->emplace_hint(hint, data_dofs_array_vec, &vit);
+      }
     }
   }
 };
@@ -884,7 +889,7 @@ MoFEMErrorCode Core::build_finite_elements(const string fe_name,
 
 MoFEMErrorCode Core::build_adjacencies(const Range &ents, int verb) {
   MoFEMFunctionBeginHot;
-  if (verb == -1)
+  if (verb == DEFAULT_VERBOSITY)
     verb = verbose;
   if (!((*buildMoFEM) & BUILD_FIELD))
     SETERRQ(cOmm, MOFEM_NOT_FOUND, "field not build");
@@ -907,20 +912,20 @@ MoFEMErrorCode Core::build_adjacencies(const Range &ents, int verb) {
         by |= BYDATA;
       FieldEntityEntFiniteElementAdjacencyMap_change_ByWhat modify_row(by);
       UId ent_uid = UId(0);
+      auto hint = entFEAdjacencies.end();
       for (auto rvit = (*fit)->row_dof_view->begin();
            rvit != (*fit)->row_dof_view->end(); ++rvit) {
-        if (ent_uid == (*rvit).lock()->getFieldEntityPtr()->getGlobalUniqueId())
-          continue;
-        ent_uid = (*rvit).lock()->getFieldEntityPtr()->getGlobalUniqueId();
-        std::pair<FieldEntityEntFiniteElementAdjacencyMap_multiIndex::iterator,
-                  bool>
-            p;
-        p = entFEAdjacencies.insert(FieldEntityEntFiniteElementAdjacencyMap(
-            (*rvit).lock()->getFieldEntityPtr(), *fit));
-        bool success = entFEAdjacencies.modify(p.first, modify_row);
-        if (!success)
-          SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
-                  "modification unsuccessful");
+        if (auto r = (*rvit).lock()) {
+          if (ent_uid == r->getFieldEntityPtr()->getGlobalUniqueId())
+            continue;
+          ent_uid = r->getFieldEntityPtr()->getGlobalUniqueId();
+          hint =
+              entFEAdjacencies.emplace_hint(hint, r->getFieldEntityPtr(), *fit);
+          bool success = entFEAdjacencies.modify(hint, modify_row);
+          if (!success)
+            SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
+                    "modification unsuccessful");
+        }
       }
       if ((*fit)->getBitFieldIdRow() != (*fit)->getBitFieldIdCol()) {
         int by = BYCOL;
@@ -928,22 +933,20 @@ MoFEMErrorCode Core::build_adjacencies(const Range &ents, int verb) {
           by |= BYDATA;
         FieldEntityEntFiniteElementAdjacencyMap_change_ByWhat modify_col(by);
         ent_uid = UId(0);
+        auto hint = entFEAdjacencies.end();
         for (auto cvit = (*fit)->col_dof_view->begin();
              cvit != (*fit)->col_dof_view->end(); cvit++) {
-          if (ent_uid ==
-              (*cvit).lock()->getFieldEntityPtr()->getGlobalUniqueId())
-            continue;
-          ent_uid = (*cvit).lock()->getFieldEntityPtr()->getGlobalUniqueId();
-          std::pair<
-              FieldEntityEntFiniteElementAdjacencyMap_multiIndex::iterator,
-              bool>
-              p;
-          p = entFEAdjacencies.insert(FieldEntityEntFiniteElementAdjacencyMap(
-              (*cvit).lock()->getFieldEntityPtr(), *fit));
-          bool success = entFEAdjacencies.modify(p.first, modify_col);
-          if (!success)
-            SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
-                    "modification unsuccessful");
+          if (auto r = (*cvit).lock()) {
+            if (ent_uid == r->getFieldEntityPtr()->getGlobalUniqueId())
+              continue;
+            ent_uid = r->getFieldEntityPtr()->getGlobalUniqueId();
+            hint = entFEAdjacencies.emplace_hint(hint, r->getFieldEntityPtr(),
+                                                 *fit);
+            bool success = entFEAdjacencies.modify(hint, modify_col);
+            if (!success)
+              SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
+                      "modification unsuccessful");
+          }
         }
       }
       if ((*fit)->getBitFieldIdRow() != (*fit)->getBitFieldIdData() ||
@@ -951,18 +954,15 @@ MoFEMErrorCode Core::build_adjacencies(const Range &ents, int verb) {
         FieldEntityEntFiniteElementAdjacencyMap_change_ByWhat modify_data(
             BYDATA);
         ent_uid = UId(0);
+        auto hint = entFEAdjacencies.end();
         for (FEDofEntity_multiIndex::iterator dvit = (*fit)->data_dofs->begin();
              dvit != (*fit)->data_dofs->end(); dvit++) {
           if (ent_uid == (*dvit)->getFieldEntityPtr()->getGlobalUniqueId())
             continue;
           ent_uid = (*dvit)->getFieldEntityPtr()->getGlobalUniqueId();
-          std::pair<
-              FieldEntityEntFiniteElementAdjacencyMap_multiIndex::iterator,
-              bool>
-              p;
-          p = entFEAdjacencies.insert(FieldEntityEntFiniteElementAdjacencyMap(
-              (*dvit)->getFieldEntityPtr(), *fit));
-          bool success = entFEAdjacencies.modify(p.first, modify_data);
+          hint = entFEAdjacencies.emplace_hint(
+              hint, (*dvit)->getFieldEntityPtr(), *fit);
+          bool success = entFEAdjacencies.modify(hint, modify_data);
           if (!success)
             SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
                     "modification unsuccessful");

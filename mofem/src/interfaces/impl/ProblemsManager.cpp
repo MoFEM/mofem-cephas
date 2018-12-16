@@ -2856,18 +2856,20 @@ ProblemsManager::partitionGhostDofsOnDistributedMesh(const std::string &name,
         } else {
           numered_dofs_ptr = p_miit->numeredDofsCols;
         }
-        auto diit = numered_dofs_ptr.lock()->find((*gdit)->getGlobalUniqueId());
-        if (diit->get()->getPetscGlobalDofIdx() == -1) {
-          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                  "data inconsistency");
+        if (auto r = numered_dofs_ptr.lock()) {
+          auto diit = r->find((*gdit)->getGlobalUniqueId());
+          if (diit->get()->getPetscGlobalDofIdx() == -1) {
+            SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                    "data inconsistency");
+          }
+          bool success = r->modify(
+              diit, NumeredDofEntity_local_idx_change((nb_local_dofs[ss])++));
+          if (!success) {
+            SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
+                    "modification unsuccessful");
+          }
+          (*nb_ghost_dofs[ss])++;
         }
-        bool success = numered_dofs_ptr.lock()->modify(
-            diit, NumeredDofEntity_local_idx_change((nb_local_dofs[ss])++));
-        if (!success) {
-          SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
-                  "modification unsuccessful");
-        }
-        (*nb_ghost_dofs[ss])++;
       }
     }
     if (loop_size == 1) {
