@@ -344,13 +344,6 @@ typedef multi_index_container<
                        member<DofEntity, UId, &DofEntity::globalUId>>,
         // non_unique
         ordered_non_unique<
-            tag<Composite_Ent_and_ShortId_mi_tag>,
-            composite_key<
-                DofEntity,
-                const_mem_fun<DofEntity, EntityHandle, &DofEntity::getEnt>,
-                const_mem_fun<DofEntity, ShortId,
-                              &DofEntity::getNonNonuniqueShortId>>>,
-        ordered_non_unique<
             tag<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>,
             composite_key<
                 DofEntity,
