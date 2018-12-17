@@ -723,8 +723,11 @@ MoFEMErrorCode Core::buildFieldForL2H1HcurlHdiv(
       nb_dofs_on_ents += rank * tmp_feit->get()->getOrderNbDofs(
                                     tmp_feit->get()->getMaxOrder());
     }
-    // Add Sequence of DOFs to sequence container as weak_ptr
+
+    // Reserve memory
     dofs_array->reserve(nb_dofs_on_ents);
+
+    // Create DOFs
     for (; feit != hi_feit; ++feit) {
       // Create dofs instances and shared pointers
       int DD = 0;
@@ -757,8 +760,11 @@ MoFEMErrorCode Core::buildFieldForL2H1HcurlHdiv(
     auto hint = dofsField.end();
     for (auto &v : *dofs_array) 
       hint = dofsField.emplace_hint(hint, dofs_array, &v);
-    
+
+    // Add Sequence of DOFs to sequence container as weak_ptr
     field_it->get()->getDofSequenceContainer()->push_back(dofs_array);
+
+    // Check data consistency
     if (PetscUnlikely(static_cast<int>(dofs_array.use_count()) !=
                       static_cast<int>(dofs_array->size() + 1))) {
       SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
