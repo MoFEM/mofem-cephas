@@ -299,7 +299,7 @@ MoFEMErrorCode FieldSeriesStep::get(Interface &moab,
       boost::shared_ptr<DofEntity>,
       indexed_by<
 
-          ordered_non_unique<
+          hashed_non_unique<
               tag<Composite_Ent_and_ShortId_mi_tag>,
               composite_key<
                   DofEntity,
