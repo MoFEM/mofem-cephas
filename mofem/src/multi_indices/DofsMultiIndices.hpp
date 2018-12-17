@@ -382,18 +382,7 @@ typedef multi_index_container<
                 const_mem_fun<DofEntity::interface_type_Field,
                               boost::string_ref, &DofEntity::getNameRef>,
                 const_mem_fun<DofEntity::interface_type_RefEntity, EntityType,
-                              &DofEntity::getEntType>>>,
-        ordered_non_unique<
-            tag<Composite_Name_Ent_Order_And_CoeffIdx_mi_tag>,
-            composite_key<
-                DofEntity,
-                const_mem_fun<DofEntity::interface_type_Field,
-                              boost::string_ref, &DofEntity::getNameRef>,
-                const_mem_fun<DofEntity, EntityHandle, &DofEntity::getEnt>,
-                const_mem_fun<DofEntity, ApproximationOrder,
-                              &DofEntity::getDofOrder>,
-                const_mem_fun<DofEntity, FieldCoefficientsNumber,
-                              &DofEntity::getDofCoeffIdx>>>>>
+                              &DofEntity::getEntType>>>>>
     DofEntity_multiIndex;
 
 /** \brief Dof multi-index by field name
