@@ -8,7 +8,7 @@ general problem on particular examples.
 
 \section hierarchical_approximation Hierarchical approximation
 
-Introduces the reader to the basic concepts of finite element approach using 
+Introduces the reader to the basic concepts of finite element approach using
 Hierarchical basis functions.
 
 - \subpage hierarchical_approximation_1
@@ -35,7 +35,7 @@ Tutorial for mixed formulation of imcompressible elasticity problem
 \section poisson_problem The Poisson equation
 
 The Poisson equation is solved using MoFEM::Simple interface. The generic
-procedure is applied to one of the simples PDEs. In order to make the problem instructional, 
+procedure is applied to one of the simples PDEs. In order to make the problem instructional,
 essential boundary conditions are enforced by Lagrange multipliers.
 
 - \subpage poisson_tut1
@@ -77,5 +77,11 @@ mix formulation applied to unsaturated water transport in heterogeneous soil.
 
 - \subpage mix_us_flow
 
+\section Pre-processors
+
+This tutorial provides a step-by-step procedure for the use of <a href="http://gmsh.info/">Gmsh</a>
+as an alternative pre-processor for MoFEM.
+
+- \subpage using_Gmsh_tut
 
 */
