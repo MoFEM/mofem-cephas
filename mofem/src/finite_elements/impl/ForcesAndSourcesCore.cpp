@@ -153,9 +153,8 @@ MoFEMErrorCode ForcesAndSourcesCore::getSense(
              side_table.get<2>().count(type));
   }
   const auto &st = side_table.get<2>();
-  auto sit = st.lower_bound(type);
-  auto hi_sit = st.upper_bound(type);
-  for (; sit != hi_sit; sit++) {
+  auto range = st.equal_range(type);
+  for (auto sit = range.first; sit != range.second; ++sit) {
     const auto &side = **sit;
     data[side.side_number].getSense() = sit->get()->sense;
     if (side.brother_side_number != -1) {
