@@ -123,9 +123,6 @@ FaceElementForcesAndSourcesCore::UserDataOperator::loopSideVolumes(
     FEByComposite::iterator miit =
         numered_fe.find(boost::make_tuple(fe_name, *vit));
     if (miit != numered_fe.end()) {
-      // cerr << **miit << endl;
-      // cerr << &(**miit) << endl;
-      // cerr << (*miit)->getEnt() << endl;
       method.nInTheLoop = nn++;
       method.numeredEntFiniteElementPtr = *miit;
       method.dataPtr = (*miit)->sPtr->data_dofs;
