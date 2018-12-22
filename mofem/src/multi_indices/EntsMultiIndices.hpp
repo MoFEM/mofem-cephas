@@ -824,9 +824,6 @@ typedef multi_index_container<
                               &FieldEntity::getEnt> > > > >
     FieldEntity_multiIndex;
 
-// /// \deprecated use FieldEntity_multiIndex
-// DEPRECATED typedef FieldEntity_multiIndex MoFEMEntity_multiIndex;
-
 /** \brief Entity index by field name
  *
  * \ingroup ent_multi_indices
