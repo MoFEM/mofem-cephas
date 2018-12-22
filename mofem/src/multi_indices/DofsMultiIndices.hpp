@@ -634,10 +634,6 @@ typedef multi_index_container<
                               EntityHandle, &NumeredDofEntity::getEnt>,
                 const_mem_fun<NumeredDofEntity::interface_type_DofEntity,
                               DofIdx, &NumeredDofEntity::getEntDofIdx>>>,
-        // ordered_non_unique<
-        //   tag<EntDofIdx_mi_tag>,
-        //   const_mem_fun<NumeredDofEntity::interface_type_DofEntity,DofIdx,&NumeredDofEntity::getEntDofIdx>
-        //   >,
         ordered_non_unique<tag<Idx_mi_tag>, member<NumeredDofEntity, DofIdx,
                                                    &NumeredDofEntity::dofIdx>>,
         ordered_non_unique<
