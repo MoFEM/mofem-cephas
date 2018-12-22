@@ -125,6 +125,9 @@ FaceElementForcesAndSourcesCore::UserDataOperator::loopSideVolumes(
     if (miit != numered_fe.end()) {
       method.nInTheLoop = nn++;
       method.numeredEntFiniteElementPtr = *miit;
+      method.dataFieldEntsPtr = (*miit)->sPtr->data_field_ents_view;
+      method.rowFieldEntsPtr = (*miit)->sPtr->row_field_ents_view;
+      method.colFieldEntsPtr = (*miit)->sPtr->col_field_ents_view;
       method.dataPtr = (*miit)->sPtr->data_dofs;
       method.rowPtr = (*miit)->rows_dofs;
       method.colPtr = (*miit)->cols_dofs;
@@ -274,6 +277,7 @@ FaceElementForcesAndSourcesCore::getSpaceBaseAndOrderOnElement() {
 
   MoFEMFunctionReturn(0);
 }
+
 
 MoFEMErrorCode
 FaceElementForcesAndSourcesCore::calculateCoordinatesAtGaussPts() {

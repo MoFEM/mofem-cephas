@@ -842,6 +842,8 @@ typedef multi_index_container<
                                                 &FieldEntity::getEnt> > > >
     FieldEntity_multiIndex_ent_view;
 
+typedef std::vector<boost::weak_ptr<FieldEntity>> FieldEntity_vector_view;
+
 } // namespace MoFEM
 
 #endif // __ENTSMULTIINDICES_HPP__

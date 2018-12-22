@@ -1021,7 +1021,10 @@ EntFiniteElement::EntFiniteElement(
       interface_RefElement<RefElement>(ref_finite_element),
       row_dof_view(new DofEntity_vector_view()),
       col_dof_view(new DofEntity_vector_view()),
-      data_dofs(new FEDofEntity_multiIndex()) {
+      data_dofs(new FEDofEntity_multiIndex()),
+      row_field_ents_view(new FieldEntity_vector_view()),
+      col_field_ents_view(new FieldEntity_vector_view()),
+      data_field_ents_view(new FieldEntity_vector_view()) {
   // get finite element entity
   globalUId = getGlobalUniqueIdCalculate();
 }

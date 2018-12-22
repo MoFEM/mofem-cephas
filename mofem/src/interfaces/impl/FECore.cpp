@@ -651,6 +651,10 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
   VecOfWeakFEPtrs processed_fes;
   processed_fes.reserve(fe_ents.size());
 
+  int last_data_field_ents_view_size = 0;
+  int last_row_field_ents_view_size = 0;
+  int last_col_field_ents_view_size = 0;
+
   // loop meshset finite element ents and add finite elements
   for (Range::const_pair_iterator peit = fe_ents.const_pair_begin();
        peit != fe_ents.const_pair_end(); peit++) {
@@ -678,6 +682,9 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
 
       hint_p = entsFiniteElements.emplace_hint(
           hint_p, boost::make_shared<EntFiniteElement>(*ref_fe_miit, fe));
+      (*hint_p)->data_field_ents_view->reserve(last_data_field_ents_view_size);
+      (*hint_p)->row_field_ents_view->reserve(last_data_field_ents_view_size);
+      (*hint_p)->col_field_ents_view->reserve(last_data_field_ents_view_size);
       processed_fes.emplace_back(*hint_p);
 
       auto fe_raw_ptr = hint_p->get();
@@ -743,22 +750,50 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
               hi_meit = field_ents_by_name_and_ent.upper_bound(
                   boost::make_tuple(field_name, second));
 
+
             // create list of finite elements with this dof UId
             for (; meit != hi_meit; ++meit) {
+              // Add entity to map with key entity uids pointers  and data
+              // finite elements weak ptrs. I using pointers to uids instead
+              // uids because this is faster.
               const UId *uid_ptr = &(meit->get()->getGlobalUniqueId());
               auto &fe_vec = ent_uid_and_fe_vec[uid_ptr];
-              fe_vec.emplace_back(*hint_p);
+              // get number of dofs on entities to pre-allocate memory for
+              // element
               const int nb_dofs_on_ent = meit->get()->getNbDofsOnEnt();
-              if (add_to_data)
+              if (add_to_data) {
                 nb_dofs_on_data += nb_dofs_on_ent;
-              if (add_to_row)
+                fe_raw_ptr->data_field_ents_view->emplace_back(*meit);
+              }
+              if (add_to_row) {
                 nb_dofs_on_row += nb_dofs_on_ent;
-              if (add_to_col)
+                fe_raw_ptr->row_field_ents_view->emplace_back(*meit);
+              }
+              if (add_to_col) {
                 nb_dofs_on_col += nb_dofs_on_ent;
+                fe_raw_ptr->col_field_ents_view->emplace_back(*meit);
+              }
+              // add finite element to processed list
+              fe_vec.emplace_back(*hint_p);
             }
           }
         }
       }
+
+      // Sort field ents by uid
+      auto uid_comp = [](const auto &a, const auto &b) {
+        return a.lock()->getGlobalUniqueId() < b.lock()->getGlobalUniqueId();
+      };
+
+      sort(fe_raw_ptr->data_field_ents_view->begin(),
+           fe_raw_ptr->data_field_ents_view->end(), uid_comp);
+      last_data_field_ents_view_size = fe_raw_ptr->data_field_ents_view->size();
+      sort(fe_raw_ptr->row_field_ents_view->begin(),
+           fe_raw_ptr->row_field_ents_view->end(), uid_comp);
+      last_row_field_ents_view_size = fe_raw_ptr->row_field_ents_view->size();
+      sort(fe_raw_ptr->col_field_ents_view->begin(),
+           fe_raw_ptr->col_field_ents_view->end(), uid_comp);
+      last_col_field_ents_view_size = fe_raw_ptr->col_field_ents_view->size();
 
       // Clear finite element data structures
       fe_raw_ptr->row_dof_view->clear();
