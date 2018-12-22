@@ -439,15 +439,22 @@ DEPRECATED void macro_is_deprecated_using_deprecated_function();
   catch (MoFEMException const &ex) {                                           \
     SETERRQ(PETSC_COMM_SELF, ex.errorCode, ex.errorMessage);                   \
   }                                                                            \
+  catch (boost::bad_weak_ptr & ex) {                                           \
+    std::string message("Boost bad weak ptr: " + std::string(ex.what()) +      \
+                        " at " + boost::lexical_cast<std::string>(__LINE__) +  \
+                        " : " + std::string(__FILE__) + " in " +               \
+                        std::string(PETSC_FUNCTION_NAME));                     \
+    SETERRQ(PETSC_COMM_SELF, MOFEM_STD_EXCEPTION_THROW, message.c_str());      \
+  }                                                                            \
   catch (std::out_of_range & ex) {                                             \
-    std::string message("Error: " + std::string(ex.what()) + " at " +          \
-                        boost::lexical_cast<std::string>(__LINE__) + " : " +   \
-                        std::string(__FILE__) + " in " +                       \
+    std::string message("Std out of range error: " + std::string(ex.what()) +  \
+                        " at " + boost::lexical_cast<std::string>(__LINE__) +  \
+                        " : " + std::string(__FILE__) + " in " +               \
                         std::string(PETSC_FUNCTION_NAME));                     \
     SETERRQ(PETSC_COMM_SELF, MOFEM_STD_EXCEPTION_THROW, message.c_str());      \
   }                                                                            \
   catch (std::exception const &ex) {                                           \
-    std::string message("Error: " + std::string(ex.what()) + " at " +          \
+    std::string message("Std error: " + std::string(ex.what()) + " at " +      \
                         boost::lexical_cast<std::string>(__LINE__) + " : " +   \
                         std::string(__FILE__) + " in " +                       \
                         std::string(PETSC_FUNCTION_NAME));                     \
