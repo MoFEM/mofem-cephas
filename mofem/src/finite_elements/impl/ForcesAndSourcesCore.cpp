@@ -176,7 +176,7 @@ static int getMaxOrder(const DOFMULTIINDEX &dof_multi_index) {
   auto hi_dit = dof_multi_index.end();
   int max_order = 0;
   for (; dit != hi_dit; dit++) {
-    if ((*dit)->getEntDofIdx() == 0) {
+    if (!(*dit)->getEntDofIdx()) {
       const int dit_max_order = (*dit)->getMaxOrder();
       max_order = (max_order > dit_max_order) ? max_order : dit_max_order;
     }
@@ -221,7 +221,7 @@ MoFEMErrorCode ForcesAndSourcesCore::getDataOrder(
     auto hi_dit = data_dofs.upper_bound(tuple);
     for (; dit != hi_dit; dit++) {
       auto &dof = **dit;
-      if (dof.getEntDofIdx() == 0) {
+      if (!dof.getEntDofIdx()) {
         ApproximationOrder ent_order = dof.getMaxOrder();
         int side_number = dof.sideNumberPtr->side_number;
         if (PetscUnlikely(side_number < 0)) {
@@ -570,17 +570,18 @@ MoFEMErrorCode ForcesAndSourcesCore::getNodesFieldData(
     }
 
     for(auto &dof_ptr : brother_dofs_vec) {
-      const auto &dof = *dof_ptr.lock();
-      const auto &sn = *dof.sideNumberPtr;
-      const int side_number = sn.side_number;
-      const int brother_side_number = sn.brother_side_number;
-      int pos = side_number * nb_dof_idx;
-      int brother_pos = brother_side_number * nb_dof_idx;
-      for (int ii = 0; ii != nb_dof_idx; ++ii) {
-        nodes_data[brother_pos] = nodes_data[pos];
-        nodes_dofs[brother_pos] = nodes_dofs[pos];        
-        ++pos;
-        ++brother_pos;
+      if (const auto d = dof_ptr.lock()) {
+        const auto &sn = d->sideNumberPtr;
+        const int side_number = sn->side_number;
+        const int brother_side_number = sn->brother_side_number;
+        int pos = side_number * nb_dof_idx;
+        int brother_pos = brother_side_number * nb_dof_idx;
+        for (int ii = 0; ii != nb_dof_idx; ++ii) {
+          nodes_data[brother_pos] = nodes_data[pos];
+          nodes_dofs[brother_pos] = nodes_dofs[pos];
+          ++pos;
+          ++brother_pos;
+        }
       }
     }
 
@@ -663,17 +664,19 @@ MoFEMErrorCode ForcesAndSourcesCore::getEntityFieldData(
     }
   }
 
-  for(auto &dof_ptr : brother_dofs_vec) {
-    const EntityType type = dof_ptr.lock()->getEntType();
-    const int side = dof_ptr.lock()->sideNumberPtr->side_number;
-    const int brother_side = dof_ptr.lock()->sideNumberPtr->brother_side_number;
-    auto &dat = data.dataOnEntities[type][side];
-    auto &dat_brother = data.dataOnEntities[type][brother_side];
-    dat_brother.getBase() = dat.getBase();
-    dat_brother.getSpace() = dat.getSpace();
-    dat_brother.getDataOrder() = dat.getDataOrder();
-    dat_brother.getFieldData() = dat.getFieldData();
-    dat_brother.getFieldDofs() = dat.getFieldDofs();
+  for (auto &dof_ptr : brother_dofs_vec) {
+    if (auto d = dof_ptr.lock()) {
+      const EntityType type = d->getEntType();
+      const int side = d->sideNumberPtr->side_number;
+      const int brother_side = d->sideNumberPtr->brother_side_number;
+      auto &dat = data.dataOnEntities[type][side];
+      auto &dat_brother = data.dataOnEntities[type][brother_side];
+      dat_brother.getBase() = dat.getBase();
+      dat_brother.getSpace() = dat.getSpace();
+      dat_brother.getDataOrder() = dat.getDataOrder();
+      dat_brother.getFieldData() = dat.getFieldData();
+      dat_brother.getFieldDofs() = dat.getFieldDofs();
+    }
   }
 
   MoFEMFunctionReturn(0);
@@ -821,17 +824,17 @@ MoFEMErrorCode ForcesAndSourcesCore::getSpacesAndBaseOnEntities(
       data.basesOnSpaces[s].reset();
     }
   }
-  for (_IT_GET_FEDATA_DOFS_FOR_LOOP_(this, dof)) {
-    if (dof->get()->getEntDofIdx() != 0)
-      continue;
-    const EntityType type = dof->get()->getEntType();
-    const FieldSpace space = dof->get()->getSpace();
-    const FieldApproximationBase approx = dof->get()->getApproxBase();
-    data.sPace.set(space);
-    data.bAse.set(approx);
-    data.spacesOnEntities[type].set(space);
-    data.basesOnEntities[type].set(approx);
-    data.basesOnSpaces[space].set(approx);
+  for (auto &dof : *dataPtr) {
+    if (!dof->getEntDofIdx()) {
+      const EntityType type = dof->getEntType();
+      const FieldSpace space = dof->getSpace();
+      const FieldApproximationBase approx = dof->getApproxBase();
+      data.sPace.set(space);
+      data.bAse.set(approx);
+      data.spacesOnEntities[type].set(space);
+      data.basesOnEntities[type].set(approx);
+      data.basesOnSpaces[space].set(approx);
+    }
   }
   MoFEMFunctionReturnHot(0);
 }
