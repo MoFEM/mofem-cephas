@@ -331,7 +331,7 @@ struct FEMethod : public BasicMethod {
       colPtr; ///< Pointer to finite element columns dofs view
   boost::shared_ptr<const FEDofEntity_multiIndex>
       dataPtr; ///< Pointer to finite element data dofs
-  boost::shared_ptr<const FieldEntity_vector_view>
+  
 
 /** \brief loop over all dofs which are on a particular FE row
  * \ingroup mofem_loops
