@@ -451,13 +451,11 @@ MoFEMErrorCode Core::loop_finite_elements(
   method.loopSize = std::distance(miit, hi_miit);
   for (int nn = 0; miit != hi_miit; miit++, nn++) {
 
-    // back_miit--;
-
-    method.nInTheLoop                 = nn;
+    method.nInTheLoop = nn;
     method.numeredEntFiniteElementPtr = *miit;
-    method.dataPtr                    = (*miit)->sPtr->data_dofs;
-    method.rowPtr                     = (*miit)->rows_dofs;
-    method.colPtr                     = (*miit)->cols_dofs;
+    method.dataPtr = (*miit)->sPtr->data_dofs;
+    method.rowPtr = (*miit)->rows_dofs;
+    method.colPtr = (*miit)->cols_dofs;
 
     PetscLogEventBegin(MOFEM_EVENT_operator, 0, 0, 0, 0);
     CHKERR method();
