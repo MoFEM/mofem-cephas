@@ -431,7 +431,7 @@ struct EntFiniteElement : public interface_FiniteElement<FiniteElement>,
   boost::shared_ptr<FEDofEntity_multiIndex> data_dofs;
   boost::shared_ptr<FieldEntity_vector_view> row_field_ents_view;
   boost::shared_ptr<FieldEntity_vector_view> col_field_ents_view;
-  boost::shared_ptr<FieldEntity_vector_view> data_field_ents_view;
+  boost::shared_ptr<FieldEntity_multiIndex_spaceType_view> data_field_ents_view;
   UId globalUId;
 
   EntFiniteElement(const boost::shared_ptr<RefElement> &ref_finite_element,

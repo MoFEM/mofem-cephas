@@ -182,7 +182,12 @@ static inline int getMaxOrder(const ENTMULTIINDEX &multi_index) {
 }
 
 int ForcesAndSourcesCore::getMaxDataOrder() const {
-  return getMaxOrder(*dataFieldEntsPtr);
+  int max_order = 0;
+  for (auto e : *dataFieldEntsPtr) {
+      const int order = e->getMaxOrder();
+      max_order = (max_order < order) ? order : max_order;
+    }
+  return max_order;
 }
 
 int ForcesAndSourcesCore::getMaxRowOrder() const {
@@ -197,50 +202,46 @@ MoFEMErrorCode ForcesAndSourcesCore::getDataOrder(
     const EntityType type, const FieldSpace space,
     boost::ptr_vector<DataForcesAndSourcesCore::EntData> &data) const {
   MoFEMFunctionBegin;
-  SideNumber_multiIndex &side_table = const_cast<SideNumber_multiIndex &>(
-      numeredEntFiniteElementPtr->getSideNumberTable());
+  auto &side_table = numeredEntFiniteElementPtr->getSideNumberTable();
   if (PetscUnlikely(data.size() < side_table.get<2>().count(type))) {
     // prims has 9 edges, some of edges for "flat" prism are not active
     SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
              "data structure too small to keep data %d < %d", data.size(),
              side_table.get<2>().count(type));
   }
+
   for (unsigned int side = 0; side != data.size(); ++side) {
     data[side].getDataOrder() = 0;
   }
-  auto &data_dofs = const_cast<FEDofEntity_multiIndex::index<
-      Composite_EntType_and_Space_mi_tag>::type &>(
-      numeredEntFiniteElementPtr->getDataDofs()
-          .get<Composite_EntType_and_Space_mi_tag>());
+
+  auto &fields_ents = numeredEntFiniteElementPtr->getDataDofs()
+                          .get<Composite_EntType_and_Space_mi_tag>();
+
   auto tuple = boost::make_tuple(type, space);
-  auto dit = data_dofs.lower_bound(tuple);
-  if (dit != data_dofs.end()) {
-    auto hi_dit = data_dofs.upper_bound(tuple);
-    for (; dit != hi_dit; dit++) {
-      auto &dof = **dit;
-      if (!dof.getEntDofIdx()) {
-        ApproximationOrder ent_order = dof.getMaxOrder();
-        int side_number = dof.sideNumberPtr->side_number;
-        if (PetscUnlikely(side_number < 0)) {
-          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                  "side number can not be negative");
-        }
-        auto &dat = data[side_number];
-        dat.getDataOrder() =
-            dat.getDataOrder() > ent_order ? dat.getDataOrder() : ent_order;
-        if (dof.sideNumberPtr->brother_side_number != -1) {
-          if (PetscUnlikely(
-                  data.size() <
-                  (unsigned int)(*dit)->sideNumberPtr->brother_side_number)) {
-            SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                    "data size not big enough to keep brother data");
-          }
-          data[dof.sideNumberPtr->brother_side_number].getDataOrder() =
-              dat.getDataOrder();
-        }
-      }
+  auto eit = fields_ents.lower_bound(tuple);
+  if (eit != fields_ents.end()) {
+    auto hi_dit = fields_ents.upper_bound(tuple);
+    for (; eit != hi_dit; eit++) {
+      auto &e = **eit;
+      ApproximationOrder ent_order = e.getMaxOrder();
+      auto &side = *side_table.find(e.getEnt());
+      const int side_number = side->side_number;
+      auto &dat = data[side_number];
+      const int order = e.getMaxOrder();
+      dat.getDataOrder() =
+          dat.getDataOrder() > ent_order ? dat.getDataOrder() : ent_order;
     }
   }
+
+  auto r = side_table.get<2>().equal_range(type);
+  for (; r.first != r.second; ++r.first) {
+    const int brother_side_number = (*r.first)->brother_side_number;
+    if (brother_side_number != -1) {
+      data[brother_side_number].getDataOrder() =
+          data[(*r.first)->side_number].getDataOrder();
+    }
+  }
+
   MoFEMFunctionReturn(0);
 }
 
@@ -822,20 +823,18 @@ MoFEMErrorCode ForcesAndSourcesCore::getSpacesAndBaseOnEntities(
       data.basesOnSpaces[s].reset();
     }
   }
-  for (auto ent_field_weak_ptr : *dataFieldEntsPtr) {
-    if (auto e = ent_field_weak_ptr.lock()) {
-      // get data from entity
-      const EntityType type = e->getEntType();
-      const FieldSpace space = e->getSpace();
-      const FieldApproximationBase approx = e->getApproxBase();
+  for (auto e : *dataFieldEntsPtr) {
+    // get data from entity
+    const EntityType type = e->getEntType();
+    const FieldSpace space = e->getSpace();
+    const FieldApproximationBase approx = e->getApproxBase();
 
-      // set data
-      data.sPace.set(space);
-      data.bAse.set(approx);
-      data.spacesOnEntities[type].set(space);
-      data.basesOnEntities[type].set(approx);
-      data.basesOnSpaces[space].set(approx);
-    }
+    // set data
+    data.sPace.set(space);
+    data.bAse.set(approx);
+    data.spacesOnEntities[type].set(space);
+    data.basesOnEntities[type].set(approx);
+    data.basesOnSpaces[space].set(approx);
   }
 
   MoFEMFunctionReturnHot(0);

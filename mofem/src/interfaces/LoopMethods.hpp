@@ -336,7 +336,7 @@ struct FEMethod : public BasicMethod {
       rowFieldEntsPtr; ///< Pointer to finite element field entities row view
   boost::shared_ptr<const FieldEntity_vector_view>
       colFieldEntsPtr; ///< Pointer to finite element field entities column view
-  boost::shared_ptr<const FieldEntity_vector_view>
+  boost::shared_ptr<const FieldEntity_multiIndex_spaceType_view>
       dataFieldEntsPtr; ///< Pointer to finite element field entities data view
 
 /** \brief loop over all dofs which are on a particular FE row

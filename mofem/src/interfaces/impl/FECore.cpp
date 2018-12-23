@@ -651,9 +651,10 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
   VecOfWeakFEPtrs processed_fes;
   processed_fes.reserve(fe_ents.size());
 
-  int last_data_field_ents_view_size = 0;
   int last_row_field_ents_view_size = 0;
   int last_col_field_ents_view_size = 0;
+
+  FieldEntity_vector_view data_field_ents_view;
 
   // loop meshset finite element ents and add finite elements
   for (Range::const_pair_iterator peit = fe_ents.const_pair_begin();
@@ -682,9 +683,11 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
 
       hint_p = entsFiniteElements.emplace_hint(
           hint_p, boost::make_shared<EntFiniteElement>(*ref_fe_miit, fe));
-      (*hint_p)->data_field_ents_view->reserve(last_data_field_ents_view_size);
-      (*hint_p)->row_field_ents_view->reserve(last_data_field_ents_view_size);
-      (*hint_p)->col_field_ents_view->reserve(last_data_field_ents_view_size);
+
+      data_field_ents_view.clear();
+
+      (*hint_p)->row_field_ents_view->reserve(last_row_field_ents_view_size);
+      (*hint_p)->col_field_ents_view->reserve(last_col_field_ents_view_size);
       processed_fes.emplace_back(*hint_p);
 
       auto fe_raw_ptr = hint_p->get();
@@ -763,7 +766,7 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
               const int nb_dofs_on_ent = meit->get()->getNbDofsOnEnt();
               if (add_to_data) {
                 nb_dofs_on_data += nb_dofs_on_ent;
-                fe_raw_ptr->data_field_ents_view->emplace_back(*meit);
+                data_field_ents_view.emplace_back(*meit);
               }
               if (add_to_row) {
                 nb_dofs_on_row += nb_dofs_on_ent;
@@ -785,9 +788,10 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
         return a.lock()->getGlobalUniqueId() < b.lock()->getGlobalUniqueId();
       };
 
-      sort(fe_raw_ptr->data_field_ents_view->begin(),
-           fe_raw_ptr->data_field_ents_view->end(), uid_comp);
-      last_data_field_ents_view_size = fe_raw_ptr->data_field_ents_view->size();
+      sort(data_field_ents_view.begin(), data_field_ents_view.end(), uid_comp);
+      for (auto e : data_field_ents_view)
+        fe_raw_ptr->data_field_ents_view->emplace_back(e);
+
       sort(fe_raw_ptr->row_field_ents_view->begin(),
            fe_raw_ptr->row_field_ents_view->end(), uid_comp);
       last_row_field_ents_view_size = fe_raw_ptr->row_field_ents_view->size();
