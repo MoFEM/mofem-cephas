@@ -42,12 +42,6 @@ struct RefElement : public interface_RefEntity<RefEntity> {
     return const_cast<SideNumber_multiIndex &>(side_number_table);
   }
 
-  // /** \deprecated Use getSideNumberTable() instead
-  // */
-  // DEPRECATED SideNumber_multiIndex &get_side_number_table() const {
-  //   return getSideNumberTable();
-  // }
-
   static const boost::shared_ptr<SideNumber> nullSideNumber;
 
   virtual const boost::shared_ptr<SideNumber> &
