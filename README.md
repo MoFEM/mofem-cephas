@@ -6,8 +6,7 @@ repository are merged to a primary MoFEM library.
 The objective is to have an implementation with reach abstraction (able to
 implement nontrivial finite elements) while being small and extendable.
 
-** For more information go to ** [
-  **documentation *page**](http://mofem.eng.gla.ac.uk/mofem/html/index.html). 
+** For more information go to ** [http://mofem.eng.gla.ac.uk](http://mofem.eng.gla.ac.uk/mofem/html/index.html). 
 
 ## Installation
 
