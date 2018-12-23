@@ -56,16 +56,6 @@ struct RefElement : public interface_RefEntity<RefEntity> {
     return nullSideNumber;
   };
 
-  // /**
-  //  * \deprecated First argument is no longer needed
-  //  */
-  // virtual DEPRECATED boost::shared_ptr<SideNumber> getSideNumberPtr(
-  //   const moab::Interface &moab,const EntityHandle ent
-  // ) const {
-  //   NOT_USED(moab);
-  //   return getSideNumberPtr(ent);
-  // }
-
   /**
    * \brief Get pointer to RefEntity
    */
