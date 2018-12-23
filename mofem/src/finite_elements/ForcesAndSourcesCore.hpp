@@ -105,7 +105,7 @@ struct ForcesAndSourcesCore : public FEMethod {
   }
 
   template <EntityType type>
-  MoFEMErrorCode getEntityFieldDataOrder(DataForcesAndSourcesCore &data,
+  MoFEMErrorCode getEntityDataOrder(DataForcesAndSourcesCore &data,
                                     const FieldSpace space) const {
     return getDataOrder(type, space, data.dataOnEntities[type]);
   }

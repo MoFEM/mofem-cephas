@@ -242,36 +242,36 @@ FaceElementForcesAndSourcesCore::getSpaceBaseAndOrderOnElement() {
   // H1
   if (dataH1.spacesOnEntities[MBEDGE].test(H1)) {
     CHKERR getEntitySense<MBEDGE>(dataH1);
-    CHKERR getEntityFieldDataOrder<MBEDGE>(dataH1, H1);
+    CHKERR getEntityDataOrder<MBEDGE>(dataH1, H1);
   }
   if (dataH1.spacesOnEntities[MBTRI].test(H1)) {
     CHKERR getEntitySense<MBTRI>(dataH1);
-    CHKERR getEntityFieldDataOrder<MBTRI>(dataH1, H1);
+    CHKERR getEntityDataOrder<MBTRI>(dataH1, H1);
   }
 
   // Hcurl
   if (dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
     CHKERR getEntitySense<MBEDGE>(dataHcurl);
-    CHKERR getEntityFieldDataOrder<MBEDGE>(dataHcurl, HCURL);
+    CHKERR getEntityDataOrder<MBEDGE>(dataHcurl, HCURL);
     dataHcurl.spacesOnEntities[MBEDGE].set(HCURL);
   }
   if (dataH1.spacesOnEntities[MBTRI].test(HCURL)) {
     CHKERR getEntitySense<MBTRI>(dataHcurl);
-    CHKERR getEntityFieldDataOrder<MBTRI>(dataHcurl, HCURL);
+    CHKERR getEntityDataOrder<MBTRI>(dataHcurl, HCURL);
     dataHcurl.spacesOnEntities[MBTRI].set(HCURL);
   }
 
   // Hdiv
   if (dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
     CHKERR getEntitySense<MBTRI>(dataHdiv);
-    CHKERR getEntityFieldDataOrder<MBTRI>(dataHdiv, HDIV);
+    CHKERR getEntityDataOrder<MBTRI>(dataHdiv, HDIV);
     dataHdiv.spacesOnEntities[MBTRI].set(HDIV);
   }
 
   // L2
   if (dataH1.spacesOnEntities[MBTRI].test(L2)) {
     CHKERR getEntitySense<MBTRI>(dataL2);
-    CHKERR getEntityFieldDataOrder<MBTRI>(dataL2, L2);
+    CHKERR getEntityDataOrder<MBTRI>(dataL2, L2);
     dataL2.spacesOnEntities[MBTRI].set(L2);
   }
 
