@@ -287,20 +287,10 @@ struct interface_NumeredDofEntity : public interface_DofEntity<T> {
 };
 
 /**
- * \brief keeps basic information about indexed dofs for the finite element
- */
-struct BaseFEDofEntity {
-  BaseFEDofEntity(const boost::shared_ptr<SideNumber> &side_number_ptr)
-      : sideNumberPtr(side_number_ptr){};
-  boost::shared_ptr<SideNumber> sideNumberPtr;
-  inline int getSideNumber() { return sideNumberPtr->side_number; }
-};
-
-/**
  * \brief keeps information about indexed dofs for the finite element
  * \ingroup dof_multi_indices
  */
-struct FEDofEntity : public BaseFEDofEntity, interface_DofEntity<DofEntity> {
+struct FEDofEntity : public BaseFEEntity, interface_DofEntity<DofEntity> {
   typedef interface_Field<DofEntity> interface_type_Field;
   typedef interface_DofEntity<DofEntity> interface_type_DofEntity;
   typedef interface_RefEntity<DofEntity> interface_type_RefEntity;
@@ -315,7 +305,7 @@ struct FEDofEntity : public BaseFEDofEntity, interface_DofEntity<DofEntity> {
  * \brief keeps information about indexed dofs for the finite element
  * \ingroup dof_multi_indices
  */
-struct FENumeredDofEntity : public BaseFEDofEntity,
+struct FENumeredDofEntity : public BaseFEEntity,
                             interface_NumeredDofEntity<NumeredDofEntity> {
   typedef interface_Field<NumeredDofEntity> interface_type_Field;
   typedef interface_DofEntity<NumeredDofEntity> interface_type_DofEntity;
@@ -484,7 +474,7 @@ typedef multi_index_container<
                 const_mem_fun<FEDofEntity::interface_type_RefEntity, EntityType,
                               &FEDofEntity::getEntType>,
                 KeyFromKey<member<SideNumber, char, &SideNumber::side_number>,
-                           member<FEDofEntity::BaseFEDofEntity,
+                           member<FEDofEntity::BaseFEEntity,
                                   boost::shared_ptr<SideNumber>,
                                   &FEDofEntity::sideNumberPtr>>>>,
         ordered_non_unique<
@@ -552,7 +542,7 @@ typedef multi_index_container<
                 const_mem_fun<FENumeredDofEntity::interface_type_RefEntity,
                               EntityType, &FENumeredDofEntity::getEntType>,
                 KeyFromKey<member<SideNumber, char, &SideNumber::side_number>,
-                           member<FENumeredDofEntity::BaseFEDofEntity,
+                           member<FENumeredDofEntity::BaseFEEntity,
                                   boost::shared_ptr<SideNumber>,
                                   &FENumeredDofEntity::sideNumberPtr>>>>,
         ordered_non_unique<

@@ -833,13 +833,56 @@ typedef FieldEntity_multiIndex::index<FieldName_mi_tag>::type
 
 typedef multi_index_container<
     boost::shared_ptr<FieldEntity>,
-    indexed_by<sequenced<>,
-               ordered_non_unique<tag<Ent_mi_tag>,
-                                  const_mem_fun<FieldEntity, EntityHandle,
-                                                &FieldEntity::getEnt> > > >
+    indexed_by<
+
+        sequenced<>,
+
+        ordered_non_unique<
+            tag<Ent_mi_tag>,
+            const_mem_fun<FieldEntity, EntityHandle, &FieldEntity::getEnt>>
+
+        >>
     FieldEntity_multiIndex_ent_view;
 
+typedef multi_index_container<
+    boost::shared_ptr<FieldEntity>,
+    indexed_by<
+
+        sequenced<>,
+
+        ordered_non_unique<tag<Ent_mi_tag>,
+                           const_mem_fun<FieldEntity::interface_RefEntity,
+                                         EntityType, &FieldEntity::getEntType>>,
+
+        ordered_non_unique<tag<Ent_mi_tag>,
+                           const_mem_fun<FieldEntity::interface_type_Field,
+                                         FieldSpace, &FieldEntity::getSpace>>
+
+        >>
+    FieldEntity_multiIndex_space_view;
+
 typedef std::vector<boost::weak_ptr<FieldEntity>> FieldEntity_vector_view;
+
+/**
+ * \brief Keeps basic information about entity on the finite element
+ */
+struct BaseFEEntity {
+  BaseFEEntity(const boost::shared_ptr<SideNumber> &side_number_ptr)
+      : sideNumberPtr(side_number_ptr){};
+  boost::shared_ptr<SideNumber> sideNumberPtr;
+  inline int getSideNumber() { return sideNumberPtr->side_number; }
+};
+
+struct FEFieldEntity : public BaseFEEntity, interface_FieldEntity<FieldEntity> {
+
+  typedef interface_Field<FieldEntity> interface_type_Field;
+  typedef interface_FieldEntity<FieldEntity> interface_type_FieldEntity;
+  typedef interface_RefEntity<FieldEntity> interface_type_RefEntity;
+
+  FEFieldEntity(const boost::shared_ptr<SideNumber> &side_number_ptr,
+              const boost::shared_ptr<FieldEntity> &entity_ptr);
+
+};
 
 } // namespace MoFEM
 

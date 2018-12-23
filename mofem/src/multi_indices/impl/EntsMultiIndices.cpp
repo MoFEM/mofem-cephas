@@ -299,4 +299,10 @@ void FieldEntity_change_order::operator()(FieldEntity *e) {
   }
 }
 
+FEFieldEntity::FEFieldEntity(
+    const boost::shared_ptr<SideNumber> &side_number_ptr,
+    const boost::shared_ptr<FieldEntity> &entity_ptr)
+    : BaseFEEntity(side_number_ptr), interface_FieldEntity<FieldEntity>(
+                                         entity_ptr) {}
+
 } // namespace MoFEM
