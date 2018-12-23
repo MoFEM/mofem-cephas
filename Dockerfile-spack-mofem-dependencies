@@ -6,7 +6,7 @@ ENV        DEBIAN_FRONTEND=noninteractive \
            SPACK_ROOT=/usr/local \
            FORCE_UNSAFE_CONFIGURE=1
 
-# install minimal spack depedencies
+# install minimal spack dependencies
 RUN        apt-get update \
            && apt-get install -y --no-install-recommends \
               autoconf \
