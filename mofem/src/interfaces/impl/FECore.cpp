@@ -683,14 +683,22 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
 
       hint_p = entsFiniteElements.emplace_hint(
           hint_p, boost::make_shared<EntFiniteElement>(*ref_fe_miit, fe));
-
-      data_field_ents_view.clear();
-
-      (*hint_p)->row_field_ents_view->reserve(last_row_field_ents_view_size);
-      (*hint_p)->col_field_ents_view->reserve(last_col_field_ents_view_size);
       processed_fes.emplace_back(*hint_p);
-
       auto fe_raw_ptr = hint_p->get();
+
+      // allocate space for etities view
+      data_field_ents_view.clear();
+      fe_raw_ptr->row_field_ents_view->reserve(last_row_field_ents_view_size);
+      if (fe_fields[ROW] == fe_fields[COL]) {
+        fe_raw_ptr->col_field_ents_view = fe_raw_ptr->row_field_ents_view;
+      } else if (fe_raw_ptr->col_field_ents_view ==
+                 fe_raw_ptr->row_field_ents_view) {
+        fe_raw_ptr->col_field_ents_view =
+            boost::make_shared<FieldEntity_vector_view>();
+        fe_raw_ptr->col_dof_view->reserve(last_col_field_ents_view_size);
+      } else {
+        fe_raw_ptr->col_dof_view->reserve(last_col_field_ents_view_size);
+      }
 
       int nb_dofs_on_data = 0;
       int nb_dofs_on_row = 0;
@@ -774,7 +782,9 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
               }
               if (add_to_col) {
                 nb_dofs_on_col += nb_dofs_on_ent;
-                fe_raw_ptr->col_field_ents_view->emplace_back(*meit);
+                if (fe_raw_ptr->col_field_ents_view !=
+                    fe_raw_ptr->row_field_ents_view)
+                  fe_raw_ptr->col_field_ents_view->emplace_back(*meit);
               }
               // add finite element to processed list
               fe_vec.emplace_back(*hint_p);
@@ -795,9 +805,12 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
       sort(fe_raw_ptr->row_field_ents_view->begin(),
            fe_raw_ptr->row_field_ents_view->end(), uid_comp);
       last_row_field_ents_view_size = fe_raw_ptr->row_field_ents_view->size();
-      sort(fe_raw_ptr->col_field_ents_view->begin(),
-           fe_raw_ptr->col_field_ents_view->end(), uid_comp);
-      last_col_field_ents_view_size = fe_raw_ptr->col_field_ents_view->size();
+      
+      if (fe_raw_ptr->col_field_ents_view != fe_raw_ptr->row_field_ents_view) {
+        sort(fe_raw_ptr->col_field_ents_view->begin(),
+             fe_raw_ptr->col_field_ents_view->end(), uid_comp);
+        last_col_field_ents_view_size = fe_raw_ptr->col_field_ents_view->size();
+      }
 
       // Clear finite element data structures
       fe_raw_ptr->row_dof_view->clear();
