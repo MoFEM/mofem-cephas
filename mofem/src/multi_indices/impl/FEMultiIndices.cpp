@@ -1073,34 +1073,6 @@ inline const UId &extractUId<const boost::weak_ptr<DofEntity>>(
   return it.lock()->getGlobalUniqueId();
 }
 
-template <typename FE_DOFS, typename MOFEM_DOFS, typename MOFEM_DOFS_VIEW>
-inline MoFEMErrorCode
-get_fe_dof_view(const FE_DOFS &fe_dofs_view, const MOFEM_DOFS &mofem_dofs,
-                MOFEM_DOFS_VIEW &mofem_dofs_view, const int operation_type) {
-  MoFEMFunctionBeginHot;
-  if (operation_type == moab::Interface::UNION) {
-    auto mofem_it = mofem_dofs.template get<Unique_mi_tag>().begin();
-    auto mofem_it_end = mofem_dofs.template get<Unique_mi_tag>().end();
-    for (auto &it : fe_dofs_view) {
-      const UId &uid = extractUId(it);
-      if (mofem_it != mofem_it_end) {
-        if ((*mofem_it)->getGlobalUniqueId() != uid) {
-          mofem_it = mofem_dofs.template get<Unique_mi_tag>().find(uid);
-        } // else lucky guess
-      } else {
-        mofem_it = mofem_dofs.template get<Unique_mi_tag>().find(uid);
-      }
-      if (mofem_it != mofem_it_end) {
-        mofem_dofs_view.insert(mofem_dofs_view.end(), *mofem_it);
-        mofem_it++;
-      }
-    }
-  } else {
-    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented");
-  }
-  MoFEMFunctionReturnHot(0);
-}
-
 template <typename FE_ENTS, typename MOFEM_DOFS, typename MOFEM_DOFS_VIEW>
 inline MoFEMErrorCode
 get_fe_ent_view(const FE_ENTS &fe_ents_view, const MOFEM_DOFS &mofem_dofs,
