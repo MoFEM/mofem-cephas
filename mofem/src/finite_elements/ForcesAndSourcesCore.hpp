@@ -200,7 +200,8 @@ struct ForcesAndSourcesCore : public FEMethod {
   MoFEMErrorCode getNodesFieldData(DataForcesAndSourcesCore &data,
                                    const std::string &field_name) const;
 
-  MoFEMErrorCode getEntityFieldData(DataForcesAndSourcesCore &data,
+  MoFEMErrorCode
+  getEntityFieldData(DataForcesAndSourcesCore &data,
                                const std::string &field_name,
                                const EntityType type_lo = MBVERTEX,
                                const EntityType type_hi = MBPOLYHEDRON) const;
