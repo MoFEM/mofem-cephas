@@ -428,20 +428,25 @@ typedef multi_index_container<
 typedef multi_index_container<
     boost::shared_ptr<FEDofEntity>,
     indexed_by<
+
         ordered_unique<
             tag<Unique_mi_tag>,
             const_mem_fun<FEDofEntity::interface_type_DofEntity, const UId &,
                           &FEDofEntity::getGlobalUniqueId>>,
+
         ordered_non_unique<tag<Ent_mi_tag>,
                            const_mem_fun<FEDofEntity::interface_type_DofEntity,
                                          EntityHandle, &FEDofEntity::getEnt>>,
+
         ordered_non_unique<
             tag<FieldName_mi_tag>,
             const_mem_fun<FEDofEntity::interface_type_Field, boost::string_ref,
                           &FEDofEntity::getNameRef>>,
+
         ordered_non_unique<tag<EntType_mi_tag>,
                            const_mem_fun<FEDofEntity::interface_type_RefEntity,
                                          EntityType, &FEDofEntity::getEntType>>,
+
         ordered_non_unique<
             tag<Composite_Name_And_Type_mi_tag>,
             composite_key<
@@ -450,6 +455,7 @@ typedef multi_index_container<
                               boost::string_ref, &FEDofEntity::getNameRef>,
                 const_mem_fun<FEDofEntity::interface_type_RefEntity, EntityType,
                               &FEDofEntity::getEntType>>>,
+
         ordered_non_unique<
             tag<Composite_Name_And_Ent_mi_tag>,
             composite_key<
@@ -458,6 +464,7 @@ typedef multi_index_container<
                               boost::string_ref, &FEDofEntity::getNameRef>,
                 const_mem_fun<FEDofEntity::interface_type_DofEntity,
                               EntityHandle, &FEDofEntity::getEnt>>>,
+
         // This is only used by obsolete modules, should be removed with
         // brother of Cephas, i.e. Pawel.
         ordered_non_unique<
@@ -471,14 +478,9 @@ typedef multi_index_container<
                 KeyFromKey<member<SideNumber, char, &SideNumber::side_number>,
                            member<FEDofEntity::BaseFEEntity,
                                   boost::shared_ptr<SideNumber>,
-                                  &FEDofEntity::sideNumberPtr>>>>,
-        ordered_non_unique<
-            tag<Composite_EntType_and_Space_mi_tag>,
-            composite_key<FEDofEntity,
-                          const_mem_fun<FEDofEntity::interface_type_RefEntity,
-                                        EntityType, &FEDofEntity::getEntType>,
-                          const_mem_fun<FEDofEntity::interface_type_Field,
-                                        FieldSpace, &FEDofEntity::getSpace>>>>>
+                                  &FEDofEntity::sideNumberPtr>>>>
+
+        >>
     FEDofEntity_multiIndex;
 
 /** \brief Finite element DoF multi-index by field name
