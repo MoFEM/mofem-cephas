@@ -140,30 +140,21 @@ MoFEMErrorCode ForcesAndSourcesCore::getNumberOfNodes(int &num_nodes) const {
 
 // ** Sense **
 
-MoFEMErrorCode ForcesAndSourcesCore::getSense(
-    EntityType type,
+MoFEMErrorCode ForcesAndSourcesCore::getEntitySense(
+    const EntityType type,
     boost::ptr_vector<DataForcesAndSourcesCore::EntData> &data) const {
   MoFEMFunctionBegin;
-  auto &side_table = const_cast<SideNumber_multiIndex &>(
-      numeredEntFiniteElementPtr->getSideNumberTable());
-  if (PetscUnlikely(data.size() < side_table.get<2>().count(type))) {
-    // prims has 9 edges, some of edges for "flat" prism are not active
-    SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-             "wrong number of sides %u < %u", data.size(),
-             side_table.get<2>().count(type));
-  }
-  const auto &st = side_table.get<2>();
-  auto range = st.equal_range(type);
-  for (auto sit = range.first; sit != range.second; ++sit) {
-    const auto &side = **sit;
-    data[side.side_number].getSense() = sit->get()->sense;
-    if (side.brother_side_number != -1) {
-      if (PetscUnlikely(data.size() < (unsigned)side.brother_side_number)) {
-        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                "data struture too small to keep data about brother node");
-      }
-      data[side.brother_side_number].getSense() = side.sense;
-    }
+
+  auto &side_table = numeredEntFiniteElementPtr->getSideNumberTable().get<2>();
+  for (auto r = side_table.equal_range(type); r.first != r.second; ++r.first) {
+
+    const int side_number = (*r.first)->side_number;
+    const int brother_side_number = (*r.first)->brother_side_number;
+    const int sense = (*r.first)->sense;
+
+    data[side_number].getSense() = sense;
+    if (brother_side_number != -1)
+      data[brother_side_number].getSense() = sense;
   }
   MoFEMFunctionReturn(0);
 }
@@ -198,47 +189,41 @@ int ForcesAndSourcesCore::getMaxColOrder() const {
   return getMaxOrder(*colFieldEntsPtr);
 }
 
-MoFEMErrorCode ForcesAndSourcesCore::getDataOrder(
+MoFEMErrorCode ForcesAndSourcesCore::getEntityDataOrder(
     const EntityType type, const FieldSpace space,
     boost::ptr_vector<DataForcesAndSourcesCore::EntData> &data) const {
   MoFEMFunctionBegin;
+
   auto &side_table = numeredEntFiniteElementPtr->getSideNumberTable();
-  if (PetscUnlikely(data.size() < side_table.get<2>().count(type))) {
-    // prims has 9 edges, some of edges for "flat" prism are not active
-    SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-             "data structure too small to keep data %d < %d", data.size(),
-             side_table.get<2>().count(type));
+
+  for (unsigned int s = 0; s != data.size(); ++s)
+    data[s].getDataOrder() = 0;
+
+  auto &fields_ents =
+      dataFieldEntsPtr->get<Composite_EntType_and_Space_mi_tag>();
+
+  for (auto r = fields_ents.equal_range(boost::make_tuple(type, space));
+       r.first != r.second; ++r.first) {
+
+    auto &e = **r.first;
+
+    auto &side = *side_table.find(e.getEnt());
+    const EntityType type = side->getEntType();
+    const int side_number = side->side_number;
+
+    ApproximationOrder ent_order = e.getMaxOrder();
+    auto &dat = data[side_number];
+    const int order = e.getMaxOrder();
+    dat.getDataOrder() =
+        dat.getDataOrder() > ent_order ? dat.getDataOrder() : ent_order;
   }
 
-  for (unsigned int side = 0; side != data.size(); ++side) {
-    data[side].getDataOrder() = 0;
-  }
-
-  auto &fields_ents = numeredEntFiniteElementPtr->getDataDofs()
-                          .get<Composite_EntType_and_Space_mi_tag>();
-
-  auto tuple = boost::make_tuple(type, space);
-  auto eit = fields_ents.lower_bound(tuple);
-  if (eit != fields_ents.end()) {
-    auto hi_dit = fields_ents.upper_bound(tuple);
-    for (; eit != hi_dit; eit++) {
-      auto &e = **eit;
-      ApproximationOrder ent_order = e.getMaxOrder();
-      auto &side = *side_table.find(e.getEnt());
-      const int side_number = side->side_number;
-      auto &dat = data[side_number];
-      const int order = e.getMaxOrder();
-      dat.getDataOrder() =
-          dat.getDataOrder() > ent_order ? dat.getDataOrder() : ent_order;
-    }
-  }
-
-  auto r = side_table.get<2>().equal_range(type);
-  for (; r.first != r.second; ++r.first) {
-    const int brother_side_number = (*r.first)->brother_side_number;
+  for (auto &side : side_table) {
+    const int brother_side_number = side->brother_side_number;
     if (brother_side_number != -1) {
+      const int side_number = side->side_number;
       data[brother_side_number].getDataOrder() =
-          data[(*r.first)->side_number].getDataOrder();
+          data[side_number].getDataOrder();
     }
   }
 

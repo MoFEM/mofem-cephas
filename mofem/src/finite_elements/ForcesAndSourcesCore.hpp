@@ -89,25 +89,46 @@ struct ForcesAndSourcesCore : public FEMethod {
    * @param  data entity data
    * @return      error code
    */
-  MoFEMErrorCode
-  getSense(EntityType type,
-           boost::ptr_vector<DataForcesAndSourcesCore::EntData> &data) const;
+  MoFEMErrorCode getEntitySense(
+      const EntityType type,
+      boost::ptr_vector<DataForcesAndSourcesCore::EntData> &data) const;
 
-  /// \brief get maximal approximation order of approximation on the entity
-  MoFEMErrorCode getDataOrder(
+  /**
+   * @brief Get the entity data order
+   *
+   * @param type
+   * @param space
+   * @param data
+   * @return MoFEMErrorCode
+   */
+  MoFEMErrorCode getEntityDataOrder(
       const EntityType type, const FieldSpace space,
       boost::ptr_vector<DataForcesAndSourcesCore::EntData> &data) const;
 
-
+  /**
+   * @brief Get the entity sense (orientation)
+   * 
+   * @tparam type 
+   * @param data 
+   * @return MoFEMErrorCode 
+   */
   template <EntityType type>
-  MoFEMErrorCode getEntitySense(DataForcesAndSourcesCore &data) const {
-    return getSense(type, data.dataOnEntities[type]);
+  inline MoFEMErrorCode getEntitySense(DataForcesAndSourcesCore &data) const {
+    return getEntitySense(type, data.dataOnEntities[type]);
   }
 
+  /**
+   * @brief Get the entity data order for given space
+   * 
+   * @tparam type 
+   * @param data 
+   * @param space 
+   * @return MoFEMErrorCode 
+   */
   template <EntityType type>
-  MoFEMErrorCode getEntityDataOrder(DataForcesAndSourcesCore &data,
-                                    const FieldSpace space) const {
-    return getDataOrder(type, space, data.dataOnEntities[type]);
+  inline MoFEMErrorCode getEntityDataOrder(DataForcesAndSourcesCore &data,
+                                           const FieldSpace space) const {
+    return getEntityDataOrder(type, space, data.dataOnEntities[type]);
   }
 
   // ** Indices **
@@ -202,9 +223,9 @@ struct ForcesAndSourcesCore : public FEMethod {
 
   MoFEMErrorCode
   getEntityFieldData(DataForcesAndSourcesCore &data,
-                               const std::string &field_name,
-                               const EntityType type_lo = MBVERTEX,
-                               const EntityType type_hi = MBPOLYHEDRON) const;
+                     const std::string &field_name,
+                     const EntityType type_lo = MBVERTEX,
+                     const EntityType type_hi = MBPOLYHEDRON) const;
 
   /// \brief Get nodes on triangles
   MoFEMErrorCode getFaceTriNodes(DataForcesAndSourcesCore &data) const;

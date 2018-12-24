@@ -39,6 +39,7 @@ namespace MoFEM {
   struct FiniteElement_name_mi_tag {};
   struct SideNumber_mi_tag{};
   struct EntDofIdx_mi_tag {};
+  struct Space_mi_tag {};
 
   struct Idx_mi_tag {
     static const bool IamNotPartitioned;

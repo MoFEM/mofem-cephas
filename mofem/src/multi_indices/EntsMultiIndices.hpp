@@ -850,14 +850,6 @@ typedef multi_index_container<
 
         sequenced<>,
 
-        ordered_non_unique<tag<EntType_mi_tag>,
-                           const_mem_fun<FieldEntity::interface_RefEntity,
-                                         EntityType, &FieldEntity::getEntType>>,
-
-        ordered_non_unique<tag<Ent_mi_tag>,
-                           const_mem_fun<FieldEntity::interface_type_Field,
-                                         FieldSpace, &FieldEntity::getSpace>>,
-
         ordered_non_unique<
             tag<Composite_EntType_and_Space_mi_tag>,
             composite_key<FieldEntity,
@@ -884,17 +876,6 @@ struct BaseFEEntity {
   boost::shared_ptr<SideNumber> sideNumberPtr;
   inline int getSideNumber() { return sideNumberPtr->side_number; }
 };
-
-// struct FEFieldEntity : public BaseFEEntity, interface_FieldEntity<FieldEntity> {
-
-//   typedef interface_Field<FieldEntity> interface_type_Field;
-//   typedef interface_FieldEntity<FieldEntity> interface_type_FieldEntity;
-//   typedef interface_RefEntity<FieldEntity> interface_type_RefEntity;
-
-//   FEFieldEntity(const boost::shared_ptr<SideNumber> &side_number_ptr,
-//               const boost::shared_ptr<FieldEntity> &entity_ptr);
-
-// };
 
 } // namespace MoFEM
 
