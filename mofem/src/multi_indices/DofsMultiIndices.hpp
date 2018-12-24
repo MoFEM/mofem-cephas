@@ -612,6 +612,11 @@ typedef multi_index_container<
                           const UId &, &NumeredDofEntity::getGlobalUniqueId>>,
         // non unique
         ordered_non_unique<
+            tag<Unique_Ent_mi_tag>,
+            const_mem_fun<NumeredDofEntity::interface_type_DofEntity,
+                          const UId &,
+                          &NumeredDofEntity::getEntGlobalUniqueId>>,
+        ordered_non_unique<
             tag<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>,
             composite_key<
                 NumeredDofEntity,

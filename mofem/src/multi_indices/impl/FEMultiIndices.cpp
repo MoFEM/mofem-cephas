@@ -1101,6 +1101,25 @@ get_fe_dof_view(const FE_DOFS &fe_dofs_view, const MOFEM_DOFS &mofem_dofs,
   MoFEMFunctionReturnHot(0);
 }
 
+template <typename FE_ENTS, typename MOFEM_DOFS, typename MOFEM_DOFS_VIEW>
+inline MoFEMErrorCode
+get_fe_ent_view(const FE_ENTS &fe_ents_view, const MOFEM_DOFS &mofem_dofs,
+                MOFEM_DOFS_VIEW &mofem_dofs_view, const int operation_type) {
+  MoFEMFunctionBeginHot;
+  if (operation_type == moab::Interface::UNION) {
+    for (auto &it : fe_ents_view) {
+      if (auto e = it.lock()) {
+        auto r = mofem_dofs.template get<Unique_Ent_mi_tag>().equal_range(
+            e->getGlobalUniqueId());
+        mofem_dofs_view.insert(r.first, r.second);
+      }
+    }
+  } else {
+    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented");
+  }
+  MoFEMFunctionReturnHot(0);
+}
+
 MoFEMErrorCode
 EntFiniteElement::getRowDofView(DofEntity_multiIndex_active_view &dofs_view,
                                 const int operation_type) const {
@@ -1179,27 +1198,28 @@ MoFEMErrorCode EntFiniteElement::getRowDofView(
     const NumeredDofEntity_multiIndex &dofs,
     NumeredDofEntity_multiIndex_uid_view_ordered &dofs_view,
     const int operation_type) const {
-  return get_fe_dof_view(*row_dof_view, dofs, dofs_view, operation_type);
+  return get_fe_ent_view(*row_field_ents_view, dofs, dofs_view, operation_type);
 }
 
 MoFEMErrorCode EntFiniteElement::getColDofView(
     const NumeredDofEntity_multiIndex &dofs,
     NumeredDofEntity_multiIndex_uid_view_ordered &dofs_view,
     const int operation_type) const {
-  return get_fe_dof_view(*col_dof_view, dofs, dofs_view, operation_type);
+  return get_fe_ent_view(*col_field_ents_view, dofs, dofs_view, operation_type);
 }
+
 MoFEMErrorCode EntFiniteElement::getRowDofView(
     const NumeredDofEntity_multiIndex &dofs,
     NumeredDofEntity_multiIndex_idx_view_hashed &dofs_view,
     const int operation_type) const {
-  return get_fe_dof_view(*row_dof_view, dofs, dofs_view, operation_type);
+  return get_fe_ent_view(*row_field_ents_view, dofs, dofs_view, operation_type);
 }
 
 MoFEMErrorCode EntFiniteElement::getColDofView(
     const NumeredDofEntity_multiIndex &dofs,
     NumeredDofEntity_multiIndex_idx_view_hashed &dofs_view,
     const int operation_type) const {
-  return get_fe_dof_view(*col_dof_view, dofs, dofs_view, operation_type);
+  return get_fe_ent_view(*col_field_ents_view, dofs, dofs_view, operation_type);
 }
 
 MoFEMErrorCode
