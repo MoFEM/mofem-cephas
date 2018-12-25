@@ -454,11 +454,9 @@ MoFEMErrorCode ProblemsManager::buildProblem(Problem *problem_ptr,
         if ((fe_bit & prb_bit) != prb_bit)
           continue;
         // get dof uids for rows and columns
-        ierr = (*miit)->getRowDofView(*dofs_field_ptr, dofs_rows);
-        CHKERRG(ierr);
+        CHKERR (*miit)->getRowDofView(*dofs_field_ptr, dofs_rows);
         if (!square_matrix) {
-          ierr = (*miit)->getColDofView(*dofs_field_ptr, dofs_cols);
-          CHKERRG(ierr);
+          CHKERR (*miit)->getColDofView(*dofs_field_ptr, dofs_cols);
         }
       }
     }
@@ -476,15 +474,7 @@ MoFEMErrorCode ProblemsManager::buildProblem(Problem *problem_ptr,
         hi_miit;
     hi_miit = dofs_rows.get<0>().end();
 
-    int count_dofs = 0;
-    miit = dofs_rows.get<0>().begin();
-    for (; miit != hi_miit; miit++) {
-      if (!(*miit)->getActive()) {
-        continue;
-      }
-      ++count_dofs;
-    }
-
+    int count_dofs = dofs_rows.get<1>().count(true);
     boost::shared_ptr<std::vector<NumeredDofEntity>> dofs_array =
         boost::shared_ptr<std::vector<NumeredDofEntity>>(
             new std::vector<NumeredDofEntity>());
@@ -492,11 +482,10 @@ MoFEMErrorCode ProblemsManager::buildProblem(Problem *problem_ptr,
     dofs_array->reserve(count_dofs);
     miit = dofs_rows.get<0>().begin();
     for (; miit != hi_miit; miit++) {
-      if (!(*miit)->getActive()) {
-        continue;
+      if ((*miit)->getActive()) {
+        dofs_array->emplace_back(*miit);
+        dofs_array->back().dofIdx = (problem_ptr->nbDofsRow)++;
       }
-      dofs_array->emplace_back(*miit);
-      dofs_array->back().dofIdx = (problem_ptr->nbDofsRow)++;
     }
     auto hint = problem_ptr->numeredDofsRows->end();
     for (auto &v : *dofs_array) {
@@ -2100,8 +2089,7 @@ MoFEMErrorCode ProblemsManager::inheritPartition(
   typedef Problem_multiIndex::index<Problem_mi_tag>::type ProblemByName;
 
   // find p_miit
-  ierr = m_field.get_problems(&problems_ptr);
-  CHKERRG(ierr);
+  CHKERR m_field.get_problems(&problems_ptr);
   ProblemByName &problems_by_name =
       const_cast<ProblemByName &>(problems_ptr->get<Problem_mi_tag>());
   ProblemByName::iterator p_miit = problems_by_name.find(name);
