@@ -752,15 +752,46 @@ struct DofEntity_active_change {
  * Change part and global pestc index (multi-index modifier)
  * \ingroup dof_multi_indices
  */
-struct NumeredDofEntity_part_change {
-  unsigned int pArt;
-  DofIdx petscGloablDofIdx;
-  NumeredDofEntity_part_change(const unsigned int part,
+struct NumeredDofEntity_part_and_glob_idx_change {
+  const unsigned int pArt;
+  const DofIdx petscGloablDofIdx;
+  NumeredDofEntity_part_and_glob_idx_change(const unsigned int part,
                                const DofIdx petsc_gloabl_dof_idx)
       : pArt(part), petscGloablDofIdx(petsc_gloabl_dof_idx){};
-  inline void operator()(boost::shared_ptr<NumeredDofEntity> &dof) {
+  inline void operator()(boost::shared_ptr<NumeredDofEntity> &dof) const {
     dof->pArt = pArt;
     dof->petscGloablDofIdx = petscGloablDofIdx;
+  }
+};
+
+struct NumeredDofEntity_part_and_mofem_glob_idx_change {
+  const unsigned int pArt;
+  const DofIdx petscGloablDofIdx;
+  const DofIdx mofemDofIdx;
+  NumeredDofEntity_part_and_mofem_glob_idx_change(
+      const unsigned int part, const DofIdx mofem_dof_idx,
+      const DofIdx petsc_gloabl_dof_idx)
+      : pArt(part), mofemDofIdx(mofem_dof_idx),
+        petscGloablDofIdx(petsc_gloabl_dof_idx){};
+  inline void operator()(boost::shared_ptr<NumeredDofEntity> &dof) const {
+    dof->pArt = pArt;
+    dof->petscGloablDofIdx = petscGloablDofIdx;
+  }
+};
+
+struct NumeredDofEntity_part_and_indices_change {
+  const unsigned int pArt;
+  const DofIdx petscGloablDofIdx;
+  const DofIdx petscLocalDofIdx;
+  NumeredDofEntity_part_and_indices_change(const unsigned int part,
+                                           const DofIdx petsc_gloabl_dof_idx,
+                                           const DofIdx petsc_local_dof_idx)
+      : pArt(part), petscGloablDofIdx(petsc_gloabl_dof_idx),
+        petscLocalDofIdx(petsc_local_dof_idx){};
+  inline void operator()(boost::shared_ptr<NumeredDofEntity> &dof) const {
+    dof->pArt = pArt;
+    dof->petscGloablDofIdx = petscGloablDofIdx;
+    dof->petscLocalDofIdx = petscLocalDofIdx;
   }
 };
 
@@ -769,10 +800,10 @@ struct NumeredDofEntity_part_change {
  * \ingroup dof_multi_indices
  */
 struct NumeredDofEntity_local_idx_change {
-  DofIdx petscLocalDofIdx;
+  const DofIdx petscLocalDofIdx;
   NumeredDofEntity_local_idx_change(const DofIdx petsc_local_dof_idx)
       : petscLocalDofIdx(petsc_local_dof_idx){};
-  inline void operator()(boost::shared_ptr<NumeredDofEntity> &dof) {
+  inline void operator()(boost::shared_ptr<NumeredDofEntity> &dof) const {
     dof->petscLocalDofIdx = petscLocalDofIdx;
   }
 };
@@ -782,10 +813,10 @@ struct NumeredDofEntity_local_idx_change {
  * \ingroup dof_multi_indices
  */
 struct NumeredDofEntity_mofem_index_change {
-  DofIdx mofemIdx;
+  const DofIdx mofemIdx;
   NumeredDofEntity_mofem_index_change(const DofIdx mofem_idx)
       : mofemIdx(mofem_idx){};
-  inline void operator()(boost::shared_ptr<NumeredDofEntity> &dof) {
+  inline void operator()(boost::shared_ptr<NumeredDofEntity> &dof) const {
     dof->dofIdx = mofemIdx;
   }
 };
@@ -794,18 +825,18 @@ struct NumeredDofEntity_mofem_index_change {
  * Change part and mofem/pestc global and local index (multi-index modifier)
  * \ingroup dof_multi_indices
  */
-struct NumeredDofEntity_mofem_part_and_all_index_change {
-  unsigned int pArt;
-  DofIdx mofemIdx;
-  DofIdx petscGloablDofIdx;
-  DofIdx petscLocalDofIdx;
-  NumeredDofEntity_mofem_part_and_all_index_change(
+struct NumeredDofEntity_part_and_all_indices_change {
+  const unsigned int pArt;
+  const DofIdx mofemIdx;
+  const DofIdx petscGloablDofIdx;
+  const DofIdx petscLocalDofIdx;
+  NumeredDofEntity_part_and_all_indices_change(
       const unsigned int part, const DofIdx mofem_idx,
       const DofIdx petsc_gloabl_dof_idx, const DofIdx petsc_local_dof_idx)
       : pArt(part), mofemIdx(mofem_idx),
         petscGloablDofIdx(petsc_gloabl_dof_idx),
         petscLocalDofIdx(petsc_local_dof_idx){};
-  inline void operator()(boost::shared_ptr<NumeredDofEntity> &dof) {
+  inline void operator()(boost::shared_ptr<NumeredDofEntity> &dof) const {
     dof->pArt = pArt;
     dof->dofIdx = mofemIdx;
     dof->petscGloablDofIdx = petscGloablDofIdx;
