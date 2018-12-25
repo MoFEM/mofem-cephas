@@ -228,17 +228,15 @@ Core::modify_problem_mask_ref_level_set_bit(const std::string &name_problem,
 }
 
 MoFEMErrorCode Core::build_problem_on_distributed_mesh(int verb) {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   if (verb == -1)
     verb = verbose;
-  DofEntity_multiIndex_active_view dofs_rows, dofs_cols;
   Problem_multiIndex::iterator p_miit = pRoblems.begin();
   for (; p_miit != pRoblems.end(); p_miit++) {
-    ierr = getInterface<ProblemsManager>()->buildProblemOnDistributedMesh(
+    CHKERR getInterface<ProblemsManager>()->buildProblemOnDistributedMesh(
         const_cast<Problem *>(&*p_miit), verb);
-    CHKERRG(ierr);
   }
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode Core::clear_problem(const std::string &problem_name, int verb) {
