@@ -124,12 +124,12 @@ Core::modify_finite_element_add_field_data(const std::string &fe_name,
       finite_element_name_set.find(fe_name);
   if (it_fe == finite_element_name_set.end())
     SETERRQ(cOmm, MOFEM_NOT_FOUND, "this FiniteElement is there");
-    bool success = finite_element_name_set.modify(
-        it_fe, FiniteElement_change_bit_add(getBitFieldId(name_data)));
-    if (!success)
-      SETERRQ(cOmm, MOFEM_OPERATION_UNSUCCESSFUL, "modification unsuccessful");
+  bool success = finite_element_name_set.modify(
+      it_fe, FiniteElement_change_bit_add(getBitFieldId(name_data)));
+  if (!success)
+    SETERRQ(cOmm, MOFEM_OPERATION_UNSUCCESSFUL, "modification unsuccessful");
   MoFEMFunctionReturn(0);
-  }
+}
 
 MoFEMErrorCode
 Core::modify_finite_element_add_field_row(const std::string &fe_name,
@@ -145,12 +145,12 @@ Core::modify_finite_element_add_field_row(const std::string &fe_name,
   if (it_fe == finite_element_name_set.end())
     SETERRQ1(cOmm, MOFEM_NOT_FOUND, "this < %s > is not there",
              fe_name.c_str());
-    bool success = finite_element_name_set.modify(
-        it_fe, FiniteElement_row_change_bit_add(getBitFieldId(name_row)));
-    if (!success)
-      SETERRQ(cOmm, MOFEM_OPERATION_UNSUCCESSFUL, "modification unsuccessful");
+  bool success = finite_element_name_set.modify(
+      it_fe, FiniteElement_row_change_bit_add(getBitFieldId(name_row)));
+  if (!success)
+    SETERRQ(cOmm, MOFEM_OPERATION_UNSUCCESSFUL, "modification unsuccessful");
   MoFEMFunctionReturn(0);
-  }
+}
 
 MoFEMErrorCode
 Core::modify_finite_element_add_field_col(const std::string &fe_name,
@@ -165,10 +165,10 @@ Core::modify_finite_element_add_field_col(const std::string &fe_name,
       finite_element_name_set.find(fe_name);
   if (it_fe == finite_element_name_set.end())
     SETERRQ(cOmm, MOFEM_OPERATION_UNSUCCESSFUL, "this FiniteElement is there");
-    bool success = finite_element_name_set.modify(
-        it_fe, FiniteElement_col_change_bit_add(getBitFieldId(name_col)));
-    if (!success)
-      SETERRQ(cOmm, MOFEM_OPERATION_UNSUCCESSFUL, "modification unsuccessful");
+  bool success = finite_element_name_set.modify(
+      it_fe, FiniteElement_col_change_bit_add(getBitFieldId(name_col)));
+  if (!success)
+    SETERRQ(cOmm, MOFEM_OPERATION_UNSUCCESSFUL, "modification unsuccessful");
   MoFEMFunctionReturn(0);
 }
 
@@ -185,10 +185,10 @@ Core::modify_finite_element_off_field_data(const std::string &fe_name,
       finite_element_name_set.find(fe_name);
   if (it_fe == finite_element_name_set.end())
     SETERRQ(cOmm, MOFEM_NOT_FOUND, "this FiniteElement is there");
-    bool success = finite_element_name_set.modify(
-        it_fe, FiniteElement_change_bit_off(getBitFieldId(name_data)));
-    if (!success)
-      SETERRQ(cOmm, MOFEM_OPERATION_UNSUCCESSFUL, "modification unsuccessful");
+  bool success = finite_element_name_set.modify(
+      it_fe, FiniteElement_change_bit_off(getBitFieldId(name_data)));
+  if (!success)
+    SETERRQ(cOmm, MOFEM_OPERATION_UNSUCCESSFUL, "modification unsuccessful");
   MoFEMFunctionReturn(0);
 }
 
@@ -521,44 +521,6 @@ MoFEMErrorCode Core::add_ents_to_finite_element_by_MESHSET(
 template <int I> struct BuildFiniteElements {
 
   template <typename T1, typename T2>
-  static inline void addToView(T1 &range_dit, T2 &fe_vec) {
-
-    static_assert(I == ROW || I == COL, "t should be set to ROW or COL");
-
-    // Add DOFs
-    for (auto dit = range_dit.first; dit != range_dit.second; ++dit)
-      for (auto fe_it : fe_vec) {
-        if (auto fe_ptr = fe_it.lock()) {
-          if (I == ROW)
-            fe_ptr->row_dof_view->emplace_back(*dit);
-          else
-            fe_ptr->col_dof_view->emplace_back(*dit);
-        }
-      }
-  }
-
-  template <typename T> static inline void sortView(T &fe_vec) {
-
-    static_assert(I == ROW || I == COL, "t should be set to ROW or COL");
-
-    auto uid_comp = [](const auto &a, const auto &b) {
-      return a.lock()->getGlobalUniqueId() < b.lock()->getGlobalUniqueId();
-    };
-
-    // Sort
-    for (auto fe_it : fe_vec) {
-      if (auto fe_ptr = fe_it.lock()) {
-        if (I == ROW)
-          std::sort(fe_ptr->row_dof_view->begin(), fe_ptr->row_dof_view->end(),
-                    uid_comp);
-        else
-          std::sort(fe_ptr->row_dof_view->begin(), fe_ptr->row_dof_view->end(),
-                    uid_comp);
-      }
-    }
-  }
-
-  template <typename T1, typename T2>
   static inline void addToData(T1 &range_dit, T2 &fe_vec) {
     static_assert(I == DATA, "t should be set to DATA");
 
@@ -675,18 +637,15 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
       fe_raw_ptr->row_field_ents_view->reserve(last_row_field_ents_view_size);
       if (fe_fields[ROW] == fe_fields[COL]) {
         fe_raw_ptr->col_field_ents_view = fe_raw_ptr->row_field_ents_view;
-      } else if (fe_raw_ptr->col_field_ents_view ==
-                 fe_raw_ptr->row_field_ents_view) {
-        fe_raw_ptr->col_field_ents_view =
-            boost::make_shared<FieldEntity_vector_view>();
-        fe_raw_ptr->col_dof_view->reserve(last_col_field_ents_view_size);
       } else {
-        fe_raw_ptr->col_dof_view->reserve(last_col_field_ents_view_size);
+        if (fe_raw_ptr->col_field_ents_view ==
+                 fe_raw_ptr->row_field_ents_view)
+          fe_raw_ptr->col_field_ents_view =
+              boost::make_shared<FieldEntity_vector_view>();
+        fe_raw_ptr->col_field_ents_view->reserve(last_col_field_ents_view_size);
       }
 
       int nb_dofs_on_data = 0;
-      int nb_dofs_on_row = 0;
-      int nb_dofs_on_col = 0;
 
       for (unsigned int ii = 0; ii != BitFieldId().size(); ++ii) {
 
@@ -761,11 +720,9 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
                 data_field_ents_view.emplace_back(*meit);
               }
               if (add_to_row) {
-                nb_dofs_on_row += nb_dofs_on_ent;
                 fe_raw_ptr->row_field_ents_view->emplace_back(*meit);
               }
               if (add_to_col) {
-                nb_dofs_on_col += nb_dofs_on_ent;
                 if (fe_raw_ptr->col_field_ents_view !=
                     fe_raw_ptr->row_field_ents_view)
                   fe_raw_ptr->col_field_ents_view->emplace_back(*meit);
@@ -797,26 +754,12 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
       }
 
       // Clear finite element data structures
-      fe_raw_ptr->row_dof_view->clear();
-      fe_raw_ptr->col_dof_view->clear();
       fe_raw_ptr->data_dofs->clear();
 
       // Reserve memory for data
       auto data_dofs_array_vec = boost::make_shared<std::vector<FEDofEntity>>();
       data_dofs_array[fe_raw_ptr->getEnt()] = data_dofs_array_vec;
       data_dofs_array_vec->reserve(nb_dofs_on_data);
-
-      // Reserve row and col views
-      fe_raw_ptr->row_dof_view->reserve(nb_dofs_on_row);
-      if (fe_fields[ROW] == fe_fields[COL]) {
-        fe_raw_ptr->col_dof_view = fe_raw_ptr->row_dof_view;
-      } else if (fe_raw_ptr->col_dof_view == fe_raw_ptr->row_dof_view) {
-        fe_raw_ptr->col_dof_view =
-            boost::make_shared<DofEntity_vector_view>();
-        fe_raw_ptr->col_dof_view->reserve(nb_dofs_on_col);
-      } else {
-        fe_raw_ptr->col_dof_view->reserve(nb_dofs_on_col);
-      }
 
       fe_raw_ptr->getDofsSequence() = data_dofs_array_vec;
 
@@ -830,29 +773,15 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
   // Loop over hash map, which has all entities on given elemnts
   boost::shared_ptr<SideNumber> side_number_ptr;
   for (auto &mit : ent_uid_and_fe_vec) {
-
     auto range_dit = dofs_by_ent_uid.equal_range(*mit.first);
-
     if (range_dit.first != range_dit.second) {
-
       const BitFieldId field_id = range_dit.first->get()->getId();
-
-      if ((field_id & fe_fields[ROW]).any())
-        BuildFiniteElements<ROW>::addToView(range_dit, mit.second);
-
-      if (fe_fields[ROW] != fe_fields[COL] && (field_id & fe_fields[COL]).any())
-        BuildFiniteElements<COL>::addToView(range_dit, mit.second);
-
       if ((field_id & fe_fields[DATA]).any())
         BuildFiniteElements<DATA>::addToData(range_dit, mit.second);
-        
     }
   }
 
   BuildFiniteElements<DATA>::emplaceHint(processed_fes);
-  BuildFiniteElements<ROW>::sortView(processed_fes);
-  if (fe_fields[ROW] != fe_fields[COL])
-    BuildFiniteElements<COL>::sortView(processed_fes);
 
   MoFEMFunctionReturn(0);
 }

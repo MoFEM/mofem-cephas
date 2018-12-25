@@ -426,8 +426,6 @@ struct EntFiniteElement : public interface_FiniteElement<FiniteElement>,
   typedef interface_RefEntity<RefElement> interface_type_RefEntity;
   typedef interface_RefElement<RefElement> interface_type_RefElement;
   typedef interface_FiniteElement<FiniteElement> interface_type_FiniteElement;
-  boost::shared_ptr<DofEntity_vector_view> row_dof_view;
-  boost::shared_ptr<DofEntity_vector_view> col_dof_view;
   boost::shared_ptr<FEDofEntity_multiIndex> data_dofs;
   boost::shared_ptr<FieldEntity_vector_view> row_field_ents_view;
   boost::shared_ptr<FieldEntity_vector_view> col_field_ents_view;
@@ -468,22 +466,6 @@ struct EntFiniteElement : public interface_FiniteElement<FiniteElement>,
    */
   inline EntityHandle getEnt() const { return getRefEnt(); }
 
-  // /** \deprecated Use getEnt() instead
-  // */
-  // DEPRECATED inline EntityHandle get_ent() const { return getEnt(); }
-
-  /**
-   * \brief Get number of DOFs on row
-   * @return Number of dofs on row
-   */
-  inline DofIdx getNbDofsRow() const { return row_dof_view->size(); }
-
-  /**
-   * \brief Get number of DOFs on col
-   * @return Number of dofs on col
-   */
-  inline DofIdx getNbDofsCol() const { return col_dof_view->size(); }
-
   /**
    * \brief Get number of DOFs on data
    * @return Number of dofs on data
@@ -501,24 +483,14 @@ struct EntFiniteElement : public interface_FiniteElement<FiniteElement>,
   friend std::ostream &operator<<(std::ostream &os, const EntFiniteElement &e);
 
   MoFEMErrorCode
-  getRowDofView(DofEntity_multiIndex_active_view &dofs_view,
-                const int operation_type = moab::Interface::UNION) const;
+  getRowDofView(const DofEntity_multiIndex &dofs,
+                DofEntity_multiIndex_active_view &dofs_view,
+                const int operation_type = moab::Interface::UNION);
 
   MoFEMErrorCode
-  getColDofView(DofEntity_multiIndex_active_view &dofs_view,
-                const int operation_type = moab::Interface::UNION) const;
-
-  MoFEMErrorCode
-  getDataDofView(DofEntity_multiIndex_active_view &dofs_view,
-                 const int operation_type = moab::Interface::UNION) const;
-
-  MoFEMErrorCode
-  getRowDofView(DofEntity_multiIndex_uid_view &dofs_view,
-                const int operation_type = moab::Interface::UNION) const;
-
-  MoFEMErrorCode
-  getColDofView(DofEntity_multiIndex_uid_view &dofs_view,
-                const int operation_type = moab::Interface::UNION) const;
+  getColDofView(const DofEntity_multiIndex &dofs,
+                DofEntity_multiIndex_active_view &dofs_view,
+                const int operation_type = moab::Interface::UNION);              
 
   MoFEMErrorCode
   getRowDofView(const NumeredDofEntity_multiIndex &dofs,
@@ -578,18 +550,6 @@ struct interface_EntFiniteElement : public interface_FiniteElement<T>,
   inline const FEDofEntity_multiIndex &getDataDofs() const {
     return this->sPtr->getDataDofs();
   }
-
-  /**
-   * \brief Get number of DOFs on row
-   * @return Number of dofs on row
-   */
-  inline DofIdx getNbDofsRow() const { return this->sPtr->getNbDofsRow(); }
-
-  /**
-   * \brief Get number of DOFs on col
-   * @return Number of dofs on col
-   */
-  inline DofIdx getNbDofsCol() const { return this->sPtr->getNbDofsCol(); }
 
   /**
    * \brief Get number of DOFs on data

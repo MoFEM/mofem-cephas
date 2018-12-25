@@ -420,7 +420,8 @@ MoFEMErrorCode ProblemsManager::buildProblem(Problem *problem_ptr,
                                              int verb) {
   MoFEM::Interface &m_field = cOre;
   const EntFiniteElement_multiIndex *fe_ent_ptr;
-  MoFEMFunctionBeginHot;
+  const DofEntity_multiIndex *dofs_field_ptr;
+  MoFEMFunctionBegin;
   PetscLogEventBegin(MOFEM_EVENT_ProblemsManager, 0, 0, 0, 0);
 
   // Note: Only allowed changes on problem_ptr structure which not influence
@@ -430,10 +431,10 @@ MoFEMErrorCode ProblemsManager::buildProblem(Problem *problem_ptr,
     SETERRQ1(PETSC_COMM_SELF, 1, "problem <%s> refinement level not set",
              problem_ptr->getName().c_str());
   }
-  ierr = m_field.clear_problem(problem_ptr->getName());
-  CHKERRG(ierr);
-  ierr = m_field.get_ents_finite_elements(&fe_ent_ptr);
-  CHKERRG(ierr);
+  CHKERR m_field.clear_problem(problem_ptr->getName());
+  CHKERR m_field.get_ents_finite_elements(&fe_ent_ptr);
+  CHKERR m_field.get_dofs(&dofs_field_ptr);
+
 
   // zero finite elements
   problem_ptr->numeredFiniteElements.clear();
@@ -455,10 +456,10 @@ MoFEMErrorCode ProblemsManager::buildProblem(Problem *problem_ptr,
         if ((fe_bit & prb_bit) != prb_bit)
           continue;
         // get dof uids for rows and columns
-        ierr = (*miit)->getRowDofView(dofs_rows);
+        ierr = (*miit)->getRowDofView(*dofs_field_ptr, dofs_rows);
         CHKERRG(ierr);
         if (!square_matrix) {
-          ierr = (*miit)->getColDofView(dofs_cols);
+          ierr = (*miit)->getColDofView(*dofs_field_ptr, dofs_cols);
           CHKERRG(ierr);
         }
       }
@@ -550,13 +551,13 @@ MoFEMErrorCode ProblemsManager::buildProblem(Problem *problem_ptr,
   }
 
   // job done, some debugging and postprocessing
-  if (verb > 0) {
+  if (verb > QUIET) {
     PetscSynchronizedPrintf(
         m_field.get_comm(), "Problem %s Nb. rows %u Nb. cols %u\n",
         problem_ptr->getName().c_str(), problem_ptr->numeredDofsRows->size(),
         problem_ptr->numeredDofsCols->size());
   }
-  if (verb > 1) {
+  if (verb > VERBOSE) {
     EntFiniteElement_multiIndex::iterator miit = fe_ent_ptr->begin();
     EntFiniteElement_multiIndex::iterator hi_miit = fe_ent_ptr->end();
     std::ostringstream ss;
@@ -587,7 +588,7 @@ MoFEMErrorCode ProblemsManager::buildProblem(Problem *problem_ptr,
     PetscSynchronizedPrintf(m_field.get_comm(), ss.str().c_str());
   }
 
-  if (verb > 0) {
+  if (verb > QUIET) {
     PetscSynchronizedFlush(m_field.get_comm(), PETSC_STDOUT);
   }
   cOre.getBuildMoFEM() |= Core::BUILD_PROBLEM; // It is assumed that user who
@@ -596,7 +597,7 @@ MoFEMErrorCode ProblemsManager::buildProblem(Problem *problem_ptr,
 
   PetscLogEventEnd(MOFEM_EVENT_ProblemsManager, 0, 0, 0, 0);
 
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
@@ -681,9 +682,9 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
           continue;
 
         // get dof uids for rows and columns
-        CHKERR (*fe_miit)->getRowDofView(dofs_rows);
+        CHKERR (*fe_miit)->getRowDofView(*dofs_field_ptr, dofs_rows);
         if (!square_matrix) {
-          CHKERR (*fe_miit)->getColDofView(dofs_cols);
+          CHKERR (*fe_miit)->getColDofView(*dofs_field_ptr, dofs_cols);
         }
       }
     }
@@ -2515,7 +2516,8 @@ MoFEMErrorCode ProblemsManager::partitionFiniteElements(const std::string &name,
 
     // check if rows and columns are the same on this element
     bool do_cols_fe = true;
-    if ((numered_fe->sPtr->row_dof_view == numered_fe->sPtr->col_dof_view) &&
+    if ((numered_fe->sPtr->row_field_ents_view ==
+         numered_fe->sPtr->col_field_ents_view) &&
         !do_cols_prob) {
       do_cols_fe = false;
       numered_fe->cols_dofs = numered_fe->rows_dofs;
@@ -2617,8 +2619,8 @@ MoFEMErrorCode ProblemsManager::partitionFiniteElements(const std::string &name,
           hint = fe_dofs[ss]->emplace_hint(hint, dofs_array, &v);
       }
     }
-    if (!numered_fe->sPtr->row_dof_view->empty() &&
-        !numered_fe->sPtr->col_dof_view->empty()) {
+    if (!numered_fe->sPtr->row_field_ents_view->empty() &&
+        !numered_fe->sPtr->col_field_ents_view->empty()) {
       std::pair<NumeredEntFiniteElement_multiIndex::iterator, bool> p;
       // Add element to the problem
       p = problem_finite_elements.insert(numered_fe);

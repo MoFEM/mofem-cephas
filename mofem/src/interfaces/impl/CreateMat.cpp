@@ -941,22 +941,6 @@ Core::partition_check_matrix_fill_in(const std::string &problem_name,
         }
       }
 
-      if (numeredEntFiniteElementPtr->sPtr->row_dof_view->size() !=
-          numeredEntFiniteElementPtr->rows_dofs->size()) {
-        std::cerr << "Warning: FEDof Row size != NumeredFEDof RowSize "
-                  << numeredEntFiniteElementPtr->sPtr->row_dof_view->size()
-                  << " " << numeredEntFiniteElementPtr->rows_dofs->size()
-                  << std::endl;
-      }
-
-      if (numeredEntFiniteElementPtr->sPtr->col_dof_view->size() !=
-          numeredEntFiniteElementPtr->cols_dofs->size()) {
-        std::cerr << "Warning: FEDof Col size != NumeredFEDof ColSize "
-                  << numeredEntFiniteElementPtr->sPtr->col_dof_view->size()
-                  << " " << numeredEntFiniteElementPtr->cols_dofs->size()
-                  << std::endl;
-      }
-
       MoFEMFunctionReturn(0);
     }
 

@@ -1019,8 +1019,6 @@ EntFiniteElement::EntFiniteElement(
     const boost::shared_ptr<FiniteElement> &fe_ptr)
     : interface_FiniteElement<FiniteElement>(fe_ptr),
       interface_RefElement<RefElement>(ref_finite_element),
-      row_dof_view(new DofEntity_vector_view()),
-      col_dof_view(new DofEntity_vector_view()),
       data_dofs(new FEDofEntity_multiIndex()),
       row_field_ents_view(new FieldEntity_vector_view()),
       col_field_ents_view(new FieldEntity_vector_view()),
@@ -1032,16 +1030,6 @@ EntFiniteElement::EntFiniteElement(
 std::ostream &operator<<(std::ostream &os, const EntFiniteElement &e) {
   os << *e.sFePtr << std::endl;
   os << *e.sPtr << std::endl;
-  os << "row dof_uids ";
-  auto rit = e.row_dof_view->begin();
-  for (; rit != e.row_dof_view->end(); rit++) {
-    os << (*rit).lock()->getGlobalUniqueId() << " ";
-  }
-  os << "col dof_uids ";
-  auto cit = e.col_dof_view->begin();
-  for (; cit != e.col_dof_view->end(); cit++) {
-    os << (*cit).lock()->getGlobalUniqueId() << " ";
-  }
   os << "data dof_uids ";
   FEDofEntity_multiIndex::iterator dit;
   dit = e.data_dofs->begin();
@@ -1092,78 +1080,18 @@ get_fe_ent_view(const FE_ENTS &fe_ents_view, const MOFEM_DOFS &mofem_dofs,
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode
-EntFiniteElement::getRowDofView(DofEntity_multiIndex_active_view &dofs_view,
-                                const int operation_type) const {
-  MoFEMFunctionBegin;
-  if (operation_type == moab::Interface::UNION) {
-    auto hint = dofs_view.end();
-    for (auto dit : *row_dof_view)
-      if (!dit.expired())
-        hint = dofs_view.emplace_hint(hint, dit);
-  } else {
-    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented");
-  }
-  MoFEMFunctionReturn(0);
+MoFEMErrorCode EntFiniteElement::getRowDofView(
+    const DofEntity_multiIndex &dofs,
+    DofEntity_multiIndex_active_view &dofs_view,
+    const int operation_type) {
+  return get_fe_ent_view(*row_field_ents_view, dofs, dofs_view, operation_type);
 }
 
 MoFEMErrorCode
-EntFiniteElement::getColDofView(DofEntity_multiIndex_active_view &dofs_view,
-                                const int operation_type) const {
-  MoFEMFunctionBegin;
-  if (operation_type == moab::Interface::UNION) {
-    auto hint = dofs_view.end();
-    for (auto dit : *col_dof_view)
-      if (!dit.expired())
-        hint = dofs_view.emplace_hint(hint, dit);
-  } else {
-    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented");
-  }
-  MoFEMFunctionReturn(0);
-}
-
-MoFEMErrorCode
-EntFiniteElement::getDataDofView(DofEntity_multiIndex_active_view &dofs_view,
-                                 const int operation_type) const {
-  MoFEMFunctionBegin;
-  if (operation_type == moab::Interface::UNION) {
-    auto hint = dofs_view.end();
-    for (auto dit : *data_dofs)
-      hint = dofs_view.emplace_hint(hint, dit->getDofEntityPtr());
-  } else {
-    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented");
-  }
-  MoFEMFunctionReturn(0);
-}
-
-MoFEMErrorCode
-EntFiniteElement::getRowDofView(DofEntity_multiIndex_uid_view &dofs_view,
-                                const int operation_type) const {
-  MoFEMFunctionBegin;
-  if (operation_type == moab::Interface::UNION) {
-    auto hint = dofs_view.end();
-    for (auto dit : *row_dof_view)
-      if (!dit.expired())
-        hint = dofs_view.emplace_hint(hint, dit);
-  } else {
-    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented");
-  }
-  MoFEMFunctionReturn(0);
-}
-
-MoFEMErrorCode
-EntFiniteElement::getColDofView(DofEntity_multiIndex_uid_view &dofs_view,
-                                const int operation_type) const {
-  MoFEMFunctionBegin;
-  if (operation_type == moab::Interface::UNION) {
-    auto hint = dofs_view.end();
-    for (auto dit : *col_dof_view)
-      if (!dit.expired())
-        hint = dofs_view.emplace_hint(hint, dit);
-  } else {
-    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented");
-  }
-  MoFEMFunctionReturn(0);
+EntFiniteElement::getColDofView(const DofEntity_multiIndex &dofs,
+                                DofEntity_multiIndex_active_view &dofs_view,
+                                const int operation_type) {
+  return get_fe_ent_view(*col_field_ents_view, dofs, dofs_view, operation_type);
 }
 
 MoFEMErrorCode EntFiniteElement::getRowDofView(
