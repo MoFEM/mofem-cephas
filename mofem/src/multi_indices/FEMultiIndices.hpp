@@ -482,35 +482,39 @@ struct EntFiniteElement : public interface_FiniteElement<FiniteElement>,
 
   friend std::ostream &operator<<(std::ostream &os, const EntFiniteElement &e);
 
-  MoFEMErrorCode
-  getRowDofView(const DofEntity_multiIndex &dofs,
-                DofEntity_multiIndex_active_view &dofs_view,
-                const int operation_type = moab::Interface::UNION);
+  template <typename FE_ENTS, typename MOFEM_DOFS, typename MOFEM_DOFS_VIEW>
+  inline MoFEMErrorCode
+  getDofView(const FE_ENTS &fe_ents_view, const MOFEM_DOFS &mofem_dofs,
+             MOFEM_DOFS_VIEW &dofs_view, const int operation_type) {
+    MoFEMFunctionBeginHot;
+    if (operation_type == moab::Interface::UNION) {
+      for (auto &it : fe_ents_view) {
+        if (auto e = it.lock()) {
+          auto r = mofem_dofs.template get<Unique_Ent_mi_tag>().equal_range(
+              e->getGlobalUniqueId());
+          dofs_view.insert(r.first, r.second);
+        }
+      }
+    } else
+      SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented");
+    MoFEMFunctionReturnHot(0);
+  }
 
-  MoFEMErrorCode
-  getColDofView(const DofEntity_multiIndex &dofs,
-                DofEntity_multiIndex_active_view &dofs_view,
-                const int operation_type = moab::Interface::UNION);              
+  template <typename MOFEM_DOFS, typename MOFEM_DOFS_VIEW>
+  inline MoFEMErrorCode
+  getRowDofView(const MOFEM_DOFS &mofem_dofs, MOFEM_DOFS_VIEW &dofs_view,
+                const int operation_type = moab::Interface::UNION) {
+    return getDofView(*row_field_ents_view, mofem_dofs, dofs_view,
+                      operation_type);
+  }
 
-  MoFEMErrorCode
-  getRowDofView(const NumeredDofEntity_multiIndex &dofs,
-                NumeredDofEntity_multiIndex_uid_view_ordered &dofs_view,
-                const int operation_type = moab::Interface::UNION) const;
-
-  MoFEMErrorCode
-  getColDofView(const NumeredDofEntity_multiIndex &dofs,
-                NumeredDofEntity_multiIndex_uid_view_ordered &dofs_view,
-                const int operation_type = moab::Interface::UNION) const;
-
-  MoFEMErrorCode
-  getRowDofView(const NumeredDofEntity_multiIndex &dofs,
-                NumeredDofEntity_multiIndex_idx_view_hashed &dofs_view,
-                const int operation_type = moab::Interface::UNION) const;
-
-  MoFEMErrorCode
-  getColDofView(const NumeredDofEntity_multiIndex &dofs,
-                NumeredDofEntity_multiIndex_idx_view_hashed &dofs_view,
-                const int operation_type = moab::Interface::UNION) const;
+  template <typename MOFEM_DOFS, typename MOFEM_DOFS_VIEW>
+  inline MoFEMErrorCode
+  getColDofView(const MOFEM_DOFS &mofem_dofs, MOFEM_DOFS_VIEW &dofs_view,
+                const int operation_type = moab::Interface::UNION) {
+    return getDofView(*col_field_ents_view, mofem_dofs, dofs_view,
+                      operation_type);
+  }
 
   MoFEMErrorCode getElementAdjacency(const boost::shared_ptr<Field> field_ptr,
                                      Range &adjacency);
