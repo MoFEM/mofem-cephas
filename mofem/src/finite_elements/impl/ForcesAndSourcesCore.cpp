@@ -218,10 +218,11 @@ MoFEMErrorCode ForcesAndSourcesCore::getEntityDataOrder(
         dat.getDataOrder() > ent_order ? dat.getDataOrder() : ent_order;
   }
 
-  for (auto &side : side_table) {
-    const int brother_side_number = side->brother_side_number;
+  for (auto r = side_table.get<2>().equal_range(type); r.first != r.second;
+       ++r.first) {
+    const int brother_side_number = (*r.first)->brother_side_number;
     if (brother_side_number != -1) {
-      const int side_number = side->side_number;
+      const int side_number = (*r.first)->side_number;
       data[brother_side_number].getDataOrder() =
           data[side_number].getDataOrder();
     }
