@@ -413,10 +413,15 @@ typedef std::vector<boost::weak_ptr<DofEntity>> DofEntity_vector_view;
 */
 typedef multi_index_container<
     boost::shared_ptr<DofEntity>,
-    indexed_by<ordered_unique<const_mem_fun<DofEntity, const UId &,
-                                            &DofEntity::getGlobalUniqueId>>,
-               ordered_non_unique<
-                   const_mem_fun<DofEntity, char, &DofEntity::getActive>>>>
+    indexed_by<
+
+        ordered_unique<const_mem_fun<DofEntity, const UId &,
+                                     &DofEntity::getGlobalUniqueId>>,
+
+        ordered_non_unique<
+            const_mem_fun<DofEntity, char, &DofEntity::getActive>>
+
+        >>
     DofEntity_multiIndex_active_view;
 
 /**
