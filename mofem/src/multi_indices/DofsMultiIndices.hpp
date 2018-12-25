@@ -662,7 +662,7 @@ typedef multi_index_container<
                               boost::string_ref, &NumeredDofEntity::getNameRef>,
                 member<NumeredDofEntity, unsigned int,
                        &NumeredDofEntity::pArt>>>,
-                       
+
         ordered_non_unique<
             tag<Composite_Name_Ent_And_Part_mi_tag>,
             composite_key<
