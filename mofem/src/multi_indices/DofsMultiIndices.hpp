@@ -617,6 +617,9 @@ typedef multi_index_container<
                           const UId &,
                           &NumeredDofEntity::getEntGlobalUniqueId>>,
         ordered_non_unique<
+            tag<Part_mi_tag>,
+            member<NumeredDofEntity, unsigned int, &NumeredDofEntity::pArt>>,
+        ordered_non_unique<
             tag<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>,
             composite_key<
                 NumeredDofEntity,
@@ -646,14 +649,6 @@ typedef multi_index_container<
             tag<Order_mi_tag>,
             const_mem_fun<NumeredDofEntity::interface_type_DofEntity,
                           ApproximationOrder, &NumeredDofEntity::getDofOrder>>,
-        ordered_non_unique<
-            tag<Composite_Part_And_Order_mi_tag>,
-            composite_key<
-                NumeredDofEntity,
-                member<NumeredDofEntity, unsigned int, &NumeredDofEntity::pArt>,
-                const_mem_fun<NumeredDofEntity::interface_type_DofEntity,
-                              ApproximationOrder,
-                              &NumeredDofEntity::getDofOrder>>>,
         ordered_non_unique<
             tag<Composite_Name_And_Part_mi_tag>,
             composite_key<
@@ -727,12 +722,6 @@ typedef multi_index_container<
     indexed_by<ordered_non_unique<const_mem_fun<
         NumeredDofEntity, DofIdx, &NumeredDofEntity::getPetscLocalDofIdx> > > >
     NumeredDofEntity_multiIndex_petsc_local_dof_view_ordered_non_unique;
-
-typedef multi_index_container<
-    boost::shared_ptr<NumeredDofEntity>,
-    indexed_by<ordered_non_unique<const_mem_fun<
-        NumeredDofEntity, DofIdx, &NumeredDofEntity::getPetscGlobalDofIdx> > > >
-    NumeredDofEntity_multiIndex_petsc_global_dof_view_ordered_non_unique;
 
 typedef multi_index_container<
     boost::shared_ptr<NumeredDofEntity>,

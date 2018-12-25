@@ -179,41 +179,53 @@ MoFEMErrorCode ISManager::isCreateProblemOrder(const std::string &problem,
   const Problem *problem_ptr;
   MoFEMFunctionBegin;
   CHKERR m_field.get_problem(problem, &problem_ptr);
-  typedef NumeredDofEntity_multiIndex::index<
-      Composite_Part_And_Order_mi_tag>::type dofs_order;
-  int rank = m_field.get_comm_rank();
-  dofs_order::iterator it, hi_it;
+
+  typedef multi_index_container<
+      boost::shared_ptr<NumeredDofEntity>,
+
+      indexed_by<
+
+          sequenced<>,
+
+          ordered_non_unique<
+              tag<Order_mi_tag>,
+              const_mem_fun<NumeredDofEntity::interface_type_DofEntity,
+                            ApproximationOrder, &NumeredDofEntity::getDofOrder>>
+
+          >>
+      NumeredDofEntity_order_view_multiIndex;
+
+  const int rank = m_field.get_comm_rank();
+
+  NumeredDofEntity_order_view_multiIndex dofs_part_view;
+  auto insert_part_range = [&dofs_part_view, rank](auto &dofs) {
+    dofs_part_view.insert(dofs_part_view.end(), dofs.lower_bound(rank),
+                          dofs.upper_bound(rank));
+  };
+
   switch (rc) {
   case ROW:
-    it = problem_ptr->numeredDofsRows->get<Composite_Part_And_Order_mi_tag>()
-             .lower_bound(boost::make_tuple(rank, min_order));
-    hi_it = problem_ptr->numeredDofsRows->get<Composite_Part_And_Order_mi_tag>()
-                .upper_bound(boost::make_tuple(rank, max_order));
+    insert_part_range(problem_ptr->numeredDofsRows->get<Part_mi_tag>());
     break;
   case COL:
-    it = problem_ptr->numeredDofsCols->get<Composite_Part_And_Order_mi_tag>()
-             .lower_bound(boost::make_tuple(rank, min_order));
-    hi_it = problem_ptr->numeredDofsCols->get<Composite_Part_And_Order_mi_tag>()
-                .upper_bound(boost::make_tuple(rank, max_order));
+    insert_part_range(problem_ptr->numeredDofsCols->get<Part_mi_tag>());
     break;
   default:
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented");
   }
-  NumeredDofEntity_multiIndex_petsc_global_dof_view_ordered_non_unique
-      dof_idx_view;
-  dof_idx_view.insert(it,hi_it);
-  NumeredDofEntity_multiIndex_petsc_global_dof_view_ordered_non_unique::iterator
-      vit,
-      hi_vit;
-  vit = dof_idx_view.begin();
-  hi_vit = dof_idx_view.end();
-  int size = std::distance(vit, hi_vit);
+
+  auto lo = dofs_part_view.get<Order_mi_tag>().lower_bound(min_order);
+  auto hi = dofs_part_view.get<Order_mi_tag>().upper_bound(max_order);
+  const int size = std::distance(lo, hi);
   int *id;
   CHKERR PetscMalloc(size * sizeof(int), &id);
-  for (int ii = 0; vit != hi_vit; ++vit, ++ii) {
-    id[ii] = (*vit)->getPetscGlobalDofIdx();
-  }
+  int *id_it = id;
+  for (; lo != hi; ++lo, ++id_it)
+    *id_it = (*lo)->getPetscGlobalDofIdx();
+  sort(id, &id[size]);
+
   CHKERR ISCreateGeneral(PETSC_COMM_WORLD, size, id, PETSC_OWN_POINTER, is);
+
   MoFEMFunctionReturn(0);
 }
 
