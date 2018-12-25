@@ -304,69 +304,92 @@ MoFEMErrorCode ISManager::isCreateFromProblemFieldToOtherProblemField(
     RowColData x_rc, const std::string &y_problem,
     const std::string &y_field_name, RowColData y_rc, std::vector<int> &idx,
     std::vector<int> &idy) const {
+
   const MoFEM::Interface &m_field = cOre;
   const Problem *px_ptr;
   const Problem *py_ptr;
   MoFEMFunctionBegin;
+
   CHKERR m_field.get_problem(x_problem, &px_ptr);
   CHKERR m_field.get_problem(y_problem, &py_ptr);
-  NumeredDofEntityByLocalIdx::iterator y_dit, hi_y_dit;
-  switch (y_rc) {
-  case ROW:
-    y_dit = py_ptr->numeredDofsRows->get<PetscLocalIdx_mi_tag>().lower_bound(0);
-    hi_y_dit = py_ptr->numeredDofsRows->get<PetscLocalIdx_mi_tag>().upper_bound(
-        py_ptr->getNbLocalDofsRow() - 1);
-    break;
-  case COL:
-    y_dit = py_ptr->numeredDofsCols->get<PetscLocalIdx_mi_tag>().lower_bound(0);
-    hi_y_dit = py_ptr->numeredDofsCols->get<PetscLocalIdx_mi_tag>().upper_bound(
-        py_ptr->getNbLocalDofsCol() - 1);
-    break;
-  default:
-    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
-            "only makes sense for ROWS and COLS");
-  }
-  typedef NumeredDofEntity_multiIndex::index<
-      Composite_Name_And_Ent_And_EntDofIdx_mi_tag>::type DofsByNameAndEntDofIdx;
-  const DofsByNameAndEntDofIdx *x_numered_dofs_by_ent_name_dof;
+  
+  typedef multi_index_container<
+      boost::shared_ptr<NumeredDofEntity>,
+
+      indexed_by<
+
+          sequenced<>,
+
+          ordered_non_unique<
+              tag<Composite_Ent_And_EntDofIdx_mi_tag>,
+              composite_key<
+                  NumeredDofEntity,
+                  const_mem_fun<NumeredDofEntity::interface_type_DofEntity,
+                                EntityHandle, &NumeredDofEntity::getEnt>,
+                  const_mem_fun<NumeredDofEntity::interface_type_DofEntity,
+                                DofIdx, &NumeredDofEntity::getEntDofIdx>>>
+
+          >>
+      NumeredDofEntity_view_multiIndex;
+
+  NumeredDofEntity_view_multiIndex dofs_view;
+
   switch (x_rc) {
   case ROW:
-    x_numered_dofs_by_ent_name_dof =
-        &(px_ptr->numeredDofsRows
-              ->get<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>());
+    dofs_view.insert(
+        dofs_view.end(),
+        px_ptr->numeredDofsRows->get<FieldName_mi_tag>().lower_bound(
+            x_field_name),
+        px_ptr->numeredDofsRows->get<FieldName_mi_tag>().upper_bound(
+            x_field_name));
     break;
   case COL:
-    x_numered_dofs_by_ent_name_dof =
-        &(px_ptr->numeredDofsCols
-              ->get<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>());
+      dofs_view.insert(
+        dofs_view.end(),
+        px_ptr->numeredDofsCols->get<FieldName_mi_tag>().lower_bound(
+            x_field_name),
+        px_ptr->numeredDofsCols->get<FieldName_mi_tag>().upper_bound(
+            x_field_name));
     break;
   default:
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
             "only makes sense for ROWS and COLS");
   }
-  std::map<int, int> global_dofs_map;
-  for (; y_dit != hi_y_dit; y_dit++) {
-    if ((*y_dit)->getPart() != (unsigned int)m_field.get_comm_rank()) {
-      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
-    }
-    if ((*y_dit)->getName() != y_field_name)
-      continue;
-    DofsByNameAndEntDofIdx::iterator x_dit;
-    x_dit = x_numered_dofs_by_ent_name_dof->find(boost::make_tuple(
-        x_field_name, (*y_dit)->getEnt(), (*y_dit)->getEntDofIdx()));
-    if (x_dit == x_numered_dofs_by_ent_name_dof->end())
-      continue;
-    global_dofs_map[(*x_dit)->getPetscGlobalDofIdx()] =
-        (*y_dit)->getPetscGlobalDofIdx();
+
+  decltype(py_ptr->numeredDofsRows) dofs_ptr;
+  switch (y_rc) {
+  case ROW:
+    dofs_ptr = py_ptr->numeredDofsRows;
+    break;
+  case COL:
+    dofs_ptr = py_ptr->numeredDofsCols;
+    break;
+  default:
+    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+            "only makes sense for ROWS and COLS");
   }
+
+  std::map<int, int> global_dofs_map;
+  for (auto r = dofs_ptr->get<Composite_Name_And_Part_mi_tag>().equal_range(
+           boost::make_tuple(y_field_name, m_field.get_comm_rank()));
+       r.first != r.second; ++r.first) {
+
+    auto x_dit = dofs_view.get<Composite_Ent_And_EntDofIdx_mi_tag>().find(
+        boost::make_tuple((*r.first)->getEnt(), (*r.first)->getEntDofIdx()));
+    if (x_dit != dofs_view.get<Composite_Ent_And_EntDofIdx_mi_tag>().end()) {
+      global_dofs_map[(*x_dit)->getPetscGlobalDofIdx()] =
+          (*r.first)->getPetscGlobalDofIdx();
+    }
+
+  }
+
   idx.resize(global_dofs_map.size());
   idy.resize(global_dofs_map.size());
   {
-    std::vector<int>::iterator ix, iy;
-    ix = idx.begin();
-    iy = idy.begin();
-    map<int, int>::iterator mit = global_dofs_map.begin();
-    for (; mit != global_dofs_map.end(); mit++, ix++, iy++) {
+    auto ix = idx.begin();
+    auto iy = idy.begin();
+    for (auto mit = global_dofs_map.begin(); mit != global_dofs_map.end();
+         mit++, ix++, iy++) {
       *ix = mit->first;
       *iy = mit->second;
     }

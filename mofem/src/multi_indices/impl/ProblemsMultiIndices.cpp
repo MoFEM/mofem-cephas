@@ -159,41 +159,37 @@ MoFEMErrorCode Problem::getDofByNameEntAndEntDofIdx(
     const string name, const EntityHandle ent, const int ent_dof_idx,
     const RowColData row_or_col,
     boost::shared_ptr<NumeredDofEntity> &dof_ptr) const {
-  MoFEMFunctionBeginHot;
-  typedef NumeredDofEntity_multiIndex::index<
-      Composite_Name_And_Ent_And_EntDofIdx_mi_tag>::type
-      NumberdDofByNameEntAndEndDofIdx;
-  NumberdDofByNameEntAndEndDofIdx::iterator it;
-  // not use shared pointer is local here, direct pointer is more efficient
-  NumeredDofEntity_multiIndex *numered_dofs;
+  MoFEMFunctionBegin;
+  decltype(numeredDofsRows) numered_dofs;
   switch (row_or_col) {
   case ROW:
     if (!numeredDofsRows) {
       SETERRQ(PETSC_COMM_SELF, MOFEM_INVALID_DATA,
               "Row numbered index in problem not allocated");
     }
-    numered_dofs = numeredDofsRows.get();
+    numered_dofs = numeredDofsRows;
     break;
   case COL:
-    if (!numeredDofsRows) {
+    if (!numeredDofsCols) {
       SETERRQ(PETSC_COMM_SELF, MOFEM_INVALID_DATA,
               "Col numbered index in problem not allocated");
     }
-    numered_dofs = numeredDofsCols.get();
+    numered_dofs = numeredDofsCols;
     break;
   default:
     SETERRQ(PETSC_COMM_SELF, MOFEM_INVALID_DATA,
             "Only ROW and COL is possible for 3rd argument");
   }
-  it = numered_dofs->get<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>().find(
-      boost::make_tuple(name, ent, ent_dof_idx));
+  auto it =
+      numered_dofs->get<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>().find(
+          boost::make_tuple(name, ent, ent_dof_idx));
   if (it !=
       numered_dofs->get<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>().end()) {
     dof_ptr = *it;
   } else {
     dof_ptr = boost::shared_ptr<NumeredDofEntity>();
   }
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 void ProblemFiniteElementChangeBitAdd::operator()(Problem &p) {
