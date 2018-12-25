@@ -398,7 +398,7 @@ MoFEMErrorCode ProblemsManager::buildProblem(const std::string &name,
                                              int verb) {
 
   MoFEM::Interface &m_field = cOre;
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   if (!(cOre.getBuildMoFEM() & (1 << 0)))
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "fields not build");
   if (!(cOre.getBuildMoFEM() & (1 << 1)))
@@ -406,13 +406,11 @@ MoFEMErrorCode ProblemsManager::buildProblem(const std::string &name,
   if (!(cOre.getBuildMoFEM() & (1 << 2)))
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "adjacencies not build");
   const Problem *problem_ptr;
-  ierr = m_field.get_problem(name, &problem_ptr);
-  CHKERRG(ierr);
-  ierr = buildProblem(const_cast<Problem *>(problem_ptr), square_matrix, verb);
-  CHKERRG(ierr);
+  CHKERR m_field.get_problem(name, &problem_ptr);
+  CHKERR buildProblem(const_cast<Problem *>(problem_ptr), square_matrix, verb);
   cOre.getBuildMoFEM() |= 1 << 3; // It is assumed that user who uses this
                                   // function knows what he is doing
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode ProblemsManager::buildProblem(Problem *problem_ptr,
