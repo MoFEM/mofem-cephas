@@ -1423,12 +1423,12 @@ DataForcesAndSourcesCore::EntData::getFTensor2DiffN<3, 2>(
 
 /**@}*/
 
-// /// \deprecated Use DataForcesAndSourcesCore
-// DEPRECATED typedef DataForcesAndSourcesCore DataForcesAndSurcesCore;
+/// \deprecated Use DataForcesAndSourcesCore
+DEPRECATED typedef DataForcesAndSourcesCore DataForcesAndSurcesCore;
 
-// /// \deprecated use DerivedDataForcesAndSourcesCore
-// DEPRECATED typedef DerivedDataForcesAndSourcesCore
-//     DerivedDataForcesAndSurcesCore;
+/// \deprecated use DerivedDataForcesAndSourcesCore
+DEPRECATED typedef DerivedDataForcesAndSourcesCore
+    DerivedDataForcesAndSurcesCore;
 
 } // namespace MoFEM
 
