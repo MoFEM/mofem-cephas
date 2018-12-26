@@ -771,8 +771,8 @@ struct NumeredDofEntity_part_and_glob_idx_change {
 
 struct NumeredDofEntity_part_and_mofem_glob_idx_change {
   const unsigned int pArt;
-  const DofIdx petscGloablDofIdx;
   const DofIdx mofemDofIdx;
+  const DofIdx petscGloablDofIdx;
   NumeredDofEntity_part_and_mofem_glob_idx_change(
       const unsigned int part, const DofIdx mofem_dof_idx,
       const DofIdx petsc_gloabl_dof_idx)
