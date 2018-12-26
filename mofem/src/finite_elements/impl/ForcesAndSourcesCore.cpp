@@ -207,15 +207,21 @@ MoFEMErrorCode ForcesAndSourcesCore::getEntityDataOrder(
 
     auto &e = **r.first;
 
-    auto &side = *side_table.find(e.getEnt());
-    const EntityType type = side->getEntType();
-    const int side_number = side->side_number;
+    auto sit = side_table.find(e.getEnt());
+    if (sit != side_table.end()) {
 
-    ApproximationOrder ent_order = e.getMaxOrder();
-    auto &dat = data[side_number];
-    const int order = e.getMaxOrder();
-    dat.getDataOrder() =
-        dat.getDataOrder() > ent_order ? dat.getDataOrder() : ent_order;
+      auto &side = *sit;
+      const int side_number = side->side_number;
+
+      ApproximationOrder ent_order = e.getMaxOrder();
+      auto &dat = data[side_number];
+      const int order = e.getMaxOrder();
+      dat.getDataOrder() =
+          dat.getDataOrder() > ent_order ? dat.getDataOrder() : ent_order;
+    } else
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "Entity on side of the element not found");
+
   }
 
   for (auto r = side_table.get<2>().equal_range(type); r.first != r.second;
