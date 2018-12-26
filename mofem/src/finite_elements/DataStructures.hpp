@@ -54,6 +54,7 @@ template <class T, class A>
 FTensor::Tensor0<FTensor::PackPtr<double *, 1> >
 getFTensor0FromVec(ublas::vector<T, A> &data) {
   static_assert(1, "not implemented");
+  return FTensor::Tensor0<FTensor::PackPtr<double *, 1>>(NULL);
 }
 
 /**
