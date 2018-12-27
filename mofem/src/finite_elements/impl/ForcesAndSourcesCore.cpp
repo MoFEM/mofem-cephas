@@ -815,19 +815,24 @@ MoFEMErrorCode ForcesAndSourcesCore::getSpacesAndBaseOnEntities(
       data.basesOnSpaces[s].reset();
     }
   }
-  for (auto e : *dataFieldEntsPtr) {
-    // get data from entity
-    const EntityType type = e->getEntType();
-    const FieldSpace space = e->getSpace();
-    const FieldApproximationBase approx = e->getApproxBase();
+  
+  if (dataFieldEntsPtr)
+    for (auto e : *dataFieldEntsPtr) {
+      // get data from entity
+      const EntityType type = e->getEntType();
+      const FieldSpace space = e->getSpace();
+      const FieldApproximationBase approx = e->getApproxBase();
 
-    // set data
-    data.sPace.set(space);
-    data.bAse.set(approx);
-    data.spacesOnEntities[type].set(space);
-    data.basesOnEntities[type].set(approx);
-    data.basesOnSpaces[space].set(approx);
-  }
+      // set data
+      data.sPace.set(space);
+      data.bAse.set(approx);
+      data.spacesOnEntities[type].set(space);
+      data.basesOnEntities[type].set(approx);
+      data.basesOnSpaces[space].set(approx);
+    }
+    else
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "data fields ents not allocated on element");
 
   MoFEMFunctionReturnHot(0);
 }
