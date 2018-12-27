@@ -529,50 +529,40 @@ template <int RANK, int DIM> struct OpGetDataAndGradient : public DataOperator {
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data) {
 
-    MoFEMFunctionBeginHot;
+    MoFEMFunctionBegin;
 
-    try {
-
-      if (data.getFieldData().size() == 0) {
-        MoFEMFunctionReturnHot(0);
-      }
-
-      unsigned int nb_dofs = data.getFieldData().size();
-      if (nb_dofs == 0)
-        MoFEMFunctionReturnHot(0);
-
-      if (nb_dofs % RANK != 0) {
-        SETERRQ4(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                 "data inconsistency, type %d, side %d, nb_dofs %d, rank %d",
-                 type, side, nb_dofs, RANK);
-      }
-      if (nb_dofs / RANK > data.getN().size2()) {
-        std::cerr << side << " " << type << " "
-                  << ApproximationBaseNames[data.getBase()] << std::endl;
-        std::cerr << data.getN() << std::endl;
-        SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                 "data inconsistency nb_dofs >= data.N.size2(), i.e. %u >= %u",
-                 nb_dofs, data.getN().size2());
-      }
-
-      if (type == MBVERTEX) {
-        dataAtGaussPts.resize(data.getN().size1(), RANK, false);
-        dataGradAtGaussPts.resize(data.getN().size1(), RANK * DIM, false);
-        dataAtGaussPts.clear();
-        dataGradAtGaussPts.clear();
-      }
-
-      ierr = calculateValAndGrad(side, type, data);
-      CHKERRG(ierr);
-
-    } catch (std::exception &ex) {
-      std::ostringstream ss;
-      ss << "throw in method: " << ex.what() << " at line " << __LINE__
-         << " in file " << __FILE__;
-      SETERRQ(PETSC_COMM_SELF, MOFEM_STD_EXCEPTION_THROW, ss.str().c_str());
+    if (data.getFieldData().size() == 0) {
+      MoFEMFunctionReturnHot(0);
     }
 
-    MoFEMFunctionReturnHot(0);
+    unsigned int nb_dofs = data.getFieldData().size();
+    if (nb_dofs == 0)
+      MoFEMFunctionReturnHot(0);
+
+    if (nb_dofs % RANK != 0) {
+      SETERRQ4(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+               "data inconsistency, type %d, side %d, nb_dofs %d, rank %d",
+               type, side, nb_dofs, RANK);
+    }
+    if (nb_dofs / RANK > data.getN().size2()) {
+      std::cerr << side << " " << type << " "
+                << ApproximationBaseNames[data.getBase()] << std::endl;
+      std::cerr << data.getN() << std::endl;
+      SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+               "data inconsistency nb_dofs >= data.N.size2(), i.e. %u >= %u",
+               nb_dofs, data.getN().size2());
+    }
+
+    if (type == MBVERTEX) {
+      dataAtGaussPts.resize(data.getN().size1(), RANK, false);
+      dataGradAtGaussPts.resize(data.getN().size1(), RANK * DIM, false);
+      dataAtGaussPts.clear();
+      dataGradAtGaussPts.clear();
+    }
+
+    CHKERR calculateValAndGrad(side, type, data);
+
+    MoFEMFunctionReturn(0);
   }
 };
 
