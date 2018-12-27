@@ -693,17 +693,8 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
           const EntityHandle second = p_eit->second;
           if (meit != field_ents_by_name_and_ent.end()) {
 
-            decltype(meit) hi_meit;
-
-            // If range is not sparse, that will remove need for costly search
-            // for end of the pair
-            if (meit->get()->getEnt() == second) {
-              hi_meit = meit;
-              ++hi_meit;
-            } else
-              hi_meit = field_ents_by_name_and_ent.upper_bound(
+            auto hi_meit = field_ents_by_name_and_ent.upper_bound(
                   boost::make_tuple(field_name, second));
-
 
             // create list of finite elements with this dof UId
             for (; meit != hi_meit; ++meit) {
