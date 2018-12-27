@@ -377,42 +377,33 @@ MoFEMErrorCode
 OpCalculateInvJacForFace::doWork(int side, EntityType type,
                                  DataForcesAndSourcesCore::EntData &data) {
 
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
 
   if (getNumeredEntFiniteElementPtr()->getEntType() != MBTRI) {
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "This operator can be used only with element which is triangle");
   }
 
-  try {
-
-    if (type == MBVERTEX) {
-      VectorDouble &coords = getCoords();
-      double *coords_ptr = &*coords.data().begin();
-      double diff_n[6];
-      ierr = ShapeDiffMBTRI(diff_n);
-      CHKERRG(ierr);
-      double j00, j01, j10, j11;
-      for (int gg = 0; gg < 1; gg++) {
-        // this is triangle, derivative of nodal shape functions is constant.
-        // So only need to do one node.
-        j00 = cblas_ddot(3, &coords_ptr[0], 3, &diff_n[0], 2);
-        j01 = cblas_ddot(3, &coords_ptr[0], 3, &diff_n[1], 2);
-        j10 = cblas_ddot(3, &coords_ptr[1], 3, &diff_n[0], 2);
-        j11 = cblas_ddot(3, &coords_ptr[1], 3, &diff_n[1], 2);
-      }
-      double det = j00 * j11 - j01 * j10;
-      invJac.resize(2, 2, false);
-      invJac(0, 0) = j11 / det;
-      invJac(0, 1) = -j01 / det;
-      invJac(1, 0) = -j10 / det;
-      invJac(1, 1) = j00 / det;
+  if (type == MBVERTEX) {
+    VectorDouble &coords = getCoords();
+    double *coords_ptr = &*coords.data().begin();
+    double diff_n[6];
+    CHKERR ShapeDiffMBTRI(diff_n);
+    double j00, j01, j10, j11;
+    for (int gg = 0; gg < 1; gg++) {
+      // this is triangle, derivative of nodal shape functions is constant.
+      // So only need to do one node.
+      j00 = cblas_ddot(3, &coords_ptr[0], 3, &diff_n[0], 2);
+      j01 = cblas_ddot(3, &coords_ptr[0], 3, &diff_n[1], 2);
+      j10 = cblas_ddot(3, &coords_ptr[1], 3, &diff_n[0], 2);
+      j11 = cblas_ddot(3, &coords_ptr[1], 3, &diff_n[1], 2);
     }
-  } catch (std::exception &ex) {
-    std::ostringstream ss;
-    ss << "throw in method: " << ex.what() << " at line " << __LINE__
-       << " in file " << __FILE__;
-    SETERRQ(PETSC_COMM_SELF, MOFEM_STD_EXCEPTION_THROW, ss.str().c_str());
+    double det = j00 * j11 - j01 * j10;
+    invJac.resize(2, 2, false);
+    invJac(0, 0) = j11 / det;
+    invJac(0, 1) = -j01 / det;
+    invJac(1, 0) = -j10 / det;
+    invJac(1, 1) = j00 / det;
   }
 
   doVertices = true;
@@ -422,7 +413,7 @@ OpCalculateInvJacForFace::doWork(int side, EntityType type,
   doTets = false;
   doPrisms = false;
 
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode
