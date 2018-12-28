@@ -2797,26 +2797,21 @@ MoFEMErrorCode ProblemsManager::getFEMeshset(const std::string &prb_name,
                                              EntityHandle *meshset) const {
   MoFEM::Interface &m_field = cOre;
   const Problem *problem_ptr;
-  MoFEMFunctionBeginHot;
-  rval = m_field.get_moab().create_meshset(MESHSET_SET, *meshset);
-  CHKERRQ_MOAB(rval);
-  ierr = m_field.get_problem(prb_name, &problem_ptr);
-  CHKERRG(ierr);
-  NumeredEntFiniteElement_multiIndex::index<
-      FiniteElement_name_mi_tag>::type::iterator fit,
-      hi_fe_it;
-  fit = problem_ptr->numeredFiniteElements.get<FiniteElement_name_mi_tag>()
+  MoFEMFunctionBegin;
+  CHKERR m_field.get_moab().create_meshset(MESHSET_SET, *meshset);
+  CHKERR m_field.get_problem(prb_name, &problem_ptr);
+  auto fit = problem_ptr->numeredFiniteElements.get<FiniteElement_name_mi_tag>()
             .lower_bound(fe_name);
-  hi_fe_it = problem_ptr->numeredFiniteElements.get<FiniteElement_name_mi_tag>()
+  auto hi_fe_it =
+      problem_ptr->numeredFiniteElements.get<FiniteElement_name_mi_tag>()
                  .upper_bound(fe_name);
   std::vector<EntityHandle> fe_vec;
   fe_vec.reserve(std::distance(fit, hi_fe_it));
-  for (; fit != hi_fe_it; fit++) {
+  for (; fit != hi_fe_it; fit++) 
     fe_vec.push_back(fit->get()->getEnt());
-  }
   rval = m_field.get_moab().add_entities(*meshset, &*fe_vec.begin(),
                                          fe_vec.size());
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode
