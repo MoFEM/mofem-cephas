@@ -1264,27 +1264,26 @@ MoFEMErrorCode ProblemsManager::buildSubProblem(
 
     // get dofs by field name and insert them in out problem multi-indices
     for (auto field : fields[ss]) {
-      auto dit =
-          main_problem_dofs[ss]->get<FieldName_mi_tag>().lower_bound(field);
-      auto hi_dit =
-          main_problem_dofs[ss]->get<FieldName_mi_tag>().upper_bound(field);
 
       // Following reserve memory in sequences, only two allocations are here,
       // once for array of objects, next for array of shared pointers
 
       // aliased sequence of pointer is killed with element
-      boost::shared_ptr<std::vector<NumeredDofEntity> > dofs_array =
-          boost::shared_ptr<std::vector<NumeredDofEntity> >(
-              new std::vector<NumeredDofEntity>());
+      boost::shared_ptr<std::vector<NumeredDofEntity>> dofs_array =
+          boost::make_shared<std::vector<NumeredDofEntity>>();
       // reserve memory for field  dofs
-      if (ss == 0) {
-        out_problem_it->getRowDofsSequence()->push_back(dofs_array);
-      } else {
-        out_problem_it->getColDofsSequence()->push_back(dofs_array);
-      }
-      dofs_array->reserve(std::distance(dit, hi_dit));
+      if (!ss)
+        out_problem_it->getRowDofsSequence()->emplace_back(dofs_array);
+      else 
+        out_problem_it->getColDofsSequence()->emplace_back(dofs_array);
+      
 
       // create elements objects
+      auto dit =
+          main_problem_dofs[ss]->get<FieldName_mi_tag>().lower_bound(field);
+      auto hi_dit =
+          main_problem_dofs[ss]->get<FieldName_mi_tag>().upper_bound(field);
+      dofs_array->reserve(std::distance(dit, hi_dit));
       for (; dit != hi_dit; dit++)
         dofs_array->emplace_back(
             dit->get()->getDofEntityPtr(), dit->get()->getPetscGlobalDofIdx(),
@@ -1298,10 +1297,8 @@ MoFEMErrorCode ProblemsManager::buildSubProblem(
     }
     // Set local indexes
     {
-      NumeredDofEntity_multiIndex::index<Idx_mi_tag>::type::iterator dit,
-          hi_dit;
-      dit = out_problem_dofs[ss]->get<Idx_mi_tag>().begin();
-      hi_dit = out_problem_dofs[ss]->get<Idx_mi_tag>().end();
+      auto dit = out_problem_dofs[ss]->get<Idx_mi_tag>().begin();
+      auto hi_dit = out_problem_dofs[ss]->get<Idx_mi_tag>().end();
       for (; dit != hi_dit; dit++) {
         int idx = -1; // if dof is not part of partition, set local index to -1
         if (dit->get()->getPart() == (unsigned int)m_field.get_comm_rank()) {
@@ -1526,12 +1523,10 @@ MoFEMErrorCode ProblemsManager::buildCompsedProblem(
   for (int ss = 0; ss != ((square_matrix) ? 1 : 2); ss++) {
     dofs_array[ss] = boost::make_shared<std::vector<NumeredDofEntity> >();
     dofs_array[ss]->reserve(nb_dofs_reserve[ss]);
-    if (ss == 0) {
-      out_problem_it->getRowDofsSequence()->push_back(dofs_array[ss]);
-    }
-    if (ss == 1) {
-      out_problem_it->getColDofsSequence()->push_back(dofs_array[ss]);
-    }
+    if (!ss) 
+      out_problem_it->getRowDofsSequence()->emplace_back(dofs_array[ss]);
+    else 
+      out_problem_it->getColDofsSequence()->emplace_back(dofs_array[ss]);
   }
 
   // Push back DOFs
@@ -2504,9 +2499,6 @@ MoFEMErrorCode ProblemsManager::partitionFiniteElements(const std::string &name,
                                         *dofs_view[ss], moab::Interface::UNION);
         }
 
-        auto vit = dofs_view[ss]->begin();
-        auto hi_vit = dofs_view[ss]->end();
-
         // Following reserve memory in sequences, only two allocations are here,
         // once for array of objects, next for array of shared pointers
 
@@ -2514,14 +2506,17 @@ MoFEMErrorCode ProblemsManager::partitionFiniteElements(const std::string &name,
         boost::shared_ptr<std::vector<FENumeredDofEntity>> dofs_array =
             boost::shared_ptr<std::vector<FENumeredDofEntity>>(
                 numered_fe, new std::vector<FENumeredDofEntity>());
-        if (ss == 0) {
+
+        if (!ss) {
           numered_fe->getRowDofsSequence() = dofs_array;
-          if (!do_cols_fe) {
+          if (!do_cols_fe) 
             numered_fe->getColDofsSequence() = dofs_array;
-          }
-        } else {
+        } else 
           numered_fe->getColDofsSequence() = dofs_array;
-        }
+
+        auto vit = dofs_view[ss]->begin();
+        auto hi_vit = dofs_view[ss]->end();
+
         dofs_array->reserve(std::distance(vit, hi_vit));
 
         // create elements objects
@@ -2539,12 +2534,12 @@ MoFEMErrorCode ProblemsManager::partitionFiniteElements(const std::string &name,
     }
     if (!numered_fe->sPtr->row_field_ents_view->empty() &&
         !numered_fe->sPtr->col_field_ents_view->empty()) {
-      std::pair<NumeredEntFiniteElement_multiIndex::iterator, bool> p;
+          
       // Add element to the problem
-      p = problem_finite_elements.insert(numered_fe);
-      if (!p.second) {
-        SETERRQ(m_field.get_comm(), MOFEM_NOT_FOUND, "element is there");
-      }
+      auto p = problem_finite_elements.insert(numered_fe);
+      if (!p.second) 
+        SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_FOUND, "element is there");
+
       if (verb >= VERY_VERBOSE) {
         std::ostringstream ss;
         ss << *p_miit << std::endl;
@@ -2563,6 +2558,7 @@ MoFEMErrorCode ProblemsManager::partitionFiniteElements(const std::string &name,
       }
     }
   }
+
   if (verb >= VERBOSE) {
     typedef NumeredEntFiniteElement_multiIndex::index<Part_mi_tag>::type
         NumeredEntFiniteElementPart;
