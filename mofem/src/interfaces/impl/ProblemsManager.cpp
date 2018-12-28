@@ -2709,53 +2709,35 @@ ProblemsManager::partitionGhostDofsOnDistributedMesh(const std::string &name,
     if (p_miit->numeredDofsCols == p_miit->numeredDofsRows) {
       loop_size = 1;
     }
+
+    typedef decltype(p_miit->numeredDofsRows) NumbDofTypeSharedPtr;
+    NumbDofTypeSharedPtr numered_dofs[] = {p_miit->numeredDofsRows,
+                                           p_miit->numeredDofsCols};
+
     // interate over dofs on rows and dofs on columns
     for (int ss = 0; ss != loop_size; ++ss) {
-      // get dofs which have not set
-      NumeredDofEntity_multiIndex::index<PetscLocalIdx_mi_tag>::type::iterator
-          dit,
-          hi_dit;
-      if (ss == 0) {
-        dit = p_miit->numeredDofsRows->get<PetscLocalIdx_mi_tag>().lower_bound(
-            -1);
-        hi_dit =
-            p_miit->numeredDofsRows->get<PetscLocalIdx_mi_tag>().upper_bound(
-                -1);
-      } else {
-        dit = p_miit->numeredDofsCols->get<PetscLocalIdx_mi_tag>().lower_bound(
-            -1);
-        hi_dit =
-            p_miit->numeredDofsCols->get<PetscLocalIdx_mi_tag>().upper_bound(
-                -1);
-      }
+      
       // create dofs view by uid
-      NumeredDofEntity_multiIndex_uid_view_ordered ghost_idx_view;
-      ghost_idx_view.insert(dit, hi_dit);
+      auto r = numered_dofs[ss]->get<PetscLocalIdx_mi_tag>().equal_range(-1);
+
+      std::vector<NumeredDofEntity_multiIndex::iterator> ghost_idx_view;
+      ghost_idx_view.reserve(std::distance(r.first, r.second));
+      for (; r.first != r.second; ++r.first)
+        ghost_idx_view.emplace_back(numered_dofs[ss]->project<0>(r.first));
+
+      auto cmp = [](auto a, auto b) {
+        return (*a)->getGlobalUniqueId() < (*b)->getGlobalUniqueId();
+      };
+      sort(ghost_idx_view.begin(), ghost_idx_view.end(), cmp);
+
       // intare over dofs which have negative local index
-      for (auto gdit = ghost_idx_view.begin(); gdit != ghost_idx_view.end();
-           ++gdit) {
-        // if (gdit->get()->getPStatus() == 0)
-        // continue;
-        boost::weak_ptr<NumeredDofEntity_multiIndex> numered_dofs_ptr;
-        if (ss == 0) {
-          numered_dofs_ptr = p_miit->numeredDofsRows;
-        } else {
-          numered_dofs_ptr = p_miit->numeredDofsCols;
-        }
-        if (auto r = numered_dofs_ptr.lock()) {
-          auto diit = r->find((*gdit)->getGlobalUniqueId());
-          if (diit->get()->getPetscGlobalDofIdx() == -1) {
-            SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                    "data inconsistency");
-          }
-          bool success = r->modify(
-              diit, NumeredDofEntity_local_idx_change((nb_local_dofs[ss])++));
-          if (!success) {
-            SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
-                    "modification unsuccessful");
-          }
-          (*nb_ghost_dofs[ss])++;
-        }
+      for (auto gid_it : ghost_idx_view) {
+        bool success = numered_dofs[ss]->modify(
+            gid_it, NumeredDofEntity_local_idx_change((nb_local_dofs[ss])++));
+        if (!success)
+          SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
+                  "modification unsuccessful");
+        ++(*nb_ghost_dofs[ss]);
       }
     }
     if (loop_size == 1) {
@@ -2801,10 +2783,10 @@ MoFEMErrorCode ProblemsManager::getFEMeshset(const std::string &prb_name,
   CHKERR m_field.get_moab().create_meshset(MESHSET_SET, *meshset);
   CHKERR m_field.get_problem(prb_name, &problem_ptr);
   auto fit = problem_ptr->numeredFiniteElements.get<FiniteElement_name_mi_tag>()
-            .lower_bound(fe_name);
+                 .lower_bound(fe_name);
   auto hi_fe_it =
       problem_ptr->numeredFiniteElements.get<FiniteElement_name_mi_tag>()
-                 .upper_bound(fe_name);
+          .upper_bound(fe_name);
   std::vector<EntityHandle> fe_vec;
   fe_vec.reserve(std::distance(fit, hi_fe_it));
   for (; fit != hi_fe_it; fit++) 
