@@ -532,7 +532,6 @@ template <int I> struct BuildFiniteElements {
           // Add FEDofEntity, first create dofs, one by one, note that memory
           // is already reserved. Then create shared pointers and finally add
           // th_FEName to element multi-index
-          const EntityHandle fe_ent = fe_ptr->getEnt();
           // There are data dofs on this element
           auto &side_number_ptr = fe_ptr->getSideNumberPtr(dof_ent);
           fe_ptr->getDofsSequence().lock()->emplace_back(side_number_ptr, *dit);
@@ -547,7 +546,6 @@ template <int I> struct BuildFiniteElements {
     // Add to data in FE
     for (auto fe_it : fe_vec) {
       if (auto fe_ptr = fe_it.lock()) {
-        const EntityHandle fe_ent = fe_ptr->getEnt();
         // It is a but unsafe, since if one mess up something in
         // buildFiniteElements, weak_ptr will not give pointer
         auto data_dofs_array_vec = fe_ptr->getDofsSequence().lock();
@@ -685,15 +683,30 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
              p_eit != adj_ents.pair_end(); ++p_eit) {
 
           const EntityHandle first = p_eit->first;
+          const EntityHandle second = p_eit->second;
+
+          typedef FieldEntity_multiIndex::index<
+              Composite_Name_And_Ent_mi_tag>::type FieldEntityByComposite;
           auto &field_ents_by_name_and_ent =
               entsFields.get<Composite_Name_And_Ent_mi_tag>();
-          auto meit = field_ents_by_name_and_ent.lower_bound(
-              boost::make_tuple(field_name, first));
+          FieldEntityByComposite::iterator meit;
 
-          const EntityHandle second = p_eit->second;
+          if (first == second)
+            meit = field_ents_by_name_and_ent.find(
+                boost::make_tuple(field_name, first));
+          else
+            meit = field_ents_by_name_and_ent.lower_bound(
+                boost::make_tuple(field_name, first));
+
           if (meit != field_ents_by_name_and_ent.end()) {
 
-            auto hi_meit = field_ents_by_name_and_ent.upper_bound(
+            decltype(meit) hi_meit;
+
+            if (first == second) {
+              hi_meit = meit;
+              ++hi_meit;
+            } else
+              hi_meit = field_ents_by_name_and_ent.upper_bound(
                   boost::make_tuple(field_name, second));
 
             // create list of finite elements with this dof UId
