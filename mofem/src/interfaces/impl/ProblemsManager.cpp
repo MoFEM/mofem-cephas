@@ -1709,7 +1709,7 @@ MoFEMErrorCode ProblemsManager::partitionSimpleProblem(const std::string &name,
 
   MoFEM::Interface &m_field = cOre;
   const Problem_multiIndex *problems_ptr;
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   if (!(cOre.getBuildMoFEM() & Core::BUILD_FIELD))
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "fields not build");
   if (!(cOre.getBuildMoFEM() & Core::BUILD_FE))
@@ -1722,8 +1722,7 @@ MoFEMErrorCode ProblemsManager::partitionSimpleProblem(const std::string &name,
     PetscPrintf(m_field.get_comm(), "Simple partition problem %s\n",
                 name.c_str());
   }
-  ierr = m_field.get_problems(&problems_ptr);
-  CHKERRG(ierr);
+  CHKERR m_field.get_problems(&problems_ptr);
   // find p_miit
   typedef Problem_multiIndex::index<Problem_mi_tag>::type ProblemByName;
   ProblemByName &problems_set =
@@ -1765,31 +1764,21 @@ MoFEMErrorCode ProblemsManager::partitionSimpleProblem(const std::string &name,
   const int *ranges_row;
 
   DofIdx nb_dofs_row = dofs_row_by_idx.size();
-  ierr = PetscLayoutCreate(m_field.get_comm(), &layout_row);
-  CHKERRG(ierr);
-  ierr = PetscLayoutSetBlockSize(layout_row, 1);
-  CHKERRG(ierr);
-  ierr = PetscLayoutSetSize(layout_row, nb_dofs_row);
-  CHKERRG(ierr);
-  ierr = PetscLayoutSetUp(layout_row);
-  CHKERRG(ierr);
-  ierr = PetscLayoutGetRanges(layout_row, &ranges_row);
-  CHKERRG(ierr);
+  CHKERR PetscLayoutCreate(m_field.get_comm(), &layout_row);
+  CHKERR PetscLayoutSetBlockSize(layout_row, 1);
+  CHKERR PetscLayoutSetSize(layout_row, nb_dofs_row);
+  CHKERR PetscLayoutSetUp(layout_row);
+  CHKERR PetscLayoutGetRanges(layout_row, &ranges_row);
   // get col range of local indices
   PetscLayout layout_col;
   const int *ranges_col;
   if (!square_matrix) {
     DofIdx nb_dofs_col = dofs_col_by_idx.size();
-    ierr = PetscLayoutCreate(m_field.get_comm(), &layout_col);
-    CHKERRG(ierr);
-    ierr = PetscLayoutSetBlockSize(layout_col, 1);
-    CHKERRG(ierr);
-    ierr = PetscLayoutSetSize(layout_col, nb_dofs_col);
-    CHKERRG(ierr);
-    ierr = PetscLayoutSetUp(layout_col);
-    CHKERRG(ierr);
-    ierr = PetscLayoutGetRanges(layout_col, &ranges_col);
-    CHKERRG(ierr);
+    CHKERR PetscLayoutCreate(m_field.get_comm(), &layout_col);
+    CHKERR PetscLayoutSetBlockSize(layout_col, 1);
+    CHKERR PetscLayoutSetSize(layout_col, nb_dofs_col);
+    CHKERR PetscLayoutSetUp(layout_col);
+    CHKERR PetscLayoutGetRanges(layout_col, &ranges_col);
   }
   for (unsigned int part = 0; part < (unsigned int)m_field.get_comm_size();
        part++) {
@@ -1850,20 +1839,17 @@ MoFEMErrorCode ProblemsManager::partitionSimpleProblem(const std::string &name,
       }
     }
   }
-  ierr = PetscLayoutDestroy(&layout_row);
-  CHKERRG(ierr);
+  CHKERR PetscLayoutDestroy(&layout_row);
   if (!square_matrix) {
-    ierr = PetscLayoutDestroy(&layout_col);
-    CHKERRG(ierr);
+    CHKERR PetscLayoutDestroy(&layout_col);
   }
   if (square_matrix) {
     nb_col_local_dofs = nb_row_local_dofs;
     nb_col_ghost_dofs = nb_row_ghost_dofs;
   }
-  ierr = printPartitionedProblem(&*p_miit, verb);
-  CHKERRG(ierr);
+  CHKERR printPartitionedProblem(&*p_miit, verb);
   cOre.getBuildMoFEM() |= Core::PARTITION_PROBLEM;
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode ProblemsManager::partitionProblem(const std::string &name,
