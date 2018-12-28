@@ -969,9 +969,7 @@ EntFiniteElement::getElementAdjacency(const boost::shared_ptr<Field> field_ptr,
 MoFEMErrorCode NumeredEntFiniteElement::getRowDofsByPetscGlobalDofIdx(
     DofIdx idx, const FENumeredDofEntity **dof_ptr) const {
   MoFEMFunctionBeginHot;
-  FENumeredDofEntity_multiIndex::index<PetscGlobalIdx_mi_tag>::type::iterator
-      dit;
-  dit = rows_dofs->get<PetscGlobalIdx_mi_tag>().find(idx);
+  auto dit = rows_dofs->get<PetscGlobalIdx_mi_tag>().find(idx);
   if (dit == rows_dofs->get<PetscGlobalIdx_mi_tag>().end()) {
     SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_FOUND,
              "dof which index < %d > not found", idx);
@@ -983,9 +981,7 @@ MoFEMErrorCode NumeredEntFiniteElement::getRowDofsByPetscGlobalDofIdx(
 MoFEMErrorCode NumeredEntFiniteElement::getColDofsByPetscGlobalDofIdx(
     DofIdx idx, const FENumeredDofEntity **dof_ptr) const {
   MoFEMFunctionBeginHot;
-  FENumeredDofEntity_multiIndex::index<PetscGlobalIdx_mi_tag>::type::iterator
-      dit;
-  dit = rows_dofs->get<PetscGlobalIdx_mi_tag>().find(idx);
+  auto dit = rows_dofs->get<PetscGlobalIdx_mi_tag>().find(idx);
   if (dit == rows_dofs->get<PetscGlobalIdx_mi_tag>().end()) {
     SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_FOUND,
              "dof which index < %d > not found", idx);
