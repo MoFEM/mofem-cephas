@@ -1272,11 +1272,11 @@ MoFEMErrorCode ProblemsManager::buildSubProblem(
       // Following reserve memory in sequences, only two allocations are here,
       // once for array of objects, next for array of shared pointers
 
-      // reserve memory for field  dofs
+      // aliased sequence of pointer is killed with element
       boost::shared_ptr<std::vector<NumeredDofEntity> > dofs_array =
           boost::shared_ptr<std::vector<NumeredDofEntity> >(
               new std::vector<NumeredDofEntity>());
-
+      // reserve memory for field  dofs
       if (ss == 0) {
         out_problem_it->getRowDofsSequence()->push_back(dofs_array);
       } else {
@@ -2511,8 +2511,9 @@ MoFEMErrorCode ProblemsManager::partitionFiniteElements(const std::string &name,
         // once for array of objects, next for array of shared pointers
 
         // reserve memory for field  dofs
-        boost::shared_ptr<std::vector<FENumeredDofEntity> > dofs_array =
-            boost::make_shared<std::vector<FENumeredDofEntity> >();
+        boost::shared_ptr<std::vector<FENumeredDofEntity>> dofs_array =
+            boost::shared_ptr<std::vector<FENumeredDofEntity>>(
+                numered_fe, new std::vector<FENumeredDofEntity>());
         if (ss == 0) {
           numered_fe->getRowDofsSequence() = dofs_array;
           if (!do_cols_fe) {
