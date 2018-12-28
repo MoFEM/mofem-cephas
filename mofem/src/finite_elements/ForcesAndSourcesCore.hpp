@@ -470,13 +470,6 @@ struct ForcesAndSourcesCore : public FEMethod {
                                         const EntityType type, const int side,
                                         VectorInt &indices) const;
 
-    // \deprecated Deprecated function with spelling mistake
-    DEPRECATED inline MoFEMErrorCode
-    getPorblemRowIndices(const std::string filed_name, const EntityType type,
-                         const int side, VectorInt &indices) const {
-      return getProblemRowIndices(filed_name, type, side, indices);
-    }
-
     /** \brief Get col indices
 
     Field could be or not declared for this element but is declared for problem
@@ -498,13 +491,6 @@ struct ForcesAndSourcesCore : public FEMethod {
       MoFEMFunctionBeginHot;
       ptrFE = ptr;
       MoFEMFunctionReturnHot(0);
-    }
-
-    // \deprecated Deprecated function with spelling mistake
-    DEPRECATED inline MoFEMErrorCode
-    getPorblemColIndices(const std::string filed_name, const EntityType type,
-                         const int side, VectorInt &indices) const {
-      return getProblemColIndices(filed_name, type, side, indices);
     }
 
     /** \brief Return raw pointer to Finite Element Method object
@@ -617,6 +603,26 @@ struct ForcesAndSourcesCore : public FEMethod {
     inline auto getFTensor0IntegrationWeight() {
       return FTensor::Tensor0<FTensor::PackPtr<double *, 1>>(
           &(getGaussPts()(getGaussPts().size1() - 1, 0)));
+    }
+
+    /**@}*/
+
+    /**@{*/
+
+    /** \name Deprecated (do not use) */
+
+    // \deprecated Deprecated function with spelling mistake
+    DEPRECATED inline MoFEMErrorCode
+    getPorblemRowIndices(const std::string filed_name, const EntityType type,
+                         const int side, VectorInt &indices) const {
+      return getProblemRowIndices(filed_name, type, side, indices);
+    }
+
+    // \deprecated Deprecated function with spelling mistake
+    DEPRECATED inline MoFEMErrorCode
+    getPorblemColIndices(const std::string filed_name, const EntityType type,
+                         const int side, VectorInt &indices) const {
+      return getProblemColIndices(filed_name, type, side, indices);
     }
 
     /**@}*/
