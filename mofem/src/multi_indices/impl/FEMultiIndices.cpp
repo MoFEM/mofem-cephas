@@ -572,7 +572,7 @@ DefaultElementAdjacency::defaultEdge(Interface &moab, const Field &field_ptr,
             "this field is not implemented for EDGE finite element");
   }
   // build side table
-  for (auto e : adjacency) 
+  for (auto e : adjacency)
     fe_ptr.getSideNumberPtr(e);
   MoFEMFunctionReturn(0);
 }
@@ -611,7 +611,7 @@ DefaultElementAdjacency::defaultTri(Interface &moab, const Field &field_ptr,
             "this field is not implemented for TRI finite element");
   }
   // build side table
-  for (Range::iterator eit = adjacency.begin(); eit != adjacency.end(); eit++) 
+  for (Range::iterator eit = adjacency.begin(); eit != adjacency.end(); eit++)
     fe_ptr.getSideNumberPtr(*eit);
   MoFEMFunctionReturn(0);
 }
@@ -661,87 +661,88 @@ DefaultElementAdjacency::defaultPrism(Interface &moab, const Field &field_ptr,
   const EntityHandle prism = fe_ptr.getEnt();
   Range nodes;
   // initialize side sets
-    fe_ptr.getRefElement()->getSideNumberPtr(prism);
-    EntityHandle face_side3, face_side4;
-    CHKERR moab.side_element(prism, 2, 3, face_side3);
-    CHKERR moab.side_element(prism, 2, 4, face_side4);
-    fe_ptr.getRefElement()->getSideNumberPtr(face_side3);
-    fe_ptr.getRefElement()->getSideNumberPtr(face_side4);
-    for (int qq = 0; qq < 3; qq++) {
-      EntityHandle quad = 0;
-      rval = moab.side_element(prism, 2, qq, quad);
-      if (rval != MB_SUCCESS || quad == 0)
-        continue;
-      int side_number, sense, offset;
-      rval = moab.side_number(prism, quad, side_number, sense, offset);
-      if (side_number == -1 || rval != MB_SUCCESS)
-        continue;
-      const_cast<SideNumber_multiIndex &>(fe_ptr.getSideNumberTable())
-          .insert(boost::shared_ptr<SideNumber>(
-              new SideNumber(quad, side_number, sense, offset)));
+  fe_ptr.getRefElement()->getSideNumberPtr(prism);
+  EntityHandle face_side3, face_side4;
+  CHKERR moab.side_element(prism, 2, 3, face_side3);
+  CHKERR moab.side_element(prism, 2, 4, face_side4);
+  fe_ptr.getRefElement()->getSideNumberPtr(face_side3);
+  fe_ptr.getRefElement()->getSideNumberPtr(face_side4);
+  for (int qq = 0; qq < 3; qq++) {
+    EntityHandle quad = 0;
+    rval = moab.side_element(prism, 2, qq, quad);
+    if (rval != MB_SUCCESS || quad == 0)
+      continue;
+    int side_number, sense, offset;
+    rval = moab.side_number(prism, quad, side_number, sense, offset);
+    if (side_number == -1 || rval != MB_SUCCESS)
+      continue;
+    const_cast<SideNumber_multiIndex &>(fe_ptr.getSideNumberTable())
+        .insert(boost::shared_ptr<SideNumber>(
+            new SideNumber(quad, side_number, sense, offset)));
+  }
+  int ee = 0;
+  for (; ee < 3; ee++) {
+    EntityHandle edge = 0;
+    CHKERR moab.side_element(prism, 1, ee, edge);
+    boost::shared_ptr<SideNumber> side_ptr =
+        fe_ptr.getRefElement()->getSideNumberPtr(edge);
+    if (side_ptr->side_number != ee) {
+      SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+               "data inconsistency for edge %d while in FE datastructure is "
+               "numbered %d.",
+               ee, side_ptr->side_number);
     }
-    int ee = 0;
-    for (; ee < 3; ee++) {
-      EntityHandle edge = 0;
-      CHKERR moab.side_element(prism, 1, ee, edge);
-      boost::shared_ptr<SideNumber> side_ptr =
-          fe_ptr.getRefElement()->getSideNumberPtr(edge);
+    CHKERR moab.side_element(prism, 1, 6 + ee, edge);
+    side_ptr = fe_ptr.getRefElement()->getSideNumberPtr(edge);
+    if (side_ptr->side_number != ee + 6) {
       if (side_ptr->side_number != ee) {
         SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                 "data inconsistency for edge %d while in FE datastructure is "
-                 "numbered %d.",
+                 "data inconsistency for edge %d while in FE datastructure "
+                 "is numbered %d.",
                  ee, side_ptr->side_number);
-      }
-      CHKERR moab.side_element(prism, 1, 6 + ee, edge);
-      side_ptr = fe_ptr.getRefElement()->getSideNumberPtr(edge);
-      if (side_ptr->side_number != ee + 6) {
-        if (side_ptr->side_number != ee) {
-          SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                   "data inconsistency for edge %d while in FE datastructure "
-                   "is numbered %d.",
-                   ee, side_ptr->side_number);
-        } else {
-          side_ptr->brother_side_number = ee + 6;
-        }
+      } else {
+        side_ptr->brother_side_number = ee + 6;
       }
     }
-    for (; ee < 6; ee++) {
-      EntityHandle edge = 0;
-      rval = moab.side_element(prism, 1, ee, edge);
-      if (rval != MB_SUCCESS || edge == 0)
-        continue;
-      int side_number, sense, offset;
-      rval = moab.side_number(prism, edge, side_number, sense, offset);
-      if (side_number == -1 || rval != MB_SUCCESS)
-        continue;
-      const_cast<SideNumber_multiIndex &>(fe_ptr.getSideNumberTable())
-          .insert(boost::shared_ptr<SideNumber>(
-              new SideNumber(edge, side_number, sense, offset)));
+  }
+  for (; ee < 6; ee++) {
+    EntityHandle edge = 0;
+    rval = moab.side_element(prism, 1, ee, edge);
+    if (rval != MB_SUCCESS || edge == 0)
+      continue;
+    int side_number, sense, offset;
+    rval = moab.side_number(prism, edge, side_number, sense, offset);
+    if (side_number == -1 || rval != MB_SUCCESS)
+      continue;
+    const_cast<SideNumber_multiIndex &>(fe_ptr.getSideNumberTable())
+        .insert(boost::shared_ptr<SideNumber>(
+            new SideNumber(edge, side_number, sense, offset)));
+  }
+  int nn = 0;
+  for (; nn < 3; nn++) {
+    EntityHandle node;
+    CHKERR moab.side_element(prism, 0, nn, node);
+    boost::shared_ptr<SideNumber> side_ptr =
+        fe_ptr.getRefElement()->getSideNumberPtr(node);
+    if (side_ptr->side_number != nn) {
+      SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+               "data inconsistency for node %d while in FE datastructure is "
+               "numbered %d.",
+               nn, side_ptr->side_number);
     }
-    int nn = 0;
-    for (; nn < 3; nn++) {
-      EntityHandle node;
-      CHKERR moab.side_element(prism, 0, nn, node);
-      boost::shared_ptr<SideNumber> side_ptr =
-          fe_ptr.getRefElement()->getSideNumberPtr(node);
+    CHKERR moab.side_element(prism, 0, nn + 3, node);
+    side_ptr = fe_ptr.getRefElement()->getSideNumberPtr(node);
+    if (side_ptr->side_number != nn + 3) {
       if (side_ptr->side_number != nn) {
         SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                 "data inconsistency for node %d while in FE datastructure is numbered %d.",
+                 "data inconsistency for node %d while in FE datastructure is "
+                 "numbered %d.",
                  nn, side_ptr->side_number);
-      }
-      CHKERR moab.side_element(prism, 0, nn + 3, node);
-      side_ptr = fe_ptr.getRefElement()->getSideNumberPtr(node);
-      if (side_ptr->side_number != nn + 3) {
-        if (side_ptr->side_number != nn) {
-          SETERRQ2(
-              PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-              "data inconsistency for node %d while in FE datastructure is numbered %d.",
-              nn, side_ptr->side_number);
-        } else {
-          side_ptr->brother_side_number = nn + 3;
-        }
+      } else {
+        side_ptr->brother_side_number = nn + 3;
       }
     }
+  }
 
   // get adjacencies
   SideNumber_multiIndex &side_table =
