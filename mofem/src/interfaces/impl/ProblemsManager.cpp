@@ -1424,7 +1424,7 @@ MoFEMErrorCode ProblemsManager::buildCompsedProblem(
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "adjacencies not build");
   MoFEM::Interface &m_field = cOre;
   const Problem_multiIndex *problems_ptr;
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
 
   ierr = m_field.clear_problem(out_name);
   CHKERRG(ierr);
