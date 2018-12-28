@@ -2820,12 +2820,10 @@ ProblemsManager::getProblemElementsLayout(const std::string &name,
                                           PetscLayout *layout) const {
   MoFEM::Interface &m_field = cOre;
   const Problem *problem_ptr;
-  MoFEMFunctionBeginHot;
-  ierr = m_field.get_problem(name, &problem_ptr);
-  CHKERRG(ierr);
-  ierr = problem_ptr->getNumberOfElementsByNameAndPart(PETSC_COMM_WORLD,
+  MoFEMFunctionBegin;
+  CHKERR m_field.get_problem(name, &problem_ptr);
+  CHKERR problem_ptr->getNumberOfElementsByNameAndPart(PETSC_COMM_WORLD,
                                                        fe_name, layout);
-  CHKERRG(ierr);
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 } // namespace MoFEM
