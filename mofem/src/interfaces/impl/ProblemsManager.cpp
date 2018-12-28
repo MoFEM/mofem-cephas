@@ -2641,7 +2641,7 @@ MoFEMErrorCode ProblemsManager::partitionGhostDofs(const std::string &name,
     }
   }
 
-  if (verb > 0) {
+  if (verb > QUIET) {
     std::ostringstream ss;
     ss << "partition_ghost_col_dofs: rank = " << m_field.get_comm_rank()
        << " FEs col ghost dofs " << *p_miit << " Nb. col ghost dof "
