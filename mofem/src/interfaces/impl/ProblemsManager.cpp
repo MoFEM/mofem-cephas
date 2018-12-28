@@ -82,14 +82,12 @@ ProblemsManager::~ProblemsManager() {}
 MoFEMErrorCode ProblemsManager::getOptions() {
   MoFEM::Interface &m_field = cOre;
   MoFEMFunctionBeginHot;
-  ierr = PetscOptionsBegin(m_field.get_comm(), "", "Problem manager", "none");
-  CHKERRG(ierr);
+  CHKERR PetscOptionsBegin(m_field.get_comm(), "", "Problem manager", "none");
   {
-    ierr = PetscOptionsBool(
+    CHKERR PetscOptionsBool(
         "-problem_build_from_fields",
         "Add DOFs to problem directly from fields not through DOFs on elements",
         "", buildProblemFromFields, &buildProblemFromFields, NULL);
-    CHKERRG(ierr);
   }
   ierr = PetscOptionsEnd();
   CHKERRG(ierr);
