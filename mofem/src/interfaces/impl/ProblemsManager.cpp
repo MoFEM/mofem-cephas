@@ -2473,9 +2473,8 @@ MoFEMErrorCode ProblemsManager::partitionFiniteElements(const std::string &name,
         // once for array of objects, next for array of shared pointers
 
         // reserve memory for field  dofs
-        boost::shared_ptr<std::vector<FENumeredDofEntity>> dofs_array =
-            boost::shared_ptr<std::vector<FENumeredDofEntity>>(
-                numered_fe, new std::vector<FENumeredDofEntity>());
+        boost::shared_ptr<std::vector<FENumeredDofEntity>> dofs_array(
+            new std::vector<FENumeredDofEntity>());
 
         if (!ss) {
           numered_fe->getRowDofsSequence() = dofs_array;
