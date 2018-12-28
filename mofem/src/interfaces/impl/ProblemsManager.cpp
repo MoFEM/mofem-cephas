@@ -1426,10 +1426,8 @@ MoFEMErrorCode ProblemsManager::buildCompsedProblem(
   const Problem_multiIndex *problems_ptr;
   MoFEMFunctionBegin;
 
-  ierr = m_field.clear_problem(out_name);
-  CHKERRG(ierr);
-  ierr = m_field.get_problems(&problems_ptr);
-  CHKERRG(ierr);
+  CHKERR m_field.clear_problem(out_name);
+  CHKERR m_field.get_problems(&problems_ptr);
   // get reference to all problems
   typedef Problem_multiIndex::index<Problem_mi_tag>::type ProblemByName;
   ProblemByName &problems_by_name =
@@ -1533,8 +1531,7 @@ MoFEMErrorCode ProblemsManager::buildCompsedProblem(
     for (unsigned int pp = 0; pp != add_prb_ptr[ss]->size(); pp++) {
       PetscInt *dofs_out_idx_ptr;
       int nb_local_dofs = (*add_prb_ptr[ss])[pp]->getNbLocalDofsRow();
-      ierr = PetscMalloc(nb_local_dofs * sizeof(int), &dofs_out_idx_ptr);
-      CHKERRG(ierr);
+      CHKERR PetscMalloc(nb_local_dofs * sizeof(int), &dofs_out_idx_ptr);
       if (ss == 0) {
         dit = (*add_prb_ptr[ss])[pp]
                   ->numeredDofsRows->get<PetscGlobalIdx_mi_tag>()
@@ -1574,9 +1571,8 @@ MoFEMErrorCode ProblemsManager::buildCompsedProblem(
                 "Data inconsistency");
       }
       IS is;
-      ierr = ISCreateGeneral(m_field.get_comm(), is_nb, dofs_out_idx_ptr,
+      CHKERR ISCreateGeneral(m_field.get_comm(), is_nb, dofs_out_idx_ptr,
                              PETSC_OWN_POINTER, &is);
-      CHKERRG(ierr);
       (*add_prb_is[ss]).push_back(is);
       if (ss == 0) {
         shift_glob += (*add_prb_ptr[ss])[pp]->getNbDofsRow();
@@ -1588,8 +1584,7 @@ MoFEMErrorCode ProblemsManager::buildCompsedProblem(
       if (square_matrix) {
         (*add_prb_ptr[1]).push_back((*add_prb_ptr[0])[pp]);
         (*add_prb_is[1]).push_back(is);
-        ierr = PetscObjectReference((PetscObject)is);
-        CHKERRG(ierr);
+        CHKERR PetscObjectReference((PetscObject)is);
       }
     }
   }
@@ -1650,11 +1645,9 @@ MoFEMErrorCode ProblemsManager::buildCompsedProblem(
 
     // set new dofs mapping
     IS is;
-    ierr = ISCreateGeneral(m_field.get_comm(), idx.size(), &*idx.begin(),
+    CHKERR ISCreateGeneral(m_field.get_comm(), idx.size(), &*idx.begin(),
                            PETSC_USE_POINTER, &is);
-    CHKERRG(ierr);
-    ierr = ISGetSize(is, nb_dofs[ss]);
-    CHKERRG(ierr);
+    CHKERR ISGetSize(is, nb_dofs[ss]);
     if (square_matrix) {
       *nb_dofs[1] = *nb_dofs[0];
     }
@@ -1664,12 +1657,9 @@ MoFEMErrorCode ProblemsManager::buildCompsedProblem(
     //   PetscSynchronizedFlush(m_field.get_comm(),PETSC_STDOUT);
     // }
     AO ao;
-    ierr = AOCreateMappingIS(is, PETSC_NULL, &ao);
-    CHKERRG(ierr);
-    for (unsigned int pp = 0; pp != (*add_prb_is[ss]).size(); pp++) {
-      ierr = AOApplicationToPetscIS(ao, (*add_prb_is[ss])[pp]);
-      CHKERRG(ierr);
-    }
+    CHKERR AOCreateMappingIS(is, PETSC_NULL, &ao);
+    for (unsigned int pp = 0; pp != (*add_prb_is[ss]).size(); pp++)
+      CHKERR AOApplicationToPetscIS(ao, (*add_prb_is[ss])[pp]);
 
     // Set DOFs numeration
     {
@@ -1682,11 +1672,9 @@ MoFEMErrorCode ProblemsManager::buildCompsedProblem(
       }
       // set new global dofs numeration
       IS is_new;
-      ierr = ISCreateGeneral(m_field.get_comm(), idx_new.size(),
+      CHKERR ISCreateGeneral(m_field.get_comm(), idx_new.size(),
                              &*idx_new.begin(), PETSC_USE_POINTER, &is_new);
-      CHKERRG(ierr);
-      ierr = AOApplicationToPetscIS(ao, is_new);
-      CHKERRG(ierr);
+      CHKERR AOApplicationToPetscIS(ao, is_new);
       // set global indices to multi-index
       std::vector<int>::iterator vit = idx_new.begin();
       for (NumeredDofEntityByUId::iterator dit =
@@ -1700,25 +1688,20 @@ MoFEMErrorCode ProblemsManager::buildCompsedProblem(
                   "modification unsuccessful");
         }
       }
-      ierr = ISDestroy(&is_new);
-      CHKERRG(ierr);
+      CHKERR ISDestroy(&is_new);
     }
-    ierr = ISDestroy(&is);
-    CHKERRG(ierr);
-    ierr = AODestroy(&ao);
-    CHKERRG(ierr);
+    CHKERR ISDestroy(&is);
+    CHKERR AODestroy(&ao);
   }
 
-  ierr = printPartitionedProblem(&*out_problem_it, verb);
-  CHKERRG(ierr);
-  ierr = debugPartitionedProblem(&*out_problem_it, verb);
-  CHKERRG(ierr);
+  CHKERR printPartitionedProblem(&*out_problem_it, verb);
+  CHKERR debugPartitionedProblem(&*out_problem_it, verb);
 
   // Inidcate that porble has been build
   cOre.getBuildMoFEM() |= Core::BUILD_PROBLEM;
   cOre.getBuildMoFEM() |= Core::PARTITION_PROBLEM;
 
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode ProblemsManager::partitionSimpleProblem(const std::string &name,
