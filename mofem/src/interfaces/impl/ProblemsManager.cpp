@@ -2580,8 +2580,8 @@ MoFEMErrorCode ProblemsManager::partitionGhostDofs(const std::string &name,
   // do work if more than one processor
   if (m_field.get_comm_size() > 1) {
 
-    NumeredDofEntity_multiIndex_uid_view_ordered ghost_idx_col_view,
-        ghost_idx_row_view;
+    NumeredDofEntity_multiIndex_uid_view_ordered ghost_idx_row_view,
+        ghost_idx_col_view;
 
     // get elements on this partition
     auto fe_range =
@@ -2614,15 +2614,14 @@ MoFEMErrorCode ProblemsManager::partitionGhostDofs(const std::string &name,
       }
     }
 
-    int *nb_ghost_dofs[2] = {&nb_col_ghost_dofs, &nb_row_ghost_dofs};
-    int nb_local_dofs[2] = {p_miit->nbLocDofsCol, p_miit->nbLocDofsRow};
+    int *nb_ghost_dofs[2] = {&nb_row_ghost_dofs, &nb_col_ghost_dofs};
+    int nb_local_dofs[2] = {p_miit->nbLocDofsRow, p_miit->nbLocDofsCol};
 
     NumeredDofEntity_multiIndex_uid_view_ordered *ghost_idx_view[2] = {
-        &ghost_idx_col_view, &ghost_idx_row_view};
-
+        &ghost_idx_row_view, &ghost_idx_col_view};
     NumeredDofEntityByUId *dof_by_uid_no_const[2] = {
-        &p_miit->numeredDofsCols->get<Unique_mi_tag>(),
-        &p_miit->numeredDofsRows->get<Unique_mi_tag>()};
+        &p_miit->numeredDofsRows->get<Unique_mi_tag>(),
+        &p_miit->numeredDofsCols->get<Unique_mi_tag>()};
 
     int loop_size = 2;
     if (p_miit->numeredDofsCols == p_miit->numeredDofsRows) {
@@ -2630,7 +2629,7 @@ MoFEMErrorCode ProblemsManager::partitionGhostDofs(const std::string &name,
     }
 
     // set local ghost dofs indices
-    for (int ss = 0; ss < loop_size; ss++) {
+    for (int ss = 0; ss != loop_size; ++ss) {
       for (auto &gid : *ghost_idx_view[ss]) {
         NumeredDofEntityByUId::iterator dof =
             dof_by_uid_no_const[ss]->find(gid->getGlobalUniqueId());
