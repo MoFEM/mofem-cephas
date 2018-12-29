@@ -2562,75 +2562,84 @@ MoFEMErrorCode ProblemsManager::partitionGhostDofs(const std::string &name,
     SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
             "partitions finite elements not build");
 
-  // get problem pointer
-  typedef Problem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
   // find p_miit
   CHKERR m_field.get_problems(&problems_ptr);
-  ProblemsByName &problems_set =
-      const_cast<ProblemsByName &>(problems_ptr->get<Problem_mi_tag>());
-  ProblemsByName::iterator p_miit = problems_set.find(name);
+
+  // get problem pointer
+  auto p_miit = problems_ptr->get<Problem_mi_tag>().find(name);
+  if (p_miit == problems_ptr->get<Problem_mi_tag>().end())
+    SETERRQ1(PETSC_COMM_SELF, MOFEM_INVALID_DATA, "Problem %s not fond",
+             name.c_str());
 
   // get reference to number of ghost dofs
-  DofIdx &nb_row_ghost_dofs = p_miit->nbGhostDofsRow;
-  DofIdx &nb_col_ghost_dofs = p_miit->nbGhostDofsCol;
+  int &nb_row_ghost_dofs = p_miit->nbGhostDofsRow;
+  int &nb_col_ghost_dofs = p_miit->nbGhostDofsCol;
   nb_row_ghost_dofs = 0;
   nb_col_ghost_dofs = 0;
 
   // do work if more than one processor
   if (m_field.get_comm_size() > 1) {
+
     NumeredDofEntity_multiIndex_uid_view_ordered ghost_idx_col_view,
         ghost_idx_row_view;
+
     // get elements on this partition
-    auto fe_it = p_miit->numeredFiniteElements.get<Part_mi_tag>().lower_bound(
-        m_field.get_comm_rank());
-    auto hi_fe_it =
-        p_miit->numeredFiniteElements.get<Part_mi_tag>().upper_bound(
+    auto fe_range =
+        p_miit->numeredFiniteElements.get<Part_mi_tag>().equal_range(
             m_field.get_comm_rank());
+
     // get dofs on elements which are not part of this partition
-    for (; fe_it != hi_fe_it; fe_it++) {
-      if ((*fe_it)->rows_dofs->size() > 0) {
-        auto rowdofit = (*fe_it)->rows_dofs->begin();
-        auto hi_rowdofit = (*fe_it)->rows_dofs->end();
-        for (; rowdofit != hi_rowdofit; rowdofit++) {
-          if ((*rowdofit)->getPart() == (unsigned int)m_field.get_comm_rank())
-            continue;
-          ghost_idx_row_view.insert((*rowdofit)->getNumeredDofEntityPtr());
-        }
-      }
-      if ((*fe_it)->cols_dofs->size() > 0) {
-        auto coldofit = (*fe_it)->cols_dofs->begin();
-        auto hi_coldofit = (*fe_it)->cols_dofs->end();
-        for (; coldofit != hi_coldofit; coldofit++) {
-          if ((*coldofit)->getPart() == (unsigned int)m_field.get_comm_rank())
-            continue;
-          ghost_idx_col_view.insert((*coldofit)->getNumeredDofEntityPtr());
+
+    // rows
+    auto hint_r = ghost_idx_row_view.begin();
+    for (auto fe_ptr = fe_range.first; fe_ptr != fe_range.second; ++fe_ptr) {
+      for (auto &dof_ptr : *(*fe_ptr)->rows_dofs) {
+        if (dof_ptr->getPart() != (unsigned int)m_field.get_comm_rank()) {
+          hint_r = ghost_idx_row_view.emplace_hint(
+              hint_r, dof_ptr->getNumeredDofEntityPtr());
         }
       }
     }
-    DofIdx *nb_ghost_dofs[2] = {&nb_col_ghost_dofs, &nb_row_ghost_dofs};
-    DofIdx nb_local_dofs[2] = {p_miit->nbLocDofsCol, p_miit->nbLocDofsRow};
+
+    // columns
+    if (p_miit->numeredDofsCols == p_miit->numeredDofsRows) {
+      auto hint_c = ghost_idx_col_view.begin();
+      for (auto fe_ptr = fe_range.first; fe_ptr != fe_range.second; ++fe_ptr) {
+        for (auto &dof_ptr : *(*fe_range.first)->cols_dofs) {
+          if (dof_ptr->getPart() != (unsigned int)m_field.get_comm_rank()) {
+            hint_c = ghost_idx_col_view.emplace_hint(
+                hint_c, dof_ptr->getNumeredDofEntityPtr());
+          }
+        }
+      }
+    }
+
+    int *nb_ghost_dofs[2] = {&nb_col_ghost_dofs, &nb_row_ghost_dofs};
+    int nb_local_dofs[2] = {p_miit->nbLocDofsCol, p_miit->nbLocDofsRow};
+
     NumeredDofEntity_multiIndex_uid_view_ordered *ghost_idx_view[2] = {
         &ghost_idx_col_view, &ghost_idx_row_view};
+
     NumeredDofEntityByUId *dof_by_uid_no_const[2] = {
         &p_miit->numeredDofsCols->get<Unique_mi_tag>(),
         &p_miit->numeredDofsRows->get<Unique_mi_tag>()};
+
     int loop_size = 2;
     if (p_miit->numeredDofsCols == p_miit->numeredDofsRows) {
       loop_size = 1;
     }
-    // set local indices
+
+    // set local ghost dofs indices
     for (int ss = 0; ss < loop_size; ss++) {
-      auto ghost_idx_miit = ghost_idx_view[ss]->begin();
-      for (; ghost_idx_miit != ghost_idx_view[ss]->end(); ghost_idx_miit++) {
-        NumeredDofEntityByUId::iterator diit = dof_by_uid_no_const[ss]->find(
-            (*ghost_idx_miit)->getGlobalUniqueId());
-        if ((*diit)->petscLocalDofIdx != (DofIdx)-1) {
+      for (auto &gid : *ghost_idx_view[ss]) {
+        NumeredDofEntityByUId::iterator dof =
+            dof_by_uid_no_const[ss]->find(gid->getGlobalUniqueId());
+        if (PetscUnlikely((*dof)->petscLocalDofIdx != (DofIdx)-1))
           SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
                   "inconsistent data, ghost dof already set");
-        }
         bool success = dof_by_uid_no_const[ss]->modify(
-            diit, NumeredDofEntity_local_idx_change(nb_local_dofs[ss]++));
-        if (!success)
+            dof, NumeredDofEntity_local_idx_change(nb_local_dofs[ss]++));
+        if (PetscUnlikely(!success))
           SETERRQ(m_field.get_comm(), MOFEM_OPERATION_UNSUCCESSFUL,
                   "modification unsuccessful");
         (*nb_ghost_dofs[ss])++;
