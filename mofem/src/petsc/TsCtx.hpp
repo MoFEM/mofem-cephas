@@ -22,8 +22,8 @@
 namespace MoFEM {
 
 /** \brief Interface for Time Stepping (TS) solver
-  * \ingroup petsc_context_struture
-  */
+ * \ingroup petsc_context_struture
+ */
 struct TsCtx {
 
   MoFEM::Interface &mField;
@@ -33,7 +33,7 @@ struct TsCtx {
   MoFEMTypes bH; ///< If set to MF_EXIST check if element exist
 
   /// \deprecated use PairNameFEMethodPtr
-  DEPRECATED  typedef MoFEM::PairNameFEMethodPtr loop_pair_type;
+  DEPRECATED typedef MoFEM::PairNameFEMethodPtr loop_pair_type;
 
   /// \deprecated use FEMethodsSequence
   DEPRECATED typedef MoFEM::FEMethodsSequence loops_to_do_type;
@@ -62,41 +62,60 @@ struct TsCtx {
   PetscLogEvent MOFEM_EVENT_TsCtxMonitor;
 
   bool zeroMatrix;
-  TsCtx(MoFEM::Interface &m_field,const std::string &problem_name):
-    mField(m_field),
-    moab(m_field.get_moab()),
-    problemName(problem_name),
-    bH(MF_EXIST),
-    zeroMatrix(true) {
-    PetscLogEventRegister("LoopTsIFunction",0,&MOFEM_EVENT_TsCtxIFunction);
-    PetscLogEventRegister("LoopTsIJacobian",0,&MOFEM_EVENT_TsCtxIJacobian);
-    PetscLogEventRegister("LoopTsRHSFunction",0,&MOFEM_EVENT_TsCtxRHSFunction);
-    PetscLogEventRegister("LoopTsRHSJacobian",0,&MOFEM_EVENT_TsCtxRHSJacobian);
-    PetscLogEventRegister("LoopTsMonitor",0,&MOFEM_EVENT_TsCtxMonitor);
+  TsCtx(MoFEM::Interface &m_field, const std::string &problem_name)
+      : mField(m_field), moab(m_field.get_moab()), problemName(problem_name),
+        bH(MF_EXIST), zeroMatrix(true) {
+    PetscLogEventRegister("LoopTsIFunction", 0, &MOFEM_EVENT_TsCtxIFunction);
+    PetscLogEventRegister("LoopTsIJacobian", 0, &MOFEM_EVENT_TsCtxIJacobian);
+    PetscLogEventRegister("LoopTsRHSFunction", 0,
+                          &MOFEM_EVENT_TsCtxRHSFunction);
+    PetscLogEventRegister("LoopTsRHSJacobian", 0,
+                          &MOFEM_EVENT_TsCtxRHSJacobian);
+    PetscLogEventRegister("LoopTsMonitor", 0, &MOFEM_EVENT_TsCtxMonitor);
   }
 
-  FEMethodsSequence& get_loops_to_do_IFunction() { return loops_to_do_IFunction; }
-  FEMethodsSequence& get_loops_to_do_IJacobian() { return loops_to_do_IJacobian; }
-  FEMethodsSequence& get_loops_to_do_Monitor() { return loops_to_do_Monitor; }
+  FEMethodsSequence &get_loops_to_do_IFunction() {
+    return loops_to_do_IFunction;
+  }
+  FEMethodsSequence &get_loops_to_do_IJacobian() {
+    return loops_to_do_IJacobian;
+  }
+  FEMethodsSequence &get_loops_to_do_Monitor() { return loops_to_do_Monitor; }
 
-  BasicMethodsSequence& get_preProcess_to_do_IFunction() { return preProcess_IFunction; }
-  BasicMethodsSequence& get_postProcess_to_do_IFunction() { return postProcess_IFunction; }
-  BasicMethodsSequence& get_preProcess_to_do_IJacobian() { return preProcess_IJacobian; }
-  BasicMethodsSequence& get_postProcess_to_do_IJacobian() { return postProcess_IJacobian; }
-  BasicMethodsSequence& get_preProcess_to_do_Monitor() { return preProcess_Monitor; }
-  BasicMethodsSequence& get_postProcess_to_do_Monitor() { return postProcess_Monitor; }
+  BasicMethodsSequence &get_preProcess_to_do_IFunction() {
+    return preProcess_IFunction;
+  }
+  BasicMethodsSequence &get_postProcess_to_do_IFunction() {
+    return postProcess_IFunction;
+  }
+  BasicMethodsSequence &get_preProcess_to_do_IJacobian() {
+    return preProcess_IJacobian;
+  }
+  BasicMethodsSequence &get_postProcess_to_do_IJacobian() {
+    return postProcess_IJacobian;
+  }
+  BasicMethodsSequence &get_preProcess_to_do_Monitor() {
+    return preProcess_Monitor;
+  }
+  BasicMethodsSequence &get_postProcess_to_do_Monitor() {
+    return postProcess_Monitor;
+  }
 
-  friend PetscErrorCode f_TSSetIFunction(TS ts,PetscReal t,Vec u,Vec u_t,Vec F,void *ctx);
-  friend PetscErrorCode f_TSSetIJacobian(TS ts,PetscReal t,Vec u,Vec U_t,PetscReal a,Mat A,Mat B,void *ctx);
-  friend PetscErrorCode f_TSMonitorSet(TS ts,PetscInt step,PetscReal t,Vec u,void *ctx);
-
+  friend PetscErrorCode f_TSSetIFunction(TS ts, PetscReal t, Vec u, Vec u_t,
+                                         Vec F, void *ctx);
+  friend PetscErrorCode f_TSSetIJacobian(TS ts, PetscReal t, Vec u, Vec U_t,
+                                         PetscReal a, Mat A, Mat B, void *ctx);
+  friend PetscErrorCode f_TSMonitorSet(TS ts, PetscInt step, PetscReal t, Vec u,
+                                       void *ctx);
 };
 
-PetscErrorCode f_TSSetIFunction(TS ts,PetscReal t,Vec u,Vec u_t,Vec F,void *ctx);
-PetscErrorCode f_TSSetIJacobian(TS ts,PetscReal t,Vec u,Vec u_t,PetscReal a,Mat A,Mat B,void *ctx);
-PetscErrorCode f_TSMonitorSet(TS ts,PetscInt step,PetscReal t,Vec u,void *ctx);
+PetscErrorCode f_TSSetIFunction(TS ts, PetscReal t, Vec u, Vec u_t, Vec F,
+                                void *ctx);
+PetscErrorCode f_TSSetIJacobian(TS ts, PetscReal t, Vec u, Vec u_t, PetscReal a,
+                                Mat A, Mat B, void *ctx);
+PetscErrorCode f_TSMonitorSet(TS ts, PetscInt step, PetscReal t, Vec u,
+                              void *ctx);
 
-
-}
+} // namespace MoFEM
 
 #endif // __TSCTX_HPP__
