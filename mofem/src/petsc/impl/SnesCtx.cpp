@@ -193,7 +193,7 @@ PetscErrorCode SnesMat(SNES snes, Vec x, Mat A, Mat B, void *ctx) {
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode SNESMoFEMSetAssemblyType(SNES snes, MatAssemblyType type) {
+MoFEMErrorCode SnesMoFEMSetAssemblyType(SNES snes, MatAssemblyType type) {
   SnesCtx *snes_ctx;
   // PetscValidHeaderSpecific(snes,SNES_CLASSID,1);
   MoFEMFunctionBeginHot;
@@ -203,11 +203,7 @@ MoFEMErrorCode SNESMoFEMSetAssemblyType(SNES snes, MatAssemblyType type) {
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode SNESMoFEMSetAssmblyType(SNES snes, MatAssemblyType type) {
-  return SNESMoFEMSetAssemblyType(snes, type);
-}
-
-MoFEMErrorCode SNESMoFEMSetBehavior(SNES snes, MoFEMTypes bh) {
+MoFEMErrorCode SnesMoFEMSetBehavior(SNES snes, MoFEMTypes bh) {
   SnesCtx *snes_ctx;
   // PetscValidHeaderSpecific(snes,SNES_CLASSID,1);
   MoFEMFunctionBeginHot;
