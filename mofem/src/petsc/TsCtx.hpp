@@ -45,7 +45,7 @@ struct TsCtx {
   typedef MoFEM::FEMethodsSequence FEMethodsSequence;
   typedef MoFEM::BasicMethodsSequence BasicMethodsSequence;
 
-  FEMethodsSequence loops_to_do_IJacobian; 
+  FEMethodsSequence loops_to_do_IJacobian;
   FEMethodsSequence loops_to_do_IFunction;
   FEMethodsSequence loops_to_do_Monitor;
   BasicMethodsSequence preProcess_IJacobian;
@@ -88,11 +88,11 @@ struct TsCtx {
 
   /**
    * @brief Get the loops to do IJacobian object
-   * 
-   * It is sequence of finite elements used to evalite the left hand sie of 
+   *
+   * It is sequence of finite elements used to evalite the left hand sie of
    * implimcit time solver.
-   * 
-   * @return FEMethodsSequence& 
+   *
+   * @return FEMethodsSequence&
    */
   FEMethodsSequence &get_loops_to_do_IJacobian() {
     return loops_to_do_IJacobian;
@@ -100,17 +100,17 @@ struct TsCtx {
 
   /**
    * @brief Get the loops to do Monitor object
-   * 
+   *
    * It is sequence used to monitor solution of time solver.
-   * 
-   * @return FEMethodsSequence& 
+   *
+   * @return FEMethodsSequence&
    */
   FEMethodsSequence &get_loops_to_do_Monitor() { return loops_to_do_Monitor; }
 
   /**
    * @brief Get the preProcess to do IFunction object
-   * 
-   * @return BasicMethodsSequence& 
+   *
+   * @return BasicMethodsSequence&
    */
   BasicMethodsSequence &get_preProcess_to_do_IFunction() {
     return preProcess_IFunction;
@@ -118,8 +118,8 @@ struct TsCtx {
 
   /**
    * @brief Get the postProcess to do IFunction object
-   * 
-   * @return BasicMethodsSequence& 
+   *
+   * @return BasicMethodsSequence&
    */
   BasicMethodsSequence &get_postProcess_to_do_IFunction() {
     return postProcess_IFunction;
@@ -127,8 +127,8 @@ struct TsCtx {
 
   /**
    * @brief Get the preProcess to do IJacobian object
-   * 
-   * @return BasicMethodsSequence& 
+   *
+   * @return BasicMethodsSequence&
    */
   BasicMethodsSequence &get_preProcess_to_do_IJacobian() {
     return preProcess_IJacobian;
@@ -136,8 +136,8 @@ struct TsCtx {
 
   /**
    * @brief Get the postProcess to do IJacobian object
-   * 
-   * @return BasicMethodsSequence& 
+   *
+   * @return BasicMethodsSequence&
    */
   BasicMethodsSequence &get_postProcess_to_do_IJacobian() {
     return postProcess_IJacobian;
@@ -145,8 +145,8 @@ struct TsCtx {
 
   /**
    * @brief Get the preProcess to do Monitor object
-   * 
-   * @return BasicMethodsSequence& 
+   *
+   * @return BasicMethodsSequence&
    */
   BasicMethodsSequence &get_preProcess_to_do_Monitor() {
     return preProcess_Monitor;
@@ -154,8 +154,8 @@ struct TsCtx {
 
   /**
    * @brief Get the postProcess to do Monitor object
-   * 
-   * @return BasicMethodsSequence& 
+   *
+   * @return BasicMethodsSequence&
    */
   BasicMethodsSequence &get_postProcess_to_do_Monitor() {
     return postProcess_Monitor;
@@ -171,52 +171,52 @@ struct TsCtx {
 
 /**
  * @brief Set IFunction for TS solver
- * 
- * For details see: 
+ *
+ * For details see:
  * <a href=https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/TS/TSSetIFunction.html>
- * 
- * @param ts 
- * @param t 
- * @param u 
- * @param u_t 
- * @param F 
- * @param ctx 
- * @return PetscErrorCode 
+ *
+ * @param ts
+ * @param t
+ * @param u
+ * @param u_t
+ * @param F
+ * @param ctx
+ * @return PetscErrorCode
  */
 PetscErrorCode TsSetIFunction(TS ts, PetscReal t, Vec u, Vec u_t, Vec F,
                               void *ctx);
 
 /**
  * @brief Set function evaluating jacobina in TS solver
- * 
+ *
  * For details see:
- * <href=https://www.mcs.anl.gov/petsc/petsc-3.1/docs/manualpages/TS/TSSetIJacobian.html>
- * 
- * @param ts 
- * @param t 
- * @param u 
- * @param u_t 
- * @param a 
- * @param A 
- * @param B 
- * @param ctx 
- * @return PetscErrorCode 
+ * <a href=https://www.mcs.anl.gov/petsc/petsc-3.1/docs/manualpages/TS/TSSetIJacobian.html>
+ *
+ * @param ts
+ * @param t
+ * @param u
+ * @param u_t
+ * @param a
+ * @param A
+ * @param B
+ * @param ctx
+ * @return PetscErrorCode
  */
 PetscErrorCode TsSetIJacobian(TS ts, PetscReal t, Vec u, Vec u_t, PetscReal a,
                               Mat A, Mat B, void *ctx);
 
 /**
  * @brief Set monitor for TS solver
- * 
+ *
  * For details see:
- * <href=https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/TS/TSMonitorSet.html>
- * 
- * @param ts 
- * @param step 
- * @param t 
- * @param u 
- * @param ctx 
- * @return PetscErrorCode 
+ * <a href=https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/TS/TSMonitorSet.html>
+ *
+ * @param ts
+ * @param step
+ * @param t
+ * @param u
+ * @param ctx
+ * @return PetscErrorCode
  */
 PetscErrorCode TsMonitorSet(TS ts, PetscInt step, PetscReal t, Vec u,
                             void *ctx);
