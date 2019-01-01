@@ -53,7 +53,7 @@
 
 namespace MoFEM {
 
-PetscErrorCode f_TSSetIFunction(TS ts, PetscReal t, Vec u, Vec u_t, Vec F,
+PetscErrorCode TsSetIFunction(TS ts, PetscReal t, Vec u, Vec u_t, Vec F,
                                 void *ctx) {
   // PetscValidHeaderSpecific(ts,TS_CLASSID,1);
   MoFEMFunctionBegin;
@@ -135,7 +135,7 @@ PetscErrorCode f_TSSetIFunction(TS ts, PetscReal t, Vec u, Vec u_t, Vec F,
   PetscLogEventEnd(ts_ctx->MOFEM_EVENT_TsCtxIFunction, 0, 0, 0, 0);
   MoFEMFunctionReturn(0);
 }
-PetscErrorCode f_TSSetIJacobian(TS ts, PetscReal t, Vec u, Vec u_t, PetscReal a,
+PetscErrorCode TsSetIJacobian(TS ts, PetscReal t, Vec u, Vec u_t, PetscReal a,
                                 Mat A, Mat B, void *ctx) {
   // PetscValidHeaderSpecific(ts,TS_CLASSID,1);
   MoFEMFunctionBegin;
@@ -208,7 +208,7 @@ PetscErrorCode f_TSSetIJacobian(TS ts, PetscReal t, Vec u, Vec u_t, PetscReal a,
   PetscLogEventEnd(ts_ctx->MOFEM_EVENT_TsCtxIFunction, 0, 0, 0, 0);
   MoFEMFunctionReturn(0);
 }
-PetscErrorCode f_TSMonitorSet(TS ts, PetscInt step, PetscReal t, Vec u,
+PetscErrorCode TsMonitorSet(TS ts, PetscInt step, PetscReal t, Vec u,
                               void *ctx) {
   // PetscValidHeaderSpecific(ts,TS_CLASSID,1);
   MoFEMFunctionBegin;

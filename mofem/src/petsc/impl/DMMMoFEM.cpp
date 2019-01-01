@@ -719,7 +719,7 @@ static PetscErrorCode DMMoFEMTSSetIFunction(DM dm, S fe_name, T0 method,
   if (post_only) {
     dm_field->tsCtx->get_postProcess_to_do_IFunction().push_back(post_only);
   }
-  CHKERR DMTSSetIFunction(dm, f_TSSetIFunction, dm_field->tsCtx.get());
+  CHKERR DMTSSetIFunction(dm, TsSetIFunction, dm_field->tsCtx.get());
   MoFEMFunctionReturn(0);
 }
 
@@ -762,7 +762,7 @@ static PetscErrorCode DMMoFEMTSSetIJacobian(DM dm, S fe_name, T0 method,
   if (post_only) {
     dm_field->tsCtx->get_postProcess_to_do_IJacobian().push_back(post_only);
   }
-  CHKERR DMTSSetIJacobian(dm, f_TSSetIJacobian, dm_field->tsCtx.get());
+  CHKERR DMTSSetIJacobian(dm, TsSetIJacobian, dm_field->tsCtx.get());
   MoFEMFunctionReturn(0);
 }
 

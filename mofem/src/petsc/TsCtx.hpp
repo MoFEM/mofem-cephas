@@ -101,20 +101,36 @@ struct TsCtx {
     return postProcess_Monitor;
   }
 
-  friend PetscErrorCode f_TSSetIFunction(TS ts, PetscReal t, Vec u, Vec u_t,
-                                         Vec F, void *ctx);
-  friend PetscErrorCode f_TSSetIJacobian(TS ts, PetscReal t, Vec u, Vec U_t,
-                                         PetscReal a, Mat A, Mat B, void *ctx);
-  friend PetscErrorCode f_TSMonitorSet(TS ts, PetscInt step, PetscReal t, Vec u,
-                                       void *ctx);
+  friend PetscErrorCode TsSetIFunction(TS ts, PetscReal t, Vec u, Vec u_t,
+                                       Vec F, void *ctx);
+  friend PetscErrorCode TsSetIJacobian(TS ts, PetscReal t, Vec u, Vec U_t,
+                                       PetscReal a, Mat A, Mat B, void *ctx);
+  friend PetscErrorCode TsMonitorSet(TS ts, PetscInt step, PetscReal t, Vec u,
+                                     void *ctx);
 };
 
-PetscErrorCode f_TSSetIFunction(TS ts, PetscReal t, Vec u, Vec u_t, Vec F,
-                                void *ctx);
-PetscErrorCode f_TSSetIJacobian(TS ts, PetscReal t, Vec u, Vec u_t, PetscReal a,
-                                Mat A, Mat B, void *ctx);
-PetscErrorCode f_TSMonitorSet(TS ts, PetscInt step, PetscReal t, Vec u,
+PetscErrorCode TsSetIFunction(TS ts, PetscReal t, Vec u, Vec u_t, Vec F,
                               void *ctx);
+PetscErrorCode TsSetIJacobian(TS ts, PetscReal t, Vec u, Vec u_t, PetscReal a,
+                              Mat A, Mat B, void *ctx);
+PetscErrorCode TsMonitorSet(TS ts, PetscInt step, PetscReal t, Vec u,
+                            void *ctx);
+
+DEPRECATED inline PetscErrorCode f_TSSetIFunction(TS ts, PetscReal t, Vec u,
+                                                  Vec u_t, Vec F, void *ctx) {
+  return TsSetIFunction(ts, t, u, u_t, F, ctx);
+}
+
+DEPRECATED inline PetscErrorCode f_TSSetIJacobian(TS ts, PetscReal t, Vec u,
+                                                  Vec u_t, PetscReal a, Mat A,
+                                                  Mat B, void *ctx) {
+  return TsSetIJacobian(ts, t, u, u_t, a, A, B, ctx);
+}
+
+DEPRECATED inline PetscErrorCode f_TSMonitorSet(TS ts, PetscInt step,
+                                                PetscReal t, Vec u, void *ctx) {
+  return TsMonitorSet(ts, step, t, u, ctx);
+}
 
 } // namespace MoFEM
 
