@@ -280,8 +280,7 @@ struct OpCalculateVectorFieldValuesDot
   VectorDouble dotVector;
 
   template <int Dim> inline auto getFTensorDotData() {
-    static_assert(1, "not implemented");
-    return FTensor::Tensor1<FTensor::PackPtr<double *, Dim>, Dim>();
+    static_assert(Dim || !Dim, "not implemented");
   }
 
 
@@ -487,9 +486,7 @@ struct OpCalculateTensor2FieldValuesDot
   VectorDouble dotVector; ///< Keeps temoorary values of time directives
 
   template <int Dim0, int Dim1> auto getFTensorDotData() {
-    static_assert(1, "not implemented");
-    return FTensor::Tensor2<FTensor::PackPtr<double *, Dim0 * Dim1>, Dim0,
-                            Dim1>();
+    static_assert(Dim0 || !Dim0 || Dim1 || !Dim1, "not implemented");
   }
 
   OpCalculateTensor2FieldValuesDot(const std::string field_name,
@@ -631,9 +628,7 @@ struct OpCalculateTensor2SymmetricFieldValuesDot
   VectorDouble dotVector;
 
   template <int Dim> inline auto getFTensorDotData() {
-    static_assert(1, "not implemented");
-    return FTensor::Tensor2_symmetric<
-        FTensor::PackPtr<double *, (Dim * (Dim + 1)) / 2>, Dim>();
+    static_assert(Dim || !Dim, "not implemented");
   }
 
   OpCalculateTensor2SymmetricFieldValuesDot(
@@ -937,8 +932,7 @@ struct OpCalculateVectorFieldGradientDot
   VectorDouble dotVector; ///< Keeps temoorary values of time directives
 
   template <int Dim> inline auto getFTensorDotData() {
-    static_assert(1, "not implemented");
-    return FTensor::Tensor1<FTensor::PackPtr<double *, Dim>, Dim>();
+    static_assert(Dim || !Dim, "not implemented");
   }
 
   OpCalculateVectorFieldGradientDot(const std::string field_name,
