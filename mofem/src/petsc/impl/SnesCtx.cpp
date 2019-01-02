@@ -81,7 +81,7 @@ PetscErrorCode SnesRhs(SNES snes, Vec x, Vec f, void *ctx) {
     CHKERR VecGetArray(l, &a);
     int s;
     CHKERR VecGetLocalSize(l, &s);
-    for (int i = 0; i != s;++i)
+    for (int i = 0; i != s; ++i)
       a[i] = 0;
     CHKERR VecRestoreArray(l, &a);
     CHKERR VecGhostRestoreLocalForm(g, &l);
@@ -89,7 +89,7 @@ PetscErrorCode SnesRhs(SNES snes, Vec x, Vec f, void *ctx) {
   };
   CHKERR zero_ghost_vec(f);
 
-  for (auto &bit: snes_ctx->preProcess_Rhs) {
+  for (auto &bit : snes_ctx->preProcess_Rhs) {
     CHKERR bit->setSnes(snes);
     bit->snes_x = x;
     bit->snes_f = f;
@@ -146,7 +146,7 @@ PetscErrorCode SnesMat(SNES snes, Vec x, Mat A, Mat B, void *ctx) {
   PetscLogEventBegin(snes_ctx->MOFEM_EVENT_SnesMat, 0, 0, 0, 0);
   if (snes_ctx->zeroPreCondMatrixB)
     CHKERR MatZeroEntries(B);
-  
+
   CHKERR VecGhostUpdateBegin(x, INSERT_VALUES, SCATTER_FORWARD);
   CHKERR VecGhostUpdateEnd(x, INSERT_VALUES, SCATTER_FORWARD);
   CHKERR snes_ctx->mField.getInterface<VecManager>()->setLocalGhostVector(
