@@ -293,7 +293,7 @@ private:
 #endif //__PROBLEMSMANAGER_HPP__
 
 
-/***************************************************************************//**
+/*******************************************************************************
  * \defgroup mofem_problems_manager ProblemsManager
  * \brief Adding and managing problems
  *
