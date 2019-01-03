@@ -52,12 +52,9 @@ int main(int argc, char *argv[]) {
     ParallelComm *pcomm = ParallelComm::get_pcomm(&moab, MYPCOMM_INDEX);
     if (pcomm == NULL)
       pcomm = new ParallelComm(&moab, PETSC_COMM_WORLD);
+    CHKERR moab.load_file(mesh_file_name, 0, "");
 
-    const char *option;
-    option = ""; //"PARALLEL=BCAST;";//;DEBUG_IO";
-    CHKERR moab.load_file(mesh_file_name, 0, option);
-
-    // Create MoFEM (Joseph) database
+    // Create MoFEM database
     MoFEM::Core core(moab);
     MoFEM::Interface &m_field = core;
 
@@ -151,18 +148,8 @@ int main(int argc, char *argv[]) {
     CHKERR m_field.getInterface<MatrixManager>()
         ->checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>("P3", -1, -1,
                                                                    0);
-
-    /*Mat m;
-    CHKERR m_field.MatCreateMPIAIJWithArrays("P3",&m);
-    PetscViewer viewer;
-    CHKERR
-    PetscViewerASCIIOpen(PETSC_COMM_WORLD,"build_composite_problem.txt",&viewer);
-    MatView(m,viewer);
-    CHKERR PetscViewerDestroy(&viewer);
-    CHKERR MatDestroy(&m); */
-
   }
-  CHECK_ERRORS;
+  CATCH_ERRORS;
 
   // finish work cleaning memory, getting statistics, etc.
   CHKERR MoFEM::Core::Finalize();

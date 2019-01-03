@@ -1,5 +1,6 @@
 /** \file dm_build_partitioned_mesh.cpp
-  \brief Testing problem for portioned mesh
+  \example dm_build_partitioned_mesh.cpp
+  \brief Testing problem for partitioned mesh
 
 */
 
@@ -51,7 +52,7 @@ int main(int argc, char *argv[]) {
     CHKERR DMCreate(PETSC_COMM_WORLD, &dm);
     CHKERR DMSetType(dm, dm_name);
 
-    // read mesh and create moab and mofem datastrutures
+    // read mesh and create moab and mofem data structures
     moab::Core mb_instance;
     moab::Interface &moab = mb_instance;
 
@@ -116,7 +117,7 @@ int main(int argc, char *argv[]) {
     CHKERR m_field.build_adjacencies(bit_level0);
 
     // set dm data structure which created mofem data structures
-    CHKERR DMMoFEMCreateMoFEM(dm, &m_field, dm_name, bit_level0);
+    CHKERR DMMoFEMCreateMoFEM(dm, &m_field, "TEST_PROBLEM", bit_level0);
     CHKERR DMMoFEMSetSquareProblem(
         dm, PETSC_FALSE); // this is for testing (this problem has the same rows
                           // and cols)
@@ -128,26 +129,17 @@ int main(int argc, char *argv[]) {
     Mat m;
     CHKERR DMCreateMatrix(dm, &m);
 
-    // if(1) {
-    //   MatView(m,PETSC_VIEWER_DRAW_WORLD);
-    //   std::string wait;
-    //   std::cin >> wait;
-    // }
-
-    // const MoFEM::Problem *problem_ptr;
-    // CHKERR DMMoFEMGetProblemPtr(dm,&problem_ptr);
-    // for(_IT_NUMEREDDOF_COL_FOR_LOOP_(problem_ptr,dit)) {
-    //   cerr << **dit << endl;
-    // }
-
-    CHKERR m_field.partition_check_matrix_fill_in("DMMOFEM", -1, -1, 1);
+    CHKERR m_field.getInterface<MatrixManager>()
+        ->checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>(
+            "TEST_PROBLEM", -1, -1, 1);
 
     std::vector<std::string> fields_list;
     fields_list.push_back("FIELD1");
 
     // PetscSection section;
     PetscSection section;
-    CHKERR m_field.getInterface<ISManager>()->sectionCreate(dm_name, &section);
+    CHKERR m_field.getInterface<ISManager>()->sectionCreate("TEST_PROBLEM",
+                                                            &section);
     CHKERR PetscSectionView(section, PETSC_VIEWER_STDOUT_WORLD);
     CHKERR DMSetDefaultSection(dm, section);
     CHKERR DMSetDefaultGlobalSection(dm, section);
@@ -155,10 +147,10 @@ int main(int argc, char *argv[]) {
 
     PetscBool save_file = PETSC_TRUE;
 #if PETSC_VERSION_GE(3, 6, 4)
-    CHKERR PetscOptionsGetBool(PETSC_NULL, "", "-my_save_fiele", &save_file,
+    CHKERR PetscOptionsGetBool(PETSC_NULL, "", "-my_save_file", &save_file,
                                &flg);
 #else
-    CHKERR PetscOptionsGetBool(PETSC_NULL, PETSC_NULL, "-my_save_fiele",
+    CHKERR PetscOptionsGetBool(PETSC_NULL, PETSC_NULL, "-my_save_file",
                                &save_file, &flg);
 #endif
     if (save_file) {
