@@ -1,0 +1,144 @@
+/** \file MatrixManager.hpp
+ * \brief Interface for creating matrices and managing matrices
+ * \ingroup mofem_mat_interface
+ *
+ * Creating and managing matrices
+ *
+ */
+
+/*
+ * MoFEM is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
+ * License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
+ */
+
+#ifndef __MATMANAGER_HPP__
+#define __MATMANAGER_HPP__
+
+#include "UnknownInterface.hpp"
+
+namespace MoFEM {
+
+static const MOFEMuuid IDD_MOFEMMatrixManager =
+    MOFEMuuid(BitIntefaceId(MATRIX_MANAGER_INTERFACE));
+
+/**
+ * \brief Matrix manager is used to build and partition problems
+ * \mofem_mat_interface
+ *
+ */
+struct MatrixManager : public UnknownInterface {
+
+  MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
+                                 UnknownInterface **iface) const;
+
+  MoFEM::Core &cOre;
+  MatrixManager(const MoFEM::Core &core);
+
+  /**
+   * \brief Destructor
+   */
+  ~MatrixManager();
+
+  /**
+   * @brief Creates a MPI AIJ matrix using arrays that contain in standard CSR
+   * format the local rows.
+   *
+   * See for details:
+   * <a
+   * href=https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/Mat/MatCreateMPIAIJWithArrays.html>
+   
+   * @tparam Tag
+   * @param name
+   * @param Aij
+   * @param verb
+   * @return MoFEMErrorCode
+   */
+  template <class Tag>
+  MoFEMErrorCode
+  createMPIAIJWithArrays(const std::string &name, Mat *Aij,
+                         PetscInt **i = PETSC_NULL, PetscInt **j = PETSC_NULL,
+                         PetscScalar **v = PETSC_NULL, int verb = QUIET) {
+    static_assert(!std::is_same<T, T>::value, "not implemented");
+    return 0;
+  }
+
+  /**
+   * @brief Creates a sparse matrix representing an adjacency list.
+   *
+   * The matrix
+   * does not have numerical values associated with it, but is intended for
+   * ordering (to reduce bandwidth etc) and partitioning.
+   *
+   * <a href =
+   * https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/Mat/MatCreateMPIAdj.html>
+   *
+   * @tparam Tag
+   * @param name
+   * @param Adj
+   * @param verb
+   * @return MoFEMErrorCode
+   */
+  template <class Tag>
+  MoFEMErrorCode createMPIAdjWithArrays(const std::string &name, Mat *Adj,
+                                        int verb = QUIET) {
+    static_assert(!std::is_same<T, T>::value, "not implemented");
+  }
+
+  /**
+   * @brief
+   *
+   * Creates a sparse matrix in AIJ (compressed row) format (the default
+   * parallel PETSc format). For good matrix assembly performance the user
+   * should preallocate the matrix storage by setting the parameter nz (or the
+   * array nnz). By setting these parameters accurately, performance during
+   * matrix assembly can be increased by more than a factor of 50.
+   *
+   * @tparam Tag
+   * @param name
+   * @param Aij
+   * @param i
+   * @param j
+   * @param v
+   * @param verb
+   * @return MoFEMErrorCode
+   */
+  template <class Tag>
+  MoFEMErrorCode createSeqAIJWithArrays(const std::string &name, Mat *Aij,
+                                        PetscInt **i, PetscInt **j,
+                                        PetscScalar **v, int verb = QUIET) {
+    static_assert(!std::is_same<T, T>::value, "not implemented");
+    return 0;
+  }
+
+  /** \brief check if matrix fill in correspond to finite element indices
+
+  This is used to check consistency of code. If problem is notices with
+  additional non-zero elements in matrix, this function can help detect
+  problem. Should be used as a part of atom tests
+
+  \param problem_name
+  \param row print info at particular row
+  \param col print info at particular col
+
+  */
+  MoFEMErrorCode partitionCheckMatrixFillIn(const std::string &problem_name,
+                                            int row_print, int col_print,
+                                            int verb = QUIET);
+
+};
+
+} // namespace MoFEM
+
+#endif // __MATMANAGER_HPP__a
+
+/*******************************************************************************
+ * \defgroup mofem_mat_interface Matrix Manager
+ * \brief Creating and managing matrices
+ *
+ * \ingroup mofem
+ ******************************************************************************/
