@@ -123,9 +123,10 @@ struct MatrixManager : public UnknownInterface {
    * @return MoFEMErrorCode
    */
   template <class Tag>
-  MoFEMErrorCode createSeqAIJWithArrays(const std::string name, Mat *Aij,
-                                        PetscInt **i, PetscInt **j,
-                                        PetscScalar **v, int verb = QUIET) {
+  MoFEMErrorCode
+  createSeqAIJWithArrays(const std::string name, Mat *Aij,
+                         PetscInt **i = PETSC_NULL, PetscInt **j = PETSC_NULL,
+                         PetscScalar **v = PETSC_NULL, int verb = QUIET) {
     static_assert(!std::is_same<Tag, Tag>::value, "not implemented");
     return 0;
   }

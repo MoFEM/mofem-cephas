@@ -41,6 +41,7 @@
 #include <PrismInterface.hpp>
 #include <SeriesRecorder.hpp>
 #include <ProblemsManager.hpp>
+#include <MatrixManager.hpp>
 #include <ISManager.hpp>
 #include <VecManager.hpp>
 #include <Core.hpp>
@@ -916,19 +917,18 @@ PetscErrorCode DMCreateMatrix_MoFEM(DM dm, Mat *M) {
     PetscInt *j;
     PetscScalar *v;
 #if PETSC_VERSION_GE(3, 7, 0)
-    CHKERR dm_field->mField_ptr->MatCreateSeqAIJWithArrays(
-        dm_field->problemName, M, &i, &j, &v);
+    CHKERR dm_field->mField_ptr->getInterface<MatrixManager>()
+        ->createSeqAIJWithArrays<PetscLocalIdx_mi_tag>(dm_field->problemName,
+                                                       M);
     CHKERR MatConvert(*M, MATAIJ, MAT_INPLACE_MATRIX, M);
 #else
     Mat N;
-    CHKERR dm_field->mField_ptr->MatCreateSeqAIJWithArrays(
-        dm_field->problemName, &N, &i, &j, &v);
+    CHKERR dm_field->mField_ptr->getInterface<MatrixManager>()
+        ->createSeqAIJWithArrays<PetscLocalIdx_mi_tag>(dm_field->problemName,
+                                                       &N);
     CHKERR MatConvert(N, MATAIJ, MAT_INITIAL_MATRIX, M);
     CHKERR MatDestroy(&N);
 #endif
-    CHKERR PetscFree(i);
-    CHKERR PetscFree(j);
-    CHKERR PetscFree(v);
   } else {
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
             "Matrix type not implemented");
