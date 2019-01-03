@@ -130,10 +130,14 @@ int main(int argc, char *argv[]) {
 
     CHKERR prb_mng_ptr->partitionFiniteElements("P1");
     CHKERR prb_mng_ptr->partitionGhostDofs("P1");
-    CHKERR m_field.partition_check_matrix_fill_in("P1", -1, -1, 0);
+    CHKERR m_field.getInterface<MatrixManager>()
+        ->checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>("P1", -1, -1,
+                                                                   0);
     CHKERR prb_mng_ptr->partitionFiniteElements("P2");
     CHKERR prb_mng_ptr->partitionGhostDofs("P2");
-    CHKERR m_field.partition_check_matrix_fill_in("P2", -1, -1, 0);
+    CHKERR m_field.getInterface<MatrixManager>()
+        ->checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>("P2", -1, -1,
+                                                                   0);
 
     // compose problem
     CHKERR m_field.add_problem("P3");
@@ -144,7 +148,9 @@ int main(int argc, char *argv[]) {
     CHKERR prb_mng_ptr->inheritPartition("P3", "P1", false, "P2", true);
     CHKERR prb_mng_ptr->partitionFiniteElements("P3");
     CHKERR prb_mng_ptr->partitionGhostDofs("P3");
-    CHKERR m_field.partition_check_matrix_fill_in("P3", -1, -1, 0);
+    CHKERR m_field.getInterface<MatrixManager>()
+        ->checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>("P3", -1, -1,
+                                                                   0);
 
     /*Mat m;
     CHKERR m_field.MatCreateMPIAIJWithArrays("P3",&m);
