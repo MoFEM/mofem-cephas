@@ -216,8 +216,12 @@ int main(int argc, char *argv[]) {
       CHKERR MatDestroy(&m);
     }
 
-    CHKERR m_field.partition_check_matrix_fill_in("P1", -1, -1, 1);
-    CHKERR m_field.partition_check_matrix_fill_in("P2", -1, -1, 1);
+    CHKERR m_field.getInterface<MatrixManager>()
+        ->checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>("P1", -1, -1,
+                                                                   1);
+    CHKERR m_field.getInterface<MatrixManager>()
+        ->checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>("P2", -1, -1,
+                                                                   1);
 
     // register new dm type, i.e. mofem
     DMType dm_name = "MOFEM";
@@ -258,7 +262,9 @@ int main(int argc, char *argv[]) {
       CHKERR MatDestroy(&m);
     }
 
-    CHKERR m_field.partition_check_matrix_fill_in("COMP", -1, -1, 1);
+    CHKERR m_field.getInterface<MatrixManager>()
+        ->checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>("COMP", -1,
+                                                                   -1, 1);
 
     CHKERR DMDestroy(&dm);
   }
