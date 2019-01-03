@@ -1,7 +1,6 @@
-/** \file dm_mofem.cpp
-
-  \brief Atom test for Data Manager Interface in MoFEM
-
+/** \file dm_create_subdm.cpp
+  \example dm_create_subdm.cpp
+  \brief Atom test for Data Manager Interface and create sub-problem
 */
 
 /* This file is part of MoFEM.
@@ -133,13 +132,15 @@ int main(int argc, char *argv[]) {
     CHKERR m_field.build_adjacencies(bit_level0);
 
     // set dm data structure which created mofem data structures
-    CHKERR DMMoFEMCreateMoFEM(dm, &m_field, dm_name, bit_level0);
+    CHKERR DMMoFEMCreateMoFEM(dm, &m_field, "MAIN_PROBLEM", bit_level0);
     CHKERR DMSetFromOptions(dm);
     CHKERR DMMoFEMAddElement(dm, "FE00");
     CHKERR DMMoFEMAddElement(dm, "FE11");
     CHKERR DMMoFEMAddElement(dm, "FE01");
     CHKERR DMSetUp(dm);
-    CHKERR m_field.partition_check_matrix_fill_in(dm_name, -1, -1, 1);
+    CHKERR m_field.getInterface<MatrixManager>()
+        ->checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>(
+            "MAIN_PROBLEM", -1, -1, 1);
 
     int nf;
     char **field_names;
@@ -159,7 +160,9 @@ int main(int argc, char *argv[]) {
     CHKERR DMMoFEMAddSubFieldRow(subdm0, "FIELD1");
     CHKERR DMMoFEMAddSubFieldCol(subdm0, "FIELD1");
     CHKERR DMSetUp(subdm0);
-    CHKERR m_field.partition_check_matrix_fill_in("SUB0", -1, -1, 1);
+    CHKERR m_field.getInterface<MatrixManager>()
+        ->checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>("SUB0", -1,
+                                                                   -1, 1);
     if (debug) {
       Mat A;
       CHKERR DMCreateMatrix(subdm0, &A);
@@ -175,7 +178,9 @@ int main(int argc, char *argv[]) {
     CHKERR DMMoFEMAddSubFieldRow(subdm1, "FIELD0");
     CHKERR DMMoFEMAddSubFieldCol(subdm1, "FIELD1");
     CHKERR DMSetUp(subdm1);
-    CHKERR m_field.partition_check_matrix_fill_in("SUB1", -1, -1, 1);
+    CHKERR m_field.getInterface<MatrixManager>()
+        ->checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>("SUB1", -1,
+                                                                   -1, 1);
 
     if (debug) {
       Mat B;
