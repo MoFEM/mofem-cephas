@@ -50,11 +50,15 @@ struct MatrixManager : public UnknownInterface {
    *
    * See for details:
    * <a
-   * href=https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/Mat/MatCreateMPIAIJWithArrays.html>
-   
+   *
+   href=https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/Mat/MatCreateMPIAIJWithArrays.html>
+
    * @tparam Tag
    * @param name
    * @param Aij
+   * @param i
+   * @param j
+   * @param v
    * @param verb
    * @return MoFEMErrorCode
    */
@@ -63,7 +67,7 @@ struct MatrixManager : public UnknownInterface {
   createMPIAIJWithArrays(const std::string &name, Mat *Aij,
                          PetscInt **i = PETSC_NULL, PetscInt **j = PETSC_NULL,
                          PetscScalar **v = PETSC_NULL, int verb = QUIET) {
-    static_assert(!std::is_same<T, T>::value, "not implemented");
+    static_assert(!std::is_same<Tag, Tag>::value, "not implemented");
     return 0;
   }
 
@@ -77,16 +81,27 @@ struct MatrixManager : public UnknownInterface {
    * <a href =
    * https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/Mat/MatCreateMPIAdj.html>
    *
+   * \note This matrix object does not support most matrix operations, include
+   * MatSetValues(). You must NOT free the ii, values and jj arrays yourself.
+   * PETSc will free them when the matrix is destroyed; you must allocate them
+   * with PetscMalloc(). If you call from Fortran you need not create the arrays
+   * with PetscMalloc(). Should not include the matrix diagonals.
+   *
    * @tparam Tag
    * @param name
    * @param Adj
+   * @param i
+   * @param j
+   * @param v
    * @param verb
    * @return MoFEMErrorCode
    */
   template <class Tag>
-  MoFEMErrorCode createMPIAdjWithArrays(const std::string &name, Mat *Adj,
-                                        int verb = QUIET) {
-    static_assert(!std::is_same<T, T>::value, "not implemented");
+  MoFEMErrorCode
+  createMPIAdjWithArrays(const std::string &name, Mat *Adj,
+                         PetscInt **i = PETSC_NULL, PetscInt **j = PETSC_NULL,
+                         PetscScalar **v = PETSC_NULL, int verb = QUIET) {
+    static_assert(!std::is_same<Tag, Tag>::value, "not implemented");
   }
 
   /**
@@ -111,7 +126,7 @@ struct MatrixManager : public UnknownInterface {
   MoFEMErrorCode createSeqAIJWithArrays(const std::string &name, Mat *Aij,
                                         PetscInt **i, PetscInt **j,
                                         PetscScalar **v, int verb = QUIET) {
-    static_assert(!std::is_same<T, T>::value, "not implemented");
+    static_assert(!std::is_same<Tag, Tag>::value, "not implemented");
     return 0;
   }
 
@@ -121,16 +136,48 @@ struct MatrixManager : public UnknownInterface {
   additional non-zero elements in matrix, this function can help detect
   problem. Should be used as a part of atom tests
 
-  \param problem_name
-  \param row print info at particular row
-  \param col print info at particular col
+  * @tparam Tag
+  * @param problem_name
+  * @param row print info at particular row
+  * @param col print info at particular col
+  * @return MoFEMErrorCode
 
   */
-  MoFEMErrorCode partitionCheckMatrixFillIn(const std::string &problem_name,
-                                            int row_print, int col_print,
-                                            int verb = QUIET);
+  template <class Tag>
+  MoFEMErrorCode
+  checkMPIAIJWithArraysMatrixFillIn(const std::string &problem_name,
+                                    int row_print, int col_print,
+                                    int verb = QUIET) {
+    static_assert(!std::is_same<Tag, Tag>::value, "not implemented");
+    return 0;
+  }
 
+private:
+  PetscLogEvent MOFEM_EVENT_createMPIAIJWithArrays;
+  PetscLogEvent MOFEM_EVENT_createMPIAdjWithArrays;
+  PetscLogEvent MOFEM_EVENT_createSeqAIJWithArrays;
+  PetscLogEvent MOFEM_EVENT_checkMPIAIJWithArraysMatrixFillIn;
 };
+
+template <>
+MoFEMErrorCode MatrixManager::createMPIAIJWithArrays<PetscGlobalIdx_mi_tag>(
+    const std::string &name, Mat *Aij, PetscInt **i, PetscInt **j,
+    PetscScalar **v, int verb);
+
+template <>
+MoFEMErrorCode MatrixManager::createMPIAdjWithArrays<Idx_mi_tag>(
+    const std::string &name, Mat *Adj, PetscInt **i, PetscInt **j,
+    PetscScalar **v, int verb);
+
+template <>
+MoFEMErrorCode MatrixManager::createSeqAIJWithArrays<PetscLocalIdx_mi_tag>(
+    const std::string &name, Mat *Aij, PetscInt **i, PetscInt **j,
+    PetscScalar **v, int verb);
+
+template <>
+MoFEMErrorCode
+MatrixManager::checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>(
+    const std::string &problem_name, int row_print, int col_print, int verb);
 
 } // namespace MoFEM
 

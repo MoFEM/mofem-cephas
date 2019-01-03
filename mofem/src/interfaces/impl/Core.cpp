@@ -166,6 +166,7 @@ MoFEMErrorCode Core::registerSubInterfaces() {
   // Register sub interfaces
   CHKERR regSubInterface<Simple>(IDD_MOFEMSimple);
   CHKERR regSubInterface<ProblemsManager>(IDD_MOFEMProblemsManager);
+  CHKERR regSubInterface<MatrixManager>(IDD_MOFEMMatrixManager);
   CHKERR regSubInterface<ISManager>(IDD_MOFEMISManager);
   CHKERR regSubInterface<VecManager>(IDD_MOFEMVEC);
   CHKERR regSubInterface<FieldBlas>(IDD_MOFEMFieldBlas);
