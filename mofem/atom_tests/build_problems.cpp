@@ -1,5 +1,5 @@
 /** \file build_problems.cpp
-
+  \example build_problems.cpp
   \brief Atom test for building problems
 
   \bug Not verifying what if partitioned mesh is loaded.
@@ -61,7 +61,7 @@ int main(int argc, char *argv[]) {
     MoFEM::Core core(moab);
     MoFEM::Interface &m_field = core;
 
-    // set entitities bit level
+    // set entities bit level
     BitRefLevel bit_level0;
     bit_level0.set(0);
     EntityHandle meshset_level0;
@@ -161,9 +161,8 @@ int main(int argc, char *argv[]) {
     CHKERR PetscViewerDestroy(&viewer);
     CHKERR MatDestroy(&m); */
 
-  } catch (MoFEMException const &e) {
-    SETERRQ(PETSC_COMM_SELF, e.errorCode, e.errorMessage);
   }
+  CHECK_ERRORS;
 
   // finish work cleaning memory, getting statistics, etc.
   CHKERR MoFEM::Core::Finalize();
