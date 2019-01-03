@@ -64,7 +64,7 @@ struct MatrixManager : public UnknownInterface {
    */
   template <class Tag>
   MoFEMErrorCode
-  createMPIAIJWithArrays(const std::string &name, Mat *Aij,
+  createMPIAIJWithArrays(const std::string name, Mat *Aij,
                          PetscInt **i = PETSC_NULL, PetscInt **j = PETSC_NULL,
                          PetscScalar **v = PETSC_NULL, int verb = QUIET) {
     static_assert(!std::is_same<Tag, Tag>::value, "not implemented");
@@ -98,7 +98,7 @@ struct MatrixManager : public UnknownInterface {
    */
   template <class Tag>
   MoFEMErrorCode
-  createMPIAdjWithArrays(const std::string &name, Mat *Adj,
+  createMPIAdjWithArrays(const std::string name, Mat *Adj,
                          PetscInt **i = PETSC_NULL, PetscInt **j = PETSC_NULL,
                          PetscScalar **v = PETSC_NULL, int verb = QUIET) {
     static_assert(!std::is_same<Tag, Tag>::value, "not implemented");
@@ -123,7 +123,7 @@ struct MatrixManager : public UnknownInterface {
    * @return MoFEMErrorCode
    */
   template <class Tag>
-  MoFEMErrorCode createSeqAIJWithArrays(const std::string &name, Mat *Aij,
+  MoFEMErrorCode createSeqAIJWithArrays(const std::string name, Mat *Aij,
                                         PetscInt **i, PetscInt **j,
                                         PetscScalar **v, int verb = QUIET) {
     static_assert(!std::is_same<Tag, Tag>::value, "not implemented");
@@ -145,7 +145,7 @@ struct MatrixManager : public UnknownInterface {
   */
   template <class Tag>
   MoFEMErrorCode
-  checkMPIAIJWithArraysMatrixFillIn(const std::string &problem_name,
+  checkMPIAIJWithArraysMatrixFillIn(const std::string problem_name,
                                     int row_print, int col_print,
                                     int verb = QUIET) {
     static_assert(!std::is_same<Tag, Tag>::value, "not implemented");
@@ -161,23 +161,23 @@ private:
 
 template <>
 MoFEMErrorCode MatrixManager::createMPIAIJWithArrays<PetscGlobalIdx_mi_tag>(
-    const std::string &name, Mat *Aij, PetscInt **i, PetscInt **j,
+    const std::string name, Mat *Aij, PetscInt **i, PetscInt **j,
     PetscScalar **v, int verb);
 
 template <>
 MoFEMErrorCode MatrixManager::createMPIAdjWithArrays<Idx_mi_tag>(
-    const std::string &name, Mat *Adj, PetscInt **i, PetscInt **j,
+    const std::string name, Mat *Adj, PetscInt **i, PetscInt **j,
     PetscScalar **v, int verb);
 
 template <>
 MoFEMErrorCode MatrixManager::createSeqAIJWithArrays<PetscLocalIdx_mi_tag>(
-    const std::string &name, Mat *Aij, PetscInt **i, PetscInt **j,
+    const std::string name, Mat *Aij, PetscInt **i, PetscInt **j,
     PetscScalar **v, int verb);
 
 template <>
 MoFEMErrorCode
 MatrixManager::checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>(
-    const std::string &problem_name, int row_print, int col_print, int verb);
+    const std::string problem_name, int row_print, int col_print, int verb);
 
 } // namespace MoFEM
 

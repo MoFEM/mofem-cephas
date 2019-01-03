@@ -710,298 +710,31 @@ MoFEMErrorCode CreateRowComressedADJMatrix::createMat(
 
 MoFEMErrorCode Core::MatCreateMPIAIJWithArrays(const std::string &name,
                                                Mat *Aij, int verb) {
-  MoFEMFunctionBegin;
-  if (verb == -1)
-    verb = verbose;
-  int *_i, *_j;
-  CreateRowComressedADJMatrix *core_ptr =
-      static_cast<CreateRowComressedADJMatrix *>(const_cast<Core *>(this));
-  CHKERR core_ptr->createMat<PetscGlobalIdx_mi_tag>(
-      name, Aij, MATMPIAIJ, &_i, &_j, PETSC_NULL, false, verb);
-  CHKERR PetscFree(_i);
-  CHKERR PetscFree(_j);
-  MoFEMFunctionReturn(0);
+  return getInterface<MatrixManager>()
+      ->createMPIAIJWithArrays<PetscGlobalIdx_mi_tag>(
+          name, Aij, PETSC_NULL, PETSC_NULL, PETSC_NULL, verb);
 }
 
 MoFEMErrorCode Core::MatCreateMPIAdj_with_Idx_mi_tag(const std::string &name,
                                                      Mat *Adj, int verb) {
-  MoFEMFunctionBegin;
-  int *i, *j;
-  if (verb >= VERY_VERBOSE) {
-    PetscPrintf(cOmm, "\tCreate Adj matrix\n");
-  }
-  CreateRowComressedADJMatrix *core_ptr =
-      static_cast<CreateRowComressedADJMatrix *>(const_cast<Core *>(this));
-  CHKERR core_ptr->createMat<Idx_mi_tag>(name, Adj, MATMPIADJ, &i, &j,
-                                         PETSC_NULL, true, verb);
-  MoFEMFunctionReturn(0);
+  return getInterface<MatrixManager>()->createMPIAdjWithArrays<Idx_mi_tag>(
+      name, Adj, PETSC_NULL, PETSC_NULL, PETSC_NULL, verb);
 }
 
 MoFEMErrorCode Core::MatCreateSeqAIJWithArrays(const std::string &name,
                                                Mat *Aij, PetscInt **i,
                                                PetscInt **j, PetscScalar **v,
                                                int verb) {
-  MoFEMFunctionBegin;
-  if (verb == -1)
-    verb = verbose;
-  CreateRowComressedADJMatrix *core_ptr =
-      static_cast<CreateRowComressedADJMatrix *>(const_cast<Core *>(this));
-  CHKERR core_ptr->createMat<PetscLocalIdx_mi_tag>(name, Aij, MATAIJ, i, j, v,
-                                                   false, verb);
-  MoFEMFunctionReturn(0);
+  return getInterface<MatrixManager>()
+      ->createSeqAIJWithArrays<PetscLocalIdx_mi_tag>(name, Aij, i, j, v, verb);
 }
 
 MoFEMErrorCode
 Core::partition_check_matrix_fill_in(const std::string &problem_name,
                                      int row_print, int col_print, int verb) {
-  MoFEMFunctionBegin;
-  if (verb == -1)
-    verb = verbose;
-
-  struct TestMatrixFillIn : public FEMethod {
-    Interface *mFieldPtr;
-
-    Mat A;
-
-    int rowPrint, colPrint;
-
-    TestMatrixFillIn(Interface *m_field_ptr, Mat a, int row_print,
-                     int col_print)
-        : mFieldPtr(m_field_ptr), A(a), rowPrint(row_print),
-          colPrint(col_print){};
-
-    MoFEMErrorCode preProcess() {
-      MoFEMFunctionBeginHot;
-      MoFEMFunctionReturnHot(0);
-    }
-
-    MoFEMErrorCode operator()() {
-      MoFEMFunctionBegin;
-
-      if (refinedFiniteElementsPtr->find(
-              numeredEntFiniteElementPtr->getEnt()) ==
-          refinedFiniteElementsPtr->end()) {
-        SETERRQ(mFieldPtr->get_comm(), MOFEM_DATA_INCONSISTENCY,
-                "data inconsistency");
-      }
-
-      for (FENumeredDofEntity_multiIndex::iterator cit = colPtr->begin();
-           cit != colPtr->end(); cit++) {
-
-        if (refinedEntitiesPtr->find((*cit)->getEnt()) ==
-            refinedEntitiesPtr->end()) {
-          SETERRQ(mFieldPtr->get_comm(), MOFEM_DATA_INCONSISTENCY,
-                  "data inconsistency");
-        }
-        if (!(*cit)->getActive()) {
-          SETERRQ(mFieldPtr->get_comm(), MOFEM_DATA_INCONSISTENCY,
-                  "data inconsistency");
-        }
-
-        FieldEntityEntFiniteElementAdjacencyMap_multiIndex::index<
-            Composite_Unique_mi_tag>::type::iterator ait;
-        ait = adjacenciesPtr->get<Composite_Unique_mi_tag>().find(
-            boost::make_tuple((*cit)->getFieldEntityPtr()->getGlobalUniqueId(),
-                              numeredEntFiniteElementPtr->getGlobalUniqueId()));
-        if (ait == adjacenciesPtr->end()) {
-          SETERRQ(mFieldPtr->get_comm(), MOFEM_DATA_INCONSISTENCY,
-                  "adjacencies data inconsistency");
-        } else {
-          UId uid = ait->getEntUniqueId();
-          if (entitiesPtr->find(uid) == entitiesPtr->end()) {
-            SETERRQ(mFieldPtr->get_comm(), MOFEM_DATA_INCONSISTENCY,
-                    "data inconsistency");
-          }
-          if (dofsPtr->find((*cit)->getGlobalUniqueId()) == dofsPtr->end()) {
-            SETERRQ(mFieldPtr->get_comm(), MOFEM_DATA_INCONSISTENCY,
-                    "data inconsistency");
-          }
-        }
-
-        if ((*cit)->getEntType() != MBVERTEX) {
-
-          FENumeredDofEntity_multiIndex::index<
-              Composite_Name_Type_And_Side_Number_mi_tag>::type::iterator dit,
-              hi_dit;
-          dit = colPtr->get<Composite_Name_Type_And_Side_Number_mi_tag>()
-                    .lower_bound(boost::make_tuple(
-                        (*cit)->getName(), (*cit)->getEntType(),
-                        (*cit)->sideNumberPtr->side_number));
-          hi_dit = colPtr->get<Composite_Name_Type_And_Side_Number_mi_tag>()
-                       .upper_bound(boost::make_tuple(
-                           (*cit)->getName(), (*cit)->getEntType(),
-                           (*cit)->sideNumberPtr->side_number));
-          int nb_dofs_on_ent = std::distance(dit, hi_dit);
-
-          int max_order = (*cit)->getMaxOrder();
-          if ((*cit)->getNbOfCoeffs() * (*cit)->getOrderNbDofs(max_order) !=
-              nb_dofs_on_ent) {
-            std::cerr << "Warning: Number of Dofs in Col diffrent than number "
-                         "of dofs for given entity order "
-                      << (*cit)->getNbOfCoeffs() *
-                             (*cit)->getOrderNbDofs(max_order)
-                      << " " << nb_dofs_on_ent << std::endl;
-          }
-        }
-      }
-
-      FENumeredDofEntity_multiIndex::iterator rit = rowPtr->begin();
-      for (; rit != rowPtr->end(); rit++) {
-
-        if (refinedEntitiesPtr->find((*rit)->getEnt()) ==
-            refinedEntitiesPtr->end()) {
-          SETERRQ(mFieldPtr->get_comm(), MOFEM_DATA_INCONSISTENCY,
-                  "data inconsistency");
-        }
-        if (!(*rit)->getActive()) {
-          SETERRQ(mFieldPtr->get_comm(), MOFEM_DATA_INCONSISTENCY,
-                  "data inconsistency");
-        }
-
-        FieldEntityEntFiniteElementAdjacencyMap_multiIndex::index<
-            Composite_Unique_mi_tag>::type::iterator ait;
-        ait = adjacenciesPtr->get<Composite_Unique_mi_tag>().find(
-            boost::make_tuple((*rit)->getFieldEntityPtr()->getGlobalUniqueId(),
-                              numeredEntFiniteElementPtr->getGlobalUniqueId()));
-        if (ait == adjacenciesPtr->end()) {
-          std::ostringstream ss;
-          ss << *(*rit) << std::endl;
-          ss << *numeredEntFiniteElementPtr << std::endl;
-          ss << "dof: " << (*rit)->getBitRefLevel() << std::endl;
-          ss << "fe: " << numeredEntFiniteElementPtr->getBitRefLevel()
-             << std::endl;
-          ss << "problem: " << problemPtr->getBitRefLevel() << std::endl;
-          ss << "problem mask: " << problemPtr->getMaskBitRefLevel()
-             << std::endl;
-          PetscPrintf(mFieldPtr->get_comm(), "%s", ss.str().c_str());
-          SETERRQ(mFieldPtr->get_comm(), MOFEM_DATA_INCONSISTENCY,
-                  "adjacencies data inconsistency");
-        } else {
-          UId uid = ait->getEntUniqueId();
-          if (entitiesPtr->find(uid) == entitiesPtr->end()) {
-            SETERRQ(mFieldPtr->get_comm(), MOFEM_DATA_INCONSISTENCY,
-                    "data inconsistency");
-          }
-          if (dofsPtr->find((*rit)->getGlobalUniqueId()) == dofsPtr->end()) {
-            SETERRQ(mFieldPtr->get_comm(), MOFEM_DATA_INCONSISTENCY,
-                    "data inconsistency");
-          }
-        }
-        int row = (*rit)->getPetscGlobalDofIdx();
-
-        FENumeredDofEntity_multiIndex::iterator cit = colPtr->begin();
-        for (; cit != colPtr->end(); cit++) {
-
-          int col = (*cit)->getPetscGlobalDofIdx();
-
-          if (row == rowPrint && col == colPrint) {
-
-            std::ostringstream ss;
-            ss << "fe:\n" << *numeredEntFiniteElementPtr << std::endl;
-            ss << "row:\n" << *(*rit) << std::endl;
-            ss << "col:\n" << *(*cit) << std::endl;
-
-            ss << "fe:\n"
-               << numeredEntFiniteElementPtr->getBitRefLevel() << std::endl;
-            ss << "row:\n" << (*rit)->getBitRefLevel() << std::endl;
-            ss << "col:\n" << (*cit)->getBitRefLevel() << std::endl;
-
-            std::cerr << ss.str() << std::endl;
-
-            // PetscPrintf(mFieldPtr->get_comm(),"%s\n",ss.str().c_str());
-          }
-
-          CHKERR MatSetValue(A, row, col, 1, INSERT_VALUES);
-        }
-
-        if ((*rit)->getEntType() != MBVERTEX) {
-
-          FENumeredDofEntity_multiIndex::index<
-              Composite_Name_Type_And_Side_Number_mi_tag>::type::iterator dit,
-              hi_dit;
-          dit = rowPtr->get<Composite_Name_Type_And_Side_Number_mi_tag>()
-                    .lower_bound(boost::make_tuple(
-                        (*rit)->getName(), (*rit)->getEntType(),
-                        (*rit)->sideNumberPtr->side_number));
-          hi_dit = rowPtr->get<Composite_Name_Type_And_Side_Number_mi_tag>()
-                       .upper_bound(boost::make_tuple(
-                           (*rit)->getName(), (*rit)->getEntType(),
-                           (*rit)->sideNumberPtr->side_number));
-          int nb_dofs_on_ent = std::distance(dit, hi_dit);
-
-          int max_order = (*rit)->getMaxOrder();
-          if ((*rit)->getNbOfCoeffs() * (*rit)->getOrderNbDofs(max_order) !=
-              nb_dofs_on_ent) {
-            std::cerr << "Warning: Number of Dofs in Row diffrent than number "
-                         "of dofs for given entity order "
-                      << (*rit)->getNbOfCoeffs() *
-                             (*rit)->getOrderNbDofs(max_order)
-                      << " " << nb_dofs_on_ent << std::endl;
-          }
-        }
-      }
-
-      MoFEMFunctionReturn(0);
-    }
-
-    MoFEMErrorCode postProcess() {
-      MoFEMFunctionBegin;
-
-      // cerr << mFieldPtr->get_comm_rank() << endl;
-      CHKERR MatAssemblyBegin(A, MAT_FLUSH_ASSEMBLY);
-      CHKERR MatAssemblyEnd(A, MAT_FLUSH_ASSEMBLY);
-
-      MoFEMFunctionReturn(0);
-    }
-  };
-
-  Mat A;
-  CHKERR MatCreateMPIAIJWithArrays(problem_name, &A);
-  CHKERR MatSetOption(A, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_TRUE);
-
-  if (verb >= VERY_VERBOSE) {
-    MatView(A, PETSC_VIEWER_STDOUT_WORLD);
-  }
-
-  if (verb >= NOISY) {
-    MatView(A, PETSC_VIEWER_DRAW_WORLD);
-    std::string wait;
-    std::cin >> wait;
-  }
-
-  TestMatrixFillIn method(this, A, row_print, col_print);
-
-  typedef Problem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
-  // find p_miit
-  ProblemsByName &pRoblems_set = pRoblems.get<Problem_mi_tag>();
-  ProblemsByName::iterator p_miit = pRoblems_set.find(problem_name);
-  if (p_miit == pRoblems_set.end()) {
-    SETERRQ1(cOmm, 1, "problem < %s > not found (top tip: check spelling)",
-             problem_name.c_str());
-  }
-  if (verb >= VERBOSE) {
-    PetscPrintf(cOmm, "check problem < %s >\n", problem_name.c_str());
-  }
-
-  // Loop all elements in problem and check if assemble is without error
-  FiniteElement_multiIndex::iterator fe = finiteElements.begin();
-  FiniteElement_multiIndex::iterator hi_fe = finiteElements.end();
-  for (; fe != hi_fe; fe++) {
-
-    if (verb >= VERBOSE) {
-      PetscPrintf(cOmm, "\tcheck element %s\n", (*fe)->getName().c_str());
-    }
-
-    CHKERR loop_finite_elements(problem_name, (*fe)->getName(), method,
-                                MF_EXIST, verb);
-  }
-
-  CHKERR MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
-  CHKERR MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
-
-  CHKERR MatDestroy(&A);
-
-  MoFEMFunctionReturn(0);
+  return getInterface<MatrixManager>()
+      ->checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>(
+          problem_name, row_print, col_print, verb);
 }
 
 MoFEMErrorCode
@@ -1032,9 +765,10 @@ MatrixManager::~MatrixManager() {}
 
 template <>
 MoFEMErrorCode MatrixManager::createMPIAIJWithArrays<PetscGlobalIdx_mi_tag>(
-    const std::string &name, Mat *Aij, PetscInt **i, PetscInt **j,
+    const std::string name, Mat *Aij, PetscInt **i, PetscInt **j,
     PetscScalar **v, int verb) {
   MoFEMFunctionBegin;
+  PetscLogEventBegin(MOFEM_EVENT_createMPIAIJWithArrays, 0, 0, 0, 0);
 
   int *_i, *_j;
   double *_v = v ? *v : PETSC_NULL;
@@ -1056,14 +790,16 @@ MoFEMErrorCode MatrixManager::createMPIAIJWithArrays<PetscGlobalIdx_mi_tag>(
   if (v)
     *v = _v;
 
+  PetscLogEventEnd(MOFEM_EVENT_createMPIAIJWithArrays, 0, 0, 0, 0);
   MoFEMFunctionReturn(0);
 }
 
 template <>
 MoFEMErrorCode MatrixManager::createMPIAdjWithArrays<Idx_mi_tag>(
-    const std::string &name, Mat *Adj, PetscInt **i, PetscInt **j,
+    const std::string name, Mat *Adj, PetscInt **i, PetscInt **j,
     PetscScalar **v, int verb) {
   MoFEMFunctionBegin;
+  PetscLogEventBegin(MOFEM_EVENT_createMPIAdjWithArrays, 0, 0, 0, 0);
 
   int *_i, *_j;
   double *_v = v ? *v : PETSC_NULL;
@@ -1081,14 +817,16 @@ MoFEMErrorCode MatrixManager::createMPIAdjWithArrays<Idx_mi_tag>(
   if (j)
     *j = _j;
 
+  PetscLogEventEnd(MOFEM_EVENT_createMPIAdjWithArrays, 0, 0, 0, 0);
   MoFEMFunctionReturn(0);
 }
 
 template <>
 MoFEMErrorCode MatrixManager::createSeqAIJWithArrays<PetscLocalIdx_mi_tag>(
-    const std::string &name, Mat *Aij, PetscInt **i, PetscInt **j,
+    const std::string name, Mat *Aij, PetscInt **i, PetscInt **j,
     PetscScalar **v, int verb) {
   MoFEMFunctionBegin;
+  PetscLogEventBegin(MOFEM_EVENT_createSeqAIJWithArrays, 0, 0, 0, 0);
 
   int *_i, *_j;
   double *_v = v ? *v : PETSC_NULL;
@@ -1110,16 +848,17 @@ MoFEMErrorCode MatrixManager::createSeqAIJWithArrays<PetscLocalIdx_mi_tag>(
   if (v)
     *v = _v;
 
+  PetscLogEventEnd(MOFEM_EVENT_createSeqAIJWithArrays, 0, 0, 0, 0);
   MoFEMFunctionReturn(0);
 }
 
 template <>
 MoFEMErrorCode
 MatrixManager::checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>(
-    const std::string &problem_name, int row_print, int col_print,
-    int verb) {
+    const std::string problem_name, int row_print, int col_print, int verb) {
   MoFEM::Interface &m_field = cOre;
   MoFEMFunctionBegin;
+  PetscLogEventBegin(MOFEM_EVENT_checkMPIAIJWithArraysMatrixFillIn, 0, 0, 0, 0);
 
   struct TestMatrixFillIn : public FEMethod {
     Interface *mFieldPtr;
@@ -1364,6 +1103,8 @@ MatrixManager::checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>(
   CHKERR MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
   CHKERR MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
   CHKERR MatDestroy(&A);
+
+  PetscLogEventEnd(MOFEM_EVENT_checkMPIAIJWithArraysMatrixFillIn, 0, 0, 0, 0);
 
   MoFEMFunctionReturn(0);
 }
