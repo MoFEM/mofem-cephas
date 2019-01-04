@@ -1888,7 +1888,9 @@ MoFEMErrorCode ProblemsManager::partitionProblem(const std::string &name,
   int nb_dofs_row = p_miit->getNbDofsRow();
 
   Mat Adj;
-  CHKERR m_field.MatCreateMPIAdj_with_Idx_mi_tag(name, &Adj, verb);
+  CHKERR m_field.getInterface<MatrixManager>()
+      ->createMPIAdjWithArrays<Idx_mi_tag>(name, &Adj, PETSC_NULL, PETSC_NULL,
+                                           PETSC_NULL, verb);
 
   int m, n;
   CHKERR MatGetSize(Adj, &m, &n);
