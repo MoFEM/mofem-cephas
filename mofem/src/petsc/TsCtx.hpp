@@ -172,8 +172,7 @@ struct TsCtx {
 /**
  * @brief Set IFunction for TS solver
  *
- * For details see:
- * <a href=https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/TS/TSSetIFunction.html>
+ * <a href=https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/TS/TSSetIFunction.html>See petsc for details</a>
  *
  * @param ts
  * @param t
@@ -189,8 +188,7 @@ PetscErrorCode TsSetIFunction(TS ts, PetscReal t, Vec u, Vec u_t, Vec F,
 /**
  * @brief Set function evaluating jacobina in TS solver
  *
- * For details see:
- * <a href=https://www.mcs.anl.gov/petsc/petsc-3.1/docs/manualpages/TS/TSSetIJacobian.html>
+ * <a href=https://www.mcs.anl.gov/petsc/petsc-3.1/docs/manualpages/TS/TSSetIJacobian.html>See PETSc for details</a>
  *
  * @param ts
  * @param t
@@ -208,8 +206,7 @@ PetscErrorCode TsSetIJacobian(TS ts, PetscReal t, Vec u, Vec u_t, PetscReal a,
 /**
  * @brief Set monitor for TS solver
  *
- * For details see:
- * <a href=https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/TS/TSMonitorSet.html>
+ * <a href=https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/TS/TSMonitorSet.html>See PETSc for details</a>
  *
  * @param ts
  * @param step

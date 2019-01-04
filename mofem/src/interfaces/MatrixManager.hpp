@@ -28,7 +28,7 @@ static const MOFEMuuid IDD_MOFEMMatrixManager =
 
 /**
  * \brief Matrix manager is used to build and partition problems
- * \mofem_mat_interface
+ * \ingroup mofem_mat_interface
  *
  */
 struct MatrixManager : public UnknownInterface {
@@ -48,10 +48,7 @@ struct MatrixManager : public UnknownInterface {
    * @brief Creates a MPI AIJ matrix using arrays that contain in standard CSR
    * format the local rows.
    *
-   * See for details:
-   * <a
-   *
-   href=https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/Mat/MatCreateMPIAIJWithArrays.html>
+   * <a href=https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/Mat/MatCreateMPIAIJWithArrays.html>See PETSc for details</a>
 
    * @tparam Tag
    * @param name
@@ -77,9 +74,8 @@ struct MatrixManager : public UnknownInterface {
    * The matrix
    * does not have numerical values associated with it, but is intended for
    * ordering (to reduce bandwidth etc) and partitioning.
-   *
-   * <a href =
-   * https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/Mat/MatCreateMPIAdj.html>
+   * 
+   * <a href=https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/Mat/MatCreateMPIAdj.html>See PETSc for details</a>
    *
    * \note This matrix object does not support most matrix operations, include
    * MatSetValues(). You must NOT free the ii, values and jj arrays yourself.
@@ -105,13 +101,15 @@ struct MatrixManager : public UnknownInterface {
   }
 
   /**
-   * @brief
+   * @brief Create sequencial matrix
    *
    * Creates a sparse matrix in AIJ (compressed row) format (the default
    * parallel PETSc format). For good matrix assembly performance the user
    * should preallocate the matrix storage by setting the parameter nz (or the
    * array nnz). By setting these parameters accurately, performance during
    * matrix assembly can be increased by more than a factor of 50.
+   * 
+   * <a href=https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/Mat/MatCreateSeqAIJ.html>See PETSc for details</a>
    *
    * @tparam Tag
    * @param name
@@ -184,9 +182,9 @@ MatrixManager::checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>(
 
 #endif // __MATMANAGER_HPP__a
 
-/*******************************************************************************
+/**
  * \defgroup mofem_mat_interface Matrix Manager
  * \brief Creating and managing matrices
  *
  * \ingroup mofem
- ******************************************************************************/
+ */
