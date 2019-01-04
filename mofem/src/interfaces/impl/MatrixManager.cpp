@@ -79,10 +79,10 @@ MoFEMErrorCode CreateRowComressedADJMatrix::buildFECol(
     boost::shared_ptr<NumeredEntFiniteElement> &fe_ptr) const {
   MoFEMFunctionBegin;
 
-  if (!ent_fe_ptr) {
-    SETERRQ(cOmm, MOFEM_DATA_INCONSISTENCY,
+  if (!ent_fe_ptr) 
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "Pointer to EntFiniteElement not given");
-  }
+  
   // if element is not part of problem
   if ((ent_fe_ptr->getId() & p_miit->getBitFEId()).none())
     MoFEMFunctionReturnHot(0);
@@ -96,18 +96,13 @@ MoFEMErrorCode CreateRowComressedADJMatrix::buildFECol(
   if ((fe_bit & prb_bit) != prb_bit)
     MoFEMFunctionReturnHot(0);
 
-  NumeredEntFiniteElement_multiIndex::iterator fe_it =
+  auto fe_it =
       p_miit->numeredFiniteElements.find(ent_fe_ptr->getGlobalUniqueId());
 
   // Create element if is not there
   if (fe_it == p_miit->numeredFiniteElements.end()) {
-    std::pair<NumeredEntFiniteElement_multiIndex::iterator, bool> p;
-    p = p_miit->numeredFiniteElements.insert(
+    auto p = p_miit->numeredFiniteElements.insert(
         boost::make_shared<NumeredEntFiniteElement>(ent_fe_ptr));
-    if (!p.second) {
-      SETERRQ(cOmm, MOFEM_DATA_INCONSISTENCY,
-              "Data inconsistency, this element should be created");
-    }
     fe_it = p.first;
   }
   fe_ptr = *fe_it;
@@ -129,27 +124,21 @@ MoFEMErrorCode CreateRowComressedADJMatrix::buildFECol(
       dofs_array->reserve(cols_view.size());
 
       // Create dofs objects
-      for (NumeredDofEntity_multiIndex_uid_view_ordered::iterator it =
-               cols_view.begin();
-           it != cols_view.end(); it++) {
-        if (!*it) {
-          SETERRQ(cOmm, MOFEM_DATA_INCONSISTENCY, "Null pointer to dof");
-        }
-        boost::shared_ptr<SideNumber> side_number_ptr;
-        side_number_ptr = fe_ptr->getSideNumberPtr(it->get()->getEnt());
-        dofs_array->emplace_back(side_number_ptr, *it);
+      for (auto &dof : cols_view) {
+        auto side_number_ptr = fe_ptr->getSideNumberPtr(dof->getEnt());
+        dofs_array->emplace_back(side_number_ptr, dof);
       }
 
       // Finally add DoFS to multi-indices
       auto hint = fe_ptr->cols_dofs->end();
       for (auto &dof : *dofs_array)
         hint = fe_ptr->cols_dofs->emplace_hint(hint, dofs_array, &dof);
+
     }
 
-  } else {
-    SETERRQ(cOmm, MOFEM_DATA_INCONSISTENCY,
+  } else 
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "At that point ptr to finite element should be well known");
-  }
 
   MoFEMFunctionReturn(0);
 }
@@ -163,31 +152,29 @@ MoFEMErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
     std::vector<int> &dofs_col_view, int verb) const {
   MoFEMFunctionBegin;
 
-  // check if dofs and columns are the same, i.e. structurally symmetric problem
-  bool do_cols_prob = true;
-  if (p_miit->numeredDofsRows == p_miit->numeredDofsCols) {
-    do_cols_prob = false;
-  }
+  BitRefLevel prb_bit = p_miit->getBitRefLevel();
+  BitRefLevel prb_mask = p_miit->getMaskBitRefLevel();
 
-  AdjByEnt::iterator adj_miit, hi_adj_miit;
-  adj_miit = entFEAdjacencies.get<Unique_mi_tag>().lower_bound(
-      mofem_ent_ptr->getGlobalUniqueId());
-  hi_adj_miit = entFEAdjacencies.get<Unique_mi_tag>().upper_bound(
-      mofem_ent_ptr->getGlobalUniqueId());
+  // check if dofs and columns are the same, i.e. structurally symmetric problem
+  bool do_cols_prob;
+  if (p_miit->numeredDofsRows == p_miit->numeredDofsCols) 
+    do_cols_prob = false;
+  else
+    do_cols_prob = true;
 
   dofs_col_view.clear();
-  for (; adj_miit != hi_adj_miit; adj_miit++) {
+  for (auto r = entFEAdjacencies.get<Unique_mi_tag>().equal_range(
+           mofem_ent_ptr->getGlobalUniqueId());
+       r.first != r.second; ++r.first) {
 
-    if (adj_miit->byWhat & BYROW) {
+    if (r.first->byWhat & BYROW) {
 
-      if ((adj_miit->entFePtr->getId() & p_miit->getBitFEId()).none()) {
+      if ((r.first->entFePtr->getId() & p_miit->getBitFEId()).none()) {
         // if element is not part of problem
         continue;
       }
 
-      BitRefLevel prb_bit = p_miit->getBitRefLevel();
-      BitRefLevel prb_mask = p_miit->getMaskBitRefLevel();
-      BitRefLevel fe_bit = adj_miit->entFePtr->getBitRefLevel();
+      BitRefLevel fe_bit = r.first->entFePtr->getBitRefLevel();
       // if entity is not problem refinement level
       if ((fe_bit & prb_mask) != fe_bit)
         continue;
@@ -200,7 +187,7 @@ MoFEMErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
 
       boost::shared_ptr<NumeredEntFiniteElement> fe_ptr;
       // get element, if element is not in database build columns dofs
-      CHKERR buildFECol(p_miit, adj_miit->entFePtr, do_cols_prob, fe_ptr);
+      CHKERR buildFECol(p_miit, r.first->entFePtr, do_cols_prob, fe_ptr);
 
       if (fe_ptr) {
         for (FENumeredDofEntity_multiIndex::iterator vit =
@@ -233,11 +220,10 @@ MoFEMErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
           }
           PetscSynchronizedPrintf(cOmm, "%s", ss.str().c_str());
         }
-      } else {
-        SETERRQ(cOmm, MOFEM_DATA_INCONSISTENCY,
+      } else
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                 "Element should be here, otherwise matrix will have missing "
                 "elements");
-      }
     }
   }
 
@@ -344,7 +330,7 @@ MoFEMErrorCode CreateRowComressedADJMatrix::createMatArrays(
           mofem_ent_ptr = (*mit_row)->getFieldEntityPtr();
           CHKERR getEntityAdjacenies<TAG>(p_miit, mit_row, mofem_ent_ptr,
                                           dofs_col_view, verb);
-          // Sort, uniqe and resize dofs_col_view
+          // Sort, unique and resize dofs_col_view
           {
             sort(dofs_col_view.begin(), dofs_col_view.end());
             std::vector<int>::iterator new_end =
@@ -355,8 +341,8 @@ MoFEMErrorCode CreateRowComressedADJMatrix::createMatArrays(
           // Add that row. Patterns is that first index is row index, second is
           // size of adjacencies after that follows column adjacencies.
           int owner = (*mit_row)->getOwnerProc();
-          dofs_vec[owner].push_back(TAG::get_index(mit_row)); // row index
-          dofs_vec[owner].push_back(
+          dofs_vec[owner].emplace_back(TAG::get_index(mit_row)); // row index
+          dofs_vec[owner].emplace_back(
               dofs_col_view.size()); // nb. of column adjacencies
           // add adjacent cools
           dofs_vec[owner].insert(dofs_vec[owner].end(), dofs_col_view.begin(),
