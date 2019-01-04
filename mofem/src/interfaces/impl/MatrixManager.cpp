@@ -123,13 +123,11 @@ MoFEMErrorCode CreateRowComressedADJMatrix::buildFECol(
           *(p_miit->numeredDofsCols), cols_view, moab::Interface::UNION);
 
       // Reserve memory for field  dofs
-      boost::shared_ptr<std::vector<FENumeredDofEntity>> dofs_array =
-          boost::make_shared<std::vector<FENumeredDofEntity>>();
+      boost::shared_ptr<std::vector<FENumeredDofEntity>> dofs_array(
+          new std::vector<FENumeredDofEntity>());
       fe_ptr->getColDofsSequence() = dofs_array;
       dofs_array->reserve(cols_view.size());
-      // Reserve memory for shared pointers now
-      std::vector<boost::shared_ptr<FENumeredDofEntity>> dofs_shared_array;
-      dofs_shared_array.reserve(dofs_array->size());
+
       // Create dofs objects
       for (NumeredDofEntity_multiIndex_uid_view_ordered::iterator it =
                cols_view.begin();
@@ -139,13 +137,13 @@ MoFEMErrorCode CreateRowComressedADJMatrix::buildFECol(
         }
         boost::shared_ptr<SideNumber> side_number_ptr;
         side_number_ptr = fe_ptr->getSideNumberPtr(it->get()->getEnt());
-        dofs_array->push_back(FENumeredDofEntity(side_number_ptr, *it));
-        dofs_shared_array.push_back(boost::shared_ptr<FENumeredDofEntity>(
-            dofs_array, &dofs_array->back()));
+        dofs_array->emplace_back(side_number_ptr, *it);
       }
+
       // Finally add DoFS to multi-indices
-      fe_ptr->cols_dofs->insert(dofs_shared_array.begin(),
-                                dofs_shared_array.end());
+      auto hint = fe_ptr->cols_dofs->end();
+      for (auto &dof : *dofs_array)
+        hint = fe_ptr->cols_dofs->emplace_hint(hint, dofs_array, &dof);
     }
 
   } else {
