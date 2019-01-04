@@ -689,8 +689,6 @@ protected:
   DEPRECATED MoFEMErrorCode
   build_problem_on_distributed_mesh(int verb = DEFAULT_VERBOSITY);
   DEPRECATED MoFEMErrorCode build_problems(int verb = DEFAULT_VERBOSITY);
-  MoFEMErrorCode partition_check_matrix_fill_in(const std::string &problem_name,
-                                                int row, int col, int verb);
 
   /**@}*/
 
@@ -724,22 +722,6 @@ protected:
   clear_adjacencies_finite_elements(const std::string &name, const Range &ents,
                                     int verb = DEFAULT_VERBOSITY);
   MoFEMErrorCode list_adjacencies() const;
-
-  /**@}*/
-
-  /** \name Create matrices (will be moved to independent interface) */
-
-  /**@{*/
-
-  MoFEMErrorCode MatCreateMPIAIJWithArrays(const std::string &name, Mat *Aij,
-                                           int verb = DEFAULT_VERBOSITY);
-  MoFEMErrorCode MatCreateMPIAdj_with_Idx_mi_tag(const std::string &name,
-                                                 Mat *Adj,
-                                                 int verb = DEFAULT_VERBOSITY);
-  MoFEMErrorCode MatCreateSeqAIJWithArrays(const std::string &name, Mat *Aij,
-                                           PetscInt **i, PetscInt **j,
-                                           PetscScalar **v,
-                                           int verb = DEFAULT_VERBOSITY);
 
   /**@}*/
 

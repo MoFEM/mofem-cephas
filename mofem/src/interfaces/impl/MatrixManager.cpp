@@ -708,35 +708,6 @@ MoFEMErrorCode CreateRowComressedADJMatrix::createMat(
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode Core::MatCreateMPIAIJWithArrays(const std::string &name,
-                                               Mat *Aij, int verb) {
-  return getInterface<MatrixManager>()
-      ->createMPIAIJWithArrays<PetscGlobalIdx_mi_tag>(
-          name, Aij, PETSC_NULL, PETSC_NULL, PETSC_NULL, verb);
-}
-
-MoFEMErrorCode Core::MatCreateMPIAdj_with_Idx_mi_tag(const std::string &name,
-                                                     Mat *Adj, int verb) {
-  return getInterface<MatrixManager>()->createMPIAdjWithArrays<Idx_mi_tag>(
-      name, Adj, PETSC_NULL, PETSC_NULL, PETSC_NULL, verb);
-}
-
-MoFEMErrorCode Core::MatCreateSeqAIJWithArrays(const std::string &name,
-                                               Mat *Aij, PetscInt **i,
-                                               PetscInt **j, PetscScalar **v,
-                                               int verb) {
-  return getInterface<MatrixManager>()
-      ->createSeqAIJWithArrays<PetscLocalIdx_mi_tag>(name, Aij, i, j, v, verb);
-}
-
-MoFEMErrorCode
-Core::partition_check_matrix_fill_in(const std::string &problem_name,
-                                     int row_print, int col_print, int verb) {
-  return getInterface<MatrixManager>()
-      ->checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>(
-          problem_name, row_print, col_print, verb);
-}
-
 MoFEMErrorCode
 MatrixManager::query_interface(const MOFEMuuid &uuid,
                                  UnknownInterface **iface) const {

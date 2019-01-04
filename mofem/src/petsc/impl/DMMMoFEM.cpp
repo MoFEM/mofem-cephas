@@ -54,12 +54,12 @@
 // #undef PETSC_VERSION_RELEASE
 // #define PETSC_VERSION_RELEASE 1
 
-#if PETSC_VERSION_GE(3,6,0)
-  #include <petsc/private/dmimpl.h> /*I  "petscdm.h"   I*/
-  // #include <petsc/private/vecimpl.h> /*I  "petscdm.h"   I*/
+#if PETSC_VERSION_GE(3, 6, 0)
+#include <petsc/private/dmimpl.h> /*I  "petscdm.h"   I*/
+// #include <petsc/private/vecimpl.h> /*I  "petscdm.h"   I*/
 #else
-  #include <petsc-private/dmimpl.h> /*I  "petscdm.h"   I*/
-  #include <petsc-private/vecimpl.h> /*I  "petscdm.h"   I*/
+#include <petsc-private/dmimpl.h>  /*I  "petscdm.h"   I*/
+#include <petsc-private/vecimpl.h> /*I  "petscdm.h"   I*/
 #endif
 
 #include <DMMoFEM.hpp>
@@ -541,7 +541,7 @@ PetscErrorCode DMoFEMLoopDofs(DM dm, const char field_name[],
   MoFEMFunctionReturnHot(0);
 }
 
-template <class S, class T0, class T1, class T2 >
+template <class S, class T0, class T1, class T2>
 static PetscErrorCode DMMoFEMKSPSetComputeRHS(DM dm, S fe_name, T0 method,
                                               T1 pre_only, T2 post_only) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
@@ -618,7 +618,7 @@ DMMoFEMKSPSetComputeOperators(DM dm, const std::string &fe_name,
                               boost::shared_ptr<MoFEM::BasicMethod> pre_only,
                               boost::shared_ptr<MoFEM::BasicMethod> post_only) {
   return DMMoFEMKSPSetComputeOperators<const std::string &,
-                                       boost::shared_ptr<MoFEM::FEMethod> >(
+                                       boost::shared_ptr<MoFEM::FEMethod>>(
       dm, fe_name, method, pre_only, post_only);
 }
 
@@ -910,8 +910,9 @@ PetscErrorCode DMCreateMatrix_MoFEM(DM dm, Mat *M) {
   MoFEMFunctionBegin;
   DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
   if (strcmp(dm->mattype, MATMPIAIJ) == 0) {
-    CHKERR dm_field->mField_ptr->MatCreateMPIAIJWithArrays(
-        dm_field->problemName, M);
+    CHKERR dm_field->mField_ptr->getInterface<MatrixManager>()
+        ->createMPIAIJWithArrays<PetscGlobalIdx_mi_tag>(dm_field->problemName,
+                                                        M);
   } else if (strcmp(dm->mattype, MATAIJ) == 0) {
     PetscInt *i;
     PetscInt *j;

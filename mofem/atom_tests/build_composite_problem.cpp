@@ -1,5 +1,5 @@
 /** \file build_composite_problems.cpp
-
+  \example build_composite_problems.cpp
   \brief Atom test for building composite problems
 
 */
@@ -113,22 +113,6 @@ int main(int argc, char *argv[]) {
     CHKERR pcomm->resolve_shared_ents(0, proc_ents, 3, -1, proc_ents_skin);
     Range owned_tets = proc_ents;
 
-    // CHKERR pcomm->get_part_entities(owned_tets,3);
-    // if(m_field.get_comm_rank()==1) {
-    //   Range verts;
-    //   CHKERR moab.get_connectivity(owned_tets,verts,true);
-    //   for(Range::iterator vit = verts.begin();vit!=verts.end();vit++) {
-    //     EntityHandle moab_owner_handle;
-    //     int owner_proc;
-    //     unsigned char pstatus;
-    //     moab.tag_get_data(pcomm->pstatus_tag(),&*vit,1,&pstatus);
-    //     MOAB_THROW(rval); CHKERR
-    //     pcomm->get_owner_handle(*vit,owner_proc,moab_owner_handle);
-    //     MOAB_THROW(rval); cerr << *vit << " " <<  std::bitset<8>(pstatus) <<
-    //     " " << owner_proc << " " << moab_owner_handle << endl;
-    //   }
-    // }
-
     if (0) {
       std::ostringstream file_owned;
       file_owned << "out_owned_" << m_field.get_comm_rank() << ".vtk";
@@ -153,7 +137,7 @@ int main(int argc, char *argv[]) {
                              &meshset_shared_owned, 1);
     }
 
-    // set entitities bit level
+    // set entities bit level
     BitRefLevel bit_level0;
     bit_level0.set(0);
     CHKERR m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(
@@ -209,7 +193,8 @@ int main(int argc, char *argv[]) {
 
     if (0) {
       Mat m;
-      CHKERR m_field.MatCreateMPIAIJWithArrays("P1", &m);
+      CHKERR m_field.getInterface<MatrixManager>()
+          ->createMPIAIJWithArrays<PetscGlobalIdx_mi_tag>("P1", &m);
       MatView(m, PETSC_VIEWER_DRAW_WORLD);
       std::string wait;
       std::cin >> wait;
@@ -240,22 +225,10 @@ int main(int argc, char *argv[]) {
     CHKERR DMMoFEMAddRowCompositeProblem(dm, "P2");
     CHKERR DMSetUp(dm);
 
-    // CHKERR m_field.add_problem("COMP");
-    // CHKERR m_field.modify_problem_ref_level_add_bit("COMP",bit_level0);
-    // CHKERR m_field.modify_problem_add_finite_element("COMP","E1");
-    // CHKERR m_field.modify_problem_add_finite_element("COMP","E2");
-    // std::vector<std::string> add_problems;
-    // add_problems.push_back("P1");
-    // add_problems.push_back("P2");
-    // CHKERR
-    // prb_mng_ptr->buildCompsedProblem("COMP",add_problems,add_problems,true,1);
-    // CHKERR
-    // prb_mng_ptr->partitionFiniteElements("COMP",true,0,m_field.get_comm_size(),1);
-    // CHKERR prb_mng_ptr->partitionGhostDofs("COMP",1);
-
     if (0) {
       Mat m;
-      CHKERR m_field.MatCreateMPIAIJWithArrays("COMP", &m);
+      CHKERR m_field.getInterface<MatrixManager>()
+          ->createMPIAIJWithArrays<PetscGlobalIdx_mi_tag>("COMP", &m);
       MatView(m, PETSC_VIEWER_DRAW_WORLD);
       std::string wait;
       std::cin >> wait;
