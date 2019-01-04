@@ -914,22 +914,9 @@ PetscErrorCode DMCreateMatrix_MoFEM(DM dm, Mat *M) {
         ->createMPIAIJWithArrays<PetscGlobalIdx_mi_tag>(dm_field->problemName,
                                                         M);
   } else if (strcmp(dm->mattype, MATAIJ) == 0) {
-    PetscInt *i;
-    PetscInt *j;
-    PetscScalar *v;
-#if PETSC_VERSION_GE(3, 7, 0)
     CHKERR dm_field->mField_ptr->getInterface<MatrixManager>()
         ->createSeqAIJWithArrays<PetscLocalIdx_mi_tag>(dm_field->problemName,
                                                        M);
-    CHKERR MatConvert(*M, MATAIJ, MAT_INPLACE_MATRIX, M);
-#else
-    Mat N;
-    CHKERR dm_field->mField_ptr->getInterface<MatrixManager>()
-        ->createSeqAIJWithArrays<PetscLocalIdx_mi_tag>(dm_field->problemName,
-                                                       &N);
-    CHKERR MatConvert(N, MATAIJ, MAT_INITIAL_MATRIX, M);
-    CHKERR MatDestroy(&N);
-#endif
   } else {
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
             "Matrix type not implemented");

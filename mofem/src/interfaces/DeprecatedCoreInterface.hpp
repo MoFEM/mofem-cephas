@@ -1502,8 +1502,7 @@ struct DeprecatedCoreInterface : public CoreInterface {
    *
    * \code
    * CHKERR m_field.getInterface<MatrixManager>()
-   *  ->createMPIAIJWithArrays<PetscGlobalIdx_mi_tag>(
-   *       name, Aij, PETSC_NULL, PETSC_NULL, PETSC_NULL, verb);
+   *  ->createMPIAIJWithArrays<PetscGlobalIdx_mi_tag>(name, Aij, verb);
    * \endcode
    */
   DEPRECATED MoFEMErrorCode MatCreateMPIAIJWithArrays(
@@ -1514,8 +1513,7 @@ struct DeprecatedCoreInterface : public CoreInterface {
    *
    * \code
    * CHKERR m_field.getInterface<MatrixManager>()
-   *  ->createMPIAIJWithArrays<PetscGlobalIdx_mi_tag>(
-   *       name, Aij, PETSC_NULL, PETSC_NULL, PETSC_NULL, verb);
+   *  ->createMPIAIJWithArrays<PetscGlobalIdx_mi_tag>(name, Aij, verb);
    * \endcode
    */
   DEPRECATED MoFEMErrorCode MatCreateMPIAdj_with_Idx_mi_tag(
@@ -1526,8 +1524,7 @@ struct DeprecatedCoreInterface : public CoreInterface {
    *
    * \code
    * CHKERR m_field.getInterface<MatrixManager>()
-   *  ->createSeqAIJWithArrays<PetscLocalIdx_mi_tag>(
-   *  name, Adj, PETSC_NULL, PETSC_NULL, PETSC_NULL, verb);
+   *  ->createSeqAIJWithArrays<PetscLocalIdx_mi_tag>(name, Adj, verb);
    * \endcode
    *
    */

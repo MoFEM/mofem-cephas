@@ -559,21 +559,24 @@ MoFEMErrorCode
 DeprecatedCoreInterface::MatCreateMPIAIJWithArrays(const std::string &name,
                                                    Mat *Aij, int verb) {
   return getInterface<MatrixManager>()
-      ->createMPIAIJWithArrays<PetscGlobalIdx_mi_tag>(
-          name, Aij, PETSC_NULL, PETSC_NULL, PETSC_NULL, verb);
+      ->createMPIAIJWithArrays<PetscGlobalIdx_mi_tag>(name, Aij, verb);
 }
 
 MoFEMErrorCode DeprecatedCoreInterface::MatCreateMPIAdj_with_Idx_mi_tag(
     const std::string &name, Mat *Adj, int verb) {
   return getInterface<MatrixManager>()->createMPIAdjWithArrays<Idx_mi_tag>(
-      name, Adj, PETSC_NULL, PETSC_NULL, PETSC_NULL, verb);
+      name, Adj, verb);
 }
 
 MoFEMErrorCode DeprecatedCoreInterface::MatCreateSeqAIJWithArrays(
     const std::string &name, Mat *Aij, PetscInt **i, PetscInt **j,
     PetscScalar **v, int verb) {
-  return getInterface<MatrixManager>()
-      ->createSeqAIJWithArrays<PetscLocalIdx_mi_tag>(name, Aij, i, j, v, verb);
+  MoFEMFunctionBegin;
+  if (i || j || v)
+    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Not implemented");
+  CHKERR getInterface<MatrixManager>()
+      ->createSeqAIJWithArrays<PetscLocalIdx_mi_tag>(name, Aij, verb);
+  MoFEMFunctionReturn(0);
 }
 
 } // namespace MoFEM

@@ -660,8 +660,7 @@ MatrixManager::~MatrixManager() {}
 
 template <>
 MoFEMErrorCode MatrixManager::createMPIAIJWithArrays<PetscGlobalIdx_mi_tag>(
-    const std::string name, Mat *Aij, PetscInt **i, PetscInt **j,
-    PetscScalar **v, int verb) {
+    const std::string name, Mat *Aij, int verb) {
   MoFEM::Interface &m_field = cOre;
   CreateRowComressedADJMatrix *core_ptr =
       static_cast<CreateRowComressedADJMatrix *>(&cOre);
@@ -681,45 +680,24 @@ MoFEMErrorCode MatrixManager::createMPIAIJWithArrays<PetscGlobalIdx_mi_tag>(
   std::vector<int> i_vec, j_vec;
   CHKERR core_ptr->createMatArrays<PetscGlobalIdx_mi_tag>(
       p_miit, MATMPIAIJ, i_vec, j_vec, false, verb);
-  int *_i, *_j;
-  CHKERR PetscMalloc(i_vec.size() * sizeof(int), &_i);
-  CHKERR PetscMalloc(j_vec.size() * sizeof(int), &_j);
-  copy(i_vec.begin(), i_vec.end(), _i);
-  copy(j_vec.begin(), j_vec.end(), _j);
 
   int nb_row_dofs = p_miit->getNbDofsRow();
   int nb_col_dofs = p_miit->getNbDofsCol();
   int nb_local_dofs_row = p_miit->getNbLocalDofsRow();
   int nb_local_dofs_col = p_miit->getNbLocalDofsCol();
 
-  if (v != PETSC_NULL) {
-    CHKERR PetscMalloc(j_vec.size() * sizeof(double), v);
-    CHKERR ::MatCreateMPIAIJWithArrays(m_field.get_comm(), nb_local_dofs_row,
-                                       nb_local_dofs_col, nb_row_dofs,
-                                       nb_col_dofs, _i, _j, *v, Aij);
-  } else
-    CHKERR ::MatCreateMPIAIJWithArrays(m_field.get_comm(), nb_local_dofs_row,
-                                       nb_local_dofs_col, nb_row_dofs,
-                                       nb_col_dofs, _i, _j, PETSC_NULL, Aij);
-
-  if (i)
-    *i = _i;
-  else
-    CHKERR PetscFree(_i);
-
-  if (j)
-    *j = _j;
-  else
-    CHKERR PetscFree(_j);
+  CHKERR ::MatCreateMPIAIJWithArrays(
+      m_field.get_comm(), nb_local_dofs_row, nb_local_dofs_col, nb_row_dofs,
+      nb_col_dofs, &*i_vec.begin(), &*j_vec.begin(), PETSC_NULL, Aij);
 
   PetscLogEventEnd(MOFEM_EVENT_createMPIAIJWithArrays, 0, 0, 0, 0);
   MoFEMFunctionReturn(0);
 }
 
 template <>
-MoFEMErrorCode MatrixManager::createMPIAdjWithArrays<Idx_mi_tag>(
-    const std::string name, Mat *Adj, PetscInt **i, PetscInt **j,
-    PetscScalar **v, int verb) {
+MoFEMErrorCode
+MatrixManager::createMPIAdjWithArrays<Idx_mi_tag>(const std::string name,
+                                                  Mat *Adj, int verb) {
   MoFEM::Interface &m_field = cOre;
   CreateRowComressedADJMatrix *core_ptr =
       static_cast<CreateRowComressedADJMatrix *>(&cOre);
@@ -745,22 +723,10 @@ MoFEMErrorCode MatrixManager::createMPIAdjWithArrays<Idx_mi_tag>(
   copy(i_vec.begin(), i_vec.end(), _i);
   copy(j_vec.begin(), j_vec.end(), _j);
 
-  int nb_row_dofs = p_miit->getNbDofsRow();
   int nb_col_dofs = p_miit->getNbDofsCol();
-
-  if (v != PETSC_NULL)
-    SETERRQ(m_field.get_comm(), MOFEM_NOT_IMPLEMENTED, "Not implemented");
-  else
-    CHKERR MatCreateMPIAdj(m_field.get_comm(), i_vec.size() - 1, nb_col_dofs,
-                           _i, _j, PETSC_NULL, Adj);
-
+  CHKERR MatCreateMPIAdj(m_field.get_comm(), i_vec.size() - 1, nb_col_dofs, _i,
+                         _j, PETSC_NULL, Adj);
   CHKERR MatSetOption(*Adj, MAT_STRUCTURALLY_SYMMETRIC, PETSC_TRUE);
-
-  if (i)
-    *i = _i;
-
-  if (j)
-    *j = _j;
 
   PetscLogEventEnd(MOFEM_EVENT_createMPIAdjWithArrays, 0, 0, 0, 0);
   MoFEMFunctionReturn(0);
@@ -768,8 +734,7 @@ MoFEMErrorCode MatrixManager::createMPIAdjWithArrays<Idx_mi_tag>(
 
 template <>
 MoFEMErrorCode MatrixManager::createSeqAIJWithArrays<PetscLocalIdx_mi_tag>(
-    const std::string name, Mat *Aij, PetscInt **i, PetscInt **j,
-    PetscScalar **v, int verb) {
+    const std::string name, Mat *Aij, int verb) {
   MoFEM::Interface &m_field = cOre;
   CreateRowComressedADJMatrix *core_ptr =
       static_cast<CreateRowComressedADJMatrix *>(&cOre);
@@ -789,33 +754,21 @@ MoFEMErrorCode MatrixManager::createSeqAIJWithArrays<PetscLocalIdx_mi_tag>(
   std::vector<int> i_vec, j_vec;
   CHKERR core_ptr->createMatArrays<PetscGlobalIdx_mi_tag>(p_miit, MATAIJ, i_vec,
                                                           j_vec, false, verb);
-  int *_i, *_j;
-  CHKERR PetscMalloc(i_vec.size() * sizeof(int), &_i);
-  CHKERR PetscMalloc(j_vec.size() * sizeof(int), &_j);
-  copy(i_vec.begin(), i_vec.end(), _i);
-  copy(j_vec.begin(), j_vec.end(), _j);
 
   int nb_local_dofs_row = p_miit->getNbLocalDofsRow();
   int nb_local_dofs_col = p_miit->getNbLocalDofsCol();
 
-  if (v != PETSC_NULL) {
-    CHKERR PetscMalloc(j_vec.size() * sizeof(double), v);
-    CHKERR ::MatCreateSeqAIJWithArrays(m_field.get_comm(), nb_local_dofs_row,
-                                       nb_local_dofs_col, _i, _j, *v, Aij);
-  } else
-    CHKERR ::MatCreateSeqAIJWithArrays(m_field.get_comm(), nb_local_dofs_row,
-                                       nb_local_dofs_col, _i, _j, PETSC_NULL,
-                                       Aij);
-
-  if (i)
-    *i = _i;
-  else
-    CHKERR PetscFree(_i);
-
-  if (j)
-    *j = _j;
-  else
-    CHKERR PetscFree(_j);
+  CHKERR ::MatCreateSeqAIJWithArrays(m_field.get_comm(), nb_local_dofs_row,
+                                     nb_local_dofs_col, &*i_vec.begin(),
+                                     &*j_vec.begin(), PETSC_NULL, Aij);
+#if PETSC_VERSION_GE(3, 7, 0)
+  CHKERR MatConvert(*Aij, MATAIJ, MAT_INPLACE_MATRIX, Aij);
+#else
+  Mat N;
+  CHKERR MatConvert(*Adj, MATAIJ, MAT_INITIAL_MATRIX, N);
+  CHKERR MatDestroy(Adj);
+  *Adj = N;
+#endif
 
   PetscLogEventEnd(MOFEM_EVENT_createMPIAIJWithArrays, 0, 0, 0, 0);
   MoFEMFunctionReturn(0);
@@ -1028,8 +981,7 @@ MatrixManager::checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>(
 
   // create matrix
   Mat A;
-  CHKERR createMPIAIJWithArrays<PetscGlobalIdx_mi_tag>(
-      problem_name, &A, PETSC_NULL, PETSC_NULL, PETSC_NULL, verb);
+  CHKERR createMPIAIJWithArrays<PetscGlobalIdx_mi_tag>(problem_name, &A, verb);
   CHKERR MatSetOption(A, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_TRUE);
 
   if (verb >= VERY_VERBOSE) {
