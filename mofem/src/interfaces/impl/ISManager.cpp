@@ -72,7 +72,7 @@ MoFEMErrorCode ISManager::sectionCreate(const std::string &problem_name,
             "Has to be ROW or COLUMN");
   }
   // get fields names on the problem
-  map<std::string, std::pair<int, int> > fields_map;
+  map<std::string, std::pair<int, int>> fields_map;
   {
     int field = 0;
     for (Field_multiIndex::iterator fit = fields_ptr->begin();
@@ -86,8 +86,7 @@ MoFEMErrorCode ISManager::sectionCreate(const std::string &problem_name,
   const int proc = m_field.get_comm_rank();
   CHKERR PetscSectionCreate(PETSC_COMM_WORLD, s);
   CHKERR PetscSectionSetNumFields(*s, fields_map.size());
-  for (map<std::string, std::pair<int, int> >::iterator mit =
-           fields_map.begin();
+  for (map<std::string, std::pair<int, int>>::iterator mit = fields_map.begin();
        mit != fields_map.end(); mit++) {
     CHKERR PetscSectionSetFieldName(*s, mit->second.first, mit->first.c_str());
     CHKERR PetscSectionSetFieldComponents(*s, mit->second.first,
@@ -101,7 +100,8 @@ MoFEMErrorCode ISManager::sectionCreate(const std::string &problem_name,
     hi_dit = dofs->end();
     for (; dit != hi_dit;) {
       EntityHandle ent = dit->get()->getEnt();
-      if (static_cast<int>(dit->get()->getPart()) == proc && dit->get()->getEntDofIdx() == 0) {
+      if (static_cast<int>(dit->get()->getPart()) == proc &&
+          dit->get()->getEntDofIdx() == 0) {
         while (dit != hi_dit && ent == dit->get()->getEnt()) {
           const int nb_of_dofs_on_ent = dit->get()->getNbDofsOnEnt();
           for (int dd = 0; dd != nb_of_dofs_on_ent; dd++, dit++) {
@@ -132,7 +132,8 @@ MoFEMErrorCode ISManager::sectionCreate(const std::string &problem_name,
     int point = rstart;
     for (; dit != hi_dit;) {
       EntityHandle ent = dit->get()->getEnt();
-      if (static_cast<int>(dit->get()->getPart()) == proc && dit->get()->getEntDofIdx() == 0) {
+      if (static_cast<int>(dit->get()->getPart()) == proc &&
+          dit->get()->getEntDofIdx() == 0) {
         // exploit that does are continuously stored on entity
         // that includes fields
         while (dit != hi_dit && ent == dit->get()->getEnt()) {
@@ -272,9 +273,9 @@ MoFEMErrorCode ISManager::isCreateProblemFieldAndRank(
     dof_loc_idx_view.insert(vit, hi_vit);
   }
 
-  auto true_if_dof_on_entity = [ents](auto & dof) {
-    if(ents) {
-      return ents->find(dof->get()->getEnt())!=ents->end();
+  auto true_if_dof_on_entity = [ents](auto &dof) {
+    if (ents) {
+      return ents->find(dof->get()->getEnt()) != ents->end();
     } else {
       return true;
     }
@@ -312,7 +313,7 @@ MoFEMErrorCode ISManager::isCreateFromProblemFieldToOtherProblemField(
 
   CHKERR m_field.get_problem(x_problem, &px_ptr);
   CHKERR m_field.get_problem(y_problem, &py_ptr);
-  
+
   typedef multi_index_container<
       boost::shared_ptr<NumeredDofEntity>,
 
@@ -344,7 +345,7 @@ MoFEMErrorCode ISManager::isCreateFromProblemFieldToOtherProblemField(
             x_field_name));
     break;
   case COL:
-      dofs_view.insert(
+    dofs_view.insert(
         dofs_view.end(),
         px_ptr->numeredDofsCols->get<FieldName_mi_tag>().lower_bound(
             x_field_name),
@@ -380,7 +381,6 @@ MoFEMErrorCode ISManager::isCreateFromProblemFieldToOtherProblemField(
       global_dofs_map[(*x_dit)->getPetscGlobalDofIdx()] =
           (*r.first)->getPetscGlobalDofIdx();
     }
-
   }
 
   idx.resize(global_dofs_map.size());
