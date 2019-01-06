@@ -133,8 +133,7 @@ public:
   }
 
   /* Initializations for varying numbers of elements. */
-  template <class... U>
-  Tensor4(U *... d) : data{d...}, inc(1) {}
+  template <class... U> Tensor4(U *... d) : inc(1), data{d...} {}
 
   /* There are two operator(int,int)'s, one for non-consts that lets you
        change the value, and one for consts that doesn't. */
