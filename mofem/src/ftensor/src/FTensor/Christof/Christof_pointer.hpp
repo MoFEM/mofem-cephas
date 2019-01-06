@@ -17,7 +17,7 @@ namespace FTensor
       data[Tensor_Dim0][(Tensor_Dim12 * (Tensor_Dim12 + 1)) / 2];
 
   public:
-    template <class... U> explicit Christof(U *... d) : data{d...}, inc(1) {
+    template <class... U> explicit Christof(U *... d) : inc(1), data{d...} {
       static_assert(sizeof...(d) == sizeof(data) / sizeof(T),
                     "Incorrect number of Arguments. Constructor should "
                     "initialize the entire Tensor");
