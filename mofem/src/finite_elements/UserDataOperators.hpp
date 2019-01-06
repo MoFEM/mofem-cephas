@@ -940,7 +940,7 @@ struct OpCalculateVectorFieldGradientDot
                                     const EntityType zero_at_type = MBVERTEX)
       : ForcesAndSourcesCore::UserDataOperator(
             field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
-        dataPtr(data_ptr), zeroAtType(zeroAtType) {
+        dataPtr(data_ptr), zeroAtType(zero_at_type) {
     if (!dataPtr)
       THROW_MESSAGE("Pointer is not set");
   }
