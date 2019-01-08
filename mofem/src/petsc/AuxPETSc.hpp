@@ -29,6 +29,13 @@ struct PairNameFEMethodPtr : public std::pair<std::string, FEMethod *> {
       : std::pair<std::string, FEMethod *>(name, ptr.get()), fePtr(ptr) {}
   virtual ~PairNameFEMethodPtr() {}
 
+  inline boost::shared_ptr<BasicMethod> gerSharedPtr() const {
+    if (!fePtr)
+      THROW_MESSAGE("Shared pointer not set. You has to be using raw "
+                    "pointer, that is unsafe.");
+    return fePtr;
+  }
+
 private:
   boost::shared_ptr<FEMethod> fePtr;
 };
@@ -41,6 +48,13 @@ struct BasicMethodPtr {
       : rawPtr(ptr.get()), bmPtr(ptr) {}
   inline BasicMethod &operator*() const { return *rawPtr; };
   inline BasicMethod *operator->() const { return rawPtr; }
+
+  inline boost::shared_ptr<BasicMethod> gerSharedPtr() const {
+    if (!bmPtr)
+      THROW_MESSAGE("Shared pointer not set. You has to be using raw "
+                    "pointer, that is unsafe.");
+    return bmPtr;
+  }
 
 private:
   BasicMethod *rawPtr;
