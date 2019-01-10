@@ -742,17 +742,22 @@ MoFEMErrorCode MatrixManager::createSeqAIJWithArrays<PetscLocalIdx_mi_tag>(
   int nb_local_dofs_row = p_miit->getNbLocalDofsRow();
   int nb_local_dofs_col = p_miit->getNbLocalDofsCol();
 
-  CHKERR ::MatCreateSeqAIJWithArrays(m_field.get_comm(), nb_local_dofs_row,
+  double *_a;
+  CHKERR PetscMalloc(j_vec.size() * sizeof(double), &_a);
+
+  CHKERR ::MatCreateSeqAIJWithArrays(PETSC_COMM_SELF, nb_local_dofs_row,
                                      nb_local_dofs_col, &*i_vec.begin(),
-                                     &*j_vec.begin(), PETSC_NULL, Aij);
+                                     &*j_vec.begin(), _a, Aij);
 #if PETSC_VERSION_GE(3, 7, 0)
   CHKERR MatConvert(*Aij, MATAIJ, MAT_INPLACE_MATRIX, Aij);
 #else
   Mat N;
-  CHKERR MatConvert(*Adj, MATAIJ, MAT_INITIAL_MATRIX, N);
-  CHKERR MatDestroy(Adj);
-  *Adj = N;
+  CHKERR MatConvert(*Aij, MATAIJ, MAT_INITIAL_MATRIX, N);
+  CHKERR MatDestroy(Aij);
+  *Aij = N;
 #endif
+
+  CHKERR PetscFree(_a);
 
   PetscLogEventEnd(MOFEM_EVENT_createMPIAIJWithArrays, 0, 0, 0, 0);
   MoFEMFunctionReturn(0);
