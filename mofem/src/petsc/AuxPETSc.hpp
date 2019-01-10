@@ -31,7 +31,7 @@ struct PairNameFEMethodPtr : public std::pair<std::string, FEMethod *> {
 
   inline boost::shared_ptr<BasicMethod> getSharedPtr() const {
     if (!fePtr)
-      THROW_MESSAGE("Shared pointer not set. You has to be using raw "
+      THROW_MESSAGE("Shared pointer not set. You have to be using raw "
                     "pointer, that is unsafe.");
     return fePtr;
   }
@@ -51,7 +51,7 @@ struct BasicMethodPtr {
 
   inline boost::shared_ptr<BasicMethod> getSharedPtr() const {
     if (!bmPtr)
-      THROW_MESSAGE("Shared pointer not set. You has to be using raw "
+      THROW_MESSAGE("Shared pointer not set. You have to be using raw "
                     "pointer, that is unsafe.");
     return bmPtr;
   }
