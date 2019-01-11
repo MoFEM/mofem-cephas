@@ -745,17 +745,12 @@ MoFEMErrorCode MatrixManager::createSeqAIJWithArrays<PetscLocalIdx_mi_tag>(
   double *_a;
   CHKERR PetscMalloc(j_vec.size() * sizeof(double), &_a);
 
+  Mat tmpMat;
   CHKERR ::MatCreateSeqAIJWithArrays(PETSC_COMM_SELF, nb_local_dofs_row,
                                      nb_local_dofs_col, &*i_vec.begin(),
-                                     &*j_vec.begin(), _a, Aij);
-#if PETSC_VERSION_GE(3, 7, 0)
-  CHKERR MatConvert(*Aij, MATAIJ, MAT_INPLACE_MATRIX, Aij);
-#else
-  Mat N;
-  CHKERR MatConvert(*Aij, MATAIJ, MAT_INITIAL_MATRIX, &N);
-  CHKERR MatDestroy(Aij);
-  *Aij = N;
-#endif
+                                     &*j_vec.begin(), _a, &tmpMat);
+  CHKERR MatDuplicate(tmpMat, MAT_SHARE_NONZERO_PATTERN, Aij);
+  CHKERR MatDestroy(&tmpMat);
 
   CHKERR PetscFree(_a);
 
