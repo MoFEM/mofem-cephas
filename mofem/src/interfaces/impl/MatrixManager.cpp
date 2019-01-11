@@ -752,7 +752,7 @@ MoFEMErrorCode MatrixManager::createSeqAIJWithArrays<PetscLocalIdx_mi_tag>(
   CHKERR MatConvert(*Aij, MATAIJ, MAT_INPLACE_MATRIX, Aij);
 #else
   Mat N;
-  CHKERR MatConvert(*Aij, MATAIJ, MAT_INITIAL_MATRIX, N);
+  CHKERR MatConvert(*Aij, MATAIJ, MAT_INITIAL_MATRIX, &N);
   CHKERR MatDestroy(Aij);
   *Aij = N;
 #endif
