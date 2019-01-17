@@ -87,7 +87,8 @@ MoFEMErrorCode MoFEM::Hdiv_Ainsworth_EdgeFaceShapeFunctions_MBTET_ON_FACE(
     }
   }
   double psi_l[p + 1], diff_psi_l[3 * (p + 1)];
-  boost::shared_ptr<FTensor::Tensor2<double *, 3, 3> > t_diff_phi_f_e_ptr;
+  boost::shared_ptr<FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3>>
+      t_diff_phi_f_e_ptr;
 
   for (int ee = 0; ee != 3; ee++) {
     const int i0 = faces_nodes[face_edges_nodes[ee][0]];
@@ -96,13 +97,14 @@ MoFEMErrorCode MoFEM::Hdiv_Ainsworth_EdgeFaceShapeFunctions_MBTET_ON_FACE(
     FTensor::Tensor1<double *, 3> t_psi_f_e(&phi_f_e[ee][0], &phi_f_e[ee][1],
                                             &phi_f_e[ee][2], 3);
     if (diff_phi_f_e) {
-      t_diff_phi_f_e_ptr = boost::shared_ptr<FTensor::Tensor2<double *, 3, 3> >(
-          new FTensor::Tensor2<double *, 3, 3>(
+      t_diff_phi_f_e_ptr = boost::shared_ptr<
+          FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3>>(
+          new FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3>(
               &diff_phi_f_e[ee][HVEC0_0], &diff_phi_f_e[ee][HVEC0_1],
               &diff_phi_f_e[ee][HVEC0_2], &diff_phi_f_e[ee][HVEC1_0],
               &diff_phi_f_e[ee][HVEC1_1], &diff_phi_f_e[ee][HVEC1_2],
               &diff_phi_f_e[ee][HVEC2_0], &diff_phi_f_e[ee][HVEC2_1],
-              &diff_phi_f_e[ee][HVEC2_2], 9));
+              &diff_phi_f_e[ee][HVEC2_2]));
     }
     for (int ii = 0; ii != gdim; ii++) {
       const int node_shift = ii * nb;
@@ -118,9 +120,9 @@ MoFEMErrorCode MoFEM::Hdiv_Ainsworth_EdgeFaceShapeFunctions_MBTET_ON_FACE(
         ierr = base_polynomials(p, ksi0i, NULL, psi_l, NULL, 3);
         CHKERRG(ierr);
       }
-      FTensor::Tensor0<double *> t_psi_l(&psi_l[0]);
-      FTensor::Tensor1<double *, 3> t_diff_psi_l(
-          &diff_psi_l[0], &diff_psi_l[p + 1], &diff_psi_l[2 * p + 2], 1);
+      FTensor::Tensor0<FTensor::PackPtr<double *, 1>> t_psi_l(&psi_l[0]);
+      FTensor::Tensor1<FTensor::PackPtr<double *, 1>, 3> t_diff_psi_l(
+          &diff_psi_l[0], &diff_psi_l[p + 1], &diff_psi_l[2 * p + 2]);
       for (int l = 0; l <= p - 1; l++) {
         t_psi_f_e(i) = lambda * t_psi_l * t_edge_cross[ee](i);
         if (t_diff_phi_f_e_ptr) {
