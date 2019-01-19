@@ -541,6 +541,11 @@ And the same for `users_modules` change:
 DMOFEM_UM_BUILD_TESTS=OFF
 ~~~~~~
 
+The following command will do this:
+~~~~~~
+sed -i -e 's/DMOFEM_UM_BUILD_TESTS=OFF/DMOFEM_UM_BUILD_TESTS=ON/g' spconfig.py & sed -i -e 's/DMOFEM_BUILD_TESTS=OFF/DMOFEM_BUILD_TESTS=ON/g'
+~~~~~~
+
 ## Setting build type and compiler flags {#spack_build_type}
 
 The build type affects performance and the availability of debugging symbols.
