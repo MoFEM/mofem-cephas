@@ -45,7 +45,7 @@ struct DataOperator {
 
   virtual ~DataOperator() {}
 
-  /** \brief Operator for bi-linear form, usually to calculate values on right
+  /** \brief Operator for bi-linear form, usually to calculate values on left
    * hand side
    */
   virtual MoFEMErrorCode doWork(int row_side, int col_side, EntityType row_type,
@@ -66,7 +66,7 @@ struct DataOperator {
     return opLhs(row_data, col_data, getSymm());
   }
 
-  /** \brief Operator for linear form, usually to calculate values on left hand
+  /** \brief Operator for linear form, usually to calculate values on right hand
    * side
    */
   virtual MoFEMErrorCode doWork(int side, EntityType type,
