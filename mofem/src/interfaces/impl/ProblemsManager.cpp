@@ -391,7 +391,7 @@ MoFEMErrorCode ProblemsManager::partitionMesh(
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode ProblemsManager::buildProblem(const std::string &name,
+MoFEMErrorCode ProblemsManager::buildProblem(const std::string name,
                                              const bool square_matrix,
                                              int verb) {
 
@@ -585,7 +585,7 @@ MoFEMErrorCode ProblemsManager::buildProblem(Problem *problem_ptr,
 }
 
 MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
-    const std::string &name, const bool square_matrix, int verb) {
+    const std::string name, const bool square_matrix, int verb) {
   MoFEM::Interface &m_field = cOre;
   MoFEMFunctionBegin;
 
@@ -1188,8 +1188,8 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
 }
 
 MoFEMErrorCode ProblemsManager::buildSubProblem(
-    const std::string &out_name, const std::vector<std::string> &fields_row,
-    const std::vector<std::string> &fields_col, const std::string &main_problem,
+    const std::string out_name, const std::vector<std::string> &fields_row,
+    const std::vector<std::string> &fields_col, const std::string main_problem,
     const bool square_matrix, int verb) {
   MoFEM::Interface &m_field = cOre;
   const Problem_multiIndex *problems_ptr;
@@ -1412,8 +1412,7 @@ MoFEMErrorCode ProblemsManager::buildSubProblem(
 }
 
 MoFEMErrorCode ProblemsManager::buildCompsedProblem(
-    const std::string &out_name,
-    const std::vector<std::string> add_row_problems,
+    const std::string out_name, const std::vector<std::string> add_row_problems,
     const std::vector<std::string> add_col_problems, const bool square_matrix,
     int verb) {
   if (!(cOre.getBuildMoFEM() & Core::BUILD_FIELD))
@@ -1704,7 +1703,7 @@ MoFEMErrorCode ProblemsManager::buildCompsedProblem(
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode ProblemsManager::partitionSimpleProblem(const std::string &name,
+MoFEMErrorCode ProblemsManager::partitionSimpleProblem(const std::string name,
                                                        int verb) {
 
   MoFEM::Interface &m_field = cOre;
@@ -1852,7 +1851,7 @@ MoFEMErrorCode ProblemsManager::partitionSimpleProblem(const std::string &name,
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode ProblemsManager::partitionProblem(const std::string &name,
+MoFEMErrorCode ProblemsManager::partitionProblem(const std::string name,
                                                  int verb) {
   MoFEM::Interface &m_field = cOre;
   const Problem_multiIndex *problems_ptr;
@@ -2039,9 +2038,8 @@ MoFEMErrorCode ProblemsManager::partitionProblem(const std::string &name,
 }
 
 MoFEMErrorCode ProblemsManager::inheritPartition(
-    const std::string &name, const std::string &problem_for_rows,
-    bool copy_rows, const std::string &problem_for_cols, bool copy_cols,
-    int verb) {
+    const std::string name, const std::string problem_for_rows, bool copy_rows,
+    const std::string problem_for_cols, bool copy_cols, int verb) {
 
   MoFEM::Interface &m_field = cOre;
   const Problem_multiIndex *problems_ptr;
@@ -2317,7 +2315,7 @@ ProblemsManager::debugPartitionedProblem(const Problem *problem_ptr, int verb) {
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode ProblemsManager::partitionFiniteElements(const std::string &name,
+MoFEMErrorCode ProblemsManager::partitionFiniteElements(const std::string name,
                                                         bool part_from_moab,
                                                         int low_proc,
                                                         int hi_proc, int verb) {
@@ -2550,7 +2548,7 @@ MoFEMErrorCode ProblemsManager::partitionFiniteElements(const std::string &name,
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode ProblemsManager::partitionGhostDofs(const std::string &name,
+MoFEMErrorCode ProblemsManager::partitionGhostDofs(const std::string name,
                                                    int verb) {
   MoFEM::Interface &m_field = cOre;
   const Problem_multiIndex *problems_ptr;
@@ -2680,7 +2678,7 @@ MoFEMErrorCode ProblemsManager::partitionGhostDofs(const std::string &name,
 }
 
 MoFEMErrorCode
-ProblemsManager::partitionGhostDofsOnDistributedMesh(const std::string &name,
+ProblemsManager::partitionGhostDofsOnDistributedMesh(const std::string name,
                                                      int verb) {
   MoFEM::Interface &m_field = cOre;
   const Problem_multiIndex *problems_ptr;
@@ -2724,7 +2722,7 @@ ProblemsManager::partitionGhostDofsOnDistributedMesh(const std::string &name,
 
     // interate over dofs on rows and dofs on columns
     for (int ss = 0; ss != loop_size; ++ss) {
-      
+
       // create dofs view by uid
       auto r = numered_dofs[ss]->get<PetscLocalIdx_mi_tag>().equal_range(-1);
 
@@ -2782,8 +2780,8 @@ ProblemsManager::partitionGhostDofsOnDistributedMesh(const std::string &name,
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode ProblemsManager::getFEMeshset(const std::string &prb_name,
-                                             const std::string &fe_name,
+MoFEMErrorCode ProblemsManager::getFEMeshset(const std::string prb_name,
+                                             const std::string fe_name,
                                              EntityHandle *meshset) const {
   MoFEM::Interface &m_field = cOre;
   const Problem *problem_ptr;
@@ -2797,7 +2795,7 @@ MoFEMErrorCode ProblemsManager::getFEMeshset(const std::string &prb_name,
           .upper_bound(fe_name);
   std::vector<EntityHandle> fe_vec;
   fe_vec.reserve(std::distance(fit, hi_fe_it));
-  for (; fit != hi_fe_it; fit++) 
+  for (; fit != hi_fe_it; fit++)
     fe_vec.push_back(fit->get()->getEnt());
   rval = m_field.get_moab().add_entities(*meshset, &*fe_vec.begin(),
                                          fe_vec.size());
@@ -2805,8 +2803,8 @@ MoFEMErrorCode ProblemsManager::getFEMeshset(const std::string &prb_name,
 }
 
 MoFEMErrorCode
-ProblemsManager::getProblemElementsLayout(const std::string &name,
-                                          const std::string &fe_name,
+ProblemsManager::getProblemElementsLayout(const std::string name,
+                                          const std::string fe_name,
                                           PetscLayout *layout) const {
   MoFEM::Interface &m_field = cOre;
   const Problem *problem_ptr;

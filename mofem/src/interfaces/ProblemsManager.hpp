@@ -14,7 +14,7 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
-*/
+ */
 
 #ifndef __PROBLEMSMANAGER_HPP__
 #define __PROBLEMSMANAGER_HPP__
@@ -40,15 +40,14 @@ struct ProblemsManager : public UnknownInterface {
   ProblemsManager(const MoFEM::Core &core);
 
   /**
-  * \brief Destructor
-  */
+   * \brief Destructor
+   */
   ~ProblemsManager();
 
   PetscBool buildProblemFromFields; ///< If set to true, problem is build from
   /// DOFs in fields, not from DOFs on elements
-  
-  PetscBool synchroniseProblemEntities; 
 
+  PetscBool synchroniseProblemEntities;
 
   MoFEMErrorCode getOptions();
 
@@ -76,10 +75,11 @@ struct ProblemsManager : public UnknownInterface {
 
   /// \deprecated do not use this one
   // DEPRECATED MoFEMErrorCode partitionMesh(const Range &ents, const int dim,
-  //                                         const int adj_dim, const int n_parts,
-  //                                         int verb = VERBOSE,
-  //                                         const bool debug = false) {
-  //   return partitionMesh(ents, dim, adj_dim, n_parts, nullptr, nullptr, nullptr,
+  //                                         const int adj_dim, const int
+  //                                         n_parts, int verb = VERBOSE, const
+  //                                         bool debug = false) {
+  //   return partitionMesh(ents, dim, adj_dim, n_parts, nullptr, nullptr,
+  //   nullptr,
   //                        verb, debug);
   // }
 
@@ -98,7 +98,7 @@ struct ProblemsManager : public UnknownInterface {
    * @return               error code
    *
    */
-  MoFEMErrorCode buildProblem(const std::string &name, const bool square_matrix,
+  MoFEMErrorCode buildProblem(const std::string name, const bool square_matrix,
                               int verb = VERBOSE);
 
   /** \brief build problem data structures
@@ -130,7 +130,7 @@ struct ProblemsManager : public UnknownInterface {
    function has to call this function.
 
    */
-  MoFEMErrorCode buildProblemOnDistributedMesh(const std::string &name,
+  MoFEMErrorCode buildProblemOnDistributedMesh(const std::string name,
                                                const bool square_matrix,
                                                int verb = VERBOSE);
 
@@ -157,10 +157,10 @@ struct ProblemsManager : public UnknownInterface {
    * @param  main_problem main problem
    * @return              error code
    */
-  MoFEMErrorCode buildSubProblem(const std::string &out_name,
+  MoFEMErrorCode buildSubProblem(const std::string out_name,
                                  const std::vector<std::string> &fields_row,
                                  const std::vector<std::string> &fields_col,
-                                 const std::string &main_problem,
+                                 const std::string main_problem,
                                  const bool square_matrix = true,
                                  int verb = VERBOSE);
 
@@ -174,30 +174,30 @@ struct ProblemsManager : public UnknownInterface {
    * @return                  error code
    */
   MoFEMErrorCode
-  buildCompsedProblem(const std::string &out_name,
+  buildCompsedProblem(const std::string out_name,
                       const std::vector<std::string> add_row_problems,
                       const std::vector<std::string> add_col_problems,
                       const bool square_matrix = true, int verb = 1);
 
   /**
-    * \brief build indexing and partition problem inheriting indexing and
+   * \brief build indexing and partition problem inheriting indexing and
    * partitioning from two other problems
-    * \ingroup mofem_problems_manager
-    *
-    * \param name problem name
-    * \param problem_for_rows problem used to index rows
-    * \param copy_rows just copy rows dofs
-    * \param problem_for_cols problem used to index cols
-    * \param copy_cols just copy cols dofs
-    *
-    * If copy_rows/copy_cols is set to false only partition is copied between
+   * \ingroup mofem_problems_manager
+   *
+   * \param name problem name
+   * \param problem_for_rows problem used to index rows
+   * \param copy_rows just copy rows dofs
+   * \param problem_for_cols problem used to index cols
+   * \param copy_cols just copy cols dofs
+   *
+   * If copy_rows/copy_cols is set to false only partition is copied between
    * problems.
-    *
-    */
-  MoFEMErrorCode inheritPartition(const std::string &name,
-                                  const std::string &problem_for_rows,
+   *
+   */
+  MoFEMErrorCode inheritPartition(const std::string name,
+                                  const std::string problem_for_rows,
                                   bool copy_rows,
-                                  const std::string &problem_for_cols,
+                                  const std::string problem_for_cols,
                                   bool copy_cols, int verb = VERBOSE);
 
   /** \brief partition problem dofs
@@ -205,7 +205,7 @@ struct ProblemsManager : public UnknownInterface {
    *
    * \param name problem name
    */
-  MoFEMErrorCode partitionSimpleProblem(const std::string &name,
+  MoFEMErrorCode partitionSimpleProblem(const std::string name,
                                         int verb = VERBOSE);
 
   /** \brief partition problem dofs (collective)
@@ -213,7 +213,7 @@ struct ProblemsManager : public UnknownInterface {
    *
    * \param name problem name
    */
-  MoFEMErrorCode partitionProblem(const std::string &name, int verb = VERBOSE);
+  MoFEMErrorCode partitionProblem(const std::string name, int verb = VERBOSE);
 
   MoFEMErrorCode printPartitionedProblem(const Problem *problem_ptr,
                                          int verb = VERBOSE);
@@ -230,7 +230,7 @@ struct ProblemsManager : public UnknownInterface {
    *
    * \param name problem name
    */
-  MoFEMErrorCode partitionFiniteElements(const std::string &name,
+  MoFEMErrorCode partitionFiniteElements(const std::string name,
                                          bool part_from_moab = false,
                                          int low_proc = -1, int hi_proc = -1,
                                          int verb = VERBOSE);
@@ -243,8 +243,7 @@ struct ProblemsManager : public UnknownInterface {
    * owned by that partitition.
    *
    */
-  MoFEMErrorCode partitionGhostDofs(const std::string &name,
-                                    int verb = VERBOSE);
+  MoFEMErrorCode partitionGhostDofs(const std::string name, int verb = VERBOSE);
 
   /** \brief determine ghost nodes on distributed meshes
    * \ingroup mofem_problems_manager
@@ -257,14 +256,14 @@ struct ProblemsManager : public UnknownInterface {
    * DOFs are ghosted if are shered but not owned by partition.
    *
    */
-  MoFEMErrorCode partitionGhostDofsOnDistributedMesh(const std::string &name,
+  MoFEMErrorCode partitionGhostDofsOnDistributedMesh(const std::string name,
                                                      int verb = VERBOSE);
 
   /**
    * \create meshset problem finite elements
    */
-  MoFEMErrorCode getFEMeshset(const std::string &prb_name,
-                              const std::string &fe_name,
+  MoFEMErrorCode getFEMeshset(const std::string prb_name,
+                              const std::string fe_name,
                               EntityHandle *meshset) const;
 
   /**
@@ -281,17 +280,16 @@ struct ProblemsManager : public UnknownInterface {
    * @param  verb    verbosity level
    * @return         error code
    */
-  MoFEMErrorCode getProblemElementsLayout(const std::string &name,
-                                          const std::string &fe_name,
+  MoFEMErrorCode getProblemElementsLayout(const std::string name,
+                                          const std::string fe_name,
                                           PetscLayout *layout) const;
 
 private:
   PetscLogEvent MOFEM_EVENT_ProblemsManager;
 };
-}
+} // namespace MoFEM
 
 #endif //__PROBLEMSMANAGER_HPP__
-
 
 /**
  * \defgroup mofem_problems_manager ProblemsManager
