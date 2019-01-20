@@ -2797,7 +2797,7 @@ MoFEMErrorCode ProblemsManager::getFEMeshset(const std::string prb_name,
   fe_vec.reserve(std::distance(fit, hi_fe_it));
   for (; fit != hi_fe_it; fit++)
     fe_vec.push_back(fit->get()->getEnt());
-  rval = m_field.get_moab().add_entities(*meshset, &*fe_vec.begin(),
+  CHKERR m_field.get_moab().add_entities(*meshset, &*fe_vec.begin(),
                                          fe_vec.size());
   MoFEMFunctionReturn(0);
 }
