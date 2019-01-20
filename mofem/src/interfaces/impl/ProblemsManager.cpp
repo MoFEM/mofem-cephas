@@ -2897,9 +2897,8 @@ ProblemsManager::removeDofsOnEntities(const std::string problem_name,
       }
 
       // get indices
-      const int nb_dofs = numered_dofs[s]->size();
-
-      auto get_indices = [&](auto tag, auto &indices, bool only_local) {
+      auto get_indices_by_tag = [&](auto tag, auto &indices, bool only_local) {
+        const int nb_dofs = numered_dofs[s]->size();
         indices.clear();
         indices.reserve(nb_dofs);
         for (auto dit = numered_dofs[s]->get<decltype(tag)>().begin();
@@ -2914,6 +2913,7 @@ ProblemsManager::removeDofsOnEntities(const std::string problem_name,
       };
 
       auto get_indices_by_uid = [&](auto tag, auto &indices) {
+        const int nb_dofs = numered_dofs[s]->size();
         indices.clear();
         indices.reserve(nb_dofs);
         for (auto dit = numered_dofs[s]->begin(); dit != numered_dofs[s]->end();
@@ -2923,30 +2923,26 @@ ProblemsManager::removeDofsOnEntities(const std::string problem_name,
         }
       };
 
-      AO ao;
-
-      std::vector<int> global_indices;
-      get_indices(PetscGlobalIdx_mi_tag(), global_indices, true);
-      CHKERR AOCreateMapping(m_field.get_comm(), global_indices.size(),
-                             &*global_indices.begin(), PETSC_NULL, &ao);
-      get_indices_by_uid(PetscGlobalIdx_mi_tag(), global_indices);
-      CHKERR AOApplicationToPetsc(ao, global_indices.size(),
-                                  &*global_indices.begin());
-      CHKERR AODestroy(&ao);
-
-      std::vector<int> local_indices;
-      get_indices(PetscLocalIdx_mi_tag(), local_indices, false);
-      CHKERR AOCreateMapping(PETSC_COMM_SELF, local_indices.size(),
-                             &*local_indices.begin(), PETSC_NULL, &ao);
-      get_indices_by_uid(PetscLocalIdx_mi_tag(), local_indices);
-      CHKERR AOApplicationToPetsc(ao, local_indices.size(),
-                                  &*local_indices.begin());
-      CHKERR AODestroy(&ao);
+      auto concatenate_dofs = [&](auto tag, auto &indices,
+                                  const auto local_only) {
+        MoFEMFunctionBegin;
+        get_indices_by_tag(tag, indices, local_only);
+        AO ao;
+        CHKERR AOCreateMapping(m_field.get_comm(), indices.size(),
+                               &*indices.begin(), PETSC_NULL, &ao);
+        get_indices_by_uid(tag, indices);
+        CHKERR AOApplicationToPetsc(ao, indices.size(), &*indices.begin());
+        CHKERR AODestroy(&ao);
+        MoFEMFunctionReturn(0);
+      };
 
       // set indices index
       auto set_concatinated_indices = [&]() {
-        int local_idx = 0;
+        std::vector<int> global_indices;
+        std::vector<int> local_indices;
         MoFEMFunctionBegin;
+        CHKERR concatenate_dofs(PetscGlobalIdx_mi_tag(), global_indices, true);
+        CHKERR concatenate_dofs(PetscLocalIdx_mi_tag(), local_indices, false);
         auto gi = global_indices.begin();
         auto li = local_indices.begin();
         for (auto dit = numered_dofs[s]->begin(); dit != numered_dofs[s]->end();
