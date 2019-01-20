@@ -194,14 +194,8 @@ MoFEMErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
                  fe_ptr.get()->cols_dofs->begin();
              vit != fe_ptr.get()->cols_dofs->end(); vit++) {
           const int idx = TAG::get_index(vit);
-          dofs_col_view.push_back(idx);
-          // Only check if index is correct
-          if (idx < 0) {
-            std::ostringstream zz;
-            zz << "rank " << rAnk << " ";
-            zz << *(*vit) << std::endl;
-            SETERRQ(cOmm, PETSC_ERR_ARG_SIZ, zz.str().c_str());
-          }
+          if (idx >= 0)
+            dofs_col_view.push_back(idx);
           if (idx >= p_miit->getNbDofsCol()) {
             std::ostringstream zz;
             zz << "rank " << rAnk << " ";

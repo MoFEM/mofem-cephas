@@ -73,16 +73,6 @@ struct ProblemsManager : public UnknownInterface {
                                Tag *th_part_weights = nullptr,
                                int verb = VERBOSE, const bool debug = false);
 
-  /// \deprecated do not use this one
-  // DEPRECATED MoFEMErrorCode partitionMesh(const Range &ents, const int dim,
-  //                                         const int adj_dim, const int
-  //                                         n_parts, int verb = VERBOSE, const
-  //                                         bool debug = false) {
-  //   return partitionMesh(ents, dim, adj_dim, n_parts, nullptr, nullptr,
-  //   nullptr,
-  //                        verb, debug);
-  // }
-
   /** \brief build problem data structures
    * \ingroup mofem_problems_manager
    *
@@ -283,6 +273,26 @@ struct ProblemsManager : public UnknownInterface {
   MoFEMErrorCode getProblemElementsLayout(const std::string name,
                                           const std::string fe_name,
                                           PetscLayout *layout) const;
+
+  /**
+   * @brief Remove DOFs from problem
+   *
+   * Remove DOFs from problem which are on entities on the given range and given
+   * field name. On the finite element level, DOFs can be still accessed however
+   * local PETSc indices and global PETSc indices are marked with the index -1.
+   *
+   * @note If the index is marked -1 it is not assembled and dropped by
+   * VecSetValues and MatSetValues.
+   *
+   * @param problem_name name of the problem
+   * @param field_name name of the field
+   * @param ents entities on which DOFs are removed
+   * @param verb
+   * @return MoFEMErrorCode
+   */
+  MoFEMErrorCode removeDofsOnEntities(const std::string problem_name,
+                                      const std::string field_name,
+                                      const Range ents, int verb = VERBOSE);
 
 private:
   PetscLogEvent MOFEM_EVENT_ProblemsManager;

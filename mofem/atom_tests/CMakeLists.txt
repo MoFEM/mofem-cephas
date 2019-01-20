@@ -971,6 +971,27 @@ add_test(
   ${CMAKE_CURRENT_BINARY_DIR}/build_problems -my_file disp01.h5m
 )
 
+# tetsing removing enetities from the problem
+cm_export_file("disp01_2parts.h5m" export_atom_tests)
+my_add_executable(remove_entities_from_problem 
+  remove_entities_from_problem.cpp
+)
+target_link_libraries(remove_entities_from_problem
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS}
+)
+add_test(remove_entities_from_problem
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 2 
+  ${CMAKE_CURRENT_BINARY_DIR}/remove_entities_from_problem 
+  -my_file disp01_2parts.h5m 
+)
+
 # teting build mesh on partinoned (not distributed) mesh and composite problems
 #test for build problems
 my_add_executable(build_composite_problem build_composite_problem.cpp)
