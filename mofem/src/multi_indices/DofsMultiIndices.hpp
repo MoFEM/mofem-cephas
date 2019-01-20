@@ -531,10 +531,6 @@ typedef multi_index_container<
             const_mem_fun<FENumeredDofEntity::interface_type_Field,
                           boost::string_ref, &FENumeredDofEntity::getNameRef>>,
         ordered_non_unique<
-            tag<PetscGlobalIdx_mi_tag>,
-            const_mem_fun<FENumeredDofEntity::interface_type_NumeredDofEntity,
-                          DofIdx, &FENumeredDofEntity::getPetscGlobalDofIdx>>,
-        ordered_non_unique<
             tag<Composite_Name_Type_And_Side_Number_mi_tag>,
             composite_key<
                 FENumeredDofEntity,

@@ -667,32 +667,56 @@ struct NumeredEntFiniteElement
   /** \brief get FE dof by petsc index
    * \ingroup mofem_dofs
    */
-  MoFEMErrorCode
-  getRowDofsByPetscGlobalDofIdx(DofIdx idx,
-                                const FENumeredDofEntity **dof_ptr) const;
-
-  // /** \deprecated Use getRowDofsByPetscGlobalDofIdx() instead
-  // */
-  // inline DEPRECATED MoFEMErrorCode get_row_dofs_by_petsc_gloabl_dof_idx(
-  //   DofIdx idx,const FENumeredDofEntity **dof_ptr
-  // ) const {
-  //   return getRowDofsByPetscGlobalDofIdx(idx,dof_ptr);
-  // }
+  boost::weak_ptr<FENumeredDofEntity>
+  getRowDofsByPetscGlobalDofIdx(const int idx) const;
 
   /** \brief get FE dof by petsc index
    * \ingroup mofem_dofs
    */
-  MoFEMErrorCode
-  getColDofsByPetscGlobalDofIdx(DofIdx idx,
-                                const FENumeredDofEntity **dof_ptr) const;
+  boost::weak_ptr<FENumeredDofEntity>
+  getColDofsByPetscGlobalDofIdx(const int idx) const;
 
-  // /** \deprecated Use getColDofsByPetscGlobalDofIdx() instead
-  // */
-  // inline DEPRECATED MoFEMErrorCode get_col_dofs_by_petsc_gloabl_dof_idx(
-  //   DofIdx idx,const FENumeredDofEntity **dof_ptr
-  // ) const {
-  //   return getColDofsByPetscGlobalDofIdx(idx,dof_ptr);
-  // }
+  /**
+   * @deprecated Unsafe to use, will be removed in future releases.
+   * 
+   * Get the Row Dofs By Petsc Global Dof Idx object
+   * 
+   * @param idx 
+   * @param dof_raw_ptr 
+   * @return MoFEMErrorCode 
+   */
+  DEPRECATED inline MoFEMErrorCode
+  getRowDofsByPetscGlobalDofIdx(const int idx,
+                                const FENumeredDofEntity **dof_raw_ptr) const {
+    MoFEMFunctionBegin;
+    if (auto r = getRowDofsByPetscGlobalDofIdx(idx).lock())
+      *dof_raw_ptr = r.get();
+    else
+      SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_FOUND,
+               "dof which index < %d > not found", idx);
+    MoFEMFunctionReturn(0);
+  }
+
+  /**
+   * @deprecated Unsafe to use, will be removed in future releases.
+   * 
+   * Get the Row Dofs By Petsc Global Dof Idx object
+   * 
+   * @param idx 
+   * @param dof_raw_ptr 
+   * @return MoFEMErrorCode 
+   */
+  DEPRECATED inline MoFEMErrorCode
+  getColDofsByPetscGlobalDofIdx(const int idx,
+                                const FENumeredDofEntity **dof_raw_ptr) const {
+    MoFEMFunctionBegin;
+    if (auto r = getColDofsByPetscGlobalDofIdx(idx).lock())
+      *dof_raw_ptr = r.get();
+    else
+      SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_FOUND,
+               "dof which index < %d > not found", idx);
+    MoFEMFunctionReturn(0);
+  }
 
   friend std::ostream &operator<<(std::ostream &os,
                                   const NumeredEntFiniteElement &e) {
