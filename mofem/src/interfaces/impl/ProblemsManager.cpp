@@ -2889,65 +2889,85 @@ ProblemsManager::removeDofsOnEntities(const std::string problem_name,
           numered_dofs[s]->erase(dit->getGlobalUniqueId());
         }
 
+      // get current number of ghost dofs
+      int nb_local_dofs = 0;
+      int nb_ghost_dofs = 0;
+      for (auto dit = numered_dofs[s]->get<PetscLocalIdx_mi_tag>().begin();
+           dit != numered_dofs[s]->get<PetscLocalIdx_mi_tag>().end(); ++dit) {
+        if ((*dit)->getPetscLocalDofIdx() >= 0 &&
+            (*dit)->getPetscLocalDofIdx() < *(local_nbdof_ptr[s]))
+          ++nb_local_dofs;
+        else if ((*dit)->getPetscLocalDofIdx() >= *(local_nbdof_ptr[s]))
+          ++nb_ghost_dofs;
+        else
+          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Imposible case");
+      }
+
       // get indices
       const int nb_dofs = numered_dofs[s]->size();
-      std::vector<int> mofem_indices;
-      std::vector<int> global_indices;
-      std::vector<int> local_indices;
 
-      auto get_indices = [&](auto tag, auto &indices) {
+      auto get_indices = [&](auto tag, auto &indices, bool only_local) {
+        indices.clear();
         indices.reserve(nb_dofs);
         for (auto dit = numered_dofs[s]->get<decltype(tag)>().begin();
              dit != numered_dofs[s]->get<decltype(tag)>().end(); ++dit) {
-          int idx = decltype(tag)::get_index(dit);
+          bool add = true;
+          if (only_local)
+            if ((*dit)->getPetscLocalDofIdx() < 0 ||
+                (*dit)->getPetscLocalDofIdx() >= *(local_nbdof_ptr[s]))
+              add = false;
+
+          if (add) {
+            const int idx = decltype(tag)::get_index(dit);
+            indices.push_back(decltype(tag)::get_index(dit));
+          }
+        }
+      };
+
+      auto get_indices_by_uid = [&](auto tag, auto &indices) {
+        indices.clear();
+        indices.reserve(nb_dofs);
+        for (auto dit = numered_dofs[s]->begin(); dit != numered_dofs[s]->end();
+             ++dit) {
+          const int idx = decltype(tag)::get_index(dit);
           indices.push_back(decltype(tag)::get_index(dit));
         }
       };
-      get_indices(Idx_mi_tag(), mofem_indices);
-      get_indices(PetscGlobalIdx_mi_tag(), global_indices);
-      get_indices(PetscLocalIdx_mi_tag(), local_indices);
 
-      // renumber
-      auto concatenate = [&](auto comm, auto &indices) {
-        MoFEMFunctionBegin;
-        IS is;
-        CHKERR ISCreateGeneral(comm, nb_dofs, &*indices.begin(),
-                               PETSC_USE_POINTER, &is);
-        AO ao;
-        CHKERR AOCreateMappingIS(is, PETSC_NULL, &ao);
-        CHKERR AOApplicationToPetscIS(ao, is);
-        CHKERR AODestroy(&ao);
-        CHKERR ISDestroy(&is);
-        MoFEMFunctionReturn(0);
-      };
-      CHKERR concatenate(m_field.get_comm(), mofem_indices);
-      CHKERR concatenate(m_field.get_comm(), global_indices);
-      CHKERR concatenate(PETSC_COMM_SELF, local_indices);
+      AO ao;
 
-      *(local_nbdof_ptr[s]) = 0;
-      *(ghost_nbdof_ptr[s]) = 0;
+      std::vector<int> global_indices;
+      get_indices(PetscGlobalIdx_mi_tag(), global_indices, true);
+      CHKERR AOCreateMapping(m_field.get_comm(), global_indices.size(),
+                             &*global_indices.begin(), PETSC_NULL, &ao);
+      get_indices_by_uid(PetscGlobalIdx_mi_tag(), global_indices);
+      CHKERR AOApplicationToPetsc(ao, global_indices.size(),
+                                  &*global_indices.begin());
+      CHKERR AODestroy(&ao);
+
+      std::vector<int> local_indices;
+      get_indices(PetscLocalIdx_mi_tag(), local_indices, false);
+      CHKERR AOCreateMapping(PETSC_COMM_SELF, local_indices.size(),
+                             &*local_indices.begin(), PETSC_NULL, &ao);
+      get_indices_by_uid(PetscLocalIdx_mi_tag(), local_indices);
+      CHKERR AOApplicationToPetsc(ao, local_indices.size(),
+                                  &*local_indices.begin());
+      CHKERR AODestroy(&ao);
 
       // set indices index
       auto set_concatinated_indices = [&]() {
+        int local_idx = 0;
         MoFEMFunctionBegin;
-        auto mi = mofem_indices.begin();
         auto gi = global_indices.begin();
         auto li = local_indices.begin();
         for (auto dit = numered_dofs[s]->begin(); dit != numered_dofs[s]->end();
              ++dit) {
-
-          if ((*dit)->getPart() == m_field.get_comm_rank())
-            ++(*(local_nbdof_ptr[s]));
-          else
-            ++(*(ghost_nbdof_ptr[s]));
-
           auto mod = NumeredDofEntity_part_and_all_indices_change(
-              (*dit)->getPart(), *mi, *gi, *li);
+              (*dit)->getPart(), (*dit)->getDofIdx(), *gi, *li);
           bool success = numered_dofs[s]->modify(dit, mod);
           if (!success)
             SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
                     "can not set negative indices");
-          ++mi;
           ++gi;
           ++li;
         }
@@ -2955,8 +2975,10 @@ ProblemsManager::removeDofsOnEntities(const std::string problem_name,
       };
       CHKERR set_concatinated_indices();
 
-      MPI_Allreduce(local_nbdof_ptr[s], nbdof_ptr[s], 1, MPI_INT, MPI_SUM,
+      MPI_Allreduce(&nb_local_dofs, nbdof_ptr[s], 1, MPI_INT, MPI_SUM,
                     m_field.get_comm());
+      *(local_nbdof_ptr[s]) = nb_local_dofs;
+      *(ghost_nbdof_ptr[s]) = nb_ghost_dofs;
 
     } else {
 
@@ -2965,8 +2987,17 @@ ProblemsManager::removeDofsOnEntities(const std::string problem_name,
       *(ghost_nbdof_ptr[1]) = *(ghost_nbdof_ptr[0]);
     }
 
-  CHKERR printPartitionedProblem(prb_ptr, verb);
-  // CHKERR debugPartitionedProblem(prb_ptr, verb);
+  if (verb > QUIET) {
+    PetscSynchronizedPrintf(
+        m_field.get_comm(),
+        "removed ents on rank %d from problem %s dofs [ %d / %d local, %d / %d "
+        "ghost, %d / %d global]\n",
+        m_field.get_comm_rank(), prb_ptr->getName().c_str(),
+        prb_ptr->getNbLocalDofsRow(), prb_ptr->getNbLocalDofsCol(),
+        prb_ptr->getNbGhostDofsRow(), prb_ptr->getNbGhostDofsCol(),
+        prb_ptr->getNbDofsRow(), prb_ptr->getNbDofsCol());
+    PetscSynchronizedFlush(m_field.get_comm(), PETSC_STDOUT);
+  }
 
   MoFEMFunctionReturn(0);
 }
