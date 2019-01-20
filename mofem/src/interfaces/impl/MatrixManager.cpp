@@ -79,10 +79,10 @@ MoFEMErrorCode CreateRowComressedADJMatrix::buildFECol(
     boost::shared_ptr<NumeredEntFiniteElement> &fe_ptr) const {
   MoFEMFunctionBegin;
 
-  if (!ent_fe_ptr) 
+  if (!ent_fe_ptr)
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "Pointer to EntFiniteElement not given");
-  
+
   // if element is not part of problem
   if ((ent_fe_ptr->getId() & p_miit->getBitFEId()).none())
     MoFEMFunctionReturnHot(0);
@@ -133,10 +133,9 @@ MoFEMErrorCode CreateRowComressedADJMatrix::buildFECol(
       auto hint = fe_ptr->cols_dofs->end();
       for (auto &dof : *dofs_array)
         hint = fe_ptr->cols_dofs->emplace_hint(hint, dofs_array, &dof);
-
     }
 
-  } else 
+  } else
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "At that point ptr to finite element should be well known");
 
@@ -157,7 +156,7 @@ MoFEMErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
 
   // check if dofs and columns are the same, i.e. structurally symmetric problem
   bool do_cols_prob;
-  if (p_miit->numeredDofsRows == p_miit->numeredDofsCols) 
+  if (p_miit->numeredDofsRows == p_miit->numeredDofsCols)
     do_cols_prob = false;
   else
     do_cols_prob = true;
