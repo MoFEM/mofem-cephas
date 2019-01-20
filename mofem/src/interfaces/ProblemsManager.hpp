@@ -28,7 +28,7 @@ static const MOFEMuuid IDD_MOFEMProblemsManager =
 
 /**
  * \brief Problem manager is used to build and partition problems
- * \mofem_problems_manager
+ * \ingroup mofem_problems_manager
  *
  */
 struct ProblemsManager : public UnknownInterface {
@@ -141,6 +141,8 @@ struct ProblemsManager : public UnknownInterface {
 
   /**
    * \brief build sub problem
+   * \ingroup mofem_problems_manager
+   * 
    * @param  out_name problem
    * @param  fields_row  vector of fields composing problem
    * @param  fields_col  vector of fields composing problem
@@ -156,6 +158,8 @@ struct ProblemsManager : public UnknownInterface {
 
   /**
    * \brief build composite problem
+   * \ingroup mofem_problems_manager
+   * 
    * @param  out_name         name of build problem
    * @param  add_row_problems vector of add row problems
    * @param  add_col_problems vector of add col problems
@@ -251,6 +255,8 @@ struct ProblemsManager : public UnknownInterface {
 
   /**
    * \create meshset problem finite elements
+   * \ingroup mofem_problems_manager
+   *
    */
   MoFEMErrorCode getFEMeshset(const std::string prb_name,
                               const std::string fe_name,
@@ -276,6 +282,7 @@ struct ProblemsManager : public UnknownInterface {
 
   /**
    * @brief Remove DOFs from problem
+   * @ingroup mofem_problems_manager
    *
    * Remove DOFs from problem which are on entities on the given range and given
    * field name. On the finite element level, DOFs can be still accessed however
