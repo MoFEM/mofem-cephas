@@ -254,9 +254,22 @@ struct ProblemsManager : public UnknownInterface {
                                                      int verb = VERBOSE);
 
   /**
-   * \create meshset problem finite elements
+   * \create add entities of finite element in the problem
    * \ingroup mofem_problems_manager
    *
+   * \note Meshset entity has to be crated
+   * 
+   */
+
+  /**
+   * @brief create add entities of finite element in the problem
+   *
+   * @note Meshset entity has to be crated
+   * 
+   * @param prb_name name of the problem
+   * @param fe_name name of the entity
+   * @param meshset pointer meshset handle
+   * @return MoFEMErrorCode 
    */
   MoFEMErrorCode getFEMeshset(const std::string prb_name,
                               const std::string fe_name,
@@ -290,6 +303,9 @@ struct ProblemsManager : public UnknownInterface {
    *
    * @note If the index is marked -1 it is not assembled and dropped by
    * VecSetValues and MatSetValues.
+   *
+   * @todo Not yet implemented update for AO maps and IS ranges if removed
+   * entities in composite problem or sub-problem
    *
    * @param problem_name name of the problem
    * @param field_name name of the field
