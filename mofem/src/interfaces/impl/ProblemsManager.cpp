@@ -2861,13 +2861,6 @@ ProblemsManager::removeDofsOnEntities(const std::string problem_name,
           dofs_it_view.emplace_back(numered_dofs[s]->project<0>(lo));
       }
 
-      auto sort_by_local_index = [](const auto &a, const auto &b) {
-        return a->get()->getPetscLocalDofIdx() <
-               b->get()->getPetscLocalDofIdx();
-      };
-      // sort by local index
-      dofs_it_view.sort(sort_by_local_index);
-
       // set negative index
       auto mod = NumeredDofEntity_part_and_all_indices_change(-1, -1, -1, -1);
       for (auto dit : dofs_it_view) {
@@ -2913,14 +2906,10 @@ ProblemsManager::removeDofsOnEntities(const std::string problem_name,
              dit != numered_dofs[s]->get<decltype(tag)>().end(); ++dit) {
           bool add = true;
           if (only_local)
-            if ((*dit)->getPetscLocalDofIdx() < 0 ||
-                (*dit)->getPetscLocalDofIdx() >= *(local_nbdof_ptr[s]))
-              add = false;
-
-          if (add) {
-            const int idx = decltype(tag)::get_index(dit);
-            indices.push_back(decltype(tag)::get_index(dit));
-          }
+            if ((*dit)->getPetscLocalDofIdx() >= 0 &&
+                (*dit)->getPetscLocalDofIdx() < *(local_nbdof_ptr[s])) {
+              indices.push_back(decltype(tag)::get_index(dit));
+            }
         }
       };
 
